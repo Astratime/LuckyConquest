@@ -1,10 +1,6 @@
 package fr.astratime.lucky.screens;
 
-import com.badlogic.gdx.Gdx;
-import com.badlogic.gdx.Input;
-import com.badlogic.gdx.InputAdapter;
-import com.badlogic.gdx.InputMultiplexer;
-import com.badlogic.gdx.ScreenAdapter;
+import com.badlogic.gdx.*;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Texture;
@@ -24,11 +20,7 @@ import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 import com.badlogic.gdx.utils.ScreenUtils;
 import com.badlogic.gdx.utils.viewport.ScreenViewport;
 import fr.astratime.lucky.LuckyGame;
-import fr.astratime.lucky.entities.Card;
-import fr.astratime.lucky.entities.Deck;
-import fr.astratime.lucky.entities.DiscardPile;
-import fr.astratime.lucky.entities.SlotMachine;
-import fr.astratime.lucky.entities.Symbol;
+import fr.astratime.lucky.entities.*;
 
 import java.util.HashMap;
 import java.util.List;

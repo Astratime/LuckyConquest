@@ -1,7 +1,5 @@
 package fr.astratime.lucky.entities;
 
-import com.badlogic.gdx.Gdx;
-
 import java.util.EnumMap;
 import java.util.Map;
 import java.util.Random;
