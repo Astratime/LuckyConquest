@@ -31,3 +31,16 @@ Useful Gradle tasks and flags:
 
 Note that most tasks that are not specific to a single project can be run with `name:` prefix, where the `name` should be replaced with the ID of a specific project.
 For example, `core:clean` removes `build` folder only from the `core` project.
+
+## Presentation
+Card Game: LUCKY CONQUEST
+
+Gameplay: Battle between two characters (player and bot). The player has a deck of cards and a slot machine. The battle is turn-based. A turn is divided into three phases. 
+Phase 1 --> Draw cards to rig the slot machine and improve the odds for certain symbols (the exact effects are to be determined, but the goal is to create an advantageous situation for Phase 2). 
+Phase 2 --> Spin the slot machine, which will display symbols. The symbols determine the actions to be taken (attack, bonus, penalty, and others to be determined later)
+Phase 3 --> bonus phase, which is activated only if the machine lines up three identical symbols (even with Phase 1 in play, this should be an extremely rare occurrence). This phase is designed to boost the machine’s outcome (enhanced attacks, penalty cancellation, jackpot).
+The rest of the battle follows standard rules: characters lose health points until one of them is defeated.
+
+Deck Building: The player can upgrade their cards, use new cards, and change the reels on their slot machine to achieve better synergy.
+
+Conquest: The player must explore and conquer dungeons to obtain new cards. Some dungeons will specialize in a particular symbol to yield cards related to that symbol (the first dungeons will offer all types of cards to give players a glimpse of the deck-building possibilities).
