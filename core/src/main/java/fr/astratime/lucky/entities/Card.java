@@ -1,12 +1,11 @@
 package fr.astratime.lucky.entities;
 
-
 public class Card {
 
     public enum Suit { COEUR, CARREAU, TREFLE, PIQUE }
 
     private final Suit suit;
-    private final int rank; // 1 (As) à 13 (Roi)
+    private final int rank;
 
     public Card(Suit suit, int rank) {
         this.suit = suit;
@@ -16,10 +15,6 @@ public class Card {
     public Suit getSuit() { return suit; }
     public int getRank() { return rank; }
 
-    /**
-     * Code d'une lettre utilisé dans le nom des fichiers d'assets
-     * (ex: "cards/light/13-C.png" pour le Roi de Trèfle).
-     */
     public String getSuitCode() {
         switch (suit) {
             case COEUR:   return "H";
@@ -30,12 +25,32 @@ public class Card {
         }
     }
 
-    /**
-     * Chemin (relatif au dossier assets) de l'image représentant cette carte,
-     * pour un thème donné ("light" ou "dark").
-     */
     public String getAssetPath(String theme) {
         return "cards/" + theme + "/" + rank + "-" + getSuitCode() + ".png";
+    }
+
+    /**
+     * Symbole dont cette carte améliore la probabilité.
+     */
+    public Symbol getTargetSymbol() {
+        switch (suit) {
+            case CARREAU: return Symbol.DIAMOND;
+            case COEUR:   return Symbol.TRIPLE_CHERRY;
+            case PIQUE:   return Symbol.TRIPLE_SEVEN;
+            case TREFLE:  return Symbol.GOLD_BAR;
+            default: throw new IllegalStateException("Couleur inconnue: " + suit);
+        }
+    }
+
+    /** Description de l'effet affichée au survol de la carte. */
+    public String getDescription() {
+        switch (suit) {
+            case CARREAU: return "Ameliore les chances\nd'obtenir Diamond";
+            case COEUR:   return "Ameliore les chances\nd'obtenir Triple Cherry";
+            case PIQUE:   return "Ameliore les chances\nd'obtenir Triple Seven";
+            case TREFLE:  return "Ameliore les chances\nd'obtenir Gold Bar";
+            default: return "";
+        }
     }
 
     @Override

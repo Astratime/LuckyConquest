@@ -7,7 +7,12 @@ public enum Symbol {
     SEVEN      ("3-seven"),
     BAR        ("4-bar"),
     GRAPE      ("5-grape"),
-    BELL       ("6-bell");
+    BELL       ("6-bell"),
+    DIAMOND ("7-diamond"),
+    TRIPLE_CHERRY     ("8-triple_cherry"),
+    TRIPLE_SEVEN      ("9-triple_seven"),
+    GOLD_BAR        ("10-gold_bar"),
+    WATERMELON      ("11-watermelon");
 
     private final String assetName;
 
