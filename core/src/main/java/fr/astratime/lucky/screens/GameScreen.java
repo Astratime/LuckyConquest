@@ -17,9 +17,7 @@ import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 import com.badlogic.gdx.utils.ScreenUtils;
 import com.badlogic.gdx.utils.viewport.ScreenViewport;
 import fr.astratime.lucky.LuckyGame;
-import fr.astratime.lucky.entities.Card;
-import fr.astratime.lucky.entities.Deck;
-import fr.astratime.lucky.entities.DiscardPile;
+import fr.astratime.lucky.entities.*;
 
 import java.util.HashMap;
 import java.util.List;
@@ -32,7 +30,7 @@ public class GameScreen extends ScreenAdapter {
     // -------------------------------------------------------------------------
 
     private static final String THEME           = "light";
-    private static final float  CARD_WIDTH      = 95f;   // moitié de la taille source (190x270)
+    private static final float  CARD_WIDTH      = 95f;
     private static final float  CARD_HEIGHT     = 135f;
     private static final String BACKGROUND_PATH = "playTable/play_table1.png";
 
@@ -40,13 +38,20 @@ public class GameScreen extends ScreenAdapter {
     private static final float BUTTON_HEIGHT = 60f;
     private static final float CARD_TABLE_Y  = 350f;
 
+    private static final float SYMBOL_WIDTH  = 94f;  // ~2/3 de la taille source (141x120)
+    private static final float SYMBOL_HEIGHT = 80f;
+    private static final float SLOT_TABLE_Y  = 500f;
+
     // -------------------------------------------------------------------------
     // Logique de jeu
     // -------------------------------------------------------------------------
 
     private final DiscardPile discardPile = new DiscardPile();
     private final Deck        deck        = new Deck(discardPile);
+    private final SlotMachine slotMachine = new SlotMachine();
     private List<Card>        currentHand = List.of();
+
+    private final TextButton spinButton;
 
     // -------------------------------------------------------------------------
     // Ressources (à disposer dans dispose())
@@ -58,7 +63,10 @@ public class GameScreen extends ScreenAdapter {
     private final Texture    backgroundTexture;
     private final Texture    buttonUpTexture;
     private final Texture    buttonDownTexture;
-    private final Map<String, Texture> cardTextures = new HashMap<>();
+    private final Map<String, Texture> cardTextures   = new HashMap<>();
+    private final Map<Symbol, Texture> symbolTextures = new HashMap<>();
+
+    private final Texture buttonDisabledTexture;
 
     // -------------------------------------------------------------------------
     // Acteurs Scene2D
@@ -66,6 +74,7 @@ public class GameScreen extends ScreenAdapter {
 
     private final Image background;
     private final Table cardTable = new Table();
+    private final Table slotTable = new Table();
 
     // -------------------------------------------------------------------------
     // Constructeur
@@ -80,12 +89,19 @@ public class GameScreen extends ScreenAdapter {
         backgroundTexture = new Texture(Gdx.files.internal(BACKGROUND_PATH));
         buttonUpTexture   = makeColorTexture(Color.DARK_GRAY);
         buttonDownTexture = makeColorTexture(Color.GRAY);
+        buttonDisabledTexture = makeColorTexture(Color.valueOf("333333ff"));
+
+        preloadSymbolTextures();
 
         background = buildBackground();
         TextButton drawButton = buildDrawButton();
+        spinButton = buildSpinButton();
+        spinButton.setDisabled(true);
 
         stage.addActor(background);
         stage.addActor(drawButton);
+        stage.addActor(spinButton);
+        stage.addActor(slotTable);
         stage.addActor(cardTable);
     }
 
@@ -100,12 +116,7 @@ public class GameScreen extends ScreenAdapter {
     }
 
     private TextButton buildDrawButton() {
-        TextButton.TextButtonStyle style = new TextButton.TextButtonStyle();
-        style.font = font;
-        style.up   = new TextureRegionDrawable(new TextureRegion(buttonUpTexture));
-        style.down = new TextureRegionDrawable(new TextureRegion(buttonDownTexture));
-
-        TextButton button = new TextButton("Tirer 3 cartes", style);
+        TextButton button = new TextButton("Tirer 3 cartes", buildButtonStyle());
         button.setSize(BUTTON_WIDTH, BUTTON_HEIGHT);
         button.setPosition(20, 20);
         button.addListener(new ChangeListener() {
@@ -117,6 +128,29 @@ public class GameScreen extends ScreenAdapter {
         return button;
     }
 
+    private TextButton buildSpinButton() {
+        TextButton button = new TextButton("Lancer machine", buildButtonStyle());
+        button.setSize(BUTTON_WIDTH, BUTTON_HEIGHT);
+        button.setPosition(20 + BUTTON_WIDTH + 20, 20);
+        button.addListener(new ChangeListener() {
+            @Override
+            public void changed(ChangeEvent event, Actor actor) {
+                spinSlotMachine();
+            }
+        });
+        return button;
+    }
+
+    private TextButton.TextButtonStyle buildButtonStyle() {
+        TextButton.TextButtonStyle style = new TextButton.TextButtonStyle();
+        style.font = font;
+        style.up   = new TextureRegionDrawable(new TextureRegion(buttonUpTexture));
+        style.down = new TextureRegionDrawable(new TextureRegion(buttonDownTexture));
+        style.disabled          = new TextureRegionDrawable(new TextureRegion(buttonDisabledTexture));
+        style.disabledFontColor = Color.GRAY;
+        return style;
+    }
+
     // -------------------------------------------------------------------------
     // Logique de pioche
     // -------------------------------------------------------------------------
@@ -126,6 +160,7 @@ public class GameScreen extends ScreenAdapter {
         currentHand = deck.draw(3);
 
         refreshCardTable();
+        spinButton.setDisabled(false);
 
         Gdx.app.log("GameScreen", "Deck: " + deck.getCards().size() + " | Discard pile: " + discardPile.size());
     }
@@ -143,8 +178,42 @@ public class GameScreen extends ScreenAdapter {
     }
 
     // -------------------------------------------------------------------------
+    // Logique machine à sous
+    // -------------------------------------------------------------------------
+
+    private void spinSlotMachine() {
+        slotMachine.spin();
+        refreshSlotTable();
+        spinButton.setDisabled(true);
+
+        Gdx.app.log("GameScreen", "Jackpot: " + slotMachine.isJackpot());
+    }
+
+    private void refreshSlotTable() {
+        slotTable.clearChildren();
+        for (Symbol symbol : slotMachine.getResult()) {
+            Image symbolImage = new Image(new TextureRegionDrawable(new TextureRegion(symbolTextures.get(symbol))));
+            slotTable.add(symbolImage).size(SYMBOL_WIDTH, SYMBOL_HEIGHT).pad(8f);
+        }
+        slotTable.pack();
+
+        float worldWidth = stage.getViewport().getWorldWidth();
+        slotTable.setPosition(worldWidth-(worldWidth/3f), SLOT_TABLE_Y);
+    }
+
+    // -------------------------------------------------------------------------
     // Gestion des textures
     // -------------------------------------------------------------------------
+
+    /**
+     * Charge toutes les textures de symboles au démarrage pour éviter
+     * tout chargement en cours de partie.
+     */
+    private void preloadSymbolTextures() {
+        for (Symbol symbol : Symbol.values()) {
+            symbolTextures.put(symbol, new Texture(Gdx.files.internal(symbol.getAssetPath())));
+        }
+    }
 
     /** Charge ou récupère depuis le cache la texture d'une carte. */
     private Texture getCardTexture(Card card) {
@@ -191,6 +260,8 @@ public class GameScreen extends ScreenAdapter {
         backgroundTexture.dispose();
         buttonUpTexture.dispose();
         buttonDownTexture.dispose();
+        buttonDisabledTexture.dispose();
         cardTextures.values().forEach(Texture::dispose);
+        symbolTextures.values().forEach(Texture::dispose);
     }
 }
