@@ -6,8 +6,7 @@ import java.util.Random;
 
 public class SlotMachine {
 
-    private static final int BASE_WEIGHT  = 10;
-    private static final int BOOST_AMOUNT = 100;
+    private static final int BASE_WEIGHT = 10;
 
     private final Random               random  = new Random();
     private final Map<Symbol, Integer> weights = new EnumMap<>(Symbol.class);
@@ -26,37 +25,27 @@ public class SlotMachine {
     private Symbol weightedRandom() {
         int total = 0;
         for (int w : weights.values()) total += w;
-
         int rand = random.nextInt(total);
-
         for (Symbol s : Symbol.values()) {
             rand -= weights.get(s);
             if (rand < 0) return s;
         }
-        return Symbol.values()[Symbol.values().length - 1]; // fallback
+        return Symbol.values()[Symbol.values().length - 1];
     }
 
-    /** Augmente le poids du symbole ciblé pour le prochain spin. */
-    public void boostSymbol(Symbol symbol) {
-        weights.put(symbol, weights.get(symbol) + BOOST_AMOUNT);
-        /*
-        for(Symbol key:weights.keySet()){
-            Gdx.app.log("SlotMachine","symbole "+key.name()+" with "+weights.get(key));
-        }
-
-         */
+    /** Augmente le poids du symbole ciblé. Appelé par BoostSymbolEffect. */
+    public void boostSymbol(Symbol symbol, int amount) {
+        weights.put(symbol, weights.get(symbol) + amount);
     }
 
-    /** Remet tous les poids à leur valeur de base. Appelé après chaque spin. */
+    /** Remet tous les poids à leur valeur de base. Appelé par GameState.nextTurn(). */
     public void resetBoosts() {
         for (Symbol s : Symbol.values()) {
             weights.put(s, BASE_WEIGHT);
         }
     }
 
-    public Symbol[] getResult() {
-        return result.clone();
-    }
+    public Symbol[] getResult() { return result.clone(); }
 
     public boolean isJackpot() {
         return result[0] != null

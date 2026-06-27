@@ -23,7 +23,6 @@ import fr.astratime.lucky.LuckyGame;
 import fr.astratime.lucky.entities.*;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 public class GameScreen extends ScreenAdapter {
@@ -37,26 +36,22 @@ public class GameScreen extends ScreenAdapter {
     private static final float  CARD_HEIGHT     = 135f;
     private static final String BACKGROUND_PATH = "playTable/play_table1.png";
 
-    private static final float BUTTON_WIDTH   = 150f;
-    private static final float BUTTON_HEIGHT  = 60f;
-    private static final float CARD_TABLE_Y   = 350f;
+    private static final float BUTTON_WIDTH  = 150f;
+    private static final float BUTTON_HEIGHT = 60f;
+    private static final float CARD_TABLE_Y  = 350f;
 
-    private static final float SYMBOL_WIDTH   = 94f;
-    private static final float SYMBOL_HEIGHT  = 80f;
-    private static final float SLOT_TABLE_Y   = 500f;
+    private static final float SYMBOL_WIDTH  = 94f;
+    private static final float SYMBOL_HEIGHT = 80f;
+    private static final float SLOT_TABLE_Y  = 500f;
 
-    private static final int SCORE_PAIR       = 10;
-    private static final int SCORE_JACKPOT    = 50;
+    private static final int SCORE_PAIR    = 10;
+    private static final int SCORE_JACKPOT = 50;
 
     // -------------------------------------------------------------------------
-    // Logique de jeu
+    // État du jeu
     // -------------------------------------------------------------------------
 
-    private final DiscardPile discardPile = new DiscardPile();
-    private final Deck        deck        = new Deck(discardPile);
-    private final SlotMachine slotMachine = new SlotMachine();
-    private List<Card>        currentHand = List.of();
-    private int               score       = 0;
+    private final GameState gameState = new GameState();
 
     // -------------------------------------------------------------------------
     // Ressources (à disposer dans dispose())
@@ -78,8 +73,8 @@ public class GameScreen extends ScreenAdapter {
     // -------------------------------------------------------------------------
 
     private final Image      background;
-    private final Table      cardTable  = new Table();
-    private final Table      slotTable  = new Table();
+    private final Table      cardTable = new Table();
+    private final Table      slotTable = new Table();
     private final Table      tooltip;
     private final Label      tooltipLabel;
     private       TextButton spinButton;
@@ -103,11 +98,11 @@ public class GameScreen extends ScreenAdapter {
 
         preloadSymbolTextures();
 
-        background = buildBackground();
+        background   = buildBackground();
         TextButton drawButton = buildDrawButton();
-        spinButton  = buildSpinButton();
+        spinButton   = buildSpinButton();
         spinButton.setDisabled(true);
-        scoreLabel  = buildScoreLabel();
+        scoreLabel   = buildScoreLabel();
         tooltipLabel = new Label("", new Label.LabelStyle(font, Color.WHITE));
         tooltip      = buildTooltip();
 
@@ -167,7 +162,7 @@ public class GameScreen extends ScreenAdapter {
     }
 
     private Label buildScoreLabel() {
-        Label label = new Label("Points : " + score, new Label.LabelStyle(font, Color.WHITE));
+        Label label = new Label("Points : " + gameState.getScore(), new Label.LabelStyle(font, Color.WHITE));
         label.setPosition(20, stage.getViewport().getWorldHeight() - 40);
         return label;
     }
@@ -185,18 +180,21 @@ public class GameScreen extends ScreenAdapter {
     // -------------------------------------------------------------------------
 
     private void drawCards() {
-        discardPile.addAll(currentHand);
-        currentHand = deck.draw(3);
+        gameState.getDiscardPile().addAll(gameState.getCurrentHand());
+        gameState.setCurrentHand(
+            gameState.getDeck().draw(gameState.getTurnContext().getDrawCount())
+        );
 
         refreshCardTable();
         spinButton.setDisabled(false);
 
-        Gdx.app.log("GameScreen", "Deck: " + deck.getCards().size() + " | Discard pile: " + discardPile.size());
+        Gdx.app.log("GameScreen", "Deck: " + gameState.getDeck().getCards().size()
+            + " | Discard: " + gameState.getDiscardPile().size());
     }
 
     private void refreshCardTable() {
         cardTable.clearChildren();
-        for (Card card : currentHand) {
+        for (Card card : gameState.getCurrentHand()) {
             Image cardImage = new Image(new TextureRegionDrawable(new TextureRegion(getCardTexture(card))));
             addCardListeners(cardImage, card);
             cardTable.add(cardImage).size(CARD_WIDTH, CARD_HEIGHT).pad(10f);
@@ -210,17 +208,16 @@ public class GameScreen extends ScreenAdapter {
     /**
      * Ajoute sur une Image de carte :
      *  - un tooltip au survol (enter/exit)
-     *  - un effet de clic : boost du symbole ciblé + disparition de la carte
+     *  - un effet de clic : applique les effets de la carte + disparition visuelle
      */
     private void addCardListeners(Image cardImage, Card card) {
         cardImage.addListener(new InputListener() {
 
             @Override
             public void enter(InputEvent event, float x, float y, int pointer, Actor fromActor) {
-                if (pointer != -1) return; // ignore les événements touch, uniquement souris
+                if (pointer != -1) return;
                 tooltipLabel.setText(card.getDescription());
                 tooltip.pack();
-                // Positionner le tooltip juste au-dessus de la carte en coordonnées stage
                 Vector2 stagePos = cardImage.localToStageCoordinates(new Vector2(0, CARD_HEIGHT + 5f));
                 tooltip.setPosition(stagePos.x, stagePos.y);
                 tooltip.setVisible(true);
@@ -234,10 +231,10 @@ public class GameScreen extends ScreenAdapter {
 
             @Override
             public boolean touchDown(InputEvent event, float x, float y, int pointer, int button) {
-                slotMachine.boostSymbol(card.getTargetSymbol());
+                card.applyEffects(gameState);
                 cardImage.setVisible(false);
                 tooltip.setVisible(false);
-                Gdx.app.log("GameScreen", "Card played : " + card + " -> boost " + card.getTargetSymbol());
+                Gdx.app.log("GameScreen", "Carte jouee : " + card);
                 return true;
             }
         });
@@ -248,35 +245,37 @@ public class GameScreen extends ScreenAdapter {
     // -------------------------------------------------------------------------
 
     private void spinSlotMachine() {
-        slotMachine.spin();           // applique les poids boostés
-        slotMachine.resetBoosts();    // réinitialise les probas pour le prochain tour
+        gameState.getSlotMachine().spin();  // utilise les poids boostés par les cartes
         refreshSlotTable();
         spinButton.setDisabled(true);
 
-        if (slotMachine.isJackpot()) {
-            score += SCORE_JACKPOT;
-        } else if (slotMachine.hasPair()) {
-            score += SCORE_PAIR;
+        if (gameState.getSlotMachine().isJackpot()) {
+            gameState.addScore(SCORE_JACKPOT);
+        } else if (gameState.getSlotMachine().hasPair()) {
+            gameState.addScore(SCORE_PAIR);
         }
         refreshScoreLabel();
 
-        Gdx.app.log("GameScreen", "Jackpot: " + slotMachine.isJackpot() + " | Pair: " + slotMachine.hasPair());
+        gameState.nextTurn(); // reset TurnContext + boosts SlotMachine
+
+        Gdx.app.log("GameScreen", "Jackpot: " + gameState.getSlotMachine().isJackpot()
+            + " | Pair: " + gameState.getSlotMachine().hasPair());
     }
 
     private void refreshSlotTable() {
         slotTable.clearChildren();
-        for (Symbol symbol : slotMachine.getResult()) {
+        for (Symbol symbol : gameState.getSlotMachine().getResult()) {
             Image symbolImage = new Image(new TextureRegionDrawable(new TextureRegion(symbolTextures.get(symbol))));
             slotTable.add(symbolImage).size(SYMBOL_WIDTH, SYMBOL_HEIGHT).pad(8f);
         }
         slotTable.pack();
 
         float worldWidth = stage.getViewport().getWorldWidth();
-        slotTable.setPosition(worldWidth-(worldWidth /3f), SLOT_TABLE_Y);
+        slotTable.setPosition(worldWidth - (worldWidth / 3f), SLOT_TABLE_Y);
     }
 
     private void refreshScoreLabel() {
-        scoreLabel.setText("Points : " + score);
+        scoreLabel.setText("Points : " + gameState.getScore());
     }
 
     // -------------------------------------------------------------------------
