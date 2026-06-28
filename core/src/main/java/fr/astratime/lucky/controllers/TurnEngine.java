@@ -36,7 +36,7 @@ public class TurnEngine {
             .getSlotMachine()
             .spin(turnContext.getSpinContext());
 
-        // Symboles → actions
+        // Symboles -> actions
         List<Action> actions = actionResolver.resolve(symbols);
 
         // Combat : actions + CombatContext → TurnResult

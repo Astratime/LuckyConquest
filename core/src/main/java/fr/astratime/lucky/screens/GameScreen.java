@@ -92,6 +92,7 @@ public class GameScreen extends ScreenAdapter {
     private final Table      tooltip;
     private final Label      tooltipLabel;
     private       TextButton spinButton;
+    private  TextButton drawButton;
     private       Label      scoreLabel;
 
     // -------------------------------------------------------------------------
@@ -117,7 +118,7 @@ public class GameScreen extends ScreenAdapter {
         background    = buildBackground();
         healthBarBg   = buildHealthBarBg();
         healthBarFill = buildHealthBarFill();
-        TextButton drawButton = buildDrawButton();
+        drawButton = buildDrawButton();
         spinButton    = buildSpinButton();
         spinButton.setDisabled(true);
         scoreLabel    = buildScoreLabel();
@@ -229,6 +230,7 @@ public class GameScreen extends ScreenAdapter {
         List<Card> hand = gameController.drawCards();
         refreshCardTable(hand);
         spinButton.setDisabled(false);
+        drawButton.setDisabled(true);
     }
 
     private void onSpin() {
@@ -237,6 +239,7 @@ public class GameScreen extends ScreenAdapter {
         refreshHealthBar();
         refreshScoreLabel();
         spinButton.setDisabled(true);
+        drawButton.setDisabled(false);
 
         Gdx.app.log("GameScreen", result.getEvents().stream()
             .map(e -> e.describe())
