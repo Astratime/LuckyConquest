@@ -1,13 +1,14 @@
 package fr.astratime.lucky.entities.effects;
 
-import fr.astratime.lucky.entities.GameState;
+import fr.astratime.lucky.entities.TurnContext;
 
 /**
- * Interface implémentée par tous les effets de carte.
- * Chaque effet sait s'appliquer sur le GameState et se décrire en une phrase.
- * Ajouter un nouvel effet = créer une classe qui implémente cette interface.
+ * Effet produit par une carte jouée en phase 1.
+ * S'applique sur le TurnContext uniquement — pas d'accès au GameState complet.
+ * Les effets modifient soit le SpinContext (boosts machine), soit le CombatContext
+ * (bonus de combat), soit le drawCount du tour suivant.
  */
 public abstract class Effect {
-    public abstract void apply(GameState state);
+    public abstract void apply(TurnContext context);
     public abstract String getDescription();
 }

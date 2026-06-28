@@ -20,11 +20,20 @@ import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 import com.badlogic.gdx.utils.ScreenUtils;
 import com.badlogic.gdx.utils.viewport.ScreenViewport;
 import fr.astratime.lucky.LuckyGame;
-import fr.astratime.lucky.entities.*;
+import fr.astratime.lucky.controllers.GameController;
+import fr.astratime.lucky.entities.Card;
+import fr.astratime.lucky.entities.Enemy;
+import fr.astratime.lucky.entities.Symbol;
+import fr.astratime.lucky.entities.TurnResult;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
+/**
+ * Responsabilité unique : afficher l'état du jeu et transmettre les actions
+ * du joueur au GameController. Aucune logique métier ici.
+ */
 public class GameScreen extends ScreenAdapter {
 
     // -------------------------------------------------------------------------
@@ -49,11 +58,10 @@ public class GameScreen extends ScreenAdapter {
     private static final float HEALTH_BAR_TOP_MARGIN = 10f;
 
     // -------------------------------------------------------------------------
-    // Logique de jeu
+    // Contrôleur — seul point d'accès à la logique de jeu
     // -------------------------------------------------------------------------
 
-    private final GameState      gameState      = new GameState();
-    private final CombatResolver combatResolver = new CombatResolver();
+    private final GameController gameController = new GameController();
 
     // -------------------------------------------------------------------------
     // Ressources (à disposer dans dispose())
@@ -124,7 +132,7 @@ public class GameScreen extends ScreenAdapter {
         stage.addActor(scoreLabel);
         stage.addActor(slotTable);
         stage.addActor(cardTable);
-        stage.addActor(tooltip);
+        stage.addActor(tooltip); // en dernier : toujours au-dessus
     }
 
     // -------------------------------------------------------------------------
@@ -158,7 +166,7 @@ public class GameScreen extends ScreenAdapter {
         button.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
-                drawCards();
+                onDrawCards();
             }
         });
         return button;
@@ -171,7 +179,7 @@ public class GameScreen extends ScreenAdapter {
         button.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
-                spinSlotMachine();
+                onSpin();
             }
         });
         return button;
@@ -188,7 +196,7 @@ public class GameScreen extends ScreenAdapter {
     }
 
     private Label buildScoreLabel() {
-        Label label = new Label("Points : " + gameState.getScore(), new Label.LabelStyle(font, Color.WHITE));
+        Label label = new Label("Points : 0", new Label.LabelStyle(font, Color.WHITE));
         label.setPosition(20, stage.getViewport().getWorldHeight() - 40);
         return label;
     }
@@ -210,52 +218,45 @@ public class GameScreen extends ScreenAdapter {
     }
 
     private float healthBarY() {
-        return stage.getViewport().getWorldHeight() - HEALTH_BAR_HEIGHT - HEALTH_BAR_TOP_MARGIN - 200f;
+        return stage.getViewport().getWorldHeight() - HEALTH_BAR_HEIGHT - HEALTH_BAR_TOP_MARGIN;
     }
 
     // -------------------------------------------------------------------------
-    // Actions joueur — déclenchées par boutons ou clavier
+    // Interactions joueur — transmises au GameController
     // -------------------------------------------------------------------------
 
-    private void drawCards() {
-        Player player = gameState.getPlayer();
-        player.getDiscardPile().addAll(player.getCurrentHand());
-        player.setCurrentHand(
-            player.getDeck().draw(gameState.getTurnContext().getDrawCount())
-        );
-
-        refreshCardTable();
+    private void onDrawCards() {
+        List<Card> hand = gameController.drawCards();
+        refreshCardTable(hand);
         spinButton.setDisabled(false);
-
-        Gdx.app.log("GameScreen", "Deck: " + player.getDeck().getCards().size()
-            + " | Discard: " + player.getDiscardPile().size());
     }
 
-    private void spinSlotMachine() {
-        gameState.getPlayer().getSlotMachine().spin();
-
-        TurnResult result = combatResolver.resolve(gameState);
-
-        refreshSlotTable();
+    private void onSpin() {
+        TurnResult result = gameController.spin();
+        refreshSlotTable(result.getSymbols());
         refreshHealthBar();
         refreshScoreLabel();
         spinButton.setDisabled(true);
 
-        gameState.nextTurn();
+        Gdx.app.log("GameScreen", result.getEvents().stream()
+            .map(e -> e.describe())
+            .reduce("", (a, b) -> a + " | " + b));
+    }
 
-        Gdx.app.log("GameScreen", "Degats: " + result.damageDealt
-            + " | Score: +" + result.scoreGained
-            + " | Jackpot: " + result.isJackpot
-            + " | HP ennemi: " + gameState.getEnemy().getHp());
+    private void onCardPlayed(Card card, Image cardImage) {
+        gameController.playCard(card);
+        cardImage.setVisible(false);
+        tooltip.setVisible(false);
+        Gdx.app.log("GameScreen", "Carte jouee : " + card);
     }
 
     // -------------------------------------------------------------------------
     // Rafraîchissement de l'affichage
     // -------------------------------------------------------------------------
 
-    private void refreshCardTable() {
+    private void refreshCardTable(List<Card> hand) {
         cardTable.clearChildren();
-        for (Card card : gameState.getPlayer().getCurrentHand()) {
+        for (Card card : hand) {
             Image cardImage = new Image(new TextureRegionDrawable(new TextureRegion(getCardTexture(card))));
             addCardListeners(cardImage, card);
             cardTable.add(cardImage).size(CARD_WIDTH, CARD_HEIGHT).pad(10f);
@@ -266,11 +267,11 @@ public class GameScreen extends ScreenAdapter {
         cardTable.setPosition((worldWidth - cardTable.getWidth()) / 2f, CARD_TABLE_Y);
     }
 
-    private void refreshSlotTable() {
+    private void refreshSlotTable(Symbol[] symbols) {
         slotTable.clearChildren();
-        for (Symbol symbol : gameState.getPlayer().getSlotMachine().getResult()) {
-            Image symbolImage = new Image(new TextureRegionDrawable(new TextureRegion(symbolTextures.get(symbol))));
-            slotTable.add(symbolImage).size(SYMBOL_WIDTH, SYMBOL_HEIGHT).pad(8f);
+        for (Symbol symbol : symbols) {
+            Image img = new Image(new TextureRegionDrawable(new TextureRegion(symbolTextures.get(symbol))));
+            slotTable.add(img).size(SYMBOL_WIDTH, SYMBOL_HEIGHT).pad(8f);
         }
         slotTable.pack();
 
@@ -279,13 +280,13 @@ public class GameScreen extends ScreenAdapter {
     }
 
     private void refreshHealthBar() {
-        Enemy enemy = gameState.getEnemy();
+        Enemy enemy = gameController.getGameState().getEnemy();
         float ratio = (float) enemy.getHp() / enemy.getMaxHp();
         healthBarFill.setWidth(HEALTH_BAR_WIDTH * ratio);
     }
 
     private void refreshScoreLabel() {
-        scoreLabel.setText("Points : " + gameState.getScore());
+        scoreLabel.setText("Points : " + gameController.getGameState().getScore());
     }
 
     // -------------------------------------------------------------------------
@@ -300,8 +301,8 @@ public class GameScreen extends ScreenAdapter {
                 if (pointer != -1) return;
                 tooltipLabel.setText(card.getDescription());
                 tooltip.pack();
-                Vector2 stagePos = cardImage.localToStageCoordinates(new Vector2(0, CARD_HEIGHT + 5f));
-                tooltip.setPosition(stagePos.x, stagePos.y);
+                Vector2 pos = cardImage.localToStageCoordinates(new Vector2(0, CARD_HEIGHT + 5f));
+                tooltip.setPosition(pos.x, pos.y);
                 tooltip.setVisible(true);
             }
 
@@ -313,10 +314,7 @@ public class GameScreen extends ScreenAdapter {
 
             @Override
             public boolean touchDown(InputEvent event, float x, float y, int pointer, int button) {
-                card.applyEffects(gameState);
-                cardImage.setVisible(false);
-                tooltip.setVisible(false);
-                Gdx.app.log("GameScreen", "Carte jouee : " + card);
+                onCardPlayed(card, cardImage);
                 return true;
             }
         });
@@ -356,11 +354,11 @@ public class GameScreen extends ScreenAdapter {
             @Override
             public boolean keyDown(int keycode) {
                 if (keycode == Input.Keys.SPACE) {
-                    drawCards();
+                    onDrawCards();
                     return true;
                 }
                 if (keycode == Input.Keys.F && !spinButton.isDisabled()) {
-                    spinSlotMachine();
+                    onSpin();
                     return true;
                 }
                 return false;
@@ -376,12 +374,8 @@ public class GameScreen extends ScreenAdapter {
         float worldHeight = stage.getViewport().getWorldHeight();
 
         background.setSize(worldWidth, worldHeight);
-
-        float hbX = healthBarX();
-        float hbY = healthBarY();
-        healthBarBg.setPosition(hbX, hbY);
-        healthBarFill.setPosition(hbX, hbY);
-
+        healthBarBg.setPosition(healthBarX(), healthBarY());
+        healthBarFill.setPosition(healthBarX(), healthBarY());
         scoreLabel.setPosition(20, worldHeight - 40);
     }
 

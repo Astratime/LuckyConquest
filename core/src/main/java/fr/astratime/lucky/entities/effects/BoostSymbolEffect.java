@@ -1,8 +1,9 @@
 package fr.astratime.lucky.entities.effects;
 
-import fr.astratime.lucky.entities.GameState;
 import fr.astratime.lucky.entities.Symbol;
+import fr.astratime.lucky.entities.TurnContext;
 
+/** Augmente la probabilité d'apparition d'un symbole via le SpinContext. */
 public class BoostSymbolEffect extends Effect {
 
     private final Symbol symbol;
@@ -14,8 +15,8 @@ public class BoostSymbolEffect extends Effect {
     }
 
     @Override
-    public void apply(GameState state) {
-        state.getPlayer().getSlotMachine().boostSymbol(symbol, amount);
+    public void apply(TurnContext context) {
+        context.getSpinContext().addWeightBoost(symbol, amount);
     }
 
     @Override

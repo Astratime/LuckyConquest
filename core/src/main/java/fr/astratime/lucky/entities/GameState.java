@@ -1,64 +1,24 @@
 package fr.astratime.lucky.entities;
 
+/**
+ * Source de vérité de la partie : participants et progression globale.
+ * N'inclut plus TurnContext (géré par TurnEngine pour chaque tour)
+ * ni les boosts de machine (gérés par SpinContext).
+ * Appartient au GameController pour toute la durée de la partie.
+ */
 public class GameState {
-
-    // -------------------------------------------------------------------------
-    // Participants au combat
-    // -------------------------------------------------------------------------
 
     private final Player player = new Player("Joueur", 100);
     private final Enemy  enemy  = new Enemy("Ennemi", 100);
 
-    // -------------------------------------------------------------------------
-    // État du tour
-    // -------------------------------------------------------------------------
-
-    private final TurnContext turnContext = new TurnContext();
-
-    // -------------------------------------------------------------------------
-    // Progression
-    // -------------------------------------------------------------------------
-
-    private int   score      = 0;
-    private int   turnNumber = 1;
-    private Phase currentPhase = Phase.DRAW_CARDS;
-
-    // -------------------------------------------------------------------------
-    // Phase du tour
-    // -------------------------------------------------------------------------
-
-    public enum Phase {
-        DRAW_CARDS,
-        SPIN,
-        BONUS,
-        ENEMY_TURN,
-        VICTORY,
-        DEFEAT
-    }
-
-    // -------------------------------------------------------------------------
-    // Transitions
-    // -------------------------------------------------------------------------
-
-    public void nextTurn() {
-        turnNumber++;
-        turnContext.reset();
-        player.getSlotMachine().resetBoosts();
-        currentPhase = Phase.DRAW_CARDS;
-    }
+    private int score      = 0;
+    private int turnNumber = 1;
 
     public void addScore(int points) { score += points; }
+    public void nextTurn()           { turnNumber++; }
 
-    // -------------------------------------------------------------------------
-    // Getters
-    // -------------------------------------------------------------------------
-
-    public Player      getPlayer()       { return player; }
-    public Enemy       getEnemy()        { return enemy; }
-    public TurnContext getTurnContext()   { return turnContext; }
-    public int         getScore()        { return score; }
-    public int         getTurnNumber()   { return turnNumber; }
-    public Phase       getCurrentPhase() { return currentPhase; }
-
-    public void setCurrentPhase(Phase phase) { currentPhase = phase; }
+    public Player getPlayer()     { return player; }
+    public Enemy  getEnemy()      { return enemy; }
+    public int    getScore()      { return score; }
+    public int    getTurnNumber() { return turnNumber; }
 }

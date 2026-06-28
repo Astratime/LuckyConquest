@@ -1,33 +1,27 @@
 package fr.astratime.lucky.entities;
 
 /**
- * Données propres au tour en cours.
- * Réinitialisées à chaque appel à GameState.nextTurn().
+ * Agrège les deux contextes du tour : spin et combat.
+ * Construit par PreparationResolver en début de résolution,
+ * à partir des effets de cartes joués par le joueur.
+ * drawCount : nombre de cartes à piocher au prochain tour (modifiable par effets).
  */
 public class TurnContext {
 
-    private static final int   DEFAULT_DRAW_COUNT = 3;
-    private static final float DEFAULT_MULTIPLIER = 1f;
+    private static final int DEFAULT_DRAW_COUNT = 3;
 
-    private int   drawCount    = DEFAULT_DRAW_COUNT;
-    private int   attackBonus  = 0;
-    private int   defenseBonus = 0;
-    private float multiplier   = DEFAULT_MULTIPLIER;
+    private int drawCount = DEFAULT_DRAW_COUNT;
 
-    public void reset() {
-        drawCount    = DEFAULT_DRAW_COUNT;
-        attackBonus  = 0;
-        defenseBonus = 0;
-        multiplier   = DEFAULT_MULTIPLIER;
+    private final SpinContext   spinContext;
+    private final CombatContext combatContext;
+
+    public TurnContext(SpinContext spinContext, CombatContext combatContext) {
+        this.spinContext   = spinContext;
+        this.combatContext = combatContext;
     }
 
-    public int   getDrawCount()    { return drawCount; }
-    public int   getAttackBonus()  { return attackBonus; }
-    public int   getDefenseBonus() { return defenseBonus; }
-    public float getMultiplier()   { return multiplier; }
-
-    public void addDrawCount(int extra)        { drawCount    += extra; }
-    public void addAttackBonus(int bonus)      { attackBonus  += bonus; }
-    public void addDefenseBonus(int bonus)     { defenseBonus += bonus; }
-    public void setMultiplier(float multiplier) { this.multiplier = multiplier; }
+    public SpinContext   getSpinContext()   { return spinContext; }
+    public CombatContext getCombatContext() { return combatContext; }
+    public int           getDrawCount()    { return drawCount; }
+    public void          addDrawCount(int extra) { drawCount += extra; }
 }

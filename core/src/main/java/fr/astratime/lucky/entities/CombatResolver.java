@@ -1,56 +1,47 @@
 package fr.astratime.lucky.entities;
 
-import java.util.EnumMap;
-import java.util.Map;
+import fr.astratime.lucky.entities.actions.Action;
+import fr.astratime.lucky.entities.events.Event;
+import fr.astratime.lucky.entities.events.JackpotEvent;
+import fr.astratime.lucky.entities.events.ScoreGainedEvent;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
- * Interprète le résultat du spin et applique les effets sur le GameState.
- * C'est ici que vit toute la logique de résolution d'un tour :
- * dégâts, score, jackpot, etc.
- * GameScreen ne fait qu'appeler resolve() et afficher le TurnResult retourné.
+ * Résout le combat d'un tour : exécute les actions, calcule le score,
+ * construit le journal d'événements et retourne un TurnResult.
+ * C'est le seul endroit qui modifie l'état du combat (HP ennemis, score).
+ * Ne reçoit que CombatContext et List<Action> — pas le GameState entier.
  */
 public class CombatResolver {
 
     private static final int SCORE_PAIR    = 10;
     private static final int SCORE_JACKPOT = 50;
 
-    public TurnResult resolve(GameState state) {
+    public TurnResult resolve(CombatContext combatContext,
+                              List<Action>  actions,
+                              Symbol[]      symbols) {
+        List<Event> events = new ArrayList<>();
 
-        // Récupération des symboles de la machine
-        Symbol[] symbols = state.getPlayer().getSlotMachine().getResult();
-        // nombre par symbole
-        Map<Symbol, Integer> counts = countSymbols(symbols);
-
-        // 1. Appliquer les actions de chaque symbole (dégâts bruts, sans bonus)
-        int hpBefore = state.getEnemy().getHp();
-        for (Map.Entry<Symbol, Integer> entry : counts.entrySet()) {
-            SymbolRegistry.getAction(entry.getKey())
-                .ifPresent(action -> action.apply(state, entry.getValue()));
+        // Chaque action résout elle-même sa logique et retourne ses événements
+        for (Action action : actions) {
+            events.addAll(action.resolve(combatContext));
         }
-        int rawDamage = hpBefore - state.getEnemy().getHp();
 
-        // 2. Ajouter le bonus d'attaque (cartes jouées) une seule fois
-        int attackBonus = state.getTurnContext().getAttackBonus();
-        if (rawDamage > 0 && attackBonus > 0) {
-            state.getEnemy().takeDamage(attackBonus);
+        // Scoring
+        int score = 0;
+        if (isJackpot(symbols)) {
+            score = SCORE_JACKPOT;
+            events.add(new JackpotEvent());
+        } else if (hasPair(symbols)) {
+            score = SCORE_PAIR;
         }
-        int totalDamage = hpBefore - state.getEnemy().getHp();
-
-        // 3. Scoring
-        boolean jackpot = isJackpot(symbols);
-        boolean pair    = !jackpot && hasPair(symbols);
-        int score = jackpot ? SCORE_JACKPOT : (pair ? SCORE_PAIR : 0);
-        state.addScore(score);
-
-        return new TurnResult(totalDamage, score, jackpot, pair);
-    }
-
-    private Map<Symbol, Integer> countSymbols(Symbol[] symbols) {
-        Map<Symbol, Integer> counts = new EnumMap<>(Symbol.class);
-        for (Symbol s : symbols) {
-            if (s != null) counts.merge(s, 1, Integer::sum);
+        if (score > 0) {
+            events.add(new ScoreGainedEvent(score));
         }
-        return counts;
+
+        return new TurnResult(events, symbols, score);
     }
 
     private boolean isJackpot(Symbol[] s) {
