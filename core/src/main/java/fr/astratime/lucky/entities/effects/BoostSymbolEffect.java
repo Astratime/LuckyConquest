@@ -1,10 +1,9 @@
 package fr.astratime.lucky.entities.effects;
 
-import fr.astratime.lucky.entities.CardEffect;
 import fr.astratime.lucky.entities.GameState;
 import fr.astratime.lucky.entities.Symbol;
 
-public class BoostSymbolEffect implements CardEffect {
+public class BoostSymbolEffect extends Effect {
 
     private final Symbol symbol;
     private final int    amount;

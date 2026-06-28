@@ -1,10 +1,9 @@
 package fr.astratime.lucky.entities.effects;
 
-import fr.astratime.lucky.entities.CardEffect;
 import fr.astratime.lucky.entities.GameState;
 
 /** Ajoute un bonus de défense pour ce tour. */
-public class DefenseEffect implements CardEffect {
+public class DefenseEffect extends Effect {
 
     private final int bonus;
 

@@ -1,14 +1,13 @@
 package fr.astratime.lucky.entities.actions;
 
 import fr.astratime.lucky.entities.GameState;
-import fr.astratime.lucky.entities.SymbolAction;
 
 /**
  * Inflige des dégâts bruts à l'ennemi.
  * Le bonus d'attaque (cartes jouées) est ajouté une seule fois
  * par CombatResolver, pas ici, pour éviter de l'appliquer plusieurs fois.
  */
-public class AttackAction implements SymbolAction {
+public class AttackAction extends Action {
 
     private final int damagePerSymbol;
 

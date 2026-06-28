@@ -1,6 +1,6 @@
 package fr.astratime.lucky.entities;
 
-import fr.astratime.lucky.entities.effects.BoostSymbolEffect;
+import fr.astratime.lucky.entities.effects.Effect;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -26,7 +26,7 @@ public class Deck {
      * C'est ici — et nulle part ailleurs — que le lien couleur → effet est défini.
      */
     private Card createCard(Card.Suit suit, int rank) {
-        List<CardEffect> effects = new ArrayList<>();
+        List<Effect> effects = new ArrayList<>();
         return new Card(suit, rank, effects);
     }
 

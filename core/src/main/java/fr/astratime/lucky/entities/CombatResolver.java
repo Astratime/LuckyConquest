@@ -15,7 +15,10 @@ public class CombatResolver {
     private static final int SCORE_JACKPOT = 50;
 
     public TurnResult resolve(GameState state) {
+
+        // Récupération des symboles de la machine
         Symbol[] symbols = state.getPlayer().getSlotMachine().getResult();
+        // nombre par symbole
         Map<Symbol, Integer> counts = countSymbols(symbols);
 
         // 1. Appliquer les actions de chaque symbole (dégâts bruts, sans bonus)

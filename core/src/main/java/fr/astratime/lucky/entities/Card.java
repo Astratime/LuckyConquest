@@ -1,5 +1,7 @@
 package fr.astratime.lucky.entities;
 
+import fr.astratime.lucky.entities.effects.Effect;
+
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -9,9 +11,9 @@ public class Card {
 
     private final Suit             suit;
     private final int              rank;
-    private final List<CardEffect> effects;
+    private final List<Effect> effects;
 
-    public Card(Suit suit, int rank, List<CardEffect> effects) {
+    public Card(Suit suit, int rank, List<Effect> effects) {
         this.suit    = suit;
         this.rank    = rank;
         this.effects = List.copyOf(effects);
@@ -42,7 +44,7 @@ public class Card {
     /** Description générée automatiquement depuis la liste des effets. */
     public String getDescription() {
         return effects.stream()
-            .map(CardEffect::getDescription)
+            .map(Effect::getDescription)
             .collect(Collectors.joining("\n"));
     }
 

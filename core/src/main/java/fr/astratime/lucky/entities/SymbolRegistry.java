@@ -1,5 +1,6 @@
 package fr.astratime.lucky.entities;
 
+import fr.astratime.lucky.entities.actions.Action;
 import fr.astratime.lucky.entities.actions.AttackAction;
 
 import java.util.EnumMap;
@@ -13,7 +14,7 @@ import java.util.Optional;
  */
 public class SymbolRegistry {
 
-    private static final Map<Symbol, SymbolAction> ACTIONS = new EnumMap<>(Symbol.class);
+    private static final Map<Symbol, Action> ACTIONS = new EnumMap<>(Symbol.class);
 
     static {
         AttackAction baseAttack = new AttackAction(10);
@@ -25,7 +26,7 @@ public class SymbolRegistry {
         // aucune action pour l'instant — à définir au fil du design
     }
 
-    public static Optional<SymbolAction> getAction(Symbol symbol) {
+    public static Optional<Action> getAction(Symbol symbol) {
         return Optional.ofNullable(ACTIONS.get(symbol));
     }
 

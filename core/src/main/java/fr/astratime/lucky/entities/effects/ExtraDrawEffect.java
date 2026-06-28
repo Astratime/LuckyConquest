@@ -1,10 +1,9 @@
 package fr.astratime.lucky.entities.effects;
 
-import fr.astratime.lucky.entities.CardEffect;
 import fr.astratime.lucky.entities.GameState;
 
 /** Permet de piocher des cartes supplémentaires ce tour. */
-public class ExtraDrawEffect implements CardEffect {
+public class ExtraDrawEffect extends Effect {
 
     private final int extraCards;
 
