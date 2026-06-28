@@ -1,5 +1,9 @@
 package fr.astratime.lucky.entities;
 
+/**
+ * Identité et asset d'un symbole de machine à sous.
+ * Le comportement associé (ce que fait le symbole) est défini dans SymbolRegistry.
+ */
 public enum Symbol {
 
     DOUBLE_BAR    ("1-double_bar"),
@@ -22,21 +26,5 @@ public enum Symbol {
 
     public String getAssetPath() {
         return "symbols/" + assetName + ".png";
-    }
-
-    /**
-     * Retourne true si ce symbole compte comme une attaque.
-     * Les symboles d'attaque infligent des dégâts à l'ennemi après le spin.
-     */
-    public boolean isAttack() {
-        switch (this) {
-            case DOUBLE_BAR:
-            case CHERRY:
-            case SEVEN:
-            case BAR:
-                return true;
-            default:
-                return false;
-        }
     }
 }

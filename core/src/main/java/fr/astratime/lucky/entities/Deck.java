@@ -27,12 +27,6 @@ public class Deck {
      */
     private Card createCard(Card.Suit suit, int rank) {
         List<CardEffect> effects = new ArrayList<>();
-        switch (suit) {
-            case CARREAU: effects.add(new BoostSymbolEffect(Symbol.DIAMOND,       100)); break;
-            case COEUR:   effects.add(new BoostSymbolEffect(Symbol.TRIPLE_CHERRY, 100)); break;
-            case PIQUE:   effects.add(new BoostSymbolEffect(Symbol.TRIPLE_SEVEN,  100)); break;
-            case TREFLE:  effects.add(new BoostSymbolEffect(Symbol.GOLD_BAR,      100)); break;
-        }
         return new Card(suit, rank, effects);
     }
 

@@ -28,7 +28,7 @@ import java.util.Map;
 public class GameScreen extends ScreenAdapter {
 
     // -------------------------------------------------------------------------
-    // Constantes
+    // Constantes d'affichage
     // -------------------------------------------------------------------------
 
     private static final String THEME           = "light";
@@ -44,19 +44,16 @@ public class GameScreen extends ScreenAdapter {
     private static final float SYMBOL_HEIGHT = 80f;
     private static final float SLOT_TABLE_Y  = 200f;
 
-    private static final float HEALTH_BAR_WIDTH  = 300f;
-    private static final float HEALTH_BAR_HEIGHT = 22f;
+    private static final float HEALTH_BAR_WIDTH      = 300f;
+    private static final float HEALTH_BAR_HEIGHT     = 22f;
     private static final float HEALTH_BAR_TOP_MARGIN = 10f;
 
-    private static final int SCORE_PAIR    = 10;
-    private static final int SCORE_JACKPOT = 50;
-    private static final int BASE_DAMAGE   = 10;
-
     // -------------------------------------------------------------------------
-    // État du jeu
+    // Logique de jeu
     // -------------------------------------------------------------------------
 
-    private final GameState gameState = new GameState();
+    private final GameState      gameState      = new GameState();
+    private final CombatResolver combatResolver = new CombatResolver();
 
     // -------------------------------------------------------------------------
     // Ressources (à disposer dans dispose())
@@ -104,7 +101,7 @@ public class GameScreen extends ScreenAdapter {
         buttonDownTexture        = makeColorTexture(Color.GRAY);
         buttonDisabledTexture    = makeColorTexture(Color.valueOf("333333ff"));
         tooltipBackgroundTexture = makeColorTexture(Color.BLACK);
-        healthBarBgTexture       = makeColorTexture(Color.valueOf("550000ff")); // rouge sombre
+        healthBarBgTexture       = makeColorTexture(Color.valueOf("550000ff"));
         healthBarFillTexture     = makeColorTexture(Color.RED);
 
         preloadSymbolTextures();
@@ -127,7 +124,7 @@ public class GameScreen extends ScreenAdapter {
         stage.addActor(scoreLabel);
         stage.addActor(slotTable);
         stage.addActor(cardTable);
-        stage.addActor(tooltip); // en dernier : affiché au-dessus de tout
+        stage.addActor(tooltip);
     }
 
     // -------------------------------------------------------------------------
@@ -217,25 +214,48 @@ public class GameScreen extends ScreenAdapter {
     }
 
     // -------------------------------------------------------------------------
-    // Logique de pioche
+    // Actions joueur — déclenchées par boutons ou clavier
     // -------------------------------------------------------------------------
 
     private void drawCards() {
-        gameState.getDiscardPile().addAll(gameState.getCurrentHand());
-        gameState.setCurrentHand(
-            gameState.getDeck().draw(gameState.getTurnContext().getDrawCount())
+        Player player = gameState.getPlayer();
+        player.getDiscardPile().addAll(player.getCurrentHand());
+        player.setCurrentHand(
+            player.getDeck().draw(gameState.getTurnContext().getDrawCount())
         );
 
         refreshCardTable();
         spinButton.setDisabled(false);
 
-        Gdx.app.log("GameScreen", "Deck: " + gameState.getDeck().getCards().size()
-            + " | Discard: " + gameState.getDiscardPile().size());
+        Gdx.app.log("GameScreen", "Deck: " + player.getDeck().getCards().size()
+            + " | Discard: " + player.getDiscardPile().size());
     }
+
+    private void spinSlotMachine() {
+        gameState.getPlayer().getSlotMachine().spin();
+
+        TurnResult result = combatResolver.resolve(gameState);
+
+        refreshSlotTable();
+        refreshHealthBar();
+        refreshScoreLabel();
+        spinButton.setDisabled(true);
+
+        gameState.nextTurn();
+
+        Gdx.app.log("GameScreen", "Degats: " + result.damageDealt
+            + " | Score: +" + result.scoreGained
+            + " | Jackpot: " + result.isJackpot
+            + " | HP ennemi: " + gameState.getEnemy().getHp());
+    }
+
+    // -------------------------------------------------------------------------
+    // Rafraîchissement de l'affichage
+    // -------------------------------------------------------------------------
 
     private void refreshCardTable() {
         cardTable.clearChildren();
-        for (Card card : gameState.getCurrentHand()) {
+        for (Card card : gameState.getPlayer().getCurrentHand()) {
             Image cardImage = new Image(new TextureRegionDrawable(new TextureRegion(getCardTexture(card))));
             addCardListeners(cardImage, card);
             cardTable.add(cardImage).size(CARD_WIDTH, CARD_HEIGHT).pad(10f);
@@ -245,6 +265,32 @@ public class GameScreen extends ScreenAdapter {
         float worldWidth = stage.getViewport().getWorldWidth();
         cardTable.setPosition((worldWidth - cardTable.getWidth()) / 2f, CARD_TABLE_Y);
     }
+
+    private void refreshSlotTable() {
+        slotTable.clearChildren();
+        for (Symbol symbol : gameState.getPlayer().getSlotMachine().getResult()) {
+            Image symbolImage = new Image(new TextureRegionDrawable(new TextureRegion(symbolTextures.get(symbol))));
+            slotTable.add(symbolImage).size(SYMBOL_WIDTH, SYMBOL_HEIGHT).pad(8f);
+        }
+        slotTable.pack();
+
+        float worldWidth = stage.getViewport().getWorldWidth();
+        slotTable.setPosition((worldWidth - slotTable.getWidth()) / 2f, SLOT_TABLE_Y);
+    }
+
+    private void refreshHealthBar() {
+        Enemy enemy = gameState.getEnemy();
+        float ratio = (float) enemy.getHp() / enemy.getMaxHp();
+        healthBarFill.setWidth(HEALTH_BAR_WIDTH * ratio);
+    }
+
+    private void refreshScoreLabel() {
+        scoreLabel.setText("Points : " + gameState.getScore());
+    }
+
+    // -------------------------------------------------------------------------
+    // Listeners des cartes
+    // -------------------------------------------------------------------------
 
     private void addCardListeners(Image cardImage, Card card) {
         cardImage.addListener(new InputListener() {
@@ -274,77 +320,6 @@ public class GameScreen extends ScreenAdapter {
                 return true;
             }
         });
-    }
-
-    // -------------------------------------------------------------------------
-    // Logique machine à sous
-    // -------------------------------------------------------------------------
-
-    private void spinSlotMachine() {
-        gameState.getSlotMachine().spin();
-        refreshSlotTable();
-        spinButton.setDisabled(true);
-
-        applyAttackDamage();
-
-        if (gameState.getSlotMachine().isJackpot()) {
-            gameState.addScore(SCORE_JACKPOT);
-        } else if (gameState.getSlotMachine().hasPair()) {
-            gameState.addScore(SCORE_PAIR);
-        }
-        refreshScoreLabel();
-
-        gameState.nextTurn();
-
-        Gdx.app.log("GameScreen", "Jackpot: " + gameState.getSlotMachine().isJackpot()
-            + " | Pair: " + gameState.getSlotMachine().hasPair()
-            + " | HP ennemi: " + gameState.getEnemy().getHp());
-    }
-
-    /**
-     * Compte les symboles d'attaque dans le résultat du spin,
-     * calcule les dégâts (+ bonus d'attaque des cartes jouées)
-     * et les applique à l'ennemi.
-     */
-    private void applyAttackDamage() {
-        int attackSymbols = 0;
-        for (Symbol symbol : gameState.getSlotMachine().getResult()) {
-            if (symbol != null && symbol.isAttack()) {
-                attackSymbols++;
-            }
-        }
-
-        int totalDamage = (attackSymbols * BASE_DAMAGE)
-            + gameState.getTurnContext().getAttackBonus();
-
-        if (totalDamage > 0) {
-            gameState.getEnemy().takeDamage(totalDamage);
-            refreshHealthBar();
-            Gdx.app.log("GameScreen", "Degats: " + totalDamage
-                + " (" + attackSymbols + " symboles d'attaque)");
-        }
-    }
-
-    private void refreshSlotTable() {
-        slotTable.clearChildren();
-        for (Symbol symbol : gameState.getSlotMachine().getResult()) {
-            Image symbolImage = new Image(new TextureRegionDrawable(new TextureRegion(symbolTextures.get(symbol))));
-            slotTable.add(symbolImage).size(SYMBOL_WIDTH, SYMBOL_HEIGHT).pad(8f);
-        }
-        slotTable.pack();
-
-        float worldWidth = stage.getViewport().getWorldWidth();
-        slotTable.setPosition((worldWidth - slotTable.getWidth()) / 2f, SLOT_TABLE_Y);
-    }
-
-    private void refreshScoreLabel() {
-        scoreLabel.setText("Points : " + gameState.getScore());
-    }
-
-    private void refreshHealthBar() {
-        Enemy enemy = gameState.getEnemy();
-        float ratio = (float) enemy.getHp() / enemy.getMaxHp();
-        healthBarFill.setWidth(HEALTH_BAR_WIDTH * ratio);
     }
 
     // -------------------------------------------------------------------------

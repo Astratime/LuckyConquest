@@ -4,6 +4,10 @@ import java.util.EnumMap;
 import java.util.Map;
 import java.util.Random;
 
+/**
+ * Machine à sous : tire des symboles selon des poids.
+ * Ne sait pas ce que font les symboles — c'est le rôle de CombatResolver.
+ */
 public class SlotMachine {
 
     private static final int BASE_WEIGHT = 10;
@@ -33,12 +37,10 @@ public class SlotMachine {
         return Symbol.values()[Symbol.values().length - 1];
     }
 
-    /** Augmente le poids du symbole ciblé. Appelé par BoostSymbolEffect. */
     public void boostSymbol(Symbol symbol, int amount) {
         weights.put(symbol, weights.get(symbol) + amount);
     }
 
-    /** Remet tous les poids à leur valeur de base. Appelé par GameState.nextTurn(). */
     public void resetBoosts() {
         for (Symbol s : Symbol.values()) {
             weights.put(s, BASE_WEIGHT);
@@ -46,16 +48,4 @@ public class SlotMachine {
     }
 
     public Symbol[] getResult() { return result.clone(); }
-
-    public boolean isJackpot() {
-        return result[0] != null
-            && result[0] == result[1]
-            && result[1] == result[2];
-    }
-
-    public boolean hasPair() {
-        if (result[0] == null) return false;
-        return !isJackpot()
-            && (result[0] == result[1] || result[1] == result[2] || result[0] == result[2]);
-    }
 }
