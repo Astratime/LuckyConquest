@@ -1,5 +1,8 @@
-package fr.astratime.lucky.entities;
+package fr.astratime.lucky.controllers;
 
+import fr.astratime.lucky.entities.context.CombatContext;
+import fr.astratime.lucky.entities.Symbol;
+import fr.astratime.lucky.entities.TurnResult;
 import fr.astratime.lucky.entities.actions.Action;
 import fr.astratime.lucky.entities.events.Event;
 import fr.astratime.lucky.entities.events.GainsEarnedEvent;
@@ -18,8 +21,8 @@ import java.util.List;
  */
 public class CombatResolver {
 
-    private static final int GAINS_PAIR    = 10;
-    private static final int GAINS_JACKPOT = 50;
+    private static final int GAINS_PAIR    = 500;
+    private static final int GAINS_JACKPOT = 2000;
 
     public TurnResult resolve(CombatContext combatContext,
                               List<Action>  actions,

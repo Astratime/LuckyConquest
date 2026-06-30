@@ -1,5 +1,7 @@
 package fr.astratime.lucky.entities;
 
+import fr.astratime.lucky.entities.context.SpinContext;
+
 import java.util.Random;
 
 /**

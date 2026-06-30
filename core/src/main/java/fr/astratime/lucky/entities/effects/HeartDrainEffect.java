@@ -1,6 +1,6 @@
 package fr.astratime.lucky.entities.effects;
 
-import fr.astratime.lucky.entities.TurnContext;
+import fr.astratime.lucky.entities.context.TurnContext;
 
 /**
  * Coeur (non-As) : ajoute du drain de vie sur tous les symboles d'attaque ce tour.

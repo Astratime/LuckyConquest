@@ -1,4 +1,7 @@
-package fr.astratime.lucky.entities;
+package fr.astratime.lucky.entities.context;
+
+import fr.astratime.lucky.entities.Enemy;
+import fr.astratime.lucky.entities.Player;
 
 /**
  * Contexte de combat pour le tour en cours.
@@ -10,7 +13,7 @@ package fr.astratime.lucky.entities;
 public class CombatContext {
 
     private final Player player;
-    private final Enemy  enemy;
+    private final Enemy enemy;
 
     private int   attackBonus    = 0;
     private int   defenseBonus   = 0;   // shield additionnel par DefenseAction (cartes Carreau)

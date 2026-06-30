@@ -1,10 +1,10 @@
 package fr.astratime.lucky.controllers;
 
-import fr.astratime.lucky.entities.CombatContext;
+import fr.astratime.lucky.entities.context.CombatContext;
 import fr.astratime.lucky.entities.Enemy;
 import fr.astratime.lucky.entities.Player;
-import fr.astratime.lucky.entities.SpinContext;
-import fr.astratime.lucky.entities.TurnContext;
+import fr.astratime.lucky.entities.context.SpinContext;
+import fr.astratime.lucky.entities.context.TurnContext;
 import fr.astratime.lucky.entities.effects.Effect;
 
 import java.util.List;

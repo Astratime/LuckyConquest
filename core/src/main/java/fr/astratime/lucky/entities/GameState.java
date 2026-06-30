@@ -9,7 +9,7 @@ package fr.astratime.lucky.entities;
 public class GameState {
 
     private final Player player = new Player("Joueur", 100);
-    private final Enemy  enemy  = new Enemy("Ennemi", 100);
+    private final Enemy  enemy  = new Enemy("Ennemi", 1500);
 
     private int turnNumber = 1;
 

@@ -1,6 +1,6 @@
 package fr.astratime.lucky.entities.effects;
 
-import fr.astratime.lucky.entities.TurnContext;
+import fr.astratime.lucky.entities.context.TurnContext;
 
 /** Augmente le nombre de cartes piochées au prochain tour. */
 public class ExtraDrawEffect extends Effect {

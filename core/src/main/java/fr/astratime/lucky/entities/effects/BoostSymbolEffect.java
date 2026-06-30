@@ -1,7 +1,7 @@
 package fr.astratime.lucky.entities.effects;
 
 import fr.astratime.lucky.entities.Symbol;
-import fr.astratime.lucky.entities.TurnContext;
+import fr.astratime.lucky.entities.context.TurnContext;
 
 /** Augmente la probabilité d'apparition d'un symbole via le SpinContext. */
 public class BoostSymbolEffect extends Effect {

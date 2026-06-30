@@ -1,6 +1,6 @@
 package fr.astratime.lucky.entities.effects;
 
-import fr.astratime.lucky.entities.TurnContext;
+import fr.astratime.lucky.entities.context.TurnContext;
 
 /**
  * As de Pique : les attaques ignorent la défense ennemie et rapportent

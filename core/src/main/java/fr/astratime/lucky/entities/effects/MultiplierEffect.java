@@ -1,6 +1,6 @@
 package fr.astratime.lucky.entities.effects;
 
-import fr.astratime.lucky.entities.TurnContext;
+import fr.astratime.lucky.entities.context.TurnContext;
 
 /** Effet générique de multiplicateur de gains (utilisable hors thème de suite). */
 public class MultiplierEffect extends Effect {

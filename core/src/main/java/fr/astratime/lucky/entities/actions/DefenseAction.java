@@ -1,6 +1,6 @@
 package fr.astratime.lucky.entities.actions;
 
-import fr.astratime.lucky.entities.CombatContext;
+import fr.astratime.lucky.entities.context.CombatContext;
 import fr.astratime.lucky.entities.Player;
 import fr.astratime.lucky.entities.events.Event;
 import fr.astratime.lucky.entities.events.ShieldGainedEvent;

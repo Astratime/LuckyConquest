@@ -1,4 +1,4 @@
-package fr.astratime.lucky.entities;
+package fr.astratime.lucky.entities.context;
 
 /**
  * Agrège les deux contextes du tour : spin et combat.

@@ -1,6 +1,6 @@
 package fr.astratime.lucky.entities.effects;
 
-import fr.astratime.lucky.entities.TurnContext;
+import fr.astratime.lucky.entities.context.TurnContext;
 
 /**
  * Carreau (non-As) : ajoute un pourcentage de renvoi de dégâts pour chaque

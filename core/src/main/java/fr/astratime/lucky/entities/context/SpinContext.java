@@ -1,4 +1,6 @@
-package fr.astratime.lucky.entities;
+package fr.astratime.lucky.entities.context;
+
+import fr.astratime.lucky.entities.Symbol;
 
 import java.util.EnumMap;
 import java.util.Map;

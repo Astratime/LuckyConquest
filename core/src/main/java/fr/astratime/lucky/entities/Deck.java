@@ -54,7 +54,7 @@ public class Deck {
             case TREFLE:
                 effects.add(isAce
                     ? new AceOfClubsEffect()
-                    : new ClubGainAttackEffect(rank * 0.08f, rank)); // gains x+0.16..1.04, attaque +2..13
+                    : new ClubGainAttackEffect(rank * 2, rank)); // gains x+0.16..1.04, attaque +2..13
                 break;
 
             case CARREAU:

@@ -19,7 +19,7 @@ import java.util.List;
  */
 public class GameController {
 
-    private static final int DEFAULT_DRAW_COUNT = 3;
+    private static final int DEFAULT_DRAW_COUNT = 6;
 
     private final GameState  gameState  = new GameState();
     private final TurnEngine turnEngine = new TurnEngine();

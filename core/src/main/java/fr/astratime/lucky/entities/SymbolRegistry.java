@@ -26,9 +26,9 @@ public class SymbolRegistry {
 
     static {
         // Symboles d'attaque de base
-        ACTIONS.put(Symbol.DOUBLE_BAR, new AttackAction(10));
-        ACTIONS.put(Symbol.CHERRY,     new AttackAction(10));
-        ACTIONS.put(Symbol.SEVEN,      new AttackAction(10));
+        ACTIONS.put(Symbol.DOUBLE_BAR, new AttackAction(20));
+        ACTIONS.put(Symbol.CHERRY,     new AttackAction(15));
+        ACTIONS.put(Symbol.SEVEN,      new AttackAction(30));
         ACTIONS.put(Symbol.BAR,        new AttackAction(10));
 
         // Symboles de défense / gains de base
@@ -38,8 +38,8 @@ public class SymbolRegistry {
 
         // Symboles rares liés aux suites (thème renforcé)
         ACTIONS.put(Symbol.DIAMOND,       new DefenseAction(20)); // theme Carreau : defense/reflect
-        ACTIONS.put(Symbol.TRIPLE_CHERRY, new AttackAction(18));  // theme Coeur : attaque + drain
-        ACTIONS.put(Symbol.TRIPLE_SEVEN,  new AttackAction(22));  // theme Pique : attaque perçante
+        ACTIONS.put(Symbol.TRIPLE_CHERRY, new AttackAction(45));  // theme Coeur : attaque + drain
+        ACTIONS.put(Symbol.TRIPLE_SEVEN,  new AttackAction(90));  // theme Pique : attaque perçante
         ACTIONS.put(Symbol.GOLD_BAR,      new GainAction(25));    // theme Trefle : gains
     }
 

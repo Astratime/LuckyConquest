@@ -1,5 +1,7 @@
-package fr.astratime.lucky.entities;
+package fr.astratime.lucky.controllers;
 
+import fr.astratime.lucky.entities.Symbol;
+import fr.astratime.lucky.entities.SymbolRegistry;
 import fr.astratime.lucky.entities.actions.Action;
 
 import java.util.ArrayList;

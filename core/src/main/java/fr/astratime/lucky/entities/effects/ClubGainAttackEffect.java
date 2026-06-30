@@ -1,6 +1,6 @@
 package fr.astratime.lucky.entities.effects;
 
-import fr.astratime.lucky.entities.TurnContext;
+import fr.astratime.lucky.entities.context.TurnContext;
 
 /**
  * Trefle (non-As) : ajoute un multiplicateur de gains et un bonus d'attaque ce tour.
@@ -8,10 +8,10 @@ import fr.astratime.lucky.entities.TurnContext;
  */
 public class ClubGainAttackEffect extends Effect {
 
-    private final float gainMultiplierAdd;
+    private final int gainMultiplierAdd;
     private final int   attackBonus;
 
-    public ClubGainAttackEffect(float gainMultiplierAdd, int attackBonus) {
+    public ClubGainAttackEffect(int gainMultiplierAdd, int attackBonus) {
         this.gainMultiplierAdd = gainMultiplierAdd;
         this.attackBonus       = attackBonus;
     }
