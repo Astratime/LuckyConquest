@@ -2,18 +2,18 @@ package fr.astratime.lucky.entities.effects;
 
 import fr.astratime.lucky.entities.TurnContext;
 
-/** Multiplie les gains de la machine à sous via le CombatContext. */
+/** Effet générique de multiplicateur de gains (utilisable hors thème de suite). */
 public class MultiplierEffect extends Effect {
 
-    private final float factor;
+    private final float amount;
 
-    public MultiplierEffect(float factor) { this.factor = factor; }
+    public MultiplierEffect(float amount) { this.amount = amount; }
 
     @Override
     public void apply(TurnContext context) {
-        context.getCombatContext().setMultiplier(factor);
+        context.getCombatContext().addGainMultiplier(amount);
     }
 
     @Override
-    public String getDescription() { return "Gains machine x" + factor; }
+    public String getDescription() { return "Gains x+" + amount; }
 }

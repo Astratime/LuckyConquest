@@ -9,27 +9,25 @@ import java.util.List;
 /**
  * Journal d'événements produit par CombatResolver à la fin d'un tour.
  * GameScreen lit ce journal pour mettre à jour l'affichage.
- * Contient également les symboles tirés (pour affichage) et le score gagné.
- * La structure List<Event> prépare le terrain pour les animations futures
- * sans que l'UI ait à les consommer immédiatement.
+ * gainsFromPairOrJackpot ne couvre que le bonus de paire/jackpot —
+ * les gains issus de GainAction ou d'AttackAction (As de Pique) sont
+ * déjà appliqués au joueur et visibles dans le journal d'événements.
  */
 public class TurnResult {
 
     private final List<Event> events;
     private final Symbol[]    symbols;
-    private final int         scoreGained;
+    private final int         gainsFromPairOrJackpot;
 
-    public TurnResult(List<Event> events, Symbol[] symbols, int scoreGained) {
-        this.events     = List.copyOf(events);
-        this.symbols    = symbols.clone();
-        this.scoreGained = scoreGained;
+    public TurnResult(List<Event> events, Symbol[] symbols, int gainsFromPairOrJackpot) {
+        this.events  = List.copyOf(events);
+        this.symbols = symbols.clone();
+        this.gainsFromPairOrJackpot = gainsFromPairOrJackpot;
     }
 
-    public List<Event> getEvents()     { return events; }
-    public Symbol[]    getSymbols()    { return symbols.clone(); }
-    public int         getScoreGained() { return scoreGained; }
-
-    // -- Raccourcis pour l'affichage -------------------------------------------
+    public List<Event> getEvents()  { return events; }
+    public Symbol[]    getSymbols() { return symbols.clone(); }
+    public int         getGainsFromPairOrJackpot() { return gainsFromPairOrJackpot; }
 
     public int getTotalDamage() {
         return events.stream()

@@ -11,10 +11,11 @@ import java.util.List;
  * Phase 1 : PreparationResolver applique les effets → TurnContext
  * Phase 2 : SlotMachine tire les symboles via SpinContext
  *           ActionResolver convertit les symboles en actions
- *           CombatResolver exécute les actions et retourne TurnResult
+ *           CombatResolver exécute les actions (et crédite les gains au joueur)
  *
  * TurnEngine est quasi-stateless : il ne possède que ses sous-résolveurs.
- * GameController lui passe la liste des effets en attente et le GameState.
+ * Les gains/dégâts sont déjà appliqués par CombatResolver via CombatContext —
+ * TurnEngine n'a donc plus besoin de toucher au GameState pour ça.
  */
 public class TurnEngine {
 
@@ -39,15 +40,13 @@ public class TurnEngine {
         // Symboles -> actions
         List<Action> actions = actionResolver.resolve(symbols);
 
-        // Combat : actions + CombatContext → TurnResult
+        // Combat : actions + CombatContext → TurnResult (mute déjà Player/Enemy)
         TurnResult result = combatResolver.resolve(
             turnContext.getCombatContext(),
             actions,
             symbols
         );
 
-        // Le score est appliqué au GameState (seul GameController touche le GameState)
-        gameState.addScore(result.getScoreGained());
         gameState.nextTurn();
 
         return result;

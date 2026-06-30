@@ -2,22 +2,24 @@ package fr.astratime.lucky.entities;
 
 import fr.astratime.lucky.entities.actions.Action;
 import fr.astratime.lucky.entities.events.Event;
+import fr.astratime.lucky.entities.events.GainsEarnedEvent;
 import fr.astratime.lucky.entities.events.JackpotEvent;
-import fr.astratime.lucky.entities.events.ScoreGainedEvent;
 
 import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Résout le combat d'un tour : exécute les actions, calcule le score,
- * construit le journal d'événements et retourne un TurnResult.
- * C'est le seul endroit qui modifie l'état du combat (HP ennemis, score).
+ * Résout le combat d'un tour : exécute les actions, calcule les gains de
+ * paire/jackpot, construit le journal d'événements et retourne un TurnResult.
+ * C'est le seul endroit qui modifie l'état du combat (HP ennemi, gains du joueur).
  * Ne reçoit que CombatContext et List<Action> — pas le GameState entier.
+ * Les gains sont crédités directement au joueur via CombatContext.getPlayer(),
+ * qui est la seule porte d'accès autorisée à l'état du joueur depuis ce niveau.
  */
 public class CombatResolver {
 
-    private static final int SCORE_PAIR    = 10;
-    private static final int SCORE_JACKPOT = 50;
+    private static final int GAINS_PAIR    = 10;
+    private static final int GAINS_JACKPOT = 50;
 
     public TurnResult resolve(CombatContext combatContext,
                               List<Action>  actions,
@@ -29,19 +31,20 @@ public class CombatResolver {
             events.addAll(action.resolve(combatContext));
         }
 
-        // Scoring
-        int score = 0;
+        // Bonus de paire/jackpot
+        int gains = 0;
         if (isJackpot(symbols)) {
-            score = SCORE_JACKPOT;
+            gains = GAINS_JACKPOT;
             events.add(new JackpotEvent());
         } else if (hasPair(symbols)) {
-            score = SCORE_PAIR;
+            gains = GAINS_PAIR;
         }
-        if (score > 0) {
-            events.add(new ScoreGainedEvent(score));
+        if (gains > 0) {
+            combatContext.getPlayer().addGains(gains);
+            events.add(new GainsEarnedEvent(gains));
         }
 
-        return new TurnResult(events, symbols, score);
+        return new TurnResult(events, symbols, gains);
     }
 
     private boolean isJackpot(Symbol[] s) {

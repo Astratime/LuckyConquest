@@ -289,7 +289,7 @@ public class GameScreen extends ScreenAdapter {
     }
 
     private void refreshScoreLabel() {
-        scoreLabel.setText("Points : " + gameController.getGameState().getScore());
+        scoreLabel.setText("Points : " + gameController.getGameState().getPlayer().getGains());
     }
 
     // -------------------------------------------------------------------------
