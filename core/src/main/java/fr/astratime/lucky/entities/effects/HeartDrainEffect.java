@@ -4,7 +4,7 @@ import fr.astratime.lucky.entities.context.TurnContext;
 
 /**
  * Coeur (non-As) : ajoute du drain de vie sur tous les symboles d'attaque ce tour.
- * percent augmente avec le rang de la carte (voir Deck.createCard).
+ * percent augmente avec le rang de la carte (voir cards/definitions/).
  */
 public class HeartDrainEffect extends Effect {
 

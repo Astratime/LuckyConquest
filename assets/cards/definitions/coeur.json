@@ -1,0 +1,170 @@
+[
+  {
+    "id": "1_coeur",
+    "name": "As de Coeur",
+    "assetPath": "cards/light/1-H.png",
+    "suit": "COEUR",
+    "rank": 1,
+    "effects": [
+      {
+        "type": "ACE_OF_HEARTS"
+      }
+    ]
+  },
+  {
+    "id": "2_coeur",
+    "name": "2 de Coeur",
+    "assetPath": "cards/light/2-H.png",
+    "suit": "COEUR",
+    "rank": 2,
+    "effects": [
+      {
+        "type": "HEART_DRAIN",
+        "percent": 3
+      }
+    ]
+  },
+  {
+    "id": "3_coeur",
+    "name": "3 de Coeur",
+    "assetPath": "cards/light/3-H.png",
+    "suit": "COEUR",
+    "rank": 3,
+    "effects": [
+      {
+        "type": "HEART_DRAIN",
+        "percent": 4
+      }
+    ]
+  },
+  {
+    "id": "4_coeur",
+    "name": "4 de Coeur",
+    "assetPath": "cards/light/4-H.png",
+    "suit": "COEUR",
+    "rank": 4,
+    "effects": [
+      {
+        "type": "HEART_DRAIN",
+        "percent": 5
+      }
+    ]
+  },
+  {
+    "id": "5_coeur",
+    "name": "5 de Coeur",
+    "assetPath": "cards/light/5-H.png",
+    "suit": "COEUR",
+    "rank": 5,
+    "effects": [
+      {
+        "type": "HEART_DRAIN",
+        "percent": 6
+      }
+    ]
+  },
+  {
+    "id": "6_coeur",
+    "name": "6 de Coeur",
+    "assetPath": "cards/light/6-H.png",
+    "suit": "COEUR",
+    "rank": 6,
+    "effects": [
+      {
+        "type": "HEART_DRAIN",
+        "percent": 7
+      }
+    ]
+  },
+  {
+    "id": "7_coeur",
+    "name": "7 de Coeur",
+    "assetPath": "cards/light/7-H.png",
+    "suit": "COEUR",
+    "rank": 7,
+    "effects": [
+      {
+        "type": "HEART_DRAIN",
+        "percent": 8
+      }
+    ]
+  },
+  {
+    "id": "8_coeur",
+    "name": "8 de Coeur",
+    "assetPath": "cards/light/8-H.png",
+    "suit": "COEUR",
+    "rank": 8,
+    "effects": [
+      {
+        "type": "HEART_DRAIN",
+        "percent": 9
+      }
+    ]
+  },
+  {
+    "id": "9_coeur",
+    "name": "9 de Coeur",
+    "assetPath": "cards/light/9-H.png",
+    "suit": "COEUR",
+    "rank": 9,
+    "effects": [
+      {
+        "type": "HEART_DRAIN",
+        "percent": 10
+      }
+    ]
+  },
+  {
+    "id": "10_coeur",
+    "name": "10 de Coeur",
+    "assetPath": "cards/light/10-H.png",
+    "suit": "COEUR",
+    "rank": 10,
+    "effects": [
+      {
+        "type": "HEART_DRAIN",
+        "percent": 11
+      }
+    ]
+  },
+  {
+    "id": "11_coeur",
+    "name": "Valet de Coeur",
+    "assetPath": "cards/light/11-H.png",
+    "suit": "COEUR",
+    "rank": 11,
+    "effects": [
+      {
+        "type": "HEART_DRAIN",
+        "percent": 12
+      }
+    ]
+  },
+  {
+    "id": "12_coeur",
+    "name": "Dame de Coeur",
+    "assetPath": "cards/light/12-H.png",
+    "suit": "COEUR",
+    "rank": 12,
+    "effects": [
+      {
+        "type": "HEART_DRAIN",
+        "percent": 13
+      }
+    ]
+  },
+  {
+    "id": "13_coeur",
+    "name": "Roi de Coeur",
+    "assetPath": "cards/light/13-H.png",
+    "suit": "COEUR",
+    "rank": 13,
+    "effects": [
+      {
+        "type": "HEART_DRAIN",
+        "percent": 14
+      }
+    ]
+  }
+]

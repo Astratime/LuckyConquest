@@ -1,0 +1,170 @@
+[
+  {
+    "id": "1_pique",
+    "name": "As de Pique",
+    "assetPath": "cards/light/1-P.png",
+    "suit": "PIQUE",
+    "rank": 1,
+    "effects": [
+      {
+        "type": "ACE_OF_SPADES"
+      }
+    ]
+  },
+  {
+    "id": "2_pique",
+    "name": "2 de Pique",
+    "assetPath": "cards/light/2-P.png",
+    "suit": "PIQUE",
+    "rank": 2,
+    "effects": [
+      {
+        "type": "SPADE_IGNORE_DEFENSE",
+        "attackBonus": 2
+      }
+    ]
+  },
+  {
+    "id": "3_pique",
+    "name": "3 de Pique",
+    "assetPath": "cards/light/3-P.png",
+    "suit": "PIQUE",
+    "rank": 3,
+    "effects": [
+      {
+        "type": "SPADE_IGNORE_DEFENSE",
+        "attackBonus": 3
+      }
+    ]
+  },
+  {
+    "id": "4_pique",
+    "name": "4 de Pique",
+    "assetPath": "cards/light/4-P.png",
+    "suit": "PIQUE",
+    "rank": 4,
+    "effects": [
+      {
+        "type": "SPADE_IGNORE_DEFENSE",
+        "attackBonus": 4
+      }
+    ]
+  },
+  {
+    "id": "5_pique",
+    "name": "5 de Pique",
+    "assetPath": "cards/light/5-P.png",
+    "suit": "PIQUE",
+    "rank": 5,
+    "effects": [
+      {
+        "type": "SPADE_IGNORE_DEFENSE",
+        "attackBonus": 5
+      }
+    ]
+  },
+  {
+    "id": "6_pique",
+    "name": "6 de Pique",
+    "assetPath": "cards/light/6-P.png",
+    "suit": "PIQUE",
+    "rank": 6,
+    "effects": [
+      {
+        "type": "SPADE_IGNORE_DEFENSE",
+        "attackBonus": 6
+      }
+    ]
+  },
+  {
+    "id": "7_pique",
+    "name": "7 de Pique",
+    "assetPath": "cards/light/7-P.png",
+    "suit": "PIQUE",
+    "rank": 7,
+    "effects": [
+      {
+        "type": "SPADE_IGNORE_DEFENSE",
+        "attackBonus": 7
+      }
+    ]
+  },
+  {
+    "id": "8_pique",
+    "name": "8 de Pique",
+    "assetPath": "cards/light/8-P.png",
+    "suit": "PIQUE",
+    "rank": 8,
+    "effects": [
+      {
+        "type": "SPADE_IGNORE_DEFENSE",
+        "attackBonus": 8
+      }
+    ]
+  },
+  {
+    "id": "9_pique",
+    "name": "9 de Pique",
+    "assetPath": "cards/light/9-P.png",
+    "suit": "PIQUE",
+    "rank": 9,
+    "effects": [
+      {
+        "type": "SPADE_IGNORE_DEFENSE",
+        "attackBonus": 9
+      }
+    ]
+  },
+  {
+    "id": "10_pique",
+    "name": "10 de Pique",
+    "assetPath": "cards/light/10-P.png",
+    "suit": "PIQUE",
+    "rank": 10,
+    "effects": [
+      {
+        "type": "SPADE_IGNORE_DEFENSE",
+        "attackBonus": 10
+      }
+    ]
+  },
+  {
+    "id": "11_pique",
+    "name": "Valet de Pique",
+    "assetPath": "cards/light/11-P.png",
+    "suit": "PIQUE",
+    "rank": 11,
+    "effects": [
+      {
+        "type": "SPADE_IGNORE_DEFENSE",
+        "attackBonus": 11
+      }
+    ]
+  },
+  {
+    "id": "12_pique",
+    "name": "Dame de Pique",
+    "assetPath": "cards/light/12-P.png",
+    "suit": "PIQUE",
+    "rank": 12,
+    "effects": [
+      {
+        "type": "SPADE_IGNORE_DEFENSE",
+        "attackBonus": 12
+      }
+    ]
+  },
+  {
+    "id": "13_pique",
+    "name": "Roi de Pique",
+    "assetPath": "cards/light/13-P.png",
+    "suit": "PIQUE",
+    "rank": 13,
+    "effects": [
+      {
+        "type": "SPADE_IGNORE_DEFENSE",
+        "attackBonus": 13
+      }
+    ]
+  }
+]

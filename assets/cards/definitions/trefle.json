@@ -1,0 +1,182 @@
+[
+  {
+    "id": "1_trefle",
+    "name": "As de Trefle",
+    "assetPath": "cards/light/1-C.png",
+    "suit": "TREFLE",
+    "rank": 1,
+    "effects": [
+      {
+        "type": "ACE_OF_CLUBS"
+      }
+    ]
+  },
+  {
+    "id": "2_trefle",
+    "name": "2 de Trefle",
+    "assetPath": "cards/light/2-C.png",
+    "suit": "TREFLE",
+    "rank": 2,
+    "effects": [
+      {
+        "type": "CLUB_GAIN_ATTACK",
+        "gainMultiplier": 4,
+        "attackBonus": 2
+      }
+    ]
+  },
+  {
+    "id": "3_trefle",
+    "name": "3 de Trefle",
+    "assetPath": "cards/light/3-C.png",
+    "suit": "TREFLE",
+    "rank": 3,
+    "effects": [
+      {
+        "type": "CLUB_GAIN_ATTACK",
+        "gainMultiplier": 6,
+        "attackBonus": 3
+      }
+    ]
+  },
+  {
+    "id": "4_trefle",
+    "name": "4 de Trefle",
+    "assetPath": "cards/light/4-C.png",
+    "suit": "TREFLE",
+    "rank": 4,
+    "effects": [
+      {
+        "type": "CLUB_GAIN_ATTACK",
+        "gainMultiplier": 8,
+        "attackBonus": 4
+      }
+    ]
+  },
+  {
+    "id": "5_trefle",
+    "name": "5 de Trefle",
+    "assetPath": "cards/light/5-C.png",
+    "suit": "TREFLE",
+    "rank": 5,
+    "effects": [
+      {
+        "type": "CLUB_GAIN_ATTACK",
+        "gainMultiplier": 10,
+        "attackBonus": 5
+      }
+    ]
+  },
+  {
+    "id": "6_trefle",
+    "name": "6 de Trefle",
+    "assetPath": "cards/light/6-C.png",
+    "suit": "TREFLE",
+    "rank": 6,
+    "effects": [
+      {
+        "type": "CLUB_GAIN_ATTACK",
+        "gainMultiplier": 12,
+        "attackBonus": 6
+      }
+    ]
+  },
+  {
+    "id": "7_trefle",
+    "name": "7 de Trefle",
+    "assetPath": "cards/light/7-C.png",
+    "suit": "TREFLE",
+    "rank": 7,
+    "effects": [
+      {
+        "type": "CLUB_GAIN_ATTACK",
+        "gainMultiplier": 14,
+        "attackBonus": 7
+      }
+    ]
+  },
+  {
+    "id": "8_trefle",
+    "name": "8 de Trefle",
+    "assetPath": "cards/light/8-C.png",
+    "suit": "TREFLE",
+    "rank": 8,
+    "effects": [
+      {
+        "type": "CLUB_GAIN_ATTACK",
+        "gainMultiplier": 16,
+        "attackBonus": 8
+      }
+    ]
+  },
+  {
+    "id": "9_trefle",
+    "name": "9 de Trefle",
+    "assetPath": "cards/light/9-C.png",
+    "suit": "TREFLE",
+    "rank": 9,
+    "effects": [
+      {
+        "type": "CLUB_GAIN_ATTACK",
+        "gainMultiplier": 18,
+        "attackBonus": 9
+      }
+    ]
+  },
+  {
+    "id": "10_trefle",
+    "name": "10 de Trefle",
+    "assetPath": "cards/light/10-C.png",
+    "suit": "TREFLE",
+    "rank": 10,
+    "effects": [
+      {
+        "type": "CLUB_GAIN_ATTACK",
+        "gainMultiplier": 20,
+        "attackBonus": 10
+      }
+    ]
+  },
+  {
+    "id": "11_trefle",
+    "name": "Valet de Trefle",
+    "assetPath": "cards/light/11-C.png",
+    "suit": "TREFLE",
+    "rank": 11,
+    "effects": [
+      {
+        "type": "CLUB_GAIN_ATTACK",
+        "gainMultiplier": 22,
+        "attackBonus": 11
+      }
+    ]
+  },
+  {
+    "id": "12_trefle",
+    "name": "Dame de Trefle",
+    "assetPath": "cards/light/12-C.png",
+    "suit": "TREFLE",
+    "rank": 12,
+    "effects": [
+      {
+        "type": "CLUB_GAIN_ATTACK",
+        "gainMultiplier": 24,
+        "attackBonus": 12
+      }
+    ]
+  },
+  {
+    "id": "13_trefle",
+    "name": "Roi de Trefle",
+    "assetPath": "cards/light/13-C.png",
+    "suit": "TREFLE",
+    "rank": 13,
+    "effects": [
+      {
+        "type": "CLUB_GAIN_ATTACK",
+        "gainMultiplier": 26,
+        "attackBonus": 13
+      }
+    ]
+  }
+]

@@ -17,7 +17,7 @@ import java.util.Optional;
  * Ajouter un effet à un symbole = ajouter une ligne dans le bloc statique.
  *
  * Les 4 symboles boostés par les suites (DIAMOND, TRIPLE_CHERRY, TRIPLE_SEVEN,
- * GOLD_BAR — voir Deck.createCard) ont une action plus forte que la normale,
+ * GOLD_BAR — voir cards/definitions/) ont une action plus forte que la normale,
  * cohérente avec le thème de leur suite respective.
  */
 public class SymbolRegistry {

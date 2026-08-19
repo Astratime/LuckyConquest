@@ -4,7 +4,7 @@ import fr.astratime.lucky.entities.context.TurnContext;
 
 /**
  * Trefle (non-As) : ajoute un multiplicateur de gains et un bonus d'attaque ce tour.
- * Les deux augmentent avec le rang de la carte (voir Deck.createCard).
+ * Les deux augmentent avec le rang de la carte (voir cards/definitions/).
  */
 public class ClubGainAttackEffect extends Effect {
 

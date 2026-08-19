@@ -5,6 +5,7 @@ import fr.astratime.lucky.entities.GameState;
 import fr.astratime.lucky.entities.Player;
 import fr.astratime.lucky.entities.TurnResult;
 import fr.astratime.lucky.entities.effects.Effect;
+import fr.astratime.lucky.loaders.CardLoader;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -12,20 +13,25 @@ import java.util.List;
 /**
  * Gère la progression globale de la partie : possède le GameState,
  * orchestre les tours via TurnEngine, et expose à GameScreen uniquement
- * les opérations nécessaires (draw, playCard, spin).
+ * les opérations nécessaires (drawCards, playCard, spin).
  *
- * Accumule les effets des cartes jouées entre le début de la phase 1
- * et le lancement de la machine (fin de phase 1 / début phase 2).
+ * C'est ici qu'est appelé CardLoader — après initialisation de libGDX,
+ * ce qui garantit que Gdx.files est disponible.
  */
 public class GameController {
 
     private static final int DEFAULT_DRAW_COUNT = 6;
 
-    private final GameState  gameState  = new GameState();
+    private final GameState  gameState;
     private final TurnEngine turnEngine = new TurnEngine();
 
     /** Effets accumulés depuis le début du tour, appliqués au moment du spin. */
     private final List<Effect> pendingEffects = new ArrayList<>();
+
+    public GameController() {
+        List<Card> cards = CardLoader.loadAll();
+        this.gameState = new GameState(cards);
+    }
 
     // -------------------------------------------------------------------------
     // Actions du joueur

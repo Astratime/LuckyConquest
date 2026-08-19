@@ -1,17 +1,21 @@
 package fr.astratime.lucky.entities;
 
+import java.util.List;
+
 /**
- * Source de vérité de la partie : participants et progression globale.
- * Les gains (monnaie en combat) appartiennent au Player, pas au GameState —
- * voir Player.getGains(). GameState ne garde que ce qui dépasse un seul joueur :
- * le tour global et, à terme, l'état de la run (salle, étage, etc.).
+ * Source de vérité de la partie.
+ * Reçoit la liste de cartes chargée par CardLoader via GameController,
+ * pour ne pas introduire de dépendance libGDX dans les entités.
  */
 public class GameState {
 
-    private final Player player = new Player("Joueur", 100);
-    private final Enemy  enemy  = new Enemy("Ennemi", 1500);
+    private final Player player;
+    private final Enemy  enemy  = new Enemy("Ennemi", 100);
+    private       int    turnNumber = 1;
 
-    private int turnNumber = 1;
+    public GameState(List<Card> playerCards) {
+        this.player = new Player("Joueur", 100, playerCards);
+    }
 
     public void nextTurn() { turnNumber++; }
 

@@ -1,0 +1,170 @@
+[
+  {
+    "id": "1_carreau",
+    "name": "As de Carreau",
+    "assetPath": "cards/light/1-D.png",
+    "suit": "CARREAU",
+    "rank": 1,
+    "effects": [
+      {
+        "type": "ACE_OF_DIAMONDS"
+      }
+    ]
+  },
+  {
+    "id": "2_carreau",
+    "name": "2 de Carreau",
+    "assetPath": "cards/light/2-D.png",
+    "suit": "CARREAU",
+    "rank": 2,
+    "effects": [
+      {
+        "type": "DIAMOND_REFLECT",
+        "percent": 6
+      }
+    ]
+  },
+  {
+    "id": "3_carreau",
+    "name": "3 de Carreau",
+    "assetPath": "cards/light/3-D.png",
+    "suit": "CARREAU",
+    "rank": 3,
+    "effects": [
+      {
+        "type": "DIAMOND_REFLECT",
+        "percent": 9
+      }
+    ]
+  },
+  {
+    "id": "4_carreau",
+    "name": "4 de Carreau",
+    "assetPath": "cards/light/4-D.png",
+    "suit": "CARREAU",
+    "rank": 4,
+    "effects": [
+      {
+        "type": "DIAMOND_REFLECT",
+        "percent": 12
+      }
+    ]
+  },
+  {
+    "id": "5_carreau",
+    "name": "5 de Carreau",
+    "assetPath": "cards/light/5-D.png",
+    "suit": "CARREAU",
+    "rank": 5,
+    "effects": [
+      {
+        "type": "DIAMOND_REFLECT",
+        "percent": 15
+      }
+    ]
+  },
+  {
+    "id": "6_carreau",
+    "name": "6 de Carreau",
+    "assetPath": "cards/light/6-D.png",
+    "suit": "CARREAU",
+    "rank": 6,
+    "effects": [
+      {
+        "type": "DIAMOND_REFLECT",
+        "percent": 18
+      }
+    ]
+  },
+  {
+    "id": "7_carreau",
+    "name": "7 de Carreau",
+    "assetPath": "cards/light/7-D.png",
+    "suit": "CARREAU",
+    "rank": 7,
+    "effects": [
+      {
+        "type": "DIAMOND_REFLECT",
+        "percent": 21
+      }
+    ]
+  },
+  {
+    "id": "8_carreau",
+    "name": "8 de Carreau",
+    "assetPath": "cards/light/8-D.png",
+    "suit": "CARREAU",
+    "rank": 8,
+    "effects": [
+      {
+        "type": "DIAMOND_REFLECT",
+        "percent": 24
+      }
+    ]
+  },
+  {
+    "id": "9_carreau",
+    "name": "9 de Carreau",
+    "assetPath": "cards/light/9-D.png",
+    "suit": "CARREAU",
+    "rank": 9,
+    "effects": [
+      {
+        "type": "DIAMOND_REFLECT",
+        "percent": 27
+      }
+    ]
+  },
+  {
+    "id": "10_carreau",
+    "name": "10 de Carreau",
+    "assetPath": "cards/light/10-D.png",
+    "suit": "CARREAU",
+    "rank": 10,
+    "effects": [
+      {
+        "type": "DIAMOND_REFLECT",
+        "percent": 30
+      }
+    ]
+  },
+  {
+    "id": "11_carreau",
+    "name": "Valet de Carreau",
+    "assetPath": "cards/light/11-D.png",
+    "suit": "CARREAU",
+    "rank": 11,
+    "effects": [
+      {
+        "type": "DIAMOND_REFLECT",
+        "percent": 33
+      }
+    ]
+  },
+  {
+    "id": "12_carreau",
+    "name": "Dame de Carreau",
+    "assetPath": "cards/light/12-D.png",
+    "suit": "CARREAU",
+    "rank": 12,
+    "effects": [
+      {
+        "type": "DIAMOND_REFLECT",
+        "percent": 36
+      }
+    ]
+  },
+  {
+    "id": "13_carreau",
+    "name": "Roi de Carreau",
+    "assetPath": "cards/light/13-D.png",
+    "suit": "CARREAU",
+    "rank": 13,
+    "effects": [
+      {
+        "type": "DIAMOND_REFLECT",
+        "percent": 39
+      }
+    ]
+  }
+]
