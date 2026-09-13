@@ -1,104 +1,131 @@
 package fr.astratime.lucky.screens;
 
 import com.badlogic.gdx.Gdx;
-import com.badlogic.gdx.Input;
 import com.badlogic.gdx.ScreenAdapter;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
-import com.badlogic.gdx.graphics.g2d.GlyphLayout;
-import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator;
+import com.badlogic.gdx.scenes.scene2d.Actor;
+import com.badlogic.gdx.scenes.scene2d.Stage;
+import com.badlogic.gdx.scenes.scene2d.ui.Image;
+import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
+import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
+import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 import com.badlogic.gdx.utils.ScreenUtils;
 import com.badlogic.gdx.utils.viewport.ScreenViewport;
-import com.badlogic.gdx.utils.viewport.Viewport;
 import fr.astratime.lucky.LuckyGame;
 
 public class ControlsScreen extends ScreenAdapter {
 
-    private final LuckyGame luckyGame;
-    private final SpriteBatch batch;
-    private final Viewport viewport = new ScreenViewport();
-    private final Texture background;
-    private final Texture blackPixel;
-    private BitmapFont font = new BitmapFont();
-    private final GlyphLayout layout = new GlyphLayout();
+    private static final float BUTTON_WIDTH  = 220f;
+    private static final float BUTTON_HEIGHT = 70f;
 
-    private static final String TEXT = "Press SPACE to start";
-    private static final float PADDING = 20f;
+    private final LuckyGame luckyGame;
+    private final Stage     stage;
+    private final BitmapFont font;
+    private final Texture backgroundTexture;
+    private final Texture buttonUpTexture;
+    private final Texture buttonDownTexture;
+
+    private final Image      background;
+    private final TextButton startButton;
 
     public ControlsScreen(LuckyGame luckyGame) {
         this.luckyGame = luckyGame;
-        this.batch = luckyGame.getBatch();
-        String menuPath = "menu/casino_menu.png";
-        this.background = new Texture(Gdx.files.internal(menuPath));
+        this.stage = new Stage(new ScreenViewport(), luckyGame.getBatch());
 
-        // Un pixel noir, étiré pour servir de cadre derrière le texte
-        Pixmap pixmap = new Pixmap(1, 1, Pixmap.Format.RGBA8888);
-        pixmap.setColor(Color.GOLDENROD);
-        pixmap.fill();
-        blackPixel = new Texture(pixmap);
-        pixmap.dispose();
+        backgroundTexture = new Texture(Gdx.files.internal("menu/casino_menu.png"));
+        buttonUpTexture   = makeColorTexture(Color.GOLDENROD);
+        buttonDownTexture = makeColorTexture(Color.valueOf("b8860bff"));
 
-        // Génération de la police à la taille voulue
         FreeTypeFontGenerator generator = new FreeTypeFontGenerator(Gdx.files.internal("fonts/Jersey10-Regular.ttf"));
         FreeTypeFontGenerator.FreeTypeFontParameter parameter = new FreeTypeFontGenerator.FreeTypeFontParameter();
-        parameter.size = 48; // taille en pixels, directement nette à cette taille
+        parameter.size  = 48;
         parameter.color = Color.WHITE;
         font = generator.generateFont(parameter);
-        generator.dispose(); // le générateur ne sert plus une fois la police créée
+        generator.dispose();
 
+        background  = buildBackground();
+        startButton = buildStartButton();
 
-        font.setColor(Color.WHITE);
-        layout.setText(font, TEXT);
+        stage.addActor(background);
+        stage.addActor(startButton);
+    }
+
+    private Image buildBackground() {
+        Image img = new Image(new TextureRegionDrawable(new TextureRegion(backgroundTexture)));
+        img.setSize(stage.getViewport().getWorldWidth(), stage.getViewport().getWorldHeight());
+        return img;
+    }
+
+    private TextButton buildStartButton() {
+        TextButton.TextButtonStyle style = new TextButton.TextButtonStyle();
+        style.font = font;
+        style.up   = new TextureRegionDrawable(new TextureRegion(buttonUpTexture));
+        style.down = new TextureRegionDrawable(new TextureRegion(buttonDownTexture));
+
+        TextButton button = new TextButton("Jouer", style);
+        button.setSize(BUTTON_WIDTH, BUTTON_HEIGHT);
+        button.setPosition(buttonX(), buttonY());
+        button.addListener(new ChangeListener() {
+            @Override
+            public void changed(ChangeEvent event, Actor actor) {
+                onStart();
+            }
+        });
+        return button;
+    }
+
+    private float buttonX() {
+        return (stage.getViewport().getWorldWidth() - BUTTON_WIDTH) / 2f;
+    }
+
+    private float buttonY() {
+        return (stage.getViewport().getWorldHeight() - BUTTON_HEIGHT) / 2f;
+    }
+
+    private void onStart() {
+        luckyGame.setScreen(new GameScreen(luckyGame));
+        dispose();
+    }
+
+    private Texture makeColorTexture(Color color) {
+        Pixmap pixmap = new Pixmap(1, 1, Pixmap.Format.RGBA8888);
+        pixmap.setColor(color);
+        pixmap.fill();
+        Texture texture = new Texture(pixmap);
+        pixmap.dispose();
+        return texture;
     }
 
     @Override
-    public void resize(int width, int height){
-        viewport.update(width, height, true);
+    public void show() {
+        Gdx.input.setInputProcessor(stage);
     }
 
     @Override
-    public void render(float delta){
-        if(Gdx.input.isKeyJustPressed(Input.Keys.SPACE)){
-            luckyGame.setScreen(new GameScreen(luckyGame));
-            dispose();
-            return;
-        }
+    public void resize(int width, int height) {
+        stage.getViewport().update(width, height, true);
+        background.setSize(stage.getViewport().getWorldWidth(), stage.getViewport().getWorldHeight());
+        startButton.setPosition(buttonX(), buttonY());
+    }
 
+    @Override
+    public void render(float delta) {
         ScreenUtils.clear(Color.WHITE);
-        viewport.apply();
-        batch.setProjectionMatrix(viewport.getCamera().combined);
-
-        float worldWidth = viewport.getWorldWidth();
-        float worldHeight = viewport.getWorldHeight();
-
-        // Dimensions du cadre = taille du texte + marge de chaque côté
-        float boxWidth = layout.width + PADDING * 2;
-        float boxHeight = layout.height + PADDING * 2;
-        float boxX = (worldWidth - boxWidth) / 2f;
-        float boxY = (worldHeight - boxHeight) / 2f;
-
-        batch.begin();
-        batch.setColor(1f, 1f, 1f, 1f);
-
-        // 1. Fond
-        batch.draw(background, 0, 0, worldWidth, worldHeight);
-
-        // 2. Cadre noir, centré
-        batch.draw(blackPixel, boxX, boxY, boxWidth, boxHeight);
-
-        // 3. Texte, centré dans le cadre
-        font.draw(batch, layout, boxX + PADDING, boxY + boxHeight - PADDING);
-
-        batch.end();
+        stage.act(delta);
+        stage.draw();
     }
 
     @Override
-    public void dispose(){
-        background.dispose();
-        blackPixel.dispose();
+    public void dispose() {
+        stage.dispose();
         font.dispose();
+        backgroundTexture.dispose();
+        buttonUpTexture.dispose();
+        buttonDownTexture.dispose();
     }
 }

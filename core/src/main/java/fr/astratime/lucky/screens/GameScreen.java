@@ -24,6 +24,7 @@ import fr.astratime.lucky.LuckyGame;
 import fr.astratime.lucky.controllers.GameController;
 import fr.astratime.lucky.entities.Card;
 import fr.astratime.lucky.entities.Enemy;
+import fr.astratime.lucky.entities.GameState;
 import fr.astratime.lucky.entities.Player;
 import fr.astratime.lucky.entities.Symbol;
 import fr.astratime.lucky.entities.TurnResult;
@@ -51,6 +52,9 @@ public class GameScreen extends ScreenAdapter {
     private static final float BUTTON_WIDTH  = 150f;
     private static final float BUTTON_HEIGHT = 60f;
     private static final float CARD_TABLE_Y  = 350f;
+
+    private static final float SCORE_LABEL_TOP_MARGIN = 40f;
+    private static final float RESTART_BUTTON_GAP      = 10f;
 
     private static final float SYMBOL_WIDTH  = 94f;
     private static final float SYMBOL_HEIGHT = 80f;
@@ -104,6 +108,7 @@ public class GameScreen extends ScreenAdapter {
     private       TextButton spinButton;
     private  TextButton drawButton;
     private       Label      scoreLabel;
+    private       TextButton restartButton;
 
     // -------------------------------------------------------------------------
     // Constructeur
@@ -138,6 +143,8 @@ public class GameScreen extends ScreenAdapter {
         spinButton    = buildSpinButton();
         spinButton.setDisabled(true);
         scoreLabel    = buildScoreLabel();
+        restartButton = buildRestartButton();
+        restartButton.setVisible(false);
         tooltipLabel  = new Label("", new Label.LabelStyle(font, Color.WHITE));
         tooltip       = buildTooltip();
 
@@ -154,6 +161,7 @@ public class GameScreen extends ScreenAdapter {
         stage.addActor(drawButton);
         stage.addActor(spinButton);
         stage.addActor(scoreLabel);
+        stage.addActor(restartButton);
         stage.addActor(slotTable);
         stage.addActor(cardTable);
         stage.addActor(tooltip); // en dernier : toujours au-dessus
@@ -252,8 +260,21 @@ public class GameScreen extends ScreenAdapter {
 
     private Label buildScoreLabel() {
         Label label = new Label("Points : 0", new Label.LabelStyle(font, Color.WHITE));
-        label.setPosition(20, stage.getViewport().getWorldHeight() - 40);
+        label.setPosition(20, stage.getViewport().getWorldHeight() - SCORE_LABEL_TOP_MARGIN);
         return label;
+    }
+
+    private TextButton buildRestartButton() {
+        TextButton button = new TextButton("Recommencer", buildButtonStyle());
+        button.setSize(BUTTON_WIDTH, BUTTON_HEIGHT);
+        button.setPosition(20, restartButtonY());
+        button.addListener(new ChangeListener() {
+            @Override
+            public void changed(ChangeEvent event, Actor actor) {
+                onRestart();
+            }
+        });
+        return button;
     }
 
     private Table buildTooltip() {
@@ -300,6 +321,10 @@ public class GameScreen extends ScreenAdapter {
         return HEALTH_BAR_BOTTOM_MARGIN;
     }
 
+    private float restartButtonY() {
+        return stage.getViewport().getWorldHeight() - SCORE_LABEL_TOP_MARGIN - BUTTON_HEIGHT - RESTART_BUTTON_GAP;
+    }
+
     // -------------------------------------------------------------------------
     // Interactions joueur — transmises au GameController
     // -------------------------------------------------------------------------
@@ -317,8 +342,13 @@ public class GameScreen extends ScreenAdapter {
         refreshHealthBar();
         refreshPlayerHealthBar();
         refreshScoreLabel();
-        spinButton.setDisabled(true);
-        drawButton.setDisabled(false);
+
+        if (isCombatOver()) {
+            endCombat();
+        } else {
+            spinButton.setDisabled(true);
+            drawButton.setDisabled(false);
+        }
 
         Gdx.app.log("GameScreen", result.getEvents().stream()
             .map(e -> e.describe())
@@ -330,6 +360,31 @@ public class GameScreen extends ScreenAdapter {
         cardImage.setVisible(false);
         tooltip.setVisible(false);
         Gdx.app.log("GameScreen", "Carte jouee : " + card);
+    }
+
+    /** Le combat est terminé dès que le joueur ou l'ennemi n'a plus de points de vie. */
+    private boolean isCombatOver() {
+        GameState gameState = gameController.getGameState();
+        return gameState.getEnemy().isDefeated() || gameState.getPlayer().isDefeated();
+    }
+
+    private void endCombat() {
+        spinButton.setDisabled(true);
+        drawButton.setDisabled(true);
+        restartButton.setVisible(true);
+    }
+
+    /** Recommence un combat : réinitialise le GameController et tout l'affichage. */
+    private void onRestart() {
+        gameController.restart();
+        cardTable.clearChildren();
+        slotTable.clearChildren();
+        refreshHealthBar();
+        refreshPlayerHealthBar();
+        refreshScoreLabel();
+        spinButton.setDisabled(true);
+        drawButton.setDisabled(false);
+        restartButton.setVisible(false);
     }
 
     // -------------------------------------------------------------------------
@@ -471,7 +526,8 @@ public class GameScreen extends ScreenAdapter {
         playerHealthBarBg.setPosition(healthBarX(), playerHealthBarY());
         playerHealthBarFill.setPosition(healthBarX(), playerHealthBarY());
         playerHealthBarLabel.setPosition(healthBarX(), playerHealthBarY());
-        scoreLabel.setPosition(20, worldHeight - 40);
+        scoreLabel.setPosition(20, worldHeight - SCORE_LABEL_TOP_MARGIN);
+        restartButton.setPosition(20, restartButtonY());
     }
 
     @Override
