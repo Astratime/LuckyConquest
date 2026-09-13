@@ -22,15 +22,24 @@ public class GameController {
 
     private static final int DEFAULT_DRAW_COUNT = 6;
 
-    private final GameState  gameState;
+    private       GameState  gameState;
     private final TurnEngine turnEngine = new TurnEngine();
 
     /** Effets accumulés depuis le début du tour, appliqués au moment du spin. */
     private final List<Effect> pendingEffects = new ArrayList<>();
 
     public GameController() {
-        List<Card> cards = CardLoader.loadAll();
-        this.gameState = new GameState(cards);
+        this.gameState = new GameState(CardLoader.loadAll());
+    }
+
+    /**
+     * Recommence un combat : recrée entièrement le GameState (joueur et
+     * ennemi au maximum de leurs points de vie, bonus/malus effacés) et
+     * vide les effets en attente du tour précédent.
+     */
+    public void restart() {
+        this.gameState = new GameState(CardLoader.loadAll());
+        pendingEffects.clear();
     }
 
     // -------------------------------------------------------------------------
