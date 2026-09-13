@@ -17,12 +17,14 @@ import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
+import com.badlogic.gdx.utils.Align;
 import com.badlogic.gdx.utils.ScreenUtils;
 import com.badlogic.gdx.utils.viewport.ScreenViewport;
 import fr.astratime.lucky.LuckyGame;
 import fr.astratime.lucky.controllers.GameController;
 import fr.astratime.lucky.entities.Card;
 import fr.astratime.lucky.entities.Enemy;
+import fr.astratime.lucky.entities.Player;
 import fr.astratime.lucky.entities.Symbol;
 import fr.astratime.lucky.entities.TurnResult;
 
@@ -44,6 +46,7 @@ public class GameScreen extends ScreenAdapter {
     private static final float  CARD_WIDTH      = 95f;
     private static final float  CARD_HEIGHT     = 135f;
     private static final String BACKGROUND_PATH = "playTable/play_table1.png";
+    private static final float  BACKGROUND_SHRINK = 100f;
 
     private static final float BUTTON_WIDTH  = 150f;
     private static final float BUTTON_HEIGHT = 60f;
@@ -53,9 +56,10 @@ public class GameScreen extends ScreenAdapter {
     private static final float SYMBOL_HEIGHT = 80f;
     private static final float SLOT_TABLE_Y  = 200f;
 
-    private static final float HEALTH_BAR_WIDTH      = 300f;
-    private static final float HEALTH_BAR_HEIGHT     = 22f;
-    private static final float HEALTH_BAR_TOP_MARGIN = 10f;
+    private static final float HEALTH_BAR_WIDTH         = 300f;
+    private static final float HEALTH_BAR_HEIGHT        = 22f;
+    private static final float HEALTH_BAR_TOP_MARGIN    = 10f;
+    private static final float HEALTH_BAR_BOTTOM_MARGIN = 100f;
 
     // -------------------------------------------------------------------------
     // Contrôleur — seul point d'accès à la logique de jeu
@@ -77,6 +81,8 @@ public class GameScreen extends ScreenAdapter {
     private final Texture    tooltipBackgroundTexture;
     private final Texture    healthBarBgTexture;
     private final Texture    healthBarFillTexture;
+    private final Texture    playerHealthBarBgTexture;
+    private final Texture    playerHealthBarFillTexture;
     private final Map<String, Texture> cardTextures   = new HashMap<>();
     private final Map<Symbol, Texture> symbolTextures = new HashMap<>();
 
@@ -87,6 +93,10 @@ public class GameScreen extends ScreenAdapter {
     private final Image      background;
     private final Image      healthBarBg;
     private final Image      healthBarFill;
+    private final Label      healthBarLabel;
+    private final Image      playerHealthBarBg;
+    private final Image      playerHealthBarFill;
+    private final Label      playerHealthBarLabel;
     private final Table      cardTable = new Table();
     private final Table      slotTable = new Table();
     private final Table      tooltip;
@@ -110,14 +120,20 @@ public class GameScreen extends ScreenAdapter {
         buttonDownTexture        = makeColorTexture(Color.GRAY);
         buttonDisabledTexture    = makeColorTexture(Color.valueOf("333333ff"));
         tooltipBackgroundTexture = makeColorTexture(Color.BLACK);
-        healthBarBgTexture       = makeColorTexture(Color.valueOf("550000ff"));
-        healthBarFillTexture     = makeColorTexture(Color.RED);
+        healthBarBgTexture         = makeColorTexture(Color.valueOf("550000ff"));
+        healthBarFillTexture       = makeColorTexture(Color.RED);
+        playerHealthBarBgTexture   = makeColorTexture(Color.valueOf("005500ff"));
+        playerHealthBarFillTexture = makeColorTexture(Color.GREEN);
 
         preloadSymbolTextures();
 
-        background    = buildBackground();
-        healthBarBg   = buildHealthBarBg();
-        healthBarFill = buildHealthBarFill();
+        background          = buildBackground();
+        healthBarBg         = buildHealthBarBg();
+        healthBarFill       = buildHealthBarFill();
+        healthBarLabel       = buildHealthBarLabel();
+        playerHealthBarBg   = buildPlayerHealthBarBg();
+        playerHealthBarFill = buildPlayerHealthBarFill();
+        playerHealthBarLabel = buildPlayerHealthBarLabel();
         drawButton = buildDrawButton();
         spinButton    = buildSpinButton();
         spinButton.setDisabled(true);
@@ -125,9 +141,16 @@ public class GameScreen extends ScreenAdapter {
         tooltipLabel  = new Label("", new Label.LabelStyle(font, Color.WHITE));
         tooltip       = buildTooltip();
 
+        refreshHealthBar();
+        refreshPlayerHealthBar();
+
         stage.addActor(background);
         stage.addActor(healthBarBg);
         stage.addActor(healthBarFill);
+        stage.addActor(healthBarLabel);
+        stage.addActor(playerHealthBarBg);
+        stage.addActor(playerHealthBarFill);
+        stage.addActor(playerHealthBarLabel);
         stage.addActor(drawButton);
         stage.addActor(spinButton);
         stage.addActor(scoreLabel);
@@ -142,7 +165,8 @@ public class GameScreen extends ScreenAdapter {
 
     private Image buildBackground() {
         Image img = new Image(new TextureRegionDrawable(new TextureRegion(backgroundTexture)));
-        img.setSize(stage.getViewport().getWorldWidth(), stage.getViewport().getWorldHeight());
+        img.setSize(backgroundWidth(), backgroundHeight());
+        img.setPosition(backgroundX(), backgroundY());
         return img;
     }
 
@@ -158,6 +182,36 @@ public class GameScreen extends ScreenAdapter {
         img.setSize(HEALTH_BAR_WIDTH, HEALTH_BAR_HEIGHT);
         img.setPosition(healthBarX(), healthBarY());
         return img;
+    }
+
+    private Label buildHealthBarLabel() {
+        return buildHealthBarLabel(healthBarX(), healthBarY());
+    }
+
+    private Image buildPlayerHealthBarBg() {
+        Image img = new Image(new TextureRegionDrawable(new TextureRegion(playerHealthBarBgTexture)));
+        img.setSize(HEALTH_BAR_WIDTH, HEALTH_BAR_HEIGHT);
+        img.setPosition(healthBarX(), playerHealthBarY());
+        return img;
+    }
+
+    private Image buildPlayerHealthBarFill() {
+        Image img = new Image(new TextureRegionDrawable(new TextureRegion(playerHealthBarFillTexture)));
+        img.setSize(HEALTH_BAR_WIDTH, HEALTH_BAR_HEIGHT);
+        img.setPosition(healthBarX(), playerHealthBarY());
+        return img;
+    }
+
+    private Label buildPlayerHealthBarLabel() {
+        return buildHealthBarLabel(healthBarX(), playerHealthBarY());
+    }
+
+    private Label buildHealthBarLabel(float x, float y) {
+        Label label = new Label("", new Label.LabelStyle(font, Color.WHITE));
+        label.setSize(HEALTH_BAR_WIDTH, HEALTH_BAR_HEIGHT);
+        label.setPosition(x, y);
+        label.setAlignment(Align.center);
+        return label;
     }
 
     private TextButton buildDrawButton() {
@@ -211,7 +265,27 @@ public class GameScreen extends ScreenAdapter {
     }
 
     // -------------------------------------------------------------------------
-    // Positionnement de la barre de vie
+    // Positionnement de la table de jeu
+    // -------------------------------------------------------------------------
+
+    private float backgroundWidth() {
+        return stage.getViewport().getWorldWidth() - BACKGROUND_SHRINK;
+    }
+
+    private float backgroundHeight() {
+        return stage.getViewport().getWorldHeight() - BACKGROUND_SHRINK;
+    }
+
+    private float backgroundX() {
+        return BACKGROUND_SHRINK / 2f;
+    }
+
+    private float backgroundY() {
+        return BACKGROUND_SHRINK / 2f;
+    }
+
+    // -------------------------------------------------------------------------
+    // Positionnement des barres de vie
     // -------------------------------------------------------------------------
 
     private float healthBarX() {
@@ -220,6 +294,10 @@ public class GameScreen extends ScreenAdapter {
 
     private float healthBarY() {
         return stage.getViewport().getWorldHeight() - HEALTH_BAR_HEIGHT - HEALTH_BAR_TOP_MARGIN;
+    }
+
+    private float playerHealthBarY() {
+        return HEALTH_BAR_BOTTOM_MARGIN;
     }
 
     // -------------------------------------------------------------------------
@@ -237,6 +315,7 @@ public class GameScreen extends ScreenAdapter {
         TurnResult result = gameController.spin();
         refreshSlotTable(result.getSymbols());
         refreshHealthBar();
+        refreshPlayerHealthBar();
         refreshScoreLabel();
         spinButton.setDisabled(true);
         drawButton.setDisabled(false);
@@ -286,6 +365,14 @@ public class GameScreen extends ScreenAdapter {
         Enemy enemy = gameController.getGameState().getEnemy();
         float ratio = (float) enemy.getHp() / enemy.getMaxHp();
         healthBarFill.setWidth(HEALTH_BAR_WIDTH * ratio);
+        healthBarLabel.setText(enemy.getHp() + "/" + enemy.getMaxHp());
+    }
+
+    private void refreshPlayerHealthBar() {
+        Player player = gameController.getGameState().getPlayer();
+        float ratio = (float) player.getHp() / player.getMaxHp();
+        playerHealthBarFill.setWidth(HEALTH_BAR_WIDTH * ratio);
+        playerHealthBarLabel.setText(player.getHp() + "/" + player.getMaxHp());
     }
 
     private void refreshScoreLabel() {
@@ -376,9 +463,14 @@ public class GameScreen extends ScreenAdapter {
         float worldWidth  = stage.getViewport().getWorldWidth();
         float worldHeight = stage.getViewport().getWorldHeight();
 
-        background.setSize(worldWidth, worldHeight);
+        background.setSize(backgroundWidth(), backgroundHeight());
+        background.setPosition(backgroundX(), backgroundY());
         healthBarBg.setPosition(healthBarX(), healthBarY());
         healthBarFill.setPosition(healthBarX(), healthBarY());
+        healthBarLabel.setPosition(healthBarX(), healthBarY());
+        playerHealthBarBg.setPosition(healthBarX(), playerHealthBarY());
+        playerHealthBarFill.setPosition(healthBarX(), playerHealthBarY());
+        playerHealthBarLabel.setPosition(healthBarX(), playerHealthBarY());
         scoreLabel.setPosition(20, worldHeight - 40);
     }
 
@@ -400,6 +492,8 @@ public class GameScreen extends ScreenAdapter {
         tooltipBackgroundTexture.dispose();
         healthBarBgTexture.dispose();
         healthBarFillTexture.dispose();
+        playerHealthBarBgTexture.dispose();
+        playerHealthBarFillTexture.dispose();
         cardTextures.values().forEach(Texture::dispose);
         symbolTextures.values().forEach(Texture::dispose);
     }
