@@ -1,12 +1,15 @@
 package fr.astratime.lucky.controllers;
 
 import fr.astratime.lucky.entities.context.CombatContext;
+import fr.astratime.lucky.entities.Enemy;
+import fr.astratime.lucky.entities.Player;
 import fr.astratime.lucky.entities.Symbol;
 import fr.astratime.lucky.entities.TurnResult;
 import fr.astratime.lucky.entities.actions.Action;
 import fr.astratime.lucky.entities.events.Event;
 import fr.astratime.lucky.entities.events.GainsEarnedEvent;
 import fr.astratime.lucky.entities.events.JackpotEvent;
+import fr.astratime.lucky.entities.events.PlayerDamagedEvent;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -45,6 +48,15 @@ public class CombatResolver {
         if (gains > 0) {
             combatContext.getPlayer().addGains(gains);
             events.add(new GainsEarnedEvent(gains));
+        }
+
+        // Riposte de l'ennemi : s'il a survécu au tour du joueur, il attaque à son tour.
+        Enemy enemy = combatContext.getEnemy();
+        if (!enemy.isDefeated()) {
+            Player player = combatContext.getPlayer();
+            int    damage = enemy.getAttackPower();
+            player.takeDamage(damage);
+            events.add(new PlayerDamagedEvent(damage));
         }
 
         return new TurnResult(events, symbols, gains);
