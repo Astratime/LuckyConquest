@@ -63,13 +63,17 @@ public class CombatResolver {
         }
 
         // Riposte de l'ennemi : s'il a survécu au tour du joueur, il attaque à son tour.
+        // Le bouclier accumulé par le joueur ce tour absorbe une partie des dégâts
+        // (voir Player.takeDamage) ; l'événement reporte les dégâts réellement subis.
         Enemy enemy = combatContext.getEnemy();
         if (!enemy.isDefeated()) {
             Player player = combatContext.getPlayer();
-            int    damage = enemy.getAttackPower();
-            player.takeDamage(damage);
-            events.add(new PlayerDamagedEvent(damage));
+            int    actualDamage = player.takeDamage(enemy.getAttackPower());
+            events.add(new PlayerDamagedEvent(actualDamage));
         }
+
+        // Le bouclier (et le renvoi de dégâts) ne vaut que pour ce tour.
+        combatContext.getPlayer().resetTurnDefenses();
 
         return new TurnResult(events, symbols, gains);
     }

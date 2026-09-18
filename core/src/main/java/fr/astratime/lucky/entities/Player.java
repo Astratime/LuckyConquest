@@ -38,8 +38,22 @@ public class Player {
         this.deck  = new Deck(cards, discardPile);
     }
 
-    /** Retire {@code damage} points de vie, sans descendre sous 0. */
-    public void takeDamage(int damage) { hp = Math.max(0, hp - damage); }
+    /**
+     * Inflige des dégâts au joueur : le bouclier accumulé absorbe les dégâts
+     * en priorité, seul l'excédent (s'il y en a) retire des points de vie,
+     * sans jamais descendre sous 0.
+     *
+     * @param damage dégâts bruts, avant absorption par le bouclier
+     * @return les dégâts effectivement retirés des points de vie (après bouclier)
+     */
+    public int takeDamage(int damage) {
+        int absorbed  = Math.min(shield, damage);
+        shield -= absorbed;
+        int remaining = damage - absorbed;
+        int actualLoss = Math.min(hp, remaining);
+        hp -= actualLoss;
+        return actualLoss;
+    }
     /** Rend {@code amount} points de vie, sans dépasser le maximum. */
     public void heal(int amount)       { hp = Math.min(maxHp, hp + amount); }
     /** @return {@code true} si le joueur n'a plus de points de vie. */

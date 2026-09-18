@@ -9,11 +9,13 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Accorde du bouclier au joueur, à consommer lors du tour ennemi
- * (non implémenté pour l'instant — voir Player.shield).
+ * Accorde du bouclier au joueur, consommé lors de la riposte de l'ennemi
+ * (voir Player.takeDamage, appelé par CombatResolver) pour absorber une
+ * partie des dégâts subis.
  * Lit dans le CombatContext :
  *  - defenseBonus       : bonus plat de bouclier (cartes jouées)
- *  - reflectPercentBonus : reflect additif accordé par symbole (cartes Carreau)
+ *  - reflectPercentBonus : reflect additif accordé par symbole (cartes Carreau,
+ *                          renvoi de dégâts non implémenté pour l'instant)
  *  - conditionalReflect  : si vrai (As de Carreau), reflect 100% sous 20% de vie, sinon 50%
  */
 public class DefenseAction extends Action {
