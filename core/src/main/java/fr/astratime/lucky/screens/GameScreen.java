@@ -6,11 +6,13 @@ import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
+import com.badlogic.gdx.math.Interpolation;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.InputListener;
 import com.badlogic.gdx.scenes.scene2d.Stage;
+import com.badlogic.gdx.scenes.scene2d.actions.Actions;
 import com.badlogic.gdx.scenes.scene2d.ui.Image;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
@@ -29,6 +31,7 @@ import fr.astratime.lucky.entities.Player;
 import fr.astratime.lucky.entities.Symbol;
 import fr.astratime.lucky.entities.TurnResult;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -47,11 +50,19 @@ public class GameScreen extends ScreenAdapter {
     private static final float  CARD_WIDTH      = 95f;
     private static final float  CARD_HEIGHT     = 135f;
     private static final String BACKGROUND_PATH = "playTable/play_table1.png";
+    private static final String CARD_BACK_PATH  = "cards/" + THEME + "/BACK.png";
     private static final float  BACKGROUND_SHRINK = 100f;
 
     private static final float BUTTON_WIDTH  = 150f;
     private static final float BUTTON_HEIGHT = 60f;
     private static final float CARD_TABLE_Y  = 350f;
+
+    // Distribution animée des cartes : elles arrivent dos visible depuis le
+    // dessus de l'écran, puis se retournent (flip) pour révéler leur face.
+    private static final float DEAL_STAGGER_DELAY = 0.15f;
+    private static final float DEAL_MOVE_DURATION = 0.35f;
+    private static final float FLIP_PAUSE_DELAY   = 0.05f;
+    private static final float FLIP_HALF_DURATION = 0.12f;
 
     private static final float SCORE_LABEL_TOP_MARGIN = 40f;
     private static final float RESTART_BUTTON_GAP      = 10f;
@@ -87,8 +98,12 @@ public class GameScreen extends ScreenAdapter {
     private final Texture    healthBarFillTexture;
     private final Texture    playerHealthBarBgTexture;
     private final Texture    playerHealthBarFillTexture;
+    private final Texture    cardBackTexture;
     private final Map<String, Texture> cardTextures   = new HashMap<>();
     private final Map<Symbol, Texture> symbolTextures = new HashMap<>();
+
+    /** Cartes en cours d'animation de distribution (dos -> face), à nettoyer si une nouvelle donne démarre. */
+    private final List<Image> flyingCards = new ArrayList<>();
 
     // -------------------------------------------------------------------------
     // Acteurs Scene2D
@@ -129,6 +144,7 @@ public class GameScreen extends ScreenAdapter {
         healthBarFillTexture       = makeColorTexture(Color.RED);
         playerHealthBarBgTexture   = makeColorTexture(Color.valueOf("005500ff"));
         playerHealthBarFillTexture = makeColorTexture(Color.GREEN);
+        cardBackTexture            = new Texture(Gdx.files.internal(CARD_BACK_PATH));
 
         preloadSymbolTextures();
 
@@ -377,6 +393,7 @@ public class GameScreen extends ScreenAdapter {
     /** Recommence un combat : réinitialise le GameController et tout l'affichage. */
     private void onRestart() {
         gameController.restart();
+        cancelCardDealAnimation();
         cardTable.clearChildren();
         slotTable.clearChildren();
         refreshHealthBar();
@@ -392,16 +409,68 @@ public class GameScreen extends ScreenAdapter {
     // -------------------------------------------------------------------------
 
     private void refreshCardTable(List<Card> hand) {
+        cancelCardDealAnimation();
         cardTable.clearChildren();
+
+        List<Image> cardImages = new ArrayList<>();
         for (Card card : hand) {
             Image cardImage = new Image(new TextureRegionDrawable(new TextureRegion(getCardTexture(card))));
+            cardImage.setVisible(false); // révélée seulement à la fin de son animation de distribution
             addCardListeners(cardImage, card);
             cardTable.add(cardImage).size(CARD_WIDTH, CARD_HEIGHT).pad(10f);
+            cardImages.add(cardImage);
         }
         cardTable.pack();
 
         float worldWidth = stage.getViewport().getWorldWidth();
         cardTable.setPosition((worldWidth - cardTable.getWidth()) / 2f, CARD_TABLE_Y);
+        cardTable.validate();
+
+        dealCards(cardImages);
+    }
+
+    /**
+     * Anime l'arrivée des cartes : chacune part, dos visible, d'un point de
+     * "pioche" au-dessus de l'écran, glisse jusqu'à sa place dans cardTable
+     * (déjà calculée mais invisible), puis se retourne pour révéler sa face.
+     */
+    private void dealCards(List<Image> targets) {
+        float deckX = cardTable.getX() + cardTable.getWidth() / 2f - CARD_WIDTH / 2f;
+        float deckY = stage.getViewport().getWorldHeight();
+
+        for (int i = 0; i < targets.size(); i++) {
+            Image target = targets.get(i);
+            Vector2 targetPos = target.localToStageCoordinates(new Vector2(0f, 0f));
+
+            Image flyingCard = new Image(new TextureRegionDrawable(new TextureRegion(cardBackTexture)));
+            flyingCard.setSize(CARD_WIDTH, CARD_HEIGHT);
+            flyingCard.setOrigin(CARD_WIDTH / 2f, CARD_HEIGHT / 2f);
+            flyingCard.setPosition(deckX, deckY);
+            stage.addActor(flyingCard);
+            flyingCards.add(flyingCard);
+
+            flyingCard.addAction(Actions.sequence(
+                Actions.delay(i * DEAL_STAGGER_DELAY),
+                Actions.moveTo(targetPos.x, targetPos.y, DEAL_MOVE_DURATION, Interpolation.pow2Out),
+                Actions.delay(FLIP_PAUSE_DELAY),
+                Actions.scaleTo(0f, 1f, FLIP_HALF_DURATION),
+                Actions.run(() -> flyingCard.setDrawable(target.getDrawable())),
+                Actions.scaleTo(1f, 1f, FLIP_HALF_DURATION),
+                Actions.run(() -> {
+                    flyingCards.remove(flyingCard);
+                    flyingCard.remove();
+                    target.setVisible(true);
+                })
+            ));
+        }
+    }
+
+    /** Retire toute carte encore en cours de distribution (ex : nouvelle donne avant la fin de l'animation). */
+    private void cancelCardDealAnimation() {
+        for (Image flyingCard : flyingCards) {
+            flyingCard.remove();
+        }
+        flyingCards.clear();
     }
 
     private void refreshSlotTable(Symbol[] symbols) {
@@ -550,6 +619,7 @@ public class GameScreen extends ScreenAdapter {
         healthBarFillTexture.dispose();
         playerHealthBarBgTexture.dispose();
         playerHealthBarFillTexture.dispose();
+        cardBackTexture.dispose();
         cardTextures.values().forEach(Texture::dispose);
         symbolTextures.values().forEach(Texture::dispose);
     }
