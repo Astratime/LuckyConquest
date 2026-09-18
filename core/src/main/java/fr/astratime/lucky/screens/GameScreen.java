@@ -5,6 +5,7 @@ import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
+import com.badlogic.gdx.graphics.g2d.GlyphLayout;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator;
 import com.badlogic.gdx.math.Interpolation;
@@ -60,16 +61,20 @@ public class GameScreen extends ScreenAdapter {
     private static final float CARD_TABLE_Y  = 350f;
 
     // Thème casino des boutons : fond sombre, liseré doré, police pixel art.
-    private static final String BUTTON_FONT_PATH = "fonts/Jersey10-Regular.ttf";
-    private static final int    BUTTON_FONT_SIZE = 30;
-    private static final int    BUTTON_BORDER_PX = 3;
-    private static final Color  BUTTON_GOLD      = Color.GOLDENROD;
+    // La largeur de chaque bouton s'adapte au texte qu'il contient (mesuré
+    // via buttonWidth()) ; BUTTON_WIDTH n'est plus qu'un plancher minimal.
+    private static final String BUTTON_FONT_PATH    = "fonts/Jersey10-Regular.ttf";
+    private static final int    BUTTON_FONT_SIZE    = 30;
+    private static final int    BUTTON_BORDER_PX    = 3;
+    private static final float  BUTTON_TEXT_PADDING = 20f; // marge horizontale de chaque côté du texte
+    private static final Color  BUTTON_GOLD         = Color.GOLDENROD;
 
     // Pile de cartes (dos visible) affichée au-dessus des boutons "Tirer" et
     // "Lancer machine" — c'est de là que partent les cartes distribuées.
     private static final int   DECK_STACK_SIZE   = 4;
     private static final float DECK_STACK_OFFSET = 3f;
     private static final float DECK_TOP_MARGIN   = 20f;
+    private static final float DECK_LEFT_SHIFT   = 40f;
     private static final float DECK_Y            = 20f + BUTTON_HEIGHT + DECK_TOP_MARGIN;
 
     // Distribution animée des cartes : elles arrivent dos visible depuis la
@@ -167,7 +172,6 @@ public class GameScreen extends ScreenAdapter {
         preloadSymbolTextures();
 
         background          = buildBackground();
-        deck                = buildDeck();
         healthBarBg         = buildHealthBarBg();
         healthBarFill       = buildHealthBarFill();
         healthBarLabel       = buildHealthBarLabel();
@@ -177,6 +181,7 @@ public class GameScreen extends ScreenAdapter {
         drawButton = buildDrawButton();
         spinButton    = buildSpinButton();
         spinButton.setDisabled(true);
+        deck          = buildDeck(); // positionné une fois la largeur réelle des boutons connue
         scoreLabel    = buildScoreLabel();
         restartButton = buildRestartButton();
         restartButton.setVisible(false);
@@ -282,8 +287,9 @@ public class GameScreen extends ScreenAdapter {
     }
 
     private TextButton buildDrawButton() {
-        TextButton button = new TextButton("Tirer 3 cartes", buildButtonStyle());
-        button.setSize(BUTTON_WIDTH, BUTTON_HEIGHT);
+        String text = "Tirer 3 cartes";
+        TextButton button = new TextButton(text, buildButtonStyle());
+        button.setSize(buttonWidth(text), BUTTON_HEIGHT);
         button.setPosition(20, 20);
         button.addListener(new ChangeListener() {
             @Override
@@ -295,9 +301,10 @@ public class GameScreen extends ScreenAdapter {
     }
 
     private TextButton buildSpinButton() {
-        TextButton button = new TextButton("Lancer machine", buildButtonStyle());
-        button.setSize(BUTTON_WIDTH, BUTTON_HEIGHT);
-        button.setPosition(20 + BUTTON_WIDTH + 20, 20);
+        String text = "Lancer machine";
+        TextButton button = new TextButton(text, buildButtonStyle());
+        button.setSize(buttonWidth(text), BUTTON_HEIGHT);
+        button.setPosition(drawButton.getX() + drawButton.getWidth() + 20, 20);
         button.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
@@ -305,6 +312,12 @@ public class GameScreen extends ScreenAdapter {
             }
         });
         return button;
+    }
+
+    /** Largeur d'un bouton adaptée à son texte (avec une marge), jamais plus petite que BUTTON_WIDTH. */
+    private float buttonWidth(String text) {
+        GlyphLayout layout = new GlyphLayout(buttonFont, text);
+        return Math.max(BUTTON_WIDTH, layout.width + BUTTON_TEXT_PADDING * 2);
     }
 
     private TextButton.TextButtonStyle buildButtonStyle() {
@@ -318,14 +331,17 @@ public class GameScreen extends ScreenAdapter {
     }
 
     private Label buildScoreLabel() {
-        Label label = new Label("Points : 0", new Label.LabelStyle(font, Color.WHITE));
+        // Pas de fond opaque sous ce label : sur fond d'écran blanc, du texte
+        // blanc y serait invisible — on le garde donc sombre.
+        Label label = new Label("Points : 0", new Label.LabelStyle(font, Color.BLACK));
         label.setPosition(20, stage.getViewport().getWorldHeight() - SCORE_LABEL_TOP_MARGIN);
         return label;
     }
 
     private TextButton buildRestartButton() {
-        TextButton button = new TextButton("Recommencer", buildButtonStyle());
-        button.setSize(BUTTON_WIDTH, BUTTON_HEIGHT);
+        String text = "Recommencer";
+        TextButton button = new TextButton(text, buildButtonStyle());
+        button.setSize(buttonWidth(text), BUTTON_HEIGHT);
         button.setPosition(20, restartButtonY());
         button.addListener(new ChangeListener() {
             @Override
@@ -388,12 +404,16 @@ public class GameScreen extends ScreenAdapter {
     // Positionnement du deck
     // -------------------------------------------------------------------------
 
-    /** Centré horizontalement au-dessus des boutons "Tirer" et "Lancer machine". */
+    /**
+     * Au-dessus des boutons "Tirer" et "Lancer machine", décalé vers la
+     * gauche par rapport au centre de la rangée (DECK_LEFT_SHIFT).
+     * Nécessite que drawButton/spinButton soient déjà construits.
+     */
     private float deckX() {
-        float buttonsLeft  = 20f;
-        float buttonsRight = 20f + BUTTON_WIDTH + 20f + BUTTON_WIDTH;
+        float buttonsLeft  = drawButton.getX();
+        float buttonsRight = spinButton.getX() + spinButton.getWidth();
         float center       = (buttonsLeft + buttonsRight) / 2f;
-        return center - CARD_WIDTH / 2f;
+        return center - CARD_WIDTH / 2f - DECK_LEFT_SHIFT;
     }
 
     /** Position de la carte du dessus de la pile : point de départ des cartes distribuées. */
@@ -675,7 +695,7 @@ public class GameScreen extends ScreenAdapter {
 
     @Override
     public void render(float delta) {
-        ScreenUtils.clear(Color.BLACK);
+        ScreenUtils.clear(Color.WHITE);
         stage.act(delta);
         stage.draw();
     }
