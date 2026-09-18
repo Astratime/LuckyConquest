@@ -2,9 +2,14 @@ Sons d'interface et de cartes — Kenney.nl (Casino Audio & UI Audio packs)
 Licence : CC0 1.0 Universal (domaine public, aucune attribution requise)
 Source : https://kenney.nl/assets/casino-audio et https://kenney.nl/assets/ui-audio
 
-Fichiers renommés depuis les packs d'origine :
-- button-click.ogg  <- UI sounds/click1.ogg
-- spin-button.ogg   <- Casino sounds/dieThrow1.ogg
-- card-deal.ogg     <- Casino sounds/cardSlide3.ogg
-- card-flip.ogg     <- Casino sounds/cardPlace2.ogg
-- card-click.ogg    <- Casino sounds/cardShove1.ogg
+Son du bouton "Lancer machine" — The Motion Monkey Free Retro Arcade Sounds
+Pack v1.0.5, licence CC0 1.0 Universal (aucune attribution requise)
+Source : http://www.themotionmonkey.co.uk/free-resources/retro-arcade-sounds/
+
+Fichiers renommés (et pour spin-button, converti de 24 bits vers 16 bits
+PCM pour compatibilité libGDX) depuis les packs d'origine :
+- button-click.ogg  <- Kenney UI sounds/click1.ogg
+- spin-button.wav   <- The Motion Monkey/Misc/wav/Hydraulic3.wav
+- card-deal.ogg     <- Kenney Casino sounds/cardSlide3.ogg
+- card-flip.ogg     <- Kenney Casino sounds/cardPlace2.ogg
+- card-click.ogg    <- Kenney Casino sounds/cardShove1.ogg
