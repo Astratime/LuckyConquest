@@ -1,0 +1,10 @@
+Sons d'interface et de cartes — Kenney.nl (Casino Audio & UI Audio packs)
+Licence : CC0 1.0 Universal (domaine public, aucune attribution requise)
+Source : https://kenney.nl/assets/casino-audio et https://kenney.nl/assets/ui-audio
+
+Fichiers renommés depuis les packs d'origine :
+- button-click.ogg  <- UI sounds/click1.ogg
+- spin-button.ogg   <- Casino sounds/dieThrow1.ogg
+- card-deal.ogg     <- Casino sounds/cardSlide3.ogg
+- card-flip.ogg     <- Casino sounds/cardPlace2.ogg
+- card-click.ogg    <- Casino sounds/cardShove1.ogg
