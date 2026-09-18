@@ -4,6 +4,7 @@ import fr.astratime.lucky.entities.Player;
 import fr.astratime.lucky.entities.Symbol;
 import fr.astratime.lucky.entities.SymbolRegistry;
 import fr.astratime.lucky.entities.context.TurnContext;
+import fr.astratime.lucky.entities.events.SymbolBoostedEvent;
 
 import java.util.List;
 import java.util.Random;
@@ -40,6 +41,7 @@ public class AceOfClubsEffect extends Effect {
         Symbol target = attackSymbols.get(RANDOM.nextInt(attackSymbols.size()));
         context.getSpinContext().addWeightBoost(target, WEIGHT_BOOST_AMOUNT);
         context.getCombatContext().addAttackBonus(ATTACK_BOOST_AMOUNT);
+        context.addEvent(new SymbolBoostedEvent(target, WEIGHT_BOOST_AMOUNT));
     }
 
     @Override

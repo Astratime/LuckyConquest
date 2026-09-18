@@ -3,6 +3,7 @@ package fr.astratime.lucky.entities.effects;
 import fr.astratime.lucky.entities.Symbol;
 import fr.astratime.lucky.entities.SymbolRegistry;
 import fr.astratime.lucky.entities.context.TurnContext;
+import fr.astratime.lucky.entities.events.SymbolBoostedEvent;
 
 import java.util.List;
 import java.util.Random;
@@ -22,6 +23,7 @@ public class AceOfHeartsEffect extends Effect {
 
         Symbol target = attackSymbols.get(RANDOM.nextInt(attackSymbols.size()));
         context.getSpinContext().addWeightBoost(target, BOOST_AMOUNT);
+        context.addEvent(new SymbolBoostedEvent(target, BOOST_AMOUNT));
     }
 
     @Override

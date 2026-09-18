@@ -37,12 +37,15 @@ public class CombatResolver {
      * @param combatContext contexte de combat (joueur, ennemi, modificateurs des cartes)
      * @param actions       actions à résoudre, dans l'ordre des symboles
      * @param symbols       symboles tirés ce tour (utilisés pour le bonus de paire/jackpot)
+     * @param priorEvents   événements déjà survenus en phase 1 (ex : symbole boosté par une
+     *                      carte), à faire figurer en tête du journal du tour
      * @return le journal d'événements du tour, les symboles et les gains de paire/jackpot
      */
     public TurnResult resolve(CombatContext combatContext,
                               List<Action>  actions,
-                              Symbol[]      symbols) {
-        List<Event> events = new ArrayList<>();
+                              Symbol[]      symbols,
+                              List<Event>   priorEvents) {
+        List<Event> events = new ArrayList<>(priorEvents);
 
         // Chaque action résout elle-même sa logique et retourne ses événements
         for (Action action : actions) {
