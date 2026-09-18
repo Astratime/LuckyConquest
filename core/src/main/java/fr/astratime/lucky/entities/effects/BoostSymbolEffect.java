@@ -9,6 +9,10 @@ public class BoostSymbolEffect extends Effect {
     private final Symbol symbol;
     private final int    amount;
 
+    /**
+     * @param symbol symbole dont le poids de tirage est augmenté
+     * @param amount montant du boost de poids
+     */
     public BoostSymbolEffect(Symbol symbol, int amount) {
         this.symbol = symbol;
         this.amount = amount;

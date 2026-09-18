@@ -22,8 +22,14 @@ public class AttackAction extends Action {
 
     private final int baseDamage;
 
+    /** @param baseDamage dégâts de base infligés avant bonus et défense. */
     public AttackAction(int baseDamage) { this.baseDamage = baseDamage; }
 
+    /**
+     * Calcule les dégâts (base + bonus, moins la défense ennemie sauf si
+     * ignorée), les applique à l'ennemi, puis résout le drain de vie et la
+     * conversion en gains le cas échéant.
+     */
     @Override
     public List<Event> resolve(CombatContext context) {
         List<Event> events = new ArrayList<>();

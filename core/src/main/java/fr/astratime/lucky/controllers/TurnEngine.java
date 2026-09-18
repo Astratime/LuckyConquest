@@ -24,6 +24,14 @@ public class TurnEngine {
     private final ActionResolver      actionResolver      = new ActionResolver();
     private final CombatResolver      combatResolver      = new CombatResolver();
 
+    /**
+     * Joue un tour complet : applique les effets en attente, lance la machine
+     * à sous, résout le combat, puis avance le compteur de tour de l'état de jeu.
+     *
+     * @param gameState      état de la partie (joueur, ennemi, numéro de tour)
+     * @param pendingEffects effets des cartes jouées par le joueur depuis le début du tour
+     * @return le journal d'événements et le résultat du spin pour ce tour
+     */
     public TurnResult playTurn(GameState gameState, List<Effect> pendingEffects) {
 
         // Phase 1 : effets des cartes → TurnContext

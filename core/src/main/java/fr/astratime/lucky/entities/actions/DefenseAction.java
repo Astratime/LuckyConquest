@@ -20,8 +20,13 @@ public class DefenseAction extends Action {
 
     private final int baseShield;
 
+    /** @param baseShield bouclier de base accordé avant bonus. */
     public DefenseAction(int baseShield) { this.baseShield = baseShield; }
 
+    /**
+     * Accorde le bouclier (base + bonus) au joueur, puis fixe le pourcentage
+     * de renvoi de dégâts selon le contexte (conditionnel ou additif).
+     */
     @Override
     public List<Event> resolve(CombatContext context) {
         List<Event> events = new ArrayList<>();

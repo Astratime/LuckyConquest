@@ -24,9 +24,21 @@ import java.util.List;
  */
 public class CombatResolver {
 
+    /** Gains accordés quand deux des trois symboles tirés sont identiques. */
     private static final int GAINS_PAIR    = 500;
+    /** Gains accordés quand les trois symboles tirés sont identiques (jackpot). */
     private static final int GAINS_JACKPOT = 2000;
 
+    /**
+     * Résout un tour de combat complet à partir des actions déjà déterminées
+     * par les symboles tirés : exécute chaque action, applique le bonus de
+     * paire/jackpot, puis fait riposter l'ennemi s'il a survécu.
+     *
+     * @param combatContext contexte de combat (joueur, ennemi, modificateurs des cartes)
+     * @param actions       actions à résoudre, dans l'ordre des symboles
+     * @param symbols       symboles tirés ce tour (utilisés pour le bonus de paire/jackpot)
+     * @return le journal d'événements du tour, les symboles et les gains de paire/jackpot
+     */
     public TurnResult resolve(CombatContext combatContext,
                               List<Action>  actions,
                               Symbol[]      symbols) {
@@ -62,10 +74,12 @@ public class CombatResolver {
         return new TurnResult(events, symbols, gains);
     }
 
+    /** @return {@code true} si les trois symboles sont identiques et non nuls. */
     private boolean isJackpot(Symbol[] s) {
         return s[0] != null && s[0] == s[1] && s[1] == s[2];
     }
 
+    /** @return {@code true} si au moins deux des trois symboles sont identiques et non nuls. */
     private boolean hasPair(Symbol[] s) {
         if (s[0] == null) return false;
         return s[0] == s[1] || s[1] == s[2] || s[0] == s[2];

@@ -14,10 +14,12 @@ public class SpinContext {
 
     private final Map<Symbol, Integer> weightBoosts = new EnumMap<>(Symbol.class);
 
+    /** Ajoute {@code amount} au boost de poids du symbole (cumulable sur plusieurs cartes). */
     public void addWeightBoost(Symbol symbol, int amount) {
         weightBoosts.merge(symbol, amount, Integer::sum);
     }
 
+    /** @return le boost de poids accumulé pour ce symbole (0 si aucun). */
     public int getWeightBoost(Symbol symbol) {
         return weightBoosts.getOrDefault(symbol, 0);
     }

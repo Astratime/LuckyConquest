@@ -151,6 +151,15 @@ public class GameScreen extends ScreenAdapter {
     // Constructeur
     // -------------------------------------------------------------------------
 
+    /**
+     * Construit l'écran de jeu : charge toutes les textures/polices, crée
+     * les acteurs Scene2D dans leur état initial et les ajoute au Stage
+     * dans l'ordre de rendu voulu (arrière-plan d'abord, tooltip en dernier).
+     *
+     * @param luckyGame instance de jeu, utilisée pour le SpriteBatch partagé
+     *                  et pour changer d'écran (non utilisé directement ici
+     *                  mais conservé pour la cohérence avec les autres écrans)
+     */
     public GameScreen(LuckyGame luckyGame) {
         this.luckyGame = luckyGame;
         // Le SpriteBatch est partagé avec LuckyGame et ne doit PAS être disposé ici.
@@ -212,6 +221,7 @@ public class GameScreen extends ScreenAdapter {
     // Construction des acteurs
     // -------------------------------------------------------------------------
 
+    /** Image de la table de jeu, réduite et centrée (voir {@link #backgroundWidth()} et consorts). */
     private Image buildBackground() {
         Image img = new Image(new TextureRegionDrawable(new TextureRegion(backgroundTexture)));
         img.setSize(backgroundWidth(), backgroundHeight());
@@ -232,6 +242,7 @@ public class GameScreen extends ScreenAdapter {
         return group;
     }
 
+    /** Génère la police pixel art dorée utilisée par les boutons, à partir de la police TrueType du thème. */
     private BitmapFont buildButtonFont() {
         FreeTypeFontGenerator generator = new FreeTypeFontGenerator(Gdx.files.internal(BUTTON_FONT_PATH));
         FreeTypeFontGenerator.FreeTypeFontParameter parameter = new FreeTypeFontGenerator.FreeTypeFontParameter();
@@ -242,6 +253,7 @@ public class GameScreen extends ScreenAdapter {
         return generated;
     }
 
+    /** Fond (piste) de la barre de vie de l'ennemi. */
     private Image buildHealthBarBg() {
         Image img = new Image(new TextureRegionDrawable(new TextureRegion(healthBarBgTexture)));
         img.setSize(HEALTH_BAR_WIDTH, HEALTH_BAR_HEIGHT);
@@ -249,6 +261,7 @@ public class GameScreen extends ScreenAdapter {
         return img;
     }
 
+    /** Remplissage (proportionnel aux PV) de la barre de vie de l'ennemi. */
     private Image buildHealthBarFill() {
         Image img = new Image(new TextureRegionDrawable(new TextureRegion(healthBarFillTexture)));
         img.setSize(HEALTH_BAR_WIDTH, HEALTH_BAR_HEIGHT);
@@ -256,10 +269,12 @@ public class GameScreen extends ScreenAdapter {
         return img;
     }
 
+    /** Label "PV/PV max" centré sur la barre de vie de l'ennemi. */
     private Label buildHealthBarLabel() {
         return buildHealthBarLabel(healthBarX(), healthBarY());
     }
 
+    /** Fond (piste) de la barre de vie du joueur. */
     private Image buildPlayerHealthBarBg() {
         Image img = new Image(new TextureRegionDrawable(new TextureRegion(playerHealthBarBgTexture)));
         img.setSize(HEALTH_BAR_WIDTH, HEALTH_BAR_HEIGHT);
@@ -267,6 +282,7 @@ public class GameScreen extends ScreenAdapter {
         return img;
     }
 
+    /** Remplissage (proportionnel aux PV) de la barre de vie du joueur. */
     private Image buildPlayerHealthBarFill() {
         Image img = new Image(new TextureRegionDrawable(new TextureRegion(playerHealthBarFillTexture)));
         img.setSize(HEALTH_BAR_WIDTH, HEALTH_BAR_HEIGHT);
@@ -274,10 +290,16 @@ public class GameScreen extends ScreenAdapter {
         return img;
     }
 
+    /** Label "PV/PV max" centré sur la barre de vie du joueur. */
     private Label buildPlayerHealthBarLabel() {
         return buildHealthBarLabel(healthBarX(), playerHealthBarY());
     }
 
+    /**
+     * Crée un label vide, centré, de la taille d'une barre de vie, positionné
+     * en {@code (x, y)} — factorisé car utilisé à l'identique pour l'ennemi
+     * et pour le joueur.
+     */
     private Label buildHealthBarLabel(float x, float y) {
         Label label = new Label("", new Label.LabelStyle(font, Color.WHITE));
         label.setSize(HEALTH_BAR_WIDTH, HEALTH_BAR_HEIGHT);
@@ -286,6 +308,7 @@ public class GameScreen extends ScreenAdapter {
         return label;
     }
 
+    /** Bouton "Tirer 3 cartes", en bas à gauche de l'écran. */
     private TextButton buildDrawButton() {
         String text = "Tirer 3 cartes";
         TextButton button = new TextButton(text, buildButtonStyle());
@@ -300,6 +323,7 @@ public class GameScreen extends ScreenAdapter {
         return button;
     }
 
+    /** Bouton "Lancer machine", juste à droite du bouton de pioche. */
     private TextButton buildSpinButton() {
         String text = "Lancer machine";
         TextButton button = new TextButton(text, buildButtonStyle());
@@ -320,6 +344,7 @@ public class GameScreen extends ScreenAdapter {
         return Math.max(BUTTON_WIDTH, layout.width + BUTTON_TEXT_PADDING * 2);
     }
 
+    /** Style commun (thème casino) partagé par tous les boutons de l'écran. */
     private TextButton.TextButtonStyle buildButtonStyle() {
         TextButton.TextButtonStyle style = new TextButton.TextButtonStyle();
         style.font              = buttonFont;
@@ -330,12 +355,14 @@ public class GameScreen extends ScreenAdapter {
         return style;
     }
 
+    /** Label affichant les points (gains) du joueur, en haut à gauche de l'écran. */
     private Label buildScoreLabel() {
         Label label = new Label("Points : 0", new Label.LabelStyle(font, Color.WHITE));
         label.setPosition(20, stage.getViewport().getWorldHeight() - SCORE_LABEL_TOP_MARGIN);
         return label;
     }
 
+    /** Bouton "Recommencer", affiché sous le score uniquement quand le combat est terminé. */
     private TextButton buildRestartButton() {
         String text = "Recommencer";
         TextButton button = new TextButton(text, buildButtonStyle());
@@ -350,6 +377,7 @@ public class GameScreen extends ScreenAdapter {
         return button;
     }
 
+    /** Infobulle noire affichant la description d'une carte au survol. */
     private Table buildTooltip() {
         Table t = new Table();
         t.setBackground(new TextureRegionDrawable(new TextureRegion(tooltipBackgroundTexture)));
@@ -362,18 +390,22 @@ public class GameScreen extends ScreenAdapter {
     // Positionnement de la table de jeu
     // -------------------------------------------------------------------------
 
+    /** @return la largeur de l'image de table, réduite de BACKGROUND_SHRINK par rapport à l'écran. */
     private float backgroundWidth() {
         return stage.getViewport().getWorldWidth() - BACKGROUND_SHRINK;
     }
 
+    /** @return la hauteur de l'image de table, réduite de BACKGROUND_SHRINK par rapport à l'écran. */
     private float backgroundHeight() {
         return stage.getViewport().getWorldHeight() - BACKGROUND_SHRINK;
     }
 
+    /** @return l'abscisse de l'image de table, centrée horizontalement sur l'écran. */
     private float backgroundX() {
         return BACKGROUND_SHRINK / 2f;
     }
 
+    /** @return l'ordonnée de l'image de table, centrée verticalement sur l'écran. */
     private float backgroundY() {
         return BACKGROUND_SHRINK / 2f;
     }
@@ -382,18 +414,22 @@ public class GameScreen extends ScreenAdapter {
     // Positionnement des barres de vie
     // -------------------------------------------------------------------------
 
+    /** @return l'abscisse commune aux deux barres de vie, centrées horizontalement sur l'écran. */
     private float healthBarX() {
         return (stage.getViewport().getWorldWidth() - HEALTH_BAR_WIDTH) / 2f;
     }
 
+    /** @return l'ordonnée de la barre de vie de l'ennemi, ancrée en haut de l'écran. */
     private float healthBarY() {
         return stage.getViewport().getWorldHeight() - HEALTH_BAR_HEIGHT - HEALTH_BAR_TOP_MARGIN;
     }
 
+    /** @return l'ordonnée de la barre de vie du joueur, ancrée à distance fixe du bas de l'écran. */
     private float playerHealthBarY() {
         return HEALTH_BAR_BOTTOM_MARGIN;
     }
 
+    /** @return l'ordonnée du bouton "Recommencer", juste sous le label de score. */
     private float restartButtonY() {
         return stage.getViewport().getWorldHeight() - SCORE_LABEL_TOP_MARGIN - BUTTON_HEIGHT - RESTART_BUTTON_GAP;
     }
@@ -414,14 +450,16 @@ public class GameScreen extends ScreenAdapter {
         return center - CARD_WIDTH / 2f - DECK_LEFT_SHIFT;
     }
 
-    /** Position de la carte du dessus de la pile : point de départ des cartes distribuées. */
+    /** @return l'abscisse de la carte du dessus de la pile : point de départ des cartes distribuées. */
     private float deckTopX() { return deckX() + (DECK_STACK_SIZE - 1) * DECK_STACK_OFFSET; }
+    /** @return l'ordonnée de la carte du dessus de la pile : point de départ des cartes distribuées. */
     private float deckTopY() { return DECK_Y + (DECK_STACK_SIZE - 1) * DECK_STACK_OFFSET; }
 
     // -------------------------------------------------------------------------
     // Interactions joueur — transmises au GameController
     // -------------------------------------------------------------------------
 
+    /** Pioche une nouvelle main et lance son animation de distribution ; active le spin, désactive la pioche. */
     private void onDrawCards() {
         List<Card> hand = gameController.drawCards();
         refreshCardTable(hand);
@@ -429,6 +467,11 @@ public class GameScreen extends ScreenAdapter {
         drawButton.setDisabled(true);
     }
 
+    /**
+     * Lance la machine à sous, met à jour tout l'affichage (symboles, PV,
+     * score), puis termine le combat si l'un des deux camps est vaincu,
+     * ou repasse la main à la phase de pioche sinon.
+     */
     private void onSpin() {
         TurnResult result = gameController.spin();
         refreshSlotTable(result.getSymbols());
@@ -448,6 +491,7 @@ public class GameScreen extends ScreenAdapter {
             .reduce("", (a, b) -> a + " | " + b));
     }
 
+    /** Transmet la carte jouée au contrôleur (ses effets seront appliqués au prochain spin) et la retire de la main. */
     private void onCardPlayed(Card card, Image cardImage) {
         gameController.playCard(card);
         cardImage.setVisible(false);
@@ -461,6 +505,7 @@ public class GameScreen extends ScreenAdapter {
         return gameState.getEnemy().isDefeated() || gameState.getPlayer().isDefeated();
     }
 
+    /** Fige la partie (plus de pioche ni de spin) et affiche le bouton pour recommencer. */
     private void endCombat() {
         spinButton.setDisabled(true);
         drawButton.setDisabled(true);
@@ -485,6 +530,11 @@ public class GameScreen extends ScreenAdapter {
     // Rafraîchissement de l'affichage
     // -------------------------------------------------------------------------
 
+    /**
+     * Reconstruit la main affichée : place chaque carte (invisible) à sa
+     * position finale dans {@code cardTable}, puis déclenche l'animation de
+     * distribution qui les révèle progressivement.
+     */
     private void refreshCardTable(List<Card> hand) {
         cancelCardDealAnimation();
         cardTable.clearChildren();
@@ -551,6 +601,7 @@ public class GameScreen extends ScreenAdapter {
         flyingCards.clear();
     }
 
+    /** Reconstruit la rangée de symboles affichés après un spin, centrée horizontalement. */
     private void refreshSlotTable(Symbol[] symbols) {
         slotTable.clearChildren();
         for (Symbol symbol : symbols) {
@@ -563,6 +614,7 @@ public class GameScreen extends ScreenAdapter {
         slotTable.setPosition((worldWidth - slotTable.getWidth()) / 2f, SLOT_TABLE_Y);
     }
 
+    /** Met à jour la largeur du remplissage et le texte "PV/PV max" de la barre de vie de l'ennemi. */
     private void refreshHealthBar() {
         Enemy enemy = gameController.getGameState().getEnemy();
         float ratio = (float) enemy.getHp() / enemy.getMaxHp();
@@ -570,6 +622,7 @@ public class GameScreen extends ScreenAdapter {
         healthBarLabel.setText(enemy.getHp() + "/" + enemy.getMaxHp());
     }
 
+    /** Met à jour la largeur du remplissage et le texte "PV/PV max" de la barre de vie du joueur. */
     private void refreshPlayerHealthBar() {
         Player player = gameController.getGameState().getPlayer();
         float ratio = (float) player.getHp() / player.getMaxHp();
@@ -577,6 +630,7 @@ public class GameScreen extends ScreenAdapter {
         playerHealthBarLabel.setText(player.getHp() + "/" + player.getMaxHp());
     }
 
+    /** Met à jour le label affichant les points (gains) du joueur. */
     private void refreshScoreLabel() {
         scoreLabel.setText("Points : " + gameController.getGameState().getPlayer().getGains());
     }
@@ -585,6 +639,10 @@ public class GameScreen extends ScreenAdapter {
     // Listeners des cartes
     // -------------------------------------------------------------------------
 
+    /**
+     * Attache à une image de carte : l'affichage de sa description au survol
+     * (dans la tooltip), et le fait de jouer la carte au clic.
+     */
     private void addCardListeners(Image cardImage, Card card) {
         cardImage.addListener(new InputListener() {
 
@@ -616,17 +674,20 @@ public class GameScreen extends ScreenAdapter {
     // Gestion des textures
     // -------------------------------------------------------------------------
 
+    /** Charge une fois pour toutes la texture de chaque symbole de la machine à sous. */
     private void preloadSymbolTextures() {
         for (Symbol symbol : Symbol.values()) {
             symbolTextures.put(symbol, new Texture(Gdx.files.internal(symbol.getAssetPath())));
         }
     }
 
+    /** @return la texture de la carte, chargée à la demande puis mise en cache par chemin d'asset. */
     private Texture getCardTexture(Card card) {
         String path = card.getAssetPath(THEME);
         return cardTextures.computeIfAbsent(path, p -> new Texture(Gdx.files.internal(p)));
     }
 
+    /** @return une texture 1x1 de la couleur donnée, à étirer pour simuler un fond uni. */
     private Texture makeColorTexture(Color color) {
         Pixmap pixmap = new Pixmap(1, 1, Pixmap.Format.RGBA8888);
         pixmap.setColor(color);
@@ -654,6 +715,11 @@ public class GameScreen extends ScreenAdapter {
     // Cycle de vie ScreenAdapter
     // -------------------------------------------------------------------------
 
+    /**
+     * Installe le processeur d'entrée de l'écran : le Stage (clics, survols)
+     * en priorité, puis un raccourci clavier (Espace = piocher, F = lancer
+     * la machine si possible).
+     */
     @Override
     public void show() {
         InputAdapter keyboardInput = new InputAdapter() {
@@ -673,6 +739,7 @@ public class GameScreen extends ScreenAdapter {
         Gdx.input.setInputProcessor(new InputMultiplexer(stage, keyboardInput));
     }
 
+    /** Met à jour le viewport puis repositionne les acteurs ancrés en haut/bas de l'écran. */
     @Override
     public void resize(int width, int height) {
         stage.getViewport().update(width, height, true);
@@ -691,6 +758,7 @@ public class GameScreen extends ScreenAdapter {
         restartButton.setPosition(20, restartButtonY());
     }
 
+    /** Efface l'écran puis met à jour et dessine le Stage. */
     @Override
     public void render(float delta) {
         ScreenUtils.clear(Color.BLACK);
@@ -698,6 +766,7 @@ public class GameScreen extends ScreenAdapter {
         stage.draw();
     }
 
+    /** Libère toutes les ressources natives (Stage, polices, textures) possédées par cet écran. */
     @Override
     public void dispose() {
         stage.dispose();

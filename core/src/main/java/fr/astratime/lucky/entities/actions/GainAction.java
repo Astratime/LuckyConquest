@@ -11,8 +11,10 @@ public class GainAction extends Action {
 
     private final int baseGain;
 
+    /** @param baseGain gain de base avant application du multiplicateur. */
     public GainAction(int baseGain) { this.baseGain = baseGain; }
 
+    /** Crédite au joueur {@code baseGain * gainMultiplier} (arrondi). */
     @Override
     public List<Event> resolve(CombatContext context) {
         int gain = Math.round(baseGain * context.getGainMultiplier());

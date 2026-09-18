@@ -16,6 +16,12 @@ import java.util.List;
  */
 public class ActionResolver {
 
+    /**
+     * Convertit chaque symbole tiré en son action associée (voir {@link SymbolRegistry}).
+     *
+     * @param symbols résultat du spin (peut contenir des {@code null})
+     * @return la liste des actions à résoudre, dans l'ordre des symboles
+     */
     public List<Action> resolve(Symbol[] symbols) {
         List<Action> actions = new ArrayList<>();
         for (Symbol symbol : symbols) {

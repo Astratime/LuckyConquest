@@ -22,6 +22,7 @@ import java.util.Optional;
  */
 public class SymbolRegistry {
 
+    /** Table de correspondance symbole -> action, remplie une fois au chargement de la classe. */
     private static final Map<Symbol, Action> ACTIONS = new EnumMap<>(Symbol.class);
 
     static {
@@ -43,6 +44,10 @@ public class SymbolRegistry {
         ACTIONS.put(Symbol.GOLD_BAR,      new GainAction(25));    // theme Trefle : gains
     }
 
+    /**
+     * @param symbol symbole tiré par la machine à sous
+     * @return l'action associée à ce symbole, vide si aucune n'est enregistrée
+     */
     public static Optional<Action> getAction(Symbol symbol) {
         return Optional.ofNullable(ACTIONS.get(symbol));
     }
@@ -58,5 +63,6 @@ public class SymbolRegistry {
         return result;
     }
 
+    /** Classe utilitaire statique : instanciation interdite. */
     private SymbolRegistry() {}
 }

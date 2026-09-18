@@ -9,6 +9,14 @@ import fr.astratime.lucky.entities.context.TurnContext;
  * (bonus de combat), soit le drawCount du tour suivant.
  */
 public abstract class Effect {
+
+    /**
+     * Applique l'effet de la carte au contexte du tour en cours.
+     *
+     * @param context contexte du tour (spin + combat) à modifier
+     */
     public abstract void apply(TurnContext context);
+
+    /** @return une courte description de l'effet, affichée en infobulle sur la carte. */
     public abstract String getDescription();
 }

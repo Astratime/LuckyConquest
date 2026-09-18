@@ -15,12 +15,27 @@ public class Deck {
     private final List<Card>  cards = new ArrayList<>();
     private final DiscardPile discardPile;
 
+    /**
+     * Copie et mélange les cartes fournies pour former le deck initial.
+     *
+     * @param cards       cartes composant le deck (copiées, non modifiées)
+     * @param discardPile défausse associée, utilisée pour recharger le deck une fois vide
+     */
     public Deck(List<Card> cards, DiscardPile discardPile) {
         this.discardPile = discardPile;
         this.cards.addAll(cards);
         Collections.shuffle(this.cards);
     }
 
+    /**
+     * Pioche jusqu'à {@code count} cartes. Si le deck s'épuise en cours de
+     * pioche, la défausse est remélangée et réintégrée au deck pour continuer ;
+     * si la défausse est également vide, la pioche s'arrête là (moins de
+     * cartes que demandé peuvent être retournées).
+     *
+     * @param count nombre de cartes souhaité
+     * @return les cartes piochées (au plus {@code count})
+     */
     public List<Card> draw(int count) {
         List<Card> drawn = new ArrayList<>();
         while (drawn.size() < count) {
@@ -33,5 +48,6 @@ public class Deck {
         return drawn;
     }
 
+    /** @return les cartes restantes dans le deck. */
     public List<Card> getCards() { return cards; }
 }

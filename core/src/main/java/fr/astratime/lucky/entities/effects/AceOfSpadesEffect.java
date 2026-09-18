@@ -8,6 +8,7 @@ import fr.astratime.lucky.entities.context.TurnContext;
  */
 public class AceOfSpadesEffect extends Effect {
 
+    /** Active l'ignorance de la défense ennemie et la conversion des dégâts en gains pour ce tour. */
     @Override
     public void apply(TurnContext context) {
         context.getCombatContext().setIgnoreDefense(true);

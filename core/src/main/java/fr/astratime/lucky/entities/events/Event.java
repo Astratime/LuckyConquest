@@ -6,5 +6,6 @@ package fr.astratime.lucky.entities.events;
  * Cette structure prépare le terrain pour les animations futures.
  */
 public abstract class Event {
+    /** @return une description textuelle de l'événement, destinée au journal/log affiché en jeu. */
     public abstract String describe();
 }

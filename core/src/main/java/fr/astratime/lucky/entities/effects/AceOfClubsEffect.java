@@ -17,11 +17,18 @@ import java.util.Random;
  */
 public class AceOfClubsEffect extends Effect {
 
+    /** Pourcentage des gains actuels du joueur consommé à la pose de la carte. */
     private static final float CONSUME_PERCENT    = 0.3f;
+    /** Boost de poids appliqué au symbole d'attaque choisi au hasard. */
     private static final int   WEIGHT_BOOST_AMOUNT = 150;
+    /** Bonus d'attaque plat accordé pour ce tour. */
     private static final int   ATTACK_BOOST_AMOUNT = 15;
     private static final Random RANDOM             = new Random();
 
+    /**
+     * Consomme 30% des gains du joueur, puis boost fortement (poids + attaque)
+     * un symbole d'attaque tiré au hasard parmi ceux enregistrés.
+     */
     @Override
     public void apply(TurnContext context) {
         Player player = context.getCombatContext().getPlayer();

@@ -45,6 +45,10 @@ public class CardLoader {
         return cards;
     }
 
+    /**
+     * Construit une {@link Card} à partir de son objet JSON (id, name, assetPath,
+     * rank optionnel, suit optionnelle, et la liste de ses effets).
+     */
     private static Card parseCard(JsonValue json) {
         String id       = json.getString("id");
         String name     = json.getString("name");
