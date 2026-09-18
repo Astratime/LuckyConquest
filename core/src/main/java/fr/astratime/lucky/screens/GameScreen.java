@@ -6,9 +6,11 @@ import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
+import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator;
 import com.badlogic.gdx.math.Interpolation;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.scenes.scene2d.Actor;
+import com.badlogic.gdx.scenes.scene2d.Group;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.InputListener;
 import com.badlogic.gdx.scenes.scene2d.Stage;
@@ -57,8 +59,21 @@ public class GameScreen extends ScreenAdapter {
     private static final float BUTTON_HEIGHT = 60f;
     private static final float CARD_TABLE_Y  = 350f;
 
-    // Distribution animée des cartes : elles arrivent dos visible depuis le
-    // dessus de l'écran, puis se retournent (flip) pour révéler leur face.
+    // Thème casino des boutons : fond sombre, liseré doré, police pixel art.
+    private static final String BUTTON_FONT_PATH = "fonts/Jersey10-Regular.ttf";
+    private static final int    BUTTON_FONT_SIZE = 30;
+    private static final int    BUTTON_BORDER_PX = 3;
+    private static final Color  BUTTON_GOLD      = Color.GOLDENROD;
+
+    // Pile de cartes (dos visible) affichée au-dessus des boutons "Tirer" et
+    // "Lancer machine" — c'est de là que partent les cartes distribuées.
+    private static final int   DECK_STACK_SIZE   = 4;
+    private static final float DECK_STACK_OFFSET = 3f;
+    private static final float DECK_TOP_MARGIN   = 20f;
+    private static final float DECK_Y            = 20f + BUTTON_HEIGHT + DECK_TOP_MARGIN;
+
+    // Distribution animée des cartes : elles arrivent dos visible depuis la
+    // pile (le deck), puis se retournent (flip) pour révéler leur face.
     private static final float DEAL_STAGGER_DELAY = 0.15f;
     private static final float DEAL_MOVE_DURATION = 0.35f;
     private static final float FLIP_PAUSE_DELAY   = 0.05f;
@@ -89,6 +104,7 @@ public class GameScreen extends ScreenAdapter {
     private final LuckyGame  luckyGame;
     private final Stage      stage;
     private final BitmapFont font;
+    private final BitmapFont buttonFont;
     private final Texture    backgroundTexture;
     private final Texture    buttonUpTexture;
     private final Texture    buttonDownTexture;
@@ -110,6 +126,7 @@ public class GameScreen extends ScreenAdapter {
     // -------------------------------------------------------------------------
 
     private final Image      background;
+    private final Group      deck;
     private final Image      healthBarBg;
     private final Image      healthBarFill;
     private final Label      healthBarLabel;
@@ -135,10 +152,11 @@ public class GameScreen extends ScreenAdapter {
         this.stage = new Stage(new ScreenViewport(), luckyGame.getBatch());
 
         font                     = new BitmapFont();
+        buttonFont               = buildButtonFont();
         backgroundTexture        = new Texture(Gdx.files.internal(BACKGROUND_PATH));
-        buttonUpTexture          = makeColorTexture(Color.DARK_GRAY);
-        buttonDownTexture        = makeColorTexture(Color.GRAY);
-        buttonDisabledTexture    = makeColorTexture(Color.valueOf("333333ff"));
+        buttonUpTexture          = makeButtonTexture(Color.valueOf("1a1a1aff"), BUTTON_GOLD);
+        buttonDownTexture        = makeButtonTexture(Color.valueOf("4a0000ff"), BUTTON_GOLD);
+        buttonDisabledTexture    = makeButtonTexture(Color.valueOf("2a2a2aff"), Color.valueOf("6b5a2eff"));
         tooltipBackgroundTexture = makeColorTexture(Color.BLACK);
         healthBarBgTexture         = makeColorTexture(Color.valueOf("550000ff"));
         healthBarFillTexture       = makeColorTexture(Color.RED);
@@ -149,6 +167,7 @@ public class GameScreen extends ScreenAdapter {
         preloadSymbolTextures();
 
         background          = buildBackground();
+        deck                = buildDeck();
         healthBarBg         = buildHealthBarBg();
         healthBarFill       = buildHealthBarFill();
         healthBarLabel       = buildHealthBarLabel();
@@ -168,6 +187,7 @@ public class GameScreen extends ScreenAdapter {
         refreshPlayerHealthBar();
 
         stage.addActor(background);
+        stage.addActor(deck);
         stage.addActor(healthBarBg);
         stage.addActor(healthBarFill);
         stage.addActor(healthBarLabel);
@@ -192,6 +212,29 @@ public class GameScreen extends ScreenAdapter {
         img.setSize(backgroundWidth(), backgroundHeight());
         img.setPosition(backgroundX(), backgroundY());
         return img;
+    }
+
+    /** Pile décorative de cartes dos visible, au-dessus des boutons : point de départ des cartes distribuées. */
+    private Group buildDeck() {
+        Group group = new Group();
+        for (int i = 0; i < DECK_STACK_SIZE; i++) {
+            Image card = new Image(new TextureRegionDrawable(new TextureRegion(cardBackTexture)));
+            card.setSize(CARD_WIDTH, CARD_HEIGHT);
+            card.setPosition(i * DECK_STACK_OFFSET, i * DECK_STACK_OFFSET);
+            group.addActor(card);
+        }
+        group.setPosition(deckX(), DECK_Y);
+        return group;
+    }
+
+    private BitmapFont buildButtonFont() {
+        FreeTypeFontGenerator generator = new FreeTypeFontGenerator(Gdx.files.internal(BUTTON_FONT_PATH));
+        FreeTypeFontGenerator.FreeTypeFontParameter parameter = new FreeTypeFontGenerator.FreeTypeFontParameter();
+        parameter.size  = BUTTON_FONT_SIZE;
+        parameter.color = BUTTON_GOLD;
+        BitmapFont generated = generator.generateFont(parameter);
+        generator.dispose(); // le générateur ne sert plus une fois la police créée
+        return generated;
     }
 
     private Image buildHealthBarBg() {
@@ -266,11 +309,11 @@ public class GameScreen extends ScreenAdapter {
 
     private TextButton.TextButtonStyle buildButtonStyle() {
         TextButton.TextButtonStyle style = new TextButton.TextButtonStyle();
-        style.font              = font;
+        style.font              = buttonFont;
         style.up                = new TextureRegionDrawable(new TextureRegion(buttonUpTexture));
         style.down              = new TextureRegionDrawable(new TextureRegion(buttonDownTexture));
         style.disabled          = new TextureRegionDrawable(new TextureRegion(buttonDisabledTexture));
-        style.disabledFontColor = Color.GRAY;
+        style.disabledFontColor = Color.valueOf("8a8a8aff");
         return style;
     }
 
@@ -340,6 +383,22 @@ public class GameScreen extends ScreenAdapter {
     private float restartButtonY() {
         return stage.getViewport().getWorldHeight() - SCORE_LABEL_TOP_MARGIN - BUTTON_HEIGHT - RESTART_BUTTON_GAP;
     }
+
+    // -------------------------------------------------------------------------
+    // Positionnement du deck
+    // -------------------------------------------------------------------------
+
+    /** Centré horizontalement au-dessus des boutons "Tirer" et "Lancer machine". */
+    private float deckX() {
+        float buttonsLeft  = 20f;
+        float buttonsRight = 20f + BUTTON_WIDTH + 20f + BUTTON_WIDTH;
+        float center       = (buttonsLeft + buttonsRight) / 2f;
+        return center - CARD_WIDTH / 2f;
+    }
+
+    /** Position de la carte du dessus de la pile : point de départ des cartes distribuées. */
+    private float deckTopX() { return deckX() + (DECK_STACK_SIZE - 1) * DECK_STACK_OFFSET; }
+    private float deckTopY() { return DECK_Y + (DECK_STACK_SIZE - 1) * DECK_STACK_OFFSET; }
 
     // -------------------------------------------------------------------------
     // Interactions joueur — transmises au GameController
@@ -430,13 +489,14 @@ public class GameScreen extends ScreenAdapter {
     }
 
     /**
-     * Anime l'arrivée des cartes : chacune part, dos visible, d'un point de
-     * "pioche" au-dessus de l'écran, glisse jusqu'à sa place dans cardTable
-     * (déjà calculée mais invisible), puis se retourne pour révéler sa face.
+     * Anime l'arrivée des cartes : chacune part, dos visible, du sommet de la
+     * pile (le deck, au-dessus des boutons), glisse jusqu'à sa place dans
+     * cardTable (déjà calculée mais invisible), puis se retourne pour révéler
+     * sa face.
      */
     private void dealCards(List<Image> targets) {
-        float deckX = cardTable.getX() + cardTable.getWidth() / 2f - CARD_WIDTH / 2f;
-        float deckY = stage.getViewport().getWorldHeight();
+        float startX = deckTopX();
+        float startY = deckTopY();
 
         for (int i = 0; i < targets.size(); i++) {
             Image target = targets.get(i);
@@ -445,7 +505,7 @@ public class GameScreen extends ScreenAdapter {
             Image flyingCard = new Image(new TextureRegionDrawable(new TextureRegion(cardBackTexture)));
             flyingCard.setSize(CARD_WIDTH, CARD_HEIGHT);
             flyingCard.setOrigin(CARD_WIDTH / 2f, CARD_HEIGHT / 2f);
-            flyingCard.setPosition(deckX, deckY);
+            flyingCard.setPosition(startX, startY);
             stage.addActor(flyingCard);
             flyingCards.add(flyingCard);
 
@@ -558,6 +618,20 @@ public class GameScreen extends ScreenAdapter {
         return texture;
     }
 
+    /** Texture de bouton "casino" : fond plein entouré d'un liseré doré. */
+    private Texture makeButtonTexture(Color fill, Color border) {
+        int w = (int) BUTTON_WIDTH;
+        int h = (int) BUTTON_HEIGHT;
+        Pixmap pixmap = new Pixmap(w, h, Pixmap.Format.RGBA8888);
+        pixmap.setColor(border);
+        pixmap.fill();
+        pixmap.setColor(fill);
+        pixmap.fillRectangle(BUTTON_BORDER_PX, BUTTON_BORDER_PX, w - BUTTON_BORDER_PX * 2, h - BUTTON_BORDER_PX * 2);
+        Texture texture = new Texture(pixmap);
+        pixmap.dispose();
+        return texture;
+    }
+
     // -------------------------------------------------------------------------
     // Cycle de vie ScreenAdapter
     // -------------------------------------------------------------------------
@@ -610,6 +684,7 @@ public class GameScreen extends ScreenAdapter {
     public void dispose() {
         stage.dispose();
         font.dispose();
+        buttonFont.dispose();
         backgroundTexture.dispose();
         buttonUpTexture.dispose();
         buttonDownTexture.dispose();
