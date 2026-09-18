@@ -1,6 +1,7 @@
 package fr.astratime.lucky.screens;
 
 import com.badlogic.gdx.*;
+import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Texture;
@@ -96,6 +97,13 @@ public class GameScreen extends ScreenAdapter {
     private static final float HEALTH_BAR_TOP_MARGIN    = 10f;
     private static final float HEALTH_BAR_BOTTOM_MARGIN = 100f;
 
+    // Bruitages (CC0, Kenney.nl — voir assets/sounds/CREDITS.txt)
+    private static final String SOUND_BUTTON_CLICK = "sounds/button-click.ogg";
+    private static final String SOUND_SPIN_BUTTON  = "sounds/spin-button.ogg";
+    private static final String SOUND_CARD_DEAL    = "sounds/card-deal.ogg";
+    private static final String SOUND_CARD_FLIP    = "sounds/card-flip.ogg";
+    private static final String SOUND_CARD_CLICK   = "sounds/card-click.ogg";
+
     // -------------------------------------------------------------------------
     // Contrôleur — seul point d'accès à la logique de jeu
     // -------------------------------------------------------------------------
@@ -122,6 +130,12 @@ public class GameScreen extends ScreenAdapter {
     private final Texture    cardBackTexture;
     private final Map<String, Texture> cardTextures   = new HashMap<>();
     private final Map<Symbol, Texture> symbolTextures = new HashMap<>();
+
+    private final Sound buttonClickSound;
+    private final Sound spinButtonSound;
+    private final Sound cardDealSound;
+    private final Sound cardFlipSound;
+    private final Sound cardClickSound;
 
     /** Cartes en cours d'animation de distribution (dos -> face), à nettoyer si une nouvelle donne démarre. */
     private final List<Image> flyingCards = new ArrayList<>();
@@ -177,6 +191,12 @@ public class GameScreen extends ScreenAdapter {
         playerHealthBarBgTexture   = makeColorTexture(Color.valueOf("005500ff"));
         playerHealthBarFillTexture = makeColorTexture(Color.GREEN);
         cardBackTexture            = new Texture(Gdx.files.internal(CARD_BACK_PATH));
+
+        buttonClickSound = Gdx.audio.newSound(Gdx.files.internal(SOUND_BUTTON_CLICK));
+        spinButtonSound  = Gdx.audio.newSound(Gdx.files.internal(SOUND_SPIN_BUTTON));
+        cardDealSound    = Gdx.audio.newSound(Gdx.files.internal(SOUND_CARD_DEAL));
+        cardFlipSound    = Gdx.audio.newSound(Gdx.files.internal(SOUND_CARD_FLIP));
+        cardClickSound   = Gdx.audio.newSound(Gdx.files.internal(SOUND_CARD_CLICK));
 
         preloadSymbolTextures();
 
@@ -317,13 +337,14 @@ public class GameScreen extends ScreenAdapter {
         button.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
+                buttonClickSound.play();
                 onDrawCards();
             }
         });
         return button;
     }
 
-    /** Bouton "Lancer machine", juste à droite du bouton de pioche. */
+    /** Bouton "Lancer machine", juste à droite du bouton de pioche. Son propre bruitage, plus marquant que les autres boutons. */
     private TextButton buildSpinButton() {
         String text = "Lancer machine";
         TextButton button = new TextButton(text, buildButtonStyle());
@@ -332,6 +353,7 @@ public class GameScreen extends ScreenAdapter {
         button.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
+                spinButtonSound.play();
                 onSpin();
             }
         });
@@ -371,6 +393,7 @@ public class GameScreen extends ScreenAdapter {
         button.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
+                buttonClickSound.play();
                 onRestart();
             }
         });
@@ -493,6 +516,7 @@ public class GameScreen extends ScreenAdapter {
 
     /** Transmet la carte jouée au contrôleur (ses effets seront appliqués au prochain spin) et la retire de la main. */
     private void onCardPlayed(Card card, Image cardImage) {
+        cardClickSound.play();
         gameController.playCard(card);
         cardImage.setVisible(false);
         tooltip.setVisible(false);
@@ -579,8 +603,10 @@ public class GameScreen extends ScreenAdapter {
 
             flyingCard.addAction(Actions.sequence(
                 Actions.delay(i * DEAL_STAGGER_DELAY),
+                Actions.run(cardDealSound::play),
                 Actions.moveTo(targetPos.x, targetPos.y, DEAL_MOVE_DURATION, Interpolation.pow2Out),
                 Actions.delay(FLIP_PAUSE_DELAY),
+                Actions.run(cardFlipSound::play),
                 Actions.scaleTo(0f, 1f, FLIP_HALF_DURATION),
                 Actions.run(() -> flyingCard.setDrawable(target.getDrawable())),
                 Actions.scaleTo(1f, 1f, FLIP_HALF_DURATION),
@@ -784,5 +810,10 @@ public class GameScreen extends ScreenAdapter {
         cardBackTexture.dispose();
         cardTextures.values().forEach(Texture::dispose);
         symbolTextures.values().forEach(Texture::dispose);
+        buttonClickSound.dispose();
+        spinButtonSound.dispose();
+        cardDealSound.dispose();
+        cardFlipSound.dispose();
+        cardClickSound.dispose();
     }
 }

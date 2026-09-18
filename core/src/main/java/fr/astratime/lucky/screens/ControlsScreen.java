@@ -2,6 +2,7 @@ package fr.astratime.lucky.screens;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.ScreenAdapter;
+import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Texture;
@@ -15,6 +16,7 @@ import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 import com.badlogic.gdx.utils.ScreenUtils;
+import com.badlogic.gdx.utils.Timer;
 import com.badlogic.gdx.utils.viewport.ScreenViewport;
 import fr.astratime.lucky.LuckyGame;
 
@@ -27,12 +29,18 @@ public class ControlsScreen extends ScreenAdapter {
     private static final float BUTTON_WIDTH  = 220f;
     private static final float BUTTON_HEIGHT = 70f;
 
+    /** Bruitage du clic (CC0, Kenney.nl — voir assets/sounds/CREDITS.txt). */
+    private static final String SOUND_BUTTON_CLICK = "sounds/button-click.ogg";
+    /** Délai avant de changer d'écran, pour laisser le bruitage du clic se jouer. */
+    private static final float  START_TRANSITION_DELAY = 0.2f;
+
     private final LuckyGame luckyGame;
     private final Stage     stage;
     private final BitmapFont font;
     private final Texture backgroundTexture;
     private final Texture buttonUpTexture;
     private final Texture buttonDownTexture;
+    private final Sound   buttonClickSound;
 
     private final Image      background;
     private final TextButton startButton;
@@ -51,6 +59,7 @@ public class ControlsScreen extends ScreenAdapter {
         backgroundTexture = new Texture(Gdx.files.internal("menu/casino_menu.png"));
         buttonUpTexture   = makeColorTexture(Color.GOLDENROD);
         buttonDownTexture = makeColorTexture(Color.valueOf("b8860bff"));
+        buttonClickSound  = Gdx.audio.newSound(Gdx.files.internal(SOUND_BUTTON_CLICK));
 
         // Génération de la police à la taille voulue
         FreeTypeFontGenerator generator = new FreeTypeFontGenerator(Gdx.files.internal("fonts/Jersey10-Regular.ttf"));
@@ -103,10 +112,20 @@ public class ControlsScreen extends ScreenAdapter {
         return (stage.getViewport().getWorldHeight() - BUTTON_HEIGHT) / 2f;
     }
 
-    /** Lance une nouvelle partie et libère les ressources de cet écran. */
+    /**
+     * Joue le bruitage du clic puis lance une nouvelle partie et libère les
+     * ressources de cet écran, après un court délai pour laisser le son se jouer
+     * (dispose() couperait sinon le son en même temps qu'il démarre).
+     */
     private void onStart() {
-        luckyGame.setScreen(new GameScreen(luckyGame));
-        dispose();
+        buttonClickSound.play();
+        Timer.schedule(new Timer.Task() {
+            @Override
+            public void run() {
+                luckyGame.setScreen(new GameScreen(luckyGame));
+                dispose();
+            }
+        }, START_TRANSITION_DELAY);
     }
 
     /** @return une texture 1x1 de la couleur donnée, à étirer pour simuler un fond uni. */
@@ -149,5 +168,6 @@ public class ControlsScreen extends ScreenAdapter {
         backgroundTexture.dispose();
         buttonUpTexture.dispose();
         buttonDownTexture.dispose();
+        buttonClickSound.dispose();
     }
 }
