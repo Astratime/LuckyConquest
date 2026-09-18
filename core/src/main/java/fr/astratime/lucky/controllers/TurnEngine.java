@@ -50,10 +50,13 @@ public class TurnEngine {
         List<Action> actions = actionResolver.resolve(symbols);
 
         // Combat : actions + CombatContext → TurnResult (mute déjà Player/Enemy)
+        // Les événements de phase 1 (ex : symbole boosté par une carte) sont
+        // fusionnés en tête du journal du tour.
         TurnResult result = combatResolver.resolve(
             turnContext.getCombatContext(),
             actions,
-            symbols
+            symbols,
+            turnContext.getEvents()
         );
 
         gameState.nextTurn();
