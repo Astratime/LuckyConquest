@@ -52,7 +52,7 @@ public class GameScreen extends ScreenAdapter {
     private static final String THEME           = "light";
     private static final float  CARD_WIDTH      = 95f;
     private static final float  CARD_HEIGHT     = 135f;
-    private static final String BACKGROUND_PATH = "playTable/play_table1.png";
+    private static final String BACKGROUND_PATH = "playTable/play_table3.png";
     private static final String CARD_BACK_PATH  = "cards/" + THEME + "/BACK.png";
     private static final float  BACKGROUND_SHRINK = 100f;
 
@@ -331,9 +331,7 @@ public class GameScreen extends ScreenAdapter {
     }
 
     private Label buildScoreLabel() {
-        // Pas de fond opaque sous ce label : sur fond d'écran blanc, du texte
-        // blanc y serait invisible — on le garde donc sombre.
-        Label label = new Label("Points : 0", new Label.LabelStyle(font, Color.BLACK));
+        Label label = new Label("Points : 0", new Label.LabelStyle(font, Color.WHITE));
         label.setPosition(20, stage.getViewport().getWorldHeight() - SCORE_LABEL_TOP_MARGIN);
         return label;
     }
@@ -695,7 +693,7 @@ public class GameScreen extends ScreenAdapter {
 
     @Override
     public void render(float delta) {
-        ScreenUtils.clear(Color.WHITE);
+        ScreenUtils.clear(Color.BLACK);
         stage.act(delta);
         stage.draw();
     }
