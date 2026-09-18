@@ -7,6 +7,7 @@ public class MultiplierEffect extends Effect {
 
     private final float amount;
 
+    /** @param amount valeur ajoutée au multiplicateur de gains. */
     public MultiplierEffect(float amount) { this.amount = amount; }
 
     @Override

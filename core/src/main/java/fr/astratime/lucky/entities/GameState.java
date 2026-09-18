@@ -13,13 +13,23 @@ public class GameState {
     private final Enemy  enemy  = new Enemy("Ennemi", 500);
     private       int    turnNumber = 1;
 
+    /**
+     * Crée une nouvelle partie : le joueur démarre à pleine vie avec le deck
+     * fourni, l'ennemi est généré avec des statistiques fixes.
+     *
+     * @param playerCards cartes composant le deck initial du joueur
+     */
     public GameState(List<Card> playerCards) {
         this.player = new Player("Joueur", 100, playerCards);
     }
 
+    /** Incrémente le numéro de tour, appelé à la fin de chaque tour résolu. */
     public void nextTurn() { turnNumber++; }
 
+    /** @return le joueur de la partie en cours. */
     public Player getPlayer()     { return player; }
+    /** @return l'ennemi de la partie en cours. */
     public Enemy  getEnemy()      { return enemy; }
+    /** @return le numéro du tour en cours (démarre à 1). */
     public int    getTurnNumber() { return turnNumber; }
 }

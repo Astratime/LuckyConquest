@@ -20,10 +20,12 @@ public enum Symbol {
 
     private final String assetName;
 
+    /** @param assetName nom de fichier (sans extension ni dossier) de la texture du symbole */
     Symbol(String assetName) {
         this.assetName = assetName;
     }
 
+    /** @return le chemin de la texture du symbole, relatif au dossier assets. */
     public String getAssetPath() {
         return "symbols/" + assetName + ".png";
     }

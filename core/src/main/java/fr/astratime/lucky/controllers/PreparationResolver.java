@@ -16,6 +16,15 @@ import java.util.List;
  */
 public class PreparationResolver {
 
+    /**
+     * Construit un TurnContext neuf pour {@code player}/{@code enemy}, puis applique
+     * chaque effet en attente dessus (dans l'ordre où les cartes ont été jouées).
+     *
+     * @param pendingEffects effets accumulés depuis le début du tour
+     * @param player         joueur du combat en cours
+     * @param enemy          ennemi du combat en cours
+     * @return le TurnContext résultant, prêt pour le spin et le combat
+     */
     public TurnContext resolve(List<Effect> pendingEffects, Player player, Enemy enemy) {
         SpinContext   spinContext   = new SpinContext();
         CombatContext combatContext = new CombatContext(player, enemy);

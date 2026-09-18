@@ -9,6 +9,7 @@ import fr.astratime.lucky.entities.context.TurnContext;
  */
 public class AceOfDiamondsEffect extends Effect {
 
+    /** Active le renvoi de dégâts conditionnel pour ce tour. */
     @Override
     public void apply(TurnContext context) {
         context.getCombatContext().setConditionalReflect(true);

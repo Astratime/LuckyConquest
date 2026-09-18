@@ -11,6 +11,10 @@ public class ClubGainAttackEffect extends Effect {
     private final int gainMultiplierAdd;
     private final int   attackBonus;
 
+    /**
+     * @param gainMultiplierAdd valeur ajoutée au multiplicateur de gains
+     * @param attackBonus       bonus d'attaque plat accordé pour ce tour
+     */
     public ClubGainAttackEffect(int gainMultiplierAdd, int attackBonus) {
         this.gainMultiplierAdd = gainMultiplierAdd;
         this.attackBonus       = attackBonus;

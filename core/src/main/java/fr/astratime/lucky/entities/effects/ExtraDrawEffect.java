@@ -7,6 +7,7 @@ public class ExtraDrawEffect extends Effect {
 
     private final int extraCards;
 
+    /** @param extraCards nombre de cartes supplémentaires à piocher au prochain tour. */
     public ExtraDrawEffect(int extraCards) { this.extraCards = extraCards; }
 
     @Override

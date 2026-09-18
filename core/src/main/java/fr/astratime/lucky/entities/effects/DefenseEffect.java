@@ -7,6 +7,7 @@ public class DefenseEffect extends Effect {
 
     private final int bonus;
 
+    /** @param bonus bonus de bouclier plat accordé pour ce tour. */
     public DefenseEffect(int bonus) { this.bonus = bonus; }
 
     @Override

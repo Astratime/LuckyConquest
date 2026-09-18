@@ -10,6 +10,7 @@ public class SpadeIgnoreDefenseEffect extends Effect {
 
     private final int attackBonus;
 
+    /** @param attackBonus bonus d'attaque plat accordé pour ce tour. */
     public SpadeIgnoreDefenseEffect(int attackBonus) { this.attackBonus = attackBonus; }
 
     @Override

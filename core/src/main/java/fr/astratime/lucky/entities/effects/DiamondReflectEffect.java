@@ -11,6 +11,7 @@ public class DiamondReflectEffect extends Effect {
 
     private final int percent;
 
+    /** @param percent pourcentage de renvoi de dégâts additionné par symbole de défense. */
     public DiamondReflectEffect(int percent) { this.percent = percent; }
 
     @Override

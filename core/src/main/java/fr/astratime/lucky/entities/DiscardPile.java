@@ -12,18 +12,22 @@ public class DiscardPile {
 
     private final List<Card> cards = new ArrayList<>();
 
+    /** Ajoute une carte à la défausse. */
     public void add(Card card) {
         cards.add(card);
     }
 
+    /** Ajoute plusieurs cartes à la défausse d'un coup (ex : main non jouée avant une nouvelle pioche). */
     public void addAll(List<Card> discarded) {
         cards.addAll(discarded);
     }
 
+    /** @return {@code true} si la défausse ne contient aucune carte. */
     public boolean isEmpty() {
         return cards.isEmpty();
     }
 
+    /** @return le nombre de cartes actuellement dans la défausse. */
     public int size() {
         return cards.size();
     }

@@ -10,6 +10,7 @@ public class HeartDrainEffect extends Effect {
 
     private final int percent;
 
+    /** @param percent pourcentage des dégâts infligés rendu en soin. */
     public HeartDrainEffect(int percent) { this.percent = percent; }
 
     @Override

@@ -20,6 +20,7 @@ import java.util.List;
  */
 public class GameController {
 
+    /** Nombre de cartes piochées par défaut à chaque appel de {@link #drawCards()}. */
     private static final int DEFAULT_DRAW_COUNT = 6;
 
     private       GameState  gameState;
@@ -28,6 +29,7 @@ public class GameController {
     /** Effets accumulés depuis le début du tour, appliqués au moment du spin. */
     private final List<Effect> pendingEffects = new ArrayList<>();
 
+    /** Charge les cartes depuis les JSON et crée une nouvelle partie (joueur + ennemi au maximum de leurs PV). */
     public GameController() {
         this.gameState = new GameState(CardLoader.loadAll());
     }
@@ -46,7 +48,12 @@ public class GameController {
     // Actions du joueur
     // -------------------------------------------------------------------------
 
-    /** Phase 1 : pioche les cartes et les retourne pour affichage. */
+    /**
+     * Phase 1 : pioche les cartes et les retourne pour affichage.
+     * La main précédente (si non jouée) part à la défausse avant de piocher.
+     *
+     * @return la nouvelle main du joueur ({@link #DEFAULT_DRAW_COUNT} cartes)
+     */
     public List<Card> drawCards() {
         Player player = gameState.getPlayer();
         player.getDiscardPile().addAll(player.getCurrentHand());
@@ -58,6 +65,8 @@ public class GameController {
     /**
      * Le joueur joue une carte : ses effets sont mis en attente.
      * Ils seront appliqués au TurnContext lors du spin.
+     *
+     * @param card carte jouée par le joueur
      */
     public void playCard(Card card) {
         pendingEffects.addAll(card.getEffects());
@@ -66,6 +75,8 @@ public class GameController {
     /**
      * Fin de phase 1 / Phase 2 : applique les effets en attente,
      * lance la machine à sous, résout le combat et retourne le TurnResult.
+     *
+     * @return le résultat du tour (symboles tirés, événements, gains)
      */
     public TurnResult spin() {
         TurnResult result = turnEngine.playTurn(gameState, pendingEffects);
@@ -77,5 +88,6 @@ public class GameController {
     // Lecture de l'état (pour GameScreen)
     // -------------------------------------------------------------------------
 
+    /** @return l'état courant de la partie (joueur, ennemi, numéro de tour). */
     public GameState getGameState() { return gameState; }
 }

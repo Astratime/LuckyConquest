@@ -10,9 +10,11 @@ import java.util.Random;
 /** As de Coeur : boost de probabilité sur un symbole d'attaque choisi au hasard. */
 public class AceOfHeartsEffect extends Effect {
 
+    /** Boost de poids appliqué au symbole d'attaque choisi au hasard. */
     private static final int    BOOST_AMOUNT = 60;
     private static final Random RANDOM       = new Random();
 
+    /** Choisit un symbole d'attaque au hasard et augmente son poids de tirage pour ce tour. */
     @Override
     public void apply(TurnContext context) {
         List<Symbol> attackSymbols = SymbolRegistry.getAttackSymbols();

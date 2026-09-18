@@ -7,6 +7,7 @@ public class AttackEffect extends Effect {
 
     private final int bonus;
 
+    /** @param bonus bonus d'attaque plat accordé pour ce tour. */
     public AttackEffect(int bonus) { this.bonus = bonus; }
 
     @Override
