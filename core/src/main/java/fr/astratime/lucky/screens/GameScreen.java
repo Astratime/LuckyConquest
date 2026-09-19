@@ -7,6 +7,8 @@ import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.GlyphLayout;
+import com.badlogic.gdx.graphics.g2d.ParticleEffect;
+import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator;
 import com.badlogic.gdx.math.Interpolation;
@@ -104,6 +106,10 @@ public class GameScreen extends ScreenAdapter {
     private static final String SOUND_CARD_FLIP    = "sounds/card-flip.ogg";
     private static final String SOUND_CARD_CLICK   = "sounds/card-click.ogg";
 
+    // Effet de particules "explosion dorée" joué à l'endroit cliqué sur une carte.
+    private static final String PARTICLE_DIR       = "particles/";
+    private static final String CARD_CLICK_EFFECT_PATH = PARTICLE_DIR + "jackpot.p";
+
     // -------------------------------------------------------------------------
     // Contrôleur — seul point d'accès à la logique de jeu
     // -------------------------------------------------------------------------
@@ -136,6 +142,8 @@ public class GameScreen extends ScreenAdapter {
     private final Sound cardDealSound;
     private final Sound cardFlipSound;
     private final Sound cardClickSound;
+
+    private final ParticleEffect cardClickEffect;
 
     /** Cartes en cours d'animation de distribution (dos -> face), à nettoyer si une nouvelle donne démarre. */
     private final List<Image> flyingCards = new ArrayList<>();
@@ -197,6 +205,9 @@ public class GameScreen extends ScreenAdapter {
         cardDealSound    = Gdx.audio.newSound(Gdx.files.internal(SOUND_CARD_DEAL));
         cardFlipSound    = Gdx.audio.newSound(Gdx.files.internal(SOUND_CARD_FLIP));
         cardClickSound   = Gdx.audio.newSound(Gdx.files.internal(SOUND_CARD_CLICK));
+
+        cardClickEffect = new ParticleEffect();
+        cardClickEffect.load(Gdx.files.internal(CARD_CLICK_EFFECT_PATH), Gdx.files.internal(PARTICLE_DIR));
 
         preloadSymbolTextures();
 
@@ -514,13 +525,25 @@ public class GameScreen extends ScreenAdapter {
             .reduce("", (a, b) -> a + " | " + b));
     }
 
-    /** Transmet la carte jouée au contrôleur (ses effets seront appliqués au prochain spin) et la retire de la main. */
-    private void onCardPlayed(Card card, Image cardImage) {
+    /**
+     * Transmet la carte jouée au contrôleur (ses effets seront appliqués au
+     * prochain spin), la retire de la main et déclenche l'effet de
+     * particules à l'endroit cliqué (en coordonnées du Stage).
+     */
+    private void onCardPlayed(Card card, Image cardImage, float stageX, float stageY) {
         cardClickSound.play();
         gameController.playCard(card);
         cardImage.setVisible(false);
         tooltip.setVisible(false);
+        playCardClickEffect(stageX, stageY);
         Gdx.app.log("GameScreen", "Carte jouee : " + card);
+    }
+
+    /** (Ré)initialise puis démarre l'effet de particules à la position donnée (coordonnées du Stage). */
+    private void playCardClickEffect(float stageX, float stageY) {
+        cardClickEffect.setPosition(stageX, stageY);
+        cardClickEffect.reset();
+        cardClickEffect.start();
     }
 
     /** Le combat est terminé dès que le joueur ou l'ennemi n'a plus de points de vie. */
@@ -690,7 +713,8 @@ public class GameScreen extends ScreenAdapter {
 
             @Override
             public boolean touchDown(InputEvent event, float x, float y, int pointer, int button) {
-                onCardPlayed(card, cardImage);
+                Vector2 stagePos = cardImage.localToStageCoordinates(new Vector2(x, y));
+                onCardPlayed(card, cardImage, stagePos.x, stagePos.y);
                 return true;
             }
         });
@@ -784,12 +808,18 @@ public class GameScreen extends ScreenAdapter {
         restartButton.setPosition(20, restartButtonY());
     }
 
-    /** Efface l'écran puis met à jour et dessine le Stage. */
+    /** Efface l'écran, met à jour et dessine le Stage, puis l'effet de particules par-dessus. */
     @Override
     public void render(float delta) {
         ScreenUtils.clear(Color.BLACK);
         stage.act(delta);
         stage.draw();
+
+        SpriteBatch batch = luckyGame.getBatch();
+        batch.begin();
+        cardClickEffect.update(delta);
+        cardClickEffect.draw(batch);
+        batch.end();
     }
 
     /** Libère toutes les ressources natives (Stage, polices, textures) possédées par cet écran. */
@@ -815,5 +845,6 @@ public class GameScreen extends ScreenAdapter {
         cardDealSound.dispose();
         cardFlipSound.dispose();
         cardClickSound.dispose();
+        cardClickEffect.dispose();
     }
 }
