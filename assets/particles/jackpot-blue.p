@@ -64,9 +64,9 @@ highMin: 0.0
 highMax: 0.0
 relative: false
 scalingCount: 3
-scaling0: 0.2
-scaling1: 1.0
-scaling2: 0.0
+scaling0: 1.0
+scaling1: 0.0
+scaling2: 1.0
 timelineCount: 3
 timeline0: 0.0
 timeline1: 0.2
