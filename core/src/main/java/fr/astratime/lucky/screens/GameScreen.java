@@ -716,6 +716,7 @@ public class GameScreen extends ScreenAdapter {
         slotTable.clearChildren();
         for (Symbol symbol : symbols) {
             Image img = new Image(new TextureRegionDrawable(new TextureRegion(symbolTextures.get(symbol))));
+            addSymbolListeners(img, symbol);
             slotTable.add(img).size(SYMBOL_WIDTH, SYMBOL_HEIGHT).pad(8f);
         }
         slotTable.pack();
@@ -777,6 +778,28 @@ public class GameScreen extends ScreenAdapter {
                 Vector2 stagePos = cardImage.localToStageCoordinates(new Vector2(x, y));
                 onCardPlayed(card, cardImage, stagePos.x, stagePos.y);
                 return true;
+            }
+        });
+    }
+
+    /** Attache à une image de symbole l'affichage de sa description au survol (dans la tooltip). Pas de clic : un symbole ne se joue pas. */
+    private void addSymbolListeners(Image symbolImage, Symbol symbol) {
+        symbolImage.addListener(new InputListener() {
+
+            @Override
+            public void enter(InputEvent event, float x, float y, int pointer, Actor fromActor) {
+                if (pointer != -1) return;
+                tooltipLabel.setText(symbol.getDescription());
+                tooltip.pack();
+                Vector2 pos = symbolImage.localToStageCoordinates(new Vector2(0, SYMBOL_HEIGHT + 5f));
+                tooltip.setPosition(pos.x, pos.y);
+                tooltip.setVisible(true);
+            }
+
+            @Override
+            public void exit(InputEvent event, float x, float y, int pointer, Actor toActor) {
+                if (pointer != -1) return;
+                tooltip.setVisible(false);
             }
         });
     }

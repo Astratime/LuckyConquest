@@ -1,5 +1,7 @@
 package fr.astratime.lucky.entities;
 
+import fr.astratime.lucky.entities.actions.Action;
+
 /**
  * Identité et asset d'un symbole de machine à sous.
  * Le comportement associé (ce que fait le symbole) est défini dans SymbolRegistry.
@@ -28,5 +30,12 @@ public enum Symbol {
     /** @return le chemin de la texture du symbole, relatif au dossier assets. */
     public String getAssetPath() {
         return "symbols/" + assetName + ".png";
+    }
+
+    /** @return la description de l'effet de ce symbole (voir SymbolRegistry), affichée en infobulle. */
+    public String getDescription() {
+        return SymbolRegistry.getAction(this)
+            .map(Action::getDescription)
+            .orElse("Aucun effet");
     }
 }
