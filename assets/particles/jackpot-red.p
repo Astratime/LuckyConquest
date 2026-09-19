@@ -77,8 +77,8 @@ active: false
 active: true
 lowMin: 0.0
 lowMax: 0.0
-highMin: 120.0
-highMax: 260.0
+highMin: 220.0
+highMax: 420.0
 relative: false
 scalingCount: 2
 scaling0: 1.0
@@ -105,8 +105,8 @@ active: false
 active: true
 lowMin: 0.0
 lowMax: 0.0
-highMin: -250.0
-highMax: -250.0
+highMin: -80.0
+highMax: -80.0
 relative: false
 scalingCount: 1
 scaling0: 1.0
