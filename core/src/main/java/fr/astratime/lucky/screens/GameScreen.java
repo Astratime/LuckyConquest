@@ -104,7 +104,7 @@ public class GameScreen extends ScreenAdapter {
 
     // Bruitages (CC0, Kenney.nl — voir assets/sounds/CREDITS.txt)
     private static final String SOUND_BUTTON_CLICK = "sounds/button-click.ogg";
-    private static final String SOUND_SPIN_BUTTON  = "sounds/spin-button.wav";
+    private static final String SOUND_SPIN_BUTTON  = "sounds/spin_machine.mp3";
     private static final String SOUND_CARD_DEAL    = "sounds/card-deal.ogg";
     private static final String SOUND_CARD_FLIP    = "sounds/card-flip.ogg";
     private static final String SOUND_CARD_CLICK   = "sounds/card-click.ogg";
