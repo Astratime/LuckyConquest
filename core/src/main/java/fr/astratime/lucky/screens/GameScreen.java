@@ -108,6 +108,10 @@ public class GameScreen extends ScreenAdapter {
     private static final String SOUND_CARD_DEAL    = "sounds/card-deal.ogg";
     private static final String SOUND_CARD_FLIP    = "sounds/card-flip.ogg";
     private static final String SOUND_CARD_CLICK   = "sounds/card-click.ogg";
+    // Résultat d'un tirage de symboles : aucune paire, une paire, ou les trois identiques.
+    private static final String SOUND_1_SYMBOL       = "sounds/1_symbol.ogg";
+    private static final String SOUND_2_SYMBOLS      = "sounds/2_symbols.ogg";
+    private static final String SOUND_BINGO_3_SYMBOLS = "sounds/bingo_3_symbols.ogg";
 
     // Effet de particules joué à l'endroit cliqué sur une carte : à chaque clic,
     // CARD_CLICK_PARTICLE_COUNT particules sont tirées, chacune avec une couleur
@@ -159,6 +163,9 @@ public class GameScreen extends ScreenAdapter {
     private final Sound cardDealSound;
     private final Sound cardFlipSound;
     private final Sound cardClickSound;
+    private final Sound oneSymbolSound;
+    private final Sound twoSymbolsSound;
+    private final Sound bingoThreeSymbolsSound;
 
     /** Un gabarit par couleur, chargé une fois ; sert uniquement à construire son pool et à libérer sa texture dans dispose(). */
     private final List<ParticleEffect> cardClickEffectSources = new ArrayList<>();
@@ -227,6 +234,9 @@ public class GameScreen extends ScreenAdapter {
         cardDealSound    = Gdx.audio.newSound(Gdx.files.internal(SOUND_CARD_DEAL));
         cardFlipSound    = Gdx.audio.newSound(Gdx.files.internal(SOUND_CARD_FLIP));
         cardClickSound   = Gdx.audio.newSound(Gdx.files.internal(SOUND_CARD_CLICK));
+        oneSymbolSound         = Gdx.audio.newSound(Gdx.files.internal(SOUND_1_SYMBOL));
+        twoSymbolsSound        = Gdx.audio.newSound(Gdx.files.internal(SOUND_2_SYMBOLS));
+        bingoThreeSymbolsSound = Gdx.audio.newSound(Gdx.files.internal(SOUND_BINGO_3_SYMBOLS));
 
         for (String path : CARD_CLICK_EFFECT_PATHS) {
             ParticleEffect source = new ParticleEffect();
@@ -541,6 +551,7 @@ public class GameScreen extends ScreenAdapter {
         refreshHealthBar();
         refreshPlayerHealthBar();
         refreshScoreLabel();
+        playSymbolResultSound(result);
 
         if (isCombatOver()) {
             endCombat();
@@ -552,6 +563,17 @@ public class GameScreen extends ScreenAdapter {
         Gdx.app.log("GameScreen", result.getEvents().stream()
             .map(e -> e.describe())
             .reduce("", (a, b) -> a + " | " + b));
+    }
+
+    /** Joue le bruitage correspondant au tirage : bingo (3 identiques), paire (2 identiques), ou aucun. */
+    private void playSymbolResultSound(TurnResult result) {
+        if (result.isJackpot()) {
+            bingoThreeSymbolsSound.play();
+        } else if (result.isPair()) {
+            twoSymbolsSound.play();
+        } else {
+            oneSymbolSound.play();
+        }
     }
 
     /**
@@ -892,6 +914,9 @@ public class GameScreen extends ScreenAdapter {
         cardDealSound.dispose();
         cardFlipSound.dispose();
         cardClickSound.dispose();
+        oneSymbolSound.dispose();
+        twoSymbolsSound.dispose();
+        bingoThreeSymbolsSound.dispose();
         cardClickEffectSources.forEach(ParticleEffect::dispose);
     }
 }

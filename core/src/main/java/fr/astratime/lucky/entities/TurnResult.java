@@ -49,4 +49,10 @@ public class TurnResult {
     public boolean isJackpot() {
         return events.stream().anyMatch(e -> e instanceof JackpotEvent);
     }
+
+    /** @return {@code true} si exactement deux des trois symboles tirés sont identiques (jackpot exclu). */
+    public boolean isPair() {
+        if (isJackpot() || symbols[0] == null) return false;
+        return symbols[0] == symbols[1] || symbols[1] == symbols[2] || symbols[0] == symbols[2];
+    }
 }
