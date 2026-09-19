@@ -109,9 +109,9 @@ public class GameScreen extends ScreenAdapter {
     private static final String SOUND_CARD_FLIP    = "sounds/card-flip.ogg";
     private static final String SOUND_CARD_CLICK   = "sounds/card-click.ogg";
     // Résultat d'un tirage de symboles : aucune paire, une paire, ou les trois identiques.
-    private static final String SOUND_1_SYMBOL       = "sounds/1_symbol.ogg";
-    private static final String SOUND_2_SYMBOLS      = "sounds/2_symbols.ogg";
-    private static final String SOUND_BINGO_3_SYMBOLS = "sounds/bingo_3_symbols.ogg";
+    private static final String SOUND_1_SYMBOL       = "sounds/1_symbol.wav";
+    private static final String SOUND_2_SYMBOLS      = "sounds/2_symbols.wav";
+    private static final String SOUND_BINGO_3_SYMBOLS = "sounds/bingo_3_symbols.wav";
 
     // Effet de particules joué à l'endroit cliqué sur une carte : à chaque clic,
     // CARD_CLICK_PARTICLE_COUNT particules sont tirées, chacune avec une couleur
