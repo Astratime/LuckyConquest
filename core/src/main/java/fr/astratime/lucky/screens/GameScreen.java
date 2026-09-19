@@ -8,7 +8,7 @@ import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.GlyphLayout;
 import com.badlogic.gdx.graphics.g2d.ParticleEffect;
-import com.badlogic.gdx.graphics.g2d.ParticleEmitter;
+import com.badlogic.gdx.graphics.g2d.ParticleEffectPool;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator;
@@ -121,6 +121,11 @@ public class GameScreen extends ScreenAdapter {
         PARTICLE_DIR + "jackpot-purple.p",
     };
     private static final int CARD_CLICK_PARTICLE_COUNT = 10;
+    // Nombre d'instances pré-allouées (et rechargées) par couleur : évite toute
+    // allocation au moment du clic, seule source possible d'un décalage visible
+    // entre la disparition de la carte et l'apparition des particules.
+    private static final int CARD_CLICK_POOL_INITIAL_CAPACITY = 10;
+    private static final int CARD_CLICK_POOL_MAX              = 20;
 
     // -------------------------------------------------------------------------
     // Contrôleur — seul point d'accès à la logique de jeu
@@ -155,10 +160,12 @@ public class GameScreen extends ScreenAdapter {
     private final Sound cardFlipSound;
     private final Sound cardClickSound;
 
-    /** Un gabarit par couleur, chargé une fois ; les instances réellement jouées en sont des copies (voir playCardClickEffect()). */
-    private final List<ParticleEffect> cardClickEffectTemplates = new ArrayList<>();
-    /** Instances de particules en cours d'animation, nettoyées au fur et à mesure qu'elles se terminent. */
-    private final List<ParticleEffect> activeCardClickEffects = new ArrayList<>();
+    /** Un gabarit par couleur, chargé une fois ; sert uniquement à construire son pool et à libérer sa texture dans dispose(). */
+    private final List<ParticleEffect> cardClickEffectSources = new ArrayList<>();
+    /** Un pool par couleur : obtain() renvoie une instance déjà démarrée, neuve ou recyclée, sans allocation une fois pré-chauffé. */
+    private final List<ParticleEffectPool> cardClickEffectPools = new ArrayList<>();
+    /** Instances de particules en cours d'animation, libérées vers leur pool d'origine au fur et à mesure qu'elles se terminent. */
+    private final List<ParticleEffectPool.PooledEffect> activeCardClickEffects = new ArrayList<>();
 
     /** Cartes en cours d'animation de distribution (dos -> face), à nettoyer si une nouvelle donne démarre. */
     private final List<Image> flyingCards = new ArrayList<>();
@@ -222,9 +229,13 @@ public class GameScreen extends ScreenAdapter {
         cardClickSound   = Gdx.audio.newSound(Gdx.files.internal(SOUND_CARD_CLICK));
 
         for (String path : CARD_CLICK_EFFECT_PATHS) {
-            ParticleEffect template = new ParticleEffect();
-            template.load(Gdx.files.internal(path), Gdx.files.internal(PARTICLE_DIR));
-            cardClickEffectTemplates.add(template);
+            ParticleEffect source = new ParticleEffect();
+            source.load(Gdx.files.internal(path), Gdx.files.internal(PARTICLE_DIR));
+            cardClickEffectSources.add(source);
+
+            ParticleEffectPool pool = new ParticleEffectPool(source, CARD_CLICK_POOL_INITIAL_CAPACITY, CARD_CLICK_POOL_MAX);
+            pool.fill(CARD_CLICK_POOL_INITIAL_CAPACITY); // alloue maintenant, pas au premier clic
+            cardClickEffectPools.add(pool);
         }
 
         preloadSymbolTextures();
@@ -559,19 +570,17 @@ public class GameScreen extends ScreenAdapter {
 
     /**
      * Tire CARD_CLICK_PARTICLE_COUNT particules à la position donnée (coordonnées
-     * du Stage) : chacune est une copie indépendante d'un gabarit de couleur pris
-     * au hasard, réduite à une seule particule dont la direction (0-360°, voir
-     * le champ Angle des fichiers .p) est elle-même tirée au hasard par LibGDX.
+     * du Stage) : chacune vient du pool d'une couleur prise au hasard (une seule
+     * particule par fichier, voir son Count max:1), dont la direction (0-360°,
+     * champ Angle des fichiers .p) est elle-même tirée au hasard par LibGDX.
+     * pool.obtain() renvoie une instance déjà démarrée (start() a déjà eu lieu,
+     * neuve ou recyclée) : aucune allocation ici tant que le pool reste chaud.
      */
     private void playCardClickEffect(float stageX, float stageY) {
         for (int i = 0; i < CARD_CLICK_PARTICLE_COUNT; i++) {
-            ParticleEffect template = cardClickEffectTemplates.get(MathUtils.random(cardClickEffectTemplates.size() - 1));
-            ParticleEffect effect = new ParticleEffect(template); // copie légère : réutilise la texture du gabarit
-            ParticleEmitter emitter = effect.getEmitters().first();
-            emitter.setMinParticleCount(1);
-            emitter.setMaxParticleCount(1);
+            ParticleEffectPool pool = cardClickEffectPools.get(MathUtils.random(cardClickEffectPools.size() - 1));
+            ParticleEffectPool.PooledEffect effect = pool.obtain();
             effect.setPosition(stageX, stageY);
-            effect.start();
             activeCardClickEffects.add(effect);
         }
     }
@@ -847,13 +856,14 @@ public class GameScreen extends ScreenAdapter {
 
         SpriteBatch batch = luckyGame.getBatch();
         batch.begin();
-        Iterator<ParticleEffect> it = activeCardClickEffects.iterator();
+        Iterator<ParticleEffectPool.PooledEffect> it = activeCardClickEffects.iterator();
         while (it.hasNext()) {
-            ParticleEffect effect = it.next();
+            ParticleEffectPool.PooledEffect effect = it.next();
             effect.update(delta);
             effect.draw(batch);
             if (effect.isComplete()) {
-                it.remove(); // copie du gabarit : rien à disposer, elle ne possède pas la texture
+                it.remove();
+                effect.free(); // revient dans son pool d'origine, prête à être réobtenue sans allocation
             }
         }
         batch.end();
@@ -882,6 +892,6 @@ public class GameScreen extends ScreenAdapter {
         cardDealSound.dispose();
         cardFlipSound.dispose();
         cardClickSound.dispose();
-        cardClickEffectTemplates.forEach(ParticleEffect::dispose);
+        cardClickEffectSources.forEach(ParticleEffect::dispose);
     }
 }
