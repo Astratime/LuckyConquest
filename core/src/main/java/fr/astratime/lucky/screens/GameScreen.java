@@ -7,9 +7,13 @@ import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.GlyphLayout;
+import com.badlogic.gdx.graphics.g2d.ParticleEffect;
+import com.badlogic.gdx.graphics.g2d.ParticleEffectPool;
+import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator;
 import com.badlogic.gdx.math.Interpolation;
+import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.Group;
@@ -37,6 +41,7 @@ import fr.astratime.lucky.entities.TurnResult;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -104,6 +109,24 @@ public class GameScreen extends ScreenAdapter {
     private static final String SOUND_CARD_FLIP    = "sounds/card-flip.ogg";
     private static final String SOUND_CARD_CLICK   = "sounds/card-click.ogg";
 
+    // Effet de particules joué à l'endroit cliqué sur une carte : à chaque clic,
+    // CARD_CLICK_PARTICLE_COUNT particules sont tirées, chacune avec une couleur
+    // et une direction choisies indépendamment au hasard (voir playCardClickEffect()).
+    private static final String   PARTICLE_DIR = "particles/";
+    private static final String[] CARD_CLICK_EFFECT_PATHS = {
+        PARTICLE_DIR + "jackpot.p",
+        PARTICLE_DIR + "jackpot-red.p",
+        PARTICLE_DIR + "jackpot-blue.p",
+        PARTICLE_DIR + "jackpot-green.p",
+        PARTICLE_DIR + "jackpot-purple.p",
+    };
+    private static final int CARD_CLICK_PARTICLE_COUNT = 10;
+    // Nombre d'instances pré-allouées (et rechargées) par couleur : évite toute
+    // allocation au moment du clic, seule source possible d'un décalage visible
+    // entre la disparition de la carte et l'apparition des particules.
+    private static final int CARD_CLICK_POOL_INITIAL_CAPACITY = 10;
+    private static final int CARD_CLICK_POOL_MAX              = 20;
+
     // -------------------------------------------------------------------------
     // Contrôleur — seul point d'accès à la logique de jeu
     // -------------------------------------------------------------------------
@@ -136,6 +159,13 @@ public class GameScreen extends ScreenAdapter {
     private final Sound cardDealSound;
     private final Sound cardFlipSound;
     private final Sound cardClickSound;
+
+    /** Un gabarit par couleur, chargé une fois ; sert uniquement à construire son pool et à libérer sa texture dans dispose(). */
+    private final List<ParticleEffect> cardClickEffectSources = new ArrayList<>();
+    /** Un pool par couleur : obtain() renvoie une instance déjà démarrée, neuve ou recyclée, sans allocation une fois pré-chauffé. */
+    private final List<ParticleEffectPool> cardClickEffectPools = new ArrayList<>();
+    /** Instances de particules en cours d'animation, libérées vers leur pool d'origine au fur et à mesure qu'elles se terminent. */
+    private final List<ParticleEffectPool.PooledEffect> activeCardClickEffects = new ArrayList<>();
 
     /** Cartes en cours d'animation de distribution (dos -> face), à nettoyer si une nouvelle donne démarre. */
     private final List<Image> flyingCards = new ArrayList<>();
@@ -197,6 +227,16 @@ public class GameScreen extends ScreenAdapter {
         cardDealSound    = Gdx.audio.newSound(Gdx.files.internal(SOUND_CARD_DEAL));
         cardFlipSound    = Gdx.audio.newSound(Gdx.files.internal(SOUND_CARD_FLIP));
         cardClickSound   = Gdx.audio.newSound(Gdx.files.internal(SOUND_CARD_CLICK));
+
+        for (String path : CARD_CLICK_EFFECT_PATHS) {
+            ParticleEffect source = new ParticleEffect();
+            source.load(Gdx.files.internal(path), Gdx.files.internal(PARTICLE_DIR));
+            cardClickEffectSources.add(source);
+
+            ParticleEffectPool pool = new ParticleEffectPool(source, CARD_CLICK_POOL_INITIAL_CAPACITY, CARD_CLICK_POOL_MAX);
+            pool.fill(CARD_CLICK_POOL_INITIAL_CAPACITY); // alloue maintenant, pas au premier clic
+            cardClickEffectPools.add(pool);
+        }
 
         preloadSymbolTextures();
 
@@ -514,13 +554,35 @@ public class GameScreen extends ScreenAdapter {
             .reduce("", (a, b) -> a + " | " + b));
     }
 
-    /** Transmet la carte jouée au contrôleur (ses effets seront appliqués au prochain spin) et la retire de la main. */
-    private void onCardPlayed(Card card, Image cardImage) {
+    /**
+     * Transmet la carte jouée au contrôleur (ses effets seront appliqués au
+     * prochain spin), la retire de la main et déclenche l'effet de
+     * particules à l'endroit cliqué (en coordonnées du Stage).
+     */
+    private void onCardPlayed(Card card, Image cardImage, float stageX, float stageY) {
         cardClickSound.play();
         gameController.playCard(card);
         cardImage.setVisible(false);
         tooltip.setVisible(false);
+        playCardClickEffect(stageX, stageY);
         Gdx.app.log("GameScreen", "Carte jouee : " + card);
+    }
+
+    /**
+     * Tire CARD_CLICK_PARTICLE_COUNT particules à la position donnée (coordonnées
+     * du Stage) : chacune vient du pool d'une couleur prise au hasard (une seule
+     * particule par fichier, voir son Count max:1), dont la direction (0-360°,
+     * champ Angle des fichiers .p) est elle-même tirée au hasard par LibGDX.
+     * pool.obtain() renvoie une instance déjà démarrée (start() a déjà eu lieu,
+     * neuve ou recyclée) : aucune allocation ici tant que le pool reste chaud.
+     */
+    private void playCardClickEffect(float stageX, float stageY) {
+        for (int i = 0; i < CARD_CLICK_PARTICLE_COUNT; i++) {
+            ParticleEffectPool pool = cardClickEffectPools.get(MathUtils.random(cardClickEffectPools.size() - 1));
+            ParticleEffectPool.PooledEffect effect = pool.obtain();
+            effect.setPosition(stageX, stageY);
+            activeCardClickEffects.add(effect);
+        }
     }
 
     /** Le combat est terminé dès que le joueur ou l'ennemi n'a plus de points de vie. */
@@ -690,7 +752,8 @@ public class GameScreen extends ScreenAdapter {
 
             @Override
             public boolean touchDown(InputEvent event, float x, float y, int pointer, int button) {
-                onCardPlayed(card, cardImage);
+                Vector2 stagePos = cardImage.localToStageCoordinates(new Vector2(x, y));
+                onCardPlayed(card, cardImage, stagePos.x, stagePos.y);
                 return true;
             }
         });
@@ -784,12 +847,26 @@ public class GameScreen extends ScreenAdapter {
         restartButton.setPosition(20, restartButtonY());
     }
 
-    /** Efface l'écran puis met à jour et dessine le Stage. */
+    /** Efface l'écran, met à jour et dessine le Stage, puis l'effet de particules par-dessus. */
     @Override
     public void render(float delta) {
         ScreenUtils.clear(Color.BLACK);
         stage.act(delta);
         stage.draw();
+
+        SpriteBatch batch = luckyGame.getBatch();
+        batch.begin();
+        Iterator<ParticleEffectPool.PooledEffect> it = activeCardClickEffects.iterator();
+        while (it.hasNext()) {
+            ParticleEffectPool.PooledEffect effect = it.next();
+            effect.update(delta);
+            effect.draw(batch);
+            if (effect.isComplete()) {
+                it.remove();
+                effect.free(); // revient dans son pool d'origine, prête à être réobtenue sans allocation
+            }
+        }
+        batch.end();
     }
 
     /** Libère toutes les ressources natives (Stage, polices, textures) possédées par cet écran. */
@@ -815,5 +892,6 @@ public class GameScreen extends ScreenAdapter {
         cardDealSound.dispose();
         cardFlipSound.dispose();
         cardClickSound.dispose();
+        cardClickEffectSources.forEach(ParticleEffect::dispose);
     }
 }
