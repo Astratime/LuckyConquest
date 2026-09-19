@@ -18,10 +18,10 @@ scaling0: 1.0
 timelineCount: 1
 timeline0: 0.0
 - Life -
-lowMin: 500.0
-lowMax: 900.0
-highMin: 500.0
-highMax: 900.0
+lowMin: 450.0
+lowMax: 650.0
+highMin: 450.0
+highMax: 650.0
 relative: false
 scalingCount: 1
 scaling0: 1.0
@@ -69,7 +69,7 @@ scaling1: 0.0
 scaling2: 1.0
 timelineCount: 3
 timeline0: 0.0
-timeline1: 0.2
+timeline1: 0.1
 timeline2: 1.0
 - Y Scale -
 active: false
@@ -139,7 +139,7 @@ scaling1: 1.0
 scaling2: 0.0
 timelineCount: 3
 timeline0: 0.0
-timeline1: 0.15
+timeline1: 0.08
 timeline2: 1.0
 - Options -
 attached: false
