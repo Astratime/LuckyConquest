@@ -3,10 +3,12 @@ package fr.astratime.lucky.controllers;
 import fr.astratime.lucky.entities.Enemy;
 import fr.astratime.lucky.entities.Player;
 import fr.astratime.lucky.entities.Symbol;
+import fr.astratime.lucky.entities.SymbolOutcome;
+import fr.astratime.lucky.entities.SymbolRegistry;
 import fr.astratime.lucky.entities.TurnResult;
 import fr.astratime.lucky.entities.context.CombatContext;
 import fr.astratime.lucky.entities.events.DamageReflectedEvent;
-import fr.astratime.lucky.entities.events.Event;
+import fr.astratime.lucky.entities.events.EnemyDamagedEvent;
 import fr.astratime.lucky.entities.events.JackpotEvent;
 import fr.astratime.lucky.entities.events.PlayerDamagedEvent;
 
@@ -97,6 +99,24 @@ class CombatResolverTest {
         TurnResult result = resolver.resolve(new CombatContext(player, enemy), List.of(), noSymbols, List.of(), 9);
 
         assertEquals(9, result.getNextDrawCount());
+    }
+
+    @Test
+    void attachesResultingEventsToTheSymbolThatProducedThem() {
+        Player player = new Player("Joueur", 100, List.of());
+        Enemy  enemy  = new Enemy("Ennemi", 100);
+        List<SymbolAction> symbolActions = List.of(
+            new SymbolAction(Symbol.SEVEN, SymbolRegistry.getAction(Symbol.SEVEN).orElseThrow())
+        );
+        Symbol[] symbols = { Symbol.SEVEN, null, null };
+
+        TurnResult result = resolver.resolve(new CombatContext(player, enemy), symbolActions, symbols, List.of(), 6);
+
+        assertEquals(1, result.getSymbolOutcomes().size());
+        SymbolOutcome outcome = result.getSymbolOutcomes().get(0);
+        assertEquals(Symbol.SEVEN, outcome.getSymbol());
+        assertTrue(outcome.getEvents().stream().anyMatch(e -> e instanceof EnemyDamagedEvent),
+            "l'action de SEVEN doit produire un EnemyDamagedEvent rattaché à ce symbole");
     }
 
     @Test

@@ -1,7 +1,6 @@
 package fr.astratime.lucky.controllers;
 
 import fr.astratime.lucky.entities.Symbol;
-import fr.astratime.lucky.entities.actions.Action;
 import fr.astratime.lucky.entities.actions.AttackAction;
 import fr.astratime.lucky.entities.actions.DefenseAction;
 import fr.astratime.lucky.entities.actions.GainAction;
@@ -20,22 +19,24 @@ class ActionResolverTest {
     void mapsEachNonNullSymbolToItsRegisteredAction() {
         Symbol[] symbols = { Symbol.SEVEN, null, Symbol.GRAPE };
 
-        List<Action> actions = resolver.resolve(symbols);
+        List<SymbolAction> symbolActions = resolver.resolve(symbols);
 
-        assertEquals(2, actions.size(), "le symbole null ne doit produire aucune action");
-        assertInstanceOf(AttackAction.class, actions.get(0));
-        assertInstanceOf(DefenseAction.class, actions.get(1));
+        assertEquals(2, symbolActions.size(), "le symbole null ne doit produire aucune action");
+        assertEquals(Symbol.SEVEN, symbolActions.get(0).getSymbol());
+        assertInstanceOf(AttackAction.class, symbolActions.get(0).getAction());
+        assertEquals(Symbol.GRAPE, symbolActions.get(1).getSymbol());
+        assertInstanceOf(DefenseAction.class, symbolActions.get(1).getAction());
     }
 
     @Test
-    void sameSymbolAppearingTwiceProducesTwoIndependentActions() {
+    void sameSymbolAppearingTwiceProducesTwoIndependentEntries() {
         Symbol[] symbols = { Symbol.BELL, Symbol.BELL, null };
 
-        List<Action> actions = resolver.resolve(symbols);
+        List<SymbolAction> symbolActions = resolver.resolve(symbols);
 
-        assertEquals(2, actions.size(), "deux BELL doivent produire deux actions à résoudre séparément");
-        assertInstanceOf(GainAction.class, actions.get(0));
-        assertInstanceOf(GainAction.class, actions.get(1));
+        assertEquals(2, symbolActions.size(), "deux BELL doivent produire deux entrées à résoudre séparément");
+        assertInstanceOf(GainAction.class, symbolActions.get(0).getAction());
+        assertInstanceOf(GainAction.class, symbolActions.get(1).getAction());
     }
 
     @Test

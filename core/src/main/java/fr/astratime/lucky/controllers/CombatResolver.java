@@ -4,8 +4,8 @@ import fr.astratime.lucky.entities.context.CombatContext;
 import fr.astratime.lucky.entities.Enemy;
 import fr.astratime.lucky.entities.Player;
 import fr.astratime.lucky.entities.Symbol;
+import fr.astratime.lucky.entities.SymbolOutcome;
 import fr.astratime.lucky.entities.TurnResult;
-import fr.astratime.lucky.entities.actions.Action;
 import fr.astratime.lucky.entities.events.DamageReflectedEvent;
 import fr.astratime.lucky.entities.events.Event;
 import fr.astratime.lucky.entities.events.GainsEarnedEvent;
@@ -36,24 +36,28 @@ public class CombatResolver {
      * paire/jackpot, puis fait riposter l'ennemi s'il a survécu.
      *
      * @param combatContext contexte de combat (joueur, ennemi, modificateurs des cartes)
-     * @param actions       actions à résoudre, dans l'ordre des symboles
+     * @param symbolActions couples symbole/action à résoudre, dans l'ordre des symboles
      * @param symbols       symboles tirés ce tour (utilisés pour le bonus de paire/jackpot)
      * @param priorEvents   événements déjà survenus en phase 1 (ex : symbole boosté par une
      *                      carte), à faire figurer en tête du journal du tour
      * @param nextDrawCount nombre de cartes à piocher au prochain tour (voir TurnContext),
      *                      simplement reporté tel quel dans le TurnResult
-     * @return le journal d'événements du tour, les symboles et les gains de paire/jackpot
+     * @return le journal d'événements du tour, les symboles, le détail par symbole et les gains de paire/jackpot
      */
-    public TurnResult resolve(CombatContext combatContext,
-                              List<Action>  actions,
-                              Symbol[]      symbols,
-                              List<Event>   priorEvents,
-                              int           nextDrawCount) {
+    public TurnResult resolve(CombatContext      combatContext,
+                              List<SymbolAction> symbolActions,
+                              Symbol[]           symbols,
+                              List<Event>        priorEvents,
+                              int                nextDrawCount) {
         List<Event> events = new ArrayList<>(priorEvents);
 
-        // Chaque action résout elle-même sa logique et retourne ses événements
-        for (Action action : actions) {
-            events.addAll(action.resolve(combatContext));
+        // Chaque action résout elle-même sa logique et retourne ses événements ;
+        // on les rattache aussi au symbole qui les a produits pour le journal détaillé.
+        List<SymbolOutcome> symbolOutcomes = new ArrayList<>();
+        for (SymbolAction symbolAction : symbolActions) {
+            List<Event> actionEvents = symbolAction.getAction().resolve(combatContext);
+            events.addAll(actionEvents);
+            symbolOutcomes.add(new SymbolOutcome(symbolAction.getSymbol(), actionEvents));
         }
 
         // Bonus de paire/jackpot
@@ -94,7 +98,7 @@ public class CombatResolver {
         // Le bouclier (et le renvoi de dégâts) ne vaut que pour ce tour.
         combatContext.getPlayer().resetTurnDefenses();
 
-        return new TurnResult(events, symbols, gains, nextDrawCount);
+        return new TurnResult(events, symbols, gains, nextDrawCount, symbolOutcomes);
     }
 
     /** @return {@code true} si les trois symboles sont identiques et non nuls. */

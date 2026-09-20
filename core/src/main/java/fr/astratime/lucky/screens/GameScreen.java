@@ -30,12 +30,15 @@ import fr.astratime.lucky.entities.Enemy;
 import fr.astratime.lucky.entities.GameState;
 import fr.astratime.lucky.entities.Player;
 import fr.astratime.lucky.entities.Symbol;
+import fr.astratime.lucky.entities.SymbolOutcome;
 import fr.astratime.lucky.entities.TurnResult;
+import fr.astratime.lucky.entities.events.Event;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * Responsabilité unique : afficher l'état du jeu et transmettre les actions
@@ -397,9 +400,26 @@ public class GameScreen extends ScreenAdapter {
             drawButton.setDisabled(false);
         }
 
+        logSymbolOutcomes(result);
         Gdx.app.log("GameScreen", result.getEvents().stream()
-            .map(e -> e.describe())
-            .reduce("", (a, b) -> a + " | " + b));
+            .map(Event::describe)
+            .collect(Collectors.joining(" | ")));
+    }
+
+    /**
+     * Journalise, pour chaque symbole tiré, son effet de base (voir
+     * {@link Symbol#getDescription()}) à côté du résultat réellement obtenu
+     * ce tour une fois les bonus des cartes jouées appliqués (bonus
+     * d'attaque/bouclier, multiplicateur de gains, drain de vie, etc.).
+     */
+    private void logSymbolOutcomes(TurnResult result) {
+        for (SymbolOutcome outcome : result.getSymbolOutcomes()) {
+            Symbol symbol = outcome.getSymbol();
+            String resultText = outcome.getEvents().isEmpty()
+                ? "aucun effet"
+                : outcome.getEvents().stream().map(Event::describe).collect(Collectors.joining(", "));
+            Gdx.app.log("GameScreen", symbol + " — base: " + symbol.getDescription() + " | resultat: " + resultText);
+        }
     }
 
     /** Joue le bruitage correspondant au tirage : bingo (3 identiques), paire (2 identiques), ou aucun. */

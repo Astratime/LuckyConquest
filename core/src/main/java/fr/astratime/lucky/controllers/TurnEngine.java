@@ -1,7 +1,6 @@
 package fr.astratime.lucky.controllers;
 
 import fr.astratime.lucky.entities.*;
-import fr.astratime.lucky.entities.actions.Action;
 import fr.astratime.lucky.entities.context.TurnContext;
 import fr.astratime.lucky.entities.effects.Effect;
 
@@ -48,15 +47,15 @@ public class TurnEngine {
             .getSlotMachine()
             .spin(turnContext.getSpinContext());
 
-        // Symboles -> actions
-        List<Action> actions = actionResolver.resolve(symbols);
+        // Symboles -> couples (symbole, action)
+        List<SymbolAction> symbolActions = actionResolver.resolve(symbols);
 
         // Combat : actions + CombatContext → TurnResult (mute déjà Player/Enemy)
         // Les événements de phase 1 (ex : symbole boosté par une carte) sont
         // fusionnés en tête du journal du tour.
         TurnResult result = combatResolver.resolve(
             turnContext.getCombatContext(),
-            actions,
+            symbolActions,
             symbols,
             turnContext.getEvents(),
             turnContext.getDrawCount()

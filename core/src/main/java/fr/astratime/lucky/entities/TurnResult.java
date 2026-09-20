@@ -15,22 +15,26 @@ import java.util.List;
  */
 public class TurnResult {
 
-    private final List<Event> events;
-    private final Symbol[]    symbols;
-    private final int         gainsFromPairOrJackpot;
-    private final int         nextDrawCount;
+    private final List<Event>         events;
+    private final Symbol[]            symbols;
+    private final int                 gainsFromPairOrJackpot;
+    private final int                 nextDrawCount;
+    private final List<SymbolOutcome> symbolOutcomes;
 
     /**
      * @param events                 journal des événements survenus pendant le tour
      * @param symbols                symboles tirés ce tour (copiés)
      * @param gainsFromPairOrJackpot gains issus uniquement du bonus de paire/jackpot
      * @param nextDrawCount          nombre de cartes à piocher au prochain tour (base + bonus des effets de ce tour)
+     * @param symbolOutcomes         détail par symbole tiré : son action et les événements qu'elle a produits
      */
-    public TurnResult(List<Event> events, Symbol[] symbols, int gainsFromPairOrJackpot, int nextDrawCount) {
+    public TurnResult(List<Event> events, Symbol[] symbols, int gainsFromPairOrJackpot, int nextDrawCount,
+                       List<SymbolOutcome> symbolOutcomes) {
         this.events  = List.copyOf(events);
         this.symbols = symbols.clone();
         this.gainsFromPairOrJackpot = gainsFromPairOrJackpot;
         this.nextDrawCount = nextDrawCount;
+        this.symbolOutcomes = List.copyOf(symbolOutcomes);
     }
 
     /** @return le journal d'événements du tour (liste immuable). */
@@ -41,6 +45,8 @@ public class TurnResult {
     public int         getGainsFromPairOrJackpot() { return gainsFromPairOrJackpot; }
     /** @return le nombre de cartes à piocher au prochain tour (voir ExtraDrawEffect). */
     public int         getNextDrawCount() { return nextDrawCount; }
+    /** @return pour chaque symbole tiré ayant une action enregistrée, son effet de base et le résultat obtenu ce tour. */
+    public List<SymbolOutcome> getSymbolOutcomes() { return symbolOutcomes; }
 
     /** @return la somme des dégâts infligés à l'ennemi ce tour (déduite des {@link EnemyDamagedEvent}). */
     public int getTotalDamage() {
