@@ -8,7 +8,6 @@ import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.utils.Disposable;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 
 /**
@@ -68,15 +67,18 @@ public class CardClickParticles implements Disposable {
         }
     }
 
-    /** Met à jour et dessine toutes les particules actives, puis libère celles qui sont terminées vers leur pool. */
+    /**
+     * Met à jour et dessine toutes les particules actives, puis libère celles qui sont
+     * terminées vers leur pool. Parcours indexé à l'envers (plutôt qu'un Iterator) pour
+     * ne rien allouer dans cette boucle appelée à chaque frame.
+     */
     public void render(SpriteBatch batch, float delta) {
-        Iterator<ParticleEffectPool.PooledEffect> it = active.iterator();
-        while (it.hasNext()) {
-            ParticleEffectPool.PooledEffect effect = it.next();
+        for (int i = active.size() - 1; i >= 0; i--) {
+            ParticleEffectPool.PooledEffect effect = active.get(i);
             effect.update(delta);
             effect.draw(batch);
             if (effect.isComplete()) {
-                it.remove();
+                active.remove(i);
                 effect.free(); // revient dans son pool d'origine, prête à être réobtenue sans allocation
             }
         }
