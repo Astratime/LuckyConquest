@@ -13,7 +13,9 @@ import java.util.Random;
 public class SlotMachine {
 
     /** Poids de base attribué à chaque symbole avant application des boosts du tour. */
-    private static final int BASE_WEIGHT = 10;
+    private static final int      BASE_WEIGHT = 10;
+    /** Copie mise en cache de {@link Symbol#values()}, qui clone son tableau à chaque appel. */
+    private static final Symbol[] SYMBOLS     = Symbol.values();
 
     private final Random   random = new Random();
     private       Symbol[] result = new Symbol[3];
@@ -26,24 +28,26 @@ public class SlotMachine {
      * @return une copie des trois symboles tirés
      */
     public Symbol[] spin(SpinContext spinContext) {
-        int total = 0;
-        for (Symbol s : Symbol.values()) {
-            total += BASE_WEIGHT + spinContext.getWeightBoost(s);
+        int[] weights = new int[SYMBOLS.length];
+        int   total   = 0;
+        for (int i = 0; i < SYMBOLS.length; i++) {
+            weights[i] = BASE_WEIGHT + spinContext.getWeightBoost(SYMBOLS[i]);
+            total += weights[i];
         }
         for (int i = 0; i < result.length; i++) {
-            result[i] = weightedRandom(spinContext, total);
+            result[i] = weightedRandom(weights, total);
         }
         return result.clone();
     }
 
-    /** Tire un symbole au hasard, pondéré par {@link #BASE_WEIGHT} + le boost du symbole dans {@code spinContext}. */
-    private Symbol weightedRandom(SpinContext spinContext, int total) {
+    /** Tire un symbole au hasard parmi {@code weights}, dont la somme vaut {@code total}. */
+    private Symbol weightedRandom(int[] weights, int total) {
         int rand = random.nextInt(total);
-        for (Symbol s : Symbol.values()) {
-            rand -= BASE_WEIGHT + spinContext.getWeightBoost(s);
-            if (rand < 0) return s;
+        for (int i = 0; i < weights.length; i++) {
+            rand -= weights[i];
+            if (rand < 0) return SYMBOLS[i];
         }
-        return Symbol.values()[Symbol.values().length - 1];
+        return SYMBOLS[SYMBOLS.length - 1];
     }
 
     /** Dernier résultat de spin, pour lecture par GameScreen. */
