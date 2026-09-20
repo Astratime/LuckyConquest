@@ -25,6 +25,9 @@ public class SymbolRegistry {
     /** Table de correspondance symbole -> action, remplie une fois au chargement de la classe. */
     private static final Map<Symbol, Action> ACTIONS = new EnumMap<>(Symbol.class);
 
+    /** Symboles d'attaque, précalculés une fois : ACTIONS ne change plus après le bloc statique. */
+    private static final List<Symbol> ATTACK_SYMBOLS;
+
     static {
         // Symboles d'attaque de base
         ACTIONS.put(Symbol.DOUBLE_BAR, new AttackAction(20));
@@ -42,6 +45,14 @@ public class SymbolRegistry {
         ACTIONS.put(Symbol.TRIPLE_CHERRY, new AttackAction(45));  // theme Coeur : attaque + drain
         ACTIONS.put(Symbol.TRIPLE_SEVEN,  new AttackAction(90));  // theme Pique : attaque perçante
         ACTIONS.put(Symbol.GOLD_BAR,      new GainAction(25));    // theme Trefle : gains
+
+        List<Symbol> attackSymbols = new ArrayList<>();
+        for (Map.Entry<Symbol, Action> entry : ACTIONS.entrySet()) {
+            if (entry.getValue() instanceof AttackAction) {
+                attackSymbols.add(entry.getKey());
+            }
+        }
+        ATTACK_SYMBOLS = List.copyOf(attackSymbols);
     }
 
     /**
@@ -54,13 +65,7 @@ public class SymbolRegistry {
 
     /** Symboles dont l'action est une attaque — utilisé par les effets "boost aléatoire" (As). */
     public static List<Symbol> getAttackSymbols() {
-        List<Symbol> result = new ArrayList<>();
-        for (Map.Entry<Symbol, Action> entry : ACTIONS.entrySet()) {
-            if (entry.getValue() instanceof AttackAction) {
-                result.add(entry.getKey());
-            }
-        }
-        return result;
+        return ATTACK_SYMBOLS;
     }
 
     /** Classe utilitaire statique : instanciation interdite. */
