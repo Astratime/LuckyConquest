@@ -26,18 +26,18 @@ public class SlotMachine {
      * @return une copie des trois symboles tirés
      */
     public Symbol[] spin(SpinContext spinContext) {
+        int total = 0;
+        for (Symbol s : Symbol.values()) {
+            total += BASE_WEIGHT + spinContext.getWeightBoost(s);
+        }
         for (int i = 0; i < result.length; i++) {
-            result[i] = weightedRandom(spinContext);
+            result[i] = weightedRandom(spinContext, total);
         }
         return result.clone();
     }
 
     /** Tire un symbole au hasard, pondéré par {@link #BASE_WEIGHT} + le boost du symbole dans {@code spinContext}. */
-    private Symbol weightedRandom(SpinContext spinContext) {
-        int total = 0;
-        for (Symbol s : Symbol.values()) {
-            total += BASE_WEIGHT + spinContext.getWeightBoost(s);
-        }
+    private Symbol weightedRandom(SpinContext spinContext, int total) {
         int rand = random.nextInt(total);
         for (Symbol s : Symbol.values()) {
             rand -= BASE_WEIGHT + spinContext.getWeightBoost(s);
