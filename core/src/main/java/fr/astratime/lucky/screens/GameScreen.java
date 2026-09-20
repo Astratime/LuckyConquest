@@ -409,10 +409,10 @@ public class GameScreen extends ScreenAdapter {
 
     /**
      * Journalise, pour chaque symbole tiré, son effet de base (voir
-     * {@link Symbol#getDescription()}), les dégâts finaux qu'il a
-     * effectivement infligés à l'ennemi (s'il en inflige), et le résultat
-     * complet obtenu ce tour une fois les bonus des cartes jouées appliqués
-     * (bonus d'attaque/bouclier, multiplicateur de gains, drain de vie, etc.).
+     * {@link Symbol#getDescription()}), ses dégâts finaux — base + bonus
+     * d'attaque des cartes jouées, {@code avant} défense de l'ennemi — et le
+     * résultat complet obtenu ce tour (dégâts réellement encaissés par
+     * l'ennemi après défense, drain de vie, gains, etc.).
      */
     private void logSymbolOutcomes(TurnResult result) {
         for (SymbolOutcome outcome : result.getSymbolOutcomes()) {
@@ -427,7 +427,7 @@ public class GameScreen extends ScreenAdapter {
                 .toList();
             String finalDamageText = damageEvents.isEmpty()
                 ? ""
-                : " | degats finaux: " + damageEvents.stream().mapToInt(e -> e.damage).sum();
+                : " | degats finaux (avec buffs, avant defense): " + damageEvents.stream().mapToInt(e -> e.rawDamage).sum();
 
             Gdx.app.log("GameScreen", symbol + " - base: " + symbol.getDescription()
                 + finalDamageText + " | resultat: " + resultText);

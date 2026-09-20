@@ -40,7 +40,7 @@ public class AttackAction extends Action {
         int damage    = Math.max(0, rawDamage - defense);
 
         enemy.takeDamage(damage);
-        events.add(new EnemyDamagedEvent(damage));
+        events.add(new EnemyDamagedEvent(damage, rawDamage));
 
         if (context.getLifeDrainPercent() > 0 && damage > 0) {
             int healed = Math.round(damage * (context.getLifeDrainPercent() / 100f));
