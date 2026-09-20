@@ -1,33 +1,26 @@
 package fr.astratime.lucky.screens;
 
 import com.badlogic.gdx.*;
-import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.GlyphLayout;
-import com.badlogic.gdx.graphics.g2d.ParticleEffect;
-import com.badlogic.gdx.graphics.g2d.ParticleEffectPool;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator;
-import com.badlogic.gdx.math.Interpolation;
-import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.Group;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.InputListener;
 import com.badlogic.gdx.scenes.scene2d.Stage;
-import com.badlogic.gdx.scenes.scene2d.actions.Actions;
 import com.badlogic.gdx.scenes.scene2d.ui.Image;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
-import com.badlogic.gdx.utils.Align;
 import com.badlogic.gdx.utils.ScreenUtils;
 import com.badlogic.gdx.utils.viewport.ScreenViewport;
 import fr.astratime.lucky.LuckyGame;
@@ -41,7 +34,6 @@ import fr.astratime.lucky.entities.TurnResult;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -83,13 +75,6 @@ public class GameScreen extends ScreenAdapter {
     private static final float DECK_LEFT_SHIFT   = 40f;
     private static final float DECK_Y            = 20f + BUTTON_HEIGHT + DECK_TOP_MARGIN;
 
-    // Distribution animée des cartes : elles arrivent dos visible depuis la
-    // pile (le deck), puis se retournent (flip) pour révéler leur face.
-    private static final float DEAL_STAGGER_DELAY = 0.15f;
-    private static final float DEAL_MOVE_DURATION = 0.35f;
-    private static final float FLIP_PAUSE_DELAY   = 0.05f;
-    private static final float FLIP_HALF_DURATION = 0.12f;
-
     private static final float SCORE_LABEL_TOP_MARGIN = 40f;
     private static final float RESTART_BUTTON_GAP      = 10f;
 
@@ -101,35 +86,6 @@ public class GameScreen extends ScreenAdapter {
     private static final float HEALTH_BAR_HEIGHT        = 22f;
     private static final float HEALTH_BAR_TOP_MARGIN    = 10f;
     private static final float HEALTH_BAR_BOTTOM_MARGIN = 100f;
-
-    // Bruitages (CC0, Kenney.nl — voir assets/sounds/CREDITS.txt)
-    private static final String SOUND_BUTTON_CLICK = "sounds/button-click.ogg";
-    private static final String SOUND_SPIN_BUTTON  = "sounds/spin_machine.mp3";
-    private static final String SOUND_CARD_DEAL    = "sounds/card-deal.ogg";
-    private static final String SOUND_CARD_FLIP    = "sounds/card-flip.ogg";
-    private static final String SOUND_CARD_CLICK   = "sounds/card-click.ogg";
-    // Résultat d'un tirage de symboles : aucune paire, une paire, ou les trois identiques.
-    private static final String SOUND_1_SYMBOL       = "sounds/1_symbol.wav";
-    private static final String SOUND_2_SYMBOLS      = "sounds/2_symbols.wav";
-    private static final String SOUND_BINGO_3_SYMBOLS = "sounds/bingo_3_symbols.wav";
-
-    // Effet de particules joué à l'endroit cliqué sur une carte : à chaque clic,
-    // CARD_CLICK_PARTICLE_COUNT particules sont tirées, chacune avec une couleur
-    // et une direction choisies indépendamment au hasard (voir playCardClickEffect()).
-    private static final String   PARTICLE_DIR = "particles/";
-    private static final String[] CARD_CLICK_EFFECT_PATHS = {
-        PARTICLE_DIR + "jackpot.p",
-        PARTICLE_DIR + "jackpot-red.p",
-        PARTICLE_DIR + "jackpot-blue.p",
-        PARTICLE_DIR + "jackpot-green.p",
-        PARTICLE_DIR + "jackpot-purple.p",
-    };
-    private static final int CARD_CLICK_PARTICLE_COUNT = 10;
-    // Nombre d'instances pré-allouées (et rechargées) par couleur : évite toute
-    // allocation au moment du clic, seule source possible d'un décalage visible
-    // entre la disparition de la carte et l'apparition des particules.
-    private static final int CARD_CLICK_POOL_INITIAL_CAPACITY = 10;
-    private static final int CARD_CLICK_POOL_MAX              = 20;
 
     // -------------------------------------------------------------------------
     // Contrôleur — seul point d'accès à la logique de jeu
@@ -149,33 +105,13 @@ public class GameScreen extends ScreenAdapter {
     private final Texture    buttonUpTexture;
     private final Texture    buttonDownTexture;
     private final Texture    buttonDisabledTexture;
-    private final Texture    tooltipBackgroundTexture;
-    private final Texture    healthBarBgTexture;
-    private final Texture    healthBarFillTexture;
-    private final Texture    playerHealthBarBgTexture;
-    private final Texture    playerHealthBarFillTexture;
     private final Texture    cardBackTexture;
     private final Map<String, Texture> cardTextures   = new HashMap<>();
     private final Map<Symbol, Texture> symbolTextures = new HashMap<>();
 
-    private final Sound buttonClickSound;
-    private final Sound spinButtonSound;
-    private final Sound cardDealSound;
-    private final Sound cardFlipSound;
-    private final Sound cardClickSound;
-    private final Sound oneSymbolSound;
-    private final Sound twoSymbolsSound;
-    private final Sound bingoThreeSymbolsSound;
-
-    /** Un gabarit par couleur, chargé une fois ; sert uniquement à construire son pool et à libérer sa texture dans dispose(). */
-    private final List<ParticleEffect> cardClickEffectSources = new ArrayList<>();
-    /** Un pool par couleur : obtain() renvoie une instance déjà démarrée, neuve ou recyclée, sans allocation une fois pré-chauffé. */
-    private final List<ParticleEffectPool> cardClickEffectPools = new ArrayList<>();
-    /** Instances de particules en cours d'animation, libérées vers leur pool d'origine au fur et à mesure qu'elles se terminent. */
-    private final List<ParticleEffectPool.PooledEffect> activeCardClickEffects = new ArrayList<>();
-
-    /** Cartes en cours d'animation de distribution (dos -> face), à nettoyer si une nouvelle donne démarre. */
-    private final List<Image> flyingCards = new ArrayList<>();
+    private final GameSounds sounds = new GameSounds();
+    private final CardClickParticles cardClickParticles = new CardClickParticles();
+    private final CardDealAnimator cardDealAnimator;
 
     // -------------------------------------------------------------------------
     // Acteurs Scene2D
@@ -183,16 +119,11 @@ public class GameScreen extends ScreenAdapter {
 
     private final Image      background;
     private final Group      deck;
-    private final Image      healthBarBg;
-    private final Image      healthBarFill;
-    private final Label      healthBarLabel;
-    private final Image      playerHealthBarBg;
-    private final Image      playerHealthBarFill;
-    private final Label      playerHealthBarLabel;
+    private final HealthBarView enemyHealthBar;
+    private final HealthBarView playerHealthBar;
     private final Table      cardTable = new Table();
     private final Table      slotTable = new Table();
-    private final Table      tooltip;
-    private final Label      tooltipLabel;
+    private final Tooltip    tooltip;
     private       TextButton spinButton;
     private  TextButton drawButton;
     private       Label      scoreLabel;
@@ -222,41 +153,16 @@ public class GameScreen extends ScreenAdapter {
         buttonUpTexture          = makeButtonTexture(Color.valueOf("1a1a1aff"), BUTTON_GOLD);
         buttonDownTexture        = makeButtonTexture(Color.valueOf("4a0000ff"), BUTTON_GOLD);
         buttonDisabledTexture    = makeButtonTexture(Color.valueOf("2a2a2aff"), Color.valueOf("6b5a2eff"));
-        tooltipBackgroundTexture = makeColorTexture(Color.BLACK);
-        healthBarBgTexture         = makeColorTexture(Color.valueOf("550000ff"));
-        healthBarFillTexture       = makeColorTexture(Color.RED);
-        playerHealthBarBgTexture   = makeColorTexture(Color.valueOf("005500ff"));
-        playerHealthBarFillTexture = makeColorTexture(Color.GREEN);
         cardBackTexture            = new Texture(Gdx.files.internal(CARD_BACK_PATH));
-
-        buttonClickSound = Gdx.audio.newSound(Gdx.files.internal(SOUND_BUTTON_CLICK));
-        spinButtonSound  = Gdx.audio.newSound(Gdx.files.internal(SOUND_SPIN_BUTTON));
-        cardDealSound    = Gdx.audio.newSound(Gdx.files.internal(SOUND_CARD_DEAL));
-        cardFlipSound    = Gdx.audio.newSound(Gdx.files.internal(SOUND_CARD_FLIP));
-        cardClickSound   = Gdx.audio.newSound(Gdx.files.internal(SOUND_CARD_CLICK));
-        oneSymbolSound         = Gdx.audio.newSound(Gdx.files.internal(SOUND_1_SYMBOL));
-        twoSymbolsSound        = Gdx.audio.newSound(Gdx.files.internal(SOUND_2_SYMBOLS));
-        bingoThreeSymbolsSound = Gdx.audio.newSound(Gdx.files.internal(SOUND_BINGO_3_SYMBOLS));
-
-        for (String path : CARD_CLICK_EFFECT_PATHS) {
-            ParticleEffect source = new ParticleEffect();
-            source.load(Gdx.files.internal(path), Gdx.files.internal(PARTICLE_DIR));
-            cardClickEffectSources.add(source);
-
-            ParticleEffectPool pool = new ParticleEffectPool(source, CARD_CLICK_POOL_INITIAL_CAPACITY, CARD_CLICK_POOL_MAX);
-            pool.fill(CARD_CLICK_POOL_INITIAL_CAPACITY); // alloue maintenant, pas au premier clic
-            cardClickEffectPools.add(pool);
-        }
+        cardDealAnimator = new CardDealAnimator(stage, cardBackTexture, CARD_WIDTH, CARD_HEIGHT, sounds.cardDeal, sounds.cardFlip);
 
         preloadSymbolTextures();
 
-        background          = buildBackground();
-        healthBarBg         = buildHealthBarBg();
-        healthBarFill       = buildHealthBarFill();
-        healthBarLabel       = buildHealthBarLabel();
-        playerHealthBarBg   = buildPlayerHealthBarBg();
-        playerHealthBarFill = buildPlayerHealthBarFill();
-        playerHealthBarLabel = buildPlayerHealthBarLabel();
+        background      = buildBackground();
+        enemyHealthBar  = new HealthBarView(font, Color.valueOf("550000ff"), Color.RED, HEALTH_BAR_WIDTH, HEALTH_BAR_HEIGHT);
+        playerHealthBar = new HealthBarView(font, Color.valueOf("005500ff"), Color.GREEN, HEALTH_BAR_WIDTH, HEALTH_BAR_HEIGHT);
+        enemyHealthBar.setPosition(healthBarX(), healthBarY());
+        playerHealthBar.setPosition(healthBarX(), playerHealthBarY());
         drawButton = buildDrawButton();
         spinButton    = buildSpinButton();
         spinButton.setDisabled(true);
@@ -264,27 +170,22 @@ public class GameScreen extends ScreenAdapter {
         scoreLabel    = buildScoreLabel();
         restartButton = buildRestartButton();
         restartButton.setVisible(false);
-        tooltipLabel  = new Label("", new Label.LabelStyle(font, Color.WHITE));
-        tooltip       = buildTooltip();
+        tooltip       = new Tooltip(font);
 
         refreshHealthBar();
         refreshPlayerHealthBar();
 
         stage.addActor(background);
         stage.addActor(deck);
-        stage.addActor(healthBarBg);
-        stage.addActor(healthBarFill);
-        stage.addActor(healthBarLabel);
-        stage.addActor(playerHealthBarBg);
-        stage.addActor(playerHealthBarFill);
-        stage.addActor(playerHealthBarLabel);
+        enemyHealthBar.addTo(stage);
+        playerHealthBar.addTo(stage);
         stage.addActor(drawButton);
         stage.addActor(spinButton);
         stage.addActor(scoreLabel);
         stage.addActor(restartButton);
         stage.addActor(slotTable);
         stage.addActor(cardTable);
-        stage.addActor(tooltip); // en dernier : toujours au-dessus
+        stage.addActor(tooltip.getActor()); // en dernier : toujours au-dessus
     }
 
     // -------------------------------------------------------------------------
@@ -323,61 +224,6 @@ public class GameScreen extends ScreenAdapter {
         return generated;
     }
 
-    /** Fond (piste) de la barre de vie de l'ennemi. */
-    private Image buildHealthBarBg() {
-        Image img = new Image(new TextureRegionDrawable(new TextureRegion(healthBarBgTexture)));
-        img.setSize(HEALTH_BAR_WIDTH, HEALTH_BAR_HEIGHT);
-        img.setPosition(healthBarX(), healthBarY());
-        return img;
-    }
-
-    /** Remplissage (proportionnel aux PV) de la barre de vie de l'ennemi. */
-    private Image buildHealthBarFill() {
-        Image img = new Image(new TextureRegionDrawable(new TextureRegion(healthBarFillTexture)));
-        img.setSize(HEALTH_BAR_WIDTH, HEALTH_BAR_HEIGHT);
-        img.setPosition(healthBarX(), healthBarY());
-        return img;
-    }
-
-    /** Label "PV/PV max" centré sur la barre de vie de l'ennemi. */
-    private Label buildHealthBarLabel() {
-        return buildHealthBarLabel(healthBarX(), healthBarY());
-    }
-
-    /** Fond (piste) de la barre de vie du joueur. */
-    private Image buildPlayerHealthBarBg() {
-        Image img = new Image(new TextureRegionDrawable(new TextureRegion(playerHealthBarBgTexture)));
-        img.setSize(HEALTH_BAR_WIDTH, HEALTH_BAR_HEIGHT);
-        img.setPosition(healthBarX(), playerHealthBarY());
-        return img;
-    }
-
-    /** Remplissage (proportionnel aux PV) de la barre de vie du joueur. */
-    private Image buildPlayerHealthBarFill() {
-        Image img = new Image(new TextureRegionDrawable(new TextureRegion(playerHealthBarFillTexture)));
-        img.setSize(HEALTH_BAR_WIDTH, HEALTH_BAR_HEIGHT);
-        img.setPosition(healthBarX(), playerHealthBarY());
-        return img;
-    }
-
-    /** Label "PV/PV max" centré sur la barre de vie du joueur. */
-    private Label buildPlayerHealthBarLabel() {
-        return buildHealthBarLabel(healthBarX(), playerHealthBarY());
-    }
-
-    /**
-     * Crée un label vide, centré, de la taille d'une barre de vie, positionné
-     * en {@code (x, y)} — factorisé car utilisé à l'identique pour l'ennemi
-     * et pour le joueur.
-     */
-    private Label buildHealthBarLabel(float x, float y) {
-        Label label = new Label("", new Label.LabelStyle(font, Color.WHITE));
-        label.setSize(HEALTH_BAR_WIDTH, HEALTH_BAR_HEIGHT);
-        label.setPosition(x, y);
-        label.setAlignment(Align.center);
-        return label;
-    }
-
     /** Bouton "Tirer 3 cartes", en bas à gauche de l'écran. */
     private TextButton buildDrawButton() {
         String text = "Tirer 3 cartes";
@@ -387,7 +233,7 @@ public class GameScreen extends ScreenAdapter {
         button.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
-                buttonClickSound.play();
+                sounds.buttonClick.play();
                 onDrawCards();
             }
         });
@@ -403,7 +249,7 @@ public class GameScreen extends ScreenAdapter {
         button.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
-                spinButtonSound.play();
+                sounds.spinButton.play();
                 onSpin();
             }
         });
@@ -443,20 +289,11 @@ public class GameScreen extends ScreenAdapter {
         button.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
-                buttonClickSound.play();
+                sounds.buttonClick.play();
                 onRestart();
             }
         });
         return button;
-    }
-
-    /** Infobulle noire affichant la description d'une carte au survol. */
-    private Table buildTooltip() {
-        Table t = new Table();
-        t.setBackground(new TextureRegionDrawable(new TextureRegion(tooltipBackgroundTexture)));
-        t.add(tooltipLabel).pad(8f);
-        t.setVisible(false);
-        return t;
     }
 
     // -------------------------------------------------------------------------
@@ -568,11 +405,11 @@ public class GameScreen extends ScreenAdapter {
     /** Joue le bruitage correspondant au tirage : bingo (3 identiques), paire (2 identiques), ou aucun. */
     private void playSymbolResultSound(TurnResult result) {
         if (result.isJackpot()) {
-            bingoThreeSymbolsSound.play();
+            sounds.bingoThreeSymbols.play();
         } else if (result.isPair()) {
-            twoSymbolsSound.play();
+            sounds.twoSymbols.play();
         } else {
-            oneSymbolSound.play();
+            sounds.oneSymbol.play();
         }
     }
 
@@ -582,29 +419,12 @@ public class GameScreen extends ScreenAdapter {
      * particules à l'endroit cliqué (en coordonnées du Stage).
      */
     private void onCardPlayed(Card card, Image cardImage, float stageX, float stageY) {
-        cardClickSound.play();
+        sounds.cardClick.play();
         gameController.playCard(card);
         cardImage.setVisible(false);
-        tooltip.setVisible(false);
-        playCardClickEffect(stageX, stageY);
+        tooltip.hide();
+        cardClickParticles.play(stageX, stageY);
         Gdx.app.log("GameScreen", "Carte jouee : " + card);
-    }
-
-    /**
-     * Tire CARD_CLICK_PARTICLE_COUNT particules à la position donnée (coordonnées
-     * du Stage) : chacune vient du pool d'une couleur prise au hasard (une seule
-     * particule par fichier, voir son Count max:1), dont la direction (0-360°,
-     * champ Angle des fichiers .p) est elle-même tirée au hasard par LibGDX.
-     * pool.obtain() renvoie une instance déjà démarrée (start() a déjà eu lieu,
-     * neuve ou recyclée) : aucune allocation ici tant que le pool reste chaud.
-     */
-    private void playCardClickEffect(float stageX, float stageY) {
-        for (int i = 0; i < CARD_CLICK_PARTICLE_COUNT; i++) {
-            ParticleEffectPool pool = cardClickEffectPools.get(MathUtils.random(cardClickEffectPools.size() - 1));
-            ParticleEffectPool.PooledEffect effect = pool.obtain();
-            effect.setPosition(stageX, stageY);
-            activeCardClickEffects.add(effect);
-        }
     }
 
     /** Le combat est terminé dès que le joueur ou l'ennemi n'a plus de points de vie. */
@@ -623,7 +443,7 @@ public class GameScreen extends ScreenAdapter {
     /** Recommence un combat : réinitialise le GameController et tout l'affichage. */
     private void onRestart() {
         gameController.restart();
-        cancelCardDealAnimation();
+        cardDealAnimator.cancel();
         cardTable.clearChildren();
         slotTable.clearChildren();
         refreshHealthBar();
@@ -644,7 +464,7 @@ public class GameScreen extends ScreenAdapter {
      * distribution qui les révèle progressivement.
      */
     private void refreshCardTable(List<Card> hand) {
-        cancelCardDealAnimation();
+        cardDealAnimator.cancel();
         cardTable.clearChildren();
 
         List<Image> cardImages = new ArrayList<>();
@@ -661,54 +481,7 @@ public class GameScreen extends ScreenAdapter {
         cardTable.setPosition((worldWidth - cardTable.getWidth()) / 2f, CARD_TABLE_Y);
         cardTable.validate();
 
-        dealCards(cardImages);
-    }
-
-    /**
-     * Anime l'arrivée des cartes : chacune part, dos visible, du sommet de la
-     * pile (le deck, au-dessus des boutons), glisse jusqu'à sa place dans
-     * cardTable (déjà calculée mais invisible), puis se retourne pour révéler
-     * sa face.
-     */
-    private void dealCards(List<Image> targets) {
-        float startX = deckTopX();
-        float startY = deckTopY();
-
-        for (int i = 0; i < targets.size(); i++) {
-            Image target = targets.get(i);
-            Vector2 targetPos = target.localToStageCoordinates(new Vector2(0f, 0f));
-
-            Image flyingCard = new Image(new TextureRegionDrawable(new TextureRegion(cardBackTexture)));
-            flyingCard.setSize(CARD_WIDTH, CARD_HEIGHT);
-            flyingCard.setOrigin(CARD_WIDTH / 2f, CARD_HEIGHT / 2f);
-            flyingCard.setPosition(startX, startY);
-            stage.addActor(flyingCard);
-            flyingCards.add(flyingCard);
-
-            flyingCard.addAction(Actions.sequence(
-                Actions.delay(i * DEAL_STAGGER_DELAY),
-                Actions.run(cardDealSound::play),
-                Actions.moveTo(targetPos.x, targetPos.y, DEAL_MOVE_DURATION, Interpolation.pow2Out),
-                Actions.delay(FLIP_PAUSE_DELAY),
-                Actions.run(cardFlipSound::play),
-                Actions.scaleTo(0f, 1f, FLIP_HALF_DURATION),
-                Actions.run(() -> flyingCard.setDrawable(target.getDrawable())),
-                Actions.scaleTo(1f, 1f, FLIP_HALF_DURATION),
-                Actions.run(() -> {
-                    flyingCards.remove(flyingCard);
-                    flyingCard.remove();
-                    target.setVisible(true);
-                })
-            ));
-        }
-    }
-
-    /** Retire toute carte encore en cours de distribution (ex : nouvelle donne avant la fin de l'animation). */
-    private void cancelCardDealAnimation() {
-        for (Image flyingCard : flyingCards) {
-            flyingCard.remove();
-        }
-        flyingCards.clear();
+        cardDealAnimator.deal(cardImages, deckTopX(), deckTopY());
     }
 
     /** Reconstruit la rangée de symboles affichés après un spin, centrée horizontalement. */
@@ -728,17 +501,13 @@ public class GameScreen extends ScreenAdapter {
     /** Met à jour la largeur du remplissage et le texte "PV/PV max" de la barre de vie de l'ennemi. */
     private void refreshHealthBar() {
         Enemy enemy = gameController.getGameState().getEnemy();
-        float ratio = (float) enemy.getHp() / enemy.getMaxHp();
-        healthBarFill.setWidth(HEALTH_BAR_WIDTH * ratio);
-        healthBarLabel.setText(enemy.getHp() + "/" + enemy.getMaxHp());
+        enemyHealthBar.refresh(enemy.getHp(), enemy.getMaxHp());
     }
 
     /** Met à jour la largeur du remplissage et le texte "PV/PV max" de la barre de vie du joueur. */
     private void refreshPlayerHealthBar() {
         Player player = gameController.getGameState().getPlayer();
-        float ratio = (float) player.getHp() / player.getMaxHp();
-        playerHealthBarFill.setWidth(HEALTH_BAR_WIDTH * ratio);
-        playerHealthBarLabel.setText(player.getHp() + "/" + player.getMaxHp());
+        playerHealthBar.refresh(player.getHp(), player.getMaxHp());
     }
 
     /** Met à jour le label affichant les points (gains) du joueur. */
@@ -760,17 +529,14 @@ public class GameScreen extends ScreenAdapter {
             @Override
             public void enter(InputEvent event, float x, float y, int pointer, Actor fromActor) {
                 if (pointer != -1) return;
-                tooltipLabel.setText(card.getDescription());
-                tooltip.pack();
                 Vector2 pos = cardImage.localToStageCoordinates(new Vector2(0, CARD_HEIGHT + 5f));
-                tooltip.setPosition(pos.x, pos.y);
-                tooltip.setVisible(true);
+                tooltip.show(card.getDescription(), pos.x, pos.y);
             }
 
             @Override
             public void exit(InputEvent event, float x, float y, int pointer, Actor toActor) {
                 if (pointer != -1) return;
-                tooltip.setVisible(false);
+                tooltip.hide();
             }
 
             @Override
@@ -789,17 +555,14 @@ public class GameScreen extends ScreenAdapter {
             @Override
             public void enter(InputEvent event, float x, float y, int pointer, Actor fromActor) {
                 if (pointer != -1) return;
-                tooltipLabel.setText(symbol.getDescription());
-                tooltip.pack();
                 Vector2 pos = symbolImage.localToStageCoordinates(new Vector2(0, SYMBOL_HEIGHT + 5f));
-                tooltip.setPosition(pos.x, pos.y);
-                tooltip.setVisible(true);
+                tooltip.show(symbol.getDescription(), pos.x, pos.y);
             }
 
             @Override
             public void exit(InputEvent event, float x, float y, int pointer, Actor toActor) {
                 if (pointer != -1) return;
-                tooltip.setVisible(false);
+                tooltip.hide();
             }
         });
     }
@@ -882,12 +645,8 @@ public class GameScreen extends ScreenAdapter {
 
         background.setSize(backgroundWidth(), backgroundHeight());
         background.setPosition(backgroundX(), backgroundY());
-        healthBarBg.setPosition(healthBarX(), healthBarY());
-        healthBarFill.setPosition(healthBarX(), healthBarY());
-        healthBarLabel.setPosition(healthBarX(), healthBarY());
-        playerHealthBarBg.setPosition(healthBarX(), playerHealthBarY());
-        playerHealthBarFill.setPosition(healthBarX(), playerHealthBarY());
-        playerHealthBarLabel.setPosition(healthBarX(), playerHealthBarY());
+        enemyHealthBar.setPosition(healthBarX(), healthBarY());
+        playerHealthBar.setPosition(healthBarX(), playerHealthBarY());
         scoreLabel.setPosition(20, worldHeight - SCORE_LABEL_TOP_MARGIN);
         restartButton.setPosition(20, restartButtonY());
     }
@@ -901,16 +660,7 @@ public class GameScreen extends ScreenAdapter {
 
         SpriteBatch batch = luckyGame.getBatch();
         batch.begin();
-        Iterator<ParticleEffectPool.PooledEffect> it = activeCardClickEffects.iterator();
-        while (it.hasNext()) {
-            ParticleEffectPool.PooledEffect effect = it.next();
-            effect.update(delta);
-            effect.draw(batch);
-            if (effect.isComplete()) {
-                it.remove();
-                effect.free(); // revient dans son pool d'origine, prête à être réobtenue sans allocation
-            }
-        }
+        cardClickParticles.render(batch, delta);
         batch.end();
     }
 
@@ -924,22 +674,13 @@ public class GameScreen extends ScreenAdapter {
         buttonUpTexture.dispose();
         buttonDownTexture.dispose();
         buttonDisabledTexture.dispose();
-        tooltipBackgroundTexture.dispose();
-        healthBarBgTexture.dispose();
-        healthBarFillTexture.dispose();
-        playerHealthBarBgTexture.dispose();
-        playerHealthBarFillTexture.dispose();
+        tooltip.dispose();
+        enemyHealthBar.dispose();
+        playerHealthBar.dispose();
         cardBackTexture.dispose();
         cardTextures.values().forEach(Texture::dispose);
         symbolTextures.values().forEach(Texture::dispose);
-        buttonClickSound.dispose();
-        spinButtonSound.dispose();
-        cardDealSound.dispose();
-        cardFlipSound.dispose();
-        cardClickSound.dispose();
-        oneSymbolSound.dispose();
-        twoSymbolsSound.dispose();
-        bingoThreeSymbolsSound.dispose();
-        cardClickEffectSources.forEach(ParticleEffect::dispose);
+        sounds.dispose();
+        cardClickParticles.dispose();
     }
 }
