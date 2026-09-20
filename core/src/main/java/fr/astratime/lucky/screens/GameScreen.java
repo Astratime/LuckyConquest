@@ -32,6 +32,7 @@ import fr.astratime.lucky.entities.Player;
 import fr.astratime.lucky.entities.Symbol;
 import fr.astratime.lucky.entities.SymbolOutcome;
 import fr.astratime.lucky.entities.TurnResult;
+import fr.astratime.lucky.entities.events.EnemyDamagedEvent;
 import fr.astratime.lucky.entities.events.Event;
 
 import java.util.ArrayList;
@@ -408,9 +409,10 @@ public class GameScreen extends ScreenAdapter {
 
     /**
      * Journalise, pour chaque symbole tiré, son effet de base (voir
-     * {@link Symbol#getDescription()}) à côté du résultat réellement obtenu
-     * ce tour une fois les bonus des cartes jouées appliqués (bonus
-     * d'attaque/bouclier, multiplicateur de gains, drain de vie, etc.).
+     * {@link Symbol#getDescription()}), les dégâts finaux qu'il a
+     * effectivement infligés à l'ennemi (s'il en inflige), et le résultat
+     * complet obtenu ce tour une fois les bonus des cartes jouées appliqués
+     * (bonus d'attaque/bouclier, multiplicateur de gains, drain de vie, etc.).
      */
     private void logSymbolOutcomes(TurnResult result) {
         for (SymbolOutcome outcome : result.getSymbolOutcomes()) {
@@ -418,7 +420,17 @@ public class GameScreen extends ScreenAdapter {
             String resultText = outcome.getEvents().isEmpty()
                 ? "aucun effet"
                 : outcome.getEvents().stream().map(Event::describe).collect(Collectors.joining(", "));
-            Gdx.app.log("GameScreen", symbol + " — base: " + symbol.getDescription() + " | resultat: " + resultText);
+
+            List<EnemyDamagedEvent> damageEvents = outcome.getEvents().stream()
+                .filter(e -> e instanceof EnemyDamagedEvent)
+                .map(e -> (EnemyDamagedEvent) e)
+                .toList();
+            String finalDamageText = damageEvents.isEmpty()
+                ? ""
+                : " | degats finaux: " + damageEvents.stream().mapToInt(e -> e.damage).sum();
+
+            Gdx.app.log("GameScreen", symbol + " - base: " + symbol.getDescription()
+                + finalDamageText + " | resultat: " + resultText);
         }
     }
 
