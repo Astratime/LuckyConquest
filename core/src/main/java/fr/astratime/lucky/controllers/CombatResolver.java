@@ -53,7 +53,7 @@ public class CombatResolver {
 
         // Chaque action résout elle-même sa logique et retourne ses événements ;
         // on les rattache aussi au symbole qui les a produits pour le journal détaillé.
-        List<SymbolOutcome> symbolOutcomes = new ArrayList<>();
+        List<SymbolOutcome> symbolOutcomes = new ArrayList<>(symbolActions.size());
         for (SymbolAction symbolAction : symbolActions) {
             List<Event> actionEvents = symbolAction.getAction().resolve(combatContext);
             events.addAll(actionEvents);

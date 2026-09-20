@@ -26,6 +26,14 @@ public class GameController {
     private       GameState  gameState;
     private final TurnEngine turnEngine = new TurnEngine();
 
+    /**
+     * Cartes chargées depuis les JSON une seule fois pour toute la durée de vie du
+     * contrôleur : Card et Effect sont immuables et Deck copie la liste reçue, donc
+     * rien n'empêche de réutiliser ces mêmes instances à chaque restart() plutôt que
+     * de relire et re-parser les fichiers à chaque nouvelle partie.
+     */
+    private final List<Card> cardTemplates = CardLoader.loadAll();
+
     /** Effets accumulés depuis le début du tour, appliqués au moment du spin. */
     private final List<Effect> pendingEffects = new ArrayList<>();
 
@@ -36,9 +44,9 @@ public class GameController {
      */
     private int nextDrawCount = DEFAULT_DRAW_COUNT;
 
-    /** Charge les cartes depuis les JSON et crée une nouvelle partie (joueur + ennemi au maximum de leurs PV). */
+    /** Crée une nouvelle partie (joueur + ennemi au maximum de leurs PV) à partir des cartes déjà chargées. */
     public GameController() {
-        this.gameState = new GameState(CardLoader.loadAll());
+        this.gameState = new GameState(cardTemplates);
     }
 
     /**
@@ -47,7 +55,7 @@ public class GameController {
      * vide les effets en attente du tour précédent.
      */
     public void restart() {
-        this.gameState = new GameState(CardLoader.loadAll());
+        this.gameState = new GameState(cardTemplates);
         pendingEffects.clear();
         nextDrawCount = DEFAULT_DRAW_COUNT;
     }

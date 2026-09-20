@@ -23,7 +23,7 @@ public class ActionResolver {
      * @return la liste des couples symbole/action à résoudre, dans l'ordre des symboles
      */
     public List<SymbolAction> resolve(Symbol[] symbols) {
-        List<SymbolAction> symbolActions = new ArrayList<>();
+        List<SymbolAction> symbolActions = new ArrayList<>(symbols.length);
         for (Symbol symbol : symbols) {
             if (symbol != null) {
                 SymbolRegistry.getAction(symbol).ifPresent(action -> symbolActions.add(new SymbolAction(symbol, action)));
