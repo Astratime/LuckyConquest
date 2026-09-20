@@ -2,12 +2,9 @@
 eclipse.project.name = appName + '-core'
 
 dependencies {
-  api "com.badlogicgames.ashley:ashley:$ashleyVersion"
-  api "com.badlogicgames.box2dlights:box2dlights:$box2dlightsVersion"
-  api "com.badlogicgames.gdx-controllers:gdx-controllers-core:$gdxControllersVersion"
-  api "com.badlogicgames.gdx:gdx-ai:$aiVersion"
-  api "com.badlogicgames.gdx:gdx-box2d:$gdxVersion"
-  api "com.badlogicgames.gdx:gdx-bullet:$gdxVersion"
+  // Ashley (ECS), Box2D/Bullet (physique 2D/3D), Box2DLights, gdx-ai et
+  // gdx-controllers ont été retirés : aucune classe du jeu n'en dépend
+  // (vérifié par recherche dans tout le code source).
   api "com.badlogicgames.gdx:gdx-freetype:$gdxVersion"
   api "com.badlogicgames.gdx:gdx:$gdxVersion"
 
