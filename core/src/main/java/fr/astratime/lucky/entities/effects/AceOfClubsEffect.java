@@ -33,15 +33,17 @@ public class AceOfClubsEffect extends Effect {
     @Override
     public void apply(TurnContext context) {
         Player player = context.getCombatContext().getPlayer();
-        player.consumeGainsPercent(CONSUME_PERCENT); // le montant consommé n'est pas utilisé ici
+        int bonusProbaSymbol = player.consumeGainsPercent(CONSUME_PERCENT);
+
+        int finalBonusProbaAmount = WEIGHT_BOOST_AMOUNT + bonusProbaSymbol;
 
         List<Symbol> attackSymbols = SymbolRegistry.getAttackSymbols();
         if (attackSymbols.isEmpty()) return;
 
         Symbol target = attackSymbols.get(RANDOM.nextInt(attackSymbols.size()));
-        context.getSpinContext().addWeightBoost(target, WEIGHT_BOOST_AMOUNT);
+        context.getSpinContext().addWeightBoost(target, finalBonusProbaAmount);
         context.getCombatContext().addAttackBonus(ATTACK_BOOST_AMOUNT);
-        context.addEvent(new SymbolBoostedEvent(target, WEIGHT_BOOST_AMOUNT));
+        context.addEvent(new SymbolBoostedEvent(target, finalBonusProbaAmount));
     }
 
     @Override
