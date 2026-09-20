@@ -14,8 +14,8 @@ import java.util.List;
  * partie des dégâts subis.
  * Lit dans le CombatContext :
  *  - defenseBonus       : bonus plat de bouclier (cartes jouées)
- *  - reflectPercentBonus : reflect additif accordé par symbole (cartes Carreau,
- *                          renvoi de dégâts non implémenté pour l'instant)
+ *  - reflectPercentBonus : reflect additif accordé par symbole (cartes Carreau),
+ *                          consommé lors de la riposte ennemie par CombatResolver
  *  - conditionalReflect  : si vrai (As de Carreau), reflect 100% sous 20% de vie, sinon 50%
  */
 public class DefenseAction extends Action {

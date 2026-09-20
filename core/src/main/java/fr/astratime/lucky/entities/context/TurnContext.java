@@ -9,13 +9,13 @@ import java.util.List;
  * Agrège les deux contextes du tour : spin et combat.
  * Construit par PreparationResolver en début de résolution,
  * à partir des effets de cartes joués par le joueur.
- * drawCount : nombre de cartes à piocher au prochain tour (modifiable par effets).
+ * drawCount : nombre de cartes à piocher au prochain tour (modifiable par effets),
+ * initialisé à baseDrawCount — la valeur de référence possédée par GameController,
+ * pour ne pas dupliquer cette constante à deux endroits différents.
  */
 public class TurnContext {
 
-    private static final int DEFAULT_DRAW_COUNT = 3;
-
-    private int drawCount = DEFAULT_DRAW_COUNT;
+    private int drawCount;
 
     private final SpinContext   spinContext;
     private final CombatContext combatContext;
@@ -24,10 +24,12 @@ public class TurnContext {
     private final List<Event> events = new ArrayList<>();
 
     /**
+     * @param baseDrawCount nombre de cartes piochées par défaut, avant bonus des effets de ce tour
      * @param spinContext   modificateurs de probabilité pour le spin de ce tour
      * @param combatContext modificateurs de combat pour ce tour
      */
-    public TurnContext(SpinContext spinContext, CombatContext combatContext) {
+    public TurnContext(int baseDrawCount, SpinContext spinContext, CombatContext combatContext) {
+        this.drawCount     = baseDrawCount;
         this.spinContext   = spinContext;
         this.combatContext = combatContext;
     }

@@ -3,9 +3,9 @@ package fr.astratime.lucky.entities.effects;
 import fr.astratime.lucky.entities.context.TurnContext;
 
 /**
- * Carreau (non-As) : ajoute un pourcentage de renvoi de dégâts pour chaque
+ * Carreau (non-As) : ajoute un pourcentage de renvoi de dégâts, activé par un
  * symbole de défense tiré ce tour. percent augmente avec le rang.
- * Le renvoi effectif sera consommé lors du tour ennemi (pas encore implémenté).
+ * Consommé lors de la riposte ennemie par CombatResolver.
  */
 public class DiamondReflectEffect extends Effect {
 

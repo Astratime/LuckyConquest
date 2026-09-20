@@ -29,6 +29,13 @@ public class GameController {
     /** Effets accumulés depuis le début du tour, appliqués au moment du spin. */
     private final List<Effect> pendingEffects = new ArrayList<>();
 
+    /**
+     * Nombre de cartes à piocher au prochain appel de {@link #drawCards()}.
+     * Vaut DEFAULT_DRAW_COUNT par défaut, mis à jour par le résultat de {@link #spin()}
+     * quand un effet (ex : ExtraDrawEffect) l'a augmenté pour le tour suivant.
+     */
+    private int nextDrawCount = DEFAULT_DRAW_COUNT;
+
     /** Charge les cartes depuis les JSON et crée une nouvelle partie (joueur + ennemi au maximum de leurs PV). */
     public GameController() {
         this.gameState = new GameState(CardLoader.loadAll());
@@ -42,6 +49,7 @@ public class GameController {
     public void restart() {
         this.gameState = new GameState(CardLoader.loadAll());
         pendingEffects.clear();
+        nextDrawCount = DEFAULT_DRAW_COUNT;
     }
 
     // -------------------------------------------------------------------------
@@ -52,12 +60,13 @@ public class GameController {
      * Phase 1 : pioche les cartes et les retourne pour affichage.
      * La main précédente (si non jouée) part à la défausse avant de piocher.
      *
-     * @return la nouvelle main du joueur ({@link #DEFAULT_DRAW_COUNT} cartes)
+     * @return la nouvelle main du joueur ({@link #nextDrawCount} cartes, DEFAULT_DRAW_COUNT
+     *         sauf bonus d'un effet type ExtraDrawEffect appliqué au tour précédent)
      */
     public List<Card> drawCards() {
         Player player = gameState.getPlayer();
         player.getDiscardPile().addAll(player.getCurrentHand());
-        List<Card> hand = player.getDeck().draw(DEFAULT_DRAW_COUNT);
+        List<Card> hand = player.getDeck().draw(nextDrawCount);
         player.setCurrentHand(hand);
         return hand;
     }
@@ -79,7 +88,8 @@ public class GameController {
      * @return le résultat du tour (symboles tirés, événements, gains)
      */
     public TurnResult spin() {
-        TurnResult result = turnEngine.playTurn(gameState, pendingEffects);
+        TurnResult result = turnEngine.playTurn(gameState, pendingEffects, DEFAULT_DRAW_COUNT);
+        nextDrawCount = result.getNextDrawCount();
         pendingEffects.clear();
         return result;
     }

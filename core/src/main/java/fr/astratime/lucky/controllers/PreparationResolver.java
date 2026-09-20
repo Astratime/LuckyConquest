@@ -23,12 +23,13 @@ public class PreparationResolver {
      * @param pendingEffects effets accumulés depuis le début du tour
      * @param player         joueur du combat en cours
      * @param enemy          ennemi du combat en cours
+     * @param baseDrawCount  nombre de cartes piochées par défaut, avant bonus des effets de ce tour
      * @return le TurnContext résultant, prêt pour le spin et le combat
      */
-    public TurnContext resolve(List<Effect> pendingEffects, Player player, Enemy enemy) {
+    public TurnContext resolve(List<Effect> pendingEffects, Player player, Enemy enemy, int baseDrawCount) {
         SpinContext   spinContext   = new SpinContext();
         CombatContext combatContext = new CombatContext(player, enemy);
-        TurnContext   turnContext   = new TurnContext(spinContext, combatContext);
+        TurnContext   turnContext   = new TurnContext(baseDrawCount, spinContext, combatContext);
 
         pendingEffects.forEach(effect -> effect.apply(turnContext));
 
