@@ -36,13 +36,14 @@ public class AceOfClubsEffect extends Effect {
         int bonusProbaSymbol = player.consumeGainsPercent(CONSUME_PERCENT);
 
         int finalBonusProbaAmount = WEIGHT_BOOST_AMOUNT + bonusProbaSymbol;
+        int finalBonusAttackAmount = ATTACK_BOOST_AMOUNT + bonusProbaSymbol/2;
 
         List<Symbol> attackSymbols = SymbolRegistry.getAttackSymbols();
         if (attackSymbols.isEmpty()) return;
 
         Symbol target = attackSymbols.get(RANDOM.nextInt(attackSymbols.size()));
         context.getSpinContext().addWeightBoost(target, finalBonusProbaAmount);
-        context.getCombatContext().addAttackBonus(ATTACK_BOOST_AMOUNT);
+        context.getCombatContext().addAttackBonus(finalBonusAttackAmount);
         context.addEvent(new SymbolBoostedEvent(target, finalBonusProbaAmount));
     }
 

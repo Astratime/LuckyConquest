@@ -12,7 +12,7 @@ import java.util.Random;
 public class AceOfHeartsEffect extends Effect {
 
     /** Boost de poids appliqué au symbole d'attaque choisi au hasard. */
-    private static final int    BOOST_AMOUNT = 60;
+    private static final int    BOOST_AMOUNT = 200;
     private static final Random RANDOM       = new Random();
 
     /** Choisit un symbole d'attaque au hasard et augmente son poids de tirage pour ce tour. */
