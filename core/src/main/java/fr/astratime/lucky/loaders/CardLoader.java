@@ -29,19 +29,39 @@ public class CardLoader {
         "cards/definitions/pique.json"
     };
 
-    /** Charge et retourne toutes les cartes de tous les fichiers de définition. */
+    /**
+     * Cartes spéciales (sans suite classique). Elles ne font pas partie du deck
+     * de départ : elles sont chargées à part via {@link #loadSpecialCards()}.
+     */
+    private static final String[] SPECIAL_DEFINITION_FILES = {
+        "cards/definitions/special.json"
+    };
+
+    /** Charge et retourne toutes les cartes des quatre suites (deck de départ). */
     public static List<Card> loadAll() {
+        List<Card> cards = loadFiles(DEFINITION_FILES);
+        Gdx.app.log("CardLoader", cards.size() + " cartes chargees.");
+        return cards;
+    }
+
+    /** Charge et retourne les cartes spéciales (ex : Pioche +2). */
+    public static List<Card> loadSpecialCards() {
+        List<Card> cards = loadFiles(SPECIAL_DEFINITION_FILES);
+        Gdx.app.log("CardLoader", cards.size() + " cartes speciales chargees.");
+        return cards;
+    }
+
+    /** Parse chaque fichier de définition fourni et retourne l'ensemble de leurs cartes. */
+    private static List<Card> loadFiles(String[] paths) {
         List<Card> cards = new ArrayList<>();
         JsonReader reader = new JsonReader();
 
-        for (String path : DEFINITION_FILES) {
+        for (String path : paths) {
             JsonValue root = reader.parse(Gdx.files.internal(path));
             for (JsonValue cardJson = root.child; cardJson != null; cardJson = cardJson.next) {
                 cards.add(parseCard(cardJson));
             }
         }
-
-        Gdx.app.log("CardLoader", cards.size() + " cartes chargees.");
         return cards;
     }
 
