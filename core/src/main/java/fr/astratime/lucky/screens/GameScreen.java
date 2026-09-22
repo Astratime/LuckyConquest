@@ -275,7 +275,7 @@ public class GameScreen extends ScreenAdapter {
 
     /** Bouton "Tirer 3 cartes", en bas à gauche de l'écran. */
     private TextButton buildDrawButton() {
-        String text = "Tirer 3 cartes";
+        String text = "Tirer 6 cartes";
         TextButton button = new TextButton(text, buildButtonStyle());
         button.setSize(buttonWidth(text), BUTTON_HEIGHT);
         button.setPosition(20, 20);
