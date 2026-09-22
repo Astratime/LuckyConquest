@@ -8,12 +8,19 @@ import fr.astratime.lucky.entities.Symbol;
 import fr.astratime.lucky.entities.effects.*;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Charge les cartes depuis les fichiers JSON dans assets/cards/definitions/.
- * Un fichier par suite — format : tableau d'objets carte, chaque carte ayant
- * un id, un nom, un assetPath, une suite, un rang et une liste d'effets.
+ * Un fichier par suite (plus un pour les cartes spéciales) — format : tableau
+ * d'objets carte, chaque carte ayant un id, un nom, un assetPath, une suite
+ * optionnelle, un rang optionnel et une liste d'effets.
+ *
+ * La composition du deck de départ est décrite à part, dans
+ * assets/cards/decks/starter.json : liste d'ids de cartes avec leur nombre
+ * d'exemplaires.
  *
  * Ajouter une nouvelle carte = ajouter une entrée dans le JSON correspondant.
  * Ajouter un nouveau type d'effet = ajouter un case dans parseEffect().
@@ -26,23 +33,62 @@ public class CardLoader {
         "cards/definitions/coeur.json",
         "cards/definitions/trefle.json",
         "cards/definitions/carreau.json",
-        "cards/definitions/pique.json"
+        "cards/definitions/pique.json",
+        "cards/definitions/special.json"
     };
 
-    /** Charge et retourne toutes les cartes de tous les fichiers de définition. */
+    private static final String STARTER_DECK_FILE = "cards/decks/starter.json";
+
+    /** Charge et retourne une instance de chaque carte définie (toutes suites et cartes spéciales). */
     public static List<Card> loadAll() {
         List<Card> cards = new ArrayList<>();
+        for (JsonValue cardJson : loadDefinitions().values()) {
+            cards.add(parseCard(cardJson));
+        }
+        Gdx.app.log("CardLoader", cards.size() + " cartes chargees.");
+        return cards;
+    }
+
+    /**
+     * Charge le deck de départ décrit par STARTER_DECK_FILE. Chaque exemplaire
+     * est une instance de {@link Card} distincte, même pour une carte présente
+     * en plusieurs exemplaires.
+     *
+     * @throws IllegalArgumentException si le deck référence un id de carte inconnu
+     */
+    public static List<Card> loadStarterDeck() {
+        Map<String, JsonValue> definitions = loadDefinitions();
+        List<Card> cards = new ArrayList<>();
+
+        JsonValue root = new JsonReader().parse(Gdx.files.internal(STARTER_DECK_FILE));
+        for (JsonValue entry = root.child; entry != null; entry = entry.next) {
+            String id = entry.getString("id");
+            JsonValue definition = definitions.get(id);
+            if (definition == null) {
+                throw new IllegalArgumentException("Carte inconnue dans " + STARTER_DECK_FILE + " : " + id);
+            }
+            int count = entry.getInt("count", 1);
+            for (int i = 0; i < count; i++) {
+                cards.add(parseCard(definition));
+            }
+        }
+
+        Gdx.app.log("CardLoader", "Deck de depart : " + cards.size() + " cartes.");
+        return cards;
+    }
+
+    /** @return l'objet JSON de chaque carte définie, indexé par id (dans l'ordre des fichiers). */
+    private static Map<String, JsonValue> loadDefinitions() {
+        Map<String, JsonValue> definitions = new LinkedHashMap<>();
         JsonReader reader = new JsonReader();
 
         for (String path : DEFINITION_FILES) {
             JsonValue root = reader.parse(Gdx.files.internal(path));
             for (JsonValue cardJson = root.child; cardJson != null; cardJson = cardJson.next) {
-                cards.add(parseCard(cardJson));
+                definitions.put(cardJson.getString("id"), cardJson);
             }
         }
-
-        Gdx.app.log("CardLoader", cards.size() + " cartes chargees.");
-        return cards;
+        return definitions;
     }
 
     /**

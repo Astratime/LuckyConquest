@@ -10,8 +10,9 @@ import com.badlogic.gdx.scenes.scene2d.actions.Actions;
 import com.badlogic.gdx.scenes.scene2d.ui.Image;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 
-import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Anime l'arrivée d'une main de cartes : chacune part, dos visible, d'un point
@@ -36,8 +37,8 @@ public class CardDealAnimator {
     private final Sound   dealSound;
     private final Sound   flipSound;
 
-    /** Cartes dos visible actuellement en vol, à nettoyer si une nouvelle donne démarre. */
-    private final List<Image> flyingCards = new ArrayList<>();
+    /** Cartes dos visible actuellement en vol (associées à leur carte cible), à nettoyer en cas d'annulation. */
+    private final Map<Image, Image> flyingCards = new LinkedHashMap<>();
 
     public CardDealAnimator(Stage stage, Texture cardBackTexture, float cardWidth, float cardHeight,
                              Sound dealSound, Sound flipSound) {
@@ -64,7 +65,7 @@ public class CardDealAnimator {
             flyingCard.setOrigin(cardWidth / 2f, cardHeight / 2f);
             flyingCard.setPosition(startX, startY);
             stage.addActor(flyingCard);
-            flyingCards.add(flyingCard);
+            flyingCards.put(flyingCard, target);
 
             flyingCard.addAction(Actions.sequence(
                 Actions.delay(i * DEAL_STAGGER_DELAY),
@@ -84,10 +85,15 @@ public class CardDealAnimator {
         }
     }
 
-    /** Retire toute carte encore en cours de distribution (ex : nouvelle donne avant la fin de l'animation). */
+    /**
+     * Interrompt la distribution en cours : retire les cartes encore en vol et
+     * révèle directement leur carte cible à sa place (ex : spin lancé avant la
+     * fin de l'animation).
+     */
     public void cancel() {
-        for (Image flyingCard : flyingCards) {
-            flyingCard.remove();
+        for (Map.Entry<Image, Image> entry : flyingCards.entrySet()) {
+            entry.getKey().remove();
+            entry.getValue().setVisible(true);
         }
         flyingCards.clear();
     }

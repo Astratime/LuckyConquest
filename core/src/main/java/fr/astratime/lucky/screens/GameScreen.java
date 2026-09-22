@@ -9,12 +9,14 @@ import com.badlogic.gdx.graphics.g2d.GlyphLayout;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator;
+import com.badlogic.gdx.math.Interpolation;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.Group;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.InputListener;
 import com.badlogic.gdx.scenes.scene2d.Stage;
+import com.badlogic.gdx.scenes.scene2d.actions.Actions;
 import com.badlogic.gdx.scenes.scene2d.ui.Image;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
@@ -26,6 +28,7 @@ import com.badlogic.gdx.utils.viewport.ScreenViewport;
 import fr.astratime.lucky.LuckyGame;
 import fr.astratime.lucky.controllers.GameController;
 import fr.astratime.lucky.entities.Card;
+import fr.astratime.lucky.entities.DrawResult;
 import fr.astratime.lucky.entities.Enemy;
 import fr.astratime.lucky.entities.GameState;
 import fr.astratime.lucky.entities.Player;
@@ -62,6 +65,12 @@ public class GameScreen extends ScreenAdapter {
     private static final float BUTTON_HEIGHT = 60f;
     private static final float CARD_TABLE_Y  = 350f;
 
+    // Main du joueur : une rangée de cartes centrée, positionnée à la main
+    // (et non via une Table) pour pouvoir animer le réagencement quand des
+    // cartes sont piochées pendant le tour.
+    private static final float HAND_CARD_GAP      = 20f;
+    private static final float HAND_MOVE_DURATION = 0.25f;
+
     // Thème casino des boutons : fond sombre, liseré doré, police pixel art.
     // La largeur de chaque bouton s'adapte au texte qu'il contient (mesuré
     // via buttonWidth()) ; BUTTON_WIDTH n'est plus qu'un plancher minimal.
@@ -71,10 +80,9 @@ public class GameScreen extends ScreenAdapter {
     private static final float  BUTTON_TEXT_PADDING = 20f; // marge horizontale de chaque côté du texte
     private static final Color  BUTTON_GOLD         = Color.GOLDENROD;
 
-    // Pile de cartes (dos visible) affichée au-dessus des boutons "Tirer" et
-    // "Lancer machine" — c'est de là que partent les cartes distribuées.
-    private static final int   DECK_STACK_SIZE   = 4;
-    private static final float DECK_STACK_OFFSET = 3f;
+    // Deck (dos visible) affiché au-dessus des boutons "Tirer" et "Lancer
+    // machine" — c'est de là que partent les cartes distribuées. La défausse
+    // est son symétrique, à droite de l'écran, à la même hauteur.
     private static final float DECK_TOP_MARGIN   = 20f;
     private static final float DECK_LEFT_SHIFT   = 40f;
     private static final float DECK_Y            = 20f + BUTTON_HEIGHT + DECK_TOP_MARGIN;
@@ -116,18 +124,29 @@ public class GameScreen extends ScreenAdapter {
     private final GameSounds sounds = new GameSounds();
     private final CardClickParticles cardClickParticles = new CardClickParticles();
     private final CardDealAnimator cardDealAnimator;
+    private final CardDiscardAnimator cardDiscardAnimator;
+
+    /**
+     * Cartes animées en route vers la défausse, déjà comptées dans le modèle :
+     * la défausse affichée ne les compte qu'à leur arrivée.
+     */
+    private int discardInFlight = 0;
 
     // -------------------------------------------------------------------------
     // Acteurs Scene2D
     // -------------------------------------------------------------------------
 
     private final Image      background;
-    private final Group      deck;
+    private final CardPileView deckPile;
+    private final CardPileView discardPile;
     private final HealthBarView enemyHealthBar;
     private final HealthBarView playerHealthBar;
-    private final Table      cardTable = new Table();
+    private final Group      handGroup  = new Group();
+    /** Images des cartes de la main (non jouées), dans l'ordre d'affichage ; userObject = la Card. */
+    private final List<Image> handImages = new ArrayList<>();
     private final Table      slotTable = new Table();
     private final Tooltip    tooltip;
+    private final PileContentOverlay pileOverlay;
     private       TextButton spinButton;
     private  TextButton drawButton;
     private       Label      scoreLabel;
@@ -159,6 +178,7 @@ public class GameScreen extends ScreenAdapter {
         buttonDisabledTexture    = makeButtonTexture(Color.valueOf("2a2a2aff"), Color.valueOf("6b5a2eff"));
         cardBackTexture            = new Texture(Gdx.files.internal(CARD_BACK_PATH));
         cardDealAnimator = new CardDealAnimator(stage, cardBackTexture, CARD_WIDTH, CARD_HEIGHT, sounds.cardDeal, sounds.cardFlip);
+        cardDiscardAnimator = new CardDiscardAnimator(stage, cardBackTexture, CARD_WIDTH, CARD_HEIGHT, sounds.cardDeal, sounds.cardFlip);
 
         preloadSymbolTextures();
 
@@ -170,17 +190,24 @@ public class GameScreen extends ScreenAdapter {
         drawButton = buildDrawButton();
         spinButton    = buildSpinButton();
         spinButton.setDisabled(true);
-        deck          = buildDeck(); // positionné une fois la largeur réelle des boutons connue
         scoreLabel    = buildScoreLabel();
         restartButton = buildRestartButton();
         restartButton.setVisible(false);
         tooltip       = new Tooltip(font);
+        // Piles positionnées une fois la largeur réelle des boutons connue.
+        deckPile      = buildPile("Deck", this::onDeckClicked);
+        deckPile.setPosition(deckX(), DECK_Y);
+        discardPile   = buildPile("Defausse", this::onDiscardClicked);
+        discardPile.setPosition(discardX(), DECK_Y);
+        pileOverlay   = new PileContentOverlay(stage, font, tooltip, this::getCardTexture, CARD_WIDTH, CARD_HEIGHT);
 
         refreshHealthBar();
         refreshPlayerHealthBar();
+        refreshPiles();
 
         stage.addActor(background);
-        stage.addActor(deck);
+        stage.addActor(deckPile);
+        stage.addActor(discardPile);
         enemyHealthBar.addTo(stage);
         playerHealthBar.addTo(stage);
         stage.addActor(drawButton);
@@ -188,7 +215,8 @@ public class GameScreen extends ScreenAdapter {
         stage.addActor(scoreLabel);
         stage.addActor(restartButton);
         stage.addActor(slotTable);
-        stage.addActor(cardTable);
+        stage.addActor(handGroup);
+        stage.addActor(pileOverlay.getActor()); // voile de consultation des piles, par-dessus le jeu
         stage.addActor(tooltip.getActor()); // en dernier : toujours au-dessus
     }
 
@@ -204,17 +232,34 @@ public class GameScreen extends ScreenAdapter {
         return img;
     }
 
-    /** Pile décorative de cartes dos visible, au-dessus des boutons : point de départ des cartes distribuées. */
-    private Group buildDeck() {
-        Group group = new Group();
-        for (int i = 0; i < DECK_STACK_SIZE; i++) {
-            Image card = new Image(new TextureRegionDrawable(new TextureRegion(cardBackTexture)));
-            card.setSize(CARD_WIDTH, CARD_HEIGHT);
-            card.setPosition(i * DECK_STACK_OFFSET, i * DECK_STACK_OFFSET);
-            group.addActor(card);
-        }
-        group.setPosition(deckX(), DECK_Y);
-        return group;
+    /**
+     * Pile de cartes dos visible (deck ou défausse) avec son compteur. Au survol,
+     * une infobulle invite à cliquer ; au clic, {@code onClick} affiche son contenu.
+     */
+    private CardPileView buildPile(String name, Runnable onClick) {
+        CardPileView pile = new CardPileView(name, cardBackTexture, font, CARD_WIDTH, CARD_HEIGHT);
+        pile.addListener(new InputListener() {
+
+            @Override
+            public void enter(InputEvent event, float x, float y, int pointer, Actor fromActor) {
+                if (pointer != -1 || (fromActor != null && fromActor.isDescendantOf(pile))) return;
+                tooltip.show("Cliquer pour voir les cartes", pile.getX(), pile.getLabelTopY() + 5f);
+            }
+
+            @Override
+            public void exit(InputEvent event, float x, float y, int pointer, Actor toActor) {
+                if (pointer != -1 || (toActor != null && toActor.isDescendantOf(pile))) return;
+                tooltip.hide();
+            }
+
+            @Override
+            public boolean touchDown(InputEvent event, float x, float y, int pointer, int button) {
+                sounds.buttonClick.play();
+                onClick.run();
+                return true;
+            }
+        });
+        return pile;
     }
 
     /** Génère la police pixel art dorée utilisée par les boutons, à partir de la police TrueType du thème. */
@@ -230,7 +275,7 @@ public class GameScreen extends ScreenAdapter {
 
     /** Bouton "Tirer 3 cartes", en bas à gauche de l'écran. */
     private TextButton buildDrawButton() {
-        String text = "Tirer 3 cartes";
+        String text = "Tirer 6 cartes";
         TextButton button = new TextButton(text, buildButtonStyle());
         button.setSize(buttonWidth(text), BUTTON_HEIGHT);
         button.setPosition(20, 20);
@@ -349,7 +394,7 @@ public class GameScreen extends ScreenAdapter {
     }
 
     // -------------------------------------------------------------------------
-    // Positionnement du deck
+    // Positionnement du deck et de la défausse
     // -------------------------------------------------------------------------
 
     /**
@@ -364,10 +409,10 @@ public class GameScreen extends ScreenAdapter {
         return center - CARD_WIDTH / 2f - DECK_LEFT_SHIFT;
     }
 
-    /** @return l'abscisse de la carte du dessus de la pile : point de départ des cartes distribuées. */
-    private float deckTopX() { return deckX() + (DECK_STACK_SIZE - 1) * DECK_STACK_OFFSET; }
-    /** @return l'ordonnée de la carte du dessus de la pile : point de départ des cartes distribuées. */
-    private float deckTopY() { return DECK_Y + (DECK_STACK_SIZE - 1) * DECK_STACK_OFFSET; }
+    /** Symétrique du deck par rapport au centre de l'écran : la défausse est ancrée à droite. */
+    private float discardX() {
+        return stage.getViewport().getWorldWidth() - deckX() - deckPile.getWidth();
+    }
 
     // -------------------------------------------------------------------------
     // Interactions joueur — transmises au GameController
@@ -375,19 +420,24 @@ public class GameScreen extends ScreenAdapter {
 
     /** Pioche une nouvelle main et lance son animation de distribution ; active le spin, désactive la pioche. */
     private void onDrawCards() {
-        List<Card> hand = gameController.drawCards();
-        refreshCardTable(hand);
+        if (drawButton.isDisabled() || pileOverlay.isShown()) return;
+        cardDealAnimator.cancel();
+        clearHand();
+        dealIntoHand(gameController.drawCards());
         spinButton.setDisabled(false);
         drawButton.setDisabled(true);
     }
 
     /**
-     * Lance la machine à sous, met à jour tout l'affichage (symboles, PV,
-     * score), puis termine le combat si l'un des deux camps est vaincu,
-     * ou repasse la main à la phase de pioche sinon.
+     * Lance la machine à sous, envoie les cartes restées sur la table à la
+     * défausse (animation), met à jour tout l'affichage (symboles, PV, score),
+     * puis termine le combat si l'un des deux camps est vaincu, ou repasse la
+     * main à la phase de pioche sinon.
      */
     private void onSpin() {
+        if (spinButton.isDisabled() || pileOverlay.isShown()) return;
         TurnResult result = gameController.spin();
+        discardHandWithAnimation();
         refreshSlotTable(result.getSymbols());
         refreshHealthBar();
         refreshPlayerHealthBar();
@@ -405,6 +455,16 @@ public class GameScreen extends ScreenAdapter {
         Gdx.app.log("GameScreen", result.getEvents().stream()
             .map(Event::describe)
             .collect(Collectors.joining(" | ")));
+    }
+
+    /** Affiche par-dessus le jeu les cartes restant dans le deck (triées, pas dans l'ordre de pioche). */
+    private void onDeckClicked() {
+        pileOverlay.show("Deck", gameController.getGameState().getPlayer().getDeck().getCards());
+    }
+
+    /** Affiche par-dessus le jeu les cartes de la défausse (triées). */
+    private void onDiscardClicked() {
+        pileOverlay.show("Defausse", gameController.getGameState().getPlayer().getDiscardPile().getCards());
     }
 
     /**
@@ -446,17 +506,23 @@ public class GameScreen extends ScreenAdapter {
     }
 
     /**
-     * Transmet la carte jouée au contrôleur (ses effets seront appliqués au
-     * prochain spin), la retire de la main et déclenche l'effet de
-     * particules à l'endroit cliqué (en coordonnées du Stage).
+     * Transmet la carte jouée au contrôleur (ses effets de tour seront appliqués
+     * au prochain spin), la retire de la main, déclenche l'effet de particules
+     * à l'endroit cliqué (en coordonnées du Stage), puis distribue les cartes
+     * éventuellement piochées par ses effets immédiats.
      */
     private void onCardPlayed(Card card, Image cardImage, float stageX, float stageY) {
         sounds.cardClick.play();
-        gameController.playCard(card);
-        cardImage.setVisible(false);
+        handImages.remove(cardImage);
+        cardImage.remove();
         tooltip.hide();
         cardClickParticles.play(stageX, stageY);
         Gdx.app.log("GameScreen", "Carte jouee : " + card);
+
+        DrawResult drawResult = gameController.playCard(card);
+        if (!drawResult.getAddedToHand().isEmpty() || !drawResult.getDiscarded().isEmpty()) {
+            dealIntoHand(drawResult);
+        }
     }
 
     /** Le combat est terminé dès que le joueur ou l'ennemi n'a plus de points de vie. */
@@ -476,7 +542,11 @@ public class GameScreen extends ScreenAdapter {
     private void onRestart() {
         gameController.restart();
         cardDealAnimator.cancel();
-        cardTable.clearChildren();
+        cardDiscardAnimator.cancel();
+        discardInFlight = 0;
+        pileOverlay.hide();
+        clearHand();
+        refreshPiles();
         slotTable.clearChildren();
         refreshHealthBar();
         refreshPlayerHealthBar();
@@ -491,29 +561,90 @@ public class GameScreen extends ScreenAdapter {
     // -------------------------------------------------------------------------
 
     /**
-     * Reconstruit la main affichée : place chaque carte (invisible) à sa
-     * position finale dans {@code cardTable}, puis déclenche l'animation de
-     * distribution qui les révèle progressivement.
+     * Ajoute à la main les cartes piochées : chacune est placée (invisible) à sa
+     * position finale, les cartes déjà présentes glissent pour recentrer la
+     * rangée, puis l'animation de distribution les révèle depuis le deck. Les
+     * cartes piochées sans place dans la main partent du deck vers la défausse.
      */
-    private void refreshCardTable(List<Card> hand) {
-        cardDealAnimator.cancel();
-        cardTable.clearChildren();
+    private void dealIntoHand(DrawResult drawResult) {
+        refreshPiles(); // le deck a déjà perdu les cartes piochées
 
-        List<Image> cardImages = new ArrayList<>();
-        for (Card card : hand) {
+        List<Image> newImages = new ArrayList<>();
+        for (Card card : drawResult.getAddedToHand()) {
             Image cardImage = new Image(new TextureRegionDrawable(new TextureRegion(getCardTexture(card))));
+            cardImage.setUserObject(card);
+            cardImage.setSize(CARD_WIDTH, CARD_HEIGHT);
             cardImage.setVisible(false); // révélée seulement à la fin de son animation de distribution
             addCardListeners(cardImage, card);
-            cardTable.add(cardImage).size(CARD_WIDTH, CARD_HEIGHT).pad(10f);
-            cardImages.add(cardImage);
+            handGroup.addActor(cardImage);
+            handImages.add(cardImage);
+            newImages.add(cardImage);
         }
-        cardTable.pack();
+        layoutHand(true);
+        cardDealAnimator.deal(newImages, deckPile.getTopX(), deckPile.getTopY());
 
-        float worldWidth = stage.getViewport().getWorldWidth();
-        cardTable.setPosition((worldWidth - cardTable.getWidth()) / 2f, CARD_TABLE_Y);
-        cardTable.validate();
+        int overflow = drawResult.getDiscarded().size();
+        if (overflow > 0) {
+            discardInFlight += overflow;
+            refreshPiles();
+            cardDiscardAnimator.discardFromDeck(overflow,
+                deckPile.getTopX(), deckPile.getTopY(),
+                discardPile.getTopX(), discardPile.getTopY(),
+                newImages.size() * 0.15f, // après la distribution des cartes gardées
+                this::onCardLandedInDiscard);
+        }
+    }
 
-        cardDealAnimator.deal(cardImages, deckTopX(), deckTopY());
+    /**
+     * Place les cartes de la main sur une rangée centrée. Avec {@code animate},
+     * les cartes déjà révélées glissent vers leur nouvelle place ; les autres
+     * (en cours de distribution) y sont placées directement.
+     */
+    private void layoutHand(boolean animate) {
+        int count = handImages.size();
+        float rowWidth = count * CARD_WIDTH + Math.max(0, count - 1) * HAND_CARD_GAP;
+        float startX   = (stage.getViewport().getWorldWidth() - rowWidth) / 2f;
+
+        for (int i = 0; i < count; i++) {
+            Image cardImage = handImages.get(i);
+            float x = startX + i * (CARD_WIDTH + HAND_CARD_GAP);
+            cardImage.clearActions();
+            if (animate && cardImage.isVisible()) {
+                cardImage.addAction(Actions.moveTo(x, CARD_TABLE_Y, HAND_MOVE_DURATION, Interpolation.pow2Out));
+            } else {
+                cardImage.setPosition(x, CARD_TABLE_Y);
+            }
+        }
+    }
+
+    /** Fin de tour : les cartes restées sur la table se retournent puis glissent jusqu'à la défausse. */
+    private void discardHandWithAnimation() {
+        cardDealAnimator.cancel(); // révèle d'un coup les cartes encore en cours de distribution
+        tooltip.hide();
+        discardInFlight += handImages.size();
+        refreshPiles();
+        cardDiscardAnimator.discardFromTable(new ArrayList<>(handImages),
+            discardPile.getTopX(), discardPile.getTopY(), this::onCardLandedInDiscard);
+        handImages.clear();
+    }
+
+    /** Une carte animée vient d'arriver sur la défausse : elle y est désormais comptée. */
+    private void onCardLandedInDiscard() {
+        discardInFlight = Math.max(0, discardInFlight - 1);
+        refreshPiles();
+    }
+
+    /** Retire toutes les cartes de la main affichée, sans animation. */
+    private void clearHand() {
+        handImages.clear();
+        handGroup.clearChildren();
+    }
+
+    /** Met à jour les compteurs du deck et de la défausse (sans les cartes encore en vol vers celle-ci). */
+    private void refreshPiles() {
+        Player player = gameController.getGameState().getPlayer();
+        deckPile.setCount(player.getDeck().getCards().size());
+        discardPile.setCount(Math.max(0, player.getDiscardPile().size() - discardInFlight));
     }
 
     /** Reconstruit la rangée de symboles affichés après un spin, centrée horizontalement. */
@@ -647,14 +778,18 @@ public class GameScreen extends ScreenAdapter {
     /**
      * Installe le processeur d'entrée de l'écran : le Stage (clics, survols)
      * en priorité, puis un raccourci clavier (Espace = piocher, F = lancer
-     * la machine si possible).
+     * la machine si possible, Échap = fermer la consultation d'une pile).
      */
     @Override
     public void show() {
         InputAdapter keyboardInput = new InputAdapter() {
             @Override
             public boolean keyDown(int keycode) {
-                if (keycode == Input.Keys.SPACE) {
+                if (keycode == Input.Keys.ESCAPE && pileOverlay.isShown()) {
+                    pileOverlay.hide();
+                    return true;
+                }
+                if (keycode == Input.Keys.SPACE && !drawButton.isDisabled()) {
                     onDrawCards();
                     return true;
                 }
@@ -681,6 +816,9 @@ public class GameScreen extends ScreenAdapter {
         playerHealthBar.setPosition(healthBarX(), playerHealthBarY());
         scoreLabel.setPosition(20, worldHeight - SCORE_LABEL_TOP_MARGIN);
         restartButton.setPosition(20, restartButtonY());
+        discardPile.setPosition(discardX(), DECK_Y);
+        layoutHand(false);
+        pileOverlay.hide();
     }
 
     /** Efface l'écran, met à jour et dessine le Stage, puis l'effet de particules par-dessus. */
@@ -714,5 +852,6 @@ public class GameScreen extends ScreenAdapter {
         symbolTextures.values().forEach(Texture::dispose);
         sounds.dispose();
         cardClickParticles.dispose();
+        pileOverlay.dispose();
     }
 }

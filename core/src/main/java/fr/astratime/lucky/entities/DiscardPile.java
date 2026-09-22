@@ -32,6 +32,11 @@ public class DiscardPile {
         return cards.size();
     }
 
+    /** @return les cartes de la défausse (vue non modifiable, dans leur ordre d'arrivée). */
+    public List<Card> getCards() {
+        return Collections.unmodifiableList(cards);
+    }
+
     /**
      * Vide la défausse et renvoie son contenu mélangé, prêt à être remis
      * dans le deck. Après cet appel, la défausse est vide.

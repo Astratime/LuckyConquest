@@ -1,0 +1,13 @@
+[
+  {
+    "id": "draw_2",
+    "name": "Pioche +2",
+    "assetPath": "cards/special/draw_2.png",
+    "effects": [
+      {
+        "type": "EXTRA_DRAW",
+        "extraCards": 2
+      }
+    ]
+  }
+]
