@@ -1,0 +1,19 @@
+[
+  { "id": "1_coeur" },
+  { "id": "11_coeur" },
+  { "id": "12_coeur" },
+  { "id": "13_coeur" },
+  { "id": "1_trefle" },
+  { "id": "11_trefle" },
+  { "id": "12_trefle" },
+  { "id": "13_trefle" },
+  { "id": "1_carreau" },
+  { "id": "11_carreau" },
+  { "id": "12_carreau" },
+  { "id": "13_carreau" },
+  { "id": "1_pique" },
+  { "id": "11_pique" },
+  { "id": "12_pique" },
+  { "id": "13_pique" },
+  { "id": "draw_2", "count": 2 }
+]

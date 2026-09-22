@@ -29,17 +29,15 @@ public class TurnEngine {
      *
      * @param gameState      état de la partie (joueur, ennemi, numéro de tour)
      * @param pendingEffects effets des cartes jouées par le joueur depuis le début du tour
-     * @param baseDrawCount  nombre de cartes piochées par défaut, avant bonus des effets de ce tour (ex : ExtraDrawEffect)
      * @return le journal d'événements et le résultat du spin pour ce tour
      */
-    public TurnResult playTurn(GameState gameState, List<Effect> pendingEffects, int baseDrawCount) {
+    public TurnResult playTurn(GameState gameState, List<Effect> pendingEffects) {
 
         // Phase 1 : effets des cartes → TurnContext
         TurnContext turnContext = preparationResolver.resolve(
             pendingEffects,
             gameState.getPlayer(),
-            gameState.getEnemy(),
-            baseDrawCount
+            gameState.getEnemy()
         );
 
         // Phase 2 : spin avec SpinContext
@@ -57,8 +55,7 @@ public class TurnEngine {
             turnContext.getCombatContext(),
             symbolActions,
             symbols,
-            turnContext.getEvents(),
-            turnContext.getDrawCount()
+            turnContext.getEvents()
         );
 
         gameState.nextTurn();

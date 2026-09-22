@@ -1,9 +1,11 @@
 package fr.astratime.lucky.controllers;
 
 import fr.astratime.lucky.entities.Card;
+import fr.astratime.lucky.entities.DrawResult;
 import fr.astratime.lucky.entities.GameState;
 import fr.astratime.lucky.entities.Player;
 import fr.astratime.lucky.entities.TurnResult;
+import fr.astratime.lucky.entities.context.PlayContext;
 import fr.astratime.lucky.entities.effects.Effect;
 import fr.astratime.lucky.loaders.CardLoader;
 
@@ -20,7 +22,7 @@ import java.util.List;
  */
 public class GameController {
 
-    /** Nombre de cartes piochées par défaut à chaque appel de {@link #drawCards()}. */
+    /** Nombre de cartes piochées à chaque début de tour par {@link #drawCards()}. */
     private static final int DEFAULT_DRAW_COUNT = 6;
 
     private       GameState  gameState;
@@ -29,16 +31,9 @@ public class GameController {
     /** Effets accumulés depuis le début du tour, appliqués au moment du spin. */
     private final List<Effect> pendingEffects = new ArrayList<>();
 
-    /**
-     * Nombre de cartes à piocher au prochain appel de {@link #drawCards()}.
-     * Vaut DEFAULT_DRAW_COUNT par défaut, mis à jour par le résultat de {@link #spin()}
-     * quand un effet (ex : ExtraDrawEffect) l'a augmenté pour le tour suivant.
-     */
-    private int nextDrawCount = DEFAULT_DRAW_COUNT;
-
-    /** Charge les cartes depuis les JSON et crée une nouvelle partie (joueur + ennemi au maximum de leurs PV). */
+    /** Charge le deck de départ depuis les JSON et crée une nouvelle partie (joueur + ennemi au maximum de leurs PV). */
     public GameController() {
-        this.gameState = new GameState(CardLoader.loadAll());
+        this.gameState = new GameState(CardLoader.loadStarterDeck());
     }
 
     /**
@@ -47,9 +42,8 @@ public class GameController {
      * vide les effets en attente du tour précédent.
      */
     public void restart() {
-        this.gameState = new GameState(CardLoader.loadAll());
+        this.gameState = new GameState(CardLoader.loadStarterDeck());
         pendingEffects.clear();
-        nextDrawCount = DEFAULT_DRAW_COUNT;
     }
 
     // -------------------------------------------------------------------------
@@ -57,40 +51,50 @@ public class GameController {
     // -------------------------------------------------------------------------
 
     /**
-     * Phase 1 : pioche les cartes et les retourne pour affichage.
-     * La main précédente (si non jouée) part à la défausse avant de piocher.
+     * Phase 1 : pioche la main du tour. Normalement la main est déjà vide
+     * (défaussée par {@link #spin()}) ; par sécurité, ce qui y resterait part
+     * à la défausse avant de piocher.
      *
-     * @return la nouvelle main du joueur ({@link #nextDrawCount} cartes, DEFAULT_DRAW_COUNT
-     *         sauf bonus d'un effet type ExtraDrawEffect appliqué au tour précédent)
+     * @return les cartes ajoutées à la main (DEFAULT_DRAW_COUNT, ou moins si
+     *         deck et défausse sont épuisés)
      */
-    public List<Card> drawCards() {
+    public DrawResult drawCards() {
         Player player = gameState.getPlayer();
-        player.getDiscardPile().addAll(player.getCurrentHand());
-        List<Card> hand = player.getDeck().draw(nextDrawCount);
-        player.setCurrentHand(hand);
-        return hand;
+        player.discardHand();
+        return player.draw(DEFAULT_DRAW_COUNT);
     }
 
     /**
-     * Le joueur joue une carte : ses effets sont mis en attente.
-     * Ils seront appliqués au TurnContext lors du spin.
+     * Le joueur joue une carte : elle quitte la main, ses effets immédiats
+     * (ex : pioche) sont appliqués tout de suite, et ses effets de tour sont
+     * mis en attente jusqu'au spin.
      *
      * @param card carte jouée par le joueur
+     * @return les cartes piochées par ses effets immédiats (vide si aucun)
      */
-    public void playCard(Card card) {
+    public DrawResult playCard(Card card) {
+        Player player = gameState.getPlayer();
+        if (!player.playCard(card)) return DrawResult.empty();
+
         pendingEffects.addAll(card.getEffects());
+
+        PlayContext playContext = new PlayContext();
+        card.getEffects().forEach(effect -> effect.onPlay(playContext));
+        if (playContext.getCardsToDraw() <= 0) return DrawResult.empty();
+        return player.draw(playContext.getCardsToDraw());
     }
 
     /**
      * Fin de phase 1 / Phase 2 : applique les effets en attente,
-     * lance la machine à sous, résout le combat et retourne le TurnResult.
+     * lance la machine à sous, résout le combat, puis envoie à la défausse
+     * toutes les cartes du tour (jouées et restées sur la table).
      *
      * @return le résultat du tour (symboles tirés, événements, gains)
      */
     public TurnResult spin() {
-        TurnResult result = turnEngine.playTurn(gameState, pendingEffects, DEFAULT_DRAW_COUNT);
-        nextDrawCount = result.getNextDrawCount();
+        TurnResult result = turnEngine.playTurn(gameState, pendingEffects);
         pendingEffects.clear();
+        gameState.getPlayer().discardHand();
         return result;
     }
 

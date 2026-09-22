@@ -1,5 +1,7 @@
 package fr.astratime.lucky.entities;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -9,11 +11,17 @@ import java.util.List;
  */
 public class Player {
 
+    /** Nombre maximum de cartes (non jouées) sur la table pendant un tour. */
+    public static final int MAX_HAND_SIZE = 8;
+
     private final String      name;
     private final DiscardPile discardPile = new DiscardPile();
     private final Deck        deck;
     private final SlotMachine slotMachine = new SlotMachine();
-    private       List<Card>  currentHand = List.of();
+    /** Cartes sur la table, pas encore jouées ce tour. */
+    private final List<Card>  currentHand = new ArrayList<>();
+    /** Cartes jouées ce tour : quittent la main, rejoignent la défausse en fin de tour. */
+    private final List<Card>  playedCards = new ArrayList<>();
     private       int         hp;
     private final int         maxHp;
 
@@ -77,6 +85,56 @@ public class Player {
         return amount;
     }
 
+    // -------------------------------------------------------------------------
+    // Main, cartes jouées et défausse
+    // -------------------------------------------------------------------------
+
+    /**
+     * Pioche {@code count} cartes du deck. Celles qui tiennent dans la main
+     * (jusqu'à {@link #MAX_HAND_SIZE}) la rejoignent, le surplus part
+     * directement à la défausse.
+     *
+     * @param count nombre de cartes à piocher
+     * @return les cartes ajoutées à la main et celles défaussées faute de place
+     */
+    public DrawResult draw(int count) {
+        List<Card> drawn = deck.draw(count);
+        int room = Math.max(0, MAX_HAND_SIZE - currentHand.size());
+        List<Card> added     = drawn.subList(0, Math.min(room, drawn.size()));
+        List<Card> discarded = drawn.subList(added.size(), drawn.size());
+        currentHand.addAll(added);
+        discardPile.addAll(discarded);
+        return new DrawResult(added, discarded);
+    }
+
+    /**
+     * Joue une carte de la main : elle quitte la table et reste de côté
+     * jusqu'à la fin du tour (elle ne peut donc pas être repiochée ce tour-ci).
+     *
+     * @param card carte jouée
+     * @return {@code false} si la carte n'était pas dans la main (rien n'est fait)
+     */
+    public boolean playCard(Card card) {
+        if (!currentHand.remove(card)) return false;
+        playedCards.add(card);
+        return true;
+    }
+
+    /**
+     * Fin de tour : envoie à la défausse les cartes jouées puis celles restées
+     * sur la table, et vide la main.
+     *
+     * @return les cartes restées sur la table (non jouées), dans leur ordre dans la main
+     */
+    public List<Card> discardHand() {
+        List<Card> remaining = new ArrayList<>(currentHand);
+        discardPile.addAll(playedCards);
+        discardPile.addAll(remaining);
+        playedCards.clear();
+        currentHand.clear();
+        return remaining;
+    }
+
     /** Ajoute {@code amount} au bouclier accumulé ce tour. */
     public void addShield(int amount) { shield += amount; }
 
@@ -101,10 +159,10 @@ public class Player {
     public Deck        getDeck()                    { return deck; }
     /** @return la machine à sous personnelle du joueur. */
     public SlotMachine getSlotMachine()             { return slotMachine; }
-    /** @return la main actuellement en jeu. */
-    public List<Card>  getCurrentHand()             { return currentHand; }
-    /** Remplace la main courante (après une pioche). */
-    public void        setCurrentHand(List<Card> h) { currentHand = h; }
+    /** @return les cartes sur la table, pas encore jouées ce tour (vue non modifiable). */
+    public List<Card>  getCurrentHand()             { return Collections.unmodifiableList(currentHand); }
+    /** @return les cartes jouées ce tour (vue non modifiable). */
+    public List<Card>  getPlayedCards()             { return Collections.unmodifiableList(playedCards); }
     /** @return les gains accumulés. */
     public int         getGains()                   { return gains; }
     /** @return le bouclier accumulé ce tour. */

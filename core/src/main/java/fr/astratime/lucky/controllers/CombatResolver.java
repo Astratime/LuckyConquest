@@ -40,15 +40,12 @@ public class CombatResolver {
      * @param symbols       symboles tirés ce tour (utilisés pour le bonus de paire/jackpot)
      * @param priorEvents   événements déjà survenus en phase 1 (ex : symbole boosté par une
      *                      carte), à faire figurer en tête du journal du tour
-     * @param nextDrawCount nombre de cartes à piocher au prochain tour (voir TurnContext),
-     *                      simplement reporté tel quel dans le TurnResult
      * @return le journal d'événements du tour, les symboles, le détail par symbole et les gains de paire/jackpot
      */
     public TurnResult resolve(CombatContext      combatContext,
                               List<SymbolAction> symbolActions,
                               Symbol[]           symbols,
-                              List<Event>        priorEvents,
-                              int                nextDrawCount) {
+                              List<Event>        priorEvents) {
         List<Event> events = new ArrayList<>(priorEvents);
 
         // Chaque action résout elle-même sa logique et retourne ses événements ;
@@ -98,7 +95,7 @@ public class CombatResolver {
         // Le bouclier (et le renvoi de dégâts) ne vaut que pour ce tour.
         combatContext.getPlayer().resetTurnDefenses();
 
-        return new TurnResult(events, symbols, gains, nextDrawCount, symbolOutcomes);
+        return new TurnResult(events, symbols, gains, symbolOutcomes);
     }
 
     /** @return {@code true} si les trois symboles sont identiques et non nuls. */
