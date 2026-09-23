@@ -28,6 +28,7 @@ import com.badlogic.gdx.utils.viewport.ScreenViewport;
 import fr.astratime.lucky.LuckyGame;
 import fr.astratime.lucky.controllers.GameController;
 import fr.astratime.lucky.entities.Card;
+import fr.astratime.lucky.entities.CardPlayResult;
 import fr.astratime.lucky.entities.DrawResult;
 import fr.astratime.lucky.entities.Enemy;
 import fr.astratime.lucky.entities.GameState;
@@ -520,17 +521,17 @@ public class GameScreen extends ScreenAdapter {
     private void onCardPlayed(Card card, Image cardImage, float stageX, float stageY) {
         sounds.cardClick.play();
         Vector2 cardCenter = cardImage.localToStageCoordinates(new Vector2(CARD_WIDTH / 2f, CARD_HEIGHT / 2f));
-        effectPopupAnimator.play(card.getEffects().stream()
-            .flatMap(effect -> effect.getPopups().stream())
-            .toList(), cardCenter.x, cardCenter.y);
         handImages.remove(cardImage);
         cardImage.remove();
         tooltip.hide();
         cardClickParticles.play(stageX, stageY);
         Gdx.app.log("GameScreen", "Carte jouee : " + card);
 
-        DrawResult drawResult = gameController.playCard(card);
-        refreshScoreLabel(); // une carte peut créditer des gains immédiatement
+        CardPlayResult playResult = gameController.playCard(card);
+        effectPopupAnimator.play(playResult.getPopups(), cardCenter.x, cardCenter.y);
+        refreshScoreLabel(); // une carte peut créditer ou consommer des gains immédiatement
+
+        DrawResult drawResult = playResult.getDrawResult();
         if (!drawResult.getAddedToHand().isEmpty() || !drawResult.getDiscarded().isEmpty()) {
             dealIntoHand(drawResult);
         }

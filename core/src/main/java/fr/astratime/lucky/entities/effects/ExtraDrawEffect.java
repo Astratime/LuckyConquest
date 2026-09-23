@@ -20,6 +20,7 @@ public class ExtraDrawEffect extends Effect {
     @Override
     public void onPlay(PlayContext context) {
         context.addCardsToDraw(extraCards);
+        context.addPopups(getPopups());
     }
 
     /** Aucun effet au moment du spin : la pioche a déjà eu lieu quand la carte a été jouée. */

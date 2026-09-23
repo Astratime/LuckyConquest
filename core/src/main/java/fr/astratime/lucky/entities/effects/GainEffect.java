@@ -19,6 +19,7 @@ public class GainEffect extends Effect {
     @Override
     public void onPlay(PlayContext context) {
         context.addGains(amount);
+        context.addPopups(getPopups());
     }
 
     /** Aucun effet au moment du spin : les gains ont déjà été crédités quand la carte a été jouée. */

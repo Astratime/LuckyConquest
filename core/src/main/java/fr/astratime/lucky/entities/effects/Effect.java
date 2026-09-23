@@ -16,12 +16,18 @@ import java.util.List;
 public abstract class Effect {
 
     /**
-     * Applique la partie immédiate de l'effet, dès que la carte est jouée.
-     * Ne fait rien par défaut : la plupart des effets n'agissent qu'au spin.
+     * Appelé dès que la carte est jouée. Par défaut, l'effet est mis en attente
+     * pour le spin et ses textes ({@link #getPopups()}) sont affichés.
+     * Les effets immédiats (pioche, gains...) redéfinissent cette méthode ; ceux
+     * dont les valeurs dépendent de l'état du jeu à la pose (ex : As de Trèfle)
+     * y calculent aussi leurs textes.
      *
-     * @param context contexte de la carte jouée (ex : cartes à piocher tout de suite)
+     * @param context contexte de la carte jouée
      */
-    public void onPlay(PlayContext context) { }
+    public void onPlay(PlayContext context) {
+        context.queueForSpin(this);
+        context.addPopups(getPopups());
+    }
 
     /**
      * Applique l'effet de la carte au contexte du tour, au moment du spin.
@@ -35,10 +41,12 @@ public abstract class Effect {
 
     /**
      * Textes animés affichés quand la carte est jouée (un par bonus, ex :
-     * "GAINS x+20" puis "ATTAQUE +10"). Chaque effet doit en fournir au moins un,
-     * pour que le joueur voie toujours ce que la carte lui apporte.
+     * "GAINS x+20" puis "ATTAQUE +10"). Chaque effet doit en déclarer, pour que
+     * le joueur voie toujours ce que la carte lui apporte. Pour un effet dont
+     * certaines valeurs ne sont connues qu'à la pose, ce sont les textes fixes :
+     * les autres sont ajoutés par {@link #onPlay(PlayContext)}.
      *
-     * @return les popups de cet effet, dans l'ordre d'affichage
+     * @return les popups fixes de cet effet, dans l'ordre d'affichage
      */
     public abstract List<EffectPopup> getPopups();
 }
