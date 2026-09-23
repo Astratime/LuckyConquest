@@ -1,6 +1,5 @@
 package fr.astratime.lucky.entities;
 
-import fr.astratime.lucky.entities.events.EnemyDamagedEvent;
 import fr.astratime.lucky.entities.events.Event;
 import fr.astratime.lucky.entities.events.JackpotEvent;
 
@@ -54,13 +53,6 @@ public class TurnResult {
     /** @return les événements de la riposte de l'ennemi (vide s'il a été vaincu avant de riposter). */
     public List<Event> getEnemyTurnEvents() { return enemyTurnEvents; }
 
-    /** @return la somme des dégâts infligés à l'ennemi ce tour (déduite des {@link EnemyDamagedEvent}). */
-    public int getTotalDamage() {
-        return events.stream()
-            .filter(e -> e instanceof EnemyDamagedEvent)
-            .mapToInt(e -> ((EnemyDamagedEvent) e).damage)
-            .sum();
-    }
 
     /** @return {@code true} si un {@link JackpotEvent} figure dans le journal de ce tour. */
     public boolean isJackpot() {

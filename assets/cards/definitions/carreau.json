@@ -20,7 +20,8 @@
     "effects": [
       {
         "type": "DIAMOND_REFLECT",
-        "percent": 6
+        "percent": 60,
+        "defenseBoost": 6
       }
     ]
   },
@@ -33,7 +34,8 @@
     "effects": [
       {
         "type": "DIAMOND_REFLECT",
-        "percent": 9
+        "percent": 90,
+        "defenseBoost": 9
       }
     ]
   },
@@ -46,7 +48,8 @@
     "effects": [
       {
         "type": "DIAMOND_REFLECT",
-        "percent": 12
+        "percent": 120,
+        "defenseBoost": 12
       }
     ]
   },
@@ -59,7 +62,8 @@
     "effects": [
       {
         "type": "DIAMOND_REFLECT",
-        "percent": 15
+        "percent": 150,
+        "defenseBoost": 15
       }
     ]
   },
@@ -72,7 +76,8 @@
     "effects": [
       {
         "type": "DIAMOND_REFLECT",
-        "percent": 18
+        "percent": 180,
+        "defenseBoost": 18
       }
     ]
   },
@@ -85,7 +90,8 @@
     "effects": [
       {
         "type": "DIAMOND_REFLECT",
-        "percent": 21
+        "percent": 210,
+        "defenseBoost": 21
       }
     ]
   },
@@ -98,7 +104,8 @@
     "effects": [
       {
         "type": "DIAMOND_REFLECT",
-        "percent": 24
+        "percent": 240,
+        "defenseBoost": 24
       }
     ]
   },
@@ -111,7 +118,8 @@
     "effects": [
       {
         "type": "DIAMOND_REFLECT",
-        "percent": 27
+        "percent": 270,
+        "defenseBoost": 27
       }
     ]
   },
@@ -124,7 +132,8 @@
     "effects": [
       {
         "type": "DIAMOND_REFLECT",
-        "percent": 30
+        "percent": 300,
+        "defenseBoost": 30
       }
     ]
   },
@@ -137,7 +146,8 @@
     "effects": [
       {
         "type": "DIAMOND_REFLECT",
-        "percent": 33
+        "percent": 330,
+        "defenseBoost": 33
       }
     ]
   },
@@ -150,7 +160,8 @@
     "effects": [
       {
         "type": "DIAMOND_REFLECT",
-        "percent": 36
+        "percent": 360,
+        "defenseBoost": 36
       }
     ]
   },
@@ -163,7 +174,8 @@
     "effects": [
       {
         "type": "DIAMOND_REFLECT",
-        "percent": 39
+        "percent": 390,
+        "defenseBoost": 39
       }
     ]
   }

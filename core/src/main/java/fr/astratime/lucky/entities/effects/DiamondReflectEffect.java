@@ -1,33 +1,54 @@
 package fr.astratime.lucky.entities.effects;
 
+import fr.astratime.lucky.entities.Symbol;
+import fr.astratime.lucky.entities.SymbolRegistry;
 import fr.astratime.lucky.entities.context.TurnContext;
 
 import java.util.List;
 
 /**
- * Carreau (non-As) : ajoute un pourcentage de renvoi de dégâts, activé par un
- * symbole de défense tiré ce tour. percent augmente avec le rang.
- * Consommé lors de la riposte ennemie par CombatResolver.
+ * Carreau (non-As) : augmente la probabilité de tirer un symbole de défense et
+ * ajoute un pourcentage de renvoi des dégâts ennemis. Le renvoi s'additionne
+ * sur toutes les cartes Carreau jouées ce tour, et s'active si au moins un
+ * symbole de défense sort (il est calculé lors de la riposte par CombatResolver).
+ * Les deux valeurs augmentent avec le rang (voir cards/definitions/carreau.json).
  */
 public class DiamondReflectEffect extends Effect {
 
     private final int percent;
+    private final int defenseBoost;
 
-    /** @param percent pourcentage de renvoi de dégâts additionné par symbole de défense. */
-    public DiamondReflectEffect(int percent) { this.percent = percent; }
+    /**
+     * @param percent      pourcentage de l'attaque ennemie renvoyé (additionné aux autres cartes Carreau)
+     * @param defenseBoost boost de poids appliqué à chaque symbole de défense pour ce tour
+     */
+    public DiamondReflectEffect(int percent, int defenseBoost) {
+        this.percent      = percent;
+        this.defenseBoost = defenseBoost;
+    }
 
     @Override
     public void apply(TurnContext context) {
         context.getCombatContext().addReflectPercentBonus(percent);
+        if (defenseBoost > 0) {
+            for (Symbol symbol : SymbolRegistry.getDefenseSymbols()) {
+                context.getSpinContext().addWeightBoost(symbol, defenseBoost);
+            }
+        }
     }
 
     @Override
-    public String getDescription() { return "Renvoi de degats +" + percent + "% par symbole de defense"; }
+    public String getDescription() {
+        return "Renvoi +" + percent + "% des degats ennemis si un symbole de defense sort"
+            + (defenseBoost > 0 ? "\nBoost des symboles de defense +" + defenseBoost : "");
+    }
 
     @Override
     public List<EffectPopup> getPopups() {
-        return List.of(
-            EffectPopup.scaled("RENVOI +" + percent + "%", EffectPopup.Style.REFLECT, percent, 40f)
-        );
+        EffectPopup reflect = EffectPopup.scaled("RENVOI +" + percent + "%", EffectPopup.Style.REFLECT,
+            percent, PopupScale.CARD_REFLECT_PERCENT);
+        if (defenseBoost <= 0) return List.of(reflect);
+        return List.of(reflect, EffectPopup.scaled("BOOST DÉFENSE +" + defenseBoost, EffectPopup.Style.DEFENSE,
+            defenseBoost, PopupScale.CARD_DEFENSE_BOOST));
     }
 }

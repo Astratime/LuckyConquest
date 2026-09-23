@@ -1,7 +1,6 @@
 package fr.astratime.lucky.screens;
 
 import com.badlogic.gdx.graphics.Color;
-import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
@@ -30,8 +29,8 @@ public class HealthBarView implements Disposable {
     public HealthBarView(BitmapFont font, Color bgColor, Color fillColor, float width, float height) {
         this.width = width;
 
-        bgTexture   = makeColorTexture(bgColor);
-        fillTexture = makeColorTexture(fillColor);
+        bgTexture   = Textures.solidColor(bgColor);
+        fillTexture = Textures.solidColor(fillColor);
 
         bg = new Image(new TextureRegionDrawable(new TextureRegion(bgTexture)));
         bg.setSize(width, height);
@@ -63,15 +62,6 @@ public class HealthBarView implements Disposable {
         float ratio = (float) hp / maxHp;
         fill.setWidth(width * ratio);
         label.setText(hp + "/" + maxHp);
-    }
-
-    private Texture makeColorTexture(Color color) {
-        Pixmap pixmap = new Pixmap(1, 1, Pixmap.Format.RGBA8888);
-        pixmap.setColor(color);
-        pixmap.fill();
-        Texture texture = new Texture(pixmap);
-        pixmap.dispose();
-        return texture;
     }
 
     @Override

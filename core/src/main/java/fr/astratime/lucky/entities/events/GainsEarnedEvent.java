@@ -1,6 +1,7 @@
 package fr.astratime.lucky.entities.events;
 
 import fr.astratime.lucky.entities.effects.EffectPopup;
+import fr.astratime.lucky.entities.effects.PopupScale;
 
 import java.util.List;
 
@@ -15,9 +16,9 @@ public class GainsEarnedEvent extends Event {
     @Override
     public String describe() { return "+" + amount + " gains"; }
 
-    /** Gains crédités ; 2000 (jackpot) donne la taille de texte maximale. */
+    /** Gains crédités, taille maximale selon {@link PopupScale}. */
     @Override
     public List<EffectPopup> getPopups() {
-        return List.of(EffectPopup.scaled("GAINS +" + amount, EffectPopup.Style.GAINS, amount, 2000f));
+        return List.of(EffectPopup.scaled("GAINS +" + amount, EffectPopup.Style.GAINS, amount, PopupScale.SPIN_GAINS));
     }
 }

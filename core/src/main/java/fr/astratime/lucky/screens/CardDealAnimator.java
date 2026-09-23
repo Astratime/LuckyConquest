@@ -25,7 +25,7 @@ import java.util.Map;
  */
 public class CardDealAnimator {
 
-    private static final float DEAL_STAGGER_DELAY = 0.15f;
+    static final float DEAL_STAGGER_DELAY = 0.15f;
     private static final float DEAL_MOVE_DURATION = 0.35f;
     private static final float FLIP_PAUSE_DELAY   = 0.05f;
     private static final float FLIP_HALF_DURATION = 0.12f;

@@ -7,7 +7,7 @@ import java.util.List;
 /**
  * Le joueur : points de vie, deck/défausse/main courante, machine à sous
  * personnelle, gains accumulés et modificateurs de combat du tour
- * (bouclier, renvoi de dégâts).
+ * (bouclier).
  */
 public class Player {
 
@@ -30,9 +30,6 @@ public class Player {
 
     /** Bouclier accumulé ce tour par les DefenseAction. */
     private int shield = 0;
-
-    /** Pourcentage de dégâts ennemis renvoyés ce tour. */
-    private int reflectPercent = 0;
 
     /**
      * @param name     nom affiché du joueur
@@ -146,13 +143,9 @@ public class Player {
     /** Ajoute {@code amount} au bouclier accumulé ce tour. */
     public void addShield(int amount) { shield += amount; }
 
-    /** Fixe le pourcentage de renvoi de dégâts, sans jamais le réduire (garde le meilleur bonus du tour). */
-    public void setReflectPercent(int percent) { reflectPercent = Math.max(reflectPercent, percent); }
-
-    /** Réinitialise le bouclier et le renvoi de dégâts en fin de tour. */
+    /** Réinitialise le bouclier en fin de tour. */
     public void resetTurnDefenses() {
-        shield         = 0;
-        reflectPercent = 0;
+        shield = 0;
     }
 
     /** @return le nom affiché du joueur. */
@@ -175,6 +168,4 @@ public class Player {
     public int         getGains()                   { return gains; }
     /** @return le bouclier accumulé ce tour. */
     public int         getShield()                  { return shield; }
-    /** @return le pourcentage de renvoi de dégâts accumulé ce tour. */
-    public int         getReflectPercent()          { return reflectPercent; }
 }

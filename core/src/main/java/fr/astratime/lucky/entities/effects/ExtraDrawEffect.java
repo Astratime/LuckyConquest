@@ -33,7 +33,7 @@ public class ExtraDrawEffect extends Effect {
     @Override
     public List<EffectPopup> getPopups() {
         return List.of(
-            EffectPopup.scaled("PIOCHE +" + extraCards, EffectPopup.Style.DRAW, extraCards, 4f)
+            EffectPopup.scaled("PIOCHE +" + extraCards, EffectPopup.Style.DRAW, extraCards, PopupScale.CARD_EXTRA_DRAW)
         );
     }
 }

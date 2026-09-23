@@ -53,15 +53,8 @@ public class Card {
     /** @return les effets déclenchés quand la carte est jouée (liste immuable). */
     public List<Effect> getEffects()   { return effects; }
 
-    /**
-     * Chemin de l'asset stocké explicitement dans la carte.
-     * Le paramètre theme est conservé pour ne pas casser les appels existants,
-     * mais il est ignoré : le chemin est défini dans le JSON.
-     *
-     * @param theme ignoré (conservé pour compatibilité d'appel)
-     * @return le chemin de la texture de la carte
-     */
-    public String getAssetPath(String theme) { return assetPath; }
+    /** @return le chemin de la texture de la carte, tel que défini dans le JSON. */
+    public String getAssetPath() { return assetPath; }
 
     /** @return la description de la carte, construite à partir de celle de chacun de ses effets. */
     public String getDescription() {

@@ -10,7 +10,7 @@ import java.util.List;
 public class GameState {
 
     private final Player player;
-    private final Enemy  enemy  = new Enemy("Ennemi", 500);
+    private final Enemy  enemy  = new Enemy("Ennemi", 5000);
     private       int    turnNumber = 1;
 
     /**

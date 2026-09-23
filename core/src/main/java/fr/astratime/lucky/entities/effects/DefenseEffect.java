@@ -23,7 +23,7 @@ public class DefenseEffect extends Effect {
     @Override
     public List<EffectPopup> getPopups() {
         return List.of(
-            EffectPopup.scaled("DÉFENSE +" + bonus, EffectPopup.Style.DEFENSE, bonus, 30f)
+            EffectPopup.scaled("DÉFENSE +" + bonus, EffectPopup.Style.DEFENSE, bonus, PopupScale.CARD_DEFENSE_BONUS)
         );
     }
 }

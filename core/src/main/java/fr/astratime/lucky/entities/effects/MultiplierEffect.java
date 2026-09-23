@@ -28,7 +28,7 @@ public class MultiplierEffect extends Effect {
     @Override
     public List<EffectPopup> getPopups() {
         return List.of(
-            EffectPopup.scaled("GAINS x+" + formatAmount(), EffectPopup.Style.GAINS, amount, 30f)
+            EffectPopup.scaled("GAINS x+" + formatAmount(), EffectPopup.Style.GAINS, amount, PopupScale.CARD_GAIN_MULTIPLIER)
         );
     }
 }

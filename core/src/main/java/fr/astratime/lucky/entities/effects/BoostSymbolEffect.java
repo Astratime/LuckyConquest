@@ -35,7 +35,7 @@ public class BoostSymbolEffect extends Effect {
     @Override
     public List<EffectPopup> getPopups() {
         return List.of(
-            EffectPopup.scaled("BOOST " + symbol.name() + " +" + amount, EffectPopup.Style.SPECIAL, amount, 200f)
+            EffectPopup.scaled("BOOST " + symbol.name() + " +" + amount, EffectPopup.Style.SPECIAL, amount, PopupScale.CARD_SYMBOL_BOOST)
         );
     }
 }

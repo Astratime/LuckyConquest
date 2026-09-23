@@ -12,11 +12,9 @@ import java.util.List;
  * Accorde du bouclier au joueur, consommé lors de la riposte de l'ennemi
  * (voir Player.takeDamage, appelé par CombatResolver) pour absorber une
  * partie des dégâts subis.
- * Lit dans le CombatContext :
- *  - defenseBonus       : bonus plat de bouclier (cartes jouées)
- *  - reflectPercentBonus : reflect additif accordé par symbole (cartes Carreau),
- *                          consommé lors de la riposte ennemie par CombatResolver
- *  - conditionalReflect  : si vrai (As de Carreau), reflect 100% sous 20% de vie, sinon 50%
+ * Lit dans le CombatContext le bonus plat de bouclier (cartes jouées), et y
+ * signale qu'un symbole de défense est sorti : c'est ce qui active le renvoi
+ * de dégâts des cartes Carreau (calculé lors de la riposte par CombatResolver).
  */
 public class DefenseAction extends Action {
 
@@ -25,10 +23,7 @@ public class DefenseAction extends Action {
     /** @param baseShield bouclier de base accordé avant bonus. */
     public DefenseAction(int baseShield) { this.baseShield = baseShield; }
 
-    /**
-     * Accorde le bouclier (base + bonus) au joueur, puis fixe le pourcentage
-     * de renvoi de dégâts selon le contexte (conditionnel ou additif).
-     */
+    /** Accorde le bouclier (base + bonus) au joueur et active le renvoi des cartes Carreau. */
     @Override
     public List<Event> resolve(CombatContext context) {
         List<Event> events = new ArrayList<>();
@@ -38,12 +33,7 @@ public class DefenseAction extends Action {
         player.addShield(shield);
         events.add(new ShieldGainedEvent(shield));
 
-        if (context.isConditionalReflect()) {
-            int percent = player.getHpRatio() < 0.2f ? 100 : 50;
-            player.setReflectPercent(percent);
-        } else if (context.getReflectPercentBonus() > 0) {
-            player.setReflectPercent(context.getReflectPercentBonus());
-        }
+        context.markDefenseSymbolDrawn();
 
         return events;
     }

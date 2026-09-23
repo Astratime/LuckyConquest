@@ -140,21 +140,11 @@ class PlayerTest {
     }
 
     @Test
-    void reflectPercentKeepsTheBestValueOfTheTurn() {
-        player.setReflectPercent(50);
-        player.setReflectPercent(30); // ne doit pas faire redescendre le bonus
-
-        assertEquals(50, player.getReflectPercent());
-    }
-
-    @Test
-    void resetTurnDefensesClearsShieldAndReflect() {
+    void resetTurnDefensesClearsShield() {
         player.addShield(40);
-        player.setReflectPercent(80);
 
         player.resetTurnDefenses();
 
         assertEquals(0, player.getShield());
-        assertEquals(0, player.getReflectPercent());
     }
 }

@@ -1,6 +1,7 @@
 package fr.astratime.lucky;
 
 import com.badlogic.gdx.Game;
+import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import fr.astratime.lucky.screens.ControlsScreen;
 
@@ -27,10 +28,16 @@ public class LuckyGame extends Game {
         super.render();
     }
 
-    /** Libère l'écran actif puis le SpriteBatch partagé. */
+    /**
+     * Libère l'écran actif puis le SpriteBatch partagé. {@link Game#dispose()}
+     * se contente d'appeler {@code hide()} sur l'écran actif : ses ressources
+     * (textures, polices, sons) doivent être libérées explicitement.
+     */
     @Override
     public void dispose() {
+        Screen current = getScreen();
         super.dispose();
+        if (current != null) current.dispose();
         batch.dispose();
     }
 
