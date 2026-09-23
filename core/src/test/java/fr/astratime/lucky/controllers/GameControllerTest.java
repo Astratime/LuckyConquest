@@ -141,10 +141,11 @@ class GameControllerTest {
         player(controller).takeDamage(30);
 
         controller.restart();
-        controller.spin();
 
-        assertEquals(0, effect.applied, "l'effet joué avant le redémarrage ne doit pas s'appliquer");
         assertEquals(player(controller).getMaxHp(), player(controller).getHp());
         assertEquals(1, player(controller).getDeck().getCards().size(), "un deck neuf est fourni au nouveau combat");
+
+        controller.spin(); // la riposte ennemie de ce spin ne concerne pas ce test
+        assertEquals(0, effect.applied, "l'effet joué avant le redémarrage ne doit pas s'appliquer");
     }
 }
