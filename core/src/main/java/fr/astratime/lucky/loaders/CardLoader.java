@@ -19,8 +19,8 @@ import java.util.Map;
  * optionnelle, un rang optionnel et une liste d'effets.
  *
  * La composition du deck de départ est décrite à part, dans
- * assets/cards/decks/starter.json : liste d'ids de cartes avec leur nombre
- * d'exemplaires.
+ * assets/cards/decks/starter.json : liste d'ids de cartes, chacun avec son
+ * nombre d'exemplaires dans le deck ("copies", 1 si absent).
  *
  * Ajouter une nouvelle carte = ajouter une entrée dans le JSON correspondant.
  * Ajouter un nouveau type d'effet = ajouter un case dans parseEffect().
@@ -67,8 +67,8 @@ public class CardLoader {
             if (definition == null) {
                 throw new IllegalArgumentException("Carte inconnue dans " + STARTER_DECK_FILE + " : " + id);
             }
-            int count = entry.getInt("count", 1);
-            for (int i = 0; i < count; i++) {
+            int copies = entry.getInt("copies", 1);
+            for (int i = 0; i < copies; i++) {
                 cards.add(parseCard(definition));
             }
         }
