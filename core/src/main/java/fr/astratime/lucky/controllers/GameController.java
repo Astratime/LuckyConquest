@@ -12,6 +12,7 @@ import fr.astratime.lucky.loaders.CardLoader;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Supplier;
 
 /**
  * Gère la progression globale de la partie : possède le GameState,
@@ -32,9 +33,21 @@ public class GameController {
     /** Effets accumulés depuis le début du tour, appliqués au moment du spin. */
     private final List<Effect> pendingEffects = new ArrayList<>();
 
+    /** Fournit un deck de départ neuf à chaque combat. */
+    private final Supplier<List<Card>> starterDeck;
+
     /** Charge le deck de départ depuis les JSON et crée une nouvelle partie (joueur + ennemi au maximum de leurs PV). */
     public GameController() {
-        this.gameState = new GameState(CardLoader.loadStarterDeck());
+        this(CardLoader::loadStarterDeck);
+    }
+
+    /**
+     * @param starterDeck fournit les cartes du deck de départ, appelé à chaque
+     *                    nouveau combat (ex : une liste fixe dans les tests)
+     */
+    public GameController(Supplier<List<Card>> starterDeck) {
+        this.starterDeck = starterDeck;
+        this.gameState   = new GameState(starterDeck.get());
     }
 
     /**
@@ -43,7 +56,7 @@ public class GameController {
      * vide les effets en attente du tour précédent.
      */
     public void restart() {
-        this.gameState = new GameState(CardLoader.loadStarterDeck());
+        this.gameState = new GameState(starterDeck.get());
         pendingEffects.clear();
     }
 

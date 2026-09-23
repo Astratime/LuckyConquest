@@ -43,6 +43,33 @@ class CombatResolverTest {
     }
 
     @Test
+    void diamondReflectNeedsADefenseSymbolDrawnThisTurn() {
+        Player player = new Player("Joueur", 100, List.of());
+        Enemy  enemy  = new Enemy("Ennemi", 1000);
+        CombatContext context = new CombatContext(player, enemy);
+        context.addReflectPercentBonus(390);
+        Symbol[] symbols = { Symbol.GRAPE, null, null };
+        List<SymbolAction> actions = List.of(
+            new SymbolAction(Symbol.GRAPE, 0, SymbolRegistry.getAction(Symbol.GRAPE).orElseThrow()));
+
+        resolver.resolve(context, actions, symbols, List.of());
+
+        assertEquals(1000 - 39, enemy.getHp(), "390% de l'attaque ennemie (10) = 39 renvoyés");
+    }
+
+    @Test
+    void diamondReflectIsInactiveWithoutDefenseSymbol() {
+        Player player = new Player("Joueur", 100, List.of());
+        Enemy  enemy  = new Enemy("Ennemi", 1000);
+        CombatContext context = new CombatContext(player, enemy);
+        context.addReflectPercentBonus(390);
+
+        resolver.resolve(context, List.of(), noSymbols, List.of());
+
+        assertEquals(1000, enemy.getHp());
+    }
+
+    @Test
     void doesNotReflectWhenPlayerHasNoReflectPercent() {
         Player player = new Player("Joueur", 100, List.of());
         Enemy  enemy  = new Enemy("Ennemi", 100);

@@ -15,7 +15,16 @@ public class SlotMachine {
     /** Poids de base attribué à chaque symbole avant application des boosts du tour. */
     private static final int BASE_WEIGHT = 10;
 
-    private final Random   random = new Random();
+    private final Random   random;
+
+    public SlotMachine() {
+        this(new Random());
+    }
+
+    /** @param random source d'aléatoire (ex : graine fixe pour des tests reproductibles) */
+    SlotMachine(Random random) {
+        this.random = random;
+    }
 
     /**
      * Tire trois symboles indépendamment, selon les poids de base plus les

@@ -39,13 +39,27 @@ public class CardLoader {
 
     private static final String STARTER_DECK_FILE = "cards/decks/starter.json";
 
+    /** Lit le contenu texte d'un fichier d'assets à partir de son chemin (ex : "cards/decks/starter.json"). */
+    public interface AssetReader {
+        String read(String path);
+    }
+
+    /** Lecture par défaut : fichiers internes de libGDX (nécessite libGDX initialisé). */
+    private static final AssetReader GDX_READER = path -> Gdx.files.internal(path).readString("UTF-8");
+
     /** Charge et retourne une instance de chaque carte définie (toutes suites et cartes spéciales). */
     public static List<Card> loadAll() {
+        List<Card> cards = loadAll(GDX_READER);
+        Gdx.app.log("CardLoader", cards.size() + " cartes chargees.");
+        return cards;
+    }
+
+    /** Comme {@link #loadAll()}, en lisant les fichiers avec {@code reader} (ex : tests sans libGDX). */
+    public static List<Card> loadAll(AssetReader reader) {
         List<Card> cards = new ArrayList<>();
-        for (JsonValue cardJson : loadDefinitions().values()) {
+        for (JsonValue cardJson : loadDefinitions(reader).values()) {
             cards.add(parseCard(cardJson));
         }
-        Gdx.app.log("CardLoader", cards.size() + " cartes chargees.");
         return cards;
     }
 
@@ -57,10 +71,17 @@ public class CardLoader {
      * @throws IllegalArgumentException si le deck référence un id de carte inconnu
      */
     public static List<Card> loadStarterDeck() {
-        Map<String, JsonValue> definitions = loadDefinitions();
+        List<Card> cards = loadStarterDeck(GDX_READER);
+        Gdx.app.log("CardLoader", "Deck de depart : " + cards.size() + " cartes.");
+        return cards;
+    }
+
+    /** Comme {@link #loadStarterDeck()}, en lisant les fichiers avec {@code reader} (ex : tests sans libGDX). */
+    public static List<Card> loadStarterDeck(AssetReader reader) {
+        Map<String, JsonValue> definitions = loadDefinitions(reader);
         List<Card> cards = new ArrayList<>();
 
-        JsonValue root = new JsonReader().parse(Gdx.files.internal(STARTER_DECK_FILE));
+        JsonValue root = new JsonReader().parse(reader.read(STARTER_DECK_FILE));
         for (JsonValue entry = root.child; entry != null; entry = entry.next) {
             String id = entry.getString("id");
             JsonValue definition = definitions.get(id);
@@ -72,18 +93,16 @@ public class CardLoader {
                 cards.add(parseCard(definition));
             }
         }
-
-        Gdx.app.log("CardLoader", "Deck de depart : " + cards.size() + " cartes.");
         return cards;
     }
 
     /** @return l'objet JSON de chaque carte définie, indexé par id (dans l'ordre des fichiers). */
-    private static Map<String, JsonValue> loadDefinitions() {
+    private static Map<String, JsonValue> loadDefinitions(AssetReader assetReader) {
         Map<String, JsonValue> definitions = new LinkedHashMap<>();
         JsonReader reader = new JsonReader();
 
         for (String path : DEFINITION_FILES) {
-            JsonValue root = reader.parse(Gdx.files.internal(path));
+            JsonValue root = reader.parse(assetReader.read(path));
             for (JsonValue cardJson = root.child; cardJson != null; cardJson = cardJson.next) {
                 definitions.put(cardJson.getString("id"), cardJson);
             }
