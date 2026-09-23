@@ -2,6 +2,8 @@ package fr.astratime.lucky.entities.effects;
 
 import fr.astratime.lucky.entities.context.TurnContext;
 
+import java.util.List;
+
 /**
  * Pique (non-As) : les attaques ignorent la défense ennemie ce tour
  * et reçoivent un bonus d'attaque. Le bonus augmente avec le rang.
@@ -22,5 +24,13 @@ public class SpadeIgnoreDefenseEffect extends Effect {
     @Override
     public String getDescription() {
         return "Ignore la defense ennemie, Attaque +" + attackBonus;
+    }
+
+    @Override
+    public List<EffectPopup> getPopups() {
+        return List.of(
+            new EffectPopup("PERCE-DÉFENSE", EffectPopup.Style.SPECIAL, 0.6f),
+            EffectPopup.scaled("ATTAQUE +" + attackBonus, EffectPopup.Style.ATTACK, attackBonus, 15f)
+        );
     }
 }

@@ -2,6 +2,8 @@ package fr.astratime.lucky.entities.effects;
 
 import fr.astratime.lucky.entities.context.TurnContext;
 
+import java.util.List;
+
 /** Ajoute un bonus de défense via le CombatContext. */
 public class DefenseEffect extends Effect {
 
@@ -17,4 +19,11 @@ public class DefenseEffect extends Effect {
 
     @Override
     public String getDescription() { return "Defense +" + bonus; }
+
+    @Override
+    public List<EffectPopup> getPopups() {
+        return List.of(
+            EffectPopup.scaled("DÉFENSE +" + bonus, EffectPopup.Style.DEFENSE, bonus, 30f)
+        );
+    }
 }

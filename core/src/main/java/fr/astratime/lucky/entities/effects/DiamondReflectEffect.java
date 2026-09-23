@@ -2,6 +2,8 @@ package fr.astratime.lucky.entities.effects;
 
 import fr.astratime.lucky.entities.context.TurnContext;
 
+import java.util.List;
+
 /**
  * Carreau (non-As) : ajoute un pourcentage de renvoi de dégâts, activé par un
  * symbole de défense tiré ce tour. percent augmente avec le rang.
@@ -21,4 +23,11 @@ public class DiamondReflectEffect extends Effect {
 
     @Override
     public String getDescription() { return "Renvoi de degats +" + percent + "% par symbole de defense"; }
+
+    @Override
+    public List<EffectPopup> getPopups() {
+        return List.of(
+            EffectPopup.scaled("RENVOI +" + percent + "%", EffectPopup.Style.REFLECT, percent, 40f)
+        );
+    }
 }

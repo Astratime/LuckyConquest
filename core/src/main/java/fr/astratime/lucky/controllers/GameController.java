@@ -1,6 +1,7 @@
 package fr.astratime.lucky.controllers;
 
 import fr.astratime.lucky.entities.Card;
+import fr.astratime.lucky.entities.CardPlayResult;
 import fr.astratime.lucky.entities.DrawResult;
 import fr.astratime.lucky.entities.GameState;
 import fr.astratime.lucky.entities.Player;
@@ -66,22 +67,25 @@ public class GameController {
 
     /**
      * Le joueur joue une carte : elle quitte la main, ses effets immédiats
-     * (ex : pioche) sont appliqués tout de suite, et ses effets de tour sont
-     * mis en attente jusqu'au spin.
+     * (ex : pioche, gains) sont appliqués tout de suite, et ses effets de tour
+     * sont mis en attente jusqu'au spin.
      *
      * @param card carte jouée par le joueur
-     * @return les cartes piochées par ses effets immédiats (vide si aucun)
+     * @return les cartes piochées par ses effets immédiats et les textes à afficher
      */
-    public DrawResult playCard(Card card) {
+    public CardPlayResult playCard(Card card) {
         Player player = gameState.getPlayer();
-        if (!player.playCard(card)) return DrawResult.empty();
+        if (!player.playCard(card)) return CardPlayResult.none();
 
-        pendingEffects.addAll(card.getEffects());
-
-        PlayContext playContext = new PlayContext();
+        PlayContext playContext = new PlayContext(player);
         card.getEffects().forEach(effect -> effect.onPlay(playContext));
-        if (playContext.getCardsToDraw() <= 0) return DrawResult.empty();
-        return player.draw(playContext.getCardsToDraw());
+        pendingEffects.addAll(playContext.getEffectsForSpin());
+
+        if (playContext.getGains() != 0) player.addGains(playContext.getGains());
+        DrawResult drawResult = playContext.getCardsToDraw() > 0
+            ? player.draw(playContext.getCardsToDraw())
+            : DrawResult.empty();
+        return new CardPlayResult(drawResult, playContext.getPopups());
     }
 
     /**

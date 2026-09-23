@@ -28,4 +28,11 @@ public class AceOfHeartsEffect extends Effect {
 
     @Override
     public String getDescription() { return "Boost aleatoire d'un symbole d'attaque"; }
+
+    @Override
+    public List<EffectPopup> getPopups() {
+        return List.of(
+            new EffectPopup("BOOST ATTAQUE !", EffectPopup.Style.ATTACK, 1f)
+        );
+    }
 }

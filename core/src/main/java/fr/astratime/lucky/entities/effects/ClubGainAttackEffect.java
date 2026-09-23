@@ -2,6 +2,8 @@ package fr.astratime.lucky.entities.effects;
 
 import fr.astratime.lucky.entities.context.TurnContext;
 
+import java.util.List;
+
 /**
  * Trefle (non-As) : ajoute un multiplicateur de gains et un bonus d'attaque ce tour.
  * Les deux augmentent avec le rang de la carte (voir cards/definitions/).
@@ -29,5 +31,13 @@ public class ClubGainAttackEffect extends Effect {
     @Override
     public String getDescription() {
         return "Gains x+" + gainMultiplierAdd + ", Attaque +" + attackBonus;
+    }
+
+    @Override
+    public List<EffectPopup> getPopups() {
+        return List.of(
+            EffectPopup.scaled("GAINS x+" + gainMultiplierAdd, EffectPopup.Style.GAINS, gainMultiplierAdd, 30f),
+            EffectPopup.scaled("ATTAQUE +" + attackBonus, EffectPopup.Style.ATTACK, attackBonus, 15f)
+        );
     }
 }

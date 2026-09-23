@@ -3,6 +3,8 @@ package fr.astratime.lucky.entities.effects;
 import fr.astratime.lucky.entities.context.PlayContext;
 import fr.astratime.lucky.entities.context.TurnContext;
 
+import java.util.List;
+
 /**
  * Pioche immédiatement des cartes supplémentaires, pendant le tour en cours.
  * Les cartes qui ne tiennent pas dans la main (voir Player.MAX_HAND_SIZE)
@@ -18,6 +20,7 @@ public class ExtraDrawEffect extends Effect {
     @Override
     public void onPlay(PlayContext context) {
         context.addCardsToDraw(extraCards);
+        context.addPopups(getPopups());
     }
 
     /** Aucun effet au moment du spin : la pioche a déjà eu lieu quand la carte a été jouée. */
@@ -26,4 +29,11 @@ public class ExtraDrawEffect extends Effect {
 
     @Override
     public String getDescription() { return "Piochez " + extraCards + " carte(s)"; }
+
+    @Override
+    public List<EffectPopup> getPopups() {
+        return List.of(
+            EffectPopup.scaled("PIOCHE +" + extraCards, EffectPopup.Style.DRAW, extraCards, 4f)
+        );
+    }
 }

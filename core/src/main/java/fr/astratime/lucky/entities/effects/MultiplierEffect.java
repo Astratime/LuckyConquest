@@ -2,6 +2,8 @@ package fr.astratime.lucky.entities.effects;
 
 import fr.astratime.lucky.entities.context.TurnContext;
 
+import java.util.List;
+
 /** Effet générique de multiplicateur de gains (utilisable hors thème de suite). */
 public class MultiplierEffect extends Effect {
 
@@ -17,4 +19,16 @@ public class MultiplierEffect extends Effect {
 
     @Override
     public String getDescription() { return "Gains x+" + amount; }
+
+    /** @return le montant sans décimale inutile (2.0 -> "2", 1.5 -> "1.5"). */
+    private String formatAmount() {
+        return amount == (int) amount ? String.valueOf((int) amount) : String.valueOf(amount);
+    }
+
+    @Override
+    public List<EffectPopup> getPopups() {
+        return List.of(
+            EffectPopup.scaled("GAINS x+" + formatAmount(), EffectPopup.Style.GAINS, amount, 30f)
+        );
+    }
 }
