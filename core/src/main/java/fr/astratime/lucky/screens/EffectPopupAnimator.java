@@ -19,9 +19,9 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Fait apparaître, à l'endroit où une carte vient d'être jouée, un texte par
- * bonus (ex : "GAINS x+20" en doré) : il surgit en grossissant, monte
- * doucement puis s'efface.
+ * Fait apparaître un texte par bonus ou résultat, à un endroit donné (carte
+ * jouée, symbole tiré, barre de vie...) — ex : "GAINS x+20" en doré. Il surgit
+ * en grossissant, monte doucement puis s'efface.
  *
  * La taille du texte suit l'intensité du bonus ({@link EffectPopup#getIntensity()}),
  * entre MIN_FONT_SIZE (toujours lisible) et MAX_FONT_SIZE. La couleur dépend
@@ -55,6 +55,7 @@ public class EffectPopupAnimator implements Disposable {
         COLORS.put(EffectPopup.Style.REFLECT, new Color(0.3f, 0.95f, 0.95f, 1f));
         COLORS.put(EffectPopup.Style.DRAW,    Color.WHITE);
         COLORS.put(EffectPopup.Style.SPECIAL, new Color(0.75f, 0.5f, 1f, 1f));
+        COLORS.put(EffectPopup.Style.DAMAGE,  new Color(0.9f, 0.1f, 0.1f, 1f));
     }
 
     private final Group            layer;
@@ -85,6 +86,14 @@ public class EffectPopupAnimator implements Disposable {
      * {@code (centerX, centerY)} (coordonnées du Stage), sans sortir de l'écran.
      */
     public void play(List<EffectPopup> popups, float centerX, float centerY) {
+        play(popups, centerX, centerY, 0f);
+    }
+
+    /**
+     * Comme {@link #play(List, float, float)}, mais le premier texte n'apparaît
+     * qu'après {@code startDelay} secondes (pour enchaîner plusieurs groupes de textes).
+     */
+    public void play(List<EffectPopup> popups, float centerX, float centerY, float startDelay) {
         float worldWidth = layer.getStage().getViewport().getWorldWidth();
         float y = centerY;
 
@@ -110,7 +119,7 @@ public class EffectPopupAnimator implements Disposable {
             layer.addActor(container);
 
             container.addAction(Actions.sequence(
-                Actions.delay(i * STAGGER_DELAY),
+                Actions.delay(startDelay + i * STAGGER_DELAY),
                 Actions.parallel(
                     Actions.fadeIn(POP_IN_DURATION),
                     Actions.scaleTo(POP_OVERSHOOT, POP_OVERSHOOT, POP_IN_DURATION, Interpolation.pow2Out)

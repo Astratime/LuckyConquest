@@ -26,6 +26,8 @@ class ActionResolverTest {
         assertInstanceOf(AttackAction.class, symbolActions.get(0).getAction());
         assertEquals(Symbol.GRAPE, symbolActions.get(1).getSymbol());
         assertInstanceOf(DefenseAction.class, symbolActions.get(1).getAction());
+        assertEquals(0, symbolActions.get(0).getSlotIndex());
+        assertEquals(2, symbolActions.get(1).getSlotIndex(), "la position sur la ligne est conservée malgré le symbole null");
     }
 
     @Test

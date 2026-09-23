@@ -54,21 +54,23 @@ public class CombatResolver {
         for (SymbolAction symbolAction : symbolActions) {
             List<Event> actionEvents = symbolAction.getAction().resolve(combatContext);
             events.addAll(actionEvents);
-            symbolOutcomes.add(new SymbolOutcome(symbolAction.getSymbol(), actionEvents));
+            symbolOutcomes.add(new SymbolOutcome(symbolAction.getSymbol(), symbolAction.getSlotIndex(), actionEvents));
         }
 
         // Bonus de paire/jackpot
+        List<Event> pairOrJackpotEvents = new ArrayList<>();
         int gains = 0;
         if (isJackpot(symbols)) {
             gains = GAINS_JACKPOT;
-            events.add(new JackpotEvent());
+            pairOrJackpotEvents.add(new JackpotEvent());
         } else if (hasPair(symbols)) {
             gains = GAINS_PAIR;
         }
         if (gains > 0) {
             combatContext.getPlayer().addGains(gains);
-            events.add(new GainsEarnedEvent(gains));
+            pairOrJackpotEvents.add(new GainsEarnedEvent(gains));
         }
+        events.addAll(pairOrJackpotEvents);
 
         // Riposte de l'ennemi : s'il a survécu au tour du joueur, il attaque à son tour.
         // Le bouclier accumulé par le joueur ce tour absorbe une partie des dégâts
@@ -76,26 +78,29 @@ public class CombatResolver {
         // Le renvoi de dégâts (Carreau) reflète un pourcentage de l'attaque brute de
         // l'ennemi, indépendamment de ce que le bouclier en a absorbé.
         Enemy enemy = combatContext.getEnemy();
+        List<Event> enemyTurnEvents = new ArrayList<>();
         if (!enemy.isDefeated()) {
             Player player       = combatContext.getPlayer();
             int    attackPower  = enemy.getAttackPower();
             int    actualDamage = player.takeDamage(attackPower);
-            events.add(new PlayerDamagedEvent(actualDamage));
+            enemyTurnEvents.add(new PlayerDamagedEvent(actualDamage));
 
             int reflectPercent = player.getReflectPercent();
             if (reflectPercent > 0) {
                 int reflectedDamage = Math.round(attackPower * (reflectPercent / 100f));
                 if (reflectedDamage > 0) {
                     enemy.takeDamage(reflectedDamage);
-                    events.add(new DamageReflectedEvent(reflectedDamage));
+                    enemyTurnEvents.add(new DamageReflectedEvent(reflectedDamage));
                 }
             }
         }
 
+        events.addAll(enemyTurnEvents);
+
         // Le bouclier (et le renvoi de dégâts) ne vaut que pour ce tour.
         combatContext.getPlayer().resetTurnDefenses();
 
-        return new TurnResult(events, symbols, gains, symbolOutcomes);
+        return new TurnResult(events, symbols, gains, symbolOutcomes, pairOrJackpotEvents, enemyTurnEvents);
     }
 
     /** @return {@code true} si les trois symboles sont identiques et non nuls. */

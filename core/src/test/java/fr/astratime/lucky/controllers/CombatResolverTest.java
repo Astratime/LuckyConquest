@@ -78,6 +78,19 @@ class CombatResolverTest {
     }
 
     @Test
+    void separatesJackpotAndEnemyRiposteEventsForDisplay() {
+        Player player = new Player("Joueur", 100, List.of());
+        Enemy  enemy  = new Enemy("Ennemi", 100);
+        Symbol[] symbols = { Symbol.SEVEN, Symbol.SEVEN, Symbol.SEVEN };
+
+        TurnResult result = resolver.resolve(new CombatContext(player, enemy), List.of(), symbols, List.of());
+
+        assertTrue(result.getPairOrJackpotEvents().stream().anyMatch(e -> e instanceof JackpotEvent));
+        assertTrue(result.getEnemyTurnEvents().stream().anyMatch(e -> e instanceof PlayerDamagedEvent));
+        assertTrue(result.getPairOrJackpotEvents().stream().noneMatch(e -> e instanceof PlayerDamagedEvent));
+    }
+
+    @Test
     void awardsPairBonusWhenExactlyTwoSymbolsMatch() {
         Player player = new Player("Joueur", 100, List.of());
         Enemy  enemy  = new Enemy("Ennemi", 100);
@@ -95,7 +108,7 @@ class CombatResolverTest {
         Player player = new Player("Joueur", 100, List.of());
         Enemy  enemy  = new Enemy("Ennemi", 100);
         List<SymbolAction> symbolActions = List.of(
-            new SymbolAction(Symbol.SEVEN, SymbolRegistry.getAction(Symbol.SEVEN).orElseThrow())
+            new SymbolAction(Symbol.SEVEN, 0, SymbolRegistry.getAction(Symbol.SEVEN).orElseThrow())
         );
         Symbol[] symbols = { Symbol.SEVEN, null, null };
 
