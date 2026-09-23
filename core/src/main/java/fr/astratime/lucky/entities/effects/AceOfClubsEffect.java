@@ -24,7 +24,7 @@ public class AceOfClubsEffect extends Effect {
     /** Boost de poids de base appliqué au symbole d'attaque choisi au hasard. */
     private static final int   WEIGHT_BOOST_AMOUNT = 150;
     /** Bonus d'attaque plat de base accordé pour ce tour. */
-    private static final int   ATTACK_BOOST_AMOUNT = 15;
+    private static final int   ATTACK_BOOST_AMOUNT = 115;
     private static final Random RANDOM             = new Random();
 
     /**

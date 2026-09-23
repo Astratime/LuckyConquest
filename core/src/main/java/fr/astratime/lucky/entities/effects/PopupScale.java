@@ -12,7 +12,7 @@ public final class PopupScale {
 
     // --- Cartes jouées ---------------------------------------------------------
     /** Bonus d'attaque d'une carte (Pique, Trèfle, effet ATTACK). */
-    public static final float CARD_ATTACK_BONUS    = 15f;
+    public static final float CARD_ATTACK_BONUS    = 115f;
     /** Bonus de bouclier d'une carte (effet DEFENSE). */
     public static final float CARD_DEFENSE_BONUS   = 30f;
     /** Multiplicateur de gains ajouté par une carte (Trèfle, effet MULTIPLIER). */
@@ -20,7 +20,9 @@ public final class PopupScale {
     /** Pourcentage de drain de vie d'une carte (Coeur). */
     public static final float CARD_DRAIN_PERCENT   = 15f;
     /** Pourcentage de renvoi de dégâts d'une carte (Carreau). */
-    public static final float CARD_REFLECT_PERCENT = 40f;
+    public static final float CARD_REFLECT_PERCENT = 400f;
+    /** Boost de poids des symboles de défense d'une carte (Carreau). */
+    public static final float CARD_DEFENSE_BOOST   = 40f;
     /** Boost de poids d'un symbole (effet BOOST_SYMBOL). */
     public static final float CARD_SYMBOL_BOOST    = 200f;
     /** Cartes piochées immédiatement (effet EXTRA_DRAW). */
@@ -30,12 +32,12 @@ public final class PopupScale {
 
     // --- As de Trèfle (valeurs calculées à la pose) ----------------------------
     public static final float ACE_OF_CLUBS_CONSUMED = 1000f;
-    public static final float ACE_OF_CLUBS_ATTACK   = 300f;
+    public static final float ACE_OF_CLUBS_ATTACK   = 400f;
     public static final float ACE_OF_CLUBS_BOOST    = 1500f;
 
     // --- Résultats du tirage ---------------------------------------------------
     /** Dégâts infligés à l'ennemi par un symbole (après défense). */
-    public static final float SPIN_DAMAGE    = 100f;
+    public static final float SPIN_DAMAGE    = 200f;
     /** Gains obtenus (symbole, paire ou jackpot). */
     public static final float SPIN_GAINS     = 2000f;
     /** Bouclier gagné par un symbole. */
@@ -45,7 +47,7 @@ public final class PopupScale {
     /** Vie rendue par le drain. */
     public static final float SPIN_HEAL      = 30f;
     /** Dégâts renvoyés à l'ennemi. */
-    public static final float SPIN_REFLECT   = 30f;
+    public static final float SPIN_REFLECT   = 100f;
 
     // --- Textes sans valeur chiffrée -------------------------------------------
     /** Intensité des textes sans valeur chiffrée qui accompagnent un bonus plus important. */

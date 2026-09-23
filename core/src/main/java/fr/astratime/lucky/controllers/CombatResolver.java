@@ -76,16 +76,17 @@ public class CombatResolver {
         // Le bouclier accumulé par le joueur ce tour absorbe une partie des dégâts
         // (voir Player.takeDamage) ; l'événement reporte les dégâts réellement subis.
         // Le renvoi de dégâts (Carreau) reflète un pourcentage de l'attaque brute de
-        // l'ennemi, indépendamment de ce que le bouclier en a absorbé.
+        // l'ennemi (voir CombatContext.getTotalReflectPercent), indépendamment de ce
+        // que le bouclier en a absorbé.
         Enemy enemy = combatContext.getEnemy();
         List<Event> enemyTurnEvents = new ArrayList<>();
         if (!enemy.isDefeated()) {
-            Player player       = combatContext.getPlayer();
-            int    attackPower  = enemy.getAttackPower();
-            int    actualDamage = player.takeDamage(attackPower);
+            Player player         = combatContext.getPlayer();
+            int    attackPower    = enemy.getAttackPower();
+            int    reflectPercent = combatContext.getTotalReflectPercent(); // selon la vie avant la riposte
+            int    actualDamage   = player.takeDamage(attackPower);
             enemyTurnEvents.add(new PlayerDamagedEvent(actualDamage));
 
-            int reflectPercent = player.getReflectPercent();
             if (reflectPercent > 0) {
                 int reflectedDamage = Math.round(attackPower * (reflectPercent / 100f));
                 if (reflectedDamage > 0) {
@@ -97,7 +98,7 @@ public class CombatResolver {
 
         events.addAll(enemyTurnEvents);
 
-        // Le bouclier (et le renvoi de dégâts) ne vaut que pour ce tour.
+        // Le bouclier ne vaut que pour ce tour.
         combatContext.getPlayer().resetTurnDefenses();
 
         return new TurnResult(events, symbols, gains, symbolOutcomes, pairOrJackpotEvents, enemyTurnEvents);

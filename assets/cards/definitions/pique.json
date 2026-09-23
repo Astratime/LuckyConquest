@@ -20,7 +20,7 @@
     "effects": [
       {
         "type": "SPADE_IGNORE_DEFENSE",
-        "attackBonus": 2
+        "attackBonus": 102
       }
     ]
   },
@@ -33,7 +33,7 @@
     "effects": [
       {
         "type": "SPADE_IGNORE_DEFENSE",
-        "attackBonus": 3
+        "attackBonus": 103
       }
     ]
   },
@@ -46,7 +46,7 @@
     "effects": [
       {
         "type": "SPADE_IGNORE_DEFENSE",
-        "attackBonus": 4
+        "attackBonus": 104
       }
     ]
   },
@@ -59,7 +59,7 @@
     "effects": [
       {
         "type": "SPADE_IGNORE_DEFENSE",
-        "attackBonus": 5
+        "attackBonus": 105
       }
     ]
   },
@@ -72,7 +72,7 @@
     "effects": [
       {
         "type": "SPADE_IGNORE_DEFENSE",
-        "attackBonus": 6
+        "attackBonus": 106
       }
     ]
   },
@@ -85,7 +85,7 @@
     "effects": [
       {
         "type": "SPADE_IGNORE_DEFENSE",
-        "attackBonus": 7
+        "attackBonus": 107
       }
     ]
   },
@@ -98,7 +98,7 @@
     "effects": [
       {
         "type": "SPADE_IGNORE_DEFENSE",
-        "attackBonus": 8
+        "attackBonus": 108
       }
     ]
   },
@@ -111,7 +111,7 @@
     "effects": [
       {
         "type": "SPADE_IGNORE_DEFENSE",
-        "attackBonus": 9
+        "attackBonus": 109
       }
     ]
   },
@@ -124,7 +124,7 @@
     "effects": [
       {
         "type": "SPADE_IGNORE_DEFENSE",
-        "attackBonus": 10
+        "attackBonus": 110
       }
     ]
   },
@@ -137,7 +137,7 @@
     "effects": [
       {
         "type": "SPADE_IGNORE_DEFENSE",
-        "attackBonus": 11
+        "attackBonus": 111
       }
     ]
   },
@@ -150,7 +150,7 @@
     "effects": [
       {
         "type": "SPADE_IGNORE_DEFENSE",
-        "attackBonus": 12
+        "attackBonus": 112
       }
     ]
   },
@@ -163,7 +163,7 @@
     "effects": [
       {
         "type": "SPADE_IGNORE_DEFENSE",
-        "attackBonus": 13
+        "attackBonus": 113
       }
     ]
   }

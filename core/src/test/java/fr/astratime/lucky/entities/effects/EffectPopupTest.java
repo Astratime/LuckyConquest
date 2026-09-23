@@ -38,7 +38,7 @@ class EffectPopupTest {
         List<Effect> effects = List.of(
             new HeartDrainEffect(12), new AceOfHeartsEffect(),
             new ClubGainAttackEffect(20, 10), new AceOfClubsEffect(),
-            new DiamondReflectEffect(33), new AceOfDiamondsEffect(),
+            new DiamondReflectEffect(330, 33), new AceOfDiamondsEffect(),
             new SpadeIgnoreDefenseEffect(11), new AceOfSpadesEffect(),
             new AttackEffect(5), new DefenseEffect(5), new MultiplierEffect(1.5f),
             new BoostSymbolEffect(Symbol.values()[0], 50), new ExtraDrawEffect(3), new GainEffect(500)
@@ -76,9 +76,9 @@ class EffectPopupTest {
 
         PlayContext context = play(new AceOfClubsEffect(), player);
 
-        // 30% de 1000 = 300 consommés -> attaque 15 + 300/2 = 165, boost 150 + 300 = 450
+        // 30% de 1000 = 300 consommés -> attaque 115 + 300/2 = 265, boost 150 + 300 = 450
         assertEquals(700, player.getGains(), "le coût est payé à la pose de la carte");
-        assertEquals(List.of("-30% GAINS", "ATTAQUE +165", "BOOST SYMBOLE +450"), texts(context));
+        assertEquals(List.of("-30% GAINS", "ATTAQUE +265", "BOOST SYMBOLE +450"), texts(context));
         assertTrue(context.getEffectsForSpin().stream().anyMatch(e -> e instanceof AttackEffect));
         assertFalse(context.getEffectsForSpin().stream().anyMatch(e -> e instanceof AceOfClubsEffect),
             "l'As lui-même n'est pas réappliqué au spin : il consommerait les gains une seconde fois");

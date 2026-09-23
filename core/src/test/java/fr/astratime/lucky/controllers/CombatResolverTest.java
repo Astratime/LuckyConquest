@@ -31,9 +31,10 @@ class CombatResolverTest {
     void reflectsPercentOfEnemyAttackPowerBackToTheEnemy() {
         Player player = new Player("Joueur", 100, List.of());
         Enemy  enemy  = new Enemy("Ennemi", 100); // attackPower par défaut = 10
-        player.setReflectPercent(50);
+        CombatContext context = new CombatContext(player, enemy);
+        context.addGuaranteedReflect(50, 50);
 
-        TurnResult result = resolver.resolve(new CombatContext(player, enemy), List.of(), noSymbols, List.of());
+        TurnResult result = resolver.resolve(context, List.of(), noSymbols, List.of());
 
         assertEquals(90, player.getHp(), "le joueur subit toujours l'attaque complète (pas de bouclier ici)");
         assertEquals(95, enemy.getHp(), "50% de l'attaque (10) doit revenir à l'ennemi, soit 5");
@@ -122,15 +123,13 @@ class CombatResolverTest {
     }
 
     @Test
-    void resetsShieldAndReflectAfterTheTurn() {
+    void resetsShieldAfterTheTurn() {
         Player player = new Player("Joueur", 100, List.of());
         Enemy  enemy  = new Enemy("Ennemi", 100);
         player.addShield(50);
-        player.setReflectPercent(100);
 
         resolver.resolve(new CombatContext(player, enemy), List.of(), noSymbols, List.of());
 
         assertEquals(0, player.getShield());
-        assertEquals(0, player.getReflectPercent());
     }
 }

@@ -63,6 +63,17 @@ public class SymbolRegistry {
         return result;
     }
 
+    /** Symboles dont l'action est une défense — boostés par les cartes Carreau. */
+    public static List<Symbol> getDefenseSymbols() {
+        List<Symbol> result = new ArrayList<>();
+        for (Map.Entry<Symbol, Action> entry : ACTIONS.entrySet()) {
+            if (entry.getValue() instanceof DefenseAction) {
+                result.add(entry.getKey());
+            }
+        }
+        return result;
+    }
+
     /** Classe utilitaire statique : instanciation interdite. */
     private SymbolRegistry() {}
 }

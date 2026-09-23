@@ -139,7 +139,7 @@ public class CardLoader {
 
             // --- Carreau ---
             case "DIAMOND_REFLECT":
-                return new DiamondReflectEffect(json.getInt("percent"));
+                return new DiamondReflectEffect(json.getInt("percent"), json.getInt("defenseBoost", 0));
             case "ACE_OF_DIAMONDS":
                 return new AceOfDiamondsEffect();
 
