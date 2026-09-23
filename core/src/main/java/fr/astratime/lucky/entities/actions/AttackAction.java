@@ -43,9 +43,9 @@ public class AttackAction extends Action {
         events.add(new EnemyDamagedEvent(damage, rawDamage));
 
         if (context.getLifeDrainPercent() > 0 && damage > 0) {
-            int healed = Math.round(damage * (context.getLifeDrainPercent() / 100f));
+            int drained = Math.round(damage * (context.getLifeDrainPercent() / 100f));
+            int healed  = context.getPlayer().heal(drained); // plafonné aux PV max
             if (healed > 0) {
-                context.getPlayer().heal(healed);
                 events.add(new PlayerHealedEvent(healed));
             }
         }

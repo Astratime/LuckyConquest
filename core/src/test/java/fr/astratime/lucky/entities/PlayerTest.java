@@ -114,9 +114,10 @@ class PlayerTest {
     void healNeverExceedsMaxHp() {
         player.takeDamage(30);
 
-        player.heal(1000);
+        int healed = player.heal(1000);
 
         assertEquals(100, player.getHp());
+        assertEquals(30, healed, "seuls les 30 PV manquants sont réellement rendus");
     }
 
     @Test

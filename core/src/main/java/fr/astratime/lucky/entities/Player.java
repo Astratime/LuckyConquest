@@ -62,8 +62,16 @@ public class Player {
         hp -= actualLoss;
         return actualLoss;
     }
-    /** Rend {@code amount} points de vie, sans dépasser le maximum. */
-    public void heal(int amount)       { hp = Math.min(maxHp, hp + amount); }
+    /**
+     * Rend {@code amount} points de vie, sans dépasser le maximum.
+     *
+     * @return les points de vie réellement rendus (0 si le joueur était déjà au maximum)
+     */
+    public int heal(int amount) {
+        int healed = Math.min(maxHp, hp + amount) - hp;
+        hp += healed;
+        return healed;
+    }
     /** @return {@code true} si le joueur n'a plus de points de vie. */
     public boolean isDefeated()        { return hp <= 0; }
 

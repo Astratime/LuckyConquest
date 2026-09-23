@@ -6,7 +6,7 @@ import java.util.List;
 
 /** Événement émis quand le joueur est soigné (drain de vie d'une attaque, cartes Coeur). */
 public class PlayerHealedEvent extends Event {
-    /** Points de vie rendus au joueur. */
+    /** Points de vie réellement rendus au joueur (plafonnés à ses PV max). */
     public final int amount;
 
     /** @param amount points de vie rendus au joueur. */
