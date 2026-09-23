@@ -294,9 +294,9 @@ public class GameScreen extends ScreenAdapter {
         return generated;
     }
 
-    /** Bouton "Tirer 3 cartes", en bas à gauche de l'écran. */
+    /** Bouton "Tirer N cartes" (N = cartes piochées en début de tour), en bas à gauche de l'écran. */
     private TextButton buildDrawButton() {
-        String text = "Tirer 6 cartes";
+        String text = "Tirer " + GameController.DEFAULT_DRAW_COUNT + " cartes";
         TextButton button = new TextButton(text, buildButtonStyle());
         button.setSize(buttonWidth(text), BUTTON_HEIGHT);
         button.setPosition(20, 20);
@@ -807,18 +807,8 @@ public class GameScreen extends ScreenAdapter {
 
     /** @return la texture de la carte, chargée à la demande puis mise en cache par chemin d'asset. */
     private Texture getCardTexture(Card card) {
-        String path = card.getAssetPath(THEME);
+        String path = card.getAssetPath();
         return cardTextures.computeIfAbsent(path, p -> new Texture(Gdx.files.internal(p)));
-    }
-
-    /** @return une texture 1x1 de la couleur donnée, à étirer pour simuler un fond uni. */
-    private Texture makeColorTexture(Color color) {
-        Pixmap pixmap = new Pixmap(1, 1, Pixmap.Format.RGBA8888);
-        pixmap.setColor(color);
-        pixmap.fill();
-        Texture texture = new Texture(pixmap);
-        pixmap.dispose();
-        return texture;
     }
 
     /** Texture de bouton "casino" : fond plein entouré d'un liseré doré. */

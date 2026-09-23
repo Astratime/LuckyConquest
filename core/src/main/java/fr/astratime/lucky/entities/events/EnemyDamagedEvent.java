@@ -1,6 +1,7 @@
 package fr.astratime.lucky.entities.events;
 
 import fr.astratime.lucky.entities.effects.EffectPopup;
+import fr.astratime.lucky.entities.effects.PopupScale;
 
 import java.util.List;
 
@@ -23,9 +24,9 @@ public class EnemyDamagedEvent extends Event {
     @Override
     public String describe() { return "Ennemi -" + damage + " PV"; }
 
-    /** Dégâts effectivement infligés (après défense) ; 100 donne la taille de texte maximale. */
+    /** Dégâts effectivement infligés (après défense), taille maximale selon {@link PopupScale}. */
     @Override
     public List<EffectPopup> getPopups() {
-        return List.of(EffectPopup.scaled("DÉGÂTS " + damage, EffectPopup.Style.ATTACK, damage, 100f));
+        return List.of(EffectPopup.scaled("DÉGÂTS " + damage, EffectPopup.Style.ATTACK, damage, PopupScale.SPIN_DAMAGE));
     }
 }

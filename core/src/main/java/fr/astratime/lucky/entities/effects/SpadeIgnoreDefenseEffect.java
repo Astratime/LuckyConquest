@@ -29,8 +29,8 @@ public class SpadeIgnoreDefenseEffect extends Effect {
     @Override
     public List<EffectPopup> getPopups() {
         return List.of(
-            new EffectPopup("PERCE-DÉFENSE", EffectPopup.Style.SPECIAL, 0.6f),
-            EffectPopup.scaled("ATTAQUE +" + attackBonus, EffectPopup.Style.ATTACK, attackBonus, 15f)
+            new EffectPopup("PERCE-DÉFENSE", EffectPopup.Style.SPECIAL, PopupScale.SECONDARY_INTENSITY),
+            EffectPopup.scaled("ATTAQUE +" + attackBonus, EffectPopup.Style.ATTACK, attackBonus, PopupScale.CARD_ATTACK_BONUS)
         );
     }
 }

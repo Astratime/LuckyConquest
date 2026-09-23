@@ -1,6 +1,7 @@
 package fr.astratime.lucky.entities.events;
 
 import fr.astratime.lucky.entities.effects.EffectPopup;
+import fr.astratime.lucky.entities.effects.PopupScale;
 
 import java.util.List;
 
@@ -15,9 +16,9 @@ public class DamageReflectedEvent extends Event {
     @Override
     public String describe() { return "Renvoi -" + damage + " PV a l'ennemi"; }
 
-    /** Dégâts renvoyés à l'ennemi ; 30 donne la taille de texte maximale. */
+    /** Dégâts renvoyés à l'ennemi, taille maximale selon {@link PopupScale}. */
     @Override
     public List<EffectPopup> getPopups() {
-        return List.of(EffectPopup.scaled("RENVOI " + damage, EffectPopup.Style.REFLECT, damage, 30f));
+        return List.of(EffectPopup.scaled("RENVOI " + damage, EffectPopup.Style.REFLECT, damage, PopupScale.SPIN_REFLECT));
     }
 }

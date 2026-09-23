@@ -27,11 +27,6 @@ public class AceOfClubsEffect extends Effect {
     private static final int   ATTACK_BOOST_AMOUNT = 15;
     private static final Random RANDOM             = new Random();
 
-    /** Valeurs donnant la taille de texte maximale. */
-    private static final float POPUP_MAX_CONSUMED = 1000f;
-    private static final float POPUP_MAX_ATTACK   = 300f;
-    private static final float POPUP_MAX_BOOST    = 1500f;
-
     /**
      * Consomme 30% des gains du joueur, calcule les bonus qui en découlent
      * (poids + attaque) sur un symbole d'attaque tiré au hasard, les met en
@@ -44,9 +39,9 @@ public class AceOfClubsEffect extends Effect {
         int attackBoost = ATTACK_BOOST_AMOUNT + consumed / 2;
 
         context.addPopups(List.of(
-            EffectPopup.scaled("-30% GAINS", EffectPopup.Style.GAINS, consumed, POPUP_MAX_CONSUMED),
-            EffectPopup.scaled("ATTAQUE +" + attackBoost, EffectPopup.Style.ATTACK, attackBoost, POPUP_MAX_ATTACK),
-            EffectPopup.scaled("BOOST SYMBOLE +" + weightBoost, EffectPopup.Style.SPECIAL, weightBoost, POPUP_MAX_BOOST)
+            EffectPopup.scaled("-30% GAINS", EffectPopup.Style.GAINS, consumed, PopupScale.ACE_OF_CLUBS_CONSUMED),
+            EffectPopup.scaled("ATTAQUE +" + attackBoost, EffectPopup.Style.ATTACK, attackBoost, PopupScale.ACE_OF_CLUBS_ATTACK),
+            EffectPopup.scaled("BOOST SYMBOLE +" + weightBoost, EffectPopup.Style.SPECIAL, weightBoost, PopupScale.ACE_OF_CLUBS_BOOST)
         ));
 
         context.queueForSpin(new AttackEffect(attackBoost));

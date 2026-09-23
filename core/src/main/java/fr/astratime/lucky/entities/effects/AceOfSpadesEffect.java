@@ -25,8 +25,8 @@ public class AceOfSpadesEffect extends Effect {
     @Override
     public List<EffectPopup> getPopups() {
         return List.of(
-            new EffectPopup("PERCE-DÉFENSE", EffectPopup.Style.SPECIAL, 1f),
-            new EffectPopup("GAINS = DÉGÂTS", EffectPopup.Style.GAINS, 1f)
+            new EffectPopup("PERCE-DÉFENSE", EffectPopup.Style.SPECIAL, PopupScale.MAX_INTENSITY),
+            new EffectPopup("GAINS = DÉGÂTS", EffectPopup.Style.GAINS, PopupScale.MAX_INTENSITY)
         );
     }
 }

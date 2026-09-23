@@ -24,7 +24,7 @@ import java.util.List;
 public class GameController {
 
     /** Nombre de cartes piochées à chaque début de tour par {@link #drawCards()}. */
-    private static final int DEFAULT_DRAW_COUNT = 6;
+    public static final int DEFAULT_DRAW_COUNT = 6;
 
     private       GameState  gameState;
     private final TurnEngine turnEngine = new TurnEngine();

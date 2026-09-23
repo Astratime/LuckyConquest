@@ -4,7 +4,6 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.ScreenAdapter;
 import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.graphics.Color;
-import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
@@ -57,8 +56,8 @@ public class ControlsScreen extends ScreenAdapter {
         this.stage = new Stage(new ScreenViewport(), luckyGame.getBatch());
 
         backgroundTexture = new Texture(Gdx.files.internal("menu/casino_menu.png"));
-        buttonUpTexture   = makeColorTexture(Color.GOLDENROD);
-        buttonDownTexture = makeColorTexture(Color.valueOf("b8860bff"));
+        buttonUpTexture   = Textures.solidColor(Color.GOLDENROD);
+        buttonDownTexture = Textures.solidColor(Color.valueOf("b8860bff"));
         buttonClickSound  = Gdx.audio.newSound(Gdx.files.internal(SOUND_BUTTON_CLICK));
 
         // Génération de la police à la taille voulue
@@ -126,16 +125,6 @@ public class ControlsScreen extends ScreenAdapter {
                 dispose();
             }
         }, START_TRANSITION_DELAY);
-    }
-
-    /** @return une texture 1x1 de la couleur donnée, à étirer pour simuler un fond uni. */
-    private Texture makeColorTexture(Color color) {
-        Pixmap pixmap = new Pixmap(1, 1, Pixmap.Format.RGBA8888);
-        pixmap.setColor(color);
-        pixmap.fill();
-        Texture texture = new Texture(pixmap);
-        pixmap.dispose();
-        return texture;
     }
 
     /** Installe le Stage comme processeur d'entrée de l'écran (clics sur le bouton). */

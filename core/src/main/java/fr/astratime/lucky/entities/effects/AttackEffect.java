@@ -23,7 +23,7 @@ public class AttackEffect extends Effect {
     @Override
     public List<EffectPopup> getPopups() {
         return List.of(
-            EffectPopup.scaled("ATTAQUE +" + bonus, EffectPopup.Style.ATTACK, bonus, 30f)
+            EffectPopup.scaled("ATTAQUE +" + bonus, EffectPopup.Style.ATTACK, bonus, PopupScale.CARD_ATTACK_BONUS)
         );
     }
 }

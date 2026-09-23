@@ -1,6 +1,7 @@
 package fr.astratime.lucky.entities.events;
 
 import fr.astratime.lucky.entities.effects.EffectPopup;
+import fr.astratime.lucky.entities.effects.PopupScale;
 
 import java.util.List;
 
@@ -15,9 +16,9 @@ public class PlayerHealedEvent extends Event {
     @Override
     public String describe() { return "Joueur soigne de " + amount + " PV (drain)"; }
 
-    /** Vie rendue par le drain ; 30 donne la taille de texte maximale. */
+    /** Vie rendue par le drain, taille maximale selon {@link PopupScale}. */
     @Override
     public List<EffectPopup> getPopups() {
-        return List.of(EffectPopup.scaled("VIE +" + amount, EffectPopup.Style.DRAIN, amount, 30f));
+        return List.of(EffectPopup.scaled("VIE +" + amount, EffectPopup.Style.DRAIN, amount, PopupScale.SPIN_HEAL));
     }
 }

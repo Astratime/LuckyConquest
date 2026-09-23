@@ -1,6 +1,7 @@
 package fr.astratime.lucky.entities.events;
 
 import fr.astratime.lucky.entities.effects.EffectPopup;
+import fr.astratime.lucky.entities.effects.PopupScale;
 
 import java.util.List;
 
@@ -15,10 +16,10 @@ public class PlayerDamagedEvent extends Event {
     @Override
     public String describe() { return "Joueur -" + damage + " PV"; }
 
-    /** Vie perdue par le joueur ("BLOQUÉ !" si le bouclier a tout absorbé) ; 30 donne la taille maximale. */
+    /** Vie perdue par le joueur ("BLOQUÉ !" si le bouclier a tout absorbé), taille maximale selon {@link PopupScale}. */
     @Override
     public List<EffectPopup> getPopups() {
-        if (damage == 0) return List.of(new EffectPopup("BLOQUÉ !", EffectPopup.Style.DEFENSE, 0.6f));
-        return List.of(EffectPopup.scaled("PV -" + damage, EffectPopup.Style.DAMAGE, damage, 30f));
+        if (damage == 0) return List.of(new EffectPopup("BLOQUÉ !", EffectPopup.Style.DEFENSE, PopupScale.SECONDARY_INTENSITY));
+        return List.of(EffectPopup.scaled("PV -" + damage, EffectPopup.Style.DAMAGE, damage, PopupScale.SPIN_LIFE_LOST));
     }
 }

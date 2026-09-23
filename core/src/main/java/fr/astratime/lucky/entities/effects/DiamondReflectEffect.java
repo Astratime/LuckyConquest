@@ -27,7 +27,7 @@ public class DiamondReflectEffect extends Effect {
     @Override
     public List<EffectPopup> getPopups() {
         return List.of(
-            EffectPopup.scaled("RENVOI +" + percent + "%", EffectPopup.Style.REFLECT, percent, 40f)
+            EffectPopup.scaled("RENVOI +" + percent + "%", EffectPopup.Style.REFLECT, percent, PopupScale.CARD_REFLECT_PERCENT)
         );
     }
 }

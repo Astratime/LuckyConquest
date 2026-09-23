@@ -36,8 +36,8 @@ public class ClubGainAttackEffect extends Effect {
     @Override
     public List<EffectPopup> getPopups() {
         return List.of(
-            EffectPopup.scaled("GAINS x+" + gainMultiplierAdd, EffectPopup.Style.GAINS, gainMultiplierAdd, 30f),
-            EffectPopup.scaled("ATTAQUE +" + attackBonus, EffectPopup.Style.ATTACK, attackBonus, 15f)
+            EffectPopup.scaled("GAINS x+" + gainMultiplierAdd, EffectPopup.Style.GAINS, gainMultiplierAdd, PopupScale.CARD_GAIN_MULTIPLIER),
+            EffectPopup.scaled("ATTAQUE +" + attackBonus, EffectPopup.Style.ATTACK, attackBonus, PopupScale.CARD_ATTACK_BONUS)
         );
     }
 }

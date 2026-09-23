@@ -26,7 +26,7 @@ public class HeartDrainEffect extends Effect {
     @Override
     public List<EffectPopup> getPopups() {
         return List.of(
-            EffectPopup.scaled("DRAIN DE VIE +" + percent + "%", EffectPopup.Style.DRAIN, percent, 15f)
+            EffectPopup.scaled("DRAIN DE VIE +" + percent + "%", EffectPopup.Style.DRAIN, percent, PopupScale.CARD_DRAIN_PERCENT)
         );
     }
 }

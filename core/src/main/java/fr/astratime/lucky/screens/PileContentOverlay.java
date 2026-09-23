@@ -1,7 +1,6 @@
 package fr.astratime.lucky.screens;
 
 import com.badlogic.gdx.graphics.Color;
-import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
@@ -74,11 +73,7 @@ public class PileContentOverlay implements Disposable {
         this.cardWidth      = cardWidth;
         this.cardHeight     = cardHeight;
 
-        Pixmap pixmap = new Pixmap(1, 1, Pixmap.Format.RGBA8888);
-        pixmap.setColor(Color.WHITE);
-        pixmap.fill();
-        backgroundTexture = new Texture(pixmap);
-        pixmap.dispose();
+        backgroundTexture = Textures.solidColor(Color.WHITE);
 
         background = new Image(new TextureRegionDrawable(new TextureRegion(backgroundTexture)));
         background.setColor(BACKGROUND_COLOR);

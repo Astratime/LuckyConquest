@@ -25,7 +25,7 @@ public class AceOfDiamondsEffect extends Effect {
     @Override
     public List<EffectPopup> getPopups() {
         return List.of(
-            new EffectPopup("RENVOI 50-100%", EffectPopup.Style.REFLECT, 1f)
+            new EffectPopup("RENVOI 50-100%", EffectPopup.Style.REFLECT, PopupScale.MAX_INTENSITY)
         );
     }
 }

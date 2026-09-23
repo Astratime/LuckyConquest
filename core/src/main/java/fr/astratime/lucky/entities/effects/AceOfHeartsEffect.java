@@ -32,7 +32,7 @@ public class AceOfHeartsEffect extends Effect {
     @Override
     public List<EffectPopup> getPopups() {
         return List.of(
-            new EffectPopup("BOOST ATTAQUE !", EffectPopup.Style.ATTACK, 1f)
+            new EffectPopup("BOOST ATTAQUE !", EffectPopup.Style.ATTACK, PopupScale.MAX_INTENSITY)
         );
     }
 }

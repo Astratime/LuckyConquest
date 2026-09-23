@@ -1,7 +1,6 @@
 package fr.astratime.lucky.screens;
 
 import com.badlogic.gdx.graphics.Color;
-import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
@@ -22,7 +21,7 @@ public class Tooltip implements Disposable {
     private final Table   table;
 
     public Tooltip(BitmapFont font) {
-        backgroundTexture = makeColorTexture(Color.BLACK);
+        backgroundTexture = Textures.solidColor(Color.BLACK);
         label = new Label("", new Label.LabelStyle(font, Color.WHITE));
         table = new Table();
         table.setBackground(new TextureRegionDrawable(new TextureRegion(backgroundTexture)));
@@ -44,15 +43,6 @@ public class Tooltip implements Disposable {
     /** Cache l'infobulle. */
     public void hide() {
         table.setVisible(false);
-    }
-
-    private Texture makeColorTexture(Color color) {
-        Pixmap pixmap = new Pixmap(1, 1, Pixmap.Format.RGBA8888);
-        pixmap.setColor(color);
-        pixmap.fill();
-        Texture texture = new Texture(pixmap);
-        pixmap.dispose();
-        return texture;
     }
 
     @Override
