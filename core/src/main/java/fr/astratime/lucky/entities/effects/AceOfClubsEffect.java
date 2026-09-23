@@ -51,4 +51,12 @@ public class AceOfClubsEffect extends Effect {
     public String getDescription() {
         return "Consomme 30% des gains : gros boost d'un symbole d'attaque";
     }
+
+    @Override
+    public List<EffectPopup> getPopups() {
+        return List.of(
+            new EffectPopup("-30% GAINS", EffectPopup.Style.GAINS, 0.6f),
+            new EffectPopup("MEGA BOOST !", EffectPopup.Style.ATTACK, 1f)
+        );
+    }
 }

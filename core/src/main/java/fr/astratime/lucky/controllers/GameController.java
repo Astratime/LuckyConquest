@@ -66,8 +66,8 @@ public class GameController {
 
     /**
      * Le joueur joue une carte : elle quitte la main, ses effets immédiats
-     * (ex : pioche) sont appliqués tout de suite, et ses effets de tour sont
-     * mis en attente jusqu'au spin.
+     * (ex : pioche, gains) sont appliqués tout de suite, et ses effets de tour
+     * sont mis en attente jusqu'au spin.
      *
      * @param card carte jouée par le joueur
      * @return les cartes piochées par ses effets immédiats (vide si aucun)
@@ -80,6 +80,7 @@ public class GameController {
 
         PlayContext playContext = new PlayContext();
         card.getEffects().forEach(effect -> effect.onPlay(playContext));
+        if (playContext.getGains() != 0) player.addGains(playContext.getGains());
         if (playContext.getCardsToDraw() <= 0) return DrawResult.empty();
         return player.draw(playContext.getCardsToDraw());
     }

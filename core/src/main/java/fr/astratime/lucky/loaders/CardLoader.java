@@ -161,6 +161,8 @@ public class CardLoader {
                 return new DefenseEffect(json.getInt("bonus"));
             case "EXTRA_DRAW":
                 return new ExtraDrawEffect(json.getInt("extraCards"));
+            case "GAIN":
+                return new GainEffect(json.getInt("amount"));
             case "MULTIPLIER":
                 return new MultiplierEffect(json.getFloat("amount"));
 

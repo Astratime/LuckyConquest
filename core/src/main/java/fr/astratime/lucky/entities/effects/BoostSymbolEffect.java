@@ -4,6 +4,8 @@ import fr.astratime.lucky.entities.Symbol;
 import fr.astratime.lucky.entities.context.TurnContext;
 import fr.astratime.lucky.entities.events.SymbolBoostedEvent;
 
+import java.util.List;
+
 /** Augmente la probabilité d'apparition d'un symbole via le SpinContext. */
 public class BoostSymbolEffect extends Effect {
 
@@ -28,5 +30,12 @@ public class BoostSymbolEffect extends Effect {
     @Override
     public String getDescription() {
         return "Boost " + symbol.name() + " +" + amount;
+    }
+
+    @Override
+    public List<EffectPopup> getPopups() {
+        return List.of(
+            EffectPopup.scaled("BOOST " + symbol.name() + " +" + amount, EffectPopup.Style.SPECIAL, amount, 200f)
+        );
     }
 }

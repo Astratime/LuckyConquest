@@ -3,6 +3,8 @@ package fr.astratime.lucky.entities.effects;
 import fr.astratime.lucky.entities.context.PlayContext;
 import fr.astratime.lucky.entities.context.TurnContext;
 
+import java.util.List;
+
 /**
  * Effet produit par une carte jouée en phase 1.
  * Deux moments d'application, sans accès au GameState complet :
@@ -30,4 +32,13 @@ public abstract class Effect {
 
     /** @return une courte description de l'effet, affichée en infobulle sur la carte. */
     public abstract String getDescription();
+
+    /**
+     * Textes animés affichés quand la carte est jouée (un par bonus, ex :
+     * "GAINS x+20" puis "ATTAQUE +10"). Chaque effet doit en fournir au moins un,
+     * pour que le joueur voie toujours ce que la carte lui apporte.
+     *
+     * @return les popups de cet effet, dans l'ordre d'affichage
+     */
+    public abstract List<EffectPopup> getPopups();
 }

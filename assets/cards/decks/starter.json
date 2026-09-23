@@ -15,5 +15,7 @@
   { "id": "11_pique" },
   { "id": "12_pique" },
   { "id": "13_pique" },
-  { "id": "draw_2", "count": 2 }
+  { "id": "draw_2", "count": 2 },
+  { "id": "draw_3" },
+  { "id": "gain_500" }
 ]

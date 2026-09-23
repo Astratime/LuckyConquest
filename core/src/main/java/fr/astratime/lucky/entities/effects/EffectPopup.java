@@ -1,0 +1,45 @@
+package fr.astratime.lucky.entities.effects;
+
+/**
+ * Texte affiché brièvement à l'écran quand une carte est jouée, pour résumer
+ * un de ses effets (ex : "GAINS x+20").
+ *
+ * Reste indépendant de libGDX : le style indique la famille d'effet (GameScreen
+ * en déduit la couleur), l'intensité (entre 0 et 1) la force du bonus (GameScreen
+ * en déduit la taille du texte, bornée entre une taille minimale et maximale).
+ */
+public class EffectPopup {
+
+    /** Famille d'effet, qui détermine la couleur du texte. */
+    public enum Style { GAINS, ATTACK, DEFENSE, DRAIN, REFLECT, DRAW, SPECIAL }
+
+    private final String text;
+    private final Style  style;
+    private final float  intensity;
+
+    /**
+     * @param text      texte affiché (en majuscules de préférence)
+     * @param style     famille d'effet
+     * @param intensity force du bonus, ramenée entre 0 (petit texte) et 1 (grand texte)
+     */
+    public EffectPopup(String text, Style style, float intensity) {
+        this.text      = text;
+        this.style     = style;
+        this.intensity = Math.max(0f, Math.min(1f, intensity));
+    }
+
+    /**
+     * Construit un popup dont l'intensité est {@code value / maxValue} : la valeur
+     * de référence {@code maxValue} (et au-delà) donne la taille de texte maximale.
+     */
+    public static EffectPopup scaled(String text, Style style, float value, float maxValue) {
+        return new EffectPopup(text, style, value / maxValue);
+    }
+
+    /** @return le texte affiché. */
+    public String getText()      { return text; }
+    /** @return la famille d'effet (couleur). */
+    public Style  getStyle()     { return style; }
+    /** @return la force du bonus, entre 0 et 1 (taille du texte). */
+    public float  getIntensity() { return intensity; }
+}

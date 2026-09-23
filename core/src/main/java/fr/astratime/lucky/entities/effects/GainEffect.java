@@ -1,0 +1,35 @@
+package fr.astratime.lucky.entities.effects;
+
+import fr.astratime.lucky.entities.context.PlayContext;
+import fr.astratime.lucky.entities.context.TurnContext;
+
+import java.util.List;
+
+/** Crédite immédiatement des gains au joueur, dès que la carte est jouée (sans multiplicateur). */
+public class GainEffect extends Effect {
+
+    /** Gains donnant la taille de texte maximale. */
+    private static final float POPUP_MAX = 1000f;
+
+    private final int amount;
+
+    /** @param amount gains crédités immédiatement. */
+    public GainEffect(int amount) { this.amount = amount; }
+
+    @Override
+    public void onPlay(PlayContext context) {
+        context.addGains(amount);
+    }
+
+    /** Aucun effet au moment du spin : les gains ont déjà été crédités quand la carte a été jouée. */
+    @Override
+    public void apply(TurnContext context) { }
+
+    @Override
+    public String getDescription() { return "+" + amount + " gains immediatement"; }
+
+    @Override
+    public List<EffectPopup> getPopups() {
+        return List.of(EffectPopup.scaled("GAINS +" + amount, EffectPopup.Style.GAINS, amount, POPUP_MAX));
+    }
+}

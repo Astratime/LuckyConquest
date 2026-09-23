@@ -125,6 +125,7 @@ public class GameScreen extends ScreenAdapter {
     private final CardClickParticles cardClickParticles = new CardClickParticles();
     private final CardDealAnimator cardDealAnimator;
     private final CardDiscardAnimator cardDiscardAnimator;
+    private final EffectPopupAnimator effectPopupAnimator;
 
     /**
      * Cartes animées en route vers la défausse, déjà comptées dans le modèle :
@@ -142,6 +143,8 @@ public class GameScreen extends ScreenAdapter {
     private final HealthBarView enemyHealthBar;
     private final HealthBarView playerHealthBar;
     private final Group      handGroup  = new Group();
+    /** Calque des textes de bonus affichés quand une carte est jouée : au-dessus de la main, sous le voile des piles. */
+    private final Group      popupLayer = new Group();
     /** Images des cartes de la main (non jouées), dans l'ordre d'affichage ; userObject = la Card. */
     private final List<Image> handImages = new ArrayList<>();
     private final Table      slotTable = new Table();
@@ -179,6 +182,7 @@ public class GameScreen extends ScreenAdapter {
         cardBackTexture            = new Texture(Gdx.files.internal(CARD_BACK_PATH));
         cardDealAnimator = new CardDealAnimator(stage, cardBackTexture, CARD_WIDTH, CARD_HEIGHT, sounds.cardDeal, sounds.cardFlip);
         cardDiscardAnimator = new CardDiscardAnimator(stage, cardBackTexture, CARD_WIDTH, CARD_HEIGHT, sounds.cardDeal, sounds.cardFlip);
+        effectPopupAnimator = new EffectPopupAnimator(popupLayer);
 
         preloadSymbolTextures();
 
@@ -216,6 +220,7 @@ public class GameScreen extends ScreenAdapter {
         stage.addActor(restartButton);
         stage.addActor(slotTable);
         stage.addActor(handGroup);
+        stage.addActor(popupLayer);
         stage.addActor(pileOverlay.getActor()); // voile de consultation des piles, par-dessus le jeu
         stage.addActor(tooltip.getActor()); // en dernier : toujours au-dessus
     }
@@ -507,12 +512,17 @@ public class GameScreen extends ScreenAdapter {
 
     /**
      * Transmet la carte jouée au contrôleur (ses effets de tour seront appliqués
-     * au prochain spin), la retire de la main, déclenche l'effet de particules
-     * à l'endroit cliqué (en coordonnées du Stage), puis distribue les cartes
-     * éventuellement piochées par ses effets immédiats.
+     * au prochain spin), affiche le texte de chacun de ses bonus à la place de
+     * la carte, la retire de la main, déclenche l'effet de particules à l'endroit
+     * cliqué (en coordonnées du Stage), puis distribue les cartes éventuellement
+     * piochées par ses effets immédiats.
      */
     private void onCardPlayed(Card card, Image cardImage, float stageX, float stageY) {
         sounds.cardClick.play();
+        Vector2 cardCenter = cardImage.localToStageCoordinates(new Vector2(CARD_WIDTH / 2f, CARD_HEIGHT / 2f));
+        effectPopupAnimator.play(card.getEffects().stream()
+            .flatMap(effect -> effect.getPopups().stream())
+            .toList(), cardCenter.x, cardCenter.y);
         handImages.remove(cardImage);
         cardImage.remove();
         tooltip.hide();
@@ -520,6 +530,7 @@ public class GameScreen extends ScreenAdapter {
         Gdx.app.log("GameScreen", "Carte jouee : " + card);
 
         DrawResult drawResult = gameController.playCard(card);
+        refreshScoreLabel(); // une carte peut créditer des gains immédiatement
         if (!drawResult.getAddedToHand().isEmpty() || !drawResult.getDiscarded().isEmpty()) {
             dealIntoHand(drawResult);
         }
@@ -543,6 +554,7 @@ public class GameScreen extends ScreenAdapter {
         gameController.restart();
         cardDealAnimator.cancel();
         cardDiscardAnimator.cancel();
+        effectPopupAnimator.cancel();
         discardInFlight = 0;
         pileOverlay.hide();
         clearHand();
@@ -853,5 +865,6 @@ public class GameScreen extends ScreenAdapter {
         sounds.dispose();
         cardClickParticles.dispose();
         pileOverlay.dispose();
+        effectPopupAnimator.dispose();
     }
 }
