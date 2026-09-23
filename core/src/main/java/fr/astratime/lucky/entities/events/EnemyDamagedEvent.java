@@ -1,5 +1,9 @@
 package fr.astratime.lucky.entities.events;
 
+import fr.astratime.lucky.entities.effects.EffectPopup;
+
+import java.util.List;
+
 /** Événement émis quand l'ennemi subit des dégâts (attaque du joueur). */
 public class EnemyDamagedEvent extends Event {
     /** Dégâts effectivement infligés à l'ennemi (après défense). */
@@ -18,4 +22,10 @@ public class EnemyDamagedEvent extends Event {
 
     @Override
     public String describe() { return "Ennemi -" + damage + " PV"; }
+
+    /** Dégâts effectivement infligés (après défense) ; 100 donne la taille de texte maximale. */
+    @Override
+    public List<EffectPopup> getPopups() {
+        return List.of(EffectPopup.scaled("DÉGÂTS " + damage, EffectPopup.Style.ATTACK, damage, 100f));
+    }
 }

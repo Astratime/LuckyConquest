@@ -11,13 +11,17 @@ import fr.astratime.lucky.entities.actions.Action;
 public class SymbolAction {
 
     private final Symbol symbol;
+    private final int    slotIndex;
     private final Action action;
 
-    public SymbolAction(Symbol symbol, Action action) {
-        this.symbol = symbol;
+    public SymbolAction(Symbol symbol, int slotIndex, Action action) {
+        this.symbol    = symbol;
+        this.slotIndex = slotIndex;
         this.action = action;
     }
 
     public Symbol getSymbol() { return symbol; }
+    /** @return la position du symbole sur la ligne tirée (0 = gauche). */
+    public int getSlotIndex() { return slotIndex; }
     public Action getAction() { return action; }
 }

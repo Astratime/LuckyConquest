@@ -14,15 +14,19 @@ import java.util.List;
 public class SymbolOutcome {
 
     private final Symbol symbol;
+    private final int    slotIndex;
     private final List<Event> events;
 
-    public SymbolOutcome(Symbol symbol, List<Event> events) {
-        this.symbol = symbol;
+    public SymbolOutcome(Symbol symbol, int slotIndex, List<Event> events) {
+        this.symbol    = symbol;
+        this.slotIndex = slotIndex;
         this.events = List.copyOf(events);
     }
 
     /** @return le symbole tiré. */
     public Symbol getSymbol() { return symbol; }
+    /** @return la position du symbole sur la ligne tirée (0 = gauche), pour placer ses textes à l'écran. */
+    public int getSlotIndex() { return slotIndex; }
     /** @return les événements produits par l'action de ce symbole (liste immuable, peut être vide). */
     public List<Event> getEvents() { return events; }
 }

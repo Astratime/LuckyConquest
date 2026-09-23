@@ -24,9 +24,11 @@ public class ActionResolver {
      */
     public List<SymbolAction> resolve(Symbol[] symbols) {
         List<SymbolAction> symbolActions = new ArrayList<>();
-        for (Symbol symbol : symbols) {
+        for (int i = 0; i < symbols.length; i++) {
+            Symbol symbol = symbols[i];
+            int slotIndex = i;
             if (symbol != null) {
-                SymbolRegistry.getAction(symbol).ifPresent(action -> symbolActions.add(new SymbolAction(symbol, action)));
+                SymbolRegistry.getAction(symbol).ifPresent(action -> symbolActions.add(new SymbolAction(symbol, slotIndex, action)));
             }
         }
         return symbolActions;

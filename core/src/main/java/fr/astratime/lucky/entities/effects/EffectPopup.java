@@ -1,8 +1,9 @@
 package fr.astratime.lucky.entities.effects;
 
 /**
- * Texte affiché brièvement à l'écran quand une carte est jouée, pour résumer
- * un de ses effets (ex : "GAINS x+20").
+ * Texte affiché brièvement à l'écran pour résumer un bonus ou un résultat :
+ * effet d'une carte jouée (ex : "GAINS x+20") ou conséquence d'un symbole tiré
+ * (ex : "DÉGÂTS 45"). DAMAGE sert à la vie perdue par le joueur.
  *
  * Reste indépendant de libGDX : le style indique la famille d'effet (GameScreen
  * en déduit la couleur), l'intensité (entre 0 et 1) la force du bonus (GameScreen
@@ -11,7 +12,7 @@ package fr.astratime.lucky.entities.effects;
 public class EffectPopup {
 
     /** Famille d'effet, qui détermine la couleur du texte. */
-    public enum Style { GAINS, ATTACK, DEFENSE, DRAIN, REFLECT, DRAW, SPECIAL }
+    public enum Style { GAINS, ATTACK, DEFENSE, DRAIN, REFLECT, DRAW, SPECIAL, DAMAGE }
 
     private final String text;
     private final Style  style;

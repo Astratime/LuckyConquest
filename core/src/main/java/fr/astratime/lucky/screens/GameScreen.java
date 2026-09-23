@@ -37,6 +37,7 @@ import fr.astratime.lucky.entities.Symbol;
 import fr.astratime.lucky.entities.SymbolOutcome;
 import fr.astratime.lucky.entities.TurnResult;
 import fr.astratime.lucky.entities.events.EnemyDamagedEvent;
+import fr.astratime.lucky.entities.effects.EffectPopup;
 import fr.astratime.lucky.entities.events.Event;
 
 import java.util.ArrayList;
@@ -95,6 +96,18 @@ public class GameScreen extends ScreenAdapter {
     private static final float SYMBOL_HEIGHT = 80f;
     private static final float SLOT_TABLE_Y  = 200f;
 
+    // Textes des résultats du tirage : ceux de chaque symbole (de gauche à
+    // droite, en escalier pour ne pas se chevaucher : les symboles sont plus
+    // étroits que les textes), puis le bonus de paire/jackpot au-dessus, puis
+    // la riposte de l'ennemi à droite de la barre de vie du joueur.
+    private static final float SPIN_POPUP_SYMBOL_GAP   = 20f;   // au-dessus du symbole
+    private static final float SPIN_POPUP_SLOT_STEP    = 55f;   // décalage vertical d'un symbole au suivant
+    private static final float SPIN_POPUP_SYMBOL_DELAY = 0.3f;  // entre deux symboles
+    private static final float SPIN_POPUP_BONUS_DELAY  = 1.0f;
+    private static final float SPIN_POPUP_BONUS_GAP    = 210f;  // au-dessus de la ligne de symboles (et de l'escalier)
+    private static final float SPIN_POPUP_ENEMY_DELAY  = 1.5f;
+    private static final float SPIN_POPUP_PLAYER_GAP   = 110f;  // à droite de la barre de vie du joueur
+
     private static final float HEALTH_BAR_WIDTH         = 300f;
     private static final float HEALTH_BAR_HEIGHT        = 22f;
     private static final float HEALTH_BAR_TOP_MARGIN    = 10f;
@@ -149,6 +162,8 @@ public class GameScreen extends ScreenAdapter {
     /** Images des cartes de la main (non jouées), dans l'ordre d'affichage ; userObject = la Card. */
     private final List<Image> handImages = new ArrayList<>();
     private final Table      slotTable = new Table();
+    /** Images des symboles affichés, dans l'ordre de la ligne tirée. */
+    private final List<Image> slotImages = new ArrayList<>();
     private final Tooltip    tooltip;
     private final PileContentOverlay pileOverlay;
     private       TextButton spinButton;
@@ -445,6 +460,7 @@ public class GameScreen extends ScreenAdapter {
         TurnResult result = gameController.spin();
         discardHandWithAnimation();
         refreshSlotTable(result.getSymbols());
+        playSpinPopups(result);
         refreshHealthBar();
         refreshPlayerHealthBar();
         refreshScoreLabel();
@@ -663,15 +679,50 @@ public class GameScreen extends ScreenAdapter {
     /** Reconstruit la rangée de symboles affichés après un spin, centrée horizontalement. */
     private void refreshSlotTable(Symbol[] symbols) {
         slotTable.clearChildren();
+        slotImages.clear();
         for (Symbol symbol : symbols) {
             Image img = new Image(new TextureRegionDrawable(new TextureRegion(symbolTextures.get(symbol))));
             addSymbolListeners(img, symbol);
             slotTable.add(img).size(SYMBOL_WIDTH, SYMBOL_HEIGHT).pad(8f);
+            slotImages.add(img);
         }
         slotTable.pack();
 
         float worldWidth = stage.getViewport().getWorldWidth();
         slotTable.setPosition((worldWidth - slotTable.getWidth()) / 2f, SLOT_TABLE_Y);
+        slotTable.validate(); // positions des symboles connues pour placer les textes du tirage
+    }
+
+    /**
+     * Affiche les résultats du tirage en textes animés, dans l'ordre où ils se
+     * produisent : au-dessus de chaque symbole ce qu'il a fait (dégâts, gains,
+     * bouclier, vie drainée), puis le bonus de paire/jackpot au-dessus de la
+     * ligne, puis la riposte de l'ennemi (vie perdue, renvoi) près de la barre
+     * de vie du joueur.
+     */
+    private void playSpinPopups(TurnResult result) {
+        for (SymbolOutcome outcome : result.getSymbolOutcomes()) {
+            int slot = outcome.getSlotIndex();
+            if (slot < 0 || slot >= slotImages.size()) continue;
+            Vector2 top = slotImages.get(slot).localToStageCoordinates(
+                new Vector2(SYMBOL_WIDTH / 2f, SYMBOL_HEIGHT + SPIN_POPUP_SYMBOL_GAP + slot * SPIN_POPUP_SLOT_STEP));
+            effectPopupAnimator.play(popupsOf(outcome.getEvents()), top.x, top.y, slot * SPIN_POPUP_SYMBOL_DELAY);
+        }
+
+        effectPopupAnimator.play(popupsOf(result.getPairOrJackpotEvents()),
+            slotTable.getX() + slotTable.getWidth() / 2f,
+            slotTable.getY() + slotTable.getHeight() + SPIN_POPUP_BONUS_GAP,
+            SPIN_POPUP_BONUS_DELAY);
+
+        effectPopupAnimator.play(popupsOf(result.getEnemyTurnEvents()),
+            healthBarX() + HEALTH_BAR_WIDTH + SPIN_POPUP_PLAYER_GAP,
+            playerHealthBarY() + HEALTH_BAR_HEIGHT / 2f,
+            SPIN_POPUP_ENEMY_DELAY);
+    }
+
+    /** @return les textes de tous les événements donnés, dans l'ordre. */
+    private static List<EffectPopup> popupsOf(List<Event> events) {
+        return events.stream().flatMap(event -> event.getPopups().stream()).toList();
     }
 
     /** Met à jour la largeur du remplissage et le texte "PV/PV max" de la barre de vie de l'ennemi. */
