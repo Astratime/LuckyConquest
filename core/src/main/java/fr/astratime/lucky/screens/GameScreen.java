@@ -1,27 +1,20 @@
 package fr.astratime.lucky.screens;
 
-import com.badlogic.gdx.*;
+import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.Input;
+import com.badlogic.gdx.InputAdapter;
+import com.badlogic.gdx.InputMultiplexer;
+import com.badlogic.gdx.ScreenAdapter;
 import com.badlogic.gdx.graphics.Color;
-import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
-import com.badlogic.gdx.graphics.g2d.GlyphLayout;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
-import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator;
-import com.badlogic.gdx.math.Interpolation;
 import com.badlogic.gdx.math.Vector2;
-import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.Group;
-import com.badlogic.gdx.scenes.scene2d.InputEvent;
-import com.badlogic.gdx.scenes.scene2d.InputListener;
 import com.badlogic.gdx.scenes.scene2d.Stage;
-import com.badlogic.gdx.scenes.scene2d.actions.Actions;
 import com.badlogic.gdx.scenes.scene2d.ui.Image;
-import com.badlogic.gdx.scenes.scene2d.ui.Label;
-import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
-import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 import com.badlogic.gdx.utils.ScreenUtils;
 import com.badlogic.gdx.utils.viewport.ScreenViewport;
@@ -30,25 +23,26 @@ import fr.astratime.lucky.controllers.GameController;
 import fr.astratime.lucky.entities.Card;
 import fr.astratime.lucky.entities.CardPlayResult;
 import fr.astratime.lucky.entities.DrawResult;
-import fr.astratime.lucky.entities.Enemy;
 import fr.astratime.lucky.entities.GameState;
 import fr.astratime.lucky.entities.Player;
 import fr.astratime.lucky.entities.Symbol;
 import fr.astratime.lucky.entities.SymbolOutcome;
 import fr.astratime.lucky.entities.TurnResult;
 import fr.astratime.lucky.entities.events.EnemyDamagedEvent;
-import fr.astratime.lucky.entities.effects.EffectPopup;
 import fr.astratime.lucky.entities.events.Event;
 
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
- * Responsabilité unique : afficher l'état du jeu et transmettre les actions
- * du joueur au GameController. Aucune logique métier ici.
+ * Écran de combat. Responsabilité : orchestrer l'affichage et transmettre les
+ * actions du joueur au GameController — aucune logique métier ici.
+ *
+ * L'affichage est réparti entre des vues dédiées : {@link HandView} (la main),
+ * {@link PilesView} (deck et défausse), {@link SlotView} (symboles tirés et
+ * textes du tirage), {@link CombatHud} (barres de vie et score). Cet écran
+ * possède les ressources partagées, les boutons et le clavier, et enchaîne les
+ * phases du tour (pioche, cartes jouées, spin, fin de combat).
  */
 public class GameScreen extends ScreenAdapter {
 
@@ -56,62 +50,21 @@ public class GameScreen extends ScreenAdapter {
     // Constantes d'affichage
     // -------------------------------------------------------------------------
 
-    private static final String THEME           = "light";
-    private static final float  CARD_WIDTH      = 95f;
-    private static final float  CARD_HEIGHT     = 135f;
-    private static final String BACKGROUND_PATH = "playTable/play_table3.png";
-    private static final String CARD_BACK_PATH  = "cards/" + THEME + "/BACK.png";
+    private static final float  CARD_WIDTH        = 95f;
+    private static final float  CARD_HEIGHT       = 135f;
+    private static final String BACKGROUND_PATH   = "playTable/play_table3.png";
+    private static final String CARD_BACK_PATH    = "cards/light/BACK.png";
     private static final float  BACKGROUND_SHRINK = 100f;
 
-    private static final float BUTTON_WIDTH  = 150f;
-    private static final float BUTTON_HEIGHT = 60f;
-    private static final float CARD_TABLE_Y  = 350f;
-
-    // Main du joueur : une rangée de cartes centrée, positionnée à la main
-    // (et non via une Table) pour pouvoir animer le réagencement quand des
-    // cartes sont piochées pendant le tour.
-    private static final float HAND_CARD_GAP      = 20f;
-    private static final float HAND_MOVE_DURATION = 0.25f;
-
-    // Thème casino des boutons : fond sombre, liseré doré, police pixel art.
-    // La largeur de chaque bouton s'adapte au texte qu'il contient (mesuré
-    // via buttonWidth()) ; BUTTON_WIDTH n'est plus qu'un plancher minimal.
-    private static final String BUTTON_FONT_PATH    = "fonts/Jersey10-Regular.ttf";
-    private static final int    BUTTON_FONT_SIZE    = 30;
-    private static final int    BUTTON_BORDER_PX    = 3;
-    private static final float  BUTTON_TEXT_PADDING = 20f; // marge horizontale de chaque côté du texte
-    private static final Color  BUTTON_GOLD         = Color.GOLDENROD;
+    private static final float BUTTON_MARGIN      = 20f;
+    private static final float RESTART_BUTTON_GAP = 10f;
 
     // Deck (dos visible) affiché au-dessus des boutons "Tirer" et "Lancer
-    // machine" — c'est de là que partent les cartes distribuées. La défausse
-    // est son symétrique, à droite de l'écran, à la même hauteur.
-    private static final float DECK_TOP_MARGIN   = 20f;
-    private static final float DECK_LEFT_SHIFT   = 40f;
-    private static final float DECK_Y            = 20f + BUTTON_HEIGHT + DECK_TOP_MARGIN;
-
-    private static final float SCORE_LABEL_TOP_MARGIN = 40f;
-    private static final float RESTART_BUTTON_GAP      = 10f;
-
-    private static final float SYMBOL_WIDTH  = 94f;
-    private static final float SYMBOL_HEIGHT = 80f;
-    private static final float SLOT_TABLE_Y  = 200f;
-
-    // Textes des résultats du tirage : ceux de chaque symbole (de gauche à
-    // droite, en escalier pour ne pas se chevaucher : les symboles sont plus
-    // étroits que les textes), puis le bonus de paire/jackpot au-dessus, puis
-    // la riposte de l'ennemi à droite de la barre de vie du joueur.
-    private static final float SPIN_POPUP_SYMBOL_GAP   = 20f;   // au-dessus du symbole
-    private static final float SPIN_POPUP_SLOT_STEP    = 55f;   // décalage vertical d'un symbole au suivant
-    private static final float SPIN_POPUP_SYMBOL_DELAY = 0.3f;  // entre deux symboles
-    private static final float SPIN_POPUP_BONUS_DELAY  = 1.0f;
-    private static final float SPIN_POPUP_BONUS_GAP    = 210f;  // au-dessus de la ligne de symboles (et de l'escalier)
-    private static final float SPIN_POPUP_ENEMY_DELAY  = 1.5f;
-    private static final float SPIN_POPUP_PLAYER_GAP   = 110f;  // à droite de la barre de vie du joueur
-
-    private static final float HEALTH_BAR_WIDTH         = 300f;
-    private static final float HEALTH_BAR_HEIGHT        = 22f;
-    private static final float HEALTH_BAR_TOP_MARGIN    = 10f;
-    private static final float HEALTH_BAR_BOTTOM_MARGIN = 100f;
+    // machine", décalé vers la gauche : c'est de là que partent les cartes
+    // distribuées. La défausse est son symétrique, à droite de l'écran.
+    private static final float DECK_TOP_MARGIN = 20f;
+    private static final float DECK_LEFT_SHIFT = 40f;
+    private static final float DECK_Y          = BUTTON_MARGIN + CasinoButtons.HEIGHT + DECK_TOP_MARGIN;
 
     // -------------------------------------------------------------------------
     // Contrôleur — seul point d'accès à la logique de jeu
@@ -123,347 +76,139 @@ public class GameScreen extends ScreenAdapter {
     // Ressources (à disposer dans dispose())
     // -------------------------------------------------------------------------
 
-    private final LuckyGame  luckyGame;
-    private final Stage      stage;
-    private final BitmapFont font;
-    private final BitmapFont buttonFont;
-    private final Texture    backgroundTexture;
-    private final Texture    buttonUpTexture;
-    private final Texture    buttonDownTexture;
-    private final Texture    buttonDisabledTexture;
-    private final Texture    cardBackTexture;
-    private final Map<String, Texture> cardTextures   = new HashMap<>();
-    private final Map<Symbol, Texture> symbolTextures = new HashMap<>();
-
-    private final GameSounds sounds = new GameSounds();
-    private final CardClickParticles cardClickParticles = new CardClickParticles();
-    private final CardDealAnimator cardDealAnimator;
-    private final CardDiscardAnimator cardDiscardAnimator;
+    private final LuckyGame           luckyGame;
+    private final Stage               stage;
+    private final BitmapFont          font;
+    private final Texture             backgroundTexture;
+    private final Texture             cardBackTexture;
+    private final CardTextures        cardTextures  = new CardTextures();
+    private final CasinoButtons       buttons       = new CasinoButtons();
+    private final GameSounds          sounds        = new GameSounds();
+    private final CardClickParticles  cardClickParticles = new CardClickParticles();
     private final EffectPopupAnimator effectPopupAnimator;
-
-    /**
-     * Cartes animées en route vers la défausse, déjà comptées dans le modèle :
-     * la défausse affichée ne les compte qu'à leur arrivée.
-     */
-    private int discardInFlight = 0;
+    private final Tooltip             tooltip;
+    private final PileContentOverlay  pileOverlay;
 
     // -------------------------------------------------------------------------
-    // Acteurs Scene2D
+    // Vues et acteurs Scene2D
     // -------------------------------------------------------------------------
 
     private final Image      background;
-    private final CardPileView deckPile;
-    private final CardPileView discardPile;
-    private final HealthBarView enemyHealthBar;
-    private final HealthBarView playerHealthBar;
-    private final Group      handGroup  = new Group();
-    /** Calque des textes de bonus affichés quand une carte est jouée : au-dessus de la main, sous le voile des piles. */
+    private final CombatHud  hud;
+    private final PilesView  piles;
+    private final HandView   hand;
+    private final SlotView   slots;
+    /** Calque des textes animés (bonus des cartes, résultats du tirage) : au-dessus du jeu, sous le voile des piles. */
     private final Group      popupLayer = new Group();
-    /** Images des cartes de la main (non jouées), dans l'ordre d'affichage ; userObject = la Card. */
-    private final List<Image> handImages = new ArrayList<>();
-    private final Table      slotTable = new Table();
-    /** Images des symboles affichés, dans l'ordre de la ligne tirée. */
-    private final List<Image> slotImages = new ArrayList<>();
-    private final Tooltip    tooltip;
-    private final PileContentOverlay pileOverlay;
-    private       TextButton spinButton;
-    private  TextButton drawButton;
-    private       Label      scoreLabel;
-    private       TextButton restartButton;
+    private final TextButton drawButton;
+    private final TextButton spinButton;
+    private final TextButton restartButton;
 
     // -------------------------------------------------------------------------
     // Constructeur
     // -------------------------------------------------------------------------
 
     /**
-     * Construit l'écran de jeu : charge toutes les textures/polices, crée
-     * les acteurs Scene2D dans leur état initial et les ajoute au Stage
-     * dans l'ordre de rendu voulu (arrière-plan d'abord, tooltip en dernier).
+     * Construit l'écran de jeu : charge les ressources, crée les vues dans leur
+     * état initial et les ajoute au Stage dans l'ordre de rendu voulu
+     * (arrière-plan d'abord, infobulle en dernier).
      *
-     * @param luckyGame instance de jeu, utilisée pour le SpriteBatch partagé
-     *                  et pour changer d'écran (non utilisé directement ici
-     *                  mais conservé pour la cohérence avec les autres écrans)
+     * @param luckyGame instance de jeu, qui fournit le SpriteBatch partagé
      */
     public GameScreen(LuckyGame luckyGame) {
         this.luckyGame = luckyGame;
         // Le SpriteBatch est partagé avec LuckyGame et ne doit PAS être disposé ici.
         this.stage = new Stage(new ScreenViewport(), luckyGame.getBatch());
 
-        font                     = new BitmapFont();
-        buttonFont               = buildButtonFont();
-        backgroundTexture        = new Texture(Gdx.files.internal(BACKGROUND_PATH));
-        buttonUpTexture          = makeButtonTexture(Color.valueOf("1a1a1aff"), BUTTON_GOLD);
-        buttonDownTexture        = makeButtonTexture(Color.valueOf("4a0000ff"), BUTTON_GOLD);
-        buttonDisabledTexture    = makeButtonTexture(Color.valueOf("2a2a2aff"), Color.valueOf("6b5a2eff"));
-        cardBackTexture            = new Texture(Gdx.files.internal(CARD_BACK_PATH));
-        cardDealAnimator = new CardDealAnimator(stage, cardBackTexture, CARD_WIDTH, CARD_HEIGHT, sounds.cardDeal, sounds.cardFlip);
-        cardDiscardAnimator = new CardDiscardAnimator(stage, cardBackTexture, CARD_WIDTH, CARD_HEIGHT, sounds.cardDeal, sounds.cardFlip);
+        font                = new BitmapFont();
+        backgroundTexture   = new Texture(Gdx.files.internal(BACKGROUND_PATH));
+        cardBackTexture     = new Texture(Gdx.files.internal(CARD_BACK_PATH));
         effectPopupAnimator = new EffectPopupAnimator(popupLayer);
+        tooltip             = new Tooltip(font);
+        pileOverlay         = new PileContentOverlay(stage, font, tooltip, cardTextures::get, CARD_WIDTH, CARD_HEIGHT);
 
-        preloadSymbolTextures();
+        background = new Image(new TextureRegionDrawable(new TextureRegion(backgroundTexture)));
+        hud        = new CombatHud(stage, font);
 
-        background      = buildBackground();
-        enemyHealthBar  = new HealthBarView(font, Color.valueOf("550000ff"), Color.RED, HEALTH_BAR_WIDTH, HEALTH_BAR_HEIGHT);
-        playerHealthBar = new HealthBarView(font, Color.valueOf("005500ff"), Color.GREEN, HEALTH_BAR_WIDTH, HEALTH_BAR_HEIGHT);
-        enemyHealthBar.setPosition(healthBarX(), healthBarY());
-        playerHealthBar.setPosition(healthBarX(), playerHealthBarY());
-        drawButton = buildDrawButton();
-        spinButton    = buildSpinButton();
+        drawButton    = buttons.create("Tirer " + GameController.DEFAULT_DRAW_COUNT + " cartes", sounds.buttonClick, this::onDrawCards);
+        spinButton    = buttons.create("Lancer machine", sounds.spinButton, this::onSpin);
+        restartButton = buttons.create("Recommencer", sounds.buttonClick, this::onRestart);
+        drawButton.setPosition(BUTTON_MARGIN, BUTTON_MARGIN);
+        spinButton.setPosition(drawButton.getX() + drawButton.getWidth() + BUTTON_MARGIN, BUTTON_MARGIN);
         spinButton.setDisabled(true);
-        scoreLabel    = buildScoreLabel();
-        restartButton = buildRestartButton();
         restartButton.setVisible(false);
-        tooltip       = new Tooltip(font);
-        // Piles positionnées une fois la largeur réelle des boutons connue.
-        deckPile      = buildPile("Deck", this::onDeckClicked);
-        deckPile.setPosition(deckX(), DECK_Y);
-        discardPile   = buildPile("Defausse", this::onDiscardClicked);
-        discardPile.setPosition(discardX(), DECK_Y);
-        pileOverlay   = new PileContentOverlay(stage, font, tooltip, this::getCardTexture, CARD_WIDTH, CARD_HEIGHT);
 
-        refreshHealthBar();
-        refreshPlayerHealthBar();
-        refreshPiles();
+        piles = new PilesView(stage, cardBackTexture, font, tooltip, sounds.buttonClick, CARD_WIDTH, CARD_HEIGHT,
+            this::onDeckClicked, this::onDiscardClicked);
+        hand  = new HandView(stage, CARD_WIDTH, CARD_HEIGHT, cardTextures, tooltip, piles, this::player,
+            new CardDealAnimator(stage, cardBackTexture, CARD_WIDTH, CARD_HEIGHT, sounds.cardDeal, sounds.cardFlip),
+            new CardDiscardAnimator(stage, cardBackTexture, CARD_WIDTH, CARD_HEIGHT, sounds.cardDeal, sounds.cardFlip),
+            this::onCardPlayed);
+        slots = new SlotView(stage, tooltip, effectPopupAnimator);
+
+        layout();
+        refreshAll();
 
         stage.addActor(background);
-        stage.addActor(deckPile);
-        stage.addActor(discardPile);
-        enemyHealthBar.addTo(stage);
-        playerHealthBar.addTo(stage);
+        piles.addTo(stage);
+        hud.addTo(stage);
         stage.addActor(drawButton);
         stage.addActor(spinButton);
-        stage.addActor(scoreLabel);
         stage.addActor(restartButton);
-        stage.addActor(slotTable);
-        stage.addActor(handGroup);
+        stage.addActor(slots.getActor());
+        stage.addActor(hand.getActor());
         stage.addActor(popupLayer);
         stage.addActor(pileOverlay.getActor()); // voile de consultation des piles, par-dessus le jeu
-        stage.addActor(tooltip.getActor()); // en dernier : toujours au-dessus
+        stage.addActor(tooltip.getActor());     // en dernier : toujours au-dessus
     }
 
     // -------------------------------------------------------------------------
-    // Construction des acteurs
-    // -------------------------------------------------------------------------
-
-    /** Image de la table de jeu, réduite et centrée (voir {@link #backgroundWidth()} et consorts). */
-    private Image buildBackground() {
-        Image img = new Image(new TextureRegionDrawable(new TextureRegion(backgroundTexture)));
-        img.setSize(backgroundWidth(), backgroundHeight());
-        img.setPosition(backgroundX(), backgroundY());
-        return img;
-    }
-
-    /**
-     * Pile de cartes dos visible (deck ou défausse) avec son compteur. Au survol,
-     * une infobulle invite à cliquer ; au clic, {@code onClick} affiche son contenu.
-     */
-    private CardPileView buildPile(String name, Runnable onClick) {
-        CardPileView pile = new CardPileView(name, cardBackTexture, font, CARD_WIDTH, CARD_HEIGHT);
-        pile.addListener(new InputListener() {
-
-            @Override
-            public void enter(InputEvent event, float x, float y, int pointer, Actor fromActor) {
-                if (pointer != -1 || (fromActor != null && fromActor.isDescendantOf(pile))) return;
-                tooltip.show("Cliquer pour voir les cartes", pile.getX(), pile.getLabelTopY() + 5f);
-            }
-
-            @Override
-            public void exit(InputEvent event, float x, float y, int pointer, Actor toActor) {
-                if (pointer != -1 || (toActor != null && toActor.isDescendantOf(pile))) return;
-                tooltip.hide();
-            }
-
-            @Override
-            public boolean touchDown(InputEvent event, float x, float y, int pointer, int button) {
-                sounds.buttonClick.play();
-                onClick.run();
-                return true;
-            }
-        });
-        return pile;
-    }
-
-    /** Génère la police pixel art dorée utilisée par les boutons, à partir de la police TrueType du thème. */
-    private BitmapFont buildButtonFont() {
-        FreeTypeFontGenerator generator = new FreeTypeFontGenerator(Gdx.files.internal(BUTTON_FONT_PATH));
-        FreeTypeFontGenerator.FreeTypeFontParameter parameter = new FreeTypeFontGenerator.FreeTypeFontParameter();
-        parameter.size  = BUTTON_FONT_SIZE;
-        parameter.color = BUTTON_GOLD;
-        BitmapFont generated = generator.generateFont(parameter);
-        generator.dispose(); // le générateur ne sert plus une fois la police créée
-        return generated;
-    }
-
-    /** Bouton "Tirer N cartes" (N = cartes piochées en début de tour), en bas à gauche de l'écran. */
-    private TextButton buildDrawButton() {
-        String text = "Tirer " + GameController.DEFAULT_DRAW_COUNT + " cartes";
-        TextButton button = new TextButton(text, buildButtonStyle());
-        button.setSize(buttonWidth(text), BUTTON_HEIGHT);
-        button.setPosition(20, 20);
-        button.addListener(new ChangeListener() {
-            @Override
-            public void changed(ChangeEvent event, Actor actor) {
-                sounds.buttonClick.play();
-                onDrawCards();
-            }
-        });
-        return button;
-    }
-
-    /** Bouton "Lancer machine", juste à droite du bouton de pioche. Son propre bruitage, plus marquant que les autres boutons. */
-    private TextButton buildSpinButton() {
-        String text = "Lancer machine";
-        TextButton button = new TextButton(text, buildButtonStyle());
-        button.setSize(buttonWidth(text), BUTTON_HEIGHT);
-        button.setPosition(drawButton.getX() + drawButton.getWidth() + 20, 20);
-        button.addListener(new ChangeListener() {
-            @Override
-            public void changed(ChangeEvent event, Actor actor) {
-                sounds.spinButton.play();
-                onSpin();
-            }
-        });
-        return button;
-    }
-
-    /** Largeur d'un bouton adaptée à son texte (avec une marge), jamais plus petite que BUTTON_WIDTH. */
-    private float buttonWidth(String text) {
-        GlyphLayout layout = new GlyphLayout(buttonFont, text);
-        return Math.max(BUTTON_WIDTH, layout.width + BUTTON_TEXT_PADDING * 2);
-    }
-
-    /** Style commun (thème casino) partagé par tous les boutons de l'écran. */
-    private TextButton.TextButtonStyle buildButtonStyle() {
-        TextButton.TextButtonStyle style = new TextButton.TextButtonStyle();
-        style.font              = buttonFont;
-        style.up                = new TextureRegionDrawable(new TextureRegion(buttonUpTexture));
-        style.down              = new TextureRegionDrawable(new TextureRegion(buttonDownTexture));
-        style.disabled          = new TextureRegionDrawable(new TextureRegion(buttonDisabledTexture));
-        style.disabledFontColor = Color.valueOf("8a8a8aff");
-        return style;
-    }
-
-    /** Label affichant les points (gains) du joueur, en haut à gauche de l'écran. */
-    private Label buildScoreLabel() {
-        Label label = new Label("Points : 0", new Label.LabelStyle(font, Color.WHITE));
-        label.setPosition(20, stage.getViewport().getWorldHeight() - SCORE_LABEL_TOP_MARGIN);
-        return label;
-    }
-
-    /** Bouton "Recommencer", affiché sous le score uniquement quand le combat est terminé. */
-    private TextButton buildRestartButton() {
-        String text = "Recommencer";
-        TextButton button = new TextButton(text, buildButtonStyle());
-        button.setSize(buttonWidth(text), BUTTON_HEIGHT);
-        button.setPosition(20, restartButtonY());
-        button.addListener(new ChangeListener() {
-            @Override
-            public void changed(ChangeEvent event, Actor actor) {
-                sounds.buttonClick.play();
-                onRestart();
-            }
-        });
-        return button;
-    }
-
-    // -------------------------------------------------------------------------
-    // Positionnement de la table de jeu
-    // -------------------------------------------------------------------------
-
-    /** @return la largeur de l'image de table, réduite de BACKGROUND_SHRINK par rapport à l'écran. */
-    private float backgroundWidth() {
-        return stage.getViewport().getWorldWidth() - BACKGROUND_SHRINK;
-    }
-
-    /** @return la hauteur de l'image de table, réduite de BACKGROUND_SHRINK par rapport à l'écran. */
-    private float backgroundHeight() {
-        return stage.getViewport().getWorldHeight() - BACKGROUND_SHRINK;
-    }
-
-    /** @return l'abscisse de l'image de table, centrée horizontalement sur l'écran. */
-    private float backgroundX() {
-        return BACKGROUND_SHRINK / 2f;
-    }
-
-    /** @return l'ordonnée de l'image de table, centrée verticalement sur l'écran. */
-    private float backgroundY() {
-        return BACKGROUND_SHRINK / 2f;
-    }
-
-    // -------------------------------------------------------------------------
-    // Positionnement des barres de vie
-    // -------------------------------------------------------------------------
-
-    /** @return l'abscisse commune aux deux barres de vie, centrées horizontalement sur l'écran. */
-    private float healthBarX() {
-        return (stage.getViewport().getWorldWidth() - HEALTH_BAR_WIDTH) / 2f;
-    }
-
-    /** @return l'ordonnée de la barre de vie de l'ennemi, ancrée en haut de l'écran. */
-    private float healthBarY() {
-        return stage.getViewport().getWorldHeight() - HEALTH_BAR_HEIGHT - HEALTH_BAR_TOP_MARGIN;
-    }
-
-    /** @return l'ordonnée de la barre de vie du joueur, ancrée à distance fixe du bas de l'écran. */
-    private float playerHealthBarY() {
-        return HEALTH_BAR_BOTTOM_MARGIN;
-    }
-
-    /** @return l'ordonnée du bouton "Recommencer", juste sous le label de score. */
-    private float restartButtonY() {
-        return stage.getViewport().getWorldHeight() - SCORE_LABEL_TOP_MARGIN - BUTTON_HEIGHT - RESTART_BUTTON_GAP;
-    }
-
-    // -------------------------------------------------------------------------
-    // Positionnement du deck et de la défausse
-    // -------------------------------------------------------------------------
-
-    /**
-     * Au-dessus des boutons "Tirer" et "Lancer machine", décalé vers la
-     * gauche par rapport au centre de la rangée (DECK_LEFT_SHIFT).
-     * Nécessite que drawButton/spinButton soient déjà construits.
-     */
-    private float deckX() {
-        float buttonsLeft  = drawButton.getX();
-        float buttonsRight = spinButton.getX() + spinButton.getWidth();
-        float center       = (buttonsLeft + buttonsRight) / 2f;
-        return center - CARD_WIDTH / 2f - DECK_LEFT_SHIFT;
-    }
-
-    /** Symétrique du deck par rapport au centre de l'écran : la défausse est ancrée à droite. */
-    private float discardX() {
-        return stage.getViewport().getWorldWidth() - deckX() - deckPile.getWidth();
-    }
-
-    // -------------------------------------------------------------------------
-    // Interactions joueur — transmises au GameController
+    // Actions du joueur — transmises au GameController
     // -------------------------------------------------------------------------
 
     /** Pioche une nouvelle main et lance son animation de distribution ; active le spin, désactive la pioche. */
     private void onDrawCards() {
         if (drawButton.isDisabled() || pileOverlay.isShown()) return;
-        cardDealAnimator.cancel();
-        clearHand();
-        dealIntoHand(gameController.drawCards());
+        hand.clear();
+        hand.deal(gameController.drawCards());
         spinButton.setDisabled(false);
         drawButton.setDisabled(true);
     }
 
     /**
+     * Transmet la carte jouée (déjà retirée de la main affichée) au contrôleur,
+     * affiche le texte de chacun de ses bonus à sa place, déclenche l'effet de
+     * particules à l'endroit cliqué, puis distribue les cartes éventuellement
+     * piochées par ses effets immédiats.
+     */
+    private void onCardPlayed(Card card, Vector2 cardCenter, Vector2 clickPos) {
+        sounds.cardClick.play();
+        cardClickParticles.play(clickPos.x, clickPos.y);
+        Gdx.app.log("GameScreen", "Carte jouee : " + card);
+
+        CardPlayResult playResult = gameController.playCard(card);
+        effectPopupAnimator.play(playResult.getPopups(), cardCenter.x, cardCenter.y);
+        hud.refresh(gameController.getGameState()); // une carte peut créditer ou consommer des gains immédiatement
+
+        DrawResult drawResult = playResult.getDrawResult();
+        if (!drawResult.getAddedToHand().isEmpty() || !drawResult.getDiscarded().isEmpty()) {
+            hand.deal(drawResult);
+        }
+    }
+
+    /**
      * Lance la machine à sous, envoie les cartes restées sur la table à la
-     * défausse (animation), met à jour tout l'affichage (symboles, PV, score),
-     * puis termine le combat si l'un des deux camps est vaincu, ou repasse la
-     * main à la phase de pioche sinon.
+     * défausse (animation), affiche les symboles et les textes du tirage, met à
+     * jour PV et score, puis termine le combat si l'un des deux camps est vaincu,
+     * ou repasse la main à la phase de pioche sinon.
      */
     private void onSpin() {
         if (spinButton.isDisabled() || pileOverlay.isShown()) return;
         TurnResult result = gameController.spin();
-        discardHandWithAnimation();
-        refreshSlotTable(result.getSymbols());
-        playSpinPopups(result);
-        refreshHealthBar();
-        refreshPlayerHealthBar();
-        refreshScoreLabel();
+        hand.discardAll();
+        slots.show(result.getSymbols());
+        slots.playResultPopups(result, hud.besidePlayerHealthBar(SlotView.POPUP_PLAYER_GAP));
+        hud.refresh(gameController.getGameState());
         playSymbolResultSound(result);
 
         if (isCombatOver()) {
@@ -481,12 +226,54 @@ public class GameScreen extends ScreenAdapter {
 
     /** Affiche par-dessus le jeu les cartes restant dans le deck (triées, pas dans l'ordre de pioche). */
     private void onDeckClicked() {
-        pileOverlay.show("Deck", gameController.getGameState().getPlayer().getDeck().getCards());
+        pileOverlay.show("Deck", player().getDeck().getCards());
     }
 
     /** Affiche par-dessus le jeu les cartes de la défausse (triées). */
     private void onDiscardClicked() {
-        pileOverlay.show("Defausse", gameController.getGameState().getPlayer().getDiscardPile().getCards());
+        pileOverlay.show("Defausse", player().getDiscardPile().getCards());
+    }
+
+    /** Recommence un combat : réinitialise le GameController et tout l'affichage. */
+    private void onRestart() {
+        gameController.restart();
+        hand.reset();
+        effectPopupAnimator.cancel();
+        piles.resetInFlight();
+        pileOverlay.hide();
+        slots.clear();
+        refreshAll();
+        spinButton.setDisabled(true);
+        drawButton.setDisabled(false);
+        restartButton.setVisible(false);
+    }
+
+    // -------------------------------------------------------------------------
+    // Fin de combat, sons et journal
+    // -------------------------------------------------------------------------
+
+    /** Le combat est terminé dès que le joueur ou l'ennemi n'a plus de points de vie. */
+    private boolean isCombatOver() {
+        GameState gameState = gameController.getGameState();
+        return gameState.getEnemy().isDefeated() || gameState.getPlayer().isDefeated();
+    }
+
+    /** Fige la partie (plus de pioche ni de spin) et affiche le bouton pour recommencer. */
+    private void endCombat() {
+        spinButton.setDisabled(true);
+        drawButton.setDisabled(true);
+        restartButton.setVisible(true);
+    }
+
+    /** Joue le bruitage correspondant au tirage : bingo (3 identiques), paire (2 identiques), ou aucun. */
+    private void playSymbolResultSound(TurnResult result) {
+        if (result.isJackpot()) {
+            sounds.bingoThreeSymbols.play();
+        } else if (result.isPair()) {
+            sounds.twoSymbols.play();
+        } else {
+            sounds.oneSymbol.play();
+        }
     }
 
     /**
@@ -516,313 +303,38 @@ public class GameScreen extends ScreenAdapter {
         }
     }
 
-    /** Joue le bruitage correspondant au tirage : bingo (3 identiques), paire (2 identiques), ou aucun. */
-    private void playSymbolResultSound(TurnResult result) {
-        if (result.isJackpot()) {
-            sounds.bingoThreeSymbols.play();
-        } else if (result.isPair()) {
-            sounds.twoSymbols.play();
-        } else {
-            sounds.oneSymbol.play();
-        }
-    }
-
-    /**
-     * Transmet la carte jouée au contrôleur (ses effets de tour seront appliqués
-     * au prochain spin), affiche le texte de chacun de ses bonus à la place de
-     * la carte, la retire de la main, déclenche l'effet de particules à l'endroit
-     * cliqué (en coordonnées du Stage), puis distribue les cartes éventuellement
-     * piochées par ses effets immédiats.
-     */
-    private void onCardPlayed(Card card, Image cardImage, float stageX, float stageY) {
-        sounds.cardClick.play();
-        Vector2 cardCenter = cardImage.localToStageCoordinates(new Vector2(CARD_WIDTH / 2f, CARD_HEIGHT / 2f));
-        handImages.remove(cardImage);
-        cardImage.remove();
-        tooltip.hide();
-        cardClickParticles.play(stageX, stageY);
-        Gdx.app.log("GameScreen", "Carte jouee : " + card);
-
-        CardPlayResult playResult = gameController.playCard(card);
-        effectPopupAnimator.play(playResult.getPopups(), cardCenter.x, cardCenter.y);
-        refreshScoreLabel(); // une carte peut créditer ou consommer des gains immédiatement
-
-        DrawResult drawResult = playResult.getDrawResult();
-        if (!drawResult.getAddedToHand().isEmpty() || !drawResult.getDiscarded().isEmpty()) {
-            dealIntoHand(drawResult);
-        }
-    }
-
-    /** Le combat est terminé dès que le joueur ou l'ennemi n'a plus de points de vie. */
-    private boolean isCombatOver() {
-        GameState gameState = gameController.getGameState();
-        return gameState.getEnemy().isDefeated() || gameState.getPlayer().isDefeated();
-    }
-
-    /** Fige la partie (plus de pioche ni de spin) et affiche le bouton pour recommencer. */
-    private void endCombat() {
-        spinButton.setDisabled(true);
-        drawButton.setDisabled(true);
-        restartButton.setVisible(true);
-    }
-
-    /** Recommence un combat : réinitialise le GameController et tout l'affichage. */
-    private void onRestart() {
-        gameController.restart();
-        cardDealAnimator.cancel();
-        cardDiscardAnimator.cancel();
-        effectPopupAnimator.cancel();
-        discardInFlight = 0;
-        pileOverlay.hide();
-        clearHand();
-        refreshPiles();
-        slotTable.clearChildren();
-        refreshHealthBar();
-        refreshPlayerHealthBar();
-        refreshScoreLabel();
-        spinButton.setDisabled(true);
-        drawButton.setDisabled(false);
-        restartButton.setVisible(false);
-    }
-
     // -------------------------------------------------------------------------
-    // Rafraîchissement de l'affichage
+    // Rafraîchissement et positionnement
     // -------------------------------------------------------------------------
 
-    /**
-     * Ajoute à la main les cartes piochées : chacune est placée (invisible) à sa
-     * position finale, les cartes déjà présentes glissent pour recentrer la
-     * rangée, puis l'animation de distribution les révèle depuis le deck. Les
-     * cartes piochées sans place dans la main partent du deck vers la défausse.
-     */
-    private void dealIntoHand(DrawResult drawResult) {
-        refreshPiles(); // le deck a déjà perdu les cartes piochées
-
-        List<Image> newImages = new ArrayList<>();
-        for (Card card : drawResult.getAddedToHand()) {
-            Image cardImage = new Image(new TextureRegionDrawable(new TextureRegion(getCardTexture(card))));
-            cardImage.setUserObject(card);
-            cardImage.setSize(CARD_WIDTH, CARD_HEIGHT);
-            cardImage.setVisible(false); // révélée seulement à la fin de son animation de distribution
-            addCardListeners(cardImage, card);
-            handGroup.addActor(cardImage);
-            handImages.add(cardImage);
-            newImages.add(cardImage);
-        }
-        layoutHand(true);
-        cardDealAnimator.deal(newImages, deckPile.getTopX(), deckPile.getTopY());
-
-        int overflow = drawResult.getDiscarded().size();
-        if (overflow > 0) {
-            discardInFlight += overflow;
-            refreshPiles();
-            cardDiscardAnimator.discardFromDeck(overflow,
-                deckPile.getTopX(), deckPile.getTopY(),
-                discardPile.getTopX(), discardPile.getTopY(),
-                newImages.size() * 0.15f, // après la distribution des cartes gardées
-                this::onCardLandedInDiscard);
-        }
+    /** @return le joueur de la partie en cours (change à chaque nouveau combat). */
+    private Player player() {
+        return gameController.getGameState().getPlayer();
     }
 
-    /**
-     * Place les cartes de la main sur une rangée centrée. Avec {@code animate},
-     * les cartes déjà révélées glissent vers leur nouvelle place ; les autres
-     * (en cours de distribution) y sont placées directement.
-     */
-    private void layoutHand(boolean animate) {
-        int count = handImages.size();
-        float rowWidth = count * CARD_WIDTH + Math.max(0, count - 1) * HAND_CARD_GAP;
-        float startX   = (stage.getViewport().getWorldWidth() - rowWidth) / 2f;
-
-        for (int i = 0; i < count; i++) {
-            Image cardImage = handImages.get(i);
-            float x = startX + i * (CARD_WIDTH + HAND_CARD_GAP);
-            cardImage.clearActions();
-            if (animate && cardImage.isVisible()) {
-                cardImage.addAction(Actions.moveTo(x, CARD_TABLE_Y, HAND_MOVE_DURATION, Interpolation.pow2Out));
-            } else {
-                cardImage.setPosition(x, CARD_TABLE_Y);
-            }
-        }
+    /** Met à jour les barres de vie, le score et les compteurs du deck et de la défausse. */
+    private void refreshAll() {
+        hud.refresh(gameController.getGameState());
+        piles.refresh(player());
     }
 
-    /** Fin de tour : les cartes restées sur la table se retournent puis glissent jusqu'à la défausse. */
-    private void discardHandWithAnimation() {
-        cardDealAnimator.cancel(); // révèle d'un coup les cartes encore en cours de distribution
-        tooltip.hide();
-        discardInFlight += handImages.size();
-        refreshPiles();
-        cardDiscardAnimator.discardFromTable(new ArrayList<>(handImages),
-            discardPile.getTopX(), discardPile.getTopY(), this::onCardLandedInDiscard);
-        handImages.clear();
+    /** Place (ou replace après un redimensionnement) les éléments qui dépendent de la taille de l'écran. */
+    private void layout() {
+        float worldHeight = stage.getViewport().getWorldHeight();
+        background.setSize(stage.getViewport().getWorldWidth() - BACKGROUND_SHRINK, worldHeight - BACKGROUND_SHRINK);
+        background.setPosition(BACKGROUND_SHRINK / 2f, BACKGROUND_SHRINK / 2f);
+        restartButton.setPosition(BUTTON_MARGIN,
+            worldHeight - CombatHud.SCORE_LABEL_TOP_MARGIN - CasinoButtons.HEIGHT - RESTART_BUTTON_GAP);
+        hud.layout();
+        piles.layout(deckX(), DECK_Y);
+        slots.layout();
+        hand.layout(false);
     }
 
-    /** Une carte animée vient d'arriver sur la défausse : elle y est désormais comptée. */
-    private void onCardLandedInDiscard() {
-        discardInFlight = Math.max(0, discardInFlight - 1);
-        refreshPiles();
-    }
-
-    /** Retire toutes les cartes de la main affichée, sans animation. */
-    private void clearHand() {
-        handImages.clear();
-        handGroup.clearChildren();
-    }
-
-    /** Met à jour les compteurs du deck et de la défausse (sans les cartes encore en vol vers celle-ci). */
-    private void refreshPiles() {
-        Player player = gameController.getGameState().getPlayer();
-        deckPile.setCount(player.getDeck().getCards().size());
-        discardPile.setCount(Math.max(0, player.getDiscardPile().size() - discardInFlight));
-    }
-
-    /** Reconstruit la rangée de symboles affichés après un spin, centrée horizontalement. */
-    private void refreshSlotTable(Symbol[] symbols) {
-        slotTable.clearChildren();
-        slotImages.clear();
-        for (Symbol symbol : symbols) {
-            Image img = new Image(new TextureRegionDrawable(new TextureRegion(symbolTextures.get(symbol))));
-            addSymbolListeners(img, symbol);
-            slotTable.add(img).size(SYMBOL_WIDTH, SYMBOL_HEIGHT).pad(8f);
-            slotImages.add(img);
-        }
-        slotTable.pack();
-
-        float worldWidth = stage.getViewport().getWorldWidth();
-        slotTable.setPosition((worldWidth - slotTable.getWidth()) / 2f, SLOT_TABLE_Y);
-        slotTable.validate(); // positions des symboles connues pour placer les textes du tirage
-    }
-
-    /**
-     * Affiche les résultats du tirage en textes animés, dans l'ordre où ils se
-     * produisent : au-dessus de chaque symbole ce qu'il a fait (dégâts, gains,
-     * bouclier, vie drainée), puis le bonus de paire/jackpot au-dessus de la
-     * ligne, puis la riposte de l'ennemi (vie perdue, renvoi) près de la barre
-     * de vie du joueur.
-     */
-    private void playSpinPopups(TurnResult result) {
-        for (SymbolOutcome outcome : result.getSymbolOutcomes()) {
-            int slot = outcome.getSlotIndex();
-            if (slot < 0 || slot >= slotImages.size()) continue;
-            Vector2 top = slotImages.get(slot).localToStageCoordinates(
-                new Vector2(SYMBOL_WIDTH / 2f, SYMBOL_HEIGHT + SPIN_POPUP_SYMBOL_GAP + slot * SPIN_POPUP_SLOT_STEP));
-            effectPopupAnimator.play(popupsOf(outcome.getEvents()), top.x, top.y, slot * SPIN_POPUP_SYMBOL_DELAY);
-        }
-
-        effectPopupAnimator.play(popupsOf(result.getPairOrJackpotEvents()),
-            slotTable.getX() + slotTable.getWidth() / 2f,
-            slotTable.getY() + slotTable.getHeight() + SPIN_POPUP_BONUS_GAP,
-            SPIN_POPUP_BONUS_DELAY);
-
-        effectPopupAnimator.play(popupsOf(result.getEnemyTurnEvents()),
-            healthBarX() + HEALTH_BAR_WIDTH + SPIN_POPUP_PLAYER_GAP,
-            playerHealthBarY() + HEALTH_BAR_HEIGHT / 2f,
-            SPIN_POPUP_ENEMY_DELAY);
-    }
-
-    /** @return les textes de tous les événements donnés, dans l'ordre. */
-    private static List<EffectPopup> popupsOf(List<Event> events) {
-        return events.stream().flatMap(event -> event.getPopups().stream()).toList();
-    }
-
-    /** Met à jour la largeur du remplissage et le texte "PV/PV max" de la barre de vie de l'ennemi. */
-    private void refreshHealthBar() {
-        Enemy enemy = gameController.getGameState().getEnemy();
-        enemyHealthBar.refresh(enemy.getHp(), enemy.getMaxHp());
-    }
-
-    /** Met à jour la largeur du remplissage et le texte "PV/PV max" de la barre de vie du joueur. */
-    private void refreshPlayerHealthBar() {
-        Player player = gameController.getGameState().getPlayer();
-        playerHealthBar.refresh(player.getHp(), player.getMaxHp());
-    }
-
-    /** Met à jour le label affichant les points (gains) du joueur. */
-    private void refreshScoreLabel() {
-        scoreLabel.setText("Points : " + gameController.getGameState().getPlayer().getGains());
-    }
-
-    // -------------------------------------------------------------------------
-    // Listeners des cartes
-    // -------------------------------------------------------------------------
-
-    /**
-     * Attache à une image de carte : l'affichage de sa description au survol
-     * (dans la tooltip), et le fait de jouer la carte au clic.
-     */
-    private void addCardListeners(Image cardImage, Card card) {
-        cardImage.addListener(new InputListener() {
-
-            @Override
-            public void enter(InputEvent event, float x, float y, int pointer, Actor fromActor) {
-                if (pointer != -1) return;
-                Vector2 pos = cardImage.localToStageCoordinates(new Vector2(0, CARD_HEIGHT + 5f));
-                tooltip.show(card.getDescription(), pos.x, pos.y);
-            }
-
-            @Override
-            public void exit(InputEvent event, float x, float y, int pointer, Actor toActor) {
-                if (pointer != -1) return;
-                tooltip.hide();
-            }
-
-            @Override
-            public boolean touchDown(InputEvent event, float x, float y, int pointer, int button) {
-                Vector2 stagePos = cardImage.localToStageCoordinates(new Vector2(x, y));
-                onCardPlayed(card, cardImage, stagePos.x, stagePos.y);
-                return true;
-            }
-        });
-    }
-
-    /** Attache à une image de symbole l'affichage de sa description au survol (dans la tooltip). Pas de clic : un symbole ne se joue pas. */
-    private void addSymbolListeners(Image symbolImage, Symbol symbol) {
-        symbolImage.addListener(new InputListener() {
-
-            @Override
-            public void enter(InputEvent event, float x, float y, int pointer, Actor fromActor) {
-                if (pointer != -1) return;
-                Vector2 pos = symbolImage.localToStageCoordinates(new Vector2(0, SYMBOL_HEIGHT + 5f));
-                tooltip.show(symbol.getDescription(), pos.x, pos.y);
-            }
-
-            @Override
-            public void exit(InputEvent event, float x, float y, int pointer, Actor toActor) {
-                if (pointer != -1) return;
-                tooltip.hide();
-            }
-        });
-    }
-
-    // -------------------------------------------------------------------------
-    // Gestion des textures
-    // -------------------------------------------------------------------------
-
-    /** Charge une fois pour toutes la texture de chaque symbole de la machine à sous. */
-    private void preloadSymbolTextures() {
-        for (Symbol symbol : Symbol.values()) {
-            symbolTextures.put(symbol, new Texture(Gdx.files.internal(symbol.getAssetPath())));
-        }
-    }
-
-    /** @return la texture de la carte, chargée à la demande puis mise en cache par chemin d'asset. */
-    private Texture getCardTexture(Card card) {
-        String path = card.getAssetPath();
-        return cardTextures.computeIfAbsent(path, p -> new Texture(Gdx.files.internal(p)));
-    }
-
-    /** Texture de bouton "casino" : fond plein entouré d'un liseré doré. */
-    private Texture makeButtonTexture(Color fill, Color border) {
-        int w = (int) BUTTON_WIDTH;
-        int h = (int) BUTTON_HEIGHT;
-        Pixmap pixmap = new Pixmap(w, h, Pixmap.Format.RGBA8888);
-        pixmap.setColor(border);
-        pixmap.fill();
-        pixmap.setColor(fill);
-        pixmap.fillRectangle(BUTTON_BORDER_PX, BUTTON_BORDER_PX, w - BUTTON_BORDER_PX * 2, h - BUTTON_BORDER_PX * 2);
-        Texture texture = new Texture(pixmap);
-        pixmap.dispose();
-        return texture;
+    /** Au-dessus des boutons "Tirer" et "Lancer machine", décalé vers la gauche par rapport au centre de la rangée. */
+    private float deckX() {
+        float center = (drawButton.getX() + spinButton.getX() + spinButton.getWidth()) / 2f;
+        return center - CARD_WIDTH / 2f - DECK_LEFT_SHIFT;
     }
 
     // -------------------------------------------------------------------------
@@ -857,21 +369,11 @@ public class GameScreen extends ScreenAdapter {
         Gdx.input.setInputProcessor(new InputMultiplexer(stage, keyboardInput));
     }
 
-    /** Met à jour le viewport puis repositionne les acteurs ancrés en haut/bas de l'écran. */
+    /** Met à jour le viewport puis repositionne les éléments qui dépendent de la taille de l'écran. */
     @Override
     public void resize(int width, int height) {
         stage.getViewport().update(width, height, true);
-        float worldWidth  = stage.getViewport().getWorldWidth();
-        float worldHeight = stage.getViewport().getWorldHeight();
-
-        background.setSize(backgroundWidth(), backgroundHeight());
-        background.setPosition(backgroundX(), backgroundY());
-        enemyHealthBar.setPosition(healthBarX(), healthBarY());
-        playerHealthBar.setPosition(healthBarX(), playerHealthBarY());
-        scoreLabel.setPosition(20, worldHeight - SCORE_LABEL_TOP_MARGIN);
-        restartButton.setPosition(20, restartButtonY());
-        discardPile.setPosition(discardX(), DECK_Y);
-        layoutHand(false);
+        layout();
         pileOverlay.hide();
     }
 
@@ -888,22 +390,18 @@ public class GameScreen extends ScreenAdapter {
         batch.end();
     }
 
-    /** Libère toutes les ressources natives (Stage, polices, textures) possédées par cet écran. */
+    /** Libère toutes les ressources natives (Stage, polices, textures, sons) possédées par cet écran. */
     @Override
     public void dispose() {
         stage.dispose();
         font.dispose();
-        buttonFont.dispose();
         backgroundTexture.dispose();
-        buttonUpTexture.dispose();
-        buttonDownTexture.dispose();
-        buttonDisabledTexture.dispose();
-        tooltip.dispose();
-        enemyHealthBar.dispose();
-        playerHealthBar.dispose();
         cardBackTexture.dispose();
-        cardTextures.values().forEach(Texture::dispose);
-        symbolTextures.values().forEach(Texture::dispose);
+        cardTextures.dispose();
+        buttons.dispose();
+        tooltip.dispose();
+        hud.dispose();
+        slots.dispose();
         sounds.dispose();
         cardClickParticles.dispose();
         pileOverlay.dispose();
