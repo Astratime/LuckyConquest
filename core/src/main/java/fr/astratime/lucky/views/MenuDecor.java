@@ -21,7 +21,7 @@ import java.util.List;
 
 /**
  * Décor animé du menu : l'intérieur du casino (assets/menu/casino_interior.png)
- * et, par-dessus, ce qui bouge. Les néons « 777 » et « BAR » grésillent de
+ * et, par-dessus, ce qui bouge. Les néons « COIN » et « BAR » grésillent de
  * temps en temps, les ampoules des machines à sous clignotent, les rouleaux
  * des machines se lancent à tour de rôle (un jackpot de temps en temps fait
  * clignoter la machine et cracher des pièces) et de la poussière dorée flotte
@@ -63,7 +63,7 @@ public class MenuDecor extends Group implements Disposable {
     private static final float BULB_PARTY_BLINK = 0.08f;  // pendant un jackpot
 
     private final Texture backgroundTexture = load("menu/casino_interior.png");
-    private final Texture neon777Texture    = load("menu/neon_777.png");
+    private final Texture neonCoinTexture    = load("menu/neon_coin.png");
     private final Texture neonBarTexture    = load("menu/neon_bar.png");
     private final Texture bulbsATexture     = load("menu/bulbs_a.png");
     private final Texture bulbsBTexture     = load("menu/bulbs_b.png");
@@ -71,7 +71,7 @@ public class MenuDecor extends Group implements Disposable {
     private final Texture coinTexture       = load("jackpot/coin_spin.png");
 
     private final Image                     background;
-    private final Neon                      neon777;
+    private final Neon                      neonCoin;
     private final Neon                      neonBar;
     private final Image                     bulbsA;
     private final Image                     bulbsB;
@@ -106,9 +106,9 @@ public class MenuDecor extends Group implements Disposable {
             nextSpin[m] = MathUtils.random(0.5f, SPIN_WAIT_MAX);
         }
 
-        neon777 = new Neon(neon777Texture);
+        neonCoin = new Neon(neonCoinTexture);
         neonBar = new Neon(neonBarTexture);
-        addActor(neon777);
+        addActor(neonCoin);
         addActor(neonBar);
         addActor(dust);
         coins = new CoinShower(new TextureRegion(coinTexture), Vector2::new, () -> { }, 0.6f);
@@ -131,7 +131,7 @@ public class MenuDecor extends Group implements Disposable {
         setSize(width, height);
         gridScaleX = width / GRID_WIDTH;
         gridScaleY = height / GRID_HEIGHT;
-        for (Actor actor : new Actor[] {background, bulbsA, bulbsB, neon777, neonBar}) {
+        for (Actor actor : new Actor[] {background, bulbsA, bulbsB, neonCoin, neonBar}) {
             actor.setBounds(0f, 0f, width, height);
         }
         for (int m = 0; m < MACHINES; m++) {
@@ -194,7 +194,7 @@ public class MenuDecor extends Group implements Disposable {
     @Override
     public void dispose() {
         backgroundTexture.dispose();
-        neon777Texture.dispose();
+        neonCoinTexture.dispose();
         neonBarTexture.dispose();
         bulbsATexture.dispose();
         bulbsBTexture.dispose();
