@@ -61,7 +61,7 @@ public class CardPileView extends Group {
     /** Met à jour le nombre de cartes affiché et la hauteur de la pile. */
     public void setCount(int count) {
         this.count = count;
-        int visible = Math.max(1, Math.min(STACK_SIZE, count));
+        int visible = Math.clamp(count, 1, STACK_SIZE);
         for (int i = 0; i < STACK_SIZE; i++) {
             Image card = stack.get(i);
             card.setVisible(i < visible);
@@ -88,5 +88,5 @@ public class CardPileView extends Group {
     /** @return la hauteur d'une carte de la pile. */
     public float getCardHeight() { return cardHeight; }
 
-    private int topIndex() { return Math.max(0, Math.min(STACK_SIZE, count) - 1); }
+    private int topIndex() { return Math.clamp(count - 1, 0, STACK_SIZE - 1); }
 }

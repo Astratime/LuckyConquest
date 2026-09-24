@@ -26,7 +26,7 @@ public class EffectPopup {
     public EffectPopup(String text, Style style, float intensity) {
         this.text      = text;
         this.style     = style;
-        this.intensity = Math.max(0f, Math.min(1f, intensity));
+        this.intensity = Math.clamp(intensity, 0f, 1f);
     }
 
     /**

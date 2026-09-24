@@ -130,7 +130,7 @@ public class PileContentOverlay implements Disposable {
 
         grid.clearChildren();
         float cellWidth = cardWidth + CARD_PAD * 2;
-        int columns = Math.max(1, Math.min(MAX_COLUMNS, (int) ((worldWidth - MARGIN * 2) / cellWidth)));
+        int columns = Math.clamp((int) ((worldWidth - MARGIN * 2) / cellWidth), 1, MAX_COLUMNS);
         if (sorted.isEmpty()) {
             grid.add(new Label("Aucune carte", new Label.LabelStyle(hint.getStyle().font, Color.WHITE)));
         }
