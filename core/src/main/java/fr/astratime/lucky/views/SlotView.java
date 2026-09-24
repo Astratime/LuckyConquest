@@ -61,6 +61,8 @@ public class SlotView implements Disposable {
     private static final float POPUP_BONUS_DELAY  = 1.0f;
     private static final float POPUP_BONUS_GAP    = 210f;  // au-dessus de la ligne de symboles (et de l'escalier)
     private static final float POPUP_ENEMY_DELAY  = 1.5f;
+    /** Temps entre le texte « JACKPOT ! » (début de sa célébration) et la riposte de l'ennemi. */
+    public static final float  RIPOSTE_AFTER_BONUS = POPUP_ENEMY_DELAY - POPUP_BONUS_DELAY;
     public static final float  POPUP_PLAYER_GAP   = 110f;  // à droite de la barre de vie du joueur
 
     private final TableView                  tableView;
@@ -153,8 +155,10 @@ public class SlotView implements Disposable {
      *
      * @param onEventShown reçoit chaque événement du tirage à l'instant où son
      *                     texte apparaît (tout de suite s'il n'a pas de texte)
+     * @param riposteDelay retard supplémentaire de la riposte (ex : laisser passer la célébration d'un jackpot)
      */
-    public void playResultPopups(TurnResult result, Vector2 riposteAnchor, Consumer<Event> onEventShown) {
+    public void playResultPopups(TurnResult result, Vector2 riposteAnchor, Consumer<Event> onEventShown,
+                                 float riposteDelay) {
         for (SymbolOutcome outcome : result.getSymbolOutcomes()) {
             int slot = outcome.getSlotIndex();
             if (slot < 0 || slot >= reels.size()) { // symbole hors de la ligne : pas de texte à attendre
@@ -171,7 +175,8 @@ public class SlotView implements Disposable {
             table.getY() + table.getHeight() + POPUP_BONUS_GAP,
             POPUP_BONUS_DELAY, onEventShown);
 
-        playEvents(result.getEnemyTurnEvents(), riposteAnchor.x, riposteAnchor.y, POPUP_ENEMY_DELAY, onEventShown);
+        playEvents(result.getEnemyTurnEvents(), riposteAnchor.x, riposteAnchor.y, POPUP_ENEMY_DELAY + riposteDelay,
+            onEventShown);
     }
 
     /**
