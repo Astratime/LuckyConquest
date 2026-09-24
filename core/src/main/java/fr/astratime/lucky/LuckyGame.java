@@ -3,7 +3,7 @@ package fr.astratime.lucky;
 import com.badlogic.gdx.Game;
 import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
-import fr.astratime.lucky.screens.ControlsScreen;
+import fr.astratime.lucky.screens.MenuScreen;
 
 /** {@link com.badlogic.gdx.ApplicationListener} implementation shared by all platforms. */
 public class LuckyGame extends Game {
@@ -19,7 +19,7 @@ public class LuckyGame extends Game {
     public void create() {
         batch = new SpriteBatch();
 
-        setScreen(new ControlsScreen(this));
+        setScreen(new MenuScreen(this));
     }
 
     /** Délègue le rendu à l'écran actif (voir {@link Game#render()}). */
