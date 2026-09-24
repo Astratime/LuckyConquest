@@ -37,6 +37,7 @@ import fr.astratime.lucky.entities.SymbolOutcome;
 import fr.astratime.lucky.entities.TurnResult;
 import fr.astratime.lucky.entities.events.EnemyDamagedEvent;
 import fr.astratime.lucky.entities.events.Event;
+import fr.astratime.lucky.entities.events.GainsEarnedEvent;
 import fr.astratime.lucky.views.CasinoButtons;
 import fr.astratime.lucky.views.CombatHud;
 import fr.astratime.lucky.views.HandView;
@@ -124,6 +125,12 @@ public class GameScreen extends ScreenAdapter {
     private final TextButton spinButton;
     private final TextButton restartButton;
 
+    /**
+     * Gains du dernier tirage dont le texte n'est pas encore apparu : le compteur
+     * du panneau ne les ajoute qu'à l'apparition de leur texte « GAINS + ».
+     */
+    private int gainsNotYetShown = 0;
+
     // -------------------------------------------------------------------------
     // Constructeur
     // -------------------------------------------------------------------------
@@ -210,7 +217,7 @@ public class GameScreen extends ScreenAdapter {
         CardPlayResult playResult = gameController.playCard(card);
         effectPopupAnimator.play(playResult.getPopups(), cardCenter.x, cardCenter.y);
         hud.refresh(gameController.getGameState());
-        sidePanel.setGains(player().getGains()); // une carte peut créditer ou consommer des gains immédiatement
+        refreshGains(); // une carte peut créditer ou consommer des gains immédiatement
 
         DrawResult drawResult = playResult.getDrawResult();
         if (!drawResult.getAddedToHand().isEmpty() || !drawResult.getDiscarded().isEmpty()) {
@@ -227,11 +234,14 @@ public class GameScreen extends ScreenAdapter {
     private void onSpin() {
         if (spinButton.isDisabled() || pileOverlay.isShown()) return;
         TurnResult result = gameController.spin();
+        gainsNotYetShown += result.getEvents().stream()
+            .filter(event -> event instanceof GainsEarnedEvent)
+            .mapToInt(event -> ((GainsEarnedEvent) event).amount)
+            .sum();
         hand.discardAll();
         slots.show(result.getSymbols());
-        slots.playResultPopups(result, hud.besidePlayerHealthBar(SlotView.POPUP_PLAYER_GAP));
+        slots.playResultPopups(result, hud.besidePlayerHealthBar(SlotView.POPUP_PLAYER_GAP), this::onGainsShown);
         hud.refresh(gameController.getGameState());
-        sidePanel.setGains(player().getGains());
         playSymbolResultSound(result);
 
         if (isCombatOver()) {
@@ -245,6 +255,12 @@ public class GameScreen extends ScreenAdapter {
         Gdx.app.log("GameScreen", result.getEvents().stream()
             .map(Event::describe)
             .collect(Collectors.joining(" | ")));
+    }
+
+    /** Le texte d'un gain du tirage vient d'apparaître : le compteur du panneau l'ajoute à son tour. */
+    private void onGainsShown(int amount) {
+        gainsNotYetShown = Math.max(0, gainsNotYetShown - amount);
+        refreshGains();
     }
 
     /** Affiche par-dessus le jeu les cartes restant dans le deck (triées, pas dans l'ordre de pioche). */
@@ -261,7 +277,8 @@ public class GameScreen extends ScreenAdapter {
     private void onRestart() {
         gameController.restart();
         hand.reset();
-        effectPopupAnimator.cancel();
+        effectPopupAnimator.cancel(); // les gains en attente ne seront jamais affichés
+        gainsNotYetShown = 0;
         piles.resetInFlight();
         pileOverlay.hide();
         slots.clear();
@@ -338,8 +355,13 @@ public class GameScreen extends ScreenAdapter {
     /** Met à jour les barres de vie, les gains et les compteurs du deck et de la défausse. */
     private void refreshAll() {
         hud.refresh(gameController.getGameState());
-        sidePanel.setGains(player().getGains());
+        refreshGains();
         piles.refresh(player());
+    }
+
+    /** Met à jour le compteur de gains, sans les gains du tirage dont le texte n'est pas encore apparu. */
+    private void refreshGains() {
+        sidePanel.setGains(player().getGains() - gainsNotYetShown);
     }
 
     /** Place (ou replace après un redimensionnement) les éléments qui dépendent de la taille de l'écran. */

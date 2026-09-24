@@ -17,6 +17,7 @@ import fr.astratime.lucky.popups.EffectPopup;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.IntConsumer;
 
 /**
  * Fait apparaître un texte par bonus ou résultat, à un endroit donné (carte
@@ -94,6 +95,15 @@ public class EffectPopupAnimator implements Disposable {
      * qu'après {@code startDelay} secondes (pour enchaîner plusieurs groupes de textes).
      */
     public void play(List<EffectPopup> popups, float centerX, float centerY, float startDelay) {
+        play(popups, centerX, centerY, startDelay, index -> {});
+    }
+
+    /**
+     * Comme {@link #play(List, float, float, float)}, et appelle {@code onShown}
+     * avec l'indice de chaque texte dans {@code popups} à l'instant où il apparaît.
+     * Rien n'est appelé pour les textes retirés avant d'apparaître ({@link #cancel()}).
+     */
+    public void play(List<EffectPopup> popups, float centerX, float centerY, float startDelay, IntConsumer onShown) {
         float worldWidth = layer.getStage().getViewport().getWorldWidth();
         float y = centerY;
 
@@ -118,8 +128,10 @@ public class EffectPopupAnimator implements Disposable {
             container.getColor().a = 0f;
             layer.addActor(container);
 
+            int index = i;
             container.addAction(Actions.sequence(
                 Actions.delay(startDelay + i * STAGGER_DELAY),
+                Actions.run(() -> onShown.accept(index)),
                 Actions.parallel(
                     Actions.fadeIn(POP_IN_DURATION),
                     Actions.scaleTo(POP_OVERSHOOT, POP_OVERSHOOT, POP_IN_DURATION, Interpolation.pow2Out)

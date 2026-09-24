@@ -15,13 +15,16 @@ import fr.astratime.lucky.animations.EffectPopupAnimator;
 import fr.astratime.lucky.entities.Symbol;
 import fr.astratime.lucky.entities.SymbolOutcome;
 import fr.astratime.lucky.entities.TurnResult;
-import fr.astratime.lucky.popups.EffectPopup;
 import fr.astratime.lucky.entities.events.Event;
+import fr.astratime.lucky.entities.events.GainsEarnedEvent;
+import fr.astratime.lucky.popups.EffectPopup;
 
 import java.util.ArrayList;
 import java.util.EnumMap;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.IntConsumer;
 
 /**
  * La ligne de symboles tirés par la machine à sous, centrée dans la zone de
@@ -98,27 +101,58 @@ public class SlotView implements Disposable {
      * produisent : au-dessus de chaque symbole ce qu'il a fait (dégâts, gains,
      * bouclier, vie drainée), puis le bonus de paire/jackpot au-dessus de la
      * ligne, puis la riposte de l'ennemi (vie perdue, renvoi) en {@code riposteAnchor}.
+     *
+     * @param onGainsShown reçoit le montant de chaque gain du tirage à l'instant
+     *                     où son texte apparaît (tout de suite s'il n'a pas de texte)
      */
-    public void playResultPopups(TurnResult result, Vector2 riposteAnchor) {
+    public void playResultPopups(TurnResult result, Vector2 riposteAnchor, IntConsumer onGainsShown) {
         for (SymbolOutcome outcome : result.getSymbolOutcomes()) {
             int slot = outcome.getSlotIndex();
-            if (slot < 0 || slot >= images.size()) continue;
+            if (slot < 0 || slot >= images.size()) { // symbole hors de la ligne : pas de texte à attendre
+                gainsOf(outcome.getEvents()).forEach(onGainsShown::accept);
+                continue;
+            }
             Vector2 top = images.get(slot).localToStageCoordinates(
                 new Vector2(SYMBOL_WIDTH / 2f, SYMBOL_HEIGHT + POPUP_SYMBOL_GAP + slot * POPUP_SLOT_STEP));
-            popupAnimator.play(popupsOf(outcome.getEvents()), top.x, top.y, slot * POPUP_SYMBOL_DELAY);
+            playEvents(outcome.getEvents(), top.x, top.y, slot * POPUP_SYMBOL_DELAY, onGainsShown);
         }
 
-        popupAnimator.play(popupsOf(result.getPairOrJackpotEvents()),
+        playEvents(result.getPairOrJackpotEvents(),
             table.getX() + table.getWidth() / 2f,
             table.getY() + table.getHeight() + POPUP_BONUS_GAP,
-            POPUP_BONUS_DELAY);
+            POPUP_BONUS_DELAY, onGainsShown);
 
-        popupAnimator.play(popupsOf(result.getEnemyTurnEvents()), riposteAnchor.x, riposteAnchor.y, POPUP_ENEMY_DELAY);
+        playEvents(result.getEnemyTurnEvents(), riposteAnchor.x, riposteAnchor.y, POPUP_ENEMY_DELAY, onGainsShown);
     }
 
-    /** @return les textes de tous les événements donnés, dans l'ordre. */
-    private static List<EffectPopup> popupsOf(List<Event> events) {
-        return events.stream().flatMap(event -> event.getPopups().stream()).toList();
+    /**
+     * Affiche les textes de {@code events} et signale chaque gain à
+     * {@code onGainsShown} quand le texte correspondant apparaît (tout de suite
+     * si le gain n'a pas de texte).
+     */
+    private void playEvents(List<Event> events, float x, float y, float delay, IntConsumer onGainsShown) {
+        List<EffectPopup>     popups       = new ArrayList<>();
+        Map<Integer, Integer> gainsByPopup = new HashMap<>();
+        for (Event event : events) {
+            List<EffectPopup> eventPopups = event.getPopups();
+            if (event instanceof GainsEarnedEvent gains) {
+                if (eventPopups.isEmpty()) onGainsShown.accept(gains.amount);
+                else gainsByPopup.put(popups.size(), gains.amount);
+            }
+            popups.addAll(eventPopups);
+        }
+        popupAnimator.play(popups, x, y, delay, index -> {
+            Integer amount = gainsByPopup.get(index);
+            if (amount != null) onGainsShown.accept(amount);
+        });
+    }
+
+    /** @return les montants des gains parmi {@code events}, dans l'ordre. */
+    private static List<Integer> gainsOf(List<Event> events) {
+        return events.stream()
+            .filter(event -> event instanceof GainsEarnedEvent)
+            .map(event -> ((GainsEarnedEvent) event).amount)
+            .toList();
     }
 
     /** Affiche la description du symbole au survol. Pas de clic : un symbole ne se joue pas. */
