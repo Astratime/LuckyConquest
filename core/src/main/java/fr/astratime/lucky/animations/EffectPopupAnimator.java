@@ -12,7 +12,7 @@ import com.badlogic.gdx.scenes.scene2d.actions.Actions;
 import com.badlogic.gdx.scenes.scene2d.ui.Container;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.utils.Disposable;
-import fr.astratime.lucky.entities.effects.EffectPopup;
+import fr.astratime.lucky.popups.EffectPopup;
 
 import java.util.EnumMap;
 import java.util.List;

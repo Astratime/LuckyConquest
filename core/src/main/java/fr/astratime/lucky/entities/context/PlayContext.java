@@ -2,7 +2,7 @@ package fr.astratime.lucky.entities.context;
 
 import fr.astratime.lucky.entities.Player;
 import fr.astratime.lucky.entities.effects.Effect;
-import fr.astratime.lucky.entities.effects.EffectPopup;
+import fr.astratime.lucky.popups.EffectPopup;
 
 import java.util.ArrayList;
 import java.util.List;

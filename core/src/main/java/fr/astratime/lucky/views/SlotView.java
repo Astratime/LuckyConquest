@@ -16,7 +16,7 @@ import fr.astratime.lucky.animations.EffectPopupAnimator;
 import fr.astratime.lucky.entities.Symbol;
 import fr.astratime.lucky.entities.SymbolOutcome;
 import fr.astratime.lucky.entities.TurnResult;
-import fr.astratime.lucky.entities.effects.EffectPopup;
+import fr.astratime.lucky.popups.EffectPopup;
 import fr.astratime.lucky.entities.events.Event;
 
 import java.util.ArrayList;

@@ -1,4 +1,4 @@
-package fr.astratime.lucky.entities.effects;
+package fr.astratime.lucky.popups;
 
 /**
  * Réglages de taille des textes animés ({@link EffectPopup}), regroupés ici pour

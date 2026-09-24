@@ -3,6 +3,7 @@ package fr.astratime.lucky.entities.effects;
 import fr.astratime.lucky.entities.Player;
 import fr.astratime.lucky.entities.Symbol;
 import fr.astratime.lucky.entities.context.PlayContext;
+import fr.astratime.lucky.popups.EffectPopup;
 
 import org.junit.jupiter.api.Test;
 
