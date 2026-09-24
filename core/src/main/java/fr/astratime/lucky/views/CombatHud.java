@@ -18,7 +18,7 @@ public class CombatHud implements Disposable {
 
     private static final float HEALTH_BAR_WIDTH         = 440f;
     private static final float HEALTH_BAR_TOP_MARGIN    = 6f;
-    private static final float HEALTH_BAR_BOTTOM_MARGIN = 88f;
+    private static final float HEALTH_BAR_BOTTOM_MARGIN = 20f;   // sous la table, à côté des boutons
     private static final int   FONT_SIZE                = 28;
     private static final float FONT_BORDER              = 2f;
 

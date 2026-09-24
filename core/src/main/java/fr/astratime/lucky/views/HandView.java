@@ -39,12 +39,10 @@ public class HandView {
         void onCardClicked(Card card, Vector2 cardCenter, Vector2 clickPos);
     }
 
-    private static final float CARD_ROW_Y    = 350f;
-    private static final float CARD_GAP      = 20f;
     private static final float MOVE_DURATION = 0.25f;
     private static final float TOOLTIP_GAP   = 5f;
 
-    private final PlayArea            playArea;
+    private final TableView           table;
     private final float               cardWidth;
     private final float               cardHeight;
     private final CardTextures        cardTextures;
@@ -59,10 +57,10 @@ public class HandView {
     /** Images des cartes de la main (non jouées), dans l'ordre d'affichage. */
     private final List<Image> images = new ArrayList<>();
 
-    public HandView(PlayArea playArea, float cardWidth, float cardHeight, CardTextures cardTextures, Tooltip tooltip,
+    public HandView(TableView table, float cardWidth, float cardHeight, CardTextures cardTextures, Tooltip tooltip,
              PilesView piles, Supplier<Player> player,
              CardDealAnimator dealAnimator, CardDiscardAnimator discardAnimator, CardClickListener clickListener) {
-        this.playArea        = playArea;
+        this.table           = table;
         this.cardWidth       = cardWidth;
         this.cardHeight      = cardHeight;
         this.cardTextures    = cardTextures;
@@ -140,23 +138,25 @@ public class HandView {
     }
 
     /**
-     * Place les cartes de la main sur une rangée centrée dans la zone de jeu.
-     * Avec {@code animate}, les cartes déjà révélées glissent vers leur nouvelle
-     * place ; les autres (en cours de distribution) y sont placées directement.
+     * Pose les cartes de la main sur les emplacements de la table, centrées dans
+     * la rangée (une main impaire est décalée d'un demi-emplacement vers la
+     * gauche). Avec {@code animate}, les cartes déjà révélées glissent vers leur
+     * nouvelle place ; les autres (en cours de distribution) y sont placées
+     * directement.
      */
     public void layout(boolean animate) {
-        int count = images.size();
-        float rowWidth = count * cardWidth + Math.max(0, count - 1) * CARD_GAP;
-        float startX   = playArea.getCenterX() - rowWidth / 2f;
+        int count     = images.size();
+        int firstSlot = Math.max(0, (Player.MAX_HAND_SIZE - count) / 2);
+        float y       = table.getHandRowY();
 
         for (int i = 0; i < count; i++) {
             Image cardImage = images.get(i);
-            float x = startX + i * (cardWidth + CARD_GAP);
+            float x = table.getHandSlotX(firstSlot + i);
             cardImage.clearActions();
             if (animate && cardImage.isVisible()) {
-                cardImage.addAction(Actions.moveTo(x, CARD_ROW_Y, MOVE_DURATION, Interpolation.pow2Out));
+                cardImage.addAction(Actions.moveTo(x, y, MOVE_DURATION, Interpolation.pow2Out));
             } else {
-                cardImage.setPosition(x, CARD_ROW_Y);
+                cardImage.setPosition(x, y);
             }
         }
     }

@@ -27,16 +27,18 @@ import java.util.Map;
 import java.util.function.IntConsumer;
 
 /**
- * La ligne de symboles tirés par la machine à sous, centrée dans la zone de
- * jeu, et les textes animés des résultats du tirage. Possède les textures des
- * symboles.
+ * La ligne de symboles tirés par la machine à sous, affichée dans les rouleaux
+ * dessinés sur la table ({@link TableView}), et les textes animés des résultats
+ * du tirage. Possède les textures des symboles.
  */
 public class SlotView implements Disposable {
 
     private static final float SYMBOL_WIDTH  = 94f;
     private static final float SYMBOL_HEIGHT = 80f;
     private static final float SYMBOL_PAD    = 8f;
-    private static final float ROW_Y         = 200f;
+    /** Taille d'un rouleau : un symbole et sa marge (les fenêtres de la table ont cette taille). */
+    public static final float  CELL_WIDTH    = SYMBOL_WIDTH + SYMBOL_PAD * 2;
+    public static final float  CELL_HEIGHT   = SYMBOL_HEIGHT + SYMBOL_PAD * 2;
     private static final float TOOLTIP_GAP   = 5f;
 
     // Textes des résultats du tirage : ceux de chaque symbole (de gauche à
@@ -51,7 +53,7 @@ public class SlotView implements Disposable {
     private static final float POPUP_ENEMY_DELAY  = 1.5f;
     public static final float  POPUP_PLAYER_GAP   = 110f;  // à droite de la barre de vie du joueur
 
-    private final PlayArea            playArea;
+    private final TableView           tableView;
     private final Tooltip             tooltip;
     private final EffectPopupAnimator popupAnimator;
     private final Map<Symbol, Texture> textures = new EnumMap<>(Symbol.class);
@@ -59,8 +61,8 @@ public class SlotView implements Disposable {
     /** Images des symboles affichés, dans l'ordre de la ligne tirée. */
     private final List<Image>         images = new ArrayList<>();
 
-    public SlotView(PlayArea playArea, Tooltip tooltip, EffectPopupAnimator popupAnimator) {
-        this.playArea      = playArea;
+    public SlotView(TableView tableView, Tooltip tooltip, EffectPopupAnimator popupAnimator) {
+        this.tableView     = tableView;
         this.tooltip       = tooltip;
         this.popupAnimator = popupAnimator;
         for (Symbol symbol : Symbol.values()) {
@@ -71,7 +73,7 @@ public class SlotView implements Disposable {
     /** @return la table contenant la ligne de symboles, à ajouter au Stage. */
     public Table getActor() { return table; }
 
-    /** Reconstruit la ligne de symboles affichés après un spin, centrée horizontalement. */
+    /** Reconstruit la ligne de symboles affichés après un spin, dans les rouleaux de la table. */
     public void show(Symbol[] symbols) {
         clear();
         for (Symbol symbol : symbols) {
@@ -91,9 +93,9 @@ public class SlotView implements Disposable {
         images.clear();
     }
 
-    /** Recentre la ligne horizontalement dans la zone de jeu (après un redimensionnement). */
+    /** Place la ligne dans les rouleaux de la machine dessinée sur la table (après un redimensionnement). */
     public void layout() {
-        table.setPosition(playArea.getCenterX() - table.getWidth() / 2f, ROW_Y);
+        table.setPosition(tableView.getReelRowX(), tableView.getReelRowY());
     }
 
     /**
