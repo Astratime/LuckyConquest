@@ -1,4 +1,4 @@
-package fr.astratime.lucky.screens;
+package fr.astratime.lucky.animations;
 
 import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.graphics.Texture;
@@ -25,7 +25,7 @@ import java.util.Map;
  */
 public class CardDealAnimator {
 
-    static final float DEAL_STAGGER_DELAY = 0.15f;
+    public static final float DEAL_STAGGER_DELAY = 0.15f;
     private static final float DEAL_MOVE_DURATION = 0.35f;
     private static final float FLIP_PAUSE_DELAY   = 0.05f;
     private static final float FLIP_HALF_DURATION = 0.12f;

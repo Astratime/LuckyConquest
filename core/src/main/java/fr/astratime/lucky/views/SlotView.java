@@ -1,4 +1,4 @@
-package fr.astratime.lucky.screens;
+package fr.astratime.lucky.views;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Texture;
@@ -12,6 +12,7 @@ import com.badlogic.gdx.scenes.scene2d.ui.Image;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 import com.badlogic.gdx.utils.Disposable;
+import fr.astratime.lucky.animations.EffectPopupAnimator;
 import fr.astratime.lucky.entities.Symbol;
 import fr.astratime.lucky.entities.SymbolOutcome;
 import fr.astratime.lucky.entities.TurnResult;
@@ -27,7 +28,7 @@ import java.util.Map;
  * La ligne de symboles tirés par la machine à sous, centrée à l'écran, et les
  * textes animés des résultats du tirage. Possède les textures des symboles.
  */
-class SlotView implements Disposable {
+public class SlotView implements Disposable {
 
     private static final float SYMBOL_WIDTH  = 94f;
     private static final float SYMBOL_HEIGHT = 80f;
@@ -45,7 +46,7 @@ class SlotView implements Disposable {
     private static final float POPUP_BONUS_DELAY  = 1.0f;
     private static final float POPUP_BONUS_GAP    = 210f;  // au-dessus de la ligne de symboles (et de l'escalier)
     private static final float POPUP_ENEMY_DELAY  = 1.5f;
-    static final float         POPUP_PLAYER_GAP   = 110f;  // à droite de la barre de vie du joueur
+    public static final float  POPUP_PLAYER_GAP   = 110f;  // à droite de la barre de vie du joueur
 
     private final Stage               stage;
     private final Tooltip             tooltip;
@@ -55,7 +56,7 @@ class SlotView implements Disposable {
     /** Images des symboles affichés, dans l'ordre de la ligne tirée. */
     private final List<Image>         images = new ArrayList<>();
 
-    SlotView(Stage stage, Tooltip tooltip, EffectPopupAnimator popupAnimator) {
+    public SlotView(Stage stage, Tooltip tooltip, EffectPopupAnimator popupAnimator) {
         this.stage         = stage;
         this.tooltip       = tooltip;
         this.popupAnimator = popupAnimator;
@@ -65,10 +66,10 @@ class SlotView implements Disposable {
     }
 
     /** @return la table contenant la ligne de symboles, à ajouter au Stage. */
-    Table getActor() { return table; }
+    public Table getActor() { return table; }
 
     /** Reconstruit la ligne de symboles affichés après un spin, centrée horizontalement. */
-    void show(Symbol[] symbols) {
+    public void show(Symbol[] symbols) {
         clear();
         for (Symbol symbol : symbols) {
             Image img = new Image(new TextureRegionDrawable(new TextureRegion(textures.get(symbol))));
@@ -82,13 +83,13 @@ class SlotView implements Disposable {
     }
 
     /** Efface la ligne de symboles. */
-    void clear() {
+    public void clear() {
         table.clearChildren();
         images.clear();
     }
 
     /** Recentre la ligne horizontalement (après un redimensionnement). */
-    void layout() {
+    public void layout() {
         table.setPosition((stage.getViewport().getWorldWidth() - table.getWidth()) / 2f, ROW_Y);
     }
 
@@ -98,7 +99,7 @@ class SlotView implements Disposable {
      * bouclier, vie drainée), puis le bonus de paire/jackpot au-dessus de la
      * ligne, puis la riposte de l'ennemi (vie perdue, renvoi) en {@code riposteAnchor}.
      */
-    void playResultPopups(TurnResult result, Vector2 riposteAnchor) {
+    public void playResultPopups(TurnResult result, Vector2 riposteAnchor) {
         for (SymbolOutcome outcome : result.getSymbolOutcomes()) {
             int slot = outcome.getSlotIndex();
             if (slot < 0 || slot >= images.size()) continue;

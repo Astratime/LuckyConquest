@@ -1,4 +1,4 @@
-package fr.astratime.lucky.screens;
+package fr.astratime.lucky.views;
 
 import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.graphics.Texture;
@@ -18,7 +18,7 @@ import fr.astratime.lucky.entities.Player;
  * modèle : la défausse affichée ne les compte qu'à leur arrivée
  * ({@link #addInFlight(int)} puis {@link #onCardLanded()}).
  */
-class PilesView {
+public class PilesView {
 
     private final Stage        stage;
     private final CardPileView deckPile;
@@ -29,7 +29,7 @@ class PilesView {
      * @param onDeckClicked    appelé au clic sur le deck
      * @param onDiscardClicked appelé au clic sur la défausse
      */
-    PilesView(Stage stage, Texture cardBackTexture, BitmapFont font, Tooltip tooltip, Sound clickSound,
+    public PilesView(Stage stage, Texture cardBackTexture, BitmapFont font, Tooltip tooltip, Sound clickSound,
               float cardWidth, float cardHeight, Runnable onDeckClicked, Runnable onDiscardClicked) {
         this.stage  = stage;
         deckPile    = buildPile("Deck", cardBackTexture, font, tooltip, clickSound, cardWidth, cardHeight, onDeckClicked);
@@ -37,7 +37,7 @@ class PilesView {
     }
 
     /** Ajoute les deux piles au Stage. */
-    void addTo(Stage target) {
+    public void addTo(Stage target) {
         target.addActor(deckPile);
         target.addActor(discardPile);
     }
@@ -46,30 +46,30 @@ class PilesView {
      * Place le deck en {@code (deckX, y)} et la défausse en symétrique par rapport
      * au centre de l'écran (ancrée à droite).
      */
-    void layout(float deckX, float y) {
+    public void layout(float deckX, float y) {
         deckPile.setPosition(deckX, y);
         discardPile.setPosition(stage.getViewport().getWorldWidth() - deckX - deckPile.getWidth(), y);
     }
 
     /** Met à jour les compteurs du deck et de la défausse (sans les cartes encore en vol vers celle-ci). */
-    void refresh(Player player) {
+    public void refresh(Player player) {
         deckPile.setCount(player.getDeck().getCards().size());
         discardPile.setCount(Math.max(0, player.getDiscardPile().size() - discardInFlight));
     }
 
     /** {@code count} cartes partent en animation vers la défausse : elles n'y seront affichées qu'à leur arrivée. */
-    void addInFlight(int count) { discardInFlight += count; }
+    public void addInFlight(int count) { discardInFlight += count; }
 
     /** Une carte animée vient d'arriver sur la défausse : elle y est désormais comptée. */
-    void onCardLanded() { discardInFlight = Math.max(0, discardInFlight - 1); }
+    public void onCardLanded() { discardInFlight = Math.max(0, discardInFlight - 1); }
 
     /** Oublie les cartes en vol (animations annulées, ex : nouveau combat). */
-    void resetInFlight() { discardInFlight = 0; }
+    public void resetInFlight() { discardInFlight = 0; }
 
     /** @return la pile du deck (point de départ des cartes distribuées). */
-    CardPileView deck()    { return deckPile; }
+    public CardPileView deck()    { return deckPile; }
     /** @return la pile de la défausse (point d'arrivée des cartes défaussées). */
-    CardPileView discard() { return discardPile; }
+    public CardPileView discard() { return discardPile; }
 
     private static CardPileView buildPile(String name, Texture cardBackTexture, BitmapFont font, Tooltip tooltip,
                                           Sound clickSound, float cardWidth, float cardHeight, Runnable onClick) {

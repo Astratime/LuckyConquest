@@ -1,4 +1,4 @@
-package fr.astratime.lucky.screens;
+package fr.astratime.lucky.animations;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Color;

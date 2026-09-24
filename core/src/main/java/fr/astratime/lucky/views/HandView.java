@@ -1,4 +1,4 @@
-package fr.astratime.lucky.screens;
+package fr.astratime.lucky.views;
 
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.Interpolation;
@@ -11,6 +11,9 @@ import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.actions.Actions;
 import com.badlogic.gdx.scenes.scene2d.ui.Image;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
+import fr.astratime.lucky.animations.CardDealAnimator;
+import fr.astratime.lucky.animations.CardDiscardAnimator;
+import fr.astratime.lucky.assets.CardTextures;
 import fr.astratime.lucky.entities.Card;
 import fr.astratime.lucky.entities.DrawResult;
 import fr.astratime.lucky.entities.Player;
@@ -25,10 +28,10 @@ import java.util.function.Supplier;
  * piochées pendant le tour. Gère aussi les animations de distribution (depuis
  * le deck) et de défausse (vers la défausse), et signale les cartes cliquées.
  */
-class HandView {
+public class HandView {
 
     /** Appelé quand le joueur clique sur une carte de la main. */
-    interface CardClickListener {
+    public interface CardClickListener {
         /**
          * @param card       carte cliquée
          * @param cardCenter centre de la carte (coordonnées du Stage), avant son retrait de la main
@@ -57,7 +60,7 @@ class HandView {
     /** Images des cartes de la main (non jouées), dans l'ordre d'affichage. */
     private final List<Image> images = new ArrayList<>();
 
-    HandView(Stage stage, float cardWidth, float cardHeight, CardTextures cardTextures, Tooltip tooltip,
+    public HandView(Stage stage, float cardWidth, float cardHeight, CardTextures cardTextures, Tooltip tooltip,
              PilesView piles, Supplier<Player> player,
              CardDealAnimator dealAnimator, CardDiscardAnimator discardAnimator, CardClickListener clickListener) {
         this.stage           = stage;
@@ -73,7 +76,7 @@ class HandView {
     }
 
     /** @return le groupe contenant les cartes de la main, à ajouter au Stage. */
-    Group getActor() { return group; }
+    public Group getActor() { return group; }
 
     /**
      * Ajoute à la main les cartes piochées : chacune est placée (invisible) à sa
@@ -81,7 +84,7 @@ class HandView {
      * rangée, puis l'animation de distribution les révèle depuis le deck. Les
      * cartes piochées sans place dans la main partent du deck vers la défausse.
      */
-    void deal(DrawResult drawResult) {
+    public void deal(DrawResult drawResult) {
         piles.refresh(player.get()); // le deck a déjà perdu les cartes piochées
 
         List<Image> newImages = new ArrayList<>();
@@ -110,7 +113,7 @@ class HandView {
     }
 
     /** Fin de tour : les cartes restées sur la table se retournent puis glissent jusqu'à la défausse. */
-    void discardAll() {
+    public void discardAll() {
         dealAnimator.cancel(); // révèle d'un coup les cartes encore en cours de distribution
         tooltip.hide();
         piles.addInFlight(images.size());
@@ -125,14 +128,14 @@ class HandView {
      * interrompt leur distribution. Les cartes déjà en vol vers la défausse
      * finissent leur trajet (elles doivent y être comptées à leur arrivée).
      */
-    void clear() {
+    public void clear() {
         dealAnimator.cancel();
         images.clear();
         group.clearChildren();
     }
 
     /** Nouveau combat : retire la main et interrompt toutes les animations, y compris vers la défausse. */
-    void reset() {
+    public void reset() {
         discardAnimator.cancel();
         clear();
     }
@@ -142,7 +145,7 @@ class HandView {
      * les cartes déjà révélées glissent vers leur nouvelle place ; les autres
      * (en cours de distribution) y sont placées directement.
      */
-    void layout(boolean animate) {
+    public void layout(boolean animate) {
         int count = images.size();
         float rowWidth = count * cardWidth + Math.max(0, count - 1) * CARD_GAP;
         float startX   = (stage.getViewport().getWorldWidth() - rowWidth) / 2f;

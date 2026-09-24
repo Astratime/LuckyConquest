@@ -1,4 +1,4 @@
-package fr.astratime.lucky.screens;
+package fr.astratime.lucky.assets;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Texture;
@@ -9,12 +9,12 @@ import java.util.HashMap;
 import java.util.Map;
 
 /** Cache des textures de cartes : chaque image est chargée à la première demande, puis réutilisée. */
-class CardTextures implements Disposable {
+public class CardTextures implements Disposable {
 
     private final Map<String, Texture> textures = new HashMap<>();
 
     /** @return la texture de la carte, chargée à la demande puis mise en cache par chemin d'asset. */
-    Texture get(Card card) {
+    public Texture get(Card card) {
         return textures.computeIfAbsent(card.getAssetPath(), path -> new Texture(Gdx.files.internal(path)));
     }
 

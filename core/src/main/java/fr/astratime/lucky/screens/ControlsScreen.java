@@ -18,6 +18,7 @@ import com.badlogic.gdx.utils.ScreenUtils;
 import com.badlogic.gdx.utils.Timer;
 import com.badlogic.gdx.utils.viewport.ScreenViewport;
 import fr.astratime.lucky.LuckyGame;
+import fr.astratime.lucky.assets.Textures;
 
 /**
  * Écran d'accueil : affiche le fond du menu casino et un bouton "Jouer"

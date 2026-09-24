@@ -1,4 +1,4 @@
-package fr.astratime.lucky.screens;
+package fr.astratime.lucky.views;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.audio.Sound;
@@ -20,9 +20,9 @@ import com.badlogic.gdx.utils.Disposable;
  * art. La largeur de chaque bouton s'adapte à son texte ; MIN_WIDTH n'est qu'un
  * plancher. Possède la police et les textures partagées par tous les boutons.
  */
-class CasinoButtons implements Disposable {
+public class CasinoButtons implements Disposable {
 
-    static final float HEIGHT = 60f;
+    public static final float HEIGHT = 60f;
 
     private static final float  MIN_WIDTH    = 150f;
     private static final String FONT_PATH    = "fonts/Jersey10-Regular.ttf";
@@ -36,7 +36,7 @@ class CasinoButtons implements Disposable {
     private final Texture    downTexture;
     private final Texture    disabledTexture;
 
-    CasinoButtons() {
+    public CasinoButtons() {
         font            = buildFont();
         upTexture       = makeTexture(Color.valueOf("1a1a1aff"), GOLD);
         downTexture     = makeTexture(Color.valueOf("4a0000ff"), GOLD);
@@ -48,7 +48,7 @@ class CasinoButtons implements Disposable {
      * @param sound   bruitage joué au clic
      * @param onClick action déclenchée au clic (jamais quand le bouton est désactivé)
      */
-    TextButton create(String text, Sound sound, Runnable onClick) {
+    public TextButton create(String text, Sound sound, Runnable onClick) {
         TextButton button = new TextButton(text, buildStyle());
         button.setSize(widthFor(text), HEIGHT);
         button.addListener(new ChangeListener() {
