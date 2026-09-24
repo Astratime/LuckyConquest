@@ -4,6 +4,7 @@ import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.Interpolation;
+import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.actions.Actions;
@@ -114,7 +115,13 @@ public class SidePanel implements Disposable {
         });
     }
 
-    private void bumpCoin() {
+    /** @return le centre (Stage) de la pièce des gains, cible des pièces du jackpot. */
+    public Vector2 getCoinCenter() {
+        return coin.localToStageCoordinates(new Vector2(coin.getWidth() / 2f, coin.getHeight() / 2f));
+    }
+
+    /** Fait rebondir la pièce des gains (à chaque gain, ou à l'arrivée d'une pièce du jackpot). */
+    public void bumpCoin() {
         coin.clearActions();
         coin.setOrigin(Align.center);
         coin.setScale(1f);

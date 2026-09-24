@@ -5,6 +5,7 @@ import com.badlogic.gdx.scenes.scene2d.Group;
 import com.badlogic.gdx.scenes.scene2d.Touchable;
 import com.badlogic.gdx.scenes.scene2d.ui.Image;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
+import fr.astratime.lucky.animations.RainbowBorder;
 import fr.astratime.lucky.assets.TableTextures;
 import fr.astratime.lucky.entities.Player;
 import fr.astratime.lucky.entities.SlotMachine;
@@ -18,7 +19,8 @@ import java.util.List;
  * le deck (à gauche) et la défausse (à droite) sur leur tapis, la machine à
  * sous (un rouleau par symbole), la rangée des cartes de la main
  * ({@link Player#MAX_HAND_SIZE} emplacements), puis un filet doré au-delà
- * duquel le côté adverse de la table reste libre.
+ * duquel le côté adverse de la table reste libre. Lors d'un jackpot, les
+ * rouleaux prennent une bordure arc-en-ciel animée.
  *
  * La table est assemblée à partir de pièces étirables ou répétées (et non
  * d'une seule image) : elle s'adapte à la taille de l'écran et reste alignée
@@ -64,6 +66,7 @@ public class TableView {
     private final Image       discardMat;
     private final Image       reelFrame;
     private final List<Image> reelCells = new ArrayList<>();
+    private final List<RainbowBorder> reelRainbows = new ArrayList<>();
     private final List<Image> cardSlots = new ArrayList<>();
 
     public TableView(PlayArea playArea, TableTextures textures, float cardWidth, float cardHeight) {
@@ -83,6 +86,12 @@ public class TableView {
         reelFrame  = add(new Image(textures.reelFrameDrawable()));
         for (int i = 0; i < SlotMachine.SYMBOL_COUNT; i++) {
             reelCells.add(add(new Image(textures.reelCellDrawable())));
+        }
+        for (int i = 0; i < SlotMachine.SYMBOL_COUNT; i++) {
+            RainbowBorder rainbow = new RainbowBorder(new TextureRegion(textures.pixel));
+            rainbow.setVisible(false);
+            group.addActor(rainbow);
+            reelRainbows.add(rainbow);
         }
         rail = add(new Image(textures.railDrawable())); // par-dessus le bord du feutre
         layout();
@@ -116,6 +125,8 @@ public class TableView {
         for (int i = 0; i < reelCells.size(); i++) {
             reelCells.get(i).setBounds(getReelRowX() + i * SlotView.CELL_WIDTH, getReelRowY(),
                 SlotView.CELL_WIDTH, SlotView.CELL_HEIGHT);
+            reelRainbows.get(i).setBounds(reelCells.get(i).getX(), reelCells.get(i).getY(),
+                SlotView.CELL_WIDTH, SlotView.CELL_HEIGHT);
         }
 
         for (int i = 0; i < cardSlots.size(); i++) {
@@ -130,6 +141,11 @@ public class TableView {
         dividerEmblem.setBounds(playArea.getCenterX() - dividerEmblem.getPrefWidth() / 2f,
             dividerY - dividerEmblem.getPrefHeight() / 2f,
             dividerEmblem.getPrefWidth(), dividerEmblem.getPrefHeight());
+    }
+
+    /** Affiche (jackpot) ou cache la bordure arc-en-ciel animée autour des rouleaux. */
+    public void setReelsRainbow(boolean shown) {
+        reelRainbows.forEach(rainbow -> rainbow.setVisible(shown));
     }
 
     /** @return l'abscisse (Stage) du deck, posé sur son tapis à gauche ; la défausse est son symétrique. */

@@ -1,6 +1,7 @@
 package fr.astratime.lucky.assets;
 
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.NinePatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
@@ -31,6 +32,8 @@ public class TableTextures implements Disposable {
     public final Texture reelCell   = load("table/reel_cell.png");
     public final Texture feltLine   = load("table/felt_line.png");
     public final Texture feltEmblem = load("table/felt_emblem.png");
+    /** Pixel blanc, teinté pour les contours animés (bordure arc-en-ciel des rouleaux). */
+    public final Texture pixel      = Textures.solidColor(Color.WHITE);
 
     /** @return le rebord de la table (centre transparent, le feutre est dessous). */
     public NinePatchDrawable railDrawable()      { return nine(rail, RAIL_BORDER); }
@@ -63,5 +66,6 @@ public class TableTextures implements Disposable {
         reelCell.dispose();
         feltLine.dispose();
         feltEmblem.dispose();
+        pixel.dispose();
     }
 }

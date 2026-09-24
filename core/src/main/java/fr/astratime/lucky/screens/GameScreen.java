@@ -20,6 +20,7 @@ import fr.astratime.lucky.animations.CardClickParticles;
 import fr.astratime.lucky.animations.CardDealAnimator;
 import fr.astratime.lucky.animations.CardDiscardAnimator;
 import fr.astratime.lucky.animations.EffectPopupAnimator;
+import fr.astratime.lucky.animations.JackpotCelebration;
 import fr.astratime.lucky.assets.CardTextures;
 import fr.astratime.lucky.assets.GameSounds;
 import fr.astratime.lucky.assets.HudTextures;
@@ -36,6 +37,7 @@ import fr.astratime.lucky.entities.TurnResult;
 import fr.astratime.lucky.entities.events.EnemyDamagedEvent;
 import fr.astratime.lucky.entities.events.Event;
 import fr.astratime.lucky.entities.events.GainsEarnedEvent;
+import fr.astratime.lucky.entities.events.JackpotEvent;
 import fr.astratime.lucky.views.CasinoButtons;
 import fr.astratime.lucky.views.CombatHud;
 import fr.astratime.lucky.views.HandView;
@@ -97,6 +99,7 @@ public class GameScreen extends ScreenAdapter {
     private final GameSounds          sounds        = new GameSounds();
     private final CardClickParticles  cardClickParticles = new CardClickParticles();
     private final EffectPopupAnimator effectPopupAnimator;
+    private final JackpotCelebration  jackpotCelebration;
     private final Tooltip             tooltip;
     private final PileContentOverlay  pileOverlay;
 
@@ -148,6 +151,7 @@ public class GameScreen extends ScreenAdapter {
         playArea   = new PlayArea(stage, SidePanel.WIDTH);
         table      = new TableView(playArea, tableTextures, CARD_WIDTH, CARD_HEIGHT);
         sidePanel  = new SidePanel(hudTextures);
+        jackpotCelebration = new JackpotCelebration(playArea, sidePanel::getCoinCenter, sidePanel::bumpCoin);
         hud        = new CombatHud(playArea, hudTextures);
 
         drawButton    = buttons.create("Tirer " + GameController.DEFAULT_DRAW_COUNT + " cartes", sounds.buttonClick, this::onDrawCards);
@@ -177,6 +181,7 @@ public class GameScreen extends ScreenAdapter {
         stage.addActor(slots.getActor());
         stage.addActor(hand.getActor());
         stage.addActor(popupLayer);
+        stage.addActor(jackpotCelebration); // par-dessus le jeu et le panneau : bloque les clics pendant la fête
         stage.addActor(pileOverlay.getActor()); // voile de consultation des piles, par-dessus le jeu
         stage.addActor(tooltip.getActor());     // en dernier : toujours au-dessus
     }
@@ -225,27 +230,59 @@ public class GameScreen extends ScreenAdapter {
     private void onSpin() {
         if (spinButton.isDisabled() || pileOverlay.isShown()) return;
         TurnResult result = gameController.spin();
+        table.setReelsRainbow(false); // la bordure d'un jackpot précédent s'arrête au lancer suivant
         gainsNotYetShown += result.getEvents().stream()
             .filter(event -> event instanceof GainsEarnedEvent)
             .mapToInt(event -> ((GainsEarnedEvent) event).amount)
             .sum();
         hand.discardAll();
         slots.show(result.getSymbols());
-        slots.playResultPopups(result, hud.besidePlayerHealthBar(SlotView.POPUP_PLAYER_GAP), this::onGainsShown);
+        slots.playResultPopups(result, hud.besidePlayerHealthBar(SlotView.POPUP_PLAYER_GAP), this::onEventShown);
         hud.refresh(gameController.getGameState());
         playSymbolResultSound(result);
 
-        if (isCombatOver()) {
-            endCombat();
-        } else {
+        if (result.isJackpot()) {
+            // La suite du tour attend la fin de la célébration (voir onJackpotShown).
             spinButton.setDisabled(true);
-            drawButton.setDisabled(false);
+            drawButton.setDisabled(true);
+        } else {
+            finishTurn();
         }
 
         logSymbolOutcomes(result);
         Gdx.app.log("GameScreen", result.getEvents().stream()
             .map(Event::describe)
             .collect(Collectors.joining(" | ")));
+    }
+
+    /** Termine le tour : fin du combat si un camp est vaincu, sinon retour à la phase de pioche. */
+    private void finishTurn() {
+        if (isCombatOver()) {
+            endCombat();
+        } else {
+            spinButton.setDisabled(true);
+            drawButton.setDisabled(false);
+        }
+    }
+
+    /** Le texte d'un événement du tirage vient d'apparaître : met à jour ce qui en dépend. */
+    private void onEventShown(Event event) {
+        if (event instanceof GainsEarnedEvent gains) {
+            onGainsShown(gains.amount);
+        } else if (event instanceof JackpotEvent) {
+            onJackpotShown();
+        }
+    }
+
+    /**
+     * Le texte « JACKPOT ! » vient d'apparaître : bruitage du bingo, bordure
+     * arc-en-ciel des rouleaux et célébration. Le tour se termine à la fin de
+     * la célébration.
+     */
+    private void onJackpotShown() {
+        sounds.bingoThreeSymbols.play();
+        table.setReelsRainbow(true);
+        jackpotCelebration.play(this::finishTurn);
     }
 
     /** Le texte d'un gain du tirage vient d'apparaître : le compteur du panneau l'ajoute à son tour. */
@@ -269,6 +306,8 @@ public class GameScreen extends ScreenAdapter {
         gameController.restart();
         hand.reset();
         effectPopupAnimator.cancel(); // les gains en attente ne seront jamais affichés
+        jackpotCelebration.cancel();
+        table.setReelsRainbow(false);
         gainsNotYetShown = 0;
         piles.resetInFlight();
         pileOverlay.hide();
@@ -296,13 +335,14 @@ public class GameScreen extends ScreenAdapter {
         restartButton.setVisible(true);
     }
 
-    /** Joue le bruitage correspondant au tirage : bingo (3 identiques), paire (2 identiques), ou aucun. */
+    /**
+     * Joue le bruitage correspondant au tirage : paire (2 identiques) ou aucun.
+     * Celui du jackpot (bingo) accompagne sa célébration (voir onJackpotShown).
+     */
     private void playSymbolResultSound(TurnResult result) {
-        if (result.isJackpot()) {
-            sounds.bingoThreeSymbols.play();
-        } else if (result.isPair()) {
+        if (result.isPair()) {
             sounds.twoSymbols.play();
-        } else {
+        } else if (!result.isJackpot()) {
             sounds.oneSymbol.play();
         }
     }
@@ -437,6 +477,7 @@ public class GameScreen extends ScreenAdapter {
         sounds.dispose();
         cardClickParticles.dispose();
         pileOverlay.dispose();
+        jackpotCelebration.dispose();
         effectPopupAnimator.dispose();
     }
 }
