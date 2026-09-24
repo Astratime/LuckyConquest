@@ -2,9 +2,11 @@ package fr.astratime.lucky.views;
 
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.Interpolation;
+import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.scenes.scene2d.Group;
 import com.badlogic.gdx.scenes.scene2d.actions.Actions;
 import com.badlogic.gdx.scenes.scene2d.ui.Image;
@@ -19,7 +21,8 @@ import fr.astratime.lucky.assets.HudTextures;
  * gauche et "PV / PV max" à droite. Après une perte de PV, une traînée claire
  * reste un instant à l'ancienne valeur puis rattrape le remplissage, pour que
  * les dégâts se voient. Réutilisée pour l'ennemi et pour le joueur (seuls le
- * nom, le jeton et la couleur du remplissage diffèrent).
+ * nom, le jeton et la couleur du remplissage diffèrent). Un coup reçu fait
+ * trembler la barre sous un flash ({@link #hit}).
  *
  * Ne possède aucune texture : elles restent possédées (et disposées) par {@link HudTextures}.
  */
@@ -32,6 +35,9 @@ public class HealthBarView extends Group {
     private static final float TEXT_PAD       = 10f;   // marge des textes à l'intérieur de la piste
     private static final float TRAIL_DELAY    = 0.35f;
     private static final float TRAIL_DURATION = 0.5f;
+    private static final float SHAKE          = 6f;    // décalage maximal du tremblement, en pixels
+    private static final float FLASH_ALPHA    = 0.75f;
+    private static final float FLASH_DURATION = 0.25f;
 
     private final float trackWidth;
     private final float trackHeight;
@@ -39,6 +45,8 @@ public class HealthBarView extends Group {
     private final Image trail;
     private final Image fill;
     private final Label hpLabel;
+    private final Image flash;
+    private float       shakeTime;
 
     /**
      * @param name        nom du camp, affiché à gauche dans la barre (ex : "ENNEMI")
@@ -82,7 +90,12 @@ public class HealthBarView extends Group {
         addActor(fill);
         addActor(nameLabel);
         addActor(hpLabel);
-        addActor(chip); // en dernier : le jeton recouvre le début du cadre
+        addActor(chip); // le jeton recouvre le début du cadre
+
+        flash = new Image(new TextureRegionDrawable(new TextureRegion(hud.pixel)));
+        flash.setBounds(frameX, frameY, frameWidth, FRAME_HEIGHT);
+        flash.getColor().a = 0f;
+        addActor(flash); // en dernier : par-dessus toute la barre
         setSize(frameX + frameWidth, HEIGHT);
     }
 
@@ -103,5 +116,37 @@ public class HealthBarView extends Group {
             trail.setWidth(width);
         }
         hpLabel.setText(hp + " / " + maxHp);
+    }
+
+    /**
+     * Marque un coup reçu (ou un soin) : la barre tremble et un flash de
+     * {@code flashColor} passe dessus.
+     *
+     * @param shake durée du tremblement, en secondes (0 : aucun)
+     */
+    public void hit(Color flashColor, float shake) {
+        shakeTime = Math.max(shakeTime, shake);
+        flash.clearActions();
+        flash.setColor(flashColor.r, flashColor.g, flashColor.b, FLASH_ALPHA);
+        flash.addAction(Actions.fadeOut(FLASH_DURATION));
+    }
+
+    @Override
+    public void act(float delta) {
+        super.act(delta);
+        shakeTime = Math.max(0f, shakeTime - delta);
+    }
+
+    @Override
+    public void draw(Batch batch, float parentAlpha) {
+        if (shakeTime <= 0f) {
+            super.draw(batch, parentAlpha);
+            return;
+        }
+        // Tremblement : décalage aléatoire le temps du dessin, sans toucher à la position de la barre.
+        float x = getX(), y = getY();
+        setPosition(x + MathUtils.random(-SHAKE, SHAKE), y + MathUtils.random(-SHAKE, SHAKE));
+        super.draw(batch, parentAlpha);
+        setPosition(x, y);
     }
 }

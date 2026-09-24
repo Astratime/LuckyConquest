@@ -1,10 +1,15 @@
 package fr.astratime.lucky.views;
 
+import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.scenes.scene2d.Group;
 import com.badlogic.gdx.scenes.scene2d.Touchable;
+import com.badlogic.gdx.scenes.scene2d.actions.Actions;
 import com.badlogic.gdx.scenes.scene2d.ui.Image;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
+import fr.astratime.lucky.animations.GlowBorder;
+import fr.astratime.lucky.animations.MarqueeLights;
+import fr.astratime.lucky.animations.RainbowBorder;
 import fr.astratime.lucky.assets.TableTextures;
 import fr.astratime.lucky.entities.Player;
 import fr.astratime.lucky.entities.SlotMachine;
@@ -13,12 +18,14 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Table de casino, dans la zone de jeu : rebord en cuir, feutre vert, et les
+ * Table de casino, dans la zone de jeu : rebord en cuir garni d'une guirlande
+ * d'ampoules en chenillard, feutre vert éclairé comme sous une lampe, et les
  * emplacements imprimés où se posent les éléments du joueur. De bas en haut :
  * le deck (à gauche) et la défausse (à droite) sur leur tapis, la machine à
  * sous (un rouleau par symbole), la rangée des cartes de la main
  * ({@link Player#MAX_HAND_SIZE} emplacements), puis un filet doré au-delà
- * duquel le côté adverse de la table reste libre.
+ * duquel le côté adverse de la table reste libre. Lors d'un jackpot, les
+ * rouleaux prennent une bordure arc-en-ciel animée.
  *
  * La table est assemblée à partir de pièces étirables ou répétées (et non
  * d'une seule image) : elle s'adapte à la taille de l'écran et reste alignée
@@ -55,16 +62,20 @@ public class TableView {
     private final float    cardWidth;
     private final float    cardHeight;
 
-    private final Group       group = new Group();
-    private final Image       felt;
-    private final Image       rail;
-    private final Image       dividerLine;
-    private final Image       dividerEmblem;
-    private final Image       deckMat;
-    private final Image       discardMat;
-    private final Image       reelFrame;
-    private final List<Image> reelCells = new ArrayList<>();
-    private final List<Image> cardSlots = new ArrayList<>();
+    private final Group               group = new Group();
+    private final Image               felt;
+    private final Image               rail;
+    private final Image               feltLight;
+    private final MarqueeLights       lights;
+    private final Image               dividerLine;
+    private final Image               dividerEmblem;
+    private final Image               deckMat;
+    private final Image               discardMat;
+    private final Image               reelFrame;
+    private final List<Image>         reelCells    = new ArrayList<>();
+    private final List<RainbowBorder> reelRainbows = new ArrayList<>();
+    private final List<GlowBorder>    reelGlows    = new ArrayList<>();
+    private final List<Image>         cardSlots    = new ArrayList<>();
 
     public TableView(PlayArea playArea, TableTextures textures, float cardWidth, float cardHeight) {
         this.playArea   = playArea;
@@ -73,6 +84,7 @@ public class TableView {
         group.setTouchable(Touchable.disabled); // décor : laisse passer les clics
 
         felt          = add(new Image(textures.feltDrawable()));
+        feltLight     = add(new Image(new TextureRegionDrawable(new TextureRegion(textures.feltLight))));
         dividerLine   = add(new Image(new TextureRegionDrawable(new TextureRegion(textures.feltLine))));
         dividerEmblem = add(new Image(new TextureRegionDrawable(new TextureRegion(textures.feltEmblem))));
         for (int i = 0; i < Player.MAX_HAND_SIZE; i++) {
@@ -84,7 +96,18 @@ public class TableView {
         for (int i = 0; i < SlotMachine.SYMBOL_COUNT; i++) {
             reelCells.add(add(new Image(textures.reelCellDrawable())));
         }
+        for (int i = 0; i < SlotMachine.SYMBOL_COUNT; i++) {
+            RainbowBorder rainbow = new RainbowBorder(new TextureRegion(textures.pixel));
+            rainbow.setVisible(false);
+            group.addActor(rainbow);
+            reelRainbows.add(rainbow);
+            GlowBorder glow = new GlowBorder(new TextureRegion(textures.pixel), Color.WHITE);
+            group.addActor(glow);
+            reelGlows.add(glow);
+        }
         rail = add(new Image(textures.railDrawable())); // par-dessus le bord du feutre
+        lights = new MarqueeLights(textures.bulbs, textures.bulbGlow);
+        group.addActor(lights); // sur le rebord
         layout();
     }
 
@@ -104,6 +127,8 @@ public class TableView {
         rail.setBounds(x, BOTTOM, width, height);
         felt.setBounds(x + RAIL - FELT_OVERLAP, BOTTOM + RAIL - FELT_OVERLAP,
             width - (RAIL - FELT_OVERLAP) * 2, height - (RAIL - FELT_OVERLAP) * 2);
+        feltLight.setBounds(felt.getX(), felt.getY(), felt.getWidth(), felt.getHeight());
+        lights.setBounds(x + RAIL / 2f, BOTTOM + RAIL / 2f, width - RAIL, height - RAIL);
 
         float matWidth  = cardWidth + PILE_STACK + MAT_PAD * 2;
         float matHeight = MAT_PAD + cardHeight + PILE_STACK + MAT_LABEL_SPACE;
@@ -115,6 +140,10 @@ public class TableView {
             reelRowWidth() + REEL_FRAME_PAD * 2, SlotView.CELL_HEIGHT + REEL_FRAME_PAD * 2);
         for (int i = 0; i < reelCells.size(); i++) {
             reelCells.get(i).setBounds(getReelRowX() + i * SlotView.CELL_WIDTH, getReelRowY(),
+                SlotView.CELL_WIDTH, SlotView.CELL_HEIGHT);
+            reelRainbows.get(i).setBounds(reelCells.get(i).getX(), reelCells.get(i).getY(),
+                SlotView.CELL_WIDTH, SlotView.CELL_HEIGHT);
+            reelGlows.get(i).setBounds(reelCells.get(i).getX(), reelCells.get(i).getY(),
                 SlotView.CELL_WIDTH, SlotView.CELL_HEIGHT);
         }
 
@@ -130,6 +159,36 @@ public class TableView {
         dividerEmblem.setBounds(playArea.getCenterX() - dividerEmblem.getPrefWidth() / 2f,
             dividerY - dividerEmblem.getPrefHeight() / 2f,
             dividerEmblem.getPrefWidth(), dividerEmblem.getPrefHeight());
+    }
+
+    /** Mode fête des ampoules du rebord (jackpot, victoire) : elles clignotent toutes, ou reprennent le chenillard. */
+    public void setLightsParty(boolean party) {
+        lights.setParty(party);
+    }
+
+    /** Affiche (jackpot) ou cache la bordure arc-en-ciel animée autour des rouleaux. */
+    public void setReelsRainbow(boolean shown) {
+        reelRainbows.forEach(rainbow -> rainbow.setVisible(shown));
+    }
+
+    /**
+     * Entoure le rouleau {@code reel} d'un contour lumineux de {@code color}, qui
+     * pulse à {@code pulseSpeed} radians par seconde (suspense, paire).
+     *
+     * @param duration durée avant qu'il s'éteigne seul, en secondes (0 : jusqu'à {@link #clearReelHighlight})
+     */
+    public void highlightReel(int reel, Color color, float pulseSpeed, float duration) {
+        GlowBorder glow = reelGlows.get(reel);
+        glow.clearActions();
+        glow.setGlow(color, pulseSpeed);
+        glow.setVisible(true);
+        if (duration > 0f) glow.addAction(Actions.delay(duration, Actions.visible(false)));
+    }
+
+    /** Éteint le contour lumineux du rouleau {@code reel}. */
+    public void clearReelHighlight(int reel) {
+        reelGlows.get(reel).clearActions();
+        reelGlows.get(reel).setVisible(false);
     }
 
     /** @return l'abscisse (Stage) du deck, posé sur son tapis à gauche ; la défausse est son symétrique. */

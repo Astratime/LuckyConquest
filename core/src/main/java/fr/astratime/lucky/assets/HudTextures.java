@@ -29,6 +29,8 @@ public class HudTextures implements Disposable {
     public final Texture barFillPlayer   = load("hud/bar_fill_player.png");
     /** Traînée claire qui rattrape la barre de vie après une perte de PV. */
     public final Texture barTrail        = Textures.solidColor(TRAIL_COLOR);
+    /** Pixel blanc, teinté pour les flashs (barre de vie touchée ou soignée). */
+    public final Texture pixel           = Textures.solidColor(Color.WHITE);
     public final Texture chipEnemy       = load("hud/chip_enemy.png");
     public final Texture chipPlayer      = load("hud/chip_player.png");
     public final Texture coin            = load("hud/coin.png");
@@ -58,6 +60,7 @@ public class HudTextures implements Disposable {
         barFillEnemy.dispose();
         barFillPlayer.dispose();
         barTrail.dispose();
+        pixel.dispose();
         chipEnemy.dispose();
         chipPlayer.dispose();
         coin.dispose();

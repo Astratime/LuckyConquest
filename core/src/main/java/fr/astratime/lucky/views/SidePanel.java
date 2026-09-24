@@ -4,6 +4,7 @@ import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.Interpolation;
+import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.actions.Actions;
@@ -37,6 +38,7 @@ public class SidePanel implements Disposable {
     private static final float INSET_PADDING  = 16f;
     private static final float COIN_SIZE      = 60f;
     private static final float COIN_GAP       = 12f;
+    private static final float FOOTER_GAP     = 12f;
     private static final float COUNT_DURATION = 0.6f;
     private static final float BUMP_SCALE     = 1.3f;
 
@@ -87,9 +89,10 @@ public class SidePanel implements Disposable {
     /** @return le panneau, à ajouter au Stage. */
     public Table getActor() { return root; }
 
-    /** Place {@code actor} (à sa taille actuelle) en bas du panneau, centré. */
-    public void setFooter(Actor actor) {
-        root.add(actor).size(actor.getWidth(), actor.getHeight());
+    /** Ajoute {@code actor} (à sa taille actuelle) en bas du panneau, centré, sous les précédents. */
+    public void addFooter(Actor actor) {
+        root.add(actor).size(actor.getWidth(), actor.getHeight()).padTop(FOOTER_GAP);
+        root.row();
     }
 
     /** Étire le panneau sur toute la hauteur de l'écran (après un redimensionnement). */
@@ -114,7 +117,13 @@ public class SidePanel implements Disposable {
         });
     }
 
-    private void bumpCoin() {
+    /** @return le centre (Stage) de la pièce des gains, cible des pièces du jackpot. */
+    public Vector2 getCoinCenter() {
+        return coin.localToStageCoordinates(new Vector2(coin.getWidth() / 2f, coin.getHeight() / 2f));
+    }
+
+    /** Fait rebondir la pièce des gains (à chaque gain, ou à l'arrivée d'une pièce du jackpot). */
+    public void bumpCoin() {
         coin.clearActions();
         coin.setOrigin(Align.center);
         coin.setScale(1f);
