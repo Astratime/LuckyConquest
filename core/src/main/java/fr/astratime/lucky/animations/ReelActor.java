@@ -53,6 +53,15 @@ public class ReelActor<S> extends Actor {
     /** @return le symbole affiché à l'arrêt, ou null (fenêtre vide ou rouleau en mouvement). */
     public S getSymbol() { return state == State.IDLE ? shown : null; }
 
+    /** Affiche {@code symbol} à l'arrêt, sans animation. */
+    public void show(S symbol) {
+        state = State.IDLE;
+        shown = symbol;
+    }
+
+    /** @return true pendant que le rouleau tourne ou arrive sur son symbole. */
+    public boolean isSpinning() { return state != State.IDLE; }
+
     /** Vide la fenêtre et arrête le rouleau. */
     public void empty() {
         state = State.IDLE;

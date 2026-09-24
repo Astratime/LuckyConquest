@@ -47,6 +47,7 @@ import fr.astratime.lucky.entities.events.GainsEarnedEvent;
 import fr.astratime.lucky.entities.events.JackpotEvent;
 import fr.astratime.lucky.entities.events.PlayerDamagedEvent;
 import fr.astratime.lucky.entities.events.PlayerHealedEvent;
+import fr.astratime.lucky.settings.AudioSettings;
 import fr.astratime.lucky.settings.VisualSettings;
 import fr.astratime.lucky.views.CasinoButtons;
 import fr.astratime.lucky.views.CombatHud;
@@ -99,6 +100,8 @@ public class GameScreen extends ScreenAdapter {
     private static final int   PAIR_CONFETTI         = 45;
     /** Temps laissé aux textes du tirage (jusqu'à la riposte) avant d'annoncer la fin du combat. */
     private static final float RESULT_TEXTS_DURATION = 1.9f;
+    /** Temps laissé au texte de la riposte (et au coup sur la barre) avant de terminer le tour. */
+    private static final float RIPOSTE_TEXT_TIME     = 0.4f;
 
     // -------------------------------------------------------------------------
     // Contrôleur — seul point d'accès à la logique de jeu
@@ -123,7 +126,7 @@ public class GameScreen extends ScreenAdapter {
     private final Confetti            confetti;
     private final CombatEndAnimation  combatEnd;
     private final TableTextures       tableTextures = new TableTextures();
-    private final GameSounds          sounds        = new GameSounds();
+    private final GameSounds          sounds        = new GameSounds(new AudioSettings());
     private final CardClickParticles  cardClickParticles = new CardClickParticles();
     private final EffectPopupAnimator effectPopupAnimator;
     private final JackpotCelebration  jackpotCelebration;
@@ -295,7 +298,10 @@ public class GameScreen extends ScreenAdapter {
      * attend que tous les coups se soient affichés.
      */
     private void onReelsStopped(TurnResult result) {
-        slots.playResultPopups(result, hud.besidePlayerHealthBar(SlotView.POPUP_PLAYER_GAP), this::onEventShown);
+        // Un jackpot fait attendre la riposte de l'ennemi jusqu'à la fin de sa célébration.
+        float riposteDelay = result.isJackpot() ? JackpotCelebration.DURATION : 0f;
+        slots.playResultPopups(result, hud.besidePlayerHealthBar(SlotView.POPUP_PLAYER_GAP), this::onEventShown,
+            riposteDelay);
         playSymbolResultSound(result);
         if (result.isPair()) celebratePair(result.getSymbols());
         if (result.isJackpot()) return; // voir onJackpotShown
@@ -370,8 +376,8 @@ public class GameScreen extends ScreenAdapter {
 
     /**
      * Le texte « JACKPOT ! » vient d'apparaître : bruitage du bingo, bordure
-     * arc-en-ciel des rouleaux et célébration. Le tour se termine à la fin de
-     * la célébration.
+     * arc-en-ciel des rouleaux et célébration. La riposte de l'ennemi attend la
+     * fin de la célébration, et le tour se termine après elle.
      */
     private void onJackpotShown() {
         sounds.bingoThreeSymbols.play();
@@ -379,7 +385,9 @@ public class GameScreen extends ScreenAdapter {
         table.setLightsParty(true);
         jackpotCelebration.play(() -> {
             table.setLightsParty(false);
-            finishTurn();
+            // La riposte de l'ennemi s'affiche maintenant (voir onReelsStopped) : le tour se termine après elle.
+            stage.addAction(Actions.delay(SlotView.RIPOSTE_AFTER_BONUS + RIPOSTE_TEXT_TIME,
+                Actions.run(this::finishTurn)));
         });
     }
 

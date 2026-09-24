@@ -42,6 +42,7 @@ public class CoinShower extends Actor {
     }
 
     private final TextureRegion[] frames;
+    private final float           sizeScale;
     private final List<Coin>      coins = new ArrayList<>();
     private final Supplier<Vector2> target;
     private final Runnable          onCollected;
@@ -52,8 +53,14 @@ public class CoinShower extends Actor {
      * @param onCollected appelé à l'arrivée de chaque pièce collectée
      */
     public CoinShower(TextureRegion spinStrip, Supplier<Vector2> target, Runnable onCollected) {
+        this(spinStrip, target, onCollected, 1f);
+    }
+
+    /** Comme le constructeur principal, avec des pièces {@code sizeScale} fois plus grandes (ou plus petites). */
+    public CoinShower(TextureRegion spinStrip, Supplier<Vector2> target, Runnable onCollected, float sizeScale) {
         this.target      = target;
         this.onCollected = onCollected;
+        this.sizeScale   = sizeScale;
         int count = spinStrip.getRegionWidth() / FRAME_SIZE;
         frames = new TextureRegion[count];
         for (int i = 0; i < count; i++) {
@@ -153,7 +160,7 @@ public class CoinShower extends Actor {
         for (Coin coin : coins) {
             boolean resting = coin.bounces > MAX_BOUNCES;
             int frame = resting ? 0 : (int) (coin.age * SPIN_FPS + coin.phase) % frames.length;
-            float size = FRAME_SIZE * coin.scale;
+            float size = FRAME_SIZE * coin.scale * sizeScale;
             batch.setColor(1f, 1f, 1f, coin.alpha * parentAlpha);
             batch.draw(frames[frame], coin.x - size / 2f, coin.y - size / 2f, size, size);
         }

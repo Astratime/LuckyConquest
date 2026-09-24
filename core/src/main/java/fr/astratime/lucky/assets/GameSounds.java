@@ -3,10 +3,12 @@ package fr.astratime.lucky.assets;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.utils.Disposable;
+import fr.astratime.lucky.settings.AudioSettings;
 
 /**
  * Tous les bruitages de GameScreen (CC0, Kenney.nl / The Motion Monkey — voir
- * assets/sounds/CREDITS.txt), chargés et libérés ensemble.
+ * assets/sounds/CREDITS.txt), chargés et libérés ensemble. Leur volume suit le
+ * réglage « Sons » ({@link VolumeSound}).
  */
 public class GameSounds implements Disposable {
 
@@ -20,7 +22,10 @@ public class GameSounds implements Disposable {
     public final Sound twoSymbols;
     public final Sound bingoThreeSymbols;
 
-    public GameSounds() {
+    private final AudioSettings audio;
+
+    public GameSounds(AudioSettings audio) {
+        this.audio        = audio;
         buttonClick       = load("sounds/button-click.ogg");
         spinButton        = load("sounds/spin_machine.mp3");
         cardDeal          = load("sounds/card-deal.ogg");
@@ -31,8 +36,8 @@ public class GameSounds implements Disposable {
         bingoThreeSymbols = load("sounds/bingo_3_symbols.wav");
     }
 
-    private static Sound load(String path) {
-        return Gdx.audio.newSound(Gdx.files.internal(path));
+    private Sound load(String path) {
+        return new VolumeSound(Gdx.audio.newSound(Gdx.files.internal(path)), audio);
     }
 
     @Override
