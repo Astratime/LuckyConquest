@@ -31,13 +31,13 @@ public class BoostSymbolEffect extends Effect {
 
     @Override
     public String getDescription() {
-        return "Boost " + symbol.name() + " +" + amount;
+        return "Boost " + symbol.getDisplayName() + " +" + amount;
     }
 
     @Override
     public List<EffectPopup> getPopups() {
         return List.of(
-            EffectPopup.scaled("BOOST " + symbol.name() + " +" + amount, EffectPopup.Style.SPECIAL, amount, PopupScale.CARD_SYMBOL_BOOST)
+            EffectPopup.scaled("BOOST " + symbol.getDisplayName() + " +" + amount, EffectPopup.Style.SPECIAL, amount, PopupScale.CARD_SYMBOL_BOOST)
         );
     }
 }

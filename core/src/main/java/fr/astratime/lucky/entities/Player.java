@@ -18,6 +18,8 @@ public class Player {
     private final DiscardPile discardPile = new DiscardPile();
     private final Deck        deck;
     private final SlotMachine slotMachine = new SlotMachine();
+    /** Effets de cartes qui durent plusieurs tours (Recyclage, Porte-bonheur). */
+    private final LastingEffects lastingEffects = new LastingEffects();
     /** Cartes sur la table, pas encore jouées ce tour. */
     private final List<Card>  currentHand = new ArrayList<>();
     /** Cartes jouées ce tour : quittent la main, rejoignent la défausse en fin de tour. */
@@ -160,6 +162,8 @@ public class Player {
     public Deck        getDeck()                    { return deck; }
     /** @return la machine à sous personnelle du joueur. */
     public SlotMachine getSlotMachine()             { return slotMachine; }
+    /** @return les effets de cartes qui durent plusieurs tours pendant ce combat. */
+    public LastingEffects getLastingEffects()      { return lastingEffects; }
     /** @return les cartes sur la table, pas encore jouées ce tour (vue non modifiable). */
     public List<Card>  getCurrentHand()             { return Collections.unmodifiableList(currentHand); }
     /** @return les cartes jouées ce tour (vue non modifiable). */

@@ -40,7 +40,7 @@ class CardLoaderTest {
     void everyCardDefinitionLoads() {
         List<Card> cards = CardLoader.loadAll(READER);
 
-        assertEquals(52 + 3, cards.size(), "4 suites de 13 cartes + 3 cartes spéciales");
+        assertEquals(52 + 14, cards.size(), "4 suites de 13 cartes + 14 cartes spéciales");
         assertEquals(cards.size(), cards.stream().map(Card::getId).distinct().count(), "les ids doivent être uniques");
     }
 
@@ -67,7 +67,11 @@ class CardLoaderTest {
         List<Card> deck = CardLoader.loadStarterDeck(READER);
         Map<String, Long> copies = deck.stream().collect(Collectors.groupingBy(Card::getId, Collectors.counting()));
 
-        assertEquals(20, deck.size());
+        assertEquals(31, deck.size());
+        for (String special : List.of("bingo", "magnet", "joker", "recycle", "bet", "russian_roulette",
+                "combo_suite", "combo_couleur", "combo_brelan", "combo_full", "lucky_charm")) {
+            assertEquals(1L, copies.get(special), special);
+        }
         assertEquals(2L, copies.get("draw_2"));
         assertEquals(1L, copies.get("draw_3"));
         assertEquals(1L, copies.get("gain_500"));

@@ -31,5 +31,131 @@
         "amount": 500
       }
     ]
+  },
+  {
+    "id": "bingo",
+    "name": "Bingo",
+    "assetPath": "cards/special/bingo.png",
+    "effects": [
+      {
+        "type": "BINGO",
+        "power": 100
+      }
+    ]
+  },
+  {
+    "id": "magnet",
+    "name": "Aimant",
+    "assetPath": "cards/special/magnet.png",
+    "effects": [
+      {
+        "type": "MAGNET",
+        "percent": 50
+      }
+    ]
+  },
+  {
+    "id": "joker",
+    "name": "Joker",
+    "assetPath": "cards/special/joker.png",
+    "effects": [
+      {
+        "type": "BOOST_SYMBOL",
+        "symbol": "JOKER",
+        "amount": 80
+      }
+    ]
+  },
+  {
+    "id": "recycle",
+    "name": "Recyclage de rouleau",
+    "assetPath": "cards/special/recycle.png",
+    "effects": [
+      {
+        "type": "RECYCLE",
+        "turns": 3
+      }
+    ]
+  },
+  {
+    "id": "bet",
+    "name": "Pari",
+    "assetPath": "cards/special/bet.png",
+    "effects": [
+      {
+        "type": "BET"
+      }
+    ]
+  },
+  {
+    "id": "russian_roulette",
+    "name": "Roulette russe",
+    "assetPath": "cards/special/russian_roulette.png",
+    "effects": [
+      {
+        "type": "RUSSIAN_ROULETTE",
+        "multiplier": 50,
+        "penaltyPercent": 20
+      }
+    ]
+  },
+  {
+    "id": "combo_suite",
+    "name": "Suite",
+    "assetPath": "cards/special/combo_suite.png",
+    "effects": [
+      {
+        "type": "COMBO",
+        "combo": "SUITE",
+        "factor": 2
+      }
+    ]
+  },
+  {
+    "id": "combo_couleur",
+    "name": "Couleur",
+    "assetPath": "cards/special/combo_couleur.png",
+    "effects": [
+      {
+        "type": "COMBO",
+        "combo": "COULEUR",
+        "factor": 2
+      }
+    ]
+  },
+  {
+    "id": "combo_brelan",
+    "name": "Brelan",
+    "assetPath": "cards/special/combo_brelan.png",
+    "effects": [
+      {
+        "type": "COMBO",
+        "combo": "BRELAN",
+        "factor": 3
+      }
+    ]
+  },
+  {
+    "id": "combo_full",
+    "name": "Full",
+    "assetPath": "cards/special/combo_full.png",
+    "effects": [
+      {
+        "type": "COMBO",
+        "combo": "FULL",
+        "factor": 5
+      }
+    ]
+  },
+  {
+    "id": "lucky_charm",
+    "name": "Porte-bonheur",
+    "assetPath": "cards/special/lucky_charm.png",
+    "effects": [
+      {
+        "type": "LUCKY_CHARM",
+        "percent": 50
+      }
+    ]
   }
 ]

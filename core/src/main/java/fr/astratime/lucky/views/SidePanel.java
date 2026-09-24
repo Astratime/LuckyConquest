@@ -9,8 +9,10 @@ import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.actions.Actions;
 import com.badlogic.gdx.scenes.scene2d.actions.TemporalAction;
+import com.badlogic.gdx.scenes.scene2d.ui.Container;
 import com.badlogic.gdx.scenes.scene2d.ui.Image;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
+import com.badlogic.gdx.scenes.scene2d.ui.Stack;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 import com.badlogic.gdx.utils.Align;
@@ -18,11 +20,13 @@ import com.badlogic.gdx.utils.Disposable;
 import fr.astratime.lucky.assets.Fonts;
 import fr.astratime.lucky.assets.HudTextures;
 
+import java.util.List;
+
 /**
  * Panneau latéral gauche, sur toute la hauteur de l'écran : titre du jeu,
- * encadré des gains (pièce d'or et montant en grand), puis un emplacement en
- * bas pour un bouton (ex : "Recommencer"). La place libre entre les deux est
- * prévue pour d'autres informations.
+ * encadré des gains (pièce d'or et montant en grand), encadré des effets de
+ * cartes actifs (symboles retirés, Porte-bonheur, paris en cours ; masqué s'il
+ * n'y en a pas), puis un emplacement en bas pour un bouton (ex : "Recommencer").
  *
  * Quand les gains changent, le montant défile jusqu'à sa nouvelle valeur et la
  * pièce rebondit (seulement si les gains augmentent).
@@ -41,6 +45,9 @@ public class SidePanel implements Disposable {
     private static final float FOOTER_GAP     = 12f;
     private static final float COUNT_DURATION = 0.6f;
     private static final float BUMP_SCALE     = 1.3f;
+    private static final float EFFECT_ICON    = 52f;
+    private static final float OVERLAY_ICON   = 30f;   // croix posée dans le coin de l'icône
+    private static final float EFFECT_GAP     = 8f;
 
     private static final Color GOLD       = Color.valueOf("ffd454ff");
     private static final Color CREAM      = Color.valueOf("f0e0b0ff");
@@ -49,6 +56,7 @@ public class SidePanel implements Disposable {
     private final BitmapFont titleFont   = Fonts.jersey(56, GOLD, 3f, TEXT_SHADE);
     private final BitmapFont captionFont = Fonts.jersey(30, CREAM, 2f, TEXT_SHADE);
     private final BitmapFont gainsFont   = Fonts.jersey(80, GOLD, 3f, TEXT_SHADE);
+    private final BitmapFont effectFont  = Fonts.jersey(28, CREAM, 2f, TEXT_SHADE);
 
     private final Table root = new Table();
     private final Image coin;
@@ -56,6 +64,17 @@ public class SidePanel implements Disposable {
     private final float gainsMaxWidth;
     private       int   shownGains;
     private       int   targetGains;
+    private final Table effectsBox  = new Table();
+    private final Table effectsRows = new Table();
+
+    /**
+     * Une ligne des effets actifs : une icône, éventuellement barrée, et un texte.
+     *
+     * @param icon    image de l'effet (ex : le symbole retiré)
+     * @param overlay image posée par-dessus l'icône (ex : une croix), ou {@code null}
+     * @param text    texte de l'effet (ex : "3 tours")
+     */
+    public record EffectRow(TextureRegion icon, TextureRegion overlay, String text) { }
 
     public SidePanel(HudTextures hud) {
         root.setBackground(hud.panelDrawable());
@@ -82,8 +101,37 @@ public class SidePanel implements Disposable {
         root.add(gainsBox).width(insetWidth).padTop(SECTION_GAP);
         root.row();
 
+        effectsBox.setBackground(hud.insetDrawable());
+        effectsBox.pad(INSET_PADDING).top().left();
+        effectsBox.add(new Label("EFFETS", new Label.LabelStyle(captionFont, Color.WHITE))).left();
+        effectsBox.row();
+        effectsBox.add(effectsRows).growX().left();
+        effectsBox.setVisible(false);
+        root.add(effectsBox).width(insetWidth).padTop(SECTION_GAP);
+        root.row();
+
         root.add().expandY(); // place libre pour de futures informations
         root.row();
+    }
+
+    /** Affiche les effets de cartes actifs, ou masque leur encadré s'il n'y en a aucun. */
+    public void setActiveEffects(List<EffectRow> rows) {
+        effectsRows.clearChildren();
+        for (EffectRow row : rows) {
+            Stack icon = new Stack();
+            icon.add(new Image(row.icon()));
+            if (row.overlay() != null) {
+                Container<Image> corner = new Container<>(new Image(row.overlay()));
+                corner.size(OVERLAY_ICON).bottom().right();
+                icon.add(corner);
+            }
+            effectsRows.add(icon).size(EFFECT_ICON).padTop(EFFECT_GAP).padRight(EFFECT_GAP);
+            effectsRows.add(new Label(row.text(), new Label.LabelStyle(effectFont, Color.WHITE)))
+                .padTop(EFFECT_GAP).growX().left();
+            effectsRows.row();
+        }
+        effectsBox.setVisible(!rows.isEmpty());
+        root.invalidateHierarchy();
     }
 
     /** @return le panneau, à ajouter au Stage. */
@@ -157,5 +205,6 @@ public class SidePanel implements Disposable {
         titleFont.dispose();
         captionFont.dispose();
         gainsFont.dispose();
+        effectFont.dispose();
     }
 }

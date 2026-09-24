@@ -20,6 +20,9 @@ public class TurnResult {
     private final List<SymbolOutcome> symbolOutcomes;
     private final List<Event>         pairOrJackpotEvents;
     private final List<Event>         enemyTurnEvents;
+    private final Symbol[]            drawnSymbols;
+    private final List<Event>         cardEvents;
+    private final List<Event>         pistolEvents;
 
     /**
      * @param events                 journal des événements survenus pendant le tour
@@ -32,18 +35,40 @@ public class TurnResult {
     public TurnResult(List<Event> events, Symbol[] symbols, int gainsFromPairOrJackpot,
                        List<SymbolOutcome> symbolOutcomes,
                        List<Event> pairOrJackpotEvents, List<Event> enemyTurnEvents) {
+        this(events, symbols, symbols, gainsFromPairOrJackpot, symbolOutcomes, List.of(), List.of(),
+            pairOrJackpotEvents, enemyTurnEvents);
+    }
+
+    /**
+     * @param drawnSymbols symboles arrêtés sur les rouleaux, Jokers compris (avant leur remplacement)
+     * @param cardEvents   événements des cartes révélés au lancer (ex : combo réussi ou raté)
+     * @param pistolEvents tirs de pistolet de la Roulette russe (vide si aucun)
+     * @see #TurnResult(List, Symbol[], int, List, List, List)
+     */
+    public TurnResult(List<Event> events, Symbol[] symbols, Symbol[] drawnSymbols, int gainsFromPairOrJackpot,
+                      List<SymbolOutcome> symbolOutcomes, List<Event> cardEvents, List<Event> pistolEvents,
+                      List<Event> pairOrJackpotEvents, List<Event> enemyTurnEvents) {
         this.events  = List.copyOf(events);
         this.symbols = symbols.clone();
+        this.drawnSymbols = drawnSymbols.clone();
         this.gainsFromPairOrJackpot = gainsFromPairOrJackpot;
         this.symbolOutcomes = List.copyOf(symbolOutcomes);
+        this.cardEvents = List.copyOf(cardEvents);
+        this.pistolEvents = List.copyOf(pistolEvents);
         this.pairOrJackpotEvents = List.copyOf(pairOrJackpotEvents);
         this.enemyTurnEvents = List.copyOf(enemyTurnEvents);
     }
 
     /** @return le journal d'événements du tour (liste immuable). */
     public List<Event> getEvents()  { return events; }
-    /** @return une copie des symboles tirés ce tour. */
+    /** @return une copie des symboles tirés ce tour, Jokers remplacés par ce qu'ils valent. */
     public Symbol[]    getSymbols() { return symbols.clone(); }
+    /** @return une copie des symboles arrêtés sur les rouleaux, Jokers compris. */
+    public Symbol[]    getDrawnSymbols() { return drawnSymbols.clone(); }
+    /** @return les événements des cartes révélés au lancer (ex : combo réussi ou raté). */
+    public List<Event> getCardEvents() { return cardEvents; }
+    /** @return les tirs de pistolet de la Roulette russe (vide si aucun). */
+    public List<Event> getPistolEvents() { return pistolEvents; }
     /** @return les gains issus uniquement du bonus de paire/jackpot. */
     public int         getGainsFromPairOrJackpot() { return gainsFromPairOrJackpot; }
     /** @return pour chaque symbole tiré ayant une action enregistrée, son effet de base et le résultat obtenu ce tour. */

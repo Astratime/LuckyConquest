@@ -34,6 +34,12 @@ public class HudTextures implements Disposable {
     public final Texture chipEnemy       = load("hud/chip_enemy.png");
     public final Texture chipPlayer      = load("hud/chip_player.png");
     public final Texture coin            = load("hud/coin.png");
+    /** Trèfle du Porte-bonheur, dans les effets actifs du panneau latéral. */
+    public final Texture iconClover      = load("hud/icon_clover.png");
+    /** Croix posée sur un symbole retiré des rouleaux (Recyclage). */
+    public final Texture iconCross       = load("hud/icon_cross.png");
+    /** Revolver de la Roulette russe, qui tire sur l'ennemi après le tirage. */
+    public final Texture pistol          = load("jackpot/pistol.png");
 
     /** @return un fond étirable pour le panneau latéral (fond sombre, liseré doré épais). */
     public NinePatchDrawable panelDrawable() { return nine(panel, PANEL_BORDER); }
@@ -55,6 +61,9 @@ public class HudTextures implements Disposable {
     @Override
     public void dispose() {
         panel.dispose();
+        iconClover.dispose();
+        iconCross.dispose();
+        pistol.dispose();
         panelInset.dispose();
         barFrame.dispose();
         barFillEnemy.dispose();

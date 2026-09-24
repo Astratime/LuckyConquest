@@ -17,5 +17,16 @@
   { "id": "13_pique", "copies": 1 },
   { "id": "draw_2", "copies": 2 },
   { "id": "draw_3", "copies": 1 },
-  { "id": "gain_500", "copies": 1 }
+  { "id": "gain_500", "copies": 1 },
+  { "id": "bingo", "copies": 1 },
+  { "id": "magnet", "copies": 1 },
+  { "id": "joker", "copies": 1 },
+  { "id": "recycle", "copies": 1 },
+  { "id": "bet", "copies": 1 },
+  { "id": "russian_roulette", "copies": 1 },
+  { "id": "combo_suite", "copies": 1 },
+  { "id": "combo_couleur", "copies": 1 },
+  { "id": "combo_brelan", "copies": 1 },
+  { "id": "combo_full", "copies": 1 },
+  { "id": "lucky_charm", "copies": 1 }
 ]

@@ -2,6 +2,7 @@ package fr.astratime.lucky.controllers;
 
 import fr.astratime.lucky.entities.context.CombatContext;
 import fr.astratime.lucky.entities.Enemy;
+import fr.astratime.lucky.entities.LastingEffects;
 import fr.astratime.lucky.entities.Player;
 import fr.astratime.lucky.entities.context.SpinContext;
 import fr.astratime.lucky.entities.context.TurnContext;
@@ -12,7 +13,9 @@ import java.util.List;
 /**
  * Phase 1 : applique les effets des cartes jouées par le joueur
  * et construit le TurnContext (SpinContext + CombatContext) qui sera
- * utilisé pour le spin et la résolution du combat.
+ * utilisé pour le spin et la résolution du combat. Les effets qui durent
+ * plusieurs tours (symboles retirés, bonus de gains du combat) y sont
+ * appliqués en premier.
  */
 public class PreparationResolver {
 
@@ -29,6 +32,10 @@ public class PreparationResolver {
         SpinContext   spinContext   = new SpinContext();
         CombatContext combatContext = new CombatContext(player, enemy);
         TurnContext   turnContext   = new TurnContext(spinContext, combatContext);
+
+        LastingEffects lasting = player.getLastingEffects();
+        lasting.getRemovedSymbols().keySet().forEach(spinContext::removeSymbol);
+        if (lasting.getGainBonus() != 0f) combatContext.multiplyGains(1f + lasting.getGainBonus());
 
         pendingEffects.forEach(effect -> effect.apply(turnContext));
 

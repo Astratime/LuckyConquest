@@ -14,6 +14,7 @@ import java.util.List;
  * Inflige des dégâts à l'ennemi.
  * Lit dans le CombatContext :
  *  - attackBonus    : bonus plat ajouté à chaque attaque (cartes jouées)
+ *  - attackFactor / symbolPower : multiplicateurs des dégâts (combos, Bingo)
  *  - ignoreDefense  : si vrai (Pique), la défense de l'ennemi est ignorée
  *  - lifeDrainPercent : si > 0 (Coeur), soigne le joueur d'un % des dégâts infligés
  *  - gainsFromDamage  : si vrai (As de Pique), convertit les dégâts en gains
@@ -35,7 +36,8 @@ public class AttackAction extends Action {
         List<Event> events = new ArrayList<>();
         Enemy enemy = context.getEnemy();
 
-        int rawDamage = baseDamage + context.getAttackBonus();
+        int rawDamage = Math.round((baseDamage + context.getAttackBonus())
+            * context.getAttackFactor() * context.getSymbolPower());
         int defense   = context.isIgnoreDefense() ? 0 : enemy.getDefense();
         int damage    = Math.max(0, rawDamage - defense);
 

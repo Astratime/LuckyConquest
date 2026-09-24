@@ -1,6 +1,8 @@
 package fr.astratime.lucky.entities.context;
 
+import fr.astratime.lucky.entities.LastingEffects;
 import fr.astratime.lucky.entities.Player;
+import fr.astratime.lucky.entities.choices.CardChoice;
 import fr.astratime.lucky.entities.effects.Effect;
 import fr.astratime.lucky.popups.EffectPopup;
 
@@ -23,6 +25,8 @@ public class PlayContext {
     private final List<EffectPopup> popups         = new ArrayList<>();
     private int cardsToDraw = 0;
     private int gains       = 0;
+    private CardChoice choice;
+    private boolean    autoSpin = false;
 
     /** @param player joueur qui joue la carte (ses gains peuvent être consommés immédiatement) */
     public PlayContext(Player player) {
@@ -48,6 +52,21 @@ public class PlayContext {
      * @return le montant effectivement consommé
      */
     public int consumeGainsPercent(float percent) { return player.consumeGainsPercent(percent); }
+
+    /** @return les effets de cartes qui durent plusieurs tours, à modifier immédiatement (Recyclage, Porte-bonheur). */
+    public LastingEffects getLastingEffects() { return player.getLastingEffects(); }
+
+    /** Demande au joueur un choix (Pari, Roulette russe) avant la suite du tour. */
+    public void requestChoice(CardChoice choice) { this.choice = choice; }
+
+    /** @return le choix demandé au joueur, ou {@code null} si aucun. */
+    public CardChoice getChoice() { return choice; }
+
+    /** Plus aucune carte ne peut être jouée : la machine se lance d'elle-même (Bingo). */
+    public void requestAutoSpin() { autoSpin = true; }
+
+    /** @return {@code true} si la machine doit se lancer d'elle-même après cette carte. */
+    public boolean isAutoSpin() { return autoSpin; }
 
     /** Met {@code effect} en attente : il sera appliqué au TurnContext au moment du spin. */
     public void queueForSpin(Effect effect) { effectsForSpin.add(effect); }

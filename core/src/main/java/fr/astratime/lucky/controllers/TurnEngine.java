@@ -40,10 +40,11 @@ public class TurnEngine {
             gameState.getEnemy()
         );
 
-        // Phase 2 : spin avec SpinContext
-        Symbol[] symbols = gameState.getPlayer()
-            .getSlotMachine()
-            .spin(turnContext.getSpinContext());
+        // Phase 2 : spin avec SpinContext, puis les Jokers prennent leur valeur
+        Player      player  = gameState.getPlayer();
+        SlotMachine machine = player.getSlotMachine();
+        Symbol[] drawn   = machine.spin(turnContext.getSpinContext());
+        Symbol[] symbols = machine.resolveJokers(drawn, turnContext.getSpinContext());
 
         // Symboles -> couples (symbole, action)
         List<SymbolAction> symbolActions = actionResolver.resolve(symbols);
@@ -55,9 +56,11 @@ public class TurnEngine {
             turnContext.getCombatContext(),
             symbolActions,
             symbols,
+            drawn,
             turnContext.getEvents()
         );
 
+        player.getLastingEffects().endTurn();
         gameState.nextTurn();
 
         return result;
