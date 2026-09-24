@@ -47,6 +47,7 @@ import fr.astratime.lucky.entities.events.GainsEarnedEvent;
 import fr.astratime.lucky.entities.events.JackpotEvent;
 import fr.astratime.lucky.entities.events.PlayerDamagedEvent;
 import fr.astratime.lucky.entities.events.PlayerHealedEvent;
+import fr.astratime.lucky.settings.AudioSettings;
 import fr.astratime.lucky.settings.VisualSettings;
 import fr.astratime.lucky.views.CasinoButtons;
 import fr.astratime.lucky.views.CombatHud;
@@ -123,7 +124,7 @@ public class GameScreen extends ScreenAdapter {
     private final Confetti            confetti;
     private final CombatEndAnimation  combatEnd;
     private final TableTextures       tableTextures = new TableTextures();
-    private final GameSounds          sounds        = new GameSounds();
+    private final GameSounds          sounds        = new GameSounds(new AudioSettings());
     private final CardClickParticles  cardClickParticles = new CardClickParticles();
     private final EffectPopupAnimator effectPopupAnimator;
     private final JackpotCelebration  jackpotCelebration;

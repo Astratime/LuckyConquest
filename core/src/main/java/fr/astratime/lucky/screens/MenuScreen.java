@@ -11,6 +11,7 @@ import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.Interpolation;
+import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.Stage;
@@ -20,92 +21,106 @@ import com.badlogic.gdx.scenes.scene2d.ui.Image;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
-import com.badlogic.gdx.utils.Align;
 import com.badlogic.gdx.utils.ScreenUtils;
 import com.badlogic.gdx.utils.viewport.ScreenViewport;
 import fr.astratime.lucky.LuckyGame;
 import fr.astratime.lucky.assets.Fonts;
 import fr.astratime.lucky.assets.HudTextures;
+import fr.astratime.lucky.assets.VolumeSound;
+import fr.astratime.lucky.settings.AudioSettings;
 import fr.astratime.lucky.settings.VisualSettings;
+import fr.astratime.lucky.views.MenuDecor;
 import fr.astratime.lucky.views.MenuOption;
+import fr.astratime.lucky.views.ShiningTitle;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.IntConsumer;
+import java.util.function.Supplier;
 
 /**
- * Écran d'accueil, devant l'intérieur d'un casino (machines à sous, bar,
- * billard) : le titre du jeu flotte au-dessus d'un panneau d'options.
+ * Écran d'accueil, devant l'intérieur animé d'un casino ({@link MenuDecor}) qui
+ * se décale légèrement avec la souris (parallaxe) : le titre, sur lequel passe
+ * un reflet, flotte au-dessus d'un panneau d'options.
  *
- * Page principale : « Jouer » (lance un combat, {@link GameScreen}) et
- * « Options ». Page des options : les effets visuels (normaux ou réduits,
- * réglage partagé avec l'écran de jeu) et « Retour ».
+ * Page principale : « Jouer » (lance un combat, {@link GameScreen}), « Options »
+ * et « Quitter ». Page des options : effets visuels (normaux ou réduits,
+ * réglage partagé avec l'écran de jeu), volume de la musique, volume des sons,
+ * et « Retour ».
  *
  * L'option sélectionnée (survol de la souris ou flèches du clavier) s'encadre
  * d'or avec un jeton qui tournoie de chaque côté (voir {@link MenuOption}) ;
- * Entrée ou un clic la valide, Échap revient à la page principale.
+ * Entrée ou un clic la valide, gauche/droite règlent un volume, Échap revient
+ * à la page principale.
  */
 public class MenuScreen extends ScreenAdapter {
 
-    private static final String BACKGROUND_PATH = "menu/casino_interior.png";
-    private static final String CHIP_PATH       = "menu/chip_spin.png";
+    private static final String CHIP_PATH   = "menu/chip_spin.png";
     /** Bruitage du clic (CC0, Kenney.nl — voir assets/sounds/CREDITS.txt). */
-    private static final String CLICK_SOUND     = "sounds/button-click.ogg";
+    private static final String CLICK_SOUND = "sounds/button-click.ogg";
 
     private static final float TITLE_TOP      = 230f;   // du haut de l'écran au centre du titre
     private static final float TITLE_FLOAT    = 8f;     // amplitude du flottement du titre
     private static final float PANEL_CENTER_Y = 0.46f;  // fraction de la hauteur de l'écran
-    private static final float OPTION_WIDTH   = 420f;
-    private static final float OPTION_HEIGHT  = 84f;
-    private static final float OPTION_GAP     = 22f;
+    private static final float OPTION_WIDTH   = 460f;
+    private static final float OPTION_HEIGHT  = 76f;
+    private static final float OPTION_GAP     = 14f;
     private static final float PANEL_SIDE     = 100f;   // de chaque côté des options : place des jetons
-    private static final float PANEL_PAD      = 36f;
-    private static final float CAPTION_SPACE  = 60f;    // en-tête « OPTIONS » de la page des options
+    private static final float PANEL_PAD      = 30f;
+    private static final float CAPTION_SPACE  = 56f;    // en-tête « OPTIONS » de la page des options
     private static final float FADE_TIME      = 0.4f;
     private static final float POP_STAGGER    = 0.06f;
+    private static final float PARALLAX       = 18f;    // décalage maximal du décor, en pixels
+    private static final float PARALLAX_EASE  = 4f;
+
+    /** Une option : son texte (relu après chaque réglage), son action, et son réglage gauche/droite éventuel. */
+    private record Entry(Supplier<String> text, Runnable action, IntConsumer adjust) {}
 
     private final LuckyGame      luckyGame;
     private final Stage          stage;
     private final VisualSettings settings = new VisualSettings();
+    private final AudioSettings  audio    = new AudioSettings();
     private final HudTextures    hud      = new HudTextures();
-    private final Texture        backgroundTexture;
     private final Texture        chipTexture;
     private final BitmapFont     titleFont;
+    private final BitmapFont     shineFont;
     private final BitmapFont     optionFont;
     private final BitmapFont     captionFont;
     private final Sound          clickSound;
 
-    private final Image             background;
-    private final Label             title;
+    private final MenuDecor         decor = new MenuDecor();
+    private final ShiningTitle      title;
     private final Image             panel;
     private final Label             caption;
     private final Image             fade;
     private final List<MenuOption>  options = new ArrayList<>();
+    private final List<Entry>       entries = new ArrayList<>();
     private int                     selected;
     private boolean                 leaving;
+    private float                   parallaxX, parallaxY;
 
     /** @param luckyGame instance de jeu : SpriteBatch partagé et changement d'écran */
     public MenuScreen(LuckyGame luckyGame) {
         this.luckyGame = luckyGame;
         this.stage     = new Stage(new ScreenViewport(), luckyGame.getBatch());
 
-        backgroundTexture = new Texture(Gdx.files.internal(BACKGROUND_PATH));
-        chipTexture       = new Texture(Gdx.files.internal(CHIP_PATH));
-        clickSound        = Gdx.audio.newSound(Gdx.files.internal(CLICK_SOUND));
-        Color shadow      = Color.valueOf("12080aff");
+        chipTexture = new Texture(Gdx.files.internal(CHIP_PATH));
+        clickSound  = new VolumeSound(Gdx.audio.newSound(Gdx.files.internal(CLICK_SOUND)), audio);
+        Color shadow = Color.valueOf("12080aff");
         titleFont   = Fonts.jersey(128, Color.valueOf("ffd54aff"), 7f, shadow);
-        optionFont  = Fonts.jersey(64, Color.WHITE, 4f, shadow);
+        shineFont   = Fonts.jersey(128, Color.WHITE, 7f, shadow);
+        optionFont  = Fonts.jersey(58, Color.WHITE, 4f, shadow);
         captionFont = Fonts.jersey(40, Color.valueOf("f0e0b0ff"), 3f, shadow);
 
-        background = new Image(new TextureRegionDrawable(new TextureRegion(backgroundTexture)));
-        title      = new Label("LUCKY CONQUEST", new Label.LabelStyle(titleFont, Color.WHITE));
-        panel      = new Image(hud.panelDrawable());
+        title   = new ShiningTitle("LUCKY CONQUEST", titleFont, shineFont);
+        panel   = new Image(hud.panelDrawable());
         panel.setTouchable(Touchable.disabled);
-        caption    = new Label("OPTIONS", new Label.LabelStyle(captionFont, Color.WHITE));
-        fade       = new Image(new TextureRegionDrawable(new TextureRegion(hud.pixel)));
+        caption = new Label("OPTIONS", new Label.LabelStyle(captionFont, Color.WHITE));
+        fade    = new Image(new TextureRegionDrawable(new TextureRegion(hud.pixel)));
         fade.setColor(Color.BLACK);
         fade.setTouchable(Touchable.disabled);
 
-        stage.addActor(background);
+        stage.addActor(decor);
         stage.addActor(title);
         stage.addActor(panel);
         stage.addActor(caption);
@@ -120,26 +135,37 @@ public class MenuScreen extends ScreenAdapter {
     // Pages
     // -------------------------------------------------------------------------
 
-    /** Page principale : Jouer, Options. */
+    /** Page principale : Jouer, Options, Quitter. */
     private void showMainPage() {
-        setOptions(false, new String[] {"Jouer", "Options"}, new Runnable[] {this::onPlay, this::showOptionsPage});
+        setEntries(false, List.of(
+            new Entry(() -> "Jouer", this::onPlay, null),
+            new Entry(() -> "Options", this::showOptionsPage, null),
+            new Entry(() -> "Quitter", this::onQuit, null)));
     }
 
-    /** Page des options : effets visuels, Retour. */
+    /** Page des options : effets visuels, musique, sons, Retour. */
     private void showOptionsPage() {
-        setOptions(true, new String[] {effectsLabel(), "Retour"}, new Runnable[] {this::onToggleEffects, this::showMainPage});
+        setEntries(true, List.of(
+            new Entry(this::effectsLabel, this::onToggleEffects, direction -> onToggleEffects()),
+            new Entry(() -> "Musique : " + AudioSettings.percent(audio.getMusicVolume()) + " %",
+                () -> cycle(audio::stepMusicVolume, audio.getMusicVolume()), audio::stepMusicVolume),
+            new Entry(() -> "Sons : " + AudioSettings.percent(audio.getSoundVolume()) + " %",
+                () -> cycle(audio::stepSoundVolume, audio.getSoundVolume()), audio::stepSoundVolume),
+            new Entry(() -> "Retour", this::showMainPage, null)));
     }
 
     /** Remplace les options affichées ; elles apparaissent l'une après l'autre, la première sélectionnée. */
-    private void setOptions(boolean withCaption, String[] texts, Runnable[] actions) {
+    private void setEntries(boolean withCaption, List<Entry> newEntries) {
         options.forEach(Actor::remove);
         options.clear();
+        entries.clear();
+        entries.addAll(newEntries);
         caption.setVisible(withCaption);
         Label.LabelStyle style = new Label.LabelStyle(optionFont, Color.WHITE);
-        for (int i = 0; i < texts.length; i++) {
+        for (int i = 0; i < entries.size(); i++) {
             int index = i;
-            MenuOption option = new MenuOption(texts[i], style, hud.insetDrawable(), new TextureRegion(chipTexture),
-                OPTION_WIDTH, OPTION_HEIGHT);
+            MenuOption option = new MenuOption(entries.get(i).text().get(), style, hud.insetDrawable(),
+                new TextureRegion(chipTexture), OPTION_WIDTH, OPTION_HEIGHT);
             option.addListener(new ClickListener() {
                 @Override
                 public void enter(InputEvent event, float x, float y, int pointer, Actor fromActor) {
@@ -149,10 +175,9 @@ public class MenuScreen extends ScreenAdapter {
 
                 @Override
                 public void clicked(InputEvent event, float x, float y) {
-                    activate(index, actions[index]);
+                    activate(index);
                 }
             });
-            option.setUserObject(actions[i]);
             option.setScale(0f);
             option.addAction(Actions.sequence(Actions.delay(i * POP_STAGGER),
                 Actions.scaleTo(1f, 1f, 0.25f, Interpolation.swingOut)));
@@ -172,12 +197,32 @@ public class MenuScreen extends ScreenAdapter {
         for (int i = 0; i < options.size(); i++) options.get(i).setSelected(i == index);
     }
 
-    /** Valide une option : bruitage du clic puis son action. */
-    private void activate(int index, Runnable action) {
+    /** Valide une option : bruitage du clic puis son action, et mise à jour de son texte (réglage). */
+    private void activate(int index) {
         if (leaving) return;
         select(index);
         clickSound.play();
-        action.run();
+        Entry entry = entries.get(index);
+        entry.action().run();
+        if (index < options.size() && entries.get(index) == entry) options.get(index).setText(entry.text().get());
+    }
+
+    /** Règle l'option sélectionnée vers la gauche ({@code -1}) ou la droite ({@code +1}), si elle se règle. */
+    private void adjust(int direction) {
+        Entry entry = entries.get(selected);
+        if (entry.adjust() == null) return;
+        entry.adjust().accept(direction);
+        options.get(selected).setText(entry.text().get());
+        clickSound.play(); // au nouveau volume : on entend le résultat
+    }
+
+    /** Volume au clic : palier suivant, puis retour à 0 après le maximum. */
+    private static void cycle(IntConsumer step, float current) {
+        if (current >= 1f) {
+            for (int i = 0; i < Math.round(1f / AudioSettings.STEP); i++) step.accept(-1);
+        } else {
+            step.accept(1);
+        }
     }
 
     // -------------------------------------------------------------------------
@@ -190,20 +235,26 @@ public class MenuScreen extends ScreenAdapter {
      * disposer pendant qu'il s'exécute).
      */
     private void onPlay() {
+        fadeOutThen(() -> {
+            luckyGame.setScreen(new GameScreen(luckyGame));
+            dispose();
+        });
+    }
+
+    /** Fondu au noir puis fermeture du jeu. */
+    private void onQuit() {
+        fadeOutThen(Gdx.app::exit);
+    }
+
+    private void fadeOutThen(Runnable next) {
         leaving = true;
         fade.clearActions();
-        fade.addAction(Actions.sequence(
-            Actions.fadeIn(FADE_TIME),
-            Actions.run(() -> Gdx.app.postRunnable(() -> {
-                luckyGame.setScreen(new GameScreen(luckyGame));
-                dispose();
-            }))));
+        fade.addAction(Actions.sequence(Actions.fadeIn(FADE_TIME), Actions.run(() -> Gdx.app.postRunnable(next))));
     }
 
     /** Bascule entre effets visuels normaux et réduits (réglage mémorisé, partagé avec l'écran de jeu). */
     private void onToggleEffects() {
         settings.setReducedEffects(!settings.isReducedEffects());
-        options.get(0).setText(effectsLabel());
     }
 
     private String effectsLabel() {
@@ -214,14 +265,15 @@ public class MenuScreen extends ScreenAdapter {
     // Mise en page et cycle de vie
     // -------------------------------------------------------------------------
 
-    /** Place le fond, le titre, le panneau et les options selon la taille de l'écran. */
+    /** Place le décor, le titre, le panneau et les options selon la taille de l'écran. */
     private void layout() {
         float width  = stage.getViewport().getWorldWidth();
         float height = stage.getViewport().getWorldHeight();
-        background.setBounds(0f, 0f, width, height);
+        // Le décor déborde un peu de l'écran : la parallaxe ne découvre jamais ses bords.
+        decor.layout(width + PARALLAX * 2f, height + PARALLAX * 2f);
+        placeDecor();
         fade.setBounds(0f, 0f, width, height);
 
-        title.pack();
         title.clearActions(); // le flottement repart de la position de repos
         title.setPosition((width - title.getWidth()) / 2f, height - TITLE_TOP - title.getHeight() / 2f);
         title.addAction(Actions.forever(Actions.sequence(
@@ -246,9 +298,29 @@ public class MenuScreen extends ScreenAdapter {
         }
     }
 
+    /** Décale le décor selon la parallaxe courante (il déborde de PARALLAX de chaque côté). */
+    private void placeDecor() {
+        decor.setPosition(-PARALLAX + parallaxX, -PARALLAX + parallaxY);
+    }
+
+    /** Parallaxe : le décor glisse doucement à l'opposé de la souris. */
+    private void updateParallax(float delta) {
+        float width  = stage.getViewport().getWorldWidth();
+        float height = stage.getViewport().getWorldHeight();
+        float mouseX = MathUtils.clamp(Gdx.input.getX() / (float) Gdx.graphics.getWidth(), 0f, 1f);
+        float mouseY = MathUtils.clamp(Gdx.input.getY() / (float) Gdx.graphics.getHeight(), 0f, 1f);
+        float targetX = -(mouseX - 0.5f) * 2f * PARALLAX;
+        float targetY = (mouseY - 0.5f) * 2f * PARALLAX;   // Y de la souris compté depuis le haut
+        float ease = Math.min(1f, PARALLAX_EASE * delta);
+        parallaxX += (targetX - parallaxX) * ease;
+        parallaxY += (targetY - parallaxY) * ease;
+        if (width > 0f && height > 0f) placeDecor();
+    }
+
     /**
      * Stage d'abord (souris), puis clavier : flèches haut/bas pour choisir,
-     * Entrée ou Espace pour valider, Échap pour revenir à la page principale.
+     * gauche/droite pour régler, Entrée ou Espace pour valider, Échap pour
+     * revenir à la page principale.
      */
     @Override
     public void show() {
@@ -259,8 +331,9 @@ public class MenuScreen extends ScreenAdapter {
                 switch (keycode) {
                     case Input.Keys.UP, Input.Keys.W -> select((selected - 1 + options.size()) % options.size());
                     case Input.Keys.DOWN, Input.Keys.S -> select((selected + 1) % options.size());
-                    case Input.Keys.ENTER, Input.Keys.SPACE ->
-                        activate(selected, (Runnable) options.get(selected).getUserObject());
+                    case Input.Keys.LEFT, Input.Keys.A -> adjust(-1);
+                    case Input.Keys.RIGHT, Input.Keys.D -> adjust(1);
+                    case Input.Keys.ENTER, Input.Keys.SPACE -> activate(selected);
                     case Input.Keys.ESCAPE -> {
                         if (!caption.isVisible()) return false;
                         clickSound.play();
@@ -283,17 +356,19 @@ public class MenuScreen extends ScreenAdapter {
     @Override
     public void render(float delta) {
         ScreenUtils.clear(Color.BLACK);
+        if (!settings.isReducedEffects()) updateParallax(delta);
         stage.act(delta);
         stage.draw();
     }
 
-    /** Libère toutes les ressources natives (Stage, polices, textures, son) possédées par cet écran. */
+    /** Libère toutes les ressources natives (Stage, décor, polices, textures, son) possédées par cet écran. */
     @Override
     public void dispose() {
         stage.dispose();
-        backgroundTexture.dispose();
+        decor.dispose();
         chipTexture.dispose();
         titleFont.dispose();
+        shineFont.dispose();
         optionFont.dispose();
         captionFont.dispose();
         clickSound.dispose();
