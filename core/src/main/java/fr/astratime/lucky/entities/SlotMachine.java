@@ -12,6 +12,9 @@ import java.util.Random;
  */
 public class SlotMachine {
 
+    /** Nombre de symboles tirés à chaque spin (un par rouleau). */
+    public static final int SYMBOL_COUNT = 3;
+
     /** Poids de base attribué à chaque symbole avant application des boosts du tour. */
     private static final int BASE_WEIGHT = 10;
 
@@ -38,7 +41,7 @@ public class SlotMachine {
         for (Symbol s : Symbol.values()) {
             total += BASE_WEIGHT + spinContext.getWeightBoost(s);
         }
-        Symbol[] result = new Symbol[3];
+        Symbol[] result = new Symbol[SYMBOL_COUNT];
         for (int i = 0; i < result.length; i++) {
             result[i] = weightedRandom(spinContext, total);
         }

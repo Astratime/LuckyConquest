@@ -1,6 +1,6 @@
 package fr.astratime.lucky.entities;
 
-import fr.astratime.lucky.entities.effects.EffectPopup;
+import fr.astratime.lucky.popups.EffectPopup;
 
 import java.util.List;
 

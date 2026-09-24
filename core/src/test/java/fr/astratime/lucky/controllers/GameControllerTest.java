@@ -6,7 +6,7 @@ import fr.astratime.lucky.entities.DrawResult;
 import fr.astratime.lucky.entities.Player;
 import fr.astratime.lucky.entities.context.TurnContext;
 import fr.astratime.lucky.entities.effects.Effect;
-import fr.astratime.lucky.entities.effects.EffectPopup;
+import fr.astratime.lucky.popups.EffectPopup;
 import fr.astratime.lucky.entities.effects.ExtraDrawEffect;
 import fr.astratime.lucky.entities.effects.GainEffect;
 

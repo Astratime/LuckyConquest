@@ -7,6 +7,7 @@ import fr.astratime.lucky.entities.SymbolRegistry;
 import fr.astratime.lucky.entities.context.CombatContext;
 import fr.astratime.lucky.entities.context.SpinContext;
 import fr.astratime.lucky.entities.context.TurnContext;
+import fr.astratime.lucky.popups.EffectPopup;
 
 import org.junit.jupiter.api.Test;
 

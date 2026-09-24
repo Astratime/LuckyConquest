@@ -4,6 +4,8 @@ import fr.astratime.lucky.entities.Symbol;
 import fr.astratime.lucky.entities.SymbolRegistry;
 import fr.astratime.lucky.entities.context.PlayContext;
 import fr.astratime.lucky.entities.context.TurnContext;
+import fr.astratime.lucky.popups.EffectPopup;
+import fr.astratime.lucky.popups.PopupScale;
 
 import java.util.List;
 import java.util.Random;
