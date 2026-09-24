@@ -2,6 +2,11 @@ package fr.astratime.lucky.entities.context;
 
 import fr.astratime.lucky.entities.Enemy;
 import fr.astratime.lucky.entities.Player;
+import fr.astratime.lucky.entities.Symbol;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 /**
  * Contexte de combat pour le tour en cours.
@@ -21,6 +26,13 @@ public class CombatContext {
     private int   attackBonus    = 0;
     private int   defenseBonus   = 0;   // shield additionnel par DefenseAction (cartes Carreau)
     private float gainMultiplier = 1f;  // multiplicateur des gains (cartes Trèfle)
+
+    private float gainFactor     = 1f;  // facteur appliqué à tous les gains du tirage (combos, Porte-bonheur)
+    private float attackFactor   = 1f;  // facteur appliqué aux dégâts de chaque symbole (combos)
+    private int   symbolPower    = 1;   // facteur de la valeur de chaque symbole : dégâts, bouclier, gains (Bingo)
+
+    private final List<Symbol>  bets        = new ArrayList<>(); // Pari : symboles sur lesquels le joueur a parié
+    private final List<Integer> pistolShots = new ArrayList<>(); // Roulette russe : multiplicateur de chaque tir de pistolet
 
     private boolean ignoreDefense  = false; // Pique : les attaques ignorent la défense ennemie
     private int     lifeDrainPercent = 0;   // Coeur : % des dégâts infligés rendus en soin
@@ -52,6 +64,17 @@ public class CombatContext {
     /** @return le multiplicateur de gains accumulé ce tour. */
     public float getGainMultiplier() { return gainMultiplier; }
 
+    /** @return le facteur appliqué à tous les gains du tirage (1 si aucun). */
+    public float getGainFactor()     { return gainFactor; }
+    /** @return le facteur appliqué aux dégâts de chaque symbole (1 si aucun). */
+    public float getAttackFactor()   { return attackFactor; }
+    /** @return le facteur de la valeur de chaque symbole : dégâts, bouclier et gains (1 si aucun). */
+    public int   getSymbolPower()    { return symbolPower; }
+    /** @return les symboles sur lesquels le joueur a parié ce tour (vue non modifiable). */
+    public List<Symbol>  getBets()        { return Collections.unmodifiableList(bets); }
+    /** @return le multiplicateur de chaque tir de pistolet de ce tour (vue non modifiable). */
+    public List<Integer> getPistolShots() { return Collections.unmodifiableList(pistolShots); }
+
     /** @return {@code true} si les attaques de ce tour ignorent la défense ennemie. */
     public boolean isIgnoreDefense()    { return ignoreDefense; }
     /** @return le pourcentage de drain de vie accumulé ce tour. */
@@ -80,6 +103,17 @@ public class CombatContext {
     public void addDefenseBonus(int bonus)        { defenseBonus += bonus; }
     /** Ajoute {@code amount} au multiplicateur de gains du tour. */
     public void addGainMultiplier(float amount)   { gainMultiplier += amount; }
+
+    /** Multiplie tous les gains du tirage par {@code factor}. */
+    public void multiplyGains(float factor)       { gainFactor   *= factor; }
+    /** Multiplie les dégâts de chaque symbole par {@code factor}. */
+    public void multiplyAttack(float factor)      { attackFactor *= factor; }
+    /** Multiplie la valeur de chaque symbole (dégâts, bouclier, gains) par {@code factor}. */
+    public void multiplySymbolPower(int factor)   { symbolPower  *= factor; }
+    /** Parie sur l'apparition de {@code symbol} au tirage. */
+    public void addBet(Symbol symbol)             { bets.add(symbol); }
+    /** Ajoute un tir de pistolet qui multiplie par {@code multiplier} les dégâts d'un symbole d'attaque. */
+    public void addPistolShot(int multiplier)     { pistolShots.add(multiplier); }
 
     /** Active ou désactive l'ignorance de la défense ennemie pour ce tour. */
     public void setIgnoreDefense(boolean value)     { ignoreDefense = value; }

@@ -117,6 +117,12 @@ public class CombatHud implements Disposable {
             enemyHealthBar.getY() + HealthBarView.HEIGHT / 2f);
     }
 
+    /** @return le centre (Stage) de la barre de vie de l'ennemi, cible du pistolet. */
+    public Vector2 getEnemyBarCenter() {
+        return new Vector2(enemyHealthBar.getX() + enemyHealthBar.getWidth() / 2f,
+            enemyHealthBar.getY() + HealthBarView.HEIGHT / 2f);
+    }
+
     /** @return la barre de vie de l'ennemi (pour la faire disparaître à la victoire). */
     public HealthBarView getEnemyHealthBar() { return enemyHealthBar; }
 

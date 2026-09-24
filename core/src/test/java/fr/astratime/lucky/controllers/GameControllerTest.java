@@ -8,6 +8,19 @@ import fr.astratime.lucky.entities.context.TurnContext;
 import fr.astratime.lucky.entities.effects.Effect;
 import fr.astratime.lucky.popups.EffectPopup;
 import fr.astratime.lucky.entities.effects.ExtraDrawEffect;
+import fr.astratime.lucky.entities.effects.BetEffect;
+import fr.astratime.lucky.entities.effects.BingoEffect;
+import fr.astratime.lucky.entities.effects.ComboEffect;
+import fr.astratime.lucky.entities.effects.RecycleEffect;
+import fr.astratime.lucky.entities.effects.RussianRouletteEffect;
+import fr.astratime.lucky.entities.Combo;
+import fr.astratime.lucky.entities.Symbol;
+import fr.astratime.lucky.entities.TurnResult;
+import fr.astratime.lucky.entities.choices.BetChoice;
+import fr.astratime.lucky.entities.choices.RouletteChoice;
+import fr.astratime.lucky.entities.events.BetLostEvent;
+import fr.astratime.lucky.entities.events.BetWonEvent;
+import fr.astratime.lucky.entities.events.ComboEvent;
 import fr.astratime.lucky.entities.effects.GainEffect;
 
 import org.junit.jupiter.api.Test;
@@ -147,5 +160,96 @@ class GameControllerTest {
 
         controller.spin(); // la riposte ennemie de ce spin ne concerne pas ce test
         assertEquals(0, effect.applied, "l'effet joué avant le redémarrage ne doit pas s'appliquer");
+    }
+
+    @Test
+    void betAsksForASymbolThenAppliesAtSpin() {
+        GameController controller = controllerWith(List.of(card("pari", new BetEffect())));
+        controller.drawCards();
+        player(controller).addGains(1000);
+
+        CardPlayResult result = controller.playCard(player(controller).getCurrentHand().get(0));
+        assertInstanceOf(BetChoice.class, result.getChoice());
+        assertFalse(controller.getBetOptions().contains(Symbol.JOKER));
+
+        controller.placeBet(Symbol.BELL);
+        assertNull(controller.getPendingChoice());
+        assertEquals(List.of(Symbol.BELL), controller.getBetsThisTurn());
+
+        TurnResult turn = controller.spin();
+        assertTrue(turn.getPairOrJackpotEvents().stream()
+            .anyMatch(e -> e instanceof BetWonEvent || e instanceof BetLostEvent));
+        assertTrue(controller.getBetsThisTurn().isEmpty());
+    }
+
+    @Test
+    void cursedJokerCostsGainsAndOtherCardsLoadThePistol() {
+        for (int index = 0; index < RussianRouletteEffect.CARDS; index++) {
+            GameController controller = controllerWith(List.of(card("roulette", new RussianRouletteEffect(50, 20))));
+            controller.drawCards();
+            player(controller).addGains(1000);
+            RouletteChoice choice = (RouletteChoice) controller
+                .playCard(player(controller).getCurrentHand().get(0)).getChoice();
+            assertEquals(1, choice.cursed().stream().filter(c -> c).count(), "un seul Joker maudit");
+
+            GameController.RouletteOutcome outcome = controller.pickRouletteCard(index);
+            TurnResult turn = controller.spin();
+
+            assertEquals(choice.cursed().get(index), outcome.cursed());
+            if (outcome.cursed()) {
+                assertTrue(turn.getPistolEvents().isEmpty());
+            } else {
+                assertEquals(1, turn.getPistolEvents().size());
+            }
+        }
+    }
+
+    @Test
+    void bingoLocksTheHandAndGuaranteesAJackpot() {
+        List<Card> deck = new ArrayList<>(plainCards(5));
+        deck.add(card("bingo", new BingoEffect(100)));
+        GameController controller = controllerWith(deck);
+        controller.drawCards();
+        Card bingo = player(controller).getCurrentHand().stream()
+            .filter(c -> c.getId().equals("bingo")).findFirst().orElseThrow();
+
+        assertTrue(controller.playCard(bingo).isAutoSpin());
+        assertTrue(controller.isHandLocked());
+        assertTrue(controller.playCard(player(controller).getCurrentHand().get(0)).getPopups().isEmpty(),
+            "plus aucune carte ne peut être jouée");
+
+        TurnResult turn = controller.spin();
+        assertTrue(turn.isJackpot());
+        assertFalse(controller.isHandLocked());
+    }
+
+    @Test
+    void recycledSymbolStaysOutOfTheReelsForThreeTurns() {
+        GameController controller = controllerWith(List.of(card("recyclage", new RecycleEffect(3))));
+        controller.drawCards();
+        controller.playCard(player(controller).getCurrentHand().get(0));
+        Symbol removed = player(controller).getLastingEffects().getRemovedSymbols().keySet().iterator().next();
+
+        for (int turn = 0; turn < 3; turn++) {
+            assertTrue(player(controller).getLastingEffects().getRemovedSymbols().containsKey(removed));
+            for (Symbol symbol : controller.spin().getDrawnSymbols()) assertNotEquals(removed, symbol);
+        }
+        assertTrue(player(controller).getLastingEffects().getRemovedSymbols().isEmpty());
+    }
+
+    @Test
+    void comboMultipliesWhenPlayedCardsFormIt() {
+        List<Card> deck = List.of(
+            new Card("a1", "a1", "x.png", List.of(), Card.Suit.COEUR, 1),
+            new Card("a2", "a2", "x.png", List.of(), Card.Suit.PIQUE, 1),
+            new Card("a3", "a3", "x.png", List.of(), Card.Suit.TREFLE, 1),
+            card("brelan", new ComboEffect(Combo.BRELAN, 3)));
+        GameController controller = controllerWith(deck);
+        controller.drawCards();
+        for (Card card : new ArrayList<>(player(controller).getCurrentHand())) controller.playCard(card);
+
+        TurnResult turn = controller.spin();
+
+        assertTrue(turn.getCardEvents().stream().anyMatch(e -> e instanceof ComboEvent combo && combo.success));
     }
 }

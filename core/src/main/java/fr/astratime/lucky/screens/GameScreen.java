@@ -18,6 +18,7 @@ import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.utils.ScreenUtils;
 import com.badlogic.gdx.utils.viewport.ScreenViewport;
 import fr.astratime.lucky.LuckyGame;
+import fr.astratime.lucky.animations.BingoCardAnimation;
 import fr.astratime.lucky.animations.CardClickParticles;
 import fr.astratime.lucky.animations.CardDealAnimator;
 import fr.astratime.lucky.animations.CardDiscardAnimator;
@@ -26,6 +27,7 @@ import fr.astratime.lucky.animations.Confetti;
 import fr.astratime.lucky.animations.DamageVignette;
 import fr.astratime.lucky.animations.EffectPopupAnimator;
 import fr.astratime.lucky.animations.JackpotCelebration;
+import fr.astratime.lucky.animations.PistolShotAnimation;
 import fr.astratime.lucky.animations.ScreenShake;
 import fr.astratime.lucky.assets.CardTextures;
 import fr.astratime.lucky.assets.GameSounds;
@@ -36,19 +38,29 @@ import fr.astratime.lucky.entities.Card;
 import fr.astratime.lucky.entities.CardPlayResult;
 import fr.astratime.lucky.entities.DrawResult;
 import fr.astratime.lucky.entities.GameState;
+import fr.astratime.lucky.entities.LastingEffects;
 import fr.astratime.lucky.entities.Player;
 import fr.astratime.lucky.entities.Symbol;
 import fr.astratime.lucky.entities.SymbolOutcome;
 import fr.astratime.lucky.entities.TurnResult;
+import fr.astratime.lucky.entities.choices.BetChoice;
+import fr.astratime.lucky.entities.choices.CardChoice;
+import fr.astratime.lucky.entities.choices.RouletteChoice;
 import fr.astratime.lucky.entities.events.DamageReflectedEvent;
 import fr.astratime.lucky.entities.events.EnemyDamagedEvent;
 import fr.astratime.lucky.entities.events.Event;
 import fr.astratime.lucky.entities.events.GainsEarnedEvent;
+import fr.astratime.lucky.entities.events.GainsLostEvent;
 import fr.astratime.lucky.entities.events.JackpotEvent;
 import fr.astratime.lucky.entities.events.PlayerDamagedEvent;
+import fr.astratime.lucky.entities.events.PistolShotEvent;
 import fr.astratime.lucky.entities.events.PlayerHealedEvent;
+import fr.astratime.lucky.popups.EffectPopup;
+import fr.astratime.lucky.popups.PopupScale;
 import fr.astratime.lucky.settings.AudioSettings;
 import fr.astratime.lucky.settings.VisualSettings;
+import fr.astratime.lucky.views.CardChoiceOverlay;
+import fr.astratime.lucky.views.CardImage;
 import fr.astratime.lucky.views.CasinoButtons;
 import fr.astratime.lucky.views.CombatHud;
 import fr.astratime.lucky.views.HandView;
@@ -61,7 +73,9 @@ import fr.astratime.lucky.views.SlotView;
 import fr.astratime.lucky.views.TableView;
 import fr.astratime.lucky.views.Tooltip;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.function.ToIntFunction;
 import java.util.stream.Collectors;
 
@@ -98,8 +112,14 @@ public class GameScreen extends ScreenAdapter {
     private static final Color PAIR_GLOW             = Color.valueOf("ffd54aff");
     private static final float PAIR_GLOW_DURATION    = 1.6f;
     private static final int   PAIR_CONFETTI         = 45;
-    /** Temps laissé aux textes du tirage (jusqu'à la riposte) avant d'annoncer la fin du combat. */
-    private static final float RESULT_TEXTS_DURATION = 1.9f;
+    /** Temps laissé au texte de la riposte, après les autres textes du tirage, avant d'annoncer la fin du combat. */
+    private static final float RESULT_TEXTS_MARGIN   = 0.4f;
+    /** Joker transformé : gerbe de confettis violets sur son rouleau. */
+    private static final int   JOKER_CONFETTI        = 30;
+    /** Textes du tir du pistolet : sous la barre de vie de l'ennemi. */
+    private static final float PISTOL_TEXT_BELOW     = 170f;
+    /** Carte Bingo : hauteur (fraction de l'écran) où elle s'élève pour lancer ses faisceaux. */
+    private static final float BINGO_CARD_HEIGHT     = 0.58f;
     /** Temps laissé au texte de la riposte (et au coup sur la barre) avant de terminer le tour. */
     private static final float RIPOSTE_TEXT_TIME     = 0.4f;
 
@@ -132,6 +152,9 @@ public class GameScreen extends ScreenAdapter {
     private final JackpotCelebration  jackpotCelebration;
     private final Tooltip             tooltip;
     private final PileContentOverlay  pileOverlay;
+    private final CardChoiceOverlay   choiceOverlay;
+    private final BingoCardAnimation  bingoAnimation;
+    private final PistolShotAnimation pistolAnimation;
 
     // -------------------------------------------------------------------------
     // Vues et acteurs Scene2D
@@ -208,6 +231,9 @@ public class GameScreen extends ScreenAdapter {
         slots = new SlotView(table, tooltip, effectPopupAnimator, sounds.cardClick);
         combatEnd = new CombatEndAnimation(playArea, screenShake, new TextureRegion(hudTextures.pixel),
             new TextureRegion(cardBackTexture), confetti, CARD_WIDTH, CARD_HEIGHT);
+        choiceOverlay   = new CardChoiceOverlay(stage, hudTextures, cardBackTexture, CARD_WIDTH, CARD_HEIGHT);
+        bingoAnimation  = new BingoCardAnimation(settings, new TextureRegion(hudTextures.pixel));
+        pistolAnimation = new PistolShotAnimation(hudTextures.pistol, new TextureRegion(hudTextures.pixel));
 
         layout();
         refreshAll();
@@ -220,11 +246,14 @@ public class GameScreen extends ScreenAdapter {
         stage.addActor(spinButton);
         stage.addActor(slots.getActor());
         stage.addActor(hand.getActor());
+        stage.addActor(pistolAnimation);
         stage.addActor(popupLayer);
         stage.addActor(combatEnd);
         stage.addActor(confetti);
         stage.addActor(damageVignette);
         stage.addActor(jackpotCelebration); // par-dessus le jeu et le panneau : bloque les clics pendant la fête
+        stage.addActor(bingoAnimation);         // carte Bingo : faisceaux et téléportation, bloque les clics
+        stage.addActor(choiceOverlay.getActor()); // choix demandé par une carte (Pari, Roulette russe)
         stage.addActor(pileOverlay.getActor()); // voile de consultation des piles, par-dessus le jeu
         stage.addActor(tooltip.getActor());     // en dernier : toujours au-dessus
         stage.addActor(screenShake);            // invisible : met à jour la caméra
@@ -236,8 +265,9 @@ public class GameScreen extends ScreenAdapter {
 
     /** Pioche une nouvelle main et lance son animation de distribution ; active le spin, désactive la pioche. */
     private void onDrawCards() {
-        if (drawButton.isDisabled() || pileOverlay.isShown()) return;
+        if (drawButton.isDisabled() || isBusy()) return;
         hand.clear();
+        hand.setLocked(false);
         hand.deal(gameController.drawCards());
         spinButton.setDisabled(false);
         drawButton.setDisabled(true);
@@ -247,22 +277,69 @@ public class GameScreen extends ScreenAdapter {
      * Transmet la carte jouée (déjà retirée de la main affichée) au contrôleur,
      * affiche le texte de chacun de ses bonus à sa place, déclenche l'effet de
      * particules à l'endroit cliqué, puis distribue les cartes éventuellement
-     * piochées par ses effets immédiats.
+     * piochées par ses effets immédiats. Une carte qui demande un choix (Pari,
+     * Roulette russe) ouvre sa fenêtre ; le Bingo bloque la main, s'élève dans
+     * ses faisceaux lumineux, se téléporte sur la défausse, puis lance la machine.
      */
-    private void onCardPlayed(Card card, Vector2 cardCenter, Vector2 clickPos) {
+    private void onCardPlayed(Card card, CardImage image, Vector2 cardCenter, Vector2 clickPos) {
         sounds.cardClick.play();
         cardClickParticles.play(clickPos.x, clickPos.y);
         Gdx.app.log("GameScreen", "Carte jouee : " + card);
 
         CardPlayResult playResult = gameController.playCard(card);
-        effectPopupAnimator.play(playResult.getPopups(), cardCenter.x, cardCenter.y);
+        if (playResult.isAutoSpin()) {
+            playBingo(image, playResult.getPopups());
+        } else {
+            hand.slam(image);
+            effectPopupAnimator.play(playResult.getPopups(), cardCenter.x, cardCenter.y);
+        }
         hud.refresh();
         refreshGains(); // une carte peut créditer ou consommer des gains immédiatement
+        refreshEffects();
 
         DrawResult drawResult = playResult.getDrawResult();
         if (!drawResult.getAddedToHand().isEmpty() || !drawResult.getDiscarded().isEmpty()) {
             hand.deal(drawResult);
         }
+        askChoice(playResult.getChoice(), cardCenter);
+    }
+
+    /** Ouvre la fenêtre du choix demandé par la carte jouée (rien si elle n'en demande pas). */
+    private void askChoice(CardChoice choice, Vector2 cardCenter) {
+        if (choice instanceof BetChoice) {
+            choiceOverlay.showBet(gameController.getBetOptions(), slots::regionOf, symbol -> {
+                effectPopupAnimator.play(gameController.placeBet(symbol), cardCenter.x, cardCenter.y);
+                refreshEffects();
+            });
+        } else if (choice instanceof RouletteChoice roulette) {
+            choiceOverlay.showRoulette(roulette.cursed(), roulette.pistolMultiplier(), roulette.penaltyPercent(),
+                index -> {
+                    GameController.RouletteOutcome outcome = gameController.pickRouletteCard(index);
+                    effectPopupAnimator.play(outcome.popups(), cardCenter.x, cardCenter.y);
+                    if (outcome.cursed()) {
+                        damageVignette.flash(settings.isReducedEffects() ? 0.3f : 0.6f);
+                        screenShake.shake(0.3f, 9f);
+                    }
+                    refreshGains();
+                });
+        }
+    }
+
+    /**
+     * Bingo : plus aucune carte ne peut être jouée ; la carte s'élève au-dessus
+     * de la table dans ses faisceaux, se téléporte sur la défausse, puis la
+     * machine se lance d'elle-même.
+     */
+    private void playBingo(CardImage image, List<EffectPopup> popups) {
+        hand.setLocked(true);
+        spinButton.setDisabled(true);
+        drawButton.setDisabled(true);
+        float centerX = playArea.getCenterX();
+        float centerY = stage.getViewport().getWorldHeight() * BINGO_CARD_HEIGHT;
+        effectPopupAnimator.play(popups, centerX, centerY + CARD_HEIGHT * 1.3f, 0.5f);
+        sounds.bingoThreeSymbols.play();
+        bingoAnimation.play(image, centerX, centerY, piles.discard().getTopX(), piles.discard().getTopY(),
+            this::spin);
     }
 
     /**
@@ -272,19 +349,32 @@ public class GameScreen extends ScreenAdapter {
      * ou repasse la main à la phase de pioche sinon.
      */
     private void onSpin() {
-        if (spinButton.isDisabled() || pileOverlay.isShown()) return;
+        if (spinButton.isDisabled() || isBusy()) return;
+        spin();
+    }
+
+    /** @return {@code true} si une fenêtre ou une animation attend : ni pioche ni lancer possibles. */
+    private boolean isBusy() {
+        return pileOverlay.isShown() || choiceOverlay.isShown() || bingoAnimation.isPlaying();
+    }
+
+    /** Lance la machine (bouton, touche F, ou d'elle-même après une carte Bingo). */
+    private void spin() {
         int enemyHpBefore = gameController.getGameState().getEnemy().getHp();
         TurnResult result = gameController.spin();
         table.setReelsRainbow(false); // la bordure d'un jackpot précédent s'arrête au lancer suivant
         // Gains et PV du tirage ne se montrent qu'à l'apparition de leurs textes, après l'arrêt des rouleaux.
-        gainsNotYetShown += sumOf(result, GainsEarnedEvent.class, gains -> gains.amount);
+        gainsNotYetShown += sumOf(result, GainsEarnedEvent.class, gains -> gains.amount)
+            - sumOf(result, GainsLostEvent.class, lost -> lost.amount);
         hud.holdBack(enemyHpBefore - gameController.getGameState().getEnemy().getHp(),
             sumOf(result, PlayerDamagedEvent.class, hit -> hit.damage),
             sumOf(result, PlayerHealedEvent.class, heal -> heal.amount));
         hand.discardAll();
         spinButton.setDisabled(true);
         drawButton.setDisabled(true); // la suite du tour attend l'arrêt des rouleaux
-        slots.spin(result.getSymbols(), () -> onReelsStopped(result));
+        slots.spin(result.getDrawnSymbols(), result.getSymbols(), this::onJokerTransformed,
+            () -> onReelsStopped(result));
+        refreshEffects(); // les symboles retirés se rapprochent de leur retour
 
         logSymbolOutcomes(result);
         Gdx.app.log("GameScreen", result.getEvents().stream()
@@ -300,16 +390,37 @@ public class GameScreen extends ScreenAdapter {
     private void onReelsStopped(TurnResult result) {
         // Un jackpot fait attendre la riposte de l'ennemi jusqu'à la fin de sa célébration.
         float riposteDelay = result.isJackpot() ? JackpotCelebration.DURATION : 0f;
-        slots.playResultPopups(result, hud.besidePlayerHealthBar(SlotView.POPUP_PLAYER_GAP), this::onEventShown,
-            riposteDelay);
+        Vector2 enemyBar    = hud.getEnemyBarCenter();
+        Vector2 pistolTexts = new Vector2(enemyBar.x, enemyBar.y - PISTOL_TEXT_BELOW);
+        float shotAt = slots.playResultPopups(result, hud.besidePlayerHealthBar(SlotView.POPUP_PLAYER_GAP),
+            pistolTexts, this::onEventShown, riposteDelay);
+        if (shotAt >= 0f) aimPistol(result, enemyBar, shotAt);
         playSymbolResultSound(result);
         if (result.isPair()) celebratePair(result.getSymbols());
         if (result.isJackpot()) return; // voir onJackpotShown
         if (isCombatOver()) {
-            stage.addAction(Actions.delay(RESULT_TEXTS_DURATION, Actions.run(this::finishTurn)));
+            stage.addAction(Actions.delay(SlotView.popupsDuration(result) + RESULT_TEXTS_MARGIN,
+                Actions.run(this::finishTurn)));
         } else {
             finishTurn();
         }
+    }
+
+    /** Le pistolet surgit au-dessus du symbole qu'il multiplie et tire sur l'ennemi à l'instant {@code shotAt}. */
+    private void aimPistol(TurnResult result, Vector2 target, float shotAt) {
+        PistolShotEvent shot = (PistolShotEvent) result.getPistolEvents().get(0);
+        Vector2 from = slots.getReelCenter(shot.slotIndex >= 0 ? shot.slotIndex : 1);
+        stage.addAction(Actions.delay(Math.max(0f, shotAt - PistolShotAnimation.AIM_TIME),
+            Actions.run(() -> pistolAnimation.play(from, target))));
+    }
+
+    /** Un Joker se transforme : texte « JOKER ! » et confettis sur son rouleau. */
+    private void onJokerTransformed(int reel) {
+        Vector2 center = slots.getReelCenter(reel);
+        effectPopupAnimator.play(List.of(new EffectPopup("JOKER !", EffectPopup.Style.SPECIAL,
+            PopupScale.SECONDARY_INTENSITY)), center.x, center.y + SlotView.CELL_HEIGHT / 2f);
+        confetti.burst(center.x, center.y, JOKER_CONFETTI);
+        sounds.twoSymbols.play();
     }
 
     /** Paire : les deux rouleaux identiques clignotent en doré et lâchent une gerbe de confettis. */
@@ -340,6 +451,8 @@ public class GameScreen extends ScreenAdapter {
     private void onEventShown(Event event) {
         if (event instanceof GainsEarnedEvent gains) {
             onGainsShown(gains.amount);
+        } else if (event instanceof GainsLostEvent lost) {
+            onGainsShown(-lost.amount);
         } else if (event instanceof JackpotEvent) {
             onJackpotShown();
         } else if (event instanceof EnemyDamagedEvent hit && hit.damage > 0) {
@@ -391,9 +504,9 @@ public class GameScreen extends ScreenAdapter {
         });
     }
 
-    /** Le texte d'un gain du tirage vient d'apparaître : le compteur du panneau l'ajoute à son tour. */
+    /** Le texte d'un gain (ou d'une perte) du tirage vient d'apparaître : le compteur du panneau le suit. */
     private void onGainsShown(int amount) {
-        gainsNotYetShown = Math.max(0, gainsNotYetShown - amount);
+        gainsNotYetShown -= amount;
         refreshGains();
     }
 
@@ -429,6 +542,10 @@ public class GameScreen extends ScreenAdapter {
         hand.reset();
         effectPopupAnimator.cancel(); // les gains en attente ne seront jamais affichés
         jackpotCelebration.cancel();
+        bingoAnimation.cancel();
+        pistolAnimation.cancel();
+        choiceOverlay.hide();
+        hand.setLocked(false);
         table.setReelsRainbow(false);
         table.setLightsParty(false);
         combatEnd.reset();
@@ -523,11 +640,35 @@ public class GameScreen extends ScreenAdapter {
         return gameController.getGameState().getPlayer();
     }
 
-    /** Met à jour les barres de vie, les gains et les compteurs du deck et de la défausse. */
+    /** Met à jour les barres de vie, les gains, les effets actifs et les compteurs du deck et de la défausse. */
     private void refreshAll() {
         hud.refresh();
         refreshGains();
+        refreshEffects();
         piles.refresh(player());
+    }
+
+    /**
+     * Met à jour les effets de cartes actifs du panneau latéral : symboles
+     * retirés des rouleaux (et tirages restants), Porte-bonheur, paris en cours.
+     */
+    private void refreshEffects() {
+        List<SidePanel.EffectRow> rows = new ArrayList<>();
+        LastingEffects lasting = player().getLastingEffects();
+        TextureRegion cross = new TextureRegion(hudTextures.iconCross);
+        for (Map.Entry<Symbol, Integer> removed : lasting.getRemovedSymbols().entrySet()) {
+            int turns = removed.getValue();
+            rows.add(new SidePanel.EffectRow(slots.regionOf(removed.getKey()), cross,
+                "Retiré " + turns + (turns > 1 ? " tours" : " tour")));
+        }
+        if (lasting.getGainBonus() > 0f) {
+            rows.add(new SidePanel.EffectRow(new TextureRegion(hudTextures.iconClover), null,
+                "Gains +" + Math.round(lasting.getGainBonus() * 100f) + " %"));
+        }
+        for (Symbol bet : gameController.getBetsThisTurn()) {
+            rows.add(new SidePanel.EffectRow(slots.regionOf(bet), null, "Pari x2 à x4"));
+        }
+        sidePanel.setActiveEffects(rows);
     }
 
     /** Met à jour le compteur de gains, sans les gains du tirage dont le texte n'est pas encore apparu. */
@@ -561,6 +702,7 @@ public class GameScreen extends ScreenAdapter {
         InputAdapter keyboardInput = new InputAdapter() {
             @Override
             public boolean keyDown(int keycode) {
+                if (choiceOverlay.isShown() || bingoAnimation.isPlaying()) return true; // un choix est attendu
                 if (keycode == Input.Keys.ESCAPE && pileOverlay.isShown()) {
                     pileOverlay.hide();
                     return true;
@@ -584,6 +726,7 @@ public class GameScreen extends ScreenAdapter {
     public void resize(int width, int height) {
         stage.getViewport().update(width, height, true);
         layout();
+        choiceOverlay.layout();
         pileOverlay.hide();
     }
 
@@ -621,6 +764,8 @@ public class GameScreen extends ScreenAdapter {
         sounds.dispose();
         cardClickParticles.dispose();
         pileOverlay.dispose();
+        choiceOverlay.dispose();
+        bingoAnimation.dispose();
         jackpotCelebration.dispose();
         damageVignette.dispose();
         combatEnd.dispose();

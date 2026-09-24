@@ -33,11 +33,14 @@ public class HandView {
     /** Appelé quand le joueur clique sur une carte de la main. */
     public interface CardClickListener {
         /**
+         * La carte vient de quitter la main : à l'écouteur de l'animer (voir {@link #slam}).
+         *
          * @param card       carte cliquée
+         * @param image      image de la carte, déjà retirée de la main (plus cliquable)
          * @param cardCenter centre de la carte (coordonnées du Stage), avant son retrait de la main
          * @param clickPos   point cliqué (coordonnées du Stage)
          */
-        void onCardClicked(Card card, Vector2 cardCenter, Vector2 clickPos);
+        void onCardClicked(Card card, CardImage image, Vector2 cardCenter, Vector2 clickPos);
     }
 
     private static final float MOVE_DURATION = 0.25f;
@@ -47,6 +50,8 @@ public class HandView {
     private static final float SLAM_END_SCALE = 0.85f;
     private static final float SLAM_GROW      = 0.07f;
     private static final float SLAM_FADE      = 0.16f;
+    /** Teinte des cartes quand la main est bloquée (Bingo). */
+    private static final float LOCKED_TINT    = 0.45f;
 
     private final TableView           table;
     private final float               cardWidth;
@@ -207,23 +212,43 @@ public class HandView {
                 Vector2 clickPos   = cardImage.localToStageCoordinates(new Vector2(x, y));
                 Vector2 cardCenter = cardImage.localToStageCoordinates(new Vector2(cardWidth / 2f, cardHeight / 2f));
                 images.remove(cardImage);
-                slam(cardImage);
+                detach(cardImage);
                 tooltip.hide();
-                clickListener.onCardClicked(card, cardCenter, clickPos);
+                clickListener.onCardClicked(card, cardImage, cardCenter, clickPos);
                 return true;
             }
         });
     }
 
-    /** Carte jouée : sortie de la main, elle grossit brièvement puis se tasse en s'effaçant. */
-    private void slam(CardImage cardImage) {
+    /**
+     * Bloque ou débloque la main : bloquée, ses cartes s'assombrissent et ne
+     * réagissent plus (une carte comme le Bingo interdit d'en jouer d'autres).
+     */
+    public void setLocked(boolean locked) {
+        group.setTouchable(locked ? Touchable.disabled : Touchable.childrenOnly);
+        float tint = locked ? LOCKED_TINT : 1f;
+        for (Image image : images) image.setColor(tint, tint, tint, image.getColor().a);
+        if (locked) {
+            tooltip.hide();
+            for (Image image : images) {
+                if (image instanceof CardImage card) card.setHovered(false);
+            }
+        }
+    }
+
+    /** Sort la carte de la main : elle n'est plus cliquable et reste à la même place à l'écran, au-dessus du jeu. */
+    private void detach(CardImage cardImage) {
         Vector2 pos = cardImage.localToStageCoordinates(new Vector2(0f, 0f));
         cardImage.clearListeners();
         cardImage.clearActions();
         cardImage.setTouchable(Touchable.disabled);
         cardImage.setRotation(0f);
-        group.getStage().addActor(cardImage); // hors de la main, à la même place à l'écran
+        group.getStage().addActor(cardImage);
         cardImage.setPosition(pos.x, pos.y);
+    }
+
+    /** Carte jouée : sortie de la main, elle grossit brièvement puis se tasse en s'effaçant. */
+    public void slam(CardImage cardImage) {
         cardImage.addAction(Actions.sequence(
             Actions.scaleTo(SLAM_SCALE, SLAM_SCALE, SLAM_GROW, Interpolation.pow2Out),
             Actions.parallel(
