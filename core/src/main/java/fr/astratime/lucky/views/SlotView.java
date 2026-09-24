@@ -7,7 +7,6 @@ import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.InputListener;
-import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.Image;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
@@ -25,8 +24,9 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * La ligne de symboles tirés par la machine à sous, centrée à l'écran, et les
- * textes animés des résultats du tirage. Possède les textures des symboles.
+ * La ligne de symboles tirés par la machine à sous, centrée dans la zone de
+ * jeu, et les textes animés des résultats du tirage. Possède les textures des
+ * symboles.
  */
 public class SlotView implements Disposable {
 
@@ -48,7 +48,7 @@ public class SlotView implements Disposable {
     private static final float POPUP_ENEMY_DELAY  = 1.5f;
     public static final float  POPUP_PLAYER_GAP   = 110f;  // à droite de la barre de vie du joueur
 
-    private final Stage               stage;
+    private final PlayArea            playArea;
     private final Tooltip             tooltip;
     private final EffectPopupAnimator popupAnimator;
     private final Map<Symbol, Texture> textures = new EnumMap<>(Symbol.class);
@@ -56,8 +56,8 @@ public class SlotView implements Disposable {
     /** Images des symboles affichés, dans l'ordre de la ligne tirée. */
     private final List<Image>         images = new ArrayList<>();
 
-    public SlotView(Stage stage, Tooltip tooltip, EffectPopupAnimator popupAnimator) {
-        this.stage         = stage;
+    public SlotView(PlayArea playArea, Tooltip tooltip, EffectPopupAnimator popupAnimator) {
+        this.playArea      = playArea;
         this.tooltip       = tooltip;
         this.popupAnimator = popupAnimator;
         for (Symbol symbol : Symbol.values()) {
@@ -88,9 +88,9 @@ public class SlotView implements Disposable {
         images.clear();
     }
 
-    /** Recentre la ligne horizontalement (après un redimensionnement). */
+    /** Recentre la ligne horizontalement dans la zone de jeu (après un redimensionnement). */
     public void layout() {
-        table.setPosition((stage.getViewport().getWorldWidth() - table.getWidth()) / 2f, ROW_Y);
+        table.setPosition(playArea.getCenterX() - table.getWidth() / 2f, ROW_Y);
     }
 
     /**

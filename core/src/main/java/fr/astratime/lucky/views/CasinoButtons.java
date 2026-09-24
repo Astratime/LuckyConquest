@@ -1,6 +1,5 @@
 package fr.astratime.lucky.views;
 
-import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Pixmap;
@@ -8,12 +7,12 @@ import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.GlyphLayout;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
-import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 import com.badlogic.gdx.utils.Disposable;
+import fr.astratime.lucky.assets.Fonts;
 
 /**
  * Fabrique des boutons au thème casino : fond sombre, liseré doré, police pixel
@@ -25,7 +24,6 @@ public class CasinoButtons implements Disposable {
     public static final float HEIGHT = 60f;
 
     private static final float  MIN_WIDTH    = 150f;
-    private static final String FONT_PATH    = "fonts/Jersey10-Regular.ttf";
     private static final int    FONT_SIZE    = 30;
     private static final int    BORDER_PX    = 3;
     private static final float  TEXT_PADDING = 20f; // marge horizontale de chaque côté du texte
@@ -37,7 +35,7 @@ public class CasinoButtons implements Disposable {
     private final Texture    disabledTexture;
 
     public CasinoButtons() {
-        font            = buildFont();
+        font            = Fonts.jersey(FONT_SIZE, GOLD);
         upTexture       = makeTexture(Color.valueOf("1a1a1aff"), GOLD);
         downTexture     = makeTexture(Color.valueOf("4a0000ff"), GOLD);
         disabledTexture = makeTexture(Color.valueOf("2a2a2aff"), Color.valueOf("6b5a2eff"));
@@ -75,17 +73,6 @@ public class CasinoButtons implements Disposable {
         style.disabled          = new TextureRegionDrawable(new TextureRegion(disabledTexture));
         style.disabledFontColor = Color.valueOf("8a8a8aff");
         return style;
-    }
-
-    /** Génère la police pixel art dorée des boutons, à partir de la police TrueType du thème. */
-    private static BitmapFont buildFont() {
-        FreeTypeFontGenerator generator = new FreeTypeFontGenerator(Gdx.files.internal(FONT_PATH));
-        FreeTypeFontGenerator.FreeTypeFontParameter parameter = new FreeTypeFontGenerator.FreeTypeFontParameter();
-        parameter.size  = FONT_SIZE;
-        parameter.color = GOLD;
-        BitmapFont generated = generator.generateFont(parameter);
-        generator.dispose(); // le générateur ne sert plus une fois la police créée
-        return generated;
     }
 
     /** Texture de bouton : fond plein entouré d'un liseré. */

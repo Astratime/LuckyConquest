@@ -25,6 +25,7 @@ import fr.astratime.lucky.animations.CardDiscardAnimator;
 import fr.astratime.lucky.animations.EffectPopupAnimator;
 import fr.astratime.lucky.assets.CardTextures;
 import fr.astratime.lucky.assets.GameSounds;
+import fr.astratime.lucky.assets.HudTextures;
 import fr.astratime.lucky.controllers.GameController;
 import fr.astratime.lucky.entities.Card;
 import fr.astratime.lucky.entities.CardPlayResult;
@@ -41,6 +42,8 @@ import fr.astratime.lucky.views.CombatHud;
 import fr.astratime.lucky.views.HandView;
 import fr.astratime.lucky.views.PileContentOverlay;
 import fr.astratime.lucky.views.PilesView;
+import fr.astratime.lucky.views.PlayArea;
+import fr.astratime.lucky.views.SidePanel;
 import fr.astratime.lucky.views.SlotView;
 import fr.astratime.lucky.views.Tooltip;
 
@@ -53,9 +56,11 @@ import java.util.stream.Collectors;
  *
  * L'affichage est réparti entre des vues dédiées : {@link HandView} (la main),
  * {@link PilesView} (deck et défausse), {@link SlotView} (symboles tirés et
- * textes du tirage), {@link CombatHud} (barres de vie et score). Cet écran
- * possède les ressources partagées, les boutons et le clavier, et enchaîne les
- * phases du tour (pioche, cartes jouées, spin, fin de combat).
+ * textes du tirage), {@link CombatHud} (barres de vie), {@link SidePanel}
+ * (panneau latéral gauche : gains). Ces vues se placent dans la zone de jeu
+ * ({@link PlayArea}), à droite du panneau. Cet écran possède les ressources
+ * partagées, les boutons et le clavier, et enchaîne les phases du tour
+ * (pioche, cartes jouées, spin, fin de combat).
  */
 public class GameScreen extends ScreenAdapter {
 
@@ -67,10 +72,9 @@ public class GameScreen extends ScreenAdapter {
     private static final float  CARD_HEIGHT       = 135f;
     private static final String BACKGROUND_PATH   = "playTable/play_table3.png";
     private static final String CARD_BACK_PATH    = "cards/light/BACK.png";
-    private static final float  BACKGROUND_SHRINK = 100f;
+    private static final float  BACKGROUND_MARGIN = 50f;   // autour de la table, dans la zone de jeu
 
-    private static final float BUTTON_MARGIN      = 20f;
-    private static final float RESTART_BUTTON_GAP = 10f;
+    private static final float BUTTON_MARGIN = 20f;
 
     // Deck (dos visible) affiché au-dessus des boutons "Tirer" et "Lancer
     // machine", décalé vers la gauche : c'est de là que partent les cartes
@@ -96,6 +100,7 @@ public class GameScreen extends ScreenAdapter {
     private final Texture             cardBackTexture;
     private final CardTextures        cardTextures  = new CardTextures();
     private final CasinoButtons       buttons       = new CasinoButtons();
+    private final HudTextures         hudTextures   = new HudTextures();
     private final GameSounds          sounds        = new GameSounds();
     private final CardClickParticles  cardClickParticles = new CardClickParticles();
     private final EffectPopupAnimator effectPopupAnimator;
@@ -106,7 +111,9 @@ public class GameScreen extends ScreenAdapter {
     // Vues et acteurs Scene2D
     // -------------------------------------------------------------------------
 
+    private final PlayArea   playArea;
     private final Image      background;
+    private final SidePanel  sidePanel;
     private final CombatHud  hud;
     private final PilesView  piles;
     private final HandView   hand;
@@ -140,34 +147,35 @@ public class GameScreen extends ScreenAdapter {
         tooltip             = new Tooltip(font);
         pileOverlay         = new PileContentOverlay(stage, font, tooltip, cardTextures::get, CARD_WIDTH, CARD_HEIGHT);
 
+        playArea   = new PlayArea(stage, SidePanel.WIDTH);
         background = new Image(new TextureRegionDrawable(new TextureRegion(backgroundTexture)));
-        hud        = new CombatHud(stage, font);
+        sidePanel  = new SidePanel(hudTextures);
+        hud        = new CombatHud(playArea, hudTextures);
 
         drawButton    = buttons.create("Tirer " + GameController.DEFAULT_DRAW_COUNT + " cartes", sounds.buttonClick, this::onDrawCards);
         spinButton    = buttons.create("Lancer machine", sounds.spinButton, this::onSpin);
         restartButton = buttons.create("Recommencer", sounds.buttonClick, this::onRestart);
-        drawButton.setPosition(BUTTON_MARGIN, BUTTON_MARGIN);
-        spinButton.setPosition(drawButton.getX() + drawButton.getWidth() + BUTTON_MARGIN, BUTTON_MARGIN);
         spinButton.setDisabled(true);
         restartButton.setVisible(false);
+        sidePanel.setFooter(restartButton);
 
-        piles = new PilesView(stage, cardBackTexture, font, tooltip, sounds.buttonClick, CARD_WIDTH, CARD_HEIGHT,
+        piles = new PilesView(playArea, cardBackTexture, font, tooltip, sounds.buttonClick, CARD_WIDTH, CARD_HEIGHT,
             this::onDeckClicked, this::onDiscardClicked);
-        hand  = new HandView(stage, CARD_WIDTH, CARD_HEIGHT, cardTextures, tooltip, piles, this::player,
+        hand  = new HandView(playArea, CARD_WIDTH, CARD_HEIGHT, cardTextures, tooltip, piles, this::player,
             new CardDealAnimator(stage, cardBackTexture, CARD_WIDTH, CARD_HEIGHT, sounds.cardDeal, sounds.cardFlip),
             new CardDiscardAnimator(stage, cardBackTexture, CARD_WIDTH, CARD_HEIGHT, sounds.cardDeal, sounds.cardFlip),
             this::onCardPlayed);
-        slots = new SlotView(stage, tooltip, effectPopupAnimator);
+        slots = new SlotView(playArea, tooltip, effectPopupAnimator);
 
         layout();
         refreshAll();
 
         stage.addActor(background);
+        stage.addActor(sidePanel.getActor()); // contient le bouton "Recommencer"
         piles.addTo(stage);
         hud.addTo(stage);
         stage.addActor(drawButton);
         stage.addActor(spinButton);
-        stage.addActor(restartButton);
         stage.addActor(slots.getActor());
         stage.addActor(hand.getActor());
         stage.addActor(popupLayer);
@@ -201,7 +209,8 @@ public class GameScreen extends ScreenAdapter {
 
         CardPlayResult playResult = gameController.playCard(card);
         effectPopupAnimator.play(playResult.getPopups(), cardCenter.x, cardCenter.y);
-        hud.refresh(gameController.getGameState()); // une carte peut créditer ou consommer des gains immédiatement
+        hud.refresh(gameController.getGameState());
+        sidePanel.setGains(player().getGains()); // une carte peut créditer ou consommer des gains immédiatement
 
         DrawResult drawResult = playResult.getDrawResult();
         if (!drawResult.getAddedToHand().isEmpty() || !drawResult.getDiscarded().isEmpty()) {
@@ -222,6 +231,7 @@ public class GameScreen extends ScreenAdapter {
         slots.show(result.getSymbols());
         slots.playResultPopups(result, hud.besidePlayerHealthBar(SlotView.POPUP_PLAYER_GAP));
         hud.refresh(gameController.getGameState());
+        sidePanel.setGains(player().getGains());
         playSymbolResultSound(result);
 
         if (isCombatOver()) {
@@ -325,19 +335,20 @@ public class GameScreen extends ScreenAdapter {
         return gameController.getGameState().getPlayer();
     }
 
-    /** Met à jour les barres de vie, le score et les compteurs du deck et de la défausse. */
+    /** Met à jour les barres de vie, les gains et les compteurs du deck et de la défausse. */
     private void refreshAll() {
         hud.refresh(gameController.getGameState());
+        sidePanel.setGains(player().getGains());
         piles.refresh(player());
     }
 
     /** Place (ou replace après un redimensionnement) les éléments qui dépendent de la taille de l'écran. */
     private void layout() {
-        float worldHeight = stage.getViewport().getWorldHeight();
-        background.setSize(stage.getViewport().getWorldWidth() - BACKGROUND_SHRINK, worldHeight - BACKGROUND_SHRINK);
-        background.setPosition(BACKGROUND_SHRINK / 2f, BACKGROUND_SHRINK / 2f);
-        restartButton.setPosition(BUTTON_MARGIN,
-            worldHeight - CombatHud.SCORE_LABEL_TOP_MARGIN - CasinoButtons.HEIGHT - RESTART_BUTTON_GAP);
+        background.setBounds(playArea.getX() + BACKGROUND_MARGIN, BACKGROUND_MARGIN,
+            playArea.getWidth() - BACKGROUND_MARGIN * 2, playArea.getHeight() - BACKGROUND_MARGIN * 2);
+        drawButton.setPosition(playArea.getX() + BUTTON_MARGIN, BUTTON_MARGIN);
+        spinButton.setPosition(drawButton.getX() + drawButton.getWidth() + BUTTON_MARGIN, BUTTON_MARGIN);
+        sidePanel.layout(stage);
         hud.layout();
         piles.layout(deckX(), DECK_Y);
         slots.layout();
@@ -414,6 +425,8 @@ public class GameScreen extends ScreenAdapter {
         buttons.dispose();
         tooltip.dispose();
         hud.dispose();
+        sidePanel.dispose();
+        hudTextures.dispose();
         slots.dispose();
         sounds.dispose();
         cardClickParticles.dispose();

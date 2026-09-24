@@ -7,7 +7,6 @@ import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.Group;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.InputListener;
-import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.actions.Actions;
 import com.badlogic.gdx.scenes.scene2d.ui.Image;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
@@ -45,7 +44,7 @@ public class HandView {
     private static final float MOVE_DURATION = 0.25f;
     private static final float TOOLTIP_GAP   = 5f;
 
-    private final Stage               stage;
+    private final PlayArea            playArea;
     private final float               cardWidth;
     private final float               cardHeight;
     private final CardTextures        cardTextures;
@@ -60,10 +59,10 @@ public class HandView {
     /** Images des cartes de la main (non jouées), dans l'ordre d'affichage. */
     private final List<Image> images = new ArrayList<>();
 
-    public HandView(Stage stage, float cardWidth, float cardHeight, CardTextures cardTextures, Tooltip tooltip,
+    public HandView(PlayArea playArea, float cardWidth, float cardHeight, CardTextures cardTextures, Tooltip tooltip,
              PilesView piles, Supplier<Player> player,
              CardDealAnimator dealAnimator, CardDiscardAnimator discardAnimator, CardClickListener clickListener) {
-        this.stage           = stage;
+        this.playArea        = playArea;
         this.cardWidth       = cardWidth;
         this.cardHeight      = cardHeight;
         this.cardTextures    = cardTextures;
@@ -141,14 +140,14 @@ public class HandView {
     }
 
     /**
-     * Place les cartes de la main sur une rangée centrée. Avec {@code animate},
-     * les cartes déjà révélées glissent vers leur nouvelle place ; les autres
-     * (en cours de distribution) y sont placées directement.
+     * Place les cartes de la main sur une rangée centrée dans la zone de jeu.
+     * Avec {@code animate}, les cartes déjà révélées glissent vers leur nouvelle
+     * place ; les autres (en cours de distribution) y sont placées directement.
      */
     public void layout(boolean animate) {
         int count = images.size();
         float rowWidth = count * cardWidth + Math.max(0, count - 1) * CARD_GAP;
-        float startX   = (stage.getViewport().getWorldWidth() - rowWidth) / 2f;
+        float startX   = playArea.getCenterX() - rowWidth / 2f;
 
         for (int i = 0; i < count; i++) {
             Image cardImage = images.get(i);

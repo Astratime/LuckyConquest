@@ -4,59 +4,54 @@ import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.scenes.scene2d.Stage;
-import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.utils.Disposable;
+import fr.astratime.lucky.assets.Fonts;
+import fr.astratime.lucky.assets.HudTextures;
 import fr.astratime.lucky.entities.GameState;
 
 /**
- * Informations de combat affichées en permanence : barre de vie de l'ennemi
- * (en haut), barre de vie du joueur (en bas), toutes deux centrées, et points
- * (gains) du joueur en haut à gauche.
+ * Barres de vie affichées en permanence, centrées dans la zone de jeu : celle
+ * de l'ennemi en haut, celle du joueur en bas. Les gains sont affichés par le
+ * panneau latéral ({@link SidePanel}).
  */
 public class CombatHud implements Disposable {
 
-    private static final float HEALTH_BAR_WIDTH         = 300f;
-    private static final float HEALTH_BAR_HEIGHT        = 22f;
-    private static final float HEALTH_BAR_TOP_MARGIN    = 10f;
-    private static final float HEALTH_BAR_BOTTOM_MARGIN = 100f;
-    public static final float  SCORE_LABEL_TOP_MARGIN   = 40f;
-    private static final float SCORE_LABEL_LEFT         = 20f;
+    private static final float HEALTH_BAR_WIDTH         = 440f;
+    private static final float HEALTH_BAR_TOP_MARGIN    = 6f;
+    private static final float HEALTH_BAR_BOTTOM_MARGIN = 88f;
+    private static final int   FONT_SIZE                = 28;
+    private static final float FONT_BORDER              = 2f;
 
-    private final Stage         stage;
+    private final PlayArea      playArea;
+    private final BitmapFont    font;
     private final HealthBarView enemyHealthBar;
     private final HealthBarView playerHealthBar;
-    private final Label         scoreLabel;
 
-    public CombatHud(Stage stage, BitmapFont font) {
-        this.stage      = stage;
-        enemyHealthBar  = new HealthBarView(font, Color.valueOf("550000ff"), Color.RED, HEALTH_BAR_WIDTH, HEALTH_BAR_HEIGHT);
-        playerHealthBar = new HealthBarView(font, Color.valueOf("005500ff"), Color.GREEN, HEALTH_BAR_WIDTH, HEALTH_BAR_HEIGHT);
-        scoreLabel      = new Label("Points : 0", new Label.LabelStyle(font, Color.WHITE));
+    public CombatHud(PlayArea playArea, HudTextures hud) {
+        this.playArea   = playArea;
+        font            = Fonts.jersey(FONT_SIZE, Color.WHITE, FONT_BORDER, Color.valueOf("1a0f0fff"));
+        enemyHealthBar  = new HealthBarView("ENNEMI", font, hud, hud.barFillEnemy, hud.chipEnemy, HEALTH_BAR_WIDTH);
+        playerHealthBar = new HealthBarView("JOUEUR", font, hud, hud.barFillPlayer, hud.chipPlayer, HEALTH_BAR_WIDTH);
         layout();
     }
 
-    /** Ajoute les barres de vie et le score au Stage. */
+    /** Ajoute les deux barres de vie au Stage. */
     public void addTo(Stage target) {
-        enemyHealthBar.addTo(target);
-        playerHealthBar.addTo(target);
-        target.addActor(scoreLabel);
+        target.addActor(enemyHealthBar);
+        target.addActor(playerHealthBar);
     }
 
-    /** Met à jour les deux barres de vie et le score à partir de l'état de la partie. */
+    /** Met à jour les deux barres de vie à partir de l'état de la partie. */
     public void refresh(GameState gameState) {
         enemyHealthBar.refresh(gameState.getEnemy().getHp(), gameState.getEnemy().getMaxHp());
         playerHealthBar.refresh(gameState.getPlayer().getHp(), gameState.getPlayer().getMaxHp());
-        scoreLabel.setText("Points : " + gameState.getPlayer().getGains());
     }
 
-    /** Repositionne les éléments ancrés en haut et au centre de l'écran (après un redimensionnement). */
+    /** Recentre les barres dans la zone de jeu (après un redimensionnement). */
     public void layout() {
-        float worldWidth  = stage.getViewport().getWorldWidth();
-        float worldHeight = stage.getViewport().getWorldHeight();
-        float barX        = (worldWidth - HEALTH_BAR_WIDTH) / 2f;
-        enemyHealthBar.setPosition(barX, worldHeight - HEALTH_BAR_HEIGHT - HEALTH_BAR_TOP_MARGIN);
+        float barX = playArea.getCenterX() - enemyHealthBar.getWidth() / 2f;
+        enemyHealthBar.setPosition(barX, playArea.getHeight() - HealthBarView.HEIGHT - HEALTH_BAR_TOP_MARGIN);
         playerHealthBar.setPosition(barX, HEALTH_BAR_BOTTOM_MARGIN);
-        scoreLabel.setPosition(SCORE_LABEL_LEFT, worldHeight - SCORE_LABEL_TOP_MARGIN);
     }
 
     /**
@@ -65,13 +60,11 @@ public class CombatHud implements Disposable {
      *         là où s'affichent les textes de la riposte ennemie
      */
     public Vector2 besidePlayerHealthBar(float gap) {
-        float worldWidth = stage.getViewport().getWorldWidth();
-        return new Vector2((worldWidth + HEALTH_BAR_WIDTH) / 2f + gap, HEALTH_BAR_BOTTOM_MARGIN + HEALTH_BAR_HEIGHT / 2f);
+        return new Vector2(playerHealthBar.getRight() + gap, playerHealthBar.getY() + HealthBarView.HEIGHT / 2f);
     }
 
     @Override
     public void dispose() {
-        enemyHealthBar.dispose();
-        playerHealthBar.dispose();
+        font.dispose();
     }
 }

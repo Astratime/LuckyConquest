@@ -20,7 +20,7 @@ import fr.astratime.lucky.entities.Player;
  */
 public class PilesView {
 
-    private final Stage        stage;
+    private final PlayArea     playArea;
     private final CardPileView deckPile;
     private final CardPileView discardPile;
     private       int          discardInFlight = 0;
@@ -29,11 +29,11 @@ public class PilesView {
      * @param onDeckClicked    appelé au clic sur le deck
      * @param onDiscardClicked appelé au clic sur la défausse
      */
-    public PilesView(Stage stage, Texture cardBackTexture, BitmapFont font, Tooltip tooltip, Sound clickSound,
+    public PilesView(PlayArea playArea, Texture cardBackTexture, BitmapFont font, Tooltip tooltip, Sound clickSound,
               float cardWidth, float cardHeight, Runnable onDeckClicked, Runnable onDiscardClicked) {
-        this.stage  = stage;
-        deckPile    = buildPile("Deck", cardBackTexture, font, tooltip, clickSound, cardWidth, cardHeight, onDeckClicked);
-        discardPile = buildPile("Defausse", cardBackTexture, font, tooltip, clickSound, cardWidth, cardHeight, onDiscardClicked);
+        this.playArea = playArea;
+        deckPile      = buildPile("Deck", cardBackTexture, font, tooltip, clickSound, cardWidth, cardHeight, onDeckClicked);
+        discardPile   = buildPile("Defausse", cardBackTexture, font, tooltip, clickSound, cardWidth, cardHeight, onDiscardClicked);
     }
 
     /** Ajoute les deux piles au Stage. */
@@ -44,11 +44,11 @@ public class PilesView {
 
     /**
      * Place le deck en {@code (deckX, y)} et la défausse en symétrique par rapport
-     * au centre de l'écran (ancrée à droite).
+     * au centre de la zone de jeu (ancrée à droite).
      */
     public void layout(float deckX, float y) {
         deckPile.setPosition(deckX, y);
-        discardPile.setPosition(stage.getViewport().getWorldWidth() - deckX - deckPile.getWidth(), y);
+        discardPile.setPosition(2 * playArea.getCenterX() - deckX - deckPile.getWidth(), y);
     }
 
     /** Met à jour les compteurs du deck et de la défausse (sans les cartes encore en vol vers celle-ci). */

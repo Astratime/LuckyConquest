@@ -4,70 +4,104 @@ import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
-import com.badlogic.gdx.scenes.scene2d.Stage;
+import com.badlogic.gdx.math.Interpolation;
+import com.badlogic.gdx.scenes.scene2d.Group;
+import com.badlogic.gdx.scenes.scene2d.actions.Actions;
 import com.badlogic.gdx.scenes.scene2d.ui.Image;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 import com.badlogic.gdx.utils.Align;
-import com.badlogic.gdx.utils.Disposable;
-import fr.astratime.lucky.assets.Textures;
+import fr.astratime.lucky.assets.HudTextures;
 
 /**
- * Barre de vie : fond (piste), remplissage proportionnel aux PV, et label
- * "PV/PV max" centré dessus. Réutilisée à l'identique pour l'ennemi et pour
- * le joueur (seules la couleur et la position diffèrent).
+ * Barre de vie au thème casino : un jeton (à gauche, par-dessus la barre), un
+ * cadre doré, un remplissage en dégradé proportionnel aux PV, le nom du camp à
+ * gauche et "PV / PV max" à droite. Après une perte de PV, une traînée claire
+ * reste un instant à l'ancienne valeur puis rattrape le remplissage, pour que
+ * les dégâts se voient. Réutilisée pour l'ennemi et pour le joueur (seuls le
+ * nom, le jeton et la couleur du remplissage diffèrent).
+ *
+ * Ne possède aucune texture : elles restent possédées (et disposées) par {@link HudTextures}.
  */
-public class HealthBarView implements Disposable {
+public class HealthBarView extends Group {
 
-    private final float width;
+    /** Hauteur totale : celle du jeton, qui dépasse du cadre en haut et en bas. */
+    public static final float  HEIGHT         = 60f;
+    private static final float CHIP_SIZE      = 60f;
+    private static final float FRAME_HEIGHT   = 42f;
+    private static final float TEXT_PAD       = 10f;   // marge des textes à l'intérieur de la piste
+    private static final float TRAIL_DELAY    = 0.35f;
+    private static final float TRAIL_DURATION = 0.5f;
 
-    private final Texture bgTexture;
-    private final Texture fillTexture;
-    private final Image   bg;
-    private final Image   fill;
-    private final Label   label;
+    private final float trackWidth;
+    private final float trackHeight;
 
-    public HealthBarView(BitmapFont font, Color bgColor, Color fillColor, float width, float height) {
-        this.width = width;
+    private final Image trail;
+    private final Image fill;
+    private final Label hpLabel;
 
-        bgTexture   = Textures.solidColor(bgColor);
-        fillTexture = Textures.solidColor(fillColor);
+    /**
+     * @param name        nom du camp, affiché à gauche dans la barre (ex : "ENNEMI")
+     * @param font        police des textes (avec contour, lisible sur le remplissage)
+     * @param fillTexture dégradé vertical du remplissage (étiré horizontalement)
+     * @param chipTexture jeton affiché à gauche de la barre
+     * @param frameWidth  largeur du cadre doré
+     */
+    public HealthBarView(String name, BitmapFont font, HudTextures hud, Texture fillTexture, Texture chipTexture,
+                         float frameWidth) {
+        int   border = HudTextures.BAR_FRAME_BORDER;
+        float frameX = CHIP_SIZE / 2f;
+        float frameY = (HEIGHT - FRAME_HEIGHT) / 2f;
+        // La piste commence au bord droit du jeton, pour que même une barre presque vide reste visible.
+        float trackX = CHIP_SIZE - border / 3f;
+        trackWidth  = frameX + frameWidth - border - trackX;
+        trackHeight = FRAME_HEIGHT - border * 2;
+        float trackY = frameY + border;
 
-        bg = new Image(new TextureRegionDrawable(new TextureRegion(bgTexture)));
-        bg.setSize(width, height);
+        Image frame = new Image(hud.barFrameDrawable());
+        frame.setBounds(frameX, frameY, frameWidth, FRAME_HEIGHT);
 
+        trail = new Image(new TextureRegionDrawable(new TextureRegion(hud.barTrail)));
+        trail.setBounds(trackX, trackY, trackWidth, trackHeight);
         fill = new Image(new TextureRegionDrawable(new TextureRegion(fillTexture)));
-        fill.setSize(width, height);
+        fill.setBounds(trackX, trackY, trackWidth, trackHeight);
 
-        label = new Label("", new Label.LabelStyle(font, Color.WHITE));
-        label.setSize(width, height);
-        label.setAlignment(Align.center);
+        Label.LabelStyle style = new Label.LabelStyle(font, Color.WHITE);
+        Label nameLabel = new Label(name, style);
+        nameLabel.setBounds(trackX + TEXT_PAD, trackY, trackWidth - TEXT_PAD * 2, trackHeight);
+        nameLabel.setAlignment(Align.left);
+        hpLabel = new Label("", style);
+        hpLabel.setBounds(trackX + TEXT_PAD, trackY, trackWidth - TEXT_PAD * 2, trackHeight);
+        hpLabel.setAlignment(Align.right);
+
+        Image chip = new Image(new TextureRegionDrawable(new TextureRegion(chipTexture)));
+        chip.setBounds(0, 0, CHIP_SIZE, CHIP_SIZE);
+
+        addActor(frame);
+        addActor(trail);
+        addActor(fill);
+        addActor(nameLabel);
+        addActor(hpLabel);
+        addActor(chip); // en dernier : le jeton recouvre le début du cadre
+        setSize(frameX + frameWidth, HEIGHT);
     }
 
-    /** Ajoute les trois acteurs de la barre au Stage (fond, remplissage, label), dans cet ordre. */
-    public void addTo(Stage stage) {
-        stage.addActor(bg);
-        stage.addActor(fill);
-        stage.addActor(label);
-    }
-
-    /** Repositionne les trois acteurs à {@code (x, y)} (ex : lors d'un resize). */
-    public void setPosition(float x, float y) {
-        bg.setPosition(x, y);
-        fill.setPosition(x, y);
-        label.setPosition(x, y);
-    }
-
-    /** Met à jour la largeur du remplissage et le texte "PV/PV max" selon les PV actuels. */
+    /**
+     * Met à jour la largeur du remplissage et le texte "PV / PV max". Une perte
+     * de PV laisse la traînée à l'ancienne valeur avant de la faire rattraper le
+     * remplissage ; un gain (soin, nouveau combat) la place directement.
+     */
     public void refresh(int hp, int maxHp) {
-        float ratio = (float) hp / maxHp;
-        fill.setWidth(width * ratio);
-        label.setText(hp + "/" + maxHp);
-    }
-
-    @Override
-    public void dispose() {
-        bgTexture.dispose();
-        fillTexture.dispose();
+        float width = trackWidth * Math.clamp((float) hp / maxHp, 0f, 1f);
+        fill.setWidth(width);
+        trail.clearActions();
+        if (width < trail.getWidth()) {
+            trail.addAction(Actions.sequence(
+                Actions.delay(TRAIL_DELAY),
+                Actions.sizeTo(width, trackHeight, TRAIL_DURATION, Interpolation.pow2In)));
+        } else {
+            trail.setWidth(width);
+        }
+        hpLabel.setText(hp + " / " + maxHp);
     }
 }
