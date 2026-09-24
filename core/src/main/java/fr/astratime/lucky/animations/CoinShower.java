@@ -85,7 +85,7 @@ public class CoinShower extends Actor {
     public boolean isEmpty() { return coins.isEmpty(); }
 
     /** Retire toutes les pièces immédiatement. */
-    public void clear() { coins.clear(); }
+    public void removeAll() { coins.clear(); }
 
     @Override
     public void act(float delta) {

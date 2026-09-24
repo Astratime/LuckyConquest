@@ -79,7 +79,7 @@ public class Fireworks extends Actor {
     public boolean isEmpty() { return rockets.isEmpty() && sparks.isEmpty(); }
 
     /** Retire toutes les fusées et étincelles immédiatement. */
-    public void clear() {
+    public void removeAll() {
         rockets.clear();
         sparks.clear();
     }

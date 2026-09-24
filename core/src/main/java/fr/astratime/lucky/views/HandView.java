@@ -7,6 +7,7 @@ import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.Group;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.InputListener;
+import com.badlogic.gdx.scenes.scene2d.Touchable;
 import com.badlogic.gdx.scenes.scene2d.actions.Actions;
 import com.badlogic.gdx.scenes.scene2d.ui.Image;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
@@ -41,6 +42,11 @@ public class HandView {
 
     private static final float MOVE_DURATION = 0.25f;
     private static final float TOOLTIP_GAP   = 5f;
+    // Carte jouée : elle grossit, puis se tasse en s'effaçant.
+    private static final float SLAM_SCALE     = 1.3f;
+    private static final float SLAM_END_SCALE = 0.85f;
+    private static final float SLAM_GROW      = 0.07f;
+    private static final float SLAM_FADE      = 0.16f;
 
     private final TableView           table;
     private final float               cardWidth;
@@ -86,7 +92,7 @@ public class HandView {
 
         List<Image> newImages = new ArrayList<>();
         for (Card card : drawResult.getAddedToHand()) {
-            Image cardImage = new Image(new TextureRegionDrawable(new TextureRegion(cardTextures.get(card))));
+            CardImage cardImage = new CardImage(new TextureRegionDrawable(new TextureRegion(cardTextures.get(card))));
             cardImage.setSize(cardWidth, cardHeight);
             cardImage.setVisible(false); // révélée seulement à la fin de son animation de distribution
             addListeners(cardImage, card);
@@ -167,22 +173,32 @@ public class HandView {
     }
 
     /**
-     * Attache à une image de carte : l'affichage de sa description au survol,
-     * et au clic son retrait de la main puis la notification du clic.
+     * Attache à une image de carte : au survol, sa levée et l'affichage de sa
+     * description ; au clic, son retrait de la main (elle grossit puis « claque »
+     * en s'effaçant) et la notification du clic.
      */
-    private void addListeners(Image cardImage, Card card) {
+    private void addListeners(CardImage cardImage, Card card) {
         cardImage.addListener(new InputListener() {
 
             @Override
             public void enter(InputEvent event, float x, float y, int pointer, Actor fromActor) {
                 if (pointer != -1) return;
+                cardImage.setHovered(true);
+                cardImage.tiltToward(x);
                 Vector2 pos = cardImage.localToStageCoordinates(new Vector2(0, cardHeight + TOOLTIP_GAP));
                 tooltip.show(card.getDescription(), pos.x, pos.y);
             }
 
             @Override
+            public boolean mouseMoved(InputEvent event, float x, float y) {
+                cardImage.tiltToward(x);
+                return false;
+            }
+
+            @Override
             public void exit(InputEvent event, float x, float y, int pointer, Actor toActor) {
                 if (pointer != -1) return;
+                cardImage.setHovered(false);
                 tooltip.hide();
             }
 
@@ -191,11 +207,28 @@ public class HandView {
                 Vector2 clickPos   = cardImage.localToStageCoordinates(new Vector2(x, y));
                 Vector2 cardCenter = cardImage.localToStageCoordinates(new Vector2(cardWidth / 2f, cardHeight / 2f));
                 images.remove(cardImage);
-                cardImage.remove();
+                slam(cardImage);
                 tooltip.hide();
                 clickListener.onCardClicked(card, cardCenter, clickPos);
                 return true;
             }
         });
+    }
+
+    /** Carte jouée : sortie de la main, elle grossit brièvement puis se tasse en s'effaçant. */
+    private void slam(CardImage cardImage) {
+        Vector2 pos = cardImage.localToStageCoordinates(new Vector2(0f, 0f));
+        cardImage.clearListeners();
+        cardImage.clearActions();
+        cardImage.setTouchable(Touchable.disabled);
+        cardImage.setRotation(0f);
+        group.getStage().addActor(cardImage); // hors de la main, à la même place à l'écran
+        cardImage.setPosition(pos.x, pos.y);
+        cardImage.addAction(Actions.sequence(
+            Actions.scaleTo(SLAM_SCALE, SLAM_SCALE, SLAM_GROW, Interpolation.pow2Out),
+            Actions.parallel(
+                Actions.scaleTo(SLAM_END_SCALE, SLAM_END_SCALE, SLAM_FADE, Interpolation.pow2In),
+                Actions.fadeOut(SLAM_FADE)),
+            Actions.removeActor()));
     }
 }

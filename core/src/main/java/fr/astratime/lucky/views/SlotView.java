@@ -1,17 +1,20 @@
 package fr.astratime.lucky.views;
 
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.audio.Sound;
+import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.InputListener;
-import com.badlogic.gdx.scenes.scene2d.ui.Image;
+import com.badlogic.gdx.scenes.scene2d.actions.Actions;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
-import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 import com.badlogic.gdx.utils.Disposable;
 import fr.astratime.lucky.animations.EffectPopupAnimator;
+import fr.astratime.lucky.animations.ReelActor;
+import fr.astratime.lucky.entities.SlotMachine;
 import fr.astratime.lucky.entities.Symbol;
 import fr.astratime.lucky.entities.SymbolOutcome;
 import fr.astratime.lucky.entities.TurnResult;
@@ -26,9 +29,11 @@ import java.util.Map;
 import java.util.function.Consumer;
 
 /**
- * La ligne de symboles tirés par la machine à sous, affichée dans les rouleaux
- * dessinés sur la table ({@link TableView}), et les textes animés des résultats
- * du tirage. Possède les textures des symboles.
+ * Les rouleaux de la machine à sous, dans les fenêtres dessinées sur la table
+ * ({@link TableView}), et les textes animés des résultats du tirage. Au lancer,
+ * les rouleaux défilent puis s'arrêtent l'un après l'autre ; si les deux
+ * premiers symboles sont identiques, le dernier ralentit et s'illumine pour
+ * faire durer le suspense. Possède les textures des symboles.
  */
 public class SlotView implements Disposable {
 
@@ -39,6 +44,12 @@ public class SlotView implements Disposable {
     public static final float  CELL_WIDTH    = SYMBOL_WIDTH + SYMBOL_PAD * 2;
     public static final float  CELL_HEIGHT   = SYMBOL_HEIGHT + SYMBOL_PAD * 2;
     private static final float TOOLTIP_GAP   = 5f;
+
+    // Arrêt des rouleaux, en secondes après le lancer.
+    private static final float FIRST_STOP    = 0.7f;
+    private static final float STOP_STEP     = 0.35f;  // entre deux rouleaux
+    private static final float SUSPENSE_TIME = 1.1f;   // arrêt retardé du dernier rouleau
+    private static final Color SUSPENSE_GLOW = Color.valueOf("ffd54aff");
 
     // Textes des résultats du tirage : ceux de chaque symbole (de gauche à
     // droite, en escalier pour ne pas se chevaucher : les symboles sont plus
@@ -52,44 +63,81 @@ public class SlotView implements Disposable {
     private static final float POPUP_ENEMY_DELAY  = 1.5f;
     public static final float  POPUP_PLAYER_GAP   = 110f;  // à droite de la barre de vie du joueur
 
-    private final TableView           tableView;
-    private final Tooltip             tooltip;
-    private final EffectPopupAnimator popupAnimator;
-    private final Map<Symbol, Texture> textures = new EnumMap<>(Symbol.class);
-    private final Table               table  = new Table();
-    /** Images des symboles affichés, dans l'ordre de la ligne tirée. */
-    private final List<Image>         images = new ArrayList<>();
+    private final TableView                  tableView;
+    private final Tooltip                    tooltip;
+    private final EffectPopupAnimator        popupAnimator;
+    private final Sound                      reelStopSound;
+    private final Map<Symbol, Texture>       textures = new EnumMap<>(Symbol.class);
+    private final Map<Symbol, TextureRegion> regions  = new EnumMap<>(Symbol.class);
+    private final Table                      table    = new Table();
+    /** Rouleaux, de gauche à droite. */
+    private final List<ReelActor<Symbol>>    reels    = new ArrayList<>();
+    /** Rouleaux pas encore arrêtés pendant un lancer. */
+    private int                              reelsSpinning;
 
-    public SlotView(TableView tableView, Tooltip tooltip, EffectPopupAnimator popupAnimator) {
+    /** @param reelStopSound bruitage joué quand un rouleau s'arrête */
+    public SlotView(TableView tableView, Tooltip tooltip, EffectPopupAnimator popupAnimator, Sound reelStopSound) {
         this.tableView     = tableView;
         this.tooltip       = tooltip;
         this.popupAnimator = popupAnimator;
+        this.reelStopSound = reelStopSound;
         for (Symbol symbol : Symbol.values()) {
-            textures.put(symbol, new Texture(Gdx.files.internal(symbol.getAssetPath())));
+            Texture texture = new Texture(Gdx.files.internal(symbol.getAssetPath()));
+            textures.put(symbol, texture);
+            regions.put(symbol, new TextureRegion(texture));
         }
+        for (int i = 0; i < SlotMachine.SYMBOL_COUNT; i++) {
+            ReelActor<Symbol> reel = new ReelActor<>(Symbol.values(), regions::get);
+            addTooltip(reel);
+            table.add(reel).size(SYMBOL_WIDTH, SYMBOL_HEIGHT).pad(SYMBOL_PAD);
+            reels.add(reel);
+        }
+        table.pack();
     }
 
     /** @return la table contenant la ligne de symboles, à ajouter au Stage. */
     public Table getActor() { return table; }
 
-    /** Reconstruit la ligne de symboles affichés après un spin, dans les rouleaux de la table. */
-    public void show(Symbol[] symbols) {
+    /**
+     * Fait tourner les rouleaux jusqu'à {@code symbols}. Chaque rouleau s'arrête
+     * après le précédent ; si les deux premiers symboles sont identiques, le
+     * dernier ralentit et s'illumine avant de s'arrêter.
+     *
+     * @param onAllStopped appelé quand le dernier rouleau est arrêté
+     */
+    public void spin(Symbol[] symbols, Runnable onAllStopped) {
         clear();
-        for (Symbol symbol : symbols) {
-            Image img = new Image(new TextureRegionDrawable(new TextureRegion(textures.get(symbol))));
-            addTooltip(img, symbol);
-            table.add(img).size(SYMBOL_WIDTH, SYMBOL_HEIGHT).pad(SYMBOL_PAD);
-            images.add(img);
+        int     last     = reels.size() - 1;
+        boolean suspense = symbols.length > 2 && symbols[0] == symbols[1];
+        reelsSpinning = reels.size();
+        for (int i = 0; i < reels.size(); i++) {
+            int   reelIndex = i;
+            float stopAt    = FIRST_STOP + i * STOP_STEP;
+            float slowAt    = -1f;
+            if (suspense && i == last) {
+                slowAt  = stopAt;
+                stopAt += SUSPENSE_TIME;
+                table.addAction(Actions.sequence(Actions.delay(slowAt),
+                    Actions.run(() -> tableView.highlightReel(reelIndex, SUSPENSE_GLOW, 14f, 0f))));
+            }
+            reels.get(i).spin(symbols[i], stopAt, slowAt, () -> {
+                reelStopSound.play();
+                tableView.clearReelHighlight(reelIndex);
+                if (--reelsSpinning == 0) onAllStopped.run();
+            });
         }
-        table.pack();
-        layout();
-        table.validate(); // positions des symboles connues pour placer les textes du tirage
     }
 
-    /** Efface la ligne de symboles. */
+    /** @return le centre (Stage) du rouleau {@code reel}. */
+    public Vector2 getReelCenter(int reel) {
+        return reels.get(reel).localToStageCoordinates(new Vector2(SYMBOL_WIDTH / 2f, SYMBOL_HEIGHT / 2f));
+    }
+
+    /** Vide les fenêtres des rouleaux et arrête tout défilement (nouveau combat). */
     public void clear() {
-        table.clearChildren();
-        images.clear();
+        table.clearActions();
+        reels.forEach(ReelActor::empty);
+        for (int i = 0; i < reels.size(); i++) tableView.clearReelHighlight(i);
     }
 
     /** Place la ligne dans les rouleaux de la machine dessinée sur la table (après un redimensionnement). */
@@ -109,11 +157,11 @@ public class SlotView implements Disposable {
     public void playResultPopups(TurnResult result, Vector2 riposteAnchor, Consumer<Event> onEventShown) {
         for (SymbolOutcome outcome : result.getSymbolOutcomes()) {
             int slot = outcome.getSlotIndex();
-            if (slot < 0 || slot >= images.size()) { // symbole hors de la ligne : pas de texte à attendre
+            if (slot < 0 || slot >= reels.size()) { // symbole hors de la ligne : pas de texte à attendre
                 outcome.getEvents().forEach(onEventShown);
                 continue;
             }
-            Vector2 top = images.get(slot).localToStageCoordinates(
+            Vector2 top = reels.get(slot).localToStageCoordinates(
                 new Vector2(SYMBOL_WIDTH / 2f, SYMBOL_HEIGHT + POPUP_SYMBOL_GAP + slot * POPUP_SLOT_STEP));
             playEvents(outcome.getEvents(), top.x, top.y, slot * POPUP_SYMBOL_DELAY, onEventShown);
         }
@@ -146,14 +194,15 @@ public class SlotView implements Disposable {
         });
     }
 
-    /** Affiche la description du symbole au survol. Pas de clic : un symbole ne se joue pas. */
-    private void addTooltip(Image symbolImage, Symbol symbol) {
-        symbolImage.addListener(new InputListener() {
+    /** Affiche au survol la description du symbole arrêté sur le rouleau. Pas de clic : un symbole ne se joue pas. */
+    private void addTooltip(ReelActor<Symbol> reel) {
+        reel.addListener(new InputListener() {
 
             @Override
             public void enter(InputEvent event, float x, float y, int pointer, Actor fromActor) {
-                if (pointer != -1) return;
-                Vector2 pos = symbolImage.localToStageCoordinates(new Vector2(0, SYMBOL_HEIGHT + TOOLTIP_GAP));
+                Symbol symbol = reel.getSymbol();
+                if (pointer != -1 || symbol == null) return;
+                Vector2 pos = reel.localToStageCoordinates(new Vector2(0, SYMBOL_HEIGHT + TOOLTIP_GAP));
                 tooltip.show(symbol.getDescription(), pos.x, pos.y);
             }
 

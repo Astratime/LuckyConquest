@@ -15,9 +15,10 @@ import com.badlogic.gdx.utils.Disposable;
 import fr.astratime.lucky.assets.Fonts;
 
 /**
- * Fabrique des boutons au thème casino : fond sombre, liseré doré, police pixel
- * art. La largeur de chaque bouton s'adapte à son texte ; MIN_WIDTH n'est qu'un
- * plancher. Possède la police et les textures partagées par tous les boutons.
+ * Fabrique des boutons au thème casino : fond sombre, liseré doré (plus clair
+ * au survol), police pixel art. La largeur de chaque bouton s'adapte à son
+ * texte ; MIN_WIDTH n'est qu'un plancher. Possède la police et les textures
+ * partagées par tous les boutons.
  */
 public class CasinoButtons implements Disposable {
 
@@ -31,12 +32,14 @@ public class CasinoButtons implements Disposable {
 
     private final BitmapFont font;
     private final Texture    upTexture;
+    private final Texture    overTexture;
     private final Texture    downTexture;
     private final Texture    disabledTexture;
 
     public CasinoButtons() {
         font            = Fonts.jersey(FONT_SIZE, GOLD);
         upTexture       = makeTexture(Color.valueOf("1a1a1aff"), GOLD);
+        overTexture     = makeTexture(Color.valueOf("2a2412ff"), Color.valueOf("ffe28aff"));
         downTexture     = makeTexture(Color.valueOf("4a0000ff"), GOLD);
         disabledTexture = makeTexture(Color.valueOf("2a2a2aff"), Color.valueOf("6b5a2eff"));
     }
@@ -46,8 +49,17 @@ public class CasinoButtons implements Disposable {
      * @param sound   bruitage joué au clic
      * @param onClick action déclenchée au clic (jamais quand le bouton est désactivé)
      */
-    public TextButton create(String text, Sound sound, Runnable onClick) {
-        TextButton button = new TextButton(text, buildStyle());
+    public CasinoButton create(String text, Sound sound, Runnable onClick) {
+        return create(text, sound, onClick, false);
+    }
+
+    /** Comme {@link #create}, pour un bouton d'action qui pulse tant qu'il est disponible. */
+    public CasinoButton createAction(String text, Sound sound, Runnable onClick) {
+        return create(text, sound, onClick, true);
+    }
+
+    private CasinoButton create(String text, Sound sound, Runnable onClick, boolean pulses) {
+        CasinoButton button = new CasinoButton(text, buildStyle(), pulses);
         button.setSize(widthFor(text), HEIGHT);
         button.addListener(new ChangeListener() {
             @Override
@@ -69,6 +81,7 @@ public class CasinoButtons implements Disposable {
         TextButton.TextButtonStyle style = new TextButton.TextButtonStyle();
         style.font              = font;
         style.up                = new TextureRegionDrawable(new TextureRegion(upTexture));
+        style.over              = new TextureRegionDrawable(new TextureRegion(overTexture));
         style.down              = new TextureRegionDrawable(new TextureRegion(downTexture));
         style.disabled          = new TextureRegionDrawable(new TextureRegion(disabledTexture));
         style.disabledFontColor = Color.valueOf("8a8a8aff");
@@ -93,6 +106,7 @@ public class CasinoButtons implements Disposable {
     public void dispose() {
         font.dispose();
         upTexture.dispose();
+        overTexture.dispose();
         downTexture.dispose();
         disabledTexture.dispose();
     }

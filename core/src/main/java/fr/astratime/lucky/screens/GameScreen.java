@@ -9,9 +9,11 @@ import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.scenes.scene2d.Group;
 import com.badlogic.gdx.scenes.scene2d.Stage;
+import com.badlogic.gdx.scenes.scene2d.actions.Actions;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.utils.ScreenUtils;
 import com.badlogic.gdx.utils.viewport.ScreenViewport;
@@ -19,8 +21,12 @@ import fr.astratime.lucky.LuckyGame;
 import fr.astratime.lucky.animations.CardClickParticles;
 import fr.astratime.lucky.animations.CardDealAnimator;
 import fr.astratime.lucky.animations.CardDiscardAnimator;
+import fr.astratime.lucky.animations.CombatEndAnimation;
+import fr.astratime.lucky.animations.Confetti;
+import fr.astratime.lucky.animations.DamageVignette;
 import fr.astratime.lucky.animations.EffectPopupAnimator;
 import fr.astratime.lucky.animations.JackpotCelebration;
+import fr.astratime.lucky.animations.ScreenShake;
 import fr.astratime.lucky.assets.CardTextures;
 import fr.astratime.lucky.assets.GameSounds;
 import fr.astratime.lucky.assets.HudTextures;
@@ -34,13 +40,18 @@ import fr.astratime.lucky.entities.Player;
 import fr.astratime.lucky.entities.Symbol;
 import fr.astratime.lucky.entities.SymbolOutcome;
 import fr.astratime.lucky.entities.TurnResult;
+import fr.astratime.lucky.entities.events.DamageReflectedEvent;
 import fr.astratime.lucky.entities.events.EnemyDamagedEvent;
 import fr.astratime.lucky.entities.events.Event;
 import fr.astratime.lucky.entities.events.GainsEarnedEvent;
 import fr.astratime.lucky.entities.events.JackpotEvent;
+import fr.astratime.lucky.entities.events.PlayerDamagedEvent;
+import fr.astratime.lucky.entities.events.PlayerHealedEvent;
+import fr.astratime.lucky.settings.VisualSettings;
 import fr.astratime.lucky.views.CasinoButtons;
 import fr.astratime.lucky.views.CombatHud;
 import fr.astratime.lucky.views.HandView;
+import fr.astratime.lucky.views.HealthBarView;
 import fr.astratime.lucky.views.PileContentOverlay;
 import fr.astratime.lucky.views.PilesView;
 import fr.astratime.lucky.views.PlayArea;
@@ -50,6 +61,7 @@ import fr.astratime.lucky.views.TableView;
 import fr.astratime.lucky.views.Tooltip;
 
 import java.util.List;
+import java.util.function.ToIntFunction;
 import java.util.stream.Collectors;
 
 /**
@@ -78,6 +90,16 @@ public class GameScreen extends ScreenAdapter {
 
     private static final float BUTTON_MARGIN = 20f;   // boutons en bas à gauche, sous la table
 
+    /** Dégâts à partir desquels un coup sur l'ennemi fige l'image un instant (micro-arrêt). */
+    private static final int   BIG_HIT               = 60;
+    private static final float BIG_HIT_STOP          = 0.09f;
+    /** Paire : clignotement doré des deux rouleaux et confettis lâchés par chacun. */
+    private static final Color PAIR_GLOW             = Color.valueOf("ffd54aff");
+    private static final float PAIR_GLOW_DURATION    = 1.6f;
+    private static final int   PAIR_CONFETTI         = 45;
+    /** Temps laissé aux textes du tirage (jusqu'à la riposte) avant d'annoncer la fin du combat. */
+    private static final float RESULT_TEXTS_DURATION = 1.9f;
+
     // -------------------------------------------------------------------------
     // Contrôleur — seul point d'accès à la logique de jeu
     // -------------------------------------------------------------------------
@@ -95,6 +117,11 @@ public class GameScreen extends ScreenAdapter {
     private final CardTextures        cardTextures  = new CardTextures();
     private final CasinoButtons       buttons       = new CasinoButtons();
     private final HudTextures         hudTextures   = new HudTextures();
+    private final VisualSettings      settings      = new VisualSettings();
+    private final ScreenShake         screenShake   = new ScreenShake(settings);
+    private final DamageVignette      damageVignette = new DamageVignette();
+    private final Confetti            confetti;
+    private final CombatEndAnimation  combatEnd;
     private final TableTextures       tableTextures = new TableTextures();
     private final GameSounds          sounds        = new GameSounds();
     private final CardClickParticles  cardClickParticles = new CardClickParticles();
@@ -119,6 +146,10 @@ public class GameScreen extends ScreenAdapter {
     private final TextButton drawButton;
     private final TextButton spinButton;
     private final TextButton restartButton;
+    private final TextButton effectsButton;
+
+    /** Temps restant du micro-arrêt en cours (voir {@link #hitStop(float)}). */
+    private float hitStop = 0f;
 
     /**
      * Gains du dernier tirage dont le texte n'est pas encore apparu : le compteur
@@ -149,17 +180,21 @@ public class GameScreen extends ScreenAdapter {
         pileOverlay         = new PileContentOverlay(stage, font, tooltip, cardTextures::get, CARD_WIDTH, CARD_HEIGHT);
 
         playArea   = new PlayArea(stage, SidePanel.WIDTH);
+        confetti   = new Confetti(new TextureRegion(hudTextures.pixel));
         table      = new TableView(playArea, tableTextures, CARD_WIDTH, CARD_HEIGHT);
         sidePanel  = new SidePanel(hudTextures);
-        jackpotCelebration = new JackpotCelebration(playArea, sidePanel::getCoinCenter, sidePanel::bumpCoin);
-        hud        = new CombatHud(playArea, hudTextures);
+        jackpotCelebration = new JackpotCelebration(playArea, screenShake, settings,
+            sidePanel::getCoinCenter, sidePanel::bumpCoin);
+        hud        = new CombatHud(playArea, hudTextures, gameController::getGameState);
 
-        drawButton    = buttons.create("Tirer " + GameController.DEFAULT_DRAW_COUNT + " cartes", sounds.buttonClick, this::onDrawCards);
-        spinButton    = buttons.create("Lancer machine", sounds.spinButton, this::onSpin);
-        restartButton = buttons.create("Recommencer", sounds.buttonClick, this::onRestart);
+        drawButton    = buttons.createAction("Tirer " + GameController.DEFAULT_DRAW_COUNT + " cartes", sounds.buttonClick, this::onDrawCards);
+        spinButton    = buttons.createAction("Lancer machine", sounds.spinButton, this::onSpin);
+        restartButton = buttons.createAction("Recommencer", sounds.buttonClick, this::onRestart);
         spinButton.setDisabled(true);
         restartButton.setVisible(false);
-        sidePanel.setFooter(restartButton);
+        effectsButton = buttons.create(effectsLabel(), sounds.buttonClick, this::onToggleEffects);
+        sidePanel.addFooter(restartButton);
+        sidePanel.addFooter(effectsButton);
 
         piles = new PilesView(playArea, cardBackTexture, font, tooltip, sounds.buttonClick, CARD_WIDTH, CARD_HEIGHT,
             this::onDeckClicked, this::onDiscardClicked);
@@ -167,7 +202,9 @@ public class GameScreen extends ScreenAdapter {
             new CardDealAnimator(stage, cardBackTexture, CARD_WIDTH, CARD_HEIGHT, sounds.cardDeal, sounds.cardFlip),
             new CardDiscardAnimator(stage, cardBackTexture, CARD_WIDTH, CARD_HEIGHT, sounds.cardDeal, sounds.cardFlip),
             this::onCardPlayed);
-        slots = new SlotView(table, tooltip, effectPopupAnimator);
+        slots = new SlotView(table, tooltip, effectPopupAnimator, sounds.cardClick);
+        combatEnd = new CombatEndAnimation(playArea, screenShake, new TextureRegion(hudTextures.pixel),
+            new TextureRegion(cardBackTexture), confetti, CARD_WIDTH, CARD_HEIGHT);
 
         layout();
         refreshAll();
@@ -181,9 +218,13 @@ public class GameScreen extends ScreenAdapter {
         stage.addActor(slots.getActor());
         stage.addActor(hand.getActor());
         stage.addActor(popupLayer);
+        stage.addActor(combatEnd);
+        stage.addActor(confetti);
+        stage.addActor(damageVignette);
         stage.addActor(jackpotCelebration); // par-dessus le jeu et le panneau : bloque les clics pendant la fête
         stage.addActor(pileOverlay.getActor()); // voile de consultation des piles, par-dessus le jeu
         stage.addActor(tooltip.getActor());     // en dernier : toujours au-dessus
+        stage.addActor(screenShake);            // invisible : met à jour la caméra
     }
 
     // -------------------------------------------------------------------------
@@ -212,7 +253,7 @@ public class GameScreen extends ScreenAdapter {
 
         CardPlayResult playResult = gameController.playCard(card);
         effectPopupAnimator.play(playResult.getPopups(), cardCenter.x, cardCenter.y);
-        hud.refresh(gameController.getGameState());
+        hud.refresh();
         refreshGains(); // une carte peut créditer ou consommer des gains immédiatement
 
         DrawResult drawResult = playResult.getDrawResult();
@@ -229,30 +270,54 @@ public class GameScreen extends ScreenAdapter {
      */
     private void onSpin() {
         if (spinButton.isDisabled() || pileOverlay.isShown()) return;
+        int enemyHpBefore = gameController.getGameState().getEnemy().getHp();
         TurnResult result = gameController.spin();
         table.setReelsRainbow(false); // la bordure d'un jackpot précédent s'arrête au lancer suivant
-        gainsNotYetShown += result.getEvents().stream()
-            .filter(event -> event instanceof GainsEarnedEvent)
-            .mapToInt(event -> ((GainsEarnedEvent) event).amount)
-            .sum();
+        // Gains et PV du tirage ne se montrent qu'à l'apparition de leurs textes, après l'arrêt des rouleaux.
+        gainsNotYetShown += sumOf(result, GainsEarnedEvent.class, gains -> gains.amount);
+        hud.holdBack(enemyHpBefore - gameController.getGameState().getEnemy().getHp(),
+            sumOf(result, PlayerDamagedEvent.class, hit -> hit.damage),
+            sumOf(result, PlayerHealedEvent.class, heal -> heal.amount));
         hand.discardAll();
-        slots.show(result.getSymbols());
-        slots.playResultPopups(result, hud.besidePlayerHealthBar(SlotView.POPUP_PLAYER_GAP), this::onEventShown);
-        hud.refresh(gameController.getGameState());
-        playSymbolResultSound(result);
-
-        if (result.isJackpot()) {
-            // La suite du tour attend la fin de la célébration (voir onJackpotShown).
-            spinButton.setDisabled(true);
-            drawButton.setDisabled(true);
-        } else {
-            finishTurn();
-        }
+        spinButton.setDisabled(true);
+        drawButton.setDisabled(true); // la suite du tour attend l'arrêt des rouleaux
+        slots.spin(result.getSymbols(), () -> onReelsStopped(result));
 
         logSymbolOutcomes(result);
         Gdx.app.log("GameScreen", result.getEvents().stream()
             .map(Event::describe)
             .collect(Collectors.joining(" | ")));
+    }
+
+    /**
+     * Les rouleaux sont arrêtés : textes du tirage, bruitage du résultat, puis fin
+     * du tour. Un jackpot attend la fin de sa célébration ; un combat terminé
+     * attend que tous les coups se soient affichés.
+     */
+    private void onReelsStopped(TurnResult result) {
+        slots.playResultPopups(result, hud.besidePlayerHealthBar(SlotView.POPUP_PLAYER_GAP), this::onEventShown);
+        playSymbolResultSound(result);
+        if (result.isPair()) celebratePair(result.getSymbols());
+        if (result.isJackpot()) return; // voir onJackpotShown
+        if (isCombatOver()) {
+            stage.addAction(Actions.delay(RESULT_TEXTS_DURATION, Actions.run(this::finishTurn)));
+        } else {
+            finishTurn();
+        }
+    }
+
+    /** Paire : les deux rouleaux identiques clignotent en doré et lâchent une gerbe de confettis. */
+    private void celebratePair(Symbol[] symbols) {
+        for (int i = 0; i < symbols.length; i++) {
+            for (int j = 0; j < symbols.length; j++) {
+                if (i != j && symbols[i] == symbols[j]) {
+                    table.highlightReel(i, PAIR_GLOW, 10f, PAIR_GLOW_DURATION);
+                    Vector2 center = slots.getReelCenter(i);
+                    confetti.burst(center.x, center.y, PAIR_CONFETTI);
+                    break;
+                }
+            }
+        }
     }
 
     /** Termine le tour : fin du combat si un camp est vaincu, sinon retour à la phase de pioche. */
@@ -271,7 +336,36 @@ public class GameScreen extends ScreenAdapter {
             onGainsShown(gains.amount);
         } else if (event instanceof JackpotEvent) {
             onJackpotShown();
+        } else if (event instanceof EnemyDamagedEvent hit && hit.damage > 0) {
+            onEnemyHit(hit.damage);
+        } else if (event instanceof DamageReflectedEvent reflect && reflect.damage > 0) {
+            onEnemyHit(reflect.damage);
+        } else if (event instanceof PlayerDamagedEvent hit && hit.damage > 0) {
+            onPlayerHit(hit.damage);
+        } else if (event instanceof PlayerHealedEvent heal && heal.amount > 0) {
+            hud.revealPlayerHeal(heal.amount);
         }
+    }
+
+    /** L'ennemi encaisse un coup : sa barre réagit ; un gros coup fige l'image un instant et secoue l'écran. */
+    private void onEnemyHit(int damage) {
+        hud.revealEnemyHit(damage);
+        if (damage >= BIG_HIT) {
+            hitStop(BIG_HIT_STOP);
+            screenShake.shake(0.2f, 6f);
+        }
+    }
+
+    /** Le joueur est touché : sa barre réagit, un voile rouge passe sur les bords et l'écran tremble. */
+    private void onPlayerHit(int damage) {
+        hud.revealPlayerHit(damage);
+        damageVignette.flash(settings.isReducedEffects() ? 0.3f : 0.6f);
+        screenShake.shake(0.3f, 9f);
+    }
+
+    /** @return la somme de {@code amount} sur les événements du tirage de type {@code type}. */
+    private static <E extends Event> int sumOf(TurnResult result, Class<E> type, ToIntFunction<E> amount) {
+        return result.getEvents().stream().filter(type::isInstance).map(type::cast).mapToInt(amount).sum();
     }
 
     /**
@@ -282,7 +376,11 @@ public class GameScreen extends ScreenAdapter {
     private void onJackpotShown() {
         sounds.bingoThreeSymbols.play();
         table.setReelsRainbow(true);
-        jackpotCelebration.play(this::finishTurn);
+        table.setLightsParty(true);
+        jackpotCelebration.play(() -> {
+            table.setLightsParty(false);
+            finishTurn();
+        });
     }
 
     /** Le texte d'un gain du tirage vient d'apparaître : le compteur du panneau l'ajoute à son tour. */
@@ -301,6 +399,22 @@ public class GameScreen extends ScreenAdapter {
         pileOverlay.show("Defausse", player().getDiscardPile().getCards());
     }
 
+    /** Bascule entre effets normaux et réduits (secousses, flashs, micro-arrêts), et mémorise le choix. */
+    private void onToggleEffects() {
+        settings.setReducedEffects(!settings.isReducedEffects());
+        effectsButton.setText(effectsLabel());
+        if (settings.isReducedEffects()) screenShake.stop();
+    }
+
+    private String effectsLabel() {
+        return settings.isReducedEffects() ? "Effets : reduits" : "Effets : normaux";
+    }
+
+    /** Fige l'animation pendant {@code duration} secondes pour marquer un gros coup (sauf effets réduits). */
+    private void hitStop(float duration) {
+        if (!settings.isReducedEffects()) hitStop = Math.max(hitStop, duration);
+    }
+
     /** Recommence un combat : réinitialise le GameController et tout l'affichage. */
     private void onRestart() {
         gameController.restart();
@@ -308,6 +422,12 @@ public class GameScreen extends ScreenAdapter {
         effectPopupAnimator.cancel(); // les gains en attente ne seront jamais affichés
         jackpotCelebration.cancel();
         table.setReelsRainbow(false);
+        table.setLightsParty(false);
+        combatEnd.reset();
+        hud.getEnemyHealthBar().clearActions();
+        hud.getEnemyHealthBar().getColor().a = 1f;
+        hud.clearHeldBack();
+        confetti.removeAll();
         gainsNotYetShown = 0;
         piles.resetInFlight();
         pileOverlay.hide();
@@ -328,11 +448,23 @@ public class GameScreen extends ScreenAdapter {
         return gameState.getEnemy().isDefeated() || gameState.getPlayer().isDefeated();
     }
 
-    /** Fige la partie (plus de pioche ni de spin) et affiche le bouton pour recommencer. */
+    /**
+     * Fige la partie (plus de pioche ni de spin), met en scène la victoire ou la
+     * défaite, puis affiche le bouton pour recommencer.
+     */
     private void endCombat() {
         spinButton.setDisabled(true);
         drawButton.setDisabled(true);
-        restartButton.setVisible(true);
+        Runnable showRestart = () -> restartButton.setVisible(true);
+        if (gameController.getGameState().getEnemy().isDefeated()) {
+            table.setLightsParty(true);
+            HealthBarView enemyBar = hud.getEnemyHealthBar();
+            enemyBar.hit(Color.WHITE, 0.4f);
+            enemyBar.addAction(Actions.fadeOut(0.5f)); // l'ennemi part en jetons
+            combatEnd.playVictory(hud.getEnemyChipCenter(), showRestart);
+        } else {
+            combatEnd.playDefeat(showRestart);
+        }
     }
 
     /**
@@ -385,7 +517,7 @@ public class GameScreen extends ScreenAdapter {
 
     /** Met à jour les barres de vie, les gains et les compteurs du deck et de la défausse. */
     private void refreshAll() {
-        hud.refresh(gameController.getGameState());
+        hud.refresh();
         refreshGains();
         piles.refresh(player());
     }
@@ -451,7 +583,11 @@ public class GameScreen extends ScreenAdapter {
     @Override
     public void render(float delta) {
         ScreenUtils.clear(Color.BLACK);
-        stage.act(delta);
+        if (hitStop > 0f) {
+            hitStop -= delta; // micro-arrêt : l'image reste figée un instant sur un gros coup
+        } else {
+            stage.act(delta);
+        }
         stage.draw();
 
         SpriteBatch batch = luckyGame.getBatch();
@@ -478,6 +614,8 @@ public class GameScreen extends ScreenAdapter {
         cardClickParticles.dispose();
         pileOverlay.dispose();
         jackpotCelebration.dispose();
+        damageVignette.dispose();
+        combatEnd.dispose();
         effectPopupAnimator.dispose();
     }
 }

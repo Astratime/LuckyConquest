@@ -19,7 +19,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Bannière « BINGO!!! » qui traverse l'écran : une bande rouge et or inclinée,
+ * Bannière (« BINGO!!! » au jackpot, « VICTOIRE ! » en fin de combat) qui traverse l'écran : une bande rouge et or inclinée,
  * doublée d'une bande noire de travers derrière elle, entre en trombe par la
  * gauche, tremble, dérive un instant pendant que des éclairs crépitent sur
  * ses bords, puis ressort à droite. Les lettres surgissent une à une, chacune
@@ -27,7 +27,6 @@ import java.util.List;
  */
 public class BingoBanner extends Group {
 
-    private static final String TEXT         = "BINGO!!!";
     private static final float  ANGLE        = 8f;     // inclinaison de la bannière
     private static final float  BACK_ANGLE   = 4f;     // inclinaison supplémentaire de la bande noire
     private static final float  BAND_HEIGHT  = 198f;   // 2 x la hauteur de l'image : pixels nets
@@ -50,11 +49,12 @@ public class BingoBanner extends Group {
     private final LightningBolts         lightning;
 
     /**
+     * @param text        texte de la bannière (chaque lettre surgit à son tour)
      * @param bandTexture profil vertical de la bande (étiré horizontalement)
      * @param pixel       région d'un pixel blanc (bande noire, éclairs)
      * @param font        grande police à contour pour les lettres
      */
-    public BingoBanner(Texture bandTexture, TextureRegion pixel, BitmapFont font) {
+    public BingoBanner(String text, Texture bandTexture, TextureRegion pixel, BitmapFont font) {
         setTransform(true); // nécessaire pour la rotation du groupe
         setTouchable(Touchable.disabled);
         setVisible(false);
@@ -67,8 +67,8 @@ public class BingoBanner extends Group {
         addActor(band);
 
         Label.LabelStyle style = new Label.LabelStyle(font, Color.WHITE);
-        for (int i = 0; i < TEXT.length(); i++) {
-            Label label = new Label(String.valueOf(TEXT.charAt(i)), style);
+        for (int i = 0; i < text.length(); i++) {
+            Label label = new Label(String.valueOf(text.charAt(i)), style);
             label.setColor(i % 2 == 0 ? GOLD : Color.WHITE);
             Container<Label> letter = new Container<>(label);
             letter.setTransform(true);

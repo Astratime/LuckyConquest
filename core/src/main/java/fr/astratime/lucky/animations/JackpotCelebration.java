@@ -1,7 +1,6 @@
 package fr.astratime.lucky.animations;
 
 import com.badlogic.gdx.Gdx;
-import com.badlogic.gdx.graphics.Camera;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
@@ -16,6 +15,7 @@ import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 import com.badlogic.gdx.utils.Disposable;
 import fr.astratime.lucky.assets.Fonts;
 import fr.astratime.lucky.assets.Textures;
+import fr.astratime.lucky.settings.VisualSettings;
 import fr.astratime.lucky.views.PlayArea;
 
 import java.util.function.Supplier;
@@ -60,11 +60,13 @@ public class JackpotCelebration extends Group implements Disposable {
 
     private static final float BANNER_Y = 0.72f;         // centre de la bannière (fraction de la hauteur)
 
-    private final PlayArea   playArea;
-    private final Texture    pixelTexture = Textures.solidColor(Color.WHITE);
-    private final Texture    coinTexture  = new Texture(Gdx.files.internal("jackpot/coin_spin.png"));
-    private final Texture    bandTexture  = new Texture(Gdx.files.internal("jackpot/banner_band.png"));
-    private final BitmapFont bannerFont   = Fonts.jersey(170, Color.WHITE, 7f, Color.valueOf("12080aff"));
+    private final PlayArea       playArea;
+    private final ScreenShake    screenShake;
+    private final VisualSettings settings;
+    private final Texture        pixelTexture = Textures.solidColor(Color.WHITE);
+    private final Texture        coinTexture  = new Texture(Gdx.files.internal("jackpot/coin_spin.png"));
+    private final Texture        bandTexture  = new Texture(Gdx.files.internal("jackpot/banner_band.png"));
+    private final BitmapFont     bannerFont   = Fonts.jersey(170, Color.WHITE, 7f, Color.valueOf("12080aff"));
 
     private final Image       flash;
     private final Fireworks   fireworks;
@@ -72,7 +74,6 @@ public class JackpotCelebration extends Group implements Disposable {
     private final BingoBanner banner;
 
     private boolean  running;
-    private boolean  shaking;
     private float    elapsed;
     private int      coinsDropped;
     private int      rocketsLaunched;
@@ -81,15 +82,19 @@ public class JackpotCelebration extends Group implements Disposable {
     /**
      * @param coinTarget      position (Stage) de la pièce du compteur des gains
      * @param onCoinCollected appelé à l'arrivée de chaque pièce sur le compteur
+     * @param settings        effets réduits : pas de flash (la secousse est coupée par {@code screenShake})
      */
-    public JackpotCelebration(PlayArea playArea, Supplier<Vector2> coinTarget, Runnable onCoinCollected) {
-        this.playArea = playArea;
+    public JackpotCelebration(PlayArea playArea, ScreenShake screenShake, VisualSettings settings,
+                              Supplier<Vector2> coinTarget, Runnable onCoinCollected) {
+        this.playArea    = playArea;
+        this.screenShake = screenShake;
+        this.settings    = settings;
         setTouchable(Touchable.disabled);
 
         TextureRegion pixel = new TextureRegion(pixelTexture);
         fireworks = new Fireworks(pixel);
         coins     = new CoinShower(new TextureRegion(coinTexture), coinTarget, onCoinCollected);
-        banner    = new BingoBanner(bandTexture, pixel, bannerFont);
+        banner    = new BingoBanner("BINGO!!!", bandTexture, pixel, bannerFont);
         flash     = new Image(new TextureRegionDrawable(pixel));
         flash.setTouchable(Touchable.disabled);
         flash.getColor().a = 0f;
@@ -105,7 +110,6 @@ public class JackpotCelebration extends Group implements Disposable {
         cancel();
         this.onFinished = onFinished;
         running         = true;
-        shaking         = true;
         elapsed         = 0f;
         coinsDropped    = 0;
         rocketsLaunched = 0;
@@ -115,9 +119,12 @@ public class JackpotCelebration extends Group implements Disposable {
         setBounds(0f, 0f, width, height);
         setTouchable(Touchable.enabled); // intercepte les clics jusqu'à la fin
 
-        flash.setBounds(0f, 0f, width, height);
-        flash.getColor().a = FLASH_ALPHA;
-        flash.addAction(Actions.fadeOut(FLASH_TIME));
+        if (!settings.isReducedEffects()) {
+            flash.setBounds(0f, 0f, width, height);
+            flash.getColor().a = FLASH_ALPHA;
+            flash.addAction(Actions.fadeOut(FLASH_TIME));
+        }
+        screenShake.shake(SHAKE_TIME, SHAKE);
 
         banner.play(playArea.getCenterX(), height * BANNER_Y, width);
     }
@@ -126,12 +133,12 @@ public class JackpotCelebration extends Group implements Disposable {
     public void cancel() {
         running = false;
         setTouchable(Touchable.disabled);
-        coins.clear();
-        fireworks.clear();
+        coins.removeAll();
+        fireworks.removeAll();
         banner.hide();
         flash.clearActions();
         flash.getColor().a = 0f;
-        stopShake();
+        screenShake.stop();
     }
 
     @Override
@@ -156,31 +163,11 @@ public class JackpotCelebration extends Group implements Disposable {
             fireworks.launch(x, height * ROCKET_FROM, height * apex);
         }
 
-        if (elapsed < SHAKE_TIME) {
-            float strength = SHAKE * (1f - elapsed / SHAKE_TIME);
-            moveCamera(MathUtils.random(-strength, strength), MathUtils.random(-strength, strength));
-        } else if (shaking) {
-            stopShake();
-        }
-
         if (elapsed >= DURATION) {
             running = false;
             setTouchable(Touchable.disabled);
             onFinished.run();
         }
-    }
-
-    private void stopShake() {
-        if (getStage() != null) moveCamera(0f, 0f);
-        shaking = false;
-    }
-
-    /** Décale la caméra de {@code (dx, dy)} par rapport au centre de l'écran (sa position au repos). */
-    private void moveCamera(float dx, float dy) {
-        Camera camera = getStage().getCamera();
-        camera.position.set(getStage().getViewport().getWorldWidth() / 2f + dx,
-            getStage().getViewport().getWorldHeight() / 2f + dy, 0f);
-        camera.update();
     }
 
     @Override

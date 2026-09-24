@@ -38,6 +38,7 @@ public class SidePanel implements Disposable {
     private static final float INSET_PADDING  = 16f;
     private static final float COIN_SIZE      = 60f;
     private static final float COIN_GAP       = 12f;
+    private static final float FOOTER_GAP     = 12f;
     private static final float COUNT_DURATION = 0.6f;
     private static final float BUMP_SCALE     = 1.3f;
 
@@ -88,9 +89,10 @@ public class SidePanel implements Disposable {
     /** @return le panneau, à ajouter au Stage. */
     public Table getActor() { return root; }
 
-    /** Place {@code actor} (à sa taille actuelle) en bas du panneau, centré. */
-    public void setFooter(Actor actor) {
-        root.add(actor).size(actor.getWidth(), actor.getHeight());
+    /** Ajoute {@code actor} (à sa taille actuelle) en bas du panneau, centré, sous les précédents. */
+    public void addFooter(Actor actor) {
+        root.add(actor).size(actor.getWidth(), actor.getHeight()).padTop(FOOTER_GAP);
+        root.row();
     }
 
     /** Étire le panneau sur toute la hauteur de l'écran (après un redimensionnement). */
