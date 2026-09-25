@@ -37,7 +37,7 @@ public class CorruptionEffect extends Effect {
 
     @Override
     public String getDescription() {
-        return "Pendant " + turns + " tours : attaque et defense des symboles x" + FACTOR
+        return "Pendant " + turns + " tours : attaque et défense des symboles x" + FACTOR
             + ", mais chaque tour consomme " + GAINS_PERCENT + "% des gains";
     }
 

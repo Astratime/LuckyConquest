@@ -40,7 +40,7 @@ class CardLoaderTest {
     void everyCardDefinitionLoads() {
         List<Card> cards = CardLoader.loadAll(READER);
 
-        assertEquals(52 + 17, cards.size(), "4 suites de 13 cartes + 17 cartes spéciales");
+        assertEquals(52 + 18, cards.size(), "4 suites de 13 cartes + 18 cartes spéciales");
         assertEquals(cards.size(), cards.stream().map(Card::getId).distinct().count(), "les ids doivent être uniques");
     }
 
@@ -67,9 +67,8 @@ class CardLoaderTest {
         List<Card> deck = CardLoader.loadStarterDeck(READER);
         Map<String, Long> copies = deck.stream().collect(Collectors.groupingBy(Card::getId, Collectors.counting()));
 
-        assertEquals(32, deck.size());
-        for (String special : List.of("bingo", "magnet", "joker", "recycle", "bet", "russian_roulette",
-                "combo_suite", "combo_couleur", "combo_brelan", "combo_full", "lucky_charm", "rainbow")) {
+        assertEquals(26, deck.size());
+        for (String special : List.of("magnet", "joker", "recycle", "bet", "lucky_charm", "rainbow")) {
             assertEquals(1L, copies.get(special), special);
         }
         assertEquals(2L, copies.get("draw_2"));
@@ -118,10 +117,23 @@ class CardLoaderTest {
     }
 
     @Test
-    void shopSellsCorruptionForTwoThousandGains() {
+    void shopSellsConsumableCardsThatAreNotInTheStarterDeck() {
         Map<String, Integer> shop = CardLoader.loadShop(READER);
+        Map<String, Integer> expected = new java.util.LinkedHashMap<>();
+        expected.put("bingo", 10000);
+        expected.put("russian_roulette", 8000);
+        expected.put("combo_full", 500);
+        expected.put("combo_brelan", 1000);
+        expected.put("combo_suite", 1000);
+        expected.put("combo_paire", 1200);
+        expected.put("combo_couleur", 1000);
+        expected.put("corruption", 5000);
+        assertEquals(List.copyOf(expected.entrySet()), List.copyOf(shop.entrySet()), "prix et ordre de l'échoppe");
 
-        assertEquals(Map.of("corruption", 2000), shop);
-        shop.keySet().forEach(id -> assertNotNull(CardLoader.cardFactory(READER).apply(id)));
+        List<String> starter = CardLoader.loadStarterDeck(READER).stream().map(Card::getId).toList();
+        for (String id : shop.keySet()) {
+            assertTrue(CardLoader.cardFactory(READER).apply(id).isConsumable(), id + " doit être consommable");
+            assertFalse(starter.contains(id), id + " ne s'obtient qu'à l'échoppe");
+        }
     }
 }

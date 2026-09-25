@@ -1,3 +1,10 @@
 [
-  { "id": "corruption", "price": 2000 }
+  { "id": "bingo", "price": 10000 },
+  { "id": "russian_roulette", "price": 8000 },
+  { "id": "combo_full", "price": 500 },
+  { "id": "combo_brelan", "price": 1000 },
+  { "id": "combo_suite", "price": 1000 },
+  { "id": "combo_paire", "price": 1200 },
+  { "id": "combo_couleur", "price": 1000 },
+  { "id": "corruption", "price": 5000 }
 ]

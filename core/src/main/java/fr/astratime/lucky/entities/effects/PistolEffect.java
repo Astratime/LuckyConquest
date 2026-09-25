@@ -20,7 +20,7 @@ public class PistolEffect extends Effect {
     }
 
     @Override
-    public String getDescription() { return "Pistolet : degats d'un symbole x" + multiplier; }
+    public String getDescription() { return "Pistolet : dégâts d'un symbole x" + multiplier; }
 
     @Override
     public List<EffectPopup> getPopups() {

@@ -42,8 +42,8 @@ public class DiamondReflectEffect extends Effect {
 
     @Override
     public String getDescription() {
-        return "Renvoi +" + percent + "% (attaque ennemie + 20% du Coffre) si un symbole de defense sort"
-            + (defenseBoost > 0 ? "\nBouclier et boost des symboles de defense +" + defenseBoost : "");
+        return "Renvoi +" + percent + "% (attaque ennemie + 20% du Coffre) si un symbole de défense sort"
+            + (defenseBoost > 0 ? "\nBouclier et boost des symboles de défense +" + defenseBoost : "");
     }
 
     @Override

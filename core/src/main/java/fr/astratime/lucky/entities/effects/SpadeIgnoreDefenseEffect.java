@@ -42,7 +42,7 @@ public class SpadeIgnoreDefenseEffect extends Effect {
 
     @Override
     public String getDescription() {
-        return "Ignore la defense ennemie, Attaque +" + attackBonus + "\nLames +" + blades + " (combat)";
+        return "Ignore la défense ennemie, Attaque +" + attackBonus + "\nLames +" + blades + " (combat)";
     }
 
     @Override

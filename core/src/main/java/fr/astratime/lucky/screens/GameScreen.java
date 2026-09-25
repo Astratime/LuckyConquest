@@ -71,6 +71,7 @@ import fr.astratime.lucky.popups.PopupScale;
 import fr.astratime.lucky.settings.AudioSettings;
 import fr.astratime.lucky.settings.VisualSettings;
 import fr.astratime.lucky.views.CardChoiceOverlay;
+import fr.astratime.lucky.views.CardDetailOverlay;
 import fr.astratime.lucky.views.CardImage;
 import fr.astratime.lucky.views.CasinoButtons;
 import fr.astratime.lucky.views.CombatHud;
@@ -179,6 +180,7 @@ public class GameScreen extends ScreenAdapter {
     private final PistolShotAnimation pistolAnimation;
     private final RainbowChipsAnimation rainbowAnimation;
     private final ShopOverlay         shopOverlay;
+    private final CardDetailOverlay   cardDetail;
     /** Icône de l'échoppe (en haut à droite de la zone de jeu), qui ouvre la boutique. */
     private final Group               shopIcon = new Group();
 
@@ -228,7 +230,7 @@ public class GameScreen extends ScreenAdapter {
         font                = new BitmapFont();
         cardBackTexture     = new Texture(Gdx.files.internal(CARD_BACK_PATH));
         effectPopupAnimator = new EffectPopupAnimator(popupLayer);
-        tooltip             = new Tooltip(font);
+        tooltip             = new Tooltip(hudTextures);
         pileOverlay         = new PileContentOverlay(stage, font, tooltip, cardTextures::get, CARD_WIDTH, CARD_HEIGHT);
 
         playArea   = new PlayArea(stage, SidePanel.WIDTH);
@@ -261,7 +263,10 @@ public class GameScreen extends ScreenAdapter {
         bingoAnimation  = new BingoCardAnimation(settings, new TextureRegion(hudTextures.pixel));
         pistolAnimation = new PistolShotAnimation(hudTextures.pistol, new TextureRegion(hudTextures.pixel));
         rainbowAnimation = new RainbowChipsAnimation(settings, new TextureRegion(hudTextures.pixel));
-        shopOverlay      = new ShopOverlay(stage, hudTextures, CARD_WIDTH, CARD_HEIGHT);
+        shopOverlay      = new ShopOverlay(stage, hudTextures, tooltip, CARD_WIDTH, CARD_HEIGHT);
+        cardDetail       = new CardDetailOverlay(stage, hudTextures, tooltip, CARD_WIDTH, CARD_HEIGHT);
+        hand.setOnInspect(this::showCardDetail);
+        pileOverlay.setOnInspect(this::showCardDetail);
         buildShopIcon();
 
         layout();
@@ -287,6 +292,7 @@ public class GameScreen extends ScreenAdapter {
         stage.addActor(choiceOverlay.getActor()); // choix demandé par une carte (Pari, Roulette russe)
         stage.addActor(shopOverlay.getActor());   // échoppe, ouverte depuis son icône
         stage.addActor(pileOverlay.getActor()); // voile de consultation des piles, par-dessus le jeu
+        stage.addActor(cardDetail.getActor());  // fiche d'une carte, par-dessus tout le reste
         stage.addActor(tooltip.getActor());     // en dernier : toujours au-dessus
         stage.addActor(screenShake);            // invisible : met à jour la caméra
     }
@@ -432,7 +438,17 @@ public class GameScreen extends ScreenAdapter {
                 refreshGains();
                 stage.addAction(Actions.delay(PURCHASE_DELAY, Actions.run(() -> placePurchase(purchase))));
                 return true;
-            });
+            },
+            offer -> showCardDetail(offer.card()));
+    }
+
+    /** Affiche la fiche de {@code card} (avec son prix si elle est vendue à l'échoppe), par-dessus tout le reste. */
+    private void showCardDetail(Card card) {
+        Integer price = gameController.getShopOffers().stream()
+            .filter(offer -> offer.card().getId().equals(card.getId()))
+            .map(GameController.ShopOffer::price).findFirst().orElse(null);
+        cardDetail.show(card, cardTextures.get(card), price);
+        tooltip.getActor().toFront();
     }
 
     /** Carte achetée : elle apparaît sur la table s'il y a de la place, sinon elle file dans le deck. */
@@ -536,7 +552,7 @@ public class GameScreen extends ScreenAdapter {
 
     /** @return {@code true} si une fenêtre ou une animation attend : ni pioche ni lancer possibles. */
     private boolean isBusy() {
-        return pileOverlay.isShown() || choiceOverlay.isShown() || shopOverlay.isShown()
+        return pileOverlay.isShown() || choiceOverlay.isShown() || shopOverlay.isShown() || cardDetail.isShown()
             || bingoAnimation.isPlaying() || rainbowAnimation.isPlaying();
     }
 
@@ -731,6 +747,7 @@ public class GameScreen extends ScreenAdapter {
         pistolAnimation.cancel();
         rainbowAnimation.cancel();
         shopOverlay.hide();
+        cardDetail.hide();
         choiceOverlay.hide();
         hand.setLocked(false);
         table.setReelsRainbow(false);
@@ -908,6 +925,11 @@ public class GameScreen extends ScreenAdapter {
         InputAdapter keyboardInput = new InputAdapter() {
             @Override
             public boolean keyDown(int keycode) {
+                if (keycode == Input.Keys.ESCAPE && cardDetail.isShown()) {
+                    cardDetail.hide();
+                    return true;
+                }
+                if (cardDetail.isShown()) return true;
                 if (keycode == Input.Keys.ESCAPE && shopOverlay.isShown()) {
                     shopOverlay.hide();
                     return true;
@@ -941,6 +963,7 @@ public class GameScreen extends ScreenAdapter {
         layout();
         choiceOverlay.layout();
         shopOverlay.layout();
+        cardDetail.layout();
         pileOverlay.hide();
     }
 
@@ -983,6 +1006,7 @@ public class GameScreen extends ScreenAdapter {
         bingoAnimation.dispose();
         rainbowAnimation.dispose();
         shopOverlay.dispose();
+        cardDetail.dispose();
         jackpotCelebration.dispose();
         damageVignette.dispose();
         combatEnd.dispose();

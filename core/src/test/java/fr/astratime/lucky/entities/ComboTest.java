@@ -46,4 +46,10 @@ class ComboTest {
         assertTrue(Combo.FULL.matches(full));
         assertFalse(Combo.BRELAN.matches(List.of(card(1, Card.Suit.COEUR), card(1, Card.Suit.PIQUE))));
     }
+
+    @Test
+    void paireNeedsTwoCardsOfTheSameRank() {
+        assertTrue(Combo.PAIRE.matches(List.of(card(12, Card.Suit.COEUR), card(12, Card.Suit.PIQUE))));
+        assertFalse(Combo.PAIRE.matches(List.of(card(12, Card.Suit.COEUR), card(13, Card.Suit.COEUR), special())));
+    }
 }

@@ -26,7 +26,7 @@ public class GainEffect extends Effect {
     public void apply(TurnContext context) { }
 
     @Override
-    public String getDescription() { return "+" + amount + " gains immediatement"; }
+    public String getDescription() { return "+" + amount + " gains immédiatement"; }
 
     @Override
     public List<EffectPopup> getPopups() {

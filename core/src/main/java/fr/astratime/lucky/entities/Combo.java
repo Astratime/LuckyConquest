@@ -13,6 +13,8 @@ import java.util.Set;
  */
 public enum Combo {
 
+    /** Deux cartes du même rang. */
+    PAIRE("PAIRE"),
     /** Trois rangs qui se suivent (l'As compte avant le 2 ou après le Roi). */
     SUITE("SUITE"),
     /** Au moins trois cartes, toutes de la même suite. */
@@ -43,6 +45,7 @@ public enum Combo {
         suited.forEach(card -> byRank.merge(card.getRank(), 1, Integer::sum));
 
         return switch (this) {
+            case PAIRE   -> byRank.values().stream().anyMatch(count -> count >= 2);
             case SUITE   -> hasStraight(byRank.keySet());
             case COULEUR -> suited.size() >= MIN_CARDS
                 && suited.stream().map(Card::getSuit).distinct().count() == 1;
