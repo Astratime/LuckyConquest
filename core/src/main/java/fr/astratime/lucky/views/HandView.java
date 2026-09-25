@@ -19,7 +19,9 @@ import fr.astratime.lucky.entities.DrawResult;
 import fr.astratime.lucky.entities.Player;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Supplier;
 
 /**
@@ -52,6 +54,8 @@ public class HandView {
     private static final float SLAM_FADE      = 0.16f;
     /** Teinte des cartes quand la main est bloquée (Bingo). */
     private static final float LOCKED_TINT    = 0.45f;
+    /** Taille d'une carte qui vient de changer de couleur, avant de revenir à la normale. */
+    private static final float RECOLOR_POP    = 1.25f;
 
     private final TableView           table;
     private final float               cardWidth;
@@ -67,6 +71,8 @@ public class HandView {
     private final Group       group  = new Group();
     /** Images des cartes de la main (non jouées), dans l'ordre d'affichage. */
     private final List<Image> images = new ArrayList<>();
+    /** Carte représentée par chaque image de la main (elle peut changer : Arc-en-ciel). */
+    private final Map<Image, Card> cardOf = new HashMap<>();
 
     public HandView(TableView table, float cardWidth, float cardHeight, CardTextures cardTextures, Tooltip tooltip,
              PilesView piles, Supplier<Player> player,
@@ -97,12 +103,8 @@ public class HandView {
 
         List<Image> newImages = new ArrayList<>();
         for (Card card : drawResult.getAddedToHand()) {
-            CardImage cardImage = new CardImage(new TextureRegionDrawable(new TextureRegion(cardTextures.get(card))));
-            cardImage.setSize(cardWidth, cardHeight);
+            CardImage cardImage = createImage(card);
             cardImage.setVisible(false); // révélée seulement à la fin de son animation de distribution
-            addListeners(cardImage, card);
-            group.addActor(cardImage);
-            images.add(cardImage);
             newImages.add(cardImage);
         }
         layout(true);
@@ -120,6 +122,53 @@ public class HandView {
         }
     }
 
+    /** Crée l'image de {@code card} et l'ajoute à la main (à la fin de la rangée). */
+    private CardImage createImage(Card card) {
+        CardImage cardImage = new CardImage(new TextureRegionDrawable(new TextureRegion(cardTextures.get(card))));
+        cardImage.setSize(cardWidth, cardHeight);
+        addListeners(cardImage);
+        cardOf.put(cardImage, card);
+        group.addActor(cardImage);
+        images.add(cardImage);
+        return cardImage;
+    }
+
+    /** @return le centre (Stage) de l'image de {@code card} dans la main, ou {@code null} si elle n'y est pas. */
+    public Vector2 centerOf(Card card) {
+        for (Image image : images) {
+            if (cardOf.get(image) == card) {
+                return image.localToStageCoordinates(new Vector2(cardWidth / 2f, cardHeight / 2f));
+            }
+        }
+        return null;
+    }
+
+    /** {@code before} change d'apparence et devient {@code after} (même place), avec un petit rebond. */
+    public void recolor(Card before, Card after) {
+        for (Image image : images) {
+            if (cardOf.get(image) != before) continue;
+            image.setDrawable(new TextureRegionDrawable(new TextureRegion(cardTextures.get(after))));
+            cardOf.put(image, after);
+            image.setScale(RECOLOR_POP); // la carte se rétablit d'elle-même à sa taille (voir CardImage)
+            return;
+        }
+    }
+
+    /**
+     * Fait apparaître {@code card} sur un emplacement libre de la table : elle
+     * surgit de rien pendant que la rangée se recentre.
+     *
+     * @return le centre (Stage) de son emplacement
+     */
+    public Vector2 conjure(Card card) {
+        CardImage cardImage = createImage(card);
+        cardImage.setVisible(false); // placée directement sur son emplacement, sans glisser
+        layout(true);
+        cardImage.setVisible(true);
+        cardImage.setScale(0f); // grandit jusqu'à sa taille (voir CardImage)
+        return cardImage.localToStageCoordinates(new Vector2(cardWidth / 2f, cardHeight / 2f));
+    }
+
     /** Fin de tour : les cartes restées sur la table se retournent puis glissent jusqu'à la défausse. */
     public void discardAll() {
         dealAnimator.cancel(); // révèle d'un coup les cartes encore en cours de distribution
@@ -129,6 +178,7 @@ public class HandView {
         discardAnimator.discardFromTable(new ArrayList<>(images),
             piles.discard().getTopX(), piles.discard().getTopY(), this::onCardLandedInDiscard);
         images.clear();
+        cardOf.clear();
     }
 
     /**
@@ -139,6 +189,7 @@ public class HandView {
     public void clear() {
         dealAnimator.cancel();
         images.clear();
+        cardOf.clear();
         group.clearChildren();
     }
 
@@ -182,7 +233,7 @@ public class HandView {
      * description ; au clic, son retrait de la main (elle grossit puis « claque »
      * en s'effaçant) et la notification du clic.
      */
-    private void addListeners(CardImage cardImage, Card card) {
+    private void addListeners(CardImage cardImage) {
         cardImage.addListener(new InputListener() {
 
             @Override
@@ -191,7 +242,7 @@ public class HandView {
                 cardImage.setHovered(true);
                 cardImage.tiltToward(x);
                 Vector2 pos = cardImage.localToStageCoordinates(new Vector2(0, cardHeight + TOOLTIP_GAP));
-                tooltip.show(card.getDescription(), pos.x, pos.y);
+                tooltip.show(cardOf.get(cardImage).getDescription(), pos.x, pos.y);
             }
 
             @Override
@@ -211,6 +262,7 @@ public class HandView {
             public boolean touchDown(InputEvent event, float x, float y, int pointer, int button) {
                 Vector2 clickPos   = cardImage.localToStageCoordinates(new Vector2(x, y));
                 Vector2 cardCenter = cardImage.localToStageCoordinates(new Vector2(cardWidth / 2f, cardHeight / 2f));
+                Card card = cardOf.remove(cardImage);
                 images.remove(cardImage);
                 detach(cardImage);
                 tooltip.hide();

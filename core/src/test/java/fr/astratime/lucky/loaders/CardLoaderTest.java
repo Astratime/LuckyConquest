@@ -40,7 +40,7 @@ class CardLoaderTest {
     void everyCardDefinitionLoads() {
         List<Card> cards = CardLoader.loadAll(READER);
 
-        assertEquals(52 + 14, cards.size(), "4 suites de 13 cartes + 14 cartes spéciales");
+        assertEquals(52 + 16, cards.size(), "4 suites de 13 cartes + 16 cartes spéciales");
         assertEquals(cards.size(), cards.stream().map(Card::getId).distinct().count(), "les ids doivent être uniques");
     }
 
@@ -67,9 +67,9 @@ class CardLoaderTest {
         List<Card> deck = CardLoader.loadStarterDeck(READER);
         Map<String, Long> copies = deck.stream().collect(Collectors.groupingBy(Card::getId, Collectors.counting()));
 
-        assertEquals(31, deck.size());
+        assertEquals(32, deck.size());
         for (String special : List.of("bingo", "magnet", "joker", "recycle", "bet", "russian_roulette",
-                "combo_suite", "combo_couleur", "combo_brelan", "combo_full", "lucky_charm")) {
+                "combo_suite", "combo_couleur", "combo_brelan", "combo_full", "lucky_charm", "rainbow")) {
             assertEquals(1L, copies.get(special), special);
         }
         assertEquals(2L, copies.get("draw_2"));
@@ -107,5 +107,13 @@ class CardLoaderTest {
             : READER.read(path);
 
         assertThrows(IllegalArgumentException.class, () -> CardLoader.loadAll(withBadEffect));
+    }
+
+    @Test
+    void potDeLutinIsAConsumableCardOutsideTheStarterDeck() {
+        Card pot = CardLoader.cardFactory(READER).apply("pot_de_lutin");
+
+        assertTrue(pot.isConsumable());
+        assertTrue(CardLoader.loadStarterDeck(READER).stream().noneMatch(c -> c.getId().equals("pot_de_lutin")));
     }
 }

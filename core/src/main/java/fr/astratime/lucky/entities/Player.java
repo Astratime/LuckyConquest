@@ -123,8 +123,36 @@ public class Player {
      */
     public boolean playCard(Card card) {
         if (!currentHand.remove(card)) return false;
-        playedCards.add(card);
+        if (!card.isConsumable()) playedCards.add(card); // une carte consommable disparaît
         return true;
+    }
+
+    /**
+     * Remplace une carte de la main par une autre, à la même place (ex : sa
+     * couleur changée par l'Arc-en-ciel).
+     *
+     * @return {@code false} si {@code card} n'était pas dans la main (rien n'est fait)
+     */
+    public boolean replaceInHand(Card card, Card replacement) {
+        int index = currentHand.indexOf(card);
+        if (index < 0) return false;
+        currentHand.set(index, replacement);
+        return true;
+    }
+
+    /**
+     * Pose une nouvelle carte sur la table s'il reste un emplacement libre,
+     * sinon la met directement dans la défausse.
+     *
+     * @return {@code true} si la carte a rejoint la main
+     */
+    public boolean addToHandOrDiscard(Card card) {
+        if (currentHand.size() < MAX_HAND_SIZE) {
+            currentHand.add(card);
+            return true;
+        }
+        discardPile.addAll(List.of(card));
+        return false;
     }
 
     /**

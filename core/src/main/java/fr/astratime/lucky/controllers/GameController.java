@@ -20,6 +20,8 @@ import fr.astratime.lucky.popups.PopupScale;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 /**
@@ -53,9 +55,14 @@ public class GameController {
     /** Fournit un deck de départ neuf à chaque combat. */
     private final Supplier<List<Card>> starterDeck;
 
+    /** Crée une carte à partir de son id (cartes créées en combat : Arc-en-ciel, Pot de Lutin). */
+    private final Function<String, Card> cardFactory;
+
+    private final Random random = new Random();
+
     /** Charge le deck de départ depuis les JSON et crée une nouvelle partie (joueur + ennemi au maximum de leurs PV). */
     public GameController() {
-        this(CardLoader::loadStarterDeck);
+        this(CardLoader::loadStarterDeck, CardLoader.cardFactory());
     }
 
     /**
@@ -63,6 +70,15 @@ public class GameController {
      *                    nouveau combat (ex : une liste fixe dans les tests)
      */
     public GameController(Supplier<List<Card>> starterDeck) {
+        this(starterDeck, id -> { throw new IllegalArgumentException("Carte inconnue : " + id); });
+    }
+
+    /**
+     * @param starterDeck fournit les cartes du deck de départ, à chaque nouveau combat
+     * @param cardFactory crée une carte à partir de son id (cartes créées en cours de combat)
+     */
+    public GameController(Supplier<List<Card>> starterDeck, Function<String, Card> cardFactory) {
+        this.cardFactory = cardFactory;
         this.starterDeck = starterDeck;
         this.gameState   = new GameState(starterDeck.get());
     }
@@ -120,7 +136,32 @@ public class GameController {
             : DrawResult.empty();
         pendingChoice = playContext.getChoice();
         if (playContext.isAutoSpin()) handLocked = true;
-        return new CardPlayResult(drawResult, playContext.getPopups(), pendingChoice, playContext.isAutoSpin());
+        CardPlayResult.Rainbow rainbow = playContext.getRainbowCardId() != null
+            ? rainbow(player, playContext.getRainbowCardId())
+            : null;
+        return new CardPlayResult(drawResult, playContext.getPopups(), pendingChoice, playContext.isAutoSpin(),
+            rainbow);
+    }
+
+    /**
+     * Arc-en-ciel : chaque carte à suite de la main devient rouge ou noire au
+     * hasard (même rang, suite tirée parmi celles de la couleur), puis la carte
+     * {@code addedId} est posée sur la table, ou en défausse s'il n'y a plus de place.
+     */
+    private CardPlayResult.Rainbow rainbow(Player player, String addedId) {
+        List<CardPlayResult.Recolor> recolored = new ArrayList<>();
+        for (Card card : new ArrayList<>(player.getCurrentHand())) {
+            if (card.getSuit() == null) continue;
+            boolean red = random.nextBoolean();
+            Card.Suit suit = red
+                ? (random.nextBoolean() ? Card.Suit.COEUR : Card.Suit.CARREAU)
+                : (random.nextBoolean() ? Card.Suit.TREFLE : Card.Suit.PIQUE);
+            Card recolor = cardFactory.apply(suit.cardId(card.getRank()));
+            player.replaceInHand(card, recolor);
+            recolored.add(new CardPlayResult.Recolor(card, recolor));
+        }
+        Card added = cardFactory.apply(addedId);
+        return new CardPlayResult.Rainbow(recolored, added, player.addToHandOrDiscard(added));
     }
 
     /** @return le choix demandé au joueur par la dernière carte jouée, ou {@code null} si aucun. */

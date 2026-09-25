@@ -27,6 +27,7 @@ public class PlayContext {
     private int gains       = 0;
     private CardChoice choice;
     private boolean    autoSpin = false;
+    private String     rainbowCardId;
 
     /** @param player joueur qui joue la carte (ses gains peuvent être consommés immédiatement) */
     public PlayContext(Player player) {
@@ -67,6 +68,27 @@ public class PlayContext {
 
     /** @return {@code true} si la machine doit se lancer d'elle-même après cette carte. */
     public boolean isAutoSpin() { return autoSpin; }
+
+    /**
+     * Arc-en-ciel : les cartes de la main changent de couleur, puis la carte
+     * {@code cardId} est posée sur la table (ou en défausse s'il n'y a plus de place).
+     */
+    public void requestRainbow(String cardId) { rainbowCardId = cardId; }
+
+    /** @return l'identifiant de la carte ajoutée par l'Arc-en-ciel, ou {@code null} si la carte n'en demande pas. */
+    public String getRainbowCardId() { return rainbowCardId; }
+
+    /**
+     * Multiplie immédiatement les gains du joueur par {@code factor} (gains
+     * déjà demandés par la carte compris).
+     *
+     * @return les gains ajoutés
+     */
+    public int multiplyGains(int factor) {
+        int added = (player.getGains() + gains) * (factor - 1);
+        gains += added;
+        return added;
+    }
 
     /** Met {@code effect} en attente : il sera appliqué au TurnContext au moment du spin. */
     public void queueForSpin(Effect effect) { effectsForSpin.add(effect); }

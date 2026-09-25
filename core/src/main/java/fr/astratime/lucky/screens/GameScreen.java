@@ -13,6 +13,9 @@ import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.scenes.scene2d.Group;
 import com.badlogic.gdx.scenes.scene2d.Stage;
+import com.badlogic.gdx.scenes.scene2d.Touchable;
+import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
+import com.badlogic.gdx.math.Interpolation;
 import com.badlogic.gdx.scenes.scene2d.actions.Actions;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.utils.ScreenUtils;
@@ -28,6 +31,7 @@ import fr.astratime.lucky.animations.DamageVignette;
 import fr.astratime.lucky.animations.EffectPopupAnimator;
 import fr.astratime.lucky.animations.JackpotCelebration;
 import fr.astratime.lucky.animations.PistolShotAnimation;
+import fr.astratime.lucky.animations.RainbowChipsAnimation;
 import fr.astratime.lucky.animations.ScreenShake;
 import fr.astratime.lucky.assets.CardTextures;
 import fr.astratime.lucky.assets.GameSounds;
@@ -120,6 +124,8 @@ public class GameScreen extends ScreenAdapter {
     private static final float PISTOL_TEXT_BELOW     = 170f;
     /** Carte Bingo : hauteur (fraction de l'écran) où elle s'élève pour lancer ses faisceaux. */
     private static final float BINGO_CARD_HEIGHT     = 0.58f;
+    /** Pot de Lutin qui apparaît : gerbe de confettis. */
+    private static final int   POT_CONFETTI          = 50;
     /** Temps laissé au texte de la riposte (et au coup sur la barre) avant de terminer le tour. */
     private static final float RIPOSTE_TEXT_TIME     = 0.4f;
 
@@ -155,6 +161,7 @@ public class GameScreen extends ScreenAdapter {
     private final CardChoiceOverlay   choiceOverlay;
     private final BingoCardAnimation  bingoAnimation;
     private final PistolShotAnimation pistolAnimation;
+    private final RainbowChipsAnimation rainbowAnimation;
 
     // -------------------------------------------------------------------------
     // Vues et acteurs Scene2D
@@ -234,6 +241,7 @@ public class GameScreen extends ScreenAdapter {
         choiceOverlay   = new CardChoiceOverlay(stage, hudTextures, cardBackTexture, CARD_WIDTH, CARD_HEIGHT);
         bingoAnimation  = new BingoCardAnimation(settings, new TextureRegion(hudTextures.pixel));
         pistolAnimation = new PistolShotAnimation(hudTextures.pistol, new TextureRegion(hudTextures.pixel));
+        rainbowAnimation = new RainbowChipsAnimation(settings, new TextureRegion(hudTextures.pixel));
 
         layout();
         refreshAll();
@@ -253,6 +261,7 @@ public class GameScreen extends ScreenAdapter {
         stage.addActor(damageVignette);
         stage.addActor(jackpotCelebration); // par-dessus le jeu et le panneau : bloque les clics pendant la fête
         stage.addActor(bingoAnimation);         // carte Bingo : faisceaux et téléportation, bloque les clics
+        stage.addActor(rainbowAnimation);       // carte Arc-en-ciel : jetons et poussière d'étoiles, bloque les clics
         stage.addActor(choiceOverlay.getActor()); // choix demandé par une carte (Pari, Roulette russe)
         stage.addActor(pileOverlay.getActor()); // voile de consultation des piles, par-dessus le jeu
         stage.addActor(tooltip.getActor());     // en dernier : toujours au-dessus
@@ -302,6 +311,59 @@ public class GameScreen extends ScreenAdapter {
             hand.deal(drawResult);
         }
         askChoice(playResult.getChoice(), cardCenter);
+        if (playResult.getRainbow() != null) playRainbow(playResult.getRainbow());
+    }
+
+    /**
+     * Arc-en-ciel : les jetons traversent l'écran ; chaque carte qui change de
+     * couleur le fait au passage de son jeton. Puis le Pot de Lutin apparaît sur
+     * la table, ou file dans la défausse si la table est pleine.
+     */
+    private void playRainbow(CardPlayResult.Rainbow rainbow) {
+        if (!rainbow.addedToHand()) piles.addInFlight(1); // compté dans la défausse à son arrivée
+        List<CardPlayResult.Recolor> recolored = new ArrayList<>();
+        List<Vector2> targets = new ArrayList<>();
+        for (CardPlayResult.Recolor recolor : rainbow.recolored()) {
+            Vector2 center = hand.centerOf(recolor.before());
+            if (center == null) continue;
+            recolored.add(recolor);
+            targets.add(center);
+        }
+        rainbowAnimation.play(targets,
+            index -> {
+                CardPlayResult.Recolor recolor = recolored.get(index);
+                hand.recolor(recolor.before(), recolor.after());
+                sounds.cardFlip.play();
+            },
+            () -> {
+                Vector2 at = rainbow.addedToHand() ? hand.conjure(rainbow.added()) : potToDiscard(rainbow.added());
+                confetti.burst(at.x, at.y, POT_CONFETTI);
+                effectPopupAnimator.play(List.of(new EffectPopup("POT DE LUTIN !", EffectPopup.Style.GAINS,
+                    PopupScale.MAX_INTENSITY)), at.x, at.y + CARD_HEIGHT * 0.8f);
+                sounds.twoSymbols.play();
+            });
+    }
+
+    /** Table pleine : le Pot de Lutin apparaît au-dessus de la défausse et s'y pose. @return son centre */
+    private Vector2 potToDiscard(Card pot) {
+        CardImage image = new CardImage(new TextureRegionDrawable(new TextureRegion(cardTextures.get(pot))));
+        image.setSize(CARD_WIDTH, CARD_HEIGHT);
+        image.setTouchable(Touchable.disabled);
+        image.setOrigin(CARD_WIDTH / 2f, CARD_HEIGHT / 2f);
+        float x = piles.discard().getTopX(), y = piles.discard().getTopY();
+        image.setPosition(x, y + CARD_HEIGHT * 0.6f);
+        image.setScale(0f);
+        stage.addActor(image);
+        image.addAction(Actions.sequence(
+            Actions.scaleTo(1f, 1f, 0.35f, Interpolation.swingOut),
+            Actions.delay(0.4f),
+            Actions.moveTo(x, y, 0.3f, Interpolation.pow2In),
+            Actions.run(() -> {
+                piles.onCardLanded();
+                piles.refresh(player());
+            }),
+            Actions.removeActor()));
+        return new Vector2(x + CARD_WIDTH / 2f, y + CARD_HEIGHT * 1.1f);
     }
 
     /** Ouvre la fenêtre du choix demandé par la carte jouée (rien si elle n'en demande pas). */
@@ -355,7 +417,8 @@ public class GameScreen extends ScreenAdapter {
 
     /** @return {@code true} si une fenêtre ou une animation attend : ni pioche ni lancer possibles. */
     private boolean isBusy() {
-        return pileOverlay.isShown() || choiceOverlay.isShown() || bingoAnimation.isPlaying();
+        return pileOverlay.isShown() || choiceOverlay.isShown() || bingoAnimation.isPlaying()
+            || rainbowAnimation.isPlaying();
     }
 
     /** Lance la machine (bouton, touche F, ou d'elle-même après une carte Bingo). */
@@ -544,6 +607,7 @@ public class GameScreen extends ScreenAdapter {
         jackpotCelebration.cancel();
         bingoAnimation.cancel();
         pistolAnimation.cancel();
+        rainbowAnimation.cancel();
         choiceOverlay.hide();
         hand.setLocked(false);
         table.setReelsRainbow(false);
@@ -702,7 +766,9 @@ public class GameScreen extends ScreenAdapter {
         InputAdapter keyboardInput = new InputAdapter() {
             @Override
             public boolean keyDown(int keycode) {
-                if (choiceOverlay.isShown() || bingoAnimation.isPlaying()) return true; // un choix est attendu
+                if (choiceOverlay.isShown() || bingoAnimation.isPlaying() || rainbowAnimation.isPlaying()) {
+                    return true; // un choix ou une animation de carte est en cours
+                }
                 if (keycode == Input.Keys.ESCAPE && pileOverlay.isShown()) {
                     pileOverlay.hide();
                     return true;
@@ -766,6 +832,7 @@ public class GameScreen extends ScreenAdapter {
         pileOverlay.dispose();
         choiceOverlay.dispose();
         bingoAnimation.dispose();
+        rainbowAnimation.dispose();
         jackpotCelebration.dispose();
         damageVignette.dispose();
         combatEnd.dispose();
