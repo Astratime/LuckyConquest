@@ -29,7 +29,8 @@ public class DefenseAction extends Action {
         List<Event> events = new ArrayList<>();
         Player player = context.getPlayer();
 
-        int shield = (baseShield + context.getDefenseBonus()) * context.getSymbolPower();
+        int shield = Math.round((baseShield + context.getDefenseBonus()) * context.getSymbolPower()
+            * context.getDefenseFactor());
         player.addShield(shield);
         events.add(new ShieldGainedEvent(shield));
 

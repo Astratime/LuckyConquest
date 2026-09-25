@@ -11,7 +11,12 @@ import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.Vector2;
+import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.Group;
+import com.badlogic.gdx.scenes.scene2d.InputEvent;
+import com.badlogic.gdx.scenes.scene2d.ui.Image;
+import com.badlogic.gdx.scenes.scene2d.ui.Label;
+import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.Touchable;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
@@ -34,10 +39,12 @@ import fr.astratime.lucky.animations.PistolShotAnimation;
 import fr.astratime.lucky.animations.RainbowChipsAnimation;
 import fr.astratime.lucky.animations.ScreenShake;
 import fr.astratime.lucky.assets.CardTextures;
+import fr.astratime.lucky.assets.Fonts;
 import fr.astratime.lucky.assets.GameSounds;
 import fr.astratime.lucky.assets.HudTextures;
 import fr.astratime.lucky.assets.TableTextures;
 import fr.astratime.lucky.controllers.GameController;
+import fr.astratime.lucky.controllers.PreparationResolver;
 import fr.astratime.lucky.entities.Card;
 import fr.astratime.lucky.entities.CardPlayResult;
 import fr.astratime.lucky.entities.DrawResult;
@@ -72,6 +79,7 @@ import fr.astratime.lucky.views.HealthBarView;
 import fr.astratime.lucky.views.PileContentOverlay;
 import fr.astratime.lucky.views.PilesView;
 import fr.astratime.lucky.views.PlayArea;
+import fr.astratime.lucky.views.ShopOverlay;
 import fr.astratime.lucky.views.SidePanel;
 import fr.astratime.lucky.views.SlotView;
 import fr.astratime.lucky.views.TableView;
@@ -124,6 +132,13 @@ public class GameScreen extends ScreenAdapter {
     private static final float PISTOL_TEXT_BELOW     = 170f;
     /** Carte Bingo : hauteur (fraction de l'écran) où elle s'élève pour lancer ses faisceaux. */
     private static final float BINGO_CARD_HEIGHT     = 0.58f;
+    /** Icône de l'échoppe : taille de l'image, marge au bord et agrandissement au survol. */
+    private static final float SHOP_ICON_WIDTH  = 150f;
+    private static final float SHOP_ICON_HEIGHT = 108f;
+    private static final float SHOP_ICON_MARGIN = 30f;
+    private static final float SHOP_HOVER_SCALE = 1.12f;
+    /** Carte achetée : posée une fois l'échoppe refermée. */
+    private static final float PURCHASE_DELAY   = 0.9f;
     /** Pot de Lutin qui apparaît : gerbe de confettis. */
     private static final int   POT_CONFETTI          = 50;
     /** Temps laissé au texte de la riposte (et au coup sur la barre) avant de terminer le tour. */
@@ -142,6 +157,7 @@ public class GameScreen extends ScreenAdapter {
     private final LuckyGame           luckyGame;
     private final Stage               stage;
     private final BitmapFont          font;
+    private final BitmapFont          shopFont = Fonts.jersey(30, Color.valueOf("ffd454ff"), 2f, Color.valueOf("1a0f0fff"));
     private final Texture             cardBackTexture;
     private final CardTextures        cardTextures  = new CardTextures();
     private final CasinoButtons       buttons       = new CasinoButtons();
@@ -162,6 +178,9 @@ public class GameScreen extends ScreenAdapter {
     private final BingoCardAnimation  bingoAnimation;
     private final PistolShotAnimation pistolAnimation;
     private final RainbowChipsAnimation rainbowAnimation;
+    private final ShopOverlay         shopOverlay;
+    /** Icône de l'échoppe (en haut à droite de la zone de jeu), qui ouvre la boutique. */
+    private final Group               shopIcon = new Group();
 
     // -------------------------------------------------------------------------
     // Vues et acteurs Scene2D
@@ -242,6 +261,8 @@ public class GameScreen extends ScreenAdapter {
         bingoAnimation  = new BingoCardAnimation(settings, new TextureRegion(hudTextures.pixel));
         pistolAnimation = new PistolShotAnimation(hudTextures.pistol, new TextureRegion(hudTextures.pixel));
         rainbowAnimation = new RainbowChipsAnimation(settings, new TextureRegion(hudTextures.pixel));
+        shopOverlay      = new ShopOverlay(stage, hudTextures, CARD_WIDTH, CARD_HEIGHT);
+        buildShopIcon();
 
         layout();
         refreshAll();
@@ -254,6 +275,7 @@ public class GameScreen extends ScreenAdapter {
         stage.addActor(spinButton);
         stage.addActor(slots.getActor());
         stage.addActor(hand.getActor());
+        stage.addActor(shopIcon);
         stage.addActor(pistolAnimation);
         stage.addActor(popupLayer);
         stage.addActor(combatEnd);
@@ -263,6 +285,7 @@ public class GameScreen extends ScreenAdapter {
         stage.addActor(bingoAnimation);         // carte Bingo : faisceaux et téléportation, bloque les clics
         stage.addActor(rainbowAnimation);       // carte Arc-en-ciel : jetons et poussière d'étoiles, bloque les clics
         stage.addActor(choiceOverlay.getActor()); // choix demandé par une carte (Pari, Roulette russe)
+        stage.addActor(shopOverlay.getActor());   // échoppe, ouverte depuis son icône
         stage.addActor(pileOverlay.getActor()); // voile de consultation des piles, par-dessus le jeu
         stage.addActor(tooltip.getActor());     // en dernier : toujours au-dessus
         stage.addActor(screenShake);            // invisible : met à jour la caméra
@@ -275,8 +298,7 @@ public class GameScreen extends ScreenAdapter {
     /** Pioche une nouvelle main et lance son animation de distribution ; active le spin, désactive la pioche. */
     private void onDrawCards() {
         if (drawButton.isDisabled() || isBusy()) return;
-        hand.clear();
-        hand.setLocked(false);
+        hand.setLocked(false); // une carte achetée entre deux tours reste sur la table
         hand.deal(gameController.drawCards());
         spinButton.setDisabled(false);
         drawButton.setDisabled(true);
@@ -359,6 +381,88 @@ public class GameScreen extends ScreenAdapter {
         };
     }
 
+    /** Icône de l'échoppe : l'étal du marché et son nom ; au survol elle grossit, au clic elle ouvre la boutique. */
+    private void buildShopIcon() {
+        Image stall = new Image(new TextureRegionDrawable(new TextureRegion(hudTextures.shop)));
+        stall.setSize(SHOP_ICON_WIDTH, SHOP_ICON_HEIGHT);
+        Label name = new Label("ÉCHOPPE", new Label.LabelStyle(shopFont, Color.WHITE));
+        name.pack();
+        name.setPosition((SHOP_ICON_WIDTH - name.getWidth()) / 2f, 0f);
+        stall.setPosition(0f, name.getHeight());
+        shopIcon.addActor(stall);
+        shopIcon.addActor(name);
+        shopIcon.setSize(SHOP_ICON_WIDTH, SHOP_ICON_HEIGHT + name.getHeight());
+        shopIcon.setOrigin(SHOP_ICON_WIDTH / 2f, 0f);
+        shopIcon.addListener(new ClickListener() {
+            @Override
+            public void enter(InputEvent event, float x, float y, int pointer, Actor fromActor) {
+                super.enter(event, x, y, pointer, fromActor);
+                if (pointer != -1) return;
+                shopIcon.clearActions();
+                shopIcon.addAction(Actions.scaleTo(SHOP_HOVER_SCALE, SHOP_HOVER_SCALE, 0.12f, Interpolation.pow2Out));
+            }
+
+            @Override
+            public void exit(InputEvent event, float x, float y, int pointer, Actor toActor) {
+                super.exit(event, x, y, pointer, toActor);
+                if (pointer != -1) return;
+                shopIcon.clearActions();
+                shopIcon.addAction(Actions.scaleTo(1f, 1f, 0.12f));
+            }
+
+            @Override
+            public void clicked(InputEvent event, float x, float y) {
+                openShop();
+            }
+        });
+    }
+
+    /**
+     * Ouvre l'échoppe, sauf pendant une animation, une fenêtre ou la résolution
+     * d'un tirage (ni pioche ni lancer possibles), ou une fois le combat terminé.
+     */
+    private void openShop() {
+        if (isBusy() || isCombatOver() || (drawButton.isDisabled() && spinButton.isDisabled())) return;
+        sounds.buttonClick.play();
+        shopOverlay.show(gameController.getShopOffers(), () -> player().getGains(), cardTextures::get,
+            (text, action) -> buttons.create(text, sounds.buttonClick, action),
+            offer -> {
+                GameController.Purchase purchase = gameController.buy(offer);
+                if (purchase == null) return false;
+                refreshGains();
+                stage.addAction(Actions.delay(PURCHASE_DELAY, Actions.run(() -> placePurchase(purchase))));
+                return true;
+            });
+    }
+
+    /** Carte achetée : elle apparaît sur la table s'il y a de la place, sinon elle file dans le deck. */
+    private void placePurchase(GameController.Purchase purchase) {
+        Card card = purchase.card();
+        Vector2 at;
+        if (purchase.addedToHand()) {
+            at = hand.conjure(card);
+        } else {
+            CardImage image = new CardImage(new TextureRegionDrawable(new TextureRegion(cardTextures.get(card))));
+            image.setSize(CARD_WIDTH, CARD_HEIGHT);
+            image.setTouchable(Touchable.disabled);
+            image.setOrigin(CARD_WIDTH / 2f, CARD_HEIGHT / 2f);
+            float x = piles.deck().getTopX(), y = piles.deck().getTopY();
+            image.setPosition(x, y + CARD_HEIGHT * 0.6f);
+            image.setScale(0f);
+            stage.addActor(image);
+            image.addAction(Actions.sequence(
+                Actions.scaleTo(1f, 1f, 0.35f, Interpolation.swingOut),
+                Actions.delay(0.4f),
+                Actions.moveTo(x, y, 0.3f, Interpolation.pow2In),
+                Actions.run(() -> piles.refresh(player())),
+                Actions.removeActor()));
+            at = new Vector2(x + CARD_WIDTH / 2f, y + CARD_HEIGHT * 1.1f);
+        }
+        confetti.burst(at.x, at.y, POT_CONFETTI);
+        effectPopupAnimator.play(List.of(new EffectPopup(card.getName().toUpperCase() + " !", EffectPopup.Style.SPECIAL,
+            PopupScale.MAX_INTENSITY)), at.x, at.y + CARD_HEIGHT * 0.8f);
+    }
+
     /** Table pleine : le Pot de Lutin apparaît au-dessus de la défausse et s'y pose. @return son centre */
     private Vector2 potToDiscard(Card pot) {
         CardImage image = new CardImage(new TextureRegionDrawable(new TextureRegion(cardTextures.get(pot))));
@@ -432,8 +536,8 @@ public class GameScreen extends ScreenAdapter {
 
     /** @return {@code true} si une fenêtre ou une animation attend : ni pioche ni lancer possibles. */
     private boolean isBusy() {
-        return pileOverlay.isShown() || choiceOverlay.isShown() || bingoAnimation.isPlaying()
-            || rainbowAnimation.isPlaying();
+        return pileOverlay.isShown() || choiceOverlay.isShown() || shopOverlay.isShown()
+            || bingoAnimation.isPlaying() || rainbowAnimation.isPlaying();
     }
 
     /** Lance la machine (bouton, touche F, ou d'elle-même après une carte Bingo). */
@@ -473,6 +577,7 @@ public class GameScreen extends ScreenAdapter {
         float shotAt = slots.playResultPopups(result, hud.besidePlayerHealthBar(SlotView.POPUP_PLAYER_GAP),
             pistolTexts, this::onEventShown, riposteDelay);
         if (shotAt >= 0f) aimPistol(result, enemyBar, shotAt);
+        refreshEffects(); // jauges vidées ou remplies par le tirage
         playSymbolResultSound(result);
         if (result.isPair()) celebratePair(result.getSymbols());
         if (result.isJackpot()) return; // voir onJackpotShown
@@ -486,7 +591,9 @@ public class GameScreen extends ScreenAdapter {
 
     /** Le pistolet surgit au-dessus du symbole qu'il multiplie et tire sur l'ennemi à l'instant {@code shotAt}. */
     private void aimPistol(TurnResult result, Vector2 target, float shotAt) {
-        PistolShotEvent shot = (PistolShotEvent) result.getPistolEvents().get(0);
+        PistolShotEvent shot = result.getPistolEvents().stream()
+            .filter(e -> e instanceof PistolShotEvent).map(e -> (PistolShotEvent) e).findFirst().orElse(null);
+        if (shot == null) return; // contre-attaque du Coffre seule : pas de pistolet
         Vector2 from = slots.getReelCenter(shot.slotIndex >= 0 ? shot.slotIndex : 1);
         stage.addAction(Actions.delay(Math.max(0f, shotAt - PistolShotAnimation.AIM_TIME),
             Actions.run(() -> pistolAnimation.play(from, target))));
@@ -623,6 +730,7 @@ public class GameScreen extends ScreenAdapter {
         bingoAnimation.cancel();
         pistolAnimation.cancel();
         rainbowAnimation.cancel();
+        shopOverlay.hide();
         choiceOverlay.hide();
         hand.setLocked(false);
         table.setReelsRainbow(false);
@@ -744,6 +852,23 @@ public class GameScreen extends ScreenAdapter {
             rows.add(new SidePanel.EffectRow(new TextureRegion(hudTextures.iconClover), null,
                 "Gains +" + Math.round(lasting.getGainBonus() * 100f) + " %"));
         }
+        if (lasting.getCorruptionTurns() > 0) {
+            int turns = lasting.getCorruptionTurns();
+            rows.add(new SidePanel.EffectRow(new TextureRegion(hudTextures.iconCorruption), null,
+                "Corruption " + turns + (turns > 1 ? " tours" : " tour")));
+        }
+        if (lasting.getBlades() > 0) {
+            rows.add(new SidePanel.EffectRow(new TextureRegion(hudTextures.iconBlade), null,
+                "Lames " + lasting.getBlades() + " (+" + lasting.getBlades() * PreparationResolver.BLADE_ATTACK + ")"));
+        }
+        if (lasting.getBlood() > 0) {
+            rows.add(new SidePanel.EffectRow(new TextureRegion(hudTextures.iconBlood), null,
+                "Sang " + lasting.getBlood()));
+        }
+        if (lasting.getVault() > 0) {
+            rows.add(new SidePanel.EffectRow(new TextureRegion(hudTextures.iconVault), null,
+                "Coffre " + lasting.getVault()));
+        }
         for (Symbol bet : gameController.getBetsThisTurn()) {
             rows.add(new SidePanel.EffectRow(slots.regionOf(bet), null, "Pari x2 à x4"));
         }
@@ -765,6 +890,8 @@ public class GameScreen extends ScreenAdapter {
         piles.layout(table.getDeckX(), table.getPilesY());
         slots.layout();
         hand.layout(false);
+        shopIcon.setPosition(playArea.getX() + playArea.getWidth() - SHOP_ICON_WIDTH - SHOP_ICON_MARGIN,
+            playArea.getHeight() - shopIcon.getHeight() - SHOP_ICON_MARGIN);
     }
 
     // -------------------------------------------------------------------------
@@ -781,7 +908,12 @@ public class GameScreen extends ScreenAdapter {
         InputAdapter keyboardInput = new InputAdapter() {
             @Override
             public boolean keyDown(int keycode) {
-                if (choiceOverlay.isShown() || bingoAnimation.isPlaying() || rainbowAnimation.isPlaying()) {
+                if (keycode == Input.Keys.ESCAPE && shopOverlay.isShown()) {
+                    shopOverlay.hide();
+                    return true;
+                }
+                if (choiceOverlay.isShown() || shopOverlay.isShown() || bingoAnimation.isPlaying()
+                    || rainbowAnimation.isPlaying()) {
                     return true; // un choix ou une animation de carte est en cours
                 }
                 if (keycode == Input.Keys.ESCAPE && pileOverlay.isShown()) {
@@ -808,6 +940,7 @@ public class GameScreen extends ScreenAdapter {
         stage.getViewport().update(width, height, true);
         layout();
         choiceOverlay.layout();
+        shopOverlay.layout();
         pileOverlay.hide();
     }
 
@@ -833,6 +966,7 @@ public class GameScreen extends ScreenAdapter {
     public void dispose() {
         stage.dispose();
         font.dispose();
+        shopFont.dispose();
         tableTextures.dispose();
         cardBackTexture.dispose();
         cardTextures.dispose();
@@ -848,6 +982,7 @@ public class GameScreen extends ScreenAdapter {
         choiceOverlay.dispose();
         bingoAnimation.dispose();
         rainbowAnimation.dispose();
+        shopOverlay.dispose();
         jackpotCelebration.dispose();
         damageVignette.dispose();
         combatEnd.dispose();

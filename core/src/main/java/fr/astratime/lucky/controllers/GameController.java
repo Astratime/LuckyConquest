@@ -57,8 +57,11 @@ public class GameController {
     /** Fournit un deck de départ neuf à chaque combat. */
     private final Supplier<List<Card>> starterDeck;
 
-    /** Crée une carte à partir de son id (cartes créées en combat : Arc-en-ciel, Pot de Lutin). */
+    /** Crée une carte à partir de son id (cartes créées en combat : Arc-en-ciel, Pot de Lutin, achats). */
     private final Function<String, Card> cardFactory;
+
+    /** Cartes proposées à l'échoppe. */
+    private final List<ShopOffer> shopOffers;
 
     private final Random random = new Random();
 
@@ -67,7 +70,7 @@ public class GameController {
 
     /** Charge le deck de départ depuis les JSON et crée une nouvelle partie (joueur + ennemi au maximum de leurs PV). */
     public GameController() {
-        this(CardLoader::loadStarterDeck, CardLoader.cardFactory());
+        this(CardLoader::loadStarterDeck, CardLoader.cardFactory(), CardLoader.loadShop());
     }
 
     /**
@@ -83,6 +86,18 @@ public class GameController {
      * @param cardFactory crée une carte à partir de son id (cartes créées en cours de combat)
      */
     public GameController(Supplier<List<Card>> starterDeck, Function<String, Card> cardFactory) {
+        this(starterDeck, cardFactory, Map.of());
+    }
+
+    /**
+     * @param shop prix de chaque carte proposée à l'échoppe, par id (dans l'ordre d'affichage)
+     * @see #GameController(Supplier, Function)
+     */
+    public GameController(Supplier<List<Card>> starterDeck, Function<String, Card> cardFactory,
+                          Map<String, Integer> shop) {
+        this.shopOffers = shop.entrySet().stream()
+            .map(entry -> new ShopOffer(cardFactory.apply(entry.getKey()), entry.getValue()))
+            .toList();
         this.cardFactory = cardFactory;
         this.starterDeck = starterDeck;
         this.gameState   = new GameState(starterDeck.get());
@@ -107,17 +122,52 @@ public class GameController {
     // -------------------------------------------------------------------------
 
     /**
-     * Phase 1 : pioche la main du tour. Normalement la main est déjà vide
-     * (défaussée par {@link #spin()}) ; par sécurité, ce qui y resterait part
-     * à la défausse avant de piocher.
+     * Phase 1 : pioche la main du tour. La main est normalement vide
+     * (défaussée par {@link #spin()}), sauf si une carte y a été posée entre
+     * deux tours (achat à l'échoppe) : elle y reste.
      *
      * @return les cartes ajoutées à la main (DEFAULT_DRAW_COUNT, ou moins si
-     *         deck et défausse sont épuisés)
+     *         deck et défausse sont épuisés ou si la main est pleine)
      */
     public DrawResult drawCards() {
+        return gameState.getPlayer().draw(DEFAULT_DRAW_COUNT);
+    }
+
+    // -------------------------------------------------------------------------
+    // Échoppe
+    // -------------------------------------------------------------------------
+
+    /**
+     * Carte proposée à l'échoppe.
+     *
+     * @param card  aperçu de la carte (l'achat en crée une nouvelle instance)
+     * @param price prix, en gains
+     */
+    public record ShopOffer(Card card, int price) { }
+
+    /**
+     * Carte achetée.
+     *
+     * @param card        la carte achetée
+     * @param addedToHand {@code true} si elle est posée sur la table, {@code false} si elle part dans le deck
+     */
+    public record Purchase(Card card, boolean addedToHand) { }
+
+    /** @return les cartes proposées à l'échoppe. */
+    public List<ShopOffer> getShopOffers() { return shopOffers; }
+
+    /**
+     * Achète {@code offer} : son prix est retiré des gains, puis la carte est
+     * posée sur la table s'il y a de la place, sinon glissée dans le deck.
+     *
+     * @return l'achat, ou {@code null} si les gains ne suffisent pas
+     */
+    public Purchase buy(ShopOffer offer) {
         Player player = gameState.getPlayer();
-        player.discardHand();
-        return player.draw(DEFAULT_DRAW_COUNT);
+        if (player.getGains() < offer.price()) return null;
+        player.addGains(-offer.price());
+        Card card = cardFactory.apply(offer.card().getId());
+        return new Purchase(card, player.addToHandOrDeck(card));
     }
 
     /**

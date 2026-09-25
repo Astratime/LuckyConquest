@@ -20,7 +20,8 @@
     "effects": [
       {
         "type": "SPADE_IGNORE_DEFENSE",
-        "attackBonus": 102
+        "attackBonus": 102,
+        "blades": 1
       }
     ]
   },
@@ -33,7 +34,8 @@
     "effects": [
       {
         "type": "SPADE_IGNORE_DEFENSE",
-        "attackBonus": 103
+        "attackBonus": 103,
+        "blades": 1
       }
     ]
   },
@@ -46,7 +48,8 @@
     "effects": [
       {
         "type": "SPADE_IGNORE_DEFENSE",
-        "attackBonus": 104
+        "attackBonus": 104,
+        "blades": 1
       }
     ]
   },
@@ -59,7 +62,8 @@
     "effects": [
       {
         "type": "SPADE_IGNORE_DEFENSE",
-        "attackBonus": 105
+        "attackBonus": 105,
+        "blades": 1
       }
     ]
   },
@@ -72,7 +76,8 @@
     "effects": [
       {
         "type": "SPADE_IGNORE_DEFENSE",
-        "attackBonus": 106
+        "attackBonus": 106,
+        "blades": 2
       }
     ]
   },
@@ -85,7 +90,8 @@
     "effects": [
       {
         "type": "SPADE_IGNORE_DEFENSE",
-        "attackBonus": 107
+        "attackBonus": 107,
+        "blades": 2
       }
     ]
   },
@@ -98,7 +104,8 @@
     "effects": [
       {
         "type": "SPADE_IGNORE_DEFENSE",
-        "attackBonus": 108
+        "attackBonus": 108,
+        "blades": 2
       }
     ]
   },
@@ -111,7 +118,8 @@
     "effects": [
       {
         "type": "SPADE_IGNORE_DEFENSE",
-        "attackBonus": 109
+        "attackBonus": 109,
+        "blades": 2
       }
     ]
   },
@@ -124,7 +132,8 @@
     "effects": [
       {
         "type": "SPADE_IGNORE_DEFENSE",
-        "attackBonus": 110
+        "attackBonus": 110,
+        "blades": 2
       }
     ]
   },
@@ -137,7 +146,8 @@
     "effects": [
       {
         "type": "SPADE_IGNORE_DEFENSE",
-        "attackBonus": 111
+        "attackBonus": 111,
+        "blades": 3
       }
     ]
   },
@@ -150,7 +160,8 @@
     "effects": [
       {
         "type": "SPADE_IGNORE_DEFENSE",
-        "attackBonus": 112
+        "attackBonus": 112,
+        "blades": 3
       }
     ]
   },
@@ -163,7 +174,8 @@
     "effects": [
       {
         "type": "SPADE_IGNORE_DEFENSE",
-        "attackBonus": 113
+        "attackBonus": 113,
+        "blades": 3
       }
     ]
   }

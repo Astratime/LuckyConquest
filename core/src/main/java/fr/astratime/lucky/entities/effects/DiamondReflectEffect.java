@@ -32,6 +32,7 @@ public class DiamondReflectEffect extends Effect {
     @Override
     public void apply(TurnContext context) {
         context.getCombatContext().addReflectPercentBonus(percent);
+        context.getCombatContext().addDefenseBonus(defenseBoost); // bouclier en plus : il remplit le Coffre
         if (defenseBoost > 0) {
             for (Symbol symbol : SymbolRegistry.getDefenseSymbols()) {
                 context.getSpinContext().addWeightBoost(symbol, defenseBoost);
@@ -41,8 +42,8 @@ public class DiamondReflectEffect extends Effect {
 
     @Override
     public String getDescription() {
-        return "Renvoi +" + percent + "% des degats ennemis si un symbole de defense sort"
-            + (defenseBoost > 0 ? "\nBoost des symboles de defense +" + defenseBoost : "");
+        return "Renvoi +" + percent + "% (attaque ennemie + 20% du Coffre) si un symbole de defense sort"
+            + (defenseBoost > 0 ? "\nBouclier et boost des symboles de defense +" + defenseBoost : "");
     }
 
     @Override

@@ -5,6 +5,7 @@ import fr.astratime.lucky.entities.Enemy;
 import fr.astratime.lucky.entities.events.EnemyDamagedEvent;
 import fr.astratime.lucky.entities.events.Event;
 import fr.astratime.lucky.entities.events.GainsEarnedEvent;
+import fr.astratime.lucky.entities.events.GaugeFilledEvent;
 import fr.astratime.lucky.entities.events.PlayerHealedEvent;
 
 import java.util.ArrayList;
@@ -16,7 +17,8 @@ import java.util.List;
  *  - attackBonus    : bonus plat ajouté à chaque attaque (cartes jouées)
  *  - attackFactor / symbolPower : multiplicateurs des dégâts (combos, Bingo)
  *  - ignoreDefense  : si vrai (Pique), la défense de l'ennemi est ignorée
- *  - lifeDrainPercent : si > 0 (Coeur), soigne le joueur d'un % des dégâts infligés
+ *  - lifeDrainPercent : si > 0 (Coeur), soigne le joueur d'un % des dégâts infligés ;
+ *                     le soin au-delà des PV max remplit le Sang
  *  - gainsFromDamage  : si vrai (As de Pique), convertit les dégâts en gains
  */
 public class AttackAction extends Action {
@@ -49,6 +51,10 @@ public class AttackAction extends Action {
             int healed  = context.getPlayer().heal(drained); // plafonné aux PV max
             if (healed > 0) {
                 events.add(new PlayerHealedEvent(healed));
+            }
+            if (drained > healed) { // le soin en trop remplit le Sang (Coeur)
+                context.getPlayer().getLastingEffects().addBlood(drained - healed);
+                events.add(new GaugeFilledEvent(GaugeFilledEvent.Gauge.SANG, drained - healed));
             }
         }
 

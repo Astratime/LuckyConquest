@@ -6,7 +6,10 @@ import fr.astratime.lucky.entities.Player;
 import fr.astratime.lucky.entities.Symbol;
 import fr.astratime.lucky.entities.SymbolOutcome;
 import fr.astratime.lucky.entities.TurnResult;
+import fr.astratime.lucky.entities.LastingEffects;
 import fr.astratime.lucky.entities.events.BetLostEvent;
+import fr.astratime.lucky.entities.events.CounterAttackEvent;
+import fr.astratime.lucky.entities.events.GaugeFilledEvent;
 import fr.astratime.lucky.entities.events.BetWonEvent;
 import fr.astratime.lucky.entities.events.DamageReflectedEvent;
 import fr.astratime.lucky.entities.events.EnemyDamagedEvent;
@@ -18,6 +21,7 @@ import fr.astratime.lucky.entities.events.PlayerDamagedEvent;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Résout le combat d'un tour : exécute les actions, calcule les gains de
@@ -35,6 +39,8 @@ public class CombatResolver {
     private static final int GAINS_JACKPOT = 2000;
     /** Dégâts de base du pistolet quand aucun symbole d'attaque n'est sorti. */
     static final int   PISTOL_BASE_DAMAGE = 10;
+    /** Part du Coffre (Carreau) ajoutée à l'attaque ennemie pour calculer le renvoi. */
+    static final float VAULT_REFLECT_SHARE = 0.2f;
     /** Part des gains perdue quand le symbole parié ne sort pas. */
     private static final float BET_LOSS   = 0.5f;
 
@@ -81,8 +87,9 @@ public class CombatResolver {
             symbolOutcomes.add(new SymbolOutcome(symbolAction.getSymbol(), symbolAction.getSlotIndex(), actionEvents));
         }
 
-        // Tirs de pistolet (Roulette russe)
+        // Tirs de pistolet (Roulette russe), puis contre-attaque du Coffre (As de Carreau)
         List<Event> pistolEvents = firePistol(combatContext, symbolOutcomes);
+        counterAttack(combatContext).ifPresent(pistolEvents::add);
         events.addAll(pistolEvents);
 
         // Bonus de paire/jackpot
@@ -122,7 +129,9 @@ public class CombatResolver {
             enemyTurnEvents.add(new PlayerDamagedEvent(actualDamage));
 
             if (reflectPercent > 0) {
-                int reflectedDamage = Math.round(attackPower * (reflectPercent / 100f));
+                // Le Coffre arme le renvoi : une part de son contenu s'ajoute à l'attaque renvoyée.
+                float reflectBase = attackPower + player.getLastingEffects().getVault() * VAULT_REFLECT_SHARE;
+                int reflectedDamage = Math.round(reflectBase * (reflectPercent / 100f));
                 if (reflectedDamage > 0) {
                     enemy.takeDamage(reflectedDamage);
                     enemyTurnEvents.add(new DamageReflectedEvent(reflectedDamage));
@@ -130,9 +139,13 @@ public class CombatResolver {
             }
         }
 
+        // Le bouclier ne vaut que pour ce tour : ce qui reste remplit le Coffre (Carreau).
+        int leftoverShield = combatContext.getPlayer().getShield();
+        if (leftoverShield > 0) {
+            combatContext.getPlayer().getLastingEffects().addVault(leftoverShield);
+            enemyTurnEvents.add(new GaugeFilledEvent(GaugeFilledEvent.Gauge.COFFRE, leftoverShield));
+        }
         events.addAll(enemyTurnEvents);
-
-        // Le bouclier ne vaut que pour ce tour.
         combatContext.getPlayer().resetTurnDefenses();
 
         List<Event> cardEvents = priorEvents.stream().filter(e -> !e.getPopups().isEmpty()).toList();
@@ -168,6 +181,20 @@ public class CombatResolver {
             shots.add(new PistolShotEvent(damage, raw, bestSlot, multiplier));
         }
         return shots;
+    }
+
+    /**
+     * Contre-attaque (As de Carreau) : le Coffre est vidé d'un coup sur
+     * l'ennemi, multiplié, sans tenir compte de sa défense. Rien si l'ennemi est
+     * déjà vaincu ou si le Coffre est vide (il reste alors plein).
+     */
+    private Optional<Event> counterAttack(CombatContext context) {
+        Enemy enemy = context.getEnemy();
+        LastingEffects lasting = context.getPlayer().getLastingEffects();
+        if (context.getCounterAttack() <= 0 || enemy.isDefeated() || lasting.getVault() <= 0) return Optional.empty();
+        int damage = lasting.consumeVault() * context.getCounterAttack();
+        enemy.takeDamage(damage);
+        return Optional.of(new CounterAttackEvent(damage));
     }
 
     /**
