@@ -15,7 +15,15 @@ import java.util.stream.Collectors;
 public class Card {
 
     /** Les quatre suites classiques d'un jeu de cartes. */
-    public enum Suit { COEUR, CARREAU, TREFLE, PIQUE }
+    public enum Suit {
+        COEUR, CARREAU, TREFLE, PIQUE;
+
+        /** @return {@code true} pour les suites rouges (Coeur, Carreau). */
+        public boolean isRed() { return this == COEUR || this == CARREAU; }
+
+        /** @return l'identifiant de la carte de rang {@code rank} de cette suite (ex : "12_coeur"). */
+        public String cardId(int rank) { return rank + "_" + name().toLowerCase(); }
+    }
 
     private final String       id;
     private final String       name;
@@ -23,6 +31,7 @@ public class Card {
     private final List<Effect> effects;
     private final Suit         suit;
     private final int          rank;
+    private final boolean      consumable;
 
     /**
      * @param id        identifiant unique de la carte (tel que défini dans le JSON)
@@ -34,6 +43,17 @@ public class Card {
      */
     public Card(String id, String name, String assetPath,
                 List<Effect> effects, Suit suit, int rank) {
+        this(id, name, assetPath, effects, suit, rank, false);
+    }
+
+    /**
+     * @param consumable {@code true} si la carte disparaît une fois jouée
+     *                   (ni défausse, ni deck : ex. Pot de Lutin)
+     * @see #Card(String, String, String, List, Suit, int)
+     */
+    public Card(String id, String name, String assetPath,
+                List<Effect> effects, Suit suit, int rank, boolean consumable) {
+        this.consumable = consumable;
         this.id        = id;
         this.name      = name;
         this.assetPath = assetPath;
@@ -50,6 +70,8 @@ public class Card {
     public Suit         getSuit()      { return suit; }
     /** @return le rang de la carte. */
     public int          getRank()      { return rank; }
+    /** @return {@code true} si la carte disparaît une fois jouée (elle ne rejoint pas la défausse). */
+    public boolean      isConsumable() { return consumable; }
     /** @return les effets déclenchés quand la carte est jouée (liste immuable). */
     public List<Effect> getEffects()   { return effects; }
 

@@ -28,5 +28,6 @@
   { "id": "combo_couleur", "copies": 1 },
   { "id": "combo_brelan", "copies": 1 },
   { "id": "combo_full", "copies": 1 },
-  { "id": "lucky_charm", "copies": 1 }
+  { "id": "lucky_charm", "copies": 1 },
+  { "id": "rainbow", "copies": 1 }
 ]

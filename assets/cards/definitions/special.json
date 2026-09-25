@@ -157,5 +157,28 @@
         "percent": 50
       }
     ]
+  },
+  {
+    "id": "rainbow",
+    "name": "Arc-en-ciel",
+    "assetPath": "cards/special/rainbow.png",
+    "effects": [
+      {
+        "type": "RAINBOW",
+        "card": "pot_de_lutin"
+      }
+    ]
+  },
+  {
+    "id": "pot_de_lutin",
+    "name": "Pot de Lutin",
+    "assetPath": "cards/special/pot_de_lutin.png",
+    "consumable": true,
+    "effects": [
+      {
+        "type": "GAINS_MULTIPLIER",
+        "factor": 5
+      }
+    ]
   }
 ]

@@ -15,6 +15,24 @@ public class CardPlayResult {
     private final List<EffectPopup> popups;
     private final CardChoice        choice;
     private final boolean           autoSpin;
+    private final Rainbow           rainbow;
+
+    /**
+     * Résultat d'un Arc-en-ciel.
+     *
+     * @param suit       suite prise par toutes les cartes à suite de la main, jusqu'à la fin du tour
+     * @param recolored  cartes de la main remplacées par leur version de cette suite (dans l'ordre de la main)
+     * @param added      carte ajoutée (Pot de Lutin)
+     * @param addedToHand {@code true} si elle est posée sur la table, {@code false} si elle part en défausse
+     */
+    public record Rainbow(Card.Suit suit, List<Recolor> recolored, Card added, boolean addedToHand) {
+        public Rainbow {
+            recolored = List.copyOf(recolored);
+        }
+    }
+
+    /** Une carte de la main qui change de couleur : {@code before} devient {@code after}. */
+    public record Recolor(Card before, Card after) { }
 
     public CardPlayResult(DrawResult drawResult, List<EffectPopup> popups) {
         this(drawResult, popups, null, false);
@@ -25,6 +43,13 @@ public class CardPlayResult {
      * @param autoSpin {@code true} si la main est bloquée et la machine se lance d'elle-même (Bingo)
      */
     public CardPlayResult(DrawResult drawResult, List<EffectPopup> popups, CardChoice choice, boolean autoSpin) {
+        this(drawResult, popups, choice, autoSpin, null);
+    }
+
+    /** @param rainbow résultat de l'Arc-en-ciel joué, ou {@code null} */
+    public CardPlayResult(DrawResult drawResult, List<EffectPopup> popups, CardChoice choice, boolean autoSpin,
+                          Rainbow rainbow) {
+        this.rainbow    = rainbow;
         this.drawResult = drawResult;
         this.popups     = List.copyOf(popups);
         this.choice     = choice;
@@ -42,4 +67,6 @@ public class CardPlayResult {
     public CardChoice        getChoice()     { return choice; }
     /** @return {@code true} si plus aucune carte ne peut être jouée et que la machine se lance d'elle-même. */
     public boolean           isAutoSpin()    { return autoSpin; }
+    /** @return le résultat de l'Arc-en-ciel joué, ou {@code null} si la carte n'en était pas un. */
+    public Rainbow           getRainbow()    { return rainbow; }
 }

@@ -12,6 +12,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
 
 /**
  * Charge les cartes depuis les fichiers JSON dans assets/cards/definitions/.
@@ -97,6 +98,25 @@ public class CardLoader {
         return cards;
     }
 
+    /**
+     * @return une fabrique de cartes : pour un id, une nouvelle instance de la
+     *         carte définie (ex : carte créée en cours de combat)
+     * @throws IllegalArgumentException (à l'appel de la fabrique) pour un id inconnu
+     */
+    public static Function<String, Card> cardFactory() {
+        return cardFactory(GDX_READER);
+    }
+
+    /** Comme {@link #cardFactory()}, en lisant les fichiers avec {@code reader} (ex : tests sans libGDX). */
+    public static Function<String, Card> cardFactory(AssetReader reader) {
+        Map<String, JsonValue> definitions = loadDefinitions(reader);
+        return id -> {
+            JsonValue definition = definitions.get(id);
+            if (definition == null) throw new IllegalArgumentException("Carte inconnue : " + id);
+            return parseCard(definition);
+        };
+    }
+
     /** @return l'objet JSON de chaque carte définie, indexé par id (dans l'ordre des fichiers). */
     private static Map<String, JsonValue> loadDefinitions(AssetReader assetReader) {
         Map<String, JsonValue> definitions = new LinkedHashMap<>();
@@ -132,7 +152,7 @@ public class CardLoader {
             }
         }
 
-        return new Card(id, name, assetPath, effects, suit, rank);
+        return new Card(id, name, assetPath, effects, suit, rank, json.getBoolean("consumable", false));
     }
 
     /**
@@ -201,6 +221,10 @@ public class CardLoader {
                 return new ComboEffect(Combo.valueOf(json.getString("combo")), json.getFloat("factor"));
             case "LUCKY_CHARM":
                 return new LuckyCharmEffect(json.getInt("percent"));
+            case "RAINBOW":
+                return new RainbowEffect(json.getString("card"));
+            case "GAINS_MULTIPLIER":
+                return new GainsMultiplierEffect(json.getInt("factor"));
 
             default:
                 throw new IllegalArgumentException("Type d'effet inconnu dans le JSON : " + type);
