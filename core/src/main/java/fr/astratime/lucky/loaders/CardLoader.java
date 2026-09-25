@@ -40,6 +40,7 @@ public class CardLoader {
     };
 
     private static final String STARTER_DECK_FILE = "cards/decks/starter.json";
+    private static final String SHOP_FILE         = "cards/decks/shop.json";
 
     /** Lit le contenu texte d'un fichier d'assets à partir de son chemin (ex : "cards/decks/starter.json"). */
     public interface AssetReader {
@@ -96,6 +97,21 @@ public class CardLoader {
             }
         }
         return cards;
+    }
+
+    /** @return le prix de chaque carte proposée à l'échoppe, par id, dans l'ordre du fichier {@code SHOP_FILE}. */
+    public static Map<String, Integer> loadShop() {
+        return loadShop(GDX_READER);
+    }
+
+    /** Comme {@link #loadShop()}, en lisant les fichiers avec {@code reader} (ex : tests sans libGDX). */
+    public static Map<String, Integer> loadShop(AssetReader reader) {
+        Map<String, Integer> shop = new LinkedHashMap<>();
+        JsonValue root = new JsonReader().parse(reader.read(SHOP_FILE));
+        for (JsonValue entry = root.child; entry != null; entry = entry.next) {
+            shop.put(entry.getString("id"), entry.getInt("price"));
+        }
+        return shop;
     }
 
     /**
@@ -185,7 +201,7 @@ public class CardLoader {
 
             // --- Pique ---
             case "SPADE_IGNORE_DEFENSE":
-                return new SpadeIgnoreDefenseEffect(json.getInt("attackBonus"));
+                return new SpadeIgnoreDefenseEffect(json.getInt("attackBonus"), json.getInt("blades", 1));
             case "ACE_OF_SPADES":
                 return new AceOfSpadesEffect();
 
@@ -224,7 +240,9 @@ public class CardLoader {
             case "RAINBOW":
                 return new RainbowEffect(json.getString("card"));
             case "GAINS_MULTIPLIER":
-                return new GainsMultiplierEffect(json.getInt("factor"));
+                return new GainsMultiplierEffect(json.getInt("factor"), json.getInt("gauges", 1));
+            case "CORRUPTION":
+                return new CorruptionEffect(json.getInt("turns"));
 
             default:
                 throw new IllegalArgumentException("Type d'effet inconnu dans le JSON : " + type);

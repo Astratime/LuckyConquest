@@ -1,6 +1,8 @@
 package fr.astratime.lucky.entities.effects;
 
+import fr.astratime.lucky.entities.Card;
 import fr.astratime.lucky.entities.Combo;
+import fr.astratime.lucky.entities.LastingEffects;
 import fr.astratime.lucky.entities.context.CombatContext;
 import fr.astratime.lucky.entities.context.TurnContext;
 import fr.astratime.lucky.entities.events.ComboEvent;
@@ -15,6 +17,11 @@ import java.util.List;
  * L'ordre dans lequel les cartes sont jouées ne compte pas.
  */
 public class ComboEffect extends Effect {
+
+    /** Jauges remplies par carte jouée quand une Couleur ou une Suite réussit. */
+    static final int COMBO_BLADES = 1;
+    static final int COMBO_BLOOD  = 25;
+    static final int COMBO_VAULT  = 40;
 
     private final Combo combo;
     private final float factor;
@@ -35,8 +42,23 @@ public class ComboEffect extends Effect {
         if (success) {
             combat.multiplyGains(factor);
             combat.multiplyAttack(factor);
+            if (combo == Combo.COULEUR || combo == Combo.SUITE) fillGauges(combat);
         }
         context.addEvent(new ComboEvent(combo.getDisplayName(), success, factor));
+    }
+
+    /** Couleur ou Suite réussie : chaque carte à suite jouée remplit la jauge de sa couleur. */
+    private static void fillGauges(CombatContext combat) {
+        LastingEffects lasting = combat.getPlayer().getLastingEffects();
+        for (Card card : combat.getPlayer().getPlayedCards()) {
+            if (card.getSuit() == null) continue;
+            switch (card.getSuit()) {
+                case PIQUE   -> lasting.addBlades(COMBO_BLADES);
+                case COEUR   -> lasting.addBlood(COMBO_BLOOD);
+                case CARREAU -> lasting.addVault(COMBO_VAULT);
+                case TREFLE  -> { } // le Trèfle rapporte déjà des gains
+            }
+        }
     }
 
     @Override
@@ -48,7 +70,8 @@ public class ComboEffect extends Effect {
             case FULL    -> "un brelan et une paire";
         };
         return combo.getDisplayName() + " : si les cartes jouees ce tour forment " + rule
-            + ", gains et attaque x" + formatFactor();
+            + ", gains et attaque x" + formatFactor()
+            + (combo == Combo.COULEUR || combo == Combo.SUITE ? "\nRemplit la jauge de chaque carte jouee" : "");
     }
 
     @Override

@@ -152,6 +152,21 @@ public class Player {
 
     /**
      * Pose une nouvelle carte sur la table s'il reste un emplacement libre,
+     * sinon la glisse dans le deck, à une place au hasard.
+     *
+     * @return {@code true} si la carte a rejoint la main
+     */
+    public boolean addToHandOrDeck(Card card) {
+        if (currentHand.size() < MAX_HAND_SIZE) {
+            currentHand.add(card);
+            return true;
+        }
+        deck.insertRandomly(card);
+        return false;
+    }
+
+    /**
+     * Pose une nouvelle carte sur la table s'il reste un emplacement libre,
      * sinon la met directement dans la défausse.
      *
      * @return {@code true} si la carte a rejoint la main

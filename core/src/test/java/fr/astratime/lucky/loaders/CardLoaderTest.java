@@ -40,7 +40,7 @@ class CardLoaderTest {
     void everyCardDefinitionLoads() {
         List<Card> cards = CardLoader.loadAll(READER);
 
-        assertEquals(52 + 16, cards.size(), "4 suites de 13 cartes + 16 cartes spéciales");
+        assertEquals(52 + 17, cards.size(), "4 suites de 13 cartes + 17 cartes spéciales");
         assertEquals(cards.size(), cards.stream().map(Card::getId).distinct().count(), "les ids doivent être uniques");
     }
 
@@ -115,5 +115,13 @@ class CardLoaderTest {
 
         assertTrue(pot.isConsumable());
         assertTrue(CardLoader.loadStarterDeck(READER).stream().noneMatch(c -> c.getId().equals("pot_de_lutin")));
+    }
+
+    @Test
+    void shopSellsCorruptionForTwoThousandGains() {
+        Map<String, Integer> shop = CardLoader.loadShop(READER);
+
+        assertEquals(Map.of("corruption", 2000), shop);
+        shop.keySet().forEach(id -> assertNotNull(CardLoader.cardFactory(READER).apply(id)));
     }
 }

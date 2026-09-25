@@ -40,6 +40,13 @@ public class HudTextures implements Disposable {
     public final Texture iconCross       = load("hud/icon_cross.png");
     /** Revolver de la Roulette russe, qui tire sur l'ennemi après le tirage. */
     public final Texture pistol          = load("jackpot/pistol.png");
+    /** Jauges des couleurs et Corruption, dans les effets actifs du panneau latéral. */
+    public final Texture iconBlade       = load("hud/icon_blade.png");
+    public final Texture iconBlood       = load("hud/icon_blood.png");
+    public final Texture iconVault       = load("hud/icon_vault.png");
+    public final Texture iconCorruption  = load("hud/icon_corruption.png");
+    /** Échoppe de marché : ouvre la boutique de cartes. */
+    public final Texture shop            = load("hud/shop.png");
 
     /** @return un fond étirable pour le panneau latéral (fond sombre, liseré doré épais). */
     public NinePatchDrawable panelDrawable() { return nine(panel, PANEL_BORDER); }
@@ -64,6 +71,11 @@ public class HudTextures implements Disposable {
         iconClover.dispose();
         iconCross.dispose();
         pistol.dispose();
+        iconBlade.dispose();
+        iconBlood.dispose();
+        iconVault.dispose();
+        iconCorruption.dispose();
+        shop.dispose();
         panelInset.dispose();
         barFrame.dispose();
         barFillEnemy.dispose();

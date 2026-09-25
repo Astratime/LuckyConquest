@@ -3,6 +3,7 @@ package fr.astratime.lucky.entities;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Random;
 
 /**
  * Deck de cartes du joueur.
@@ -11,6 +12,8 @@ import java.util.List;
  * la responsabilité de CardLoader et des fichiers de définition.
  */
 public class Deck {
+
+    private static final Random RANDOM = new Random();
 
     private final List<Card>  cards = new ArrayList<>();
     private final DiscardPile discardPile;
@@ -46,6 +49,11 @@ public class Deck {
             drawn.add(cards.removeLast());
         }
         return drawn;
+    }
+
+    /** Glisse {@code card} dans le deck, à une place tirée au hasard. */
+    public void insertRandomly(Card card) {
+        cards.add(RANDOM.nextInt(cards.size() + 1), card);
     }
 
     /** @return les cartes restantes dans le deck. */

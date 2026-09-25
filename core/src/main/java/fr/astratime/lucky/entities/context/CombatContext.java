@@ -30,6 +30,8 @@ public class CombatContext {
     private float gainFactor     = 1f;  // facteur appliqué à tous les gains du tirage (combos, Porte-bonheur)
     private float attackFactor   = 1f;  // facteur appliqué aux dégâts de chaque symbole (combos)
     private int   symbolPower    = 1;   // facteur de la valeur de chaque symbole : dégâts, bouclier, gains (Bingo)
+    private float defenseFactor  = 1f;  // facteur du bouclier de chaque symbole (Corruption)
+    private int   counterAttack  = 0;   // As de Carreau : multiplicateur du Coffre infligé en contre-attaque (0 : aucune)
 
     private final List<Symbol>  bets        = new ArrayList<>(); // Pari : symboles sur lesquels le joueur a parié
     private final List<Integer> pistolShots = new ArrayList<>(); // Roulette russe : multiplicateur de chaque tir de pistolet
@@ -68,6 +70,10 @@ public class CombatContext {
     public float getGainFactor()     { return gainFactor; }
     /** @return le facteur appliqué aux dégâts de chaque symbole (1 si aucun). */
     public float getAttackFactor()   { return attackFactor; }
+    /** @return le facteur du bouclier de chaque symbole (1 si aucun). */
+    public float getDefenseFactor()  { return defenseFactor; }
+    /** @return le multiplicateur du Coffre infligé en contre-attaque ce tour (0 si aucune). */
+    public int   getCounterAttack()  { return counterAttack; }
     /** @return le facteur de la valeur de chaque symbole : dégâts, bouclier et gains (1 si aucun). */
     public int   getSymbolPower()    { return symbolPower; }
     /** @return les symboles sur lesquels le joueur a parié ce tour (vue non modifiable). */
@@ -108,6 +114,10 @@ public class CombatContext {
     public void multiplyGains(float factor)       { gainFactor   *= factor; }
     /** Multiplie les dégâts de chaque symbole par {@code factor}. */
     public void multiplyAttack(float factor)      { attackFactor *= factor; }
+    /** Multiplie le bouclier de chaque symbole par {@code factor}. */
+    public void multiplyDefense(float factor)     { defenseFactor *= factor; }
+    /** Contre-attaque (As de Carreau) : le Coffre, multiplié par {@code factor}, est infligé à l'ennemi. */
+    public void addCounterAttack(int factor)      { counterAttack += factor; }
     /** Multiplie la valeur de chaque symbole (dégâts, bouclier, gains) par {@code factor}. */
     public void multiplySymbolPower(int factor)   { symbolPower  *= factor; }
     /** Parie sur l'apparition de {@code symbol} au tirage. */

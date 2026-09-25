@@ -27,6 +27,10 @@ public class AceOfClubsEffect extends Effect {
     private static final int   WEIGHT_BOOST_AMOUNT = 150;
     /** Bonus d'attaque plat de base accordé pour ce tour. */
     private static final int   ATTACK_BOOST_AMOUNT = 115;
+    /** Attaque ajoutée par racine carrée des gains consommés (1 000 gains : +316). */
+    static final float          ATTACK_PER_SQRT_GAIN  = 10f;
+    /** Boost de poids au plus obtenu avec les gains consommés. */
+    static final int            MAX_WEIGHT_FROM_GAINS = 1500;
     private static final Random RANDOM             = new Random();
 
     /**
@@ -37,8 +41,9 @@ public class AceOfClubsEffect extends Effect {
     @Override
     public void onPlay(PlayContext context) {
         int consumed = context.consumeGainsPercent(CONSUME_PERCENT);
-        int weightBoost = WEIGHT_BOOST_AMOUNT + consumed;
-        int attackBoost = ATTACK_BOOST_AMOUNT + consumed / 2;
+        // Rendement décroissant : l'attaque suit la racine des gains consommés, le boost est plafonné.
+        int weightBoost = WEIGHT_BOOST_AMOUNT + Math.min(consumed, MAX_WEIGHT_FROM_GAINS);
+        int attackBoost = ATTACK_BOOST_AMOUNT + Math.round(ATTACK_PER_SQRT_GAIN * (float) Math.sqrt(consumed));
 
         context.addPopups(List.of(
             EffectPopup.scaled("-30% GAINS", EffectPopup.Style.GAINS, consumed, PopupScale.ACE_OF_CLUBS_CONSUMED),

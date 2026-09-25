@@ -19,22 +19,31 @@ public class AceOfDiamondsEffect extends Effect {
     /** Renvoi garanti si le joueur est sous LOW_HP_RATIO de sa vie. */
     private static final int REFLECT_PERCENT_LOW_HP = 1000;
 
+    /** Multiplicateur du Coffre infligé en contre-attaque ({@link #COUNTER_LOW_HP} si vie basse). */
+    static final int COUNTER        = 3;
+    static final int COUNTER_LOW_HP = 5;
+
     @Override
     public void apply(TurnContext context) {
-        context.getCombatContext().addGuaranteedReflect(REFLECT_PERCENT, REFLECT_PERCENT_LOW_HP);
+        CombatContext combat = context.getCombatContext();
+        combat.addGuaranteedReflect(REFLECT_PERCENT, REFLECT_PERCENT_LOW_HP);
+        combat.addCounterAttack(combat.getPlayer().getHpRatio() < CombatContext.LOW_HP_RATIO ? COUNTER_LOW_HP : COUNTER);
     }
 
     @Override
     public String getDescription() {
-        return "Renvoi garanti de " + REFLECT_PERCENT + "% des degats ennemis ("
-            + REFLECT_PERCENT_LOW_HP + "% si vie < " + Math.round(CombatContext.LOW_HP_RATIO * 100) + "%)";
+        int lowHp = Math.round(CombatContext.LOW_HP_RATIO * 100);
+        return "Contre-attaque : inflige le Coffre x" + COUNTER + " (x" + COUNTER_LOW_HP + " si vie < " + lowHp
+            + "%), puis le vide\nRenvoi garanti de " + REFLECT_PERCENT + "% (" + REFLECT_PERCENT_LOW_HP
+            + "% si vie < " + lowHp + "%)";
     }
 
     @Override
     public List<EffectPopup> getPopups() {
         return List.of(
+            new EffectPopup("CONTRE-ATTAQUE", EffectPopup.Style.DEFENSE, PopupScale.MAX_INTENSITY),
             new EffectPopup("RENVOI " + REFLECT_PERCENT + "-" + REFLECT_PERCENT_LOW_HP + "%",
-                EffectPopup.Style.REFLECT, PopupScale.MAX_INTENSITY)
+                EffectPopup.Style.REFLECT, PopupScale.SECONDARY_INTENSITY)
         );
     }
 }

@@ -177,7 +177,19 @@
     "effects": [
       {
         "type": "GAINS_MULTIPLIER",
-        "factor": 5
+        "factor": 5,
+        "gauges": 2
+      }
+    ]
+  },
+  {
+    "id": "corruption",
+    "name": "Corruption",
+    "assetPath": "cards/special/corruption.png",
+    "effects": [
+      {
+        "type": "CORRUPTION",
+        "turns": 3
       }
     ]
   }
