@@ -20,7 +20,7 @@ public class DefenseEffect extends Effect {
     }
 
     @Override
-    public String getDescription() { return "Defense +" + bonus; }
+    public String getDescription() { return "Défense +" + bonus; }
 
     @Override
     public List<EffectPopup> getPopups() {

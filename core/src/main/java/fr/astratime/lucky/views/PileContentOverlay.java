@@ -23,6 +23,7 @@ import fr.astratime.lucky.entities.Card;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.function.Consumer;
 import java.util.function.Function;
 
 /**
@@ -60,6 +61,7 @@ public class PileContentOverlay implements Disposable {
     private final Label   hint;
     private final Table   grid = new Table();
     private final ScrollPane scrollPane;
+    private Consumer<Card> onInspect;
 
     /**
      * @param stage          Stage de l'écran de jeu (l'acteur racine y est ajouté par l'appelant via {@link #getActor()})
@@ -82,7 +84,7 @@ public class PileContentOverlay implements Disposable {
         Label.LabelStyle style = new Label.LabelStyle(font, Color.WHITE);
         title = new Label("", style);
         title.setFontScale(1.5f);
-        hint  = new Label("Cliquer n'importe ou (ou Echap) pour fermer", new Label.LabelStyle(font, Color.LIGHT_GRAY));
+        hint  = new Label("Clic sur une carte : sa fiche. Ailleurs (ou Echap) : fermer", new Label.LabelStyle(font, Color.LIGHT_GRAY));
 
         scrollPane = new ScrollPane(grid);
         scrollPane.setScrollingDisabled(true, false);
@@ -172,7 +174,7 @@ public class PileContentOverlay implements Disposable {
             public void enter(InputEvent event, float x, float y, int pointer, Actor fromActor) {
                 if (pointer != -1) return;
                 Vector2 pos = image.localToStageCoordinates(new Vector2(0, cardHeight + 5f));
-                tooltip.show(card.getName() + "\n" + card.getDescription(), pos.x, pos.y);
+                tooltip.show(card.getName(), card.getDescription(), pos.x, pos.y);
             }
 
             @Override
@@ -180,8 +182,20 @@ public class PileContentOverlay implements Disposable {
                 if (pointer != -1) return;
                 tooltip.hide();
             }
+
+            /** Clic sur une carte : sa fiche, sans refermer le voile. */
+            @Override
+            public boolean touchDown(InputEvent event, float x, float y, int pointer, int button) {
+                if (onInspect == null) return false;
+                event.stop();
+                onInspect.accept(card);
+                return true;
+            }
         });
     }
+
+    /** @param onInspect appelé au clic sur une carte (afficher sa fiche) */
+    public void setOnInspect(Consumer<Card> onInspect) { this.onInspect = onInspect; }
 
     @Override
     public void dispose() {

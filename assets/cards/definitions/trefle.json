@@ -1,7 +1,7 @@
 [
   {
     "id": "1_trefle",
-    "name": "As de Trefle",
+    "name": "As de Trèfle",
     "assetPath": "cards/light/1-C.png",
     "suit": "TREFLE",
     "rank": 1,
@@ -13,7 +13,7 @@
   },
   {
     "id": "2_trefle",
-    "name": "2 de Trefle",
+    "name": "2 de Trèfle",
     "assetPath": "cards/light/2-C.png",
     "suit": "TREFLE",
     "rank": 2,
@@ -27,7 +27,7 @@
   },
   {
     "id": "3_trefle",
-    "name": "3 de Trefle",
+    "name": "3 de Trèfle",
     "assetPath": "cards/light/3-C.png",
     "suit": "TREFLE",
     "rank": 3,
@@ -41,7 +41,7 @@
   },
   {
     "id": "4_trefle",
-    "name": "4 de Trefle",
+    "name": "4 de Trèfle",
     "assetPath": "cards/light/4-C.png",
     "suit": "TREFLE",
     "rank": 4,
@@ -55,7 +55,7 @@
   },
   {
     "id": "5_trefle",
-    "name": "5 de Trefle",
+    "name": "5 de Trèfle",
     "assetPath": "cards/light/5-C.png",
     "suit": "TREFLE",
     "rank": 5,
@@ -69,7 +69,7 @@
   },
   {
     "id": "6_trefle",
-    "name": "6 de Trefle",
+    "name": "6 de Trèfle",
     "assetPath": "cards/light/6-C.png",
     "suit": "TREFLE",
     "rank": 6,
@@ -83,7 +83,7 @@
   },
   {
     "id": "7_trefle",
-    "name": "7 de Trefle",
+    "name": "7 de Trèfle",
     "assetPath": "cards/light/7-C.png",
     "suit": "TREFLE",
     "rank": 7,
@@ -97,7 +97,7 @@
   },
   {
     "id": "8_trefle",
-    "name": "8 de Trefle",
+    "name": "8 de Trèfle",
     "assetPath": "cards/light/8-C.png",
     "suit": "TREFLE",
     "rank": 8,
@@ -111,7 +111,7 @@
   },
   {
     "id": "9_trefle",
-    "name": "9 de Trefle",
+    "name": "9 de Trèfle",
     "assetPath": "cards/light/9-C.png",
     "suit": "TREFLE",
     "rank": 9,
@@ -125,7 +125,7 @@
   },
   {
     "id": "10_trefle",
-    "name": "10 de Trefle",
+    "name": "10 de Trèfle",
     "assetPath": "cards/light/10-C.png",
     "suit": "TREFLE",
     "rank": 10,
@@ -139,7 +139,7 @@
   },
   {
     "id": "11_trefle",
-    "name": "Valet de Trefle",
+    "name": "Valet de Trèfle",
     "assetPath": "cards/light/11-C.png",
     "suit": "TREFLE",
     "rank": 11,
@@ -153,7 +153,7 @@
   },
   {
     "id": "12_trefle",
-    "name": "Dame de Trefle",
+    "name": "Dame de Trèfle",
     "assetPath": "cards/light/12-C.png",
     "suit": "TREFLE",
     "rank": 12,
@@ -167,7 +167,7 @@
   },
   {
     "id": "13_trefle",
-    "name": "Roi de Trefle",
+    "name": "Roi de Trèfle",
     "assetPath": "cards/light/13-C.png",
     "suit": "TREFLE",
     "rank": 13,

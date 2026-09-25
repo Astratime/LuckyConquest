@@ -67,5 +67,5 @@ public class AttackAction extends Action {
     }
 
     @Override
-    public String getDescription() { return baseDamage + " degats de base"; }
+    public String getDescription() { return baseDamage + " dégâts de base"; }
 }

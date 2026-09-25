@@ -36,6 +36,7 @@
     "id": "bingo",
     "name": "Bingo",
     "assetPath": "cards/special/bingo.png",
+    "consumable": true,
     "effects": [
       {
         "type": "BINGO",
@@ -91,6 +92,7 @@
     "id": "russian_roulette",
     "name": "Roulette russe",
     "assetPath": "cards/special/russian_roulette.png",
+    "consumable": true,
     "effects": [
       {
         "type": "RUSSIAN_ROULETTE",
@@ -103,6 +105,7 @@
     "id": "combo_suite",
     "name": "Suite",
     "assetPath": "cards/special/combo_suite.png",
+    "consumable": true,
     "effects": [
       {
         "type": "COMBO",
@@ -112,9 +115,23 @@
     ]
   },
   {
+    "id": "combo_paire",
+    "name": "Paire",
+    "assetPath": "cards/special/combo_paire.png",
+    "consumable": true,
+    "effects": [
+      {
+        "type": "COMBO",
+        "combo": "PAIRE",
+        "factor": 1.5
+      }
+    ]
+  },
+  {
     "id": "combo_couleur",
     "name": "Couleur",
     "assetPath": "cards/special/combo_couleur.png",
+    "consumable": true,
     "effects": [
       {
         "type": "COMBO",
@@ -127,6 +144,7 @@
     "id": "combo_brelan",
     "name": "Brelan",
     "assetPath": "cards/special/combo_brelan.png",
+    "consumable": true,
     "effects": [
       {
         "type": "COMBO",
@@ -139,6 +157,7 @@
     "id": "combo_full",
     "name": "Full",
     "assetPath": "cards/special/combo_full.png",
+    "consumable": true,
     "effects": [
       {
         "type": "COMBO",
@@ -186,6 +205,7 @@
     "id": "corruption",
     "name": "Corruption",
     "assetPath": "cards/special/corruption.png",
+    "consumable": true,
     "effects": [
       {
         "type": "CORRUPTION",

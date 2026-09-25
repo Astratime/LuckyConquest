@@ -7,7 +7,9 @@ import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.Interpolation;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.Group;
+import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
+import com.badlogic.gdx.scenes.scene2d.InputListener;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.Touchable;
 import com.badlogic.gdx.scenes.scene2d.actions.Actions;
@@ -25,13 +27,14 @@ import fr.astratime.lucky.entities.Card;
 
 import java.util.List;
 import java.util.function.BiFunction;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.IntSupplier;
 import java.util.function.Predicate;
 
 /**
  * L'échoppe, ouverte par-dessus le jeu depuis l'icône du marché : les cartes
- * en vente, avec leur description et leur prix. Acheter retire le prix des
+ * en vente, en grille, avec leur prix (leur effet au survol, leur fiche au clic). Acheter retire le prix des
  * gains ; sans assez de gains, le prix clignote en rouge. Un clic à côté, le
  * bouton « Fermer » ou Échap (géré par l'appelant via {@link #hide()}) la referment.
  */
@@ -45,25 +48,31 @@ public class ShopOverlay implements Disposable {
     private static final float FADE       = 0.2f;
     private static final float PADDING    = 44f;
     private static final float GAP        = 16f;
-    private static final float CARD_SCALE = 2.2f;
-    private static final float TEXT_WIDTH = 360f;
-    private static final float COIN_SIZE  = 40f;
+    private static final float CARD_SCALE = 1.15f;
+    private static final float CELL_WIDTH = 230f;
+    private static final float COIN_SIZE  = 30f;
+    private static final float CELL_PAD   = 14f;
+    private static final int   COLUMNS    = 4;
     private static final float CLOSE_AFTER_PURCHASE = 0.7f;
 
     private final Stage       stage;
     private final HudTextures hud;
+    private final Tooltip     tooltip;
     private final float       cardWidth;
     private final float       cardHeight;
     private final BitmapFont  titleFont   = Fonts.jersey(72, GOLD, 3f, TEXT_SHADE);
     private final BitmapFont  textFont    = Fonts.jersey(30, CREAM, 2f, TEXT_SHADE);
-    private final BitmapFont  priceFont   = Fonts.jersey(44, Color.WHITE, 3f, TEXT_SHADE);
+    private final BitmapFont  hintFont    = Fonts.jersey(22, CREAM, 2f, TEXT_SHADE);
+    private final BitmapFont  nameFont    = Fonts.jersey(30, Color.WHITE, 2f, TEXT_SHADE);
+    private final BitmapFont  priceFont   = Fonts.jersey(34, Color.WHITE, 2f, TEXT_SHADE);
 
     private final Group root  = new Group();
     private final Image veil;
     private final Table panel = new Table();
 
     /** @param cardWidth taille d'une carte de la main (agrandie ici) */
-    public ShopOverlay(Stage stage, HudTextures hud, float cardWidth, float cardHeight) {
+    public ShopOverlay(Stage stage, HudTextures hud, Tooltip tooltip, float cardWidth, float cardHeight) {
+        this.tooltip    = tooltip;
         this.stage      = stage;
         this.hud        = hud;
         this.cardWidth  = cardWidth * CARD_SCALE;
@@ -96,39 +105,65 @@ public class ShopOverlay implements Disposable {
      * @param textureOf image de chaque carte
      * @param button    crée un bouton du jeu (texte, action au clic)
      * @param buy       tente l'achat : {@code true} s'il a eu lieu (gains suffisants)
+     * @param inspect   affiche la fiche d'une carte (clic sur son image)
      */
     public void show(List<ShopOffer> offers, IntSupplier gains, Function<Card, Texture> textureOf,
-                     BiFunction<String, Runnable, Actor> button, Predicate<ShopOffer> buy) {
+                     BiFunction<String, Runnable, Actor> button, Predicate<ShopOffer> buy, Consumer<ShopOffer> inspect) {
+        int columns = Math.min(COLUMNS, Math.max(1, offers.size()));
         panel.clearChildren();
-        panel.add(new Label("ÉCHOPPE", new Label.LabelStyle(titleFont, Color.WHITE))).colspan(offers.size());
+        panel.add(new Label("ÉCHOPPE", new Label.LabelStyle(titleFont, Color.WHITE))).colspan(columns);
         panel.row();
         Label wallet = new Label(walletText(gains.getAsInt()), new Label.LabelStyle(textFont, Color.WHITE));
-        panel.add(wallet).colspan(offers.size()).padBottom(GAP * 2);
+        panel.add(wallet).colspan(columns);
+        panel.row();
+        panel.add(new Label("Survole une carte pour son effet, clique dessus pour sa fiche. Les cartes achetées"
+            + " disparaissent une fois jouées.", new Label.LabelStyle(hintFont, Color.WHITE))).colspan(columns)
+            .padBottom(GAP * 1.5f);
         panel.row();
 
-        for (ShopOffer offer : offers) {
+        for (int i = 0; i < offers.size(); i++) {
+            ShopOffer offer = offers.get(i);
             Card card = offer.card();
-            Table column = new Table();
-            column.add(new Image(new TextureRegionDrawable(new TextureRegion(textureOf.apply(card)))))
-                .size(cardWidth, cardHeight);
-            column.row();
-            column.add(new Label(card.getName(), new Label.LabelStyle(priceFont, GOLD))).padTop(GAP);
-            column.row();
-            Label description = new Label(card.getDescription(), new Label.LabelStyle(textFont, Color.WHITE));
-            description.setWrap(true);
-            description.setAlignment(Align.center);
-            column.add(description).width(TEXT_WIDTH).padTop(GAP / 2f);
-            column.row();
+            Table cell = new Table();
+            cell.setBackground(hud.insetDrawable());
+            cell.pad(CELL_PAD);
+
+            Image image = new Image(new TextureRegionDrawable(new TextureRegion(textureOf.apply(card))));
+            image.addListener(new InputListener() {
+                @Override
+                public void enter(InputEvent event, float x, float y, int pointer, Actor fromActor) {
+                    if (pointer != -1) return;
+                    Vector2 pos = image.localToStageCoordinates(new Vector2(image.getWidth() + 8f, 0f));
+                    tooltip.show(card.getName(), card.getDescription(), pos.x, pos.y);
+                }
+
+                @Override
+                public void exit(InputEvent event, float x, float y, int pointer, Actor toActor) {
+                    if (pointer != -1) return;
+                    tooltip.hide();
+                }
+
+                @Override
+                public boolean touchDown(InputEvent event, float x, float y, int pointer, int button) {
+                    tooltip.hide();
+                    inspect.accept(offer);
+                    return true;
+                }
+            });
+            cell.add(image).size(cardWidth, cardHeight);
+            cell.row();
+            cell.add(new Label(card.getName(), new Label.LabelStyle(nameFont, GOLD))).padTop(GAP / 2f);
+            cell.row();
 
             Table price = new Table();
-            price.add(new Image(new TextureRegionDrawable(new TextureRegion(hud.coin)))).size(COIN_SIZE).padRight(8f);
+            price.add(new Image(new TextureRegionDrawable(new TextureRegion(hud.coin)))).size(COIN_SIZE).padRight(6f);
             Label priceLabel = new Label(SidePanel.formatGains(offer.price()), new Label.LabelStyle(priceFont, Color.WHITE));
             price.add(priceLabel);
-            column.add(price).padTop(GAP);
-            column.row();
+            cell.add(price).padTop(GAP / 4f);
+            cell.row();
 
-            Label status = new Label(" ", new Label.LabelStyle(textFont, Color.WHITE));
-            column.add(button.apply("Acheter", () -> {
+            Label status = new Label(" ", new Label.LabelStyle(hintFont, Color.WHITE));
+            cell.add(button.apply("Acheter", () -> {
                 if (!root.isVisible() || !root.isTouchable()) return;
                 if (buy.test(offer)) {
                     wallet.setText(walletText(gains.getAsInt()));
@@ -143,13 +178,14 @@ public class ShopOverlay implements Disposable {
                     priceLabel.setColor(RED);
                     priceLabel.addAction(Actions.sequence(Actions.delay(0.4f), Actions.color(Color.WHITE, 0.4f)));
                 }
-            })).padTop(GAP);
-            column.row();
-            column.add(status).padTop(GAP / 2f);
-            panel.add(column).top().pad(0f, GAP, 0f, GAP);
+            })).padTop(GAP / 2f);
+            cell.row();
+            cell.add(status);
+            panel.add(cell).width(CELL_WIDTH).pad(GAP / 2f);
+            if ((i + 1) % columns == 0) panel.row();
         }
         panel.row();
-        panel.add(button.apply("Fermer", this::hide)).colspan(offers.size()).padTop(GAP * 2);
+        panel.add(button.apply("Fermer", this::hide)).colspan(columns).padTop(GAP);
 
         layout();
         root.clearActions();
@@ -158,6 +194,7 @@ public class ShopOverlay implements Disposable {
         root.getColor().a = 0f;
         root.addAction(Actions.fadeIn(FADE, Interpolation.pow2Out));
         root.toFront();
+        tooltip.getActor().toFront();
     }
 
     private static String walletText(int gains) {
@@ -166,6 +203,7 @@ public class ShopOverlay implements Disposable {
 
     /** Referme l'échoppe. */
     public void hide() {
+        tooltip.hide();
         root.clearActions();
         root.setVisible(false);
     }
@@ -185,5 +223,7 @@ public class ShopOverlay implements Disposable {
         titleFont.dispose();
         textFont.dispose();
         priceFont.dispose();
+        hintFont.dispose();
+        nameFont.dispose();
     }
 }

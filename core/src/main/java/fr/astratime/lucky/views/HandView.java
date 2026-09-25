@@ -1,5 +1,6 @@
 package fr.astratime.lucky.views;
 
+import com.badlogic.gdx.Input;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.Interpolation;
 import com.badlogic.gdx.math.Vector2;
@@ -22,6 +23,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 /**
@@ -71,6 +73,9 @@ public class HandView {
     private final Group       group  = new Group();
     /** Images des cartes de la main (non jouées), dans l'ordre d'affichage. */
     private final List<Image> images = new ArrayList<>();
+    /** Appelé au clic droit sur une carte : afficher sa fiche. */
+    private Consumer<Card> onInspect;
+
     /** Carte représentée par chaque image de la main (elle peut changer : Arc-en-ciel). */
     private final Map<Image, Card> cardOf = new HashMap<>();
 
@@ -88,6 +93,9 @@ public class HandView {
         this.discardAnimator = discardAnimator;
         this.clickListener   = clickListener;
     }
+
+    /** @param onInspect appelé au clic droit sur une carte de la main (afficher sa fiche) */
+    public void setOnInspect(Consumer<Card> onInspect) { this.onInspect = onInspect; }
 
     /** @return le groupe contenant les cartes de la main, à ajouter au Stage. */
     public Group getActor() { return group; }
@@ -242,7 +250,7 @@ public class HandView {
                 cardImage.setHovered(true);
                 cardImage.tiltToward(x);
                 Vector2 pos = cardImage.localToStageCoordinates(new Vector2(0, cardHeight + TOOLTIP_GAP));
-                tooltip.show(cardOf.get(cardImage).getDescription(), pos.x, pos.y);
+                tooltip.show(cardOf.get(cardImage).getName(), cardOf.get(cardImage).getDescription(), pos.x, pos.y);
             }
 
             @Override
@@ -260,6 +268,11 @@ public class HandView {
 
             @Override
             public boolean touchDown(InputEvent event, float x, float y, int pointer, int button) {
+                if (button == Input.Buttons.RIGHT) { // clic droit : fiche de la carte, sans la jouer
+                    tooltip.hide();
+                    if (onInspect != null) onInspect.accept(cardOf.get(cardImage));
+                    return true;
+                }
                 Vector2 clickPos   = cardImage.localToStageCoordinates(new Vector2(x, y));
                 Vector2 cardCenter = cardImage.localToStageCoordinates(new Vector2(cardWidth / 2f, cardHeight / 2f));
                 Card card = cardOf.remove(cardImage);

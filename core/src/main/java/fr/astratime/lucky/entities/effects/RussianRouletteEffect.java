@@ -49,7 +49,7 @@ public class RussianRouletteEffect extends Effect {
 
     @Override
     public String getDescription() {
-        return "Choisissez une carte : pistolet (degats d'un symbole x" + multiplier
+        return "Choisissez une carte : pistolet (dégâts d'un symbole x" + multiplier
             + ") ou Joker maudit (-" + penaltyPercent + "% de gains)";
     }
 

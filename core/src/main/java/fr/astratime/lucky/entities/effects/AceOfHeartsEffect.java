@@ -49,7 +49,7 @@ public class AceOfHeartsEffect extends Effect {
 
     @Override
     public String getDescription() {
-        return "Frenesie : boost d'un symbole d'attaque ; attaque x(1 + 2 x vie manquante) ; tout le Sang devient de l'attaque";
+        return "Frénésie : boost d'un symbole d'attaque ; attaque x(1 + 2 x vie manquante) ; tout le Sang devient de l'attaque";
     }
 
     @Override

@@ -32,7 +32,7 @@ public class RainbowEffect extends Effect {
 
     @Override
     public String getDescription() {
-        return "Toutes les cartes de la main prennent une meme suite, tiree au hasard, jusqu'a la fin du tour. Ajoute un Pot de Lutin sur la table";
+        return "Toutes les cartes de la main prennent une même suite, tirée au hasard, jusqu'à la fin du tour. Ajoute un Pot de Lutin sur la table";
     }
 
     @Override

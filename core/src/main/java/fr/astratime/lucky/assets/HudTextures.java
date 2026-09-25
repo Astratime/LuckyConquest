@@ -19,6 +19,7 @@ public class HudTextures implements Disposable {
     public static final int PANEL_BORDER     = 15;
     public static final int INSET_BORDER     = 9;
     public static final int BAR_FRAME_BORDER = 9;
+    public static final int TOOLTIP_BORDER   = 12;
 
     private static final Color TRAIL_COLOR = Color.valueOf("fff2c0ff");
 
@@ -47,12 +48,18 @@ public class HudTextures implements Disposable {
     public final Texture iconCorruption  = load("hud/icon_corruption.png");
     /** Échoppe de marché : ouvre la boutique de cartes. */
     public final Texture shop            = load("hud/shop.png");
+    /** Infobulle : fond laqué, double liseré doré et rivets, étirable ; filet doré sous son titre. */
+    public final Texture tooltip         = load("hud/tooltip.png");
+    public final Texture tooltipRule     = load("hud/tooltip_rule.png");
 
     /** @return un fond étirable pour le panneau latéral (fond sombre, liseré doré épais). */
     public NinePatchDrawable panelDrawable() { return nine(panel, PANEL_BORDER); }
 
     /** @return un fond étirable pour un encadré du panneau (feutre rouge, liseré doré fin). */
     public NinePatchDrawable insetDrawable() { return nine(panelInset, INSET_BORDER); }
+
+    /** @return le fond étirable des infobulles (laque sombre, liseré doré). */
+    public NinePatchDrawable tooltipDrawable() { return nine(tooltip, TOOLTIP_BORDER); }
 
     /** @return le cadre étirable d'une barre de vie (piste sombre, liseré doré). */
     public NinePatchDrawable barFrameDrawable() { return nine(barFrame, BAR_FRAME_BORDER); }
@@ -76,6 +83,8 @@ public class HudTextures implements Disposable {
         iconVault.dispose();
         iconCorruption.dispose();
         shop.dispose();
+        tooltip.dispose();
+        tooltipRule.dispose();
         panelInset.dispose();
         barFrame.dispose();
         barFillEnemy.dispose();

@@ -279,7 +279,7 @@ public class SlotView implements Disposable {
                 Symbol symbol = reel.getSymbol();
                 if (pointer != -1 || symbol == null) return;
                 Vector2 pos = reel.localToStageCoordinates(new Vector2(0, SYMBOL_HEIGHT + TOOLTIP_GAP));
-                tooltip.show(symbol.getDescription(), pos.x, pos.y);
+                tooltip.show(symbol.getDisplayName(), symbol.getDescription(), pos.x, pos.y);
             }
 
             @Override

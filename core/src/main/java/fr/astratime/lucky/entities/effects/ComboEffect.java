@@ -64,14 +64,15 @@ public class ComboEffect extends Effect {
     @Override
     public String getDescription() {
         String rule = switch (combo) {
+            case PAIRE   -> "2 cartes du même rang";
             case SUITE   -> "3 rangs qui se suivent";
-            case COULEUR -> "3 cartes ou plus, toutes de la meme suite";
-            case BRELAN  -> "3 cartes du meme rang";
+            case COULEUR -> "3 cartes ou plus, toutes de la même suite";
+            case BRELAN  -> "3 cartes du même rang";
             case FULL    -> "un brelan et une paire";
         };
-        return combo.getDisplayName() + " : si les cartes jouees ce tour forment " + rule
+        return combo.getDisplayName() + " : si les cartes jouées ce tour forment " + rule
             + ", gains et attaque x" + formatFactor()
-            + (combo == Combo.COULEUR || combo == Combo.SUITE ? "\nRemplit la jauge de chaque carte jouee" : "");
+            + (combo == Combo.COULEUR || combo == Combo.SUITE ? "\nRemplit la jauge de chaque carte jouée" : "");
     }
 
     @Override
