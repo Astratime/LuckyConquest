@@ -3,6 +3,7 @@ package fr.astratime.lucky.entities;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Le joueur : points de vie, deck/défausse/main courante, machine à sous
@@ -138,6 +139,15 @@ public class Player {
         if (index < 0) return false;
         currentHand.set(index, replacement);
         return true;
+    }
+
+    /**
+     * Remplace, dans la main et parmi les cartes jouées, chaque carte présente
+     * dans {@code originals} par sa carte d'origine (fin de l'effet d'un Arc-en-ciel).
+     */
+    public void restoreCards(Map<Card, Card> originals) {
+        currentHand.replaceAll(card -> originals.getOrDefault(card, card));
+        playedCards.replaceAll(card -> originals.getOrDefault(card, card));
     }
 
     /**

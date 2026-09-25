@@ -19,7 +19,9 @@ import fr.astratime.lucky.popups.EffectPopup;
 import fr.astratime.lucky.popups.PopupScale;
 
 import java.util.ArrayList;
+import java.util.IdentityHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -60,6 +62,9 @@ public class GameController {
 
     private final Random random = new Random();
 
+    /** Cartes changées de suite par l'Arc-en-ciel ce tour, et la carte d'origine de chacune. */
+    private final Map<Card, Card> originals = new IdentityHashMap<>();
+
     /** Charge le deck de départ depuis les JSON et crée une nouvelle partie (joueur + ennemi au maximum de leurs PV). */
     public GameController() {
         this(CardLoader::loadStarterDeck, CardLoader.cardFactory());
@@ -94,6 +99,7 @@ public class GameController {
         betsThisTurn.clear();
         pendingChoice = null;
         handLocked    = false;
+        originals.clear();
     }
 
     // -------------------------------------------------------------------------
@@ -144,24 +150,22 @@ public class GameController {
     }
 
     /**
-     * Arc-en-ciel : chaque carte à suite de la main devient rouge ou noire au
-     * hasard (même rang, suite tirée parmi celles de la couleur), puis la carte
+     * Arc-en-ciel : une suite est tirée au hasard et toutes les cartes à suite
+     * de la main la prennent (même rang), jusqu'à la fin du tour ; puis la carte
      * {@code addedId} est posée sur la table, ou en défausse s'il n'y a plus de place.
      */
     private CardPlayResult.Rainbow rainbow(Player player, String addedId) {
+        Card.Suit suit = Card.Suit.values()[random.nextInt(Card.Suit.values().length)];
         List<CardPlayResult.Recolor> recolored = new ArrayList<>();
         for (Card card : new ArrayList<>(player.getCurrentHand())) {
             if (card.getSuit() == null) continue;
-            boolean red = random.nextBoolean();
-            Card.Suit suit = red
-                ? (random.nextBoolean() ? Card.Suit.COEUR : Card.Suit.CARREAU)
-                : (random.nextBoolean() ? Card.Suit.TREFLE : Card.Suit.PIQUE);
             Card recolor = cardFactory.apply(suit.cardId(card.getRank()));
             player.replaceInHand(card, recolor);
+            originals.put(recolor, originals.getOrDefault(card, card)); // redevient la carte d'origine en fin de tour
             recolored.add(new CardPlayResult.Recolor(card, recolor));
         }
         Card added = cardFactory.apply(addedId);
-        return new CardPlayResult.Rainbow(recolored, added, player.addToHandOrDiscard(added));
+        return new CardPlayResult.Rainbow(suit, recolored, added, player.addToHandOrDiscard(added));
     }
 
     /** @return le choix demandé au joueur par la dernière carte jouée, ou {@code null} si aucun. */
@@ -245,6 +249,8 @@ public class GameController {
         betsThisTurn.clear();
         pendingChoice = null;
         handLocked    = false;
+        gameState.getPlayer().restoreCards(originals); // l'effet de l'Arc-en-ciel ne dure que le tour
+        originals.clear();
         gameState.getPlayer().discardHand();
         return result;
     }

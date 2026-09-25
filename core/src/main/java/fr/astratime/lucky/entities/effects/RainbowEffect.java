@@ -8,8 +8,8 @@ import fr.astratime.lucky.popups.PopupScale;
 import java.util.List;
 
 /**
- * Arc-en-ciel : chaque carte de la main (à suite) devient rouge ou noire au
- * hasard, puis une carte (le Pot de Lutin) est posée sur un emplacement libre
+ * Arc-en-ciel : une suite est tirée au hasard et toutes les cartes à suite de
+ * la main la prennent jusqu'à la fin du tour, puis une carte (le Pot de Lutin) est posée sur un emplacement libre
  * de la table, ou part dans la défausse s'il n'y en a plus. GameController
  * s'en charge.
  */
@@ -32,7 +32,7 @@ public class RainbowEffect extends Effect {
 
     @Override
     public String getDescription() {
-        return "Les cartes de la main deviennent rouges ou noires au hasard. Ajoute un Pot de Lutin sur la table";
+        return "Toutes les cartes de la main prennent une meme suite, tiree au hasard, jusqu'a la fin du tour. Ajoute un Pot de Lutin sur la table";
     }
 
     @Override

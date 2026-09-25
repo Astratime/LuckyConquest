@@ -282,6 +282,7 @@ class GameControllerTest {
         assertEquals(2, result.recolored().size(), "seules les cartes à suite changent de couleur");
         for (CardPlayResult.Recolor recolor : result.recolored()) {
             assertEquals(recolor.before().getRank(), recolor.after().getRank());
+            assertEquals(result.suit(), recolor.after().getSuit(), "toutes les cartes prennent la même suite");
             assertTrue(player(controller).getCurrentHand().contains(recolor.after()));
             assertFalse(player(controller).getCurrentHand().contains(recolor.before()));
         }
@@ -313,5 +314,23 @@ class GameControllerTest {
 
         assertTrue(player(controller).getDiscardPile().getCards().isEmpty(), "le Pot de Lutin ne va pas en défausse");
         assertTrue(player(controller).getDeck().getCards().isEmpty(), "ni dans le deck");
+    }
+
+    @Test
+    void rainbowSuitLastsUntilTheEndOfTheTurn() {
+        Card ace = suited(1, Card.Suit.COEUR), queen = suited(12, Card.Suit.PIQUE);
+        List<Card> deck = new ArrayList<>(List.of(ace, queen, card("arc", new RainbowEffect("pot"))));
+        GameController controller = new GameController(() -> new ArrayList<>(deck), GameControllerTest::fromId);
+        controller.drawCards();
+        Card rainbow = player(controller).getCurrentHand().stream()
+            .filter(c -> c.getId().equals("arc")).findFirst().orElseThrow();
+        CardPlayResult.Rainbow result = controller.playCard(rainbow).getRainbow();
+        controller.playCard(result.recolored().get(0).after()); // une carte changée, jouée ce tour
+
+        controller.spin();
+
+        List<Card> discarded = player(controller).getDiscardPile().getCards();
+        assertTrue(discarded.contains(ace) && discarded.contains(queen), "les cartes d'origine reviennent en défausse");
+        for (CardPlayResult.Recolor recolor : result.recolored()) assertFalse(discarded.contains(recolor.after()));
     }
 }

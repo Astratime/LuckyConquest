@@ -340,8 +340,23 @@ public class GameScreen extends ScreenAdapter {
                 confetti.burst(at.x, at.y, POT_CONFETTI);
                 effectPopupAnimator.play(List.of(new EffectPopup("POT DE LUTIN !", EffectPopup.Style.GAINS,
                     PopupScale.MAX_INTENSITY)), at.x, at.y + CARD_HEIGHT * 0.8f);
+                if (!recolored.isEmpty()) {
+                    effectPopupAnimator.play(List.of(new EffectPopup("TOUT EN " + suitName(rainbow.suit()) + " !",
+                        EffectPopup.Style.SPECIAL, PopupScale.MAX_INTENSITY)),
+                        playArea.getCenterX(), table.getHandRowY() + CARD_HEIGHT * 2f);
+                }
                 sounds.twoSymbols.play();
             });
+    }
+
+    /** @return le nom affiché de {@code suit}, en majuscules. */
+    private static String suitName(Card.Suit suit) {
+        return switch (suit) {
+            case COEUR   -> "COEUR";
+            case CARREAU -> "CARREAU";
+            case TREFLE  -> "TRÈFLE";
+            case PIQUE   -> "PIQUE";
+        };
     }
 
     /** Table pleine : le Pot de Lutin apparaît au-dessus de la défausse et s'y pose. @return son centre */

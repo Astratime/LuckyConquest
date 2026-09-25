@@ -20,11 +20,12 @@ public class CardPlayResult {
     /**
      * Résultat d'un Arc-en-ciel.
      *
-     * @param recolored  cartes de la main remplacées par leur version d'une autre couleur (dans l'ordre de la main)
+     * @param suit       suite prise par toutes les cartes à suite de la main, jusqu'à la fin du tour
+     * @param recolored  cartes de la main remplacées par leur version de cette suite (dans l'ordre de la main)
      * @param added      carte ajoutée (Pot de Lutin)
      * @param addedToHand {@code true} si elle est posée sur la table, {@code false} si elle part en défausse
      */
-    public record Rainbow(List<Recolor> recolored, Card added, boolean addedToHand) {
+    public record Rainbow(Card.Suit suit, List<Recolor> recolored, Card added, boolean addedToHand) {
         public Rainbow {
             recolored = List.copyOf(recolored);
         }
