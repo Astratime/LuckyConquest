@@ -31,6 +31,9 @@ public class CardPileView extends Group {
     private final float       cardHeight;
     private final List<Image> stack = new ArrayList<>();
     private final Label       label;
+    /** Couleurs du libellé : nom en crème, nombre de cartes en doré (comme les textes du panneau latéral). */
+    private static final String NAME_COLOR  = "f0e0b0";
+    private static final String COUNT_COLOR = "ffd454";
     private       int         count;
 
     /**
@@ -67,7 +70,7 @@ public class CardPileView extends Group {
             card.setVisible(i < visible);
             card.getColor().a = count == 0 ? EMPTY_ALPHA : 1f;
         }
-        label.setText(name + " (" + count + ")");
+        label.setText("[#" + NAME_COLOR + "]" + name + " [#" + COUNT_COLOR + "]" + count); // police à balises de couleur
         label.pack();
         label.setPosition((getWidth() - label.getWidth()) / 2f, getHeight() + LABEL_MARGIN);
     }
