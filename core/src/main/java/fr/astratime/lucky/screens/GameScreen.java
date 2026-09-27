@@ -16,6 +16,7 @@ import com.badlogic.gdx.scenes.scene2d.Group;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.ui.Image;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
+import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.Touchable;
@@ -133,6 +134,10 @@ public class GameScreen extends ScreenAdapter {
     private static final float PISTOL_TEXT_BELOW     = 170f;
     /** Carte Bingo : hauteur (fraction de l'écran) où elle s'élève pour lancer ses faisceaux. */
     private static final float BINGO_CARD_HEIGHT     = 0.58f;
+    /** Boutons de fin de combat : écart entre eux, hauteur (fraction de l'écran) et apparition en fondu. */
+    private static final float END_BUTTONS_GAP    = 30f;
+    private static final float END_BUTTONS_HEIGHT = 0.46f;  // sous l'annonce, au-dessus de la rangée de cartes
+    private static final float END_BUTTONS_FADE   = 0.4f;
     /** Icône de l'échoppe : taille de l'image, marge au bord et agrandissement au survol. */
     private static final float SHOP_ICON_WIDTH  = 150f;
     private static final float SHOP_ICON_HEIGHT = 108f;
@@ -200,6 +205,9 @@ public class GameScreen extends ScreenAdapter {
     private final TextButton drawButton;
     private final TextButton spinButton;
     private final TextButton restartButton;
+    private final TextButton menuButton;
+    /** Boutons de fin de combat (Recommencer, Menu principal), centrés sous l'annonce de victoire ou de défaite. */
+    private final Table      endButtons = new Table();
     private final TextButton effectsButton;
 
     /** Temps restant du micro-arrêt en cours (voir {@link #hitStop(float)}). */
@@ -244,10 +252,13 @@ public class GameScreen extends ScreenAdapter {
         drawButton    = buttons.createAction("Tirer " + GameController.DEFAULT_DRAW_COUNT + " cartes", sounds.buttonClick, this::onDrawCards);
         spinButton    = buttons.createAction("Lancer machine", sounds.spinButton, this::onSpin);
         restartButton = buttons.createAction("Recommencer", sounds.buttonClick, this::onRestart);
+        menuButton    = buttons.createAction("Menu principal", sounds.buttonClick, this::onBackToMenu);
         spinButton.setDisabled(true);
-        restartButton.setVisible(false);
+        endButtons.add(restartButton).size(restartButton.getWidth(), restartButton.getHeight());
+        endButtons.add(menuButton).size(menuButton.getWidth(), menuButton.getHeight()).padLeft(END_BUTTONS_GAP);
+        endButtons.pack();
+        endButtons.setVisible(false);
         effectsButton = buttons.create(effectsLabel(), sounds.buttonClick, this::onToggleEffects);
-        sidePanel.addFooter(restartButton);
         sidePanel.addFooter(effectsButton);
 
         piles = new PilesView(playArea, cardBackTexture, font, tooltip, sounds.buttonClick, CARD_WIDTH, CARD_HEIGHT,
@@ -284,6 +295,7 @@ public class GameScreen extends ScreenAdapter {
         stage.addActor(pistolAnimation);
         stage.addActor(popupLayer);
         stage.addActor(combatEnd);
+        stage.addActor(endButtons); // au-dessus de l'annonce de fin de combat
         stage.addActor(confetti);
         stage.addActor(damageVignette);
         stage.addActor(jackpotCelebration); // par-dessus le jeu et le panneau : bloque les clics pendant la fête
@@ -764,7 +776,20 @@ public class GameScreen extends ScreenAdapter {
         refreshAll();
         spinButton.setDisabled(true);
         drawButton.setDisabled(false);
-        restartButton.setVisible(false);
+        endButtons.setVisible(false);
+    }
+
+    /**
+     * Retour au menu principal : l'écran du menu remplace celui du combat, qui
+     * est libéré ensuite (hors de la boucle d'animation du Stage, qu'il ne faut
+     * pas disposer pendant qu'il s'exécute).
+     */
+    private void onBackToMenu() {
+        endButtons.setTouchable(Touchable.disabled); // un seul retour, même en cliquant plusieurs fois
+        Gdx.app.postRunnable(() -> {
+            luckyGame.setScreen(new MenuScreen(luckyGame));
+            dispose();
+        });
     }
 
     // -------------------------------------------------------------------------
@@ -779,12 +804,18 @@ public class GameScreen extends ScreenAdapter {
 
     /**
      * Fige la partie (plus de pioche ni de spin), met en scène la victoire ou la
-     * défaite, puis affiche le bouton pour recommencer.
+     * défaite, puis affiche les boutons pour recommencer ou revenir au menu principal.
      */
     private void endCombat() {
         spinButton.setDisabled(true);
         drawButton.setDisabled(true);
-        Runnable showRestart = () -> restartButton.setVisible(true);
+        Runnable showRestart = () -> {
+            endButtons.setTouchable(Touchable.childrenOnly);
+            endButtons.setVisible(true);
+            endButtons.getColor().a = 0f;
+            endButtons.addAction(Actions.fadeIn(END_BUTTONS_FADE));
+            endButtons.toFront();
+        };
         if (gameController.getGameState().getEnemy().isDefeated()) {
             table.setLightsParty(true);
             HealthBarView enemyBar = hud.getEnemyHealthBar();
@@ -907,6 +938,8 @@ public class GameScreen extends ScreenAdapter {
         piles.layout(table.getDeckX(), table.getPilesY());
         slots.layout();
         hand.layout(false);
+        endButtons.setPosition(playArea.getCenterX() - endButtons.getWidth() / 2f,
+            playArea.getHeight() * END_BUTTONS_HEIGHT);
         shopIcon.setPosition(playArea.getX() + playArea.getWidth() - SHOP_ICON_WIDTH - SHOP_ICON_MARGIN,
             playArea.getHeight() - shopIcon.getHeight() - SHOP_ICON_MARGIN);
     }
