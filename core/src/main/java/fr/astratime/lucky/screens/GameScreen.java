@@ -163,6 +163,8 @@ public class GameScreen extends ScreenAdapter {
     private final LuckyGame           luckyGame;
     private final Stage               stage;
     private final BitmapFont          font;
+    /** Libellés du deck et de la défausse : police du jeu, à balises de couleur (nom crème, nombre doré). */
+    private final BitmapFont          pileFont = markup(Fonts.jersey(20, Color.WHITE, 2f, Color.valueOf("1a0f0fff")));
     private final BitmapFont          shopFont = Fonts.jersey(30, Color.valueOf("ffd454ff"), 2f, Color.valueOf("1a0f0fff"));
     private final Texture             cardBackTexture;
     private final CardTextures        cardTextures  = new CardTextures();
@@ -261,7 +263,7 @@ public class GameScreen extends ScreenAdapter {
         effectsButton = buttons.create(effectsLabel(), sounds.buttonClick, this::onToggleEffects);
         sidePanel.addFooter(effectsButton);
 
-        piles = new PilesView(playArea, cardBackTexture, font, tooltip, sounds.buttonClick, CARD_WIDTH, CARD_HEIGHT,
+        piles = new PilesView(playArea, cardBackTexture, pileFont, tooltip, sounds.buttonClick, CARD_WIDTH, CARD_HEIGHT,
             this::onDeckClicked, this::onDiscardClicked);
         hand  = new HandView(table, CARD_WIDTH, CARD_HEIGHT, cardTextures, tooltip, piles, this::player,
             new CardDealAnimator(stage, cardBackTexture, CARD_WIDTH, CARD_HEIGHT, sounds.cardDeal, sounds.cardFlip),
@@ -387,6 +389,12 @@ public class GameScreen extends ScreenAdapter {
                 }
                 sounds.twoSymbols.play();
             });
+    }
+
+    /** Active les balises de couleur ([#rrggbb]) de {@code font}. @return la même police */
+    private static BitmapFont markup(BitmapFont font) {
+        font.getData().markupEnabled = true;
+        return font;
     }
 
     /** @return le nom affiché de {@code suit}, en majuscules. */
@@ -1023,6 +1031,7 @@ public class GameScreen extends ScreenAdapter {
         stage.dispose();
         font.dispose();
         shopFont.dispose();
+        pileFont.dispose();
         tableTextures.dispose();
         cardBackTexture.dispose();
         cardTextures.dispose();

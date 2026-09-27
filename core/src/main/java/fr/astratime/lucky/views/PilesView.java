@@ -32,8 +32,8 @@ public class PilesView {
     public PilesView(PlayArea playArea, Texture cardBackTexture, BitmapFont font, Tooltip tooltip, Sound clickSound,
               float cardWidth, float cardHeight, Runnable onDeckClicked, Runnable onDiscardClicked) {
         this.playArea = playArea;
-        deckPile      = buildPile("Deck", cardBackTexture, font, tooltip, clickSound, cardWidth, cardHeight, onDeckClicked);
-        discardPile   = buildPile("Defausse", cardBackTexture, font, tooltip, clickSound, cardWidth, cardHeight, onDiscardClicked);
+        deckPile      = buildPile("DECK", cardBackTexture, font, tooltip, clickSound, cardWidth, cardHeight, onDeckClicked);
+        discardPile   = buildPile("DÉFAUSSE", cardBackTexture, font, tooltip, clickSound, cardWidth, cardHeight, onDiscardClicked);
     }
 
     /** Ajoute les deux piles au Stage. */
