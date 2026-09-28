@@ -45,8 +45,9 @@ import java.util.function.Supplier;
  *       « BINGO! » s'écrit en géant (voir {@link BullseyeAnimation}) ;</li>
  *   <li>Raisin : des bulles violettes montent pendant que des grappes tombent
  *       mollement ;</li>
- *   <li>Cloche : le carillon — des ondes sonores partent de la bannière et des
- *       cloches s'envolent en se balançant ;</li>
+ *   <li>Cloche : une mailloche frappe une cloche d'église qui se balance en
+ *       projetant des clochettes, et « BINGO! » s'écrit en géant (voir
+ *       {@link ChurchBellAnimation}) ;</li>
  *   <li>Diamant : l'écran scintille de toutes parts et des diamants tombent
  *       lentement ;</li>
  *   <li>Lingot : une avalanche de lingots et de pièces, presque toutes
@@ -89,6 +90,10 @@ public class JackpotCelebration extends Group implements Disposable {
     private static final float BANNER_Y = 0.72f;         // centre de la bannière (fraction de la hauteur)
     private static final float BULLSEYE_Y      = 0.4f;   // centre de la cible du Triple Cerise
     private static final float BULLSEYE_WORD_Y = 0.8f;   // mot « BINGO! » géant, au-dessus de la cible
+    private static final float BELL_PIVOT_Y    = 0.86f;  // axe de la cloche d'église, sous le haut de l'écran
+    private static final float BELL_WORD_Y     = 0.22f;  // mot « BINGO! » géant, sous la cloche
+    /** Le mot « BINGO! » géant commence à s'estomper, avec son décor. */
+    private static final float WORD_FADE_AT    = 2.45f;
 
     /**
      * Apparitions étalées dans le temps : {@code count} appels de {@code spawn}
@@ -114,7 +119,9 @@ public class JackpotCelebration extends Group implements Disposable {
     private final Fireworks    fireworks;
     private final SymbolShower symbols;
     private final CoinShower   coins;
-    private final BullseyeAnimation bullseye = new BullseyeAnimation();
+    private final BullseyeAnimation bullseye  = new BullseyeAnimation();
+    private final ChurchBellAnimation churchBell = new ChurchBellAnimation();
+    private final GiantWord         giantWord = new GiantWord();
     private final Group        bannerLayer = new Group();
     /** Une bannière par symbole, créée à son premier Bingo (ses lettres ont les couleurs du symbole). */
     private final Map<Symbol, BingoBanner> banners = new EnumMap<>(Symbol.class);
@@ -154,6 +161,7 @@ public class JackpotCelebration extends Group implements Disposable {
         flash.getColor().a = 0f;
         bannerLayer.setTouchable(Touchable.disabled);
         symbols.setLandingListener(this::onSymbolLanded);
+        churchBell.setSwingListener(this::onBellSwing);
 
         addActor(shockwaves);
         addActor(glitter);
@@ -161,7 +169,9 @@ public class JackpotCelebration extends Group implements Disposable {
         addActor(symbols);
         addActor(coins);
         addActor(bullseye);
+        addActor(churchBell);
         addActor(bannerLayer);
+        addActor(giantWord);
         addActor(flash);
     }
 
@@ -209,6 +219,8 @@ public class JackpotCelebration extends Group implements Disposable {
         shockwaves.removeAll();
         for (BingoBanner banner : banners.values()) banner.hide();
         bullseye.hide();
+        churchBell.hide();
+        giantWord.hide();
         flash.clearActions();
         flash.getColor().a = 0f;
         screenShake.stop();
@@ -328,12 +340,12 @@ public class JackpotCelebration extends Group implements Disposable {
      * L'impact secoue l'écran et fait exploser des cerises tout autour.
      */
     private void scheduleBullseye(TextureRegion icon) {
-        showBanner = false;
-        flash.clearActions(); // pas de flash d'entrée : celui de l'impact suffit
-        flash.getColor().a = 0f;
+        useGiantWord();
         float centerX = playArea.getCenterX();
         float centerY = getHeight() * BULLSEYE_Y;
-        bullseye.play(centerX, centerY, getHeight() * BULLSEYE_WORD_Y, style.letterA(), style.letterB());
+        bullseye.play(centerX, centerY);
+        giantWord.play(centerX, getHeight() * BULLSEYE_WORD_Y, BullseyeAnimation.IMPACT_TIME + 0.12f, WORD_FADE_AT,
+            style.letterA(), style.letterB());
 
         // Traînée d'étincelles derrière la flèche en vol.
         float launch = BullseyeAnimation.arrowLaunchTime();
@@ -392,22 +404,71 @@ public class JackpotCelebration extends Group implements Disposable {
         coinRain(0.2f, 1.2f, 18, 1);
     }
 
-    /** Cloche : le carillon — des ondes sonores partent de la bannière et des cloches s'envolent. */
+    /**
+     * Cloche : une cloche d'église est frappée par une mailloche puis se balance ;
+     * « BINGO! » s'écrit en géant sous elle (à la place de la bannière) et, à
+     * chaque balancement, elle sonne et projette des clochettes (voir {@link #onBellSwing}).
+     */
     private void scheduleChime(TextureRegion icon) {
+        useGiantWord();
+        float centerX = playArea.getCenterX();
+        churchBell.play(centerX, getHeight() * BELL_PIVOT_Y);
+        float strike = ChurchBellAnimation.STRIKE_TIME;
+        giantWord.play(centerX, getHeight() * BELL_WORD_Y, strike + 0.12f, WORD_FADE_AT,
+            style.letterA(), style.letterB());
+
         Color gold = Color.valueOf("ffe680ff");
-        for (int k = 0; k < 8; k++) {
-            float time = 0.25f + k * 0.3f;
-            at(time, () -> {
-                shockwaves.ring(playArea.getCenterX(), getHeight() * BANNER_Y,
-                    playArea.getWidth() * 0.55f, 1.1f, 0.8f, gold);
-                screenShake.shake(0.12f, 5f); // chaque coup de cloche fait vibrer l'écran
+        at(strike, () -> {
+            screenShake.shake(0.35f, 12f);
+            if (!settings.isReducedEffects()) {
+                flash.clearActions();
+                flash.setColor(1f, 0.95f, 0.75f, 0.45f);
+                flash.addAction(Actions.fadeOut(0.25f));
+            }
+            Vector2 hit = churchBell.strikePoint();
+            for (int k = 0; k < 10; k++) {
+                float angle = MathUtils.random(-70f, 70f);
+                float speed = MathUtils.random(250f, 600f);
+                glitter.ember(hit.x, hit.y, MathUtils.cosDeg(angle) * speed, MathUtils.sinDeg(angle) * speed, 900f,
+                    MathUtils.random(5f, 9f), MathUtils.random(0.4f, 0.7f), Color.WHITE);
+            }
+        });
+        for (int k = 0; k < 3; k++) {
+            at(strike + k * 0.12f, () -> {
+                Vector2 hit = churchBell.strikePoint();
+                shockwaves.ring(hit.x, hit.y, 260f, 0.8f, 1f, gold);
             });
         }
-        emit(0f, 2.2f, 22, i -> symbols.rise(icon, tableX(60f), getHeight() * MathUtils.random(-0.1f, 0.1f),
-            MathUtils.random(220f, 360f), MathUtils.random(65f, 95f), MathUtils.random(2f, 2.6f)));
-        emit(0.2f, 2.6f, 60, i -> glitter.twinkle(tableX(0f), getHeight() * MathUtils.random(0.1f, 0.95f),
+        // Clochettes qui tombent de la bouche pendant tout le balancement.
+        emit(strike + 0.1f, 2.3f, 26, i -> {
+            Vector2 mouth = churchBell.mouth();
+            symbols.jet(icon, mouth.x, mouth.y, MathUtils.random(200f, 340f), MathUtils.random(150f, 450f),
+                MathUtils.random(60f, 85f), 1100f);
+        });
+        emit(0.3f, 2.6f, 50, i -> glitter.twinkle(tableX(0f), getHeight() * MathUtils.random(0.05f, 0.95f),
             MathUtils.random(12f, 24f), 0.6f, gold));
-        coinRain(0.1f, 1.4f, 45, 2);
+        coinRain(strike, strike + 1.2f, 30, 2);
+    }
+
+    /**
+     * La cloche d'église atteint l'extrémité d'un balancement : elle sonne (onde
+     * dorée, petite secousse) et projette une gerbe de clochettes du côté où
+     * elle penche.
+     */
+    private void onBellSwing(float mouthX, float mouthY, int direction) {
+        if (!running) return;
+        shockwaves.ring(mouthX, mouthY, 200f, 0.7f, 0.6f, Color.valueOf("ffe680ff"));
+        screenShake.shake(0.12f, 5f);
+        TextureRegion bellIcon = iconOf(Symbol.BELL);
+        for (int k = 0; k < 9; k++) {
+            float angle = direction < 0 ? MathUtils.random(110f, 170f) : MathUtils.random(10f, 70f);
+            symbols.jet(bellIcon, mouthX, mouthY, angle, MathUtils.random(550f, 1000f),
+                MathUtils.random(70f, 100f), 1300f);
+        }
+        for (int k = 0; k < 6; k++) {
+            glitter.twinkle(mouthX + MathUtils.random(-80f, 80f), mouthY + MathUtils.random(-40f, 60f),
+                MathUtils.random(14f, 26f), 0.5f, Color.WHITE);
+        }
     }
 
     /** Diamant : l'écran scintille de toutes parts et des diamants tombent lentement. */
@@ -466,6 +527,16 @@ public class JackpotCelebration extends Group implements Disposable {
     // -------------------------------------------------------------------------
     // Outils des mises en scène
     // -------------------------------------------------------------------------
+
+    /**
+     * La mise en scène a son propre décor et écrit « BINGO! » en géant : pas de
+     * bannière, ni de flash d'entrée (celui de l'impact suffit).
+     */
+    private void useGiantWord() {
+        showBanner = false;
+        flash.clearActions();
+        flash.getColor().a = 0f;
+    }
 
     /** Programme {@code count} apparitions réparties entre {@code start} et {@code end}. */
     private void emit(float start, float end, int count, IntConsumer spawn) {
@@ -545,5 +616,7 @@ public class JackpotCelebration extends Group implements Disposable {
         for (Texture icon : icons.values()) icon.dispose();
         bannerFont.dispose();
         bullseye.dispose();
+        churchBell.dispose();
+        giantWord.dispose();
     }
 }

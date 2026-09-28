@@ -3,7 +3,6 @@ package fr.astratime.lucky.animations;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Texture;
-import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.Interpolation;
 import com.badlogic.gdx.math.MathUtils;
@@ -12,21 +11,15 @@ import com.badlogic.gdx.scenes.scene2d.Group;
 import com.badlogic.gdx.scenes.scene2d.Touchable;
 import com.badlogic.gdx.scenes.scene2d.actions.Actions;
 import com.badlogic.gdx.scenes.scene2d.actions.SequenceAction;
-import com.badlogic.gdx.scenes.scene2d.ui.Container;
 import com.badlogic.gdx.scenes.scene2d.ui.Image;
-import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 import com.badlogic.gdx.utils.Disposable;
-import fr.astratime.lucky.assets.Fonts;
-
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * Bingo du Triple Cerise : une cible de tir à l'arc surgit au milieu de la
  * table, une flèche traverse l'écran et se plante en plein centre (la cible
- * encaisse le choc, la flèche vibre), puis le mot « BINGO! » s'écrit en géant
- * au-dessus, lettre par lettre. Tout s'estompe à la fin de la célébration.
+ * encaisse le choc, la flèche vibre). Tout s'estompe à la fin de la
+ * célébration ; le mot « BINGO! » géant est écrit par {@link GiantWord}.
  *
  * La cible et la flèche sont dessinées en pixel art (petites images agrandies
  * sans lissage). Les positions sont celles du Stage : l'acteur doit être placé
@@ -40,7 +33,6 @@ public class BullseyeAnimation extends Group implements Disposable {
     private static final float TARGET_POP    = 0.3f;
     private static final float ARROW_FLIGHT  = 0.3f;
     private static final float ARROW_LAUNCH  = IMPACT_TIME - ARROW_FLIGHT;
-    private static final float WORD_AT       = IMPACT_TIME + 0.12f;
     private static final float FADE_AT       = 2.45f;
     private static final float FADE_TIME     = 0.45f;
 
@@ -53,17 +45,13 @@ public class BullseyeAnimation extends Group implements Disposable {
     private static final float ARROW_FROM_X  = -1100f;
     private static final float ARROW_FROM_Y  = 420f;
 
-    private static final float LETTER_GAP    = 4f;
 
     private final Texture    targetTexture = createTarget();
     private final Texture    arrowTexture  = createArrow();
-    private final BitmapFont wordFont      = Fonts.jersey(230, Color.WHITE, 9f, Color.valueOf("12080aff"));
 
     private final Image flyingArrow;
     private final Image plantedArrow;
     private final Image target;
-    private final Group word = new Group();
-    private final List<Container<Label>> letters = new ArrayList<>();
 
     private final Vector2 center = new Vector2();
 
@@ -82,20 +70,9 @@ public class BullseyeAnimation extends Group implements Disposable {
         flyingArrow  = arrowImage(full);
         plantedArrow = arrowImage(planted);
 
-        Label.LabelStyle style = new Label.LabelStyle(wordFont, Color.WHITE);
-        for (char c : "BINGO!".toCharArray()) {
-            Container<Label> letter = new Container<>(new Label(String.valueOf(c), style));
-            letter.setTransform(true);
-            letter.pack();
-            letter.setOrigin(letter.getWidth() / 2f, letter.getHeight() / 2f);
-            letters.add(letter);
-            word.addActor(letter);
-        }
-
         addActor(target);
         addActor(plantedArrow);
         addActor(flyingArrow);
-        addActor(word);
     }
 
     /** Image d'une flèche dont l'origine est son extrémité droite (la pointe, ou le point d'impact). */
@@ -106,14 +83,8 @@ public class BullseyeAnimation extends Group implements Disposable {
         return image;
     }
 
-    /**
-     * Lance l'animation : la cible est centrée en {@code (centerX, centerY)}, le
-     * mot « BINGO! » en {@code (centerX, wordY)}.
-     *
-     * @param letterA couleur des lettres de rang pair
-     * @param letterB couleur des lettres de rang impair
-     */
-    public void play(float centerX, float centerY, float wordY, Color letterA, Color letterB) {
+    /** Lance l'animation, la cible centrée en {@code (centerX, centerY)}. */
+    public void play(float centerX, float centerY) {
         clearAll();
         center.set(centerX, centerY);
         setVisible(true);
@@ -157,8 +128,6 @@ public class BullseyeAnimation extends Group implements Disposable {
         quiver.addAction(Actions.rotateTo(angle, 0.045f));
         plantedArrow.addAction(Actions.sequence(Actions.delay(IMPACT_TIME), Actions.visible(true), quiver));
 
-        playWord(centerX, wordY, letterA, letterB);
-
         addAction(Actions.sequence(Actions.delay(FADE_AT), Actions.fadeOut(FADE_TIME), Actions.visible(false)));
     }
 
@@ -167,32 +136,6 @@ public class BullseyeAnimation extends Group implements Disposable {
         arrow.clearActions();
         arrow.setPosition(x - arrow.getOriginX(), y - arrow.getOriginY());
         arrow.setRotation(angle);
-    }
-
-    /** Les lettres de « BINGO! » surgissent une à une, de travers, puis respirent jusqu'à la fin. */
-    private void playWord(float centerX, float centerY, Color letterA, Color letterB) {
-        float width = -LETTER_GAP;
-        for (Container<Label> letter : letters) width += letter.getWidth() + LETTER_GAP;
-        float x = centerX - width / 2f;
-        for (int i = 0; i < letters.size(); i++) {
-            Container<Label> letter = letters.get(i);
-            letter.getActor().setColor(i % 2 == 0 ? letterA : letterB);
-            letter.setPosition(x, centerY - letter.getHeight() / 2f + (i % 2 == 0 ? 10f : -10f));
-            x += letter.getWidth() + LETTER_GAP;
-            letter.clearActions();
-            letter.setScale(0f);
-            float tilt = (i % 2 == 0 ? 1f : -1f) * MathUtils.random(4f, 9f);
-            letter.setRotation(tilt * 3f);
-            letter.addAction(Actions.sequence(
-                Actions.delay(WORD_AT + i * 0.07f),
-                Actions.parallel(
-                    Actions.scaleTo(1.6f, 1.6f, 0.1f, Interpolation.pow2Out),
-                    Actions.rotateTo(tilt, 0.18f, Interpolation.pow2Out)),
-                Actions.scaleTo(1f, 1f, 0.14f, Interpolation.pow2In),
-                Actions.forever(Actions.sequence(
-                    Actions.scaleTo(1.06f, 1.06f, 0.3f, Interpolation.sine),
-                    Actions.scaleTo(1f, 1f, 0.3f, Interpolation.sine)))));
-        }
     }
 
     /**
@@ -218,10 +161,6 @@ public class BullseyeAnimation extends Group implements Disposable {
         target.clearActions();
         flyingArrow.clearActions();
         plantedArrow.clearActions();
-        for (Container<Label> letter : letters) {
-            letter.clearActions();
-            letter.setScale(0f);
-        }
     }
 
     /**
@@ -313,6 +252,5 @@ public class BullseyeAnimation extends Group implements Disposable {
     public void dispose() {
         targetTexture.dispose();
         arrowTexture.dispose();
-        wordFont.dispose();
     }
 }
