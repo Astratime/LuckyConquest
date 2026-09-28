@@ -109,6 +109,18 @@ class CombatResolverTest {
     }
 
     @Test
+    void jackpotEventCarriesTheAlignedSymbol() {
+        Player player = new Player("Joueur", 100, List.of());
+        Enemy  enemy  = new Enemy("Ennemi", 100);
+        Symbol[] symbols = { Symbol.DIAMOND, Symbol.DIAMOND, Symbol.DIAMOND };
+
+        TurnResult result = resolver.resolve(new CombatContext(player, enemy), List.of(), symbols, List.of());
+
+        assertTrue(result.getEvents().stream()
+            .anyMatch(e -> e instanceof JackpotEvent jackpot && jackpot.symbol == Symbol.DIAMOND));
+    }
+
+    @Test
     void separatesJackpotAndEnemyRiposteEventsForDisplay() {
         Player player = new Player("Joueur", 100, List.of());
         Enemy  enemy  = new Enemy("Ennemi", 100);

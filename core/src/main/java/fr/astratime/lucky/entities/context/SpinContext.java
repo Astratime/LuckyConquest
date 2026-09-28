@@ -21,6 +21,8 @@ public class SpinContext {
     private float   pairChance   = 0f;
     /** Les trois rouleaux affichent le même symbole (Bingo). */
     private boolean forceJackpot = false;
+    /** Symbole imposé au jackpot garanti ; {@code null} : tiré au hasard. */
+    private Symbol  jackpotSymbol;
 
     /** Ajoute {@code amount} au boost de poids du symbole (cumulable sur plusieurs cartes). */
     public void addWeightBoost(Symbol symbol, int amount) {
@@ -46,6 +48,15 @@ public class SpinContext {
 
     /** Garantit que les trois rouleaux affichent le même symbole. */
     public void forceJackpot() { forceJackpot = true; }
+
+    /** Garantit que les trois rouleaux affichent {@code symbol}. */
+    public void forceJackpot(Symbol symbol) {
+        forceJackpot  = true;
+        jackpotSymbol = symbol;
+    }
+
+    /** @return le symbole imposé au jackpot garanti, ou {@code null} s'il est tiré au hasard. */
+    public Symbol getJackpotSymbol() { return jackpotSymbol; }
 
     /** @return {@code true} si le tirage de ce tour est un jackpot garanti. */
     public boolean isJackpotForced() { return forceJackpot; }

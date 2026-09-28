@@ -11,7 +11,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class TurnResultTest {
 
     private static TurnResult result(Symbol a, Symbol b, Symbol c, boolean jackpot) {
-        return new TurnResult(jackpot ? List.of(new JackpotEvent()) : List.of(), new Symbol[] { a, b, c }, 0,
+        return new TurnResult(jackpot ? List.of(new JackpotEvent(Symbol.SEVEN)) : List.of(), new Symbol[] { a, b, c }, 0,
             List.of(), List.of(), List.of());
     }
 

@@ -1,0 +1,145 @@
+[
+  {
+    "id": "bingo_double_bar",
+    "name": "Bingo Double Bar",
+    "assetPath": "cards/test/bingo_double_bar.png",
+    "consumable": true,
+    "effects": [
+      {
+        "type": "BINGO",
+        "power": 1,
+        "symbol": "DOUBLE_BAR"
+      }
+    ]
+  },
+  {
+    "id": "bingo_cherry",
+    "name": "Bingo Cerise",
+    "assetPath": "cards/test/bingo_cherry.png",
+    "consumable": true,
+    "effects": [
+      {
+        "type": "BINGO",
+        "power": 1,
+        "symbol": "CHERRY"
+      }
+    ]
+  },
+  {
+    "id": "bingo_seven",
+    "name": "Bingo Sept",
+    "assetPath": "cards/test/bingo_seven.png",
+    "consumable": true,
+    "effects": [
+      {
+        "type": "BINGO",
+        "power": 1,
+        "symbol": "SEVEN"
+      }
+    ]
+  },
+  {
+    "id": "bingo_bar",
+    "name": "Bingo Bar",
+    "assetPath": "cards/test/bingo_bar.png",
+    "consumable": true,
+    "effects": [
+      {
+        "type": "BINGO",
+        "power": 1,
+        "symbol": "BAR"
+      }
+    ]
+  },
+  {
+    "id": "bingo_grape",
+    "name": "Bingo Raisin",
+    "assetPath": "cards/test/bingo_grape.png",
+    "consumable": true,
+    "effects": [
+      {
+        "type": "BINGO",
+        "power": 1,
+        "symbol": "GRAPE"
+      }
+    ]
+  },
+  {
+    "id": "bingo_bell",
+    "name": "Bingo Cloche",
+    "assetPath": "cards/test/bingo_bell.png",
+    "consumable": true,
+    "effects": [
+      {
+        "type": "BINGO",
+        "power": 1,
+        "symbol": "BELL"
+      }
+    ]
+  },
+  {
+    "id": "bingo_diamond",
+    "name": "Bingo Diamant",
+    "assetPath": "cards/test/bingo_diamond.png",
+    "consumable": true,
+    "effects": [
+      {
+        "type": "BINGO",
+        "power": 1,
+        "symbol": "DIAMOND"
+      }
+    ]
+  },
+  {
+    "id": "bingo_triple_cherry",
+    "name": "Bingo Triple Cerise",
+    "assetPath": "cards/test/bingo_triple_cherry.png",
+    "consumable": true,
+    "effects": [
+      {
+        "type": "BINGO",
+        "power": 1,
+        "symbol": "TRIPLE_CHERRY"
+      }
+    ]
+  },
+  {
+    "id": "bingo_triple_seven",
+    "name": "Bingo Triple Sept",
+    "assetPath": "cards/test/bingo_triple_seven.png",
+    "consumable": true,
+    "effects": [
+      {
+        "type": "BINGO",
+        "power": 1,
+        "symbol": "TRIPLE_SEVEN"
+      }
+    ]
+  },
+  {
+    "id": "bingo_gold_bar",
+    "name": "Bingo Lingot",
+    "assetPath": "cards/test/bingo_gold_bar.png",
+    "consumable": true,
+    "effects": [
+      {
+        "type": "BINGO",
+        "power": 1,
+        "symbol": "GOLD_BAR"
+      }
+    ]
+  },
+  {
+    "id": "bingo_watermelon",
+    "name": "Bingo Pastèque",
+    "assetPath": "cards/test/bingo_watermelon.png",
+    "consumable": true,
+    "effects": [
+      {
+        "type": "BINGO",
+        "power": 1,
+        "symbol": "WATERMELON"
+      }
+    ]
+  }
+]

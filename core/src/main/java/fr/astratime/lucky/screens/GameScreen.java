@@ -36,6 +36,7 @@ import fr.astratime.lucky.animations.Confetti;
 import fr.astratime.lucky.animations.DamageVignette;
 import fr.astratime.lucky.animations.EffectPopupAnimator;
 import fr.astratime.lucky.animations.JackpotCelebration;
+import fr.astratime.lucky.animations.TurnBanner;
 import fr.astratime.lucky.animations.PistolShotAnimation;
 import fr.astratime.lucky.animations.RainbowChipsAnimation;
 import fr.astratime.lucky.animations.ScreenShake;
@@ -104,8 +105,10 @@ import java.util.stream.Collectors;
  * gains). Ces vues se placent dans la zone de jeu ({@link PlayArea}), à droite
  * du panneau ; la main, les symboles et les piles se posent aux emplacements de
  * la table. Cet écran possède les ressources partagées, les boutons et le
- * clavier, et enchaîne les phases du tour (pioche, cartes jouées, spin, fin de
- * combat).
+ * clavier, et enchaîne les phases du tour : annonce « À TOI DE JOUER ! » et
+ * pioche automatique, cartes jouées, spin (qui termine le tour du joueur),
+ * annonce « TOUR ENNEMI » et riposte, puis de nouveau le tour du joueur,
+ * jusqu'à la fin du combat.
  */
 public class GameScreen extends ScreenAdapter {
 
@@ -147,8 +150,10 @@ public class GameScreen extends ScreenAdapter {
     private static final float PURCHASE_DELAY   = 0.9f;
     /** Pot de Lutin qui apparaît : gerbe de confettis. */
     private static final int   POT_CONFETTI          = 50;
-    /** Temps laissé au texte de la riposte (et au coup sur la barre) avant de terminer le tour. */
-    private static final float RIPOSTE_TEXT_TIME     = 0.4f;
+    /** Temps laissé au texte de la riposte (et au coup sur la barre) avant de passer au tour du joueur. */
+    private static final float RIPOSTE_TEXT_TIME     = 0.8f;
+    /** Annonces de tour : hauteur de leur bande (fraction de l'écran), au-dessus de la machine. */
+    private static final float TURN_BANNER_HEIGHT    = 0.62f;
 
     // -------------------------------------------------------------------------
     // Contrôleur — seul point d'accès à la logique de jeu
@@ -180,6 +185,8 @@ public class GameScreen extends ScreenAdapter {
     private final CardClickParticles  cardClickParticles = new CardClickParticles();
     private final EffectPopupAnimator effectPopupAnimator;
     private final JackpotCelebration  jackpotCelebration;
+    /** Annonces « À TOI DE JOUER ! » et « TOUR ENNEMI ». */
+    private final TurnBanner          turnBanner = new TurnBanner();
     private final Tooltip             tooltip;
     private final PileContentOverlay  pileOverlay;
     private final CardChoiceOverlay   choiceOverlay;
@@ -204,7 +211,6 @@ public class GameScreen extends ScreenAdapter {
     private final SlotView   slots;
     /** Calque des textes animés (bonus des cartes, résultats du tirage) : au-dessus du jeu, sous le voile des piles. */
     private final Group      popupLayer = new Group();
-    private final TextButton drawButton;
     private final TextButton spinButton;
     private final TextButton restartButton;
     private final TextButton menuButton;
@@ -220,6 +226,9 @@ public class GameScreen extends ScreenAdapter {
      * du panneau ne les ajoute qu'à l'apparition de leur texte « GAINS + ».
      */
     private int gainsNotYetShown = 0;
+
+    /** Durée de l'annonce « TOUR ENNEMI » du tirage en cours (0 si l'ennemi, vaincu, ne riposte pas). */
+    private float enemyAnnounceTime = 0f;
 
     // -------------------------------------------------------------------------
     // Constructeur
@@ -251,7 +260,6 @@ public class GameScreen extends ScreenAdapter {
             sidePanel::getCoinCenter, sidePanel::bumpCoin);
         hud        = new CombatHud(playArea, hudTextures, gameController::getGameState);
 
-        drawButton    = buttons.createAction("Tirer " + GameController.DEFAULT_DRAW_COUNT + " cartes", sounds.buttonClick, this::onDrawCards);
         spinButton    = buttons.createAction("Lancer machine", sounds.spinButton, this::onSpin);
         restartButton = buttons.createAction("Recommencer", sounds.buttonClick, this::onRestart);
         menuButton    = buttons.createAction("Menu principal", sounds.buttonClick, this::onBackToMenu);
@@ -289,13 +297,13 @@ public class GameScreen extends ScreenAdapter {
         stage.addActor(sidePanel.getActor()); // contient le bouton "Recommencer"
         piles.addTo(stage);
         hud.addTo(stage);
-        stage.addActor(drawButton);
         stage.addActor(spinButton);
         stage.addActor(slots.getActor());
         stage.addActor(hand.getActor());
         stage.addActor(shopIcon);
         stage.addActor(pistolAnimation);
         stage.addActor(popupLayer);
+        stage.addActor(turnBanner);   // annonce des tours : au-dessus du jeu, ne bloque pas les clics
         stage.addActor(combatEnd);
         stage.addActor(endButtons); // au-dessus de l'annonce de fin de combat
         stage.addActor(confetti);
@@ -309,19 +317,40 @@ public class GameScreen extends ScreenAdapter {
         stage.addActor(cardDetail.getActor());  // fiche d'une carte, par-dessus tout le reste
         stage.addActor(tooltip.getActor());     // en dernier : toujours au-dessus
         stage.addActor(screenShake);            // invisible : met à jour la caméra
+
+        startPlayerTurn(); // le combat commence par le tour du joueur, main piochée d'office
     }
 
     // -------------------------------------------------------------------------
     // Actions du joueur — transmises au GameController
     // -------------------------------------------------------------------------
 
-    /** Pioche une nouvelle main et lance son animation de distribution ; active le spin, désactive la pioche. */
-    private void onDrawCards() {
-        if (drawButton.isDisabled() || isBusy()) return;
+    /**
+     * Début du tour du joueur (début du combat, ou fin du tour ennemi) :
+     * annonce « À TOI DE JOUER ! », puis pioche automatique de la main.
+     */
+    private void startPlayerTurn() {
+        spinButton.setDisabled(true);
+        turnBanner.play(TurnBanner.Side.PLAYER, playArea.getCenterX(), turnBannerY(), playArea.getWidth());
+        stage.addAction(Actions.delay(TurnBanner.DURATION, Actions.run(this::drawHand)));
+    }
+
+    /** Pioche une nouvelle main et lance son animation de distribution ; active le spin. */
+    private void drawHand() {
+        if (isCombatOver()) return;
         hand.setLocked(false); // une carte achetée entre deux tours reste sur la table
         hand.deal(gameController.drawCards());
         spinButton.setDisabled(false);
-        drawButton.setDisabled(true);
+    }
+
+    /** Fin du tour du joueur (ses résultats sont affichés) : annonce « TOUR ENNEMI » avant la riposte. */
+    private void announceEnemyTurn() {
+        turnBanner.play(TurnBanner.Side.ENEMY, playArea.getCenterX(), turnBannerY(), playArea.getWidth());
+    }
+
+    /** @return la hauteur des annonces de tour : au-dessus de la machine, sous les barres de vie. */
+    private float turnBannerY() {
+        return stage.getViewport().getWorldHeight() * TURN_BANNER_HEIGHT;
     }
 
     /**
@@ -444,11 +473,11 @@ public class GameScreen extends ScreenAdapter {
     }
 
     /**
-     * Ouvre l'échoppe, sauf pendant une animation, une fenêtre ou la résolution
-     * d'un tirage (ni pioche ni lancer possibles), ou une fois le combat terminé.
+     * Ouvre l'échoppe pendant le tour du joueur (main piochée, machine pas encore
+     * lancée), sauf pendant une animation ou une fenêtre, ou une fois le combat terminé.
      */
     private void openShop() {
-        if (isBusy() || isCombatOver() || (drawButton.isDisabled() && spinButton.isDisabled())) return;
+        if (isBusy() || isCombatOver() || spinButton.isDisabled()) return;
         sounds.buttonClick.play();
         shopOverlay.show(gameController.getShopOffers(), () -> player().getGains(), cardTextures::get,
             (text, action) -> buttons.create(text, sounds.buttonClick, action),
@@ -550,7 +579,6 @@ public class GameScreen extends ScreenAdapter {
     private void playBingo(CardImage image, List<EffectPopup> popups) {
         hand.setLocked(true);
         spinButton.setDisabled(true);
-        drawButton.setDisabled(true);
         float centerX = playArea.getCenterX();
         float centerY = stage.getViewport().getWorldHeight() * BINGO_CARD_HEIGHT;
         effectPopupAnimator.play(popups, centerX, centerY + CARD_HEIGHT * 1.3f, 0.5f);
@@ -588,8 +616,7 @@ public class GameScreen extends ScreenAdapter {
             sumOf(result, PlayerDamagedEvent.class, hit -> hit.damage),
             sumOf(result, PlayerHealedEvent.class, heal -> heal.amount));
         hand.discardAll();
-        spinButton.setDisabled(true);
-        drawButton.setDisabled(true); // la suite du tour attend l'arrêt des rouleaux
+        spinButton.setDisabled(true); // le tour du joueur se termine : la suite attend l'arrêt des rouleaux
         slots.spin(result.getDrawnSymbols(), result.getSymbols(), this::onJokerTransformed,
             () -> onReelsStopped(result));
         refreshEffects(); // les symboles retirés se rapprochent de leur retour
@@ -601,13 +628,21 @@ public class GameScreen extends ScreenAdapter {
     }
 
     /**
-     * Les rouleaux sont arrêtés : textes du tirage, bruitage du résultat, puis fin
-     * du tour. Un jackpot attend la fin de sa célébration ; un combat terminé
-     * attend que tous les coups se soient affichés.
+     * Les rouleaux sont arrêtés : textes du tirage et bruitage du résultat ; une
+     * fois les résultats du joueur affichés, « TOUR ENNEMI » est annoncé puis
+     * l'ennemi riposte (s'il a survécu), et le tour se termine après sa riposte.
+     * Un jackpot fait attendre tout cela la fin de sa célébration.
      */
     private void onReelsStopped(TurnResult result) {
-        // Un jackpot fait attendre la riposte de l'ennemi jusqu'à la fin de sa célébration.
-        float riposteDelay = result.isJackpot() ? JackpotCelebration.DURATION : 0f;
+        float jackpotDelay = result.isJackpot() ? JackpotCelebration.DURATION : 0f;
+        boolean enemyTurn  = !result.getEnemyTurnEvents().isEmpty();
+        enemyAnnounceTime  = enemyTurn ? TurnBanner.DURATION : 0f;
+        // La riposte attend la célébration d'un jackpot, puis l'annonce du tour ennemi.
+        float riposteDelay = jackpotDelay + enemyAnnounceTime;
+        if (enemyTurn) {
+            stage.addAction(Actions.delay(SlotView.popupsDuration(result) + jackpotDelay,
+                Actions.run(this::announceEnemyTurn)));
+        }
         Vector2 enemyBar    = hud.getEnemyBarCenter();
         Vector2 pistolTexts = new Vector2(enemyBar.x, enemyBar.y - PISTOL_TEXT_BELOW);
         float shotAt = slots.playResultPopups(result, hud.besidePlayerHealthBar(SlotView.POPUP_PLAYER_GAP),
@@ -617,12 +652,9 @@ public class GameScreen extends ScreenAdapter {
         playSymbolResultSound(result);
         if (result.isPair()) celebratePair(result.getSymbols());
         if (result.isJackpot()) return; // voir onJackpotShown
-        if (isCombatOver()) {
-            stage.addAction(Actions.delay(SlotView.popupsDuration(result) + RESULT_TEXTS_MARGIN,
-                Actions.run(this::finishTurn)));
-        } else {
-            finishTurn();
-        }
+        float margin = isCombatOver() ? RESULT_TEXTS_MARGIN : RIPOSTE_TEXT_TIME;
+        stage.addAction(Actions.delay(SlotView.popupsDuration(result) + enemyAnnounceTime + margin,
+            Actions.run(this::finishTurn)));
     }
 
     /** Le pistolet surgit au-dessus du symbole qu'il multiplie et tire sur l'ennemi à l'instant {@code shotAt}. */
@@ -658,13 +690,12 @@ public class GameScreen extends ScreenAdapter {
         }
     }
 
-    /** Termine le tour : fin du combat si un camp est vaincu, sinon retour à la phase de pioche. */
+    /** Termine le tour de l'ennemi : fin du combat si un camp est vaincu, sinon au tour du joueur. */
     private void finishTurn() {
         if (isCombatOver()) {
             endCombat();
         } else {
-            spinButton.setDisabled(true);
-            drawButton.setDisabled(false);
+            startPlayerTurn();
         }
     }
 
@@ -674,8 +705,8 @@ public class GameScreen extends ScreenAdapter {
             onGainsShown(gains.amount);
         } else if (event instanceof GainsLostEvent lost) {
             onGainsShown(-lost.amount);
-        } else if (event instanceof JackpotEvent) {
-            onJackpotShown();
+        } else if (event instanceof JackpotEvent jackpot) {
+            onJackpotShown(jackpot.symbol);
         } else if (event instanceof EnemyDamagedEvent hit && hit.damage > 0) {
             onEnemyHit(hit.damage);
         } else if (event instanceof DamageReflectedEvent reflect && reflect.damage > 0) {
@@ -710,17 +741,18 @@ public class GameScreen extends ScreenAdapter {
 
     /**
      * Le texte « JACKPOT ! » vient d'apparaître : bruitage du bingo, bordure
-     * arc-en-ciel des rouleaux et célébration. La riposte de l'ennemi attend la
-     * fin de la célébration, et le tour se termine après elle.
+     * arc-en-ciel des rouleaux et célébration propre au {@code symbol} aligné.
+     * La riposte de l'ennemi attend la fin de la célébration, et le tour se
+     * termine après elle.
      */
-    private void onJackpotShown() {
+    private void onJackpotShown(Symbol symbol) {
         sounds.bingoThreeSymbols.play();
         table.setReelsRainbow(true);
         table.setLightsParty(true);
-        jackpotCelebration.play(() -> {
+        jackpotCelebration.play(symbol, () -> {
             table.setLightsParty(false);
-            // La riposte de l'ennemi s'affiche maintenant (voir onReelsStopped) : le tour se termine après elle.
-            stage.addAction(Actions.delay(SlotView.RIPOSTE_AFTER_BONUS + RIPOSTE_TEXT_TIME,
+            // Le tour ennemi est annoncé puis l'ennemi riposte (voir onReelsStopped) : le tour se termine après.
+            stage.addAction(Actions.delay(SlotView.RIPOSTE_AFTER_BONUS + enemyAnnounceTime + RIPOSTE_TEXT_TIME,
                 Actions.run(this::finishTurn)));
         });
     }
@@ -763,6 +795,7 @@ public class GameScreen extends ScreenAdapter {
         hand.reset();
         effectPopupAnimator.cancel(); // les gains en attente ne seront jamais affichés
         jackpotCelebration.cancel();
+        turnBanner.hide();
         bingoAnimation.cancel();
         pistolAnimation.cancel();
         rainbowAnimation.cancel();
@@ -782,9 +815,8 @@ public class GameScreen extends ScreenAdapter {
         pileOverlay.hide();
         slots.clear();
         refreshAll();
-        spinButton.setDisabled(true);
-        drawButton.setDisabled(false);
         endButtons.setVisible(false);
+        startPlayerTurn();
     }
 
     /**
@@ -816,7 +848,6 @@ public class GameScreen extends ScreenAdapter {
      */
     private void endCombat() {
         spinButton.setDisabled(true);
-        drawButton.setDisabled(true);
         Runnable showRestart = () -> {
             endButtons.setTouchable(Touchable.childrenOnly);
             endButtons.setVisible(true);
@@ -939,8 +970,7 @@ public class GameScreen extends ScreenAdapter {
     /** Place (ou replace après un redimensionnement) les éléments qui dépendent de la taille de l'écran. */
     private void layout() {
         table.layout();
-        drawButton.setPosition(playArea.getX() + BUTTON_MARGIN, BUTTON_MARGIN);
-        spinButton.setPosition(drawButton.getX() + drawButton.getWidth() + BUTTON_MARGIN, BUTTON_MARGIN);
+        spinButton.setPosition(playArea.getX() + BUTTON_MARGIN, BUTTON_MARGIN);
         sidePanel.layout(stage);
         hud.layout();
         piles.layout(table.getDeckX(), table.getPilesY());
@@ -958,8 +988,9 @@ public class GameScreen extends ScreenAdapter {
 
     /**
      * Installe le processeur d'entrée de l'écran : le Stage (clics, survols)
-     * en priorité, puis un raccourci clavier (Espace = piocher, F = lancer
-     * la machine si possible, Échap = fermer la consultation d'une pile).
+     * en priorité, puis un raccourci clavier (F = lancer la machine si
+     * possible, Échap = fermer la consultation d'une pile). La pioche est
+     * automatique au début de chaque tour du joueur.
      */
     @Override
     public void show() {
@@ -981,10 +1012,6 @@ public class GameScreen extends ScreenAdapter {
                 }
                 if (keycode == Input.Keys.ESCAPE && pileOverlay.isShown()) {
                     pileOverlay.hide();
-                    return true;
-                }
-                if (keycode == Input.Keys.SPACE && !drawButton.isDisabled()) {
-                    onDrawCards();
                     return true;
                 }
                 if (keycode == Input.Keys.F && !spinButton.isDisabled()) {
@@ -1050,6 +1077,7 @@ public class GameScreen extends ScreenAdapter {
         shopOverlay.dispose();
         cardDetail.dispose();
         jackpotCelebration.dispose();
+        turnBanner.dispose();
         damageVignette.dispose();
         combatEnd.dispose();
         effectPopupAnimator.dispose();

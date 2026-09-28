@@ -67,11 +67,16 @@ public class Fireworks extends Actor {
 
     /** Lance une fusée depuis {@code (x, fromY)} ; elle explose à l'ordonnée {@code apexY}. */
     public void launch(float x, float fromY, float apexY) {
+        launch(x, fromY, apexY, COLORS);
+    }
+
+    /** Comme {@link #launch(float, float, float)}, la couleur de la gerbe étant tirée dans {@code palette}. */
+    public void launch(float x, float fromY, float apexY, Color[] palette) {
         Rocket rocket = new Rocket();
         rocket.x     = x;
         rocket.y     = fromY;
         rocket.apexY = apexY;
-        rocket.color = COLORS[MathUtils.random(COLORS.length - 1)];
+        rocket.color = palette[MathUtils.random(palette.length - 1)];
         rockets.add(rocket);
     }
 

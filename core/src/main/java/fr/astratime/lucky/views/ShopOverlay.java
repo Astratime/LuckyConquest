@@ -13,8 +13,10 @@ import com.badlogic.gdx.scenes.scene2d.InputListener;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.Touchable;
 import com.badlogic.gdx.scenes.scene2d.actions.Actions;
+import com.badlogic.gdx.scenes.scene2d.ui.Cell;
 import com.badlogic.gdx.scenes.scene2d.ui.Image;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
+import com.badlogic.gdx.scenes.scene2d.ui.ScrollPane;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
@@ -37,6 +39,8 @@ import java.util.function.Predicate;
  * en vente, en grille, avec leur prix (leur effet au survol, leur fiche au clic). Acheter retire le prix des
  * gains ; sans assez de gains, le prix clignote en rouge. Un clic à côté, le
  * bouton « Fermer » ou Échap (géré par l'appelant via {@link #hide()}) la referment.
+ * Quand les cartes ne tiennent pas à l'écran, leur grille défile (molette ou
+ * glisser).
  */
 public class ShopOverlay implements Disposable {
 
@@ -69,6 +73,10 @@ public class ShopOverlay implements Disposable {
     private final Group root  = new Group();
     private final Image veil;
     private final Table panel = new Table();
+    /** Grille des cartes en vente, dans un panneau qui défile si elle dépasse de l'écran. */
+    private final Table      grid   = new Table();
+    private final ScrollPane scroll = new ScrollPane(grid);
+    private Cell<ScrollPane> scrollCell;
 
     /** @param cardWidth taille d'une carte de la main (agrandie ici) */
     public ShopOverlay(Stage stage, HudTextures hud, Tooltip tooltip, float cardWidth, float cardHeight) {
@@ -86,6 +94,8 @@ public class ShopOverlay implements Disposable {
         panel.setBackground(hud.panelDrawable());
         panel.pad(PADDING);
         panel.setTouchable(Touchable.enabled);
+        scroll.setScrollingDisabled(true, false);
+        scroll.setOverscroll(false, false);
         root.addActor(veil);
         root.addActor(panel);
         root.setVisible(false);
@@ -120,6 +130,7 @@ public class ShopOverlay implements Disposable {
             + " disparaissent une fois jouées.", new Label.LabelStyle(hintFont, Color.WHITE))).colspan(columns)
             .padBottom(GAP * 1.5f);
         panel.row();
+        grid.clearChildren();
 
         for (int i = 0; i < offers.size(); i++) {
             ShopOffer offer = offers.get(i);
@@ -181,9 +192,10 @@ public class ShopOverlay implements Disposable {
             })).padTop(GAP / 2f);
             cell.row();
             cell.add(status);
-            panel.add(cell).width(CELL_WIDTH).pad(GAP / 2f);
-            if ((i + 1) % columns == 0) panel.row();
+            grid.add(cell).width(CELL_WIDTH).pad(GAP / 2f);
+            if ((i + 1) % columns == 0) grid.row();
         }
+        scrollCell = panel.add(scroll).colspan(columns);
         panel.row();
         panel.add(button.apply("Fermer", this::hide)).colspan(columns).padTop(GAP);
 
@@ -195,6 +207,8 @@ public class ShopOverlay implements Disposable {
         root.addAction(Actions.fadeIn(FADE, Interpolation.pow2Out));
         root.toFront();
         tooltip.getActor().toFront();
+        scroll.setScrollY(0f);
+        stage.setScrollFocus(scroll); // la molette fait défiler les cartes
     }
 
     private static String walletText(int gains) {
@@ -204,6 +218,7 @@ public class ShopOverlay implements Disposable {
     /** Referme l'échoppe. */
     public void hide() {
         tooltip.hide();
+        if (stage.getScrollFocus() == scroll) stage.setScrollFocus(null);
         root.clearActions();
         root.setVisible(false);
     }
@@ -214,6 +229,17 @@ public class ShopOverlay implements Disposable {
         float height = stage.getViewport().getWorldHeight();
         root.setSize(width, height);
         veil.setSize(width, height);
+        if (scrollCell != null) {
+            // La grille prend toute sa hauteur si elle tient à l'écran, sinon elle défile.
+            grid.pack();
+            scrollCell.width(grid.getPrefWidth()).height(grid.getPrefHeight());
+            panel.invalidate(); // les tailles de cellule ne sont relues qu'après invalidation
+            float overflow = panel.getPrefHeight() - (height - GAP * 2f);
+            if (overflow > 0f) {
+                scrollCell.height(Math.max(CELL_WIDTH, grid.getPrefHeight() - overflow));
+                panel.invalidate();
+            }
+        }
         panel.pack();
         panel.setPosition((width - panel.getWidth()) / 2f, (height - panel.getHeight()) / 2f);
     }

@@ -1,5 +1,6 @@
 package fr.astratime.lucky.animations;
 
+import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.MathUtils;
@@ -9,7 +10,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Éclairs dorés qui jaillissent de points d'ancrage (le bord de la bannière
+ * Éclairs (dorés par défaut) qui jaillissent de points d'ancrage (le bord de la bannière
  * « BINGO!!! ») : chaque éclair est une ligne brisée redessinée au hasard
  * plusieurs fois par seconde, avec un halo doré et un cœur presque blanc, ce
  * qui le fait crépiter.
@@ -29,6 +30,8 @@ public class LightningBolts extends Actor {
     private record Anchor(float x, float y, float angleDeg, float length) {}
 
     private final TextureRegion      pixel;
+    private final Color              glow = new Color(1f, 0.8f, 0.15f, 0.55f);
+    private final Color              core = new Color(1f, 1f, 0.85f, 1f);
     private final List<Anchor>       anchors = new ArrayList<>();
     private final List<float[]>      bolts   = new ArrayList<>();
     private float                    timer;
@@ -36,6 +39,12 @@ public class LightningBolts extends Actor {
     /** @param pixel région d'un pixel blanc, étirée pour tracer les segments */
     public LightningBolts(TextureRegion pixel) {
         this.pixel = pixel;
+    }
+
+    /** Change les couleurs des éclairs : halo (dont l'opacité est conservée) et cœur. */
+    public void setColors(Color glowColor, Color coreColor) {
+        glow.set(glowColor.r, glowColor.g, glowColor.b, glow.a);
+        core.set(coreColor.r, coreColor.g, coreColor.b, core.a);
     }
 
     /** Ajoute un point d'où part un éclair, dans la direction {@code angleDeg} (degrés). */
@@ -84,9 +93,9 @@ public class LightningBolts extends Actor {
         float r = batch.getColor().r, g = batch.getColor().g, b = batch.getColor().b, a = batch.getColor().a;
         float alpha = getColor().a * parentAlpha;
         for (float[] points : bolts) {
-            batch.setColor(1f, 0.8f, 0.15f, 0.55f * alpha);
+            batch.setColor(glow.r, glow.g, glow.b, glow.a * alpha);
             drawPolyline(batch, points, GLOW_WIDTH);
-            batch.setColor(1f, 1f, 0.85f, alpha);
+            batch.setColor(core.r, core.g, core.b, core.a * alpha);
             drawPolyline(batch, points, CORE_WIDTH);
         }
         batch.setColor(r, g, b, a);
