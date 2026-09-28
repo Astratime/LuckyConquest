@@ -30,7 +30,7 @@ public final class Textures {
      */
     public static Texture bannerBand(Color body, Color trim) {
         int height = 99;
-        Color outline   = new Color(0.07f, 0.03f, 0.04f, 1f);
+        Color outline   = Palette.OUTLINE;
         Color trimLight = trim.cpy().lerp(Color.WHITE, 0.4f);
         Color trimDark  = trim.cpy().mul(0.7f, 0.7f, 0.7f, 1f);
         Color bodyDark  = body.cpy().mul(0.78f, 0.78f, 0.78f, 1f);

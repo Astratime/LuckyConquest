@@ -11,6 +11,7 @@ import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.utils.Drawable;
 import com.badlogic.gdx.utils.Align;
 import fr.astratime.lucky.animations.SpinningSprite;
+import fr.astratime.lucky.assets.Palette;
 
 /**
  * Option d'un menu. Au repos, seul son texte (crème) est visible ;
@@ -20,8 +21,8 @@ import fr.astratime.lucky.animations.SpinningSprite;
  */
 public class MenuOption extends Group {
 
-    private static final Color IDLE_COLOR     = Color.valueOf("f0e0b0ff");
-    private static final Color SELECTED_COLOR = Color.valueOf("ffd54aff");
+    private static final Color IDLE_COLOR     = Palette.CREAM;
+    private static final Color SELECTED_COLOR = Palette.GOLD;
     private static final float CHIP_SIZE      = 48f;   // 16 pixels de la grille x3
     private static final float CHIP_GAP       = 16f;   // entre le cadre et un jeton
     private static final float CHIP_FPS       = 12f;

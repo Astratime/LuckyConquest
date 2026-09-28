@@ -44,6 +44,7 @@ import fr.astratime.lucky.assets.CardTextures;
 import fr.astratime.lucky.assets.Fonts;
 import fr.astratime.lucky.assets.GameSounds;
 import fr.astratime.lucky.assets.HudTextures;
+import fr.astratime.lucky.assets.Palette;
 import fr.astratime.lucky.assets.TableTextures;
 import fr.astratime.lucky.controllers.GameController;
 import fr.astratime.lucky.controllers.PreparationResolver;
@@ -126,7 +127,7 @@ public class GameScreen extends ScreenAdapter {
     private static final int   BIG_HIT               = 60;
     private static final float BIG_HIT_STOP          = 0.09f;
     /** Paire : clignotement doré des deux rouleaux et confettis lâchés par chacun. */
-    private static final Color PAIR_GLOW             = Color.valueOf("ffd54aff");
+    private static final Color PAIR_GLOW             = Palette.GOLD;
     private static final float PAIR_GLOW_DURATION    = 1.6f;
     private static final int   PAIR_CONFETTI         = 45;
     /** Temps laissé au texte de la riposte, après les autres textes du tirage, avant d'annoncer la fin du combat. */
@@ -169,8 +170,8 @@ public class GameScreen extends ScreenAdapter {
     private final Stage               stage;
     private final BitmapFont          font;
     /** Libellés du deck et de la défausse : police du jeu, à balises de couleur (nom crème, nombre doré). */
-    private final BitmapFont          pileFont = markup(Fonts.jersey(20, Color.WHITE, 2f, Color.valueOf("1a0f0fff")));
-    private final BitmapFont          shopFont = Fonts.jersey(30, Color.valueOf("ffd454ff"), 2f, Color.valueOf("1a0f0fff"));
+    private final BitmapFont          pileFont = markup(Fonts.jersey(20, Color.WHITE, 2f, Palette.TEXT_SHADE));
+    private final BitmapFont          shopFont = Fonts.jersey(30, Palette.GOLD, 2f, Palette.TEXT_SHADE);
     private final Texture             cardBackTexture;
     private final CardTextures        cardTextures  = new CardTextures();
     private final CasinoButtons       buttons       = new CasinoButtons();
@@ -287,6 +288,7 @@ public class GameScreen extends ScreenAdapter {
         shopOverlay      = new ShopOverlay(stage, hudTextures, tooltip, CARD_WIDTH, CARD_HEIGHT);
         cardDetail       = new CardDetailOverlay(stage, hudTextures, tooltip, CARD_WIDTH, CARD_HEIGHT);
         hand.setOnInspect(this::showCardDetail);
+        hand.setBlockedReason(gameController::unplayableReason, this::onCardRefused);
         pileOverlay.setOnInspect(this::showCardDetail);
         buildShopIcon();
 
@@ -376,6 +378,7 @@ public class GameScreen extends ScreenAdapter {
         hud.refresh();
         refreshGains(); // une carte peut créditer ou consommer des gains immédiatement
         refreshEffects();
+        hand.refreshBlocked(); // un Recyclage peut avoir rendu un Bingo de la main injouable
 
         DrawResult drawResult = playResult.getDrawResult();
         if (!drawResult.getAddedToHand().isEmpty() || !drawResult.getDiscarded().isEmpty()) {
@@ -481,6 +484,7 @@ public class GameScreen extends ScreenAdapter {
         sounds.buttonClick.play();
         shopOverlay.show(gameController.getShopOffers(), () -> player().getGains(), cardTextures::get,
             (text, action) -> buttons.create(text, sounds.buttonClick, action),
+            gameController::unavailableReason,
             offer -> {
                 GameController.Purchase purchase = gameController.buy(offer);
                 if (purchase == null) return false;
@@ -569,6 +573,17 @@ public class GameScreen extends ScreenAdapter {
                     refreshGains();
                 });
         }
+    }
+
+    /**
+     * Le joueur clique sur une carte qui ne peut pas être jouée (Bingo d'un
+     * symbole recyclé) : elle reste dans la main, son infobulle donne la raison
+     * (voir {@link HandView}) et un texte « BINGO BLOQUÉ ! » surgit sur la carte.
+     */
+    private void onCardRefused(Card card, String reason, Vector2 cardCenter) {
+        Gdx.app.log("GameScreen", "Carte refusee : " + card + " (" + reason + ")");
+        effectPopupAnimator.play(List.of(new EffectPopup("BINGO BLOQUÉ !", EffectPopup.Style.DAMAGE,
+            PopupScale.SECONDARY_INTENSITY)), cardCenter.x, cardCenter.y - CARD_HEIGHT * 0.3f); // monte sur la carte, sous l'infobulle
     }
 
     /**

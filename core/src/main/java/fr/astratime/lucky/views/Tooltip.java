@@ -14,6 +14,7 @@ import com.badlogic.gdx.utils.Align;
 import com.badlogic.gdx.utils.Disposable;
 import fr.astratime.lucky.assets.Fonts;
 import fr.astratime.lucky.assets.HudTextures;
+import fr.astratime.lucky.assets.Palette;
 
 /**
  * Infobulle au thème du casino, partagée par tous les acteurs survolables de
@@ -24,17 +25,14 @@ import fr.astratime.lucky.assets.HudTextures;
  */
 public class Tooltip implements Disposable {
 
-    private static final Color GOLD       = Color.valueOf("ffd454ff");
-    private static final Color CREAM      = Color.valueOf("f0e0b0ff");
-    private static final Color TEXT_SHADE = Color.valueOf("1a0f0fff");
     private static final float PAD        = 16f;
     private static final float MAX_WIDTH  = 380f;   // largeur du texte avant retour à la ligne
     private static final float RULE_GAP   = 6f;
     private static final float MARGIN     = 8f;     // distance minimale au bord de l'écran
     private static final float APPEAR     = 0.12f;
 
-    private final BitmapFont titleFont = Fonts.jersey(30, GOLD, 2f, TEXT_SHADE);
-    private final BitmapFont bodyFont  = Fonts.jersey(24, CREAM, 2f, TEXT_SHADE);
+    private final BitmapFont titleFont = Fonts.jersey(30, Palette.TEXT_TITLE, 2f, Palette.TEXT_SHADE);
+    private final BitmapFont bodyFont  = Fonts.jersey(24, Palette.TEXT_BODY, 2f, Palette.TEXT_SHADE);
     private final Label      title;
     private final Image      rule;
     private final Label      body;

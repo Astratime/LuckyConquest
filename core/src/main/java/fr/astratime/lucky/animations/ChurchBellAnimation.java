@@ -13,6 +13,7 @@ import com.badlogic.gdx.scenes.scene2d.actions.Actions;
 import com.badlogic.gdx.scenes.scene2d.ui.Image;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 import com.badlogic.gdx.utils.Disposable;
+import fr.astratime.lucky.assets.Palette;
 
 /**
  * Bingo de la Cloche : une cloche d'église descend, suspendue à sa poutre ;
@@ -221,14 +222,14 @@ public class ChurchBellAnimation extends Group implements Disposable {
     private static Texture createBell() {
         Pixmap pixmap = new Pixmap(BELL_WIDTH, BELL_HEIGHT, Pixmap.Format.RGBA8888);
         pixmap.setBlending(Pixmap.Blending.None);
-        Color outline = Color.valueOf("1a0f0fff");
+        Color outline = Palette.OUTLINE;
         Color bronze  = Color.valueOf("d9a441ff");
         Color light   = Color.valueOf("ffe08aff");
         Color mid     = Color.valueOf("b98530ff");
         Color shadow  = Color.valueOf("8a5a1eff");
         Color band    = Color.valueOf("7a4c16ff");
-        Color wood    = Color.valueOf("8a5a2cff");
-        Color woodLit = Color.valueOf("b07a3cff");
+        Color wood    = Palette.WOOD;
+        Color woodLit = Palette.WOOD_LIGHT;
         int center = BELL_WIDTH / 2;
 
         // Joug : pièce de bois qui porte la cloche.
@@ -283,23 +284,23 @@ public class ChurchBellAnimation extends Group implements Disposable {
     private static Texture createMallet() {
         Pixmap pixmap = new Pixmap(MALLET_WIDTH, MALLET_HEIGHT, Pixmap.Format.RGBA8888);
         pixmap.setBlending(Pixmap.Blending.None);
-        Color outline = Color.valueOf("1a0f0fff");
+        Color outline = Palette.OUTLINE;
         fillOutlined(pixmap, 0, 0, MALLET_WIDTH, MALLET_HEAD, outline, Color.valueOf("7a3b1eff"));
         pixmap.setColor(Color.valueOf("a8582eff"));
         pixmap.drawLine(1, 1, MALLET_WIDTH - 2, 1);
-        pixmap.setColor(Color.valueOf("c8d2dcff")); // cercles de fer
+        pixmap.setColor(Palette.STEEL_LIGHT); // cercles de fer
         pixmap.drawLine(1, 3, MALLET_WIDTH - 2, 3);
         pixmap.drawLine(1, MALLET_HEAD - 4, MALLET_WIDTH - 2, MALLET_HEAD - 4);
 
         int handle = 4;
         int left = (MALLET_WIDTH - handle) / 2;
         fillOutlined(pixmap, left, MALLET_HEAD - 1, handle, MALLET_HEIGHT - MALLET_HEAD + 1, outline,
-            Color.valueOf("b07a3cff"));
-        pixmap.setColor(Color.valueOf("dca466ff"));
+            Palette.WOOD_LIGHT);
+        pixmap.setColor(Palette.WOOD_HIGHLIGHT);
         pixmap.drawLine(left + 1, MALLET_HEAD, left + 1, MALLET_HEIGHT - 12);
         // Grip entouré de cuir rouge.
         for (int y = MALLET_HEIGHT - 10; y < MALLET_HEIGHT - 1; y++) {
-            pixmap.setColor(Color.valueOf(y % 2 == 0 ? "e0303cff" : "a81e28ff"));
+            pixmap.setColor(y % 2 == 0 ? Palette.RED : Color.valueOf("a81e28ff"));
             pixmap.drawLine(left + 1, y, left + handle - 2, y);
         }
         Texture texture = new Texture(pixmap);
@@ -311,8 +312,8 @@ public class ChurchBellAnimation extends Group implements Disposable {
     private static Texture createBeam() {
         Pixmap pixmap = new Pixmap(BEAM_WIDTH, BEAM_HEIGHT, Pixmap.Format.RGBA8888);
         pixmap.setBlending(Pixmap.Blending.None);
-        fillOutlined(pixmap, 0, 0, BEAM_WIDTH, BEAM_HEIGHT, Color.valueOf("1a0f0fff"), Color.valueOf("6e4524ff"));
-        pixmap.setColor(Color.valueOf("8a5a2cff"));
+        fillOutlined(pixmap, 0, 0, BEAM_WIDTH, BEAM_HEIGHT, Palette.OUTLINE, Palette.WOOD_DARK);
+        pixmap.setColor(Palette.WOOD);
         pixmap.drawLine(1, 1, BEAM_WIDTH - 2, 1);
         pixmap.setColor(Color.valueOf("4e2f18ff")); // veines du bois
         for (int x = 4; x < BEAM_WIDTH - 4; x += 9) {

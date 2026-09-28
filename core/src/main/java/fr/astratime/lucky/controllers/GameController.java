@@ -12,6 +12,7 @@ import fr.astratime.lucky.entities.choices.CardChoice;
 import fr.astratime.lucky.entities.choices.RouletteChoice;
 import fr.astratime.lucky.entities.context.PlayContext;
 import fr.astratime.lucky.entities.effects.BetOnSymbolEffect;
+import fr.astratime.lucky.entities.effects.BingoEffect;
 import fr.astratime.lucky.entities.effects.Effect;
 import fr.astratime.lucky.entities.effects.PistolEffect;
 import fr.astratime.lucky.loaders.CardLoader;
@@ -157,14 +158,56 @@ public class GameController {
     public List<ShopOffer> getShopOffers() { return shopOffers; }
 
     /**
+     * @return pourquoi {@code offer} ne peut pas être achetée en ce moment (hors
+     *         manque de gains), ou {@code null} si elle est disponible. Un Bingo
+     *         dont le symbole est retiré des rouleaux (Recyclage) ne peut pas
+     *         sortir : il n'est pas en vente tant que le symbole n'est pas revenu.
+     */
+    public String unavailableReason(ShopOffer offer) {
+        Symbol recycled = recycledBingoSymbol(offer.card());
+        if (recycled == null) return null;
+        int turns = gameState.getPlayer().getLastingEffects().getRemovedSymbols().get(recycled);
+        return "Indisponible : le symbole " + recycled.getDisplayName()
+            + " est retiré des rouleaux par le Recyclage (encore " + turnsText(turns) + ")";
+    }
+
+    /**
+     * @return pourquoi {@code card} ne peut pas être jouée en ce moment, ou
+     *         {@code null} si elle le peut. Comme à l'échoppe, un Bingo dont le
+     *         symbole est retiré des rouleaux (Recyclage) ne peut pas sortir : il
+     *         reste en main tant que le symbole n'est pas revenu.
+     */
+    public String unplayableReason(Card card) {
+        Symbol recycled = recycledBingoSymbol(card);
+        if (recycled == null) return null;
+        int turns = gameState.getPlayer().getLastingEffects().getRemovedSymbols().get(recycled);
+        return "Le symbole " + recycled.getDisplayName() + " est retiré des rouleaux par le Recyclage (encore "
+            + turnsText(turns) + ") : ce Bingo ne peut pas être joué";
+    }
+
+    /** @return le symbole imposé par le Bingo de {@code card} s'il est retiré des rouleaux, sinon {@code null}. */
+    private Symbol recycledBingoSymbol(Card card) {
+        Map<Symbol, Integer> removed = gameState.getPlayer().getLastingEffects().getRemovedSymbols();
+        for (Effect effect : card.getEffects()) {
+            if (effect instanceof BingoEffect bingo && removed.containsKey(bingo.getSymbol())) return bingo.getSymbol();
+        }
+        return null;
+    }
+
+    private static String turnsText(int turns) {
+        return turns + (turns > 1 ? " tours" : " tour");
+    }
+
+    /**
      * Achète {@code offer} : son prix est retiré des gains, puis la carte est
      * posée sur la table s'il y a de la place, sinon glissée dans le deck.
      *
-     * @return l'achat, ou {@code null} si les gains ne suffisent pas
+     * @return l'achat, ou {@code null} si la carte est indisponible (voir
+     *         {@link #unavailableReason}) ou si les gains ne suffisent pas
      */
     public Purchase buy(ShopOffer offer) {
         Player player = gameState.getPlayer();
-        if (player.getGains() < offer.price()) return null;
+        if (unavailableReason(offer) != null || player.getGains() < offer.price()) return null;
         player.addGains(-offer.price());
         Card card = cardFactory.apply(offer.card().getId());
         return new Purchase(card, player.addToHandOrDeck(card));
@@ -180,7 +223,9 @@ public class GameController {
      */
     public CardPlayResult playCard(Card card) {
         Player player = gameState.getPlayer();
-        if (handLocked || pendingChoice != null || !player.playCard(card)) return CardPlayResult.none();
+        if (handLocked || pendingChoice != null || unplayableReason(card) != null || !player.playCard(card)) {
+            return CardPlayResult.none();
+        }
 
         PlayContext playContext = new PlayContext(player);
         card.getEffects().forEach(effect -> effect.onPlay(playContext));

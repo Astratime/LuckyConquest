@@ -14,6 +14,7 @@ import com.badlogic.gdx.scenes.scene2d.ui.Image;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 import com.badlogic.gdx.utils.Disposable;
 import fr.astratime.lucky.assets.Fonts;
+import fr.astratime.lucky.assets.Palette;
 import fr.astratime.lucky.assets.Textures;
 import fr.astratime.lucky.entities.Symbol;
 import fr.astratime.lucky.settings.VisualSettings;
@@ -104,7 +105,7 @@ public class JackpotCelebration extends Group implements Disposable {
     private final List<Texture>  styleBands   = new ArrayList<>();
     /** Image de chaque symbole, détourée de sa case blanche, chargée à son premier Bingo. */
     private final Map<Symbol, Texture> icons  = new EnumMap<>(Symbol.class);
-    private final BitmapFont     bannerFont   = Fonts.jersey(170, Color.WHITE, 7f, Color.valueOf("12080aff"));
+    private final BitmapFont     bannerFont   = Fonts.jersey(170, Color.WHITE, 7f, Palette.TEXT_SHADE);
 
     private final Image        flash;
     private final Shockwaves   shockwaves;
@@ -321,11 +322,11 @@ public class JackpotCelebration extends Group implements Disposable {
         float centerX = playArea.getCenterX(), centerY = getHeight() * 0.5f;
         float slam = HydraulicPressScene.SLAM_TIME;
         playScene(hydraulicPress, centerX, centerY, slam + 0.3f, 0.5f);
-        Color[] sparks = {Color.valueOf("ffd23cff"), Color.valueOf("ff8a1fff"), Color.WHITE};
+        Color[] sparks = {Palette.GOLD, Palette.ORANGE, Color.WHITE};
         at(slam, () -> {
             screenShake.shake(0.5f, 18f);
             impactFlash(1f, 1f, 1f, 0.5f);
-            shockwaves.ring(centerX, centerY, 520f, 0.6f, 0.2f, Color.valueOf("c8d2dcff"));
+            shockwaves.ring(centerX, centerY, 520f, 0.6f, 0.2f, Palette.STEEL_LIGHT);
         });
         float half = 37f * BingoScene.SCALE;
         emit(slam, slam, 70, i -> {
@@ -348,7 +349,7 @@ public class JackpotCelebration extends Group implements Disposable {
         float[] hits = ForgeScene.HITS;
         float last = hits[hits.length - 1];
         playScene(forge, centerX, getHeight() * 0.16f, last + 0.12f, 0.78f);
-        Color[] sparks = {Color.valueOf("ffd23cff"), Color.valueOf("ff8a1fff"), Color.valueOf("fff2c0ff")};
+        Color[] sparks = {Palette.GOLD, Palette.ORANGE, Palette.GOLD_PALE};
         for (int k = 0; k < hits.length; k++) {
             int strength = k;
             at(hits[k], () -> {
@@ -452,7 +453,7 @@ public class JackpotCelebration extends Group implements Disposable {
         playScene(safe, centerX, baseY, open + 0.12f, 0.8f);
         at(SafeScene.LAND_TIME, () -> {
             screenShake.shake(0.45f, 16f);
-            shockwaves.ring(centerX, baseY, 360f, 0.55f, 0.25f, Color.valueOf("c8d2dcff"));
+            shockwaves.ring(centerX, baseY, 360f, 0.55f, 0.25f, Palette.STEEL_LIGHT);
             for (int e = 0; e < 24; e++) {
                 float side = e % 2 == 0 ? -1f : 1f;
                 glitter.ember(centerX + side * MathUtils.random(60f, 140f), baseY, side * MathUtils.random(80f, 260f),

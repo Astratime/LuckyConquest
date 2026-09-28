@@ -14,6 +14,7 @@ import com.badlogic.gdx.scenes.scene2d.ui.Container;
 import com.badlogic.gdx.scenes.scene2d.ui.Image;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
+import fr.astratime.lucky.assets.Palette;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -41,9 +42,6 @@ public class BingoBanner extends Group {
     private static final float SHAKE = 14f;
     private static final float DRIFT = 50f;   // glissement pendant la pause
 
-    private static final Color GOLD       = Color.valueOf("ffd54aff");
-    private static final Color BACK_COLOR = new Color(0.06f, 0.02f, 0.03f, 0.92f);
-
     private final Image                  backBand;
     private final Image                  band;
     private final List<Container<Label>> letters = new ArrayList<>();
@@ -56,7 +54,7 @@ public class BingoBanner extends Group {
      * @param font        grande police à contour pour les lettres
      */
     public BingoBanner(String text, Texture bandTexture, TextureRegion pixel, BitmapFont font) {
-        this(text, bandTexture, pixel, font, GOLD, Color.WHITE, BACK_COLOR);
+        this(text, bandTexture, pixel, font, Palette.GOLD, Color.WHITE, Palette.BANNER_SHADOW);
     }
 
     /**

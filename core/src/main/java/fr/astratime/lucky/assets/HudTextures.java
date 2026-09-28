@@ -21,7 +21,7 @@ public class HudTextures implements Disposable {
     public static final int BAR_FRAME_BORDER = 9;
     public static final int TOOLTIP_BORDER   = 12;
 
-    private static final Color TRAIL_COLOR = Color.valueOf("fff2c0ff");
+    private static final Color TRAIL_COLOR = Palette.GOLD_PALE;
 
     public final Texture panel           = load("hud/panel.png");
     public final Texture panelInset      = load("hud/panel_inset.png");

@@ -24,6 +24,7 @@ import com.badlogic.gdx.utils.Align;
 import com.badlogic.gdx.utils.Disposable;
 import fr.astratime.lucky.assets.Fonts;
 import fr.astratime.lucky.assets.HudTextures;
+import fr.astratime.lucky.assets.Palette;
 import fr.astratime.lucky.controllers.GameController.ShopOffer;
 import fr.astratime.lucky.entities.Card;
 
@@ -37,18 +38,19 @@ import java.util.function.Predicate;
 /**
  * L'échoppe, ouverte par-dessus le jeu depuis l'icône du marché : les cartes
  * en vente, en grille, avec leur prix (leur effet au survol, leur fiche au clic). Acheter retire le prix des
- * gains ; sans assez de gains, le prix clignote en rouge. Un clic à côté, le
+ * gains ; sans assez de gains, le prix clignote en rouge. Une carte
+ * indisponible (ex : Bingo d'un symbole retiré par le Recyclage) est grisée,
+ * et tenter de l'acheter explique pourquoi. Un clic à côté, le
  * bouton « Fermer » ou Échap (géré par l'appelant via {@link #hide()}) la referment.
  * Quand les cartes ne tiennent pas à l'écran, leur grille défile (molette ou
  * glisser).
  */
 public class ShopOverlay implements Disposable {
 
-    private static final Color VEIL       = new Color(0f, 0f, 0f, 0.72f);
-    private static final Color GOLD       = Color.valueOf("ffd454ff");
-    private static final Color CREAM      = Color.valueOf("f0e0b0ff");
-    private static final Color RED        = Color.valueOf("ff5a5aff");
-    private static final Color TEXT_SHADE = Color.valueOf("1a0f0fff");
+    /** Teinte d'une carte qui ne peut pas être achetée en ce moment. */
+    private static final Color UNAVAILABLE_TINT = new Color(0.4f, 0.4f, 0.4f, 1f);
+    /** Temps d'affichage de l'avertissement d'une carte indisponible. */
+    private static final float NOTICE_TIME = 3.5f;
     private static final float FADE       = 0.2f;
     private static final float PADDING    = 44f;
     private static final float GAP        = 16f;
@@ -64,11 +66,11 @@ public class ShopOverlay implements Disposable {
     private final Tooltip     tooltip;
     private final float       cardWidth;
     private final float       cardHeight;
-    private final BitmapFont  titleFont   = Fonts.jersey(72, GOLD, 3f, TEXT_SHADE);
-    private final BitmapFont  textFont    = Fonts.jersey(30, CREAM, 2f, TEXT_SHADE);
-    private final BitmapFont  hintFont    = Fonts.jersey(22, CREAM, 2f, TEXT_SHADE);
-    private final BitmapFont  nameFont    = Fonts.jersey(30, Color.WHITE, 2f, TEXT_SHADE);
-    private final BitmapFont  priceFont   = Fonts.jersey(34, Color.WHITE, 2f, TEXT_SHADE);
+    private final BitmapFont  titleFont   = Fonts.jersey(72, Palette.TEXT_TITLE, 3f, Palette.TEXT_SHADE);
+    private final BitmapFont  textFont    = Fonts.jersey(30, Palette.TEXT_BODY, 2f, Palette.TEXT_SHADE);
+    private final BitmapFont  hintFont    = Fonts.jersey(22, Palette.TEXT_BODY, 2f, Palette.TEXT_SHADE);
+    private final BitmapFont  nameFont    = Fonts.jersey(30, Color.WHITE, 2f, Palette.TEXT_SHADE);
+    private final BitmapFont  priceFont   = Fonts.jersey(34, Color.WHITE, 2f, Palette.TEXT_SHADE);
 
     private final Group root  = new Group();
     private final Image veil;
@@ -86,7 +88,7 @@ public class ShopOverlay implements Disposable {
         this.cardWidth  = cardWidth * CARD_SCALE;
         this.cardHeight = cardHeight * CARD_SCALE;
         veil = new Image(new TextureRegionDrawable(new TextureRegion(hud.pixel)));
-        veil.setColor(VEIL);
+        veil.setColor(Palette.VEIL);
         veil.addListener(new ClickListener() {
             @Override
             public void clicked(InputEvent event, float x, float y) { hide(); }
@@ -114,11 +116,13 @@ public class ShopOverlay implements Disposable {
      * @param gains     gains actuels du joueur (relus après chaque achat)
      * @param textureOf image de chaque carte
      * @param button    crée un bouton du jeu (texte, action au clic)
+     * @param unavailable pourquoi une carte ne peut pas être achetée en ce moment, ou {@code null} si elle le peut
      * @param buy       tente l'achat : {@code true} s'il a eu lieu (gains suffisants)
      * @param inspect   affiche la fiche d'une carte (clic sur son image)
      */
     public void show(List<ShopOffer> offers, IntSupplier gains, Function<Card, Texture> textureOf,
-                     BiFunction<String, Runnable, Actor> button, Predicate<ShopOffer> buy, Consumer<ShopOffer> inspect) {
+                     BiFunction<String, Runnable, Actor> button, Function<ShopOffer, String> unavailable,
+                     Predicate<ShopOffer> buy, Consumer<ShopOffer> inspect) {
         int columns = Math.min(COLUMNS, Math.max(1, offers.size()));
         panel.clearChildren();
         panel.add(new Label("ÉCHOPPE", new Label.LabelStyle(titleFont, Color.WHITE))).colspan(columns);
@@ -127,8 +131,11 @@ public class ShopOverlay implements Disposable {
         panel.add(wallet).colspan(columns);
         panel.row();
         panel.add(new Label("Survole une carte pour son effet, clique dessus pour sa fiche. Les cartes achetées"
-            + " disparaissent une fois jouées.", new Label.LabelStyle(hintFont, Color.WHITE))).colspan(columns)
-            .padBottom(GAP * 1.5f);
+            + " disparaissent une fois jouées.", new Label.LabelStyle(hintFont, Color.WHITE))).colspan(columns);
+        panel.row();
+        // Avertissement (carte indisponible) : ligne réservée, vide tant qu'il n'y a rien à dire.
+        Label notice = new Label(" ", new Label.LabelStyle(textFont, Palette.TEXT_ALERT));
+        panel.add(notice).colspan(columns).padTop(GAP / 2f).padBottom(GAP);
         panel.row();
         grid.clearChildren();
 
@@ -161,9 +168,10 @@ public class ShopOverlay implements Disposable {
                     return true;
                 }
             });
+            if (unavailable.apply(offer) != null) image.setColor(UNAVAILABLE_TINT);
             cell.add(image).size(cardWidth, cardHeight);
             cell.row();
-            cell.add(new Label(card.getName(), new Label.LabelStyle(nameFont, GOLD))).padTop(GAP / 2f);
+            cell.add(new Label(card.getName(), new Label.LabelStyle(nameFont, Palette.TEXT_TITLE))).padTop(GAP / 2f);
             cell.row();
 
             Table price = new Table();
@@ -176,17 +184,25 @@ public class ShopOverlay implements Disposable {
             Label status = new Label(" ", new Label.LabelStyle(hintFont, Color.WHITE));
             cell.add(button.apply("Acheter", () -> {
                 if (!root.isVisible() || !root.isTouchable()) return;
-                if (buy.test(offer)) {
+                String reason = unavailable.apply(offer);
+                if (reason != null) {
+                    status.setText("Indisponible");
+                    status.setColor(Palette.TEXT_ALERT);
+                    notice.clearActions();
+                    notice.setText(reason);
+                    notice.getColor().a = 1f;
+                    notice.addAction(Actions.sequence(Actions.delay(NOTICE_TIME), Actions.fadeOut(0.4f)));
+                } else if (buy.test(offer)) {
                     wallet.setText(walletText(gains.getAsInt()));
                     status.setText("Acheté !");
-                    status.setColor(GOLD);
+                    status.setColor(Palette.TEXT_TITLE);
                     root.setTouchable(Touchable.disabled);
                     root.addAction(Actions.delay(CLOSE_AFTER_PURCHASE, Actions.run(this::hide)));
                 } else {
                     status.setText("Pas assez de gains");
-                    status.setColor(RED);
+                    status.setColor(Palette.TEXT_ALERT);
                     priceLabel.clearActions();
-                    priceLabel.setColor(RED);
+                    priceLabel.setColor(Palette.TEXT_ALERT);
                     priceLabel.addAction(Actions.sequence(Actions.delay(0.4f), Actions.color(Color.WHITE, 0.4f)));
                 }
             })).padTop(GAP / 2f);

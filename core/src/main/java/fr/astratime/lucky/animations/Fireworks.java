@@ -6,6 +6,7 @@ import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.scenes.scene2d.Actor;
+import fr.astratime.lucky.assets.Palette;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -42,8 +43,8 @@ public class Fireworks extends Actor {
 
     /** Couleurs des gerbes, tirées au hasard ; le doré revient plus souvent (thème casino). */
     private static final Color[] COLORS = {
-        Color.valueOf("ffd54aff"), Color.valueOf("ffd54aff"), Color.valueOf("ff4a5aff"),
-        Color.valueOf("4affa0ff"), Color.valueOf("4ac8ffff"), Color.valueOf("c77dffff"), Color.WHITE,
+        Palette.GOLD, Palette.GOLD, Palette.RUBY,
+        Palette.MINT, Palette.SKY, Palette.VIOLET, Color.WHITE,
     };
 
     private static final class Rocket {

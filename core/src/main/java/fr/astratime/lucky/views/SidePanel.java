@@ -19,6 +19,7 @@ import com.badlogic.gdx.utils.Align;
 import com.badlogic.gdx.utils.Disposable;
 import fr.astratime.lucky.assets.Fonts;
 import fr.astratime.lucky.assets.HudTextures;
+import fr.astratime.lucky.assets.Palette;
 
 import java.util.List;
 
@@ -49,14 +50,10 @@ public class SidePanel implements Disposable {
     private static final float OVERLAY_ICON   = 30f;   // croix posée dans le coin de l'icône
     private static final float EFFECT_GAP     = 8f;
 
-    private static final Color GOLD       = Color.valueOf("ffd454ff");
-    private static final Color CREAM      = Color.valueOf("f0e0b0ff");
-    private static final Color TEXT_SHADE = Color.valueOf("1a0f0fff");
-
-    private final BitmapFont titleFont   = Fonts.jersey(56, GOLD, 3f, TEXT_SHADE);
-    private final BitmapFont captionFont = Fonts.jersey(30, CREAM, 2f, TEXT_SHADE);
-    private final BitmapFont gainsFont   = Fonts.jersey(80, GOLD, 3f, TEXT_SHADE);
-    private final BitmapFont effectFont  = Fonts.jersey(28, CREAM, 2f, TEXT_SHADE);
+    private final BitmapFont titleFont   = Fonts.jersey(56, Palette.TEXT_TITLE, 3f, Palette.TEXT_SHADE);
+    private final BitmapFont captionFont = Fonts.jersey(30, Palette.TEXT_BODY, 2f, Palette.TEXT_SHADE);
+    private final BitmapFont gainsFont   = Fonts.jersey(80, Palette.TEXT_TITLE, 3f, Palette.TEXT_SHADE);
+    private final BitmapFont effectFont  = Fonts.jersey(28, Palette.TEXT_BODY, 2f, Palette.TEXT_SHADE);
 
     private final Table root = new Table();
     private final Image coin;

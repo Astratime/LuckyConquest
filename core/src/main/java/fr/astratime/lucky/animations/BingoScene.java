@@ -11,6 +11,7 @@ import com.badlogic.gdx.scenes.scene2d.actions.Actions;
 import com.badlogic.gdx.scenes.scene2d.ui.Image;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 import com.badlogic.gdx.utils.Disposable;
+import fr.astratime.lucky.assets.Palette;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -34,7 +35,7 @@ public abstract class BingoScene extends Group implements Disposable {
     /** Agrandissement des images : entier, pour des pixels nets. */
     protected static final float SCALE = 5f;
 
-    protected static final Color OUTLINE = Color.valueOf("1a0f0fff");
+    protected static final Color OUTLINE = Palette.OUTLINE;
 
     private final List<Texture> textures = new ArrayList<>();
     /** Temps écoulé depuis {@link #play}. */

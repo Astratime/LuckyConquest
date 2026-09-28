@@ -14,6 +14,7 @@ import com.badlogic.gdx.scenes.scene2d.actions.SequenceAction;
 import com.badlogic.gdx.scenes.scene2d.ui.Image;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 import com.badlogic.gdx.utils.Disposable;
+import fr.astratime.lucky.assets.Palette;
 
 /**
  * Bingo du Triple Cerise : une cible de tir à l'arc surgit au milieu de la
@@ -44,7 +45,6 @@ public class BullseyeAnimation extends Group implements Disposable {
     /** Départ de la flèche, relatif au centre de la cible : hors de l'écran, en haut à gauche. */
     private static final float ARROW_FROM_X  = -1100f;
     private static final float ARROW_FROM_Y  = 420f;
-
 
     private final Texture    targetTexture = createTarget();
     private final Texture    arrowTexture  = createArrow();
@@ -172,22 +172,22 @@ public class BullseyeAnimation extends Group implements Disposable {
         int c = size / 2;
         Pixmap pixmap = new Pixmap(size, size, Pixmap.Format.RGBA8888);
         pixmap.setBlending(Pixmap.Blending.None);
-        Color outline = Color.valueOf("1a0f0fff");
-        String[][] rings = {   // couleur, reflet — de l'extérieur vers le centre
-            {"f2ede2ff", "ffffffff"},
-            {"2a2a33ff", "4a4a58ff"},
-            {"2f7fe0ff", "6fb2ffff"},
-            {"e0303cff", "ff6a72ff"},
-            {"ffd23cff", "fff0a0ff"},
+        Color outline = Palette.OUTLINE;
+        Color[][] rings = {   // couleur, reflet — de l'extérieur vers le centre
+            {Color.valueOf("f2ede2ff"), Color.WHITE},
+            {Color.valueOf("2a2a33ff"), Palette.IRON},
+            {Color.valueOf("2f7fe0ff"), Color.valueOf("6fb2ffff")},
+            {Palette.RED, Color.valueOf("ff6a72ff")},
+            {Palette.GOLD, Color.valueOf("fff0a0ff")},
         };
         int radius = c;
         int step   = 6;
-        for (String[] ring : rings) {
+        for (Color[] ring : rings) {
             pixmap.setColor(outline);
             pixmap.fillCircle(c, c, radius);
-            pixmap.setColor(Color.valueOf(ring[1]));
+            pixmap.setColor(ring[1]);
             pixmap.fillCircle(c, c, radius - 1);
-            pixmap.setColor(Color.valueOf(ring[0]));
+            pixmap.setColor(ring[0]);
             pixmap.fillCircle(c + 1, c + 1, radius - 2); // décalé : un reflet reste en haut à gauche
             radius -= step;
         }
@@ -204,12 +204,12 @@ public class BullseyeAnimation extends Group implements Disposable {
         int height = 9, mid = 4;
         Pixmap pixmap = new Pixmap(ARROW_LENGTH, height, Pixmap.Format.RGBA8888);
         pixmap.setBlending(Pixmap.Blending.None);
-        Color outline = Color.valueOf("1a0f0fff");
-        Color wood    = Color.valueOf("b07a3cff");
-        Color woodLit = Color.valueOf("dca466ff");
-        Color feather = Color.valueOf("e0303cff");
+        Color outline = Palette.OUTLINE;
+        Color wood    = Palette.WOOD_LIGHT;
+        Color woodLit = Palette.WOOD_HIGHLIGHT;
+        Color feather = Palette.RED;
         Color featherLit = Color.valueOf("ff8a90ff");
-        Color steel   = Color.valueOf("c8d2dcff");
+        Color steel   = Palette.STEEL_LIGHT;
         Color steelDark = Color.valueOf("6a7684ff");
 
         int headStart = ARROW_LENGTH - ARROW_HEAD;
