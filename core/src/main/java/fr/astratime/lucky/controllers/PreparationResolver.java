@@ -20,7 +20,7 @@ import java.util.List;
  * et construit le TurnContext (SpinContext + CombatContext) qui sera
  * utilisé pour le spin et la résolution du combat. Les effets qui durent
  * plusieurs tours (symboles retirés, bonus de gains du combat, Lames,
- * Corruption) y sont appliqués en premier ; la combinaison formée par les
+ * Corruption) y sont appliqués en premier ; les combinaisons formées par les
  * cartes jouées ({@link Combo}), en dernier.
  */
 public class PreparationResolver {
@@ -59,24 +59,24 @@ public class PreparationResolver {
         }
 
         pendingEffects.forEach(effect -> effect.apply(turnContext));
-        applyCombo(turnContext, player);
+        applyCombos(turnContext, player);
 
         return turnContext;
     }
 
     /**
-     * La meilleure combinaison formée par les cartes jouées ce tour multiplie
-     * les gains et l'attaque du tirage ; une Couleur ou une Suite remplit en
-     * plus la jauge de chaque carte à suite jouée.
+     * Chaque combinaison formée par les cartes jouées ce tour multiplie les
+     * gains et l'attaque du tirage (les multiplicateurs se cumulent) ; une
+     * Couleur ou une Suite remplit en plus la jauge de chaque carte à suite jouée.
      */
-    private static void applyCombo(TurnContext turnContext, Player player) {
-        Combo.best(player.getPlayedCards()).ifPresent(combo -> {
-            CombatContext combat = turnContext.getCombatContext();
+    private static void applyCombos(TurnContext turnContext, Player player) {
+        CombatContext combat = turnContext.getCombatContext();
+        for (Combo combo : Combo.formed(player.getPlayedCards())) {
             combat.multiplyGains(combo.getFactor());
             combat.multiplyAttack(combo.getFactor());
             if (combo.fillsGauges()) fillGauges(player);
             turnContext.addEvent(new ComboEvent(combo));
-        });
+        }
     }
 
     /** Chaque carte à suite jouée remplit la jauge de sa couleur. */

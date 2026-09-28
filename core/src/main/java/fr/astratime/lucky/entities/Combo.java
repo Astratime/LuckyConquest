@@ -1,25 +1,29 @@
 package fr.astratime.lucky.entities;
 
+import java.util.Collection;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 
 /**
  * Combinaisons de poker formées par les cartes à suite jouées pendant le tour
  * (les cartes spéciales, sans suite ni rang pertinent, sont ignorées). Elles
- * sont vérifiées automatiquement au lancer de la machine : la meilleure
- * combinaison formée ({@link #best}) multiplie les gains et l'attaque du
- * tirage. L'ordre dans lequel les cartes sont jouées ne compte pas.
+ * sont vérifiées automatiquement au lancer de la machine : chaque combinaison
+ * formée ({@link #formed}) multiplie les gains et l'attaque du tirage, et
+ * leurs multiplicateurs se cumulent (ex : Couleur et Suite, x4). Une
+ * combinaison contenue dans une plus forte ne compte pas en plus : un Full
+ * n'est pas aussi un Brelan et une Paire. L'ordre dans lequel les cartes sont
+ * jouées ne compte pas.
  *
  * Elles poussent le joueur à varier les cartes qu'il pose, plutôt que de ne
  * jouer que les plus fortes.
  */
 public enum Combo {
 
-    // Déclarées de la plus forte à la plus faible : best() retient la première formée.
+    // Déclarées de la plus forte à la plus faible.
 
     /** Un brelan et une paire d'un autre rang. */
     FULL("FULL", 5f, "un brelan et une paire"),
@@ -54,9 +58,7 @@ public enum Combo {
     public float getFactor() { return factor; }
 
     /** @return le multiplicateur, sans décimale inutile (ex : "2", "1.5"). */
-    public String formatFactor() {
-        return factor == (int) factor ? String.valueOf((int) factor) : String.valueOf(factor);
-    }
+    public String formatFactor() { return formatFactor(factor); }
 
     /** @return la règle, en quelques mots (ex : "2 cartes du même rang"). */
     public String getRule() { return rule; }
@@ -64,12 +66,31 @@ public enum Combo {
     /** @return {@code true} si, formée, elle remplit la jauge de chaque carte jouée (Couleur, Suite). */
     public boolean fillsGauges() { return this == COULEUR || this == SUITE; }
 
-    /** @return la plus forte combinaison formée par les cartes de {@code played}, si elles en forment une. */
-    public static Optional<Combo> best(List<Card> played) {
+    /**
+     * @return les combinaisons formées par les cartes de {@code played}, de la
+     *         plus forte à la plus faible, sans celles contenues dans une plus
+     *         forte (le Brelan et la Paire d'un Full, la Paire d'un Brelan)
+     */
+    public static List<Combo> formed(List<Card> played) {
+        EnumSet<Combo> formed = EnumSet.noneOf(Combo.class);
         for (Combo combo : values()) {
-            if (combo.matches(played)) return Optional.of(combo);
+            if (combo.matches(played)) formed.add(combo);
         }
-        return Optional.empty();
+        if (formed.contains(FULL)) formed.remove(BRELAN);
+        if (formed.contains(FULL) || formed.contains(BRELAN)) formed.remove(PAIRE);
+        return List.copyOf(formed);
+    }
+
+    /** @return le produit des multiplicateurs de {@code combos} (1 s'il n'y en a aucune). */
+    public static float totalFactor(Collection<Combo> combos) {
+        float total = 1f;
+        for (Combo combo : combos) total *= combo.factor;
+        return total;
+    }
+
+    /** @return {@code factor} sans décimale inutile (ex : "2", "1.5"). */
+    public static String formatFactor(float factor) {
+        return factor == (int) factor ? String.valueOf((int) factor) : String.valueOf(factor);
     }
 
     /** @return {@code true} si les cartes à suite de {@code played} forment cette combinaison. */

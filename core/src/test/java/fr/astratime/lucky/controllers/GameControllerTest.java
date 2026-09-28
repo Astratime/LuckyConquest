@@ -247,7 +247,7 @@ class GameControllerTest {
         GameController controller = controllerWith(deck);
         controller.drawCards();
         for (Card card : new ArrayList<>(player(controller).getCurrentHand())) controller.playCard(card);
-        assertEquals(Combo.BRELAN, controller.getCurrentCombo().orElseThrow());
+        assertEquals(List.of(Combo.BRELAN), controller.getCurrentCombos());
 
         TurnResult turn = controller.spin();
 

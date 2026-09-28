@@ -48,7 +48,7 @@ class PreparationResolverTest {
     }
 
     @Test
-    void theBestComboOfThePlayedCardsMultipliesGainsAndAttackOnItsOwn() {
+    void aFullMultipliesGainsAndAttackWithoutItsBrelanAndPair() {
         Player player = playerWhoPlayed(suited(13, Card.Suit.COEUR), suited(13, Card.Suit.PIQUE),
             suited(13, Card.Suit.TREFLE), suited(1, Card.Suit.COEUR), suited(1, Card.Suit.CARREAU));
 
@@ -57,6 +57,20 @@ class PreparationResolverTest {
         assertEquals(Combo.FULL.getFactor(), context.getCombatContext().getGainFactor(), 1e-6, "seul le Full compte");
         assertEquals(Combo.FULL.getFactor(), context.getCombatContext().getAttackFactor(), 1e-6);
         assertEquals(List.of(Combo.FULL), context.getEvents().stream()
+            .filter(ComboEvent.class::isInstance).map(event -> ((ComboEvent) event).combo).toList());
+    }
+
+    @Test
+    void combosStackTheirMultipliers() {
+        Player player = playerWhoPlayed(suited(11, Card.Suit.COEUR), suited(12, Card.Suit.COEUR),
+            suited(13, Card.Suit.COEUR));
+
+        TurnContext context = new PreparationResolver().resolve(List.of(), player, new Enemy("Ennemi", 1000));
+
+        float both = Combo.COULEUR.getFactor() * Combo.SUITE.getFactor();
+        assertEquals(both, context.getCombatContext().getGainFactor(), 1e-6, "Couleur et Suite se cumulent");
+        assertEquals(both, context.getCombatContext().getAttackFactor(), 1e-6);
+        assertEquals(List.of(Combo.COULEUR, Combo.SUITE), context.getEvents().stream()
             .filter(ComboEvent.class::isInstance).map(event -> ((ComboEvent) event).combo).toList());
     }
 

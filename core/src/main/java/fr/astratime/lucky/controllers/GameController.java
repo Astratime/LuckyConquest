@@ -23,7 +23,6 @@ import fr.astratime.lucky.popups.PopupScale;
 import java.util.ArrayList;
 import java.util.IdentityHashMap;
 import java.util.List;
-import java.util.Optional;
 import java.util.Map;
 import java.util.Random;
 import java.util.function.Function;
@@ -283,8 +282,8 @@ public class GameController {
         return options;
     }
 
-    /** @return la meilleure combinaison que forment les cartes jouées ce tour, appliquée au lancer. */
-    public Optional<Combo> getCurrentCombo() { return Combo.best(gameState.getPlayer().getPlayedCards()); }
+    /** @return les combinaisons que forment les cartes jouées ce tour, appliquées au lancer. */
+    public List<Combo> getCurrentCombos() { return Combo.formed(gameState.getPlayer().getPlayedCards()); }
 
     /** @return les symboles pariés ce tour, en attente du tirage. */
     public List<Symbol> getBetsThisTurn() { return List.copyOf(betsThisTurn); }

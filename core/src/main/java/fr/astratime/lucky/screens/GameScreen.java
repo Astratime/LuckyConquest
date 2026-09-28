@@ -343,7 +343,7 @@ public class GameScreen extends ScreenAdapter {
     /** Pioche une nouvelle main et lance son animation de distribution ; active le spin. */
     private void drawHand() {
         if (isCombatOver()) return;
-        refreshCombo(); // la combinaison du tour précédent s'éteint
+        refreshCombos(); // les combinaisons du tour précédent s'éteignent
         hand.setLocked(false); // une carte achetée entre deux tours reste sur la table
         hand.deal(gameController.drawCards());
         spinButton.setDisabled(false);
@@ -372,7 +372,7 @@ public class GameScreen extends ScreenAdapter {
         cardClickParticles.play(clickPos.x, clickPos.y);
         Gdx.app.log("GameScreen", "Carte jouee : " + card);
 
-        Combo comboBefore = gameController.getCurrentCombo().orElse(null);
+        List<Combo> combosBefore = gameController.getCurrentCombos();
         CardPlayResult playResult = gameController.playCard(card);
         if (playResult.isAutoSpin()) {
             playBingo(image, playResult.getPopups());
@@ -384,7 +384,7 @@ public class GameScreen extends ScreenAdapter {
         refreshGains(); // une carte peut créditer ou consommer des gains immédiatement
         refreshEffects();
         hand.refreshBlocked(); // un Recyclage peut avoir rendu un Bingo de la main injouable
-        announceCombo(comboBefore);
+        announceCombos(combosBefore);
 
         DrawResult drawResult = playResult.getDrawResult();
         if (!drawResult.getAddedToHand().isEmpty() || !drawResult.getDiscarded().isEmpty()) {
@@ -395,23 +395,32 @@ public class GameScreen extends ScreenAdapter {
     }
 
     /**
-     * Met en avant la combinaison que forment les cartes jouées ; si elle vient
-     * d'être formée, ou d'en battre une autre ({@code before}), son nom et son
-     * multiplicateur s'affichent au-dessus de la main.
+     * Met en avant les combinaisons que forment les cartes jouées ; le nom et le
+     * multiplicateur de celles qui viennent d'être formées (absentes de
+     * {@code before}) s'affichent au-dessus de la main, suivis du total s'il y en
+     * a plusieurs.
      */
-    private void announceCombo(Combo before) {
-        Combo combo = refreshCombo();
-        if (combo == null || combo == before || (before != null && before.compareTo(combo) < 0)) return;
-        effectPopupAnimator.play(List.of(new EffectPopup(combo.getDisplayName() + " x" + combo.formatFactor() + " !",
-            EffectPopup.Style.SPECIAL, PopupScale.SECONDARY_INTENSITY)),
-            playArea.getCenterX(), table.getHandRowY() + CARD_HEIGHT * COMBO_TEXT_HEIGHT);
+    private void announceCombos(List<Combo> before) {
+        List<Combo> combos = refreshCombos();
+        List<EffectPopup> popups = new ArrayList<>();
+        for (Combo combo : combos) {
+            if (before.contains(combo)) continue;
+            popups.add(new EffectPopup(combo.getDisplayName() + " x" + combo.formatFactor() + " !",
+                EffectPopup.Style.SPECIAL, PopupScale.SECONDARY_INTENSITY));
+        }
+        if (popups.isEmpty()) return;
+        if (combos.size() > 1) {
+            popups.add(new EffectPopup("TOTAL x" + Combo.formatFactor(Combo.totalFactor(combos)),
+                EffectPopup.Style.GAINS, PopupScale.SECONDARY_INTENSITY));
+        }
+        effectPopupAnimator.play(popups, playArea.getCenterX(), table.getHandRowY() + CARD_HEIGHT * COMBO_TEXT_HEIGHT);
     }
 
-    /** Fait briller dans le panneau la combinaison des cartes jouées ce tour. @return cette combinaison, ou {@code null} */
-    private Combo refreshCombo() {
-        Combo combo = gameController.getCurrentCombo().orElse(null);
-        sidePanel.setCombo(combo);
-        return combo;
+    /** Fait briller dans le panneau les combinaisons des cartes jouées ce tour. @return ces combinaisons */
+    private List<Combo> refreshCombos() {
+        List<Combo> combos = gameController.getCurrentCombos();
+        sidePanel.setCombos(combos);
+        return combos;
     }
 
     /**

@@ -29,8 +29,8 @@ import java.util.Map;
 /**
  * Panneau latéral gauche, sur toute la hauteur de l'écran : titre du jeu,
  * encadré des gains (pièce d'or et montant en grand), aide-mémoire des
- * combinaisons de poker (celle que forment les cartes jouées ce tour brille en
- * or), encadré des effets de cartes actifs (symboles retirés, Porte-bonheur,
+ * combinaisons de poker (celles que forment les cartes jouées ce tour brillent
+ * en or, avec leur multiplicateur total), encadré des effets de cartes actifs (symboles retirés, Porte-bonheur,
  * paris en cours ; masqué s'il n'y en a pas), puis un emplacement en bas pour
  * un bouton (ex : "Recommencer").
  *
@@ -57,6 +57,8 @@ public class SidePanel implements Disposable {
     private static final float COMBO_GAP      = 2f;
     private static final float COMBO_IDLE     = 0.5f;  // opacité des combinaisons non formées
     private static final float COMBO_PULSE    = 1.15f;
+    private static final float COMBO_RULE     = 5f;    // filet entre les combinaisons et leur total
+    private static final float COMBO_RULE_GAP = 8f;
 
     private final BitmapFont titleFont   = Fonts.jersey(56, Palette.TEXT_TITLE, 3f, Palette.TEXT_SHADE);
     private final BitmapFont captionFont = Fonts.jersey(30, Palette.TEXT_BODY, 2f, Palette.TEXT_SHADE);
@@ -72,7 +74,8 @@ public class SidePanel implements Disposable {
     private final Table effectsBox  = new Table();
     private final Table effectsRows = new Table();
     private final Map<Combo, Label[]> comboLabels = new EnumMap<>(Combo.class); // nom, multiplicateur
-    private       Combo               shownCombo;
+    private       List<Combo>         shownCombos = List.of();
+    private       Label[]             totalLabels;                                  // "Total", multiplicateur
 
     /**
      * Une ligne des effets actifs : une icône, éventuellement barrée, et un texte.
@@ -114,19 +117,15 @@ public class SidePanel implements Disposable {
         combosBox.add(new Label("COMBINAISONS", new Label.LabelStyle(captionFont, Color.WHITE))).colspan(2).left();
         combosBox.row();
         for (Combo combo : Combo.values()) {
-            Label name   = new Label(capitalized(combo.getDisplayName()), new Label.LabelStyle(effectFont, Color.WHITE));
-            Label factor = new Label("x" + combo.formatFactor(), new Label.LabelStyle(effectFont, Color.WHITE));
-            factor.setAlignment(Align.right);
-            // Hauteur fixe : la ligne qui grossit un instant ne pousse pas les encadrés suivants.
-            float height = name.getPrefHeight();
-            combosBox.add(name).height(height).padTop(COMBO_GAP).growX().left();
-            combosBox.add(factor).height(height).padTop(COMBO_GAP).right();
-            combosBox.row();
-            comboLabels.put(combo, new Label[] {name, factor});
+            comboLabels.put(combo, comboRow(combosBox, capitalized(combo.getDisplayName()), "x" + combo.formatFactor()));
         }
+        combosBox.add(new Image(new TextureRegionDrawable(new TextureRegion(hud.tooltipRule)))).colspan(2)
+            .height(COMBO_RULE).growX().padTop(COMBO_RULE_GAP);
+        combosBox.row();
+        totalLabels = comboRow(combosBox, "Total", "x1");
         root.add(combosBox).width(insetWidth).padTop(SECTION_GAP);
         root.row();
-        setCombo(null);
+        setCombos(List.of());
 
         effectsBox.setBackground(hud.insetDrawable());
         effectsBox.pad(INSET_PADDING).top().left();
@@ -141,20 +140,41 @@ public class SidePanel implements Disposable {
         root.row();
     }
 
+    /** Ajoute à {@code box} une ligne : un nom à gauche, un multiplicateur à droite. @return ces deux textes */
+    private Label[] comboRow(Table box, String nameText, String factorText) {
+        Label name   = new Label(nameText, new Label.LabelStyle(effectFont, Color.WHITE));
+        Label factor = new Label(factorText, new Label.LabelStyle(effectFont, Color.WHITE));
+        factor.setAlignment(Align.right);
+        // Hauteur fixe : la ligne qui grossit un instant ne pousse pas les encadrés suivants.
+        float height = name.getPrefHeight();
+        box.add(name).height(height).padTop(COMBO_GAP).growX().left();
+        box.add(factor).height(height).padTop(COMBO_GAP).right();
+        box.row();
+        return new Label[] {name, factor};
+    }
+
     /**
-     * Fait briller {@code combo}, la combinaison que forment les cartes jouées
-     * ce tour ({@code null} : aucune) ; les autres restent en retrait.
+     * Fait briller {@code combos}, les combinaisons que forment les cartes
+     * jouées ce tour, et affiche leur multiplicateur total ; les autres restent
+     * en retrait. Celles qui viennent d'être formées grossissent un instant.
      */
-    public void setCombo(Combo combo) {
-        boolean changed = combo != shownCombo;
-        shownCombo = combo;
+    public void setCombos(List<Combo> combos) {
         for (Map.Entry<Combo, Label[]> entry : comboLabels.entrySet()) {
-            boolean formed = entry.getKey() == combo;
-            for (Label label : entry.getValue()) {
-                label.setColor(formed ? Palette.TEXT_TITLE : Palette.TEXT_BODY);
-                label.getColor().a = formed ? 1f : COMBO_IDLE;
-                if (formed && changed) pulse(label);
-            }
+            boolean formed = combos.contains(entry.getKey());
+            highlight(entry.getValue(), formed, formed && !shownCombos.contains(entry.getKey()));
+        }
+        float total = Combo.totalFactor(combos);
+        totalLabels[1].setText("x" + Combo.formatFactor(total));
+        highlight(totalLabels, !combos.isEmpty(), !combos.equals(shownCombos) && !combos.isEmpty());
+        shownCombos = List.copyOf(combos);
+    }
+
+    /** Met en or une ligne ({@code on}) ou la laisse en retrait ; la fait grossir un instant si {@code pulse}. */
+    private static void highlight(Label[] row, boolean on, boolean pulse) {
+        for (Label label : row) {
+            label.setColor(on ? Palette.TEXT_TITLE : Palette.TEXT_BODY);
+            label.getColor().a = on ? 1f : COMBO_IDLE;
+            if (pulse) pulse(label);
         }
     }
 

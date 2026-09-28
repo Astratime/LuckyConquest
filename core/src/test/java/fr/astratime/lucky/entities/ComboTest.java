@@ -54,14 +54,23 @@ class ComboTest {
     }
 
     @Test
-    void bestKeepsOnlyTheStrongestComboFormed() {
+    void combosStackButAFullOrABrelanDoesNotAlsoCountWhatItContains() {
         List<Card> full = List.of(card(12, Card.Suit.COEUR), card(12, Card.Suit.PIQUE), card(12, Card.Suit.TREFLE),
             card(1, Card.Suit.COEUR), card(1, Card.Suit.CARREAU));
-        assertEquals(Combo.FULL, Combo.best(full).orElseThrow(), "le Full l'emporte sur le brelan et la paire");
+        assertEquals(List.of(Combo.FULL), Combo.formed(full), "ni Brelan ni Paire en plus du Full");
 
-        List<Card> flush = List.of(card(1, Card.Suit.COEUR), card(11, Card.Suit.COEUR), card(13, Card.Suit.COEUR));
-        assertEquals(Combo.COULEUR, Combo.best(flush).orElseThrow());
-        assertTrue(Combo.best(List.of(card(1, Card.Suit.COEUR), card(12, Card.Suit.PIQUE), special())).isEmpty());
+        List<Card> brelan = List.of(card(12, Card.Suit.COEUR), card(12, Card.Suit.PIQUE), card(12, Card.Suit.TREFLE));
+        assertEquals(List.of(Combo.BRELAN), Combo.formed(brelan), "pas de Paire en plus du Brelan");
+
+        List<Card> straightFlush = List.of(card(11, Card.Suit.COEUR), card(12, Card.Suit.COEUR), card(13, Card.Suit.COEUR));
+        assertEquals(List.of(Combo.COULEUR, Combo.SUITE), Combo.formed(straightFlush));
+        assertEquals(4f, Combo.totalFactor(Combo.formed(straightFlush)), 1e-6);
+
+        List<Card> flushWithPair = List.of(card(1, Card.Suit.COEUR), card(1, Card.Suit.COEUR), card(13, Card.Suit.COEUR));
+        assertEquals(List.of(Combo.COULEUR, Combo.PAIRE), Combo.formed(flushWithPair));
+
+        assertTrue(Combo.formed(List.of(card(1, Card.Suit.COEUR), card(12, Card.Suit.PIQUE), special())).isEmpty());
+        assertEquals(1f, Combo.totalFactor(List.of()), 1e-6);
     }
 
     @Test
