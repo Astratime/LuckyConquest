@@ -2,6 +2,7 @@ package fr.astratime.lucky.controllers;
 
 import fr.astratime.lucky.entities.Card;
 import fr.astratime.lucky.entities.CardPlayResult;
+import fr.astratime.lucky.entities.Combo;
 import fr.astratime.lucky.entities.DrawResult;
 import fr.astratime.lucky.entities.GameState;
 import fr.astratime.lucky.entities.Player;
@@ -280,6 +281,9 @@ public class GameController {
         }
         return options;
     }
+
+    /** @return les combinaisons que forment les cartes jouées ce tour, appliquées au lancer. */
+    public List<Combo> getCurrentCombos() { return Combo.formed(gameState.getPlayer().getPlayedCards()); }
 
     /** @return les symboles pariés ce tour, en attente du tirage. */
     public List<Symbol> getBetsThisTurn() { return List.copyOf(betsThisTurn); }

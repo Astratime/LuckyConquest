@@ -20,14 +20,19 @@ import com.badlogic.gdx.utils.Disposable;
 import fr.astratime.lucky.assets.Fonts;
 import fr.astratime.lucky.assets.HudTextures;
 import fr.astratime.lucky.assets.Palette;
+import fr.astratime.lucky.entities.Combo;
 
+import java.util.EnumMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Panneau latéral gauche, sur toute la hauteur de l'écran : titre du jeu,
- * encadré des gains (pièce d'or et montant en grand), encadré des effets de
- * cartes actifs (symboles retirés, Porte-bonheur, paris en cours ; masqué s'il
- * n'y en a pas), puis un emplacement en bas pour un bouton (ex : "Recommencer").
+ * encadré des gains (pièce d'or et montant en grand), aide-mémoire des
+ * combinaisons de poker (celles que forment les cartes jouées ce tour brillent
+ * en or, avec leur multiplicateur total), encadré des effets de cartes actifs (symboles retirés, Porte-bonheur,
+ * paris en cours ; masqué s'il n'y en a pas), puis un emplacement en bas pour
+ * un bouton (ex : "Recommencer").
  *
  * Quand les gains changent, le montant défile jusqu'à sa nouvelle valeur et la
  * pièce rebondit (seulement si les gains augmentent).
@@ -49,6 +54,11 @@ public class SidePanel implements Disposable {
     private static final float EFFECT_ICON    = 52f;
     private static final float OVERLAY_ICON   = 30f;   // croix posée dans le coin de l'icône
     private static final float EFFECT_GAP     = 8f;
+    private static final float COMBO_GAP      = 2f;
+    private static final float COMBO_IDLE     = 0.5f;  // opacité des combinaisons non formées
+    private static final float COMBO_PULSE    = 1.15f;
+    private static final float COMBO_RULE     = 5f;    // filet entre les combinaisons et leur total
+    private static final float COMBO_RULE_GAP = 8f;
 
     private final BitmapFont titleFont   = Fonts.jersey(56, Palette.TEXT_TITLE, 3f, Palette.TEXT_SHADE);
     private final BitmapFont captionFont = Fonts.jersey(30, Palette.TEXT_BODY, 2f, Palette.TEXT_SHADE);
@@ -63,6 +73,9 @@ public class SidePanel implements Disposable {
     private       int   targetGains;
     private final Table effectsBox  = new Table();
     private final Table effectsRows = new Table();
+    private final Map<Combo, Label[]> comboLabels = new EnumMap<>(Combo.class); // nom, multiplicateur
+    private       List<Combo>         shownCombos = List.of();
+    private       Label[]             totalLabels;                                  // "Total", multiplicateur
 
     /**
      * Une ligne des effets actifs : une icône, éventuellement barrée, et un texte.
@@ -98,6 +111,22 @@ public class SidePanel implements Disposable {
         root.add(gainsBox).width(insetWidth).padTop(SECTION_GAP);
         root.row();
 
+        Table combosBox = new Table();
+        combosBox.setBackground(hud.insetDrawable());
+        combosBox.pad(INSET_PADDING).top().left();
+        combosBox.add(new Label("COMBINAISONS", new Label.LabelStyle(captionFont, Color.WHITE))).colspan(2).left();
+        combosBox.row();
+        for (Combo combo : Combo.values()) {
+            comboLabels.put(combo, comboRow(combosBox, capitalized(combo.getDisplayName()), "x" + combo.formatFactor()));
+        }
+        combosBox.add(new Image(new TextureRegionDrawable(new TextureRegion(hud.tooltipRule)))).colspan(2)
+            .height(COMBO_RULE).growX().padTop(COMBO_RULE_GAP);
+        combosBox.row();
+        totalLabels = comboRow(combosBox, "Total", "x1");
+        root.add(combosBox).width(insetWidth).padTop(SECTION_GAP);
+        root.row();
+        setCombos(List.of());
+
         effectsBox.setBackground(hud.insetDrawable());
         effectsBox.pad(INSET_PADDING).top().left();
         effectsBox.add(new Label("EFFETS", new Label.LabelStyle(captionFont, Color.WHITE))).left();
@@ -109,6 +138,62 @@ public class SidePanel implements Disposable {
 
         root.add().expandY(); // place libre pour de futures informations
         root.row();
+    }
+
+    /** Ajoute à {@code box} une ligne : un nom à gauche, un multiplicateur à droite. @return ces deux textes */
+    private Label[] comboRow(Table box, String nameText, String factorText) {
+        Label name   = new Label(nameText, new Label.LabelStyle(effectFont, Color.WHITE));
+        Label factor = new Label(factorText, new Label.LabelStyle(effectFont, Color.WHITE));
+        factor.setAlignment(Align.right);
+        // Hauteur fixe : la ligne qui grossit un instant ne pousse pas les encadrés suivants.
+        float height = name.getPrefHeight();
+        box.add(name).height(height).padTop(COMBO_GAP).growX().left();
+        box.add(factor).height(height).padTop(COMBO_GAP).right();
+        box.row();
+        return new Label[] {name, factor};
+    }
+
+    /**
+     * Fait briller {@code combos}, les combinaisons que forment les cartes
+     * jouées ce tour, et affiche leur multiplicateur total ; les autres restent
+     * en retrait. Celles qui viennent d'être formées grossissent un instant.
+     */
+    public void setCombos(List<Combo> combos) {
+        for (Map.Entry<Combo, Label[]> entry : comboLabels.entrySet()) {
+            boolean formed = combos.contains(entry.getKey());
+            highlight(entry.getValue(), formed, formed && !shownCombos.contains(entry.getKey()));
+        }
+        float total = Combo.totalFactor(combos);
+        totalLabels[1].setText("x" + Combo.formatFactor(total));
+        highlight(totalLabels, !combos.isEmpty(), !combos.equals(shownCombos) && !combos.isEmpty());
+        shownCombos = List.copyOf(combos);
+    }
+
+    /** Met en or une ligne ({@code on}) ou la laisse en retrait ; la fait grossir un instant si {@code pulse}. */
+    private static void highlight(Label[] row, boolean on, boolean pulse) {
+        for (Label label : row) {
+            label.setColor(on ? Palette.TEXT_TITLE : Palette.TEXT_BODY);
+            label.getColor().a = on ? 1f : COMBO_IDLE;
+            if (pulse) pulse(label);
+        }
+    }
+
+    /** Fait grossir un instant {@code label}, pour signaler une combinaison qui vient d'être formée. */
+    private static void pulse(Label label) {
+        label.clearActions();
+        label.setFontScale(1f);
+        label.addAction(new TemporalAction(0.45f) {
+            @Override
+            protected void update(float percent) {
+                float bump = percent < 0.3f ? percent / 0.3f : 1f - (percent - 0.3f) / 0.7f;
+                label.setFontScale(1f + (COMBO_PULSE - 1f) * Interpolation.pow2Out.apply(bump));
+            }
+        });
+    }
+
+    /** @return {@code text} en minuscules, sauf sa première lettre (ex : "Brelan"). */
+    private static String capitalized(String text) {
+        return text.charAt(0) + text.substring(1).toLowerCase();
     }
 
     /** Affiche les effets de cartes actifs, ou masque leur encadré s'il n'y en a aucun. */
