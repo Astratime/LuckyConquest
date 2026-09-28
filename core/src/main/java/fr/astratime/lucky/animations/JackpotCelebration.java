@@ -28,32 +28,25 @@ import java.util.function.Supplier;
 
 /**
  * Célébration du jackpot (Bingo), par-dessus tout l'écran de jeu. Elle change
- * selon le symbole aligné : chacun a les couleurs de sa bannière « BINGO!!! »
- * et de ses éclairs (voir {@link BingoStyle}) et sa propre mise en scène.
+ * selon le symbole aligné. Le Triple Sept garde la célébration d'origine :
+ * flash blanc, bannière « BINGO!!! » qui traverse l'écran, pluie de pièces
+ * d'or (dont une partie file vers le compteur des gains) et feux d'artifice.
+ * Chaque autre symbole joue une scène avec un décor en pixel art — un objet,
+ * un geste, un impact — puis « BINGO! » s'écrit en géant ({@link GiantWord})
+ * aux couleurs du symbole (voir {@link BingoStyle}) :
  *
  * <ul>
- *   <li>Triple Sept : flash blanc, pluie de pièces d'or (dont une partie file
- *       vers le compteur des gains) et feux d'artifice multicolores ;</li>
- *   <li>Sept : fournaise — des braises montent de la table, des 7 jaillissent
- *       et des fusées rouge et orange éclatent ;</li>
- *   <li>Double Bar : une averse de barres d'acier s'écrase sur la table en
- *       soulevant des ondes de poussière ;</li>
- *   <li>Bar : trois rangées de barres tombent d'un bloc, chaque volée fait
- *       trembler l'écran ;</li>
- *   <li>Cerise : une fontaine de cerises jaillit du centre de la table ;</li>
- *   <li>Triple Cerise : une flèche se plante en plein centre d'une cible et
- *       « BINGO! » s'écrit en géant (voir {@link BullseyeAnimation}) ;</li>
- *   <li>Raisin : des bulles violettes montent pendant que des grappes tombent
- *       mollement ;</li>
+ *   <li>Sept : un dé roule et se pose sur un « 7 » qui s'embrase ({@link FlamingDieScene}) ;</li>
+ *   <li>Double Bar : les mâchoires d'une presse hydraulique se percutent ({@link HydraulicPressScene}) ;</li>
+ *   <li>Bar : un marteau de forge frappe trois fois une barre rougeoyante qui éclate ({@link ForgeScene}) ;</li>
+ *   <li>Cerise : un cerisier pousse, fleurit, puis lâche ses cerises ({@link CherryTreeScene}) ;</li>
+ *   <li>Triple Cerise : une flèche se plante en plein centre d'une cible ({@link BullseyeAnimation}) ;</li>
+ *   <li>Raisin : un pressoir écrase une grappe géante ({@link WinePressScene}) ;</li>
  *   <li>Cloche : une mailloche frappe une cloche d'église qui se balance en
- *       projetant des clochettes, et « BINGO! » s'écrit en géant (voir
- *       {@link ChurchBellAnimation}) ;</li>
- *   <li>Diamant : l'écran scintille de toutes parts et des diamants tombent
- *       lentement ;</li>
- *   <li>Lingot : une avalanche de lingots et de pièces, presque toutes
- *       ramassées par le compteur ;</li>
- *   <li>Pastèque : des pastèques sont lancées des deux côtés et éclaboussent
- *       l'écran de jus et de pépins.</li>
+ *       projetant des clochettes ({@link ChurchBellAnimation}) ;</li>
+ *   <li>Diamant : un burin taille une pierre brute en diamant, sous un faisceau de phare ({@link GemCutScene}) ;</li>
+ *   <li>Lingot : un coffre-fort tombe, sa molette tourne, il s'ouvre sur un flot d'or ({@link SafeScene}) ;</li>
+ *   <li>Pastèque : un sabre tranche une pastèque en plein vol ({@link KatanaScene}).</li>
  * </ul>
  *
  * Pendant {@link #DURATION}, le calque intercepte les clics : le joueur ne peut
@@ -122,6 +115,16 @@ public class JackpotCelebration extends Group implements Disposable {
     private final BullseyeAnimation bullseye  = new BullseyeAnimation();
     private final ChurchBellAnimation churchBell = new ChurchBellAnimation();
     private final GiantWord         giantWord = new GiantWord();
+    private final FlamingDieScene     flamingDie     = new FlamingDieScene();
+    private final HydraulicPressScene hydraulicPress = new HydraulicPressScene();
+    private final ForgeScene          forge          = new ForgeScene();
+    private final CherryTreeScene     cherryTree     = new CherryTreeScene(iconOf(Symbol.CHERRY));
+    private final WinePressScene      winePress      = new WinePressScene(iconOf(Symbol.GRAPE));
+    private final GemCutScene         gemCut         = new GemCutScene(iconOf(Symbol.DIAMOND));
+    private final SafeScene           safe           = new SafeScene();
+    private final KatanaScene         katana         = new KatanaScene();
+    private final List<BingoScene>    scenes = List.of(flamingDie, hydraulicPress, forge, cherryTree, winePress,
+        gemCut, safe, katana);
     private final Group        bannerLayer = new Group();
     /** Une bannière par symbole, créée à son premier Bingo (ses lettres ont les couleurs du symbole). */
     private final Map<Symbol, BingoBanner> banners = new EnumMap<>(Symbol.class);
@@ -129,9 +132,8 @@ public class JackpotCelebration extends Group implements Disposable {
     private final List<Emitter> emitters = new ArrayList<>();
     private int[]      emitted = new int[0];
     private BingoStyle style;
-    /** Couleur des ondes soulevées par un symbole lourd qui touche la table, et secousse de l'impact. */
-    private Color      landingColor = Color.WHITE;
-    private float      landingShake;
+    /** Fumée (du dé en feu, de la poussière du coffre qui s'écrase). */
+    private static final Color SMOKE = new Color(0.55f, 0.55f, 0.58f, 1f);
     /** false quand la mise en scène remplace la bannière « BINGO!!! » (Triple Cerise). */
     private boolean    showBanner;
 
@@ -160,7 +162,6 @@ public class JackpotCelebration extends Group implements Disposable {
         flash.setTouchable(Touchable.disabled);
         flash.getColor().a = 0f;
         bannerLayer.setTouchable(Touchable.disabled);
-        symbols.setLandingListener(this::onSymbolLanded);
         churchBell.setSwingListener(this::onBellSwing);
 
         addActor(shockwaves);
@@ -170,6 +171,7 @@ public class JackpotCelebration extends Group implements Disposable {
         addActor(coins);
         addActor(bullseye);
         addActor(churchBell);
+        for (BingoScene scene : scenes) addActor(scene);
         addActor(bannerLayer);
         addActor(giantWord);
         addActor(flash);
@@ -198,8 +200,6 @@ public class JackpotCelebration extends Group implements Disposable {
         }
 
         emitters.clear();
-        landingColor = Color.WHITE;
-        landingShake = 0f;
         showBanner   = true;
         schedule(symbol, iconOf(symbol));
         emitted = new int[emitters.size()];
@@ -220,6 +220,7 @@ public class JackpotCelebration extends Group implements Disposable {
         for (BingoBanner banner : banners.values()) banner.hide();
         bullseye.hide();
         churchBell.hide();
+        for (BingoScene scene : scenes) scene.hide();
         giantWord.hide();
         flash.clearActions();
         flash.getColor().a = 0f;
@@ -255,16 +256,16 @@ public class JackpotCelebration extends Group implements Disposable {
     /** Programme les effets du Bingo de {@code symbol}, dont l'image est {@code icon}. */
     private void schedule(Symbol symbol, TextureRegion icon) {
         switch (symbol) {
-            case SEVEN         -> scheduleFurnace(icon);
-            case DOUBLE_BAR    -> scheduleSteelRain(icon);
-            case BAR           -> scheduleHammer(icon);
-            case CHERRY        -> scheduleCherryFountain(icon);
+            case SEVEN         -> scheduleFlamingDie(icon);
+            case DOUBLE_BAR    -> scheduleHydraulicPress(icon);
+            case BAR           -> scheduleForge(icon);
+            case CHERRY        -> scheduleCherryTree(icon);
             case TRIPLE_CHERRY -> scheduleBullseye(icon);
-            case GRAPE         -> scheduleBubbles(icon);
+            case GRAPE         -> scheduleWinePress(icon);
             case BELL          -> scheduleChime(icon);
-            case DIAMOND       -> scheduleSparkle(icon);
-            case GOLD_BAR      -> scheduleGoldAvalanche(icon);
-            case WATERMELON    -> scheduleSplash(icon);
+            case DIAMOND       -> scheduleGemCut(icon);
+            case GOLD_BAR      -> scheduleSafe(icon);
+            case WATERMELON    -> scheduleKatana(icon);
             case TRIPLE_SEVEN, JOKER -> scheduleCasino();
         }
     }
@@ -279,59 +280,224 @@ public class JackpotCelebration extends Group implements Disposable {
         }
     }
 
-    /** Sept : braises qui montent de la table, 7 qui jaillissent, fusées rouge et orange. */
-    private void scheduleFurnace(TextureRegion icon) {
-        at(0f, () -> screenShake.shake(0.6f, 16f));
-        Color[] fire = {Color.valueOf("ff3b1fff"), Color.valueOf("ff8a1fff"), Color.valueOf("ffd54aff")};
-        emit(0f, 2.6f, 240, i -> glitter.ember(tableX(0f), getHeight() * MathUtils.random(0.05f, 0.2f),
-            MathUtils.random(-30f, 30f), MathUtils.random(160f, 420f), 0f,
-            MathUtils.random(5f, 11f), MathUtils.random(1f, 1.8f), fire[i % fire.length]));
-        emit(0.05f, 1.2f, 16, i -> symbols.jet(icon, tableX(80f), -60f, MathUtils.random(75f, 105f),
-            MathUtils.random(1150f, 1500f), MathUtils.random(70f, 100f), 1500f));
-        for (float time : new float[] {1.0f, 1.4f, 1.8f, 2.2f, 2.5f}) at(time, () -> rocket(false));
-        coinRain(0.2f, 1.2f, 18, 1);
+    // --- Scènes à décor : un objet en pixel art, un geste, un impact, puis « BINGO! » en géant ---
+
+    /** Sept : un dé roule, se pose sur un « 7 » qui s'embrase ; des 7 en feu jaillissent, le mot fume en partant. */
+    private void scheduleFlamingDie(TextureRegion icon) {
+        float centerX = playArea.getCenterX();
+        playScene(flamingDie, centerX, getHeight() * 0.36f, FlamingDieScene.LAND_TIME + 0.12f, 0.8f);
+        float land = FlamingDieScene.LAND_TIME;
+        Color[] fire = style.fireworks();
+        float half = flamingDie.halfSize();
+        at(land, () -> {
+            screenShake.shake(0.4f, 14f);
+            impactFlash(1f, 0.55f, 0.2f, 0.4f);
+            shockwaves.ring(centerX, getHeight() * 0.36f - half, 260f, 0.6f, 0.3f, fire[1]);
+        });
+        // Le « 7 » s'embrase d'un coup, puis les flammes lèchent le dessus et les flancs du dé.
+        emit(land, land + 0.1f, 60, i -> glitter.ember(centerX + MathUtils.random(-half, half),
+            flamingDie.topY() - MathUtils.random(0f, half * 1.5f), MathUtils.random(-80f, 80f),
+            MathUtils.random(350f, 700f), 0f, MathUtils.random(10f, 18f), MathUtils.random(0.5f, 0.9f), fire[i % 3]));
+        emit(land, 2.6f, 420, i -> glitter.ember(centerX + MathUtils.random(-half * 1.1f, half * 1.1f),
+            flamingDie.topY() - MathUtils.random(0f, half * 1.6f), MathUtils.random(-30f, 30f), MathUtils.random(250f, 520f),
+            0f, MathUtils.random(8f, 16f), MathUtils.random(0.5f, 1.1f), fire[i % 3]));
+        emit(land, land, 10, i -> sevenJet(icon, centerX, flamingDie.topY()));
+        emit(land + 0.1f, land + 1.3f, 14, i -> sevenJet(icon, centerX, flamingDie.topY()));
+        // Le mot fume en s'effaçant.
+        emit(2.05f, 2.6f, 60, i -> glitter.ember(centerX + MathUtils.random(-330f, 330f),
+            getHeight() * 0.8f + MathUtils.random(-70f, 50f), MathUtils.random(-15f, 15f), MathUtils.random(60f, 130f),
+            0f, MathUtils.random(10f, 18f), MathUtils.random(0.7f, 1.1f), SMOKE));
+        for (float time : new float[] {1.6f, 2.0f, 2.3f}) at(time, () -> rocket(false));
+        coinRain(land, land + 1f, 18, 1);
     }
 
-    /** Double Bar : averse de barres d'acier qui s'écrasent sur la table en soulevant de la poussière. */
-    private void scheduleSteelRain(TextureRegion icon) {
-        at(0f, () -> screenShake.shake(SHAKE_TIME, 8f));
-        landingColor = Color.valueOf("c8d2dcff");
-        landingShake = 5f;
-        emit(0.15f, 1.9f, 34, i -> symbols.rain(icon, tableX(60f), getHeight() + 60f, floorY(),
-            MathUtils.random(70f, 105f), MathUtils.random(500f, 900f), 2600f, true));
-        emit(0.3f, 2.4f, 40, i -> glitter.twinkle(tableX(0f), getHeight() * MathUtils.random(0.15f, 0.9f),
+    private void sevenJet(TextureRegion icon, float x, float y) {
+        symbols.jet(icon, x + MathUtils.random(-40f, 40f), y, MathUtils.random(60f, 120f),
+            MathUtils.random(900f, 1300f), MathUtils.random(60f, 85f), 1500f);
+    }
+
+    /** Double Bar : la presse hydraulique ; au choc, étincelles et Double Bar jaillissent sur les côtés. */
+    private void scheduleHydraulicPress(TextureRegion icon) {
+        float centerX = playArea.getCenterX(), centerY = getHeight() * 0.5f;
+        float slam = HydraulicPressScene.SLAM_TIME;
+        playScene(hydraulicPress, centerX, centerY, slam + 0.3f, 0.5f);
+        Color[] sparks = {Color.valueOf("ffd23cff"), Color.valueOf("ff8a1fff"), Color.WHITE};
+        at(slam, () -> {
+            screenShake.shake(0.5f, 18f);
+            impactFlash(1f, 1f, 1f, 0.5f);
+            shockwaves.ring(centerX, centerY, 520f, 0.6f, 0.2f, Color.valueOf("c8d2dcff"));
+        });
+        float half = 37f * BingoScene.SCALE;
+        emit(slam, slam, 70, i -> {
+            float side = i % 2 == 0 ? -1f : 1f;
+            glitter.ember(centerX + side * MathUtils.random(half * 0.6f, half), centerY,
+                side * MathUtils.random(300f, 900f), MathUtils.random(-120f, 320f), 1000f,
+                MathUtils.random(4f, 8f), MathUtils.random(0.5f, 0.9f), sparks[i % sparks.length]);
+        });
+        emit(slam, slam + 0.25f, 26, i -> symbols.jet(icon, centerX + MathUtils.random(-half, half), centerY,
+            i % 2 == 0 ? MathUtils.random(-15f, 35f) : MathUtils.random(145f, 195f),
+            MathUtils.random(700f, 1200f), MathUtils.random(60f, 90f), 1100f));
+        emit(slam + 0.3f, 2.6f, 40, i -> glitter.twinkle(tableX(0f), getHeight() * MathUtils.random(0.1f, 0.9f),
             MathUtils.random(14f, 26f), 0.5f, Color.valueOf("8fd3ffff")));
-        coinRain(0.2f, 1.2f, 18, 1);
+        coinRain(slam, slam + 1f, 18, 1);
     }
 
-    /** Bar : trois rangées de barres tombent d'un bloc ; chaque volée secoue l'écran. */
-    private void scheduleHammer(TextureRegion icon) {
-        landingColor = Color.WHITE;
-        landingShake = 14f;
-        float[] volleys = {0.2f, 0.85f, 1.5f};
-        int perVolley = 7;
-        for (int v = 0; v < volleys.length; v++) {
-            float floor = getHeight() * (0.16f + v * 0.1f); // chaque rangée se pose un peu plus haut
-            emit(volleys[v], volleys[v], perVolley, i -> {
-                float step = playArea.getWidth() / (perVolley + 1);
-                symbols.rain(icon, playArea.getX() + step * (i + 1), getHeight() + 80f, floor,
-                    95f, 1400f, 3200f, true);
+    /** Bar : la forge ; trois coups de marteau en gerbes d'étincelles, la barre éclate au troisième. */
+    private void scheduleForge(TextureRegion icon) {
+        float centerX = playArea.getCenterX();
+        float[] hits = ForgeScene.HITS;
+        float last = hits[hits.length - 1];
+        playScene(forge, centerX, getHeight() * 0.16f, last + 0.12f, 0.78f);
+        Color[] sparks = {Color.valueOf("ffd23cff"), Color.valueOf("ff8a1fff"), Color.valueOf("fff2c0ff")};
+        for (int k = 0; k < hits.length; k++) {
+            int strength = k;
+            at(hits[k], () -> {
+                Vector2 hit = forge.strikePoint();
+                screenShake.shake(0.2f, 8f + strength * 5f);
+                shockwaves.ring(hit.x, hit.y, 180f + strength * 60f, 0.45f, 0.3f, sparks[1]);
+                for (int e = 0; e < 25 + strength * 15; e++) {
+                    float angle = MathUtils.random(15f, 165f);
+                    float speed = MathUtils.random(300f, 850f);
+                    glitter.ember(hit.x, hit.y, MathUtils.cosDeg(angle) * speed, MathUtils.sinDeg(angle) * speed, 1500f,
+                        MathUtils.random(4f, 8f), MathUtils.random(0.4f, 0.8f), sparks[e % sparks.length]);
+                }
             });
         }
-        coinRain(0.3f, 1.4f, 18, 1);
+        at(last, () -> impactFlash(1f, 0.9f, 0.7f, 0.5f));
+        emit(last, last, 30, i -> {
+            Vector2 hit = forge.strikePoint();
+            symbols.jet(icon, hit.x, hit.y, MathUtils.random(20f, 160f), MathUtils.random(700f, 1300f),
+                MathUtils.random(50f, 80f), 1400f);
+        });
+        coinRain(last, last + 0.8f, 18, 1);
     }
 
-    /** Cerise : une fontaine de cerises jaillit du centre de la table, sous des gerbes roses. */
-    private void scheduleCherryFountain(TextureRegion icon) {
-        at(0f, () -> screenShake.shake(SHAKE_TIME, 8f));
+    /** Cerise : le cerisier pousse, fleurit, se couvre de cerises ; secoué, il les laisse tomber en pluie. */
+    private void scheduleCherryTree(TextureRegion icon) {
         float centerX = playArea.getCenterX();
-        emit(0f, 1.8f, 44, i -> symbols.jet(icon, centerX + MathUtils.random(-40f, 40f), -40f,
-            MathUtils.random(62f, 118f), MathUtils.random(1100f, 1500f), MathUtils.random(60f, 90f), 1400f));
-        emit(0f, 1.8f, 90, i -> glitter.ember(centerX + MathUtils.random(-30f, 30f), 0f,
-            MathUtils.random(-260f, 260f), MathUtils.random(700f, 1100f), 900f,
-            MathUtils.random(5f, 9f), MathUtils.random(1.2f, 1.8f), style.fireworks()[i % style.fireworks().length]));
-        for (float time : new float[] {1.0f, 1.4f, 1.8f, 2.2f}) at(time, () -> rocket(false));
-        coinRain(0.2f, 1.2f, 18, 1);
+        playScene(cherryTree, centerX, getHeight() * 0.1f, 1.2f, 0.82f);
+        at(CherryTreeScene.SHAKE_TIME, () -> screenShake.shake(0.3f, 6f));
+        at(CherryTreeScene.DROP_TIME, () -> {
+            for (Vector2 fruit : cherryTree.fruitPositions()) {
+                symbols.rain(icon, fruit.x, fruit.y, getHeight() * MathUtils.random(0.05f, 0.14f),
+                    MathUtils.random(55f, 70f), MathUtils.random(0f, 120f), 1400f, false);
+            }
+        });
+        emit(CherryTreeScene.DROP_TIME, CherryTreeScene.DROP_TIME + 1f, 30, i -> symbols.rain(icon, tableX(40f),
+            getHeight() + 60f, floorY(), MathUtils.random(45f, 70f), MathUtils.random(150f, 400f), 1000f, false));
+        // Pétales emportés par le vent.
+        Color[] petals = {Color.valueOf("ff6fa0ff"), Color.valueOf("ffb3cfff"), Color.valueOf("ff4a8aff")};
+        emit(0.8f, 2.6f, 110, i -> glitter.ember(tableX(0f), getHeight() * MathUtils.random(0.35f, 1f),
+            MathUtils.random(20f, 70f), MathUtils.random(-90f, -40f), 0f, MathUtils.random(9f, 13f),
+            MathUtils.random(1.2f, 2f), petals[i % petals.length]));
+        coinRain(CherryTreeScene.DROP_TIME, CherryTreeScene.DROP_TIME + 0.8f, 18, 1);
+    }
+
+    /** Raisin : le pressoir écrase une grappe géante ; le jus gicle, des bulles montent, des grains roulent. */
+    private void scheduleWinePress(TextureRegion icon) {
+        float centerX = playArea.getCenterX();
+        float crush = WinePressScene.CRUSH_TIME;
+        playScene(winePress, centerX, getHeight() * 0.06f, crush + 0.12f, 0.8f);
+        Color[] juice = style.fireworks();
+        float half = 23f * BingoScene.SCALE;
+        at(crush, () -> {
+            screenShake.shake(0.45f, 14f);
+            impactFlash(0.75f, 0.5f, 1f, 0.35f);
+            shockwaves.ring(centerX, winePress.vatTop(), 320f, 0.6f, 0.3f, juice[1]);
+        });
+        emit(crush, crush, 90, i -> {
+            float angle = MathUtils.random(40f, 140f);
+            float speed = MathUtils.random(400f, 950f);
+            glitter.ember(centerX + MathUtils.random(-half, half), winePress.vatTop(), MathUtils.cosDeg(angle) * speed,
+                MathUtils.sinDeg(angle) * speed, 1300f, MathUtils.random(6f, 12f), MathUtils.random(0.8f, 1.3f),
+                juice[i % juice.length]);
+        });
+        emit(crush, 2.6f, 120, i -> glitter.ember(centerX + MathUtils.random(-half, half), winePress.vatTop(),
+            MathUtils.random(-15f, 15f), MathUtils.random(80f, 200f), 0f, MathUtils.random(8f, 16f),
+            MathUtils.random(1.5f, 2.2f), juice[i % juice.length]));
+        emit(crush, crush + 0.3f, 24, i -> {
+            boolean left = i % 2 == 0;
+            symbols.jet(icon, centerX + (left ? -half : half), winePress.vatTop(),
+                left ? MathUtils.random(140f, 170f) : MathUtils.random(10f, 40f),
+                MathUtils.random(500f, 900f), MathUtils.random(45f, 65f), 1400f);
+        });
+        coinRain(crush, crush + 1f, 18, 1);
+    }
+
+    /** Diamant : la taille ; au coup de burin, éclat, faisceau de phare et mini-diamants. */
+    private void scheduleGemCut(TextureRegion icon) {
+        float centerX = playArea.getCenterX(), centerY = getHeight() * 0.42f;
+        float cut = GemCutScene.CUT_TIME;
+        playScene(gemCut, centerX, centerY, cut + 0.12f, 0.8f);
+        Color[] ice = style.fireworks();
+        at(cut, () -> {
+            screenShake.shake(0.25f, 6f);
+            impactFlash(0.85f, 1f, 1f, 0.6f);
+            shockwaves.ring(centerX, centerY, 420f, 0.7f, 1f, ice[0]);
+        });
+        emit(cut, cut, 26, i -> symbols.jet(icon, centerX, centerY, i * 360f / 26 + MathUtils.random(-6f, 6f),
+            MathUtils.random(500f, 1000f), MathUtils.random(45f, 70f), 900f));
+        emit(cut, cut, 30, i -> glitter.twinkle(centerX + MathUtils.random(-200f, 200f),
+            centerY + MathUtils.random(-160f, 160f), MathUtils.random(18f, 34f), MathUtils.random(0.4f, 0.8f),
+            ice[i % ice.length]));
+        emit(cut, 2.6f, 90, i -> glitter.twinkle(tableX(0f), getHeight() * MathUtils.random(0.05f, 0.98f),
+            MathUtils.random(14f, 30f), MathUtils.random(0.4f, 0.8f), ice[i % ice.length]));
+        coinRain(cut, cut + 1f, 18, 1);
+    }
+
+    /** Lingot : le coffre-fort tombe, sa molette tourne, sa porte s'ouvre sur un flot de lingots et de pièces. */
+    private void scheduleSafe(TextureRegion icon) {
+        float centerX = playArea.getCenterX(), baseY = getHeight() * 0.12f;
+        float open = SafeScene.OPEN_TIME;
+        playScene(safe, centerX, baseY, open + 0.12f, 0.8f);
+        at(SafeScene.LAND_TIME, () -> {
+            screenShake.shake(0.45f, 16f);
+            shockwaves.ring(centerX, baseY, 360f, 0.55f, 0.25f, Color.valueOf("c8d2dcff"));
+            for (int e = 0; e < 24; e++) {
+                float side = e % 2 == 0 ? -1f : 1f;
+                glitter.ember(centerX + side * MathUtils.random(60f, 140f), baseY, side * MathUtils.random(80f, 260f),
+                    MathUtils.random(40f, 160f), 400f, MathUtils.random(8f, 14f), MathUtils.random(0.4f, 0.7f), SMOKE);
+            }
+        });
+        at(open, () -> {
+            screenShake.shake(0.3f, 8f);
+            impactFlash(1f, 0.9f, 0.5f, 0.5f);
+        });
+        emit(open, open + 0.9f, 40, i -> {
+            Vector2 mouth = safe.opening();
+            symbols.jet(icon, mouth.x + MathUtils.random(-60f, 60f), mouth.y, MathUtils.random(55f, 125f),
+                MathUtils.random(800f, 1300f), MathUtils.random(60f, 90f), 1300f);
+        });
+        emit(open, open + 1.3f, 60, i -> {
+            Vector2 mouth = safe.opening();
+            glitter.twinkle(mouth.x + MathUtils.random(-120f, 120f), mouth.y + MathUtils.random(-100f, 260f),
+                MathUtils.random(14f, 26f), 0.5f, Color.valueOf("fffbe0ff"));
+        });
+        coinRain(open, open + 1.2f, 120, 2);
+    }
+
+    /** Pastèque : le sabre tranche une pastèque en l'air ; jus, pépins et tranches jaillissent. */
+    private void scheduleKatana(TextureRegion icon) {
+        float centerX = playArea.getCenterX(), centerY = getHeight() * 0.48f;
+        float slice = KatanaScene.SLICE_TIME;
+        playScene(katana, centerX, centerY, slice + 0.25f, 0.8f);
+        Color juice = Color.valueOf("ff5a78ff");
+        Color seed  = Color.valueOf("1a1a1aff");
+        at(slice, () -> {
+            screenShake.shake(0.3f, 10f);
+            impactFlash(1f, 1f, 1f, 0.4f);
+        });
+        emit(slice, slice + 0.2f, 80, i -> {
+            float angle = MathUtils.random(360f);
+            float speed = MathUtils.random(250f, 800f);
+            boolean isSeed = i % 3 == 0;
+            glitter.ember(centerX, centerY, MathUtils.cosDeg(angle) * speed, MathUtils.sinDeg(angle) * speed, 1300f,
+                isSeed ? 6f : MathUtils.random(7f, 12f), MathUtils.random(0.9f, 1.5f), isSeed ? seed : juice);
+        });
+        emit(slice, slice + 0.2f, 22, i -> symbols.jet(icon, centerX, centerY, i * 360f / 22 + MathUtils.random(-8f, 8f),
+            MathUtils.random(500f, 1000f), MathUtils.random(55f, 80f), 1300f));
+        for (float time : new float[] {1.6f, 2.0f, 2.3f}) at(time, () -> rocket(false));
+        coinRain(slice, slice + 1f, 18, 1);
     }
 
     /**
@@ -388,20 +554,6 @@ public class JackpotCelebration extends Group implements Disposable {
         });
         for (float time : new float[] {1.5f, 1.8f, 2.1f, 2.4f}) at(time, () -> rocket(false));
         coinRain(impact, impact + 1f, 18, 1);
-    }
-
-    /** Raisin : des bulles violettes montent pendant que des grappes tombent mollement. */
-    private void scheduleBubbles(TextureRegion icon) {
-        at(0f, () -> screenShake.shake(SHAKE_TIME, 6f));
-        at(0f, () -> shockwaves.ring(playArea.getCenterX(), getHeight() * BANNER_Y,
-            playArea.getWidth() * 0.6f, 0.9f, 1f, Color.valueOf("c77dffff")));
-        Color[] purples = style.fireworks();
-        emit(0f, 2.7f, 170, i -> glitter.ember(tableX(0f), getHeight() * MathUtils.random(-0.05f, 0.15f),
-            MathUtils.random(-15f, 15f), MathUtils.random(90f, 220f), 0f, MathUtils.random(8f, 18f),
-            MathUtils.random(2f, 3f), purples[i % purples.length]));
-        emit(0.1f, 2.0f, 26, i -> symbols.rain(icon, tableX(60f), getHeight() + 60f, floorY(),
-            MathUtils.random(70f, 100f), MathUtils.random(60f, 160f), 380f, false));
-        coinRain(0.2f, 1.2f, 18, 1);
     }
 
     /**
@@ -471,59 +623,6 @@ public class JackpotCelebration extends Group implements Disposable {
         }
     }
 
-    /** Diamant : l'écran scintille de toutes parts et des diamants tombent lentement. */
-    private void scheduleSparkle(TextureRegion icon) {
-        at(0f, () -> screenShake.shake(SHAKE_TIME, 6f));
-        Color[] ice = style.fireworks();
-        emit(0f, 2.7f, 180, i -> glitter.twinkle(tableX(0f), getHeight() * MathUtils.random(0.05f, 0.98f),
-            MathUtils.random(14f, 34f), MathUtils.random(0.4f, 0.8f), ice[i % ice.length]));
-        emit(0.1f, 1.9f, 26, i -> symbols.rain(icon, tableX(60f), getHeight() + 60f, floorY(),
-            MathUtils.random(60f, 95f), MathUtils.random(80f, 200f), 520f, false));
-        for (float time : new float[] {1.2f, 1.6f, 2.0f, 2.4f}) at(time, () -> rocket(false));
-        coinRain(0.2f, 1.2f, 18, 1);
-    }
-
-    /** Lingot : avalanche de lingots et de pièces, presque toutes ramassées par le compteur. */
-    private void scheduleGoldAvalanche(TextureRegion icon) {
-        at(0f, () -> screenShake.shake(0.6f, 14f));
-        landingColor = Color.valueOf("ffd54aff");
-        landingShake = 4f;
-        emit(0.1f, 1.8f, 38, i -> symbols.rain(icon, tableX(60f), getHeight() + 60f, floorY(),
-            MathUtils.random(75f, 105f), MathUtils.random(400f, 800f), 2400f, true));
-        coinRain(0f, 1.8f, 140, 2);
-        emit(0.3f, 2.5f, 50, i -> glitter.twinkle(tableX(0f), getHeight() * MathUtils.random(0.1f, 0.6f),
-            MathUtils.random(12f, 22f), 0.5f, Color.valueOf("fffbe0ff")));
-    }
-
-    /** Pastèque : des pastèques sont lancées des deux côtés et éclaboussent l'écran de jus et de pépins. */
-    private void scheduleSplash(TextureRegion icon) {
-        at(0f, () -> screenShake.shake(SHAKE_TIME, 10f));
-        float left  = playArea.getX() + 30f;
-        float right = playArea.getX() + playArea.getWidth() - 30f;
-        emit(0f, 1.8f, 34, i -> {
-            boolean fromLeft = i % 2 == 0;
-            float x = fromLeft ? left : right;
-            symbols.jet(icon, x, -40f, fromLeft ? MathUtils.random(50f, 70f) : MathUtils.random(110f, 130f),
-                MathUtils.random(1200f, 1550f), MathUtils.random(75f, 105f), 1300f);
-            splash(x, fromLeft);
-        });
-        for (float time : new float[] {1.1f, 1.5f, 1.9f, 2.3f}) at(time, () -> rocket(false));
-        coinRain(0.2f, 1.2f, 18, 1);
-    }
-
-    /** Gerbe de jus (rose) et de pépins (noirs) lancée d'un coin de la table avec une pastèque. */
-    private void splash(float x, boolean fromLeft) {
-        Color juice = Color.valueOf("ff5a78ff");
-        Color seed  = Color.valueOf("1a1a1aff");
-        for (int k = 0; k < 8; k++) {
-            float angle = fromLeft ? MathUtils.random(40f, 80f) : MathUtils.random(100f, 140f);
-            float speed = MathUtils.random(700f, 1200f);
-            boolean isSeed = k % 3 == 0;
-            glitter.ember(x, 0f, MathUtils.cosDeg(angle) * speed, MathUtils.sinDeg(angle) * speed, 1300f,
-                isSeed ? 6f : MathUtils.random(7f, 12f), MathUtils.random(1.2f, 1.8f), isSeed ? seed : juice);
-        }
-    }
-
     // -------------------------------------------------------------------------
     // Outils des mises en scène
     // -------------------------------------------------------------------------
@@ -536,6 +635,25 @@ public class JackpotCelebration extends Group implements Disposable {
         showBanner = false;
         flash.clearActions();
         flash.getColor().a = 0f;
+    }
+
+    /**
+     * Lance le décor {@code scene} en {@code (x, y)} et écrit « BINGO! » en géant
+     * à {@code wordAt}, centré sur la table à la hauteur {@code wordY} (fraction de l'écran).
+     */
+    private void playScene(BingoScene scene, float x, float y, float wordAt, float wordY) {
+        useGiantWord();
+        scene.play(x, y);
+        giantWord.play(playArea.getCenterX(), getHeight() * wordY, wordAt, WORD_FADE_AT,
+            style.letterA(), style.letterB());
+    }
+
+    /** Flash de l'écran à l'impact d'une scène (sauf effets réduits). */
+    private void impactFlash(float r, float g, float b, float alpha) {
+        if (settings.isReducedEffects()) return;
+        flash.clearActions();
+        flash.setColor(r, g, b, alpha);
+        flash.addAction(Actions.fadeOut(0.25f));
     }
 
     /** Programme {@code count} apparitions réparties entre {@code start} et {@code end}. */
@@ -562,16 +680,6 @@ public class JackpotCelebration extends Group implements Disposable {
         } else {
             fireworks.launch(x, getHeight() * ROCKET_FROM, getHeight() * apex);
         }
-    }
-
-    /** Un symbole lourd touche la table : onde de poussière au sol, étincelles et petite secousse. */
-    private void onSymbolLanded(float x, float y) {
-        shockwaves.ring(x, y, 110f, 0.45f, 0.28f, landingColor);
-        for (int k = 0; k < 5; k++) {
-            glitter.ember(x + MathUtils.random(-30f, 30f), y, MathUtils.random(-220f, 220f),
-                MathUtils.random(120f, 320f), 1100f, 5f, MathUtils.random(0.3f, 0.5f), landingColor);
-        }
-        if (landingShake > 0f) screenShake.shake(0.12f, landingShake);
     }
 
     /** @return une abscisse au hasard sur la table, à {@code margin} de ses bords. */
@@ -617,6 +725,7 @@ public class JackpotCelebration extends Group implements Disposable {
         bannerFont.dispose();
         bullseye.dispose();
         churchBell.dispose();
+        for (BingoScene scene : scenes) scene.dispose();
         giantWord.dispose();
     }
 }
