@@ -50,6 +50,7 @@ import fr.astratime.lucky.controllers.GameController;
 import fr.astratime.lucky.controllers.PreparationResolver;
 import fr.astratime.lucky.entities.Card;
 import fr.astratime.lucky.entities.CardPlayResult;
+import fr.astratime.lucky.entities.Combo;
 import fr.astratime.lucky.entities.DrawResult;
 import fr.astratime.lucky.entities.GameState;
 import fr.astratime.lucky.entities.LastingEffects;
@@ -155,6 +156,8 @@ public class GameScreen extends ScreenAdapter {
     private static final float RIPOSTE_TEXT_TIME     = 0.8f;
     /** Annonces de tour : hauteur de leur bande (fraction de l'écran), au-dessus de la machine. */
     private static final float TURN_BANNER_HEIGHT    = 0.62f;
+    /** Combinaison formée : hauteur de son texte au-dessus de la main (en hauteurs de carte). */
+    private static final float COMBO_TEXT_HEIGHT     = 2f;
 
     // -------------------------------------------------------------------------
     // Contrôleur — seul point d'accès à la logique de jeu
@@ -340,6 +343,7 @@ public class GameScreen extends ScreenAdapter {
     /** Pioche une nouvelle main et lance son animation de distribution ; active le spin. */
     private void drawHand() {
         if (isCombatOver()) return;
+        refreshCombo(); // la combinaison du tour précédent s'éteint
         hand.setLocked(false); // une carte achetée entre deux tours reste sur la table
         hand.deal(gameController.drawCards());
         spinButton.setDisabled(false);
@@ -368,6 +372,7 @@ public class GameScreen extends ScreenAdapter {
         cardClickParticles.play(clickPos.x, clickPos.y);
         Gdx.app.log("GameScreen", "Carte jouee : " + card);
 
+        Combo comboBefore = gameController.getCurrentCombo().orElse(null);
         CardPlayResult playResult = gameController.playCard(card);
         if (playResult.isAutoSpin()) {
             playBingo(image, playResult.getPopups());
@@ -379,6 +384,7 @@ public class GameScreen extends ScreenAdapter {
         refreshGains(); // une carte peut créditer ou consommer des gains immédiatement
         refreshEffects();
         hand.refreshBlocked(); // un Recyclage peut avoir rendu un Bingo de la main injouable
+        announceCombo(comboBefore);
 
         DrawResult drawResult = playResult.getDrawResult();
         if (!drawResult.getAddedToHand().isEmpty() || !drawResult.getDiscarded().isEmpty()) {
@@ -386,6 +392,26 @@ public class GameScreen extends ScreenAdapter {
         }
         askChoice(playResult.getChoice(), cardCenter);
         if (playResult.getRainbow() != null) playRainbow(playResult.getRainbow());
+    }
+
+    /**
+     * Met en avant la combinaison que forment les cartes jouées ; si elle vient
+     * d'être formée, ou d'en battre une autre ({@code before}), son nom et son
+     * multiplicateur s'affichent au-dessus de la main.
+     */
+    private void announceCombo(Combo before) {
+        Combo combo = refreshCombo();
+        if (combo == null || combo == before || (before != null && before.compareTo(combo) < 0)) return;
+        effectPopupAnimator.play(List.of(new EffectPopup(combo.getDisplayName() + " x" + combo.formatFactor() + " !",
+            EffectPopup.Style.SPECIAL, PopupScale.SECONDARY_INTENSITY)),
+            playArea.getCenterX(), table.getHandRowY() + CARD_HEIGHT * COMBO_TEXT_HEIGHT);
+    }
+
+    /** Fait briller dans le panneau la combinaison des cartes jouées ce tour. @return cette combinaison, ou {@code null} */
+    private Combo refreshCombo() {
+        Combo combo = gameController.getCurrentCombo().orElse(null);
+        sidePanel.setCombo(combo);
+        return combo;
     }
 
     /**

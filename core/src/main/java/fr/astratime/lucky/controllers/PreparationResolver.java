@@ -1,5 +1,7 @@
 package fr.astratime.lucky.controllers;
 
+import fr.astratime.lucky.entities.Card;
+import fr.astratime.lucky.entities.Combo;
 import fr.astratime.lucky.entities.context.CombatContext;
 import fr.astratime.lucky.entities.Enemy;
 import fr.astratime.lucky.entities.LastingEffects;
@@ -8,6 +10,7 @@ import fr.astratime.lucky.entities.context.SpinContext;
 import fr.astratime.lucky.entities.context.TurnContext;
 import fr.astratime.lucky.entities.effects.CorruptionEffect;
 import fr.astratime.lucky.entities.effects.Effect;
+import fr.astratime.lucky.entities.events.ComboEvent;
 import fr.astratime.lucky.entities.events.CorruptionEvent;
 
 import java.util.List;
@@ -17,12 +20,18 @@ import java.util.List;
  * et construit le TurnContext (SpinContext + CombatContext) qui sera
  * utilisé pour le spin et la résolution du combat. Les effets qui durent
  * plusieurs tours (symboles retirés, bonus de gains du combat, Lames,
- * Corruption) y sont appliqués en premier.
+ * Corruption) y sont appliqués en premier ; la combinaison formée par les
+ * cartes jouées ({@link Combo}), en dernier.
  */
 public class PreparationResolver {
 
     /** Attaque ajoutée à chaque symbole par Lame (Pique). */
     public static final int BLADE_ATTACK = 20;
+
+    /** Jauges remplies par carte jouée quand une Couleur ou une Suite est formée. */
+    static final int COMBO_BLADES = 1;
+    static final int COMBO_BLOOD  = 25;
+    static final int COMBO_VAULT  = 40;
 
     /**
      * Construit un TurnContext neuf pour {@code player}/{@code enemy}, puis applique
@@ -50,7 +59,37 @@ public class PreparationResolver {
         }
 
         pendingEffects.forEach(effect -> effect.apply(turnContext));
+        applyCombo(turnContext, player);
 
         return turnContext;
+    }
+
+    /**
+     * La meilleure combinaison formée par les cartes jouées ce tour multiplie
+     * les gains et l'attaque du tirage ; une Couleur ou une Suite remplit en
+     * plus la jauge de chaque carte à suite jouée.
+     */
+    private static void applyCombo(TurnContext turnContext, Player player) {
+        Combo.best(player.getPlayedCards()).ifPresent(combo -> {
+            CombatContext combat = turnContext.getCombatContext();
+            combat.multiplyGains(combo.getFactor());
+            combat.multiplyAttack(combo.getFactor());
+            if (combo.fillsGauges()) fillGauges(player);
+            turnContext.addEvent(new ComboEvent(combo));
+        });
+    }
+
+    /** Chaque carte à suite jouée remplit la jauge de sa couleur. */
+    private static void fillGauges(Player player) {
+        LastingEffects lasting = player.getLastingEffects();
+        for (Card card : player.getPlayedCards()) {
+            if (card.getSuit() == null) continue;
+            switch (card.getSuit()) {
+                case PIQUE   -> lasting.addBlades(COMBO_BLADES);
+                case COEUR   -> lasting.addBlood(COMBO_BLOOD);
+                case CARREAU -> lasting.addVault(COMBO_VAULT);
+                case TREFLE  -> { } // le Trèfle rapporte déjà des gains
+            }
+        }
     }
 }

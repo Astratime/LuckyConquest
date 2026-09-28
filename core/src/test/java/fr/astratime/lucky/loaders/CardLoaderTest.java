@@ -45,7 +45,7 @@ class CardLoaderTest {
     void everyCardDefinitionLoads() {
         List<Card> cards = CardLoader.loadAll(READER);
 
-        assertEquals(52 + 18 + 11, cards.size(), "4 suites de 13 cartes + 18 cartes spéciales + 11 cartes de test (Bingo par symbole)");
+        assertEquals(52 + 13 + 11, cards.size(), "4 suites de 13 cartes + 13 cartes spéciales + 11 cartes de test (Bingo par symbole)");
         assertEquals(cards.size(), cards.stream().map(Card::getId).distinct().count(), "les ids doivent être uniques");
     }
 
@@ -141,11 +141,6 @@ class CardLoaderTest {
         Map<String, Integer> expected = new java.util.LinkedHashMap<>();
         expected.put("bingo", 10000);
         expected.put("russian_roulette", 8000);
-        expected.put("combo_full", 500);
-        expected.put("combo_brelan", 1000);
-        expected.put("combo_suite", 1000);
-        expected.put("combo_paire", 1200);
-        expected.put("combo_couleur", 1000);
         expected.put("corruption", 5000);
         for (Symbol symbol : Symbol.values()) {
             if (symbol != Symbol.JOKER) expected.put("bingo_" + symbol.name().toLowerCase(), 0); // cartes de test

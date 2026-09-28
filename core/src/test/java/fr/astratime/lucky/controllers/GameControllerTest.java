@@ -10,7 +10,6 @@ import fr.astratime.lucky.popups.EffectPopup;
 import fr.astratime.lucky.entities.effects.ExtraDrawEffect;
 import fr.astratime.lucky.entities.effects.BetEffect;
 import fr.astratime.lucky.entities.effects.BingoEffect;
-import fr.astratime.lucky.entities.effects.ComboEffect;
 import fr.astratime.lucky.entities.effects.GainsMultiplierEffect;
 import fr.astratime.lucky.entities.effects.RainbowEffect;
 import fr.astratime.lucky.entities.effects.RecycleEffect;
@@ -240,19 +239,19 @@ class GameControllerTest {
     }
 
     @Test
-    void comboMultipliesWhenPlayedCardsFormIt() {
+    void aComboFormedByThePlayedCardsAppliesWithoutAnyComboCard() {
         List<Card> deck = List.of(
             new Card("a1", "a1", "x.png", List.of(), Card.Suit.COEUR, 1),
             new Card("a2", "a2", "x.png", List.of(), Card.Suit.PIQUE, 1),
-            new Card("a3", "a3", "x.png", List.of(), Card.Suit.TREFLE, 1),
-            card("brelan", new ComboEffect(Combo.BRELAN, 3)));
+            new Card("a3", "a3", "x.png", List.of(), Card.Suit.TREFLE, 1));
         GameController controller = controllerWith(deck);
         controller.drawCards();
         for (Card card : new ArrayList<>(player(controller).getCurrentHand())) controller.playCard(card);
+        assertEquals(Combo.BRELAN, controller.getCurrentCombo().orElseThrow());
 
         TurnResult turn = controller.spin();
 
-        assertTrue(turn.getCardEvents().stream().anyMatch(e -> e instanceof ComboEvent combo && combo.success));
+        assertTrue(turn.getCardEvents().stream().anyMatch(e -> e instanceof ComboEvent event && event.combo == Combo.BRELAN));
     }
 
     private static Card suited(int rank, Card.Suit suit) {

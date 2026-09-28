@@ -52,4 +52,23 @@ class ComboTest {
         assertTrue(Combo.PAIRE.matches(List.of(card(12, Card.Suit.COEUR), card(12, Card.Suit.PIQUE))));
         assertFalse(Combo.PAIRE.matches(List.of(card(12, Card.Suit.COEUR), card(13, Card.Suit.COEUR), special())));
     }
+
+    @Test
+    void bestKeepsOnlyTheStrongestComboFormed() {
+        List<Card> full = List.of(card(12, Card.Suit.COEUR), card(12, Card.Suit.PIQUE), card(12, Card.Suit.TREFLE),
+            card(1, Card.Suit.COEUR), card(1, Card.Suit.CARREAU));
+        assertEquals(Combo.FULL, Combo.best(full).orElseThrow(), "le Full l'emporte sur le brelan et la paire");
+
+        List<Card> flush = List.of(card(1, Card.Suit.COEUR), card(11, Card.Suit.COEUR), card(13, Card.Suit.COEUR));
+        assertEquals(Combo.COULEUR, Combo.best(flush).orElseThrow());
+        assertTrue(Combo.best(List.of(card(1, Card.Suit.COEUR), card(12, Card.Suit.PIQUE), special())).isEmpty());
+    }
+
+    @Test
+    void strongerCombosMultiplyMore() {
+        Combo[] strongestFirst = Combo.values();
+        for (int i = 1; i < strongestFirst.length; i++) {
+            assertTrue(strongestFirst[i - 1].getFactor() >= strongestFirst[i].getFactor(), strongestFirst[i - 1].name());
+        }
+    }
 }

@@ -4,7 +4,6 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.utils.JsonReader;
 import com.badlogic.gdx.utils.JsonValue;
 import fr.astratime.lucky.entities.Card;
-import fr.astratime.lucky.entities.Combo;
 import fr.astratime.lucky.entities.Symbol;
 import fr.astratime.lucky.entities.effects.*;
 
@@ -235,8 +234,6 @@ public class CardLoader {
                 return new BetEffect();
             case "RUSSIAN_ROULETTE":
                 return new RussianRouletteEffect(json.getInt("multiplier"), json.getInt("penaltyPercent"));
-            case "COMBO":
-                return new ComboEffect(Combo.valueOf(json.getString("combo")), json.getFloat("factor"));
             case "LUCKY_CHARM":
                 return new LuckyCharmEffect(json.getInt("percent"));
             case "RAINBOW":
