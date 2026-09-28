@@ -191,8 +191,7 @@ public class JackpotCelebration extends Group implements Disposable {
         landingColor = Color.WHITE;
         landingShake = 0f;
         showBanner   = true;
-        schedule(symbol, new TextureRegion(icons.computeIfAbsent(symbol,
-            s -> Textures.cutOut(Gdx.files.internal(s.getAssetPath())))));
+        schedule(symbol, iconOf(symbol));
         emitted = new int[emitters.size()];
 
         if (showBanner) banner(symbol).play(playArea.getCenterX(), height * BANNER_Y, width);
@@ -358,8 +357,17 @@ public class JackpotCelebration extends Group implements Disposable {
             Color color = palette[k % palette.length];
             at(impact + k * 0.12f, () -> shockwaves.ring(centerX, centerY, 330f, 0.7f, 1f, color));
         }
-        emit(impact, impact, 22, i -> symbols.jet(icon, centerX, centerY, i * 360f / 22 + MathUtils.random(-6f, 6f),
-            MathUtils.random(700f, 1100f), MathUtils.random(60f, 85f), 1300f));
+        // Explosion de cerises : un anneau rapide de triples cerises, un anneau plus lent de
+        // cerises simples, une seconde salve, puis une pluie de cerises qui retombe sur la table.
+        TextureRegion cherry = iconOf(Symbol.CHERRY);
+        emit(impact, impact, 32, i -> symbols.jet(icon, centerX, centerY, i * 360f / 32 + MathUtils.random(-5f, 5f),
+            MathUtils.random(900f, 1300f), MathUtils.random(60f, 85f), 1300f));
+        emit(impact, impact, 28, i -> symbols.jet(cherry, centerX, centerY, i * 360f / 28 + MathUtils.random(-6f, 6f),
+            MathUtils.random(450f, 800f), MathUtils.random(45f, 65f), 1100f));
+        emit(impact + 0.15f, impact + 0.35f, 30, i -> symbols.jet(i % 2 == 0 ? icon : cherry, centerX, centerY,
+            MathUtils.random(360f), MathUtils.random(600f, 1200f), MathUtils.random(50f, 80f), 1300f));
+        emit(impact + 0.3f, impact + 1.3f, 36, i -> symbols.rain(i % 3 == 0 ? icon : cherry, tableX(40f),
+            getHeight() + 60f, floorY(), MathUtils.random(45f, 75f), MathUtils.random(150f, 400f), 900f, false));
         emit(impact, impact, 70, i -> {
             float angle = MathUtils.random(360f);
             float speed = MathUtils.random(250f, 750f);
@@ -503,6 +511,12 @@ public class JackpotCelebration extends Group implements Disposable {
     /** @return une ordonnée au hasard sur la table, où rebondissent pièces et symboles. */
     private float floorY() {
         return getHeight() * MathUtils.random(COIN_FLOOR_MIN, COIN_FLOOR_MAX);
+    }
+
+    /** @return l'image de {@code symbol} détourée de sa case blanche, chargée à sa première utilisation. */
+    private TextureRegion iconOf(Symbol symbol) {
+        return new TextureRegion(icons.computeIfAbsent(symbol,
+            s -> Textures.cutOut(Gdx.files.internal(s.getAssetPath()))));
     }
 
     /** @return la bannière du Bingo de {@code symbol}, créée à sa première utilisation. */
