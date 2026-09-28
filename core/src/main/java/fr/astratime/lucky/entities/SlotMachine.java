@@ -41,7 +41,8 @@ public class SlotMachine {
     /**
      * Tire trois symboles indépendamment, selon les poids de base plus les
      * boosts du {@code spinContext}, sans les symboles retirés. Un jackpot
-     * garanti (Bingo) donne trois fois le même symbole (jamais le Joker) ; sinon,
+     * garanti (Bingo) donne trois fois le même symbole (celui imposé par la
+     * carte, sinon tiré au hasard, jamais le Joker) ; sinon,
      * l'Aimant peut transformer un tirage sans paire en paire.
      *
      * @param spinContext modificateurs du spin pour ce tour
@@ -50,7 +51,8 @@ public class SlotMachine {
     public Symbol[] spin(SpinContext spinContext) {
         Symbol[] result = new Symbol[SYMBOL_COUNT];
         if (spinContext.isJackpotForced()) {
-            Arrays.fill(result, weightedRandom(spinContext, false));
+            Symbol symbol = spinContext.getJackpotSymbol();
+            Arrays.fill(result, symbol != null ? symbol : weightedRandom(spinContext, false));
             return result;
         }
         for (int i = 0; i < result.length; i++) {

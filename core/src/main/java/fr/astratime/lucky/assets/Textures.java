@@ -5,8 +5,6 @@ import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Texture;
 
-import java.util.ArrayDeque;
-
 /** Fabrique de textures simples partagée par les écrans et leurs composants. */
 public final class Textures {
 
@@ -55,48 +53,26 @@ public final class Textures {
     }
 
     /**
-     * @return l'image {@code file} détourée : son fond clair (les pixels presque
-     *         blancs reliés à ses bords) devient transparent, le reste est
-     *         conservé. Sert aux images des symboles, dessinées sur une case
-     *         blanche cernée d'un contour sombre. L'appelant est propriétaire de
-     *         la texture et doit la disposer.
+     * @return l'image {@code file} détourée : tous les pixels de la couleur de
+     *         son coin supérieur gauche (le fond uni des images des symboles)
+     *         deviennent transparents, y compris ceux enfermés dans le dessin.
+     *         L'appelant est propriétaire de la texture et doit la disposer.
      */
     public static Texture cutOut(FileHandle file) {
-        Pixmap pixmap = new Pixmap(file);
-        if (pixmap.getFormat() != Pixmap.Format.RGBA8888) {
-            Pixmap rgba = new Pixmap(pixmap.getWidth(), pixmap.getHeight(), Pixmap.Format.RGBA8888);
-            rgba.setBlending(Pixmap.Blending.None);
-            rgba.drawPixmap(pixmap, 0, 0);
-            pixmap.dispose();
-            pixmap = rgba;
-        }
+        Pixmap source = new Pixmap(file);
+        Pixmap pixmap = new Pixmap(source.getWidth(), source.getHeight(), Pixmap.Format.RGBA8888);
         pixmap.setBlending(Pixmap.Blending.None);
-        int width = pixmap.getWidth(), height = pixmap.getHeight();
-        boolean[] visited = new boolean[width * height];
-        ArrayDeque<Integer> queue = new ArrayDeque<>();
-        for (int x = 0; x < width; x++) { queue.add(x); queue.add((height - 1) * width + x); }
-        for (int y = 0; y < height; y++) { queue.add(y * width); queue.add(y * width + width - 1); }
-        while (!queue.isEmpty()) {
-            int index = queue.poll();
-            if (visited[index]) continue;
-            visited[index] = true;
-            int x = index % width, y = index / width;
-            if (!isBackground(pixmap.getPixel(x, y))) continue;
-            pixmap.drawPixel(x, y, 0);
-            if (x > 0)          queue.add(index - 1);
-            if (x < width - 1)  queue.add(index + 1);
-            if (y > 0)          queue.add(index - width);
-            if (y < height - 1) queue.add(index + width);
+        pixmap.drawPixmap(source, 0, 0);
+        source.dispose();
+        int background = pixmap.getPixel(0, 0);
+        for (int y = 0; y < pixmap.getHeight(); y++) {
+            for (int x = 0; x < pixmap.getWidth(); x++) {
+                if (pixmap.getPixel(x, y) == background) pixmap.drawPixel(x, y, 0);
+            }
         }
         Texture texture = new Texture(pixmap);
         pixmap.dispose();
         return texture;
-    }
-
-    /** @return true pour un pixel du fond à détourer : presque blanc, ou déjà transparent. */
-    private static boolean isBackground(int rgba8888) {
-        int r = (rgba8888 >>> 24) & 0xff, g = (rgba8888 >>> 16) & 0xff, b = (rgba8888 >>> 8) & 0xff, a = rgba8888 & 0xff;
-        return a < 16 || (r > 225 && g > 225 && b > 225);
     }
 
     private Textures() {}

@@ -1,8 +1,13 @@
 package fr.astratime.lucky.loaders;
 
 import fr.astratime.lucky.entities.Card;
+import fr.astratime.lucky.entities.Enemy;
 import fr.astratime.lucky.entities.Player;
+import fr.astratime.lucky.entities.Symbol;
+import fr.astratime.lucky.entities.context.CombatContext;
 import fr.astratime.lucky.entities.context.PlayContext;
+import fr.astratime.lucky.entities.context.SpinContext;
+import fr.astratime.lucky.entities.context.TurnContext;
 
 import org.junit.jupiter.api.Test;
 
@@ -40,7 +45,7 @@ class CardLoaderTest {
     void everyCardDefinitionLoads() {
         List<Card> cards = CardLoader.loadAll(READER);
 
-        assertEquals(52 + 18, cards.size(), "4 suites de 13 cartes + 18 cartes spéciales");
+        assertEquals(52 + 18 + 11, cards.size(), "4 suites de 13 cartes + 18 cartes spéciales + 11 cartes de test (Bingo par symbole)");
         assertEquals(cards.size(), cards.stream().map(Card::getId).distinct().count(), "les ids doivent être uniques");
     }
 
@@ -117,6 +122,20 @@ class CardLoaderTest {
     }
 
     @Test
+    void testBingoCardsForceTheJackpotOfTheirSymbol() {
+        for (Symbol symbol : Symbol.values()) {
+            if (symbol == Symbol.JOKER) continue;
+            Card card = CardLoader.cardFactory(READER).apply("bingo_" + symbol.name().toLowerCase());
+            TurnContext context = new TurnContext(new SpinContext(),
+                new CombatContext(new Player("Joueur", 100, List.of()), new Enemy("Ennemi", 100)));
+            card.getEffects().forEach(effect -> effect.apply(context));
+
+            assertTrue(context.getSpinContext().isJackpotForced(), card.getId());
+            assertEquals(symbol, context.getSpinContext().getJackpotSymbol(), card.getId());
+        }
+    }
+
+    @Test
     void shopSellsConsumableCardsThatAreNotInTheStarterDeck() {
         Map<String, Integer> shop = CardLoader.loadShop(READER);
         Map<String, Integer> expected = new java.util.LinkedHashMap<>();
@@ -128,6 +147,9 @@ class CardLoaderTest {
         expected.put("combo_paire", 1200);
         expected.put("combo_couleur", 1000);
         expected.put("corruption", 5000);
+        for (Symbol symbol : Symbol.values()) {
+            if (symbol != Symbol.JOKER) expected.put("bingo_" + symbol.name().toLowerCase(), 0); // cartes de test
+        }
         assertEquals(List.copyOf(expected.entrySet()), List.copyOf(shop.entrySet()), "prix et ordre de l'échoppe");
 
         List<String> starter = CardLoader.loadStarterDeck(READER).stream().map(Card::getId).toList();

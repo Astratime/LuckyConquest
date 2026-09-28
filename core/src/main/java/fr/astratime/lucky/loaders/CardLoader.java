@@ -36,7 +36,8 @@ public class CardLoader {
         "cards/definitions/trefle.json",
         "cards/definitions/carreau.json",
         "cards/definitions/pique.json",
-        "cards/definitions/special.json"
+        "cards/definitions/special.json",
+        "cards/definitions/test.json"
     };
 
     private static final String STARTER_DECK_FILE = "cards/decks/starter.json";
@@ -224,7 +225,8 @@ public class CardLoader {
 
             // --- Cartes de casino ---
             case "BINGO":
-                return new BingoEffect(json.getInt("power"));
+                return new BingoEffect(json.getInt("power"),
+                    json.has("symbol") ? Symbol.valueOf(json.getString("symbol")) : null);
             case "MAGNET":
                 return new MagnetEffect(json.getInt("percent"));
             case "RECYCLE":

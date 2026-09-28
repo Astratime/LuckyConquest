@@ -41,8 +41,8 @@ import java.util.function.Supplier;
  *   <li>Bar : trois rangées de barres tombent d'un bloc, chaque volée fait
  *       trembler l'écran ;</li>
  *   <li>Cerise : une fontaine de cerises jaillit du centre de la table ;</li>
- *   <li>Triple Cerise : deux canons à cerises tirent depuis les coins de la
- *       table, sous des gerbes roses ;</li>
+ *   <li>Triple Cerise : une flèche se plante en plein centre d'une cible et
+ *       « BINGO! » s'écrit en géant (voir {@link BullseyeAnimation}) ;</li>
  *   <li>Raisin : des bulles violettes montent pendant que des grappes tombent
  *       mollement ;</li>
  *   <li>Cloche : le carillon — des ondes sonores partent de la bannière et des
@@ -87,6 +87,8 @@ public class JackpotCelebration extends Group implements Disposable {
     private static final float   ROCKET_SIDE_MARGIN = 120f;
 
     private static final float BANNER_Y = 0.72f;         // centre de la bannière (fraction de la hauteur)
+    private static final float BULLSEYE_Y      = 0.4f;   // centre de la cible du Triple Cerise
+    private static final float BULLSEYE_WORD_Y = 0.8f;   // mot « BINGO! » géant, au-dessus de la cible
 
     /**
      * Apparitions étalées dans le temps : {@code count} appels de {@code spawn}
@@ -112,6 +114,7 @@ public class JackpotCelebration extends Group implements Disposable {
     private final Fireworks    fireworks;
     private final SymbolShower symbols;
     private final CoinShower   coins;
+    private final BullseyeAnimation bullseye = new BullseyeAnimation();
     private final Group        bannerLayer = new Group();
     /** Une bannière par symbole, créée à son premier Bingo (ses lettres ont les couleurs du symbole). */
     private final Map<Symbol, BingoBanner> banners = new EnumMap<>(Symbol.class);
@@ -122,6 +125,8 @@ public class JackpotCelebration extends Group implements Disposable {
     /** Couleur des ondes soulevées par un symbole lourd qui touche la table, et secousse de l'impact. */
     private Color      landingColor = Color.WHITE;
     private float      landingShake;
+    /** false quand la mise en scène remplace la bannière « BINGO!!! » (Triple Cerise). */
+    private boolean    showBanner;
 
     private boolean  running;
     private float    elapsed;
@@ -155,6 +160,7 @@ public class JackpotCelebration extends Group implements Disposable {
         addActor(fireworks);
         addActor(symbols);
         addActor(coins);
+        addActor(bullseye);
         addActor(bannerLayer);
         addActor(flash);
     }
@@ -184,11 +190,12 @@ public class JackpotCelebration extends Group implements Disposable {
         emitters.clear();
         landingColor = Color.WHITE;
         landingShake = 0f;
+        showBanner   = true;
         schedule(symbol, new TextureRegion(icons.computeIfAbsent(symbol,
             s -> Textures.cutOut(Gdx.files.internal(s.getAssetPath())))));
         emitted = new int[emitters.size()];
 
-        banner(symbol).play(playArea.getCenterX(), height * BANNER_Y, width);
+        if (showBanner) banner(symbol).play(playArea.getCenterX(), height * BANNER_Y, width);
     }
 
     /** Arrête tout immédiatement (nouvelle partie), sans appeler la fin de la célébration. */
@@ -202,6 +209,7 @@ public class JackpotCelebration extends Group implements Disposable {
         glitter.removeAll();
         shockwaves.removeAll();
         for (BingoBanner banner : banners.values()) banner.hide();
+        bullseye.hide();
         flash.clearActions();
         flash.getColor().a = 0f;
         screenShake.stop();
@@ -240,7 +248,7 @@ public class JackpotCelebration extends Group implements Disposable {
             case DOUBLE_BAR    -> scheduleSteelRain(icon);
             case BAR           -> scheduleHammer(icon);
             case CHERRY        -> scheduleCherryFountain(icon);
-            case TRIPLE_CHERRY -> scheduleCherryCannons(icon);
+            case TRIPLE_CHERRY -> scheduleBullseye(icon);
             case GRAPE         -> scheduleBubbles(icon);
             case BELL          -> scheduleChime(icon);
             case DIAMOND       -> scheduleSparkle(icon);
@@ -315,22 +323,51 @@ public class JackpotCelebration extends Group implements Disposable {
         coinRain(0.2f, 1.2f, 18, 1);
     }
 
-    /** Triple Cerise : deux canons à cerises tirent des coins de la table, sous des gerbes rouges et roses. */
-    private void scheduleCherryCannons(TextureRegion icon) {
-        at(0f, () -> screenShake.shake(0.5f, 12f));
-        float left  = playArea.getX() + 40f;
-        float right = playArea.getX() + playArea.getWidth() - 40f;
-        emit(0f, 2.0f, 60, i -> {
-            boolean fromLeft = i % 2 == 0;
-            symbols.jet(icon, fromLeft ? left : right, -40f,
-                fromLeft ? MathUtils.random(52f, 72f) : MathUtils.random(108f, 128f),
-                MathUtils.random(1200f, 1600f), MathUtils.random(65f, 95f), 1300f);
+    /**
+     * Triple Cerise : une cible surgit au milieu de la table, une flèche se plante
+     * en plein centre et « BINGO! » s'écrit en géant (à la place de la bannière).
+     * L'impact secoue l'écran et fait exploser des cerises tout autour.
+     */
+    private void scheduleBullseye(TextureRegion icon) {
+        showBanner = false;
+        flash.clearActions(); // pas de flash d'entrée : celui de l'impact suffit
+        flash.getColor().a = 0f;
+        float centerX = playArea.getCenterX();
+        float centerY = getHeight() * BULLSEYE_Y;
+        bullseye.play(centerX, centerY, getHeight() * BULLSEYE_WORD_Y, style.letterA(), style.letterB());
+
+        // Traînée d'étincelles derrière la flèche en vol.
+        float launch = BullseyeAnimation.arrowLaunchTime();
+        Vector2 tip = new Vector2();
+        emit(launch, BullseyeAnimation.IMPACT_TIME, 24, i -> {
+            bullseye.arrowTipAt(elapsed, tip);
+            glitter.ember(tip.x, tip.y, 0f, 0f, 0f, MathUtils.random(5f, 8f), 0.35f, Color.WHITE);
         });
-        emit(0.2f, 2.6f, 90, i -> glitter.ember(tableX(0f), getHeight() * MathUtils.random(0.05f, 0.3f),
-            MathUtils.random(-20f, 20f), MathUtils.random(100f, 260f), 0f, MathUtils.random(6f, 12f),
-            MathUtils.random(1.2f, 2f), style.fireworks()[i % style.fireworks().length]));
-        for (float time : new float[] {0.4f, 1.1f, 1.4f, 1.7f, 2.0f, 2.3f, 2.6f}) at(time, () -> rocket(time < 1f));
-        coinRain(0.2f, 1.2f, 18, 1);
+
+        float impact = BullseyeAnimation.IMPACT_TIME;
+        at(impact, () -> {
+            screenShake.shake(0.45f, 16f);
+            if (!settings.isReducedEffects()) {
+                flash.clearActions();
+                flash.setColor(1f, 1f, 1f, 0.55f);
+                flash.addAction(Actions.fadeOut(0.25f));
+            }
+        });
+        Color[] palette = style.fireworks();
+        for (int k = 0; k < 3; k++) {
+            Color color = palette[k % palette.length];
+            at(impact + k * 0.12f, () -> shockwaves.ring(centerX, centerY, 330f, 0.7f, 1f, color));
+        }
+        emit(impact, impact, 22, i -> symbols.jet(icon, centerX, centerY, i * 360f / 22 + MathUtils.random(-6f, 6f),
+            MathUtils.random(700f, 1100f), MathUtils.random(60f, 85f), 1300f));
+        emit(impact, impact, 70, i -> {
+            float angle = MathUtils.random(360f);
+            float speed = MathUtils.random(250f, 750f);
+            glitter.ember(centerX, centerY, MathUtils.cosDeg(angle) * speed, MathUtils.sinDeg(angle) * speed, 700f,
+                MathUtils.random(6f, 11f), MathUtils.random(0.8f, 1.4f), palette[i % palette.length]);
+        });
+        for (float time : new float[] {1.5f, 1.8f, 2.1f, 2.4f}) at(time, () -> rocket(false));
+        coinRain(impact, impact + 1f, 18, 1);
     }
 
     /** Raisin : des bulles violettes montent pendant que des grappes tombent mollement. */
@@ -493,5 +530,6 @@ public class JackpotCelebration extends Group implements Disposable {
         for (Texture band : styleBands) band.dispose();
         for (Texture icon : icons.values()) icon.dispose();
         bannerFont.dispose();
+        bullseye.dispose();
     }
 }

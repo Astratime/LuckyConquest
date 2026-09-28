@@ -44,6 +44,18 @@ class SlotMachineTest {
     }
 
     @Test
+    void aForcedJackpotCanImposeItsSymbol() {
+        SpinContext context = new SpinContext();
+        context.forceJackpot(Symbol.WATERMELON);
+        SlotMachine machine = new SlotMachine(new Random(3));
+
+        for (int i = 0; i < 20; i++) {
+            assertArrayEquals(new Symbol[] { Symbol.WATERMELON, Symbol.WATERMELON, Symbol.WATERMELON },
+                machine.spin(context));
+        }
+    }
+
+    @Test
     void aForcedJackpotShowsThreeTimesTheSameSymbolButNeverTheJoker() {
         SpinContext context = new SpinContext();
         context.forceJackpot();

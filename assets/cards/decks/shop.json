@@ -6,5 +6,16 @@
   { "id": "combo_suite", "price": 1000 },
   { "id": "combo_paire", "price": 1200 },
   { "id": "combo_couleur", "price": 1000 },
-  { "id": "corruption", "price": 5000 }
+  { "id": "corruption", "price": 5000 },
+  { "id": "bingo_double_bar", "price": 0 },
+  { "id": "bingo_cherry", "price": 0 },
+  { "id": "bingo_seven", "price": 0 },
+  { "id": "bingo_bar", "price": 0 },
+  { "id": "bingo_grape", "price": 0 },
+  { "id": "bingo_bell", "price": 0 },
+  { "id": "bingo_diamond", "price": 0 },
+  { "id": "bingo_triple_cherry", "price": 0 },
+  { "id": "bingo_triple_seven", "price": 0 },
+  { "id": "bingo_gold_bar", "price": 0 },
+  { "id": "bingo_watermelon", "price": 0 }
 ]
