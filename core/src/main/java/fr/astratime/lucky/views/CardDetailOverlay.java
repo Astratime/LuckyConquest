@@ -19,6 +19,7 @@ import com.badlogic.gdx.utils.Align;
 import com.badlogic.gdx.utils.Disposable;
 import fr.astratime.lucky.assets.Fonts;
 import fr.astratime.lucky.assets.HudTextures;
+import fr.astratime.lucky.assets.Palette;
 import fr.astratime.lucky.entities.Card;
 import fr.astratime.lucky.entities.effects.Effect;
 
@@ -33,9 +34,6 @@ import java.util.function.Function;
 public class CardDetailOverlay implements Disposable {
 
     private static final Color VEIL       = new Color(0f, 0f, 0f, 0.78f);
-    private static final Color GOLD       = Color.valueOf("ffd454ff");
-    private static final Color CREAM      = Color.valueOf("f0e0b0ff");
-    private static final Color TEXT_SHADE = Color.valueOf("1a0f0fff");
     private static final float CARD_SCALE = 3.4f;
     private static final float PADDING    = 48f;
     private static final float INFO_WIDTH = 560f;
@@ -47,10 +45,10 @@ public class CardDetailOverlay implements Disposable {
     private final Tooltip     tooltip;
     private final float       cardWidth;
     private final float       cardHeight;
-    private final BitmapFont  nameFont  = Fonts.jersey(64, GOLD, 3f, TEXT_SHADE);
-    private final BitmapFont  keyFont   = Fonts.jersey(34, GOLD, 2f, TEXT_SHADE);
-    private final BitmapFont  valueFont = Fonts.jersey(34, CREAM, 2f, TEXT_SHADE);
-    private final BitmapFont  hintFont  = Fonts.jersey(24, Color.LIGHT_GRAY, 2f, TEXT_SHADE);
+    private final BitmapFont  nameFont  = Fonts.jersey(64, Palette.TEXT_TITLE, 3f, Palette.TEXT_SHADE);
+    private final BitmapFont  keyFont   = Fonts.jersey(34, Palette.TEXT_TITLE, 2f, Palette.TEXT_SHADE);
+    private final BitmapFont  valueFont = Fonts.jersey(34, Palette.TEXT_BODY, 2f, Palette.TEXT_SHADE);
+    private final BitmapFont  hintFont  = Fonts.jersey(24, Color.LIGHT_GRAY, 2f, Palette.TEXT_SHADE);
 
     private final Group root  = new Group();
     private final Image veil;

@@ -7,6 +7,7 @@ import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.utils.Disposable;
 import fr.astratime.lucky.assets.Fonts;
 import fr.astratime.lucky.assets.HudTextures;
+import fr.astratime.lucky.assets.Palette;
 import fr.astratime.lucky.entities.GameState;
 
 import java.util.function.Supplier;
@@ -47,7 +48,7 @@ public class CombatHud implements Disposable {
     public CombatHud(PlayArea playArea, HudTextures hud, Supplier<GameState> gameState) {
         this.playArea   = playArea;
         this.gameState  = gameState;
-        font            = Fonts.jersey(FONT_SIZE, Color.WHITE, FONT_BORDER, Color.valueOf("1a0f0fff"));
+        font            = Fonts.jersey(FONT_SIZE, Color.WHITE, FONT_BORDER, Palette.TEXT_SHADE);
         enemyHealthBar  = new HealthBarView("ENNEMI", font, hud, hud.barFillEnemy, hud.chipEnemy, HEALTH_BAR_WIDTH);
         playerHealthBar = new HealthBarView("JOUEUR", font, hud, hud.barFillPlayer, hud.chipPlayer, HEALTH_BAR_WIDTH);
         layout();

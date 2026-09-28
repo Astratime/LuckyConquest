@@ -7,6 +7,7 @@ import com.badlogic.gdx.math.Interpolation;
 import com.badlogic.gdx.scenes.scene2d.actions.Actions;
 import com.badlogic.gdx.scenes.scene2d.ui.Image;
 import com.badlogic.gdx.scenes.scene2d.utils.TiledDrawable;
+import fr.astratime.lucky.assets.Palette;
 
 /**
  * Bingo du Raisin : le pressoir. Une grappe géante tombe dans la cuve d'un
@@ -101,9 +102,9 @@ public class WinePressScene extends BingoScene {
     /** @return la cuve : douelles de bois alternées, deux cercles de fer, rebord sombre. */
     private static Pixmap vat() {
         Pixmap pixmap = pixmap(VAT_WIDTH, VAT_HEIGHT);
-        fillOutlined(pixmap, 0, 0, VAT_WIDTH, VAT_HEIGHT, c("8a5a2c"));
+        fillOutlined(pixmap, 0, 0, VAT_WIDTH, VAT_HEIGHT, Palette.WOOD);
         for (int x = 1; x < VAT_WIDTH - 1; x++) {
-            pixmap.setColor((x / 5) % 2 == 0 ? c("8a5a2c") : c("7a4a24"));
+            pixmap.setColor((x / 5) % 2 == 0 ? Palette.WOOD : c("7a4a24"));
             pixmap.drawLine(x, 2, x, VAT_HEIGHT - 2);
             if (x % 5 == 0) {
                 pixmap.setColor(c("5a3418"));
@@ -113,7 +114,7 @@ public class WinePressScene extends BingoScene {
         hLine(pixmap, 1, VAT_WIDTH - 2, 1, c("4e2e18"));
         for (int hoop : new int[] {5, 15}) {
             hLine(pixmap, 1, VAT_WIDTH - 2, hoop, c("8a8a9c"));
-            hLine(pixmap, 1, VAT_WIDTH - 2, hoop + 1, c("3a3a44"));
+            hLine(pixmap, 1, VAT_WIDTH - 2, hoop + 1, Palette.IRON_DARK);
         }
         return pixmap;
     }
@@ -121,7 +122,7 @@ public class WinePressScene extends BingoScene {
     /** @return le bâti : deux montants et une traverse en bois sombre. */
     private static Pixmap frame() {
         Pixmap pixmap = pixmap(FRAME_WIDTH, FRAME_HEIGHT);
-        Color wood = c("6e4524"), light = c("8a5a2c");
+        Color wood = Palette.WOOD_DARK, light = Palette.WOOD;
         fillOutlined(pixmap, 0, 0, 6, FRAME_HEIGHT, wood);
         fillOutlined(pixmap, FRAME_WIDTH - 6, 0, 6, FRAME_HEIGHT, wood);
         fillOutlined(pixmap, 0, 0, FRAME_WIDTH, 7, wood);
@@ -135,9 +136,9 @@ public class WinePressScene extends BingoScene {
     /** @return le plateau de pressage en bois cerclé de fer. */
     private static Pixmap plate() {
         Pixmap pixmap = pixmap(PLATE_WIDTH, PLATE_HEIGHT);
-        fillOutlined(pixmap, 0, 0, PLATE_WIDTH, PLATE_HEIGHT, c("8a5a2c"));
-        hLine(pixmap, 1, PLATE_WIDTH - 2, 1, c("b07a3c"));
-        hLine(pixmap, 1, PLATE_WIDTH - 2, PLATE_HEIGHT - 2, c("3a3a44"));
+        fillOutlined(pixmap, 0, 0, PLATE_WIDTH, PLATE_HEIGHT, Palette.WOOD);
+        hLine(pixmap, 1, PLATE_WIDTH - 2, 1, Palette.WOOD_LIGHT);
+        hLine(pixmap, 1, PLATE_WIDTH - 2, PLATE_HEIGHT - 2, Palette.IRON_DARK);
         return pixmap;
     }
 
@@ -148,7 +149,7 @@ public class WinePressScene extends BingoScene {
             for (int x = 0; x < ROD_WIDTH; x++) {
                 Color color;
                 if (x == 0 || x == ROD_WIDTH - 1) color = OUTLINE;
-                else if ((x + y) % 4 == 0)       color = c("3a3a44");
+                else if ((x + y) % 4 == 0)       color = Palette.IRON_DARK;
                 else if (x < 3)                  color = c("a8a8b8");
                 else                             color = c("6a6a78");
                 pixmap.setColor(color);

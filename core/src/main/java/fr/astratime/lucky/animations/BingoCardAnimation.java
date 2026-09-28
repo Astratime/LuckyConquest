@@ -13,6 +13,7 @@ import com.badlogic.gdx.scenes.scene2d.Group;
 import com.badlogic.gdx.scenes.scene2d.Touchable;
 import com.badlogic.gdx.scenes.scene2d.actions.Actions;
 import com.badlogic.gdx.utils.Disposable;
+import fr.astratime.lucky.assets.Palette;
 import fr.astratime.lucky.settings.VisualSettings;
 
 import java.util.ArrayList;
@@ -49,7 +50,6 @@ public class BingoCardAnimation extends Group implements Disposable {
     private static final float PILLAR_HEIGHT = 700f;
     private static final int   SPARKS        = 40;
 
-    private static final Color GOLD  = Color.valueOf("ffd54aff");
     private static final Color WHITE = new Color(1f, 1f, 0.9f, 1f);
 
     private final VisualSettings settings;
@@ -172,7 +172,7 @@ public class BingoCardAnimation extends Group implements Disposable {
             fadeInOut(appearAt - 0.1f, appearAt + APPEAR_TIME + 0.3f, 0.1f, 0.3f), parentAlpha);
         for (float[] s : sparks) {
             float life = s[4] / s[5];
-            batch.setColor(GOLD.r, GOLD.g, GOLD.b * 0.8f + 0.2f * life, life * parentAlpha);
+            batch.setColor(Palette.GOLD.r, Palette.GOLD.g, Palette.GOLD.b * 0.8f + 0.2f * life, life * parentAlpha);
             batch.draw(pixel, s[0] - s[6] / 2f, s[1] - s[6] / 2f, s[6], s[6]);
         }
         batch.setBlendFunction(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
@@ -193,7 +193,7 @@ public class BingoCardAnimation extends Group implements Disposable {
             float angle  = i * 360f / count + time * BEAM_SPIN * (i % 2 == 0 ? 1f : -0.6f);
             float length = BEAM_LENGTH * grow * (i % 2 == 0 ? 1f : 0.7f);
             float pulse  = 0.75f + 0.25f * MathUtils.sin(time * 9f + i);
-            Color color  = i % 2 == 0 ? GOLD : WHITE;
+            Color color  = i % 2 == 0 ? Palette.GOLD : WHITE;
             batch.setColor(color.r, color.g, color.b, alpha * pulse * 0.55f * parentAlpha);
             batch.draw(beam, centerX, centerY - BEAM_WIDTH / 2f, 0f, BEAM_WIDTH / 2f, length, BEAM_WIDTH, 1f, 1f, angle);
         }

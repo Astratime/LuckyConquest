@@ -24,6 +24,7 @@ import com.badlogic.gdx.utils.Align;
 import com.badlogic.gdx.utils.Disposable;
 import fr.astratime.lucky.assets.Fonts;
 import fr.astratime.lucky.assets.HudTextures;
+import fr.astratime.lucky.assets.Palette;
 import fr.astratime.lucky.controllers.GameController.ShopOffer;
 import fr.astratime.lucky.entities.Card;
 
@@ -44,11 +45,6 @@ import java.util.function.Predicate;
  */
 public class ShopOverlay implements Disposable {
 
-    private static final Color VEIL       = new Color(0f, 0f, 0f, 0.72f);
-    private static final Color GOLD       = Color.valueOf("ffd454ff");
-    private static final Color CREAM      = Color.valueOf("f0e0b0ff");
-    private static final Color RED        = Color.valueOf("ff5a5aff");
-    private static final Color TEXT_SHADE = Color.valueOf("1a0f0fff");
     private static final float FADE       = 0.2f;
     private static final float PADDING    = 44f;
     private static final float GAP        = 16f;
@@ -64,11 +60,11 @@ public class ShopOverlay implements Disposable {
     private final Tooltip     tooltip;
     private final float       cardWidth;
     private final float       cardHeight;
-    private final BitmapFont  titleFont   = Fonts.jersey(72, GOLD, 3f, TEXT_SHADE);
-    private final BitmapFont  textFont    = Fonts.jersey(30, CREAM, 2f, TEXT_SHADE);
-    private final BitmapFont  hintFont    = Fonts.jersey(22, CREAM, 2f, TEXT_SHADE);
-    private final BitmapFont  nameFont    = Fonts.jersey(30, Color.WHITE, 2f, TEXT_SHADE);
-    private final BitmapFont  priceFont   = Fonts.jersey(34, Color.WHITE, 2f, TEXT_SHADE);
+    private final BitmapFont  titleFont   = Fonts.jersey(72, Palette.TEXT_TITLE, 3f, Palette.TEXT_SHADE);
+    private final BitmapFont  textFont    = Fonts.jersey(30, Palette.TEXT_BODY, 2f, Palette.TEXT_SHADE);
+    private final BitmapFont  hintFont    = Fonts.jersey(22, Palette.TEXT_BODY, 2f, Palette.TEXT_SHADE);
+    private final BitmapFont  nameFont    = Fonts.jersey(30, Color.WHITE, 2f, Palette.TEXT_SHADE);
+    private final BitmapFont  priceFont   = Fonts.jersey(34, Color.WHITE, 2f, Palette.TEXT_SHADE);
 
     private final Group root  = new Group();
     private final Image veil;
@@ -86,7 +82,7 @@ public class ShopOverlay implements Disposable {
         this.cardWidth  = cardWidth * CARD_SCALE;
         this.cardHeight = cardHeight * CARD_SCALE;
         veil = new Image(new TextureRegionDrawable(new TextureRegion(hud.pixel)));
-        veil.setColor(VEIL);
+        veil.setColor(Palette.VEIL);
         veil.addListener(new ClickListener() {
             @Override
             public void clicked(InputEvent event, float x, float y) { hide(); }
@@ -163,7 +159,7 @@ public class ShopOverlay implements Disposable {
             });
             cell.add(image).size(cardWidth, cardHeight);
             cell.row();
-            cell.add(new Label(card.getName(), new Label.LabelStyle(nameFont, GOLD))).padTop(GAP / 2f);
+            cell.add(new Label(card.getName(), new Label.LabelStyle(nameFont, Palette.TEXT_TITLE))).padTop(GAP / 2f);
             cell.row();
 
             Table price = new Table();
@@ -179,14 +175,14 @@ public class ShopOverlay implements Disposable {
                 if (buy.test(offer)) {
                     wallet.setText(walletText(gains.getAsInt()));
                     status.setText("Acheté !");
-                    status.setColor(GOLD);
+                    status.setColor(Palette.TEXT_TITLE);
                     root.setTouchable(Touchable.disabled);
                     root.addAction(Actions.delay(CLOSE_AFTER_PURCHASE, Actions.run(this::hide)));
                 } else {
                     status.setText("Pas assez de gains");
-                    status.setColor(RED);
+                    status.setColor(Palette.TEXT_ALERT);
                     priceLabel.clearActions();
-                    priceLabel.setColor(RED);
+                    priceLabel.setColor(Palette.TEXT_ALERT);
                     priceLabel.addAction(Actions.sequence(Actions.delay(0.4f), Actions.color(Color.WHITE, 0.4f)));
                 }
             })).padTop(GAP / 2f);

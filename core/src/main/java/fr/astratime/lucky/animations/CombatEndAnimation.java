@@ -18,6 +18,7 @@ import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 import com.badlogic.gdx.utils.Disposable;
 import fr.astratime.lucky.assets.Fonts;
+import fr.astratime.lucky.assets.Palette;
 import fr.astratime.lucky.views.PlayArea;
 
 import java.util.ArrayList;
@@ -58,7 +59,7 @@ public class CombatEndAnimation extends Group implements Disposable {
 
     private final Texture     chipsTexture = new Texture(Gdx.files.internal("jackpot/chips.png"));
     private final Texture     bandTexture  = new Texture(Gdx.files.internal("jackpot/banner_band.png"));
-    private final BitmapFont  bigFont      = Fonts.jersey(170, Color.WHITE, 7f, Color.valueOf("12080aff"));
+    private final BitmapFont  bigFont      = Fonts.jersey(170, Color.WHITE, 7f, Palette.TEXT_SHADE);
     private final TextureRegion[] chips;
     private final TextureRegion   cardBack;
 

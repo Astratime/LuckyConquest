@@ -14,6 +14,7 @@ import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 import com.badlogic.gdx.utils.Align;
 import com.badlogic.gdx.utils.Disposable;
 import fr.astratime.lucky.assets.Fonts;
+import fr.astratime.lucky.assets.Palette;
 import fr.astratime.lucky.assets.Textures;
 
 /**
@@ -38,9 +39,9 @@ public class TurnBanner extends Group implements Disposable {
     /** Camp dont c'est le tour. */
     public enum Side { PLAYER, ENEMY }
 
-    private final Texture    playerBand = Textures.bannerBand(Color.valueOf("1d3a6eff"), Color.valueOf("ffd54aff"));
-    private final Texture    enemyBand  = Textures.bannerBand(Color.valueOf("7a0f12ff"), Color.valueOf("ff8a1fff"));
-    private final BitmapFont font       = Fonts.jersey(84, Color.WHITE, 5f, Color.valueOf("12080aff"));
+    private final Texture    playerBand = Textures.bannerBand(Color.valueOf("1d3a6eff"), Palette.GOLD);
+    private final Texture    enemyBand  = Textures.bannerBand(Color.valueOf("7a0f12ff"), Palette.ORANGE);
+    private final BitmapFont font       = Fonts.jersey(84, Color.WHITE, 5f, Palette.TEXT_SHADE);
 
     private final Image band;
     private final Label title;
@@ -69,7 +70,7 @@ public class TurnBanner extends Group implements Disposable {
         boolean player = side == Side.PLAYER;
         ((TextureRegionDrawable) band.getDrawable()).setRegion(new TextureRegion(player ? playerBand : enemyBand));
         title.setText(player ? "À TOI DE JOUER !" : "TOUR ENNEMI");
-        title.setColor(player ? Color.valueOf("ffd54aff") : Color.valueOf("ffb0a0ff"));
+        title.setColor(player ? Palette.GOLD : Color.valueOf("ffb0a0ff"));
         title.pack();
 
         band.setBounds(centerX - width / 2f, centerY - BAND_HEIGHT / 2f, width, BAND_HEIGHT);

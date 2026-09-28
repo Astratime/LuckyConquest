@@ -10,6 +10,7 @@ import com.badlogic.gdx.scenes.scene2d.Group;
 import com.badlogic.gdx.scenes.scene2d.actions.Actions;
 import com.badlogic.gdx.scenes.scene2d.actions.SequenceAction;
 import com.badlogic.gdx.scenes.scene2d.ui.Image;
+import fr.astratime.lucky.assets.Palette;
 
 /**
  * Bingo du Lingot : le coffre-fort. Un lourd coffre tombe du ciel et s'écrase
@@ -117,7 +118,7 @@ public class SafeScene extends BingoScene {
         pixmap.drawRectangle(DOOR_X - 1, DOOR_Y - 1, DOOR_WIDTH + 2, DOOR_HEIGHT + 2);
         // Charnières.
         for (int y : new int[] {DOOR_Y + 5, DOOR_Y + DOOR_HEIGHT - 10}) {
-            fillOutlined(pixmap, DOOR_X - 4, y, 4, 6, c("8a97a8"));
+            fillOutlined(pixmap, DOOR_X - 4, y, 4, 6, Palette.STEEL);
         }
         // Pieds.
         fillOutlined(pixmap, 3, BODY_HEIGHT - 4, 8, 4, dark);
@@ -135,7 +136,7 @@ public class SafeScene extends BingoScene {
             for (int row = 0; row < 3; row++) {
                 for (int i = 0; i < 4 - row; i++) {
                     int x = 3 + row * 4 + i * 9, y = base - 4 - row * 4;
-                    fillOutlined(pixmap, x, y, 9, 5, c("ffd23c"));
+                    fillOutlined(pixmap, x, y, 9, 5, Palette.GOLD);
                     hLine(pixmap, x + 1, x + 7, y + 1, c("fff0a0"));
                 }
             }
@@ -159,7 +160,7 @@ public class SafeScene extends BingoScene {
         int hx = DOOR_WIDTH - 9, hy = DOOR_HEIGHT / 2;
         pixmap.setColor(OUTLINE);
         pixmap.fillRectangle(hx - 1, hy - 7, 4, 15);
-        pixmap.setColor(c("c8d2dc"));
+        pixmap.setColor(Palette.STEEL_LIGHT);
         pixmap.fillRectangle(hx, hy - 6, 2, 13);
         return pixmap;
     }
@@ -168,8 +169,8 @@ public class SafeScene extends BingoScene {
     private static Pixmap dial() {
         Pixmap pixmap = pixmap(DIAL_SIZE, DIAL_SIZE);
         int center = DIAL_SIZE / 2;
-        fillOutlinedCircle(pixmap, center, center, center - 1, c("c8d2dc"));
-        pixmap.setColor(c("8a97a8"));
+        fillOutlinedCircle(pixmap, center, center, center - 1, Palette.STEEL_LIGHT);
+        pixmap.setColor(Palette.STEEL);
         pixmap.fillCircle(center, center, center - 4);
         pixmap.setColor(c("2e3d44"));
         for (int i = 0; i < 8; i++) {
@@ -177,7 +178,7 @@ public class SafeScene extends BingoScene {
             pixmap.drawPixel(center + Math.round(MathUtils.cosDeg(angle) * (center - 3)),
                 center + Math.round(MathUtils.sinDeg(angle) * (center - 3)));
         }
-        pixmap.setColor(c("e0303c"));
+        pixmap.setColor(Palette.RED);
         pixmap.fillRectangle(center - 1, 1, 2, 4);
         pixmap.setColor(OUTLINE);
         pixmap.fillCircle(center, center, 2);

@@ -6,6 +6,7 @@ import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.Interpolation;
 import com.badlogic.gdx.scenes.scene2d.actions.Actions;
 import com.badlogic.gdx.scenes.scene2d.ui.Image;
+import fr.astratime.lucky.assets.Palette;
 
 /**
  * Bingo du Double Bar : une presse hydraulique. Deux lourdes mâchoires d'acier,
@@ -82,7 +83,7 @@ public class HydraulicPressScene extends BingoScene {
     /** @return une mâchoire d'acier riveté, bande de danger jaune et noire sur sa face de frappe (en bas). */
     private static Pixmap jaw() {
         Pixmap pixmap = pixmap(JAW_WIDTH, JAW_HEIGHT);
-        Color steel = c("8a97a8"), light = c("c8d2dc"), dark = c("4a5566");
+        Color steel = Palette.STEEL, light = Palette.STEEL_LIGHT, dark = Palette.STEEL_DARK;
         fillOutlined(pixmap, 0, 0, JAW_WIDTH, JAW_HEIGHT, steel);
         hLine(pixmap, 1, JAW_WIDTH - 2, 1, light);
         hLine(pixmap, 1, JAW_WIDTH - 2, JAW_HEIGHT - 6, dark);
@@ -96,7 +97,7 @@ public class HydraulicPressScene extends BingoScene {
         // Bande de danger, rayures en biais.
         for (int y = JAW_HEIGHT - 5; y < JAW_HEIGHT - 1; y++) {
             for (int x = 1; x < JAW_WIDTH - 1; x++) {
-                pixmap.setColor(((x + y) / 3) % 2 == 0 ? c("ffd23c") : c("2a2a33"));
+                pixmap.setColor(((x + y) / 3) % 2 == 0 ? Palette.GOLD : c("2a2a33"));
                 pixmap.drawPixel(x, y);
             }
         }
@@ -106,10 +107,10 @@ public class HydraulicPressScene extends BingoScene {
     /** @return un tronçon de vérin chromé (étiré en hauteur). */
     private static Pixmap rod() {
         Pixmap pixmap = pixmap(ROD_WIDTH, 1);
-        String[] columns = {"1a0f0f", "5a6676", "c8d2dc", "ffffff", "c8d2dc", "a8b4c2",
-                            "8a97a8", "8a97a8", "6a7684", "5a6676", "4a5566", "1a0f0f"};
+        Color[] columns = {OUTLINE, c("5a6676"), Palette.STEEL_LIGHT, Color.WHITE, Palette.STEEL_LIGHT, c("a8b4c2"),
+                           Palette.STEEL, Palette.STEEL, c("6a7684"), c("5a6676"), Palette.STEEL_DARK, OUTLINE};
         for (int x = 0; x < ROD_WIDTH; x++) {
-            pixmap.setColor(c(columns[x]));
+            pixmap.setColor(columns[x]);
             pixmap.drawPixel(x, 0);
         }
         return pixmap;

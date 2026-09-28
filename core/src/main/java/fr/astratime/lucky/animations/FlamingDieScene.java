@@ -9,6 +9,7 @@ import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.scenes.scene2d.actions.Actions;
 import com.badlogic.gdx.scenes.scene2d.ui.Image;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
+import fr.astratime.lucky.assets.Palette;
 
 /**
  * Bingo du Sept : un gros dé roule sur la table depuis la gauche en
@@ -118,7 +119,7 @@ public class FlamingDieScene extends BingoScene {
     /** @return une face du dé : {@code value} points (1 à 6), ou un grand « 7 » rouge pour 0. */
     private static Pixmap face(int value) {
         Pixmap pixmap = pixmap(SIZE, SIZE);
-        Color body = c("f5f0e6"), shade = c("cfc6b4"), light = c("ffffff");
+        Color body = c("f5f0e6"), shade = c("cfc6b4"), light = Color.WHITE;
         fillOutlined(pixmap, 0, 0, SIZE, SIZE, body);
         hLine(pixmap, 2, SIZE - 3, 1, light);
         hLine(pixmap, 1, SIZE - 2, SIZE - 2, shade);
@@ -155,7 +156,7 @@ public class FlamingDieScene extends BingoScene {
     /** Dessine un grand « 7 » rouge cerné de sombre au milieu de la face. */
     private static void drawSeven(Pixmap pixmap) {
         for (int pass = 0; pass < 2; pass++) {
-            pixmap.setColor(pass == 0 ? OUTLINE : c("e0303c"));
+            pixmap.setColor(pass == 0 ? OUTLINE : Palette.RED);
             int grow = pass == 0 ? 1 : 0;
             // Barre du haut.
             pixmap.fillRectangle(6 - grow, 5 - grow, 14 + grow * 2, 4 + grow * 2);

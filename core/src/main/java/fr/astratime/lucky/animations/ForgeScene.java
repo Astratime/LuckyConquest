@@ -7,6 +7,7 @@ import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.scenes.scene2d.actions.Actions;
 import com.badlogic.gdx.scenes.scene2d.actions.SequenceAction;
 import com.badlogic.gdx.scenes.scene2d.ui.Image;
+import fr.astratime.lucky.assets.Palette;
 
 /**
  * Bingo du Bar : la forge. Une barre chauffée au rouge est posée sur une
@@ -99,7 +100,7 @@ public class ForgeScene extends BingoScene {
     /** @return l'enclume : table plate, bigorne pointue à gauche, pied évasé. */
     private static Pixmap anvil() {
         Pixmap pixmap = pixmap(ANVIL_WIDTH, ANVIL_HEIGHT);
-        Color iron = c("4a4a58"), light = c("7a7a8c"), dark = c("2a2a33");
+        Color iron = Palette.IRON, light = c("7a7a8c"), dark = c("2a2a33");
         pixmap.setColor(OUTLINE);
         // Table et bigorne (pointe vers la gauche).
         pixmap.fillRectangle(10, 0, ANVIL_WIDTH - 12, 8);
@@ -122,8 +123,8 @@ public class ForgeScene extends BingoScene {
     /** @return la barre chauffée au rouge : cœur jaune, bords orange et rouge. */
     private static Pixmap hotBar() {
         Pixmap pixmap = pixmap(BAR_WIDTH, BAR_HEIGHT);
-        String[] rows = {"1a0f0f", "ff5a1f", "ffb347", "fff2c0", "ffb347", "d42a1a", "1a0f0f"};
-        for (int y = 0; y < BAR_HEIGHT; y++) hLine(pixmap, 0, BAR_WIDTH - 1, y, c(rows[y]));
+        Color[] rows = {OUTLINE, c("ff5a1f"), c("ffb347"), Palette.GOLD_PALE, c("ffb347"), c("d42a1a"), OUTLINE};
+        for (int y = 0; y < BAR_HEIGHT; y++) hLine(pixmap, 0, BAR_WIDTH - 1, y, rows[y]);
         pixmap.setColor(OUTLINE);
         pixmap.drawLine(0, 0, 0, BAR_HEIGHT - 1);
         pixmap.drawLine(BAR_WIDTH - 1, 0, BAR_WIDTH - 1, BAR_HEIGHT - 1);
@@ -133,12 +134,12 @@ public class ForgeScene extends BingoScene {
     /** @return le marteau de forge, tête en haut : masse de fer, long manche en bois. */
     private static Pixmap hammer() {
         Pixmap pixmap = pixmap(HAMMER_WIDTH, HAMMER_HEIGHT);
-        fillOutlined(pixmap, 0, 0, HAMMER_WIDTH, HAMMER_HEAD, c("4a4a58"));
+        fillOutlined(pixmap, 0, 0, HAMMER_WIDTH, HAMMER_HEAD, Palette.IRON);
         hLine(pixmap, 1, HAMMER_WIDTH - 2, 1, c("8a8a9c"));
         hLine(pixmap, 1, HAMMER_WIDTH - 2, HAMMER_HEAD - 2, c("2a2a33"));
         int handle = 4, left = (HAMMER_WIDTH - handle) / 2;
-        fillOutlined(pixmap, left, HAMMER_HEAD - 1, handle, HAMMER_HEIGHT - HAMMER_HEAD + 1, c("8a5a2c"));
-        pixmap.setColor(c("b07a3c"));
+        fillOutlined(pixmap, left, HAMMER_HEAD - 1, handle, HAMMER_HEIGHT - HAMMER_HEAD + 1, Palette.WOOD);
+        pixmap.setColor(Palette.WOOD_LIGHT);
         pixmap.drawLine(left + 1, HAMMER_HEAD, left + 1, HAMMER_HEIGHT - 2);
         return pixmap;
     }

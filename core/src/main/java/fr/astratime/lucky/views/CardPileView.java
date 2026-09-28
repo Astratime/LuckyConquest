@@ -8,6 +8,7 @@ import com.badlogic.gdx.scenes.scene2d.Group;
 import com.badlogic.gdx.scenes.scene2d.ui.Image;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
+import fr.astratime.lucky.assets.Palette;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -32,8 +33,8 @@ public class CardPileView extends Group {
     private final List<Image> stack = new ArrayList<>();
     private final Label       label;
     /** Couleurs du libellé : nom en crème, nombre de cartes en doré (comme les textes du panneau latéral). */
-    private static final String NAME_COLOR  = "f0e0b0";
-    private static final String COUNT_COLOR = "ffd454";
+    private static final String NAME_COLOR  = Palette.TEXT_BODY.toString();
+    private static final String COUNT_COLOR = Palette.TEXT_TITLE.toString();
     private       int         count;
 
     /**

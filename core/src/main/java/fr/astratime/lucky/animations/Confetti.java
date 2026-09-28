@@ -6,6 +6,7 @@ import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.Touchable;
+import fr.astratime.lucky.assets.Palette;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -26,10 +27,7 @@ public class Confetti extends Actor {
     private static final float FLUTTER        = 40f;    // balancement latéral en tombant
     private static final float FADE_TIME      = 0.5f;
 
-    private static final Color[] COLORS = {
-        Color.valueOf("ffd54aff"), Color.valueOf("ff4a5aff"), Color.valueOf("4affa0ff"),
-        Color.valueOf("4ac8ffff"), Color.valueOf("c77dffff"), Color.WHITE,
-    };
+    private static final Color[] COLORS = Palette.FESTIVE;
 
     private static final class Piece {
         float x, y, vx, vy, rotation, spin, width, height, flip, flipSpeed, phase, life;

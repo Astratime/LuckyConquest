@@ -10,6 +10,7 @@ import com.badlogic.gdx.scenes.scene2d.Group;
 import com.badlogic.gdx.scenes.scene2d.actions.Actions;
 import com.badlogic.gdx.scenes.scene2d.actions.SequenceAction;
 import com.badlogic.gdx.scenes.scene2d.ui.Image;
+import fr.astratime.lucky.assets.Palette;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -179,7 +180,7 @@ public class CherryTreeScene extends BingoScene {
         pixmap.fillRectangle(1, 2, 5, 3);
         pixmap.setColor(c("ffe3ec"));
         pixmap.drawPixel(2, 1);
-        pixmap.setColor(c("ffd23c"));
+        pixmap.setColor(Palette.GOLD);
         pixmap.drawPixel(3, 3);
         return pixmap;
     }

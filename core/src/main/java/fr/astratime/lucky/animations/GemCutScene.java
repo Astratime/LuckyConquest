@@ -11,6 +11,7 @@ import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.actions.Actions;
 import com.badlogic.gdx.scenes.scene2d.ui.Image;
+import fr.astratime.lucky.assets.Palette;
 
 /**
  * Bingo du Diamant : la taille. Une pierre brute tourne lentement sur
@@ -182,17 +183,17 @@ public class GemCutScene extends BingoScene {
     private static Pixmap chisel() {
         Pixmap pixmap = pixmap(CHISEL_WIDTH, CHISEL_HEIGHT);
         int bladeFrom = 22;
-        fillOutlined(pixmap, 1, 0, CHISEL_WIDTH - 2, bladeFrom + 1, c("8a5a2c"));
-        pixmap.setColor(c("b07a3c"));
+        fillOutlined(pixmap, 1, 0, CHISEL_WIDTH - 2, bladeFrom + 1, Palette.WOOD);
+        pixmap.setColor(Palette.WOOD_LIGHT);
         pixmap.drawLine(2, 1, 2, bladeFrom - 1);
-        hLine(pixmap, 1, CHISEL_WIDTH - 2, 4, c("3a3a44"));
+        hLine(pixmap, 1, CHISEL_WIDTH - 2, 4, Palette.IRON_DARK);
         for (int y = bladeFrom; y < CHISEL_HEIGHT; y++) {
             int half = y > CHISEL_HEIGHT - 6 ? Math.max(1, (CHISEL_HEIGHT - y) / 2) : 3;
             int center = CHISEL_WIDTH / 2;
             hLine(pixmap, center - half, center + half - 1, y, OUTLINE);
             if (half > 1) {
                 hLine(pixmap, center - half + 1, center - 1, y, c("e0e8f0"));
-                hLine(pixmap, center, center + half - 2, y, c("8a97a8"));
+                hLine(pixmap, center, center + half - 2, y, Palette.STEEL);
             }
         }
         return pixmap;

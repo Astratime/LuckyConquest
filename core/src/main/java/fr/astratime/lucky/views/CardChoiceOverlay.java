@@ -22,6 +22,7 @@ import com.badlogic.gdx.utils.Align;
 import com.badlogic.gdx.utils.Disposable;
 import fr.astratime.lucky.assets.Fonts;
 import fr.astratime.lucky.assets.HudTextures;
+import fr.astratime.lucky.assets.Palette;
 import fr.astratime.lucky.entities.Symbol;
 
 import java.util.ArrayList;
@@ -38,11 +39,6 @@ import java.util.function.IntConsumer;
  */
 public class CardChoiceOverlay implements Disposable {
 
-    private static final Color VEIL        = new Color(0f, 0f, 0f, 0.72f);
-    private static final Color GOLD        = Color.valueOf("ffd454ff");
-    private static final Color CREAM       = Color.valueOf("f0e0b0ff");
-    private static final Color RED         = Color.valueOf("ff5a5aff");
-    private static final Color TEXT_SHADE  = Color.valueOf("1a0f0fff");
     private static final float FADE        = 0.2f;
     private static final float PADDING     = 48f;
     private static final float TITLE_GAP   = 10f;
@@ -68,9 +64,9 @@ public class CardChoiceOverlay implements Disposable {
     private final Texture rouletteFace = new Texture(Gdx.files.internal("cards/special/russian_roulette.png"));
     private final Texture cursedFace   = new Texture(Gdx.files.internal("cards/special/cursed_joker.png"));
     private final HudTextures hud;
-    private final BitmapFont titleFont    = Fonts.jersey(72, GOLD, 3f, TEXT_SHADE);
-    private final BitmapFont subtitleFont = Fonts.jersey(34, CREAM, 2f, TEXT_SHADE);
-    private final BitmapFont resultFont   = Fonts.jersey(56, Color.WHITE, 3f, TEXT_SHADE);
+    private final BitmapFont titleFont    = Fonts.jersey(72, Palette.TEXT_TITLE, 3f, Palette.TEXT_SHADE);
+    private final BitmapFont subtitleFont = Fonts.jersey(34, Palette.TEXT_BODY, 2f, Palette.TEXT_SHADE);
+    private final BitmapFont resultFont   = Fonts.jersey(56, Color.WHITE, 3f, Palette.TEXT_SHADE);
 
     private final Group root  = new Group();
     private final Image veil;
@@ -89,7 +85,7 @@ public class CardChoiceOverlay implements Disposable {
         this.cardWidth  = cardWidth * CARD_SCALE;
         this.cardHeight = cardHeight * CARD_SCALE;
         veil = new Image(new TextureRegionDrawable(new TextureRegion(hud.pixel)));
-        veil.setColor(VEIL);
+        veil.setColor(Palette.VEIL);
         root.addActor(veil);
         root.addActor(panel);
         root.setVisible(false);
@@ -127,7 +123,7 @@ public class CardChoiceOverlay implements Disposable {
                     if (pointer != -1) return;
                     cell.clearActions();
                     cell.addAction(Actions.scaleTo(HOVER_SCALE, HOVER_SCALE, 0.1f, Interpolation.pow2Out));
-                    cell.setColor(GOLD);
+                    cell.setColor(Palette.TEXT_TITLE);
                 }
 
                 @Override
@@ -201,7 +197,7 @@ public class CardChoiceOverlay implements Disposable {
                     card.addAction(Actions.delay(FLIP_TIME * 2f, Actions.run(() -> {
                         result.setText(lost ? "JOKER MAUDIT !  -" + penaltyPercent + "% DE GAINS"
                             : "PAN ! PISTOLET CHARGE  x" + multiplier);
-                        result.setColor(lost ? RED : GOLD);
+                        result.setColor(lost ? Palette.TEXT_ALERT : Palette.TEXT_TITLE);
                         result.setOrigin(Align.center);
                         result.setFontScale(1f);
                     })));

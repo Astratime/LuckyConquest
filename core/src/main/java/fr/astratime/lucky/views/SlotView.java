@@ -14,6 +14,7 @@ import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.utils.Disposable;
 import fr.astratime.lucky.animations.EffectPopupAnimator;
 import fr.astratime.lucky.animations.ReelActor;
+import fr.astratime.lucky.assets.Palette;
 import fr.astratime.lucky.entities.SlotMachine;
 import fr.astratime.lucky.entities.Symbol;
 import fr.astratime.lucky.entities.SymbolOutcome;
@@ -51,9 +52,9 @@ public class SlotView implements Disposable {
     private static final float FIRST_STOP    = 0.7f;
     private static final float STOP_STEP     = 0.35f;  // entre deux rouleaux
     private static final float SUSPENSE_TIME = 1.1f;   // arrêt retardé du dernier rouleau
-    private static final Color SUSPENSE_GLOW = Color.valueOf("ffd54aff");
+    private static final Color SUSPENSE_GLOW = Palette.GOLD;
     // Transformation d'un Joker : il brille, puis son rouleau repart brièvement vers le symbole remplacé.
-    private static final Color JOKER_GLOW       = Color.valueOf("c77dffff");
+    private static final Color JOKER_GLOW       = Palette.VIOLET;
     private static final float JOKER_SHOW_TIME  = 0.45f;  // Joker affiché avant de se transformer
     private static final float JOKER_SPIN_TIME  = 0.25f;
     private static final float JOKER_STEP       = 0.15f;  // entre deux Jokers

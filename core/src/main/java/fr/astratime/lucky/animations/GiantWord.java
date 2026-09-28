@@ -11,6 +11,7 @@ import com.badlogic.gdx.scenes.scene2d.ui.Container;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.utils.Disposable;
 import fr.astratime.lucky.assets.Fonts;
+import fr.astratime.lucky.assets.Palette;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -29,7 +30,7 @@ public class GiantWord extends Group implements Disposable {
     private static final float LETTER_STEP = 0.07f;  // entre l'apparition de deux lettres
     private static final float FADE_TIME   = 0.45f;
 
-    private final BitmapFont             font    = Fonts.jersey(230, Color.WHITE, 9f, Color.valueOf("12080aff"));
+    private final BitmapFont             font    = Fonts.jersey(230, Color.WHITE, 9f, Palette.TEXT_SHADE);
     private final List<Container<Label>> letters = new ArrayList<>();
 
     public GiantWord() {

@@ -26,6 +26,7 @@ import com.badlogic.gdx.utils.viewport.ScreenViewport;
 import fr.astratime.lucky.LuckyGame;
 import fr.astratime.lucky.assets.Fonts;
 import fr.astratime.lucky.assets.HudTextures;
+import fr.astratime.lucky.assets.Palette;
 import fr.astratime.lucky.assets.VolumeSound;
 import fr.astratime.lucky.settings.AudioSettings;
 import fr.astratime.lucky.settings.VisualSettings;
@@ -106,11 +107,11 @@ public class MenuScreen extends ScreenAdapter {
 
         chipTexture = new Texture(Gdx.files.internal(CHIP_PATH));
         clickSound  = new VolumeSound(Gdx.audio.newSound(Gdx.files.internal(CLICK_SOUND)), audio);
-        Color shadow = Color.valueOf("12080aff");
-        titleFont   = Fonts.jersey(128, Color.valueOf("ffd54aff"), 7f, shadow);
+        Color shadow = Palette.TEXT_SHADE;
+        titleFont   = Fonts.jersey(128, Palette.GOLD, 7f, shadow);
         shineFont   = Fonts.jersey(128, Color.WHITE, 7f, shadow);
         optionFont  = Fonts.jersey(58, Color.WHITE, 4f, shadow);
-        captionFont = Fonts.jersey(40, Color.valueOf("f0e0b0ff"), 3f, shadow);
+        captionFont = Fonts.jersey(40, Palette.CREAM, 3f, shadow);
 
         title   = new ShiningTitle("LUCKY CONQUEST", titleFont, shineFont);
         panel   = new Image(hud.panelDrawable());

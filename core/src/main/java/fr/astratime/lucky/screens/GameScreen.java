@@ -44,6 +44,7 @@ import fr.astratime.lucky.assets.CardTextures;
 import fr.astratime.lucky.assets.Fonts;
 import fr.astratime.lucky.assets.GameSounds;
 import fr.astratime.lucky.assets.HudTextures;
+import fr.astratime.lucky.assets.Palette;
 import fr.astratime.lucky.assets.TableTextures;
 import fr.astratime.lucky.controllers.GameController;
 import fr.astratime.lucky.controllers.PreparationResolver;
@@ -126,7 +127,7 @@ public class GameScreen extends ScreenAdapter {
     private static final int   BIG_HIT               = 60;
     private static final float BIG_HIT_STOP          = 0.09f;
     /** Paire : clignotement doré des deux rouleaux et confettis lâchés par chacun. */
-    private static final Color PAIR_GLOW             = Color.valueOf("ffd54aff");
+    private static final Color PAIR_GLOW             = Palette.GOLD;
     private static final float PAIR_GLOW_DURATION    = 1.6f;
     private static final int   PAIR_CONFETTI         = 45;
     /** Temps laissé au texte de la riposte, après les autres textes du tirage, avant d'annoncer la fin du combat. */
@@ -169,8 +170,8 @@ public class GameScreen extends ScreenAdapter {
     private final Stage               stage;
     private final BitmapFont          font;
     /** Libellés du deck et de la défausse : police du jeu, à balises de couleur (nom crème, nombre doré). */
-    private final BitmapFont          pileFont = markup(Fonts.jersey(20, Color.WHITE, 2f, Color.valueOf("1a0f0fff")));
-    private final BitmapFont          shopFont = Fonts.jersey(30, Color.valueOf("ffd454ff"), 2f, Color.valueOf("1a0f0fff"));
+    private final BitmapFont          pileFont = markup(Fonts.jersey(20, Color.WHITE, 2f, Palette.TEXT_SHADE));
+    private final BitmapFont          shopFont = Fonts.jersey(30, Palette.GOLD, 2f, Palette.TEXT_SHADE);
     private final Texture             cardBackTexture;
     private final CardTextures        cardTextures  = new CardTextures();
     private final CasinoButtons       buttons       = new CasinoButtons();
