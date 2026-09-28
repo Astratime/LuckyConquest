@@ -22,16 +22,18 @@ import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 import com.badlogic.gdx.utils.ScreenUtils;
-import com.badlogic.gdx.utils.viewport.ScreenViewport;
 import fr.astratime.lucky.LuckyGame;
 import fr.astratime.lucky.assets.Fonts;
 import fr.astratime.lucky.assets.HudTextures;
 import fr.astratime.lucky.assets.Palette;
 import fr.astratime.lucky.assets.VolumeSound;
 import fr.astratime.lucky.settings.AudioSettings;
+import fr.astratime.lucky.settings.DisplaySettings;
+import fr.astratime.lucky.settings.ScreenMode;
 import fr.astratime.lucky.settings.VisualSettings;
 import fr.astratime.lucky.views.MenuDecor;
 import fr.astratime.lucky.views.MenuOption;
+import fr.astratime.lucky.views.MinimumScreenViewport;
 import fr.astratime.lucky.views.ShiningTitle;
 
 import java.util.ArrayList;
@@ -45,7 +47,8 @@ import java.util.function.Supplier;
  * un reflet, flotte au-dessus d'un panneau d'options.
  *
  * Page principale : « Jouer » (lance un combat, {@link GameScreen}), « Options »
- * et « Quitter ». Page des options : effets visuels (normaux ou réduits,
+ * et « Quitter ». Page des options : affichage (fenêtre agrandie ou plein
+ * écran, appliqué tout de suite), effets visuels (normaux ou réduits,
  * réglage partagé avec l'écran de jeu), volume de la musique, volume des sons,
  * et « Retour ».
  *
@@ -60,10 +63,13 @@ public class MenuScreen extends ScreenAdapter {
     /** Bruitage du clic (CC0, Kenney.nl — voir assets/sounds/CREDITS.txt). */
     private static final String CLICK_SOUND = "sounds/button-click.ogg";
 
+    /** Taille minimale du menu : dans une fenêtre plus petite, il est réduit (voir {@link MinimumScreenViewport}). */
+    private static final float MIN_WIDTH      = 1280f;
+    private static final float MIN_HEIGHT     = 1080f;
     private static final float TITLE_TOP      = 230f;   // du haut de l'écran au centre du titre
     private static final float TITLE_FLOAT    = 8f;     // amplitude du flottement du titre
     private static final float PANEL_CENTER_Y = 0.46f;  // fraction de la hauteur de l'écran
-    private static final float OPTION_WIDTH   = 460f;
+    private static final float OPTION_WIDTH   = 580f;   // assez pour « Affichage : plein écran »
     private static final float OPTION_HEIGHT  = 76f;
     private static final float OPTION_GAP     = 14f;
     private static final float PANEL_SIDE     = 100f;   // de chaque côté des options : place des jetons
@@ -81,6 +87,7 @@ public class MenuScreen extends ScreenAdapter {
     private final Stage          stage;
     private final VisualSettings settings = new VisualSettings();
     private final AudioSettings  audio    = new AudioSettings();
+    private final DisplaySettings display = new DisplaySettings();
     private final HudTextures    hud      = new HudTextures();
     private final Texture        chipTexture;
     private final BitmapFont     titleFont;
@@ -103,7 +110,7 @@ public class MenuScreen extends ScreenAdapter {
     /** @param luckyGame instance de jeu : SpriteBatch partagé et changement d'écran */
     public MenuScreen(LuckyGame luckyGame) {
         this.luckyGame = luckyGame;
-        this.stage     = new Stage(new ScreenViewport(), luckyGame.getBatch());
+        this.stage     = new Stage(new MinimumScreenViewport(MIN_WIDTH, MIN_HEIGHT), luckyGame.getBatch());
 
         chipTexture = new Texture(Gdx.files.internal(CHIP_PATH));
         clickSound  = new VolumeSound(Gdx.audio.newSound(Gdx.files.internal(CLICK_SOUND)), audio);
@@ -144,9 +151,10 @@ public class MenuScreen extends ScreenAdapter {
             new Entry(() -> "Quitter", this::onQuit, null)));
     }
 
-    /** Page des options : effets visuels, musique, sons, Retour. */
+    /** Page des options : affichage, effets visuels, musique, sons, Retour. */
     private void showOptionsPage() {
         setEntries(true, List.of(
+            new Entry(this::screenModeLabel, this::onToggleScreenMode, direction -> onToggleScreenMode()),
             new Entry(this::effectsLabel, this::onToggleEffects, direction -> onToggleEffects()),
             new Entry(() -> "Musique : " + AudioSettings.percent(audio.getMusicVolume()) + " %",
                 () -> cycle(audio::stepMusicVolume, audio.getMusicVolume()), audio::stepMusicVolume),
@@ -256,6 +264,17 @@ public class MenuScreen extends ScreenAdapter {
     /** Bascule entre effets visuels normaux et réduits (réglage mémorisé, partagé avec l'écran de jeu). */
     private void onToggleEffects() {
         settings.setReducedEffects(!settings.isReducedEffects());
+    }
+
+    /** Bascule entre fenêtre agrandie et plein écran, tout de suite (réglage mémorisé). */
+    private void onToggleScreenMode() {
+        ScreenMode mode = display.getScreenMode().toggled();
+        display.setScreenMode(mode);
+        luckyGame.applyScreenMode(mode);
+    }
+
+    private String screenModeLabel() {
+        return "Affichage : " + display.getScreenMode().getLabel();
     }
 
     private String effectsLabel() {

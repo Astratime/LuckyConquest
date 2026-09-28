@@ -25,7 +25,6 @@ import com.badlogic.gdx.math.Interpolation;
 import com.badlogic.gdx.scenes.scene2d.actions.Actions;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.utils.ScreenUtils;
-import com.badlogic.gdx.utils.viewport.ScreenViewport;
 import fr.astratime.lucky.LuckyGame;
 import fr.astratime.lucky.animations.BingoCardAnimation;
 import fr.astratime.lucky.animations.CardClickParticles;
@@ -80,6 +79,7 @@ import fr.astratime.lucky.views.CardImage;
 import fr.astratime.lucky.views.CasinoButtons;
 import fr.astratime.lucky.views.CombatHud;
 import fr.astratime.lucky.views.HandView;
+import fr.astratime.lucky.views.MinimumScreenViewport;
 import fr.astratime.lucky.views.HealthBarView;
 import fr.astratime.lucky.views.PileContentOverlay;
 import fr.astratime.lucky.views.PilesView;
@@ -118,6 +118,9 @@ public class GameScreen extends ScreenAdapter {
     // Constantes d'affichage
     // -------------------------------------------------------------------------
 
+    /** Taille minimale de l'écran de jeu : dans une fenêtre plus petite, il est réduit (voir {@link MinimumScreenViewport}). */
+    private static final float  MIN_WIDTH      = 1600f;
+    private static final float  MIN_HEIGHT     = 900f;
     private static final float  CARD_WIDTH     = 95f;
     private static final float  CARD_HEIGHT    = 135f;
     private static final String CARD_BACK_PATH = "cards/light/BACK.png";
@@ -248,7 +251,7 @@ public class GameScreen extends ScreenAdapter {
     public GameScreen(LuckyGame luckyGame) {
         this.luckyGame = luckyGame;
         // Le SpriteBatch est partagé avec LuckyGame et ne doit PAS être disposé ici.
-        this.stage = new Stage(new ScreenViewport(), luckyGame.getBatch());
+        this.stage = new Stage(new MinimumScreenViewport(MIN_WIDTH, MIN_HEIGHT), luckyGame.getBatch());
 
         font                = new BitmapFont();
         cardBackTexture     = new Texture(Gdx.files.internal(CARD_BACK_PATH));
