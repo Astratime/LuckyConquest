@@ -24,6 +24,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 /**
@@ -47,6 +48,16 @@ public class HandView {
         void onCardClicked(Card card, CardImage image, Vector2 cardCenter, Vector2 clickPos);
     }
 
+    /** Appelé quand le joueur clique sur une carte qui ne peut pas être jouée (voir {@link #setBlockedReason}). */
+    public interface CardRefusedListener {
+        /**
+         * @param card       carte refusée, restée dans la main
+         * @param reason     pourquoi elle ne peut pas être jouée
+         * @param cardCenter centre de la carte (coordonnées du Stage)
+         */
+        void onCardRefused(Card card, String reason, Vector2 cardCenter);
+    }
+
     private static final float MOVE_DURATION = 0.25f;
     private static final float TOOLTIP_GAP   = 5f;
     // Carte jouée : elle grossit, puis se tasse en s'effaçant.
@@ -54,8 +65,19 @@ public class HandView {
     private static final float SLAM_END_SCALE = 0.85f;
     private static final float SLAM_GROW      = 0.07f;
     private static final float SLAM_FADE      = 0.16f;
-    /** Teinte des cartes quand la main est bloquée (Bingo). */
+    /** Teinte des cartes quand la main est bloquée (Bingo), ou d'une carte qui ne peut pas être jouée. */
     private static final float LOCKED_TINT    = 0.45f;
+    /** Infobulle de la carte : son nom et sa description, suivis de la raison si elle ne peut pas être jouée. */
+    private void showTooltip(CardImage cardImage) {
+        Card card = cardOf.get(cardImage);
+        String reason = blockedReason.apply(card);
+        String text = reason == null ? card.getDescription() : card.getDescription() + "\n\n" + reason;
+        Vector2 pos = cardImage.localToStageCoordinates(new Vector2(0, cardHeight + TOOLTIP_GAP));
+        tooltip.show(card.getName(), text, pos.x, pos.y);
+    }
+
+    /** Refus d'une carte : elle tremble sur place. */
+    private static final float REFUSE_SHAKE   = 8f;
     /** Taille d'une carte qui vient de changer de couleur, avant de revenir à la normale. */
     private static final float RECOLOR_POP    = 1.25f;
 
@@ -78,6 +100,10 @@ public class HandView {
 
     /** Carte représentée par chaque image de la main (elle peut changer : Arc-en-ciel). */
     private final Map<Image, Card> cardOf = new HashMap<>();
+    /** Pourquoi une carte ne peut pas être jouée en ce moment ({@code null} : elle le peut). */
+    private Function<Card, String> blockedReason = card -> null;
+    private CardRefusedListener    refusedListener;
+    private boolean                locked;
 
     public HandView(TableView table, float cardWidth, float cardHeight, CardTextures cardTextures, Tooltip tooltip,
              PilesView piles, Supplier<Player> player,
@@ -116,6 +142,7 @@ public class HandView {
             newImages.add(cardImage);
         }
         layout(true);
+        refreshBlocked();
         dealAnimator.deal(newImages, piles.deck().getTopX(), piles.deck().getTopY());
 
         int overflow = drawResult.getDiscarded().size();
@@ -249,8 +276,7 @@ public class HandView {
                 if (pointer != -1) return;
                 cardImage.setHovered(true);
                 cardImage.tiltToward(x);
-                Vector2 pos = cardImage.localToStageCoordinates(new Vector2(0, cardHeight + TOOLTIP_GAP));
-                tooltip.show(cardOf.get(cardImage).getName(), cardOf.get(cardImage).getDescription(), pos.x, pos.y);
+                showTooltip(cardImage);
             }
 
             @Override
@@ -275,6 +301,13 @@ public class HandView {
                 }
                 Vector2 clickPos   = cardImage.localToStageCoordinates(new Vector2(x, y));
                 Vector2 cardCenter = cardImage.localToStageCoordinates(new Vector2(cardWidth / 2f, cardHeight / 2f));
+                String reason = blockedReason.apply(cardOf.get(cardImage));
+                if (reason != null) { // la carte ne peut pas être jouée : elle tremble et reste dans la main
+                    refuse(cardImage);
+                    showTooltip(cardImage); // avec la raison du refus
+                    if (refusedListener != null) refusedListener.onCardRefused(cardOf.get(cardImage), reason, cardCenter);
+                    return true;
+                }
                 Card card = cardOf.remove(cardImage);
                 images.remove(cardImage);
                 detach(cardImage);
@@ -290,15 +323,44 @@ public class HandView {
      * réagissent plus (une carte comme le Bingo interdit d'en jouer d'autres).
      */
     public void setLocked(boolean locked) {
+        this.locked = locked;
         group.setTouchable(locked ? Touchable.disabled : Touchable.childrenOnly);
-        float tint = locked ? LOCKED_TINT : 1f;
-        for (Image image : images) image.setColor(tint, tint, tint, image.getColor().a);
+        refreshBlocked();
         if (locked) {
             tooltip.hide();
             for (Image image : images) {
                 if (image instanceof CardImage card) card.setHovered(false);
             }
         }
+    }
+
+    /**
+     * @param reason    pourquoi une carte ne peut pas être jouée en ce moment ({@code null} : elle le peut)
+     * @param onRefused prévenu quand le joueur clique quand même sur une telle carte
+     */
+    public void setBlockedReason(Function<Card, String> reason, CardRefusedListener onRefused) {
+        this.blockedReason   = reason;
+        this.refusedListener = onRefused;
+    }
+
+    /**
+     * Assombrit les cartes qui ne peuvent pas être jouées (toutes quand la main
+     * est bloquée). À rappeler quand la raison peut avoir changé (ex : un
+     * Recyclage vient de retirer un symbole).
+     */
+    public void refreshBlocked() {
+        for (Image image : images) {
+            boolean dark = locked || blockedReason.apply(cardOf.get(image)) != null;
+            float tint = dark ? LOCKED_TINT : 1f;
+            image.setColor(tint, tint, tint, image.getColor().a);
+        }
+    }
+
+    /** Refus d'une carte : elle tremble de gauche à droite, sans quitter sa place. */
+    private void refuse(CardImage cardImage) {
+        cardImage.addAction(Actions.sequence(
+            Actions.moveBy(REFUSE_SHAKE, 0f, 0.04f), Actions.moveBy(-REFUSE_SHAKE * 2f, 0f, 0.07f),
+            Actions.moveBy(REFUSE_SHAKE * 2f, 0f, 0.07f), Actions.moveBy(-REFUSE_SHAKE, 0f, 0.04f)));
     }
 
     /** Sort la carte de la main : elle n'est plus cliquable et reste à la même place à l'écran, au-dessus du jeu. */

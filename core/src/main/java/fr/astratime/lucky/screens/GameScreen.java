@@ -288,6 +288,7 @@ public class GameScreen extends ScreenAdapter {
         shopOverlay      = new ShopOverlay(stage, hudTextures, tooltip, CARD_WIDTH, CARD_HEIGHT);
         cardDetail       = new CardDetailOverlay(stage, hudTextures, tooltip, CARD_WIDTH, CARD_HEIGHT);
         hand.setOnInspect(this::showCardDetail);
+        hand.setBlockedReason(gameController::unplayableReason, this::onCardRefused);
         pileOverlay.setOnInspect(this::showCardDetail);
         buildShopIcon();
 
@@ -377,6 +378,7 @@ public class GameScreen extends ScreenAdapter {
         hud.refresh();
         refreshGains(); // une carte peut créditer ou consommer des gains immédiatement
         refreshEffects();
+        hand.refreshBlocked(); // un Recyclage peut avoir rendu un Bingo de la main injouable
 
         DrawResult drawResult = playResult.getDrawResult();
         if (!drawResult.getAddedToHand().isEmpty() || !drawResult.getDiscarded().isEmpty()) {
@@ -571,6 +573,17 @@ public class GameScreen extends ScreenAdapter {
                     refreshGains();
                 });
         }
+    }
+
+    /**
+     * Le joueur clique sur une carte qui ne peut pas être jouée (Bingo d'un
+     * symbole recyclé) : elle reste dans la main, son infobulle donne la raison
+     * (voir {@link HandView}) et un texte « BINGO BLOQUÉ ! » surgit sur la carte.
+     */
+    private void onCardRefused(Card card, String reason, Vector2 cardCenter) {
+        Gdx.app.log("GameScreen", "Carte refusee : " + card + " (" + reason + ")");
+        effectPopupAnimator.play(List.of(new EffectPopup("BINGO BLOQUÉ !", EffectPopup.Style.DAMAGE,
+            PopupScale.SECONDARY_INTENSITY)), cardCenter.x, cardCenter.y - CARD_HEIGHT * 0.3f); // monte sur la carte, sous l'infobulle
     }
 
     /**

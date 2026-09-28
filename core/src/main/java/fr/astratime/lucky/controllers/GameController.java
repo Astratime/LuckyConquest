@@ -164,15 +164,38 @@ public class GameController {
      *         sortir : il n'est pas en vente tant que le symbole n'est pas revenu.
      */
     public String unavailableReason(ShopOffer offer) {
+        Symbol recycled = recycledBingoSymbol(offer.card());
+        if (recycled == null) return null;
+        int turns = gameState.getPlayer().getLastingEffects().getRemovedSymbols().get(recycled);
+        return "Indisponible : le symbole " + recycled.getDisplayName()
+            + " est retiré des rouleaux par le Recyclage (encore " + turnsText(turns) + ")";
+    }
+
+    /**
+     * @return pourquoi {@code card} ne peut pas être jouée en ce moment, ou
+     *         {@code null} si elle le peut. Comme à l'échoppe, un Bingo dont le
+     *         symbole est retiré des rouleaux (Recyclage) ne peut pas sortir : il
+     *         reste en main tant que le symbole n'est pas revenu.
+     */
+    public String unplayableReason(Card card) {
+        Symbol recycled = recycledBingoSymbol(card);
+        if (recycled == null) return null;
+        int turns = gameState.getPlayer().getLastingEffects().getRemovedSymbols().get(recycled);
+        return "Le symbole " + recycled.getDisplayName() + " est retiré des rouleaux par le Recyclage (encore "
+            + turnsText(turns) + ") : ce Bingo ne peut pas être joué";
+    }
+
+    /** @return le symbole imposé par le Bingo de {@code card} s'il est retiré des rouleaux, sinon {@code null}. */
+    private Symbol recycledBingoSymbol(Card card) {
         Map<Symbol, Integer> removed = gameState.getPlayer().getLastingEffects().getRemovedSymbols();
-        for (Effect effect : offer.card().getEffects()) {
-            if (effect instanceof BingoEffect bingo && removed.containsKey(bingo.getSymbol())) {
-                int turns = removed.get(bingo.getSymbol());
-                return "Indisponible : le symbole " + bingo.getSymbol().getDisplayName()
-                    + " est retiré des rouleaux par le Recyclage (encore " + turns + (turns > 1 ? " tours)" : " tour)");
-            }
+        for (Effect effect : card.getEffects()) {
+            if (effect instanceof BingoEffect bingo && removed.containsKey(bingo.getSymbol())) return bingo.getSymbol();
         }
         return null;
+    }
+
+    private static String turnsText(int turns) {
+        return turns + (turns > 1 ? " tours" : " tour");
     }
 
     /**
@@ -200,7 +223,9 @@ public class GameController {
      */
     public CardPlayResult playCard(Card card) {
         Player player = gameState.getPlayer();
-        if (handLocked || pendingChoice != null || !player.playCard(card)) return CardPlayResult.none();
+        if (handLocked || pendingChoice != null || unplayableReason(card) != null || !player.playCard(card)) {
+            return CardPlayResult.none();
+        }
 
         PlayContext playContext = new PlayContext(player);
         card.getEffects().forEach(effect -> effect.onPlay(playContext));
