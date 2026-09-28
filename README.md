@@ -32,6 +32,17 @@ Useful Gradle tasks and flags:
 Note that most tasks that are not specific to a single project can be run with `name:` prefix, where the `name` should be replaced with the ID of a specific project.
 For example, `core:clean` removes `build` folder only from the `core` project.
 
+## Distribution
+
+Each package is a zip holding the game and its own Java runtime, so players have nothing to install:
+
+- `lwjgl3:packageWinX64`, `lwjgl3:packageMacM1`, `lwjgl3:packageMacX64`, `lwjgl3:packageLinuxX64`: build the package for one platform, in `lwjgl3/build/construo/dist`.
+- The **Exécutables** GitHub workflow builds all four packages:
+  - run it by hand from the Actions tab (*Run workflow*); the zips can be downloaded at the bottom of the run page;
+  - or push a `v*` tag (e.g. `git tag v1.0.0 && git push origin v1.0.0`); the zips are then also published in a GitHub Release, whose link can be shared.
+
+The game is not signed: Windows SmartScreen asks to confirm (*More info* > *Run anyway*), and on macOS the first launch needs a right-click > *Open*.
+
 ## Presentation
 Card Game: LUCKY CONQUEST
 
