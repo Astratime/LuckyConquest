@@ -4,12 +4,26 @@ import com.badlogic.gdx.Game;
 import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import fr.astratime.lucky.screens.MenuScreen;
+import fr.astratime.lucky.settings.ScreenMode;
+import fr.astratime.lucky.settings.ScreenModeSwitcher;
 
 /** {@link com.badlogic.gdx.ApplicationListener} implementation shared by all platforms. */
 public class LuckyGame extends Game {
 
     /** SpriteBatch partagé par tous les écrans (créé une seule fois, réutilisé partout). */
     private SpriteBatch batch;
+
+    private final ScreenModeSwitcher screenModeSwitcher;
+
+    /** Jeu sans réglage du mode d'affichage (plateformes sans fenêtre, tests). */
+    public LuckyGame() {
+        this(ScreenModeSwitcher.NONE);
+    }
+
+    /** @param screenModeSwitcher change le mode d'affichage de la fenêtre, fourni par le lanceur */
+    public LuckyGame(ScreenModeSwitcher screenModeSwitcher) {
+        this.screenModeSwitcher = screenModeSwitcher;
+    }
 
     /**
      * Appelé une fois par libGDX au lancement de l'application.
@@ -39,6 +53,11 @@ public class LuckyGame extends Game {
         super.dispose();
         if (current != null) current.dispose();
         batch.dispose();
+    }
+
+    /** Passe la fenêtre du jeu en mode {@code mode} (choisi dans les options). */
+    public void applyScreenMode(ScreenMode mode) {
+        screenModeSwitcher.apply(mode);
     }
 
     /** @return le SpriteBatch partagé, à utiliser par tous les écrans plutôt que d'en recréer un. */

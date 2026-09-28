@@ -1,8 +1,11 @@
 package fr.astratime.lucky.lwjgl3;
 
+import com.badlogic.gdx.Preferences;
 import com.badlogic.gdx.backends.lwjgl3.Lwjgl3Application;
 import com.badlogic.gdx.backends.lwjgl3.Lwjgl3ApplicationConfiguration;
+import com.badlogic.gdx.backends.lwjgl3.Lwjgl3Preferences;
 import fr.astratime.lucky.LuckyGame;
+import fr.astratime.lucky.settings.DisplaySettings;
 
 /** Launches the desktop (LWJGL3) application. */
 public class Lwjgl3Launcher {
@@ -12,7 +15,7 @@ public class Lwjgl3Launcher {
     }
 
     private static Lwjgl3Application createApplication() {
-        return new Lwjgl3Application(new LuckyGame(), getDefaultConfiguration());
+        return new Lwjgl3Application(new LuckyGame(new Lwjgl3ScreenModes()), getDefaultConfiguration());
     }
 
     private static Lwjgl3ApplicationConfiguration getDefaultConfiguration() {
@@ -28,7 +31,10 @@ public class Lwjgl3Launcher {
         //// useful for testing performance, but can also be very stressful to some hardware.
         //// You may also need to configure GPU drivers to fully disable Vsync; this can cause screen tearing.
 
-        configuration.setWindowedMode(1920, 1080);
+        // Mode d'affichage choisi dans les options (fenêtre agrandie par défaut), relu
+        // avant l'ouverture de la fenêtre, là où le jeu range ses préférences.
+        Preferences preferences = new Lwjgl3Preferences(DisplaySettings.PREFERENCES, ".prefs/");
+        Lwjgl3ScreenModes.configure(configuration, new DisplaySettings(preferences).getScreenMode());
         //// You can change these files; they are in lwjgl3/src/main/resources/ .
         //// They can also be loaded from the root of assets/ .
         configuration.setWindowIcon("libgdx128.png", "libgdx64.png", "libgdx32.png", "libgdx16.png");

@@ -4,6 +4,7 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.InputAdapter;
 import com.badlogic.gdx.InputMultiplexer;
+import com.badlogic.gdx.InputProcessor;
 import com.badlogic.gdx.ScreenAdapter;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Texture;
@@ -25,7 +26,6 @@ import com.badlogic.gdx.math.Interpolation;
 import com.badlogic.gdx.scenes.scene2d.actions.Actions;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.utils.ScreenUtils;
-import com.badlogic.gdx.utils.viewport.ScreenViewport;
 import fr.astratime.lucky.LuckyGame;
 import fr.astratime.lucky.animations.BingoCardAnimation;
 import fr.astratime.lucky.animations.CardClickParticles;
@@ -80,9 +80,11 @@ import fr.astratime.lucky.views.CardImage;
 import fr.astratime.lucky.views.CasinoButtons;
 import fr.astratime.lucky.views.CombatHud;
 import fr.astratime.lucky.views.HandView;
+import fr.astratime.lucky.views.MinimumScreenViewport;
 import fr.astratime.lucky.views.HealthBarView;
 import fr.astratime.lucky.views.PileContentOverlay;
 import fr.astratime.lucky.views.PilesView;
+import fr.astratime.lucky.views.PauseOverlay;
 import fr.astratime.lucky.views.PlayArea;
 import fr.astratime.lucky.views.ShopOverlay;
 import fr.astratime.lucky.views.SidePanel;
@@ -118,6 +120,9 @@ public class GameScreen extends ScreenAdapter {
     // Constantes d'affichage
     // -------------------------------------------------------------------------
 
+    /** Taille minimale de l'écran de jeu : dans une fenêtre plus petite, il est réduit (voir {@link MinimumScreenViewport}). */
+    private static final float  MIN_WIDTH      = 1600f;
+    private static final float  MIN_HEIGHT     = 900f;
     private static final float  CARD_WIDTH     = 95f;
     private static final float  CARD_HEIGHT    = 135f;
     private static final String CARD_BACK_PATH = "cards/light/BACK.png";
@@ -199,6 +204,8 @@ public class GameScreen extends ScreenAdapter {
     private final RainbowChipsAnimation rainbowAnimation;
     private final ShopOverlay         shopOverlay;
     private final CardDetailOverlay   cardDetail;
+    /** Menu pause (Échap) : options, recommencer, quitter ; le jeu est figé tant qu'il est ouvert. */
+    private final PauseOverlay        pauseOverlay;
     /** Icône de l'échoppe (en haut à droite de la zone de jeu), qui ouvre la boutique. */
     private final Group               shopIcon = new Group();
 
@@ -220,7 +227,9 @@ public class GameScreen extends ScreenAdapter {
     private final TextButton menuButton;
     /** Boutons de fin de combat (Recommencer, Menu principal), centrés sous l'annonce de victoire ou de défaite. */
     private final Table      endButtons = new Table();
-    private final TextButton effectsButton;
+
+    /** Entrées du jeu (Stage puis raccourcis clavier), rendues à la fermeture du menu pause. */
+    private InputProcessor gameInput;
 
     /** Temps restant du micro-arrêt en cours (voir {@link #hitStop(float)}). */
     private float hitStop = 0f;
@@ -248,7 +257,7 @@ public class GameScreen extends ScreenAdapter {
     public GameScreen(LuckyGame luckyGame) {
         this.luckyGame = luckyGame;
         // Le SpriteBatch est partagé avec LuckyGame et ne doit PAS être disposé ici.
-        this.stage = new Stage(new ScreenViewport(), luckyGame.getBatch());
+        this.stage = new Stage(new MinimumScreenViewport(MIN_WIDTH, MIN_HEIGHT), luckyGame.getBatch());
 
         font                = new BitmapFont();
         cardBackTexture     = new Texture(Gdx.files.internal(CARD_BACK_PATH));
@@ -272,8 +281,6 @@ public class GameScreen extends ScreenAdapter {
         endButtons.add(menuButton).size(menuButton.getWidth(), menuButton.getHeight()).padLeft(END_BUTTONS_GAP);
         endButtons.pack();
         endButtons.setVisible(false);
-        effectsButton = buttons.create(effectsLabel(), sounds.buttonClick, this::onToggleEffects);
-        sidePanel.addFooter(effectsButton);
 
         piles = new PilesView(playArea, cardBackTexture, pileFont, tooltip, sounds.buttonClick, CARD_WIDTH, CARD_HEIGHT,
             this::onDeckClicked, this::onDiscardClicked);
@@ -290,6 +297,13 @@ public class GameScreen extends ScreenAdapter {
         rainbowAnimation = new RainbowChipsAnimation(settings, new TextureRegion(hudTextures.pixel));
         shopOverlay      = new ShopOverlay(stage, hudTextures, tooltip, CARD_WIDTH, CARD_HEIGHT);
         cardDetail       = new CardDetailOverlay(stage, hudTextures, tooltip, CARD_WIDTH, CARD_HEIGHT);
+        pauseOverlay     = new PauseOverlay(luckyGame, luckyGame.getBatch(), hudTextures, sounds.buttonClick, settings,
+            new PauseOverlay.Listener() {
+                @Override public void onResume()         { Gdx.input.setInputProcessor(gameInput); }
+                @Override public void onRestart()        { Gdx.input.setInputProcessor(gameInput); GameScreen.this.onRestart(); }
+                @Override public void onQuit()           { Gdx.app.exit(); }
+                @Override public void onEffectsChanged() { GameScreen.this.onEffectsChanged(); }
+            });
         hand.setOnInspect(this::showCardDetail);
         hand.setBlockedReason(gameController::unplayableReason, this::onCardRefused);
         pileOverlay.setOnInspect(this::showCardDetail);
@@ -299,7 +313,7 @@ public class GameScreen extends ScreenAdapter {
         refreshAll();
 
         stage.addActor(table.getActor());
-        stage.addActor(sidePanel.getActor()); // contient le bouton "Recommencer"
+        stage.addActor(sidePanel.getActor());
         piles.addTo(stage);
         hud.addTo(stage);
         stage.addActor(spinButton);
@@ -823,15 +837,17 @@ public class GameScreen extends ScreenAdapter {
         pileOverlay.show("Defausse", player().getDiscardPile().getCards());
     }
 
-    /** Bascule entre effets normaux et réduits (secousses, flashs, micro-arrêts), et mémorise le choix. */
-    private void onToggleEffects() {
-        settings.setReducedEffects(!settings.isReducedEffects());
-        effectsButton.setText(effectsLabel());
-        if (settings.isReducedEffects()) screenShake.stop();
+    /** Ouvre le menu pause : le jeu se fige et le menu reçoit seul les entrées. */
+    private void openPauseMenu() {
+        sounds.buttonClick.play();
+        tooltip.hide();
+        pauseOverlay.show();
+        Gdx.input.setInputProcessor(pauseOverlay.getInput());
     }
 
-    private String effectsLabel() {
-        return settings.isReducedEffects() ? "Effets : reduits" : "Effets : normaux";
+    /** Effets réduits choisis dans le menu pause : une secousse en cours s'arrête. */
+    private void onEffectsChanged() {
+        if (settings.isReducedEffects()) screenShake.stop();
     }
 
     /** Fige l'animation pendant {@code duration} secondes pour marquer un gros coup (sauf effets réduits). */
@@ -1038,9 +1054,10 @@ public class GameScreen extends ScreenAdapter {
 
     /**
      * Installe le processeur d'entrée de l'écran : le Stage (clics, survols)
-     * en priorité, puis un raccourci clavier (F = lancer la machine si
-     * possible, Échap = fermer la consultation d'une pile). La pioche est
-     * automatique au début de chaque tour du joueur.
+     * en priorité, puis les raccourcis clavier : F lance la machine si
+     * possible ; Échap ferme la fenêtre ouverte (carte, échoppe, pile) ou, s'il
+     * n'y en a pas, ouvre le menu pause. La pioche est automatique au début de
+     * chaque tour du joueur.
      */
     @Override
     public void show() {
@@ -1056,13 +1073,17 @@ public class GameScreen extends ScreenAdapter {
                     shopOverlay.hide();
                     return true;
                 }
-                if (choiceOverlay.isShown() || shopOverlay.isShown() || bingoAnimation.isPlaying()
-                    || rainbowAnimation.isPlaying()) {
-                    return true; // un choix ou une animation de carte est en cours
-                }
                 if (keycode == Input.Keys.ESCAPE && pileOverlay.isShown()) {
                     pileOverlay.hide();
                     return true;
+                }
+                if (keycode == Input.Keys.ESCAPE) {
+                    openPauseMenu();
+                    return true;
+                }
+                if (choiceOverlay.isShown() || shopOverlay.isShown() || bingoAnimation.isPlaying()
+                    || rainbowAnimation.isPlaying()) {
+                    return true; // un choix ou une animation de carte est en cours
                 }
                 if (keycode == Input.Keys.F && !spinButton.isDisabled()) {
                     onSpin();
@@ -1071,7 +1092,8 @@ public class GameScreen extends ScreenAdapter {
                 return false;
             }
         };
-        Gdx.input.setInputProcessor(new InputMultiplexer(stage, keyboardInput));
+        gameInput = new InputMultiplexer(stage, keyboardInput);
+        Gdx.input.setInputProcessor(pauseOverlay.isShown() ? pauseOverlay.getInput() : gameInput);
     }
 
     /** Met à jour le viewport puis repositionne les éléments qui dépendent de la taille de l'écran. */
@@ -1083,23 +1105,29 @@ public class GameScreen extends ScreenAdapter {
         shopOverlay.layout();
         cardDetail.layout();
         pileOverlay.hide();
+        pauseOverlay.resize(width, height);
     }
 
     /** Efface l'écran, met à jour et dessine le Stage, puis l'effet de particules par-dessus. */
     @Override
     public void render(float delta) {
         ScreenUtils.clear(Color.BLACK);
-        if (hitStop > 0f) {
+        if (pauseOverlay.isShown()) {
+            // En pause : le jeu reste affiché, figé, sous le menu.
+        } else if (hitStop > 0f) {
             hitStop -= delta; // micro-arrêt : l'image reste figée un instant sur un gros coup
         } else {
             stage.act(delta);
         }
+        stage.getViewport().apply();
         stage.draw();
 
         SpriteBatch batch = luckyGame.getBatch();
         batch.begin();
         cardClickParticles.render(batch, delta);
         batch.end();
+
+        pauseOverlay.render(delta);
     }
 
     /** Libère toutes les ressources natives (Stage, polices, textures, sons) possédées par cet écran. */
@@ -1126,6 +1154,7 @@ public class GameScreen extends ScreenAdapter {
         rainbowAnimation.dispose();
         shopOverlay.dispose();
         cardDetail.dispose();
+        pauseOverlay.dispose();
         jackpotCelebration.dispose();
         turnBanner.dispose();
         damageVignette.dispose();

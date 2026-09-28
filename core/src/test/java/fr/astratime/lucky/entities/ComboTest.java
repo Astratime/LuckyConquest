@@ -35,15 +35,9 @@ class ComboTest {
     }
 
     @Test
-    void brelanAndFull() {
+    void brelanNeedsThreeCardsOfTheSameRank() {
         List<Card> brelan = List.of(card(1, Card.Suit.COEUR), card(1, Card.Suit.PIQUE), card(1, Card.Suit.TREFLE));
         assertTrue(Combo.BRELAN.matches(brelan));
-        assertFalse(Combo.FULL.matches(brelan));
-
-        List<Card> full = new ArrayList<>(brelan);
-        full.add(card(12, Card.Suit.COEUR));
-        full.add(card(12, Card.Suit.CARREAU));
-        assertTrue(Combo.FULL.matches(full));
         assertFalse(Combo.BRELAN.matches(List.of(card(1, Card.Suit.COEUR), card(1, Card.Suit.PIQUE))));
     }
 
@@ -54,13 +48,14 @@ class ComboTest {
     }
 
     @Test
-    void combosStackButAFullOrABrelanDoesNotAlsoCountWhatItContains() {
-        List<Card> full = List.of(card(12, Card.Suit.COEUR), card(12, Card.Suit.PIQUE), card(12, Card.Suit.TREFLE),
-            card(1, Card.Suit.COEUR), card(1, Card.Suit.CARREAU));
-        assertEquals(List.of(Combo.FULL), Combo.formed(full), "ni Brelan ni Paire en plus du Full");
-
+    void combosStackButABrelanDoesNotAlsoCountItsOwnPair() {
         List<Card> brelan = List.of(card(12, Card.Suit.COEUR), card(12, Card.Suit.PIQUE), card(12, Card.Suit.TREFLE));
         assertEquals(List.of(Combo.BRELAN), Combo.formed(brelan), "pas de Paire en plus du Brelan");
+
+        List<Card> brelanAndPair = List.of(card(12, Card.Suit.COEUR), card(12, Card.Suit.PIQUE),
+            card(12, Card.Suit.TREFLE), card(1, Card.Suit.COEUR), card(1, Card.Suit.CARREAU));
+        assertEquals(List.of(Combo.BRELAN, Combo.PAIRE), Combo.formed(brelanAndPair), "une paire d'un autre rang compte");
+        assertEquals(4.5f, Combo.totalFactor(Combo.formed(brelanAndPair)), 1e-6);
 
         List<Card> straightFlush = List.of(card(11, Card.Suit.COEUR), card(12, Card.Suit.COEUR), card(13, Card.Suit.COEUR));
         assertEquals(List.of(Combo.COULEUR, Combo.SUITE), Combo.formed(straightFlush));
