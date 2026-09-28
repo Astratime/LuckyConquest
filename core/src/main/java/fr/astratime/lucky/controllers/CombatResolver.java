@@ -97,7 +97,7 @@ public class CombatResolver {
         int gains = 0;
         if (isJackpot(symbols)) {
             gains = GAINS_JACKPOT;
-            pairOrJackpotEvents.add(new JackpotEvent());
+            pairOrJackpotEvents.add(new JackpotEvent(symbols[0]));
         } else if (hasPair(symbols)) {
             gains = GAINS_PAIR;
         }

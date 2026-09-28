@@ -41,7 +41,8 @@ public class BingoBanner extends Group {
     private static final float SHAKE = 14f;
     private static final float DRIFT = 50f;   // glissement pendant la pause
 
-    private static final Color GOLD = Color.valueOf("ffd54aff");
+    private static final Color GOLD       = Color.valueOf("ffd54aff");
+    private static final Color BACK_COLOR = new Color(0.06f, 0.02f, 0.03f, 0.92f);
 
     private final Image                  backBand;
     private final Image                  band;
@@ -55,12 +56,25 @@ public class BingoBanner extends Group {
      * @param font        grande police à contour pour les lettres
      */
     public BingoBanner(String text, Texture bandTexture, TextureRegion pixel, BitmapFont font) {
+        this(text, bandTexture, pixel, font, GOLD, Color.WHITE, BACK_COLOR);
+    }
+
+    /**
+     * Comme le constructeur principal, aux couleurs choisies (les éclairs se
+     * règlent avec {@link #setLightningColors}).
+     *
+     * @param letterA   couleur des lettres de rang pair
+     * @param letterB   couleur des lettres de rang impair
+     * @param backColor couleur de la bande de travers, derrière la bannière
+     */
+    public BingoBanner(String text, Texture bandTexture, TextureRegion pixel, BitmapFont font,
+                       Color letterA, Color letterB, Color backColor) {
         setTransform(true); // nécessaire pour la rotation du groupe
         setTouchable(Touchable.disabled);
         setVisible(false);
 
         backBand = new Image(new TextureRegionDrawable(pixel));
-        backBand.setColor(0.06f, 0.02f, 0.03f, 0.92f);
+        backBand.setColor(backColor);
         addActor(backBand);
 
         band = new Image(new TextureRegionDrawable(new TextureRegion(bandTexture)));
@@ -69,7 +83,7 @@ public class BingoBanner extends Group {
         Label.LabelStyle style = new Label.LabelStyle(font, Color.WHITE);
         for (int i = 0; i < text.length(); i++) {
             Label label = new Label(String.valueOf(text.charAt(i)), style);
-            label.setColor(i % 2 == 0 ? GOLD : Color.WHITE);
+            label.setColor(i % 2 == 0 ? letterA : letterB);
             Container<Label> letter = new Container<>(label);
             letter.setTransform(true);
             letter.pack();
@@ -127,6 +141,11 @@ public class BingoBanner extends Group {
         lightning.setVisible(false);
         lightning.addAction(Actions.sequence(
             Actions.delay(ENTER), Actions.visible(true), Actions.delay(HOLD), Actions.visible(false)));
+    }
+
+    /** Change les couleurs des éclairs qui crépitent sur les bords (halo et cœur). */
+    public void setLightningColors(Color glow, Color core) {
+        lightning.setColors(glow, core);
     }
 
     /** Cache la bannière immédiatement. */

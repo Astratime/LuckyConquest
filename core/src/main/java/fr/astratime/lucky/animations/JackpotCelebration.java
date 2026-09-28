@@ -15,21 +15,49 @@ import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 import com.badlogic.gdx.utils.Disposable;
 import fr.astratime.lucky.assets.Fonts;
 import fr.astratime.lucky.assets.Textures;
+import fr.astratime.lucky.entities.Symbol;
 import fr.astratime.lucky.settings.VisualSettings;
 import fr.astratime.lucky.views.PlayArea;
 
+import java.util.ArrayList;
+import java.util.EnumMap;
+import java.util.List;
+import java.util.Map;
+import java.util.function.IntConsumer;
 import java.util.function.Supplier;
 
 /**
- * Célébration du jackpot, par-dessus tout l'écran de jeu : un flash blanc et
- * une secousse de l'écran, la bannière « BINGO!!! » qui traverse l'écran avec
- * ses éclairs, une pluie de pièces d'or (dont une partie file vers le compteur
- * des gains) et des feux d'artifice qui éclatent au-dessus de la table, côté
- * adverse.
+ * Célébration du jackpot (Bingo), par-dessus tout l'écran de jeu. Elle change
+ * selon le symbole aligné : chacun a les couleurs de sa bannière « BINGO!!! »
+ * et de ses éclairs (voir {@link BingoStyle}) et sa propre mise en scène.
+ *
+ * <ul>
+ *   <li>Triple Sept : flash blanc, pluie de pièces d'or (dont une partie file
+ *       vers le compteur des gains) et feux d'artifice multicolores ;</li>
+ *   <li>Sept : fournaise — des braises montent de la table, des 7 jaillissent
+ *       et des fusées rouge et orange éclatent ;</li>
+ *   <li>Double Bar : une averse de barres d'acier s'écrase sur la table en
+ *       soulevant des ondes de poussière ;</li>
+ *   <li>Bar : trois rangées de barres tombent d'un bloc, chaque volée fait
+ *       trembler l'écran ;</li>
+ *   <li>Cerise : une fontaine de cerises jaillit du centre de la table ;</li>
+ *   <li>Triple Cerise : deux canons à cerises tirent depuis les coins de la
+ *       table, sous des gerbes roses ;</li>
+ *   <li>Raisin : des bulles violettes montent pendant que des grappes tombent
+ *       mollement ;</li>
+ *   <li>Cloche : le carillon — des ondes sonores partent de la bannière et des
+ *       cloches s'envolent en se balançant ;</li>
+ *   <li>Diamant : l'écran scintille de toutes parts et des diamants tombent
+ *       lentement ;</li>
+ *   <li>Lingot : une avalanche de lingots et de pièces, presque toutes
+ *       ramassées par le compteur ;</li>
+ *   <li>Pastèque : des pastèques sont lancées des deux côtés et éclaboussent
+ *       l'écran de jus et de pépins.</li>
+ * </ul>
  *
  * Pendant {@link #DURATION}, le calque intercepte les clics : le joueur ne peut
- * pas continuer avant la fin. Les dernières pièces et étincelles finissent
- * ensuite de tomber sans bloquer le jeu.
+ * pas continuer avant la fin. Les dernières particules finissent ensuite de
+ * tomber sans bloquer le jeu.
  */
 public class JackpotCelebration extends Group implements Disposable {
 
@@ -60,23 +88,43 @@ public class JackpotCelebration extends Group implements Disposable {
 
     private static final float BANNER_Y = 0.72f;         // centre de la bannière (fraction de la hauteur)
 
+    /**
+     * Apparitions étalées dans le temps : {@code count} appels de {@code spawn}
+     * répartis entre {@code start} et {@code end} (tous d'un coup s'ils sont égaux).
+     */
+    private record Emitter(float start, float end, int count, IntConsumer spawn) {}
+
     private final PlayArea       playArea;
     private final ScreenShake    screenShake;
     private final VisualSettings settings;
     private final Texture        pixelTexture = Textures.solidColor(Color.WHITE);
+    private final TextureRegion  pixel        = new TextureRegion(pixelTexture);
     private final Texture        coinTexture  = new Texture(Gdx.files.internal("jackpot/coin_spin.png"));
     private final Texture        bandTexture  = new Texture(Gdx.files.internal("jackpot/banner_band.png"));
+    private final List<Texture>  styleBands   = new ArrayList<>();
+    /** Image de chaque symbole, détourée de sa case blanche, chargée à son premier Bingo. */
+    private final Map<Symbol, Texture> icons  = new EnumMap<>(Symbol.class);
     private final BitmapFont     bannerFont   = Fonts.jersey(170, Color.WHITE, 7f, Color.valueOf("12080aff"));
 
-    private final Image       flash;
-    private final Fireworks   fireworks;
-    private final CoinShower  coins;
-    private final BingoBanner banner;
+    private final Image        flash;
+    private final Shockwaves   shockwaves;
+    private final Glitter      glitter;
+    private final Fireworks    fireworks;
+    private final SymbolShower symbols;
+    private final CoinShower   coins;
+    private final Group        bannerLayer = new Group();
+    /** Une bannière par symbole, créée à son premier Bingo (ses lettres ont les couleurs du symbole). */
+    private final Map<Symbol, BingoBanner> banners = new EnumMap<>(Symbol.class);
+
+    private final List<Emitter> emitters = new ArrayList<>();
+    private int[]      emitted = new int[0];
+    private BingoStyle style;
+    /** Couleur des ondes soulevées par un symbole lourd qui touche la table, et secousse de l'impact. */
+    private Color      landingColor = Color.WHITE;
+    private float      landingShake;
 
     private boolean  running;
     private float    elapsed;
-    private int      coinsDropped;
-    private int      rocketsLaunched;
     private Runnable onFinished;
 
     /**
@@ -86,33 +134,41 @@ public class JackpotCelebration extends Group implements Disposable {
      */
     public JackpotCelebration(PlayArea playArea, ScreenShake screenShake, VisualSettings settings,
                               Supplier<Vector2> coinTarget, Runnable onCoinCollected) {
-        this.playArea    = playArea;
-        this.screenShake = screenShake;
-        this.settings    = settings;
+        this.playArea      = playArea;
+        this.screenShake   = screenShake;
+        this.settings      = settings;
         setTouchable(Touchable.disabled);
 
-        TextureRegion pixel = new TextureRegion(pixelTexture);
-        fireworks = new Fireworks(pixel);
-        coins     = new CoinShower(new TextureRegion(coinTexture), coinTarget, onCoinCollected);
-        banner    = new BingoBanner("BINGO!!!", bandTexture, pixel, bannerFont);
-        flash     = new Image(new TextureRegionDrawable(pixel));
+        shockwaves = new Shockwaves(pixel);
+        glitter    = new Glitter(pixel);
+        fireworks  = new Fireworks(pixel);
+        symbols    = new SymbolShower();
+        coins      = new CoinShower(new TextureRegion(coinTexture), coinTarget, onCoinCollected);
+        flash      = new Image(new TextureRegionDrawable(pixel));
         flash.setTouchable(Touchable.disabled);
         flash.getColor().a = 0f;
+        bannerLayer.setTouchable(Touchable.disabled);
+        symbols.setLandingListener(this::onSymbolLanded);
 
+        addActor(shockwaves);
+        addActor(glitter);
         addActor(fireworks);
+        addActor(symbols);
         addActor(coins);
-        addActor(banner);
+        addActor(bannerLayer);
         addActor(flash);
     }
 
-    /** Lance la célébration ; {@code onFinished} est appelé au bout de {@link #DURATION}. */
-    public void play(Runnable onFinished) {
+    /**
+     * Lance la célébration du Bingo de {@code symbol} ; {@code onFinished} est
+     * appelé au bout de {@link #DURATION}.
+     */
+    public void play(Symbol symbol, Runnable onFinished) {
         cancel();
         this.onFinished = onFinished;
         running         = true;
         elapsed         = 0f;
-        coinsDropped    = 0;
-        rocketsLaunched = 0;
+        style           = BingoStyle.of(symbol);
 
         float width  = getStage().getViewport().getWorldWidth();
         float height = getStage().getViewport().getWorldHeight();
@@ -121,21 +177,31 @@ public class JackpotCelebration extends Group implements Disposable {
 
         if (!settings.isReducedEffects()) {
             flash.setBounds(0f, 0f, width, height);
-            flash.getColor().a = FLASH_ALPHA;
+            flash.setColor(style.flash().r, style.flash().g, style.flash().b, FLASH_ALPHA);
             flash.addAction(Actions.fadeOut(FLASH_TIME));
         }
-        screenShake.shake(SHAKE_TIME, SHAKE);
 
-        banner.play(playArea.getCenterX(), height * BANNER_Y, width);
+        emitters.clear();
+        landingColor = Color.WHITE;
+        landingShake = 0f;
+        schedule(symbol, new TextureRegion(icons.computeIfAbsent(symbol,
+            s -> Textures.cutOut(Gdx.files.internal(s.getAssetPath())))));
+        emitted = new int[emitters.size()];
+
+        banner(symbol).play(playArea.getCenterX(), height * BANNER_Y, width);
     }
 
     /** Arrête tout immédiatement (nouvelle partie), sans appeler la fin de la célébration. */
     public void cancel() {
         running = false;
         setTouchable(Touchable.disabled);
+        emitters.clear();
         coins.removeAll();
         fireworks.removeAll();
-        banner.hide();
+        symbols.removeAll();
+        glitter.removeAll();
+        shockwaves.removeAll();
+        for (BingoBanner banner : banners.values()) banner.hide();
         flash.clearActions();
         flash.getColor().a = 0f;
         screenShake.stop();
@@ -146,21 +212,14 @@ public class JackpotCelebration extends Group implements Disposable {
         super.act(delta);
         if (!running) return;
         elapsed += delta;
-        float height = getHeight();
 
-        int coinsDue = Math.round(COIN_COUNT * Math.min(1f, elapsed / COIN_SPAWN_TIME));
-        for (; coinsDropped < coinsDue; coinsDropped++) {
-            float x     = MathUtils.random(playArea.getX(), playArea.getX() + playArea.getWidth());
-            float floor = height * MathUtils.random(COIN_FLOOR_MIN, COIN_FLOOR_MAX);
-            coins.drop(x, height, floor, coinsDropped % COLLECT_EVERY == 0);
-        }
-
-        for (; rocketsLaunched < ROCKET_TIMES.length && elapsed >= ROCKET_TIMES[rocketsLaunched]; rocketsLaunched++) {
-            float x = MathUtils.random(playArea.getX() + ROCKET_SIDE_MARGIN,
-                playArea.getX() + playArea.getWidth() - ROCKET_SIDE_MARGIN);
-            boolean low  = ROCKET_TIMES[rocketsLaunched] < LOW_ROCKETS_UNTIL;
-            float   apex = low ? MathUtils.random(LOW_APEX_MIN, LOW_APEX_MAX) : MathUtils.random(APEX_MIN, APEX_MAX);
-            fireworks.launch(x, height * ROCKET_FROM, height * apex);
+        for (int i = 0; i < emitters.size(); i++) {
+            Emitter emitter = emitters.get(i);
+            float progress = emitter.end() <= emitter.start()
+                ? (elapsed >= emitter.start() ? 1f : 0f)
+                : MathUtils.clamp((elapsed - emitter.start()) / (emitter.end() - emitter.start()), 0f, 1f);
+            int due = Math.round(emitter.count() * progress);
+            for (; emitted[i] < due; emitted[i]++) emitter.spawn().accept(emitted[i]);
         }
 
         if (elapsed >= DURATION) {
@@ -170,11 +229,269 @@ public class JackpotCelebration extends Group implements Disposable {
         }
     }
 
+    // -------------------------------------------------------------------------
+    // Mises en scène
+    // -------------------------------------------------------------------------
+
+    /** Programme les effets du Bingo de {@code symbol}, dont l'image est {@code icon}. */
+    private void schedule(Symbol symbol, TextureRegion icon) {
+        switch (symbol) {
+            case SEVEN         -> scheduleFurnace(icon);
+            case DOUBLE_BAR    -> scheduleSteelRain(icon);
+            case BAR           -> scheduleHammer(icon);
+            case CHERRY        -> scheduleCherryFountain(icon);
+            case TRIPLE_CHERRY -> scheduleCherryCannons(icon);
+            case GRAPE         -> scheduleBubbles(icon);
+            case BELL          -> scheduleChime(icon);
+            case DIAMOND       -> scheduleSparkle(icon);
+            case GOLD_BAR      -> scheduleGoldAvalanche(icon);
+            case WATERMELON    -> scheduleSplash(icon);
+            case TRIPLE_SEVEN, JOKER -> scheduleCasino();
+        }
+    }
+
+    /** Triple Sept, la célébration d'origine : pluie de pièces et feux d'artifice multicolores. */
+    private void scheduleCasino() {
+        at(0f, () -> screenShake.shake(SHAKE_TIME, SHAKE));
+        coinRain(0f, COIN_SPAWN_TIME, COIN_COUNT, COLLECT_EVERY);
+        for (float time : ROCKET_TIMES) {
+            boolean low = time < LOW_ROCKETS_UNTIL;
+            at(time, () -> rocket(low));
+        }
+    }
+
+    /** Sept : braises qui montent de la table, 7 qui jaillissent, fusées rouge et orange. */
+    private void scheduleFurnace(TextureRegion icon) {
+        at(0f, () -> screenShake.shake(0.6f, 16f));
+        Color[] fire = {Color.valueOf("ff3b1fff"), Color.valueOf("ff8a1fff"), Color.valueOf("ffd54aff")};
+        emit(0f, 2.6f, 240, i -> glitter.ember(tableX(0f), getHeight() * MathUtils.random(0.05f, 0.2f),
+            MathUtils.random(-30f, 30f), MathUtils.random(160f, 420f), 0f,
+            MathUtils.random(5f, 11f), MathUtils.random(1f, 1.8f), fire[i % fire.length]));
+        emit(0.05f, 1.2f, 16, i -> symbols.jet(icon, tableX(80f), -60f, MathUtils.random(75f, 105f),
+            MathUtils.random(1150f, 1500f), MathUtils.random(70f, 100f), 1500f));
+        for (float time : new float[] {1.0f, 1.4f, 1.8f, 2.2f, 2.5f}) at(time, () -> rocket(false));
+        coinRain(0.2f, 1.2f, 18, 1);
+    }
+
+    /** Double Bar : averse de barres d'acier qui s'écrasent sur la table en soulevant de la poussière. */
+    private void scheduleSteelRain(TextureRegion icon) {
+        at(0f, () -> screenShake.shake(SHAKE_TIME, 8f));
+        landingColor = Color.valueOf("c8d2dcff");
+        landingShake = 5f;
+        emit(0.15f, 1.9f, 34, i -> symbols.rain(icon, tableX(60f), getHeight() + 60f, floorY(),
+            MathUtils.random(70f, 105f), MathUtils.random(500f, 900f), 2600f, true));
+        emit(0.3f, 2.4f, 40, i -> glitter.twinkle(tableX(0f), getHeight() * MathUtils.random(0.15f, 0.9f),
+            MathUtils.random(14f, 26f), 0.5f, Color.valueOf("8fd3ffff")));
+        coinRain(0.2f, 1.2f, 18, 1);
+    }
+
+    /** Bar : trois rangées de barres tombent d'un bloc ; chaque volée secoue l'écran. */
+    private void scheduleHammer(TextureRegion icon) {
+        landingColor = Color.WHITE;
+        landingShake = 14f;
+        float[] volleys = {0.2f, 0.85f, 1.5f};
+        int perVolley = 7;
+        for (int v = 0; v < volleys.length; v++) {
+            float floor = getHeight() * (0.16f + v * 0.1f); // chaque rangée se pose un peu plus haut
+            emit(volleys[v], volleys[v], perVolley, i -> {
+                float step = playArea.getWidth() / (perVolley + 1);
+                symbols.rain(icon, playArea.getX() + step * (i + 1), getHeight() + 80f, floor,
+                    95f, 1400f, 3200f, true);
+            });
+        }
+        coinRain(0.3f, 1.4f, 18, 1);
+    }
+
+    /** Cerise : une fontaine de cerises jaillit du centre de la table, sous des gerbes roses. */
+    private void scheduleCherryFountain(TextureRegion icon) {
+        at(0f, () -> screenShake.shake(SHAKE_TIME, 8f));
+        float centerX = playArea.getCenterX();
+        emit(0f, 1.8f, 44, i -> symbols.jet(icon, centerX + MathUtils.random(-40f, 40f), -40f,
+            MathUtils.random(62f, 118f), MathUtils.random(1100f, 1500f), MathUtils.random(60f, 90f), 1400f));
+        emit(0f, 1.8f, 90, i -> glitter.ember(centerX + MathUtils.random(-30f, 30f), 0f,
+            MathUtils.random(-260f, 260f), MathUtils.random(700f, 1100f), 900f,
+            MathUtils.random(5f, 9f), MathUtils.random(1.2f, 1.8f), style.fireworks()[i % style.fireworks().length]));
+        for (float time : new float[] {1.0f, 1.4f, 1.8f, 2.2f}) at(time, () -> rocket(false));
+        coinRain(0.2f, 1.2f, 18, 1);
+    }
+
+    /** Triple Cerise : deux canons à cerises tirent des coins de la table, sous des gerbes rouges et roses. */
+    private void scheduleCherryCannons(TextureRegion icon) {
+        at(0f, () -> screenShake.shake(0.5f, 12f));
+        float left  = playArea.getX() + 40f;
+        float right = playArea.getX() + playArea.getWidth() - 40f;
+        emit(0f, 2.0f, 60, i -> {
+            boolean fromLeft = i % 2 == 0;
+            symbols.jet(icon, fromLeft ? left : right, -40f,
+                fromLeft ? MathUtils.random(52f, 72f) : MathUtils.random(108f, 128f),
+                MathUtils.random(1200f, 1600f), MathUtils.random(65f, 95f), 1300f);
+        });
+        emit(0.2f, 2.6f, 90, i -> glitter.ember(tableX(0f), getHeight() * MathUtils.random(0.05f, 0.3f),
+            MathUtils.random(-20f, 20f), MathUtils.random(100f, 260f), 0f, MathUtils.random(6f, 12f),
+            MathUtils.random(1.2f, 2f), style.fireworks()[i % style.fireworks().length]));
+        for (float time : new float[] {0.4f, 1.1f, 1.4f, 1.7f, 2.0f, 2.3f, 2.6f}) at(time, () -> rocket(time < 1f));
+        coinRain(0.2f, 1.2f, 18, 1);
+    }
+
+    /** Raisin : des bulles violettes montent pendant que des grappes tombent mollement. */
+    private void scheduleBubbles(TextureRegion icon) {
+        at(0f, () -> screenShake.shake(SHAKE_TIME, 6f));
+        at(0f, () -> shockwaves.ring(playArea.getCenterX(), getHeight() * BANNER_Y,
+            playArea.getWidth() * 0.6f, 0.9f, 1f, Color.valueOf("c77dffff")));
+        Color[] purples = style.fireworks();
+        emit(0f, 2.7f, 170, i -> glitter.ember(tableX(0f), getHeight() * MathUtils.random(-0.05f, 0.15f),
+            MathUtils.random(-15f, 15f), MathUtils.random(90f, 220f), 0f, MathUtils.random(8f, 18f),
+            MathUtils.random(2f, 3f), purples[i % purples.length]));
+        emit(0.1f, 2.0f, 26, i -> symbols.rain(icon, tableX(60f), getHeight() + 60f, floorY(),
+            MathUtils.random(70f, 100f), MathUtils.random(60f, 160f), 380f, false));
+        coinRain(0.2f, 1.2f, 18, 1);
+    }
+
+    /** Cloche : le carillon — des ondes sonores partent de la bannière et des cloches s'envolent. */
+    private void scheduleChime(TextureRegion icon) {
+        Color gold = Color.valueOf("ffe680ff");
+        for (int k = 0; k < 8; k++) {
+            float time = 0.25f + k * 0.3f;
+            at(time, () -> {
+                shockwaves.ring(playArea.getCenterX(), getHeight() * BANNER_Y,
+                    playArea.getWidth() * 0.55f, 1.1f, 0.8f, gold);
+                screenShake.shake(0.12f, 5f); // chaque coup de cloche fait vibrer l'écran
+            });
+        }
+        emit(0f, 2.2f, 22, i -> symbols.rise(icon, tableX(60f), getHeight() * MathUtils.random(-0.1f, 0.1f),
+            MathUtils.random(220f, 360f), MathUtils.random(65f, 95f), MathUtils.random(2f, 2.6f)));
+        emit(0.2f, 2.6f, 60, i -> glitter.twinkle(tableX(0f), getHeight() * MathUtils.random(0.1f, 0.95f),
+            MathUtils.random(12f, 24f), 0.6f, gold));
+        coinRain(0.1f, 1.4f, 45, 2);
+    }
+
+    /** Diamant : l'écran scintille de toutes parts et des diamants tombent lentement. */
+    private void scheduleSparkle(TextureRegion icon) {
+        at(0f, () -> screenShake.shake(SHAKE_TIME, 6f));
+        Color[] ice = style.fireworks();
+        emit(0f, 2.7f, 180, i -> glitter.twinkle(tableX(0f), getHeight() * MathUtils.random(0.05f, 0.98f),
+            MathUtils.random(14f, 34f), MathUtils.random(0.4f, 0.8f), ice[i % ice.length]));
+        emit(0.1f, 1.9f, 26, i -> symbols.rain(icon, tableX(60f), getHeight() + 60f, floorY(),
+            MathUtils.random(60f, 95f), MathUtils.random(80f, 200f), 520f, false));
+        for (float time : new float[] {1.2f, 1.6f, 2.0f, 2.4f}) at(time, () -> rocket(false));
+        coinRain(0.2f, 1.2f, 18, 1);
+    }
+
+    /** Lingot : avalanche de lingots et de pièces, presque toutes ramassées par le compteur. */
+    private void scheduleGoldAvalanche(TextureRegion icon) {
+        at(0f, () -> screenShake.shake(0.6f, 14f));
+        landingColor = Color.valueOf("ffd54aff");
+        landingShake = 4f;
+        emit(0.1f, 1.8f, 38, i -> symbols.rain(icon, tableX(60f), getHeight() + 60f, floorY(),
+            MathUtils.random(75f, 105f), MathUtils.random(400f, 800f), 2400f, true));
+        coinRain(0f, 1.8f, 140, 2);
+        emit(0.3f, 2.5f, 50, i -> glitter.twinkle(tableX(0f), getHeight() * MathUtils.random(0.1f, 0.6f),
+            MathUtils.random(12f, 22f), 0.5f, Color.valueOf("fffbe0ff")));
+    }
+
+    /** Pastèque : des pastèques sont lancées des deux côtés et éclaboussent l'écran de jus et de pépins. */
+    private void scheduleSplash(TextureRegion icon) {
+        at(0f, () -> screenShake.shake(SHAKE_TIME, 10f));
+        float left  = playArea.getX() + 30f;
+        float right = playArea.getX() + playArea.getWidth() - 30f;
+        emit(0f, 1.8f, 34, i -> {
+            boolean fromLeft = i % 2 == 0;
+            float x = fromLeft ? left : right;
+            symbols.jet(icon, x, -40f, fromLeft ? MathUtils.random(50f, 70f) : MathUtils.random(110f, 130f),
+                MathUtils.random(1200f, 1550f), MathUtils.random(75f, 105f), 1300f);
+            splash(x, fromLeft);
+        });
+        for (float time : new float[] {1.1f, 1.5f, 1.9f, 2.3f}) at(time, () -> rocket(false));
+        coinRain(0.2f, 1.2f, 18, 1);
+    }
+
+    /** Gerbe de jus (rose) et de pépins (noirs) lancée d'un coin de la table avec une pastèque. */
+    private void splash(float x, boolean fromLeft) {
+        Color juice = Color.valueOf("ff5a78ff");
+        Color seed  = Color.valueOf("1a1a1aff");
+        for (int k = 0; k < 8; k++) {
+            float angle = fromLeft ? MathUtils.random(40f, 80f) : MathUtils.random(100f, 140f);
+            float speed = MathUtils.random(700f, 1200f);
+            boolean isSeed = k % 3 == 0;
+            glitter.ember(x, 0f, MathUtils.cosDeg(angle) * speed, MathUtils.sinDeg(angle) * speed, 1300f,
+                isSeed ? 6f : MathUtils.random(7f, 12f), MathUtils.random(1.2f, 1.8f), isSeed ? seed : juice);
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // Outils des mises en scène
+    // -------------------------------------------------------------------------
+
+    /** Programme {@code count} apparitions réparties entre {@code start} et {@code end}. */
+    private void emit(float start, float end, int count, IntConsumer spawn) {
+        emitters.add(new Emitter(start, end, count, spawn));
+    }
+
+    /** Programme {@code action} à l'instant {@code time}. */
+    private void at(float time, Runnable action) {
+        emit(time, time, 1, i -> action.run());
+    }
+
+    /** Pluie de {@code count} pièces entre {@code start} et {@code end} ; une sur {@code collectEvery} file vers le compteur. */
+    private void coinRain(float start, float end, int count, int collectEvery) {
+        emit(start, end, count, i -> coins.drop(tableX(0f), getHeight(), floorY(), i % collectEvery == 0));
+    }
+
+    /** Fusée aux couleurs du style ; {@code low} : elle éclate sous la bannière. */
+    private void rocket(boolean low) {
+        float x    = tableX(ROCKET_SIDE_MARGIN);
+        float apex = low ? MathUtils.random(LOW_APEX_MIN, LOW_APEX_MAX) : MathUtils.random(APEX_MIN, APEX_MAX);
+        if (style.fireworks() != null) {
+            fireworks.launch(x, getHeight() * ROCKET_FROM, getHeight() * apex, style.fireworks());
+        } else {
+            fireworks.launch(x, getHeight() * ROCKET_FROM, getHeight() * apex);
+        }
+    }
+
+    /** Un symbole lourd touche la table : onde de poussière au sol, étincelles et petite secousse. */
+    private void onSymbolLanded(float x, float y) {
+        shockwaves.ring(x, y, 110f, 0.45f, 0.28f, landingColor);
+        for (int k = 0; k < 5; k++) {
+            glitter.ember(x + MathUtils.random(-30f, 30f), y, MathUtils.random(-220f, 220f),
+                MathUtils.random(120f, 320f), 1100f, 5f, MathUtils.random(0.3f, 0.5f), landingColor);
+        }
+        if (landingShake > 0f) screenShake.shake(0.12f, landingShake);
+    }
+
+    /** @return une abscisse au hasard sur la table, à {@code margin} de ses bords. */
+    private float tableX(float margin) {
+        return MathUtils.random(playArea.getX() + margin, playArea.getX() + playArea.getWidth() - margin);
+    }
+
+    /** @return une ordonnée au hasard sur la table, où rebondissent pièces et symboles. */
+    private float floorY() {
+        return getHeight() * MathUtils.random(COIN_FLOOR_MIN, COIN_FLOOR_MAX);
+    }
+
+    /** @return la bannière du Bingo de {@code symbol}, créée à sa première utilisation. */
+    private BingoBanner banner(Symbol symbol) {
+        return banners.computeIfAbsent(symbol, s -> {
+            BingoStyle bannerStyle = BingoStyle.of(s);
+            Texture band = bandTexture;
+            if (bannerStyle.body() != null) {
+                band = Textures.bannerBand(bannerStyle.body(), bannerStyle.trim());
+                styleBands.add(band);
+            }
+            BingoBanner banner = new BingoBanner("BINGO!!!", band, pixel, bannerFont,
+                bannerStyle.letterA(), bannerStyle.letterB(), bannerStyle.back());
+            banner.setLightningColors(bannerStyle.boltGlow(), bannerStyle.boltCore());
+            bannerLayer.addActor(banner);
+            return banner;
+        });
+    }
+
     @Override
     public void dispose() {
         pixelTexture.dispose();
         coinTexture.dispose();
         bandTexture.dispose();
+        for (Texture band : styleBands) band.dispose();
+        for (Texture icon : icons.values()) icon.dispose();
         bannerFont.dispose();
     }
 }

@@ -674,8 +674,8 @@ public class GameScreen extends ScreenAdapter {
             onGainsShown(gains.amount);
         } else if (event instanceof GainsLostEvent lost) {
             onGainsShown(-lost.amount);
-        } else if (event instanceof JackpotEvent) {
-            onJackpotShown();
+        } else if (event instanceof JackpotEvent jackpot) {
+            onJackpotShown(jackpot.symbol);
         } else if (event instanceof EnemyDamagedEvent hit && hit.damage > 0) {
             onEnemyHit(hit.damage);
         } else if (event instanceof DamageReflectedEvent reflect && reflect.damage > 0) {
@@ -710,14 +710,15 @@ public class GameScreen extends ScreenAdapter {
 
     /**
      * Le texte « JACKPOT ! » vient d'apparaître : bruitage du bingo, bordure
-     * arc-en-ciel des rouleaux et célébration. La riposte de l'ennemi attend la
-     * fin de la célébration, et le tour se termine après elle.
+     * arc-en-ciel des rouleaux et célébration propre au {@code symbol} aligné.
+     * La riposte de l'ennemi attend la fin de la célébration, et le tour se
+     * termine après elle.
      */
-    private void onJackpotShown() {
+    private void onJackpotShown(Symbol symbol) {
         sounds.bingoThreeSymbols.play();
         table.setReelsRainbow(true);
         table.setLightsParty(true);
-        jackpotCelebration.play(() -> {
+        jackpotCelebration.play(symbol, () -> {
             table.setLightsParty(false);
             // La riposte de l'ennemi s'affiche maintenant (voir onReelsStopped) : le tour se termine après elle.
             stage.addAction(Actions.delay(SlotView.RIPOSTE_AFTER_BONUS + RIPOSTE_TEXT_TIME,

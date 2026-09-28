@@ -25,7 +25,7 @@ class EventPopupTest {
         assertEquals("PV -10", text(new PlayerDamagedEvent(10)));
         assertEquals("VIE +4", text(new PlayerHealedEvent(4)));
         assertEquals("RENVOI 5", text(new DamageReflectedEvent(5)));
-        assertEquals("JACKPOT !", text(new JackpotEvent()));
+        assertEquals("JACKPOT !", text(new JackpotEvent(Symbol.SEVEN)));
     }
 
     @Test
