@@ -13,10 +13,10 @@ import java.util.Set;
  * (les cartes spéciales, sans suite ni rang pertinent, sont ignorées). Elles
  * sont vérifiées automatiquement au lancer de la machine : chaque combinaison
  * formée ({@link #formed}) multiplie les gains et l'attaque du tirage, et
- * leurs multiplicateurs se cumulent (ex : Couleur et Suite, x4). Une
- * combinaison contenue dans une plus forte ne compte pas en plus : un Full
- * n'est pas aussi un Brelan et une Paire. L'ordre dans lequel les cartes sont
- * jouées ne compte pas.
+ * leurs multiplicateurs se cumulent (ex : Couleur et Suite, x4). Une paire
+ * contenue dans un brelan ne compte pas en plus ; une paire d'un autre rang,
+ * si (Brelan et Paire, x4,5). L'ordre dans lequel les cartes sont jouées ne
+ * compte pas.
  *
  * Elles poussent le joueur à varier les cartes qu'il pose, plutôt que de ne
  * jouer que les plus fortes.
@@ -25,8 +25,6 @@ public enum Combo {
 
     // Déclarées de la plus forte à la plus faible.
 
-    /** Un brelan et une paire d'un autre rang. */
-    FULL("FULL", 5f, "un brelan et une paire"),
     /** Trois cartes du même rang. */
     BRELAN("BRELAN", 3f, "3 cartes du même rang"),
     /** Au moins trois cartes, toutes de la même suite. */
@@ -68,16 +66,18 @@ public enum Combo {
 
     /**
      * @return les combinaisons formées par les cartes de {@code played}, de la
-     *         plus forte à la plus faible, sans celles contenues dans une plus
-     *         forte (le Brelan et la Paire d'un Full, la Paire d'un Brelan)
+     *         plus forte à la plus faible ; la Paire n'est comptée avec un Brelan
+     *         que si elle est d'un autre rang
      */
     public static List<Combo> formed(List<Card> played) {
         EnumSet<Combo> formed = EnumSet.noneOf(Combo.class);
         for (Combo combo : values()) {
             if (combo.matches(played)) formed.add(combo);
         }
-        if (formed.contains(FULL)) formed.remove(BRELAN);
-        if (formed.contains(FULL) || formed.contains(BRELAN)) formed.remove(PAIRE);
+        if (formed.contains(BRELAN)) {
+            long ranksWithPair = countByRank(played).values().stream().filter(count -> count >= 2).count();
+            if (ranksWithPair < 2) formed.remove(PAIRE); // la seule paire est celle du brelan
+        }
         return List.copyOf(formed);
     }
 
@@ -95,9 +95,8 @@ public enum Combo {
 
     /** @return {@code true} si les cartes à suite de {@code played} forment cette combinaison. */
     public boolean matches(List<Card> played) {
-        List<Card> suited = played.stream().filter(card -> card.getSuit() != null).toList();
-        Map<Integer, Integer> byRank = new HashMap<>();
-        suited.forEach(card -> byRank.merge(card.getRank(), 1, Integer::sum));
+        List<Card> suited = suited(played);
+        Map<Integer, Integer> byRank = countByRank(played);
 
         return switch (this) {
             case PAIRE   -> byRank.values().stream().anyMatch(count -> count >= 2);
@@ -105,7 +104,6 @@ public enum Combo {
             case COULEUR -> suited.size() >= MIN_CARDS
                 && suited.stream().map(Card::getSuit).distinct().count() == 1;
             case BRELAN  -> byRank.values().stream().anyMatch(count -> count >= MIN_CARDS);
-            case FULL    -> hasFullHouse(byRank);
         };
     }
 
@@ -118,13 +116,15 @@ public enum Combo {
         return false;
     }
 
-    private static boolean hasFullHouse(Map<Integer, Integer> byRank) {
-        for (Map.Entry<Integer, Integer> three : byRank.entrySet()) {
-            if (three.getValue() < MIN_CARDS) continue;
-            for (Map.Entry<Integer, Integer> pair : byRank.entrySet()) {
-                if (!pair.getKey().equals(three.getKey()) && pair.getValue() >= 2) return true;
-            }
-        }
-        return false;
+    /** @return les cartes à suite de {@code played} (les cartes spéciales n'ont pas de rang pertinent). */
+    private static List<Card> suited(List<Card> played) {
+        return played.stream().filter(card -> card.getSuit() != null).toList();
+    }
+
+    /** @return le nombre de cartes à suite de chaque rang parmi {@code played}. */
+    private static Map<Integer, Integer> countByRank(List<Card> played) {
+        Map<Integer, Integer> byRank = new HashMap<>();
+        suited(played).forEach(card -> byRank.merge(card.getRank(), 1, Integer::sum));
+        return byRank;
     }
 }

@@ -48,15 +48,15 @@ class PreparationResolverTest {
     }
 
     @Test
-    void aFullMultipliesGainsAndAttackWithoutItsBrelanAndPair() {
+    void aBrelanMultipliesGainsAndAttackWithoutItsOwnPair() {
         Player player = playerWhoPlayed(suited(13, Card.Suit.COEUR), suited(13, Card.Suit.PIQUE),
-            suited(13, Card.Suit.TREFLE), suited(1, Card.Suit.COEUR), suited(1, Card.Suit.CARREAU));
+            suited(13, Card.Suit.TREFLE), suited(1, Card.Suit.COEUR));
 
         TurnContext context = new PreparationResolver().resolve(List.of(), player, new Enemy("Ennemi", 1000));
 
-        assertEquals(Combo.FULL.getFactor(), context.getCombatContext().getGainFactor(), 1e-6, "seul le Full compte");
-        assertEquals(Combo.FULL.getFactor(), context.getCombatContext().getAttackFactor(), 1e-6);
-        assertEquals(List.of(Combo.FULL), context.getEvents().stream()
+        assertEquals(Combo.BRELAN.getFactor(), context.getCombatContext().getGainFactor(), 1e-6, "seul le Brelan compte");
+        assertEquals(Combo.BRELAN.getFactor(), context.getCombatContext().getAttackFactor(), 1e-6);
+        assertEquals(List.of(Combo.BRELAN), context.getEvents().stream()
             .filter(ComboEvent.class::isInstance).map(event -> ((ComboEvent) event).combo).toList());
     }
 

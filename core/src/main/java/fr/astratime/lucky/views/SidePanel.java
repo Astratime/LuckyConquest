@@ -5,7 +5,6 @@ import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.Interpolation;
 import com.badlogic.gdx.math.Vector2;
-import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.actions.Actions;
 import com.badlogic.gdx.scenes.scene2d.actions.TemporalAction;
@@ -30,9 +29,9 @@ import java.util.Map;
  * Panneau latéral gauche, sur toute la hauteur de l'écran : titre du jeu,
  * encadré des gains (pièce d'or et montant en grand), aide-mémoire des
  * combinaisons de poker (celles que forment les cartes jouées ce tour brillent
- * en or, avec leur multiplicateur total), encadré des effets de cartes actifs (symboles retirés, Porte-bonheur,
- * paris en cours ; masqué s'il n'y en a pas), puis un emplacement en bas pour
- * un bouton (ex : "Recommencer").
+ * en or, avec leur multiplicateur total), puis encadré des effets de cartes
+ * actifs (symboles retirés, Porte-bonheur, paris en cours ; masqué s'il n'y
+ * en a pas).
  *
  * Quand les gains changent, le montant défile jusqu'à sa nouvelle valeur et la
  * pièce rebondit (seulement si les gains augmentent).
@@ -48,7 +47,6 @@ public class SidePanel implements Disposable {
     private static final float INSET_PADDING  = 16f;
     private static final float COIN_SIZE      = 60f;
     private static final float COIN_GAP       = 12f;
-    private static final float FOOTER_GAP     = 12f;
     private static final float COUNT_DURATION = 0.6f;
     private static final float BUMP_SCALE     = 1.3f;
     private static final float EFFECT_ICON    = 52f;
@@ -218,12 +216,6 @@ public class SidePanel implements Disposable {
 
     /** @return le panneau, à ajouter au Stage. */
     public Table getActor() { return root; }
-
-    /** Ajoute {@code actor} (à sa taille actuelle) en bas du panneau, centré, sous les précédents. */
-    public void addFooter(Actor actor) {
-        root.add(actor).size(actor.getWidth(), actor.getHeight()).padTop(FOOTER_GAP);
-        root.row();
-    }
 
     /** Étire le panneau sur toute la hauteur de l'écran (après un redimensionnement). */
     public void layout(Stage stage) {
