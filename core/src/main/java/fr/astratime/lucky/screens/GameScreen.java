@@ -482,6 +482,7 @@ public class GameScreen extends ScreenAdapter {
         sounds.buttonClick.play();
         shopOverlay.show(gameController.getShopOffers(), () -> player().getGains(), cardTextures::get,
             (text, action) -> buttons.create(text, sounds.buttonClick, action),
+            gameController::unavailableReason,
             offer -> {
                 GameController.Purchase purchase = gameController.buy(offer);
                 if (purchase == null) return false;

@@ -31,6 +31,9 @@ public class BingoEffect extends Effect {
         this.symbol = symbol;
     }
 
+    /** @return le symbole imposé au jackpot, ou {@code null} s'il est tiré au hasard. */
+    public Symbol getSymbol() { return symbol; }
+
     @Override
     public void onPlay(PlayContext context) {
         super.onPlay(context);

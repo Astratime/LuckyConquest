@@ -12,6 +12,7 @@ import fr.astratime.lucky.entities.choices.CardChoice;
 import fr.astratime.lucky.entities.choices.RouletteChoice;
 import fr.astratime.lucky.entities.context.PlayContext;
 import fr.astratime.lucky.entities.effects.BetOnSymbolEffect;
+import fr.astratime.lucky.entities.effects.BingoEffect;
 import fr.astratime.lucky.entities.effects.Effect;
 import fr.astratime.lucky.entities.effects.PistolEffect;
 import fr.astratime.lucky.loaders.CardLoader;
@@ -157,14 +158,33 @@ public class GameController {
     public List<ShopOffer> getShopOffers() { return shopOffers; }
 
     /**
+     * @return pourquoi {@code offer} ne peut pas être achetée en ce moment (hors
+     *         manque de gains), ou {@code null} si elle est disponible. Un Bingo
+     *         dont le symbole est retiré des rouleaux (Recyclage) ne peut pas
+     *         sortir : il n'est pas en vente tant que le symbole n'est pas revenu.
+     */
+    public String unavailableReason(ShopOffer offer) {
+        Map<Symbol, Integer> removed = gameState.getPlayer().getLastingEffects().getRemovedSymbols();
+        for (Effect effect : offer.card().getEffects()) {
+            if (effect instanceof BingoEffect bingo && removed.containsKey(bingo.getSymbol())) {
+                int turns = removed.get(bingo.getSymbol());
+                return "Indisponible : le symbole " + bingo.getSymbol().getDisplayName()
+                    + " est retiré des rouleaux par le Recyclage (encore " + turns + (turns > 1 ? " tours)" : " tour)");
+            }
+        }
+        return null;
+    }
+
+    /**
      * Achète {@code offer} : son prix est retiré des gains, puis la carte est
      * posée sur la table s'il y a de la place, sinon glissée dans le deck.
      *
-     * @return l'achat, ou {@code null} si les gains ne suffisent pas
+     * @return l'achat, ou {@code null} si la carte est indisponible (voir
+     *         {@link #unavailableReason}) ou si les gains ne suffisent pas
      */
     public Purchase buy(ShopOffer offer) {
         Player player = gameState.getPlayer();
-        if (player.getGains() < offer.price()) return null;
+        if (unavailableReason(offer) != null || player.getGains() < offer.price()) return null;
         player.addGains(-offer.price());
         Card card = cardFactory.apply(offer.card().getId());
         return new Purchase(card, player.addToHandOrDeck(card));
