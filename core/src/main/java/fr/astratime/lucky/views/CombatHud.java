@@ -41,6 +41,7 @@ public class CombatHud implements Disposable {
 
     // PV du tirage en cours pas encore montrés (voir holdBack).
     private int heldEnemyLoss;
+    private int heldEnemyHeal;
     private int heldPlayerDamage;
     private int heldPlayerHeal;
 
@@ -65,7 +66,8 @@ public class CombatHud implements Disposable {
         GameState state = gameState.get();
         int enemyMax  = state.getEnemy().getMaxHp();
         int playerMax = state.getPlayer().getMaxHp();
-        enemyHealthBar.refresh(Math.clamp(state.getEnemy().getHp() + heldEnemyLoss, 0, enemyMax), enemyMax);
+        enemyHealthBar.refresh(Math.clamp(state.getEnemy().getHp() + heldEnemyLoss - heldEnemyHeal, 0, enemyMax),
+            enemyMax);
         playerHealthBar.refresh(
             Math.clamp(state.getPlayer().getHp() + heldPlayerDamage - heldPlayerHeal, 0, playerMax), playerMax);
     }
@@ -73,21 +75,23 @@ public class CombatHud implements Disposable {
     /**
      * Retient les PV d'un tirage déjà joué : les barres les montreront au fil
      * des textes ({@link #revealEnemyHit}, {@link #revealPlayerHit},
-     * {@link #revealPlayerHeal}).
+     * {@link #revealPlayerHeal}, {@link #revealEnemyHeal}).
      *
-     * @param enemyLoss    PV réellement perdus par l'ennemi pendant le tirage
+     * @param enemyLoss    PV réellement perdus par l'ennemi pendant le tour
+     * @param enemyHeal    PV réellement rendus à l'ennemi (ses Potions)
      * @param playerDamage dégâts réellement subis par le joueur
      * @param playerHeal   PV réellement rendus au joueur
      */
-    public void holdBack(int enemyLoss, int playerDamage, int playerHeal) {
+    public void holdBack(int enemyLoss, int enemyHeal, int playerDamage, int playerHeal) {
         heldEnemyLoss    += enemyLoss;
+        heldEnemyHeal    += enemyHeal;
         heldPlayerDamage += playerDamage;
         heldPlayerHeal   += playerHeal;
     }
 
     /** Oublie les PV retenus (nouveau combat : leurs textes ne s'afficheront jamais). */
     public void clearHeldBack() {
-        heldEnemyLoss = heldPlayerDamage = heldPlayerHeal = 0;
+        heldEnemyLoss = heldEnemyHeal = heldPlayerDamage = heldPlayerHeal = 0;
         refresh();
     }
 
@@ -96,6 +100,13 @@ public class CombatHud implements Disposable {
         heldEnemyLoss -= Math.min(damage, heldEnemyLoss); // un coup fatal peut dépasser les PV restants
         refresh();
         enemyHealthBar.hit(HIT_FLASH, HIT_SHAKE);
+    }
+
+    /** Montre un soin de l'ennemi : sa barre remonte sous un flash vert. */
+    public void revealEnemyHeal(int amount) {
+        heldEnemyHeal = Math.max(0, heldEnemyHeal - amount);
+        refresh();
+        enemyHealthBar.hit(HEAL_FLASH, 0f);
     }
 
     /** Montre un coup porté au joueur : sa barre descend, tremble et flashe. */
