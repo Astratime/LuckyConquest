@@ -48,6 +48,10 @@ public final class PopupScale {
     public static final float SPIN_HEAL      = 30f;
     /** Dégâts renvoyés à l'ennemi. */
     public static final float SPIN_REFLECT   = 100f;
+    /** Soin d'une Potion de l'ennemi. */
+    public static final float ENEMY_HEAL     = 2500f;
+    /** Défense d'un Bouclier de l'ennemi. */
+    public static final float ENEMY_SHIELD   = 700f;
 
     // --- Textes sans valeur chiffrée -------------------------------------------
     /** Intensité des textes sans valeur chiffrée qui accompagnent un bonus plus important. */

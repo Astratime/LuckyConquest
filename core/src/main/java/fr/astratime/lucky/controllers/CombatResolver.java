@@ -9,23 +9,21 @@ import fr.astratime.lucky.entities.TurnResult;
 import fr.astratime.lucky.entities.LastingEffects;
 import fr.astratime.lucky.entities.events.BetLostEvent;
 import fr.astratime.lucky.entities.events.CounterAttackEvent;
-import fr.astratime.lucky.entities.events.GaugeFilledEvent;
 import fr.astratime.lucky.entities.events.BetWonEvent;
-import fr.astratime.lucky.entities.events.DamageReflectedEvent;
 import fr.astratime.lucky.entities.events.EnemyDamagedEvent;
 import fr.astratime.lucky.entities.events.Event;
 import fr.astratime.lucky.entities.events.GainsEarnedEvent;
 import fr.astratime.lucky.entities.events.JackpotEvent;
 import fr.astratime.lucky.entities.events.PistolShotEvent;
-import fr.astratime.lucky.entities.events.PlayerDamagedEvent;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
 /**
- * Résout le combat d'un tour : exécute les actions, calcule les gains de
- * paire/jackpot, construit le journal d'événements et retourne un TurnResult.
+ * Résout le tour du joueur : exécute les actions, calcule les gains de
+ * paire/jackpot, construit le journal d'événements et retourne un TurnResult
+ * (le tour de l'ennemi qui suit est résolu par {@link EnemyTurnResolver}).
  * C'est le seul endroit qui modifie l'état du combat (HP ennemi, gains du joueur).
  * Ne reçoit que CombatContext et List<Action> — pas le GameState entier.
  * Les gains sont crédités directement au joueur via CombatContext.getPlayer(),
@@ -39,7 +37,7 @@ public class CombatResolver {
     private static final int GAINS_JACKPOT = 2000;
     /** Dégâts de base du pistolet quand aucun symbole d'attaque n'est sorti. */
     static final int   PISTOL_BASE_DAMAGE = 10;
-    /** Part du Coffre (Carreau) ajoutée à l'attaque ennemie pour calculer le renvoi. */
+    /** Part du Coffre (Carreau) ajoutée à l'attaque ennemie pour calculer le renvoi (voir EnemyTurnResolver). */
     static final float VAULT_REFLECT_SHARE = 0.2f;
     /** Part des gains perdue quand le symbole parié ne sort pas. */
     private static final float BET_LOSS   = 0.5f;
@@ -47,7 +45,7 @@ public class CombatResolver {
     /**
      * Résout un tour de combat complet à partir des actions déjà déterminées
      * par les symboles tirés : exécute chaque action, applique le bonus de
-     * paire/jackpot, puis fait riposter l'ennemi s'il a survécu.
+     * paire/jackpot.
      *
      * @param combatContext contexte de combat (joueur, ennemi, modificateurs des cartes)
      * @param symbolActions couples symbole/action à résoudre, dans l'ordre des symboles
@@ -67,7 +65,7 @@ public class CombatResolver {
      * Comme {@link #resolve(CombatContext, List, Symbol[], List)}, avec les
      * symboles arrêtés sur les rouleaux avant le remplacement des Jokers.
      * Après les symboles viennent les tirs de pistolet (Roulette russe), puis
-     * le bonus de paire/jackpot et les paris, puis la riposte de l'ennemi.
+     * le bonus de paire/jackpot et les paris.
      *
      * @param drawnSymbols symboles arrêtés sur les rouleaux, Jokers compris
      */
@@ -113,44 +111,9 @@ public class CombatResolver {
         }
         events.addAll(pairOrJackpotEvents);
 
-        // Riposte de l'ennemi : s'il a survécu au tour du joueur, il attaque à son tour.
-        // Le bouclier accumulé par le joueur ce tour absorbe une partie des dégâts
-        // (voir Player.takeDamage) ; l'événement reporte les dégâts réellement subis.
-        // Le renvoi de dégâts (Carreau) reflète un pourcentage de l'attaque brute de
-        // l'ennemi (voir CombatContext.getTotalReflectPercent), indépendamment de ce
-        // que le bouclier en a absorbé.
-        Enemy enemy = combatContext.getEnemy();
-        List<Event> enemyTurnEvents = new ArrayList<>();
-        if (!enemy.isDefeated()) {
-            Player player         = combatContext.getPlayer();
-            int    attackPower    = enemy.getAttackPower();
-            int    reflectPercent = combatContext.getTotalReflectPercent(); // selon la vie avant la riposte
-            int    actualDamage   = player.takeDamage(attackPower);
-            enemyTurnEvents.add(new PlayerDamagedEvent(actualDamage));
-
-            if (reflectPercent > 0) {
-                // Le Coffre arme le renvoi : une part de son contenu s'ajoute à l'attaque renvoyée.
-                float reflectBase = attackPower + player.getLastingEffects().getVault() * VAULT_REFLECT_SHARE;
-                int reflectedDamage = Math.round(reflectBase * (reflectPercent / 100f));
-                if (reflectedDamage > 0) {
-                    enemy.takeDamage(reflectedDamage);
-                    enemyTurnEvents.add(new DamageReflectedEvent(reflectedDamage));
-                }
-            }
-        }
-
-        // Le bouclier ne vaut que pour ce tour : ce qui reste remplit le Coffre (Carreau).
-        int leftoverShield = combatContext.getPlayer().getShield();
-        if (leftoverShield > 0) {
-            combatContext.getPlayer().getLastingEffects().addVault(leftoverShield);
-            enemyTurnEvents.add(new GaugeFilledEvent(GaugeFilledEvent.Gauge.COFFRE, leftoverShield));
-        }
-        events.addAll(enemyTurnEvents);
-        combatContext.getPlayer().resetTurnDefenses();
-
         List<Event> cardEvents = priorEvents.stream().filter(e -> !e.getPopups().isEmpty()).toList();
         return new TurnResult(events, symbols, drawnSymbols, gains, symbolOutcomes, cardEvents, pistolEvents,
-            pairOrJackpotEvents, enemyTurnEvents);
+            pairOrJackpotEvents, List.of());
     }
 
     /**

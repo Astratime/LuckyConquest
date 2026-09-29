@@ -97,7 +97,10 @@ class SuitGaugesTest {
         CombatContext combat = new CombatContext(player, enemy);
         Symbol[] symbols = { Symbol.DIAMOND, null, null };
         new CombatResolver().resolve(combat, List.of(action(Symbol.DIAMOND, 0)), symbols, List.of());
-        assertEquals(20 - 10, lasting.getVault(), "bouclier 20, riposte 10 : il reste 10 pour le Coffre");
+        player.takeDamage(10); // une Épée de l'ennemi, absorbée par le bouclier
+        TurnEngine.storeLeftoverShield(player);
+        assertEquals(20 - 10, lasting.getVault(), "bouclier 20, attaque 10 : il reste 10 pour le Coffre");
+        assertEquals(0, player.getShield(), "le bouclier ne dure qu'un tour");
 
         lasting.addVault(90);
         TurnContext turn = prepare(new AceOfDiamondsEffect());

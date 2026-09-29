@@ -1,8 +1,10 @@
 package fr.astratime.lucky.entities;
 
+import fr.astratime.lucky.entities.enemy.EnemyTurnResult;
 import fr.astratime.lucky.entities.events.Event;
 import fr.astratime.lucky.entities.events.JackpotEvent;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -23,6 +25,7 @@ public class TurnResult {
     private final Symbol[]            drawnSymbols;
     private final List<Event>         cardEvents;
     private final List<Event>         pistolEvents;
+    private final EnemyTurnResult     enemyTurn;
 
     /**
      * @param events                 journal des événements survenus pendant le tour
@@ -30,7 +33,7 @@ public class TurnResult {
      * @param gainsFromPairOrJackpot gains issus uniquement du bonus de paire/jackpot
      * @param symbolOutcomes         détail par symbole tiré : son action et les événements qu'elle a produits
      * @param pairOrJackpotEvents    événements du bonus de paire/jackpot (vide si aucun)
-     * @param enemyTurnEvents        événements de la riposte de l'ennemi (vie perdue, renvoi ; vide s'il est vaincu)
+     * @param enemyTurnEvents        événements de fin de tour, après celui de l'ennemi (ex : Coffre rempli)
      */
     public TurnResult(List<Event> events, Symbol[] symbols, int gainsFromPairOrJackpot,
                        List<SymbolOutcome> symbolOutcomes,
@@ -48,6 +51,14 @@ public class TurnResult {
     public TurnResult(List<Event> events, Symbol[] symbols, Symbol[] drawnSymbols, int gainsFromPairOrJackpot,
                       List<SymbolOutcome> symbolOutcomes, List<Event> cardEvents, List<Event> pistolEvents,
                       List<Event> pairOrJackpotEvents, List<Event> enemyTurnEvents) {
+        this(events, symbols, drawnSymbols, gainsFromPairOrJackpot, symbolOutcomes, cardEvents, pistolEvents,
+            pairOrJackpotEvents, enemyTurnEvents, null);
+    }
+
+    private TurnResult(List<Event> events, Symbol[] symbols, Symbol[] drawnSymbols, int gainsFromPairOrJackpot,
+                       List<SymbolOutcome> symbolOutcomes, List<Event> cardEvents, List<Event> pistolEvents,
+                       List<Event> pairOrJackpotEvents, List<Event> enemyTurnEvents, EnemyTurnResult enemyTurn) {
+        this.enemyTurn = enemyTurn;
         this.events  = List.copyOf(events);
         this.symbols = symbols.clone();
         this.drawnSymbols = drawnSymbols.clone();
@@ -75,8 +86,26 @@ public class TurnResult {
     public List<SymbolOutcome> getSymbolOutcomes() { return symbolOutcomes; }
     /** @return les événements du bonus de paire/jackpot de ce tour (vide si aucun). */
     public List<Event> getPairOrJackpotEvents() { return pairOrJackpotEvents; }
-    /** @return les événements de la riposte de l'ennemi (vide s'il a été vaincu avant de riposter). */
+    /** @return les événements de fin de tour, après celui de l'ennemi (ex : Coffre rempli par le bouclier restant). */
     public List<Event> getEnemyTurnEvents() { return enemyTurnEvents; }
+
+    /** @return le tour de l'ennemi qui a suivi, ou {@code null} s'il n'a pas joué (vaincu, ou joueur vaincu). */
+    public EnemyTurnResult getEnemyTurn() { return enemyTurn; }
+
+    /**
+     * @param enemyTurn tour de l'ennemi qui suit celui du joueur ({@code null} s'il n'a pas joué)
+     * @param endEvents événements de fin de tour (ex : Coffre rempli)
+     * @return ce résultat, complété du tour de l'ennemi et de la fin du tour (journal compris)
+     */
+    public TurnResult withEnemyTurn(EnemyTurnResult enemyTurn, List<Event> endEvents) {
+        List<Event> all = new ArrayList<>(events);
+        if (enemyTurn != null) all.addAll(enemyTurn.events());
+        all.addAll(endEvents);
+        List<Event> end = new ArrayList<>(enemyTurnEvents);
+        end.addAll(endEvents);
+        return new TurnResult(all, symbols, drawnSymbols, gainsFromPairOrJackpot, symbolOutcomes, cardEvents,
+            pistolEvents, pairOrJackpotEvents, end, enemyTurn);
+    }
 
 
     /** @return {@code true} si un {@link JackpotEvent} figure dans le journal de ce tour. */
