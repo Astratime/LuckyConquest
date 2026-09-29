@@ -70,9 +70,9 @@ public class EnemyView implements Disposable {
     /** Textes des symboles : sous le filet, côté joueur (vide pendant le tour de l'ennemi), écartés. */
     private static final float RESULT_BELOW   = 70f;
     private static final float RESULT_SPREAD  = 250f;
-    private static final float SYMBOL_SIZE    = 64f;
+    private static final float SYMBOL_SIZE    = 80f;    // 16 pixels x5, comme les symboles du joueur
     private static final float BOB            = 4f;     // respiration du croupier
-    private static final float DEFENSE_GAP    = 20f;    // entre le cadre des rouleaux et la défense
+    private static final float DEFENSE_GAP    = 40f;    // entre les rouleaux et la défense (au-delà du cadre)
 
     private final TableView           table;
     private final EnemyTextures       textures;
@@ -127,9 +127,9 @@ public class EnemyView implements Disposable {
                 + Enemy.PLAYS_PER_TURN + " à chaque tour");
 
         deckPile    = new CardPileView("DECK", textures.cardBack, pileFont,
-            TableView.ENEMY_CARD_WIDTH, TableView.ENEMY_CARD_HEIGHT);
+            table.getCardWidth(), table.getCardHeight());
         discardPile = new CardPileView("DÉFAUSSE", textures.cardBack, pileFont,
-            TableView.ENEMY_CARD_WIDTH, TableView.ENEMY_CARD_HEIGHT);
+            table.getCardWidth(), table.getCardHeight());
 
         for (int i = 0; i < EnemySlotMachine.SYMBOL_COUNT; i++) {
             int reel = i;
@@ -178,18 +178,24 @@ public class EnemyView implements Disposable {
     /** Place le croupier, ses rouleaux et ses piles aux positions de la table (après un redimensionnement). */
     public void layout() {
         character.clearActions();
-        character.setPosition(table.getEnemyCharacterCenterX() - character.getWidth() / 2f,
-            Math.min(table.getEnemyCardRowY(), table.getFeltTop() - character.getHeight()));
+        // Le plus grand agrandissement entier qui tient entre les cartes de l'ennemi et le haut du feutre.
+        float room  = table.getFeltTop() - table.getEnemyCharacterY();
+        int   scale = Math.clamp((int) (room / textures.croupier.getHeight()), 2, EnemyTextures.CROUPIER_SCALE);
+        croupier.setSize(textures.croupier.getWidth() * scale, textures.croupier.getHeight() * scale);
+        flash.setSize(croupier.getWidth(), croupier.getHeight());
+        character.setSize(croupier.getWidth(), croupier.getHeight());
+        character.setOrigin(croupier.getWidth() / 2f, 0f);
+        character.setPosition(table.getEnemyCharacterCenterX() - character.getWidth() / 2f, table.getEnemyCharacterY());
         idle();
-        deckPile.setPosition(table.getEnemyDeckX(), table.getEnemyCardRowY());
-        discardPile.setPosition(table.getEnemyDiscardX(), table.getEnemyCardRowY());
-        float pad = (TableView.ENEMY_CELL - SYMBOL_SIZE) / 2f;
+        deckPile.setPosition(table.getEnemyDeckX(), table.getEnemyPilesY());
+        discardPile.setPosition(table.getEnemyDiscardX(), table.getEnemyPilesY());
+        float padX = (SlotView.CELL_WIDTH - SYMBOL_SIZE) / 2f, padY = (SlotView.CELL_HEIGHT - SYMBOL_SIZE) / 2f;
         for (int i = 0; i < reels.size(); i++) {
-            reels.get(i).setPosition(table.getEnemyReelRowX() + i * TableView.ENEMY_CELL + pad,
-                table.getEnemyReelRowY() + pad);
+            reels.get(i).setPosition(table.getReelRowX() + i * SlotView.CELL_WIDTH + padX,
+                table.getEnemyReelRowY() + padY);
         }
-        float reelsRight = table.getEnemyReelRowX() + EnemySlotMachine.SYMBOL_COUNT * TableView.ENEMY_CELL;
-        float centerY    = table.getEnemyReelRowY() + TableView.ENEMY_CELL / 2f;
+        float reelsRight = table.getReelRowX() + EnemySlotMachine.SYMBOL_COUNT * SlotView.CELL_WIDTH;
+        float centerY    = table.getEnemyReelRowY() + SlotView.CELL_HEIGHT / 2f;
         defenseIcon.setPosition(reelsRight + DEFENSE_GAP, centerY - defenseIcon.getHeight() / 2f);
         refreshDefense();
         for (int i = 0; i < handCards.size(); i++) {
@@ -229,8 +235,8 @@ public class EnemyView implements Disposable {
             }
             shownDeck = Math.max(0, shownDeck - 1);
             Image card = new Image(new TextureRegionDrawable(new TextureRegion(textures.cardBack)));
-            card.setSize(TableView.ENEMY_CARD_WIDTH, TableView.ENEMY_CARD_HEIGHT);
-            card.setOrigin(TableView.ENEMY_CARD_WIDTH / 2f, TableView.ENEMY_CARD_HEIGHT / 2f);
+            card.setSize(table.getCardWidth(), table.getCardHeight());
+            card.setOrigin(table.getCardWidth() / 2f, table.getCardHeight() / 2f);
             card.setPosition(deckPile.getTopX(), deckPile.getTopY());
             card.setVisible(false);
             card.addAction(Actions.sequence(
@@ -342,7 +348,7 @@ public class EnemyView implements Disposable {
         Image image = reels.get(reel);
         image.clearActions();
         setReel(reel, symbol);
-        float baseY = table.getEnemyReelRowY() + (TableView.ENEMY_CELL - SYMBOL_SIZE) / 2f;
+        float baseY = table.getEnemyReelRowY() + (SlotView.CELL_HEIGHT - SYMBOL_SIZE) / 2f;
         image.setY(baseY - 8f);
         image.addAction(Actions.moveTo(image.getX(), baseY, 0.18f, Interpolation.swingOut));
         cardSound.play();
@@ -350,7 +356,7 @@ public class EnemyView implements Disposable {
 
         List<EffectPopup> texts = new ArrayList<>();
         events.forEach(event -> texts.addAll(event.getPopups()));
-        float centerX = table.getEnemyReelRowX() + EnemySlotMachine.SYMBOL_COUNT * TableView.ENEMY_CELL / 2f;
+        float centerX = table.getReelRowX() + EnemySlotMachine.SYMBOL_COUNT * SlotView.CELL_WIDTH / 2f;
         popups.play(texts, centerX + (reel - 1) * RESULT_SPREAD, table.getDividerY() - RESULT_BELOW);
         for (Event event : events) {
             if (event instanceof EnemyShieldedEvent shield) {

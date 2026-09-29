@@ -126,7 +126,7 @@ public class GameScreen extends ScreenAdapter {
 
     /** Taille minimale de l'écran de jeu : dans une fenêtre plus petite, il est réduit (voir {@link MinimumScreenViewport}). */
     private static final float  MIN_WIDTH      = 1600f;
-    private static final float  MIN_HEIGHT     = 900f;
+    private static final float  MIN_HEIGHT     = 1080f;  // les deux côtés de la table, à la même taille
     private static final float  CARD_WIDTH     = 95f;
     private static final float  CARD_HEIGHT    = 135f;
     private static final String CARD_BACK_PATH = "cards/light/BACK.png";
@@ -164,8 +164,6 @@ public class GameScreen extends ScreenAdapter {
     private static final int   POT_CONFETTI          = 50;
     /** Temps laissé au texte de la riposte (et au coup sur la barre) avant de passer au tour du joueur. */
     private static final float RIPOSTE_TEXT_TIME     = 0.8f;
-    /** Annonces de tour : hauteur de leur bande (fraction de l'écran), au-dessus de la machine. */
-    private static final float TURN_BANNER_HEIGHT    = 0.62f;
     /** Combinaison formée : hauteur de son texte au-dessus de la main (en hauteurs de carte). */
     private static final float COMBO_TEXT_HEIGHT     = 2f;
 
@@ -385,9 +383,9 @@ public class GameScreen extends ScreenAdapter {
         turnBanner.play(TurnBanner.Side.ENEMY, playArea.getCenterX(), turnBannerY(), playArea.getWidth());
     }
 
-    /** @return la hauteur des annonces de tour : au-dessus de la machine, sous les barres de vie. */
+    /** @return la hauteur des annonces de tour : sur le filet, entre le côté du joueur et celui de l'ennemi. */
     private float turnBannerY() {
-        return stage.getViewport().getWorldHeight() * TURN_BANNER_HEIGHT;
+        return table.getDividerY();
     }
 
     /**

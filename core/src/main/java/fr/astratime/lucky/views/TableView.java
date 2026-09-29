@@ -26,10 +26,10 @@ import java.util.List;
  * le deck (à gauche) et la défausse (à droite) sur leur tapis, la machine à
  * sous (un rouleau par symbole), la rangée des cartes de la main
  * ({@link Player#MAX_HAND_SIZE} emplacements), puis un filet doré. Au-delà,
- * le côté de l'ennemi, en plus petit : la rangée de ses cartes
- * ({@link Enemy#HAND_SIZE} emplacements), sa machine à sous au-dessus, sa
- * défausse (à gauche) et son deck (à droite), et une place pour le croupier
- * entre sa défausse et ses cartes. Lors d'un jackpot, les rouleaux du joueur
+ * le côté de l'ennemi, en miroir et à la même taille : la rangée de ses
+ * cartes ({@link Enemy#HAND_SIZE} emplacements) contre le filet, sa machine à
+ * sous au-dessus, sa défausse (en haut à gauche) et son deck (en haut à
+ * droite), et une place pour le croupier entre sa défausse et ses rouleaux. Lors d'un jackpot, les rouleaux du joueur
  * prennent une bordure arc-en-ciel animée.
  *
  * La table est assemblée à partir de pièces étirables ou répétées (et non
@@ -63,18 +63,9 @@ public class TableView {
     private static final float DIVIDER_GAP  = 60f;     // au-dessus de la rangée de cartes
     private static final float DIVIDER_SIDE = 60f;     // retrait du filet par rapport au rebord
 
-    // Côté de l'ennemi, au-dessus du filet (cartes et rouleaux plus petits)
-    /** Taille d'une carte de l'ennemi sur la table. */
-    public static final float ENEMY_CARD_WIDTH  = 57f;
-    public static final float ENEMY_CARD_HEIGHT = 81f;
-    /** Taille d'un rouleau de l'ennemi. */
-    public static final float ENEMY_CELL        = 68f;
-    private static final float ENEMY_ROW_GAP     = 24f;  // entre le filet et la rangée de cartes
-    private static final float ENEMY_CARD_GAP    = 10f;
-    private static final float ENEMY_REEL_GAP    = 16f;  // entre les cartes et le cadre des rouleaux
-    private static final float ENEMY_FRAME_PAD   = 10f;
-    private static final float ENEMY_MAT_PAD     = 10f;
-    private static final float ENEMY_SLOT_LINE   = 3f;
+    // Côté de l'ennemi : le reflet de celui du joueur, de l'autre côté du filet
+    private static final float CROUPIER_GAP = 8f;      // entre la rangée de cartes de l'ennemi et le croupier
+    private static final float SHOP_CLEARANCE = 36f;   // piles de l'ennemi abaissées : l'échoppe est au-dessus
 
     private final PlayArea playArea;
     private final float    cardWidth;
@@ -192,63 +183,64 @@ public class TableView {
             dividerY - dividerEmblem.getPrefHeight() / 2f,
             dividerEmblem.getPrefWidth(), dividerEmblem.getPrefHeight());
 
-        // Côté de l'ennemi
+        // Côté de l'ennemi : mêmes tailles que celui du joueur, en miroir.
         for (int i = 0; i < enemyCardSlots.size(); i++) {
-            enemyCardSlots.get(i).setBounds(getEnemyCardSlotX(i) - ENEMY_SLOT_LINE, getEnemyCardRowY() - ENEMY_SLOT_LINE,
-                ENEMY_CARD_WIDTH + ENEMY_SLOT_LINE * 2, ENEMY_CARD_HEIGHT + ENEMY_SLOT_LINE * 2);
+            enemyCardSlots.get(i).setBounds(getEnemyCardSlotX(i) - SLOT_OUTLINE, getEnemyCardRowY() - SLOT_OUTLINE,
+                cardWidth + SLOT_OUTLINE * 2, cardHeight + SLOT_OUTLINE * 2);
         }
-        float enemyReelsWidth = EnemySlotMachine.SYMBOL_COUNT * ENEMY_CELL;
-        enemyReelFrame.setBounds(getEnemyReelRowX() - ENEMY_FRAME_PAD, getEnemyReelRowY() - ENEMY_FRAME_PAD,
-            enemyReelsWidth + ENEMY_FRAME_PAD * 2, ENEMY_CELL + ENEMY_FRAME_PAD * 2);
+        enemyReelFrame.setBounds(getReelRowX() - REEL_FRAME_PAD, getEnemyReelRowY() - REEL_FRAME_PAD,
+            reelRowWidth() + REEL_FRAME_PAD * 2, SlotView.CELL_HEIGHT + REEL_FRAME_PAD * 2);
         for (int i = 0; i < enemyReelCells.size(); i++) {
-            enemyReelCells.get(i).setBounds(getEnemyReelRowX() + i * ENEMY_CELL, getEnemyReelRowY(),
-                ENEMY_CELL, ENEMY_CELL);
+            enemyReelCells.get(i).setBounds(getReelRowX() + i * SlotView.CELL_WIDTH, getEnemyReelRowY(),
+                SlotView.CELL_WIDTH, SlotView.CELL_HEIGHT);
         }
-        float enemyMatWidth  = ENEMY_CARD_WIDTH + ENEMY_MAT_PAD * 2 + 9f;
-        float enemyMatHeight = ENEMY_CARD_HEIGHT + ENEMY_MAT_PAD * 2 + 9f + 26f; // pile, épaisseur, libellé
-        enemyDiscardMat.setBounds(getEnemyDiscardX() - ENEMY_MAT_PAD, getEnemyCardRowY() - ENEMY_MAT_PAD,
-            enemyMatWidth, enemyMatHeight);
-        enemyDeckMat.setBounds(getEnemyDeckX() - ENEMY_MAT_PAD, getEnemyCardRowY() - ENEMY_MAT_PAD,
-            enemyMatWidth, enemyMatHeight);
+        enemyDiscardMat.setBounds(getEnemyDiscardX() - MAT_PAD, getEnemyPilesY() - MAT_PAD, matWidth, matHeight);
+        enemyDeckMat.setBounds(getEnemyDeckX() - MAT_PAD, getEnemyPilesY() - MAT_PAD, matWidth, matHeight);
     }
 
     /** @return l'ordonnée (Stage) du filet qui sépare le côté du joueur de celui de l'ennemi. */
     public float getDividerY() { return getHandRowY() + cardHeight + DIVIDER_GAP; }
 
-    /** @return l'ordonnée (Stage) du bas de la rangée de cartes de l'ennemi (et de ses piles). */
-    public float getEnemyCardRowY() { return getDividerY() + ENEMY_ROW_GAP; }
+    /** @return l'ordonnée (Stage) du bas de la rangée de cartes de l'ennemi, contre le filet. */
+    public float getEnemyCardRowY() { return getDividerY() + DIVIDER_GAP; }
 
     /** @return l'abscisse (Stage) de l'emplacement de carte {@code slot} de l'ennemi (0 à gauche). */
-    public float getEnemyCardSlotX(int slot) {
-        int   slots    = Enemy.HAND_SIZE;
-        float rowWidth = slots * ENEMY_CARD_WIDTH + (slots - 1) * ENEMY_CARD_GAP;
-        return playArea.getCenterX() - rowWidth / 2f + slot * (ENEMY_CARD_WIDTH + ENEMY_CARD_GAP);
-    }
-
-    /** @return l'abscisse (Stage) du premier rouleau de l'ennemi. */
-    public float getEnemyReelRowX() {
-        return playArea.getCenterX() - EnemySlotMachine.SYMBOL_COUNT * ENEMY_CELL / 2f;
-    }
+    public float getEnemyCardSlotX(int slot) { return getHandSlotX(slot); }
 
     /** @return l'ordonnée (Stage) du bas des rouleaux de l'ennemi, au-dessus de ses cartes. */
     public float getEnemyReelRowY() {
-        return getEnemyCardRowY() + ENEMY_CARD_HEIGHT + ENEMY_REEL_GAP + ENEMY_FRAME_PAD;
+        return getEnemyCardRowY() + cardHeight + HAND_GAP + REEL_FRAME_PAD;
     }
 
-    /** @return l'abscisse (Stage) de la défausse de l'ennemi, à gauche de son côté. */
-    public float getEnemyDiscardX() { return getX() + RAIL + PILE_MARGIN + ENEMY_MAT_PAD; }
+    /** @return l'ordonnée (Stage) du bas du deck et de la défausse de l'ennemi, en haut de la table. */
+    public float getEnemyPilesY() {
+        float tableTop = BOTTOM + playArea.getHeight() - BOTTOM - TOP_MARGIN;
+        float matHeight = MAT_PAD + cardHeight + PILE_STACK + MAT_LABEL_SPACE;
+        return tableTop - RAIL - PILE_MARGIN - SHOP_CLEARANCE - matHeight + MAT_PAD;
+    }
 
-    /** @return l'abscisse (Stage) du deck de l'ennemi, à droite de son côté. */
+    /** @return l'abscisse (Stage) de la défausse de l'ennemi, en haut à gauche (au-dessus du deck du joueur). */
+    public float getEnemyDiscardX() { return getDeckX(); }
+
+    /** @return l'abscisse (Stage) du deck de l'ennemi, en haut à droite (au-dessus de la défausse du joueur). */
     public float getEnemyDeckX() {
-        return 2 * playArea.getCenterX() - getEnemyDiscardX() - ENEMY_CARD_WIDTH - 9f;
+        return 2 * playArea.getCenterX() - getDeckX() - cardWidth - PILE_STACK;
     }
 
-    /** @return l'abscisse (Stage) du centre de la place du croupier, entre sa défausse et ses cartes. */
+    /** @return l'abscisse (Stage) du centre de la place du croupier, entre sa défausse et ses rouleaux. */
     public float getEnemyCharacterCenterX() {
-        float left  = getEnemyDiscardX() + ENEMY_CARD_WIDTH + ENEMY_MAT_PAD + 9f;
-        float right = getEnemyCardSlotX(0) - ENEMY_SLOT_LINE;
+        float left  = getEnemyDiscardX() - MAT_PAD + cardWidth + PILE_STACK + MAT_PAD * 2;
+        float right = getReelRowX() - REEL_FRAME_PAD;
         return (left + right) / 2f;
     }
+
+    /** @return l'ordonnée (Stage) du bas du croupier, juste au-dessus de la rangée de cartes de l'ennemi. */
+    public float getEnemyCharacterY() { return getEnemyCardRowY() + cardHeight + CROUPIER_GAP; }
+
+    /** @return la largeur d'une carte posée sur la table (des deux côtés). */
+    public float getCardWidth()  { return cardWidth; }
+    /** @return la hauteur d'une carte posée sur la table (des deux côtés). */
+    public float getCardHeight() { return cardHeight; }
 
     /** @return l'ordonnée (Stage) du haut du feutre, sous le rebord. */
     public float getFeltTop() { return felt.getY() + felt.getHeight(); }
