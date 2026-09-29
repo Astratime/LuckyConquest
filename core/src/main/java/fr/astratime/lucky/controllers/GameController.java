@@ -40,6 +40,8 @@ public class GameController {
 
     /** Nombre de cartes piochées à chaque début de tour par {@link #drawCards()}. */
     public static final int DEFAULT_DRAW_COUNT = 6;
+    /** Cartes que le joueur peut jouer par tour (plus sous l'effet de Dans la manche). */
+    public static final int DEFAULT_PLAY_LIMIT = 4;
 
     private       GameState  gameState;
     private final TurnEngine turnEngine = new TurnEngine();
@@ -52,6 +54,9 @@ public class GameController {
 
     /** Une carte (Bingo) a bloqué la main : plus aucune carte ne peut être jouée ce tour. */
     private boolean handLocked = false;
+
+    /** Cartes jouées ce tour (toutes comptent, consommables compris), limitées par {@link #getPlayLimit()}. */
+    private int cardsPlayedThisTurn = 0;
 
     /** Paris placés ce tour, pour les afficher en attendant le tirage. */
     private final List<Symbol> betsThisTurn = new ArrayList<>();
@@ -114,6 +119,7 @@ public class GameController {
         this.gameState = new GameState(starterDeck.get());
         pendingEffects.clear();
         betsThisTurn.clear();
+        cardsPlayedThisTurn = 0;
         pendingChoice = null;
         handLocked    = false;
         originals.clear();
@@ -174,11 +180,15 @@ public class GameController {
 
     /**
      * @return pourquoi {@code card} ne peut pas être jouée en ce moment, ou
-     *         {@code null} si elle le peut. Comme à l'échoppe, un Bingo dont le
-     *         symbole est retiré des rouleaux (Recyclage) ne peut pas sortir : il
-     *         reste en main tant que le symbole n'est pas revenu.
+     *         {@code null} si elle le peut : la limite de cartes du tour est
+     *         atteinte, ou (comme à l'échoppe) c'est un Bingo dont le symbole est
+     *         retiré des rouleaux (Recyclage), qui reste en main tant que le
+     *         symbole n'est pas revenu.
      */
     public String unplayableReason(Card card) {
+        if (cardsPlayedThisTurn >= getPlayLimit()) {
+            return "Limite atteinte : " + getPlayLimit() + " cartes jouées ce tour";
+        }
         Symbol recycled = recycledBingoSymbol(card);
         if (recycled == null) return null;
         int turns = gameState.getPlayer().getLastingEffects().getRemovedSymbols().get(recycled);
@@ -228,6 +238,7 @@ public class GameController {
             return CardPlayResult.none();
         }
 
+        cardsPlayedThisTurn++;
         PlayContext playContext = new PlayContext(player);
         card.getEffects().forEach(effect -> effect.onPlay(playContext));
         pendingEffects.addAll(playContext.getEffectsForSpin());
@@ -284,6 +295,17 @@ public class GameController {
 
     /** @return les combinaisons que forment les cartes jouées ce tour, appliquées au lancer. */
     public List<Combo> getCurrentCombos() { return Combo.formed(gameState.getPlayer().getPlayedCards()); }
+
+    /** @return les cartes que le joueur peut jouer ce tour (plus sous l'effet de Dans la manche). */
+    public int getPlayLimit() {
+        return Math.max(DEFAULT_PLAY_LIMIT, gameState.getPlayer().getLastingEffects().getExtraPlays());
+    }
+
+    /** @return les cartes jouées ce tour. */
+    public int getCardsPlayedThisTurn() { return cardsPlayedThisTurn; }
+
+    /** @return {@code true} si le joueur a atteint la limite de cartes du tour. */
+    public boolean isPlayLimitReached() { return cardsPlayedThisTurn >= getPlayLimit(); }
 
     /** @return les symboles pariés ce tour, en attente du tirage. */
     public List<Symbol> getBetsThisTurn() { return List.copyOf(betsThisTurn); }
@@ -346,6 +368,7 @@ public class GameController {
         TurnResult result = turnEngine.playTurn(gameState, pendingEffects);
         pendingEffects.clear();
         betsThisTurn.clear();
+        cardsPlayedThisTurn = 0;
         pendingChoice = null;
         handLocked    = false;
         gameState.getPlayer().restoreCards(originals); // l'effet de l'Arc-en-ciel ne dure que le tour

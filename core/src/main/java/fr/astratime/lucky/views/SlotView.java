@@ -61,8 +61,8 @@ public class SlotView implements Disposable {
 
     // Textes des résultats du tirage : ceux de chaque symbole (de gauche à
     // droite, en escalier pour ne pas se chevaucher : les symboles sont plus
-    // étroits que les textes), puis le bonus de paire/jackpot au-dessus, puis
-    // la riposte de l'ennemi à droite de la barre de vie du joueur.
+    // étroits que les textes), puis le bonus de paire/jackpot au-dessus ; le
+    // tour de l'ennemi attend la fin de ces textes.
     private static final float POPUP_SYMBOL_GAP   = 20f;   // au-dessus du symbole
     private static final float POPUP_SLOT_STEP    = 55f;   // décalage vertical d'un symbole au suivant
     private static final float POPUP_SYMBOL_DELAY = 0.3f;  // entre deux symboles
@@ -74,7 +74,7 @@ public class SlotView implements Disposable {
     /** Tir du pistolet, après les textes des symboles ; le bonus et la riposte attendent d'autant. */
     private static final float POPUP_PISTOL_DELAY = 1.1f;
     private static final float POPUP_PISTOL_TIME  = 1.0f;
-    /** Temps entre le texte « JACKPOT ! » (début de sa célébration) et la riposte de l'ennemi. */
+    /** Temps entre le texte « JACKPOT ! » (début de sa célébration) et la fin des textes du tirage. */
     public static final float  RIPOSTE_AFTER_BONUS = POPUP_ENEMY_DELAY - POPUP_BONUS_DELAY;
     public static final float  POPUP_PLAYER_GAP   = 110f;  // à droite de la barre de vie du joueur
 
@@ -198,16 +198,14 @@ public class SlotView implements Disposable {
      * produisent : les cartes révélées au lancer (combos), au-dessus de chaque
      * symbole ce qu'il a fait (dégâts, gains, bouclier, vie drainée), le tir du
      * pistolet en {@code pistolAnchor}, puis le bonus de paire/jackpot et les
-     * paris au-dessus de la ligne, puis la riposte de l'ennemi (vie perdue,
-     * renvoi) en {@code riposteAnchor}.
+     * paris au-dessus de la ligne (le tour de l'ennemi, qui suit, est joué par
+     * {@link EnemyView}).
      *
      * @param onEventShown reçoit chaque événement du tirage à l'instant où son
      *                     texte apparaît (tout de suite s'il n'a pas de texte)
-     * @param riposteDelay retard supplémentaire de la riposte (ex : laisser passer la célébration d'un jackpot)
      * @return le temps (en secondes) au bout duquel le pistolet tire, ou -1 s'il ne tire pas
      */
-    public float playResultPopups(TurnResult result, Vector2 riposteAnchor, Vector2 pistolAnchor,
-                                  Consumer<Event> onEventShown, float riposteDelay) {
+    public float playResultPopups(TurnResult result, Vector2 pistolAnchor, Consumer<Event> onEventShown) {
         float bonusX = table.getX() + table.getWidth() / 2f;
         float bonusY = table.getY() + table.getHeight() + POPUP_BONUS_GAP;
         float start  = 0f;
@@ -237,13 +235,10 @@ public class SlotView implements Disposable {
         }
 
         playEvents(result.getPairOrJackpotEvents(), bonusX, bonusY, start + POPUP_BONUS_DELAY, onEventShown);
-
-        playEvents(result.getEnemyTurnEvents(), riposteAnchor.x, riposteAnchor.y,
-            start + POPUP_ENEMY_DELAY + riposteDelay, onEventShown);
         return shotAt;
     }
 
-    /** @return le temps que prennent les textes d'un tirage avant la riposte (sans le retard d'un jackpot). */
+    /** @return le temps que prennent les textes d'un tirage (sans la célébration d'un jackpot). */
     public static float popupsDuration(TurnResult result) {
         float duration = POPUP_ENEMY_DELAY;
         if (!result.getCardEvents().isEmpty()) duration += POPUP_CARDS_TIME;

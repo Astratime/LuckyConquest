@@ -11,8 +11,10 @@ import fr.astratime.lucky.animations.GlowBorder;
 import fr.astratime.lucky.animations.MarqueeLights;
 import fr.astratime.lucky.animations.RainbowBorder;
 import fr.astratime.lucky.assets.TableTextures;
+import fr.astratime.lucky.entities.Enemy;
 import fr.astratime.lucky.entities.Player;
 import fr.astratime.lucky.entities.SlotMachine;
+import fr.astratime.lucky.entities.enemy.EnemySlotMachine;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -23,9 +25,12 @@ import java.util.List;
  * emplacements imprimés où se posent les éléments du joueur. De bas en haut :
  * le deck (à gauche) et la défausse (à droite) sur leur tapis, la machine à
  * sous (un rouleau par symbole), la rangée des cartes de la main
- * ({@link Player#MAX_HAND_SIZE} emplacements), puis un filet doré au-delà
- * duquel le côté adverse de la table reste libre. Lors d'un jackpot, les
- * rouleaux prennent une bordure arc-en-ciel animée.
+ * ({@link Player#MAX_HAND_SIZE} emplacements), puis un filet doré. Au-delà,
+ * le côté de l'ennemi, en miroir et à la même taille : la rangée de ses
+ * cartes ({@link Enemy#HAND_SIZE} emplacements) contre le filet, sa machine à
+ * sous au-dessus, sa défausse (en haut à gauche) et son deck (en haut à
+ * droite), et une place pour le croupier entre sa défausse et ses rouleaux. Lors d'un jackpot, les rouleaux du joueur
+ * prennent une bordure arc-en-ciel animée.
  *
  * La table est assemblée à partir de pièces étirables ou répétées (et non
  * d'une seule image) : elle s'adapte à la taille de l'écran et reste alignée
@@ -58,6 +63,10 @@ public class TableView {
     private static final float DIVIDER_GAP  = 60f;     // au-dessus de la rangée de cartes
     private static final float DIVIDER_SIDE = 60f;     // retrait du filet par rapport au rebord
 
+    // Côté de l'ennemi : le reflet de celui du joueur, de l'autre côté du filet
+    private static final float CROUPIER_GAP = 8f;      // entre la rangée de cartes de l'ennemi et le croupier
+    private static final float SHOP_CLEARANCE = 36f;   // piles de l'ennemi abaissées : l'échoppe est au-dessus
+
     private final PlayArea playArea;
     private final float    cardWidth;
     private final float    cardHeight;
@@ -76,6 +85,11 @@ public class TableView {
     private final List<RainbowBorder> reelRainbows = new ArrayList<>();
     private final List<GlowBorder>    reelGlows    = new ArrayList<>();
     private final List<Image>         cardSlots    = new ArrayList<>();
+    private final Image               enemyReelFrame;
+    private final List<Image>         enemyReelCells = new ArrayList<>();
+    private final List<Image>         enemyCardSlots = new ArrayList<>();
+    private final Image               enemyDeckMat;
+    private final Image               enemyDiscardMat;
 
     public TableView(PlayArea playArea, TableTextures textures, float cardWidth, float cardHeight) {
         this.playArea   = playArea;
@@ -92,6 +106,15 @@ public class TableView {
         }
         deckMat    = add(new Image(textures.pileMatDrawable()));
         discardMat = add(new Image(textures.pileMatDrawable()));
+        enemyDeckMat    = add(new Image(textures.pileMatDrawable()));
+        enemyDiscardMat = add(new Image(textures.pileMatDrawable()));
+        for (int i = 0; i < Enemy.HAND_SIZE; i++) {
+            enemyCardSlots.add(add(new Image(textures.cardSlotDrawable())));
+        }
+        enemyReelFrame = add(new Image(textures.reelFrameDrawable()));
+        for (int i = 0; i < EnemySlotMachine.SYMBOL_COUNT; i++) {
+            enemyReelCells.add(add(new Image(textures.reelCellDrawable())));
+        }
         reelFrame  = add(new Image(textures.reelFrameDrawable()));
         for (int i = 0; i < SlotMachine.SYMBOL_COUNT; i++) {
             reelCells.add(add(new Image(textures.reelCellDrawable())));
@@ -152,14 +175,75 @@ public class TableView {
                 cardWidth + SLOT_OUTLINE * 2, cardHeight + SLOT_OUTLINE * 2);
         }
 
-        float dividerY = getHandRowY() + cardHeight + DIVIDER_GAP;
+        float dividerY = getDividerY();
         float lineX    = x + RAIL + DIVIDER_SIDE;
         dividerLine.setBounds(lineX, dividerY - dividerLine.getPrefHeight() / 2f,
             width - (RAIL + DIVIDER_SIDE) * 2, dividerLine.getPrefHeight());
         dividerEmblem.setBounds(playArea.getCenterX() - dividerEmblem.getPrefWidth() / 2f,
             dividerY - dividerEmblem.getPrefHeight() / 2f,
             dividerEmblem.getPrefWidth(), dividerEmblem.getPrefHeight());
+
+        // Côté de l'ennemi : mêmes tailles que celui du joueur, en miroir.
+        for (int i = 0; i < enemyCardSlots.size(); i++) {
+            enemyCardSlots.get(i).setBounds(getEnemyCardSlotX(i) - SLOT_OUTLINE, getEnemyCardRowY() - SLOT_OUTLINE,
+                cardWidth + SLOT_OUTLINE * 2, cardHeight + SLOT_OUTLINE * 2);
+        }
+        enemyReelFrame.setBounds(getReelRowX() - REEL_FRAME_PAD, getEnemyReelRowY() - REEL_FRAME_PAD,
+            reelRowWidth() + REEL_FRAME_PAD * 2, SlotView.CELL_HEIGHT + REEL_FRAME_PAD * 2);
+        for (int i = 0; i < enemyReelCells.size(); i++) {
+            enemyReelCells.get(i).setBounds(getReelRowX() + i * SlotView.CELL_WIDTH, getEnemyReelRowY(),
+                SlotView.CELL_WIDTH, SlotView.CELL_HEIGHT);
+        }
+        enemyDiscardMat.setBounds(getEnemyDiscardX() - MAT_PAD, getEnemyPilesY() - MAT_PAD, matWidth, matHeight);
+        enemyDeckMat.setBounds(getEnemyDeckX() - MAT_PAD, getEnemyPilesY() - MAT_PAD, matWidth, matHeight);
     }
+
+    /** @return l'ordonnée (Stage) du filet qui sépare le côté du joueur de celui de l'ennemi. */
+    public float getDividerY() { return getHandRowY() + cardHeight + DIVIDER_GAP; }
+
+    /** @return l'ordonnée (Stage) du bas de la rangée de cartes de l'ennemi, contre le filet. */
+    public float getEnemyCardRowY() { return getDividerY() + DIVIDER_GAP; }
+
+    /** @return l'abscisse (Stage) de l'emplacement de carte {@code slot} de l'ennemi (0 à gauche). */
+    public float getEnemyCardSlotX(int slot) { return getHandSlotX(slot); }
+
+    /** @return l'ordonnée (Stage) du bas des rouleaux de l'ennemi, au-dessus de ses cartes. */
+    public float getEnemyReelRowY() {
+        return getEnemyCardRowY() + cardHeight + HAND_GAP + REEL_FRAME_PAD;
+    }
+
+    /** @return l'ordonnée (Stage) du bas du deck et de la défausse de l'ennemi, en haut de la table. */
+    public float getEnemyPilesY() {
+        float tableTop = BOTTOM + playArea.getHeight() - BOTTOM - TOP_MARGIN;
+        float matHeight = MAT_PAD + cardHeight + PILE_STACK + MAT_LABEL_SPACE;
+        return tableTop - RAIL - PILE_MARGIN - SHOP_CLEARANCE - matHeight + MAT_PAD;
+    }
+
+    /** @return l'abscisse (Stage) de la défausse de l'ennemi, en haut à gauche (au-dessus du deck du joueur). */
+    public float getEnemyDiscardX() { return getDeckX(); }
+
+    /** @return l'abscisse (Stage) du deck de l'ennemi, en haut à droite (au-dessus de la défausse du joueur). */
+    public float getEnemyDeckX() {
+        return 2 * playArea.getCenterX() - getDeckX() - cardWidth - PILE_STACK;
+    }
+
+    /** @return l'abscisse (Stage) du centre de la place du croupier, entre sa défausse et ses rouleaux. */
+    public float getEnemyCharacterCenterX() {
+        float left  = getEnemyDiscardX() - MAT_PAD + cardWidth + PILE_STACK + MAT_PAD * 2;
+        float right = getReelRowX() - REEL_FRAME_PAD;
+        return (left + right) / 2f;
+    }
+
+    /** @return l'ordonnée (Stage) du bas du croupier, juste au-dessus de la rangée de cartes de l'ennemi. */
+    public float getEnemyCharacterY() { return getEnemyCardRowY() + cardHeight + CROUPIER_GAP; }
+
+    /** @return la largeur d'une carte posée sur la table (des deux côtés). */
+    public float getCardWidth()  { return cardWidth; }
+    /** @return la hauteur d'une carte posée sur la table (des deux côtés). */
+    public float getCardHeight() { return cardHeight; }
+
+    /** @return l'ordonnée (Stage) du haut du feutre, sous le rebord. */
+    public float getFeltTop() { return felt.getY() + felt.getHeight(); }
 
     /** Mode fête des ampoules du rebord (jackpot, victoire) : elles clignotent toutes, ou reprennent le chenillard. */
     public void setLightsParty(boolean party) {

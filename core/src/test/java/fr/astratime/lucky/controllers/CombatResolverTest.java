@@ -9,11 +9,9 @@ import fr.astratime.lucky.entities.TurnResult;
 import fr.astratime.lucky.entities.context.CombatContext;
 import fr.astratime.lucky.entities.events.BetLostEvent;
 import fr.astratime.lucky.entities.events.BetWonEvent;
-import fr.astratime.lucky.entities.events.DamageReflectedEvent;
 import fr.astratime.lucky.entities.events.PistolShotEvent;
 import fr.astratime.lucky.entities.events.EnemyDamagedEvent;
 import fr.astratime.lucky.entities.events.JackpotEvent;
-import fr.astratime.lucky.entities.events.PlayerDamagedEvent;
 
 import org.junit.jupiter.api.Test;
 
@@ -21,29 +19,11 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-/**
- * Couvre en particulier la régression corrigée : le renvoi de dégâts
- * (Carreau) doit réellement toucher l'ennemi.
- */
+/** Tour du joueur : symboles, pistolet, paire/jackpot, paris (le tour de l'ennemi : EnemyTurnResolverTest). */
 class CombatResolverTest {
 
     private final CombatResolver resolver = new CombatResolver();
     private final Symbol[] noSymbols = new Symbol[] { null, null, null };
-
-    @Test
-    void reflectsPercentOfEnemyAttackPowerBackToTheEnemy() {
-        Player player = new Player("Joueur", 100, List.of());
-        Enemy  enemy  = new Enemy("Ennemi", 100); // attackPower par défaut = 10
-        CombatContext context = new CombatContext(player, enemy);
-        context.addGuaranteedReflect(50, 50);
-
-        TurnResult result = resolver.resolve(context, List.of(), noSymbols, List.of());
-
-        assertEquals(90, player.getHp(), "le joueur subit toujours l'attaque complète (pas de bouclier ici)");
-        assertEquals(95, enemy.getHp(), "50% de l'attaque (10) doit revenir à l'ennemi, soit 5");
-        assertTrue(result.getEvents().stream().anyMatch(e -> e instanceof DamageReflectedEvent),
-            "un DamageReflectedEvent doit être journalisé");
-    }
 
     @Test
     void diamondReflectNeedsADefenseSymbolDrawnThisTurn() {
@@ -57,7 +37,7 @@ class CombatResolverTest {
 
         resolver.resolve(context, actions, symbols, List.of());
 
-        assertEquals(1000 - 39, enemy.getHp(), "390% de l'attaque ennemie (10) = 39 renvoyés");
+        assertEquals(390, context.getTotalReflectPercent(), "le renvoi vaudra pour le tour de l'ennemi");
     }
 
     @Test
@@ -69,29 +49,7 @@ class CombatResolverTest {
 
         resolver.resolve(context, List.of(), noSymbols, List.of());
 
-        assertEquals(1000, enemy.getHp());
-    }
-
-    @Test
-    void doesNotReflectWhenPlayerHasNoReflectPercent() {
-        Player player = new Player("Joueur", 100, List.of());
-        Enemy  enemy  = new Enemy("Ennemi", 100);
-
-        resolver.resolve(new CombatContext(player, enemy), List.of(), noSymbols, List.of());
-
-        assertEquals(100, enemy.getHp(), "sans renvoi, l'ennemi ne doit subir aucun dégât de riposte");
-    }
-
-    @Test
-    void skipsEnemyRiposteWhenEnemyAlreadyDefeated() {
-        Player player = new Player("Joueur", 100, List.of());
-        Enemy  enemy  = new Enemy("Ennemi", 100);
-        enemy.takeDamage(200); // l'ennemi est déjà mort avant la riposte
-
-        TurnResult result = resolver.resolve(new CombatContext(player, enemy), List.of(), noSymbols, List.of());
-
-        assertEquals(100, player.getHp(), "un ennemi vaincu ne peut pas riposter");
-        assertTrue(result.getEvents().stream().noneMatch(e -> e instanceof PlayerDamagedEvent));
+        assertEquals(0, context.getTotalReflectPercent());
     }
 
     @Test
@@ -118,19 +76,6 @@ class CombatResolverTest {
 
         assertTrue(result.getEvents().stream()
             .anyMatch(e -> e instanceof JackpotEvent jackpot && jackpot.symbol == Symbol.DIAMOND));
-    }
-
-    @Test
-    void separatesJackpotAndEnemyRiposteEventsForDisplay() {
-        Player player = new Player("Joueur", 100, List.of());
-        Enemy  enemy  = new Enemy("Ennemi", 100);
-        Symbol[] symbols = { Symbol.SEVEN, Symbol.SEVEN, Symbol.SEVEN };
-
-        TurnResult result = resolver.resolve(new CombatContext(player, enemy), List.of(), symbols, List.of());
-
-        assertTrue(result.getPairOrJackpotEvents().stream().anyMatch(e -> e instanceof JackpotEvent));
-        assertTrue(result.getEnemyTurnEvents().stream().anyMatch(e -> e instanceof PlayerDamagedEvent));
-        assertTrue(result.getPairOrJackpotEvents().stream().noneMatch(e -> e instanceof PlayerDamagedEvent));
     }
 
     @Test
@@ -165,13 +110,15 @@ class CombatResolverTest {
     }
 
     @Test
-    void resetsShieldAfterTheTurn() {
+    void keepsTheShieldForTheEnemysTurnThenResetsIt() {
         Player player = new Player("Joueur", 100, List.of());
         Enemy  enemy  = new Enemy("Ennemi", 100);
         player.addShield(50);
 
         resolver.resolve(new CombatContext(player, enemy), List.of(), noSymbols, List.of());
+        assertEquals(50, player.getShield(), "le bouclier attend les attaques de l'ennemi");
 
+        TurnEngine.storeLeftoverShield(player);
         assertEquals(0, player.getShield());
     }
 

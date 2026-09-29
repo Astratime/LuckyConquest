@@ -41,6 +41,7 @@ import fr.astratime.lucky.animations.PistolShotAnimation;
 import fr.astratime.lucky.animations.RainbowChipsAnimation;
 import fr.astratime.lucky.animations.ScreenShake;
 import fr.astratime.lucky.assets.CardTextures;
+import fr.astratime.lucky.assets.EnemyTextures;
 import fr.astratime.lucky.assets.Fonts;
 import fr.astratime.lucky.assets.GameSounds;
 import fr.astratime.lucky.assets.HudTextures;
@@ -61,7 +62,9 @@ import fr.astratime.lucky.entities.TurnResult;
 import fr.astratime.lucky.entities.choices.BetChoice;
 import fr.astratime.lucky.entities.choices.CardChoice;
 import fr.astratime.lucky.entities.choices.RouletteChoice;
+import fr.astratime.lucky.entities.enemy.EnemyTurnResult;
 import fr.astratime.lucky.entities.events.DamageReflectedEvent;
+import fr.astratime.lucky.entities.events.EnemyHealedEvent;
 import fr.astratime.lucky.entities.events.EnemyDamagedEvent;
 import fr.astratime.lucky.entities.events.Event;
 import fr.astratime.lucky.entities.events.GainsEarnedEvent;
@@ -79,6 +82,7 @@ import fr.astratime.lucky.views.CardDetailOverlay;
 import fr.astratime.lucky.views.CardImage;
 import fr.astratime.lucky.views.CasinoButtons;
 import fr.astratime.lucky.views.CombatHud;
+import fr.astratime.lucky.views.EnemyView;
 import fr.astratime.lucky.views.HandView;
 import fr.astratime.lucky.views.MinimumScreenViewport;
 import fr.astratime.lucky.views.HealthBarView;
@@ -122,12 +126,13 @@ public class GameScreen extends ScreenAdapter {
 
     /** Taille minimale de l'écran de jeu : dans une fenêtre plus petite, il est réduit (voir {@link MinimumScreenViewport}). */
     private static final float  MIN_WIDTH      = 1600f;
-    private static final float  MIN_HEIGHT     = 900f;
+    private static final float  MIN_HEIGHT     = 1080f;  // les deux côtés de la table, à la même taille
     private static final float  CARD_WIDTH     = 95f;
     private static final float  CARD_HEIGHT    = 135f;
     private static final String CARD_BACK_PATH = "cards/light/BACK.png";
 
     private static final float BUTTON_MARGIN = 20f;   // boutons en bas à gauche, sous la table
+    private static final float PLAYS_LABEL_GAP = 16f; // entre le bouton de lancer et le compteur de cartes
 
     /** Dégâts à partir desquels un coup sur l'ennemi fige l'image un instant (micro-arrêt). */
     private static final int   BIG_HIT               = 60;
@@ -159,8 +164,6 @@ public class GameScreen extends ScreenAdapter {
     private static final int   POT_CONFETTI          = 50;
     /** Temps laissé au texte de la riposte (et au coup sur la barre) avant de passer au tour du joueur. */
     private static final float RIPOSTE_TEXT_TIME     = 0.8f;
-    /** Annonces de tour : hauteur de leur bande (fraction de l'écran), au-dessus de la machine. */
-    private static final float TURN_BANNER_HEIGHT    = 0.62f;
     /** Combinaison formée : hauteur de son texte au-dessus de la main (en hauteurs de carte). */
     private static final float COMBO_TEXT_HEIGHT     = 2f;
 
@@ -180,8 +183,10 @@ public class GameScreen extends ScreenAdapter {
     /** Libellés du deck et de la défausse : police du jeu, à balises de couleur (nom crème, nombre doré). */
     private final BitmapFont          pileFont = markup(Fonts.jersey(20, Color.WHITE, 2f, Palette.TEXT_SHADE));
     private final BitmapFont          shopFont = Fonts.jersey(30, Palette.GOLD, 2f, Palette.TEXT_SHADE);
+    private final BitmapFont          playsFont = Fonts.jersey(24, Color.WHITE, 2f, Palette.TEXT_SHADE);
     private final Texture             cardBackTexture;
     private final CardTextures        cardTextures  = new CardTextures();
+    private final EnemyTextures       enemyTextures = new EnemyTextures();
     private final CasinoButtons       buttons       = new CasinoButtons();
     private final HudTextures         hudTextures   = new HudTextures();
     private final VisualSettings      settings      = new VisualSettings();
@@ -217,12 +222,16 @@ public class GameScreen extends ScreenAdapter {
     private final TableView  table;
     private final SidePanel  sidePanel;
     private final CombatHud  hud;
+    /** Côté de l'ennemi : le croupier, ses rouleaux, ses cartes et ses piles ; joue son tour en animation. */
+    private final EnemyView  enemyView;
     private final PilesView  piles;
     private final HandView   hand;
     private final SlotView   slots;
     /** Calque des textes animés (bonus des cartes, résultats du tirage) : au-dessus du jeu, sous le voile des piles. */
     private final Group      popupLayer = new Group();
     private final TextButton spinButton;
+    /** Cartes jouées ce tour sur la limite (« Cartes 2/4 »), à droite du bouton de lancer. */
+    private final Label      playsLabel;
     private final TextButton restartButton;
     private final TextButton menuButton;
     /** Boutons de fin de combat (Recommencer, Menu principal), centrés sous l'annonce de victoire ou de défaite. */
@@ -241,7 +250,7 @@ public class GameScreen extends ScreenAdapter {
     private int gainsNotYetShown = 0;
 
     /** Durée de l'annonce « TOUR ENNEMI » du tirage en cours (0 si l'ennemi, vaincu, ne riposte pas). */
-    private float enemyAnnounceTime = 0f;
+    private TurnResult currentResult;
 
     // -------------------------------------------------------------------------
     // Constructeur
@@ -268,6 +277,8 @@ public class GameScreen extends ScreenAdapter {
         playArea   = new PlayArea(stage, SidePanel.WIDTH);
         confetti   = new Confetti(new TextureRegion(hudTextures.pixel));
         table      = new TableView(playArea, tableTextures, CARD_WIDTH, CARD_HEIGHT);
+        enemyView  = new EnemyView(table, enemyTextures, pileFont, tooltip, effectPopupAnimator,
+            sounds.cardDeal, sounds.cardFlip, () -> gameController.getGameState().getEnemy());
         sidePanel  = new SidePanel(hudTextures);
         jackpotCelebration = new JackpotCelebration(playArea, screenShake, settings,
             sidePanel::getCoinCenter, sidePanel::bumpCoin);
@@ -277,6 +288,7 @@ public class GameScreen extends ScreenAdapter {
         restartButton = buttons.createAction("Recommencer", sounds.buttonClick, this::onRestart);
         menuButton    = buttons.createAction("Menu principal", sounds.buttonClick, this::onBackToMenu);
         spinButton.setDisabled(true);
+        playsLabel    = new Label("", new Label.LabelStyle(playsFont, Color.WHITE));
         endButtons.add(restartButton).size(restartButton.getWidth(), restartButton.getHeight());
         endButtons.add(menuButton).size(menuButton.getWidth(), menuButton.getHeight()).padLeft(END_BUTTONS_GAP);
         endButtons.pack();
@@ -313,10 +325,12 @@ public class GameScreen extends ScreenAdapter {
         refreshAll();
 
         stage.addActor(table.getActor());
+        stage.addActor(enemyView.getActor());
         stage.addActor(sidePanel.getActor());
         piles.addTo(stage);
         hud.addTo(stage);
         stage.addActor(spinButton);
+        stage.addActor(playsLabel);
         stage.addActor(slots.getActor());
         stage.addActor(hand.getActor());
         stage.addActor(shopIcon);
@@ -360,6 +374,7 @@ public class GameScreen extends ScreenAdapter {
         refreshCombos(); // les combinaisons du tour précédent s'éteignent
         hand.setLocked(false); // une carte achetée entre deux tours reste sur la table
         hand.deal(gameController.drawCards());
+        refreshPlays();
         spinButton.setDisabled(false);
     }
 
@@ -368,9 +383,9 @@ public class GameScreen extends ScreenAdapter {
         turnBanner.play(TurnBanner.Side.ENEMY, playArea.getCenterX(), turnBannerY(), playArea.getWidth());
     }
 
-    /** @return la hauteur des annonces de tour : au-dessus de la machine, sous les barres de vie. */
+    /** @return la hauteur des annonces de tour : sur le filet, entre le côté du joueur et celui de l'ennemi. */
     private float turnBannerY() {
-        return stage.getViewport().getWorldHeight() * TURN_BANNER_HEIGHT;
+        return table.getDividerY();
     }
 
     /**
@@ -397,7 +412,8 @@ public class GameScreen extends ScreenAdapter {
         hud.refresh();
         refreshGains(); // une carte peut créditer ou consommer des gains immédiatement
         refreshEffects();
-        hand.refreshBlocked(); // un Recyclage peut avoir rendu un Bingo de la main injouable
+        hand.refreshBlocked(); // limite de cartes atteinte, ou Bingo rendu injouable par un Recyclage
+        refreshPlays();
         announceCombos(combosBefore);
 
         DrawResult drawResult = playResult.getDrawResult();
@@ -625,13 +641,15 @@ public class GameScreen extends ScreenAdapter {
     }
 
     /**
-     * Le joueur clique sur une carte qui ne peut pas être jouée (Bingo d'un
-     * symbole recyclé) : elle reste dans la main, son infobulle donne la raison
-     * (voir {@link HandView}) et un texte « BINGO BLOQUÉ ! » surgit sur la carte.
+     * Le joueur clique sur une carte qui ne peut pas être jouée (limite de
+     * cartes du tour atteinte, ou Bingo d'un symbole recyclé) : elle reste dans
+     * la main, son infobulle donne la raison (voir {@link HandView}) et un texte
+     * « LIMITE ATTEINTE ! » ou « BINGO BLOQUÉ ! » surgit sur la carte.
      */
     private void onCardRefused(Card card, String reason, Vector2 cardCenter) {
         Gdx.app.log("GameScreen", "Carte refusee : " + card + " (" + reason + ")");
-        effectPopupAnimator.play(List.of(new EffectPopup("BINGO BLOQUÉ !", EffectPopup.Style.DAMAGE,
+        String text = gameController.isPlayLimitReached() ? "LIMITE ATTEINTE !" : "BINGO BLOQUÉ !";
+        effectPopupAnimator.play(List.of(new EffectPopup(text, EffectPopup.Style.DAMAGE,
             PopupScale.SECONDARY_INTENSITY)), cardCenter.x, cardCenter.y - CARD_HEIGHT * 0.3f); // monte sur la carte, sous l'infobulle
     }
 
@@ -676,7 +694,8 @@ public class GameScreen extends ScreenAdapter {
         // Gains et PV du tirage ne se montrent qu'à l'apparition de leurs textes, après l'arrêt des rouleaux.
         gainsNotYetShown += sumOf(result, GainsEarnedEvent.class, gains -> gains.amount)
             - sumOf(result, GainsLostEvent.class, lost -> lost.amount);
-        hud.holdBack(enemyHpBefore - gameController.getGameState().getEnemy().getHp(),
+        int enemyHeal = sumOf(result, EnemyHealedEvent.class, heal -> heal.amount);
+        hud.holdBack(enemyHpBefore - gameController.getGameState().getEnemy().getHp() + enemyHeal, enemyHeal,
             sumOf(result, PlayerDamagedEvent.class, hit -> hit.damage),
             sumOf(result, PlayerHealedEvent.class, heal -> heal.amount));
         hand.discardAll();
@@ -684,6 +703,7 @@ public class GameScreen extends ScreenAdapter {
         slots.spin(result.getDrawnSymbols(), result.getSymbols(), this::onJokerTransformed,
             () -> onReelsStopped(result));
         refreshEffects(); // les symboles retirés se rapprochent de leur retour
+        refreshPlays();   // nouveau tour : le compteur de cartes repart à zéro
 
         logSymbolOutcomes(result);
         Gdx.app.log("GameScreen", result.getEvents().stream()
@@ -693,32 +713,53 @@ public class GameScreen extends ScreenAdapter {
 
     /**
      * Les rouleaux sont arrêtés : textes du tirage et bruitage du résultat ; une
-     * fois les résultats du joueur affichés, « TOUR ENNEMI » est annoncé puis
-     * l'ennemi riposte (s'il a survécu), et le tour se termine après sa riposte.
-     * Un jackpot fait attendre tout cela la fin de sa célébration.
+     * fois les résultats du joueur affichés (après la célébration d'un jackpot,
+     * voir {@link #onJackpotShown}), vient le tour de l'ennemi.
      */
     private void onReelsStopped(TurnResult result) {
-        float jackpotDelay = result.isJackpot() ? JackpotCelebration.DURATION : 0f;
-        boolean enemyTurn  = !result.getEnemyTurnEvents().isEmpty();
-        enemyAnnounceTime  = enemyTurn ? TurnBanner.DURATION : 0f;
-        // La riposte attend la célébration d'un jackpot, puis l'annonce du tour ennemi.
-        float riposteDelay = jackpotDelay + enemyAnnounceTime;
-        if (enemyTurn) {
-            stage.addAction(Actions.delay(SlotView.popupsDuration(result) + jackpotDelay,
-                Actions.run(this::announceEnemyTurn)));
-        }
+        currentResult = result;
         Vector2 enemyBar    = hud.getEnemyBarCenter();
         Vector2 pistolTexts = new Vector2(enemyBar.x, enemyBar.y - PISTOL_TEXT_BELOW);
-        float shotAt = slots.playResultPopups(result, hud.besidePlayerHealthBar(SlotView.POPUP_PLAYER_GAP),
-            pistolTexts, this::onEventShown, riposteDelay);
+        float shotAt = slots.playResultPopups(result, pistolTexts, this::onEventShown);
         if (shotAt >= 0f) aimPistol(result, enemyBar, shotAt);
         refreshEffects(); // jauges vidées ou remplies par le tirage
         playSymbolResultSound(result);
         if (result.isPair()) celebratePair(result.getSymbols());
         if (result.isJackpot()) return; // voir onJackpotShown
-        float margin = isCombatOver() ? RESULT_TEXTS_MARGIN : RIPOSTE_TEXT_TIME;
-        stage.addAction(Actions.delay(SlotView.popupsDuration(result) + enemyAnnounceTime + margin,
-            Actions.run(this::finishTurn)));
+        stage.addAction(Actions.delay(SlotView.popupsDuration(result), Actions.run(this::playEnemyTurn)));
+    }
+
+    /**
+     * Tour de l'ennemi (s'il a joué) : « TOUR ENNEMI » est annoncé, puis
+     * l'ennemi pioche, joue ses cartes et lance sa machine (voir
+     * {@link EnemyView#playTurn}) ; ensuite, la fin du tour.
+     */
+    private void playEnemyTurn() {
+        EnemyTurnResult enemyTurn = currentResult.getEnemyTurn();
+        if (enemyTurn == null) {
+            endTurn();
+            return;
+        }
+        announceEnemyTurn();
+        stage.addAction(Actions.delay(TurnBanner.DURATION,
+            Actions.run(() -> enemyView.playTurn(enemyTurn, this::onEventShown, this::endTurn))));
+    }
+
+    /**
+     * Fin du tour : ce qui reste du bouclier du joueur remplit son Coffre (texte
+     * à droite de sa barre de vie), puis le combat se termine si un camp est
+     * vaincu, ou le joueur reprend la main.
+     */
+    private void endTurn() {
+        List<Event> endEvents = currentResult.getEnemyTurnEvents();
+        Vector2 anchor = hud.besidePlayerHealthBar(SlotView.POPUP_PLAYER_GAP);
+        List<EffectPopup> texts = new ArrayList<>();
+        endEvents.forEach(event -> texts.addAll(event.getPopups()));
+        if (!texts.isEmpty()) effectPopupAnimator.play(texts, anchor.x, anchor.y);
+        endEvents.forEach(this::onEventShown);
+        refreshEffects();
+        float margin = texts.isEmpty() ? RESULT_TEXTS_MARGIN : RIPOSTE_TEXT_TIME;
+        stage.addAction(Actions.delay(margin, Actions.run(this::finishTurn)));
     }
 
     /** Le pistolet surgit au-dessus du symbole qu'il multiplie et tire sur l'ennemi à l'instant {@code shotAt}. */
@@ -779,12 +820,16 @@ public class GameScreen extends ScreenAdapter {
             onPlayerHit(hit.damage);
         } else if (event instanceof PlayerHealedEvent heal && heal.amount > 0) {
             hud.revealPlayerHeal(heal.amount);
+        } else if (event instanceof EnemyHealedEvent heal) {
+            if (heal.amount > 0) hud.revealEnemyHeal(heal.amount);
+            enemyView.heal();
         }
     }
 
     /** L'ennemi encaisse un coup : sa barre réagit ; un gros coup fige l'image un instant et secoue l'écran. */
     private void onEnemyHit(int damage) {
         hud.revealEnemyHit(damage);
+        enemyView.hit();
         if (damage >= BIG_HIT) {
             hitStop(BIG_HIT_STOP);
             screenShake.shake(0.2f, 6f);
@@ -806,8 +851,7 @@ public class GameScreen extends ScreenAdapter {
     /**
      * Le texte « JACKPOT ! » vient d'apparaître : bruitage du bingo, bordure
      * arc-en-ciel des rouleaux et célébration propre au {@code symbol} aligné.
-     * La riposte de l'ennemi attend la fin de la célébration, et le tour se
-     * termine après elle.
+     * Le tour de l'ennemi attend la fin de la célébration.
      */
     private void onJackpotShown(Symbol symbol) {
         sounds.bingoThreeSymbols.play();
@@ -815,9 +859,8 @@ public class GameScreen extends ScreenAdapter {
         table.setLightsParty(true);
         jackpotCelebration.play(symbol, () -> {
             table.setLightsParty(false);
-            // Le tour ennemi est annoncé puis l'ennemi riposte (voir onReelsStopped) : le tour se termine après.
-            stage.addAction(Actions.delay(SlotView.RIPOSTE_AFTER_BONUS + enemyAnnounceTime + RIPOSTE_TEXT_TIME,
-                Actions.run(this::finishTurn)));
+            // Après la célébration et les derniers textes du tirage, au tour de l'ennemi.
+            stage.addAction(Actions.delay(SlotView.RIPOSTE_AFTER_BONUS, Actions.run(this::playEnemyTurn)));
         });
     }
 
@@ -857,6 +900,7 @@ public class GameScreen extends ScreenAdapter {
 
     /** Recommence un combat : réinitialise le GameController et tout l'affichage. */
     private void onRestart() {
+        stage.getRoot().clearActions(); // la suite du tour en cours (tour de l'ennemi, fin du tour) n'a plus lieu
         gameController.restart();
         hand.reset();
         effectPopupAnimator.cancel(); // les gains en attente ne seront jamais affichés
@@ -880,6 +924,7 @@ public class GameScreen extends ScreenAdapter {
         piles.resetInFlight();
         pileOverlay.hide();
         slots.clear();
+        enemyView.reset();
         refreshAll();
         endButtons.setVisible(false);
         startPlayerTurn();
@@ -926,6 +971,7 @@ public class GameScreen extends ScreenAdapter {
             HealthBarView enemyBar = hud.getEnemyHealthBar();
             enemyBar.hit(Color.WHITE, 0.4f);
             enemyBar.addAction(Actions.fadeOut(0.5f)); // l'ennemi part en jetons
+            enemyView.defeat();
             combatEnd.playVictory(hud.getEnemyChipCenter(), showRestart);
         } else {
             combatEnd.playDefeat(showRestart);
@@ -985,7 +1031,16 @@ public class GameScreen extends ScreenAdapter {
         hud.refresh();
         refreshGains();
         refreshEffects();
+        refreshPlays();
         piles.refresh(player());
+    }
+
+    /** Met à jour le compteur de cartes jouées ce tour (en rouge une fois la limite atteinte). */
+    private void refreshPlays() {
+        playsLabel.setText("Cartes " + gameController.getCardsPlayedThisTurn() + "/"
+            + gameController.getPlayLimit());
+        playsLabel.setColor(gameController.isPlayLimitReached() ? Palette.TEXT_ALERT : Palette.TEXT_TITLE);
+        playsLabel.pack();
     }
 
     /**
@@ -1009,6 +1064,11 @@ public class GameScreen extends ScreenAdapter {
             int turns = lasting.getCorruptionTurns();
             rows.add(new SidePanel.EffectRow(new TextureRegion(hudTextures.iconCorruption), null,
                 "Corruption " + turns + (turns > 1 ? " tours" : " tour")));
+        }
+        if (lasting.getExtraPlaysTurns() > 0) {
+            int turns = lasting.getExtraPlaysTurns();
+            rows.add(new SidePanel.EffectRow(new TextureRegion(hudTextures.iconSleeve), null,
+                lasting.getExtraPlays() + " cartes, " + turns + (turns > 1 ? " tours" : " tour")));
         }
         if (lasting.getBlades() > 0) {
             rows.add(new SidePanel.EffectRow(new TextureRegion(hudTextures.iconBlade), null,
@@ -1036,7 +1096,11 @@ public class GameScreen extends ScreenAdapter {
     /** Place (ou replace après un redimensionnement) les éléments qui dépendent de la taille de l'écran. */
     private void layout() {
         table.layout();
+        enemyView.layout();
         spinButton.setPosition(playArea.getX() + BUTTON_MARGIN, BUTTON_MARGIN);
+        playsLabel.pack();
+        playsLabel.setPosition(spinButton.getX() + spinButton.getWidth() + PLAYS_LABEL_GAP,
+            spinButton.getY() + (spinButton.getHeight() - playsLabel.getHeight()) / 2f);
         sidePanel.layout(stage);
         hud.layout();
         piles.layout(table.getDeckX(), table.getPilesY());
@@ -1136,12 +1200,15 @@ public class GameScreen extends ScreenAdapter {
         stage.dispose();
         font.dispose();
         shopFont.dispose();
+        playsFont.dispose();
         pileFont.dispose();
         tableTextures.dispose();
         cardBackTexture.dispose();
         cardTextures.dispose();
         buttons.dispose();
         tooltip.dispose();
+        enemyView.dispose();
+        enemyTextures.dispose();
         hud.dispose();
         sidePanel.dispose();
         hudTextures.dispose();
