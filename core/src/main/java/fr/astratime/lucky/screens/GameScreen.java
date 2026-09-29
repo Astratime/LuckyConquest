@@ -128,6 +128,7 @@ public class GameScreen extends ScreenAdapter {
     private static final String CARD_BACK_PATH = "cards/light/BACK.png";
 
     private static final float BUTTON_MARGIN = 20f;   // boutons en bas à gauche, sous la table
+    private static final float PLAYS_LABEL_GAP = 24f; // entre le bouton de lancer et le compteur de cartes
 
     /** Dégâts à partir desquels un coup sur l'ennemi fige l'image un instant (micro-arrêt). */
     private static final int   BIG_HIT               = 60;
@@ -223,6 +224,8 @@ public class GameScreen extends ScreenAdapter {
     /** Calque des textes animés (bonus des cartes, résultats du tirage) : au-dessus du jeu, sous le voile des piles. */
     private final Group      popupLayer = new Group();
     private final TextButton spinButton;
+    /** Cartes jouées ce tour sur la limite (« Cartes jouées : 2/4 »), à droite du bouton de lancer. */
+    private final Label      playsLabel;
     private final TextButton restartButton;
     private final TextButton menuButton;
     /** Boutons de fin de combat (Recommencer, Menu principal), centrés sous l'annonce de victoire ou de défaite. */
@@ -277,6 +280,7 @@ public class GameScreen extends ScreenAdapter {
         restartButton = buttons.createAction("Recommencer", sounds.buttonClick, this::onRestart);
         menuButton    = buttons.createAction("Menu principal", sounds.buttonClick, this::onBackToMenu);
         spinButton.setDisabled(true);
+        playsLabel    = new Label("", new Label.LabelStyle(shopFont, Color.WHITE));
         endButtons.add(restartButton).size(restartButton.getWidth(), restartButton.getHeight());
         endButtons.add(menuButton).size(menuButton.getWidth(), menuButton.getHeight()).padLeft(END_BUTTONS_GAP);
         endButtons.pack();
@@ -317,6 +321,7 @@ public class GameScreen extends ScreenAdapter {
         piles.addTo(stage);
         hud.addTo(stage);
         stage.addActor(spinButton);
+        stage.addActor(playsLabel);
         stage.addActor(slots.getActor());
         stage.addActor(hand.getActor());
         stage.addActor(shopIcon);
@@ -360,6 +365,7 @@ public class GameScreen extends ScreenAdapter {
         refreshCombos(); // les combinaisons du tour précédent s'éteignent
         hand.setLocked(false); // une carte achetée entre deux tours reste sur la table
         hand.deal(gameController.drawCards());
+        refreshPlays();
         spinButton.setDisabled(false);
     }
 
@@ -397,7 +403,8 @@ public class GameScreen extends ScreenAdapter {
         hud.refresh();
         refreshGains(); // une carte peut créditer ou consommer des gains immédiatement
         refreshEffects();
-        hand.refreshBlocked(); // un Recyclage peut avoir rendu un Bingo de la main injouable
+        hand.refreshBlocked(); // limite de cartes atteinte, ou Bingo rendu injouable par un Recyclage
+        refreshPlays();
         announceCombos(combosBefore);
 
         DrawResult drawResult = playResult.getDrawResult();
@@ -625,13 +632,15 @@ public class GameScreen extends ScreenAdapter {
     }
 
     /**
-     * Le joueur clique sur une carte qui ne peut pas être jouée (Bingo d'un
-     * symbole recyclé) : elle reste dans la main, son infobulle donne la raison
-     * (voir {@link HandView}) et un texte « BINGO BLOQUÉ ! » surgit sur la carte.
+     * Le joueur clique sur une carte qui ne peut pas être jouée (limite de
+     * cartes du tour atteinte, ou Bingo d'un symbole recyclé) : elle reste dans
+     * la main, son infobulle donne la raison (voir {@link HandView}) et un texte
+     * « LIMITE ATTEINTE ! » ou « BINGO BLOQUÉ ! » surgit sur la carte.
      */
     private void onCardRefused(Card card, String reason, Vector2 cardCenter) {
         Gdx.app.log("GameScreen", "Carte refusee : " + card + " (" + reason + ")");
-        effectPopupAnimator.play(List.of(new EffectPopup("BINGO BLOQUÉ !", EffectPopup.Style.DAMAGE,
+        String text = gameController.isPlayLimitReached() ? "LIMITE ATTEINTE !" : "BINGO BLOQUÉ !";
+        effectPopupAnimator.play(List.of(new EffectPopup(text, EffectPopup.Style.DAMAGE,
             PopupScale.SECONDARY_INTENSITY)), cardCenter.x, cardCenter.y - CARD_HEIGHT * 0.3f); // monte sur la carte, sous l'infobulle
     }
 
@@ -684,6 +693,7 @@ public class GameScreen extends ScreenAdapter {
         slots.spin(result.getDrawnSymbols(), result.getSymbols(), this::onJokerTransformed,
             () -> onReelsStopped(result));
         refreshEffects(); // les symboles retirés se rapprochent de leur retour
+        refreshPlays();   // nouveau tour : le compteur de cartes repart à zéro
 
         logSymbolOutcomes(result);
         Gdx.app.log("GameScreen", result.getEvents().stream()
@@ -985,7 +995,16 @@ public class GameScreen extends ScreenAdapter {
         hud.refresh();
         refreshGains();
         refreshEffects();
+        refreshPlays();
         piles.refresh(player());
+    }
+
+    /** Met à jour le compteur de cartes jouées ce tour (en rouge une fois la limite atteinte). */
+    private void refreshPlays() {
+        playsLabel.setText("Cartes jouées : " + gameController.getCardsPlayedThisTurn() + "/"
+            + gameController.getPlayLimit());
+        playsLabel.setColor(gameController.isPlayLimitReached() ? Palette.TEXT_ALERT : Palette.TEXT_TITLE);
+        playsLabel.pack();
     }
 
     /**
@@ -1009,6 +1028,11 @@ public class GameScreen extends ScreenAdapter {
             int turns = lasting.getCorruptionTurns();
             rows.add(new SidePanel.EffectRow(new TextureRegion(hudTextures.iconCorruption), null,
                 "Corruption " + turns + (turns > 1 ? " tours" : " tour")));
+        }
+        if (lasting.getExtraPlaysTurns() > 0) {
+            int turns = lasting.getExtraPlaysTurns();
+            rows.add(new SidePanel.EffectRow(new TextureRegion(hudTextures.iconSleeve), null,
+                lasting.getExtraPlays() + " cartes, " + turns + (turns > 1 ? " tours" : " tour")));
         }
         if (lasting.getBlades() > 0) {
             rows.add(new SidePanel.EffectRow(new TextureRegion(hudTextures.iconBlade), null,
@@ -1037,6 +1061,9 @@ public class GameScreen extends ScreenAdapter {
     private void layout() {
         table.layout();
         spinButton.setPosition(playArea.getX() + BUTTON_MARGIN, BUTTON_MARGIN);
+        playsLabel.pack();
+        playsLabel.setPosition(spinButton.getX() + spinButton.getWidth() + PLAYS_LABEL_GAP,
+            spinButton.getY() + (spinButton.getHeight() - playsLabel.getHeight()) / 2f);
         sidePanel.layout(stage);
         hud.layout();
         piles.layout(table.getDeckX(), table.getPilesY());

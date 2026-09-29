@@ -102,6 +102,19 @@
     ]
   },
   {
+    "id": "in_the_sleeve",
+    "name": "Dans la manche",
+    "assetPath": "cards/special/in_the_sleeve.png",
+    "consumable": true,
+    "effects": [
+      {
+        "type": "EXTRA_PLAYS",
+        "plays": 6,
+        "turns": 3
+      }
+    ]
+  },
+  {
     "id": "lucky_charm",
     "name": "Porte-bonheur",
     "assetPath": "cards/special/lucky_charm.png",

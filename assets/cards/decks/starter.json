@@ -23,5 +23,6 @@
   { "id": "recycle", "copies": 1 },
   { "id": "bet", "copies": 1 },
   { "id": "lucky_charm", "copies": 1 },
+  { "id": "in_the_sleeve", "copies": 1 },
   { "id": "rainbow", "copies": 1 }
 ]
