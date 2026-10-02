@@ -149,9 +149,10 @@ public class JackpotCelebration extends Group implements Disposable {
      * @param coinTarget      position (Stage) de la pièce du compteur des gains
      * @param onCoinCollected appelé à l'arrivée de chaque pièce sur le compteur
      * @param settings        effets réduits : pas de flash (la secousse est coupée par {@code screenShake})
+     * @param fireworkSounds  bruitages des fusées
      */
     public JackpotCelebration(PlayArea playArea, ScreenShake screenShake, VisualSettings settings, HudTextures hud,
-                              Supplier<Vector2> coinTarget, Runnable onCoinCollected) {
+                              Supplier<Vector2> coinTarget, Runnable onCoinCollected, Fireworks.Sounds fireworkSounds) {
         this.playArea      = playArea;
         this.screenShake   = screenShake;
         this.settings      = settings;
@@ -161,7 +162,7 @@ public class JackpotCelebration extends Group implements Disposable {
 
         shockwaves = new Shockwaves(pixel);
         glitter    = new Glitter(pixel);
-        fireworks  = new Fireworks(pixel);
+        fireworks  = new Fireworks(pixel, fireworkSounds);
         symbols    = new SymbolShower();
         coins      = new CoinShower(new TextureRegion(coinTexture), coinTarget, onCoinCollected);
         flash      = new Image(new TextureRegionDrawable(pixel));

@@ -16,8 +16,9 @@ import java.util.Map;
 /**
  * Tous les bruitages de GameScreen, chargés et libérés ensemble. Leur volume suit
  * le réglage « Sons » ({@link VolumeSound}). Les sons de cartes distribuées et de
- * bouton viennent de Kenney.nl (CC0) ; tous les autres sont synthétisés par
- * tools/sounds/generate_sounds.py (voir assets/sounds/CREDITS.txt).
+ * bouton viennent de Kenney.nl (CC0), le Bingo classique est celui d'origine du jeu ;
+ * tous les autres sont synthétisés par tools/sounds/generate_sounds.py (voir
+ * assets/sounds/CREDITS.txt).
  */
 public class GameSounds implements Disposable {
 
@@ -39,6 +40,14 @@ public class GameSounds implements Disposable {
     /** Clic gauche sur une carte : elle est jouée. */
     public final Sound cardPlay;
 
+    /** Carte achetée à l'échoppe. */
+    public final Sound purchase;
+    /** Une combinaison vient d'être formée par les cartes jouées. */
+    public final Sound comboFormed;
+    /** Gains crédités, ou perdus. */
+    public final Sound coinsGain;
+    public final Sound coinsLoss;
+
     /** Bouton « Lancer machine ». */
     public final Sound spinButton;
     /** Rouleaux qui tournent : à jouer en boucle (une seconde qui se raccorde sans blanc). */
@@ -50,6 +59,20 @@ public class GameSounds implements Disposable {
     /** Résultat d'un tirage : aucune paire, ou une paire (le jackpot a son propre son, voir {@link #bingo}). */
     public final Sound resultNone;
     public final Sound resultPair;
+    /** Les trois symboles alignés : le son de Bingo d'origine, joué avec celui de la scène du symbole ({@link #bingo}). */
+    public final Sound bingoClassic;
+
+    /** Coup encaissé par le joueur, ou par l'ennemi. */
+    public final Sound playerHurt;
+    public final Sound enemyHurt;
+    /** Bouclier gagné (le joueur, ou l'ennemi joué un ton plus bas). */
+    public final Sound shieldGain;
+
+    /** Gerbe et pluie de confettis, départ et explosion d'une fusée de feu d'artifice. */
+    public final Sound confettiPop;
+    public final Sound confettiRain;
+    public final Sound fireworkLaunch;
+    public final Sound fireworkBurst;
 
     public final Sound victory;
     public final Sound defeat;
@@ -71,6 +94,10 @@ public class GameSounds implements Disposable {
         shopHover    = load("sounds/ui/shop_hover.ogg");
         cardInspect  = load("sounds/ui/card_inspect.ogg");
         cardPlay     = load("sounds/ui/card_play.ogg");
+        purchase     = load("sounds/shop/purchase.ogg");
+        comboFormed  = load("sounds/combo/formed.ogg");
+        coinsGain    = load("sounds/coins/gain.ogg");
+        coinsLoss    = load("sounds/coins/loss.ogg");
 
         spinButton   = load("sounds/slots/spin_button.ogg");
         reelSpin     = load("sounds/slots/reel_spin.wav");
@@ -78,6 +105,16 @@ public class GameSounds implements Disposable {
         reelSuspense = load("sounds/slots/reel_suspense.ogg");
         resultNone   = load("sounds/slots/result_none.ogg");
         resultPair   = load("sounds/slots/result_pair.ogg");
+        bingoClassic = load("sounds/bingo_3_symbols.wav");
+
+        playerHurt   = load("sounds/combat/player_hurt.ogg");
+        enemyHurt    = load("sounds/combat/enemy_hurt.ogg");
+        shieldGain   = load("sounds/combat/shield_gain.ogg");
+
+        confettiPop    = load("sounds/party/confetti_pop.ogg");
+        confettiRain   = load("sounds/party/confetti_rain.ogg");
+        fireworkLaunch = load("sounds/party/firework_launch.ogg");
+        fireworkBurst  = load("sounds/party/firework_burst.ogg");
 
         victory      = load("sounds/combat/victory.ogg");
         defeat       = load("sounds/combat/defeat.ogg");

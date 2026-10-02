@@ -120,6 +120,11 @@ def power_up(notes, step=0.045, wave='square', duty=0.25, last=0.25):
     return track.buf
 
 
+# Le son de Bingo classique du jeu (assets/sounds/bingo_3_symbols.wav) est joué en même temps que chaque
+# scène : l'arpège « BINGO ! » des scènes reste en retrait pour ne pas se marcher dessus.
+SCENE_JINGLE = 0.55
+
+
 def bingo_jingle(root='C5', wave='square', duty=0.25, step=0.065, hold=0.75, chord=(0, 4, 7, 12)):
     """« BINGO ! » : arpège qui monte puis accord tenu en tremolo, transposé et colorié selon la scène."""
     f0 = hz(root)
@@ -133,7 +138,7 @@ def bingo_jingle(root='C5', wave='square', duty=0.25, step=0.065, hold=0.75, cho
                     r=0.25, vib=0.006)
         track.add(tone * tremolo, at, 0.42)
     track.add(sparkle(hold, count=10, tau=0.07), at, 0.35)
-    return track.buf
+    return track.buf * SCENE_JINGLE
 
 
 def fire_burst(d=1.2):
@@ -147,17 +152,6 @@ def fire_burst(d=1.2):
     return mix((roar, 0, 1.0), (crackle.buf * expdec(d, d * 0.45), 0, 0.5), (thump(90, 40, 0.4, 0.15), 0, 0.8))
 
 
-def rocket(rise=0.75):
-    """Fusée de feu d'artifice : sifflement qui monte, puis explosion et crépitement."""
-    whistle = osc(vibrato(sweep(900, 2600, rise), rise, rate=18, depth=0.02), rise) * ramp(rise, 0.15, 0.6)
-    hiss = hp(noise(rise), 3000) * ramp(rise, 0.3, 0.05)
-    boom = mix((lp(noise(0.9), 1200) * expdec(0.9, 0.18), 0, 1.0), (thump(110, 40, 0.5, 0.15), 0, 0.9))
-    crackle = Track(0.8)
-    for _ in range(30):
-        crackle.add(bp(noise(0.004), 2500, 8000) * expdec(0.004, 0.001), rand(0.1, 0.8), rand(0.2, 0.8))
-    return mix((whistle, 0, 0.25), (hiss, 0, 0.25), (boom, rise, 0.9), (crackle.buf, rise, 0.5))
-
-
 # ===========================================================================
 # Interface
 # ===========================================================================
@@ -169,19 +163,22 @@ def menu_hover():
     return mix((tone, 0, 1.0), (click(0.004, 2500, 7000), 0, 0.5))
 
 
-@sound('ui/card_hover', -32)
+def soft_whoop(f0, f1, d, air=0.25):
+    """« Whoop » doux, de la famille de card_inspect : note ronde qui glisse vers le haut et un souffle léger."""
+    tone = (osc(sweep(f0, f1, d), d) + 0.15 * osc(sweep(2 * f0, 2 * f1, d), d)) * adsr(d, 0.008, 0.03, 0.5, d * 0.6)
+    return mix((tone, 0, 1.0), (whoosh(d, 1200, 3500, q=0.7), 0, air))
+
+
+@sound('ui/card_hover', -31)
 def card_hover():
-    """Survol d'une carte : frottement de papier très court, la carte se soulève."""
-    return mix((card_flick(0.05), 0, 1.0), (osc(sweep(600, 900, 0.03), 0.03) * expdec(0.03, 0.008), 0, 0.25))
+    """Survol d'une carte : petit « whoop » rond qui monte, comme une version brève de la fiche (card_inspect)."""
+    return soft_whoop(520, 880, 0.09)
 
 
 @sound('ui/pile_hover', -31)
 def pile_hover():
-    """Survol du deck ou de la défausse : trois cartes effleurées du pouce."""
-    track = Track()
-    for k in range(3):
-        track.add(card_flick(0.035), k * 0.032, 0.9 - 0.2 * k)
-    return track.buf
+    """Survol du deck ou de la défausse : le même « whoop », un peu plus grave et doublé."""
+    return mix((soft_whoop(420, 640, 0.07, air=0.2), 0, 0.8), (soft_whoop(520, 780, 0.08, air=0.15), 0.06, 0.9))
 
 
 @sound('ui/shop_hover', -27)
@@ -212,32 +209,39 @@ def card_play():
 
 @sound('slots/spin_button', -19)
 def spin_button():
-    """Bouton « Lancer machine » : jeton glissé dans la fente, puis levier abaissé."""
+    """Bouton « Lancer machine » d'une machine moderne : clic du gros bouton, souffle qui monte et carillon de départ."""
     track = Track()
-    track.add(modal(hz('E6'), 0.2, BAR_RATIOS, [0.08, 0.04, 0.02, 0.01]), 0.0, 0.5)      # jeton
-    track.add(svf(noise(0.12), sweep(3000, 1200, 0.12), q=1.5, mode='bp') * expdec(0.12, 0.05), 0.03, 0.4)
-    for k in range(5):                                                                    # cliquet du levier
-        track.add(stack(modal(1500 + 120 * k, 0.03, [1, 2.3], [0.01, 0.005]), click(0.003, 2000, 6000)), 0.14 + k * 0.035, 0.7)
-    track.add(impact(0.3, 120, 50), 0.33, 0.9)                                            # levier en butée
-    track.add(metal_hit(240, 0.3, bright=0.5), 0.33, 0.35)
-    return track.buf
+    track.add(mix((click(0.006, 1500, 6000), 0, 1.0), (thump(260, 120, 0.08, 0.02), 0, 0.7)), 0.0, 0.9)
+    track.add(whoosh(0.45, 400, 5000, q=0.9, curve=2.0), 0.02, 0.6)
+    rise = osc(sweep(300, 1200, 0.35), 0.35, 'tri') * adsr(0.35, 0.02, 0.05, 0.6, 0.12)
+    track.add(lp(rise, 4000), 0.03, 0.35)
+    for k, note in enumerate(['C6', 'G6', 'C7']):                    # carillon : la machine démarre
+        track.add(modal(hz(note), 0.5, GLASS_RATIOS, [0.25, 0.12, 0.06, 0.03]), 0.12 + k * 0.05, 0.35)
+    track.add(sparkle(0.35, count=6), 0.2, 0.25)
+    return reverb(track.buf, wet=0.2, tail=0.4)
 
 
-# Une seconde exacte, jouée en boucle pendant que les rouleaux tournent :
-# cliquetis régulier des crans et ronronnement du moteur.
+# Une seconde exacte, jouée en boucle pendant que les rouleaux tournent, façon machine moderne : défilement
+# électronique feutré (souffle rythmé au passage des symboles), ronronnement doux et petite boucle
+# d'arpège en clochettes. Ce qui déborde de la seconde est replié sur son début, et les filtres passent sur
+# trois copies dont on garde celle du milieu : la boucle se raccorde sans blanc ni saut.
 @sound('slots/reel_spin', -27, fmt='wav', loop=True)
 def reel_spin():
-    d, ticks = 1.0, 20
-    base = Track(d)
-    for k in range(ticks):
-        tick = stack(modal(rand(1700, 1900), 0.03, [1, 2.2], [0.008, 0.004]), click(0.003, 2500, 8000))
-        base.add(tick, k * d / ticks, 0.8 if k % 2 == 0 else 0.6)
-    loop = base.buf[:n(d)]
-    loop = loop + 0.25 * osc(np.full(n(d), 60.0), d, 'saw', phase=0.0) + 0.15 * noise(d)
-    # Filtrer trois copies à la suite puis garder celle du milieu : le son reste périodique, sans saut au raccord.
-    tiled = np.tile(loop, 3)
-    tiled = lp(tiled, 5000) + 0.3 * bp(tiled, 200, 600)
-    return tiled[n(d):2 * n(d)]
+    d, steps = 1.0, 16
+    N = n(d)
+    track = Track(2 * d)
+    for k in range(steps):
+        tick = stack(bp(noise(0.02), 1500, 5000) * expdec(0.02, 0.005), modal(rand(2300, 2500), 0.04, [1, 2.0], [0.01, 0.005]))
+        track.add(tick, k * d / steps, 0.35 if k % 2 == 0 else 0.22)
+    for k, note in enumerate(['C6', 'E6', 'G6', 'C7', 'A6', 'G6', 'E6', 'D6']):
+        bell = modal(hz(note), 0.3, GLASS_RATIOS, [0.12, 0.05, 0.025, 0.01], [1, 0.3, 0.12, 0.05])
+        track.add(bell, k * d / 8, 0.32)
+    buf = pad(track.buf, 2 * d)
+    loop = buf[:N] + buf[N:]
+    whir = noise(d) * (0.55 + 0.45 * np.sin(2 * math.pi * steps * times(d)) ** 2)
+    hum = osc(np.full(N, 110.0), d, phase=0.0) + 0.4 * osc(np.full(N, 220.0), d, phase=0.0)
+    tiled = np.tile(loop + 0.12 * hum, 3) + 0.18 * bp(np.tile(whir, 3), 700, 2600)
+    return lp(tiled, 7000)[N:2 * N]
 
 
 @sound('slots/reel_stop', -22)
@@ -516,7 +520,7 @@ def fx_spade_ignore_defense():
 
 @sound('bingo/casino', -16)
 def bingo_casino():
-    """Triple Sept et Joker : sonnerie de jackpot, pluie de pièces, feux d'artifice."""
+    """Triple Sept et Joker : sonnerie de jackpot et pluie de pièces (les fusées ont leurs propres sons, fx/firework_*)."""
     track = Track(3.0)
     track.add(bingo_jingle('C5', 'square', duty=0.25), 0.0, 0.9)
     alarm = Track()
@@ -524,8 +528,6 @@ def bingo_casino():
         alarm.add(modal(1480, 0.08, BAR_RATIOS, [0.04, 0.02, 0.01, 0.005]), k / 16, 1.0 - k / 30)
     track.add(alarm.buf, 0.0, 0.35)
     track.add(coin_shower(1.6, 45), 0.05, 0.7)
-    for at in (0.3, 0.55, 1.1, 1.3, 1.5, 1.7, 1.9):                  # ROCKET_TIMES (montée ~0,75 s)
-        track.add(rocket(0.75), at, 0.45)
     return track.buf
 
 
@@ -733,6 +735,136 @@ def defeat():
         at += d + 0.04
     track.add(thump(80, 35, 0.8, 0.3), at - 0.6, 0.6)
     return reverb(track.buf, wet=0.2, tail=0.6)
+
+
+# ===========================================================================
+# Combat : coups encaissés, bouclier
+# ===========================================================================
+
+@sound('combat/player_hurt', -17)
+def player_hurt():
+    """Le joueur encaisse un coup : choc lourd et sec, craquement et note grave qui retombe."""
+    punch = mix((thump(160, 45, 0.35, 0.09), 0, 1.0), (drive(lp(noise(0.12), 2200), 2.5) * expdec(0.12, 0.025), 0, 0.8))
+    groan = lp(osc(sweep(330, 140, 0.3), 0.3, 'saw'), 1100) * adsr(0.3, 0.01, 0.05, 0.6, 0.15)
+    return mix((punch, 0, 1.0), (groan, 0.015, 0.35), (click(0.006, 1500, 5000), 0, 0.6))
+
+
+@sound('combat/enemy_hurt', -18)
+def enemy_hurt():
+    """L'ennemi encaisse un coup : impact plus clair, claquement de jetons et petite note qui chute (« bonk »)."""
+    hit = mix((thump(220, 70, 0.25, 0.06), 0, 1.0), (bp(noise(0.06), 1200, 6000) * expdec(0.06, 0.012), 0, 0.8))
+    bonk = chip(sweep(820, 360, 0.16), 0.16, 'square', duty=0.3, s=0.5, r=0.06)
+    return mix((hit, 0, 1.0), (lp(bonk, 3500), 0.01, 0.3), (chips_clatter(3, 0.09), 0.02, 0.35))
+
+
+@sound('combat/shield_gain', -19)
+def shield_gain():
+    """Bouclier gagné : la protection s'élève (« shwing » qui monte), tinte, puis scintille."""
+    d = 0.3
+    rise = (osc(sweep(330, 990, d), d) + 0.5 * osc(sweep(332, 995, d) * 1.5, d, 'tri')) * adsr(d, 0.02, 0.05, 0.7, 0.08)
+    ring = modal(hz('E6'), 0.7, [1, 1.51, 2.43, 3.2], [0.35, 0.22, 0.12, 0.08], [1, 0.5, 0.3, 0.2])
+    return reverb(mix((whoosh(d, 500, 3000, q=0.9, curve=1.5), 0, 0.5), (rise, 0, 0.45),
+                      (metal_hit(1050, 0.5, bright=0.5), d - 0.03, 0.45), (ring, d - 0.03, 0.5),
+                      (sparkle(0.35, count=5), d, 0.3)), wet=0.2, tail=0.4)
+
+
+# ===========================================================================
+# Pièces, échoppe, combinaisons
+# ===========================================================================
+
+@sound('coins/gain', -20)
+def coins_gain():
+    """Des gains tombent dans la caisse : trois pièces qui tintent en montant."""
+    track = Track()
+    for k, f in enumerate((1760, 2093, 2637)):
+        track.add(modal(f, 0.3, BAR_RATIOS, [0.12, 0.05, 0.03, 0.015], [1, 0.5, 0.3, 0.15]), k * 0.055, 0.7 + 0.1 * k)
+    track.add(chips_clatter(3, 0.1), 0.0, 0.3)
+    return track.buf
+
+
+@sound('coins/loss', -21)
+def coins_loss():
+    """Des gains s'envolent : pièces qui glissent en descendant et note qui s'affaisse."""
+    track = Track()
+    for k, f in enumerate((2349, 1976, 1661, 1397)):
+        track.add(modal(f, 0.22, BAR_RATIOS, [0.09, 0.04, 0.02, 0.01], [1, 0.5, 0.3, 0.15]), k * 0.06, 0.8 - 0.12 * k)
+    sag = chip(sweep(520, 260, 0.35), 0.35, 'tri', s=0.6, r=0.15)
+    track.add(sag, 0.05, 0.5)
+    return track.buf
+
+
+@sound('shop/purchase', -18)
+def shop_purchase():
+    """Carte achetée à l'échoppe : touches de caisse, tiroir qui s'ouvre, « ka-tching » et petit « ta-da »."""
+    track = Track()
+    for k in range(2):                                               # touches de la caisse
+        track.add(stack(click(0.006, 1200, 5000), modal(1300 + 200 * k, 0.04, WOOD_RATIOS, [0.015, 0.008, 0.004])), k * 0.07, 0.6)
+    track.add(mix((thump(180, 80, 0.15, 0.04), 0, 0.8), (svf(noise(0.12), 1800, q=0.8) * expdec(0.12, 0.04), 0, 0.5)), 0.16, 1.0)
+    track.add(cash_register_bell(), 0.2, 0.7)
+    track.add(coin_shower(0.35, 6), 0.22, 0.5)
+    track.add(pluck(hz('G5'), 0.35), 0.36, 0.6)
+    track.add(pluck(hz('C6'), 0.6), 0.46, 0.7)
+    track.add(sparkle(0.4, count=8), 0.46, 0.35)
+    return track.buf
+
+
+@sound('combo/formed', -18)
+def combo_formed():
+    """Combinaison formée : deux accords piqués, puis l'accord tenu qui brille (« combo ! »)."""
+    track = Track()
+    stab = lambda notes, d: sum(chip(hz(x), d, 'square', duty=0.25, dc=0.04, s=0.5, r=0.05) for x in notes) / len(notes)
+    track.add(stab(('E5', 'G5', 'C6'), 0.09), 0.0, 0.8)
+    track.add(stab(('F5', 'A5', 'D6'), 0.09), 0.1, 0.8)
+    held = stab(('G5', 'C6', 'E6', 'G6'), 0.5) * (1 - 0.3 * (0.5 + 0.5 * np.sin(2 * math.pi * 10 * times(0.5))))
+    track.add(held, 0.2, 0.9)
+    track.add(card_flick(0.05), 0.0, 0.4)
+    track.add(sparkle(0.5, count=10), 0.22, 0.4)
+    return reverb(track.buf, wet=0.2, tail=0.4)
+
+
+# ===========================================================================
+# Fêtes : confettis et feux d'artifice (joués en direct par Confetti et Fireworks)
+# ===========================================================================
+
+@sound('party/confetti_pop', -19)
+def confetti_pop():
+    """Gerbe de confettis : « pop » de canon à confettis, puis papiers qui froufroutent en retombant."""
+    pop = mix((bp(noise(0.03), 600, 5000) * expdec(0.03, 0.006, attack=0.0005), 0, 1.0), (thump(320, 110, 0.08, 0.02), 0, 0.8))
+    paper = Track(0.7)
+    for _ in range(45):
+        paper.add(bp(noise(0.012), 3000, 9000) * expdec(0.012, 0.004), rand(0.0, 0.65) ** 1.3, rand(0.15, 0.6))
+    return mix((pop, 0, 1.0), (paper.buf * ramp(len(paper.buf) / SR, 1.0, 0.2), 0.02, 0.5),
+               (whoosh(0.2, 1500, 5000, q=0.8), 0, 0.3))
+
+
+@sound('party/confetti_rain', -24)
+def confetti_rain():
+    """Pluie de confettis : froissement de papier léger qui tombe longtemps et s'éteint."""
+    d = 3.0
+    paper = Track(d)
+    for _ in range(260):
+        paper.add(bp(noise(0.015), 2500, 9000) * expdec(0.015, 0.005), rand(0, d - 0.05), rand(0.15, 0.6))
+    return fade(paper.buf * adsr(d, 0.3, 0.2, 0.8, 1.5), 0.002, 0.3)
+
+
+@sound('party/firework_launch', -24)
+def firework_launch():
+    """Départ d'une fusée : petit souffle de poudre et sifflement qui monte."""
+    rise = 0.6
+    whistle = osc(vibrato(sweep(1000, 2800, rise), rise, rate=18, depth=0.02), rise) * ramp(rise, 0.1, 0.5) * ramp(rise, 1.0, 0.3)
+    hiss = hp(noise(rise), 3000) * expdec(rise, 0.25)
+    puff = lp(noise(0.1), 1200) * expdec(0.1, 0.03)
+    return mix((puff, 0, 0.8), (hiss, 0, 0.3), (whistle, 0.02, 0.25))
+
+
+@sound('party/firework_burst', -18)
+def firework_burst():
+    """Explosion d'une fusée : détonation sourde au loin, puis crépitement d'étincelles."""
+    boom = mix((lp(noise(0.9), 1200) * expdec(0.9, 0.16), 0, 1.0), (thump(110, 38, 0.6, 0.16), 0, 0.9))
+    crackle = Track(1.2)
+    for _ in range(45):
+        crackle.add(bp(noise(0.004), 2500, 8000) * expdec(0.004, 0.001), 0.12 + rand(0, 1.0) ** 1.4, rand(0.2, 0.8))
+    return reverb(mix((boom, 0, 0.9), (crackle.buf, 0, 0.45)), wet=0.25, size=1.4, tail=0.6)
 
 
 # ===========================================================================

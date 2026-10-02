@@ -4,6 +4,7 @@ import com.badlogic.gdx.Input;
 import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.Interpolation;
+import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.Group;
@@ -277,7 +278,7 @@ public class HandView {
             @Override
             public void enter(InputEvent event, float x, float y, int pointer, Actor fromActor) {
                 if (pointer != -1) return;
-                hoverSound.play();
+                hoverSound.play(1f, MathUtils.random(0.95f, 1.06f), 0f); // à peine varié d'une carte à l'autre
                 cardImage.setHovered(true);
                 cardImage.tiltToward(x);
                 showTooltip(cardImage);

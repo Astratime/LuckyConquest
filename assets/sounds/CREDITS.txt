@@ -7,6 +7,11 @@ Fichiers renommés depuis les packs d'origine :
 - card-deal.ogg     <- Kenney Casino sounds/cardSlide3.ogg
 - card-flip.ogg     <- Kenney Casino sounds/cardPlace2.ogg
 
-Tous les autres sons (dossiers ui, slots, effects, bingo, combat) sont
-synthétisés pour le jeu par tools/sounds/generate_sounds.py : modifier ce
-script puis le relancer pour les régénérer (voir son en-tête).
+Son de Bingo classique (trois symboles alignés) :
+- bingo_3_symbols.wav : son d'origine du jeu, conservé tel quel ; il est joué
+  avec le son de scène du symbole (dossier bingo).
+
+Tous les autres sons (dossiers ui, slots, effects, bingo, combat, coins, shop,
+combo, party) sont synthétisés pour le jeu par tools/sounds/generate_sounds.py,
+sans échantillon extérieur : modifier ce script puis le relancer pour les
+régénérer (voir son en-tête).
