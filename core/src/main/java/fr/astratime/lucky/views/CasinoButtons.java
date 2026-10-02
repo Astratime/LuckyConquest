@@ -104,7 +104,7 @@ public class CasinoButtons implements Disposable {
 
     @Override
     public void dispose() {
-        font.dispose();
+        Fonts.release(font);
         upTexture.dispose();
         overTexture.dispose();
         downTexture.dispose();

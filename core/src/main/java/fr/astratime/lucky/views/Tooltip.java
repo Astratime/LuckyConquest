@@ -112,7 +112,7 @@ public class Tooltip implements Disposable {
 
     @Override
     public void dispose() {
-        titleFont.dispose();
-        bodyFont.dispose();
+        Fonts.release(titleFont);
+        Fonts.release(bodyFont);
     }
 }

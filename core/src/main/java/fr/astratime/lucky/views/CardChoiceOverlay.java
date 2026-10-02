@@ -1,6 +1,5 @@
 package fr.astratime.lucky.views;
 
-import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
@@ -21,6 +20,7 @@ import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 import com.badlogic.gdx.utils.Align;
 import com.badlogic.gdx.utils.Disposable;
 import fr.astratime.lucky.assets.Fonts;
+import fr.astratime.lucky.assets.CardTextures;
 import fr.astratime.lucky.assets.HudTextures;
 import fr.astratime.lucky.assets.Palette;
 import fr.astratime.lucky.entities.Symbol;
@@ -61,8 +61,8 @@ public class CardChoiceOverlay implements Disposable {
 
     private final Stage   stage;
     private final Texture cardBack;
-    private final Texture rouletteFace = new Texture(Gdx.files.internal("cards/special/russian_roulette.png"));
-    private final Texture cursedFace   = new Texture(Gdx.files.internal("cards/special/cursed_joker.png"));
+    private final Texture rouletteFace;
+    private final Texture cursedFace;
     private final HudTextures hud;
     private final BitmapFont titleFont    = Fonts.jersey(72, Palette.TEXT_TITLE, 3f, Palette.TEXT_SHADE);
     private final BitmapFont subtitleFont = Fonts.jersey(34, Palette.TEXT_BODY, 2f, Palette.TEXT_SHADE);
@@ -76,12 +76,16 @@ public class CardChoiceOverlay implements Disposable {
 
     /**
      * @param cardBack   dos des cartes (faces cachées de la Roulette russe)
+     * @param cards      cache des images de cartes (faces révélées de la Roulette russe)
      * @param cardWidth  taille d'une carte de la main (agrandie ici)
      */
-    public CardChoiceOverlay(Stage stage, HudTextures hud, Texture cardBack, float cardWidth, float cardHeight) {
+    public CardChoiceOverlay(Stage stage, HudTextures hud, Texture cardBack, CardTextures cards,
+                             float cardWidth, float cardHeight) {
         this.stage      = stage;
         this.hud        = hud;
         this.cardBack   = cardBack;
+        this.rouletteFace = cards.get("cards/special/russian_roulette.png");
+        this.cursedFace   = cards.get("cards/special/cursed_joker.png");
         this.cardWidth  = cardWidth * CARD_SCALE;
         this.cardHeight = cardHeight * CARD_SCALE;
         veil = new Image(new TextureRegionDrawable(new TextureRegion(hud.pixel)));
@@ -270,10 +274,8 @@ public class CardChoiceOverlay implements Disposable {
 
     @Override
     public void dispose() {
-        rouletteFace.dispose();
-        cursedFace.dispose();
-        titleFont.dispose();
-        subtitleFont.dispose();
-        resultFont.dispose();
+        Fonts.release(titleFont);
+        Fonts.release(subtitleFont);
+        Fonts.release(resultFont);
     }
 }

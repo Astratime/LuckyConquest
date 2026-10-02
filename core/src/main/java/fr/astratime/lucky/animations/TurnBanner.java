@@ -106,6 +106,6 @@ public class TurnBanner extends Group implements Disposable {
     public void dispose() {
         playerBand.dispose();
         enemyBand.dispose();
-        font.dispose();
+        Fonts.release(font);
     }
 }

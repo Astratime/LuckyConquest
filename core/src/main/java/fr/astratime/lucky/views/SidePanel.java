@@ -276,9 +276,9 @@ public class SidePanel implements Disposable {
 
     @Override
     public void dispose() {
-        titleFont.dispose();
-        captionFont.dispose();
-        gainsFont.dispose();
-        effectFont.dispose();
+        Fonts.release(titleFont);
+        Fonts.release(captionFont);
+        Fonts.release(gainsFont);
+        Fonts.release(effectFont);
     }
 }

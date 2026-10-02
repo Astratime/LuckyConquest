@@ -30,14 +30,16 @@ public class GiantWord extends Group implements Disposable {
     private static final float LETTER_STEP = 0.07f;  // entre l'apparition de deux lettres
     private static final float FADE_TIME   = 0.45f;
 
-    private final BitmapFont             font    = Fonts.jersey(230, Color.WHITE, 9f, Palette.TEXT_SHADE);
+    private static final String WORD = "BINGO!";
+
+    private final BitmapFont             font    = Fonts.jersey(230, Color.WHITE, 9f, Palette.TEXT_SHADE, WORD);
     private final List<Container<Label>> letters = new ArrayList<>();
 
     public GiantWord() {
         setTouchable(Touchable.disabled);
         setVisible(false);
         Label.LabelStyle style = new Label.LabelStyle(font, Color.WHITE);
-        for (char c : "BINGO!".toCharArray()) {
+        for (char c : WORD.toCharArray()) {
             Container<Label> letter = new Container<>(new Label(String.valueOf(c), style));
             letter.setTransform(true);
             letter.pack();
@@ -95,6 +97,6 @@ public class GiantWord extends Group implements Disposable {
 
     @Override
     public void dispose() {
-        font.dispose();
+        Fonts.release(font);
     }
 }

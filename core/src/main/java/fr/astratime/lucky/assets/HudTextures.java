@@ -41,6 +41,8 @@ public class HudTextures implements Disposable {
     public final Texture iconCross       = load("hud/icon_cross.png");
     /** Revolver de la Roulette russe, qui tire sur l'ennemi après le tirage. */
     public final Texture pistol          = load("jackpot/pistol.png");
+    /** Bande dorée des bannières qui traversent l'écran (Bingo, Victoire). */
+    public final Texture bannerBand      = load("jackpot/banner_band.png");
     /** Jauges des couleurs et Corruption, dans les effets actifs du panneau latéral. */
     public final Texture iconBlade       = load("hud/icon_blade.png");
     public final Texture iconBlood       = load("hud/icon_blood.png");
@@ -79,6 +81,7 @@ public class HudTextures implements Disposable {
         iconClover.dispose();
         iconCross.dispose();
         pistol.dispose();
+        bannerBand.dispose();
         iconBlade.dispose();
         iconBlood.dispose();
         iconVault.dispose();

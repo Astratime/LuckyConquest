@@ -262,10 +262,10 @@ public class ShopOverlay implements Disposable {
 
     @Override
     public void dispose() {
-        titleFont.dispose();
-        textFont.dispose();
-        priceFont.dispose();
-        hintFont.dispose();
-        nameFont.dispose();
+        Fonts.release(titleFont);
+        Fonts.release(textFont);
+        Fonts.release(priceFont);
+        Fonts.release(hintFont);
+        Fonts.release(nameFont);
     }
 }
