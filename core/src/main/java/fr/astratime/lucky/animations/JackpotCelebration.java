@@ -29,8 +29,9 @@ import java.util.function.IntConsumer;
 import java.util.function.Supplier;
 
 /**
- * Célébration du jackpot (Bingo), par-dessus tout l'écran de jeu. Elle change
- * selon le symbole aligné. Le Triple Sept garde la célébration d'origine :
+ * Célébration du jackpot (Bingo), par-dessus tout l'écran de jeu, sous des
+ * projecteurs disco multicolores ({@link DiscoSpotlights}). Elle change selon
+ * le symbole aligné. Le Triple Sept garde la célébration d'origine :
  * flash blanc, bannière « BINGO!!! » qui traverse l'écran, pluie de pièces
  * d'or (dont une partie file vers le compteur des gains) et feux d'artifice.
  * Chaque autre symbole joue une scène avec un décor en pixel art — un objet,
@@ -61,6 +62,8 @@ public class JackpotCelebration extends Group implements Disposable {
     public static final float DURATION = 3f;
 
     private static final float FLASH_ALPHA = 0.7f;
+    /** Hauteur (fraction de l'écran) où les projecteurs dessinent leurs flaques de lumière sur la table. */
+    private static final float SPOTLIGHT_FLOOR = 0.14f;
     private static final float FLASH_TIME  = 0.35f;
     private static final float SHAKE_TIME  = 0.45f;
     private static final float SHAKE       = 12f;
@@ -110,6 +113,8 @@ public class JackpotCelebration extends Group implements Disposable {
     private final BitmapFont     bannerFont   = Fonts.jersey(170, Color.WHITE, 7f, Palette.TEXT_SHADE, BANNER_TEXT);
 
     private final Image        flash;
+    /** Projecteurs disco multicolores qui balaient la table pendant toute la fête. */
+    private final DiscoSpotlights spotlights = new DiscoSpotlights();
     private final Shockwaves   shockwaves;
     private final Glitter      glitter;
     private final Fireworks    fireworks;
@@ -173,6 +178,7 @@ public class JackpotCelebration extends Group implements Disposable {
         bannerLayer.setTouchable(Touchable.disabled);
         churchBell.setSwingListener(this::onBellSwing);
 
+        addActor(spotlights); // derrière tout le reste : la lumière éclaire la table, pas les objets
         addActor(shockwaves);
         addActor(glitter);
         addActor(fireworks);
@@ -209,6 +215,9 @@ public class JackpotCelebration extends Group implements Disposable {
             flash.addAction(Actions.fadeOut(FLASH_TIME));
         }
 
+        spotlights.play(playArea.getX(), playArea.getX() + playArea.getWidth(), height, height * SPOTLIGHT_FLOOR,
+            DURATION, settings.isReducedEffects());
+
         emitters.clear();
         showBanner   = true;
         wordAt       = 0f;
@@ -225,6 +234,7 @@ public class JackpotCelebration extends Group implements Disposable {
         setTouchable(Touchable.disabled);
         emitters.clear();
         coins.removeAll();
+        spotlights.stop();
         fireworks.removeAll();
         symbols.removeAll();
         glitter.removeAll();
@@ -733,6 +743,7 @@ public class JackpotCelebration extends Group implements Disposable {
     @Override
     public void dispose() {
         coinTexture.dispose();
+        spotlights.dispose();
         for (Texture band : styleBands) band.dispose();
         for (Texture icon : icons.values()) icon.dispose();
         Fonts.release(bannerFont);
