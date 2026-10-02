@@ -26,14 +26,17 @@ public class PilesView {
     private       int          discardInFlight = 0;
 
     /**
+     * @param hoverSound       bruitage joué au survol d'une pile
      * @param onDeckClicked    appelé au clic sur le deck
      * @param onDiscardClicked appelé au clic sur la défausse
      */
     public PilesView(PlayArea playArea, Texture cardBackTexture, BitmapFont font, Tooltip tooltip, Sound clickSound,
-              float cardWidth, float cardHeight, Runnable onDeckClicked, Runnable onDiscardClicked) {
+              Sound hoverSound, float cardWidth, float cardHeight, Runnable onDeckClicked, Runnable onDiscardClicked) {
         this.playArea = playArea;
-        deckPile      = buildPile("DECK", cardBackTexture, font, tooltip, clickSound, cardWidth, cardHeight, onDeckClicked);
-        discardPile   = buildPile("DÉFAUSSE", cardBackTexture, font, tooltip, clickSound, cardWidth, cardHeight, onDiscardClicked);
+        deckPile      = buildPile("DECK", cardBackTexture, font, tooltip, clickSound, hoverSound, cardWidth, cardHeight,
+            onDeckClicked);
+        discardPile   = buildPile("DÉFAUSSE", cardBackTexture, font, tooltip, clickSound, hoverSound, cardWidth,
+            cardHeight, onDiscardClicked);
     }
 
     /** Ajoute les deux piles au Stage. */
@@ -72,13 +75,15 @@ public class PilesView {
     public CardPileView discard() { return discardPile; }
 
     private static CardPileView buildPile(String name, Texture cardBackTexture, BitmapFont font, Tooltip tooltip,
-                                          Sound clickSound, float cardWidth, float cardHeight, Runnable onClick) {
+                                          Sound clickSound, Sound hoverSound, float cardWidth, float cardHeight,
+                                          Runnable onClick) {
         CardPileView pile = new CardPileView(name, cardBackTexture, font, cardWidth, cardHeight);
         pile.addListener(new InputListener() {
 
             @Override
             public void enter(InputEvent event, float x, float y, int pointer, Actor fromActor) {
                 if (pointer != -1 || (fromActor != null && fromActor.isDescendantOf(pile))) return;
+                hoverSound.play();
                 tooltip.show("Cliquer pour voir les cartes", pile.getX(), pile.getLabelTopY() + 5f);
             }
 

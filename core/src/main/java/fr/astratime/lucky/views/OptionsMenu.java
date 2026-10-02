@@ -66,6 +66,7 @@ public class OptionsMenu implements Disposable {
     private final Stage       stage;
     private final HudTextures hud;
     private final Sound       clickSound;
+    private final Sound       hoverSound;
     private final Texture     chipTexture;
     private final BitmapFont  optionFont;
     private final BitmapFont  captionFont;
@@ -82,11 +83,13 @@ public class OptionsMenu implements Disposable {
      * Ajoute le panneau (vide) à {@code stage}.
      *
      * @param clickSound bruitage joué à chaque option validée ou réglée
+     * @param hoverSound bruitage joué quand une autre option est sélectionnée (survol ou flèches)
      */
-    public OptionsMenu(Stage stage, HudTextures hud, Sound clickSound) {
+    public OptionsMenu(Stage stage, HudTextures hud, Sound clickSound, Sound hoverSound) {
         this.stage      = stage;
         this.hud        = hud;
         this.clickSound = clickSound;
+        this.hoverSound = hoverSound;
         chipTexture = new Texture(Gdx.files.internal(CHIP_PATH));
         optionFont  = Fonts.jersey(58, Color.WHITE, 4f, Palette.TEXT_SHADE);
         captionFont = Fonts.jersey(40, Palette.CREAM, 3f, Palette.TEXT_SHADE);
@@ -186,9 +189,13 @@ public class OptionsMenu implements Disposable {
     /** @return {@code true} si le panneau montre un en-tête (page secondaire, ex : « OPTIONS »). */
     public boolean hasCaption() { return caption.isVisible(); }
 
-    /** Sélectionne l'option {@code index} et désélectionne les autres. */
+    /**
+     * Sélectionne l'option {@code index} et désélectionne les autres, avec le
+     * bruitage de survol (sauf pour la sélection initiale d'une page).
+     */
     private void select(int index) {
         if (index == selected) return;
+        if (selected >= 0) hoverSound.play();
         selected = index;
         for (int i = 0; i < options.size(); i++) options.get(i).setSelected(i == index);
     }

@@ -270,7 +270,7 @@ public class GameScreen extends ScreenAdapter {
 
         font                = new BitmapFont();
         cardBackTexture     = cardTextures.get(CARD_BACK_PATH);
-        effectPopupAnimator = new EffectPopupAnimator(popupLayer);
+        effectPopupAnimator = new EffectPopupAnimator(popupLayer, effect -> sounds.effect(effect).play());
         tooltip             = new Tooltip(hudTextures);
         pileOverlay         = new PileContentOverlay(stage, font, tooltip, cardTextures::get, CARD_WIDTH, CARD_HEIGHT);
 
@@ -278,7 +278,8 @@ public class GameScreen extends ScreenAdapter {
         confetti   = new Confetti(new TextureRegion(hudTextures.pixel));
         table      = new TableView(playArea, tableTextures, CARD_WIDTH, CARD_HEIGHT);
         enemyView  = new EnemyView(table, enemyTextures, pileFont, tooltip, effectPopupAnimator,
-            sounds.cardDeal, sounds.cardFlip, () -> gameController.getGameState().getEnemy());
+            sounds.cardDeal, sounds.cardFlip, sounds.reelSpin, sounds.reelStop,
+            () -> gameController.getGameState().getEnemy());
         sidePanel  = new SidePanel(hudTextures);
         jackpotCelebration = new JackpotCelebration(playArea, screenShake, settings, hudTextures,
             sidePanel::getCoinCenter, sidePanel::bumpCoin);
@@ -294,13 +295,13 @@ public class GameScreen extends ScreenAdapter {
         endButtons.pack();
         endButtons.setVisible(false);
 
-        piles = new PilesView(playArea, cardBackTexture, pileFont, tooltip, sounds.buttonClick, CARD_WIDTH, CARD_HEIGHT,
-            this::onDeckClicked, this::onDiscardClicked);
-        hand  = new HandView(table, CARD_WIDTH, CARD_HEIGHT, cardTextures, tooltip, piles, this::player,
+        piles = new PilesView(playArea, cardBackTexture, pileFont, tooltip, sounds.buttonClick, sounds.pileHover,
+            CARD_WIDTH, CARD_HEIGHT, this::onDeckClicked, this::onDiscardClicked);
+        hand  = new HandView(table, CARD_WIDTH, CARD_HEIGHT, cardTextures, tooltip, sounds.cardHover, piles, this::player,
             new CardDealAnimator(stage, cardBackTexture, CARD_WIDTH, CARD_HEIGHT, sounds.cardDeal, sounds.cardFlip),
             new CardDiscardAnimator(stage, cardBackTexture, CARD_WIDTH, CARD_HEIGHT, sounds.cardDeal, sounds.cardFlip),
             this::onCardPlayed);
-        slots = new SlotView(table, tooltip, effectPopupAnimator, sounds.cardClick);
+        slots = new SlotView(table, tooltip, effectPopupAnimator, sounds.reelSpin, sounds.reelStop, sounds.reelSuspense);
         combatEnd = new CombatEndAnimation(playArea, screenShake, new TextureRegion(hudTextures.pixel),
             hudTextures.bannerBand, new TextureRegion(cardBackTexture), confetti, CARD_WIDTH, CARD_HEIGHT);
         choiceOverlay   = new CardChoiceOverlay(stage, hudTextures, cardBackTexture, cardTextures, CARD_WIDTH, CARD_HEIGHT);
@@ -309,7 +310,8 @@ public class GameScreen extends ScreenAdapter {
         rainbowAnimation = new RainbowChipsAnimation(settings, new TextureRegion(hudTextures.pixel));
         shopOverlay      = new ShopOverlay(stage, hudTextures, tooltip, CARD_WIDTH, CARD_HEIGHT);
         cardDetail       = new CardDetailOverlay(stage, hudTextures, tooltip, CARD_WIDTH, CARD_HEIGHT);
-        pauseOverlay     = new PauseOverlay(luckyGame, luckyGame.getBatch(), hudTextures, sounds.buttonClick, settings,
+        pauseOverlay     = new PauseOverlay(luckyGame, luckyGame.getBatch(), hudTextures, sounds.buttonClick, sounds.menuHover,
+            settings,
             new PauseOverlay.Listener() {
                 @Override public void onResume()         { Gdx.input.setInputProcessor(gameInput); }
                 @Override public void onRestart()        { Gdx.input.setInputProcessor(gameInput); GameScreen.this.onRestart(); }
@@ -397,7 +399,7 @@ public class GameScreen extends ScreenAdapter {
      * ses faisceaux lumineux, se téléporte sur la défausse, puis lance la machine.
      */
     private void onCardPlayed(Card card, CardImage image, Vector2 cardCenter, Vector2 clickPos) {
-        sounds.cardClick.play();
+        sounds.cardPlay.play();
         cardClickParticles.play(clickPos.x, clickPos.y);
         Gdx.app.log("GameScreen", "Carte jouee : " + card);
 
@@ -484,7 +486,7 @@ public class GameScreen extends ScreenAdapter {
                         EffectPopup.Style.SPECIAL, PopupScale.MAX_INTENSITY)),
                         playArea.getCenterX(), table.getHandRowY() + CARD_HEIGHT * 2f);
                 }
-                sounds.twoSymbols.play();
+                sounds.resultPair.play();
             });
     }
 
@@ -515,6 +517,7 @@ public class GameScreen extends ScreenAdapter {
             public void enter(InputEvent event, float x, float y, int pointer, Actor fromActor) {
                 super.enter(event, x, y, pointer, fromActor);
                 if (pointer != -1) return;
+                sounds.shopHover.play();
                 shopIcon.clearActions();
                 shopIcon.addAction(Actions.scaleTo(SHOP_HOVER_SCALE, SHOP_HOVER_SCALE, 0.12f, Interpolation.pow2Out));
             }
@@ -559,6 +562,7 @@ public class GameScreen extends ScreenAdapter {
         Integer price = gameController.getShopOffers().stream()
             .filter(offer -> offer.card().getId().equals(card.getId()))
             .map(GameController.ShopOffer::price).findFirst().orElse(null);
+        sounds.cardInspect.play();
         cardDetail.show(card, cardTextures.get(card), price);
         tooltip.getActor().toFront();
     }
@@ -657,8 +661,7 @@ public class GameScreen extends ScreenAdapter {
         spinButton.setDisabled(true);
         float centerX = playArea.getCenterX();
         float centerY = stage.getViewport().getWorldHeight() * BINGO_CARD_HEIGHT;
-        effectPopupAnimator.play(popups, centerX, centerY + CARD_HEIGHT * 1.3f, 0.5f);
-        sounds.bingoThreeSymbols.play();
+        effectPopupAnimator.play(popups, centerX, centerY + CARD_HEIGHT * 1.3f, 0.5f); // avec le son de la carte
         bingoAnimation.play(image, centerX, centerY, piles.discard().getTopX(), piles.discard().getTopY(),
             this::spin);
     }
@@ -772,7 +775,7 @@ public class GameScreen extends ScreenAdapter {
         effectPopupAnimator.play(List.of(new EffectPopup("JOKER !", EffectPopup.Style.SPECIAL,
             PopupScale.SECONDARY_INTENSITY)), center.x, center.y + SlotView.CELL_HEIGHT / 2f);
         confetti.burst(center.x, center.y, JOKER_CONFETTI);
-        sounds.twoSymbols.play();
+        sounds.resultPair.play();
     }
 
     /** Paire : les deux rouleaux identiques clignotent en doré et lâchent une gerbe de confettis. */
@@ -848,7 +851,7 @@ public class GameScreen extends ScreenAdapter {
      * Le tour de l'ennemi attend la fin de la célébration.
      */
     private void onJackpotShown(Symbol symbol) {
-        sounds.bingoThreeSymbols.play();
+        sounds.bingo(symbol).play(); // accordé à la mise en scène du symbole
         table.setReelsRainbow(true);
         table.setLightsParty(true);
         jackpotCelebration.play(symbol, () -> {
@@ -967,8 +970,10 @@ public class GameScreen extends ScreenAdapter {
             enemyBar.addAction(Actions.fadeOut(0.5f)); // l'ennemi part en jetons
             enemyView.defeat();
             combatEnd.playVictory(hud.getEnemyChipCenter(), showRestart);
+            sounds.victory.play();
         } else {
             combatEnd.playDefeat(showRestart);
+            sounds.defeat.play();
         }
     }
 
@@ -978,9 +983,9 @@ public class GameScreen extends ScreenAdapter {
      */
     private void playSymbolResultSound(TurnResult result) {
         if (result.isPair()) {
-            sounds.twoSymbols.play();
+            sounds.resultPair.play();
         } else if (!result.isJackpot()) {
-            sounds.oneSymbol.play();
+            sounds.resultNone.play();
         }
     }
 

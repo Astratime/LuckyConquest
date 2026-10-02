@@ -4,6 +4,7 @@ import fr.astratime.lucky.entities.choices.RouletteChoice;
 import fr.astratime.lucky.entities.context.PlayContext;
 import fr.astratime.lucky.entities.context.TurnContext;
 import fr.astratime.lucky.popups.EffectPopup;
+import fr.astratime.lucky.popups.EffectSound;
 import fr.astratime.lucky.popups.PopupScale;
 
 import java.util.ArrayList;
@@ -57,4 +58,7 @@ public class RussianRouletteEffect extends Effect {
     public List<EffectPopup> getPopups() {
         return List.of(new EffectPopup("ROULETTE RUSSE !", EffectPopup.Style.DAMAGE, PopupScale.MAX_INTENSITY));
     }
+
+    @Override
+    public EffectSound getSound() { return EffectSound.RUSSIAN_ROULETTE; }
 }

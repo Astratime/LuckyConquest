@@ -7,7 +7,8 @@ package fr.astratime.lucky.popups;
  *
  * Reste indépendant de libGDX : le style indique la famille d'effet (EffectPopupAnimator
  * en déduit la couleur), l'intensité (entre 0 et 1) la force du bonus (EffectPopupAnimator
- * en déduit la taille du texte, bornée entre une taille minimale et maximale).
+ * en déduit la taille du texte, bornée entre une taille minimale et maximale). Le premier
+ * texte d'un effet de carte porte aussi son bruitage, joué à son apparition.
  */
 public class EffectPopup {
 
@@ -17,6 +18,7 @@ public class EffectPopup {
     private final String text;
     private final Style  style;
     private final float  intensity;
+    private final EffectSound sound;
 
     /**
      * @param text      texte affiché (en majuscules de préférence)
@@ -24,9 +26,19 @@ public class EffectPopup {
      * @param intensity force du bonus, ramenée entre 0 (petit texte) et 1 (grand texte)
      */
     public EffectPopup(String text, Style style, float intensity) {
+        this(text, style, intensity, null);
+    }
+
+    private EffectPopup(String text, Style style, float intensity, EffectSound sound) {
         this.text      = text;
         this.style     = style;
         this.intensity = Math.clamp(intensity, 0f, 1f);
+        this.sound     = sound;
+    }
+
+    /** @return ce texte, accompagné du bruitage {@code sound} à son apparition. */
+    public EffectPopup withSound(EffectSound sound) {
+        return new EffectPopup(text, style, intensity, sound);
     }
 
     /**
@@ -43,4 +55,6 @@ public class EffectPopup {
     public Style  getStyle()     { return style; }
     /** @return la force du bonus, entre 0 et 1 (taille du texte). */
     public float  getIntensity() { return intensity; }
+    /** @return le bruitage joué à l'apparition du texte, ou {@code null} s'il n'en a pas. */
+    public EffectSound getSound() { return sound; }
 }

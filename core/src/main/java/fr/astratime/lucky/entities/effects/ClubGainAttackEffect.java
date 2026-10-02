@@ -2,6 +2,7 @@ package fr.astratime.lucky.entities.effects;
 
 import fr.astratime.lucky.entities.context.TurnContext;
 import fr.astratime.lucky.popups.EffectPopup;
+import fr.astratime.lucky.popups.EffectSound;
 import fr.astratime.lucky.popups.PopupScale;
 
 import java.util.List;
@@ -42,4 +43,7 @@ public class ClubGainAttackEffect extends Effect {
             EffectPopup.scaled("ATTAQUE +" + attackBonus, EffectPopup.Style.ATTACK, attackBonus, PopupScale.CARD_ATTACK_BONUS)
         );
     }
+
+    @Override
+    public EffectSound getSound() { return EffectSound.CLUB_GAIN_ATTACK; }
 }

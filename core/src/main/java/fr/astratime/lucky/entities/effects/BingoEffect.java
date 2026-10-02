@@ -4,6 +4,7 @@ import fr.astratime.lucky.entities.Symbol;
 import fr.astratime.lucky.entities.context.PlayContext;
 import fr.astratime.lucky.entities.context.TurnContext;
 import fr.astratime.lucky.popups.EffectPopup;
+import fr.astratime.lucky.popups.EffectSound;
 import fr.astratime.lucky.popups.PopupScale;
 
 import java.util.List;
@@ -62,4 +63,7 @@ public class BingoEffect extends Effect {
             new EffectPopup("BINGO GARANTI !", EffectPopup.Style.GAINS, PopupScale.MAX_INTENSITY),
             new EffectPopup("SYMBOLES x" + power, EffectPopup.Style.SPECIAL, PopupScale.MAX_INTENSITY));
     }
+
+    @Override
+    public EffectSound getSound() { return EffectSound.BINGO; }
 }

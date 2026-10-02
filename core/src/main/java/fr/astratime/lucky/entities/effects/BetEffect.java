@@ -4,6 +4,7 @@ import fr.astratime.lucky.entities.choices.BetChoice;
 import fr.astratime.lucky.entities.context.PlayContext;
 import fr.astratime.lucky.entities.context.TurnContext;
 import fr.astratime.lucky.popups.EffectPopup;
+import fr.astratime.lucky.popups.EffectSound;
 import fr.astratime.lucky.popups.PopupScale;
 
 import java.util.List;
@@ -34,4 +35,7 @@ public class BetEffect extends Effect {
     public List<EffectPopup> getPopups() {
         return List.of(new EffectPopup("PARI !", EffectPopup.Style.GAINS, PopupScale.MAX_INTENSITY));
     }
+
+    @Override
+    public EffectSound getSound() { return EffectSound.BET; }
 }

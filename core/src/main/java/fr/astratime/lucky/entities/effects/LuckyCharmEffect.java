@@ -3,6 +3,7 @@ package fr.astratime.lucky.entities.effects;
 import fr.astratime.lucky.entities.context.PlayContext;
 import fr.astratime.lucky.entities.context.TurnContext;
 import fr.astratime.lucky.popups.EffectPopup;
+import fr.astratime.lucky.popups.EffectSound;
 import fr.astratime.lucky.popups.PopupScale;
 
 import java.util.List;
@@ -34,4 +35,7 @@ public class LuckyCharmEffect extends Effect {
             new EffectPopup("PORTE-BONHEUR", EffectPopup.Style.GAINS, PopupScale.MAX_INTENSITY),
             new EffectPopup("GAINS +" + percent + "% (COMBAT)", EffectPopup.Style.GAINS, PopupScale.SECONDARY_INTENSITY));
     }
+
+    @Override
+    public EffectSound getSound() { return EffectSound.LUCKY_CHARM; }
 }

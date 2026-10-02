@@ -52,6 +52,8 @@ public class MenuScreen extends ScreenAdapter {
 
     /** Bruitage du clic (CC0, Kenney.nl — voir assets/sounds/CREDITS.txt). */
     private static final String CLICK_SOUND = "sounds/button-click.ogg";
+    /** Survol d'une option (synthétisé, voir tools/sounds/generate_sounds.py). */
+    private static final String HOVER_SOUND = "sounds/ui/menu_hover.ogg";
     private static final String TITLE       = "LUCKY CONQUEST";
 
     /** Taille minimale du menu : dans une fenêtre plus petite, il est réduit (voir {@link MinimumScreenViewport}). */
@@ -73,6 +75,7 @@ public class MenuScreen extends ScreenAdapter {
     private final BitmapFont     titleFont;
     private final BitmapFont     shineFont;
     private final Sound          clickSound;
+    private final Sound          hoverSound;
 
     private final MenuDecor         decor = new MenuDecor();
     private final ShiningTitle      title;
@@ -87,6 +90,7 @@ public class MenuScreen extends ScreenAdapter {
         this.stage     = new Stage(new MinimumScreenViewport(MIN_WIDTH, MIN_HEIGHT), luckyGame.getBatch());
 
         clickSound  = new VolumeSound(Gdx.audio.newSound(Gdx.files.internal(CLICK_SOUND)), audio);
+        hoverSound  = new VolumeSound(Gdx.audio.newSound(Gdx.files.internal(HOVER_SOUND)), audio);
         Color shadow = Palette.TEXT_SHADE;
         titleFont   = Fonts.jersey(128, Palette.GOLD, 7f, shadow, TITLE);
         shineFont   = Fonts.jersey(128, Color.WHITE, 7f, shadow, TITLE);
@@ -98,7 +102,7 @@ public class MenuScreen extends ScreenAdapter {
 
         stage.addActor(decor);
         stage.addActor(title);
-        menu = new OptionsMenu(stage, hud, clickSound);
+        menu = new OptionsMenu(stage, hud, clickSound, hoverSound);
 
         showMainPage();
         stage.addActor(fade);                     // en dernier : fondu d'ouverture et de sortie
@@ -245,6 +249,7 @@ public class MenuScreen extends ScreenAdapter {
         Fonts.release(shineFont);
         menu.dispose();
         clickSound.dispose();
+        hoverSound.dispose();
         hud.dispose();
     }
 }

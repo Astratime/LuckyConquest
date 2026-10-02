@@ -2,6 +2,7 @@ package fr.astratime.lucky.entities.effects;
 
 import fr.astratime.lucky.entities.context.TurnContext;
 import fr.astratime.lucky.popups.EffectPopup;
+import fr.astratime.lucky.popups.EffectSound;
 import fr.astratime.lucky.popups.PopupScale;
 
 import java.util.List;
@@ -33,4 +34,7 @@ public class MultiplierEffect extends Effect {
             EffectPopup.scaled("GAINS x+" + formatAmount(), EffectPopup.Style.GAINS, amount, PopupScale.CARD_GAIN_MULTIPLIER)
         );
     }
+
+    @Override
+    public EffectSound getSound() { return EffectSound.MULTIPLIER; }
 }

@@ -3,52 +3,124 @@ package fr.astratime.lucky.assets;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.utils.Disposable;
+import fr.astratime.lucky.entities.Symbol;
+import fr.astratime.lucky.popups.EffectSound;
 import fr.astratime.lucky.settings.AudioSettings;
 
+import java.util.ArrayList;
+import java.util.EnumMap;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 /**
- * Tous les bruitages de GameScreen (CC0, Kenney.nl / The Motion Monkey — voir
- * assets/sounds/CREDITS.txt), chargés et libérés ensemble. Leur volume suit le
- * réglage « Sons » ({@link VolumeSound}).
+ * Tous les bruitages de GameScreen, chargés et libérés ensemble. Leur volume suit
+ * le réglage « Sons » ({@link VolumeSound}). Les sons de cartes distribuées et de
+ * bouton viennent de Kenney.nl (CC0) ; tous les autres sont synthétisés par
+ * tools/sounds/generate_sounds.py (voir assets/sounds/CREDITS.txt).
  */
 public class GameSounds implements Disposable {
 
+    /** Clic de bouton (validation). */
     public final Sound buttonClick;
-    public final Sound spinButton;
     public final Sound cardDeal;
     public final Sound cardFlip;
-    public final Sound cardClick;
-    /** Résultat d'un tirage de symboles : aucune paire, une paire, ou les trois identiques. */
-    public final Sound oneSymbol;
-    public final Sound twoSymbols;
-    public final Sound bingoThreeSymbols;
 
-    private final AudioSettings audio;
+    /** Survol d'une option d'un menu (pause). */
+    public final Sound menuHover;
+    /** Survol d'une carte de la main. */
+    public final Sound cardHover;
+    /** Survol du deck ou de la défausse. */
+    public final Sound pileHover;
+    /** Survol de l'échoppe. */
+    public final Sound shopHover;
+    /** Clic droit sur une carte : sa fiche s'ouvre. */
+    public final Sound cardInspect;
+    /** Clic gauche sur une carte : elle est jouée. */
+    public final Sound cardPlay;
+
+    /** Bouton « Lancer machine ». */
+    public final Sound spinButton;
+    /** Rouleaux qui tournent : à jouer en boucle (une seconde qui se raccorde sans blanc). */
+    public final Sound reelSpin;
+    /** Un rouleau s'arrête sur son symbole. */
+    public final Sound reelStop;
+    /** Le dernier rouleau ralentit pour faire durer le suspense (dure jusqu'à son arrêt). */
+    public final Sound reelSuspense;
+    /** Résultat d'un tirage : aucune paire, ou une paire (le jackpot a son propre son, voir {@link #bingo}). */
+    public final Sound resultNone;
+    public final Sound resultPair;
+
+    public final Sound victory;
+    public final Sound defeat;
+
+    private final Map<EffectSound, Sound> effects = new EnumMap<>(EffectSound.class);
+    private final Map<Symbol, Sound>      bingos  = new EnumMap<>(Symbol.class);
+    private final List<Sound>             all     = new ArrayList<>();
+    private final AudioSettings           audio;
 
     public GameSounds(AudioSettings audio) {
-        this.audio        = audio;
-        buttonClick       = load("sounds/button-click.ogg");
-        spinButton        = load("sounds/spin_machine.mp3");
-        cardDeal          = load("sounds/card-deal.ogg");
-        cardFlip          = load("sounds/card-flip.ogg");
-        cardClick         = load("sounds/card-click.ogg");
-        oneSymbol         = load("sounds/1_symbol.wav");
-        twoSymbols        = load("sounds/2_symbols.wav");
-        bingoThreeSymbols = load("sounds/bingo_3_symbols.wav");
+        this.audio   = audio;
+        buttonClick  = load("sounds/button-click.ogg");
+        cardDeal     = load("sounds/card-deal.ogg");
+        cardFlip     = load("sounds/card-flip.ogg");
+
+        menuHover    = load("sounds/ui/menu_hover.ogg");
+        cardHover    = load("sounds/ui/card_hover.ogg");
+        pileHover    = load("sounds/ui/pile_hover.ogg");
+        shopHover    = load("sounds/ui/shop_hover.ogg");
+        cardInspect  = load("sounds/ui/card_inspect.ogg");
+        cardPlay     = load("sounds/ui/card_play.ogg");
+
+        spinButton   = load("sounds/slots/spin_button.ogg");
+        reelSpin     = load("sounds/slots/reel_spin.wav");
+        reelStop     = load("sounds/slots/reel_stop.ogg");
+        reelSuspense = load("sounds/slots/reel_suspense.ogg");
+        resultNone   = load("sounds/slots/result_none.ogg");
+        resultPair   = load("sounds/slots/result_pair.ogg");
+
+        victory      = load("sounds/combat/victory.ogg");
+        defeat       = load("sounds/combat/defeat.ogg");
+
+        for (EffectSound effect : EffectSound.values()) effects.put(effect, load(effect.getAssetPath()));
+        Map<String, Sound> byName = new HashMap<>(); // Triple Sept et Joker partagent le même son
+        for (Symbol symbol : Symbol.values()) {
+            bingos.put(symbol, byName.computeIfAbsent(bingoName(symbol), name -> load("sounds/bingo/" + name + ".ogg")));
+        }
+    }
+
+    /** @return le bruitage de l'effet de carte {@code effect}. */
+    public Sound effect(EffectSound effect) { return effects.get(effect); }
+
+    /** @return le bruitage du Bingo de {@code symbol}, accordé à sa célébration (voir JackpotCelebration). */
+    public Sound bingo(Symbol symbol) { return bingos.get(symbol); }
+
+    /** @return le nom du son de Bingo de {@code symbol} : un par mise en scène. */
+    private static String bingoName(Symbol symbol) {
+        return switch (symbol) {
+            case SEVEN               -> "seven";
+            case DOUBLE_BAR          -> "double_bar";
+            case BAR                 -> "bar";
+            case CHERRY              -> "cherry";
+            case TRIPLE_CHERRY       -> "triple_cherry";
+            case GRAPE               -> "grape";
+            case BELL                -> "bell";
+            case DIAMOND             -> "diamond";
+            case GOLD_BAR            -> "gold_bar";
+            case WATERMELON          -> "watermelon";
+            case TRIPLE_SEVEN, JOKER -> "casino";
+        };
     }
 
     private Sound load(String path) {
-        return new VolumeSound(Gdx.audio.newSound(Gdx.files.internal(path)), audio);
+        Sound sound = new VolumeSound(Gdx.audio.newSound(Gdx.files.internal(path)), audio);
+        all.add(sound);
+        return sound;
     }
 
     @Override
     public void dispose() {
-        buttonClick.dispose();
-        spinButton.dispose();
-        cardDeal.dispose();
-        cardFlip.dispose();
-        cardClick.dispose();
-        oneSymbol.dispose();
-        twoSymbols.dispose();
-        bingoThreeSymbols.dispose();
+        all.forEach(Sound::dispose);
+        all.clear();
     }
 }

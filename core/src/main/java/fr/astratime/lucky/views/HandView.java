@@ -1,6 +1,7 @@
 package fr.astratime.lucky.views;
 
 import com.badlogic.gdx.Input;
+import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.Interpolation;
 import com.badlogic.gdx.math.Vector2;
@@ -86,6 +87,7 @@ public class HandView {
     private final float               cardHeight;
     private final CardTextures        cardTextures;
     private final Tooltip             tooltip;
+    private final Sound               hoverSound;
     private final PilesView           piles;
     private final Supplier<Player> player;
     private final CardDealAnimator    dealAnimator;
@@ -106,13 +108,14 @@ public class HandView {
     private boolean                locked;
 
     public HandView(TableView table, float cardWidth, float cardHeight, CardTextures cardTextures, Tooltip tooltip,
-             PilesView piles, Supplier<Player> player,
+             Sound hoverSound, PilesView piles, Supplier<Player> player,
              CardDealAnimator dealAnimator, CardDiscardAnimator discardAnimator, CardClickListener clickListener) {
         this.table           = table;
         this.cardWidth       = cardWidth;
         this.cardHeight      = cardHeight;
         this.cardTextures    = cardTextures;
         this.tooltip         = tooltip;
+        this.hoverSound      = hoverSound;
         this.piles           = piles;
         this.player          = player;
         this.dealAnimator    = dealAnimator;
@@ -274,6 +277,7 @@ public class HandView {
             @Override
             public void enter(InputEvent event, float x, float y, int pointer, Actor fromActor) {
                 if (pointer != -1) return;
+                hoverSound.play();
                 cardImage.setHovered(true);
                 cardImage.tiltToward(x);
                 showTooltip(cardImage);

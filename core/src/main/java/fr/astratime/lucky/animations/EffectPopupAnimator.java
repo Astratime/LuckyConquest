@@ -13,10 +13,12 @@ import com.badlogic.gdx.scenes.scene2d.ui.Container;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.utils.Disposable;
 import fr.astratime.lucky.popups.EffectPopup;
+import fr.astratime.lucky.popups.EffectSound;
 
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
 import java.util.function.IntConsumer;
 
 /**
@@ -60,12 +62,17 @@ public class EffectPopupAnimator implements Disposable {
     }
 
     private final Group            layer;
+    private final Consumer<EffectSound> playSound;
     private final BitmapFont       font;
     private final Label.LabelStyle labelStyle;
 
-    /** @param layer groupe (plein écran, à l'origine du Stage) dans lequel les textes sont ajoutés. */
-    public EffectPopupAnimator(Group layer) {
-        this.layer = layer;
+    /**
+     * @param layer     groupe (plein écran, à l'origine du Stage) dans lequel les textes sont ajoutés
+     * @param playSound joue le bruitage d'un texte qui en porte un (premier texte d'un effet de carte)
+     */
+    public EffectPopupAnimator(Group layer, Consumer<EffectSound> playSound) {
+        this.layer     = layer;
+        this.playSound = playSound;
         this.layer.setTouchable(Touchable.disabled);
 
         FreeTypeFontGenerator generator = new FreeTypeFontGenerator(Gdx.files.internal(FONT_PATH));
@@ -131,7 +138,10 @@ public class EffectPopupAnimator implements Disposable {
             int index = i;
             container.addAction(Actions.sequence(
                 Actions.delay(startDelay + i * STAGGER_DELAY),
-                Actions.run(() -> onShown.accept(index)),
+                Actions.run(() -> {
+                    if (popup.getSound() != null) playSound.accept(popup.getSound());
+                    onShown.accept(index);
+                }),
                 Actions.parallel(
                     Actions.fadeIn(POP_IN_DURATION),
                     Actions.scaleTo(POP_OVERSHOOT, POP_OVERSHOOT, POP_IN_DURATION, Interpolation.pow2Out)

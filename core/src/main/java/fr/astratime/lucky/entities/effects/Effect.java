@@ -3,6 +3,7 @@ package fr.astratime.lucky.entities.effects;
 import fr.astratime.lucky.entities.context.PlayContext;
 import fr.astratime.lucky.entities.context.TurnContext;
 import fr.astratime.lucky.popups.EffectPopup;
+import fr.astratime.lucky.popups.EffectSound;
 
 import java.util.List;
 
@@ -50,4 +51,7 @@ public abstract class Effect {
      * @return les popups fixes de cet effet, dans l'ordre d'affichage
      */
     public abstract List<EffectPopup> getPopups();
+
+    /** @return le bruitage de l'effet, joué avec son premier texte quand la carte est jouée. */
+    public abstract EffectSound getSound();
 }

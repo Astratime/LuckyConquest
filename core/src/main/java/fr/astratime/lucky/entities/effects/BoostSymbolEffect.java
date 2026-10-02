@@ -4,6 +4,7 @@ import fr.astratime.lucky.entities.Symbol;
 import fr.astratime.lucky.entities.context.TurnContext;
 import fr.astratime.lucky.entities.events.SymbolBoostedEvent;
 import fr.astratime.lucky.popups.EffectPopup;
+import fr.astratime.lucky.popups.EffectSound;
 import fr.astratime.lucky.popups.PopupScale;
 
 import java.util.List;
@@ -40,4 +41,7 @@ public class BoostSymbolEffect extends Effect {
             EffectPopup.scaled("BOOST " + symbol.getDisplayName() + " +" + amount, EffectPopup.Style.SPECIAL, amount, PopupScale.CARD_SYMBOL_BOOST)
         );
     }
+
+    @Override
+    public EffectSound getSound() { return EffectSound.BOOST_SYMBOL; }
 }

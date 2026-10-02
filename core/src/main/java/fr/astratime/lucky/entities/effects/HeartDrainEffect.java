@@ -2,6 +2,7 @@ package fr.astratime.lucky.entities.effects;
 
 import fr.astratime.lucky.entities.context.TurnContext;
 import fr.astratime.lucky.popups.EffectPopup;
+import fr.astratime.lucky.popups.EffectSound;
 import fr.astratime.lucky.popups.PopupScale;
 
 import java.util.List;
@@ -31,4 +32,7 @@ public class HeartDrainEffect extends Effect {
             EffectPopup.scaled("DRAIN DE VIE +" + percent + "%", EffectPopup.Style.DRAIN, percent, PopupScale.CARD_DRAIN_PERCENT)
         );
     }
+
+    @Override
+    public EffectSound getSound() { return EffectSound.HEART_DRAIN; }
 }
