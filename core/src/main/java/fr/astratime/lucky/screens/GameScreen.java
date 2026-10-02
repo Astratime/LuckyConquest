@@ -181,12 +181,12 @@ public class GameScreen extends ScreenAdapter {
     private final Stage               stage;
     private final BitmapFont          font;
     /** Libellés du deck et de la défausse : police du jeu, à balises de couleur (nom crème, nombre doré). */
-    private final BitmapFont          pileFont = markup(Fonts.jersey(20, Color.WHITE, 2f, Palette.TEXT_SHADE));
+    private final BitmapFont          pileFont = Fonts.jerseyMarkup(20, Color.WHITE, 2f, Palette.TEXT_SHADE);
     private final BitmapFont          shopFont = Fonts.jersey(30, Palette.GOLD, 2f, Palette.TEXT_SHADE);
     private final BitmapFont          playsFont = Fonts.jersey(24, Color.WHITE, 2f, Palette.TEXT_SHADE);
     private final Texture             cardBackTexture;
     private final CardTextures        cardTextures  = new CardTextures();
-    private final EnemyTextures       enemyTextures = new EnemyTextures();
+    private final EnemyTextures       enemyTextures = new EnemyTextures(cardTextures);
     private final CasinoButtons       buttons       = new CasinoButtons();
     private final HudTextures         hudTextures   = new HudTextures();
     private final VisualSettings      settings      = new VisualSettings();
@@ -269,7 +269,7 @@ public class GameScreen extends ScreenAdapter {
         this.stage = new Stage(new MinimumScreenViewport(MIN_WIDTH, MIN_HEIGHT), luckyGame.getBatch());
 
         font                = new BitmapFont();
-        cardBackTexture     = new Texture(Gdx.files.internal(CARD_BACK_PATH));
+        cardBackTexture     = cardTextures.get(CARD_BACK_PATH);
         effectPopupAnimator = new EffectPopupAnimator(popupLayer);
         tooltip             = new Tooltip(hudTextures);
         pileOverlay         = new PileContentOverlay(stage, font, tooltip, cardTextures::get, CARD_WIDTH, CARD_HEIGHT);
@@ -280,7 +280,7 @@ public class GameScreen extends ScreenAdapter {
         enemyView  = new EnemyView(table, enemyTextures, pileFont, tooltip, effectPopupAnimator,
             sounds.cardDeal, sounds.cardFlip, () -> gameController.getGameState().getEnemy());
         sidePanel  = new SidePanel(hudTextures);
-        jackpotCelebration = new JackpotCelebration(playArea, screenShake, settings,
+        jackpotCelebration = new JackpotCelebration(playArea, screenShake, settings, hudTextures,
             sidePanel::getCoinCenter, sidePanel::bumpCoin);
         hud        = new CombatHud(playArea, hudTextures, gameController::getGameState);
 
@@ -302,8 +302,8 @@ public class GameScreen extends ScreenAdapter {
             this::onCardPlayed);
         slots = new SlotView(table, tooltip, effectPopupAnimator, sounds.cardClick);
         combatEnd = new CombatEndAnimation(playArea, screenShake, new TextureRegion(hudTextures.pixel),
-            new TextureRegion(cardBackTexture), confetti, CARD_WIDTH, CARD_HEIGHT);
-        choiceOverlay   = new CardChoiceOverlay(stage, hudTextures, cardBackTexture, CARD_WIDTH, CARD_HEIGHT);
+            hudTextures.bannerBand, new TextureRegion(cardBackTexture), confetti, CARD_WIDTH, CARD_HEIGHT);
+        choiceOverlay   = new CardChoiceOverlay(stage, hudTextures, cardBackTexture, cardTextures, CARD_WIDTH, CARD_HEIGHT);
         bingoAnimation  = new BingoCardAnimation(settings, new TextureRegion(hudTextures.pixel));
         pistolAnimation = new PistolShotAnimation(hudTextures.pistol, new TextureRegion(hudTextures.pixel));
         rainbowAnimation = new RainbowChipsAnimation(settings, new TextureRegion(hudTextures.pixel));
@@ -486,12 +486,6 @@ public class GameScreen extends ScreenAdapter {
                 }
                 sounds.twoSymbols.play();
             });
-    }
-
-    /** Active les balises de couleur ([#rrggbb]) de {@code font}. @return la même police */
-    private static BitmapFont markup(BitmapFont font) {
-        font.getData().markupEnabled = true;
-        return font;
     }
 
     /** @return le nom affiché de {@code suit}, en majuscules. */
@@ -1199,11 +1193,10 @@ public class GameScreen extends ScreenAdapter {
     public void dispose() {
         stage.dispose();
         font.dispose();
-        shopFont.dispose();
-        playsFont.dispose();
-        pileFont.dispose();
+        Fonts.release(shopFont);
+        Fonts.release(playsFont);
+        Fonts.release(pileFont);
         tableTextures.dispose();
-        cardBackTexture.dispose();
         cardTextures.dispose();
         buttons.dispose();
         tooltip.dispose();

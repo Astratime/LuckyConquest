@@ -195,9 +195,9 @@ public class CardDetailOverlay implements Disposable {
 
     @Override
     public void dispose() {
-        nameFont.dispose();
-        keyFont.dispose();
-        valueFont.dispose();
-        hintFont.dispose();
+        Fonts.release(nameFont);
+        Fonts.release(keyFont);
+        Fonts.release(valueFont);
+        Fonts.release(hintFont);
     }
 }

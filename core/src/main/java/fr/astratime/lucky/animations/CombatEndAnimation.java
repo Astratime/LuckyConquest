@@ -57,9 +57,13 @@ public class CombatEndAnimation extends Group implements Disposable {
     private final float       cardWidth;
     private final float       cardHeight;
 
+    private static final String VICTORY_TEXT = "VICTOIRE !";
+    private static final String DEFEAT_TEXT  = "DÉFAITE";
+
     private final Texture     chipsTexture = new Texture(Gdx.files.internal("jackpot/chips.png"));
-    private final Texture     bandTexture  = new Texture(Gdx.files.internal("jackpot/banner_band.png"));
-    private final BitmapFont  bigFont      = Fonts.jersey(170, Color.WHITE, 7f, Palette.TEXT_SHADE);
+    private final Texture     bandTexture;
+    private final BitmapFont  bigFont      = Fonts.jersey(170, Color.WHITE, 7f, Palette.TEXT_SHADE,
+                                                          VICTORY_TEXT + DEFEAT_TEXT);
     private final TextureRegion[] chips;
     private final TextureRegion   cardBack;
 
@@ -78,11 +82,13 @@ public class CombatEndAnimation extends Group implements Disposable {
 
     /**
      * @param pixel    région d'un pixel blanc (assombrissement, étincelles)
+     * @param band     bande dorée de la bannière « VICTOIRE ! » (non possédée)
      * @param cardBack dos de carte, pour les cartes qui s'éparpillent à la défaite
      * @param confetti confettis partagés de l'écran de jeu
      */
-    public CombatEndAnimation(PlayArea playArea, ScreenShake screenShake, TextureRegion pixel,
+    public CombatEndAnimation(PlayArea playArea, ScreenShake screenShake, TextureRegion pixel, Texture band,
                               TextureRegion cardBack, Confetti confetti, float cardWidth, float cardHeight) {
+        this.bandTexture = band;
         this.playArea    = playArea;
         this.screenShake = screenShake;
         this.confetti    = confetti;
@@ -99,8 +105,8 @@ public class CombatEndAnimation extends Group implements Disposable {
         darken.setColor(0f, 0f, 0f, 0f);
         darken.setTouchable(Touchable.disabled);
         fireworks     = new Fireworks(pixel);
-        victoryBanner = new BingoBanner("VICTOIRE !", bandTexture, pixel, bigFont);
-        defeatLabel   = new Label("DÉFAITE", new Label.LabelStyle(bigFont, Color.WHITE));
+        victoryBanner = new BingoBanner(VICTORY_TEXT, bandTexture, pixel, bigFont);
+        defeatLabel   = new Label(DEFEAT_TEXT, new Label.LabelStyle(bigFont, Color.WHITE));
         defeatLabel.setColor(DEFEAT_COLOR);
         defeatLabel.setVisible(false);
 
@@ -200,8 +206,7 @@ public class CombatEndAnimation extends Group implements Disposable {
     @Override
     public void dispose() {
         chipsTexture.dispose();
-        bandTexture.dispose();
-        bigFont.dispose();
+        Fonts.release(bigFont);
     }
 
     /** Objets projetés (jetons, cartes) : ils volent en tournoyant, retombent et sortent de l'écran. */

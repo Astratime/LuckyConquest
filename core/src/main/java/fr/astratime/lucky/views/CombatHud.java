@@ -156,6 +156,6 @@ public class CombatHud implements Disposable {
 
     @Override
     public void dispose() {
-        font.dispose();
+        Fonts.release(font);
     }
 }

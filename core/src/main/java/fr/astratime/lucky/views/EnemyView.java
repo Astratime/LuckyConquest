@@ -489,6 +489,6 @@ public class EnemyView implements Disposable {
 
     @Override
     public void dispose() {
-        defenseFont.dispose();
+        Fonts.release(defenseFont);
     }
 }

@@ -52,6 +52,7 @@ public class MenuScreen extends ScreenAdapter {
 
     /** Bruitage du clic (CC0, Kenney.nl — voir assets/sounds/CREDITS.txt). */
     private static final String CLICK_SOUND = "sounds/button-click.ogg";
+    private static final String TITLE       = "LUCKY CONQUEST";
 
     /** Taille minimale du menu : dans une fenêtre plus petite, il est réduit (voir {@link MinimumScreenViewport}). */
     private static final float MIN_WIDTH      = 1280f;
@@ -87,10 +88,10 @@ public class MenuScreen extends ScreenAdapter {
 
         clickSound  = new VolumeSound(Gdx.audio.newSound(Gdx.files.internal(CLICK_SOUND)), audio);
         Color shadow = Palette.TEXT_SHADE;
-        titleFont   = Fonts.jersey(128, Palette.GOLD, 7f, shadow);
-        shineFont   = Fonts.jersey(128, Color.WHITE, 7f, shadow);
+        titleFont   = Fonts.jersey(128, Palette.GOLD, 7f, shadow, TITLE);
+        shineFont   = Fonts.jersey(128, Color.WHITE, 7f, shadow, TITLE);
 
-        title   = new ShiningTitle("LUCKY CONQUEST", titleFont, shineFont);
+        title   = new ShiningTitle(TITLE, titleFont, shineFont);
         fade    = new Image(new TextureRegionDrawable(new TextureRegion(hud.pixel)));
         fade.setColor(Color.BLACK);
         fade.setTouchable(Touchable.disabled);
@@ -240,8 +241,8 @@ public class MenuScreen extends ScreenAdapter {
     public void dispose() {
         stage.dispose();
         decor.dispose();
-        titleFont.dispose();
-        shineFont.dispose();
+        Fonts.release(titleFont);
+        Fonts.release(shineFont);
         menu.dispose();
         clickSound.dispose();
         hud.dispose();

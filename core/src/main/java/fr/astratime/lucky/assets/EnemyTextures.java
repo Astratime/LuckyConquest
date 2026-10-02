@@ -1,6 +1,5 @@
 package fr.astratime.lucky.assets;
 
-import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Texture;
@@ -9,7 +8,6 @@ import fr.astratime.lucky.entities.Card;
 import fr.astratime.lucky.entities.enemy.EnemySymbol;
 
 import java.util.EnumMap;
-import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -30,11 +28,14 @@ public class EnemyTextures implements Disposable {
     /** Silhouette blanche du croupier, posée par-dessus quand il est touché. */
     public final Texture croupierFlash;
     /** Dos des cartes de l'ennemi. */
-    public final Texture cardBack = new Texture(Gdx.files.internal("cards/dark/BACK.png"));
+    public final Texture cardBack;
     private final Map<EnemySymbol, Texture> symbols = new EnumMap<>(EnemySymbol.class);
-    private final Map<String, Texture>      cards   = new HashMap<>();
+    private final CardTextures              cards;
 
-    public EnemyTextures() {
+    /** @param cards cache des images de cartes, partagé avec l'écran de jeu (non possédé) */
+    public EnemyTextures(CardTextures cards) {
+        this.cards = cards;
+        cardBack   = cards.get("cards/dark/BACK.png");
         int[][] croupierGrid = croupierGrid();
         croupier      = texture(croupierGrid, false);
         croupierFlash = texture(croupierGrid, true);
@@ -48,7 +49,7 @@ public class EnemyTextures implements Disposable {
 
     /** @return la face de la carte sombre {@code card} (chargée une fois, puis gardée). */
     public Texture card(Card card) {
-        return cards.computeIfAbsent(card.getAssetPath(), path -> new Texture(Gdx.files.internal(path)));
+        return cards.get(card);
     }
 
     // -------------------------------------------------------------------------
@@ -258,8 +259,6 @@ public class EnemyTextures implements Disposable {
     public void dispose() {
         croupier.dispose();
         croupierFlash.dispose();
-        cardBack.dispose();
         symbols.values().forEach(Texture::dispose);
-        cards.values().forEach(Texture::dispose);
     }
 }

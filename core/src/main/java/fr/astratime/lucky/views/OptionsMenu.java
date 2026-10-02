@@ -256,7 +256,7 @@ public class OptionsMenu implements Disposable {
     @Override
     public void dispose() {
         chipTexture.dispose();
-        optionFont.dispose();
-        captionFont.dispose();
+        Fonts.release(optionFont);
+        Fonts.release(captionFont);
     }
 }

@@ -15,6 +15,7 @@ import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 import com.badlogic.gdx.utils.Disposable;
 import fr.astratime.lucky.assets.Fonts;
 import fr.astratime.lucky.assets.Palette;
+import fr.astratime.lucky.assets.HudTextures;
 import fr.astratime.lucky.assets.Textures;
 import fr.astratime.lucky.entities.Symbol;
 import fr.astratime.lucky.settings.VisualSettings;
@@ -98,14 +99,15 @@ public class JackpotCelebration extends Group implements Disposable {
     private final PlayArea       playArea;
     private final ScreenShake    screenShake;
     private final VisualSettings settings;
-    private final Texture        pixelTexture = Textures.solidColor(Color.WHITE);
-    private final TextureRegion  pixel        = new TextureRegion(pixelTexture);
+    private final TextureRegion  pixel;
     private final Texture        coinTexture  = new Texture(Gdx.files.internal("jackpot/coin_spin.png"));
-    private final Texture        bandTexture  = new Texture(Gdx.files.internal("jackpot/banner_band.png"));
+    private final Texture        bandTexture;
     private final List<Texture>  styleBands   = new ArrayList<>();
     /** Image de chaque symbole, détourée de sa case blanche, chargée à son premier Bingo. */
     private final Map<Symbol, Texture> icons  = new EnumMap<>(Symbol.class);
-    private final BitmapFont     bannerFont   = Fonts.jersey(170, Color.WHITE, 7f, Palette.TEXT_SHADE);
+    private static final String  BANNER_TEXT  = "BINGO!!!";
+
+    private final BitmapFont     bannerFont   = Fonts.jersey(170, Color.WHITE, 7f, Palette.TEXT_SHADE, BANNER_TEXT);
 
     private final Image        flash;
     private final Shockwaves   shockwaves;
@@ -143,15 +145,18 @@ public class JackpotCelebration extends Group implements Disposable {
     private Runnable onFinished;
 
     /**
+     * @param hud             pixel blanc et bande des bannières, partagés avec l'écran de jeu
      * @param coinTarget      position (Stage) de la pièce du compteur des gains
      * @param onCoinCollected appelé à l'arrivée de chaque pièce sur le compteur
      * @param settings        effets réduits : pas de flash (la secousse est coupée par {@code screenShake})
      */
-    public JackpotCelebration(PlayArea playArea, ScreenShake screenShake, VisualSettings settings,
+    public JackpotCelebration(PlayArea playArea, ScreenShake screenShake, VisualSettings settings, HudTextures hud,
                               Supplier<Vector2> coinTarget, Runnable onCoinCollected) {
         this.playArea      = playArea;
         this.screenShake   = screenShake;
         this.settings      = settings;
+        this.pixel         = new TextureRegion(hud.pixel);
+        this.bandTexture   = hud.bannerBand;
         setTouchable(Touchable.disabled);
 
         shockwaves = new Shockwaves(pixel);
@@ -708,7 +713,7 @@ public class JackpotCelebration extends Group implements Disposable {
                 band = Textures.bannerBand(bannerStyle.body(), bannerStyle.trim());
                 styleBands.add(band);
             }
-            BingoBanner banner = new BingoBanner("BINGO!!!", band, pixel, bannerFont,
+            BingoBanner banner = new BingoBanner(BANNER_TEXT, band, pixel, bannerFont,
                 bannerStyle.letterA(), bannerStyle.letterB(), bannerStyle.back());
             banner.setLightningColors(bannerStyle.boltGlow(), bannerStyle.boltCore());
             bannerLayer.addActor(banner);
@@ -718,12 +723,10 @@ public class JackpotCelebration extends Group implements Disposable {
 
     @Override
     public void dispose() {
-        pixelTexture.dispose();
         coinTexture.dispose();
-        bandTexture.dispose();
         for (Texture band : styleBands) band.dispose();
         for (Texture icon : icons.values()) icon.dispose();
-        bannerFont.dispose();
+        Fonts.release(bannerFont);
         bullseye.dispose();
         churchBell.dispose();
         for (BingoScene scene : scenes) scene.dispose();
