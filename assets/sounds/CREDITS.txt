@@ -11,6 +11,11 @@ Son de Bingo classique (trois symboles alignés) :
 - bingo_3_symbols.wav : son d'origine du jeu, conservé tel quel ; il est joué
   avec le son de scène du symbole (dossier bingo).
 
+Musiques de fond (dossier assets/music) :
+- main_menu.ogg : « Musique Main Menu », fournie par Astra pour le jeu.
+- combat.ogg    : « Boss Battle », fournie par Astra pour le jeu.
+  Converties en Ogg Vorbis depuis les vidéos d'origine, sans autre retouche.
+
 Tous les autres sons (dossiers ui, slots, effects, bingo, combat, coins, shop,
 combo, party) sont synthétisés pour le jeu par tools/sounds/generate_sounds.py,
 sans échantillon extérieur : modifier ce script puis le relancer pour les

@@ -41,6 +41,7 @@ import fr.astratime.lucky.animations.TurnBanner;
 import fr.astratime.lucky.animations.PistolShotAnimation;
 import fr.astratime.lucky.animations.RainbowChipsAnimation;
 import fr.astratime.lucky.animations.ScreenShake;
+import fr.astratime.lucky.assets.BackgroundMusic;
 import fr.astratime.lucky.assets.CardTextures;
 import fr.astratime.lucky.assets.EnemyTextures;
 import fr.astratime.lucky.assets.Fonts;
@@ -145,6 +146,8 @@ public class GameScreen extends ScreenAdapter {
     private static final float ENEMY_SHIELD_PITCH    = 0.84f;
     /** Volume du son de scène d'un Bingo, sous le son de Bingo d'origine joué en même temps. */
     private static final float BINGO_SCENE_VOLUME    = 0.8f;
+    /** Volume de la musique du combat quand le réglage « Musique » est à 100 %. */
+    private static final float COMBAT_MUSIC_LEVEL    = 0.15f;
     private static final float BIG_HIT_STOP          = 0.09f;
     /** Paire : clignotement doré des deux rouleaux et confettis lâchés par chacun. */
     private static final Color PAIR_GLOW             = Palette.GOLD;
@@ -204,7 +207,10 @@ public class GameScreen extends ScreenAdapter {
     private final Confetti            confetti;
     private final CombatEndAnimation  combatEnd;
     private final TableTextures       tableTextures = new TableTextures();
-    private final GameSounds          sounds        = new GameSounds(new AudioSettings());
+    private final AudioSettings       audio         = new AudioSettings();
+    private final GameSounds          sounds        = new GameSounds(audio);
+    /** Musique du combat (fournie par Astra), gardée basse pour ne pas couvrir les bruitages. */
+    private final BackgroundMusic     music         = new BackgroundMusic("music/combat.ogg", audio, COMBAT_MUSIC_LEVEL);
     private final CardClickParticles  cardClickParticles = new CardClickParticles();
     private final EffectPopupAnimator effectPopupAnimator;
     private final JackpotCelebration  jackpotCelebration;
@@ -870,11 +876,11 @@ public class GameScreen extends ScreenAdapter {
      * Le tour de l'ennemi attend la fin de la célébration.
      */
     private void onJackpotShown(Symbol symbol) {
-        sounds.bingoClassic.play();                  // le son de Bingo d'origine du jeu…
-        sounds.bingo(symbol).play(BINGO_SCENE_VOLUME); // …avec celui accordé à la mise en scène du symbole
+        sounds.bingo(symbol).play(BINGO_SCENE_VOLUME); // accordé à la mise en scène du symbole
         table.setReelsRainbow(true);
         table.setLightsParty(true);
-        jackpotCelebration.play(symbol, () -> {
+        // Le son de Bingo d'origine du jeu retentit quand « BINGO! » apparaît.
+        jackpotCelebration.play(symbol, () -> sounds.bingoClassic.play(), () -> {
             table.setLightsParty(false);
             // Après la célébration et les derniers textes du tirage, au tour de l'ennemi.
             stage.addAction(Actions.delay(SlotView.RIPOSTE_AFTER_BONUS, Actions.run(this::playEnemyTurn)));
@@ -1179,6 +1185,7 @@ public class GameScreen extends ScreenAdapter {
         };
         gameInput = new InputMultiplexer(stage, keyboardInput);
         Gdx.input.setInputProcessor(pauseOverlay.isShown() ? pauseOverlay.getInput() : gameInput);
+        music.play();
     }
 
     /** Met à jour le viewport puis repositionne les éléments qui dépendent de la taille de l'écran. */
@@ -1197,6 +1204,7 @@ public class GameScreen extends ScreenAdapter {
     @Override
     public void render(float delta) {
         ScreenUtils.clear(Color.BLACK);
+        music.update(); // suit le réglage « Musique », aussi depuis le menu pause
         if (pauseOverlay.isShown()) {
             // En pause : le jeu reste affiché, figé, sous le menu.
         } else if (hitStop > 0f) {
@@ -1234,6 +1242,7 @@ public class GameScreen extends ScreenAdapter {
         hudTextures.dispose();
         slots.dispose();
         sounds.dispose();
+        music.dispose();
         cardClickParticles.dispose();
         pileOverlay.dispose();
         choiceOverlay.dispose();

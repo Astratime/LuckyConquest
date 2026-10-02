@@ -139,6 +139,8 @@ public class JackpotCelebration extends Group implements Disposable {
     private static final Color SMOKE = new Color(0.55f, 0.55f, 0.58f, 1f);
     /** false quand la mise en scène remplace la bannière « BINGO!!! » (Triple Cerise). */
     private boolean    showBanner;
+    /** Instant où « BINGO! » apparaît : la bannière dès le début, ou le mot géant d'une scène. */
+    private float      wordAt;
 
     private boolean  running;
     private float    elapsed;
@@ -185,10 +187,11 @@ public class JackpotCelebration extends Group implements Disposable {
     }
 
     /**
-     * Lance la célébration du Bingo de {@code symbol} ; {@code onFinished} est
-     * appelé au bout de {@link #DURATION}.
+     * Lance la célébration du Bingo de {@code symbol} ; {@code onWord} est appelé
+     * quand « BINGO! » apparaît (bannière ou mot géant de la scène),
+     * {@code onFinished} au bout de {@link #DURATION}.
      */
-    public void play(Symbol symbol, Runnable onFinished) {
+    public void play(Symbol symbol, Runnable onWord, Runnable onFinished) {
         cancel();
         this.onFinished = onFinished;
         running         = true;
@@ -208,7 +211,9 @@ public class JackpotCelebration extends Group implements Disposable {
 
         emitters.clear();
         showBanner   = true;
+        wordAt       = 0f;
         schedule(symbol, iconOf(symbol));
+        at(wordAt, onWord);
         emitted = new int[emitters.size()];
 
         if (showBanner) banner(symbol).play(playArea.getCenterX(), height * BANNER_Y, width);
@@ -517,7 +522,8 @@ public class JackpotCelebration extends Group implements Disposable {
         float centerX = playArea.getCenterX();
         float centerY = getHeight() * BULLSEYE_Y;
         bullseye.play(centerX, centerY);
-        giantWord.play(centerX, getHeight() * BULLSEYE_WORD_Y, BullseyeAnimation.IMPACT_TIME + 0.12f, WORD_FADE_AT,
+        wordAt = BullseyeAnimation.IMPACT_TIME + 0.12f;
+        giantWord.play(centerX, getHeight() * BULLSEYE_WORD_Y, wordAt, WORD_FADE_AT,
             style.letterA(), style.letterB());
 
         // Traînée d'étincelles derrière la flèche en vol.
@@ -573,7 +579,8 @@ public class JackpotCelebration extends Group implements Disposable {
         float centerX = playArea.getCenterX();
         churchBell.play(centerX, getHeight() * BELL_PIVOT_Y);
         float strike = ChurchBellAnimation.STRIKE_TIME;
-        giantWord.play(centerX, getHeight() * BELL_WORD_Y, strike + 0.12f, WORD_FADE_AT,
+        wordAt = strike + 0.12f;
+        giantWord.play(centerX, getHeight() * BELL_WORD_Y, wordAt, WORD_FADE_AT,
             style.letterA(), style.letterB());
 
         Color gold = Color.valueOf("ffe680ff");
@@ -650,6 +657,7 @@ public class JackpotCelebration extends Group implements Disposable {
      */
     private void playScene(BingoScene scene, float x, float y, float wordAt, float wordY) {
         useGiantWord();
+        this.wordAt = wordAt;
         scene.play(x, y);
         giantWord.play(playArea.getCenterX(), getHeight() * wordY, wordAt, WORD_FADE_AT,
             style.letterA(), style.letterB());

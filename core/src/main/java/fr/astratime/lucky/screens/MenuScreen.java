@@ -21,6 +21,7 @@ import fr.astratime.lucky.LuckyGame;
 import fr.astratime.lucky.assets.Fonts;
 import fr.astratime.lucky.assets.HudTextures;
 import fr.astratime.lucky.assets.Palette;
+import fr.astratime.lucky.assets.BackgroundMusic;
 import fr.astratime.lucky.assets.VolumeSound;
 import fr.astratime.lucky.settings.AudioSettings;
 import fr.astratime.lucky.settings.DisplaySettings;
@@ -55,6 +56,9 @@ public class MenuScreen extends ScreenAdapter {
     /** Survol d'une option (synthétisé, voir tools/sounds/generate_sounds.py). */
     private static final String HOVER_SOUND = "sounds/ui/menu_hover.ogg";
     private static final String TITLE       = "LUCKY CONQUEST";
+    /** Musique du menu (fournie par Astra) et son volume au réglage maximal : pas de bruitage à couvrir ici. */
+    private static final String MUSIC       = "music/main_menu.ogg";
+    private static final float  MUSIC_LEVEL = 0.3f;
 
     /** Taille minimale du menu : dans une fenêtre plus petite, il est réduit (voir {@link MinimumScreenViewport}). */
     private static final float MIN_WIDTH      = 1280f;
@@ -76,6 +80,7 @@ public class MenuScreen extends ScreenAdapter {
     private final BitmapFont     shineFont;
     private final Sound          clickSound;
     private final Sound          hoverSound;
+    private final BackgroundMusic music;
 
     private final MenuDecor         decor = new MenuDecor();
     private final ShiningTitle      title;
@@ -91,6 +96,7 @@ public class MenuScreen extends ScreenAdapter {
 
         clickSound  = new VolumeSound(Gdx.audio.newSound(Gdx.files.internal(CLICK_SOUND)), audio);
         hoverSound  = new VolumeSound(Gdx.audio.newSound(Gdx.files.internal(HOVER_SOUND)), audio);
+        music       = new BackgroundMusic(MUSIC, audio, MUSIC_LEVEL);
         Color shadow = Palette.TEXT_SHADE;
         titleFont   = Fonts.jersey(128, Palette.GOLD, 7f, shadow, TITLE);
         shineFont   = Fonts.jersey(128, Color.WHITE, 7f, shadow, TITLE);
@@ -224,6 +230,7 @@ public class MenuScreen extends ScreenAdapter {
             }
         };
         Gdx.input.setInputProcessor(new InputMultiplexer(stage, keyboard));
+        music.play();
     }
 
     @Override
@@ -236,6 +243,7 @@ public class MenuScreen extends ScreenAdapter {
     public void render(float delta) {
         ScreenUtils.clear(Color.BLACK);
         if (!settings.isReducedEffects()) updateParallax(delta);
+        music.update(); // suit le réglage « Musique » des options
         stage.act(delta);
         stage.draw();
     }
@@ -250,6 +258,7 @@ public class MenuScreen extends ScreenAdapter {
         menu.dispose();
         clickSound.dispose();
         hoverSound.dispose();
+        music.dispose();
         hud.dispose();
     }
 }

@@ -163,22 +163,25 @@ def menu_hover():
     return mix((tone, 0, 1.0), (click(0.004, 2500, 7000), 0, 0.5))
 
 
-def soft_whoop(f0, f1, d, air=0.25):
-    """« Whoop » doux, de la famille de card_inspect : note ronde qui glisse vers le haut et un souffle léger."""
-    tone = (osc(sweep(f0, f1, d), d) + 0.15 * osc(sweep(2 * f0, 2 * f1, d), d)) * adsr(d, 0.008, 0.03, 0.5, d * 0.6)
-    return mix((tone, 0, 1.0), (whoosh(d, 1200, 3500, q=0.7), 0, air))
+def chip_tap(f, d=0.12):
+    """Jeton de casino effleuré : petit claquement de céramique, net et boisé."""
+    body = modal(f, d, [1, 1.83, 2.9, 4.1], [0.035, 0.018, 0.009, 0.005], [1, 0.6, 0.35, 0.2])
+    return mix((body, 0, 1.0), (click(0.003, 2500, 9000), 0, 0.5), (thump(300, 180, 0.04, 0.01), 0, 0.25))
 
 
-@sound('ui/card_hover', -31)
+@sound('ui/card_hover', -30)
 def card_hover():
-    """Survol d'une carte : petit « whoop » rond qui monte, comme une version brève de la fiche (card_inspect)."""
-    return soft_whoop(520, 880, 0.09)
+    """Survol d'une carte : deux jetons de casino qui se touchent (« tic-tac » de table de jeu)."""
+    return mix((chip_tap(2900), 0, 0.8), (chip_tap(3400), 0.045, 1.0))
 
 
-@sound('ui/pile_hover', -31)
+@sound('ui/pile_hover', -30)
 def pile_hover():
-    """Survol du deck ou de la défausse : le même « whoop », un peu plus grave et doublé."""
-    return mix((soft_whoop(420, 640, 0.07, air=0.2), 0, 0.8), (soft_whoop(520, 780, 0.08, air=0.15), 0.06, 0.9))
+    """Survol du deck ou de la défausse : pile de jetons égrenée du pouce."""
+    track = Track()
+    for k, f in enumerate((2500, 2750, 3000, 3300)):
+        track.add(chip_tap(f, 0.08), k * 0.03, 0.6 + 0.12 * k)
+    return track.buf
 
 
 @sound('ui/shop_hover', -27)
@@ -741,31 +744,50 @@ def defeat():
 # Combat : coups encaissés, bouclier
 # ===========================================================================
 
-@sound('combat/player_hurt', -17)
+def crack(d=0.05, tau=0.006, lo=500, hi=9000):
+    """Claquement sec et large bande : l'attaque d'un impact ou d'une détonation."""
+    return drive(bp(noise(d), lo, hi) * expdec(d, tau, attack=0.0002), 3.0)
+
+
+def wood_break():
+    """Planche brisée : craquement, éclats de bois qui se détachent et résonance sèche."""
+    track = Track()
+    track.add(crack(0.06, 0.008, 300, 7000), 0, 1.0)
+    track.add(modal(220, 0.25, WOOD_RATIOS, [0.06, 0.03, 0.015], [1, 0.6, 0.3]), 0, 0.7)
+    for _ in range(9):                                               # éclats
+        at = rand(0.01, 0.12)
+        track.add(stack(click(0.004, 1200, 6000), modal(rand(500, 1400), 0.05, WOOD_RATIOS, [0.012, 0.006, 0.003])),
+                  at, rand(0.25, 0.6))
+    return track.buf
+
+
+@sound('combat/player_hurt', -15)
 def player_hurt():
-    """Le joueur encaisse un coup : choc lourd et sec, craquement et note grave qui retombe."""
-    punch = mix((thump(160, 45, 0.35, 0.09), 0, 1.0), (drive(lp(noise(0.12), 2200), 2.5) * expdec(0.12, 0.025), 0, 0.8))
-    groan = lp(osc(sweep(330, 140, 0.3), 0.3, 'saw'), 1100) * adsr(0.3, 0.01, 0.05, 0.6, 0.15)
-    return mix((punch, 0, 1.0), (groan, 0.015, 0.35), (click(0.006, 1500, 5000), 0, 0.6))
+    """Le joueur encaisse un coup : poing qui brise une planche, choc lourd dans la poitrine."""
+    punch = lp(noise(0.25), 220) * expdec(0.25, 0.06, attack=0.001)
+    body = thump(95, 45, 0.3, 0.07)
+    return reverb(mix((drive(stack(punch * 2.5, body), 2.0), 0, 1.0), (wood_break(), 0.003, 0.9)), wet=0.1, tail=0.25)
 
 
-@sound('combat/enemy_hurt', -18)
+@sound('combat/enemy_hurt', -15)
 def enemy_hurt():
-    """L'ennemi encaisse un coup : impact plus clair, claquement de jetons et petite note qui chute (« bonk »)."""
-    hit = mix((thump(220, 70, 0.25, 0.06), 0, 1.0), (bp(noise(0.06), 1200, 6000) * expdec(0.06, 0.012), 0, 0.8))
-    bonk = chip(sweep(820, 360, 0.16), 0.16, 'square', duty=0.3, s=0.5, r=0.06)
-    return mix((hit, 0, 1.0), (lp(bonk, 3500), 0.01, 0.3), (chips_clatter(3, 0.09), 0.02, 0.35))
+    """L'ennemi encaisse un coup : détonation sèche, comme un coup de pistolet, et jetons du croupier qui volent."""
+    shot = mix((crack(0.04, 0.004, 800, 10000), 0, 1.0), (drive(lp(noise(0.3), 900) * expdec(0.3, 0.05), 2.0), 0, 0.9),
+               (thump(120, 50, 0.2, 0.05), 0, 0.6))
+    tail = lp(noise(0.6), 2500) * expdec(0.6, 0.12) * ramp(0.6, 0.0, 1.0, 0.3)
+    return reverb(mix((shot, 0, 1.0), (tail, 0.02, 0.25), (chips_clatter(4, 0.15), 0.05, 0.3)), wet=0.12, size=1.2, tail=0.3)
 
 
 @sound('combat/shield_gain', -19)
 def shield_gain():
-    """Bouclier gagné : la protection s'élève (« shwing » qui monte), tinte, puis scintille."""
+    """Bouclier gagné : la protection s'élève (« shwing » qui monte), tinte et une pile de jetons s'empile."""
     d = 0.3
     rise = (osc(sweep(330, 990, d), d) + 0.5 * osc(sweep(332, 995, d) * 1.5, d, 'tri')) * adsr(d, 0.02, 0.05, 0.7, 0.08)
     ring = modal(hz('E6'), 0.7, [1, 1.51, 2.43, 3.2], [0.35, 0.22, 0.12, 0.08], [1, 0.5, 0.3, 0.2])
     return reverb(mix((whoosh(d, 500, 3000, q=0.9, curve=1.5), 0, 0.5), (rise, 0, 0.45),
                       (metal_hit(1050, 0.5, bright=0.5), d - 0.03, 0.45), (ring, d - 0.03, 0.5),
-                      (sparkle(0.35, count=5), d, 0.3)), wet=0.2, tail=0.4)
+                      (sparkle(0.35, count=5), d, 0.3), (chips_clatter(4, 0.16, 2600, 3400), d - 0.02, 0.35)),
+                  wet=0.2, tail=0.4)
 
 
 # ===========================================================================
@@ -810,7 +832,7 @@ def shop_purchase():
 
 @sound('combo/formed', -18)
 def combo_formed():
-    """Combinaison formée : deux accords piqués, puis l'accord tenu qui brille (« combo ! »)."""
+    """Combinaison formée : deux accords piqués, puis l'accord tenu qui brille et la sonnette d'une machine à sous."""
     track = Track()
     stab = lambda notes, d: sum(chip(hz(x), d, 'square', duty=0.25, dc=0.04, s=0.5, r=0.05) for x in notes) / len(notes)
     track.add(stab(('E5', 'G5', 'C6'), 0.09), 0.0, 0.8)
@@ -818,6 +840,8 @@ def combo_formed():
     held = stab(('G5', 'C6', 'E6', 'G6'), 0.5) * (1 - 0.3 * (0.5 + 0.5 * np.sin(2 * math.pi * 10 * times(0.5))))
     track.add(held, 0.2, 0.9)
     track.add(card_flick(0.05), 0.0, 0.4)
+    for k in range(4):                                               # sonnette de machine à sous
+        track.add(modal(1480, 0.1, BAR_RATIOS, [0.05, 0.025, 0.012, 0.006]), 0.22 + k * 0.06, 0.3)
     track.add(sparkle(0.5, count=10), 0.22, 0.4)
     return reverb(track.buf, wet=0.2, tail=0.4)
 
@@ -859,12 +883,17 @@ def firework_launch():
 
 @sound('party/firework_burst', -18)
 def firework_burst():
-    """Explosion d'une fusée : détonation sourde au loin, puis crépitement d'étincelles."""
-    boom = mix((lp(noise(0.9), 1200) * expdec(0.9, 0.16), 0, 1.0), (thump(110, 38, 0.6, 0.16), 0, 0.9))
-    crackle = Track(1.2)
-    for _ in range(45):
-        crackle.add(bp(noise(0.004), 2500, 8000) * expdec(0.004, 0.001), 0.12 + rand(0, 1.0) ** 1.4, rand(0.2, 0.8))
-    return reverb(mix((boom, 0, 0.9), (crackle.buf, 0, 0.45)), wet=0.25, size=1.4, tail=0.6)
+    """Explosion d'une fusée : détonation qui claque et résonne au loin, puis gerbe d'étincelles qui crépite."""
+    bang = mix((crack(0.05, 0.007, 300, 9000), 0, 1.0), (lp(noise(1.2), 900) * expdec(1.2, 0.3, attack=0.002), 0, 0.8))
+    echo = lp(noise(1.0), 1500) * expdec(1.0, 0.35) * ramp(1.0, 0.0, 1.0, 0.2)
+    crackle = Track(2.0)
+    for _ in range(170):                                             # crépitement : dense, puis qui s'éteint
+        at = 0.18 + rand(0, 1.0) ** 1.6 * 1.5
+        pop = bp(noise(0.006), rand(1500, 3500), rand(5000, 9000)) * expdec(0.006, rand(0.0008, 0.002), attack=0.0001)
+        crackle.add(pop, at, rand(0.2, 1.0) * (1.0 - 0.5 * (at - 0.18) / 1.5))
+    sizzle = hp(noise(1.6), 4000) * expdec(1.6, 0.5, attack=0.15)
+    return reverb(mix((bang, 0, 1.0), (echo, 0.08, 0.3), (crackle.buf, 0, 0.55), (sizzle, 0.15, 0.12)),
+                  wet=0.3, size=1.5, tail=0.8)
 
 
 # ===========================================================================
