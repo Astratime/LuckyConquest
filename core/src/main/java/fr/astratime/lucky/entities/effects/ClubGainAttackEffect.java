@@ -33,7 +33,8 @@ public class ClubGainAttackEffect extends Effect {
 
     @Override
     public String getDescription() {
-        return "Gains x+" + gainMultiplierAdd + ", Attaque +" + attackBonus;
+        return "Multiplicateur de gains +" + gainMultiplierAdd + ". Attaque +" + attackBonus
+            + " sur chaque symbole d'attaque";
     }
 
     @Override

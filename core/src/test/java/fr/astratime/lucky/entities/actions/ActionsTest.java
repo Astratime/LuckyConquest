@@ -36,24 +36,44 @@ class ActionsTest {
 
         assertEquals(130, event.rawDamage);
         assertEquals(100, event.damage, "130 - 30 de défense");
+        assertEquals(30, event.blocked);
+        assertEquals(0, event.defenseLeft, "la défense a tout donné");
         assertEquals(900, enemy.getHp());
     }
 
     @Test
-    void attackBelowDefenseDealsNothing() {
+    void attackBelowDefenseIsBlockedAndWearsItDown() {
         EnemyDamagedEvent event = only(new AttackAction(10).resolve(context), EnemyDamagedEvent.class);
 
         assertEquals(0, event.damage);
+        assertEquals(10, event.blocked);
+        assertEquals(20, event.defenseLeft);
         assertEquals(1000, enemy.getHp());
     }
 
     @Test
-    void ignoreDefenseDealsFullDamage() {
+    void eachAttackWearsTheDefenseDownUntilItBreaks() {
+        EnemyDamagedEvent first  = only(new AttackAction(20).resolve(context), EnemyDamagedEvent.class);
+        EnemyDamagedEvent second = only(new AttackAction(20).resolve(context), EnemyDamagedEvent.class);
+        EnemyDamagedEvent third  = only(new AttackAction(20).resolve(context), EnemyDamagedEvent.class);
+
+        assertEquals(0, first.damage);
+        assertEquals(10, second.damage, "il ne restait que 10 de défense");
+        assertEquals(20, third.damage, "défense brisée : tout passe");
+        assertEquals(0, enemy.getDefense());
+        assertEquals(970, enemy.getHp());
+    }
+
+    @Test
+    void ignoreDefenseDealsFullDamageAndLeavesTheDefenseIntact() {
         context.setIgnoreDefense(true);
 
         EnemyDamagedEvent event = only(new AttackAction(10).resolve(context), EnemyDamagedEvent.class);
 
         assertEquals(10, event.damage);
+        assertEquals(0, event.blocked);
+        assertTrue(event.pierced);
+        assertEquals(Enemy.BASE_DEFENSE, enemy.getDefense());
     }
 
     @Test

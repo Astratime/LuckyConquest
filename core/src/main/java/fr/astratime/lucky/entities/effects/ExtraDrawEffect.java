@@ -31,7 +31,7 @@ public class ExtraDrawEffect extends Effect {
     public void apply(TurnContext context) { }
 
     @Override
-    public String getDescription() { return "Piochez " + extraCards + " carte(s)"; }
+    public String getDescription() { return "Piochez " + extraCards + (extraCards > 1 ? " cartes" : " carte"); }
 
     @Override
     public List<EffectPopup> getPopups() {

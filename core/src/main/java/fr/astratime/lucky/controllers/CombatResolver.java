@@ -119,7 +119,7 @@ public class CombatResolver {
     /**
      * Chaque tir de pistolet multiplie les dégâts bruts du symbole d'attaque le
      * plus fort du tirage ({@link #PISTOL_BASE_DAMAGE} si aucun n'est sorti),
-     * puis touche l'ennemi (sa défense s'applique, sauf Pique). Rien si
+     * puis touche l'ennemi (sa défense absorbe et s'use, sauf Pique). Rien si
      * l'ennemi est déjà vaincu.
      */
     private List<Event> firePistol(CombatContext context, List<SymbolOutcome> outcomes) {
@@ -137,11 +137,12 @@ public class CombatResolver {
         Enemy enemy = context.getEnemy();
         for (int multiplier : context.getPistolShots()) {
             if (enemy.isDefeated()) break;
-            int raw     = bestRaw * multiplier;
-            int defense = context.isIgnoreDefense() ? 0 : enemy.getDefense();
-            int damage  = Math.max(0, raw - defense);
+            int raw         = bestRaw * multiplier;
+            boolean pierced = context.isIgnoreDefense();
+            int blocked     = pierced ? 0 : enemy.absorb(raw);
+            int damage      = raw - blocked;
             enemy.takeDamage(damage);
-            shots.add(new PistolShotEvent(damage, raw, bestSlot, multiplier));
+            shots.add(new PistolShotEvent(damage, raw, blocked, enemy.getDefense(), pierced, bestSlot, multiplier));
         }
         return shots;
     }
@@ -157,7 +158,7 @@ public class CombatResolver {
         if (context.getCounterAttack() <= 0 || enemy.isDefeated() || lasting.getVault() <= 0) return Optional.empty();
         int damage = lasting.consumeVault() * context.getCounterAttack();
         enemy.takeDamage(damage);
-        return Optional.of(new CounterAttackEvent(damage));
+        return Optional.of(new CounterAttackEvent(damage, enemy.getDefense()));
     }
 
     /**

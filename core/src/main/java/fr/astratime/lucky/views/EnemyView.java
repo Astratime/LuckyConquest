@@ -15,7 +15,6 @@ import com.badlogic.gdx.scenes.scene2d.InputListener;
 import com.badlogic.gdx.scenes.scene2d.Touchable;
 import com.badlogic.gdx.scenes.scene2d.actions.Actions;
 import com.badlogic.gdx.scenes.scene2d.ui.Image;
-import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 import com.badlogic.gdx.utils.Disposable;
 import fr.astratime.lucky.animations.EffectPopupAnimator;
@@ -28,6 +27,7 @@ import fr.astratime.lucky.entities.enemy.EnemyCards;
 import fr.astratime.lucky.entities.enemy.EnemySlotMachine;
 import fr.astratime.lucky.entities.enemy.EnemySymbol;
 import fr.astratime.lucky.entities.enemy.EnemyTurnResult;
+import fr.astratime.lucky.entities.events.EnemyDamagedEvent;
 import fr.astratime.lucky.entities.events.EnemyShieldedEvent;
 import fr.astratime.lucky.entities.events.Event;
 import fr.astratime.lucky.popups.EffectPopup;
@@ -89,14 +89,12 @@ public class EnemyView implements Disposable {
     private final Group         character = new Group();
     private final Image         croupier;
     private final Image         flash;
-    private final Image         defenseIcon;
-    private final Label         defenseLabel;
+    private final ShieldBadge   defense;
     private final CardPileView  deckPile;
     private final CardPileView  discardPile;
     private final List<Image>   reels     = new ArrayList<>();
     private final EnemySymbol[] shownSymbols = {EnemySymbol.SWORD, EnemySymbol.SHIELD, EnemySymbol.POTION};
     private final List<Image>   handCards = new ArrayList<>();
-    private int shownDefense  = Enemy.BASE_DEFENSE;
     private int shownDeck;
     private int shownDiscard;
     /** Boucle du bruit de ses rouleaux pendant son lancer (-1 : aucune). */
@@ -106,10 +104,11 @@ public class EnemyView implements Disposable {
      * @param reelSpinSound boucle jouée tant que ses rouleaux tournent
      * @param reelStopSound bruitage joué quand un de ses rouleaux s'arrête
      * @param enemy         l'ennemi du combat en cours (il change à chaque nouveau combat)
+     * @param pixel         texture d'un pixel blanc (trait qui barre sa défense percée)
      */
     public EnemyView(TableView table, EnemyTextures textures, BitmapFont pileFont, Tooltip tooltip,
                      EffectPopupAnimator popups, Sound cardSound, Sound flipSound, Sound reelSpinSound,
-                     Sound reelStopSound, Supplier<Enemy> enemy) {
+                     Sound reelStopSound, Supplier<Enemy> enemy, Texture pixel) {
         this.table         = table;
         this.textures      = textures;
         this.tooltip       = tooltip;
@@ -132,7 +131,7 @@ public class EnemyView implements Disposable {
         character.setSize(croupier.getWidth(), croupier.getHeight());
         character.setOrigin(croupier.getWidth() / 2f, 0f);
         hoverTooltip(croupier, () -> "Croupier démoniaque",
-            () -> "Défense : " + shownDefense + "\nPioche " + Enemy.HAND_SIZE + " cartes et en joue "
+            () -> "Défense : " + shownDefense() + "\nPioche " + Enemy.HAND_SIZE + " cartes et en joue "
                 + Enemy.PLAYS_PER_TURN + " à chaque tour");
 
         deckPile    = new CardPileView("DECK", textures.cardBack, pileFont,
@@ -148,17 +147,15 @@ public class EnemyView implements Disposable {
             reels.add(image);
         }
 
-        defenseIcon  = new Image(new TextureRegionDrawable(new TextureRegion(textures.symbol(EnemySymbol.SHIELD))));
-        defenseIcon.setSize(32f, 32f);
-        defenseLabel = new Label("", new Label.LabelStyle(defenseFont, Color.WHITE));
-        hoverTooltip(defenseIcon, () -> "Défense de l'ennemi",
-            () -> "Réduit les dégâts de chacune de tes attaques\nLes Boucliers de son tour s'y ajoutent jusqu'à son tour suivant");
+        defense = new ShieldBadge("Défense", Enemy.BASE_DEFENSE, textures.symbol(EnemySymbol.SHIELD), defenseFont, pixel);
+        hoverTooltip(defense, () -> "Défense de l'ennemi",
+            () -> "Absorbe les dégâts de tes attaques et s'use à chaque coup\n"
+                + "Les Piques l'ignorent\nSe reforme à son tour, avec ses Boucliers");
 
         group.addActor(deckPile);
         group.addActor(discardPile);
         reels.forEach(group::addActor);
-        group.addActor(defenseIcon);
-        group.addActor(defenseLabel);
+        group.addActor(defense);
         group.addActor(character);
         reset();
     }
@@ -177,7 +174,7 @@ public class EnemyView implements Disposable {
         character.getColor().a = 1f;
         flash.clearActions();
         flash.getColor().a = 0f;
-        shownDefense = Enemy.BASE_DEFENSE;
+        defense.setValue(Enemy.BASE_DEFENSE);
         shownDeck    = enemy.get().getDeckCards().size();
         shownDiscard = enemy.get().getDiscardCards().size();
         refreshCounts();
@@ -206,8 +203,7 @@ public class EnemyView implements Disposable {
         }
         float reelsRight = table.getReelRowX() + EnemySlotMachine.SYMBOL_COUNT * SlotView.CELL_WIDTH;
         float centerY    = table.getEnemyReelRowY() + SlotView.CELL_HEIGHT / 2f;
-        defenseIcon.setPosition(reelsRight + DEFENSE_GAP, centerY - defenseIcon.getHeight() / 2f);
-        refreshDefense();
+        defense.setPosition(reelsRight + DEFENSE_GAP, centerY - defense.getHeight() / 2f);
         for (int i = 0; i < handCards.size(); i++) {
             handCards.get(i).setPosition(table.getEnemyCardSlotX(i), table.getEnemyCardRowY());
         }
@@ -233,8 +229,7 @@ public class EnemyView implements Disposable {
     public void playTurn(EnemyTurnResult turn, Consumer<Event> onEventShown, Runnable onDone) {
         handCards.forEach(Actor::remove);
         handCards.clear();
-        shownDefense = Enemy.BASE_DEFENSE; // les Boucliers de son tour précédent ne valent plus
-        refreshDefense();
+        defense.restore(Enemy.BASE_DEFENSE); // les Boucliers de son tour précédent ne valent plus
 
         // Distribution, face cachée, depuis son deck (remélangé depuis sa défausse s'il s'épuise).
         List<Card> drawn = turn.drawn();
@@ -384,8 +379,7 @@ public class EnemyView implements Disposable {
         popups.play(texts, centerX + (reel - 1) * RESULT_SPREAD, table.getDividerY() - RESULT_BELOW);
         for (Event event : events) {
             if (event instanceof EnemyShieldedEvent shield) {
-                shownDefense += shield.defense;
-                refreshDefense();
+                defense.add(shield.defense);
                 pulse(Color.valueOf("6ab0ffff"));
             }
             onEventShown.accept(event);
@@ -422,9 +416,8 @@ public class EnemyView implements Disposable {
         Enemy current = enemy.get();
         shownDeck    = current.getDeckCards().size();
         shownDiscard = current.getDiscardCards().size();
-        shownDefense = current.getDefense();
+        defense.setValue(current.getDefense());
         refreshCounts();
-        refreshDefense();
     }
 
     private void refreshCounts() {
@@ -432,12 +425,31 @@ public class EnemyView implements Disposable {
         discardPile.setCount(shownDiscard);
     }
 
-    private void refreshDefense() {
-        defenseLabel.setText("Défense " + shownDefense);
-        defenseLabel.setColor(shownDefense > Enemy.BASE_DEFENSE ? Palette.SKY : Palette.TEXT_BODY);
-        defenseLabel.pack();
-        defenseLabel.setPosition(defenseIcon.getX() + defenseIcon.getWidth() + 8f,
-            defenseIcon.getY() + (defenseIcon.getHeight() - defenseLabel.getHeight()) / 2f);
+    // -------------------------------------------------------------------------
+    // Défense, face aux attaques du joueur
+    // -------------------------------------------------------------------------
+
+    /** Ce que fait sa défense face à un coup du joueur. */
+    public enum DefenseReaction { NONE, BLOCKED, BROKEN, PIERCED }
+
+    /**
+     * Un coup du joueur atteint l'ennemi (à l'apparition de son texte) : sa
+     * défense l'absorbe et s'use, se brise, ou est percée (attaque qui l'ignore).
+     *
+     * @return ce que la défense a fait, pour le bruitage
+     */
+    public DefenseReaction onPlayerAttack(EnemyDamagedEvent hit) {
+        if (hit.pierced) return defense.pierce() ? DefenseReaction.PIERCED : DefenseReaction.NONE;
+        if (hit.blocked <= 0) return DefenseReaction.NONE;
+        return defense.block(hit.defenseLeft) ? DefenseReaction.BROKEN : DefenseReaction.BLOCKED;
+    }
+
+    /** @return la défense affichée (elle suit les textes du tirage). */
+    private int shownDefense() { return defense.getValue(); }
+
+    /** @return le centre (Stage) de l'icône de sa défense. */
+    public Vector2 getDefenseCenter() {
+        return defense.localToStageCoordinates(new Vector2(ShieldBadge.ICON_SIZE / 2f, ShieldBadge.ICON_SIZE / 2f));
     }
 
     // -------------------------------------------------------------------------

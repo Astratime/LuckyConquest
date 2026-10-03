@@ -67,6 +67,9 @@ public class GameSounds implements Disposable {
     public final Sound enemyHurt;
     /** Bouclier gagné (le joueur, ou l'ennemi joué un ton plus bas). */
     public final Sound shieldGain;
+    /** Coup absorbé par un bouclier, et bouclier brisé (usé jusqu'au bout, ou percé par une attaque qui l'ignore). */
+    public final Sound shieldBlock;
+    public final Sound shieldBreak;
 
     /** Gerbe et pluie de confettis, départ et explosion d'une fusée de feu d'artifice. */
     public final Sound confettiPop;
@@ -110,6 +113,8 @@ public class GameSounds implements Disposable {
         playerHurt   = load("sounds/combat/player_hurt.ogg");
         enemyHurt    = load("sounds/combat/enemy_hurt.ogg");
         shieldGain   = load("sounds/combat/shield_gain.ogg");
+        shieldBlock  = load("sounds/combat/shield_block.ogg");
+        shieldBreak  = load("sounds/combat/shield_break.ogg");
 
         confettiPop    = load("sounds/party/confetti_pop.ogg");
         confettiRain   = load("sounds/party/confetti_rain.ogg");

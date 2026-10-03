@@ -66,7 +66,8 @@ public class AceOfClubsEffect extends Effect {
 
     @Override
     public String getDescription() {
-        return "Consomme 30% des gains : gros boost d'un symbole d'attaque";
+        return "Consomme 30% des gains. Un symbole d'attaque devient bien plus fréquent"
+            + " et gagne +" + ATTACK_BOOST_AMOUNT + " d'attaque, plus selon les gains consommés";
     }
 
     /** Textes fixes : aucun, toutes les valeurs dépendent des gains consommés (voir {@link #onPlay}). */

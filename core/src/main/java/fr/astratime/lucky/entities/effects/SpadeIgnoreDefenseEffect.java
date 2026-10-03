@@ -1,5 +1,6 @@
 package fr.astratime.lucky.entities.effects;
 
+import fr.astratime.lucky.controllers.PreparationResolver;
 import fr.astratime.lucky.entities.context.PlayContext;
 import fr.astratime.lucky.entities.context.TurnContext;
 import fr.astratime.lucky.popups.EffectPopup;
@@ -43,7 +44,9 @@ public class SpadeIgnoreDefenseEffect extends Effect {
 
     @Override
     public String getDescription() {
-        return "Ignore la défense ennemie, Attaque +" + attackBonus + "\nLames +" + blades + " (combat)";
+        return "Les symboles d'attaque ignorent la défense. Attaque +" + attackBonus
+            + " sur chaque symbole d'attaque. +" + blades + (blades > 1 ? " Lames" : " Lame")
+            + " (+" + PreparationResolver.BLADE_ATTACK + " d'attaque chacune, tout le combat)";
     }
 
     @Override

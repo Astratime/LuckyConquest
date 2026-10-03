@@ -26,10 +26,10 @@ import java.util.Random;
  * puis chaque symbole agit, renforcé par les cartes jouées :
  * <ul>
  *   <li>Épée : attaque le joueur ({@link EnemySymbol#SWORD_DAMAGE}, + les Piques) ;
- *       son bouclier absorbe les coups, et le renvoi de dégâts (Carreau)
+ *       son bouclier absorbe les coups et s'use à chacun, et le renvoi de dégâts (Carreau)
  *       touche l'ennemi une fois toutes ses attaques portées ;</li>
  *   <li>Bouclier : défense ({@link EnemySymbol#SHIELD_DEFENSE}, + les Carreaux)
- *       pendant le prochain tour du joueur ;</li>
+ *       qui absorbe les attaques du prochain tour du joueur, et s'use à chaque coup ;</li>
  *   <li>Potion : soin ({@link EnemySymbol#POTION_PERCENT} % des PV max, + les Cœurs).</li>
  * </ul>
  * Toutes les cartes piochées partent ensuite dans sa défausse.
@@ -59,7 +59,7 @@ public class EnemyTurnResolver {
      * @param vaultShare     part du Coffre du joueur ajoutée à l'attaque renvoyée
      */
     public EnemyTurnResult resolve(Enemy enemy, Player player, int reflectPercent, float vaultShare) {
-        enemy.resetShieldDefense(); // la défense de son tour précédent ne valait que pour le tour du joueur
+        enemy.resetDefense(); // la défense de son tour précédent ne valait que pour le tour du joueur
         List<Card> drawn  = enemy.draw(Enemy.HAND_SIZE);
         List<Card> played = choose(drawn, enemy.getHpRatio());
 
@@ -86,7 +86,9 @@ public class EnemyTurnResolver {
                 case SWORD -> {
                     int attack = EnemySymbol.SWORD_DAMAGE + swordBonus;
                     totalAttack += attack;
-                    events.add(new PlayerDamagedEvent(player.takeDamage(attack)));
+                    int shieldBefore = player.getShield();
+                    int lost = player.takeDamage(attack);
+                    events.add(new PlayerDamagedEvent(lost, shieldBefore - player.getShield(), player.getShield()));
                 }
                 case SHIELD -> {
                     int defense = EnemySymbol.SHIELD_DEFENSE + shieldBonus;

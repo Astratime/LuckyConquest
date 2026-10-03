@@ -790,6 +790,32 @@ def shield_gain():
                   wet=0.2, tail=0.4)
 
 
+@sound('combat/shield_block', -16)
+def shield_block():
+    """Coup bloqué par un bouclier : « clang » d'acier lourd, choc sourd, et jetons qui tressautent sur le feutre."""
+    clang = mix((metal_hit(330, 0.9, bright=0.9), 0, 1.0), (metal_hit(497, 0.6, bright=0.6), 0.002, 0.55))
+    body = thump(160, 70, 0.22, 0.05)
+    scrape = bp(noise(0.12), 2500, 6500) * expdec(0.12, 0.03, attack=0.001)
+    return reverb(mix((crack(0.03, 0.004, 1200, 9000), 0, 0.7), (clang, 0, 0.9), (body, 0, 0.8), (scrape, 0.004, 0.3),
+                      (chips_clatter(3, 0.12, 2400, 3300), 0.03, 0.35)), wet=0.18, size=1.1, tail=0.45)
+
+
+@sound('combat/shield_break', -15)
+def shield_break():
+    """Bouclier brisé : l'acier claque et se fend, des éclats tintent en tombant, et une pile de jetons s'écroule."""
+    track = Track()
+    track.add(crack(0.06, 0.007, 600, 10000), 0, 1.0)
+    track.add(metal_hit(280, 0.5, bright=1.2), 0, 0.8)
+    track.add(thump(140, 50, 0.3, 0.07), 0, 0.8)
+    for k in range(6):                                               # fissure qui court
+        track.add(hp(noise(0.02), 2500) * expdec(0.02, 0.005), 0.02 + k * 0.018 + rand(0, 0.008), rand(0.4, 0.9))
+    track.add(modal(hz('A6'), 0.6, GLASS_RATIOS, [0.25, 0.14, 0.08, 0.05]), 0.05, 0.45)
+    for _ in range(8):                                               # éclats qui retombent
+        track.add(modal(rand(1800, 4200), 0.15, [1, 2.4, 3.9], [0.06, 0.03, 0.015]), rand(0.12, 0.5), rand(0.15, 0.4))
+    track.add(chips_clatter(7, 0.4, 2200, 3600), 0.1, 0.45)
+    return reverb(track.buf, wet=0.2, size=1.2, tail=0.5)
+
+
 # ===========================================================================
 # Pièces, échoppe, combinaisons
 # ===========================================================================

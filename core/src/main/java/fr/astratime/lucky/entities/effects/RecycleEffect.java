@@ -50,7 +50,7 @@ public class RecycleEffect extends Effect {
     public void apply(TurnContext context) { }
 
     @Override
-    public String getDescription() { return "Retire un symbole des rouleaux pendant " + turns + " tours"; }
+    public String getDescription() { return "Retire un symbole au hasard des rouleaux pendant " + turns + " tours"; }
 
     @Override
     public List<EffectPopup> getPopups() {

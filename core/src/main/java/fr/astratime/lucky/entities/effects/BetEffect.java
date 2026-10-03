@@ -28,7 +28,7 @@ public class BetEffect extends Effect {
 
     @Override
     public String getDescription() {
-        return "Pariez sur un symbole : gains x2, x3 ou x4 s'il sort 1, 2 ou 3 fois, sinon gains /2";
+        return "Pariez sur un symbole. S'il sort 1, 2 ou 3 fois : gains x2, x3 ou x4. Sinon : gains /2";
     }
 
     @Override

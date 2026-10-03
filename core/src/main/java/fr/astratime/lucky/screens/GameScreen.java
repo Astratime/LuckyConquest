@@ -15,6 +15,7 @@ import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.Group;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
+import com.badlogic.gdx.scenes.scene2d.InputListener;
 import com.badlogic.gdx.scenes.scene2d.ui.Image;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
@@ -64,6 +65,8 @@ import fr.astratime.lucky.entities.TurnResult;
 import fr.astratime.lucky.entities.choices.BetChoice;
 import fr.astratime.lucky.entities.choices.CardChoice;
 import fr.astratime.lucky.entities.choices.RouletteChoice;
+import fr.astratime.lucky.entities.SlotMachine;
+import fr.astratime.lucky.entities.enemy.EnemySymbol;
 import fr.astratime.lucky.entities.enemy.EnemyTurnResult;
 import fr.astratime.lucky.entities.events.DamageReflectedEvent;
 import fr.astratime.lucky.entities.events.EnemyHealedEvent;
@@ -94,6 +97,7 @@ import fr.astratime.lucky.views.PileContentOverlay;
 import fr.astratime.lucky.views.PilesView;
 import fr.astratime.lucky.views.PauseOverlay;
 import fr.astratime.lucky.views.PlayArea;
+import fr.astratime.lucky.views.ShieldBadge;
 import fr.astratime.lucky.views.ShopOverlay;
 import fr.astratime.lucky.views.SidePanel;
 import fr.astratime.lucky.views.SlotView;
@@ -144,6 +148,8 @@ public class GameScreen extends ScreenAdapter {
     private static final float BIG_HIT_PITCH         = 0.85f;
     /** Bouclier de l'ennemi : le son du bouclier, un ton plus bas. */
     private static final float ENEMY_SHIELD_PITCH    = 0.84f;
+    private static final float PLAYER_SHIELD_GAP     = 40f;   // entre ses rouleaux et son bouclier, comme l'ennemi
+    private static final float SHIELD_TEXT_ABOVE     = 40f;   // texte d'un bouclier brisé, au-dessus de lui
     /** Volume du son de scène d'un Bingo, sous le son de Bingo d'origine joué en même temps. */
     private static final float BINGO_SCENE_VOLUME    = 0.8f;
     /** Volume de la musique du combat quand le réglage « Musique » est à 100 %. */
@@ -196,6 +202,7 @@ public class GameScreen extends ScreenAdapter {
     private final BitmapFont          pileFont = Fonts.jerseyMarkup(20, Color.WHITE, 2f, Palette.TEXT_SHADE);
     private final BitmapFont          shopFont = Fonts.jersey(30, Palette.GOLD, 2f, Palette.TEXT_SHADE);
     private final BitmapFont          playsFont = Fonts.jersey(24, Color.WHITE, 2f, Palette.TEXT_SHADE);
+    private final BitmapFont          shieldFont = Fonts.jersey(26, Color.WHITE, 2f, Palette.TEXT_SHADE);
     private final Texture             cardBackTexture;
     private final CardTextures        cardTextures  = new CardTextures();
     private final EnemyTextures       enemyTextures = new EnemyTextures(cardTextures);
@@ -239,6 +246,8 @@ public class GameScreen extends ScreenAdapter {
     private final CombatHud  hud;
     /** Côté de l'ennemi : le croupier, ses rouleaux, ses cartes et ses piles ; joue son tour en animation. */
     private final EnemyView  enemyView;
+    /** Bouclier du joueur, à droite de ses rouleaux (comme la défense de l'ennemi en face). */
+    private final ShieldBadge playerShield;
     private final PilesView  piles;
     private final HandView   hand;
     private final SlotView   slots;
@@ -295,7 +304,24 @@ public class GameScreen extends ScreenAdapter {
         table      = new TableView(playArea, tableTextures, CARD_WIDTH, CARD_HEIGHT);
         enemyView  = new EnemyView(table, enemyTextures, pileFont, tooltip, effectPopupAnimator,
             sounds.cardDeal, sounds.cardFlip, sounds.reelSpin, sounds.reelStop,
-            () -> gameController.getGameState().getEnemy());
+            () -> gameController.getGameState().getEnemy(), hudTextures.pixel);
+        playerShield = new ShieldBadge("Bouclier", 0, enemyTextures.symbol(EnemySymbol.SHIELD), shieldFont,
+            hudTextures.pixel);
+        playerShield.addListener(new InputListener() {
+            @Override
+            public void enter(InputEvent event, float x, float y, int pointer, Actor fromActor) {
+                if (pointer != -1) return;
+                Vector2 top = playerShield.localToStageCoordinates(new Vector2(ShieldBadge.ICON_SIZE / 2f, playerShield.getHeight()));
+                tooltip.show("Ton bouclier", "Absorbe les attaques de l'ennemi et s'use à chaque coup\n"
+                    + "Gagné avec les symboles de défense ; ce qui reste en fin de tour remplit le Coffre",
+                    top.x, top.y + 6f);
+            }
+
+            @Override
+            public void exit(InputEvent event, float x, float y, int pointer, Actor toActor) {
+                if (pointer == -1) tooltip.hide();
+            }
+        });
         sidePanel  = new SidePanel(hudTextures);
         jackpotCelebration = new JackpotCelebration(playArea, screenShake, settings, hudTextures,
             sidePanel::getCoinCenter, sidePanel::bumpCoin, fireworkSounds);
@@ -344,6 +370,7 @@ public class GameScreen extends ScreenAdapter {
 
         stage.addActor(table.getActor());
         stage.addActor(enemyView.getActor());
+        stage.addActor(playerShield);
         stage.addActor(sidePanel.getActor());
         piles.addTo(stage);
         hud.addTo(stage);
@@ -767,6 +794,7 @@ public class GameScreen extends ScreenAdapter {
      * vaincu, ou le joueur reprend la main.
      */
     private void endTurn() {
+        playerShield.restore(0); // ce qui en reste part au Coffre
         List<Event> endEvents = currentResult.getEnemyTurnEvents();
         Vector2 anchor = hud.besidePlayerHealthBar(SlotView.POPUP_PLAYER_GAP);
         List<EffectPopup> texts = new ArrayList<>();
@@ -828,13 +856,16 @@ public class GameScreen extends ScreenAdapter {
             onGainsShown(-lost.amount);
         } else if (event instanceof JackpotEvent jackpot) {
             onJackpotShown(jackpot.symbol);
-        } else if (event instanceof EnemyDamagedEvent hit && hit.damage > 0) {
-            onEnemyHit(hit.damage);
+        } else if (event instanceof EnemyDamagedEvent hit) {
+            onEnemyDefense(enemyView.onPlayerAttack(hit));
+            if (hit.damage > 0) onEnemyHit(hit.damage);
         } else if (event instanceof DamageReflectedEvent reflect && reflect.damage > 0) {
             onEnemyHit(reflect.damage);
-        } else if (event instanceof PlayerDamagedEvent hit && hit.damage > 0) {
-            onPlayerHit(hit.damage);
+        } else if (event instanceof PlayerDamagedEvent hit) {
+            if (hit.blocked > 0) onPlayerBlocked(hit);
+            if (hit.damage > 0) onPlayerHit(hit.damage);
         } else if (event instanceof ShieldGainedEvent shield && shield.amount > 0) {
+            playerShield.add(shield.amount);
             sounds.shieldGain.play();
         } else if (event instanceof EnemyShieldedEvent shield && shield.defense > 0) {
             sounds.shieldGain.play(0.8f, ENEMY_SHIELD_PITCH, 0f); // un ton plus bas : c'est le bouclier de l'ennemi
@@ -855,6 +886,36 @@ public class GameScreen extends ScreenAdapter {
             hitStop(BIG_HIT_STOP);
             screenShake.shake(0.2f, 6f);
         }
+    }
+
+    /**
+     * La défense de l'ennemi réagit à un coup : « clang » d'un coup absorbé,
+     * fracas d'une défense brisée ou percée (un ton plus bas : c'est l'ennemi).
+     */
+    private void onEnemyDefense(EnemyView.DefenseReaction reaction) {
+        switch (reaction) {
+            case BLOCKED -> sounds.shieldBlock.play(0.9f, ENEMY_SHIELD_PITCH, 0f);
+            case BROKEN  -> shieldBroken("DÉFENSE BRISÉE !", enemyView.getDefenseCenter(), ENEMY_SHIELD_PITCH);
+            case PIERCED -> shieldBroken("DÉFENSE PERCÉE !", enemyView.getDefenseCenter(), ENEMY_SHIELD_PITCH);
+            case NONE    -> { }
+        }
+    }
+
+    /** Le bouclier du joueur absorbe une attaque de l'ennemi : il encaisse, s'use, et se brise s'il n'en reste rien. */
+    private void onPlayerBlocked(PlayerDamagedEvent hit) {
+        if (playerShield.block(hit.shieldLeft)) {
+            shieldBroken("BOUCLIER BRISÉ !", playerShield.localToStageCoordinates(new Vector2(ShieldBadge.ICON_SIZE / 2f, ShieldBadge.ICON_SIZE / 2f)), 1f);
+        } else {
+            sounds.shieldBlock.play();
+        }
+    }
+
+    /** Un bouclier se brise : fracas, petite secousse et texte {@code text} au-dessus de lui ({@code at}). */
+    private void shieldBroken(String text, Vector2 at, float pitch) {
+        sounds.shieldBreak.play(1f, pitch, 0f);
+        screenShake.shake(0.15f, 4f);
+        effectPopupAnimator.play(List.of(new EffectPopup(text, EffectPopup.Style.DAMAGE, PopupScale.SECONDARY_INTENSITY * 0.8f)),
+            at.x, at.y + SHIELD_TEXT_ABOVE);
     }
 
     /** Le joueur est touché : sa barre réagit, un voile rouge passe sur les bords et l'écran tremble. */
@@ -950,6 +1011,7 @@ public class GameScreen extends ScreenAdapter {
         pileOverlay.hide();
         slots.clear();
         enemyView.reset();
+        playerShield.setValue(0);
         refreshAll();
         endButtons.setVisible(false);
         startPlayerTurn();
@@ -1124,6 +1186,9 @@ public class GameScreen extends ScreenAdapter {
     private void layout() {
         table.layout();
         enemyView.layout();
+        float reelsRight = table.getReelRowX() + SlotMachine.SYMBOL_COUNT * SlotView.CELL_WIDTH;
+        playerShield.setPosition(reelsRight + PLAYER_SHIELD_GAP,
+            table.getReelRowY() + (SlotView.CELL_HEIGHT - playerShield.getHeight()) / 2f);
         spinButton.setPosition(playArea.getX() + BUTTON_MARGIN, BUTTON_MARGIN);
         playsLabel.pack();
         playsLabel.setPosition(spinButton.getX() + spinButton.getWidth() + PLAYS_LABEL_GAP,
@@ -1230,6 +1295,7 @@ public class GameScreen extends ScreenAdapter {
         font.dispose();
         Fonts.release(shopFont);
         Fonts.release(playsFont);
+        Fonts.release(shieldFont);
         Fonts.release(pileFont);
         tableTextures.dispose();
         cardTextures.dispose();

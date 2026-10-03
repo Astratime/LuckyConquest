@@ -3,6 +3,7 @@ package fr.astratime.lucky.entities.events;
 import fr.astratime.lucky.popups.EffectPopup;
 import fr.astratime.lucky.popups.PopupScale;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -16,13 +17,17 @@ public class PistolShotEvent extends EnemyDamagedEvent {
     public final int multiplier;
 
     /**
-     * @param damage     dégâts effectivement infligés (après défense)
-     * @param rawDamage  dégâts bruts du tir, avant défense
-     * @param slotIndex  rouleau du symbole visé, -1 si aucun
-     * @param multiplier multiplicateur appliqué aux dégâts du symbole
+     * @param damage      dégâts effectivement infligés (après défense)
+     * @param rawDamage   dégâts bruts du tir, avant défense
+     * @param blocked     dégâts absorbés par la défense de l'ennemi
+     * @param defenseLeft défense de l'ennemi restante après le tir
+     * @param pierced     {@code true} si le tir a ignoré la défense (Pique)
+     * @param slotIndex   rouleau du symbole visé, -1 si aucun
+     * @param multiplier  multiplicateur appliqué aux dégâts du symbole
      */
-    public PistolShotEvent(int damage, int rawDamage, int slotIndex, int multiplier) {
-        super(damage, rawDamage);
+    public PistolShotEvent(int damage, int rawDamage, int blocked, int defenseLeft, boolean pierced,
+                           int slotIndex, int multiplier) {
+        super(damage, rawDamage, blocked, defenseLeft, pierced);
         this.slotIndex  = slotIndex;
         this.multiplier = multiplier;
     }
@@ -32,8 +37,9 @@ public class PistolShotEvent extends EnemyDamagedEvent {
 
     @Override
     public List<EffectPopup> getPopups() {
-        return List.of(
-            new EffectPopup("PAN ! x" + multiplier, EffectPopup.Style.ATTACK, PopupScale.MAX_INTENSITY),
-            EffectPopup.scaled("DÉGÂTS " + damage, EffectPopup.Style.ATTACK, damage, PopupScale.SPIN_DAMAGE));
+        List<EffectPopup> popups = new ArrayList<>();
+        popups.add(new EffectPopup("PAN ! x" + multiplier, EffectPopup.Style.ATTACK, PopupScale.MAX_INTENSITY));
+        popups.addAll(super.getPopups());
+        return popups;
     }
 }

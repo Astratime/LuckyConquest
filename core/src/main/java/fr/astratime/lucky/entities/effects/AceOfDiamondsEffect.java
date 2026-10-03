@@ -34,9 +34,9 @@ public class AceOfDiamondsEffect extends Effect {
     @Override
     public String getDescription() {
         int lowHp = Math.round(CombatContext.LOW_HP_RATIO * 100);
-        return "Contre-attaque : inflige le Coffre x" + COUNTER + " (x" + COUNTER_LOW_HP + " si vie < " + lowHp
-            + "%), puis le vide\nRenvoi garanti de " + REFLECT_PERCENT + "% (" + REFLECT_PERCENT_LOW_HP
-            + "% si vie < " + lowHp + "%)";
+        return "Contre-attaque : vide le Coffre sur l'ennemi x" + COUNTER + " (x" + COUNTER_LOW_HP + " sous "
+            + lowHp + "% de vie), en ignorant sa défense. Renvoie " + REFLECT_PERCENT
+            + "% des attaques ennemies (" + REFLECT_PERCENT_LOW_HP + "% sous " + lowHp + "% de vie)";
     }
 
     @Override

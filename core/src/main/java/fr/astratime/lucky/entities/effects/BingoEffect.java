@@ -53,8 +53,9 @@ public class BingoEffect extends Effect {
 
     @Override
     public String getDescription() {
-        String bingo = symbol != null ? "Bingo " + symbol.getDisplayName() + " garanti" : "Bingo garanti";
-        return bingo + " : attaque, bouclier et gains des symboles x" + power + ". Lance la machine";
+        String bingo = symbol != null ? "Bingo " + symbol.getDisplayName() : "Bingo";
+        return "Lance la machine avec un " + bingo + " garanti"
+            + (power > 1 ? ". Attaque, bouclier et gains des symboles x" + power : "");
     }
 
     @Override
