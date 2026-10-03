@@ -66,6 +66,7 @@ import fr.astratime.lucky.entities.choices.BetChoice;
 import fr.astratime.lucky.entities.choices.CardChoice;
 import fr.astratime.lucky.entities.choices.RouletteChoice;
 import fr.astratime.lucky.entities.SlotMachine;
+import fr.astratime.lucky.entities.enemy.EnemyKind;
 import fr.astratime.lucky.entities.enemy.EnemySymbol;
 import fr.astratime.lucky.entities.enemy.EnemyTurnResult;
 import fr.astratime.lucky.entities.events.DamageReflectedEvent;
@@ -80,6 +81,7 @@ import fr.astratime.lucky.entities.events.PlayerDamagedEvent;
 import fr.astratime.lucky.entities.events.PistolShotEvent;
 import fr.astratime.lucky.entities.events.PlayerHealedEvent;
 import fr.astratime.lucky.entities.events.ShieldGainedEvent;
+import fr.astratime.lucky.entities.tower.TowerRun;
 import fr.astratime.lucky.popups.EffectPopup;
 import fr.astratime.lucky.popups.PopupScale;
 import fr.astratime.lucky.settings.AudioSettings;
@@ -89,6 +91,7 @@ import fr.astratime.lucky.views.CardDetailOverlay;
 import fr.astratime.lucky.views.CardImage;
 import fr.astratime.lucky.views.CasinoButtons;
 import fr.astratime.lucky.views.CombatHud;
+import fr.astratime.lucky.views.EnemyPickOverlay;
 import fr.astratime.lucky.views.EnemyView;
 import fr.astratime.lucky.views.HandView;
 import fr.astratime.lucky.views.MinimumScreenViewport;
@@ -125,6 +128,12 @@ import java.util.stream.Collectors;
  * pioche automatique, cartes jouées, spin (qui termine le tour du joueur),
  * annonce « TOUR ENNEMI » et riposte, puis de nouveau le tour du joueur,
  * jusqu'à la fin du combat.
+ *
+ * Dans la Tour des épreuves ({@link TowerRun}), l'écran enchaîne les trois
+ * combats d'un chapitre : après une victoire, le joueur choisit son adversaire
+ * parmi trois cartes faces cachées, puis affronte le boss (voir
+ * {@link EnemyPickOverlay}) ; il garde ses PV, ses gains et ses cartes d'un
+ * combat à l'autre. Une défaite fait recommencer le chapitre.
  */
 public class GameScreen extends ScreenAdapter {
 
@@ -178,6 +187,8 @@ public class GameScreen extends ScreenAdapter {
     private static final float SHOP_HOVER_SCALE = 1.12f;
     /** Carte achetée : posée une fois l'échoppe refermée. */
     private static final float PURCHASE_DELAY   = 0.9f;
+    /** Étape de la Tour des épreuves : en haut à gauche de la zone de jeu. */
+    private static final float STAGE_LABEL_MARGIN = 30f;
     /** Pot de Lutin qui apparaît : gerbe de confettis. */
     private static final int   POT_CONFETTI          = 50;
     /** Temps laissé au texte de la riposte (et au coup sur la barre) avant de passer au tour du joueur. */
@@ -196,6 +207,8 @@ public class GameScreen extends ScreenAdapter {
     // -------------------------------------------------------------------------
 
     private final LuckyGame           luckyGame;
+    /** Ascension d'un chapitre de la Tour des épreuves, ou {@code null} pour un combat seul (« Jouer »). */
+    private final TowerRun            run;
     private final Stage               stage;
     private final BitmapFont          font;
     /** Libellés du deck et de la défausse : police du jeu, à balises de couleur (nom crème, nombre doré). */
@@ -235,6 +248,10 @@ public class GameScreen extends ScreenAdapter {
     private final PauseOverlay        pauseOverlay;
     /** Icône de l'échoppe (en haut à droite de la zone de jeu), qui ouvre la boutique. */
     private final Group               shopIcon = new Group();
+    /** Transitions de la Tour des épreuves : choix de l'adversaire, apparition du boss. */
+    private final EnemyPickOverlay    pickOverlay;
+    /** Étape de la Tour des épreuves (« CHAPITRE 1 · COMBAT 2/3 »), vide pour un combat seul. */
+    private final Label               stageLabel;
 
     // -------------------------------------------------------------------------
     // Vues et acteurs Scene2D
@@ -288,7 +305,17 @@ public class GameScreen extends ScreenAdapter {
      * @param luckyGame instance de jeu, qui fournit le SpriteBatch partagé
      */
     public GameScreen(LuckyGame luckyGame) {
+        this(luckyGame, null);
+    }
+
+    /**
+     * Écran de jeu d'une ascension de la Tour des épreuves.
+     *
+     * @param run chapitre en cours ({@code null} : un combat seul, comme « Jouer »)
+     */
+    public GameScreen(LuckyGame luckyGame, TowerRun run) {
         this.luckyGame = luckyGame;
+        this.run       = run;
         // Le SpriteBatch est partagé avec LuckyGame et ne doit PAS être disposé ici.
         this.stage = new Stage(new MinimumScreenViewport(MIN_WIDTH, MIN_HEIGHT), luckyGame.getBatch());
 
@@ -360,6 +387,11 @@ public class GameScreen extends ScreenAdapter {
                 @Override public void onQuit()           { Gdx.app.exit(); }
                 @Override public void onEffectsChanged() { GameScreen.this.onEffectsChanged(); }
             });
+        pickOverlay      = new EnemyPickOverlay(stage, hudTextures, enemyTextures, sounds.cardFlip, sounds.cardHover,
+            sounds.fireworkBurst);
+        stageLabel       = new Label("", new Label.LabelStyle(shopFont, Color.WHITE));
+        stageLabel.setTouchable(Touchable.disabled);
+        refreshStageLabel();
         hand.setOnInspect(this::showCardDetail);
         hand.setBlockedReason(gameController::unplayableReason, this::onCardRefused);
         pileOverlay.setOnInspect(this::showCardDetail);
@@ -379,11 +411,13 @@ public class GameScreen extends ScreenAdapter {
         stage.addActor(slots.getActor());
         stage.addActor(hand.getActor());
         stage.addActor(shopIcon);
+        stage.addActor(stageLabel);
         stage.addActor(pistolAnimation);
         stage.addActor(popupLayer);
         stage.addActor(turnBanner);   // annonce des tours : au-dessus du jeu, ne bloque pas les clics
         stage.addActor(combatEnd);
         stage.addActor(endButtons); // au-dessus de l'annonce de fin de combat
+        stage.addActor(pickOverlay.getActor()); // Tour des épreuves : choix de l'adversaire, boss
         stage.addActor(confetti);
         stage.addActor(damageVignette);
         stage.addActor(jackpotCelebration); // par-dessus le jeu et le panneau : bloque les clics pendant la fête
@@ -726,7 +760,7 @@ public class GameScreen extends ScreenAdapter {
     /** @return {@code true} si une fenêtre ou une animation attend : ni pioche ni lancer possibles. */
     private boolean isBusy() {
         return pileOverlay.isShown() || choiceOverlay.isShown() || shopOverlay.isShown() || cardDetail.isShown()
-            || bingoAnimation.isPlaying() || rainbowAnimation.isPlaying();
+            || bingoAnimation.isPlaying() || rainbowAnimation.isPlaying() || pickOverlay.isShown();
     }
 
     /** Lance la machine (bouton, touche F, ou d'elle-même après une carte Bingo). */
@@ -984,10 +1018,28 @@ public class GameScreen extends ScreenAdapter {
         if (!settings.isReducedEffects()) hitStop = Math.max(hitStop, duration);
     }
 
-    /** Recommence un combat : réinitialise le GameController et tout l'affichage. */
+    /**
+     * Recommence un combat : réinitialise le GameController et tout
+     * l'affichage. Dans la Tour des épreuves, le chapitre repart du premier combat.
+     */
     private void onRestart() {
-        stage.getRoot().clearActions(); // la suite du tour en cours (tour de l'ennemi, fin du tour) n'a plus lieu
+        if (run != null) run.restart();
         gameController.restart();
+        resetBoard();
+    }
+
+    /**
+     * Combat suivant d'un chapitre de la Tour des épreuves, contre {@code kind} :
+     * le joueur garde ses PV, ses gains et ses cartes, l'affichage repart de zéro.
+     */
+    private void startNextCombat(EnemyKind kind) {
+        gameController.startCombat(kind);
+        resetBoard();
+    }
+
+    /** Remet tout l'affichage à l'état d'un début de combat, puis lance le tour du joueur. */
+    private void resetBoard() {
+        stage.getRoot().clearActions(); // la suite du tour en cours (tour de l'ennemi, fin du tour) n'a plus lieu
         hand.reset();
         effectPopupAnimator.cancel(); // les gains en attente ne seront jamais affichés
         jackpotCelebration.cancel();
@@ -1012,7 +1064,10 @@ public class GameScreen extends ScreenAdapter {
         slots.clear();
         enemyView.reset();
         playerShield.setValue(0);
+        pickOverlay.hide();
         refreshAll();
+        refreshStageLabel();
+        layout();
         endButtons.setVisible(false);
         startPlayerTurn();
     }
@@ -1028,6 +1083,79 @@ public class GameScreen extends ScreenAdapter {
             luckyGame.setScreen(new MenuScreen(luckyGame));
             dispose();
         });
+    }
+
+    /** Tour des épreuves : retour à l'écran des chapitres. */
+    private void onBackToChapters() {
+        endButtons.setTouchable(Touchable.disabled);
+        Gdx.app.postRunnable(() -> {
+            luckyGame.setScreen(new TowerScreen(luckyGame));
+            dispose();
+        });
+    }
+
+    /**
+     * Tour des épreuves, combat gagné : vers le choix de l'adversaire (après le
+     * 1er combat) ou l'apparition du boss (après le 2e).
+     */
+    private void onContinue() {
+        endButtons.setVisible(false);
+        combatEnd.reset();
+        table.setLightsParty(false);
+        confetti.removeAll();
+        TowerRun.Next next = run.win();
+        refreshStageLabel();
+        switch (next) {
+            case CHOOSE_ENEMY -> pickOverlay.showChoice(run.getChoices(), this::createButton,
+                index -> startNextCombat(run.choose(index)));
+            case BOSS -> pickOverlay.showBoss(run.getEnemy(), this::createButton, () -> startNextCombat(run.getEnemy()));
+            case CHAPTER_CLEARED -> onBackToChapters();
+        }
+    }
+
+    /** @return un bouton du casino ({@code text}), qui joue le clic et lance {@code action}. */
+    private TextButton createButton(String text, Runnable action) {
+        return buttons.create(text, sounds.buttonClick, action);
+    }
+
+    /**
+     * Boutons de fin de combat : Recommencer et Menu principal pour un combat
+     * seul ; dans la Tour des épreuves, Continuer (victoire), Réessayer
+     * (défaite) ou Chapitres (chapitre terminé), et Chapitres.
+     */
+    private void buildEndButtons(boolean victory) {
+        endButtons.clearChildren();
+        List<TextButton> shown = new ArrayList<>();
+        if (run == null) {
+            shown.add(restartButton);
+            shown.add(menuButton);
+        } else if (!victory) {
+            shown.add(buttons.createAction("Réessayer le chapitre", sounds.buttonClick, this::onRestart));
+            shown.add(buttons.create("Chapitres", sounds.buttonClick, this::onBackToChapters));
+        } else if (run.isBossStage()) {
+            shown.add(buttons.createAction("Chapitre terminé !", sounds.buttonClick, this::onBackToChapters));
+        } else {
+            shown.add(buttons.createAction("Continuer", sounds.buttonClick, this::onContinue));
+            shown.add(buttons.create("Chapitres", sounds.buttonClick, this::onBackToChapters));
+        }
+        for (int i = 0; i < shown.size(); i++) {
+            TextButton button = shown.get(i);
+            endButtons.add(button).size(button.getWidth(), button.getHeight()).padLeft(i == 0 ? 0f : END_BUTTONS_GAP);
+        }
+        endButtons.pack();
+        endButtons.setPosition(playArea.getCenterX() - endButtons.getWidth() / 2f,
+            playArea.getHeight() * END_BUTTONS_HEIGHT);
+    }
+
+    /** Étape de la Tour des épreuves, en haut à gauche de la zone de jeu (rien pour un combat seul). */
+    private void refreshStageLabel() {
+        if (run == null) {
+            stageLabel.setText("");
+            return;
+        }
+        String step = run.isBossStage() ? "BOSS" : "COMBAT " + (run.getStage() + 1) + "/" + TowerRun.STAGES;
+        stageLabel.setText(run.getChapter().getLabel().toUpperCase() + " · " + step);
+        stageLabel.pack();
     }
 
     // -------------------------------------------------------------------------
@@ -1046,6 +1174,7 @@ public class GameScreen extends ScreenAdapter {
      */
     private void endCombat() {
         spinButton.setDisabled(true);
+        buildEndButtons(gameController.getGameState().getEnemy().isDefeated());
         Runnable showRestart = () -> {
             endButtons.setTouchable(Touchable.childrenOnly);
             endButtons.setVisible(true);
@@ -1202,6 +1331,11 @@ public class GameScreen extends ScreenAdapter {
             playArea.getHeight() * END_BUTTONS_HEIGHT);
         shopIcon.setPosition(playArea.getX() + playArea.getWidth() - SHOP_ICON_WIDTH - SHOP_ICON_MARGIN,
             playArea.getHeight() - shopIcon.getHeight() - SHOP_ICON_MARGIN);
+        if (stageLabel != null) {
+            stageLabel.pack();
+            stageLabel.setPosition(playArea.getX() + STAGE_LABEL_MARGIN,
+                playArea.getHeight() - stageLabel.getHeight() - STAGE_LABEL_MARGIN);
+        }
     }
 
     // -------------------------------------------------------------------------
@@ -1237,7 +1371,7 @@ public class GameScreen extends ScreenAdapter {
                     openPauseMenu();
                     return true;
                 }
-                if (choiceOverlay.isShown() || shopOverlay.isShown() || bingoAnimation.isPlaying()
+                if (choiceOverlay.isShown() || shopOverlay.isShown() || pickOverlay.isShown() || bingoAnimation.isPlaying()
                     || rainbowAnimation.isPlaying()) {
                     return true; // un choix ou une animation de carte est en cours
                 }
@@ -1259,6 +1393,7 @@ public class GameScreen extends ScreenAdapter {
         stage.getViewport().update(width, height, true);
         layout();
         choiceOverlay.layout();
+        pickOverlay.layout();
         shopOverlay.layout();
         cardDetail.layout();
         pileOverlay.hide();
@@ -1312,6 +1447,7 @@ public class GameScreen extends ScreenAdapter {
         cardClickParticles.dispose();
         pileOverlay.dispose();
         choiceOverlay.dispose();
+        pickOverlay.dispose();
         bingoAnimation.dispose();
         rainbowAnimation.dispose();
         shopOverlay.dispose();

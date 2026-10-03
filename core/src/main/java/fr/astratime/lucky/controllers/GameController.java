@@ -4,6 +4,7 @@ import fr.astratime.lucky.entities.Card;
 import fr.astratime.lucky.entities.CardPlayResult;
 import fr.astratime.lucky.entities.Combo;
 import fr.astratime.lucky.entities.DrawResult;
+import fr.astratime.lucky.entities.Enemy;
 import fr.astratime.lucky.entities.GameState;
 import fr.astratime.lucky.entities.Player;
 import fr.astratime.lucky.entities.Symbol;
@@ -16,6 +17,7 @@ import fr.astratime.lucky.entities.effects.BetOnSymbolEffect;
 import fr.astratime.lucky.entities.effects.BingoEffect;
 import fr.astratime.lucky.entities.effects.Effect;
 import fr.astratime.lucky.entities.effects.PistolEffect;
+import fr.astratime.lucky.entities.enemy.EnemyKind;
 import fr.astratime.lucky.loaders.CardLoader;
 import fr.astratime.lucky.popups.EffectPopup;
 import fr.astratime.lucky.popups.PopupScale;
@@ -117,6 +119,21 @@ public class GameController {
      */
     public void restart() {
         this.gameState = new GameState(starterDeck.get());
+        clearTurn();
+    }
+
+    /**
+     * Combat suivant d'une épreuve, contre un ennemi {@code kind} : le joueur
+     * garde ses PV, ses gains et toutes ses cartes (achats compris), sans effet
+     * en cours ; voir {@link Player#nextCombat()}.
+     */
+    public void startCombat(EnemyKind kind) {
+        this.gameState = new GameState(gameState.getPlayer().nextCombat(), new Enemy(kind));
+        clearTurn();
+    }
+
+    /** Oublie tout ce qui restait du tour en cours (effets, paris, choix, compteur de cartes). */
+    private void clearTurn() {
         pendingEffects.clear();
         betsThisTurn.clear();
         cardsPlayedThisTurn = 0;

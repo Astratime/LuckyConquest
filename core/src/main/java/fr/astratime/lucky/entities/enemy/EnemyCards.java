@@ -9,7 +9,7 @@ import java.util.List;
  * Cartes de l'ennemi (jeu sombre, cards/dark/) : leur effet dépend de leur
  * couleur, et grandit avec leur rang, du rang 1 au rang {@link #MAX_RANK} :
  * <ul>
- *   <li>Pique : chaque Épée attaque de +5 à +10 ;</li>
+ *   <li>Pique : chaque Épée et chaque Croc attaquent de +5 à +10 ;</li>
  *   <li>Cœur : chaque Potion soigne de +10 % à +20 % des PV max en plus ;</li>
  *   <li>Carreau : chaque Bouclier donne de +300 à +600 de défense en plus ;</li>
  *   <li>Trèfle : un symbole tiré au hasard devient de 10 % à 50 % plus probable.</li>
@@ -45,7 +45,7 @@ public final class EnemyCards {
             List.of(), suit, rank);
     }
 
-    /** @return l'attaque ajoutée à chaque Épée par une carte Pique. */
+    /** @return l'attaque ajoutée à chaque Épée et chaque Croc par une carte Pique. */
     public static int swordBonus(Card card)   { return scaled(card, SWORD_MIN, SWORD_MAX); }
     /** @return le soin (en % des PV max) ajouté à chaque Potion par une carte Cœur. */
     public static int healBonus(Card card)    { return scaled(card, HEAL_MIN, HEAL_MAX); }
@@ -57,7 +57,7 @@ public final class EnemyCards {
     /** @return la description de l'effet de la carte, pour son infobulle. */
     public static String describe(Card card) {
         return switch (card.getSuit()) {
-            case PIQUE   -> "Épées : attaque +" + swordBonus(card);
+            case PIQUE   -> "Épées et Crocs : attaque +" + swordBonus(card);
             case COEUR   -> "Potions : soin +" + healBonus(card) + " % des PV max";
             case CARREAU -> "Boucliers : défense +" + shieldBonus(card);
             case TREFLE  -> "Un symbole au hasard : chance +" + luckBonus(card) + " %";

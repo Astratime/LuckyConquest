@@ -5,16 +5,18 @@ import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.utils.Disposable;
 import fr.astratime.lucky.entities.Card;
+import fr.astratime.lucky.entities.enemy.EnemyKind;
 import fr.astratime.lucky.entities.enemy.EnemySymbol;
 
 import java.util.EnumMap;
 import java.util.Map;
 
 /**
- * Textures de l'ennemi : le croupier démoniaque (et sa silhouette blanche,
- * pour le faire flasher quand il est touché), les symboles de sa machine à
- * sous (Épée, Bouclier, Potion), dessinés en pixel art, et ses cartes (jeu
- * sombre, chargées à la demande).
+ * Textures des ennemis : le portrait de chacun (le croupier démoniaque et ceux
+ * de la Tour des épreuves, voir {@link EnemyPortraits}) et sa silhouette
+ * blanche, pour le faire flasher quand il est touché, les symboles de leurs
+ * machines à sous, dessinés en pixel art, l'illustration du chapitre 1, et
+ * leurs cartes (jeu sombre, chargées à la demande).
  */
 public class EnemyTextures implements Disposable {
 
@@ -29,7 +31,11 @@ public class EnemyTextures implements Disposable {
     public final Texture croupierFlash;
     /** Dos des cartes de l'ennemi. */
     public final Texture cardBack;
+    /** Illustration du chapitre 1 : la comète dorée s'écrase sur la Terre. */
+    public final Texture genesis;
     private final Map<EnemySymbol, Texture> symbols = new EnumMap<>(EnemySymbol.class);
+    private final Map<EnemyKind, Texture>   portraits = new EnumMap<>(EnemyKind.class);
+    private final Map<EnemyKind, Texture>   flashes   = new EnumMap<>(EnemyKind.class);
     private final CardTextures              cards;
 
     /** @param cards cache des images de cartes, partagé avec l'écran de jeu (non possédé) */
@@ -42,10 +48,31 @@ public class EnemyTextures implements Disposable {
         symbols.put(EnemySymbol.SWORD,  texture(swordGrid(), false));
         symbols.put(EnemySymbol.SHIELD, texture(shieldGrid(), false));
         symbols.put(EnemySymbol.POTION, texture(potionGrid(), false));
+        symbols.put(EnemySymbol.THORNS, texture(EnemyPortraits.thorns(), false));
+        symbols.put(EnemySymbol.FANG,   texture(EnemyPortraits.fang(), false));
+        symbols.put(EnemySymbol.RAGE,   texture(EnemyPortraits.rage(), false));
+        portraits.put(EnemyKind.CROUPIER, croupier);
+        flashes.put(EnemyKind.CROUPIER, croupierFlash);
+        addPortrait(EnemyKind.GARDIEN, EnemyPortraits.gardien());
+        addPortrait(EnemyKind.SANGSUE, EnemyPortraits.sangsue());
+        addPortrait(EnemyKind.BRETTEUR, EnemyPortraits.bretteur());
+        addPortrait(EnemyKind.COMETE, EnemyPortraits.comete());
+        genesis = texture(EnemyPortraits.genesis(), false);
+    }
+
+    private void addPortrait(EnemyKind kind, int[][] grid) {
+        portraits.put(kind, texture(grid, false));
+        flashes.put(kind, texture(grid, true));
     }
 
     /** @return la texture du symbole {@code symbol} (16 x 16 pixels). */
     public Texture symbol(EnemySymbol symbol) { return symbols.get(symbol); }
+
+    /** @return le portrait de l'ennemi {@code kind}. */
+    public Texture portrait(EnemyKind kind) { return portraits.get(kind); }
+
+    /** @return la silhouette blanche du portrait de l'ennemi {@code kind}. */
+    public Texture portraitFlash(EnemyKind kind) { return flashes.get(kind); }
 
     /** @return la face de la carte sombre {@code card} (chargée une fois, puis gardée). */
     public Texture card(Card card) {
@@ -257,8 +284,9 @@ public class EnemyTextures implements Disposable {
 
     @Override
     public void dispose() {
-        croupier.dispose();
-        croupierFlash.dispose();
+        portraits.values().forEach(Texture::dispose); // le croupier compris
+        flashes.values().forEach(Texture::dispose);
         symbols.values().forEach(Texture::dispose);
+        genesis.dispose();
     }
 }

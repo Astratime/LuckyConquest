@@ -1,5 +1,7 @@
 package fr.astratime.lucky.entities;
 
+import fr.astratime.lucky.entities.enemy.EnemyKind;
+
 import java.util.List;
 
 /**
@@ -10,17 +12,23 @@ import java.util.List;
 public class GameState {
 
     private final Player player;
-    private final Enemy  enemy  = new Enemy("Ennemi", 5000);
+    private final Enemy  enemy;
     private       int    turnNumber = 1;
 
     /**
      * Crée une nouvelle partie : le joueur démarre à pleine vie avec le deck
-     * fourni, l'ennemi est généré avec des statistiques fixes.
+     * fourni, face au croupier (voir {@link EnemyKind#CROUPIER}).
      *
      * @param playerCards cartes composant le deck initial du joueur
      */
     public GameState(List<Card> playerCards) {
-        this.player = new Player("Joueur", 100, playerCards);
+        this(new Player("Joueur", 100, playerCards), new Enemy(EnemyKind.CROUPIER));
+    }
+
+    /** Combat contre {@code enemy}, avec un joueur déjà constitué (combat suivant d'une épreuve). */
+    public GameState(Player player, Enemy enemy) {
+        this.player = player;
+        this.enemy  = enemy;
     }
 
     /** Incrémente le numéro de tour, appelé à la fin de chaque tour résolu. */

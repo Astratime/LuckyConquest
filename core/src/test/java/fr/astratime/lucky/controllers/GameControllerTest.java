@@ -348,4 +348,27 @@ class GameControllerTest {
         assertTrue(discarded.contains(ace) && discarded.contains(queen), "les cartes d'origine reviennent en défausse");
         for (CardPlayResult.Recolor recolor : result.recolored()) assertFalse(discarded.contains(recolor.after()));
     }
+
+    @Test
+    void theNextFightOfAChapterKeepsLifeGainsAndCards() {
+        GameController controller = controllerWith(plainCards(10));
+        Player player = controller.getGameState().getPlayer();
+        player.addGains(700);
+        player.takeDamage(60);
+        player.getLastingEffects().addVault(40);
+        controller.drawCards();
+        controller.playCard(player.getCurrentHand().get(0));
+
+        controller.startCombat(fr.astratime.lucky.entities.enemy.EnemyKind.SANGSUE);
+
+        Player next = controller.getGameState().getPlayer();
+        assertEquals(700, next.getGains());
+        assertEquals(40, next.getHp(), "les PV perdus ne reviennent pas");
+        assertTrue(next.getLastingEffects().isEmpty());
+        assertEquals(10, next.getDeck().getCards().size(), "toutes ses cartes reviennent dans le deck");
+        assertTrue(next.getCurrentHand().isEmpty());
+        assertEquals(0, controller.getCardsPlayedThisTurn());
+        assertEquals("Sangsue du Tapis", controller.getGameState().getEnemy().getName());
+        assertEquals(10_000, controller.getGameState().getEnemy().getHp());
+    }
 }

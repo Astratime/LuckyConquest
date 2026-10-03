@@ -195,6 +195,24 @@ public class Player {
         return remaining;
     }
 
+    /**
+     * Combat suivant d'une épreuve : un joueur sans effet en cours ni bouclier,
+     * qui garde ses PV, ses gains et toutes ses cartes (achats compris),
+     * réunies dans son deck.
+     *
+     * @return le joueur prêt pour le combat suivant
+     */
+    public Player nextCombat() {
+        List<Card> cards = new ArrayList<>(deck.getCards());
+        cards.addAll(discardPile.getCards());
+        cards.addAll(currentHand);
+        cards.addAll(playedCards);
+        Player next = new Player(name, maxHp, cards);
+        next.hp = hp; // les PV perdus ne reviennent pas d'un combat à l'autre
+        next.addGains(gains);
+        return next;
+    }
+
     /** Ajoute {@code amount} au bouclier accumulé ce tour. */
     public void addShield(int amount) { shield += amount; }
 
