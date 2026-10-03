@@ -196,8 +196,8 @@ public class Player {
     }
 
     /**
-     * Combat suivant d'une épreuve : un joueur neuf, à pleine vie et sans effet
-     * en cours, qui garde ses gains et toutes ses cartes (achats compris),
+     * Combat suivant d'une épreuve : un joueur sans effet en cours ni bouclier,
+     * qui garde ses PV, ses gains et toutes ses cartes (achats compris),
      * réunies dans son deck.
      *
      * @return le joueur prêt pour le combat suivant
@@ -208,6 +208,7 @@ public class Player {
         cards.addAll(currentHand);
         cards.addAll(playedCards);
         Player next = new Player(name, maxHp, cards);
+        next.hp = hp; // les PV perdus ne reviennent pas d'un combat à l'autre
         next.addGains(gains);
         return next;
     }

@@ -124,8 +124,8 @@ public class GameController {
 
     /**
      * Combat suivant d'une épreuve, contre un ennemi {@code kind} : le joueur
-     * repart à pleine vie, sans effet en cours, avec ses gains et toutes ses
-     * cartes (achats compris) ; voir {@link Player#nextCombat()}.
+     * garde ses PV, ses gains et toutes ses cartes (achats compris), sans effet
+     * en cours ; voir {@link Player#nextCombat()}.
      */
     public void startCombat(EnemyKind kind) {
         this.gameState = new GameState(gameState.getPlayer().nextCombat(), new Enemy(kind));

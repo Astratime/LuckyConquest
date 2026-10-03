@@ -132,8 +132,8 @@ import java.util.stream.Collectors;
  * Dans la Tour des épreuves ({@link TowerRun}), l'écran enchaîne les trois
  * combats d'un chapitre : après une victoire, le joueur choisit son adversaire
  * parmi trois cartes faces cachées, puis affronte le boss (voir
- * {@link EnemyPickOverlay}) ; il garde ses gains et ses cartes d'un combat à
- * l'autre. Une défaite fait recommencer le chapitre.
+ * {@link EnemyPickOverlay}) ; il garde ses PV, ses gains et ses cartes d'un
+ * combat à l'autre. Une défaite fait recommencer le chapitre.
  */
 public class GameScreen extends ScreenAdapter {
 
@@ -1030,7 +1030,7 @@ public class GameScreen extends ScreenAdapter {
 
     /**
      * Combat suivant d'un chapitre de la Tour des épreuves, contre {@code kind} :
-     * le joueur garde ses gains et ses cartes, l'affichage repart de zéro.
+     * le joueur garde ses PV, ses gains et ses cartes, l'affichage repart de zéro.
      */
     private void startNextCombat(EnemyKind kind) {
         gameController.startCombat(kind);

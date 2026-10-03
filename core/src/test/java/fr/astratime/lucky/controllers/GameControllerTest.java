@@ -350,7 +350,7 @@ class GameControllerTest {
     }
 
     @Test
-    void theNextFightOfAChapterKeepsGainsAndCardsButRestoresLife() {
+    void theNextFightOfAChapterKeepsLifeGainsAndCards() {
         GameController controller = controllerWith(plainCards(10));
         Player player = controller.getGameState().getPlayer();
         player.addGains(700);
@@ -363,7 +363,7 @@ class GameControllerTest {
 
         Player next = controller.getGameState().getPlayer();
         assertEquals(700, next.getGains());
-        assertEquals(next.getMaxHp(), next.getHp());
+        assertEquals(40, next.getHp(), "les PV perdus ne reviennent pas");
         assertTrue(next.getLastingEffects().isEmpty());
         assertEquals(10, next.getDeck().getCards().size(), "toutes ses cartes reviennent dans le deck");
         assertTrue(next.getCurrentHand().isEmpty());
