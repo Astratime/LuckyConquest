@@ -45,7 +45,8 @@ public class GainsMultiplierEffect extends Effect {
 
     @Override
     public String getDescription() {
-        return "Gains x" + factor + (gaugeFactor > 1 ? "\nLames, Sang et Coffre x" + gaugeFactor : "");
+        return "Multiplie les gains actuels par " + factor
+            + (gaugeFactor > 1 ? ". Lames, Sang et Coffre x" + gaugeFactor : "");
     }
 
     @Override

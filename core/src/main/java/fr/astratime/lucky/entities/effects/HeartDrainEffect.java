@@ -24,7 +24,9 @@ public class HeartDrainEffect extends Effect {
     }
 
     @Override
-    public String getDescription() { return "Drain de vie +" + percent + "%"; }
+    public String getDescription() {
+        return "Drain de vie : soigne de " + percent + "% des dégâts infligés. Le surplus remplit le Sang";
+    }
 
     @Override
     public List<EffectPopup> getPopups() {

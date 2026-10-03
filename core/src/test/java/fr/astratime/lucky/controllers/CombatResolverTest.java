@@ -140,8 +140,9 @@ class CombatResolverTest {
         PistolShotEvent shot = (PistolShotEvent) result.getPistolEvents().get(0);
         assertEquals(1, shot.slotIndex, "le SEPT (30) est le symbole d'attaque le plus fort");
         assertEquals(30 * 50, shot.rawDamage);
-        assertEquals(30 * 50 - 30, shot.damage);
-        assertEquals(100_000 - 0 - 0 - shot.damage, enemy.getHp(), "BAR (10) et SEPT (30) ne passent pas la défense");
+        assertEquals(30 * 50, shot.damage, "BAR (10) et SEPT (30) ont déjà usé les 30 de défense");
+        assertEquals(0, shot.blocked);
+        assertEquals(100_000 - 0 - 10 - shot.damage, enemy.getHp(), "BAR est bloqué, SEPT passe de 10");
     }
 
     @Test

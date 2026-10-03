@@ -19,7 +19,7 @@ public class Enemy {
     public static final int HAND_SIZE      = 8;
     /** Cartes que l'ennemi joue parmi celles piochées. */
     public static final int PLAYS_PER_TURN = 3;
-    /** Défense de base, qui réduit les dégâts reçus des attaques du joueur. */
+    /** Défense de base, reformée à chacun de ses tours : elle absorbe les dégâts des attaques du joueur. */
     public static final int BASE_DEFENSE   = 30;
 
     private final String      name;
@@ -27,8 +27,11 @@ public class Enemy {
     private       int         hp;
     private final DiscardPile discardPile = new DiscardPile();
     private final Deck        deck;
-    /** Défense des Boucliers de son dernier tour : elle vaut pendant le tour suivant du joueur. */
-    private       int         shieldDefense;
+    /**
+     * Défense restante : base et Boucliers de son dernier tour. Elle absorbe
+     * les attaques du joueur et s'use à chaque coup, jusqu'à son tour suivant.
+     */
+    private       int         defense = BASE_DEFENSE;
 
     /**
      * Ennemi avec le deck de départ du jeu sombre.
@@ -67,11 +70,24 @@ public class Enemy {
     /** @return {@code true} si l'ennemi n'a plus de points de vie. */
     public boolean isDefeated() { return hp <= 0; }
 
-    /** Ajoute {@code defense} à la défense des Boucliers de ce tour. */
-    public void addShieldDefense(int defense) { shieldDefense += defense; }
+    /** Ajoute {@code amount} à la défense (Bouclier de son tour). */
+    public void addShieldDefense(int amount) { defense += amount; }
 
-    /** Retire la défense des Boucliers du tour précédent (au début d'un nouveau tour de l'ennemi). */
-    public void resetShieldDefense() { shieldDefense = 0; }
+    /** Reforme la défense de base, sans les Boucliers du tour précédent (au début d'un nouveau tour de l'ennemi). */
+    public void resetDefense() { defense = BASE_DEFENSE; }
+
+    /**
+     * Une attaque du joueur frappe la défense : elle absorbe tout ce qu'elle
+     * peut et s'use d'autant.
+     *
+     * @param damage dégâts bruts de l'attaque
+     * @return les dégâts absorbés par la défense (le reste touche l'ennemi)
+     */
+    public int absorb(int damage) {
+        int absorbed = Math.min(defense, Math.max(0, damage));
+        defense -= absorbed;
+        return absorbed;
+    }
 
     /** Pioche {@code count} cartes (la défausse est remélangée si le deck s'épuise). */
     public List<Card> draw(int count) { return deck.draw(count); }
@@ -87,10 +103,8 @@ public class Enemy {
     public int    getMaxHp()       { return maxHp; }
     /** @return la proportion de vie restante, entre 0 et 1. */
     public float  getHpRatio()     { return (float) hp / maxHp; }
-    /** @return la défense de l'ennemi (base et Boucliers), qui réduit les dégâts des attaques du joueur. */
-    public int    getDefense()     { return BASE_DEFENSE + shieldDefense; }
-    /** @return la défense ajoutée par les Boucliers de son dernier tour. */
-    public int    getShieldDefense() { return shieldDefense; }
+    /** @return la défense restante de l'ennemi (base et Boucliers, moins ce que les attaques ont déjà usé). */
+    public int    getDefense()     { return defense; }
     /** @return les cartes restantes dans le deck de l'ennemi. */
     public List<Card> getDeckCards()    { return Collections.unmodifiableList(new ArrayList<>(deck.getCards())); }
     /** @return les cartes de la défausse de l'ennemi. */

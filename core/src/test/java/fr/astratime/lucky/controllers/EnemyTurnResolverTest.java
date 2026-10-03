@@ -86,7 +86,8 @@ class EnemyTurnResolverTest {
 
         int shieldsThisTurn = turn.events().stream()
             .filter(e -> e instanceof EnemyShieldedEvent).mapToInt(e -> ((EnemyShieldedEvent) e).defense).sum();
-        assertEquals(shieldsThisTurn, enemy.getShieldDefense(), "sa défense ne compte que les Boucliers de ce tour");
+        assertEquals(Enemy.BASE_DEFENSE + shieldsThisTurn, enemy.getDefense(),
+            "sa défense ne compte que la base et les Boucliers de ce tour");
     }
 
     @Test

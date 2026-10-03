@@ -32,7 +32,7 @@ public class BoostSymbolEffect extends Effect {
 
     @Override
     public String getDescription() {
-        return "Boost " + symbol.getDisplayName() + " +" + amount;
+        return symbol.getDisplayName() + " plus fréquent sur les rouleaux (+" + amount + ")";
     }
 
     @Override

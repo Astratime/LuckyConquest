@@ -38,8 +38,8 @@ public class CorruptionEffect extends Effect {
 
     @Override
     public String getDescription() {
-        return "Pendant " + turns + " tours : attaque et défense des symboles x" + FACTOR
-            + ", mais chaque tour consomme " + GAINS_PERCENT + "% des gains";
+        return "Pendant " + turns + " tours : attaque et bouclier des symboles x" + FACTOR
+            + ". Chaque tour coûte " + GAINS_PERCENT + "% des gains";
     }
 
     @Override
