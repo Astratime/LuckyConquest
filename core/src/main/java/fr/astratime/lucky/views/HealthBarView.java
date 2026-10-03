@@ -48,6 +48,9 @@ public class HealthBarView extends Group {
     private final Image flash;
     private float       shakeTime;
 
+    /** Nom du camp, à gauche dans la barre. */
+    private final Label nameLabel;
+
     /**
      * @param name        nom du camp, affiché à gauche dans la barre (ex : "ENNEMI")
      * @param font        police des textes (avec contour, lisible sur le remplissage)
@@ -75,7 +78,7 @@ public class HealthBarView extends Group {
         fill.setBounds(trackX, trackY, trackWidth, trackHeight);
 
         Label.LabelStyle style = new Label.LabelStyle(font, Color.WHITE);
-        Label nameLabel = new Label(name, style);
+        nameLabel = new Label(name, style);
         nameLabel.setBounds(trackX + TEXT_PAD, trackY, trackWidth - TEXT_PAD * 2, trackHeight);
         nameLabel.setAlignment(Align.left);
         hpLabel = new Label("", style);
@@ -97,6 +100,11 @@ public class HealthBarView extends Group {
         flash.getColor().a = 0f;
         addActor(flash); // en dernier : par-dessus toute la barre
         setSize(frameX + frameWidth, HEIGHT);
+    }
+
+    /** Change le nom du camp affiché dans la barre (ex : le nom de l'ennemi du combat). */
+    public void setTitle(String name) {
+        nameLabel.setText(name);
     }
 
     /**

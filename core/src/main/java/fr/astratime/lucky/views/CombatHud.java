@@ -65,6 +65,7 @@ public class CombatHud implements Disposable {
     public void refresh() {
         GameState state = gameState.get();
         int enemyMax  = state.getEnemy().getMaxHp();
+        enemyHealthBar.setTitle(state.getEnemy().getKind().getBarName());
         int playerMax = state.getPlayer().getMaxHp();
         enemyHealthBar.refresh(Math.clamp(state.getEnemy().getHp() + heldEnemyLoss - heldEnemyHeal, 0, enemyMax),
             enemyMax);

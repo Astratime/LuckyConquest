@@ -24,6 +24,7 @@ import fr.astratime.lucky.assets.Palette;
 import fr.astratime.lucky.entities.Card;
 import fr.astratime.lucky.entities.Enemy;
 import fr.astratime.lucky.entities.enemy.EnemyCards;
+import fr.astratime.lucky.entities.enemy.EnemyKind;
 import fr.astratime.lucky.entities.enemy.EnemySlotMachine;
 import fr.astratime.lucky.entities.enemy.EnemySymbol;
 import fr.astratime.lucky.entities.enemy.EnemyTurnResult;
@@ -39,14 +40,15 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 /**
- * Côté de l'ennemi, sur la table (voir {@link TableView}) : le croupier
- * démoniaque, sa machine à sous, ses cartes, son deck et sa défausse, et sa
- * défense. Joue en animation le tour de l'ennemi déjà résolu
- * ({@link #playTurn}) : il pioche ses cartes face cachée, retourne les trois
- * qu'il joue (avec leur bonus), lance ses rouleaux (chaque symbole agit à son
- * arrêt), puis toutes ses cartes filent dans sa défausse.
+ * Côté de l'ennemi, sur la table (voir {@link TableView}) : son portrait (le
+ * croupier démoniaque, ou un ennemi de la Tour des épreuves), sa machine à
+ * sous, ses cartes, son deck et sa défausse, et sa défense. Joue en animation
+ * le tour de l'ennemi déjà résolu ({@link #playTurn}) : ses Épines piquent
+ * d'abord, puis il pioche ses cartes face cachée, retourne celles qu'il joue
+ * (avec leur bonus), lance ses rouleaux (chaque symbole agit à son arrêt), puis
+ * toutes ses cartes filent dans sa défausse.
  *
- * Survoler le croupier, un rouleau ou une carte jouée affiche son effet.
+ * Survoler l'ennemi, un rouleau ou une carte jouée affiche son effet.
  */
 public class EnemyView implements Disposable {
 
@@ -73,6 +75,7 @@ public class EnemyView implements Disposable {
     private static final float SYMBOL_SIZE    = 80f;    // 16 pixels x5, comme les symboles du joueur
     private static final float BOB            = 4f;     // respiration du croupier
     private static final float DEFENSE_GAP    = 40f;    // entre les rouleaux et la défense (au-delà du cadre)
+    private static final float OPENING_TIME   = 0.9f;   // ses Épines piquent, avant sa pioche
 
     private final TableView           table;
     private final EnemyTextures       textures;
@@ -94,6 +97,8 @@ public class EnemyView implements Disposable {
     private final CardPileView  discardPile;
     private final List<Image>   reels     = new ArrayList<>();
     private final EnemySymbol[] shownSymbols = {EnemySymbol.SWORD, EnemySymbol.SHIELD, EnemySymbol.POTION};
+    /** Portrait affiché (il change avec l'ennemi du combat). */
+    private EnemyKind shownKind = EnemyKind.CROUPIER;
     private final List<Image>   handCards = new ArrayList<>();
     private int shownDeck;
     private int shownDiscard;
@@ -130,9 +135,7 @@ public class EnemyView implements Disposable {
         character.addActor(flash);
         character.setSize(croupier.getWidth(), croupier.getHeight());
         character.setOrigin(croupier.getWidth() / 2f, 0f);
-        hoverTooltip(croupier, () -> "Croupier démoniaque",
-            () -> "Défense : " + shownDefense() + "\nPioche " + Enemy.HAND_SIZE + " cartes et en joue "
-                + Enemy.PLAYS_PER_TURN + " à chaque tour");
+        hoverTooltip(croupier, () -> enemy.get().getName(), this::describeEnemy);
 
         deckPile    = new CardPileView("DECK", textures.cardBack, pileFont,
             table.getCardWidth(), table.getCardHeight());
@@ -147,7 +150,7 @@ public class EnemyView implements Disposable {
             reels.add(image);
         }
 
-        defense = new ShieldBadge("Défense", Enemy.BASE_DEFENSE, textures.symbol(EnemySymbol.SHIELD), defenseFont, pixel);
+        defense = new ShieldBadge("Défense", enemy.get().getBaseDefense(), textures.symbol(EnemySymbol.SHIELD), defenseFont, pixel);
         hoverTooltip(defense, () -> "Défense de l'ennemi",
             () -> "Absorbe les dégâts de tes attaques et s'use à chaque coup\n"
                 + "Les Piques l'ignorent\nSe reforme à son tour, avec ses Boucliers");
@@ -163,8 +166,39 @@ public class EnemyView implements Disposable {
     /** @return le côté de l'ennemi, à ajouter au Stage au-dessus de la table. */
     public Group getActor() { return group; }
 
-    /** Nouveau combat : croupier debout, piles pleines, défense de base, rouleaux au repos. */
+    /**
+     * @return l'infobulle de l'ennemi : sa présentation, sa défense, ses
+     *         rouleaux, ses cartes, sa Rage et ses Épines en cours
+     */
+    private String describeEnemy() {
+        Enemy current = enemy.get();
+        EnemyKind kind = current.getKind();
+        StringBuilder text = new StringBuilder(kind.getDescription());
+        text.append("\nDéfense : ").append(shownDefense());
+        text.append("\nRouleaux : ").append(kind.describeReels());
+        text.append("\nPioche ").append(Enemy.HAND_SIZE).append(" cartes et en joue ").append(kind.getPlaysPerTurn())
+            .append(" à chaque tour");
+        if (current.getRage() > 0) text.append("\nRage : attaque +").append(current.getRage());
+        if (current.getThornsPercent() > 0) {
+            text.append("\nÉpines : ").append(current.getThornsPercent()).append(" % de tes dégâts te reviendront");
+        }
+        return text.toString();
+    }
+
+    /** Montre le portrait de l'ennemi du combat en cours, et ses symboles au repos sur les rouleaux. */
+    private void showKind() {
+        EnemyKind kind = enemy.get().getKind();
+        if (kind == shownKind) return;
+        shownKind = kind;
+        ((TextureRegionDrawable) croupier.getDrawable()).setRegion(new TextureRegion(textures.portrait(kind)));
+        ((TextureRegionDrawable) flash.getDrawable()).setRegion(new TextureRegion(textures.portraitFlash(kind)));
+        List<EnemySymbol> symbols = kind.getSymbols();
+        for (int i = 0; i < reels.size(); i++) setReel(i, symbols.get(i % symbols.size()));
+    }
+
+    /** Nouveau combat : l'ennemi debout, piles pleines, défense de base, rouleaux au repos. */
     public void reset() {
+        showKind();
         stopSpinSound();
         group.clearActions();
         handCards.forEach(Actor::remove);
@@ -174,7 +208,7 @@ public class EnemyView implements Disposable {
         character.getColor().a = 1f;
         flash.clearActions();
         flash.getColor().a = 0f;
-        defense.setValue(Enemy.BASE_DEFENSE);
+        defense.setValue(enemy.get().getBaseDefense());
         shownDeck    = enemy.get().getDeckCards().size();
         shownDiscard = enemy.get().getDiscardCards().size();
         refreshCounts();
@@ -187,8 +221,9 @@ public class EnemyView implements Disposable {
         character.clearActions();
         // Le plus grand agrandissement entier qui tient entre les cartes de l'ennemi et le haut du feutre.
         float room  = table.getFeltTop() - table.getEnemyCharacterY();
-        int   scale = Math.clamp((int) (room / textures.croupier.getHeight()), 2, EnemyTextures.CROUPIER_SCALE);
-        croupier.setSize(textures.croupier.getWidth() * scale, textures.croupier.getHeight() * scale);
+        Texture portrait = textures.portrait(shownKind);
+        int   scale = Math.clamp((int) (room / portrait.getHeight()), 2, EnemyTextures.CROUPIER_SCALE);
+        croupier.setSize(portrait.getWidth() * scale, portrait.getHeight() * scale);
         flash.setSize(croupier.getWidth(), croupier.getHeight());
         character.setSize(croupier.getWidth(), croupier.getHeight());
         character.setOrigin(croupier.getWidth() / 2f, 0f);
@@ -229,7 +264,23 @@ public class EnemyView implements Disposable {
     public void playTurn(EnemyTurnResult turn, Consumer<Event> onEventShown, Runnable onDone) {
         handCards.forEach(Actor::remove);
         handCards.clear();
-        defense.restore(Enemy.BASE_DEFENSE); // les Boucliers de son tour précédent ne valent plus
+        if (turn.openingEvents().isEmpty()) {
+            playCardsAndReels(turn, onEventShown, onDone);
+            return;
+        }
+        // Ses Épines piquent d'abord, au-dessus de lui.
+        Vector2 top = characterTop();
+        List<EffectPopup> texts = new ArrayList<>();
+        turn.openingEvents().forEach(event -> texts.addAll(event.getPopups()));
+        popups.play(texts, top.x, top.y);
+        pulse(Color.valueOf("7dd87aff"));
+        turn.openingEvents().forEach(onEventShown);
+        group.addAction(Actions.delay(OPENING_TIME, Actions.run(() -> playCardsAndReels(turn, onEventShown, onDone))));
+    }
+
+    /** Le reste de son tour : pioche, cartes jouées, rouleaux, suites de ses attaques, défausse. */
+    private void playCardsAndReels(EnemyTurnResult turn, Consumer<Event> onEventShown, Runnable onDone) {
+        defense.restore(enemy.get().getBaseDefense()); // les Boucliers de son tour précédent ne valent plus
 
         // Distribution, face cachée, depuis son deck (remélangé depuis sa défausse s'il s'épuise).
         List<Card> drawn = turn.drawn();
@@ -331,7 +382,7 @@ public class EnemyView implements Disposable {
     /** @return le bonus d'une carte jouée, en quelques mots (ex : "ÉPÉE +10"). */
     private static String bonusText(Card card) {
         return switch (card.getSuit()) {
-            case PIQUE   -> "ÉPÉE +" + EnemyCards.swordBonus(card);
+            case PIQUE   -> "ATTAQUE +" + EnemyCards.swordBonus(card);
             case COEUR   -> "POTION +" + EnemyCards.healBonus(card) + "%";
             case CARREAU -> "BOUCLIER +" + EnemyCards.shieldBonus(card);
             case TREFLE  -> "CHANCE +" + EnemyCards.luckBonus(card) + "%";
@@ -358,7 +409,10 @@ public class EnemyView implements Disposable {
         Image image = reels.get(reel);
         int frames = Math.max(1, Math.round((stop - start) / SPIN_FRAME));
         image.addAction(Actions.delay(start, Actions.repeat(frames, Actions.sequence(
-            Actions.run(() -> setReel(reel, EnemySymbol.values()[MathUtils.random(EnemySymbol.values().length - 1)])),
+            Actions.run(() -> {
+                List<EnemySymbol> symbols = shownKind.getSymbols();
+                setReel(reel, symbols.get(MathUtils.random(symbols.size() - 1)));
+            }),
             Actions.delay(SPIN_FRAME)))));
     }
 
@@ -371,7 +425,12 @@ public class EnemyView implements Disposable {
         image.setY(baseY - 8f);
         image.addAction(Actions.moveTo(image.getX(), baseY, 0.18f, Interpolation.swingOut));
         reelStopSound.play();
-        if (symbol == EnemySymbol.SWORD) lunge();
+        switch (symbol) {
+            case SWORD, FANG -> lunge();
+            case RAGE        -> pulse(Color.valueOf("ff4a3aff"));
+            case THORNS      -> pulse(Color.valueOf("7dd87aff"));
+            default          -> { }
+        }
 
         List<EffectPopup> texts = new ArrayList<>();
         events.forEach(event -> texts.addAll(event.getPopups()));

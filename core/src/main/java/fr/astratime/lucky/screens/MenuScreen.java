@@ -39,8 +39,8 @@ import java.util.List;
  * se décale légèrement avec la souris (parallaxe) : le titre, sur lequel passe
  * un reflet, flotte au-dessus d'un panneau d'options.
  *
- * Page principale : « Jouer » (lance un combat, {@link GameScreen}), « Options »
- * et « Quitter ». Page des options : affichage (fenêtre agrandie ou plein
+ * Page principale : « Jouer » (lance un combat, {@link GameScreen}), « Tour des
+ * épreuves » (choix d'un chapitre, {@link TowerScreen}), « Options » et « Quitter ». Page des options : affichage (fenêtre agrandie ou plein
  * écran, appliqué tout de suite), effets visuels (normaux ou réduits,
  * réglage partagé avec l'écran de jeu), volume de la musique, volume des sons,
  * et « Retour ».
@@ -120,10 +120,11 @@ public class MenuScreen extends ScreenAdapter {
     // Pages
     // -------------------------------------------------------------------------
 
-    /** Page principale : Jouer, Options, Quitter. */
+    /** Page principale : Jouer, Tour des épreuves, Options, Quitter. */
     private void showMainPage() {
         showPage(null, List.of(
             OptionsMenu.Entry.button("Jouer", this::onPlay),
+            OptionsMenu.Entry.button("Tour des épreuves", this::onTower),
             OptionsMenu.Entry.button("Options", this::showOptionsPage),
             OptionsMenu.Entry.button("Quitter", this::onQuit)));
     }
@@ -153,6 +154,14 @@ public class MenuScreen extends ScreenAdapter {
     private void onPlay() {
         fadeOutThen(() -> {
             luckyGame.setScreen(new GameScreen(luckyGame));
+            dispose();
+        });
+    }
+
+    /** Fondu au noir puis écran des chapitres de la Tour des épreuves. */
+    private void onTower() {
+        fadeOutThen(() -> {
+            luckyGame.setScreen(new TowerScreen(luckyGame));
             dispose();
         });
     }

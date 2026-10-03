@@ -23,7 +23,8 @@ import java.util.Map;
  */
 public enum EnemyKind {
 
-    CROUPIER("Croupier démoniaque", "Il tient la table. Il frappe. Il se protège. Il se soigne.",
+    CROUPIER("Croupier démoniaque", "ENNEMI",
+        "Il tient la table. Il frappe. Il se protège. Il se soigne.",
         5_000, 30, 3,
         weights(EnemySymbol.SWORD, 1, EnemySymbol.SHIELD, 1, EnemySymbol.POTION, 1),
         deck(new int[] {2, 5, 8, 11, 14}, new int[] {2, 5, 8, 11, 14},
@@ -31,7 +32,8 @@ public enum EnemyKind {
         List.of(Card.Suit.PIQUE, Card.Suit.CARREAU, Card.Suit.TREFLE, Card.Suit.COEUR),
         List.of(Card.Suit.COEUR, Card.Suit.CARREAU, Card.Suit.PIQUE, Card.Suit.TREFLE)),
 
-    GARDIEN("Gardien de la Banque", "Il garde le coffre. Sa défense est épaisse. Ses Épines te renvoient tes coups.",
+    GARDIEN("Gardien de la Banque", "GARDIEN",
+        "Il garde le coffre. Sa défense est épaisse. Ses Épines te renvoient tes coups.",
         10_000, 150, 3,
         weights(EnemySymbol.SWORD, 1, EnemySymbol.SHIELD, 1, EnemySymbol.THORNS, 1),
         deck(new int[] {4, 9}, new int[] {5, 11},
@@ -39,7 +41,8 @@ public enum EnemyKind {
         List.of(Card.Suit.CARREAU, Card.Suit.TREFLE, Card.Suit.PIQUE, Card.Suit.COEUR),
         List.of(Card.Suit.COEUR, Card.Suit.CARREAU, Card.Suit.TREFLE, Card.Suit.PIQUE)),
 
-    SANGSUE("Sangsue du Tapis", "Elle colle au feutre. Chaque morsure la soigne. Garde ton bouclier levé.",
+    SANGSUE("Sangsue du Tapis", "SANGSUE",
+        "Elle colle au feutre. Chaque morsure la soigne. Garde ton bouclier levé.",
         10_000, 30, 3,
         weights(EnemySymbol.FANG, 2, EnemySymbol.SHIELD, 2, EnemySymbol.POTION, 1),
         deck(new int[] {3, 6, 9, 12, 14}, new int[] {2, 5, 8, 11, 13, 14},
@@ -47,7 +50,8 @@ public enum EnemyKind {
         List.of(Card.Suit.PIQUE, Card.Suit.TREFLE, Card.Suit.COEUR, Card.Suit.CARREAU),
         List.of(Card.Suit.COEUR, Card.Suit.PIQUE, Card.Suit.TREFLE, Card.Suit.CARREAU)),
 
-    BRETTEUR("Bretteur à la Mise", "Il ne pare jamais. Il frappe. Chaque Rage le rend plus fort.",
+    BRETTEUR("Bretteur à la Mise", "BRETTEUR",
+        "Il ne pare jamais. Il frappe. Chaque Rage le rend plus fort.",
         10_000, 0, 3,
         weights(EnemySymbol.SWORD, 1, EnemySymbol.RAGE, 1, EnemySymbol.SHIELD, 1),
         deck(new int[] {3, 6, 9, 12, 14}, new int[] {5, 11},
@@ -55,7 +59,8 @@ public enum EnemyKind {
         List.of(Card.Suit.PIQUE, Card.Suit.TREFLE, Card.Suit.CARREAU, Card.Suit.COEUR),
         List.of(Card.Suit.PIQUE, Card.Suit.TREFLE, Card.Suit.CARREAU, Card.Suit.COEUR)),
 
-    COMETE("Comète Dorée", "Elle est tombée du ciel. Elle a créé la règle. Elle joue tous les jeux à la fois.",
+    COMETE("Comète Dorée", "COMÈTE DORÉE",
+        "Elle est tombée du ciel. Elle a créé la règle. Elle joue tous les jeux à la fois.",
         20_000, 100, 3,
         weights(EnemySymbol.SWORD, 1, EnemySymbol.SHIELD, 2, EnemySymbol.THORNS, 1,
             EnemySymbol.FANG, 1, EnemySymbol.RAGE, 1),
@@ -68,6 +73,7 @@ public enum EnemyKind {
     public static final List<EnemyKind> CHALLENGERS = List.of(GARDIEN, SANGSUE, BRETTEUR);
 
     private final String                     displayName;
+    private final String                     barName;
     private final String                     description;
     private final int                        maxHp;
     private final int                        baseDefense;
@@ -77,10 +83,11 @@ public enum EnemyKind {
     private final List<Card.Suit>            priority;
     private final List<Card.Suit>            lowHpPriority;
 
-    EnemyKind(String displayName, String description, int maxHp, int baseDefense, int playsPerTurn,
+    EnemyKind(String displayName, String barName, String description, int maxHp, int baseDefense, int playsPerTurn,
               Map<EnemySymbol, Integer> weights, Map<Card.Suit, int[]> deck, List<Card.Suit> priority,
               List<Card.Suit> lowHpPriority) {
         this.displayName  = displayName;
+        this.barName      = barName;
         this.description  = description;
         this.maxHp        = maxHp;
         this.baseDefense  = baseDefense;
@@ -93,6 +100,8 @@ public enum EnemyKind {
 
     /** @return le nom affiché (ex : "Gardien de la Banque"). */
     public String getDisplayName() { return displayName; }
+    /** @return le nom court affiché dans sa barre de vie (ex : "GARDIEN"). */
+    public String getBarName() { return barName; }
     /** @return sa présentation, en quelques phrases courtes. */
     public String getDescription() { return description; }
     /** @return ses points de vie maximum. */
