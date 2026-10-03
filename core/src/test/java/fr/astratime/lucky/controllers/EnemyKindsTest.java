@@ -12,6 +12,7 @@ import fr.astratime.lucky.entities.events.EnemyThornsEvent;
 import fr.astratime.lucky.entities.events.Event;
 import fr.astratime.lucky.entities.events.PlayerDamagedEvent;
 import fr.astratime.lucky.entities.events.ThornsEvent;
+import fr.astratime.lucky.entities.tower.Chapter;
 
 import org.junit.jupiter.api.Test;
 
@@ -25,10 +26,17 @@ import static org.junit.jupiter.api.Assertions.*;
 class EnemyKindsTest {
 
     @Test
-    void theChallengersAndTheBossHaveTheRequestedLife() {
-        for (EnemyKind kind : EnemyKind.CHALLENGERS) assertEquals(10_000, new Enemy(kind).getMaxHp(), kind.name());
-        assertEquals(20_000, new Enemy(EnemyKind.COMETE).getMaxHp());
-        assertEquals(5_000, new Enemy(EnemyKind.CROUPIER).getMaxHp(), "le 1er combat reste celui du jeu");
+    void eachChapterHasTheRequestedLife() {
+        assertLives(Chapter.GENESE, 5_000, 10_000, 20_000);
+        assertLives(Chapter.TABLES_SACREES, 20_000, 40_000, 100_000);
+        assertLives(Chapter.DERNIER_TIRAGE, 120_000, 200_000, 400_000);
+    }
+
+    private static void assertLives(Chapter chapter, int first, int challengers, int boss) {
+        assertEquals(first, new Enemy(chapter.getFirstEnemy()).getMaxHp(), chapter.name());
+        for (EnemyKind kind : chapter.getChallengers()) assertEquals(challengers, new Enemy(kind).getMaxHp(), kind.name());
+        assertEquals(boss, new Enemy(chapter.getBoss()).getMaxHp(), chapter.name());
+        assertTrue(chapter.getBoss().isBoss());
     }
 
     @Test
@@ -72,7 +80,7 @@ class EnemyKindsTest {
         enemy.takeDamage(900); // avant ses Épines : ne compte pas
         enemy.resetDamageTaken();
         enemy.addThorns(10);
-        enemy.takeDamage(300);
+        enemy.takeDamage(150);
         Player player = new Player("Joueur", 1_000, List.of());
         player.addShield(10);
 
@@ -80,7 +88,15 @@ class EnemyKindsTest {
 
         ThornsEvent thorns = (ThornsEvent) turn.openingEvents().get(0);
         assertEquals(10, thorns.blocked);
-        assertEquals(20, thorns.damage, "10 % de 300, moins 10 de bouclier");
+        assertEquals(5, thorns.damage, "10 % de 150, moins 10 de bouclier");
+    }
+
+    @Test
+    void thornsNeverSendBackMoreThanTheirCap() {
+        Enemy enemy = new Enemy(EnemyKind.GARDIEN);
+        enemy.addThorns(2);
+        enemy.takeDamage(9_000); // 2 % de 9 000 = 180
+        assertEquals(EnemySymbol.THORNS_MAX, enemy.collectThorns());
     }
 
     @Test

@@ -156,7 +156,7 @@ public class TowerScreen extends ScreenAdapter {
         chapterLabel = new Label("", new Label.LabelStyle(labelFont, Color.WHITE));
         chapterTitle = new Label("", new Label.LabelStyle(chapterFont, Color.WHITE));
         artFrame     = new Image(hud.insetDrawable());
-        art          = new Image(new TextureRegionDrawable(new TextureRegion(enemyTextures.genesis)));
+        art          = new Image(new TextureRegionDrawable(new TextureRegion(enemyTextures.chapterArt(Chapter.GENESE))));
         lockMark     = new Label("?", new Label.LabelStyle(lockFont, Color.WHITE));
         lockMark.setAlignment(Align.center);
         description  = new Label("", new Label.LabelStyle(bodyFont, Color.WHITE));
@@ -204,6 +204,7 @@ public class TowerScreen extends ScreenAdapter {
         chapterLabel.setText(chapter.getLabel().toUpperCase());
         chapterTitle.setText(chapter.getTitle());
         description.setText(chapter.getDescription());
+        ((TextureRegionDrawable) art.getDrawable()).setRegion(new TextureRegion(enemyTextures.chapterArt(chapter)));
         art.setVisible(chapter.isOpen());
         lockMark.setVisible(!chapter.isOpen());
         startButton.setDisabled(!chapter.isOpen());
@@ -282,7 +283,7 @@ public class TowerScreen extends ScreenAdapter {
         float artScale = ART_SCALE;
         float artTop   = chapterTitle.getY() - 16f;
         float maxArtHeight = artTop - panelBottom - PANEL_PAD - 200f;
-        Texture texture = enemyTextures.genesis;
+        Texture texture = enemyTextures.chapterArt(Chapter.values()[Math.max(0, selected)]);
         while (artScale > 1f && (texture.getHeight() * artScale > maxArtHeight || texture.getWidth() * artScale > innerWidth)) {
             artScale -= 1f;
         }

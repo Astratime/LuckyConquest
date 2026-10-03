@@ -118,7 +118,13 @@ public class GameController {
      * vide les effets en attente du tour précédent.
      */
     public void restart() {
-        this.gameState = new GameState(starterDeck.get());
+        restart(EnemyKind.CROUPIER);
+    }
+
+    /** Comme {@link #restart()}, contre un ennemi {@code kind} (premier combat d'un chapitre). */
+    public void restart(EnemyKind kind) {
+        GameState fresh = new GameState(starterDeck.get());
+        this.gameState = new GameState(fresh.getPlayer(), new Enemy(kind));
         clearTurn();
     }
 

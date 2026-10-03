@@ -17,7 +17,19 @@ public enum EnemySymbol {
     /** Mord le joueur et rend à l'ennemi une part de ses PV max pour chaque PV volé. */
     FANG("CROC"),
     /** Toutes ses attaques frappent plus fort, jusqu'à la fin du combat. */
-    RAGE("RAGE");
+    RAGE("RAGE"),
+    /** Il triche : les jauges du joueur (Coffre, Sang, Lames) perdent une part de leur contenu. */
+    LOADED_DIE("DÉ PIPÉ"),
+    /** Il prend une part des gains du joueur ; ce qu'il vole renforce sa prochaine attaque. */
+    INTEREST("INTÉRÊTS"),
+    /** Il lance une roulette : rouge, ses attaques du tour doublent ; noir, ses Boucliers ; zéro, les deux. */
+    ZERO("ZÉRO"),
+    /** Il rejoue la dernière carte jouée par le joueur, à moitié de sa force. */
+    MIRROR("REFLET"),
+    /** Son compte à rebours avance ; arrivé au bout, il explose. */
+    HOURGLASS("SABLIER"),
+    /** Il fait tapis : à son tour suivant, sa mise double (ses attaques avec), sauf s'il est touché d'ici là. */
+    ALL_IN("TAPIS");
 
     /** Dégâts de base d'une Épée. */
     public static final int SWORD_DAMAGE   = 20;
@@ -35,6 +47,26 @@ public enum EnemySymbol {
     public static final int RAGE_ATTACK    = 3;
     /** La Rage ne dépasse pas ce bonus d'attaque. */
     public static final int RAGE_MAX       = 30;
+    /** Les Épines ne renvoient pas plus que ces dégâts en un tour. */
+    public static final int THORNS_MAX     = 20;
+    /** Part des jauges du joueur vidée par chaque Dé pipé, en pourcentage. */
+    public static final int DIE_PERCENT    = 25;
+    /** Part des gains du joueur prise par chaque Intérêts, en pourcentage. */
+    public static final int INTEREST_PERCENT = 5;
+    /** Gains volés pour chaque point d'attaque ajouté par les Intérêts. */
+    public static final int INTEREST_PER_ATTACK = 100;
+    /** Les Intérêts n'ajoutent pas plus que cette attaque. */
+    public static final int INTEREST_MAX   = 25;
+    /** Chances sur 37 que la roulette du Zéro tombe sur le zéro (le reste : moitié rouge, moitié noir). */
+    public static final int ZERO_POCKETS   = 5;
+    /** Tours de Sablier avant l'explosion. */
+    public static final int HOURGLASS_MAX  = 5;
+    /** Dégâts de l'explosion du Sablier (plus sa Rage). */
+    public static final int HOURGLASS_DAMAGE = 35;
+    /** Un coup du joueur d'au moins cette part de ses PV max (en pour mille) fait reculer son Sablier. */
+    public static final int HOURGLASS_HIT_PER_MILLE = 10;
+    /** Le Tapis ne monte pas au-delà de cette mise (multiplicateur de ses attaques). */
+    public static final int ALL_IN_MAX     = 4;
 
     private final String displayName;
 
@@ -44,6 +76,25 @@ public enum EnemySymbol {
 
     /** @return le nom affiché du symbole (ex : "ÉPÉE"). */
     public String getDisplayName() { return displayName; }
+
+    /**
+     * @return la description de l'effet de base du symbole chez l'ennemi
+     *         {@code kind} (ses Potions et ses Crocs soignent selon sa force de soin)
+     */
+    public String getDescription(EnemyKind kind) {
+        return switch (this) {
+            case POTION -> "Potion : soigne " + percent(kind.potionPercent(0)) + " % des PV max";
+            case FANG   -> "Croc : mord de " + FANG_DAMAGE + ". Chaque PV volé lui rend " + percent(kind.drainPercent())
+                + " % de ses PV max";
+            default     -> getDescription();
+        };
+    }
+
+    /** @return {@code value} sans décimale inutile (ex : "30", "1,5"). */
+    private static String percent(float value) {
+        return value == Math.round(value) ? String.valueOf(Math.round(value))
+            : String.valueOf(Math.round(value * 10f) / 10f).replace('.', ',');
+    }
 
     /** @return la description de l'effet de base du symbole, pour son infobulle. */
     public String getDescription() {
@@ -55,6 +106,14 @@ public enum EnemySymbol {
             case FANG   -> "Croc : mord de " + FANG_DAMAGE + ". Chaque PV volé lui rend " + FANG_DRAIN
                 + " % de ses PV max";
             case RAGE   -> "Rage : attaque +" + RAGE_ATTACK + ". Jusqu'à la fin du combat";
+            case LOADED_DIE -> "Dé pipé : tes jauges (Coffre, Sang, Lames) perdent " + DIE_PERCENT + " %";
+            case INTEREST -> "Intérêts : il prend " + INTEREST_PERCENT + " % de tes gains. Attaque +1 par "
+                + INTEREST_PER_ATTACK + " volés, au prochain coup. Sans gains, il mord";
+            case ZERO   -> "Zéro : rouge, ses attaques doublent. Noir, ses Boucliers. Zéro, les deux";
+            case MIRROR -> "Reflet : il rejoue ta dernière carte. À moitié de sa force";
+            case HOURGLASS -> "Sablier : +1. À " + HOURGLASS_MAX + ", il explose (" + HOURGLASS_DAMAGE
+                + "). Tes gros coups le font reculer";
+            case ALL_IN -> "Tapis : à son prochain tour, ses attaques doublent. Touche-le avant pour l'annuler";
         };
     }
 }
