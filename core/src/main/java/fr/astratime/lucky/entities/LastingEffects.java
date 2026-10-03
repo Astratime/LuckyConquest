@@ -32,6 +32,8 @@ public class LastingEffects {
     private int blood  = 0;
     /** Coffre (Carreau) : bouclier resté inutilisé à la fin des tours. */
     private int vault  = 0;
+    /** Rouleau bloqué au prochain tirage par le Rouleau interdit de l'ennemi (-1 : aucun). */
+    private int forbiddenReel = -1;
 
     /** Retire {@code symbol} des rouleaux pour les {@code turns} prochains tirages (prolonge s'il l'est déjà). */
     public void removeSymbol(Symbol symbol, int turns) {
@@ -112,6 +114,19 @@ public class LastingEffects {
         blood  -= lostBlood;
         vault  -= lostVault;
         return lostBlades + lostBlood + lostVault;
+    }
+
+    /** Le Rouleau interdit de l'ennemi bloque le rouleau {@code reel} au prochain tirage. */
+    public void forbidReel(int reel) { forbiddenReel = reel; }
+
+    /** @return le rouleau bloqué au prochain tirage, ou -1 si aucun. */
+    public int getForbiddenReel() { return forbiddenReel; }
+
+    /** Tirage : le rouleau bloqué l'est pour ce tirage, puis se libère. @return ce rouleau, ou -1 */
+    public int takeForbiddenReel() {
+        int reel = forbiddenReel;
+        forbiddenReel = -1;
+        return reel;
     }
 
     /** Fin d'un tirage : chaque symbole retiré se rapproche de son retour, la Corruption et Dans la manche de leur fin. */

@@ -3,6 +3,7 @@ package fr.astratime.lucky.controllers;
 import fr.astratime.lucky.entities.Card;
 import fr.astratime.lucky.entities.Enemy;
 import fr.astratime.lucky.entities.Player;
+import fr.astratime.lucky.entities.SlotMachine;
 import fr.astratime.lucky.entities.enemy.EnemyCards;
 import fr.astratime.lucky.entities.enemy.EnemyKind;
 import fr.astratime.lucky.entities.enemy.EnemySlotMachine;
@@ -23,6 +24,7 @@ import fr.astratime.lucky.entities.events.EnemyHealedEvent;
 import fr.astratime.lucky.entities.events.EnemyShieldedEvent;
 import fr.astratime.lucky.entities.events.Event;
 import fr.astratime.lucky.entities.events.PlayerDamagedEvent;
+import fr.astratime.lucky.entities.events.ReelForbiddenEvent;
 import fr.astratime.lucky.entities.events.ThornsEvent;
 
 import java.util.ArrayList;
@@ -59,6 +61,9 @@ import java.util.Random;
  *   <li>Tapis : à son tour suivant, sa mise double (ses attaques avec), sauf s'il est touché
  *       d'ici là ; un coup reçu la fait retomber.</li>
  * </ul>
+ * Sa force ({@link EnemyKind#getPower()}, qui grandit à chaque chapitre) multiplie ses attaques,
+ * ses Boucliers et tous ses effets. Le Rouleau interdit (Éclat Originel) bloque un rouleau du
+ * joueur à son prochain tirage.
  * Ses Potions et ses Crocs le soignent selon {@link EnemyKind#getHealScale()} ; l'Éclat
  * Originel change de symboles à mi-vie (sa deuxième phase).
  * Toutes les cartes piochées partent ensuite dans sa défausse.
@@ -88,6 +93,16 @@ public class EnemyTurnResolver {
      * @param vaultShare     part du Coffre du joueur ajoutée à l'attaque renvoyée
      */
     public EnemyTurnResult resolve(Enemy enemy, Player player, int reflectPercent, float vaultShare) {
+        return resolve(enemy, player, reflectPercent, vaultShare, 0);
+    }
+
+    /**
+     * Comme {@link #resolve(Enemy, Player, int, float)}, après un Bingo de bouclier du joueur.
+     *
+     * @param shieldReflect dégâts renvoyés à l'ennemi s'il attaque ce tour (le bouclier du Bingo), 0 sinon
+     */
+    public EnemyTurnResult resolve(Enemy enemy, Player player, int reflectPercent, float vaultShare,
+                                   int shieldReflect) {
         EnemyKind kind = enemy.getKind();
         List<Event> openingEvents = new ArrayList<>();
         if (enemy.enterPhaseTwo()) openingEvents.add(new EnemyPhaseEvent(enemy.getPhase()));
@@ -105,7 +120,12 @@ public class EnemyTurnResolver {
         int swordBonus = 0, healBonus = 0, shieldBonus = 0;
         int luckFactor = kind.royalBet() && enemy.getHpRatio() < LOW_HP_RATIO ? 2 : 1; // Mise royale
         Map<EnemySymbol, Integer> luck = new EnumMap<>(EnemySymbol.class);
+        boolean forbidReel = false;
         for (Card card : played) {
+            if (EnemyCards.isForbiddenReel(card)) {
+                forbidReel = true;
+                continue;
+            }
             switch (card.getSuit()) {
                 case PIQUE   -> swordBonus  += EnemyCards.swordBonus(card);
                 case COEUR   -> healBonus   += EnemyCards.healBonus(card);
@@ -136,8 +156,8 @@ public class EnemyTurnResolver {
                 case SWORD  -> events.add(turn.strike(EnemySymbol.SWORD_DAMAGE));
                 case FANG   -> bite(turn, events);
                 case THORNS -> {
-                    enemy.addThorns(EnemySymbol.THORNS_PERCENT);
-                    events.add(new EnemyThornsEvent(EnemySymbol.THORNS_PERCENT, enemy.getThornsPercent()));
+                    enemy.addThorns(kind.thornsPercent());
+                    events.add(new EnemyThornsEvent(kind.thornsPercent(), enemy.getThornsPercent()));
                 }
                 case RAGE   -> events.add(rage(enemy));
                 case SHIELD -> events.add(turn.shield(EnemySymbol.SHIELD_DEFENSE + shieldBonus));
@@ -146,11 +166,11 @@ public class EnemyTurnResolver {
                     if (kind.potionShields()) events.add(turn.shield(EnemySymbol.SHIELD_DEFENSE + shieldBonus));
                 }
                 case LOADED_DIE -> {
-                    int drained = player.getLastingEffects().drainGauges(EnemySymbol.DIE_PERCENT);
-                    events.add(new GaugesDrainedEvent(EnemySymbol.DIE_PERCENT, drained));
+                    int drained = player.getLastingEffects().drainGauges(kind.diePercent());
+                    events.add(new GaugesDrainedEvent(kind.diePercent(), drained));
                 }
                 case INTEREST -> {
-                    int stolen = Math.round(player.getGains() * EnemySymbol.INTEREST_PERCENT / 100f);
+                    int stolen = Math.round(player.getGains() * kind.interestPercent() / 100f);
                     if (stolen > 0) {
                         player.addGains(-stolen);
                         events.add(new GainsStolenEvent(stolen, enemy.addInterest(stolen)));
@@ -175,7 +195,12 @@ public class EnemyTurnResolver {
         }
 
         List<Event> afterEvents = new ArrayList<>();
-        if (turn.totalAttack > 0 && reflectPercent > 0) {
+        if (turn.totalAttack > 0 && shieldReflect > 0) {
+            // Bingo de bouclier : il frappe dans le bouclier, qui lui est renvoyé entier.
+            enemy.takeDamage(shieldReflect);
+            afterEvents.add(new DamageReflectedEvent(shieldReflect));
+        }
+        if (turn.totalAttack > 0 && reflectPercent > 0 && !enemy.isDefeated()) {
             // Le Coffre arme le renvoi : une part de son contenu s'ajoute à l'attaque renvoyée.
             float reflectBase = turn.totalAttack + player.getLastingEffects().getVault() * vaultShare;
             int reflected = Math.round(reflectBase * (reflectPercent / 100f));
@@ -183,6 +208,12 @@ public class EnemyTurnResolver {
                 enemy.takeDamage(reflected);
                 afterEvents.add(new DamageReflectedEvent(reflected));
             }
+        }
+
+        if (forbidReel) {
+            int reel = random.nextInt(SlotMachine.SYMBOL_COUNT);
+            player.getLastingEffects().forbidReel(reel);
+            afterEvents.add(new ReelForbiddenEvent(reel));
         }
 
         enemy.discard(drawn);
@@ -258,20 +289,21 @@ public class EnemyTurnResolver {
 
         /**
          * Il frappe de {@code base}, plus ses Piques, sa Rage et ses Intérêts,
-         * multipliés par sa mise (Tapis) et la roulette du Zéro ; le bouclier du
+         * multipliés par sa mise (Tapis), la roulette du Zéro et sa force ; le bouclier du
          * joueur absorbe le coup et s'use d'autant.
          */
         PlayerDamagedEvent strike(int base) {
-            int attack = (base + swordBonus + enemy.getRage() + enemy.spendInterest()) * enemy.getStake() * attackFactor;
+            int attack = enemy.getKind().empowered(
+                (base + swordBonus + enemy.getRage() + enemy.spendInterest()) * enemy.getStake() * attackFactor);
             totalAttack += attack;
             int shieldBefore = player.getShield();
             int lost = player.takeDamage(attack);
             return new PlayerDamagedEvent(lost, shieldBefore - player.getShield(), player.getShield());
         }
 
-        /** Il se protège de {@code defense}, multipliée par la roulette du Zéro. */
+        /** Il se protège de {@code defense}, multipliée par la roulette du Zéro et sa force. */
         EnemyShieldedEvent shield(int defense) {
-            int total = defense * shieldFactor;
+            int total = enemy.getKind().empowered(defense * shieldFactor);
             enemy.addShieldDefense(total);
             return new EnemyShieldedEvent(total);
         }
@@ -282,7 +314,8 @@ public class EnemyTurnResolver {
      * {@code hand}. En forme, il attaque (Piques), se protège (Carreaux), tente
      * sa chance (Trèfles), et ne se soigne (Cœurs) qu'en dernier ; sous
      * {@link #LOW_HP_RATIO} de vie, il se soigne d'abord. À couleur égale, le
-     * rang le plus fort passe devant.
+     * rang le plus fort passe devant. Une carte sans couleur (Rouleau interdit)
+     * est toujours jouée.
      */
     static List<Card> choose(List<Card> hand, float hpRatio) {
         return choose(hand, hpRatio, EnemyKind.CROUPIER);
@@ -296,7 +329,7 @@ public class EnemyTurnResolver {
     static List<Card> choose(List<Card> hand, float hpRatio, EnemyKind kind) {
         List<Card.Suit> priority = hpRatio < LOW_HP_RATIO ? kind.getLowHpPriority() : kind.getPriority();
         return hand.stream()
-            .sorted(Comparator.comparingInt((Card card) -> priority.indexOf(card.getSuit()))
+            .sorted(Comparator.comparingInt((Card card) -> card.getSuit() == null ? -1 : priority.indexOf(card.getSuit()))
                 .thenComparing(Comparator.comparingInt(Card::getRank).reversed()))
             .limit(kind.getPlaysPerTurn())
             .toList();

@@ -122,7 +122,7 @@ public class Enemy {
      * @return les dégâts à renvoyer au joueur (part des dégâts encaissés depuis la fin de son dernier tour)
      */
     public int collectThorns() {
-        int thorns = Math.min(EnemySymbol.THORNS_MAX, Math.round(damageTaken * thornsPercent / 100f));
+        int thorns = Math.min(kind.thornsMax(), Math.round(damageTaken * thornsPercent / 100f));
         thornsPercent = 0;
         return thorns;
     }

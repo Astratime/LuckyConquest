@@ -78,6 +78,7 @@ import fr.astratime.lucky.entities.events.GainsEarnedEvent;
 import fr.astratime.lucky.entities.events.GainsLostEvent;
 import fr.astratime.lucky.entities.events.JackpotEvent;
 import fr.astratime.lucky.entities.events.PlayerDamagedEvent;
+import fr.astratime.lucky.entities.events.ReelForbiddenEvent;
 import fr.astratime.lucky.entities.events.PistolShotEvent;
 import fr.astratime.lucky.entities.events.PlayerHealedEvent;
 import fr.astratime.lucky.entities.events.ShieldGainedEvent;
@@ -454,6 +455,9 @@ public class GameScreen extends ScreenAdapter {
         if (isCombatOver()) return;
         refreshCombos(); // les combinaisons du tour précédent s'éteignent
         hand.setLocked(false); // une carte achetée entre deux tours reste sur la table
+        slots.setBlockedReel(player().getLastingEffects().getForbiddenReel()); // Rouleau interdit de l'ennemi
+        GameController.Purchase gift = gameController.claimBonusCard(); // Bingo offert après un Bingo de bouclier
+        if (gift != null) placePurchase(gift);
         hand.deal(gameController.drawCards());
         refreshPlays();
         spinButton.setDisabled(false);
@@ -910,6 +914,10 @@ public class GameScreen extends ScreenAdapter {
         } else if (event instanceof EnemyHealedEvent heal) {
             if (heal.amount > 0) hud.revealEnemyHeal(heal.amount);
             enemyView.heal();
+        } else if (event instanceof ReelForbiddenEvent forbidden) {
+            slots.setBlockedReel(forbidden.reel);
+            sounds.shieldBreak.play();
+            screenShake.shake(0.25f, 7f);
         }
     }
 

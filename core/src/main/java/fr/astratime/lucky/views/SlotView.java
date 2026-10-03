@@ -10,6 +10,9 @@ import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.InputListener;
 import com.badlogic.gdx.scenes.scene2d.actions.Actions;
+import com.badlogic.gdx.scenes.scene2d.Touchable;
+import com.badlogic.gdx.scenes.scene2d.ui.Image;
+import com.badlogic.gdx.scenes.scene2d.ui.Stack;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.utils.Disposable;
 import fr.astratime.lucky.animations.EffectPopupAnimator;
@@ -36,7 +39,9 @@ import java.util.function.IntConsumer;
  * les rouleaux défilent puis s'arrêtent l'un après l'autre ; si les deux
  * premiers symboles sont identiques, le dernier ralentit et s'illumine pour
  * faire durer le suspense. Un Joker arrêté s'illumine puis se transforme en
- * symbole qu'il remplace. Possède les textures des symboles.
+ * symbole qu'il remplace. Un rouleau bloqué par le Rouleau interdit de
+ * l'ennemi est barré d'une croix rouge et ne tourne pas. Possède les textures
+ * des symboles.
  */
 public class SlotView implements Disposable {
 
@@ -79,6 +84,10 @@ public class SlotView implements Disposable {
     public static final float  RIPOSTE_AFTER_BONUS = POPUP_ENEMY_DELAY - POPUP_BONUS_DELAY;
     public static final float  POPUP_PLAYER_GAP   = 110f;  // à droite de la barre de vie du joueur
 
+    /** Croix d'un rouleau bloqué : la fenêtre barrée de la carte Rouleau interdit. */
+    private static final String LOCK_ASSET = "cards/dark/FORBIDDEN_REEL.png";
+    private static final int    LOCK_X = 40, LOCK_Y = 60, LOCK_SIZE_X = 110, LOCK_SIZE_Y = 120;
+
     private final TableView                  tableView;
     private final Tooltip                    tooltip;
     private final EffectPopupAnimator        popupAnimator;
@@ -90,6 +99,11 @@ public class SlotView implements Disposable {
     private final Table                      table    = new Table();
     /** Rouleaux, de gauche à droite. */
     private final List<ReelActor<Symbol>>    reels    = new ArrayList<>();
+    /** Croix posée sur chaque rouleau quand il est bloqué (Rouleau interdit). */
+    private final List<Image>                locks    = new ArrayList<>();
+    private final Texture                    lockTexture;
+    /** Rouleau bloqué (-1 : aucun). */
+    private int                              blockedReel = -1;
     /** Rouleaux pas encore arrêtés pendant un lancer. */
     private int                              reelsSpinning;
     /** Boucle du bruit des rouleaux et suspense en cours (-1 : aucun). */
@@ -114,11 +128,17 @@ public class SlotView implements Disposable {
             textures.put(symbol, texture);
             regions.put(symbol, new TextureRegion(texture));
         }
+        lockTexture = new Texture(Gdx.files.internal(LOCK_ASSET));
+        TextureRegion lockRegion = new TextureRegion(lockTexture, LOCK_X, LOCK_Y, LOCK_SIZE_X, LOCK_SIZE_Y);
         for (int i = 0; i < SlotMachine.SYMBOL_COUNT; i++) {
             ReelActor<Symbol> reel = new ReelActor<>(Symbol.values(), regions::get);
             addTooltip(reel);
-            table.add(reel).size(SYMBOL_WIDTH, SYMBOL_HEIGHT).pad(SYMBOL_PAD);
+            Image lock = new Image(lockRegion);
+            lock.setTouchable(Touchable.disabled);
+            lock.setVisible(false);
+            table.add(new Stack(reel, lock)).size(SYMBOL_WIDTH, SYMBOL_HEIGHT).pad(SYMBOL_PAD);
             reels.add(reel);
+            locks.add(lock);
         }
         table.pack();
     }
@@ -141,13 +161,24 @@ public class SlotView implements Disposable {
      * @param onAllStopped appelé quand les rouleaux sont arrêtés et les Jokers transformés
      */
     public void spin(Symbol[] symbols, Symbol[] resolved, IntConsumer onJoker, Runnable onAllStopped) {
+        int blocked = blockedReel;
         clear();
+        setBlockedReel(blocked); // le rouleau bloqué reste barré pendant le tirage
         int     last     = reels.size() - 1;
-        boolean suspense = symbols.length > 2 && (symbols[0] == symbols[1]
+        boolean suspense = symbols.length > 2 && symbols[last] != null && symbols[0] != null && (symbols[0] == symbols[1]
             || symbols[0] == Symbol.JOKER || symbols[1] == Symbol.JOKER);
-        reelsSpinning = reels.size();
+        reelsSpinning = 0;
+        for (int i = 0; i < reels.size(); i++) {
+            if (symbols[i] != null) reelsSpinning++;
+        }
+        if (reelsSpinning == 0) {
+            onAllStopped.run();
+            return;
+        }
+        int spinning = reelsSpinning;
         spinSoundId   = reelSpinSound.loop();
         for (int i = 0; i < reels.size(); i++) {
+            if (symbols[i] == null) continue; // rouleau bloqué : il ne tourne pas
             int   reelIndex = i;
             float stopAt    = FIRST_STOP + i * STOP_STEP;
             float slowAt    = -1f;
@@ -167,7 +198,7 @@ public class SlotView implements Disposable {
                     stopSpinSounds();
                     transformJokers(symbols, resolved, onJoker, onAllStopped);
                 } else {
-                    reelSpinSound.setVolume(spinSoundId, reelsSpinning / (float) reels.size()); // moins de rouleaux, moins de bruit
+                    reelSpinSound.setVolume(spinSoundId, reelsSpinning / (float) spinning); // moins de rouleaux, moins de bruit
                 }
             });
         }
@@ -211,12 +242,34 @@ public class SlotView implements Disposable {
         return reels.get(reel).localToStageCoordinates(new Vector2(SYMBOL_WIDTH / 2f, SYMBOL_HEIGHT / 2f));
     }
 
-    /** Vide les fenêtres des rouleaux et arrête tout défilement (nouveau combat). */
+    /** Vide les fenêtres des rouleaux, les libère et arrête tout défilement (nouveau combat). */
     public void clear() {
         stopSpinSounds();
         table.clearActions();
         reels.forEach(ReelActor::empty);
         for (int i = 0; i < reels.size(); i++) tableView.clearReelHighlight(i);
+        setBlockedReel(-1);
+    }
+
+    /**
+     * Barre le rouleau {@code reel} (Rouleau interdit de l'ennemi) : il se vide et
+     * ne tournera pas au prochain tirage ; -1 libère tous les rouleaux.
+     */
+    public void setBlockedReel(int reel) {
+        blockedReel = reel;
+        for (int i = 0; i < locks.size(); i++) {
+            boolean blocked = i == reel;
+            Image lock = locks.get(i);
+            if (blocked && !lock.isVisible()) {
+                reels.get(i).empty();
+                lock.setVisible(true);
+                lock.getColor().a = 0f;
+                lock.addAction(Actions.fadeIn(0.25f));
+            } else if (!blocked) {
+                lock.clearActions();
+                lock.setVisible(false);
+            }
+        }
     }
 
     /** Place la ligne dans les rouleaux de la machine dessinée sur la table (après un redimensionnement). */
@@ -320,5 +373,6 @@ public class SlotView implements Disposable {
     @Override
     public void dispose() {
         textures.values().forEach(Texture::dispose);
+        lockTexture.dispose();
     }
 }

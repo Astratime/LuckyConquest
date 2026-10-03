@@ -79,14 +79,25 @@ public enum EnemySymbol {
 
     /**
      * @return la description de l'effet de base du symbole chez l'ennemi
-     *         {@code kind} (ses Potions et ses Crocs soignent selon sa force de soin)
+     *         {@code kind} (renforcé par sa force ; ses Potions et ses Crocs
+     *         soignent selon sa force de soin)
      */
     public String getDescription(EnemyKind kind) {
         return switch (this) {
+            case SWORD  -> "Épée : attaque de " + kind.empowered(SWORD_DAMAGE);
+            case SHIELD -> "Bouclier : défense +" + kind.empowered(SHIELD_DEFENSE) + " pendant le tour suivant";
             case POTION -> "Potion : soigne " + percent(kind.potionPercent(0)) + " % des PV max";
-            case FANG   -> "Croc : mord de " + FANG_DAMAGE + ". Chaque PV volé lui rend " + percent(kind.drainPercent())
-                + " % de ses PV max";
-            default     -> getDescription();
+            case THORNS -> "Épines : renvoie " + kind.thornsPercent() + " % de tes dégâts. Au début de son tour";
+            case FANG   -> "Croc : mord de " + kind.empowered(FANG_DAMAGE) + ". Chaque PV volé lui rend "
+                + percent(kind.drainPercent()) + " % de ses PV max";
+            case RAGE   -> "Rage : attaque +" + kind.empowered(RAGE_ATTACK) + ". Jusqu'à la fin du combat";
+            case LOADED_DIE -> "Dé pipé : tes jauges (Coffre, Sang, Lames) perdent " + kind.diePercent() + " %";
+            case INTEREST -> "Intérêts : il prend " + kind.interestPercent() + " % de tes gains. Attaque +1 par " + INTEREST_PER_ATTACK + " volés, au prochain coup. Sans gains, il mord";
+            case ZERO   -> "Zéro : rouge, ses attaques doublent. Noir, ses Boucliers. Zéro, les deux";
+            case MIRROR -> "Reflet : il rejoue ta dernière carte. À moitié de sa force";
+            case HOURGLASS -> "Sablier : +1. À " + HOURGLASS_MAX + ", il explose (" + kind.empowered(HOURGLASS_DAMAGE)
+                + "). Tes gros coups le font reculer";
+            case ALL_IN -> "Tapis : à son prochain tour, ses attaques doublent. Touche-le avant pour l'annuler";
         };
     }
 
@@ -96,24 +107,8 @@ public enum EnemySymbol {
             : String.valueOf(Math.round(value * 10f) / 10f).replace('.', ',');
     }
 
-    /** @return la description de l'effet de base du symbole, pour son infobulle. */
+    /** @return la description de l'effet de base du symbole (chez le croupier), pour son infobulle. */
     public String getDescription() {
-        return switch (this) {
-            case SWORD  -> "Épée : attaque de " + SWORD_DAMAGE;
-            case SHIELD -> "Bouclier : défense +" + SHIELD_DEFENSE + " pendant le tour suivant";
-            case POTION -> "Potion : soigne " + POTION_PERCENT + " % des PV max";
-            case THORNS -> "Épines : renvoie " + THORNS_PERCENT + " % de tes dégâts. Au début de son tour";
-            case FANG   -> "Croc : mord de " + FANG_DAMAGE + ". Chaque PV volé lui rend " + FANG_DRAIN
-                + " % de ses PV max";
-            case RAGE   -> "Rage : attaque +" + RAGE_ATTACK + ". Jusqu'à la fin du combat";
-            case LOADED_DIE -> "Dé pipé : tes jauges (Coffre, Sang, Lames) perdent " + DIE_PERCENT + " %";
-            case INTEREST -> "Intérêts : il prend " + INTEREST_PERCENT + " % de tes gains. Attaque +1 par "
-                + INTEREST_PER_ATTACK + " volés, au prochain coup. Sans gains, il mord";
-            case ZERO   -> "Zéro : rouge, ses attaques doublent. Noir, ses Boucliers. Zéro, les deux";
-            case MIRROR -> "Reflet : il rejoue ta dernière carte. À moitié de sa force";
-            case HOURGLASS -> "Sablier : +1. À " + HOURGLASS_MAX + ", il explose (" + HOURGLASS_DAMAGE
-                + "). Tes gros coups le font reculer";
-            case ALL_IN -> "Tapis : à son prochain tour, ses attaques doublent. Touche-le avant pour l'annuler";
-        };
+        return getDescription(EnemyKind.CROUPIER);
     }
 }

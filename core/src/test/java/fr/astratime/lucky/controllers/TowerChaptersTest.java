@@ -45,7 +45,7 @@ class TowerChaptersTest {
     }
 
     @Test
-    void aLoadedDieEmptiesAQuarterOfThePlayerGauges() {
+    void aLoadedDieEmptiesPartOfThePlayerGauges() {
         Player[] holder = new Player[1];
         EnemyTurnResult turn = turnWith(EnemySymbol.LOADED_DIE, () -> new Enemy(EnemyKind.TRICHEUR), () -> {
             holder[0] = new Player("Joueur", 1_000_000, List.of());
@@ -56,8 +56,8 @@ class TowerChaptersTest {
         long dice = count(turn, EnemySymbol.LOADED_DIE);
         int expectedVault = 100, expectedBlood = 40;
         for (int i = 0; i < dice; i++) {
-            expectedVault -= (int) Math.ceil(expectedVault * EnemySymbol.DIE_PERCENT / 100.0);
-            expectedBlood -= (int) Math.ceil(expectedBlood * EnemySymbol.DIE_PERCENT / 100.0);
+            expectedVault -= (int) Math.ceil(expectedVault * EnemyKind.TRICHEUR.diePercent() / 100.0);
+            expectedBlood -= (int) Math.ceil(expectedBlood * EnemyKind.TRICHEUR.diePercent() / 100.0);
         }
         assertEquals(expectedVault, holder[0].getLastingEffects().getVault());
         assertEquals(expectedBlood, holder[0].getLastingEffects().getBlood());
@@ -80,8 +80,10 @@ class TowerChaptersTest {
             return holder[0];
         });
         GainsStolenEvent first = events(turn, GainsStolenEvent.class).get(0);
-        assertEquals(500, first.amount, "5 % de 10 000");
-        assertEquals(500 / EnemySymbol.INTEREST_PER_ATTACK, first.attack);
+        int percent = EnemyKind.USURIER.interestPercent();
+        assertTrue(percent > EnemySymbol.INTEREST_PERCENT, "renforcés au chapitre 2");
+        assertEquals(10_000 * percent / 100, first.amount);
+        assertEquals(first.amount / EnemySymbol.INTEREST_PER_ATTACK, first.attack);
         assertTrue(holder[0].getGains() < 10_000);
     }
 
@@ -96,7 +98,8 @@ class TowerChaptersTest {
                 int bonus = turn.played().stream().filter(c -> c.getSuit() == Card.Suit.CARREAU)
                     .mapToInt(EnemyCards::shieldBonus).sum();
                 for (EnemyShieldedEvent shield : events(turn, EnemyShieldedEvent.class)) {
-                    assertEquals((EnemySymbol.SHIELD_DEFENSE + bonus) * 2, shield.defense, "noir : Boucliers doublés");
+                    assertEquals(EnemyKind.ROULETTE.empowered((EnemySymbol.SHIELD_DEFENSE + bonus) * 2), shield.defense,
+                        "noir : Boucliers doublés");
                 }
             }
         }
@@ -114,7 +117,8 @@ class TowerChaptersTest {
         List<EnemyMirrorEvent> mirrors = events(turn, EnemyMirrorEvent.class);
         assertEquals(count(turn, EnemySymbol.MIRROR), mirrors.size());
         assertEquals("13 de Carreau", mirrors.get(0).cardName);
-        int copied = (EnemySymbol.SHIELD_DEFENSE + EnemyCards.shieldBonus(EnemyCards.card(Card.Suit.CARREAU, 13))) / 2;
+        int copied = EnemyKind.MIROIR.empowered(
+            (EnemySymbol.SHIELD_DEFENSE + EnemyCards.shieldBonus(EnemyCards.card(Card.Suit.CARREAU, 13))) / 2);
         assertTrue(events(turn, EnemyShieldedEvent.class).stream().anyMatch(e -> e.defense == copied),
             "un Carreau copié : un Bouclier à moitié de sa force");
     }
@@ -182,9 +186,10 @@ class TowerChaptersTest {
             q.takeDamage(90_000);
             return q;
         }, () -> new Player("Joueur", 1_000_000, List.of()));
+        float most = EnemyKind.REINE.potionPercent(Enemy.PLAYS_PER_TURN * 20); // tous ses Cœurs au plus fort
         for (EnemyHealedEvent heal : events(turn, EnemyHealedEvent.class)) {
-            assertTrue(heal.amount <= Math.round(100_000 * EnemyKind.REINE.potionPercent(20) / 100f),
-                "soin d'une Potion : au plus " + EnemyKind.REINE.potionPercent(20) + " % de ses PV max");
+            assertTrue(heal.amount <= Math.round(100_000 * most / 100f),
+                "soin d'une Potion : au plus " + most + " % de ses PV max");
         }
     }
 }

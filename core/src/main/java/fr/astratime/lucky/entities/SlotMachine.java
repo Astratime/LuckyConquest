@@ -43,7 +43,8 @@ public class SlotMachine {
      * boosts du {@code spinContext}, sans les symboles retirés. Un jackpot
      * garanti (Bingo) donne trois fois le même symbole (celui imposé par la
      * carte, sinon tiré au hasard, jamais le Joker) ; sinon,
-     * l'Aimant peut transformer un tirage sans paire en paire.
+     * l'Aimant peut transformer un tirage sans paire en paire. Un rouleau bloqué
+     * (Rouleau interdit de l'ennemi) reste vide ({@code null}) : pas de Bingo possible.
      *
      * @param spinContext modificateurs du spin pour ce tour
      * @return les trois symboles arrêtés sur les rouleaux (Jokers compris)
@@ -53,16 +54,30 @@ public class SlotMachine {
         if (spinContext.isJackpotForced()) {
             Symbol symbol = spinContext.getJackpotSymbol();
             Arrays.fill(result, symbol != null ? symbol : weightedRandom(spinContext, false));
-            return result;
+            return block(result, spinContext);
         }
         for (int i = 0; i < result.length; i++) {
             result[i] = weightedRandom(spinContext, true);
         }
+        block(result, spinContext);
         if (!hasPairOrJoker(result) && random.nextFloat() < spinContext.getPairChance()) {
-            int from = random.nextInt(SYMBOL_COUNT);
-            int to   = (from + 1 + random.nextInt(SYMBOL_COUNT - 1)) % SYMBOL_COUNT;
-            result[to] = result[from];
+            List<Integer> open = new ArrayList<>();
+            for (int i = 0; i < SYMBOL_COUNT; i++) {
+                if (result[i] != null) open.add(i);
+            }
+            if (open.size() >= 2) {
+                int from = open.remove(random.nextInt(open.size()));
+                int to   = open.get(random.nextInt(open.size()));
+                result[to] = result[from];
+            }
         }
+        return result;
+    }
+
+    /** Vide le rouleau bloqué du tirage, s'il y en a un. @return {@code result} */
+    private static Symbol[] block(Symbol[] result, SpinContext spinContext) {
+        int blocked = spinContext.getBlockedReel();
+        if (blocked >= 0 && blocked < result.length) result[blocked] = null;
         return result;
     }
 
@@ -80,10 +95,12 @@ public class SlotMachine {
     public Symbol[] resolveJokers(Symbol[] drawn, SpinContext spinContext) {
         Symbol[] resolved = drawn.clone();
         List<Symbol> others = new ArrayList<>();
+        int jokers = 0;
         for (Symbol symbol : drawn) {
-            if (symbol != Symbol.JOKER) others.add(symbol);
+            if (symbol == Symbol.JOKER) jokers++;
+            else if (symbol != null) others.add(symbol); // un rouleau bloqué ne compte pas
         }
-        if (others.size() == drawn.length) return resolved;
+        if (jokers == 0) return resolved;
 
         Symbol value;
         if (others.isEmpty()) {
@@ -104,7 +121,17 @@ public class SlotMachine {
         for (Symbol symbol : s) {
             if (symbol == Symbol.JOKER) return true;
         }
-        return s[0] == s[1] || s[1] == s[2] || s[0] == s[2];
+        return hasPair(s);
+    }
+
+    /** @return {@code true} si deux symboles (non vides) sont identiques. */
+    public static boolean hasPair(Symbol[] s) {
+        for (int i = 0; i < s.length; i++) {
+            for (int j = i + 1; j < s.length; j++) {
+                if (s[i] != null && s[i] == s[j]) return true;
+            }
+        }
+        return false;
     }
 
     /** @return le poids de tirage de {@code symbol} ce tour (0 s'il est retiré des rouleaux). */

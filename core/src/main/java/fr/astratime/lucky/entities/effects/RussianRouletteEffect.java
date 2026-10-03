@@ -13,9 +13,9 @@ import java.util.List;
 
 /**
  * Roulette russe : le joueur retourne une carte parmi trois, faces cachées.
- * Deux sont des cartes Roulette : le pistolet multiplie après le tirage les
- * dégâts du meilleur symbole d'attaque ({@link PistolEffect}). La troisième
- * est le Joker maudit : le joueur perd une partie de ses gains.
+ * Quelle que soit la carte, le pistolet multiplie après le tirage les dégâts
+ * du meilleur symbole d'attaque ({@link PistolEffect}). Une des trois est le
+ * Joker maudit : le joueur perd en plus une partie de ses gains.
  */
 public class RussianRouletteEffect extends Effect {
 
@@ -50,8 +50,8 @@ public class RussianRouletteEffect extends Effect {
 
     @Override
     public String getDescription() {
-        return "Choisissez une carte. Pistolet : dégâts du meilleur symbole d'attaque x" + multiplier
-            + ". Joker maudit : -" + penaltyPercent + "% de gains";
+        return "Choisissez une carte. Le pistolet tire toujours : dégâts du meilleur symbole d'attaque x" + multiplier
+            + ". Joker maudit : -" + penaltyPercent + "% de gains en plus";
     }
 
     @Override

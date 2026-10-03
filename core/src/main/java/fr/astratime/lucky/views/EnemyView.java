@@ -179,6 +179,7 @@ public class EnemyView implements Disposable {
         Enemy current = enemy.get();
         EnemyKind kind = current.getKind();
         StringBuilder text = new StringBuilder(kind.getDescription());
+        if (kind.getPower() > 100) text.append("\nForce ").append(kind.powerText()).append(" : attaques, défense et effets");
         text.append("\nDéfense : ").append(shownDefense());
         text.append("\nRouleaux : ").append(kind.describeReels(current.getPhase()));
         if (kind.hasPhaseTwo() && current.getPhase() < 2) {
@@ -187,6 +188,7 @@ public class EnemyView implements Disposable {
         if (kind.playsAtRandom()) text.append("\nJoue ses cartes au hasard");
         if (kind.potionShields()) text.append("\nSes Potions reforment aussi sa défense");
         if (kind.royalBet()) text.append("\nMise royale : ses Trèfles comptent double sous la moitié de ses PV");
+        if (kind.forbidsReels()) text.append("\nRouleau interdit : bloque un de tes rouleaux. Pas de Bingo possible");
         text.append("\nPioche ").append(Enemy.HAND_SIZE).append(" cartes et en joue ").append(kind.getPlaysPerTurn())
             .append(" à chaque tour");
         if (current.getRage() > 0) text.append("\nRage : attaque +").append(current.getRage());
@@ -394,24 +396,27 @@ public class EnemyView implements Disposable {
                 ((TextureRegionDrawable) card.getDrawable()).setRegion(new TextureRegion(face));
                 flipSound.play();
                 nod();
-                hoverTooltip(card, played::getName, () -> EnemyCards.describe(played));
-                popups.play(List.of(new EffectPopup(bonusText(played), styleOf(played), PopupScale.SECONDARY_INTENSITY * 0.7f)),
+                EnemyKind kind = enemy.get().getKind();
+                hoverTooltip(card, played::getName, () -> EnemyCards.describe(played, kind));
+                popups.play(List.of(new EffectPopup(bonusText(played, kind), styleOf(played), PopupScale.SECONDARY_INTENSITY * 0.7f)),
                     card.getX() + card.getWidth() / 2f, card.getY() - CARD_POPUP_GAP);
             }),
             Actions.scaleTo(1f, 1f, FLIP_TIME, Interpolation.pow2Out)));
     }
 
-    /** @return le bonus d'une carte jouée, en quelques mots (ex : "ÉPÉE +10"). */
-    private static String bonusText(Card card) {
+    /** @return le bonus d'une carte jouée, en quelques mots (ex : "ÉPÉE +10"), chez un ennemi {@code kind}. */
+    private static String bonusText(Card card, EnemyKind kind) {
+        if (card.getSuit() == null) return "ROULEAU INTERDIT";
         return switch (card.getSuit()) {
-            case PIQUE   -> "ATTAQUE +" + EnemyCards.swordBonus(card);
+            case PIQUE   -> "ATTAQUE +" + kind.empowered(EnemyCards.swordBonus(card));
             case COEUR   -> "POTION +" + EnemyCards.healBonus(card) + "%";
-            case CARREAU -> "BOUCLIER +" + EnemyCards.shieldBonus(card);
+            case CARREAU -> "BOUCLIER +" + kind.empowered(EnemyCards.shieldBonus(card));
             case TREFLE  -> "CHANCE +" + EnemyCards.luckBonus(card) + "%";
         };
     }
 
     private static EffectPopup.Style styleOf(Card card) {
+        if (card.getSuit() == null) return EffectPopup.Style.DAMAGE;
         return switch (card.getSuit()) {
             case PIQUE   -> EffectPopup.Style.ATTACK;
             case COEUR   -> EffectPopup.Style.DRAIN;

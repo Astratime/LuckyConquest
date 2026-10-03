@@ -171,6 +171,14 @@ public enum EnemyKind {
         List.of(Card.Suit.PIQUE, Card.Suit.CARREAU, Card.Suit.TREFLE, Card.Suit.COEUR),
         List.of(Card.Suit.COEUR, Card.Suit.CARREAU, Card.Suit.PIQUE, Card.Suit.TREFLE));
 
+    /** Force des ennemis du chapitre 2, en % : leurs attaques, défenses et effets sont multipliés d'autant. */
+    public static final int CHAPTER_2_POWER = 150;
+    /** Force des ennemis du chapitre 3, en %. */
+    public static final int CHAPTER_3_POWER = 200;
+
+    /** Rouleaux interdits dans le deck de l'Éclat Originel. */
+    static final int FORBIDDEN_REELS = 1;
+
     /** Sous cette part de vie, l'Éclat Originel passe à sa deuxième phase. */
     public static final float PHASE_TWO_RATIO = 0.5f;
 
@@ -212,8 +220,45 @@ public enum EnemyKind {
     public String getDescription() { return description; }
     /** @return ses points de vie maximum. */
     public int getMaxHp() { return maxHp; }
-    /** @return sa défense de base, reformée à chacun de ses tours. */
-    public int getBaseDefense() { return baseDefense; }
+    /** @return sa défense de base (renforcée par sa {@linkplain #getPower() force}), reformée à chacun de ses tours. */
+    public int getBaseDefense() { return empowered(baseDefense); }
+
+    /**
+     * @return sa force, en % : le multiplicateur de ses attaques, de ses défenses
+     *         et de tous ses effets (100 au chapitre 1, puis plus à chaque chapitre)
+     */
+    public int getPower() {
+        return switch (this) {
+            case CHEF, TRICHEUR, USURIER, ROULETTE, REINE -> CHAPTER_2_POWER;
+            case GARDIENNE, MIROIR, HORLOGER, FOU, ECLAT  -> CHAPTER_3_POWER;
+            default -> 100;
+        };
+    }
+
+    /** @return {@code value} multiplié par sa {@linkplain #getPower() force} (arrondi). */
+    public int empowered(int value) { return Math.round(value * getPower() / 100f); }
+
+    /** @return sa force en multiplicateur affichable (ex : "x1,5"). */
+    public String powerText() {
+        float factor = getPower() / 100f;
+        String text = factor == Math.round(factor) ? String.valueOf(Math.round(factor)) : String.valueOf(factor);
+        return "x" + text.replace('.', ',');
+    }
+
+    /** @return la part des dégâts du joueur renvoyée par chaque Épines, en %. */
+    public int thornsPercent() { return empowered(EnemySymbol.THORNS_PERCENT); }
+
+    /** @return les dégâts maximum que ses Épines renvoient en un tour. */
+    public int thornsMax() { return empowered(EnemySymbol.THORNS_MAX); }
+
+    /** @return la part des jauges du joueur vidée par chaque Dé pipé, en %. */
+    public int diePercent() { return Math.min(100, empowered(EnemySymbol.DIE_PERCENT)); }
+
+    /** @return la part des gains du joueur prise par chaque Intérêts, en %. */
+    public int interestPercent() { return empowered(EnemySymbol.INTEREST_PERCENT); }
+
+    /** @return {@code true} si son deck contient le Rouleau interdit (l'Éclat Originel). */
+    public boolean forbidsReels() { return this == ECLAT; }
     /** @return les cartes qu'il joue à chaque tour, parmi celles piochées. */
     public int getPlaysPerTurn() { return Enemy.PLAYS_PER_TURN; }
     /** @return {@code true} pour le boss d'un chapitre. */
@@ -228,11 +273,11 @@ public enum EnemyKind {
 
     /** @return les points de vie que rend une Potion renforcée de {@code bonusPercent} (Cœurs), en % de ses PV max. */
     public float potionPercent(int bonusPercent) {
-        return (EnemySymbol.POTION_PERCENT + bonusPercent) * healScale / 100f;
+        return (EnemySymbol.POTION_PERCENT + bonusPercent) * healScale * getPower() / 10_000f;
     }
 
     /** @return la part de ses PV max qu'un Croc lui rend pour chaque PV volé, en %. */
-    public float drainPercent() { return EnemySymbol.FANG_DRAIN * healScale / 100f; }
+    public float drainPercent() { return EnemySymbol.FANG_DRAIN * healScale * getPower() / 10_000f; }
 
     /** @return {@code true} s'il joue ses cartes au hasard (la Roulette Vivante). */
     public boolean playsAtRandom() { return this == ROULETTE; }
@@ -271,6 +316,9 @@ public enum EnemyKind {
         List<Card> cards = new ArrayList<>();
         for (Map.Entry<Card.Suit, int[]> entry : deck.entrySet()) {
             for (int rank : entry.getValue()) cards.add(EnemyCards.card(entry.getKey(), rank));
+        }
+        if (forbidsReels()) {
+            for (int i = 0; i < FORBIDDEN_REELS; i++) cards.add(EnemyCards.forbiddenReel());
         }
         return cards;
     }
