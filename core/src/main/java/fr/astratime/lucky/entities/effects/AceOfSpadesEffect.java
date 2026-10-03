@@ -54,8 +54,8 @@ public class AceOfSpadesEffect extends Effect {
 
     @Override
     public String getDescription() {
-        return "Exécution : consomme 10% des gains (1 Lame par " + GAINS_PER_BLADE
-            + "), puis toutes les Lames : attaque x(1 + 0,5 par Lame), ignore la défense";
+        return "Exécution : consomme 10% des gains. +1 Lame tous les " + GAINS_PER_BLADE
+            + " gains consommés. Attaque multipliée par (1 + 0,5 x Lame). Les symboles d'attaque ignorent la défense";
     }
 
     /** Textes fixes : aucun, ils dépendent des gains consommés (voir {@link #onPlay}). */
