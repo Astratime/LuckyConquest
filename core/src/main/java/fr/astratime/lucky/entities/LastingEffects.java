@@ -99,6 +99,21 @@ public class LastingEffects {
         vault  *= factor;
     }
 
+    /**
+     * Retire {@code percent} % de chaque jauge (Lames, Sang, Coffre), arrondi au-dessus (Dé pipé de l'ennemi).
+     *
+     * @return le total retiré des trois jauges
+     */
+    public int drainGauges(int percent) {
+        int lostBlades = (int) Math.ceil(blades * percent / 100.0);
+        int lostBlood  = (int) Math.ceil(blood * percent / 100.0);
+        int lostVault  = (int) Math.ceil(vault * percent / 100.0);
+        blades -= lostBlades;
+        blood  -= lostBlood;
+        vault  -= lostVault;
+        return lostBlades + lostBlood + lostVault;
+    }
+
     /** Fin d'un tirage : chaque symbole retiré se rapproche de son retour, la Corruption et Dans la manche de leur fin. */
     public void endTurn() {
         removedSymbols.replaceAll((symbol, turns) -> turns - 1);

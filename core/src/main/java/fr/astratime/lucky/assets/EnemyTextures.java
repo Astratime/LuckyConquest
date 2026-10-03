@@ -7,6 +7,7 @@ import com.badlogic.gdx.utils.Disposable;
 import fr.astratime.lucky.entities.Card;
 import fr.astratime.lucky.entities.enemy.EnemyKind;
 import fr.astratime.lucky.entities.enemy.EnemySymbol;
+import fr.astratime.lucky.entities.tower.Chapter;
 
 import java.util.EnumMap;
 import java.util.Map;
@@ -15,7 +16,7 @@ import java.util.Map;
  * Textures des ennemis : le portrait de chacun (le croupier démoniaque et ceux
  * de la Tour des épreuves, voir {@link EnemyPortraits}) et sa silhouette
  * blanche, pour le faire flasher quand il est touché, les symboles de leurs
- * machines à sous, dessinés en pixel art, l'illustration du chapitre 1, et
+ * machines à sous, dessinés en pixel art, l'illustration de chaque chapitre, et
  * leurs cartes (jeu sombre, chargées à la demande).
  */
 public class EnemyTextures implements Disposable {
@@ -31,8 +32,8 @@ public class EnemyTextures implements Disposable {
     public final Texture croupierFlash;
     /** Dos des cartes de l'ennemi. */
     public final Texture cardBack;
-    /** Illustration du chapitre 1 : la comète dorée s'écrase sur la Terre. */
-    public final Texture genesis;
+    /** Illustrations des chapitres de la Tour des épreuves. */
+    private final Map<Chapter, Texture>     chapterArt = new EnumMap<>(Chapter.class);
     private final Map<EnemySymbol, Texture> symbols = new EnumMap<>(EnemySymbol.class);
     private final Map<EnemyKind, Texture>   portraits = new EnumMap<>(EnemyKind.class);
     private final Map<EnemyKind, Texture>   flashes   = new EnumMap<>(EnemyKind.class);
@@ -51,13 +52,31 @@ public class EnemyTextures implements Disposable {
         symbols.put(EnemySymbol.THORNS, texture(EnemyPortraits.thorns(), false));
         symbols.put(EnemySymbol.FANG,   texture(EnemyPortraits.fang(), false));
         symbols.put(EnemySymbol.RAGE,   texture(EnemyPortraits.rage(), false));
+        symbols.put(EnemySymbol.LOADED_DIE, texture(Chapter2Art.loadedDie(), false));
+        symbols.put(EnemySymbol.INTEREST,   texture(Chapter2Art.interest(), false));
+        symbols.put(EnemySymbol.ZERO,       texture(Chapter2Art.zero(), false));
+        symbols.put(EnemySymbol.MIRROR,     texture(Chapter3Art.mirror(), false));
+        symbols.put(EnemySymbol.HOURGLASS,  texture(Chapter3Art.hourglass(), false));
+        symbols.put(EnemySymbol.ALL_IN,     texture(Chapter3Art.allIn(), false));
         portraits.put(EnemyKind.CROUPIER, croupier);
         flashes.put(EnemyKind.CROUPIER, croupierFlash);
         addPortrait(EnemyKind.GARDIEN, EnemyPortraits.gardien());
         addPortrait(EnemyKind.SANGSUE, EnemyPortraits.sangsue());
         addPortrait(EnemyKind.BRETTEUR, EnemyPortraits.bretteur());
         addPortrait(EnemyKind.COMETE, EnemyPortraits.comete());
-        genesis = texture(EnemyPortraits.genesis(), false);
+        addPortrait(EnemyKind.CHEF, Chapter2Art.chef());
+        addPortrait(EnemyKind.TRICHEUR, Chapter2Art.tricheur());
+        addPortrait(EnemyKind.USURIER, Chapter2Art.usurier());
+        addPortrait(EnemyKind.ROULETTE, Chapter2Art.roulette());
+        addPortrait(EnemyKind.REINE, Chapter2Art.reine());
+        addPortrait(EnemyKind.GARDIENNE, Chapter3Art.gardienne());
+        addPortrait(EnemyKind.MIROIR, Chapter3Art.miroir());
+        addPortrait(EnemyKind.HORLOGER, Chapter3Art.horloger());
+        addPortrait(EnemyKind.FOU, Chapter3Art.fou());
+        addPortrait(EnemyKind.ECLAT, Chapter3Art.eclat());
+        chapterArt.put(Chapter.GENESE, texture(EnemyPortraits.genesis(), false));
+        chapterArt.put(Chapter.TABLES_SACREES, texture(Chapter2Art.tables(), false));
+        chapterArt.put(Chapter.DERNIER_TIRAGE, texture(Chapter3Art.crater(), false));
     }
 
     private void addPortrait(EnemyKind kind, int[][] grid) {
@@ -74,6 +93,9 @@ public class EnemyTextures implements Disposable {
     /** @return la silhouette blanche du portrait de l'ennemi {@code kind}. */
     public Texture portraitFlash(EnemyKind kind) { return flashes.get(kind); }
 
+    /** @return l'illustration du chapitre {@code chapter}. */
+    public Texture chapterArt(Chapter chapter) { return chapterArt.get(chapter); }
+
     /** @return la face de la carte sombre {@code card} (chargée une fois, puis gardée). */
     public Texture card(Card card) {
         return cards.get(card);
@@ -89,7 +111,7 @@ public class EnemyTextures implements Disposable {
      * nœud papillon, gilet sombre sur chemise blanche, et un éventail de cartes
      * contre le gilet.
      */
-    private static int[][] croupierGrid() {
+    static int[][] croupierGrid() {
         int w = 34, h = 42;
         int[][] g = new int[h][w];
         int hat = c("2a2233"), hatLight = c("4a3f58"), band = c("c0283a");
@@ -287,6 +309,6 @@ public class EnemyTextures implements Disposable {
         portraits.values().forEach(Texture::dispose); // le croupier compris
         flashes.values().forEach(Texture::dispose);
         symbols.values().forEach(Texture::dispose);
-        genesis.dispose();
+        chapterArt.values().forEach(Texture::dispose);
     }
 }

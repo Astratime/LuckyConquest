@@ -29,8 +29,10 @@ import fr.astratime.lucky.entities.enemy.EnemySlotMachine;
 import fr.astratime.lucky.entities.enemy.EnemySymbol;
 import fr.astratime.lucky.entities.enemy.EnemyTurnResult;
 import fr.astratime.lucky.entities.events.EnemyDamagedEvent;
+import fr.astratime.lucky.entities.events.EnemyPhaseEvent;
 import fr.astratime.lucky.entities.events.EnemyShieldedEvent;
 import fr.astratime.lucky.entities.events.Event;
+import fr.astratime.lucky.entities.events.PlayerDamagedEvent;
 import fr.astratime.lucky.popups.EffectPopup;
 import fr.astratime.lucky.popups.PopupScale;
 
@@ -99,6 +101,8 @@ public class EnemyView implements Disposable {
     private final EnemySymbol[] shownSymbols = {EnemySymbol.SWORD, EnemySymbol.SHIELD, EnemySymbol.POTION};
     /** Portrait affiché (il change avec l'ennemi du combat). */
     private EnemyKind shownKind = EnemyKind.CROUPIER;
+    /** Phase de l'ennemi dont les symboles sont sur les rouleaux au repos. */
+    private int shownPhase = 1;
     private final List<Image>   handCards = new ArrayList<>();
     private int shownDeck;
     private int shownDiscard;
@@ -146,7 +150,8 @@ public class EnemyView implements Disposable {
             int reel = i;
             Image image = new Image(new TextureRegionDrawable(new TextureRegion(textures.symbol(shownSymbols[i]))));
             image.setSize(SYMBOL_SIZE, SYMBOL_SIZE);
-            hoverTooltip(image, () -> shownSymbols[reel].getDisplayName(), () -> shownSymbols[reel].getDescription());
+            hoverTooltip(image, () -> shownSymbols[reel].getDisplayName(),
+                () -> shownSymbols[reel].getDescription(shownKind));
             reels.add(image);
         }
 
@@ -175,24 +180,38 @@ public class EnemyView implements Disposable {
         EnemyKind kind = current.getKind();
         StringBuilder text = new StringBuilder(kind.getDescription());
         text.append("\nDéfense : ").append(shownDefense());
-        text.append("\nRouleaux : ").append(kind.describeReels());
+        text.append("\nRouleaux : ").append(kind.describeReels(current.getPhase()));
+        if (kind.hasPhaseTwo() && current.getPhase() < 2) {
+            text.append("\nSous la moitié de ses PV : ").append(kind.describeReels(2));
+        }
+        if (kind.playsAtRandom()) text.append("\nJoue ses cartes au hasard");
+        if (kind.potionShields()) text.append("\nSes Potions reforment aussi sa défense");
+        if (kind.royalBet()) text.append("\nMise royale : ses Trèfles comptent double sous la moitié de ses PV");
         text.append("\nPioche ").append(Enemy.HAND_SIZE).append(" cartes et en joue ").append(kind.getPlaysPerTurn())
             .append(" à chaque tour");
         if (current.getRage() > 0) text.append("\nRage : attaque +").append(current.getRage());
         if (current.getThornsPercent() > 0) {
             text.append("\nÉpines : ").append(current.getThornsPercent()).append(" % de tes dégâts te reviendront");
         }
+        if (current.getInterest() > 0) text.append("\nIntérêts : prochain coup +").append(current.getInterest());
+        if (kind.getSymbols(2).contains(EnemySymbol.HOURGLASS) || kind.getSymbols().contains(EnemySymbol.HOURGLASS)) {
+            text.append("\nSablier : ").append(current.getHourglass()).append("/").append(EnemySymbol.HOURGLASS_MAX);
+        }
+        if (current.getStake() > 1) text.append("\nMise : attaques x").append(current.getStake());
+        if (current.isAllIn()) text.append("\nTapis posé : sa mise doublera à son tour, sauf si tu le touches");
         return text.toString();
     }
 
     /** Montre le portrait de l'ennemi du combat en cours, et ses symboles au repos sur les rouleaux. */
     private void showKind() {
-        EnemyKind kind = enemy.get().getKind();
-        if (kind == shownKind) return;
-        shownKind = kind;
+        Enemy current = enemy.get();
+        EnemyKind kind = current.getKind();
+        if (kind == shownKind && current.getPhase() == shownPhase) return;
+        shownKind  = kind;
+        shownPhase = current.getPhase();
         ((TextureRegionDrawable) croupier.getDrawable()).setRegion(new TextureRegion(textures.portrait(kind)));
         ((TextureRegionDrawable) flash.getDrawable()).setRegion(new TextureRegion(textures.portraitFlash(kind)));
-        List<EnemySymbol> symbols = kind.getSymbols();
+        List<EnemySymbol> symbols = current.getSymbols();
         for (int i = 0; i < reels.size(); i++) setReel(i, symbols.get(i % symbols.size()));
     }
 
@@ -273,7 +292,10 @@ public class EnemyView implements Disposable {
         List<EffectPopup> texts = new ArrayList<>();
         turn.openingEvents().forEach(event -> texts.addAll(event.getPopups()));
         popups.play(texts, top.x, top.y);
-        pulse(Color.valueOf("7dd87aff"));
+        boolean newPhase = turn.openingEvents().stream().anyMatch(event -> event instanceof EnemyPhaseEvent);
+        if (newPhase) showKind(); // ses rouleaux prennent les symboles de sa nouvelle phase
+        boolean hits = turn.openingEvents().stream().anyMatch(event -> event instanceof PlayerDamagedEvent);
+        pulse(Color.valueOf(newPhase ? "ffd54aff" : hits ? "7dd87aff" : "ff4a3aff"));
         turn.openingEvents().forEach(onEventShown);
         group.addAction(Actions.delay(OPENING_TIME, Actions.run(() -> playCardsAndReels(turn, onEventShown, onDone))));
     }
@@ -410,7 +432,7 @@ public class EnemyView implements Disposable {
         int frames = Math.max(1, Math.round((stop - start) / SPIN_FRAME));
         image.addAction(Actions.delay(start, Actions.repeat(frames, Actions.sequence(
             Actions.run(() -> {
-                List<EnemySymbol> symbols = shownKind.getSymbols();
+                List<EnemySymbol> symbols = enemy.get().getSymbols();
                 setReel(reel, symbols.get(MathUtils.random(symbols.size() - 1)));
             }),
             Actions.delay(SPIN_FRAME)))));
@@ -425,11 +447,15 @@ public class EnemyView implements Disposable {
         image.setY(baseY - 8f);
         image.addAction(Actions.moveTo(image.getX(), baseY, 0.18f, Interpolation.swingOut));
         reelStopSound.play();
+        if (events.stream().anyMatch(event -> event instanceof PlayerDamagedEvent)) lunge(); // il frappe
         switch (symbol) {
-            case SWORD, FANG -> lunge();
-            case RAGE        -> pulse(Color.valueOf("ff4a3aff"));
-            case THORNS      -> pulse(Color.valueOf("7dd87aff"));
-            default          -> { }
+            case RAGE, ALL_IN -> pulse(Color.valueOf("ff4a3aff"));
+            case THORNS       -> pulse(Color.valueOf("7dd87aff"));
+            case LOADED_DIE   -> pulse(Color.valueOf("c060ffff"));
+            case INTEREST, HOURGLASS -> pulse(Color.valueOf("ffd54aff"));
+            case MIRROR       -> pulse(Color.valueOf("b8e0ffff"));
+            case ZERO         -> pulse(Color.valueOf("2ec060ff"));
+            default           -> { }
         }
 
         List<EffectPopup> texts = new ArrayList<>();
