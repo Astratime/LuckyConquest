@@ -1,6 +1,8 @@
 package fr.astratime.lucky.entities;
 
 import fr.astratime.lucky.entities.enemy.EnemyCards;
+import fr.astratime.lucky.entities.enemy.EnemyKind;
+import fr.astratime.lucky.entities.enemy.EnemySymbol;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -17,11 +19,12 @@ public class Enemy {
 
     /** Cartes piochées par l'ennemi à chaque tour. */
     public static final int HAND_SIZE      = 8;
-    /** Cartes que l'ennemi joue parmi celles piochées. */
+    /** Cartes que le croupier joue parmi celles piochées (voir {@link EnemyKind#getPlaysPerTurn()}). */
     public static final int PLAYS_PER_TURN = 3;
-    /** Défense de base, reformée à chacun de ses tours : elle absorbe les dégâts des attaques du joueur. */
+    /** Défense de base du croupier, reformée à chacun de ses tours : elle absorbe les dégâts des attaques du joueur. */
     public static final int BASE_DEFENSE   = 30;
 
+    private final EnemyKind   kind;
     private final String      name;
     private final int         maxHp;
     private       int         hp;
@@ -31,7 +34,13 @@ public class Enemy {
      * Défense restante : base et Boucliers de son dernier tour. Elle absorbe
      * les attaques du joueur et s'use à chaque coup, jusqu'à son tour suivant.
      */
-    private       int         defense = BASE_DEFENSE;
+    private       int         defense;
+    /** Bonus d'attaque de la Rage, gardé jusqu'à la fin du combat. */
+    private       int         rage;
+    /** Part des dégâts du joueur renvoyée par ses Épines (en %), jusqu'à son tour suivant. */
+    private       int         thornsPercent;
+    /** Dégâts encaissés depuis le début de son dernier tour (pour ses Épines). */
+    private       int         damageTaken;
 
     /**
      * Ennemi avec le deck de départ du jeu sombre.
@@ -45,15 +54,28 @@ public class Enemy {
 
     /** @param cards cartes composant le deck de l'ennemi (mélangées) */
     public Enemy(String name, int maxHp, List<Card> cards) {
-        this.name  = name;
-        this.maxHp = maxHp;
-        this.hp    = maxHp;
-        this.deck  = new Deck(cards, discardPile);
+        this(EnemyKind.CROUPIER, name, maxHp, cards);
+    }
+
+    /** Ennemi {@code kind} : son nom, ses PV, sa défense, ses rouleaux et son deck. */
+    public Enemy(EnemyKind kind) {
+        this(kind, kind.getDisplayName(), kind.getMaxHp(), kind.createDeck());
+    }
+
+    private Enemy(EnemyKind kind, String name, int maxHp, List<Card> cards) {
+        this.kind    = kind;
+        this.name    = name;
+        this.maxHp   = maxHp;
+        this.hp      = maxHp;
+        this.defense = kind.getBaseDefense();
+        this.deck    = new Deck(cards, discardPile);
     }
 
     /** Retire {@code damage} points de vie, sans descendre sous 0. */
     public void takeDamage(int damage) {
-        hp = Math.max(0, hp - damage);
+        int lost = Math.min(hp, Math.max(0, damage));
+        hp -= lost;
+        damageTaken += lost;
     }
 
     /**
@@ -74,7 +96,31 @@ public class Enemy {
     public void addShieldDefense(int amount) { defense += amount; }
 
     /** Reforme la défense de base, sans les Boucliers du tour précédent (au début d'un nouveau tour de l'ennemi). */
-    public void resetDefense() { defense = BASE_DEFENSE; }
+    public void resetDefense() { defense = kind.getBaseDefense(); }
+
+    /**
+     * Début de son tour : ses Épines du tour précédent tombent.
+     *
+     * @return les dégâts à renvoyer au joueur (part des dégâts encaissés depuis la fin de son dernier tour)
+     */
+    public int collectThorns() {
+        int thorns = Math.round(damageTaken * thornsPercent / 100f);
+        thornsPercent = 0;
+        return thorns;
+    }
+
+    /** Fin de son tour : ses Épines ne compteront que les coups encaissés à partir de maintenant. */
+    public void resetDamageTaken() { damageTaken = 0; }
+
+    /** Ajoute {@code percent} à ses Épines, jusqu'à son tour suivant. */
+    public void addThorns(int percent) { thornsPercent += percent; }
+
+    /** Ajoute {@code amount} à sa Rage (plafonnée à {@link EnemySymbol#RAGE_MAX}). @return la Rage ajoutée */
+    public int addRage(int amount) {
+        int added = Math.min(amount, EnemySymbol.RAGE_MAX - rage);
+        rage += Math.max(0, added);
+        return Math.max(0, added);
+    }
 
     /**
      * Une attaque du joueur frappe la défense : elle absorbe tout ce qu'elle
@@ -95,6 +141,14 @@ public class Enemy {
     /** Envoie {@code cards} dans la défausse (fin du tour de l'ennemi). */
     public void discard(List<Card> cards) { discardPile.addAll(cards); }
 
+    /** @return le type d'ennemi : ses rouleaux, sa façon de jouer, son portrait. */
+    public EnemyKind getKind()     { return kind; }
+    /** @return le bonus d'attaque de sa Rage. */
+    public int    getRage()        { return rage; }
+    /** @return la part des dégâts du joueur que renverront ses Épines, en %. */
+    public int    getThornsPercent() { return thornsPercent; }
+    /** @return sa défense de base, reformée à chacun de ses tours. */
+    public int    getBaseDefense() { return kind.getBaseDefense(); }
     /** @return le nom affiché de l'ennemi. */
     public String getName()        { return name; }
     /** @return les points de vie actuels. */

@@ -17,12 +17,21 @@ import java.util.Map;
  * @param symbols    symboles arrêtés sur ses trois rouleaux
  * @param outcomes   événements produits par chaque symbole, dans l'ordre des rouleaux
  * @param afterEvents événements qui suivent les symboles (ex : renvoi de dégâts)
+ * @param openingEvents événements du début de son tour, avant sa pioche (ex : ses Épines qui piquent)
  */
 public record EnemyTurnResult(List<Card> drawn, List<Card> played, Map<EnemySymbol, Integer> luck,
-                              EnemySymbol[] symbols, List<List<Event>> outcomes, List<Event> afterEvents) {
+                              EnemySymbol[] symbols, List<List<Event>> outcomes, List<Event> afterEvents,
+                              List<Event> openingEvents) {
+
+    /** Tour sans événement d'ouverture. */
+    public EnemyTurnResult(List<Card> drawn, List<Card> played, Map<EnemySymbol, Integer> luck,
+                           EnemySymbol[] symbols, List<List<Event>> outcomes, List<Event> afterEvents) {
+        this(drawn, played, luck, symbols, outcomes, afterEvents, List.of());
+    }
 
     /** @return tous les événements du tour de l'ennemi, dans l'ordre. */
     public List<Event> events() {
-        return java.util.stream.Stream.concat(outcomes.stream().flatMap(List::stream), afterEvents.stream()).toList();
+        return java.util.stream.Stream.of(openingEvents.stream(), outcomes.stream().flatMap(List::stream),
+            afterEvents.stream()).flatMap(s -> s).toList();
     }
 }
