@@ -2,6 +2,7 @@ package fr.astratime.lucky.entities.effects;
 
 import fr.astratime.lucky.entities.context.TurnContext;
 import fr.astratime.lucky.popups.EffectPopup;
+import fr.astratime.lucky.popups.EffectSound;
 import fr.astratime.lucky.popups.PopupScale;
 
 import java.util.List;
@@ -28,4 +29,7 @@ public class PistolEffect extends Effect {
             new EffectPopup("PISTOLET CHARGÉ !", EffectPopup.Style.ATTACK, PopupScale.MAX_INTENSITY),
             new EffectPopup("DÉGÂTS x" + multiplier, EffectPopup.Style.ATTACK, PopupScale.SECONDARY_INTENSITY));
     }
+
+    @Override
+    public EffectSound getSound() { return EffectSound.PISTOL; }
 }

@@ -80,6 +80,8 @@ public class EnemyView implements Disposable {
     private final EffectPopupAnimator popups;
     private final Sound               cardSound;
     private final Sound               flipSound;
+    private final Sound               reelSpinSound;
+    private final Sound               reelStopSound;
     private final Supplier<Enemy>     enemy;
     private final BitmapFont          defenseFont = Fonts.jersey(26, Color.WHITE, 2f, Palette.TEXT_SHADE);
 
@@ -97,19 +99,26 @@ public class EnemyView implements Disposable {
     private int shownDefense  = Enemy.BASE_DEFENSE;
     private int shownDeck;
     private int shownDiscard;
+    /** Boucle du bruit de ses rouleaux pendant son lancer (-1 : aucune). */
+    private long spinSoundId = -1;
 
     /**
-     * @param enemy l'ennemi du combat en cours (il change à chaque nouveau combat)
+     * @param reelSpinSound boucle jouée tant que ses rouleaux tournent
+     * @param reelStopSound bruitage joué quand un de ses rouleaux s'arrête
+     * @param enemy         l'ennemi du combat en cours (il change à chaque nouveau combat)
      */
     public EnemyView(TableView table, EnemyTextures textures, BitmapFont pileFont, Tooltip tooltip,
-                     EffectPopupAnimator popups, Sound cardSound, Sound flipSound, Supplier<Enemy> enemy) {
-        this.table     = table;
-        this.textures  = textures;
-        this.tooltip   = tooltip;
-        this.popups    = popups;
-        this.cardSound = cardSound;
-        this.flipSound = flipSound;
-        this.enemy     = enemy;
+                     EffectPopupAnimator popups, Sound cardSound, Sound flipSound, Sound reelSpinSound,
+                     Sound reelStopSound, Supplier<Enemy> enemy) {
+        this.table         = table;
+        this.textures      = textures;
+        this.tooltip       = tooltip;
+        this.popups        = popups;
+        this.cardSound     = cardSound;
+        this.flipSound     = flipSound;
+        this.reelSpinSound = reelSpinSound;
+        this.reelStopSound = reelStopSound;
+        this.enemy         = enemy;
 
         croupier = new Image(new TextureRegionDrawable(new TextureRegion(textures.croupier)));
         croupier.setSize(textures.croupier.getWidth() * EnemyTextures.CROUPIER_SCALE,
@@ -159,6 +168,7 @@ public class EnemyView implements Disposable {
 
     /** Nouveau combat : croupier debout, piles pleines, défense de base, rouleaux au repos. */
     public void reset() {
+        stopSpinSound();
         group.clearActions();
         handCards.forEach(Actor::remove);
         handCards.clear();
@@ -266,12 +276,20 @@ public class EnemyView implements Disposable {
         // Lancer : les rouleaux défilent puis s'arrêtent l'un après l'autre ; chaque symbole agit à son arrêt.
         float spinStart = time + 0.2f;
         EnemySymbol[] symbols = turn.symbols();
+        group.addAction(Actions.delay(spinStart, Actions.run(() -> spinSoundId = reelSpinSound.loop())));
         for (int i = 0; i < symbols.length; i++) {
             int reel = i;
             float stopAt = spinStart + FIRST_STOP + i * STOP_STEP;
             spinReel(reel, spinStart, stopAt);
-            group.addAction(Actions.delay(stopAt, Actions.run(() -> stopReel(reel, symbols[reel],
-                turn.outcomes().get(reel), onEventShown))));
+            group.addAction(Actions.delay(stopAt, Actions.run(() -> {
+                stopReel(reel, symbols[reel], turn.outcomes().get(reel), onEventShown);
+                int stillSpinning = symbols.length - 1 - reel;
+                if (stillSpinning == 0) {
+                    stopSpinSound();
+                } else {
+                    reelSpinSound.setVolume(spinSoundId, stillSpinning / (float) symbols.length);
+                }
+            })));
         }
         float afterStops = spinStart + FIRST_STOP + (symbols.length - 1) * STOP_STEP + AFTER_STOPS;
 
@@ -334,6 +352,12 @@ public class EnemyView implements Disposable {
         };
     }
 
+    /** Coupe la boucle du bruit de ses rouleaux si elle est en cours. */
+    private void stopSpinSound() {
+        if (spinSoundId != -1) reelSpinSound.stop(spinSoundId);
+        spinSoundId = -1;
+    }
+
     /** Le rouleau {@code reel} fait défiler les symboles de {@code start} à {@code stop}. */
     private void spinReel(int reel, float start, float stop) {
         Image image = reels.get(reel);
@@ -351,7 +375,7 @@ public class EnemyView implements Disposable {
         float baseY = table.getEnemyReelRowY() + (SlotView.CELL_HEIGHT - SYMBOL_SIZE) / 2f;
         image.setY(baseY - 8f);
         image.addAction(Actions.moveTo(image.getX(), baseY, 0.18f, Interpolation.swingOut));
-        cardSound.play();
+        reelStopSound.play();
         if (symbol == EnemySymbol.SWORD) lunge();
 
         List<EffectPopup> texts = new ArrayList<>();

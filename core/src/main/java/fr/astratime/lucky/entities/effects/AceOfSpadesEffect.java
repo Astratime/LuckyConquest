@@ -5,6 +5,7 @@ import fr.astratime.lucky.entities.context.PlayContext;
 import fr.astratime.lucky.entities.context.TurnContext;
 import fr.astratime.lucky.entities.events.CardBonusEvent;
 import fr.astratime.lucky.popups.EffectPopup;
+import fr.astratime.lucky.popups.EffectSound;
 import fr.astratime.lucky.popups.PopupScale;
 
 import java.util.List;
@@ -60,4 +61,7 @@ public class AceOfSpadesEffect extends Effect {
     /** Textes fixes : aucun, ils dépendent des gains consommés (voir {@link #onPlay}). */
     @Override
     public List<EffectPopup> getPopups() { return List.of(); }
+
+    @Override
+    public EffectSound getSound() { return EffectSound.ACE_OF_SPADES; }
 }

@@ -29,8 +29,9 @@ import java.util.function.IntConsumer;
 import java.util.function.Supplier;
 
 /**
- * Célébration du jackpot (Bingo), par-dessus tout l'écran de jeu. Elle change
- * selon le symbole aligné. Le Triple Sept garde la célébration d'origine :
+ * Célébration du jackpot (Bingo), par-dessus tout l'écran de jeu, sous des
+ * projecteurs disco multicolores ({@link DiscoSpotlights}). Elle change selon
+ * le symbole aligné. Le Triple Sept garde la célébration d'origine :
  * flash blanc, bannière « BINGO!!! » qui traverse l'écran, pluie de pièces
  * d'or (dont une partie file vers le compteur des gains) et feux d'artifice.
  * Chaque autre symbole joue une scène avec un décor en pixel art — un objet,
@@ -61,6 +62,8 @@ public class JackpotCelebration extends Group implements Disposable {
     public static final float DURATION = 3f;
 
     private static final float FLASH_ALPHA = 0.7f;
+    /** Hauteur (fraction de l'écran) où les projecteurs dessinent leurs flaques de lumière sur la table. */
+    private static final float SPOTLIGHT_FLOOR = 0.14f;
     private static final float FLASH_TIME  = 0.35f;
     private static final float SHAKE_TIME  = 0.45f;
     private static final float SHAKE       = 12f;
@@ -110,6 +113,8 @@ public class JackpotCelebration extends Group implements Disposable {
     private final BitmapFont     bannerFont   = Fonts.jersey(170, Color.WHITE, 7f, Palette.TEXT_SHADE, BANNER_TEXT);
 
     private final Image        flash;
+    /** Projecteurs disco multicolores qui balaient la table pendant toute la fête. */
+    private final DiscoSpotlights spotlights = new DiscoSpotlights();
     private final Shockwaves   shockwaves;
     private final Glitter      glitter;
     private final Fireworks    fireworks;
@@ -139,6 +144,8 @@ public class JackpotCelebration extends Group implements Disposable {
     private static final Color SMOKE = new Color(0.55f, 0.55f, 0.58f, 1f);
     /** false quand la mise en scène remplace la bannière « BINGO!!! » (Triple Cerise). */
     private boolean    showBanner;
+    /** Instant où « BINGO! » apparaît : la bannière dès le début, ou le mot géant d'une scène. */
+    private float      wordAt;
 
     private boolean  running;
     private float    elapsed;
@@ -149,9 +156,10 @@ public class JackpotCelebration extends Group implements Disposable {
      * @param coinTarget      position (Stage) de la pièce du compteur des gains
      * @param onCoinCollected appelé à l'arrivée de chaque pièce sur le compteur
      * @param settings        effets réduits : pas de flash (la secousse est coupée par {@code screenShake})
+     * @param fireworkSounds  bruitages des fusées
      */
     public JackpotCelebration(PlayArea playArea, ScreenShake screenShake, VisualSettings settings, HudTextures hud,
-                              Supplier<Vector2> coinTarget, Runnable onCoinCollected) {
+                              Supplier<Vector2> coinTarget, Runnable onCoinCollected, Fireworks.Sounds fireworkSounds) {
         this.playArea      = playArea;
         this.screenShake   = screenShake;
         this.settings      = settings;
@@ -161,7 +169,7 @@ public class JackpotCelebration extends Group implements Disposable {
 
         shockwaves = new Shockwaves(pixel);
         glitter    = new Glitter(pixel);
-        fireworks  = new Fireworks(pixel);
+        fireworks  = new Fireworks(pixel, fireworkSounds);
         symbols    = new SymbolShower();
         coins      = new CoinShower(new TextureRegion(coinTexture), coinTarget, onCoinCollected);
         flash      = new Image(new TextureRegionDrawable(pixel));
@@ -170,6 +178,7 @@ public class JackpotCelebration extends Group implements Disposable {
         bannerLayer.setTouchable(Touchable.disabled);
         churchBell.setSwingListener(this::onBellSwing);
 
+        addActor(spotlights); // derrière tout le reste : la lumière éclaire la table, pas les objets
         addActor(shockwaves);
         addActor(glitter);
         addActor(fireworks);
@@ -184,10 +193,11 @@ public class JackpotCelebration extends Group implements Disposable {
     }
 
     /**
-     * Lance la célébration du Bingo de {@code symbol} ; {@code onFinished} est
-     * appelé au bout de {@link #DURATION}.
+     * Lance la célébration du Bingo de {@code symbol} ; {@code onWord} est appelé
+     * quand « BINGO! » apparaît (bannière ou mot géant de la scène),
+     * {@code onFinished} au bout de {@link #DURATION}.
      */
-    public void play(Symbol symbol, Runnable onFinished) {
+    public void play(Symbol symbol, Runnable onWord, Runnable onFinished) {
         cancel();
         this.onFinished = onFinished;
         running         = true;
@@ -205,9 +215,14 @@ public class JackpotCelebration extends Group implements Disposable {
             flash.addAction(Actions.fadeOut(FLASH_TIME));
         }
 
+        spotlights.play(playArea.getX(), playArea.getX() + playArea.getWidth(), height, height * SPOTLIGHT_FLOOR,
+            DURATION, settings.isReducedEffects());
+
         emitters.clear();
         showBanner   = true;
+        wordAt       = 0f;
         schedule(symbol, iconOf(symbol));
+        at(wordAt, onWord);
         emitted = new int[emitters.size()];
 
         if (showBanner) banner(symbol).play(playArea.getCenterX(), height * BANNER_Y, width);
@@ -219,6 +234,7 @@ public class JackpotCelebration extends Group implements Disposable {
         setTouchable(Touchable.disabled);
         emitters.clear();
         coins.removeAll();
+        spotlights.stop();
         fireworks.removeAll();
         symbols.removeAll();
         glitter.removeAll();
@@ -516,7 +532,8 @@ public class JackpotCelebration extends Group implements Disposable {
         float centerX = playArea.getCenterX();
         float centerY = getHeight() * BULLSEYE_Y;
         bullseye.play(centerX, centerY);
-        giantWord.play(centerX, getHeight() * BULLSEYE_WORD_Y, BullseyeAnimation.IMPACT_TIME + 0.12f, WORD_FADE_AT,
+        wordAt = BullseyeAnimation.IMPACT_TIME + 0.12f;
+        giantWord.play(centerX, getHeight() * BULLSEYE_WORD_Y, wordAt, WORD_FADE_AT,
             style.letterA(), style.letterB());
 
         // Traînée d'étincelles derrière la flèche en vol.
@@ -572,7 +589,8 @@ public class JackpotCelebration extends Group implements Disposable {
         float centerX = playArea.getCenterX();
         churchBell.play(centerX, getHeight() * BELL_PIVOT_Y);
         float strike = ChurchBellAnimation.STRIKE_TIME;
-        giantWord.play(centerX, getHeight() * BELL_WORD_Y, strike + 0.12f, WORD_FADE_AT,
+        wordAt = strike + 0.12f;
+        giantWord.play(centerX, getHeight() * BELL_WORD_Y, wordAt, WORD_FADE_AT,
             style.letterA(), style.letterB());
 
         Color gold = Color.valueOf("ffe680ff");
@@ -649,6 +667,7 @@ public class JackpotCelebration extends Group implements Disposable {
      */
     private void playScene(BingoScene scene, float x, float y, float wordAt, float wordY) {
         useGiantWord();
+        this.wordAt = wordAt;
         scene.play(x, y);
         giantWord.play(playArea.getCenterX(), getHeight() * wordY, wordAt, WORD_FADE_AT,
             style.letterA(), style.letterB());
@@ -724,6 +743,7 @@ public class JackpotCelebration extends Group implements Disposable {
     @Override
     public void dispose() {
         coinTexture.dispose();
+        spotlights.dispose();
         for (Texture band : styleBands) band.dispose();
         for (Texture icon : icons.values()) icon.dispose();
         Fonts.release(bannerFont);

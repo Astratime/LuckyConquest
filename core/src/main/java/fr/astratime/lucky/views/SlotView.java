@@ -52,6 +52,7 @@ public class SlotView implements Disposable {
     private static final float FIRST_STOP    = 0.7f;
     private static final float STOP_STEP     = 0.35f;  // entre deux rouleaux
     private static final float SUSPENSE_TIME = 1.1f;   // arrêt retardé du dernier rouleau
+    private static final float SUSPENSE_SPIN_PITCH = 0.6f; // bruit des rouleaux plus grave quand le dernier ralentit
     private static final Color SUSPENSE_GLOW = Palette.GOLD;
     // Transformation d'un Joker : il brille, puis son rouleau repart brièvement vers le symbole remplacé.
     private static final Color JOKER_GLOW       = Palette.VIOLET;
@@ -81,7 +82,9 @@ public class SlotView implements Disposable {
     private final TableView                  tableView;
     private final Tooltip                    tooltip;
     private final EffectPopupAnimator        popupAnimator;
+    private final Sound                      reelSpinSound;
     private final Sound                      reelStopSound;
+    private final Sound                      suspenseSound;
     private final Map<Symbol, Texture>       textures = new EnumMap<>(Symbol.class);
     private final Map<Symbol, TextureRegion> regions  = new EnumMap<>(Symbol.class);
     private final Table                      table    = new Table();
@@ -89,11 +92,21 @@ public class SlotView implements Disposable {
     private final List<ReelActor<Symbol>>    reels    = new ArrayList<>();
     /** Rouleaux pas encore arrêtés pendant un lancer. */
     private int                              reelsSpinning;
+    /** Boucle du bruit des rouleaux et suspense en cours (-1 : aucun). */
+    private long                             spinSoundId     = -1;
+    private long                             suspenseSoundId = -1;
 
-    /** @param reelStopSound bruitage joué quand un rouleau s'arrête */
-    public SlotView(TableView tableView, Tooltip tooltip, EffectPopupAnimator popupAnimator, Sound reelStopSound) {
+    /**
+     * @param reelSpinSound boucle jouée tant que des rouleaux tournent
+     * @param reelStopSound bruitage joué quand un rouleau s'arrête
+     * @param suspenseSound bruitage du dernier rouleau qui ralentit, coupé à son arrêt
+     */
+    public SlotView(TableView tableView, Tooltip tooltip, EffectPopupAnimator popupAnimator, Sound reelSpinSound,
+                    Sound reelStopSound, Sound suspenseSound) {
         this.tableView     = tableView;
         this.tooltip       = tooltip;
+        this.reelSpinSound = reelSpinSound;
+        this.suspenseSound = suspenseSound;
         this.popupAnimator = popupAnimator;
         this.reelStopSound = reelStopSound;
         for (Symbol symbol : Symbol.values()) {
@@ -133,6 +146,7 @@ public class SlotView implements Disposable {
         boolean suspense = symbols.length > 2 && (symbols[0] == symbols[1]
             || symbols[0] == Symbol.JOKER || symbols[1] == Symbol.JOKER);
         reelsSpinning = reels.size();
+        spinSoundId   = reelSpinSound.loop();
         for (int i = 0; i < reels.size(); i++) {
             int   reelIndex = i;
             float stopAt    = FIRST_STOP + i * STOP_STEP;
@@ -140,15 +154,31 @@ public class SlotView implements Disposable {
             if (suspense && i == last) {
                 slowAt  = stopAt;
                 stopAt += SUSPENSE_TIME;
-                table.addAction(Actions.sequence(Actions.delay(slowAt),
-                    Actions.run(() -> tableView.highlightReel(reelIndex, SUSPENSE_GLOW, 14f, 0f))));
+                table.addAction(Actions.sequence(Actions.delay(slowAt), Actions.run(() -> {
+                    tableView.highlightReel(reelIndex, SUSPENSE_GLOW, 14f, 0f);
+                    suspenseSoundId = suspenseSound.play();
+                    reelSpinSound.setPitch(spinSoundId, SUSPENSE_SPIN_PITCH); // le rouleau ralentit
+                })));
             }
             reels.get(i).spin(symbols[i], stopAt, slowAt, () -> {
                 reelStopSound.play();
                 tableView.clearReelHighlight(reelIndex);
-                if (--reelsSpinning == 0) transformJokers(symbols, resolved, onJoker, onAllStopped);
+                if (--reelsSpinning == 0) {
+                    stopSpinSounds();
+                    transformJokers(symbols, resolved, onJoker, onAllStopped);
+                } else {
+                    reelSpinSound.setVolume(spinSoundId, reelsSpinning / (float) reels.size()); // moins de rouleaux, moins de bruit
+                }
             });
         }
+    }
+
+    /** Coupe la boucle des rouleaux et le suspense s'ils sont en cours. */
+    private void stopSpinSounds() {
+        if (spinSoundId != -1) reelSpinSound.stop(spinSoundId);
+        if (suspenseSoundId != -1) suspenseSound.stop(suspenseSoundId);
+        spinSoundId     = -1;
+        suspenseSoundId = -1;
     }
 
     /** Rouleaux arrêtés : chaque Joker brille, puis repart brièvement jusqu'au symbole qu'il remplace. */
@@ -183,6 +213,7 @@ public class SlotView implements Disposable {
 
     /** Vide les fenêtres des rouleaux et arrête tout défilement (nouveau combat). */
     public void clear() {
+        stopSpinSounds();
         table.clearActions();
         reels.forEach(ReelActor::empty);
         for (int i = 0; i < reels.size(); i++) tableView.clearReelHighlight(i);

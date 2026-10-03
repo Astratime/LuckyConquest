@@ -2,6 +2,7 @@ package fr.astratime.lucky.entities.effects;
 
 import fr.astratime.lucky.entities.context.TurnContext;
 import fr.astratime.lucky.popups.EffectPopup;
+import fr.astratime.lucky.popups.EffectSound;
 import fr.astratime.lucky.popups.PopupScale;
 
 import java.util.List;
@@ -27,4 +28,7 @@ public class MagnetEffect extends Effect {
         return List.of(
             new EffectPopup("AIMANT : PAIRE +" + percent + "%", EffectPopup.Style.SPECIAL, PopupScale.MAX_INTENSITY));
     }
+
+    @Override
+    public EffectSound getSound() { return EffectSound.MAGNET; }
 }

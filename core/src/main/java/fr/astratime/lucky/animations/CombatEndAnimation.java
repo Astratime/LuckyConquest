@@ -85,9 +85,11 @@ public class CombatEndAnimation extends Group implements Disposable {
      * @param band     bande dorée de la bannière « VICTOIRE ! » (non possédée)
      * @param cardBack dos de carte, pour les cartes qui s'éparpillent à la défaite
      * @param confetti confettis partagés de l'écran de jeu
+     * @param fireworkSounds bruitages des fusées
      */
     public CombatEndAnimation(PlayArea playArea, ScreenShake screenShake, TextureRegion pixel, Texture band,
-                              TextureRegion cardBack, Confetti confetti, float cardWidth, float cardHeight) {
+                              TextureRegion cardBack, Confetti confetti, Fireworks.Sounds fireworkSounds,
+                              float cardWidth, float cardHeight) {
         this.bandTexture = band;
         this.playArea    = playArea;
         this.screenShake = screenShake;
@@ -104,7 +106,7 @@ public class CombatEndAnimation extends Group implements Disposable {
         darken = new Image(new TextureRegionDrawable(pixel));
         darken.setColor(0f, 0f, 0f, 0f);
         darken.setTouchable(Touchable.disabled);
-        fireworks     = new Fireworks(pixel);
+        fireworks     = new Fireworks(pixel, fireworkSounds);
         victoryBanner = new BingoBanner(VICTORY_TEXT, bandTexture, pixel, bigFont);
         defeatLabel   = new Label(DEFEAT_TEXT, new Label.LabelStyle(bigFont, Color.WHITE));
         defeatLabel.setColor(DEFEAT_COLOR);

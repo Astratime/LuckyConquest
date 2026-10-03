@@ -5,6 +5,7 @@ import fr.astratime.lucky.entities.Player;
 import fr.astratime.lucky.entities.choices.CardChoice;
 import fr.astratime.lucky.entities.effects.Effect;
 import fr.astratime.lucky.popups.EffectPopup;
+import fr.astratime.lucky.popups.EffectSound;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -101,4 +102,9 @@ public class PlayContext {
 
     /** @return les textes à afficher pour la carte jouée, dans l'ordre d'affichage. */
     public List<EffectPopup> getPopups() { return popups; }
+
+    /** Le texte d'indice {@code index} (s'il existe) jouera {@code sound} à son apparition. */
+    public void attachSound(int index, EffectSound sound) {
+        if (index < popups.size()) popups.set(index, popups.get(index).withSound(sound));
+    }
 }

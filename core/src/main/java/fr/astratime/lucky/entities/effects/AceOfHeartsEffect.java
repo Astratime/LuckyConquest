@@ -8,6 +8,7 @@ import fr.astratime.lucky.entities.context.TurnContext;
 import fr.astratime.lucky.entities.events.CardBonusEvent;
 import fr.astratime.lucky.entities.events.SymbolBoostedEvent;
 import fr.astratime.lucky.popups.EffectPopup;
+import fr.astratime.lucky.popups.EffectSound;
 import fr.astratime.lucky.popups.PopupScale;
 
 import java.util.List;
@@ -58,4 +59,7 @@ public class AceOfHeartsEffect extends Effect {
             new EffectPopup("FRÉNÉSIE !", EffectPopup.Style.DRAIN, PopupScale.MAX_INTENSITY)
         );
     }
+
+    @Override
+    public EffectSound getSound() { return EffectSound.ACE_OF_HEARTS; }
 }

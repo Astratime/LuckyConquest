@@ -3,6 +3,7 @@ package fr.astratime.lucky.entities.effects;
 import fr.astratime.lucky.entities.context.PlayContext;
 import fr.astratime.lucky.entities.context.TurnContext;
 import fr.astratime.lucky.popups.EffectPopup;
+import fr.astratime.lucky.popups.EffectSound;
 import fr.astratime.lucky.popups.PopupScale;
 
 import java.util.List;
@@ -53,4 +54,7 @@ public class SpadeIgnoreDefenseEffect extends Effect {
             new EffectPopup("LAMES +" + blades, EffectPopup.Style.ATTACK, PopupScale.SECONDARY_INTENSITY)
         );
     }
+
+    @Override
+    public EffectSound getSound() { return EffectSound.SPADE_IGNORE_DEFENSE; }
 }

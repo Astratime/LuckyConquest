@@ -1,5 +1,6 @@
 package fr.astratime.lucky.animations;
 
+import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
@@ -15,7 +16,8 @@ import java.util.List;
 /**
  * Confettis : petits rectangles colorés qui jaillissent (gerbe) ou tombent du
  * haut de l'écran (pluie), tournoient et se retournent comme du papier en
- * retombant lentement, puis s'estompent.
+ * retombant lentement, puis s'estompent. Une gerbe part avec un « pop » de
+ * canon à confettis, une pluie avec un froissement de papier.
  *
  * Les positions sont celles du Stage : l'acteur doit être placé à l'origine.
  */
@@ -34,18 +36,34 @@ public class Confetti extends Actor {
         Color color;
     }
 
+    /** Deux gerbes lancées ensemble (paire : une par rouleau) ne font qu'un seul « pop ». */
+    private static final float POP_GAP = 0.08f;
+
     private final TextureRegion pixel;
+    private final Sound         popSound;
+    private final Sound         rainSound;
     private final List<Piece>   pieces = new ArrayList<>();
     private float               time;
+    private float               lastPopAt = -1f;
 
-    /** @param pixel région d'un pixel blanc, teintée pour chaque confetti */
-    public Confetti(TextureRegion pixel) {
-        this.pixel = pixel;
+    /**
+     * @param pixel     région d'un pixel blanc, teintée pour chaque confetti
+     * @param popSound  bruitage d'une gerbe
+     * @param rainSound bruitage d'une pluie
+     */
+    public Confetti(TextureRegion pixel, Sound popSound, Sound rainSound) {
+        this.pixel     = pixel;
+        this.popSound  = popSound;
+        this.rainSound = rainSound;
         setTouchable(Touchable.disabled);
     }
 
     /** Fait jaillir {@code count} confettis de {@code (x, y)}, vers le haut en éventail. */
     public void burst(float x, float y, int count) {
+        if (lastPopAt < 0f || time - lastPopAt >= POP_GAP) {
+            popSound.play(1f, MathUtils.random(0.92f, 1.08f), 0f);
+            lastPopAt = time;
+        }
         for (int i = 0; i < count; i++) {
             float angle = MathUtils.random(50f, 130f);
             float speed = MathUtils.random(300f, 650f);
@@ -55,6 +73,7 @@ public class Confetti extends Actor {
 
     /** Fait tomber {@code count} confettis du haut de l'écran, entre {@code minX} et {@code maxX}. */
     public void rain(float minX, float maxX, float topY, int count) {
+        rainSound.play();
         for (int i = 0; i < count; i++) {
             add(MathUtils.random(minX, maxX), topY + MathUtils.random(0f, 400f),
                 MathUtils.random(-60f, 60f), MathUtils.random(-150f, -60f), MathUtils.random(4f, 6f));

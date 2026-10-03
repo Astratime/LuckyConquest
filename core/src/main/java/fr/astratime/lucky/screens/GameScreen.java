@@ -35,11 +35,13 @@ import fr.astratime.lucky.animations.CombatEndAnimation;
 import fr.astratime.lucky.animations.Confetti;
 import fr.astratime.lucky.animations.DamageVignette;
 import fr.astratime.lucky.animations.EffectPopupAnimator;
+import fr.astratime.lucky.animations.Fireworks;
 import fr.astratime.lucky.animations.JackpotCelebration;
 import fr.astratime.lucky.animations.TurnBanner;
 import fr.astratime.lucky.animations.PistolShotAnimation;
 import fr.astratime.lucky.animations.RainbowChipsAnimation;
 import fr.astratime.lucky.animations.ScreenShake;
+import fr.astratime.lucky.assets.BackgroundMusic;
 import fr.astratime.lucky.assets.CardTextures;
 import fr.astratime.lucky.assets.EnemyTextures;
 import fr.astratime.lucky.assets.Fonts;
@@ -66,6 +68,7 @@ import fr.astratime.lucky.entities.enemy.EnemyTurnResult;
 import fr.astratime.lucky.entities.events.DamageReflectedEvent;
 import fr.astratime.lucky.entities.events.EnemyHealedEvent;
 import fr.astratime.lucky.entities.events.EnemyDamagedEvent;
+import fr.astratime.lucky.entities.events.EnemyShieldedEvent;
 import fr.astratime.lucky.entities.events.Event;
 import fr.astratime.lucky.entities.events.GainsEarnedEvent;
 import fr.astratime.lucky.entities.events.GainsLostEvent;
@@ -73,6 +76,7 @@ import fr.astratime.lucky.entities.events.JackpotEvent;
 import fr.astratime.lucky.entities.events.PlayerDamagedEvent;
 import fr.astratime.lucky.entities.events.PistolShotEvent;
 import fr.astratime.lucky.entities.events.PlayerHealedEvent;
+import fr.astratime.lucky.entities.events.ShieldGainedEvent;
 import fr.astratime.lucky.popups.EffectPopup;
 import fr.astratime.lucky.popups.PopupScale;
 import fr.astratime.lucky.settings.AudioSettings;
@@ -136,6 +140,14 @@ public class GameScreen extends ScreenAdapter {
 
     /** Dégâts à partir desquels un coup sur l'ennemi fige l'image un instant (micro-arrêt). */
     private static final int   BIG_HIT               = 60;
+    /** Un gros coup sonne plus grave. */
+    private static final float BIG_HIT_PITCH         = 0.85f;
+    /** Bouclier de l'ennemi : le son du bouclier, un ton plus bas. */
+    private static final float ENEMY_SHIELD_PITCH    = 0.84f;
+    /** Volume du son de scène d'un Bingo, sous le son de Bingo d'origine joué en même temps. */
+    private static final float BINGO_SCENE_VOLUME    = 0.8f;
+    /** Volume de la musique du combat quand le réglage « Musique » est à 100 %. */
+    private static final float COMBAT_MUSIC_LEVEL    = 0.15f;
     private static final float BIG_HIT_STOP          = 0.09f;
     /** Paire : clignotement doré des deux rouleaux et confettis lâchés par chacun. */
     private static final Color PAIR_GLOW             = Palette.GOLD;
@@ -195,7 +207,10 @@ public class GameScreen extends ScreenAdapter {
     private final Confetti            confetti;
     private final CombatEndAnimation  combatEnd;
     private final TableTextures       tableTextures = new TableTextures();
-    private final GameSounds          sounds        = new GameSounds(new AudioSettings());
+    private final AudioSettings       audio         = new AudioSettings();
+    private final GameSounds          sounds        = new GameSounds(audio);
+    /** Musique du combat (fournie par Astra), gardée basse pour ne pas couvrir les bruitages. */
+    private final BackgroundMusic     music         = new BackgroundMusic("music/combat.ogg", audio, COMBAT_MUSIC_LEVEL);
     private final CardClickParticles  cardClickParticles = new CardClickParticles();
     private final EffectPopupAnimator effectPopupAnimator;
     private final JackpotCelebration  jackpotCelebration;
@@ -270,18 +285,20 @@ public class GameScreen extends ScreenAdapter {
 
         font                = new BitmapFont();
         cardBackTexture     = cardTextures.get(CARD_BACK_PATH);
-        effectPopupAnimator = new EffectPopupAnimator(popupLayer);
+        effectPopupAnimator = new EffectPopupAnimator(popupLayer, effect -> sounds.effect(effect).play());
         tooltip             = new Tooltip(hudTextures);
         pileOverlay         = new PileContentOverlay(stage, font, tooltip, cardTextures::get, CARD_WIDTH, CARD_HEIGHT);
 
         playArea   = new PlayArea(stage, SidePanel.WIDTH);
-        confetti   = new Confetti(new TextureRegion(hudTextures.pixel));
+        confetti   = new Confetti(new TextureRegion(hudTextures.pixel), sounds.confettiPop, sounds.confettiRain);
+        Fireworks.Sounds fireworkSounds = new Fireworks.Sounds(sounds.fireworkLaunch, sounds.fireworkBurst);
         table      = new TableView(playArea, tableTextures, CARD_WIDTH, CARD_HEIGHT);
         enemyView  = new EnemyView(table, enemyTextures, pileFont, tooltip, effectPopupAnimator,
-            sounds.cardDeal, sounds.cardFlip, () -> gameController.getGameState().getEnemy());
+            sounds.cardDeal, sounds.cardFlip, sounds.reelSpin, sounds.reelStop,
+            () -> gameController.getGameState().getEnemy());
         sidePanel  = new SidePanel(hudTextures);
         jackpotCelebration = new JackpotCelebration(playArea, screenShake, settings, hudTextures,
-            sidePanel::getCoinCenter, sidePanel::bumpCoin);
+            sidePanel::getCoinCenter, sidePanel::bumpCoin, fireworkSounds);
         hud        = new CombatHud(playArea, hudTextures, gameController::getGameState);
 
         spinButton    = buttons.createAction("Lancer machine", sounds.spinButton, this::onSpin);
@@ -294,22 +311,23 @@ public class GameScreen extends ScreenAdapter {
         endButtons.pack();
         endButtons.setVisible(false);
 
-        piles = new PilesView(playArea, cardBackTexture, pileFont, tooltip, sounds.buttonClick, CARD_WIDTH, CARD_HEIGHT,
-            this::onDeckClicked, this::onDiscardClicked);
-        hand  = new HandView(table, CARD_WIDTH, CARD_HEIGHT, cardTextures, tooltip, piles, this::player,
+        piles = new PilesView(playArea, cardBackTexture, pileFont, tooltip, sounds.buttonClick, sounds.pileHover,
+            CARD_WIDTH, CARD_HEIGHT, this::onDeckClicked, this::onDiscardClicked);
+        hand  = new HandView(table, CARD_WIDTH, CARD_HEIGHT, cardTextures, tooltip, sounds.cardHover, piles, this::player,
             new CardDealAnimator(stage, cardBackTexture, CARD_WIDTH, CARD_HEIGHT, sounds.cardDeal, sounds.cardFlip),
             new CardDiscardAnimator(stage, cardBackTexture, CARD_WIDTH, CARD_HEIGHT, sounds.cardDeal, sounds.cardFlip),
             this::onCardPlayed);
-        slots = new SlotView(table, tooltip, effectPopupAnimator, sounds.cardClick);
+        slots = new SlotView(table, tooltip, effectPopupAnimator, sounds.reelSpin, sounds.reelStop, sounds.reelSuspense);
         combatEnd = new CombatEndAnimation(playArea, screenShake, new TextureRegion(hudTextures.pixel),
-            hudTextures.bannerBand, new TextureRegion(cardBackTexture), confetti, CARD_WIDTH, CARD_HEIGHT);
+            hudTextures.bannerBand, new TextureRegion(cardBackTexture), confetti, fireworkSounds, CARD_WIDTH, CARD_HEIGHT);
         choiceOverlay   = new CardChoiceOverlay(stage, hudTextures, cardBackTexture, cardTextures, CARD_WIDTH, CARD_HEIGHT);
         bingoAnimation  = new BingoCardAnimation(settings, new TextureRegion(hudTextures.pixel));
         pistolAnimation = new PistolShotAnimation(hudTextures.pistol, new TextureRegion(hudTextures.pixel));
         rainbowAnimation = new RainbowChipsAnimation(settings, new TextureRegion(hudTextures.pixel));
         shopOverlay      = new ShopOverlay(stage, hudTextures, tooltip, CARD_WIDTH, CARD_HEIGHT);
         cardDetail       = new CardDetailOverlay(stage, hudTextures, tooltip, CARD_WIDTH, CARD_HEIGHT);
-        pauseOverlay     = new PauseOverlay(luckyGame, luckyGame.getBatch(), hudTextures, sounds.buttonClick, settings,
+        pauseOverlay     = new PauseOverlay(luckyGame, luckyGame.getBatch(), hudTextures, sounds.buttonClick, sounds.menuHover,
+            settings,
             new PauseOverlay.Listener() {
                 @Override public void onResume()         { Gdx.input.setInputProcessor(gameInput); }
                 @Override public void onRestart()        { Gdx.input.setInputProcessor(gameInput); GameScreen.this.onRestart(); }
@@ -397,7 +415,7 @@ public class GameScreen extends ScreenAdapter {
      * ses faisceaux lumineux, se téléporte sur la défausse, puis lance la machine.
      */
     private void onCardPlayed(Card card, CardImage image, Vector2 cardCenter, Vector2 clickPos) {
-        sounds.cardClick.play();
+        sounds.cardPlay.play();
         cardClickParticles.play(clickPos.x, clickPos.y);
         Gdx.app.log("GameScreen", "Carte jouee : " + card);
 
@@ -439,6 +457,7 @@ public class GameScreen extends ScreenAdapter {
                 EffectPopup.Style.SPECIAL, PopupScale.SECONDARY_INTENSITY));
         }
         if (popups.isEmpty()) return;
+        sounds.comboFormed.play();
         if (combos.size() > 1) {
             popups.add(new EffectPopup("TOTAL x" + Combo.formatFactor(Combo.totalFactor(combos)),
                 EffectPopup.Style.GAINS, PopupScale.SECONDARY_INTENSITY));
@@ -484,7 +503,7 @@ public class GameScreen extends ScreenAdapter {
                         EffectPopup.Style.SPECIAL, PopupScale.MAX_INTENSITY)),
                         playArea.getCenterX(), table.getHandRowY() + CARD_HEIGHT * 2f);
                 }
-                sounds.twoSymbols.play();
+                sounds.resultPair.play();
             });
     }
 
@@ -515,6 +534,7 @@ public class GameScreen extends ScreenAdapter {
             public void enter(InputEvent event, float x, float y, int pointer, Actor fromActor) {
                 super.enter(event, x, y, pointer, fromActor);
                 if (pointer != -1) return;
+                sounds.shopHover.play();
                 shopIcon.clearActions();
                 shopIcon.addAction(Actions.scaleTo(SHOP_HOVER_SCALE, SHOP_HOVER_SCALE, 0.12f, Interpolation.pow2Out));
             }
@@ -547,6 +567,7 @@ public class GameScreen extends ScreenAdapter {
             offer -> {
                 GameController.Purchase purchase = gameController.buy(offer);
                 if (purchase == null) return false;
+                sounds.purchase.play();
                 refreshGains();
                 stage.addAction(Actions.delay(PURCHASE_DELAY, Actions.run(() -> placePurchase(purchase))));
                 return true;
@@ -559,6 +580,7 @@ public class GameScreen extends ScreenAdapter {
         Integer price = gameController.getShopOffers().stream()
             .filter(offer -> offer.card().getId().equals(card.getId()))
             .map(GameController.ShopOffer::price).findFirst().orElse(null);
+        sounds.cardInspect.play();
         cardDetail.show(card, cardTextures.get(card), price);
         tooltip.getActor().toFront();
     }
@@ -626,6 +648,7 @@ public class GameScreen extends ScreenAdapter {
                     GameController.RouletteOutcome outcome = gameController.pickRouletteCard(index);
                     effectPopupAnimator.play(outcome.popups(), cardCenter.x, cardCenter.y);
                     if (outcome.cursed()) {
+                        sounds.coinsLoss.play();
                         damageVignette.flash(settings.isReducedEffects() ? 0.3f : 0.6f);
                         screenShake.shake(0.3f, 9f);
                     }
@@ -657,8 +680,7 @@ public class GameScreen extends ScreenAdapter {
         spinButton.setDisabled(true);
         float centerX = playArea.getCenterX();
         float centerY = stage.getViewport().getWorldHeight() * BINGO_CARD_HEIGHT;
-        effectPopupAnimator.play(popups, centerX, centerY + CARD_HEIGHT * 1.3f, 0.5f);
-        sounds.bingoThreeSymbols.play();
+        effectPopupAnimator.play(popups, centerX, centerY + CARD_HEIGHT * 1.3f, 0.5f); // avec le son de la carte
         bingoAnimation.play(image, centerX, centerY, piles.discard().getTopX(), piles.discard().getTopY(),
             this::spin);
     }
@@ -772,7 +794,7 @@ public class GameScreen extends ScreenAdapter {
         effectPopupAnimator.play(List.of(new EffectPopup("JOKER !", EffectPopup.Style.SPECIAL,
             PopupScale.SECONDARY_INTENSITY)), center.x, center.y + SlotView.CELL_HEIGHT / 2f);
         confetti.burst(center.x, center.y, JOKER_CONFETTI);
-        sounds.twoSymbols.play();
+        sounds.resultPair.play();
     }
 
     /** Paire : les deux rouleaux identiques clignotent en doré et lâchent une gerbe de confettis. */
@@ -812,6 +834,10 @@ public class GameScreen extends ScreenAdapter {
             onEnemyHit(reflect.damage);
         } else if (event instanceof PlayerDamagedEvent hit && hit.damage > 0) {
             onPlayerHit(hit.damage);
+        } else if (event instanceof ShieldGainedEvent shield && shield.amount > 0) {
+            sounds.shieldGain.play();
+        } else if (event instanceof EnemyShieldedEvent shield && shield.defense > 0) {
+            sounds.shieldGain.play(0.8f, ENEMY_SHIELD_PITCH, 0f); // un ton plus bas : c'est le bouclier de l'ennemi
         } else if (event instanceof PlayerHealedEvent heal && heal.amount > 0) {
             hud.revealPlayerHeal(heal.amount);
         } else if (event instanceof EnemyHealedEvent heal) {
@@ -824,6 +850,7 @@ public class GameScreen extends ScreenAdapter {
     private void onEnemyHit(int damage) {
         hud.revealEnemyHit(damage);
         enemyView.hit();
+        sounds.enemyHurt.play(1f, damage >= BIG_HIT ? BIG_HIT_PITCH : 1f, 0f);
         if (damage >= BIG_HIT) {
             hitStop(BIG_HIT_STOP);
             screenShake.shake(0.2f, 6f);
@@ -833,6 +860,7 @@ public class GameScreen extends ScreenAdapter {
     /** Le joueur est touché : sa barre réagit, un voile rouge passe sur les bords et l'écran tremble. */
     private void onPlayerHit(int damage) {
         hud.revealPlayerHit(damage);
+        sounds.playerHurt.play(1f, damage >= BIG_HIT ? BIG_HIT_PITCH : 1f, 0f);
         damageVignette.flash(settings.isReducedEffects() ? 0.3f : 0.6f);
         screenShake.shake(0.3f, 9f);
     }
@@ -848,10 +876,11 @@ public class GameScreen extends ScreenAdapter {
      * Le tour de l'ennemi attend la fin de la célébration.
      */
     private void onJackpotShown(Symbol symbol) {
-        sounds.bingoThreeSymbols.play();
+        sounds.bingo(symbol).play(BINGO_SCENE_VOLUME); // accordé à la mise en scène du symbole
         table.setReelsRainbow(true);
         table.setLightsParty(true);
-        jackpotCelebration.play(symbol, () -> {
+        // Le son de Bingo d'origine du jeu retentit quand « BINGO! » apparaît.
+        jackpotCelebration.play(symbol, () -> sounds.bingoClassic.play(), () -> {
             table.setLightsParty(false);
             // Après la célébration et les derniers textes du tirage, au tour de l'ennemi.
             stage.addAction(Actions.delay(SlotView.RIPOSTE_AFTER_BONUS, Actions.run(this::playEnemyTurn)));
@@ -860,6 +889,8 @@ public class GameScreen extends ScreenAdapter {
 
     /** Le texte d'un gain (ou d'une perte) du tirage vient d'apparaître : le compteur du panneau le suit. */
     private void onGainsShown(int amount) {
+        if (amount > 0) sounds.coinsGain.play();
+        else if (amount < 0) sounds.coinsLoss.play();
         gainsNotYetShown -= amount;
         refreshGains();
     }
@@ -967,8 +998,10 @@ public class GameScreen extends ScreenAdapter {
             enemyBar.addAction(Actions.fadeOut(0.5f)); // l'ennemi part en jetons
             enemyView.defeat();
             combatEnd.playVictory(hud.getEnemyChipCenter(), showRestart);
+            sounds.victory.play();
         } else {
             combatEnd.playDefeat(showRestart);
+            sounds.defeat.play();
         }
     }
 
@@ -978,9 +1011,9 @@ public class GameScreen extends ScreenAdapter {
      */
     private void playSymbolResultSound(TurnResult result) {
         if (result.isPair()) {
-            sounds.twoSymbols.play();
+            sounds.resultPair.play();
         } else if (!result.isJackpot()) {
-            sounds.oneSymbol.play();
+            sounds.resultNone.play();
         }
     }
 
@@ -1152,6 +1185,7 @@ public class GameScreen extends ScreenAdapter {
         };
         gameInput = new InputMultiplexer(stage, keyboardInput);
         Gdx.input.setInputProcessor(pauseOverlay.isShown() ? pauseOverlay.getInput() : gameInput);
+        music.play();
     }
 
     /** Met à jour le viewport puis repositionne les éléments qui dépendent de la taille de l'écran. */
@@ -1170,6 +1204,7 @@ public class GameScreen extends ScreenAdapter {
     @Override
     public void render(float delta) {
         ScreenUtils.clear(Color.BLACK);
+        music.update(); // suit le réglage « Musique », aussi depuis le menu pause
         if (pauseOverlay.isShown()) {
             // En pause : le jeu reste affiché, figé, sous le menu.
         } else if (hitStop > 0f) {
@@ -1207,6 +1242,7 @@ public class GameScreen extends ScreenAdapter {
         hudTextures.dispose();
         slots.dispose();
         sounds.dispose();
+        music.dispose();
         cardClickParticles.dispose();
         pileOverlay.dispose();
         choiceOverlay.dispose();

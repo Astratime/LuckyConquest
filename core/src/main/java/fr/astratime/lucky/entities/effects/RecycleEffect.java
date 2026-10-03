@@ -5,6 +5,7 @@ import fr.astratime.lucky.entities.Symbol;
 import fr.astratime.lucky.entities.context.PlayContext;
 import fr.astratime.lucky.entities.context.TurnContext;
 import fr.astratime.lucky.popups.EffectPopup;
+import fr.astratime.lucky.popups.EffectSound;
 import fr.astratime.lucky.popups.PopupScale;
 
 import java.util.ArrayList;
@@ -55,4 +56,7 @@ public class RecycleEffect extends Effect {
     public List<EffectPopup> getPopups() {
         return List.of(new EffectPopup("RECYCLAGE", EffectPopup.Style.SPECIAL, PopupScale.MAX_INTENSITY));
     }
+
+    @Override
+    public EffectSound getSound() { return EffectSound.RECYCLE; }
 }

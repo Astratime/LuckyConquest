@@ -4,6 +4,7 @@ import fr.astratime.lucky.entities.Symbol;
 import fr.astratime.lucky.entities.SymbolRegistry;
 import fr.astratime.lucky.entities.context.TurnContext;
 import fr.astratime.lucky.popups.EffectPopup;
+import fr.astratime.lucky.popups.EffectSound;
 import fr.astratime.lucky.popups.PopupScale;
 
 import java.util.List;
@@ -54,4 +55,7 @@ public class DiamondReflectEffect extends Effect {
         return List.of(reflect, EffectPopup.scaled("BOOST DÉFENSE +" + defenseBoost, EffectPopup.Style.DEFENSE,
             defenseBoost, PopupScale.CARD_DEFENSE_BOOST));
     }
+
+    @Override
+    public EffectSound getSound() { return EffectSound.DIAMOND_REFLECT; }
 }

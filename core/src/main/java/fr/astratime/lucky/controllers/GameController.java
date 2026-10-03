@@ -240,7 +240,11 @@ public class GameController {
 
         cardsPlayedThisTurn++;
         PlayContext playContext = new PlayContext(player);
-        card.getEffects().forEach(effect -> effect.onPlay(playContext));
+        for (Effect effect : card.getEffects()) {
+            int firstPopup = playContext.getPopups().size();
+            effect.onPlay(playContext);
+            playContext.attachSound(firstPopup, effect.getSound()); // son de l'effet, avec son premier texte
+        }
         pendingEffects.addAll(playContext.getEffectsForSpin());
 
         if (playContext.getGains() != 0) player.addGains(playContext.getGains());

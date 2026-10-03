@@ -1,5 +1,6 @@
 package fr.astratime.lucky.animations;
 
+import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.g2d.Batch;
@@ -19,9 +20,15 @@ import java.util.List;
  * art) : un halo en mélange additif les fait briller, et leur cœur est dessiné
  * en couleur pleine pour rester saturé sur le feutre vert.
  *
+ * Chaque fusée siffle à son départ et détone à son explosion, un peu plus ou
+ * moins grave au hasard et placée à gauche ou à droite selon sa position.
+ *
  * Les positions sont celles du Stage : l'acteur doit être placé à l'origine.
  */
 public class Fireworks extends Actor {
+
+    /** Bruitages d'une fusée : départ (sifflement) et explosion. */
+    public record Sounds(Sound launch, Sound burst) { }
 
     private static final float ROCKET_SPEED   = 900f;
     private static final float TRAIL_INTERVAL = 0.015f;
@@ -58,12 +65,17 @@ public class Fireworks extends Actor {
     }
 
     private final TextureRegion  pixel;
+    private final Sounds         sounds;
     private final List<Rocket>   rockets = new ArrayList<>();
     private final List<Spark>    sparks  = new ArrayList<>();
 
-    /** @param pixel région d'un pixel blanc, teintée pour chaque particule */
-    public Fireworks(TextureRegion pixel) {
-        this.pixel = pixel;
+    /**
+     * @param pixel  région d'un pixel blanc, teintée pour chaque particule
+     * @param sounds bruitages des fusées
+     */
+    public Fireworks(TextureRegion pixel, Sounds sounds) {
+        this.pixel  = pixel;
+        this.sounds = sounds;
     }
 
     /** Lance une fusée depuis {@code (x, fromY)} ; elle explose à l'ordonnée {@code apexY}. */
@@ -79,6 +91,14 @@ public class Fireworks extends Actor {
         rocket.apexY = apexY;
         rocket.color = palette[MathUtils.random(palette.length - 1)];
         rockets.add(rocket);
+        play(sounds.launch(), x, MathUtils.random(0.5f, 0.7f));
+    }
+
+    /** Joue {@code sound} un peu plus ou moins grave, placé à gauche ou à droite selon {@code x}. */
+    private void play(Sound sound, float x, float volume) {
+        float width = getStage() != null ? getStage().getViewport().getWorldWidth() : 0f;
+        float pan   = width > 0f ? MathUtils.clamp((x / width) * 2f - 1f, -1f, 1f) * 0.6f : 0f;
+        sound.play(volume, MathUtils.random(0.88f, 1.12f), pan);
     }
 
     /** @return true s'il ne reste ni fusée ni étincelle. */
@@ -127,6 +147,7 @@ public class Fireworks extends Actor {
 
     /** Éclat blanc puis gerbe circulaire : la plupart des étincelles sur un anneau, quelques-unes à l'intérieur. */
     private void explode(Rocket rocket) {
+        play(sounds.burst(), rocket.x, MathUtils.random(0.7f, 1f));
         for (int i = 0; i < FLASH_SPARKS; i++) {
             addSpark(rocket.x + MathUtils.random(-12f, 12f), rocket.y + MathUtils.random(-12f, 12f),
                 0f, 0f, FLASH_LIFE, FLASH_SIZE, Color.WHITE);

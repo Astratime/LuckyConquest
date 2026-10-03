@@ -7,6 +7,9 @@ import fr.astratime.lucky.entities.Player;
 import fr.astratime.lucky.entities.context.TurnContext;
 import fr.astratime.lucky.entities.effects.Effect;
 import fr.astratime.lucky.popups.EffectPopup;
+import fr.astratime.lucky.popups.EffectSound;
+import fr.astratime.lucky.entities.effects.AttackEffect;
+import fr.astratime.lucky.entities.effects.DefenseEffect;
 import fr.astratime.lucky.entities.effects.ExtraDrawEffect;
 import fr.astratime.lucky.entities.effects.BetEffect;
 import fr.astratime.lucky.entities.effects.BingoEffect;
@@ -40,6 +43,7 @@ class GameControllerTest {
         @Override public void apply(TurnContext context) { applied++; }
         @Override public String getDescription() { return "compteur"; }
         @Override public List<EffectPopup> getPopups() { return List.of(); }
+        @Override public EffectSound getSound() { return EffectSound.ATTACK; }
     }
 
     private static Card card(String id, Effect... effects) {
@@ -85,6 +89,18 @@ class GameControllerTest {
 
         controller.spin();
         assertEquals(1, effect.applied, "les effets en attente sont vidés après le spin");
+    }
+
+    @Test
+    void firstTextOfEachEffectCarriesItsSound() {
+        Card both = card("double", new AttackEffect(10), new DefenseEffect(5));
+        GameController controller = controllerWith(List.of(both));
+        controller.drawCards();
+
+        CardPlayResult result = controller.playCard(player(controller).getCurrentHand().get(0));
+
+        assertEquals(List.of(EffectSound.ATTACK, EffectSound.DEFENSE),
+            result.getPopups().stream().map(EffectPopup::getSound).toList());
     }
 
     @Test

@@ -60,16 +60,18 @@ public class PauseOverlay implements Disposable {
 
     /**
      * @param clickSound bruitage des options (celui des boutons du jeu)
+     * @param hoverSound bruitage du survol des options
      * @param settings   réglages visuels de l'écran de jeu (ceux que lit sa secousse)
      */
-    public PauseOverlay(LuckyGame game, Batch batch, HudTextures hud, Sound clickSound, VisualSettings settings,
+    public PauseOverlay(LuckyGame game, Batch batch, HudTextures hud, Sound clickSound, Sound hoverSound,
+                        VisualSettings settings,
                         Listener listener) {
         this.listener = listener;
         stage = new Stage(new MinimumScreenViewport(MIN_WIDTH, MIN_HEIGHT), batch);
         veil  = new Image(new TextureRegionDrawable(new TextureRegion(hud.pixel)));
         veil.setColor(Palette.VEIL);
         stage.addActor(veil);
-        menu = new OptionsMenu(stage, hud, clickSound);
+        menu = new OptionsMenu(stage, hud, clickSound, hoverSound);
         settingsEntries = OptionsMenu.settingsEntries(game, settings, new AudioSettings(), new DisplaySettings(),
             listener::onEffectsChanged);
 
