@@ -1326,6 +1326,8 @@ public class GameScreen extends ScreenAdapter {
         } else if (run.isBossStage() && isDungeon()) {
             shown.add(buttons.createAction("Ouvrir le coffre !", sounds.buttonClick, this::onContinue));
         } else if (run.isBossStage()) {
+            // Boss battu : le chapitre est terminé dans ce mode, le suivant s'ouvre.
+            if (run instanceof TowerRun tower) luckyGame.getProfile().clearChapter(tower.getChapter(), tower.isHard());
             shown.add(buttons.createAction("Chapitre terminé !", sounds.buttonClick, this::onBackToChapters));
         } else {
             shown.add(buttons.createAction("Continuer", sounds.buttonClick, this::onContinue));

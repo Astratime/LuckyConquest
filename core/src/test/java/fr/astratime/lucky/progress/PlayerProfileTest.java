@@ -3,6 +3,7 @@ package fr.astratime.lucky.progress;
 import fr.astratime.lucky.entities.Symbol;
 import fr.astratime.lucky.entities.exploration.Dungeon;
 import fr.astratime.lucky.entities.exploration.Place;
+import fr.astratime.lucky.entities.tower.Chapter;
 
 import org.junit.jupiter.api.Test;
 
@@ -216,5 +217,38 @@ class PlayerProfileTest {
         assertTrue(profile.openTowerHard());
         assertFalse(profile.openTowerHard(), "déjà ouvert");
         assertTrue(profile(storage).isTowerHardOpen(), "sauvegardé");
+    }
+
+    @Test
+    void aChapterOpensOnlyOnceThePreviousOneIsFinishedInTheSameMode() {
+        MemoryStorage storage = new MemoryStorage();
+        PlayerProfile profile = profile(storage);
+        assertTrue(profile.isOpen(Chapter.GENESE, false), "le premier chapitre est toujours ouvert");
+        assertFalse(profile.isOpen(Chapter.TABLES_SACREES, false));
+
+        assertTrue(profile.clearChapter(Chapter.GENESE, false));
+        assertFalse(profile.clearChapter(Chapter.GENESE, false), "déjà terminé");
+        assertTrue(profile.isOpen(Chapter.TABLES_SACREES, false));
+        assertFalse(profile.isOpen(Chapter.DERNIER_TIRAGE, false));
+        assertTrue(profile(storage).isOpen(Chapter.TABLES_SACREES, false), "sauvegardé");
+
+        assertFalse(profile.isOpen(Chapter.GENESE, true), "mode difficile pas encore ouvert");
+        profile.openTowerHard();
+        assertTrue(profile.isOpen(Chapter.GENESE, true));
+        assertFalse(profile.isOpen(Chapter.TABLES_SACREES, true), "le mode difficile a sa propre progression");
+        profile.clearChapter(Chapter.GENESE, true);
+        assertTrue(profile(storage).isOpen(Chapter.TABLES_SACREES, true));
+    }
+
+    @Test
+    void anOldSaveWithTheHardTowerKeepsEveryNormalChapterOpen() {
+        MemoryStorage storage = new MemoryStorage();
+        storage.values.put(PlayerProfile.KEY_TOWER_HARD, "true");
+        PlayerProfile profile = profile(storage);
+        for (Chapter chapter : Chapter.values()) assertTrue(profile.isOpen(chapter, false), chapter.name());
+        assertFalse(profile.isOpen(Chapter.TABLES_SACREES, true));
+
+        MemoryStorage fresh = new MemoryStorage();
+        assertFalse(profile(fresh).isOpen(Chapter.TABLES_SACREES, false), "vieux profil sans mode difficile : chapitre 1 seulement");
     }
 }

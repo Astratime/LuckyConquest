@@ -49,8 +49,9 @@ import java.util.List;
  * À gauche, un panneau liste les chapitres ; à droite, le chapitre sélectionné
  * (survol de la souris ou flèches) montre son titre, son illustration et son
  * récit. Un clic sur un chapitre ouvert (ou Entrée, ou « Commencer ») le lance :
- * trois combats à la suite (voir {@link TowerRun}, {@link GameScreen}). Les
- * chapitres pas encore ouverts sont grisés. Échap ou « Retour » ramène au menu
+ * trois combats à la suite (voir {@link TowerRun}, {@link GameScreen}). Un
+ * chapitre s'ouvre quand le précédent est terminé, dans le même mode ; les
+ * autres sont grisés. Échap ou « Retour » ramène au menu
  * principal.
  */
 public class TowerScreen extends ScreenAdapter {
@@ -140,7 +141,6 @@ public class TowerScreen extends ScreenAdapter {
             int index = i;
             MenuOption row = new MenuOption(chapters[i].getLabel(), rowStyle, hud.insetDrawable(),
                 new TextureRegion(chipTexture), ROW_WIDTH, ROW_HEIGHT);
-            if (!chapters[i].isOpen()) row.setColor(LOCKED_TEXT);
             row.addListener(new ClickListener() {
                 @Override
                 public void enter(InputEvent event, float x, float y, int pointer, Actor fromActor) {
@@ -214,19 +214,26 @@ public class TowerScreen extends ScreenAdapter {
     /** Montre le chapitre sélectionné : titre, illustration et récit (avec la règle du mode difficile). */
     private void showChapter() {
         int index = selected;
-        for (int i = 0; i < rows.size(); i++) rows.get(i).setSelected(i == index);
+        for (int i = 0; i < rows.size(); i++) {
+            rows.get(i).setSelected(i == index);
+            rows.get(i).setColor(isOpen(Chapter.values()[i]) ? Color.WHITE : LOCKED_TEXT);
+        }
         Chapter chapter = Chapter.values()[index];
+        boolean open = isOpen(chapter);
         chapterLabel.setText(chapter.getLabel().toUpperCase() + (hard ? " · DIFFICILE" : ""));
         chapterTitle.setText(chapter.getTitle());
-        description.setText(hard
+        description.setText(!open
+            ? "Termine le " + chapter.getPrevious().getLabel().toLowerCase()
+                + (hard ? " en mode difficile" : "") + " pour ouvrir ce chapitre."
+            : hard
             ? chapter.getDescription() + "\n\nMode difficile : ennemis PV x" + EnemyKind.HARD_HP_FACTOR
                 + ", force x" + EnemyKind.HARD_POWER_FACTOR + "."
             : chapter.getDescription());
         ((TextureRegionDrawable) art.getDrawable()).setRegion(new TextureRegion(enemyTextures.chapterArt(chapter)));
-        art.setVisible(chapter.isOpen());
-        lockMark.setVisible(!chapter.isOpen());
-        startButton.setDisabled(!chapter.isOpen());
-        startButton.setText(chapter.isOpen() ? "Commencer" : "Bientôt");
+        art.setVisible(open);
+        lockMark.setVisible(!open);
+        startButton.setDisabled(!open);
+        startButton.setText(open ? "Commencer" : "Verrouillé");
         // Le panneau de droite apparaît en fondu à chaque changement.
         for (Actor actor : List.of(chapterLabel, chapterTitle, art, lockMark, description)) {
             actor.clearActions();
@@ -240,11 +247,16 @@ public class TowerScreen extends ScreenAdapter {
     private void launch() {
         if (leaving) return;
         Chapter chapter = Chapter.values()[selected];
-        if (!chapter.isOpen()) return;
+        if (!isOpen(chapter)) return;
         fadeOutThen(() -> {
             luckyGame.setScreen(new GameScreen(luckyGame, new TowerRun(chapter, hard)));
             dispose();
         });
+    }
+
+    /** @return {@code true} si {@code chapter} peut être joué dans le mode choisi (le précédent est terminé). */
+    private boolean isOpen(Chapter chapter) {
+        return luckyGame.getProfile().isOpen(chapter, hard);
     }
 
     /** Bascule entre le mode normal et le mode difficile. */
@@ -343,7 +355,7 @@ public class TowerScreen extends ScreenAdapter {
                     case Input.Keys.UP, Input.Keys.W -> select((selected + rows.size() - 1) % rows.size(), true);
                     case Input.Keys.DOWN, Input.Keys.S -> select((selected + 1) % rows.size(), true);
                     case Input.Keys.ENTER, Input.Keys.SPACE -> {
-                        if (Chapter.values()[selected].isOpen()) {
+                        if (isOpen(Chapter.values()[selected])) {
                             clickSound.play();
                             launch();
                         }
