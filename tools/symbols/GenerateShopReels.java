@@ -8,8 +8,8 @@ import java.util.function.BiPredicate;
  * style des rouleaux classiques : 24 x 20 pixels de 6 px sur fond gris clair,
  * contour sombre, bord éclairé en haut à gauche et ombré en bas à droite.
  * Dessine aussi leur carte Bingo de test (assets/cards/test/), sur le modèle de
- * celle de la Cloche, et les trois nouvelles cartes de la boutique
- * (Pioche +5, Gains +2000, Grand Aimant) à partir de cartes existantes.
+ * celle de la Cloche, et la nouvelle carte de la boutique
+ * (Gains +2000) à partir d'une carte existante.
  *
  * Lancement, depuis la racine du dépôt : java tools/symbols/GenerateShopReels.java
  */
@@ -27,11 +27,8 @@ public class GenerateShopReels {
         reel("18-star", "bingo_star", star());
         reel("19-bomb", "bingo_bomb", bomb());
         reel("20-crown", "bingo_crown", crown());
-        draw5();
         recolor("gain_500", "gain_2000", new int[] {0xff460a1a, 0xff681228, 0xff540e20},
             new int[] {0xff0a1e46, 0xff123c68, 0xff0e2c54});
-        recolor("magnet", "big_magnet", new int[] {0xff16285f, 0xff284696, 0xff1e3473, 0xff14235a},
-            new int[] {0xff5f1616, 0xff962828, 0xff731e1e, 0xff5a1414});
     }
 
     // -------------------------------------------------------------------------
@@ -230,41 +227,6 @@ public class GenerateShopReels {
     // -------------------------------------------------------------------------
     // Cartes de la boutique
     // -------------------------------------------------------------------------
-
-    /** Pioche +5 : la carte Pioche +3, dont chaque « 3 » devient un « 5 ». */
-    private static void draw5() throws Exception {
-        BufferedImage card = ImageIO.read(new File("assets/cards/special/draw_3.png"));
-        int ink = card.getRGB(21 * CARD_PIXEL + 1, 24 * CARD_PIXEL + 1);   // rouge du « 3 » de la pièce
-        int coin = card.getRGB(26 * CARD_PIXEL + 1, 26 * CARD_PIXEL + 1);  // or de la pièce
-        int cream = card.getRGB(3 * CARD_PIXEL + 1, 9 * CARD_PIXEL + 1);   // chiffres des coins
-        String[] big = {"#####", "#....", "#....", "####.", "....#", "....#", "####."};
-        glyph(card, 21, 24, big, ink, coin);
-        String[] small = {"###", "#..", "###", "..#", "###"};
-        int[] topLeftBack  = {card.getRGB(3 * CARD_PIXEL + 1, 7 * CARD_PIXEL + 1),
-            card.getRGB(4 * CARD_PIXEL + 1, 7 * CARD_PIXEL + 1), card.getRGB(5 * CARD_PIXEL + 1, 7 * CARD_PIXEL + 1)};
-        int[] bottomBack   = {card.getRGB(34 * CARD_PIXEL + 1, 47 * CARD_PIXEL + 1),
-            card.getRGB(35 * CARD_PIXEL + 1, 47 * CARD_PIXEL + 1), card.getRGB(36 * CARD_PIXEL + 1, 47 * CARD_PIXEL + 1)};
-        smallGlyph(card, 3, 9, small, cream, topLeftBack);
-        smallGlyph(card, 34, 42, small, cream, bottomBack);
-        ImageIO.write(card, "png", new File("assets/cards/special/draw_5.png"));
-    }
-
-    private static void glyph(BufferedImage card, int left, int top, String[] rows, int ink, int back) {
-        for (int y = 0; y < rows.length; y++) {
-            for (int x = 0; x < rows[y].length(); x++) {
-                block(card, left + x, top + y, CARD_PIXEL, rows[y].charAt(x) == '#' ? ink : back);
-            }
-        }
-    }
-
-    /** Chiffre d'un coin : le fond de chaque colonne est celui du cadre à cet endroit. */
-    private static void smallGlyph(BufferedImage card, int left, int top, String[] rows, int ink, int[] backs) {
-        for (int y = 0; y < rows.length; y++) {
-            for (int x = 0; x < rows[y].length(); x++) {
-                block(card, left + x, top + y, CARD_PIXEL, rows[y].charAt(x) == '#' ? ink : backs[x]);
-            }
-        }
-    }
 
     /** Copie la carte {@code from} en remplaçant chaque couleur de {@code before} par celle de {@code after}. */
     private static void recolor(String from, String to, int[] before, int[] after) throws Exception {
