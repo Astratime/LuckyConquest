@@ -7,6 +7,7 @@ import fr.astratime.lucky.entities.exploration.Place;
 import fr.astratime.lucky.entities.tower.Chapter;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -32,6 +33,14 @@ import java.util.Map;
  *       ({@link ReelShop}) ; sa machine en compte exactement {@link Symbol#MACHINE_SIZE},
  *       tous différents (au départ, les 11 classiques).</li>
  * </ul>
+ *
+ * Le <b>mode ADMIN</b> ({@link #setAdmin(boolean)}) donne accès à tout le
+ * contenu du jeu sans toucher à cette progression : tous les chapitres de la
+ * Tour (normal et difficile), tous les lieux de l'Exploration, toutes les
+ * cartes en {@link #MAX_COPIES} exemplaires, tous les rouleaux et le plus haut
+ * rang. Il a son propre deck et sa propre machine ; les combats joués en mode
+ * ADMIN ne rapportent rien et ne vident aucun donjon ni chapitre. Une fois le
+ * mode désactivé, le joueur retrouve exactement sa partie.
  */
 public class PlayerProfile {
 
@@ -54,6 +63,9 @@ public class PlayerProfile {
     static final String KEY_TOWER_HARD = "towerHard";
     static final String KEY_CHAPTERS      = "chapters";
     static final String KEY_HARD_CHAPTERS = "hardChapters";
+    static final String KEY_ADMIN         = "admin";
+    static final String KEY_ADMIN_DECK    = "adminDeck";
+    static final String KEY_ADMIN_MACHINE = "adminMachine";
 
     private final ProfileStorage       storage;
     private final Map<String, Integer> starterDeck;
@@ -72,6 +84,13 @@ public class PlayerProfile {
     /** Chapitres de la Tour terminés (leur boss battu), en mode normal puis en mode difficile, par nom. */
     private final java.util.Set<String> clearedChapters     = new java.util.LinkedHashSet<>();
     private final java.util.Set<String> clearedHardChapters = new java.util.LinkedHashSet<>();
+    /** Mode ADMIN : tout le contenu du jeu est ouvert, sans toucher à la progression enregistrée. */
+    private boolean admin;
+    /** Toutes les cartes à collectionner, par id (voir {@link #setCatalog(Collection)}). */
+    private final java.util.Set<String> catalog = new java.util.LinkedHashSet<>();
+    /** Deck et machine du mode ADMIN, séparés de ceux de la partie. */
+    private final Map<String, Integer> adminDeck    = new LinkedHashMap<>();
+    private final List<Symbol>         adminMachine = new ArrayList<>();
 
     /**
      * Charge le profil enregistré dans {@code storage} ; au premier lancement
@@ -107,6 +126,7 @@ public class PlayerProfile {
             for (Chapter chapter : Chapter.values()) clearedChapters.add(chapter.name());
         }
         readNames(storage.get(KEY_HARD_CHAPTERS), clearedHardChapters);
+        admin = Boolean.parseBoolean(storage.get(KEY_ADMIN));
         String savedDungeons = storage.get(KEY_DUNGEONS);
         if (savedDungeons != null) {
             for (String name : savedDungeons.split(",")) if (!name.isBlank()) clearedDungeons.add(name.trim());
@@ -118,6 +138,65 @@ public class PlayerProfile {
                 }
             }
         }
+        for (Place place : Place.values()) {
+            for (Dungeon dungeon : place.getDungeons()) dungeon.getLoot().forEach(loot -> catalog.add(loot.cardId()));
+        }
+        loadAdminLoadout();
+    }
+
+    // -------------------------------------------------------------------------
+    // Mode ADMIN
+    // -------------------------------------------------------------------------
+
+    /**
+     * Ajoute au catalogue (toutes les cartes que le mode ADMIN met dans la
+     * collection) les cartes {@code cardIds} : la collection de départ et les
+     * cartes de la boutique. Les cartes des coffres des donjons y sont déjà.
+     */
+    public void setCatalog(Collection<String> cardIds) {
+        catalog.addAll(cardIds);
+        loadAdminLoadout();
+    }
+
+    /** @return {@code true} si le mode ADMIN est activé. */
+    public boolean isAdmin() { return admin; }
+
+    /**
+     * Active ou désactive le mode ADMIN et l'enregistre. La progression de la
+     * partie (pièces, collection, deck, rang, rouleaux, donjons, chapitres)
+     * n'est jamais modifiée par ce changement.
+     */
+    public void setAdmin(boolean admin) {
+        if (this.admin == admin) return;
+        this.admin = admin;
+        loadAdminLoadout();
+        storage.put(KEY_ADMIN, String.valueOf(admin));
+        storage.flush();
+    }
+
+    /** Recharge le deck et la machine du mode ADMIN (ceux de la partie s'ils ne sont pas valides). */
+    private void loadAdminLoadout() {
+        boolean wasAdmin = admin;
+        admin = true; // les règles du deck et de la machine se vérifient avec tout le contenu
+        String savedDeck = storage.get(KEY_ADMIN_DECK);
+        Map<String, Integer> loadedDeck = savedDeck != null ? decode(savedDeck) : Map.of();
+        adminDeck.clear();
+        adminDeck.putAll(deckProblem(loadedDeck) == null ? loadedDeck : deck);
+        List<Symbol> savedMachine = decodeSymbols(storage.get(KEY_ADMIN_MACHINE));
+        adminMachine.clear();
+        adminMachine.addAll(machineProblem(savedMachine) == null ? savedMachine : machine);
+        admin = wasAdmin;
+    }
+
+    /** @return tous les rouleaux qui se mettent dans une machine : les classiques, ceux de la boutique, ceux des lieux. */
+    static List<Symbol> allReels() {
+        List<Symbol> reels = new ArrayList<>(Symbol.classicReels());
+        for (Symbol symbol : ReelShop.getPrices().keySet()) if (!reels.contains(symbol)) reels.add(symbol);
+        for (Place place : Place.values()) {
+            Symbol reward = place.getReelReward();
+            if (reward != null && !reels.contains(reward)) reels.add(reward);
+        }
+        return reels;
     }
 
     // -------------------------------------------------------------------------
@@ -132,7 +211,7 @@ public class PlayerProfile {
      * @return le rouleau gagné à l'instant, ou {@code null}
      */
     public Symbol clearDungeon(String dungeon) {
-        if (!clearedDungeons.add(dungeon)) return null;
+        if (admin || !clearedDungeons.add(dungeon)) return null;
         Symbol earned = null;
         for (Place place : Place.values()) {
             Symbol reel = place.getReelReward();
@@ -145,7 +224,7 @@ public class PlayerProfile {
     }
 
     /** @return {@code true} si le mode difficile de la Tour est ouvert (la Machine Originelle a été battue). */
-    public boolean isTowerHardOpen() { return towerHard; }
+    public boolean isTowerHardOpen() { return admin || towerHard; }
 
     /**
      * La Machine Originelle est battue : le mode difficile de la Tour s'ouvre, pour toujours.
@@ -153,7 +232,7 @@ public class PlayerProfile {
      * @return {@code true} s'il vient de s'ouvrir
      */
     public boolean openTowerHard() {
-        if (towerHard) return false;
+        if (admin || towerHard) return false;
         towerHard = true;
         save();
         return true;
@@ -170,7 +249,7 @@ public class PlayerProfile {
      * @return {@code true} s'il vient d'être terminé pour la première fois
      */
     public boolean clearChapter(Chapter chapter, boolean hard) {
-        if (!(hard ? clearedHardChapters : clearedChapters).add(chapter.name())) return false;
+        if (admin || !(hard ? clearedHardChapters : clearedChapters).add(chapter.name())) return false;
         save();
         return true;
     }
@@ -185,6 +264,7 @@ public class PlayerProfile {
      *         le premier, ou le précédent terminé dans ce même mode (le mode difficile doit en plus être ouvert)
      */
     public boolean isOpen(Chapter chapter, boolean hard) {
+        if (admin) return true;
         if (hard && !towerHard) return false;
         Chapter previous = chapter.getPrevious();
         return previous == null || isCleared(previous, hard);
@@ -195,6 +275,7 @@ public class PlayerProfile {
 
     /** @return {@code true} si le lieu {@code place} est ouvert : le premier, ou tous les donjons du précédent vidés. */
     public boolean isOpen(Place place) {
+        if (admin) return true;
         Place previous = place.getPrevious();
         return previous == null || previous.getDungeons().stream().allMatch(this::isCleared);
     }
@@ -204,13 +285,22 @@ public class PlayerProfile {
     // -------------------------------------------------------------------------
 
     /** @return les cartes possédées et leur nombre d'exemplaires, par id, dans l'ordre où elles ont été obtenues. */
-    public Map<String, Integer> getCollection() { return Collections.unmodifiableMap(collection); }
+    public Map<String, Integer> getCollection() {
+        if (!admin) return Collections.unmodifiableMap(collection);
+        Map<String, Integer> everything = new LinkedHashMap<>();
+        for (String id : collection.keySet()) everything.put(id, MAX_COPIES);
+        for (String id : catalog) everything.put(id, MAX_COPIES);
+        return Collections.unmodifiableMap(everything);
+    }
 
     /** @return le nombre d'exemplaires possédés de la carte {@code id} (0 si aucun). */
-    public int getOwnedCopies(String id) { return collection.getOrDefault(id, 0); }
+    public int getOwnedCopies(String id) {
+        if (admin && (catalog.contains(id) || collection.containsKey(id))) return MAX_COPIES;
+        return collection.getOrDefault(id, 0);
+    }
 
     /** @return le deck du joueur : nombre d'exemplaires de chaque carte, par id. */
-    public Map<String, Integer> getDeck() { return Collections.unmodifiableMap(deck); }
+    public Map<String, Integer> getDeck() { return Collections.unmodifiableMap(admin ? adminDeck : deck); }
 
     /** @return le deck de départ, joué tant que le joueur n'a pas construit le sien. */
     public Map<String, Integer> getStarterDeck() { return Collections.unmodifiableMap(starterDeck); }
@@ -241,8 +331,9 @@ public class PlayerProfile {
     public void setDeck(Map<String, Integer> newDeck) {
         String problem = deckProblem(newDeck);
         if (problem != null) throw new IllegalArgumentException(problem);
-        deck.clear();
-        newDeck.forEach((id, copies) -> { if (copies > 0) deck.put(id, copies); });
+        Map<String, Integer> target = admin ? adminDeck : deck;
+        target.clear();
+        newDeck.forEach((id, copies) -> { if (copies > 0) target.put(id, copies); });
         save();
     }
 
@@ -271,7 +362,7 @@ public class PlayerProfile {
 
     /** Ajoute {@code amount} pièces (rien si négatif) et enregistre le profil. */
     public void addCoins(long amount) {
-        if (amount <= 0) return;
+        if (admin || amount <= 0) return;
         coins += amount;
         save();
     }
@@ -285,6 +376,7 @@ public class PlayerProfile {
      * @return ce que le joueur a reçu
      */
     public ChestReward openChest(String cardId) {
+        if (admin) return new ChestReward(cardId, false, MAX_COPIES, 0); // le mode ADMIN ne rapporte rien
         int owned = getOwnedCopies(cardId);
         boolean newCopy = owned < MAX_COPIES;
         int reward = CHEST_COINS + (newCopy ? 0 : DUPLICATE_COINS);
@@ -309,13 +401,19 @@ public class PlayerProfile {
     // -------------------------------------------------------------------------
 
     /** @return le rang du joueur, ou {@code null} s'il n'en a acheté aucun. */
-    public Rank getRank() { return ranks == 0 ? null : Rank.values()[ranks - 1]; }
+    public Rank getRank() {
+        int owned = shownRanks();
+        return owned == 0 ? null : Rank.values()[owned - 1];
+    }
 
     /** @return le prochain rang à acheter, ou {@code null} s'il les a tous. */
-    public Rank getNextRank() { return ranks >= Rank.values().length ? null : Rank.values()[ranks]; }
+    public Rank getNextRank() { return shownRanks() >= Rank.values().length ? null : Rank.values()[shownRanks()]; }
 
     /** @return les bonus de son rang en combat ({@link RankBonus#NONE} sans rang). */
-    public RankBonus getRankBonus() { return ranks == 0 ? RankBonus.NONE : getRank().getBonus(); }
+    public RankBonus getRankBonus() { return shownRanks() == 0 ? RankBonus.NONE : getRank().getBonus(); }
+
+    /** @return le nombre de rangs du joueur (tous en mode ADMIN). */
+    private int shownRanks() { return admin ? Rank.values().length : ranks; }
 
     /**
      * Achète le rang suivant (les rangs s'achètent dans l'ordre) et enregistre le profil.
@@ -339,6 +437,7 @@ public class PlayerProfile {
      * @return {@code false} si la carte est déjà au maximum ou si les pièces manquent
      */
     public boolean buyCard(String id, long price) {
+        if (admin) return false;
         int owned = getOwnedCopies(id);
         if (owned >= MAX_COPIES || price < 0 || coins < price) return false;
         coins -= price;
@@ -349,13 +448,17 @@ public class PlayerProfile {
 
     /** @return les rouleaux possédés : les 11 classiques, puis ceux achetés, dans l'ordre d'achat. */
     public List<Symbol> getOwnedReels() {
+        if (admin) return Collections.unmodifiableList(allReels());
         List<Symbol> owned = new ArrayList<>(Symbol.classicReels());
         owned.addAll(boughtReels);
         return Collections.unmodifiableList(owned);
     }
 
     /** @return {@code true} si le joueur possède le rouleau {@code symbol}. */
-    public boolean ownsReel(Symbol symbol) { return symbol.isClassic() || boughtReels.contains(symbol); }
+    public boolean ownsReel(Symbol symbol) {
+        if (admin) return allReels().contains(symbol);
+        return symbol.isClassic() || boughtReels.contains(symbol);
+    }
 
     /**
      * Achète le rouleau {@code symbol} pour {@code price} pièces, puis enregistre le profil.
@@ -363,7 +466,7 @@ public class PlayerProfile {
      * @return {@code false} s'il est déjà possédé, si c'est le Joker ou si les pièces manquent
      */
     public boolean buyReel(Symbol symbol, long price) {
-        if (symbol == Symbol.JOKER || ownsReel(symbol) || price < 0 || coins < price) return false;
+        if (admin || symbol == Symbol.JOKER || ownsReel(symbol) || price < 0 || coins < price) return false;
         coins -= price;
         boughtReels.add(symbol);
         save();
@@ -371,7 +474,7 @@ public class PlayerProfile {
     }
 
     /** @return les rouleaux de la machine du joueur, dans l'ordre. */
-    public List<Symbol> getMachine() { return Collections.unmodifiableList(machine); }
+    public List<Symbol> getMachine() { return Collections.unmodifiableList(admin ? adminMachine : machine); }
 
     /**
      * @return pourquoi {@code candidate} ne peut pas être la machine du joueur, ou
@@ -398,8 +501,9 @@ public class PlayerProfile {
     public void setMachine(List<Symbol> newMachine) {
         String problem = machineProblem(newMachine);
         if (problem != null) throw new IllegalArgumentException(problem);
-        machine.clear();
-        machine.addAll(newMachine);
+        List<Symbol> target = admin ? adminMachine : machine;
+        target.clear();
+        target.addAll(newMachine);
         save();
     }
 
@@ -419,6 +523,8 @@ public class PlayerProfile {
         storage.put(KEY_DUNGEONS, String.join(",", clearedDungeons));
         storage.put(KEY_CHAPTERS, String.join(",", clearedChapters));
         storage.put(KEY_HARD_CHAPTERS, String.join(",", clearedHardChapters));
+        storage.put(KEY_ADMIN_DECK, encode(adminDeck));
+        storage.put(KEY_ADMIN_MACHINE, encodeSymbols(adminMachine));
         storage.flush();
     }
 
