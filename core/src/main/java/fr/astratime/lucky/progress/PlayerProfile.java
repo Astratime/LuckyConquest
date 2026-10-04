@@ -50,6 +50,7 @@ public class PlayerProfile {
     static final String KEY_REELS      = "reels";
     static final String KEY_MACHINE    = "machine";
     static final String KEY_DUNGEONS   = "dungeons";
+    static final String KEY_TOWER_HARD = "towerHard";
 
     private final ProfileStorage       storage;
     private final Map<String, Integer> starterDeck;
@@ -60,6 +61,7 @@ public class PlayerProfile {
     private int  ranks;
     /** Rouleaux achetés à la boutique, dans l'ordre d'achat. */
     private final List<Symbol> boughtReels = new ArrayList<>();
+    private boolean            towerHard;
     /** Rouleaux de la machine du joueur. */
     private final List<Symbol> machine     = new ArrayList<>();
     /** Donjons de l'Exploration vidés (leur chef battu), par nom. */
@@ -90,6 +92,7 @@ public class PlayerProfile {
         }
         List<Symbol> savedMachine = decodeSymbols(storage.get(KEY_MACHINE));
         machine.addAll(machineProblem(savedMachine) == null ? savedMachine : Symbol.classicReels());
+        towerHard = Boolean.parseBoolean(storage.get(KEY_TOWER_HARD));
         String savedDungeons = storage.get(KEY_DUNGEONS);
         if (savedDungeons != null) {
             for (String name : savedDungeons.split(",")) if (!name.isBlank()) clearedDungeons.add(name.trim());
@@ -125,6 +128,21 @@ public class PlayerProfile {
         }
         save();
         return earned;
+    }
+
+    /** @return {@code true} si le mode difficile de la Tour est ouvert (la Machine Originelle a été battue). */
+    public boolean isTowerHardOpen() { return towerHard; }
+
+    /**
+     * La Machine Originelle est battue : le mode difficile de la Tour s'ouvre, pour toujours.
+     *
+     * @return {@code true} s'il vient de s'ouvrir
+     */
+    public boolean openTowerHard() {
+        if (towerHard) return false;
+        towerHard = true;
+        save();
+        return true;
     }
 
     /** @return {@code true} si le donjon {@code dungeon} a déjà été vidé. */
@@ -344,8 +362,9 @@ public class PlayerProfile {
     // Enregistrement
     // -------------------------------------------------------------------------
 
-    /** Enregistre la collection, le deck, les pièces, le rang, les rouleaux et les donjons vidés. */
+    /** Enregistre la collection, le deck, les pièces, le rang, les rouleaux, les donjons vidés et le mode difficile. */
     public void save() {
+        storage.put(KEY_TOWER_HARD, String.valueOf(towerHard));
         storage.put(KEY_COLLECTION, encode(collection));
         storage.put(KEY_DECK, encode(deck));
         storage.put(KEY_COINS, String.valueOf(coins));

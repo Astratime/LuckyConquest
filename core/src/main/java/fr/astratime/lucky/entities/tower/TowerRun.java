@@ -25,18 +25,29 @@ public class TowerRun implements CombatRun {
 
     private final Chapter chapter;
     private final Random  random;
+    private final boolean hard;
     private int           stage;
     private EnemyKind     enemy;
     private List<EnemyKind> choices = List.of();
 
     public TowerRun(Chapter chapter) {
-        this(chapter, new Random());
+        this(chapter, false);
+    }
+
+    /** @param hard mode difficile : ennemis plus forts (voir {@link EnemyKind#HARD_POWER_FACTOR}) */
+    public TowerRun(Chapter chapter, boolean hard) {
+        this(chapter, new Random(), hard);
     }
 
     /** @param random ordre des cartes du choix de l'adversaire (graine fixe pour les tests) */
     public TowerRun(Chapter chapter, Random random) {
+        this(chapter, random, false);
+    }
+
+    private TowerRun(Chapter chapter, Random random, boolean hard) {
         this.chapter = chapter;
         this.random  = random;
+        this.hard    = hard;
         this.enemy   = chapter.getFirstEnemy();
     }
 
@@ -48,8 +59,10 @@ public class TowerRun implements CombatRun {
     public int getStageCount() { return STAGES; }
     @Override
     public EnemyKind getEnemy() { return enemy; }
+    /** @return {@code true} en mode difficile. */
+    public boolean isHard() { return hard; }
     @Override
-    public String getLabel() { return chapter.getLabel(); }
+    public String getLabel() { return hard ? chapter.getLabel() + " difficile" : chapter.getLabel(); }
     @Override
     public String getEnding() { return chapter.getEnding(); }
 

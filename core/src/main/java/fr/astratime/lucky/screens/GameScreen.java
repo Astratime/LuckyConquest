@@ -26,6 +26,7 @@ import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 import com.badlogic.gdx.math.Interpolation;
 import com.badlogic.gdx.scenes.scene2d.actions.Actions;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
+import com.badlogic.gdx.utils.Align;
 import com.badlogic.gdx.utils.ScreenUtils;
 import fr.astratime.lucky.LuckyGame;
 import fr.astratime.lucky.animations.BingoCardAnimation;
@@ -77,6 +78,7 @@ import fr.astratime.lucky.entities.choices.CardChoice;
 import fr.astratime.lucky.entities.choices.RouletteChoice;
 import fr.astratime.lucky.entities.SlotMachine;
 import fr.astratime.lucky.entities.enemy.EnemyKind;
+import fr.astratime.lucky.entities.tower.TowerRun;
 import fr.astratime.lucky.entities.enemy.EnemySymbol;
 import fr.astratime.lucky.entities.enemy.EnemyTurnResult;
 import fr.astratime.lucky.entities.events.DamageReflectedEvent;
@@ -353,6 +355,7 @@ public class GameScreen extends ScreenAdapter {
             CardLoader.cardFactory(), CardLoader.loadShop(),
             cards -> new Player("Joueur", Player.BASE_HP, cards, profile.getRankBonus(), profile.getMachine()));
         if (run != null) gameController.setPlaceRule(run.getPlaceRule()); // Exploration : la règle du lieu
+        EnemyKind.setTowerHard(run instanceof TowerRun tower && tower.isHard()); // Tour : mode difficile
         gameController.restart(firstEnemy()); // le premier ennemi du chapitre, ou le croupier d'entraînement
         // Le SpriteBatch est partagé avec LuckyGame et ne doit PAS être disposé ici.
         this.stage = new Stage(new MinimumScreenViewport(MIN_WIDTH, MIN_HEIGHT), luckyGame.getBatch());
@@ -1336,8 +1339,12 @@ public class GameScreen extends ScreenAdapter {
         }
         String ending = run != null && victory && run.isBossStage() ? run.getEnding() : null;
         if (ending != null) {
-            // Le dernier chapitre clôt l'histoire : sa phrase de fin, au-dessus du bouton.
+            // Le dernier chapitre clôt l'histoire : sa phrase de fin, au-dessus du bouton. Il ouvre le mode difficile.
+            if (run instanceof TowerRun && luckyGame.getProfile().openTowerHard()) {
+                ending += "\nLa Tour recommence en mode difficile.";
+            }
             Label endingLabel = new Label(ending, new Label.LabelStyle(shopFont, Palette.GOLD));
+            endingLabel.setAlignment(Align.center);
             endButtons.add(endingLabel).colspan(shown.size()).padBottom(18f).row();
         }
         for (int i = 0; i < shown.size(); i++) {

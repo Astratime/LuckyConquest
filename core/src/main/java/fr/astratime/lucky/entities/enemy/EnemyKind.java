@@ -605,6 +605,24 @@ public enum EnemyKind {
     public static final int CHAPTER_5_POWER = 500;
     public static final int CHAPTER_6_POWER = 600;
 
+    /**
+     * Mode difficile de la Tour (« Nouveau tirage + », ouvert après la Machine
+     * Originelle) : PV et force des ennemis de la Tour multipliés d'autant.
+     */
+    public static final int HARD_HP_FACTOR = 2, HARD_POWER_FACTOR = 2;
+
+    /** {@code true} pendant une ascension de la Tour en mode difficile (voir {@link #setTowerHard(boolean)}). */
+    private static boolean towerHard;
+
+    /**
+     * Règle la difficulté de la Tour pour les combats qui suivent : l'écran de
+     * jeu l'appelle à chaque nouvelle suite de combats (faux hors de la Tour).
+     */
+    public static void setTowerHard(boolean hard) { towerHard = hard; }
+
+    /** @return {@code true} si les ennemis de la Tour sont en mode difficile. */
+    public static boolean isTowerHard() { return towerHard; }
+
     /** Tours du combat contre le Temps Mort : au tour suivant, le joueur a perdu. */
     public static final int TIME_LIMIT = 10;
     /** Rouleaux de la Machine Originelle, puis quand elle a volé un rouleau au joueur. */
@@ -665,9 +683,12 @@ public enum EnemyKind {
     /**
      * @return ses points de vie maximum : ceux de la Tour des épreuves sont
      *         multipliés par {@link #TOWER_HP_FACTOR}, car le rang du joueur le
-     *         rend bien plus fort
+     *         rend bien plus fort (et encore par {@link #HARD_HP_FACTOR} en mode difficile)
      */
-    public int getMaxHp() { return isTower() ? maxHp * TOWER_HP_FACTOR : maxHp; }
+    public int getMaxHp() {
+        if (!isTower()) return maxHp;
+        return maxHp * TOWER_HP_FACTOR * (towerHard ? HARD_HP_FACTOR : 1);
+    }
 
     /** @return {@code true} pour un ennemi de la Tour des épreuves (voir {@link fr.astratime.lucky.entities.tower.Chapter}). */
     public boolean isTower() {
@@ -686,9 +707,15 @@ public enum EnemyKind {
 
     /**
      * @return sa force, en % : le multiplicateur de ses attaques, de ses défenses
-     *         et de tous ses effets (100 au chapitre 1, puis plus à chaque chapitre)
+     *         et de tous ses effets (100 au chapitre 1, puis plus à chaque chapitre ;
+     *         multipliée par {@link #HARD_POWER_FACTOR} dans la Tour en mode difficile)
      */
     public int getPower() {
+        return isTower() && towerHard ? chapterPower() * HARD_POWER_FACTOR : chapterPower();
+    }
+
+    /** @return sa force en mode normal, en %, selon son chapitre. */
+    private int chapterPower() {
         return switch (this) {
             case CHEF, TRICHEUR, USURIER, ROULETTE, REINE -> CHAPTER_2_POWER;
             case GARDIENNE, MIROIR, HORLOGER, FOU, ECLAT  -> CHAPTER_3_POWER;

@@ -31,6 +31,7 @@ import fr.astratime.lucky.assets.Fonts;
 import fr.astratime.lucky.assets.HudTextures;
 import fr.astratime.lucky.assets.Palette;
 import fr.astratime.lucky.assets.VolumeSound;
+import fr.astratime.lucky.entities.enemy.EnemyKind;
 import fr.astratime.lucky.entities.tower.Chapter;
 import fr.astratime.lucky.entities.tower.TowerRun;
 import fr.astratime.lucky.settings.AudioSettings;
@@ -106,11 +107,14 @@ public class TowerScreen extends ScreenAdapter {
     private final Label             lockMark;
     private final Label             description;
     private final TextButton        startButton;
+    private final TextButton        modeButton;
     private final TextButton        backButton;
     private final Image             fade;
 
     private int     selected = -1;
     private boolean leaving;
+    /** Mode difficile choisi (ouvert une fois la Machine Originelle battue). */
+    private boolean hard;
 
     public TowerScreen(LuckyGame luckyGame) {
         this.luckyGame = luckyGame;
@@ -164,6 +168,10 @@ public class TowerScreen extends ScreenAdapter {
         description.setAlignment(Align.topLeft);
         startButton  = buttons.createAction("Commencer", clickSound, this::launch);
         backButton   = buttons.create("Retour", clickSound, this::onBack);
+        // Mode difficile : ouvert après la Machine Originelle ; le bouton bascule entre les deux modes.
+        modeButton   = buttons.create("Mode difficile", clickSound, this::toggleMode);
+        modeButton.setText("Mode normal");
+        modeButton.setVisible(luckyGame.getProfile().isTowerHardOpen());
 
         fade = new Image(pixel);
         fade.setColor(Color.BLACK);
@@ -182,6 +190,7 @@ public class TowerScreen extends ScreenAdapter {
         stage.addActor(lockMark);
         stage.addActor(description);
         stage.addActor(startButton);
+        stage.addActor(modeButton);
         stage.addActor(backButton);
         stage.addActor(fade);
         fade.addAction(Actions.fadeOut(FADE_TIME));
@@ -199,11 +208,20 @@ public class TowerScreen extends ScreenAdapter {
         if (index == selected) return;
         if (sound) hoverSound.play();
         selected = index;
+        showChapter();
+    }
+
+    /** Montre le chapitre sélectionné : titre, illustration et récit (avec la règle du mode difficile). */
+    private void showChapter() {
+        int index = selected;
         for (int i = 0; i < rows.size(); i++) rows.get(i).setSelected(i == index);
         Chapter chapter = Chapter.values()[index];
-        chapterLabel.setText(chapter.getLabel().toUpperCase());
+        chapterLabel.setText(chapter.getLabel().toUpperCase() + (hard ? " · DIFFICILE" : ""));
         chapterTitle.setText(chapter.getTitle());
-        description.setText(chapter.getDescription());
+        description.setText(hard
+            ? chapter.getDescription() + "\n\nMode difficile : ennemis PV x" + EnemyKind.HARD_HP_FACTOR
+                + ", force x" + EnemyKind.HARD_POWER_FACTOR + "."
+            : chapter.getDescription());
         ((TextureRegionDrawable) art.getDrawable()).setRegion(new TextureRegion(enemyTextures.chapterArt(chapter)));
         art.setVisible(chapter.isOpen());
         lockMark.setVisible(!chapter.isOpen());
@@ -224,9 +242,16 @@ public class TowerScreen extends ScreenAdapter {
         Chapter chapter = Chapter.values()[selected];
         if (!chapter.isOpen()) return;
         fadeOutThen(() -> {
-            luckyGame.setScreen(new GameScreen(luckyGame, new TowerRun(chapter)));
+            luckyGame.setScreen(new GameScreen(luckyGame, new TowerRun(chapter, hard)));
             dispose();
         });
+    }
+
+    /** Bascule entre le mode normal et le mode difficile. */
+    private void toggleMode() {
+        hard = !hard;
+        modeButton.setText(hard ? "Mode difficile" : "Mode normal");
+        showChapter();
     }
 
     /** Retour au menu principal. */
@@ -300,6 +325,7 @@ public class TowerScreen extends ScreenAdapter {
         description.setPosition(innerX, panelBottom + PANEL_PAD);
 
         startButton.setPosition(detailX + detailWidth - startButton.getWidth(), (BOTTOM_SPACE - startButton.getHeight()) / 2f);
+        modeButton.setPosition(startButton.getX() - modeButton.getWidth() - 20f, startButton.getY());
         backButton.setPosition(MARGIN, (BOTTOM_SPACE - backButton.getHeight()) / 2f);
     }
 

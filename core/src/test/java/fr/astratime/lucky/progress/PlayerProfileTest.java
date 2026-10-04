@@ -207,4 +207,14 @@ class PlayerProfileTest {
         assertTrue(profile(storage).ownsReel(Symbol.NUGGET), "sauvegardé");
         assertNull(profile.clearDungeon(Dungeon.PIQUE.name()), "la prairie ne donne pas de rouleau");
     }
+
+    @Test
+    void theHardTowerOpensOnceAndIsSaved() {
+        MemoryStorage storage = new MemoryStorage();
+        PlayerProfile profile = profile(storage);
+        assertFalse(profile.isTowerHardOpen());
+        assertTrue(profile.openTowerHard());
+        assertFalse(profile.openTowerHard(), "déjà ouvert");
+        assertTrue(profile(storage).isTowerHardOpen(), "sauvegardé");
+    }
 }
