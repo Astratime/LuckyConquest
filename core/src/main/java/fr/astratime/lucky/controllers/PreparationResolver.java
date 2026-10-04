@@ -66,15 +66,19 @@ public class PreparationResolver {
     }
 
     /**
-     * Chaque combinaison formée par les cartes jouées ce tour multiplie les
-     * gains et l'attaque du tirage (les multiplicateurs se cumulent) ; une
-     * Couleur ou une Suite remplit en plus la jauge de chaque carte à suite jouée.
+     * Les combinaisons formées par les cartes jouées ce tour multiplient les
+     * gains et l'attaque du tirage par la somme de leurs multiplicateurs (ex :
+     * Suite et Paire, x9.5) ; une Couleur ou une Suite remplit en plus la jauge
+     * de chaque carte à suite jouée.
      */
     private static void applyCombos(TurnContext turnContext, Player player) {
         CombatContext combat = turnContext.getCombatContext();
-        for (Combo combo : Combo.formed(player.getPlayedCards())) {
-            combat.multiplyGains(combo.getFactor());
-            combat.multiplyAttack(combo.getFactor());
+        List<Combo> combos = Combo.formed(player.getPlayedCards());
+        if (combos.isEmpty()) return;
+        float total = Combo.totalFactor(combos);
+        combat.multiplyGains(total);
+        combat.multiplyAttack(total);
+        for (Combo combo : combos) {
             if (combo.fillsGauges()) fillGauges(player);
             turnContext.addEvent(new ComboEvent(combo));
         }
