@@ -516,6 +516,99 @@ def fx_spade_ignore_defense():
     return mix((zing, 0, 0.6), (crack.buf, d - 0.02, 1.0), (shatter, d, 0.6), (impact(0.25, 180, 70), d - 0.02, 0.6))
 
 
+
+@sound('effects/reroll', -18)
+def fx_reroll():
+    """Relance : levier tiré (cliquetis qui monte), puis petite note d'espoir."""
+    track = Track()
+    for k in range(5):
+        track.add(stack(click(0.004, 1500, 6000), modal(1500 + 180 * k, 0.05, WOOD_RATIOS, [0.02, 0.01, 0.005])),
+                  k * 0.05, 0.7)
+    track.add(chip(sweep(hz('C5'), hz('G5'), 0.18), 0.22, 'square', duty=0.25, s=0.5), 0.28, 0.6)
+    return track.buf
+
+
+@sound('effects/rigged_reel', -18)
+def fx_rigged_reel():
+    """Rouleau truqué : tournevis qui grince, déclic sec du rouleau calé, rire de note basse."""
+    d = 0.3
+    screw = svf(noise(d), sweep(1800, 2600, d), q=6.0, mode='bp') * (0.5 + 0.5 * np.sin(2 * math.pi * 18 * np.arange(n(d)) / SR))
+    return mix((screw * adsr(d, 0.02, 0.05, 0.8, 0.05), 0, 0.6),
+               (stack(click(0.006, 1200, 6000), modal(1300, 0.08, WOOD_RATIOS, [0.03, 0.015, 0.007])), 0.32, 1.0),
+               (chip(hz('E4'), 0.1, 'square', duty=0.5, s=0.5), 0.42, 0.4), (chip(hz('C4'), 0.16, 'square', duty=0.5, s=0.5), 0.52, 0.4))
+
+
+@sound('effects/ghost_reel', -18)
+def fx_ghost_reel():
+    """Rouleau fantôme : « hoouu » de fantôme qui ondule, puis scintillement du Joker."""
+    d = 0.8
+    f = vibrato(sweep(hz('A4'), hz('D4'), d), d, rate=6, depth=0.03)
+    ghost = (osc(f, d) + 0.3 * osc(f * 2, d, 'tri')) * adsr(d, 0.15, 0.1, 0.8, 0.3)
+    return reverb(mix((lp(ghost, 2500), 0, 0.7), (sparkle(0.5, count=10), 0.45, 0.5)), wet=0.4, tail=0.8)
+
+
+@sound('effects/rank_token', -18)
+def fx_rank_token():
+    """Jeton de rang : jeton posé sur le tapis, puis petite fanfare de cuivres."""
+    return mix((chips_clatter(2, 0.06), 0, 0.7),
+               (brass(hz('G4'), 0.12), 0.08, 0.6), (brass(hz('C5'), 0.12), 0.2, 0.6), (brass(hz('E5'), 0.35), 0.32, 0.7))
+
+
+@sound('effects/all_in', -17)
+def fx_all_in():
+    """Tapis : toutes les piles de jetons poussées d'un coup, et un grondement de tension."""
+    drone = lp(osc(55, 0.9, 'saw') + osc(55.6, 0.9, 'saw'), 400) * adsr(0.9, 0.1, 0.1, 0.7, 0.3)
+    return mix((chips_clatter(18, 0.6), 0, 1.0), (whoosh(0.3, 3000, 600, q=1.0), 0, 0.5), (drone, 0.2, 0.5),
+               (impact(0.3, 120, 50), 0.6, 0.8))
+
+
+@sound('effects/safe', -18)
+def fx_safe():
+    """Coffre-fort : molette qui tourne (clics), lourde porte qui se ferme."""
+    track = Track()
+    for k in range(6):
+        track.add(stack(click(0.003, 2000, 7000), modal(2600, 0.03, [1, 2.1, 3.4], [0.01, 0.005, 0.002])), k * 0.06, 0.6)
+    track.add(metal_hit(180, 0.6, bright=0.4), 0.42, 1.0)
+    track.add(thump(90, 45, 0.4, 0.12), 0.42, 0.8)
+    return track.buf
+
+
+@sound('effects/insurance', -18)
+def fx_insurance():
+    """Assurance : tampon apposé sur le contrat, puis accord rassurant."""
+    chord = sum(osc(hz(n_), 0.6, 'tri') for n_ in ('C5', 'E5', 'G5')) / 3 * adsr(0.6, 0.03, 0.1, 0.6, 0.3)
+    return mix((thump(200, 90, 0.15, 0.04), 0, 1.0), (click(0.01, 600, 3000), 0, 0.6), (chord, 0.12, 0.6))
+
+
+@sound('effects/bribe', -18)
+def fx_bribe():
+    """Pot-de-vin : billets froissés glissés en douce, puis « ka-tching » étouffé."""
+    rustle = Track(0.4)
+    for k in range(10):
+        rustle.add(bp(noise(0.03), 1800, 5200) * expdec(0.03, 0.01), k * 0.035 + rand(0, 0.01), rand(0.4, 1))
+    return mix((rustle.buf, 0, 0.9), (lp(cash_register_bell(), 2500), 0.38, 0.5), (coin(), 0.36, 0.5))
+
+
+@sound('effects/double_or_nothing', -17)
+def fx_double_or_nothing():
+    """Double ou rien : deux dés qui roulent, puis deux notes montantes en écho."""
+    track = Track()
+    for k in range(7):
+        track.add(stack(click(0.004, 800, 4000), modal(rand(900, 1400), 0.05, WOOD_RATIOS, [0.02, 0.01, 0.005])),
+                  k * 0.045 + rand(0, 0.015), rand(0.5, 1))
+    track.add(power_up(['C5', 'G5'], step=0.09, last=0.12), 0.36, 0.8)
+    track.add(power_up(['C6', 'G6'], step=0.09, last=0.25), 0.56, 0.6)
+    return track.buf
+
+
+@sound('effects/overheat', -17)
+def fx_overheat():
+    """Machine en surchauffe : sifflement de vapeur, moteur qui s'emballe et flamme."""
+    d = 0.9
+    steam = hp(noise(d), 3000) * ramp(d, 0.2, 1.0) * adsr(d, 0.05, 0.1, 0.8, 0.2)
+    motor = drive(lp(osc(sweep(60, 240, d), d, 'saw'), 1500), 2.0) * ramp(d, 0.3, 1.0)
+    return mix((steam, 0, 0.5), (motor, 0, 0.5), (fire_burst(0.7), 0.35, 0.8))
+
 # ===========================================================================
 # Bingo : un son par célébration (JackpotCelebration), aligné sur sa mise en scène.
 # Les instants en commentaire sont ceux des constantes des scènes.

@@ -71,6 +71,10 @@ public class BingoEffect extends Effect {
             new EffectPopup("SYMBOLES x" + power, EffectPopup.Style.SPECIAL, PopupScale.MAX_INTENSITY));
     }
 
+    /** Un Bingo doublé ferait exploser sa puissance : il ne compte qu'une fois. */
+    @Override
+    public boolean canBeDoubled() { return false; }
+
     @Override
     public EffectSound getSound() { return EffectSound.BINGO; }
 }

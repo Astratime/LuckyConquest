@@ -309,6 +309,28 @@ public class CardLoader {
             case "CORRUPTION":
                 return new CorruptionEffect(json.getInt("turns"));
 
+            // --- Cartes de la boutique ---
+            case "REROLL":
+                return new RerollEffect();
+            case "RIGGED_REEL":
+                return new RiggedReelEffect();
+            case "GHOST_REEL":
+                return new ForceReelEffect(Symbol.JOKER);
+            case "RANK_TOKEN":
+                return new RankTokenEffect();
+            case "ALL_IN":
+                return new AllInEffect();
+            case "SAFE":
+                return new SafeEffect(json.getInt("percent"), json.getInt("turns"));
+            case "INSURANCE":
+                return new InsuranceEffect(json.getInt("percent"));
+            case "BRIBE":
+                return new BribeEffect();
+            case "DOUBLE_OR_NOTHING":
+                return new DoubleOrNothingEffect();
+            case "OVERHEAT":
+                return new OverheatEffect(json.getInt("hpPercent"));
+
             // --- Cartes des donjons (Exploration) ---
             case "BLADES_ATTACK":
                 return new BladesAttackEffect(json.getInt("blades"), json.getInt("attackBonus"));

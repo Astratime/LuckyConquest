@@ -21,7 +21,7 @@ public class GainAction extends Action {
     /** Crédite au joueur {@code (baseGain + bonus du rang) * gainMultiplier * gainFactor * symbolPower} (arrondi). */
     @Override
     public List<Event> resolve(CombatContext context) {
-        int base = baseGain + context.getPlayer().getRankBonus().gains();
+        int base = baseGain + context.getPlayer().getRankBonus().gains() * context.getRankFactor();
         int gain = Math.round(base * context.getGainMultiplier() * context.getGainFactor()
             * context.getSymbolPower());
         context.getPlayer().addGains(gain);

@@ -7,15 +7,19 @@ import fr.astratime.lucky.entities.DrawResult;
 import fr.astratime.lucky.entities.Enemy;
 import fr.astratime.lucky.entities.GameState;
 import fr.astratime.lucky.entities.Player;
+import fr.astratime.lucky.entities.SlotMachine;
 import fr.astratime.lucky.entities.Symbol;
 import fr.astratime.lucky.entities.TurnResult;
 import fr.astratime.lucky.entities.choices.BetChoice;
 import fr.astratime.lucky.entities.choices.CardChoice;
+import fr.astratime.lucky.entities.choices.RiggedReelChoice;
 import fr.astratime.lucky.entities.choices.RouletteChoice;
 import fr.astratime.lucky.entities.context.PlayContext;
 import fr.astratime.lucky.entities.effects.BetOnSymbolEffect;
 import fr.astratime.lucky.entities.effects.BingoEffect;
 import fr.astratime.lucky.entities.effects.Effect;
+import fr.astratime.lucky.entities.effects.ForceReelEffect;
+import fr.astratime.lucky.entities.effects.OverheatEffect;
 import fr.astratime.lucky.entities.effects.PistolEffect;
 import fr.astratime.lucky.entities.enemy.EnemyKind;
 import fr.astratime.lucky.loaders.CardLoader;
@@ -65,6 +69,9 @@ public class GameController {
 
     /** Cartes jouées ce tour (toutes comptent, consommables compris), limitées par {@link #getPlayLimit()}. */
     private int cardsPlayedThisTurn = 0;
+
+    /** Double ou rien : la prochaine carte jouée ce tour compte deux fois. */
+    private boolean doubleNext = false;
 
     /** Paris placés ce tour, pour les afficher en attendant le tirage. */
     private final List<Symbol> betsThisTurn = new ArrayList<>();
@@ -164,6 +171,7 @@ public class GameController {
         cardsPlayedThisTurn = 0;
         pendingChoice = null;
         handLocked    = false;
+        doubleNext    = false;
         bingoGiftPending = false;
         originals.clear();
     }
@@ -283,11 +291,16 @@ public class GameController {
 
         cardsPlayedThisTurn++;
         PlayContext playContext = new PlayContext(player);
-        for (Effect effect : card.getEffects()) {
-            int firstPopup = playContext.getPopups().size();
-            effect.onPlay(playContext);
-            playContext.attachSound(firstPopup, effect.getSound()); // son de l'effet, avec son premier texte
+        boolean doubling = doubleNext;
+        playEffects(card, playContext, false);
+        // Double ou rien : la carte compte deux fois, sauf si elle demande un choix (le doublement attend la suivante)
+        if (doubling && playContext.getChoice() == null && !playContext.isDoubleRequested()) {
+            doubleNext = false;
+            playContext.addPopups(List.of(new EffectPopup("DOUBLE !", EffectPopup.Style.SPECIAL,
+                PopupScale.MAX_INTENSITY)));
+            playEffects(card, playContext, true);
         }
+        if (playContext.isDoubleRequested()) doubleNext = true;
         pendingEffects.addAll(playContext.getEffectsForSpin());
 
         if (playContext.getGains() != 0) player.addGains(playContext.getGains());
@@ -301,6 +314,19 @@ public class GameController {
             : null;
         return new CardPlayResult(drawResult, playContext.getPopups(), pendingChoice, playContext.isAutoSpin(),
             rainbow);
+    }
+
+    /**
+     * Joue les effets de {@code card} ({@code again} : une seconde fois, pour
+     * Double ou rien, sans ceux qui ne se doublent pas).
+     */
+    private static void playEffects(Card card, PlayContext playContext, boolean again) {
+        for (Effect effect : card.getEffects()) {
+            if (again && !effect.canBeDoubled()) continue;
+            int firstPopup = playContext.getPopups().size();
+            effect.onPlay(playContext);
+            playContext.attachSound(firstPopup, effect.getSound()); // son de l'effet, avec son premier texte
+        }
     }
 
     /**
@@ -402,6 +428,38 @@ public class GameController {
     }
 
     /**
+     * Réponse au Rouleau truqué : {@code symbol} est imposé au rouleau du milieu au prochain spin.
+     *
+     * @return les textes à afficher
+     * @throws IllegalStateException si aucun Rouleau truqué n'est en attente de choix
+     */
+    public List<EffectPopup> rigReel(Symbol symbol) {
+        if (!(pendingChoice instanceof RiggedReelChoice)) throw new IllegalStateException("Aucun rouleau truqué en attente");
+        pendingChoice = null;
+        ForceReelEffect rigged = new ForceReelEffect(symbol);
+        pendingEffects.add(rigged);
+        return rigged.getPopups();
+    }
+
+    /** @return {@code true} si la prochaine carte jouée ce tour comptera deux fois (Double ou rien). */
+    public boolean isDoubleNextPending() { return doubleNext; }
+
+    /** @return les rouleaux qui tourneront au prochain spin : 4 avec la Machine en surchauffe, sinon 3. */
+    public int getReelCount() {
+        boolean overheat = pendingEffects.stream().anyMatch(effect -> effect instanceof OverheatEffect);
+        return overheat ? SlotMachine.MAX_SYMBOL_COUNT : SlotMachine.SYMBOL_COUNT;
+    }
+
+    /** @return le symbole imposé au rouleau du milieu au prochain spin (Rouleau truqué ou fantôme), ou {@code null}. */
+    public Symbol getForcedMiddleSymbol() {
+        Symbol forced = null;
+        for (Effect effect : pendingEffects) {
+            if (effect instanceof ForceReelEffect force) forced = force.getSymbol();
+        }
+        return forced;
+    }
+
+    /**
      * Réponse à la Roulette russe : retourne la carte {@code index}. Le
      * pistolet est mis en attente jusqu'au spin, quelle que soit la carte (moins
      * fort avec le Joker maudit, qui coûte en plus une partie des gains tout de suite).
@@ -454,6 +512,7 @@ public class GameController {
         cardsPlayedThisTurn = 0;
         pendingChoice = null;
         handLocked    = false;
+        doubleNext    = false;
         gameState.getPlayer().restoreCards(originals); // l'effet de l'Arc-en-ciel ne dure que le tour
         originals.clear();
         gameState.getPlayer().discardHand();

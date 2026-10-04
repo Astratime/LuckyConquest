@@ -36,7 +36,17 @@ public enum EffectSound {
     RAINBOW,
     RECYCLE,
     RUSSIAN_ROULETTE,
-    SPADE_IGNORE_DEFENSE;
+    SPADE_IGNORE_DEFENSE,
+    REROLL,
+    RIGGED_REEL,
+    GHOST_REEL,
+    RANK_TOKEN,
+    ALL_IN,
+    SAFE,
+    INSURANCE,
+    BRIBE,
+    DOUBLE_OR_NOTHING,
+    OVERHEAT;
 
     /** @return le chemin interne du fichier son (ex : "sounds/effects/attack.ogg"). */
     public String getAssetPath() {

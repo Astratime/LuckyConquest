@@ -55,6 +55,8 @@ public class TableView {
     // Machine à sous et rangée de cartes
     private static final float REEL_BOTTOM_GAP = 24f;  // entre le rebord et la machine
     private static final float REEL_FRAME_PAD  = 18f;  // carrosserie autour des rouleaux
+    /** Teinte du cadre de la machine en surchauffe. */
+    private static final Color OVERHEAT_TINT   = new Color(1f, 0.55f, 0.45f, 1f);
     private static final float HAND_GAP        = 40f;  // entre la machine et la rangée de cartes
     private static final float CARD_GAP        = 20f;  // entre deux cartes de la rangée
     private static final float SLOT_OUTLINE    = 4f;   // contour imprimé autour d'un emplacement
@@ -81,6 +83,8 @@ public class TableView {
     private final Image               deckMat;
     private final Image               discardMat;
     private final Image               reelFrame;
+    /** Rouleaux de la machine du joueur affichés (4 avec la Machine en surchauffe). */
+    private int                       playerReels = SlotMachine.SYMBOL_COUNT;
     private final List<Image>         reelCells    = new ArrayList<>();
     private final List<RainbowBorder> reelRainbows = new ArrayList<>();
     private final List<GlowBorder>    reelGlows    = new ArrayList<>();
@@ -116,10 +120,10 @@ public class TableView {
             enemyReelCells.add(add(new Image(textures.reelCellDrawable())));
         }
         reelFrame  = add(new Image(textures.reelFrameDrawable()));
-        for (int i = 0; i < SlotMachine.SYMBOL_COUNT; i++) {
+        for (int i = 0; i < SlotMachine.MAX_SYMBOL_COUNT; i++) {
             reelCells.add(add(new Image(textures.reelCellDrawable())));
         }
-        for (int i = 0; i < SlotMachine.SYMBOL_COUNT; i++) {
+        for (int i = 0; i < SlotMachine.MAX_SYMBOL_COUNT; i++) {
             RainbowBorder rainbow = new RainbowBorder(new TextureRegion(textures.pixel));
             rainbow.setVisible(false);
             group.addActor(rainbow);
@@ -159,16 +163,7 @@ public class TableView {
         discardMat.setBounds(2 * playArea.getCenterX() - deckMat.getX() - matWidth, deckMat.getY(),
             matWidth, matHeight);
 
-        reelFrame.setBounds(getReelRowX() - REEL_FRAME_PAD, getReelRowY() - REEL_FRAME_PAD,
-            reelRowWidth() + REEL_FRAME_PAD * 2, SlotView.CELL_HEIGHT + REEL_FRAME_PAD * 2);
-        for (int i = 0; i < reelCells.size(); i++) {
-            reelCells.get(i).setBounds(getReelRowX() + i * SlotView.CELL_WIDTH, getReelRowY(),
-                SlotView.CELL_WIDTH, SlotView.CELL_HEIGHT);
-            reelRainbows.get(i).setBounds(reelCells.get(i).getX(), reelCells.get(i).getY(),
-                SlotView.CELL_WIDTH, SlotView.CELL_HEIGHT);
-            reelGlows.get(i).setBounds(reelCells.get(i).getX(), reelCells.get(i).getY(),
-                SlotView.CELL_WIDTH, SlotView.CELL_HEIGHT);
-        }
+        layoutPlayerReels();
 
         for (int i = 0; i < cardSlots.size(); i++) {
             cardSlots.get(i).setBounds(getHandSlotX(i) - SLOT_OUTLINE, getHandRowY() - SLOT_OUTLINE,
@@ -237,6 +232,46 @@ public class TableView {
     /** @return l'ordonnée (Stage) du bas du croupier, juste au-dessus de la rangée de cartes de l'ennemi. */
     public float getEnemyCharacterY() { return getEnemyCardRowY() + cardHeight + CROUPIER_GAP; }
 
+    /** Place la machine du joueur : son cadre et ses {@link #playerReels} rouleaux, centrés. */
+    private void layoutPlayerReels() {
+        float rowX = getPlayerReelRowX();
+        reelFrame.setBounds(rowX - REEL_FRAME_PAD, getReelRowY() - REEL_FRAME_PAD,
+            playerReels * SlotView.CELL_WIDTH + REEL_FRAME_PAD * 2, SlotView.CELL_HEIGHT + REEL_FRAME_PAD * 2);
+        for (int i = 0; i < reelCells.size(); i++) {
+            boolean shown = i < playerReels;
+            reelCells.get(i).setVisible(shown);
+            reelCells.get(i).setBounds(rowX + i * SlotView.CELL_WIDTH, getReelRowY(),
+                SlotView.CELL_WIDTH, SlotView.CELL_HEIGHT);
+            reelRainbows.get(i).setBounds(reelCells.get(i).getX(), reelCells.get(i).getY(),
+                SlotView.CELL_WIDTH, SlotView.CELL_HEIGHT);
+            reelGlows.get(i).setBounds(reelCells.get(i).getX(), reelCells.get(i).getY(),
+                SlotView.CELL_WIDTH, SlotView.CELL_HEIGHT);
+            if (!shown) {
+                reelRainbows.get(i).setVisible(false);
+                clearReelHighlight(i);
+            }
+        }
+    }
+
+    /**
+     * Machine du joueur à {@code count} rouleaux (4 avec la Machine en
+     * surchauffe : la machine s'élargit et son cadre rougit), toujours centrée.
+     */
+    public void setPlayerReelCount(int count) {
+        playerReels = count;
+        reelFrame.setColor(count > SlotMachine.SYMBOL_COUNT ? OVERHEAT_TINT : Color.WHITE);
+        layoutPlayerReels();
+    }
+
+    /** @return le nombre de rouleaux de la machine du joueur affichés. */
+    public int getPlayerReelCount() { return playerReels; }
+
+    /** @return l'abscisse (Stage) du premier rouleau de la machine du joueur. */
+    public float getPlayerReelRowX() { return playArea.getCenterX() - playerReels * SlotView.CELL_WIDTH / 2f; }
+
+    /** @return l'abscisse (Stage) du bord droit des rouleaux du joueur. */
+    public float getPlayerReelsRight() { return getPlayerReelRowX() + playerReels * SlotView.CELL_WIDTH; }
+
     /** @return la largeur d'une carte posée sur la table (des deux côtés). */
     public float getCardWidth()  { return cardWidth; }
     /** @return la hauteur d'une carte posée sur la table (des deux côtés). */
@@ -252,7 +287,7 @@ public class TableView {
 
     /** Affiche (jackpot) ou cache la bordure arc-en-ciel animée autour des rouleaux. */
     public void setReelsRainbow(boolean shown) {
-        reelRainbows.forEach(rainbow -> rainbow.setVisible(shown));
+        for (int i = 0; i < reelRainbows.size(); i++) reelRainbows.get(i).setVisible(shown && i < playerReels);
     }
 
     /**
@@ -281,7 +316,7 @@ public class TableView {
     /** @return l'ordonnée (Stage) du bas du deck et de la défausse. */
     public float getPilesY() { return BOTTOM + RAIL + PILE_MARGIN + MAT_PAD; }
 
-    /** @return l'abscisse (Stage) du premier rouleau de la machine à sous. */
+    /** @return l'abscisse (Stage) du premier rouleau de la machine à sous de l'ennemi (3 rouleaux, comme celle du joueur d'habitude). */
     public float getReelRowX() { return playArea.getCenterX() - reelRowWidth() / 2f; }
 
     /** @return l'ordonnée (Stage) du bas des rouleaux. */

@@ -30,6 +30,7 @@ public class PlayContext {
     private CardChoice choice;
     private boolean    autoSpin = false;
     private String     rainbowCardId;
+    private boolean    doubleNext = false;
 
     /** @param player joueur qui joue la carte (ses gains peuvent être consommés immédiatement) */
     public PlayContext(Player player) {
@@ -96,6 +97,12 @@ public class PlayContext {
 
     /** @return {@code true} si la machine doit se lancer d'elle-même après cette carte. */
     public boolean isAutoSpin() { return autoSpin; }
+
+    /** Double ou rien : la prochaine carte jouée ce tour comptera deux fois. */
+    public void requestDouble() { doubleNext = true; }
+
+    /** @return {@code true} si la carte demande que la suivante compte deux fois. */
+    public boolean isDoubleRequested() { return doubleNext; }
 
     /**
      * Arc-en-ciel : les cartes de la main changent de couleur, puis la carte

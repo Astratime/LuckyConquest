@@ -4,7 +4,9 @@ import fr.astratime.lucky.entities.context.SpinContext;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.EnumMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 
 /**
@@ -25,6 +27,10 @@ public class SlotMachine {
 
     /** Nombre de symboles tirés à chaque spin (un par rouleau). */
     public static final int SYMBOL_COUNT = 3;
+    /** Rouleaux au plus, avec celui de la Machine en surchauffe. */
+    public static final int MAX_SYMBOL_COUNT = 4;
+    /** Symboles identiques qui font un jackpot (Bingo). */
+    public static final int JACKPOT_COUNT = 3;
 
     /** Poids de base attribué à chaque symbole avant application des boosts du tour. */
     private static final int BASE_WEIGHT  = 10;
@@ -59,18 +65,20 @@ public class SlotMachine {
     public List<Symbol> getReels() { return reels; }
 
     /**
-     * Tire trois symboles indépendamment, selon les poids de base plus les
-     * boosts du {@code spinContext}, sans les symboles retirés. Un jackpot
-     * garanti (Bingo) donne trois fois le même symbole (celui imposé par la
-     * carte, sinon tiré au hasard, jamais le Joker) ; sinon,
+     * Tire un symbole par rouleau ({@link SpinContext#getReelCount()} : trois,
+     * quatre avec la Machine en surchauffe), indépendamment, selon les poids de
+     * base plus les boosts du {@code spinContext}, sans les symboles retirés.
+     * Un jackpot garanti (Bingo) donne partout le même symbole (celui imposé par
+     * la carte, sinon tiré au hasard, jamais le Joker) ; sinon, les rouleaux
+     * imposés (Rouleau truqué, Rouleau fantôme) prennent leur symbole, puis
      * l'Aimant peut transformer un tirage sans paire en paire. Un rouleau bloqué
      * (Rouleau interdit de l'ennemi) reste vide ({@code null}) : pas de Bingo possible.
      *
      * @param spinContext modificateurs du spin pour ce tour
-     * @return les trois symboles arrêtés sur les rouleaux (Jokers compris)
+     * @return les symboles arrêtés sur les rouleaux (Jokers compris)
      */
     public Symbol[] spin(SpinContext spinContext) {
-        Symbol[] result = new Symbol[SYMBOL_COUNT];
+        Symbol[] result = new Symbol[spinContext.getReelCount()];
         if (spinContext.isJackpotForced()) {
             Symbol symbol = spinContext.getJackpotSymbol();
             Arrays.fill(result, symbol != null ? symbol : weightedRandom(spinContext, false));
@@ -79,16 +87,25 @@ public class SlotMachine {
         for (int i = 0; i < result.length; i++) {
             result[i] = weightedRandom(spinContext, true);
         }
+        spinContext.getForcedReels().forEach((reel, symbol) -> {
+            if (reel < result.length) result[reel] = symbol;
+        });
         block(result, spinContext);
         if (!hasPairOrJoker(result) && random.nextFloat() < spinContext.getPairChance()) {
             List<Integer> open = new ArrayList<>();
-            for (int i = 0; i < SYMBOL_COUNT; i++) {
+            for (int i = 0; i < result.length; i++) {
                 if (result[i] != null) open.add(i);
             }
             if (open.size() >= 2) {
                 int from = open.remove(random.nextInt(open.size()));
                 int to   = open.get(random.nextInt(open.size()));
-                result[to] = result[from];
+                Map<Integer, Symbol> forced = spinContext.getForcedReels();
+                if (forced.containsKey(to)) { // un rouleau imposé garde son symbole : c'est lui que l'autre copie
+                    int swap = to;
+                    to   = from;
+                    from = swap;
+                }
+                if (!forced.containsKey(to)) result[to] = result[from];
             }
         }
         return result;
@@ -102,11 +119,10 @@ public class SlotMachine {
     }
 
     /**
-     * Remplace chaque Joker par le symbole qui lui rapporte le plus : avec deux
-     * symboles identiques, il complète le jackpot ; avec deux Jokers, ils prennent
-     * la valeur du troisième symbole ; avec deux symboles différents, il forme une
-     * paire avec l'un d'eux (au hasard) ; trois Jokers deviennent un jackpot d'un
-     * symbole tiré au hasard.
+     * Remplace chaque Joker par le symbole qui lui rapporte le plus : celui qui
+     * sort le plus souvent parmi les autres (il complète le jackpot ou la paire ;
+     * à égalité, l'un d'eux au hasard) ; si tous sont des Jokers, ils
+     * deviennent un jackpot d'un symbole tiré au hasard.
      *
      * @param drawn       symboles arrêtés sur les rouleaux (voir {@link #spin})
      * @param spinContext modificateurs du tour (symboles retirés, boosts)
@@ -114,26 +130,47 @@ public class SlotMachine {
      */
     public Symbol[] resolveJokers(Symbol[] drawn, SpinContext spinContext) {
         Symbol[] resolved = drawn.clone();
-        List<Symbol> others = new ArrayList<>();
+        Map<Symbol, Integer> counts = new EnumMap<>(Symbol.class);
         int jokers = 0;
         for (Symbol symbol : drawn) {
             if (symbol == Symbol.JOKER) jokers++;
-            else if (symbol != null) others.add(symbol); // un rouleau bloqué ne compte pas
+            else if (symbol != null) counts.merge(symbol, 1, Integer::sum); // un rouleau bloqué ne compte pas
         }
         if (jokers == 0) return resolved;
 
         Symbol value;
-        if (others.isEmpty()) {
+        if (counts.isEmpty()) {
             value = weightedRandom(spinContext, false);
-        } else if (others.size() == 1 || others.get(0) == others.get(1)) {
-            value = others.get(0);
         } else {
-            value = others.get(random.nextInt(others.size()));
+            int best = counts.values().stream().max(Integer::compare).orElse(0);
+            List<Symbol> top = new ArrayList<>();
+            for (Symbol symbol : drawn) { // dans l'ordre des rouleaux
+                if (symbol != null && symbol != Symbol.JOKER && counts.get(symbol) == best && !top.contains(symbol)) {
+                    top.add(symbol);
+                }
+            }
+            value = top.size() == 1 ? top.get(0) : top.get(random.nextInt(top.size()));
         }
         for (int i = 0; i < resolved.length; i++) {
             if (resolved[i] == Symbol.JOKER) resolved[i] = value;
         }
         return resolved;
+    }
+
+    /**
+     * @return le symbole sorti au moins {@link #JACKPOT_COUNT} fois (jackpot),
+     *         ou {@code null} s'il n'y en a pas
+     */
+    public static Symbol jackpotSymbol(Symbol[] s) {
+        for (Symbol symbol : s) {
+            if (symbol == null) continue;
+            int count = 0;
+            for (Symbol other : s) {
+                if (other == symbol) count++;
+            }
+            if (count >= JACKPOT_COUNT) return symbol;
+        }
+        return null;
     }
 
     /** @return {@code true} si deux symboles sont identiques ou si un Joker est sorti (il fera déjà une paire). */

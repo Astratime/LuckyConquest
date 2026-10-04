@@ -37,6 +37,10 @@ public class Player {
 
     /** Bouclier accumulé ce tour par les DefenseAction. */
     private int shield = 0;
+    /** Assurance : PV que l'ennemi peut retirer en tout ce tour (-1 : pas de plafond). */
+    private int damageCap = -1;
+    /** PV retirés par l'ennemi depuis le début du tour (pour l'Assurance). */
+    private int damageTakenThisTurn = 0;
 
     /**
      * @param name     nom affiché du joueur
@@ -74,7 +78,9 @@ public class Player {
         shield -= absorbed;
         int remaining = damage - absorbed;
         int actualLoss = Math.min(hp, remaining);
+        if (damageCap >= 0) actualLoss = Math.min(actualLoss, Math.max(0, damageCap - damageTakenThisTurn)); // Assurance
         hp -= actualLoss;
+        damageTakenThisTurn += actualLoss;
         return actualLoss;
     }
     /**
@@ -246,7 +252,21 @@ public class Player {
     /** Réinitialise le bouclier en fin de tour. */
     public void resetTurnDefenses() {
         shield = 0;
+        damageCap = -1;
+        damageTakenThisTurn = 0;
     }
+
+    /**
+     * Assurance : jusqu'à la fin du tour, les coups de l'ennemi ne retirent pas
+     * plus de {@code percent} % des PV max en tout.
+     */
+    public void insure(int percent) {
+        int cap = Math.round(maxHp * percent / 100f);
+        damageCap = damageCap < 0 ? cap : Math.min(damageCap, cap);
+    }
+
+    /** @return les PV que l'ennemi peut encore retirer ce tour (Assurance), ou -1 sans plafond. */
+    public int getDamageCapLeft() { return damageCap < 0 ? -1 : Math.max(0, damageCap - damageTakenThisTurn); }
 
     /** @return le nom affiché du joueur. */
     public String      getName()                   { return name; }

@@ -54,7 +54,7 @@ public class AttackAction extends Action {
         List<Event> events = new ArrayList<>();
         Enemy enemy = context.getEnemy();
 
-        int base = rollBaseDamage() + context.getPlayer().getRankBonus().attack();
+        int base = rollBaseDamage() + context.getPlayer().getRankBonus().attack() * context.getRankFactor();
         int rawDamage = Math.round((base + context.getAttackBonus())
             * context.getAttackFactor() * context.getSymbolPower());
         boolean pierced = piercing || context.isIgnoreDefense();

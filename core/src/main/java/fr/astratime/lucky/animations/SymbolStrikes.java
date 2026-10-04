@@ -34,6 +34,12 @@ import java.util.Map;
  *   <li>gains, vers la pièce du panneau des gains : cloche qui sonne
  *       (CLOCHE), pastèque qui éclate (PASTÈQUE), lingot qui tombe
  *       (LINGOT).</li>
+ *   <li>rouleaux de la boutique : fer à cheval lancé vers les gains (FER À
+ *       CHEVAL), écu qui s'abat sur le bouclier (ÉCU), épée qui transperce
+ *       l'ennemi (ÉPÉE), coeur qui bat puis rejoint le joueur (COEUR), dé qui
+ *       rebondit jusqu'à l'ennemi (DÉ), étoile filante qui se divise vers
+ *       l'ennemi, le bouclier et les gains (ÉTOILE), grosse bombe à mèche
+ *       (BOMBE), couronne posée en sacre puis fontaine de pièces (COURONNE).</li>
  * </ul>
  * Chaque animation touche sa cible {@link #IMPACT_TIME} secondes après son
  * départ : le texte du symbole apparaît à cet instant (voir SlotView).
@@ -79,21 +85,37 @@ public class SymbolStrikes extends Actor implements Disposable {
     private static final Color BOLT   = Color.valueOf("a8e6ffff");
     private static final Color MELON  = Color.valueOf("ff4d6aff");
     private static final Color RIND   = Color.valueOf("2e9e3eff");
+    private static final Color LUCK   = Color.valueOf("6ae07aff");
+    private static final Color AZURE  = Color.valueOf("4aa8ffff");
+    private static final Color LOVE   = Color.valueOf("ff5c8aff");
+    private static final Color SMOKE  = Color.valueOf("5a5a66ff");
+
+    // Rouleaux de la boutique
+    private static final float SWORD_SCALE    = 0.8f;
+    private static final float SWORD_OVERSHOOT = 140f;   // l'épée transperce et ressort derrière l'ennemi
+    private static final float HEART_RISE     = 0.25f;   // le coeur bat au-dessus de son rouleau, puis part
+    private static final float STAR_SPLIT     = 0.2f;    // l'étoile se divise en trois
+    private static final float BIG_BOMB_ARC   = 360f;
+    private static final float BIG_BOMB_SCALE = 1.05f;
+    private static final float BOMB_FUSE_X    = 56f;     // bout de la mèche, depuis le centre de l'image de la bombe
+    private static final float BOMB_FUSE_Y    = 52f;
 
     /** Une animation en cours. */
     private static final class Strike {
-        /** Symbole dont l'animation est jouée (un rouleau de la boutique emprunte celle d'un classique). */
+        /** Symbole tiré : il choisit l'animation, son image vole. */
         final Symbol symbol;
-        /** Symbole tiré, dont l'image vole. */
         final Symbol art;
         final float  fromX, fromY, toX, toY;
+        /** Cibles en plus de la principale (l'Étoile : bouclier, puis pièce des gains). */
+        final Vector2[] extra;
         final long   seed = MathUtils.random(Long.MAX_VALUE);
         final List<Flyer> flyers = new ArrayList<>();
         float time;  // négatif : départ différé
 
-        Strike(Symbol symbol, Vector2 from, Vector2 to, float delay) {
-            this.symbol = animationOf(symbol);
+        Strike(Symbol symbol, Vector2 from, Vector2 to, float delay, Vector2[] extra) {
+            this.symbol = symbol;
             this.art    = symbol;
+            this.extra  = extra;
             fromX = from.x; fromY = from.y;
             toX   = to.x;   toY   = to.y;
             time  = -delay;
@@ -155,25 +177,17 @@ public class SymbolStrikes extends Actor implements Disposable {
      * secondes après {@code delay}.
      */
     public void play(Symbol symbol, Vector2 from, Vector2 to, float delay) {
-        Strike strike = new Strike(symbol, from, to, delay);
-        prepare(strike);
-        strikes.add(strike);
+        play(symbol, from, to, delay, new Vector2[0]);
     }
 
     /**
-     * @return le symbole classique dont {@code symbol} emprunte l'animation : un
-     *         rouleau acheté à la boutique vole comme un classique de son type
+     * Comme {@link #play(Symbol, Vector2, Vector2, float)}, avec des cibles en
+     * plus : l'Étoile vise aussi le bouclier du joueur puis la pièce des gains.
      */
-    static Symbol animationOf(Symbol symbol) {
-        return switch (symbol) {
-            case HORSESHOE      -> Symbol.BELL;
-            case CROWN          -> Symbol.GOLD_BAR;
-            case ECU, HEART     -> Symbol.DIAMOND;
-            case SWORD, STAR    -> Symbol.SEVEN;
-            case DIE            -> Symbol.TRIPLE_SEVEN;
-            case BOMB           -> Symbol.CHERRY;
-            default             -> symbol;
-        };
+    public void play(Symbol symbol, Vector2 from, Vector2 to, float delay, Vector2... extra) {
+        Strike strike = new Strike(symbol, from, to, delay, extra);
+        prepare(strike);
+        strikes.add(strike);
     }
 
     /** Arrête toutes les animations (nouveau combat). */
@@ -224,6 +238,19 @@ public class SymbolStrikes extends Actor implements Disposable {
             case GOLD_BAR -> {
                 for (int i = 0; i < 8; i++) {
                     coinFlyer(s, s.fromX + MathUtils.random(-40f, 40f), s.fromY + 60f, 0.28f + i * 0.04f);
+                }
+            }
+            case CROWN -> {
+                for (int i = 0; i < 12; i++) {
+                    float angle = 30f + i * 10f;
+                    coinFlyer(s, s.fromX + MathUtils.cosDeg(angle) * 30f, s.fromY + ABOVE_REEL + 10f,
+                        0.3f + i * 0.03f);
+                }
+            }
+            case HORSESHOE -> {
+                for (int i = 0; i < 3; i++) {
+                    coinFlyer(s, s.toX + MathUtils.random(-50f, 50f), s.toY + 120f, IMPACT_TIME + 0.02f + i * 0.06f)
+                        .arc = 40f;
                 }
             }
             default -> { }
@@ -348,6 +375,135 @@ public class SymbolStrikes extends Actor implements Disposable {
                     shake.shake(0.12f, 4f);
                 }
                 if (crossed(before, now, 0.4f)) ringAt(s.fromX, s.fromY + 60f, GOLD, 0.9f);
+            }
+            case HORSESHOE -> {
+                if (now < IMPACT_TIME && MathUtils.random() < delta * 40f) {
+                    Vector2 at = horseshoePosition(s, now);
+                    Particle p = particle(at.x, at.y, MathUtils.randomBoolean() ? GOLD : LUCK, 40f, 0.4f, 7f, true);
+                    p.gravity = 80f;
+                }
+                if (crossed(before, now, IMPACT_TIME)) {
+                    flashAt(s.toX, s.toY, GOLD, 150f);
+                    burst(s.toX, s.toY, 16, GOLD, 320f, 0.5f, 8f, true);
+                    burst(s.toX, s.toY, 10, LUCK, 260f, 0.5f, 7f, true);
+                    ringAt(s.toX, s.toY, LUCK, 0.9f);
+                    onCoinArrived.run();
+                }
+            }
+            case ECU -> {
+                if (crossed(before, now, IMPACT_TIME)) {
+                    flashAt(s.toX, s.toY, AZURE, 170f);
+                    ringAt(s.toX, s.toY, AZURE, 1.1f);
+                    ringAt(s.toX, s.toY, Color.WHITE, 0.6f);
+                    burst(s.toX, s.toY, 16, STEEL, 360f, 0.5f, 9f, false);
+                    shake.shake(0.15f, 5f);
+                }
+            }
+            case SWORD -> {
+                if (crossed(before, now, IMPACT_TIME)) {
+                    flashAt(s.toX, s.toY, Color.WHITE, 190f);
+                    burst(s.toX, s.toY, 20, STEEL, 520f, 0.45f, 9f, true);
+                    burst(s.toX, s.toY, 12, JUICE, 380f, 0.6f, 12f, false);
+                    shake.shake(0.18f, 7f);
+                }
+            }
+            case HEART -> {
+                if (now < IMPACT_TIME && MathUtils.random() < delta * 30f) {
+                    Vector2 at = heartPosition(s, now);
+                    Particle p = particle(at.x + MathUtils.random(-20f, 20f), at.y, LOVE, 30f, 0.5f, 9f, true);
+                    p.gravity = -90f; // les étincelles d'amour montent
+                }
+                if (crossed(before, now, HEART_RISE * 0.35f) || crossed(before, now, HEART_RISE * 0.8f)) {
+                    ringAt(s.fromX, s.fromY + ABOVE_REEL, LOVE, 0.6f); // battement
+                }
+                if (crossed(before, now, IMPACT_TIME)) {
+                    flashAt(s.toX, s.toY, LOVE, 160f);
+                    burst(s.toX, s.toY, 18, LOVE, 260f, 0.6f, 10f, true);
+                    ringAt(s.toX, s.toY, LOVE, 0.9f);
+                }
+            }
+            case DIE -> {
+                for (float bounce : new float[] {IMPACT_TIME * 0.33f, IMPACT_TIME * 0.66f}) {
+                    if (crossed(before, now, bounce)) {
+                        Vector2 at = diePosition(s, bounce);
+                        burst(at.x, at.y - 30f, 6, Color.WHITE, 160f, 0.3f, 6f, true);
+                    }
+                }
+                if (crossed(before, now, IMPACT_TIME)) {
+                    flashAt(s.toX, s.toY, Color.WHITE, 170f);
+                    for (int i = 0; i < 14; i++) { // les points du dé s'éparpillent
+                        Particle p = particle(s.toX, s.toY, Color.valueOf("1a0f0fff"), MathUtils.random(200f, 420f),
+                            MathUtils.random(0.4f, 0.7f), MathUtils.random(8f, 12f), false);
+                        p.square = true;
+                        p.gravity = 900f;
+                    }
+                    burst(s.toX, s.toY, 16, Color.WHITE, 420f, 0.45f, 9f, true);
+                    ringAt(s.toX, s.toY, Color.WHITE, 1f);
+                    shake.shake(0.16f, 6f);
+                }
+            }
+            case STAR -> {
+                if (now < STAR_SPLIT) cometTrail(starPosition(s, now), delta * 0.5f);
+                if (crossed(before, now, STAR_SPLIT)) {
+                    Vector2 at = starPosition(s, STAR_SPLIT);
+                    flashAt(at.x, at.y, FLAME, 140f);
+                    burst(at.x, at.y, 12, FLAME, 260f, 0.4f, 7f, true);
+                }
+                if (now >= STAR_SPLIT && now < IMPACT_TIME) {
+                    for (int i = 0; i < starTargets(s).length; i++) {
+                        Vector2 at = starShard(s, now, i);
+                        if (MathUtils.random() < delta * 30f) particle(at.x, at.y, starColor(i), 20f, 0.3f, 6f, true);
+                    }
+                }
+                if (crossed(before, now, IMPACT_TIME)) {
+                    Vector2[] targets = starTargets(s);
+                    for (int i = 0; i < targets.length; i++) {
+                        flashAt(targets[i].x, targets[i].y, starColor(i), 120f);
+                        burst(targets[i].x, targets[i].y, 12, starColor(i), 300f, 0.45f, 8f, true);
+                        ringAt(targets[i].x, targets[i].y, starColor(i), 0.7f);
+                    }
+                    if (targets.length > 2) onCoinArrived.run();
+                    shake.shake(0.12f, 4f);
+                }
+            }
+            case BOMB -> {
+                if (now < IMPACT_TIME) {
+                    Vector2 fuse = fuseTip(bigBombPosition(s, now), bombTilt(now));
+                    fuseSparks(new Vector2(fuse.x, fuse.y - 34f), delta * 2.5f); // fuseSparks vise 34 px au-dessus
+                }
+                if (crossed(before, now, IMPACT_TIME)) {
+                    if (!settings.isReducedEffects()) flash = 0.25f;
+                    flashAt(s.toX, s.toY, FLAME, 300f);
+                    burst(s.toX, s.toY, 40, FIRE, 680f, 0.7f, 22f, true);
+                    burst(s.toX, s.toY, 24, FLAME, 480f, 0.5f, 14f, true);
+                    burst(s.toX, s.toY, 16, STEEL, 520f, 0.8f, 10f, false);
+                    for (int i = 0; i < 14; i++) { // fumée qui monte
+                        Particle p = particle(s.toX + MathUtils.random(-50f, 50f), s.toY + MathUtils.random(-20f, 30f),
+                            SMOKE, MathUtils.random(20f, 70f), MathUtils.random(0.8f, 1.2f), MathUtils.random(30f, 48f), false);
+                        p.gravity = -140f;
+                    }
+                    ringAt(s.toX, s.toY, FIRE, 1.8f);
+                    ringAt(s.toX, s.toY, Color.WHITE, 1.1f);
+                    shake.shake(0.35f, 13f);
+                }
+                if (crossed(before, now, IMPACT_TIME + 0.08f)) { // le recul brûle le joueur
+                    burst(s.fromX, s.fromY, 10, FIRE, 240f, 0.4f, 9f, true);
+                    flashAt(s.fromX, s.fromY, FIRE, 120f);
+                }
+            }
+            case CROWN -> {
+                if (crossed(before, now, 0.22f)) {
+                    float y = s.fromY + ABOVE_REEL;
+                    flashAt(s.fromX, y, GOLD, 220f);
+                    ringAt(s.fromX, y, GOLD, 1.3f);
+                    burst(s.fromX, y, 22, GOLD, 360f, 0.6f, 9f, true);
+                    shake.shake(0.12f, 4f);
+                }
+                if (now > 0.22f && now < 0.9f && MathUtils.random() < delta * 25f) {
+                    float angle = MathUtils.random(360f);
+                    flashAt(s.fromX + MathUtils.cosDeg(angle) * 60f, s.fromY + ABOVE_REEL + MathUtils.sinDeg(angle) * 40f,
+                        Color.WHITE, 40f);
+                }
             }
             default -> { }
         }
@@ -486,6 +642,105 @@ public class SymbolStrikes extends Actor implements Disposable {
         return new Vector2(x, y);
     }
 
+    /** Fer à cheval lancé en haute cloche vers la pièce des gains. */
+    private static Vector2 horseshoePosition(Strike s, float time) {
+        float u = MathUtils.clamp(time / IMPACT_TIME, 0f, 1f);
+        float x = MathUtils.lerp(s.fromX, s.toX, Interpolation.pow2Out.apply(u));
+        float y = MathUtils.lerp(s.fromY, s.toY, u) + 240f * 4f * u * (1f - u);
+        return new Vector2(x, y);
+    }
+
+    /** Écu : il monte au-dessus de son rouleau, puis s'abat sur le bouclier du joueur. */
+    private static Vector2 ecuPosition(Strike s, float time) {
+        float riseEnd = 0.2f;
+        float topX = s.fromX + (s.toX - s.fromX) * 0.5f, topY = Math.max(s.fromY, s.toY) + 170f;
+        if (time < riseEnd) {
+            float u = Interpolation.pow2Out.apply(time / riseEnd);
+            return new Vector2(MathUtils.lerp(s.fromX, topX, u), MathUtils.lerp(s.fromY, topY, u));
+        }
+        float u = Interpolation.pow3In.apply(MathUtils.clamp((time - riseEnd) / (IMPACT_TIME - riseEnd), 0f, 1f));
+        return new Vector2(MathUtils.lerp(topX, s.toX, u), MathUtils.lerp(topY, s.toY, u));
+    }
+
+    /** Épée : elle file droit sur l'ennemi, le transperce et ressort derrière lui. */
+    private static Vector2 swordPosition(Strike s, float time) {
+        float dx = s.toX - s.fromX, dy = s.toY - s.fromY;
+        float length = (float) Math.sqrt(dx * dx + dy * dy);
+        float u = time < IMPACT_TIME ? Interpolation.pow3In.apply(time / IMPACT_TIME)
+            : 1f + (time - IMPACT_TIME) / 0.15f * SWORD_OVERSHOOT / Math.max(1f, length);
+        return new Vector2(s.fromX + dx * u, s.fromY + dy * u);
+    }
+
+    /** Coeur : il bat au-dessus de son rouleau, puis flotte jusqu'au jeton du joueur. */
+    private static Vector2 heartPosition(Strike s, float time) {
+        float y0 = s.fromY + ABOVE_REEL;
+        if (time < HEART_RISE) {
+            float u = Interpolation.pow2Out.apply(Math.min(1f, time / 0.12f));
+            return new Vector2(s.fromX, MathUtils.lerp(s.fromY, y0, u));
+        }
+        float u = Interpolation.sine.apply(MathUtils.clamp((time - HEART_RISE) / (IMPACT_TIME - HEART_RISE), 0f, 1f));
+        float x = MathUtils.lerp(s.fromX, s.toX, u) + 30f * MathUtils.sin(u * MathUtils.PI2);
+        return new Vector2(x, MathUtils.lerp(y0, s.toY, u));
+    }
+
+    /** Dé : il roule vers l'ennemi en trois bonds de plus en plus courts. */
+    private static Vector2 diePosition(Strike s, float time) {
+        float u = MathUtils.clamp(time / IMPACT_TIME, 0f, 1f);
+        float x = MathUtils.lerp(s.fromX, s.toX, u);
+        float base = MathUtils.lerp(s.fromY, s.toY, u);
+        int hop = Math.min(2, (int) (u * 3f));
+        float v = u * 3f - hop;
+        float height = (hop == 0 ? 200f : hop == 1 ? 110f : 60f) * 4f * v * (1f - v);
+        return new Vector2(x, base + height);
+    }
+
+    /** Étoile filante : elle monte de son rouleau avant de se diviser. */
+    private static Vector2 starPosition(Strike s, float time) {
+        float u = Interpolation.pow2Out.apply(MathUtils.clamp(time / STAR_SPLIT, 0f, 1f));
+        return new Vector2(s.fromX + 40f * u, s.fromY + 150f * u);
+    }
+
+    /** @return les cibles de l'Étoile : l'ennemi, puis ses cibles en plus (bouclier, pièce des gains). */
+    private static Vector2[] starTargets(Strike s) {
+        Vector2[] targets = new Vector2[1 + s.extra.length];
+        targets[0] = new Vector2(s.toX, s.toY);
+        System.arraycopy(s.extra, 0, targets, 1, s.extra.length);
+        return targets;
+    }
+
+    /** Éclat {@code index} de l'Étoile, entre la division et l'impact. */
+    private static Vector2 starShard(Strike s, float time, int index) {
+        Vector2 split = starPosition(s, STAR_SPLIT);
+        Vector2 target = starTargets(s)[index];
+        float u = Interpolation.pow2In.apply(MathUtils.clamp((time - STAR_SPLIT) / (IMPACT_TIME - STAR_SPLIT), 0f, 1f));
+        float x = MathUtils.lerp(split.x, target.x, u);
+        float y = MathUtils.lerp(split.y, target.y, u) + 90f * 4f * u * (1f - u);
+        return new Vector2(x, y);
+    }
+
+    /** Couleur de l'éclat {@code index} de l'Étoile : attaque, bouclier, gains. */
+    private static Color starColor(int index) {
+        return index == 0 ? FIRE : index == 1 ? AZURE : GOLD;
+    }
+
+    /** Grosse bombe : elle se balance un peu en vol (degrés). */
+    private static float bombTilt(float time) {
+        return 12f * MathUtils.sin(time * 14f);
+    }
+
+    /** @return le bout de la mèche de la grosse bombe en {@code at}, penchée de {@code tilt} degrés. */
+    private static Vector2 fuseTip(Vector2 at, float tilt) {
+        return new Vector2(BOMB_FUSE_X * BIG_BOMB_SCALE, BOMB_FUSE_Y * BIG_BOMB_SCALE).rotateDeg(tilt).add(at);
+    }
+
+    /** Grosse bombe : lancée très haut, elle retombe lourdement sur l'ennemi. */
+    private static Vector2 bigBombPosition(Strike s, float time) {
+        float u = MathUtils.clamp(time / IMPACT_TIME, 0f, 1f);
+        float x = MathUtils.lerp(s.fromX, s.toX, u);
+        float y = MathUtils.lerp(s.fromY, s.toY, Interpolation.pow2In.apply(u)) + BIG_BOMB_ARC * 4f * u * (1f - u);
+        return new Vector2(x, y);
+    }
+
     // -------------------------------------------------------------------------
     // Dessin
     // -------------------------------------------------------------------------
@@ -551,6 +806,92 @@ public class SymbolStrikes extends Actor implements Disposable {
                 if (t > 0.25f) y += 18f * Math.abs(MathUtils.sin((t - 0.25f) * 12f)) * Math.max(0f, 1f - (t - 0.25f) * 4f);
                 symbol(batch, s.art, s.fromX, y, 0.9f, 0f, alpha * Math.min(1f, t / 0.08f));
                 if (t > 0.3f && t < 0.75f) shine(batch, s.fromX, y, (t - 0.3f) / 0.45f, alpha);
+            }
+            case HORSESHOE -> {
+                if (t < IMPACT_TIME) {
+                    Vector2 at = horseshoePosition(s, t);
+                    glow(batch, at.x, at.y, 100f, GOLD, alpha * 0.6f);
+                    symbol(batch, s.art, at.x, at.y, 0.7f, -720f * t / IMPACT_TIME, alpha);
+                }
+            }
+            case ECU -> {
+                if (t < IMPACT_TIME + 0.15f) {
+                    Vector2 at = ecuPosition(s, Math.min(t, IMPACT_TIME));
+                    float appear = Interpolation.swingOut.apply(Math.min(1f, t / 0.15f));
+                    float squash = t > IMPACT_TIME ? 1f - 0.3f * MathUtils.sin((t - IMPACT_TIME) / 0.15f * MathUtils.PI) : 1f;
+                    glow(batch, at.x, at.y, 140f, AZURE, alpha * 0.7f);
+                    symbolScaled(batch, s.art, at.x, at.y, 0.9f * appear * (2f - squash), 0.9f * appear * squash, 0f,
+                        alpha * (t > IMPACT_TIME ? 1f - (t - IMPACT_TIME) / 0.15f : 1f));
+                }
+            }
+            case SWORD -> {
+                if (t < IMPACT_TIME + 0.15f) {
+                    Vector2 at = swordPosition(s, t);
+                    float angle = MathUtils.atan2(s.toY - s.fromY, s.toX - s.fromX) * MathUtils.radiansToDegrees;
+                    float fade = t > IMPACT_TIME ? 1f - (t - IMPACT_TIME) / 0.15f : Math.min(1f, t / 0.06f);
+                    if (t > 0.1f) { // traînée d'acier derrière la lame
+                        Vector2 back = swordPosition(s, Math.max(0f, t - 0.08f));
+                        batch.setBlendFunction(GL20.GL_SRC_ALPHA, GL20.GL_ONE);
+                        segment(batch, back.x, back.y, at.x, at.y, 16f, STEEL, alpha * fade * 0.5f);
+                        batch.setBlendFunction(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
+                    }
+                    symbol(batch, s.art, at.x, at.y, SWORD_SCALE, angle - 90f, alpha * fade); // la pointe (en haut de l'image) vise l'ennemi
+                }
+                if (t >= IMPACT_TIME && t < IMPACT_TIME + 0.35f) { // entaille en croix qui s'élargit
+                    float since = (t - IMPACT_TIME) / 0.35f;
+                    float len = 160f * Interpolation.pow2Out.apply(Math.min(1f, since * 2f));
+                    float a = alpha * (1f - since);
+                    batch.setBlendFunction(GL20.GL_SRC_ALPHA, GL20.GL_ONE);
+                    segment(batch, s.toX - len / 2f, s.toY + len / 2f, s.toX + len / 2f, s.toY - len / 2f, 10f, Color.WHITE, a);
+                    segment(batch, s.toX - len / 2f, s.toY + len / 2f, s.toX + len / 2f, s.toY - len / 2f, 26f, STEEL, a * 0.4f);
+                    batch.setBlendFunction(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
+                }
+            }
+            case HEART -> {
+                if (t < IMPACT_TIME) {
+                    Vector2 at = heartPosition(s, t);
+                    float beat = t < HEART_RISE ? 1f + 0.25f * Math.abs(MathUtils.sin(t / HEART_RISE * MathUtils.PI * 2f)) : 1f;
+                    float shrink = t > HEART_RISE ? 1f - 0.4f * (t - HEART_RISE) / (IMPACT_TIME - HEART_RISE) : 1f;
+                    glow(batch, at.x, at.y, 130f * beat, LOVE, alpha * 0.7f);
+                    symbol(batch, s.art, at.x, at.y, 0.8f * beat * shrink, 0f, alpha);
+                }
+            }
+            case DIE -> {
+                if (t < IMPACT_TIME) {
+                    Vector2 at = diePosition(s, t);
+                    symbol(batch, s.art, at.x, at.y, 0.7f, -540f * t / IMPACT_TIME, alpha);
+                }
+            }
+            case STAR -> {
+                if (t < STAR_SPLIT) {
+                    Vector2 at = starPosition(s, t);
+                    glow(batch, at.x, at.y, 140f, FLAME, alpha * 0.8f);
+                    symbol(batch, s.art, at.x, at.y, 0.8f, 360f * t, alpha);
+                } else if (t < IMPACT_TIME) {
+                    for (int i = 0; i < starTargets(s).length; i++) {
+                        Vector2 at = starShard(s, t, i);
+                        glow(batch, at.x, at.y, 80f, starColor(i), alpha * 0.8f);
+                        symbol(batch, s.art, at.x, at.y, 0.45f, 540f * t, alpha);
+                    }
+                }
+            }
+            case BOMB -> {
+                if (t < IMPACT_TIME) {
+                    Vector2 at = bigBombPosition(s, t);
+                    float swell = 1f + 0.12f * MathUtils.sin(t * 50f) * (t / IMPACT_TIME); // elle va exploser
+                    float tilt = bombTilt(t);
+                    Vector2 fuse = fuseTip(at, tilt);
+                    glow(batch, fuse.x, fuse.y, 34f + 14f * MathUtils.sin(t * 70f), FLAME, alpha);
+                    symbol(batch, s.art, at.x, at.y, BIG_BOMB_SCALE * swell, tilt, alpha);
+                }
+            }
+            case CROWN -> {
+                float y0 = s.fromY + ABOVE_REEL;
+                float u = Math.min(1f, t / 0.22f);
+                float y = MathUtils.lerp(y0 + 300f, y0, Interpolation.bounceOut.apply(u));
+                glow(batch, s.fromX, y, 170f, GOLD, alpha * (0.4f + 0.3f * MathUtils.sin(t * 12f)));
+                symbol(batch, s.art, s.fromX, y, 1.15f, 0f, alpha * Math.min(1f, t / 0.08f));
+                if (t > 0.25f && t < 0.75f) shine(batch, s.fromX, y, (t - 0.25f) / 0.5f, alpha);
             }
             default -> { }
         }

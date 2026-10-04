@@ -5,6 +5,7 @@ import fr.astratime.lucky.entities.context.TurnContext;
 import fr.astratime.lucky.entities.enemy.EnemyTurnResult;
 import fr.astratime.lucky.entities.events.Event;
 import fr.astratime.lucky.entities.events.GaugeFilledEvent;
+import fr.astratime.lucky.entities.events.SafeOpenedEvent;
 import fr.astratime.lucky.entities.effects.Effect;
 
 import java.util.ArrayList;
@@ -51,6 +52,13 @@ public class TurnEngine {
         SlotMachine machine = player.getSlotMachine();
         Symbol[] drawn   = machine.spin(turnContext.getSpinContext());
         Symbol[] symbols = machine.resolveJokers(drawn, turnContext.getSpinContext());
+        // Relance : sans paire, la machine relance (une fois par carte)
+        Symbol[] rerolled = null;
+        for (int i = 0; i < turnContext.getSpinContext().getRerolls() && !SlotMachine.hasPair(symbols); i++) {
+            if (rerolled == null) rerolled = drawn;
+            drawn   = machine.spin(turnContext.getSpinContext());
+            symbols = machine.resolveJokers(drawn, turnContext.getSpinContext());
+        }
 
         // Symboles -> couples (symbole, action)
         List<SymbolAction> symbolActions = actionResolver.resolve(symbols);
@@ -78,7 +86,15 @@ public class TurnEngine {
                 shieldReflect);
         }
 
-        result = result.withEnemyTurn(enemyTurn, storeLeftoverShield(player));
+        List<Event> endEvents = storeLeftoverShield(player);
+        // Coffres-forts : ceux arrivés à terme s'ouvrent ; tous, si l'ennemi est vaincu
+        int safe = player.getLastingEffects().openSafes(enemy.isDefeated());
+        if (safe > 0 && !player.isDefeated()) {
+            player.addGains(safe);
+            endEvents.add(new SafeOpenedEvent(safe));
+        }
+        result = result.withEnemyTurn(enemyTurn, endEvents);
+        if (rerolled != null) result = result.withReroll(rerolled);
 
         player.getLastingEffects().endTurn();
         gameState.nextTurn();

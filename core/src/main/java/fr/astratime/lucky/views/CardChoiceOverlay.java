@@ -110,7 +110,24 @@ public class CardChoiceOverlay implements Disposable {
      */
     public void showBet(List<Symbol> options, Function<Symbol, TextureRegion> regionOf,
                         Consumer<Symbol> onPicked) {
-        open("PARI", "Choisis un symbole : gains x2, x3 ou x4 s'il sort 1, 2 ou 3 fois.\nS'il ne sort pas : gains /2.");
+        showSymbols("PARI", "Choisis un symbole : gains x2, x3 ou x4 s'il sort 1, 2 ou 3 fois.\nS'il ne sort pas : gains /2.",
+            options, regionOf, onPicked);
+    }
+
+    /**
+     * Rouleau truqué : le joueur choisit le symbole du rouleau du milieu.
+     *
+     * @param onPicked reçoit le symbole choisi, une fois la fenêtre fermée
+     */
+    public void showRiggedReel(List<Symbol> options, Function<Symbol, TextureRegion> regionOf,
+                               Consumer<Symbol> onPicked) {
+        showSymbols("ROULEAU TRUQUÉ", "Choisis le symbole du rouleau du milieu.", options, regionOf, onPicked);
+    }
+
+    /** Fenêtre de choix d'un symbole parmi {@code options}. */
+    private void showSymbols(String title, String text, List<Symbol> options, Function<Symbol, TextureRegion> regionOf,
+                             Consumer<Symbol> onPicked) {
+        open(title, text);
         Table grid = new Table();
         for (int i = 0; i < options.size(); i++) {
             Symbol symbol = options.get(i);

@@ -30,7 +30,7 @@ public class DefenseAction extends Action {
         List<Event> events = new ArrayList<>();
         Player player = context.getPlayer();
 
-        int base   = baseShield + player.getRankBonus().defense();
+        int base   = baseShield + player.getRankBonus().defense() * context.getRankFactor();
         int shield = Math.round((base + context.getDefenseBonus()) * context.getSymbolPower()
             * context.getDefenseFactor());
         player.addShield(shield);

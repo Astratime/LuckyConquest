@@ -116,6 +116,13 @@ public class Enemy {
     /** Reforme la défense de base, sans les Boucliers du tour précédent (au début d'un nouveau tour de l'ennemi). */
     public void resetDefense() { defense = kind.getBaseDefense(); }
 
+    /** Pot-de-vin : sa défense tombe à 0 jusqu'à son tour. @return la défense retirée */
+    public int bribe() {
+        int removed = defense;
+        defense = 0;
+        return removed;
+    }
+
     /**
      * Début de son tour : ses Épines du tour précédent tombent.
      *

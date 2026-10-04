@@ -37,6 +37,9 @@ public class CombatContext {
     private final List<Symbol>  bets        = new ArrayList<>(); // Pari : symboles sur lesquels le joueur a parié
     private final List<Integer> pistolShots = new ArrayList<>(); // Roulette russe : multiplicateur de chaque tir de pistolet
 
+    private int     rankFactor = 1;      // Jeton de rang : multiplicateur du bonus du rang
+    private int     allIn      = 0;      // Tapis : nombre de mises de tous les gains sur une paire
+
     private boolean ignoreDefense  = false; // Pique : les attaques ignorent la défense ennemie
     private int     lifeDrainPercent = 0;   // Coeur : % des dégâts infligés rendus en soin
     private boolean gainsFromDamage  = false; // As de Pique : convertit les dégâts infligés en gains
@@ -83,6 +86,16 @@ public class CombatContext {
     public List<Symbol>  getBets()        { return Collections.unmodifiableList(bets); }
     /** @return le multiplicateur de chaque tir de pistolet de ce tour (vue non modifiable). */
     public List<Integer> getPistolShots() { return Collections.unmodifiableList(pistolShots); }
+
+    /** @return le multiplicateur du bonus du rang ce tour (1 si aucun Jeton de rang). */
+    public int getRankFactor() { return rankFactor; }
+    /** Jeton de rang : multiplie le bonus du rang par {@code factor} ce tour. */
+    public void multiplyRankBonus(int factor) { rankFactor *= factor; }
+
+    /** @return le nombre de Tapis joués ce tour (0 : aucune mise). */
+    public int getAllIn() { return allIn; }
+    /** Tapis : tous les gains sont misés sur une paire. */
+    public void addAllIn() { allIn++; }
 
     /** @return {@code true} si les attaques de ce tour ignorent la défense ennemie. */
     public boolean isIgnoreDefense()    { return ignoreDefense; }

@@ -8,6 +8,8 @@ import fr.astratime.lucky.entities.Symbol;
 import fr.astratime.lucky.entities.SymbolOutcome;
 import fr.astratime.lucky.entities.TurnResult;
 import fr.astratime.lucky.entities.LastingEffects;
+import fr.astratime.lucky.entities.events.AllInLostEvent;
+import fr.astratime.lucky.entities.events.AllInWonEvent;
 import fr.astratime.lucky.entities.events.BetLostEvent;
 import fr.astratime.lucky.entities.events.CounterAttackEvent;
 import fr.astratime.lucky.entities.events.ExecutionEvent;
@@ -45,6 +47,8 @@ public class CombatResolver {
     static final int   EXECUTION_MAX_PERCENT = 50;
     /** Part des gains perdue quand le symbole parié ne sort pas. */
     private static final float BET_LOSS   = 0.5f;
+    /** Tapis gagné : multiplicateur des gains du joueur. */
+    static final int ALL_IN_FACTOR = 3;
 
     /**
      * Résout un tour de combat complet à partir des actions déjà déterminées
@@ -98,9 +102,10 @@ public class CombatResolver {
         // Bonus de paire/jackpot
         List<Event> pairOrJackpotEvents = new ArrayList<>();
         int gains = 0;
-        if (isJackpot(symbols)) {
+        Symbol jackpot = SlotMachine.jackpotSymbol(symbols);
+        if (jackpot != null) {
             gains = GAINS_JACKPOT;
-            pairOrJackpotEvents.add(new JackpotEvent(symbols[0]));
+            pairOrJackpotEvents.add(new JackpotEvent(jackpot));
         } else if (hasPair(symbols)) {
             gains = GAINS_PAIR;
         }
@@ -113,6 +118,10 @@ public class CombatResolver {
         // Paris : sur les gains du joueur, une fois ceux du tirage crédités
         for (Symbol bet : combatContext.getBets()) {
             pairOrJackpotEvents.add(resolveBet(combatContext.getPlayer(), bet, symbols));
+        }
+        // Tapis : tous les gains misés sur une paire (un jackpot en est une)
+        for (int i = 0; i < combatContext.getAllIn(); i++) {
+            pairOrJackpotEvents.add(resolveAllIn(combatContext.getPlayer(), hasPair(symbols)));
         }
         events.addAll(pairOrJackpotEvents);
 
@@ -198,12 +207,15 @@ public class CombatResolver {
         return new BetWonEvent(bet, multiplier, won);
     }
 
-    /** @return {@code true} si les trois symboles sont identiques et non nuls. */
-    private boolean isJackpot(Symbol[] s) {
-        return s[0] != null && s[0] == s[1] && s[1] == s[2];
+    /** Tapis : avec une paire, les gains du joueur sont triplés ; sans paire, il les perd tous. */
+    private Event resolveAllIn(Player player, boolean pair) {
+        if (!pair) return new AllInLostEvent(player.consumeGainsPercent(1f));
+        int won = player.getGains() * (ALL_IN_FACTOR - 1);
+        player.addGains(won);
+        return new AllInWonEvent(won);
     }
 
-    /** @return {@code true} si au moins deux des trois symboles sont identiques et non nuls. */
+    /** @return {@code true} si au moins deux symboles sont identiques et non nuls. */
     private boolean hasPair(Symbol[] s) {
         return SlotMachine.hasPair(s);
     }

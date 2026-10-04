@@ -172,5 +172,109 @@
         "amount": 2000
       }
     ]
+  },
+  {
+    "id": "reroll",
+    "name": "Relance",
+    "assetPath": "cards/special/reroll.png",
+    "effects": [
+      {
+        "type": "REROLL"
+      }
+    ]
+  },
+  {
+    "id": "rigged_reel",
+    "name": "Rouleau truqué",
+    "assetPath": "cards/special/rigged_reel.png",
+    "effects": [
+      {
+        "type": "RIGGED_REEL"
+      }
+    ]
+  },
+  {
+    "id": "ghost_reel",
+    "name": "Rouleau fantôme",
+    "assetPath": "cards/special/ghost_reel.png",
+    "effects": [
+      {
+        "type": "GHOST_REEL"
+      }
+    ]
+  },
+  {
+    "id": "rank_token",
+    "name": "Jeton de rang",
+    "assetPath": "cards/special/rank_token.png",
+    "effects": [
+      {
+        "type": "RANK_TOKEN"
+      }
+    ]
+  },
+  {
+    "id": "all_in",
+    "name": "Tapis",
+    "assetPath": "cards/special/all_in.png",
+    "effects": [
+      {
+        "type": "ALL_IN"
+      }
+    ]
+  },
+  {
+    "id": "safe",
+    "name": "Coffre-fort",
+    "assetPath": "cards/special/safe.png",
+    "effects": [
+      {
+        "type": "SAFE",
+        "percent": 30,
+        "turns": 3
+      }
+    ]
+  },
+  {
+    "id": "insurance",
+    "name": "Assurance",
+    "assetPath": "cards/special/insurance.png",
+    "effects": [
+      {
+        "type": "INSURANCE",
+        "percent": 10
+      }
+    ]
+  },
+  {
+    "id": "bribe",
+    "name": "Pot-de-vin",
+    "assetPath": "cards/special/bribe.png",
+    "effects": [
+      {
+        "type": "BRIBE"
+      }
+    ]
+  },
+  {
+    "id": "double_or_nothing",
+    "name": "Double ou rien",
+    "assetPath": "cards/special/double_or_nothing.png",
+    "effects": [
+      {
+        "type": "DOUBLE_OR_NOTHING"
+      }
+    ]
+  },
+  {
+    "id": "overheat",
+    "name": "Machine en surchauffe",
+    "assetPath": "cards/special/overheat.png",
+    "effects": [
+      {
+        "type": "OVERHEAT",
+        "hpPercent": 10
+      }
+    ]
   }
 ]
