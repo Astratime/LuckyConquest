@@ -182,9 +182,9 @@ public class EnemyTurnResolver {
                 continue;
             }
             switch (card.getSuit()) {
-                case PIQUE   -> swordBonus  += EnemyCards.swordBonus(card);
+                case PIQUE   -> swordBonus  += kind.swordBonus(card);
                 case COEUR   -> healBonus   += EnemyCards.healBonus(card);
-                case CARREAU -> shieldBonus += EnemyCards.shieldBonus(card);
+                case CARREAU -> shieldBonus += kind.shieldBonus(card);
                 case TREFLE  -> {
                     List<EnemySymbol> symbols = enemy.getSymbols();
                     EnemySymbol lucky = symbols.get(random.nextInt(symbols.size()));
@@ -498,9 +498,9 @@ public class EnemyTurnResolver {
         }
         Enemy enemy = turn.enemy;
         switch (copied.getSuit()) {
-            case PIQUE   -> events.add(turn.strike(turn.enemy.getKind().swordDamage() + EnemyCards.swordBonus(copied) / 2));
+            case PIQUE   -> events.add(turn.strike(turn.enemy.getKind().swordDamage() + turn.enemy.getKind().swordBonus(copied) / 2));
             case COEUR   -> events.add(heal(enemy, enemy.getKind().potionPercent(EnemyCards.healBonus(copied)) / 2f));
-            case CARREAU, TREFLE -> events.add(turn.shield((turn.enemy.getKind().shieldDefense() + EnemyCards.shieldBonus(copied)) / 2));
+            case CARREAU, TREFLE -> events.add(turn.shield((turn.enemy.getKind().shieldDefense() + turn.enemy.getKind().shieldBonus(copied)) / 2));
         }
     }
 
@@ -526,9 +526,9 @@ public class EnemyTurnResolver {
             return;
         }
         switch (stolen.getSuit()) {
-            case PIQUE   -> events.add(turn.strike(turn.enemy.getKind().swordDamage() + EnemyCards.swordBonus(stolen)));
+            case PIQUE   -> events.add(turn.strike(turn.enemy.getKind().swordDamage() + turn.enemy.getKind().swordBonus(stolen)));
             case COEUR   -> events.add(heal(enemy, enemy.getKind().potionPercent(EnemyCards.healBonus(stolen))));
-            case CARREAU, TREFLE -> events.add(turn.shield(turn.enemy.getKind().shieldDefense() + EnemyCards.shieldBonus(stolen)));
+            case CARREAU, TREFLE -> events.add(turn.shield(turn.enemy.getKind().shieldDefense() + turn.enemy.getKind().shieldBonus(stolen)));
         }
     }
 

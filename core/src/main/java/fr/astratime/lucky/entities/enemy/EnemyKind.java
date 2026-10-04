@@ -703,8 +703,14 @@ public enum EnemyKind {
             default -> false;
         };
     }
-    /** @return sa défense de base (renforcée par sa {@linkplain #getPower() force}), reformée à chacun de ses tours. */
-    public int getBaseDefense() { return empowered(baseDefense); }
+    /**
+     * @return sa défense de base (renforcée par sa {@linkplain #getPower() force}), reformée à chacun de ses tours :
+     *         en Exploration, celle de son lieu
+     */
+    public int getBaseDefense() {
+        Place place = Place.of(this);
+        return empowered(place != null && place.getShieldDefense() > 0 ? place.getShieldDefense() : baseDefense);
+    }
 
     /**
      * @return sa force, en % : le multiplicateur de ses attaques, de ses défenses
@@ -737,10 +743,28 @@ public enum EnemyKind {
         return place != null && place.getSwordDamage() > 0 ? place.getSwordDamage() : EnemySymbol.SWORD_DAMAGE;
     }
 
-    /** @return la défense de base d'un de ses Boucliers, avant sa {@linkplain #getPower() force} (celle de son lieu en Exploration). */
-    public int shieldDefense() {
+    /**
+     * @return la défense d'un de ses Boucliers, avant sa {@linkplain #getPower() force} : en Exploration,
+     *         à l'échelle de la défense de base de son lieu
+     */
+    public int shieldDefense() { return Math.round(EnemySymbol.SHIELD_DEFENSE * shieldScale()); }
+
+    /** @return l'attaque ajoutée par une de ses cartes Pique, avant sa force (à l'échelle de l'Épée de son lieu). */
+    public int swordBonus(Card card) { return Math.round(EnemyCards.swordBonus(card) * swordScale()); }
+
+    /** @return la défense ajoutée par une de ses cartes Carreau, avant sa force (à l'échelle de la défense de son lieu). */
+    public int shieldBonus(Card card) { return Math.round(EnemyCards.shieldBonus(card) * shieldScale()); }
+
+    /** @return l'échelle de ses attaques par rapport à la base : l'Épée de son lieu sur {@link EnemySymbol#SWORD_DAMAGE}. */
+    private float swordScale() {
         Place place = Place.of(this);
-        return place != null && place.getShieldDefense() > 0 ? place.getShieldDefense() : EnemySymbol.SHIELD_DEFENSE;
+        return place != null && place.getSwordDamage() > 0 ? place.getSwordDamage() / (float) EnemySymbol.SWORD_DAMAGE : 1f;
+    }
+
+    /** @return l'échelle de ses défenses par rapport à la base : la défense de son lieu sur {@link EnemySymbol#SHIELD_DEFENSE}. */
+    private float shieldScale() {
+        Place place = Place.of(this);
+        return place != null && place.getShieldDefense() > 0 ? place.getShieldDefense() / (float) EnemySymbol.SHIELD_DEFENSE : 1f;
     }
 
     /** @return {@code value} multiplié par sa {@linkplain #getPower() force} (arrondi). */

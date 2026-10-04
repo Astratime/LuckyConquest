@@ -4,6 +4,7 @@ import fr.astratime.lucky.entities.Card;
 import fr.astratime.lucky.entities.Enemy;
 import fr.astratime.lucky.entities.Player;
 import fr.astratime.lucky.entities.context.CombatContext;
+import fr.astratime.lucky.entities.enemy.EnemyCards;
 import fr.astratime.lucky.entities.enemy.EnemyKind;
 import fr.astratime.lucky.entities.enemy.EnemySymbol;
 import fr.astratime.lucky.entities.exploration.Dungeon;
@@ -38,13 +39,21 @@ class PlacesTest {
             for (Dungeon dungeon : places[p].getDungeons()) {
                 for (EnemyKind kind : List.of(dungeon.getSoldier(), dungeon.getKing())) {
                     assertEquals(stats[p][0], kind.swordDamage(), kind + " : épée");
-                    assertEquals(stats[p][1], kind.shieldDefense(), kind + " : bouclier");
+                    assertEquals(stats[p][1], kind.getBaseDefense(), kind + " : défense de base");
+                    assertEquals(stats[p][1], kind.shieldDefense(), kind + " : Bouclier à la même échelle");
                     assertEquals(stats[p][2], kind.potionPercent(0), 1e-4, kind + " : soin");
                 }
             }
         }
         assertEquals(EnemySymbol.SWORD_DAMAGE, EnemyKind.ROI_PIQUE.swordDamage(), "la prairie ne change pas");
         assertEquals(EnemySymbol.SHIELD_DEFENSE, EnemyKind.ROI_PIQUE.shieldDefense());
+        Card tenOfDiamonds = new Card("c", "c", "x.png", List.of(), Card.Suit.CARREAU, 10);
+        Card tenOfSpades   = new Card("p", "p", "x.png", List.of(), Card.Suit.PIQUE, 10);
+        assertEquals(EnemyCards.shieldBonus(tenOfDiamonds) * 500, EnemyKind.KRAKEN.shieldBonus(tenOfDiamonds),
+            "les Carreaux du Casino protègent 500 fois plus");
+        assertEquals(EnemyCards.swordBonus(tenOfSpades) * 20, EnemyKind.KRAKEN.swordBonus(tenOfSpades),
+            "les Piques du Casino frappent 20 fois plus");
+        assertEquals(EnemyCards.shieldBonus(tenOfDiamonds), EnemyKind.ROI_PIQUE.shieldBonus(tenOfDiamonds));
         assertEquals(EnemySymbol.SHIELD_DEFENSE, EnemyKind.CROUPIER.shieldDefense(), "la Tour ne change pas");
         assertEquals(60f, EnemyKind.KRAKEN.potionPercent(EnemySymbol.POTION_PERCENT), 1e-4,
             "les Cœurs renforcent son soin en proportion");
