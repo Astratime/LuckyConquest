@@ -5,6 +5,7 @@ import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
+import com.badlogic.gdx.math.Interpolation;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
@@ -100,8 +101,12 @@ public class SlotView implements Disposable {
     private final Map<Symbol, Texture>       textures = new EnumMap<>(Symbol.class);
     private final Map<Symbol, TextureRegion> regions  = new EnumMap<>(Symbol.class);
     private final Table                      table    = new Table();
-    /** Rouleaux, de gauche à droite. */
+    /** Rouleaux, de gauche à droite (le 4e ne s'affiche qu'avec la Machine en surchauffe). */
     private final List<ReelActor<Symbol>>    reels    = new ArrayList<>();
+    /** Case de chaque rouleau : le rouleau et sa croix. */
+    private final List<Stack>                cells    = new ArrayList<>();
+    /** Rouleaux affichés (-1 avant le premier affichage). */
+    private int                              reelCount = -1;
     /** Croix posée sur chaque rouleau quand il est bloqué (Rouleau interdit). */
     private final List<Image>                locks    = new ArrayList<>();
     private final Texture                    lockTexture;
@@ -120,6 +125,12 @@ public class SlotView implements Disposable {
      */
     public SlotView(TableView tableView, Tooltip tooltip, EffectPopupAnimator popupAnimator, Sound reelSpinSound,
                     Sound reelStopSound, Sound suspenseSound) {
+        this(tableView, tooltip, popupAnimator, reelSpinSound, reelStopSound, suspenseSound, Symbol.classicReels());
+    }
+
+    /** @param machine symboles de la machine du joueur, qui défilent sur les rouleaux (avec le Joker) */
+    public SlotView(TableView tableView, Tooltip tooltip, EffectPopupAnimator popupAnimator, Sound reelSpinSound,
+                    Sound reelStopSound, Sound suspenseSound, List<Symbol> machine) {
         this.tableView     = tableView;
         this.tooltip       = tooltip;
         this.reelSpinSound = reelSpinSound;
@@ -133,18 +144,48 @@ public class SlotView implements Disposable {
         }
         lockTexture = new Texture(Gdx.files.internal(LOCK_ASSET));
         TextureRegion lockRegion = new TextureRegion(lockTexture, LOCK_X, LOCK_Y, LOCK_SIZE_X, LOCK_SIZE_Y);
-        for (int i = 0; i < SlotMachine.SYMBOL_COUNT; i++) {
-            ReelActor<Symbol> reel = new ReelActor<>(Symbol.values(), regions::get);
+        List<Symbol> strip = new ArrayList<>(machine);
+        strip.add(Symbol.JOKER);
+        for (int i = 0; i < SlotMachine.MAX_SYMBOL_COUNT; i++) {
+            ReelActor<Symbol> reel = new ReelActor<>(strip.toArray(new Symbol[0]), regions::get);
             addTooltip(reel);
             Image lock = new Image(lockRegion);
             lock.setTouchable(Touchable.disabled);
             lock.setVisible(false);
-            table.add(new Stack(reel, lock)).size(SYMBOL_WIDTH, SYMBOL_HEIGHT).pad(SYMBOL_PAD);
+            cells.add(new Stack(reel, lock));
             reels.add(reel);
             locks.add(lock);
         }
-        table.pack();
+        setReelCount(SlotMachine.SYMBOL_COUNT);
     }
+
+    /**
+     * Affiche {@code count} rouleaux (4 avec la Machine en surchauffe) : la
+     * machine de la table s'élargit d'autant ; un rouleau qui apparaît surgit.
+     */
+    public void setReelCount(int count) {
+        if (count == reelCount) return;
+        int before = reelCount;
+        reelCount = count;
+        table.clearChildren();
+        for (int i = 0; i < count; i++) {
+            table.add(cells.get(i)).size(SYMBOL_WIDTH, SYMBOL_HEIGHT).pad(SYMBOL_PAD);
+        }
+        for (int i = count; i < cells.size(); i++) reels.get(i).empty();
+        table.pack();
+        tableView.setPlayerReelCount(count);
+        layout();
+        for (int i = Math.max(0, before); i < count; i++) { // le rouleau en plus surgit
+            Stack cell = cells.get(i);
+            cell.setTransform(true);
+            cell.setOrigin(SYMBOL_WIDTH / 2f, SYMBOL_HEIGHT / 2f);
+            cell.setScale(before < 0 ? 1f : 0f);
+            cell.addAction(Actions.scaleTo(1f, 1f, 0.35f, Interpolation.swingOut));
+        }
+    }
+
+    /** @return le nombre de rouleaux affichés. */
+    public int getReelCount() { return reelCount; }
 
     /** @return l'image du symbole (pour l'afficher ailleurs : panneau latéral, choix du pari). */
     public TextureRegion regionOf(Symbol symbol) { return regions.get(symbol); }
@@ -166,12 +207,12 @@ public class SlotView implements Disposable {
     public void spin(Symbol[] symbols, Symbol[] resolved, IntConsumer onJoker, Runnable onAllStopped) {
         int blocked = blockedReel;
         clear();
+        setReelCount(symbols.length);
         setBlockedReel(blocked); // le rouleau bloqué reste barré pendant le tirage
-        int     last     = reels.size() - 1;
-        boolean suspense = symbols.length > 2 && symbols[last] != null && symbols[0] != null && (symbols[0] == symbols[1]
-            || symbols[0] == Symbol.JOKER || symbols[1] == Symbol.JOKER);
+        int     last     = symbols.length - 1;
+        boolean suspense = symbols.length > 2 && symbols[last] != null && pairOrJokerBefore(symbols, last);
         reelsSpinning = 0;
-        for (int i = 0; i < reels.size(); i++) {
+        for (int i = 0; i < symbols.length; i++) {
             if (symbols[i] != null) reelsSpinning++;
         }
         if (reelsSpinning == 0) {
@@ -180,7 +221,7 @@ public class SlotView implements Disposable {
         }
         int spinning = reelsSpinning;
         spinSoundId   = reelSpinSound.loop();
-        for (int i = 0; i < reels.size(); i++) {
+        for (int i = 0; i < symbols.length; i++) {
             if (symbols[i] == null) continue; // rouleau bloqué : il ne tourne pas
             int   reelIndex = i;
             float stopAt    = FIRST_STOP + i * STOP_STEP;
@@ -205,6 +246,18 @@ public class SlotView implements Disposable {
                 }
             });
         }
+    }
+
+    /** @return {@code true} si les symboles avant le rouleau {@code last} font déjà une paire ou montrent un Joker. */
+    private static boolean pairOrJokerBefore(Symbol[] symbols, int last) {
+        for (int i = 0; i < last; i++) {
+            if (symbols[i] == null) continue;
+            if (symbols[i] == Symbol.JOKER) return true;
+            for (int j = i + 1; j < last; j++) {
+                if (symbols[i] == symbols[j]) return true;
+            }
+        }
+        return false;
     }
 
     /** Coupe la boucle des rouleaux et le suspense s'ils sont en cours. */
@@ -250,7 +303,7 @@ public class SlotView implements Disposable {
         stopSpinSounds();
         table.clearActions();
         reels.forEach(ReelActor::empty);
-        for (int i = 0; i < reels.size(); i++) tableView.clearReelHighlight(i);
+        for (int i = 0; i < reelCount; i++) tableView.clearReelHighlight(i);
         setBlockedReel(-1);
     }
 
@@ -277,7 +330,7 @@ public class SlotView implements Disposable {
 
     /** Place la ligne dans les rouleaux de la machine dessinée sur la table (après un redimensionnement). */
     public void layout() {
-        table.setPosition(tableView.getReelRowX(), tableView.getReelRowY());
+        table.setPosition(tableView.getPlayerReelRowX(), tableView.getReelRowY());
     }
 
     /**
@@ -311,7 +364,7 @@ public class SlotView implements Disposable {
 
         for (SymbolOutcome outcome : result.getSymbolOutcomes()) {
             int slot = outcome.getSlotIndex();
-            if (slot < 0 || slot >= reels.size()) { // symbole hors de la ligne : pas de texte à attendre
+            if (slot < 0 || slot >= reelCount) { // symbole hors de la ligne : pas de texte à attendre
                 outcome.getEvents().forEach(onEventShown);
                 continue;
             }

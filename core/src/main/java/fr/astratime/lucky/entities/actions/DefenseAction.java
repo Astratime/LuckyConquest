@@ -15,6 +15,7 @@ import java.util.List;
  * Lit dans le CombatContext le bonus plat de bouclier (cartes jouées), et y
  * signale qu'un symbole de défense est sorti : c'est ce qui active le renvoi
  * de dégâts des cartes Carreau (calculé lors de la riposte par CombatResolver).
+ * Le bonus de défense du rang du joueur s'ajoute au bouclier de base.
  */
 public class DefenseAction extends Action {
 
@@ -29,7 +30,8 @@ public class DefenseAction extends Action {
         List<Event> events = new ArrayList<>();
         Player player = context.getPlayer();
 
-        int shield = Math.round((baseShield + context.getDefenseBonus()) * context.getSymbolPower()
+        int base   = baseShield + player.getRankBonus().defense() * context.getRankFactor();
+        int shield = Math.round((base + context.getDefenseBonus()) * context.getSymbolPower()
             * context.getDefenseFactor());
         player.addShield(shield);
         events.add(new ShieldGainedEvent(shield));

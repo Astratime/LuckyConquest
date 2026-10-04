@@ -46,8 +46,8 @@ class CardLoaderTest {
     void everyCardDefinitionLoads() {
         List<Card> cards = CardLoader.loadAll(READER);
 
-        assertEquals(52 + 14 + 12 + 11, cards.size(),
-            "4 suites de 13 cartes + 14 cartes spéciales + 12 cartes des donjons + 11 cartes de test (Bingo par symbole)");
+        assertEquals(52 + 25 + 12 + 19, cards.size(),
+            "4 suites de 13 cartes + 25 cartes spéciales + 12 cartes des donjons + 19 cartes de test (Bingo par symbole)");
         assertEquals(cards.size(), cards.stream().map(Card::getId).distinct().count(), "les ids doivent être uniques");
     }
 
@@ -180,6 +180,21 @@ class CardLoaderTest {
         for (fr.astratime.lucky.entities.Symbol symbol : symbols) {
             String id = fr.astratime.lucky.controllers.GameController.bingoGiftId(symbol);
             assertTrue(ids.contains(id), "carte Bingo offerte manquante : " + id);
+        }
+    }
+
+    @Test
+    void theBoutiqueSellsKnownCardsButNeitherChestNorCombatShopCards() {
+        Map<String, Long> boutique = CardLoader.loadBoutique(READER);
+        assertEquals(10_000_000L, boutique.get("in_the_sleeve"), "le prix donné par Astra");
+        java.util.Set<String> shop = CardLoader.loadShop(READER).keySet();
+        for (Map.Entry<String, Long> entry : boutique.entrySet()) {
+            Card card = CardLoader.cardFactory(READER).apply(entry.getKey());
+            assertTrue(entry.getValue() > 0, card.getId());
+            assertFalse(shop.contains(card.getId()), card.getId() + " reste dans l'échoppe du combat");
+        }
+        for (String chest : List.of("pierre_a_aiguiser", "guillotine", "fortune_du_roi", "diamant_brut")) {
+            assertFalse(boutique.containsKey(chest), chest + " ne s'obtient qu'au coffre");
         }
     }
 }

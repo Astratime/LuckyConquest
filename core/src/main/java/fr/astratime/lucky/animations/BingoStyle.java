@@ -46,6 +46,13 @@ public record BingoStyle(Color body, Color trim, Color letterA, Color letterB, C
                 Palette.GOLD, c("fffbe0"), c("ffe066"), palette(Palette.GOLD, c("ffe066"), Color.WHITE));
             case WATERMELON -> new BingoStyle(c("1f7a2e"), c("ff5a78"), c("ff8fa3"), c("eaffea"), back("0a200e"),
                 c("7dff9a"), c("f0fff0"), c("7dff9a"), palette(Palette.MINT, c("ff5a78"), c("ff8fa3"), c("eaffea")));
+            // Rouleaux de la boutique : les couleurs d'un classique de leur type
+            case HORSESHOE -> of(Symbol.BELL);
+            case CROWN     -> of(Symbol.GOLD_BAR);
+            case ECU       -> of(Symbol.DIAMOND);
+            case HEART     -> of(Symbol.CHERRY);
+            case SWORD, DIE, STAR -> of(Symbol.SEVEN);
+            case BOMB      -> of(Symbol.TRIPLE_CHERRY);
             // Triple Sept (et Joker, qui ne s'aligne jamais seul) : la célébration d'origine.
             case TRIPLE_SEVEN, JOKER -> new BingoStyle(null, null, Palette.GOLD, Color.WHITE, Palette.BANNER_SHADOW,
                 c("ffcc26"), c("ffffd9"), Color.WHITE, null);

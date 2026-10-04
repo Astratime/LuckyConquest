@@ -26,6 +26,8 @@ public class TurnResult {
     private final List<Event>         cardEvents;
     private final List<Event>         pistolEvents;
     private final EnemyTurnResult     enemyTurn;
+    /** Premier tirage, relancé faute de paire (Relance) ; {@code null} sans relance. */
+    private final Symbol[]            rerolledDraw;
 
     /**
      * @param events                 journal des événements survenus pendant le tour
@@ -52,13 +54,15 @@ public class TurnResult {
                       List<SymbolOutcome> symbolOutcomes, List<Event> cardEvents, List<Event> pistolEvents,
                       List<Event> pairOrJackpotEvents, List<Event> enemyTurnEvents) {
         this(events, symbols, drawnSymbols, gainsFromPairOrJackpot, symbolOutcomes, cardEvents, pistolEvents,
-            pairOrJackpotEvents, enemyTurnEvents, null);
+            pairOrJackpotEvents, enemyTurnEvents, null, null);
     }
 
     private TurnResult(List<Event> events, Symbol[] symbols, Symbol[] drawnSymbols, int gainsFromPairOrJackpot,
                        List<SymbolOutcome> symbolOutcomes, List<Event> cardEvents, List<Event> pistolEvents,
-                       List<Event> pairOrJackpotEvents, List<Event> enemyTurnEvents, EnemyTurnResult enemyTurn) {
+                       List<Event> pairOrJackpotEvents, List<Event> enemyTurnEvents, EnemyTurnResult enemyTurn,
+                       Symbol[] rerolledDraw) {
         this.enemyTurn = enemyTurn;
+        this.rerolledDraw = rerolledDraw == null ? null : rerolledDraw.clone();
         this.events  = List.copyOf(events);
         this.symbols = symbols.clone();
         this.drawnSymbols = drawnSymbols.clone();
@@ -104,8 +108,20 @@ public class TurnResult {
         List<Event> end = new ArrayList<>(enemyTurnEvents);
         end.addAll(endEvents);
         return new TurnResult(all, symbols, drawnSymbols, gainsFromPairOrJackpot, symbolOutcomes, cardEvents,
-            pistolEvents, pairOrJackpotEvents, end, enemyTurn);
+            pistolEvents, pairOrJackpotEvents, end, enemyTurn, rerolledDraw);
     }
+
+    /**
+     * @param firstDraw premier tirage, relancé faute de paire (Relance)
+     * @return ce résultat, avec le tirage relancé à montrer avant le second
+     */
+    public TurnResult withReroll(Symbol[] firstDraw) {
+        return new TurnResult(events, symbols, drawnSymbols, gainsFromPairOrJackpot, symbolOutcomes, cardEvents,
+            pistolEvents, pairOrJackpotEvents, enemyTurnEvents, enemyTurn, firstDraw);
+    }
+
+    /** @return une copie du premier tirage, relancé faute de paire (Relance), ou {@code null} sans relance. */
+    public Symbol[] getRerolledDraw() { return rerolledDraw == null ? null : rerolledDraw.clone(); }
 
 
     /** @return {@code true} si un {@link JackpotEvent} figure dans le journal de ce tour. */
@@ -113,7 +129,7 @@ public class TurnResult {
         return events.stream().anyMatch(e -> e instanceof JackpotEvent);
     }
 
-    /** @return {@code true} si exactement deux des trois symboles tirés sont identiques (jackpot exclu). */
+    /** @return {@code true} si au moins deux symboles tirés sont identiques, sans jackpot. */
     public boolean isPair() {
         return !isJackpot() && SlotMachine.hasPair(symbols);
     }
@@ -123,11 +139,12 @@ public class TurnResult {
      *         ou {@code null} si ce tour n'en est pas un
      */
     public Symbol getGainBingoSymbol() {
-        return isJackpot() && SymbolRegistry.getGainSymbols().contains(symbols[0]) ? symbols[0] : null;
+        Symbol symbol = SlotMachine.jackpotSymbol(symbols);
+        return isJackpot() && SymbolRegistry.getGainSymbols().contains(symbol) ? symbol : null;
     }
 
     /** @return {@code true} pour un Bingo de bouclier : trois symboles de défense identiques. */
     public boolean isShieldBingo() {
-        return isJackpot() && SymbolRegistry.getDefenseSymbols().contains(symbols[0]);
+        return isJackpot() && SymbolRegistry.getDefenseSymbols().contains(SlotMachine.jackpotSymbol(symbols));
     }
 }

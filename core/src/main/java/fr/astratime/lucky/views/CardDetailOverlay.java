@@ -23,6 +23,8 @@ import fr.astratime.lucky.assets.Palette;
 import fr.astratime.lucky.entities.Card;
 import fr.astratime.lucky.entities.effects.Effect;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.function.Function;
 
 /**
@@ -55,7 +57,10 @@ public class CardDetailOverlay implements Disposable {
     private final Table panel = new Table();
     private final Image rule;
 
-    /** @param cardWidth taille d'une carte de la main (agrandie ici) */
+    /**
+     * @param tooltip   infobulle à cacher à l'ouverture ({@code null} : aucune)
+     * @param cardWidth taille d'une carte de la main (agrandie ici)
+     */
     public CardDetailOverlay(Stage stage, HudTextures hud, Tooltip tooltip, float cardWidth, float cardHeight) {
         this.stage      = stage;
         this.tooltip    = tooltip;
@@ -88,46 +93,86 @@ public class CardDetailOverlay implements Disposable {
      * @param price   prix à l'échoppe, ou {@code null} si la carte n'y est pas vendue
      */
     public void show(Card card, Texture texture, Integer price) {
+        show(card, texture, price != null ? "Prix à l'échoppe" : null,
+            price != null ? SidePanel.formatGains(price) + " gains" : null);
+    }
+
+    /**
+     * Fiche d'une carte vendue à la Boutique du menu, avec son prix en pièces.
+     *
+     * @param price prix, déjà mis en forme (« 3 000 000 pièces »)
+     */
+    public void showForSale(Card card, Texture texture, String price) {
+        show(card, texture, "Prix en boutique", price);
+    }
+
+    private void show(Card card, Texture texture, String priceKey, String price) {
+        List<String[]> lines = new ArrayList<>();
+        lines.add(new String[] {"Nom", card.getName()});
+        lines.add(new String[] {"Couleur", suitName(card.getSuit())});
+        if (card.getSuit() != null) lines.add(new String[] {"Rang", rankName(card.getRank())});
+        lines.add(new String[] {"Type", card.isConsumable() ? "Consommable : disparaît une fois jouée"
+            : card.getSuit() != null ? "Carte à suite" : "Carte spéciale"});
+        if (price != null) lines.add(new String[] {priceKey, price});
+        List<String> effects = new ArrayList<>();
+        for (Effect effect : card.getEffects()) effects.addAll(List.of(effect.getDescription().split("\n")));
+        open(new TextureRegion(texture), cardWidth, cardHeight, card.getName(), lines, effects);
+    }
+
+    /**
+     * Fiche d'un rouleau vendu à la Boutique : son symbole en grand, son effet et son prix.
+     *
+     * @param effect effet du rouleau (une phrase par ligne)
+     * @param price  prix, déjà mis en forme
+     * @param state  ce que le joueur en a (« Possédé »…)
+     */
+    public void showReel(String name, TextureRegion region, String effect, String price, String state) {
+        float width = cardWidth * 1.2f;
+        float height = width * region.getRegionHeight() / region.getRegionWidth();
+        List<String[]> lines = new ArrayList<>();
+        lines.add(new String[] {"Nom", name});
+        lines.add(new String[] {"Type", "Rouleau de la machine"});
+        lines.add(new String[] {"Prix en boutique", price});
+        lines.add(new String[] {"État", state});
+        open(region, width, height, name, lines, List.of(effect.split("\n")));
+    }
+
+    /** Ouvre la fiche : l'image en grand à gauche, le nom, les lignes « Clé : valeur » et les effets à droite. */
+    private void open(TextureRegion region, float width, float height, String name, List<String[]> lines,
+                      List<String> effects) {
         panel.clearChildren();
-        Image image = new Image(new TextureRegionDrawable(new TextureRegion(texture)));
-        panel.add(image).size(cardWidth, cardHeight).top().padRight(CARD_GAP);
+        Image image = new Image(new TextureRegionDrawable(region));
+        panel.add(image).size(width, height).top().padRight(CARD_GAP);
 
         Table info = new Table();
         info.top().left();
-        info.add(new Label(card.getName(), new Label.LabelStyle(nameFont, Color.WHITE))).left();
+        info.add(new Label(name, new Label.LabelStyle(nameFont, Color.WHITE))).left();
         info.row();
         info.add(rule).growX().height(rule.getPrefHeight() * 1.5f).padTop(LINE_GAP).padBottom(LINE_GAP * 2);
         info.row();
-        line(info, "Nom", card.getName());
-        line(info, "Couleur", suitName(card.getSuit()));
-        if (card.getSuit() != null) line(info, "Rang", rankName(card.getRank()));
-        line(info, "Type", card.isConsumable() ? "Consommable : disparaît une fois jouée"
-            : card.getSuit() != null ? "Carte à suite" : "Carte spéciale");
-        if (price != null) line(info, "Prix à l'échoppe", SidePanel.formatGains(price) + " gains");
+        for (String[] line : lines) line(info, line[0], line[1]);
 
         info.add(label("Effets :", keyFont)).left().padTop(LINE_GAP * 2);
         info.row();
-        if (card.getEffects().isEmpty()) {
+        if (effects.isEmpty()) {
             info.add(wrapped("- Aucun effet")).width(INFO_WIDTH).left().padTop(LINE_GAP);
             info.row();
         }
-        for (Effect effect : card.getEffects()) {
-            for (String part : effect.getDescription().split("\n")) {
-                info.add(wrapped("- " + part)).width(INFO_WIDTH).left().padTop(LINE_GAP);
-                info.row();
-            }
+        for (String part : effects) {
+            info.add(wrapped("- " + part)).width(INFO_WIDTH).left().padTop(LINE_GAP);
+            info.row();
         }
         info.add(label("Clic ou Échap pour fermer", hintFont)).left().padTop(LINE_GAP * 4);
         panel.add(info).width(INFO_WIDTH).top();
 
         layout();
-        tooltip.hide();
+        if (tooltip != null) tooltip.hide();
         root.clearActions();
         root.setVisible(true);
         root.setTouchable(Touchable.enabled);
         root.getColor().a = 0f;
         root.addAction(Actions.fadeIn(FADE, Interpolation.pow2Out));
-        image.setOrigin(cardWidth / 2f, cardHeight / 2f);
+        image.setOrigin(width / 2f, height / 2f);
         image.setScale(0.85f);
         image.addAction(Actions.scaleTo(1f, 1f, 0.25f, Interpolation.swingOut));
         root.toFront();

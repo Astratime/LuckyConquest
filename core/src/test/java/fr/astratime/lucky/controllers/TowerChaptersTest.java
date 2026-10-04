@@ -179,16 +179,15 @@ class TowerChaptersTest {
         assertEquals(EnemySymbol.FANG_DRAIN, EnemyKind.SANGSUE.drainPercent(), 0.001f);
         assertTrue(EnemyKind.REINE.potionPercent(0) < EnemySymbol.POTION_PERCENT);
 
-        Enemy queen = new Enemy(EnemyKind.REINE);
-        queen.takeDamage(90_000);
+        int life = EnemyKind.REINE.getMaxHp();
         EnemyTurnResult turn = turnWith(EnemySymbol.POTION, () -> {
             Enemy q = new Enemy(EnemyKind.REINE);
-            q.takeDamage(90_000);
+            q.takeDamage(life * 9 / 10);
             return q;
         }, () -> new Player("Joueur", 1_000_000, List.of()));
         float most = EnemyKind.REINE.potionPercent(Enemy.PLAYS_PER_TURN * 20); // tous ses Cœurs au plus fort
         for (EnemyHealedEvent heal : events(turn, EnemyHealedEvent.class)) {
-            assertTrue(heal.amount <= Math.round(100_000 * most / 100f),
+            assertTrue(heal.amount <= Math.round(life * most / 100f),
                 "soin d'une Potion : au plus " + most + " % de ses PV max");
         }
     }

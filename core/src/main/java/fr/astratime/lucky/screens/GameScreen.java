@@ -67,8 +67,11 @@ import fr.astratime.lucky.entities.actions.Action;
 import fr.astratime.lucky.entities.actions.AttackAction;
 import fr.astratime.lucky.entities.actions.DefenseAction;
 import fr.astratime.lucky.entities.actions.GainAction;
+import fr.astratime.lucky.entities.actions.HealAction;
+import fr.astratime.lucky.entities.actions.MixedAction;
 import fr.astratime.lucky.entities.TurnResult;
 import fr.astratime.lucky.entities.choices.BetChoice;
+import fr.astratime.lucky.entities.choices.RiggedReelChoice;
 import fr.astratime.lucky.entities.choices.CardChoice;
 import fr.astratime.lucky.entities.choices.RouletteChoice;
 import fr.astratime.lucky.entities.SlotMachine;
@@ -158,6 +161,8 @@ public class GameScreen extends ScreenAdapter {
     // -------------------------------------------------------------------------
 
     /** Taille minimale de l'écran de jeu : dans une fenêtre plus petite, il est réduit (voir {@link MinimumScreenViewport}). */
+    /** Relance : pause entre l'arrêt du premier tirage et le second. */
+    private static final float REROLL_PAUSE = 0.45f;
     private static final float  MIN_WIDTH      = 1600f;
     private static final float  MIN_HEIGHT     = 1080f;  // les deux côtés de la table, à la même taille
     private static final float  CARD_WIDTH     = 95f;
@@ -338,8 +343,10 @@ public class GameScreen extends ScreenAdapter {
         this.luckyGame = luckyGame;
         this.run       = run;
         // Le deck construit par le joueur (ou le deck de départ), relu à chaque nouveau combat.
-        this.gameController = new GameController(() -> CardLoader.loadDeck(luckyGame.getProfile().getDeck()),
-            CardLoader.cardFactory(), CardLoader.loadShop());
+        PlayerProfile profile = luckyGame.getProfile();
+        this.gameController = new GameController(() -> CardLoader.loadDeck(profile.getDeck()),
+            CardLoader.cardFactory(), CardLoader.loadShop(),
+            cards -> new Player("Joueur", Player.BASE_HP, cards, profile.getRankBonus(), profile.getMachine()));
         gameController.restart(firstEnemy()); // le premier ennemi du chapitre, ou le croupier d'entraînement
         // Le SpriteBatch est partagé avec LuckyGame et ne doit PAS être disposé ici.
         this.stage = new Stage(new MinimumScreenViewport(MIN_WIDTH, MIN_HEIGHT), luckyGame.getBatch());
@@ -395,7 +402,8 @@ public class GameScreen extends ScreenAdapter {
             new CardDealAnimator(stage, cardBackTexture, CARD_WIDTH, CARD_HEIGHT, sounds.cardDeal, sounds.cardFlip),
             new CardDiscardAnimator(stage, cardBackTexture, CARD_WIDTH, CARD_HEIGHT, sounds.cardDeal, sounds.cardFlip),
             this::onCardPlayed);
-        slots = new SlotView(table, tooltip, effectPopupAnimator, sounds.reelSpin, sounds.reelStop, sounds.reelSuspense);
+        slots = new SlotView(table, tooltip, effectPopupAnimator, sounds.reelSpin, sounds.reelStop, sounds.reelSuspense,
+            gameController.getGameState().getPlayer().getSlotMachine().getReels());
         combatEnd = new CombatEndAnimation(playArea, screenShake, new TextureRegion(hudTextures.pixel),
             hudTextures.bannerBand, new TextureRegion(cardBackTexture), confetti, fireworkSounds, CARD_WIDTH, CARD_HEIGHT);
         choiceOverlay   = new CardChoiceOverlay(stage, hudTextures, cardBackTexture, cardTextures, CARD_WIDTH, CARD_HEIGHT);
@@ -484,6 +492,7 @@ public class GameScreen extends ScreenAdapter {
         if (isCombatOver()) return;
         refreshCombos(); // les combinaisons du tour précédent s'éteignent
         hand.setLocked(false); // une carte achetée entre deux tours reste sur la table
+        showReelCount(gameController.getReelCount()); // le 4e rouleau de la surchauffe ne dure qu'un tour
         slots.setBlockedReel(player().getLastingEffects().getForbiddenReel()); // Rouleau interdit de l'ennemi
         GameController.Purchase gift = gameController.claimBonusCard(); // Bingo glissé dans le deck après un Bingo de gains
         if (gift != null) placePurchase(gift);
@@ -528,6 +537,7 @@ public class GameScreen extends ScreenAdapter {
         refreshEffects();
         hand.refreshBlocked(); // limite de cartes atteinte, ou Bingo rendu injouable par un Recyclage
         refreshPlays();
+        showReelCount(gameController.getReelCount()); // Machine en surchauffe : un 4e rouleau surgit
         announceCombos(combosBefore);
 
         DrawResult drawResult = playResult.getDrawResult();
@@ -738,6 +748,11 @@ public class GameScreen extends ScreenAdapter {
                 effectPopupAnimator.play(gameController.placeBet(symbol), cardCenter.x, cardCenter.y);
                 refreshEffects();
             });
+        } else if (choice instanceof RiggedReelChoice) {
+            choiceOverlay.showRiggedReel(gameController.getBetOptions(), slots::regionOf, symbol -> {
+                effectPopupAnimator.play(gameController.rigReel(symbol), cardCenter.x, cardCenter.y);
+                refreshEffects();
+            });
         } else if (choice instanceof RouletteChoice roulette) {
             choiceOverlay.showRoulette(roulette.cursed(), roulette.pistolMultiplier(), roulette.cursedMultiplier(),
                 roulette.penaltyPercent(),
@@ -813,8 +828,19 @@ public class GameScreen extends ScreenAdapter {
             sumOf(result, PlayerHealedEvent.class, heal -> heal.amount));
         hand.discardAll();
         spinButton.setDisabled(true); // le tour du joueur se termine : la suite attend l'arrêt des rouleaux
-        slots.spin(result.getDrawnSymbols(), result.getSymbols(), this::onJokerTransformed,
-            () -> onReelsStopped(result));
+        showReelCount(result.getDrawnSymbols().length);
+        Symbol[] rerolled = result.getRerolledDraw();
+        if (rerolled == null) {
+            slots.spin(result.getDrawnSymbols(), result.getSymbols(), this::onJokerTransformed,
+                () -> onReelsStopped(result));
+        } else { // Relance : le premier tirage s'arrête sans paire, puis la machine repart
+            slots.spin(rerolled, rerolled, reel -> { }, () -> stage.addAction(Actions.delay(REROLL_PAUSE,
+                Actions.run(() -> {
+                    playReroll();
+                    slots.spin(result.getDrawnSymbols(), result.getSymbols(), this::onJokerTransformed,
+                        () -> onReelsStopped(result));
+                }))));
+        }
         refreshEffects(); // les symboles retirés se rapprochent de leur retour
         refreshPlays();   // nouveau tour : le compteur de cartes repart à zéro
 
@@ -885,10 +911,17 @@ public class GameScreen extends ScreenAdapter {
         if (outcome.getEvents().isEmpty()) return;
         Action action = SymbolRegistry.getAction(outcome.getSymbol()).orElse(null);
         Vector2 target;
-        if (action instanceof AttackAction) {
+        Vector2 shield = playerShield.localToStageCoordinates(new Vector2(ShieldBadge.ICON_SIZE / 2f, ShieldBadge.ICON_SIZE / 2f));
+        if (action instanceof MixedAction) { // l'Étoile se divise : ennemi, bouclier et gains
+            symbolStrikes.play(outcome.getSymbol(), reel, enemyView.getCroupierCenter(), delay, shield,
+                sidePanel.getCoinCenter());
+            return;
+        } else if (action instanceof AttackAction) {
             target = enemyView.getCroupierCenter();
         } else if (action instanceof DefenseAction) {
-            target = playerShield.localToStageCoordinates(new Vector2(ShieldBadge.ICON_SIZE / 2f, ShieldBadge.ICON_SIZE / 2f));
+            target = shield;
+        } else if (action instanceof HealAction) {
+            target = hud.getPlayerChipCenter();
         } else if (action instanceof GainAction) {
             target = sidePanel.getCoinCenter();
         } else {
@@ -905,6 +938,27 @@ public class GameScreen extends ScreenAdapter {
         Vector2 from = slots.getReelCenter(shot.slotIndex >= 0 ? shot.slotIndex : 1);
         stage.addAction(Actions.delay(Math.max(0f, shotAt - PistolShotAnimation.AIM_TIME),
             Actions.run(() -> pistolAnimation.play(from, target))));
+    }
+
+    /** Affiche {@code count} rouleaux (4 avec la Machine en surchauffe) et replace le bouclier à leur droite. */
+    private void showReelCount(int count) {
+        if (count == slots.getReelCount()) return;
+        boolean grows = count > slots.getReelCount();
+        slots.setReelCount(count);
+        placePlayerShield();
+        if (grows) { // la machine chauffe : elle tremble et lâche des étincelles
+            screenShake.shake(0.3f, 6f);
+            Vector2 center = slots.getReelCenter(count - 1);
+            confetti.burst(center.x, center.y, JOKER_CONFETTI);
+        }
+    }
+
+    /** Relance : « RELANCE ! » au-dessus des rouleaux, levier et étincelles. */
+    private void playReroll() {
+        Vector2 center = slots.getReelCenter(1);
+        effectPopupAnimator.play(List.of(new EffectPopup("RELANCE !", EffectPopup.Style.SPECIAL,
+            PopupScale.MAX_INTENSITY)), center.x, center.y + SlotView.CELL_HEIGHT);
+        confetti.burst(center.x, center.y, JOKER_CONFETTI);
     }
 
     /** Un Joker se transforme : texte « JOKER ! » et confettis sur son rouleau. */
@@ -1124,6 +1178,7 @@ public class GameScreen extends ScreenAdapter {
         piles.resetInFlight();
         pileOverlay.hide();
         slots.clear();
+        showReelCount(gameController.getReelCount());
         enemyView.reset();
         playerShield.setValue(0);
         pickOverlay.hide();
@@ -1414,8 +1469,15 @@ public class GameScreen extends ScreenAdapter {
             rows.add(new SidePanel.EffectRow(new TextureRegion(hudTextures.iconVault), null,
                 "Coffre " + lasting.getVault()));
         }
+        for (int[] safe : lasting.getSafes()) {
+            rows.add(new SidePanel.EffectRow(new TextureRegion(hudTextures.iconSafe), null,
+                "+" + safe[0] + ", " + safe[1] + (safe[1] > 1 ? " tours" : " tour")));
+        }
         for (Symbol bet : gameController.getBetsThisTurn()) {
             rows.add(new SidePanel.EffectRow(slots.regionOf(bet), null, "Pari x2 à x4"));
+        }
+        if (gameController.isDoubleNextPending()) {
+            rows.add(new SidePanel.EffectRow(new TextureRegion(hudTextures.iconDouble), null, "Carte suivante x2"));
         }
         sidePanel.setActiveEffects(rows);
     }
@@ -1425,13 +1487,17 @@ public class GameScreen extends ScreenAdapter {
         sidePanel.setGains(player().getGains() - gainsNotYetShown);
     }
 
+    /** Place le bouclier du joueur à droite de ses rouleaux. */
+    private void placePlayerShield() {
+        playerShield.setPosition(table.getPlayerReelsRight() + PLAYER_SHIELD_GAP,
+            table.getReelRowY() + (SlotView.CELL_HEIGHT - playerShield.getHeight()) / 2f);
+    }
+
     /** Place (ou replace après un redimensionnement) les éléments qui dépendent de la taille de l'écran. */
     private void layout() {
         table.layout();
         enemyView.layout();
-        float reelsRight = table.getReelRowX() + SlotMachine.SYMBOL_COUNT * SlotView.CELL_WIDTH;
-        playerShield.setPosition(reelsRight + PLAYER_SHIELD_GAP,
-            table.getReelRowY() + (SlotView.CELL_HEIGHT - playerShield.getHeight()) / 2f);
+        placePlayerShield();
         spinButton.setPosition(playArea.getX() + BUTTON_MARGIN, BUTTON_MARGIN);
         playsLabel.pack();
         playsLabel.setPosition(spinButton.getX() + spinButton.getWidth() + PLAYS_LABEL_GAP,

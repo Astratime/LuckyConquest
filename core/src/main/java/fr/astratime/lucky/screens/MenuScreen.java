@@ -122,13 +122,13 @@ public class MenuScreen extends ScreenAdapter {
     // Pages
     // -------------------------------------------------------------------------
 
-    /** Page principale : Entraînement, Tour des épreuves, Exploration, Construction de deck, Boutique, Options, Quitter. */
+    /** Page principale : Entraînement, Tour des épreuves, Exploration, Table du croupier, Boutique, Options, Quitter. */
     private void showMainPage() {
         showPage(null, List.of(
             OptionsMenu.Entry.button("Entraînement", this::onPlay),
             OptionsMenu.Entry.button("Tour des épreuves", this::onTower),
             OptionsMenu.Entry.button("Exploration", () -> goTo(() -> new ExplorationScreen(luckyGame))),
-            OptionsMenu.Entry.button("Construction de deck", () -> goTo(() -> new DeckBuilderScreen(luckyGame))),
+            OptionsMenu.Entry.button("Table du croupier", () -> goTo(() -> new CroupierTableScreen(luckyGame))),
             OptionsMenu.Entry.button("Boutique", () -> goTo(() -> new ShopScreen(luckyGame))),
             OptionsMenu.Entry.button("Options", this::showOptionsPage),
             OptionsMenu.Entry.button("Quitter", this::onQuit)));
@@ -171,7 +171,7 @@ public class MenuScreen extends ScreenAdapter {
         });
     }
 
-    /** Fondu au noir puis écran {@code next} (Exploration, Construction de deck, Boutique). */
+    /** Fondu au noir puis écran {@code next} (Exploration, Table du croupier, Boutique). */
     private void goTo(Supplier<Screen> next) {
         fadeOutThen(() -> {
             luckyGame.setScreen(next.get());

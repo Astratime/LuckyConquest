@@ -2,6 +2,7 @@ package fr.astratime.lucky.entities.context;
 
 import fr.astratime.lucky.entities.LastingEffects;
 import fr.astratime.lucky.entities.Player;
+import fr.astratime.lucky.entities.Symbol;
 import fr.astratime.lucky.entities.choices.CardChoice;
 import fr.astratime.lucky.entities.effects.Effect;
 import fr.astratime.lucky.popups.EffectPopup;
@@ -29,6 +30,7 @@ public class PlayContext {
     private CardChoice choice;
     private boolean    autoSpin = false;
     private String     rainbowCardId;
+    private boolean    doubleNext = false;
 
     /** @param player joueur qui joue la carte (ses gains peuvent être consommés immédiatement) */
     public PlayContext(Player player) {
@@ -81,6 +83,9 @@ public class PlayContext {
     /** @return les effets de cartes qui durent plusieurs tours, à modifier immédiatement (Recyclage, Porte-bonheur). */
     public LastingEffects getLastingEffects() { return player.getLastingEffects(); }
 
+    /** @return les symboles de la machine du joueur (sans le Joker). */
+    public List<Symbol> getReels() { return player.getSlotMachine().getReels(); }
+
     /** Demande au joueur un choix (Pari, Roulette russe) avant la suite du tour. */
     public void requestChoice(CardChoice choice) { this.choice = choice; }
 
@@ -92,6 +97,12 @@ public class PlayContext {
 
     /** @return {@code true} si la machine doit se lancer d'elle-même après cette carte. */
     public boolean isAutoSpin() { return autoSpin; }
+
+    /** Double ou rien : la prochaine carte jouée ce tour comptera deux fois. */
+    public void requestDouble() { doubleNext = true; }
+
+    /** @return {@code true} si la carte demande que la suivante compte deux fois. */
+    public boolean isDoubleRequested() { return doubleNext; }
 
     /**
      * Arc-en-ciel : les cartes de la main changent de couleur, puis la carte

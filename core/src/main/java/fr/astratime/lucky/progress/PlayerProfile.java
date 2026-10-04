@@ -1,7 +1,14 @@
 package fr.astratime.lucky.progress;
 
+import fr.astratime.lucky.entities.RankBonus;
+import fr.astratime.lucky.entities.Symbol;
+
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 /**
@@ -17,6 +24,10 @@ import java.util.Map;
  *   <li>ses pièces : les gains acquis en combat, versés à la fin de chacun, et
  *       les pièces des coffres. Elles ne servent qu'à la boutique : on n'entre
  *       jamais en combat avec.</li>
+ *   <li>son {@link Rank rang}, acheté à la boutique, rang après rang ;</li>
+ *   <li>ses rouleaux : les 11 classiques et ceux achetés à la boutique
+ *       ({@link ReelShop}) ; sa machine en compte exactement {@link Symbol#MACHINE_SIZE},
+ *       tous différents (au départ, les 11 classiques).</li>
  * </ul>
  */
 public class PlayerProfile {
@@ -33,12 +44,21 @@ public class PlayerProfile {
     static final String KEY_COLLECTION = "collection";
     static final String KEY_DECK       = "deck";
     static final String KEY_COINS      = "coins";
+    static final String KEY_RANK       = "rank";
+    static final String KEY_REELS      = "reels";
+    static final String KEY_MACHINE    = "machine";
 
     private final ProfileStorage       storage;
     private final Map<String, Integer> starterDeck;
     private final Map<String, Integer> collection = new LinkedHashMap<>();
     private final Map<String, Integer> deck       = new LinkedHashMap<>();
     private long coins;
+    /** Nombre de rangs achetés (0 : aucun rang). */
+    private int  ranks;
+    /** Rouleaux achetés à la boutique, dans l'ordre d'achat. */
+    private final List<Symbol> boughtReels = new ArrayList<>();
+    /** Rouleaux de la machine du joueur. */
+    private final List<Symbol> machine     = new ArrayList<>();
 
     /**
      * Charge le profil enregistré dans {@code storage} ; au premier lancement
@@ -59,6 +79,12 @@ public class PlayerProfile {
         deck.putAll(deckProblem(loadedDeck) == null ? loadedDeck : starterDeck);
         String savedCoins = storage.get(KEY_COINS);
         coins = parseCoins(savedCoins);
+        ranks = Math.max(0, Math.min(Rank.values().length, (int) parseCoins(storage.get(KEY_RANK))));
+        for (Symbol symbol : decodeSymbols(storage.get(KEY_REELS))) {
+            if (!symbol.isClassic() && symbol != Symbol.JOKER && !boughtReels.contains(symbol)) boughtReels.add(symbol);
+        }
+        List<Symbol> savedMachine = decodeSymbols(storage.get(KEY_MACHINE));
+        machine.addAll(machineProblem(savedMachine) == null ? savedMachine : Symbol.classicReels());
     }
 
     // -------------------------------------------------------------------------
@@ -167,14 +193,116 @@ public class PlayerProfile {
     public record ChestReward(String cardId, boolean newCopy, int copies, int coins) { }
 
     // -------------------------------------------------------------------------
+    // Boutique : rangs, cartes, rouleaux
+    // -------------------------------------------------------------------------
+
+    /** @return le rang du joueur, ou {@code null} s'il n'en a acheté aucun. */
+    public Rank getRank() { return ranks == 0 ? null : Rank.values()[ranks - 1]; }
+
+    /** @return le prochain rang à acheter, ou {@code null} s'il les a tous. */
+    public Rank getNextRank() { return ranks >= Rank.values().length ? null : Rank.values()[ranks]; }
+
+    /** @return les bonus de son rang en combat ({@link RankBonus#NONE} sans rang). */
+    public RankBonus getRankBonus() { return ranks == 0 ? RankBonus.NONE : getRank().getBonus(); }
+
+    /**
+     * Achète le rang suivant (les rangs s'achètent dans l'ordre) et enregistre le profil.
+     *
+     * @return {@code false} si tous les rangs sont achetés ou si les pièces manquent
+     */
+    public boolean buyNextRank() {
+        Rank next = getNextRank();
+        if (next == null || coins < next.getPrice()) return false;
+        coins -= next.getPrice();
+        ranks++;
+        save();
+        return true;
+    }
+
+    /**
+     * Achète un exemplaire de la carte {@code id} pour {@code price} pièces : il
+     * rejoint la collection (au plus {@link #MAX_COPIES}), et peut ensuite entrer
+     * dans le deck. Le profil est enregistré.
+     *
+     * @return {@code false} si la carte est déjà au maximum ou si les pièces manquent
+     */
+    public boolean buyCard(String id, long price) {
+        int owned = getOwnedCopies(id);
+        if (owned >= MAX_COPIES || price < 0 || coins < price) return false;
+        coins -= price;
+        collection.put(id, owned + 1);
+        save();
+        return true;
+    }
+
+    /** @return les rouleaux possédés : les 11 classiques, puis ceux achetés, dans l'ordre d'achat. */
+    public List<Symbol> getOwnedReels() {
+        List<Symbol> owned = new ArrayList<>(Symbol.classicReels());
+        owned.addAll(boughtReels);
+        return Collections.unmodifiableList(owned);
+    }
+
+    /** @return {@code true} si le joueur possède le rouleau {@code symbol}. */
+    public boolean ownsReel(Symbol symbol) { return symbol.isClassic() || boughtReels.contains(symbol); }
+
+    /**
+     * Achète le rouleau {@code symbol} pour {@code price} pièces, puis enregistre le profil.
+     *
+     * @return {@code false} s'il est déjà possédé, si c'est le Joker ou si les pièces manquent
+     */
+    public boolean buyReel(Symbol symbol, long price) {
+        if (symbol == Symbol.JOKER || ownsReel(symbol) || price < 0 || coins < price) return false;
+        coins -= price;
+        boughtReels.add(symbol);
+        save();
+        return true;
+    }
+
+    /** @return les rouleaux de la machine du joueur, dans l'ordre. */
+    public List<Symbol> getMachine() { return Collections.unmodifiableList(machine); }
+
+    /**
+     * @return pourquoi {@code candidate} ne peut pas être la machine du joueur, ou
+     *         {@code null} si elle est valide : exactement {@link Symbol#MACHINE_SIZE}
+     *         rouleaux possédés, tous différents, sans le Joker
+     */
+    public String machineProblem(List<Symbol> candidate) {
+        if (new HashSet<>(candidate).size() != candidate.size()) return "Un rouleau ne peut être mis qu'une fois";
+        for (Symbol symbol : candidate) {
+            if (symbol == null || symbol == Symbol.JOKER) return "Le Joker ne se met pas dans la machine";
+            if (!ownsReel(symbol)) return "Rouleau pas possédé : " + symbol.getDisplayName();
+        }
+        if (candidate.size() != Symbol.MACHINE_SIZE) {
+            return "La machine doit avoir " + Symbol.MACHINE_SIZE + " rouleaux (" + candidate.size() + " ici)";
+        }
+        return null;
+    }
+
+    /**
+     * Remplace la machine du joueur et l'enregistre.
+     *
+     * @throws IllegalArgumentException si {@code newMachine} n'est pas valide (voir {@link #machineProblem(List)})
+     */
+    public void setMachine(List<Symbol> newMachine) {
+        String problem = machineProblem(newMachine);
+        if (problem != null) throw new IllegalArgumentException(problem);
+        machine.clear();
+        machine.addAll(newMachine);
+        save();
+    }
+
+    // -------------------------------------------------------------------------
     // Enregistrement
     // -------------------------------------------------------------------------
 
-    /** Enregistre la collection, le deck et les pièces. */
+    /** Enregistre la collection, le deck, les pièces, le rang et les rouleaux. */
     public void save() {
         storage.put(KEY_COLLECTION, encode(collection));
         storage.put(KEY_DECK, encode(deck));
         storage.put(KEY_COINS, String.valueOf(coins));
+        storage.put(KEY_RANK, String.valueOf(ranks));
+        storage.put(KEY_REELS, encodeSymbols(boughtReels));
+        storage.put(KEY_MACHINE, encodeSymbols(machine));
         storage.flush();
     }
 
@@ -204,6 +332,25 @@ public class PlayerProfile {
             }
         }
         return copies;
+    }
+
+    /** @return {@code symbols} écrits "NOM,NOM". */
+    static String encodeSymbols(List<Symbol> symbols) {
+        return String.join(",", symbols.stream().map(Symbol::name).toList());
+    }
+
+    /** @return les symboles écrits par {@link #encodeSymbols(List)} (les noms inconnus sont ignorés). */
+    static List<Symbol> decodeSymbols(String text) {
+        List<Symbol> symbols = new ArrayList<>();
+        if (text == null || text.isBlank()) return symbols;
+        for (String name : text.split(",")) {
+            try {
+                symbols.add(Symbol.valueOf(name.trim().toUpperCase(Locale.ROOT)));
+            } catch (IllegalArgumentException ignored) {
+                // nom abîmé : ignoré
+            }
+        }
+        return symbols;
     }
 
     /** @return {@code amount} écrit avec des espaces entre les milliers (ex : "10 000"). */

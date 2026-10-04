@@ -45,6 +45,7 @@ public class CardLoader {
     private static final String STARTER_DECK_FILE = "cards/decks/starter.json";
     private static final String COLLECTION_FILE   = "cards/decks/collection.json";
     private static final String SHOP_FILE         = "cards/decks/shop.json";
+    private static final String BOUTIQUE_FILE     = "cards/decks/boutique.json";
 
     /** Lit le contenu texte d'un fichier d'assets à partir de son chemin (ex : "cards/decks/starter.json"). */
     public interface AssetReader {
@@ -156,6 +157,24 @@ public class CardLoader {
             shop.put(entry.getString("id"), entry.getInt("price"));
         }
         return shop;
+    }
+
+    /**
+     * @return le prix en pièces de chaque carte vendue à la boutique (onglet
+     *         « Cartes »), par id, dans l'ordre du fichier {@code BOUTIQUE_FILE}
+     */
+    public static Map<String, Long> loadBoutique() {
+        return loadBoutique(GDX_READER);
+    }
+
+    /** Comme {@link #loadBoutique()}, en lisant les fichiers avec {@code reader} (ex : tests sans libGDX). */
+    public static Map<String, Long> loadBoutique(AssetReader reader) {
+        Map<String, Long> boutique = new LinkedHashMap<>();
+        JsonValue root = new JsonReader().parse(reader.read(BOUTIQUE_FILE));
+        for (JsonValue entry = root.child; entry != null; entry = entry.next) {
+            boutique.put(entry.getString("id"), entry.getLong("price"));
+        }
+        return boutique;
     }
 
     /**
@@ -289,6 +308,28 @@ public class CardLoader {
                 return new GainsMultiplierEffect(json.getInt("factor"), json.getInt("gauges", 1));
             case "CORRUPTION":
                 return new CorruptionEffect(json.getInt("turns"));
+
+            // --- Cartes de la boutique ---
+            case "REROLL":
+                return new RerollEffect();
+            case "RIGGED_REEL":
+                return new RiggedReelEffect();
+            case "GHOST_REEL":
+                return new ForceReelEffect(Symbol.JOKER);
+            case "RANK_TOKEN":
+                return new RankTokenEffect();
+            case "ALL_IN":
+                return new AllInEffect();
+            case "SAFE":
+                return new SafeEffect(json.getInt("percent"), json.getInt("turns"));
+            case "INSURANCE":
+                return new InsuranceEffect(json.getInt("percent"));
+            case "BRIBE":
+                return new BribeEffect();
+            case "DOUBLE_OR_NOTHING":
+                return new DoubleOrNothingEffect();
+            case "OVERHEAT":
+                return new OverheatEffect(json.getInt("hpPercent"));
 
             // --- Cartes des donjons (Exploration) ---
             case "BLADES_ATTACK":

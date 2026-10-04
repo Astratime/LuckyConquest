@@ -22,7 +22,7 @@ public class GameState {
      * @param playerCards cartes composant le deck initial du joueur
      */
     public GameState(List<Card> playerCards) {
-        this(new Player("Joueur", 100, playerCards), new Enemy(EnemyKind.CROUPIER));
+        this(new Player("Joueur", Player.BASE_HP, playerCards), new Enemy(EnemyKind.CROUPIER));
     }
 
     /** Combat contre {@code enemy}, avec un joueur déjà constitué (combat suivant d'une épreuve). */

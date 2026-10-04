@@ -1,11 +1,14 @@
 package fr.astratime.lucky.entities.context;
 
+import fr.astratime.lucky.entities.SlotMachine;
 import fr.astratime.lucky.entities.Symbol;
 
+import java.util.Collections;
 import java.util.EnumMap;
 import java.util.EnumSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
 
 /**
  * Modificateurs liés au spin pour le tour en cours.
@@ -25,6 +28,12 @@ public class SpinContext {
     private Symbol  jackpotSymbol;
     /** Rouleau bloqué (Rouleau interdit de l'ennemi) : il ne tourne pas et ne donne rien ; -1 : aucun. */
     private int     blockedReel = -1;
+    /** Symboles imposés à certains rouleaux (Rouleau truqué, Rouleau fantôme), par indice de rouleau. */
+    private final Map<Integer, Symbol> forcedReels = new TreeMap<>();
+    /** Relances accordées si le tirage n'a pas de paire (Relance). */
+    private int     rerolls = 0;
+    /** Rouleaux en plus des {@link SlotMachine#SYMBOL_COUNT} habituels (Machine en surchauffe). */
+    private int     extraReels = 0;
 
     /** Ajoute {@code amount} au boost de poids du symbole (cumulable sur plusieurs cartes). */
     public void addWeightBoost(Symbol symbol, int amount) {
@@ -65,6 +74,27 @@ public class SpinContext {
 
     /** @return le rouleau bloqué ce tirage, ou -1 si aucun. */
     public int getBlockedReel() { return blockedReel; }
+
+    /** Impose {@code symbol} au rouleau {@code reel} (le dernier imposé l'emporte). */
+    public void forceReel(int reel, Symbol symbol) { forcedReels.put(reel, symbol); }
+
+    /** @return les symboles imposés, par indice de rouleau (vue non modifiable). */
+    public Map<Integer, Symbol> getForcedReels() { return Collections.unmodifiableMap(forcedReels); }
+
+    /** Accorde une relance si le tirage n'a pas de paire. */
+    public void addReroll() { rerolls++; }
+
+    /** @return les relances accordées ce tour. */
+    public int getRerolls() { return rerolls; }
+
+    /** Ajoute un rouleau au tirage de ce tour (au plus {@link SlotMachine#MAX_SYMBOL_COUNT}). */
+    public void addExtraReel() { extraReels++; }
+
+    /** @return le nombre de rouleaux qui tournent ce tour. */
+    public int getReelCount() {
+        return Math.min(SlotMachine.MAX_SYMBOL_COUNT,
+            SlotMachine.SYMBOL_COUNT + extraReels);
+    }
 
     /** @return {@code true} si le tirage de ce tour est un jackpot garanti. */
     public boolean isJackpotForced() { return forceJackpot; }

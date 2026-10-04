@@ -2,8 +2,12 @@ package fr.astratime.lucky.entities;
 
 import fr.astratime.lucky.entities.actions.Action;
 import fr.astratime.lucky.entities.actions.AttackAction;
+import fr.astratime.lucky.entities.actions.BombAction;
 import fr.astratime.lucky.entities.actions.DefenseAction;
 import fr.astratime.lucky.entities.actions.GainAction;
+import fr.astratime.lucky.entities.actions.HealAction;
+import fr.astratime.lucky.entities.actions.MixedAction;
+import fr.astratime.lucky.entities.actions.RandomAttackAction;
 
 import java.util.ArrayList;
 import java.util.EnumMap;
@@ -42,6 +46,16 @@ public class SymbolRegistry {
         ACTIONS.put(Symbol.TRIPLE_CHERRY, new AttackAction(45));  // theme Coeur : attaque + drain
         ACTIONS.put(Symbol.TRIPLE_SEVEN,  new AttackAction(90));  // theme Pique : attaque perçante
         ACTIONS.put(Symbol.GOLD_BAR,      new GainAction(25));    // theme Trefle : gains
+
+        // Rouleaux achetés à la boutique (voir progress.ReelShop)
+        ACTIONS.put(Symbol.HORSESHOE, new GainAction(40));
+        ACTIONS.put(Symbol.ECU,       new DefenseAction(40));
+        ACTIONS.put(Symbol.SWORD,     new AttackAction(70, true));
+        ACTIONS.put(Symbol.HEART,     new HealAction(10));
+        ACTIONS.put(Symbol.DIE,       new RandomAttackAction(1, 250));
+        ACTIONS.put(Symbol.STAR,      new MixedAction(new AttackAction(30), new DefenseAction(30), new GainAction(30)));
+        ACTIONS.put(Symbol.BOMB,      new BombAction(200, 5));
+        ACTIONS.put(Symbol.CROWN,     new GainAction(100));
     }
 
     /**

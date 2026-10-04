@@ -5,7 +5,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
- * Deck en cours de construction (écran « Construction de deck ») : une copie
+ * Deck en cours de construction (onglet « Deck » de la Table du croupier) : une copie
  * du deck du joueur, modifiée carte par carte, puis enregistrée dans son
  * {@link PlayerProfile} une fois complète ({@link PlayerProfile#DECK_SIZE}
  * cartes exactement).

@@ -7,16 +7,19 @@ import fr.astratime.lucky.entities.DrawResult;
 import fr.astratime.lucky.entities.Enemy;
 import fr.astratime.lucky.entities.GameState;
 import fr.astratime.lucky.entities.Player;
+import fr.astratime.lucky.entities.SlotMachine;
 import fr.astratime.lucky.entities.Symbol;
-import fr.astratime.lucky.entities.SymbolRegistry;
 import fr.astratime.lucky.entities.TurnResult;
 import fr.astratime.lucky.entities.choices.BetChoice;
 import fr.astratime.lucky.entities.choices.CardChoice;
+import fr.astratime.lucky.entities.choices.RiggedReelChoice;
 import fr.astratime.lucky.entities.choices.RouletteChoice;
 import fr.astratime.lucky.entities.context.PlayContext;
 import fr.astratime.lucky.entities.effects.BetOnSymbolEffect;
 import fr.astratime.lucky.entities.effects.BingoEffect;
 import fr.astratime.lucky.entities.effects.Effect;
+import fr.astratime.lucky.entities.effects.ForceReelEffect;
+import fr.astratime.lucky.entities.effects.OverheatEffect;
 import fr.astratime.lucky.entities.effects.PistolEffect;
 import fr.astratime.lucky.entities.enemy.EnemyKind;
 import fr.astratime.lucky.loaders.CardLoader;
@@ -67,11 +70,17 @@ public class GameController {
     /** Cartes jouées ce tour (toutes comptent, consommables compris), limitées par {@link #getPlayLimit()}. */
     private int cardsPlayedThisTurn = 0;
 
+    /** Double ou rien : la prochaine carte jouée ce tour compte deux fois. */
+    private boolean doubleNext = false;
+
     /** Paris placés ce tour, pour les afficher en attendant le tirage. */
     private final List<Symbol> betsThisTurn = new ArrayList<>();
 
     /** Fournit un deck de départ neuf à chaque combat. */
     private final Supplier<List<Card>> starterDeck;
+
+    /** Crée le joueur d'un nouveau combat avec son deck (rang et machine du profil). */
+    private final Function<List<Card>, Player> playerFactory;
 
     /** Crée une carte à partir de son id (cartes créées en combat : Arc-en-ciel, Pot de Lutin, achats). */
     private final Function<String, Card> cardFactory;
@@ -111,12 +120,23 @@ public class GameController {
      */
     public GameController(Supplier<List<Card>> starterDeck, Function<String, Card> cardFactory,
                           Map<String, Integer> shop) {
+        this(starterDeck, cardFactory, shop, cards -> new Player("Joueur", Player.BASE_HP, cards));
+    }
+
+    /**
+     * @param playerFactory crée le joueur de chaque nouveau combat à partir de
+     *                      son deck (avec le bonus de son rang et sa machine)
+     * @see #GameController(Supplier, Function, Map)
+     */
+    public GameController(Supplier<List<Card>> starterDeck, Function<String, Card> cardFactory,
+                          Map<String, Integer> shop, Function<List<Card>, Player> playerFactory) {
+        this.playerFactory = playerFactory;
         this.shopOffers = shop.entrySet().stream()
             .map(entry -> new ShopOffer(cardFactory.apply(entry.getKey()), entry.getValue()))
             .toList();
         this.cardFactory = cardFactory;
         this.starterDeck = starterDeck;
-        this.gameState   = new GameState(starterDeck.get());
+        this.gameState   = new GameState(playerFactory.apply(starterDeck.get()), new Enemy(EnemyKind.CROUPIER));
     }
 
     /**
@@ -130,8 +150,7 @@ public class GameController {
 
     /** Comme {@link #restart()}, contre un ennemi {@code kind} (premier combat d'un chapitre). */
     public void restart(EnemyKind kind) {
-        GameState fresh = new GameState(starterDeck.get());
-        this.gameState = new GameState(fresh.getPlayer(), new Enemy(kind));
+        this.gameState = new GameState(playerFactory.apply(starterDeck.get()), new Enemy(kind));
         clearTurn();
     }
 
@@ -152,6 +171,7 @@ public class GameController {
         cardsPlayedThisTurn = 0;
         pendingChoice = null;
         handLocked    = false;
+        doubleNext    = false;
         bingoGiftPending = false;
         originals.clear();
     }
@@ -271,11 +291,16 @@ public class GameController {
 
         cardsPlayedThisTurn++;
         PlayContext playContext = new PlayContext(player);
-        for (Effect effect : card.getEffects()) {
-            int firstPopup = playContext.getPopups().size();
-            effect.onPlay(playContext);
-            playContext.attachSound(firstPopup, effect.getSound()); // son de l'effet, avec son premier texte
+        boolean doubling = doubleNext;
+        playEffects(card, playContext, false);
+        // Double ou rien : la carte compte deux fois, sauf si elle demande un choix (le doublement attend la suivante)
+        if (doubling && playContext.getChoice() == null && !playContext.isDoubleRequested()) {
+            doubleNext = false;
+            playContext.addPopups(List.of(new EffectPopup("DOUBLE !", EffectPopup.Style.SPECIAL,
+                PopupScale.MAX_INTENSITY)));
+            playEffects(card, playContext, true);
         }
+        if (playContext.isDoubleRequested()) doubleNext = true;
         pendingEffects.addAll(playContext.getEffectsForSpin());
 
         if (playContext.getGains() != 0) player.addGains(playContext.getGains());
@@ -289,6 +314,19 @@ public class GameController {
             : null;
         return new CardPlayResult(drawResult, playContext.getPopups(), pendingChoice, playContext.isAutoSpin(),
             rainbow);
+    }
+
+    /**
+     * Joue les effets de {@code card} ({@code again} : une seconde fois, pour
+     * Double ou rien, sans ceux qui ne se doublent pas).
+     */
+    private static void playEffects(Card card, PlayContext playContext, boolean again) {
+        for (Effect effect : card.getEffects()) {
+            if (again && !effect.canBeDoubled()) continue;
+            int firstPopup = playContext.getPopups().size();
+            effect.onPlay(playContext);
+            playContext.attachSound(firstPopup, effect.getSound()); // son de l'effet, avec son premier texte
+        }
     }
 
     /**
@@ -328,12 +366,9 @@ public class GameController {
         return new Purchase(card, false);
     }
 
-    /** @return les symboles que peut imposer la carte Bingo offerte : tous ceux des rouleaux, sauf ceux retirés. */
+    /** @return les symboles que peut imposer la carte Bingo offerte : ceux de la machine du joueur, sauf ceux retirés. */
     private List<Symbol> getBingoGiftSymbols() {
-        List<Symbol> symbols = new ArrayList<>();
-        symbols.addAll(SymbolRegistry.getAttackSymbols());
-        symbols.addAll(SymbolRegistry.getDefenseSymbols());
-        symbols.addAll(SymbolRegistry.getGainSymbols());
+        List<Symbol> symbols = new ArrayList<>(gameState.getPlayer().getSlotMachine().getReels());
         symbols.removeIf(gameState.getPlayer().getLastingEffects().getRemovedSymbols()::containsKey);
         return symbols;
     }
@@ -349,12 +384,11 @@ public class GameController {
     /** @return {@code true} si plus aucune carte ne peut être jouée ce tour (Bingo). */
     public boolean isHandLocked() { return handLocked; }
 
-    /** @return les symboles sur lesquels parier : ceux qui peuvent sortir ce tour (ni Joker, ni retirés). */
+    /** @return les symboles sur lesquels parier : ceux de la machine qui peuvent sortir ce tour (ni Joker, ni retirés). */
     public List<Symbol> getBetOptions() {
         List<Symbol> options = new ArrayList<>();
-        for (Symbol symbol : Symbol.values()) {
-            if (symbol != Symbol.JOKER
-                && !gameState.getPlayer().getLastingEffects().getRemovedSymbols().containsKey(symbol)) {
+        for (Symbol symbol : gameState.getPlayer().getSlotMachine().getReels()) {
+            if (!gameState.getPlayer().getLastingEffects().getRemovedSymbols().containsKey(symbol)) {
                 options.add(symbol);
             }
         }
@@ -391,6 +425,38 @@ public class GameController {
         pendingEffects.add(bet);
         betsThisTurn.add(symbol);
         return bet.getPopups();
+    }
+
+    /**
+     * Réponse au Rouleau truqué : {@code symbol} est imposé au rouleau du milieu au prochain spin.
+     *
+     * @return les textes à afficher
+     * @throws IllegalStateException si aucun Rouleau truqué n'est en attente de choix
+     */
+    public List<EffectPopup> rigReel(Symbol symbol) {
+        if (!(pendingChoice instanceof RiggedReelChoice)) throw new IllegalStateException("Aucun rouleau truqué en attente");
+        pendingChoice = null;
+        ForceReelEffect rigged = new ForceReelEffect(symbol);
+        pendingEffects.add(rigged);
+        return rigged.getPopups();
+    }
+
+    /** @return {@code true} si la prochaine carte jouée ce tour comptera deux fois (Double ou rien). */
+    public boolean isDoubleNextPending() { return doubleNext; }
+
+    /** @return les rouleaux qui tourneront au prochain spin : 4 avec la Machine en surchauffe, sinon 3. */
+    public int getReelCount() {
+        boolean overheat = pendingEffects.stream().anyMatch(effect -> effect instanceof OverheatEffect);
+        return overheat ? SlotMachine.MAX_SYMBOL_COUNT : SlotMachine.SYMBOL_COUNT;
+    }
+
+    /** @return le symbole imposé au rouleau du milieu au prochain spin (Rouleau truqué ou fantôme), ou {@code null}. */
+    public Symbol getForcedMiddleSymbol() {
+        Symbol forced = null;
+        for (Effect effect : pendingEffects) {
+            if (effect instanceof ForceReelEffect force) forced = force.getSymbol();
+        }
+        return forced;
     }
 
     /**
@@ -446,6 +512,7 @@ public class GameController {
         cardsPlayedThisTurn = 0;
         pendingChoice = null;
         handLocked    = false;
+        doubleNext    = false;
         gameState.getPlayer().restoreCards(originals); // l'effet de l'Arc-en-ciel ne dure que le tour
         originals.clear();
         gameState.getPlayer().discardHand();

@@ -31,8 +31,8 @@ public class RecycleEffect extends Effect {
     public void onPlay(PlayContext context) {
         LastingEffects lasting = context.getLastingEffects();
         List<Symbol> candidates = new ArrayList<>();
-        for (Symbol symbol : Symbol.values()) {
-            if (symbol != Symbol.JOKER && !lasting.getRemovedSymbols().containsKey(symbol)) candidates.add(symbol);
+        for (Symbol symbol : context.getReels()) {
+            if (!lasting.getRemovedSymbols().containsKey(symbol)) candidates.add(symbol);
         }
         if (candidates.isEmpty()) {
             context.addPopups(getPopups());

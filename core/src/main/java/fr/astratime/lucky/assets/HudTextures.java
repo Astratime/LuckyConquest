@@ -49,6 +49,8 @@ public class HudTextures implements Disposable {
     public final Texture iconVault       = load("hud/icon_vault.png");
     public final Texture iconCorruption  = load("hud/icon_corruption.png");
     public final Texture iconSleeve      = load("hud/icon_sleeve.png");
+    public final Texture iconSafe        = load("hud/icon_safe.png");
+    public final Texture iconDouble      = load("hud/icon_double.png");
     /** Échoppe de marché : ouvre la boutique de cartes. */
     public final Texture shop            = load("hud/shop.png");
     /** Infobulle : fond laqué, double liseré doré et rivets, étirable ; filet doré sous son titre. */
@@ -87,6 +89,8 @@ public class HudTextures implements Disposable {
         iconVault.dispose();
         iconCorruption.dispose();
         iconSleeve.dispose();
+        iconSafe.dispose();
+        iconDouble.dispose();
         shop.dispose();
         tooltip.dispose();
         tooltipRule.dispose();

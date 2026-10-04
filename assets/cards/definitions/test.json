@@ -141,5 +141,109 @@
         "symbol": "WATERMELON"
       }
     ]
+  },
+  {
+    "id": "bingo_horseshoe",
+    "name": "Bingo Fer à cheval",
+    "assetPath": "cards/test/bingo_horseshoe.png",
+    "consumable": true,
+    "effects": [
+      {
+        "type": "BINGO",
+        "power": 1,
+        "symbol": "HORSESHOE"
+      }
+    ]
+  },
+  {
+    "id": "bingo_ecu",
+    "name": "Bingo Écu",
+    "assetPath": "cards/test/bingo_ecu.png",
+    "consumable": true,
+    "effects": [
+      {
+        "type": "BINGO",
+        "power": 1,
+        "symbol": "ECU"
+      }
+    ]
+  },
+  {
+    "id": "bingo_sword",
+    "name": "Bingo Épée",
+    "assetPath": "cards/test/bingo_sword.png",
+    "consumable": true,
+    "effects": [
+      {
+        "type": "BINGO",
+        "power": 1,
+        "symbol": "SWORD"
+      }
+    ]
+  },
+  {
+    "id": "bingo_heart",
+    "name": "Bingo Coeur",
+    "assetPath": "cards/test/bingo_heart.png",
+    "consumable": true,
+    "effects": [
+      {
+        "type": "BINGO",
+        "power": 1,
+        "symbol": "HEART"
+      }
+    ]
+  },
+  {
+    "id": "bingo_die",
+    "name": "Bingo Dé",
+    "assetPath": "cards/test/bingo_die.png",
+    "consumable": true,
+    "effects": [
+      {
+        "type": "BINGO",
+        "power": 1,
+        "symbol": "DIE"
+      }
+    ]
+  },
+  {
+    "id": "bingo_star",
+    "name": "Bingo Étoile",
+    "assetPath": "cards/test/bingo_star.png",
+    "consumable": true,
+    "effects": [
+      {
+        "type": "BINGO",
+        "power": 1,
+        "symbol": "STAR"
+      }
+    ]
+  },
+  {
+    "id": "bingo_bomb",
+    "name": "Bingo Bombe",
+    "assetPath": "cards/test/bingo_bomb.png",
+    "consumable": true,
+    "effects": [
+      {
+        "type": "BINGO",
+        "power": 1,
+        "symbol": "BOMB"
+      }
+    ]
+  },
+  {
+    "id": "bingo_crown",
+    "name": "Bingo Couronne",
+    "assetPath": "cards/test/bingo_crown.png",
+    "consumable": true,
+    "effects": [
+      {
+        "type": "BINGO",
+        "power": 1,
+        "symbol": "CROWN"
+      }
+    ]
   }
 ]

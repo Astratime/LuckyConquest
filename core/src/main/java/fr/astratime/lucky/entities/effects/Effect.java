@@ -52,6 +52,12 @@ public abstract class Effect {
      */
     public abstract List<EffectPopup> getPopups();
 
+    /**
+     * @return {@code false} si l'effet ne compte qu'une fois quand Double ou rien
+     *         double la carte (ex : la Machine en surchauffe n'a qu'un 4e rouleau)
+     */
+    public boolean canBeDoubled() { return true; }
+
     /** @return le bruitage de l'effet, joué avec son premier texte quand la carte est jouée. */
     public abstract EffectSound getSound();
 }

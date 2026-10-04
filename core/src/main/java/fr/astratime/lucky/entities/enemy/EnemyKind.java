@@ -259,6 +259,8 @@ public enum EnemyKind {
 
     /** Force des ennemis du chapitre 2, en % : leurs attaques, défenses et effets sont multipliés d'autant. */
     public static final int CHAPTER_2_POWER = 200;
+    /** Multiplicateur des PV des ennemis de la Tour des épreuves (le joueur gagne des rangs à la boutique). */
+    public static final int TOWER_HP_FACTOR = 5;
     /** Force des ennemis du chapitre 3, en %. */
     public static final int CHAPTER_3_POWER = 300;
 
@@ -304,8 +306,22 @@ public enum EnemyKind {
     public String getBarName() { return barName; }
     /** @return sa présentation, en quelques phrases courtes. */
     public String getDescription() { return description; }
-    /** @return ses points de vie maximum. */
-    public int getMaxHp() { return maxHp; }
+    /**
+     * @return ses points de vie maximum : ceux de la Tour des épreuves sont
+     *         multipliés par {@link #TOWER_HP_FACTOR}, car le rang du joueur le
+     *         rend bien plus fort
+     */
+    public int getMaxHp() { return isTower() ? maxHp * TOWER_HP_FACTOR : maxHp; }
+
+    /** @return {@code true} pour un ennemi de la Tour des épreuves (voir {@link fr.astratime.lucky.entities.tower.Chapter}). */
+    public boolean isTower() {
+        return switch (this) {
+            case CROUPIER, GARDIEN, SANGSUE, BRETTEUR, COMETE,
+                 CHEF, TRICHEUR, USURIER, ROULETTE, REINE,
+                 GARDIENNE, MIROIR, HORLOGER, FOU, ECLAT -> true;
+            default -> false;
+        };
+    }
     /** @return sa défense de base (renforcée par sa {@linkplain #getPower() force}), reformée à chacun de ses tours. */
     public int getBaseDefense() { return empowered(baseDefense); }
 

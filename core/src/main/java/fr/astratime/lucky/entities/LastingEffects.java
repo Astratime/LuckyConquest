@@ -1,7 +1,10 @@
 package fr.astratime.lucky.entities;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumMap;
+import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -11,6 +14,7 @@ import java.util.Map;
  *  - bonus de gains (Porte-bonheur, jusqu'à la fin du combat) ;
  *  - Corruption (attaque et défense des symboles décuplées, quelques tours) ;
  *  - Dans la manche (plus de cartes jouables par tour, quelques tours) ;
+ *  - Coffres-forts (gains mis de côté, rendus doublés quelques tours plus tard) ;
  *  - les jauges des couleurs, remplies au fil du combat et vidées par leur As :
  *    Lames (Pique), Sang (Coeur) et Coffre (Carreau).
  */
@@ -34,6 +38,8 @@ public class LastingEffects {
     private int vault  = 0;
     /** Rouleau bloqué au prochain tirage par le Rouleau interdit de l'ennemi (-1 : aucun). */
     private int forbiddenReel = -1;
+    /** Coffres-forts : gains mis de côté (déjà doublés) et tours restants avant leur ouverture. */
+    private final List<int[]> safes = new ArrayList<>();
 
     /** Retire {@code symbol} des rouleaux pour les {@code turns} prochains tirages (prolonge s'il l'est déjà). */
     public void removeSymbol(Symbol symbol, int turns) {
@@ -129,17 +135,46 @@ public class LastingEffects {
         return reel;
     }
 
+    /** Coffre-fort : {@code amount} gains reviennent à la fin du {@code turns}-ième tour, celui-ci compris. */
+    public void addSafe(int amount, int turns) { safes.add(new int[] {amount, turns}); }
+
+    /** @return les Coffres-forts fermés : pour chacun, ses gains et ses tours restants. */
+    public List<int[]> getSafes() {
+        List<int[]> copy = new ArrayList<>();
+        safes.forEach(safe -> copy.add(safe.clone()));
+        return copy;
+    }
+
+    /**
+     * Fin du tour, avant {@link #endTurn()} : ouvre les Coffres-forts arrivés à
+     * leur dernier tour, ou tous si {@code all} (ennemi vaincu).
+     *
+     * @return les gains rendus
+     */
+    public int openSafes(boolean all) {
+        int total = 0;
+        for (Iterator<int[]> it = safes.iterator(); it.hasNext(); ) {
+            int[] safe = it.next();
+            if (all || safe[1] <= 1) {
+                total += safe[0];
+                it.remove();
+            }
+        }
+        return total;
+    }
+
     /** Fin d'un tirage : chaque symbole retiré se rapproche de son retour, la Corruption et Dans la manche de leur fin. */
     public void endTurn() {
         removedSymbols.replaceAll((symbol, turns) -> turns - 1);
         removedSymbols.values().removeIf(turns -> turns <= 0);
         if (corruptionTurns > 0) corruptionTurns--;
         if (extraPlaysTurns > 0 && --extraPlaysTurns == 0) extraPlays = 0;
+        safes.forEach(safe -> safe[1]--);
     }
 
     /** @return {@code true} si aucun effet n'est actif et les jauges sont vides. */
     public boolean isEmpty() {
         return removedSymbols.isEmpty() && gainBonus == 0f && corruptionTurns == 0 && extraPlaysTurns == 0
-            && blades == 0 && blood == 0 && vault == 0;
+            && blades == 0 && blood == 0 && vault == 0 && safes.isEmpty();
     }
 }
