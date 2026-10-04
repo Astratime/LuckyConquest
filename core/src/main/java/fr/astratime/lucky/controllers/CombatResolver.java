@@ -164,7 +164,7 @@ public class CombatResolver {
         Enemy enemy = context.getEnemy();
         for (int multiplier : context.getPistolShots()) {
             if (enemy.isDefeated()) break;
-            int raw         = bestRaw * multiplier;
+            int raw         = (int) Math.min((long) bestRaw * multiplier, Integer.MAX_VALUE); // pas de dépassement
             boolean pierced = context.isIgnoreDefense();
             int blocked     = pierced ? 0 : enemy.absorb(raw);
             int damage      = enemy.skinned(raw - blocked);
