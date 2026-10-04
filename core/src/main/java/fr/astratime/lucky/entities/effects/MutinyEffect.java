@@ -9,21 +9,19 @@ import fr.astratime.lucky.popups.PopupScale;
 import java.util.List;
 
 /**
- * Mutinerie (le Galion) : au prochain tour de l'ennemi, ses cartes se
- * retournent contre lui : il ne les joue pas, et chacune lui retire
- * {@link #PERCENT_PER_CARD} % de ses PV max (sans le tuer).
+ * Mutinerie (le Galion) : à son prochain tour, l'ennemi joue
+ * {@link #CARDS_LESS} cartes de moins que d'habitude (jamais moins de zéro).
  */
 public class MutinyEffect extends Effect {
 
-    /** PV max de l'ennemi retirés par chacune de ses cartes retournées, en %. */
-    public static final int PERCENT_PER_CARD = 2;
+    /** Cartes de moins jouées par l'ennemi à son prochain tour. */
+    public static final int CARDS_LESS = 2;
 
     @Override
     public void apply(TurnContext context) { context.getCombatContext().getEnemy().addMutiny(); }
 
     @Override
-    public String getDescription() { return "Au prochain tour de l'ennemi, ses cartes se retournent contre lui. Il ne les joue pas. "
-        + "Chacune lui retire " + PERCENT_PER_CARD + " % de ses PV max."; }
+    public String getDescription() { return "Au prochain tour de l'ennemi, l'équipage se révolte. Il joue " + CARDS_LESS + " cartes de moins."; }
 
     @Override
     public List<EffectPopup> getPopups() {

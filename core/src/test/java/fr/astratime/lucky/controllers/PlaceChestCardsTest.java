@@ -16,7 +16,6 @@ import fr.astratime.lucky.entities.enemy.EnemyKind;
 import fr.astratime.lucky.entities.enemy.EnemySymbol;
 import fr.astratime.lucky.entities.enemy.EnemyTurnResult;
 import fr.astratime.lucky.entities.events.CardStrikeEvent;
-import fr.astratime.lucky.entities.events.EnemySelfHitEvent;
 import fr.astratime.lucky.entities.events.Event;
 import fr.astratime.lucky.entities.exploration.Dungeon;
 import fr.astratime.lucky.entities.exploration.Place;
@@ -154,15 +153,16 @@ class PlaceChestCardsTest {
     }
 
     @Test
-    void aMutinyTurnsTheEnemyCardsAgainstHim() {
+    void aMutinyMakesTheEnemyPlayTwoCardsLess() {
         Enemy enemy = new Enemy("Ennemi", 100_000);
+        int plays = enemy.getPlaysPerTurn();
         enemy.addMutiny();
         EnemyTurnResult turn = new EnemyTurnResolver(new Random(1))
             .resolve(enemy, new Player("Joueur", 100, List.of()), 0, 0f);
-        assertTrue(turn.played().isEmpty(), "il ne joue pas ses cartes");
-        EnemySelfHitEvent hit = turn.openingEvents().stream().filter(e -> e instanceof EnemySelfHitEvent)
-            .map(e -> (EnemySelfHitEvent) e).findFirst().orElseThrow();
-        assertEquals(enemy.getKind().getPlaysPerTurn() * MutinyEffect.PERCENT_PER_CARD * 1000, hit.damage);
+        assertEquals(Math.max(0, plays - MutinyEffect.CARDS_LESS), turn.played().size());
+        EnemyTurnResult next = new EnemyTurnResolver(new Random(1))
+            .resolve(enemy, new Player("Joueur", 100, List.of()), 0, 0f);
+        assertEquals(plays, next.played().size(), "un seul tour");
     }
 
     @Test

@@ -12,7 +12,6 @@ import fr.astratime.lucky.entities.enemy.EnemyKind;
 import fr.astratime.lucky.entities.enemy.EnemySlotMachine;
 import fr.astratime.lucky.entities.enemy.EnemySymbol;
 import fr.astratime.lucky.entities.enemy.EnemyTurnResult;
-import fr.astratime.lucky.entities.events.EnemySelfHitEvent;
 import fr.astratime.lucky.entities.events.DamageReflectedEvent;
 import fr.astratime.lucky.entities.events.EnemyDrainEvent;
 import fr.astratime.lucky.entities.events.EnemyHourglassEvent;
@@ -161,17 +160,13 @@ public class EnemyTurnResolver {
             openingEvents.add(new StatusEvent("HARPON : " + harpooned + " CARTE" + (harpooned > 1 ? "S" : "")
                 + " DE MOINS", EffectPopup.Style.ATTACK));
         }
+        if (enemy.takeMutiny()) { // Mutinerie : son équipage refuse de jouer une partie de ses cartes
+            plays = Math.max(0, plays - MutinyEffect.CARDS_LESS);
+            openingEvents.add(new StatusEvent("MUTINERIE : " + MutinyEffect.CARDS_LESS + " CARTES DE MOINS",
+                EffectPopup.Style.SPECIAL));
+        }
         List<Card> played = kind.playsAtRandom() ? chooseAtRandom(drawn, plays)
             : choose(drawn, enemy.getHpRatio(), kind, plays);
-        if (enemy.takeMutiny() && !played.isEmpty()) {
-            // Mutinerie : ses cartes se retournent contre lui, sans le tuer.
-            int hit = Math.round(enemy.getMaxHp() * played.size() * MutinyEffect.PERCENT_PER_CARD / 100f);
-            int lost = enemy.takeDamage(Math.min(hit, enemy.getHp() - 1));
-            openingEvents.add(new StatusEvent("MUTINERIE : " + played.size() + " CARTE" + (played.size() > 1 ? "S" : "")
-                + " RETOURNÉE" + (played.size() > 1 ? "S" : ""), EffectPopup.Style.SPECIAL));
-            openingEvents.add(new EnemySelfHitEvent("MUTINERIE", lost));
-            played = List.of();
-        }
 
         int swordBonus = 0, healBonus = 0, shieldBonus = 0;
         // Mise royale : la Reine blessée, ou le Prétendant tant qu'il porte l'éclat de la Reine

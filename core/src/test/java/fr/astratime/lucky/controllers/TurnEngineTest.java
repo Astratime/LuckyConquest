@@ -3,6 +3,8 @@ package fr.astratime.lucky.controllers;
 import fr.astratime.lucky.entities.Enemy;
 import fr.astratime.lucky.entities.GameState;
 import fr.astratime.lucky.entities.Player;
+import fr.astratime.lucky.entities.Symbol;
+import fr.astratime.lucky.entities.RankBonus;
 import fr.astratime.lucky.entities.TurnResult;
 import fr.astratime.lucky.entities.effects.ExtraDrawEffect;
 import fr.astratime.lucky.entities.enemy.EnemyKind;
@@ -42,7 +44,9 @@ class TurnEngineTest {
         Enemy enemy = new Enemy(EnemyKind.GARDIEN);
         enemy.addThorns(10);
         enemy.takeDamage(1_000); // coups du joueur : ses Épines lui en renverront 10 %
-        GameState gameState = new GameState(new Player("Joueur", 5, List.of()), enemy);
+        // Sa machine n'a que des 7 (attaque) : aucun bouclier tiré ne peut arrêter les Épines.
+        Player player = new Player("Joueur", 5, List.of(), RankBonus.NONE, List.of(Symbol.SEVEN));
+        GameState gameState = new GameState(player, enemy);
 
         TurnResult result = engine.playTurn(gameState, List.of());
 
