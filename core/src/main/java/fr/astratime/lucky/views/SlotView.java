@@ -17,6 +17,7 @@ import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.utils.Disposable;
 import fr.astratime.lucky.animations.EffectPopupAnimator;
 import fr.astratime.lucky.animations.ReelActor;
+import fr.astratime.lucky.animations.SymbolStrikes;
 import fr.astratime.lucky.assets.Palette;
 import fr.astratime.lucky.entities.SlotMachine;
 import fr.astratime.lucky.entities.Symbol;
@@ -83,6 +84,8 @@ public class SlotView implements Disposable {
     /** Temps entre le texte « JACKPOT ! » (début de sa célébration) et la fin des textes du tirage. */
     public static final float  RIPOSTE_AFTER_BONUS = POPUP_ENEMY_DELAY - POPUP_BONUS_DELAY;
     public static final float  POPUP_PLAYER_GAP   = 110f;  // à droite de la barre de vie du joueur
+    /** Animation de chaque symbole (voir SymbolStrikes) : son texte apparaît quand elle touche sa cible. */
+    private static final float POPUP_STRIKE_LEAD  = SymbolStrikes.IMPACT_TIME;
 
     /** Croix d'un rouleau bloqué : la fenêtre barrée de la carte Rouleau interdit. */
     private static final String LOCK_ASSET = "cards/dark/FORBIDDEN_REEL.png";
@@ -285,11 +288,17 @@ public class SlotView implements Disposable {
      * paris au-dessus de la ligne (le tour de l'ennemi, qui suit, est joué par
      * {@link EnemyView}).
      *
-     * @param onEventShown reçoit chaque événement du tirage à l'instant où son
-     *                     texte apparaît (tout de suite s'il n'a pas de texte)
+     * Le texte de chaque symbole attend que son animation (lancée par
+     * {@code onSymbolStrike}) touche sa cible.
+     *
+     * @param onEventShown   reçoit chaque événement du tirage à l'instant où son
+     *                       texte apparaît (tout de suite s'il n'a pas de texte)
+     * @param onSymbolStrike reçoit chaque symbole de la ligne, le centre de son
+     *                       rouleau et le délai avant le départ de son animation
      * @return le temps (en secondes) au bout duquel le pistolet tire, ou -1 s'il ne tire pas
      */
-    public float playResultPopups(TurnResult result, Vector2 pistolAnchor, Consumer<Event> onEventShown) {
+    public float playResultPopups(TurnResult result, Vector2 pistolAnchor, Consumer<Event> onEventShown,
+                                  SymbolStrike onSymbolStrike) {
         float bonusX = table.getX() + table.getWidth() / 2f;
         float bonusY = table.getY() + table.getHeight() + POPUP_BONUS_GAP;
         float start  = 0f;
@@ -308,8 +317,11 @@ public class SlotView implements Disposable {
             }
             Vector2 top = reels.get(slot).localToStageCoordinates(
                 new Vector2(SYMBOL_WIDTH / 2f, SYMBOL_HEIGHT + POPUP_SYMBOL_GAP + slot * POPUP_SLOT_STEP));
-            playEvents(outcome.getEvents(), top.x, top.y, start + slot * POPUP_SYMBOL_DELAY, onEventShown);
+            float strikeAt = start + slot * POPUP_SYMBOL_DELAY;
+            onSymbolStrike.play(outcome, getReelCenter(slot), strikeAt);
+            playEvents(outcome.getEvents(), top.x, top.y, strikeAt + POPUP_STRIKE_LEAD, onEventShown);
         }
+        start += POPUP_STRIKE_LEAD;
 
         float shotAt = -1f;
         if (!result.getPistolEvents().isEmpty()) {
@@ -324,7 +336,7 @@ public class SlotView implements Disposable {
 
     /** @return le temps que prennent les textes d'un tirage (sans la célébration d'un jackpot). */
     public static float popupsDuration(TurnResult result) {
-        float duration = POPUP_ENEMY_DELAY;
+        float duration = POPUP_ENEMY_DELAY + POPUP_STRIKE_LEAD;
         if (!result.getCardEvents().isEmpty()) duration += POPUP_CARDS_TIME;
         if (!result.getPistolEvents().isEmpty()) duration += POPUP_PISTOL_TIME;
         return duration;
@@ -348,6 +360,17 @@ public class SlotView implements Disposable {
             Event event = eventByPopup.get(index);
             if (event != null) onEventShown.accept(event);
         });
+    }
+
+    /** Lance l'animation d'un symbole du tirage. */
+    @FunctionalInterface
+    public interface SymbolStrike {
+        /**
+         * @param outcome le symbole et ce qu'il a fait
+         * @param reel    centre (Stage) de son rouleau
+         * @param delay   secondes avant le départ de l'animation
+         */
+        void play(SymbolOutcome outcome, Vector2 reel, float delay);
     }
 
     /** Affiche au survol la description du symbole arrêté sur le rouleau. Pas de clic : un symbole ne se joue pas. */

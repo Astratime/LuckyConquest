@@ -40,6 +40,7 @@ import fr.astratime.lucky.animations.Fireworks;
 import fr.astratime.lucky.animations.JackpotCelebration;
 import fr.astratime.lucky.animations.TurnBanner;
 import fr.astratime.lucky.animations.PistolShotAnimation;
+import fr.astratime.lucky.animations.SymbolStrikes;
 import fr.astratime.lucky.animations.RainbowChipsAnimation;
 import fr.astratime.lucky.animations.ScreenShake;
 import fr.astratime.lucky.assets.BackgroundMusic;
@@ -61,6 +62,11 @@ import fr.astratime.lucky.entities.LastingEffects;
 import fr.astratime.lucky.entities.Player;
 import fr.astratime.lucky.entities.Symbol;
 import fr.astratime.lucky.entities.SymbolOutcome;
+import fr.astratime.lucky.entities.SymbolRegistry;
+import fr.astratime.lucky.entities.actions.Action;
+import fr.astratime.lucky.entities.actions.AttackAction;
+import fr.astratime.lucky.entities.actions.DefenseAction;
+import fr.astratime.lucky.entities.actions.GainAction;
 import fr.astratime.lucky.entities.TurnResult;
 import fr.astratime.lucky.entities.choices.BetChoice;
 import fr.astratime.lucky.entities.choices.CardChoice;
@@ -253,6 +259,7 @@ public class GameScreen extends ScreenAdapter {
     private final CardChoiceOverlay   choiceOverlay;
     private final BingoCardAnimation  bingoAnimation;
     private final PistolShotAnimation pistolAnimation;
+    private final SymbolStrikes       symbolStrikes;
     private final RainbowChipsAnimation rainbowAnimation;
     private final ShopOverlay         shopOverlay;
     private final CardDetailOverlay   cardDetail;
@@ -394,6 +401,8 @@ public class GameScreen extends ScreenAdapter {
         choiceOverlay   = new CardChoiceOverlay(stage, hudTextures, cardBackTexture, cardTextures, CARD_WIDTH, CARD_HEIGHT);
         bingoAnimation  = new BingoCardAnimation(settings, new TextureRegion(hudTextures.pixel));
         pistolAnimation = new PistolShotAnimation(hudTextures.pistol, new TextureRegion(hudTextures.pixel));
+        symbolStrikes   = new SymbolStrikes(settings, screenShake, new TextureRegion(hudTextures.pixel), hudTextures.coin,
+            sidePanel::bumpCoin);
         rainbowAnimation = new RainbowChipsAnimation(settings, new TextureRegion(hudTextures.pixel));
         shopOverlay      = new ShopOverlay(stage, hudTextures, tooltip, CARD_WIDTH, CARD_HEIGHT);
         cardDetail       = new CardDetailOverlay(stage, hudTextures, tooltip, CARD_WIDTH, CARD_HEIGHT);
@@ -434,6 +443,7 @@ public class GameScreen extends ScreenAdapter {
         stage.addActor(shopIcon);
         stage.addActor(stageLabel);
         stage.addActor(pistolAnimation);
+        stage.addActor(symbolStrikes);
         stage.addActor(popupLayer);
         stage.addActor(turnBanner);   // annonce des tours : au-dessus du jeu, ne bloque pas les clics
         stage.addActor(combatEnd);
@@ -823,7 +833,7 @@ public class GameScreen extends ScreenAdapter {
         currentResult = result;
         Vector2 enemyBar    = hud.getEnemyBarCenter();
         Vector2 pistolTexts = new Vector2(enemyBar.x, enemyBar.y - PISTOL_TEXT_BELOW);
-        float shotAt = slots.playResultPopups(result, pistolTexts, this::onEventShown);
+        float shotAt = slots.playResultPopups(result, pistolTexts, this::onEventShown, this::playSymbolStrike);
         if (shotAt >= 0f) aimPistol(result, enemyBar, shotAt);
         refreshEffects(); // jauges vidées ou remplies par le tirage
         playSymbolResultSound(result);
@@ -864,6 +874,27 @@ public class GameScreen extends ScreenAdapter {
         refreshEffects();
         float margin = texts.isEmpty() ? RESULT_TEXTS_MARGIN : RIPOSTE_TEXT_TIME;
         stage.addAction(Actions.delay(margin, Actions.run(this::finishTurn)));
+    }
+
+    /**
+     * Animation du symbole tiré : vers l'ennemi pour une attaque, vers le
+     * bouclier du joueur pour une défense, vers la pièce des gains pour un
+     * gain. Rien si le symbole n'a rien fait (ennemi déjà vaincu…).
+     */
+    private void playSymbolStrike(SymbolOutcome outcome, Vector2 reel, float delay) {
+        if (outcome.getEvents().isEmpty()) return;
+        Action action = SymbolRegistry.getAction(outcome.getSymbol()).orElse(null);
+        Vector2 target;
+        if (action instanceof AttackAction) {
+            target = enemyView.getCroupierCenter();
+        } else if (action instanceof DefenseAction) {
+            target = playerShield.localToStageCoordinates(new Vector2(ShieldBadge.ICON_SIZE / 2f, ShieldBadge.ICON_SIZE / 2f));
+        } else if (action instanceof GainAction) {
+            target = sidePanel.getCoinCenter();
+        } else {
+            return;
+        }
+        symbolStrikes.play(outcome.getSymbol(), reel, target, delay);
     }
 
     /** Le pistolet surgit au-dessus du symbole qu'il multiplie et tire sur l'ennemi à l'instant {@code shotAt}. */
@@ -1076,6 +1107,7 @@ public class GameScreen extends ScreenAdapter {
         turnBanner.hide();
         bingoAnimation.cancel();
         pistolAnimation.cancel();
+        symbolStrikes.cancel();
         rainbowAnimation.cancel();
         shopOverlay.hide();
         cardDetail.hide();
@@ -1525,6 +1557,7 @@ public class GameScreen extends ScreenAdapter {
         hud.dispose();
         sidePanel.dispose();
         hudTextures.dispose();
+        symbolStrikes.dispose();
         slots.dispose();
         sounds.dispose();
         music.dispose();
