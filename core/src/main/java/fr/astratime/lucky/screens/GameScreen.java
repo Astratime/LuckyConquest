@@ -1194,7 +1194,7 @@ public class GameScreen extends ScreenAdapter {
             shown.add(buttons.createAction("Continuer", sounds.buttonClick, this::onContinue));
             shown.add(buttons.create(backText(), sounds.buttonClick, this::onBackToChapters));
         }
-        // Les gains affichés, versés en pièces pour la boutique après le dernier combat gagné.
+        // Les gains affichés, versés en pièces pour la boutique après le roi d'un donjon.
         int earned = combatReward(victory);
         if (earned > 0) {
             Label coinsLabel = new Label("PIÈCES +" + PlayerProfile.formatCoins(earned), new Label.LabelStyle(shopFont, Palette.GOLD));
@@ -1233,7 +1233,7 @@ public class GameScreen extends ScreenAdapter {
 
     /** @return les pièces gagnées à la fin de ce combat (voir {@link PlayerProfile#combatReward}). */
     private int combatReward(boolean victory) {
-        if (run == null) return 0; // Entraînement : aucune pièce
+        if (!isDungeon()) return 0; // seule l'Exploration rapporte des pièces (ni Entraînement, ni Tour)
         return PlayerProfile.combatReward(victory, run.isBossStage(),
             gameController.getGameState().getPlayer().getGains());
     }

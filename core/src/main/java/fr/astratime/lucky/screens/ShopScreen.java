@@ -33,8 +33,8 @@ import fr.astratime.lucky.views.MinimumScreenViewport;
 
 /**
  * Boutique : pour l'instant, elle montre seulement les pièces du joueur (voir
- * {@link PlayerProfile#getCoins()}), gagnées en combat et dans les coffres des
- * donjons. Les achats viendront plus tard. Échap ou « Retour » ramène au menu principal.
+ * {@link PlayerProfile#getCoins()}), gagnées dans les donjons de l'Exploration
+ * (gains de combat et coffres). Les achats viendront plus tard. Échap ou « Retour » ramène au menu principal.
  */
 public class ShopScreen extends ScreenAdapter {
 
@@ -95,7 +95,7 @@ public class ShopScreen extends ScreenAdapter {
         coins = new Label(PlayerProfile.formatCoins(amount) + (amount > 1 ? " pièces" : " pièce"),
             new Label.LabelStyle(coinsFont, Color.WHITE));
         coins.pack();
-        text = new Label("Les gains de tes combats et les coffres des donjons remplissent ta bourse. "
+        text = new Label("Les gains de tes donjons et leurs coffres remplissent ta bourse. "
             + "La boutique ouvre bientôt.", new Label.LabelStyle(bodyFont, Color.WHITE));
         text.setWrap(true);
         text.setAlignment(Align.center);

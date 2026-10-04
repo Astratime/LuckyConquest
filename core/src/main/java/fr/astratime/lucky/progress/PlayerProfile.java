@@ -116,14 +116,14 @@ public class PlayerProfile {
     public long getCoins() { return coins; }
 
     /**
-     * Pièces versées à la fin d'un combat : les gains affichés dans le cadre
-     * « Gains », seulement après la victoire contre le dernier ennemi (le roi
-     * d'un donjon ou le boss d'un chapitre ; l'Entraînement n'en donne pas). Une défaite ne
-     * rapporte rien, et un combat intermédiaire non plus : ses gains sont
-     * gardés pour le combat suivant.
+     * Pièces versées à la fin d'un combat de l'Exploration : les gains affichés
+     * dans le cadre « Gains », seulement après la victoire contre le roi du
+     * donjon. Une défaite ne rapporte rien, le soldat non plus : ses gains sont
+     * gardés pour le roi. L'Entraînement et la Tour des épreuves ne rapportent
+     * aucune pièce.
      *
      * @param victory   l'ennemi est vaincu
-     * @param lastFight c'était le dernier combat du donjon, du chapitre ou de la partie
+     * @param lastFight c'était le dernier combat du donjon (le roi)
      * @param gains     les gains du joueur à la fin du combat
      * @return les pièces à ajouter au profil
      */
