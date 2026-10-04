@@ -135,6 +135,18 @@ public class PlayContext {
         return added;
     }
 
+    /**
+     * Ajoute immédiatement {@code percent} % des gains actuels du joueur (gains
+     * déjà demandés par la carte compris).
+     *
+     * @return les gains ajoutés
+     */
+    public int addGainsPercent(int percent) {
+        int added = (int) ((long) (player.getGains() + gains) * percent / 100);
+        gains += added;
+        return added;
+    }
+
     /** Met {@code effect} en attente : il sera appliqué au TurnContext au moment du spin. */
     public void queueForSpin(Effect effect) { effectsForSpin.add(effect); }
 

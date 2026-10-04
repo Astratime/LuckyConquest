@@ -274,10 +274,10 @@ class GameControllerTest {
         return new Card(suit.cardId(rank), suit.cardId(rank), "x.png", List.of(), suit, rank);
     }
 
-    /** Fabrique de test : cartes à suite d'après leur id, et un Pot de Lutin consommable (gains x5). */
+    /** Fabrique de test : cartes à suite d'après leur id, et un Pot de Lutin consommable (gains +50 %). */
     private static Card fromId(String id) {
         if (id.equals("pot")) {
-            return new Card("pot", "pot", "x.png", List.of(new GainsMultiplierEffect(5)), null, 1, true);
+            return new Card("pot", "pot", "x.png", List.of(new GainsMultiplierEffect(50)), null, 1, true);
         }
         String[] parts = id.split("_");
         return suited(Integer.parseInt(parts[0]), Card.Suit.valueOf(parts[1].toUpperCase()));
@@ -317,14 +317,14 @@ class GameControllerTest {
     }
 
     @Test
-    void potDeLutinMultipliesGainsAndDisappearsOncePlayed() {
+    void potDeLutinAddsHalfTheGainsAndDisappearsOncePlayed() {
         GameController controller = new GameController(() -> new ArrayList<>(List.of(fromId("pot"))),
             GameControllerTest::fromId);
         controller.drawCards();
         player(controller).addGains(300);
 
         controller.playCard(player(controller).getCurrentHand().get(0));
-        assertEquals(1500, player(controller).getGains());
+        assertEquals(450, player(controller).getGains(), "300 + 50 %");
         controller.spin();
 
         assertTrue(player(controller).getDiscardPile().getCards().isEmpty(), "le Pot de Lutin ne va pas en défausse");

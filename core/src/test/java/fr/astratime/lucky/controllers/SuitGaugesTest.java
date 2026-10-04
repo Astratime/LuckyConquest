@@ -136,7 +136,7 @@ class SuitGaugesTest {
         lasting.addBlood(10);
         lasting.addVault(30);
 
-        prepare(new GainsMultiplierEffect(5, 2));
+        prepare(new GainsMultiplierEffect(50, 2));
 
         assertEquals(4, lasting.getBlades());
         assertEquals(20, lasting.getBlood());
