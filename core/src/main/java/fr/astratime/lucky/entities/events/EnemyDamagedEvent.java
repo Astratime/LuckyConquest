@@ -16,6 +16,8 @@ public class EnemyDamagedEvent extends Event {
     public final long damage;
     /** Dégâts bruts avant défense (base du symbole + bonus d'attaque des cartes). */
     public final long rawDamage;
+    /** Attaque du coup avant les multiplicateurs (combos, Bingo, Corruption...) : celle que vise le pistolet. */
+    public final long baseDamage;
     /** Dégâts absorbés par la défense de l'ennemi. */
     public final int blocked;
     /** Défense de l'ennemi restante après ce coup. */
@@ -31,8 +33,18 @@ public class EnemyDamagedEvent extends Event {
      * @param pierced     {@code true} si l'attaque a ignoré la défense (Pique)
      */
     public EnemyDamagedEvent(long damage, long rawDamage, int blocked, int defenseLeft, boolean pierced) {
+        this(damage, rawDamage, rawDamage, blocked, defenseLeft, pierced);
+    }
+
+    /**
+     * Comme {@link #EnemyDamagedEvent(long, long, int, int, boolean)}, avec
+     * {@code baseDamage}, l'attaque du coup avant les multiplicateurs.
+     */
+    public EnemyDamagedEvent(long damage, long rawDamage, long baseDamage, int blocked, int defenseLeft,
+                             boolean pierced) {
         this.damage      = damage;
         this.rawDamage   = rawDamage;
+        this.baseDamage  = baseDamage;
         this.blocked     = blocked;
         this.defenseLeft = defenseLeft;
         this.pierced     = pierced;

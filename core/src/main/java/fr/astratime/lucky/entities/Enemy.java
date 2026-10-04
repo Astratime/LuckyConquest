@@ -223,6 +223,12 @@ public class Enemy {
     public int getStolenReels() { return kind.stolenReels(phase); }
 
     /** @return les dégâts qui le touchent vraiment : la moitié, tant que sa peau d'or tient (plus de la moitié de ses PV). */
+    /**
+     * Plafond des dégâts d'un coup : jamais plus que ses PV max (un coup de
+     * plusieurs milliards ne s'affiche pas sur un ennemi qui en a quelques millions).
+     */
+    public long capHit(long damage) { return Math.min(damage, maxHp); }
+
     public long skinned(long damage) {
         return hasGoldSkin() ? damage / 2 : damage;
     }

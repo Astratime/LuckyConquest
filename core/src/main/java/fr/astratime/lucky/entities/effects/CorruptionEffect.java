@@ -18,7 +18,7 @@ public class CorruptionEffect extends Effect {
     /** Part des gains consommée à chaque tirage sous Corruption. */
     public static final int GAINS_PERCENT = 10;
     /** Multiplicateur de l'attaque et de la défense des symboles. */
-    public static final int FACTOR        = 10;
+    public static final int FACTOR        = 2;
 
     private final int turns;
 
