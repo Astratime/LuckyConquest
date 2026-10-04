@@ -115,6 +115,22 @@ public class PlayerProfile {
     /** @return les pièces du joueur, pour la boutique. */
     public long getCoins() { return coins; }
 
+    /**
+     * Pièces versées à la fin d'un combat : les gains affichés dans le cadre
+     * « Gains », seulement après la victoire contre le dernier ennemi (le roi
+     * d'un donjon, le boss d'un chapitre, ou le combat seul). Une défaite ne
+     * rapporte rien, et un combat intermédiaire non plus : ses gains sont
+     * gardés pour le combat suivant.
+     *
+     * @param victory   l'ennemi est vaincu
+     * @param lastFight c'était le dernier combat du donjon, du chapitre ou de la partie
+     * @param gains     les gains du joueur à la fin du combat
+     * @return les pièces à ajouter au profil
+     */
+    public static int combatReward(boolean victory, boolean lastFight, int gains) {
+        return victory && lastFight ? Math.max(0, gains) : 0;
+    }
+
     /** Ajoute {@code amount} pièces (rien si négatif) et enregistre le profil. */
     public void addCoins(long amount) {
         if (amount <= 0) return;

@@ -160,4 +160,12 @@ class PlayerProfileTest {
         assertEquals("10 000", PlayerProfile.formatCoins(10_000));
         assertEquals("1 234 567", PlayerProfile.formatCoins(1_234_567));
     }
+
+    @Test
+    void combatCoinsAreTheShownGainsAfterTheLastFightOnly() {
+        assertEquals(32_000, PlayerProfile.combatReward(true, true, 32_000), "les gains affichés, pas plus");
+        assertEquals(0, PlayerProfile.combatReward(true, false, 32_000), "rien après le soldat");
+        assertEquals(0, PlayerProfile.combatReward(false, true, 32_000), "rien en cas de défaite");
+        assertEquals(0, PlayerProfile.combatReward(false, false, 32_000));
+    }
 }

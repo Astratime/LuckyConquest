@@ -1194,8 +1194,8 @@ public class GameScreen extends ScreenAdapter {
             shown.add(buttons.createAction("Continuer", sounds.buttonClick, this::onContinue));
             shown.add(buttons.create(backText(), sounds.buttonClick, this::onBackToChapters));
         }
-        // Les gains acquis pendant le combat, versés en pièces pour la boutique.
-        int earned = gameController.getGameState().getPlayer().getEarnedThisCombat();
+        // Les gains affichés, versés en pièces pour la boutique après le dernier combat gagné.
+        int earned = combatReward(victory);
         if (earned > 0) {
             Label coinsLabel = new Label("PIÈCES +" + PlayerProfile.formatCoins(earned), new Label.LabelStyle(shopFont, Palette.GOLD));
             endButtons.add(coinsLabel).colspan(shown.size()).padBottom(14f).row();
@@ -1231,6 +1231,12 @@ public class GameScreen extends ScreenAdapter {
     // Fin de combat, sons et journal
     // -------------------------------------------------------------------------
 
+    /** @return les pièces gagnées à la fin de ce combat (voir {@link PlayerProfile#combatReward}). */
+    private int combatReward(boolean victory) {
+        return PlayerProfile.combatReward(victory, run == null || run.isBossStage(),
+            gameController.getGameState().getPlayer().getGains());
+    }
+
     /** Le combat est terminé dès que le joueur ou l'ennemi n'a plus de points de vie. */
     private boolean isCombatOver() {
         GameState gameState = gameController.getGameState();
@@ -1243,7 +1249,7 @@ public class GameScreen extends ScreenAdapter {
      */
     private void endCombat() {
         spinButton.setDisabled(true);
-        luckyGame.getProfile().addCoins(gameController.getGameState().getPlayer().getEarnedThisCombat());
+        luckyGame.getProfile().addCoins(combatReward(gameController.getGameState().getEnemy().isDefeated()));
         buildEndButtons(gameController.getGameState().getEnemy().isDefeated());
         Runnable showRestart = () -> {
             endButtons.setTouchable(Touchable.childrenOnly);
