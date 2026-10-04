@@ -172,9 +172,9 @@ public enum EnemyKind {
         List.of(Card.Suit.COEUR, Card.Suit.CARREAU, Card.Suit.PIQUE, Card.Suit.TREFLE));
 
     /** Force des ennemis du chapitre 2, en % : leurs attaques, défenses et effets sont multipliés d'autant. */
-    public static final int CHAPTER_2_POWER = 150;
+    public static final int CHAPTER_2_POWER = 200;
     /** Force des ennemis du chapitre 3, en %. */
-    public static final int CHAPTER_3_POWER = 200;
+    public static final int CHAPTER_3_POWER = 300;
 
     /** Rouleaux interdits dans le deck de l'Éclat Originel. */
     static final int FORBIDDEN_REELS = 1;
