@@ -68,8 +68,8 @@ public enum Chapter {
     public String getTitle() { return title; }
     /** @return le récit du chapitre. */
     public String getDescription() { return description; }
-    /** @return {@code true} si le chapitre peut être joué. */
-    public boolean isOpen() { return true; }
+    /** @return le chapitre d'avant, à terminer pour ouvrir celui-ci ({@code null} pour le premier). */
+    public Chapter getPrevious() { return ordinal() == 0 ? null : values()[ordinal() - 1]; }
     /** @return l'ennemi du premier combat. */
     public EnemyKind getFirstEnemy() { return firstEnemy; }
     /** @return les trois adversaires cachés sous les cartes du 2e combat. */

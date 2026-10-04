@@ -4,6 +4,7 @@ import fr.astratime.lucky.entities.RankBonus;
 import fr.astratime.lucky.entities.Symbol;
 import fr.astratime.lucky.entities.exploration.Dungeon;
 import fr.astratime.lucky.entities.exploration.Place;
+import fr.astratime.lucky.entities.tower.Chapter;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -51,6 +52,8 @@ public class PlayerProfile {
     static final String KEY_MACHINE    = "machine";
     static final String KEY_DUNGEONS   = "dungeons";
     static final String KEY_TOWER_HARD = "towerHard";
+    static final String KEY_CHAPTERS      = "chapters";
+    static final String KEY_HARD_CHAPTERS = "hardChapters";
 
     private final ProfileStorage       storage;
     private final Map<String, Integer> starterDeck;
@@ -66,6 +69,9 @@ public class PlayerProfile {
     private final List<Symbol> machine     = new ArrayList<>();
     /** Donjons de l'Exploration vidés (leur chef battu), par nom. */
     private final java.util.Set<String> clearedDungeons = new java.util.LinkedHashSet<>();
+    /** Chapitres de la Tour terminés (leur boss battu), en mode normal puis en mode difficile, par nom. */
+    private final java.util.Set<String> clearedChapters     = new java.util.LinkedHashSet<>();
+    private final java.util.Set<String> clearedHardChapters = new java.util.LinkedHashSet<>();
 
     /**
      * Charge le profil enregistré dans {@code storage} ; au premier lancement
@@ -93,6 +99,14 @@ public class PlayerProfile {
         List<Symbol> savedMachine = decodeSymbols(storage.get(KEY_MACHINE));
         machine.addAll(machineProblem(savedMachine) == null ? savedMachine : Symbol.classicReels());
         towerHard = Boolean.parseBoolean(storage.get(KEY_TOWER_HARD));
+        String savedChapters = storage.get(KEY_CHAPTERS);
+        if (savedChapters != null) {
+            readNames(savedChapters, clearedChapters);
+        } else if (towerHard) {
+            // Profil d'avant les chapitres verrouillés : le mode difficile prouve que toute la Tour a été finie.
+            for (Chapter chapter : Chapter.values()) clearedChapters.add(chapter.name());
+        }
+        readNames(storage.get(KEY_HARD_CHAPTERS), clearedHardChapters);
         String savedDungeons = storage.get(KEY_DUNGEONS);
         if (savedDungeons != null) {
             for (String name : savedDungeons.split(",")) if (!name.isBlank()) clearedDungeons.add(name.trim());
@@ -143,6 +157,37 @@ public class PlayerProfile {
         towerHard = true;
         save();
         return true;
+    }
+
+    // -------------------------------------------------------------------------
+    // Tour des épreuves
+    // -------------------------------------------------------------------------
+
+    /**
+     * Le boss du chapitre {@code chapter} est battu, dans le mode {@code hard} :
+     * le chapitre est terminé dans ce mode, ce qui ouvre le suivant.
+     *
+     * @return {@code true} s'il vient d'être terminé pour la première fois
+     */
+    public boolean clearChapter(Chapter chapter, boolean hard) {
+        if (!(hard ? clearedHardChapters : clearedChapters).add(chapter.name())) return false;
+        save();
+        return true;
+    }
+
+    /** @return {@code true} si le chapitre {@code chapter} a été terminé dans le mode {@code hard}. */
+    public boolean isCleared(Chapter chapter, boolean hard) {
+        return (hard ? clearedHardChapters : clearedChapters).contains(chapter.name());
+    }
+
+    /**
+     * @return {@code true} si le chapitre {@code chapter} peut être joué dans le mode {@code hard} :
+     *         le premier, ou le précédent terminé dans ce même mode (le mode difficile doit en plus être ouvert)
+     */
+    public boolean isOpen(Chapter chapter, boolean hard) {
+        if (hard && !towerHard) return false;
+        Chapter previous = chapter.getPrevious();
+        return previous == null || isCleared(previous, hard);
     }
 
     /** @return {@code true} si le donjon {@code dungeon} a déjà été vidé. */
@@ -362,7 +407,7 @@ public class PlayerProfile {
     // Enregistrement
     // -------------------------------------------------------------------------
 
-    /** Enregistre la collection, le deck, les pièces, le rang, les rouleaux, les donjons vidés et le mode difficile. */
+    /** Enregistre la collection, le deck, les pièces, le rang, les rouleaux, les donjons vidés, les chapitres terminés et le mode difficile. */
     public void save() {
         storage.put(KEY_TOWER_HARD, String.valueOf(towerHard));
         storage.put(KEY_COLLECTION, encode(collection));
@@ -372,7 +417,15 @@ public class PlayerProfile {
         storage.put(KEY_REELS, encodeSymbols(boughtReels));
         storage.put(KEY_MACHINE, encodeSymbols(machine));
         storage.put(KEY_DUNGEONS, String.join(",", clearedDungeons));
+        storage.put(KEY_CHAPTERS, String.join(",", clearedChapters));
+        storage.put(KEY_HARD_CHAPTERS, String.join(",", clearedHardChapters));
         storage.flush();
+    }
+
+    /** Ajoute à {@code names} les noms de {@code text} ("a,b,c" ; rien si {@code null}). */
+    private static void readNames(String text, java.util.Set<String> names) {
+        if (text == null) return;
+        for (String name : text.split(",")) if (!name.isBlank()) names.add(name.trim());
     }
 
     /** @return {@code copies} écrit "id:n,id:n" (dans l'ordre de la table). */

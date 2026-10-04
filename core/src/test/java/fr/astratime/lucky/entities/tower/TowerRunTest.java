@@ -53,8 +53,11 @@ class TowerRunTest {
     }
 
     @Test
-    void theThreeChaptersAreOpen() {
-        for (Chapter chapter : Chapter.values()) assertTrue(chapter.isOpen(), chapter.name());
+    void eachChapterFollowsThePreviousOne() {
+        assertNull(Chapter.GENESE.getPrevious());
+        for (int i = 1; i < Chapter.values().length; i++) {
+            assertEquals(Chapter.values()[i - 1], Chapter.values()[i].getPrevious());
+        }
         assertEquals("La genèse", Chapter.GENESE.getTitle());
         assertEquals("Les Tables Sacrées", Chapter.TABLES_SACREES.getTitle());
         assertEquals("Le Dernier Tirage", Chapter.DERNIER_TIRAGE.getTitle());
