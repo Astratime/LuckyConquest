@@ -233,7 +233,8 @@ public class CardLoader {
             case "BET":
                 return new BetEffect();
             case "RUSSIAN_ROULETTE":
-                return new RussianRouletteEffect(json.getInt("multiplier"), json.getInt("penaltyPercent"));
+                return new RussianRouletteEffect(json.getInt("multiplier"), json.getInt("cursedMultiplier"),
+                    json.getInt("penaltyPercent"));
             case "EXTRA_PLAYS":
                 return new ExtraPlaysEffect(json.getInt("plays"), json.getInt("turns"));
             case "LUCKY_CHARM":

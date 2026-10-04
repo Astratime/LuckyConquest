@@ -375,8 +375,8 @@ public class GameController {
 
     /**
      * Réponse à la Roulette russe : retourne la carte {@code index}. Le
-     * pistolet est mis en attente jusqu'au spin, quelle que soit la carte ; le
-     * Joker maudit coûte en plus une partie des gains tout de suite.
+     * pistolet est mis en attente jusqu'au spin, quelle que soit la carte (moins
+     * fort avec le Joker maudit, qui coûte en plus une partie des gains tout de suite).
      *
      * @return {@code true} si la carte est le Joker maudit, et les textes à afficher
      * @throws IllegalStateException si aucune roulette n'est en attente de choix
@@ -386,9 +386,10 @@ public class GameController {
             throw new IllegalStateException("Aucune roulette en attente");
         }
         pendingChoice = null;
-        PistolEffect pistol = new PistolEffect(roulette.pistolMultiplier());
+        boolean cursed = roulette.cursed().get(index);
+        PistolEffect pistol = new PistolEffect(cursed ? roulette.cursedMultiplier() : roulette.pistolMultiplier());
         pendingEffects.add(pistol);
-        if (roulette.cursed().get(index)) {
+        if (cursed) {
             int lost = gameState.getPlayer().consumeGainsPercent(roulette.penaltyPercent() / 100f);
             List<EffectPopup> popups = new ArrayList<>(List.of(
                 new EffectPopup("JOKER MAUDIT !", EffectPopup.Style.DAMAGE, PopupScale.MAX_INTENSITY),

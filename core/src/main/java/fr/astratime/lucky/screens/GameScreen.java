@@ -710,7 +710,8 @@ public class GameScreen extends ScreenAdapter {
                 refreshEffects();
             });
         } else if (choice instanceof RouletteChoice roulette) {
-            choiceOverlay.showRoulette(roulette.cursed(), roulette.pistolMultiplier(), roulette.penaltyPercent(),
+            choiceOverlay.showRoulette(roulette.cursed(), roulette.pistolMultiplier(), roulette.cursedMultiplier(),
+                roulette.penaltyPercent(),
                 index -> {
                     GameController.RouletteOutcome outcome = gameController.pickRouletteCard(index);
                     effectPopupAnimator.play(outcome.popups(), cardCenter.x, cardCenter.y);

@@ -202,7 +202,7 @@ class GameControllerTest {
     @Test
     void thePistolAlwaysFiresAndTheCursedJokerAlsoCostsGains() {
         for (int index = 0; index < RussianRouletteEffect.CARDS; index++) {
-            GameController controller = controllerWith(List.of(card("roulette", new RussianRouletteEffect(20, 20))));
+            GameController controller = controllerWith(List.of(card("roulette", new RussianRouletteEffect(50, 20, 20))));
             controller.drawCards();
             player(controller).addGains(1000);
             RouletteChoice choice = (RouletteChoice) controller
@@ -216,6 +216,8 @@ class GameControllerTest {
             assertEquals(choice.cursed().get(index), outcome.cursed());
             assertEquals(outcome.cursed() ? 800 : 1000, gainsAfterPick, "Joker maudit : -20 % de gains");
             assertEquals(1, turn.getPistolEvents().size(), "le pistolet tire quelle que soit la carte");
+            assertEquals(outcome.cursed() ? 20 : 50,
+                ((fr.astratime.lucky.entities.events.PistolShotEvent) turn.getPistolEvents().get(0)).multiplier);
         }
     }
 
