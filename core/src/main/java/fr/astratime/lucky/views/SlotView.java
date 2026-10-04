@@ -120,6 +120,12 @@ public class SlotView implements Disposable {
      */
     public SlotView(TableView tableView, Tooltip tooltip, EffectPopupAnimator popupAnimator, Sound reelSpinSound,
                     Sound reelStopSound, Sound suspenseSound) {
+        this(tableView, tooltip, popupAnimator, reelSpinSound, reelStopSound, suspenseSound, Symbol.classicReels());
+    }
+
+    /** @param machine symboles de la machine du joueur, qui défilent sur les rouleaux (avec le Joker) */
+    public SlotView(TableView tableView, Tooltip tooltip, EffectPopupAnimator popupAnimator, Sound reelSpinSound,
+                    Sound reelStopSound, Sound suspenseSound, List<Symbol> machine) {
         this.tableView     = tableView;
         this.tooltip       = tooltip;
         this.reelSpinSound = reelSpinSound;
@@ -133,8 +139,10 @@ public class SlotView implements Disposable {
         }
         lockTexture = new Texture(Gdx.files.internal(LOCK_ASSET));
         TextureRegion lockRegion = new TextureRegion(lockTexture, LOCK_X, LOCK_Y, LOCK_SIZE_X, LOCK_SIZE_Y);
+        List<Symbol> strip = new ArrayList<>(machine);
+        strip.add(Symbol.JOKER);
         for (int i = 0; i < SlotMachine.SYMBOL_COUNT; i++) {
-            ReelActor<Symbol> reel = new ReelActor<>(Symbol.values(), regions::get);
+            ReelActor<Symbol> reel = new ReelActor<>(strip.toArray(new Symbol[0]), regions::get);
             addTooltip(reel);
             Image lock = new Image(lockRegion);
             lock.setTouchable(Touchable.disabled);

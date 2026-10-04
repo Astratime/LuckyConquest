@@ -67,6 +67,8 @@ import fr.astratime.lucky.entities.actions.Action;
 import fr.astratime.lucky.entities.actions.AttackAction;
 import fr.astratime.lucky.entities.actions.DefenseAction;
 import fr.astratime.lucky.entities.actions.GainAction;
+import fr.astratime.lucky.entities.actions.HealAction;
+import fr.astratime.lucky.entities.actions.MixedAction;
 import fr.astratime.lucky.entities.TurnResult;
 import fr.astratime.lucky.entities.choices.BetChoice;
 import fr.astratime.lucky.entities.choices.CardChoice;
@@ -338,8 +340,10 @@ public class GameScreen extends ScreenAdapter {
         this.luckyGame = luckyGame;
         this.run       = run;
         // Le deck construit par le joueur (ou le deck de départ), relu à chaque nouveau combat.
-        this.gameController = new GameController(() -> CardLoader.loadDeck(luckyGame.getProfile().getDeck()),
-            CardLoader.cardFactory(), CardLoader.loadShop());
+        PlayerProfile profile = luckyGame.getProfile();
+        this.gameController = new GameController(() -> CardLoader.loadDeck(profile.getDeck()),
+            CardLoader.cardFactory(), CardLoader.loadShop(),
+            cards -> new Player("Joueur", Player.BASE_HP, cards, profile.getRankBonus(), profile.getMachine()));
         gameController.restart(firstEnemy()); // le premier ennemi du chapitre, ou le croupier d'entraînement
         // Le SpriteBatch est partagé avec LuckyGame et ne doit PAS être disposé ici.
         this.stage = new Stage(new MinimumScreenViewport(MIN_WIDTH, MIN_HEIGHT), luckyGame.getBatch());
@@ -395,7 +399,8 @@ public class GameScreen extends ScreenAdapter {
             new CardDealAnimator(stage, cardBackTexture, CARD_WIDTH, CARD_HEIGHT, sounds.cardDeal, sounds.cardFlip),
             new CardDiscardAnimator(stage, cardBackTexture, CARD_WIDTH, CARD_HEIGHT, sounds.cardDeal, sounds.cardFlip),
             this::onCardPlayed);
-        slots = new SlotView(table, tooltip, effectPopupAnimator, sounds.reelSpin, sounds.reelStop, sounds.reelSuspense);
+        slots = new SlotView(table, tooltip, effectPopupAnimator, sounds.reelSpin, sounds.reelStop, sounds.reelSuspense,
+            gameController.getGameState().getPlayer().getSlotMachine().getReels());
         combatEnd = new CombatEndAnimation(playArea, screenShake, new TextureRegion(hudTextures.pixel),
             hudTextures.bannerBand, new TextureRegion(cardBackTexture), confetti, fireworkSounds, CARD_WIDTH, CARD_HEIGHT);
         choiceOverlay   = new CardChoiceOverlay(stage, hudTextures, cardBackTexture, cardTextures, CARD_WIDTH, CARD_HEIGHT);
@@ -885,9 +890,9 @@ public class GameScreen extends ScreenAdapter {
         if (outcome.getEvents().isEmpty()) return;
         Action action = SymbolRegistry.getAction(outcome.getSymbol()).orElse(null);
         Vector2 target;
-        if (action instanceof AttackAction) {
+        if (action instanceof AttackAction || action instanceof MixedAction) {
             target = enemyView.getCroupierCenter();
-        } else if (action instanceof DefenseAction) {
+        } else if (action instanceof DefenseAction || action instanceof HealAction) {
             target = playerShield.localToStageCoordinates(new Vector2(ShieldBadge.ICON_SIZE / 2f, ShieldBadge.ICON_SIZE / 2f));
         } else if (action instanceof GainAction) {
             target = sidePanel.getCoinCenter();

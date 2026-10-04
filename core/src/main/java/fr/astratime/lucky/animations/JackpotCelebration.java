@@ -288,6 +288,13 @@ public class JackpotCelebration extends Group implements Disposable {
             case DIAMOND       -> scheduleGemCut(icon);
             case GOLD_BAR      -> scheduleSafe(icon);
             case WATERMELON    -> scheduleKatana(icon);
+            // Rouleaux de la boutique : la mise en scène d'un classique de leur type
+            case HORSESHOE     -> scheduleChime(icon);
+            case CROWN         -> scheduleSafe(icon);
+            case ECU           -> scheduleGemCut(icon);
+            case HEART         -> scheduleCherryTree(icon);
+            case SWORD, DIE, STAR -> scheduleFlamingDie(icon);
+            case BOMB          -> scheduleBullseye(icon);
             case TRIPLE_SEVEN, JOKER -> scheduleCasino();
         }
     }

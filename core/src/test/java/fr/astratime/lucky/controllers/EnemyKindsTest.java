@@ -27,9 +27,10 @@ class EnemyKindsTest {
 
     @Test
     void eachChapterHasTheRequestedLife() {
-        assertLives(Chapter.GENESE, 5_000, 10_000, 20_000);
-        assertLives(Chapter.TABLES_SACREES, 20_000, 40_000, 100_000);
-        assertLives(Chapter.DERNIER_TIRAGE, 120_000, 200_000, 400_000);
+        // Les PV demandés, x5 depuis l'arrivée des rangs (EnemyKind.TOWER_HP_FACTOR).
+        assertLives(Chapter.GENESE, 25_000, 50_000, 100_000);
+        assertLives(Chapter.TABLES_SACREES, 100_000, 200_000, 500_000);
+        assertLives(Chapter.DERNIER_TIRAGE, 600_000, 1_000_000, 2_000_000);
     }
 
     private static void assertLives(Chapter chapter, int first, int challengers, int boss) {
@@ -116,7 +117,7 @@ class EnemyKindsTest {
         int bites = 0;
         for (int seed = 0; seed < 50 && bites == 0; seed++) {
             Enemy enemy = new Enemy(EnemyKind.SANGSUE);
-            enemy.takeDamage(9_000);
+            enemy.takeDamage(enemy.getMaxHp() * 9 / 10);
             Player player = new Player("Joueur", 1_000_000, List.of());
 
             EnemyTurnResult turn = new EnemyTurnResolver(new Random(seed)).resolve(enemy, player, 0, 0f);
@@ -128,7 +129,8 @@ class EnemyKindsTest {
                 int stolen = ((PlayerDamagedEvent) events.get(0)).damage;
                 assertTrue(stolen >= EnemySymbol.FANG_DAMAGE);
                 EnemyDrainEvent drain = (EnemyDrainEvent) events.get(1);
-                assertTrue(drain.amount > 0 && drain.amount <= stolen * 100, "1 % de 10 000 PV max par PV volé, au plus");
+                assertTrue(drain.amount > 0 && drain.amount <= stolen * enemy.getMaxHp() / 100,
+                    "1 % de ses PV max par PV volé, au plus");
             }
         }
         assertTrue(bites > 0, "au moins un Croc");

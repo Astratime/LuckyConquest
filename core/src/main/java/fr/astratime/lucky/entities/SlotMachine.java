@@ -16,6 +16,10 @@ import java.util.Random;
  * Le Joker est un symbole à part : plus rare, il compte comme n'importe quel
  * symbole. {@link #spin} rend les symboles tels qu'ils s'arrêtent sur les
  * rouleaux (Jokers compris), {@link #resolveJokers} ce qu'ils valent.
+ *
+ * Les symboles qui peuvent sortir sont ceux de la machine du joueur
+ * ({@link Symbol#MACHINE_SIZE} rouleaux choisis à la Table du croupier ; les
+ * 11 classiques par défaut), plus le Joker.
  */
 public class SlotMachine {
 
@@ -27,16 +31,32 @@ public class SlotMachine {
     /** Poids de base du Joker, plus rare que les autres symboles. */
     private static final int JOKER_WEIGHT = 4;
 
-    private final Random   random;
+    private final Random       random;
+    /** Symboles de la machine, sans le Joker. */
+    private final List<Symbol> reels;
 
+    /** Machine aux 11 rouleaux classiques. */
     public SlotMachine() {
-        this(new Random());
+        this(Symbol.classicReels());
+    }
+
+    /** @param reels symboles de la machine (le Joker s'y ajoute toujours) */
+    public SlotMachine(List<Symbol> reels) {
+        this(reels, new Random());
     }
 
     /** @param random source d'aléatoire (ex : graine fixe pour des tests reproductibles) */
     SlotMachine(Random random) {
+        this(Symbol.classicReels(), random);
+    }
+
+    SlotMachine(List<Symbol> reels, Random random) {
+        this.reels  = List.copyOf(reels);
         this.random = random;
     }
+
+    /** @return les symboles de la machine, sans le Joker. */
+    public List<Symbol> getReels() { return reels; }
 
     /**
      * Tire trois symboles indépendamment, selon les poids de base plus les
@@ -143,18 +163,17 @@ public class SlotMachine {
 
     /** Tire un symbole au hasard selon son poids du tour, Joker compris ou non. */
     private Symbol weightedRandom(SpinContext spinContext, boolean withJoker) {
+        List<Symbol> candidates = new ArrayList<>(reels);
+        if (withJoker) candidates.add(Symbol.JOKER);
         int total = 0;
-        for (Symbol s : Symbol.values()) {
-            if (withJoker || s != Symbol.JOKER) total += weight(s, spinContext);
-        }
-        if (total <= 0) return Symbol.BAR; // tous les symboles retirés : le plus modeste reste
+        for (Symbol s : candidates) total += weight(s, spinContext);
+        if (total <= 0) return reels.get(0); // tous les symboles retirés : le premier reste
         int rand = random.nextInt(total);
-        for (Symbol s : Symbol.values()) {
-            if (!withJoker && s == Symbol.JOKER) continue;
+        for (Symbol s : candidates) {
             rand -= weight(s, spinContext);
             if (rand < 0) return s;
         }
-        return Symbol.BAR;
+        return reels.get(0);
     }
 
 }

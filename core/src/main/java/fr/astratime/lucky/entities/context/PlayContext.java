@@ -2,6 +2,7 @@ package fr.astratime.lucky.entities.context;
 
 import fr.astratime.lucky.entities.LastingEffects;
 import fr.astratime.lucky.entities.Player;
+import fr.astratime.lucky.entities.Symbol;
 import fr.astratime.lucky.entities.choices.CardChoice;
 import fr.astratime.lucky.entities.effects.Effect;
 import fr.astratime.lucky.popups.EffectPopup;
@@ -80,6 +81,9 @@ public class PlayContext {
 
     /** @return les effets de cartes qui durent plusieurs tours, à modifier immédiatement (Recyclage, Porte-bonheur). */
     public LastingEffects getLastingEffects() { return player.getLastingEffects(); }
+
+    /** @return les symboles de la machine du joueur (sans le Joker). */
+    public List<Symbol> getReels() { return player.getSlotMachine().getReels(); }
 
     /** Demande au joueur un choix (Pari, Roulette russe) avant la suite du tour. */
     public void requestChoice(CardChoice choice) { this.choice = choice; }

@@ -369,6 +369,6 @@ class GameControllerTest {
         assertTrue(next.getCurrentHand().isEmpty());
         assertEquals(0, controller.getCardsPlayedThisTurn());
         assertEquals("Sangsue du Tapis", controller.getGameState().getEnemy().getName());
-        assertEquals(10_000, controller.getGameState().getEnemy().getHp());
+        assertEquals(50_000, controller.getGameState().getEnemy().getHp());
     }
 }

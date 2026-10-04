@@ -8,7 +8,6 @@ import fr.astratime.lucky.entities.Enemy;
 import fr.astratime.lucky.entities.GameState;
 import fr.astratime.lucky.entities.Player;
 import fr.astratime.lucky.entities.Symbol;
-import fr.astratime.lucky.entities.SymbolRegistry;
 import fr.astratime.lucky.entities.TurnResult;
 import fr.astratime.lucky.entities.choices.BetChoice;
 import fr.astratime.lucky.entities.choices.CardChoice;
@@ -73,6 +72,9 @@ public class GameController {
     /** Fournit un deck de départ neuf à chaque combat. */
     private final Supplier<List<Card>> starterDeck;
 
+    /** Crée le joueur d'un nouveau combat avec son deck (rang et machine du profil). */
+    private final Function<List<Card>, Player> playerFactory;
+
     /** Crée une carte à partir de son id (cartes créées en combat : Arc-en-ciel, Pot de Lutin, achats). */
     private final Function<String, Card> cardFactory;
 
@@ -111,12 +113,23 @@ public class GameController {
      */
     public GameController(Supplier<List<Card>> starterDeck, Function<String, Card> cardFactory,
                           Map<String, Integer> shop) {
+        this(starterDeck, cardFactory, shop, cards -> new Player("Joueur", Player.BASE_HP, cards));
+    }
+
+    /**
+     * @param playerFactory crée le joueur de chaque nouveau combat à partir de
+     *                      son deck (avec le bonus de son rang et sa machine)
+     * @see #GameController(Supplier, Function, Map)
+     */
+    public GameController(Supplier<List<Card>> starterDeck, Function<String, Card> cardFactory,
+                          Map<String, Integer> shop, Function<List<Card>, Player> playerFactory) {
+        this.playerFactory = playerFactory;
         this.shopOffers = shop.entrySet().stream()
             .map(entry -> new ShopOffer(cardFactory.apply(entry.getKey()), entry.getValue()))
             .toList();
         this.cardFactory = cardFactory;
         this.starterDeck = starterDeck;
-        this.gameState   = new GameState(starterDeck.get());
+        this.gameState   = new GameState(playerFactory.apply(starterDeck.get()), new Enemy(EnemyKind.CROUPIER));
     }
 
     /**
@@ -130,8 +143,7 @@ public class GameController {
 
     /** Comme {@link #restart()}, contre un ennemi {@code kind} (premier combat d'un chapitre). */
     public void restart(EnemyKind kind) {
-        GameState fresh = new GameState(starterDeck.get());
-        this.gameState = new GameState(fresh.getPlayer(), new Enemy(kind));
+        this.gameState = new GameState(playerFactory.apply(starterDeck.get()), new Enemy(kind));
         clearTurn();
     }
 
@@ -328,12 +340,9 @@ public class GameController {
         return new Purchase(card, false);
     }
 
-    /** @return les symboles que peut imposer la carte Bingo offerte : tous ceux des rouleaux, sauf ceux retirés. */
+    /** @return les symboles que peut imposer la carte Bingo offerte : ceux de la machine du joueur, sauf ceux retirés. */
     private List<Symbol> getBingoGiftSymbols() {
-        List<Symbol> symbols = new ArrayList<>();
-        symbols.addAll(SymbolRegistry.getAttackSymbols());
-        symbols.addAll(SymbolRegistry.getDefenseSymbols());
-        symbols.addAll(SymbolRegistry.getGainSymbols());
+        List<Symbol> symbols = new ArrayList<>(gameState.getPlayer().getSlotMachine().getReels());
         symbols.removeIf(gameState.getPlayer().getLastingEffects().getRemovedSymbols()::containsKey);
         return symbols;
     }
@@ -349,12 +358,11 @@ public class GameController {
     /** @return {@code true} si plus aucune carte ne peut être jouée ce tour (Bingo). */
     public boolean isHandLocked() { return handLocked; }
 
-    /** @return les symboles sur lesquels parier : ceux qui peuvent sortir ce tour (ni Joker, ni retirés). */
+    /** @return les symboles sur lesquels parier : ceux de la machine qui peuvent sortir ce tour (ni Joker, ni retirés). */
     public List<Symbol> getBetOptions() {
         List<Symbol> options = new ArrayList<>();
-        for (Symbol symbol : Symbol.values()) {
-            if (symbol != Symbol.JOKER
-                && !gameState.getPlayer().getLastingEffects().getRemovedSymbols().containsKey(symbol)) {
+        for (Symbol symbol : gameState.getPlayer().getSlotMachine().getReels()) {
+            if (!gameState.getPlayer().getLastingEffects().getRemovedSymbols().containsKey(symbol)) {
                 options.add(symbol);
             }
         }

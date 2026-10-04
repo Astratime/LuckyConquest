@@ -14,11 +14,15 @@ public class Player {
 
     /** Nombre maximum de cartes (non jouées) sur la table pendant un tour. */
     public static final int MAX_HAND_SIZE = 8;
+    /** PV max du joueur sans rang. */
+    public static final int BASE_HP = 100;
 
     private final String      name;
     private final DiscardPile discardPile = new DiscardPile();
     private final Deck        deck;
-    private final SlotMachine slotMachine = new SlotMachine();
+    private final SlotMachine slotMachine;
+    /** Bonus de son rang (PV max compris), acheté à la boutique. */
+    private final RankBonus   rankBonus;
     /** Effets de cartes qui durent plusieurs tours (Recyclage, Porte-bonheur). */
     private final LastingEffects lastingEffects = new LastingEffects();
     /** Cartes sur la table, pas encore jouées ce tour. */
@@ -40,10 +44,21 @@ public class Player {
      * @param cards    cartes composant le deck initial (mélangées à la construction du Deck)
      */
     public Player(String name, int maxHp, List<Card> cards) {
-        this.name  = name;
-        this.maxHp = maxHp;
-        this.hp    = maxHp;
-        this.deck  = new Deck(cards, discardPile);
+        this(name, maxHp, cards, RankBonus.NONE, Symbol.classicReels());
+    }
+
+    /**
+     * @param maxHp     points de vie maximum, avant le bonus du rang
+     * @param rankBonus bonus du rang du joueur (PV max, valeur de base des rouleaux)
+     * @param reels     symboles de sa machine à sous (le Joker s'y ajoute toujours)
+     */
+    public Player(String name, int maxHp, List<Card> cards, RankBonus rankBonus, List<Symbol> reels) {
+        this.name        = name;
+        this.rankBonus   = rankBonus;
+        this.maxHp       = maxHp + rankBonus.hp();
+        this.hp          = this.maxHp;
+        this.deck        = new Deck(cards, discardPile);
+        this.slotMachine = new SlotMachine(reels);
     }
 
     /**
@@ -219,7 +234,7 @@ public class Player {
         cards.addAll(discardPile.getCards());
         cards.addAll(currentHand);
         cards.addAll(playedCards);
-        Player next = new Player(name, maxHp, cards);
+        Player next = new Player(name, maxHp - rankBonus.hp(), cards, rankBonus, slotMachine.getReels());
         next.hp = hp; // les PV perdus ne reviennent pas d'un combat à l'autre
         next.gains = gains;
         return next;
@@ -243,6 +258,8 @@ public class Player {
     public DiscardPile getDiscardPile()             { return discardPile; }
     /** @return le deck du joueur. */
     public Deck        getDeck()                    { return deck; }
+    /** @return les bonus de son rang. */
+    public RankBonus   getRankBonus()               { return rankBonus; }
     /** @return la machine à sous personnelle du joueur. */
     public SlotMachine getSlotMachine()             { return slotMachine; }
     /** @return les effets de cartes qui durent plusieurs tours pendant ce combat. */

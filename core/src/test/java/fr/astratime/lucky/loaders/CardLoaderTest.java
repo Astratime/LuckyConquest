@@ -46,8 +46,8 @@ class CardLoaderTest {
     void everyCardDefinitionLoads() {
         List<Card> cards = CardLoader.loadAll(READER);
 
-        assertEquals(52 + 14 + 12 + 11, cards.size(),
-            "4 suites de 13 cartes + 14 cartes spéciales + 12 cartes des donjons + 11 cartes de test (Bingo par symbole)");
+        assertEquals(52 + 17 + 12 + 19, cards.size(),
+            "4 suites de 13 cartes + 17 cartes spéciales + 12 cartes des donjons + 19 cartes de test (Bingo par symbole)");
         assertEquals(cards.size(), cards.stream().map(Card::getId).distinct().count(), "les ids doivent être uniques");
     }
 

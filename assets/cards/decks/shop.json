@@ -12,5 +12,13 @@
   { "id": "bingo_triple_cherry", "price": 0 },
   { "id": "bingo_triple_seven", "price": 0 },
   { "id": "bingo_gold_bar", "price": 0 },
-  { "id": "bingo_watermelon", "price": 0 }
+  { "id": "bingo_watermelon", "price": 0 },
+  { "id": "bingo_horseshoe", "price": 0 },
+  { "id": "bingo_ecu", "price": 0 },
+  { "id": "bingo_sword", "price": 0 },
+  { "id": "bingo_heart", "price": 0 },
+  { "id": "bingo_die", "price": 0 },
+  { "id": "bingo_star", "price": 0 },
+  { "id": "bingo_bomb", "price": 0 },
+  { "id": "bingo_crown", "price": 0 }
 ]

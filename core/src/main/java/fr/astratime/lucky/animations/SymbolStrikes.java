@@ -82,14 +82,18 @@ public class SymbolStrikes extends Actor implements Disposable {
 
     /** Une animation en cours. */
     private static final class Strike {
+        /** Symbole dont l'animation est jouée (un rouleau de la boutique emprunte celle d'un classique). */
         final Symbol symbol;
+        /** Symbole tiré, dont l'image vole. */
+        final Symbol art;
         final float  fromX, fromY, toX, toY;
         final long   seed = MathUtils.random(Long.MAX_VALUE);
         final List<Flyer> flyers = new ArrayList<>();
         float time;  // négatif : départ différé
 
         Strike(Symbol symbol, Vector2 from, Vector2 to, float delay) {
-            this.symbol = symbol;
+            this.symbol = animationOf(symbol);
+            this.art    = symbol;
             fromX = from.x; fromY = from.y;
             toX   = to.x;   toY   = to.y;
             time  = -delay;
@@ -156,6 +160,22 @@ public class SymbolStrikes extends Actor implements Disposable {
         strikes.add(strike);
     }
 
+    /**
+     * @return le symbole classique dont {@code symbol} emprunte l'animation : un
+     *         rouleau acheté à la boutique vole comme un classique de son type
+     */
+    static Symbol animationOf(Symbol symbol) {
+        return switch (symbol) {
+            case HORSESHOE      -> Symbol.BELL;
+            case CROWN          -> Symbol.GOLD_BAR;
+            case ECU, HEART     -> Symbol.DIAMOND;
+            case SWORD, STAR    -> Symbol.SEVEN;
+            case DIE            -> Symbol.TRIPLE_SEVEN;
+            case BOMB           -> Symbol.CHERRY;
+            default             -> symbol;
+        };
+    }
+
     /** Arrête toutes les animations (nouveau combat). */
     public void cancel() {
         strikes.clear();
@@ -182,7 +202,7 @@ public class SymbolStrikes extends Actor implements Disposable {
                 }
             }
             case DIAMOND -> {
-                Flyer f = flyer(s, symbolArt.get(Symbol.DIAMOND), s.fromX, s.fromY, s.toX, s.toY,
+                Flyer f = flyer(s, symbolArt.get(s.art), s.fromX, s.fromY, s.toX, s.toY,
                     0f, IMPACT_TIME, 140f, 80f);
                 f.spin = 1f;
                 f.onArrival = () -> crystalBurst(s.toX, s.toY);
@@ -508,20 +528,20 @@ public class SymbolStrikes extends Actor implements Disposable {
                     float scale = SEVEN_SCALE * (1f + 0.4f * t / IMPACT_TIME);
                     float tilt = MathUtils.atan2(s.toY - s.fromY, s.toX - s.fromX) * MathUtils.radiansToDegrees - 90f;
                     glow(batch, at.x, at.y, 130f * scale, FIRE, alpha * 0.8f);
-                    symbol(batch, Symbol.SEVEN, at.x, at.y, scale, tilt * 0.25f, alpha);
+                    symbol(batch, s.art, at.x, at.y, scale, tilt * 0.25f, alpha);
                 }
             }
             case TRIPLE_SEVEN -> drawLightning(batch, s, t, alpha);
             case BELL -> {
                 float appear = Interpolation.swingOut.apply(Math.min(1f, t / 0.15f));
                 float swing = 28f * (float) Math.exp(-2.2f * t) * MathUtils.sin(t * 16f);
-                symbol(batch, Symbol.BELL, s.fromX, s.fromY + ABOVE_REEL, 1.1f * appear, swing, alpha);
+                symbol(batch, s.art, s.fromX, s.fromY + ABOVE_REEL, 1.1f * appear, swing, alpha);
             }
             case WATERMELON -> {
                 if (t < 0.25f) {
                     float appear = Interpolation.swingOut.apply(Math.min(1f, t / 0.12f));
                     float wobble = t > 0.12f ? MathUtils.sin(t * 90f) * 0.08f : 0f;
-                    symbolScaled(batch, Symbol.WATERMELON, s.fromX, s.fromY + ABOVE_REEL,
+                    symbolScaled(batch, s.art, s.fromX, s.fromY + ABOVE_REEL,
                         1.05f * appear * (1f + wobble), 1.05f * appear * (1f - wobble), 0f, alpha);
                 }
             }
@@ -529,7 +549,7 @@ public class SymbolStrikes extends Actor implements Disposable {
                 float u = Math.min(1f, t / 0.25f);
                 float y = MathUtils.lerp(s.fromY + 420f, s.fromY + 60f, Interpolation.pow2In.apply(u));
                 if (t > 0.25f) y += 18f * Math.abs(MathUtils.sin((t - 0.25f) * 12f)) * Math.max(0f, 1f - (t - 0.25f) * 4f);
-                symbol(batch, Symbol.GOLD_BAR, s.fromX, y, 0.9f, 0f, alpha * Math.min(1f, t / 0.08f));
+                symbol(batch, s.art, s.fromX, y, 0.9f, 0f, alpha * Math.min(1f, t / 0.08f));
                 if (t > 0.3f && t < 0.75f) shine(batch, s.fromX, y, (t - 0.3f) / 0.45f, alpha);
             }
             default -> { }
@@ -555,7 +575,7 @@ public class SymbolStrikes extends Actor implements Disposable {
             float since = local - IMPACT_TIME;
             angle = STRIKE_ANGLE + REBOUND_ANGLE * MathUtils.sin(Math.min(1f, since / 0.25f) * MathUtils.PI);
         }
-        TextureRegion head = symbolArt.get(s.symbol);
+        TextureRegion head = symbolArt.get(s.art);
         float headLength = head.getRegionWidth() * HAMMER_HEAD * 0.5f; // la tête est dressée : sa largeur devient sa hauteur
         float side   = mirror ? -1f : 1f;
         // Le manche part d'un pivot fixe, placé pour que la tête frappe le centre de l'ennemi.
@@ -570,7 +590,7 @@ public class SymbolStrikes extends Actor implements Disposable {
         float hw = handle.getRegionWidth() * HANDLE_SCALE, hh = handle.getRegionHeight() * HANDLE_SCALE;
         batch.draw(handle, pivotX - hw, pivotY - hh / 2f, hw, hh / 2f, hw, hh, appear * side, appear, rot);
         float headX = pivotX + dirX * HANDLE_LENGTH * appear, headY = pivotY + dirY * HANDLE_LENGTH * appear;
-        symbol(batch, s.symbol, headX, headY, HAMMER_HEAD * appear, rot + side * 90f, alpha); // texte lisible des deux côtés
+        symbol(batch, s.art, headX, headY, HAMMER_HEAD * appear, rot + side * 90f, alpha); // texte lisible des deux côtés
         if (local >= IMPACT_TIME - 0.08f && local < IMPACT_TIME + 0.12f) {
             float streak = 1f - Math.abs(local - IMPACT_TIME) / 0.12f;
             glow(batch, headX, headY - headLength, 120f, Color.WHITE, alpha * streak);
@@ -585,7 +605,7 @@ public class SymbolStrikes extends Actor implements Disposable {
         float u = (t - (impact - IMPACT_TIME)) / IMPACT_TIME;
         float spin = (index % 2 == 0 ? -1f : 1f) * 300f * u;
         glow(batch, at.x, at.y + 34f, 26f + 10f * MathUtils.sin(t * 60f), FLAME, alpha);
-        symbol(batch, Symbol.CHERRY, at.x, at.y, BOMB_SCALE * (count == 1 ? 1f : 0.85f), spin, alpha);
+        symbol(batch, s.art, at.x, at.y, BOMB_SCALE * (count == 1 ? 1f : 0.85f), spin, alpha);
     }
 
     /** TRIPLE SEPT : le symbole monte au-dessus de son rouleau et luit, puis un éclair tombe du ciel sur l'ennemi. */
@@ -594,7 +614,7 @@ public class SymbolStrikes extends Actor implements Disposable {
             float rise = Interpolation.pow2Out.apply(Math.min(1f, t / 0.3f));
             float pulse = 0.5f + 0.5f * MathUtils.sin(t * 40f);
             glow(batch, s.fromX, s.fromY + 120f * rise, 150f, BOLT, alpha * (0.4f + 0.4f * pulse));
-            symbol(batch, Symbol.TRIPLE_SEVEN, s.fromX, s.fromY + 120f * rise, 0.85f + 0.15f * rise, 0f, alpha);
+            symbol(batch, s.art, s.fromX, s.fromY + 120f * rise, 0.85f + 0.15f * rise, 0f, alpha);
         }
         if (t < IMPACT_TIME || t > IMPACT_TIME + 0.4f || getStage() == null) return;
         float since = t - IMPACT_TIME;
