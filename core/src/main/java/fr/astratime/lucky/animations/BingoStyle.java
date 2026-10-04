@@ -51,7 +51,10 @@ public record BingoStyle(Color body, Color trim, Color letterA, Color letterB, C
             case CROWN, NUGGET -> of(Symbol.GOLD_BAR);
             case ECU       -> of(Symbol.DIAMOND);
             case HEART     -> of(Symbol.CHERRY);
-            case SWORD, DIE, STAR -> of(Symbol.SEVEN);
+            case SWORD, DIE -> of(Symbol.SEVEN);
+            // Étoile : nuit bleue et or, feu d'artifice rouge, bleu et or.
+            case STAR -> new BingoStyle(c("1a2a6a"), Palette.GOLD, Palette.GOLD, Color.WHITE, back("060a1f"),
+                c("8fd3ff"), Color.WHITE, c("fff0b0"), palette(c("ff3040"), c("3a7bff"), Palette.GOLD));
             case BOMB      -> of(Symbol.TRIPLE_CHERRY);
             // Triple Sept (et Joker, qui ne s'aligne jamais seul) : la célébration d'origine.
             case TRIPLE_SEVEN, JOKER -> new BingoStyle(null, null, Palette.GOLD, Color.WHITE, Palette.BANNER_SHADOW,

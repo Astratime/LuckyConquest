@@ -145,11 +145,19 @@ public class Fireworks extends Actor {
         }
     }
 
-    /** Éclat blanc puis gerbe circulaire : la plupart des étincelles sur un anneau, quelques-unes à l'intérieur. */
     private void explode(Rocket rocket) {
-        play(sounds.burst(), rocket.x, MathUtils.random(0.7f, 1f));
+        burst(rocket.x, rocket.y, rocket.color);
+    }
+
+    /**
+     * Fait éclater une gerbe de {@code color} en {@code (x, y)}, sans fusée : éclat
+     * blanc puis gerbe circulaire, la plupart des étincelles sur un anneau,
+     * quelques-unes à l'intérieur.
+     */
+    public void burst(float x, float y, Color color) {
+        play(sounds.burst(), x, MathUtils.random(0.7f, 1f));
         for (int i = 0; i < FLASH_SPARKS; i++) {
-            addSpark(rocket.x + MathUtils.random(-12f, 12f), rocket.y + MathUtils.random(-12f, 12f),
+            addSpark(x + MathUtils.random(-12f, 12f), y + MathUtils.random(-12f, 12f),
                 0f, 0f, FLASH_LIFE, FLASH_SIZE, Color.WHITE);
         }
         float ringSpeed = MathUtils.random(SPARK_SPEED_MIN * 1.5f, SPARK_SPEED_MAX);
@@ -158,9 +166,9 @@ public class Fireworks extends Actor {
             float speed = MathUtils.randomBoolean(0.7f)
                 ? ringSpeed * MathUtils.random(0.9f, 1.05f)
                 : MathUtils.random(SPARK_SPEED_MIN, ringSpeed);
-            Color color = MathUtils.randomBoolean(0.2f) ? Color.WHITE : rocket.color;
-            addSpark(rocket.x, rocket.y, MathUtils.cos(angle) * speed, MathUtils.sin(angle) * speed,
-                MathUtils.random(SPARK_LIFE_MIN, SPARK_LIFE_MAX), SPARK_SIZE, color);
+            Color spark = MathUtils.randomBoolean(0.2f) ? Color.WHITE : color;
+            addSpark(x, y, MathUtils.cos(angle) * speed, MathUtils.sin(angle) * speed,
+                MathUtils.random(SPARK_LIFE_MIN, SPARK_LIFE_MAX), SPARK_SIZE, spark);
         }
     }
 
