@@ -14,6 +14,7 @@ import com.badlogic.gdx.math.Interpolation;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.Group;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
+import com.badlogic.gdx.scenes.scene2d.InputListener;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.Touchable;
 import com.badlogic.gdx.scenes.scene2d.actions.Actions;
@@ -40,6 +41,7 @@ import fr.astratime.lucky.progress.PlayerProfile;
 import fr.astratime.lucky.progress.Rank;
 import fr.astratime.lucky.progress.ReelShop;
 import fr.astratime.lucky.settings.AudioSettings;
+import fr.astratime.lucky.views.CardDetailOverlay;
 import fr.astratime.lucky.views.CasinoButtons;
 import fr.astratime.lucky.views.MenuDecor;
 import fr.astratime.lucky.views.MinimumScreenViewport;
@@ -136,6 +138,8 @@ public class ShopScreen extends ScreenAdapter {
     private final TextButton buyButton;
     private final TextButton backButton;
     private final Image      fade;
+    /** Fiche détaillée d'une carte ou d'un rouleau (clic droit). */
+    private final CardDetailOverlay detail;
 
     private Tab     tab = Tab.RANG;
     /** Article choisi, à acheter avec « Acheter » ({@code null} : aucun). */
@@ -212,6 +216,8 @@ public class ShopScreen extends ScreenAdapter {
         stage.addActor(detailText);
         stage.addActor(buyButton);
         stage.addActor(backButton);
+        detail = new CardDetailOverlay(stage, hud, null, CARD_WIDTH, CARD_HEIGHT);
+        stage.addActor(detail.getActor());
         stage.addActor(fade);
         fade.addAction(Actions.fadeOut(FADE_TIME));
 
@@ -289,7 +295,8 @@ public class ShopScreen extends ScreenAdapter {
                 () -> profile.buyCard(card.getId(), price));
             cells.add(cell(new TextureRegion(cardTextures.get(card)), CARD_WIDTH, CARD_HEIGHT,
                 PlayerProfile.formatCoins(price), owned + " / " + PlayerProfile.MAX_COPIES,
-                owned >= PlayerProfile.MAX_COPIES, offer));
+                owned >= PlayerProfile.MAX_COPIES, offer,
+                () -> detail.showForSale(card, cardTextures.get(card), PlayerProfile.formatCoins(price) + " pièces")));
         }
         return cells;
     }
@@ -306,14 +313,17 @@ public class ShopScreen extends ScreenAdapter {
                 price, () -> profile.ownsReel(symbol) ? "Tu possèdes déjà ce rouleau." : null,
                 () -> profile.buyReel(symbol, price));
             cells.add(cell(new TextureRegion(reelTextures.get(symbol)), REEL_WIDTH, REEL_HEIGHT,
-                PlayerProfile.formatCoins(price), owned ? "Possédé" : symbol.getDisplayName(), owned, offer));
+                PlayerProfile.formatCoins(price), owned ? "Possédé" : symbol.getDisplayName(), owned, offer,
+                () -> detail.showReel(symbol.getDisplayName(), new TextureRegion(reelTextures.get(symbol)),
+                    ReelShop.describe(symbol), PlayerProfile.formatCoins(price) + " pièces",
+                    profile.ownsReel(symbol) ? "Possédé" : "Pas encore acheté")));
         }
         return cells;
     }
 
-    /** Case d'un article : son image, son prix et une ligne d'état. Un clic le choisit. */
+    /** Case d'un article : son image, son prix et une ligne d'état. Un clic le choisit, un clic droit montre sa fiche. */
     private Group cell(TextureRegion region, float width, float height, String price, String state, boolean owned,
-                       Offer offer) {
+                       Offer offer, Runnable onInspect) {
         Group cell = new Group();
         cell.setSize(Math.max(width, 150f), height + 64f);
         Group holder = new Group();
@@ -334,6 +344,16 @@ public class ShopScreen extends ScreenAdapter {
         cell.addActor(holder);
         cell.addActor(priceLabel);
         cell.addActor(stateLabel);
+        cell.addListener(new InputListener() {
+            @Override
+            public boolean touchDown(InputEvent event, float x, float y, int pointer, int button) {
+                if (button != Input.Buttons.RIGHT) return false;
+                clickSound.play();
+                select(offer, priceLabel);
+                onInspect.run();
+                return true;
+            }
+        });
         cell.addListener(new ClickListener() {
             @Override
             public void enter(InputEvent event, float x, float y, int pointer, Actor fromActor) {
@@ -511,6 +531,10 @@ public class ShopScreen extends ScreenAdapter {
             public boolean keyDown(int keycode) {
                 if (leaving || keycode != Input.Keys.ESCAPE) return false;
                 clickSound.play();
+                if (detail.isShown()) {
+                    detail.hide();
+                    return true;
+                }
                 onBack();
                 return true;
             }
@@ -525,6 +549,7 @@ public class ShopScreen extends ScreenAdapter {
         stage.getViewport().update(width, height, true);
         if (tab != Tab.RANG) showTab(tab); // la grille suit la largeur
         layout();
+        detail.layout();
     }
 
     @Override
@@ -546,6 +571,7 @@ public class ShopScreen extends ScreenAdapter {
         purchaseSound.dispose();
         refuseSound.dispose();
         music.dispose();
+        detail.dispose();
         hud.dispose();
         Fonts.release(titleFont);
         Fonts.release(coinsFont);
