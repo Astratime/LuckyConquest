@@ -35,7 +35,8 @@
     "id": "casque",
     "name": "Casque",
     "assetPath": "cards/special/casque.png",
-    "effects": [ { "type": "HELMET" } ]
+    "effects": [ { "type": "HELMET" } ],
+    "consumable": true
   },
   {
     "id": "veine_d_or",
@@ -60,5 +61,170 @@
     "name": "Trident",
     "assetPath": "cards/special/trident.png",
     "effects": [ { "type": "TRIDENT" } ]
+  },
+  {
+    "id": "piege_a_rats",
+    "name": "Piège à rats",
+    "assetPath": "cards/special/piege_a_rats.png",
+    "effects": [ { "type": "RAT_TRAP" }, { "type": "EXTRA_DRAW", "extraCards": 1 } ]
+  },
+  {
+    "id": "chope",
+    "name": "Chope",
+    "assetPath": "cards/special/chope.png",
+    "effects": [ { "type": "GAINS_PERCENT", "percent": 20 }, { "type": "COMBO_BONUS", "bonus": 1 } ]
+  },
+  {
+    "id": "tournee_generale",
+    "name": "Tournée générale",
+    "assetPath": "cards/special/tournee_generale.png",
+    "effects": [ { "type": "BEST_OF_TWO" } ]
+  },
+  {
+    "id": "fut_de_poudre",
+    "name": "Fût de poudre",
+    "assetPath": "cards/special/fut_de_poudre.png",
+    "effects": [ { "type": "POWDER_KEG", "factor": 3, "hpPercent": 5 } ]
+  },
+  {
+    "id": "lanterne",
+    "name": "Lanterne",
+    "assetPath": "cards/special/lanterne.png",
+    "effects": [ { "type": "LANTERN", "draws": 3, "defensePercent": 20 } ]
+  },
+  {
+    "id": "rayon_du_phare",
+    "name": "Rayon du phare",
+    "assetPath": "cards/special/rayon_du_phare.png",
+    "consumable": true,
+    "effects": [ { "type": "DAZZLE" } ]
+  },
+  {
+    "id": "sabre_d_abordage",
+    "name": "Sabre d'abordage",
+    "assetPath": "cards/special/sabre_d_abordage.png",
+    "effects": [ { "type": "CUTLASS", "attackPercent": 30 } ]
+  },
+  {
+    "id": "pavillon_noir",
+    "name": "Pavillon noir",
+    "assetPath": "cards/special/pavillon_noir.png",
+    "effects": [ { "type": "BLACK_FLAG" } ]
+  },
+  {
+    "id": "mutinerie",
+    "name": "Mutinerie",
+    "assetPath": "cards/special/mutinerie.png",
+    "consumable": true,
+    "effects": [ { "type": "MUTINY" } ]
+  },
+  {
+    "id": "tamis",
+    "name": "Tamis",
+    "assetPath": "cards/special/tamis.png",
+    "effects": [ { "type": "SIEVE", "gainsPercent": 50 } ]
+  },
+  {
+    "id": "etai",
+    "name": "Étai",
+    "assetPath": "cards/special/etai.png",
+    "effects": [ { "type": "PROP", "turns": 2, "defensePercent": 30 } ]
+  },
+  {
+    "id": "corde_de_rappel",
+    "name": "Corde de rappel",
+    "assetPath": "cards/special/corde_de_rappel.png",
+    "effects": [ { "type": "ROPE" } ]
+  },
+  {
+    "id": "marteau_de_forge",
+    "name": "Marteau de forge",
+    "assetPath": "cards/special/marteau_de_forge.png",
+    "effects": [ { "type": "FORGE_HAMMER" } ]
+  },
+  {
+    "id": "trempe",
+    "name": "Trempe",
+    "assetPath": "cards/special/trempe.png",
+    "effects": [ { "type": "TEMPER", "percent": 5 } ]
+  },
+  {
+    "id": "lame_forgee",
+    "name": "Lame forgée",
+    "assetPath": "cards/special/lame_forgee.png",
+    "effects": [ { "type": "FORGED_BLADE" } ]
+  },
+  {
+    "id": "dynamite",
+    "name": "Dynamite",
+    "assetPath": "cards/special/dynamite.png",
+    "effects": [ { "type": "DYNAMITE", "percent": 3 } ]
+  },
+  {
+    "id": "lampe_a_carbure",
+    "name": "Lampe à carbure",
+    "assetPath": "cards/special/lampe_a_carbure.png",
+    "effects": [ { "type": "CARBIDE_LAMP" }, { "type": "EXTRA_DRAW", "extraCards": 1 } ]
+  },
+  {
+    "id": "coeur_d_or",
+    "name": "Cœur d'or",
+    "assetPath": "cards/special/coeur_d_or.png",
+    "effects": [ { "type": "GOLDEN_HEART" } ]
+  },
+  {
+    "id": "bouchons_d_oreille",
+    "name": "Bouchons d'oreille",
+    "assetPath": "cards/special/bouchons_d_oreille.png",
+    "effects": [ { "type": "EARPLUGS", "draws": 3 }, { "type": "EXTRA_DRAW", "extraCards": 1 } ]
+  },
+  {
+    "id": "cocktail_des_abysses",
+    "name": "Cocktail des abysses",
+    "assetPath": "cards/special/cocktail_des_abysses.png",
+    "effects": [ { "type": "BONUS_PLAYS", "plays": 2 }, { "type": "GAINS_PERCENT", "percent": 50 } ]
+  },
+  {
+    "id": "piece_truquee",
+    "name": "Pièce truquée",
+    "assetPath": "cards/special/piece_truquee.png",
+    "effects": [ { "type": "LOADED_COIN" } ]
+  },
+  {
+    "id": "levier_rouille",
+    "name": "Levier rouillé",
+    "assetPath": "cards/special/levier_rouille.png",
+    "effects": [ { "type": "RUSTY_LEVER" } ]
+  },
+  {
+    "id": "jackpot_englouti",
+    "name": "Jackpot englouti",
+    "assetPath": "cards/special/jackpot_englouti.png",
+    "effects": [ { "type": "SUNKEN_JACKPOT" } ]
+  },
+  {
+    "id": "cage_a_requin",
+    "name": "Cage à requin",
+    "assetPath": "cards/special/cage_a_requin.png",
+    "effects": [ { "type": "SHARK_CAGE", "turns": 3 } ]
+  },
+  {
+    "id": "coffre_de_l_epave",
+    "name": "Coffre de l'épave",
+    "assetPath": "cards/special/coffre_de_l_epave.png",
+    "consumable": true,
+    "effects": [ { "type": "GAINS_PERCENT", "percent": 100 } ]
+  },
+  {
+    "id": "harpon",
+    "name": "Harpon",
+    "assetPath": "cards/special/harpon.png",
+    "effects": [ { "type": "HARPOON", "attackPercent": 40 } ]
+  },
+  {
+    "id": "ancre",
+    "name": "Ancre",
+    "assetPath": "cards/special/ancre.png",
+    "effects": [ { "type": "ANCHOR", "turns": 3, "defensePercent": 30 } ]
   }
 ]

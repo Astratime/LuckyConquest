@@ -43,6 +43,11 @@ public class Player {
     private int damageTakenThisTurn = 0;
     /** Casques : chacun bloque entièrement le prochain coup reçu. */
     private int helmets = 0;
+    /** Corde de rappel : prête à retenir le joueur à 1 PV ; elle ne sert qu'une fois par combat. */
+    private boolean ropeReady = false;
+    private boolean ropeUsed  = false;
+    /** La Corde de rappel vient de retenir le joueur (texte à montrer). */
+    private boolean ropeSaved = false;
     /** Cartes volées (Abordage) ou confisquées (Fouille) : absentes du combat, elles reviennent au suivant. */
     private final List<Card> confiscated = new ArrayList<>();
 
@@ -95,6 +100,12 @@ public class Player {
         int remaining = damage - absorbed;
         int actualLoss = Math.min(hp, remaining);
         if (damageCap >= 0) actualLoss = Math.min(actualLoss, Math.max(0, damageCap - damageTakenThisTurn)); // Assurance
+        if (ropeReady && actualLoss >= hp && hp > 0) { // Corde de rappel : il reste à 1 PV
+            actualLoss = hp - 1;
+            ropeReady  = false;
+            ropeUsed   = true;
+            ropeSaved  = true;
+        }
         hp -= actualLoss;
         damageTakenThisTurn += actualLoss;
         return actualLoss;
@@ -318,6 +329,28 @@ public class Player {
 
     /** Casque : le prochain coup reçu est bloqué entièrement. */
     public void addHelmet() { helmets++; }
+
+    /**
+     * Corde de rappel : le prochain coup qui devrait tuer le joueur le laisse
+     * à 1 PV. Une fois par combat.
+     *
+     * @return {@code false} si elle a déjà servi dans ce combat
+     */
+    public boolean addRope() {
+        if (ropeUsed) return false;
+        ropeReady = true;
+        return true;
+    }
+
+    /** @return {@code true} si la Corde de rappel est prête. */
+    public boolean hasRope() { return ropeReady; }
+
+    /** @return {@code true} si la Corde de rappel vient de retenir le joueur (une seule fois). */
+    public boolean takeRopeSaved() {
+        boolean saved = ropeSaved;
+        ropeSaved = false;
+        return saved;
+    }
 
     /** @return les Casques prêts à bloquer un coup. */
     public int getHelmets() { return helmets; }

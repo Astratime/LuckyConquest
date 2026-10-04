@@ -104,7 +104,14 @@ public class PreparationResolver {
             combatContext.multiplyGains(PlaceRule.SCURVY_FACTOR);
             turnContext.addEvent(new StatusEvent("SCORBUT : TIRAGE DIVISÉ PAR 2", EffectPopup.Style.DAMAGE));
         }
-        if (rule.isHighTide(turn)) {
+        if (lasting.getTemperPercent() > 0) { // Trempe : l'épée durcit à chaque tour
+            combatContext.multiplyAttack(1f + lasting.getTemperPercent() / 100f);
+            turnContext.addEvent(new StatusEvent("TREMPE : ATTAQUE +" + lasting.getTemperPercent() + " %",
+                EffectPopup.Style.ATTACK));
+        }
+        if (rule.isHighTide(turn) && lasting.getAnchorTurns() > 0) {
+            turnContext.addEvent(new StatusEvent("ANCRE : LA MARÉE HAUTE NE TE GÊNE PAS", EffectPopup.Style.DEFENSE));
+        } else if (rule.isHighTide(turn)) {
             combatContext.multiplyAttack(1f - PlaceRule.HIGH_TIDE_MALUS / 100f);
             turnContext.addEvent(new StatusEvent("MARÉE HAUTE : ATTAQUE -" + PlaceRule.HIGH_TIDE_MALUS + " %",
                 EffectPopup.Style.DAMAGE));
@@ -131,7 +138,7 @@ public class PreparationResolver {
         CombatContext combat = turnContext.getCombatContext();
         List<Combo> combos = Combo.formed(player.getPlayedCards());
         if (combos.isEmpty()) return;
-        float total = Combo.totalFactor(combos);
+        float total = Combo.totalFactor(combos) + combat.getComboBonus() * combos.size(); // Chope
         combat.multiplyGains(total);
         combat.multiplyAttack(total);
         for (Combo combo : combos) {

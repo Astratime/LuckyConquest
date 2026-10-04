@@ -41,6 +41,25 @@ public class PlayContext {
     /** Casque : le prochain coup reçu par le joueur est bloqué entièrement. */
     public void addHelmet() { player.addHelmet(); }
 
+    /**
+     * Corde de rappel : le prochain coup qui devrait tuer le joueur le laisse à 1 PV.
+     *
+     * @return {@code false} si elle a déjà servi dans ce combat
+     */
+    public boolean addRope() { return player.addRope(); }
+
+    /**
+     * Ajoute tout de suite {@code percent} % des gains actuels du joueur (gains
+     * déjà demandés par la carte compris) ; rien si ses gains sont nuls ou négatifs.
+     *
+     * @return les gains ajoutés
+     */
+    public int addGainsPercent(int percent) {
+        int added = Math.max(0, Math.round((player.getGains() + gains) * percent / 100f));
+        gains += added;
+        return added;
+    }
+
     /** Carte au trésor : le coffre du donjon en cours donnera une carte de plus. */
     public void addTreasureMap() { treasureMaps++; }
 

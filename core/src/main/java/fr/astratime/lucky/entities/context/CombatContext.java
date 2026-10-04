@@ -41,6 +41,15 @@ public class CombatContext {
     private int     allIn      = 0;      // Tapis : nombre de mises de tous les gains sur une paire
 
     private boolean stoneGains     = false; // Pépite de l'ennemi : les symboles de gain ne rapportent rien
+
+    // ----- Cartes des coffres des lieux -----
+    private float comboBonus    = 0f; // Chope : ajouté au multiplicateur de chaque combinaison
+    private int   hammers       = 0;  // Marteau de forge : bonus d'attaque renforcé si un BAR sort
+    private int   levers        = 0;  // Levier rouillé : bonus d'attaque si le tirage fait une paire
+    private int   sunkenJackpots = 0; // Jackpot englouti : gains et attaque multipliés sur un Bingo
+    private int   forgedBlades  = 0;  // Lame forgée : coups d'épée en plus, à une part de la plus grosse attaque
+    private int   dynamitePercent = 0; // Dynamite : % des PV max de l'ennemi infligés, sans peau ni défense
+    private int   goldenHearts  = 0;  // Cœur d'or : les gains du tirage frappent aussi l'ennemi
     private boolean ignoreDefense  = false; // Pique : les attaques ignorent la défense ennemie
     private int     lifeDrainPercent = 0;   // Coeur : % des dégâts infligés rendus en soin
     private boolean gainsFromDamage  = false; // As de Pique : convertit les dégâts infligés en gains
@@ -102,6 +111,43 @@ public class CombatContext {
     public boolean isStoneGains() { return stoneGains; }
     /** Pépite de l'ennemi : les symboles de gain de ce tour deviennent des pierres. */
     public void turnGainsToStone() { stoneGains = true; }
+    /** Tamis : les pierres de ce tour redeviennent de l'or. */
+    public void restoreGains() { stoneGains = false; }
+
+    /** Chope : chaque combinaison de ce tour compte {@code bonus} de plus au multiplicateur. */
+    public void addComboBonus(float bonus) { comboBonus += bonus; }
+    /** @return ce qu'ajoute la Chope au multiplicateur de chaque combinaison (0 si aucune). */
+    public float getComboBonus() { return comboBonus; }
+
+    /** Marteau de forge : son bonus d'attaque grandit si un BAR ou un double BAR sort. */
+    public void addHammer() { hammers++; }
+    /** @return les Marteaux de forge joués ce tour. */
+    public int getHammers() { return hammers; }
+
+    /** Levier rouillé : bonus d'attaque si le tirage fait une paire. */
+    public void addLever() { levers++; }
+    /** @return les Leviers rouillés joués ce tour. */
+    public int getLevers() { return levers; }
+
+    /** Jackpot englouti : gains et attaque multipliés si les rouleaux font un Bingo. */
+    public void addSunkenJackpot() { sunkenJackpots++; }
+    /** @return les Jackpots engloutis joués ce tour. */
+    public int getSunkenJackpots() { return sunkenJackpots; }
+
+    /** Lame forgée : un coup d'épée de plus après le tirage. */
+    public void addForgedBlade() { forgedBlades++; }
+    /** @return les Lames forgées jouées ce tour. */
+    public int getForgedBlades() { return forgedBlades; }
+
+    /** Dynamite : {@code percent} % des PV max de l'ennemi de plus, infligés après le tirage. */
+    public void addDynamite(int percent) { dynamitePercent += percent; }
+    /** @return la part des PV max de l'ennemi infligée par la Dynamite, en %. */
+    public int getDynamitePercent() { return dynamitePercent; }
+
+    /** Cœur d'or : les gains gagnés ce tour frappent aussi l'ennemi. */
+    public void addGoldenHeart() { goldenHearts++; }
+    /** @return les Cœurs d'or joués ce tour. */
+    public int getGoldenHearts() { return goldenHearts; }
 
     /** @return {@code true} si les attaques de ce tour ignorent la défense ennemie. */
     public boolean isIgnoreDefense()    { return ignoreDefense; }

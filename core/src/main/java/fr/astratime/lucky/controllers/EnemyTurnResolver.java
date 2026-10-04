@@ -1,5 +1,6 @@
 package fr.astratime.lucky.controllers;
 
+import fr.astratime.lucky.entities.effects.MutinyEffect;
 import fr.astratime.lucky.entities.Card;
 import fr.astratime.lucky.entities.Enemy;
 import fr.astratime.lucky.entities.LastingEffects;
@@ -11,6 +12,7 @@ import fr.astratime.lucky.entities.enemy.EnemyKind;
 import fr.astratime.lucky.entities.enemy.EnemySlotMachine;
 import fr.astratime.lucky.entities.enemy.EnemySymbol;
 import fr.astratime.lucky.entities.enemy.EnemyTurnResult;
+import fr.astratime.lucky.entities.events.EnemySelfHitEvent;
 import fr.astratime.lucky.entities.events.DamageReflectedEvent;
 import fr.astratime.lucky.entities.events.EnemyDrainEvent;
 import fr.astratime.lucky.entities.events.EnemyHourglassEvent;
@@ -153,8 +155,23 @@ public class EnemyTurnResolver {
         enemy.resetDefense(); // la défense de son tour précédent ne valait que pour le tour du joueur
         List<Card> drawn  = enemy.draw(Enemy.HAND_SIZE);
         int plays = enemy.getPlaysPerTurn(); // le Kraken joue une carte par bras qui lui reste
+        int harpooned = enemy.takeHarpoons(); // Harpon : une carte de moins
+        if (harpooned > 0) {
+            plays = Math.max(0, plays - harpooned);
+            openingEvents.add(new StatusEvent("HARPON : " + harpooned + " CARTE" + (harpooned > 1 ? "S" : "")
+                + " DE MOINS", EffectPopup.Style.ATTACK));
+        }
         List<Card> played = kind.playsAtRandom() ? chooseAtRandom(drawn, plays)
             : choose(drawn, enemy.getHpRatio(), kind, plays);
+        if (enemy.takeMutiny() && !played.isEmpty()) {
+            // Mutinerie : ses cartes se retournent contre lui, sans le tuer.
+            int hit = Math.round(enemy.getMaxHp() * played.size() * MutinyEffect.PERCENT_PER_CARD / 100f);
+            int lost = enemy.takeDamage(Math.min(hit, enemy.getHp() - 1));
+            openingEvents.add(new StatusEvent("MUTINERIE : " + played.size() + " CARTE" + (played.size() > 1 ? "S" : "")
+                + " RETOURNÉE" + (played.size() > 1 ? "S" : ""), EffectPopup.Style.SPECIAL));
+            openingEvents.add(new EnemySelfHitEvent("MUTINERIE", lost));
+            played = List.of();
+        }
 
         int swordBonus = 0, healBonus = 0, shieldBonus = 0;
         // Mise royale : la Reine blessée, ou le Prétendant tant qu'il porte l'éclat de la Reine
@@ -196,6 +213,11 @@ public class EnemyTurnResolver {
         // Jackpot (Bandit manchot, Jackpot Vivant) : trois symboles identiques, tout le tour est multiplié.
         boolean jackpot = kind.hitsJackpots() && symbols.length > 0
             && java.util.Arrays.stream(symbols).allMatch(symbol -> symbol == symbols[0]);
+        boolean loadedCoin = enemy.takeLoadedCoin(); // Pièce truquée : pas de Jackpot ce tirage
+        if (jackpot && loadedCoin) {
+            jackpot = false;
+            openingEvents.add(new StatusEvent("PIÈCE TRUQUÉE : PAS DE JACKPOT", EffectPopup.Style.SPECIAL));
+        }
         if (jackpot) {
             turn.attackFactor *= EnemySymbol.JACKPOT_FACTOR;
             turn.shieldFactor *= EnemySymbol.JACKPOT_FACTOR;
@@ -207,6 +229,12 @@ public class EnemyTurnResolver {
             List<Event> events = new ArrayList<>();
             if (jackpot && i == 0) {
                 events.add(new StatusEvent("JACKPOT ! TOUT x" + EnemySymbol.JACKPOT_FACTOR, EffectPopup.Style.SPECIAL));
+            }
+            Event parried = parry(symbols[i], player);
+            if (parried != null) { // Piège à rats, Cage à requin : le mauvais sort tombe à l'eau
+                events.add(parried);
+                outcomes.add(events);
+                continue;
             }
             switch (symbols[i]) {
                 case SWORD  -> events.add(turn.strike(enemy.getKind().swordDamage()));
@@ -265,7 +293,9 @@ public class EnemyTurnResolver {
                 }
                 case DRILL  -> {
                     events.add(new StatusEvent("FORAGE !", EffectPopup.Style.ATTACK));
-                    events.add(turn.strike(kind.swordDamage(), true));
+                    boolean propped = player.getLastingEffects().getPropTurns() > 0; // Étai : le bouclier tient
+                    if (propped) events.add(new StatusEvent("ÉTAI : LE FORAGE NE PERCE PAS", EffectPopup.Style.DEFENSE));
+                    events.add(turn.strike(kind.swordDamage(), !propped));
                 }
                 case ANVIL  -> {
                     enemy.addAnvil(EnemySymbol.ANVIL_ATTACK);
@@ -365,6 +395,37 @@ public class EnemyTurnResolver {
         enemy.discard(drawn);
         enemy.resetDamageTaken(); // ses Épines ne comptent que les coups du prochain tour du joueur
         return new EnemyTurnResult(drawn, played, luck, symbols, outcomes, afterEvents, openingEvents);
+    }
+
+    /**
+     * Parades des cartes des coffres des lieux : le Piège à rats annule un mauvais
+     * sort sur la main (Grignotage, Aveuglement, Chant, Abordage, Fouille) ; la
+     * Cage à requin protège les gains (Intérêts, Morsure, Fausse monnaie, Faillite).
+     *
+     * @return le texte de la parade, ou {@code null} si {@code symbol} agit normalement
+     */
+    static Event parry(EnemySymbol symbol, Player player) {
+        LastingEffects lasting = player.getLastingEffects();
+        String spell = switch (symbol) {
+            case NIBBLE   -> "GRIGNOTAGE";
+            case BLIND    -> "AVEUGLEMENT";
+            case SONG     -> "CHANT";
+            case BOARDING -> "ABORDAGE";
+            case FRISK    -> "FOUILLE";
+            default       -> null;
+        };
+        if (spell != null && lasting.useTrap()) {
+            return new StatusEvent("PIÈGE À RATS : " + spell + " ANNULÉ" + (symbol == EnemySymbol.FRISK ? "E" : ""),
+                EffectPopup.Style.DEFENSE);
+        }
+        boolean takesGains = switch (symbol) {
+            case INTEREST, BANK_BITE, FAKE_MONEY, BANKRUPTCY -> true;
+            default -> false;
+        };
+        if (takesGains && lasting.getCageTurns() > 0 && player.getGains() > 0) {
+            return new StatusEvent("CAGE À REQUIN : GAINS PROTÉGÉS", EffectPopup.Style.DEFENSE);
+        }
+        return null;
     }
 
     /**

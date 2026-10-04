@@ -263,6 +263,11 @@ public class GameController {
             turnNotices.add(new EffectPopup("SCORBUT !", EffectPopup.Style.DAMAGE, PopupScale.MAX_INTENSITY));
         }
         handHidden = lasting.takeBlind();
+        if (lasting.useLantern() && handHidden) { // Lanterne : la main reste visible
+            handHidden = false;
+            turnNotices.add(new EffectPopup("LANTERNE : AVEUGLEMENT DISSIPÉ", EffectPopup.Style.DEFENSE,
+                PopupScale.SECONDARY_INTENSITY));
+        }
         if (handHidden) {
             turnNotices.add(new EffectPopup("AVEUGLEMENT : MAIN CACHÉE", EffectPopup.Style.DAMAGE,
                 PopupScale.SECONDARY_INTENSITY));
@@ -278,6 +283,11 @@ public class GameController {
                 EffectPopup.Style.DAMAGE, PopupScale.MAX_INTENSITY));
         }
         songs = lasting.takeSongs();
+        if (lasting.useEarplugs() && songs > 0) { // Bouchons d'oreille : le Chant ne passe pas
+            songs = 0;
+            turnNotices.add(new EffectPopup("BOUCHONS D'OREILLE : CHANT IGNORÉ", EffectPopup.Style.DEFENSE,
+                PopupScale.SECONDARY_INTENSITY));
+        }
         if (songs > 0) {
             turnNotices.add(new EffectPopup("CHANT : CARTE JOUÉE D'OFFICE", EffectPopup.Style.DAMAGE,
                 PopupScale.SECONDARY_INTENSITY));
@@ -547,7 +557,8 @@ public class GameController {
 
     /** @return les cartes que le joueur peut jouer ce tour (plus sous l'effet de Dans la manche). */
     public int getPlayLimit() {
-        return Math.max(DEFAULT_PLAY_LIMIT, gameState.getPlayer().getLastingEffects().getExtraPlays());
+        LastingEffects lasting = gameState.getPlayer().getLastingEffects();
+        return Math.max(DEFAULT_PLAY_LIMIT, lasting.getExtraPlays()) + lasting.getBonusPlays();
     }
 
     /** @return les cartes jouées ce tour. */

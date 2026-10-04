@@ -1576,6 +1576,24 @@ public class GameScreen extends ScreenAdapter {
             rows.add(new SidePanel.EffectRow(new TextureRegion(hudTextures.iconVault), null,
                 "Casque x" + player().getHelmets()));
         }
+        // Parades des cartes des coffres des lieux
+        List<String> guards = new ArrayList<>();
+        if (lasting.getTraps() > 0) guards.add("Piège x" + lasting.getTraps());
+        if (lasting.getLanternDraws() > 0) guards.add("Lanterne (" + lasting.getLanternDraws() + ")");
+        if (lasting.getEarplugDraws() > 0) guards.add("Bouchons (" + lasting.getEarplugDraws() + ")");
+        if (lasting.getPropTurns() > 0) guards.add("Étai (" + lasting.getPropTurns() + ")");
+        if (lasting.getLamps() > 0) guards.add("Lampe x" + lasting.getLamps());
+        if (lasting.getCageTurns() > 0) guards.add("Cage (" + lasting.getCageTurns() + ")");
+        if (lasting.getAnchorTurns() > 0) guards.add("Ancre (" + lasting.getAnchorTurns() + ")");
+        if (lasting.getTemperPercent() > 0) guards.add("Trempe +" + lasting.getTemperPercent() + " %");
+        if (player().hasRope()) guards.add("Corde de rappel");
+        Enemy target = gameController.getGameState().getEnemy();
+        if (target.isDazzled()) guards.add("Ennemi ébloui");
+        if (target.getMutinies() > 0) guards.add("Mutinerie");
+        if (target.getLoadedCoins() > 0) guards.add("Pièce truquée");
+        if (target.getHarpoons() > 0) guards.add("Harpon x" + target.getHarpoons());
+        for (String guard : guards) rows.add(new SidePanel.EffectRow(new TextureRegion(hudTextures.iconVault), null, guard));
+
         List<String> curses = new ArrayList<>();
         if (lasting.getNibbles() > 0) curses.add("Grignotage x" + lasting.getNibbles());
         if (lasting.getDrunk() > 0) curses.add("Ivresse x" + lasting.getDrunk());

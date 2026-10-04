@@ -70,6 +70,16 @@ public class Enemy {
     private       CardFamily  bannedFamily;
     /** As sombres gardés en copie des achats du joueur (le Pilleur). */
     private       int         loot;
+    /** Rayon du phare : ébloui, il passe son prochain tour. */
+    private       boolean     dazzled;
+    /** Mutinerie : à son prochain tour, ses cartes se retournent contre lui. */
+    private       int         mutinies;
+    /** Pièce truquée : ses prochains tirages ne font pas de Jackpot. */
+    private       int         loadedCoins;
+    /** Harpon : cartes de moins à son prochain tour. */
+    private       int         harpoons;
+    /** Harpon : bras coupés au Kraken, pour tout le combat. */
+    private       int         cutArms;
 
     /**
      * Ennemi avec le deck de départ du jeu sombre.
@@ -226,7 +236,64 @@ public class Enemy {
      */
     public int getPlaysPerTurn() {
         if (!kind.hasArms()) return kind.getPlaysPerTurn();
-        return Math.max(1, (int) Math.ceil(EnemyKind.KRAKEN_ARMS * (double) hp / maxHp));
+        return Math.max(1, (int) Math.ceil(EnemyKind.KRAKEN_ARMS * (double) hp / maxHp) - cutArms);
+    }
+
+    /** Rayon du phare : il passe son prochain tour. */
+    public void dazzle() { dazzled = true; }
+    /** @return {@code true} s'il est ébloui. */
+    public boolean isDazzled() { return dazzled; }
+    /** Son tour arrive : l'éblouissement vaut pour celui-ci. @return {@code true} s'il était ébloui */
+    public boolean takeDazzle() {
+        boolean was = dazzled;
+        dazzled = false;
+        return was;
+    }
+
+    /** Mutinerie : ses cartes du prochain tour se retournent contre lui. */
+    public void addMutiny() { mutinies++; }
+    /** @return les Mutineries en attente. */
+    public int getMutinies() { return mutinies; }
+    /** Son tour : la Mutinerie vaut pour celui-ci. @return {@code true} si elle était en attente */
+    public boolean takeMutiny() {
+        if (mutinies <= 0) return false;
+        mutinies--;
+        return true;
+    }
+
+    /** Pièce truquée : son prochain tirage ne fera pas de Jackpot. */
+    public void addLoadedCoin() { loadedCoins++; }
+    /** @return les Pièces truquées en attente. */
+    public int getLoadedCoins() { return loadedCoins; }
+    /** Son tirage : une Pièce truquée vaut pour celui-ci. @return {@code true} s'il y en avait une */
+    public boolean takeLoadedCoin() {
+        if (loadedCoins <= 0) return false;
+        loadedCoins--;
+        return true;
+    }
+
+    /** Harpon : une carte de moins à son prochain tour ; le Kraken, lui, perd un bras pour de bon. */
+    public void harpoon() {
+        if (kind.hasArms()) cutArms++;
+        else harpoons++;
+    }
+    /** @return les cartes de moins qu'il jouera à son prochain tour (Harpon). */
+    public int getHarpoons() { return harpoons; }
+    /** Son tour : les Harpons valent pour celui-ci. @return le nombre de cartes de moins */
+    public int takeHarpoons() {
+        int n = harpoons;
+        harpoons = 0;
+        return n;
+    }
+
+    /**
+     * Retire {@code damage} PV sans que sa peau d'or n'en encaisse la moitié
+     * (Dynamite). La Maison et la Machine Originelle se gardent comme d'habitude.
+     *
+     * @return les points de vie réellement retirés
+     */
+    public int takeTrueDamage(int damage) {
+        return takeDamage(hasGoldSkin() ? damage * 2 : damage);
     }
 
     /** Ajoute {@code amount} à son Enclume (sans limite). */
