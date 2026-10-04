@@ -137,7 +137,10 @@ class ShopCardsTest {
     @Test
     void theSafeKeepsGainsAsideAndGivesThemBackDoubledAfterThreeTurns() {
         Card safe = card("coffre", new SafeEffect(30, 3));
-        GameController controller = controllerWith(safe);
+        // Un joueur solide : il ne doit pas tomber avant l'ouverture du coffre
+        GameController controller = new GameController(() -> new ArrayList<>(List.of(safe)), id -> null, java.util.Map.of(),
+            cards -> new Player("Joueur", 1_000_000, cards));
+        controller.drawCards();
         player(controller).addGains(1000);
         controller.playCard(inHand(controller, "coffre"));
         assertEquals(700, player(controller).getGains());
