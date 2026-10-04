@@ -98,7 +98,10 @@ public class EnemyView implements Disposable {
     private final CardPileView  deckPile;
     private final CardPileView  discardPile;
     private final List<Image>   reels     = new ArrayList<>();
-    private final EnemySymbol[] shownSymbols = {EnemySymbol.SWORD, EnemySymbol.SHIELD, EnemySymbol.POTION};
+    private final EnemySymbol[] shownSymbols = {EnemySymbol.SWORD, EnemySymbol.SHIELD, EnemySymbol.POTION,
+        EnemySymbol.SWORD, EnemySymbol.SHIELD, EnemySymbol.POTION};
+    /** Rouleaux affichés (3, sauf la Machine Originelle : 5 puis 6). */
+    private int shownReels = EnemySlotMachine.SYMBOL_COUNT;
     /** Portrait affiché (il change avec l'ennemi du combat). */
     private EnemyKind shownKind = EnemyKind.CROUPIER;
     /** Phase de l'ennemi dont les symboles sont sur les rouleaux au repos. */
@@ -146,10 +149,10 @@ public class EnemyView implements Disposable {
         discardPile = new CardPileView("DÉFAUSSE", textures.cardBack, pileFont,
             table.getCardWidth(), table.getCardHeight());
 
-        for (int i = 0; i < EnemySlotMachine.SYMBOL_COUNT; i++) {
+        for (int i = 0; i < EnemySlotMachine.MAX_SYMBOL_COUNT; i++) {
             int reel = i;
             Image image = new Image(new TextureRegionDrawable(new TextureRegion(textures.symbol(shownSymbols[i]))));
-            image.setSize(SYMBOL_SIZE, SYMBOL_SIZE);
+            image.setSize(SYMBOL_SIZE, SYMBOL_SIZE); // réduit dans layout() quand ils sont plus de trois
             hoverTooltip(image, () -> shownSymbols[reel].getDisplayName(),
                 () -> shownSymbols[reel].getDescription(shownKind));
             reels.add(image);
@@ -189,8 +192,35 @@ public class EnemyView implements Disposable {
         if (kind.potionShields()) text.append("\nSes Potions reforment aussi sa défense");
         if (kind.royalBet()) text.append("\nMise royale : ses Trèfles comptent double sous la moitié de ses PV");
         if (kind.forbidsReels()) text.append("\nRouleau interdit : bloque un de tes rouleaux. Pas de Bingo possible");
-        text.append("\nPioche ").append(Enemy.HAND_SIZE).append(" cartes et en joue ").append(kind.getPlaysPerTurn())
+        if (kind.hasGoldSkin()) text.append("\nPeau d'or : tes dégâts sont divisés par 2 tant qu'il a plus de la moitié de ses PV");
+        if (kind.hitsJackpots()) {
+            text.append("\nJackpot : 3 symboles identiques, attaques et Boucliers x").append(EnemySymbol.JACKPOT_FACTOR);
+        }
+        text.append("\nPioche ").append(Enemy.HAND_SIZE).append(" cartes et en joue ").append(current.getPlaysPerTurn())
             .append(" à chaque tour");
+        if (kind.hasArms()) text.append("\nChaque bras perdu lui retire une carte jouée");
+        if (kind == EnemyKind.PRETENDANT) {
+            int shards = EnemyKind.shards(current.getPhase());
+            text.append("\nÉclats : ").append(shards).append("/3 (Comète");
+            if (shards >= 2) text.append(", Reine : Trèfles doublés");
+            if (shards >= 3) text.append(", Éclat : Rouleau interdit");
+            text.append(")");
+        }
+        if (kind == EnemyKind.MAISON) {
+            text.append("\nDebout : ").append(current.getPhase() <= 1 ? "Façade, " : "")
+                .append(current.getPhase() <= 2 ? "Coffre, " : "").append("Salle de jeu");
+            if (!current.isHouseUsed()) text.append("\nLa Maison gagne toujours : ton prochain gros coup sera annulé");
+        }
+        if (kind.hasLastDraw()) {
+            text.append("\nRouleaux : ").append(current.getReelCount()).append(". Rouleaux volés : ").append(current.getStolenReels());
+        }
+        if (current.getBannedFamily() != null) {
+            text.append("\nInterdit : les cartes ").append(current.getBannedFamily().getDisplayName());
+        }
+        if (current.getLoot() > 0) text.append("\nButin : ").append(current.getLoot()).append(" As volés");
+        if (current.getPrediction() != null) text.append("\nPrédiction : ").append(current.getPrediction().getDisplayName());
+        if (kind.getTurnLimit() > 0) text.append("\nLe combat dure ").append(kind.getTurnLimit()).append(" tours");
+        if (current.getAnvil() > 0) text.append("\nEnclume : attaque +").append(current.getAnvil());
         if (current.getRage() > 0) text.append("\nRage : attaque +").append(current.getRage());
         if (current.getThornsPercent() > 0) {
             text.append("\nÉpines : ").append(current.getThornsPercent()).append(" % de tes dégâts te reviendront");
@@ -215,6 +245,16 @@ public class EnemyView implements Disposable {
         ((TextureRegionDrawable) flash.getDrawable()).setRegion(new TextureRegion(textures.portraitFlash(kind)));
         List<EnemySymbol> symbols = current.getSymbols();
         for (int i = 0; i < reels.size(); i++) setReel(i, symbols.get(i % symbols.size()));
+        if (current.getReelCount() != shownReels) {
+            shownReels = current.getReelCount();
+            table.setEnemyReelCount(shownReels);
+            layout();
+        }
+    }
+
+    /** @return la taille d'un symbole sur ses rouleaux : plus petit quand ils sont plus de trois. */
+    private float symbolSize() {
+        return Math.min(SYMBOL_SIZE, table.getEnemyCellWidth() - 8f);
     }
 
     /** Nouveau combat : l'ennemi debout, piles pleines, défense de base, rouleaux au repos. */
@@ -252,10 +292,12 @@ public class EnemyView implements Disposable {
         idle();
         deckPile.setPosition(table.getEnemyDeckX(), table.getEnemyPilesY());
         discardPile.setPosition(table.getEnemyDiscardX(), table.getEnemyPilesY());
-        float padX = (SlotView.CELL_WIDTH - SYMBOL_SIZE) / 2f, padY = (SlotView.CELL_HEIGHT - SYMBOL_SIZE) / 2f;
+        float size = symbolSize(), cell = table.getEnemyCellWidth();
+        float padX = (cell - size) / 2f, padY = (SlotView.CELL_HEIGHT - size) / 2f;
         for (int i = 0; i < reels.size(); i++) {
-            reels.get(i).setPosition(table.getReelRowX() + i * SlotView.CELL_WIDTH + padX,
-                table.getEnemyReelRowY() + padY);
+            reels.get(i).setSize(size, size);
+            reels.get(i).setPosition(table.getReelRowX() + i * cell + padX, table.getEnemyReelRowY() + padY);
+            reels.get(i).setVisible(i < shownReels);
         }
         float reelsRight = table.getReelRowX() + EnemySlotMachine.SYMBOL_COUNT * SlotView.CELL_WIDTH;
         float centerY    = table.getEnemyReelRowY() + SlotView.CELL_HEIGHT / 2f;
@@ -448,7 +490,7 @@ public class EnemyView implements Disposable {
         Image image = reels.get(reel);
         image.clearActions();
         setReel(reel, symbol);
-        float baseY = table.getEnemyReelRowY() + (SlotView.CELL_HEIGHT - SYMBOL_SIZE) / 2f;
+        float baseY = table.getEnemyReelRowY() + (SlotView.CELL_HEIGHT - symbolSize()) / 2f;
         image.setY(baseY - 8f);
         image.addAction(Actions.moveTo(image.getX(), baseY, 0.18f, Interpolation.swingOut));
         reelStopSound.play();
@@ -466,7 +508,8 @@ public class EnemyView implements Disposable {
         List<EffectPopup> texts = new ArrayList<>();
         events.forEach(event -> texts.addAll(event.getPopups()));
         float centerX = table.getReelRowX() + EnemySlotMachine.SYMBOL_COUNT * SlotView.CELL_WIDTH / 2f;
-        popups.play(texts, centerX + (reel - 1) * RESULT_SPREAD, table.getDividerY() - RESULT_BELOW);
+        float spread  = RESULT_SPREAD * (EnemySlotMachine.SYMBOL_COUNT - 1) / Math.max(1, shownReels - 1);
+        popups.play(texts, centerX + (reel - (shownReels - 1) / 2f) * spread, table.getDividerY() - RESULT_BELOW);
         for (Event event : events) {
             if (event instanceof EnemyShieldedEvent shield) {
                 defense.add(shield.defense);

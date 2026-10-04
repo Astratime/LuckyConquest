@@ -54,6 +54,7 @@ public final class ReelShop {
             case STAR          -> "Attaque 30. Bouclier 30. Gains 30.";
             case BOMB          -> "Attaque 200. Tu perds 5 % de tes PV max.";
             case CROWN         -> "Gains 100.";
+            case NUGGET        -> "Attaque 40. Gains 60. Gagné en vidant les Mines d'Or.";
             case JOKER         -> "Compte comme n'importe quel symbole.";
         };
     }

@@ -57,10 +57,12 @@ class EnemyPowerTest {
     }
 
     @Test
-    void onlyTheFinalBossHoldsTheForbiddenReel() {
+    void onlyTheOriginalShardAndThePretenderHoldTheForbiddenReel() {
         assertEquals(1, EnemyKind.ECLAT.createDeck().stream().filter(EnemyCards::isForbiddenReel).count());
+        assertEquals(1, EnemyKind.PRETENDANT.createDeck().stream().filter(EnemyCards::isForbiddenReel).count(),
+            "l'éclat de l'Éclat Originel");
         for (EnemyKind kind : EnemyKind.values()) {
-            if (kind != EnemyKind.ECLAT) assertTrue(kind.createDeck().stream().noneMatch(EnemyCards::isForbiddenReel));
+            if (kind != EnemyKind.ECLAT && kind != EnemyKind.PRETENDANT) assertTrue(kind.createDeck().stream().noneMatch(EnemyCards::isForbiddenReel));
         }
     }
 

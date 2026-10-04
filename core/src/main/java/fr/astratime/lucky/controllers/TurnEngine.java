@@ -1,15 +1,21 @@
 package fr.astratime.lucky.controllers;
 
 import fr.astratime.lucky.entities.*;
+import fr.astratime.lucky.entities.context.SpinContext;
 import fr.astratime.lucky.entities.context.TurnContext;
 import fr.astratime.lucky.entities.enemy.EnemyTurnResult;
 import fr.astratime.lucky.entities.events.Event;
 import fr.astratime.lucky.entities.events.GaugeFilledEvent;
+import fr.astratime.lucky.entities.events.PlayerDamagedEvent;
 import fr.astratime.lucky.entities.events.SafeOpenedEvent;
+import fr.astratime.lucky.entities.events.StatusEvent;
 import fr.astratime.lucky.entities.effects.Effect;
+import fr.astratime.lucky.entities.exploration.PlaceRule;
+import fr.astratime.lucky.popups.EffectPopup;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 
 /**
  * Orchestre un tour complet en séquençant les phases :
@@ -29,6 +35,7 @@ public class TurnEngine {
     private final ActionResolver      actionResolver      = new ActionResolver();
     private final CombatResolver      combatResolver      = new CombatResolver();
     private final EnemyTurnResolver   enemyTurnResolver   = new EnemyTurnResolver();
+    private final Random              random              = new Random();
 
     /**
      * Joue un tour complet : applique les effets en attente, lance la machine
@@ -44,7 +51,9 @@ public class TurnEngine {
         TurnContext turnContext = preparationResolver.resolve(
             pendingEffects,
             gameState.getPlayer(),
-            gameState.getEnemy()
+            gameState.getEnemy(),
+            gameState.getActiveRule(),
+            gameState.getTurnNumber()
         );
 
         // Phase 2 : spin avec SpinContext, puis les Jokers prennent leur valeur
@@ -59,6 +68,33 @@ public class TurnEngine {
             drawn   = machine.spin(turnContext.getSpinContext());
             symbols = machine.resolveJokers(drawn, turnContext.getSpinContext());
         }
+
+        // Ivresse (ennemi) : un rouleau tourne deux fois et garde le pire résultat
+        int drunk = player.getLastingEffects().takeDrunk();
+        for (int i = 0; i < drunk; i++) {
+            Symbol[] twice = drunkReel(machine, drawn, turnContext);
+            drawn   = twice;
+            symbols = machine.resolveJokers(twice, turnContext.getSpinContext());
+        }
+
+        // Nouvelle règle du Directeur des Jeux : les rouleaux tournent deux fois (le pire reste)…
+        SpinContext spin = turnContext.getSpinContext();
+        if (spin.isDoubleSpin()) {
+            Symbol[] again = machine.spin(spin);
+            if (matches(machine.resolveJokers(again, spin)) <= matches(symbols)) {
+                drawn   = again;
+                symbols = machine.resolveJokers(again, spin);
+            }
+        }
+        // … ou le Bingo est interdit : le dernier rouleau libre retourne tant qu'il complète un Bingo.
+        if (spin.isBingoForbidden()) {
+            Symbol[] unbingoed = breakJackpot(machine, drawn, spin);
+            drawn   = unbingoed;
+            symbols = machine.resolveJokers(unbingoed, spin);
+        }
+
+        // Prédiction de la Cartomancienne : son symbole est-il sorti ?
+        gameState.getEnemy().checkPrediction(symbols);
 
         // Symboles -> couples (symbole, action)
         List<SymbolAction> symbolActions = actionResolver.resolve(symbols);
@@ -77,16 +113,50 @@ public class TurnEngine {
         // Tour de l'ennemi, s'il a survécu : le bouclier du joueur (ses symboles de
         // défense) absorbe ses attaques, et le renvoi dépend des cartes jouées ce tour.
         Enemy enemy = gameState.getEnemy();
+        List<Event> afterCombat = new ArrayList<>();
+        String notice = enemy.takeNotice(); // un coup annulé ou une résistance passés inaperçus
+        if (notice != null) afterCombat.add(new StatusEvent(notice, EffectPopup.Style.SPECIAL));
+        if (enemy.isLastDrawPending() && !player.isDefeated()) afterCombat.addAll(lastDraw(player, enemy));
+
         EnemyTurnResult enemyTurn = null;
         if (!enemy.isDefeated() && !player.isDefeated()) {
-            // Bingo de bouclier : s'il frappe, tout le bouclier lui est renvoyé.
-            int shieldReflect = result.isShieldBingo() ? player.getShield() : 0;
-            enemyTurn = enemyTurnResolver.resolve(enemy, player,
-                turnContext.getCombatContext().getTotalReflectPercent(), CombatResolver.VAULT_REFLECT_SHARE,
-                shieldReflect);
+            // Ses Épines piquent d'abord : si le joueur en meurt, l'ennemi ne joue pas son tour.
+            List<Event> thorns = enemyTurnResolver.prickThorns(enemy, player);
+            if (player.isDefeated()) {
+                afterCombat.addAll(thorns);
+            } else {
+                // Bingo de bouclier : s'il frappe, tout le bouclier lui est renvoyé.
+                int shieldReflect = result.isShieldBingo() ? player.getShield() : 0;
+                enemyTurn = enemyTurnResolver.resolve(enemy, player,
+                    turnContext.getCombatContext().getTotalReflectPercent(), CombatResolver.VAULT_REFLECT_SHARE,
+                    shieldReflect, thorns);
+            }
+        }
+
+        // Coup de grisou (Mines d'Or) : il frappe le joueur seul, son bouclier le protège
+        List<Event> firedamp = new ArrayList<>();
+        if (gameState.getActiveRule().firedampExplodes(gameState.getTurnNumber()) && !player.isDefeated()
+            && !enemy.isDefeated()) {
+            int shieldBefore = player.getShield();
+            int lost = player.takeDamage(Math.round(player.getMaxHp() * PlaceRule.FIREDAMP_PERCENT / 100f));
+            firedamp.add(new StatusEvent("COUP DE GRISOU !", EffectPopup.Style.DAMAGE));
+            firedamp.add(new PlayerDamagedEvent(lost, shieldBefore - player.getShield(), player.getShield()));
+        }
+
+        notice = enemy.takeNotice(); // pendant son tour (renvoi de dégâts, Duel...)
+        if (notice != null) firedamp.add(0, new StatusEvent(notice, EffectPopup.Style.SPECIAL));
+        if (enemy.isLastDrawPending() && !player.isDefeated()) firedamp.addAll(lastDraw(player, enemy));
+
+        // Le Temps Mort : le dernier tour est passé, le joueur a perdu.
+        int limit = enemy.getKind().getTurnLimit();
+        if (limit > 0 && gameState.getTurnNumber() >= limit && !enemy.isDefeated() && !player.isDefeated()) {
+            firedamp.add(new StatusEvent("TEMPS MORT : LE TEMPS EST ÉCOULÉ", EffectPopup.Style.DAMAGE));
+            firedamp.add(new PlayerDamagedEvent(player.loseAllHp(), 0, player.getShield()));
         }
 
         List<Event> endEvents = storeLeftoverShield(player);
+        endEvents.addAll(0, firedamp);
+        endEvents.addAll(0, afterCombat);
         // Coffres-forts : ceux arrivés à terme s'ouvrent ; tous, si l'ennemi est vaincu
         int safe = player.getLastingEffects().openSafes(enemy.isDefeated());
         if (safe > 0 && !player.isDefeated()) {
@@ -100,6 +170,96 @@ public class TurnEngine {
         gameState.nextTurn();
 
         return result;
+    }
+
+    /**
+     * Ivresse : un rouleau tiré au hasard (ni vide ni imposé) tourne une seconde
+     * fois ; le tirage garde le pire des deux résultats, celui qui aligne le
+     * moins de symboles identiques (au second, à égalité).
+     *
+     * @return les symboles arrêtés sur les rouleaux, après l'Ivresse
+     */
+    private Symbol[] drunkReel(SlotMachine machine, Symbol[] drawn, TurnContext turnContext) {
+        List<Integer> open = new ArrayList<>();
+        for (int i = 0; i < drawn.length; i++) {
+            if (drawn[i] != null && !turnContext.getSpinContext().getForcedReels().containsKey(i)) open.add(i);
+        }
+        if (open.isEmpty()) return drawn;
+        int reel = open.get(random.nextInt(open.size()));
+        Symbol[] twice = drawn.clone();
+        twice[reel] = machine.spin(turnContext.getSpinContext())[reel];
+        SpinContext spin = turnContext.getSpinContext();
+        boolean worse = matches(machine.resolveJokers(twice, spin)) <= matches(machine.resolveJokers(drawn, spin));
+        return worse ? twice : drawn;
+    }
+
+    /**
+     * Bingo interdit : tant que les rouleaux font un Bingo, le dernier rouleau
+     * libre (ni vide ni imposé) tourne à nouveau.
+     *
+     * @return les symboles arrêtés, sans Bingo si c'était possible
+     */
+    private Symbol[] breakJackpot(SlotMachine machine, Symbol[] drawn, SpinContext spin) {
+        int reel = -1;
+        for (int i = 0; i < drawn.length; i++) {
+            if (drawn[i] != null && !spin.getForcedReels().containsKey(i)) reel = i;
+        }
+        Symbol[] result = drawn.clone();
+        for (int tries = 0; reel >= 0 && tries < 50
+                && SlotMachine.jackpotSymbol(machine.resolveJokers(result, spin)) != null; tries++) {
+            result[reel] = machine.spin(spin)[reel];
+        }
+        return result;
+    }
+
+    /**
+     * Dernier tirage de la Machine Originelle, qui a résisté au coup fatal :
+     * le joueur et elle lancent chacun un seul rouleau (le joueur, un de ses
+     * symboles ; elle, un des rouleaux classiques). Le meilleur score gagne (le
+     * rang du symbole : le Joker en tête) ; à égalité, on relance. Gagné, elle
+     * tombe ; perdu, le joueur tombe.
+     *
+     * @return les textes du Dernier tirage
+     */
+    List<Event> lastDraw(Player player, Enemy enemy) {
+        List<Event> events = new ArrayList<>();
+        List<Symbol> mine = player.getSlotMachine().getReels(), hers = Symbol.classicReels();
+        Symbol own, theirs;
+        do {
+            own    = mine.get(random.nextInt(mine.size()));
+            theirs = hers.get(random.nextInt(hers.size()));
+            if (score(own) == score(theirs)) {
+                events.add(new StatusEvent("ÉGALITÉ : " + own.getDisplayName() + " ! ON RELANCE", EffectPopup.Style.SPECIAL));
+            }
+        } while (score(own) == score(theirs));
+        events.add(new StatusEvent("DERNIER TIRAGE : TOI " + own.getDisplayName() + " (" + score(own) + "), ELLE "
+            + theirs.getDisplayName() + " (" + score(theirs) + ")", EffectPopup.Style.SPECIAL));
+        boolean won = score(own) > score(theirs);
+        enemy.endLastDraw(won);
+        if (won) {
+            events.add(new StatusEvent("TU AS TIRÉ LE LEVIER !", EffectPopup.Style.GAINS));
+        } else {
+            events.add(new StatusEvent("LA MACHINE GAGNE", EffectPopup.Style.DAMAGE));
+            events.add(new PlayerDamagedEvent(player.loseAllHp(), 0, player.getShield()));
+        }
+        return events;
+    }
+
+    /** @return le score d'un symbole au Dernier tirage : son rang dans la liste des symboles (le Joker en tête). */
+    static int score(Symbol symbol) {
+        return symbol == Symbol.JOKER ? Symbol.values().length : symbol.ordinal() + 1;
+    }
+
+    /** @return le plus grand nombre de symboles identiques parmi {@code symbols} (rouleaux vides exclus). */
+    static int matches(Symbol[] symbols) {
+        int best = 0;
+        for (Symbol a : symbols) {
+            if (a == null) continue;
+            int count = 0;
+            for (Symbol b : symbols) if (b == a) count++;
+            best = Math.max(best, count);
+        }
+        return best;
     }
 
     /**

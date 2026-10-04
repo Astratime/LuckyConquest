@@ -40,8 +40,8 @@ class DungeonTest {
     }
 
     @Test
-    void eachDungeonHasASoldierThenItsKing() {
-        for (Dungeon dungeon : Dungeon.values()) {
+    void eachPrairieDungeonHasASoldierThenItsKing() {
+        for (Dungeon dungeon : Place.PRAIRIE.getDungeons()) {
             assertEquals(10_000, new Enemy(dungeon.getSoldier()).getMaxHp(), dungeon.name());
             assertEquals(20_000, new Enemy(dungeon.getKing()).getMaxHp(), dungeon.name());
             assertEquals(100, dungeon.getSoldier().getPower(), "force du chapitre 1");
@@ -52,6 +52,23 @@ class DungeonTest {
             assertTrue(dungeon.getKing().getDisplayName().startsWith("Roi de"));
             assertEquals(dungeon.getSuit(), dungeon.getSoldier().getPriority().get(0), "le soldat joue sa couleur d'abord");
             assertEquals(dungeon.getSuit(), dungeon.getKing().getPriority().get(0));
+        }
+    }
+
+    @Test
+    void theNewPlacesHaveTenTimesTheHpAndAChiefAtTheEnd() {
+        int[][] hp = {{250_000, 500_000}, {600_000, 1_200_000}, {1_500_000, 3_000_000}};
+        Place[] places = {Place.PORT, Place.MINES, Place.CASINO};
+        for (int i = 0; i < places.length; i++) {
+            assertEquals(4, places[i].getDungeons().size(), places[i].name());
+            assertEquals(Place.values()[i], places[i].getPrevious(), "ordre d'ouverture");
+            for (Dungeon dungeon : places[i].getDungeons()) {
+                assertEquals(hp[i][0], new Enemy(dungeon.getSoldier()).getMaxHp(), dungeon.name());
+                assertEquals(hp[i][1], new Enemy(dungeon.getKing()).getMaxHp(), dungeon.name());
+                assertTrue(dungeon.getKing().isBoss(), dungeon.name());
+                assertFalse(dungeon.getSoldier().isBoss(), dungeon.name());
+                assertEquals(places[i], Place.of(dungeon));
+            }
         }
     }
 

@@ -13,6 +13,8 @@ public class EnemySlotMachine {
 
     /** Nombre de rouleaux. */
     public static final int SYMBOL_COUNT = 3;
+    /** Rouleaux au plus (la Machine Originelle, quand elle a volé un rouleau au joueur). */
+    public static final int MAX_SYMBOL_COUNT = 6;
 
     private final Random random;
 
@@ -35,7 +37,15 @@ public class EnemySlotMachine {
      * @return les symboles arrêtés sur les trois rouleaux
      */
     public EnemySymbol[] spin(Map<EnemySymbol, Integer> weights, Map<EnemySymbol, Integer> luck) {
-        EnemySymbol[] result = new EnemySymbol[SYMBOL_COUNT];
+        return spin(weights, luck, SYMBOL_COUNT);
+    }
+
+    /**
+     * Comme {@link #spin(Map, Map)}, avec {@code count} rouleaux (la Machine
+     * Originelle en a cinq, puis six).
+     */
+    public EnemySymbol[] spin(Map<EnemySymbol, Integer> weights, Map<EnemySymbol, Integer> luck, int count) {
+        EnemySymbol[] result = new EnemySymbol[count];
         List<EnemySymbol> symbols = List.copyOf(weights.keySet());
         float total = 0f;
         for (EnemySymbol symbol : symbols) total += weight(symbol, weights, luck);

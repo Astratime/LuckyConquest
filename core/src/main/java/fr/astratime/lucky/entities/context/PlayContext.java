@@ -31,11 +31,21 @@ public class PlayContext {
     private boolean    autoSpin = false;
     private String     rainbowCardId;
     private boolean    doubleNext = false;
+    private int        treasureMaps = 0;
 
     /** @param player joueur qui joue la carte (ses gains peuvent être consommés immédiatement) */
     public PlayContext(Player player) {
         this.player = player;
     }
+
+    /** Casque : le prochain coup reçu par le joueur est bloqué entièrement. */
+    public void addHelmet() { player.addHelmet(); }
+
+    /** Carte au trésor : le coffre du donjon en cours donnera une carte de plus. */
+    public void addTreasureMap() { treasureMaps++; }
+
+    /** @return les Cartes au trésor jouées (cartes de plus dans le coffre du donjon). */
+    public int getTreasureMaps() { return treasureMaps; }
 
     /** Demande à piocher {@code count} cartes supplémentaires immédiatement. */
     public void addCardsToDraw(int count) { cardsToDraw += count; }

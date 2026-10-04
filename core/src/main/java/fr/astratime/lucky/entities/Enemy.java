@@ -52,6 +52,24 @@ public class Enemy {
     private       boolean     allIn;
     /** Sa phase (1, puis 2 pour l'Éclat Originel blessé). */
     private       int         phase = 1;
+    /** Bonus d'attaque de ses Enclumes, gardé jusqu'à la fin du combat, sans limite. */
+    private       int         anvil;
+    /** Symbole annoncé par sa Prédiction pour le prochain tirage du joueur ({@code null} : aucun). */
+    private       Symbol      prediction;
+    /** Sa Prédiction est sortie au dernier tirage du joueur : ses attaques de ce tour triplent. */
+    private       boolean     predictionHit;
+    /** La Maison a déjà annulé un coup (une fois par combat). */
+    private       boolean     houseUsed;
+    /** La Machine Originelle a résisté au coup fatal : le Dernier tirage l'attend. */
+    private       boolean     lastDrawPending;
+    /** Le Dernier tirage a eu lieu : le prochain coup fatal l'est vraiment. */
+    private       boolean     lastDrawDone;
+    /** Ce qu'il vient de faire à un coup (Maison, Machine Originelle), à annoncer ({@code null} : rien). */
+    private       String      notice;
+    /** Famille de cartes interdite tout le combat (le Portier), ou {@code null}. */
+    private       CardFamily  bannedFamily;
+    /** As sombres gardés en copie des achats du joueur (le Pilleur). */
+    private       int         loot;
 
     /**
      * Ennemi avec le deck de départ du jeu sombre.
@@ -73,6 +91,11 @@ public class Enemy {
         this(kind, kind.getDisplayName(), kind.getMaxHp(), kind.createDeck());
     }
 
+    /** Ennemi {@code kind} qui joue avec le deck {@code cards} (l'Ombre du Joueur, qui a celui du joueur). */
+    public Enemy(EnemyKind kind, List<Card> cards) {
+        this(kind, kind.getDisplayName(), kind.getMaxHp(), cards);
+    }
+
     private Enemy(EnemyKind kind, String name, int maxHp, List<Card> cards) {
         this.kind    = kind;
         this.name    = name;
@@ -83,18 +106,134 @@ public class Enemy {
     }
 
     /**
-     * Retire {@code damage} points de vie, sans descendre sous 0. Un coup qui
-     * touche fait retomber sa mise (Tapis) ; un gros coup fait reculer son Sablier.
+     * Retire {@code damage} points de vie, sans descendre sous 0. Une peau d'or
+     * (Golem d'or) en encaisse la moitié tant qu'il a plus de la moitié de ses PV.
+     * Un coup qui touche fait retomber sa mise (Tapis) ; un gros coup fait reculer son Sablier.
+     *
+     * @return les points de vie réellement retirés
      */
-    public void takeDamage(int damage) {
-        int lost = Math.min(hp, Math.max(0, damage));
+    public int takeDamage(int damage) {
+        int lost = Math.min(hp, Math.max(0, guard(skinned(damage))));
         hp -= lost;
         damageTaken += lost;
-        if (lost <= 0) return;
+        if (lost <= 0) return 0;
         stake = 1;
         allIn = false;
         if (hourglass > 0 && lost * 1000L >= (long) maxHp * EnemySymbol.HOURGLASS_HIT_PER_MILLE) hourglass--;
+        return lost;
     }
+
+    /**
+     * Ce que deviennent {@code damage} dégâts qui le touchent : la Maison annule
+     * une fois le premier gros coup (au moins {@link EnemyKind#HOUSE_CANCEL_PERCENT} %
+     * de ses PV max) ; la Machine Originelle résiste au premier coup fatal, à 1 PV,
+     * et le Dernier tirage décidera. Ce qui arrive est à lire dans {@link #takeNotice()}.
+     */
+    private int guard(int damage) {
+        if (kind.houseWins() && !houseUsed && damage * 100L >= (long) maxHp * EnemyKind.HOUSE_CANCEL_PERCENT) {
+            houseUsed = true;
+            notice = "LA MAISON GAGNE TOUJOURS : COUP ANNULÉ";
+            return 0;
+        }
+        if (kind.hasLastDraw() && !lastDrawDone && !lastDrawPending && damage >= hp) {
+            lastDrawPending = true;
+            notice = "ELLE RÉSISTE ! DERNIER TIRAGE";
+            return hp - 1;
+        }
+        return damage;
+    }
+
+    /** @return ce qu'il vient de faire à un coup (coup annulé, résistance), une seule fois, ou {@code null}. */
+    public String takeNotice() {
+        String taken = notice;
+        notice = null;
+        return taken;
+    }
+
+    /** @return {@code true} si la Maison a déjà annulé un coup. */
+    public boolean isHouseUsed() { return houseUsed; }
+
+    /** @return {@code true} si la Machine Originelle attend son Dernier tirage. */
+    public boolean isLastDrawPending() { return lastDrawPending; }
+
+    /**
+     * Fin du Dernier tirage : gagné par le joueur, la Machine Originelle tombe ;
+     * perdu, elle reste à 1 PV (le joueur, lui, a perdu).
+     */
+    public void endLastDraw(boolean playerWins) {
+        lastDrawPending = false;
+        lastDrawDone    = true;
+        if (playerWins) hp = 0;
+    }
+
+    /** Sa Prédiction annonce {@code symbol} pour le prochain tirage du joueur. */
+    public void predict(Symbol symbol) { prediction = symbol; }
+
+    /** @return le symbole annoncé par sa Prédiction, ou {@code null}. */
+    public Symbol getPrediction() { return prediction; }
+
+    /**
+     * Tirage du joueur : si le symbole prédit est sorti, ses attaques du tour triplent.
+     *
+     * @return {@code true} si sa Prédiction s'est réalisée
+     */
+    public boolean checkPrediction(Symbol[] symbols) {
+        if (prediction == null) return false;
+        for (Symbol symbol : symbols) if (symbol == prediction) predictionHit = true;
+        prediction = null;
+        return predictionHit;
+    }
+
+    /** @return {@code true} (une seule fois) si sa Prédiction s'est réalisée au dernier tirage du joueur. */
+    public boolean takePredictionHit() {
+        boolean hit = predictionHit;
+        predictionHit = false;
+        return hit;
+    }
+
+    /** Le Portier laisse dehors la famille {@code family} tout le combat. */
+    public void banFamily(CardFamily family) { bannedFamily = family; }
+
+    /** @return la famille de cartes interdite (le Portier), ou {@code null}. */
+    public CardFamily getBannedFamily() { return bannedFamily; }
+
+    /** Le Pilleur garde une copie d'un achat : un As sombre de la couleur {@code suit} rejoint son deck. */
+    public void addLoot(Card.Suit suit) {
+        deck.insertRandomly(EnemyCards.card(suit, 14));
+        loot++;
+    }
+
+    /** @return les As gardés en copie des achats du joueur. */
+    public int getLoot() { return loot; }
+
+    /** @return le nombre de rouleaux de sa machine, dans sa phase. */
+    public int getReelCount() { return kind.getReelCount(phase); }
+
+    /** @return les rouleaux qu'il a volés au joueur (la Machine Originelle blessée). */
+    public int getStolenReels() { return kind.stolenReels(phase); }
+
+    /** @return les dégâts qui le touchent vraiment : la moitié, tant que sa peau d'or tient (plus de la moitié de ses PV). */
+    public int skinned(int damage) {
+        return hasGoldSkin() ? damage / 2 : damage;
+    }
+
+    /** @return {@code true} si sa peau d'or encaisse la moitié des coups en ce moment. */
+    public boolean hasGoldSkin() { return kind.hasGoldSkin() && hp * 2L > maxHp; }
+
+    /**
+     * @return les cartes qu'il joue ce tour : celles de son type, ou une par bras
+     *         qui lui reste (le Kraken perd un bras à chaque huitième de ses PV)
+     */
+    public int getPlaysPerTurn() {
+        if (!kind.hasArms()) return kind.getPlaysPerTurn();
+        return Math.max(1, (int) Math.ceil(EnemyKind.KRAKEN_ARMS * (double) hp / maxHp));
+    }
+
+    /** Ajoute {@code amount} à son Enclume (sans limite). */
+    public void addAnvil(int amount) { anvil += amount; }
+
+    /** @return l'attaque ajoutée par ses Enclumes, jusqu'à la fin du combat. */
+    public int getAnvil() { return anvil; }
 
     /**
      * Rend {@code amount} points de vie, sans dépasser le maximum.
@@ -114,7 +253,7 @@ public class Enemy {
     public void addShieldDefense(int amount) { defense += amount; }
 
     /** Reforme la défense de base, sans les Boucliers du tour précédent (au début d'un nouveau tour de l'ennemi). */
-    public void resetDefense() { defense = kind.getBaseDefense(); }
+    public void resetDefense() { defense = getBaseDefense(); }
 
     /** Pot-de-vin : sa défense tombe à 0 jusqu'à son tour. @return la défense retirée */
     public int bribe() {
@@ -197,8 +336,9 @@ public class Enemy {
      * @return {@code true} s'il vient de changer de phase
      */
     public boolean enterPhaseTwo() {
-        if (phase >= 2 || !kind.hasPhaseTwo() || getHpRatio() >= EnemyKind.PHASE_TWO_RATIO) return false;
-        phase = 2;
+        int reached = kind.phaseFor(getHpRatio());
+        if (reached <= phase) return false;
+        phase = reached;
         return true;
     }
 
@@ -242,7 +382,7 @@ public class Enemy {
     /** @return la part des dégâts du joueur que renverront ses Épines, en %. */
     public int    getThornsPercent() { return thornsPercent; }
     /** @return sa défense de base, reformée à chacun de ses tours. */
-    public int    getBaseDefense() { return kind.getBaseDefense(); }
+    public int    getBaseDefense() { return kind == EnemyKind.MAISON && phase >= 2 ? 0 : kind.getBaseDefense(); }
     /** @return le nom affiché de l'ennemi. */
     public String getName()        { return name; }
     /** @return les points de vie actuels. */

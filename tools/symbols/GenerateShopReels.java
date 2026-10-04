@@ -4,7 +4,8 @@ import java.io.File;
 import java.util.function.BiPredicate;
 
 /**
- * Dessine les rouleaux vendus à la boutique (assets/symbols/13 à 20), dans le
+ * Dessine les rouleaux vendus à la boutique (assets/symbols/13 à 20) et le
+ * Rouleau de la Mine (21, la Pépite), dans le
  * style des rouleaux classiques : 24 x 20 pixels de 6 px sur fond gris clair,
  * contour sombre, bord éclairé en haut à gauche et ombré en bas à droite.
  * Dessine aussi leur carte Bingo de test (assets/cards/test/), sur le modèle de
@@ -27,6 +28,7 @@ public class GenerateShopReels {
         reel("18-star", "bingo_star", star());
         reel("19-bomb", "bingo_bomb", bomb());
         reel("20-crown", "bingo_crown", crown());
+        reel("21-nugget", "bingo_nugget", nugget());
         recolor("gain_500", "gain_2000", new int[] {0xff460a1a, 0xff681228, 0xff540e20},
             new int[] {0xff0a1e46, 0xff123c68, 0xff0e2c54});
     }
@@ -175,6 +177,21 @@ public class GenerateShopReels {
         dot(g, 15, 14, 0xffc0283a);
         dot(g, 16, 14, 0xffc0283a);
         for (double peak : new double[] {4, 12, 20}) dot(g, (int) peak, 2, 0xffffffff);
+        return g;
+    }
+
+    /** Pépite : un bloc d'or bosselé, encore pris dans sa roche en bas. */
+    private static int[][] nugget() {
+        int[][] g = grid();
+        fill(g, BROWN, (x, y) -> y >= 13 && Math.hypot((x - 12) / 1.6, y - 19) <= 6.4);
+        double[][] lumps = {{8, 9, 3.6}, {13, 6, 3.3}, {16, 10, 3.7}, {11, 12, 4.0}, {6, 13, 2.6}, {17, 14, 2.4}};
+        fill(g, GOLD, (x, y) -> {
+            for (double[] l : lumps) if (Math.hypot(x - l[0], y - l[1]) <= l[2]) return true;
+            return false;
+        });
+        for (int[] p : new int[][] {{7, 7}, {8, 6}, {12, 4}, {13, 4}, {15, 8}}) dot(g, p[0], p[1], 0xffffffff);
+        for (int[] p : new int[][] {{11, 9}, {14, 12}, {8, 12}}) dot(g, p[0], p[1], 0xffbe7814);
+        for (int[] p : new int[][] {{5, 17}, {19, 18}, {8, 18}}) dot(g, p[0], p[1], 0xff5e3a18);
         return g;
     }
 

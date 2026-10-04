@@ -16,7 +16,11 @@ import java.util.Map;
  *  - Dans la manche (plus de cartes jouables par tour, quelques tours) ;
  *  - Coffres-forts (gains mis de côté, rendus doublés quelques tours plus tard) ;
  *  - les jauges des couleurs, remplies au fil du combat et vidées par leur As :
- *    Lames (Pique), Sang (Coeur) et Coffre (Carreau).
+ *    Lames (Pique), Sang (Coeur) et Coffre (Carreau) ;
+ *  - Veine d'or (gains x3, quelques tours) et Bulle d'air (la règle du lieu ne
+ *    joue plus, quelques tours) ;
+ *  - les mauvais sorts des ennemis de l'Exploration, pour le prochain tour :
+ *    Grignotage, Aveuglement, Chant (à la pioche) ; Ivresse, Pépite (au tirage).
  */
 public class LastingEffects {
 
@@ -40,6 +44,50 @@ public class LastingEffects {
     private int forbiddenReel = -1;
     /** Coffres-forts : gains mis de côté (déjà doublés) et tours restants avant leur ouverture. */
     private final List<int[]> safes = new ArrayList<>();
+    /** Veine d'or : tirages restants dont les gains sont multipliés (0 : inactive). */
+    private int goldVeinTurns = 0;
+    /** Bulle d'air : tours restants pendant lesquels la règle du lieu ne joue pas (0 : inactive). */
+    private int bubbleTurns = 0;
+    /** Grignotage : cartes rongées dans la main, à la prochaine pioche. */
+    private int nibbles = 0;
+    /** Aveuglement : la prochaine main est piochée face cachée. */
+    private boolean blind = false;
+    /** Chant : cartes de la prochaine main jouées d'office, au hasard. */
+    private int songs = 0;
+    /** Ivresse : rouleaux qui tourneront deux fois au prochain tirage (le pire résultat reste). */
+    private int drunk = 0;
+    /** Pépite : au prochain tirage, les symboles de gain ne rapportent rien. */
+    private boolean nugget = false;
+    /** Gains devenus faux (Fausse monnaie) : ils disparaissent au prochain tirage, sauf ce qui est dépensé avant. */
+    private int fakeGains = 0;
+    /** Taxes (le Comptable) pour le prochain tour : chaque carte jouée paie autant de fois la Taxe. */
+    private int taxes = 0;
+    /** Règle changée par le Directeur des Jeux ({@code null} : aucune), et ses tirages restants. */
+    private HouseRule houseRule;
+    private int houseRuleTurns = 0;
+
+    /** Règles que peut changer le Directeur des Jeux (Nouvelle règle). */
+    public enum HouseRule {
+        /** Les combinaisons de cartes ne comptent plus. */
+        NO_COMBOS("Sans combinaisons", "LES COMBINAISONS NE COMPTENT PLUS"),
+        /** Les rouleaux ne peuvent plus faire de Bingo. */
+        NO_BINGO("Sans Bingo", "BINGO INTERDIT"),
+        /** Chaque rouleau tourne deux fois et garde le pire résultat. */
+        DOUBLE_SPIN("Rouleaux x2", "TES ROULEAUX TOURNENT DEUX FOIS");
+
+        private final String shortName;
+        private final String announce;
+
+        HouseRule(String shortName, String announce) {
+            this.shortName = shortName;
+            this.announce  = announce;
+        }
+
+        /** @return le nom court de la règle (panneau des effets). */
+        public String getShortName() { return shortName; }
+        /** @return le texte qui annonce la règle. */
+        public String getAnnounce() { return announce; }
+    }
 
     /** Retire {@code symbol} des rouleaux pour les {@code turns} prochains tirages (prolonge s'il l'est déjà). */
     public void removeSymbol(Symbol symbol, int turns) {
@@ -163,6 +211,99 @@ public class LastingEffects {
         return total;
     }
 
+    /** Veine d'or : les gains sont multipliés pendant les {@code turns} prochains tirages (prolonge si elle l'est déjà). */
+    public void addGoldVein(int turns) { goldVeinTurns = Math.max(goldVeinTurns, turns); }
+    /** @return les tirages restants sous la Veine d'or (0 si inactive). */
+    public int getGoldVeinTurns() { return goldVeinTurns; }
+
+    /** Bulle d'air : la règle du lieu ne joue pas pendant les {@code turns} prochains tours, celui-ci compris. */
+    public void addBubble(int turns) { bubbleTurns = Math.max(bubbleTurns, turns); }
+    /** @return les tours restants sous la Bulle d'air (0 si inactive). */
+    public int getBubbleTurns() { return bubbleTurns; }
+
+    /** Grignotage : une carte de plus sera rongée à la prochaine pioche. */
+    public void addNibble() { nibbles++; }
+    /** @return les cartes qui seront rongées à la prochaine pioche. */
+    public int getNibbles() { return nibbles; }
+    /** Pioche : les cartes à ronger le sont. @return leur nombre */
+    public int takeNibbles() { int n = nibbles; nibbles = 0; return n; }
+
+    /** Aveuglement : la prochaine main sera face cachée. */
+    public void blind() { blind = true; }
+    /** @return {@code true} si la prochaine main sera face cachée. */
+    public boolean isBlind() { return blind; }
+    /** Pioche : l'Aveuglement vaut pour cette main. @return {@code true} s'il était actif */
+    public boolean takeBlind() { boolean was = blind; blind = false; return was; }
+
+    /** Chant : une carte de plus sera jouée d'office au prochain tour. */
+    public void addSong() { songs++; }
+    /** @return les cartes qui seront jouées d'office au prochain tour. */
+    public int getSongs() { return songs; }
+    /** Pioche : les cartes à jouer d'office le sont. @return leur nombre */
+    public int takeSongs() { int n = songs; songs = 0; return n; }
+
+    /** Ivresse : un rouleau de plus tournera deux fois au prochain tirage. */
+    public void addDrunk() { drunk++; }
+    /** @return les rouleaux qui tourneront deux fois au prochain tirage. */
+    public int getDrunk() { return drunk; }
+    /** Tirage : l'Ivresse vaut pour celui-ci. @return le nombre de rouleaux qui tournent deux fois */
+    public int takeDrunk() { int n = drunk; drunk = 0; return n; }
+
+    /** Pépite : au prochain tirage, les symboles de gain ne rapportent rien. */
+    public void addNugget() { nugget = true; }
+    /** @return {@code true} si les symboles de gain ne rapporteront rien au prochain tirage. */
+    public boolean hasNugget() { return nugget; }
+    /** Tirage : la Pépite vaut pour celui-ci. @return {@code true} si elle était active */
+    public boolean takeNugget() { boolean was = nugget; nugget = false; return was; }
+
+    /** Fausse monnaie : {@code amount} gains de plus deviennent faux. */
+    public void addFakeGains(int amount) { fakeGains += Math.max(0, amount); }
+
+    /** @return les gains faux, qui disparaîtront au prochain tirage. */
+    public int getFakeGains() { return fakeGains; }
+
+    /** Des gains sont perdus ou dépensés : la Fausse monnaie part la première. */
+    public void spendFakeGains(int amount) { fakeGains = Math.max(0, fakeGains - Math.max(0, amount)); }
+
+    /** Tirage : la Fausse monnaie qui reste disparaît. @return les gains faux à retirer */
+    public int takeFakeGains() {
+        int fake = fakeGains;
+        fakeGains = 0;
+        return fake;
+    }
+
+    /** Taxe : une Taxe de plus sur chaque carte du prochain tour. */
+    public void addTax() { taxes++; }
+
+    /** @return les Taxes en attente pour le prochain tour. */
+    public int getTaxes() { return taxes; }
+
+    /** Début du tour : les Taxes valent pour ce tour. @return leur nombre */
+    public int takeTaxes() {
+        int taken = taxes;
+        taxes = 0;
+        return taken;
+    }
+
+    /** Nouvelle règle : {@code rule} vaut pour les {@code turns} prochains tirages. */
+    public void setHouseRule(HouseRule rule, int turns) {
+        houseRule      = rule;
+        houseRuleTurns = turns;
+    }
+
+    /** @return la règle changée par le Directeur des Jeux, ou {@code null}. */
+    public HouseRule getHouseRule() { return houseRuleTurns > 0 ? houseRule : null; }
+
+    /** @return les tirages restants sous la règle changée. */
+    public int getHouseRuleTurns() { return houseRuleTurns; }
+
+    /** Tirage : la règle changée vaut pour ce tirage. @return la règle, ou {@code null} */
+    public HouseRule useHouseRule() {
+        if (houseRuleTurns <= 0) return null;
+        houseRuleTurns--;
+        return houseRule;
+    }
+
     /** Fin d'un tirage : chaque symbole retiré se rapproche de son retour, la Corruption et Dans la manche de leur fin. */
     public void endTurn() {
         removedSymbols.replaceAll((symbol, turns) -> turns - 1);
@@ -170,11 +311,15 @@ public class LastingEffects {
         if (corruptionTurns > 0) corruptionTurns--;
         if (extraPlaysTurns > 0 && --extraPlaysTurns == 0) extraPlays = 0;
         safes.forEach(safe -> safe[1]--);
+        if (goldVeinTurns > 0) goldVeinTurns--;
+        if (bubbleTurns > 0) bubbleTurns--;
     }
 
     /** @return {@code true} si aucun effet n'est actif et les jauges sont vides. */
     public boolean isEmpty() {
         return removedSymbols.isEmpty() && gainBonus == 0f && corruptionTurns == 0 && extraPlaysTurns == 0
-            && blades == 0 && blood == 0 && vault == 0 && safes.isEmpty();
+            && blades == 0 && blood == 0 && vault == 0 && safes.isEmpty() && goldVeinTurns == 0 && bubbleTurns == 0
+            && nibbles == 0 && !blind && songs == 0 && drunk == 0 && !nugget
+            && fakeGains == 0 && taxes == 0 && houseRuleTurns == 0;
     }
 }

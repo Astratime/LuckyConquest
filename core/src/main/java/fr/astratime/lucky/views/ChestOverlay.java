@@ -24,6 +24,7 @@ import fr.astratime.lucky.assets.Fonts;
 import fr.astratime.lucky.assets.HudTextures;
 import fr.astratime.lucky.assets.Palette;
 import fr.astratime.lucky.entities.Card;
+import fr.astratime.lucky.entities.Symbol;
 import fr.astratime.lucky.entities.exploration.Dungeon;
 import fr.astratime.lucky.progress.PlayerProfile;
 
@@ -68,6 +69,8 @@ public class ChestOverlay implements Disposable {
     private final Label cardText;
     private final Label copiesText;
     private final Label coinsText;
+    private final Label reelText;
+    private Symbol      earnedReel;
     private TextButton button;
     private boolean    opened;
 
@@ -107,6 +110,7 @@ public class ChestOverlay implements Disposable {
         cardText.setWrap(true);
         copiesText = new Label("", new Label.LabelStyle(rewardFont, Color.WHITE));
         coinsText  = new Label("", new Label.LabelStyle(rewardFont, Palette.GOLD));
+        reelText   = new Label("", new Label.LabelStyle(rewardFont, Palette.GOLD));
 
         root.addActor(veil);
         root.addActor(title);
@@ -118,6 +122,7 @@ public class ChestOverlay implements Disposable {
         root.addActor(cardText);
         root.addActor(copiesText);
         root.addActor(coinsText);
+        root.addActor(reelText);
         root.setVisible(false);
     }
 
@@ -126,6 +131,12 @@ public class ChestOverlay implements Disposable {
 
     /** @return {@code true} tant que le coffre est affiché. */
     public boolean isShown() { return root.isVisible(); }
+
+    /**
+     * Rouleau gagné avec ce donjon (le Rouleau de la Mine), annoncé sous les
+     * pièces du prochain coffre ouvert ; {@code null} : aucun.
+     */
+    public void setEarnedReel(Symbol reel) { earnedReel = reel; }
 
     /**
      * Montre le coffre fermé de {@code dungeon}.
@@ -137,19 +148,25 @@ public class ChestOverlay implements Disposable {
     public void show(Dungeon dungeon, PlayerProfile.ChestReward reward, Card found, TextButton newButton) {
         hide();
         opened = false;
-        subtitle.setText(dungeon.getName().toUpperCase() + " TERMINÉ !");
+        subtitle.setText(dungeon.getSuit() != null
+            ? dungeon.getName().toUpperCase() + " TERMINÉ !"
+            : "VICTOIRE : " + dungeon.getName().toUpperCase() + " !");
         ((TextureRegionDrawable) chest.getDrawable()).setRegion(new TextureRegion(enemyTextures.chestClosed));
         chest.setTouchable(Touchable.enabled);
         card.setDrawable(new TextureRegionDrawable(new TextureRegion(cardTextures.get(found))));
         card.setVisible(false);
         cardName.setText(found.getName());
-        cardText.setText(found.getDescription().replace("\n", ". ") + ".");
+        String description = found.getDescription().replace("\n", ". ");
+        cardText.setText(description.endsWith(".") ? description : description + ".");
         copiesText.setText(reward.newCopy()
             ? "NOUVELLE CARTE ! " + reward.copies() + "/" + PlayerProfile.MAX_COPIES + " EXEMPLAIRES"
             : "DÉJÀ " + PlayerProfile.MAX_COPIES + " EXEMPLAIRES : "
                 + PlayerProfile.formatCoins(PlayerProfile.DUPLICATE_COINS) + " PIÈCES EN PLUS");
         coinsText.setText("PIÈCES +" + PlayerProfile.formatCoins(reward.coins()));
-        for (Label label : new Label[] {cardName, cardText, copiesText, coinsText}) label.setVisible(false);
+        reelText.setText(earnedReel == null ? ""
+            : "NOUVEAU ROULEAU : " + earnedReel.getDisplayName() + " ! (TABLE DU CROUPIER)");
+        earnedReel = null; // annoncé une seule fois, au premier coffre
+        for (Label label : new Label[] {cardName, cardText, copiesText, coinsText, reelText}) label.setVisible(false);
         hint.setVisible(true);
         button = newButton;
         button.setVisible(false);
@@ -194,7 +211,7 @@ public class ChestOverlay implements Disposable {
         card.addAction(Actions.delay(0.7f, Actions.forever(Actions.sequence(
             Actions.moveBy(0f, 6f, 1.1f, Interpolation.sine), Actions.moveBy(0f, -6f, 1.1f, Interpolation.sine)))));
 
-        Label[] texts = {cardName, cardText, copiesText, coinsText};
+        Label[] texts = {cardName, cardText, copiesText, coinsText, reelText};
         for (int i = 0; i < texts.length; i++) {
             Label label = texts[i];
             label.getColor().a = 0f;
@@ -251,6 +268,8 @@ public class ChestOverlay implements Disposable {
         copiesText.setPosition(textX, cardText.getY() - copiesText.getHeight() - 24f);
         coinsText.pack();
         coinsText.setPosition(textX, copiesText.getY() - coinsText.getHeight() - 8f);
+        reelText.pack();
+        reelText.setPosition(textX, coinsText.getY() - reelText.getHeight() - 8f);
         if (button != null) button.setPosition((width - button.getWidth()) / 2f, height * 0.04f);
     }
 

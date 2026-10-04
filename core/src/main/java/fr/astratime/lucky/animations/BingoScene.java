@@ -142,6 +142,71 @@ public abstract class BingoScene extends Group implements Disposable {
         pixmap.drawLine(x1, y, x2, y);
     }
 
+    /** Forme dessinée pixel par pixel : {@code true} pour les pixels qui en font partie. */
+    @FunctionalInterface
+    protected interface Shape {
+        boolean contains(int x, int y);
+    }
+
+    /** Couleur d'un pixel intérieur d'une forme (ombres, reflets, motifs). */
+    @FunctionalInterface
+    protected interface Shader {
+        Color at(int x, int y);
+    }
+
+    /**
+     * Remplit {@code shape} (sur toute l'image) de la couleur que donne
+     * {@code shader}, cernée d'un liseré {@link #OUTLINE} sur son pourtour.
+     */
+    protected static void fillShape(Pixmap pixmap, Shape shape, Shader shader) {
+        int width = pixmap.getWidth(), height = pixmap.getHeight();
+        Shape inside = (x, y) -> x >= 0 && y >= 0 && x < width && y < height && shape.contains(x, y);
+        for (int y = 0; y < height; y++) {
+            for (int x = 0; x < width; x++) {
+                if (!inside.contains(x, y)) continue;
+                boolean edge = !inside.contains(x - 1, y) || !inside.contains(x + 1, y)
+                    || !inside.contains(x, y - 1) || !inside.contains(x, y + 1);
+                pixmap.setColor(edge ? OUTLINE : shader.at(x, y));
+                pixmap.drawPixel(x, y);
+            }
+        }
+    }
+
+    /**
+     * Dessine un motif écrit ligne par ligne, son coin en haut à gauche en
+     * {@code (x, y)} : chaque caractère est la couleur d'un pixel dans
+     * {@code colors} (dans l'ordre de {@code keys}), les autres sont transparents.
+     */
+    protected static void drawGrid(Pixmap pixmap, String[] rows, int x, int y, String keys, Color... colors) {
+        for (int row = 0; row < rows.length; row++) {
+            for (int col = 0; col < rows[row].length(); col++) {
+                int key = keys.indexOf(rows[row].charAt(col));
+                if (key < 0) continue;
+                pixmap.setColor(colors[key]);
+                pixmap.drawPixel(x + col, y + row);
+            }
+        }
+    }
+
+    /** @return un halo rond de {@code color}, de plus en plus dense vers le centre. */
+    protected static Pixmap halo(int size, Color color) {
+        Pixmap pixmap = pixmap(size, size);
+        int rings = 5;
+        for (int ring = 0; ring < rings; ring++) {
+            pixmap.setColor(color.r, color.g, color.b, 0.2f + ring * 0.14f);
+            pixmap.fillCircle(size / 2, size / 2, size / 2 - 1 - ring * size / (rings * 3));
+        }
+        return pixmap;
+    }
+
+    /** @return un pixel blanc, à étirer et teinter (traits de lumière, coups de lame). */
+    protected static Pixmap whitePixel() {
+        Pixmap pixmap = pixmap(1, 1);
+        pixmap.setColor(Color.WHITE);
+        pixmap.drawPixel(0, 0);
+        return pixmap;
+    }
+
     /** @return la couleur {@code hex} (« rrggbb »), opaque. */
     protected static Color c(String hex) {
         return Color.valueOf(hex + "ff");

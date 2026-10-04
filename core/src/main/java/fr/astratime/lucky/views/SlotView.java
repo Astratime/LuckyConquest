@@ -110,8 +110,8 @@ public class SlotView implements Disposable {
     /** Croix posée sur chaque rouleau quand il est bloqué (Rouleau interdit). */
     private final List<Image>                locks    = new ArrayList<>();
     private final Texture                    lockTexture;
-    /** Rouleau bloqué (-1 : aucun). */
-    private int                              blockedReel = -1;
+    /** Rouleaux bloqués (Rouleau interdit, rouleaux volés par la Machine Originelle). */
+    private final java.util.Set<Integer>     blockedReels = new java.util.TreeSet<>();
     /** Rouleaux pas encore arrêtés pendant un lancer. */
     private int                              reelsSpinning;
     /** Boucle du bruit des rouleaux et suspense en cours (-1 : aucun). */
@@ -205,10 +205,10 @@ public class SlotView implements Disposable {
      * @param onAllStopped appelé quand les rouleaux sont arrêtés et les Jokers transformés
      */
     public void spin(Symbol[] symbols, Symbol[] resolved, IntConsumer onJoker, Runnable onAllStopped) {
-        int blocked = blockedReel;
+        java.util.Set<Integer> blocked = new java.util.TreeSet<>(blockedReels);
         clear();
         setReelCount(symbols.length);
-        setBlockedReel(blocked); // le rouleau bloqué reste barré pendant le tirage
+        setBlockedReels(blocked); // les rouleaux bloqués restent barrés pendant le tirage
         int     last     = symbols.length - 1;
         boolean suspense = symbols.length > 2 && symbols[last] != null && pairOrJokerBefore(symbols, last);
         reelsSpinning = 0;
@@ -312,9 +312,16 @@ public class SlotView implements Disposable {
      * ne tournera pas au prochain tirage ; -1 libère tous les rouleaux.
      */
     public void setBlockedReel(int reel) {
-        blockedReel = reel;
+        setBlockedReels(reel >= 0 ? java.util.Set.of(reel) : java.util.Set.of());
+    }
+
+    /** Comme {@link #setBlockedReel(int)}, pour plusieurs rouleaux à la fois ; un ensemble vide les libère tous. */
+    public void setBlockedReels(java.util.Set<Integer> reelsToBlock) {
+        java.util.Set<Integer> wanted = new java.util.TreeSet<>(reelsToBlock);
+        blockedReels.clear();
+        blockedReels.addAll(wanted);
         for (int i = 0; i < locks.size(); i++) {
-            boolean blocked = i == reel;
+            boolean blocked = wanted.contains(i);
             Image lock = locks.get(i);
             if (blocked && !lock.isVisible()) {
                 reels.get(i).empty();

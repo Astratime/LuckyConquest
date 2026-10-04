@@ -1,5 +1,9 @@
 package fr.astratime.lucky.progress;
 
+import fr.astratime.lucky.entities.Symbol;
+import fr.astratime.lucky.entities.exploration.Dungeon;
+import fr.astratime.lucky.entities.exploration.Place;
+
 import org.junit.jupiter.api.Test;
 
 import java.util.HashMap;
@@ -167,5 +171,50 @@ class PlayerProfileTest {
         assertEquals(0, PlayerProfile.combatReward(true, false, 32_000), "rien après le soldat");
         assertEquals(0, PlayerProfile.combatReward(false, true, 32_000), "rien en cas de défaite");
         assertEquals(0, PlayerProfile.combatReward(false, false, 32_000));
+    }
+
+    @Test
+    void aPlaceOpensOnceEveryDungeonOfThePreviousOneIsCleared() {
+        MemoryStorage storage = new MemoryStorage();
+        PlayerProfile profile = profile(storage);
+        assertTrue(profile.isOpen(Place.PRAIRIE));
+        assertFalse(profile.isOpen(Place.PORT));
+        for (Dungeon dungeon : Place.PRAIRIE.getDungeons()) profile.clearDungeon(dungeon.name());
+        assertTrue(profile.isOpen(Place.PORT));
+        assertFalse(profile.isOpen(Place.MINES));
+        assertTrue(profile(storage).isOpen(Place.PORT), "sauvegardé");
+    }
+
+    @Test
+    void anOldSaveCountsAPrairieDungeonAsClearedWhenOneOfItsChestCardsIsOwned() {
+        Map<String, Integer> owned = collection();
+        owned.put("guillotine", 1);
+        PlayerProfile profile = new PlayerProfile(new MemoryStorage(), owned, starterDeck());
+        assertTrue(profile.isCleared(Dungeon.PIQUE));
+        assertFalse(profile.isCleared(Dungeon.TREFLE));
+    }
+
+    @Test
+    void theLastMinesDungeonGivesTheMineReelOnce() {
+        MemoryStorage storage = new MemoryStorage();
+        PlayerProfile profile = profile(storage);
+        java.util.List<Dungeon> mines = Place.MINES.getDungeons();
+        for (int i = 0; i < mines.size() - 1; i++) assertNull(profile.clearDungeon(mines.get(i).name()));
+        assertFalse(profile.ownsReel(Symbol.NUGGET));
+        assertEquals(Symbol.NUGGET, profile.clearDungeon(mines.get(mines.size() - 1).name()));
+        assertTrue(profile.ownsReel(Symbol.NUGGET));
+        assertNull(profile.clearDungeon(mines.get(0).name()), "déjà vidé : rien de plus");
+        assertTrue(profile(storage).ownsReel(Symbol.NUGGET), "sauvegardé");
+        assertNull(profile.clearDungeon(Dungeon.PIQUE.name()), "la prairie ne donne pas de rouleau");
+    }
+
+    @Test
+    void theHardTowerOpensOnceAndIsSaved() {
+        MemoryStorage storage = new MemoryStorage();
+        PlayerProfile profile = profile(storage);
+        assertFalse(profile.isTowerHardOpen());
+        assertTrue(profile.openTowerHard());
+        assertFalse(profile.openTowerHard(), "déjà ouvert");
+        assertTrue(profile(storage).isTowerHardOpen(), "sauvegardé");
     }
 }

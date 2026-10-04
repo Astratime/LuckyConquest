@@ -7,6 +7,8 @@ import com.badlogic.gdx.utils.Disposable;
 import fr.astratime.lucky.entities.Card;
 import fr.astratime.lucky.entities.enemy.EnemyKind;
 import fr.astratime.lucky.entities.enemy.EnemySymbol;
+import fr.astratime.lucky.entities.exploration.Dungeon;
+import fr.astratime.lucky.entities.exploration.Place;
 import fr.astratime.lucky.entities.tower.Chapter;
 
 import java.util.EnumMap;
@@ -42,7 +44,8 @@ public class EnemyTextures implements Disposable {
     public final Texture                    chestClosed;
     public final Texture                    chestOpen;
     public final Texture                    prairie;
-    private final Map<Card.Suit, Texture>   gates = new EnumMap<>(Card.Suit.class);
+    private final Map<Dungeon, Texture>     gates = new EnumMap<>(Dungeon.class);
+    private final Map<Place, Texture>       maps  = new EnumMap<>(Place.class);
 
     /** @param cards cache des images de cartes, partagé avec l'écran de jeu (non possédé) */
     public EnemyTextures(CardTextures cards) {
@@ -63,6 +66,22 @@ public class EnemyTextures implements Disposable {
         symbols.put(EnemySymbol.MIRROR,     texture(Chapter3Art.mirror(), false));
         symbols.put(EnemySymbol.HOURGLASS,  texture(Chapter3Art.hourglass(), false));
         symbols.put(EnemySymbol.ALL_IN,     texture(Chapter3Art.allIn(), false));
+        symbols.put(EnemySymbol.NIBBLE,     texture(PlacesArt.nibble(), false));
+        symbols.put(EnemySymbol.DRUNK,      texture(PlacesArt.drunk(), false));
+        symbols.put(EnemySymbol.BLIND,      texture(PlacesArt.blind(), false));
+        symbols.put(EnemySymbol.BOARDING,   texture(PlacesArt.boarding(), false));
+        symbols.put(EnemySymbol.NUGGET,     texture(PlacesArt.nugget(), false));
+        symbols.put(EnemySymbol.DRILL,      texture(PlacesArt.drill(), false));
+        symbols.put(EnemySymbol.ANVIL,      texture(PlacesArt.anvil(), false));
+        symbols.put(EnemySymbol.SONG,       texture(PlacesArt.song(), false));
+        symbols.put(EnemySymbol.BANK_BITE,  texture(PlacesArt.bankBite(), false));
+        symbols.put(EnemySymbol.FAKE_MONEY, texture(Chapter456Art.fakeMoney(), false));
+        symbols.put(EnemySymbol.PREDICTION, texture(Chapter456Art.prediction(), false));
+        symbols.put(EnemySymbol.DUEL,       texture(Chapter456Art.duel(), false));
+        symbols.put(EnemySymbol.TAX,        texture(Chapter456Art.tax(), false));
+        symbols.put(EnemySymbol.NEW_RULE,   texture(Chapter456Art.newRule(), false));
+        symbols.put(EnemySymbol.FRISK,      texture(Chapter456Art.frisk(), false));
+        symbols.put(EnemySymbol.BANKRUPTCY, texture(Chapter456Art.bankruptcy(), false));
         portraits.put(EnemyKind.CROUPIER, croupier);
         flashes.put(EnemyKind.CROUPIER, croupierFlash);
         portraits.put(EnemyKind.ENTRAINEMENT, croupier); // le même croupier, en mode Entraînement
@@ -92,10 +111,39 @@ public class EnemyTextures implements Disposable {
         chestClosed = texture(ExplorationArt.chestClosed(), false);
         chestOpen   = texture(ExplorationArt.chestOpen(), false);
         prairie     = texture(ExplorationArt.prairie(), false);
-        for (Card.Suit suit : Card.Suit.values()) gates.put(suit, texture(ExplorationArt.gate(suit), false));
+        maps.put(Place.PRAIRIE, prairie);
+        maps.put(Place.PORT, texture(PlacesArt.port(), false));
+        maps.put(Place.MINES, texture(PlacesArt.mines(), false));
+        maps.put(Place.CASINO, texture(PlacesArt.casino(), false));
+        for (Dungeon dungeon : Dungeon.values()) {
+            int[][] grid = dungeon.getSuit() != null ? ExplorationArt.gate(dungeon.getSuit()) : PlacesArt.gate(dungeon);
+            gates.put(dungeon, texture(grid, false));
+        }
+        for (EnemyKind kind : EnemyKind.values()) {
+            int[][] grid = PlacesPortraits.of(kind);
+            if (grid != null) addPortrait(kind, grid);
+        }
         chapterArt.put(Chapter.GENESE, texture(EnemyPortraits.genesis(), false));
         chapterArt.put(Chapter.TABLES_SACREES, texture(Chapter2Art.tables(), false));
         chapterArt.put(Chapter.DERNIER_TIRAGE, texture(Chapter3Art.crater(), false));
+        chapterArt.put(Chapter.MONDE_SANS_MAITRE, texture(Chapter456Art.worldWithoutMaster(), false));
+        chapterArt.put(Chapter.LA_MAISON, texture(Chapter456Art.house(), false));
+        chapterArt.put(Chapter.LE_JACKPOT, texture(Chapter456Art.jackpot(), false));
+        addPortrait(EnemyKind.PILLEUR, Chapter456Art.pilleur());
+        addPortrait(EnemyKind.FAUSSAIRE, Chapter456Art.faussaire());
+        addPortrait(EnemyKind.CARTOMANCIENNE, Chapter456Art.cartomancienne());
+        addPortrait(EnemyKind.DUELLISTE, Chapter456Art.duelliste());
+        addPortrait(EnemyKind.PRETENDANT, Chapter456Art.pretendant());
+        addPortrait(EnemyKind.PORTIER, Chapter456Art.portier());
+        addPortrait(EnemyKind.COMPTABLE, Chapter456Art.comptable());
+        addPortrait(EnemyKind.DIRECTEUR, Chapter456Art.directeur());
+        addPortrait(EnemyKind.SECURITE, Chapter456Art.securite());
+        addPortrait(EnemyKind.MAISON, Chapter456Art.maison());
+        addPortrait(EnemyKind.GARDIEN_LEVIER, Chapter456Art.gardienLevier());
+        addPortrait(EnemyKind.OMBRE, Chapter456Art.ombre());
+        addPortrait(EnemyKind.BANQUEROUTE, Chapter456Art.banqueroute());
+        addPortrait(EnemyKind.TEMPS_MORT, Chapter456Art.tempsMort());
+        addPortrait(EnemyKind.MACHINE_ORIGINELLE, Chapter456Art.machineOriginelle());
     }
 
     private void addPortrait(EnemyKind kind, int[][] grid) {
@@ -112,8 +160,11 @@ public class EnemyTextures implements Disposable {
     /** @return la silhouette blanche du portrait de l'ennemi {@code kind}. */
     public Texture portraitFlash(EnemyKind kind) { return flashes.get(kind); }
 
-    /** @return l'entrée du donjon de la couleur {@code suit}, sur la carte de l'Exploration. */
-    public Texture gate(Card.Suit suit) { return gates.get(suit); }
+    /** @return l'entrée du donjon {@code dungeon}, sur la carte de son lieu. */
+    public Texture gate(Dungeon dungeon) { return gates.get(dungeon); }
+
+    /** @return la carte vue du ciel du lieu {@code place}. */
+    public Texture map(Place place) { return maps.get(place); }
 
     /** @return l'illustration du chapitre {@code chapter}. */
     public Texture chapterArt(Chapter chapter) { return chapterArt.get(chapter); }
@@ -335,6 +386,6 @@ public class EnemyTextures implements Disposable {
         gates.values().forEach(Texture::dispose);
         chestClosed.dispose();
         chestOpen.dispose();
-        prairie.dispose();
+        maps.values().forEach(Texture::dispose); // la prairie comprise
     }
 }

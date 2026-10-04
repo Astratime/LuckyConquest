@@ -22,6 +22,11 @@ public class DiscardPile {
         cards.addAll(discarded);
     }
 
+    /** Retire {@code card} de la défausse (Fouille). @return {@code false} si elle n'y était pas */
+    public boolean remove(Card card) {
+        return cards.remove(card);
+    }
+
     /** @return {@code true} si la défausse ne contient aucune carte. */
     public boolean isEmpty() {
         return cards.isEmpty();

@@ -36,7 +36,9 @@ import fr.astratime.lucky.entities.Card;
 import fr.astratime.lucky.entities.exploration.Dungeon;
 import fr.astratime.lucky.entities.exploration.DungeonRun;
 import fr.astratime.lucky.entities.exploration.Place;
+import fr.astratime.lucky.entities.exploration.PlaceRule;
 import fr.astratime.lucky.loaders.CardLoader;
+import fr.astratime.lucky.progress.PlayerProfile;
 import fr.astratime.lucky.settings.AudioSettings;
 import fr.astratime.lucky.views.CasinoButtons;
 import fr.astratime.lucky.views.MenuDecor;
@@ -83,6 +85,10 @@ public class ExplorationScreen extends ScreenAdapter {
     private static final float INFO_WIDTH   = 300f;    // colonne du donjon choisi, à droite de la carte
     private static final float GATE_HOVER   = 1.12f;
     private static final float FADE_TIME    = 0.4f;
+    /** Opacité du nom d'un lieu fermé, dans la liste. */
+    private static final float LOCKED_ALPHA = 0.4f;
+    /** Teinte de la carte et des entrées d'un lieu fermé. */
+    private static final Color LOCKED_TINT  = new Color(0.35f, 0.35f, 0.4f, 1f);
 
     private final LuckyGame       luckyGame;
     private final Stage           stage;
@@ -122,12 +128,15 @@ public class ExplorationScreen extends ScreenAdapter {
     private final Image            fade;
 
     private Place   place = Place.values()[0];
+    /** Profil du joueur : les donjons vidés ouvrent les lieux suivants. */
+    private final PlayerProfile profile;
     private int     selected = -1;   // donjon choisi sur la carte, -1 : aucun
     private float   mapScale = 4f;
     private boolean leaving;
 
     public ExplorationScreen(LuckyGame luckyGame) {
         this.luckyGame = luckyGame;
+        this.profile   = luckyGame.getProfile();
         this.stage     = new Stage(new MinimumScreenViewport(MIN_WIDTH, MIN_HEIGHT), luckyGame.getBatch());
         clickSound = new VolumeSound(Gdx.audio.newSound(Gdx.files.internal(CLICK_SOUND)), audio);
         hoverSound = new VolumeSound(Gdx.audio.newSound(Gdx.files.internal(HOVER_SOUND)), audio);
@@ -155,9 +164,10 @@ public class ExplorationScreen extends ScreenAdapter {
         Place[] places = Place.values();
         for (int i = 0; i < places.length; i++) {
             Place rowPlace = places[i];
-            MenuOption row = new MenuOption(rowPlace.getName(), rowStyle, hud.insetDrawable(),
+            MenuOption row = new MenuOption(rowPlace.getShortName(), rowStyle, hud.insetDrawable(),
                 new TextureRegion(chipTexture), ROW_WIDTH, ROW_HEIGHT);
             row.setSelected(rowPlace == place);
+            if (!profile.isOpen(rowPlace)) row.getColor().a = LOCKED_ALPHA; // lieu fermé : à peine visible
             row.addListener(new ClickListener() {
                 @Override
                 public void clicked(InputEvent event, float x, float y) { selectPlace(rowPlace); }
@@ -167,7 +177,7 @@ public class ExplorationScreen extends ScreenAdapter {
 
         placeLabel = new Label("", new Label.LabelStyle(placeFont, Color.WHITE));
         mapFrame   = new Image(hud.insetDrawable());
-        map        = new Image(new TextureRegionDrawable(new TextureRegion(enemyTextures.prairie)));
+        map        = new Image(new TextureRegionDrawable(new TextureRegion(enemyTextures.map(place))));
         map.setTouchable(Touchable.disabled);
         dungeonName = new Label("", new Label.LabelStyle(nameFont, Color.WHITE));
         dungeonName.setWrap(true);
@@ -209,6 +219,9 @@ public class ExplorationScreen extends ScreenAdapter {
         place = newPlace;
         for (int i = 0; i < rows.size(); i++) rows.get(i).setSelected(Place.values()[i] == place);
         placeLabel.setText(place.getName().toUpperCase());
+        ((TextureRegionDrawable) map.getDrawable()).setRegion(new TextureRegion(enemyTextures.map(place)));
+        boolean open = profile.isOpen(place);
+        map.setColor(open ? Color.WHITE : LOCKED_TINT);
         gates.forEach(Actor::remove);
         gateLabels.forEach(Actor::remove);
         gates.clear();
@@ -217,20 +230,21 @@ public class ExplorationScreen extends ScreenAdapter {
         for (int i = 0; i < dungeons.size(); i++) {
             int index = i;
             Dungeon dungeon = dungeons.get(i);
-            Image gate = new Image(new TextureRegionDrawable(new TextureRegion(enemyTextures.gate(dungeon.getSuit()))));
+            Image gate = new Image(new TextureRegionDrawable(new TextureRegion(enemyTextures.gate(dungeon))));
+            if (!open) gate.setColor(LOCKED_TINT);
             gate.addListener(new ClickListener() {
                 @Override
                 public void enter(InputEvent event, float x, float y, int pointer, Actor fromActor) {
                     super.enter(event, x, y, pointer, fromActor);
                     if (pointer != -1) return;
                     hoverSound.play();
-                    gate.setColor(Palette.GOLD_PALE);
+                    if (profile.isOpen(place)) gate.setColor(Palette.GOLD_PALE);
                 }
 
                 @Override
                 public void exit(InputEvent event, float x, float y, int pointer, Actor toActor) {
                     super.exit(event, x, y, pointer, toActor);
-                    if (pointer == -1) gate.setColor(Color.WHITE);
+                    if (pointer == -1) gate.setColor(profile.isOpen(place) ? Color.WHITE : LOCKED_TINT);
                 }
 
                 @Override
@@ -267,9 +281,23 @@ public class ExplorationScreen extends ScreenAdapter {
             gateLabels.get(i).setColor(i == index ? Palette.GOLD : Color.WHITE);
         }
         dungeonName.setText(dungeon.getName());
-        StringBuilder text = new StringBuilder(dungeon.getDescription());
-        text.append("\n\nCombat 1 : ").append(dungeon.getSoldier().getDisplayName());
-        text.append("\nCombat 2 : ").append(dungeon.getKing().getDisplayName());
+        StringBuilder text = new StringBuilder();
+        if (!profile.isOpen(place)) {
+            // Fermé : la description attendra, place à ce qu'il faut faire pour l'ouvrir.
+            String previous = place.getPrevious().getName();
+            text.append("Lieu fermé. Termine d'abord ").append(Character.toLowerCase(previous.charAt(0)))
+                .append(previous.substring(1)).append(".");
+        } else {
+            text.append(dungeon.getDescription());
+            if (profile.isCleared(dungeon)) text.append("\nDéjà vidé.");
+        }
+        if (place.getRule() != PlaceRule.NONE) {
+            text.append("\n\nRègle du lieu : ").append(place.getRule().getName());
+        }
+        text.append("\n\nCombat 1 : ").append(dungeon.getSoldier().getDisplayName())
+            .append(" (").append(PlayerProfile.formatCoins(dungeon.getSoldier().getMaxHp())).append(" PV)");
+        text.append("\nCombat 2 : ").append(dungeon.getKing().getDisplayName())
+            .append(" (").append(PlayerProfile.formatCoins(dungeon.getKing().getMaxHp())).append(" PV)");
         text.append("\n\nCoffre :");
         for (Dungeon.Loot loot : dungeon.getLoot()) {
             text.append("\n").append(cardNames.get(loot.cardId())).append(" ").append(loot.percent()).append(" %");
@@ -297,7 +325,7 @@ public class ExplorationScreen extends ScreenAdapter {
 
     /** Entre dans le donjon choisi : fondu au noir puis combat contre son soldat. */
     private void launch() {
-        if (leaving || selected < 0) return;
+        if (leaving || selected < 0 || !profile.isOpen(place)) return;
         Dungeon dungeon = place.getDungeons().get(selected);
         fadeOutThen(() -> {
             luckyGame.setScreen(new GameScreen(luckyGame, new DungeonRun(dungeon)));
@@ -371,7 +399,8 @@ public class ExplorationScreen extends ScreenAdapter {
         // Entrées des donjons : le bas de chaque entrée au bout de son chemin.
         float gateSize = ExplorationArt.GATE_SIZE * mapScale * 0.75f;
         for (int i = 0; i < gates.size(); i++) {
-            int[] spot = ExplorationArt.GATES[i % ExplorationArt.GATES.length];
+            int[][] spots = ExplorationArt.gates(place);
+            int[] spot = spots[i % spots.length];
             float centerX = mapX + spot[0] * mapScale;
             float bottomY = mapY + (ExplorationArt.MAP_HEIGHT - spot[1] - 7) * mapScale;
             Image gate = gates.get(i);

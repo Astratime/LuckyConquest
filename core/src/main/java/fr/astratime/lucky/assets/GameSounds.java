@@ -151,7 +151,7 @@ public class GameSounds implements Disposable {
             case GOLD_BAR            -> "gold_bar";
             case WATERMELON          -> "watermelon";
             case HORSESHOE           -> "bell";
-            case CROWN               -> "gold_bar";
+            case CROWN, NUGGET       -> "gold_bar";
             case ECU                 -> "diamond";
             case HEART               -> "cherry";
             case SWORD, DIE, STAR    -> "seven";

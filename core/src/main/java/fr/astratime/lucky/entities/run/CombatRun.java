@@ -1,6 +1,7 @@
 package fr.astratime.lucky.entities.run;
 
 import fr.astratime.lucky.entities.enemy.EnemyKind;
+import fr.astratime.lucky.entities.exploration.PlaceRule;
 
 import java.util.List;
 
@@ -47,6 +48,9 @@ public interface CombatRun {
 
     /** @return le nom de la suite de combats, en haut de l'écran de jeu (ex : "Chapitre 1"). */
     String getLabel();
+
+    /** @return la règle du lieu, qui joue dans tous les combats (aucune hors de l'Exploration). */
+    default PlaceRule getPlaceRule() { return PlaceRule.NONE; }
 
     /** @return la phrase de fin, affichée après le dernier combat gagné, ou {@code null}. */
     default String getEnding() { return null; }

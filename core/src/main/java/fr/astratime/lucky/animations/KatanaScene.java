@@ -149,11 +149,4 @@ public class KatanaScene extends BingoScene {
         }
         return pixmap;
     }
-
-    private static Pixmap whitePixel() {
-        Pixmap pixmap = pixmap(1, 1);
-        pixmap.setColor(Color.WHITE);
-        pixmap.drawPixel(0, 0);
-        return pixmap;
-    }
 }

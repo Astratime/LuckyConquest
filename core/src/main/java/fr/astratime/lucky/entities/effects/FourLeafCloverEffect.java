@@ -37,14 +37,17 @@ public class FourLeafCloverEffect extends Effect {
 
     @Override
     public String getDescription() {
+        if (gainMultiplierAdd == 0) return "Les symboles de gain sortent plus souvent"; // Rhum
         return "Multiplicateur de gains +" + gainMultiplierAdd + ". Les symboles de gain sortent plus souvent";
     }
 
     @Override
     public List<EffectPopup> getPopups() {
+        EffectPopup luck = new EffectPopup("CHANCE DE GAINS", EffectPopup.Style.GAINS, PopupScale.SECONDARY_INTENSITY);
+        if (gainMultiplierAdd == 0) return List.of(luck);
         return List.of(
             EffectPopup.scaled("GAINS x+" + gainMultiplierAdd, EffectPopup.Style.GAINS, gainMultiplierAdd, PopupScale.CARD_GAIN_MULTIPLIER),
-            new EffectPopup("CHANCE DE GAINS", EffectPopup.Style.GAINS, PopupScale.SECONDARY_INTENSITY));
+            luck);
     }
 
     @Override

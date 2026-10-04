@@ -26,6 +26,7 @@ import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 import com.badlogic.gdx.math.Interpolation;
 import com.badlogic.gdx.scenes.scene2d.actions.Actions;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
+import com.badlogic.gdx.utils.Align;
 import com.badlogic.gdx.utils.ScreenUtils;
 import fr.astratime.lucky.LuckyGame;
 import fr.astratime.lucky.animations.BingoCardAnimation;
@@ -59,6 +60,7 @@ import fr.astratime.lucky.entities.Combo;
 import fr.astratime.lucky.entities.DrawResult;
 import fr.astratime.lucky.entities.GameState;
 import fr.astratime.lucky.entities.LastingEffects;
+import fr.astratime.lucky.entities.Enemy;
 import fr.astratime.lucky.entities.Player;
 import fr.astratime.lucky.entities.Symbol;
 import fr.astratime.lucky.entities.SymbolOutcome;
@@ -76,6 +78,7 @@ import fr.astratime.lucky.entities.choices.CardChoice;
 import fr.astratime.lucky.entities.choices.RouletteChoice;
 import fr.astratime.lucky.entities.SlotMachine;
 import fr.astratime.lucky.entities.enemy.EnemyKind;
+import fr.astratime.lucky.entities.tower.TowerRun;
 import fr.astratime.lucky.entities.enemy.EnemySymbol;
 import fr.astratime.lucky.entities.enemy.EnemyTurnResult;
 import fr.astratime.lucky.entities.events.DamageReflectedEvent;
@@ -92,6 +95,8 @@ import fr.astratime.lucky.entities.events.PistolShotEvent;
 import fr.astratime.lucky.entities.events.PlayerHealedEvent;
 import fr.astratime.lucky.entities.events.ShieldGainedEvent;
 import fr.astratime.lucky.entities.exploration.DungeonRun;
+import fr.astratime.lucky.entities.exploration.PlaceRule;
+import fr.astratime.lucky.entities.effects.GoldVeinEffect;
 import fr.astratime.lucky.entities.run.CombatRun;
 import fr.astratime.lucky.progress.PlayerProfile;
 import fr.astratime.lucky.loaders.CardLoader;
@@ -163,6 +168,8 @@ public class GameScreen extends ScreenAdapter {
     /** Taille minimale de l'écran de jeu : dans une fenêtre plus petite, il est réduit (voir {@link MinimumScreenViewport}). */
     /** Relance : pause entre l'arrêt du premier tirage et le second. */
     private static final float REROLL_PAUSE = 0.45f;
+    /** Chant de l'ennemi : pause entre la fin de la distribution et la carte jouée d'office. */
+    private static final float SONG_DELAY = 0.6f;
     private static final float  MIN_WIDTH      = 1600f;
     private static final float  MIN_HEIGHT     = 1080f;  // les deux côtés de la table, à la même taille
     private static final float  CARD_WIDTH     = 95f;
@@ -347,6 +354,8 @@ public class GameScreen extends ScreenAdapter {
         this.gameController = new GameController(() -> CardLoader.loadDeck(profile.getDeck()),
             CardLoader.cardFactory(), CardLoader.loadShop(),
             cards -> new Player("Joueur", Player.BASE_HP, cards, profile.getRankBonus(), profile.getMachine()));
+        if (run != null) gameController.setPlaceRule(run.getPlaceRule()); // Exploration : la règle du lieu
+        EnemyKind.setTowerHard(run instanceof TowerRun tower && tower.isHard()); // Tour : mode difficile
         gameController.restart(firstEnemy()); // le premier ennemi du chapitre, ou le croupier d'entraînement
         // Le SpriteBatch est partagé avec LuckyGame et ne doit PAS être disposé ici.
         this.stage = new Stage(new MinimumScreenViewport(MIN_WIDTH, MIN_HEIGHT), luckyGame.getBatch());
@@ -493,12 +502,24 @@ public class GameScreen extends ScreenAdapter {
         refreshCombos(); // les combinaisons du tour précédent s'éteignent
         hand.setLocked(false); // une carte achetée entre deux tours reste sur la table
         showReelCount(gameController.getReelCount()); // le 4e rouleau de la surchauffe ne dure qu'un tour
-        slots.setBlockedReel(player().getLastingEffects().getForbiddenReel()); // Rouleau interdit de l'ennemi
+        slots.setBlockedReels(blockedReels(player().getLastingEffects().getForbiddenReel())); // Rouleau interdit, rouleaux volés
         GameController.Purchase gift = gameController.claimBonusCard(); // Bingo glissé dans le deck après un Bingo de gains
         if (gift != null) placePurchase(gift);
-        hand.deal(gameController.drawCards());
+        DrawResult drawn = gameController.drawCards(); // Grignotage, Scorbut, Aveuglement et Chant s'y appliquent
+        hand.setHidden(gameController.isHandHidden());
+        hand.deal(drawn);
+        List<EffectPopup> notices = gameController.getTurnNotices();
+        if (!notices.isEmpty()) {
+            effectPopupAnimator.play(notices, playArea.getCenterX(), table.getHandRowY() + CARD_HEIGHT * 1.3f);
+            refreshEffects(); // les mauvais sorts de l'ennemi s'appliquent : ils quittent le panneau
+        }
         refreshPlays();
         spinButton.setDisabled(false);
+        // Chant de l'ennemi : une fois la main distribuée, des cartes partent d'office.
+        float dealt = drawn.getAddedToHand().size() * CardDealAnimator.DEAL_STAGGER_DELAY + SONG_DELAY;
+        stage.addAction(Actions.delay(dealt, Actions.run(() -> {
+            for (Card card : gameController.takeSongCards()) hand.forcePlay(card);
+        })));
     }
 
     /** Fin du tour du joueur (ses résultats sont affichés) : annonce « TOUR ENNEMI » avant la riposte. */
@@ -526,6 +547,8 @@ public class GameScreen extends ScreenAdapter {
 
         List<Combo> combosBefore = gameController.getCurrentCombos();
         CardPlayResult playResult = gameController.playCard(card);
+        int maps = gameController.takeTreasureMaps(); // Carte au trésor : le coffre du donjon grossit
+        if (run instanceof DungeonRun dungeonRun) for (int i = 0; i < maps; i++) dungeonRun.addTreasureMap();
         if (playResult.isAutoSpin()) {
             playBingo(image, playResult.getPopups());
         } else {
@@ -1020,10 +1043,23 @@ public class GameScreen extends ScreenAdapter {
             if (heal.amount > 0) hud.revealEnemyHeal(heal.amount);
             enemyView.heal();
         } else if (event instanceof ReelForbiddenEvent forbidden) {
-            slots.setBlockedReel(forbidden.reel);
+            slots.setBlockedReels(blockedReels(forbidden.reel));
             sounds.shieldBreak.play();
             screenShake.shake(0.25f, 7f);
         }
+    }
+
+    /**
+     * @return les rouleaux du joueur barrés au prochain tirage : {@code forbidden}
+     *         (Rouleau interdit, -1 : aucun) et ceux volés par la Machine Originelle
+     */
+    private java.util.Set<Integer> blockedReels(int forbidden) {
+        java.util.Set<Integer> blocked = new java.util.TreeSet<>();
+        if (forbidden >= 0) blocked.add(forbidden);
+        int stolen = gameController.getGameState().getEnemy().getStolenReels();
+        if (stolen >= 1) blocked.add(SlotMachine.SYMBOL_COUNT - 1);
+        if (stolen >= 2) blocked.add(0);
+        return blocked;
     }
 
     /** L'ennemi encaisse un coup : sa barre réagit ; un gros coup fige l'image un instant et secoue l'écran. */
@@ -1221,11 +1257,25 @@ public class GameScreen extends ScreenAdapter {
      */
     private void openChest() {
         DungeonRun dungeonRun = (DungeonRun) run;
+        // Ouvre peut-être le lieu suivant ; le dernier donjon des Mines donne le Rouleau de la Mine.
+        Symbol earnedReel = luckyGame.getProfile().clearDungeon(dungeonRun.getDungeon().name());
+        chestOverlay.setEarnedReel(earnedReel);
+        openChest(dungeonRun.getChestCards());
+    }
+
+    /**
+     * Ouvre le coffre : une carte tirée et enregistrée tout de suite ; s'il en
+     * reste {@code left - 1} (Carte au trésor), le bouton mène au coffre suivant.
+     */
+    private void openChest(int left) {
+        DungeonRun dungeonRun = (DungeonRun) run;
         String cardId = dungeonRun.getDungeon().rollLoot(new java.util.Random());
         PlayerProfile.ChestReward reward = luckyGame.getProfile().openChest(cardId);
         chestOverlay.getActor().toFront();
-        chestOverlay.show(dungeonRun.getDungeon(), reward, CardLoader.cardFactory().apply(cardId),
-            buttons.createAction("Exploration", sounds.buttonClick, this::onBackToChapters));
+        TextButton next = left > 1
+            ? buttons.createAction("Coffre suivant", sounds.buttonClick, () -> openChest(left - 1))
+            : buttons.createAction("Exploration", sounds.buttonClick, this::onBackToChapters);
+        chestOverlay.show(dungeonRun.getDungeon(), reward, CardLoader.cardFactory().apply(cardId), next);
     }
 
     /**
@@ -1289,8 +1339,12 @@ public class GameScreen extends ScreenAdapter {
         }
         String ending = run != null && victory && run.isBossStage() ? run.getEnding() : null;
         if (ending != null) {
-            // Le dernier chapitre clôt l'histoire : sa phrase de fin, au-dessus du bouton.
+            // Le dernier chapitre clôt l'histoire : sa phrase de fin, au-dessus du bouton. Il ouvre le mode difficile.
+            if (run instanceof TowerRun && luckyGame.getProfile().openTowerHard()) {
+                ending += "\nLa Tour recommence en mode difficile.";
+            }
             Label endingLabel = new Label(ending, new Label.LabelStyle(shopFont, Palette.GOLD));
+            endingLabel.setAlignment(Align.center);
             endButtons.add(endingLabel).colspan(shown.size()).padBottom(18f).row();
         }
         for (int i = 0; i < shown.size(); i++) {
@@ -1479,7 +1533,65 @@ public class GameScreen extends ScreenAdapter {
         if (gameController.isDoubleNextPending()) {
             rows.add(new SidePanel.EffectRow(new TextureRegion(hudTextures.iconDouble), null, "Carte suivante x2"));
         }
+        addPlaceRows(rows, lasting);
         sidePanel.setActiveEffects(rows);
+    }
+
+    /**
+     * Exploration : la règle du lieu (Scorbut, prochain coup de grisou, niveau de
+     * la marée), les cartes des lieux qui durent (Veine d'or, Bulle d'air,
+     * Casque) et les mauvais sorts de l'ennemi qui attendent le prochain tour.
+     */
+    private void addPlaceRows(List<SidePanel.EffectRow> rows, LastingEffects lasting) {
+        GameState state = gameController.getGameState();
+        TextureRegion skull = new TextureRegion(hudTextures.iconCorruption);
+        int turn = state.getTurnNumber();
+        switch (state.getActiveRule()) {
+            case SCORBUT -> {
+                int turns = PlaceRule.SCURVY_PERIOD - (turn - 1) % PlaceRule.SCURVY_PERIOD;
+                rows.add(new SidePanel.EffectRow(skull, null, "Scorbut : " + turns + (turns > 1 ? " tours" : " tour")));
+            }
+            case GRISOU -> {
+                int turns = PlaceRule.turnsBeforeFiredamp(turn);
+                rows.add(new SidePanel.EffectRow(skull, null, turns == 1 ? "Grisou : ce tour"
+                    : "Grisou : " + turns + " tours"));
+            }
+            case MAREE -> rows.add(new SidePanel.EffectRow(skull, null, "Marée " + PlaceRule.tide(turn) + "/"
+                + PlaceRule.TIDE_CYCLE + (state.getPlaceRule().isHighTide(turn) ? " : haute" : "")));
+            case NONE -> { }
+        }
+        if (lasting.getBubbleTurns() > 0) {
+            int turns = lasting.getBubbleTurns();
+            rows.add(new SidePanel.EffectRow(new TextureRegion(hudTextures.iconSleeve), null,
+                "Bulle : " + turns + (turns > 1 ? " tours" : " tour")));
+        }
+        if (lasting.getGoldVeinTurns() > 0) {
+            int turns = lasting.getGoldVeinTurns();
+            rows.add(new SidePanel.EffectRow(new TextureRegion(hudTextures.iconClover), null,
+                "Veine x" + GoldVeinEffect.FACTOR + " (" + turns + ")"));
+        }
+        if (player().getHelmets() > 0) {
+            rows.add(new SidePanel.EffectRow(new TextureRegion(hudTextures.iconVault), null,
+                "Casque x" + player().getHelmets()));
+        }
+        List<String> curses = new ArrayList<>();
+        if (lasting.getNibbles() > 0) curses.add("Grignotage x" + lasting.getNibbles());
+        if (lasting.getDrunk() > 0) curses.add("Ivresse x" + lasting.getDrunk());
+        if (lasting.isBlind()) curses.add("Aveuglement");
+        if (lasting.hasNugget()) curses.add("Pépite");
+        if (lasting.getSongs() > 0) curses.add("Chant x" + lasting.getSongs());
+        if (lasting.getFakeGains() > 0) curses.add("Faux : " + lasting.getFakeGains());
+        if (lasting.getTaxes() > 0) curses.add("Taxe x" + lasting.getTaxes());
+        if (lasting.getHouseRule() != null) {
+            curses.add(lasting.getHouseRule().getShortName() + " (" + lasting.getHouseRuleTurns() + ")");
+        }
+        Enemy foe = gameController.getGameState().getEnemy();
+        if (foe.getBannedFamily() != null) curses.add("Banni : " + foe.getBannedFamily().getDisplayName());
+        if (foe.getPrediction() != null) curses.add("Prédit : " + foe.getPrediction().getDisplayName().toLowerCase());
+        if (foe.getStolenReels() > 0) curses.add("Vol : " + foe.getStolenReels() + (foe.getStolenReels() > 1 ? " rouleaux" : " rouleau"));
+        int limit = foe.getKind().getTurnLimit();
+        if (limit > 0) curses.add("Temps : " + Math.max(0, limit - state.getTurnNumber() + 1) + " tours");
+        for (String curse : curses) rows.add(new SidePanel.EffectRow(skull, null, curse));
     }
 
     /** Met à jour le compteur de gains, sans les gains du tirage dont le texte n'est pas encore apparu. */

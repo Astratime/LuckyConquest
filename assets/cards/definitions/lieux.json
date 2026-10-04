@@ -1,0 +1,64 @@
+[
+  {
+    "id": "scorbut",
+    "name": "Scorbut",
+    "assetPath": "cards/special/scorbut.png",
+    "consumable": true,
+    "effects": [ { "type": "SCURVY" } ]
+  },
+  {
+    "id": "longue_vue",
+    "name": "Longue-vue",
+    "assetPath": "cards/special/longue_vue.png",
+    "effects": [ { "type": "SPYGLASS" } ]
+  },
+  {
+    "id": "rhum",
+    "name": "Rhum",
+    "assetPath": "cards/special/rhum.png",
+    "effects": [ { "type": "TRANSFUSION", "percent": 10 }, { "type": "FOUR_LEAF_CLOVER", "gainMultiplier": 0, "gainBoost": 10 } ]
+  },
+  {
+    "id": "carte_au_tresor",
+    "name": "Carte au trésor",
+    "assetPath": "cards/special/carte_au_tresor.png",
+    "consumable": true,
+    "effects": [ { "type": "TREASURE_MAP" } ]
+  },
+  {
+    "id": "pioche_du_mineur",
+    "name": "Pioche du mineur",
+    "assetPath": "cards/special/pioche_du_mineur.png",
+    "effects": [ { "type": "EXTRA_DRAW", "extraCards": 2 }, { "type": "GAIN", "amount": 2000 } ]
+  },
+  {
+    "id": "casque",
+    "name": "Casque",
+    "assetPath": "cards/special/casque.png",
+    "effects": [ { "type": "HELMET" } ]
+  },
+  {
+    "id": "veine_d_or",
+    "name": "Veine d'or",
+    "assetPath": "cards/special/veine_d_or.png",
+    "effects": [ { "type": "GOLD_VEIN", "turns": 3 } ]
+  },
+  {
+    "id": "bulle_d_air",
+    "name": "Bulle d'air",
+    "assetPath": "cards/special/bulle_d_air.png",
+    "effects": [ { "type": "BUBBLE", "turns": 3 } ]
+  },
+  {
+    "id": "perle_noire",
+    "name": "Perle noire",
+    "assetPath": "cards/special/perle_noire.png",
+    "effects": [ { "type": "BLACK_PEARL" } ]
+  },
+  {
+    "id": "trident",
+    "name": "Trident",
+    "assetPath": "cards/special/trident.png",
+    "effects": [ { "type": "TRIDENT" } ]
+  }
+]

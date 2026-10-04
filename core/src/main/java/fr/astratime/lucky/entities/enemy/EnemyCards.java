@@ -1,6 +1,7 @@
 package fr.astratime.lucky.entities.enemy;
 
 import fr.astratime.lucky.entities.Card;
+import fr.astratime.lucky.entities.CardFamily;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -59,6 +60,32 @@ public final class EnemyCards {
         return new Card("enemy_" + suit.cardId(rank), name, "cards/dark/" + rank + "-" + letter(suit) + ".png",
             List.of(), suit, rank);
     }
+
+    /**
+     * L'Ombre du Joueur : le deck du joueur, carte pour carte, en cartes sombres.
+     * Une carte de couleur garde sa couleur et son rang (l'As vaut 14) ; une
+     * carte spéciale devient un 10 de la couleur de sa famille : Attaque en
+     * Pique, Gains en Trèfle, Pioche en Carreau, les autres en Cœur.
+     *
+     * @return le deck sombre copié sur {@code playerCards}
+     */
+    public static List<Card> shadowDeck(List<Card> playerCards) {
+        List<Card> cards = new ArrayList<>();
+        for (Card card : playerCards) {
+            if (card.getSuit() != null) {
+                cards.add(card(card.getSuit(), card.getRank() == 1 ? MAX_RANK : Math.clamp(card.getRank(), 2, MAX_RANK)));
+            } else {
+                Card.Suit suit = CardFamily.ATTAQUE.contains(card) ? Card.Suit.PIQUE
+                    : CardFamily.GAINS.contains(card) ? Card.Suit.TREFLE
+                    : CardFamily.PIOCHE.contains(card) ? Card.Suit.CARREAU : Card.Suit.COEUR;
+                cards.add(card(suit, SHADOW_SPECIAL_RANK));
+            }
+        }
+        return cards.isEmpty() ? starterDeck() : cards;
+    }
+
+    /** Rang des cartes spéciales du joueur, copiées par l'Ombre du Joueur. */
+    static final int SHADOW_SPECIAL_RANK = 10;
 
     /** @return l'attaque ajoutée à chaque Épée et chaque Croc par une carte Pique. */
     public static int swordBonus(Card card)   { return scaled(card, SWORD_MIN, SWORD_MAX); }

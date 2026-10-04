@@ -89,6 +89,7 @@ public class SymbolStrikes extends Actor implements Disposable {
     private static final Color AZURE  = Color.valueOf("4aa8ffff");
     private static final Color LOVE   = Color.valueOf("ff5c8aff");
     private static final Color SMOKE  = Color.valueOf("5a5a66ff");
+    private static final Color ROCK   = Color.valueOf("7a5a3aff");
 
     // Rouleaux de la boutique
     private static final float SWORD_SCALE    = 0.8f;
@@ -245,6 +246,21 @@ public class SymbolStrikes extends Actor implements Disposable {
                     float angle = 30f + i * 10f;
                     coinFlyer(s, s.fromX + MathUtils.cosDeg(angle) * 30f, s.fromY + ABOVE_REEL + 10f,
                         0.3f + i * 0.03f);
+                }
+            }
+            case NUGGET -> {
+                // La pépite est lancée sur l'ennemi, éclate en or, et ses éclats rejoignent les gains.
+                Flyer nugget = flyer(s, symbolArt.get(s.art), s.fromX, s.fromY, s.toX, s.toY,
+                    0f, IMPACT_TIME, 220f, 80f);
+                nugget.spin = 1f;
+                nugget.onArrival = () -> nuggetBurst(s.toX, s.toY);
+                Vector2 coins = s.extra.length > 1 ? s.extra[1] : new Vector2(s.fromX, s.fromY);
+                for (int i = 0; i < 7; i++) {
+                    Flyer f = flyer(s, coin, s.toX + MathUtils.random(-30f, 30f), s.toY + MathUtils.random(-20f, 30f),
+                        coins.x, coins.y, IMPACT_TIME + 0.05f + i * 0.05f, COIN_FLIGHT + 0.15f,
+                        MathUtils.random(140f, 240f), COIN_SIZE);
+                    f.spin = 1f;
+                    f.onArrival = onCoinArrived;
                 }
             }
             case HORSESHOE -> {
@@ -491,6 +507,14 @@ public class SymbolStrikes extends Actor implements Disposable {
                     flashAt(s.fromX, s.fromY, FIRE, 120f);
                 }
             }
+            case NUGGET -> {
+                if (now < IMPACT_TIME && MathUtils.random() < delta * 30f) {
+                    float u = Interpolation.pow2In.apply(now / IMPACT_TIME); // comme la pépite qui vole
+                    float x = MathUtils.lerp(s.fromX, s.toX, u);
+                    float y = MathUtils.lerp(s.fromY, s.toY, u) + 220f * 4f * u * (1f - u);
+                    particle(x, y, GOLD, 30f, 0.35f, 6f, true);
+                }
+            }
             case CROWN -> {
                 if (crossed(before, now, 0.22f)) {
                     float y = s.fromY + ABOVE_REEL;
@@ -543,6 +567,20 @@ public class SymbolStrikes extends Actor implements Disposable {
         }
         ringAt(x, y, CRYSTAL, 0.9f);
         flashAt(x, y, CRYSTAL, 130f);
+    }
+
+    /** La pépite éclate sur l'ennemi : éclats d'or et de roche, étincelles. */
+    private void nuggetBurst(float x, float y) {
+        flashAt(x, y, GOLD, 200f);
+        burst(x, y, 26, GOLD, 420f, 0.6f, 10f, true);
+        for (int i = 0; i < 14; i++) { // éclats de roche qui retombent
+            Particle p = particle(x, y, ROCK, MathUtils.random(160f, 420f), MathUtils.random(0.5f, 0.9f),
+                MathUtils.random(8f, 14f), false);
+            p.square = true;
+            p.gravity = 700f;
+        }
+        ringAt(x, y, GOLD, 1.0f);
+        shake.shake(0.18f, 7f);
     }
 
     private void pop(float x, float y, Color color, int count) {
