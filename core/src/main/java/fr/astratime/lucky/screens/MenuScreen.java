@@ -4,6 +4,7 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.InputAdapter;
 import com.badlogic.gdx.InputMultiplexer;
+import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.ScreenAdapter;
 import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.graphics.Color;
@@ -33,13 +34,14 @@ import fr.astratime.lucky.views.ShiningTitle;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Supplier;
 
 /**
  * Écran d'accueil, devant l'intérieur animé d'un casino ({@link MenuDecor}) qui
  * se décale légèrement avec la souris (parallaxe) : le titre, sur lequel passe
  * un reflet, flotte au-dessus d'un panneau d'options.
  *
- * Page principale : « Jouer » (lance un combat, {@link GameScreen}), « Tour des
+ * Page principale : « Entraînement » (lance un combat contre le croupier d'entraînement, {@link GameScreen}), « Tour des
  * épreuves » (choix d'un chapitre, {@link TowerScreen}), « Options » et « Quitter ». Page des options : affichage (fenêtre agrandie ou plein
  * écran, appliqué tout de suite), effets visuels (normaux ou réduits,
  * réglage partagé avec l'écran de jeu), volume de la musique, volume des sons,
@@ -120,11 +122,14 @@ public class MenuScreen extends ScreenAdapter {
     // Pages
     // -------------------------------------------------------------------------
 
-    /** Page principale : Jouer, Tour des épreuves, Options, Quitter. */
+    /** Page principale : Entraînement, Tour des épreuves, Exploration, Construction de deck, Boutique, Options, Quitter. */
     private void showMainPage() {
         showPage(null, List.of(
-            OptionsMenu.Entry.button("Jouer", this::onPlay),
+            OptionsMenu.Entry.button("Entraînement", this::onPlay),
             OptionsMenu.Entry.button("Tour des épreuves", this::onTower),
+            OptionsMenu.Entry.button("Exploration", () -> goTo(() -> new ExplorationScreen(luckyGame))),
+            OptionsMenu.Entry.button("Construction de deck", () -> goTo(() -> new DeckBuilderScreen(luckyGame))),
+            OptionsMenu.Entry.button("Boutique", () -> goTo(() -> new ShopScreen(luckyGame))),
             OptionsMenu.Entry.button("Options", this::showOptionsPage),
             OptionsMenu.Entry.button("Quitter", this::onQuit)));
     }
@@ -162,6 +167,14 @@ public class MenuScreen extends ScreenAdapter {
     private void onTower() {
         fadeOutThen(() -> {
             luckyGame.setScreen(new TowerScreen(luckyGame));
+            dispose();
+        });
+    }
+
+    /** Fondu au noir puis écran {@code next} (Exploration, Construction de deck, Boutique). */
+    private void goTo(Supplier<Screen> next) {
+        fadeOutThen(() -> {
+            luckyGame.setScreen(next.get());
             dispose();
         });
     }

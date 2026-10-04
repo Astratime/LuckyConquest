@@ -8,6 +8,7 @@ import fr.astratime.lucky.entities.Enemy;
 import fr.astratime.lucky.entities.GameState;
 import fr.astratime.lucky.entities.Player;
 import fr.astratime.lucky.entities.Symbol;
+import fr.astratime.lucky.entities.SymbolRegistry;
 import fr.astratime.lucky.entities.TurnResult;
 import fr.astratime.lucky.entities.choices.BetChoice;
 import fr.astratime.lucky.entities.choices.CardChoice;
@@ -57,10 +58,10 @@ public class GameController {
     /** Une carte (Bingo) a bloqué la main : plus aucune carte ne peut être jouée ce tour. */
     private boolean handLocked = false;
 
-    /** Carte offerte au prochain tour après un Bingo de bouclier (voir {@link #claimBonusCard()}). */
-    public static final String SHIELD_BINGO_GIFT = "bingo";
+    /** Préfixe des cartes Bingo à symbole imposé (« bingo_bell »…), offertes après un Bingo de gains de la carte « Bingo » (voir {@link #claimBonusCard()}). */
+    public static final String BINGO_GIFT_PREFIX = "bingo_";
 
-    /** Un Bingo de bouclier a été tiré : un Bingo est offert au prochain tour du joueur. */
+    /** La carte « Bingo » a donné un Bingo de gains : une carte Bingo (symbole au hasard) est glissée dans le deck au prochain tour. */
     private boolean bingoGiftPending = false;
 
     /** Cartes jouées ce tour (toutes comptent, consommables compris), limitées par {@link #getPlayLimit()}. */
@@ -310,17 +311,36 @@ public class GameController {
     }
 
     /**
-     * Début du tour du joueur, avant sa pioche : après un Bingo de bouclier, une
-     * carte Bingo (symbole au hasard) lui est offerte, posée sur la table s'il y a
-     * de la place, sinon glissée dans le deck.
+     * Début du tour du joueur, avant sa pioche : après un Bingo de gains obtenu
+     * avec la carte « Bingo » (pas un Bingo tiré par la machine seule), une
+     * carte Bingo d'un symbole tiré au hasard (pas forcément celui du Bingo, ni un
+     * symbole retiré des rouleaux) est glissée dans son deck, à une place au hasard.
      *
      * @return la carte offerte, ou {@code null} s'il n'y en a pas
      */
     public Purchase claimBonusCard() {
         if (!bingoGiftPending) return null;
         bingoGiftPending = false;
-        Card card = cardFactory.apply(SHIELD_BINGO_GIFT);
-        return new Purchase(card, gameState.getPlayer().addToHandOrDeck(card));
+        List<Symbol> symbols = getBingoGiftSymbols();
+        if (symbols.isEmpty()) return null;
+        Card card = cardFactory.apply(bingoGiftId(symbols.get(random.nextInt(symbols.size()))));
+        gameState.getPlayer().getDeck().insertRandomly(card);
+        return new Purchase(card, false);
+    }
+
+    /** @return les symboles que peut imposer la carte Bingo offerte : tous ceux des rouleaux, sauf ceux retirés. */
+    private List<Symbol> getBingoGiftSymbols() {
+        List<Symbol> symbols = new ArrayList<>();
+        symbols.addAll(SymbolRegistry.getAttackSymbols());
+        symbols.addAll(SymbolRegistry.getDefenseSymbols());
+        symbols.addAll(SymbolRegistry.getGainSymbols());
+        symbols.removeIf(gameState.getPlayer().getLastingEffects().getRemovedSymbols()::containsKey);
+        return symbols;
+    }
+
+    /** @return l'id de la carte Bingo qui impose {@code symbol} (« bingo_bell »…). */
+    public static String bingoGiftId(Symbol symbol) {
+        return BINGO_GIFT_PREFIX + symbol.name().toLowerCase(java.util.Locale.ROOT);
     }
 
     /** @return le choix demandé au joueur par la dernière carte jouée, ou {@code null} si aucun. */
@@ -416,8 +436,11 @@ public class GameController {
      * @return le résultat du tour (symboles tirés, événements, gains)
      */
     public TurnResult spin() {
+        // La carte « Bingo » (symbole au hasard), seule, offre un Bingo si son Bingo est de gains.
+        boolean bingoCardPlayed = pendingEffects.stream()
+            .anyMatch(effect -> effect instanceof BingoEffect bingo && bingo.getSymbol() == null);
         TurnResult result = turnEngine.playTurn(gameState, pendingEffects);
-        if (result.isShieldBingo()) bingoGiftPending = true;
+        if (bingoCardPlayed && result.getGainBingoSymbol() != null) bingoGiftPending = true;
         pendingEffects.clear();
         betsThisTurn.clear();
         cardsPlayedThisTurn = 0;

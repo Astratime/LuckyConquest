@@ -15,6 +15,7 @@ import java.util.Map;
  * symboles de leurs rouleaux (et leur poids), composition de leur deck sombre
  * et ordre dans lequel ils jouent leurs cartes.
  * <ul>
+ *   <li>{@link #ENTRAINEMENT} : le croupier du mode Entraînement, peu de PV et une Épée faible ;</li>
  *   <li>{@link #CROUPIER} : le combat de départ, équilibré ;</li>
  *   <li>{@link #GARDIEN} : défense épaisse et Épines, qui renvoient les coups ;</li>
  *   <li>{@link #SANGSUE} : Crocs, qui volent la vie du joueur ;</li>
@@ -23,11 +24,22 @@ import java.util.Map;
  *   <li>chapitre 2 : {@link #CHEF}, puis {@link #TRICHEUR} (Dés pipés), {@link #USURIER}
  *       (Intérêts) ou {@link #ROULETTE} (Zéro), et la {@link #REINE} ;</li>
  *   <li>chapitre 3 : la {@link #GARDIENNE}, puis {@link #MIROIR} (Reflet), {@link #HORLOGER}
- *       (Sablier) ou {@link #FOU} (Tapis), et l'{@link #ECLAT}, en deux phases.</li>
+ *       (Sablier) ou {@link #FOU} (Tapis), et l'{@link #ECLAT}, en deux phases ;</li>
+ *   <li>Exploration : dans chaque donjon, un soldat de la couleur puis son roi
+ *       (voir {@link fr.astratime.lucky.entities.exploration.Dungeon}).</li>
  * </ul>
  * Les lignes de chaque chapitre sont dans {@link fr.astratime.lucky.entities.tower.Chapter}.
  */
 public enum EnemyKind {
+
+    ENTRAINEMENT("Croupier d'entraînement", "ENTRAÎNEMENT",
+        "Il t'apprend la table. Il frappe doucement. Il se protège. Il se soigne.",
+        1_000, 30, 100,
+        weights(EnemySymbol.SWORD, 1, EnemySymbol.SHIELD, 1, EnemySymbol.POTION, 1),
+        deck(new int[] {2, 5, 8, 11, 14}, new int[] {2, 5, 8, 11, 14},
+            new int[] {2, 5, 8, 11, 14}, new int[] {2, 5, 8, 11, 14}),
+        List.of(Card.Suit.PIQUE, Card.Suit.CARREAU, Card.Suit.TREFLE, Card.Suit.COEUR),
+        List.of(Card.Suit.COEUR, Card.Suit.CARREAU, Card.Suit.PIQUE, Card.Suit.TREFLE)),
 
     CROUPIER("Croupier démoniaque", "ENNEMI",
         "Il tient la table. Il frappe. Il se protège. Il se soigne.",
@@ -169,7 +181,81 @@ public enum EnemyKind {
         deck(new int[] {4, 9, 14}, new int[] {4, 8, 12, 14},
             new int[] {5, 9, 13, 14}, new int[] {4, 8, 12}),
         List.of(Card.Suit.PIQUE, Card.Suit.CARREAU, Card.Suit.TREFLE, Card.Suit.COEUR),
-        List.of(Card.Suit.COEUR, Card.Suit.CARREAU, Card.Suit.PIQUE, Card.Suit.TREFLE));
+        List.of(Card.Suit.COEUR, Card.Suit.CARREAU, Card.Suit.PIQUE, Card.Suit.TREFLE)),
+
+    // ----- Exploration : les donjons de la prairie (un soldat, puis le roi de la couleur) -----
+
+    SOLDAT_PIQUE("Soldat de Pique", "SOLDAT DE PIQUE",
+        "Il garde le donjon. Sa lance est affûtée. Il frappe sans pitié.",
+        10_000, 30, 100,
+        weights(EnemySymbol.SWORD, 2, EnemySymbol.SHIELD, 1),
+        deck(new int[] {3, 5, 7, 9, 11, 13}, new int[] {6},
+            new int[] {4, 10}, new int[] {8}),
+        List.of(Card.Suit.PIQUE, Card.Suit.CARREAU, Card.Suit.TREFLE, Card.Suit.COEUR),
+        List.of(Card.Suit.PIQUE, Card.Suit.COEUR, Card.Suit.CARREAU, Card.Suit.TREFLE)),
+
+    ROI_PIQUE("Roi de Pique", "ROI DE PIQUE",
+        "Il règne sur les lames. Il frappe. Chaque Rage le rend plus fort.",
+        20_000, 60, 100,
+        weights(EnemySymbol.SWORD, 2, EnemySymbol.RAGE, 1, EnemySymbol.SHIELD, 1),
+        deck(new int[] {3, 6, 9, 11, 12, 13, 14}, new int[] {5, 11},
+            new int[] {4, 9}, new int[] {8}),
+        List.of(Card.Suit.PIQUE, Card.Suit.TREFLE, Card.Suit.CARREAU, Card.Suit.COEUR),
+        List.of(Card.Suit.PIQUE, Card.Suit.COEUR, Card.Suit.TREFLE, Card.Suit.CARREAU)),
+
+    SOLDAT_COEUR("Soldat de Coeur", "SOLDAT DE COEUR",
+        "Il panse ses blessures. Ses Potions le relèvent. Frappe vite.",
+        10_000, 30, 100,
+        weights(EnemySymbol.SWORD, 1, EnemySymbol.SHIELD, 1, EnemySymbol.POTION, 2),
+        deck(new int[] {5, 10}, new int[] {3, 5, 7, 9, 11, 13},
+            new int[] {6}, new int[] {8}),
+        List.of(Card.Suit.COEUR, Card.Suit.PIQUE, Card.Suit.CARREAU, Card.Suit.TREFLE),
+        List.of(Card.Suit.COEUR, Card.Suit.CARREAU, Card.Suit.PIQUE, Card.Suit.TREFLE)),
+
+    ROI_COEUR("Roi de Coeur", "ROI DE COEUR",
+        "Il boit ta vie. Chaque Croc le soigne. Garde ton bouclier levé.",
+        20_000, 50, 100,
+        weights(EnemySymbol.FANG, 2, EnemySymbol.POTION, 1, EnemySymbol.SHIELD, 1),
+        deck(new int[] {4, 9, 13}, new int[] {3, 6, 9, 11, 12, 13, 14},
+            new int[] {5, 10}, new int[] {7}),
+        List.of(Card.Suit.COEUR, Card.Suit.PIQUE, Card.Suit.CARREAU, Card.Suit.TREFLE),
+        List.of(Card.Suit.COEUR, Card.Suit.CARREAU, Card.Suit.PIQUE, Card.Suit.TREFLE)),
+
+    SOLDAT_CARREAU("Soldat de Carreau", "SOLDAT DE CARREAU",
+        "Il se cache derrière son écu. Sa défense est épaisse. Perce-la.",
+        10_000, 100, 100,
+        weights(EnemySymbol.SHIELD, 2, EnemySymbol.SWORD, 1),
+        deck(new int[] {5, 10}, new int[] {6},
+            new int[] {3, 5, 7, 9, 11, 13}, new int[] {8}),
+        List.of(Card.Suit.CARREAU, Card.Suit.PIQUE, Card.Suit.TREFLE, Card.Suit.COEUR),
+        List.of(Card.Suit.CARREAU, Card.Suit.COEUR, Card.Suit.PIQUE, Card.Suit.TREFLE)),
+
+    ROI_CARREAU("Roi de Carreau", "ROI DE CARREAU",
+        "Il dort sur son trésor. Sa défense est épaisse. Ses Épines te renvoient tes coups.",
+        20_000, 150, 100,
+        weights(EnemySymbol.SHIELD, 2, EnemySymbol.THORNS, 1, EnemySymbol.SWORD, 1),
+        deck(new int[] {4, 9}, new int[] {5, 11},
+            new int[] {3, 6, 9, 11, 12, 13, 14}, new int[] {8}),
+        List.of(Card.Suit.CARREAU, Card.Suit.PIQUE, Card.Suit.TREFLE, Card.Suit.COEUR),
+        List.of(Card.Suit.CARREAU, Card.Suit.COEUR, Card.Suit.PIQUE, Card.Suit.TREFLE)),
+
+    SOLDAT_TREFLE("Soldat de Trèfle", "SOLDAT DE TRÈFLE",
+        "Il compte les pièces. Il frappe. Ses Intérêts mangent tes gains.",
+        10_000, 30, 100,
+        weights(EnemySymbol.SWORD, 1, EnemySymbol.SHIELD, 1, EnemySymbol.INTEREST, 1),
+        deck(new int[] {5, 10}, new int[] {6},
+            new int[] {8}, new int[] {3, 5, 7, 9, 11, 13}),
+        List.of(Card.Suit.TREFLE, Card.Suit.PIQUE, Card.Suit.CARREAU, Card.Suit.COEUR),
+        List.of(Card.Suit.TREFLE, Card.Suit.COEUR, Card.Suit.CARREAU, Card.Suit.PIQUE)),
+
+    ROI_TREFLE("Roi de Trèfle", "ROI DE TRÈFLE",
+        "Toutes les tables lui appartiennent. Ses Intérêts arment ses coups. Ses Dés pipés vident tes jauges.",
+        20_000, 50, 100,
+        weights(EnemySymbol.INTEREST, 2, EnemySymbol.SWORD, 1, EnemySymbol.LOADED_DIE, 1, EnemySymbol.SHIELD, 1),
+        deck(new int[] {4, 9}, new int[] {5, 11},
+            new int[] {7}, new int[] {3, 6, 9, 11, 12, 13, 14}),
+        List.of(Card.Suit.TREFLE, Card.Suit.PIQUE, Card.Suit.CARREAU, Card.Suit.COEUR),
+        List.of(Card.Suit.TREFLE, Card.Suit.COEUR, Card.Suit.CARREAU, Card.Suit.PIQUE));
 
     /** Force des ennemis du chapitre 2, en % : leurs attaques, défenses et effets sont multipliés d'autant. */
     public static final int CHAPTER_2_POWER = 200;
@@ -235,6 +321,14 @@ public enum EnemyKind {
         };
     }
 
+    /** Dégâts de base d'une Épée du croupier d'entraînement. */
+    public static final int TRAINING_SWORD_DAMAGE = 10;
+
+    /** @return les dégâts de base de son Épée, avant sa {@linkplain #getPower() force}. */
+    public int swordDamage() {
+        return this == ENTRAINEMENT ? TRAINING_SWORD_DAMAGE : EnemySymbol.SWORD_DAMAGE;
+    }
+
     /** @return {@code value} multiplié par sa {@linkplain #getPower() force} (arrondi). */
     public int empowered(int value) { return Math.round(value * getPower() / 100f); }
 
@@ -261,8 +355,11 @@ public enum EnemyKind {
     public boolean forbidsReels() { return this == ECLAT; }
     /** @return les cartes qu'il joue à chaque tour, parmi celles piochées. */
     public int getPlaysPerTurn() { return Enemy.PLAYS_PER_TURN; }
-    /** @return {@code true} pour le boss d'un chapitre. */
-    public boolean isBoss() { return this == COMETE || this == REINE || this == ECLAT; }
+    /** @return {@code true} pour le boss d'un chapitre ou le roi d'un donjon. */
+    public boolean isBoss() {
+        return this == COMETE || this == REINE || this == ECLAT
+            || this == ROI_PIQUE || this == ROI_COEUR || this == ROI_CARREAU || this == ROI_TREFLE;
+    }
 
     /**
      * @return la force de ses soins (Potions et Crocs), en pourcentage de ceux

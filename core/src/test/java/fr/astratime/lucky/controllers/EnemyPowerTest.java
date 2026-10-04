@@ -109,14 +109,12 @@ class EnemyPowerTest {
     }
 
     @Test
-    void aShieldBingoReflectsTheShieldAndOffersABingo() {
-        Card offered = new Card(GameController.SHIELD_BINGO_GIFT, "Bingo", "bingo.png", List.of(new BingoEffect(100)),
-            null, 1);
+    void aShieldBingoReflectsTheShieldAndOffersNothing() {
         boolean reflected = false;
         for (int attempt = 0; attempt < 40 && !reflected; attempt++) {
             GameController controller = new GameController(() -> new ArrayList<>(List.of(
                 new Card("grape", "Bingo Raisin", "b.png", List.of(new BingoEffect(100, Symbol.GRAPE)), null, 1))),
-                id -> offered);
+                id -> { throw new AssertionError("aucune carte offerte"); });
             controller.drawCards();
             Player player = controller.getGameState().getPlayer();
             controller.playCard(player.getCurrentHand().get(0));
@@ -135,12 +133,53 @@ class EnemyPowerTest {
                 reflected = true;
             }
 
-            GameController.Purchase gift = controller.claimBonusCard();
-            assertNotNull(gift, "un Bingo est offert au tour suivant");
-            assertSame(offered, gift.card());
-            assertNull(controller.claimBonusCard(), "une seule fois");
+            assertNull(controller.claimBonusCard(), "pas de carte après un Bingo de bouclier");
         }
         assertTrue(reflected, "l'ennemi n'a jamais attaqué");
+    }
+
+    @Test
+    void theBingoCardSlipsARandomBingoIntoTheDeckOnAGainBingo() {
+        boolean gained = false;
+        for (int attempt = 0; attempt < 200 && !gained; attempt++) {
+            List<String> created = new ArrayList<>();
+            GameController controller = new GameController(() -> new ArrayList<>(List.of(
+                new Card("bingo", "Bingo", "b.png", List.of(new BingoEffect(100)), null, 1))),
+                id -> {
+                    created.add(id);
+                    return new Card(id, "Bingo", "b.png", List.of(new BingoEffect(1, Symbol.BELL)), null, 1);
+                });
+            controller.drawCards();
+            Player player = controller.getGameState().getPlayer();
+            controller.playCard(player.getCurrentHand().get(0));
+            TurnResult turn = controller.spin();
+            int deckBefore = player.getDeck().getCards().size();
+            GameController.Purchase gift = controller.claimBonusCard();
+            if (turn.getGainBingoSymbol() == null) {
+                assertNull(gift, "pas de carte sans Bingo de gains");
+                continue;
+            }
+            gained = true;
+            assertNotNull(gift, "un Bingo est offert");
+            assertEquals(1, created.size());
+            assertTrue(created.get(0).startsWith(GameController.BINGO_GIFT_PREFIX), created.get(0));
+            assertFalse(gift.addedToHand(), "dans le deck, pas sur la table");
+            assertEquals(deckBefore + 1, player.getDeck().getCards().size());
+            assertNull(controller.claimBonusCard(), "une seule fois");
+        }
+        assertTrue(gained, "jamais de Bingo de gains");
+    }
+
+    @Test
+    void aGainBingoWithoutTheBingoCardOffersNothing() {
+        GameController controller = new GameController(() -> new ArrayList<>(List.of(
+            new Card("bingo_bell", "Bingo Cloche", "b.png", List.of(new BingoEffect(1, Symbol.BELL)), null, 1))),
+            id -> { throw new AssertionError("aucune carte offerte"); });
+        controller.drawCards();
+        controller.playCard(controller.getGameState().getPlayer().getCurrentHand().get(0));
+        TurnResult turn = controller.spin();
+        assertEquals(Symbol.BELL, turn.getGainBingoSymbol());
+        assertNull(controller.claimBonusCard(), "seule la carte « Bingo » offre un Bingo");
     }
 
     @Test
@@ -155,5 +194,13 @@ class EnemyPowerTest {
         assertFalse(turn.isShieldBingo());
         assertNull(controller.claimBonusCard());
         assertTrue(Arrays.stream(turn.getSymbols()).allMatch(s -> s == Symbol.SEVEN));
+    }
+
+    @Test
+    void theTrainingCroupierIsGentle() {
+        assertEquals(1_000, EnemyKind.ENTRAINEMENT.getMaxHp());
+        assertEquals(10, EnemyKind.ENTRAINEMENT.empowered(EnemyKind.ENTRAINEMENT.swordDamage()));
+        assertEquals(EnemySymbol.SWORD_DAMAGE, EnemyKind.CROUPIER.swordDamage(), "le croupier de la Tour ne change pas");
+        assertEquals(5_000, EnemyKind.CROUPIER.getMaxHp());
     }
 }

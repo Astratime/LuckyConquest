@@ -82,12 +82,16 @@ import fr.astratime.lucky.entities.events.ReelForbiddenEvent;
 import fr.astratime.lucky.entities.events.PistolShotEvent;
 import fr.astratime.lucky.entities.events.PlayerHealedEvent;
 import fr.astratime.lucky.entities.events.ShieldGainedEvent;
-import fr.astratime.lucky.entities.tower.TowerRun;
+import fr.astratime.lucky.entities.exploration.DungeonRun;
+import fr.astratime.lucky.entities.run.CombatRun;
+import fr.astratime.lucky.progress.PlayerProfile;
+import fr.astratime.lucky.loaders.CardLoader;
 import fr.astratime.lucky.popups.EffectPopup;
 import fr.astratime.lucky.popups.PopupScale;
 import fr.astratime.lucky.settings.AudioSettings;
 import fr.astratime.lucky.settings.VisualSettings;
 import fr.astratime.lucky.views.CardChoiceOverlay;
+import fr.astratime.lucky.views.ChestOverlay;
 import fr.astratime.lucky.views.CardDetailOverlay;
 import fr.astratime.lucky.views.CardImage;
 import fr.astratime.lucky.views.CasinoButtons;
@@ -130,11 +134,16 @@ import java.util.stream.Collectors;
  * annonce « TOUR ENNEMI » et riposte, puis de nouveau le tour du joueur,
  * jusqu'à la fin du combat.
  *
- * Dans la Tour des épreuves ({@link TowerRun}), l'écran enchaîne les trois
- * combats d'un chapitre : après une victoire, le joueur choisit son adversaire
- * parmi trois cartes faces cachées, puis affronte le boss (voir
- * {@link EnemyPickOverlay}) ; il garde ses PV, ses gains et ses cartes d'un
- * combat à l'autre. Une défaite fait recommencer le chapitre.
+ * Dans la Tour des épreuves ({@link fr.astratime.lucky.entities.tower.TowerRun}),
+ * l'écran enchaîne les trois combats d'un chapitre : après une victoire, le
+ * joueur choisit son adversaire parmi trois cartes faces cachées, puis affronte
+ * le boss (voir {@link EnemyPickOverlay}) ; il garde ses PV, ses gains et ses
+ * cartes d'un combat à l'autre. Une défaite fait recommencer le chapitre. Dans
+ * un donjon de l'Exploration ({@link DungeonRun}), le soldat puis le roi, et
+ * enfin le coffre au trésor ({@link ChestOverlay}).
+ *
+ * Le joueur joue son deck (voir {@link PlayerProfile}). À la fin de chaque
+ * combat, les gains acquis pendant le combat sont versés en pièces.
  */
 public class GameScreen extends ScreenAdapter {
 
@@ -190,6 +199,8 @@ public class GameScreen extends ScreenAdapter {
     private static final float PURCHASE_DELAY   = 0.9f;
     /** Étape de la Tour des épreuves : en haut à gauche de la zone de jeu. */
     private static final float STAGE_LABEL_MARGIN = 30f;
+    /** Coffre au trésor ouvert : gerbe de confettis. */
+    private static final int   CHEST_CONFETTI        = 70;
     /** Pot de Lutin qui apparaît : gerbe de confettis. */
     private static final int   POT_CONFETTI          = 50;
     /** Temps laissé au texte de la riposte (et au coup sur la barre) avant de passer au tour du joueur. */
@@ -201,15 +212,15 @@ public class GameScreen extends ScreenAdapter {
     // Contrôleur — seul point d'accès à la logique de jeu
     // -------------------------------------------------------------------------
 
-    private final GameController gameController = new GameController();
+    private final GameController gameController;
 
     // -------------------------------------------------------------------------
     // Ressources (à disposer dans dispose())
     // -------------------------------------------------------------------------
 
     private final LuckyGame           luckyGame;
-    /** Ascension d'un chapitre de la Tour des épreuves, ou {@code null} pour un combat seul (« Jouer »). */
-    private final TowerRun            run;
+    /** Chapitre de la Tour des épreuves ou donjon de l'Exploration, ou {@code null} pour un combat seul (« Entraînement »). */
+    private final CombatRun           run;
     private final Stage               stage;
     private final BitmapFont          font;
     /** Libellés du deck et de la défausse : police du jeu, à balises de couleur (nom crème, nombre doré). */
@@ -251,6 +262,8 @@ public class GameScreen extends ScreenAdapter {
     private final Group               shopIcon = new Group();
     /** Transitions de la Tour des épreuves : choix de l'adversaire, apparition du boss. */
     private final EnemyPickOverlay    pickOverlay;
+    /** Exploration : le coffre au trésor, au bout d'un donjon. */
+    private final ChestOverlay        chestOverlay;
     /** Étape de la Tour des épreuves (« CHAPITRE 1 · COMBAT 2/3 »), vide pour un combat seul. */
     private final Label               stageLabel;
 
@@ -312,12 +325,15 @@ public class GameScreen extends ScreenAdapter {
     /**
      * Écran de jeu d'une ascension de la Tour des épreuves.
      *
-     * @param run chapitre en cours ({@code null} : un combat seul, comme « Jouer »)
+     * @param run chapitre ou donjon en cours ({@code null} : un combat seul, comme « Entraînement »)
      */
-    public GameScreen(LuckyGame luckyGame, TowerRun run) {
+    public GameScreen(LuckyGame luckyGame, CombatRun run) {
         this.luckyGame = luckyGame;
         this.run       = run;
-        if (run != null) gameController.restart(run.getEnemy()); // le premier ennemi du chapitre
+        // Le deck construit par le joueur (ou le deck de départ), relu à chaque nouveau combat.
+        this.gameController = new GameController(() -> CardLoader.loadDeck(luckyGame.getProfile().getDeck()),
+            CardLoader.cardFactory(), CardLoader.loadShop());
+        gameController.restart(firstEnemy()); // le premier ennemi du chapitre, ou le croupier d'entraînement
         // Le SpriteBatch est partagé avec LuckyGame et ne doit PAS être disposé ici.
         this.stage = new Stage(new MinimumScreenViewport(MIN_WIDTH, MIN_HEIGHT), luckyGame.getBatch());
 
@@ -392,6 +408,8 @@ public class GameScreen extends ScreenAdapter {
             });
         pickOverlay      = new EnemyPickOverlay(stage, hudTextures, enemyTextures, sounds.cardFlip, sounds.cardHover,
             sounds.fireworkBurst);
+        chestOverlay     = new ChestOverlay(stage, hudTextures, enemyTextures, cardTextures, sounds.cardFlip,
+            sounds.coinsGain, (x, y) -> confetti.burst(x, y, CHEST_CONFETTI));
         stageLabel       = new Label("", new Label.LabelStyle(shopFont, Color.WHITE));
         stageLabel.setTouchable(Touchable.disabled);
         refreshStageLabel();
@@ -421,6 +439,7 @@ public class GameScreen extends ScreenAdapter {
         stage.addActor(combatEnd);
         stage.addActor(endButtons); // au-dessus de l'annonce de fin de combat
         stage.addActor(pickOverlay.getActor()); // Tour des épreuves : choix de l'adversaire, boss
+        stage.addActor(chestOverlay.getActor()); // Exploration : coffre au trésor
         stage.addActor(confetti);
         stage.addActor(damageVignette);
         stage.addActor(jackpotCelebration); // par-dessus le jeu et le panneau : bloque les clics pendant la fête
@@ -456,7 +475,7 @@ public class GameScreen extends ScreenAdapter {
         refreshCombos(); // les combinaisons du tour précédent s'éteignent
         hand.setLocked(false); // une carte achetée entre deux tours reste sur la table
         slots.setBlockedReel(player().getLastingEffects().getForbiddenReel()); // Rouleau interdit de l'ennemi
-        GameController.Purchase gift = gameController.claimBonusCard(); // Bingo offert après un Bingo de bouclier
+        GameController.Purchase gift = gameController.claimBonusCard(); // Bingo glissé dans le deck après un Bingo de gains
         if (gift != null) placePurchase(gift);
         hand.deal(gameController.drawCards());
         refreshPlays();
@@ -767,7 +786,7 @@ public class GameScreen extends ScreenAdapter {
     /** @return {@code true} si une fenêtre ou une animation attend : ni pioche ni lancer possibles. */
     private boolean isBusy() {
         return pileOverlay.isShown() || choiceOverlay.isShown() || shopOverlay.isShown() || cardDetail.isShown()
-            || bingoAnimation.isPlaying() || rainbowAnimation.isPlaying() || pickOverlay.isShown();
+            || bingoAnimation.isPlaying() || rainbowAnimation.isPlaying() || pickOverlay.isShown() || chestOverlay.isShown();
     }
 
     /** Lance la machine (bouton, touche F, ou d'elle-même après une carte Bingo). */
@@ -1035,7 +1054,7 @@ public class GameScreen extends ScreenAdapter {
      */
     private void onRestart() {
         if (run != null) run.restart();
-        gameController.restart(run != null ? run.getEnemy() : EnemyKind.CROUPIER);
+        gameController.restart(firstEnemy());
         resetBoard();
     }
 
@@ -1076,6 +1095,7 @@ public class GameScreen extends ScreenAdapter {
         enemyView.reset();
         playerShield.setValue(0);
         pickOverlay.hide();
+        chestOverlay.hide();
         refreshAll();
         refreshStageLabel();
         layout();
@@ -1096,13 +1116,29 @@ public class GameScreen extends ScreenAdapter {
         });
     }
 
-    /** Tour des épreuves : retour à l'écran des chapitres. */
+    /** Tour des épreuves : retour à l'écran des chapitres ; Exploration : retour à la carte. */
     private void onBackToChapters() {
         endButtons.setTouchable(Touchable.disabled);
         Gdx.app.postRunnable(() -> {
-            luckyGame.setScreen(new TowerScreen(luckyGame));
+            luckyGame.setScreen(isDungeon() ? new ExplorationScreen(luckyGame) : new TowerScreen(luckyGame));
             dispose();
         });
+    }
+
+    /** @return {@code true} dans un donjon de l'Exploration. */
+    private boolean isDungeon() { return run instanceof DungeonRun; }
+
+    /**
+     * Donjon terminé : le coffre au trésor. Son contenu est tiré et enregistré
+     * tout de suite (une carte du donjon et des pièces) ; le joueur l'ouvre d'un clic.
+     */
+    private void openChest() {
+        DungeonRun dungeonRun = (DungeonRun) run;
+        String cardId = dungeonRun.getDungeon().rollLoot(new java.util.Random());
+        PlayerProfile.ChestReward reward = luckyGame.getProfile().openChest(cardId);
+        chestOverlay.getActor().toFront();
+        chestOverlay.show(dungeonRun.getDungeon(), reward, CardLoader.cardFactory().apply(cardId),
+            buttons.createAction("Exploration", sounds.buttonClick, this::onBackToChapters));
     }
 
     /**
@@ -1114,15 +1150,21 @@ public class GameScreen extends ScreenAdapter {
         combatEnd.reset();
         table.setLightsParty(false);
         confetti.removeAll();
-        TowerRun.Next next = run.win();
+        CombatRun.Next next = run.win();
         refreshStageLabel();
         switch (next) {
             case CHOOSE_ENEMY -> pickOverlay.showChoice(run.getChoices(), this::createButton,
                 index -> startNextCombat(run.choose(index)));
             case BOSS -> pickOverlay.showBoss(run.getEnemy(), this::createButton, () -> startNextCombat(run.getEnemy()));
-            case CHAPTER_CLEARED -> onBackToChapters();
+            case CLEARED -> {
+                if (isDungeon()) openChest();
+                else onBackToChapters();
+            }
         }
     }
+
+    /** @return le texte du bouton qui ramène au choix du chapitre ou du donjon. */
+    private String backText() { return isDungeon() ? "Exploration" : "Chapitres"; }
 
     /** @return un bouton du casino ({@code text}), qui joue le clic et lance {@code action}. */
     private TextButton createButton(String text, Runnable action) {
@@ -1141,15 +1183,24 @@ public class GameScreen extends ScreenAdapter {
             shown.add(restartButton);
             shown.add(menuButton);
         } else if (!victory) {
-            shown.add(buttons.createAction("Réessayer le chapitre", sounds.buttonClick, this::onRestart));
-            shown.add(buttons.create("Chapitres", sounds.buttonClick, this::onBackToChapters));
+            shown.add(buttons.createAction(isDungeon() ? "Réessayer le donjon" : "Réessayer le chapitre",
+                sounds.buttonClick, this::onRestart));
+            shown.add(buttons.create(backText(), sounds.buttonClick, this::onBackToChapters));
+        } else if (run.isBossStage() && isDungeon()) {
+            shown.add(buttons.createAction("Ouvrir le coffre !", sounds.buttonClick, this::onContinue));
         } else if (run.isBossStage()) {
             shown.add(buttons.createAction("Chapitre terminé !", sounds.buttonClick, this::onBackToChapters));
         } else {
             shown.add(buttons.createAction("Continuer", sounds.buttonClick, this::onContinue));
-            shown.add(buttons.create("Chapitres", sounds.buttonClick, this::onBackToChapters));
+            shown.add(buttons.create(backText(), sounds.buttonClick, this::onBackToChapters));
         }
-        String ending = run != null && victory && run.isBossStage() ? run.getChapter().getEnding() : null;
+        // Les gains affichés, versés en pièces pour la boutique après le roi d'un donjon.
+        int earned = combatReward(victory);
+        if (earned > 0) {
+            Label coinsLabel = new Label("PIÈCES +" + PlayerProfile.formatCoins(earned), new Label.LabelStyle(shopFont, Palette.GOLD));
+            endButtons.add(coinsLabel).colspan(shown.size()).padBottom(14f).row();
+        }
+        String ending = run != null && victory && run.isBossStage() ? run.getEnding() : null;
         if (ending != null) {
             // Le dernier chapitre clôt l'histoire : sa phrase de fin, au-dessus du bouton.
             Label endingLabel = new Label(ending, new Label.LabelStyle(shopFont, Palette.GOLD));
@@ -1170,14 +1221,27 @@ public class GameScreen extends ScreenAdapter {
             stageLabel.setText("");
             return;
         }
-        String step = run.isBossStage() ? "BOSS" : "COMBAT " + (run.getStage() + 1) + "/" + TowerRun.STAGES;
-        stageLabel.setText(run.getChapter().getLabel().toUpperCase() + " · " + step);
+        String step = run.isBossStage() ? (isDungeon() ? "ROI" : "BOSS")
+            : "COMBAT " + (run.getStage() + 1) + "/" + run.getStageCount();
+        stageLabel.setText(run.getLabel().toUpperCase() + " · " + step);
         stageLabel.pack();
     }
 
     // -------------------------------------------------------------------------
     // Fin de combat, sons et journal
     // -------------------------------------------------------------------------
+
+    /** @return les pièces gagnées à la fin de ce combat (voir {@link PlayerProfile#combatReward}). */
+    private int combatReward(boolean victory) {
+        if (!isDungeon()) return 0; // seule l'Exploration rapporte des pièces (ni Entraînement, ni Tour)
+        return PlayerProfile.combatReward(victory, run.isBossStage(),
+            gameController.getGameState().getPlayer().getGains());
+    }
+
+    /** @return l'ennemi du combat en cours de la Tour ou du donjon, ou le croupier d'entraînement. */
+    private EnemyKind firstEnemy() {
+        return run != null ? run.getEnemy() : EnemyKind.ENTRAINEMENT;
+    }
 
     /** Le combat est terminé dès que le joueur ou l'ennemi n'a plus de points de vie. */
     private boolean isCombatOver() {
@@ -1191,6 +1255,7 @@ public class GameScreen extends ScreenAdapter {
      */
     private void endCombat() {
         spinButton.setDisabled(true);
+        luckyGame.getProfile().addCoins(combatReward(gameController.getGameState().getEnemy().isDefeated()));
         buildEndButtons(gameController.getGameState().getEnemy().isDefeated());
         Runnable showRestart = () -> {
             endButtons.setTouchable(Touchable.childrenOnly);
@@ -1388,7 +1453,8 @@ public class GameScreen extends ScreenAdapter {
                     openPauseMenu();
                     return true;
                 }
-                if (choiceOverlay.isShown() || shopOverlay.isShown() || pickOverlay.isShown() || bingoAnimation.isPlaying()
+                if (choiceOverlay.isShown() || shopOverlay.isShown() || pickOverlay.isShown() || chestOverlay.isShown()
+                    || bingoAnimation.isPlaying()
                     || rainbowAnimation.isPlaying()) {
                     return true; // un choix ou une animation de carte est en cours
                 }
@@ -1411,6 +1477,7 @@ public class GameScreen extends ScreenAdapter {
         layout();
         choiceOverlay.layout();
         pickOverlay.layout();
+        chestOverlay.layout();
         shopOverlay.layout();
         cardDetail.layout();
         pileOverlay.hide();
@@ -1465,6 +1532,7 @@ public class GameScreen extends ScreenAdapter {
         pileOverlay.dispose();
         choiceOverlay.dispose();
         pickOverlay.dispose();
+        chestOverlay.dispose();
         bingoAnimation.dispose();
         rainbowAnimation.dispose();
         shopOverlay.dispose();

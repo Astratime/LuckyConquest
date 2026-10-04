@@ -55,6 +55,29 @@ public class PlayContext {
      */
     public int consumeGainsPercent(float percent) { return player.consumeGainsPercent(percent); }
 
+    /**
+     * Soigne immédiatement le joueur de {@code percent} % de ses PV max ; ce qui
+     * dépasse ses PV max remplit le Sang.
+     *
+     * @return les points de vie rendus et le Sang ajouté, au total
+     */
+    public int healPercent(int percent) {
+        int amount = Math.round(player.getMaxHp() * percent / 100f);
+        int healed = player.heal(amount);
+        player.getLastingEffects().addBlood(amount - healed);
+        return amount;
+    }
+
+    /**
+     * Retire immédiatement {@code percent} % de ses PV max au joueur, sans
+     * passer par le bouclier et sans descendre sous 1 PV.
+     *
+     * @return les points de vie retirés
+     */
+    public int sacrificeHpPercent(int percent) {
+        return player.sacrificeHp(Math.round(player.getMaxHp() * percent / 100f));
+    }
+
     /** @return les effets de cartes qui durent plusieurs tours, à modifier immédiatement (Recyclage, Porte-bonheur). */
     public LastingEffects getLastingEffects() { return player.getLastingEffects(); }
 

@@ -32,6 +32,7 @@ public class CombatContext {
     private int   symbolPower    = 1;   // facteur de la valeur de chaque symbole : dégâts, bouclier, gains (Bingo)
     private float defenseFactor  = 1f;  // facteur du bouclier de chaque symbole (Corruption)
     private int   counterAttack  = 0;   // As de Carreau : multiplicateur du Coffre infligé en contre-attaque (0 : aucune)
+    private int   executionPercent = 0; // Guillotine : % des PV restants de l'ennemi infligés d'un coup (0 : aucun)
 
     private final List<Symbol>  bets        = new ArrayList<>(); // Pari : symboles sur lesquels le joueur a parié
     private final List<Integer> pistolShots = new ArrayList<>(); // Roulette russe : multiplicateur de chaque tir de pistolet
@@ -74,6 +75,8 @@ public class CombatContext {
     public float getDefenseFactor()  { return defenseFactor; }
     /** @return le multiplicateur du Coffre infligé en contre-attaque ce tour (0 si aucune). */
     public int   getCounterAttack()  { return counterAttack; }
+    /** @return la part des PV restants de l'ennemi infligée d'un coup par la Guillotine, en % (0 : aucune). */
+    public int   getExecutionPercent() { return executionPercent; }
     /** @return le facteur de la valeur de chaque symbole : dégâts, bouclier et gains (1 si aucun). */
     public int   getSymbolPower()    { return symbolPower; }
     /** @return les symboles sur lesquels le joueur a parié ce tour (vue non modifiable). */
@@ -118,6 +121,8 @@ public class CombatContext {
     public void multiplyDefense(float factor)     { defenseFactor *= factor; }
     /** Contre-attaque (As de Carreau) : le Coffre, multiplié par {@code factor}, est infligé à l'ennemi. */
     public void addCounterAttack(int factor)      { counterAttack += factor; }
+    /** Guillotine : ajoute {@code percent} % des PV restants de l'ennemi, infligés d'un coup après le tirage. */
+    public void addExecution(int percent)         { executionPercent += percent; }
     /** Multiplie la valeur de chaque symbole (dégâts, bouclier, gains) par {@code factor}. */
     public void multiplySymbolPower(int factor)   { symbolPower  *= factor; }
     /** Parie sur l'apparition de {@code symbol} au tirage. */

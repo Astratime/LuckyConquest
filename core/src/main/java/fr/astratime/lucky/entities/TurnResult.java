@@ -118,6 +118,14 @@ public class TurnResult {
         return !isJackpot() && SlotMachine.hasPair(symbols);
     }
 
+    /**
+     * @return le symbole d'un Bingo de gains (trois symboles de gains identiques),
+     *         ou {@code null} si ce tour n'en est pas un
+     */
+    public Symbol getGainBingoSymbol() {
+        return isJackpot() && SymbolRegistry.getGainSymbols().contains(symbols[0]) ? symbols[0] : null;
+    }
+
     /** @return {@code true} pour un Bingo de bouclier : trois symboles de défense identiques. */
     public boolean isShieldBingo() {
         return isJackpot() && SymbolRegistry.getDefenseSymbols().contains(symbols[0]);

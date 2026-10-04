@@ -15,14 +15,8 @@
   { "id": "11_pique", "copies": 1 },
   { "id": "12_pique", "copies": 1 },
   { "id": "13_pique", "copies": 1 },
-  { "id": "draw_2", "copies": 2 },
-  { "id": "draw_3", "copies": 1 },
-  { "id": "gain_500", "copies": 1 },
-  { "id": "magnet", "copies": 1 },
+  { "id": "draw_2", "copies": 1 },
   { "id": "joker", "copies": 1 },
-  { "id": "recycle", "copies": 1 },
-  { "id": "bet", "copies": 1 },
-  { "id": "lucky_charm", "copies": 1 },
-  { "id": "in_the_sleeve", "copies": 1 },
-  { "id": "rainbow", "copies": 1 }
+  { "id": "gain_500", "copies": 1 },
+  { "id": "lucky_charm", "copies": 1 }
 ]

@@ -1,0 +1,74 @@
+[
+  {
+    "id": "pierre_a_aiguiser",
+    "name": "Pierre à aiguiser",
+    "assetPath": "cards/special/pierre_a_aiguiser.png",
+    "effects": [ { "type": "BLADES_ATTACK", "blades": 3, "attackBonus": 150 } ]
+  },
+  {
+    "id": "dague_de_l_ombre",
+    "name": "Dague de l'ombre",
+    "assetPath": "cards/special/dague_de_l_ombre.png",
+    "effects": [ { "type": "SHADOW_DAGGER", "attackPerBlade": 60 } ]
+  },
+  {
+    "id": "guillotine",
+    "name": "Guillotine",
+    "assetPath": "cards/special/guillotine.png",
+    "effects": [ { "type": "GUILLOTINE", "percentPerBlade": 2 } ]
+  },
+  {
+    "id": "trefle_a_quatre_feuilles",
+    "name": "Trèfle à quatre feuilles",
+    "assetPath": "cards/special/trefle_a_quatre_feuilles.png",
+    "effects": [ { "type": "FOUR_LEAF_CLOVER", "gainMultiplier": 40, "gainBoost": 30 } ]
+  },
+  {
+    "id": "bourse_garnie",
+    "name": "Bourse garnie",
+    "assetPath": "cards/special/bourse_garnie.png",
+    "effects": [ { "type": "GAIN", "amount": 1500 }, { "type": "FORTUNE", "attackPercent": 5 } ]
+  },
+  {
+    "id": "fortune_du_roi",
+    "name": "Fortune du Roi",
+    "assetPath": "cards/special/fortune_du_roi.png",
+    "effects": [ { "type": "FORTUNE", "gainFactor": 2, "attackPercent": 10 } ]
+  },
+  {
+    "id": "transfusion",
+    "name": "Transfusion",
+    "assetPath": "cards/special/transfusion.png",
+    "effects": [ { "type": "TRANSFUSION", "percent": 15 } ]
+  },
+  {
+    "id": "baiser_vampire",
+    "name": "Baiser vampire",
+    "assetPath": "cards/special/baiser_vampire.png",
+    "effects": [ { "type": "HEART_DRAIN", "percent": 30 } ]
+  },
+  {
+    "id": "pacte_de_sang",
+    "name": "Pacte de sang",
+    "assetPath": "cards/special/pacte_de_sang.png",
+    "effects": [ { "type": "BLOOD_PACT", "hpPercent": 20, "attackFactor": 3 }, { "type": "HEART_DRAIN", "percent": 30 } ]
+  },
+  {
+    "id": "rempart",
+    "name": "Rempart",
+    "assetPath": "cards/special/rempart.png",
+    "effects": [ { "type": "RAMPART", "shield": 40, "defenseBoost": 30 } ]
+  },
+  {
+    "id": "miroir_taille",
+    "name": "Miroir taillé",
+    "assetPath": "cards/special/miroir_taille.png",
+    "effects": [ { "type": "GUARANTEED_REFLECT", "percent": 200 } ]
+  },
+  {
+    "id": "diamant_brut",
+    "name": "Diamant brut",
+    "assetPath": "cards/special/diamant_brut.png",
+    "effects": [ { "type": "ROUGH_DIAMOND", "counter": 2 } ]
+  }
+]

@@ -74,6 +74,17 @@ public class SymbolRegistry {
         return result;
     }
 
+    /** Symboles dont l'action rapporte des gains — boostés par le Trèfle à quatre feuilles. */
+    public static List<Symbol> getGainSymbols() {
+        List<Symbol> result = new ArrayList<>();
+        for (Map.Entry<Symbol, Action> entry : ACTIONS.entrySet()) {
+            if (entry.getValue() instanceof GainAction) {
+                result.add(entry.getKey());
+            }
+        }
+        return result;
+    }
+
     /** Classe utilitaire statique : instanciation interdite. */
     private SymbolRegistry() {}
 }

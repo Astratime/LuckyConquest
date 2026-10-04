@@ -10,6 +10,7 @@ import fr.astratime.lucky.entities.TurnResult;
 import fr.astratime.lucky.entities.LastingEffects;
 import fr.astratime.lucky.entities.events.BetLostEvent;
 import fr.astratime.lucky.entities.events.CounterAttackEvent;
+import fr.astratime.lucky.entities.events.ExecutionEvent;
 import fr.astratime.lucky.entities.events.BetWonEvent;
 import fr.astratime.lucky.entities.events.EnemyDamagedEvent;
 import fr.astratime.lucky.entities.events.Event;
@@ -40,6 +41,8 @@ public class CombatResolver {
     static final int   PISTOL_BASE_DAMAGE = 10;
     /** Part du Coffre (Carreau) ajoutée à l'attaque ennemie pour calculer le renvoi (voir EnemyTurnResolver). */
     static final float VAULT_REFLECT_SHARE = 0.2f;
+    /** Part des PV restants de l'ennemi que la Guillotine peut infliger au plus en un coup. */
+    static final int   EXECUTION_MAX_PERCENT = 50;
     /** Part des gains perdue quand le symbole parié ne sort pas. */
     private static final float BET_LOSS   = 0.5f;
 
@@ -89,6 +92,7 @@ public class CombatResolver {
         // Tirs de pistolet (Roulette russe), puis contre-attaque du Coffre (As de Carreau)
         List<Event> pistolEvents = firePistol(combatContext, symbolOutcomes);
         counterAttack(combatContext).ifPresent(pistolEvents::add);
+        execution(combatContext).ifPresent(pistolEvents::add);
         events.addAll(pistolEvents);
 
         // Bonus de paire/jackpot
@@ -160,6 +164,20 @@ public class CombatResolver {
         int damage = lasting.consumeVault() * context.getCounterAttack();
         enemy.takeDamage(damage);
         return Optional.of(new CounterAttackEvent(damage, enemy.getDefense()));
+    }
+
+    /**
+     * Guillotine : une part des PV restants de l'ennemi, infligée d'un coup,
+     * sans tenir compte de sa défense (au plus {@link #EXECUTION_MAX_PERCENT} %).
+     * Rien si l'ennemi est déjà vaincu.
+     */
+    private Optional<Event> execution(CombatContext context) {
+        Enemy enemy = context.getEnemy();
+        if (context.getExecutionPercent() <= 0 || enemy.isDefeated()) return Optional.empty();
+        int percent = Math.min(EXECUTION_MAX_PERCENT, context.getExecutionPercent());
+        int damage  = Math.max(1, Math.round(enemy.getHp() * percent / 100f));
+        enemy.takeDamage(damage);
+        return Optional.of(new ExecutionEvent(damage, percent, enemy.getDefense()));
     }
 
     /**

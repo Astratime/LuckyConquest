@@ -38,6 +38,11 @@ public class EnemyTextures implements Disposable {
     private final Map<EnemyKind, Texture>   portraits = new EnumMap<>(EnemyKind.class);
     private final Map<EnemyKind, Texture>   flashes   = new EnumMap<>(EnemyKind.class);
     private final CardTextures              cards;
+    /** Exploration : coffre au trésor (fermé, ouvert), carte de la prairie et entrée de chaque donjon. */
+    public final Texture                    chestClosed;
+    public final Texture                    chestOpen;
+    public final Texture                    prairie;
+    private final Map<Card.Suit, Texture>   gates = new EnumMap<>(Card.Suit.class);
 
     /** @param cards cache des images de cartes, partagé avec l'écran de jeu (non possédé) */
     public EnemyTextures(CardTextures cards) {
@@ -60,6 +65,8 @@ public class EnemyTextures implements Disposable {
         symbols.put(EnemySymbol.ALL_IN,     texture(Chapter3Art.allIn(), false));
         portraits.put(EnemyKind.CROUPIER, croupier);
         flashes.put(EnemyKind.CROUPIER, croupierFlash);
+        portraits.put(EnemyKind.ENTRAINEMENT, croupier); // le même croupier, en mode Entraînement
+        flashes.put(EnemyKind.ENTRAINEMENT, croupierFlash);
         addPortrait(EnemyKind.GARDIEN, EnemyPortraits.gardien());
         addPortrait(EnemyKind.SANGSUE, EnemyPortraits.sangsue());
         addPortrait(EnemyKind.BRETTEUR, EnemyPortraits.bretteur());
@@ -74,6 +81,18 @@ public class EnemyTextures implements Disposable {
         addPortrait(EnemyKind.HORLOGER, Chapter3Art.horloger());
         addPortrait(EnemyKind.FOU, Chapter3Art.fou());
         addPortrait(EnemyKind.ECLAT, Chapter3Art.eclat());
+        addPortrait(EnemyKind.SOLDAT_PIQUE, ExplorationArt.soldier(Card.Suit.PIQUE));
+        addPortrait(EnemyKind.ROI_PIQUE, ExplorationArt.king(Card.Suit.PIQUE));
+        addPortrait(EnemyKind.SOLDAT_TREFLE, ExplorationArt.soldier(Card.Suit.TREFLE));
+        addPortrait(EnemyKind.ROI_TREFLE, ExplorationArt.king(Card.Suit.TREFLE));
+        addPortrait(EnemyKind.SOLDAT_COEUR, ExplorationArt.soldier(Card.Suit.COEUR));
+        addPortrait(EnemyKind.ROI_COEUR, ExplorationArt.king(Card.Suit.COEUR));
+        addPortrait(EnemyKind.SOLDAT_CARREAU, ExplorationArt.soldier(Card.Suit.CARREAU));
+        addPortrait(EnemyKind.ROI_CARREAU, ExplorationArt.king(Card.Suit.CARREAU));
+        chestClosed = texture(ExplorationArt.chestClosed(), false);
+        chestOpen   = texture(ExplorationArt.chestOpen(), false);
+        prairie     = texture(ExplorationArt.prairie(), false);
+        for (Card.Suit suit : Card.Suit.values()) gates.put(suit, texture(ExplorationArt.gate(suit), false));
         chapterArt.put(Chapter.GENESE, texture(EnemyPortraits.genesis(), false));
         chapterArt.put(Chapter.TABLES_SACREES, texture(Chapter2Art.tables(), false));
         chapterArt.put(Chapter.DERNIER_TIRAGE, texture(Chapter3Art.crater(), false));
@@ -92,6 +111,9 @@ public class EnemyTextures implements Disposable {
 
     /** @return la silhouette blanche du portrait de l'ennemi {@code kind}. */
     public Texture portraitFlash(EnemyKind kind) { return flashes.get(kind); }
+
+    /** @return l'entrée du donjon de la couleur {@code suit}, sur la carte de l'Exploration. */
+    public Texture gate(Card.Suit suit) { return gates.get(suit); }
 
     /** @return l'illustration du chapitre {@code chapter}. */
     public Texture chapterArt(Chapter chapter) { return chapterArt.get(chapter); }
@@ -310,5 +332,9 @@ public class EnemyTextures implements Disposable {
         flashes.values().forEach(Texture::dispose);
         symbols.values().forEach(Texture::dispose);
         chapterArt.values().forEach(Texture::dispose);
+        gates.values().forEach(Texture::dispose);
+        chestClosed.dispose();
+        chestOpen.dispose();
+        prairie.dispose();
     }
 }

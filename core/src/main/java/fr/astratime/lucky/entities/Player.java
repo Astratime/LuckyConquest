@@ -72,6 +72,18 @@ public class Player {
         hp += healed;
         return healed;
     }
+    /**
+     * Retire {@code amount} points de vie sans passer par le bouclier, sans
+     * jamais descendre sous 1 PV (Pacte de sang : on ne meurt pas de sa propre carte).
+     *
+     * @return les points de vie réellement retirés
+     */
+    public int sacrificeHp(int amount) {
+        int lost = Math.max(0, Math.min(amount, hp - 1));
+        hp -= lost;
+        return lost;
+    }
+
     /** @return {@code true} si le joueur n'a plus de points de vie. */
     public boolean isDefeated()        { return hp <= 0; }
 
@@ -209,7 +221,7 @@ public class Player {
         cards.addAll(playedCards);
         Player next = new Player(name, maxHp, cards);
         next.hp = hp; // les PV perdus ne reviennent pas d'un combat à l'autre
-        next.addGains(gains);
+        next.gains = gains;
         return next;
     }
 

@@ -19,9 +19,11 @@ import java.util.function.Function;
  * d'objets carte, chaque carte ayant un id, un nom, un assetPath, une suite
  * optionnelle, un rang optionnel et une liste d'effets.
  *
- * La composition du deck de départ est décrite à part, dans
- * assets/cards/decks/starter.json : liste d'ids de cartes, chacun avec son
- * nombre d'exemplaires dans le deck ("copies", 1 si absent).
+ * La composition du deck de départ (20 cartes, joué tant que le joueur n'a
+ * pas construit le sien) est décrite à part, dans assets/cards/decks/starter.json,
+ * et les cartes que le joueur possède au premier lancement dans
+ * assets/cards/decks/collection.json : liste d'ids de cartes, chacun avec son
+ * nombre d'exemplaires ("copies", 1 si absent).
  *
  * Ajouter une nouvelle carte = ajouter une entrée dans le JSON correspondant.
  * Ajouter un nouveau type d'effet = ajouter un case dans parseEffect().
@@ -36,10 +38,12 @@ public class CardLoader {
         "cards/definitions/carreau.json",
         "cards/definitions/pique.json",
         "cards/definitions/special.json",
+        "cards/definitions/donjons.json",
         "cards/definitions/test.json"
     };
 
     private static final String STARTER_DECK_FILE = "cards/decks/starter.json";
+    private static final String COLLECTION_FILE   = "cards/decks/collection.json";
     private static final String SHOP_FILE         = "cards/decks/shop.json";
 
     /** Lit le contenu texte d'un fichier d'assets à partir de son chemin (ex : "cards/decks/starter.json"). */
@@ -67,9 +71,8 @@ public class CardLoader {
     }
 
     /**
-     * Charge le deck de départ décrit par STARTER_DECK_FILE. Chaque exemplaire
-     * est une instance de {@link Card} distincte, même pour une carte présente
-     * en plusieurs exemplaires.
+     * Charge le deck de départ décrit par STARTER_DECK_FILE : celui du joueur
+     * tant qu'il n'a pas construit le sien (voir {@link #loadDeck(Map)}).
      *
      * @throws IllegalArgumentException si le deck référence un id de carte inconnu
      */
@@ -81,22 +84,63 @@ public class CardLoader {
 
     /** Comme {@link #loadStarterDeck()}, en lisant les fichiers avec {@code reader} (ex : tests sans libGDX). */
     public static List<Card> loadStarterDeck(AssetReader reader) {
+        return loadDeck(loadCopies(reader, STARTER_DECK_FILE), reader);
+    }
+
+    /** @return le nombre d'exemplaires de chaque carte du deck de départ, par id. */
+    public static Map<String, Integer> loadStarterDeckCopies() {
+        return loadCopies(GDX_READER, STARTER_DECK_FILE);
+    }
+
+    /** Comme {@link #loadStarterDeckCopies()}, en lisant les fichiers avec {@code reader}. */
+    public static Map<String, Integer> loadStarterDeckCopies(AssetReader reader) {
+        return loadCopies(reader, STARTER_DECK_FILE);
+    }
+
+    /**
+     * @return les cartes que possède le joueur au premier lancement (décrites par
+     *         COLLECTION_FILE) : nombre d'exemplaires par id, dans l'ordre du fichier
+     */
+    public static Map<String, Integer> loadStartingCollection() {
+        return loadCopies(GDX_READER, COLLECTION_FILE);
+    }
+
+    /** Comme {@link #loadStartingCollection()}, en lisant les fichiers avec {@code reader}. */
+    public static Map<String, Integer> loadStartingCollection(AssetReader reader) {
+        return loadCopies(reader, COLLECTION_FILE);
+    }
+
+    /**
+     * Crée les cartes d'un deck : chaque exemplaire est une instance de
+     * {@link Card} distincte, même pour une carte présente en plusieurs exemplaires.
+     *
+     * @param copies nombre d'exemplaires de chaque carte, par id
+     * @throws IllegalArgumentException si un id de carte est inconnu
+     */
+    public static List<Card> loadDeck(Map<String, Integer> copies) {
+        return loadDeck(copies, GDX_READER);
+    }
+
+    /** Comme {@link #loadDeck(Map)}, en lisant les fichiers avec {@code reader} (ex : tests sans libGDX). */
+    public static List<Card> loadDeck(Map<String, Integer> copies, AssetReader reader) {
         Map<String, JsonValue> definitions = loadDefinitions(reader);
         List<Card> cards = new ArrayList<>();
-
-        JsonValue root = new JsonReader().parse(reader.read(STARTER_DECK_FILE));
-        for (JsonValue entry = root.child; entry != null; entry = entry.next) {
-            String id = entry.getString("id");
-            JsonValue definition = definitions.get(id);
-            if (definition == null) {
-                throw new IllegalArgumentException("Carte inconnue dans " + STARTER_DECK_FILE + " : " + id);
-            }
-            int copies = entry.getInt("copies", 1);
-            for (int i = 0; i < copies; i++) {
-                cards.add(parseCard(definition));
-            }
+        for (Map.Entry<String, Integer> entry : copies.entrySet()) {
+            JsonValue definition = definitions.get(entry.getKey());
+            if (definition == null) throw new IllegalArgumentException("Carte inconnue dans le deck : " + entry.getKey());
+            for (int i = 0; i < entry.getValue(); i++) cards.add(parseCard(definition));
         }
         return cards;
+    }
+
+    /** @return le nombre d'exemplaires de chaque carte du fichier {@code path} ("copies", 1 si absent), par id. */
+    private static Map<String, Integer> loadCopies(AssetReader reader, String path) {
+        Map<String, Integer> copies = new LinkedHashMap<>();
+        JsonValue root = new JsonReader().parse(reader.read(path));
+        for (JsonValue entry = root.child; entry != null; entry = entry.next) {
+            copies.merge(entry.getString("id"), entry.getInt("copies", 1), Integer::sum);
+        }
+        return copies;
     }
 
     /** @return le prix de chaque carte proposée à l'échoppe, par id, dans l'ordre du fichier {@code SHOP_FILE}. */
@@ -245,6 +289,28 @@ public class CardLoader {
                 return new GainsMultiplierEffect(json.getInt("factor"), json.getInt("gauges", 1));
             case "CORRUPTION":
                 return new CorruptionEffect(json.getInt("turns"));
+
+            // --- Cartes des donjons (Exploration) ---
+            case "BLADES_ATTACK":
+                return new BladesAttackEffect(json.getInt("blades"), json.getInt("attackBonus"));
+            case "SHADOW_DAGGER":
+                return new ShadowDaggerEffect(json.getInt("attackPerBlade"));
+            case "GUILLOTINE":
+                return new GuillotineEffect(json.getInt("percentPerBlade"));
+            case "FOUR_LEAF_CLOVER":
+                return new FourLeafCloverEffect(json.getInt("gainMultiplier"), json.getInt("gainBoost"));
+            case "FORTUNE":
+                return new FortuneEffect(json.getInt("gainFactor", 1), json.getInt("attackPercent"));
+            case "TRANSFUSION":
+                return new TransfusionEffect(json.getInt("percent"));
+            case "BLOOD_PACT":
+                return new BloodPactEffect(json.getInt("hpPercent"), json.getFloat("attackFactor"));
+            case "RAMPART":
+                return new RampartEffect(json.getInt("shield"), json.getInt("defenseBoost"));
+            case "GUARANTEED_REFLECT":
+                return new GuaranteedReflectEffect(json.getInt("percent"));
+            case "ROUGH_DIAMOND":
+                return new RoughDiamondEffect(json.getInt("counter"));
 
             default:
                 throw new IllegalArgumentException("Type d'effet inconnu dans le JSON : " + type);

@@ -1,6 +1,7 @@
 package fr.astratime.lucky.entities.tower;
 
 import fr.astratime.lucky.entities.enemy.EnemyKind;
+import fr.astratime.lucky.entities.run.CombatRun;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -17,7 +18,7 @@ import java.util.Random;
  * </ol>
  * Une défaite fait recommencer le chapitre au premier combat.
  */
-public class TowerRun {
+public class TowerRun implements CombatRun {
 
     /** Nombre de combats d'un chapitre. */
     public static final int STAGES = 3;
@@ -41,20 +42,20 @@ public class TowerRun {
 
     /** @return le chapitre en cours. */
     public Chapter getChapter() { return chapter; }
-    /** @return le combat en cours, de 0 (le premier) à {@link #STAGES} - 1 (le boss). */
+    @Override
     public int getStage() { return stage; }
-    /** @return l'ennemi du combat en cours. */
+    @Override
+    public int getStageCount() { return STAGES; }
+    @Override
     public EnemyKind getEnemy() { return enemy; }
-    /** @return {@code true} pendant le combat contre le boss. */
-    public boolean isBossStage() { return stage == STAGES - 1; }
+    @Override
+    public String getLabel() { return chapter.getLabel(); }
+    @Override
+    public String getEnding() { return chapter.getEnding(); }
 
-    /**
-     * Combat en cours gagné : prépare le suivant.
-     *
-     * @return ce qui vient ensuite
-     */
+    @Override
     public Next win() {
-        if (isBossStage()) return Next.CHAPTER_CLEARED;
+        if (isBossStage()) return Next.CLEARED;
         stage++;
         if (isBossStage()) {
             enemy = chapter.getBoss();
@@ -67,13 +68,10 @@ public class TowerRun {
     }
 
     /** @return les trois adversaires cachés sous les cartes du choix, dans l'ordre des cartes. */
+    @Override
     public List<EnemyKind> getChoices() { return choices; }
 
-    /**
-     * Le joueur retourne la carte {@code index} : son ennemi sera l'adversaire du combat.
-     *
-     * @return l'ennemi choisi
-     */
+    @Override
     public EnemyKind choose(int index) {
         if (choices.isEmpty()) throw new IllegalStateException("Aucun choix d'adversaire en cours");
         enemy   = choices.get(index);
@@ -82,12 +80,10 @@ public class TowerRun {
     }
 
     /** Défaite : le chapitre recommence au premier combat. */
+    @Override
     public void restart() {
         stage   = 0;
         enemy   = chapter.getFirstEnemy();
         choices = List.of();
     }
-
-    /** Ce qui suit un combat gagné. */
-    public enum Next { CHOOSE_ENEMY, BOSS, CHAPTER_CLEARED }
 }
