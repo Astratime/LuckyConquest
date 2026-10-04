@@ -40,7 +40,7 @@
     "effects": [
       {
         "type": "BINGO",
-        "power": 100
+        "power": 10
       }
     ]
   },

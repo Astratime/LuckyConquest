@@ -144,19 +144,19 @@ public class CombatResolver {
     }
 
     /**
-     * Chaque tir de pistolet multiplie les dégâts bruts du symbole d'attaque le
-     * plus fort du tirage ({@link #PISTOL_BASE_DAMAGE} si aucun n'est sorti),
-     * puis touche l'ennemi (sa défense absorbe et s'use, sauf Pique). Rien si
-     * l'ennemi est déjà vaincu.
+     * Chaque tir de pistolet multiplie l'attaque, avant les multiplicateurs
+     * (combos, Bingo, Corruption...), du symbole d'attaque le plus fort du tirage
+     * ({@link #PISTOL_BASE_DAMAGE} si aucun n'est sorti), puis touche l'ennemi
+     * (sa défense absorbe et s'use, sauf Pique). Rien si l'ennemi est déjà vaincu.
      */
     private List<Event> firePistol(CombatContext context, List<SymbolOutcome> outcomes) {
         List<Event> shots = new ArrayList<>();
-        int bestRaw  = PISTOL_BASE_DAMAGE;
+        long bestRaw = PISTOL_BASE_DAMAGE;
         int bestSlot = -1;
         for (SymbolOutcome outcome : outcomes) {
             for (Event event : outcome.getEvents()) {
-                if (event instanceof EnemyDamagedEvent hit && (bestSlot < 0 || hit.rawDamage > bestRaw)) {
-                    bestRaw  = hit.rawDamage;
+                if (event instanceof EnemyDamagedEvent hit && (bestSlot < 0 || hit.baseDamage > bestRaw)) {
+                    bestRaw  = hit.baseDamage;
                     bestSlot = outcome.getSlotIndex();
                 }
             }
@@ -164,10 +164,10 @@ public class CombatResolver {
         Enemy enemy = context.getEnemy();
         for (int multiplier : context.getPistolShots()) {
             if (enemy.isDefeated()) break;
-            int raw         = bestRaw * multiplier;
+            long raw        = enemy.capHit(bestRaw * multiplier);
             boolean pierced = context.isIgnoreDefense();
             int blocked     = pierced ? 0 : enemy.absorb(raw);
-            int damage      = enemy.skinned(raw - blocked);
+            long damage     = enemy.skinned(raw - blocked);
             enemy.takeDamage(raw - blocked);
             shots.add(new PistolShotEvent(damage, raw, blocked, enemy.getDefense(), pierced, bestSlot, multiplier));
         }
@@ -214,7 +214,7 @@ public class CombatResolver {
     private List<Event> forgedBlades(CombatContext context, List<SymbolOutcome> outcomes, List<Event> shots) {
         List<Event> strikes = new ArrayList<>();
         if (context.getForgedBlades() <= 0) return strikes;
-        int best = 0;
+        long best = 0;
         for (SymbolOutcome outcome : outcomes) {
             for (Event event : outcome.getEvents()) {
                 if (event instanceof EnemyDamagedEvent hit) best = Math.max(best, hit.rawDamage);
@@ -224,9 +224,9 @@ public class CombatResolver {
             if (event instanceof PistolShotEvent shot) best = Math.max(best, shot.rawDamage);
         }
         Enemy enemy = context.getEnemy();
-        int hit = Math.round(best * ForgedBladeEffect.PERCENT / 100f);
+        long hit = enemy.capHit(Math.round(best * ForgedBladeEffect.PERCENT / 100.0));
         for (int i = 0; i < context.getForgedBlades() && hit > 0 && !enemy.isDefeated(); i++) {
-            int damage = enemy.skinned(hit);
+            long damage = enemy.skinned(hit);
             enemy.takeDamage(hit);
             strikes.add(new CardStrikeEvent("LAME FORGÉE !", damage, hit, enemy.getDefense()));
         }
@@ -246,8 +246,8 @@ public class CombatResolver {
     private Optional<Event> goldenHeart(CombatContext context, int gainsEarned) {
         Enemy enemy = context.getEnemy();
         if (context.getGoldenHearts() <= 0 || gainsEarned <= 0 || enemy.isDefeated()) return Optional.empty();
-        int hit    = gainsEarned * context.getGoldenHearts();
-        int damage = enemy.skinned(hit);
+        long hit    = enemy.capHit((long) gainsEarned * context.getGoldenHearts());
+        long damage = enemy.skinned(hit);
         enemy.takeDamage(hit);
         return Optional.of(new CardStrikeEvent("CŒUR D'OR !", damage, hit, enemy.getDefense()));
     }
@@ -261,8 +261,8 @@ public class CombatResolver {
         Enemy enemy = context.getEnemy();
         LastingEffects lasting = context.getPlayer().getLastingEffects();
         if (context.getCounterAttack() <= 0 || enemy.isDefeated() || lasting.getVault() <= 0) return Optional.empty();
-        int hit    = lasting.consumeVault() * context.getCounterAttack();
-        int damage = enemy.skinned(hit);
+        long hit    = enemy.capHit((long) lasting.consumeVault() * context.getCounterAttack());
+        long damage = enemy.skinned(hit);
         enemy.takeDamage(hit);
         return Optional.of(new CounterAttackEvent(damage, enemy.getDefense()));
     }
@@ -277,7 +277,7 @@ public class CombatResolver {
         if (context.getExecutionPercent() <= 0 || enemy.isDefeated()) return Optional.empty();
         int percent = Math.min(EXECUTION_MAX_PERCENT, context.getExecutionPercent());
         int hit     = Math.max(1, Math.round(enemy.getHp() * percent / 100f));
-        int damage  = enemy.skinned(hit);
+        long damage = enemy.skinned(hit);
         enemy.takeDamage(hit);
         return Optional.of(new ExecutionEvent(damage, percent, enemy.getDefense()));
     }

@@ -97,8 +97,8 @@ public class CombatHud implements Disposable {
     }
 
     /** Montre un coup porté à l'ennemi : sa barre descend, tremble et flashe. */
-    public void revealEnemyHit(int damage) {
-        heldEnemyLoss -= Math.min(damage, heldEnemyLoss); // un coup fatal peut dépasser les PV restants
+    public void revealEnemyHit(long damage) {
+        heldEnemyLoss -= (int) Math.min(damage, heldEnemyLoss); // un coup fatal peut dépasser les PV restants
         refresh();
         enemyHealthBar.hit(HIT_FLASH, HIT_SHAKE);
     }

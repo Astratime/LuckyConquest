@@ -20,7 +20,7 @@ public class CardStrikeEvent extends EnemyDamagedEvent {
      * @param rawDamage   dégâts avant sa peau d'or
      * @param defenseLeft défense de l'ennemi, ignorée par le coup
      */
-    public CardStrikeEvent(String title, int damage, int rawDamage, int defenseLeft) {
+    public CardStrikeEvent(String title, long damage, long rawDamage, int defenseLeft) {
         super(damage, rawDamage, 0, defenseLeft, true);
         this.title = title;
     }

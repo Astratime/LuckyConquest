@@ -126,10 +126,10 @@ class PlaceChestCardsTest {
             List.of());
         CardStrikeEvent blade = result.getPistolEvents().stream().filter(e -> e instanceof CardStrikeEvent)
             .map(e -> (CardStrikeEvent) e).findFirst().orElseThrow();
-        int attack = result.getSymbolOutcomes().get(0).getEvents().stream()
+        long attack = result.getSymbolOutcomes().get(0).getEvents().stream()
             .filter(e -> e instanceof fr.astratime.lucky.entities.events.EnemyDamagedEvent)
-            .mapToInt(e -> ((fr.astratime.lucky.entities.events.EnemyDamagedEvent) e).rawDamage).max().orElseThrow();
-        assertEquals(Math.round(attack * ForgedBladeEffect.PERCENT / 100f), blade.rawDamage);
+            .mapToLong(e -> ((fr.astratime.lucky.entities.events.EnemyDamagedEvent) e).rawDamage).max().orElseThrow();
+        assertEquals(Math.round(attack * ForgedBladeEffect.PERCENT / 100.0), blade.rawDamage);
     }
 
     @Test

@@ -368,7 +368,7 @@ public class EnemyTurnResolver {
         List<Event> afterEvents = new ArrayList<>();
         if (turn.totalAttack > 0 && shieldReflect > 0) {
             // Bingo de bouclier : il frappe dans le bouclier, qui lui est renvoyé entier.
-            afterEvents.add(new DamageReflectedEvent(enemy.skinned(shieldReflect)));
+            afterEvents.add(new DamageReflectedEvent((int) enemy.skinned(shieldReflect)));
             enemy.takeDamage(shieldReflect);
         }
         if (turn.totalAttack > 0 && reflectPercent > 0 && !enemy.isDefeated()) {
@@ -376,7 +376,7 @@ public class EnemyTurnResolver {
             float reflectBase = turn.totalAttack + player.getLastingEffects().getVault() * vaultShare;
             int reflected = Math.round(reflectBase * (reflectPercent / 100f));
             if (reflected > 0) {
-                afterEvents.add(new DamageReflectedEvent(enemy.skinned(reflected)));
+                afterEvents.add(new DamageReflectedEvent((int) enemy.skinned(reflected)));
                 enemy.takeDamage(reflected);
             }
         }
