@@ -137,6 +137,24 @@ public class CardDetailOverlay implements Disposable {
         open(region, width, height, name, lines, List.of(effect.split("\n")));
     }
 
+    /**
+     * Fiche d'un effet en cours dans un combat (panneau « Effets ») : son icône
+     * en grand, son état et ce qu'il fait.
+     *
+     * @param icon        icône de l'effet
+     * @param state       son état (« 3 tours », « Lames 4 (+80) »…)
+     * @param description ce que fait l'effet, en phrases courtes (une ligne par phrase sur la fiche)
+     */
+    public void showEffect(String name, TextureRegion icon, String state, String description) {
+        float size = cardWidth * 0.8f;
+        List<String[]> lines = new ArrayList<>();
+        lines.add(new String[] {"Nom", name});
+        lines.add(new String[] {"Type", "Effet en cours"});
+        lines.add(new String[] {"État", state});
+        open(icon, size, size * icon.getRegionHeight() / icon.getRegionWidth(), name, lines,
+            List.of(description.split("(?<=[.!]) ")));
+    }
+
     /** Ouvre la fiche : l'image en grand à gauche, le nom, les lignes « Clé : valeur » et les effets à droite. */
     private void open(TextureRegion region, float width, float height, String name, List<String[]> lines,
                       List<String> effects) {

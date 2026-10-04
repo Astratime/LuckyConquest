@@ -1,11 +1,16 @@
 package fr.astratime.lucky.views;
 
+import com.badlogic.gdx.Input;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.Interpolation;
 import com.badlogic.gdx.math.Vector2;
+import com.badlogic.gdx.scenes.scene2d.Actor;
+import com.badlogic.gdx.scenes.scene2d.InputEvent;
+import com.badlogic.gdx.scenes.scene2d.InputListener;
 import com.badlogic.gdx.scenes.scene2d.Stage;
+import com.badlogic.gdx.scenes.scene2d.Touchable;
 import com.badlogic.gdx.scenes.scene2d.actions.Actions;
 import com.badlogic.gdx.scenes.scene2d.actions.TemporalAction;
 import com.badlogic.gdx.scenes.scene2d.ui.Container;
@@ -24,6 +29,7 @@ import fr.astratime.lucky.entities.Combo;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
 
 /**
  * Panneau latéral gauche, sur toute la hauteur de l'écran : titre du jeu,
@@ -31,7 +37,8 @@ import java.util.Map;
  * combinaisons de poker (celles que forment les cartes jouées ce tour brillent
  * en or, avec leur multiplicateur total), puis encadré des effets de cartes
  * actifs (symboles retirés, Porte-bonheur, paris en cours ; masqué s'il n'y
- * en a pas).
+ * en a pas). Survoler un effet affiche sa description ; un clic droit ouvre
+ * sa fiche.
  *
  * Quand les gains changent, le montant défile jusqu'à sa nouvelle valeur et la
  * pièce rebondit (seulement si les gains augmentent).
@@ -57,6 +64,7 @@ public class SidePanel implements Disposable {
     private static final float COMBO_PULSE    = 1.15f;
     private static final float COMBO_RULE     = 5f;    // filet entre les combinaisons et leur total
     private static final float COMBO_RULE_GAP = 8f;
+    private static final float TOOLTIP_GAP    = 8f;    // entre le panneau et l'infobulle d'un effet
 
     private final BitmapFont titleFont   = Fonts.jersey(56, Palette.TEXT_TITLE, 3f, Palette.TEXT_SHADE);
     private final BitmapFont captionFont = Fonts.jersey(30, Palette.TEXT_BODY, 2f, Palette.TEXT_SHADE);
@@ -74,15 +82,21 @@ public class SidePanel implements Disposable {
     private final Map<Combo, Label[]> comboLabels = new EnumMap<>(Combo.class); // nom, multiplicateur
     private       List<Combo>         shownCombos = List.of();
     private       Label[]             totalLabels;                                  // "Total", multiplicateur
+    private       Tooltip             tooltip;
+    private       Consumer<EffectRow> onInspect;
 
     /**
      * Une ligne des effets actifs : une icône, éventuellement barrée, et un texte.
+     * Au survol, son infobulle donne son nom et sa description ; un clic droit
+     * ouvre sa fiche.
      *
-     * @param icon    image de l'effet (ex : le symbole retiré)
-     * @param overlay image posée par-dessus l'icône (ex : une croix), ou {@code null}
-     * @param text    texte de l'effet (ex : "3 tours")
+     * @param icon        image de l'effet (ex : le symbole retiré)
+     * @param overlay     image posée par-dessus l'icône (ex : une croix), ou {@code null}
+     * @param text        texte de l'effet (ex : "3 tours")
+     * @param name        nom de l'effet (ex : "Recyclage")
+     * @param description ce que fait l'effet, en phrases courtes
      */
-    public record EffectRow(TextureRegion icon, TextureRegion overlay, String text) { }
+    public record EffectRow(TextureRegion icon, TextureRegion overlay, String text, String name, String description) { }
 
     public SidePanel(HudTextures hud) {
         root.setBackground(hud.panelDrawable());
@@ -194,8 +208,18 @@ public class SidePanel implements Disposable {
         return text.charAt(0) + text.substring(1).toLowerCase();
     }
 
+    /**
+     * @param tooltip   infobulle partagée : survoler un effet affiche son nom et sa description
+     * @param onInspect appelé au clic droit sur un effet (afficher sa fiche)
+     */
+    public void setEffectHelp(Tooltip tooltip, Consumer<EffectRow> onInspect) {
+        this.tooltip   = tooltip;
+        this.onInspect = onInspect;
+    }
+
     /** Affiche les effets de cartes actifs, ou masque leur encadré s'il n'y en a aucun. */
     public void setActiveEffects(List<EffectRow> rows) {
+        if (tooltip != null && effectsRows.hasChildren()) tooltip.hide(); // la ligne survolée a pu disparaître
         effectsRows.clearChildren();
         for (EffectRow row : rows) {
             Stack icon = new Stack();
@@ -205,13 +229,41 @@ public class SidePanel implements Disposable {
                 corner.size(OVERLAY_ICON).bottom().right();
                 icon.add(corner);
             }
-            effectsRows.add(icon).size(EFFECT_ICON).padTop(EFFECT_GAP).padRight(EFFECT_GAP);
-            effectsRows.add(new Label(row.text(), new Label.LabelStyle(effectFont, Color.WHITE)))
-                .padTop(EFFECT_GAP).growX().left();
+            Table line = new Table();
+            line.setTouchable(Touchable.enabled); // toute la ligne réagit, l'espace entre l'icône et le texte compris
+            line.add(icon).size(EFFECT_ICON).padRight(EFFECT_GAP);
+            line.add(new Label(row.text(), new Label.LabelStyle(effectFont, Color.WHITE))).growX().left();
+            addHelp(line, row);
+            effectsRows.add(line).padTop(EFFECT_GAP).growX().left();
             effectsRows.row();
         }
         effectsBox.setVisible(!rows.isEmpty());
         root.invalidateHierarchy();
+    }
+
+    /** Survoler {@code line} affiche l'infobulle de l'effet, à droite du panneau ; un clic droit ouvre sa fiche. */
+    private void addHelp(Table line, EffectRow row) {
+        line.addListener(new InputListener() {
+            @Override
+            public void enter(InputEvent event, float x, float y, int pointer, Actor fromActor) {
+                if (pointer != -1 || tooltip == null) return;
+                Vector2 bottom = line.localToStageCoordinates(new Vector2(0f, 0f));
+                tooltip.show(row.name(), row.description(), WIDTH + TOOLTIP_GAP, bottom.y);
+            }
+
+            @Override
+            public void exit(InputEvent event, float x, float y, int pointer, Actor toActor) {
+                if (pointer == -1 && tooltip != null) tooltip.hide();
+            }
+
+            @Override
+            public boolean touchDown(InputEvent event, float x, float y, int pointer, int button) {
+                if (button != Input.Buttons.RIGHT || onInspect == null) return false;
+                if (tooltip != null) tooltip.hide();
+                onInspect.accept(row);
+                return true;
+            }
+        });
     }
 
     /** @return le panneau, à ajouter au Stage. */

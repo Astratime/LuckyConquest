@@ -24,6 +24,7 @@ import fr.astratime.lucky.assets.HudTextures;
 import fr.astratime.lucky.assets.Palette;
 import fr.astratime.lucky.assets.BackgroundMusic;
 import fr.astratime.lucky.assets.VolumeSound;
+import fr.astratime.lucky.progress.PlayerProfile;
 import fr.astratime.lucky.settings.AudioSettings;
 import fr.astratime.lucky.settings.DisplaySettings;
 import fr.astratime.lucky.settings.VisualSettings;
@@ -45,6 +46,7 @@ import java.util.function.Supplier;
  * épreuves » (choix d'un chapitre, {@link TowerScreen}), « Options » et « Quitter ». Page des options : affichage (fenêtre agrandie ou plein
  * écran, appliqué tout de suite), effets visuels (normaux ou réduits,
  * réglage partagé avec l'écran de jeu), volume de la musique, volume des sons,
+ * mode ADMIN (tout le contenu du jeu ouvert, voir {@link PlayerProfile#setAdmin(boolean)})
  * et « Retour ».
  *
  * Les options (panneau partagé avec le menu pause, voir {@link OptionsMenu}) se
@@ -134,10 +136,14 @@ public class MenuScreen extends ScreenAdapter {
             OptionsMenu.Entry.button("Quitter", this::onQuit)));
     }
 
-    /** Page des options : affichage, effets visuels, musique, sons, Retour. */
+    /** Page des options : affichage, effets visuels, musique, sons, mode ADMIN, Retour. */
     private void showOptionsPage() {
         List<OptionsMenu.Entry> entries = new ArrayList<>(
             OptionsMenu.settingsEntries(luckyGame, settings, audio, display, () -> { }));
+        PlayerProfile profile = luckyGame.getProfile();
+        Runnable toggleAdmin = () -> profile.setAdmin(!profile.isAdmin());
+        entries.add(new OptionsMenu.Entry(() -> "Mode ADMIN : " + (profile.isAdmin() ? "activé" : "désactivé"),
+            toggleAdmin, direction -> toggleAdmin.run()));
         entries.add(OptionsMenu.Entry.button("Retour", this::showMainPage));
         showPage("OPTIONS", entries);
     }

@@ -22,10 +22,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Menu pause, ouvert par Échap pendant un combat : un voile assombrit le jeu
- * (figé tant que le menu est ouvert) et un panneau propose de reprendre la
- * partie, de régler les options (les mêmes que celles du menu principal), de
- * recommencer le combat, de revenir au menu principal ou de quitter le jeu.
+ * Menu pause, ouvert par Échap ou le bouton pause pendant un combat : un voile
+ * assombrit le jeu (figé tant que le menu est ouvert) et un panneau propose de
+ * reprendre la partie, de régler les options (les mêmes que celles du menu
+ * principal), de recommencer le combat ou de revenir au menu principal. On ne
+ * quitte pas le jeu depuis un combat : seulement depuis le menu principal.
  *
  * Il a son propre Stage, dessiné par-dessus celui du jeu : tant qu'il est
  * ouvert, il reçoit seul les clics et le clavier ({@link #getInput()}).
@@ -45,8 +46,6 @@ public class PauseOverlay implements Disposable {
         void onRestart();
         /** Le joueur revient au menu principal (le menu est déjà fermé). */
         void onMainMenu();
-        /** Le joueur quitte le jeu. */
-        void onQuit();
         /** Les effets visuels viennent de passer de normaux à réduits, ou l'inverse. */
         void onEffectsChanged();
     }
@@ -109,7 +108,7 @@ public class PauseOverlay implements Disposable {
     /** @return le processeur d'entrée du menu, à installer tant qu'il est ouvert. */
     public InputProcessor getInput() { return input; }
 
-    /** Page pause : Reprendre, Options, Recommencer, Menu principal, Quitter le jeu. */
+    /** Page pause : Reprendre, Options, Recommencer, Menu principal. */
     private void showPausePage() {
         optionsPage = false;
         menu.setEntries("PAUSE", List.of(
@@ -122,8 +121,7 @@ public class PauseOverlay implements Disposable {
             OptionsMenu.Entry.button("Menu principal", () -> {
                 shown = false;
                 listener.onMainMenu();
-            }),
-            OptionsMenu.Entry.button("Quitter le jeu", listener::onQuit)));
+            })));
     }
 
     /** Page des options : affichage, effets visuels, musique, sons, Retour. */

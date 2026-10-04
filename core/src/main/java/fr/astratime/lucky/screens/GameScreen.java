@@ -96,6 +96,7 @@ import fr.astratime.lucky.entities.events.PlayerHealedEvent;
 import fr.astratime.lucky.entities.events.ShieldGainedEvent;
 import fr.astratime.lucky.entities.exploration.DungeonRun;
 import fr.astratime.lucky.entities.exploration.PlaceRule;
+import fr.astratime.lucky.entities.effects.CorruptionEffect;
 import fr.astratime.lucky.entities.effects.GoldVeinEffect;
 import fr.astratime.lucky.entities.run.CombatRun;
 import fr.astratime.lucky.progress.PlayerProfile;
@@ -275,7 +276,7 @@ public class GameScreen extends ScreenAdapter {
     private final RainbowChipsAnimation rainbowAnimation;
     private final ShopOverlay         shopOverlay;
     private final CardDetailOverlay   cardDetail;
-    /** Menu pause (Échap) : options, recommencer, menu principal, quitter ; le jeu est figé tant qu'il est ouvert. */
+    /** Menu pause (Échap ou bouton pause) : options, recommencer, menu principal ; le jeu est figé tant qu'il est ouvert. */
     private final PauseOverlay        pauseOverlay;
     /** Icône de l'échoppe (en haut à droite de la zone de jeu), qui ouvre la boutique. */
     private final Group               shopIcon = new Group();
@@ -308,6 +309,8 @@ public class GameScreen extends ScreenAdapter {
     private final Label      playsLabel;
     private final TextButton restartButton;
     private final TextButton menuButton;
+    /** Bouton pause, en bas à droite : ouvre le même menu qu'Échap. */
+    private final TextButton pauseButton;
     /** Boutons de fin de combat (Recommencer, Menu principal), centrés sous l'annonce de victoire ou de défaite. */
     private final Table      endButtons = new Table();
 
@@ -398,6 +401,7 @@ public class GameScreen extends ScreenAdapter {
         spinButton    = buttons.createAction("Lancer machine", sounds.spinButton, this::onSpin);
         restartButton = buttons.createAction("Recommencer", sounds.buttonClick, this::onRestart);
         menuButton    = buttons.createAction("Menu principal", sounds.buttonClick, this::onBackToMenu);
+        pauseButton   = buttons.create("Pause", sounds.buttonClick, this::showPauseMenu);
         spinButton.setDisabled(true);
         playsLabel    = new Label("", new Label.LabelStyle(playsFont, Color.WHITE));
         endButtons.add(restartButton).size(restartButton.getWidth(), restartButton.getHeight());
@@ -429,7 +433,6 @@ public class GameScreen extends ScreenAdapter {
                 @Override public void onResume()         { Gdx.input.setInputProcessor(gameInput); }
                 @Override public void onRestart()        { Gdx.input.setInputProcessor(gameInput); GameScreen.this.onRestart(); }
                 @Override public void onMainMenu()       { onBackToMenu(); }
-                @Override public void onQuit()           { Gdx.app.exit(); }
                 @Override public void onEffectsChanged() { GameScreen.this.onEffectsChanged(); }
             });
         pickOverlay      = new EnemyPickOverlay(stage, hudTextures, enemyTextures, sounds.cardFlip, sounds.cardHover,
@@ -440,6 +443,10 @@ public class GameScreen extends ScreenAdapter {
         stageLabel.setTouchable(Touchable.disabled);
         refreshStageLabel();
         hand.setOnInspect(this::showCardDetail);
+        sidePanel.setEffectHelp(tooltip, row -> {
+            sounds.cardInspect.play();
+            cardDetail.showEffect(row.name(), row.icon(), row.text(), row.description());
+        });
         hand.setBlockedReason(gameController::unplayableReason, this::onCardRefused);
         pileOverlay.setOnInspect(this::showCardDetail);
         buildShopIcon();
@@ -454,6 +461,7 @@ public class GameScreen extends ScreenAdapter {
         piles.addTo(stage);
         hud.addTo(stage);
         stage.addActor(spinButton);
+        stage.addActor(pauseButton);
         stage.addActor(playsLabel);
         stage.addActor(slots.getActor());
         stage.addActor(hand.getActor());
@@ -1151,9 +1159,15 @@ public class GameScreen extends ScreenAdapter {
         pileOverlay.show("Defausse", player().getDiscardPile().getCards());
     }
 
-    /** Ouvre le menu pause : le jeu se fige et le menu reçoit seul les entrées. */
+    /** Échap : ouvre le menu pause, avec le bruitage du clic. */
     private void openPauseMenu() {
         sounds.buttonClick.play();
+        showPauseMenu();
+    }
+
+    /** Ouvre le menu pause : le jeu se fige et le menu reçoit seul les entrées. */
+    private void showPauseMenu() {
+        if (pauseOverlay.isShown()) return;
         tooltip.hide();
         pauseOverlay.show();
         Gdx.input.setInputProcessor(pauseOverlay.getInput());
@@ -1489,6 +1503,7 @@ public class GameScreen extends ScreenAdapter {
     /**
      * Met à jour les effets de cartes actifs du panneau latéral : symboles
      * retirés des rouleaux (et tirages restants), Porte-bonheur, paris en cours.
+     * Chaque effet a son nom et sa description, pour son infobulle et sa fiche.
      */
     private void refreshEffects() {
         List<SidePanel.EffectRow> rows = new ArrayList<>();
@@ -1497,46 +1512,70 @@ public class GameScreen extends ScreenAdapter {
         for (Map.Entry<Symbol, Integer> removed : lasting.getRemovedSymbols().entrySet()) {
             int turns = removed.getValue();
             rows.add(new SidePanel.EffectRow(slots.regionOf(removed.getKey()), cross,
-                "Retiré " + turns + (turns > 1 ? " tours" : " tour")));
+                "Retiré " + turns(turns), "Recyclage",
+                removed.getKey().getDisplayName() + " est retiré de tes rouleaux. Il revient dans " + turns(turns) + "."));
         }
         if (lasting.getGainBonus() > 0f) {
+            int percent = Math.round(lasting.getGainBonus() * 100f);
             rows.add(new SidePanel.EffectRow(new TextureRegion(hudTextures.iconClover), null,
-                "Gains +" + Math.round(lasting.getGainBonus() * 100f) + " %"));
+                "Gains +" + percent + " %", "Porte-bonheur",
+                "Tes gains +" + percent + " %. Jusqu'à la fin du combat."));
         }
         if (lasting.getCorruptionTurns() > 0) {
             int turns = lasting.getCorruptionTurns();
             rows.add(new SidePanel.EffectRow(new TextureRegion(hudTextures.iconCorruption), null,
-                "Corruption " + turns + (turns > 1 ? " tours" : " tour")));
+                "Corruption " + turns(turns), "Corruption",
+                "Attaque et bouclier des symboles x" + CorruptionEffect.FACTOR + ". Chaque tour coûte "
+                    + CorruptionEffect.GAINS_PERCENT + " % de tes gains. Encore " + turns(turns) + "."));
         }
         if (lasting.getExtraPlaysTurns() > 0) {
             int turns = lasting.getExtraPlaysTurns();
             rows.add(new SidePanel.EffectRow(new TextureRegion(hudTextures.iconSleeve), null,
-                lasting.getExtraPlays() + " cartes, " + turns + (turns > 1 ? " tours" : " tour")));
+                lasting.getExtraPlays() + " cartes, " + turns(turns), "Dans la manche",
+                lasting.getExtraPlays() + " cartes jouables par tour. Encore " + turns(turns) + "."));
         }
         if (lasting.getBlades() > 0) {
+            int blades = lasting.getBlades();
             rows.add(new SidePanel.EffectRow(new TextureRegion(hudTextures.iconBlade), null,
-                "Lames " + lasting.getBlades() + " (+" + lasting.getBlades() * PreparationResolver.BLADE_ATTACK + ")"));
+                "Lames " + blades + " (+" + blades * PreparationResolver.BLADE_ATTACK + ")", "Lames",
+                "Jauge de Pique. Chaque Lame donne +" + PreparationResolver.BLADE_ATTACK
+                    + " d'attaque à tes symboles. Tes Piques jouées en Couleur ou en Suite la remplissent. "
+                    + "L'As de Pique et la Guillotine l'encaissent."));
         }
         if (lasting.getBlood() > 0) {
             rows.add(new SidePanel.EffectRow(new TextureRegion(hudTextures.iconBlood), null,
-                "Sang " + lasting.getBlood()));
+                "Sang " + lasting.getBlood(), "Sang",
+                "Jauge de Coeur. Le soin au-delà de tes PV max s'y garde. Tes Coeurs joués en Couleur ou en Suite "
+                    + "la remplissent. L'As de Coeur ajoute tout le Sang à ton attaque."));
         }
         if (lasting.getVault() > 0) {
             rows.add(new SidePanel.EffectRow(new TextureRegion(hudTextures.iconVault), null,
-                "Coffre " + lasting.getVault()));
+                "Coffre " + lasting.getVault(), "Coffre",
+                "Jauge de Carreau. Ton bouclier inutilisé s'y garde. Tes Carreaux joués en Couleur ou en Suite "
+                    + "la remplissent. L'As de Carreau le vide sur l'ennemi."));
         }
         for (int[] safe : lasting.getSafes()) {
             rows.add(new SidePanel.EffectRow(new TextureRegion(hudTextures.iconSafe), null,
-                "+" + safe[0] + ", " + safe[1] + (safe[1] > 1 ? " tours" : " tour")));
+                "+" + safe[0] + ", " + turns(safe[1]), "Coffre-fort",
+                PlayerProfile.formatCoins(safe[0]) + " gains mis de côté, déjà doublés. Ils reviennent dans "
+                    + turns(safe[1]) + "."));
         }
         for (Symbol bet : gameController.getBetsThisTurn()) {
-            rows.add(new SidePanel.EffectRow(slots.regionOf(bet), null, "Pari x2 à x4"));
+            rows.add(new SidePanel.EffectRow(slots.regionOf(bet), null, "Pari x2 à x4", "Pari",
+                "Tu as parié sur " + bet.getDisplayName() + ". S'il sort 1, 2 ou 3 fois : gains x2, x3 ou x4. "
+                    + "Sinon : gains /2."));
         }
         if (gameController.isDoubleNextPending()) {
-            rows.add(new SidePanel.EffectRow(new TextureRegion(hudTextures.iconDouble), null, "Carte suivante x2"));
+            rows.add(new SidePanel.EffectRow(new TextureRegion(hudTextures.iconDouble), null, "Carte suivante x2",
+                "Double ou rien", "La prochaine carte jouée ce tour compte deux fois."));
         }
         addPlaceRows(rows, lasting);
         sidePanel.setActiveEffects(rows);
+    }
+
+    /** @return {@code count} suivi de « tour » ou « tours ». */
+    private static String turns(int count) {
+        return count + (count > 1 ? " tours" : " tour");
     }
 
     /**
@@ -1548,52 +1587,106 @@ public class GameScreen extends ScreenAdapter {
         GameState state = gameController.getGameState();
         TextureRegion skull = new TextureRegion(hudTextures.iconCorruption);
         int turn = state.getTurnNumber();
+        PlaceRule rule = state.getPlaceRule();
         switch (state.getActiveRule()) {
             case SCORBUT -> {
                 int turns = PlaceRule.SCURVY_PERIOD - (turn - 1) % PlaceRule.SCURVY_PERIOD;
-                rows.add(new SidePanel.EffectRow(skull, null, "Scorbut : " + turns + (turns > 1 ? " tours" : " tour")));
+                rows.add(new SidePanel.EffectRow(skull, null, "Scorbut : " + turns(turns), rule.getName(),
+                    rule.getDescription() + " Prochain Scorbut dans " + turns(turns) + "."));
             }
             case GRISOU -> {
                 int turns = PlaceRule.turnsBeforeFiredamp(turn);
                 rows.add(new SidePanel.EffectRow(skull, null, turns == 1 ? "Grisou : ce tour"
-                    : "Grisou : " + turns + " tours"));
+                    : "Grisou : " + turns + " tours", rule.getName(), rule.getDescription()
+                    + (turns == 1 ? " Explosion à la fin de ce tour." : " Prochaine explosion dans " + turns(turns) + ".")));
             }
             case MAREE -> rows.add(new SidePanel.EffectRow(skull, null, "Marée " + PlaceRule.tide(turn) + "/"
-                + PlaceRule.TIDE_CYCLE + (state.getPlaceRule().isHighTide(turn) ? " : haute" : "")));
+                + PlaceRule.TIDE_CYCLE + (rule.isHighTide(turn) ? " : haute" : ""), rule.getName(),
+                rule.getDescription() + " Niveau actuel : " + PlaceRule.tide(turn) + "."));
             case NONE -> { }
         }
         if (lasting.getBubbleTurns() > 0) {
             int turns = lasting.getBubbleTurns();
             rows.add(new SidePanel.EffectRow(new TextureRegion(hudTextures.iconSleeve), null,
-                "Bulle : " + turns + (turns > 1 ? " tours" : " tour")));
+                "Bulle : " + turns(turns), "Bulle d'air",
+                "La règle du lieu ne joue plus. Encore " + turns(turns) + "."));
         }
         if (lasting.getGoldVeinTurns() > 0) {
             int turns = lasting.getGoldVeinTurns();
             rows.add(new SidePanel.EffectRow(new TextureRegion(hudTextures.iconClover), null,
-                "Veine x" + GoldVeinEffect.FACTOR + " (" + turns + ")"));
+                "Veine x" + GoldVeinEffect.FACTOR + " (" + turns + ")", "Veine d'or",
+                "Tes gains x" + GoldVeinEffect.FACTOR + ". Encore " + turns(turns) + "."));
         }
         if (player().getHelmets() > 0) {
+            int helmets = player().getHelmets();
             rows.add(new SidePanel.EffectRow(new TextureRegion(hudTextures.iconVault), null,
-                "Casque x" + player().getHelmets()));
-        }
-        List<String> curses = new ArrayList<>();
-        if (lasting.getNibbles() > 0) curses.add("Grignotage x" + lasting.getNibbles());
-        if (lasting.getDrunk() > 0) curses.add("Ivresse x" + lasting.getDrunk());
-        if (lasting.isBlind()) curses.add("Aveuglement");
-        if (lasting.hasNugget()) curses.add("Pépite");
-        if (lasting.getSongs() > 0) curses.add("Chant x" + lasting.getSongs());
-        if (lasting.getFakeGains() > 0) curses.add("Faux : " + lasting.getFakeGains());
-        if (lasting.getTaxes() > 0) curses.add("Taxe x" + lasting.getTaxes());
-        if (lasting.getHouseRule() != null) {
-            curses.add(lasting.getHouseRule().getShortName() + " (" + lasting.getHouseRuleTurns() + ")");
+                "Casque x" + helmets, "Casque", "Bloque entièrement le prochain coup que tu reçois. "
+                    + (helmets > 1 ? helmets + " casques : un par coup." : "Un seul coup.")));
         }
         Enemy foe = gameController.getGameState().getEnemy();
-        if (foe.getBannedFamily() != null) curses.add("Banni : " + foe.getBannedFamily().getDisplayName());
-        if (foe.getPrediction() != null) curses.add("Prédit : " + foe.getPrediction().getDisplayName().toLowerCase());
-        if (foe.getStolenReels() > 0) curses.add("Vol : " + foe.getStolenReels() + (foe.getStolenReels() > 1 ? " rouleaux" : " rouleau"));
-        int limit = foe.getKind().getTurnLimit();
-        if (limit > 0) curses.add("Temps : " + Math.max(0, limit - state.getTurnNumber() + 1) + " tours");
-        for (String curse : curses) rows.add(new SidePanel.EffectRow(skull, null, curse));
+        EnemyKind kind = foe.getKind();
+        if (lasting.getNibbles() > 0) rows.add(curse(skull, "Grignotage x" + lasting.getNibbles(), EnemySymbol.NIBBLE, kind));
+        if (lasting.getDrunk() > 0) rows.add(curse(skull, "Ivresse x" + lasting.getDrunk(), EnemySymbol.DRUNK, kind));
+        if (lasting.isBlind()) rows.add(curse(skull, "Aveuglement", EnemySymbol.BLIND, kind));
+        if (lasting.hasNugget()) rows.add(curse(skull, "Pépite", EnemySymbol.NUGGET, kind));
+        if (lasting.getSongs() > 0) rows.add(curse(skull, "Chant x" + lasting.getSongs(), EnemySymbol.SONG, kind));
+        if (lasting.getFakeGains() > 0) {
+            rows.add(new SidePanel.EffectRow(skull, null, "Faux : " + lasting.getFakeGains(), "Fausse monnaie",
+                PlayerProfile.formatCoins(lasting.getFakeGains()) + " de tes gains sont faux. Dépense-les avant ton "
+                    + "tirage, ou ils disparaissent."));
+        }
+        if (lasting.getTaxes() > 0) rows.add(curse(skull, "Taxe x" + lasting.getTaxes(), EnemySymbol.TAX, kind));
+        if (lasting.getHouseRule() != null) {
+            LastingEffects.HouseRule houseRule = lasting.getHouseRule();
+            rows.add(new SidePanel.EffectRow(skull, null,
+                houseRule.getShortName() + " (" + lasting.getHouseRuleTurns() + ")", "Nouvelle règle",
+                houseRuleText(houseRule) + " Encore " + turns(lasting.getHouseRuleTurns()) + "."));
+        }
+        if (foe.getBannedFamily() != null) {
+            String family = foe.getBannedFamily().getDisplayName();
+            rows.add(new SidePanel.EffectRow(skull, null, "Banni : " + family, "Cartes bannies",
+                "L'ennemi laisse dehors les cartes " + family + ". Tu ne peux pas les jouer. Jusqu'à la fin du combat."));
+        }
+        if (foe.getPrediction() != null) {
+            rows.add(new SidePanel.EffectRow(skull, null, "Prédit : " + foe.getPrediction().getDisplayName().toLowerCase(),
+                "Prédiction", "Symbole annoncé : " + foe.getPrediction().getDisplayName() + ". "
+                    + sentence(EnemySymbol.PREDICTION.getDescription(kind))));
+        }
+        if (foe.getStolenReels() > 0) {
+            int stolen = foe.getStolenReels();
+            String reels = stolen + (stolen > 1 ? " rouleaux" : " rouleau");
+            rows.add(new SidePanel.EffectRow(skull, null, "Vol : " + reels, "Rouleaux volés",
+                "L'ennemi t'a volé " + reels + ". Ils restent bloqués tant qu'il les garde."));
+        }
+        int limit = kind.getTurnLimit();
+        if (limit > 0) {
+            int left = Math.max(0, limit - state.getTurnNumber() + 1);
+            rows.add(new SidePanel.EffectRow(skull, null, "Temps : " + left + " tours", "Temps compté",
+                "Le combat dure " + limit + " tours. Après, tu perds. Encore " + turns(left) + "."));
+        }
+    }
+
+    /** @return la ligne d'un mauvais sort de l'ennemi, décrit comme sur ses rouleaux. */
+    private static SidePanel.EffectRow curse(TextureRegion icon, String text, EnemySymbol symbol, EnemyKind kind) {
+        String name = symbol.getDisplayName().charAt(0) + symbol.getDisplayName().substring(1).toLowerCase();
+        return new SidePanel.EffectRow(icon, null, text, name, sentence(symbol.getDescription(kind)));
+    }
+
+    /** @return la description d'un symbole ennemi (« Nom : texte ») sans son nom, terminée par un point. */
+    private static String sentence(String description) {
+        int colon = description.indexOf(" : ");
+        String text = colon >= 0 ? description.substring(colon + 3) : description;
+        text = Character.toUpperCase(text.charAt(0)) + text.substring(1);
+        return text.endsWith(".") ? text : text + ".";
+    }
+
+    /** @return ce que change la règle du Directeur des Jeux. */
+    private static String houseRuleText(LastingEffects.HouseRule rule) {
+        return switch (rule) {
+            case NO_COMBOS   -> "Les combinaisons de cartes ne comptent plus.";
+            case NO_BINGO    -> "Tes rouleaux ne peuvent plus faire de Bingo.";
+            case DOUBLE_SPIN -> "Chaque rouleau tourne deux fois. Le pire résultat reste.";
+        };
     }
 
     /** Met à jour le compteur de gains, sans les gains du tirage dont le texte n'est pas encore apparu. */
@@ -1613,6 +1706,8 @@ public class GameScreen extends ScreenAdapter {
         enemyView.layout();
         placePlayerShield();
         spinButton.setPosition(playArea.getX() + BUTTON_MARGIN, BUTTON_MARGIN);
+        pauseButton.setPosition(playArea.getX() + playArea.getWidth() - pauseButton.getWidth() - BUTTON_MARGIN,
+            BUTTON_MARGIN);
         playsLabel.pack();
         playsLabel.setPosition(spinButton.getX() + spinButton.getWidth() + PLAYS_LABEL_GAP,
             spinButton.getY() + (spinButton.getHeight() - playsLabel.getHeight()) / 2f);
