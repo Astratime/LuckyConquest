@@ -107,9 +107,24 @@ public class PlayerProfile {
     // Exploration
     // -------------------------------------------------------------------------
 
-    /** Le chef du donjon {@code dungeon} (son nom) est battu : le donjon est vidé, pour toujours. */
-    public void clearDungeon(String dungeon) {
-        if (clearedDungeons.add(dungeon)) save();
+    /**
+     * Le chef du donjon {@code dungeon} (son nom) est battu : le donjon est vidé,
+     * pour toujours. Le dernier donjon d'un lieu qui a un rouleau en récompense
+     * (les Mines d'Or) donne ce rouleau.
+     *
+     * @return le rouleau gagné à l'instant, ou {@code null}
+     */
+    public Symbol clearDungeon(String dungeon) {
+        if (!clearedDungeons.add(dungeon)) return null;
+        Symbol earned = null;
+        for (Place place : Place.values()) {
+            Symbol reel = place.getReelReward();
+            if (reel == null || ownsReel(reel) || !place.getDungeons().stream().allMatch(this::isCleared)) continue;
+            boughtReels.add(reel);
+            earned = reel;
+        }
+        save();
+        return earned;
     }
 
     /** @return {@code true} si le donjon {@code dungeon} a déjà été vidé. */

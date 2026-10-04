@@ -48,7 +48,7 @@ public record BingoStyle(Color body, Color trim, Color letterA, Color letterB, C
                 c("7dff9a"), c("f0fff0"), c("7dff9a"), palette(Palette.MINT, c("ff5a78"), c("ff8fa3"), c("eaffea")));
             // Rouleaux de la boutique : les couleurs d'un classique de leur type
             case HORSESHOE -> of(Symbol.BELL);
-            case CROWN     -> of(Symbol.GOLD_BAR);
+            case CROWN, NUGGET -> of(Symbol.GOLD_BAR);
             case ECU       -> of(Symbol.DIAMOND);
             case HEART     -> of(Symbol.CHERRY);
             case SWORD, DIE, STAR -> of(Symbol.SEVEN);

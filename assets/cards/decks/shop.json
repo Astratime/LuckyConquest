@@ -20,5 +20,6 @@
   { "id": "bingo_die", "price": 0 },
   { "id": "bingo_star", "price": 0 },
   { "id": "bingo_bomb", "price": 0 },
-  { "id": "bingo_crown", "price": 0 }
+  { "id": "bingo_crown", "price": 0 },
+  { "id": "bingo_nugget", "price": 0 }
 ]

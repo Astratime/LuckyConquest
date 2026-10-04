@@ -30,6 +30,8 @@ public enum Symbol {
     STAR          ("18-star"),
     BOMB          ("19-bomb"),
     CROWN         ("20-crown"),
+    /** Rouleau de la Mine : gagné en vidant les quatre donjons des Mines d'Or (voir Place#getReelReward). */
+    NUGGET        ("21-nugget"),
     /** Joker : compte comme n'importe quel symbole (voir SlotMachine#resolveJokers). */
     JOKER         ("12-joker");
 
@@ -80,6 +82,7 @@ public enum Symbol {
             case STAR          -> "ÉTOILE";
             case BOMB          -> "BOMBE";
             case CROWN         -> "COURONNE";
+            case NUGGET        -> "PÉPITE";
             case JOKER         -> "JOKER";
         };
     }

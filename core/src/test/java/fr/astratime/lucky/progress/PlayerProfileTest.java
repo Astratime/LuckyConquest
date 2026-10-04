@@ -1,5 +1,6 @@
 package fr.astratime.lucky.progress;
 
+import fr.astratime.lucky.entities.Symbol;
 import fr.astratime.lucky.entities.exploration.Dungeon;
 import fr.astratime.lucky.entities.exploration.Place;
 
@@ -191,5 +192,19 @@ class PlayerProfileTest {
         PlayerProfile profile = new PlayerProfile(new MemoryStorage(), owned, starterDeck());
         assertTrue(profile.isCleared(Dungeon.PIQUE));
         assertFalse(profile.isCleared(Dungeon.TREFLE));
+    }
+
+    @Test
+    void theLastMinesDungeonGivesTheMineReelOnce() {
+        MemoryStorage storage = new MemoryStorage();
+        PlayerProfile profile = profile(storage);
+        java.util.List<Dungeon> mines = Place.MINES.getDungeons();
+        for (int i = 0; i < mines.size() - 1; i++) assertNull(profile.clearDungeon(mines.get(i).name()));
+        assertFalse(profile.ownsReel(Symbol.NUGGET));
+        assertEquals(Symbol.NUGGET, profile.clearDungeon(mines.get(mines.size() - 1).name()));
+        assertTrue(profile.ownsReel(Symbol.NUGGET));
+        assertNull(profile.clearDungeon(mines.get(0).name()), "déjà vidé : rien de plus");
+        assertTrue(profile(storage).ownsReel(Symbol.NUGGET), "sauvegardé");
+        assertNull(profile.clearDungeon(Dungeon.PIQUE.name()), "la prairie ne donne pas de rouleau");
     }
 }

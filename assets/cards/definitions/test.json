@@ -245,5 +245,18 @@
         "symbol": "CROWN"
       }
     ]
+  },
+  {
+    "id": "bingo_nugget",
+    "name": "Bingo Pépite",
+    "assetPath": "cards/test/bingo_nugget.png",
+    "consumable": true,
+    "effects": [
+      {
+        "type": "BINGO",
+        "power": 1,
+        "symbol": "NUGGET"
+      }
+    ]
   }
 ]

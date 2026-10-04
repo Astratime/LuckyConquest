@@ -1,5 +1,7 @@
 package fr.astratime.lucky.entities.exploration;
 
+import fr.astratime.lucky.entities.Symbol;
+
 import java.util.List;
 
 /**
@@ -43,6 +45,12 @@ public enum Place {
         this.rule        = rule;
         this.dungeons    = dungeons;
     }
+
+    /**
+     * @return le rouleau gagné en vidant les quatre donjons du lieu (le Rouleau
+     *         de la Mine pour les Mines d'Or), ou {@code null}
+     */
+    public Symbol getReelReward() { return this == MINES ? Symbol.NUGGET : null; }
 
     /** @return la règle du lieu, qui joue dans tous ses combats. */
     public PlaceRule getRule() { return rule; }

@@ -1254,7 +1254,9 @@ public class GameScreen extends ScreenAdapter {
      */
     private void openChest() {
         DungeonRun dungeonRun = (DungeonRun) run;
-        luckyGame.getProfile().clearDungeon(dungeonRun.getDungeon().name()); // ouvre peut-être le lieu suivant
+        // Ouvre peut-être le lieu suivant ; le dernier donjon des Mines donne le Rouleau de la Mine.
+        Symbol earnedReel = luckyGame.getProfile().clearDungeon(dungeonRun.getDungeon().name());
+        chestOverlay.setEarnedReel(earnedReel);
         openChest(dungeonRun.getChestCards());
     }
 

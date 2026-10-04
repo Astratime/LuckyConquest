@@ -56,6 +56,9 @@ public class SymbolRegistry {
         ACTIONS.put(Symbol.STAR,      new MixedAction(new AttackAction(30), new DefenseAction(30), new GainAction(30)));
         ACTIONS.put(Symbol.BOMB,      new BombAction(200, 5));
         ACTIONS.put(Symbol.CROWN,     new GainAction(100));
+
+        // Rouleau de la Mine (Exploration, Mines d'Or)
+        ACTIONS.put(Symbol.NUGGET,    new MixedAction(new AttackAction(40), new GainAction(60)));
     }
 
     /**
