@@ -46,12 +46,12 @@ import java.util.Random;
  * (voir {@link #choose}), lance sa machine à sous (symboles de son type, voir
  * {@link EnemyKind}), puis chaque symbole agit, renforcé par les cartes jouées :
  * <ul>
- *   <li>Épée : attaque le joueur ({@link EnemySymbol#SWORD_DAMAGE}, + les Piques, + sa Rage) ;
+ *   <li>Épée : attaque le joueur ({@link EnemyKind#swordDamage()}, + les Piques, + sa Rage) ;
  *       son bouclier absorbe les coups et s'use à chacun, et le renvoi de dégâts (Carreau)
  *       touche l'ennemi une fois toutes ses attaques portées ;</li>
- *   <li>Bouclier : défense ({@link EnemySymbol#SHIELD_DEFENSE}, + les Carreaux)
+ *   <li>Bouclier : défense ({@link EnemyKind#shieldDefense()}, + les Carreaux)
  *       qui absorbe les attaques du prochain tour du joueur, et s'use à chaque coup ;</li>
- *   <li>Potion : soin ({@link EnemySymbol#POTION_PERCENT} % des PV max, + les Cœurs) ;</li>
+ *   <li>Potion : soin ({@link EnemyKind#potionPercent(int)} % des PV max, + les Cœurs) ;</li>
  *   <li>Épines : {@link EnemySymbol#THORNS_PERCENT} % des dégâts que le joueur lui
  *       inflige à son prochain tour lui seront renvoyés, au début du tour suivant de l'ennemi ;</li>
  *   <li>Croc : attaque comme une Épée ({@link EnemySymbol#FANG_DAMAGE}) et chaque PV
@@ -239,10 +239,10 @@ public class EnemyTurnResolver {
                     events.add(new EnemyThornsEvent(kind.thornsPercent(), enemy.getThornsPercent()));
                 }
                 case RAGE   -> events.add(rage(enemy));
-                case SHIELD -> events.add(turn.shield(EnemySymbol.SHIELD_DEFENSE + shieldBonus));
+                case SHIELD -> events.add(turn.shield(kind.shieldDefense() + shieldBonus));
                 case POTION -> {
                     events.add(heal(enemy, kind.potionPercent(healBonus)));
-                    if (kind.potionShields()) events.add(turn.shield(EnemySymbol.SHIELD_DEFENSE + shieldBonus));
+                    if (kind.potionShields()) events.add(turn.shield(kind.shieldDefense() + shieldBonus));
                 }
                 case LOADED_DIE -> {
                     int drained = player.getLastingEffects().drainGauges(kind.diePercent());
@@ -493,14 +493,14 @@ public class EnemyTurnResolver {
         }
         events.add(new EnemyMirrorEvent(copied != null ? copied.getName() : null));
         if (copied == null) {
-            events.add(turn.strike(EnemySymbol.SWORD_DAMAGE));
+            events.add(turn.strike(turn.enemy.getKind().swordDamage()));
             return;
         }
         Enemy enemy = turn.enemy;
         switch (copied.getSuit()) {
-            case PIQUE   -> events.add(turn.strike(EnemySymbol.SWORD_DAMAGE + EnemyCards.swordBonus(copied) / 2));
+            case PIQUE   -> events.add(turn.strike(turn.enemy.getKind().swordDamage() + EnemyCards.swordBonus(copied) / 2));
             case COEUR   -> events.add(heal(enemy, enemy.getKind().potionPercent(EnemyCards.healBonus(copied)) / 2f));
-            case CARREAU, TREFLE -> events.add(turn.shield((EnemySymbol.SHIELD_DEFENSE + EnemyCards.shieldBonus(copied)) / 2));
+            case CARREAU, TREFLE -> events.add(turn.shield((turn.enemy.getKind().shieldDefense() + EnemyCards.shieldBonus(copied)) / 2));
         }
     }
 
@@ -516,19 +516,19 @@ public class EnemyTurnResolver {
         Card stolen = bestCard(player.getCurrentHand());
         if (stolen == null) stolen = bestCard(player.getPlayedCards());
         if (stolen == null || !player.steal(stolen)) {
-            events.add(turn.strike(EnemySymbol.SWORD_DAMAGE));
+            events.add(turn.strike(turn.enemy.getKind().swordDamage()));
             return;
         }
         events.add(new StatusEvent("ABORDAGE : " + stolen.getName().toUpperCase() + " VOLÉE", EffectPopup.Style.DAMAGE));
         Enemy enemy = turn.enemy;
         if (stolen.getSuit() == null) {
-            events.add(turn.strike(EnemySymbol.SWORD_DAMAGE));
+            events.add(turn.strike(turn.enemy.getKind().swordDamage()));
             return;
         }
         switch (stolen.getSuit()) {
-            case PIQUE   -> events.add(turn.strike(EnemySymbol.SWORD_DAMAGE + EnemyCards.swordBonus(stolen)));
+            case PIQUE   -> events.add(turn.strike(turn.enemy.getKind().swordDamage() + EnemyCards.swordBonus(stolen)));
             case COEUR   -> events.add(heal(enemy, enemy.getKind().potionPercent(EnemyCards.healBonus(stolen))));
-            case CARREAU, TREFLE -> events.add(turn.shield(EnemySymbol.SHIELD_DEFENSE + EnemyCards.shieldBonus(stolen)));
+            case CARREAU, TREFLE -> events.add(turn.shield(turn.enemy.getKind().shieldDefense() + EnemyCards.shieldBonus(stolen)));
         }
     }
 

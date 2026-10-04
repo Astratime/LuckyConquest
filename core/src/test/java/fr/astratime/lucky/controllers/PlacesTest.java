@@ -5,6 +5,9 @@ import fr.astratime.lucky.entities.Enemy;
 import fr.astratime.lucky.entities.Player;
 import fr.astratime.lucky.entities.context.CombatContext;
 import fr.astratime.lucky.entities.enemy.EnemyKind;
+import fr.astratime.lucky.entities.enemy.EnemySymbol;
+import fr.astratime.lucky.entities.exploration.Dungeon;
+import fr.astratime.lucky.entities.exploration.Place;
 import fr.astratime.lucky.entities.exploration.PlaceRule;
 
 import org.junit.jupiter.api.Test;
@@ -25,6 +28,26 @@ class PlacesTest {
         Player player = new Player("Joueur", 100, List.of(hand));
         player.draw(hand.length);
         return player;
+    }
+
+    @Test
+    void eachPlaceSetsTheSwordShieldAndHealOfAllItsEnemies() {
+        int[][] stats = {{50, 1_000, 10}, {150, 10_000, 20}, {400, 50_000, 30}};
+        Place[] places = {Place.PORT, Place.MINES, Place.CASINO};
+        for (int p = 0; p < places.length; p++) {
+            for (Dungeon dungeon : places[p].getDungeons()) {
+                for (EnemyKind kind : List.of(dungeon.getSoldier(), dungeon.getKing())) {
+                    assertEquals(stats[p][0], kind.swordDamage(), kind + " : épée");
+                    assertEquals(stats[p][1], kind.shieldDefense(), kind + " : bouclier");
+                    assertEquals(stats[p][2], kind.potionPercent(0), 1e-4, kind + " : soin");
+                }
+            }
+        }
+        assertEquals(EnemySymbol.SWORD_DAMAGE, EnemyKind.ROI_PIQUE.swordDamage(), "la prairie ne change pas");
+        assertEquals(EnemySymbol.SHIELD_DEFENSE, EnemyKind.ROI_PIQUE.shieldDefense());
+        assertEquals(EnemySymbol.SHIELD_DEFENSE, EnemyKind.CROUPIER.shieldDefense(), "la Tour ne change pas");
+        assertEquals(60f, EnemyKind.KRAKEN.potionPercent(EnemySymbol.POTION_PERCENT), 1e-4,
+            "les Cœurs renforcent son soin en proportion");
     }
 
     @Test

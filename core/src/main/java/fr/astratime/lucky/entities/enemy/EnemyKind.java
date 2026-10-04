@@ -2,6 +2,7 @@ package fr.astratime.lucky.entities.enemy;
 
 import fr.astratime.lucky.entities.Card;
 import fr.astratime.lucky.entities.Enemy;
+import fr.astratime.lucky.entities.exploration.Place;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -731,7 +732,15 @@ public enum EnemyKind {
 
     /** @return les dégâts de base de son Épée, avant sa {@linkplain #getPower() force}. */
     public int swordDamage() {
-        return this == ENTRAINEMENT ? TRAINING_SWORD_DAMAGE : EnemySymbol.SWORD_DAMAGE;
+        if (this == ENTRAINEMENT) return TRAINING_SWORD_DAMAGE;
+        Place place = Place.of(this);
+        return place != null && place.getSwordDamage() > 0 ? place.getSwordDamage() : EnemySymbol.SWORD_DAMAGE;
+    }
+
+    /** @return la défense de base d'un de ses Boucliers, avant sa {@linkplain #getPower() force} (celle de son lieu en Exploration). */
+    public int shieldDefense() {
+        Place place = Place.of(this);
+        return place != null && place.getShieldDefense() > 0 ? place.getShieldDefense() : EnemySymbol.SHIELD_DEFENSE;
     }
 
     /** @return {@code value} multiplié par sa {@linkplain #getPower() force} (arrondi). */
@@ -803,6 +812,11 @@ public enum EnemyKind {
 
     /** @return les points de vie que rend une Potion renforcée de {@code bonusPercent} (Cœurs), en % de ses PV max. */
     public float potionPercent(int bonusPercent) {
+        Place place = Place.of(this);
+        if (place != null && place.getHealPercent() > 0) { // soin fixé par son lieu, les Cœurs en proportion
+            return place.getHealPercent() * (EnemySymbol.POTION_PERCENT + bonusPercent)
+                / (float) EnemySymbol.POTION_PERCENT * getPower() / 100f;
+        }
         return (EnemySymbol.POTION_PERCENT + bonusPercent) * healScale * getPower() / 10_000f;
     }
 
