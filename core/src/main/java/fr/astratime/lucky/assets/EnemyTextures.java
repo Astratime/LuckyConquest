@@ -65,6 +65,8 @@ public class EnemyTextures implements Disposable {
         symbols.put(EnemySymbol.ALL_IN,     texture(Chapter3Art.allIn(), false));
         portraits.put(EnemyKind.CROUPIER, croupier);
         flashes.put(EnemyKind.CROUPIER, croupierFlash);
+        portraits.put(EnemyKind.ENTRAINEMENT, croupier); // le même croupier, en mode Entraînement
+        flashes.put(EnemyKind.ENTRAINEMENT, croupierFlash);
         addPortrait(EnemyKind.GARDIEN, EnemyPortraits.gardien());
         addPortrait(EnemyKind.SANGSUE, EnemyPortraits.sangsue());
         addPortrait(EnemyKind.BRETTEUR, EnemyPortraits.bretteur());

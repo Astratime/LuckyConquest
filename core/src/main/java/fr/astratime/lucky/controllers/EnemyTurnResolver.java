@@ -153,7 +153,7 @@ public class EnemyTurnResolver {
         for (int i = 0; i < symbols.length; i++) {
             List<Event> events = new ArrayList<>();
             switch (symbols[i]) {
-                case SWORD  -> events.add(turn.strike(EnemySymbol.SWORD_DAMAGE));
+                case SWORD  -> events.add(turn.strike(enemy.getKind().swordDamage()));
                 case FANG   -> bite(turn, events);
                 case THORNS -> {
                     enemy.addThorns(kind.thornsPercent());

@@ -15,6 +15,7 @@ import java.util.Map;
  * symboles de leurs rouleaux (et leur poids), composition de leur deck sombre
  * et ordre dans lequel ils jouent leurs cartes.
  * <ul>
+ *   <li>{@link #ENTRAINEMENT} : le croupier du mode Entraînement, peu de PV et une Épée faible ;</li>
  *   <li>{@link #CROUPIER} : le combat de départ, équilibré ;</li>
  *   <li>{@link #GARDIEN} : défense épaisse et Épines, qui renvoient les coups ;</li>
  *   <li>{@link #SANGSUE} : Crocs, qui volent la vie du joueur ;</li>
@@ -30,6 +31,15 @@ import java.util.Map;
  * Les lignes de chaque chapitre sont dans {@link fr.astratime.lucky.entities.tower.Chapter}.
  */
 public enum EnemyKind {
+
+    ENTRAINEMENT("Croupier d'entraînement", "ENTRAÎNEMENT",
+        "Il t'apprend la table. Il frappe doucement. Il se protège. Il se soigne.",
+        1_000, 30, 100,
+        weights(EnemySymbol.SWORD, 1, EnemySymbol.SHIELD, 1, EnemySymbol.POTION, 1),
+        deck(new int[] {2, 5, 8, 11, 14}, new int[] {2, 5, 8, 11, 14},
+            new int[] {2, 5, 8, 11, 14}, new int[] {2, 5, 8, 11, 14}),
+        List.of(Card.Suit.PIQUE, Card.Suit.CARREAU, Card.Suit.TREFLE, Card.Suit.COEUR),
+        List.of(Card.Suit.COEUR, Card.Suit.CARREAU, Card.Suit.PIQUE, Card.Suit.TREFLE)),
 
     CROUPIER("Croupier démoniaque", "ENNEMI",
         "Il tient la table. Il frappe. Il se protège. Il se soigne.",
@@ -309,6 +319,14 @@ public enum EnemyKind {
             case GARDIENNE, MIROIR, HORLOGER, FOU, ECLAT  -> CHAPTER_3_POWER;
             default -> 100;
         };
+    }
+
+    /** Dégâts de base d'une Épée du croupier d'entraînement. */
+    public static final int TRAINING_SWORD_DAMAGE = 10;
+
+    /** @return les dégâts de base de son Épée, avant sa {@linkplain #getPower() force}. */
+    public int swordDamage() {
+        return this == ENTRAINEMENT ? TRAINING_SWORD_DAMAGE : EnemySymbol.SWORD_DAMAGE;
     }
 
     /** @return {@code value} multiplié par sa {@linkplain #getPower() force} (arrondi). */

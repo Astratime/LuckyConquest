@@ -219,7 +219,7 @@ public class GameScreen extends ScreenAdapter {
     // -------------------------------------------------------------------------
 
     private final LuckyGame           luckyGame;
-    /** Chapitre de la Tour des épreuves ou donjon de l'Exploration, ou {@code null} pour un combat seul (« Jouer »). */
+    /** Chapitre de la Tour des épreuves ou donjon de l'Exploration, ou {@code null} pour un combat seul (« Entraînement »). */
     private final CombatRun           run;
     private final Stage               stage;
     private final BitmapFont          font;
@@ -325,7 +325,7 @@ public class GameScreen extends ScreenAdapter {
     /**
      * Écran de jeu d'une ascension de la Tour des épreuves.
      *
-     * @param run chapitre ou donjon en cours ({@code null} : un combat seul, comme « Jouer »)
+     * @param run chapitre ou donjon en cours ({@code null} : un combat seul, comme « Entraînement »)
      */
     public GameScreen(LuckyGame luckyGame, CombatRun run) {
         this.luckyGame = luckyGame;
@@ -333,7 +333,7 @@ public class GameScreen extends ScreenAdapter {
         // Le deck construit par le joueur (ou le deck de départ), relu à chaque nouveau combat.
         this.gameController = new GameController(() -> CardLoader.loadDeck(luckyGame.getProfile().getDeck()),
             CardLoader.cardFactory(), CardLoader.loadShop());
-        if (run != null) gameController.restart(run.getEnemy()); // le premier ennemi du chapitre
+        gameController.restart(firstEnemy()); // le premier ennemi du chapitre, ou le croupier d'entraînement
         // Le SpriteBatch est partagé avec LuckyGame et ne doit PAS être disposé ici.
         this.stage = new Stage(new MinimumScreenViewport(MIN_WIDTH, MIN_HEIGHT), luckyGame.getBatch());
 
@@ -1054,7 +1054,7 @@ public class GameScreen extends ScreenAdapter {
      */
     private void onRestart() {
         if (run != null) run.restart();
-        gameController.restart(run != null ? run.getEnemy() : EnemyKind.CROUPIER);
+        gameController.restart(firstEnemy());
         resetBoard();
     }
 
@@ -1233,8 +1233,14 @@ public class GameScreen extends ScreenAdapter {
 
     /** @return les pièces gagnées à la fin de ce combat (voir {@link PlayerProfile#combatReward}). */
     private int combatReward(boolean victory) {
-        return PlayerProfile.combatReward(victory, run == null || run.isBossStage(),
+        if (run == null) return 0; // Entraînement : aucune pièce
+        return PlayerProfile.combatReward(victory, run.isBossStage(),
             gameController.getGameState().getPlayer().getGains());
+    }
+
+    /** @return l'ennemi du combat en cours de la Tour ou du donjon, ou le croupier d'entraînement. */
+    private EnemyKind firstEnemy() {
+        return run != null ? run.getEnemy() : EnemyKind.ENTRAINEMENT;
     }
 
     /** Le combat est terminé dès que le joueur ou l'ennemi n'a plus de points de vie. */

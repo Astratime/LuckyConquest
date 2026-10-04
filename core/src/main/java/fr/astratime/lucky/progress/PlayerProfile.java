@@ -118,7 +118,7 @@ public class PlayerProfile {
     /**
      * Pièces versées à la fin d'un combat : les gains affichés dans le cadre
      * « Gains », seulement après la victoire contre le dernier ennemi (le roi
-     * d'un donjon, le boss d'un chapitre, ou le combat seul). Une défaite ne
+     * d'un donjon ou le boss d'un chapitre ; l'Entraînement n'en donne pas). Une défaite ne
      * rapporte rien, et un combat intermédiaire non plus : ses gains sont
      * gardés pour le combat suivant.
      *

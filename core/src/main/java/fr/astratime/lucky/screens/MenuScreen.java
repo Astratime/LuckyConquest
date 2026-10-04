@@ -41,7 +41,7 @@ import java.util.function.Supplier;
  * se décale légèrement avec la souris (parallaxe) : le titre, sur lequel passe
  * un reflet, flotte au-dessus d'un panneau d'options.
  *
- * Page principale : « Jouer » (lance un combat, {@link GameScreen}), « Tour des
+ * Page principale : « Entraînement » (lance un combat contre le croupier d'entraînement, {@link GameScreen}), « Tour des
  * épreuves » (choix d'un chapitre, {@link TowerScreen}), « Options » et « Quitter ». Page des options : affichage (fenêtre agrandie ou plein
  * écran, appliqué tout de suite), effets visuels (normaux ou réduits,
  * réglage partagé avec l'écran de jeu), volume de la musique, volume des sons,
@@ -122,10 +122,10 @@ public class MenuScreen extends ScreenAdapter {
     // Pages
     // -------------------------------------------------------------------------
 
-    /** Page principale : Jouer, Tour des épreuves, Exploration, Construction de deck, Boutique, Options, Quitter. */
+    /** Page principale : Entraînement, Tour des épreuves, Exploration, Construction de deck, Boutique, Options, Quitter. */
     private void showMainPage() {
         showPage(null, List.of(
-            OptionsMenu.Entry.button("Jouer", this::onPlay),
+            OptionsMenu.Entry.button("Entraînement", this::onPlay),
             OptionsMenu.Entry.button("Tour des épreuves", this::onTower),
             OptionsMenu.Entry.button("Exploration", () -> goTo(() -> new ExplorationScreen(luckyGame))),
             OptionsMenu.Entry.button("Construction de deck", () -> goTo(() -> new DeckBuilderScreen(luckyGame))),

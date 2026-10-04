@@ -176,4 +176,12 @@ class EnemyPowerTest {
         assertNull(controller.claimBonusCard());
         assertTrue(Arrays.stream(turn.getSymbols()).allMatch(s -> s == Symbol.SEVEN));
     }
+
+    @Test
+    void theTrainingCroupierIsGentle() {
+        assertEquals(1_000, EnemyKind.ENTRAINEMENT.getMaxHp());
+        assertEquals(10, EnemyKind.ENTRAINEMENT.empowered(EnemyKind.ENTRAINEMENT.swordDamage()));
+        assertEquals(EnemySymbol.SWORD_DAMAGE, EnemyKind.CROUPIER.swordDamage(), "le croupier de la Tour ne change pas");
+        assertEquals(5_000, EnemyKind.CROUPIER.getMaxHp());
+    }
 }
