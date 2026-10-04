@@ -55,11 +55,11 @@ class ComboTest {
         List<Card> brelanAndPair = List.of(card(12, Card.Suit.COEUR), card(12, Card.Suit.PIQUE),
             card(12, Card.Suit.TREFLE), card(1, Card.Suit.COEUR), card(1, Card.Suit.CARREAU));
         assertEquals(List.of(Combo.BRELAN, Combo.PAIRE), Combo.formed(brelanAndPair), "une paire d'un autre rang compte");
-        assertEquals(4.5f, Combo.totalFactor(Combo.formed(brelanAndPair)), 1e-6);
+        assertEquals(27f, Combo.totalFactor(Combo.formed(brelanAndPair)), 1e-6);
 
         List<Card> straightFlush = List.of(card(11, Card.Suit.COEUR), card(12, Card.Suit.COEUR), card(13, Card.Suit.COEUR));
         assertEquals(List.of(Combo.COULEUR, Combo.SUITE), Combo.formed(straightFlush));
-        assertEquals(4f, Combo.totalFactor(Combo.formed(straightFlush)), 1e-6);
+        assertEquals(25f, Combo.totalFactor(Combo.formed(straightFlush)), 1e-6);
 
         List<Card> flushWithPair = List.of(card(1, Card.Suit.COEUR), card(1, Card.Suit.COEUR), card(13, Card.Suit.COEUR));
         assertEquals(List.of(Combo.COULEUR, Combo.PAIRE), Combo.formed(flushWithPair));

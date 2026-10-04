@@ -3,6 +3,9 @@ package fr.astratime.lucky;
 import com.badlogic.gdx.Game;
 import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import fr.astratime.lucky.loaders.CardLoader;
+import fr.astratime.lucky.progress.GdxProfileStorage;
+import fr.astratime.lucky.progress.PlayerProfile;
 import fr.astratime.lucky.screens.MenuScreen;
 import fr.astratime.lucky.settings.ScreenMode;
 import fr.astratime.lucky.settings.ScreenModeSwitcher;
@@ -14,6 +17,9 @@ public class LuckyGame extends Game {
     private SpriteBatch batch;
 
     private final ScreenModeSwitcher screenModeSwitcher;
+
+    /** Collection, deck et pièces du joueur, gardés d'une partie à l'autre (chargés au lancement). */
+    private PlayerProfile profile;
 
     /** Jeu sans réglage du mode d'affichage (plateformes sans fenêtre, tests). */
     public LuckyGame() {
@@ -32,6 +38,8 @@ public class LuckyGame extends Game {
     @Override
     public void create() {
         batch = new SpriteBatch();
+        profile = new PlayerProfile(new GdxProfileStorage(), CardLoader.loadStartingCollection(),
+            CardLoader.loadStarterDeckCopies());
 
         setScreen(new MenuScreen(this));
     }
@@ -58,6 +66,11 @@ public class LuckyGame extends Game {
     /** Passe la fenêtre du jeu en mode {@code mode} (choisi dans les options). */
     public void applyScreenMode(ScreenMode mode) {
         screenModeSwitcher.apply(mode);
+    }
+
+    /** @return la collection, le deck et les pièces du joueur. */
+    public PlayerProfile getProfile() {
+        return profile;
     }
 
     /** @return le SpriteBatch partagé, à utiliser par tous les écrans plutôt que d'en recréer un. */

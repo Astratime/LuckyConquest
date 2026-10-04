@@ -13,26 +13,28 @@ import java.util.Set;
  * (les cartes spéciales, sans suite ni rang pertinent, sont ignorées). Elles
  * sont vérifiées automatiquement au lancer de la machine : chaque combinaison
  * formée ({@link #formed}) multiplie les gains et l'attaque du tirage, et
- * leurs multiplicateurs se cumulent (ex : Couleur et Suite, x4). Une paire
+ * leurs multiplicateurs se cumulent (ex : Couleur et Suite, x25). Une paire
  * contenue dans un brelan ne compte pas en plus ; une paire d'un autre rang,
- * si (Brelan et Paire, x4,5). L'ordre dans lequel les cartes sont jouées ne
+ * si (Brelan et Paire, x27). L'ordre dans lequel les cartes sont jouées ne
  * compte pas.
  *
  * Elles poussent le joueur à varier les cartes qu'il pose, plutôt que de ne
- * jouer que les plus fortes.
+ * jouer que les plus fortes. Leurs multiplicateurs sont hauts (+3 depuis
+ * l'Exploration) pour que les cartes à suite gardent leur place dans le deck
+ * face aux cartes débloquées dans les donjons, qui n'ont pas de suite.
  */
 public enum Combo {
 
     // Déclarées de la plus forte à la plus faible.
 
     /** Trois cartes du même rang. */
-    BRELAN("BRELAN", 3f, "3 cartes du même rang"),
+    BRELAN("BRELAN", 6f, "3 cartes du même rang"),
     /** Au moins trois cartes, toutes de la même suite. */
-    COULEUR("COULEUR", 2f, "3 cartes ou plus de la même suite"),
+    COULEUR("COULEUR", 5f, "3 cartes ou plus de la même suite"),
     /** Trois rangs qui se suivent (l'As compte avant le 2 ou après le Roi). */
-    SUITE("SUITE", 2f, "3 rangs qui se suivent"),
+    SUITE("SUITE", 5f, "3 rangs qui se suivent"),
     /** Deux cartes du même rang. */
-    PAIRE("PAIRE", 1.5f, "2 cartes du même rang");
+    PAIRE("PAIRE", 4.5f, "2 cartes du même rang");
 
     /** Nombre de cartes minimum pour une suite, une couleur ou un brelan. */
     private static final int MIN_CARDS = 3;

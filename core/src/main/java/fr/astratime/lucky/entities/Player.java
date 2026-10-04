@@ -30,6 +30,8 @@ public class Player {
 
     /** Monnaie gagnée en combat. Servira à acheter des bonus en combat. */
     private int gains = 0;
+    /** Gains acquis depuis le début du combat (voir {@link #getEarnedThisCombat()}). */
+    private int earnedThisCombat = 0;
 
     /** Bouclier accumulé ce tour par les DefenseAction. */
     private int shield = 0;
@@ -72,14 +74,39 @@ public class Player {
         hp += healed;
         return healed;
     }
+    /**
+     * Retire {@code amount} points de vie sans passer par le bouclier, sans
+     * jamais descendre sous 1 PV (Pacte de sang : on ne meurt pas de sa propre carte).
+     *
+     * @return les points de vie réellement retirés
+     */
+    public int sacrificeHp(int amount) {
+        int lost = Math.max(0, Math.min(amount, hp - 1));
+        hp -= lost;
+        return lost;
+    }
+
     /** @return {@code true} si le joueur n'a plus de points de vie. */
     public boolean isDefeated()        { return hp <= 0; }
 
     /** @return la proportion de vie restante, entre 0 et 1 (utilisé par les effets conditionnels). */
     public float getHpRatio() { return (float) hp / maxHp; }
 
-    /** Ajoute {@code amount} aux gains accumulés, sans jamais passer sous 0. */
-    public void addGains(int amount) { gains = Math.max(0, gains + amount); }
+    /**
+     * Ajoute {@code amount} aux gains accumulés, sans jamais passer sous 0. Un
+     * montant positif compte aussi dans les gains acquis pendant le combat
+     * (voir {@link #getEarnedThisCombat()}).
+     */
+    public void addGains(int amount) {
+        gains = Math.max(0, gains + amount);
+        if (amount > 0) earnedThisCombat += amount;
+    }
+
+    /**
+     * @return les gains acquis pendant ce combat (tout ce qui a été gagné, même
+     *         dépensé ou perdu ensuite), versés en pièces à la fin du combat
+     */
+    public int getEarnedThisCombat() { return earnedThisCombat; }
 
     /**
      * Consomme un pourcentage des gains actuels (ex : coût d'un As de Trèfle).
@@ -209,7 +236,7 @@ public class Player {
         cards.addAll(playedCards);
         Player next = new Player(name, maxHp, cards);
         next.hp = hp; // les PV perdus ne reviennent pas d'un combat à l'autre
-        next.addGains(gains);
+        next.gains = gains; // gardés, sans compter comme acquis au combat suivant
         return next;
     }
 

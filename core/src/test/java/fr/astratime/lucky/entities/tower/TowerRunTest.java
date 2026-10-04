@@ -28,7 +28,7 @@ class TowerRunTest {
         assertTrue(run.isBossStage());
         assertEquals(EnemyKind.COMETE, run.getEnemy());
 
-        assertEquals(TowerRun.Next.CHAPTER_CLEARED, run.win());
+        assertEquals(TowerRun.Next.CLEARED, run.win());
     }
 
     @Test

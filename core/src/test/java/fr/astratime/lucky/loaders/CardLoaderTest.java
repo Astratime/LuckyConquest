@@ -8,6 +8,7 @@ import fr.astratime.lucky.entities.context.CombatContext;
 import fr.astratime.lucky.entities.context.PlayContext;
 import fr.astratime.lucky.entities.context.SpinContext;
 import fr.astratime.lucky.entities.context.TurnContext;
+import fr.astratime.lucky.progress.PlayerProfile;
 
 import org.junit.jupiter.api.Test;
 
@@ -45,7 +46,8 @@ class CardLoaderTest {
     void everyCardDefinitionLoads() {
         List<Card> cards = CardLoader.loadAll(READER);
 
-        assertEquals(52 + 14 + 11, cards.size(), "4 suites de 13 cartes + 14 cartes spéciales + 11 cartes de test (Bingo par symbole)");
+        assertEquals(52 + 14 + 12 + 11, cards.size(),
+            "4 suites de 13 cartes + 14 cartes spéciales + 12 cartes des donjons + 11 cartes de test (Bingo par symbole)");
         assertEquals(cards.size(), cards.stream().map(Card::getId).distinct().count(), "les ids doivent être uniques");
     }
 
@@ -68,22 +70,35 @@ class CardLoaderTest {
     }
 
     @Test
-    void starterDeckHasTheExpectedComposition() {
+    void starterDeckHasTwentyCardsTheAcesFacesAndFourSpecials() {
         List<Card> deck = CardLoader.loadStarterDeck(READER);
         Map<String, Long> copies = deck.stream().collect(Collectors.groupingBy(Card::getId, Collectors.counting()));
 
-        assertEquals(27, deck.size());
-        for (String special : List.of("magnet", "joker", "recycle", "bet", "lucky_charm", "rainbow", "in_the_sleeve")) {
+        assertEquals(PlayerProfile.DECK_SIZE, deck.size());
+        for (String special : List.of("draw_2", "joker", "gain_500", "lucky_charm")) {
             assertEquals(1L, copies.get(special), special);
         }
-        assertEquals(2L, copies.get("draw_2"));
-        assertEquals(1L, copies.get("draw_3"));
-        assertEquals(1L, copies.get("gain_500"));
         for (String suit : List.of("coeur", "trefle", "carreau", "pique")) {
             for (int rank : List.of(1, 11, 12, 13)) {
                 assertEquals(1L, copies.get(rank + "_" + suit), rank + "_" + suit);
             }
         }
+        assertNull(copies.get("magnet"), "l'Aimant n'est plus dans le deck de départ");
+    }
+
+    @Test
+    void startingCollectionHoldsTheOldStarterCardsWithoutInTheSleeve() {
+        Map<String, Integer> collection = CardLoader.loadStartingCollection(READER);
+
+        assertFalse(collection.containsKey("in_the_sleeve"), "Dans la manche sera débloquée dans un autre donjon");
+        assertEquals(2, collection.get("gain_500"), "Dans la manche est remplacée par un Gains +500");
+        assertEquals(2, collection.get("draw_2"));
+        assertEquals(27, collection.values().stream().mapToInt(Integer::intValue).sum());
+        for (Map.Entry<String, Integer> entry : CardLoader.loadStarterDeckCopies(READER).entrySet()) {
+            assertTrue(collection.getOrDefault(entry.getKey(), 0) >= entry.getValue(),
+                "le deck de départ ne contient que des cartes possédées : " + entry.getKey());
+        }
+        assertDoesNotThrow(() -> CardLoader.loadDeck(collection, READER), "toutes les cartes de la collection existent");
     }
 
     @Test
