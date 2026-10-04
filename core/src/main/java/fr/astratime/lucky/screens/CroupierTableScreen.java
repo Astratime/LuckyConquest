@@ -8,6 +8,7 @@ import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.ScreenAdapter;
 import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.graphics.Color;
+import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.Interpolation;
@@ -35,8 +36,11 @@ import fr.astratime.lucky.assets.HudTextures;
 import fr.astratime.lucky.assets.Palette;
 import fr.astratime.lucky.assets.VolumeSound;
 import fr.astratime.lucky.entities.Card;
+import fr.astratime.lucky.entities.Symbol;
 import fr.astratime.lucky.loaders.CardLoader;
 import fr.astratime.lucky.progress.DeckDraft;
+import fr.astratime.lucky.progress.MachineDraft;
+import fr.astratime.lucky.progress.ReelShop;
 import fr.astratime.lucky.progress.PlayerProfile;
 import fr.astratime.lucky.settings.AudioSettings;
 import fr.astratime.lucky.views.CasinoButtons;
@@ -45,6 +49,7 @@ import fr.astratime.lucky.views.MinimumScreenViewport;
 import fr.astratime.lucky.views.Tooltip;
 
 import java.util.ArrayList;
+import java.util.EnumMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -52,8 +57,13 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 
 /**
- * Construction de deck : le joueur choisit les {@link PlayerProfile#DECK_SIZE}
- * cartes qu'il emmène au combat, parmi celles qu'il possède.
+ * Table du croupier : le joueur y prépare ce qu'il emmène au combat, en deux onglets.
+ * <ul>
+ *   <li>« Deck » : les {@link PlayerProfile#DECK_SIZE} cartes de son deck, parmi
+ *       celles qu'il possède (collection de départ, coffres, boutique) ;</li>
+ *   <li>« Rouleaux » : les {@link Symbol#MACHINE_SIZE} rouleaux de sa machine,
+ *       tous différents, parmi les classiques et ceux achetés à la boutique.</li>
+ * </ul>
  *
  * À gauche, sa collection : chaque carte, avec le nombre d'exemplaires déjà
  * dans le deck sur le nombre qu'il peut y mettre (ceux qu'il possède, au plus
@@ -61,8 +71,10 @@ import java.util.function.Supplier;
  * droit : un de moins. À droite, le deck : le compteur de cartes et la liste,
  * où un clic retire un exemplaire. « Enregistrer » n'est possible qu'avec
  * exactement {@link PlayerProfile#DECK_SIZE} cartes ; « Retour » abandonne les changements.
+ * Dans l'onglet « Rouleaux », un clic place un rouleau dans la machine ou l'en
+ * retire. « Enregistrer » enregistre le deck et la machine, complets tous les deux.
  */
-public class DeckBuilderScreen extends ScreenAdapter {
+public class CroupierTableScreen extends ScreenAdapter {
 
     private static final String CLICK_SOUND  = "sounds/button-click.ogg";
     private static final String DEAL_SOUND   = "sounds/card-deal.ogg";
@@ -80,6 +92,8 @@ public class DeckBuilderScreen extends ScreenAdapter {
     private static final float DECK_WIDTH   = 470f;
     private static final float CARD_WIDTH   = 110f;
     private static final float CARD_HEIGHT  = 154f;   // images 480 x 672
+    private static final float REEL_WIDTH   = 144f;
+    private static final float REEL_HEIGHT  = 120f;
     private static final float CELL_GAP     = 16f;
     private static final float HOVER_SCALE  = 1.06f;
     private static final float FADE_TIME    = 0.4f;
@@ -89,6 +103,7 @@ public class DeckBuilderScreen extends ScreenAdapter {
     private final LuckyGame       luckyGame;
     private final PlayerProfile   profile;
     private final DeckDraft       draft;
+    private final MachineDraft    machineDraft;
     private final Stage           stage;
     private final AudioSettings   audio  = new AudioSettings();
     private final HudTextures     hud    = new HudTextures();
@@ -122,6 +137,16 @@ public class DeckBuilderScreen extends ScreenAdapter {
     private final List<Group> cells = new ArrayList<>();
     private final Map<String, Label> cellCounts = new LinkedHashMap<>();
     private final Table       deckList = new Table();
+    /** Images des rouleaux possédés. */
+    private final Map<Symbol, Texture> reelTextures = new EnumMap<>(Symbol.class);
+    private final Table       reelGrid = new Table();
+    private final ScrollPane  reelScroll;
+    private final List<Group> reelCells = new ArrayList<>();
+    private final Map<Symbol, Label> reelStates = new EnumMap<>(Symbol.class);
+    private final Table       machineList = new Table();
+    private final TextButton  deckTab;
+    private final TextButton  reelsTab;
+    private final TextButton  classicButton;
     private final Label       hint;
     private final TextButton  saveButton;
     private final TextButton  starterButton;
@@ -130,12 +155,16 @@ public class DeckBuilderScreen extends ScreenAdapter {
     private final Image       fade;
 
     private int     columns = 6;
+    private int     reelColumns = 4;
+    /** Onglet « Rouleaux » affiché (sinon « Deck »). */
+    private boolean showingReels;
     private boolean leaving;
 
-    public DeckBuilderScreen(LuckyGame luckyGame) {
+    public CroupierTableScreen(LuckyGame luckyGame) {
         this.luckyGame = luckyGame;
         this.profile   = luckyGame.getProfile();
         this.draft     = new DeckDraft(profile);
+        this.machineDraft = new MachineDraft(profile);
         this.stage     = new Stage(new MinimumScreenViewport(MIN_WIDTH, MIN_HEIGHT), luckyGame.getBatch());
         clickSound  = new VolumeSound(Gdx.audio.newSound(Gdx.files.internal(CLICK_SOUND)), audio);
         dealSound   = new VolumeSound(Gdx.audio.newSound(Gdx.files.internal(DEAL_SOUND)), audio);
@@ -149,7 +178,7 @@ public class DeckBuilderScreen extends ScreenAdapter {
         veil = new Image(pixel);
         veil.setColor(0f, 0f, 0f, 0.65f);
         veil.setTouchable(Touchable.disabled);
-        title = new Label("CONSTRUCTION DE DECK", new Label.LabelStyle(titleFont, Color.WHITE));
+        title = new Label("TABLE DU CROUPIER", new Label.LabelStyle(titleFont, Color.WHITE));
         title.pack();
         collectionPanel = new Image(hud.panelDrawable());
         deckPanel       = new Image(hud.panelDrawable());
@@ -166,9 +195,24 @@ public class DeckBuilderScreen extends ScreenAdapter {
         scroll.setFadeScrollBars(false);
         scroll.setOverscroll(false, false);
 
+        for (Symbol symbol : profile.getOwnedReels()) {
+            reelTextures.put(symbol, new Texture(Gdx.files.internal(symbol.getAssetPath())));
+            reelCells.add(buildReelCell(symbol));
+        }
+        reelScroll = new ScrollPane(reelGrid);
+        reelScroll.setScrollingDisabled(true, false);
+        reelScroll.setFadeScrollBars(false);
+        reelScroll.setOverscroll(false, false);
+
+        deckTab  = buttons.create("Deck", clickSound, () -> showTab(false));
+        reelsTab = buttons.create("Rouleaux", clickSound, () -> showTab(true));
         saveButton    = buttons.createAction("Enregistrer", clickSound, this::onSave);
         starterButton = buttons.create("Deck de départ", clickSound, () -> { draft.resetToStarter(); refresh(); });
-        clearButton   = buttons.create("Vider", clickSound, () -> { draft.clear(); refresh(); });
+        classicButton = buttons.create("Rouleaux de départ", clickSound, () -> { machineDraft.resetToClassic(); refresh(); });
+        clearButton   = buttons.create("Vider", clickSound, () -> {
+            if (showingReels) machineDraft.clear(); else draft.clear();
+            refresh();
+        });
         backButton    = buttons.create("Retour", clickSound, this::onBack);
 
         fade = new Image(pixel);
@@ -185,6 +229,11 @@ public class DeckBuilderScreen extends ScreenAdapter {
         stage.addActor(counter);
         stage.addActor(scroll);
         stage.addActor(deckList);
+        stage.addActor(reelScroll);
+        stage.addActor(machineList);
+        stage.addActor(deckTab);
+        stage.addActor(reelsTab);
+        stage.addActor(classicButton);
         stage.addActor(hint);
         stage.addActor(saveButton);
         stage.addActor(starterButton);
@@ -195,6 +244,95 @@ public class DeckBuilderScreen extends ScreenAdapter {
         fade.addAction(Actions.fadeOut(FADE_TIME));
 
         layout();
+        showTab(false);
+    }
+
+    /** Affiche l'onglet « Rouleaux » ({@code reels}) ou « Deck ». */
+    private void showTab(boolean reels) {
+        showingReels = reels;
+        deckTab.setColor(reels ? USED_UP : Color.WHITE);
+        reelsTab.setColor(reels ? Color.WHITE : USED_UP);
+        scroll.setVisible(!reels);
+        deckList.setVisible(!reels);
+        starterButton.setVisible(!reels);
+        reelScroll.setVisible(reels);
+        machineList.setVisible(reels);
+        classicButton.setVisible(reels);
+        collectionHead.setText(reels ? "MES ROULEAUX" : "MA COLLECTION");
+        deckHead.setText(reels ? "MA MACHINE" : "MON DECK");
+        stage.setScrollFocus(reels ? reelScroll : scroll);
+        refresh();
+    }
+
+    // -------------------------------------------------------------------------
+    // Rouleaux
+    // -------------------------------------------------------------------------
+
+    /**
+     * Case d'un rouleau possédé : son image et, dessous, son nom (en or s'il est
+     * dans la machine). Un clic le place dans la machine ou l'en retire.
+     */
+    private Group buildReelCell(Symbol symbol) {
+        Group cell = new Group();
+        cell.setSize(REEL_WIDTH, REEL_HEIGHT + 34f);
+        Group holder = new Group();
+        holder.setSize(REEL_WIDTH, REEL_HEIGHT);
+        holder.setPosition(0f, 34f);
+        holder.setOrigin(Align.center);
+        holder.setTransform(true);
+        Image image = new Image(new TextureRegionDrawable(new TextureRegion(reelTextures.get(symbol))));
+        image.setSize(REEL_WIDTH, REEL_HEIGHT);
+        holder.addActor(image);
+        Label state = new Label(symbol.getDisplayName(), new Label.LabelStyle(countFont, Color.WHITE));
+        state.setAlignment(Align.center);
+        state.setBounds(0f, 0f, REEL_WIDTH, 30f);
+        cell.addActor(holder);
+        cell.addActor(state);
+        reelStates.put(symbol, state);
+
+        cell.addListener(new ClickListener() {
+            @Override
+            public void enter(InputEvent event, float x, float y, int pointer, Actor fromActor) {
+                super.enter(event, x, y, pointer, fromActor);
+                if (pointer != -1) return;
+                holder.clearActions();
+                holder.addAction(Actions.scaleTo(HOVER_SCALE, HOVER_SCALE, 0.1f, Interpolation.pow2Out));
+                Vector2 pos = holder.localToStageCoordinates(new Vector2(0f, REEL_HEIGHT + 8f));
+                tooltip.show(symbol.getDisplayName(), ReelShop.describe(symbol), pos.x, pos.y);
+            }
+
+            @Override
+            public void exit(InputEvent event, float x, float y, int pointer, Actor toActor) {
+                super.exit(event, x, y, pointer, toActor);
+                if (pointer != -1) return;
+                holder.clearActions();
+                holder.addAction(Actions.scaleTo(1f, 1f, 0.1f, Interpolation.pow2Out));
+                tooltip.hide();
+            }
+
+            @Override
+            public void clicked(InputEvent event, float x, float y) {
+                if (machineDraft.contains(symbol)) {
+                    machineDraft.remove(symbol);
+                    clickSound.play();
+                    refresh();
+                } else {
+                    addReel(symbol, holder);
+                }
+            }
+        });
+        return cell;
+    }
+
+    /** Place le rouleau {@code symbol} dans la machine, ou dit pourquoi ce n'est pas possible. */
+    private void addReel(Symbol symbol, Actor feedback) {
+        String problem = machineDraft.addProblem(symbol);
+        if (problem != null) {
+            refuse(problem, feedback);
+            return;
+        }
+        machineDraft.add(symbol);
+        dealSound.play();
         refresh();
     }
 
@@ -258,18 +396,23 @@ public class DeckBuilderScreen extends ScreenAdapter {
     private void addCard(String id, Actor feedback) {
         String problem = draft.addProblem(id);
         if (problem != null) {
-            refuseSound.play();
-            hint.setText(problem + ".");
-            hint.setColor(REFUSED);
-            feedback.clearActions();
-            feedback.addAction(Actions.sequence(
-                Actions.moveBy(-6f, 0f, 0.04f), Actions.moveBy(12f, 0f, 0.08f), Actions.moveBy(-6f, 0f, 0.04f),
-                Actions.scaleTo(HOVER_SCALE, HOVER_SCALE, 0f)));
+            refuse(problem, feedback);
             return;
         }
         draft.add(id);
         dealSound.play();
         refresh();
+    }
+
+    /** Refus : bruitage, explication sous la liste, et {@code feedback} qui tremble. */
+    private void refuse(String problem, Actor feedback) {
+        refuseSound.play();
+        hint.setText(problem + ".");
+        hint.setColor(REFUSED);
+        feedback.clearActions();
+        feedback.addAction(Actions.sequence(
+            Actions.moveBy(-6f, 0f, 0.04f), Actions.moveBy(12f, 0f, 0.08f), Actions.moveBy(-6f, 0f, 0.04f),
+            Actions.scaleTo(HOVER_SCALE, HOVER_SCALE, 0f)));
     }
 
     /** Retire un exemplaire de la carte {@code id} du deck. */
@@ -299,14 +442,24 @@ public class DeckBuilderScreen extends ScreenAdapter {
             holder.setColor(draft.getCopies(id) >= draft.getMaxCopies(id) ? USED_UP : Color.WHITE);
         }
 
-        int size = draft.size();
-        counter.setText(size + " / " + PlayerProfile.DECK_SIZE);
-        counter.setColor(draft.isComplete() ? Palette.GOLD : REFUSED);
-        saveButton.setDisabled(!draft.isComplete());
+        refreshMachine();
+        saveButton.setDisabled(!draft.isComplete() || !machineDraft.isComplete());
         hint.setColor(Color.WHITE);
-        hint.setText(draft.isComplete() ? "Le deck est prêt."
-            : size < PlayerProfile.DECK_SIZE ? "Encore " + (PlayerProfile.DECK_SIZE - size) + " carte" + (PlayerProfile.DECK_SIZE - size > 1 ? "s" : "") + " à choisir."
-            : "Clic droit : retirer une carte.");
+        if (showingReels) {
+            int reels = machineDraft.size();
+            counter.setText(reels + " / " + Symbol.MACHINE_SIZE);
+            counter.setColor(machineDraft.isComplete() ? Palette.GOLD : REFUSED);
+            int missing = Symbol.MACHINE_SIZE - reels;
+            hint.setText(machineDraft.isComplete() ? (draft.isComplete() ? "La machine est prête." : "La machine est prête. Le deck n'est pas complet.")
+                : "Encore " + missing + " rouleau" + (missing > 1 ? "x" : "") + " à choisir.");
+        } else {
+            int size = draft.size();
+            counter.setText(size + " / " + PlayerProfile.DECK_SIZE);
+            counter.setColor(draft.isComplete() ? Palette.GOLD : REFUSED);
+            hint.setText(draft.isComplete() ? (machineDraft.isComplete() ? "Le deck est prêt." : "Le deck est prêt. La machine n'est pas complète.")
+                : size < PlayerProfile.DECK_SIZE ? "Encore " + (PlayerProfile.DECK_SIZE - size) + " carte" + (PlayerProfile.DECK_SIZE - size > 1 ? "s" : "") + " à choisir."
+                : "Clic droit : retirer une carte.");
+        }
 
         deckList.clearChildren();
         Label.LabelStyle style = new Label.LabelStyle(rowFont, Color.WHITE);
@@ -336,9 +489,49 @@ public class DeckBuilderScreen extends ScreenAdapter {
         layout();
     }
 
-    /** Enregistre le deck (complet) et revient au menu principal. */
+    /** Met à jour les cases des rouleaux (dans la machine ou non) et la liste de la machine. */
+    private void refreshMachine() {
+        for (Map.Entry<Symbol, Label> entry : reelStates.entrySet()) {
+            boolean in = machineDraft.contains(entry.getKey());
+            entry.getValue().setColor(in ? Palette.GOLD : USED_UP); // en or : dans la machine
+        }
+        int index = 0;
+        for (Symbol symbol : profile.getOwnedReels()) {
+            Group holder = (Group) reelCells.get(index++).getChildren().first();
+            holder.getChildren().first().setColor(machineDraft.contains(symbol) ? Color.WHITE : USED_UP);
+        }
+        machineList.clearChildren();
+        Label.LabelStyle style = new Label.LabelStyle(rowFont, Color.WHITE);
+        for (Symbol symbol : machineDraft.getReels()) {
+            Label row = new Label(symbol.getDisplayName() + "   " + ReelShop.describe(symbol), style);
+            row.setEllipsis(true);
+            row.addListener(new ClickListener() {
+                @Override
+                public void enter(InputEvent event, float x, float y, int pointer, Actor fromActor) {
+                    super.enter(event, x, y, pointer, fromActor);
+                    if (pointer == -1) row.setColor(REFUSED);
+                }
+
+                @Override
+                public void exit(InputEvent event, float x, float y, int pointer, Actor toActor) {
+                    super.exit(event, x, y, pointer, toActor);
+                    if (pointer == -1) row.setColor(Color.WHITE);
+                }
+
+                @Override
+                public void clicked(InputEvent event, float x, float y) {
+                    machineDraft.remove(symbol);
+                    clickSound.play();
+                    refresh();
+                }
+            });
+            machineList.add(row).left().width(DECK_WIDTH - PANEL_PAD * 2).height(30f).row();
+        }
+    }
+
+    /** Enregistre le deck et la machine (complets) et revient au menu principal. */
     private void onSave() {
-        if (leaving || !draft.save()) return;
+        if (leaving || !draft.isComplete() || !machineDraft.isComplete() || !draft.save() || !machineDraft.save()) return;
         leaveTo(() -> new MenuScreen(luckyGame));
     }
 
@@ -369,7 +562,9 @@ public class DeckBuilderScreen extends ScreenAdapter {
         decor.setPosition(0f, 0f);
         veil.setBounds(0f, 0f, width, height);
         fade.setBounds(0f, 0f, width, height);
-        title.setPosition((width - title.getWidth()) / 2f, height - TITLE_TOP - title.getHeight() / 2f);
+        title.setPosition(MARGIN, height - TITLE_TOP - title.getHeight() / 2f);
+        reelsTab.setPosition(width - MARGIN - reelsTab.getWidth(), height - TITLE_TOP - reelsTab.getHeight() / 2f);
+        deckTab.setPosition(reelsTab.getX() - 20f - deckTab.getWidth(), reelsTab.getY());
 
         float panelTop    = height - PANEL_TOP;
         float panelBottom = BOTTOM_SPACE;
@@ -395,6 +590,18 @@ public class DeckBuilderScreen extends ScreenAdapter {
         grid.top().left();
         scroll.setBounds(MARGIN + PANEL_PAD, panelBottom + PANEL_PAD, gridWidth, gridTop - panelBottom - PANEL_PAD);
         scroll.layout();
+        int newReelColumns = Math.max(1, (int) ((gridWidth + CELL_GAP) / (REEL_WIDTH + CELL_GAP)));
+        if (newReelColumns != reelColumns || reelGrid.getChildren().isEmpty()) {
+            reelColumns = newReelColumns;
+            reelGrid.clearChildren();
+            for (int i = 0; i < reelCells.size(); i++) {
+                reelGrid.add(reelCells.get(i)).size(REEL_WIDTH, REEL_HEIGHT + 34f).pad(CELL_GAP / 2f);
+                if ((i + 1) % reelColumns == 0) reelGrid.row();
+            }
+        }
+        reelGrid.top().left();
+        reelScroll.setBounds(scroll.getX(), scroll.getY(), scroll.getWidth(), scroll.getHeight());
+        reelScroll.layout();
 
         deckHead.pack();
         deckHead.setPosition(deckX + PANEL_PAD, panelTop - PANEL_PAD - deckHead.getHeight());
@@ -403,6 +610,8 @@ public class DeckBuilderScreen extends ScreenAdapter {
             deckHead.getY() + (deckHead.getHeight() - counter.getHeight()) / 2f);
         deckList.pack();
         deckList.setPosition(deckX + PANEL_PAD, deckHead.getY() - 20f - deckList.getHeight());
+        machineList.pack();
+        machineList.setPosition(deckX + PANEL_PAD, deckHead.getY() - 20f - machineList.getHeight());
         hint.setWrap(true);
         hint.setWidth(DECK_WIDTH - PANEL_PAD * 2);
         hint.setHeight(hint.getPrefHeight());
@@ -412,6 +621,7 @@ public class DeckBuilderScreen extends ScreenAdapter {
         saveButton.setPosition(width - MARGIN - saveButton.getWidth(), buttonY);
         clearButton.setPosition(saveButton.getX() - 24f - clearButton.getWidth(), buttonY);
         starterButton.setPosition(clearButton.getX() - 24f - starterButton.getWidth(), buttonY);
+        classicButton.setPosition(clearButton.getX() - 24f - classicButton.getWidth(), buttonY);
         backButton.setPosition(MARGIN, buttonY);
     }
 
@@ -428,7 +638,7 @@ public class DeckBuilderScreen extends ScreenAdapter {
             }
         };
         Gdx.input.setInputProcessor(new InputMultiplexer(stage, keyboard));
-        stage.setScrollFocus(scroll);
+        stage.setScrollFocus(showingReels ? reelScroll : scroll);
         music.play();
     }
 
@@ -451,6 +661,7 @@ public class DeckBuilderScreen extends ScreenAdapter {
         stage.dispose();
         decor.dispose();
         cardTextures.dispose();
+        reelTextures.values().forEach(Texture::dispose);
         buttons.dispose();
         tooltip.dispose();
         clickSound.dispose();

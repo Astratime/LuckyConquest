@@ -182,4 +182,19 @@ class CardLoaderTest {
             assertTrue(ids.contains(id), "carte Bingo offerte manquante : " + id);
         }
     }
+
+    @Test
+    void theBoutiqueSellsKnownCardsButNeitherChestNorCombatShopCards() {
+        Map<String, Long> boutique = CardLoader.loadBoutique(READER);
+        assertEquals(10_000_000L, boutique.get("in_the_sleeve"), "le prix donné par Astra");
+        java.util.Set<String> shop = CardLoader.loadShop(READER).keySet();
+        for (Map.Entry<String, Long> entry : boutique.entrySet()) {
+            Card card = CardLoader.cardFactory(READER).apply(entry.getKey());
+            assertTrue(entry.getValue() > 0, card.getId());
+            assertFalse(shop.contains(card.getId()), card.getId() + " reste dans l'échoppe du combat");
+        }
+        for (String chest : List.of("pierre_a_aiguiser", "guillotine", "fortune_du_roi", "diamant_brut")) {
+            assertFalse(boutique.containsKey(chest), chest + " ne s'obtient qu'au coffre");
+        }
+    }
 }

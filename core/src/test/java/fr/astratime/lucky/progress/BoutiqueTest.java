@@ -114,4 +114,25 @@ class BoutiqueTest {
             assertFalse(ReelShop.describe(symbol).isBlank(), symbol.name());
         }
     }
+
+    @Test
+    void theMachineDraftIsSavedOnlyWithElevenReels() {
+        PlayerProfile profile = profile(new MemoryStorage());
+        MachineDraft draft = new MachineDraft(profile);
+        assertTrue(draft.isComplete());
+        assertNotNull(draft.addProblem(Symbol.SEVEN), "déjà dans la machine");
+        assertNotNull(draft.addProblem(Symbol.STAR), "pas encore achetée");
+
+        assertTrue(draft.remove(Symbol.BAR));
+        assertFalse(draft.save(), "10 rouleaux");
+        profile.addCoins(5_000_000);
+        profile.buyReel(Symbol.STAR, 5_000_000);
+        assertTrue(draft.add(Symbol.STAR));
+        assertTrue(draft.save());
+        assertTrue(profile.getMachine().contains(Symbol.STAR));
+        assertFalse(profile.getMachine().contains(Symbol.BAR));
+
+        draft.resetToClassic();
+        assertEquals(Symbol.classicReels(), draft.getReels());
+    }
 }
