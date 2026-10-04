@@ -475,7 +475,7 @@ public class GameScreen extends ScreenAdapter {
         refreshCombos(); // les combinaisons du tour précédent s'éteignent
         hand.setLocked(false); // une carte achetée entre deux tours reste sur la table
         slots.setBlockedReel(player().getLastingEffects().getForbiddenReel()); // Rouleau interdit de l'ennemi
-        GameController.Purchase gift = gameController.claimBonusCard(); // Bingo offert après un Bingo de bouclier
+        GameController.Purchase gift = gameController.claimBonusCard(); // Bingo glissé dans le deck après un Bingo de gains
         if (gift != null) placePurchase(gift);
         hand.deal(gameController.drawCards());
         refreshPlays();

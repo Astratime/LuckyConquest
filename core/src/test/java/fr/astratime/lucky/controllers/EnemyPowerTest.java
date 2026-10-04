@@ -109,14 +109,12 @@ class EnemyPowerTest {
     }
 
     @Test
-    void aShieldBingoReflectsTheShieldAndOffersABingo() {
-        Card offered = new Card(GameController.SHIELD_BINGO_GIFT, "Bingo", "bingo.png", List.of(new BingoEffect(100)),
-            null, 1);
+    void aShieldBingoReflectsTheShieldAndOffersNothing() {
         boolean reflected = false;
         for (int attempt = 0; attempt < 40 && !reflected; attempt++) {
             GameController controller = new GameController(() -> new ArrayList<>(List.of(
                 new Card("grape", "Bingo Raisin", "b.png", List.of(new BingoEffect(100, Symbol.GRAPE)), null, 1))),
-                id -> offered);
+                id -> { throw new AssertionError("aucune carte offerte"); });
             controller.drawCards();
             Player player = controller.getGameState().getPlayer();
             controller.playCard(player.getCurrentHand().get(0));
@@ -135,12 +133,34 @@ class EnemyPowerTest {
                 reflected = true;
             }
 
-            GameController.Purchase gift = controller.claimBonusCard();
-            assertNotNull(gift, "un Bingo est offert au tour suivant");
-            assertSame(offered, gift.card());
-            assertNull(controller.claimBonusCard(), "une seule fois");
+            assertNull(controller.claimBonusCard(), "pas de carte après un Bingo de bouclier");
         }
         assertTrue(reflected, "l'ennemi n'a jamais attaqué");
+    }
+
+    @Test
+    void aGainBingoSlipsARandomBingoIntoTheDeck() {
+        List<String> created = new ArrayList<>();
+        GameController controller = new GameController(() -> new ArrayList<>(List.of(
+            new Card("bell", "Bingo Cloche", "b.png", List.of(new BingoEffect(100, Symbol.BELL)), null, 1))),
+            id -> {
+                created.add(id);
+                return new Card(id, "Bingo Cloche", "b.png", List.of(new BingoEffect(1, Symbol.BELL)), null, 1);
+            });
+        controller.drawCards();
+        Player player = controller.getGameState().getPlayer();
+        controller.playCard(player.getCurrentHand().get(0));
+        TurnResult turn = controller.spin();
+        assertEquals(Symbol.BELL, turn.getGainBingoSymbol());
+
+        int deckBefore = player.getDeck().getCards().size();
+        GameController.Purchase gift = controller.claimBonusCard();
+        assertNotNull(gift, "un Bingo est offert");
+        assertEquals(1, created.size());
+        assertTrue(created.get(0).startsWith(GameController.BINGO_GIFT_PREFIX), created.get(0));
+        assertFalse(gift.addedToHand(), "dans le deck, pas sur la table");
+        assertEquals(deckBefore + 1, player.getDeck().getCards().size());
+        assertNull(controller.claimBonusCard(), "une seule fois");
     }
 
     @Test

@@ -168,4 +168,18 @@ class CardLoaderTest {
             assertFalse(starter.contains(id), id + " ne s'obtient qu'à l'échoppe");
         }
     }
+
+    @Test
+    void everyReelSymbolHasItsBingoCard() {
+        java.util.Set<String> ids = new java.util.HashSet<>();
+        for (Card card : CardLoader.loadAll(READER)) ids.add(card.getId());
+        List<fr.astratime.lucky.entities.Symbol> symbols =
+            new java.util.ArrayList<>(fr.astratime.lucky.entities.SymbolRegistry.getAttackSymbols());
+        symbols.addAll(fr.astratime.lucky.entities.SymbolRegistry.getDefenseSymbols());
+        symbols.addAll(fr.astratime.lucky.entities.SymbolRegistry.getGainSymbols());
+        for (fr.astratime.lucky.entities.Symbol symbol : symbols) {
+            String id = fr.astratime.lucky.controllers.GameController.bingoGiftId(symbol);
+            assertTrue(ids.contains(id), "carte Bingo offerte manquante : " + id);
+        }
+    }
 }
