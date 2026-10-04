@@ -22,7 +22,7 @@ public class FlamingDieScene extends BingoScene {
     /** Le dé s'immobilise sur sa face « 7 ». */
     public static final float LAND_TIME = 1.0f;
 
-    private static final int   SIZE      = 26;       // côté du dé, en pixels de l'image
+    static final int           SIZE      = 26;       // côté du dé, en pixels de l'image (repris par TripleDiceScene)
     private static final float DIE_SCALE = 6f;       // un peu plus grand que les autres décors
     private static final float ROLL_FROM = -760f;    // départ, relatif au centre
     private static final float[] BOUNCES = {0.3f, 0.6f, 0.82f, LAND_TIME}; // instants des contacts avec la table
@@ -116,8 +116,8 @@ public class FlamingDieScene extends BingoScene {
         ((TextureRegionDrawable) die.getDrawable()).setRegion(faces[value]);
     }
 
-    /** @return une face du dé : {@code value} points (1 à 6), ou un grand « 7 » rouge pour 0. */
-    private static Pixmap face(int value) {
+    /** @return une face du dé : {@code value} points (1 à 6), ou un grand « 7 » rouge pour 0 (reprise par {@link TripleDiceScene}). */
+    static Pixmap face(int value) {
         Pixmap pixmap = pixmap(SIZE, SIZE);
         Color body = c("f5f0e6"), shade = c("cfc6b4"), light = Color.WHITE;
         fillOutlined(pixmap, 0, 0, SIZE, SIZE, body);
