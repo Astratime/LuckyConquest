@@ -145,7 +145,8 @@ public class Player {
      */
     public void addGains(int amount) {
         int before = gains;
-        gains = amount >= 0 ? gains + amount : Math.max(Math.min(0, gains), gains + amount);
+        gains = amount >= 0 ? (int) Math.min(Integer.MAX_VALUE, (long) gains + amount) // pas de dépassement
+                            : Math.max(Math.min(0, gains), gains + amount);
         if (gains < before) lastingEffects.spendFakeGains(before - gains);
     }
 

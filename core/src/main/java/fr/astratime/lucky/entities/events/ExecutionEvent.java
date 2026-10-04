@@ -16,7 +16,7 @@ public class ExecutionEvent extends EnemyDamagedEvent {
      * @param percent     part de ses PV restants infligée, en %
      * @param defenseLeft défense de l'ennemi, ignorée par la Guillotine
      */
-    public ExecutionEvent(int damage, int percent, int defenseLeft) {
+    public ExecutionEvent(long damage, int percent, int defenseLeft) {
         super(damage, damage, 0, defenseLeft, true);
         this.percent = percent;
     }

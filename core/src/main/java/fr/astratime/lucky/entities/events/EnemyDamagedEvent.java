@@ -13,9 +13,9 @@ import java.util.List;
  */
 public class EnemyDamagedEvent extends Event {
     /** Dégâts effectivement infligés à l'ennemi (après défense). */
-    public final int damage;
+    public final long damage;
     /** Dégâts bruts avant défense (base du symbole + bonus d'attaque des cartes). */
-    public final int rawDamage;
+    public final long rawDamage;
     /** Dégâts absorbés par la défense de l'ennemi. */
     public final int blocked;
     /** Défense de l'ennemi restante après ce coup. */
@@ -30,7 +30,7 @@ public class EnemyDamagedEvent extends Event {
      * @param defenseLeft défense de l'ennemi restante après ce coup
      * @param pierced     {@code true} si l'attaque a ignoré la défense (Pique)
      */
-    public EnemyDamagedEvent(int damage, int rawDamage, int blocked, int defenseLeft, boolean pierced) {
+    public EnemyDamagedEvent(long damage, long rawDamage, int blocked, int defenseLeft, boolean pierced) {
         this.damage      = damage;
         this.rawDamage   = rawDamage;
         this.blocked     = blocked;

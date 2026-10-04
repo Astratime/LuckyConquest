@@ -122,8 +122,8 @@ public class Enemy {
      *
      * @return les points de vie réellement retirés
      */
-    public int takeDamage(int damage) {
-        int lost = Math.min(hp, Math.max(0, guard(skinned(damage))));
+    public int takeDamage(long damage) {
+        int lost = (int) Math.min(hp, Math.max(0, guard(skinned(damage))));
         hp -= lost;
         damageTaken += lost;
         if (lost <= 0) return 0;
@@ -139,8 +139,8 @@ public class Enemy {
      * de ses PV max) ; la Machine Originelle résiste au premier coup fatal, à 1 PV,
      * et le Dernier tirage décidera. Ce qui arrive est à lire dans {@link #takeNotice()}.
      */
-    private int guard(int damage) {
-        if (kind.houseWins() && !houseUsed && damage * 100L >= (long) maxHp * EnemyKind.HOUSE_CANCEL_PERCENT) {
+    private long guard(long damage) {
+        if (kind.houseWins() && !houseUsed && damage * 100 >= (long) maxHp * EnemyKind.HOUSE_CANCEL_PERCENT) {
             houseUsed = true;
             notice = "LA MAISON GAGNE TOUJOURS : COUP ANNULÉ";
             return 0;
@@ -223,7 +223,7 @@ public class Enemy {
     public int getStolenReels() { return kind.stolenReels(phase); }
 
     /** @return les dégâts qui le touchent vraiment : la moitié, tant que sa peau d'or tient (plus de la moitié de ses PV). */
-    public int skinned(int damage) {
+    public long skinned(long damage) {
         return hasGoldSkin() ? damage / 2 : damage;
     }
 
@@ -292,7 +292,7 @@ public class Enemy {
      *
      * @return les points de vie réellement retirés
      */
-    public int takeTrueDamage(int damage) {
+    public int takeTrueDamage(long damage) {
         return takeDamage(hasGoldSkin() ? damage * 2 : damage);
     }
 
@@ -416,8 +416,8 @@ public class Enemy {
      * @param damage dégâts bruts de l'attaque
      * @return les dégâts absorbés par la défense (le reste touche l'ennemi)
      */
-    public int absorb(int damage) {
-        int absorbed = Math.min(defense, Math.max(0, damage));
+    public int absorb(long damage) {
+        int absorbed = (int) Math.min(defense, Math.max(0, damage));
         defense -= absorbed;
         return absorbed;
     }

@@ -13,7 +13,8 @@ import fr.astratime.lucky.entities.events.Event;
 import fr.astratime.lucky.entities.events.PistolShotEvent;
 import fr.astratime.lucky.loaders.CardLoader;
 
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -28,10 +29,11 @@ import java.util.function.Function;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Dégâts d'un gros combo, joué comme en vrai (vraies cartes des JSON, GameController) :
- * 1 000 000 de gains, As de Trèfle, As de Pique, Roulette russe gagnante,
- * Corruption, puis la carte « Bingo » qui tire un Bingo Triple Sept (x100).
- * Le Bingo est joué en dernier : il lance la machine tout seul.
+ * Référence des dégâts d'un gros combo, joué comme en vrai (vraies cartes des
+ * JSON, GameController), sans rang : As de Trèfle, As de Pique, Roulette russe
+ * gagnante, Corruption, puis la carte « Bingo » qui tire un Bingo Triple Sept
+ * (x100). Le Bingo est joué en dernier : il lance la machine tout seul. Cinq
+ * cartes, soit un coup de plus que la limite de 4 (comme avec Dans la manche).
  */
 class ComboDamageTest {
 
@@ -46,8 +48,21 @@ class ComboDamageTest {
         }
     });
 
-    @Test
-    void asTrefleAsPiqueRouletteCorruptionEtBingoTripleSept() throws Exception {
+    /**
+     * Chaque Triple Sept frappe de (90 + 20 par Lame + bonus de l'As de Trèfle)
+     * x (1 + 0,5 par Lame) x 10 (Corruption) x 4,5 (Paire des deux As) x 100 (Bingo) ;
+     * le pistolet tire ensuite le meilleur symbole x50.
+     */
+    @ParameterizedTest(name = "{0} gains : {7} dégâts")
+    @CsvSource({
+        // gains,   As de Trèfle (consommé, attaque), As de Pique (consommé, Lames), par Triple Sept, pistolet, total
+        "10000,     3000,   663,  700,   2, 7137000,   356850000,   378261000",
+        "100000,    30000,  1847, 7000,  5, 32082750,  1604137500,  1700385750",
+        "1000000,   300000, 5592, 70000, 5, 91066500,  4553325000,  4826524500",
+    })
+    void asTrefleAsPiqueRouletteCorruptionEtBingoTripleSept(int gains, int clubsConsumed, int clubsAttack,
+                                                           int spadesConsumed, int blades, long perSymbol,
+                                                           long pistol, long total) throws Exception {
         // La carte « Bingo » tire son symbole au hasard : ici, on impose le Triple Sept.
         Card bingo = new Card("bingo", "Bingo", "cards/special/bingo.png",
             List.of(new BingoEffect(100, Symbol.TRIPLE_SEVEN)), null, 0, true);
@@ -55,17 +70,17 @@ class ComboDamageTest {
             CARDS.apply("russian_roulette"), CARDS.apply("corruption"), bingo);
         GameController controller = new GameController(() -> new ArrayList<>(deck));
         Player player = controller.getGameState().getPlayer();
-        // Une cible sans défense et avec assez de PV pour encaisser tous les coups.
+        // Une cible sans défense, avec le plus de PV possible : elle encaisse tous les coups.
         setGameState(controller, new GameState(player, new Enemy("Cible", Integer.MAX_VALUE)));
-        player.addGains(1_000_000);
-        player.getLastingEffects().addBonusPlays(1); // 5 cartes : une de plus que la limite de 4
+        player.addGains(gains);
+        player.getLastingEffects().addBonusPlays(1);
         controller.drawCards();
 
         play(controller, "1_trefle");
-        assertEquals(700_000, player.getGains(), "As de Trèfle : -30 % des gains (300 000)");
+        assertEquals(gains - clubsConsumed, player.getGains(), "As de Trèfle : -30 % des gains");
         play(controller, "1_pique");
-        assertEquals(630_000, player.getGains(), "As de Pique : -10 % des gains (70 000)");
-        assertEquals(5, player.getLastingEffects().getBlades(), "70 000 gains : 5 Lames (le maximum)");
+        assertEquals(gains - clubsConsumed - spadesConsumed, player.getGains(), "As de Pique : -10 % des gains");
+        assertEquals(blades, player.getLastingEffects().getBlades(), "une Lame par 250 gains consommés, 5 au plus");
         play(controller, "russian_roulette");
         RouletteChoice roulette = (RouletteChoice) controller.getPendingChoice();
         assertFalse(controller.pickRouletteCard(roulette.cursed().indexOf(false)).cursed(), "Roulette gagnante");
@@ -76,31 +91,24 @@ class ComboDamageTest {
         assertArrayEquals(new Symbol[] {Symbol.TRIPLE_SEVEN, Symbol.TRIPLE_SEVEN, Symbol.TRIPLE_SEVEN},
             turn.getSymbols());
 
-        // Attaque de chaque Triple Sept : (90 de base + 5 Lames x 20 + bonus de l'As de Trèfle)
-        // x 3,5 (As de Pique, 5 Lames) x 10 (Corruption) x 4,5 (Paire des deux As) x 100 (Bingo).
-        int clubsBonus = 115 + Math.round(10f * (float) Math.sqrt(300_000)); // 5 592
-        int base       = 90 + 5 * PreparationResolver.BLADE_ATTACK + clubsBonus;  // 5 782
-        assertEquals(5_782, base);
-        long perSymbol = Math.round(base * 3.5 * 10 * 4.5 * 100);                // 91 066 500
-        assertEquals(91_066_500L, perSymbol);
+        assertEquals(clubsAttack, 115 + Math.round(10f * (float) Math.sqrt(clubsConsumed)), "attaque de l'As de Trèfle");
+        long base = 90 + blades * PreparationResolver.BLADE_ATTACK + clubsAttack;
+        assertEquals(perSymbol, Math.round(base * (1 + 0.5 * blades) * 10 * 4.5 * 100));
 
         List<EnemyDamagedEvent> hits = symbolHits(turn);
         assertEquals(3, hits.size());
         for (EnemyDamagedEvent hit : hits) {
-            assertEquals(perSymbol, hit.damage, 8, "arrondi des flottants près");
+            assertEquals(perSymbol, hit.damage);
             assertEquals(0, hit.blocked, "l'As de Pique ignore la défense");
         }
 
-        // Pistolet x50 sur le meilleur symbole : 91 066 496 x 50 = 4 553 324 800,
-        // plafonné au maximum d'un entier (les PV des ennemis n'iront jamais plus loin).
         List<PistolShotEvent> shots = turn.getPistolEvents().stream()
             .filter(PistolShotEvent.class::isInstance).map(PistolShotEvent.class::cast).toList();
         assertEquals(1, shots.size());
         assertEquals(50, shots.get(0).multiplier);
-        assertEquals(Integer.MAX_VALUE, shots.get(0).rawDamage);
+        assertEquals(pistol, shots.get(0).damage, "pistolet : meilleur symbole x50");
 
-        long total = hits.stream().mapToLong(hit -> hit.damage).sum() + shots.get(0).damage;
-        assertEquals(273_199_488L + Integer.MAX_VALUE, total);
+        assertEquals(total, hits.stream().mapToLong(hit -> hit.damage).sum() + shots.get(0).damage);
     }
 
     private static void play(GameController controller, String id) {

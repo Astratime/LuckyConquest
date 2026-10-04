@@ -55,11 +55,12 @@ public class AttackAction extends Action {
         Enemy enemy = context.getEnemy();
 
         int base = rollBaseDamage() + context.getPlayer().getRankBonus().attack() * context.getRankFactor();
-        int rawDamage = Math.round((base + context.getAttackBonus())
+        // En long et en double : un gros combo dépasse le milliard de dégâts.
+        long rawDamage = Math.round((double) (base + context.getAttackBonus())
             * context.getAttackFactor() * context.getSymbolPower());
         boolean pierced = piercing || context.isIgnoreDefense();
         int blocked     = pierced ? 0 : enemy.absorb(rawDamage); // la défense s'use à chaque coup
-        int damage      = enemy.skinned(rawDamage - blocked); // une peau d'or encaisse la moitié
+        long damage     = enemy.skinned(rawDamage - blocked); // une peau d'or encaisse la moitié
 
         int lost = enemy.takeDamage(rawDamage - blocked);
         if (lost < damage && !enemy.isDefeated()) damage = lost; // coup annulé (la Maison) ou fatal évité (Machine Originelle)
@@ -78,8 +79,9 @@ public class AttackAction extends Action {
         }
 
         if (context.isGainsFromDamage() && damage > 0) {
-            context.getPlayer().addGains(damage);
-            events.add(new GainsEarnedEvent(damage));
+            int earned = (int) Math.min(damage, Integer.MAX_VALUE); // les gains restent un int
+            context.getPlayer().addGains(earned);
+            events.add(new GainsEarnedEvent(earned));
         }
 
         return events;

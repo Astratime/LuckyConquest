@@ -1072,7 +1072,7 @@ public class GameScreen extends ScreenAdapter {
     }
 
     /** L'ennemi encaisse un coup : sa barre réagit ; un gros coup fige l'image un instant et secoue l'écran. */
-    private void onEnemyHit(int damage) {
+    private void onEnemyHit(long damage) {
         hud.revealEnemyHit(damage);
         enemyView.hit();
         sounds.enemyHurt.play(1f, damage >= BIG_HIT ? BIG_HIT_PITCH : 1f, 0f);
@@ -1468,7 +1468,7 @@ public class GameScreen extends ScreenAdapter {
                 .toList();
             String finalDamageText = damageEvents.isEmpty()
                 ? ""
-                : " | degats finaux (avec buffs, avant defense): " + damageEvents.stream().mapToInt(e -> e.rawDamage).sum();
+                : " | degats finaux (avec buffs, avant defense): " + damageEvents.stream().mapToLong(e -> e.rawDamage).sum();
 
             Gdx.app.log("GameScreen", symbol + " - base: " + symbol.getDescription()
                 + finalDamageText + " | resultat: " + resultText);

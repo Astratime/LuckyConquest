@@ -25,7 +25,7 @@ public class PistolShotEvent extends EnemyDamagedEvent {
      * @param slotIndex   rouleau du symbole visé, -1 si aucun
      * @param multiplier  multiplicateur appliqué aux dégâts du symbole
      */
-    public PistolShotEvent(int damage, int rawDamage, int blocked, int defenseLeft, boolean pierced,
+    public PistolShotEvent(long damage, long rawDamage, int blocked, int defenseLeft, boolean pierced,
                            int slotIndex, int multiplier) {
         super(damage, rawDamage, blocked, defenseLeft, pierced);
         this.slotIndex  = slotIndex;
