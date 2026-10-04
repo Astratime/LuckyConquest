@@ -29,7 +29,25 @@ public enum EnemySymbol {
     /** Son compte à rebours avance ; arrivé au bout, il explose. */
     HOURGLASS("SABLIER"),
     /** Il fait tapis : à son tour suivant, sa mise double (ses attaques avec), sauf s'il est touché d'ici là. */
-    ALL_IN("TAPIS");
+    ALL_IN("TAPIS"),
+    /** Il ronge une carte : au prochain tour du joueur, une carte de sa main part à la défausse. */
+    NIBBLE("GRIGNOTAGE"),
+    /** Au prochain tirage du joueur, un de ses rouleaux tourne deux fois et garde le pire résultat. */
+    DRUNK("IVRESSE"),
+    /** Au prochain tour du joueur, ses cartes en main sont faces cachées. */
+    BLIND("AVEUGLEMENT"),
+    /** Il vole la meilleure carte du joueur (pour tout le combat) et la joue contre lui. */
+    BOARDING("ABORDAGE"),
+    /** Au prochain tirage du joueur, ses symboles de gain deviennent des pierres : ils ne rapportent rien. */
+    NUGGET("PÉPITE"),
+    /** Une attaque qui traverse le bouclier du joueur. */
+    DRILL("FORAGE"),
+    /** Son attaque grandit, pour tout le combat (sans limite). */
+    ANVIL("ENCLUME"),
+    /** Au début du prochain tour du joueur, une carte au hasard de sa main est jouée d'office. */
+    SONG("CHANT"),
+    /** Il dévore une part des gains du joueur et se soigne d'autant. */
+    BANK_BITE("MORSURE");
 
     /** Dégâts de base d'une Épée. */
     public static final int SWORD_DAMAGE   = 20;
@@ -67,6 +85,12 @@ public enum EnemySymbol {
     public static final int HOURGLASS_HIT_PER_MILLE = 10;
     /** Le Tapis ne monte pas au-delà de cette mise (multiplicateur de ses attaques). */
     public static final int ALL_IN_MAX     = 4;
+    /** Attaque ajoutée par chaque Enclume, jusqu'à la fin du combat (sans limite). */
+    public static final int ANVIL_ATTACK   = 5;
+    /** Part des gains du joueur dévorée par chaque Morsure de la banque, en pourcentage. */
+    public static final int BANK_BITE_PERCENT = 10;
+    /** Les trois rouleaux de l'ennemi identiques (Jackpot) : ses attaques et ses Boucliers du tour sont multipliés d'autant. */
+    public static final int JACKPOT_FACTOR = 5;
 
     private final String displayName;
 
@@ -98,6 +122,15 @@ public enum EnemySymbol {
             case HOURGLASS -> "Sablier : +1. À " + HOURGLASS_MAX + ", il explose (" + kind.empowered(HOURGLASS_DAMAGE)
                 + "). Tes gros coups le font reculer";
             case ALL_IN -> "Tapis : à son prochain tour, ses attaques doublent. Touche-le avant pour l'annuler";
+            case NIBBLE -> "Grignotage : il ronge une carte. Au prochain tour, une carte de ta main part à la défausse";
+            case DRUNK  -> "Ivresse : à ton prochain tirage, un rouleau tourne deux fois et garde le pire résultat";
+            case BLIND  -> "Aveuglement : au prochain tour, tes cartes en main sont faces cachées";
+            case BOARDING -> "Abordage : il vole ta meilleure carte en main pour tout le combat. Il la joue contre toi";
+            case NUGGET -> "Pépite : à ton prochain tirage, tes symboles de gain deviennent des pierres. Ils ne rapportent rien";
+            case DRILL  -> "Forage : attaque de " + kind.empowered(kind.swordDamage()) + ". Traverse ton bouclier";
+            case ANVIL  -> "Enclume : attaque +" + kind.empowered(ANVIL_ATTACK) + ". Jusqu'à la fin du combat, sans limite";
+            case SONG   -> "Chant : au début de ton prochain tour, une carte au hasard de ta main est jouée d'office";
+            case BANK_BITE -> "Morsure : il dévore " + kind.empowered(BANK_BITE_PERCENT) + " % de tes gains et se soigne d'autant. Sans gains, il mord";
         };
     }
 

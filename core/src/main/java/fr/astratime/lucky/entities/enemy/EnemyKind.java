@@ -25,8 +25,10 @@ import java.util.Map;
  *       (Intérêts) ou {@link #ROULETTE} (Zéro), et la {@link #REINE} ;</li>
  *   <li>chapitre 3 : la {@link #GARDIENNE}, puis {@link #MIROIR} (Reflet), {@link #HORLOGER}
  *       (Sablier) ou {@link #FOU} (Tapis), et l'{@link #ECLAT}, en deux phases ;</li>
- *   <li>Exploration : dans chaque donjon, un soldat de la couleur puis son roi
- *       (voir {@link fr.astratime.lucky.entities.exploration.Dungeon}).</li>
+ *   <li>Exploration : dans chaque donjon, un premier ennemi puis son chef (le roi de la
+ *       couleur dans la prairie ; voir {@link fr.astratime.lucky.entities.exploration.Dungeon}).
+ *       Port des Contrebandiers : Grignotage, Ivresse, Aveuglement, Abordage ; Mines d'Or :
+ *       Pépite, Forage, Enclume, peau d'or ; Casino Englouti : Chant, Jackpot, Morsure, bras du Kraken.</li>
  * </ul>
  * Les lignes de chaque chapitre sont dans {@link fr.astratime.lucky.entities.tower.Chapter}.
  */
@@ -255,7 +257,208 @@ public enum EnemyKind {
         deck(new int[] {4, 9}, new int[] {5, 11},
             new int[] {7}, new int[] {3, 6, 9, 11, 12, 13, 14}),
         List.of(Card.Suit.TREFLE, Card.Suit.PIQUE, Card.Suit.CARREAU, Card.Suit.COEUR),
-        List.of(Card.Suit.TREFLE, Card.Suit.COEUR, Card.Suit.CARREAU, Card.Suit.PIQUE));
+        List.of(Card.Suit.TREFLE, Card.Suit.COEUR, Card.Suit.CARREAU, Card.Suit.PIQUE)),
+
+    // ----- Exploration : le Port des Contrebandiers -----
+
+    RAT_CALES("Rat des cales", "RAT DES CALES",
+        "Il vit dans le noir. Il ronge tout. Même tes cartes.",
+        250_000, 40, 25,
+        weights(EnemySymbol.SWORD, 2, EnemySymbol.NIBBLE, 1, EnemySymbol.SHIELD, 1),
+        deck(new int[] {3, 6, 9, 12, 14}, new int[] {4, 8, 12},
+            new int[] {5, 9, 13}, new int[] {3, 7, 11}),
+        List.of(Card.Suit.PIQUE, Card.Suit.CARREAU, Card.Suit.TREFLE, Card.Suit.COEUR),
+        List.of(Card.Suit.COEUR, Card.Suit.CARREAU, Card.Suit.PIQUE, Card.Suit.TREFLE)),
+    CAPITAINE_RAT("Capitaine Rat", "CAPITAINE RAT",
+        "Il commande la cale. Ses dents mordent. Ses rats rongent ta main.",
+        500_000, 80, 15,
+        weights(EnemySymbol.NIBBLE, 2, EnemySymbol.FANG, 1, EnemySymbol.SWORD, 1, EnemySymbol.SHIELD, 1),
+        deck(new int[] {3, 6, 9, 12, 14}, new int[] {4, 8, 12},
+            new int[] {5, 9, 13}, new int[] {3, 7, 11}),
+        List.of(Card.Suit.PIQUE, Card.Suit.CARREAU, Card.Suit.TREFLE, Card.Suit.COEUR),
+        List.of(Card.Suit.COEUR, Card.Suit.CARREAU, Card.Suit.PIQUE, Card.Suit.TREFLE)),
+    BUVEUR("Buveur", "BUVEUR",
+        "Il titube. Il cogne. Son haleine te fait tourner la tête.",
+        250_000, 40, 25,
+        weights(EnemySymbol.SWORD, 2, EnemySymbol.DRUNK, 1, EnemySymbol.POTION, 1),
+        deck(new int[] {3, 6, 9, 12, 14}, new int[] {4, 8, 12},
+            new int[] {5, 9, 13}, new int[] {3, 7, 11}),
+        List.of(Card.Suit.PIQUE, Card.Suit.CARREAU, Card.Suit.TREFLE, Card.Suit.COEUR),
+        List.of(Card.Suit.COEUR, Card.Suit.CARREAU, Card.Suit.PIQUE, Card.Suit.TREFLE)),
+    TAVERNIER("Tavernier", "TAVERNIER",
+        "Il sert à boire. Toujours. Sous son Ivresse, tes rouleaux trinquent au pire.",
+        500_000, 80, 15,
+        weights(EnemySymbol.DRUNK, 2, EnemySymbol.SWORD, 1, EnemySymbol.SHIELD, 1, EnemySymbol.POTION, 1),
+        deck(new int[] {3, 6, 9, 12, 14}, new int[] {4, 8, 12},
+            new int[] {5, 9, 13}, new int[] {3, 7, 11}),
+        List.of(Card.Suit.PIQUE, Card.Suit.CARREAU, Card.Suit.TREFLE, Card.Suit.COEUR),
+        List.of(Card.Suit.COEUR, Card.Suit.CARREAU, Card.Suit.PIQUE, Card.Suit.TREFLE)),
+    GUETTEUR("Guetteur", "GUETTEUR",
+        "Il veille sur la côte. Sa lanterne t'éblouit. Tu joues sans voir.",
+        250_000, 60, 25,
+        weights(EnemySymbol.SWORD, 2, EnemySymbol.BLIND, 1, EnemySymbol.SHIELD, 1),
+        deck(new int[] {3, 6, 9, 12, 14}, new int[] {4, 8, 12},
+            new int[] {5, 9, 13}, new int[] {3, 7, 11}),
+        List.of(Card.Suit.PIQUE, Card.Suit.CARREAU, Card.Suit.TREFLE, Card.Suit.COEUR),
+        List.of(Card.Suit.COEUR, Card.Suit.CARREAU, Card.Suit.PIQUE, Card.Suit.TREFLE)),
+    GARDIEN_PHARE("Gardien du Phare", "GARDIEN DU PHARE",
+        "Son phare aveugle les navires. Tu joueras à l'aveugle. Ses Épines te renvoient tes coups.",
+        500_000, 120, 15,
+        weights(EnemySymbol.BLIND, 2, EnemySymbol.SWORD, 1, EnemySymbol.SHIELD, 1, EnemySymbol.THORNS, 1),
+        deck(new int[] {3, 6, 9, 12, 14}, new int[] {4, 8, 12},
+            new int[] {5, 9, 13}, new int[] {3, 7, 11}),
+        List.of(Card.Suit.PIQUE, Card.Suit.CARREAU, Card.Suit.TREFLE, Card.Suit.COEUR),
+        List.of(Card.Suit.COEUR, Card.Suit.CARREAU, Card.Suit.PIQUE, Card.Suit.TREFLE)),
+    PIRATE("Pirate", "PIRATE",
+        "Sabre au clair. Il prend ce qu'il veut. Surveille ta main.",
+        250_000, 30, 25,
+        weights(EnemySymbol.SWORD, 2, EnemySymbol.BOARDING, 1, EnemySymbol.SHIELD, 1),
+        deck(new int[] {3, 6, 9, 12, 14}, new int[] {4, 8, 12},
+            new int[] {5, 9, 13}, new int[] {3, 7, 11}),
+        List.of(Card.Suit.PIQUE, Card.Suit.CARREAU, Card.Suit.TREFLE, Card.Suit.COEUR),
+        List.of(Card.Suit.COEUR, Card.Suit.CARREAU, Card.Suit.PIQUE, Card.Suit.TREFLE)),
+    CAPITAINE_NOIR("Capitaine Noir", "CAPITAINE NOIR",
+        "Le maître du galion. Il vole tes cartes. Chaque Rage le rend plus fort.",
+        500_000, 60, 15,
+        weights(EnemySymbol.BOARDING, 2, EnemySymbol.SWORD, 2, EnemySymbol.RAGE, 1, EnemySymbol.SHIELD, 1),
+        deck(new int[] {3, 6, 9, 12, 14}, new int[] {4, 8, 12},
+            new int[] {5, 9, 13}, new int[] {3, 7, 11}),
+        List.of(Card.Suit.PIQUE, Card.Suit.CARREAU, Card.Suit.TREFLE, Card.Suit.COEUR),
+        List.of(Card.Suit.COEUR, Card.Suit.CARREAU, Card.Suit.PIQUE, Card.Suit.TREFLE)),
+
+    // ----- Exploration : les Mines d'Or -----
+
+    CHERCHEUR_OR("Chercheur d'or", "CHERCHEUR D'OR",
+        "Il creuse. Il trie. Avec lui, tes gains ne valent que des cailloux.",
+        600_000, 60, 10,
+        weights(EnemySymbol.SWORD, 2, EnemySymbol.NUGGET, 1, EnemySymbol.SHIELD, 1),
+        deck(new int[] {3, 6, 9, 12, 14}, new int[] {4, 8, 12},
+            new int[] {5, 9, 13}, new int[] {3, 7, 11}),
+        List.of(Card.Suit.PIQUE, Card.Suit.CARREAU, Card.Suit.TREFLE, Card.Suit.COEUR),
+        List.of(Card.Suit.COEUR, Card.Suit.CARREAU, Card.Suit.PIQUE, Card.Suit.TREFLE)),
+    BARON_OR("Baron de l'Or", "BARON DE L'OR",
+        "Tout l'or de la mine est à lui. Ses Pépites changent tes gains en pierres. Ses Intérêts arment ses coups.",
+        1_200_000, 100, 6,
+        weights(EnemySymbol.NUGGET, 2, EnemySymbol.SWORD, 1, EnemySymbol.INTEREST, 1, EnemySymbol.SHIELD, 1),
+        deck(new int[] {3, 6, 9, 12, 14}, new int[] {4, 8, 12},
+            new int[] {5, 9, 13}, new int[] {3, 7, 11}),
+        List.of(Card.Suit.PIQUE, Card.Suit.CARREAU, Card.Suit.TREFLE, Card.Suit.COEUR),
+        List.of(Card.Suit.COEUR, Card.Suit.CARREAU, Card.Suit.PIQUE, Card.Suit.TREFLE)),
+    FOREUR("Foreur", "FOREUR",
+        "Sa foreuse perce tout. Ton bouclier aussi.",
+        600_000, 60, 10,
+        weights(EnemySymbol.DRILL, 2, EnemySymbol.SHIELD, 1),
+        deck(new int[] {3, 6, 9, 12, 14}, new int[] {4, 8, 12},
+            new int[] {5, 9, 13}, new int[] {3, 7, 11}),
+        List.of(Card.Suit.PIQUE, Card.Suit.CARREAU, Card.Suit.TREFLE, Card.Suit.COEUR),
+        List.of(Card.Suit.COEUR, Card.Suit.CARREAU, Card.Suit.PIQUE, Card.Suit.TREFLE)),
+    GRAND_FOREUR("Grand Foreur", "GRAND FOREUR",
+        "Il creuse jusqu'au coeur de la montagne. Rien ne l'arrête. Chaque Rage le rend plus fort.",
+        1_200_000, 100, 6,
+        weights(EnemySymbol.DRILL, 2, EnemySymbol.SWORD, 1, EnemySymbol.RAGE, 1, EnemySymbol.SHIELD, 1),
+        deck(new int[] {3, 6, 9, 12, 14}, new int[] {4, 8, 12},
+            new int[] {5, 9, 13}, new int[] {3, 7, 11}),
+        List.of(Card.Suit.PIQUE, Card.Suit.CARREAU, Card.Suit.TREFLE, Card.Suit.COEUR),
+        List.of(Card.Suit.COEUR, Card.Suit.CARREAU, Card.Suit.PIQUE, Card.Suit.TREFLE)),
+    FORGERON("Forgeron", "FORGERON",
+        "Chaque coup d'Enclume affûte son arme. Ne traîne pas.",
+        600_000, 80, 10,
+        weights(EnemySymbol.SWORD, 2, EnemySymbol.ANVIL, 1, EnemySymbol.SHIELD, 1),
+        deck(new int[] {3, 6, 9, 12, 14}, new int[] {4, 8, 12},
+            new int[] {5, 9, 13}, new int[] {3, 7, 11}),
+        List.of(Card.Suit.PIQUE, Card.Suit.CARREAU, Card.Suit.TREFLE, Card.Suit.COEUR),
+        List.of(Card.Suit.COEUR, Card.Suit.CARREAU, Card.Suit.PIQUE, Card.Suit.TREFLE)),
+    MAITRE_FORGE("Maître de Forge", "MAÎTRE DE FORGE",
+        "Il forge depuis mille ans. Son arme grandit à chaque Enclume. Pour toujours.",
+        1_200_000, 120, 6,
+        weights(EnemySymbol.ANVIL, 2, EnemySymbol.SWORD, 2, EnemySymbol.SHIELD, 1),
+        deck(new int[] {3, 6, 9, 12, 14}, new int[] {4, 8, 12},
+            new int[] {5, 9, 13}, new int[] {3, 7, 11}),
+        List.of(Card.Suit.PIQUE, Card.Suit.CARREAU, Card.Suit.TREFLE, Card.Suit.COEUR),
+        List.of(Card.Suit.COEUR, Card.Suit.CARREAU, Card.Suit.PIQUE, Card.Suit.TREFLE)),
+    GOLEM_OR("Golem d'or", "GOLEM D'OR",
+        "Un tas d'or qui marche. Tant qu'il a plus de la moitié de ses PV, sa peau d'or encaisse la moitié de tes coups.",
+        600_000, 100, 10,
+        weights(EnemySymbol.SWORD, 1, EnemySymbol.SHIELD, 2),
+        deck(new int[] {3, 6, 9, 12, 14}, new int[] {4, 8, 12},
+            new int[] {5, 9, 13}, new int[] {3, 7, 11}),
+        List.of(Card.Suit.PIQUE, Card.Suit.CARREAU, Card.Suit.TREFLE, Card.Suit.COEUR),
+        List.of(Card.Suit.COEUR, Card.Suit.CARREAU, Card.Suit.PIQUE, Card.Suit.TREFLE)),
+    COEUR_MONTAGNE("Coeur de la Montagne", "COEUR DE LA MONTAGNE",
+        "La montagne est vivante. Tant qu'il a plus de la moitié de ses PV, il ne prend que la moitié de tes dégâts.",
+        1_200_000, 150, 6,
+        weights(EnemySymbol.SWORD, 2, EnemySymbol.SHIELD, 2, EnemySymbol.POTION, 1),
+        deck(new int[] {3, 6, 9, 12, 14}, new int[] {4, 8, 12},
+            new int[] {5, 9, 13}, new int[] {3, 7, 11}),
+        List.of(Card.Suit.PIQUE, Card.Suit.CARREAU, Card.Suit.TREFLE, Card.Suit.COEUR),
+        List.of(Card.Suit.COEUR, Card.Suit.CARREAU, Card.Suit.PIQUE, Card.Suit.TREFLE)),
+
+    // ----- Exploration : le Casino Englouti -----
+
+    BARMAN_NOYE("Barman noyé", "BARMAN NOYÉ",
+        "Il sert sous l'eau. Il fredonne. Ta main n'obéit plus.",
+        1_500_000, 80, 5,
+        weights(EnemySymbol.SWORD, 2, EnemySymbol.SONG, 1, EnemySymbol.POTION, 1),
+        deck(new int[] {3, 6, 9, 12, 14}, new int[] {4, 8, 12},
+            new int[] {5, 9, 13}, new int[] {3, 7, 11}),
+        List.of(Card.Suit.PIQUE, Card.Suit.CARREAU, Card.Suit.TREFLE, Card.Suit.COEUR),
+        List.of(Card.Suit.COEUR, Card.Suit.CARREAU, Card.Suit.PIQUE, Card.Suit.TREFLE)),
+    SIRENE("Sirène du Bar", "SIRÈNE DU BAR",
+        "Son Chant t'envoûte. Tu joues ce qu'elle veut.",
+        3_000_000, 120, 3,
+        weights(EnemySymbol.SONG, 2, EnemySymbol.SWORD, 1, EnemySymbol.SHIELD, 1, EnemySymbol.POTION, 1),
+        deck(new int[] {3, 6, 9, 12, 14}, new int[] {4, 8, 12},
+            new int[] {5, 9, 13}, new int[] {3, 7, 11}),
+        List.of(Card.Suit.PIQUE, Card.Suit.CARREAU, Card.Suit.TREFLE, Card.Suit.COEUR),
+        List.of(Card.Suit.COEUR, Card.Suit.CARREAU, Card.Suit.PIQUE, Card.Suit.TREFLE)),
+    BANDIT_MANCHOT("Bandit manchot", "BANDIT MANCHOT",
+        "Une machine à sous rouillée. Trois symboles pareils : Jackpot. Il frappe cinq fois plus fort.",
+        1_500_000, 80, 5,
+        weights(EnemySymbol.SWORD, 1, EnemySymbol.SHIELD, 1),
+        deck(new int[] {3, 6, 9, 12, 14}, new int[] {4, 8, 12},
+            new int[] {5, 9, 13}, new int[] {3, 7, 11}),
+        List.of(Card.Suit.PIQUE, Card.Suit.CARREAU, Card.Suit.TREFLE, Card.Suit.COEUR),
+        List.of(Card.Suit.COEUR, Card.Suit.CARREAU, Card.Suit.PIQUE, Card.Suit.TREFLE)),
+    JACKPOT_VIVANT("Jackpot Vivant", "JACKPOT VIVANT",
+        "La plus grande machine du casino. Trois symboles pareils : Jackpot. Toute la salle tremble.",
+        3_000_000, 120, 3,
+        weights(EnemySymbol.SWORD, 1, EnemySymbol.SHIELD, 1, EnemySymbol.RAGE, 1),
+        deck(new int[] {3, 6, 9, 12, 14}, new int[] {4, 8, 12},
+            new int[] {5, 9, 13}, new int[] {3, 7, 11}),
+        List.of(Card.Suit.PIQUE, Card.Suit.CARREAU, Card.Suit.TREFLE, Card.Suit.COEUR),
+        List.of(Card.Suit.COEUR, Card.Suit.CARREAU, Card.Suit.PIQUE, Card.Suit.TREFLE)),
+    REQUIN("Requin", "REQUIN",
+        "Il sent l'argent. Sa Morsure vide tes poches. Elle le soigne.",
+        1_500_000, 80, 5,
+        weights(EnemySymbol.SWORD, 2, EnemySymbol.BANK_BITE, 1, EnemySymbol.SHIELD, 1),
+        deck(new int[] {3, 6, 9, 12, 14}, new int[] {4, 8, 12},
+            new int[] {5, 9, 13}, new int[] {3, 7, 11}),
+        List.of(Card.Suit.PIQUE, Card.Suit.CARREAU, Card.Suit.TREFLE, Card.Suit.COEUR),
+        List.of(Card.Suit.COEUR, Card.Suit.CARREAU, Card.Suit.PIQUE, Card.Suit.TREFLE)),
+    REQUIN_BANQUIER("Grand Requin Banquier", "REQUIN BANQUIER",
+        "Il garde les coffres engloutis. Il dévore tes gains. Chaque pièce le soigne.",
+        3_000_000, 120, 3,
+        weights(EnemySymbol.BANK_BITE, 2, EnemySymbol.FANG, 1, EnemySymbol.SHIELD, 1),
+        deck(new int[] {3, 6, 9, 12, 14}, new int[] {4, 8, 12},
+            new int[] {5, 9, 13}, new int[] {3, 7, 11}),
+        List.of(Card.Suit.PIQUE, Card.Suit.CARREAU, Card.Suit.TREFLE, Card.Suit.COEUR),
+        List.of(Card.Suit.COEUR, Card.Suit.CARREAU, Card.Suit.PIQUE, Card.Suit.TREFLE)),
+    PIEUVRE("Pieuvre croupière", "PIEUVRE",
+        "Huit bras pour distribuer. Elle joue cinq cartes à chaque tour.",
+        1_500_000, 80, 5,
+        weights(EnemySymbol.SWORD, 2, EnemySymbol.SHIELD, 1, EnemySymbol.ZERO, 1),
+        deck(new int[] {3, 6, 9, 12, 14}, new int[] {4, 8, 12},
+            new int[] {5, 9, 13}, new int[] {3, 7, 11}),
+        List.of(Card.Suit.PIQUE, Card.Suit.CARREAU, Card.Suit.TREFLE, Card.Suit.COEUR),
+        List.of(Card.Suit.COEUR, Card.Suit.CARREAU, Card.Suit.PIQUE, Card.Suit.TREFLE)),
+    KRAKEN("Kraken", "KRAKEN",
+        "Le maître de la salle VIP. Huit bras, huit cartes par tour. Il perd un bras à chaque huitième de ses PV.",
+        3_000_000, 150, 3,
+        weights(EnemySymbol.SWORD, 2, EnemySymbol.FANG, 1, EnemySymbol.SHIELD, 1),
+        deck(new int[] {3, 6, 9, 12, 14}, new int[] {4, 8, 12},
+            new int[] {5, 9, 13}, new int[] {3, 7, 11}),
+        List.of(Card.Suit.PIQUE, Card.Suit.CARREAU, Card.Suit.TREFLE, Card.Suit.COEUR),
+        List.of(Card.Suit.COEUR, Card.Suit.CARREAU, Card.Suit.PIQUE, Card.Suit.TREFLE));
 
     /** Force des ennemis du chapitre 2, en % : leurs attaques, défenses et effets sont multipliés d'autant. */
     public static final int CHAPTER_2_POWER = 200;
@@ -370,12 +573,37 @@ public enum EnemyKind {
     /** @return {@code true} si son deck contient le Rouleau interdit (l'Éclat Originel). */
     public boolean forbidsReels() { return this == ECLAT; }
     /** @return les cartes qu'il joue à chaque tour, parmi celles piochées. */
-    public int getPlaysPerTurn() { return Enemy.PLAYS_PER_TURN; }
+    public int getPlaysPerTurn() {
+        return switch (this) {
+            case PIEUVRE -> OCTOPUS_PLAYS;
+            case KRAKEN  -> KRAKEN_ARMS;
+            default      -> Enemy.PLAYS_PER_TURN;
+        };
+    }
     /** @return {@code true} pour le boss d'un chapitre ou le roi d'un donjon. */
     public boolean isBoss() {
-        return this == COMETE || this == REINE || this == ECLAT
-            || this == ROI_PIQUE || this == ROI_COEUR || this == ROI_CARREAU || this == ROI_TREFLE;
+        return switch (this) {
+            case COMETE, REINE, ECLAT, ROI_PIQUE, ROI_COEUR, ROI_CARREAU, ROI_TREFLE,
+                 CAPITAINE_RAT, TAVERNIER, GARDIEN_PHARE, CAPITAINE_NOIR,
+                 BARON_OR, GRAND_FOREUR, MAITRE_FORGE, COEUR_MONTAGNE,
+                 SIRENE, JACKPOT_VIVANT, REQUIN_BANQUIER, KRAKEN -> true;
+            default -> false;
+        };
     }
+
+    /** Cartes jouées à chaque tour par la Pieuvre croupière. */
+    static final int OCTOPUS_PLAYS = 5;
+    /** Bras du Kraken à pleine vie : une carte jouée par bras. */
+    public static final int KRAKEN_ARMS = 8;
+
+    /** @return {@code true} si sa peau d'or encaisse la moitié des coups tant qu'il a plus de la moitié de ses PV. */
+    public boolean hasGoldSkin() { return this == GOLEM_OR || this == COEUR_MONTAGNE; }
+
+    /** @return {@code true} si ses trois rouleaux identiques font un Jackpot (attaques et Boucliers x{@link EnemySymbol#JACKPOT_FACTOR}). */
+    public boolean hitsJackpots() { return this == BANDIT_MANCHOT || this == JACKPOT_VIVANT; }
+
+    /** @return {@code true} s'il joue une carte par bras, et perd un bras à chaque huitième de ses PV (le Kraken). */
+    public boolean hasArms() { return this == KRAKEN; }
 
     /**
      * @return la force de ses soins (Potions et Crocs), en pourcentage de ceux

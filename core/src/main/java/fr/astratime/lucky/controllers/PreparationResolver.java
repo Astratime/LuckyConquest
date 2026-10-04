@@ -10,8 +10,12 @@ import fr.astratime.lucky.entities.context.SpinContext;
 import fr.astratime.lucky.entities.context.TurnContext;
 import fr.astratime.lucky.entities.effects.CorruptionEffect;
 import fr.astratime.lucky.entities.effects.Effect;
+import fr.astratime.lucky.entities.effects.GoldVeinEffect;
 import fr.astratime.lucky.entities.events.ComboEvent;
 import fr.astratime.lucky.entities.events.CorruptionEvent;
+import fr.astratime.lucky.entities.events.StatusEvent;
+import fr.astratime.lucky.entities.exploration.PlaceRule;
+import fr.astratime.lucky.popups.EffectPopup;
 
 import java.util.List;
 
@@ -43,6 +47,16 @@ public class PreparationResolver {
      * @return le TurnContext résultant, prêt pour le spin et le combat
      */
     public TurnContext resolve(List<Effect> pendingEffects, Player player, Enemy enemy) {
+        return resolve(pendingEffects, player, enemy, PlaceRule.NONE, 1);
+    }
+
+    /**
+     * Comme {@link #resolve(List, Player, Enemy)}, dans un lieu de l'Exploration :
+     * la règle {@code rule} (déjà annulée par une Bulle d'air s'il le faut) joue
+     * au tour {@code turn}. Le Scorbut resté en main divise le tirage par deux ;
+     * la marée haute retire une part de l'attaque.
+     */
+    public TurnContext resolve(List<Effect> pendingEffects, Player player, Enemy enemy, PlaceRule rule, int turn) {
         SpinContext   spinContext   = new SpinContext();
         CombatContext combatContext = new CombatContext(player, enemy);
         TurnContext   turnContext   = new TurnContext(spinContext, combatContext);
@@ -59,10 +73,35 @@ public class PreparationResolver {
             turnContext.addEvent(new CorruptionEvent(consumed, CorruptionEffect.FACTOR));
         }
 
+        if (lasting.getGoldVeinTurns() > 0) {
+            combatContext.multiplyGains(GoldVeinEffect.FACTOR);
+            turnContext.addEvent(new StatusEvent("VEINE D'OR : GAINS x" + GoldVeinEffect.FACTOR, EffectPopup.Style.GAINS));
+        }
+        if (lasting.takeNugget()) { // Pépite de l'ennemi
+            combatContext.turnGainsToStone();
+            turnContext.addEvent(new StatusEvent("PÉPITE : TES GAINS SONT DES PIERRES", EffectPopup.Style.DAMAGE));
+        }
+        if (rule == PlaceRule.SCORBUT && hasScurvy(player)) {
+            combatContext.multiplyAttack(PlaceRule.SCURVY_FACTOR);
+            combatContext.multiplyDefense(PlaceRule.SCURVY_FACTOR);
+            combatContext.multiplyGains(PlaceRule.SCURVY_FACTOR);
+            turnContext.addEvent(new StatusEvent("SCORBUT : TIRAGE DIVISÉ PAR 2", EffectPopup.Style.DAMAGE));
+        }
+        if (rule.isHighTide(turn)) {
+            combatContext.multiplyAttack(1f - PlaceRule.HIGH_TIDE_MALUS / 100f);
+            turnContext.addEvent(new StatusEvent("MARÉE HAUTE : ATTAQUE -" + PlaceRule.HIGH_TIDE_MALUS + " %",
+                EffectPopup.Style.DAMAGE));
+        }
+
         pendingEffects.forEach(effect -> effect.apply(turnContext));
         applyCombos(turnContext, player);
 
         return turnContext;
+    }
+
+    /** @return {@code true} si le joueur garde une carte Scorbut en main, sans l'avoir jouée. */
+    static boolean hasScurvy(Player player) {
+        return player.getCurrentHand().stream().anyMatch(card -> PlaceRule.SCURVY_CARD.equals(card.getId()));
     }
 
     /**

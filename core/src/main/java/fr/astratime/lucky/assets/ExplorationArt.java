@@ -300,6 +300,16 @@ public final class ExplorationArt {
      */
     public static final int[][] GATES = {{30, 30}, {74, 22}, {120, 32}, {134, 70}};
 
+    /** @return les positions des entrées des donjons du lieu {@code place}, dans l'ordre de ses donjons. */
+    public static int[][] gates(fr.astratime.lucky.entities.exploration.Place place) {
+        return switch (place) {
+            case PRAIRIE -> GATES;
+            case PORT    -> PlacesArt.PORT_GATES;
+            case MINES   -> PlacesArt.MINES_GATES;
+            case CASINO  -> PlacesArt.CASINO_GATES;
+        };
+    }
+
     /** Départ du chemin, en bas de la carte. */
     private static final int[] PATH_START = {70, 95};
 
@@ -366,7 +376,7 @@ public final class ExplorationArt {
      * Chemin de terre de 3 pixels de large, bordé d'une ombre, en courbe de
      * ({@code x0}, {@code y0}) à ({@code x1}, {@code y1}).
      */
-    private static void path(PixelCanvas g, int x0, int y0, int x1, int y1, int dirt, int dirtDark) {
+    static void path(PixelCanvas g, int x0, int y0, int x1, int y1, int dirt, int dirtDark) {
         // Point de contrôle : le milieu, poussé sur le côté, pour un chemin qui serpente.
         float mx = (x0 + x1) / 2f, my = (y0 + y1) / 2f;
         float nx = -(y1 - y0), ny = x1 - x0;
@@ -384,7 +394,7 @@ public final class ExplorationArt {
         }
     }
 
-    private static boolean isOnPath(PixelCanvas g, int x, int y, int dirt, int dirtDark) {
+    static boolean isOnPath(PixelCanvas g, int x, int y, int dirt, int dirtDark) {
         for (int dy = -4; dy <= 5; dy++) {
             for (int dx = -4; dx <= 5; dx++) {
                 int color = g.get(x + dx, y + dy);

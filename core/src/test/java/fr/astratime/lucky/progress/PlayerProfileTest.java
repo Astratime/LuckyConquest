@@ -1,5 +1,8 @@
 package fr.astratime.lucky.progress;
 
+import fr.astratime.lucky.entities.exploration.Dungeon;
+import fr.astratime.lucky.entities.exploration.Place;
+
 import org.junit.jupiter.api.Test;
 
 import java.util.HashMap;
@@ -167,5 +170,26 @@ class PlayerProfileTest {
         assertEquals(0, PlayerProfile.combatReward(true, false, 32_000), "rien après le soldat");
         assertEquals(0, PlayerProfile.combatReward(false, true, 32_000), "rien en cas de défaite");
         assertEquals(0, PlayerProfile.combatReward(false, false, 32_000));
+    }
+
+    @Test
+    void aPlaceOpensOnceEveryDungeonOfThePreviousOneIsCleared() {
+        MemoryStorage storage = new MemoryStorage();
+        PlayerProfile profile = profile(storage);
+        assertTrue(profile.isOpen(Place.PRAIRIE));
+        assertFalse(profile.isOpen(Place.PORT));
+        for (Dungeon dungeon : Place.PRAIRIE.getDungeons()) profile.clearDungeon(dungeon.name());
+        assertTrue(profile.isOpen(Place.PORT));
+        assertFalse(profile.isOpen(Place.MINES));
+        assertTrue(profile(storage).isOpen(Place.PORT), "sauvegardé");
+    }
+
+    @Test
+    void anOldSaveCountsAPrairieDungeonAsClearedWhenOneOfItsChestCardsIsOwned() {
+        Map<String, Integer> owned = collection();
+        owned.put("guillotine", 1);
+        PlayerProfile profile = new PlayerProfile(new MemoryStorage(), owned, starterDeck());
+        assertTrue(profile.isCleared(Dungeon.PIQUE));
+        assertFalse(profile.isCleared(Dungeon.TREFLE));
     }
 }

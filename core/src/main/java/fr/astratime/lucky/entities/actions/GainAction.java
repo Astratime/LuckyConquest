@@ -3,6 +3,8 @@ package fr.astratime.lucky.entities.actions;
 import fr.astratime.lucky.entities.context.CombatContext;
 import fr.astratime.lucky.entities.events.Event;
 import fr.astratime.lucky.entities.events.GainsEarnedEvent;
+import fr.astratime.lucky.entities.events.StatusEvent;
+import fr.astratime.lucky.popups.EffectPopup;
 
 import java.util.List;
 
@@ -21,6 +23,9 @@ public class GainAction extends Action {
     /** Crédite au joueur {@code (baseGain + bonus du rang) * gainMultiplier * gainFactor * symbolPower} (arrondi). */
     @Override
     public List<Event> resolve(CombatContext context) {
+        if (context.isStoneGains()) { // Pépite de l'ennemi : le symbole n'est qu'une pierre
+            return List.of(new StatusEvent("PIERRE : GAINS 0", EffectPopup.Style.DAMAGE));
+        }
         int base = baseGain + context.getPlayer().getRankBonus().gains() * context.getRankFactor();
         int gain = Math.round(base * context.getGainMultiplier() * context.getGainFactor()
             * context.getSymbolPower());

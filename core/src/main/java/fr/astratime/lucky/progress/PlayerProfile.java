@@ -2,6 +2,8 @@ package fr.astratime.lucky.progress;
 
 import fr.astratime.lucky.entities.RankBonus;
 import fr.astratime.lucky.entities.Symbol;
+import fr.astratime.lucky.entities.exploration.Dungeon;
+import fr.astratime.lucky.entities.exploration.Place;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -47,6 +49,7 @@ public class PlayerProfile {
     static final String KEY_RANK       = "rank";
     static final String KEY_REELS      = "reels";
     static final String KEY_MACHINE    = "machine";
+    static final String KEY_DUNGEONS   = "dungeons";
 
     private final ProfileStorage       storage;
     private final Map<String, Integer> starterDeck;
@@ -59,6 +62,8 @@ public class PlayerProfile {
     private final List<Symbol> boughtReels = new ArrayList<>();
     /** Rouleaux de la machine du joueur. */
     private final List<Symbol> machine     = new ArrayList<>();
+    /** Donjons de l'Exploration vidés (leur chef battu), par nom. */
+    private final java.util.Set<String> clearedDungeons = new java.util.LinkedHashSet<>();
 
     /**
      * Charge le profil enregistré dans {@code storage} ; au premier lancement
@@ -85,6 +90,35 @@ public class PlayerProfile {
         }
         List<Symbol> savedMachine = decodeSymbols(storage.get(KEY_MACHINE));
         machine.addAll(machineProblem(savedMachine) == null ? savedMachine : Symbol.classicReels());
+        String savedDungeons = storage.get(KEY_DUNGEONS);
+        if (savedDungeons != null) {
+            for (String name : savedDungeons.split(",")) if (!name.isBlank()) clearedDungeons.add(name.trim());
+        } else {
+            // Profil d'avant les nouveaux lieux : un donjon dont on possède une carte a été vidé.
+            for (Dungeon dungeon : Place.PRAIRIE.getDungeons()) {
+                if (dungeon.getLoot().stream().anyMatch(loot -> collection.containsKey(loot.cardId()))) {
+                    clearedDungeons.add(dungeon.name());
+                }
+            }
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // Exploration
+    // -------------------------------------------------------------------------
+
+    /** Le chef du donjon {@code dungeon} (son nom) est battu : le donjon est vidé, pour toujours. */
+    public void clearDungeon(String dungeon) {
+        if (clearedDungeons.add(dungeon)) save();
+    }
+
+    /** @return {@code true} si le donjon {@code dungeon} a déjà été vidé. */
+    public boolean isCleared(Dungeon dungeon) { return clearedDungeons.contains(dungeon.name()); }
+
+    /** @return {@code true} si le lieu {@code place} est ouvert : le premier, ou tous les donjons du précédent vidés. */
+    public boolean isOpen(Place place) {
+        Place previous = place.getPrevious();
+        return previous == null || previous.getDungeons().stream().allMatch(this::isCleared);
     }
 
     // -------------------------------------------------------------------------
@@ -295,7 +329,7 @@ public class PlayerProfile {
     // Enregistrement
     // -------------------------------------------------------------------------
 
-    /** Enregistre la collection, le deck, les pièces, le rang et les rouleaux. */
+    /** Enregistre la collection, le deck, les pièces, le rang, les rouleaux et les donjons vidés. */
     public void save() {
         storage.put(KEY_COLLECTION, encode(collection));
         storage.put(KEY_DECK, encode(deck));
@@ -303,6 +337,7 @@ public class PlayerProfile {
         storage.put(KEY_RANK, String.valueOf(ranks));
         storage.put(KEY_REELS, encodeSymbols(boughtReels));
         storage.put(KEY_MACHINE, encodeSymbols(machine));
+        storage.put(KEY_DUNGEONS, String.join(",", clearedDungeons));
         storage.flush();
     }
 

@@ -189,8 +189,14 @@ public class EnemyView implements Disposable {
         if (kind.potionShields()) text.append("\nSes Potions reforment aussi sa défense");
         if (kind.royalBet()) text.append("\nMise royale : ses Trèfles comptent double sous la moitié de ses PV");
         if (kind.forbidsReels()) text.append("\nRouleau interdit : bloque un de tes rouleaux. Pas de Bingo possible");
-        text.append("\nPioche ").append(Enemy.HAND_SIZE).append(" cartes et en joue ").append(kind.getPlaysPerTurn())
+        if (kind.hasGoldSkin()) text.append("\nPeau d'or : tes dégâts sont divisés par 2 tant qu'il a plus de la moitié de ses PV");
+        if (kind.hitsJackpots()) {
+            text.append("\nJackpot : 3 symboles identiques, attaques et Boucliers x").append(EnemySymbol.JACKPOT_FACTOR);
+        }
+        text.append("\nPioche ").append(Enemy.HAND_SIZE).append(" cartes et en joue ").append(current.getPlaysPerTurn())
             .append(" à chaque tour");
+        if (kind.hasArms()) text.append("\nChaque bras perdu lui retire une carte jouée");
+        if (current.getAnvil() > 0) text.append("\nEnclume : attaque +").append(current.getAnvil());
         if (current.getRage() > 0) text.append("\nRage : attaque +").append(current.getRage());
         if (current.getThornsPercent() > 0) {
             text.append("\nÉpines : ").append(current.getThornsPercent()).append(" % de tes dégâts te reviendront");

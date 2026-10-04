@@ -15,6 +15,8 @@ public class DungeonRun implements CombatRun {
 
     private final Dungeon dungeon;
     private int           stage;
+    /** Cartes au trésor jouées pendant la descente (perdues si le donjon recommence). */
+    private int           treasureMaps;
 
     public DungeonRun(Dungeon dungeon) {
         this.dungeon = dungeon;
@@ -40,8 +42,20 @@ public class DungeonRun implements CombatRun {
     }
 
     @Override
-    public void restart() { stage = 0; }
+    public void restart() {
+        stage = 0;
+        treasureMaps = 0;
+    }
 
     @Override
     public String getLabel() { return dungeon.getName(); }
+
+    @Override
+    public PlaceRule getPlaceRule() { return Place.of(dungeon).getRule(); }
+
+    /** Carte au trésor jouée : le coffre de ce donjon donnera une carte de plus. */
+    public void addTreasureMap() { treasureMaps++; }
+
+    /** @return les cartes que donnera le coffre : une, plus une par Carte au trésor jouée dans le donjon. */
+    public int getChestCards() { return 1 + treasureMaps; }
 }

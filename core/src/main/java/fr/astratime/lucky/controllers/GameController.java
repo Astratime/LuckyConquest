@@ -6,6 +6,7 @@ import fr.astratime.lucky.entities.Combo;
 import fr.astratime.lucky.entities.DrawResult;
 import fr.astratime.lucky.entities.Enemy;
 import fr.astratime.lucky.entities.GameState;
+import fr.astratime.lucky.entities.LastingEffects;
 import fr.astratime.lucky.entities.Player;
 import fr.astratime.lucky.entities.SlotMachine;
 import fr.astratime.lucky.entities.Symbol;
@@ -22,6 +23,7 @@ import fr.astratime.lucky.entities.effects.ForceReelEffect;
 import fr.astratime.lucky.entities.effects.OverheatEffect;
 import fr.astratime.lucky.entities.effects.PistolEffect;
 import fr.astratime.lucky.entities.enemy.EnemyKind;
+import fr.astratime.lucky.entities.exploration.PlaceRule;
 import fr.astratime.lucky.loaders.CardLoader;
 import fr.astratime.lucky.popups.EffectPopup;
 import fr.astratime.lucky.popups.PopupScale;
@@ -57,6 +59,21 @@ public class GameController {
 
     /** Choix demandé au joueur par la dernière carte jouée, en attente de sa réponse (null si aucun). */
     private CardChoice pendingChoice;
+
+    /** Règle du lieu (Exploration), qui joue dans chaque combat. */
+    private PlaceRule placeRule = PlaceRule.NONE;
+
+    /** Textes du début du tour : mauvais sorts de l'ennemi et règle du lieu. */
+    private final List<EffectPopup> turnNotices = new ArrayList<>();
+
+    /** La main de ce tour est face cachée (Aveuglement de l'ennemi). */
+    private boolean handHidden = false;
+
+    /** Cartes à jouer d'office au début de ce tour (Chant de l'ennemi). */
+    private int songs = 0;
+
+    /** Cartes au trésor jouées, pas encore comptées pour le coffre du donjon. */
+    private int treasureMaps = 0;
 
     /** Une carte (Bingo) a bloqué la main : plus aucune carte ne peut être jouée ce tour. */
     private boolean handLocked = false;
@@ -151,6 +168,8 @@ public class GameController {
     /** Comme {@link #restart()}, contre un ennemi {@code kind} (premier combat d'un chapitre). */
     public void restart(EnemyKind kind) {
         this.gameState = new GameState(playerFactory.apply(starterDeck.get()), new Enemy(kind));
+        gameState.setPlaceRule(placeRule);
+        treasureMaps = 0;
         clearTurn();
     }
 
@@ -161,6 +180,7 @@ public class GameController {
      */
     public void startCombat(EnemyKind kind) {
         this.gameState = new GameState(gameState.getPlayer().nextCombat(), new Enemy(kind));
+        gameState.setPlaceRule(placeRule);
         clearTurn();
     }
 
@@ -173,6 +193,9 @@ public class GameController {
         handLocked    = false;
         doubleNext    = false;
         bingoGiftPending = false;
+        handHidden = false;
+        songs = 0;
+        turnNotices.clear();
         originals.clear();
     }
 
@@ -189,7 +212,83 @@ public class GameController {
      *         deck et défausse sont épuisés ou si la main est pleine)
      */
     public DrawResult drawCards() {
-        return gameState.getPlayer().draw(DEFAULT_DRAW_COUNT);
+        Player player = gameState.getPlayer();
+        LastingEffects lasting = player.getLastingEffects();
+        DrawResult drawn = player.draw(DEFAULT_DRAW_COUNT);
+        List<Card> added     = new ArrayList<>(drawn.getAddedToHand());
+        List<Card> discarded = new ArrayList<>(drawn.getDiscarded());
+        turnNotices.clear();
+
+        // Grignotage de l'ennemi : des cartes piochées sont rongées et partent à la défausse.
+        int nibbles = lasting.takeNibbles();
+        for (int i = 0; i < nibbles && !added.isEmpty(); i++) {
+            Card eaten = added.remove(random.nextInt(added.size()));
+            player.discardFromHand(eaten);
+            discarded.add(eaten);
+            turnNotices.add(new EffectPopup("GRIGNOTAGE : " + eaten.getName().toUpperCase() + " RONGÉE",
+                EffectPopup.Style.DAMAGE, PopupScale.SECONDARY_INTENSITY));
+        }
+        // Scorbut (Port des Contrebandiers) : il remplace une carte piochée.
+        if (gameState.getActiveRule().scurvyArrives(gameState.getTurnNumber()) && !added.isEmpty()) {
+            int index = random.nextInt(added.size());
+            Card replaced = added.get(index);
+            Card scurvy = cardFactory.apply(PlaceRule.SCURVY_CARD);
+            player.replaceInHand(replaced, scurvy);
+            player.getDiscardPile().addAll(List.of(replaced));
+            added.set(index, scurvy);
+            discarded.add(replaced);
+            turnNotices.add(new EffectPopup("SCORBUT !", EffectPopup.Style.DAMAGE, PopupScale.MAX_INTENSITY));
+        }
+        handHidden = lasting.takeBlind();
+        if (handHidden) {
+            turnNotices.add(new EffectPopup("AVEUGLEMENT : MAIN CACHÉE", EffectPopup.Style.DAMAGE,
+                PopupScale.SECONDARY_INTENSITY));
+        }
+        songs = lasting.takeSongs();
+        if (songs > 0) {
+            turnNotices.add(new EffectPopup("CHANT : CARTE JOUÉE D'OFFICE", EffectPopup.Style.DAMAGE,
+                PopupScale.SECONDARY_INTENSITY));
+        }
+        return new DrawResult(added, discarded);
+    }
+
+    /** @return les textes du début du tour (Grignotage, Scorbut, Aveuglement, Chant), après {@link #drawCards()}. */
+    public List<EffectPopup> getTurnNotices() { return List.copyOf(turnNotices); }
+
+    /** @return {@code true} si la main de ce tour est face cachée (Aveuglement de l'ennemi). */
+    public boolean isHandHidden() { return handHidden; }
+
+    /**
+     * Chant de l'ennemi : les cartes de la main à jouer d'office ce tour, tirées
+     * au hasard parmi celles qui peuvent l'être. À appeler une fois, après la pioche.
+     *
+     * @return les cartes à jouer, dans l'ordre (vide sans Chant)
+     */
+    public List<Card> takeSongCards() {
+        List<Card> chosen = new ArrayList<>();
+        List<Card> hand = new ArrayList<>(gameState.getPlayer().getCurrentHand());
+        for (int i = 0; i < songs && !hand.isEmpty(); i++) {
+            Card card = hand.remove(random.nextInt(hand.size()));
+            if (unplayableReason(card) == null) chosen.add(card);
+        }
+        songs = 0;
+        return chosen;
+    }
+
+    /**
+     * Fixe la règle du lieu (Exploration) pour ce combat et les suivants (voir
+     * {@link PlaceRule}) ; aucune hors de l'Exploration.
+     */
+    public void setPlaceRule(PlaceRule rule) {
+        placeRule = rule;
+        gameState.setPlaceRule(rule);
+    }
+
+    /** @return les Cartes au trésor jouées depuis le dernier appel (le coffre du donjon donnera autant de cartes de plus). */
+    public int takeTreasureMaps() {
+        int maps = treasureMaps;
+        treasureMaps = 0;
+        return maps;
     }
 
     // -------------------------------------------------------------------------
@@ -301,6 +400,7 @@ public class GameController {
             playEffects(card, playContext, true);
         }
         if (playContext.isDoubleRequested()) doubleNext = true;
+        treasureMaps += playContext.getTreasureMaps();
         pendingEffects.addAll(playContext.getEffectsForSpin());
 
         if (playContext.getGains() != 0) player.addGains(playContext.getGains());
@@ -454,7 +554,7 @@ public class GameController {
     public Symbol getForcedMiddleSymbol() {
         Symbol forced = null;
         for (Effect effect : pendingEffects) {
-            if (effect instanceof ForceReelEffect force) forced = force.getSymbol();
+            if (effect instanceof ForceReelEffect force && force.getReel() == ForceReelEffect.MIDDLE_REEL) forced = force.getSymbol();
         }
         return forced;
     }
@@ -515,6 +615,11 @@ public class GameController {
         doubleNext    = false;
         gameState.getPlayer().restoreCards(originals); // l'effet de l'Arc-en-ciel ne dure que le tour
         originals.clear();
+        handHidden = false;
+        // Le Scorbut resté en main disparaît : il ne revient que par la règle du lieu.
+        for (Card card : new ArrayList<>(gameState.getPlayer().getCurrentHand())) {
+            if (PlaceRule.SCURVY_CARD.equals(card.getId())) gameState.getPlayer().removeFromHand(card);
+        }
         gameState.getPlayer().discardHand();
         return result;
     }

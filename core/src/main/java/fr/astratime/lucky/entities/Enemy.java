@@ -52,6 +52,8 @@ public class Enemy {
     private       boolean     allIn;
     /** Sa phase (1, puis 2 pour l'Éclat Originel blessé). */
     private       int         phase = 1;
+    /** Bonus d'attaque de ses Enclumes, gardé jusqu'à la fin du combat, sans limite. */
+    private       int         anvil;
 
     /**
      * Ennemi avec le deck de départ du jeu sombre.
@@ -83,18 +85,45 @@ public class Enemy {
     }
 
     /**
-     * Retire {@code damage} points de vie, sans descendre sous 0. Un coup qui
-     * touche fait retomber sa mise (Tapis) ; un gros coup fait reculer son Sablier.
+     * Retire {@code damage} points de vie, sans descendre sous 0. Une peau d'or
+     * (Golem d'or) en encaisse la moitié tant qu'il a plus de la moitié de ses PV.
+     * Un coup qui touche fait retomber sa mise (Tapis) ; un gros coup fait reculer son Sablier.
+     *
+     * @return les points de vie réellement retirés
      */
-    public void takeDamage(int damage) {
-        int lost = Math.min(hp, Math.max(0, damage));
+    public int takeDamage(int damage) {
+        int lost = Math.min(hp, Math.max(0, skinned(damage)));
         hp -= lost;
         damageTaken += lost;
-        if (lost <= 0) return;
+        if (lost <= 0) return 0;
         stake = 1;
         allIn = false;
         if (hourglass > 0 && lost * 1000L >= (long) maxHp * EnemySymbol.HOURGLASS_HIT_PER_MILLE) hourglass--;
+        return lost;
     }
+
+    /** @return les dégâts qui le touchent vraiment : la moitié, tant que sa peau d'or tient (plus de la moitié de ses PV). */
+    public int skinned(int damage) {
+        return hasGoldSkin() ? damage / 2 : damage;
+    }
+
+    /** @return {@code true} si sa peau d'or encaisse la moitié des coups en ce moment. */
+    public boolean hasGoldSkin() { return kind.hasGoldSkin() && hp * 2L > maxHp; }
+
+    /**
+     * @return les cartes qu'il joue ce tour : celles de son type, ou une par bras
+     *         qui lui reste (le Kraken perd un bras à chaque huitième de ses PV)
+     */
+    public int getPlaysPerTurn() {
+        if (!kind.hasArms()) return kind.getPlaysPerTurn();
+        return Math.max(1, (int) Math.ceil(EnemyKind.KRAKEN_ARMS * (double) hp / maxHp));
+    }
+
+    /** Ajoute {@code amount} à son Enclume (sans limite). */
+    public void addAnvil(int amount) { anvil += amount; }
+
+    /** @return l'attaque ajoutée par ses Enclumes, jusqu'à la fin du combat. */
+    public int getAnvil() { return anvil; }
 
     /**
      * Rend {@code amount} points de vie, sans dépasser le maximum.

@@ -17,29 +17,44 @@ public class ForceReelEffect extends Effect {
     /** Rouleau imposé : celui du milieu. */
     public static final int MIDDLE_REEL = 1;
 
+    /** Rouleau de gauche (Perle noire). */
+    public static final int LEFT_REEL = 0;
+
+    private final int    reel;
     private final Symbol symbol;
 
     /** @param symbol symbole imposé au rouleau du milieu */
-    public ForceReelEffect(Symbol symbol) { this.symbol = symbol; }
+    public ForceReelEffect(Symbol symbol) { this(MIDDLE_REEL, symbol); }
+
+    /** @param reel rouleau imposé (0 : celui de gauche) */
+    public ForceReelEffect(int reel, Symbol symbol) {
+        this.reel   = reel;
+        this.symbol = symbol;
+    }
 
     @Override
     public void apply(TurnContext context) {
-        context.getSpinContext().forceReel(MIDDLE_REEL, symbol);
+        context.getSpinContext().forceReel(reel, symbol);
     }
 
-    /** @return le symbole imposé au rouleau du milieu. */
+    /** @return le symbole imposé au rouleau. */
     public Symbol getSymbol() { return symbol; }
+
+    /** @return le rouleau imposé (1 : celui du milieu). */
+    public int getReel() { return reel; }
 
     @Override
     public String getDescription() {
+        String where = reel == MIDDLE_REEL ? "Le rouleau du milieu" : "Le rouleau de gauche";
         return symbol == Symbol.JOKER
-            ? "Le rouleau du milieu devient un Joker."
-            : "Le rouleau du milieu affiche " + symbol.getDisplayName() + ".";
+            ? where + " devient un Joker."
+            : where + " affiche " + symbol.getDisplayName() + ".";
     }
 
     @Override
     public List<EffectPopup> getPopups() {
-        String text = symbol == Symbol.JOKER ? "ROULEAU FANTÔME : JOKER" : "MILIEU : " + symbol.getDisplayName();
+        String text = reel != MIDDLE_REEL ? (symbol == Symbol.JOKER ? "PERLE NOIRE : JOKER" : "GAUCHE : " + symbol.getDisplayName())
+            : symbol == Symbol.JOKER ? "ROULEAU FANTÔME : JOKER" : "MILIEU : " + symbol.getDisplayName();
         return List.of(new EffectPopup(text, EffectPopup.Style.SPECIAL, PopupScale.MAX_INTENSITY));
     }
 

@@ -1,15 +1,21 @@
 package fr.astratime.lucky.controllers;
 
 import fr.astratime.lucky.entities.*;
+import fr.astratime.lucky.entities.context.SpinContext;
 import fr.astratime.lucky.entities.context.TurnContext;
 import fr.astratime.lucky.entities.enemy.EnemyTurnResult;
 import fr.astratime.lucky.entities.events.Event;
 import fr.astratime.lucky.entities.events.GaugeFilledEvent;
+import fr.astratime.lucky.entities.events.PlayerDamagedEvent;
 import fr.astratime.lucky.entities.events.SafeOpenedEvent;
+import fr.astratime.lucky.entities.events.StatusEvent;
 import fr.astratime.lucky.entities.effects.Effect;
+import fr.astratime.lucky.entities.exploration.PlaceRule;
+import fr.astratime.lucky.popups.EffectPopup;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 
 /**
  * Orchestre un tour complet en séquençant les phases :
@@ -29,6 +35,7 @@ public class TurnEngine {
     private final ActionResolver      actionResolver      = new ActionResolver();
     private final CombatResolver      combatResolver      = new CombatResolver();
     private final EnemyTurnResolver   enemyTurnResolver   = new EnemyTurnResolver();
+    private final Random              random              = new Random();
 
     /**
      * Joue un tour complet : applique les effets en attente, lance la machine
@@ -44,7 +51,9 @@ public class TurnEngine {
         TurnContext turnContext = preparationResolver.resolve(
             pendingEffects,
             gameState.getPlayer(),
-            gameState.getEnemy()
+            gameState.getEnemy(),
+            gameState.getActiveRule(),
+            gameState.getTurnNumber()
         );
 
         // Phase 2 : spin avec SpinContext, puis les Jokers prennent leur valeur
@@ -58,6 +67,14 @@ public class TurnEngine {
             if (rerolled == null) rerolled = drawn;
             drawn   = machine.spin(turnContext.getSpinContext());
             symbols = machine.resolveJokers(drawn, turnContext.getSpinContext());
+        }
+
+        // Ivresse (ennemi) : un rouleau tourne deux fois et garde le pire résultat
+        int drunk = player.getLastingEffects().takeDrunk();
+        for (int i = 0; i < drunk; i++) {
+            Symbol[] twice = drunkReel(machine, drawn, turnContext);
+            drawn   = twice;
+            symbols = machine.resolveJokers(twice, turnContext.getSpinContext());
         }
 
         // Symboles -> couples (symbole, action)
@@ -86,7 +103,18 @@ public class TurnEngine {
                 shieldReflect);
         }
 
+        // Coup de grisou (Mines d'Or) : il frappe le joueur seul, son bouclier le protège
+        List<Event> firedamp = new ArrayList<>();
+        if (gameState.getActiveRule().firedampExplodes(gameState.getTurnNumber()) && !player.isDefeated()
+            && !enemy.isDefeated()) {
+            int shieldBefore = player.getShield();
+            int lost = player.takeDamage(Math.round(player.getMaxHp() * PlaceRule.FIREDAMP_PERCENT / 100f));
+            firedamp.add(new StatusEvent("COUP DE GRISOU !", EffectPopup.Style.DAMAGE));
+            firedamp.add(new PlayerDamagedEvent(lost, shieldBefore - player.getShield(), player.getShield()));
+        }
+
         List<Event> endEvents = storeLeftoverShield(player);
+        endEvents.addAll(0, firedamp);
         // Coffres-forts : ceux arrivés à terme s'ouvrent ; tous, si l'ennemi est vaincu
         int safe = player.getLastingEffects().openSafes(enemy.isDefeated());
         if (safe > 0 && !player.isDefeated()) {
@@ -100,6 +128,39 @@ public class TurnEngine {
         gameState.nextTurn();
 
         return result;
+    }
+
+    /**
+     * Ivresse : un rouleau tiré au hasard (ni vide ni imposé) tourne une seconde
+     * fois ; le tirage garde le pire des deux résultats, celui qui aligne le
+     * moins de symboles identiques (au second, à égalité).
+     *
+     * @return les symboles arrêtés sur les rouleaux, après l'Ivresse
+     */
+    private Symbol[] drunkReel(SlotMachine machine, Symbol[] drawn, TurnContext turnContext) {
+        List<Integer> open = new ArrayList<>();
+        for (int i = 0; i < drawn.length; i++) {
+            if (drawn[i] != null && !turnContext.getSpinContext().getForcedReels().containsKey(i)) open.add(i);
+        }
+        if (open.isEmpty()) return drawn;
+        int reel = open.get(random.nextInt(open.size()));
+        Symbol[] twice = drawn.clone();
+        twice[reel] = machine.spin(turnContext.getSpinContext())[reel];
+        SpinContext spin = turnContext.getSpinContext();
+        boolean worse = matches(machine.resolveJokers(twice, spin)) <= matches(machine.resolveJokers(drawn, spin));
+        return worse ? twice : drawn;
+    }
+
+    /** @return le plus grand nombre de symboles identiques parmi {@code symbols} (rouleaux vides exclus). */
+    static int matches(Symbol[] symbols) {
+        int best = 0;
+        for (Symbol a : symbols) {
+            if (a == null) continue;
+            int count = 0;
+            for (Symbol b : symbols) if (b == a) count++;
+            best = Math.max(best, count);
+        }
+        return best;
     }
 
     /**

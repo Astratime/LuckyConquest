@@ -41,6 +41,8 @@ public class Player {
     private int damageCap = -1;
     /** PV retirés par l'ennemi depuis le début du tour (pour l'Assurance). */
     private int damageTakenThisTurn = 0;
+    /** Casques : chacun bloque entièrement le prochain coup reçu. */
+    private int helmets = 0;
 
     /**
      * @param name     nom affiché du joueur
@@ -74,7 +76,19 @@ public class Player {
      * @return les dégâts effectivement retirés des points de vie (après bouclier)
      */
     public int takeDamage(int damage) {
-        int absorbed  = Math.min(shield, damage);
+        return takeDamage(damage, false);
+    }
+
+    /**
+     * Comme {@link #takeDamage(int)} ; avec {@code pierceShield} (Forage), le
+     * coup traverse le bouclier sans l'user. Un Casque bloque le coup entier.
+     */
+    public int takeDamage(int damage, boolean pierceShield) {
+        if (damage > 0 && helmets > 0) { // Casque : le coup rebondit
+            helmets--;
+            return 0;
+        }
+        int absorbed  = pierceShield ? 0 : Math.min(shield, damage);
         shield -= absorbed;
         int remaining = damage - absorbed;
         int actualLoss = Math.min(hp, remaining);
@@ -263,6 +277,37 @@ public class Player {
     public void insure(int percent) {
         int cap = Math.round(maxHp * percent / 100f);
         damageCap = damageCap < 0 ? cap : Math.min(damageCap, cap);
+    }
+
+    /** Casque : le prochain coup reçu est bloqué entièrement. */
+    public void addHelmet() { helmets++; }
+
+    /** @return les Casques prêts à bloquer un coup. */
+    public int getHelmets() { return helmets; }
+
+    /**
+     * Abordage : {@code card} est volée, sur la table ou parmi les cartes
+     * jouées ; elle ne revient pas de tout le combat.
+     *
+     * @return {@code false} si le joueur ne l'avait ni en main ni parmi les cartes jouées
+     */
+    public boolean steal(Card card) {
+        return currentHand.remove(card) || playedCards.remove(card);
+    }
+
+    /**
+     * Retire {@code card} de la main sans la défausser (une carte qui disparaît
+     * en fin de tour, comme le Scorbut).
+     *
+     * @return {@code false} si elle n'était pas dans la main
+     */
+    public boolean removeFromHand(Card card) { return currentHand.remove(card); }
+
+    /** Envoie {@code card}, retirée de la main, dans la défausse (Grignotage, Scorbut qui la remplace). */
+    public boolean discardFromHand(Card card) {
+        if (!currentHand.remove(card)) return false;
+        discardPile.addAll(List.of(card));
+        return true;
     }
 
     /** @return les PV que l'ennemi peut encore retirer ce tour (Assurance), ou -1 sans plafond. */

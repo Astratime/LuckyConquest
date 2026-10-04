@@ -40,6 +40,7 @@ public class CombatContext {
     private int     rankFactor = 1;      // Jeton de rang : multiplicateur du bonus du rang
     private int     allIn      = 0;      // Tapis : nombre de mises de tous les gains sur une paire
 
+    private boolean stoneGains     = false; // Pépite de l'ennemi : les symboles de gain ne rapportent rien
     private boolean ignoreDefense  = false; // Pique : les attaques ignorent la défense ennemie
     private int     lifeDrainPercent = 0;   // Coeur : % des dégâts infligés rendus en soin
     private boolean gainsFromDamage  = false; // As de Pique : convertit les dégâts infligés en gains
@@ -96,6 +97,11 @@ public class CombatContext {
     public int getAllIn() { return allIn; }
     /** Tapis : tous les gains sont misés sur une paire. */
     public void addAllIn() { allIn++; }
+
+    /** @return {@code true} si les symboles de gain ne rapportent rien ce tour (Pépite de l'ennemi). */
+    public boolean isStoneGains() { return stoneGains; }
+    /** Pépite de l'ennemi : les symboles de gain de ce tour deviennent des pierres. */
+    public void turnGainsToStone() { stoneGains = true; }
 
     /** @return {@code true} si les attaques de ce tour ignorent la défense ennemie. */
     public boolean isIgnoreDefense()    { return ignoreDefense; }

@@ -39,6 +39,7 @@ public class CardLoader {
         "cards/definitions/pique.json",
         "cards/definitions/special.json",
         "cards/definitions/donjons.json",
+        "cards/definitions/lieux.json",
         "cards/definitions/test.json"
     };
 
@@ -352,6 +353,24 @@ public class CardLoader {
                 return new GuaranteedReflectEffect(json.getInt("percent"));
             case "ROUGH_DIAMOND":
                 return new RoughDiamondEffect(json.getInt("counter"));
+
+            // ----- Lieux de l'Exploration -----
+            case "SCURVY":
+                return new ScurvyEffect();
+            case "SPYGLASS":
+                return new SpyglassEffect();
+            case "TREASURE_MAP":
+                return new TreasureMapEffect();
+            case "HELMET":
+                return new HelmetEffect();
+            case "GOLD_VEIN":
+                return new GoldVeinEffect(json.getInt("turns"));
+            case "BUBBLE":
+                return new BubbleEffect(json.getInt("turns"));
+            case "BLACK_PEARL":
+                return new ForceReelEffect(ForceReelEffect.LEFT_REEL, Symbol.JOKER);
+            case "TRIDENT":
+                return new TridentEffect();
 
             default:
                 throw new IllegalArgumentException("Type d'effet inconnu dans le JSON : " + type);

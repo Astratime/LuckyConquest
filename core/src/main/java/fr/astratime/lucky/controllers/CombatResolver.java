@@ -154,8 +154,8 @@ public class CombatResolver {
             int raw         = bestRaw * multiplier;
             boolean pierced = context.isIgnoreDefense();
             int blocked     = pierced ? 0 : enemy.absorb(raw);
-            int damage      = raw - blocked;
-            enemy.takeDamage(damage);
+            int damage      = enemy.skinned(raw - blocked);
+            enemy.takeDamage(raw - blocked);
             shots.add(new PistolShotEvent(damage, raw, blocked, enemy.getDefense(), pierced, bestSlot, multiplier));
         }
         return shots;
@@ -170,8 +170,9 @@ public class CombatResolver {
         Enemy enemy = context.getEnemy();
         LastingEffects lasting = context.getPlayer().getLastingEffects();
         if (context.getCounterAttack() <= 0 || enemy.isDefeated() || lasting.getVault() <= 0) return Optional.empty();
-        int damage = lasting.consumeVault() * context.getCounterAttack();
-        enemy.takeDamage(damage);
+        int hit    = lasting.consumeVault() * context.getCounterAttack();
+        int damage = enemy.skinned(hit);
+        enemy.takeDamage(hit);
         return Optional.of(new CounterAttackEvent(damage, enemy.getDefense()));
     }
 
@@ -184,8 +185,9 @@ public class CombatResolver {
         Enemy enemy = context.getEnemy();
         if (context.getExecutionPercent() <= 0 || enemy.isDefeated()) return Optional.empty();
         int percent = Math.min(EXECUTION_MAX_PERCENT, context.getExecutionPercent());
-        int damage  = Math.max(1, Math.round(enemy.getHp() * percent / 100f));
-        enemy.takeDamage(damage);
+        int hit     = Math.max(1, Math.round(enemy.getHp() * percent / 100f));
+        int damage  = enemy.skinned(hit);
+        enemy.takeDamage(hit);
         return Optional.of(new ExecutionEvent(damage, percent, enemy.getDefense()));
     }
 

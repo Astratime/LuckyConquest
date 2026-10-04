@@ -2,6 +2,7 @@ package fr.astratime.lucky.views;
 
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.audio.Sound;
+import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.Interpolation;
 import com.badlogic.gdx.math.MathUtils;
@@ -69,8 +70,16 @@ public class HandView {
     private static final float SLAM_FADE      = 0.16f;
     /** Teinte des cartes quand la main est bloquée (Bingo), ou d'une carte qui ne peut pas être jouée. */
     private static final float LOCKED_TINT    = 0.45f;
+    /** Image du dos des cartes, montrée à la place des cartes d'une main cachée (Aveuglement). */
+    private static final String BACK_PATH = "cards/light/BACK.png";
+
     /** Infobulle de la carte : son nom et sa description, suivis de la raison si elle ne peut pas être jouée. */
     private void showTooltip(CardImage cardImage) {
+        if (hiddenImages.contains(cardImage)) { // Aveuglement : la carte reste un mystère
+            Vector2 pos = cardImage.localToStageCoordinates(new Vector2(0, cardHeight + TOOLTIP_GAP));
+            tooltip.show("Carte cachée", "Aveuglement : tu joues sans savoir laquelle.", pos.x, pos.y);
+            return;
+        }
         Card card = cardOf.get(cardImage);
         String reason = blockedReason.apply(card);
         String text = reason == null ? card.getDescription() : card.getDescription() + "\n\n" + reason;
@@ -107,6 +116,10 @@ public class HandView {
     private Function<Card, String> blockedReason = card -> null;
     private CardRefusedListener    refusedListener;
     private boolean                locked;
+    /** Les cartes piochées arrivent face cachée (Aveuglement de l'ennemi). */
+    private boolean                hidden;
+    /** Images de la main montrées face cachée. */
+    private final java.util.Set<Image> hiddenImages = new java.util.HashSet<>();
 
     public HandView(TableView table, float cardWidth, float cardHeight, CardTextures cardTextures, Tooltip tooltip,
              Sound hoverSound, PilesView piles, Supplier<Player> player,
@@ -161,9 +174,38 @@ public class HandView {
         }
     }
 
+    /**
+     * Aveuglement : les cartes piochées ensuite arrivent face cachée (jusqu'à
+     * {@code false}). Une carte cachée se joue sans qu'on sache laquelle.
+     */
+    public void setHidden(boolean hidden) { this.hidden = hidden; }
+
+    /**
+     * Joue {@code card} d'office (Chant de l'ennemi), comme si le joueur avait
+     * cliqué dessus.
+     *
+     * @return {@code false} si elle n'est pas dans la main affichée
+     */
+    public boolean forcePlay(Card card) {
+        for (Image image : new ArrayList<>(images)) {
+            if (cardOf.get(image) != card || !(image instanceof CardImage cardImage)) continue;
+            Vector2 cardCenter = cardImage.localToStageCoordinates(new Vector2(cardWidth / 2f, cardHeight / 2f));
+            cardOf.remove(cardImage);
+            images.remove(cardImage);
+            hiddenImages.remove(cardImage);
+            detach(cardImage);
+            tooltip.hide();
+            clickListener.onCardClicked(card, cardImage, cardCenter, cardCenter);
+            return true;
+        }
+        return false;
+    }
+
     /** Crée l'image de {@code card} et l'ajoute à la main (à la fin de la rangée). */
     private CardImage createImage(Card card) {
-        CardImage cardImage = new CardImage(new TextureRegionDrawable(new TextureRegion(cardTextures.get(card))));
+        Texture face = hidden ? cardTextures.get(BACK_PATH) : cardTextures.get(card);
+        CardImage cardImage = new CardImage(new TextureRegionDrawable(new TextureRegion(face)));
+        if (hidden) hiddenImages.add(cardImage);
         cardImage.setSize(cardWidth, cardHeight);
         addListeners(cardImage);
         cardOf.put(cardImage, card);
@@ -186,7 +228,9 @@ public class HandView {
     public void recolor(Card before, Card after) {
         for (Image image : images) {
             if (cardOf.get(image) != before) continue;
-            image.setDrawable(new TextureRegionDrawable(new TextureRegion(cardTextures.get(after))));
+            if (!hiddenImages.contains(image)) { // une carte cachée le reste
+                image.setDrawable(new TextureRegionDrawable(new TextureRegion(cardTextures.get(after))));
+            }
             cardOf.put(image, after);
             image.setScale(RECOLOR_POP); // la carte se rétablit d'elle-même à sa taille (voir CardImage)
             return;
@@ -200,7 +244,10 @@ public class HandView {
      * @return le centre (Stage) de son emplacement
      */
     public Vector2 conjure(Card card) {
+        boolean wasHidden = hidden;
+        hidden = false; // une carte qui surgit (achat, Arc-en-ciel) se voit, même sous l'Aveuglement
         CardImage cardImage = createImage(card);
+        hidden = wasHidden;
         cardImage.setVisible(false); // placée directement sur son emplacement, sans glisser
         layout(true);
         cardImage.setVisible(true);
@@ -218,6 +265,8 @@ public class HandView {
             piles.discard().getTopX(), piles.discard().getTopY(), this::onCardLandedInDiscard);
         images.clear();
         cardOf.clear();
+        hiddenImages.clear();
+        hidden = false;
     }
 
     /**
@@ -229,6 +278,8 @@ public class HandView {
         dealAnimator.cancel();
         images.clear();
         cardOf.clear();
+        hiddenImages.clear();
+        hidden = false;
         group.clearChildren();
     }
 
@@ -301,7 +352,7 @@ public class HandView {
             public boolean touchDown(InputEvent event, float x, float y, int pointer, int button) {
                 if (button == Input.Buttons.RIGHT) { // clic droit : fiche de la carte, sans la jouer
                     tooltip.hide();
-                    if (onInspect != null) onInspect.accept(cardOf.get(cardImage));
+                    if (onInspect != null && !hiddenImages.contains(cardImage)) onInspect.accept(cardOf.get(cardImage));
                     return true;
                 }
                 Vector2 clickPos   = cardImage.localToStageCoordinates(new Vector2(x, y));
@@ -315,6 +366,7 @@ public class HandView {
                 }
                 Card card = cardOf.remove(cardImage);
                 images.remove(cardImage);
+                hiddenImages.remove(cardImage);
                 detach(cardImage);
                 tooltip.hide();
                 clickListener.onCardClicked(card, cardImage, cardCenter, clickPos);

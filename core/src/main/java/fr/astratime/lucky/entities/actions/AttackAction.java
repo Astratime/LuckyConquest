@@ -59,9 +59,9 @@ public class AttackAction extends Action {
             * context.getAttackFactor() * context.getSymbolPower());
         boolean pierced = piercing || context.isIgnoreDefense();
         int blocked     = pierced ? 0 : enemy.absorb(rawDamage); // la défense s'use à chaque coup
-        int damage      = rawDamage - blocked;
+        int damage      = enemy.skinned(rawDamage - blocked); // une peau d'or encaisse la moitié
 
-        enemy.takeDamage(damage);
+        enemy.takeDamage(rawDamage - blocked);
         events.add(new EnemyDamagedEvent(damage, rawDamage, blocked, enemy.getDefense(), pierced));
 
         if (context.getLifeDrainPercent() > 0 && damage > 0) {

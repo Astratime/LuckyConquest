@@ -137,7 +137,9 @@ public class ChestOverlay implements Disposable {
     public void show(Dungeon dungeon, PlayerProfile.ChestReward reward, Card found, TextButton newButton) {
         hide();
         opened = false;
-        subtitle.setText(dungeon.getName().toUpperCase() + " TERMINÉ !");
+        subtitle.setText(dungeon.getSuit() != null
+            ? dungeon.getName().toUpperCase() + " TERMINÉ !"
+            : "VICTOIRE : " + dungeon.getName().toUpperCase() + " !");
         ((TextureRegionDrawable) chest.getDrawable()).setRegion(new TextureRegion(enemyTextures.chestClosed));
         chest.setTouchable(Touchable.enabled);
         card.setDrawable(new TextureRegionDrawable(new TextureRegion(cardTextures.get(found))));

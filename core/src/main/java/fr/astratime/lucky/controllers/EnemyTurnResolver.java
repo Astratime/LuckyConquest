@@ -2,6 +2,7 @@ package fr.astratime.lucky.controllers;
 
 import fr.astratime.lucky.entities.Card;
 import fr.astratime.lucky.entities.Enemy;
+import fr.astratime.lucky.entities.LastingEffects;
 import fr.astratime.lucky.entities.Player;
 import fr.astratime.lucky.entities.SlotMachine;
 import fr.astratime.lucky.entities.enemy.EnemyCards;
@@ -25,6 +26,9 @@ import fr.astratime.lucky.entities.events.EnemyShieldedEvent;
 import fr.astratime.lucky.entities.events.Event;
 import fr.astratime.lucky.entities.events.PlayerDamagedEvent;
 import fr.astratime.lucky.entities.events.ReelForbiddenEvent;
+import fr.astratime.lucky.entities.events.StatusEvent;
+import fr.astratime.lucky.entities.exploration.PlaceRule;
+import fr.astratime.lucky.popups.EffectPopup;
 import fr.astratime.lucky.entities.events.ThornsEvent;
 
 import java.util.ArrayList;
@@ -59,7 +63,12 @@ import java.util.Random;
  *   <li>Reflet : il rejoue la dernière carte du joueur, à moitié de sa force ;</li>
  *   <li>Sablier : son compte à rebours avance, et il explose au bout ;</li>
  *   <li>Tapis : à son tour suivant, sa mise double (ses attaques avec), sauf s'il est touché
- *       d'ici là ; un coup reçu la fait retomber.</li>
+ *       d'ici là ; un coup reçu la fait retomber ;</li>
+ *   <li>Exploration : Grignotage, Ivresse, Aveuglement, Pépite et Chant jettent un mauvais
+ *       sort au prochain tour du joueur ; l'Abordage vole sa meilleure carte ; le Forage
+ *       traverse son bouclier ; l'Enclume renforce ses attaques sans limite ; la Morsure
+ *       dévore ses gains et le soigne d'autant. Trois symboles identiques font un Jackpot
+ *       (Bandit manchot, Jackpot Vivant) ; le Kraken joue une carte par bras.</li>
  * </ul>
  * Sa force ({@link EnemyKind#getPower()}, qui grandit à chaque chapitre) multiplie ses attaques,
  * ses Boucliers et tous ses effets. Le Rouleau interdit (Éclat Originel) bloque un rouleau du
@@ -115,7 +124,9 @@ public class EnemyTurnResolver {
         }
         enemy.resetDefense(); // la défense de son tour précédent ne valait que pour le tour du joueur
         List<Card> drawn  = enemy.draw(Enemy.HAND_SIZE);
-        List<Card> played = kind.playsAtRandom() ? chooseAtRandom(drawn, kind) : choose(drawn, enemy.getHpRatio(), kind);
+        int plays = enemy.getPlaysPerTurn(); // le Kraken joue une carte par bras qui lui reste
+        List<Card> played = kind.playsAtRandom() ? chooseAtRandom(drawn, plays)
+            : choose(drawn, enemy.getHpRatio(), kind, plays);
 
         int swordBonus = 0, healBonus = 0, shieldBonus = 0;
         int luckFactor = kind.royalBet() && enemy.getHpRatio() < LOW_HP_RATIO ? 2 : 1; // Mise royale
@@ -149,9 +160,21 @@ public class EnemyTurnResolver {
             if (roulettes[i].pocket != EnemyRouletteEvent.Pocket.ROUGE) turn.shieldFactor *= 2;
         }
 
+        // Jackpot (Bandit manchot, Jackpot Vivant) : trois symboles identiques, tout le tour est multiplié.
+        boolean jackpot = kind.hitsJackpots() && symbols.length > 0
+            && java.util.Arrays.stream(symbols).allMatch(symbol -> symbol == symbols[0]);
+        if (jackpot) {
+            turn.attackFactor *= EnemySymbol.JACKPOT_FACTOR;
+            turn.shieldFactor *= EnemySymbol.JACKPOT_FACTOR;
+        }
+
+        LastingEffects curses = player.getLastingEffects(); // les mauvais sorts pour le prochain tour du joueur
         List<List<Event>> outcomes = new ArrayList<>();
         for (int i = 0; i < symbols.length; i++) {
             List<Event> events = new ArrayList<>();
+            if (jackpot && i == 0) {
+                events.add(new StatusEvent("JACKPOT ! TOUT x" + EnemySymbol.JACKPOT_FACTOR, EffectPopup.Style.SPECIAL));
+            }
             switch (symbols[i]) {
                 case SWORD  -> events.add(turn.strike(enemy.getKind().swordDamage()));
                 case FANG   -> bite(turn, events);
@@ -190,6 +213,46 @@ public class EnemyTurnResolver {
                     enemy.goAllIn();
                     events.add(new EnemyStakeEvent(enemy.getStake(), true));
                 }
+                case NIBBLE -> {
+                    curses.addNibble();
+                    events.add(new StatusEvent("GRIGNOTAGE : UNE CARTE RONGÉE AU PROCHAIN TOUR", EffectPopup.Style.DAMAGE));
+                }
+                case DRUNK -> {
+                    curses.addDrunk();
+                    events.add(new StatusEvent("IVRESSE : UN ROULEAU TITUBERA", EffectPopup.Style.DAMAGE));
+                }
+                case BLIND -> {
+                    curses.blind();
+                    events.add(new StatusEvent("AVEUGLEMENT : MAIN CACHÉE AU PROCHAIN TOUR", EffectPopup.Style.DAMAGE));
+                }
+                case BOARDING -> board(turn, events);
+                case NUGGET -> {
+                    curses.addNugget();
+                    events.add(new StatusEvent("PÉPITE : TES GAINS SERONT DES PIERRES", EffectPopup.Style.DAMAGE));
+                }
+                case DRILL  -> {
+                    events.add(new StatusEvent("FORAGE !", EffectPopup.Style.ATTACK));
+                    events.add(turn.strike(kind.swordDamage(), true));
+                }
+                case ANVIL  -> {
+                    enemy.addAnvil(EnemySymbol.ANVIL_ATTACK);
+                    events.add(new StatusEvent("ENCLUME : ATTAQUE +" + kind.empowered(enemy.getAnvil()),
+                        EffectPopup.Style.ATTACK));
+                }
+                case SONG   -> {
+                    curses.addSong();
+                    events.add(new StatusEvent("CHANT : UNE CARTE JOUÉE D'OFFICE", EffectPopup.Style.DAMAGE));
+                }
+                case BANK_BITE -> {
+                    int stolen = Math.round(player.getGains() * kind.empowered(EnemySymbol.BANK_BITE_PERCENT) / 100f);
+                    if (stolen > 0) {
+                        player.addGains(-stolen);
+                        events.add(new GainsStolenEvent(stolen, 0));
+                        events.add(new EnemyHealedEvent(enemy.heal(stolen)));
+                    } else {
+                        events.add(turn.strike(EnemySymbol.FANG_DAMAGE)); // rien à dévorer : il mord
+                    }
+                }
             }
             outcomes.add(events);
         }
@@ -197,16 +260,16 @@ public class EnemyTurnResolver {
         List<Event> afterEvents = new ArrayList<>();
         if (turn.totalAttack > 0 && shieldReflect > 0) {
             // Bingo de bouclier : il frappe dans le bouclier, qui lui est renvoyé entier.
+            afterEvents.add(new DamageReflectedEvent(enemy.skinned(shieldReflect)));
             enemy.takeDamage(shieldReflect);
-            afterEvents.add(new DamageReflectedEvent(shieldReflect));
         }
         if (turn.totalAttack > 0 && reflectPercent > 0 && !enemy.isDefeated()) {
             // Le Coffre arme le renvoi : une part de son contenu s'ajoute à l'attaque renvoyée.
             float reflectBase = turn.totalAttack + player.getLastingEffects().getVault() * vaultShare;
             int reflected = Math.round(reflectBase * (reflectPercent / 100f));
             if (reflected > 0) {
+                afterEvents.add(new DamageReflectedEvent(enemy.skinned(reflected)));
                 enemy.takeDamage(reflected);
-                afterEvents.add(new DamageReflectedEvent(reflected));
             }
         }
 
@@ -265,6 +328,43 @@ public class EnemyTurnResolver {
         }
     }
 
+    /**
+     * Abordage : il vole la meilleure carte du joueur (la plus forte de sa main,
+     * sinon parmi celles qu'il a jouées ; jamais le Scorbut), pour tout le
+     * combat, et la joue contre lui à pleine force : Pique, il frappe ; Cœur, il
+     * se soigne ; Carreau et Trèfle, il se protège. Une carte sans couleur lui
+     * sert d'arme. Sans rien à voler, il frappe simplement.
+     */
+    private static void board(Turn turn, List<Event> events) {
+        Player player = turn.player;
+        Card stolen = bestCard(player.getCurrentHand());
+        if (stolen == null) stolen = bestCard(player.getPlayedCards());
+        if (stolen == null || !player.steal(stolen)) {
+            events.add(turn.strike(EnemySymbol.SWORD_DAMAGE));
+            return;
+        }
+        events.add(new StatusEvent("ABORDAGE : " + stolen.getName().toUpperCase() + " VOLÉE", EffectPopup.Style.DAMAGE));
+        Enemy enemy = turn.enemy;
+        if (stolen.getSuit() == null) {
+            events.add(turn.strike(EnemySymbol.SWORD_DAMAGE));
+            return;
+        }
+        switch (stolen.getSuit()) {
+            case PIQUE   -> events.add(turn.strike(EnemySymbol.SWORD_DAMAGE + EnemyCards.swordBonus(stolen)));
+            case COEUR   -> events.add(heal(enemy, enemy.getKind().potionPercent(EnemyCards.healBonus(stolen))));
+            case CARREAU, TREFLE -> events.add(turn.shield(EnemySymbol.SHIELD_DEFENSE + EnemyCards.shieldBonus(stolen)));
+        }
+    }
+
+    /** @return la carte la plus forte de {@code cards} (une figure ou un As avant tout, puis le rang), sans le Scorbut, ou {@code null}. */
+    static Card bestCard(List<Card> cards) {
+        return cards.stream()
+            .filter(card -> !PlaceRule.SCURVY_CARD.equals(card.getId()))
+            .max(Comparator.comparingInt((Card card) -> card.getSuit() == null ? 0 : 1)
+                .thenComparingInt(card -> card.getRank() == 1 ? 14 : card.getRank()))
+            .orElse(null);
+    }
+
     /** @return la case où s'arrête la bille de la roulette du Zéro. */
     private EnemyRouletteEvent.Pocket spinRoulette() {
         int pocket = random.nextInt(37);
@@ -292,12 +392,16 @@ public class EnemyTurnResolver {
          * multipliés par sa mise (Tapis), la roulette du Zéro et sa force ; le bouclier du
          * joueur absorbe le coup et s'use d'autant.
          */
-        PlayerDamagedEvent strike(int base) {
+        PlayerDamagedEvent strike(int base) { return strike(base, false); }
+
+        /** Comme {@link #strike(int)} ; avec {@code pierce} (Forage), le coup traverse le bouclier du joueur. */
+        PlayerDamagedEvent strike(int base, boolean pierce) {
             int attack = enemy.getKind().empowered(
-                (base + swordBonus + enemy.getRage() + enemy.spendInterest()) * enemy.getStake() * attackFactor);
+                (base + swordBonus + enemy.getRage() + enemy.getAnvil() + enemy.spendInterest())
+                    * enemy.getStake() * attackFactor);
             totalAttack += attack;
             int shieldBefore = player.getShield();
-            int lost = player.takeDamage(attack);
+            int lost = player.takeDamage(attack, pierce);
             return new PlayerDamagedEvent(lost, shieldBefore - player.getShield(), player.getShield());
         }
 
@@ -327,18 +431,23 @@ public class EnemyTurnResolver {
      * se protège d'abord, la Sangsue mord, le Bretteur attaque même blessé).
      */
     static List<Card> choose(List<Card> hand, float hpRatio, EnemyKind kind) {
+        return choose(hand, hpRatio, kind, kind.getPlaysPerTurn());
+    }
+
+    /** Comme {@link #choose(List, float, EnemyKind)}, en jouant {@code plays} cartes (les bras du Kraken). */
+    static List<Card> choose(List<Card> hand, float hpRatio, EnemyKind kind, int plays) {
         List<Card.Suit> priority = hpRatio < LOW_HP_RATIO ? kind.getLowHpPriority() : kind.getPriority();
         return hand.stream()
             .sorted(Comparator.comparingInt((Card card) -> card.getSuit() == null ? -1 : priority.indexOf(card.getSuit()))
                 .thenComparing(Comparator.comparingInt(Card::getRank).reversed()))
-            .limit(kind.getPlaysPerTurn())
+            .limit(plays)
             .toList();
     }
 
-    /** IA de la Roulette Vivante : elle n'en a pas, ses cartes sortent au hasard. */
-    private List<Card> chooseAtRandom(List<Card> hand, EnemyKind kind) {
+    /** IA de la Roulette Vivante : elle n'en a pas, ses {@code plays} cartes sortent au hasard. */
+    private List<Card> chooseAtRandom(List<Card> hand, int plays) {
         List<Card> shuffled = new ArrayList<>(hand);
         java.util.Collections.shuffle(shuffled, random);
-        return List.copyOf(shuffled.subList(0, Math.min(kind.getPlaysPerTurn(), shuffled.size())));
+        return List.copyOf(shuffled.subList(0, Math.min(plays, shuffled.size())));
     }
 }
