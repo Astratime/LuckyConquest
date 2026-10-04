@@ -120,11 +120,17 @@ public class TurnEngine {
 
         EnemyTurnResult enemyTurn = null;
         if (!enemy.isDefeated() && !player.isDefeated()) {
-            // Bingo de bouclier : s'il frappe, tout le bouclier lui est renvoyé.
-            int shieldReflect = result.isShieldBingo() ? player.getShield() : 0;
-            enemyTurn = enemyTurnResolver.resolve(enemy, player,
-                turnContext.getCombatContext().getTotalReflectPercent(), CombatResolver.VAULT_REFLECT_SHARE,
-                shieldReflect);
+            // Ses Épines piquent d'abord : si le joueur en meurt, l'ennemi ne joue pas son tour.
+            List<Event> thorns = enemyTurnResolver.prickThorns(enemy, player);
+            if (player.isDefeated()) {
+                afterCombat.addAll(thorns);
+            } else {
+                // Bingo de bouclier : s'il frappe, tout le bouclier lui est renvoyé.
+                int shieldReflect = result.isShieldBingo() ? player.getShield() : 0;
+                enemyTurn = enemyTurnResolver.resolve(enemy, player,
+                    turnContext.getCombatContext().getTotalReflectPercent(), CombatResolver.VAULT_REFLECT_SHARE,
+                    shieldReflect, thorns);
+            }
         }
 
         // Coup de grisou (Mines d'Or) : il frappe le joueur seul, son bouclier le protège

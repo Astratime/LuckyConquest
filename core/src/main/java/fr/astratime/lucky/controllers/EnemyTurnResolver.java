@@ -113,6 +113,31 @@ public class EnemyTurnResolver {
      */
     public EnemyTurnResult resolve(Enemy enemy, Player player, int reflectPercent, float vaultShare,
                                    int shieldReflect) {
+        return resolve(enemy, player, reflectPercent, vaultShare, shieldReflect, prickThorns(enemy, player));
+    }
+
+    /**
+     * Ses Épines piquent le joueur pour les coups de son tour : avant le tour
+     * de l'ennemi, pour que le combat s'arrête là si le joueur en meurt.
+     *
+     * @return l'événement des Épines (vide si elles n'ont pas piqué)
+     */
+    public List<Event> prickThorns(Enemy enemy, Player player) {
+        int thorns = enemy.collectThorns();
+        if (thorns <= 0) return new ArrayList<>();
+        int shieldBefore = player.getShield();
+        int lost = player.takeDamage(thorns);
+        List<Event> events = new ArrayList<>();
+        events.add(new ThornsEvent(lost, shieldBefore - player.getShield(), player.getShield()));
+        return events;
+    }
+
+    /**
+     * Comme {@link #resolve(Enemy, Player, int, float, int)}, ses Épines ayant
+     * déjà piqué (voir {@link #prickThorns}) : {@code thornsEvents} ouvre son tour.
+     */
+    public EnemyTurnResult resolve(Enemy enemy, Player player, int reflectPercent, float vaultShare,
+                                   int shieldReflect, List<Event> thornsEvents) {
         EnemyKind kind = enemy.getKind();
         List<Event> openingEvents = new ArrayList<>();
         if (enemy.enterPhaseTwo()) {
@@ -124,12 +149,7 @@ public class EnemyTurnResolver {
                 EffectPopup.Style.ATTACK));
         }
         if (enemy.raiseStake()) openingEvents.add(new EnemyStakeEvent(enemy.getStake(), false));
-        int thorns = enemy.collectThorns(); // ses Épines piquent pour les coups du tour du joueur
-        if (thorns > 0) {
-            int shieldBefore = player.getShield();
-            int lost = player.takeDamage(thorns);
-            openingEvents.add(new ThornsEvent(lost, shieldBefore - player.getShield(), player.getShield()));
-        }
+        openingEvents.addAll(thornsEvents); // ses Épines ont piqué pour les coups du tour du joueur
         enemy.resetDefense(); // la défense de son tour précédent ne valait que pour le tour du joueur
         List<Card> drawn  = enemy.draw(Enemy.HAND_SIZE);
         int plays = enemy.getPlaysPerTurn(); // le Kraken joue une carte par bras qui lui reste
