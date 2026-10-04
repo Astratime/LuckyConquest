@@ -84,6 +84,7 @@ public class ExplorationScreen extends ScreenAdapter {
     private static final float BOTTOM_SPACE = 130f;    // sous les panneaux : boutons
     private static final float INFO_WIDTH   = 300f;    // colonne du donjon choisi, à droite de la carte
     private static final float GATE_HOVER   = 1.12f;
+    private static final float RULE_GAP     = 24f;     // entre le bas de la carte et la règle du lieu
     private static final float FADE_TIME    = 0.4f;
     /** Opacité du nom d'un lieu fermé, dans la liste. */
     private static final float LOCKED_ALPHA = 0.4f;
@@ -108,6 +109,8 @@ public class ExplorationScreen extends ScreenAdapter {
     private final BitmapFont      nameFont  = Fonts.jersey(44, Palette.GOLD, 3f, Palette.TEXT_SHADE);
     private final BitmapFont      bodyFont  = Fonts.jersey(30, Color.WHITE, 2f, Palette.TEXT_SHADE);
     private final BitmapFont      gateFont  = Fonts.jersey(26, Color.WHITE, 2f, Palette.TEXT_SHADE);
+    private final BitmapFont      ruleFont  = Fonts.jersey(32, Palette.GOLD, 2f, Palette.TEXT_SHADE);
+    private final BitmapFont      ruleBody  = Fonts.jersey(28, Color.WHITE, 2f, Palette.TEXT_SHADE);
     /** Nom de chaque carte, par id, pour le contenu des coffres. */
     private final Map<String, String> cardNames;
 
@@ -123,6 +126,9 @@ public class ExplorationScreen extends ScreenAdapter {
     private final List<Label>      gateLabels = new ArrayList<>();
     private final Label            dungeonName;
     private final Label            dungeonText;
+    /** Sous la carte : le nom de la règle du lieu, puis ce qu'elle fait. */
+    private final Label            ruleName;
+    private final Label            ruleText;
     private final TextButton       enterButton;
     private final TextButton       backButton;
     private final Image            fade;
@@ -184,6 +190,10 @@ public class ExplorationScreen extends ScreenAdapter {
         dungeonText = new Label("", new Label.LabelStyle(bodyFont, Color.WHITE));
         dungeonText.setWrap(true);
         dungeonText.setAlignment(Align.topLeft);
+        ruleName = new Label("", new Label.LabelStyle(ruleFont, Color.WHITE));
+        ruleText = new Label("", new Label.LabelStyle(ruleBody, Color.WHITE));
+        ruleText.setWrap(true);
+        ruleText.setAlignment(Align.topLeft);
         enterButton = buttons.createAction("Entrer", clickSound, this::launch);
         backButton  = buttons.create("Retour", clickSound, this::onBack);
 
@@ -202,6 +212,8 @@ public class ExplorationScreen extends ScreenAdapter {
         stage.addActor(map);
         stage.addActor(dungeonName);
         stage.addActor(dungeonText);
+        stage.addActor(ruleName);
+        stage.addActor(ruleText);
         stage.addActor(enterButton);
         stage.addActor(backButton);
         stage.addActor(fade);
@@ -219,6 +231,12 @@ public class ExplorationScreen extends ScreenAdapter {
         place = newPlace;
         for (int i = 0; i < rows.size(); i++) rows.get(i).setSelected(Place.values()[i] == place);
         placeLabel.setText(place.getName().toUpperCase());
+        PlaceRule rule = place.getRule();
+        boolean hasRule = rule != PlaceRule.NONE;
+        ruleName.setText(hasRule ? "Règle du lieu : " + rule.getName() : "");
+        ruleText.setText(hasRule ? rule.getDescription() : "");
+        ruleName.setVisible(hasRule);
+        ruleText.setVisible(hasRule);
         ((TextureRegionDrawable) map.getDrawable()).setRegion(new TextureRegion(enemyTextures.map(place)));
         boolean open = profile.isOpen(place);
         map.setColor(open ? Color.WHITE : LOCKED_TINT);
@@ -290,9 +308,6 @@ public class ExplorationScreen extends ScreenAdapter {
         } else {
             text.append(dungeon.getDescription());
             if (profile.isCleared(dungeon)) text.append("\nDéjà vidé.");
-        }
-        if (place.getRule() != PlaceRule.NONE) {
-            text.append("\n\nRègle du lieu : ").append(place.getRule().getName());
         }
         text.append("\n\nCombat 1 : ").append(dungeon.getSoldier().getDisplayName())
             .append(" (").append(PlayerProfile.formatCoins(dungeon.getSoldier().getMaxHp())).append(" PV)");
@@ -384,6 +399,16 @@ public class ExplorationScreen extends ScreenAdapter {
         float mapTop       = placeLabel.getY() - 20f;
         float maxMapWidth  = innerWidth - INFO_WIDTH - PANEL_PAD;
         float maxMapHeight = mapTop - panelBottom - PANEL_PAD;
+        // La règle du lieu, sous la carte : on lui garde sa place avant de choisir la taille de la carte.
+        float ruleHeight = 0f;
+        if (ruleName.isVisible()) {
+            ruleName.pack();
+            ruleText.setWidth(maxMapWidth);
+            ruleText.pack();
+            ruleText.setWidth(maxMapWidth);
+            ruleHeight = RULE_GAP + ruleName.getHeight() + 4f + ruleText.getHeight();
+            maxMapHeight -= ruleHeight;
+        }
         mapScale = 1f;
         while ((mapScale + 1) * ExplorationArt.MAP_WIDTH <= maxMapWidth
             && (mapScale + 1) * ExplorationArt.MAP_HEIGHT <= maxMapHeight) {
@@ -395,6 +420,13 @@ public class ExplorationScreen extends ScreenAdapter {
         map.setBounds(mapX, mapY, mapWidth, mapHeight);
         float frame = 10f;
         mapFrame.setBounds(mapX - frame, mapY - frame, mapWidth + frame * 2, mapHeight + frame * 2);
+        if (ruleName.isVisible()) {
+            ruleText.setWidth(mapWidth);
+            ruleText.pack();
+            ruleText.setWidth(mapWidth);
+            ruleName.setPosition(mapX, mapY - RULE_GAP - ruleName.getHeight());
+            ruleText.setPosition(mapX, ruleName.getY() - 4f - ruleText.getHeight());
+        }
 
         // Entrées des donjons : le bas de chaque entrée au bout de son chemin.
         float gateSize = ExplorationArt.GATE_SIZE * mapScale * 0.75f;
