@@ -20,7 +20,10 @@ import java.util.Map;
  *  - Veine d'or (gains x3, quelques tours) et Bulle d'air (la règle du lieu ne
  *    joue plus, quelques tours) ;
  *  - les mauvais sorts des ennemis de l'Exploration, pour le prochain tour :
- *    Grignotage, Aveuglement, Chant (à la pioche) ; Ivresse, Pépite (au tirage).
+ *    Grignotage, Aveuglement, Chant (à la pioche) ; Ivresse, Pépite (au tirage) ;
+ *  - les parades des cartes des coffres des lieux : Piège à rats, Lanterne,
+ *    Bouchons d'oreille, Étai, Lampe à carbure, Cage à requin, Ancre, et la
+ *    Trempe qui renforce l'attaque à chaque tour.
  */
 public class LastingEffects {
 
@@ -65,6 +68,25 @@ public class LastingEffects {
     /** Règle changée par le Directeur des Jeux ({@code null} : aucune), et ses tirages restants. */
     private HouseRule houseRule;
     private int houseRuleTurns = 0;
+    /** Piège à rats : mauvais sorts de l'ennemi sur la main (Grignotage, Aveuglement, Chant, Abordage, Fouille) annulés. */
+    private int traps = 0;
+    /** Lanterne : pioches restantes où la main ne peut pas être cachée. */
+    private int lanternDraws = 0;
+    /** Bouchons d'oreille : pioches restantes où le Chant n'a pas d'effet. */
+    private int earplugDraws = 0;
+    /** Étai : tours restants où le Forage ne perce pas le bouclier. */
+    private int propTurns = 0;
+    /** Lampe à carbure : coups de grisou à éviter. */
+    private int lamps = 0;
+    /** Cage à requin : tours restants où l'ennemi ne peut rien prendre aux gains. */
+    private int cageTurns = 0;
+    /** Ancre : tours restants où la marée haute ne retire pas d'attaque. */
+    private int anchorTurns = 0;
+    /** Trempe : bonus d'attaque gagné à chaque tour, et bonus atteint, en %. */
+    private int temperCards = 0;
+    private int temperPercent = 0;
+    /** Cocktail des abysses : cartes jouables en plus, ce tour seulement. */
+    private int bonusPlays = 0;
 
     /** Règles que peut changer le Directeur des Jeux (Nouvelle règle). */
     public enum HouseRule {
@@ -304,6 +326,78 @@ public class LastingEffects {
         return houseRule;
     }
 
+    /** Piège à rats : le prochain mauvais sort de l'ennemi sur la main est annulé. */
+    public void addTrap() { traps++; }
+    /** @return les Pièges à rats posés. */
+    public int getTraps() { return traps; }
+    /** Un mauvais sort tombe : un Piège à rats l'annule s'il y en a un. @return {@code true} si annulé */
+    public boolean useTrap() {
+        if (traps <= 0) return false;
+        traps--;
+        return true;
+    }
+
+    /** Lanterne : la main ne peut plus être cachée pendant les {@code draws} prochaines pioches. */
+    public void addLantern(int draws) { lanternDraws = Math.max(lanternDraws, draws); }
+    /** @return les pioches restantes sous la Lanterne. */
+    public int getLanternDraws() { return lanternDraws; }
+    /** Pioche : la Lanterne éclaire celle-ci. @return {@code true} si elle était allumée */
+    public boolean useLantern() {
+        if (lanternDraws <= 0) return false;
+        lanternDraws--;
+        return true;
+    }
+
+    /** Bouchons d'oreille : le Chant n'a plus d'effet pendant les {@code draws} prochaines pioches. */
+    public void addEarplugs(int draws) { earplugDraws = Math.max(earplugDraws, draws); }
+    /** @return les pioches restantes avec les Bouchons d'oreille. */
+    public int getEarplugDraws() { return earplugDraws; }
+    /** Pioche : les Bouchons valent pour celle-ci. @return {@code true} s'ils étaient mis */
+    public boolean useEarplugs() {
+        if (earplugDraws <= 0) return false;
+        earplugDraws--;
+        return true;
+    }
+
+    /** Étai : le Forage ne perce plus le bouclier pendant {@code turns} tours, celui-ci compris. */
+    public void addProp(int turns) { propTurns = Math.max(propTurns, turns); }
+    /** @return les tours restants sous l'Étai. */
+    public int getPropTurns() { return propTurns; }
+
+    /** Lampe à carbure : le prochain coup de grisou est évité. */
+    public void addLamp() { lamps++; }
+    /** @return les Lampes à carbure allumées. */
+    public int getLamps() { return lamps; }
+    /** Coup de grisou : une Lampe l'évite s'il y en a une. @return {@code true} si évité */
+    public boolean useLamp() {
+        if (lamps <= 0) return false;
+        lamps--;
+        return true;
+    }
+
+    /** Cage à requin : l'ennemi ne peut rien prendre aux gains pendant {@code turns} tours, celui-ci compris. */
+    public void addCage(int turns) { cageTurns = Math.max(cageTurns, turns); }
+    /** @return les tours restants dans la Cage à requin. */
+    public int getCageTurns() { return cageTurns; }
+
+    /** Ancre : la marée haute ne retire plus d'attaque pendant {@code turns} tours, celui-ci compris. */
+    public void addAnchor(int turns) { anchorTurns = Math.max(anchorTurns, turns); }
+    /** @return les tours restants sous l'Ancre. */
+    public int getAnchorTurns() { return anchorTurns; }
+
+    /** Trempe : l'attaque gagne {@code percent} % tout de suite, puis autant à chaque tour, jusqu'à la fin du combat. */
+    public void addTemper(int percent) {
+        temperCards += percent;
+        temperPercent += percent;
+    }
+    /** @return le bonus d'attaque de la Trempe, en % (0 si aucune). */
+    public int getTemperPercent() { return temperPercent; }
+
+    /** Cocktail des abysses : {@code plays} cartes jouables en plus, ce tour seulement. */
+    public void addBonusPlays(int plays) { bonusPlays += plays; }
+    /** @return les cartes jouables en plus ce tour (Cocktail des abysses). */
+    public int getBonusPlays() { return bonusPlays; }
+
     /** Fin d'un tirage : chaque symbole retiré se rapproche de son retour, la Corruption et Dans la manche de leur fin. */
     public void endTurn() {
         removedSymbols.replaceAll((symbol, turns) -> turns - 1);
@@ -313,6 +407,11 @@ public class LastingEffects {
         safes.forEach(safe -> safe[1]--);
         if (goldVeinTurns > 0) goldVeinTurns--;
         if (bubbleTurns > 0) bubbleTurns--;
+        if (propTurns > 0) propTurns--;
+        if (cageTurns > 0) cageTurns--;
+        if (anchorTurns > 0) anchorTurns--;
+        temperPercent += temperCards; // la Trempe durcit l'épée à chaque tour
+        bonusPlays = 0;
     }
 
     /** @return {@code true} si aucun effet n'est actif et les jauges sont vides. */
@@ -320,6 +419,8 @@ public class LastingEffects {
         return removedSymbols.isEmpty() && gainBonus == 0f && corruptionTurns == 0 && extraPlaysTurns == 0
             && blades == 0 && blood == 0 && vault == 0 && safes.isEmpty() && goldVeinTurns == 0 && bubbleTurns == 0
             && nibbles == 0 && !blind && songs == 0 && drunk == 0 && !nugget
-            && fakeGains == 0 && taxes == 0 && houseRuleTurns == 0;
+            && fakeGains == 0 && taxes == 0 && houseRuleTurns == 0
+            && traps == 0 && lanternDraws == 0 && earplugDraws == 0 && propTurns == 0 && lamps == 0
+            && cageTurns == 0 && anchorTurns == 0 && temperPercent == 0 && bonusPlays == 0;
     }
 }

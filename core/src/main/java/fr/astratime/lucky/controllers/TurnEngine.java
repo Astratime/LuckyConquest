@@ -69,6 +69,15 @@ public class TurnEngine {
             symbols = machine.resolveJokers(drawn, turnContext.getSpinContext());
         }
 
+        // Tournée générale : la machine tourne encore, le meilleur tirage reste
+        for (int i = 0; i < turnContext.getSpinContext().getBestOfTwo(); i++) {
+            Symbol[] again = machine.spin(turnContext.getSpinContext());
+            if (matches(machine.resolveJokers(again, turnContext.getSpinContext())) > matches(symbols)) {
+                drawn   = again;
+                symbols = machine.resolveJokers(again, turnContext.getSpinContext());
+            }
+        }
+
         // Ivresse (ennemi) : un rouleau tourne deux fois et garde le pire résultat
         int drunk = player.getLastingEffects().takeDrunk();
         for (int i = 0; i < drunk; i++) {
@@ -119,7 +128,13 @@ public class TurnEngine {
         if (enemy.isLastDrawPending() && !player.isDefeated()) afterCombat.addAll(lastDraw(player, enemy));
 
         EnemyTurnResult enemyTurn = null;
-        if (!enemy.isDefeated() && !player.isDefeated()) {
+        if (!enemy.isDefeated() && !player.isDefeated() && enemy.takeDazzle()) {
+            // Rayon du phare : ébloui, il passe son tour (sa défense ne valait que pour celui du joueur).
+            enemy.collectThorns(); // ses Épines ne piquent pas non plus
+            enemy.resetDefense();
+            enemy.resetDamageTaken();
+            afterCombat.add(new StatusEvent("ÉBLOUI : L'ENNEMI PASSE SON TOUR", EffectPopup.Style.SPECIAL));
+        } else if (!enemy.isDefeated() && !player.isDefeated()) {
             // Ses Épines piquent d'abord : si le joueur en meurt, l'ennemi ne joue pas son tour.
             List<Event> thorns = enemyTurnResolver.prickThorns(enemy, player);
             if (player.isDefeated()) {
@@ -135,8 +150,11 @@ public class TurnEngine {
 
         // Coup de grisou (Mines d'Or) : il frappe le joueur seul, son bouclier le protège
         List<Event> firedamp = new ArrayList<>();
-        if (gameState.getActiveRule().firedampExplodes(gameState.getTurnNumber()) && !player.isDefeated()
-            && !enemy.isDefeated()) {
+        boolean explodes = gameState.getActiveRule().firedampExplodes(gameState.getTurnNumber()) && !player.isDefeated()
+            && !enemy.isDefeated();
+        if (explodes && player.getLastingEffects().useLamp()) { // Lampe à carbure : le grisou est évité
+            firedamp.add(new StatusEvent("LAMPE À CARBURE : GRISOU ÉVITÉ", EffectPopup.Style.DEFENSE));
+        } else if (explodes) {
             int shieldBefore = player.getShield();
             int lost = player.takeDamage(Math.round(player.getMaxHp() * PlaceRule.FIREDAMP_PERCENT / 100f));
             firedamp.add(new StatusEvent("COUP DE GRISOU !", EffectPopup.Style.DAMAGE));
@@ -152,6 +170,10 @@ public class TurnEngine {
         if (limit > 0 && gameState.getTurnNumber() >= limit && !enemy.isDefeated() && !player.isDefeated()) {
             firedamp.add(new StatusEvent("TEMPS MORT : LE TEMPS EST ÉCOULÉ", EffectPopup.Style.DAMAGE));
             firedamp.add(new PlayerDamagedEvent(player.loseAllHp(), 0, player.getShield()));
+        }
+
+        if (player.takeRopeSaved()) {
+            firedamp.add(new StatusEvent("CORDE DE RAPPEL : TU TIENS À 1 PV", EffectPopup.Style.DEFENSE));
         }
 
         List<Event> endEvents = storeLeftoverShield(player);

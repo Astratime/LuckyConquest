@@ -98,6 +98,7 @@ import fr.astratime.lucky.entities.exploration.DungeonRun;
 import fr.astratime.lucky.entities.exploration.PlaceRule;
 import fr.astratime.lucky.entities.effects.CorruptionEffect;
 import fr.astratime.lucky.entities.effects.GoldVeinEffect;
+import fr.astratime.lucky.entities.effects.MutinyEffect;
 import fr.astratime.lucky.entities.run.CombatRun;
 import fr.astratime.lucky.progress.PlayerProfile;
 import fr.astratime.lucky.loaders.CardLoader;
@@ -1623,6 +1624,42 @@ public class GameScreen extends ScreenAdapter {
                 "Casque x" + helmets, "Casque", "Bloque entièrement le prochain coup que tu reçois. "
                     + (helmets > 1 ? helmets + " casques : un par coup." : "Un seul coup.")));
         }
+        // Parades des cartes des coffres des lieux
+        TextureRegion guard = new TextureRegion(hudTextures.iconVault);
+        Enemy target = gameController.getGameState().getEnemy();
+        if (lasting.getTraps() > 0) rows.add(new SidePanel.EffectRow(guard, null, "Piège x" + lasting.getTraps(),
+            "Piège à rats", "Le prochain mauvais sort sur ta main est annulé (Grignotage, Aveuglement, Chant, Abordage, Fouille)."));
+        if (lasting.getLanternDraws() > 0) rows.add(new SidePanel.EffectRow(guard, null,
+            "Lanterne (" + lasting.getLanternDraws() + ")", "Lanterne",
+            "Ta main ne peut pas être cachée. Encore " + turns(lasting.getLanternDraws()) + "."));
+        if (lasting.getEarplugDraws() > 0) rows.add(new SidePanel.EffectRow(guard, null,
+            "Bouchons (" + lasting.getEarplugDraws() + ")", "Bouchons d'oreille",
+            "Le Chant n'a pas d'effet. Encore " + turns(lasting.getEarplugDraws()) + "."));
+        if (lasting.getPropTurns() > 0) rows.add(new SidePanel.EffectRow(guard, null,
+            "Étai (" + lasting.getPropTurns() + ")", "Étai",
+            "Le Forage ne perce pas ton bouclier. Encore " + turns(lasting.getPropTurns()) + "."));
+        if (lasting.getLamps() > 0) rows.add(new SidePanel.EffectRow(guard, null, "Lampe x" + lasting.getLamps(),
+            "Lampe à carbure", "Le prochain coup de grisou ne t'atteint pas."));
+        if (lasting.getCageTurns() > 0) rows.add(new SidePanel.EffectRow(guard, null,
+            "Cage (" + lasting.getCageTurns() + ")", "Cage à requin",
+            "Rien ne peut prendre tes gains. Encore " + turns(lasting.getCageTurns()) + "."));
+        if (lasting.getAnchorTurns() > 0) rows.add(new SidePanel.EffectRow(guard, null,
+            "Ancre (" + lasting.getAnchorTurns() + ")", "Ancre",
+            "La marée haute ne baisse pas ton attaque. Encore " + turns(lasting.getAnchorTurns()) + "."));
+        if (lasting.getTemperPercent() > 0) rows.add(new SidePanel.EffectRow(guard, null,
+            "Trempe +" + lasting.getTemperPercent() + " %", "Trempe",
+            "Ton attaque est à +" + lasting.getTemperPercent() + " %. Elle monte encore à chaque tour."));
+        if (player().hasRope()) rows.add(new SidePanel.EffectRow(guard, null, "Corde de rappel", "Corde de rappel",
+            "Si un coup devait te tuer, tu restes à 1 PV."));
+        if (target.isDazzled()) rows.add(new SidePanel.EffectRow(guard, null, "Ennemi ébloui", "Rayon du phare",
+            "L'ennemi passe son prochain tour."));
+        if (target.getMutinies() > 0) rows.add(new SidePanel.EffectRow(guard, null, "Mutinerie", "Mutinerie",
+            "À son prochain tour, l'ennemi joue " + MutinyEffect.CARDS_LESS + " cartes de moins."));
+        if (target.getLoadedCoins() > 0) rows.add(new SidePanel.EffectRow(guard, null, "Pièce truquée", "Pièce truquée",
+            "Le prochain tirage de l'ennemi ne peut pas faire de Jackpot."));
+        if (target.getHarpoons() > 0) rows.add(new SidePanel.EffectRow(guard, null, "Harpon x" + target.getHarpoons(),
+            "Harpon", "À son prochain tour, l'ennemi joue " + target.getHarpoons() + " carte"
+                + (target.getHarpoons() > 1 ? "s" : "") + " de moins."));
         Enemy foe = gameController.getGameState().getEnemy();
         EnemyKind kind = foe.getKind();
         if (lasting.getNibbles() > 0) rows.add(curse(skull, "Grignotage x" + lasting.getNibbles(), EnemySymbol.NIBBLE, kind));

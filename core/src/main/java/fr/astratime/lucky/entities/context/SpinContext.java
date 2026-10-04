@@ -36,6 +36,8 @@ public class SpinContext {
     private final Map<Integer, Symbol> forcedReels = new TreeMap<>();
     /** Relances accordées si le tirage n'a pas de paire (Relance). */
     private int     rerolls = 0;
+    /** Tournée générale : la machine tourne une fois de plus par carte, le meilleur tirage reste. */
+    private int     bestOfTwo = 0;
     /** Rouleaux en plus des {@link SlotMachine#SYMBOL_COUNT} habituels (Machine en surchauffe). */
     private int     extraReels = 0;
 
@@ -96,6 +98,12 @@ public class SpinContext {
 
     /** @return les symboles imposés, par indice de rouleau (vue non modifiable). */
     public Map<Integer, Symbol> getForcedReels() { return Collections.unmodifiableMap(forcedReels); }
+
+    /** Tournée générale : la machine tourne une fois de plus, le meilleur tirage reste. */
+    public void addBestOfTwo() { bestOfTwo++; }
+
+    /** @return les tirages en plus de la Tournée générale (le meilleur reste). */
+    public int getBestOfTwo() { return bestOfTwo; }
 
     /** Accorde une relance si le tirage n'a pas de paire. */
     public void addReroll() { rerolls++; }

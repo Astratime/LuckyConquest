@@ -372,6 +372,62 @@ public class CardLoader {
             case "TRIDENT":
                 return new TridentEffect();
 
+            // ----- Coffres des donjons des lieux -----
+            case "RAT_TRAP":
+                return new RatTrapEffect();
+            case "GAINS_PERCENT":
+                return new GainsPercentEffect(json.getInt("percent"));
+            case "COMBO_BONUS":
+                return new ComboBonusEffect(json.getFloat("bonus"));
+            case "BEST_OF_TWO":
+                return new BestOfTwoEffect();
+            case "POWDER_KEG":
+                return new PowderKegEffect(json.getInt("factor"), json.getInt("hpPercent"));
+            case "LANTERN":
+                return new LanternEffect(json.getInt("draws"), json.getInt("defensePercent"));
+            case "DAZZLE":
+                return new DazzleEffect();
+            case "CUTLASS":
+                return new CutlassEffect(json.getInt("attackPercent"));
+            case "BLACK_FLAG":
+                return new BlackFlagEffect();
+            case "MUTINY":
+                return new MutinyEffect();
+            case "SIEVE":
+                return new SieveEffect(json.getInt("gainsPercent"));
+            case "PROP":
+                return new PropEffect(json.getInt("turns"), json.getInt("defensePercent"));
+            case "ROPE":
+                return new RopeEffect();
+            case "FORGE_HAMMER":
+                return new ForgeHammerEffect();
+            case "TEMPER":
+                return new TemperEffect(json.getInt("percent"));
+            case "FORGED_BLADE":
+                return new ForgedBladeEffect();
+            case "DYNAMITE":
+                return new DynamiteEffect(json.getInt("percent"));
+            case "CARBIDE_LAMP":
+                return new CarbideLampEffect();
+            case "GOLDEN_HEART":
+                return new GoldenHeartEffect();
+            case "EARPLUGS":
+                return new EarplugsEffect(json.getInt("draws"));
+            case "BONUS_PLAYS":
+                return new BonusPlaysEffect(json.getInt("plays"));
+            case "LOADED_COIN":
+                return new LoadedCoinEffect();
+            case "RUSTY_LEVER":
+                return new RustyLeverEffect();
+            case "SUNKEN_JACKPOT":
+                return new SunkenJackpotEffect();
+            case "SHARK_CAGE":
+                return new SharkCageEffect(json.getInt("turns"));
+            case "HARPOON":
+                return new HarpoonEffect(json.getInt("attackPercent"));
+            case "ANCHOR":
+                return new AnchorEffect(json.getInt("turns"), json.getInt("defensePercent"));
+
             default:
                 throw new IllegalArgumentException("Type d'effet inconnu dans le JSON : " + type);
         }

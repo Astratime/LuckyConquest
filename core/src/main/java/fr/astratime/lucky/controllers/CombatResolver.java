@@ -8,7 +8,14 @@ import fr.astratime.lucky.entities.Symbol;
 import fr.astratime.lucky.entities.SymbolOutcome;
 import fr.astratime.lucky.entities.TurnResult;
 import fr.astratime.lucky.entities.LastingEffects;
+import fr.astratime.lucky.entities.effects.ForgeHammerEffect;
+import fr.astratime.lucky.entities.effects.ForgedBladeEffect;
+import fr.astratime.lucky.entities.effects.RustyLeverEffect;
+import fr.astratime.lucky.entities.effects.SunkenJackpotEffect;
 import fr.astratime.lucky.entities.events.AllInLostEvent;
+import fr.astratime.lucky.entities.events.CardStrikeEvent;
+import fr.astratime.lucky.entities.events.StatusEvent;
+import fr.astratime.lucky.popups.EffectPopup;
 import fr.astratime.lucky.entities.events.AllInWonEvent;
 import fr.astratime.lucky.entities.events.BetLostEvent;
 import fr.astratime.lucky.entities.events.CounterAttackEvent;
@@ -82,7 +89,10 @@ public class CombatResolver {
                               Symbol[]           symbols,
                               Symbol[]           drawnSymbols,
                               List<Event>        priorEvents) {
+        priorEvents = new ArrayList<>(priorEvents);
+        priorEvents.addAll(cardsOnDraw(combatContext, symbols)); // Marteau de forge, Levier rouillé, Jackpot englouti
         List<Event> events = new ArrayList<>(priorEvents);
+        int gainsBefore = combatContext.getPlayer().getGains(); // pour le Cœur d'or
 
         // Chaque action résout elle-même sa logique et retourne ses événements ;
         // on les rattache aussi au symbole qui les a produits pour le journal détaillé.
@@ -97,6 +107,8 @@ public class CombatResolver {
         List<Event> pistolEvents = firePistol(combatContext, symbolOutcomes);
         counterAttack(combatContext).ifPresent(pistolEvents::add);
         execution(combatContext).ifPresent(pistolEvents::add);
+        pistolEvents.addAll(forgedBlades(combatContext, symbolOutcomes, pistolEvents));
+        dynamite(combatContext).ifPresent(pistolEvents::add);
         events.addAll(pistolEvents);
 
         // Bonus de paire/jackpot
@@ -123,6 +135,7 @@ public class CombatResolver {
         for (int i = 0; i < combatContext.getAllIn(); i++) {
             pairOrJackpotEvents.add(resolveAllIn(combatContext.getPlayer(), hasPair(symbols)));
         }
+        goldenHeart(combatContext, combatContext.getPlayer().getGains() - gainsBefore).ifPresent(pairOrJackpotEvents::add);
         events.addAll(pairOrJackpotEvents);
 
         List<Event> cardEvents = priorEvents.stream().filter(e -> !e.getPopups().isEmpty()).toList();
@@ -159,6 +172,84 @@ public class CombatResolver {
             shots.add(new PistolShotEvent(damage, raw, blocked, enemy.getDefense(), pierced, bestSlot, multiplier));
         }
         return shots;
+    }
+
+    /**
+     * Cartes des coffres des lieux qui dépendent du tirage, avant que les
+     * symboles agissent : le Marteau de forge frappe plus fort sur un BAR ou un
+     * double BAR, le Levier rouillé sur une paire, le Jackpot englouti sur un Bingo.
+     *
+     * @return les textes de ces bonus
+     */
+    private List<Event> cardsOnDraw(CombatContext context, Symbol[] symbols) {
+        List<Event> events = new ArrayList<>();
+        boolean bar = java.util.Arrays.stream(symbols).anyMatch(s -> s == Symbol.BAR || s == Symbol.DOUBLE_BAR);
+        if (context.getHammers() > 0 && bar) {
+            float boost = (1f + ForgeHammerEffect.BAR_PERCENT / 100f) / (1f + ForgeHammerEffect.ATTACK_PERCENT / 100f);
+            context.multiplyAttack((float) Math.pow(boost, context.getHammers()));
+            events.add(new StatusEvent("MARTEAU SUR LE BAR : ATTAQUE +" + ForgeHammerEffect.BAR_PERCENT + " %",
+                EffectPopup.Style.ATTACK));
+        }
+        if (context.getLevers() > 0 && hasPair(symbols)) {
+            context.multiplyAttack((float) Math.pow(1f + RustyLeverEffect.ATTACK_PERCENT / 100f, context.getLevers()));
+            events.add(new StatusEvent("LEVIER : PAIRE ! ATTAQUE +" + RustyLeverEffect.ATTACK_PERCENT + " %",
+                EffectPopup.Style.ATTACK));
+        }
+        if (context.getSunkenJackpots() > 0 && SlotMachine.jackpotSymbol(symbols) != null) {
+            for (int i = 0; i < context.getSunkenJackpots(); i++) {
+                context.multiplyGains(SunkenJackpotEffect.GAINS_FACTOR);
+                context.multiplyAttack(SunkenJackpotEffect.ATTACK_FACTOR);
+            }
+            events.add(new StatusEvent("JACKPOT ENGLOUTI : GAINS x" + SunkenJackpotEffect.GAINS_FACTOR
+                + ", ATTAQUE x" + SunkenJackpotEffect.ATTACK_FACTOR, EffectPopup.Style.GAINS));
+        }
+        return events;
+    }
+
+    /**
+     * Lame forgée : un coup d'épée par carte, à {@link ForgedBladeEffect#PERCENT} %
+     * de la plus grosse attaque du tour (symboles et tirs de pistolet), sans
+     * tenir compte de la défense ennemie. Rien sans attaque ce tour.
+     */
+    private List<Event> forgedBlades(CombatContext context, List<SymbolOutcome> outcomes, List<Event> shots) {
+        List<Event> strikes = new ArrayList<>();
+        if (context.getForgedBlades() <= 0) return strikes;
+        int best = 0;
+        for (SymbolOutcome outcome : outcomes) {
+            for (Event event : outcome.getEvents()) {
+                if (event instanceof EnemyDamagedEvent hit) best = Math.max(best, hit.rawDamage);
+            }
+        }
+        for (Event event : shots) {
+            if (event instanceof PistolShotEvent shot) best = Math.max(best, shot.rawDamage);
+        }
+        Enemy enemy = context.getEnemy();
+        int hit = Math.round(best * ForgedBladeEffect.PERCENT / 100f);
+        for (int i = 0; i < context.getForgedBlades() && hit > 0 && !enemy.isDefeated(); i++) {
+            int damage = enemy.skinned(hit);
+            enemy.takeDamage(hit);
+            strikes.add(new CardStrikeEvent("LAME FORGÉE !", damage, hit, enemy.getDefense()));
+        }
+        return strikes;
+    }
+
+    /** Dynamite : une part des PV max de l'ennemi, sans que sa peau d'or ni sa défense n'en arrêtent rien. */
+    private Optional<Event> dynamite(CombatContext context) {
+        Enemy enemy = context.getEnemy();
+        if (context.getDynamitePercent() <= 0 || enemy.isDefeated()) return Optional.empty();
+        int hit = Math.max(1, Math.round(enemy.getMaxHp() * context.getDynamitePercent() / 100f));
+        enemy.takeTrueDamage(hit);
+        return Optional.of(new CardStrikeEvent("DYNAMITE !", hit, hit, enemy.getDefense()));
+    }
+
+    /** Cœur d'or : les gains gagnés ce tour frappent aussi l'ennemi (une fois par carte), sans tenir compte de sa défense. */
+    private Optional<Event> goldenHeart(CombatContext context, int gainsEarned) {
+        Enemy enemy = context.getEnemy();
+        if (context.getGoldenHearts() <= 0 || gainsEarned <= 0 || enemy.isDefeated()) return Optional.empty();
+        int hit    = gainsEarned * context.getGoldenHearts();
+        int damage = enemy.skinned(hit);
+        enemy.takeDamage(hit);
+        return Optional.of(new CardStrikeEvent("CŒUR D'OR !", damage, hit, enemy.getDefense()));
     }
 
     /**

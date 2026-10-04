@@ -41,6 +41,13 @@ public class PlayContext {
     /** Casque : le prochain coup reçu par le joueur est bloqué entièrement. */
     public void addHelmet() { player.addHelmet(); }
 
+    /**
+     * Corde de rappel : le prochain coup qui devrait tuer le joueur le laisse à 1 PV.
+     *
+     * @return {@code false} si elle a déjà servi dans ce combat
+     */
+    public boolean addRope() { return player.addRope(); }
+
     /** Carte au trésor : le coffre du donjon en cours donnera une carte de plus. */
     public void addTreasureMap() { treasureMaps++; }
 
