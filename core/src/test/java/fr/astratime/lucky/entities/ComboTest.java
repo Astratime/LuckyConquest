@@ -48,18 +48,23 @@ class ComboTest {
     }
 
     @Test
-    void combosStackButABrelanDoesNotAlsoCountItsOwnPair() {
+    void combosAddUpButABrelanDoesNotAlsoCountItsOwnPair() {
         List<Card> brelan = List.of(card(12, Card.Suit.COEUR), card(12, Card.Suit.PIQUE), card(12, Card.Suit.TREFLE));
         assertEquals(List.of(Combo.BRELAN), Combo.formed(brelan), "pas de Paire en plus du Brelan");
 
         List<Card> brelanAndPair = List.of(card(12, Card.Suit.COEUR), card(12, Card.Suit.PIQUE),
             card(12, Card.Suit.TREFLE), card(1, Card.Suit.COEUR), card(1, Card.Suit.CARREAU));
         assertEquals(List.of(Combo.BRELAN, Combo.PAIRE), Combo.formed(brelanAndPair), "une paire d'un autre rang compte");
-        assertEquals(27f, Combo.totalFactor(Combo.formed(brelanAndPair)), 1e-6);
+        assertEquals(10.5f, Combo.totalFactor(Combo.formed(brelanAndPair)), 1e-6, "les multiplicateurs s'additionnent");
 
         List<Card> straightFlush = List.of(card(11, Card.Suit.COEUR), card(12, Card.Suit.COEUR), card(13, Card.Suit.COEUR));
         assertEquals(List.of(Combo.COULEUR, Combo.SUITE), Combo.formed(straightFlush));
-        assertEquals(25f, Combo.totalFactor(Combo.formed(straightFlush)), 1e-6);
+        assertEquals(10f, Combo.totalFactor(Combo.formed(straightFlush)), 1e-6);
+
+        List<Card> straightWithPair = List.of(card(11, Card.Suit.COEUR), card(12, Card.Suit.PIQUE),
+            card(13, Card.Suit.TREFLE), card(13, Card.Suit.CARREAU));
+        assertEquals(List.of(Combo.SUITE, Combo.PAIRE), Combo.formed(straightWithPair));
+        assertEquals(9.5f, Combo.totalFactor(Combo.formed(straightWithPair)), 1e-6, "Suite + Paire : 5 + 4.5");
 
         List<Card> flushWithPair = List.of(card(1, Card.Suit.COEUR), card(1, Card.Suit.COEUR), card(13, Card.Suit.COEUR));
         assertEquals(List.of(Combo.COULEUR, Combo.PAIRE), Combo.formed(flushWithPair));

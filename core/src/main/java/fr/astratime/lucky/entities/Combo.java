@@ -12,10 +12,11 @@ import java.util.Set;
  * Combinaisons de poker formées par les cartes à suite jouées pendant le tour
  * (les cartes spéciales, sans suite ni rang pertinent, sont ignorées). Elles
  * sont vérifiées automatiquement au lancer de la machine : chaque combinaison
- * formée ({@link #formed}) multiplie les gains et l'attaque du tirage, et
- * leurs multiplicateurs se cumulent (ex : Couleur et Suite, x25). Une paire
+ * formée ({@link #formed}) apporte son multiplicateur, et ceux de toutes
+ * les combinaisons formées s'additionnent avant de multiplier les gains et
+ * l'attaque du tirage (ex : Suite et Paire, 5 + 4.5 = x9.5). Une paire
  * contenue dans un brelan ne compte pas en plus ; une paire d'un autre rang,
- * si (Brelan et Paire, x27). L'ordre dans lequel les cartes sont jouées ne
+ * si (Brelan et Paire, x10.5). L'ordre dans lequel les cartes sont jouées ne
  * compte pas.
  *
  * Elles poussent le joueur à varier les cartes qu'il pose, plutôt que de ne
@@ -83,10 +84,11 @@ public enum Combo {
         return List.copyOf(formed);
     }
 
-    /** @return le produit des multiplicateurs de {@code combos} (1 s'il n'y en a aucune). */
+    /** @return la somme des multiplicateurs de {@code combos} (1 s'il n'y en a aucune). */
     public static float totalFactor(Collection<Combo> combos) {
-        float total = 1f;
-        for (Combo combo : combos) total *= combo.factor;
+        if (combos.isEmpty()) return 1f;
+        float total = 0f;
+        for (Combo combo : combos) total += combo.factor;
         return total;
     }
 

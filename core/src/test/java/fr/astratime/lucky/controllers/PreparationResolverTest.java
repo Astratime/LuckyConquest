@@ -61,14 +61,14 @@ class PreparationResolverTest {
     }
 
     @Test
-    void combosStackTheirMultipliers() {
+    void combosAddTheirMultipliers() {
         Player player = playerWhoPlayed(suited(11, Card.Suit.COEUR), suited(12, Card.Suit.COEUR),
             suited(13, Card.Suit.COEUR));
 
         TurnContext context = new PreparationResolver().resolve(List.of(), player, new Enemy("Ennemi", 1000));
 
-        float both = Combo.COULEUR.getFactor() * Combo.SUITE.getFactor();
-        assertEquals(both, context.getCombatContext().getGainFactor(), 1e-6, "Couleur et Suite se cumulent");
+        float both = Combo.COULEUR.getFactor() + Combo.SUITE.getFactor();
+        assertEquals(both, context.getCombatContext().getGainFactor(), 1e-6, "Couleur et Suite s'additionnent");
         assertEquals(both, context.getCombatContext().getAttackFactor(), 1e-6);
         assertEquals(List.of(Combo.COULEUR, Combo.SUITE), context.getEvents().stream()
             .filter(ComboEvent.class::isInstance).map(event -> ((ComboEvent) event).combo).toList());
