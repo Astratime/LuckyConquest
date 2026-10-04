@@ -144,7 +144,7 @@ public enum EnemySymbol {
     public String getDescription(EnemyKind kind) {
         return switch (this) {
             case SWORD  -> "Épée : attaque de " + kind.empowered(kind.swordDamage());
-            case SHIELD -> "Bouclier : défense +" + kind.empowered(SHIELD_DEFENSE) + " pendant le tour suivant";
+            case SHIELD -> "Bouclier : défense +" + kind.empowered(kind.shieldDefense()) + " pendant le tour suivant";
             case POTION -> "Potion : soigne " + percent(kind.potionPercent(0)) + " % des PV max";
             case THORNS -> "Épines : renvoie " + kind.thornsPercent() + " % de tes dégâts. Au début de son tour";
             case FANG   -> "Croc : mord de " + kind.empowered(FANG_DAMAGE) + ". Chaque PV volé lui rend "

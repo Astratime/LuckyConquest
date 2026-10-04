@@ -103,9 +103,9 @@ public final class EnemyCards {
     public static String describe(Card card, EnemyKind kind) {
         if (card.getSuit() == null) return "Bloque un de tes rouleaux à ton prochain tirage. Pas de Bingo possible";
         return switch (card.getSuit()) {
-            case PIQUE   -> "Épées et Crocs : attaque +" + kind.empowered(swordBonus(card));
+            case PIQUE   -> "Épées et Crocs : attaque +" + kind.empowered(kind.swordBonus(card));
             case COEUR   -> "Potions : soin +" + healBonus(card) + " % des PV max";
-            case CARREAU -> "Boucliers : défense +" + kind.empowered(shieldBonus(card));
+            case CARREAU -> "Boucliers : défense +" + kind.empowered(kind.shieldBonus(card));
             case TREFLE  -> "Un symbole au hasard : chance +" + luckBonus(card) + " %";
         };
     }

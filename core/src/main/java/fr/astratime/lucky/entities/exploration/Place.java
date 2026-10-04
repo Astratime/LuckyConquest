@@ -1,6 +1,7 @@
 package fr.astratime.lucky.entities.exploration;
 
 import fr.astratime.lucky.entities.Symbol;
+import fr.astratime.lucky.entities.enemy.EnemyKind;
 
 import java.util.List;
 
@@ -15,35 +16,64 @@ public enum Place {
     PRAIRIE("La prairie", "La prairie",
         "L'herbe est haute. Le vent est doux. Quatre donjons dorment sous les collines. "
             + "Chacun garde un coffre au trésor.",
-        PlaceRule.NONE, List.of(Dungeon.PIQUE, Dungeon.TREFLE, Dungeon.COEUR, Dungeon.CARREAU)),
+        PlaceRule.NONE, 0, 0, 0, List.of(Dungeon.PIQUE, Dungeon.TREFLE, Dungeon.COEUR, Dungeon.CARREAU)),
 
     PORT("Le Port des Contrebandiers", "Le Port",
         "Les bateaux n'apportent plus d'épices. Ils apportent des cartes truquées. Sur les quais, tout s'achète. "
             + "Même la chance.",
-        PlaceRule.SCORBUT, List.of(Dungeon.CALE, Dungeon.TAVERNE, Dungeon.PHARE, Dungeon.GALION)),
+        PlaceRule.SCORBUT, 50, 1_000, 10, List.of(Dungeon.CALE, Dungeon.TAVERNE, Dungeon.PHARE, Dungeon.GALION)),
 
     MINES("Les Mines d'Or", "Les Mines",
         "Sous la montagne, l'or de la comète coule encore. Les mineurs creusent sans fin. Ils ont oublié la lumière. "
             + "Pas leur cupidité.",
-        PlaceRule.GRISOU, List.of(Dungeon.FILON, Dungeon.PUITS, Dungeon.FORGE, Dungeon.GOUFFRE)),
+        PlaceRule.GRISOU, 150, 10_000, 20, List.of(Dungeon.FILON, Dungeon.PUITS, Dungeon.FORGE, Dungeon.GOUFFRE)),
 
     CASINO("Le Casino Englouti", "Le Casino",
         "Le plus grand casino du monde a sombré une nuit de jackpot. Sous l'eau, les machines tournent toujours. "
             + "Les joueurs aussi.",
-        PlaceRule.MAREE, List.of(Dungeon.BAR, Dungeon.MACHINES, Dungeon.COFFRES, Dungeon.VIP));
+        PlaceRule.MAREE, 400, 50_000, 30, List.of(Dungeon.BAR, Dungeon.MACHINES, Dungeon.COFFRES, Dungeon.VIP));
 
     private final String        name;
     private final String        shortName;
     private final String        description;
     private final PlaceRule     rule;
+    private final int           swordDamage;
+    private final int           shieldDefense;
+    private final int           healPercent;
     private final List<Dungeon> dungeons;
 
-    Place(String name, String shortName, String description, PlaceRule rule, List<Dungeon> dungeons) {
-        this.name        = name;
-        this.shortName   = shortName;
-        this.description = description;
-        this.rule        = rule;
-        this.dungeons    = dungeons;
+    /**
+     * @param swordDamage   dégâts de base d'une Épée de ses ennemis (0 : ceux de base)
+     * @param shieldDefense défense de base d'un Bouclier de ses ennemis (0 : celle de base)
+     * @param healPercent   soin de base d'une Potion de ses ennemis, en % de leurs PV max (0 : celui de base)
+     */
+    Place(String name, String shortName, String description, PlaceRule rule,
+          int swordDamage, int shieldDefense, int healPercent, List<Dungeon> dungeons) {
+        this.name          = name;
+        this.shortName     = shortName;
+        this.description   = description;
+        this.rule          = rule;
+        this.swordDamage   = swordDamage;
+        this.shieldDefense = shieldDefense;
+        this.healPercent   = healPercent;
+        this.dungeons      = dungeons;
+    }
+
+    /** @return les dégâts de base d'une Épée de ses ennemis, soldats et rois, ou 0 s'ils gardent ceux de base. */
+    public int getSwordDamage() { return swordDamage; }
+    /** @return la défense de base d'un Bouclier de ses ennemis, ou 0 s'ils gardent celle de base. */
+    public int getShieldDefense() { return shieldDefense; }
+    /** @return le soin de base d'une Potion de ses ennemis, en % de leurs PV max, ou 0 s'ils gardent celui de base. */
+    public int getHealPercent() { return healPercent; }
+
+    /** @return le lieu où l'on combat {@code kind} (soldat ou roi d'un de ses donjons), ou {@code null}. */
+    public static Place of(EnemyKind kind) {
+        for (Place place : values()) {
+            for (Dungeon dungeon : place.dungeons) {
+                if (dungeon.getSoldier() == kind || dungeon.getKing() == kind) return place;
+            }
+        }
+        return null;
     }
 
     /**
