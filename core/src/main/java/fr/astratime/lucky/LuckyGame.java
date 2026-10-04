@@ -10,6 +10,9 @@ import fr.astratime.lucky.screens.MenuScreen;
 import fr.astratime.lucky.settings.ScreenMode;
 import fr.astratime.lucky.settings.ScreenModeSwitcher;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /** {@link com.badlogic.gdx.ApplicationListener} implementation shared by all platforms. */
 public class LuckyGame extends Game {
 
@@ -40,6 +43,10 @@ public class LuckyGame extends Game {
         batch = new SpriteBatch();
         profile = new PlayerProfile(new GdxProfileStorage(), CardLoader.loadStartingCollection(),
             CardLoader.loadStarterDeckCopies());
+        // Mode ADMIN : toutes les cartes à collectionner (celles des coffres, le profil les connaît déjà).
+        List<String> catalog = new ArrayList<>(CardLoader.loadStartingCollection().keySet());
+        catalog.addAll(CardLoader.loadBoutique().keySet());
+        profile.setCatalog(catalog);
 
         setScreen(new MenuScreen(this));
     }

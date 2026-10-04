@@ -1,7 +1,7 @@
 [
-  { "id": "bingo", "price": 10000 },
-  { "id": "russian_roulette", "price": 8000 },
-  { "id": "corruption", "price": 5000 },
+  { "id": "bingo", "price": 20000 },
+  { "id": "russian_roulette", "price": 15000 },
+  { "id": "corruption", "price": 10000 },
   { "id": "bingo_double_bar", "price": 0 },
   { "id": "bingo_cherry", "price": 0 },
   { "id": "bingo_seven", "price": 0 },

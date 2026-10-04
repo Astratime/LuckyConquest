@@ -306,7 +306,7 @@ public class CardLoader {
             case "RAINBOW":
                 return new RainbowEffect(json.getString("card"));
             case "GAINS_MULTIPLIER":
-                return new GainsMultiplierEffect(json.getInt("factor"), json.getInt("gauges", 1));
+                return new GainsMultiplierEffect(json.getInt("percent"), json.getInt("gauges", 1));
             case "CORRUPTION":
                 return new CorruptionEffect(json.getInt("turns"));
 

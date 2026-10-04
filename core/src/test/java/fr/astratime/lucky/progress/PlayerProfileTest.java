@@ -251,4 +251,64 @@ class PlayerProfileTest {
         MemoryStorage fresh = new MemoryStorage();
         assertFalse(profile(fresh).isOpen(Chapter.TABLES_SACREES, false), "vieux profil sans mode difficile : chapitre 1 seulement");
     }
+
+    @Test
+    void theAdminModeOpensEverythingWithoutTouchingTheSave() {
+        MemoryStorage storage = new MemoryStorage();
+        PlayerProfile profile = profile(storage);
+        profile.setCatalog(java.util.List.of("boutique_1"));
+        profile.addCoins(1_000);
+        Map<String, String> before = new HashMap<>(storage.values);
+
+        profile.setAdmin(true);
+        assertTrue(profile.isAdmin());
+        for (Chapter chapter : Chapter.values()) {
+            assertTrue(profile.isOpen(chapter, false), chapter.name());
+            assertTrue(profile.isOpen(chapter, true), chapter.name() + " difficile");
+        }
+        assertTrue(profile.isTowerHardOpen());
+        for (Place place : Place.values()) assertTrue(profile.isOpen(place), place.name());
+        assertEquals(PlayerProfile.MAX_COPIES, profile.getOwnedCopies("boutique_1"));
+        assertEquals(PlayerProfile.MAX_COPIES, profile.getCollection().get("carte_0"));
+        String loot = Place.PRAIRIE.getDungeons().get(0).getLoot().get(0).cardId();
+        assertEquals(PlayerProfile.MAX_COPIES, profile.getOwnedCopies(loot), "cartes des coffres");
+        for (Symbol reel : ReelShop.getPrices().keySet()) assertTrue(profile.ownsReel(reel), reel.name());
+        assertTrue(profile.ownsReel(Symbol.NUGGET), "rouleau de la Mine");
+        assertNull(profile.getNextRank(), "tous les rangs");
+        assertEquals(Rank.values()[Rank.values().length - 1], profile.getRank());
+
+        // Rien de ce qui se passe en mode ADMIN ne change la partie.
+        Map<String, Integer> adminDeck = new LinkedHashMap<>();
+        adminDeck.put("boutique_1", 3);
+        for (int i = 0; i < 17; i++) adminDeck.put("carte_" + i, 1);
+        profile.setDeck(adminDeck);
+        profile.addCoins(5_000);
+        assertNull(profile.clearDungeon(Place.PRAIRIE.getDungeons().get(0).name()));
+        assertFalse(profile.clearChapter(Chapter.GENESE, false));
+        assertEquals(0, profile.openChest(loot).coins());
+        assertEquals(1_000L, profile.getCoins());
+
+        profile.setAdmin(false);
+        assertEquals(starterDeck(), profile.getDeck(), "le deck de la partie revient");
+        assertEquals(collection(), profile.getCollection());
+        assertFalse(profile.isOpen(Chapter.TABLES_SACREES, false));
+        assertFalse(profile.isOpen(Place.values()[1]), "le deuxième lieu reste fermé");
+        assertNull(profile.getRank());
+        for (String key : before.keySet()) {
+            if (!key.startsWith("admin")) assertEquals(before.get(key), storage.values.get(key), key);
+        }
+
+        PlayerProfile relaunched = profile(storage);
+        relaunched.setCatalog(java.util.List.of("boutique_1"));
+        assertFalse(relaunched.isAdmin(), "désactivé, il le reste au prochain lancement");
+        relaunched.setAdmin(true);
+        assertEquals(adminDeck, relaunched.getDeck(), "le deck du mode ADMIN est gardé");
+    }
+
+    @Test
+    void theAdminModeStaysOnAfterARelaunch() {
+        MemoryStorage storage = new MemoryStorage();
+        profile(storage).setAdmin(true);
+        assertTrue(profile(storage).isAdmin());
+    }
 }

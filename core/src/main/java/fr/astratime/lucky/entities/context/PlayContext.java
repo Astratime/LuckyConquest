@@ -48,18 +48,6 @@ public class PlayContext {
      */
     public boolean addRope() { return player.addRope(); }
 
-    /**
-     * Ajoute tout de suite {@code percent} % des gains actuels du joueur (gains
-     * déjà demandés par la carte compris) ; rien si ses gains sont nuls ou négatifs.
-     *
-     * @return les gains ajoutés
-     */
-    public int addGainsPercent(int percent) {
-        int added = Math.max(0, Math.round((player.getGains() + gains) * percent / 100f));
-        gains += added;
-        return added;
-    }
-
     /** Carte au trésor : le coffre du donjon en cours donnera une carte de plus. */
     public void addTreasureMap() { treasureMaps++; }
 
@@ -150,6 +138,18 @@ public class PlayContext {
      */
     public int multiplyGains(int factor) {
         int added = (player.getGains() + gains) * (factor - 1);
+        gains += added;
+        return added;
+    }
+
+    /**
+     * Ajoute immédiatement {@code percent} % des gains actuels du joueur (gains
+     * déjà demandés par la carte compris).
+     *
+     * @return les gains ajoutés
+     */
+    public int addGainsPercent(int percent) {
+        int added = (int) ((long) (player.getGains() + gains) * percent / 100);
         gains += added;
         return added;
     }

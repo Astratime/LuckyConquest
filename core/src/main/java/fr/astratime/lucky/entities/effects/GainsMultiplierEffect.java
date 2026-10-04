@@ -8,29 +8,29 @@ import fr.astratime.lucky.popups.PopupScale;
 
 import java.util.List;
 
-/** Multiplie immédiatement les gains du joueur (ex : Pot de Lutin, gains x5). */
+/** Augmente immédiatement les gains du joueur d'un pourcentage (ex : Pot de Lutin, gains +50 %). */
 public class GainsMultiplierEffect extends Effect {
 
-    private final int factor;
+    private final int percent;
     private final int gaugeFactor;
 
-    /** @param factor multiplicateur des gains du joueur. */
-    public GainsMultiplierEffect(int factor) { this(factor, 1); }
+    /** @param percent pourcentage des gains actuels ajouté aux gains du joueur. */
+    public GainsMultiplierEffect(int percent) { this(percent, 1); }
 
     /**
-     * @param factor      multiplicateur des gains du joueur
+     * @param percent     pourcentage des gains actuels ajouté aux gains du joueur
      * @param gaugeFactor multiplicateur des jauges Lames, Sang et Coffre (1 : inchangées)
      */
-    public GainsMultiplierEffect(int factor, int gaugeFactor) {
-        this.factor      = factor;
+    public GainsMultiplierEffect(int percent, int gaugeFactor) {
+        this.percent     = percent;
         this.gaugeFactor = gaugeFactor;
     }
 
     @Override
     public void onPlay(PlayContext context) {
-        int added = context.multiplyGains(factor);
+        int added = context.addGainsPercent(percent);
         context.addPopups(List.of(
-            new EffectPopup("GAINS x" + factor, EffectPopup.Style.GAINS, PopupScale.MAX_INTENSITY),
+            new EffectPopup("GAINS +" + percent + "%", EffectPopup.Style.GAINS, PopupScale.MAX_INTENSITY),
             EffectPopup.scaled("GAINS +" + added, EffectPopup.Style.GAINS, added, PopupScale.SPIN_GAINS)));
         if (gaugeFactor > 1) {
             context.getLastingEffects().multiplyGauges(gaugeFactor);
@@ -45,13 +45,13 @@ public class GainsMultiplierEffect extends Effect {
 
     @Override
     public String getDescription() {
-        return "Multiplie les gains actuels par " + factor
+        return "Gains actuels +" + percent + "%"
             + (gaugeFactor > 1 ? ". Lames, Sang et Coffre x" + gaugeFactor : "");
     }
 
     @Override
     public List<EffectPopup> getPopups() {
-        return List.of(new EffectPopup("GAINS x" + factor, EffectPopup.Style.GAINS, PopupScale.MAX_INTENSITY));
+        return List.of(new EffectPopup("GAINS +" + percent + "%", EffectPopup.Style.GAINS, PopupScale.MAX_INTENSITY));
     }
 
     @Override
