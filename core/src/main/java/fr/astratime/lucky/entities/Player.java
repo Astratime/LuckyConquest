@@ -43,6 +43,8 @@ public class Player {
     private int damageTakenThisTurn = 0;
     /** Casques : chacun bloque entièrement le prochain coup reçu. */
     private int helmets = 0;
+    /** Cartes volées (Abordage) ou confisquées (Fouille) : absentes du combat, elles reviennent au suivant. */
+    private final List<Card> confiscated = new ArrayList<>();
 
     /**
      * @param name     nom affiché du joueur
@@ -125,8 +127,29 @@ public class Player {
     /** @return la proportion de vie restante, entre 0 et 1 (utilisé par les effets conditionnels). */
     public float getHpRatio() { return (float) hp / maxHp; }
 
-    /** Ajoute {@code amount} aux gains accumulés, sans jamais passer sous 0. */
-    public void addGains(int amount) { gains = Math.max(0, gains + amount); }
+    /**
+     * Ajoute {@code amount} aux gains accumulés. Une perte ne fait jamais passer
+     * les gains sous 0 (ni n'aggrave une dette de la Taxe) ; ce qui est perdu ou
+     * dépensé l'est d'abord en Fausse monnaie.
+     */
+    public void addGains(int amount) {
+        int before = gains;
+        gains = amount >= 0 ? gains + amount : Math.max(Math.min(0, gains), gains + amount);
+        if (gains < before) lastingEffects.spendFakeGains(before - gains);
+    }
+
+    /**
+     * Taxe (le Comptable) : retire {@code percent} % des gains, puis encore
+     * {@code flat} ; les gains peuvent passer sous zéro.
+     *
+     * @return les gains retirés
+     */
+    public int payTax(int percent, int flat) {
+        int taxed = Math.round(Math.max(0, gains) * percent / 100f) + flat;
+        lastingEffects.spendFakeGains(Math.max(0, Math.min(gains, taxed)));
+        gains -= taxed;
+        return taxed;
+    }
 
     /**
      * Consomme un pourcentage des gains actuels (ex : coût d'un As de Trèfle).
@@ -135,7 +158,8 @@ public class Player {
      * @return le montant effectivement consommé
      */
     public int consumeGainsPercent(float percent) {
-        int amount = Math.round(gains * percent);
+        int amount = Math.round(Math.max(0, gains) * percent);
+        lastingEffects.spendFakeGains(amount);
         gains -= amount;
         return amount;
     }
@@ -254,10 +278,23 @@ public class Player {
         cards.addAll(discardPile.getCards());
         cards.addAll(currentHand);
         cards.addAll(playedCards);
+        cards.addAll(confiscated); // volées ou confisquées le temps d'un combat seulement
         Player next = new Player(name, maxHp - rankBonus.hp(), cards, rankBonus, slotMachine.getReels());
         next.hp = hp; // les PV perdus ne reviennent pas d'un combat à l'autre
         next.gains = gains;
         return next;
+    }
+
+    /**
+     * Le joueur perd tous ses PV d'un coup, sans que rien ne le protège (Dernier
+     * tirage perdu, Temps Mort écoulé).
+     *
+     * @return les PV perdus
+     */
+    public int loseAllHp() {
+        int lost = hp;
+        hp = 0;
+        return lost;
     }
 
     /** Ajoute {@code amount} au bouclier accumulé ce tour. */
@@ -292,7 +329,37 @@ public class Player {
      * @return {@code false} si le joueur ne l'avait ni en main ni parmi les cartes jouées
      */
     public boolean steal(Card card) {
-        return currentHand.remove(card) || playedCards.remove(card);
+        if (!currentHand.remove(card) && !playedCards.remove(card)) return false;
+        confiscated.add(card);
+        return true;
+    }
+
+    /**
+     * Fouille (la Sécurité) : une carte tirée au hasard du deck (sinon de la
+     * défausse) est confisquée jusqu'à la fin du combat.
+     *
+     * @return la carte confisquée, ou {@code null} s'il n'y en avait plus
+     */
+    public Card frisk(java.util.Random random) {
+        List<Card> pile = !deck.getCards().isEmpty() ? deck.getCards() : discardPile.getCards();
+        if (pile.isEmpty()) return null;
+        Card card = pile.get(random.nextInt(pile.size()));
+        if (pile == deck.getCards()) deck.getCards().remove(card);
+        else discardPile.remove(card);
+        confiscated.add(card);
+        return card;
+    }
+
+    /** @return les cartes volées ou confisquées ce combat. */
+    public List<Card> getConfiscated() { return Collections.unmodifiableList(confiscated); }
+
+    /** @return toutes les cartes du joueur ce combat : deck, défausse, main et cartes jouées. */
+    public List<Card> getAllCards() {
+        List<Card> cards = new ArrayList<>(deck.getCards());
+        cards.addAll(discardPile.getCards());
+        cards.addAll(currentHand);
+        cards.addAll(playedCards);
+        return cards;
     }
 
     /**

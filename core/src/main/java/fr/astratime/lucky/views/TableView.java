@@ -91,6 +91,8 @@ public class TableView {
     private final List<Image>         cardSlots    = new ArrayList<>();
     private final Image               enemyReelFrame;
     private final List<Image>         enemyReelCells = new ArrayList<>();
+    /** Rouleaux de l'ennemi affichés (3, sauf la Machine Originelle). */
+    private int                       enemyReels = EnemySlotMachine.SYMBOL_COUNT;
     private final List<Image>         enemyCardSlots = new ArrayList<>();
     private final Image               enemyDeckMat;
     private final Image               enemyDiscardMat;
@@ -116,7 +118,7 @@ public class TableView {
             enemyCardSlots.add(add(new Image(textures.cardSlotDrawable())));
         }
         enemyReelFrame = add(new Image(textures.reelFrameDrawable()));
-        for (int i = 0; i < EnemySlotMachine.SYMBOL_COUNT; i++) {
+        for (int i = 0; i < EnemySlotMachine.MAX_SYMBOL_COUNT; i++) {
             enemyReelCells.add(add(new Image(textures.reelCellDrawable())));
         }
         reelFrame  = add(new Image(textures.reelFrameDrawable()));
@@ -186,12 +188,26 @@ public class TableView {
         enemyReelFrame.setBounds(getReelRowX() - REEL_FRAME_PAD, getEnemyReelRowY() - REEL_FRAME_PAD,
             reelRowWidth() + REEL_FRAME_PAD * 2, SlotView.CELL_HEIGHT + REEL_FRAME_PAD * 2);
         for (int i = 0; i < enemyReelCells.size(); i++) {
-            enemyReelCells.get(i).setBounds(getReelRowX() + i * SlotView.CELL_WIDTH, getEnemyReelRowY(),
-                SlotView.CELL_WIDTH, SlotView.CELL_HEIGHT);
+            enemyReelCells.get(i).setBounds(getReelRowX() + i * getEnemyCellWidth(), getEnemyReelRowY(),
+                getEnemyCellWidth(), SlotView.CELL_HEIGHT);
+            enemyReelCells.get(i).setVisible(i < enemyReels);
         }
         enemyDiscardMat.setBounds(getEnemyDiscardX() - MAT_PAD, getEnemyPilesY() - MAT_PAD, matWidth, matHeight);
         enemyDeckMat.setBounds(getEnemyDeckX() - MAT_PAD, getEnemyPilesY() - MAT_PAD, matWidth, matHeight);
     }
+
+    /**
+     * Rouleaux de l'ennemi : {@code count} cases dans la même largeur que ses
+     * trois habituels (la Machine Originelle en a cinq, puis six, plus étroits).
+     */
+    public void setEnemyReelCount(int count) {
+        if (count == enemyReels) return;
+        enemyReels = count;
+        layout();
+    }
+
+    /** @return la largeur d'une case des rouleaux de l'ennemi. */
+    public float getEnemyCellWidth() { return reelRowWidth() / enemyReels; }
 
     /** @return l'ordonnée (Stage) du filet qui sépare le côté du joueur de celui de l'ennemi. */
     public float getDividerY() { return getHandRowY() + cardHeight + DIVIDER_GAP; }

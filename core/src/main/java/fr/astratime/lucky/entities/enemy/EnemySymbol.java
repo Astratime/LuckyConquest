@@ -47,7 +47,21 @@ public enum EnemySymbol {
     /** Au début du prochain tour du joueur, une carte au hasard de sa main est jouée d'office. */
     SONG("CHANT"),
     /** Il dévore une part des gains du joueur et se soigne d'autant. */
-    BANK_BITE("MORSURE");
+    BANK_BITE("MORSURE"),
+    /** Une part des gains du joueur devient fausse : elle disparaît au prochain tirage, si elle n'est pas dépensée. */
+    FAKE_MONEY("FAUSSE MONNAIE"),
+    /** Il annonce un symbole : s'il sort au prochain tirage du joueur, ses attaques du tour suivant triplent. */
+    PREDICTION("PRÉDICTION"),
+    /** Chacun tire une carte au hasard de son deck : la plus haute frappe l'autre. */
+    DUEL("DUEL"),
+    /** Au prochain tour du joueur, chaque carte jouée lui coûte une part de ses gains, puis une somme fixe. */
+    TAX("TAXE"),
+    /** Une règle du jeu change pendant deux tours : sans combinaisons, sans Bingo, ou rouleaux qui tournent deux fois. */
+    NEW_RULE("NOUVELLE RÈGLE"),
+    /** Il confisque une carte du deck du joueur jusqu'à la fin du combat (plus s'il a gros gains). */
+    FRISK("FOUILLE"),
+    /** Tout ou rien : plus riche que lui, le joueur perd tous ses gains ; sinon, lui perd une part de ses PV. */
+    BANKRUPTCY("FAILLITE");
 
     /** Dégâts de base d'une Épée. */
     public static final int SWORD_DAMAGE   = 20;
@@ -92,6 +106,27 @@ public enum EnemySymbol {
     /** Les trois rouleaux de l'ennemi identiques (Jackpot) : ses attaques et ses Boucliers du tour sont multipliés d'autant. */
     public static final int JACKPOT_FACTOR = 5;
 
+    /** Part des gains du joueur rendue fausse par chaque Fausse monnaie, en pourcentage (avant sa force). */
+    public static final int FAKE_PERCENT = 5;
+    /** Ses attaques sont multipliées d'autant quand sa Prédiction sort sur les rouleaux du joueur. */
+    public static final int PREDICTION_FACTOR = 3;
+    /** Duel gagné par le joueur : l'ennemi perd cette part de ses PV max par rang de la carte, en pour mille. */
+    public static final int DUEL_PER_MILLE_PER_RANK = 2;
+    /** Part des gains retirée par la Taxe à chaque carte jouée, en pourcentage (fixée par Astra, sans sa force). */
+    public static final int TAX_PERCENT = 20;
+    /** Gains retirés en plus par la Taxe à chaque carte jouée, même à sec : les gains peuvent passer sous zéro. */
+    public static final int TAX_FLAT = 1_000;
+    /** Tours pendant lesquels vaut la Nouvelle règle. */
+    public static final int NEW_RULE_TURNS = 2;
+    /** Une Fouille confisque une carte de plus par tranche de ces gains du joueur. */
+    public static final int FRISK_GAINS_STEP = 100_000;
+    /** Une Fouille ne confisque pas plus de cartes. */
+    public static final int FRISK_MAX = 3;
+    /** Fortune de la Banqueroute, en pourcentage de ses PV restants. */
+    public static final int BANKRUPTCY_FORTUNE_PERCENT = 20;
+    /** PV perdus par la Banqueroute quand sa Faillite tourne mal, en pourcentage de ses PV restants. */
+    public static final int BANKRUPTCY_HP_PERCENT = 20;
+
     private final String displayName;
 
     EnemySymbol(String displayName) {
@@ -131,6 +166,16 @@ public enum EnemySymbol {
             case ANVIL  -> "Enclume : attaque +" + kind.empowered(ANVIL_ATTACK) + ". Jusqu'à la fin du combat, sans limite";
             case SONG   -> "Chant : au début de ton prochain tour, une carte au hasard de ta main est jouée d'office";
             case BANK_BITE -> "Morsure : il dévore " + kind.empowered(BANK_BITE_PERCENT) + " % de tes gains et se soigne d'autant. Sans gains, il mord";
+            case FAKE_MONEY -> "Fausse monnaie : " + kind.fakePercent() + " % de tes gains deviennent faux. Dépense-les avant ton tirage, ou ils disparaissent";
+            case PREDICTION -> "Prédiction : il annonce un de tes symboles. S'il sort à ton tirage, ses attaques du tour triplent";
+            case DUEL -> "Duel : chacun tire une carte de son deck. La plus haute frappe l'autre. Tes As et tes figures comptent";
+            case TAX -> "Taxe : au prochain tour, chaque carte jouée te coûte " + TAX_PERCENT + " % de tes gains, puis "
+                + TAX_FLAT + ". Tes gains peuvent passer sous zéro";
+            case NEW_RULE -> "Nouvelle règle : pendant " + NEW_RULE_TURNS + " tours, plus de combinaisons, ou plus de Bingo, ou tes rouleaux tournent deux fois (le pire reste)";
+            case FRISK -> "Fouille : il confisque une carte de ton deck jusqu'à la fin du combat. Une de plus par "
+                + FRISK_GAINS_STEP + " gains";
+            case BANKRUPTCY -> "Faillite : si tes gains dépassent sa fortune (" + BANKRUPTCY_FORTUNE_PERCENT
+                + " % de ses PV), il te prend tout. Sinon, il perd " + BANKRUPTCY_HP_PERCENT + " % de ses PV";
         };
     }
 

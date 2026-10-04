@@ -6,6 +6,7 @@ import fr.astratime.lucky.entities.context.CombatContext;
 import fr.astratime.lucky.entities.Enemy;
 import fr.astratime.lucky.entities.LastingEffects;
 import fr.astratime.lucky.entities.Player;
+import fr.astratime.lucky.entities.SlotMachine;
 import fr.astratime.lucky.entities.context.SpinContext;
 import fr.astratime.lucky.entities.context.TurnContext;
 import fr.astratime.lucky.entities.effects.CorruptionEffect;
@@ -64,6 +65,22 @@ public class PreparationResolver {
         LastingEffects lasting = player.getLastingEffects();
         lasting.getRemovedSymbols().keySet().forEach(spinContext::removeSymbol);
         spinContext.blockReel(lasting.takeForbiddenReel()); // Rouleau interdit de l'ennemi
+        // Rouleaux volés par la Machine Originelle : d'abord celui de droite, puis celui de gauche.
+        int stolen = enemy.getStolenReels();
+        if (stolen >= 1) spinContext.blockReel(SlotMachine.SYMBOL_COUNT - 1);
+        if (stolen >= 2) spinContext.blockReel(0);
+        int fake = lasting.takeFakeGains(); // la Fausse monnaie pas dépensée disparaît
+        if (fake > 0 && player.getGains() > 0) {
+            int lost = Math.min(fake, player.getGains());
+            player.addGains(-lost);
+            turnContext.addEvent(new StatusEvent("FAUSSE MONNAIE : -" + lost + " GAINS", EffectPopup.Style.DAMAGE));
+        }
+        LastingEffects.HouseRule houseRule = lasting.useHouseRule(); // Nouvelle règle du Directeur des Jeux
+        if (houseRule == LastingEffects.HouseRule.NO_BINGO) spinContext.forbidBingo();
+        if (houseRule == LastingEffects.HouseRule.DOUBLE_SPIN) spinContext.spinTwice();
+        if (houseRule != null) {
+            turnContext.addEvent(new StatusEvent("RÈGLE : " + houseRule.getAnnounce(), EffectPopup.Style.DAMAGE));
+        }
         if (lasting.getGainBonus() != 0f) combatContext.multiplyGains(1f + lasting.getGainBonus());
         combatContext.addAttackBonus(lasting.getBlades() * BLADE_ATTACK);
         if (lasting.getCorruptionTurns() > 0) {
@@ -94,7 +111,7 @@ public class PreparationResolver {
         }
 
         pendingEffects.forEach(effect -> effect.apply(turnContext));
-        applyCombos(turnContext, player);
+        if (houseRule != LastingEffects.HouseRule.NO_COMBOS) applyCombos(turnContext, player);
 
         return turnContext;
     }

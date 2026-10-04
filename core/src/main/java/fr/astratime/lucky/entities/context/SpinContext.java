@@ -26,8 +26,12 @@ public class SpinContext {
     private boolean forceJackpot = false;
     /** Symbole imposé au jackpot garanti ; {@code null} : tiré au hasard. */
     private Symbol  jackpotSymbol;
-    /** Rouleau bloqué (Rouleau interdit de l'ennemi) : il ne tourne pas et ne donne rien ; -1 : aucun. */
-    private int     blockedReel = -1;
+    /** Rouleaux bloqués (Rouleau interdit, rouleaux volés par la Machine Originelle) : ils ne tournent pas et ne donnent rien. */
+    private final java.util.Set<Integer> blockedReels = new java.util.TreeSet<>();
+    /** Nouvelle règle du Directeur des Jeux : pas de Bingo possible à ce tirage. */
+    private boolean noBingo = false;
+    /** Nouvelle règle du Directeur des Jeux : chaque rouleau tourne deux fois et garde le pire résultat. */
+    private boolean doubleSpin = false;
     /** Symboles imposés à certains rouleaux (Rouleau truqué, Rouleau fantôme), par indice de rouleau. */
     private final Map<Integer, Symbol> forcedReels = new TreeMap<>();
     /** Relances accordées si le tirage n'a pas de paire (Relance). */
@@ -69,11 +73,23 @@ public class SpinContext {
     /** @return le symbole imposé au jackpot garanti, ou {@code null} s'il est tiré au hasard. */
     public Symbol getJackpotSymbol() { return jackpotSymbol; }
 
-    /** Bloque le rouleau {@code reel} pour ce tirage (Rouleau interdit). */
-    public void blockReel(int reel) { blockedReel = reel; }
+    /** Bloque le rouleau {@code reel} pour ce tirage (Rouleau interdit, rouleau volé) ; -1 ne bloque rien. */
+    public void blockReel(int reel) { if (reel >= 0) blockedReels.add(reel); }
 
-    /** @return le rouleau bloqué ce tirage, ou -1 si aucun. */
-    public int getBlockedReel() { return blockedReel; }
+    /** @return les rouleaux bloqués ce tirage. */
+    public java.util.Set<Integer> getBlockedReels() { return java.util.Collections.unmodifiableSet(blockedReels); }
+
+    /** Nouvelle règle : ce tirage ne peut pas faire de Bingo. */
+    public void forbidBingo() { noBingo = true; }
+
+    /** @return {@code true} si ce tirage ne peut pas faire de Bingo. */
+    public boolean isBingoForbidden() { return noBingo; }
+
+    /** Nouvelle règle : chaque rouleau tourne deux fois et garde le pire résultat. */
+    public void spinTwice() { doubleSpin = true; }
+
+    /** @return {@code true} si chaque rouleau tourne deux fois ce tirage. */
+    public boolean isDoubleSpin() { return doubleSpin; }
 
     /** Impose {@code symbol} au rouleau {@code reel} (le dernier imposé l'emporte). */
     public void forceReel(int reel, Symbol symbol) { forcedReels.put(reel, symbol); }

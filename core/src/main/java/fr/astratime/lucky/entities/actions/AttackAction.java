@@ -61,7 +61,8 @@ public class AttackAction extends Action {
         int blocked     = pierced ? 0 : enemy.absorb(rawDamage); // la défense s'use à chaque coup
         int damage      = enemy.skinned(rawDamage - blocked); // une peau d'or encaisse la moitié
 
-        enemy.takeDamage(rawDamage - blocked);
+        int lost = enemy.takeDamage(rawDamage - blocked);
+        if (lost < damage && !enemy.isDefeated()) damage = lost; // coup annulé (la Maison) ou fatal évité (Machine Originelle)
         events.add(new EnemyDamagedEvent(damage, rawDamage, blocked, enemy.getDefense(), pierced));
 
         if (context.getLifeDrainPercent() > 0 && damage > 0) {

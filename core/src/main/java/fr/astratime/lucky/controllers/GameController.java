@@ -1,6 +1,7 @@
 package fr.astratime.lucky.controllers;
 
 import fr.astratime.lucky.entities.Card;
+import fr.astratime.lucky.entities.CardFamily;
 import fr.astratime.lucky.entities.CardPlayResult;
 import fr.astratime.lucky.entities.Combo;
 import fr.astratime.lucky.entities.DrawResult;
@@ -22,7 +23,9 @@ import fr.astratime.lucky.entities.effects.Effect;
 import fr.astratime.lucky.entities.effects.ForceReelEffect;
 import fr.astratime.lucky.entities.effects.OverheatEffect;
 import fr.astratime.lucky.entities.effects.PistolEffect;
+import fr.astratime.lucky.entities.enemy.EnemyCards;
 import fr.astratime.lucky.entities.enemy.EnemyKind;
+import fr.astratime.lucky.entities.enemy.EnemySymbol;
 import fr.astratime.lucky.entities.exploration.PlaceRule;
 import fr.astratime.lucky.loaders.CardLoader;
 import fr.astratime.lucky.popups.EffectPopup;
@@ -71,6 +74,8 @@ public class GameController {
 
     /** Cartes à jouer d'office au début de ce tour (Chant de l'ennemi). */
     private int songs = 0;
+    /** Taxes du Comptable ce tour : chaque carte jouée les paie toutes. */
+    private int taxes = 0;
 
     /** Cartes au trésor jouées, pas encore comptées pour le coffre du donjon. */
     private int treasureMaps = 0;
@@ -167,7 +172,8 @@ public class GameController {
 
     /** Comme {@link #restart()}, contre un ennemi {@code kind} (premier combat d'un chapitre). */
     public void restart(EnemyKind kind) {
-        this.gameState = new GameState(playerFactory.apply(starterDeck.get()), new Enemy(kind));
+        Player player = playerFactory.apply(starterDeck.get());
+        this.gameState = new GameState(player, createEnemy(kind, player));
         gameState.setPlaceRule(placeRule);
         treasureMaps = 0;
         clearTurn();
@@ -179,9 +185,25 @@ public class GameController {
      * en cours ; voir {@link Player#nextCombat()}.
      */
     public void startCombat(EnemyKind kind) {
-        this.gameState = new GameState(gameState.getPlayer().nextCombat(), new Enemy(kind));
+        Player player = gameState.getPlayer().nextCombat();
+        this.gameState = new GameState(player, createEnemy(kind, player));
         gameState.setPlaceRule(placeRule);
         clearTurn();
+    }
+
+    /**
+     * @return un ennemi {@code kind} face à {@code player} : l'Ombre du Joueur
+     *         prend une copie de son deck ; le Portier tire la famille de cartes
+     *         qu'il laisse dehors
+     */
+    private Enemy createEnemy(EnemyKind kind, Player player) {
+        Enemy enemy = kind.copiesPlayerDeck() ? new Enemy(kind, EnemyCards.shadowDeck(player.getAllCards()))
+            : new Enemy(kind);
+        if (kind.bansFamily()) {
+            CardFamily[] families = CardFamily.values();
+            enemy.banFamily(families[random.nextInt(families.length)]);
+        }
+        return enemy;
     }
 
     /** Oublie tout ce qui restait du tour en cours (effets, paris, choix, compteur de cartes). */
@@ -195,6 +217,7 @@ public class GameController {
         bingoGiftPending = false;
         handHidden = false;
         songs = 0;
+        taxes = 0;
         turnNotices.clear();
         originals.clear();
     }
@@ -243,6 +266,16 @@ public class GameController {
         if (handHidden) {
             turnNotices.add(new EffectPopup("AVEUGLEMENT : MAIN CACHÉE", EffectPopup.Style.DAMAGE,
                 PopupScale.SECONDARY_INTENSITY));
+        }
+        taxes = lasting.takeTaxes();
+        if (taxes > 0) {
+            turnNotices.add(new EffectPopup("TAXE : CHAQUE CARTE TE COÛTE", EffectPopup.Style.DAMAGE,
+                PopupScale.SECONDARY_INTENSITY));
+        }
+        CardFamily banned = gameState.getEnemy().getBannedFamily();
+        if (banned != null && gameState.getTurnNumber() == 1) {
+            turnNotices.add(new EffectPopup("LE PORTIER INTERDIT : " + banned.getDisplayName().toUpperCase(),
+                EffectPopup.Style.DAMAGE, PopupScale.MAX_INTENSITY));
         }
         songs = lasting.takeSongs();
         if (songs > 0) {
@@ -336,6 +369,10 @@ public class GameController {
      *         symbole n'est pas revenu.
      */
     public String unplayableReason(Card card) {
+        CardFamily banned = gameState.getEnemy().getBannedFamily();
+        if (banned != null && banned.contains(card)) {
+            return "Le Portier laisse les cartes " + banned.getDisplayName() + " dehors : pas de ça ici, tout le combat";
+        }
         if (cardsPlayedThisTurn >= getPlayLimit()) {
             return "Limite atteinte : " + getPlayLimit() + " cartes jouées ce tour";
         }
@@ -371,6 +408,11 @@ public class GameController {
         if (unavailableReason(offer) != null || player.getGains() < offer.price()) return null;
         player.addGains(-offer.price());
         Card card = cardFactory.apply(offer.card().getId());
+        Enemy enemy = gameState.getEnemy();
+        if (enemy.getKind().copiesPurchases()) { // le Pilleur en garde une copie : un As sombre
+            Card.Suit[] suits = Card.Suit.values();
+            enemy.addLoot(card.getSuit() != null ? card.getSuit() : suits[random.nextInt(suits.length)]);
+        }
         return new Purchase(card, player.addToHandOrDeck(card));
     }
 
@@ -390,6 +432,11 @@ public class GameController {
 
         cardsPlayedThisTurn++;
         PlayContext playContext = new PlayContext(player);
+        for (int i = 0; i < taxes; i++) { // Taxe du Comptable : chaque carte jouée la paie
+            int taxed = player.payTax(EnemySymbol.TAX_PERCENT, EnemySymbol.TAX_FLAT);
+            playContext.addPopups(List.of(new EffectPopup("TAXE -" + taxed, EffectPopup.Style.DAMAGE,
+                PopupScale.SECONDARY_INTENSITY)));
+        }
         boolean doubling = doubleNext;
         playEffects(card, playContext, false);
         // Double ou rien : la carte compte deux fois, sauf si elle demande un choix (le doublement attend la suivante)

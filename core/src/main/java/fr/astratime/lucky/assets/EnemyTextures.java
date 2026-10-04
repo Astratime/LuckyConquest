@@ -75,6 +75,13 @@ public class EnemyTextures implements Disposable {
         symbols.put(EnemySymbol.ANVIL,      texture(PlacesArt.anvil(), false));
         symbols.put(EnemySymbol.SONG,       texture(PlacesArt.song(), false));
         symbols.put(EnemySymbol.BANK_BITE,  texture(PlacesArt.bankBite(), false));
+        symbols.put(EnemySymbol.FAKE_MONEY, texture(Chapter456Art.fakeMoney(), false));
+        symbols.put(EnemySymbol.PREDICTION, texture(Chapter456Art.prediction(), false));
+        symbols.put(EnemySymbol.DUEL,       texture(Chapter456Art.duel(), false));
+        symbols.put(EnemySymbol.TAX,        texture(Chapter456Art.tax(), false));
+        symbols.put(EnemySymbol.NEW_RULE,   texture(Chapter456Art.newRule(), false));
+        symbols.put(EnemySymbol.FRISK,      texture(Chapter456Art.frisk(), false));
+        symbols.put(EnemySymbol.BANKRUPTCY, texture(Chapter456Art.bankruptcy(), false));
         portraits.put(EnemyKind.CROUPIER, croupier);
         flashes.put(EnemyKind.CROUPIER, croupierFlash);
         portraits.put(EnemyKind.ENTRAINEMENT, croupier); // le même croupier, en mode Entraînement
@@ -119,6 +126,24 @@ public class EnemyTextures implements Disposable {
         chapterArt.put(Chapter.GENESE, texture(EnemyPortraits.genesis(), false));
         chapterArt.put(Chapter.TABLES_SACREES, texture(Chapter2Art.tables(), false));
         chapterArt.put(Chapter.DERNIER_TIRAGE, texture(Chapter3Art.crater(), false));
+        chapterArt.put(Chapter.MONDE_SANS_MAITRE, texture(Chapter456Art.worldWithoutMaster(), false));
+        chapterArt.put(Chapter.LA_MAISON, texture(Chapter456Art.house(), false));
+        chapterArt.put(Chapter.LE_JACKPOT, texture(Chapter456Art.jackpot(), false));
+        addPortrait(EnemyKind.PILLEUR, Chapter456Art.pilleur());
+        addPortrait(EnemyKind.FAUSSAIRE, Chapter456Art.faussaire());
+        addPortrait(EnemyKind.CARTOMANCIENNE, Chapter456Art.cartomancienne());
+        addPortrait(EnemyKind.DUELLISTE, Chapter456Art.duelliste());
+        addPortrait(EnemyKind.PRETENDANT, Chapter456Art.pretendant());
+        addPortrait(EnemyKind.PORTIER, Chapter456Art.portier());
+        addPortrait(EnemyKind.COMPTABLE, Chapter456Art.comptable());
+        addPortrait(EnemyKind.DIRECTEUR, Chapter456Art.directeur());
+        addPortrait(EnemyKind.SECURITE, Chapter456Art.securite());
+        addPortrait(EnemyKind.MAISON, Chapter456Art.maison());
+        addPortrait(EnemyKind.GARDIEN_LEVIER, Chapter456Art.gardienLevier());
+        addPortrait(EnemyKind.OMBRE, Chapter456Art.ombre());
+        addPortrait(EnemyKind.BANQUEROUTE, Chapter456Art.banqueroute());
+        addPortrait(EnemyKind.TEMPS_MORT, Chapter456Art.tempsMort());
+        addPortrait(EnemyKind.MACHINE_ORIGINELLE, Chapter456Art.machineOriginelle());
     }
 
     private void addPortrait(EnemyKind kind, int[][] grid) {

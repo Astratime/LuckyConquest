@@ -59,6 +59,7 @@ import fr.astratime.lucky.entities.Combo;
 import fr.astratime.lucky.entities.DrawResult;
 import fr.astratime.lucky.entities.GameState;
 import fr.astratime.lucky.entities.LastingEffects;
+import fr.astratime.lucky.entities.Enemy;
 import fr.astratime.lucky.entities.Player;
 import fr.astratime.lucky.entities.Symbol;
 import fr.astratime.lucky.entities.SymbolOutcome;
@@ -498,7 +499,7 @@ public class GameScreen extends ScreenAdapter {
         refreshCombos(); // les combinaisons du tour précédent s'éteignent
         hand.setLocked(false); // une carte achetée entre deux tours reste sur la table
         showReelCount(gameController.getReelCount()); // le 4e rouleau de la surchauffe ne dure qu'un tour
-        slots.setBlockedReel(player().getLastingEffects().getForbiddenReel()); // Rouleau interdit de l'ennemi
+        slots.setBlockedReels(blockedReels(player().getLastingEffects().getForbiddenReel())); // Rouleau interdit, rouleaux volés
         GameController.Purchase gift = gameController.claimBonusCard(); // Bingo glissé dans le deck après un Bingo de gains
         if (gift != null) placePurchase(gift);
         DrawResult drawn = gameController.drawCards(); // Grignotage, Scorbut, Aveuglement et Chant s'y appliquent
@@ -1039,10 +1040,23 @@ public class GameScreen extends ScreenAdapter {
             if (heal.amount > 0) hud.revealEnemyHeal(heal.amount);
             enemyView.heal();
         } else if (event instanceof ReelForbiddenEvent forbidden) {
-            slots.setBlockedReel(forbidden.reel);
+            slots.setBlockedReels(blockedReels(forbidden.reel));
             sounds.shieldBreak.play();
             screenShake.shake(0.25f, 7f);
         }
+    }
+
+    /**
+     * @return les rouleaux du joueur barrés au prochain tirage : {@code forbidden}
+     *         (Rouleau interdit, -1 : aucun) et ceux volés par la Machine Originelle
+     */
+    private java.util.Set<Integer> blockedReels(int forbidden) {
+        java.util.Set<Integer> blocked = new java.util.TreeSet<>();
+        if (forbidden >= 0) blocked.add(forbidden);
+        int stolen = gameController.getGameState().getEnemy().getStolenReels();
+        if (stolen >= 1) blocked.add(SlotMachine.SYMBOL_COUNT - 1);
+        if (stolen >= 2) blocked.add(0);
+        return blocked;
     }
 
     /** L'ennemi encaisse un coup : sa barre réagit ; un gros coup fige l'image un instant et secoue l'écran. */
@@ -1557,6 +1571,17 @@ public class GameScreen extends ScreenAdapter {
         if (lasting.isBlind()) curses.add("Aveuglement");
         if (lasting.hasNugget()) curses.add("Pépite");
         if (lasting.getSongs() > 0) curses.add("Chant x" + lasting.getSongs());
+        if (lasting.getFakeGains() > 0) curses.add("Faux : " + lasting.getFakeGains());
+        if (lasting.getTaxes() > 0) curses.add("Taxe x" + lasting.getTaxes());
+        if (lasting.getHouseRule() != null) {
+            curses.add(lasting.getHouseRule().getShortName() + " (" + lasting.getHouseRuleTurns() + ")");
+        }
+        Enemy foe = gameController.getGameState().getEnemy();
+        if (foe.getBannedFamily() != null) curses.add("Banni : " + foe.getBannedFamily().getDisplayName());
+        if (foe.getPrediction() != null) curses.add("Prédit : " + foe.getPrediction().getDisplayName().toLowerCase());
+        if (foe.getStolenReels() > 0) curses.add("Vol : " + foe.getStolenReels() + (foe.getStolenReels() > 1 ? " rouleaux" : " rouleau"));
+        int limit = foe.getKind().getTurnLimit();
+        if (limit > 0) curses.add("Temps : " + Math.max(0, limit - state.getTurnNumber() + 1) + " tours");
         for (String curse : curses) rows.add(new SidePanel.EffectRow(skull, null, curse));
     }
 

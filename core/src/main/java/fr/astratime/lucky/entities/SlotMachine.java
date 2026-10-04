@@ -111,10 +111,11 @@ public class SlotMachine {
         return result;
     }
 
-    /** Vide le rouleau bloqué du tirage, s'il y en a un. @return {@code result} */
+    /** Vide les rouleaux bloqués du tirage, s'il y en a. @return {@code result} */
     private static Symbol[] block(Symbol[] result, SpinContext spinContext) {
-        int blocked = spinContext.getBlockedReel();
-        if (blocked >= 0 && blocked < result.length) result[blocked] = null;
+        for (int blocked : spinContext.getBlockedReels()) {
+            if (blocked < result.length) result[blocked] = null;
+        }
         return result;
     }
 

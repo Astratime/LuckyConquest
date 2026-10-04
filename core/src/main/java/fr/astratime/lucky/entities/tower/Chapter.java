@@ -25,7 +25,21 @@ public enum Chapter {
         "La comète n'était pas tombée par hasard. Elle était le hasard. Au fond du cratère, quelque chose bat "
             + "encore. Celui qui le touche décidera du prochain tirage.",
         EnemyKind.GARDIENNE, List.of(EnemyKind.MIROIR, EnemyKind.HORLOGER, EnemyKind.FOU), EnemyKind.ECLAT,
-        "La chance n'a plus de maître.");
+        "La chance n'a plus de maître."),
+    MONDE_SANS_MAITRE(4, "Le Monde sans Maître",
+        "La chance n'avait plus de maître. Alors chacun voulut le devenir. Les tables brûlèrent. "
+            + "Les joueurs se battirent pour les miettes de la comète.",
+        EnemyKind.PILLEUR, List.of(EnemyKind.FAUSSAIRE, EnemyKind.CARTOMANCIENNE, EnemyKind.DUELLISTE),
+        EnemyKind.PRETENDANT, null),
+    LA_MAISON(5, "La Maison",
+        "Derrière chaque table, il y a une Maison. Derrière chaque Maison, une seule règle. La Maison gagne toujours.",
+        EnemyKind.PORTIER, List.of(EnemyKind.COMPTABLE, EnemyKind.DIRECTEUR, EnemyKind.SECURITE), EnemyKind.MAISON,
+        null),
+    LE_JACKPOT(6, "Le Jackpot",
+        "Au sommet de la Tour, une seule machine. Elle n'a jamais été jouée. On dit qu'elle donne tout. "
+            + "On dit aussi qu'elle prend tout.",
+        EnemyKind.GARDIEN_LEVIER, List.of(EnemyKind.OMBRE, EnemyKind.BANQUEROUTE, EnemyKind.TEMPS_MORT),
+        EnemyKind.MACHINE_ORIGINELLE, "Tu as tiré le levier. Le monde a recommencé.");
 
     private final int             number;
     private final String          title;

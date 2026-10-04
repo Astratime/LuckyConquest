@@ -105,6 +105,7 @@ public class HealthBarView extends Group {
     /** Change le nom du camp affiché dans la barre (ex : le nom de l'ennemi du combat). */
     public void setTitle(String name) {
         nameLabel.setText(name);
+        fitName();
     }
 
     /**
@@ -123,7 +124,24 @@ public class HealthBarView extends Group {
         } else {
             trail.setWidth(width);
         }
-        hpLabel.setText(hp + " / " + maxHp);
+        hpLabel.setText(hpText(hp) + " / " + hpText(maxHp));
+        fitName();
+    }
+
+    /** @return les PV, abrégés en millions au-delà d'un million (ex : "5,5M") pour laisser la place au nom. */
+    static String hpText(int hp) {
+        if (Math.abs(hp) < 1_000_000) return Integer.toString(hp);
+        int tenths = Math.round(hp / 100_000f);
+        String text = tenths % 10 == 0 ? Integer.toString(tenths / 10) : (tenths / 10) + "," + Math.abs(tenths % 10);
+        return text + "M";
+    }
+
+    /** Rétrécit le nom quand il chevauche le texte des PV (ex : « Machine Originelle »). */
+    private void fitName() {
+        nameLabel.setFontScale(1f);
+        float room = nameLabel.getWidth() - hpLabel.getPrefWidth() - TEXT_PAD;
+        float width = nameLabel.getPrefWidth();
+        if (width > room && room > 0) nameLabel.setFontScale(room / width);
     }
 
     /**

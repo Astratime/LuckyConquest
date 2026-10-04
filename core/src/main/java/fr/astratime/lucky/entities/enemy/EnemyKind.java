@@ -25,6 +25,12 @@ import java.util.Map;
  *       (Intérêts) ou {@link #ROULETTE} (Zéro), et la {@link #REINE} ;</li>
  *   <li>chapitre 3 : la {@link #GARDIENNE}, puis {@link #MIROIR} (Reflet), {@link #HORLOGER}
  *       (Sablier) ou {@link #FOU} (Tapis), et l'{@link #ECLAT}, en deux phases ;</li>
+ *   <li>chapitre 4 : le {@link #PILLEUR}, puis {@link #FAUSSAIRE} (Fausse monnaie), {@link #CARTOMANCIENNE}
+ *       (Prédiction) ou {@link #DUELLISTE} (Duel), et le {@link #PRETENDANT} et ses trois éclats ;</li>
+ *   <li>chapitre 5 : le {@link #PORTIER}, puis {@link #COMPTABLE} (Taxe), {@link #DIRECTEUR} (Nouvelle
+ *       règle) ou {@link #SECURITE} (Fouille), et la {@link #MAISON} en trois parties ;</li>
+ *   <li>chapitre 6 : le {@link #GARDIEN_LEVIER}, puis l'{@link #OMBRE} (ton deck), la {@link #BANQUEROUTE}
+ *       (Faillite) ou le {@link #TEMPS_MORT} (10 tours), et la {@link #MACHINE_ORIGINELLE} ;</li>
  *   <li>Exploration : dans chaque donjon, un premier ennemi puis son chef (le roi de la
  *       couleur dans la prairie ; voir {@link fr.astratime.lucky.entities.exploration.Dungeon}).
  *       Port des Contrebandiers : Grignotage, Ivresse, Aveuglement, Abordage ; Mines d'Or :
@@ -458,6 +464,134 @@ public enum EnemyKind {
         deck(new int[] {3, 6, 9, 12, 14}, new int[] {4, 8, 12},
             new int[] {5, 9, 13}, new int[] {3, 7, 11}),
         List.of(Card.Suit.PIQUE, Card.Suit.CARREAU, Card.Suit.TREFLE, Card.Suit.COEUR),
+        List.of(Card.Suit.COEUR, Card.Suit.CARREAU, Card.Suit.PIQUE, Card.Suit.TREFLE)),
+
+    // ----- Chapitre 4 : Le Monde sans Maître -----
+    PILLEUR("Le Pilleur", "PILLEUR",
+        "Il a pillé la boutique. Chaque carte que tu achètes, il en garde une copie : un As de plus dans son deck.",
+        320_000, 120, 5,
+        weights(EnemySymbol.SWORD, 2, EnemySymbol.SHIELD, 1, EnemySymbol.POTION, 1, EnemySymbol.INTEREST, 1),
+        deck(new int[] {3, 6, 9, 12, 14}, new int[] {4, 8, 12},
+            new int[] {5, 9, 13, 14}, new int[] {3, 7, 11}),
+        List.of(Card.Suit.PIQUE, Card.Suit.CARREAU, Card.Suit.TREFLE, Card.Suit.COEUR),
+        List.of(Card.Suit.COEUR, Card.Suit.CARREAU, Card.Suit.PIQUE, Card.Suit.TREFLE)),
+    FAUSSAIRE("Le Faussaire", "FAUSSAIRE",
+        "Ses billets sont faux. Les tiens aussi, bientôt. Dépense vite.",
+        560_000, 80, 4,
+        weights(EnemySymbol.FAKE_MONEY, 2, EnemySymbol.SWORD, 2, EnemySymbol.SHIELD, 1),
+        deck(new int[] {3, 6, 9, 12, 14}, new int[] {4, 8, 12},
+            new int[] {5, 9, 13, 14}, new int[] {3, 7, 11}),
+        List.of(Card.Suit.PIQUE, Card.Suit.CARREAU, Card.Suit.TREFLE, Card.Suit.COEUR),
+        List.of(Card.Suit.COEUR, Card.Suit.CARREAU, Card.Suit.PIQUE, Card.Suit.TREFLE)),
+    CARTOMANCIENNE("La Cartomancienne", "CARTOMANCIENNE",
+        "Elle connaît ton avenir. Si sa Prédiction sort, elle frappe trois fois plus fort.",
+        560_000, 80, 4,
+        weights(EnemySymbol.PREDICTION, 2, EnemySymbol.SWORD, 2, EnemySymbol.SHIELD, 1, EnemySymbol.POTION, 1),
+        deck(new int[] {3, 6, 9, 12, 14}, new int[] {4, 8, 12},
+            new int[] {5, 9, 13, 14}, new int[] {3, 7, 11}),
+        List.of(Card.Suit.PIQUE, Card.Suit.CARREAU, Card.Suit.TREFLE, Card.Suit.COEUR),
+        List.of(Card.Suit.COEUR, Card.Suit.CARREAU, Card.Suit.PIQUE, Card.Suit.TREFLE)),
+    DUELLISTE("Le Duelliste", "DUELLISTE",
+        "Un contre un. Chacun tire une carte. La plus haute frappe. Tes As et tes figures comptent enfin.",
+        560_000, 60, 4,
+        weights(EnemySymbol.DUEL, 2, EnemySymbol.SWORD, 2, EnemySymbol.SHIELD, 1),
+        deck(new int[] {3, 6, 9, 12, 14}, new int[] {4, 8, 12},
+            new int[] {5, 9, 13, 14}, new int[] {3, 7, 11}),
+        List.of(Card.Suit.PIQUE, Card.Suit.CARREAU, Card.Suit.TREFLE, Card.Suit.COEUR),
+        List.of(Card.Suit.COEUR, Card.Suit.CARREAU, Card.Suit.PIQUE, Card.Suit.TREFLE)),
+    PRETENDANT("Le Prétendant", "PRÉTENDANT",
+        "Il veut devenir le nouveau maître de la chance. Trois éclats, trois pouvoirs volés. Chaque tiers de ses PV perdu lui en retire un.",
+        1_100_000, 120, 3,
+        weights(EnemySymbol.SWORD, 1, EnemySymbol.SHIELD, 2, EnemySymbol.THORNS, 1, EnemySymbol.FANG, 1, EnemySymbol.RAGE, 1),
+        deck(new int[] {3, 6, 9, 12, 14}, new int[] {4, 8, 12},
+            new int[] {5, 9, 13, 14}, new int[] {3, 7, 11}),
+        List.of(Card.Suit.PIQUE, Card.Suit.CARREAU, Card.Suit.TREFLE, Card.Suit.COEUR),
+        List.of(Card.Suit.COEUR, Card.Suit.CARREAU, Card.Suit.PIQUE, Card.Suit.TREFLE)),
+
+    // ----- Chapitre 5 : La Maison -----
+
+    PORTIER("Le Portier", "PORTIER",
+        "Il filtre l'entrée. Une famille de cartes reste dehors tout le combat.",
+        400_000, 150, 4,
+        weights(EnemySymbol.SWORD, 2, EnemySymbol.SHIELD, 2, EnemySymbol.POTION, 1),
+        deck(new int[] {3, 6, 9, 12, 14}, new int[] {4, 8, 12},
+            new int[] {5, 9, 13, 14}, new int[] {3, 7, 11}),
+        List.of(Card.Suit.PIQUE, Card.Suit.CARREAU, Card.Suit.TREFLE, Card.Suit.COEUR),
+        List.of(Card.Suit.COEUR, Card.Suit.CARREAU, Card.Suit.PIQUE, Card.Suit.TREFLE)),
+    COMPTABLE("Le Comptable", "COMPTABLE",
+        "Il compte tout. Sa Taxe frappe chaque carte jouée. Même à sec.",
+        700_000, 80, 4,
+        weights(EnemySymbol.TAX, 2, EnemySymbol.SWORD, 2, EnemySymbol.SHIELD, 1),
+        deck(new int[] {3, 6, 9, 12, 14}, new int[] {4, 8, 12},
+            new int[] {5, 9, 13, 14}, new int[] {3, 7, 11}),
+        List.of(Card.Suit.PIQUE, Card.Suit.CARREAU, Card.Suit.TREFLE, Card.Suit.COEUR),
+        List.of(Card.Suit.COEUR, Card.Suit.CARREAU, Card.Suit.PIQUE, Card.Suit.TREFLE)),
+    DIRECTEUR("Le Directeur des Jeux", "DIRECTEUR",
+        "Il change les règles. Pour deux tours, le jeu n'est plus le même.",
+        700_000, 80, 4,
+        weights(EnemySymbol.NEW_RULE, 1, EnemySymbol.SWORD, 2, EnemySymbol.SHIELD, 1, EnemySymbol.POTION, 1),
+        deck(new int[] {3, 6, 9, 12, 14}, new int[] {4, 8, 12},
+            new int[] {5, 9, 13, 14}, new int[] {3, 7, 11}),
+        List.of(Card.Suit.PIQUE, Card.Suit.CARREAU, Card.Suit.TREFLE, Card.Suit.COEUR),
+        List.of(Card.Suit.COEUR, Card.Suit.CARREAU, Card.Suit.PIQUE, Card.Suit.TREFLE)),
+    SECURITE("La Sécurité", "SÉCURITÉ",
+        "On t'a repéré. Elle fouille ton deck. Plus tu gagnes gros, plus elle confisque.",
+        700_000, 120, 4,
+        weights(EnemySymbol.FRISK, 2, EnemySymbol.SWORD, 2, EnemySymbol.SHIELD, 1),
+        deck(new int[] {3, 6, 9, 12, 14}, new int[] {4, 8, 12},
+            new int[] {5, 9, 13, 14}, new int[] {3, 7, 11}),
+        List.of(Card.Suit.PIQUE, Card.Suit.CARREAU, Card.Suit.TREFLE, Card.Suit.COEUR),
+        List.of(Card.Suit.COEUR, Card.Suit.CARREAU, Card.Suit.PIQUE, Card.Suit.TREFLE)),
+    MAISON("La Maison", "LA MAISON",
+        "Pas un ennemi. Un lieu vivant. La Façade protège, le Coffre soigne, la Salle de jeu frappe. La Maison gagne toujours : une fois, elle annule ton plus gros coup.",
+        1_400_000, 150, 3,
+        weights(EnemySymbol.SHIELD, 2, EnemySymbol.SWORD, 2, EnemySymbol.POTION, 1),
+        deck(new int[] {3, 6, 9, 12, 14}, new int[] {4, 8, 12},
+            new int[] {5, 9, 13, 14}, new int[] {3, 7, 11}),
+        List.of(Card.Suit.PIQUE, Card.Suit.CARREAU, Card.Suit.TREFLE, Card.Suit.COEUR),
+        List.of(Card.Suit.COEUR, Card.Suit.CARREAU, Card.Suit.PIQUE, Card.Suit.TREFLE)),
+
+    // ----- Chapitre 6 : Le Jackpot -----
+
+    GARDIEN_LEVIER("Le Gardien du Levier", "GARDIEN DU LEVIER",
+        "Il garde le levier. Il a tout appris en route. Fausse monnaie, Taxe et Duel.",
+        500_000, 100, 4,
+        weights(EnemySymbol.SWORD, 2, EnemySymbol.SHIELD, 1, EnemySymbol.FAKE_MONEY, 1, EnemySymbol.TAX, 1, EnemySymbol.DUEL, 1),
+        deck(new int[] {3, 6, 9, 12, 14}, new int[] {4, 8, 12},
+            new int[] {5, 9, 13, 14}, new int[] {3, 7, 11}),
+        List.of(Card.Suit.PIQUE, Card.Suit.CARREAU, Card.Suit.TREFLE, Card.Suit.COEUR),
+        List.of(Card.Suit.COEUR, Card.Suit.CARREAU, Card.Suit.PIQUE, Card.Suit.TREFLE)),
+    OMBRE("L'Ombre du Joueur", "OMBRE",
+        "Ton passé. Il a ton deck. Exactement le même.",
+        900_000, 80, 4,
+        weights(EnemySymbol.SWORD, 2, EnemySymbol.SHIELD, 1, EnemySymbol.POTION, 1, EnemySymbol.MIRROR, 1),
+        deck(new int[] {3, 6, 9, 12, 14}, new int[] {4, 8, 12},
+            new int[] {5, 9, 13, 14}, new int[] {3, 7, 11}),
+        List.of(Card.Suit.PIQUE, Card.Suit.CARREAU, Card.Suit.TREFLE, Card.Suit.COEUR),
+        List.of(Card.Suit.COEUR, Card.Suit.CARREAU, Card.Suit.PIQUE, Card.Suit.TREFLE)),
+    BANQUEROUTE("La Banqueroute", "BANQUEROUTE",
+        "Tout ou rien. Plus riche que lui, tu perds tout. Plus pauvre, c'est lui qui perd.",
+        900_000, 60, 4,
+        weights(EnemySymbol.BANKRUPTCY, 2, EnemySymbol.SWORD, 2, EnemySymbol.SHIELD, 1),
+        deck(new int[] {3, 6, 9, 12, 14}, new int[] {4, 8, 12},
+            new int[] {5, 9, 13, 14}, new int[] {3, 7, 11}),
+        List.of(Card.Suit.PIQUE, Card.Suit.CARREAU, Card.Suit.TREFLE, Card.Suit.COEUR),
+        List.of(Card.Suit.COEUR, Card.Suit.CARREAU, Card.Suit.PIQUE, Card.Suit.TREFLE)),
+    TEMPS_MORT("Le Temps Mort", "TEMPS MORT",
+        "Les tours comptent. Le combat dure 10 tours. Au 11e, tu perds. Moins de PV, mais il ne pardonne pas.",
+        600_000, 80, 3,
+        weights(EnemySymbol.SWORD, 2, EnemySymbol.SHIELD, 1, EnemySymbol.HOURGLASS, 1),
+        deck(new int[] {3, 6, 9, 12, 14}, new int[] {4, 8, 12},
+            new int[] {5, 9, 13, 14}, new int[] {3, 7, 11}),
+        List.of(Card.Suit.PIQUE, Card.Suit.CARREAU, Card.Suit.TREFLE, Card.Suit.COEUR),
+        List.of(Card.Suit.COEUR, Card.Suit.CARREAU, Card.Suit.PIQUE, Card.Suit.TREFLE)),
+    MACHINE_ORIGINELLE("La Machine Originelle", "MACHINE ORIGINELLE",
+        "La machine qui a créé la comète. Cinq rouleaux contre tes trois. Blessée, elle te vole tes rouleaux. Achevée, elle tente un dernier tirage.",
+        2_000_000, 150, 2,
+        weights(EnemySymbol.SWORD, 2, EnemySymbol.SHIELD, 1, EnemySymbol.POTION, 1, EnemySymbol.RAGE, 1),
+        deck(new int[] {3, 6, 9, 12, 14}, new int[] {4, 8, 12},
+            new int[] {5, 9, 13, 14}, new int[] {3, 7, 11}),
+        List.of(Card.Suit.PIQUE, Card.Suit.CARREAU, Card.Suit.TREFLE, Card.Suit.COEUR),
         List.of(Card.Suit.COEUR, Card.Suit.CARREAU, Card.Suit.PIQUE, Card.Suit.TREFLE));
 
     /** Force des ennemis du chapitre 2, en % : leurs attaques, défenses et effets sont multipliés d'autant. */
@@ -466,6 +600,19 @@ public enum EnemyKind {
     public static final int TOWER_HP_FACTOR = 5;
     /** Force des ennemis du chapitre 3, en %. */
     public static final int CHAPTER_3_POWER = 300;
+    /** Force des ennemis des chapitres 4, 5 et 6, en % (choix d'Astra : le rang rendra le joueur plus fort). */
+    public static final int CHAPTER_4_POWER = 400;
+    public static final int CHAPTER_5_POWER = 500;
+    public static final int CHAPTER_6_POWER = 600;
+
+    /** Tours du combat contre le Temps Mort : au tour suivant, le joueur a perdu. */
+    public static final int TIME_LIMIT = 10;
+    /** Rouleaux de la Machine Originelle, puis quand elle a volé un rouleau au joueur. */
+    public static final int MACHINE_REELS = 5, MACHINE_GREEDY_REELS = 6;
+    /** Sous cette part de vie, la Machine Originelle vole un deuxième rouleau au joueur. */
+    public static final float MACHINE_LAST_RATIO = 0.1f;
+    /** La Maison annule le premier coup qui lui retire au moins cette part de ses PV max (en %). */
+    public static final int HOUSE_CANCEL_PERCENT = 5;
 
     /** Rouleaux interdits dans le deck de l'Éclat Originel. */
     static final int FORBIDDEN_REELS = 1;
@@ -476,6 +623,12 @@ public enum EnemyKind {
     /** Symboles de l'Éclat Originel dans sa deuxième phase : ceux du chapitre 3. */
     private static final Map<EnemySymbol, Integer> ECLAT_PHASE_TWO = Collections.unmodifiableMap(weights(
         EnemySymbol.SHIELD, 3, EnemySymbol.MIRROR, 1, EnemySymbol.HOURGLASS, 1, EnemySymbol.ALL_IN, 1));
+
+    /** Symboles de la Maison sans sa Façade (plus de Boucliers), puis sans son Coffre (plus de Potions). */
+    private static final Map<EnemySymbol, Integer> HOUSE_PHASE_TWO = Collections.unmodifiableMap(weights(
+        EnemySymbol.SWORD, 2, EnemySymbol.POTION, 1));
+    private static final Map<EnemySymbol, Integer> HOUSE_PHASE_THREE = Collections.unmodifiableMap(weights(
+        EnemySymbol.SWORD, 1));
 
     private final String                     displayName;
     private final String                     barName;
@@ -521,7 +674,10 @@ public enum EnemyKind {
         return switch (this) {
             case CROUPIER, GARDIEN, SANGSUE, BRETTEUR, COMETE,
                  CHEF, TRICHEUR, USURIER, ROULETTE, REINE,
-                 GARDIENNE, MIROIR, HORLOGER, FOU, ECLAT -> true;
+                 GARDIENNE, MIROIR, HORLOGER, FOU, ECLAT,
+                 PILLEUR, FAUSSAIRE, CARTOMANCIENNE, DUELLISTE, PRETENDANT,
+                 PORTIER, COMPTABLE, DIRECTEUR, SECURITE, MAISON,
+                 GARDIEN_LEVIER, OMBRE, BANQUEROUTE, TEMPS_MORT, MACHINE_ORIGINELLE -> true;
             default -> false;
         };
     }
@@ -536,6 +692,9 @@ public enum EnemyKind {
         return switch (this) {
             case CHEF, TRICHEUR, USURIER, ROULETTE, REINE -> CHAPTER_2_POWER;
             case GARDIENNE, MIROIR, HORLOGER, FOU, ECLAT  -> CHAPTER_3_POWER;
+            case PILLEUR, FAUSSAIRE, CARTOMANCIENNE, DUELLISTE, PRETENDANT -> CHAPTER_4_POWER;
+            case PORTIER, COMPTABLE, DIRECTEUR, SECURITE, MAISON -> CHAPTER_5_POWER;
+            case GARDIEN_LEVIER, OMBRE, BANQUEROUTE, TEMPS_MORT, MACHINE_ORIGINELLE -> CHAPTER_6_POWER;
             default -> 100;
         };
     }
@@ -567,11 +726,14 @@ public enum EnemyKind {
     /** @return la part des jauges du joueur vidée par chaque Dé pipé, en %. */
     public int diePercent() { return Math.min(100, empowered(EnemySymbol.DIE_PERCENT)); }
 
+    /** @return la part des gains du joueur rendue fausse par chaque Fausse monnaie, en %. */
+    public int fakePercent() { return Math.min(100, empowered(EnemySymbol.FAKE_PERCENT)); }
+
     /** @return la part des gains du joueur prise par chaque Intérêts, en %. */
     public int interestPercent() { return empowered(EnemySymbol.INTEREST_PERCENT); }
 
     /** @return {@code true} si son deck contient le Rouleau interdit (l'Éclat Originel). */
-    public boolean forbidsReels() { return this == ECLAT; }
+    public boolean forbidsReels() { return this == ECLAT || this == PRETENDANT; }
     /** @return les cartes qu'il joue à chaque tour, parmi celles piochées. */
     public int getPlaysPerTurn() {
         return switch (this) {
@@ -583,7 +745,7 @@ public enum EnemyKind {
     /** @return {@code true} pour le boss d'un chapitre ou le roi d'un donjon. */
     public boolean isBoss() {
         return switch (this) {
-            case COMETE, REINE, ECLAT, ROI_PIQUE, ROI_COEUR, ROI_CARREAU, ROI_TREFLE,
+            case COMETE, REINE, ECLAT, PRETENDANT, MAISON, MACHINE_ORIGINELLE, ROI_PIQUE, ROI_COEUR, ROI_CARREAU, ROI_TREFLE,
                  CAPITAINE_RAT, TAVERNIER, GARDIEN_PHARE, CAPITAINE_NOIR,
                  BARON_OR, GRAND_FOREUR, MAITRE_FORGE, COEUR_MONTAGNE,
                  SIRENE, JACKPOT_VIVANT, REQUIN_BANQUIER, KRAKEN -> true;
@@ -632,12 +794,71 @@ public enum EnemyKind {
     /** @return {@code true} s'il change de symboles sous {@link #PHASE_TWO_RATIO} de vie (l'Éclat Originel). */
     public boolean hasPhaseTwo() { return this == ECLAT; }
 
+    /**
+     * @return sa phase quand il lui reste {@code hpRatio} de ses PV : l'Éclat
+     *         Originel passe à 2 sous la moitié ; le Prétendant perd un éclat et
+     *         la Maison une de ses parties à chaque tiers ; la Machine
+     *         Originelle vole un rouleau sous la moitié, puis un autre sous
+     *         {@link #MACHINE_LAST_RATIO}. Les autres restent en phase 1.
+     */
+    public int phaseFor(float hpRatio) {
+        return switch (this) {
+            case ECLAT -> hpRatio < PHASE_TWO_RATIO ? 2 : 1;
+            case PRETENDANT, MAISON -> hpRatio * 3f <= 1f ? 3 : hpRatio * 3f <= 2f ? 2 : 1;
+            case MACHINE_ORIGINELLE -> hpRatio < MACHINE_LAST_RATIO ? 3 : hpRatio < PHASE_TWO_RATIO ? 2 : 1;
+            default -> 1;
+        };
+    }
+
+    /** @return le texte qui annonce sa phase {@code phase}, quand il y entre. */
+    public String phaseText(int phase) {
+        return switch (this) {
+            case PRETENDANT -> phase == 2 ? "ÉCLAT PERDU : FINI LE ROULEAU INTERDIT" : "ÉCLAT PERDU : FINIE LA MISE ROYALE";
+            case MAISON -> phase == 2 ? "LA FAÇADE TOMBE : PLUS DE DÉFENSE" : "LE COFFRE TOMBE : PLUS DE SOINS";
+            case MACHINE_ORIGINELLE -> "ELLE TE VOLE UN ROULEAU !";
+            default -> "PHASE " + phase + " !";
+        };
+    }
+
+    /** @return les éclats que porte le Prétendant dans sa phase {@code phase} (3, 2 puis 1). */
+    public static int shards(int phase) { return Math.max(0, 4 - phase); }
+
+    /** @return le nombre de rouleaux de sa machine dans la phase {@code phase} (3, sauf la Machine Originelle). */
+    public int getReelCount(int phase) {
+        if (this != MACHINE_ORIGINELLE) return EnemySlotMachine.SYMBOL_COUNT;
+        return phase >= 2 ? MACHINE_GREEDY_REELS : MACHINE_REELS;
+    }
+
+    /** @return les rouleaux qu'il a volés au joueur dans la phase {@code phase} (la Machine Originelle). */
+    public int stolenReels(int phase) { return this == MACHINE_ORIGINELLE ? phase - 1 : 0; }
+
+    /** @return {@code true} s'il garde une copie (un As sombre) de chaque carte achetée à l'échoppe (le Pilleur). */
+    public boolean copiesPurchases() { return this == PILLEUR; }
+
+    /** @return {@code true} s'il interdit une famille de cartes tout le combat (le Portier). */
+    public boolean bansFamily() { return this == PORTIER; }
+
+    /** @return {@code true} s'il joue avec une copie du deck du joueur (l'Ombre du Joueur). */
+    public boolean copiesPlayerDeck() { return this == OMBRE; }
+
+    /** @return les tours que dure le combat (le Temps Mort), 0 s'il n'y a pas de limite. */
+    public int getTurnLimit() { return this == TEMPS_MORT ? TIME_LIMIT : 0; }
+
+    /** @return {@code true} si une fois par combat, il annule le plus gros coup du joueur (la Maison). */
+    public boolean houseWins() { return this == MAISON; }
+
+    /** @return {@code true} si, achevé, il résiste et tente un dernier tirage (la Machine Originelle). */
+    public boolean hasLastDraw() { return this == MACHINE_ORIGINELLE; }
+
     /** @return les symboles de ses rouleaux et leur poids (dans l'ordre de tirage), en première phase. */
     public Map<EnemySymbol, Integer> getWeights() { return weights; }
 
     /** @return les symboles de ses rouleaux et leur poids dans la phase {@code phase} (1 ou 2). */
     public Map<EnemySymbol, Integer> getWeights(int phase) {
-        return phase >= 2 && hasPhaseTwo() ? ECLAT_PHASE_TWO : weights;
+        if (phase >= 2 && hasPhaseTwo()) return ECLAT_PHASE_TWO;
+        if (this == MAISON && phase >= 3) return HOUSE_PHASE_THREE;
+        if (this == MAISON && phase == 2) return HOUSE_PHASE_TWO;
+        return weights;
     }
 
     /** @return les symboles qui peuvent sortir sur ses rouleaux, en première phase. */

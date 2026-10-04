@@ -5,6 +5,7 @@ import fr.astratime.lucky.entities.Enemy;
 import fr.astratime.lucky.entities.LastingEffects;
 import fr.astratime.lucky.entities.Player;
 import fr.astratime.lucky.entities.SlotMachine;
+import fr.astratime.lucky.entities.Symbol;
 import fr.astratime.lucky.entities.enemy.EnemyCards;
 import fr.astratime.lucky.entities.enemy.EnemyKind;
 import fr.astratime.lucky.entities.enemy.EnemySlotMachine;
@@ -114,7 +115,14 @@ public class EnemyTurnResolver {
                                    int shieldReflect) {
         EnemyKind kind = enemy.getKind();
         List<Event> openingEvents = new ArrayList<>();
-        if (enemy.enterPhaseTwo()) openingEvents.add(new EnemyPhaseEvent(enemy.getPhase()));
+        if (enemy.enterPhaseTwo()) {
+            openingEvents.add(new EnemyPhaseEvent(enemy.getPhase(), kind.phaseText(enemy.getPhase())));
+        }
+        boolean foreseen = enemy.takePredictionHit(); // sa Prédiction est sortie au tirage du joueur
+        if (foreseen) {
+            openingEvents.add(new StatusEvent("PRÉDICTION RÉALISÉE : ATTAQUES x" + EnemySymbol.PREDICTION_FACTOR,
+                EffectPopup.Style.ATTACK));
+        }
         if (enemy.raiseStake()) openingEvents.add(new EnemyStakeEvent(enemy.getStake(), false));
         int thorns = enemy.collectThorns(); // ses Épines piquent pour les coups du tour du joueur
         if (thorns > 0) {
@@ -129,12 +137,16 @@ public class EnemyTurnResolver {
             : choose(drawn, enemy.getHpRatio(), kind, plays);
 
         int swordBonus = 0, healBonus = 0, shieldBonus = 0;
-        int luckFactor = kind.royalBet() && enemy.getHpRatio() < LOW_HP_RATIO ? 2 : 1; // Mise royale
+        // Mise royale : la Reine blessée, ou le Prétendant tant qu'il porte l'éclat de la Reine
+        boolean royal = kind.royalBet() && enemy.getHpRatio() < LOW_HP_RATIO
+            || kind == EnemyKind.PRETENDANT && EnemyKind.shards(enemy.getPhase()) >= 2;
+        int luckFactor = royal ? 2 : 1;
         Map<EnemySymbol, Integer> luck = new EnumMap<>(EnemySymbol.class);
         boolean forbidReel = false;
         for (Card card : played) {
             if (EnemyCards.isForbiddenReel(card)) {
-                forbidReel = true;
+                // le Prétendant n'a plus le Rouleau interdit une fois l'éclat de l'Éclat Originel perdu
+                forbidReel = kind != EnemyKind.PRETENDANT || EnemyKind.shards(enemy.getPhase()) >= 3;
                 continue;
             }
             switch (card.getSuit()) {
@@ -149,9 +161,10 @@ public class EnemyTurnResolver {
             }
         }
 
-        EnemySymbol[] symbols = machine.spin(enemy.getWeights(), luck);
+        EnemySymbol[] symbols = machine.spin(enemy.getWeights(), luck, enemy.getReelCount());
         // Les roulettes du Zéro tournent d'abord : elles valent pour tout le tour.
         Turn turn = new Turn(enemy, player, swordBonus);
+        if (foreseen) turn.attackFactor *= EnemySymbol.PREDICTION_FACTOR;
         EnemyRouletteEvent[] roulettes = new EnemyRouletteEvent[symbols.length];
         for (int i = 0; i < symbols.length; i++) {
             if (symbols[i] != EnemySymbol.ZERO) continue;
@@ -253,6 +266,56 @@ public class EnemyTurnResolver {
                         events.add(turn.strike(EnemySymbol.FANG_DAMAGE)); // rien à dévorer : il mord
                     }
                 }
+                case FAKE_MONEY -> {
+                    int real = Math.max(0, player.getGains() - curses.getFakeGains());
+                    int faked = Math.round(real * kind.fakePercent() / 100f);
+                    if (faked > 0) {
+                        curses.addFakeGains(faked);
+                        events.add(new StatusEvent("FAUSSE MONNAIE : " + faked + " GAINS FAUX", EffectPopup.Style.DAMAGE));
+                    } else {
+                        events.add(turn.strike(EnemySymbol.FANG_DAMAGE)); // rien à contrefaire : il frappe
+                    }
+                }
+                case PREDICTION -> {
+                    List<Symbol> reels = player.getSlotMachine().getReels();
+                    Symbol foretold = reels.get(random.nextInt(reels.size()));
+                    enemy.predict(foretold);
+                    events.add(new StatusEvent("PRÉDICTION : " + foretold.getDisplayName(), EffectPopup.Style.SPECIAL));
+                }
+                case DUEL   -> duel(turn, events);
+                case TAX    -> {
+                    curses.addTax();
+                    events.add(new StatusEvent("TAXE SUR TES PROCHAINES CARTES", EffectPopup.Style.DAMAGE));
+                }
+                case NEW_RULE -> {
+                    LastingEffects.HouseRule[] rules = LastingEffects.HouseRule.values();
+                    LastingEffects.HouseRule rule = rules[random.nextInt(rules.length)];
+                    curses.setHouseRule(rule, EnemySymbol.NEW_RULE_TURNS);
+                    events.add(new StatusEvent("NOUVELLE RÈGLE : " + rule.getAnnounce(), EffectPopup.Style.SPECIAL));
+                }
+                case FRISK  -> {
+                    int count = Math.min(EnemySymbol.FRISK_MAX, 1 + Math.max(0, player.getGains()) / EnemySymbol.FRISK_GAINS_STEP);
+                    List<String> taken = new ArrayList<>();
+                    for (int k = 0; k < count; k++) {
+                        Card card = player.frisk(random);
+                        if (card != null) taken.add(card.getName().toUpperCase());
+                    }
+                    events.add(taken.isEmpty() ? turn.strike(EnemySymbol.FANG_DAMAGE)
+                        : new StatusEvent("FOUILLE : " + String.join(", ", taken) + " CONFISQUÉ"
+                            + (taken.size() > 1 ? "ES" : "E"), EffectPopup.Style.DAMAGE));
+                }
+                case BANKRUPTCY -> {
+                    int fortune = Math.round(enemy.getHp() * EnemySymbol.BANKRUPTCY_FORTUNE_PERCENT / 100f);
+                    if (player.getGains() > fortune) {
+                        int lost = player.getGains();
+                        player.addGains(-lost);
+                        events.add(new StatusEvent("FAILLITE : IL TE PREND TOUT", EffectPopup.Style.DAMAGE));
+                        events.add(new GainsStolenEvent(lost, 0));
+                    } else {
+                        int lost = enemy.takeDamage(Math.round(enemy.getHp() * EnemySymbol.BANKRUPTCY_HP_PERCENT / 100f));
+                        events.add(new StatusEvent("FAILLITE : IL PERD " + lost + " PV", EffectPopup.Style.SPECIAL));
+                    }
+                }
             }
             outcomes.add(events);
         }
@@ -282,6 +345,43 @@ public class EnemyTurnResolver {
         enemy.discard(drawn);
         enemy.resetDamageTaken(); // ses Épines ne comptent que les coups du prochain tour du joueur
         return new EnemyTurnResult(drawn, played, luck, symbols, outcomes, afterEvents, openingEvents);
+    }
+
+    /**
+     * Duel : le joueur et l'ennemi tirent chacun une carte au hasard de leur
+     * deck (l'As vaut 14, une carte sans couleur 0). La plus haute frappe :
+     * l'ennemi attaque comme une Épée, plus le rang de sa carte ; le joueur lui
+     * retire {@link EnemySymbol#DUEL_PER_MILLE_PER_RANK} pour mille de ses PV max
+     * par rang. À égalité, rien.
+     */
+    private void duel(Turn turn, List<Event> events) {
+        Card mine   = randomCard(turn.player.getAllCards());
+        Card theirs = randomCard(turn.enemy.getDeckCards().isEmpty() ? turn.enemy.getDiscardCards()
+            : turn.enemy.getDeckCards());
+        int myRank = duelRank(mine), theirRank = duelRank(theirs);
+        events.add(new StatusEvent("DUEL : " + duelName(mine) + " CONTRE " + duelName(theirs),
+            EffectPopup.Style.SPECIAL));
+        if (theirRank > myRank) {
+            events.add(turn.strike(EnemySymbol.SWORD_DAMAGE + theirRank));
+        } else if (myRank > theirRank) {
+            Enemy enemy = turn.enemy;
+            int lost = enemy.takeDamage(Math.round(enemy.getMaxHp() * myRank * EnemySymbol.DUEL_PER_MILLE_PER_RANK / 1000f));
+            events.add(new StatusEvent("DUEL GAGNÉ : -" + lost + " PV", EffectPopup.Style.ATTACK));
+        }
+    }
+
+    private Card randomCard(List<Card> cards) {
+        return cards.isEmpty() ? null : cards.get(random.nextInt(cards.size()));
+    }
+
+    /** @return la valeur de {@code card} au Duel : son rang, l'As valant 14 ; 0 sans couleur. */
+    static int duelRank(Card card) {
+        if (card == null || card.getSuit() == null) return 0;
+        return card.getRank() == 1 ? 14 : card.getRank();
+    }
+
+    private static String duelName(Card card) {
+        return card == null ? "RIEN" : card.getName().toUpperCase();
     }
 
     /** Croc : il mord, et chaque PV volé lui rend une part de ses PV max. */
