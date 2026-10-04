@@ -155,9 +155,9 @@ class CardLoaderTest {
     void shopSellsConsumableCardsThatAreNotInTheStarterDeck() {
         Map<String, Integer> shop = CardLoader.loadShop(READER);
         Map<String, Integer> expected = new java.util.LinkedHashMap<>();
-        expected.put("bingo", 10000);
-        expected.put("russian_roulette", 8000);
-        expected.put("corruption", 5000);
+        expected.put("bingo", 20000);
+        expected.put("russian_roulette", 15000);
+        expected.put("corruption", 10000);
         for (Symbol symbol : Symbol.values()) {
             if (symbol != Symbol.JOKER) expected.put("bingo_" + symbol.name().toLowerCase(), 0); // cartes de test
         }

@@ -145,7 +145,7 @@
     "effects": [
       {
         "type": "GAINS_MULTIPLIER",
-        "factor": 5,
+        "percent": 50,
         "gauges": 2
       }
     ]
