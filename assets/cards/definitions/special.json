@@ -97,6 +97,7 @@
       {
         "type": "RUSSIAN_ROULETTE",
         "multiplier": 50,
+        "cursedMultiplier": 20,
         "penaltyPercent": 20
       }
     ]

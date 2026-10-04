@@ -13,9 +13,10 @@ import java.util.List;
 
 /**
  * Roulette russe : le joueur retourne une carte parmi trois, faces cachées.
- * Deux sont des cartes Roulette : le pistolet multiplie après le tirage les
- * dégâts du meilleur symbole d'attaque ({@link PistolEffect}). La troisième
- * est le Joker maudit : le joueur perd une partie de ses gains.
+ * Quelle que soit la carte, le pistolet multiplie après le tirage les dégâts
+ * du meilleur symbole d'attaque ({@link PistolEffect}). Une des trois est le
+ * Joker maudit : le pistolet multiplie moins, et le joueur perd une partie de
+ * ses gains.
  */
 public class RussianRouletteEffect extends Effect {
 
@@ -23,15 +24,18 @@ public class RussianRouletteEffect extends Effect {
     public static final int CARDS = 3;
 
     private final int multiplier;
+    private final int cursedMultiplier;
     private final int penaltyPercent;
 
     /**
-     * @param multiplier     multiplicateur des dégâts du pistolet
-     * @param penaltyPercent pourcentage des gains perdus avec le Joker maudit
+     * @param multiplier       multiplicateur des dégâts du pistolet avec une bonne carte
+     * @param cursedMultiplier multiplicateur des dégâts du pistolet avec le Joker maudit
+     * @param penaltyPercent   pourcentage des gains perdus avec le Joker maudit
      */
-    public RussianRouletteEffect(int multiplier, int penaltyPercent) {
-        this.multiplier     = multiplier;
-        this.penaltyPercent = penaltyPercent;
+    public RussianRouletteEffect(int multiplier, int cursedMultiplier, int penaltyPercent) {
+        this.multiplier       = multiplier;
+        this.cursedMultiplier = cursedMultiplier;
+        this.penaltyPercent   = penaltyPercent;
     }
 
     /** Mélange les cartes proposées et demande au joueur d'en choisir une. */
@@ -40,7 +44,7 @@ public class RussianRouletteEffect extends Effect {
         List<Boolean> cursed = new ArrayList<>(Collections.nCopies(CARDS, false));
         cursed.set(0, true);
         Collections.shuffle(cursed);
-        context.requestChoice(new RouletteChoice(multiplier, penaltyPercent, cursed));
+        context.requestChoice(new RouletteChoice(multiplier, cursedMultiplier, penaltyPercent, cursed));
         context.addPopups(getPopups());
     }
 
@@ -51,7 +55,7 @@ public class RussianRouletteEffect extends Effect {
     @Override
     public String getDescription() {
         return "Choisissez une carte. Pistolet : dégâts du meilleur symbole d'attaque x" + multiplier
-            + ". Joker maudit : -" + penaltyPercent + "% de gains";
+            + ". Joker maudit : pistolet x" + cursedMultiplier + " et -" + penaltyPercent + "% de gains";
     }
 
     @Override

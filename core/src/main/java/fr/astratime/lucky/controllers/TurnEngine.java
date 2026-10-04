@@ -71,8 +71,11 @@ public class TurnEngine {
         Enemy enemy = gameState.getEnemy();
         EnemyTurnResult enemyTurn = null;
         if (!enemy.isDefeated() && !player.isDefeated()) {
+            // Bingo de bouclier : s'il frappe, tout le bouclier lui est renvoyé.
+            int shieldReflect = result.isShieldBingo() ? player.getShield() : 0;
             enemyTurn = enemyTurnResolver.resolve(enemy, player,
-                turnContext.getCombatContext().getTotalReflectPercent(), CombatResolver.VAULT_REFLECT_SHARE);
+                turnContext.getCombatContext().getTotalReflectPercent(), CombatResolver.VAULT_REFLECT_SHARE,
+                shieldReflect);
         }
 
         result = result.withEnemyTurn(enemyTurn, storeLeftoverShield(player));

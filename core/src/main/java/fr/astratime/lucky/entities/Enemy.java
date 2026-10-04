@@ -7,6 +7,7 @@ import fr.astratime.lucky.entities.enemy.EnemySymbol;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 /**
  * L'ennemi : points de vie, défense, et son propre jeu de cartes (jeu sombre,
@@ -41,6 +42,16 @@ public class Enemy {
     private       int         thornsPercent;
     /** Dégâts encaissés depuis le début de son dernier tour (pour ses Épines). */
     private       int         damageTaken;
+    /** Attaque ajoutée à son prochain coup par les gains volés (Intérêts). */
+    private       int         interest;
+    /** Compte à rebours de son Sablier, de 0 à {@link EnemySymbol#HOURGLASS_MAX}. */
+    private       int         hourglass;
+    /** Sa mise (Tapis) : ses attaques sont multipliées d'autant, jusqu'à ce qu'il soit touché. */
+    private       int         stake = 1;
+    /** Tapis posé à son dernier tour : sa mise doublera à son tour suivant, s'il n'est pas touché d'ici là. */
+    private       boolean     allIn;
+    /** Sa phase (1, puis 2 pour l'Éclat Originel blessé). */
+    private       int         phase = 1;
 
     /**
      * Ennemi avec le deck de départ du jeu sombre.
@@ -71,11 +82,18 @@ public class Enemy {
         this.deck    = new Deck(cards, discardPile);
     }
 
-    /** Retire {@code damage} points de vie, sans descendre sous 0. */
+    /**
+     * Retire {@code damage} points de vie, sans descendre sous 0. Un coup qui
+     * touche fait retomber sa mise (Tapis) ; un gros coup fait reculer son Sablier.
+     */
     public void takeDamage(int damage) {
         int lost = Math.min(hp, Math.max(0, damage));
         hp -= lost;
         damageTaken += lost;
+        if (lost <= 0) return;
+        stake = 1;
+        allIn = false;
+        if (hourglass > 0 && lost * 1000L >= (long) maxHp * EnemySymbol.HOURGLASS_HIT_PER_MILLE) hourglass--;
     }
 
     /**
@@ -104,7 +122,7 @@ public class Enemy {
      * @return les dégâts à renvoyer au joueur (part des dégâts encaissés depuis la fin de son dernier tour)
      */
     public int collectThorns() {
-        int thorns = Math.round(damageTaken * thornsPercent / 100f);
+        int thorns = Math.min(kind.thornsMax(), Math.round(damageTaken * thornsPercent / 100f));
         thornsPercent = 0;
         return thorns;
     }
@@ -120,6 +138,61 @@ public class Enemy {
         int added = Math.min(amount, EnemySymbol.RAGE_MAX - rage);
         rage += Math.max(0, added);
         return Math.max(0, added);
+    }
+
+    /** Ses Intérêts : {@code stolen} gains volés renforcent son prochain coup. @return l'attaque ajoutée */
+    public int addInterest(int stolen) {
+        int added = Math.min(EnemySymbol.INTEREST_MAX - interest, stolen / EnemySymbol.INTEREST_PER_ATTACK);
+        interest += Math.max(0, added);
+        return Math.max(0, added);
+    }
+
+    /** Son coup part : l'attaque de ses Intérêts est dépensée. @return l'attaque à ajouter à ce coup */
+    public int spendInterest() {
+        int spent = interest;
+        interest = 0;
+        return spent;
+    }
+
+    /**
+     * Son Sablier avance d'un cran.
+     *
+     * @return {@code true} s'il arrive au bout : il explose et repart de zéro
+     */
+    public boolean tickHourglass() {
+        hourglass++;
+        if (hourglass < EnemySymbol.HOURGLASS_MAX) return false;
+        hourglass = 0;
+        return true;
+    }
+
+    /** Tapis : sa mise doublera à son tour suivant, s'il n'est pas touché d'ici là. */
+    public void goAllIn() { allIn = true; }
+
+    /**
+     * Début de son tour : son Tapis du tour précédent, s'il tient encore, double
+     * sa mise (plafonnée à {@link EnemySymbol#ALL_IN_MAX}).
+     *
+     * @return {@code true} si sa mise vient de doubler
+     */
+    public boolean raiseStake() {
+        if (!allIn) return false;
+        allIn = false;
+        int before = stake;
+        stake = Math.min(EnemySymbol.ALL_IN_MAX, stake * 2);
+        return stake > before;
+    }
+
+    /**
+     * Début de son tour : l'Éclat Originel passe à sa deuxième phase sous
+     * {@link EnemyKind#PHASE_TWO_RATIO} de vie.
+     *
+     * @return {@code true} s'il vient de changer de phase
+     */
+    public boolean enterPhaseTwo() {
+        if (phase >= 2 || !kind.hasPhaseTwo() || getHpRatio() >= EnemyKind.PHASE_TWO_RATIO) return false;
+        phase = 2;
+        return true;
     }
 
     /**
@@ -145,6 +218,20 @@ public class Enemy {
     public EnemyKind getKind()     { return kind; }
     /** @return le bonus d'attaque de sa Rage. */
     public int    getRage()        { return rage; }
+    /** @return l'attaque que ses Intérêts ajouteront à son prochain coup. */
+    public int    getInterest()    { return interest; }
+    /** @return le compte à rebours de son Sablier. */
+    public int    getHourglass()   { return hourglass; }
+    /** @return {@code true} si son Tapis doublera sa mise à son prochain tour. */
+    public boolean isAllIn()       { return allIn; }
+    /** @return sa mise : ses attaques sont multipliées d'autant (Tapis). */
+    public int    getStake()       { return stake; }
+    /** @return sa phase (1, ou 2 pour l'Éclat Originel blessé). */
+    public int    getPhase()       { return phase; }
+    /** @return les symboles de ses rouleaux et leur poids, dans sa phase. */
+    public Map<EnemySymbol, Integer> getWeights() { return kind.getWeights(phase); }
+    /** @return les symboles qui peuvent sortir sur ses rouleaux, dans sa phase. */
+    public List<EnemySymbol> getSymbols() { return kind.getSymbols(phase); }
     /** @return la part des dégâts du joueur que renverront ses Épines, en %. */
     public int    getThornsPercent() { return thornsPercent; }
     /** @return sa défense de base, reformée à chacun de ses tours. */

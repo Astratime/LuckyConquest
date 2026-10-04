@@ -49,6 +49,7 @@ public class PreparationResolver {
 
         LastingEffects lasting = player.getLastingEffects();
         lasting.getRemovedSymbols().keySet().forEach(spinContext::removeSymbol);
+        spinContext.blockReel(lasting.takeForbiddenReel()); // Rouleau interdit de l'ennemi
         if (lasting.getGainBonus() != 0f) combatContext.multiplyGains(1f + lasting.getGainBonus());
         combatContext.addAttackBonus(lasting.getBlades() * BLADE_ATTACK);
         if (lasting.getCorruptionTurns() > 0) {

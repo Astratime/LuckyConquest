@@ -157,11 +157,13 @@ public class CardChoiceOverlay implements Disposable {
      * {@code onPicked} quand la fenêtre se referme.
      *
      * @param cursed pour chaque carte, {@code true} si c'est le Joker maudit
-     * @param multiplier multiplicateur du pistolet, et {@code penaltyPercent} les gains perdus (pour le texte)
+     * @param multiplier multiplicateur du pistolet, {@code cursedMultiplier} celui du Joker maudit et
+     *                   {@code penaltyPercent} les gains qu'il fait perdre (pour le texte)
      */
-    public void showRoulette(List<Boolean> cursed, int multiplier, int penaltyPercent, IntConsumer onPicked) {
+    public void showRoulette(List<Boolean> cursed, int multiplier, int cursedMultiplier, int penaltyPercent,
+                             IntConsumer onPicked) {
         open("ROULETTE RUSSE", "Retourne une carte. Pistolet : degats d'un symbole x" + multiplier
-            + ".\nJoker maudit : -" + penaltyPercent + "% de gains.");
+            + ".\nJoker maudit : pistolet x" + cursedMultiplier + " et -" + penaltyPercent + "% de gains.");
         Table row = new Table();
         Label result = new Label(" ", new Label.LabelStyle(resultFont, Color.WHITE));
         result.setAlignment(Align.center);
@@ -199,7 +201,7 @@ public class CardChoiceOverlay implements Disposable {
                     boolean lost = cursed.get(index);
                     flip(card, lost ? cursedFace : rouletteFace, 0f);
                     card.addAction(Actions.delay(FLIP_TIME * 2f, Actions.run(() -> {
-                        result.setText(lost ? "JOKER MAUDIT !  -" + penaltyPercent + "% DE GAINS"
+                        result.setText(lost ? "JOKER MAUDIT !  -" + penaltyPercent + "% DE GAINS, PISTOLET x" + cursedMultiplier
                             : "PAN ! PISTOLET CHARGE  x" + multiplier);
                         result.setColor(lost ? Palette.TEXT_ALERT : Palette.TEXT_TITLE);
                         result.setOrigin(Align.center);

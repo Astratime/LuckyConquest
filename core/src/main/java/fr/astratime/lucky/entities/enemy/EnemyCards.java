@@ -14,6 +14,10 @@ import java.util.List;
  *   <li>Carreau : chaque Bouclier donne de +300 à +600 de défense en plus ;</li>
  *   <li>Trèfle : un symbole tiré au hasard devient de 10 % à 50 % plus probable.</li>
  * </ul>
+ * Le Rouleau interdit ({@link #forbiddenReel()}), sans couleur, n'est que dans le
+ * deck de l'Éclat Originel : il bloque un rouleau du joueur à son prochain tirage.
+ * Les bonus d'attaque et de défense grandissent avec la force de l'ennemi
+ * ({@link EnemyKind#getPower()}), comme ses symboles.
  */
 public final class EnemyCards {
 
@@ -38,6 +42,17 @@ public final class EnemyCards {
         return cards;
     }
 
+    /** Identifiant du Rouleau interdit. */
+    public static final String FORBIDDEN_REEL_ID = "enemy_forbidden_reel";
+
+    /** @return le Rouleau interdit : joué, il bloque un rouleau du joueur à son prochain tirage. */
+    public static Card forbiddenReel() {
+        return new Card(FORBIDDEN_REEL_ID, "Rouleau interdit", "cards/dark/FORBIDDEN_REEL.png", List.of(), null, 1);
+    }
+
+    /** @return {@code true} pour le Rouleau interdit. */
+    public static boolean isForbiddenReel(Card card) { return FORBIDDEN_REEL_ID.equals(card.getId()); }
+
     /** @return la carte sombre de rang {@code rank} et de couleur {@code suit}. */
     public static Card card(Card.Suit suit, int rank) {
         String name = rank + " de " + suitName(suit);
@@ -55,11 +70,15 @@ public final class EnemyCards {
     public static int luckBonus(Card card)    { return scaled(card, LUCK_MIN, LUCK_MAX); }
 
     /** @return la description de l'effet de la carte, pour son infobulle. */
-    public static String describe(Card card) {
+    public static String describe(Card card) { return describe(card, EnemyKind.CROUPIER); }
+
+    /** @return la description de l'effet de la carte chez un ennemi {@code kind} (bonus renforcés par sa force). */
+    public static String describe(Card card, EnemyKind kind) {
+        if (card.getSuit() == null) return "Bloque un de tes rouleaux à ton prochain tirage. Pas de Bingo possible";
         return switch (card.getSuit()) {
-            case PIQUE   -> "Épées et Crocs : attaque +" + swordBonus(card);
+            case PIQUE   -> "Épées et Crocs : attaque +" + kind.empowered(swordBonus(card));
             case COEUR   -> "Potions : soin +" + healBonus(card) + " % des PV max";
-            case CARREAU -> "Boucliers : défense +" + shieldBonus(card);
+            case CARREAU -> "Boucliers : défense +" + kind.empowered(shieldBonus(card));
             case TREFLE  -> "Un symbole au hasard : chance +" + luckBonus(card) + " %";
         };
     }

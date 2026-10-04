@@ -10,10 +10,10 @@ import java.util.Random;
 /**
  * Une ascension d'un chapitre de la Tour des épreuves : trois combats à la suite.
  * <ol>
- *   <li>le croupier ({@link EnemyKind#CROUPIER}) ;</li>
+ *   <li>le premier ennemi du chapitre ({@link Chapter#getFirstEnemy()}) ;</li>
  *   <li>l'adversaire choisi par le joueur parmi trois cartes faces cachées
- *       (les {@link EnemyKind#CHALLENGERS}, dans un ordre tiré au hasard) ;</li>
- *   <li>le boss du chapitre ({@link EnemyKind#COMETE}).</li>
+ *       ({@link Chapter#getChallengers()}, dans un ordre tiré au hasard) ;</li>
+ *   <li>le boss du chapitre ({@link Chapter#getBoss()}).</li>
  * </ol>
  * Une défaite fait recommencer le chapitre au premier combat.
  */
@@ -25,7 +25,7 @@ public class TowerRun {
     private final Chapter chapter;
     private final Random  random;
     private int           stage;
-    private EnemyKind     enemy = EnemyKind.CROUPIER;
+    private EnemyKind     enemy;
     private List<EnemyKind> choices = List.of();
 
     public TowerRun(Chapter chapter) {
@@ -36,6 +36,7 @@ public class TowerRun {
     public TowerRun(Chapter chapter, Random random) {
         this.chapter = chapter;
         this.random  = random;
+        this.enemy   = chapter.getFirstEnemy();
     }
 
     /** @return le chapitre en cours. */
@@ -56,10 +57,10 @@ public class TowerRun {
         if (isBossStage()) return Next.CHAPTER_CLEARED;
         stage++;
         if (isBossStage()) {
-            enemy = EnemyKind.COMETE;
+            enemy = chapter.getBoss();
             return Next.BOSS;
         }
-        List<EnemyKind> shuffled = new ArrayList<>(EnemyKind.CHALLENGERS);
+        List<EnemyKind> shuffled = new ArrayList<>(chapter.getChallengers());
         Collections.shuffle(shuffled, random);
         choices = List.copyOf(shuffled);
         return Next.CHOOSE_ENEMY;
@@ -83,7 +84,7 @@ public class TowerRun {
     /** Défaite : le chapitre recommence au premier combat. */
     public void restart() {
         stage   = 0;
-        enemy   = EnemyKind.CROUPIER;
+        enemy   = chapter.getFirstEnemy();
         choices = List.of();
     }
 

@@ -115,7 +115,11 @@ public class TurnResult {
 
     /** @return {@code true} si exactement deux des trois symboles tirés sont identiques (jackpot exclu). */
     public boolean isPair() {
-        if (isJackpot() || symbols[0] == null) return false;
-        return symbols[0] == symbols[1] || symbols[1] == symbols[2] || symbols[0] == symbols[2];
+        return !isJackpot() && SlotMachine.hasPair(symbols);
+    }
+
+    /** @return {@code true} pour un Bingo de bouclier : trois symboles de défense identiques. */
+    public boolean isShieldBingo() {
+        return isJackpot() && SymbolRegistry.getDefenseSymbols().contains(symbols[0]);
     }
 }

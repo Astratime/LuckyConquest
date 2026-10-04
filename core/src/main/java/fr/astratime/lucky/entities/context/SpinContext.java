@@ -23,6 +23,8 @@ public class SpinContext {
     private boolean forceJackpot = false;
     /** Symbole imposé au jackpot garanti ; {@code null} : tiré au hasard. */
     private Symbol  jackpotSymbol;
+    /** Rouleau bloqué (Rouleau interdit de l'ennemi) : il ne tourne pas et ne donne rien ; -1 : aucun. */
+    private int     blockedReel = -1;
 
     /** Ajoute {@code amount} au boost de poids du symbole (cumulable sur plusieurs cartes). */
     public void addWeightBoost(Symbol symbol, int amount) {
@@ -57,6 +59,12 @@ public class SpinContext {
 
     /** @return le symbole imposé au jackpot garanti, ou {@code null} s'il est tiré au hasard. */
     public Symbol getJackpotSymbol() { return jackpotSymbol; }
+
+    /** Bloque le rouleau {@code reel} pour ce tirage (Rouleau interdit). */
+    public void blockReel(int reel) { blockedReel = reel; }
+
+    /** @return le rouleau bloqué ce tirage, ou -1 si aucun. */
+    public int getBlockedReel() { return blockedReel; }
 
     /** @return {@code true} si le tirage de ce tour est un jackpot garanti. */
     public boolean isJackpotForced() { return forceJackpot; }

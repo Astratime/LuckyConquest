@@ -78,6 +78,7 @@ import fr.astratime.lucky.entities.events.GainsEarnedEvent;
 import fr.astratime.lucky.entities.events.GainsLostEvent;
 import fr.astratime.lucky.entities.events.JackpotEvent;
 import fr.astratime.lucky.entities.events.PlayerDamagedEvent;
+import fr.astratime.lucky.entities.events.ReelForbiddenEvent;
 import fr.astratime.lucky.entities.events.PistolShotEvent;
 import fr.astratime.lucky.entities.events.PlayerHealedEvent;
 import fr.astratime.lucky.entities.events.ShieldGainedEvent;
@@ -244,7 +245,7 @@ public class GameScreen extends ScreenAdapter {
     private final RainbowChipsAnimation rainbowAnimation;
     private final ShopOverlay         shopOverlay;
     private final CardDetailOverlay   cardDetail;
-    /** Menu pause (Échap) : options, recommencer, quitter ; le jeu est figé tant qu'il est ouvert. */
+    /** Menu pause (Échap) : options, recommencer, menu principal, quitter ; le jeu est figé tant qu'il est ouvert. */
     private final PauseOverlay        pauseOverlay;
     /** Icône de l'échoppe (en haut à droite de la zone de jeu), qui ouvre la boutique. */
     private final Group               shopIcon = new Group();
@@ -316,6 +317,7 @@ public class GameScreen extends ScreenAdapter {
     public GameScreen(LuckyGame luckyGame, TowerRun run) {
         this.luckyGame = luckyGame;
         this.run       = run;
+        if (run != null) gameController.restart(run.getEnemy()); // le premier ennemi du chapitre
         // Le SpriteBatch est partagé avec LuckyGame et ne doit PAS être disposé ici.
         this.stage = new Stage(new MinimumScreenViewport(MIN_WIDTH, MIN_HEIGHT), luckyGame.getBatch());
 
@@ -384,6 +386,7 @@ public class GameScreen extends ScreenAdapter {
             new PauseOverlay.Listener() {
                 @Override public void onResume()         { Gdx.input.setInputProcessor(gameInput); }
                 @Override public void onRestart()        { Gdx.input.setInputProcessor(gameInput); GameScreen.this.onRestart(); }
+                @Override public void onMainMenu()       { onBackToMenu(); }
                 @Override public void onQuit()           { Gdx.app.exit(); }
                 @Override public void onEffectsChanged() { GameScreen.this.onEffectsChanged(); }
             });
@@ -452,6 +455,9 @@ public class GameScreen extends ScreenAdapter {
         if (isCombatOver()) return;
         refreshCombos(); // les combinaisons du tour précédent s'éteignent
         hand.setLocked(false); // une carte achetée entre deux tours reste sur la table
+        slots.setBlockedReel(player().getLastingEffects().getForbiddenReel()); // Rouleau interdit de l'ennemi
+        GameController.Purchase gift = gameController.claimBonusCard(); // Bingo offert après un Bingo de bouclier
+        if (gift != null) placePurchase(gift);
         hand.deal(gameController.drawCards());
         refreshPlays();
         spinButton.setDisabled(false);
@@ -704,7 +710,8 @@ public class GameScreen extends ScreenAdapter {
                 refreshEffects();
             });
         } else if (choice instanceof RouletteChoice roulette) {
-            choiceOverlay.showRoulette(roulette.cursed(), roulette.pistolMultiplier(), roulette.penaltyPercent(),
+            choiceOverlay.showRoulette(roulette.cursed(), roulette.pistolMultiplier(), roulette.cursedMultiplier(),
+                roulette.penaltyPercent(),
                 index -> {
                     GameController.RouletteOutcome outcome = gameController.pickRouletteCard(index);
                     effectPopupAnimator.play(outcome.popups(), cardCenter.x, cardCenter.y);
@@ -908,6 +915,10 @@ public class GameScreen extends ScreenAdapter {
         } else if (event instanceof EnemyHealedEvent heal) {
             if (heal.amount > 0) hud.revealEnemyHeal(heal.amount);
             enemyView.heal();
+        } else if (event instanceof ReelForbiddenEvent forbidden) {
+            slots.setBlockedReel(forbidden.reel);
+            sounds.shieldBreak.play();
+            screenShake.shake(0.25f, 7f);
         }
     }
 
@@ -1024,7 +1035,7 @@ public class GameScreen extends ScreenAdapter {
      */
     private void onRestart() {
         if (run != null) run.restart();
-        gameController.restart();
+        gameController.restart(run != null ? run.getEnemy() : EnemyKind.CROUPIER);
         resetBoard();
     }
 
@@ -1137,6 +1148,12 @@ public class GameScreen extends ScreenAdapter {
         } else {
             shown.add(buttons.createAction("Continuer", sounds.buttonClick, this::onContinue));
             shown.add(buttons.create("Chapitres", sounds.buttonClick, this::onBackToChapters));
+        }
+        String ending = run != null && victory && run.isBossStage() ? run.getChapter().getEnding() : null;
+        if (ending != null) {
+            // Le dernier chapitre clôt l'histoire : sa phrase de fin, au-dessus du bouton.
+            Label endingLabel = new Label(ending, new Label.LabelStyle(shopFont, Palette.GOLD));
+            endButtons.add(endingLabel).colspan(shown.size()).padBottom(18f).row();
         }
         for (int i = 0; i < shown.size(); i++) {
             TextButton button = shown.get(i);

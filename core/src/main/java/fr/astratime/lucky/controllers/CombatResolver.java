@@ -3,6 +3,7 @@ package fr.astratime.lucky.controllers;
 import fr.astratime.lucky.entities.context.CombatContext;
 import fr.astratime.lucky.entities.Enemy;
 import fr.astratime.lucky.entities.Player;
+import fr.astratime.lucky.entities.SlotMachine;
 import fr.astratime.lucky.entities.Symbol;
 import fr.astratime.lucky.entities.SymbolOutcome;
 import fr.astratime.lucky.entities.TurnResult;
@@ -186,7 +187,6 @@ public class CombatResolver {
 
     /** @return {@code true} si au moins deux des trois symboles sont identiques et non nuls. */
     private boolean hasPair(Symbol[] s) {
-        if (s[0] == null) return false;
-        return s[0] == s[1] || s[1] == s[2] || s[0] == s[2];
+        return SlotMachine.hasPair(s);
     }
 }

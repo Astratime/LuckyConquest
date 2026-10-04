@@ -13,7 +13,9 @@ import java.util.List;
  * Bingo : les trois rouleaux affichent le même symbole, dont la valeur
  * (dégâts, bouclier ou gains) est multipliée. Plus aucune carte ne peut être
  * jouée : la machine se lance d'elle-même. Le symbole peut être imposé
- * (cartes de test de l'échoppe) ou tiré au hasard.
+ * (cartes de test de l'échoppe) ou tiré au hasard. Un Bingo de bouclier renvoie
+ * tout le bouclier à l'ennemi s'il attaque (voir EnemyTurnResolver) et offre un
+ * Bingo au prochain tour (voir GameController#claimBonusCard).
  */
 public class BingoEffect extends Effect {
 
@@ -55,7 +57,8 @@ public class BingoEffect extends Effect {
     public String getDescription() {
         String bingo = symbol != null ? "Bingo " + symbol.getDisplayName() : "Bingo";
         return "Lance la machine avec un " + bingo + " garanti"
-            + (power > 1 ? ". Attaque, bouclier et gains des symboles x" + power : "");
+            + (power > 1 ? ". Attaque, bouclier et gains des symboles x" + power : "")
+            + ". Bingo de bouclier : s'il attaque, ton bouclier lui est renvoyé. Un Bingo offert au tour suivant";
     }
 
     @Override

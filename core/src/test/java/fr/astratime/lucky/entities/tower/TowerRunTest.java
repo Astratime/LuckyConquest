@@ -18,7 +18,7 @@ class TowerRunTest {
         assertEquals(0, run.getStage());
 
         assertEquals(TowerRun.Next.CHOOSE_ENEMY, run.win());
-        assertEquals(new HashSet<>(EnemyKind.CHALLENGERS), new HashSet<>(run.getChoices()), "3 cartes, 3 ennemis différents");
+        assertEquals(new HashSet<>(Chapter.GENESE.getChallengers()), new HashSet<>(run.getChoices()), "3 cartes, 3 ennemis différents");
         EnemyKind chosen = run.getChoices().get(2);
         assertEquals(chosen, run.choose(2));
         assertEquals(chosen, run.getEnemy());
@@ -53,10 +53,30 @@ class TowerRunTest {
     }
 
     @Test
-    void onlyTheFirstChapterIsOpen() {
-        assertTrue(Chapter.GENESE.isOpen());
+    void theThreeChaptersAreOpen() {
+        for (Chapter chapter : Chapter.values()) assertTrue(chapter.isOpen(), chapter.name());
         assertEquals("La genèse", Chapter.GENESE.getTitle());
-        assertFalse(Chapter.CHAPITRE_2.isOpen());
-        assertFalse(Chapter.CHAPITRE_3.isOpen());
+        assertEquals("Les Tables Sacrées", Chapter.TABLES_SACREES.getTitle());
+        assertEquals("Le Dernier Tirage", Chapter.DERNIER_TIRAGE.getTitle());
+    }
+
+    @Test
+    void eachChapterHasItsOwnLineUp() {
+        TowerRun run = new TowerRun(Chapter.TABLES_SACREES, new Random(2));
+        assertEquals(EnemyKind.CHEF, run.getEnemy());
+        run.win();
+        assertEquals(new HashSet<>(Chapter.TABLES_SACREES.getChallengers()), new HashSet<>(run.getChoices()));
+        run.choose(0);
+        run.win();
+        assertEquals(EnemyKind.REINE, run.getEnemy());
+        run.restart();
+        assertEquals(EnemyKind.CHEF, run.getEnemy());
+
+        run = new TowerRun(Chapter.DERNIER_TIRAGE, new Random(2));
+        assertEquals(EnemyKind.GARDIENNE, run.getEnemy());
+        run.win();
+        run.choose(1);
+        run.win();
+        assertEquals(EnemyKind.ECLAT, run.getEnemy());
     }
 }

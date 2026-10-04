@@ -57,6 +57,12 @@ public class GameController {
     /** Une carte (Bingo) a bloqué la main : plus aucune carte ne peut être jouée ce tour. */
     private boolean handLocked = false;
 
+    /** Carte offerte au prochain tour après un Bingo de bouclier (voir {@link #claimBonusCard()}). */
+    public static final String SHIELD_BINGO_GIFT = "bingo";
+
+    /** Un Bingo de bouclier a été tiré : un Bingo est offert au prochain tour du joueur. */
+    private boolean bingoGiftPending = false;
+
     /** Cartes jouées ce tour (toutes comptent, consommables compris), limitées par {@link #getPlayLimit()}. */
     private int cardsPlayedThisTurn = 0;
 
@@ -118,7 +124,13 @@ public class GameController {
      * vide les effets en attente du tour précédent.
      */
     public void restart() {
-        this.gameState = new GameState(starterDeck.get());
+        restart(EnemyKind.CROUPIER);
+    }
+
+    /** Comme {@link #restart()}, contre un ennemi {@code kind} (premier combat d'un chapitre). */
+    public void restart(EnemyKind kind) {
+        GameState fresh = new GameState(starterDeck.get());
+        this.gameState = new GameState(fresh.getPlayer(), new Enemy(kind));
         clearTurn();
     }
 
@@ -139,6 +151,7 @@ public class GameController {
         cardsPlayedThisTurn = 0;
         pendingChoice = null;
         handLocked    = false;
+        bingoGiftPending = false;
         originals.clear();
     }
 
@@ -296,6 +309,20 @@ public class GameController {
         return new CardPlayResult.Rainbow(suit, recolored, added, player.addToHandOrDiscard(added));
     }
 
+    /**
+     * Début du tour du joueur, avant sa pioche : après un Bingo de bouclier, une
+     * carte Bingo (symbole au hasard) lui est offerte, posée sur la table s'il y a
+     * de la place, sinon glissée dans le deck.
+     *
+     * @return la carte offerte, ou {@code null} s'il n'y en a pas
+     */
+    public Purchase claimBonusCard() {
+        if (!bingoGiftPending) return null;
+        bingoGiftPending = false;
+        Card card = cardFactory.apply(SHIELD_BINGO_GIFT);
+        return new Purchase(card, gameState.getPlayer().addToHandOrDeck(card));
+    }
+
     /** @return le choix demandé au joueur par la dernière carte jouée, ou {@code null} si aucun. */
     public CardChoice getPendingChoice() { return pendingChoice; }
 
@@ -347,9 +374,9 @@ public class GameController {
     }
 
     /**
-     * Réponse à la Roulette russe : retourne la carte {@code index}. Le Joker
-     * maudit coûte une partie des gains tout de suite ; sinon, le pistolet est
-     * mis en attente jusqu'au spin.
+     * Réponse à la Roulette russe : retourne la carte {@code index}. Le
+     * pistolet est mis en attente jusqu'au spin, quelle que soit la carte (moins
+     * fort avec le Joker maudit, qui coûte en plus une partie des gains tout de suite).
      *
      * @return {@code true} si la carte est le Joker maudit, et les textes à afficher
      * @throws IllegalStateException si aucune roulette n'est en attente de choix
@@ -359,14 +386,17 @@ public class GameController {
             throw new IllegalStateException("Aucune roulette en attente");
         }
         pendingChoice = null;
-        if (roulette.cursed().get(index)) {
+        boolean cursed = roulette.cursed().get(index);
+        PistolEffect pistol = new PistolEffect(cursed ? roulette.cursedMultiplier() : roulette.pistolMultiplier());
+        pendingEffects.add(pistol);
+        if (cursed) {
             int lost = gameState.getPlayer().consumeGainsPercent(roulette.penaltyPercent() / 100f);
-            return new RouletteOutcome(true, List.of(
+            List<EffectPopup> popups = new ArrayList<>(List.of(
                 new EffectPopup("JOKER MAUDIT !", EffectPopup.Style.DAMAGE, PopupScale.MAX_INTENSITY),
                 EffectPopup.scaled("GAINS -" + lost, EffectPopup.Style.DAMAGE, lost, PopupScale.SPIN_GAINS)));
+            popups.addAll(pistol.getPopups());
+            return new RouletteOutcome(true, popups);
         }
-        PistolEffect pistol = new PistolEffect(roulette.pistolMultiplier());
-        pendingEffects.add(pistol);
         return new RouletteOutcome(false, pistol.getPopups());
     }
 
@@ -387,6 +417,7 @@ public class GameController {
      */
     public TurnResult spin() {
         TurnResult result = turnEngine.playTurn(gameState, pendingEffects);
+        if (result.isShieldBingo()) bingoGiftPending = true;
         pendingEffects.clear();
         betsThisTurn.clear();
         cardsPlayedThisTurn = 0;
