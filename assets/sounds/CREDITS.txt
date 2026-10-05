@@ -17,6 +17,6 @@ Musiques de fond (dossier assets/music) :
   Converties en Ogg Vorbis depuis les vidéos d'origine, sans autre retouche.
 
 Tous les autres sons (dossiers ui, slots, effects, bingo, combat, coins, shop,
-combo, party) sont synthétisés pour le jeu par tools/sounds/generate_sounds.py,
+combo, party, cutscene) sont synthétisés pour le jeu par tools/sounds/generate_sounds.py,
 sans échantillon extérieur : modifier ce script puis le relancer pour les
 régénérer (voir son en-tête).

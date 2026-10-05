@@ -1017,6 +1017,57 @@ def firework_burst():
 
 # ===========================================================================
 
+# ===========================================================================
+# Cinématiques
+# ===========================================================================
+
+@sound('cutscene/comet', -17)
+def cutscene_comet():
+    """
+    Avant la Comète Dorée (CometCutscene) : nuit calme et étoiles filantes qui tintent,
+    puis une météorite en feu qui gronde de plus en plus fort, l'explosion (IMPACT = 5,6 s)
+    et un accord de casino qui monte dans le fondu blanc (WHITE_FULL = 6,8 s).
+    """
+    impact_at, white_full = 5.6, 6.8
+    track = Track(9.0)
+    night = lp(noise(6.0), 500) * ramp(6.0, 0.0, 1.0, 0.4) * ramp(6.0, 1.0, 0.2, 3.0)   # vent de nuit
+    track.add(night, 0.0, 0.18)
+    drone = stack(osc(hz('A2'), 6.0, 'sine'), 0.5 * osc(hz('E3'), 6.0, 'sine'), 0.3 * osc(hz('A3') * 1.003, 6.0, 'tri'))
+    track.add(drone * ramp(6.0, 0.0, 1.0, 0.5) * ramp(6.0, 1.0, 0.0, 2.0), 0.0, 0.12)
+    notes = ['E6', 'B5', 'A6', 'E6', 'C#7', 'B6', 'E7', 'A6', 'B6', 'E7']
+    t = 0.6
+    for k, note in enumerate(notes):                                  # étoiles filantes : tintements de clochette
+        ring = modal(hz(note), 0.9, [1, 2.76, 5.4], [0.5, 0.2, 0.08], [1, 0.3, 0.12])
+        swish = whoosh(0.35, 3000, 9000, q=1.5, curve=1.2) * expdec(0.35, 0.15, attack=0.05)
+        track.add(swish, t, 0.12)
+        track.add(ring, t + 0.12, 0.22)
+        t += 0.32 - 0.017 * k
+    track.add(sparkle(2.4, count=40, lo=4000, hi=10000), 1.2, 0.18)
+    roar_d = impact_at - 3.3                                          # la météorite approche
+    fc = sweep(120, 1800, roar_d)
+    roar = svf(noise(roar_d), fc, q=0.9) * ramp(roar_d, 0.0, 1.0, 2.2)
+    rumble = lp(noise(roar_d), 160) * ramp(roar_d, 0.0, 1.0, 1.5)
+    whistle = osc(sweep(1800, 500, roar_d), roar_d, 'tri') * ramp(roar_d, 0.0, 1.0, 2.5)
+    crackle = Track(roar_d)
+    for _ in range(int(roar_d * 90)):
+        at = rand(0, 1) ** 0.6 * (roar_d - 0.01)
+        crackle.add(bp(noise(0.006), 1500, 6000) * expdec(0.006, 0.0015), at, rand(0.2, 0.9) * at / roar_d)
+    track.add(roar, 3.3, 0.6)
+    track.add(rumble, 3.3, 0.9)
+    track.add(whistle, 3.3, 0.08)
+    track.add(crackle.buf, 3.3, 0.35)
+    boom = mix((crack(0.08, 0.01, 200, 9000), 0, 1.0), (thump(70, 25, 2.0, 0.6), 0, 1.2),
+               (drive(lp(noise(3.0), 700) * expdec(3.0, 0.8, attack=0.004), 2.5), 0, 1.0),
+               (fire_burst(2.4), 0.03, 0.7))
+    track.add(reverb(boom, wet=0.35, size=1.8, tail=1.5), impact_at, 1.0)
+    rise = white_full - impact_at + 0.4                              # le blanc : glissando qui monte et accord
+    gliss = stack(*(osc(sweep(hz(n) / 2, hz(n), rise), rise, 'tri') for n in ('A4', 'C#5', 'E5')))
+    track.add(gliss * ramp(rise, 0.0, 1.0, 1.5), impact_at + 0.3, 0.12)
+    track.add(bingo_jingle('A5', 'square', duty=0.25, step=0.06, hold=1.2) * 0.8, white_full - 0.25, 0.6)
+    track.add(sparkle(1.5, count=24), white_full, 0.3)
+    return reverb(track.buf, wet=0.18, size=1.4, tail=1.0)
+
+
 def main(prefixes):
     done = 0
     for name, level, fmt, trim, loop, fn in SOUNDS:

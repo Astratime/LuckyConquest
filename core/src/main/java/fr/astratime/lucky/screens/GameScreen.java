@@ -33,6 +33,7 @@ import fr.astratime.lucky.animations.BingoCardAnimation;
 import fr.astratime.lucky.animations.CardClickParticles;
 import fr.astratime.lucky.animations.CardDealAnimator;
 import fr.astratime.lucky.animations.CardDiscardAnimator;
+import fr.astratime.lucky.animations.CometCutscene;
 import fr.astratime.lucky.animations.CombatEndAnimation;
 import fr.astratime.lucky.animations.Confetti;
 import fr.astratime.lucky.animations.DamageVignette;
@@ -78,6 +79,7 @@ import fr.astratime.lucky.entities.choices.CardChoice;
 import fr.astratime.lucky.entities.choices.RouletteChoice;
 import fr.astratime.lucky.entities.SlotMachine;
 import fr.astratime.lucky.entities.enemy.EnemyKind;
+import fr.astratime.lucky.entities.tower.Chapter;
 import fr.astratime.lucky.entities.tower.TowerRun;
 import fr.astratime.lucky.entities.enemy.EnemySymbol;
 import fr.astratime.lucky.entities.enemy.EnemyTurnResult;
@@ -255,6 +257,7 @@ public class GameScreen extends ScreenAdapter {
     private final HudTextures         hudTextures   = new HudTextures();
     private final VisualSettings      settings      = new VisualSettings();
     private final ScreenShake         screenShake   = new ScreenShake(settings);
+    private CometCutscene             cometCutscene;
     private final DamageVignette      damageVignette = new DamageVignette();
     private final Confetti            confetti;
     private final CombatEndAnimation  combatEnd;
@@ -426,12 +429,13 @@ public class GameScreen extends ScreenAdapter {
         symbolStrikes   = new SymbolStrikes(settings, screenShake, new TextureRegion(hudTextures.pixel), hudTextures.coin,
             sidePanel::bumpCoin);
         rainbowAnimation = new RainbowChipsAnimation(settings, new TextureRegion(hudTextures.pixel));
+        cometCutscene    = new CometCutscene(settings, screenShake, sounds.cometCutscene);
         shopOverlay      = new ShopOverlay(stage, hudTextures, tooltip, CARD_WIDTH, CARD_HEIGHT);
         cardDetail       = new CardDetailOverlay(stage, hudTextures, tooltip, CARD_WIDTH, CARD_HEIGHT);
         pauseOverlay     = new PauseOverlay(luckyGame, luckyGame.getBatch(), hudTextures, sounds.buttonClick, sounds.menuHover,
             settings,
             new PauseOverlay.Listener() {
-                @Override public void onResume()         { Gdx.input.setInputProcessor(gameInput); }
+                @Override public void onResume()         { Gdx.input.setInputProcessor(gameInput); cometCutscene.resumeSound(); }
                 @Override public void onRestart()        { Gdx.input.setInputProcessor(gameInput); GameScreen.this.onRestart(); }
                 @Override public void onMainMenu()       { onBackToMenu(); }
                 @Override public void onEffectsChanged() { GameScreen.this.onEffectsChanged(); }
@@ -486,6 +490,7 @@ public class GameScreen extends ScreenAdapter {
         stage.addActor(pileOverlay.getActor()); // voile de consultation des piles, par-dessus le jeu
         stage.addActor(cardDetail.getActor());  // fiche d'une carte, par-dessus tout le reste
         stage.addActor(tooltip.getActor());     // en dernier : toujours au-dessus
+        stage.addActor(cometCutscene);          // cinématique avant la Comète Dorée : couvre tout l'écran
         stage.addActor(screenShake);            // invisible : met à jour la caméra
 
         startPlayerTurn(); // le combat commence par le tour du joueur, main piochée d'office
@@ -1170,6 +1175,7 @@ public class GameScreen extends ScreenAdapter {
     private void showPauseMenu() {
         if (pauseOverlay.isShown()) return;
         tooltip.hide();
+        cometCutscene.pauseSound();
         pauseOverlay.show();
         Gdx.input.setInputProcessor(pauseOverlay.getInput());
     }
@@ -1189,6 +1195,8 @@ public class GameScreen extends ScreenAdapter {
      * l'affichage. Dans la Tour des épreuves, le chapitre repart du premier combat.
      */
     private void onRestart() {
+        cometCutscene.cancel();
+        music.setDucked(false);
         if (run != null) run.restart();
         gameController.restart(firstEnemy());
         resetBoard();
@@ -1307,12 +1315,36 @@ public class GameScreen extends ScreenAdapter {
         switch (next) {
             case CHOOSE_ENEMY -> pickOverlay.showChoice(run.getChoices(), this::createButton,
                 index -> startNextCombat(run.choose(index)));
-            case BOSS -> pickOverlay.showBoss(run.getEnemy(), this::createButton, () -> startNextCombat(run.getEnemy()));
+            case BOSS -> introduceBoss();
             case CLEARED -> {
                 if (isDungeon()) openChest();
                 else onBackToChapters();
             }
         }
+    }
+
+    /**
+     * Après le 2e combat, « Continuer » : avant la Comète Dorée (chapitre 1 de la
+     * Tour), la cinématique de la météorite joue d'abord, et la présentation du
+     * boss apparaît sous son fondu blanc ; la musique s'efface pendant la scène.
+     * « Affronter » lance ensuite le combat.
+     */
+    private void introduceBoss() {
+        if (!(run instanceof TowerRun tower) || tower.getChapter() != Chapter.GENESE) {
+            showBoss();
+            return;
+        }
+        tooltip.hide();
+        music.setDucked(true);
+        cometCutscene.play(() -> {
+            music.setDucked(false);
+            showBoss();
+        });
+    }
+
+    /** La présentation du boss, avec « Affronter ». */
+    private void showBoss() {
+        pickOverlay.showBoss(run.getEnemy(), this::createButton, () -> startNextCombat(run.getEnemy()));
     }
 
     /** @return le texte du bouton qui ramène au choix du chapitre ou du donjon. */
@@ -1797,6 +1829,10 @@ public class GameScreen extends ScreenAdapter {
                     openPauseMenu();
                     return true;
                 }
+                if (cometCutscene.isPlaying()) {
+                    cometCutscene.skip(); // n'importe quelle autre touche passe la cinématique
+                    return true;
+                }
                 if (choiceOverlay.isShown() || shopOverlay.isShown() || pickOverlay.isShown() || chestOverlay.isShown()
                     || bingoAnimation.isPlaying()
                     || rainbowAnimation.isPlaying()) {
@@ -1880,6 +1916,7 @@ public class GameScreen extends ScreenAdapter {
         chestOverlay.dispose();
         bingoAnimation.dispose();
         rainbowAnimation.dispose();
+        cometCutscene.dispose();
         shopOverlay.dispose();
         cardDetail.dispose();
         pauseOverlay.dispose();

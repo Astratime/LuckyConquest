@@ -12,10 +12,14 @@ import fr.astratime.lucky.settings.AudioSettings;
  */
 public class BackgroundMusic implements Disposable {
 
+    /** Volume gardé quand la musique s'efface derrière une cinématique. */
+    private static final float DUCKED = 0.15f;
+
     private final Music         music;
     private final AudioSettings audio;
     private final float         level;
     private float               applied = -1f;
+    private boolean             ducked;
 
     /**
      * @param path  chemin interne du fichier (ex : "music/combat.ogg")
@@ -36,10 +40,16 @@ public class BackgroundMusic implements Disposable {
 
     /** Applique le réglage « Musique » s'il a changé ; à appeler à chaque image. */
     public void update() {
-        float volume = level * audio.getMusicVolume();
+        float volume = level * audio.getMusicVolume() * (ducked ? DUCKED : 1f);
         if (volume == applied) return;
         applied = volume;
         music.setVolume(volume);
+    }
+
+    /** Baisse la musique (pendant une cinématique) ou lui rend son volume. */
+    public void setDucked(boolean ducked) {
+        this.ducked = ducked;
+        update();
     }
 
     @Override

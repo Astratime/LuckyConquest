@@ -79,6 +79,8 @@ public class GameSounds implements Disposable {
 
     public final Sound victory;
     public final Sound defeat;
+    /** Cinématique avant la Comète Dorée, calée sur {@code CometCutscene}. */
+    public final Sound cometCutscene;
 
     private final Map<EffectSound, Sound> effects = new EnumMap<>(EffectSound.class);
     private final Map<Symbol, Sound>      bingos  = new EnumMap<>(Symbol.class);
@@ -123,6 +125,7 @@ public class GameSounds implements Disposable {
 
         victory      = load("sounds/combat/victory.ogg");
         defeat       = load("sounds/combat/defeat.ogg");
+        cometCutscene = load("sounds/cutscene/comet.ogg");
 
         for (EffectSound effect : EffectSound.values()) effects.put(effect, load(effect.getAssetPath()));
         Map<String, Sound> byName = new HashMap<>(); // Triple Sept et Joker partagent le même son
