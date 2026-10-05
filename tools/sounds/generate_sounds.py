@@ -1294,30 +1294,36 @@ def lever_pull(d, heavy=False):
 @sound('cutscene/last_draw_round', -18)
 def cutscene_last_draw_round():
     """
-    Une manche du Dernier tirage : la main tire ton levier (0,25 à 0,55 s), ton rouleau tourne ; son levier
-    descend tout seul (0,85 à 1,15 s, plus lourd), son rouleau tourne ; le tien s'arrête (2,2 s) en ralentissant,
-    suspense, puis le sien (3,0 s).
+    Une manche du Dernier tirage, à partir du moment où ton levier touche le fond (0 s) : ton rouleau tourne ;
+    son levier descend tout seul (0,35 à 0,65 s, plus lourd), son rouleau tourne ; le tien s'arrête (1,6 s) en
+    ralentissant, suspense, puis le sien (2,45 s).
     """
-    track = Track(3.6)
-    track.add(lever_pull(0.3), 0.25, 0.9)
-    track.add(rattle(1.65, 30, 6, 2000, 5000), 0.55, 0.4)                     # ton rouleau qui ralentit
-    track.add(lever_pull(0.3, heavy=True), 0.85, 1.0)
-    track.add(rattle(1.85, 30, 4, 900, 2600), 1.15, 0.4)                      # le sien, plus grave
-    track.add(lp(noise(2.0), 110) * ramp(2.0, 0.6, 0.2), 1.15, 0.7)           # le sol tremble
+    track = Track(3.0)
+    track.add(mix((metal_hit(320, 0.4), 0, 1.0), (impact(0.25, 200, 70), 0, 1.0)), 0.0, 0.75)
+    track.add(rattle(1.6, 30, 6, 2000, 5000), 0.0, 0.4)                       # ton rouleau qui ralentit
+    track.add(lever_pull(0.3, heavy=True), 0.35, 1.0)
+    track.add(rattle(1.8, 30, 4, 900, 2600), 0.65, 0.4)                       # le sien, plus grave
+    track.add(lp(noise(1.8), 110) * ramp(1.8, 0.6, 0.2), 0.65, 0.7)           # le sol tremble
     stop = mix((thump(220, 90, 0.12, 0.03), 0, 1.0), (click(0.005, 1500, 6000), 0, 0.8),
                (modal(hz('E6'), 0.25, BAR_RATIOS, [0.07, 0.03, 0.015, 0.008]), 0.004, 0.35))
-    track.add(stop, 2.2, 0.9)
-    t, interval = 2.25, 0.1                                                    # suspense : la caisse claire accélère
-    while t < 2.98:
+    track.add(stop, 1.6, 0.9)
+    t, interval = 1.65, 0.1                                                    # suspense : la caisse claire accélère
+    while t < 2.43:
         snare = stack(bp(noise(0.05), 1200, 7000) * expdec(0.05, 0.015), 0.3 * thump(240, 180, 0.04, 0.015))
-        track.add(snare, t, 0.3 + 0.6 * (t - 2.25) / 0.75)
+        track.add(snare, t, 0.3 + 0.6 * (t - 1.65) / 0.8)
         t += interval
         interval = max(0.03, interval * 0.85)
-    rise = osc(vibrato(sweep(260, 700, 0.75), 0.75, rate=7, depth=0.015), 0.75, 'tri') * ramp(0.75, 0.1, 0.8, 1.5)
-    track.add(lp(rise, 3000), 2.25, 0.35)
+    rise = osc(vibrato(sweep(260, 700, 0.8), 0.8, rate=7, depth=0.015), 0.8, 'tri') * ramp(0.8, 0.1, 0.8, 1.5)
+    track.add(lp(rise, 3000), 1.65, 0.35)
     track.add(mix((thump(160, 60, 0.25, 0.06), 0, 1.0), (click(0.01, 1200, 5000), 0, 0.8),
-                  (metal_hit(260, 0.5), 0, 0.4)), 3.0, 1.0)
+                  (metal_hit(260, 0.5), 0, 0.4)), 2.45, 1.0)
     return reverb(track.buf, wet=0.2, size=1.2, tail=0.5)
+
+
+@sound('cutscene/last_draw_notch', -24)
+def cutscene_last_draw_notch():
+    """Dernier tirage : un cran de ton levier, pendant que tu le tires à la souris."""
+    return mix((click(0.005, 1500, 5000), 0, 1.0), (modal(rand(900, 1100), 0.06, WOOD_RATIOS, [0.02, 0.01, 0.006]), 0, 0.6))
 
 
 @sound('cutscene/last_draw_tie', -20)

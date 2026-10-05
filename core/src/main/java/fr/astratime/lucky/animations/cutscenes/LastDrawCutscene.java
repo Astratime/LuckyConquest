@@ -4,6 +4,7 @@ import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
+import com.badlogic.gdx.graphics.g2d.GlyphLayout;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.Interpolation;
 import com.badlogic.gdx.math.MathUtils;
@@ -16,58 +17,83 @@ import java.util.List;
 
 /**
  * Le Dernier tirage de la Machine Originelle, achevée : au sommet de la Tour,
- * ta machine à un rouleau fait face à la sienne. Une main gantée tire ton
- * levier, puis le sien descend tout seul. Ton rouleau s'arrête, le sien se fait
- * attendre... Le plus haut rang gagne (le Joker en tête) ; à égalité, on relance.
- * Gagné : sa vitre se fend, son œil s'éteint, ta machine crache des pièces, fondu
- * blanc (la victoire, puis « Le Jackpot »). Perdu : ta machine grille, son œil
- * flambe, fondu noir.
+ * ta machine à un rouleau fait face à la sienne. Elle parle (une bulle qui
+ * s'écrit, un clic la fait avancer) : un dernier tirage décidera. Puis c'est
+ * au joueur : il saisit son levier à la souris et le tire jusqu'en bas. Son
+ * rouleau part, le levier de la Machine descend tout seul, les deux rouleaux
+ * s'arrêtent (le sien se fait attendre). Le plus haut rang gagne (le Joker en
+ * tête) ; à égalité, elle le relance et il retire. Gagné : sa vitre se fend,
+ * son œil s'éteint, ta machine crache des pièces, fondu blanc (la victoire,
+ * puis « Le Jackpot »). Perdu : ta machine grille, son œil flambe, fondu noir.
+ * Le verdict reste {@link #VERDICT} secondes à l'écran.
  *
- * Les manches viennent de {@link LastDrawEvent} : la scène montre le tirage déjà décidé.
+ * Les manches viennent de {@link LastDrawEvent} : la scène montre le tirage déjà
+ * décidé. Un clic ne passe pas cette scène (il sert au levier) ; une touche, si.
  */
 public class LastDrawCutscene extends Cutscene {
 
-    /** Le décor sort du noir, « DERNIER TIRAGE » s'affiche ; la première manche commence ensuite. */
+    /** Le décor sort du noir, « DERNIER TIRAGE » s'affiche ; puis elle parle. */
     public static final float INTRO      = 1.6f;
-    /** Une manche, à partir de son début : la main saisit ton levier... */
-    public static final float GRAB       = 0.0f;
-    /** ... et le tire (voir le son cutscene/last_draw_round) ; ton rouleau part. */
-    public static final float PULL       = 0.25f;
-    public static final float PULL_DOWN  = 0.55f;
+    // Une manche commence quand ton levier touche le fond (voir le son cutscene/last_draw_round) : ton rouleau part.
     /** Son levier descend tout seul ; son rouleau part. */
-    public static final float HER_PULL   = 0.85f;
-    public static final float HER_DOWN   = 1.15f;
+    public static final float HER_PULL   = 0.35f;
+    public static final float HER_DOWN   = 0.65f;
     /** Ton rouleau s'arrête, puis le sien, plus tard (suspense). */
-    public static final float STOP       = 2.2f;
-    public static final float HER_STOP   = 3.0f;
-    /** Durée d'une manche, et pause « ÉGALITÉ ! ON RELANCE » après une manche nulle. */
-    public static final float ROUND      = 3.3f;
-    public static final float TIE        = 1.2f;
-    /** Après la dernière manche : le verdict, puis le fondu. */
-    public static final float VERDICT    = 1.9f;
+    public static final float STOP       = 1.6f;
+    public static final float HER_STOP   = 2.45f;
+    /** Durée d'une manche, jusqu'à l'égalité ou au verdict. */
+    public static final float ROUND      = 2.75f;
+    /** Le verdict reste à l'écran, puis le fondu. */
+    public static final float VERDICT    = 4.0f;
     public static final float COVER      = 0.6f;
+    /** La bulle s'écrit à cette vitesse (lettres par seconde), puis reste affichée avant la réplique suivante. */
+    private static final float LETTERS   = 32f;
+    private static final float LINE_HOLD = 1.1f;
+    /** Le levier lâché avant le fond remonte en autant de secondes. */
+    private static final float SPRING    = 0.3f;
+    /** Crans du levier : un cliquetis à chacun. */
+    private static final int   NOTCHES   = 6;
+
+    private static final String[] INTRO_LINES = {
+        "Tu crois m'avoir achevée ?",
+        "Pas si vite. Un dernier tirage.",
+        "Le plus haut rang gagne. L'autre tombe.",
+        "Tire ton levier. Si tu l'oses."};
+    private static final String[] TIE_LINES = {"Égalité.", "Encore. Tire !"};
+    private static final String WIN_LINE  = "Non... Impossible...";
+    private static final String LOSE_LINE = "La Machine gagne toujours.";
 
     private static final Color OUT = c("140a0a"), GOLD = c("ffc93a"), GOLD_LIGHT = c("ffe58a"), GOLD_DARK = c("b8801f");
     private static final Color RED = c("c8203a"), RED_LIGHT = c("ff5a6e"), RED_DARK = c("7a0f20");
     private static final Color CHROME = c("d8d8e0"), CHROME_DARK = c("8a8a9a"), GLASS = c("f4ecdc");
     private static final Color SKY_TOP = c("05071a"), SKY_LOW = c("2b1a4a"), STONE = c("3b3550"), STONE_DARK = c("262238");
-    private static final Color HOT = c("fff6c8"), EYE_RED = c("ff2a3a");
+    private static final Color HOT = c("fff6c8"), EYE_RED = c("ff2a3a"), BUBBLE = c("1c0f24");
 
     private final LastDrawEvent draw;
     private final BitmapFont font;
+    private final GlyphLayout bubbleLayout = new GlyphLayout();
     private final Starfield stars = new Starfield(180, 0.25f);
     private final TextureRegion[] mineStrip, herStrip;
     private final int[] mineAt, herAt;               // où s'arrête chaque manche, dans chaque bande
+    private final float[] roundAt;                   // quand chaque manche a commencé (ton levier au fond), -1 avant
     private final TextureRegion eye, gem, glove, coin;
     private final Array<Particle> coins  = new Array<>(false, 128);
     private final Array<Particle> sparks = new Array<>(false, 128);
-    private final Sound roundSound, tieSound, winSound, loseSound;
+    private final Sound roundSound, tieSound, winSound, loseSound, notchSound;
     private final List<long[]> playing = new ArrayList<>(); // {indice du son, id} des sons lancés par la scène
     private final Sound[] sounds;
-    private final float end;                          // fin de la dernière manche
+    private float end;                                // fin de la dernière manche (-1 : pas encore jouée)
     private int   roundsStarted, landed, herLanded;
-    private boolean tieSounded, verdict;
+    private boolean tieSaid, verdict, introSaid;
     private float bright = 1f, mineBright = 1f, sparkDebt;
+    /** La bulle de la Machine : ses répliques, celle en cours et quand elle a commencé à s'écrire. */
+    private String[] lines;
+    private int   line;
+    private float lineAt;
+    /** Ton levier, à la souris : saisi, où en est le geste, et où il en était quand tu l'as lâché. */
+    private boolean dragging;
+    private float grabY, dragPull, releasedPull, releasedAt = -10f;
+    private int   notch;
 
     public LastDrawCutscene(CutsceneKit kit, LastDrawEvent draw) {
         super(kit.settings(), kit.shake(), kit.sound("last_draw"));
@@ -77,18 +103,19 @@ public class LastDrawCutscene extends Cutscene {
         tieSound   = kit.sound("last_draw_tie");
         winSound   = kit.sound("last_draw_win");
         loseSound  = kit.sound("last_draw_lose");
-        sounds = new Sound[] {roundSound, tieSound, winSound, loseSound};
+        notchSound = kit.sound("last_draw_notch");
+        sounds = new Sound[] {roundSound, tieSound, winSound, loseSound, notchSound};
         List<Symbol> classic = Symbol.classicReels();
         mineStrip = strip(draw.playerReels);
         herStrip  = strip(classic);
         int rounds = draw.mine.size();
-        mineAt = new int[rounds];
-        herAt  = new int[rounds];
+        mineAt  = new int[rounds];
+        herAt   = new int[rounds];
+        roundAt = new float[rounds];
         for (int r = 0; r < rounds; r++) {
             mineAt[r] = draw.playerReels.indexOf(draw.mine.get(r));
             herAt[r]  = classic.indexOf(draw.hers.get(r));
         }
-        end = roundStart(rounds - 1) + ROUND;
         Color[] eyeColors = {OUT, Color.WHITE, c("e0283a"), GOLD, c("6e0f1e")};
         eye = art("owrgd", eyeColors,
             "...oooooo...",
@@ -129,11 +156,11 @@ public class LastDrawCutscene extends Cutscene {
         return strip;
     }
 
-    /** @return le début de la manche {@code round} (une pause « égalité » après chaque manche nulle). */
-    private static float roundStart(int round) { return INTRO + round * (ROUND + TIE); }
+    /** @return le début de la manche {@code round} (ton levier au fond), ou une date très lointaine si elle attend. */
+    private float roundStart(int round) { return round < roundsStarted ? roundAt[round] : Float.MAX_VALUE / 4f; }
 
-    @Override protected float coverStart() { return end + VERDICT; }
-    @Override protected float coverFull()  { return end + VERDICT + COVER; }
+    @Override protected float coverStart() { return end < 0f ? Float.MAX_VALUE / 2f : end + VERDICT; }
+    @Override protected float coverFull()  { return end < 0f ? Float.MAX_VALUE : end + VERDICT + COVER; }
     @Override protected Color coverColor() { return draw.playerWins ? Color.WHITE : Color.BLACK; }
 
     @Override
@@ -142,9 +169,13 @@ public class LastDrawCutscene extends Cutscene {
         coins.clear();
         sparks.clear();
         roundsStarted = landed = herLanded = 0;
-        tieSounded = verdict = false;
+        tieSaid = verdict = introSaid = dragging = false;
         bright = mineBright = 1f;
         sparkDebt = 0f;
+        end = -1f;
+        lines = null;
+        releasedPull = 0f;
+        releasedAt = -10f;
     }
 
     // -------------------------------------------------------------------------
@@ -188,21 +219,102 @@ public class LastDrawCutscene extends Cutscene {
     }
 
     // -------------------------------------------------------------------------
+    // La bulle et le levier
+    // -------------------------------------------------------------------------
+
+    /** La Machine dit {@code said}, une réplique après l'autre. */
+    private void say(String... said) {
+        lines = said;
+        line = 0;
+        lineAt = time;
+    }
+
+    /** @return le temps qu'il faut pour écrire la réplique en cours. */
+    private float typing() { return lines[line].length() / LETTERS; }
+
+    /** La réplique suivante, ou la fin de la bulle (la dernière du verdict reste jusqu'au fondu). */
+    private void nextLine() {
+        if (line < lines.length - 1) {
+            line++;
+            lineAt = time;
+        } else if (!verdict) {
+            lines = null;
+        }
+    }
+
+    /** @return {@code true} quand le joueur peut tirer son levier : elle a fini de parler et la manche suivante attend. */
+    private boolean awaitingPull() {
+        if (!introSaid || lines != null || roundsStarted >= draw.mine.size()) return false;
+        return roundsStarted == 0 || time >= roundAt[roundsStarted - 1] + ROUND;
+    }
+
+    @Override
+    protected boolean pointerDown(float x, float y) {
+        if (lines != null && !verdict) {                       // la bulle : finir la réplique, ou passer à la suivante
+            if (time - lineAt < typing()) lineAt = time - typing();
+            else nextLine();
+            return true;
+        }
+        if (!awaitingPull() || !onLever(x, y)) return true;
+        dragging = true;
+        grabY = y;
+        dragPull = 0f;
+        notch = 0;
+        return true;
+    }
+
+    @Override
+    protected void pointerDragged(float x, float y) {
+        if (!dragging) return;
+        Mine m = mine();
+        dragPull = MathUtils.clamp((grabY - y) / (26f * m.u), 0f, 1f);
+        int reached = (int) (dragPull * NOTCHES);
+        if (reached > notch) sound(notchSound);
+        notch = Math.max(notch, reached);
+        if (dragPull >= 1f) startRound();
+    }
+
+    @Override
+    protected void pointerUp(float x, float y) {
+        if (!dragging) return;
+        dragging = false;                                      // lâché avant le fond : il remonte
+        releasedPull = dragPull;
+        releasedAt = time;
+    }
+
+    /** @return {@code true} si ({@code x}, {@code y}) tombe sur ta machine ou son levier (on peut l'attraper là). */
+    private boolean onLever(float x, float y) {
+        Mine m = mine();
+        float left = m.cx - m.w / 2f - 28f * m.u, right = m.cx + m.w / 2f;
+        return x >= left && x <= right && y >= m.base && y <= m.base + m.h + 22f * m.u;
+    }
+
+    /** Ton levier touche le fond : la manche commence. */
+    private void startRound() {
+        dragging = false;
+        roundAt[roundsStarted] = time;
+        roundsStarted++;
+        tieSaid = false;
+        if (roundsStarted == draw.mine.size()) end = time + ROUND;
+        sound(roundSound);
+        rumble(0.15f, 5f);
+    }
+
+    // -------------------------------------------------------------------------
     // Déroulé
     // -------------------------------------------------------------------------
 
     @Override
     protected void simulate(float delta) {
         int rounds = draw.mine.size();
-        if (roundsStarted < rounds && time >= roundStart(roundsStarted)) {
-            roundsStarted++;
-            tieSounded = false;
-            sound(roundSound);
+        if (!introSaid && time >= INTRO) {
+            introSaid = true;
+            say(INTRO_LINES);
         }
+        if (lines != null && time - lineAt >= typing() + LINE_HOLD) nextLine();
         int round = roundsStarted - 1;
         if (round >= 0) {
-            float t = time - roundStart(round);
-            if (t >= PULL_DOWN && t - delta < PULL_DOWN) rumble(0.15f, 5f);
+            float t = time - roundAt[round];
             if (t >= HER_DOWN && t - delta < HER_DOWN) rumble(0.25f, 9f);
             if (landed <= round && t >= STOP) {
                 landed = round + 1;
@@ -212,13 +324,15 @@ public class LastDrawCutscene extends Cutscene {
                 herLanded = round + 1;
                 rumble(0.2f, 8f);
             }
-            if (round < rounds - 1 && !tieSounded && t >= ROUND) {
-                tieSounded = true;
+            if (round < rounds - 1 && !tieSaid && t >= ROUND) {
+                tieSaid = true;
                 sound(tieSound);
+                say(TIE_LINES);
             }
         }
-        if (!verdict && time >= end) {
+        if (!verdict && end >= 0f && time >= end) {
             verdict = true;
+            say(draw.playerWins ? WIN_LINE : LOSE_LINE);
             sound(draw.playerWins ? winSound : loseSound);
             rumble(0.6f, draw.playerWins ? 14f : 18f);
             Mine mine = mine(), hers = hers();
@@ -320,6 +434,8 @@ public class LastDrawCutscene extends Cutscene {
         drawParticles(batch, sparks);
         drawParticles(batch, coins);
         drawTexts(batch, mine, hers);
+        drawHint(batch, mine);
+        drawBubble(batch, hers);
         int round = roundsStarted - 1;
         if (round >= 0) {
             float t = time - roundStart(round);
@@ -358,19 +474,28 @@ public class LastDrawCutscene extends Cutscene {
         return from + distance * ease.apply((t - spinFrom) / (stopAt - spinFrom));
     }
 
-    /** @return où en est un levier (0 levé, 1 baissé) : il descend de {@code from} à {@code down}, puis remonte. */
-    private float lever(float from, float down) {
+    /** @return où en est ton levier (0 levé, 1 au fond) : sous ta main, lâché qui remonte, ou remonté après le fond. */
+    private float playerLever() {
+        if (dragging) return dragPull;
+        float released = releasedPull * (1f - Interpolation.pow2Out.apply(MathUtils.clamp((time - releasedAt) / SPRING, 0f, 1f)));
+        if (roundsStarted == 0) return released;
+        float t = time - roundAt[roundsStarted - 1];
+        return Math.max(released, 1f - Interpolation.pow2Out.apply(MathUtils.clamp((t - 0.12f) / 0.4f, 0f, 1f)));
+    }
+
+    /** @return où en est son levier : il descend tout seul de {@link #HER_PULL} à {@link #HER_DOWN}, puis remonte. */
+    private float herLever() {
         if (roundsStarted == 0) return 0f;
-        float t = time - roundStart(roundsStarted - 1);
-        if (t < from) return 0f;
-        if (t < down) return Interpolation.pow2In.apply((t - from) / (down - from));
-        return 1f - Interpolation.pow2Out.apply(MathUtils.clamp((t - down - 0.12f) / 0.4f, 0f, 1f));
+        float t = time - roundAt[roundsStarted - 1];
+        if (t < HER_PULL) return 0f;
+        if (t < HER_DOWN) return Interpolation.pow2In.apply((t - HER_PULL) / (HER_DOWN - HER_PULL));
+        return 1f - Interpolation.pow2Out.apply(MathUtils.clamp((t - HER_DOWN - 0.12f) / 0.4f, 0f, 1f));
     }
 
     /** Ta machine : rouge et chrome, un rouleau, le levier à gauche. */
     private void drawPlayerMachine(Batch batch, Mine m) {
         float u = m.u, left = m.cx - m.w / 2f, b = mineBright;
-        float pull = lever(PULL, PULL_DOWN);
+        float pull = playerLever();
         float[] knob = drawLever(batch, left - u, m.base + m.h * 0.55f, u, pull, -1, b);
         // Corps.
         rect(batch, OUT, left - u, m.base - u, m.w + 2f * u, m.h + 2f * u, b);
@@ -385,29 +510,30 @@ public class LastDrawCutscene extends Cutscene {
         rect(batch, OUT, m.cx - signW / 2f - u, signY - u, signW + 2f * u, 8f * u, b);
         rect(batch, GOLD, m.cx - signW / 2f, signY, signW, 6f * u, b);
         bulbs(batch, m.cx - signW / 2f, signY + 3f * u, signW, 7, u, b, 0);
-        drawWindow(batch, m, mineStrip, offset(mineAt, mineStrip.length, PULL_DOWN, STOP, Interpolation.pow3Out, 2f), b,
+        drawWindow(batch, m, mineStrip, offset(mineAt, mineStrip.length, 0f, STOP, Interpolation.pow3Out, 2f), b,
             landed > 0 && landed == roundsStarted);
         drawTray(batch, m, b);
         if (draw.playerWins && verdict) glow(batch, m.cx, m.reelY + m.reelH / 2f, m.reelW * 3f, GOLD,
             0.5f + 0.3f * MathUtils.sin(time * 14f));
-        // La main gantée saisit le levier et le tire.
-        if (roundsStarted > 0) {
-            float t = time - roundStart(roundsStarted - 1);
-            float in = Interpolation.pow2Out.apply(MathUtils.clamp((t - GRAB) / (PULL - GRAB), 0f, 1f));
-            float out = MathUtils.clamp((t - PULL_DOWN - 0.15f) / 0.3f, 0f, 1f);
-            float alpha = in * (1f - out);
-            if (alpha > 0f) {
-                float dx = (1f - in) * -14f * u - out * 10f * u, dy = (1f - in) * 6f * u;
-                batch.setColor(1f, 1f, 1f, alpha);
-                sprite(batch, glove, knob[0] + dx - 1.5f * u, knob[1] + dy, 0.9f * u, 0f);
-            }
+        // Ta main (gantée) sur la boule, tant que tu tiens le levier ; quand il t'attend, une main fantôme montre le geste.
+        if (dragging) {
+            batch.setColor(Color.WHITE);
+            sprite(batch, glove, knob[0] - 1.5f * u, knob[1], 0.9f * u, 0f);
+        } else if (awaitingPull()) {
+            float demo = (time % 1.8f) / 1.8f, k = Interpolation.pow2.apply(MathUtils.clamp(demo / 0.6f, 0f, 1f));
+            float angle = 180f - MathUtils.lerp(80f, -60f, k), length = 18f * u;
+            float pivotX = left - u - 4f * u + 1.5f * u, pivotY = m.base + m.h * 0.55f;
+            float alpha = 0.55f * MathUtils.clamp(Math.min(demo / 0.1f, (1f - demo) / 0.25f), 0f, 1f);
+            batch.setColor(1f, 1f, 1f, alpha);
+            sprite(batch, glove, pivotX + MathUtils.cosDeg(angle) * length - 1.5f * u,
+                pivotY + MathUtils.sinDeg(angle) * length, 0.9f * u, 0f);
         }
     }
 
     /** Sa machine : dorée, plus grande, son œil au-dessus du rouleau ; le levier à droite, qui descend tout seul. */
     private void drawHerMachine(Batch batch, Mine m) {
         float u = m.u, left = m.cx - m.w / 2f, b = bright;
-        float pull = lever(HER_PULL, HER_DOWN);
+        float pull = herLever();
         float[] knob = drawLever(batch, left + m.w + u, m.base + m.h * 0.55f, u, pull, 1, b);
         if (pull > 0f) glow(batch, knob[0], knob[1], 14f * u, EYE_RED, 0.5f * pull * b);
         rect(batch, OUT, left - u, m.base - u, m.w + 2f * u, m.h + 2f * u, b);
@@ -551,6 +677,65 @@ public class LastDrawCutscene extends Cutscene {
         font.getData().setScale(scale);
     }
 
+    /** Quand ton levier t'attend : « TIRE LE LEVIER ! » au-dessus de ta machine, et une flèche qui descend le long du levier. */
+    private void drawHint(Batch batch, Mine m) {
+        if (!awaitingPull() || dragging) return;
+        float pulse = 0.8f + 0.2f * MathUtils.sin(time * 6f), u = m.u;
+        float scale = font.getData().scaleX;
+        font.getData().setScale(scale * (2.3f + 0.15f * MathUtils.sin(time * 6f)));
+        caption(batch, font, "TIRE LE LEVIER !", m.cx, m.base + m.h + 15f * u, pulse);
+        font.getData().setScale(scale);
+        float x = m.cx - m.w / 2f - 12f * u, y = m.base + m.h * 0.95f - (time * 30f * u % (16f * u));
+        for (int i = 0; i < 3; i++) {                                  // chevron vers le bas
+            float w = (5f - i * 1.5f) * u;
+            rect(batch, OUT, x - w / 2f - 0.5f * u, y - i * u - 0.5f * u, w + u, 2f * u, 1f);
+        }
+        for (int i = 0; i < 3; i++) {
+            float w = (5f - i * 1.5f) * u;
+            batch.setColor(GOLD.r, GOLD.g, GOLD.b, pulse);
+            batch.draw(pixel, x - w / 2f, y - i * u, w, u);
+        }
+    }
+
+    /** La bulle de la Machine, à gauche de son dôme, qui pointe vers son œil ; la réplique s'écrit lettre à lettre. */
+    private void drawBubble(Batch batch, Mine hers) {
+        if (lines == null) return;
+        String text = lines[line];
+        int shown = MathUtils.clamp((int) ((time - lineAt) * LETTERS), 0, text.length());
+        float scale = font.getData().scaleX, u = worldHeight() / 80f;
+        font.getData().setScale(scale * 1.9f);
+        bubbleLayout.setText(font, text);
+        float pad = 2.5f * u, w = bubbleLayout.width + 2f * pad, h = bubbleLayout.height + 2.4f * pad;
+        float eyeY = hers.base + hers.h + 5f * hers.u;
+        float right = hers.cx - 9f * hers.u - 4f * u, x = right - w, y = eyeY + 4f * u;
+        float pop = Interpolation.swingOut.apply(progress(lineAt, lineAt + 0.18f));
+        float alpha = Math.min(1f, pop * 1.5f);
+        // La queue de la bulle, en marches, vers son œil.
+        for (int i = 0; i < 4; i++) {
+            float sx = right - 3f * u + i * 1.6f * u, sy = y - (i + 1) * 1.4f * u;
+            box(batch, GOLD, sx - 0.4f * u, sy - 0.4f * u, 2.8f * u, 2.2f * u, alpha);
+            box(batch, BUBBLE, sx, sy, 2f * u, 1.4f * u, alpha);
+        }
+        float cx = x + w / 2f, cy = y + h / 2f, sw = w * (0.85f + 0.15f * pop), sh = h * (0.85f + 0.15f * pop);
+        batch.setColor(GOLD.r, GOLD.g, GOLD.b, alpha);
+        batch.draw(pixel, cx - sw / 2f - 0.6f * u, cy - sh / 2f, sw + 1.2f * u, sh);
+        batch.draw(pixel, cx - sw / 2f, cy - sh / 2f - 0.6f * u, sw, sh + 1.2f * u);
+        batch.setColor(BUBBLE.r, BUBBLE.g, BUBBLE.b, 0.95f * alpha);
+        batch.draw(pixel, cx - sw / 2f, cy - sh / 2f, sw, sh);
+        if (shown > 0 && pop > 0.5f) {
+            Color old = font.getColor().cpy();
+            font.setColor(old.r, old.g, old.b, alpha);
+            font.draw(batch, text.substring(0, shown), x + pad, y + h / 2f + bubbleLayout.height / 2f);
+            font.setColor(old);
+        }
+        boolean waiting = shown == text.length() && !verdict;            // la suite : un petit triangle qui clignote
+        if (waiting && (int) (time * 3f) % 2 == 0) {
+            box(batch, GOLD, x + w - 2.5f * u, y + 1f * u, 1.4f * u, 0.6f * u, alpha);
+            box(batch, GOLD, x + w - 2.2f * u, y + 0.5f * u, 0.8f * u, 0.5f * u, alpha);
+        }
+        font.getData().setScale(scale);
+    }
+
     /** Le symbole tiré et son rang, sur une plaque sombre sous la machine. */
     private void plate(Batch batch, String text, float x, float y, float alpha) {
         float u = worldHeight() / 80f, w = 30f * u, h = 4.2f * u;
@@ -564,6 +749,12 @@ public class LastDrawCutscene extends Cutscene {
 
     private static String label(Symbol symbol) {
         return symbol.getDisplayName() + "  -  RANG " + LastDrawEvent.score(symbol);
+    }
+
+    /** Un rectangle de couleur {@code color}, d'opacité {@code alpha}. */
+    private void box(Batch batch, Color color, float x, float y, float w, float h, float alpha) {
+        batch.setColor(color.r, color.g, color.b, alpha);
+        batch.draw(pixel, x, y, w, h);
     }
 
     private void rect(Batch batch, Color color, float x, float y, float w, float h, float b) {
