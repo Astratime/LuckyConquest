@@ -11,6 +11,7 @@ import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.Interpolation;
+import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.Group;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
@@ -43,6 +44,7 @@ import fr.astratime.lucky.progress.ReelShop;
 import fr.astratime.lucky.settings.AudioSettings;
 import fr.astratime.lucky.views.CardDetailOverlay;
 import fr.astratime.lucky.views.CasinoButtons;
+import fr.astratime.lucky.views.GuideOverlay;
 import fr.astratime.lucky.views.MenuDecor;
 import fr.astratime.lucky.views.MinimumScreenViewport;
 
@@ -139,6 +141,8 @@ public class ShopScreen extends ScreenAdapter {
     private final Label      detailText;
     private final TextButton buyButton;
     private final TextButton backButton;
+    /** Rejoue la présentation du Croupier. */
+    private final TextButton tutorialButton;
     private final Image      fade;
     /** Fiche détaillée d'une carte ou d'un rouleau (clic droit). */
     private final CardDetailOverlay detail;
@@ -201,6 +205,7 @@ public class ShopScreen extends ScreenAdapter {
         detailText.setWrap(true);
         buyButton  = buttons.createAction("Acheter", clickSound, this::onBuy);
         backButton = buttons.create("Retour", clickSound, this::onBack);
+        tutorialButton = buttons.create("Tutoriel", clickSound, this::replayGuide);
 
         fade = new Image(pixel);
         fade.setColor(Color.BLACK);
@@ -218,16 +223,55 @@ public class ShopScreen extends ScreenAdapter {
         stage.addActor(detailText);
         stage.addActor(buyButton);
         stage.addActor(backButton);
+        stage.addActor(tutorialButton);
         detail = new CardDetailOverlay(stage, hud, null, CARD_WIDTH, CARD_HEIGHT);
         stage.addActor(detail.getActor());
         stage.addActor(fade);
         fade.addAction(Actions.fadeOut(FADE_TIME));
 
         showTab(Tab.RANG);
-        firstVisit = new FirstVisitGuide(stage, hud, clickSound, luckyGame.getProfile(), PlayerProfile.GUIDE_SHOP,
-            "La Boutique. Tes pièces y achètent des rangs, des cartes et des rouleaux.",
-            "Un rang te rend plus fort dans tous les combats. Une carte rejoint ta collection.",
-            "Un rouleau se place dans ta machine, à la Table du croupier.");
+        firstVisit = new FirstVisitGuide(stage, hud, clickSound, profile, PlayerProfile.GUIDE_SHOP, this::guideSteps);
+        fade.toFront();
+    }
+
+    /**
+     * Le Croupier présente la boutique et ses trois onglets, et fait choisir un
+     * article au joueur (sans l'acheter : ses pièces restent à lui).
+     */
+    private List<GuideOverlay.Step> guideSteps() {
+        List<GuideOverlay.Step> steps = new ArrayList<>();
+        steps.add(GuideOverlay.Step.say("La Boutique. Tes pièces s'y dépensent. Seuls les combats d'Exploration en rapportent.",
+            () -> GuideOverlay.boundsOf(coin).merge(GuideOverlay.boundsOf(coins))).onStart(() -> showTab(Tab.RANG)));
+        steps.add(GuideOverlay.Step.say("Trois onglets : Rang, Cartes et Rouleau.", this::tabsBounds));
+        steps.add(GuideOverlay.Step.say("Onglet Rang. Un rang te rend plus fort dans tous les combats. "
+            + "Ils s'achètent dans l'ordre ; chacun remplace le précédent.", () -> GuideOverlay.boundsOf(panel)));
+        steps.add(GuideOverlay.Step.action("Ouvre l'onglet Cartes.",
+            () -> GuideOverlay.boundsOf(tabButtons.get(Tab.CARTES.ordinal())), () -> tab == Tab.CARTES));
+        steps.add(GuideOverlay.Step.action("Clique sur une carte pour la choisir.",
+            () -> GuideOverlay.boundsOf(panel), () -> tab == Tab.CARTES && selected != null));
+        steps.add(GuideOverlay.Step.say("Son prix et son effet s'affichent ici. Acheter la paie : elle rejoint ta collection. "
+            + "Clic droit sur un article : sa fiche complète.", this::detailBounds));
+        steps.add(GuideOverlay.Step.action("Ouvre l'onglet Rouleau.",
+            () -> GuideOverlay.boundsOf(tabButtons.get(Tab.ROULEAU.ordinal())), () -> tab == Tab.ROULEAU));
+        steps.add(GuideOverlay.Step.say("Un rouleau acheté se place dans ta machine, à la Table du croupier.",
+            () -> GuideOverlay.boundsOf(panel)));
+        return steps;
+    }
+
+    private Rectangle tabsBounds() {
+        Rectangle bounds = GuideOverlay.boundsOf(tabButtons.get(0));
+        for (TextButton button : tabButtons) bounds.merge(GuideOverlay.boundsOf(button));
+        return bounds;
+    }
+
+    /** La fiche de l'article choisi, sous le panneau, et le bouton « Acheter ». */
+    private Rectangle detailBounds() {
+        return GuideOverlay.boundsOf(detailTitle).merge(GuideOverlay.boundsOf(detailText)).merge(GuideOverlay.boundsOf(buyButton));
+    }
+
+    /** Bouton « Tutoriel » : le Croupier présente la boutique de nouveau. */
+    private void replayGuide() {
+        firstVisit.replay();
         fade.toFront();
     }
 
@@ -521,8 +565,9 @@ public class ShopScreen extends ScreenAdapter {
 
         float buttonY = (BOTTOM_SPACE - CasinoButtons.HEIGHT) / 2f;
         backButton.setPosition(MARGIN, buttonY);
+        tutorialButton.setPosition(backButton.getX() + backButton.getWidth() + 20f, buttonY);
         buyButton.setPosition(width - MARGIN - buyButton.getWidth(), buttonY);
-        float detailX = backButton.getX() + backButton.getWidth() + 40f;
+        float detailX = tutorialButton.getX() + tutorialButton.getWidth() + 40f;
         float detailWidth = buyButton.getX() - 40f - detailX;
         detailTitle.pack();
         detailTitle.setPosition(detailX, BOTTOM_SPACE - 18f - detailTitle.getHeight());
