@@ -239,7 +239,7 @@ public class TurnEngine {
      * Dernier tirage de la Machine Originelle, qui a résisté au coup fatal :
      * le joueur et elle lancent chacun un seul rouleau (le joueur, un de ses
      * symboles ; elle, un des rouleaux classiques). Le meilleur score gagne (le
-     * rang du symbole : le Joker en tête) ; à égalité, on relance. Gagné, elle
+     * rang du symbole : fruits en bas, 7, 777 puis Joker en haut) ; à égalité, on relance. Gagné, elle
      * tombe ; perdu, le joueur tombe.
      *
      * @return le Dernier tirage (et le coup fatal au joueur, s'il perd)
@@ -259,7 +259,7 @@ public class TurnEngine {
         return events;
     }
 
-    /** @return le score d'un symbole au Dernier tirage : son rang dans la liste des symboles (le Joker en tête). */
+    /** @return le rang d'un symbole au Dernier tirage (voir {@link LastDrawEvent#score}). */
     static int score(Symbol symbol) { return LastDrawEvent.score(symbol); }
 
     /** @return le plus grand nombre de symboles identiques parmi {@code symbols} (rouleaux vides exclus). */

@@ -29,9 +29,20 @@ public class LastDrawEvent extends Event {
         this.playerWins  = playerWins;
     }
 
-    /** @return le score d'un symbole au Dernier tirage : son rang dans la liste des symboles (le Joker en tête). */
+    /**
+     * L'échelle des rangs au Dernier tirage, du plus faible au plus fort : les
+     * fruits, les porte-bonheur, les bars et les armes, puis les raretés et l'or,
+     * la couronne, le 7, le 777, et le Joker tout en haut. Un triple bat toujours
+     * son simple (Triple cerise sur Cerise, Triple sept sur Sept).
+     */
+    private static final List<Symbol> LADDER = List.of(
+        Symbol.CHERRY, Symbol.GRAPE, Symbol.WATERMELON, Symbol.HORSESHOE, Symbol.BELL, Symbol.HEART, Symbol.DIE,
+        Symbol.BAR, Symbol.ECU, Symbol.SWORD, Symbol.DOUBLE_BAR, Symbol.BOMB, Symbol.TRIPLE_CHERRY, Symbol.STAR,
+        Symbol.DIAMOND, Symbol.NUGGET, Symbol.GOLD_BAR, Symbol.CROWN, Symbol.SEVEN, Symbol.TRIPLE_SEVEN, Symbol.JOKER);
+
+    /** @return le rang d'un symbole au Dernier tirage (1 : Cerise, ..., 21 : Joker), voir {@link #LADDER}. */
     public static int score(Symbol symbol) {
-        return symbol == Symbol.JOKER ? Symbol.values().length : symbol.ordinal() + 1;
+        return LADDER.indexOf(symbol) + 1;
     }
 
     /** @return le symbole décisif du joueur (la dernière manche). */

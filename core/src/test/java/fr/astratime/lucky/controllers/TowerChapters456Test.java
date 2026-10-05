@@ -205,7 +205,13 @@ class TowerChapters456Test {
             assertEquals(TurnEngine.score(draw.mine.get(round)), TurnEngine.score(draw.hers.get(round)), "égalité : on relance");
         }
         assertEquals(draw.playerWins, TurnEngine.score(draw.own()) > TurnEngine.score(draw.theirs()));
-        assertTrue(TurnEngine.score(Symbol.JOKER) > TurnEngine.score(Symbol.WATERMELON));
+        assertTrue(TurnEngine.score(Symbol.JOKER) > TurnEngine.score(Symbol.TRIPLE_SEVEN));
+        assertTrue(TurnEngine.score(Symbol.TRIPLE_SEVEN) > TurnEngine.score(Symbol.SEVEN));
+        assertTrue(TurnEngine.score(Symbol.TRIPLE_CHERRY) > TurnEngine.score(Symbol.CHERRY));
+        assertTrue(TurnEngine.score(Symbol.DOUBLE_BAR) > TurnEngine.score(Symbol.BAR));
+        assertEquals(1, TurnEngine.score(Symbol.CHERRY));
+        assertEquals(Symbol.values().length, java.util.Arrays.stream(Symbol.values()).map(TurnEngine::score)
+            .distinct().filter(rank -> rank >= 1).count(), "un rang distinct pour chaque symbole");
     }
 
     @Test
