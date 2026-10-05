@@ -1,6 +1,7 @@
 package fr.astratime.lucky.entities.tutorial;
 
 import fr.astratime.lucky.entities.Card;
+import fr.astratime.lucky.entities.Enemy;
 import fr.astratime.lucky.entities.Symbol;
 import fr.astratime.lucky.entities.enemy.EnemyKind;
 import fr.astratime.lucky.entities.run.CombatRun;
@@ -69,6 +70,16 @@ public class TutorialRun implements CombatRun {
             return index < 0 ? order.size() : index;
         }));
         Collections.reverse(cards);
+    }
+
+    /**
+     * Le croupier pioche d'abord ses cartes les plus faibles, ses Piques en dernier :
+     * ses tours restent doux pendant la leçon (sans cela, ses fortes cartes peuvent
+     * abattre le joueur dès le premier tour).
+     */
+    public static void arrange(Enemy enemy) {
+        enemy.arrangeDeck(Comparator.comparingInt((Card card) -> (card.getSuit() == Card.Suit.PIQUE ? 100 : 0) + card.getRank())
+            .reversed());
     }
 
     /**

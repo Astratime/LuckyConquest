@@ -43,6 +43,7 @@ class TutorialRunTest {
             cards -> new Player("Joueur", Player.BASE_HP, cards, RankBonus.NONE, Symbol.classicReels()));
         controller.restart(run.getEnemy());
         TutorialRun.arrange(controller.getGameState().getPlayer().getDeck().getCards());
+        TutorialRun.arrange(controller.getGameState().getEnemy());
         return controller;
     }
 

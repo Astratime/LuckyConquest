@@ -387,7 +387,10 @@ public class GameScreen extends ScreenAdapter {
         if (run != null) gameController.setPlaceRule(run.getPlaceRule()); // Exploration : la règle du lieu
         EnemyKind.setTowerHard(run instanceof TowerRun tower && tower.isHard()); // Tour : mode difficile
         gameController.restart(firstEnemy()); // le premier ennemi du chapitre, ou le croupier d'entraînement
-        if (run instanceof TutorialRun) TutorialRun.arrange(player().getDeck().getCards());
+        if (run instanceof TutorialRun) {
+            TutorialRun.arrange(player().getDeck().getCards());
+            TutorialRun.arrange(gameController.getGameState().getEnemy());
+        }
         // Le SpriteBatch est partagé avec LuckyGame et ne doit PAS être disposé ici.
         this.stage = new Stage(new MinimumScreenViewport(MIN_WIDTH, MIN_HEIGHT), luckyGame.getBatch());
 
@@ -1274,6 +1277,7 @@ public class GameScreen extends ScreenAdapter {
         gameController.restart(firstEnemy());
         if (tutorial != null) {
             TutorialRun.arrange(player().getDeck().getCards());
+            TutorialRun.arrange(gameController.getGameState().getEnemy());
             tutorial.reset();
         }
         resetBoard();
