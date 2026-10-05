@@ -6,6 +6,7 @@ import fr.astratime.lucky.entities.context.TurnContext;
 import fr.astratime.lucky.entities.enemy.EnemyTurnResult;
 import fr.astratime.lucky.entities.events.Event;
 import fr.astratime.lucky.entities.events.GaugeFilledEvent;
+import fr.astratime.lucky.entities.events.LastDrawEvent;
 import fr.astratime.lucky.entities.events.PlayerDamagedEvent;
 import fr.astratime.lucky.entities.events.SafeOpenedEvent;
 import fr.astratime.lucky.entities.events.StatusEvent;
@@ -241,36 +242,25 @@ public class TurnEngine {
      * rang du symbole : le Joker en tête) ; à égalité, on relance. Gagné, elle
      * tombe ; perdu, le joueur tombe.
      *
-     * @return les textes du Dernier tirage
+     * @return le Dernier tirage (et le coup fatal au joueur, s'il perd)
      */
     List<Event> lastDraw(Player player, Enemy enemy) {
         List<Event> events = new ArrayList<>();
         List<Symbol> mine = player.getSlotMachine().getReels(), hers = Symbol.classicReels();
-        Symbol own, theirs;
+        List<Symbol> own = new ArrayList<>(), theirs = new ArrayList<>();
         do {
-            own    = mine.get(random.nextInt(mine.size()));
-            theirs = hers.get(random.nextInt(hers.size()));
-            if (score(own) == score(theirs)) {
-                events.add(new StatusEvent("ÉGALITÉ : " + own.getDisplayName() + " ! ON RELANCE", EffectPopup.Style.SPECIAL));
-            }
-        } while (score(own) == score(theirs));
-        events.add(new StatusEvent("DERNIER TIRAGE : TOI " + own.getDisplayName() + " (" + score(own) + "), ELLE "
-            + theirs.getDisplayName() + " (" + score(theirs) + ")", EffectPopup.Style.SPECIAL));
-        boolean won = score(own) > score(theirs);
+            own.add(mine.get(random.nextInt(mine.size())));
+            theirs.add(hers.get(random.nextInt(hers.size())));
+        } while (score(own.get(own.size() - 1)) == score(theirs.get(theirs.size() - 1)));
+        boolean won = score(own.get(own.size() - 1)) > score(theirs.get(theirs.size() - 1));
         enemy.endLastDraw(won);
-        if (won) {
-            events.add(new StatusEvent("TU AS TIRÉ LE LEVIER !", EffectPopup.Style.GAINS));
-        } else {
-            events.add(new StatusEvent("LA MACHINE GAGNE", EffectPopup.Style.DAMAGE));
-            events.add(new PlayerDamagedEvent(player.loseAllHp(), 0, player.getShield()));
-        }
+        events.add(new LastDrawEvent(mine, own, theirs, won));
+        if (!won) events.add(new PlayerDamagedEvent(player.loseAllHp(), 0, player.getShield()));
         return events;
     }
 
     /** @return le score d'un symbole au Dernier tirage : son rang dans la liste des symboles (le Joker en tête). */
-    static int score(Symbol symbol) {
-        return symbol == Symbol.JOKER ? Symbol.values().length : symbol.ordinal() + 1;
-    }
+    static int score(Symbol symbol) { return LastDrawEvent.score(symbol); }
 
     /** @return le plus grand nombre de symboles identiques parmi {@code symbols} (rouleaux vides exclus). */
     static int matches(Symbol[] symbols) {

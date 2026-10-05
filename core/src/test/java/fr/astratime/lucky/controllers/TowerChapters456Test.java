@@ -193,9 +193,16 @@ class TowerChapters456Test {
         assertTrue(machine.isLastDrawPending());
 
         Player player = new Player("Joueur", 100, List.of());
-        new TurnEngine().lastDraw(player, machine);
+        var events = new TurnEngine().lastDraw(player, machine);
         assertFalse(machine.isLastDrawPending());
         assertTrue(machine.isDefeated() != player.isDefeated(), "le meilleur score gagne, l'autre tombe");
+        var draw = (fr.astratime.lucky.entities.events.LastDrawEvent) events.get(0);
+        assertEquals(machine.isDefeated(), draw.playerWins, "la cinématique montre le vrai vainqueur");
+        assertEquals(draw.mine.size(), draw.hers.size());
+        for (int round = 0; round < draw.mine.size() - 1; round++) {
+            assertEquals(TurnEngine.score(draw.mine.get(round)), TurnEngine.score(draw.hers.get(round)), "égalité : on relance");
+        }
+        assertEquals(draw.playerWins, TurnEngine.score(draw.own()) > TurnEngine.score(draw.theirs()));
         assertTrue(TurnEngine.score(Symbol.JOKER) > TurnEngine.score(Symbol.WATERMELON));
     }
 
