@@ -133,6 +133,8 @@ public class ExplorationScreen extends ScreenAdapter {
     private final Label            ruleText;
     private final TextButton       enterButton;
     private final TextButton       backButton;
+    /** Rejoue la présentation du Croupier. */
+    private final TextButton       tutorialButton;
     private final Image            fade;
 
     private Place   place = Place.values()[0];
@@ -198,6 +200,7 @@ public class ExplorationScreen extends ScreenAdapter {
         ruleText.setAlignment(Align.topLeft);
         enterButton = buttons.createAction("Entrer", clickSound, this::launch);
         backButton  = buttons.create("Retour", clickSound, this::onBack);
+        tutorialButton = buttons.create("Tutoriel", clickSound, this::replayGuide);
 
         fade = new Image(pixel);
         fade.setColor(Color.BLACK);
@@ -218,6 +221,7 @@ public class ExplorationScreen extends ScreenAdapter {
         stage.addActor(ruleText);
         stage.addActor(enterButton);
         stage.addActor(backButton);
+        stage.addActor(tutorialButton);
         stage.addActor(fade);
         fade.addAction(Actions.fadeOut(FADE_TIME));
 
@@ -464,6 +468,7 @@ public class ExplorationScreen extends ScreenAdapter {
 
         enterButton.setPosition(detailX + detailWidth - enterButton.getWidth(), (BOTTOM_SPACE - enterButton.getHeight()) / 2f);
         backButton.setPosition(MARGIN, (BOTTOM_SPACE - backButton.getHeight()) / 2f);
+        tutorialButton.setPosition(backButton.getX() + backButton.getWidth() + 20f, backButton.getY());
         bobSelectedGate(); // les entrées viennent d'être replacées
     }
 
@@ -533,5 +538,11 @@ public class ExplorationScreen extends ScreenAdapter {
         Fonts.release(nameFont);
         Fonts.release(bodyFont);
         Fonts.release(gateFont);
+    }
+
+    /** Bouton « Tutoriel » : le Croupier présente l'écran de nouveau. */
+    private void replayGuide() {
+        firstVisit.replay();
+        fade.toFront();
     }
 }

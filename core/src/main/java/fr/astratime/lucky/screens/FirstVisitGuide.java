@@ -23,18 +23,18 @@ final class FirstVisitGuide implements Disposable {
     private final GuideOverlay  overlay;
     private final Texture       portrait;
     private final CasinoButtons buttons;
+    private final PlayerProfile profile;
+    private final String        guide;
+    private final String[]      lines;
 
     /**
      * @param guide nom du guide dans le profil (voir {@link PlayerProfile#GUIDE_EXPLORATION}...)
      * @param lines répliques du Croupier, dans l'ordre
      */
     FirstVisitGuide(Stage stage, HudTextures hud, Sound clickSound, PlayerProfile profile, String guide, String... lines) {
-        if (profile.hasSeen(guide)) {
-            overlay  = null;
-            portrait = null;
-            buttons  = null;
-            return;
-        }
+        this.profile = profile;
+        this.guide   = guide;
+        this.lines   = lines;
         portrait = EnemyTextures.newCroupierPortrait();
         buttons  = new CasinoButtons();
         overlay  = new GuideOverlay(hud, portrait);
@@ -43,22 +43,26 @@ final class FirstVisitGuide implements Disposable {
             overlay.stop();
         }));
         stage.addActor(overlay);
+        if (!profile.hasSeen(guide)) replay();
+    }
+
+    /** Le Croupier redit ses répliques (bouton « Tutoriel » de l'écran), même déjà lues. */
+    void replay() {
+        if (overlay.isActive()) return;
+        overlay.toFront();
         List<GuideOverlay.Step> steps = new ArrayList<>();
         for (String line : lines) steps.add(GuideOverlay.Step.say(line));
         overlay.play(steps, () -> profile.markSeen(guide));
     }
 
     /** @return {@code true} tant que le Croupier parle : l'écran dessous ne reçoit pas les clics. */
-    boolean isActive() { return overlay != null && overlay.isActive(); }
+    boolean isActive() { return overlay.isActive(); }
 
     /** Repasse le Croupier devant les acteurs ajoutés depuis (à appeler avant de remettre le fondu devant). */
-    void toFront() {
-        if (overlay != null) overlay.toFront();
-    }
+    void toFront() { overlay.toFront(); }
 
     @Override
     public void dispose() {
-        if (overlay == null) return;
         overlay.dispose();
         portrait.dispose();
         buttons.dispose();
