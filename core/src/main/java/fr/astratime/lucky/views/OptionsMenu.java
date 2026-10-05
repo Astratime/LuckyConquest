@@ -142,6 +142,11 @@ public class OptionsMenu implements Disposable {
         layout(centerX, centerY);
     }
 
+    /** @return l'option {@code index} affichée (le guide du menu l'éclaire), ou {@code null}. */
+    public Actor getOption(int index) {
+        return index >= 0 && index < options.size() ? options.get(index) : null;
+    }
+
     /** Centre le panneau en {@code (x, y)} (après un redimensionnement, ou un changement d'options). */
     public void layout(float x, float y) {
         centerX = x;

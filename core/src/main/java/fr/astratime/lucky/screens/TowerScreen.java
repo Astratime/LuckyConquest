@@ -24,6 +24,7 @@ import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 import com.badlogic.gdx.utils.Align;
 import com.badlogic.gdx.utils.ScreenUtils;
 import fr.astratime.lucky.LuckyGame;
+import fr.astratime.lucky.progress.PlayerProfile;
 import fr.astratime.lucky.assets.BackgroundMusic;
 import fr.astratime.lucky.assets.CardTextures;
 import fr.astratime.lucky.assets.EnemyTextures;
@@ -81,6 +82,8 @@ public class TowerScreen extends ScreenAdapter {
     private final Stage           stage;
     private final AudioSettings   audio  = new AudioSettings();
     private final HudTextures     hud    = new HudTextures();
+    /** Première visite : le Croupier présente l'écran. */
+    private final FirstVisitGuide firstVisit;
     private final CardTextures    cardTextures = new CardTextures();
     private final EnemyTextures   enemyTextures = new EnemyTextures(cardTextures);
     private final CasinoButtons   buttons = new CasinoButtons();
@@ -110,6 +113,8 @@ public class TowerScreen extends ScreenAdapter {
     private final TextButton        startButton;
     private final TextButton        modeButton;
     private final TextButton        backButton;
+    /** Rejoue la présentation du Croupier. */
+    private final TextButton        tutorialButton;
     private final Image             fade;
 
     private int     selected = -1;
@@ -168,6 +173,7 @@ public class TowerScreen extends ScreenAdapter {
         description.setAlignment(Align.topLeft);
         startButton  = buttons.createAction("Commencer", clickSound, this::launch);
         backButton   = buttons.create("Retour", clickSound, this::onBack);
+        tutorialButton = buttons.create("Tutoriel", clickSound, this::replayGuide);
         // Mode difficile : ouvert après la Machine Originelle ; le bouton bascule entre les deux modes.
         modeButton   = buttons.create("Mode difficile", clickSound, this::toggleMode);
         modeButton.setText("Mode normal");
@@ -192,11 +198,17 @@ public class TowerScreen extends ScreenAdapter {
         stage.addActor(startButton);
         stage.addActor(modeButton);
         stage.addActor(backButton);
+        stage.addActor(tutorialButton);
         stage.addActor(fade);
         fade.addAction(Actions.fadeOut(FADE_TIME));
 
         select(0, false);
         layout();
+        firstVisit = new FirstVisitGuide(stage, hud, clickSound, luckyGame.getProfile(), PlayerProfile.GUIDE_TOWER,
+            "La Tour des épreuves. Six chapitres, de plus en plus durs.",
+            "Un chapitre : un premier combat, puis tu choisis ton adversaire parmi trois cartes, puis le boss. Tes PV et tes gains te suivent.",
+            "Bats le boss pour ouvrir le chapitre suivant. La Tour ne rapporte pas de pièces.");
+        fade.toFront();
     }
 
     // -------------------------------------------------------------------------
@@ -339,6 +351,7 @@ public class TowerScreen extends ScreenAdapter {
         startButton.setPosition(detailX + detailWidth - startButton.getWidth(), (BOTTOM_SPACE - startButton.getHeight()) / 2f);
         modeButton.setPosition(startButton.getX() - modeButton.getWidth() - 20f, startButton.getY());
         backButton.setPosition(MARGIN, (BOTTOM_SPACE - backButton.getHeight()) / 2f);
+        tutorialButton.setPosition(backButton.getX() + backButton.getWidth() + 20f, backButton.getY());
     }
 
     /**
@@ -390,6 +403,7 @@ public class TowerScreen extends ScreenAdapter {
     @Override
     public void dispose() {
         stage.dispose();
+        firstVisit.dispose();
         decor.dispose();
         enemyTextures.dispose();
         cardTextures.dispose();
@@ -405,5 +419,11 @@ public class TowerScreen extends ScreenAdapter {
         Fonts.release(chapterFont);
         Fonts.release(bodyFont);
         Fonts.release(lockFont);
+    }
+
+    /** Bouton « Tutoriel » : le Croupier présente l'écran de nouveau. */
+    private void replayGuide() {
+        firstVisit.replay();
+        fade.toFront();
     }
 }

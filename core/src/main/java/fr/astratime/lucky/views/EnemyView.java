@@ -585,6 +585,9 @@ public class EnemyView implements Disposable {
         return defense.localToStageCoordinates(new Vector2(ShieldBadge.ICON_SIZE / 2f, ShieldBadge.ICON_SIZE / 2f));
     }
 
+    /** @return le badge de sa défense (le tutoriel le montre). */
+    public Actor getDefenseBadge() { return defense; }
+
     /** @return le centre (Stage) du portrait de l'ennemi, cible des animations d'attaque des symboles. */
     public Vector2 getCroupierCenter() {
         return croupier.localToStageCoordinates(new Vector2(croupier.getWidth() / 2f, croupier.getHeight() / 2f));

@@ -6,6 +6,7 @@ import fr.astratime.lucky.entities.enemy.EnemySymbol;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 
@@ -431,6 +432,9 @@ public class Enemy {
 
     /** Pioche {@code count} cartes (la défausse est remélangée si le deck s'épuise). */
     public List<Card> draw(int count) { return deck.draw(count); }
+
+    /** Range son deck dans l'ordre {@code order} : il pioche par la fin (le tutoriel lui donne ses cartes faibles d'abord). */
+    public void arrangeDeck(Comparator<Card> order) { deck.getCards().sort(order); }
 
     /** Envoie {@code cards} dans la défausse (fin du tour de l'ennemi). */
     public void discard(List<Card> cards) { discardPile.addAll(cards); }

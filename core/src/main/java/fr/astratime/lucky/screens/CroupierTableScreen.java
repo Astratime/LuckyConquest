@@ -107,6 +107,8 @@ public class CroupierTableScreen extends ScreenAdapter {
     private final Stage           stage;
     private final AudioSettings   audio  = new AudioSettings();
     private final HudTextures     hud    = new HudTextures();
+    /** Première visite : le Croupier présente l'écran. */
+    private final FirstVisitGuide firstVisit;
     private final CardTextures    cardTextures = new CardTextures();
     private final CasinoButtons   buttons = new CasinoButtons();
     private final MenuDecor       decor  = new MenuDecor();
@@ -245,6 +247,11 @@ public class CroupierTableScreen extends ScreenAdapter {
 
         layout();
         showTab(false);
+        firstVisit = new FirstVisitGuide(stage, hud, clickSound, luckyGame.getProfile(), PlayerProfile.GUIDE_TABLE,
+            "La Table du croupier. À gauche, ta collection. À droite, ton deck.",
+            "Ton deck fait 20 cartes, 3 exemplaires au plus de chacune. Tu le joues dans tous les modes.",
+            "Onglet Rouleaux : les 11 rouleaux de ta machine. Pense à enregistrer.");
+        fade.toFront();
     }
 
     /** Affiche l'onglet « Rouleaux » ({@code reels}) ou « Deck ». */
@@ -659,6 +666,7 @@ public class CroupierTableScreen extends ScreenAdapter {
     @Override
     public void dispose() {
         stage.dispose();
+        firstVisit.dispose();
         decor.dispose();
         cardTextures.dispose();
         reelTextures.values().forEach(Texture::dispose);

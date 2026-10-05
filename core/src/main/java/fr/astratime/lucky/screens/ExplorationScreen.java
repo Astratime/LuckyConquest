@@ -95,6 +95,8 @@ public class ExplorationScreen extends ScreenAdapter {
     private final Stage           stage;
     private final AudioSettings   audio  = new AudioSettings();
     private final HudTextures     hud    = new HudTextures();
+    /** Première visite : le Croupier présente l'écran. */
+    private final FirstVisitGuide firstVisit;
     private final CardTextures    cardTextures = new CardTextures();
     private final EnemyTextures   enemyTextures = new EnemyTextures(cardTextures);
     private final CasinoButtons   buttons = new CasinoButtons();
@@ -131,6 +133,8 @@ public class ExplorationScreen extends ScreenAdapter {
     private final Label            ruleText;
     private final TextButton       enterButton;
     private final TextButton       backButton;
+    /** Rejoue la présentation du Croupier. */
+    private final TextButton       tutorialButton;
     private final Image            fade;
 
     private Place   place = Place.values()[0];
@@ -196,6 +200,7 @@ public class ExplorationScreen extends ScreenAdapter {
         ruleText.setAlignment(Align.topLeft);
         enterButton = buttons.createAction("Entrer", clickSound, this::launch);
         backButton  = buttons.create("Retour", clickSound, this::onBack);
+        tutorialButton = buttons.create("Tutoriel", clickSound, this::replayGuide);
 
         fade = new Image(pixel);
         fade.setColor(Color.BLACK);
@@ -216,10 +221,16 @@ public class ExplorationScreen extends ScreenAdapter {
         stage.addActor(ruleText);
         stage.addActor(enterButton);
         stage.addActor(backButton);
+        stage.addActor(tutorialButton);
         stage.addActor(fade);
         fade.addAction(Actions.fadeOut(FADE_TIME));
 
         selectPlace(place);
+        firstVisit = new FirstVisitGuide(stage, hud, clickSound, luckyGame.getProfile(), PlayerProfile.GUIDE_EXPLORATION,
+            "L'Exploration. Choisis un lieu, puis un de ses donjons.",
+            "Dans chaque donjon, un soldat, puis son roi. Bats le roi : son coffre s'ouvre. Une carte et des pièces.",
+            "Seuls ces combats rapportent des pièces. Vide les quatre donjons d'un lieu pour ouvrir le suivant.");
+        fade.toFront();
     }
 
     // -------------------------------------------------------------------------
@@ -283,6 +294,7 @@ public class ExplorationScreen extends ScreenAdapter {
             stage.addActor(gate);
             stage.addActor(label);
         }
+        if (firstVisit != null) firstVisit.toFront(); // les portes passent sous le Croupier
         fade.toFront();
         selected = -1;
         selectDungeon(0, false);
@@ -456,6 +468,7 @@ public class ExplorationScreen extends ScreenAdapter {
 
         enterButton.setPosition(detailX + detailWidth - enterButton.getWidth(), (BOTTOM_SPACE - enterButton.getHeight()) / 2f);
         backButton.setPosition(MARGIN, (BOTTOM_SPACE - backButton.getHeight()) / 2f);
+        tutorialButton.setPosition(backButton.getX() + backButton.getWidth() + 20f, backButton.getY());
         bobSelectedGate(); // les entrées viennent d'être replacées
     }
 
@@ -509,6 +522,7 @@ public class ExplorationScreen extends ScreenAdapter {
     @Override
     public void dispose() {
         stage.dispose();
+        firstVisit.dispose();
         decor.dispose();
         enemyTextures.dispose();
         cardTextures.dispose();
@@ -524,5 +538,11 @@ public class ExplorationScreen extends ScreenAdapter {
         Fonts.release(nameFont);
         Fonts.release(bodyFont);
         Fonts.release(gateFont);
+    }
+
+    /** Bouton « Tutoriel » : le Croupier présente l'écran de nouveau. */
+    private void replayGuide() {
+        firstVisit.replay();
+        fade.toFront();
     }
 }

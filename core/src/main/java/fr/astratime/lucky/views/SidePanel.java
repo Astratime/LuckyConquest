@@ -78,6 +78,8 @@ public class SidePanel implements Disposable {
     private       int   shownGains;
     private       int   targetGains;
     private final Table effectsBox  = new Table();
+    private final Table gainsBox    = new Table();
+    private final Table combosBox   = new Table();
     private final Table effectsRows = new Table();
     private final Map<Combo, Label[]> comboLabels = new EnumMap<>(Combo.class); // nom, multiplicateur
     private       List<Combo>         shownCombos = List.of();
@@ -113,7 +115,6 @@ public class SidePanel implements Disposable {
         float insetWidth = WIDTH - MARGIN * 2 - PADDING * 2;
         gainsMaxWidth = insetWidth - INSET_PADDING * 2 - COIN_SIZE - COIN_GAP;
 
-        Table gainsBox = new Table();
         gainsBox.setBackground(hud.insetDrawable());
         gainsBox.pad(INSET_PADDING);
         gainsBox.add(new Label("GAINS", new Label.LabelStyle(captionFont, Color.WHITE))).colspan(2).left();
@@ -123,7 +124,6 @@ public class SidePanel implements Disposable {
         root.add(gainsBox).width(insetWidth).padTop(SECTION_GAP);
         root.row();
 
-        Table combosBox = new Table();
         combosBox.setBackground(hud.insetDrawable());
         combosBox.pad(INSET_PADDING).top().left();
         combosBox.add(new Label("COMBINAISONS", new Label.LabelStyle(captionFont, Color.WHITE))).colspan(2).left();
@@ -265,6 +265,11 @@ public class SidePanel implements Disposable {
             }
         });
     }
+
+    /** @return les encadrés des gains, des combinaisons et des effets (le guide du tutoriel les éclaire). */
+    public Actor getGainsBox()   { return gainsBox; }
+    public Actor getCombosBox()  { return combosBox; }
+    public Actor getEffectsBox() { return effectsBox; }
 
     /** @return le panneau, à ajouter au Stage. */
     public Table getActor() { return root; }

@@ -8,6 +8,7 @@ import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.ScreenAdapter;
 import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.graphics.Color;
+import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.Interpolation;
@@ -19,6 +20,7 @@ import com.badlogic.gdx.scenes.scene2d.ui.Image;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 import com.badlogic.gdx.utils.ScreenUtils;
 import fr.astratime.lucky.LuckyGame;
+import fr.astratime.lucky.assets.EnemyTextures;
 import fr.astratime.lucky.assets.Fonts;
 import fr.astratime.lucky.assets.HudTextures;
 import fr.astratime.lucky.assets.Palette;
@@ -28,6 +30,9 @@ import fr.astratime.lucky.progress.PlayerProfile;
 import fr.astratime.lucky.settings.AudioSettings;
 import fr.astratime.lucky.settings.DisplaySettings;
 import fr.astratime.lucky.settings.VisualSettings;
+import fr.astratime.lucky.entities.tutorial.TutorialRun;
+import fr.astratime.lucky.views.CasinoButtons;
+import fr.astratime.lucky.views.GuideOverlay;
 import fr.astratime.lucky.views.MenuDecor;
 import fr.astratime.lucky.views.MinimumScreenViewport;
 import fr.astratime.lucky.views.OptionsMenu;
@@ -73,6 +78,8 @@ public class MenuScreen extends ScreenAdapter {
     private static final float FADE_TIME      = 0.4f;
     private static final float PARALLAX       = 18f;    // décalage maximal du décor, en pixels
     private static final float PARALLAX_EASE  = 4f;
+    /** Le Croupier parle une fois les options apparues. */
+    private static final float GUIDE_DELAY    = 0.9f;
 
     private final LuckyGame      luckyGame;
     private final Stage          stage;
@@ -90,6 +97,10 @@ public class MenuScreen extends ScreenAdapter {
     private final ShiningTitle      title;
     private final OptionsMenu       menu;
     private final Image             fade;
+    /** Le Croupier : il propose le tutoriel au premier lancement, puis présente le menu après le tutoriel. */
+    private final Texture           croupier = EnemyTextures.newCroupierPortrait();
+    private final CasinoButtons     guideButtons = new CasinoButtons();
+    private final GuideOverlay      guide;
     private boolean                 leaving;
     private float                   parallaxX, parallaxY;
 
@@ -115,9 +126,12 @@ public class MenuScreen extends ScreenAdapter {
         menu = new OptionsMenu(stage, hud, clickSound, hoverSound);
 
         showMainPage();
+        guide = new GuideOverlay(hud, croupier);
+        stage.addActor(guide);
         stage.addActor(fade);                     // en dernier : fondu d'ouverture et de sortie
         fade.addAction(Actions.fadeOut(FADE_TIME));
         layout();
+        stage.addAction(Actions.delay(GUIDE_DELAY, Actions.run(this::startGuide)));
     }
 
     // -------------------------------------------------------------------------
@@ -140,6 +154,7 @@ public class MenuScreen extends ScreenAdapter {
     private void showOptionsPage() {
         List<OptionsMenu.Entry> entries = new ArrayList<>(
             OptionsMenu.settingsEntries(luckyGame, settings, audio, display, () -> { }));
+        entries.add(OptionsMenu.Entry.button("Rejouer le tutoriel", this::onTutorial));
         PlayerProfile profile = luckyGame.getProfile();
         Runnable toggleAdmin = () -> profile.setAdmin(!profile.isAdmin());
         entries.add(new OptionsMenu.Entry(() -> "Mode ADMIN : " + (profile.isAdmin() ? "activé" : "désactivé"),
@@ -154,8 +169,70 @@ public class MenuScreen extends ScreenAdapter {
     }
 
     // -------------------------------------------------------------------------
+    // Le Croupier
+    // -------------------------------------------------------------------------
+
+    /**
+     * Premier lancement : le Croupier propose le tutoriel (« Plus tard » : il
+     * reste dans les Options). Tutoriel fini ou passé : il présente le menu, une fois.
+     */
+    private void startGuide() {
+        if (leaving || menu.hasCaption()) return;
+        PlayerProfile profile = luckyGame.getProfile();
+        if (!profile.hasSeen(PlayerProfile.GUIDE_TUTORIAL) && !profile.hasSeen(PlayerProfile.GUIDE_OFFER)) {
+            offerTutorial(profile);
+        } else if (profile.hasSeen(PlayerProfile.GUIDE_TUTORIAL) && !profile.hasSeen(PlayerProfile.GUIDE_MENU)) {
+            showMenuTour(profile);
+        }
+    }
+
+    private void offerTutorial(PlayerProfile profile) {
+        GuideOverlay.Step offer = GuideOverlay.Step.say("Bienvenue à Lucky Conquest. Première fois à ma table ? "
+            + "Je t'apprends à jouer en un combat. Le tutoriel reste aussi dans les Options.").buttons(
+            guideButtons.create("Suivre le tutoriel", clickSound, () -> {
+                profile.markSeen(PlayerProfile.GUIDE_OFFER);
+                guide.stop();
+                onTutorial();
+            }),
+            guideButtons.create("Plus tard", clickSound, () -> {
+                profile.markSeen(PlayerProfile.GUIDE_OFFER);
+                guide.stop();
+            }));
+        guide.play(List.of(offer), null);
+    }
+
+    /** Le Croupier présente chaque bouton du menu principal. */
+    private void showMenuTour(PlayerProfile profile) {
+        guide.setSkipButton(guideButtons.create("Passer", clickSound, () -> {
+            profile.markSeen(PlayerProfile.GUIDE_MENU);
+            guide.stop();
+        }));
+        String[] lines = {
+            "Entraînement : un combat contre moi, pour t'exercer. Il ne rapporte rien.",
+            "Tour des épreuves : six chapitres de combats, jusqu'au sommet. Elle ne rapporte pas de pièces.",
+            "Exploration : des donjons, leurs rois et leurs coffres. Les seuls combats qui rapportent des pièces.",
+            "Table du croupier : ton deck de 20 cartes et les 11 rouleaux de ta machine.",
+            "Boutique : tes pièces y achètent des rangs, des cartes et des rouleaux.",
+            "Options : le tutoriel s'y rejoue. Bonne chance à la table."};
+        List<GuideOverlay.Step> steps = new ArrayList<>();
+        for (int i = 0; i < lines.length; i++) {
+            int index = i;
+            steps.add(GuideOverlay.Step.say(lines[i], () -> GuideOverlay.boundsOf(menu.getOption(index))));
+        }
+        guide.play(steps, () -> profile.markSeen(PlayerProfile.GUIDE_MENU));
+    }
+
+    // -------------------------------------------------------------------------
     // Actions
     // -------------------------------------------------------------------------
+
+    /** Fondu au noir puis le tutoriel : un combat commenté par le Croupier. */
+    private void onTutorial() {
+        fadeOutThen(() -> {
+            luckyGame.setScreen(new GameScreen(luckyGame, new TutorialRun()));
+            dispose();
+        });
+    }
 
     /**
      * Fondu au noir puis lancement d'un combat ; l'écran du menu est libéré
@@ -249,6 +326,7 @@ public class MenuScreen extends ScreenAdapter {
             @Override
             public boolean keyDown(int keycode) {
                 if (leaving) return false;
+                if (guide.isActive()) return true; // le Croupier parle : le menu attend
                 if (keycode == Input.Keys.ESCAPE && menu.hasCaption()) {
                     clickSound.play();
                     showMainPage();
@@ -280,6 +358,9 @@ public class MenuScreen extends ScreenAdapter {
     @Override
     public void dispose() {
         stage.dispose();
+        guide.dispose();
+        croupier.dispose();
+        guideButtons.dispose();
         decor.dispose();
         Fonts.release(titleFont);
         Fonts.release(shineFont);
