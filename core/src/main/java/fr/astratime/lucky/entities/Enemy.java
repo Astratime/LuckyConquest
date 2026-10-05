@@ -137,7 +137,7 @@ public class Enemy {
      * Ce que deviennent {@code damage} dégâts qui le touchent : la Maison annule
      * une fois le premier gros coup (au moins {@link EnemyKind#HOUSE_CANCEL_PERCENT} %
      * de ses PV max) ; la Machine Originelle résiste au premier coup fatal, à 1 PV,
-     * et le Dernier tirage décidera. Ce qui arrive est à lire dans {@link #takeNotice()}.
+     * et le Dernier tirage décidera (les coups suivants du même tour ne la touchent plus). Ce qui arrive est à lire dans {@link #takeNotice()}.
      */
     private long guard(long damage) {
         if (kind.houseWins() && !houseUsed && damage * 100 >= (long) maxHp * EnemyKind.HOUSE_CANCEL_PERCENT) {
@@ -145,7 +145,8 @@ public class Enemy {
             notice = "LA MAISON GAGNE TOUJOURS : COUP ANNULÉ";
             return 0;
         }
-        if (kind.hasLastDraw() && !lastDrawDone && !lastDrawPending && damage >= hp) {
+        if (lastDrawPending) return 0;                  // à 1 PV, elle attend le Dernier tirage : plus rien ne la touche
+        if (kind.hasLastDraw() && !lastDrawDone && damage >= hp) {
             lastDrawPending = true;
             notice = "ELLE RÉSISTE ! DERNIER TIRAGE";
             return hp - 1;

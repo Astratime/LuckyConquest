@@ -191,12 +191,41 @@ class TowerChapters456Test {
         assertFalse(machine.isDefeated(), "elle résiste au coup fatal");
         assertEquals(1, machine.getHp());
         assertTrue(machine.isLastDrawPending());
+        machine.takeDamage(machine.getMaxHp());
+        assertEquals(1, machine.getHp(), "les coups suivants du même tour ne l'achèvent pas avant le Dernier tirage");
 
         Player player = new Player("Joueur", 100, List.of());
-        new TurnEngine().lastDraw(player, machine);
+        var events = new TurnEngine().lastDraw(player, machine);
         assertFalse(machine.isLastDrawPending());
         assertTrue(machine.isDefeated() != player.isDefeated(), "le meilleur score gagne, l'autre tombe");
-        assertTrue(TurnEngine.score(Symbol.JOKER) > TurnEngine.score(Symbol.WATERMELON));
+        var draw = (fr.astratime.lucky.entities.events.LastDrawEvent) events.get(0);
+        assertEquals(machine.isDefeated(), draw.playerWins, "la cinématique montre le vrai vainqueur");
+        assertEquals(draw.mine.size(), draw.hers.size());
+        for (int round = 0; round < draw.mine.size() - 1; round++) {
+            assertEquals(TurnEngine.score(draw.mine.get(round)), TurnEngine.score(draw.hers.get(round)), "égalité : on relance");
+        }
+        assertEquals(draw.playerWins, TurnEngine.score(draw.own()) > TurnEngine.score(draw.theirs()));
+        assertTrue(TurnEngine.score(Symbol.JOKER) > TurnEngine.score(Symbol.TRIPLE_SEVEN));
+        assertTrue(TurnEngine.score(Symbol.TRIPLE_SEVEN) > TurnEngine.score(Symbol.SEVEN));
+        assertTrue(TurnEngine.score(Symbol.TRIPLE_CHERRY) > TurnEngine.score(Symbol.CHERRY));
+        assertTrue(TurnEngine.score(Symbol.DOUBLE_BAR) > TurnEngine.score(Symbol.BAR));
+        assertEquals(1, TurnEngine.score(Symbol.CHERRY));
+        assertEquals(Symbol.values().length, java.util.Arrays.stream(Symbol.values()).map(TurnEngine::score)
+            .distinct().filter(rank -> rank >= 1).count(), "un rang distinct pour chaque symbole");
+    }
+
+    @Test
+    void losingTheLastDrawIsADefeatEvenAfterSeveralFatalHits() {
+        for (int seed = 0; seed < 40; seed++) {
+            Enemy machine = new Enemy(EnemyKind.MACHINE_ORIGINELLE);
+            Player player = new Player("Joueur", 100, List.of());
+            machine.takeDamage(machine.getMaxHp());
+            machine.takeDamage(machine.getMaxHp());             // un deuxième coup fatal dans le même tour
+            var draw = (fr.astratime.lucky.entities.events.LastDrawEvent)
+                new TurnEngine().lastDraw(player, machine).get(0);
+            assertEquals(draw.playerWins, machine.isDefeated(), "seed " + seed);
+            assertEquals(!draw.playerWins, player.isDefeated(), "seed " + seed);
+        }
     }
 
     @Test

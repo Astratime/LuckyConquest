@@ -1260,6 +1260,111 @@ def cutscene_machine():
     return reverb(track.buf, wet=0.25, size=1.6, tail=1.0)
 
 
+@sound('cutscene/last_draw', -18)
+def cutscene_last_draw():
+    """
+    Dernier tirage (LastDrawCutscene), l'intro : roulement de caisse claire qui monte, « DERNIER TIRAGE »
+    s'imprime (0,4 à 0,7 s) sur un accord de cuivres, les noms s'allument (0,8 s) ; la première manche à 1,6 s.
+    """
+    track = Track(2.2)
+    t, interval = 0.0, 0.09
+    while t < 0.7:
+        snare = stack(bp(noise(0.05), 1200, 7000) * expdec(0.05, 0.015), 0.3 * thump(240, 180, 0.04, 0.015))
+        track.add(snare, t, 0.3 + t)
+        t += interval
+        interval = max(0.035, interval * 0.9)
+    track.add(mix((impact(0.4, 150, 50), 0, 1.0), (metal_hit(220, 0.6), 0, 0.4)), 0.7, 0.9)
+    track.add(brass_chord(['A2', 'E3', 'A3', 'C4'], 0.9, 0.7), 0.7, 0.9)
+    for k in range(4):                                                          # les ampoules s'allument
+        track.add(chip(hz('A5') * 2 ** (k * 3 / 12), 0.1, 'square', dc=0.03, s=0.5), 0.85 + k * 0.08, 0.25)
+    track.add(heartbeat([1.2, 1.45]), 0.0, 0.6)
+    return reverb(track.buf, wet=0.25, size=1.4, tail=0.8)
+
+
+def lever_pull(d, heavy=False):
+    """Un levier qu'on tire : cliquetis du cran qui descend, puis le choc en bas ({d} secondes plus tard)."""
+    track = Track(d + 0.6)
+    track.add(rattle(d, 10, 22, 500, 1400, wood=True) if heavy else rattle(d, 14, 30, 1500, 4000), 0.0, 0.7)
+    hit = mix((metal_hit(140 if heavy else 320, 0.9 if heavy else 0.4), 0, 1.0),
+              (impact(0.5 if heavy else 0.25, 110 if heavy else 200, 35 if heavy else 70), 0, 1.0))
+    track.add(hit, d, 1.0 if heavy else 0.75)
+    return track.buf
+
+
+@sound('cutscene/last_draw_round', -18)
+def cutscene_last_draw_round():
+    """
+    Une manche du Dernier tirage, à partir du moment où ton levier touche le fond (0 s) : ton rouleau tourne ;
+    son levier descend tout seul (0,35 à 0,65 s, plus lourd), son rouleau tourne ; le tien s'arrête (1,6 s) en
+    ralentissant, suspense, puis le sien (2,45 s).
+    """
+    track = Track(3.0)
+    track.add(mix((metal_hit(320, 0.4), 0, 1.0), (impact(0.25, 200, 70), 0, 1.0)), 0.0, 0.75)
+    track.add(rattle(1.6, 30, 6, 2000, 5000), 0.0, 0.4)                       # ton rouleau qui ralentit
+    track.add(lever_pull(0.3, heavy=True), 0.35, 1.0)
+    track.add(rattle(1.8, 30, 4, 900, 2600), 0.65, 0.4)                       # le sien, plus grave
+    track.add(lp(noise(1.8), 110) * ramp(1.8, 0.6, 0.2), 0.65, 0.7)           # le sol tremble
+    stop = mix((thump(220, 90, 0.12, 0.03), 0, 1.0), (click(0.005, 1500, 6000), 0, 0.8),
+               (modal(hz('E6'), 0.25, BAR_RATIOS, [0.07, 0.03, 0.015, 0.008]), 0.004, 0.35))
+    track.add(stop, 1.6, 0.9)
+    t, interval = 1.65, 0.1                                                    # suspense : la caisse claire accélère
+    while t < 2.43:
+        snare = stack(bp(noise(0.05), 1200, 7000) * expdec(0.05, 0.015), 0.3 * thump(240, 180, 0.04, 0.015))
+        track.add(snare, t, 0.3 + 0.6 * (t - 1.65) / 0.8)
+        t += interval
+        interval = max(0.03, interval * 0.85)
+    rise = osc(vibrato(sweep(260, 700, 0.8), 0.8, rate=7, depth=0.015), 0.8, 'tri') * ramp(0.8, 0.1, 0.8, 1.5)
+    track.add(lp(rise, 3000), 1.65, 0.35)
+    track.add(mix((thump(160, 60, 0.25, 0.06), 0, 1.0), (click(0.01, 1200, 5000), 0, 0.8),
+                  (metal_hit(260, 0.5), 0, 0.4)), 2.45, 1.0)
+    return reverb(track.buf, wet=0.2, size=1.2, tail=0.5)
+
+
+@sound('cutscene/last_draw_notch', -24)
+def cutscene_last_draw_notch():
+    """Dernier tirage : un cran de ton levier, pendant que tu le tires à la souris."""
+    return mix((click(0.005, 1500, 5000), 0, 1.0), (modal(rand(900, 1100), 0.06, WOOD_RATIOS, [0.02, 0.01, 0.006]), 0, 0.6))
+
+
+@sound('cutscene/last_draw_tie', -20)
+def cutscene_last_draw_tie():
+    """Égalité au Dernier tirage : deux notes en suspens et des jetons qui retombent ; on relance."""
+    track = Track(1.2)
+    track.add(chip(hz('E5'), 0.16, 'tri', s=0.5), 0.0, 0.8)
+    track.add(chip(hz('E5'), 0.3, 'tri', s=0.5, r=0.15), 0.18, 0.8)
+    track.add(chips_clatter(6, 0.4), 0.3, 0.5)
+    return reverb(track.buf, wet=0.2, tail=0.4)
+
+
+@sound('cutscene/last_draw_win', -16)
+def cutscene_last_draw_win():
+    """Dernier tirage gagné : sa vitre se fend, BINGO, ta machine crache des pièces, sa machine grésille et s'éteint."""
+    track = Track(3.0)
+    track.add(mix((crack_hit(), 0, 1.0), (modal(3200, 0.5, GLASS_RATIOS, [0.2, 0.1, 0.05, 0.03]), 0, 0.5)), 0.0, 0.9)
+    track.add(bingo_jingle('C5', 'square', hold=0.9), 0.05, 0.6)
+    track.add(coin_shower(1.8, 40), 0.1, 0.6)
+    for k in range(4):
+        track.add(cash_register_bell(), 0.2 + k * 0.18, 0.3)
+    hum = osc(sweep(hz('A2'), hz('A1'), 1.2), 1.2, 'saw') * ramp(1.2, 0.6, 0.0)
+    track.add(lp(hum, 900), 0.2, 0.35)
+    track.add(brass_chord(['C3', 'E3', 'G3', 'C4'], 1.2, 0.6), 0.9, 0.8)
+    return reverb(track.buf, wet=0.25, size=1.3, tail=0.8)
+
+
+@sound('cutscene/last_draw_lose', -16)
+def cutscene_last_draw_lose():
+    """Dernier tirage perdu : ta machine grille dans un grésillement, son œil flambe, accord grave qui descend."""
+    track = Track(3.0)
+    fizz = bp(noise(1.2), 1500, 7000) * (0.5 + 0.5 * (rand(0, 1, n(1.2)) > 0.6)) * ramp(1.2, 1.0, 0.0)
+    track.add(fizz, 0.0, 0.5)
+    track.add(mix((impact(0.5, 120, 40), 0, 1.0), (metal_hit(150, 0.8), 0, 0.5)), 0.0, 0.9)
+    power = osc(sweep(hz('A3'), hz('A1'), 1.0), 1.0, 'saw') * ramp(1.0, 0.8, 0.0)
+    track.add(lp(power, 1200), 0.05, 0.4)
+    track.add(brass_chord(['A1', 'C2', 'D#2', 'A2'], 1.8, 0.7), 0.3, 1.0)
+    track.add(lp(noise(1.6), 90) * ramp(1.6, 1.0, 0.0), 0.3, 0.9)
+    return reverb(track.buf, wet=0.3, size=1.6, tail=1.0)
+
+
 @sound('cutscene/shard_ending', -18)
 def cutscene_shard_ending():
     """

@@ -72,8 +72,17 @@ public abstract class Cutscene extends Actor implements Disposable {
         addListener(new InputListener() {
             @Override
             public boolean touchDown(InputEvent event, float x, float y, int pointer, int button) {
-                skip();
-                return true;
+                return pointerDown(event.getStageX(), event.getStageY());
+            }
+
+            @Override
+            public void touchDragged(InputEvent event, float x, float y, int pointer) {
+                pointerDragged(event.getStageX(), event.getStageY());
+            }
+
+            @Override
+            public void touchUp(InputEvent event, float x, float y, int pointer, int button) {
+                pointerUp(event.getStageX(), event.getStageY());
             }
         });
     }
@@ -99,6 +108,21 @@ public abstract class Cutscene extends Actor implements Disposable {
 
     /** Dessine la scène, en mélange normal ; le fondu final est dessiné par-dessus. */
     protected abstract void drawScene(Batch batch);
+
+    /**
+     * Un clic sur la scène, en ({@code x}, {@code y}) sur le Stage : par défaut, il la passe.
+     * @return {@code true} pour suivre le glissé et le relâché qui suivent
+     */
+    protected boolean pointerDown(float x, float y) {
+        skip();
+        return true;
+    }
+
+    /** Le bouton tenu, la souris glisse en ({@code x}, {@code y}) ; rien par défaut. */
+    protected void pointerDragged(float x, float y) {}
+
+    /** Le bouton est relâché en ({@code x}, {@code y}) ; rien par défaut. */
+    protected void pointerUp(float x, float y) {}
 
     // -------------------------------------------------------------------------
     // Lecture

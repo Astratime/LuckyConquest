@@ -36,6 +36,7 @@ import fr.astratime.lucky.animations.CardDiscardAnimator;
 import fr.astratime.lucky.animations.cutscenes.Cutscene;
 import fr.astratime.lucky.animations.cutscenes.CutsceneKit;
 import fr.astratime.lucky.animations.cutscenes.Cutscenes;
+import fr.astratime.lucky.animations.cutscenes.LastDrawCutscene;
 import fr.astratime.lucky.animations.CombatEndAnimation;
 import fr.astratime.lucky.animations.Confetti;
 import fr.astratime.lucky.animations.DamageVignette;
@@ -93,6 +94,7 @@ import fr.astratime.lucky.entities.events.GainsEarnedEvent;
 import fr.astratime.lucky.entities.events.GainsLostEvent;
 import fr.astratime.lucky.entities.events.JackpotEvent;
 import fr.astratime.lucky.entities.events.PlayerDamagedEvent;
+import fr.astratime.lucky.entities.events.LastDrawEvent;
 import fr.astratime.lucky.entities.events.ReelForbiddenEvent;
 import fr.astratime.lucky.entities.events.PistolShotEvent;
 import fr.astratime.lucky.entities.events.PlayerHealedEvent;
@@ -228,6 +230,8 @@ public class GameScreen extends ScreenAdapter {
     private static final int   POT_CONFETTI          = 50;
     /** Temps laissé au texte de la riposte (et au coup sur la barre) avant de passer au tour du joueur. */
     private static final float RIPOSTE_TEXT_TIME     = 0.8f;
+    /** Le temps de lire « ELLE RÉSISTE ! DERNIER TIRAGE » avant le duel des leviers. */
+    private static final float LAST_DRAW_DELAY       = 1.2f;
     /** Combinaison formée : hauteur de son texte au-dessus de la main (en hauteurs de carte). */
     private static final float COMBO_TEXT_HEIGHT     = 2f;
 
@@ -926,19 +930,41 @@ public class GameScreen extends ScreenAdapter {
     /**
      * Fin du tour : ce qui reste du bouclier du joueur remplit son Coffre (texte
      * à droite de sa barre de vie), puis le combat se termine si un camp est
-     * vaincu, ou le joueur reprend la main.
+     * vaincu, ou le joueur reprend la main. Le Dernier tirage de la Machine
+     * Originelle se joue en cinématique (le duel des leviers) ; ce qui le suit
+     * s'affiche sous son fondu final.
      */
     private void endTurn() {
         playerShield.restore(0); // ce qui en reste part au Coffre
         List<Event> endEvents = currentResult.getEnemyTurnEvents();
+        int duel = 0;
+        while (duel < endEvents.size() && !(endEvents.get(duel) instanceof LastDrawEvent)) duel++;
+        if (duel == endEvents.size()) {
+            showEndEvents(endEvents);
+            return;
+        }
+        LastDrawEvent draw = (LastDrawEvent) endEvents.get(duel);
+        List<Event> after = endEvents.subList(duel, endEvents.size());
+        boolean before = showEndTexts(endEvents.subList(0, duel)); // « ELLE RÉSISTE ! DERNIER TIRAGE »
+        stage.addAction(Actions.delay(before ? LAST_DRAW_DELAY : 0f, Actions.run(() ->
+            playCutscene(new LastDrawCutscene(cutsceneKit, draw), () -> showEndEvents(after)))));
+    }
+
+    /** Affiche les événements de fin de tour {@code events}, puis termine le tour. */
+    private void showEndEvents(List<Event> events) {
+        float margin = showEndTexts(events) ? RIPOSTE_TEXT_TIME : RESULT_TEXTS_MARGIN;
+        stage.addAction(Actions.delay(margin, Actions.run(this::finishTurn)));
+    }
+
+    /** @return {@code true} si les événements {@code events} ont des textes, affichés à droite de la barre de vie du joueur. */
+    private boolean showEndTexts(List<Event> events) {
         Vector2 anchor = hud.besidePlayerHealthBar(SlotView.POPUP_PLAYER_GAP);
         List<EffectPopup> texts = new ArrayList<>();
-        endEvents.forEach(event -> texts.addAll(event.getPopups()));
+        events.forEach(event -> texts.addAll(event.getPopups()));
         if (!texts.isEmpty()) effectPopupAnimator.play(texts, anchor.x, anchor.y);
-        endEvents.forEach(this::onEventShown);
+        events.forEach(this::onEventShown);
         refreshEffects();
-        float margin = texts.isEmpty() ? RESULT_TEXTS_MARGIN : RIPOSTE_TEXT_TIME;
-        stage.addAction(Actions.delay(margin, Actions.run(this::finishTurn)));
+        return !texts.isEmpty();
     }
 
     /**
