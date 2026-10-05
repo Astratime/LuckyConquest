@@ -191,6 +191,8 @@ class TowerChapters456Test {
         assertFalse(machine.isDefeated(), "elle résiste au coup fatal");
         assertEquals(1, machine.getHp());
         assertTrue(machine.isLastDrawPending());
+        machine.takeDamage(machine.getMaxHp());
+        assertEquals(1, machine.getHp(), "les coups suivants du même tour ne l'achèvent pas avant le Dernier tirage");
 
         Player player = new Player("Joueur", 100, List.of());
         var events = new TurnEngine().lastDraw(player, machine);
@@ -204,6 +206,20 @@ class TowerChapters456Test {
         }
         assertEquals(draw.playerWins, TurnEngine.score(draw.own()) > TurnEngine.score(draw.theirs()));
         assertTrue(TurnEngine.score(Symbol.JOKER) > TurnEngine.score(Symbol.WATERMELON));
+    }
+
+    @Test
+    void losingTheLastDrawIsADefeatEvenAfterSeveralFatalHits() {
+        for (int seed = 0; seed < 40; seed++) {
+            Enemy machine = new Enemy(EnemyKind.MACHINE_ORIGINELLE);
+            Player player = new Player("Joueur", 100, List.of());
+            machine.takeDamage(machine.getMaxHp());
+            machine.takeDamage(machine.getMaxHp());             // un deuxième coup fatal dans le même tour
+            var draw = (fr.astratime.lucky.entities.events.LastDrawEvent)
+                new TurnEngine().lastDraw(player, machine).get(0);
+            assertEquals(draw.playerWins, machine.isDefeated(), "seed " + seed);
+            assertEquals(!draw.playerWins, player.isDefeated(), "seed " + seed);
+        }
     }
 
     @Test
