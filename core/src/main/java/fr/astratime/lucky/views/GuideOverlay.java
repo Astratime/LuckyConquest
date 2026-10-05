@@ -297,6 +297,12 @@ public class GuideOverlay extends Group implements Disposable {
         bubble.setPosition(MathUtils.clamp(x, MARGIN, width - w - MARGIN), MathUtils.clamp(y, MARGIN, height - h - MARGIN));
         if (skip != null && skipCorner != null) skip.setPosition(skipCorner.x, skipCorner.y - skip.getHeight());
         else if (skip != null) skip.setPosition(width - skip.getWidth() - MARGIN, height - skip.getHeight() - MARGIN);
+        // La bulle ne cache pas le bouton « Passer » : elle se pousse à sa gauche, sinon dessous.
+        if (skip != null && bubble.getX() < skip.getX() + skip.getWidth() && bubble.getX() + w > skip.getX()
+                && bubble.getY() < skip.getY() + skip.getHeight() && bubble.getY() + h > skip.getY()) {
+            if (skip.getX() - BUBBLE_GAP - w >= MARGIN) bubble.setX(skip.getX() - BUBBLE_GAP - w);
+            else bubble.setY(Math.max(MARGIN, skip.getY() - BUBBLE_GAP - h));
+        }
     }
 
     @Override

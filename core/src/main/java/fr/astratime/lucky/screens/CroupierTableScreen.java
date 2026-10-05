@@ -44,6 +44,7 @@ import fr.astratime.lucky.progress.ReelShop;
 import fr.astratime.lucky.progress.PlayerProfile;
 import fr.astratime.lucky.settings.AudioSettings;
 import fr.astratime.lucky.views.CasinoButtons;
+import fr.astratime.lucky.views.GuideOverlay;
 import fr.astratime.lucky.views.MenuDecor;
 import fr.astratime.lucky.views.MinimumScreenViewport;
 import fr.astratime.lucky.views.Tooltip;
@@ -154,6 +155,8 @@ public class CroupierTableScreen extends ScreenAdapter {
     private final TextButton  starterButton;
     private final TextButton  clearButton;
     private final TextButton  backButton;
+    /** Rejoue la présentation du Croupier. */
+    private final TextButton  tutorialButton;
     private final Image       fade;
 
     private int     columns = 6;
@@ -216,6 +219,7 @@ public class CroupierTableScreen extends ScreenAdapter {
             refresh();
         });
         backButton    = buttons.create("Retour", clickSound, this::onBack);
+        tutorialButton = buttons.create("Tutoriel", clickSound, this::replayGuide);
 
         fade = new Image(pixel);
         fade.setColor(Color.BLACK);
@@ -241,16 +245,57 @@ public class CroupierTableScreen extends ScreenAdapter {
         stage.addActor(starterButton);
         stage.addActor(clearButton);
         stage.addActor(backButton);
+        stage.addActor(tutorialButton);
         stage.addActor(tooltip.getActor());
         stage.addActor(fade);
         fade.addAction(Actions.fadeOut(FADE_TIME));
 
         layout();
         showTab(false);
-        firstVisit = new FirstVisitGuide(stage, hud, clickSound, luckyGame.getProfile(), PlayerProfile.GUIDE_TABLE,
-            "La Table du croupier. À gauche, ta collection. À droite, ton deck.",
-            "Ton deck fait 20 cartes, 3 exemplaires au plus de chacune. Tu le joues dans tous les modes.",
-            "Onglet Rouleaux : les 11 rouleaux de ta machine. Pense à enregistrer.");
+        firstVisit = new FirstVisitGuide(stage, hud, clickSound, profile, PlayerProfile.GUIDE_TABLE, this::guideSteps);
+        fade.toFront();
+    }
+
+    /**
+     * Le Croupier présente la table, puis fait manipuler le joueur : retirer
+     * une carte du deck et en ajouter une, puis la même chose avec un rouleau.
+     */
+    private List<GuideOverlay.Step> guideSteps() {
+        int[] before = new int[1];
+        List<GuideOverlay.Step> steps = new ArrayList<>();
+        steps.add(GuideOverlay.Step.say("La Table du croupier. Ici, tu prépares ce que tu emmènes au combat.")
+            .onStart(() -> showTab(false)));
+        steps.add(GuideOverlay.Step.say("À gauche, ta collection : toutes les cartes que tu possèdes.",
+            () -> GuideOverlay.boundsOf(collectionPanel)));
+        steps.add(GuideOverlay.Step.say("À droite, ton deck. Il fait " + PlayerProfile.DECK_SIZE
+            + " cartes, " + PlayerProfile.MAX_COPIES + " exemplaires au plus de chacune. Tu le joues dans tous les modes.",
+            () -> GuideOverlay.boundsOf(deckPanel)));
+        steps.add(GuideOverlay.Step.action("Retire une carte : clique sur une ligne de ton deck.",
+                () -> GuideOverlay.boundsOf(deckPanel), () -> draft.size() < before[0])
+            .onStart(() -> before[0] = draft.size()));
+        steps.add(GuideOverlay.Step.action("Ajoute une carte : clic gauche sur une carte de ta collection. "
+                + "Clic droit l'enlève du deck.",
+                () -> GuideOverlay.boundsOf(collectionPanel), () -> draft.size() > before[0])
+            .onStart(() -> before[0] = draft.size()));
+        steps.add(GuideOverlay.Step.action("Ta machine a ses propres rouleaux. Ouvre l'onglet Rouleaux.",
+            () -> GuideOverlay.boundsOf(reelsTab), () -> showingReels));
+        steps.add(GuideOverlay.Step.say("Tes rouleaux. Ceux en or tournent dans ta machine. Elle en prend "
+            + Symbol.MACHINE_SIZE + ", tous différents.", () -> GuideOverlay.boundsOf(collectionPanel)));
+        steps.add(GuideOverlay.Step.action("Retire un rouleau : clique sur un rouleau en or, ou sur une ligne de ta machine.",
+                () -> GuideOverlay.boundsOf(collectionPanel).merge(GuideOverlay.boundsOf(deckPanel)),
+                () -> machineDraft.size() < before[0])
+            .onStart(() -> before[0] = machineDraft.size()));
+        steps.add(GuideOverlay.Step.action("Place un rouleau : clique sur un rouleau qui n'est pas en or.",
+                () -> GuideOverlay.boundsOf(collectionPanel), () -> machineDraft.size() > before[0])
+            .onStart(() -> before[0] = machineDraft.size()));
+        steps.add(GuideOverlay.Step.say("Enregistre pour garder ton deck et ta machine. Retour les laisse comme avant.",
+            () -> GuideOverlay.boundsOf(saveButton).merge(GuideOverlay.boundsOf(backButton))));
+        return steps;
+    }
+
+    /** Bouton « Tutoriel » : le Croupier présente la table de nouveau. */
+    private void replayGuide() {
+        firstVisit.replay();
         fade.toFront();
     }
 
@@ -630,6 +675,7 @@ public class CroupierTableScreen extends ScreenAdapter {
         starterButton.setPosition(clearButton.getX() - 24f - starterButton.getWidth(), buttonY);
         classicButton.setPosition(clearButton.getX() - 24f - classicButton.getWidth(), buttonY);
         backButton.setPosition(MARGIN, buttonY);
+        tutorialButton.setPosition(backButton.getX() + backButton.getWidth() + 20f, buttonY);
     }
 
     /** Stage d'abord (souris), puis clavier : Échap revient au menu principal sans enregistrer. */
