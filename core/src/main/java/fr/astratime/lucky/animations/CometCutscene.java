@@ -26,7 +26,7 @@ import java.util.Random;
  * épreuves) : un ciel nocturne au-dessus d'une ville de casinos, une pluie
  * d'étoiles filantes, puis une météorite en feu qui traverse le ciel et
  * s'écrase derrière la ville. L'explosion s'ouvre en boule de feu et en onde
- * de choc, puis tout l'écran passe au blanc ; le combat commence sous le blanc
+ * de choc, puis tout l'écran passe au blanc ; la présentation du boss apparaît sous le blanc
  * ({@code onWhite}), qui s'estompe ensuite.
  *
  * Un clic ou une touche passe la cinématique : l'écran blanchit tout de suite.
@@ -49,7 +49,7 @@ public class CometCutscene extends Actor implements Disposable {
     public static final float IMPACT       = 5.6f;
     /** L'écran commence à blanchir. */
     public static final float WHITE_START  = 5.9f;
-    /** L'écran est tout blanc : le combat commence dessous. */
+    /** L'écran est tout blanc : la présentation du boss apparaît dessous. */
     public static final float WHITE_FULL   = 6.8f;
     private static final float WHITE_HOLD  = 0.2f;
     private static final float WHITE_OUT   = 0.9f;
@@ -119,7 +119,7 @@ public class CometCutscene extends Actor implements Disposable {
 
     /**
      * Lance la cinématique par-dessus tout l'écran ; {@code onWhite} est appelé
-     * une fois, quand l'écran est tout blanc (le combat doit commencer là).
+     * une fois, quand l'écran est tout blanc (la présentation du boss doit apparaître là).
      */
     public void play(Runnable onWhite) {
         this.onWhite = onWhite;
@@ -147,7 +147,7 @@ public class CometCutscene extends Actor implements Disposable {
     /** @return {@code true} tant que la cinématique joue, jusqu'à ce que l'écran blanc commence à s'estomper. */
     public boolean isPlaying() { return isVisible() && whiteAt < 0f; }
 
-    /** Passe la cinématique : l'écran blanchit tout de suite, puis le combat commence. */
+    /** Passe la cinématique : l'écran blanchit tout de suite, puis le boss se présente. */
     public void skip() {
         if (!isPlaying() || skipAt >= 0f || time >= WHITE_START) return;
         skipAt = time;
@@ -198,7 +198,7 @@ public class CometCutscene extends Actor implements Disposable {
         if (skipAt < 0f) simulate(delta);
         if (whiteAlpha() >= 1f) {
             whiteAt = time;
-            setTouchable(Touchable.disabled); // le combat se joue déjà dessous
+            setTouchable(Touchable.disabled); // la présentation du boss est déjà dessous
             Runnable callback = onWhite;
             onWhite = null;
             if (callback != null) callback.run();

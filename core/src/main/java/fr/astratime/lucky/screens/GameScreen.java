@@ -1315,7 +1315,7 @@ public class GameScreen extends ScreenAdapter {
         switch (next) {
             case CHOOSE_ENEMY -> pickOverlay.showChoice(run.getChoices(), this::createButton,
                 index -> startNextCombat(run.choose(index)));
-            case BOSS -> pickOverlay.showBoss(run.getEnemy(), this::createButton, this::fightBoss);
+            case BOSS -> introduceBoss();
             case CLEARED -> {
                 if (isDungeon()) openChest();
                 else onBackToChapters();
@@ -1324,21 +1324,27 @@ public class GameScreen extends ScreenAdapter {
     }
 
     /**
-     * « Affronter » le boss : avant la Comète Dorée (chapitre 1 de la Tour), la
-     * cinématique de la météorite joue d'abord, et le combat commence sous son
-     * fondu blanc ; la musique s'efface pendant ce temps.
+     * Après le 2e combat, « Continuer » : avant la Comète Dorée (chapitre 1 de la
+     * Tour), la cinématique de la météorite joue d'abord, et la présentation du
+     * boss apparaît sous son fondu blanc ; la musique s'efface pendant la scène.
+     * « Affronter » lance ensuite le combat.
      */
-    private void fightBoss() {
+    private void introduceBoss() {
         if (!(run instanceof TowerRun tower) || tower.getChapter() != Chapter.GENESE) {
-            startNextCombat(run.getEnemy());
+            showBoss();
             return;
         }
         tooltip.hide();
         music.setDucked(true);
         cometCutscene.play(() -> {
             music.setDucked(false);
-            startNextCombat(run.getEnemy());
+            showBoss();
         });
+    }
+
+    /** La présentation du boss, avec « Affronter ». */
+    private void showBoss() {
+        pickOverlay.showBoss(run.getEnemy(), this::createButton, () -> startNextCombat(run.getEnemy()));
     }
 
     /** @return le texte du bouton qui ramène au choix du chapitre ou du donjon. */
