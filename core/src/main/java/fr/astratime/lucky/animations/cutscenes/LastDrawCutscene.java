@@ -41,8 +41,10 @@ public class LastDrawCutscene extends Cutscene {
     /** Ton rouleau s'arrête, puis le sien, plus tard (suspense). */
     public static final float STOP       = 1.6f;
     public static final float HER_STOP   = 2.45f;
+    /** Les deux rouleaux arrêtés, leurs symboles et leurs rangs restent autant de secondes avant l'égalité ou le verdict. */
+    public static final float RESULT     = 4.0f;
     /** Durée d'une manche, jusqu'à l'égalité ou au verdict. */
-    public static final float ROUND      = 2.75f;
+    public static final float ROUND      = HER_STOP + RESULT;
     /** Le verdict reste à l'écran, puis le fondu. */
     public static final float VERDICT    = 4.0f;
     public static final float COVER      = 0.6f;
@@ -663,12 +665,20 @@ public class LastDrawCutscene extends Cutscene {
         float names = progress(0.8f, 1.2f) * (1f - gone);
         caption(batch, font, "TOI", mine.cx, mine.base - 3.5f * mine.u, names);
         caption(batch, font, "ELLE", hers.cx, mine.base - 3.5f * mine.u, names);
-        if (round >= 0 && !verdict) {
+        if (round >= 0) {                                    // les symboles et leurs rangs restent jusqu'au fondu
             font.getData().setScale(scale * 1.6f);
             if (t >= STOP) plate(batch, label(draw.mine.get(round)), mine.cx, mine.base - 8f * mine.u,
                 progress(roundStart(round) + STOP, roundStart(round) + STOP + 0.2f));
             if (t >= HER_STOP) plate(batch, label(draw.hers.get(round)), hers.cx, mine.base - 8f * mine.u,
                 progress(roundStart(round) + HER_STOP, roundStart(round) + HER_STOP + 0.2f));
+            if (t >= HER_STOP + 0.3f) {                          // entre les deux machines : qui l'emporte
+                int own = LastDrawEvent.score(draw.mine.get(round)), theirs = LastDrawEvent.score(draw.hers.get(round));
+                float k = Interpolation.pow2Out.apply(progress(roundStart(round) + HER_STOP + 0.3f,
+                    roundStart(round) + HER_STOP + 0.6f));
+                font.getData().setScale(scale * MathUtils.lerp(5f, 3.4f, k));
+                caption(batch, font, own + (own > theirs ? "  >  " : own < theirs ? "  <  " : "  =  ") + theirs,
+                    width / 2f, mine.reelY + mine.reelH / 2f, k * (1f - gone));
+            }
         }
         if (verdict) {
             font.getData().setScale(scale * MathUtils.lerp(4.6f, 3f, gone));
