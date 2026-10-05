@@ -360,8 +360,11 @@ public class CasinoKings extends KingEntrance {
                 batch.draw(pixel, x - 34f, y - 2f, 34f, 0f, 68f, 96f, 1f, 1f, cardAngle);
                 batch.setColor(c("f4ecdc"));
                 batch.draw(pixel, x - 30f, y + 2f, 30f, -4f, 60f, 88f, 1f, 1f, cardAngle);
+                // Le logo au centre de la carte : on tourne sa position avec la carte, puis le losange sur lui-même.
+                float logoX = x - MathUtils.sinDeg(cardAngle) * 46f;
+                float logoY = y - 2f + MathUtils.cosDeg(cardAngle) * 46f;
                 batch.setColor(i % 2 == 0 ? c("e0283a") : c("0a0808"));
-                batch.draw(pixel, x - 9f, y + 37f, 9f, -39f, 18f, 18f, 1f, 1f, cardAngle + 45f);
+                batch.draw(pixel, logoX - 9f, logoY - 9f, 9f, 9f, 18f, 18f, 1f, 1f, cardAngle + 45f);
             }
         }
         flash(batch, c("ffe066"), EYE, 0.2f, 0.35f);
