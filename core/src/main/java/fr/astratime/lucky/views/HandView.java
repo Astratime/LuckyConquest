@@ -6,6 +6,7 @@ import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.Interpolation;
 import com.badlogic.gdx.math.MathUtils;
+import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.Group;
@@ -28,6 +29,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 
 /**
@@ -222,6 +224,23 @@ public class HandView {
             }
         }
         return null;
+    }
+
+    /**
+     * @return le rectangle (Stage) qui réunit, sur la rangée de la main, les
+     *         cartes pour lesquelles {@code which} est vrai (le guide du tutoriel
+     *         les éclaire), ou {@code null} s'il n'y en a aucune
+     */
+    public Rectangle boundsOf(Predicate<Card> which) {
+        Rectangle bounds = null;
+        for (Image image : images) {
+            if (!which.test(cardOf.get(image))) continue;
+            // La rangée, pas la carte levée au survol : le trou ne bouge pas sous la souris.
+            Vector2 corner = group.localToStageCoordinates(new Vector2(image.getX(), table.getHandRowY()));
+            Rectangle card = new Rectangle(corner.x, corner.y, cardWidth, cardHeight);
+            bounds = bounds == null ? card : bounds.merge(card);
+        }
+        return bounds;
     }
 
     /** {@code before} change d'apparence et devient {@code after} (même place), avec un petit rebond. */

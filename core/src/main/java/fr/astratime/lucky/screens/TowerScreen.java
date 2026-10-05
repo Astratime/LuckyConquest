@@ -24,6 +24,7 @@ import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 import com.badlogic.gdx.utils.Align;
 import com.badlogic.gdx.utils.ScreenUtils;
 import fr.astratime.lucky.LuckyGame;
+import fr.astratime.lucky.progress.PlayerProfile;
 import fr.astratime.lucky.assets.BackgroundMusic;
 import fr.astratime.lucky.assets.CardTextures;
 import fr.astratime.lucky.assets.EnemyTextures;
@@ -81,6 +82,8 @@ public class TowerScreen extends ScreenAdapter {
     private final Stage           stage;
     private final AudioSettings   audio  = new AudioSettings();
     private final HudTextures     hud    = new HudTextures();
+    /** Première visite : le Croupier présente l'écran. */
+    private final FirstVisitGuide firstVisit;
     private final CardTextures    cardTextures = new CardTextures();
     private final EnemyTextures   enemyTextures = new EnemyTextures(cardTextures);
     private final CasinoButtons   buttons = new CasinoButtons();
@@ -197,6 +200,11 @@ public class TowerScreen extends ScreenAdapter {
 
         select(0, false);
         layout();
+        firstVisit = new FirstVisitGuide(stage, hud, clickSound, luckyGame.getProfile(), PlayerProfile.GUIDE_TOWER,
+            "La Tour des épreuves. Six chapitres, de plus en plus durs.",
+            "Un chapitre : un premier combat, puis tu choisis ton adversaire parmi trois cartes, puis le boss. Tes PV et tes gains te suivent.",
+            "Bats le boss pour ouvrir le chapitre suivant. La Tour ne rapporte pas de pièces.");
+        fade.toFront();
     }
 
     // -------------------------------------------------------------------------
@@ -390,6 +398,7 @@ public class TowerScreen extends ScreenAdapter {
     @Override
     public void dispose() {
         stage.dispose();
+        firstVisit.dispose();
         decor.dispose();
         enemyTextures.dispose();
         cardTextures.dispose();

@@ -11,6 +11,7 @@ import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
+import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.Group;
@@ -83,6 +84,8 @@ import fr.astratime.lucky.entities.choices.RouletteChoice;
 import fr.astratime.lucky.entities.SlotMachine;
 import fr.astratime.lucky.entities.enemy.EnemyKind;
 import fr.astratime.lucky.entities.tower.TowerRun;
+import fr.astratime.lucky.entities.tutorial.TutorialRun;
+import fr.astratime.lucky.entities.RankBonus;
 import fr.astratime.lucky.entities.enemy.EnemySymbol;
 import fr.astratime.lucky.entities.enemy.EnemyTurnResult;
 import fr.astratime.lucky.entities.events.DamageReflectedEvent;
@@ -119,6 +122,7 @@ import fr.astratime.lucky.views.CasinoButtons;
 import fr.astratime.lucky.views.CombatHud;
 import fr.astratime.lucky.views.EnemyPickOverlay;
 import fr.astratime.lucky.views.EnemyView;
+import fr.astratime.lucky.views.GuideOverlay;
 import fr.astratime.lucky.views.HandView;
 import fr.astratime.lucky.views.MinimumScreenViewport;
 import fr.astratime.lucky.views.HealthBarView;
@@ -297,6 +301,11 @@ public class GameScreen extends ScreenAdapter {
     private final ChestOverlay        chestOverlay;
     /** Étape de la Tour des épreuves (« CHAPITRE 1 · COMBAT 2/3 »), vide pour un combat seul. */
     private final Label               stageLabel;
+    /** Tutoriel : le Croupier, sa bulle et son voile, et ce qu'il fait faire ({@code null} hors du tutoriel). */
+    private final GuideOverlay        guide;
+    private final TutorialDirector    tutorial;
+    /** Tutoriel : le dernier tirage était un Bingo. */
+    private boolean                   lastSpinBingo;
 
     // -------------------------------------------------------------------------
     // Vues et acteurs Scene2D
@@ -365,12 +374,20 @@ public class GameScreen extends ScreenAdapter {
         this.run       = run;
         // Le deck construit par le joueur (ou le deck de départ), relu à chaque nouveau combat.
         PlayerProfile profile = luckyGame.getProfile();
-        this.gameController = new GameController(() -> CardLoader.loadDeck(profile.getDeck()),
-            CardLoader.cardFactory(), CardLoader.loadShop(),
-            cards -> new Player("Joueur", Player.BASE_HP, cards, profile.getRankBonus(), profile.getMachine()));
+        if (run instanceof TutorialRun) {
+            // Tutoriel : son deck rangé d'avance, la machine de départ, aucun rang, une échoppe qui ne vend que le Bingo.
+            this.gameController = new GameController(() -> CardLoader.loadDeck(TutorialRun.deck()),
+                CardLoader.cardFactory(), TutorialRun.shop(),
+                cards -> new Player("Joueur", Player.BASE_HP, cards, RankBonus.NONE, Symbol.classicReels()));
+        } else {
+            this.gameController = new GameController(() -> CardLoader.loadDeck(profile.getDeck()),
+                CardLoader.cardFactory(), CardLoader.loadShop(),
+                cards -> new Player("Joueur", Player.BASE_HP, cards, profile.getRankBonus(), profile.getMachine()));
+        }
         if (run != null) gameController.setPlaceRule(run.getPlaceRule()); // Exploration : la règle du lieu
         EnemyKind.setTowerHard(run instanceof TowerRun tower && tower.isHard()); // Tour : mode difficile
         gameController.restart(firstEnemy()); // le premier ennemi du chapitre, ou le croupier d'entraînement
+        if (run instanceof TutorialRun) TutorialRun.arrange(player().getDeck().getCards());
         // Le SpriteBatch est partagé avec LuckyGame et ne doit PAS être disposé ici.
         this.stage = new Stage(new MinimumScreenViewport(MIN_WIDTH, MIN_HEIGHT), luckyGame.getBatch());
 
@@ -459,7 +476,15 @@ public class GameScreen extends ScreenAdapter {
             sounds.cardInspect.play();
             cardDetail.showEffect(row.name(), row.icon(), row.text(), row.description());
         });
-        hand.setBlockedReason(gameController::unplayableReason, this::onCardRefused);
+        if (run instanceof TutorialRun) {
+            guide    = new GuideOverlay(hudTextures, enemyTextures.portrait(EnemyKind.ENTRAINEMENT));
+            guide.setSkipButton(buttons.create("Passer le tutoriel", sounds.buttonClick, this::skipTutorial));
+            tutorial = new TutorialDirector(guide, new TutorialBoard());
+        } else {
+            guide    = null;
+            tutorial = null;
+        }
+        hand.setBlockedReason(this::unplayableReason, this::onCardRefused);
         pileOverlay.setOnInspect(this::showCardDetail);
         buildShopIcon();
 
@@ -495,6 +520,7 @@ public class GameScreen extends ScreenAdapter {
         stage.addActor(choiceOverlay.getActor()); // choix demandé par une carte (Pari, Roulette russe)
         stage.addActor(shopOverlay.getActor());   // échoppe, ouverte depuis son icône
         stage.addActor(pileOverlay.getActor()); // voile de consultation des piles, par-dessus le jeu
+        if (guide != null) stage.addActor(guide); // tutoriel : le Croupier, sous les fiches et les infobulles
         stage.addActor(cardDetail.getActor());  // fiche d'une carte, par-dessus tout le reste
         stage.addActor(tooltip.getActor());     // en dernier : toujours au-dessus
         stage.addActor(screenShake);            // invisible : met à jour la caméra
@@ -535,6 +561,7 @@ public class GameScreen extends ScreenAdapter {
         }
         refreshPlays();
         spinButton.setDisabled(false);
+        if (tutorial != null) tutorial.beat(TutorialDirector.Beat.HAND_DEALT, () -> { });
         // Chant de l'ennemi : une fois la main distribuée, des cartes partent d'office.
         float dealt = drawn.getAddedToHand().size() * CardDealAnimator.DEAL_STAGGER_DELAY + SONG_DELAY;
         stage.addAction(Actions.delay(dealt, Actions.run(() -> {
@@ -567,6 +594,7 @@ public class GameScreen extends ScreenAdapter {
 
         List<Combo> combosBefore = gameController.getCurrentCombos();
         CardPlayResult playResult = gameController.playCard(card);
+        if (tutorial != null) tutorial.onCardPlayed(card);
         int maps = gameController.takeTreasureMaps(); // Carte au trésor : le coffre du donjon grossit
         if (run instanceof DungeonRun dungeonRun) for (int i = 0; i < maps; i++) dungeonRun.addTreasureMap();
         if (playResult.isAutoSpin()) {
@@ -716,12 +744,17 @@ public class GameScreen extends ScreenAdapter {
             offer -> {
                 GameController.Purchase purchase = gameController.buy(offer);
                 if (purchase == null) return false;
+                if (tutorial != null) tutorial.onPurchase();
                 sounds.purchase.play();
                 refreshGains();
                 stage.addAction(Actions.delay(PURCHASE_DELAY, Actions.run(() -> placePurchase(purchase))));
                 return true;
             },
             offer -> showCardDetail(offer.card()));
+        if (guide != null) { // l'échoppe passe devant tout : le Croupier reste visible au-dessus
+            guide.toFront();
+            tooltip.getActor().toFront();
+        }
     }
 
     /** Affiche la fiche de {@code card} (avec son prix si elle est vendue à l'échoppe), par-dessus tout le reste. */
@@ -820,7 +853,8 @@ public class GameScreen extends ScreenAdapter {
      */
     private void onCardRefused(Card card, String reason, Vector2 cardCenter) {
         Gdx.app.log("GameScreen", "Carte refusee : " + card + " (" + reason + ")");
-        String text = gameController.isPlayLimitReached() ? "LIMITE ATTEINTE !" : "BINGO BLOQUÉ !";
+        String text = tutorial != null && tutorial.refusal(card) != null ? "PAS CELLE-LÀ !"
+            : gameController.isPlayLimitReached() ? "LIMITE ATTEINTE !" : "BINGO BLOQUÉ !";
         effectPopupAnimator.play(List.of(new EffectPopup(text, EffectPopup.Style.DAMAGE,
             PopupScale.SECONDARY_INTENSITY)), cardCenter.x, cardCenter.y - CARD_HEIGHT * 0.3f); // monte sur la carte, sous l'infobulle
     }
@@ -848,6 +882,7 @@ public class GameScreen extends ScreenAdapter {
      */
     private void onSpin() {
         if (spinButton.isDisabled() || isBusy()) return;
+        if (tutorial != null && !tutorial.allowsSpin()) return; // le Croupier n'a pas encore demandé de lancer
         spin();
     }
 
@@ -861,6 +896,8 @@ public class GameScreen extends ScreenAdapter {
     private void spin() {
         int enemyHpBefore = gameController.getGameState().getEnemy().getHp();
         TurnResult result = gameController.spin();
+        if (tutorial != null) tutorial.onSpin();
+        lastSpinBingo = result.isJackpot();
         table.setReelsRainbow(false); // la bordure d'un jackpot précédent s'arrête au lancer suivant
         // Gains et PV du tirage ne se montrent qu'à l'apparition de leurs textes, après l'arrêt des rouleaux.
         gainsNotYetShown += sumOf(result, GainsEarnedEvent.class, gains -> gains.amount)
@@ -908,7 +945,13 @@ public class GameScreen extends ScreenAdapter {
         playSymbolResultSound(result);
         if (result.isPair()) celebratePair(result.getSymbols());
         if (result.isJackpot()) return; // voir onJackpotShown
-        stage.addAction(Actions.delay(SlotView.popupsDuration(result), Actions.run(this::playEnemyTurn)));
+        stage.addAction(Actions.delay(SlotView.popupsDuration(result), Actions.run(this::afterPlayerSpin)));
+    }
+
+    /** Les résultats du tirage sont affichés : le Croupier du tutoriel les commente, puis le tour de l'ennemi. */
+    private void afterPlayerSpin() {
+        if (tutorial != null) tutorial.beat(TutorialDirector.Beat.SPIN_RESOLVED, this::playEnemyTurn);
+        else playEnemyTurn();
     }
 
     /**
@@ -1053,6 +1096,8 @@ public class GameScreen extends ScreenAdapter {
     private void finishTurn() {
         if (isCombatOver()) {
             endCombat();
+        } else if (tutorial != null) {
+            tutorial.beat(TutorialDirector.Beat.ENEMY_TURN_DONE, this::startPlayerTurn);
         } else {
             startPlayerTurn();
         }
@@ -1171,7 +1216,7 @@ public class GameScreen extends ScreenAdapter {
         jackpotCelebration.play(symbol, () -> sounds.bingoClassic.play(), () -> {
             table.setLightsParty(false);
             // Après la célébration et les derniers textes du tirage, au tour de l'ennemi.
-            stage.addAction(Actions.delay(SlotView.RIPOSTE_AFTER_BONUS, Actions.run(this::playEnemyTurn)));
+            stage.addAction(Actions.delay(SlotView.RIPOSTE_AFTER_BONUS, Actions.run(this::afterPlayerSpin)));
         });
     }
 
@@ -1227,6 +1272,10 @@ public class GameScreen extends ScreenAdapter {
         music.setDucked(false);
         if (run != null) run.restart();
         gameController.restart(firstEnemy());
+        if (tutorial != null) {
+            TutorialRun.arrange(player().getDeck().getCards());
+            tutorial.reset();
+        }
         resetBoard();
     }
 
@@ -1410,6 +1459,9 @@ public class GameScreen extends ScreenAdapter {
         if (run == null) {
             shown.add(restartButton);
             shown.add(menuButton);
+        } else if (run instanceof TutorialRun) {
+            if (!victory) shown.add(restartButton);
+            shown.add(menuButton);
         } else if (!victory) {
             shown.add(buttons.createAction(isDungeon() ? "Réessayer le donjon" : "Réessayer le chapitre",
                 sounds.buttonClick, this::onRestart));
@@ -1455,6 +1507,11 @@ public class GameScreen extends ScreenAdapter {
             stageLabel.setText("");
             return;
         }
+        if (run instanceof TutorialRun) {
+            stageLabel.setText(run.getLabel().toUpperCase());
+            stageLabel.pack();
+            return;
+        }
         String step = run.isBossStage() ? (isDungeon() ? "ROI" : "BOSS")
             : "COMBAT " + (run.getStage() + 1) + "/" + run.getStageCount();
         stageLabel.setText(run.getLabel().toUpperCase() + " · " + step);
@@ -1475,6 +1532,47 @@ public class GameScreen extends ScreenAdapter {
     /** @return l'ennemi du combat en cours de la Tour ou du donjon, ou le croupier d'entraînement. */
     private EnemyKind firstEnemy() {
         return run != null ? run.getEnemy() : EnemyKind.ENTRAINEMENT;
+    }
+
+    /** @return pourquoi {@code card} ne se joue pas maintenant (règles du combat, ou le Croupier du tutoriel), ou {@code null}. */
+    private String unplayableReason(Card card) {
+        String refusal = tutorial != null ? tutorial.refusal(card) : null;
+        return refusal != null ? refusal : gameController.unplayableReason(card);
+    }
+
+    /** « Passer le tutoriel » : il ne sera plus proposé ; retour au menu (où le Croupier présente les modes). */
+    private void skipTutorial() {
+        luckyGame.getProfile().markSeen(PlayerProfile.GUIDE_TUTORIAL);
+        guide.stop();
+        onBackToMenu();
+    }
+
+    /** Ce que le Croupier du tutoriel montre sur l'écran de jeu, et ce qu'il y règle. */
+    private final class TutorialBoard implements TutorialDirector.Board {
+        @Override public Rectangle enemyBar()  { return GuideOverlay.boundsOf(hud.getEnemyHealthBar()); }
+        @Override public Rectangle playerBar() { return GuideOverlay.boundsOf(hud.getPlayerHealthBar()); }
+        @Override public Rectangle enemy()     { return GuideOverlay.around(enemyView.getCroupierCenter(), 260f, 260f); }
+        @Override public Rectangle hand(java.util.function.Predicate<Card> which) { return GameScreen.this.hand.boundsOf(which); }
+        @Override public Rectangle spinButton() { return GuideOverlay.boundsOf(GameScreen.this.spinButton); }
+        @Override public Rectangle reels() {
+            Vector2 first = slots.getReelCenter(0), last = slots.getReelCenter(slots.getReelCount() - 1);
+            return new Rectangle(first.x - SlotView.CELL_WIDTH / 2f, first.y - SlotView.CELL_HEIGHT / 2f,
+                last.x - first.x + SlotView.CELL_WIDTH, SlotView.CELL_HEIGHT);
+        }
+        @Override public Rectangle playerShield() { return GuideOverlay.boundsOf(GameScreen.this.playerShield); }
+        @Override public Rectangle enemyDefense() {
+            return GuideOverlay.boundsOf(enemyView.getDefenseBadge());
+        }
+        @Override public Rectangle gains()    { return GuideOverlay.boundsOf(sidePanel.getGainsBox()); }
+        @Override public Rectangle combos()   { return GuideOverlay.boundsOf(sidePanel.getCombosBox()); }
+        @Override public Rectangle effects()  { return GuideOverlay.boundsOf(sidePanel.getEffectsBox()); }
+        @Override public Rectangle shopIcon() { return GuideOverlay.boundsOf(GameScreen.this.shopIcon); }
+        @Override public boolean shopShown()      { return shopOverlay.isShown(); }
+        @Override public boolean enemyDefeated()  { return gameController.getGameState().getEnemy().isDefeated(); }
+        @Override public boolean lastSpinWasBingo() { return lastSpinBingo; }
+        @Override public void rig(Symbol[] symbols) { gameController.rigSpin(symbols); }
+        @Override public void rigJackpot(Symbol symbol) { gameController.rigJackpot(symbol); }
+        @Override public void refreshHand() { GameScreen.this.hand.refreshBlocked(); }
     }
 
     /** Le combat est terminé dès que le joueur ou l'ennemi n'a plus de points de vie. */
@@ -1507,8 +1605,12 @@ public class GameScreen extends ScreenAdapter {
             // Fin de l'histoire (chapitres 3 et 6) : sa cinématique, puis la phrase de fin et les boutons.
             Cutscene ending = run instanceof TowerRun tower && run.isBossStage()
                 ? Cutscenes.ending(cutsceneKit, tower.getChapter()) : null;
-            combatEnd.playVictory(hud.getEnemyChipCenter(),
-                ending == null ? showRestart : () -> playCutscene(ending, showRestart));
+            Runnable afterVictory = ending == null ? showRestart : () -> playCutscene(ending, showRestart);
+            if (tutorial != null) { // tutoriel réussi : le Croupier conclut, puis le menu
+                luckyGame.getProfile().markSeen(PlayerProfile.GUIDE_TUTORIAL);
+                afterVictory = () -> tutorial.beat(TutorialDirector.Beat.VICTORY, showRestart);
+            }
+            combatEnd.playVictory(hud.getEnemyChipCenter(), afterVictory);
             sounds.victory.play();
         } else {
             combatEnd.playDefeat(showRestart);
@@ -1842,6 +1944,10 @@ public class GameScreen extends ScreenAdapter {
             stageLabel.setPosition(playArea.getX() + STAGE_LABEL_MARGIN,
                 playArea.getHeight() - stageLabel.getHeight() - STAGE_LABEL_MARGIN);
         }
+        if (guide != null) { // « Passer le tutoriel » sous « TUTORIEL », loin de l'échoppe
+            guide.setSkipCorner(playArea.getX() + STAGE_LABEL_MARGIN,
+                playArea.getHeight() - STAGE_LABEL_MARGIN - stageLabel.getHeight() - STAGE_LABEL_MARGIN / 2f);
+        }
     }
 
     // -------------------------------------------------------------------------
@@ -1965,6 +2071,7 @@ public class GameScreen extends ScreenAdapter {
         bingoAnimation.dispose();
         rainbowAnimation.dispose();
         if (cutscene != null) cutscene.dispose();
+        if (guide != null) guide.dispose();
         shopOverlay.dispose();
         cardDetail.dispose();
         pauseOverlay.dispose();

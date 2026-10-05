@@ -599,6 +599,20 @@ public class GameController {
         return rigged.getPopups();
     }
 
+    /** Tutoriel : le prochain tirage affiche {@code symbols}, de gauche à droite (sans texte ni son). */
+    public void rigSpin(Symbol... symbols) {
+        for (int reel = 0; reel < symbols.length; reel++) pendingEffects.add(new ForceReelEffect(reel, symbols[reel]));
+    }
+
+    /**
+     * Tutoriel : un Bingo joué ce tour (même la carte « Bingo », au symbole tiré
+     * au hasard) aligne {@code symbol}. Un Bingo de puissance 1 qui ne se lance
+     * pas seul : il ne fait qu'imposer son symbole.
+     */
+    public void rigJackpot(Symbol symbol) {
+        pendingEffects.add(new BingoEffect(1, symbol));
+    }
+
     /** @return {@code true} si la prochaine carte jouée ce tour comptera deux fois (Double ou rien). */
     public boolean isDoubleNextPending() { return doubleNext; }
 

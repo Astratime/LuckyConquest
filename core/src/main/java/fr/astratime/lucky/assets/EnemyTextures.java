@@ -358,6 +358,11 @@ public class EnemyTextures implements Disposable {
         return out;
     }
 
+    /** @return un portrait du croupier, à disposer par l'appelant (le guide des écrans sans {@code EnemyTextures}). */
+    public static Texture newCroupierPortrait() {
+        return texture(croupierGrid(), false);
+    }
+
     /** @return la texture de la grille ({@code flash} : silhouette toute blanche). */
     private static Texture texture(int[][] g, boolean flash) {
         Pixmap pixmap = new Pixmap(g[0].length, g.length, Pixmap.Format.RGBA8888);

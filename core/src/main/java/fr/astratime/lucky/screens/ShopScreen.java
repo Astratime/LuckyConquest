@@ -106,6 +106,8 @@ public class ShopScreen extends ScreenAdapter {
     private final Stage           stage;
     private final AudioSettings   audio   = new AudioSettings();
     private final HudTextures     hud     = new HudTextures();
+    /** Première visite : le Croupier présente l'écran. */
+    private final FirstVisitGuide firstVisit;
     private final CardTextures    cardTextures = new CardTextures();
     private final CasinoButtons   buttons = new CasinoButtons();
     private final MenuDecor       decor   = new MenuDecor();
@@ -222,6 +224,11 @@ public class ShopScreen extends ScreenAdapter {
         fade.addAction(Actions.fadeOut(FADE_TIME));
 
         showTab(Tab.RANG);
+        firstVisit = new FirstVisitGuide(stage, hud, clickSound, luckyGame.getProfile(), PlayerProfile.GUIDE_SHOP,
+            "La Boutique. Tes pièces y achètent des rangs, des cartes et des rouleaux.",
+            "Un rang te rend plus fort dans tous les combats. Une carte rejoint ta collection.",
+            "Un rouleau se place dans ta machine, à la Table du croupier.");
+        fade.toFront();
     }
 
     // -------------------------------------------------------------------------
@@ -563,6 +570,7 @@ public class ShopScreen extends ScreenAdapter {
     @Override
     public void dispose() {
         stage.dispose();
+        firstVisit.dispose();
         decor.dispose();
         cardTextures.dispose();
         reelTextures.values().forEach(Texture::dispose);

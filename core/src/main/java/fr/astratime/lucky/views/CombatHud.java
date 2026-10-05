@@ -142,6 +142,9 @@ public class CombatHud implements Disposable {
             enemyHealthBar.getY() + HealthBarView.HEIGHT / 2f);
     }
 
+    /** @return la barre de vie du joueur. */
+    public HealthBarView getPlayerHealthBar() { return playerHealthBar; }
+
     /** @return la barre de vie de l'ennemi (pour la faire disparaître à la victoire). */
     public HealthBarView getEnemyHealthBar() { return enemyHealthBar; }
 

@@ -66,6 +66,17 @@ public class PlayerProfile {
     static final String KEY_ADMIN         = "admin";
     static final String KEY_ADMIN_DECK    = "adminDeck";
     static final String KEY_ADMIN_MACHINE = "adminMachine";
+    static final String KEY_GUIDES        = "guides";
+
+    /** Guides du Croupier (voir {@link #hasSeen(String)}) : le tutoriel, sa proposition au premier lancement, la visite du menu. */
+    public static final String GUIDE_TUTORIAL    = "tutorial";
+    public static final String GUIDE_OFFER       = "offer";
+    public static final String GUIDE_MENU        = "menu";
+    /** Première visite de chaque écran du menu. */
+    public static final String GUIDE_EXPLORATION = "exploration";
+    public static final String GUIDE_TABLE       = "table";
+    public static final String GUIDE_SHOP        = "shop";
+    public static final String GUIDE_TOWER       = "tower";
 
     private final ProfileStorage       storage;
     private final Map<String, Integer> starterDeck;
@@ -91,6 +102,8 @@ public class PlayerProfile {
     /** Deck et machine du mode ADMIN, séparés de ceux de la partie. */
     private final Map<String, Integer> adminDeck    = new LinkedHashMap<>();
     private final List<Symbol>         adminMachine = new ArrayList<>();
+    /** Guides du Croupier déjà vus, par nom (voir {@link #GUIDE_TUTORIAL}...). */
+    private final java.util.Set<String> seenGuides = new java.util.LinkedHashSet<>();
 
     /**
      * Charge le profil enregistré dans {@code storage} ; au premier lancement
@@ -127,6 +140,7 @@ public class PlayerProfile {
         }
         readNames(storage.get(KEY_HARD_CHAPTERS), clearedHardChapters);
         admin = Boolean.parseBoolean(storage.get(KEY_ADMIN));
+        readNames(storage.get(KEY_GUIDES), seenGuides);
         String savedDungeons = storage.get(KEY_DUNGEONS);
         if (savedDungeons != null) {
             for (String name : savedDungeons.split(",")) if (!name.isBlank()) clearedDungeons.add(name.trim());
@@ -197,6 +211,20 @@ public class PlayerProfile {
             if (reward != null && !reels.contains(reward)) reels.add(reward);
         }
         return reels;
+    }
+
+    // -------------------------------------------------------------------------
+    // Guides du Croupier
+    // -------------------------------------------------------------------------
+
+    /** @return {@code true} si le guide {@code guide} a déjà été vu (ou passé) : il ne revient plus de lui-même. */
+    public boolean hasSeen(String guide) { return seenGuides.contains(guide); }
+
+    /** Le guide {@code guide} est vu (ou passé) : enregistré tout de suite. */
+    public void markSeen(String guide) {
+        if (!seenGuides.add(guide)) return;
+        storage.put(KEY_GUIDES, String.join(",", seenGuides));
+        storage.flush();
     }
 
     // -------------------------------------------------------------------------
