@@ -1068,6 +1068,474 @@ def cutscene_comet():
     return reverb(track.buf, wet=0.18, size=1.4, tail=1.0)
 
 
+
+# --- Briques des cinématiques ------------------------------------------------
+
+def drone(notes, d, wave='sine', fin=0.6, fout=1.5):
+    """Nappe tenue sur plusieurs notes, qui entre et sort en douceur."""
+    x = stack(*(osc(hz(note) * (1.002 if k % 2 else 1.0), d, wave) / (k + 1) ** 0.5 for k, note in enumerate(notes)))
+    return x * np.clip(times(d) / fin, 0, 1) * fade_out(d, fout)
+
+
+def fade_out(d, length):
+    """Enveloppe à 1, qui retombe à 0 sur les {length} dernières secondes."""
+    env = np.ones(n(d))
+    k = min(n(length), len(env))
+    env[len(env) - k:] = np.linspace(1, 0, k)
+    return env
+
+
+def brass_chord(notes, d, gain=1.0):
+    """Accord de cuivres (menace ou triomphe selon les notes)."""
+    return stack(*(brass(hz(note), d) for note in notes)) * gain / len(notes) ** 0.5
+
+
+def swell(d, f0=200, f1=2400):
+    """Montée de souffle et de lumière vers le fondu final."""
+    rise = svf(noise(d), sweep(f0, f1, d), q=0.8) * ramp(d, 0.0, 1.0, 2.0)
+    return rise
+
+
+def boom(d=2.0, f=60):
+    """Explosion grave avec un claquement."""
+    return mix((crack_hit(), 0, 1.0), (thump(f * 1.6, f * 0.5, d, d * 0.3), 0, 1.2),
+               (lp(noise(d), 600) * expdec(d, d * 0.35, attack=0.004), 0, 0.9))
+
+
+def crack_hit():
+    return bp(noise(0.06), 600, 9000) * expdec(0.06, 0.012, attack=0.0005)
+
+
+def ambience(d, lo=200, hi=1200, gain=1.0):
+    """Fond de bruit filtré (vent, mer, foule, eau)."""
+    return bp(noise(d), lo, hi) * fade_out(d, 0.6) * ramp(d, 0.0, 1.0, 0.3) * gain
+
+
+def bubbles(d, count, lo=300, hi=900):
+    """Bulles sous l'eau : petits « bloups » qui montent."""
+    track = Track(d)
+    for _ in range(count):
+        f = rand(lo, hi)
+        blip = osc(sweep(f, f * 2.2, 0.06), 0.06) * expdec(0.06, 0.02)
+        track.add(blip, rand(0, d - 0.1), rand(0.2, 0.7))
+    return track.buf
+
+
+def rattle(d, rate0, rate1, lo=1500, hi=5000, wood=False):
+    """Cliquetis réguliers qui accélèrent ou ralentissent (roue, rails, rouleaux)."""
+    track = Track(d)
+    t = 0.0
+    while t < d:
+        k = t / d
+        rate = rate0 + (rate1 - rate0) * k
+        tick = modal(rand(lo, hi), 0.05, WOOD_RATIOS if wood else [1, 2.3], [0.015, 0.008]) if wood \
+            else click(0.005, lo, hi)
+        track.add(tick, t, rand(0.5, 1.0))
+        t += 1.0 / max(rate, 1.0)
+    return track.buf
+
+
+def screech(d, f=2600):
+    """Grincement aigu (freins, ferraille)."""
+    tone = osc(vibrato(f, d, rate=17, depth=0.02), d, 'saw')
+    return bp(tone, f * 0.8, f * 2.5) * 0.4 + bp(noise(d), 2000, 7000) * 0.6
+
+
+# --- Tour des épreuves --------------------------------------------------------
+
+@sound('cutscene/queen', -17)
+def cutscene_queen():
+    """
+    Avant la Reine des Tables (QueenCutscene) : la roulette se met à tourner (0,9 s), la bille roule (1,5 s),
+    saute de case en case, tombe dans le zéro (ZERO = 4,0 s), les jetons jaillissent (4,2 s), les dés roulent
+    (5,0 s) et s'allument : la Reine (EYES = 5,7 s), puis le fondu rouge (6,9 s).
+    """
+    track = Track(8.5)
+    track.add(drone(['D2', 'A2', 'F3'], 7.5, 'tri', fout=1.2), 0.0, 0.12)
+    track.add(ambience(7.5, 150, 600, 0.12), 0.0, 1.0)
+    track.add(rattle(3.1, 4, 22, 1800, 4000, wood=True), 0.9, 0.35)          # la roue
+    roll = svf(noise(1.7), sweep(2600, 1400, 1.7), q=3.0, mode='bp') * ramp(1.7, 0.6, 1.0)
+    track.add(roll, 1.5, 0.25)                                                # la bille qui roule
+    for at in (3.2, 3.38, 3.54, 3.68, 3.8, 3.9):
+        track.add(modal(rand(2600, 3400), 0.08, [1, 2.4], [0.02, 0.01]), at, 0.6)
+    track.add(mix((modal(2200, 0.3, WOOD_RATIOS, [0.08, 0.04, 0.02]), 0, 1.0), (thump(150, 60, 0.3), 0, 0.8)), 4.0, 0.9)
+    track.add(chips_clatter(26, 1.0, 1800, 4200), 4.2, 0.7)
+    track.add(whoosh(0.9, 400, 3000, q=1.0), 4.2, 0.35)
+    track.add(rattle(0.6, 25, 8, 1500, 3000, wood=True), 5.0, 0.4)           # les dés
+    track.add(brass_chord(['D3', 'F3', 'G#3', 'D4'], 1.4, 0.6), 5.7, 1.0)    # la Reine
+    track.add(thump(80, 40, 0.8, 0.3), 5.7, 0.9)
+    track.add(swell(1.0, 300, 2500), 5.9, 0.25)
+    return reverb(track.buf, wet=0.22, size=1.4, tail=1.0)
+
+
+@sound('cutscene/shard', -17)
+def cutscene_shard():
+    """
+    Avant l'Éclat Originel (ShardCutscene) : le cœur doré bat (ShardCutscene.BEATS), les rouleaux sortent
+    (2,2 s) et tournent (3,0 s), tout s'arrête net sur trois 7 (STOP = 5,0 s), le soleil éclate (SUN = 5,45 s).
+    """
+    beats = [1.0, 1.28, 2.0, 2.26, 2.85, 3.07, 3.55, 3.73, 4.1, 4.25, 4.5, 4.62, 4.78, 4.88]
+    track = Track(8.0)
+    track.add(drone(['C2', 'G2', 'C3'], 5.5, 'sine', fout=0.6), 0.0, 0.18)
+    for k, at in enumerate(beats):
+        track.add(thump(90, 45, 0.25, 0.08), at, 0.9 + 0.02 * k)
+    track.add(whoosh(0.8, 200, 1800, q=1.0), 2.2, 0.4)
+    spin = rattle(2.0, 10, 40, 2000, 5000)
+    whirr = osc(sweep(300, 1200, 2.0), 2.0, 'saw') * ramp(2.0, 0.0, 1.0)
+    track.add(spin, 3.0, 0.4)
+    track.add(lp(whirr, 2000), 3.0, 0.08)
+    for k in range(3):                                                        # trois 7 : clac, clac, clac
+        track.add(mix((thump(220, 90, 0.2, 0.05), 0, 1.0), (click(0.01, 1500, 6000), 0, 0.8)), 5.0 + k * 0.05, 0.8)
+    track.add(boom(2.0, 55), 5.45, 1.0)
+    track.add(bingo_jingle('C5', 'square', step=0.05, hold=1.0) * 1.2, 5.55, 0.8)
+    track.add(sparkle(1.3, count=30), 5.5, 0.4)
+    return reverb(track.buf, wet=0.25, size=1.6, tail=1.0)
+
+
+@sound('cutscene/pretender', -17)
+def cutscene_pretender():
+    """
+    Avant le Prétendant (PretenderCutscene) : la ville brûle, une ombre passe (1,8 à 3,0 s), elle ramasse trois
+    éclats (PICK = 3,3 / 3,75 / 4,2 s), le Prétendant apparaît (REVEAL = 4,7 s) et lève les yeux (STARE = 5,4 s).
+    """
+    track = Track(8.0)
+    track.add(fire_burst(7.0) * fade_out(7.0, 1.0), 0.0, 0.35)
+    track.add(ambience(6.5, 400, 1800, 0.15), 0.0, 1.0)                       # cris lointains de la foule
+    for _ in range(10):
+        shout = svf(noise(0.4), sweep(rand(500, 900), rand(300, 500), 0.4), q=4.0, mode='bp') * expdec(0.4, 0.15)
+        track.add(shout, rand(0.2, 2.0), rand(0.1, 0.25))
+    track.add(whoosh(1.4, 120, 600, q=0.8), 1.7, 0.7)                         # l'ombre
+    for k, (at, note) in enumerate(zip((3.3, 3.75, 4.2), ('E6', 'G6', 'B6'))):
+        track.add(modal(hz(note), 1.0, GLASS_RATIOS, [0.5, 0.3, 0.15, 0.08]), at, 0.45)
+    track.add(brass_chord(['E2', 'B2', 'E3', 'G3'], 1.6, 0.7), 4.7, 1.0)
+    track.add(thump(70, 35, 1.0, 0.4), 5.4, 1.0)
+    track.add(drone(['E2', 'A#2'], 1.4, 'saw', fin=0.3, fout=0.6) * 0.3, 5.4, 0.4)
+    return reverb(track.buf, wet=0.2, size=1.3, tail=0.8)
+
+
+@sound('cutscene/house', -17)
+def cutscene_house():
+    """
+    Avant la Maison (HouseCutscene) : vent au-dessus des nuages, les fenêtres-cartes se retournent
+    (1,0 s, une toutes les 0,13 s), la porte s'ouvre (2,7 s), la pièce roule (3,2 s) et entre dans la fente
+    (4,3 s), le manoir s'allume (4,4 s), les portes claquent (SLAM = 5,9 s).
+    """
+    track = Track(7.0)
+    track.add(ambience(6.0, 300, 1500, 0.25), 0.0, 1.0)
+    for k in range(12):
+        track.add(card_flick(0.07), 1.0 + k * 0.13, 0.6)
+        track.add(modal(hz('A5') * 2 ** (k / 12), 0.25, GLASS_RATIOS, [0.12, 0.06, 0.03, 0.02]), 1.05 + k * 0.13, 0.15)
+    creak = svf(osc(sweep(90, 140, 0.5), 0.5, 'saw'), 900, q=3.0, mode='bp') * ramp(0.5, 1.0, 0.3)
+    track.add(creak, 2.7, 0.5)
+    track.add(rattle(1.1, 12, 26, 2500, 4500), 3.2, 0.25)                    # la pièce qui roule
+    track.add(coin(1500, 0.6), 4.3, 0.7)
+    track.add(mix((thump(160, 70, 0.3, 0.08), 0, 1.0), (click(0.02, 800, 3000), 0, 0.6)), 4.32, 0.8)
+    track.add(brass_chord(['C3', 'E3', 'G3', 'C4'], 1.5, 0.6), 4.4, 1.0)
+    track.add(bingo_jingle('C5', 'square', hold=0.9), 4.45, 0.6)
+    track.add(mix((impact(0.6, 120, 40), 0, 1.2), (crack_hit(), 0, 0.8)), 5.9, 1.0)
+    return reverb(track.buf, wet=0.28, size=1.7, tail=1.0)
+
+
+@sound('cutscene/machine', -17)
+def cutscene_machine():
+    """
+    Avant la Machine Originelle (MachineCutscene) : on monte (0 à 2 s), le levier descend (1,9 à 3,2 s) et cogne,
+    les rouleaux s'allument (3,35 s, un toutes les 0,2 s), tournent (4,3 s) et s'arrêtent (5,5 s, un toutes les
+    0,14 s) sur cinq yeux ; fondu blanc à 7,2 s.
+    """
+    track = Track(8.5)
+    track.add(drone(['A1', 'E2', 'A2'], 7.5, 'tri', fout=1.0), 0.0, 0.15)
+    track.add(ambience(7.0, 200, 900, 0.18), 0.0, 1.0)
+    track.add(rattle(1.3, 6, 3, 600, 1500, wood=True), 1.9, 0.6)              # le levier qui grince
+    track.add(mix((metal_hit(180, 1.2), 0, 1.0), (impact(0.5, 100, 35), 0, 1.0)), 3.2, 0.9)
+    for k in range(5):
+        track.add(chip(hz('A3') * 2 ** (k * 3 / 12), 0.18, 'square', dc=0.05, s=0.5), 3.35 + k * 0.2, 0.35)
+        track.add(thump(60, 40, 0.3, 0.1), 3.35 + k * 0.2, 0.6)
+    track.add(lp(noise(2.6), 120) * ramp(2.6, 0.3, 1.0), 3.35, 0.8)           # le sol tremble
+    track.add(rattle(1.2, 18, 34, 2000, 5000), 4.3, 0.45)
+    for k in range(5):
+        track.add(mix((thump(240, 90, 0.18, 0.05), 0, 1.0), (click(0.01, 1500, 6000), 0, 0.7)), 5.5 + k * 0.14, 0.8)
+    track.add(brass_chord(['A2', 'C3', 'D#3', 'A3'], 1.4, 0.7), 6.2, 1.0)
+    track.add(swell(1.0, 400, 4000), 6.3, 0.3)
+    return reverb(track.buf, wet=0.25, size=1.6, tail=1.0)
+
+
+@sound('cutscene/shard_ending', -18)
+def cutscene_shard_ending():
+    """
+    Fin du chapitre 3 (ShardEndingCutscene) : le soleil bourdonne et s'éteint (0,8 à 2,0 s), se brise (BREAK
+    = 2,0 s), puis la neige dorée tombe sur une boîte à musique, jusqu'au fondu noir (6,9 s).
+    """
+    track = Track(8.0)
+    hum = stack(osc(sweep(hz('C4'), hz('C3'), 2.0), 2.0, 'tri'), 0.5 * osc(sweep(hz('G4'), hz('G3'), 2.0), 2.0))
+    track.add(hum * ramp(2.0, 1.0, 0.4), 0.0, 0.25)
+    shatter = Track(1.2)
+    for _ in range(40):
+        shatter.add(modal(rand(2500, 7000), 0.5, GLASS_RATIOS, [0.2, 0.1, 0.05, 0.03]), rand(0, 0.5), rand(0.2, 0.7))
+    track.add(mix((crack_hit(), 0, 1.0), (shatter.buf, 0, 0.6), (thump(90, 40, 0.6, 0.2), 0, 0.8)), 2.0, 1.0)
+    melody = ['E6', 'C6', 'G5', 'C6', 'D6', 'G5', 'E6', 'D6', 'C6', 'G5', 'A5', 'C6']
+    for k, note in enumerate(melody):                                          # boîte à musique
+        track.add(modal(hz(note), 1.2, BAR_RATIOS, [0.6, 0.2, 0.1, 0.05], [1, 0.3, 0.1, 0.05]), 2.4 + k * 0.32, 0.3)
+    track.add(drone(['C3', 'G3', 'E4'], 4.6, 'sine', fin=1.0, fout=1.5), 2.3, 0.15)
+    return reverb(track.buf, wet=0.35, size=1.8, tail=1.5)
+
+
+@sound('cutscene/jackpot_ending', -17)
+def cutscene_jackpot_ending():
+    """
+    Fin du chapitre 6 (JackpotEndingCutscene) : la machine s'éteint (0,6 s), s'effondre en pièces (1,5 s),
+    une comète jaillit (2,6 s) et file au ciel ; la nuit du chapitre 1 revient (4,3 s), fondu blanc (6,3 s).
+    """
+    track = Track(7.5)
+    track.add(chip(sweep(hz('A4'), hz('A1'), 0.9), 0.9, 'square', s=0.6), 0.6, 0.25)       # extinction
+    track.add(mix((boom(1.5, 50), 0, 1.0), (coin_shower(2.0, 60), 0.05, 0.7), (chips_clatter(20, 1.2), 0.1, 0.4)),
+              1.5, 1.0)
+    rise = 1.8
+    whistle = osc(sweep(500, 2200, rise), rise, 'tri') * ramp(rise, 0.3, 1.0)
+    track.add(whistle * fade_out(rise, 0.5), 2.6, 0.12)
+    track.add(fire_burst(1.8), 2.6, 0.6)
+    notes = ['E6', 'B5', 'A6', 'E6', 'C#7', 'B6', 'E7']                       # les étoiles filantes du chapitre 1
+    for k, note in enumerate(notes):
+        track.add(modal(hz(note), 0.9, [1, 2.76, 5.4], [0.5, 0.2, 0.08], [1, 0.3, 0.12]), 4.0 + k * 0.22, 0.25)
+    gliss = stack(*(osc(sweep(hz(note) / 2, hz(note), 1.4), 1.4, 'tri') for note in ('A4', 'C#5', 'E5')))
+    track.add(gliss * ramp(1.4, 0.0, 1.0, 1.5), 5.0, 0.12)
+    track.add(bingo_jingle('A5', 'square', duty=0.25, step=0.06, hold=1.2) * 0.8, 6.1, 0.6)
+    return reverb(track.buf, wet=0.25, size=1.5, tail=1.0)
+
+
+# --- Exploration : les rois ---------------------------------------------------
+
+@sound('cutscene/king_roi_pique', -17)
+def king_roi_pique():
+    """Roi de Pique (PrairieKings) : huit lames se plantent (0,47 s puis toutes les 0,17 s), le roi sort (1,8 s)."""
+    track = Track(4.5)
+    track.add(ambience(4.0, 200, 700, 0.15), 0.0, 1.0)
+    for k in range(8):
+        at = 0.25 + k * 0.17
+        track.add(blade_swish(0.2, 3000, 800), at, 0.25)
+        track.add(mix((metal_hit(rand(1800, 2600), 0.5), 0, 0.6), (thump(200, 80, 0.12, 0.03), 0, 0.6)), at + 0.22, 0.6)
+    track.add(whoosh(0.5, 150, 900, q=0.9), 1.8, 0.5)
+    track.add(blade_ring(3100, 1.2), 2.3, 0.7)
+    track.add(brass_chord(['D3', 'A3', 'D4'], 1.0, 0.6), 2.3, 0.9)
+    return reverb(track.buf, wet=0.25, size=1.3)
+
+
+@sound('cutscene/king_roi_trefle', -17)
+def king_roi_trefle():
+    """Roi de Trèfle (PrairieKings) : pluie de pièces (0 à 1,7 s), le tas éclate (1,9 s), la dernière pièce (2,9 s)."""
+    track = Track(4.5)
+    track.add(coin_shower(1.7, 60), 0.0, 0.7)
+    track.add(mix((impact(0.5, 140, 50), 0, 1.0), (coin_shower(0.8, 30), 0, 0.8)), 1.9, 0.9)
+    track.add(brass_chord(['G3', 'B3', 'D4'], 0.8, 0.6), 1.95, 0.8)
+    track.add(coin(1975.5, 0.7), 2.9, 0.9)
+    return reverb(track.buf, wet=0.22, size=1.2)
+
+
+@sound('cutscene/king_roi_coeur', -17)
+def king_roi_coeur():
+    """Roi de Coeur (PrairieKings) : les murs battent (0,3 s...), le cœur géant s'ouvre (2,0 s)."""
+    track = Track(4.5)
+    for at in (0.3, 0.95, 1.5):
+        track.add(heartbeat([at], f=55, gain=1.0), 0.0, 1.0)
+    track.add(drone(['A2', 'E3'], 2.0, 'tri', fin=0.3, fout=0.2), 0.0, 0.12)
+    rip = svf(noise(0.5), sweep(400, 2500, 0.5), q=1.5, mode='bp') * expdec(0.5, 0.2)
+    track.add(rip, 2.0, 0.7)
+    track.add(brass_chord(['A2', 'C3', 'E3', 'A3'], 1.2, 0.6), 2.05, 1.0)
+    return reverb(track.buf, wet=0.25, size=1.3)
+
+
+@sound('cutscene/king_roi_carreau', -17)
+def king_roi_carreau():
+    """Roi de Carreau (PrairieKings) : le trésor tremble (0,5 s), le roi en sort (1,7 s), éclat du diamant (2,55 s)."""
+    track = Track(4.5)
+    track.add(coin_shower(1.2, 25, 1200, 2200), 0.5, 0.4)
+    track.add(lp(noise(1.2), 150) * ramp(1.2, 0.2, 1.0), 0.5, 0.6)
+    track.add(mix((impact(0.5, 120, 45), 0, 1.0), (whoosh(0.5, 200, 1500), 0, 0.5)), 1.7, 0.8)
+    track.add(modal(hz('E7'), 1.2, GLASS_RATIOS, [0.6, 0.3, 0.15, 0.08]), 2.55, 0.5)
+    track.add(sparkle(1.0, count=20, lo=5000, hi=10000), 2.55, 0.5)
+    track.add(brass_chord(['E3', 'G#3', 'B3'], 0.9, 0.5), 2.55, 0.7)
+    return reverb(track.buf, wet=0.25, size=1.3)
+
+
+@sound('cutscene/king_capitaine_rat', -17)
+def king_capitaine_rat():
+    """Capitaine Rat (PortKings) : couinements et grattements dans le noir, le capitaine surgit (2,2 s)."""
+    track = Track(4.5)
+    track.add(ambience(3.8, 100, 400, 0.2), 0.0, 1.0)
+    for _ in range(14):
+        f = rand(2500, 4200)
+        squeak = osc(sweep(f, f * rand(1.1, 1.4), 0.08), 0.08, 'tri') * expdec(0.08, 0.04)
+        track.add(squeak, rand(0.2, 2.0), rand(0.15, 0.35))
+    scratch = Track(2.0)
+    for _ in range(80):
+        scratch.add(click(0.004, 3000, 8000), rand(0, 1.9), rand(0.1, 0.4))
+    track.add(scratch.buf, 0.3, 0.5)
+    track.add(mix((impact(0.5, 110, 40), 0, 1.0), (brass_chord(['C3', 'D#3', 'F#3'], 0.9, 0.6), 0, 1.0)), 2.2, 0.9)
+    return reverb(track.buf, wet=0.25, size=1.0)
+
+
+@sound('cutscene/king_tavernier', -17)
+def king_tavernier():
+    """Tavernier (PortKings) : brouhaha, les chopes glissent (0,15 s, toutes les 0,4 s), la chope posée (2,55 s)."""
+    track = Track(4.5)
+    track.add(ambience(3.6, 300, 1400, 0.3), 0.0, 1.0)
+    for k in range(4):
+        track.add(svf(noise(1.0), 900, q=1.5, mode='bp') * ramp(1.0, 1.0, 0.0) * 0.5, 0.15 + k * 0.4, 0.4)
+        track.add(modal(rand(1200, 1600), 0.3, GLASS_RATIOS, [0.12, 0.06, 0.03, 0.02]), 0.2 + k * 0.4, 0.15)
+    track.add(mix((impact(0.5, 160, 50), 0, 1.2), (modal(1100, 0.5, GLASS_RATIOS, [0.2, 0.1, 0.05, 0.02]), 0, 0.5),
+                  (hp(noise(0.4), 2000) * expdec(0.4, 0.12), 0.02, 0.4)), 2.55, 1.0)
+    return reverb(track.buf, wet=0.2, size=1.0)
+
+
+@sound('cutscene/king_gardien_phare', -17)
+def king_gardien_phare():
+    """Gardien du Phare (PortKings) : la mer, le faisceau qui tourne, puis se tourne vers toi : corne de brume (2,2 s)."""
+    track = Track(4.8)
+    waves = lp(noise(4.2), 500) * (0.6 + 0.4 * np.sin(2 * math.pi * 0.5 * times(4.2)))
+    track.add(waves * fade_out(4.2, 0.6), 0.0, 0.5)
+    track.add(osc(sweep(300, 900, 0.5), 0.5, 'sine') * ramp(0.5, 0.0, 1.0), 1.8, 0.15)
+    horn = svf(stack(osc(hz('A1'), 1.6, 'saw'), osc(hz('A1') * 1.006, 1.6, 'saw')), 500, q=0.8) * adsr(1.6, 0.1, 0.2, 0.8, 0.4)
+    track.add(horn, 2.2, 0.6)
+    track.add(sparkle(1.0, count=12), 2.3, 0.3)
+    return reverb(track.buf, wet=0.3, size=1.8, tail=1.2)
+
+
+@sound('cutscene/king_capitaine_noir', -17)
+def king_capitaine_noir():
+    """Capitaine Noir (PortKings) : mer et bois qui grince, coup de canon (1,9 s), il atterrit sur le pont (2,65 s)."""
+    track = Track(4.8)
+    track.add(lp(noise(3.6), 400) * fade_out(3.6, 0.5), 0.0, 0.4)
+    for at in (0.3, 1.1):
+        creak = svf(osc(sweep(110, 80, 0.6), 0.6, 'saw'), 700, q=4.0, mode='bp') * expdec(0.6, 0.3, attack=0.1)
+        track.add(creak, at, 0.25)
+    track.add(reverb(boom(1.6, 45), wet=0.4, size=2.0, tail=1.2), 1.9, 1.0)
+    track.add(impact(0.4, 150, 50), 2.65, 0.9)
+    track.add(brass_chord(['D3', 'F3', 'A3', 'D4'], 0.9, 0.6), 2.7, 0.8)
+    return reverb(track.buf, wet=0.15, size=1.2)
+
+
+@sound('cutscene/king_baron_or', -17)
+def king_baron_or():
+    """Baron de l'Or (MinesKings) : les rails qui claquent, le freinage (1,35 à 1,9 s), l'arrêt, l'or qui brille (2,3 s)."""
+    track = Track(4.5)
+    track.add(rattle(1.35, 8, 18, 900, 2500, wood=True), 0.0, 0.6)
+    track.add(lp(noise(1.9), 300) * ramp(1.9, 0.2, 1.0), 0.0, 0.4)
+    track.add(screech(0.55, 2800) * ramp(0.55, 1.0, 0.3), 1.35, 0.35)
+    track.add(mix((metal_hit(140, 0.8), 0, 0.8), (impact(0.5, 120, 40), 0, 1.0)), 1.9, 0.9)
+    track.add(mix((sparkle(1.0, count=20), 0, 1.0), (coin(), 0, 0.6)), 2.3, 0.6)
+    return reverb(track.buf, wet=0.25, size=1.4)
+
+
+@sound('cutscene/king_grand_foreur', -17)
+def king_grand_foreur():
+    """Grand Foreur (MinesKings) : le sol vibre (0 à 1,4 s), la foreuse perce le mur (1,4 s) et hurle jusqu'à 2,1 s."""
+    track = Track(4.5)
+    track.add(lp(noise(1.4), 100) * ramp(1.4, 0.2, 1.0, 1.5), 0.0, 1.0)
+    pebbles = Track(1.4)
+    for _ in range(25):
+        pebbles.add(modal(rand(600, 1400), 0.1, WOOD_RATIOS, [0.03, 0.015, 0.01]), rand(0, 1.3), rand(0.2, 0.6))
+    track.add(pebbles.buf, 0.0, 0.5)
+    track.add(boom(1.5, 50), 1.4, 1.0)
+    drill = svf(osc(vibrato(180, 0.7, rate=30, depth=0.05), 0.7, 'saw'), 1600, q=1.2) * adsr(0.7, 0.02, 0.1, 0.9, 0.15)
+    track.add(drill, 1.4, 0.4)
+    track.add(brass_chord(['C3', 'G3', 'C4'], 0.9, 0.5), 2.3, 0.7)
+    return reverb(track.buf, wet=0.25, size=1.4)
+
+
+@sound('cutscene/king_maitre_forge', -17)
+def king_maitre_forge():
+    """Maître de Forge (MinesKings) : trois coups d'enclume (0,6 / 1,15 / 1,7 s), il lève la lame rouge (2,4 s)."""
+    track = Track(4.5)
+    track.add(fire_burst(3.6) * fade_out(3.6, 0.5), 0.0, 0.2)
+    for at in (0.6, 1.15, 1.7):
+        track.add(mix((metal_hit(1250, 1.0), 0, 1.0), (thump(180, 80, 0.15, 0.04), 0, 0.8)), at, 0.8)
+        track.add(sparkle(0.4, count=10, lo=4000, hi=9000), at, 0.3)
+    track.add(blade_ring(2600, 1.0), 2.4, 0.5)
+    track.add(hp(noise(0.8), 3000) * expdec(0.8, 0.3), 2.4, 0.2)
+    track.add(brass_chord(['F2', 'C3', 'F3'], 1.0, 0.6), 2.4, 0.8)
+    return reverb(track.buf, wet=0.25, size=1.4)
+
+
+@sound('cutscene/king_coeur_montagne', -17)
+def king_coeur_montagne():
+    """Coeur de la Montagne (MinesKings) : les rochers roulent (0 à 1,4 s), s'assemblent (2,0 s), le cœur s'allume (2,6 s)."""
+    track = Track(4.5)
+    track.add(lp(noise(1.6), 140), 0.0, 0.8)
+    track.add(rattle(1.4, 9, 5, 200, 500, wood=True), 0.0, 0.6)
+    track.add(whoosh(0.6, 150, 700), 1.4, 0.5)
+    track.add(impact(0.6, 100, 35), 2.0, 1.0)
+    track.add(heartbeat([2.6, 3.2], f=50, gain=0.9), 0.0, 1.0)
+    track.add(modal(hz('C6'), 1.5, CHURCH_RATIOS, [0.8, 0.6, 0.5, 0.4, 0.3, 0.2, 0.2, 0.15, 0.1]), 2.6, 0.25)
+    return reverb(track.buf, wet=0.3, size=1.6)
+
+
+@sound('cutscene/king_sirene', -17)
+def king_sirene():
+    """Sirène du Bar (CasinoKings) : sous l'eau, les bulles, le chant (0,5 s), les verres qui tintent, elle apparaît (2,0 s)."""
+    track = Track(4.6)
+    track.add(lp(noise(3.8), 400) * fade_out(3.8, 0.5), 0.0, 0.3)
+    track.add(bubbles(3.6, 40), 0.0, 0.4)
+    for k, note in enumerate(['E5', 'G5', 'B5', 'A5', 'G5', 'E5', 'D5', 'E5']):
+        voice = osc(vibrato(hz(note), 0.45, rate=5.5, depth=0.015, delay=0.1), 0.45, 'sine') * adsr(0.45, 0.08, 0.1, 0.8, 0.12)
+        track.add(bp(voice + 0.3 * osc(hz(note) * 2, 0.45), 300, 3000), 0.5 + k * 0.4, 0.35)
+    for _ in range(8):
+        track.add(modal(rand(1800, 2600), 0.3, GLASS_RATIOS, [0.15, 0.07, 0.04, 0.02]), rand(0.8, 2.2), rand(0.1, 0.3))
+    track.add(sparkle(1.0, count=16), 2.0, 0.4)
+    return reverb(track.buf, wet=0.35, size=1.8, tail=1.2)
+
+
+@sound('cutscene/king_jackpot_vivant', -17)
+def king_jackpot_vivant():
+    """Jackpot Vivant (CasinoKings) : les machines s'allument (0,3 s, toutes les 0,13 s), JACKPOT (1,3 s), il marche (2,1 s)."""
+    track = Track(4.5)
+    for k in range(7):
+        track.add(chip(hz('C4') * 2 ** (k * 2 / 12), 0.12, 'square', dc=0.03, s=0.5), 0.3 + k * 0.13, 0.35)
+    for k in range(6):
+        track.add(cash_register_bell(), 1.3 + k * 0.15, 0.3)
+    track.add(bingo_jingle('C5', 'square', hold=0.6), 1.3, 0.6)
+    for k in range(4):
+        track.add(mix((thump(120, 50, 0.3, 0.08), 0, 1.0), (metal_hit(300, 0.3), 0, 0.3)), 2.25 + k * 0.22, 0.9)
+    track.add(brass_chord(['C3', 'E3', 'G3', 'C4'], 0.9, 0.6), 3.0, 0.8)
+    return reverb(track.buf, wet=0.2, size=1.2)
+
+
+@sound('cutscene/king_requin_banquier', -17)
+def king_requin_banquier():
+    """Grand Requin Banquier (CasinoKings) : les pièces coulent, l'ombre tourne (0,4 s) sur deux notes graves, il surgit (2,1 s)."""
+    track = Track(4.5)
+    track.add(lp(noise(3.6), 350) * fade_out(3.6, 0.5), 0.0, 0.3)
+    track.add(bubbles(3.4, 20), 0.0, 0.3)
+    for _ in range(8):
+        track.add(lp(coin(rand(1400, 2000), 0.4), 2500), rand(0.1, 1.8), rand(0.15, 0.3))
+    t, gap = 0.4, 0.42
+    while t < 2.05:                                                            # deux notes graves qui accélèrent
+        for k, note in enumerate(('E2', 'F2')):
+            tone = svf(osc(hz(note), 0.22, 'saw'), 600, q=1.0) * adsr(0.22, 0.01, 0.05, 0.7, 0.08)
+            track.add(tone, t + k * gap / 2, 0.45)
+        t += gap
+        gap = max(0.16, gap * 0.82)
+    track.add(mix((hp(noise(0.5), 600) * expdec(0.5, 0.15), 0, 0.8), (impact(0.4, 150, 50), 0, 1.0),
+                  (click(0.03, 1500, 6000), 0.05, 0.8)), 2.1, 1.0)
+    track.add(brass_chord(['E2', 'G2', 'A#2', 'E3'], 1.0, 0.6), 2.15, 0.8)
+    return reverb(track.buf, wet=0.25, size=1.4)
+
+
+@sound('cutscene/king_kraken', -17)
+def king_kraken():
+    """Kraken (CasinoKings) : la table se fend (0,5 s), huit bras sortent (0,8 s, tous les 0,18 s), l'œil s'ouvre (2,45 s)."""
+    track = Track(4.6)
+    track.add(lp(noise(3.8), 300) * fade_out(3.8, 0.5), 0.0, 0.3)
+    track.add(mix((crack_hit(), 0, 1.0), (modal(500, 0.4, WOOD_RATIOS, [0.1, 0.05, 0.03]), 0, 0.8),
+                  (thump(100, 40, 0.4, 0.15), 0, 0.8)), 0.5, 0.9)
+    for k in range(8):
+        slither = svf(noise(0.35), sweep(200, 700, 0.35), q=2.0, mode='bp') * expdec(0.35, 0.15, attack=0.03)
+        track.add(slither, 0.8 + k * 0.18, 0.5)
+        track.add(card_flick(0.06), 1.05 + k * 0.18, 0.3)
+    horn = svf(stack(osc(hz('D1'), 1.6, 'saw'), osc(hz('A1'), 1.6, 'saw')), 400, q=0.9) * adsr(1.6, 0.2, 0.2, 0.8, 0.4)
+    track.add(horn, 2.45, 0.6)
+    track.add(lp(noise(1.5), 90) * ramp(1.5, 1.0, 0.2), 2.45, 0.9)
+    return reverb(track.buf, wet=0.3, size=1.8, tail=1.2)
+
 def main(prefixes):
     done = 0
     for name, level, fmt, trim, loop, fn in SOUNDS:

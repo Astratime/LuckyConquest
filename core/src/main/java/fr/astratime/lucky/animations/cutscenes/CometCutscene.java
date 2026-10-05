@@ -1,24 +1,17 @@
-package fr.astratime.lucky.animations;
+package fr.astratime.lucky.animations.cutscenes;
 
 import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.Pixmap;
-import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.Interpolation;
 import com.badlogic.gdx.math.MathUtils;
-import com.badlogic.gdx.scenes.scene2d.Actor;
-import com.badlogic.gdx.scenes.scene2d.InputEvent;
-import com.badlogic.gdx.scenes.scene2d.InputListener;
-import com.badlogic.gdx.scenes.scene2d.Touchable;
 import com.badlogic.gdx.utils.Array;
-import com.badlogic.gdx.utils.Disposable;
+import fr.astratime.lucky.animations.ScreenShake;
 import fr.astratime.lucky.settings.VisualSettings;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Random;
 
 /**
@@ -35,7 +28,7 @@ import java.util.Random;
  * Tout est dessiné à chaque image (pas d'enfants) ; l'acteur couvre le Stage
  * et bloque les clics tant qu'il est visible.
  */
-public class CometCutscene extends Actor implements Disposable {
+public class CometCutscene extends Cutscene {
 
     /** Le ciel sort du noir. */
     public static final float SKY_IN       = 0.8f;
@@ -51,11 +44,6 @@ public class CometCutscene extends Actor implements Disposable {
     public static final float WHITE_START  = 5.9f;
     /** L'écran est tout blanc : la présentation du boss apparaît dessous. */
     public static final float WHITE_FULL   = 6.8f;
-    private static final float WHITE_HOLD  = 0.2f;
-    private static final float WHITE_OUT   = 0.9f;
-    private static final float SKIP_WHITE  = 0.35f;   // durée du blanc quand on passe la cinématique
-
-    private static final float MARGIN      = 40f;     // le décor déborde, pour les secousses
     private static final int   SKY_BANDS   = 48;
     private static final int   STAR_COUNT  = 170;
     private static final float CITY_SCALE  = 4f;
@@ -72,60 +60,30 @@ public class CometCutscene extends Actor implements Disposable {
     private static final Color FIRE_RED    = c("c92a12");
     private static final Color SMOKE       = c("2a1a1e");
 
-    private final VisualSettings settings;
-    private final ScreenShake    shake;
-    private final Sound          sound;
-    private final Random         random = new Random();
-    private final List<Texture>  textures = new ArrayList<>();
-    private final TextureRegion  pixel, soft, trail, ring, meteor, city, moon;
+    private final TextureRegion  meteor, city, moon;
 
     private final float[] starX = new float[STAR_COUNT], starY = new float[STAR_COUNT];
     private final float[] starSize = new float[STAR_COUNT], starPhase = new float[STAR_COUNT];
     private final Array<Streak> streaks = new Array<>(false, 64);
     private final Array<Flame>  flames  = new Array<>(false, 256);
     private final Array<Flame>  debris  = new Array<>(false, 96);
-    private final Color tmp = new Color();
 
-    private Runnable onWhite;
-    private float    time;
-    private float    skipAt = -1f;      // instant où le joueur a passé la cinématique
-    private float    whiteAt = -1f;     // instant où l'écran est devenu tout blanc
     private float    streakDebt, flameDebt, nextRumble;
     private boolean  exploded;
-    private long     soundId = -1;
     private float    meteorX, meteorY, meteorScale, meteorAngle, meteorDirX = -1f, meteorDirY = -1f;
 
     public CometCutscene(VisualSettings settings, ScreenShake shake, Sound sound) {
-        this.settings = settings;
-        this.shake    = shake;
-        this.sound    = sound;
-        pixel  = region(solid(), false);
-        soft   = region(softDisc(64), true);
-        trail  = region(trailGradient(), true);
-        ring   = region(softRing(128), true);
+        super(settings, shake, sound);
         meteor = region(meteorRock(), false);
         city   = region(skyline(), false);
         moon   = region(crescent(), false);
-        setVisible(false);
-        setTouchable(Touchable.disabled);
-        addListener(new InputListener() {
-            @Override
-            public boolean touchDown(InputEvent event, float x, float y, int pointer, int button) {
-                skip();
-                return true;
-            }
-        });
     }
 
-    /**
-     * Lance la cinématique par-dessus tout l'écran ; {@code onWhite} est appelé
-     * une fois, quand l'écran est tout blanc (la présentation du boss doit apparaître là).
-     */
-    public void play(Runnable onWhite) {
-        this.onWhite = onWhite;
-        time = 0f;
-        skipAt = -1f;
-        whiteAt = -1f;
+    @Override protected float coverStart() { return WHITE_START; }
+    @Override protected float coverFull()  { return WHITE_FULL; }
+
+    @Override
+    protected void reset() {
         streakDebt = flameDebt = 0f;
         nextRumble = METEOR_START + 0.6f;
         exploded = false;
@@ -138,75 +96,15 @@ public class CometCutscene extends Actor implements Disposable {
             starSize[i] = random.nextFloat() < 0.12f ? 3f : random.nextFloat() < 0.4f ? 2f : 1.5f;
             starPhase[i] = random.nextFloat() * MathUtils.PI2;
         }
-        setVisible(true);
-        setTouchable(Touchable.enabled);
-        toFront();
-        soundId = sound.play();
-    }
-
-    /** @return {@code true} tant que la cinématique joue, jusqu'à ce que l'écran blanc commence à s'estomper. */
-    public boolean isPlaying() { return isVisible() && whiteAt < 0f; }
-
-    /** Passe la cinématique : l'écran blanchit tout de suite, puis le boss se présente. */
-    public void skip() {
-        if (!isPlaying() || skipAt >= 0f || time >= WHITE_START) return;
-        skipAt = time;
-        if (soundId != -1) sound.stop(soundId);
-        soundId = -1;
-    }
-
-    /** Menu pause : le son se fige avec l'image. */
-    public void pauseSound() {
-        if (isVisible() && soundId != -1) sound.pause(soundId);
-    }
-
-    /** Fin de la pause : le son reprend. */
-    public void resumeSound() {
-        if (isVisible() && soundId != -1) sound.resume(soundId);
-    }
-
-    /** Arrête et cache la cinématique sans lancer le combat. */
-    public void cancel() {
-        if (soundId != -1) sound.stop(soundId);
-        soundId = -1;
-        onWhite = null;
-        setVisible(false);
-        setTouchable(Touchable.disabled);
-    }
-
-    @Override
-    public Actor hit(float x, float y, boolean touchable) {
-        return touchable && getTouchable() == Touchable.enabled && isVisible() ? this : null;
     }
 
     // -------------------------------------------------------------------------
     // Déroulement
     // -------------------------------------------------------------------------
 
-    @Override
-    public void act(float delta) {
-        super.act(delta);
-        if (!isVisible()) return;
-        time += delta;
-        if (whiteAt >= 0f) {
-            if (time - whiteAt >= WHITE_HOLD + WHITE_OUT) {
-                setVisible(false);
-                setTouchable(Touchable.disabled);
-            }
-            return;
-        }
-        if (skipAt < 0f) simulate(delta);
-        if (whiteAlpha() >= 1f) {
-            whiteAt = time;
-            setTouchable(Touchable.disabled); // la présentation du boss est déjà dessous
-            Runnable callback = onWhite;
-            onWhite = null;
-            if (callback != null) callback.run();
-        }
-    }
-
     /** Fait vivre le ciel : étoiles filantes, météorite, flammes et explosion. */
-    private void simulate(float delta) {
+    @Override
+    protected void simulate(float delta) {
         float width = worldWidth(), height = worldHeight();
         // Étoiles filantes : de plus en plus nombreuses, puis plus aucune.
         if (time > 0.4f && time < STARS_END) {
@@ -267,31 +165,12 @@ public class CometCutscene extends Actor implements Disposable {
         }
     }
 
-    /** @return l'opacité du voile blanc (1 = écran tout blanc). */
-    private float whiteAlpha() {
-        if (whiteAt >= 0f) {
-            float out = time - whiteAt - WHITE_HOLD;
-            return out <= 0f ? 1f : 1f - Interpolation.pow2.apply(Math.min(1f, out / WHITE_OUT));
-        }
-        float alpha = time <= WHITE_START ? 0f
-            : Interpolation.pow2In.apply(Math.min(1f, (time - WHITE_START) / (WHITE_FULL - WHITE_START)));
-        if (skipAt >= 0f) alpha = Math.max(alpha, Math.min(1f, (time - skipAt) / SKIP_WHITE));
-        return alpha;
-    }
-
     // -------------------------------------------------------------------------
     // Dessin
     // -------------------------------------------------------------------------
 
     @Override
-    public void draw(Batch batch, float parentAlpha) {
-        float white = whiteAlpha();
-        if (whiteAt < 0f) drawScene(batch);
-        if (white > 0f) fill(batch, Color.WHITE, white);
-        batch.setColor(Color.WHITE);
-    }
-
-    private void drawScene(Batch batch) {
+    protected void drawScene(Batch batch) {
         float width = worldWidth(), height = worldHeight();
         float left = -MARGIN, right = width + MARGIN, bottom = -MARGIN, top = height + MARGIN;
         float horizon = horizonY();
@@ -455,13 +334,6 @@ public class CometCutscene extends Actor implements Disposable {
         batch.draw(ring, x - sky / 2f, y - sky / 2f, sky, sky);
     }
 
-    private void fill(Batch batch, Color color, float alpha) {
-        batch.setColor(color.r, color.g, color.b, alpha);
-        batch.draw(pixel, -MARGIN, -MARGIN, worldWidth() + 2f * MARGIN, worldHeight() + 2f * MARGIN);
-    }
-
-    private float worldWidth()  { return getStage().getViewport().getWorldWidth(); }
-    private float worldHeight() { return getStage().getViewport().getWorldHeight(); }
     private float horizonY()    { return worldHeight() * 0.2f; }
     private float impactX()     { return worldWidth() * 0.46f; }
     private float impactY()     { return horizonY() + city.getRegionHeight() * CITY_SCALE * 0.25f; }
@@ -555,71 +427,6 @@ public class CometCutscene extends Actor implements Disposable {
     // -------------------------------------------------------------------------
     // Images
     // -------------------------------------------------------------------------
-
-    private TextureRegion region(Pixmap pixmap, boolean smooth) {
-        Texture texture = new Texture(pixmap);
-        pixmap.dispose();
-        if (smooth) texture.setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear);
-        textures.add(texture);
-        return new TextureRegion(texture);
-    }
-
-    private static Pixmap solid() {
-        Pixmap pixmap = new Pixmap(1, 1, Pixmap.Format.RGBA8888);
-        pixmap.setColor(Color.WHITE);
-        pixmap.fill();
-        return pixmap;
-    }
-
-    /** @return un disque blanc qui s'estompe doucement vers le bord. */
-    private static Pixmap softDisc(int size) {
-        Pixmap pixmap = new Pixmap(size, size, Pixmap.Format.RGBA8888);
-        pixmap.setBlending(Pixmap.Blending.None);
-        float center = (size - 1) / 2f;
-        for (int y = 0; y < size; y++) {
-            for (int x = 0; x < size; x++) {
-                float d = (float) Math.hypot(x - center, y - center) / (size / 2f);
-                float a = d >= 1f ? 0f : (1f - d) * (1f - d);
-                pixmap.setColor(1f, 1f, 1f, a);
-                pixmap.drawPixel(x, y);
-            }
-        }
-        return pixmap;
-    }
-
-    /** @return un anneau blanc flou (onde de choc). */
-    private static Pixmap softRing(int size) {
-        Pixmap pixmap = new Pixmap(size, size, Pixmap.Format.RGBA8888);
-        pixmap.setBlending(Pixmap.Blending.None);
-        float center = (size - 1) / 2f;
-        for (int y = 0; y < size; y++) {
-            for (int x = 0; x < size; x++) {
-                float d = (float) Math.hypot(x - center, y - center) / (size / 2f);
-                float a = Math.max(0f, 1f - Math.abs(d - 0.88f) / 0.1f);
-                pixmap.setColor(1f, 1f, 1f, a * a);
-                pixmap.drawPixel(x, y);
-            }
-        }
-        return pixmap;
-    }
-
-    /** @return la traîne d'une étoile filante : transparente à gauche, éclatante à droite (la tête). */
-    private static Pixmap trailGradient() {
-        int width = 128, height = 8;
-        Pixmap pixmap = new Pixmap(width, height, Pixmap.Format.RGBA8888);
-        pixmap.setBlending(Pixmap.Blending.None);
-        for (int x = 0; x < width; x++) {
-            float along = x / (float) (width - 1);
-            for (int y = 0; y < height; y++) {
-                float across = 1f - Math.abs(y - (height - 1) / 2f) / (height / 2f);
-                float taper = along * along;
-                pixmap.setColor(1f, 1f, 1f, taper * Math.max(0f, across) * (0.3f + 0.7f * along));
-                pixmap.drawPixel(x, y);
-            }
-        }
-        return pixmap;
-    }
-
     /** @return la météorite en pixel art : roche sombre craquelée de lave, cernée de noir. */
     private static Pixmap meteorRock() {
         int size = 22;
@@ -719,14 +526,5 @@ public class CometCutscene extends Actor implements Disposable {
             }
         }
         return pixmap;
-    }
-
-    private static Color c(String hex) { return Color.valueOf(hex); }
-
-    @Override
-    public void dispose() {
-        cancel();
-        for (Texture texture : textures) texture.dispose();
-        textures.clear();
     }
 }
