@@ -412,7 +412,18 @@ public class CometCutscene extends Cutscene {
             float out = SIGNS_OUT + i * 0.35f;
             boolean on = time < out || (time < out + 0.3f && random.nextFloat() < 0.5f);   // il grésille, puis s'éteint
             Color neon = NEONS[i];
-            float sx = width * SIGNS[i], sy = base + 10f * u, sw = 22f * u, sh = 6f * u;
+            float sx = width * SIGNS[i], sy = base + 18f * u, sw = 22f * u, sh = 6f * u;
+            // La devanture du casino qui porte l'enseigne : façade, toit, porte éclairée.
+            float fw = sw * 1.4f, fh = sy + sh + 3f * u - base;
+            batch.setColor(c("120a1c"));
+            batch.draw(pixel, sx - fw / 2f, -MARGIN, fw, fh + base + MARGIN);
+            batch.setColor(c("2a1a36"));
+            batch.draw(pixel, sx - fw / 2f - u, base + fh, fw + 2f * u, 1.2f * u);
+            float door = on ? 0.55f : 0.2f;
+            batch.setColor(1f, 0.8f, 0.4f, door);
+            batch.draw(pixel, sx - 3f * u, base, 6f * u, 10f * u);
+            batch.setColor(c("120a1c"));
+            batch.draw(pixel, sx - 0.4f * u, base, 0.8f * u, 10f * u);
             if (on) glow(batch, sx, sy + sh / 2f, sw * 2f, neon, 0.4f);
             batch.setColor(on ? neon : tmp.set(neon).mul(0.25f, 0.25f, 0.25f, 1f));
             batch.draw(pixel, sx - sw / 2f, sy, sw, 0.8f * u);

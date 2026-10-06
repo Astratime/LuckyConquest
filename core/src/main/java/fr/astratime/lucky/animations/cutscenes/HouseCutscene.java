@@ -52,7 +52,7 @@ public class HouseCutscene extends Cutscene {
     /** Les couleurs des jetons de l'escalier. */
     private static final Color[] CHIPS = {c("c8283c"), c("2a5ad8"), c("1f9a4a"), c("1a1a24"), c("e8b020")};
 
-    private final TextureRegion house, coin, butlerLegs, butlerTop;
+    private final TextureRegion house, coin, butlerLegs, butlerTop, aceRed, aceBlack, cardBack;
     private final BitmapFont    font;
     private final Array<Particle> clouds = new Array<>(false, 32);
     private final Array<Particle> sparks = new Array<>(false, 64);
@@ -63,6 +63,39 @@ public class HouseCutscene extends Cutscene {
         house = kit.chapterArt(Chapter.LA_MAISON);
         coin  = load("hud/coin.png");
         font  = kit.font();
+        // Les As des fenêtres : un grand A au centre, cerné de noir pour trancher sur le manoir doré.
+        String[] ace = {
+            "oooooooooo",
+            "owwwwwwwwo",
+            "owrwwwwwwo",
+            "owwwwwwwwo",
+            "owwwrrwwwo",
+            "owwrwwrwwo",
+            "owwrwwrwwo",
+            "owwrrrrwwo",
+            "owwrwwrwwo",
+            "owwrwwrwwo",
+            "owwwwwwwwo",
+            "owwwwwwrwo",
+            "owwwwwwwwo",
+            "oooooooooo"};
+        aceRed   = art("owr", new Color[] {c("1a0a10"), c("f4ecdc"), c("c8283c")}, ace);
+        aceBlack = art("owr", new Color[] {c("1a0a10"), c("f4ecdc"), c("1a1a24")}, ace);
+        cardBack = art("owr", new Color[] {c("1a0a10"), c("8a1424"), c("c8283c")},
+            "oooooooooo",
+            "owwwwwwwwo",
+            "owrwrwrwwo",
+            "owwrwrwrwo",
+            "owrwrwrwwo",
+            "owwrwrwrwo",
+            "owrwrwrwwo",
+            "owwrwrwrwo",
+            "owrwrwrwwo",
+            "owwrwrwrwo",
+            "owrwrwrwwo",
+            "owwrwrwrwo",
+            "owwwwwwwwo",
+            "oooooooooo");
         Color[] shade = {c("05030a"), c("2a2030")};
         butlerTop = art("ow", shade,
             "...ooo...",
@@ -271,23 +304,19 @@ public class HouseCutscene extends Cutscene {
     /** Les cartes des fenêtres se retournent sur un As, et rient : elles sautillent. */
     private void drawAces(Batch batch, float zoom) {
         if (time < ACES) return;
-        font.getData().setScale(Math.max(1f, zoom * 0.16f));
         for (int i = 0; i < WINDOWS.length; i++) {
             float at = ACES + (i % 6) * 0.05f;
             float flip = progress(at, at + 0.2f);
             float laugh = time > at + 0.3f ? Math.abs(MathUtils.sin((time - at) * 14f + i)) * 1.2f * zoom : 0f;
             float x = artX(WINDOWS[i][0]), y = artY(WINDOWS[i][1]) + laugh;
-            float w = 5f * zoom * Math.abs(MathUtils.cos((1f - flip) * MathUtils.PI / 2f)), h = 7f * zoom;
-            batch.setColor(c("f4ecdc"));
-            batch.draw(pixel, x - w / 2f, y - h / 2f, w, h);
-            if (flip >= 1f) {
-                Color old = font.getColor().cpy();
-                font.setColor(i % 2 == 0 ? c("c8283c") : c("1a1a24"));
-                caption(batch, font, "A", x, y, 1f);
-                font.setColor(old);
-            }
+            // La carte se retourne : le dos rouge se referme, puis l'As s'ouvre.
+            float turn = MathUtils.cos(flip * MathUtils.PI);
+            float w = 5f * zoom * Math.abs(turn), h = 7f * zoom;
+            batch.setColor(0f, 0f, 0f, 0.45f);                               // une ombre, pour détacher la carte
+            batch.draw(soft, x - 4.5f * zoom, y - 5.5f * zoom, 9f * zoom, 11f * zoom);
+            batch.setColor(Color.WHITE);
+            batch.draw(turn > 0f ? cardBack : i % 2 == 0 ? aceRed : aceBlack, x - w / 2f, y - h / 2f, w, h);
         }
-        font.getData().setScale(1f);
     }
 
     /** La porte-fente : elle s'ouvre sur de la lumière, puis claque. */
