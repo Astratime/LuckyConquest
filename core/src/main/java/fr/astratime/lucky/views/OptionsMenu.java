@@ -142,6 +142,12 @@ public class OptionsMenu implements Disposable {
         layout(centerX, centerY);
     }
 
+    /** Hauteur d'une option et de l'espace qui la suit. */
+    public static final float OPTION_STEP = OPTION_HEIGHT + OPTION_GAP;
+
+    /** @return le nombre d'options affichées. */
+    public int size() { return options.size(); }
+
     /** @return l'option {@code index} affichée (le guide du menu l'éclaire), ou {@code null}. */
     public Actor getOption(int index) {
         return index >= 0 && index < options.size() ? options.get(index) : null;

@@ -306,9 +306,10 @@ class PlayerProfileTest {
     }
 
     @Test
-    void theAdminModeStaysOnAfterARelaunch() {
+    void theAdminModeIsOffAtEveryLaunch() {
         MemoryStorage storage = new MemoryStorage();
+        assertFalse(profile(storage).isAdmin(), "désactivé au premier lancement");
         profile(storage).setAdmin(true);
-        assertTrue(profile(storage).isAdmin());
+        assertFalse(profile(storage).isAdmin(), "désactivé au lancement suivant, même activé avant");
     }
 }

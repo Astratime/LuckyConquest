@@ -51,7 +51,8 @@ import java.util.function.Supplier;
  * épreuves » (choix d'un chapitre, {@link TowerScreen}), « Options » et « Quitter ». Page des options : affichage (fenêtre agrandie ou plein
  * écran, appliqué tout de suite), effets visuels (normaux ou réduits,
  * réglage partagé avec l'écran de jeu), volume de la musique, volume des sons,
- * mode ADMIN (tout le contenu du jeu ouvert, voir {@link PlayerProfile#setAdmin(boolean)})
+ * mode ADMIN (tout le contenu du jeu ouvert et le mode « Cinématique », {@link CinematicScreen} ;
+ * désactivé à chaque lancement, voir {@link PlayerProfile#setAdmin(boolean)})
  * et « Retour ».
  *
  * Les options (panneau partagé avec le menu pause, voir {@link OptionsMenu}) se
@@ -75,6 +76,8 @@ public class MenuScreen extends ScreenAdapter {
     private static final float TITLE_TOP      = 230f;   // du haut de l'écran au centre du titre
     private static final float TITLE_FLOAT    = 8f;     // amplitude du flottement du titre
     private static final float PANEL_CENTER_Y = 0.46f;  // fraction de la hauteur de l'écran
+    /** Options de la page principale hors mode ADMIN. */
+    private static final int   MAIN_ENTRIES   = 7;
     private static final float FADE_TIME      = 0.4f;
     private static final float PARALLAX       = 18f;    // décalage maximal du décor, en pixels
     private static final float PARALLAX_EASE  = 4f;
@@ -138,16 +141,24 @@ public class MenuScreen extends ScreenAdapter {
     // Pages
     // -------------------------------------------------------------------------
 
-    /** Page principale : Entraînement, Tour des épreuves, Exploration, Table du croupier, Boutique, Options, Quitter. */
+    /**
+     * Page principale : Entraînement, Tour des épreuves, Exploration, Table du croupier, Boutique,
+     * Cinématique (en mode ADMIN seulement), Options, Quitter.
+     */
     private void showMainPage() {
-        showPage(null, List.of(
+        List<OptionsMenu.Entry> entries = new ArrayList<>(List.of(
             OptionsMenu.Entry.button("Entraînement", this::onPlay),
             OptionsMenu.Entry.button("Tour des épreuves", this::onTower),
             OptionsMenu.Entry.button("Exploration", () -> goTo(() -> new ExplorationScreen(luckyGame))),
             OptionsMenu.Entry.button("Table du croupier", () -> goTo(() -> new CroupierTableScreen(luckyGame))),
-            OptionsMenu.Entry.button("Boutique", () -> goTo(() -> new ShopScreen(luckyGame))),
-            OptionsMenu.Entry.button("Options", this::showOptionsPage),
-            OptionsMenu.Entry.button("Quitter", this::onQuit)));
+            OptionsMenu.Entry.button("Boutique", () -> goTo(() -> new ShopScreen(luckyGame)))));
+        // Mode Cinématique : seulement en mode ADMIN.
+        if (luckyGame.getProfile().isAdmin()) {
+            entries.add(OptionsMenu.Entry.button("Cinématique", () -> goTo(() -> new CinematicScreen(luckyGame))));
+        }
+        entries.add(OptionsMenu.Entry.button("Options", this::showOptionsPage));
+        entries.add(OptionsMenu.Entry.button("Quitter", this::onQuit));
+        showPage(null, entries);
     }
 
     /** Page des options : affichage, effets visuels, musique, sons, mode ADMIN, Retour. */
@@ -165,7 +176,21 @@ public class MenuScreen extends ScreenAdapter {
 
     private void showPage(String caption, List<OptionsMenu.Entry> entries) {
         menu.setEntries(caption, entries);
+        placeMenu();
         fade.toFront();
+    }
+
+    /**
+     * Centre le panneau des options ; une page principale plus longue que
+     * {@link #MAIN_ENTRIES} options (« Cinématique » en mode ADMIN) descend,
+     * pour que son haut ne couvre pas davantage le titre.
+     */
+    private void placeMenu() {
+        float width  = stage.getViewport().getWorldWidth();
+        float height = stage.getViewport().getWorldHeight();
+        if (width <= 0f || height <= 0f) return;
+        int extra = menu.hasCaption() ? 0 : Math.max(0, menu.size() - MAIN_ENTRIES);
+        menu.layout(width / 2f, height * PANEL_CENTER_Y - extra * OptionsMenu.OPTION_STEP / 2f);
     }
 
     // -------------------------------------------------------------------------
@@ -216,7 +241,8 @@ public class MenuScreen extends ScreenAdapter {
             "Options : le tutoriel s'y rejoue. Bonne chance à la table."};
         List<GuideOverlay.Step> steps = new ArrayList<>();
         for (int i = 0; i < lines.length; i++) {
-            int index = i;
+            // « Options » vient après « Cinématique » quand le mode ADMIN l'affiche.
+            int index = i == lines.length - 1 && profile.isAdmin() ? i + 1 : i;
             steps.add(GuideOverlay.Step.say(lines[i], () -> GuideOverlay.boundsOf(menu.getOption(index))));
         }
         guide.play(steps, () -> profile.markSeen(PlayerProfile.GUIDE_MENU));
@@ -293,7 +319,7 @@ public class MenuScreen extends ScreenAdapter {
             Actions.moveBy(0f, TITLE_FLOAT, 1.4f, Interpolation.sine),
             Actions.moveBy(0f, -TITLE_FLOAT, 1.4f, Interpolation.sine))));
 
-        menu.layout(width / 2f, height * PANEL_CENTER_Y);
+        placeMenu();
     }
 
     /** Décale le décor selon la parallaxe courante (il déborde de PARALLAX de chaque côté). */
