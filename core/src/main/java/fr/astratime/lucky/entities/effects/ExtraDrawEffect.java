@@ -32,7 +32,7 @@ public class ExtraDrawEffect extends Effect {
     public void apply(TurnContext context) { }
 
     @Override
-    public String getDescription() { return Lang.f(extraCards > 1 ? "Piochez {0} cartes" : "Piochez {0} carte",
+    public String getDescription() { return Lang.f(Lang.plural(extraCards) ? "Piochez {0} cartes" : "Piochez {0} carte",
         extraCards); }
 
     @Override

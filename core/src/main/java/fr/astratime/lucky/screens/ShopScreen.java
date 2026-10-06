@@ -192,7 +192,7 @@ public class ShopScreen extends ScreenAdapter {
         coin.setSize(COIN_SIZE, COIN_SIZE);
         coins = new Label("", new Label.LabelStyle(coinsFont, Color.WHITE));
         for (Tab each : Tab.values()) {
-            TextButton button = buttons.create(each.label, clickSound, () -> showTab(each));
+            TextButton button = buttons.create(Lang.t(each.label), clickSound, () -> showTab(each));
             tabButtons.add(button);
         }
         panel = new Image(hud.panelDrawable());
@@ -518,7 +518,7 @@ public class ShopScreen extends ScreenAdapter {
 
     private void refreshCoins() {
         long amount = profile.getCoins();
-        coins.setText(Lang.f(amount > 1 ? "{0} pièces" : "{0} pièce", PlayerProfile.formatCoins(amount)));
+        coins.setText(Lang.f(Lang.plural(amount) ? "{0} pièces" : "{0} pièce", PlayerProfile.formatCoins(amount)));
         coins.pack();
     }
 

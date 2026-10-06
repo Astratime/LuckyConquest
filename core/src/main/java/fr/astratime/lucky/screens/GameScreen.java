@@ -1764,7 +1764,7 @@ public class GameScreen extends ScreenAdapter {
 
     /** @return {@code count} suivi de « tour » ou « tours ». */
     private static String turns(int count) {
-        return Lang.f(count > 1 ? "{0} tours" : "{0} tour", count);
+        return Lang.f(Lang.plural(count) ? "{0} tours" : "{0} tour", count);
     }
 
     /**
@@ -1851,8 +1851,9 @@ public class GameScreen extends ScreenAdapter {
             Lang.t("Le prochain tirage de l'ennemi ne peut pas faire de Jackpot.")));
         if (target.getHarpoons() > 0) rows.add(new SidePanel.EffectRow(guard, null, Lang.f("Harpon x{0}",
             target.getHarpoons()),
-            Lang.t("Harpon"), Lang.f("À son prochain tour, l'ennemi joue {0} carte{1} de moins.",
-                target.getHarpoons(), (target.getHarpoons() > 1 ? "s" : ""))));
+            Lang.t("Harpon"), Lang.f(Lang.plural(target.getHarpoons())
+                ? "À son prochain tour, l'ennemi joue {0} cartes de moins."
+                : "À son prochain tour, l'ennemi joue {0} carte de moins.", target.getHarpoons())));
         Enemy foe = gameController.getGameState().getEnemy();
         EnemyKind kind = foe.getKind();
         if (lasting.getNibbles() > 0) rows.add(curse(skull, Lang.f("Grignotage x{0}", lasting.getNibbles()), EnemySymbol.NIBBLE, kind));
@@ -1886,7 +1887,7 @@ public class GameScreen extends ScreenAdapter {
         }
         if (foe.getStolenReels() > 0) {
             int stolen = foe.getStolenReels();
-            String reels = Lang.f(stolen > 1 ? "{0} rouleaux" : "{0} rouleau", stolen);
+            String reels = Lang.f(Lang.plural(stolen) ? "{0} rouleaux" : "{0} rouleau", stolen);
             rows.add(new SidePanel.EffectRow(skull, null, Lang.f("Vol : {0}", reels), Lang.t("Rouleaux volés"),
                 Lang.f("L'ennemi t'a volé {0}. Ils restent bloqués tant qu'il les garde.", reels)));
         }
@@ -1906,8 +1907,8 @@ public class GameScreen extends ScreenAdapter {
 
     /** @return la description d'un symbole ennemi (« Nom : texte ») sans son nom, terminée par un point. */
     private static String sentence(String description) {
-        int colon = description.indexOf(" : ");
-        String text = colon >= 0 ? description.substring(colon + 3) : description;
+        int colon = description.indexOf(':');
+        String text = colon >= 0 ? description.substring(colon + 1).trim() : description;
         text = Character.toUpperCase(text.charAt(0)) + text.substring(1);
         return text.endsWith(".") ? text : text + ".";
     }

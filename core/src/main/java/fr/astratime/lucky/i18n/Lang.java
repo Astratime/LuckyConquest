@@ -143,6 +143,14 @@ public final class Lang {
     /** @return le séparateur des milliers : une espace en français, une virgule en anglais (1 000 / 1,000). */
     public static char thousands() { return isEnglish() ? ',' : ' '; }
 
+    /**
+     * @return {@code true} si {@code count} s'écrit au pluriel : au-delà de 1 en français
+     *         (0 tour, 1 tour, 2 tours), dès qu'il n'est pas 1 en anglais (0 turns, 1 turn)
+     */
+    public static boolean plural(long count) {
+        return isEnglish() ? count != 1 : count > 1;
+    }
+
     /** @return {@code true} si la langue choisie est l'anglais (formats de nombres, pluriels). */
     public static boolean isEnglish() { return current == Language.ENGLISH; }
 }

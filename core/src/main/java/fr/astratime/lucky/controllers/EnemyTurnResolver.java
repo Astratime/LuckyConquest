@@ -159,8 +159,8 @@ public class EnemyTurnResolver {
         int harpooned = enemy.takeHarpoons(); // Harpon : une carte de moins
         if (harpooned > 0) {
             plays = Math.max(0, plays - harpooned);
-            openingEvents.add(new StatusEvent(Lang.f("HARPON : {0} CARTE{1} DE MOINS",
-                harpooned, (harpooned > 1 ? "S" : "")), EffectPopup.Style.ATTACK));
+            openingEvents.add(new StatusEvent(Lang.f(Lang.plural(harpooned) ? "HARPON : {0} CARTES DE MOINS"
+                : "HARPON : {0} CARTE DE MOINS", harpooned), EffectPopup.Style.ATTACK));
         }
         if (enemy.takeMutiny()) { // Mutinerie : son équipage refuse de jouer une partie de ses cartes
             plays = Math.max(0, plays - MutinyEffect.CARDS_LESS);
@@ -348,7 +348,7 @@ public class EnemyTurnResolver {
                         if (card != null) taken.add(card.getName().toUpperCase());
                     }
                     events.add(taken.isEmpty() ? turn.strike(EnemySymbol.FANG_DAMAGE)
-                        : new StatusEvent(Lang.f(taken.size() > 1 ? "FOUILLE : {0} CONFISQUÉES" : "FOUILLE : {0} CONFISQUÉE",
+                        : new StatusEvent(Lang.f(Lang.plural(taken.size()) ? "FOUILLE : {0} CONFISQUÉES" : "FOUILLE : {0} CONFISQUÉE",
                             String.join(", ", taken)), EffectPopup.Style.DAMAGE));
                 }
                 case BANKRUPTCY -> {
@@ -412,8 +412,8 @@ public class EnemyTurnResolver {
             default       -> null;
         };
         if (spell != null && lasting.useTrap()) {
-            return new StatusEvent(Lang.f("PIÈGE À RATS : {0} ANNULÉ{1}",
-                spell, (symbol == EnemySymbol.FRISK ? "E" : "")),
+            return new StatusEvent(Lang.f(symbol == EnemySymbol.FRISK ? "PIÈGE À RATS : {0} ANNULÉE"
+                : "PIÈGE À RATS : {0} ANNULÉ", spell),
                 EffectPopup.Style.DEFENSE);
         }
         boolean takesGains = switch (symbol) {

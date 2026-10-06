@@ -45,7 +45,7 @@ public class SpadeIgnoreDefenseEffect extends Effect {
 
     @Override
     public String getDescription() {
-        return Lang.f(blades > 1
+        return Lang.f(Lang.plural(blades)
                 ? "Les symboles d'attaque ignorent la défense. Attaque +{0} sur chaque symbole d'attaque. +{1} Lames "
                     + "(+{2} d'attaque chacune, tout le combat)"
                 : "Les symboles d'attaque ignorent la défense. Attaque +{0} sur chaque symbole d'attaque. +{1} Lame "

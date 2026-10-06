@@ -321,12 +321,12 @@ public class SidePanel implements Disposable {
         if (width > gainsMaxWidth) gainsLabel.setFontScale(gainsMaxWidth / width);
     }
 
-    /** @return le montant avec une espace entre chaque groupe de trois chiffres (ex : "12 500"). */
+    /** @return le montant avec un séparateur entre chaque groupe de trois chiffres (ex : "12 500", en anglais "12,500"). */
     static String formatGains(int gains) {
         String digits = Integer.toString(Math.abs(gains));
         StringBuilder text = new StringBuilder();
         for (int i = 0; i < digits.length(); i++) {
-            if (i > 0 && (digits.length() - i) % 3 == 0) text.append(' ');
+            if (i > 0 && (digits.length() - i) % 3 == 0) text.append(Lang.thousands());
             text.append(digits.charAt(i));
         }
         return gains < 0 ? "-" + text : text.toString();

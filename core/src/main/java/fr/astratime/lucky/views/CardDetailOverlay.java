@@ -200,7 +200,7 @@ public class CardDetailOverlay implements Disposable {
     /** Ajoute une ligne « Clé : valeur » (la valeur est renvoyée à la ligne si besoin). */
     private void line(Table info, String key, String value) {
         Table row = new Table();
-        row.add(label(key + " : ", keyFont)).top().left();
+        row.add(label(Lang.f("{0} : ", key), keyFont)).top().left();
         Label valueLabel = new Label(value, new Label.LabelStyle(valueFont, Color.WHITE));
         valueLabel.setWrap(true);
         row.add(valueLabel).growX().left();

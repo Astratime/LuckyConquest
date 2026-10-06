@@ -962,7 +962,7 @@ public enum EnemyKind {
         List<String> parts = new ArrayList<>();
         int total = weights.values().stream().mapToInt(Integer::intValue).sum();
         for (Map.Entry<EnemySymbol, Integer> entry : weights.entrySet()) {
-            parts.add(entry.getKey().getDisplayName() + " " + Math.round(100f * entry.getValue() / total) + " %");
+            parts.add(Lang.f("{0} {1} %", entry.getKey().getDisplayName(), Math.round(100f * entry.getValue() / total)));
         }
         return String.join(", ", parts);
     }

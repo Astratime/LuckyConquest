@@ -9,7 +9,6 @@ import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.scenes.scene2d.actions.Actions;
 import com.badlogic.gdx.scenes.scene2d.ui.Image;
 import fr.astratime.lucky.assets.Palette;
-import fr.astratime.lucky.i18n.Lang;
 
 /**
  * Bingo du Fer à cheval : un poteau de bois se dresse au milieu de la table,
@@ -194,9 +193,9 @@ public class HorseshoeScene extends BingoScene {
             ".oLLGoGGGo...",
             ".oLGGoGGDo...",
             ".oGGGGGGDo...",
-            Lang.t("ooooGGGGoooo."),
-            Lang.t("oLLGGoGGGGGo."),
-            Lang.t("oLGGGoDGGGDo."),
+            "ooooGGGGoooo.",
+            "oLLGGoGGGGGo.",
+            "oLGGGoDGGGDo.",
             ".oGGDoDGGDo..",
             ".ooooGooooo..",
             "....oGo.oo...",

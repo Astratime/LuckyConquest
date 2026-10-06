@@ -406,7 +406,7 @@ public class GameController {
     }
 
     private static String turnsText(int turns) {
-        return Lang.f(turns > 1 ? "{0} tours" : "{0} tour", turns);
+        return Lang.f(Lang.plural(turns) ? "{0} tours" : "{0} tour", turns);
     }
 
     /**
