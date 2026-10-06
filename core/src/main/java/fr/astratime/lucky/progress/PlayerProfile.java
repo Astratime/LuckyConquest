@@ -63,7 +63,6 @@ public class PlayerProfile {
     static final String KEY_TOWER_HARD = "towerHard";
     static final String KEY_CHAPTERS      = "chapters";
     static final String KEY_HARD_CHAPTERS = "hardChapters";
-    static final String KEY_ADMIN         = "admin";
     static final String KEY_ADMIN_DECK    = "adminDeck";
     static final String KEY_ADMIN_MACHINE = "adminMachine";
     static final String KEY_GUIDES        = "guides";
@@ -139,7 +138,6 @@ public class PlayerProfile {
             for (Chapter chapter : Chapter.values()) clearedChapters.add(chapter.name());
         }
         readNames(storage.get(KEY_HARD_CHAPTERS), clearedHardChapters);
-        admin = Boolean.parseBoolean(storage.get(KEY_ADMIN));
         readNames(storage.get(KEY_GUIDES), seenGuides);
         String savedDungeons = storage.get(KEY_DUNGEONS);
         if (savedDungeons != null) {
@@ -176,7 +174,8 @@ public class PlayerProfile {
     public boolean isAdmin() { return admin; }
 
     /**
-     * Active ou désactive le mode ADMIN et l'enregistre. La progression de la
+     * Active ou désactive le mode ADMIN. Il ne s'enregistre pas : chaque
+     * lancement du jeu commence mode ADMIN désactivé. La progression de la
      * partie (pièces, collection, deck, rang, rouleaux, donjons, chapitres)
      * n'est jamais modifiée par ce changement.
      */
@@ -184,8 +183,6 @@ public class PlayerProfile {
         if (this.admin == admin) return;
         this.admin = admin;
         loadAdminLoadout();
-        storage.put(KEY_ADMIN, String.valueOf(admin));
-        storage.flush();
     }
 
     /** Recharge le deck et la machine du mode ADMIN (ceux de la partie s'ils ne sont pas valides). */
