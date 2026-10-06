@@ -733,10 +733,6 @@ public class LastDrawCutscene extends Cutscene {
             font.getData().setScale(scale * MathUtils.lerp(3.6f, 2.6f, Interpolation.pow2Out.apply(tie)));
             caption(batch, font, "ÉGALITÉ ! ON RELANCE", width / 2f, height * 0.93f, tie);
         }
-        font.getData().setScale(scale * 2f);
-        float names = progress(ARRIVE + 0.8f, ARRIVE + 1.2f) * (1f - gone);
-        caption(batch, font, "TOI", mine.cx, mine.base - 3.5f * mine.u, names);
-        caption(batch, font, "ELLE", hers.cx, mine.base - 3.5f * mine.u, names);
         if (round >= 0) {                                    // les symboles et leurs rangs restent jusqu'au fondu
             font.getData().setScale(scale * 1.6f);
             if (t >= STOP) plate(batch, label(draw.mine.get(round)), mine.cx, mine.base - 8f * mine.u,

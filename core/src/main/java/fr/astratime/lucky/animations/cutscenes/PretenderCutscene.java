@@ -39,6 +39,10 @@ public class PretenderCutscene extends Cutscene {
     public static final float COVER_START  = 10.1f;
     public static final float COVER_FULL   = 10.8f;
 
+    /** Centre des yeux sur le portrait (34 x 42 pixels), depuis le milieu et le bas : ils ne sont pas symétriques. */
+    private static final float[] EYES_X = {-3f, 4f};
+    private static final float EYES_Y = 24.5f;
+
     /** Les couleurs des trois éclats : la Comète, la Reine, l'Éclat Originel. */
     private static final Color[] SHARDS = {c("ffc93a"), c("e0283a"), c("fff6c8")};
     /** Où brillent les éclats dans la ville (fractions de l'écran). */
@@ -205,8 +209,8 @@ public class PretenderCutscene extends Cutscene {
             float scale = MathUtils.lerp(10f, 15f, Interpolation.pow2In.apply(progress(STARE, COVER_FULL)));
             float baseY = MathUtils.lerp(height * 0.12f, -height * 0.35f, Interpolation.pow2In.apply(
                 progress(STARE, COVER_FULL)));
-            for (int side = -1; side <= 1; side += 2) {
-                glow(batch, width / 2f + side * 3f * scale, baseY + 26f * scale, 5f * scale, GOLD, 0.9f * stare);
+            for (float eye : EYES_X) {
+                glow(batch, width / 2f + eye * scale, baseY + EYES_Y * scale, 4f * scale, GOLD, 0.9f * stare);
             }
         }
         fadeThroughBlack(batch, TABLE_END, 0.25f);
