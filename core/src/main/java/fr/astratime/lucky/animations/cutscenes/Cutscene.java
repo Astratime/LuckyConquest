@@ -297,6 +297,12 @@ public abstract class Cutscene extends Actor implements Disposable {
         if (time < length) fill(batch, Color.BLACK, 1f - Interpolation.pow2Out.apply(time / length));
     }
 
+    /** Changement de plan : l'écran passe au noir jusqu'à {@code at}, puis en ressort, en {@code half} secondes de chaque côté. */
+    protected void fadeThroughBlack(Batch batch, float at, float half) {
+        float k = 1f - Math.abs(time - at) / half;
+        if (k > 0f) fill(batch, Color.BLACK, Interpolation.pow2Out.apply(k));
+    }
+
     /**
      * Dessine un portrait en pixel art centré en bas sur ({@code x}, {@code y}) :
      * {@code shadow} = 1 en ombre noire, 0 en couleurs ; {@code alpha} pour l'apparition.

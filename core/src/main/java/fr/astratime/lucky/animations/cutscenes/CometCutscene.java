@@ -16,9 +16,11 @@ import java.util.Random;
 
 /**
  * Cinématique avant la Comète Dorée (boss du chapitre 1 de la Tour des
- * épreuves) : un ciel nocturne au-dessus d'une ville de casinos, une pluie
- * d'étoiles filantes, puis une météorite en feu qui traverse le ciel et
- * s'écrase derrière la ville. L'explosion s'ouvre en boule de feu et en onde
+ * épreuves) : d'abord la ville de casinos, calme ; les enseignes clignotent,
+ * une machine à sous attend seule dans une rue. Puis le ciel nocturne au-dessus
+ * de la ville, une pluie d'étoiles filantes (l'une tombe en dés). Une météorite
+ * en feu traverse le ciel ; les enseignes grésillent et s'éteignent une à une,
+ * les passants lèvent la tête. Elle s'écrase derrière la ville. L'explosion s'ouvre en boule de feu et en onde
  * de choc, puis tout l'écran passe au blanc ; la présentation du boss apparaît sous le blanc
  * ({@code onWhite}), qui s'estompe ensuite.
  *
@@ -30,20 +32,32 @@ import java.util.Random;
  */
 public class CometCutscene extends Cutscene {
 
+    /** La rue de casinos, calme (voir le son cutscene/comet) ; puis le ciel. */
+    public static final float STREET_END   = 1.5f;
     /** Le ciel sort du noir. */
-    public static final float SKY_IN       = 0.8f;
+    public static final float SKY_IN       = 2.3f;
     /** La pluie d'étoiles filantes s'arrête de grossir. */
-    public static final float STARS_PEAK   = 2.6f;
+    public static final float STARS_PEAK   = 4.1f;
+    /** Une étoile filante tombe en dés. */
+    public static final float DICE_STAR    = 4.6f;
     /** Plus de nouvelles étoiles filantes. */
-    public static final float STARS_END    = 4.2f;
+    public static final float STARS_END    = 6.7f;
     /** La météorite apparaît dans le coin en haut à droite. */
-    public static final float METEOR_START = 3.3f;
-    /** La météorite s'écrase derrière la ville (voir le son cutscene/comet). */
-    public static final float IMPACT       = 5.6f;
+    public static final float METEOR_START = 5.8f;
+    /** Les enseignes grésillent et s'éteignent une à une ; les passants lèvent la tête. */
+    public static final float SIGNS_OUT    = 7.6f;
+    public static final float LOOK_UP      = 7.8f;
+    /** La météorite s'écrase derrière la ville. */
+    public static final float IMPACT       = 9.6f;
     /** L'écran commence à blanchir. */
-    public static final float WHITE_START  = 5.9f;
+    public static final float WHITE_START  = 9.9f;
     /** L'écran est tout blanc : la présentation du boss apparaît dessous. */
-    public static final float WHITE_FULL   = 6.8f;
+    public static final float WHITE_FULL   = 10.8f;
+    /** Les enseignes du premier plan : position (fraction de la largeur) et couleur. */
+    private static final float[] SIGNS     = {0.08f, 0.27f, 0.62f, 0.83f};
+    private static final Color[] NEONS     = {c("ff4fa0"), c("4fd8ff"), c("ffc93a"), c("ff4fa0")};
+    /** Les passants : position (fraction de la largeur). */
+    private static final float[] PEOPLE    = {0.17f, 0.21f, 0.39f, 0.52f, 0.56f, 0.74f, 0.92f};
     private static final int   SKY_BANDS   = 48;
     private static final int   STAR_COUNT  = 170;
     private static final float CITY_SCALE  = 4f;
@@ -60,7 +74,7 @@ public class CometCutscene extends Cutscene {
     private static final Color FIRE_RED    = c("c92a12");
     private static final Color SMOKE       = c("2a1a1e");
 
-    private final TextureRegion  meteor, city, moon;
+    private final TextureRegion  meteor, city, moon, slot, die, walker, watcher;
 
     private final float[] starX = new float[STAR_COUNT], starY = new float[STAR_COUNT];
     private final float[] starSize = new float[STAR_COUNT], starPhase = new float[STAR_COUNT];
@@ -77,6 +91,51 @@ public class CometCutscene extends Cutscene {
         meteor = region(meteorRock(), false);
         city   = region(skyline(), false);
         moon   = region(crescent(), false);
+        Color[] slotColors = {c("140a0a"), c("e0283a"), c("7a0f20"), c("ffc93a"), c("fff6c8"), c("f4ecdc"),
+            c("1a1418"), c("c8c8d4")};
+        slot = art("ordgywkc", slotColors,
+            "...gggggggggg...r",
+            "..gyggyggyggyg..c",
+            "..oooooooooooo..c",
+            "..orrrrrrrrrro..c",
+            "..orwwwwwwwwro..c",
+            "..orwrwwgwwkro.cc",
+            "..orwrwggwwkro.c.",
+            "..orwwwwwwwwrocc.",
+            "..orrrrrrrrrro...",
+            "..orddddddddro...",
+            "..ordkkkkkkdro...",
+            "..orddddddddro...",
+            "..orrrrrrrrrro...",
+            "..orrrrrrrrrro...",
+            "..oooooooooooo...");
+        die = art("owr", new Color[] {c("1a0a0e"), c("f4ecdc"), c("e0283a")},
+            "ooooooo",
+            "owwwwwo",
+            "owrwwwo",
+            "owwrwwo",
+            "owwwrwo",
+            "owwwwwo",
+            "ooooooo");
+        Color[] ink = {c("05030a")};
+        walker = art("o", ink,
+            ".oo.",
+            ".oo.",
+            "oooo",
+            "oooo",
+            "oooo",
+            ".oo.",
+            ".oo.",
+            "o..o");
+        watcher = art("o", ink,
+            "..oo",
+            ".oo.",
+            "oooo",
+            "oooo",
+            "oooo",
+            ".oo.",
+            ".oo.",
+            "o..o");
     }
 
     @Override protected float coverStart() { return WHITE_START; }
@@ -85,7 +144,7 @@ public class CometCutscene extends Cutscene {
     @Override
     protected void reset() {
         streakDebt = flameDebt = 0f;
-        nextRumble = METEOR_START + 0.6f;
+        nextRumble = METEOR_START + 1.0f;
         exploded = false;
         streaks.clear();
         flames.clear();
@@ -107,8 +166,8 @@ public class CometCutscene extends Cutscene {
     protected void simulate(float delta) {
         float width = worldWidth(), height = worldHeight();
         // Étoiles filantes : de plus en plus nombreuses, puis plus aucune.
-        if (time > 0.4f && time < STARS_END) {
-            float rate = time < STARS_PEAK ? MathUtils.lerp(3f, 26f, (time - 0.4f) / (STARS_PEAK - 0.4f))
+        if (time > STREET_END + 0.4f && time < STARS_END) {
+            float rate = time < STARS_PEAK ? MathUtils.lerp(3f, 26f, (time - STREET_END - 0.4f) / (STARS_PEAK - STREET_END - 0.4f))
                 : MathUtils.lerp(26f, 4f, (time - STARS_PEAK) / (STARS_END - STARS_PEAK));
             streakDebt += rate * delta;
             while (streakDebt >= 1f) {
@@ -171,6 +230,12 @@ public class CometCutscene extends Cutscene {
 
     @Override
     protected void drawScene(Batch batch) {
+        if (time < STREET_END) {
+            drawStreet(batch);
+            fadeFromBlack(batch, 0.6f);
+            fadeThroughBlack(batch, STREET_END, 0.25f);
+            return;
+        }
         float width = worldWidth(), height = worldHeight();
         float left = -MARGIN, right = width + MARGIN, bottom = -MARGIN, top = height + MARGIN;
         float horizon = horizonY();
@@ -227,6 +292,7 @@ public class CometCutscene extends Cutscene {
             float head = streak.thickness * 3f;
             batch.draw(soft, streak.x - head / 2f, streak.y - head / 2f, head, head);
         }
+        drawDiceStar(batch);
         // Explosion derrière la ville : boule de feu et onde de choc.
         if (exploded) drawBlast(batch, false);
         // Traîne de feu et météorite.
@@ -246,6 +312,7 @@ public class CometCutscene extends Cutscene {
         }
         batch.setColor(c("0b0712"));
         batch.draw(pixel, left, bottom, right - left, horizon - cityHeight * 0.18f - bottom + 1f);
+        drawForeground(batch, Math.max(glow * glow, blast));
 
         // Devant la ville : l'éclat de l'explosion et les débris.
         batch.setBlendFunction(GL20.GL_SRC_ALPHA, GL20.GL_ONE);
@@ -266,8 +333,107 @@ public class CometCutscene extends Cutscene {
             float flash = 1f - (time - IMPACT) / 0.3f;
             if (flash > 0f) fill(batch, FIRE_HOT, 0.85f * flash);
         }
-        // Le ciel sort du noir.
-        if (time < SKY_IN) fill(batch, Color.BLACK, 1f - Interpolation.pow2Out.apply(time / SKY_IN));
+        fadeThroughBlack(batch, STREET_END, 0.25f);
+    }
+
+    /**
+     * La rue de casinos, avant tout : façades, enseignes au néon qui clignotent,
+     * et une machine à sous seule sur le trottoir, ses ampoules allumées.
+     */
+    private void drawStreet(Batch batch) {
+        float width = worldWidth(), height = worldHeight();
+        float pan = progress(0f, STREET_END) * 60f;
+        fill(batch, c("1a1028"), 1f);
+        float u = height / 80f;
+        for (int i = 0; i < 4; i++) {                                   // façades et vitrines
+            float x = -MARGIN + i * width * 0.28f - pan;
+            batch.setColor(i % 2 == 0 ? c("22152e") : c("2a1a36"));
+            batch.draw(pixel, x, height * 0.25f, width * 0.27f, height * 0.8f);
+            for (int w = 0; w < 3; w++) {
+                batch.setColor(c("ffcf5a").r, c("ffcf5a").g * 0.8f, 0.3f, 0.35f + 0.1f * ((i + w) % 2));
+                batch.draw(pixel, x + width * (0.03f + w * 0.08f), height * 0.62f, width * 0.05f, height * 0.12f);
+            }
+            Color neon = NEONS[i % NEONS.length];                       // l'enseigne, qui clignote
+            boolean on = ((int) (time * 3f) + i) % 3 != 0;
+            float sx = x + width * 0.04f, sy = height * 0.82f, sw = width * 0.19f, sh = height * 0.07f;
+            if (on) glow(batch, sx + sw / 2f, sy + sh / 2f, sw * 1.6f, neon, 0.35f);
+            batch.setColor(on ? neon : tmp.set(neon).mul(0.35f, 0.35f, 0.35f, 1f));
+            batch.draw(pixel, sx, sy, sw, 4f);
+            batch.draw(pixel, sx, sy + sh - 4f, sw, 4f);
+            batch.draw(pixel, sx, sy, 4f, sh);
+            batch.draw(pixel, sx + sw - 4f, sy, 4f, sh);
+            for (int k = 0; k < 5; k++) batch.draw(pixel, sx + sw * (0.12f + k * 0.17f), sy + sh * 0.3f, sw * 0.09f, sh * 0.4f);
+        }
+        batch.setColor(c("0e0816"));                                     // le trottoir
+        batch.draw(pixel, -MARGIN, -MARGIN, width + 2f * MARGIN, height * 0.25f + MARGIN);
+        batch.setColor(c("2a1e36"));
+        batch.draw(pixel, -MARGIN, height * 0.25f - 6f, width + 2f * MARGIN, 6f);
+        // La machine à sous, seule ; ses ampoules clignotent.
+        float scale = 2.8f * u, mx = width * 0.5f - pan * 0.5f, my = height * 0.18f;
+        glow(batch, mx, my + 6f * scale, 40f * scale, c("ffc93a"), 0.3f + 0.1f * MathUtils.sin(time * 6f));
+        batch.setColor(Color.WHITE);
+        batch.draw(slot, mx - slot.getRegionWidth() * scale / 2f, my, slot.getRegionWidth() * scale,
+            slot.getRegionHeight() * scale);
+        for (int k = 0; k < 4; k++) {
+            if (((int) (time * 6f) + k) % 2 == 0) glow(batch, mx + (k - 1.5f) * 3f * scale - 0.5f * scale,
+                my + 13.5f * scale, 3f * scale, c("fff6c8"), 0.8f);
+        }
+    }
+
+    /** Une étoile filante qui tombe en dés : deux dés qui culbutent, avec une petite traîne. */
+    private void drawDiceStar(Batch batch) {
+        if (time < DICE_STAR || time > DICE_STAR + 0.9f) return;
+        float k = progress(DICE_STAR, DICE_STAR + 0.9f);
+        float width = worldWidth(), height = worldHeight();
+        for (int i = 0; i < 2; i++) {
+            float x = MathUtils.lerp(width * 0.2f, width * 0.75f, k) - i * 60f;
+            float y = MathUtils.lerp(height * 0.95f, height * 0.5f, k) + i * 30f;
+            float alpha = Math.min(1f, k * 6f) * (1f - k * k);
+            additive(batch);
+            batch.setColor(1f, 0.95f, 0.8f, 0.6f * alpha);
+            batch.draw(trail, x - 220f, y - 3f, 220f, 3f, 220f, 6f, 1f, 1f, -39f);
+            normal(batch);
+            batch.setColor(1f, 1f, 1f, alpha);
+            sprite(batch, die, x, y, 5f, k * 900f + i * 45f);
+        }
+        additive(batch);
+    }
+
+    /**
+     * Le premier plan : enseignes au néon au bas des façades (elles grésillent
+     * et s'éteignent une à une quand la météorite approche) et passants, qui
+     * lèvent la tête vers le ciel.
+     */
+    private void drawForeground(Batch batch, float fire) {
+        float width = worldWidth(), height = worldHeight();
+        float base = height * 0.05f, u = height / 90f;
+        normal(batch);
+        for (int i = 0; i < SIGNS.length; i++) {
+            float out = SIGNS_OUT + i * 0.35f;
+            boolean on = time < out || (time < out + 0.3f && random.nextFloat() < 0.5f);   // il grésille, puis s'éteint
+            Color neon = NEONS[i];
+            float sx = width * SIGNS[i], sy = base + 10f * u, sw = 22f * u, sh = 6f * u;
+            if (on) glow(batch, sx, sy + sh / 2f, sw * 2f, neon, 0.4f);
+            batch.setColor(on ? neon : tmp.set(neon).mul(0.25f, 0.25f, 0.25f, 1f));
+            batch.draw(pixel, sx - sw / 2f, sy, sw, 0.8f * u);
+            batch.draw(pixel, sx - sw / 2f, sy + sh - 0.8f * u, sw, 0.8f * u);
+            batch.draw(pixel, sx - sw / 2f, sy, 0.8f * u, sh);
+            batch.draw(pixel, sx + sw / 2f - 0.8f * u, sy, 0.8f * u, sh);
+            for (int k = 0; k < 4; k++) batch.draw(pixel, sx - sw / 2f + sw * (0.15f + k * 0.2f), sy + sh * 0.3f, sw * 0.1f, sh * 0.4f);
+            if (time >= out && time < out + 0.3f) {                       // les étincelles du néon qui grille
+                glow(batch, sx + (random.nextFloat() - 0.5f) * sw, sy + sh, 4f * u, Color.WHITE, 0.8f);
+            }
+        }
+        for (int i = 0; i < PEOPLE.length; i++) {
+            boolean looking = time >= LOOK_UP + i * 0.12f;
+            TextureRegion pose = looking ? watcher : walker;
+            float scale = 1.1f * u, x = width * PEOPLE[i];
+            if (fire > 0f) glow(batch, x, base + 8f * scale, 10f * scale, FIRE_ORANGE, 0.35f * fire);   // la lueur du ciel sur eux
+            batch.setColor(Color.WHITE);
+            batch.draw(pose, x - pose.getRegionWidth() * scale / 2f, base, pose.getRegionWidth() * scale,
+                pose.getRegionHeight() * scale);
+        }
+        batch.setBlendFunction(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
     }
 
     private void drawFlames(Batch batch) {

@@ -17,7 +17,9 @@ import java.util.List;
 
 /**
  * Le Dernier tirage de la Machine Originelle, achevée : au sommet de la Tour,
- * ta machine à un rouleau fait face à la sienne. Elle parle (une bulle qui
+ * elle est seule, fissurée, elle crache des étincelles ; ses rouleaux tournent
+ * dans le vide, au ralenti, puis s'arrêtent. Ta machine à un rouleau monte du
+ * sol en face d'elle, son œil se pose sur toi. Elle parle (une bulle qui
  * s'écrit, un clic la fait avancer) : un dernier tirage décidera. Puis c'est
  * au joueur : il saisit son levier à la souris et le tire jusqu'en bas. Son
  * rouleau part, le levier de la Machine descend tout seul, les deux rouleaux
@@ -32,8 +34,14 @@ import java.util.List;
  */
 public class LastDrawCutscene extends Cutscene {
 
-    /** Le décor sort du noir, « DERNIER TIRAGE » s'affiche ; puis elle parle. */
-    public static final float INTRO      = 1.6f;
+    /** Ses rouleaux tournent dans le vide jusque-là (voir le son cutscene/last_draw). */
+    public static final float IDLE_STOP  = 2.0f;
+    /** Ta machine monte du sol. */
+    public static final float RISE_START = 2.0f;
+    public static final float RISE_END   = 3.4f;
+    /** Ta machine est en place : « DERNIER TIRAGE » s'affiche ; puis elle parle. */
+    public static final float ARRIVE     = 4.0f;
+    public static final float INTRO      = ARRIVE + 1.6f;
     // Une manche commence quand ton levier touche le fond (voir le son cutscene/last_draw_round) : ton rouleau part.
     /** Son levier descend tout seul ; son rouleau part. */
     public static final float HER_PULL   = 0.35f;
@@ -86,7 +94,7 @@ public class LastDrawCutscene extends Cutscene {
     private final Sound[] sounds;
     private float end;                                // fin de la dernière manche (-1 : pas encore jouée)
     private int   roundsStarted, landed, herLanded;
-    private boolean tieSaid, verdict, introSaid;
+    private boolean tieSaid, verdict, introSaid, idleStopped, risen;
     private float bright = 1f, mineBright = 1f, sparkDebt;
     /** La bulle de la Machine : ses répliques, celle en cours et quand elle a commencé à s'écrire. */
     private String[] lines;
@@ -171,7 +179,7 @@ public class LastDrawCutscene extends Cutscene {
         coins.clear();
         sparks.clear();
         roundsStarted = landed = herLanded = 0;
-        tieSaid = verdict = introSaid = dragging = false;
+        tieSaid = verdict = introSaid = dragging = idleStopped = risen = false;
         bright = mineBright = 1f;
         sparkDebt = 0f;
         end = -1f;
@@ -309,6 +317,36 @@ public class LastDrawCutscene extends Cutscene {
     @Override
     protected void simulate(float delta) {
         int rounds = draw.mine.size();
+        if (time < ARRIVE + 1f) {                                // fissurée, elle crache des étincelles
+            Mine hers = hers();
+            sparkDebt += MathUtils.lerp(30f, 4f, progress(0f, ARRIVE + 1f)) * delta;
+            while (sparkDebt >= 1f) {
+                sparkDebt -= 1f;
+                Particle spark = particle(hers.cx + (random.nextFloat() - 0.5f) * hers.w,
+                    hers.base + hers.h * (0.2f + 0.8f * random.nextFloat()), 30f + 120f * random.nextFloat(),
+                    150f + 300f * random.nextFloat(), 0.3f + 0.4f * random.nextFloat(), 10f + 12f * random.nextFloat());
+                spark.gravity = 700f;
+                spark.color.set(random.nextBoolean() ? GOLD_LIGHT : c("ff8a3a"));
+                sparks.add(spark);
+            }
+        }
+        if (!idleStopped && time >= IDLE_STOP) {
+            idleStopped = true;
+            rumble(0.15f, 5f);
+        }
+        if (!risen && time >= RISE_END) {                       // ta machine se pose : la poussière
+            risen = true;
+            rumble(0.3f, 10f);
+            Mine mine = mine();
+            for (int i = 0; i < 40; i++) {
+                Particle dust = particle(mine.cx + (random.nextFloat() - 0.5f) * mine.w * 1.4f, mine.base,
+                    random.nextBoolean() ? 10f + 30f * random.nextFloat() : 140f + 30f * random.nextFloat(),
+                    80f + 200f * random.nextFloat(), 0.5f + 0.5f * random.nextFloat(), 30f + 40f * random.nextFloat());
+                dust.drag = 0.2f;
+                dust.color.set(0.55f, 0.5f, 0.6f, 0.6f);
+                sparks.add(dust);
+            }
+        }
         if (!introSaid && time >= INTRO) {
             introSaid = true;
             say(INTRO_LINES);
@@ -393,7 +431,17 @@ public class LastDrawCutscene extends Cutscene {
         float cx, base, u, w, h, reelX, reelY, reelW, reelH, tray;
     }
 
-    private Mine mine() { return place(0.3f, 1f, 26f); }
+    private Mine mine() {
+        Mine m = place(0.3f, 1f, 26f);
+        float rise = 1f - Interpolation.pow2Out.apply(progress(RISE_START, RISE_END));   // elle monte du sol
+        if (rise > 0f) {
+            float drop = rise * (m.h + 30f * m.u);
+            m.base -= drop;
+            m.reelY -= drop;
+            m.tray -= drop;
+        }
+        return m;
+    }
     private Mine hers() { return place(0.7f, 1.12f, 26f); }
 
     private Mine place(float at, float scale, float width) {
@@ -417,21 +465,23 @@ public class LastDrawCutscene extends Cutscene {
         gradient(batch, SKY_LOW, SKY_TOP);
         stars.draw(batch, 1f);
         Mine mine = mine(), hers = hers();
-        // Projecteurs de casino qui balaient les deux machines.
-        float lit = progress(0.3f, 1.2f);
+        // Projecteurs de casino qui balaient les deux machines (le tien s'allume quand ta machine arrive).
+        float lit = progress(0.3f, 1.2f), mineLit = progress(RISE_START, RISE_END);
         additive(batch);
         for (int i = 0; i < 2; i++) {
             float x = i == 0 ? mine.cx : hers.cx, sway = MathUtils.sin(time * 1.3f + i * 2f) * 8f;
-            batch.setColor(i == 0 ? 1f : 1f, i == 0 ? 0.9f : 0.5f, i == 0 ? 0.6f : 0.5f, 0.18f * lit);
+            batch.setColor(i == 0 ? 1f : 1f, i == 0 ? 0.9f : 0.5f, i == 0 ? 0.6f : 0.5f, 0.18f * (i == 0 ? mineLit : lit));
             batch.draw(trail, x, height, 0f, 60f, height * 1.1f, 120f, 1f, 1f, -90f + sway);
         }
         normal(batch);
-        glow(batch, mine.cx, mine.base + mine.h * 0.6f, mine.h * 2.2f, GOLD, 0.25f * lit * mineBright);
+        glow(batch, mine.cx, mine.base + mine.h * 0.6f, mine.h * 2.2f, GOLD, 0.25f * mineLit * mineBright);
         glow(batch, hers.cx, hers.base + hers.h * 0.6f, hers.h * 2.4f, c("6a4aff"), 0.3f * lit);
         glow(batch, hers.cx, hers.base + hers.h * 0.6f, hers.h * 2.0f, EYE_RED, 0.2f * lit * bright
             + (verdict && !draw.playerWins ? 0.45f * progress(end, end + 0.4f) : 0f));
-        drawFloor(batch, width, mine.base);
-        drawPlayerMachine(batch, mine);
+        boolean rising = time < RISE_END;                         // en montant, elle sort de sous les dalles
+        if (rising) drawPlayerMachine(batch, mine);
+        drawFloor(batch, width, hers.base);
+        if (!rising) drawPlayerMachine(batch, mine);
         drawHerMachine(batch, hers);
         drawParticles(batch, sparks);
         drawParticles(batch, coins);
@@ -555,13 +605,17 @@ public class LastDrawCutscene extends Cutscene {
         batch.setColor(b, b, b, 1f);
         sprite(batch, gem, m.cx, gemY, 1.6f * u, 0f);
         float eyeY = m.base + m.h + 5f * u;
-        float stare = (pull > 0f ? 0.6f : 0.25f) + (verdict && !draw.playerWins ? 0.6f : 0f);
+        float stare = (pull > 0f ? 0.6f : 0.25f) + (verdict && !draw.playerWins ? 0.6f : 0f)
+            + 0.8f * Math.max(0f, 1f - Math.abs(time - (RISE_END + 0.3f)) / 0.5f);   // son œil se pose sur toi
         glow(batch, m.cx, eyeY, 16f * u, EYE_RED, stare * b);
         batch.setColor(b, b, b, 1f);
         sprite(batch, eye, m.cx, eyeY, 0.8f * u, 0f);
         bulbs(batch, left + 2f * u, m.base + 11.5f * u, m.w - 4f * u, 8, u, b, 1);
-        drawWindow(batch, m, herStrip, offset(herAt, herStrip.length, HER_DOWN, HER_STOP, Interpolation.pow5Out, 3f), b,
-            herLanded > 0 && herLanded == roundsStarted);
+        drawBodyCracks(batch, m, b);
+        // Avant le duel, ses rouleaux tournent dans le vide, au ralenti, puis s'arrêtent.
+        float idle = roundsStarted == 0 ? 7f * (1f - Interpolation.pow2Out.apply(progress(0.3f, IDLE_STOP))) : 0f;
+        drawWindow(batch, m, herStrip, offset(herAt, herStrip.length, HER_DOWN, HER_STOP, Interpolation.pow5Out, 3f) - idle,
+            b, herLanded > 0 && herLanded == roundsStarted);
         if (draw.playerWins && verdict) drawCrack(batch, m);
         drawTray(batch, m, b);
     }
@@ -610,6 +664,24 @@ public class LastDrawCutscene extends Cutscene {
             0.25f + 0.15f * MathUtils.sin(time * 10f));
     }
 
+    /** Achevée : des fissures sur son corps doré, qui rougeoient. */
+    private void drawBodyCracks(Batch batch, Mine m, float b) {
+        float u = m.u, left = m.cx - m.w / 2f;
+        float[][] cracks = {{0.12f, 0.95f, -60f, 9f}, {0.12f, 0.95f, -100f, 6f}, {0.85f, 0.3f, 70f, 8f},
+            {0.9f, 0.85f, -120f, 7f}, {0.3f, 0.12f, 40f, 6f}};
+        float hot = 0.5f + 0.3f * MathUtils.sin(time * 6f);
+        for (float[] crack : cracks) {
+            float x = left + crack[0] * m.w, y = m.base + crack[1] * m.h;
+            float angle = crack[2], length = crack[3] * u;
+            batch.setColor(OUT.r * b, OUT.g * b, OUT.b * b, 1f);
+            batch.draw(pixel, x, y - 0.5f * u, 0f, 0.5f * u, length, u, 1f, 1f, angle);
+            float ex = x + MathUtils.cosDeg(angle) * length, ey = y + MathUtils.sinDeg(angle) * length;
+            batch.draw(pixel, ex, ey - 0.4f * u, 0f, 0.4f * u, length * 0.5f, 0.8f * u, 1f, 1f, angle + 35f);
+            glow(batch, x + MathUtils.cosDeg(angle) * length / 2f, y + MathUtils.sinDeg(angle) * length / 2f,
+                length * 1.2f, c("ff5a2a"), 0.25f * hot * b);
+        }
+    }
+
     /** Sa vitre se fend : des éclats qui partent du centre. */
     private void drawCrack(Batch batch, Mine m) {
         float k = Interpolation.pow2Out.apply(progress(end, end + 0.25f));
@@ -652,7 +724,7 @@ public class LastDrawCutscene extends Cutscene {
             ? progress(roundStart(round) + ROUND, roundStart(round) + ROUND + 0.2f) : 0f;
         float gone = verdict ? Interpolation.pow2Out.apply(progress(end, end + 0.3f)) : 0f;
         // « DERNIER TIRAGE », qui tombe et s'imprime.
-        float stamp = progress(0.4f, 0.7f);
+        float stamp = progress(ARRIVE + 0.4f, ARRIVE + 0.7f);
         if (stamp > 0f) {
             font.getData().setScale(scale * MathUtils.lerp(4.2f, 2.6f, Interpolation.pow2Out.apply(stamp)));
             caption(batch, font, "DERNIER TIRAGE", width / 2f, height * 0.93f, stamp * (1f - tie) * (1f - gone));
@@ -662,7 +734,7 @@ public class LastDrawCutscene extends Cutscene {
             caption(batch, font, "ÉGALITÉ ! ON RELANCE", width / 2f, height * 0.93f, tie);
         }
         font.getData().setScale(scale * 2f);
-        float names = progress(0.8f, 1.2f) * (1f - gone);
+        float names = progress(ARRIVE + 0.8f, ARRIVE + 1.2f) * (1f - gone);
         caption(batch, font, "TOI", mine.cx, mine.base - 3.5f * mine.u, names);
         caption(batch, font, "ELLE", hers.cx, mine.base - 3.5f * mine.u, names);
         if (round >= 0) {                                    // les symboles et leurs rangs restent jusqu'au fondu
