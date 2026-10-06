@@ -2,6 +2,7 @@ package fr.astratime.lucky.entities.effects;
 
 import fr.astratime.lucky.entities.context.PlayContext;
 import fr.astratime.lucky.entities.context.TurnContext;
+import fr.astratime.lucky.i18n.Lang;
 import fr.astratime.lucky.popups.EffectPopup;
 import fr.astratime.lucky.popups.EffectSound;
 import fr.astratime.lucky.popups.PopupScale;
@@ -23,11 +24,12 @@ public class DynamiteEffect extends Effect {
     public void apply(TurnContext context) { context.getCombatContext().addDynamite(percent); }
 
     @Override
-    public String getDescription() { return "Dégâts égaux à " + percent + " % des PV max de l'ennemi. Ignore sa peau d'or et sa défense."; }
+    public String getDescription() { return Lang.f("Dégâts égaux à {0} % des PV max de l'ennemi. Ignore sa peau d'or et sa défense.",
+        percent); }
 
     @Override
     public List<EffectPopup> getPopups() {
-        return List.of(new EffectPopup("DYNAMITE : " + percent + " % DES PV", EffectPopup.Style.ATTACK, PopupScale.SECONDARY_INTENSITY));
+        return List.of(new EffectPopup(Lang.f("DYNAMITE : {0} % DES PV", percent), EffectPopup.Style.ATTACK, PopupScale.SECONDARY_INTENSITY));
     }
 
     @Override

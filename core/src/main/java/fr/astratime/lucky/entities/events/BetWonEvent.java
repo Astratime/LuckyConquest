@@ -1,6 +1,7 @@
 package fr.astratime.lucky.entities.events;
 
 import fr.astratime.lucky.entities.Symbol;
+import fr.astratime.lucky.i18n.Lang;
 import fr.astratime.lucky.popups.EffectPopup;
 import fr.astratime.lucky.popups.PopupScale;
 
@@ -30,7 +31,7 @@ public class BetWonEvent extends GainsEarnedEvent {
     @Override
     public List<EffectPopup> getPopups() {
         return List.of(
-            new EffectPopup("PARI GAGNÉ ! GAINS x" + multiplier, EffectPopup.Style.GAINS, PopupScale.MAX_INTENSITY),
-            EffectPopup.scaled("GAINS +" + amount, EffectPopup.Style.GAINS, amount, PopupScale.SPIN_GAINS));
+            new EffectPopup(Lang.f("PARI GAGNÉ ! GAINS x{0}", multiplier), EffectPopup.Style.GAINS, PopupScale.MAX_INTENSITY),
+            EffectPopup.scaled(Lang.f("GAINS +{0}", amount), EffectPopup.Style.GAINS, amount, PopupScale.SPIN_GAINS));
     }
 }

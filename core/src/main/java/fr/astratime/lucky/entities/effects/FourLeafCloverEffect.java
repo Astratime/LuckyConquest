@@ -3,6 +3,7 @@ package fr.astratime.lucky.entities.effects;
 import fr.astratime.lucky.entities.Symbol;
 import fr.astratime.lucky.entities.SymbolRegistry;
 import fr.astratime.lucky.entities.context.TurnContext;
+import fr.astratime.lucky.i18n.Lang;
 import fr.astratime.lucky.popups.EffectPopup;
 import fr.astratime.lucky.popups.EffectSound;
 import fr.astratime.lucky.popups.PopupScale;
@@ -37,16 +38,16 @@ public class FourLeafCloverEffect extends Effect {
 
     @Override
     public String getDescription() {
-        if (gainMultiplierAdd == 0) return "Les symboles de gain sortent plus souvent"; // Rhum
-        return "Multiplicateur de gains +" + gainMultiplierAdd + ". Les symboles de gain sortent plus souvent";
+        if (gainMultiplierAdd == 0) return Lang.t("Les symboles de gain sortent plus souvent"); // Rhum
+        return Lang.f("Multiplicateur de gains +{0}. Les symboles de gain sortent plus souvent", gainMultiplierAdd);
     }
 
     @Override
     public List<EffectPopup> getPopups() {
-        EffectPopup luck = new EffectPopup("CHANCE DE GAINS", EffectPopup.Style.GAINS, PopupScale.SECONDARY_INTENSITY);
+        EffectPopup luck = new EffectPopup(Lang.t("CHANCE DE GAINS"), EffectPopup.Style.GAINS, PopupScale.SECONDARY_INTENSITY);
         if (gainMultiplierAdd == 0) return List.of(luck);
         return List.of(
-            EffectPopup.scaled("GAINS x+" + gainMultiplierAdd, EffectPopup.Style.GAINS, gainMultiplierAdd, PopupScale.CARD_GAIN_MULTIPLIER),
+            EffectPopup.scaled(Lang.f("GAINS x+{0}", gainMultiplierAdd), EffectPopup.Style.GAINS, gainMultiplierAdd, PopupScale.CARD_GAIN_MULTIPLIER),
             luck);
     }
 

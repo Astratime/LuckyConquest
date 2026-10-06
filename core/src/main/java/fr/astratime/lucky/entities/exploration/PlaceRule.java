@@ -1,5 +1,7 @@
 package fr.astratime.lucky.entities.exploration;
 
+import fr.astratime.lucky.i18n.Lang;
+
 /**
  * La règle d'un lieu de l'Exploration : elle joue dans tous ses combats, contre
  * le joueur seul. La Bulle d'air l'annule quelques tours.
@@ -50,9 +52,9 @@ public enum PlaceRule {
     }
 
     /** @return le nom de la règle (ex : "Scorbut"), ou {@code null} sans règle. */
-    public String getName() { return name; }
+    public String getName() { return Lang.t(name); }
     /** @return la règle, en quelques phrases courtes, ou {@code null} sans règle. */
-    public String getDescription() { return description; }
+    public String getDescription() { return Lang.t(description); }
 
     /** @return {@code true} si le Scorbut remplace une carte de la main au tour {@code turn} (à partir de 1). */
     public boolean scurvyArrives(int turn) {

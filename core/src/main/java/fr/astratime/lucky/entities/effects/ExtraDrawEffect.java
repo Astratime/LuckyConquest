@@ -2,6 +2,7 @@ package fr.astratime.lucky.entities.effects;
 
 import fr.astratime.lucky.entities.context.PlayContext;
 import fr.astratime.lucky.entities.context.TurnContext;
+import fr.astratime.lucky.i18n.Lang;
 import fr.astratime.lucky.popups.EffectPopup;
 import fr.astratime.lucky.popups.EffectSound;
 import fr.astratime.lucky.popups.PopupScale;
@@ -31,12 +32,13 @@ public class ExtraDrawEffect extends Effect {
     public void apply(TurnContext context) { }
 
     @Override
-    public String getDescription() { return "Piochez " + extraCards + (extraCards > 1 ? " cartes" : " carte"); }
+    public String getDescription() { return Lang.f(extraCards > 1 ? "Piochez {0} cartes" : "Piochez {0} carte",
+        extraCards); }
 
     @Override
     public List<EffectPopup> getPopups() {
         return List.of(
-            EffectPopup.scaled("PIOCHE +" + extraCards, EffectPopup.Style.DRAW, extraCards, PopupScale.CARD_EXTRA_DRAW)
+            EffectPopup.scaled(Lang.f("PIOCHE +{0}", extraCards), EffectPopup.Style.DRAW, extraCards, PopupScale.CARD_EXTRA_DRAW)
         );
     }
 

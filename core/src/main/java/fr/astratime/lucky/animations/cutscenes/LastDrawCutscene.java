@@ -11,6 +11,7 @@ import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.utils.Array;
 import fr.astratime.lucky.entities.Symbol;
 import fr.astratime.lucky.entities.events.LastDrawEvent;
+import fr.astratime.lucky.i18n.Lang;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -234,7 +235,8 @@ public class LastDrawCutscene extends Cutscene {
 
     /** La Machine dit {@code said}, une réplique après l'autre. */
     private void say(String... said) {
-        lines = said;
+        lines = new String[said.length];
+        for (int i = 0; i < said.length; i++) lines[i] = Lang.t(said[i]);
         line = 0;
         lineAt = time;
     }
@@ -727,16 +729,16 @@ public class LastDrawCutscene extends Cutscene {
         float stamp = progress(ARRIVE + 0.4f, ARRIVE + 0.7f);
         if (stamp > 0f) {
             font.getData().setScale(scale * MathUtils.lerp(4.2f, 2.6f, Interpolation.pow2Out.apply(stamp)));
-            caption(batch, font, "DERNIER TIRAGE", width / 2f, height * 0.93f, stamp * (1f - tie) * (1f - gone));
+            caption(batch, font, Lang.t("DERNIER TIRAGE"), width / 2f, height * 0.93f, stamp * (1f - tie) * (1f - gone));
         }
         if (tie > 0f) {
             font.getData().setScale(scale * MathUtils.lerp(3.6f, 2.6f, Interpolation.pow2Out.apply(tie)));
-            caption(batch, font, "ÉGALITÉ ! ON RELANCE", width / 2f, height * 0.93f, tie);
+            caption(batch, font, Lang.t("ÉGALITÉ ! ON RELANCE"), width / 2f, height * 0.93f, tie);
         }
         font.getData().setScale(scale * 2f);
         float names = progress(ARRIVE + 0.8f, ARRIVE + 1.2f) * (1f - gone);
-        caption(batch, font, "TOI", mine.cx, mine.base - 3.5f * mine.u, names);
-        caption(batch, font, "ELLE", hers.cx, mine.base - 3.5f * mine.u, names);
+        caption(batch, font, Lang.t("TOI"), mine.cx, mine.base - 3.5f * mine.u, names);
+        caption(batch, font, Lang.t("ELLE"), hers.cx, mine.base - 3.5f * mine.u, names);
         if (round >= 0) {                                    // les symboles et leurs rangs restent jusqu'au fondu
             font.getData().setScale(scale * 1.6f);
             if (t >= STOP) plate(batch, label(draw.mine.get(round)), mine.cx, mine.base - 8f * mine.u,
@@ -754,7 +756,7 @@ public class LastDrawCutscene extends Cutscene {
         }
         if (verdict) {
             font.getData().setScale(scale * MathUtils.lerp(4.6f, 3f, gone));
-            caption(batch, font, draw.playerWins ? "TU GAGNES !" : "LA MACHINE GAGNE", width / 2f, height * 0.93f, gone);
+            caption(batch, font, draw.playerWins ? Lang.t("TU GAGNES !") : Lang.t("LA MACHINE GAGNE"), width / 2f, height * 0.93f, gone);
         }
         font.getData().setScale(scale);
     }
@@ -765,7 +767,7 @@ public class LastDrawCutscene extends Cutscene {
         float pulse = 0.8f + 0.2f * MathUtils.sin(time * 6f), u = m.u;
         float scale = font.getData().scaleX;
         font.getData().setScale(scale * (2.3f + 0.15f * MathUtils.sin(time * 6f)));
-        caption(batch, font, "TIRE LE LEVIER !", m.cx, m.base + m.h + 15f * u, pulse);
+        caption(batch, font, Lang.t("TIRE LE LEVIER !"), m.cx, m.base + m.h + 15f * u, pulse);
         font.getData().setScale(scale);
         float x = m.cx - m.w / 2f - 12f * u, y = m.base + m.h * 0.95f - (time * 30f * u % (16f * u));
         for (int i = 0; i < 3; i++) {                                  // chevron vers le bas
@@ -830,7 +832,7 @@ public class LastDrawCutscene extends Cutscene {
     }
 
     private static String label(Symbol symbol) {
-        return symbol.getDisplayName() + "  -  RANG " + LastDrawEvent.score(symbol);
+        return Lang.f("{0}  -  RANG {1}", symbol.getDisplayName(), LastDrawEvent.score(symbol));
     }
 
     /** Un rectangle de couleur {@code color}, d'opacité {@code alpha}. */

@@ -2,6 +2,7 @@ package fr.astratime.lucky.entities.effects;
 
 import fr.astratime.lucky.entities.Symbol;
 import fr.astratime.lucky.entities.context.TurnContext;
+import fr.astratime.lucky.i18n.Lang;
 import fr.astratime.lucky.popups.EffectPopup;
 import fr.astratime.lucky.popups.EffectSound;
 import fr.astratime.lucky.popups.PopupScale;
@@ -22,11 +23,11 @@ public class BetOnSymbolEffect extends Effect {
     }
 
     @Override
-    public String getDescription() { return "Pari sur " + symbol.getDisplayName(); }
+    public String getDescription() { return Lang.f("Pari sur {0}", symbol.getDisplayName()); }
 
     @Override
     public List<EffectPopup> getPopups() {
-        return List.of(new EffectPopup("PARI SUR " + symbol.getDisplayName(), EffectPopup.Style.GAINS,
+        return List.of(new EffectPopup(Lang.f("PARI SUR {0}", symbol.getDisplayName()), EffectPopup.Style.GAINS,
             PopupScale.MAX_INTENSITY));
     }
 

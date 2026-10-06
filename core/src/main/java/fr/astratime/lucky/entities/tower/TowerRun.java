@@ -2,6 +2,7 @@ package fr.astratime.lucky.entities.tower;
 
 import fr.astratime.lucky.entities.enemy.EnemyKind;
 import fr.astratime.lucky.entities.run.CombatRun;
+import fr.astratime.lucky.i18n.Lang;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -62,7 +63,7 @@ public class TowerRun implements CombatRun {
     /** @return {@code true} en mode difficile. */
     public boolean isHard() { return hard; }
     @Override
-    public String getLabel() { return hard ? chapter.getLabel() + " difficile" : chapter.getLabel(); }
+    public String getLabel() { return hard ? Lang.f("{0} difficile", chapter.getLabel()) : chapter.getLabel(); }
     @Override
     public String getEnding() { return chapter.getEnding(); }
 

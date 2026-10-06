@@ -2,6 +2,7 @@ package fr.astratime.lucky.entities.effects;
 
 import fr.astratime.lucky.entities.context.PlayContext;
 import fr.astratime.lucky.entities.context.TurnContext;
+import fr.astratime.lucky.i18n.Lang;
 import fr.astratime.lucky.popups.EffectPopup;
 import fr.astratime.lucky.popups.EffectSound;
 import fr.astratime.lucky.popups.PopupScale;
@@ -25,11 +26,11 @@ public class TreasureMapEffect extends Effect {
     public void apply(TurnContext context) { }
 
     @Override
-    public String getDescription() { return "Si tu vides ce donjon, son coffre donne une carte de plus."; }
+    public String getDescription() { return Lang.t("Si tu vides ce donjon, son coffre donne une carte de plus."); }
 
     @Override
     public List<EffectPopup> getPopups() {
-        return List.of(new EffectPopup("COFFRE : UNE CARTE DE PLUS", EffectPopup.Style.GAINS, PopupScale.SECONDARY_INTENSITY));
+        return List.of(new EffectPopup(Lang.t("COFFRE : UNE CARTE DE PLUS"), EffectPopup.Style.GAINS, PopupScale.SECONDARY_INTENSITY));
     }
 
     @Override

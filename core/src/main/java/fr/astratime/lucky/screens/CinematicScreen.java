@@ -43,6 +43,7 @@ import fr.astratime.lucky.entities.events.LastDrawEvent;
 import fr.astratime.lucky.entities.exploration.Dungeon;
 import fr.astratime.lucky.entities.exploration.Place;
 import fr.astratime.lucky.entities.tower.Chapter;
+import fr.astratime.lucky.i18n.Lang;
 import fr.astratime.lucky.settings.AudioSettings;
 import fr.astratime.lucky.settings.VisualSettings;
 import fr.astratime.lucky.views.CasinoButtons;
@@ -153,7 +154,7 @@ public class CinematicScreen extends ScreenAdapter {
         veil = new Image(pixel);
         veil.setColor(0f, 0f, 0f, 0.6f);
         veil.setTouchable(Touchable.disabled);
-        title = new Label("CINÉMATIQUES", new Label.LabelStyle(titleFont, Color.WHITE));
+        title = new Label(Lang.t("CINÉMATIQUES"), new Label.LabelStyle(titleFont, Color.WHITE));
         title.pack();
         listPanel   = new Image(hud.panelDrawable());
         detailPanel = new Image(hud.panelDrawable());
@@ -188,8 +189,8 @@ public class CinematicScreen extends ScreenAdapter {
         description = new Label("", new Label.LabelStyle(bodyFont, Color.WHITE));
         description.setWrap(true);
         description.setAlignment(Align.topLeft);
-        playButton  = buttons.createAction("Lancer", clickSound, this::launch);
-        backButton  = buttons.create("Retour", clickSound, this::onBack);
+        playButton  = buttons.createAction(Lang.t("Lancer"), clickSound, this::launch);
+        backButton  = buttons.create(Lang.t("Retour"), clickSound, this::onBack);
 
         fade = new Image(pixel);
         fade.setColor(Color.BLACK);
@@ -227,38 +228,39 @@ public class CinematicScreen extends ScreenAdapter {
         for (Chapter chapter : Chapter.values()) {
             EnemyKind boss = chapter.getBoss();
             bosses.add(new Entry(chapter.getNumber() + ". " + boss.getDisplayName(),
-                chapter.getLabel() + ", « " + chapter.getTitle() + " » : avant le combat contre le boss.",
+                Lang.f("{0}, « {1} » : avant le combat contre le boss.", chapter.getLabel(), chapter.getTitle()),
                 enemyTextures.portrait(boss), kit -> Cutscenes.beforeBoss(kit, boss)));
         }
-        addGroup("Tour : boss", "Les boss de la Tour", bosses);
+        addGroup(Lang.t("Tour : boss"), Lang.t("Les boss de la Tour"), bosses);
 
         List<Entry> endings = new ArrayList<>();
         Symbol[] reels = Symbol.classicReels().toArray(new Symbol[0]);
-        endings.add(new Entry("Duel des leviers : victoire",
-            "Le Dernier tirage de la Machine Originelle. Tire ton levier à la souris. "
-                + "Une égalité, puis tu gagnes.",
+        endings.add(new Entry(Lang.t("Duel des leviers : victoire"),
+            Lang.t("Le Dernier tirage de la Machine Originelle. Tire ton levier à la souris. Une égalité, puis tu "
+                + "gagnes."),
             enemyTextures.portrait(EnemyKind.MACHINE_ORIGINELLE),
             kit -> new LastDrawCutscene(kit, new LastDrawEvent(List.of(reels),
                 List.of(Symbol.BELL, Symbol.SEVEN), List.of(Symbol.BELL, Symbol.GOLD_BAR), true))));
-        endings.add(new Entry("Duel des leviers : défaite",
-            "Le Dernier tirage de la Machine Originelle. Tire ton levier à la souris. La Machine gagne.",
+        endings.add(new Entry(Lang.t("Duel des leviers : défaite"),
+            Lang.t("Le Dernier tirage de la Machine Originelle. Tire ton levier à la souris. La Machine gagne."),
             enemyTextures.portrait(EnemyKind.MACHINE_ORIGINELLE),
             kit -> new LastDrawCutscene(kit, new LastDrawEvent(List.of(reels),
                 List.of(Symbol.CHERRY), List.of(Symbol.DIAMOND), false))));
         for (Chapter chapter : List.of(Chapter.DERNIER_TIRAGE, Chapter.LE_JACKPOT)) { // voir Cutscenes.ending
-            endings.add(new Entry("Fin du " + chapter.getLabel().toLowerCase(),
-                "La fin de « " + chapter.getTitle() + " », après la victoire contre "
-                    + chapter.getBoss().getDisplayName() + ".",
+            endings.add(new Entry(Lang.f("Fin du {0}", chapter.getLabel().toLowerCase()),
+                Lang.f("La fin de « {0} », après la victoire contre {1}.",
+                    chapter.getTitle(), chapter.getBoss().getDisplayName()),
                 enemyTextures.chapterArt(chapter), kit -> Cutscenes.ending(kit, chapter)));
         }
-        addGroup("Tour : fins", "Le duel et les fins", endings);
+        addGroup(Lang.t("Tour : fins"), Lang.t("Le duel et les fins"), endings);
 
         for (Place place : Place.values()) {
             List<Entry> kings = new ArrayList<>();
             for (Dungeon dungeon : place.getDungeons()) {
                 EnemyKind king = dungeon.getKing();
                 kings.add(new Entry(king.getDisplayName(),
-                    place.getName() + ", « " + dungeon.getName() + " » : l'entrée en scène du roi, après le soldat.",
+                    Lang.f("{0}, « {1} » : l'entrée en scène du roi, après le soldat.",
+                        place.getName(), dungeon.getName()),
                     enemyTextures.portrait(king), kit -> Cutscenes.beforeBoss(kit, king)));
             }
             addGroup(place.getShortName(), place.getName(), kings);

@@ -1,6 +1,7 @@
 package fr.astratime.lucky.entities.effects;
 
 import fr.astratime.lucky.entities.context.TurnContext;
+import fr.astratime.lucky.i18n.Lang;
 import fr.astratime.lucky.popups.EffectPopup;
 import fr.astratime.lucky.popups.EffectSound;
 import fr.astratime.lucky.popups.PopupScale;
@@ -25,13 +26,13 @@ public class HeartDrainEffect extends Effect {
 
     @Override
     public String getDescription() {
-        return "Drain de vie : soigne de " + percent + "% des dégâts infligés. Le surplus remplit le Sang";
+        return Lang.f("Drain de vie : soigne de {0}% des dégâts infligés. Le surplus remplit le Sang", percent);
     }
 
     @Override
     public List<EffectPopup> getPopups() {
         return List.of(
-            EffectPopup.scaled("DRAIN DE VIE +" + percent + "%", EffectPopup.Style.DRAIN, percent, PopupScale.CARD_DRAIN_PERCENT)
+            EffectPopup.scaled(Lang.f("DRAIN DE VIE +{0}%", percent), EffectPopup.Style.DRAIN, percent, PopupScale.CARD_DRAIN_PERCENT)
         );
     }
 

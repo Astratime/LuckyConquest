@@ -2,6 +2,7 @@ package fr.astratime.lucky.entities.effects;
 
 import fr.astratime.lucky.entities.context.PlayContext;
 import fr.astratime.lucky.entities.context.TurnContext;
+import fr.astratime.lucky.i18n.Lang;
 import fr.astratime.lucky.popups.EffectPopup;
 import fr.astratime.lucky.popups.EffectSound;
 import fr.astratime.lucky.popups.PopupScale;
@@ -33,7 +34,7 @@ public class SafeEffect extends Effect {
         context.getLastingEffects().addSafe(stored * 2, turns);
         List<EffectPopup> popups = new ArrayList<>(getPopups());
         if (stored > 0) {
-            popups.add(EffectPopup.scaled("GAINS -" + stored, EffectPopup.Style.DAMAGE, stored, PopupScale.SPIN_GAINS));
+            popups.add(EffectPopup.scaled(Lang.f("GAINS -{0}", stored), EffectPopup.Style.DAMAGE, stored, PopupScale.SPIN_GAINS));
         }
         context.addPopups(popups);
     }
@@ -44,12 +45,12 @@ public class SafeEffect extends Effect {
 
     @Override
     public String getDescription() {
-        return "Mets " + percent + " % de tes gains de côté. Ils reviennent x2 dans " + turns + " tours.";
+        return Lang.f("Mets {0} % de tes gains de côté. Ils reviennent x2 dans {1} tours.", percent, turns);
     }
 
     @Override
     public List<EffectPopup> getPopups() {
-        return List.of(new EffectPopup("COFFRE-FORT : " + percent + " % DES GAINS", EffectPopup.Style.GAINS,
+        return List.of(new EffectPopup(Lang.f("COFFRE-FORT : {0} % DES GAINS", percent), EffectPopup.Style.GAINS,
             PopupScale.MAX_INTENSITY));
     }
 

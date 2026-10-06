@@ -3,6 +3,7 @@ package fr.astratime.lucky.entities.effects;
 import fr.astratime.lucky.entities.context.CombatContext;
 import fr.astratime.lucky.entities.context.PlayContext;
 import fr.astratime.lucky.entities.context.TurnContext;
+import fr.astratime.lucky.i18n.Lang;
 import fr.astratime.lucky.popups.EffectPopup;
 import fr.astratime.lucky.popups.EffectSound;
 import fr.astratime.lucky.popups.PopupScale;
@@ -43,15 +44,15 @@ public class FortuneEffect extends Effect {
 
     @Override
     public String getDescription() {
-        String attack = "Attaque +" + attackPercent + "% des gains";
-        return gainFactor > 1 ? "Gains x" + gainFactor + ". " + attack : attack;
+        String attack = Lang.f("Attaque +{0}% des gains", attackPercent);
+        return gainFactor > 1 ? Lang.f("Gains x{0}. {1}", gainFactor, attack) : attack;
     }
 
     @Override
     public List<EffectPopup> getPopups() {
         List<EffectPopup> popups = new ArrayList<>();
-        if (gainFactor > 1) popups.add(new EffectPopup("GAINS x" + gainFactor, EffectPopup.Style.GAINS, PopupScale.MAX_INTENSITY));
-        popups.add(new EffectPopup("ATTAQUE +" + attackPercent + "% DES GAINS", EffectPopup.Style.ATTACK, PopupScale.SECONDARY_INTENSITY));
+        if (gainFactor > 1) popups.add(new EffectPopup(Lang.f("GAINS x{0}", gainFactor), EffectPopup.Style.GAINS, PopupScale.MAX_INTENSITY));
+        popups.add(new EffectPopup(Lang.f("ATTAQUE +{0}% DES GAINS", attackPercent), EffectPopup.Style.ATTACK, PopupScale.SECONDARY_INTENSITY));
         return popups;
     }
 

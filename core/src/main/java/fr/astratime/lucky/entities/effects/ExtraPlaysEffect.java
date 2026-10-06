@@ -2,6 +2,7 @@ package fr.astratime.lucky.entities.effects;
 
 import fr.astratime.lucky.entities.context.PlayContext;
 import fr.astratime.lucky.entities.context.TurnContext;
+import fr.astratime.lucky.i18n.Lang;
 import fr.astratime.lucky.popups.EffectPopup;
 import fr.astratime.lucky.popups.EffectSound;
 import fr.astratime.lucky.popups.PopupScale;
@@ -38,14 +39,14 @@ public class ExtraPlaysEffect extends Effect {
 
     @Override
     public String getDescription() {
-        return plays + " cartes jouables par tour pendant " + turns + " tours (celui-ci compris)";
+        return Lang.f("{0} cartes jouables par tour pendant {1} tours (celui-ci compris)", plays, turns);
     }
 
     @Override
     public List<EffectPopup> getPopups() {
         return List.of(
-            new EffectPopup("DANS LA MANCHE !", EffectPopup.Style.SPECIAL, PopupScale.MAX_INTENSITY),
-            new EffectPopup(plays + " CARTES PAR TOUR (" + turns + " TOURS)", EffectPopup.Style.DRAW,
+            new EffectPopup(Lang.t("DANS LA MANCHE !"), EffectPopup.Style.SPECIAL, PopupScale.MAX_INTENSITY),
+            new EffectPopup(Lang.f("{0} CARTES PAR TOUR ({1} TOURS)", plays, turns), EffectPopup.Style.DRAW,
                 PopupScale.SECONDARY_INTENSITY));
     }
 

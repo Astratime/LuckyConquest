@@ -2,6 +2,7 @@ package fr.astratime.lucky.entities.effects;
 
 import fr.astratime.lucky.entities.context.PlayContext;
 import fr.astratime.lucky.entities.context.TurnContext;
+import fr.astratime.lucky.i18n.Lang;
 import fr.astratime.lucky.popups.EffectPopup;
 import fr.astratime.lucky.popups.EffectSound;
 import fr.astratime.lucky.popups.PopupScale;
@@ -24,11 +25,11 @@ public class CarbideLampEffect extends Effect {
     public void apply(TurnContext context) { }
 
     @Override
-    public String getDescription() { return "Annule le prochain coup de grisou."; }
+    public String getDescription() { return Lang.t("Annule le prochain coup de grisou."); }
 
     @Override
     public List<EffectPopup> getPopups() {
-        return List.of(new EffectPopup("LAMPE : GRISOU ÉVITÉ", EffectPopup.Style.DEFENSE, PopupScale.SECONDARY_INTENSITY));
+        return List.of(new EffectPopup(Lang.t("LAMPE : GRISOU ÉVITÉ"), EffectPopup.Style.DEFENSE, PopupScale.SECONDARY_INTENSITY));
     }
 
     @Override

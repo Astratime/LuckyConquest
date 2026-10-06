@@ -1,5 +1,6 @@
 package fr.astratime.lucky.entities.events;
 
+import fr.astratime.lucky.i18n.Lang;
 import fr.astratime.lucky.popups.EffectPopup;
 import fr.astratime.lucky.popups.PopupScale;
 
@@ -22,8 +23,8 @@ public class GainsStolenEvent extends GainsLostEvent {
     @Override
     public List<EffectPopup> getPopups() {
         List<EffectPopup> popups = new ArrayList<>();
-        popups.add(EffectPopup.scaled("GAINS VOLÉS -" + amount, EffectPopup.Style.DAMAGE, amount, PopupScale.SPIN_GAINS));
-        if (attack > 0) popups.add(new EffectPopup("ATTAQUE +" + attack, EffectPopup.Style.ATTACK, PopupScale.SECONDARY_INTENSITY));
+        popups.add(EffectPopup.scaled(Lang.f("GAINS VOLÉS -{0}", amount), EffectPopup.Style.DAMAGE, amount, PopupScale.SPIN_GAINS));
+        if (attack > 0) popups.add(new EffectPopup(Lang.f("ATTAQUE +{0}", attack), EffectPopup.Style.ATTACK, PopupScale.SECONDARY_INTENSITY));
         return popups;
     }
 }

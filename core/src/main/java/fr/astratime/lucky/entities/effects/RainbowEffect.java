@@ -2,6 +2,7 @@ package fr.astratime.lucky.entities.effects;
 
 import fr.astratime.lucky.entities.context.PlayContext;
 import fr.astratime.lucky.entities.context.TurnContext;
+import fr.astratime.lucky.i18n.Lang;
 import fr.astratime.lucky.popups.EffectPopup;
 import fr.astratime.lucky.popups.EffectSound;
 import fr.astratime.lucky.popups.PopupScale;
@@ -33,12 +34,13 @@ public class RainbowEffect extends Effect {
 
     @Override
     public String getDescription() {
-        return "Toute la main prend une même suite, tirée au hasard, jusqu'à la fin du tour. Ajoute un Pot de Lutin sur la table";
+        return Lang.t("Toute la main prend une même suite, tirée au hasard, jusqu'à la fin du tour. Ajoute un Pot de "
+            + "Lutin sur la table");
     }
 
     @Override
     public List<EffectPopup> getPopups() {
-        return List.of(new EffectPopup("ARC-EN-CIEL !", EffectPopup.Style.SPECIAL, PopupScale.MAX_INTENSITY));
+        return List.of(new EffectPopup(Lang.t("ARC-EN-CIEL !"), EffectPopup.Style.SPECIAL, PopupScale.MAX_INTENSITY));
     }
 
     @Override

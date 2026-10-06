@@ -1,6 +1,7 @@
 package fr.astratime.lucky.entities.effects;
 
 import fr.astratime.lucky.entities.context.TurnContext;
+import fr.astratime.lucky.i18n.Lang;
 import fr.astratime.lucky.popups.EffectPopup;
 import fr.astratime.lucky.popups.EffectSound;
 import fr.astratime.lucky.popups.PopupScale;
@@ -21,7 +22,7 @@ public class MultiplierEffect extends Effect {
     }
 
     @Override
-    public String getDescription() { return "Gains x+" + amount; }
+    public String getDescription() { return Lang.f("Gains x+{0}", amount); }
 
     /** @return le montant sans décimale inutile (2.0 -> "2", 1.5 -> "1.5"). */
     private String formatAmount() {
@@ -31,7 +32,7 @@ public class MultiplierEffect extends Effect {
     @Override
     public List<EffectPopup> getPopups() {
         return List.of(
-            EffectPopup.scaled("GAINS x+" + formatAmount(), EffectPopup.Style.GAINS, amount, PopupScale.CARD_GAIN_MULTIPLIER)
+            EffectPopup.scaled(Lang.f("GAINS x+{0}", formatAmount()), EffectPopup.Style.GAINS, amount, PopupScale.CARD_GAIN_MULTIPLIER)
         );
     }
 

@@ -37,6 +37,7 @@ import fr.astratime.lucky.assets.Palette;
 import fr.astratime.lucky.assets.VolumeSound;
 import fr.astratime.lucky.entities.Card;
 import fr.astratime.lucky.entities.Symbol;
+import fr.astratime.lucky.i18n.Lang;
 import fr.astratime.lucky.loaders.CardLoader;
 import fr.astratime.lucky.progress.DeckDraft;
 import fr.astratime.lucky.progress.MachineDraft;
@@ -183,16 +184,16 @@ public class CroupierTableScreen extends ScreenAdapter {
         veil = new Image(pixel);
         veil.setColor(0f, 0f, 0f, 0.65f);
         veil.setTouchable(Touchable.disabled);
-        title = new Label("TABLE DU CROUPIER", new Label.LabelStyle(titleFont, Color.WHITE));
+        title = new Label(Lang.t("TABLE DU CROUPIER"), new Label.LabelStyle(titleFont, Color.WHITE));
         title.pack();
         collectionPanel = new Image(hud.panelDrawable());
         deckPanel       = new Image(hud.panelDrawable());
         collectionPanel.setTouchable(Touchable.disabled);
         deckPanel.setTouchable(Touchable.disabled);
-        collectionHead = new Label("MA COLLECTION", new Label.LabelStyle(headFont, Color.WHITE));
-        deckHead       = new Label("MON DECK", new Label.LabelStyle(headFont, Color.WHITE));
+        collectionHead = new Label(Lang.t("MA COLLECTION"), new Label.LabelStyle(headFont, Color.WHITE));
+        deckHead       = new Label(Lang.t("MON DECK"), new Label.LabelStyle(headFont, Color.WHITE));
         counter        = new Label("", new Label.LabelStyle(counterFont, Color.WHITE));
-        hint = new Label("Clic gauche : ajouter. Clic droit : retirer.", new Label.LabelStyle(hintFont, Color.WHITE));
+        hint = new Label(Lang.t("Clic gauche : ajouter. Clic droit : retirer."), new Label.LabelStyle(hintFont, Color.WHITE));
 
         for (Card card : cards.values()) cells.add(buildCell(card));
         scroll = new ScrollPane(grid);
@@ -209,17 +210,17 @@ public class CroupierTableScreen extends ScreenAdapter {
         reelScroll.setFadeScrollBars(false);
         reelScroll.setOverscroll(false, false);
 
-        deckTab  = buttons.create("Deck", clickSound, () -> showTab(false));
-        reelsTab = buttons.create("Rouleaux", clickSound, () -> showTab(true));
-        saveButton    = buttons.createAction("Enregistrer", clickSound, this::onSave);
-        starterButton = buttons.create("Deck de départ", clickSound, () -> { draft.resetToStarter(); refresh(); });
-        classicButton = buttons.create("Rouleaux de départ", clickSound, () -> { machineDraft.resetToClassic(); refresh(); });
-        clearButton   = buttons.create("Vider", clickSound, () -> {
+        deckTab  = buttons.create(Lang.t("Deck"), clickSound, () -> showTab(false));
+        reelsTab = buttons.create(Lang.t("Rouleaux"), clickSound, () -> showTab(true));
+        saveButton    = buttons.createAction(Lang.t("Enregistrer"), clickSound, this::onSave);
+        starterButton = buttons.create(Lang.t("Deck de départ"), clickSound, () -> { draft.resetToStarter(); refresh(); });
+        classicButton = buttons.create(Lang.t("Rouleaux de départ"), clickSound, () -> { machineDraft.resetToClassic(); refresh(); });
+        clearButton   = buttons.create(Lang.t("Vider"), clickSound, () -> {
             if (showingReels) machineDraft.clear(); else draft.clear();
             refresh();
         });
-        backButton    = buttons.create("Retour", clickSound, this::onBack);
-        tutorialButton = buttons.create("Tutoriel", clickSound, this::replayGuide);
+        backButton    = buttons.create(Lang.t("Retour"), clickSound, this::onBack);
+        tutorialButton = buttons.create(Lang.t("Tutoriel"), clickSound, this::replayGuide);
 
         fade = new Image(pixel);
         fade.setColor(Color.BLACK);
@@ -263,32 +264,32 @@ public class CroupierTableScreen extends ScreenAdapter {
     private List<GuideOverlay.Step> guideSteps() {
         int[] before = new int[1];
         List<GuideOverlay.Step> steps = new ArrayList<>();
-        steps.add(GuideOverlay.Step.say("La Table du croupier. Ici, tu prépares ce que tu emmènes au combat.")
+        steps.add(GuideOverlay.Step.say(Lang.t("La Table du croupier. Ici, tu prépares ce que tu emmènes au combat."))
             .onStart(() -> showTab(false)));
-        steps.add(GuideOverlay.Step.say("À gauche, ta collection : toutes les cartes que tu possèdes.",
+        steps.add(GuideOverlay.Step.say(Lang.t("À gauche, ta collection : toutes les cartes que tu possèdes."),
             () -> GuideOverlay.boundsOf(collectionPanel)));
-        steps.add(GuideOverlay.Step.say("À droite, ton deck. Il fait " + PlayerProfile.DECK_SIZE
-            + " cartes, " + PlayerProfile.MAX_COPIES + " exemplaires au plus de chacune. Tu le joues dans tous les modes.",
+        steps.add(GuideOverlay.Step.say(Lang.f("À droite, ton deck. Il fait {0} cartes, {1} exemplaires au plus de chacune. Tu le joues dans "
+            + "tous les modes.",
+            PlayerProfile.DECK_SIZE, PlayerProfile.MAX_COPIES),
             () -> GuideOverlay.boundsOf(deckPanel)));
-        steps.add(GuideOverlay.Step.action("Retire une carte : clique sur une ligne de ton deck.",
+        steps.add(GuideOverlay.Step.action(Lang.t("Retire une carte : clique sur une ligne de ton deck."),
                 () -> GuideOverlay.boundsOf(deckPanel), () -> draft.size() < before[0])
             .onStart(() -> before[0] = draft.size()));
-        steps.add(GuideOverlay.Step.action("Ajoute une carte : clic gauche sur une carte de ta collection. "
-                + "Clic droit l'enlève du deck.",
+        steps.add(GuideOverlay.Step.action(Lang.t("Ajoute une carte : clic gauche sur une carte de ta collection. Clic droit l'enlève du deck."),
                 () -> GuideOverlay.boundsOf(collectionPanel), () -> draft.size() > before[0])
             .onStart(() -> before[0] = draft.size()));
-        steps.add(GuideOverlay.Step.action("Ta machine a ses propres rouleaux. Ouvre l'onglet Rouleaux.",
+        steps.add(GuideOverlay.Step.action(Lang.t("Ta machine a ses propres rouleaux. Ouvre l'onglet Rouleaux."),
             () -> GuideOverlay.boundsOf(reelsTab), () -> showingReels));
-        steps.add(GuideOverlay.Step.say("Tes rouleaux. Ceux en or tournent dans ta machine. Elle en prend "
-            + Symbol.MACHINE_SIZE + ", tous différents.", () -> GuideOverlay.boundsOf(collectionPanel)));
-        steps.add(GuideOverlay.Step.action("Retire un rouleau : clique sur un rouleau en or, ou sur une ligne de ta machine.",
+        steps.add(GuideOverlay.Step.say(Lang.f("Tes rouleaux. Ceux en or tournent dans ta machine. Elle en prend {0}, tous différents.",
+            Symbol.MACHINE_SIZE), () -> GuideOverlay.boundsOf(collectionPanel)));
+        steps.add(GuideOverlay.Step.action(Lang.t("Retire un rouleau : clique sur un rouleau en or, ou sur une ligne de ta machine."),
                 () -> GuideOverlay.boundsOf(collectionPanel).merge(GuideOverlay.boundsOf(deckPanel)),
                 () -> machineDraft.size() < before[0])
             .onStart(() -> before[0] = machineDraft.size()));
-        steps.add(GuideOverlay.Step.action("Place un rouleau : clique sur un rouleau qui n'est pas en or.",
+        steps.add(GuideOverlay.Step.action(Lang.t("Place un rouleau : clique sur un rouleau qui n'est pas en or."),
                 () -> GuideOverlay.boundsOf(collectionPanel), () -> machineDraft.size() > before[0])
             .onStart(() -> before[0] = machineDraft.size()));
-        steps.add(GuideOverlay.Step.say("Enregistre pour garder ton deck et ta machine. Retour les laisse comme avant.",
+        steps.add(GuideOverlay.Step.say(Lang.t("Enregistre pour garder ton deck et ta machine. Retour les laisse comme avant."),
             () -> GuideOverlay.boundsOf(saveButton).merge(GuideOverlay.boundsOf(backButton))));
         return steps;
     }
@@ -310,8 +311,8 @@ public class CroupierTableScreen extends ScreenAdapter {
         reelScroll.setVisible(reels);
         machineList.setVisible(reels);
         classicButton.setVisible(reels);
-        collectionHead.setText(reels ? "MES ROULEAUX" : "MA COLLECTION");
-        deckHead.setText(reels ? "MA MACHINE" : "MON DECK");
+        collectionHead.setText(reels ? Lang.t("MES ROULEAUX") : Lang.t("MA COLLECTION"));
+        deckHead.setText(reels ? Lang.t("MA MACHINE") : Lang.t("MON DECK"));
         stage.setScrollFocus(reels ? reelScroll : scroll);
         refresh();
     }
@@ -502,15 +503,16 @@ public class CroupierTableScreen extends ScreenAdapter {
             counter.setText(reels + " / " + Symbol.MACHINE_SIZE);
             counter.setColor(machineDraft.isComplete() ? Palette.GOLD : REFUSED);
             int missing = Symbol.MACHINE_SIZE - reels;
-            hint.setText(machineDraft.isComplete() ? (draft.isComplete() ? "La machine est prête." : "La machine est prête. Le deck n'est pas complet.")
-                : "Encore " + missing + " rouleau" + (missing > 1 ? "x" : "") + " à choisir.");
+            hint.setText(machineDraft.isComplete() ? (draft.isComplete() ? Lang.t("La machine est prête.") : Lang.t("La machine est prête. Le deck n'est pas complet."))
+                : Lang.f("Encore {0} rouleau{1} à choisir.", missing, (missing > 1 ? "x" : "")));
         } else {
             int size = draft.size();
             counter.setText(size + " / " + PlayerProfile.DECK_SIZE);
             counter.setColor(draft.isComplete() ? Palette.GOLD : REFUSED);
-            hint.setText(draft.isComplete() ? (machineDraft.isComplete() ? "Le deck est prêt." : "Le deck est prêt. La machine n'est pas complète.")
-                : size < PlayerProfile.DECK_SIZE ? "Encore " + (PlayerProfile.DECK_SIZE - size) + " carte" + (PlayerProfile.DECK_SIZE - size > 1 ? "s" : "") + " à choisir."
-                : "Clic droit : retirer une carte.");
+            hint.setText(draft.isComplete() ? (machineDraft.isComplete() ? Lang.t("Le deck est prêt.") : Lang.t("Le deck est prêt. La machine n'est pas complète."))
+                : size < PlayerProfile.DECK_SIZE ? Lang.f("Encore {0} carte{1} à choisir.",
+                    (PlayerProfile.DECK_SIZE - size), (PlayerProfile.DECK_SIZE - size > 1 ? "s" : ""))
+                : Lang.t("Clic droit : retirer une carte."));
         }
 
         deckList.clearChildren();

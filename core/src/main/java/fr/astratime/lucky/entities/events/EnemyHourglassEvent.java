@@ -1,5 +1,6 @@
 package fr.astratime.lucky.entities.events;
 
+import fr.astratime.lucky.i18n.Lang;
 import fr.astratime.lucky.popups.EffectPopup;
 import fr.astratime.lucky.popups.PopupScale;
 
@@ -24,7 +25,7 @@ public class EnemyHourglassEvent extends Event {
 
     @Override
     public List<EffectPopup> getPopups() {
-        String text = exploded ? "BOUM !" : "SABLIER " + count + "/" + max;
+        String text = exploded ? Lang.t("BOUM !") : Lang.f("SABLIER {0}/{1}", count, max);
         return List.of(new EffectPopup(text, EffectPopup.Style.SPECIAL,
             exploded ? PopupScale.SECONDARY_INTENSITY * 1.4f : PopupScale.SECONDARY_INTENSITY));
     }

@@ -1,6 +1,7 @@
 package fr.astratime.lucky.entities;
 
 import fr.astratime.lucky.entities.effects.Effect;
+import fr.astratime.lucky.i18n.Lang;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -65,7 +66,7 @@ public class Card {
     /** @return l'identifiant unique de la carte. */
     public String       getId()        { return id; }
     /** @return le nom affiché de la carte. */
-    public String       getName()      { return name; }
+    public String       getName()      { return Lang.t(name); }
     /** @return la suite de la carte, ou {@code null} si elle n'en a pas. */
     public Suit         getSuit()      { return suit; }
     /** @return le rang de la carte. */
@@ -80,7 +81,7 @@ public class Card {
 
     /** @return la description de la carte, construite à partir de celle de chacun de ses effets. */
     public String getDescription() {
-        if (effects.isEmpty()) return "Aucun effet";
+        if (effects.isEmpty()) return Lang.t("Aucun effet");
         return effects.stream()
             .map(Effect::getDescription)
             .collect(Collectors.joining("\n"));

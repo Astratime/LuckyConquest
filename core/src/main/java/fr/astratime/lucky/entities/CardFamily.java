@@ -18,6 +18,7 @@ import fr.astratime.lucky.entities.effects.RussianRouletteEffect;
 import fr.astratime.lucky.entities.effects.ShadowDaggerEffect;
 import fr.astratime.lucky.entities.effects.SpadeIgnoreDefenseEffect;
 import fr.astratime.lucky.entities.effects.TridentEffect;
+import fr.astratime.lucky.i18n.Lang;
 
 import java.util.List;
 
@@ -47,7 +48,7 @@ public enum CardFamily {
     }
 
     /** @return le nom de la famille (ex : "Gains"). */
-    public String getDisplayName() { return displayName; }
+    public String getDisplayName() { return Lang.t(displayName); }
 
     /** @return {@code true} si {@code card} fait partie de cette famille. */
     public boolean contains(Card card) {

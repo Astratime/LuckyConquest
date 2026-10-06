@@ -1,6 +1,7 @@
 package fr.astratime.lucky.progress;
 
 import fr.astratime.lucky.entities.Symbol;
+import fr.astratime.lucky.i18n.Lang;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -35,9 +36,9 @@ public class MachineDraft {
 
     /** @return pourquoi {@code symbol} ne peut pas entrer dans la machine, ou {@code null} s'il le peut. */
     public String addProblem(Symbol symbol) {
-        if (!profile.ownsReel(symbol)) return "Rouleau pas encore acheté";
-        if (reels.contains(symbol)) return "Ce rouleau est déjà dans la machine";
-        if (reels.size() >= Symbol.MACHINE_SIZE) return "La machine a déjà " + Symbol.MACHINE_SIZE + " rouleaux";
+        if (!profile.ownsReel(symbol)) return Lang.t("Rouleau pas encore acheté");
+        if (reels.contains(symbol)) return Lang.t("Ce rouleau est déjà dans la machine");
+        if (reels.size() >= Symbol.MACHINE_SIZE) return Lang.f("La machine a déjà {0} rouleaux", Symbol.MACHINE_SIZE);
         return null;
     }
 

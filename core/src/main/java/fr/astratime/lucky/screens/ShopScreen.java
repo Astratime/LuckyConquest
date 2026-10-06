@@ -37,6 +37,7 @@ import fr.astratime.lucky.assets.Palette;
 import fr.astratime.lucky.assets.VolumeSound;
 import fr.astratime.lucky.entities.Card;
 import fr.astratime.lucky.entities.Symbol;
+import fr.astratime.lucky.i18n.Lang;
 import fr.astratime.lucky.loaders.CardLoader;
 import fr.astratime.lucky.progress.PlayerProfile;
 import fr.astratime.lucky.progress.Rank;
@@ -185,7 +186,7 @@ public class ShopScreen extends ScreenAdapter {
         veil = new Image(pixel);
         veil.setColor(0f, 0f, 0f, 0.65f);
         veil.setTouchable(Touchable.disabled);
-        title = new Label("BOUTIQUE", new Label.LabelStyle(titleFont, Color.WHITE));
+        title = new Label(Lang.t("BOUTIQUE"), new Label.LabelStyle(titleFont, Color.WHITE));
         title.pack();
         coin = new Image(new TextureRegionDrawable(new TextureRegion(hud.coin)));
         coin.setSize(COIN_SIZE, COIN_SIZE);
@@ -203,9 +204,9 @@ public class ShopScreen extends ScreenAdapter {
         detailTitle = new Label("", new Label.LabelStyle(headFont, Color.WHITE));
         detailText  = new Label("", new Label.LabelStyle(bodyFont, Color.WHITE));
         detailText.setWrap(true);
-        buyButton  = buttons.createAction("Acheter", clickSound, this::onBuy);
-        backButton = buttons.create("Retour", clickSound, this::onBack);
-        tutorialButton = buttons.create("Tutoriel", clickSound, this::replayGuide);
+        buyButton  = buttons.createAction(Lang.t("Acheter"), clickSound, this::onBuy);
+        backButton = buttons.create(Lang.t("Retour"), clickSound, this::onBack);
+        tutorialButton = buttons.create(Lang.t("Tutoriel"), clickSound, this::replayGuide);
 
         fade = new Image(pixel);
         fade.setColor(Color.BLACK);
@@ -240,20 +241,20 @@ public class ShopScreen extends ScreenAdapter {
      */
     private List<GuideOverlay.Step> guideSteps() {
         List<GuideOverlay.Step> steps = new ArrayList<>();
-        steps.add(GuideOverlay.Step.say("La Boutique. Tes pièces s'y dépensent. Seuls les combats d'Exploration en rapportent.",
+        steps.add(GuideOverlay.Step.say(Lang.t("La Boutique. Tes pièces s'y dépensent. Seuls les combats d'Exploration en rapportent."),
             () -> GuideOverlay.boundsOf(coin).merge(GuideOverlay.boundsOf(coins))).onStart(() -> showTab(Tab.RANG)));
-        steps.add(GuideOverlay.Step.say("Trois onglets : Rang, Cartes et Rouleau.", this::tabsBounds));
-        steps.add(GuideOverlay.Step.say("Onglet Rang. Un rang te rend plus fort dans tous les combats. "
-            + "Ils s'achètent dans l'ordre ; chacun remplace le précédent.", () -> GuideOverlay.boundsOf(panel)));
-        steps.add(GuideOverlay.Step.action("Ouvre l'onglet Cartes.",
+        steps.add(GuideOverlay.Step.say(Lang.t("Trois onglets : Rang, Cartes et Rouleau."), this::tabsBounds));
+        steps.add(GuideOverlay.Step.say(Lang.t("Onglet Rang. Un rang te rend plus fort dans tous les combats. Ils s'achètent dans l'ordre ; "
+            + "chacun remplace le précédent."), () -> GuideOverlay.boundsOf(panel)));
+        steps.add(GuideOverlay.Step.action(Lang.t("Ouvre l'onglet Cartes."),
             () -> GuideOverlay.boundsOf(tabButtons.get(Tab.CARTES.ordinal())), () -> tab == Tab.CARTES));
-        steps.add(GuideOverlay.Step.action("Clique sur une carte pour la choisir.",
+        steps.add(GuideOverlay.Step.action(Lang.t("Clique sur une carte pour la choisir."),
             () -> GuideOverlay.boundsOf(panel), () -> tab == Tab.CARTES && selected != null));
-        steps.add(GuideOverlay.Step.say("Son prix et son effet s'affichent ici. Acheter la paie : elle rejoint ta collection. "
-            + "Clic droit sur un article : sa fiche complète.", this::detailBounds));
-        steps.add(GuideOverlay.Step.action("Ouvre l'onglet Rouleau.",
+        steps.add(GuideOverlay.Step.say(Lang.t("Son prix et son effet s'affichent ici. Acheter la paie : elle rejoint ta collection. Clic droit "
+            + "sur un article : sa fiche complète."), this::detailBounds));
+        steps.add(GuideOverlay.Step.action(Lang.t("Ouvre l'onglet Rouleau."),
             () -> GuideOverlay.boundsOf(tabButtons.get(Tab.ROULEAU.ordinal())), () -> tab == Tab.ROULEAU));
-        steps.add(GuideOverlay.Step.say("Un rouleau acheté se place dans ta machine, à la Table du croupier.",
+        steps.add(GuideOverlay.Step.say(Lang.t("Un rouleau acheté se place dans ta machine, à la Table du croupier."),
             () -> GuideOverlay.boundsOf(panel)));
         return steps;
     }
@@ -301,7 +302,8 @@ public class ShopScreen extends ScreenAdapter {
     private void buildRanks() {
         content.top().left();
         Rank current = profile.getRank(), next = profile.getNextRank();
-        Label header = new Label(current == null ? "Tu n'as pas encore de rang." : "Ton rang : " + current.getTitle(),
+        Label header = new Label(current == null ? Lang.t("Tu n'as pas encore de rang.") : Lang.f("Ton rang : {0}",
+            current.getTitle()),
             new Label.LabelStyle(headFont, Color.WHITE));
         content.add(header).left().colspan(3).padBottom(16f).row();
         for (Rank rank : Rank.values()) {
@@ -314,7 +316,8 @@ public class ShopScreen extends ScreenAdapter {
             Label text = new Label(rank.getDescription() + "\n" + rank.getBonusText(),
                 new Label.LabelStyle(bodyFont, Color.WHITE));
             text.setWrap(true);
-            Label state = new Label(owned ? "Acquis" : PlayerProfile.formatCoins(rank.getPrice()) + " pièces",
+            Label state = new Label(owned ? Lang.t("Acquis") : Lang.f("{0} pièces",
+                PlayerProfile.formatCoins(rank.getPrice())),
                 new Label.LabelStyle(bodyFont, Color.WHITE));
             state.setAlignment(Align.right);
             row.add(name).width(330f).left();
@@ -330,7 +333,7 @@ public class ShopScreen extends ScreenAdapter {
                 select(offer, row);
             }
         }
-        if (next == null) showDetail("Tous les rangs sont acquis.", "Tu es une légende. Les tables murmurent ton nom.");
+        if (next == null) showDetail(Lang.t("Tous les rangs sont acquis."), Lang.t("Tu es une légende. Les tables murmurent ton nom."));
     }
 
     /** Onglet « Cartes » : chaque carte en vente, son prix et les exemplaires possédés. */
@@ -339,15 +342,16 @@ public class ShopScreen extends ScreenAdapter {
         for (Card card : cards) {
             long price = cardPrices.get(card.getId());
             int owned = profile.getOwnedCopies(card.getId());
-            Offer offer = new Offer(card.getName(), card.getDescription() + "\nPossédées : " + owned + " / "
-                + PlayerProfile.MAX_COPIES + ".", price,
+            Offer offer = new Offer(card.getName(), Lang.f("{0}\nPossédées : {1} / {2}.",
+                card.getDescription(), owned, PlayerProfile.MAX_COPIES), price,
                 () -> profile.getOwnedCopies(card.getId()) >= PlayerProfile.MAX_COPIES
-                    ? "Tu as déjà " + PlayerProfile.MAX_COPIES + " exemplaires." : null,
+                    ? Lang.f("Tu as déjà {0} exemplaires.", PlayerProfile.MAX_COPIES) : null,
                 () -> profile.buyCard(card.getId(), price));
             cells.add(cell(new TextureRegion(cardTextures.get(card)), CARD_WIDTH, CARD_HEIGHT,
                 PlayerProfile.formatCoins(price), owned + " / " + PlayerProfile.MAX_COPIES,
                 owned >= PlayerProfile.MAX_COPIES, offer,
-                () -> detail.showForSale(card, cardTextures.get(card), PlayerProfile.formatCoins(price) + " pièces")));
+                () -> detail.showForSale(card, cardTextures.get(card), Lang.f("{0} pièces",
+                    PlayerProfile.formatCoins(price)))));
         }
         return cells;
     }
@@ -359,15 +363,15 @@ public class ShopScreen extends ScreenAdapter {
             Symbol symbol = entry.getKey();
             long price = entry.getValue();
             boolean owned = profile.ownsReel(symbol);
-            Offer offer = new Offer(symbol.getDisplayName(), ReelShop.describe(symbol)
-                + (owned ? "\nDéjà dans ta collection de rouleaux." : "\nÀ placer dans ta machine, à la Table du croupier."),
-                price, () -> profile.ownsReel(symbol) ? "Tu possèdes déjà ce rouleau." : null,
+            Offer offer = new Offer(symbol.getDisplayName(), ReelShop.describe(symbol) + "\n"
+                + (owned ? Lang.t("Déjà dans ta collection de rouleaux.") : Lang.t("À placer dans ta machine, à la Table du croupier.")),
+                price, () -> profile.ownsReel(symbol) ? Lang.t("Tu possèdes déjà ce rouleau.") : null,
                 () -> profile.buyReel(symbol, price));
             cells.add(cell(new TextureRegion(reelTextures.get(symbol)), REEL_WIDTH, REEL_HEIGHT,
-                PlayerProfile.formatCoins(price), owned ? "Possédé" : symbol.getDisplayName(), owned, offer,
+                PlayerProfile.formatCoins(price), owned ? Lang.t("Possédé") : symbol.getDisplayName(), owned, offer,
                 () -> detail.showReel(symbol.getDisplayName(), new TextureRegion(reelTextures.get(symbol)),
-                    ReelShop.describe(symbol), PlayerProfile.formatCoins(price) + " pièces",
-                    profile.ownsReel(symbol) ? "Possédé" : "Pas encore acheté")));
+                    ReelShop.describe(symbol), Lang.f("{0} pièces", PlayerProfile.formatCoins(price)),
+                    profile.ownsReel(symbol) ? Lang.t("Possédé") : Lang.t("Pas encore acheté"))));
         }
         return cells;
     }
@@ -465,14 +469,14 @@ public class ShopScreen extends ScreenAdapter {
         selectedActor = actor;
         if (actor instanceof Label label) label.setColor(Color.WHITE);
         if (offer == null) {
-            showDetail(tab == Tab.RANG ? "" : "Choisis un article.",
-                tab == Tab.CARTES ? "Les cartes achetées rejoignent ta collection, puis la Table du croupier."
-                    : tab == Tab.ROULEAU ? "Les rouleaux achetés se placent dans ta machine, à la Table du croupier."
+            showDetail(tab == Tab.RANG ? "" : Lang.t("Choisis un article."),
+                tab == Tab.CARTES ? Lang.t("Les cartes achetées rejoignent ta collection, puis la Table du croupier.")
+                    : tab == Tab.ROULEAU ? Lang.t("Les rouleaux achetés se placent dans ta machine, à la Table du croupier.")
                     : "");
             buyButton.setDisabled(true);
             return;
         }
-        showDetail(offer.name() + "  -  " + PlayerProfile.formatCoins(offer.price()) + " pièces", offer.text());
+        showDetail(Lang.f("{0}  -  {1} pièces", offer.name(), PlayerProfile.formatCoins(offer.price())), offer.text());
         buyButton.setDisabled(offer.blocked().get() != null);
     }
 
@@ -489,11 +493,12 @@ public class ShopScreen extends ScreenAdapter {
         if (selected == null || leaving) return;
         String blocked = selected.blocked().get();
         if (blocked == null && profile.getCoins() < selected.price()) {
-            blocked = "Il te manque " + PlayerProfile.formatCoins(selected.price() - profile.getCoins()) + " pièces.";
+            blocked = Lang.f("Il te manque {0} pièces.",
+                PlayerProfile.formatCoins(selected.price() - profile.getCoins()));
         }
         if (blocked != null || !selected.purchase().getAsBoolean()) {
             refuseSound.play();
-            detailText.setText(blocked != null ? blocked : "Achat impossible.");
+            detailText.setText(blocked != null ? blocked : Lang.t("Achat impossible."));
             detailText.setColor(REFUSED);
             return;
         }
@@ -503,9 +508,9 @@ public class ShopScreen extends ScreenAdapter {
         showTab(tab); // met à jour les états (possédé, rang suivant…)
         this.scroll.layout();
         this.scroll.setScrollY(scroll);
-        showDetail(name + " : acheté !", tab == Tab.RANG ? "Ton nouveau rang vaut dans tous les combats."
-            : tab == Tab.CARTES ? "La carte t'attend à la Table du croupier."
-            : "Place-le dans ta machine, à la Table du croupier.");
+        showDetail(Lang.f("{0} : acheté !", name), tab == Tab.RANG ? Lang.t("Ton nouveau rang vaut dans tous les combats.")
+            : tab == Tab.CARTES ? Lang.t("La carte t'attend à la Table du croupier.")
+            : Lang.t("Place-le dans ta machine, à la Table du croupier."));
         detailTitle.setColor(Palette.GOLD);
         coin.clearActions();
         coin.addAction(Actions.sequence(Actions.scaleTo(1.2f, 1.2f, 0.08f), Actions.scaleTo(1f, 1f, 0.15f)));
@@ -513,7 +518,7 @@ public class ShopScreen extends ScreenAdapter {
 
     private void refreshCoins() {
         long amount = profile.getCoins();
-        coins.setText(PlayerProfile.formatCoins(amount) + (amount > 1 ? " pièces" : " pièce"));
+        coins.setText(Lang.f(amount > 1 ? "{0} pièces" : "{0} pièce", PlayerProfile.formatCoins(amount)));
         coins.pack();
     }
 

@@ -9,6 +9,7 @@ import fr.astratime.lucky.assets.Fonts;
 import fr.astratime.lucky.assets.HudTextures;
 import fr.astratime.lucky.assets.Palette;
 import fr.astratime.lucky.entities.GameState;
+import fr.astratime.lucky.i18n.Lang;
 
 import java.util.function.Supplier;
 
@@ -50,8 +51,8 @@ public class CombatHud implements Disposable {
         this.playArea   = playArea;
         this.gameState  = gameState;
         font            = Fonts.jersey(FONT_SIZE, Color.WHITE, FONT_BORDER, Palette.TEXT_SHADE);
-        enemyHealthBar  = new HealthBarView("ENNEMI", font, hud, hud.barFillEnemy, hud.chipEnemy, HEALTH_BAR_WIDTH);
-        playerHealthBar = new HealthBarView("JOUEUR", font, hud, hud.barFillPlayer, hud.chipPlayer, HEALTH_BAR_WIDTH);
+        enemyHealthBar  = new HealthBarView(Lang.t("ENNEMI"), font, hud, hud.barFillEnemy, hud.chipEnemy, HEALTH_BAR_WIDTH);
+        playerHealthBar = new HealthBarView(Lang.t("JOUEUR"), font, hud, hud.barFillPlayer, hud.chipPlayer, HEALTH_BAR_WIDTH);
         layout();
     }
 

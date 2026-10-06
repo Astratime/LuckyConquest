@@ -9,6 +9,7 @@ import com.badlogic.gdx.math.Interpolation;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.utils.Array;
 import fr.astratime.lucky.entities.enemy.EnemyKind;
+import fr.astratime.lucky.i18n.Lang;
 
 /**
  * Les rois du Casino Englouti entrent en scène, sous la mer :
@@ -341,7 +342,7 @@ public class CasinoKings extends KingEntrance {
             java.util.Random spots = new java.util.Random((int) (time * 6f));
             for (int i = 0; i < 4; i++) {
                 float x = width * (0.15f + 0.7f * spots.nextFloat()), y = height * (0.6f + 0.3f * spots.nextFloat());
-                caption(batch, font, "JACKPOT", x, y, 1f - progress(WALK, WALK + 0.5f));
+                caption(batch, font, Lang.t("JACKPOT"), x, y, 1f - progress(WALK, WALK + 0.5f));
             }
             font.getData().setScale(1f);
         }
@@ -505,7 +506,7 @@ public class CasinoKings extends KingEntrance {
             drawCard(batch, cx(), MathUtils.lerp(fanY() - 200f, fanY() + 30f, k), 0f, 1.9f * k, c("8a2adf"));
             if (k > 0.5f) {
                 font.getData().setScale(1.4f * k);
-                caption(batch, font, "JOKER", cx(), fanY() + 30f - 52f * k, Math.min(1f, (k - 0.5f) * 2f));
+                caption(batch, font, Lang.t("JOKER"), cx(), fanY() + 30f - 52f * k, Math.min(1f, (k - 0.5f) * 2f));
                 font.getData().setScale(1f);
             }
         }
@@ -565,7 +566,7 @@ public class CasinoKings extends KingEntrance {
             font.getData().setScale(MathUtils.lerp(4.4f, 3.2f, k));
             Color old = font.getColor().cpy();
             font.setColor(c("d81e1e"));
-            caption(batch, font, "REFUSÉ", x, y, 1f);
+            caption(batch, font, Lang.t("REFUSÉ"), x, y, 1f);
             font.setColor(old);
             font.getData().setScale(1f);
         }
@@ -646,7 +647,7 @@ public class CasinoKings extends KingEntrance {
         for (int r = 0; r < 4; r++) rect(batch, c("24505e"), bx - (bw / 2f - r * 90f), floor + bh + 40f + r * 34f,
             bw - r * 180f, 34f);                                                            // le fronton
         font.getData().setScale(2.2f);
-        caption(batch, font, "BANQUE", bx, floor + bh - 50f, 0.8f);
+        caption(batch, font, Lang.t("BANQUE"), bx, floor + bh - 50f, 0.8f);
         font.getData().setScale(1f);
         // Le coffre, au premier plan : la porte ouverte, l'or qui brille dedans.
         float sx = width * 0.74f, scale = 30f, sw = safe.getRegionWidth() * scale, sh = safe.getRegionHeight() * scale;

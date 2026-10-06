@@ -108,6 +108,7 @@ import fr.astratime.lucky.entities.effects.CorruptionEffect;
 import fr.astratime.lucky.entities.effects.GoldVeinEffect;
 import fr.astratime.lucky.entities.effects.MutinyEffect;
 import fr.astratime.lucky.entities.run.CombatRun;
+import fr.astratime.lucky.i18n.Lang;
 import fr.astratime.lucky.progress.PlayerProfile;
 import fr.astratime.lucky.loaders.CardLoader;
 import fr.astratime.lucky.popups.EffectPopup;
@@ -378,11 +379,11 @@ public class GameScreen extends ScreenAdapter {
             // Tutoriel : son deck rangé d'avance, la machine de départ, aucun rang, une échoppe qui ne vend que le Bingo.
             this.gameController = new GameController(() -> CardLoader.loadDeck(TutorialRun.deck()),
                 CardLoader.cardFactory(), TutorialRun.shop(),
-                cards -> new Player("Joueur", Player.BASE_HP, cards, RankBonus.NONE, Symbol.classicReels()));
+                cards -> new Player(Lang.t("Joueur"), Player.BASE_HP, cards, RankBonus.NONE, Symbol.classicReels()));
         } else {
             this.gameController = new GameController(() -> CardLoader.loadDeck(profile.getDeck()),
                 CardLoader.cardFactory(), CardLoader.loadShop(),
-                cards -> new Player("Joueur", Player.BASE_HP, cards, profile.getRankBonus(), profile.getMachine()));
+                cards -> new Player(Lang.t("Joueur"), Player.BASE_HP, cards, profile.getRankBonus(), profile.getMachine()));
         }
         if (run != null) gameController.setPlaceRule(run.getPlaceRule()); // Exploration : la règle du lieu
         EnemyKind.setTowerHard(run instanceof TowerRun tower && tower.isHard()); // Tour : mode difficile
@@ -407,15 +408,15 @@ public class GameScreen extends ScreenAdapter {
         enemyView  = new EnemyView(table, enemyTextures, pileFont, tooltip, effectPopupAnimator,
             sounds.cardDeal, sounds.cardFlip, sounds.reelSpin, sounds.reelStop,
             () -> gameController.getGameState().getEnemy(), hudTextures.pixel);
-        playerShield = new ShieldBadge("Bouclier", 0, enemyTextures.symbol(EnemySymbol.SHIELD), shieldFont,
+        playerShield = new ShieldBadge(Lang.t("Bouclier"), 0, enemyTextures.symbol(EnemySymbol.SHIELD), shieldFont,
             hudTextures.pixel);
         playerShield.addListener(new InputListener() {
             @Override
             public void enter(InputEvent event, float x, float y, int pointer, Actor fromActor) {
                 if (pointer != -1) return;
                 Vector2 top = playerShield.localToStageCoordinates(new Vector2(ShieldBadge.ICON_SIZE / 2f, playerShield.getHeight()));
-                tooltip.show("Ton bouclier", "Absorbe les attaques de l'ennemi et s'use à chaque coup\n"
-                    + "Gagné avec les symboles de défense ; ce qui reste en fin de tour remplit le Coffre",
+                tooltip.show(Lang.t("Ton bouclier"), Lang.t("Absorbe les attaques de l'ennemi et s'use à chaque coup\nGagné avec les symboles de défense ; "
+                    + "ce qui reste en fin de tour remplit le Coffre"),
                     top.x, top.y + 6f);
             }
 
@@ -429,10 +430,10 @@ public class GameScreen extends ScreenAdapter {
             sidePanel::getCoinCenter, sidePanel::bumpCoin, fireworkSounds);
         hud        = new CombatHud(playArea, hudTextures, gameController::getGameState);
 
-        spinButton    = buttons.createAction("Lancer machine", sounds.spinButton, this::onSpin);
-        restartButton = buttons.createAction("Recommencer", sounds.buttonClick, this::onRestart);
-        menuButton    = buttons.createAction("Menu principal", sounds.buttonClick, this::onBackToMenu);
-        pauseButton   = buttons.create("Pause", sounds.buttonClick, this::showPauseMenu);
+        spinButton    = buttons.createAction(Lang.t("Lancer machine"), sounds.spinButton, this::onSpin);
+        restartButton = buttons.createAction(Lang.t("Recommencer"), sounds.buttonClick, this::onRestart);
+        menuButton    = buttons.createAction(Lang.t("Menu principal"), sounds.buttonClick, this::onBackToMenu);
+        pauseButton   = buttons.create(Lang.t("Pause"), sounds.buttonClick, this::showPauseMenu);
         spinButton.setDisabled(true);
         playsLabel    = new Label("", new Label.LabelStyle(playsFont, Color.WHITE));
         endButtons.add(restartButton).size(restartButton.getWidth(), restartButton.getHeight());
@@ -481,7 +482,7 @@ public class GameScreen extends ScreenAdapter {
         });
         if (run instanceof TutorialRun) {
             guide    = new GuideOverlay(hudTextures, enemyTextures.portrait(EnemyKind.ENTRAINEMENT));
-            guide.setSkipButton(buttons.create("Passer le tutoriel", sounds.buttonClick, this::skipTutorial));
+            guide.setSkipButton(buttons.create(Lang.t("Passer le tutoriel"), sounds.buttonClick, this::skipTutorial));
             tutorial = new TutorialDirector(guide, new TutorialBoard());
         } else {
             guide    = null;
@@ -639,7 +640,7 @@ public class GameScreen extends ScreenAdapter {
         if (popups.isEmpty()) return;
         sounds.comboFormed.play();
         if (combos.size() > 1) {
-            popups.add(new EffectPopup("TOTAL x" + Combo.formatFactor(Combo.totalFactor(combos)),
+            popups.add(new EffectPopup(Lang.f("TOTAL x{0}", Combo.formatFactor(Combo.totalFactor(combos))),
                 EffectPopup.Style.GAINS, PopupScale.SECONDARY_INTENSITY));
         }
         effectPopupAnimator.play(popups, playArea.getCenterX(), table.getHandRowY() + CARD_HEIGHT * COMBO_TEXT_HEIGHT);
@@ -676,10 +677,10 @@ public class GameScreen extends ScreenAdapter {
             () -> {
                 Vector2 at = rainbow.addedToHand() ? hand.conjure(rainbow.added()) : potToDiscard(rainbow.added());
                 confetti.burst(at.x, at.y, POT_CONFETTI);
-                effectPopupAnimator.play(List.of(new EffectPopup("POT DE LUTIN !", EffectPopup.Style.GAINS,
+                effectPopupAnimator.play(List.of(new EffectPopup(Lang.t("POT DE LUTIN !"), EffectPopup.Style.GAINS,
                     PopupScale.MAX_INTENSITY)), at.x, at.y + CARD_HEIGHT * 0.8f);
                 if (!recolored.isEmpty()) {
-                    effectPopupAnimator.play(List.of(new EffectPopup("TOUT EN " + suitName(rainbow.suit()) + " !",
+                    effectPopupAnimator.play(List.of(new EffectPopup(Lang.f("TOUT EN {0} !", suitName(rainbow.suit())),
                         EffectPopup.Style.SPECIAL, PopupScale.MAX_INTENSITY)),
                         playArea.getCenterX(), table.getHandRowY() + CARD_HEIGHT * 2f);
                 }
@@ -690,10 +691,10 @@ public class GameScreen extends ScreenAdapter {
     /** @return le nom affiché de {@code suit}, en majuscules. */
     private static String suitName(Card.Suit suit) {
         return switch (suit) {
-            case COEUR   -> "COEUR";
-            case CARREAU -> "CARREAU";
-            case TREFLE  -> "TRÈFLE";
-            case PIQUE   -> "PIQUE";
+            case COEUR   -> Lang.t("COEUR");
+            case CARREAU -> Lang.t("CARREAU");
+            case TREFLE  -> Lang.t("TRÈFLE");
+            case PIQUE   -> Lang.t("PIQUE");
         };
     }
 
@@ -701,7 +702,7 @@ public class GameScreen extends ScreenAdapter {
     private void buildShopIcon() {
         Image stall = new Image(new TextureRegionDrawable(new TextureRegion(hudTextures.shop)));
         stall.setSize(SHOP_ICON_WIDTH, SHOP_ICON_HEIGHT);
-        Label name = new Label("ÉCHOPPE", new Label.LabelStyle(shopFont, Color.WHITE));
+        Label name = new Label(Lang.t("ÉCHOPPE"), new Label.LabelStyle(shopFont, Color.WHITE));
         name.pack();
         name.setPosition((SHOP_ICON_WIDTH - name.getWidth()) / 2f, 0f);
         stall.setPosition(0f, name.getHeight());
@@ -856,8 +857,8 @@ public class GameScreen extends ScreenAdapter {
      */
     private void onCardRefused(Card card, String reason, Vector2 cardCenter) {
         Gdx.app.log("GameScreen", "Carte refusee : " + card + " (" + reason + ")");
-        String text = tutorial != null && tutorial.refusal(card) != null ? "PAS CELLE-LÀ !"
-            : gameController.isPlayLimitReached() ? "LIMITE ATTEINTE !" : "BINGO BLOQUÉ !";
+        String text = tutorial != null && tutorial.refusal(card) != null ? Lang.t("PAS CELLE-LÀ !")
+            : gameController.isPlayLimitReached() ? Lang.t("LIMITE ATTEINTE !") : Lang.t("BINGO BLOQUÉ !");
         effectPopupAnimator.play(List.of(new EffectPopup(text, EffectPopup.Style.DAMAGE,
             PopupScale.SECONDARY_INTENSITY)), cardCenter.x, cardCenter.y - CARD_HEIGHT * 0.3f); // monte sur la carte, sous l'infobulle
     }
@@ -1067,7 +1068,7 @@ public class GameScreen extends ScreenAdapter {
     /** Relance : « RELANCE ! » au-dessus des rouleaux, levier et étincelles. */
     private void playReroll() {
         Vector2 center = slots.getReelCenter(1);
-        effectPopupAnimator.play(List.of(new EffectPopup("RELANCE !", EffectPopup.Style.SPECIAL,
+        effectPopupAnimator.play(List.of(new EffectPopup(Lang.t("RELANCE !"), EffectPopup.Style.SPECIAL,
             PopupScale.MAX_INTENSITY)), center.x, center.y + SlotView.CELL_HEIGHT);
         confetti.burst(center.x, center.y, JOKER_CONFETTI);
     }
@@ -1075,7 +1076,7 @@ public class GameScreen extends ScreenAdapter {
     /** Un Joker se transforme : texte « JOKER ! » et confettis sur son rouleau. */
     private void onJokerTransformed(int reel) {
         Vector2 center = slots.getReelCenter(reel);
-        effectPopupAnimator.play(List.of(new EffectPopup("JOKER !", EffectPopup.Style.SPECIAL,
+        effectPopupAnimator.play(List.of(new EffectPopup(Lang.t("JOKER !"), EffectPopup.Style.SPECIAL,
             PopupScale.SECONDARY_INTENSITY)), center.x, center.y + SlotView.CELL_HEIGHT / 2f);
         confetti.burst(center.x, center.y, JOKER_CONFETTI);
         sounds.resultPair.play();
@@ -1170,8 +1171,8 @@ public class GameScreen extends ScreenAdapter {
     private void onEnemyDefense(EnemyView.DefenseReaction reaction) {
         switch (reaction) {
             case BLOCKED -> sounds.shieldBlock.play(0.9f, ENEMY_SHIELD_PITCH, 0f);
-            case BROKEN  -> shieldBroken("DÉFENSE BRISÉE !", enemyView.getDefenseCenter(), ENEMY_SHIELD_PITCH);
-            case PIERCED -> shieldBroken("DÉFENSE PERCÉE !", enemyView.getDefenseCenter(), ENEMY_SHIELD_PITCH);
+            case BROKEN  -> shieldBroken(Lang.t("DÉFENSE BRISÉE !"), enemyView.getDefenseCenter(), ENEMY_SHIELD_PITCH);
+            case PIERCED -> shieldBroken(Lang.t("DÉFENSE PERCÉE !"), enemyView.getDefenseCenter(), ENEMY_SHIELD_PITCH);
             case NONE    -> { }
         }
     }
@@ -1179,7 +1180,7 @@ public class GameScreen extends ScreenAdapter {
     /** Le bouclier du joueur absorbe une attaque de l'ennemi : il encaisse, s'use, et se brise s'il n'en reste rien. */
     private void onPlayerBlocked(PlayerDamagedEvent hit) {
         if (playerShield.block(hit.shieldLeft)) {
-            shieldBroken("BOUCLIER BRISÉ !", playerShield.localToStageCoordinates(new Vector2(ShieldBadge.ICON_SIZE / 2f, ShieldBadge.ICON_SIZE / 2f)), 1f);
+            shieldBroken(Lang.t("BOUCLIER BRISÉ !"), playerShield.localToStageCoordinates(new Vector2(ShieldBadge.ICON_SIZE / 2f, ShieldBadge.ICON_SIZE / 2f)), 1f);
         } else {
             sounds.shieldBlock.play();
         }
@@ -1233,12 +1234,12 @@ public class GameScreen extends ScreenAdapter {
 
     /** Affiche par-dessus le jeu les cartes restant dans le deck (triées, pas dans l'ordre de pioche). */
     private void onDeckClicked() {
-        pileOverlay.show("Deck", player().getDeck().getCards());
+        pileOverlay.show(Lang.t("Deck"), player().getDeck().getCards());
     }
 
     /** Affiche par-dessus le jeu les cartes de la défausse (triées). */
     private void onDiscardClicked() {
-        pileOverlay.show("Defausse", player().getDiscardPile().getCards());
+        pileOverlay.show(Lang.t("Defausse"), player().getDiscardPile().getCards());
     }
 
     /** Échap : ouvre le menu pause, avec le bruitage du clic. */
@@ -1377,8 +1378,8 @@ public class GameScreen extends ScreenAdapter {
         PlayerProfile.ChestReward reward = luckyGame.getProfile().openChest(cardId);
         chestOverlay.getActor().toFront();
         TextButton next = left > 1
-            ? buttons.createAction("Coffre suivant", sounds.buttonClick, () -> openChest(left - 1))
-            : buttons.createAction("Exploration", sounds.buttonClick, this::onBackToChapters);
+            ? buttons.createAction(Lang.t("Coffre suivant"), sounds.buttonClick, () -> openChest(left - 1))
+            : buttons.createAction(Lang.t("Exploration"), sounds.buttonClick, this::onBackToChapters);
         chestOverlay.show(dungeonRun.getDungeon(), reward, CardLoader.cardFactory().apply(cardId), next);
     }
 
@@ -1445,7 +1446,7 @@ public class GameScreen extends ScreenAdapter {
     }
 
     /** @return le texte du bouton qui ramène au choix du chapitre ou du donjon. */
-    private String backText() { return isDungeon() ? "Exploration" : "Chapitres"; }
+    private String backText() { return isDungeon() ? Lang.t("Exploration") : Lang.t("Chapitres"); }
 
     /** @return un bouton du casino ({@code text}), qui joue le clic et lance {@code action}. */
     private TextButton createButton(String text, Runnable action) {
@@ -1467,30 +1468,30 @@ public class GameScreen extends ScreenAdapter {
             if (!victory) shown.add(restartButton);
             shown.add(menuButton);
         } else if (!victory) {
-            shown.add(buttons.createAction(isDungeon() ? "Réessayer le donjon" : "Réessayer le chapitre",
+            shown.add(buttons.createAction(isDungeon() ? Lang.t("Réessayer le donjon") : Lang.t("Réessayer le chapitre"),
                 sounds.buttonClick, this::onRestart));
             shown.add(buttons.create(backText(), sounds.buttonClick, this::onBackToChapters));
         } else if (run.isBossStage() && isDungeon()) {
-            shown.add(buttons.createAction("Ouvrir le coffre !", sounds.buttonClick, this::onContinue));
+            shown.add(buttons.createAction(Lang.t("Ouvrir le coffre !"), sounds.buttonClick, this::onContinue));
         } else if (run.isBossStage()) {
             // Boss battu : le chapitre est terminé dans ce mode, le suivant s'ouvre.
             if (run instanceof TowerRun tower) luckyGame.getProfile().clearChapter(tower.getChapter(), tower.isHard());
-            shown.add(buttons.createAction("Chapitre terminé !", sounds.buttonClick, this::onBackToChapters));
+            shown.add(buttons.createAction(Lang.t("Chapitre terminé !"), sounds.buttonClick, this::onBackToChapters));
         } else {
-            shown.add(buttons.createAction("Continuer", sounds.buttonClick, this::onContinue));
+            shown.add(buttons.createAction(Lang.t("Continuer"), sounds.buttonClick, this::onContinue));
             shown.add(buttons.create(backText(), sounds.buttonClick, this::onBackToChapters));
         }
         // Les gains affichés, versés en pièces pour la boutique après le roi d'un donjon.
         int earned = combatReward(victory);
         if (earned > 0) {
-            Label coinsLabel = new Label("PIÈCES +" + PlayerProfile.formatCoins(earned), new Label.LabelStyle(shopFont, Palette.GOLD));
+            Label coinsLabel = new Label(Lang.f("PIÈCES +{0}", PlayerProfile.formatCoins(earned)), new Label.LabelStyle(shopFont, Palette.GOLD));
             endButtons.add(coinsLabel).colspan(shown.size()).padBottom(14f).row();
         }
         String ending = run != null && victory && run.isBossStage() ? run.getEnding() : null;
         if (ending != null) {
             // Le dernier chapitre clôt l'histoire : sa phrase de fin, au-dessus du bouton. Il ouvre le mode difficile.
             if (run instanceof TowerRun && luckyGame.getProfile().openTowerHard()) {
-                ending += "\nLa Tour recommence en mode difficile.";
+                ending += "\n" + Lang.t("La Tour recommence en mode difficile.");
             }
             Label endingLabel = new Label(ending, new Label.LabelStyle(shopFont, Palette.GOLD));
             endingLabel.setAlignment(Align.center);
@@ -1516,8 +1517,8 @@ public class GameScreen extends ScreenAdapter {
             stageLabel.pack();
             return;
         }
-        String step = run.isBossStage() ? (isDungeon() ? "ROI" : "BOSS")
-            : "COMBAT " + (run.getStage() + 1) + "/" + run.getStageCount();
+        String step = run.isBossStage() ? (isDungeon() ? Lang.t("ROI") : Lang.t("BOSS"))
+            : Lang.f("COMBAT {0}/{1}", (run.getStage() + 1), run.getStageCount());
         stageLabel.setText(run.getLabel().toUpperCase() + " · " + step);
         stageLabel.pack();
     }
@@ -1681,8 +1682,8 @@ public class GameScreen extends ScreenAdapter {
 
     /** Met à jour le compteur de cartes jouées ce tour (en rouge une fois la limite atteinte). */
     private void refreshPlays() {
-        playsLabel.setText("Cartes " + gameController.getCardsPlayedThisTurn() + "/"
-            + gameController.getPlayLimit());
+        playsLabel.setText(Lang.f("Cartes {0}/{1}",
+            gameController.getCardsPlayedThisTurn(), gameController.getPlayLimit()));
         playsLabel.setColor(gameController.isPlayLimitReached() ? Palette.TEXT_ALERT : Palette.TEXT_TITLE);
         playsLabel.pack();
     }
@@ -1699,62 +1700,63 @@ public class GameScreen extends ScreenAdapter {
         for (Map.Entry<Symbol, Integer> removed : lasting.getRemovedSymbols().entrySet()) {
             int turns = removed.getValue();
             rows.add(new SidePanel.EffectRow(slots.regionOf(removed.getKey()), cross,
-                "Retiré " + turns(turns), "Recyclage",
-                removed.getKey().getDisplayName() + " est retiré de tes rouleaux. Il revient dans " + turns(turns) + "."));
+                Lang.f("Retiré {0}", turns(turns)), Lang.t("Recyclage"),
+                Lang.f("{0} est retiré de tes rouleaux. Il revient dans {1}.",
+                    removed.getKey().getDisplayName(), turns(turns))));
         }
         if (lasting.getGainBonus() > 0f) {
             int percent = Math.round(lasting.getGainBonus() * 100f);
             rows.add(new SidePanel.EffectRow(new TextureRegion(hudTextures.iconClover), null,
-                "Gains +" + percent + " %", "Porte-bonheur",
-                "Tes gains +" + percent + " %. Jusqu'à la fin du combat."));
+                Lang.f("Gains +{0} %", percent), Lang.t("Porte-bonheur"),
+                Lang.f("Tes gains +{0} %. Jusqu'à la fin du combat.", percent)));
         }
         if (lasting.getCorruptionTurns() > 0) {
             int turns = lasting.getCorruptionTurns();
             rows.add(new SidePanel.EffectRow(new TextureRegion(hudTextures.iconCorruption), null,
-                "Corruption " + turns(turns), "Corruption",
-                "Attaque et bouclier des symboles x" + CorruptionEffect.FACTOR + ". Chaque tour coûte "
-                    + CorruptionEffect.GAINS_PERCENT + " % de tes gains. Encore " + turns(turns) + "."));
+                Lang.f("Corruption {0}", turns(turns)), Lang.t("Corruption"),
+                Lang.f("Attaque et bouclier des symboles x{0}. Chaque tour coûte {1} % de tes gains. Encore {2}.",
+                    CorruptionEffect.FACTOR, CorruptionEffect.GAINS_PERCENT, turns(turns))));
         }
         if (lasting.getExtraPlaysTurns() > 0) {
             int turns = lasting.getExtraPlaysTurns();
             rows.add(new SidePanel.EffectRow(new TextureRegion(hudTextures.iconSleeve), null,
-                lasting.getExtraPlays() + " cartes, " + turns(turns), "Dans la manche",
-                lasting.getExtraPlays() + " cartes jouables par tour. Encore " + turns(turns) + "."));
+                Lang.f("{0} cartes, {1}", lasting.getExtraPlays(), turns(turns)), Lang.t("Dans la manche"),
+                Lang.f("{0} cartes jouables par tour. Encore {1}.", lasting.getExtraPlays(), turns(turns))));
         }
         if (lasting.getBlades() > 0) {
             int blades = lasting.getBlades();
             rows.add(new SidePanel.EffectRow(new TextureRegion(hudTextures.iconBlade), null,
-                "Lames " + blades + " (+" + blades * PreparationResolver.BLADE_ATTACK + ")", "Lames",
-                "Jauge de Pique. Chaque Lame donne +" + PreparationResolver.BLADE_ATTACK
-                    + " d'attaque à tes symboles. Tes Piques jouées en Couleur ou en Suite la remplissent. "
-                    + "L'As de Pique et la Guillotine l'encaissent."));
+                Lang.f("Lames {0} (+{1})", blades, blades * PreparationResolver.BLADE_ATTACK), Lang.t("Lames"),
+                Lang.f("Jauge de Pique. Chaque Lame donne +{0} d'attaque à tes symboles. Tes Piques jouées en Couleur "
+                    + "ou en Suite la remplissent. L'As de Pique et la Guillotine l'encaissent.",
+                    PreparationResolver.BLADE_ATTACK)));
         }
         if (lasting.getBlood() > 0) {
             rows.add(new SidePanel.EffectRow(new TextureRegion(hudTextures.iconBlood), null,
-                "Sang " + lasting.getBlood(), "Sang",
-                "Jauge de Coeur. Le soin au-delà de tes PV max s'y garde. Tes Coeurs joués en Couleur ou en Suite "
-                    + "la remplissent. L'As de Coeur ajoute tout le Sang à ton attaque."));
+                Lang.f("Sang {0}", lasting.getBlood()), Lang.t("Sang"),
+                Lang.t("Jauge de Coeur. Le soin au-delà de tes PV max s'y garde. Tes Coeurs joués en Couleur ou en "
+                    + "Suite la remplissent. L'As de Coeur ajoute tout le Sang à ton attaque.")));
         }
         if (lasting.getVault() > 0) {
             rows.add(new SidePanel.EffectRow(new TextureRegion(hudTextures.iconVault), null,
-                "Coffre " + lasting.getVault(), "Coffre",
-                "Jauge de Carreau. Ton bouclier inutilisé s'y garde. Tes Carreaux joués en Couleur ou en Suite "
-                    + "la remplissent. L'As de Carreau le vide sur l'ennemi."));
+                Lang.f("Coffre {0}", lasting.getVault()), Lang.t("Coffre"),
+                Lang.t("Jauge de Carreau. Ton bouclier inutilisé s'y garde. Tes Carreaux joués en Couleur ou en Suite "
+                    + "la remplissent. L'As de Carreau le vide sur l'ennemi.")));
         }
         for (int[] safe : lasting.getSafes()) {
             rows.add(new SidePanel.EffectRow(new TextureRegion(hudTextures.iconSafe), null,
-                "+" + safe[0] + ", " + turns(safe[1]), "Coffre-fort",
-                PlayerProfile.formatCoins(safe[0]) + " gains mis de côté, déjà doublés. Ils reviennent dans "
-                    + turns(safe[1]) + "."));
+                "+" + safe[0] + ", " + turns(safe[1]), Lang.t("Coffre-fort"),
+                Lang.f("{0} gains mis de côté, déjà doublés. Ils reviennent dans {1}.",
+                    PlayerProfile.formatCoins(safe[0]), turns(safe[1]))));
         }
         for (Symbol bet : gameController.getBetsThisTurn()) {
-            rows.add(new SidePanel.EffectRow(slots.regionOf(bet), null, "Pari x2 à x4", "Pari",
-                "Tu as parié sur " + bet.getDisplayName() + ". S'il sort 1, 2 ou 3 fois : gains x2, x3 ou x4. "
-                    + "Sinon : gains /2."));
+            rows.add(new SidePanel.EffectRow(slots.regionOf(bet), null, Lang.t("Pari x2 à x4"), Lang.t("Pari"),
+                Lang.f("Tu as parié sur {0}. S'il sort 1, 2 ou 3 fois : gains x2, x3 ou x4. Sinon : gains /2.",
+                    bet.getDisplayName())));
         }
         if (gameController.isDoubleNextPending()) {
-            rows.add(new SidePanel.EffectRow(new TextureRegion(hudTextures.iconDouble), null, "Carte suivante x2",
-                "Double ou rien", "La prochaine carte jouée ce tour compte deux fois."));
+            rows.add(new SidePanel.EffectRow(new TextureRegion(hudTextures.iconDouble), null, Lang.t("Carte suivante x2"),
+                Lang.t("Double ou rien"), Lang.t("La prochaine carte jouée ce tour compte deux fois.")));
         }
         addPlaceRows(rows, lasting);
         sidePanel.setActiveEffects(rows);
@@ -1762,7 +1764,7 @@ public class GameScreen extends ScreenAdapter {
 
     /** @return {@code count} suivi de « tour » ou « tours ». */
     private static String turns(int count) {
-        return count + (count > 1 ? " tours" : " tour");
+        return Lang.f(count > 1 ? "{0} tours" : "{0} tour", count);
     }
 
     /**
@@ -1778,114 +1780,121 @@ public class GameScreen extends ScreenAdapter {
         switch (state.getActiveRule()) {
             case SCORBUT -> {
                 int turns = PlaceRule.SCURVY_PERIOD - (turn - 1) % PlaceRule.SCURVY_PERIOD;
-                rows.add(new SidePanel.EffectRow(skull, null, "Scorbut : " + turns(turns), rule.getName(),
-                    rule.getDescription() + " Prochain Scorbut dans " + turns(turns) + "."));
+                rows.add(new SidePanel.EffectRow(skull, null, Lang.f("Scorbut : {0}", turns(turns)), rule.getName(),
+                    Lang.f("{0} Prochain Scorbut dans {1}.", rule.getDescription(), turns(turns))));
             }
             case GRISOU -> {
                 int turns = PlaceRule.turnsBeforeFiredamp(turn);
-                rows.add(new SidePanel.EffectRow(skull, null, turns == 1 ? "Grisou : ce tour"
-                    : "Grisou : " + turns + " tours", rule.getName(), rule.getDescription()
-                    + (turns == 1 ? " Explosion à la fin de ce tour." : " Prochaine explosion dans " + turns(turns) + ".")));
+                rows.add(new SidePanel.EffectRow(skull, null, turns == 1 ? Lang.t("Grisou : ce tour")
+                    : Lang.f("Grisou : {0} tours", turns), rule.getName(), rule.getDescription()
+                    + (turns == 1 ? Lang.t(" Explosion à la fin de ce tour.") : Lang.f(" Prochaine explosion dans {0}.",
+                        turns(turns)))));
             }
-            case MAREE -> rows.add(new SidePanel.EffectRow(skull, null, "Marée " + PlaceRule.tide(turn) + "/"
-                + PlaceRule.TIDE_CYCLE + (rule.isHighTide(turn) ? " : haute" : ""), rule.getName(),
-                rule.getDescription() + " Niveau actuel : " + PlaceRule.tide(turn) + "."));
+            case MAREE -> rows.add(new SidePanel.EffectRow(skull, null, Lang.f("Marée {0}/{1}{2}",
+                PlaceRule.tide(turn), PlaceRule.TIDE_CYCLE, (rule.isHighTide(turn) ? Lang.t(" : haute") : "")), rule.getName(),
+                Lang.f("{0} Niveau actuel : {1}.", rule.getDescription(), PlaceRule.tide(turn))));
             case NONE -> { }
         }
         if (lasting.getBubbleTurns() > 0) {
             int turns = lasting.getBubbleTurns();
             rows.add(new SidePanel.EffectRow(new TextureRegion(hudTextures.iconSleeve), null,
-                "Bulle : " + turns(turns), "Bulle d'air",
-                "La règle du lieu ne joue plus. Encore " + turns(turns) + "."));
+                Lang.f("Bulle : {0}", turns(turns)), Lang.t("Bulle d'air"),
+                Lang.f("La règle du lieu ne joue plus. Encore {0}.", turns(turns))));
         }
         if (lasting.getGoldVeinTurns() > 0) {
             int turns = lasting.getGoldVeinTurns();
             rows.add(new SidePanel.EffectRow(new TextureRegion(hudTextures.iconClover), null,
-                "Veine x" + GoldVeinEffect.FACTOR + " (" + turns + ")", "Veine d'or",
-                "Tes gains x" + GoldVeinEffect.FACTOR + ". Encore " + turns(turns) + "."));
+                Lang.f("Veine x{0} ({1})", GoldVeinEffect.FACTOR, turns), Lang.t("Veine d'or"),
+                Lang.f("Tes gains x{0}. Encore {1}.", GoldVeinEffect.FACTOR, turns(turns))));
         }
         if (player().getHelmets() > 0) {
             int helmets = player().getHelmets();
             rows.add(new SidePanel.EffectRow(new TextureRegion(hudTextures.iconVault), null,
-                "Casque x" + helmets, "Casque", "Bloque entièrement le prochain coup que tu reçois. "
-                    + (helmets > 1 ? helmets + " casques : un par coup." : "Un seul coup.")));
+                Lang.f("Casque x{0}", helmets), Lang.t("Casque"), Lang.f("Bloque entièrement le prochain coup que tu reçois. {0}",
+                    (helmets > 1 ? Lang.f("{0} casques : un par coup.", helmets) : Lang.t("Un seul coup.")))));
         }
         // Parades des cartes des coffres des lieux
         TextureRegion guard = new TextureRegion(hudTextures.iconVault);
         Enemy target = gameController.getGameState().getEnemy();
-        if (lasting.getTraps() > 0) rows.add(new SidePanel.EffectRow(guard, null, "Piège x" + lasting.getTraps(),
-            "Piège à rats", "Le prochain mauvais sort sur ta main est annulé (Grignotage, Aveuglement, Chant, Abordage, Fouille)."));
+        if (lasting.getTraps() > 0) rows.add(new SidePanel.EffectRow(guard, null, Lang.f("Piège x{0}",
+            lasting.getTraps()),
+            Lang.t("Piège à rats"), Lang.t("Le prochain mauvais sort sur ta main est annulé (Grignotage, Aveuglement, Chant, Abordage, "
+                + "Fouille).")));
         if (lasting.getLanternDraws() > 0) rows.add(new SidePanel.EffectRow(guard, null,
-            "Lanterne (" + lasting.getLanternDraws() + ")", "Lanterne",
-            "Ta main ne peut pas être cachée. Encore " + turns(lasting.getLanternDraws()) + "."));
+            Lang.f("Lanterne ({0})", lasting.getLanternDraws()), Lang.t("Lanterne"),
+            Lang.f("Ta main ne peut pas être cachée. Encore {0}.", turns(lasting.getLanternDraws()))));
         if (lasting.getEarplugDraws() > 0) rows.add(new SidePanel.EffectRow(guard, null,
-            "Bouchons (" + lasting.getEarplugDraws() + ")", "Bouchons d'oreille",
-            "Le Chant n'a pas d'effet. Encore " + turns(lasting.getEarplugDraws()) + "."));
+            Lang.f("Bouchons ({0})", lasting.getEarplugDraws()), Lang.t("Bouchons d'oreille"),
+            Lang.f("Le Chant n'a pas d'effet. Encore {0}.", turns(lasting.getEarplugDraws()))));
         if (lasting.getPropTurns() > 0) rows.add(new SidePanel.EffectRow(guard, null,
-            "Étai (" + lasting.getPropTurns() + ")", "Étai",
-            "Le Forage ne perce pas ton bouclier. Encore " + turns(lasting.getPropTurns()) + "."));
-        if (lasting.getLamps() > 0) rows.add(new SidePanel.EffectRow(guard, null, "Lampe x" + lasting.getLamps(),
-            "Lampe à carbure", "Le prochain coup de grisou ne t'atteint pas."));
+            Lang.f("Étai ({0})", lasting.getPropTurns()), Lang.t("Étai"),
+            Lang.f("Le Forage ne perce pas ton bouclier. Encore {0}.", turns(lasting.getPropTurns()))));
+        if (lasting.getLamps() > 0) rows.add(new SidePanel.EffectRow(guard, null, Lang.f("Lampe x{0}",
+            lasting.getLamps()),
+            Lang.t("Lampe à carbure"), Lang.t("Le prochain coup de grisou ne t'atteint pas.")));
         if (lasting.getCageTurns() > 0) rows.add(new SidePanel.EffectRow(guard, null,
-            "Cage (" + lasting.getCageTurns() + ")", "Cage à requin",
-            "Rien ne peut prendre tes gains. Encore " + turns(lasting.getCageTurns()) + "."));
+            Lang.f("Cage ({0})", lasting.getCageTurns()), Lang.t("Cage à requin"),
+            Lang.f("Rien ne peut prendre tes gains. Encore {0}.", turns(lasting.getCageTurns()))));
         if (lasting.getAnchorTurns() > 0) rows.add(new SidePanel.EffectRow(guard, null,
-            "Ancre (" + lasting.getAnchorTurns() + ")", "Ancre",
-            "La marée haute ne baisse pas ton attaque. Encore " + turns(lasting.getAnchorTurns()) + "."));
+            Lang.f("Ancre ({0})", lasting.getAnchorTurns()), Lang.t("Ancre"),
+            Lang.f("La marée haute ne baisse pas ton attaque. Encore {0}.", turns(lasting.getAnchorTurns()))));
         if (lasting.getTemperPercent() > 0) rows.add(new SidePanel.EffectRow(guard, null,
-            "Trempe +" + lasting.getTemperPercent() + " %", "Trempe",
-            "Ton attaque est à +" + lasting.getTemperPercent() + " %. Elle monte encore à chaque tour."));
-        if (player().hasRope()) rows.add(new SidePanel.EffectRow(guard, null, "Corde de rappel", "Corde de rappel",
-            "Si un coup devait te tuer, tu restes à 1 PV."));
-        if (target.isDazzled()) rows.add(new SidePanel.EffectRow(guard, null, "Ennemi ébloui", "Rayon du phare",
-            "L'ennemi passe son prochain tour."));
-        if (target.getMutinies() > 0) rows.add(new SidePanel.EffectRow(guard, null, "Mutinerie", "Mutinerie",
-            "À son prochain tour, l'ennemi joue " + MutinyEffect.CARDS_LESS + " cartes de moins."));
-        if (target.getLoadedCoins() > 0) rows.add(new SidePanel.EffectRow(guard, null, "Pièce truquée", "Pièce truquée",
-            "Le prochain tirage de l'ennemi ne peut pas faire de Jackpot."));
-        if (target.getHarpoons() > 0) rows.add(new SidePanel.EffectRow(guard, null, "Harpon x" + target.getHarpoons(),
-            "Harpon", "À son prochain tour, l'ennemi joue " + target.getHarpoons() + " carte"
-                + (target.getHarpoons() > 1 ? "s" : "") + " de moins."));
+            Lang.f("Trempe +{0} %", lasting.getTemperPercent()), Lang.t("Trempe"),
+            Lang.f("Ton attaque est à +{0} %. Elle monte encore à chaque tour.", lasting.getTemperPercent())));
+        if (player().hasRope()) rows.add(new SidePanel.EffectRow(guard, null, Lang.t("Corde de rappel"), Lang.t("Corde de rappel"),
+            Lang.t("Si un coup devait te tuer, tu restes à 1 PV.")));
+        if (target.isDazzled()) rows.add(new SidePanel.EffectRow(guard, null, Lang.t("Ennemi ébloui"), Lang.t("Rayon du phare"),
+            Lang.t("L'ennemi passe son prochain tour.")));
+        if (target.getMutinies() > 0) rows.add(new SidePanel.EffectRow(guard, null, Lang.t("Mutinerie"), Lang.t("Mutinerie"),
+            Lang.f("À son prochain tour, l'ennemi joue {0} cartes de moins.", MutinyEffect.CARDS_LESS)));
+        if (target.getLoadedCoins() > 0) rows.add(new SidePanel.EffectRow(guard, null, Lang.t("Pièce truquée"), Lang.t("Pièce truquée"),
+            Lang.t("Le prochain tirage de l'ennemi ne peut pas faire de Jackpot.")));
+        if (target.getHarpoons() > 0) rows.add(new SidePanel.EffectRow(guard, null, Lang.f("Harpon x{0}",
+            target.getHarpoons()),
+            Lang.t("Harpon"), Lang.f("À son prochain tour, l'ennemi joue {0} carte{1} de moins.",
+                target.getHarpoons(), (target.getHarpoons() > 1 ? "s" : ""))));
         Enemy foe = gameController.getGameState().getEnemy();
         EnemyKind kind = foe.getKind();
-        if (lasting.getNibbles() > 0) rows.add(curse(skull, "Grignotage x" + lasting.getNibbles(), EnemySymbol.NIBBLE, kind));
-        if (lasting.getDrunk() > 0) rows.add(curse(skull, "Ivresse x" + lasting.getDrunk(), EnemySymbol.DRUNK, kind));
-        if (lasting.isBlind()) rows.add(curse(skull, "Aveuglement", EnemySymbol.BLIND, kind));
-        if (lasting.hasNugget()) rows.add(curse(skull, "Pépite", EnemySymbol.NUGGET, kind));
-        if (lasting.getSongs() > 0) rows.add(curse(skull, "Chant x" + lasting.getSongs(), EnemySymbol.SONG, kind));
+        if (lasting.getNibbles() > 0) rows.add(curse(skull, Lang.f("Grignotage x{0}", lasting.getNibbles()), EnemySymbol.NIBBLE, kind));
+        if (lasting.getDrunk() > 0) rows.add(curse(skull, Lang.f("Ivresse x{0}", lasting.getDrunk()), EnemySymbol.DRUNK, kind));
+        if (lasting.isBlind()) rows.add(curse(skull, Lang.t("Aveuglement"), EnemySymbol.BLIND, kind));
+        if (lasting.hasNugget()) rows.add(curse(skull, Lang.t("Pépite"), EnemySymbol.NUGGET, kind));
+        if (lasting.getSongs() > 0) rows.add(curse(skull, Lang.f("Chant x{0}", lasting.getSongs()), EnemySymbol.SONG, kind));
         if (lasting.getFakeGains() > 0) {
-            rows.add(new SidePanel.EffectRow(skull, null, "Faux : " + lasting.getFakeGains(), "Fausse monnaie",
-                PlayerProfile.formatCoins(lasting.getFakeGains()) + " de tes gains sont faux. Dépense-les avant ton "
-                    + "tirage, ou ils disparaissent."));
+            rows.add(new SidePanel.EffectRow(skull, null, Lang.f("Faux : {0}", lasting.getFakeGains()), Lang.t("Fausse monnaie"),
+                Lang.f("{0} de tes gains sont faux. Dépense-les avant ton tirage, ou ils disparaissent.",
+                    PlayerProfile.formatCoins(lasting.getFakeGains()))));
         }
-        if (lasting.getTaxes() > 0) rows.add(curse(skull, "Taxe x" + lasting.getTaxes(), EnemySymbol.TAX, kind));
+        if (lasting.getTaxes() > 0) rows.add(curse(skull, Lang.f("Taxe x{0}", lasting.getTaxes()), EnemySymbol.TAX, kind));
         if (lasting.getHouseRule() != null) {
             LastingEffects.HouseRule houseRule = lasting.getHouseRule();
             rows.add(new SidePanel.EffectRow(skull, null,
-                houseRule.getShortName() + " (" + lasting.getHouseRuleTurns() + ")", "Nouvelle règle",
-                houseRuleText(houseRule) + " Encore " + turns(lasting.getHouseRuleTurns()) + "."));
+                houseRule.getShortName() + " (" + lasting.getHouseRuleTurns() + ")", Lang.t("Nouvelle règle"),
+                Lang.f("{0} Encore {1}.", houseRuleText(houseRule), turns(lasting.getHouseRuleTurns()))));
         }
         if (foe.getBannedFamily() != null) {
             String family = foe.getBannedFamily().getDisplayName();
-            rows.add(new SidePanel.EffectRow(skull, null, "Banni : " + family, "Cartes bannies",
-                "L'ennemi laisse dehors les cartes " + family + ". Tu ne peux pas les jouer. Jusqu'à la fin du combat."));
+            rows.add(new SidePanel.EffectRow(skull, null, Lang.f("Banni : {0}", family), Lang.t("Cartes bannies"),
+                Lang.f("L'ennemi laisse dehors les cartes {0}. Tu ne peux pas les jouer. Jusqu'à la fin du combat.",
+                    family)));
         }
         if (foe.getPrediction() != null) {
-            rows.add(new SidePanel.EffectRow(skull, null, "Prédit : " + foe.getPrediction().getDisplayName().toLowerCase(),
-                "Prédiction", "Symbole annoncé : " + foe.getPrediction().getDisplayName() + ". "
-                    + sentence(EnemySymbol.PREDICTION.getDescription(kind))));
+            rows.add(new SidePanel.EffectRow(skull, null, Lang.f("Prédit : {0}",
+                foe.getPrediction().getDisplayName().toLowerCase()),
+                Lang.t("Prédiction"), Lang.f("Symbole annoncé : {0}. {1}",
+                    foe.getPrediction().getDisplayName(), sentence(EnemySymbol.PREDICTION.getDescription(kind)))));
         }
         if (foe.getStolenReels() > 0) {
             int stolen = foe.getStolenReels();
-            String reels = stolen + (stolen > 1 ? " rouleaux" : " rouleau");
-            rows.add(new SidePanel.EffectRow(skull, null, "Vol : " + reels, "Rouleaux volés",
-                "L'ennemi t'a volé " + reels + ". Ils restent bloqués tant qu'il les garde."));
+            String reels = Lang.f(stolen > 1 ? "{0} rouleaux" : "{0} rouleau", stolen);
+            rows.add(new SidePanel.EffectRow(skull, null, Lang.f("Vol : {0}", reels), Lang.t("Rouleaux volés"),
+                Lang.f("L'ennemi t'a volé {0}. Ils restent bloqués tant qu'il les garde.", reels)));
         }
         int limit = kind.getTurnLimit();
         if (limit > 0) {
             int left = Math.max(0, limit - state.getTurnNumber() + 1);
-            rows.add(new SidePanel.EffectRow(skull, null, "Temps : " + left + " tours", "Temps compté",
-                "Le combat dure " + limit + " tours. Après, tu perds. Encore " + turns(left) + "."));
+            rows.add(new SidePanel.EffectRow(skull, null, Lang.f("Temps : {0} tours", left), Lang.t("Temps compté"),
+                Lang.f("Le combat dure {0} tours. Après, tu perds. Encore {1}.", limit, turns(left))));
         }
     }
 
@@ -1906,9 +1915,9 @@ public class GameScreen extends ScreenAdapter {
     /** @return ce que change la règle du Directeur des Jeux. */
     private static String houseRuleText(LastingEffects.HouseRule rule) {
         return switch (rule) {
-            case NO_COMBOS   -> "Les combinaisons de cartes ne comptent plus.";
-            case NO_BINGO    -> "Tes rouleaux ne peuvent plus faire de Bingo.";
-            case DOUBLE_SPIN -> "Chaque rouleau tourne deux fois. Le pire résultat reste.";
+            case NO_COMBOS   -> Lang.t("Les combinaisons de cartes ne comptent plus.");
+            case NO_BINGO    -> Lang.t("Tes rouleaux ne peuvent plus faire de Bingo.");
+            case DOUBLE_SPIN -> Lang.t("Chaque rouleau tourne deux fois. Le pire résultat reste.");
         };
     }
 

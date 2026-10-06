@@ -1,5 +1,7 @@
 package fr.astratime.lucky.progress;
 
+import fr.astratime.lucky.i18n.Lang;
+
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -38,9 +40,11 @@ public class DeckDraft {
 
     /** @return pourquoi la carte {@code id} ne peut pas être ajoutée, ou {@code null} si elle peut l'être. */
     public String addProblem(String id) {
-        if (size() >= PlayerProfile.DECK_SIZE) return "Le deck est plein (" + PlayerProfile.DECK_SIZE + " cartes)";
-        if (getCopies(id) >= PlayerProfile.MAX_COPIES) return "Pas plus de " + PlayerProfile.MAX_COPIES + " exemplaires";
-        if (getCopies(id) >= profile.getOwnedCopies(id)) return "Tu n'en as pas d'autre exemplaire";
+        if (size() >= PlayerProfile.DECK_SIZE) return Lang.f("Le deck est plein ({0} cartes)",
+            PlayerProfile.DECK_SIZE);
+        if (getCopies(id) >= PlayerProfile.MAX_COPIES) return Lang.f("Pas plus de {0} exemplaires",
+            PlayerProfile.MAX_COPIES);
+        if (getCopies(id) >= profile.getOwnedCopies(id)) return Lang.t("Tu n'en as pas d'autre exemplaire");
         return null;
     }
 

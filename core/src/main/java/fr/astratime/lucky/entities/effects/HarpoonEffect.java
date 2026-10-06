@@ -2,6 +2,7 @@ package fr.astratime.lucky.entities.effects;
 
 import fr.astratime.lucky.entities.context.PlayContext;
 import fr.astratime.lucky.entities.context.TurnContext;
+import fr.astratime.lucky.i18n.Lang;
 import fr.astratime.lucky.popups.EffectPopup;
 import fr.astratime.lucky.popups.EffectSound;
 import fr.astratime.lucky.popups.PopupScale;
@@ -26,11 +27,13 @@ public class HarpoonEffect extends Effect {
     }
 
     @Override
-    public String getDescription() { return "Attaque +" + attackPercent + " %. Coupe un bras du Kraken. Les autres ennemis jouent une carte de moins à leur prochain tour."; }
+    public String getDescription() { return Lang.f("Attaque +{0} %. Coupe un bras du Kraken. Les autres ennemis jouent une carte de moins à leur "
+        + "prochain tour.",
+        attackPercent); }
 
     @Override
     public List<EffectPopup> getPopups() {
-        return List.of(new EffectPopup("HARPON : ATTAQUE +" + attackPercent + " %", EffectPopup.Style.ATTACK, PopupScale.SECONDARY_INTENSITY));
+        return List.of(new EffectPopup(Lang.f("HARPON : ATTAQUE +{0} %", attackPercent), EffectPopup.Style.ATTACK, PopupScale.SECONDARY_INTENSITY));
     }
 
     @Override

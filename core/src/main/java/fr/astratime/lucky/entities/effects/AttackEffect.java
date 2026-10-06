@@ -1,6 +1,7 @@
 package fr.astratime.lucky.entities.effects;
 
 import fr.astratime.lucky.entities.context.TurnContext;
+import fr.astratime.lucky.i18n.Lang;
 import fr.astratime.lucky.popups.EffectPopup;
 import fr.astratime.lucky.popups.EffectSound;
 import fr.astratime.lucky.popups.PopupScale;
@@ -21,12 +22,12 @@ public class AttackEffect extends Effect {
     }
 
     @Override
-    public String getDescription() { return "Attaque +" + bonus; }
+    public String getDescription() { return Lang.f("Attaque +{0}", bonus); }
 
     @Override
     public List<EffectPopup> getPopups() {
         return List.of(
-            EffectPopup.scaled("ATTAQUE +" + bonus, EffectPopup.Style.ATTACK, bonus, PopupScale.CARD_ATTACK_BONUS)
+            EffectPopup.scaled(Lang.f("ATTAQUE +{0}", bonus), EffectPopup.Style.ATTACK, bonus, PopupScale.CARD_ATTACK_BONUS)
         );
     }
 

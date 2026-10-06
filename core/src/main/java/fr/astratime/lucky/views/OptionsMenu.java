@@ -21,6 +21,7 @@ import fr.astratime.lucky.LuckyGame;
 import fr.astratime.lucky.assets.Fonts;
 import fr.astratime.lucky.assets.HudTextures;
 import fr.astratime.lucky.assets.Palette;
+import fr.astratime.lucky.i18n.Lang;
 import fr.astratime.lucky.settings.AudioSettings;
 import fr.astratime.lucky.settings.DisplaySettings;
 import fr.astratime.lucky.settings.ScreenMode;
@@ -108,6 +109,14 @@ public class OptionsMenu implements Disposable {
      * @param captionText en-tête du panneau, ou {@code null} pour aucun
      */
     public void setEntries(String captionText, List<Entry> newEntries) {
+        setEntries(captionText, newEntries, 0);
+    }
+
+    /**
+     * Comme {@link #setEntries(String, List)}, l'option {@code first} sélectionnée
+     * (ex : la page redessinée dans une autre langue garde l'option « Langue »).
+     */
+    public void setEntries(String captionText, List<Entry> newEntries, int first) {
         options.forEach(Actor::remove);
         options.clear();
         entries.clear();
@@ -137,8 +146,8 @@ public class OptionsMenu implements Disposable {
             options.add(option);
             stage.addActor(option);
         }
-        selected = -1;
-        select(0);
+        selected = Math.max(0, Math.min(first, entries.size() - 1));
+        for (int i = 0; i < options.size(); i++) options.get(i).setSelected(i == selected);
         layout(centerX, centerY);
     }
 
@@ -252,13 +261,13 @@ public class OptionsMenu implements Disposable {
             onEffectsChanged.run();
         };
         return List.of(
-            new Entry(() -> "Affichage : " + display.getScreenMode().getLabel(), toggleScreenMode,
+            new Entry(() -> Lang.f("Affichage : {0}", display.getScreenMode().getLabel()), toggleScreenMode,
                 direction -> toggleScreenMode.run()),
-            new Entry(() -> visual.isReducedEffects() ? "Effets : réduits" : "Effets : normaux", toggleEffects,
+            new Entry(() -> visual.isReducedEffects() ? Lang.t("Effets : réduits") : Lang.t("Effets : normaux"), toggleEffects,
                 direction -> toggleEffects.run()),
-            new Entry(() -> "Musique : " + AudioSettings.percent(audio.getMusicVolume()) + " %",
+            new Entry(() -> Lang.f("Musique : {0} %", AudioSettings.percent(audio.getMusicVolume())),
                 () -> cycle(audio::stepMusicVolume, audio.getMusicVolume()), audio::stepMusicVolume),
-            new Entry(() -> "Sons : " + AudioSettings.percent(audio.getSoundVolume()) + " %",
+            new Entry(() -> Lang.f("Sons : {0} %", AudioSettings.percent(audio.getSoundVolume())),
                 () -> cycle(audio::stepSoundVolume, audio.getSoundVolume()), audio::stepSoundVolume));
     }
 

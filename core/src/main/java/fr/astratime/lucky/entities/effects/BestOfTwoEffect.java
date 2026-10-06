@@ -2,6 +2,7 @@ package fr.astratime.lucky.entities.effects;
 
 import fr.astratime.lucky.entities.context.PlayContext;
 import fr.astratime.lucky.entities.context.TurnContext;
+import fr.astratime.lucky.i18n.Lang;
 import fr.astratime.lucky.popups.EffectPopup;
 import fr.astratime.lucky.popups.EffectSound;
 import fr.astratime.lucky.popups.PopupScale;
@@ -18,11 +19,11 @@ public class BestOfTwoEffect extends Effect {
     public void apply(TurnContext context) { context.getSpinContext().addBestOfTwo(); }
 
     @Override
-    public String getDescription() { return "La machine tourne deux fois. Tu gardes le meilleur tirage."; }
+    public String getDescription() { return Lang.t("La machine tourne deux fois. Tu gardes le meilleur tirage."); }
 
     @Override
     public List<EffectPopup> getPopups() {
-        return List.of(new EffectPopup("TOURNÉE GÉNÉRALE !", EffectPopup.Style.SPECIAL, PopupScale.SECONDARY_INTENSITY));
+        return List.of(new EffectPopup(Lang.t("TOURNÉE GÉNÉRALE !"), EffectPopup.Style.SPECIAL, PopupScale.SECONDARY_INTENSITY));
     }
 
     @Override

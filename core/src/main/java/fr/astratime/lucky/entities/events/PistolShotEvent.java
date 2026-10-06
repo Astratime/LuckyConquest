@@ -1,5 +1,6 @@
 package fr.astratime.lucky.entities.events;
 
+import fr.astratime.lucky.i18n.Lang;
 import fr.astratime.lucky.popups.EffectPopup;
 import fr.astratime.lucky.popups.PopupScale;
 
@@ -38,7 +39,7 @@ public class PistolShotEvent extends EnemyDamagedEvent {
     @Override
     public List<EffectPopup> getPopups() {
         List<EffectPopup> popups = new ArrayList<>();
-        popups.add(new EffectPopup("PAN ! x" + multiplier, EffectPopup.Style.ATTACK, PopupScale.MAX_INTENSITY));
+        popups.add(new EffectPopup(Lang.f("PAN ! x{0}", multiplier), EffectPopup.Style.ATTACK, PopupScale.MAX_INTENSITY));
         popups.addAll(super.getPopups());
         return popups;
     }

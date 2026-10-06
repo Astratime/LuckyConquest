@@ -24,6 +24,7 @@ import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 import com.badlogic.gdx.utils.Align;
 import com.badlogic.gdx.utils.ScreenUtils;
 import fr.astratime.lucky.LuckyGame;
+import fr.astratime.lucky.i18n.Lang;
 import fr.astratime.lucky.progress.PlayerProfile;
 import fr.astratime.lucky.assets.BackgroundMusic;
 import fr.astratime.lucky.assets.CardTextures;
@@ -133,7 +134,7 @@ public class TowerScreen extends ScreenAdapter {
         veil = new Image(pixel);
         veil.setColor(0f, 0f, 0f, 0.6f);
         veil.setTouchable(Touchable.disabled);
-        title = new Label("TOUR DES ÉPREUVES", new Label.LabelStyle(titleFont, Color.WHITE));
+        title = new Label(Lang.t("TOUR DES ÉPREUVES"), new Label.LabelStyle(titleFont, Color.WHITE));
         title.pack();
         listPanel   = new Image(hud.panelDrawable());
         detailPanel = new Image(hud.panelDrawable());
@@ -171,12 +172,12 @@ public class TowerScreen extends ScreenAdapter {
         description  = new Label("", new Label.LabelStyle(bodyFont, Color.WHITE));
         description.setWrap(true);
         description.setAlignment(Align.topLeft);
-        startButton  = buttons.createAction("Commencer", clickSound, this::launch);
-        backButton   = buttons.create("Retour", clickSound, this::onBack);
-        tutorialButton = buttons.create("Tutoriel", clickSound, this::replayGuide);
+        startButton  = buttons.createAction(Lang.t("Commencer"), clickSound, this::launch);
+        backButton   = buttons.create(Lang.t("Retour"), clickSound, this::onBack);
+        tutorialButton = buttons.create(Lang.t("Tutoriel"), clickSound, this::replayGuide);
         // Mode difficile : ouvert après la Machine Originelle ; le bouton bascule entre les deux modes.
-        modeButton   = buttons.create("Mode difficile", clickSound, this::toggleMode);
-        modeButton.setText("Mode normal");
+        modeButton   = buttons.create(Lang.t("Mode difficile"), clickSound, this::toggleMode);
+        modeButton.setText(Lang.t("Mode normal"));
         modeButton.setVisible(luckyGame.getProfile().isTowerHardOpen());
 
         fade = new Image(pixel);
@@ -205,9 +206,10 @@ public class TowerScreen extends ScreenAdapter {
         select(0, false);
         layout();
         firstVisit = new FirstVisitGuide(stage, hud, clickSound, luckyGame.getProfile(), PlayerProfile.GUIDE_TOWER,
-            "La Tour des épreuves. Six chapitres, de plus en plus durs.",
-            "Un chapitre : un premier combat, puis tu choisis ton adversaire parmi trois cartes, puis le boss. Tes PV et tes gains te suivent.",
-            "Bats le boss pour ouvrir le chapitre suivant. La Tour ne rapporte pas de pièces.");
+            Lang.t("La Tour des épreuves. Six chapitres, de plus en plus durs."),
+            Lang.t("Un chapitre : un premier combat, puis tu choisis ton adversaire parmi trois cartes, puis le "
+                + "boss. Tes PV et tes gains te suivent."),
+            Lang.t("Bats le boss pour ouvrir le chapitre suivant. La Tour ne rapporte pas de pièces."));
         fade.toFront();
     }
 
@@ -232,20 +234,22 @@ public class TowerScreen extends ScreenAdapter {
         }
         Chapter chapter = Chapter.values()[index];
         boolean open = isOpen(chapter);
-        chapterLabel.setText(chapter.getLabel().toUpperCase() + (hard ? " · DIFFICILE" : ""));
+        chapterLabel.setText(hard ? Lang.f("{0} · DIFFICILE", chapter.getLabel().toUpperCase())
+            : chapter.getLabel().toUpperCase());
         chapterTitle.setText(chapter.getTitle());
         description.setText(!open
-            ? "Termine le " + chapter.getPrevious().getLabel().toLowerCase()
-                + (hard ? " en mode difficile" : "") + " pour ouvrir ce chapitre."
+            ? Lang.f(hard ? "Termine le {0} en mode difficile pour ouvrir ce chapitre."
+                    : "Termine le {0} pour ouvrir ce chapitre.",
+                chapter.getPrevious().getLabel().toLowerCase())
             : hard
-            ? chapter.getDescription() + "\n\nMode difficile : ennemis PV x" + EnemyKind.HARD_HP_FACTOR
-                + ", force x" + EnemyKind.HARD_POWER_FACTOR + "."
+            ? Lang.f("{0}\n\nMode difficile : ennemis PV x{1}, force x{2}.",
+                chapter.getDescription(), EnemyKind.HARD_HP_FACTOR, EnemyKind.HARD_POWER_FACTOR)
             : chapter.getDescription());
         ((TextureRegionDrawable) art.getDrawable()).setRegion(new TextureRegion(enemyTextures.chapterArt(chapter)));
         art.setVisible(open);
         lockMark.setVisible(!open);
         startButton.setDisabled(!open);
-        startButton.setText(open ? "Commencer" : "Verrouillé");
+        startButton.setText(open ? Lang.t("Commencer") : Lang.t("Verrouillé"));
         // Le panneau de droite apparaît en fondu à chaque changement.
         for (Actor actor : List.of(chapterLabel, chapterTitle, art, lockMark, description)) {
             actor.clearActions();
@@ -274,7 +278,7 @@ public class TowerScreen extends ScreenAdapter {
     /** Bascule entre le mode normal et le mode difficile. */
     private void toggleMode() {
         hard = !hard;
-        modeButton.setText(hard ? "Mode difficile" : "Mode normal");
+        modeButton.setText(hard ? Lang.t("Mode difficile") : Lang.t("Mode normal"));
         showChapter();
     }
 

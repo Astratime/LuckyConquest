@@ -2,6 +2,7 @@ package fr.astratime.lucky.entities.effects;
 
 import fr.astratime.lucky.entities.context.PlayContext;
 import fr.astratime.lucky.entities.context.TurnContext;
+import fr.astratime.lucky.i18n.Lang;
 import fr.astratime.lucky.popups.EffectPopup;
 import fr.astratime.lucky.popups.EffectSound;
 import fr.astratime.lucky.popups.PopupScale;
@@ -38,15 +39,15 @@ public class CorruptionEffect extends Effect {
 
     @Override
     public String getDescription() {
-        return "Pendant " + turns + " tours : attaque et bouclier des symboles x" + FACTOR
-            + ". Chaque tour coûte " + GAINS_PERCENT + "% des gains";
+        return Lang.f("Pendant {0} tours : attaque et bouclier des symboles x{1}. Chaque tour coûte {2}% des gains",
+            turns, FACTOR, GAINS_PERCENT);
     }
 
     @Override
     public List<EffectPopup> getPopups() {
         return List.of(
-            new EffectPopup("CORRUPTION !", EffectPopup.Style.DAMAGE, PopupScale.MAX_INTENSITY),
-            new EffectPopup("ATTAQUE ET DÉFENSE x" + FACTOR + " (" + turns + " TOURS)", EffectPopup.Style.SPECIAL,
+            new EffectPopup(Lang.t("CORRUPTION !"), EffectPopup.Style.DAMAGE, PopupScale.MAX_INTENSITY),
+            new EffectPopup(Lang.f("ATTAQUE ET DÉFENSE x{0} ({1} TOURS)", FACTOR, turns), EffectPopup.Style.SPECIAL,
                 PopupScale.SECONDARY_INTENSITY));
     }
 

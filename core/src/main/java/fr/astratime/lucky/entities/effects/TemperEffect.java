@@ -2,6 +2,7 @@ package fr.astratime.lucky.entities.effects;
 
 import fr.astratime.lucky.entities.context.PlayContext;
 import fr.astratime.lucky.entities.context.TurnContext;
+import fr.astratime.lucky.i18n.Lang;
 import fr.astratime.lucky.popups.EffectPopup;
 import fr.astratime.lucky.popups.EffectSound;
 import fr.astratime.lucky.popups.PopupScale;
@@ -30,11 +31,12 @@ public class TemperEffect extends Effect {
     public void apply(TurnContext context) { }
 
     @Override
-    public String getDescription() { return "Attaque +" + percent + " %, puis encore +" + percent + " % à chaque tour. Jusqu'à la fin du combat."; }
+    public String getDescription() { return Lang.f("Attaque +{0} %, puis encore +{1} % à chaque tour. Jusqu'à la fin du combat.",
+        percent, percent); }
 
     @Override
     public List<EffectPopup> getPopups() {
-        return List.of(new EffectPopup("TREMPE : +" + percent + " % PAR TOUR", EffectPopup.Style.ATTACK, PopupScale.SECONDARY_INTENSITY));
+        return List.of(new EffectPopup(Lang.f("TREMPE : +{0} % PAR TOUR", percent), EffectPopup.Style.ATTACK, PopupScale.SECONDARY_INTENSITY));
     }
 
     @Override

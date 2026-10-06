@@ -2,6 +2,7 @@ package fr.astratime.lucky.entities;
 
 import fr.astratime.lucky.entities.enemy.EnemyKind;
 import fr.astratime.lucky.entities.exploration.PlaceRule;
+import fr.astratime.lucky.i18n.Lang;
 
 import java.util.List;
 
@@ -25,7 +26,7 @@ public class GameState {
      * @param playerCards cartes composant le deck initial du joueur
      */
     public GameState(List<Card> playerCards) {
-        this(new Player("Joueur", Player.BASE_HP, playerCards), new Enemy(EnemyKind.CROUPIER));
+        this(new Player(Lang.t("Joueur"), Player.BASE_HP, playerCards), new Enemy(EnemyKind.CROUPIER));
     }
 
     /** Combat contre {@code enemy}, avec un joueur déjà constitué (combat suivant d'une épreuve). */

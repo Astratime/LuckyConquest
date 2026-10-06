@@ -2,6 +2,7 @@ package fr.astratime.lucky.entities.effects;
 
 import fr.astratime.lucky.entities.context.CombatContext;
 import fr.astratime.lucky.entities.context.TurnContext;
+import fr.astratime.lucky.i18n.Lang;
 import fr.astratime.lucky.popups.EffectPopup;
 import fr.astratime.lucky.popups.EffectSound;
 import fr.astratime.lucky.popups.PopupScale;
@@ -34,16 +35,16 @@ public class AceOfDiamondsEffect extends Effect {
     @Override
     public String getDescription() {
         int lowHp = Math.round(CombatContext.LOW_HP_RATIO * 100);
-        return "Contre-attaque : vide le Coffre sur l'ennemi x" + COUNTER + " (x" + COUNTER_LOW_HP + " sous "
-            + lowHp + "% de vie), en ignorant sa défense. Renvoie " + REFLECT_PERCENT
-            + "% des attaques ennemies (" + REFLECT_PERCENT_LOW_HP + "% sous " + lowHp + "% de vie)";
+        return Lang.f("Contre-attaque : vide le Coffre sur l'ennemi x{0} (x{1} sous {2}% de vie), en ignorant sa "
+            + "défense. Renvoie {3}% des attaques ennemies ({4}% sous {5}% de vie)",
+            COUNTER, COUNTER_LOW_HP, lowHp, REFLECT_PERCENT, REFLECT_PERCENT_LOW_HP, lowHp);
     }
 
     @Override
     public List<EffectPopup> getPopups() {
         return List.of(
-            new EffectPopup("CONTRE-ATTAQUE", EffectPopup.Style.DEFENSE, PopupScale.MAX_INTENSITY),
-            new EffectPopup("RENVOI " + REFLECT_PERCENT + "-" + REFLECT_PERCENT_LOW_HP + "%",
+            new EffectPopup(Lang.t("CONTRE-ATTAQUE"), EffectPopup.Style.DEFENSE, PopupScale.MAX_INTENSITY),
+            new EffectPopup(Lang.f("RENVOI {0}-{1}%", REFLECT_PERCENT, REFLECT_PERCENT_LOW_HP),
                 EffectPopup.Style.REFLECT, PopupScale.SECONDARY_INTENSITY)
         );
     }

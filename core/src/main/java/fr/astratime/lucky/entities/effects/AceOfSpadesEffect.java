@@ -4,6 +4,7 @@ import fr.astratime.lucky.entities.LastingEffects;
 import fr.astratime.lucky.entities.context.PlayContext;
 import fr.astratime.lucky.entities.context.TurnContext;
 import fr.astratime.lucky.entities.events.CardBonusEvent;
+import fr.astratime.lucky.i18n.Lang;
 import fr.astratime.lucky.popups.EffectPopup;
 import fr.astratime.lucky.popups.EffectSound;
 import fr.astratime.lucky.popups.PopupScale;
@@ -34,8 +35,8 @@ public class AceOfSpadesEffect extends Effect {
         context.getLastingEffects().addBlades(blades);
         context.queueForSpin(this);
         context.addPopups(List.of(
-            new EffectPopup("EXÉCUTION", EffectPopup.Style.ATTACK, PopupScale.MAX_INTENSITY),
-            new EffectPopup("-10% GAINS : LAMES +" + blades, EffectPopup.Style.GAINS, PopupScale.SECONDARY_INTENSITY)));
+            new EffectPopup(Lang.t("EXÉCUTION"), EffectPopup.Style.ATTACK, PopupScale.MAX_INTENSITY),
+            new EffectPopup(Lang.f("-10% GAINS : LAMES +{0}", blades), EffectPopup.Style.GAINS, PopupScale.SECONDARY_INTENSITY)));
     }
 
     /** Encaisse les Lames : attaque multipliée pour ce tour, défense ennemie ignorée. */
@@ -47,15 +48,16 @@ public class AceOfSpadesEffect extends Effect {
         context.getCombatContext().setIgnoreDefense(true);
         context.getCombatContext().multiplyAttack(factor);
         String times = factor == (int) factor ? String.valueOf((int) factor) : String.valueOf(factor);
-        context.addEvent(new CardBonusEvent("Execution : " + blades + " lames, attaque x" + times, List.of(
-            new EffectPopup("EXÉCUTION : " + blades + " LAMES", EffectPopup.Style.ATTACK, PopupScale.MAX_INTENSITY),
-            new EffectPopup("ATTAQUE x" + times, EffectPopup.Style.ATTACK, PopupScale.SECONDARY_INTENSITY))));
+        context.addEvent(new CardBonusEvent(Lang.f("Execution : {0} lames, attaque x{1}", blades, times), List.of(
+            new EffectPopup(Lang.f("EXÉCUTION : {0} LAMES", blades), EffectPopup.Style.ATTACK, PopupScale.MAX_INTENSITY),
+            new EffectPopup(Lang.f("ATTAQUE x{0}", times), EffectPopup.Style.ATTACK, PopupScale.SECONDARY_INTENSITY))));
     }
 
     @Override
     public String getDescription() {
-        return "Exécution : consomme 10% des gains. +1 Lame tous les " + GAINS_PER_BLADE
-            + " gains consommés. Attaque multipliée par (1 + 0,5 x Lame). Les symboles d'attaque ignorent la défense";
+        return Lang.f("Exécution : consomme 10% des gains. +1 Lame tous les {0} gains consommés. Attaque multipliée "
+            + "par (1 + 0,5 x Lame). Les symboles d'attaque ignorent la défense",
+            GAINS_PER_BLADE);
     }
 
     /** Textes fixes : aucun, ils dépendent des gains consommés (voir {@link #onPlay}). */

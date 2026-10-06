@@ -14,6 +14,7 @@ import com.badlogic.gdx.utils.Disposable;
 import fr.astratime.lucky.LuckyGame;
 import fr.astratime.lucky.assets.HudTextures;
 import fr.astratime.lucky.assets.Palette;
+import fr.astratime.lucky.i18n.Lang;
 import fr.astratime.lucky.settings.AudioSettings;
 import fr.astratime.lucky.settings.DisplaySettings;
 import fr.astratime.lucky.settings.VisualSettings;
@@ -111,14 +112,14 @@ public class PauseOverlay implements Disposable {
     /** Page pause : Reprendre, Options, Recommencer, Menu principal. */
     private void showPausePage() {
         optionsPage = false;
-        menu.setEntries("PAUSE", List.of(
-            OptionsMenu.Entry.button("Reprendre", this::resume),
-            OptionsMenu.Entry.button("Options", this::showOptionsPage),
-            OptionsMenu.Entry.button("Recommencer", () -> {
+        menu.setEntries(Lang.t("PAUSE"), List.of(
+            OptionsMenu.Entry.button(Lang.t("Reprendre"), this::resume),
+            OptionsMenu.Entry.button(Lang.t("Options"), this::showOptionsPage),
+            OptionsMenu.Entry.button(Lang.t("Recommencer"), () -> {
                 shown = false;
                 listener.onRestart();
             }),
-            OptionsMenu.Entry.button("Menu principal", () -> {
+            OptionsMenu.Entry.button(Lang.t("Menu principal"), () -> {
                 shown = false;
                 listener.onMainMenu();
             })));
@@ -128,8 +129,8 @@ public class PauseOverlay implements Disposable {
     private void showOptionsPage() {
         optionsPage = true;
         List<OptionsMenu.Entry> entries = new ArrayList<>(settingsEntries);
-        entries.add(OptionsMenu.Entry.button("Retour", this::showPausePage));
-        menu.setEntries("OPTIONS", entries);
+        entries.add(OptionsMenu.Entry.button(Lang.t("Retour"), this::showPausePage));
+        menu.setEntries(Lang.t("OPTIONS"), entries);
     }
 
     private void resume() {

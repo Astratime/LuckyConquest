@@ -22,6 +22,7 @@ import fr.astratime.lucky.assets.HudTextures;
 import fr.astratime.lucky.assets.Palette;
 import fr.astratime.lucky.entities.Card;
 import fr.astratime.lucky.entities.effects.Effect;
+import fr.astratime.lucky.i18n.Lang;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -93,8 +94,8 @@ public class CardDetailOverlay implements Disposable {
      * @param price   prix à l'échoppe, ou {@code null} si la carte n'y est pas vendue
      */
     public void show(Card card, Texture texture, Integer price) {
-        show(card, texture, price != null ? "Prix à l'échoppe" : null,
-            price != null ? SidePanel.formatGains(price) + " gains" : null);
+        show(card, texture, price != null ? Lang.t("Prix à l'échoppe") : null,
+            price != null ? Lang.f("{0} gains", SidePanel.formatGains(price)) : null);
     }
 
     /**
@@ -103,16 +104,16 @@ public class CardDetailOverlay implements Disposable {
      * @param price prix, déjà mis en forme (« 3 000 000 pièces »)
      */
     public void showForSale(Card card, Texture texture, String price) {
-        show(card, texture, "Prix en boutique", price);
+        show(card, texture, Lang.t("Prix en boutique"), price);
     }
 
     private void show(Card card, Texture texture, String priceKey, String price) {
         List<String[]> lines = new ArrayList<>();
-        lines.add(new String[] {"Nom", card.getName()});
-        lines.add(new String[] {"Couleur", suitName(card.getSuit())});
-        if (card.getSuit() != null) lines.add(new String[] {"Rang", rankName(card.getRank())});
-        lines.add(new String[] {"Type", card.isConsumable() ? "Consommable : disparaît une fois jouée"
-            : card.getSuit() != null ? "Carte à suite" : "Carte spéciale"});
+        lines.add(new String[] {Lang.t("Nom"), card.getName()});
+        lines.add(new String[] {Lang.t("Couleur"), suitName(card.getSuit())});
+        if (card.getSuit() != null) lines.add(new String[] {Lang.t("Rang"), rankName(card.getRank())});
+        lines.add(new String[] {Lang.t("Type"), card.isConsumable() ? Lang.t("Consommable : disparaît une fois jouée")
+            : card.getSuit() != null ? Lang.t("Carte à suite") : Lang.t("Carte spéciale")});
         if (price != null) lines.add(new String[] {priceKey, price});
         List<String> effects = new ArrayList<>();
         for (Effect effect : card.getEffects()) effects.addAll(List.of(effect.getDescription().split("\n")));
@@ -130,10 +131,10 @@ public class CardDetailOverlay implements Disposable {
         float width = cardWidth * 1.2f;
         float height = width * region.getRegionHeight() / region.getRegionWidth();
         List<String[]> lines = new ArrayList<>();
-        lines.add(new String[] {"Nom", name});
-        lines.add(new String[] {"Type", "Rouleau de la machine"});
-        lines.add(new String[] {"Prix en boutique", price});
-        lines.add(new String[] {"État", state});
+        lines.add(new String[] {Lang.t("Nom"), name});
+        lines.add(new String[] {Lang.t("Type"), Lang.t("Rouleau de la machine")});
+        lines.add(new String[] {Lang.t("Prix en boutique"), price});
+        lines.add(new String[] {Lang.t("État"), state});
         open(region, width, height, name, lines, List.of(effect.split("\n")));
     }
 
@@ -148,9 +149,9 @@ public class CardDetailOverlay implements Disposable {
     public void showEffect(String name, TextureRegion icon, String state, String description) {
         float size = cardWidth * 0.8f;
         List<String[]> lines = new ArrayList<>();
-        lines.add(new String[] {"Nom", name});
-        lines.add(new String[] {"Type", "Effet en cours"});
-        lines.add(new String[] {"État", state});
+        lines.add(new String[] {Lang.t("Nom"), name});
+        lines.add(new String[] {Lang.t("Type"), Lang.t("Effet en cours")});
+        lines.add(new String[] {Lang.t("État"), state});
         open(icon, size, size * icon.getRegionHeight() / icon.getRegionWidth(), name, lines,
             List.of(description.split("(?<=[.!]) ")));
     }
@@ -170,17 +171,17 @@ public class CardDetailOverlay implements Disposable {
         info.row();
         for (String[] line : lines) line(info, line[0], line[1]);
 
-        info.add(label("Effets :", keyFont)).left().padTop(LINE_GAP * 2);
+        info.add(label(Lang.t("Effets :"), keyFont)).left().padTop(LINE_GAP * 2);
         info.row();
         if (effects.isEmpty()) {
-            info.add(wrapped("- Aucun effet")).width(INFO_WIDTH).left().padTop(LINE_GAP);
+            info.add(wrapped(Lang.t("- Aucun effet"))).width(INFO_WIDTH).left().padTop(LINE_GAP);
             info.row();
         }
         for (String part : effects) {
             info.add(wrapped("- " + part)).width(INFO_WIDTH).left().padTop(LINE_GAP);
             info.row();
         }
-        info.add(label("Clic ou Échap pour fermer", hintFont)).left().padTop(LINE_GAP * 4);
+        info.add(label(Lang.t("Clic ou Échap pour fermer"), hintFont)).left().padTop(LINE_GAP * 4);
         panel.add(info).width(INFO_WIDTH).top();
 
         layout();
@@ -220,22 +221,22 @@ public class CardDetailOverlay implements Disposable {
 
     /** @return le nom affiché de la couleur d'une carte ("Spéciale" pour une carte sans suite). */
     static String suitName(Card.Suit suit) {
-        if (suit == null) return "Spéciale";
+        if (suit == null) return Lang.t("Spéciale");
         return switch (suit) {
-            case COEUR   -> "Coeur";
-            case CARREAU -> "Carreau";
-            case TREFLE  -> "Trèfle";
-            case PIQUE   -> "Pique";
+            case COEUR   -> Lang.t("Coeur");
+            case CARREAU -> Lang.t("Carreau");
+            case TREFLE  -> Lang.t("Trèfle");
+            case PIQUE   -> Lang.t("Pique");
         };
     }
 
     /** @return le nom affiché d'un rang (As, Valet, Dame, Roi, ou le chiffre). */
     static String rankName(int rank) {
         return switch (rank) {
-            case 1  -> "As";
-            case 11 -> "Valet";
-            case 12 -> "Dame";
-            case 13 -> "Roi";
+            case 1  -> Lang.t("As");
+            case 11 -> Lang.t("Valet");
+            case 12 -> Lang.t("Dame");
+            case 13 -> Lang.t("Roi");
             default -> String.valueOf(rank);
         };
     }

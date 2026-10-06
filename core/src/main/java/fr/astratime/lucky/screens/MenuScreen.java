@@ -26,6 +26,7 @@ import fr.astratime.lucky.assets.HudTextures;
 import fr.astratime.lucky.assets.Palette;
 import fr.astratime.lucky.assets.BackgroundMusic;
 import fr.astratime.lucky.assets.VolumeSound;
+import fr.astratime.lucky.i18n.Lang;
 import fr.astratime.lucky.progress.PlayerProfile;
 import fr.astratime.lucky.settings.AudioSettings;
 import fr.astratime.lucky.settings.DisplaySettings;
@@ -147,35 +148,53 @@ public class MenuScreen extends ScreenAdapter {
      */
     private void showMainPage() {
         List<OptionsMenu.Entry> entries = new ArrayList<>(List.of(
-            OptionsMenu.Entry.button("Entraînement", this::onPlay),
-            OptionsMenu.Entry.button("Tour des épreuves", this::onTower),
-            OptionsMenu.Entry.button("Exploration", () -> goTo(() -> new ExplorationScreen(luckyGame))),
-            OptionsMenu.Entry.button("Table du croupier", () -> goTo(() -> new CroupierTableScreen(luckyGame))),
-            OptionsMenu.Entry.button("Boutique", () -> goTo(() -> new ShopScreen(luckyGame)))));
+            OptionsMenu.Entry.button(Lang.t("Entraînement"), this::onPlay),
+            OptionsMenu.Entry.button(Lang.t("Tour des épreuves"), this::onTower),
+            OptionsMenu.Entry.button(Lang.t("Exploration"), () -> goTo(() -> new ExplorationScreen(luckyGame))),
+            OptionsMenu.Entry.button(Lang.t("Table du croupier"), () -> goTo(() -> new CroupierTableScreen(luckyGame))),
+            OptionsMenu.Entry.button(Lang.t("Boutique"), () -> goTo(() -> new ShopScreen(luckyGame)))));
         // Mode Cinématique : seulement en mode ADMIN.
         if (luckyGame.getProfile().isAdmin()) {
-            entries.add(OptionsMenu.Entry.button("Cinématique", () -> goTo(() -> new CinematicScreen(luckyGame))));
+            entries.add(OptionsMenu.Entry.button(Lang.t("Cinématique"), () -> goTo(() -> new CinematicScreen(luckyGame))));
         }
-        entries.add(OptionsMenu.Entry.button("Options", this::showOptionsPage));
-        entries.add(OptionsMenu.Entry.button("Quitter", this::onQuit));
+        entries.add(OptionsMenu.Entry.button(Lang.t("Options"), this::showOptionsPage));
+        entries.add(OptionsMenu.Entry.button(Lang.t("Quitter"), this::onQuit));
         showPage(null, entries);
     }
 
-    /** Page des options : affichage, effets visuels, musique, sons, mode ADMIN, Retour. */
+    /** Page des options : affichage, effets visuels, musique, sons, langue, tutoriel, mode ADMIN, Retour. */
     private void showOptionsPage() {
+        showOptionsPage(0);
+    }
+
+    /** @param selected l'option sélectionnée à l'ouverture de la page */
+    private void showOptionsPage(int selected) {
         List<OptionsMenu.Entry> entries = new ArrayList<>(
             OptionsMenu.settingsEntries(luckyGame, settings, audio, display, () -> { }));
-        entries.add(OptionsMenu.Entry.button("Rejouer le tutoriel", this::onTutorial));
+        int languageIndex = entries.size();
+        // Langue : la page est redessinée (au prochain rendu) pour que tous ses textes changent.
+        Runnable toggleLanguage = () -> {
+            Lang.set(Lang.get().next());
+            Gdx.app.postRunnable(() -> showOptionsPage(languageIndex));
+        };
+        entries.add(new OptionsMenu.Entry(() -> Lang.f("Langue : {0}", Lang.get().label), toggleLanguage,
+            direction -> toggleLanguage.run()));
+        entries.add(OptionsMenu.Entry.button(Lang.t("Rejouer le tutoriel"), this::onTutorial));
         PlayerProfile profile = luckyGame.getProfile();
         Runnable toggleAdmin = () -> profile.setAdmin(!profile.isAdmin());
-        entries.add(new OptionsMenu.Entry(() -> "Mode ADMIN : " + (profile.isAdmin() ? "activé" : "désactivé"),
+        entries.add(new OptionsMenu.Entry(() -> Lang.f("Mode ADMIN : {0}",
+            (profile.isAdmin() ? Lang.t("activé") : Lang.t("désactivé"))),
             toggleAdmin, direction -> toggleAdmin.run()));
-        entries.add(OptionsMenu.Entry.button("Retour", this::showMainPage));
-        showPage("OPTIONS", entries);
+        entries.add(OptionsMenu.Entry.button(Lang.t("Retour"), this::showMainPage));
+        showPage(Lang.t("OPTIONS"), entries, selected);
     }
 
     private void showPage(String caption, List<OptionsMenu.Entry> entries) {
-        menu.setEntries(caption, entries);
+        showPage(caption, entries, 0);
+    }
+
+    private void showPage(String caption, List<OptionsMenu.Entry> entries, int selected) {
+        menu.setEntries(caption, entries, selected);
         placeMenu();
         fade.toFront();
     }
@@ -212,14 +231,14 @@ public class MenuScreen extends ScreenAdapter {
     }
 
     private void offerTutorial(PlayerProfile profile) {
-        GuideOverlay.Step offer = GuideOverlay.Step.say("Bienvenue à Lucky Conquest. Première fois à ma table ? "
-            + "Je t'apprends à jouer en un combat. Le tutoriel reste aussi dans les Options.").buttons(
-            guideButtons.create("Suivre le tutoriel", clickSound, () -> {
+        GuideOverlay.Step offer = GuideOverlay.Step.say(Lang.t("Bienvenue à Lucky Conquest. Première fois à ma table ? Je t'apprends à jouer en un combat. Le "
+            + "tutoriel reste aussi dans les Options.")).buttons(
+            guideButtons.create(Lang.t("Suivre le tutoriel"), clickSound, () -> {
                 profile.markSeen(PlayerProfile.GUIDE_OFFER);
                 guide.stop();
                 onTutorial();
             }),
-            guideButtons.create("Plus tard", clickSound, () -> {
+            guideButtons.create(Lang.t("Plus tard"), clickSound, () -> {
                 profile.markSeen(PlayerProfile.GUIDE_OFFER);
                 guide.stop();
             }));
@@ -228,17 +247,18 @@ public class MenuScreen extends ScreenAdapter {
 
     /** Le Croupier présente chaque bouton du menu principal. */
     private void showMenuTour(PlayerProfile profile) {
-        guide.setSkipButton(guideButtons.create("Passer", clickSound, () -> {
+        guide.setSkipButton(guideButtons.create(Lang.t("Passer"), clickSound, () -> {
             profile.markSeen(PlayerProfile.GUIDE_MENU);
             guide.stop();
         }));
         String[] lines = {
-            "Entraînement : un combat contre moi, pour t'exercer. Il ne rapporte rien.",
-            "Tour des épreuves : six chapitres de combats, jusqu'au sommet. Elle ne rapporte pas de pièces.",
-            "Exploration : des donjons, leurs rois et leurs coffres. Les seuls combats qui rapportent des pièces.",
-            "Table du croupier : ton deck de 20 cartes et les 11 rouleaux de ta machine.",
-            "Boutique : tes pièces y achètent des rangs, des cartes et des rouleaux.",
-            "Options : le tutoriel s'y rejoue. Bonne chance à la table."};
+            Lang.t("Entraînement : un combat contre moi, pour t'exercer. Il ne rapporte rien."),
+            Lang.t("Tour des épreuves : six chapitres de combats, jusqu'au sommet. Elle ne rapporte pas de pièces."),
+            Lang.t("Exploration : des donjons, leurs rois et leurs coffres. Les seuls combats qui rapportent des "
+                + "pièces."),
+            Lang.t("Table du croupier : ton deck de 20 cartes et les 11 rouleaux de ta machine."),
+            Lang.t("Boutique : tes pièces y achètent des rangs, des cartes et des rouleaux."),
+            Lang.t("Options : le tutoriel s'y rejoue. Bonne chance à la table.")};
         List<GuideOverlay.Step> steps = new ArrayList<>();
         for (int i = 0; i < lines.length; i++) {
             // « Options » vient après « Cinématique » quand le mode ADMIN l'affiche.

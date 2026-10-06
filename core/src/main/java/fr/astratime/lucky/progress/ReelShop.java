@@ -1,6 +1,7 @@
 package fr.astratime.lucky.progress;
 
 import fr.astratime.lucky.entities.Symbol;
+import fr.astratime.lucky.i18n.Lang;
 
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -35,27 +36,27 @@ public final class ReelShop {
      */
     public static String describe(Symbol symbol) {
         return switch (symbol) {
-            case DOUBLE_BAR    -> "Attaque 20.";
-            case CHERRY        -> "Attaque 15.";
-            case SEVEN         -> "Attaque 30.";
-            case BAR           -> "Attaque 10.";
-            case GRAPE         -> "Bouclier 8.";
-            case BELL          -> "Gains 8.";
-            case DIAMOND       -> "Bouclier 20.";
-            case TRIPLE_CHERRY -> "Attaque 45.";
-            case TRIPLE_SEVEN  -> "Attaque 90.";
-            case GOLD_BAR      -> "Gains 25.";
-            case WATERMELON    -> "Gains 12.";
-            case HORSESHOE     -> "Gains 40.";
-            case ECU           -> "Bouclier 40.";
-            case SWORD         -> "Attaque 70. Ignore la défense.";
-            case HEART         -> "Soigne 10 % des PV max. Le surplus remplit le Sang.";
-            case DIE           -> "Attaque de 1 à 250, au hasard.";
-            case STAR          -> "Attaque 30. Bouclier 30. Gains 30.";
-            case BOMB          -> "Attaque 200. Tu perds 5 % de tes PV max.";
-            case CROWN         -> "Gains 100.";
-            case NUGGET        -> "Attaque 40. Gains 60. Gagné en vidant les Mines d'Or.";
-            case JOKER         -> "Compte comme n'importe quel symbole.";
+            case DOUBLE_BAR    -> Lang.t("Attaque 20.");
+            case CHERRY        -> Lang.t("Attaque 15.");
+            case SEVEN         -> Lang.t("Attaque 30.");
+            case BAR           -> Lang.t("Attaque 10.");
+            case GRAPE         -> Lang.t("Bouclier 8.");
+            case BELL          -> Lang.t("Gains 8.");
+            case DIAMOND       -> Lang.t("Bouclier 20.");
+            case TRIPLE_CHERRY -> Lang.t("Attaque 45.");
+            case TRIPLE_SEVEN  -> Lang.t("Attaque 90.");
+            case GOLD_BAR      -> Lang.t("Gains 25.");
+            case WATERMELON    -> Lang.t("Gains 12.");
+            case HORSESHOE     -> Lang.t("Gains 40.");
+            case ECU           -> Lang.t("Bouclier 40.");
+            case SWORD         -> Lang.t("Attaque 70. Ignore la défense.");
+            case HEART         -> Lang.t("Soigne 10 % des PV max. Le surplus remplit le Sang.");
+            case DIE           -> Lang.t("Attaque de 1 à 250, au hasard.");
+            case STAR          -> Lang.t("Attaque 30. Bouclier 30. Gains 30.");
+            case BOMB          -> Lang.t("Attaque 200. Tu perds 5 % de tes PV max.");
+            case CROWN         -> Lang.t("Gains 100.");
+            case NUGGET        -> Lang.t("Attaque 40. Gains 60. Gagné en vidant les Mines d'Or.");
+            case JOKER         -> Lang.t("Compte comme n'importe quel symbole.");
         };
     }
 

@@ -7,6 +7,7 @@ import fr.astratime.lucky.entities.events.Event;
 import fr.astratime.lucky.entities.events.GainsEarnedEvent;
 import fr.astratime.lucky.entities.events.GaugeFilledEvent;
 import fr.astratime.lucky.entities.events.PlayerHealedEvent;
+import fr.astratime.lucky.i18n.Lang;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -89,5 +90,6 @@ public class AttackAction extends Action {
     }
 
     @Override
-    public String getDescription() { return baseDamage + " dégâts de base" + (piercing ? ", ignore la défense" : ""); }
+    public String getDescription() { return Lang.f("{0} dégâts de base{1}",
+        baseDamage, (piercing ? Lang.t(", ignore la défense") : "")); }
 }

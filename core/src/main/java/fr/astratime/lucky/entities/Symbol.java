@@ -1,6 +1,7 @@
 package fr.astratime.lucky.entities;
 
 import fr.astratime.lucky.entities.actions.Action;
+import fr.astratime.lucky.i18n.Lang;
 
 import java.util.List;
 
@@ -63,35 +64,35 @@ public enum Symbol {
     /** @return le nom du symbole tel qu'affiché au joueur (ex : "CLOCHE"). */
     public String getDisplayName() {
         return switch (this) {
-            case DOUBLE_BAR    -> "DOUBLE BAR";
-            case CHERRY        -> "CERISE";
-            case SEVEN         -> "SEPT";
-            case BAR           -> "BAR";
-            case GRAPE         -> "RAISIN";
-            case BELL          -> "CLOCHE";
-            case DIAMOND       -> "DIAMANT";
-            case TRIPLE_CHERRY -> "TRIPLE CERISE";
-            case TRIPLE_SEVEN  -> "TRIPLE SEPT";
-            case GOLD_BAR      -> "LINGOT";
-            case WATERMELON    -> "PASTEQUE";
-            case HORSESHOE     -> "FER À CHEVAL";
-            case ECU           -> "ÉCU";
-            case SWORD         -> "ÉPÉE";
-            case HEART         -> "COEUR";
-            case DIE           -> "DÉ";
-            case STAR          -> "ÉTOILE";
-            case BOMB          -> "BOMBE";
-            case CROWN         -> "COURONNE";
-            case NUGGET        -> "PÉPITE";
-            case JOKER         -> "JOKER";
+            case DOUBLE_BAR    -> Lang.t("DOUBLE BAR");
+            case CHERRY        -> Lang.t("CERISE");
+            case SEVEN         -> Lang.t("SEPT");
+            case BAR           -> Lang.t("BAR");
+            case GRAPE         -> Lang.t("RAISIN");
+            case BELL          -> Lang.t("CLOCHE");
+            case DIAMOND       -> Lang.t("DIAMANT");
+            case TRIPLE_CHERRY -> Lang.t("TRIPLE CERISE");
+            case TRIPLE_SEVEN  -> Lang.t("TRIPLE SEPT");
+            case GOLD_BAR      -> Lang.t("LINGOT");
+            case WATERMELON    -> Lang.t("PASTEQUE");
+            case HORSESHOE     -> Lang.t("FER À CHEVAL");
+            case ECU           -> Lang.t("ÉCU");
+            case SWORD         -> Lang.t("ÉPÉE");
+            case HEART         -> Lang.t("COEUR");
+            case DIE           -> Lang.t("DÉ");
+            case STAR          -> Lang.t("ÉTOILE");
+            case BOMB          -> Lang.t("BOMBE");
+            case CROWN         -> Lang.t("COURONNE");
+            case NUGGET        -> Lang.t("PÉPITE");
+            case JOKER         -> Lang.t("JOKER");
         };
     }
 
     /** @return la description de l'effet de ce symbole (voir SymbolRegistry), affichée en infobulle. */
     public String getDescription() {
-        if (this == JOKER) return "Joker : compte comme n'importe quel symbole";
+        if (this == JOKER) return Lang.t("Joker : compte comme n'importe quel symbole");
         return SymbolRegistry.getAction(this)
             .map(Action::getDescription)
-            .orElse("Aucun effet");
+            .orElse(Lang.t("Aucun effet"));
     }
 }

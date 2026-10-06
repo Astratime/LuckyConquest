@@ -1,5 +1,7 @@
 package fr.astratime.lucky.settings;
 
+import fr.astratime.lucky.i18n.Lang;
+
 /** Mode d'affichage de la fenêtre du jeu, réglé dans les options. */
 public enum ScreenMode {
 
@@ -18,7 +20,7 @@ public enum ScreenMode {
     }
 
     /** @return le nom du mode, tel qu'affiché dans les options (ex : "plein écran"). */
-    public String getLabel() { return label; }
+    public String getLabel() { return Lang.t(label); }
 
     /** @return l'autre mode. */
     public ScreenMode toggled() {

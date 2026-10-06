@@ -7,6 +7,7 @@ import fr.astratime.lucky.entities.context.CombatContext;
 import fr.astratime.lucky.entities.context.TurnContext;
 import fr.astratime.lucky.entities.events.CardBonusEvent;
 import fr.astratime.lucky.entities.events.SymbolBoostedEvent;
+import fr.astratime.lucky.i18n.Lang;
 import fr.astratime.lucky.popups.EffectPopup;
 import fr.astratime.lucky.popups.EffectSound;
 import fr.astratime.lucky.popups.PopupScale;
@@ -43,21 +44,22 @@ public class AceOfHeartsEffect extends Effect {
         combat.multiplyAttack(factor);
         combat.addAttackBonus(blood);
         String times = String.valueOf(Math.round(factor * 10f) / 10f);
-        context.addEvent(new CardBonusEvent("Frenesie : attaque x" + times + ", sang +" + blood, List.of(
-            new EffectPopup("FRÉNÉSIE : ATTAQUE x" + times, EffectPopup.Style.DRAIN, PopupScale.MAX_INTENSITY),
-            new EffectPopup("SANG : ATTAQUE +" + blood, EffectPopup.Style.DRAIN, PopupScale.SECONDARY_INTENSITY))));
+        context.addEvent(new CardBonusEvent(Lang.f("Frenesie : attaque x{0}, sang +{1}", times, blood), List.of(
+            new EffectPopup(Lang.f("FRÉNÉSIE : ATTAQUE x{0}", times), EffectPopup.Style.DRAIN, PopupScale.MAX_INTENSITY),
+            new EffectPopup(Lang.f("SANG : ATTAQUE +{0}", blood), EffectPopup.Style.DRAIN, PopupScale.SECONDARY_INTENSITY))));
     }
 
     @Override
     public String getDescription() {
-        return "Frénésie : un symbole d'attaque devient plus fréquent. Attaque multipliée jusqu'à x"
-            + Math.round(1 + FRENZY_PER_MISSING_HP) + " selon la vie perdue. Tout le Sang s'ajoute à l'attaque";
+        return Lang.f("Frénésie : un symbole d'attaque devient plus fréquent. Attaque multipliée jusqu'à x{0} selon la "
+            + "vie perdue. Tout le Sang s'ajoute à l'attaque",
+            Math.round(1 + FRENZY_PER_MISSING_HP));
     }
 
     @Override
     public List<EffectPopup> getPopups() {
         return List.of(
-            new EffectPopup("FRÉNÉSIE !", EffectPopup.Style.DRAIN, PopupScale.MAX_INTENSITY)
+            new EffectPopup(Lang.t("FRÉNÉSIE !"), EffectPopup.Style.DRAIN, PopupScale.MAX_INTENSITY)
         );
     }
 

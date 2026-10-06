@@ -1,6 +1,7 @@
 package fr.astratime.lucky.entities.tower;
 
 import fr.astratime.lucky.entities.enemy.EnemyKind;
+import fr.astratime.lucky.i18n.Lang;
 
 import java.util.List;
 
@@ -63,11 +64,11 @@ public enum Chapter {
     /** @return le numéro du chapitre (à partir de 1). */
     public int getNumber() { return number; }
     /** @return "Chapitre N". */
-    public String getLabel() { return "Chapitre " + number; }
+    public String getLabel() { return Lang.f("Chapitre {0}", number); }
     /** @return le titre du chapitre (ex : "La genèse"). */
-    public String getTitle() { return title; }
+    public String getTitle() { return Lang.t(title); }
     /** @return le récit du chapitre. */
-    public String getDescription() { return description; }
+    public String getDescription() { return Lang.t(description); }
     /** @return le chapitre d'avant, à terminer pour ouvrir celui-ci ({@code null} pour le premier). */
     public Chapter getPrevious() { return ordinal() == 0 ? null : values()[ordinal() - 1]; }
     /** @return l'ennemi du premier combat. */
@@ -77,5 +78,5 @@ public enum Chapter {
     /** @return le boss du chapitre. */
     public EnemyKind getBoss() { return boss; }
     /** @return la phrase de fin, quand ce chapitre clôt l'histoire ({@code null} sinon). */
-    public String getEnding() { return ending; }
+    public String getEnding() { return Lang.t(ending); }
 }

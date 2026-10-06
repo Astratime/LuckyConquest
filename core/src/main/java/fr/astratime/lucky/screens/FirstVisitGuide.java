@@ -6,6 +6,7 @@ import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.utils.Disposable;
 import fr.astratime.lucky.assets.EnemyTextures;
 import fr.astratime.lucky.assets.HudTextures;
+import fr.astratime.lucky.i18n.Lang;
 import fr.astratime.lucky.progress.PlayerProfile;
 import fr.astratime.lucky.views.CasinoButtons;
 import fr.astratime.lucky.views.GuideOverlay;
@@ -55,7 +56,7 @@ final class FirstVisitGuide implements Disposable {
         portrait = EnemyTextures.newCroupierPortrait();
         buttons  = new CasinoButtons();
         overlay  = new GuideOverlay(hud, portrait);
-        overlay.setSkipButton(buttons.create("Passer", clickSound, () -> {
+        overlay.setSkipButton(buttons.create(Lang.t("Passer"), clickSound, () -> {
             profile.markSeen(guide);
             overlay.stop();
         }));

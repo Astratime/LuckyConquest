@@ -1,5 +1,6 @@
 package fr.astratime.lucky.entities.events;
 
+import fr.astratime.lucky.i18n.Lang;
 import fr.astratime.lucky.popups.EffectPopup;
 import fr.astratime.lucky.popups.PopupScale;
 
@@ -17,7 +18,7 @@ public class EnemyMirrorEvent extends Event {
 
     @Override
     public List<EffectPopup> getPopups() {
-        String text = cardName != null ? "REFLET : " + cardName.toUpperCase() : "REFLET";
+        String text = cardName != null ? Lang.f("REFLET : {0}", cardName.toUpperCase()) : Lang.t("REFLET");
         return List.of(new EffectPopup(text, EffectPopup.Style.REFLECT, PopupScale.SECONDARY_INTENSITY));
     }
 }

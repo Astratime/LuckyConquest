@@ -1,6 +1,7 @@
 package fr.astratime.lucky.entities.effects;
 
 import fr.astratime.lucky.entities.context.TurnContext;
+import fr.astratime.lucky.i18n.Lang;
 import fr.astratime.lucky.popups.EffectPopup;
 import fr.astratime.lucky.popups.EffectSound;
 import fr.astratime.lucky.popups.PopupScale;
@@ -25,12 +26,12 @@ public class GuaranteedReflectEffect extends Effect {
 
     @Override
     public String getDescription() {
-        return "Renvoie " + percent + "% des attaques ennemies. Pas besoin de symbole de défense";
+        return Lang.f("Renvoie {0}% des attaques ennemies. Pas besoin de symbole de défense", percent);
     }
 
     @Override
     public List<EffectPopup> getPopups() {
-        return List.of(EffectPopup.scaled("RENVOI " + percent + "%", EffectPopup.Style.REFLECT, percent, PopupScale.CARD_REFLECT_PERCENT));
+        return List.of(EffectPopup.scaled(Lang.f("RENVOI {0}%", percent), EffectPopup.Style.REFLECT, percent, PopupScale.CARD_REFLECT_PERCENT));
     }
 
     @Override

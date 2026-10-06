@@ -4,6 +4,7 @@ import fr.astratime.lucky.entities.Symbol;
 import fr.astratime.lucky.entities.SymbolRegistry;
 import fr.astratime.lucky.entities.context.PlayContext;
 import fr.astratime.lucky.entities.context.TurnContext;
+import fr.astratime.lucky.i18n.Lang;
 import fr.astratime.lucky.popups.EffectPopup;
 import fr.astratime.lucky.popups.EffectSound;
 import fr.astratime.lucky.popups.PopupScale;
@@ -47,9 +48,9 @@ public class AceOfClubsEffect extends Effect {
         int attackBoost = ATTACK_BOOST_AMOUNT + Math.round(ATTACK_PER_SQRT_GAIN * (float) Math.sqrt(consumed));
 
         context.addPopups(List.of(
-            EffectPopup.scaled("-30% GAINS", EffectPopup.Style.GAINS, consumed, PopupScale.ACE_OF_CLUBS_CONSUMED),
-            EffectPopup.scaled("ATTAQUE +" + attackBoost, EffectPopup.Style.ATTACK, attackBoost, PopupScale.ACE_OF_CLUBS_ATTACK),
-            EffectPopup.scaled("BOOST SYMBOLE +" + weightBoost, EffectPopup.Style.SPECIAL, weightBoost, PopupScale.ACE_OF_CLUBS_BOOST)
+            EffectPopup.scaled(Lang.t("-30% GAINS"), EffectPopup.Style.GAINS, consumed, PopupScale.ACE_OF_CLUBS_CONSUMED),
+            EffectPopup.scaled(Lang.f("ATTAQUE +{0}", attackBoost), EffectPopup.Style.ATTACK, attackBoost, PopupScale.ACE_OF_CLUBS_ATTACK),
+            EffectPopup.scaled(Lang.f("BOOST SYMBOLE +{0}", weightBoost), EffectPopup.Style.SPECIAL, weightBoost, PopupScale.ACE_OF_CLUBS_BOOST)
         ));
 
         context.queueForSpin(new AttackEffect(attackBoost));
@@ -66,8 +67,9 @@ public class AceOfClubsEffect extends Effect {
 
     @Override
     public String getDescription() {
-        return "Consomme 30% des gains. Un symbole d'attaque devient bien plus fréquent"
-            + " et gagne +" + ATTACK_BOOST_AMOUNT + " d'attaque, plus selon les gains consommés";
+        return Lang.f("Consomme 30% des gains. Un symbole d'attaque devient bien plus fréquent et gagne +{0} "
+            + "d'attaque, plus selon les gains consommés",
+            ATTACK_BOOST_AMOUNT);
     }
 
     /** Textes fixes : aucun, toutes les valeurs dépendent des gains consommés (voir {@link #onPlay}). */

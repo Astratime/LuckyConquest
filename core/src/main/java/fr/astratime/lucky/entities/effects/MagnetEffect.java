@@ -1,6 +1,7 @@
 package fr.astratime.lucky.entities.effects;
 
 import fr.astratime.lucky.entities.context.TurnContext;
+import fr.astratime.lucky.i18n.Lang;
 import fr.astratime.lucky.popups.EffectPopup;
 import fr.astratime.lucky.popups.EffectSound;
 import fr.astratime.lucky.popups.PopupScale;
@@ -21,12 +22,12 @@ public class MagnetEffect extends Effect {
     }
 
     @Override
-    public String getDescription() { return "Aimant : +" + percent + "% de chance d'obtenir une paire"; }
+    public String getDescription() { return Lang.f("Aimant : +{0}% de chance d'obtenir une paire", percent); }
 
     @Override
     public List<EffectPopup> getPopups() {
         return List.of(
-            new EffectPopup("AIMANT : PAIRE +" + percent + "%", EffectPopup.Style.SPECIAL, PopupScale.MAX_INTENSITY));
+            new EffectPopup(Lang.f("AIMANT : PAIRE +{0}%", percent), EffectPopup.Style.SPECIAL, PopupScale.MAX_INTENSITY));
     }
 
     @Override

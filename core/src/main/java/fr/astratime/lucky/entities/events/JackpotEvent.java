@@ -1,6 +1,7 @@
 package fr.astratime.lucky.entities.events;
 
 import fr.astratime.lucky.entities.Symbol;
+import fr.astratime.lucky.i18n.Lang;
 import fr.astratime.lucky.popups.EffectPopup;
 import fr.astratime.lucky.popups.PopupScale;
 
@@ -21,6 +22,6 @@ public class JackpotEvent extends Event {
     /** Toujours affiché en grand. */
     @Override
     public List<EffectPopup> getPopups() {
-        return List.of(new EffectPopup("JACKPOT !", EffectPopup.Style.GAINS, PopupScale.MAX_INTENSITY));
+        return List.of(new EffectPopup(Lang.t("JACKPOT !"), EffectPopup.Style.GAINS, PopupScale.MAX_INTENSITY));
     }
 }

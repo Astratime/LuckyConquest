@@ -2,6 +2,7 @@ package fr.astratime.lucky.entities.effects;
 
 import fr.astratime.lucky.entities.context.PlayContext;
 import fr.astratime.lucky.entities.context.TurnContext;
+import fr.astratime.lucky.i18n.Lang;
 import fr.astratime.lucky.popups.EffectPopup;
 import fr.astratime.lucky.popups.EffectSound;
 import fr.astratime.lucky.popups.PopupScale;
@@ -26,12 +27,13 @@ public class CutlassEffect extends Effect {
     }
 
     @Override
-    public String getDescription() { return "Attaque +" + attackPercent + " %. Tes coups passent la défense ennemie."; }
+    public String getDescription() { return Lang.f("Attaque +{0} %. Tes coups passent la défense ennemie.",
+        attackPercent); }
 
     @Override
     public List<EffectPopup> getPopups() {
-        return List.of(new EffectPopup("ATTAQUE +" + attackPercent + " %", EffectPopup.Style.ATTACK, PopupScale.SECONDARY_INTENSITY),
-            new EffectPopup("DÉFENSE ENNEMIE IGNORÉE", EffectPopup.Style.ATTACK, PopupScale.SECONDARY_INTENSITY));
+        return List.of(new EffectPopup(Lang.f("ATTAQUE +{0} %", attackPercent), EffectPopup.Style.ATTACK, PopupScale.SECONDARY_INTENSITY),
+            new EffectPopup(Lang.t("DÉFENSE ENNEMIE IGNORÉE"), EffectPopup.Style.ATTACK, PopupScale.SECONDARY_INTENSITY));
     }
 
     @Override

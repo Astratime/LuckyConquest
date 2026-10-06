@@ -2,6 +2,7 @@ package fr.astratime.lucky.entities.effects;
 
 import fr.astratime.lucky.entities.context.PlayContext;
 import fr.astratime.lucky.entities.context.TurnContext;
+import fr.astratime.lucky.i18n.Lang;
 import fr.astratime.lucky.popups.EffectPopup;
 import fr.astratime.lucky.popups.EffectSound;
 import fr.astratime.lucky.popups.PopupScale;
@@ -25,11 +26,11 @@ public class DoubleOrNothingEffect extends Effect {
     public void apply(TurnContext context) { }
 
     @Override
-    public String getDescription() { return "La prochaine carte jouée ce tour compte deux fois."; }
+    public String getDescription() { return Lang.t("La prochaine carte jouée ce tour compte deux fois."); }
 
     @Override
     public List<EffectPopup> getPopups() {
-        return List.of(new EffectPopup("PROCHAINE CARTE x2", EffectPopup.Style.SPECIAL, PopupScale.MAX_INTENSITY));
+        return List.of(new EffectPopup(Lang.t("PROCHAINE CARTE x2"), EffectPopup.Style.SPECIAL, PopupScale.MAX_INTENSITY));
     }
 
     @Override

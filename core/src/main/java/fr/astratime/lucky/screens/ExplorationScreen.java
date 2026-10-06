@@ -37,6 +37,7 @@ import fr.astratime.lucky.entities.exploration.Dungeon;
 import fr.astratime.lucky.entities.exploration.DungeonRun;
 import fr.astratime.lucky.entities.exploration.Place;
 import fr.astratime.lucky.entities.exploration.PlaceRule;
+import fr.astratime.lucky.i18n.Lang;
 import fr.astratime.lucky.loaders.CardLoader;
 import fr.astratime.lucky.progress.PlayerProfile;
 import fr.astratime.lucky.settings.AudioSettings;
@@ -163,7 +164,7 @@ public class ExplorationScreen extends ScreenAdapter {
         veil = new Image(pixel);
         veil.setColor(0f, 0f, 0f, 0.6f);
         veil.setTouchable(Touchable.disabled);
-        title = new Label("EXPLORATION", new Label.LabelStyle(titleFont, Color.WHITE));
+        title = new Label(Lang.t("EXPLORATION"), new Label.LabelStyle(titleFont, Color.WHITE));
         title.pack();
         listPanel   = new Image(hud.panelDrawable());
         detailPanel = new Image(hud.panelDrawable());
@@ -198,9 +199,9 @@ public class ExplorationScreen extends ScreenAdapter {
         ruleText = new Label("", new Label.LabelStyle(ruleBody, Color.WHITE));
         ruleText.setWrap(true);
         ruleText.setAlignment(Align.topLeft);
-        enterButton = buttons.createAction("Entrer", clickSound, this::launch);
-        backButton  = buttons.create("Retour", clickSound, this::onBack);
-        tutorialButton = buttons.create("Tutoriel", clickSound, this::replayGuide);
+        enterButton = buttons.createAction(Lang.t("Entrer"), clickSound, this::launch);
+        backButton  = buttons.create(Lang.t("Retour"), clickSound, this::onBack);
+        tutorialButton = buttons.create(Lang.t("Tutoriel"), clickSound, this::replayGuide);
 
         fade = new Image(pixel);
         fade.setColor(Color.BLACK);
@@ -227,9 +228,11 @@ public class ExplorationScreen extends ScreenAdapter {
 
         selectPlace(place);
         firstVisit = new FirstVisitGuide(stage, hud, clickSound, luckyGame.getProfile(), PlayerProfile.GUIDE_EXPLORATION,
-            "L'Exploration. Choisis un lieu, puis un de ses donjons.",
-            "Dans chaque donjon, un soldat, puis son roi. Bats le roi : son coffre s'ouvre. Une carte et des pièces.",
-            "Seuls ces combats rapportent des pièces. Vide les quatre donjons d'un lieu pour ouvrir le suivant.");
+            Lang.t("L'Exploration. Choisis un lieu, puis un de ses donjons."),
+            Lang.t("Dans chaque donjon, un soldat, puis son roi. Bats le roi : son coffre s'ouvre. Une carte et des "
+                + "pièces."),
+            Lang.t("Seuls ces combats rapportent des pièces. Vide les quatre donjons d'un lieu pour ouvrir le "
+                + "suivant."));
         fade.toFront();
     }
 
@@ -244,7 +247,7 @@ public class ExplorationScreen extends ScreenAdapter {
         placeLabel.setText(place.getName().toUpperCase());
         PlaceRule rule = place.getRule();
         boolean hasRule = rule != PlaceRule.NONE;
-        ruleName.setText(hasRule ? "Règle du lieu : " + rule.getName() : "");
+        ruleName.setText(hasRule ? Lang.f("Règle du lieu : {0}", rule.getName()) : "");
         ruleText.setText(hasRule ? rule.getDescription() : "");
         ruleName.setVisible(hasRule);
         ruleText.setVisible(hasRule);
@@ -315,19 +318,19 @@ public class ExplorationScreen extends ScreenAdapter {
         if (!profile.isOpen(place)) {
             // Fermé : la description attendra, place à ce qu'il faut faire pour l'ouvrir.
             String previous = place.getPrevious().getName();
-            text.append("Lieu fermé. Termine d'abord ").append(Character.toLowerCase(previous.charAt(0)))
-                .append(previous.substring(1)).append(".");
+            text.append(Lang.f("Lieu fermé. Termine d'abord {0}.",
+                Character.toLowerCase(previous.charAt(0)) + previous.substring(1)));
         } else {
             text.append(dungeon.getDescription());
-            if (profile.isCleared(dungeon)) text.append("\nDéjà vidé.");
+            if (profile.isCleared(dungeon)) text.append('\n').append(Lang.t("Déjà vidé."));
         }
-        text.append("\n\nCombat 1 : ").append(dungeon.getSoldier().getDisplayName())
-            .append(" (").append(PlayerProfile.formatCoins(dungeon.getSoldier().getMaxHp())).append(" PV)");
-        text.append("\nCombat 2 : ").append(dungeon.getKing().getDisplayName())
-            .append(" (").append(PlayerProfile.formatCoins(dungeon.getKing().getMaxHp())).append(" PV)");
-        text.append("\n\nCoffre :");
+        text.append("\n\n").append(Lang.f("Combat 1 : {0} ({1} PV)", dungeon.getSoldier().getDisplayName(),
+            PlayerProfile.formatCoins(dungeon.getSoldier().getMaxHp())));
+        text.append('\n').append(Lang.f("Combat 2 : {0} ({1} PV)", dungeon.getKing().getDisplayName(),
+            PlayerProfile.formatCoins(dungeon.getKing().getMaxHp())));
+        text.append("\n\n").append(Lang.t("Coffre :"));
         for (Dungeon.Loot loot : dungeon.getLoot()) {
-            text.append("\n").append(cardNames.get(loot.cardId())).append(" ").append(loot.percent()).append(" %");
+            text.append('\n').append(Lang.f("{0} {1} %", cardNames.get(loot.cardId()), loot.percent()));
         }
         dungeonText.setText(text);
         for (Actor actor : List.of(dungeonName, dungeonText)) {

@@ -5,6 +5,7 @@ import fr.astratime.lucky.entities.context.CombatContext;
 import fr.astratime.lucky.entities.events.Event;
 import fr.astratime.lucky.entities.events.GaugeFilledEvent;
 import fr.astratime.lucky.entities.events.PlayerHealedEvent;
+import fr.astratime.lucky.i18n.Lang;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -36,5 +37,5 @@ public class HealAction extends Action {
     }
 
     @Override
-    public String getDescription() { return "Soigne " + percent + " % des PV max"; }
+    public String getDescription() { return Lang.f("Soigne {0} % des PV max", percent); }
 }

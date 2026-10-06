@@ -1,5 +1,6 @@
 package fr.astratime.lucky.entities.events;
 
+import fr.astratime.lucky.i18n.Lang;
 import fr.astratime.lucky.popups.EffectPopup;
 import fr.astratime.lucky.popups.PopupScale;
 
@@ -21,8 +22,8 @@ public class CorruptionEvent extends GainsLostEvent {
     @Override
     public List<EffectPopup> getPopups() {
         return List.of(
-            new EffectPopup("CORRUPTION : ATTAQUE ET DÉFENSE x" + factor, EffectPopup.Style.SPECIAL,
+            new EffectPopup(Lang.f("CORRUPTION : ATTAQUE ET DÉFENSE x{0}", factor), EffectPopup.Style.SPECIAL,
                 PopupScale.MAX_INTENSITY),
-            EffectPopup.scaled("GAINS -" + amount, EffectPopup.Style.DAMAGE, amount, PopupScale.SPIN_GAINS));
+            EffectPopup.scaled(Lang.f("GAINS -{0}", amount), EffectPopup.Style.DAMAGE, amount, PopupScale.SPIN_GAINS));
     }
 }

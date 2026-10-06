@@ -1,6 +1,7 @@
 package fr.astratime.lucky.entities.effects;
 
 import fr.astratime.lucky.entities.context.TurnContext;
+import fr.astratime.lucky.i18n.Lang;
 import fr.astratime.lucky.popups.EffectPopup;
 import fr.astratime.lucky.popups.EffectSound;
 import fr.astratime.lucky.popups.PopupScale;
@@ -22,12 +23,12 @@ public class InsuranceEffect extends Effect {
 
     @Override
     public String getDescription() {
-        return "Ce tour, l'ennemi ne t'enlève pas plus de " + percent + " % de tes PV.";
+        return Lang.f("Ce tour, l'ennemi ne t'enlève pas plus de {0} % de tes PV.", percent);
     }
 
     @Override
     public List<EffectPopup> getPopups() {
-        return List.of(new EffectPopup("ASSURÉ : PERTE MAX " + percent + " %", EffectPopup.Style.DEFENSE,
+        return List.of(new EffectPopup(Lang.f("ASSURÉ : PERTE MAX {0} %", percent), EffectPopup.Style.DEFENSE,
             PopupScale.MAX_INTENSITY));
     }
 

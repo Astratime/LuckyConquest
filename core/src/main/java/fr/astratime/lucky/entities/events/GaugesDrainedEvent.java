@@ -1,5 +1,6 @@
 package fr.astratime.lucky.entities.events;
 
+import fr.astratime.lucky.i18n.Lang;
 import fr.astratime.lucky.popups.EffectPopup;
 import fr.astratime.lucky.popups.PopupScale;
 
@@ -22,7 +23,7 @@ public class GaugesDrainedEvent extends Event {
 
     @Override
     public List<EffectPopup> getPopups() {
-        String text = amount > 0 ? "JAUGES -" + percent + " %" : "DÉ PIPÉ";
+        String text = amount > 0 ? Lang.f("JAUGES -{0} %", percent) : Lang.t("DÉ PIPÉ");
         return List.of(new EffectPopup(text, EffectPopup.Style.DAMAGE, PopupScale.SECONDARY_INTENSITY));
     }
 }

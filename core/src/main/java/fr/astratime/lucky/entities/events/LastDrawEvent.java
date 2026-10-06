@@ -1,6 +1,7 @@
 package fr.astratime.lucky.entities.events;
 
 import fr.astratime.lucky.entities.Symbol;
+import fr.astratime.lucky.i18n.Lang;
 import fr.astratime.lucky.popups.EffectPopup;
 import fr.astratime.lucky.popups.PopupScale;
 
@@ -61,15 +62,15 @@ public class LastDrawEvent extends Event {
     public List<EffectPopup> getPopups() {
         List<EffectPopup> popups = new ArrayList<>();
         for (int round = 0; round < mine.size() - 1; round++) {
-            popups.add(new EffectPopup("ÉGALITÉ : " + mine.get(round).getDisplayName() + " ! ON RELANCE",
+            popups.add(new EffectPopup(Lang.f("ÉGALITÉ : {0} ! ON RELANCE", mine.get(round).getDisplayName()),
                 EffectPopup.Style.SPECIAL, PopupScale.SECONDARY_INTENSITY));
         }
-        popups.add(new EffectPopup("DERNIER TIRAGE : TOI " + own().getDisplayName() + " (" + score(own()) + "), ELLE "
-            + theirs().getDisplayName() + " (" + score(theirs()) + ")", EffectPopup.Style.SPECIAL,
+        popups.add(new EffectPopup(Lang.f("DERNIER TIRAGE : TOI {0} ({1}), ELLE {2} ({3})",
+            own().getDisplayName(), score(own()), theirs().getDisplayName(), score(theirs())), EffectPopup.Style.SPECIAL,
             PopupScale.SECONDARY_INTENSITY));
         popups.add(playerWins
-            ? new EffectPopup("TU AS TIRÉ LE LEVIER !", EffectPopup.Style.GAINS, PopupScale.SECONDARY_INTENSITY)
-            : new EffectPopup("LA MACHINE GAGNE", EffectPopup.Style.DAMAGE, PopupScale.SECONDARY_INTENSITY));
+            ? new EffectPopup(Lang.t("TU AS TIRÉ LE LEVIER !"), EffectPopup.Style.GAINS, PopupScale.SECONDARY_INTENSITY)
+            : new EffectPopup(Lang.t("LA MACHINE GAGNE"), EffectPopup.Style.DAMAGE, PopupScale.SECONDARY_INTENSITY));
         return popups;
     }
 }

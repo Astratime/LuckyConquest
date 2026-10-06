@@ -3,6 +3,7 @@ package fr.astratime.lucky.entities;
 import fr.astratime.lucky.entities.enemy.EnemyCards;
 import fr.astratime.lucky.entities.enemy.EnemyKind;
 import fr.astratime.lucky.entities.enemy.EnemySymbol;
+import fr.astratime.lucky.i18n.Lang;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -143,13 +144,13 @@ public class Enemy {
     private long guard(long damage) {
         if (kind.houseWins() && !houseUsed && damage * 100 >= (long) maxHp * EnemyKind.HOUSE_CANCEL_PERCENT) {
             houseUsed = true;
-            notice = "LA MAISON GAGNE TOUJOURS : COUP ANNULÉ";
+            notice = Lang.t("LA MAISON GAGNE TOUJOURS : COUP ANNULÉ");
             return 0;
         }
         if (lastDrawPending) return 0;                  // à 1 PV, elle attend le Dernier tirage : plus rien ne la touche
         if (kind.hasLastDraw() && !lastDrawDone && damage >= hp) {
             lastDrawPending = true;
-            notice = "ELLE RÉSISTE ! DERNIER TIRAGE";
+            notice = Lang.t("ELLE RÉSISTE ! DERNIER TIRAGE");
             return hp - 1;
         }
         return damage;

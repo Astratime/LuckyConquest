@@ -3,6 +3,7 @@ package fr.astratime.lucky.entities.effects;
 import fr.astratime.lucky.entities.choices.RouletteChoice;
 import fr.astratime.lucky.entities.context.PlayContext;
 import fr.astratime.lucky.entities.context.TurnContext;
+import fr.astratime.lucky.i18n.Lang;
 import fr.astratime.lucky.popups.EffectPopup;
 import fr.astratime.lucky.popups.EffectSound;
 import fr.astratime.lucky.popups.PopupScale;
@@ -54,14 +55,14 @@ public class RussianRouletteEffect extends Effect {
 
     @Override
     public String getDescription() {
-        return "Choisissez une carte. Pistolet : attaque du meilleur symbole x" + multiplier
-            + ", sans les multiplicateurs"
-            + ". Joker maudit : pistolet x" + cursedMultiplier + " et -" + penaltyPercent + "% de gains";
+        return Lang.f("Choisissez une carte. Pistolet : attaque du meilleur symbole x{0}, sans les multiplicateurs. "
+            + "Joker maudit : pistolet x{1} et -{2}% de gains",
+            multiplier, cursedMultiplier, penaltyPercent);
     }
 
     @Override
     public List<EffectPopup> getPopups() {
-        return List.of(new EffectPopup("ROULETTE RUSSE !", EffectPopup.Style.DAMAGE, PopupScale.MAX_INTENSITY));
+        return List.of(new EffectPopup(Lang.t("ROULETTE RUSSE !"), EffectPopup.Style.DAMAGE, PopupScale.MAX_INTENSITY));
     }
 
     @Override

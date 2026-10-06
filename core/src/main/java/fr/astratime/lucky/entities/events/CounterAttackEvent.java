@@ -1,5 +1,6 @@
 package fr.astratime.lucky.entities.events;
 
+import fr.astratime.lucky.i18n.Lang;
 import fr.astratime.lucky.popups.EffectPopup;
 import fr.astratime.lucky.popups.PopupScale;
 
@@ -22,7 +23,7 @@ public class CounterAttackEvent extends EnemyDamagedEvent {
     @Override
     public List<EffectPopup> getPopups() {
         return List.of(
-            new EffectPopup("CONTRE-ATTAQUE !", EffectPopup.Style.DEFENSE, PopupScale.MAX_INTENSITY),
-            EffectPopup.scaled("DÉGÂTS " + damage, EffectPopup.Style.ATTACK, damage, PopupScale.SPIN_DAMAGE));
+            new EffectPopup(Lang.t("CONTRE-ATTAQUE !"), EffectPopup.Style.DEFENSE, PopupScale.MAX_INTENSITY),
+            EffectPopup.scaled(Lang.f("DÉGÂTS {0}", damage), EffectPopup.Style.ATTACK, damage, PopupScale.SPIN_DAMAGE));
     }
 }

@@ -2,6 +2,7 @@ package fr.astratime.lucky.entities.effects;
 
 import fr.astratime.lucky.entities.context.PlayContext;
 import fr.astratime.lucky.entities.context.TurnContext;
+import fr.astratime.lucky.i18n.Lang;
 import fr.astratime.lucky.popups.EffectPopup;
 import fr.astratime.lucky.popups.EffectSound;
 import fr.astratime.lucky.popups.PopupScale;
@@ -27,11 +28,11 @@ public class GainEffect extends Effect {
     public void apply(TurnContext context) { }
 
     @Override
-    public String getDescription() { return "+" + amount + " gains immédiatement"; }
+    public String getDescription() { return Lang.f("+{0} gains immédiatement", amount); }
 
     @Override
     public List<EffectPopup> getPopups() {
-        return List.of(EffectPopup.scaled("GAINS +" + amount, EffectPopup.Style.GAINS, amount, PopupScale.CARD_GAINS));
+        return List.of(EffectPopup.scaled(Lang.f("GAINS +{0}", amount), EffectPopup.Style.GAINS, amount, PopupScale.CARD_GAINS));
     }
 
     @Override

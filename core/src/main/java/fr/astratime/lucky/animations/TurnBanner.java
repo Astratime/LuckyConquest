@@ -16,6 +16,7 @@ import com.badlogic.gdx.utils.Disposable;
 import fr.astratime.lucky.assets.Fonts;
 import fr.astratime.lucky.assets.Palette;
 import fr.astratime.lucky.assets.Textures;
+import fr.astratime.lucky.i18n.Lang;
 
 /**
  * Annonce de changement de tour (« À TOI DE JOUER ! », « TOUR ENNEMI ») : une
@@ -69,7 +70,7 @@ public class TurnBanner extends Group implements Disposable {
 
         boolean player = side == Side.PLAYER;
         ((TextureRegionDrawable) band.getDrawable()).setRegion(new TextureRegion(player ? playerBand : enemyBand));
-        title.setText(player ? "À TOI DE JOUER !" : "TOUR ENNEMI");
+        title.setText(player ? Lang.t("À TOI DE JOUER !") : Lang.t("TOUR ENNEMI"));
         title.setColor(player ? Palette.GOLD : Color.valueOf("ffb0a0ff"));
         title.pack();
 

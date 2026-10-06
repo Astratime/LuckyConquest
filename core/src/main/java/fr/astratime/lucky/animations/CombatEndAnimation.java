@@ -19,6 +19,7 @@ import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 import com.badlogic.gdx.utils.Disposable;
 import fr.astratime.lucky.assets.Fonts;
 import fr.astratime.lucky.assets.Palette;
+import fr.astratime.lucky.i18n.Lang;
 import fr.astratime.lucky.views.PlayArea;
 
 import java.util.ArrayList;
@@ -57,13 +58,13 @@ public class CombatEndAnimation extends Group implements Disposable {
     private final float       cardWidth;
     private final float       cardHeight;
 
-    private static final String VICTORY_TEXT = "VICTOIRE !";
-    private static final String DEFEAT_TEXT  = "DÉFAITE";
+    private final String      victoryText  = Lang.t("VICTOIRE !");
+    private final String      defeatText   = Lang.t("DÉFAITE");
 
     private final Texture     chipsTexture = new Texture(Gdx.files.internal("jackpot/chips.png"));
     private final Texture     bandTexture;
     private final BitmapFont  bigFont      = Fonts.jersey(170, Color.WHITE, 7f, Palette.TEXT_SHADE,
-                                                          VICTORY_TEXT + DEFEAT_TEXT);
+                                                          victoryText + defeatText);
     private final TextureRegion[] chips;
     private final TextureRegion   cardBack;
 
@@ -107,8 +108,8 @@ public class CombatEndAnimation extends Group implements Disposable {
         darken.setColor(0f, 0f, 0f, 0f);
         darken.setTouchable(Touchable.disabled);
         fireworks     = new Fireworks(pixel, fireworkSounds);
-        victoryBanner = new BingoBanner(VICTORY_TEXT, bandTexture, pixel, bigFont);
-        defeatLabel   = new Label(DEFEAT_TEXT, new Label.LabelStyle(bigFont, Color.WHITE));
+        victoryBanner = new BingoBanner(victoryText, bandTexture, pixel, bigFont);
+        defeatLabel   = new Label(defeatText, new Label.LabelStyle(bigFont, Color.WHITE));
         defeatLabel.setColor(DEFEAT_COLOR);
         defeatLabel.setVisible(false);
 

@@ -1,5 +1,6 @@
 package fr.astratime.lucky.entities.events;
 
+import fr.astratime.lucky.i18n.Lang;
 import fr.astratime.lucky.popups.EffectPopup;
 import fr.astratime.lucky.popups.PopupScale;
 
@@ -19,6 +20,6 @@ public class PlayerHealedEvent extends Event {
     /** Vie rendue par le drain, taille maximale selon {@link PopupScale}. */
     @Override
     public List<EffectPopup> getPopups() {
-        return List.of(EffectPopup.scaled("VIE +" + amount, EffectPopup.Style.DRAIN, amount, PopupScale.SPIN_HEAL));
+        return List.of(EffectPopup.scaled(Lang.f("VIE +{0}", amount), EffectPopup.Style.DRAIN, amount, PopupScale.SPIN_HEAL));
     }
 }

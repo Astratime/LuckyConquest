@@ -3,6 +3,7 @@ package fr.astratime.lucky.entities.effects;
 import fr.astratime.lucky.entities.choices.BetChoice;
 import fr.astratime.lucky.entities.context.PlayContext;
 import fr.astratime.lucky.entities.context.TurnContext;
+import fr.astratime.lucky.i18n.Lang;
 import fr.astratime.lucky.popups.EffectPopup;
 import fr.astratime.lucky.popups.EffectSound;
 import fr.astratime.lucky.popups.PopupScale;
@@ -28,12 +29,12 @@ public class BetEffect extends Effect {
 
     @Override
     public String getDescription() {
-        return "Pariez sur un symbole. S'il sort 1, 2 ou 3 fois : gains x2, x3 ou x4. Sinon : gains /2";
+        return Lang.t("Pariez sur un symbole. S'il sort 1, 2 ou 3 fois : gains x2, x3 ou x4. Sinon : gains /2");
     }
 
     @Override
     public List<EffectPopup> getPopups() {
-        return List.of(new EffectPopup("PARI !", EffectPopup.Style.GAINS, PopupScale.MAX_INTENSITY));
+        return List.of(new EffectPopup(Lang.t("PARI !"), EffectPopup.Style.GAINS, PopupScale.MAX_INTENSITY));
     }
 
     @Override

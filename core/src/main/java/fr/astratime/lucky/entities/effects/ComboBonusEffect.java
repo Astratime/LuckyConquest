@@ -2,6 +2,7 @@ package fr.astratime.lucky.entities.effects;
 
 import fr.astratime.lucky.entities.context.PlayContext;
 import fr.astratime.lucky.entities.context.TurnContext;
+import fr.astratime.lucky.i18n.Lang;
 import fr.astratime.lucky.popups.EffectPopup;
 import fr.astratime.lucky.popups.EffectSound;
 import fr.astratime.lucky.popups.PopupScale;
@@ -25,11 +26,12 @@ public class ComboBonusEffect extends Effect {
     private String bonusText() { return bonus == Math.round(bonus) ? String.valueOf(Math.round(bonus)) : String.valueOf(bonus); }
 
     @Override
-    public String getDescription() { return "Ce tour, chaque combinaison compte +" + bonusText() + " au multiplicateur."; }
+    public String getDescription() { return Lang.f("Ce tour, chaque combinaison compte +{0} au multiplicateur.",
+        bonusText()); }
 
     @Override
     public List<EffectPopup> getPopups() {
-        return List.of(new EffectPopup("COMBINAISONS +" + bonusText(), EffectPopup.Style.GAINS, PopupScale.SECONDARY_INTENSITY));
+        return List.of(new EffectPopup(Lang.f("COMBINAISONS +{0}", bonusText()), EffectPopup.Style.GAINS, PopupScale.SECONDARY_INTENSITY));
     }
 
     @Override

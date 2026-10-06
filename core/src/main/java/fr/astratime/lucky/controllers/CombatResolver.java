@@ -15,6 +15,7 @@ import fr.astratime.lucky.entities.effects.SunkenJackpotEffect;
 import fr.astratime.lucky.entities.events.AllInLostEvent;
 import fr.astratime.lucky.entities.events.CardStrikeEvent;
 import fr.astratime.lucky.entities.events.StatusEvent;
+import fr.astratime.lucky.i18n.Lang;
 import fr.astratime.lucky.popups.EffectPopup;
 import fr.astratime.lucky.entities.events.AllInWonEvent;
 import fr.astratime.lucky.entities.events.BetLostEvent;
@@ -187,12 +188,12 @@ public class CombatResolver {
         if (context.getHammers() > 0 && bar) {
             float boost = (1f + ForgeHammerEffect.BAR_PERCENT / 100f) / (1f + ForgeHammerEffect.ATTACK_PERCENT / 100f);
             context.multiplyAttack((float) Math.pow(boost, context.getHammers()));
-            events.add(new StatusEvent("MARTEAU SUR LE BAR : ATTAQUE +" + ForgeHammerEffect.BAR_PERCENT + " %",
+            events.add(new StatusEvent(Lang.f("MARTEAU SUR LE BAR : ATTAQUE +{0} %", ForgeHammerEffect.BAR_PERCENT),
                 EffectPopup.Style.ATTACK));
         }
         if (context.getLevers() > 0 && hasPair(symbols)) {
             context.multiplyAttack((float) Math.pow(1f + RustyLeverEffect.ATTACK_PERCENT / 100f, context.getLevers()));
-            events.add(new StatusEvent("LEVIER : PAIRE ! ATTAQUE +" + RustyLeverEffect.ATTACK_PERCENT + " %",
+            events.add(new StatusEvent(Lang.f("LEVIER : PAIRE ! ATTAQUE +{0} %", RustyLeverEffect.ATTACK_PERCENT),
                 EffectPopup.Style.ATTACK));
         }
         if (context.getSunkenJackpots() > 0 && SlotMachine.jackpotSymbol(symbols) != null) {
@@ -200,8 +201,8 @@ public class CombatResolver {
                 context.multiplyGains(SunkenJackpotEffect.GAINS_FACTOR);
                 context.multiplyAttack(SunkenJackpotEffect.ATTACK_FACTOR);
             }
-            events.add(new StatusEvent("JACKPOT ENGLOUTI : GAINS x" + SunkenJackpotEffect.GAINS_FACTOR
-                + ", ATTAQUE x" + SunkenJackpotEffect.ATTACK_FACTOR, EffectPopup.Style.GAINS));
+            events.add(new StatusEvent(Lang.f("JACKPOT ENGLOUTI : GAINS x{0}, ATTAQUE x{1}",
+                SunkenJackpotEffect.GAINS_FACTOR, SunkenJackpotEffect.ATTACK_FACTOR), EffectPopup.Style.GAINS));
         }
         return events;
     }
@@ -228,7 +229,7 @@ public class CombatResolver {
         for (int i = 0; i < context.getForgedBlades() && hit > 0 && !enemy.isDefeated(); i++) {
             long damage = enemy.skinned(hit);
             enemy.takeDamage(hit);
-            strikes.add(new CardStrikeEvent("LAME FORGÉE !", damage, hit, enemy.getDefense()));
+            strikes.add(new CardStrikeEvent(Lang.t("LAME FORGÉE !"), damage, hit, enemy.getDefense()));
         }
         return strikes;
     }
@@ -239,7 +240,7 @@ public class CombatResolver {
         if (context.getDynamitePercent() <= 0 || enemy.isDefeated()) return Optional.empty();
         int hit = Math.max(1, Math.round(enemy.getMaxHp() * context.getDynamitePercent() / 100f));
         enemy.takeTrueDamage(hit);
-        return Optional.of(new CardStrikeEvent("DYNAMITE !", hit, hit, enemy.getDefense()));
+        return Optional.of(new CardStrikeEvent(Lang.t("DYNAMITE !"), hit, hit, enemy.getDefense()));
     }
 
     /** Cœur d'or : les gains gagnés ce tour frappent aussi l'ennemi (une fois par carte), sans tenir compte de sa défense. */
@@ -249,7 +250,7 @@ public class CombatResolver {
         long hit    = enemy.capHit((long) gainsEarned * context.getGoldenHearts());
         long damage = enemy.skinned(hit);
         enemy.takeDamage(hit);
-        return Optional.of(new CardStrikeEvent("CŒUR D'OR !", damage, hit, enemy.getDefense()));
+        return Optional.of(new CardStrikeEvent(Lang.t("CŒUR D'OR !"), damage, hit, enemy.getDefense()));
     }
 
     /**

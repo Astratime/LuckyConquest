@@ -8,6 +8,7 @@ import com.badlogic.gdx.math.Interpolation;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.utils.Array;
 import fr.astratime.lucky.entities.tower.Chapter;
+import fr.astratime.lucky.i18n.Lang;
 
 /**
  * Avant la Maison (chapitre 5) : un escalier de jetons monte à travers les
@@ -211,7 +212,7 @@ public class HouseCutscene extends Cutscene {
                 float at = ACES + 0.3f + i * 0.22f;
                 float k = progress(at, at + 0.15f) * (1f - progress(at + 0.5f, at + 0.7f));
                 float x = artX(WINDOWS[i * 2][0]) + (i % 2 == 0 ? -1f : 1f) * 6f * zoom;
-                caption(batch, font, "HA !", x, artY(WINDOWS[i * 2][1]) + 6f * zoom + k * 10f, k);
+                caption(batch, font, Lang.t("HA !"), x, artY(WINDOWS[i * 2][1]) + 6f * zoom + k * 10f, k);
             }
             font.getData().setScale(1f);
         }
@@ -220,7 +221,7 @@ public class HouseCutscene extends Cutscene {
             batch.setColor(0f, 0f, 0f, 0.55f * alpha);
             batch.draw(soft, width * 0.1f, height * 0.04f, width * 0.8f, height * 0.22f);
             font.getData().setScale(2.4f);
-            caption(batch, font, "La Maison gagne toujours.", width / 2f, height * 0.15f, alpha);
+            caption(batch, font, Lang.t("La Maison gagne toujours."), width / 2f, height * 0.15f, alpha);
             font.getData().setScale(1f);
         }
         if (slammed && !settings.isReducedEffects()) {
