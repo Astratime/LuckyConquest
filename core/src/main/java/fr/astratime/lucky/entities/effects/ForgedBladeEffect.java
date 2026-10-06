@@ -2,6 +2,7 @@ package fr.astratime.lucky.entities.effects;
 
 import fr.astratime.lucky.entities.context.PlayContext;
 import fr.astratime.lucky.entities.context.TurnContext;
+import fr.astratime.lucky.i18n.Lang;
 import fr.astratime.lucky.popups.EffectPopup;
 import fr.astratime.lucky.popups.EffectSound;
 import fr.astratime.lucky.popups.PopupScale;
@@ -21,11 +22,12 @@ public class ForgedBladeEffect extends Effect {
     public void apply(TurnContext context) { context.getCombatContext().addForgedBlade(); }
 
     @Override
-    public String getDescription() { return "Un coup d'épée en plus. Il frappe à " + PERCENT + " % de ta plus grosse attaque du tour."; }
+    public String getDescription() { return Lang.f("Un coup d'épée en plus. Il frappe à {0} % de ta plus grosse attaque du tour.",
+        PERCENT); }
 
     @Override
     public List<EffectPopup> getPopups() {
-        return List.of(new EffectPopup("LAME FORGÉE", EffectPopup.Style.ATTACK, PopupScale.SECONDARY_INTENSITY));
+        return List.of(new EffectPopup(Lang.t("LAME FORGÉE"), EffectPopup.Style.ATTACK, PopupScale.SECONDARY_INTENSITY));
     }
 
     @Override

@@ -1,6 +1,7 @@
 package fr.astratime.lucky.entities.effects;
 
 import fr.astratime.lucky.entities.context.TurnContext;
+import fr.astratime.lucky.i18n.Lang;
 import fr.astratime.lucky.popups.EffectPopup;
 import fr.astratime.lucky.popups.EffectSound;
 import fr.astratime.lucky.popups.PopupScale;
@@ -33,15 +34,15 @@ public class ClubGainAttackEffect extends Effect {
 
     @Override
     public String getDescription() {
-        return "Multiplicateur de gains +" + gainMultiplierAdd + ". Attaque +" + attackBonus
-            + " sur chaque symbole d'attaque";
+        return Lang.f("Multiplicateur de gains +{0}. Attaque +{1} sur chaque symbole d'attaque",
+            gainMultiplierAdd, attackBonus);
     }
 
     @Override
     public List<EffectPopup> getPopups() {
         return List.of(
-            EffectPopup.scaled("GAINS x+" + gainMultiplierAdd, EffectPopup.Style.GAINS, gainMultiplierAdd, PopupScale.CARD_GAIN_MULTIPLIER),
-            EffectPopup.scaled("ATTAQUE +" + attackBonus, EffectPopup.Style.ATTACK, attackBonus, PopupScale.CARD_ATTACK_BONUS)
+            EffectPopup.scaled(Lang.f("GAINS x+{0}", gainMultiplierAdd), EffectPopup.Style.GAINS, gainMultiplierAdd, PopupScale.CARD_GAIN_MULTIPLIER),
+            EffectPopup.scaled(Lang.f("ATTAQUE +{0}", attackBonus), EffectPopup.Style.ATTACK, attackBonus, PopupScale.CARD_ATTACK_BONUS)
         );
     }
 

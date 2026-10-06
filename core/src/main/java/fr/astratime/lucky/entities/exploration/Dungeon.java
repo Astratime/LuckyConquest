@@ -2,6 +2,7 @@ package fr.astratime.lucky.entities.exploration;
 
 import fr.astratime.lucky.entities.Card;
 import fr.astratime.lucky.entities.enemy.EnemyKind;
+import fr.astratime.lucky.i18n.Lang;
 
 import java.util.List;
 import java.util.Random;
@@ -131,13 +132,13 @@ public enum Dungeon {
     }
 
     /** @return le nom du donjon (ex : "Donjon du Pique"). */
-    public String getName() { return name; }
+    public String getName() { return Lang.t(name); }
     /** @return son nom court (ex : "Pique", "Cale"), sous son entrée sur la carte. */
-    public String getShortName() { return shortName; }
+    public String getShortName() { return Lang.t(shortName); }
     /** @return la couleur du donjon de la prairie, ou {@code null} pour les autres lieux. */
     public Card.Suit getSuit() { return suit; }
     /** @return sa présentation, en quelques phrases courtes. */
-    public String getDescription() { return description; }
+    public String getDescription() { return Lang.t(description); }
     /** @return l'ennemi du premier combat. */
     public EnemyKind getSoldier() { return soldier; }
     /** @return l'ennemi du second combat, le roi de la couleur. */

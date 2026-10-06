@@ -1,6 +1,7 @@
 package fr.astratime.lucky.entities.effects;
 
 import fr.astratime.lucky.entities.context.TurnContext;
+import fr.astratime.lucky.i18n.Lang;
 import fr.astratime.lucky.popups.EffectPopup;
 import fr.astratime.lucky.popups.EffectSound;
 import fr.astratime.lucky.popups.PopupScale;
@@ -21,13 +22,14 @@ public class PistolEffect extends Effect {
     }
 
     @Override
-    public String getDescription() { return "Pistolet : tire l'attaque du meilleur symbole x" + multiplier + ", sans les multiplicateurs"; }
+    public String getDescription() { return Lang.f("Pistolet : tire l'attaque du meilleur symbole x{0}, sans les multiplicateurs",
+        multiplier); }
 
     @Override
     public List<EffectPopup> getPopups() {
         return List.of(
-            new EffectPopup("PISTOLET CHARGÉ !", EffectPopup.Style.ATTACK, PopupScale.MAX_INTENSITY),
-            new EffectPopup("DÉGÂTS x" + multiplier, EffectPopup.Style.ATTACK, PopupScale.SECONDARY_INTENSITY));
+            new EffectPopup(Lang.t("PISTOLET CHARGÉ !"), EffectPopup.Style.ATTACK, PopupScale.MAX_INTENSITY),
+            new EffectPopup(Lang.f("DÉGÂTS x{0}", multiplier), EffectPopup.Style.ATTACK, PopupScale.SECONDARY_INTENSITY));
     }
 
     @Override

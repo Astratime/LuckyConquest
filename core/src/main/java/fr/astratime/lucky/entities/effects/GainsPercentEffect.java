@@ -2,6 +2,7 @@ package fr.astratime.lucky.entities.effects;
 
 import fr.astratime.lucky.entities.context.PlayContext;
 import fr.astratime.lucky.entities.context.TurnContext;
+import fr.astratime.lucky.i18n.Lang;
 import fr.astratime.lucky.popups.EffectPopup;
 import fr.astratime.lucky.popups.EffectSound;
 import fr.astratime.lucky.popups.PopupScale;
@@ -22,7 +23,7 @@ public class GainsPercentEffect extends Effect {
     @Override
     public void onPlay(PlayContext context) {
         int added = context.addGainsPercent(percent);
-        context.addPopups(List.of(EffectPopup.scaled("GAINS +" + added, EffectPopup.Style.GAINS, added,
+        context.addPopups(List.of(EffectPopup.scaled(Lang.f("GAINS +{0}", added), EffectPopup.Style.GAINS, added,
             PopupScale.SPIN_GAINS)));
     }
 
@@ -31,11 +32,11 @@ public class GainsPercentEffect extends Effect {
     public void apply(TurnContext context) { }
 
     @Override
-    public String getDescription() { return "Gains +" + percent + " % de tes gains actuels."; }
+    public String getDescription() { return Lang.f("Gains +{0} % de tes gains actuels.", percent); }
 
     @Override
     public List<EffectPopup> getPopups() {
-        return List.of(new EffectPopup("GAINS +" + percent + " %", EffectPopup.Style.GAINS, PopupScale.SECONDARY_INTENSITY));
+        return List.of(new EffectPopup(Lang.f("GAINS +{0} %", percent), EffectPopup.Style.GAINS, PopupScale.SECONDARY_INTENSITY));
     }
 
     @Override

@@ -2,6 +2,7 @@ package fr.astratime.lucky.entities.effects;
 
 import fr.astratime.lucky.entities.context.PlayContext;
 import fr.astratime.lucky.entities.context.TurnContext;
+import fr.astratime.lucky.i18n.Lang;
 import fr.astratime.lucky.popups.EffectPopup;
 import fr.astratime.lucky.popups.EffectSound;
 import fr.astratime.lucky.popups.PopupScale;
@@ -38,13 +39,13 @@ public class BladesAttackEffect extends Effect {
     }
 
     @Override
-    public String getDescription() { return "+" + blades + " Lames. Attaque +" + attackBonus; }
+    public String getDescription() { return Lang.f("+{0} Lames. Attaque +{1}", blades, attackBonus); }
 
     @Override
     public List<EffectPopup> getPopups() {
         return List.of(
-            new EffectPopup("LAMES +" + blades, EffectPopup.Style.ATTACK, PopupScale.SECONDARY_INTENSITY),
-            EffectPopup.scaled("ATTAQUE +" + attackBonus, EffectPopup.Style.ATTACK, attackBonus, PopupScale.CARD_ATTACK_BONUS));
+            new EffectPopup(Lang.f("LAMES +{0}", blades), EffectPopup.Style.ATTACK, PopupScale.SECONDARY_INTENSITY),
+            EffectPopup.scaled(Lang.f("ATTAQUE +{0}", attackBonus), EffectPopup.Style.ATTACK, attackBonus, PopupScale.CARD_ATTACK_BONUS));
     }
 
     @Override

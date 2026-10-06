@@ -2,6 +2,7 @@ package fr.astratime.lucky.entities.effects;
 
 import fr.astratime.lucky.entities.context.PlayContext;
 import fr.astratime.lucky.entities.context.TurnContext;
+import fr.astratime.lucky.i18n.Lang;
 import fr.astratime.lucky.popups.EffectPopup;
 import fr.astratime.lucky.popups.EffectSound;
 import fr.astratime.lucky.popups.PopupScale;
@@ -37,12 +38,13 @@ public class LanternEffect extends Effect {
     public void apply(TurnContext context) { context.getCombatContext().multiplyDefense(1f + defensePercent / 100f); }
 
     @Override
-    public String getDescription() { return "Ta main reste visible pendant " + draws + " tours. Défense +" + defensePercent + " %."; }
+    public String getDescription() { return Lang.f("Ta main reste visible pendant {0} tours. Défense +{1} %.",
+        draws, defensePercent); }
 
     @Override
     public List<EffectPopup> getPopups() {
-        return List.of(new EffectPopup("LANTERNE", EffectPopup.Style.SPECIAL, PopupScale.SECONDARY_INTENSITY),
-            new EffectPopup("DÉFENSE +" + defensePercent + " %", EffectPopup.Style.DEFENSE, PopupScale.SECONDARY_INTENSITY));
+        return List.of(new EffectPopup(Lang.t("LANTERNE"), EffectPopup.Style.SPECIAL, PopupScale.SECONDARY_INTENSITY),
+            new EffectPopup(Lang.f("DÉFENSE +{0} %", defensePercent), EffectPopup.Style.DEFENSE, PopupScale.SECONDARY_INTENSITY));
     }
 
     @Override

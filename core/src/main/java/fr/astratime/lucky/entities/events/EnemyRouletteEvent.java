@@ -1,5 +1,6 @@
 package fr.astratime.lucky.entities.events;
 
+import fr.astratime.lucky.i18n.Lang;
 import fr.astratime.lucky.popups.EffectPopup;
 import fr.astratime.lucky.popups.PopupScale;
 
@@ -21,9 +22,9 @@ public class EnemyRouletteEvent extends Event {
     @Override
     public List<EffectPopup> getPopups() {
         String text = switch (pocket) {
-            case ROUGE -> "ROUGE ! ATTAQUE x2";
-            case NOIR  -> "NOIR ! BOUCLIER x2";
-            case ZERO  -> "ZÉRO ! TOUT x2";
+            case ROUGE -> Lang.t("ROUGE ! ATTAQUE x2");
+            case NOIR  -> Lang.t("NOIR ! BOUCLIER x2");
+            case ZERO  -> Lang.t("ZÉRO ! TOUT x2");
         };
         EffectPopup.Style style = pocket == Pocket.NOIR ? EffectPopup.Style.DEFENSE : EffectPopup.Style.ATTACK;
         return List.of(new EffectPopup(text, style, PopupScale.SECONDARY_INTENSITY));

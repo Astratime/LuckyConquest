@@ -2,6 +2,7 @@ package fr.astratime.lucky.entities.effects;
 
 import fr.astratime.lucky.entities.context.PlayContext;
 import fr.astratime.lucky.entities.context.TurnContext;
+import fr.astratime.lucky.i18n.Lang;
 import fr.astratime.lucky.popups.EffectPopup;
 import fr.astratime.lucky.popups.EffectSound;
 import fr.astratime.lucky.popups.PopupScale;
@@ -31,7 +32,7 @@ public class PowderKegEffect extends Effect {
         context.queueForSpin(this);
         context.addPopups(getPopups());
         int lost = context.sacrificeHpPercent(hpPercent);
-        if (lost > 0) context.addPopups(List.of(new EffectPopup("PV -" + lost, EffectPopup.Style.DAMAGE,
+        if (lost > 0) context.addPopups(List.of(new EffectPopup(Lang.f("PV -{0}", lost), EffectPopup.Style.DAMAGE,
             PopupScale.SECONDARY_INTENSITY)));
     }
 
@@ -39,11 +40,12 @@ public class PowderKegEffect extends Effect {
     public void apply(TurnContext context) { context.getCombatContext().multiplyAttack(factor); }
 
     @Override
-    public String getDescription() { return "Attaque x" + factor + " ce tour. L'explosion te retire " + hpPercent + " % de tes PV."; }
+    public String getDescription() { return Lang.f("Attaque x{0} ce tour. L'explosion te retire {1} % de tes PV.",
+        factor, hpPercent); }
 
     @Override
     public List<EffectPopup> getPopups() {
-        return List.of(new EffectPopup("BOUM ! ATTAQUE x" + factor, EffectPopup.Style.ATTACK, PopupScale.MAX_INTENSITY));
+        return List.of(new EffectPopup(Lang.f("BOUM ! ATTAQUE x{0}", factor), EffectPopup.Style.ATTACK, PopupScale.MAX_INTENSITY));
     }
 
     @Override

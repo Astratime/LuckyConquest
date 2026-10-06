@@ -3,6 +3,7 @@ package fr.astratime.lucky.entities.effects;
 import fr.astratime.lucky.controllers.PreparationResolver;
 import fr.astratime.lucky.entities.context.PlayContext;
 import fr.astratime.lucky.entities.context.TurnContext;
+import fr.astratime.lucky.i18n.Lang;
 import fr.astratime.lucky.popups.EffectPopup;
 import fr.astratime.lucky.popups.EffectSound;
 import fr.astratime.lucky.popups.PopupScale;
@@ -44,17 +45,20 @@ public class SpadeIgnoreDefenseEffect extends Effect {
 
     @Override
     public String getDescription() {
-        return "Les symboles d'attaque ignorent la défense. Attaque +" + attackBonus
-            + " sur chaque symbole d'attaque. +" + blades + (blades > 1 ? " Lames" : " Lame")
-            + " (+" + PreparationResolver.BLADE_ATTACK + " d'attaque chacune, tout le combat)";
+        return Lang.f(Lang.plural(blades)
+                ? "Les symboles d'attaque ignorent la défense. Attaque +{0} sur chaque symbole d'attaque. +{1} Lames "
+                    + "(+{2} d'attaque chacune, tout le combat)"
+                : "Les symboles d'attaque ignorent la défense. Attaque +{0} sur chaque symbole d'attaque. +{1} Lame "
+                    + "(+{2} d'attaque chacune, tout le combat)",
+            attackBonus, blades, PreparationResolver.BLADE_ATTACK);
     }
 
     @Override
     public List<EffectPopup> getPopups() {
         return List.of(
-            new EffectPopup("PERCE-DÉFENSE", EffectPopup.Style.SPECIAL, PopupScale.SECONDARY_INTENSITY),
-            EffectPopup.scaled("ATTAQUE +" + attackBonus, EffectPopup.Style.ATTACK, attackBonus, PopupScale.CARD_ATTACK_BONUS),
-            new EffectPopup("LAMES +" + blades, EffectPopup.Style.ATTACK, PopupScale.SECONDARY_INTENSITY)
+            new EffectPopup(Lang.t("PERCE-DÉFENSE"), EffectPopup.Style.SPECIAL, PopupScale.SECONDARY_INTENSITY),
+            EffectPopup.scaled(Lang.f("ATTAQUE +{0}", attackBonus), EffectPopup.Style.ATTACK, attackBonus, PopupScale.CARD_ATTACK_BONUS),
+            new EffectPopup(Lang.f("LAMES +{0}", blades), EffectPopup.Style.ATTACK, PopupScale.SECONDARY_INTENSITY)
         );
     }
 

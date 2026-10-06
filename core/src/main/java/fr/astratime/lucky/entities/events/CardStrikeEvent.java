@@ -1,5 +1,6 @@
 package fr.astratime.lucky.entities.events;
 
+import fr.astratime.lucky.i18n.Lang;
 import fr.astratime.lucky.popups.EffectPopup;
 import fr.astratime.lucky.popups.PopupScale;
 
@@ -32,6 +33,6 @@ public class CardStrikeEvent extends EnemyDamagedEvent {
     public List<EffectPopup> getPopups() {
         return List.of(
             new EffectPopup(title, EffectPopup.Style.ATTACK, PopupScale.MAX_INTENSITY),
-            EffectPopup.scaled("DÉGÂTS " + damage, EffectPopup.Style.ATTACK, damage, PopupScale.SPIN_DAMAGE));
+            EffectPopup.scaled(Lang.f("DÉGÂTS {0}", damage), EffectPopup.Style.ATTACK, damage, PopupScale.SPIN_DAMAGE));
     }
 }

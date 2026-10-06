@@ -2,6 +2,7 @@ package fr.astratime.lucky.entities.effects;
 
 import fr.astratime.lucky.entities.context.PlayContext;
 import fr.astratime.lucky.entities.context.TurnContext;
+import fr.astratime.lucky.i18n.Lang;
 import fr.astratime.lucky.popups.EffectPopup;
 import fr.astratime.lucky.popups.EffectSound;
 import fr.astratime.lucky.popups.PopupScale;
@@ -18,11 +19,11 @@ public class GoldenHeartEffect extends Effect {
     public void apply(TurnContext context) { context.getCombatContext().addGoldenHeart(); }
 
     @Override
-    public String getDescription() { return "Ce tour, tes gains comptent aussi comme attaque."; }
+    public String getDescription() { return Lang.t("Ce tour, tes gains comptent aussi comme attaque."); }
 
     @Override
     public List<EffectPopup> getPopups() {
-        return List.of(new EffectPopup("CŒUR D'OR : GAINS = ATTAQUE", EffectPopup.Style.GAINS, PopupScale.SECONDARY_INTENSITY));
+        return List.of(new EffectPopup(Lang.t("CŒUR D'OR : GAINS = ATTAQUE"), EffectPopup.Style.GAINS, PopupScale.SECONDARY_INTENSITY));
     }
 
     @Override

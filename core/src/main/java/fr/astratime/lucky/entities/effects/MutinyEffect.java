@@ -2,6 +2,7 @@ package fr.astratime.lucky.entities.effects;
 
 import fr.astratime.lucky.entities.context.PlayContext;
 import fr.astratime.lucky.entities.context.TurnContext;
+import fr.astratime.lucky.i18n.Lang;
 import fr.astratime.lucky.popups.EffectPopup;
 import fr.astratime.lucky.popups.EffectSound;
 import fr.astratime.lucky.popups.PopupScale;
@@ -21,11 +22,12 @@ public class MutinyEffect extends Effect {
     public void apply(TurnContext context) { context.getCombatContext().getEnemy().addMutiny(); }
 
     @Override
-    public String getDescription() { return "Au prochain tour de l'ennemi, l'équipage se révolte. Il joue " + CARDS_LESS + " cartes de moins."; }
+    public String getDescription() { return Lang.f("Au prochain tour de l'ennemi, l'équipage se révolte. Il joue {0} cartes de moins.",
+        CARDS_LESS); }
 
     @Override
     public List<EffectPopup> getPopups() {
-        return List.of(new EffectPopup("MUTINERIE !", EffectPopup.Style.SPECIAL, PopupScale.MAX_INTENSITY));
+        return List.of(new EffectPopup(Lang.t("MUTINERIE !"), EffectPopup.Style.SPECIAL, PopupScale.MAX_INTENSITY));
     }
 
     @Override

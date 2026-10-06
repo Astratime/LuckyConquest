@@ -4,6 +4,7 @@ import fr.astratime.lucky.entities.Symbol;
 import fr.astratime.lucky.entities.SymbolRegistry;
 import fr.astratime.lucky.entities.context.TurnContext;
 import fr.astratime.lucky.entities.events.ShieldGainedEvent;
+import fr.astratime.lucky.i18n.Lang;
 import fr.astratime.lucky.popups.EffectPopup;
 import fr.astratime.lucky.popups.EffectSound;
 import fr.astratime.lucky.popups.PopupScale;
@@ -39,14 +40,14 @@ public class RampartEffect extends Effect {
 
     @Override
     public String getDescription() {
-        return "Bouclier +" + shield + ". Les symboles de défense sortent plus souvent";
+        return Lang.f("Bouclier +{0}. Les symboles de défense sortent plus souvent", shield);
     }
 
     @Override
     public List<EffectPopup> getPopups() {
         return List.of(
-            EffectPopup.scaled("BOUCLIER +" + shield, EffectPopup.Style.DEFENSE, shield, PopupScale.CARD_DEFENSE_BONUS),
-            new EffectPopup("CHANCE DE DÉFENSE", EffectPopup.Style.DEFENSE, PopupScale.SECONDARY_INTENSITY));
+            EffectPopup.scaled(Lang.f("BOUCLIER +{0}", shield), EffectPopup.Style.DEFENSE, shield, PopupScale.CARD_DEFENSE_BONUS),
+            new EffectPopup(Lang.t("CHANCE DE DÉFENSE"), EffectPopup.Style.DEFENSE, PopupScale.SECONDARY_INTENSITY));
     }
 
     @Override

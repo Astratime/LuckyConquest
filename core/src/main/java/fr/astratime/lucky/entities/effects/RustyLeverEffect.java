@@ -2,6 +2,7 @@ package fr.astratime.lucky.entities.effects;
 
 import fr.astratime.lucky.entities.context.PlayContext;
 import fr.astratime.lucky.entities.context.TurnContext;
+import fr.astratime.lucky.i18n.Lang;
 import fr.astratime.lucky.popups.EffectPopup;
 import fr.astratime.lucky.popups.EffectSound;
 import fr.astratime.lucky.popups.PopupScale;
@@ -24,11 +25,12 @@ public class RustyLeverEffect extends Effect {
     }
 
     @Override
-    public String getDescription() { return "Relance si le tirage n'a pas de paire. Avec une paire, attaque +" + ATTACK_PERCENT + " %."; }
+    public String getDescription() { return Lang.f("Relance si le tirage n'a pas de paire. Avec une paire, attaque +{0} %.",
+        ATTACK_PERCENT); }
 
     @Override
     public List<EffectPopup> getPopups() {
-        return List.of(new EffectPopup("LEVIER ROUILLÉ", EffectPopup.Style.SPECIAL, PopupScale.SECONDARY_INTENSITY));
+        return List.of(new EffectPopup(Lang.t("LEVIER ROUILLÉ"), EffectPopup.Style.SPECIAL, PopupScale.SECONDARY_INTENSITY));
     }
 
     @Override

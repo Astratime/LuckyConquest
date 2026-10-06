@@ -1,5 +1,7 @@
 package fr.astratime.lucky.entities;
 
+import fr.astratime.lucky.i18n.Lang;
+
 import java.util.Collection;
 import java.util.EnumSet;
 import java.util.HashMap;
@@ -53,7 +55,7 @@ public enum Combo {
     }
 
     /** @return le nom affiché de la combinaison. */
-    public String getDisplayName() { return displayName; }
+    public String getDisplayName() { return Lang.t(displayName); }
 
     /** @return le multiplicateur des gains et de l'attaque quand elle est formée. */
     public float getFactor() { return factor; }
@@ -62,7 +64,7 @@ public enum Combo {
     public String formatFactor() { return formatFactor(factor); }
 
     /** @return la règle, en quelques mots (ex : "2 cartes du même rang"). */
-    public String getRule() { return rule; }
+    public String getRule() { return Lang.t(rule); }
 
     /** @return {@code true} si, formée, elle remplit la jauge de chaque carte jouée (Couleur, Suite). */
     public boolean fillsGauges() { return this == COULEUR || this == SUITE; }

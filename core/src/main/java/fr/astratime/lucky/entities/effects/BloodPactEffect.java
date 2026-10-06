@@ -2,6 +2,7 @@ package fr.astratime.lucky.entities.effects;
 
 import fr.astratime.lucky.entities.context.PlayContext;
 import fr.astratime.lucky.entities.context.TurnContext;
+import fr.astratime.lucky.i18n.Lang;
 import fr.astratime.lucky.popups.EffectPopup;
 import fr.astratime.lucky.popups.EffectSound;
 import fr.astratime.lucky.popups.PopupScale;
@@ -39,13 +40,13 @@ public class BloodPactEffect extends Effect {
     }
 
     @Override
-    public String getDescription() { return "Perd " + hpPercent + "% des PV. Attaque x" + factorText(); }
+    public String getDescription() { return Lang.f("Perd {0}% des PV. Attaque x{1}", hpPercent, factorText()); }
 
     @Override
     public List<EffectPopup> getPopups() {
         return List.of(
-            new EffectPopup("PV -" + hpPercent + "%", EffectPopup.Style.DAMAGE, PopupScale.SECONDARY_INTENSITY),
-            new EffectPopup("ATTAQUE x" + factorText(), EffectPopup.Style.ATTACK, PopupScale.MAX_INTENSITY));
+            new EffectPopup(Lang.f("PV -{0}%", hpPercent), EffectPopup.Style.DAMAGE, PopupScale.SECONDARY_INTENSITY),
+            new EffectPopup(Lang.f("ATTAQUE x{0}", factorText()), EffectPopup.Style.ATTACK, PopupScale.MAX_INTENSITY));
     }
 
     private String factorText() {

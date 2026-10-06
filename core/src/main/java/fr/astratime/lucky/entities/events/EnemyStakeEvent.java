@@ -1,5 +1,6 @@
 package fr.astratime.lucky.entities.events;
 
+import fr.astratime.lucky.i18n.Lang;
 import fr.astratime.lucky.popups.EffectPopup;
 import fr.astratime.lucky.popups.PopupScale;
 
@@ -26,7 +27,7 @@ public class EnemyStakeEvent extends Event {
 
     @Override
     public List<EffectPopup> getPopups() {
-        String text = placed ? "TAPIS !" : "MISE x" + stake;
+        String text = placed ? Lang.t("TAPIS !") : Lang.f("MISE x{0}", stake);
         return List.of(new EffectPopup(text, EffectPopup.Style.ATTACK, PopupScale.SECONDARY_INTENSITY));
     }
 }

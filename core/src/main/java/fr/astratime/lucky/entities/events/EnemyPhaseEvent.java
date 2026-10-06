@@ -1,5 +1,6 @@
 package fr.astratime.lucky.entities.events;
 
+import fr.astratime.lucky.i18n.Lang;
 import fr.astratime.lucky.popups.EffectPopup;
 import fr.astratime.lucky.popups.PopupScale;
 
@@ -17,7 +18,7 @@ public class EnemyPhaseEvent extends Event {
     /** Texte qui annonce la phase. */
     public final String text;
 
-    public EnemyPhaseEvent(int phase) { this(phase, "PHASE " + phase + " !"); }
+    public EnemyPhaseEvent(int phase) { this(phase, Lang.f("PHASE {0} !", phase)); }
 
     public EnemyPhaseEvent(int phase, String text) {
         this.phase = phase;

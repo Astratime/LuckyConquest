@@ -27,6 +27,7 @@ import fr.astratime.lucky.assets.HudTextures;
 import fr.astratime.lucky.assets.Palette;
 import fr.astratime.lucky.controllers.GameController.ShopOffer;
 import fr.astratime.lucky.entities.Card;
+import fr.astratime.lucky.i18n.Lang;
 
 import java.util.List;
 import java.util.function.BiFunction;
@@ -125,13 +126,13 @@ public class ShopOverlay implements Disposable {
                      Predicate<ShopOffer> buy, Consumer<ShopOffer> inspect) {
         int columns = Math.min(COLUMNS, Math.max(1, offers.size()));
         panel.clearChildren();
-        panel.add(new Label("ÉCHOPPE", new Label.LabelStyle(titleFont, Color.WHITE))).colspan(columns);
+        panel.add(new Label(Lang.t("ÉCHOPPE"), new Label.LabelStyle(titleFont, Color.WHITE))).colspan(columns);
         panel.row();
         Label wallet = new Label(walletText(gains.getAsInt()), new Label.LabelStyle(textFont, Color.WHITE));
         panel.add(wallet).colspan(columns);
         panel.row();
-        panel.add(new Label("Survole une carte pour son effet, clique dessus pour sa fiche. Les cartes achetées"
-            + " disparaissent une fois jouées.", new Label.LabelStyle(hintFont, Color.WHITE))).colspan(columns);
+        panel.add(new Label(Lang.t("Survole une carte pour son effet, clique dessus pour sa fiche. Les cartes achetées "
+            + "disparaissent une fois jouées."), new Label.LabelStyle(hintFont, Color.WHITE))).colspan(columns);
         panel.row();
         // Avertissement (carte indisponible) : ligne réservée, vide tant qu'il n'y a rien à dire.
         Label notice = new Label(" ", new Label.LabelStyle(textFont, Palette.TEXT_ALERT));
@@ -182,11 +183,11 @@ public class ShopOverlay implements Disposable {
             cell.row();
 
             Label status = new Label(" ", new Label.LabelStyle(hintFont, Color.WHITE));
-            cell.add(button.apply("Acheter", () -> {
+            cell.add(button.apply(Lang.t("Acheter"), () -> {
                 if (!root.isVisible() || !root.isTouchable()) return;
                 String reason = unavailable.apply(offer);
                 if (reason != null) {
-                    status.setText("Indisponible");
+                    status.setText(Lang.t("Indisponible"));
                     status.setColor(Palette.TEXT_ALERT);
                     notice.clearActions();
                     notice.setText(reason);
@@ -194,12 +195,12 @@ public class ShopOverlay implements Disposable {
                     notice.addAction(Actions.sequence(Actions.delay(NOTICE_TIME), Actions.fadeOut(0.4f)));
                 } else if (buy.test(offer)) {
                     wallet.setText(walletText(gains.getAsInt()));
-                    status.setText("Acheté !");
+                    status.setText(Lang.t("Acheté !"));
                     status.setColor(Palette.TEXT_TITLE);
                     root.setTouchable(Touchable.disabled);
                     root.addAction(Actions.delay(CLOSE_AFTER_PURCHASE, Actions.run(this::hide)));
                 } else {
-                    status.setText("Pas assez de gains");
+                    status.setText(Lang.t("Pas assez de gains"));
                     status.setColor(Palette.TEXT_ALERT);
                     priceLabel.clearActions();
                     priceLabel.setColor(Palette.TEXT_ALERT);
@@ -213,7 +214,7 @@ public class ShopOverlay implements Disposable {
         }
         scrollCell = panel.add(scroll).colspan(columns);
         panel.row();
-        panel.add(button.apply("Fermer", this::hide)).colspan(columns).padTop(GAP);
+        panel.add(button.apply(Lang.t("Fermer"), this::hide)).colspan(columns).padTop(GAP);
 
         layout();
         root.clearActions();
@@ -228,7 +229,7 @@ public class ShopOverlay implements Disposable {
     }
 
     private static String walletText(int gains) {
-        return "Tes gains : " + SidePanel.formatGains(gains);
+        return Lang.f("Tes gains : {0}", SidePanel.formatGains(gains));
     }
 
     /** Referme l'échoppe. */

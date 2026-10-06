@@ -2,6 +2,7 @@ package fr.astratime.lucky.entities.effects;
 
 import fr.astratime.lucky.entities.context.PlayContext;
 import fr.astratime.lucky.entities.context.TurnContext;
+import fr.astratime.lucky.i18n.Lang;
 import fr.astratime.lucky.popups.EffectPopup;
 import fr.astratime.lucky.popups.EffectSound;
 import fr.astratime.lucky.popups.PopupScale;
@@ -30,11 +31,11 @@ public class BubbleEffect extends Effect {
     public void apply(TurnContext context) { }
 
     @Override
-    public String getDescription() { return "La règle du lieu ne joue plus pendant " + turns + " tours."; }
+    public String getDescription() { return Lang.f("La règle du lieu ne joue plus pendant {0} tours.", turns); }
 
     @Override
     public List<EffectPopup> getPopups() {
-        return List.of(new EffectPopup("BULLE D'AIR !", EffectPopup.Style.SPECIAL, PopupScale.SECONDARY_INTENSITY));
+        return List.of(new EffectPopup(Lang.t("BULLE D'AIR !"), EffectPopup.Style.SPECIAL, PopupScale.SECONDARY_INTENSITY));
     }
 
     @Override

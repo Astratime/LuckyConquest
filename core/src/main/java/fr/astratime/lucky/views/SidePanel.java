@@ -25,6 +25,7 @@ import fr.astratime.lucky.assets.Fonts;
 import fr.astratime.lucky.assets.HudTextures;
 import fr.astratime.lucky.assets.Palette;
 import fr.astratime.lucky.entities.Combo;
+import fr.astratime.lucky.i18n.Lang;
 
 import java.util.EnumMap;
 import java.util.List;
@@ -104,7 +105,7 @@ public class SidePanel implements Disposable {
         root.setBackground(hud.panelDrawable());
         root.pad(PADDING).top();
 
-        Label title = new Label("LUCKY\nCONQUEST", new Label.LabelStyle(titleFont, Color.WHITE));
+        Label title = new Label(Lang.t("LUCKY\nCONQUEST"), new Label.LabelStyle(titleFont, Color.WHITE));
         title.setAlignment(Align.center);
         root.add(title).growX();
         root.row();
@@ -117,7 +118,7 @@ public class SidePanel implements Disposable {
 
         gainsBox.setBackground(hud.insetDrawable());
         gainsBox.pad(INSET_PADDING);
-        gainsBox.add(new Label("GAINS", new Label.LabelStyle(captionFont, Color.WHITE))).colspan(2).left();
+        gainsBox.add(new Label(Lang.t("GAINS"), new Label.LabelStyle(captionFont, Color.WHITE))).colspan(2).left();
         gainsBox.row();
         gainsBox.add(coin).size(COIN_SIZE).padRight(COIN_GAP);
         gainsBox.add(gainsLabel).growX().left();
@@ -126,7 +127,7 @@ public class SidePanel implements Disposable {
 
         combosBox.setBackground(hud.insetDrawable());
         combosBox.pad(INSET_PADDING).top().left();
-        combosBox.add(new Label("COMBINAISONS", new Label.LabelStyle(captionFont, Color.WHITE))).colspan(2).left();
+        combosBox.add(new Label(Lang.t("COMBINAISONS"), new Label.LabelStyle(captionFont, Color.WHITE))).colspan(2).left();
         combosBox.row();
         for (Combo combo : Combo.values()) {
             comboLabels.put(combo, comboRow(combosBox, capitalized(combo.getDisplayName()), "x" + combo.formatFactor()));
@@ -134,14 +135,14 @@ public class SidePanel implements Disposable {
         combosBox.add(new Image(new TextureRegionDrawable(new TextureRegion(hud.tooltipRule)))).colspan(2)
             .height(COMBO_RULE).growX().padTop(COMBO_RULE_GAP);
         combosBox.row();
-        totalLabels = comboRow(combosBox, "Total", "x1");
+        totalLabels = comboRow(combosBox, Lang.t("Total"), "x1");
         root.add(combosBox).width(insetWidth).padTop(SECTION_GAP);
         root.row();
         setCombos(List.of());
 
         effectsBox.setBackground(hud.insetDrawable());
         effectsBox.pad(INSET_PADDING).top().left();
-        effectsBox.add(new Label("EFFETS", new Label.LabelStyle(captionFont, Color.WHITE))).left();
+        effectsBox.add(new Label(Lang.t("EFFETS"), new Label.LabelStyle(captionFont, Color.WHITE))).left();
         effectsBox.row();
         effectsBox.add(effectsRows).growX().left();
         effectsBox.setVisible(false);
@@ -320,12 +321,12 @@ public class SidePanel implements Disposable {
         if (width > gainsMaxWidth) gainsLabel.setFontScale(gainsMaxWidth / width);
     }
 
-    /** @return le montant avec une espace entre chaque groupe de trois chiffres (ex : "12 500"). */
+    /** @return le montant avec un séparateur entre chaque groupe de trois chiffres (ex : "12 500", en anglais "12,500"). */
     static String formatGains(int gains) {
         String digits = Integer.toString(Math.abs(gains));
         StringBuilder text = new StringBuilder();
         for (int i = 0; i < digits.length(); i++) {
-            if (i > 0 && (digits.length() - i) % 3 == 0) text.append(' ');
+            if (i > 0 && (digits.length() - i) % 3 == 0) text.append(Lang.thousands());
             text.append(digits.charAt(i));
         }
         return gains < 0 ? "-" + text : text.toString();

@@ -3,6 +3,7 @@ package fr.astratime.lucky;
 import com.badlogic.gdx.Game;
 import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import fr.astratime.lucky.i18n.Lang;
 import fr.astratime.lucky.loaders.CardLoader;
 import fr.astratime.lucky.progress.GdxProfileStorage;
 import fr.astratime.lucky.progress.PlayerProfile;
@@ -41,6 +42,7 @@ public class LuckyGame extends Game {
     @Override
     public void create() {
         batch = new SpriteBatch();
+        Lang.load();
         profile = new PlayerProfile(new GdxProfileStorage(), CardLoader.loadStartingCollection(),
             CardLoader.loadStarterDeckCopies());
         // Mode ADMIN : toutes les cartes à collectionner (celles des coffres, le profil les connaît déjà).

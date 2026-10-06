@@ -24,6 +24,7 @@ import fr.astratime.lucky.assets.Fonts;
 import fr.astratime.lucky.assets.HudTextures;
 import fr.astratime.lucky.assets.Palette;
 import fr.astratime.lucky.entities.enemy.EnemyKind;
+import fr.astratime.lucky.i18n.Lang;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -116,7 +117,7 @@ public class EnemyPickOverlay implements Disposable {
      */
     public void showChoice(List<EnemyKind> choices, BiFunction<String, Runnable, TextButton> buttonFactory,
                            IntConsumer onFight) {
-        open("CHOISIS TON ADVERSAIRE", "Trois cartes. Trois ennemis. Une seule carte se retourne.");
+        open(Lang.t("CHOISIS TON ADVERSAIRE"), Lang.t("Trois cartes. Trois ennemis. Une seule carte se retourne."));
         picked = false;
         for (int i = 0; i < choices.size(); i++) {
             int index = i;
@@ -176,7 +177,7 @@ public class EnemyPickOverlay implements Disposable {
         description.setText(chosen.getDescription());
         description.getColor().a = 0f;
         description.addAction(Actions.delay(FLIP_TIME * 2, Actions.fadeIn(0.3f)));
-        showButton(buttonFactory.apply("Combattre !", () -> {
+        showButton(buttonFactory.apply(Lang.t("Combattre !"), () -> {
             hide();
             onFight.accept(index);
         }), OTHERS_DELAY + BUTTON_DELAY);
@@ -188,7 +189,7 @@ public class EnemyPickOverlay implements Disposable {
      * @param onFight appelé au clic sur « Affronter »
      */
     public void showBoss(EnemyKind boss, BiFunction<String, Runnable, TextButton> buttonFactory, Runnable onFight) {
-        open("BOSS", boss.getDisplayName().toUpperCase());
+        open(Lang.t("BOSS"), boss.getDisplayName().toUpperCase());
         revealSound.play();
         Texture texture = enemyTextures.portrait(boss);
         Image portrait = new Image(new TextureRegionDrawable(new TextureRegion(texture)));
@@ -207,7 +208,7 @@ public class EnemyPickOverlay implements Disposable {
             Actions.scaleTo(1f, 1f, 0.7f, Interpolation.swingOut)));
         portrait.addAction(Actions.delay(0.8f, Actions.forever(Actions.sequence(
             Actions.moveBy(0f, 8f, 1.2f, Interpolation.sine), Actions.moveBy(0f, -8f, 1.2f, Interpolation.sine)))));
-        showButton(buttonFactory.apply("Affronter", () -> {
+        showButton(buttonFactory.apply(Lang.t("Affronter"), () -> {
             hide();
             onFight.run();
         }), 0.9f);

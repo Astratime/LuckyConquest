@@ -2,6 +2,7 @@ package fr.astratime.lucky.entities.exploration;
 
 import fr.astratime.lucky.entities.Symbol;
 import fr.astratime.lucky.entities.enemy.EnemyKind;
+import fr.astratime.lucky.i18n.Lang;
 
 import java.util.List;
 
@@ -97,11 +98,11 @@ public enum Place {
     }
 
     /** @return le nom du lieu (ex : "La prairie"). */
-    public String getName() { return name; }
+    public String getName() { return Lang.t(name); }
     /** @return son nom court, dans la liste des lieux (ex : "Le Port"). */
-    public String getShortName() { return shortName; }
+    public String getShortName() { return Lang.t(shortName); }
     /** @return sa présentation, en quelques phrases courtes. */
-    public String getDescription() { return description; }
+    public String getDescription() { return Lang.t(description); }
     /** @return ses donjons, dans l'ordre de leurs icônes sur la carte. */
     public List<Dungeon> getDungeons() { return dungeons; }
 }

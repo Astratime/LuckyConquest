@@ -1,6 +1,7 @@
 package fr.astratime.lucky.entities.events;
 
 import fr.astratime.lucky.entities.Combo;
+import fr.astratime.lucky.i18n.Lang;
 import fr.astratime.lucky.popups.EffectPopup;
 import fr.astratime.lucky.popups.PopupScale;
 
@@ -26,7 +27,7 @@ public class ComboEvent extends Event {
         String times = combo.formatFactor();
         return List.of(
             new EffectPopup(combo.getDisplayName() + " !", EffectPopup.Style.SPECIAL, PopupScale.MAX_INTENSITY),
-            new EffectPopup("GAINS x" + times + "  ATTAQUE x" + times, EffectPopup.Style.GAINS,
+            new EffectPopup(Lang.f("GAINS x{0}  ATTAQUE x{1}", times, times), EffectPopup.Style.GAINS,
                 PopupScale.SECONDARY_INTENSITY));
     }
 }

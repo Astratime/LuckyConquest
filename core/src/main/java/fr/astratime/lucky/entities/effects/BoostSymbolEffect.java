@@ -3,6 +3,7 @@ package fr.astratime.lucky.entities.effects;
 import fr.astratime.lucky.entities.Symbol;
 import fr.astratime.lucky.entities.context.TurnContext;
 import fr.astratime.lucky.entities.events.SymbolBoostedEvent;
+import fr.astratime.lucky.i18n.Lang;
 import fr.astratime.lucky.popups.EffectPopup;
 import fr.astratime.lucky.popups.EffectSound;
 import fr.astratime.lucky.popups.PopupScale;
@@ -32,13 +33,13 @@ public class BoostSymbolEffect extends Effect {
 
     @Override
     public String getDescription() {
-        return symbol.getDisplayName() + " plus fréquent sur les rouleaux (+" + amount + ")";
+        return Lang.f("{0} plus fréquent sur les rouleaux (+{1})", symbol.getDisplayName(), amount);
     }
 
     @Override
     public List<EffectPopup> getPopups() {
         return List.of(
-            EffectPopup.scaled("BOOST " + symbol.getDisplayName() + " +" + amount, EffectPopup.Style.SPECIAL, amount, PopupScale.CARD_SYMBOL_BOOST)
+            EffectPopup.scaled(Lang.f("BOOST {0} +{1}", symbol.getDisplayName(), amount), EffectPopup.Style.SPECIAL, amount, PopupScale.CARD_SYMBOL_BOOST)
         );
     }
 

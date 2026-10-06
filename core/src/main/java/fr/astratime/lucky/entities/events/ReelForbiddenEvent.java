@@ -1,5 +1,6 @@
 package fr.astratime.lucky.entities.events;
 
+import fr.astratime.lucky.i18n.Lang;
 import fr.astratime.lucky.popups.EffectPopup;
 import fr.astratime.lucky.popups.PopupScale;
 
@@ -17,6 +18,6 @@ public class ReelForbiddenEvent extends Event {
 
     @Override
     public List<EffectPopup> getPopups() {
-        return List.of(new EffectPopup("ROULEAU INTERDIT !", EffectPopup.Style.DAMAGE, PopupScale.SECONDARY_INTENSITY * 1.4f));
+        return List.of(new EffectPopup(Lang.t("ROULEAU INTERDIT !"), EffectPopup.Style.DAMAGE, PopupScale.SECONDARY_INTENSITY * 1.4f));
     }
 }

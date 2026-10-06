@@ -1,5 +1,6 @@
 package fr.astratime.lucky.entities.events;
 
+import fr.astratime.lucky.i18n.Lang;
 import fr.astratime.lucky.popups.EffectPopup;
 import fr.astratime.lucky.popups.PopupScale;
 
@@ -22,6 +23,6 @@ public class EnemyThornsEvent extends Event {
 
     @Override
     public List<EffectPopup> getPopups() {
-        return List.of(new EffectPopup("ÉPINES " + total + " %", EffectPopup.Style.REFLECT, PopupScale.SECONDARY_INTENSITY));
+        return List.of(new EffectPopup(Lang.f("ÉPINES {0} %", total), EffectPopup.Style.REFLECT, PopupScale.SECONDARY_INTENSITY));
     }
 }

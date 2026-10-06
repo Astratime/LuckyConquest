@@ -4,6 +4,7 @@ import com.badlogic.gdx.math.Rectangle;
 import fr.astratime.lucky.entities.Card;
 import fr.astratime.lucky.entities.Symbol;
 import fr.astratime.lucky.entities.tutorial.TutorialRun;
+import fr.astratime.lucky.i18n.Lang;
 import fr.astratime.lucky.views.GuideOverlay;
 import fr.astratime.lucky.views.GuideOverlay.Step;
 
@@ -128,12 +129,12 @@ final class TutorialDirector {
             case HAND_DEALT -> handDealt(steps);
             case SPIN_RESOLVED -> spinResolved(steps);
             case ENEMY_TURN_DONE -> {
-                if (turn == 1) steps.add(say("Moi aussi, je joue des cartes et je tire mon levier. Épée : je frappe. "
-                    + "Bouclier : je me protège. Potion : je me soigne.", board::enemy));
+                if (turn == 1) steps.add(say(Lang.t("Moi aussi, je joue des cartes et je tire mon levier. Épée : je frappe. Bouclier : je me "
+                    + "protège. Potion : je me soigne."), board::enemy));
             }
             case VICTORY -> {
-                steps.add(say("Bien joué. Tu connais la table, maintenant."));
-                steps.add(say("Retourne au menu. Je t'y montre le reste."));
+                steps.add(say(Lang.t("Bien joué. Tu connais la table, maintenant.")));
+                steps.add(say(Lang.t("Retourne au menu. Je t'y montre le reste.")));
             }
         }
         return steps;
@@ -142,36 +143,36 @@ final class TutorialDirector {
     private void handDealt(List<Step> steps) {
         switch (turn) {
             case 1 -> {
-                steps.add(say("Bienvenue à ma table. Je suis le Croupier. Je vais t'apprendre à jouer."));
-                steps.add(say("Là-haut, mes points de vie. Fais-les tomber à zéro et tu gagnes.", board::enemyBar));
-                steps.add(say("En bas, les tiens. À zéro, tu perds.", board::playerBar));
-                steps.add(say("Ta main. Chaque tour, tu pioches 6 cartes. Tu en joues 4 au plus.",
+                steps.add(say(Lang.t("Bienvenue à ma table. Je suis le Croupier. Je vais t'apprendre à jouer.")));
+                steps.add(say(Lang.t("Là-haut, mes points de vie. Fais-les tomber à zéro et tu gagnes."), board::enemyBar));
+                steps.add(say(Lang.t("En bas, les tiens. À zéro, tu perds."), board::playerBar));
+                steps.add(say(Lang.t("Ta main. Chaque tour, tu pioches 6 cartes. Tu en joues 4 au plus."),
                     () -> board.hand(card -> true)));
-                steps.add(play("Joue la carte Gains +500. Clique dessus.", Set.of(TutorialRun.GAINS_CARD), 1));
-                steps.add(say("Tes gains montent. Ils servent à acheter des cartes à l'échoppe.", board::gains));
-                steps.add(play("Survole une carte pour lire son effet. Clic droit : sa fiche. Joue le 7 de Trèfle.",
+                steps.add(play(Lang.t("Joue la carte Gains +500. Clique dessus."), Set.of(TutorialRun.GAINS_CARD), 1));
+                steps.add(say(Lang.t("Tes gains montent. Ils servent à acheter des cartes à l'échoppe."), board::gains));
+                steps.add(play(Lang.t("Survole une carte pour lire son effet. Clic droit : sa fiche. Joue le 7 de Trèfle."),
                     Set.of(TutorialRun.CLUB_SEVEN), 1));
-                steps.add(spin("Tes cartes sont posées. Lance la machine.", TutorialRun.rigged(1)));
+                steps.add(spin(Lang.t("Tes cartes sont posées. Lance la machine."), TutorialRun.rigged(1)));
             }
             case 2 -> {
-                steps.add(play("Deux cartes de même valeur font une Paire. Joue tes deux 7.",
+                steps.add(play(Lang.t("Deux cartes de même valeur font une Paire. Joue tes deux 7."),
                     Set.copyOf(TutorialRun.PAIR), TutorialRun.PAIR.size()));
-                steps.add(say("Les combinaisons multiplient tout ton tirage. Elles s'additionnent : "
-                    + "une Paire et une Suite, c'est x9,5.", board::combos));
-                steps.add(play("Joue le Porte-bonheur.", Set.of(TutorialRun.LUCKY_CHARM), 1));
-                steps.add(say("Ses effets durent. Ils s'affichent ici. Survole-les pour les relire.", board::effects));
-                steps.add(spin("Lance la machine.", TutorialRun.rigged(2)));
+                steps.add(say(Lang.t("Les combinaisons multiplient tout ton tirage. Elles s'additionnent : une Paire et une Suite, "
+                    + "c'est x9,5."), board::combos));
+                steps.add(play(Lang.t("Joue le Porte-bonheur."), Set.of(TutorialRun.LUCKY_CHARM), 1));
+                steps.add(say(Lang.t("Ses effets durent. Ils s'affichent ici. Survole-les pour les relire."), board::effects));
+                steps.add(spin(Lang.t("Lance la machine."), TutorialRun.rigged(2)));
             }
             case 3 -> {
-                steps.add(play("Mon bouclier est épais. Les Piques le transpercent. Joue le Valet de Pique.",
+                steps.add(play(Lang.t("Mon bouclier est épais. Les Piques le transpercent. Joue le Valet de Pique."),
                     Set.of(TutorialRun.SPADE), 1));
-                steps.add(Step.action("Tes gains se dépensent à l'échoppe. Ouvre-la.", board::shopIcon, board::shopShown)
+                steps.add(Step.action(Lang.t("Tes gains se dépensent à l'échoppe. Ouvre-la."), board::shopIcon, board::shopShown)
                     .onStart(() -> restrict(Set.of(), false)));
                 int bought = purchases;
-                steps.add(Step.passive("Achète la carte Bingo. Elle coûte " + TutorialRun.BINGO_PRICE + " gains.",
+                steps.add(Step.passive(Lang.f("Achète la carte Bingo. Elle coûte {0} gains.", TutorialRun.BINGO_PRICE),
                         () -> purchases > bought && !board.shopShown())
                     .onStart(() -> restrict(Set.of(), false)));
-                steps.add(play("La carte Bingo aligne trois symboles pareils. Joue-la.", Set.of(TutorialRun.BINGO), 1)
+                steps.add(play(Lang.t("La carte Bingo aligne trois symboles pareils. Joue-la."), Set.of(TutorialRun.BINGO), 1)
                     .onStart(() -> {
                         restrict(Set.of(TutorialRun.BINGO), false);
                         board.rigJackpot(TutorialRun.BINGO_SYMBOL);
@@ -184,19 +185,19 @@ final class TutorialDirector {
     private void spinResolved(List<Step> steps) {
         switch (turn) {
             case 1 -> {
-                steps.add(say("Chaque symbole agit. Le Sept frappe. La Cloche rapporte des gains. Le Raisin te protège.",
+                steps.add(say(Lang.t("Chaque symbole agit. Le Sept frappe. La Cloche rapporte des gains. Le Raisin te protège."),
                     board::reels));
-                steps.add(say("Ton bouclier. Il absorbe mes coups.", board::playerShield));
-                steps.add(say("Mon bouclier. Il encaisse tes coups et s'use. Il revient à chacun de mes tours.",
+                steps.add(say(Lang.t("Ton bouclier. Il absorbe mes coups."), board::playerShield));
+                steps.add(say(Lang.t("Mon bouclier. Il encaisse tes coups et s'use. Il revient à chacun de mes tours."),
                     board::enemyDefense));
-                steps.add(say("À moi de jouer. Regarde bien."));
+                steps.add(say(Lang.t("À moi de jouer. Regarde bien.")));
             }
-            case 2 -> steps.add(say("Ta Paire a multiplié tout le tirage : attaque, gains et bouclier.", board::reels));
+            case 2 -> steps.add(say(Lang.t("Ta Paire a multiplié tout le tirage : attaque, gains et bouclier."), board::reels));
             case 3 -> {
                 if (board.lastSpinWasBingo()) {
-                    steps.add(say("BINGO ! Trois symboles pareils. Leur effet est multiplié.", board::reels));
+                    steps.add(say(Lang.t("BINGO ! Trois symboles pareils. Leur effet est multiplié."), board::reels));
                 }
-                if (!board.enemyDefeated()) steps.add(say("Je tiens encore. Achève-moi. Je te laisse jouer seul."));
+                if (!board.enemyDefeated()) steps.add(say(Lang.t("Je tiens encore. Achève-moi. Je te laisse jouer seul.")));
             }
             default -> { }
         }

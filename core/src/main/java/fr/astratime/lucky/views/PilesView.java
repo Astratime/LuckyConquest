@@ -8,6 +8,7 @@ import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.InputListener;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import fr.astratime.lucky.entities.Player;
+import fr.astratime.lucky.i18n.Lang;
 
 /**
  * Le deck (à gauche) et la défausse (à droite, son symétrique) : piles de dos
@@ -33,9 +34,9 @@ public class PilesView {
     public PilesView(PlayArea playArea, Texture cardBackTexture, BitmapFont font, Tooltip tooltip, Sound clickSound,
               Sound hoverSound, float cardWidth, float cardHeight, Runnable onDeckClicked, Runnable onDiscardClicked) {
         this.playArea = playArea;
-        deckPile      = buildPile("DECK", cardBackTexture, font, tooltip, clickSound, hoverSound, cardWidth, cardHeight,
+        deckPile      = buildPile(Lang.t("DECK"), cardBackTexture, font, tooltip, clickSound, hoverSound, cardWidth, cardHeight,
             onDeckClicked);
-        discardPile   = buildPile("DÉFAUSSE", cardBackTexture, font, tooltip, clickSound, hoverSound, cardWidth,
+        discardPile   = buildPile(Lang.t("DÉFAUSSE"), cardBackTexture, font, tooltip, clickSound, hoverSound, cardWidth,
             cardHeight, onDiscardClicked);
     }
 
@@ -84,7 +85,7 @@ public class PilesView {
             public void enter(InputEvent event, float x, float y, int pointer, Actor fromActor) {
                 if (pointer != -1 || (fromActor != null && fromActor.isDescendantOf(pile))) return;
                 hoverSound.play();
-                tooltip.show("Cliquer pour voir les cartes", pile.getX(), pile.getLabelTopY() + 5f);
+                tooltip.show(Lang.t("Cliquer pour voir les cartes"), pile.getX(), pile.getLabelTopY() + 5f);
             }
 
             @Override

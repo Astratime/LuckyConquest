@@ -1,5 +1,6 @@
 package fr.astratime.lucky.entities.events;
 
+import fr.astratime.lucky.i18n.Lang;
 import fr.astratime.lucky.popups.EffectPopup;
 import fr.astratime.lucky.popups.PopupScale;
 
@@ -22,7 +23,7 @@ public class EnemyRageEvent extends Event {
 
     @Override
     public List<EffectPopup> getPopups() {
-        String text = amount > 0 ? "RAGE +" + total : "RAGE MAX";
+        String text = amount > 0 ? Lang.f("RAGE +{0}", total) : Lang.t("RAGE MAX");
         return List.of(new EffectPopup(text, EffectPopup.Style.ATTACK, PopupScale.SECONDARY_INTENSITY));
     }
 }

@@ -1,5 +1,6 @@
 package fr.astratime.lucky.entities.events;
 
+import fr.astratime.lucky.i18n.Lang;
 import fr.astratime.lucky.popups.EffectPopup;
 import fr.astratime.lucky.popups.PopupScale;
 
@@ -19,6 +20,6 @@ public class ShieldGainedEvent extends Event {
     /** Bouclier gagné, taille maximale selon {@link PopupScale}. */
     @Override
     public List<EffectPopup> getPopups() {
-        return List.of(EffectPopup.scaled("BOUCLIER +" + amount, EffectPopup.Style.DEFENSE, amount, PopupScale.SPIN_SHIELD));
+        return List.of(EffectPopup.scaled(Lang.f("BOUCLIER +{0}", amount), EffectPopup.Style.DEFENSE, amount, PopupScale.SPIN_SHIELD));
     }
 }

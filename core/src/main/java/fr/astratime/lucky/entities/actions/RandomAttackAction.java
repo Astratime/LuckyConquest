@@ -1,5 +1,7 @@
 package fr.astratime.lucky.entities.actions;
 
+import fr.astratime.lucky.i18n.Lang;
+
 import java.util.Random;
 
 /** Dé : inflige des dégâts de base tirés au hasard entre {@code min} et {@code max}, puis comme une attaque. */
@@ -27,5 +29,5 @@ public class RandomAttackAction extends AttackAction {
     protected int rollBaseDamage() { return min + random.nextInt(max - min + 1); }
 
     @Override
-    public String getDescription() { return "De " + min + " à " + max + " dégâts de base, au hasard"; }
+    public String getDescription() { return Lang.f("De {0} à {1} dégâts de base, au hasard", min, max); }
 }

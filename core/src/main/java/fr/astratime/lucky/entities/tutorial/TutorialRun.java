@@ -5,6 +5,7 @@ import fr.astratime.lucky.entities.Enemy;
 import fr.astratime.lucky.entities.Symbol;
 import fr.astratime.lucky.entities.enemy.EnemyKind;
 import fr.astratime.lucky.entities.run.CombatRun;
+import fr.astratime.lucky.i18n.Lang;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -113,5 +114,5 @@ public class TutorialRun implements CombatRun {
     public void restart() { }
 
     @Override
-    public String getLabel() { return "Tutoriel"; }
+    public String getLabel() { return Lang.t("Tutoriel"); }
 }

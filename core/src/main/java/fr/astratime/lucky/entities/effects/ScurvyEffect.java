@@ -1,6 +1,7 @@
 package fr.astratime.lucky.entities.effects;
 
 import fr.astratime.lucky.entities.context.TurnContext;
+import fr.astratime.lucky.i18n.Lang;
 import fr.astratime.lucky.popups.EffectPopup;
 import fr.astratime.lucky.popups.EffectSound;
 import fr.astratime.lucky.popups.PopupScale;
@@ -20,13 +21,13 @@ public class ScurvyEffect extends Effect {
 
     @Override
     public String getDescription() {
-        return "En main, ton tirage donne moitié moins d'attaque, de défense et de gains. "
-            + "Joue-la pour t'en débarrasser. Elle compte dans tes cartes du tour";
+        return Lang.t("En main, ton tirage donne moitié moins d'attaque, de défense et de gains. Joue-la pour t'en "
+            + "débarrasser. Elle compte dans tes cartes du tour");
     }
 
     @Override
     public List<EffectPopup> getPopups() {
-        return List.of(new EffectPopup("SCORBUT SOIGNÉ", EffectPopup.Style.DRAIN, PopupScale.SECONDARY_INTENSITY));
+        return List.of(new EffectPopup(Lang.t("SCORBUT SOIGNÉ"), EffectPopup.Style.DRAIN, PopupScale.SECONDARY_INTENSITY));
     }
 
     @Override

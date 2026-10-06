@@ -4,6 +4,7 @@ import fr.astratime.lucky.entities.LastingEffects;
 import fr.astratime.lucky.entities.Symbol;
 import fr.astratime.lucky.entities.context.PlayContext;
 import fr.astratime.lucky.entities.context.TurnContext;
+import fr.astratime.lucky.i18n.Lang;
 import fr.astratime.lucky.popups.EffectPopup;
 import fr.astratime.lucky.popups.EffectSound;
 import fr.astratime.lucky.popups.PopupScale;
@@ -41,8 +42,8 @@ public class RecycleEffect extends Effect {
         Symbol removed = candidates.get(RANDOM.nextInt(candidates.size()));
         lasting.removeSymbol(removed, turns);
         context.addPopups(List.of(
-            new EffectPopup("RECYCLAGE : " + removed.getDisplayName(), EffectPopup.Style.SPECIAL, PopupScale.MAX_INTENSITY),
-            new EffectPopup("RETIRÉ " + turns + " TOURS", EffectPopup.Style.SPECIAL, PopupScale.SECONDARY_INTENSITY)));
+            new EffectPopup(Lang.f("RECYCLAGE : {0}", removed.getDisplayName()), EffectPopup.Style.SPECIAL, PopupScale.MAX_INTENSITY),
+            new EffectPopup(Lang.f("RETIRÉ {0} TOURS", turns), EffectPopup.Style.SPECIAL, PopupScale.SECONDARY_INTENSITY)));
     }
 
     /** Aucun effet propre au spin : le symbole retiré est appliqué par PreparationResolver. */
@@ -50,11 +51,12 @@ public class RecycleEffect extends Effect {
     public void apply(TurnContext context) { }
 
     @Override
-    public String getDescription() { return "Retire un symbole au hasard des rouleaux pendant " + turns + " tours"; }
+    public String getDescription() { return Lang.f("Retire un symbole au hasard des rouleaux pendant {0} tours",
+        turns); }
 
     @Override
     public List<EffectPopup> getPopups() {
-        return List.of(new EffectPopup("RECYCLAGE", EffectPopup.Style.SPECIAL, PopupScale.MAX_INTENSITY));
+        return List.of(new EffectPopup(Lang.t("RECYCLAGE"), EffectPopup.Style.SPECIAL, PopupScale.MAX_INTENSITY));
     }
 
     @Override

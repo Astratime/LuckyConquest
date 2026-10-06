@@ -2,6 +2,7 @@ package fr.astratime.lucky.entities.effects;
 
 import fr.astratime.lucky.entities.context.PlayContext;
 import fr.astratime.lucky.entities.context.TurnContext;
+import fr.astratime.lucky.i18n.Lang;
 import fr.astratime.lucky.popups.EffectPopup;
 import fr.astratime.lucky.popups.EffectSound;
 import fr.astratime.lucky.popups.PopupScale;
@@ -37,11 +38,12 @@ public class PropEffect extends Effect {
     public void apply(TurnContext context) { context.getCombatContext().multiplyDefense(1f + defensePercent / 100f); }
 
     @Override
-    public String getDescription() { return "Défense +" + defensePercent + " %. Le Forage ne perce plus ton bouclier pendant " + turns + " tours."; }
+    public String getDescription() { return Lang.f("Défense +{0} %. Le Forage ne perce plus ton bouclier pendant {1} tours.",
+        defensePercent, turns); }
 
     @Override
     public List<EffectPopup> getPopups() {
-        return List.of(new EffectPopup("ÉTAI : DÉFENSE +" + defensePercent + " %", EffectPopup.Style.DEFENSE, PopupScale.SECONDARY_INTENSITY));
+        return List.of(new EffectPopup(Lang.f("ÉTAI : DÉFENSE +{0} %", defensePercent), EffectPopup.Style.DEFENSE, PopupScale.SECONDARY_INTENSITY));
     }
 
     @Override

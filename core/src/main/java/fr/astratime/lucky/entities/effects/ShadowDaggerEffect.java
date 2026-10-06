@@ -2,6 +2,7 @@ package fr.astratime.lucky.entities.effects;
 
 import fr.astratime.lucky.entities.context.CombatContext;
 import fr.astratime.lucky.entities.context.TurnContext;
+import fr.astratime.lucky.i18n.Lang;
 import fr.astratime.lucky.popups.EffectPopup;
 import fr.astratime.lucky.popups.EffectSound;
 import fr.astratime.lucky.popups.PopupScale;
@@ -28,14 +29,15 @@ public class ShadowDaggerEffect extends Effect {
 
     @Override
     public String getDescription() {
-        return "Les symboles d'attaque ignorent la défense. Attaque +" + attackPerBlade + " par Lame. Les Lames restent";
+        return Lang.f("Les symboles d'attaque ignorent la défense. Attaque +{0} par Lame. Les Lames restent",
+            attackPerBlade);
     }
 
     @Override
     public List<EffectPopup> getPopups() {
         return List.of(
-            new EffectPopup("DÉFENSE IGNORÉE", EffectPopup.Style.ATTACK, PopupScale.SECONDARY_INTENSITY),
-            new EffectPopup("ATTAQUE +" + attackPerBlade + " PAR LAME", EffectPopup.Style.ATTACK, PopupScale.SECONDARY_INTENSITY));
+            new EffectPopup(Lang.t("DÉFENSE IGNORÉE"), EffectPopup.Style.ATTACK, PopupScale.SECONDARY_INTENSITY),
+            new EffectPopup(Lang.f("ATTAQUE +{0} PAR LAME", attackPerBlade), EffectPopup.Style.ATTACK, PopupScale.SECONDARY_INTENSITY));
     }
 
     @Override

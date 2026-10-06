@@ -3,6 +3,7 @@ package fr.astratime.lucky.entities.effects;
 import fr.astratime.lucky.entities.Symbol;
 import fr.astratime.lucky.entities.context.PlayContext;
 import fr.astratime.lucky.entities.context.TurnContext;
+import fr.astratime.lucky.i18n.Lang;
 import fr.astratime.lucky.popups.EffectPopup;
 import fr.astratime.lucky.popups.EffectSound;
 import fr.astratime.lucky.popups.PopupScale;
@@ -57,18 +58,17 @@ public class BingoEffect extends Effect {
 
     @Override
     public String getDescription() {
-        String bingo = symbol != null ? "Bingo " + symbol.getDisplayName() : "Bingo";
-        return "Lance la machine avec un " + bingo + " garanti"
-            + (power > 1 ? ". Attaque, bouclier et gains des symboles x" + power : "")
-            + ". Bingo de bouclier : s'il attaque, ton bouclier lui est renvoyé"
-            + (symbol == null ? ". Bingo de gains : un Bingo au hasard rejoint ton deck" : "");
+        String bingo = symbol != null ? Lang.f("Bingo {0}", symbol.getDisplayName()) : Lang.t("Bingo");
+        return Lang.f("Lance la machine avec un {0} garanti{1}. Bingo de bouclier : s'il attaque, ton bouclier lui est "
+            + "renvoyé{2}",
+            bingo, (power > 1 ? Lang.f(". Attaque, bouclier et gains des symboles x{0}", power) : ""), (symbol == null ? Lang.t(". Bingo de gains : un Bingo au hasard rejoint ton deck") : ""));
     }
 
     @Override
     public List<EffectPopup> getPopups() {
         return List.of(
-            new EffectPopup("BINGO GARANTI !", EffectPopup.Style.GAINS, PopupScale.MAX_INTENSITY),
-            new EffectPopup("SYMBOLES x" + power, EffectPopup.Style.SPECIAL, PopupScale.MAX_INTENSITY));
+            new EffectPopup(Lang.t("BINGO GARANTI !"), EffectPopup.Style.GAINS, PopupScale.MAX_INTENSITY),
+            new EffectPopup(Lang.f("SYMBOLES x{0}", power), EffectPopup.Style.SPECIAL, PopupScale.MAX_INTENSITY));
     }
 
     /** Un Bingo doublé ferait exploser sa puissance : il ne compte qu'une fois. */

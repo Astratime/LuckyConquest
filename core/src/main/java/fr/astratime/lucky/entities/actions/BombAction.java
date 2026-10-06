@@ -4,6 +4,7 @@ import fr.astratime.lucky.entities.Player;
 import fr.astratime.lucky.entities.context.CombatContext;
 import fr.astratime.lucky.entities.events.Event;
 import fr.astratime.lucky.entities.events.PlayerDamagedEvent;
+import fr.astratime.lucky.i18n.Lang;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -38,6 +39,6 @@ public class BombAction extends AttackAction {
 
     @Override
     public String getDescription() {
-        return baseDamage + " dégâts de base, coûte " + hpCostPercent + " % des PV max";
+        return Lang.f("{0} dégâts de base, coûte {1} % des PV max", baseDamage, hpCostPercent);
     }
 }

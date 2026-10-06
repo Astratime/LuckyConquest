@@ -2,6 +2,7 @@ package fr.astratime.lucky.entities.effects;
 
 import fr.astratime.lucky.entities.Symbol;
 import fr.astratime.lucky.entities.context.TurnContext;
+import fr.astratime.lucky.i18n.Lang;
 import fr.astratime.lucky.popups.EffectPopup;
 import fr.astratime.lucky.popups.EffectSound;
 import fr.astratime.lucky.popups.PopupScale;
@@ -45,16 +46,17 @@ public class ForceReelEffect extends Effect {
 
     @Override
     public String getDescription() {
-        String where = reel == MIDDLE_REEL ? "Le rouleau du milieu" : "Le rouleau de gauche";
+        String where = reel == MIDDLE_REEL ? Lang.t("Le rouleau du milieu") : Lang.t("Le rouleau de gauche");
         return symbol == Symbol.JOKER
-            ? where + " devient un Joker."
-            : where + " affiche " + symbol.getDisplayName() + ".";
+            ? Lang.f("{0} devient un Joker.", where)
+            : Lang.f("{0} affiche {1}.", where, symbol.getDisplayName());
     }
 
     @Override
     public List<EffectPopup> getPopups() {
-        String text = reel != MIDDLE_REEL ? (symbol == Symbol.JOKER ? "PERLE NOIRE : JOKER" : "GAUCHE : " + symbol.getDisplayName())
-            : symbol == Symbol.JOKER ? "ROULEAU FANTÔME : JOKER" : "MILIEU : " + symbol.getDisplayName();
+        String text = reel != MIDDLE_REEL ? (symbol == Symbol.JOKER ? Lang.t("PERLE NOIRE : JOKER") : Lang.f("GAUCHE : {0}",
+            symbol.getDisplayName()))
+            : symbol == Symbol.JOKER ? Lang.t("ROULEAU FANTÔME : JOKER") : Lang.f("MILIEU : {0}", symbol.getDisplayName());
         return List.of(new EffectPopup(text, EffectPopup.Style.SPECIAL, PopupScale.MAX_INTENSITY));
     }
 

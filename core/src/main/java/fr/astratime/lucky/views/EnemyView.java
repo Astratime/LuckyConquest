@@ -33,6 +33,7 @@ import fr.astratime.lucky.entities.events.EnemyPhaseEvent;
 import fr.astratime.lucky.entities.events.EnemyShieldedEvent;
 import fr.astratime.lucky.entities.events.Event;
 import fr.astratime.lucky.entities.events.PlayerDamagedEvent;
+import fr.astratime.lucky.i18n.Lang;
 import fr.astratime.lucky.popups.EffectPopup;
 import fr.astratime.lucky.popups.PopupScale;
 
@@ -144,9 +145,9 @@ public class EnemyView implements Disposable {
         character.setOrigin(croupier.getWidth() / 2f, 0f);
         hoverTooltip(croupier, () -> enemy.get().getName(), this::describeEnemy);
 
-        deckPile    = new CardPileView("DECK", textures.cardBack, pileFont,
+        deckPile    = new CardPileView(Lang.t("DECK"), textures.cardBack, pileFont,
             table.getCardWidth(), table.getCardHeight());
-        discardPile = new CardPileView("DÉFAUSSE", textures.cardBack, pileFont,
+        discardPile = new CardPileView(Lang.t("DÉFAUSSE"), textures.cardBack, pileFont,
             table.getCardWidth(), table.getCardHeight());
 
         for (int i = 0; i < EnemySlotMachine.MAX_SYMBOL_COUNT; i++) {
@@ -158,10 +159,10 @@ public class EnemyView implements Disposable {
             reels.add(image);
         }
 
-        defense = new ShieldBadge("Défense", enemy.get().getBaseDefense(), textures.symbol(EnemySymbol.SHIELD), defenseFont, pixel);
-        hoverTooltip(defense, () -> "Défense de l'ennemi",
-            () -> "Absorbe les dégâts de tes attaques et s'use à chaque coup\n"
-                + "Les Piques l'ignorent\nSe reforme à son tour, avec ses Boucliers");
+        defense = new ShieldBadge(Lang.t("Défense"), enemy.get().getBaseDefense(), textures.symbol(EnemySymbol.SHIELD), defenseFont, pixel);
+        hoverTooltip(defense, () -> Lang.t("Défense de l'ennemi"),
+            () -> Lang.t("Absorbe les dégâts de tes attaques et s'use à chaque coup\nLes Piques l'ignorent\nSe reforme à "
+                + "son tour, avec ses Boucliers"));
 
         group.addActor(deckPile);
         group.addActor(discardPile);
@@ -182,56 +183,63 @@ public class EnemyView implements Disposable {
         Enemy current = enemy.get();
         EnemyKind kind = current.getKind();
         StringBuilder text = new StringBuilder(kind.getDescription());
-        if (kind.getPower() > 100) text.append("\nForce ").append(kind.powerText()).append(" : attaques, défense et effets");
-        text.append("\nDéfense : ").append(shownDefense());
-        text.append("\nRouleaux : ").append(kind.describeReels(current.getPhase()));
+        if (kind.getPower() > 100) line(text, Lang.f("Force {0} : attaques, défense et effets", kind.powerText()));
+        line(text, Lang.f("Défense : {0}", shownDefense()));
+        line(text, Lang.f("Rouleaux : {0}", kind.describeReels(current.getPhase())));
         if (kind.hasPhaseTwo() && current.getPhase() < 2) {
-            text.append("\nSous la moitié de ses PV : ").append(kind.describeReels(2));
+            line(text, Lang.f("Sous la moitié de ses PV : {0}", kind.describeReels(2)));
         }
-        if (kind.playsAtRandom()) text.append("\nJoue ses cartes au hasard");
-        if (kind.potionShields()) text.append("\nSes Potions reforment aussi sa défense");
-        if (kind.royalBet()) text.append("\nMise royale : ses Trèfles comptent double sous la moitié de ses PV");
-        if (kind.forbidsReels()) text.append("\nRouleau interdit : bloque un de tes rouleaux. Pas de Bingo possible");
-        if (kind.hasGoldSkin()) text.append("\nPeau d'or : tes dégâts sont divisés par 2 tant qu'il a plus de la moitié de ses PV");
+        if (kind.playsAtRandom()) line(text, Lang.t("Joue ses cartes au hasard"));
+        if (kind.potionShields()) line(text, Lang.t("Ses Potions reforment aussi sa défense"));
+        if (kind.royalBet()) line(text, Lang.t("Mise royale : ses Trèfles comptent double sous la moitié de ses PV"));
+        if (kind.forbidsReels()) line(text, Lang.t("Rouleau interdit : bloque un de tes rouleaux. Pas de Bingo possible"));
+        if (kind.hasGoldSkin()) {
+            line(text, Lang.t("Peau d'or : tes dégâts sont divisés par 2 tant qu'il a plus de la moitié de ses PV"));
+        }
         if (kind.hitsJackpots()) {
-            text.append("\nJackpot : 3 symboles identiques, attaques et Boucliers x").append(EnemySymbol.JACKPOT_FACTOR);
+            line(text, Lang.f("Jackpot : 3 symboles identiques, attaques et Boucliers x{0}", EnemySymbol.JACKPOT_FACTOR));
         }
-        text.append("\nPioche ").append(Enemy.HAND_SIZE).append(" cartes et en joue ").append(current.getPlaysPerTurn())
-            .append(" à chaque tour");
-        if (kind.hasArms()) text.append("\nChaque bras perdu lui retire une carte jouée");
+        line(text, Lang.f("Pioche {0} cartes et en joue {1} à chaque tour", Enemy.HAND_SIZE, current.getPlaysPerTurn()));
+        if (kind.hasArms()) line(text, Lang.t("Chaque bras perdu lui retire une carte jouée"));
         if (kind == EnemyKind.PRETENDANT) {
             int shards = EnemyKind.shards(current.getPhase());
-            text.append("\nÉclats : ").append(shards).append("/3 (Comète");
-            if (shards >= 2) text.append(", Reine : Trèfles doublés");
-            if (shards >= 3) text.append(", Éclat : Rouleau interdit");
-            text.append(")");
+            String powers = Lang.t("Comète");
+            if (shards >= 2) powers += Lang.t(", Reine : Trèfles doublés");
+            if (shards >= 3) powers += Lang.t(", Éclat : Rouleau interdit");
+            line(text, Lang.f("Éclats : {0}/3 ({1})", shards, powers));
         }
         if (kind == EnemyKind.MAISON) {
-            text.append("\nDebout : ").append(current.getPhase() <= 1 ? "Façade, " : "")
-                .append(current.getPhase() <= 2 ? "Coffre, " : "").append("Salle de jeu");
-            if (!current.isHouseUsed()) text.append("\nLa Maison gagne toujours : ton prochain gros coup sera annulé");
+            String standing = (current.getPhase() <= 1 ? Lang.t("Façade") + ", " : "")
+                + (current.getPhase() <= 2 ? Lang.t("Coffre") + ", " : "") + Lang.t("Salle de jeu");
+            line(text, Lang.f("Debout : {0}", standing));
+            if (!current.isHouseUsed()) line(text, Lang.t("La Maison gagne toujours : ton prochain gros coup sera annulé"));
         }
         if (kind.hasLastDraw()) {
-            text.append("\nRouleaux : ").append(current.getReelCount()).append(". Rouleaux volés : ").append(current.getStolenReels());
+            line(text, Lang.f("Rouleaux : {0}. Rouleaux volés : {1}", current.getReelCount(), current.getStolenReels()));
         }
         if (current.getBannedFamily() != null) {
-            text.append("\nInterdit : les cartes ").append(current.getBannedFamily().getDisplayName());
+            line(text, Lang.f("Interdit : les cartes {0}", current.getBannedFamily().getDisplayName()));
         }
-        if (current.getLoot() > 0) text.append("\nButin : ").append(current.getLoot()).append(" As volés");
-        if (current.getPrediction() != null) text.append("\nPrédiction : ").append(current.getPrediction().getDisplayName());
-        if (kind.getTurnLimit() > 0) text.append("\nLe combat dure ").append(kind.getTurnLimit()).append(" tours");
-        if (current.getAnvil() > 0) text.append("\nEnclume : attaque +").append(current.getAnvil());
-        if (current.getRage() > 0) text.append("\nRage : attaque +").append(current.getRage());
+        if (current.getLoot() > 0) line(text, Lang.f("Butin : {0} As volés", current.getLoot()));
+        if (current.getPrediction() != null) line(text, Lang.f("Prédiction : {0}", current.getPrediction().getDisplayName()));
+        if (kind.getTurnLimit() > 0) line(text, Lang.f("Le combat dure {0} tours", kind.getTurnLimit()));
+        if (current.getAnvil() > 0) line(text, Lang.f("Enclume : attaque +{0}", current.getAnvil()));
+        if (current.getRage() > 0) line(text, Lang.f("Rage : attaque +{0}", current.getRage()));
         if (current.getThornsPercent() > 0) {
-            text.append("\nÉpines : ").append(current.getThornsPercent()).append(" % de tes dégâts te reviendront");
+            line(text, Lang.f("Épines : {0} % de tes dégâts te reviendront", current.getThornsPercent()));
         }
-        if (current.getInterest() > 0) text.append("\nIntérêts : prochain coup +").append(current.getInterest());
+        if (current.getInterest() > 0) line(text, Lang.f("Intérêts : prochain coup +{0}", current.getInterest()));
         if (kind.getSymbols(2).contains(EnemySymbol.HOURGLASS) || kind.getSymbols().contains(EnemySymbol.HOURGLASS)) {
-            text.append("\nSablier : ").append(current.getHourglass()).append("/").append(EnemySymbol.HOURGLASS_MAX);
+            line(text, Lang.f("Sablier : {0}/{1}", current.getHourglass(), EnemySymbol.HOURGLASS_MAX));
         }
-        if (current.getStake() > 1) text.append("\nMise : attaques x").append(current.getStake());
-        if (current.isAllIn()) text.append("\nTapis posé : sa mise doublera à son tour, sauf si tu le touches");
+        if (current.getStake() > 1) line(text, Lang.f("Mise : attaques x{0}", current.getStake()));
+        if (current.isAllIn()) line(text, Lang.t("Tapis posé : sa mise doublera à son tour, sauf si tu le touches"));
         return text.toString();
+    }
+
+    /** Ajoute {@code line} à la ligne. */
+    private static void line(StringBuilder text, String line) {
+        text.append('\n').append(line);
     }
 
     /** Montre le portrait de l'ennemi du combat en cours, et ses symboles au repos sur les rouleaux. */
@@ -448,12 +456,12 @@ public class EnemyView implements Disposable {
 
     /** @return le bonus d'une carte jouée, en quelques mots (ex : "ÉPÉE +10"), chez un ennemi {@code kind}. */
     private static String bonusText(Card card, EnemyKind kind) {
-        if (card.getSuit() == null) return "ROULEAU INTERDIT";
+        if (card.getSuit() == null) return Lang.t("ROULEAU INTERDIT");
         return switch (card.getSuit()) {
-            case PIQUE   -> "ATTAQUE +" + kind.empowered(kind.swordBonus(card));
-            case COEUR   -> "POTION +" + EnemyCards.healBonus(card) + "%";
-            case CARREAU -> "BOUCLIER +" + kind.empowered(kind.shieldBonus(card));
-            case TREFLE  -> "CHANCE +" + EnemyCards.luckBonus(card) + "%";
+            case PIQUE   -> Lang.f("ATTAQUE +{0}", kind.empowered(kind.swordBonus(card)));
+            case COEUR   -> Lang.f("POTION +{0}%", EnemyCards.healBonus(card));
+            case CARREAU -> Lang.f("BOUCLIER +{0}", kind.empowered(kind.shieldBonus(card)));
+            case TREFLE  -> Lang.f("CHANCE +{0}%", EnemyCards.luckBonus(card));
         };
     }
 

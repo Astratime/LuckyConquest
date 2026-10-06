@@ -2,6 +2,7 @@ package fr.astratime.lucky.entities.effects;
 
 import fr.astratime.lucky.entities.context.PlayContext;
 import fr.astratime.lucky.entities.context.TurnContext;
+import fr.astratime.lucky.i18n.Lang;
 import fr.astratime.lucky.popups.EffectPopup;
 import fr.astratime.lucky.popups.EffectSound;
 import fr.astratime.lucky.popups.PopupScale;
@@ -29,14 +30,14 @@ public class OverheatEffect extends Effect {
 
     @Override
     public String getDescription() {
-        return "4 symboles tirés ce tour au lieu de 3. Tu perds " + hpPercent + " % de tes PV.";
+        return Lang.f("4 symboles tirés ce tour au lieu de 3. Tu perds {0} % de tes PV.", hpPercent);
     }
 
     @Override
     public List<EffectPopup> getPopups() {
         return List.of(
-            new EffectPopup("SURCHAUFFE : 4 ROULEAUX", EffectPopup.Style.ATTACK, PopupScale.MAX_INTENSITY),
-            new EffectPopup("PV -" + hpPercent + "%", EffectPopup.Style.DAMAGE, PopupScale.SECONDARY_INTENSITY));
+            new EffectPopup(Lang.t("SURCHAUFFE : 4 ROULEAUX"), EffectPopup.Style.ATTACK, PopupScale.MAX_INTENSITY),
+            new EffectPopup(Lang.f("PV -{0}%", hpPercent), EffectPopup.Style.DAMAGE, PopupScale.SECONDARY_INTENSITY));
     }
 
     /** Un seul 4e rouleau : doublée, la carte coûterait des PV pour rien. */

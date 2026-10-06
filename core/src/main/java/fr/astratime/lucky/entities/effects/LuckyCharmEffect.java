@@ -2,6 +2,7 @@ package fr.astratime.lucky.entities.effects;
 
 import fr.astratime.lucky.entities.context.PlayContext;
 import fr.astratime.lucky.entities.context.TurnContext;
+import fr.astratime.lucky.i18n.Lang;
 import fr.astratime.lucky.popups.EffectPopup;
 import fr.astratime.lucky.popups.EffectSound;
 import fr.astratime.lucky.popups.PopupScale;
@@ -27,13 +28,13 @@ public class LuckyCharmEffect extends Effect {
     public void apply(TurnContext context) { }
 
     @Override
-    public String getDescription() { return "Gains +" + percent + "% pendant tout le combat"; }
+    public String getDescription() { return Lang.f("Gains +{0}% pendant tout le combat", percent); }
 
     @Override
     public List<EffectPopup> getPopups() {
         return List.of(
-            new EffectPopup("PORTE-BONHEUR", EffectPopup.Style.GAINS, PopupScale.MAX_INTENSITY),
-            new EffectPopup("GAINS +" + percent + "% (COMBAT)", EffectPopup.Style.GAINS, PopupScale.SECONDARY_INTENSITY));
+            new EffectPopup(Lang.t("PORTE-BONHEUR"), EffectPopup.Style.GAINS, PopupScale.MAX_INTENSITY),
+            new EffectPopup(Lang.f("GAINS +{0}% (COMBAT)", percent), EffectPopup.Style.GAINS, PopupScale.SECONDARY_INTENSITY));
     }
 
     @Override

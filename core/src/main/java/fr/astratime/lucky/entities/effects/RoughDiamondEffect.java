@@ -3,6 +3,7 @@ package fr.astratime.lucky.entities.effects;
 import fr.astratime.lucky.entities.LastingEffects;
 import fr.astratime.lucky.entities.context.PlayContext;
 import fr.astratime.lucky.entities.context.TurnContext;
+import fr.astratime.lucky.i18n.Lang;
 import fr.astratime.lucky.popups.EffectPopup;
 import fr.astratime.lucky.popups.EffectSound;
 import fr.astratime.lucky.popups.PopupScale;
@@ -34,14 +35,14 @@ public class RoughDiamondEffect extends Effect {
 
     @Override
     public String getDescription() {
-        return "Le Coffre double. Contre-attaque : vide le Coffre sur l'ennemi x" + counter;
+        return Lang.f("Le Coffre double. Contre-attaque : vide le Coffre sur l'ennemi x{0}", counter);
     }
 
     @Override
     public List<EffectPopup> getPopups() {
         return List.of(
-            new EffectPopup("COFFRE x2", EffectPopup.Style.DEFENSE, PopupScale.MAX_INTENSITY),
-            new EffectPopup("CONTRE-ATTAQUE x" + counter, EffectPopup.Style.REFLECT, PopupScale.SECONDARY_INTENSITY));
+            new EffectPopup(Lang.t("COFFRE x2"), EffectPopup.Style.DEFENSE, PopupScale.MAX_INTENSITY),
+            new EffectPopup(Lang.f("CONTRE-ATTAQUE x{0}", counter), EffectPopup.Style.REFLECT, PopupScale.SECONDARY_INTENSITY));
     }
 
     @Override

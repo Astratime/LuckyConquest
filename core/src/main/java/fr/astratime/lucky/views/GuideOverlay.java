@@ -25,6 +25,7 @@ import com.badlogic.gdx.utils.Disposable;
 import fr.astratime.lucky.assets.Fonts;
 import fr.astratime.lucky.assets.HudTextures;
 import fr.astratime.lucky.assets.Palette;
+import fr.astratime.lucky.i18n.Lang;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -221,7 +222,7 @@ public class GuideOverlay extends Group implements Disposable {
         buttonRow.clearChildren();
         for (Actor button : step.buttons) buttonRow.add(button).size(button.getWidth(), button.getHeight()).padRight(GAP);
         boolean clickStep = step.done == null && step.buttons.isEmpty();
-        hint.setText(clickStep ? "Clic pour continuer" : "");
+        hint.setText(clickStep ? Lang.t("Clic pour continuer") : "");
         // Les lignes vides (pas de boutons, pas d'indice) ne laissent pas de blanc dans la bulle.
         buttonCell.padTop(step.buttons.isEmpty() ? 0f : GAP);
         hintCell.padTop(clickStep ? 4f : 0f).height(clickStep ? hint.getPrefHeight() : 0f);

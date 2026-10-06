@@ -3,6 +3,7 @@ package fr.astratime.lucky.entities.effects;
 import fr.astratime.lucky.entities.Symbol;
 import fr.astratime.lucky.entities.SymbolRegistry;
 import fr.astratime.lucky.entities.context.TurnContext;
+import fr.astratime.lucky.i18n.Lang;
 import fr.astratime.lucky.popups.EffectPopup;
 import fr.astratime.lucky.popups.EffectSound;
 import fr.astratime.lucky.popups.PopupScale;
@@ -43,16 +44,16 @@ public class DiamondReflectEffect extends Effect {
 
     @Override
     public String getDescription() {
-        return "Si un symbole de défense sort, renvoie " + percent + "% des attaques ennemies (+20% du Coffre)"
-            + (defenseBoost > 0 ? ". Symboles de défense : bouclier +" + defenseBoost + " et plus fréquents" : "");
+        return Lang.f("Si un symbole de défense sort, renvoie {0}% des attaques ennemies (+20% du Coffre){1}",
+            percent, (defenseBoost > 0 ? Lang.f(". Symboles de défense : bouclier +{0} et plus fréquents", defenseBoost) : ""));
     }
 
     @Override
     public List<EffectPopup> getPopups() {
-        EffectPopup reflect = EffectPopup.scaled("RENVOI +" + percent + "%", EffectPopup.Style.REFLECT,
+        EffectPopup reflect = EffectPopup.scaled(Lang.f("RENVOI +{0}%", percent), EffectPopup.Style.REFLECT,
             percent, PopupScale.CARD_REFLECT_PERCENT);
         if (defenseBoost <= 0) return List.of(reflect);
-        return List.of(reflect, EffectPopup.scaled("BOOST DÉFENSE +" + defenseBoost, EffectPopup.Style.DEFENSE,
+        return List.of(reflect, EffectPopup.scaled(Lang.f("BOOST DÉFENSE +{0}", defenseBoost), EffectPopup.Style.DEFENSE,
             defenseBoost, PopupScale.CARD_DEFENSE_BOOST));
     }
 

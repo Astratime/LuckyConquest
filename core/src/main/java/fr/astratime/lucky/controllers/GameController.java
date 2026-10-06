@@ -27,6 +27,7 @@ import fr.astratime.lucky.entities.enemy.EnemyCards;
 import fr.astratime.lucky.entities.enemy.EnemyKind;
 import fr.astratime.lucky.entities.enemy.EnemySymbol;
 import fr.astratime.lucky.entities.exploration.PlaceRule;
+import fr.astratime.lucky.i18n.Lang;
 import fr.astratime.lucky.loaders.CardLoader;
 import fr.astratime.lucky.popups.EffectPopup;
 import fr.astratime.lucky.popups.PopupScale;
@@ -142,7 +143,7 @@ public class GameController {
      */
     public GameController(Supplier<List<Card>> starterDeck, Function<String, Card> cardFactory,
                           Map<String, Integer> shop) {
-        this(starterDeck, cardFactory, shop, cards -> new Player("Joueur", Player.BASE_HP, cards));
+        this(starterDeck, cardFactory, shop, cards -> new Player(Lang.t("Joueur"), Player.BASE_HP, cards));
     }
 
     /**
@@ -248,7 +249,7 @@ public class GameController {
             Card eaten = added.remove(random.nextInt(added.size()));
             player.discardFromHand(eaten);
             discarded.add(eaten);
-            turnNotices.add(new EffectPopup("GRIGNOTAGE : " + eaten.getName().toUpperCase() + " RONGÉE",
+            turnNotices.add(new EffectPopup(Lang.f("GRIGNOTAGE : {0} RONGÉE", eaten.getName().toUpperCase()),
                 EffectPopup.Style.DAMAGE, PopupScale.SECONDARY_INTENSITY));
         }
         // Scorbut (Port des Contrebandiers) : il remplace une carte piochée.
@@ -260,36 +261,36 @@ public class GameController {
             player.getDiscardPile().addAll(List.of(replaced));
             added.set(index, scurvy);
             discarded.add(replaced);
-            turnNotices.add(new EffectPopup("SCORBUT !", EffectPopup.Style.DAMAGE, PopupScale.MAX_INTENSITY));
+            turnNotices.add(new EffectPopup(Lang.t("SCORBUT !"), EffectPopup.Style.DAMAGE, PopupScale.MAX_INTENSITY));
         }
         handHidden = lasting.takeBlind();
         if (lasting.useLantern() && handHidden) { // Lanterne : la main reste visible
             handHidden = false;
-            turnNotices.add(new EffectPopup("LANTERNE : AVEUGLEMENT DISSIPÉ", EffectPopup.Style.DEFENSE,
+            turnNotices.add(new EffectPopup(Lang.t("LANTERNE : AVEUGLEMENT DISSIPÉ"), EffectPopup.Style.DEFENSE,
                 PopupScale.SECONDARY_INTENSITY));
         }
         if (handHidden) {
-            turnNotices.add(new EffectPopup("AVEUGLEMENT : MAIN CACHÉE", EffectPopup.Style.DAMAGE,
+            turnNotices.add(new EffectPopup(Lang.t("AVEUGLEMENT : MAIN CACHÉE"), EffectPopup.Style.DAMAGE,
                 PopupScale.SECONDARY_INTENSITY));
         }
         taxes = lasting.takeTaxes();
         if (taxes > 0) {
-            turnNotices.add(new EffectPopup("TAXE : CHAQUE CARTE TE COÛTE", EffectPopup.Style.DAMAGE,
+            turnNotices.add(new EffectPopup(Lang.t("TAXE : CHAQUE CARTE TE COÛTE"), EffectPopup.Style.DAMAGE,
                 PopupScale.SECONDARY_INTENSITY));
         }
         CardFamily banned = gameState.getEnemy().getBannedFamily();
         if (banned != null && gameState.getTurnNumber() == 1) {
-            turnNotices.add(new EffectPopup("LE PORTIER INTERDIT : " + banned.getDisplayName().toUpperCase(),
+            turnNotices.add(new EffectPopup(Lang.f("LE PORTIER INTERDIT : {0}", banned.getDisplayName().toUpperCase()),
                 EffectPopup.Style.DAMAGE, PopupScale.MAX_INTENSITY));
         }
         songs = lasting.takeSongs();
         if (lasting.useEarplugs() && songs > 0) { // Bouchons d'oreille : le Chant ne passe pas
             songs = 0;
-            turnNotices.add(new EffectPopup("BOUCHONS D'OREILLE : CHANT IGNORÉ", EffectPopup.Style.DEFENSE,
+            turnNotices.add(new EffectPopup(Lang.t("BOUCHONS D'OREILLE : CHANT IGNORÉ"), EffectPopup.Style.DEFENSE,
                 PopupScale.SECONDARY_INTENSITY));
         }
         if (songs > 0) {
-            turnNotices.add(new EffectPopup("CHANT : CARTE JOUÉE D'OFFICE", EffectPopup.Style.DAMAGE,
+            turnNotices.add(new EffectPopup(Lang.t("CHANT : CARTE JOUÉE D'OFFICE"), EffectPopup.Style.DAMAGE,
                 PopupScale.SECONDARY_INTENSITY));
         }
         return new DrawResult(added, discarded);
@@ -367,8 +368,8 @@ public class GameController {
         Symbol recycled = recycledBingoSymbol(offer.card());
         if (recycled == null) return null;
         int turns = gameState.getPlayer().getLastingEffects().getRemovedSymbols().get(recycled);
-        return "Indisponible : le symbole " + recycled.getDisplayName()
-            + " est retiré des rouleaux par le Recyclage (encore " + turnsText(turns) + ")";
+        return Lang.f("Indisponible : le symbole {0} est retiré des rouleaux par le Recyclage (encore {1})",
+            recycled.getDisplayName(), turnsText(turns));
     }
 
     /**
@@ -381,16 +382,18 @@ public class GameController {
     public String unplayableReason(Card card) {
         CardFamily banned = gameState.getEnemy().getBannedFamily();
         if (banned != null && banned.contains(card)) {
-            return "Le Portier laisse les cartes " + banned.getDisplayName() + " dehors : pas de ça ici, tout le combat";
+            return Lang.f("Le Portier laisse les cartes {0} dehors : pas de ça ici, tout le combat",
+                banned.getDisplayName());
         }
         if (cardsPlayedThisTurn >= getPlayLimit()) {
-            return "Limite atteinte : " + getPlayLimit() + " cartes jouées ce tour";
+            return Lang.f("Limite atteinte : {0} cartes jouées ce tour", getPlayLimit());
         }
         Symbol recycled = recycledBingoSymbol(card);
         if (recycled == null) return null;
         int turns = gameState.getPlayer().getLastingEffects().getRemovedSymbols().get(recycled);
-        return "Le symbole " + recycled.getDisplayName() + " est retiré des rouleaux par le Recyclage (encore "
-            + turnsText(turns) + ") : ce Bingo ne peut pas être joué";
+        return Lang.f("Le symbole {0} est retiré des rouleaux par le Recyclage (encore {1}) : ce Bingo ne peut pas "
+            + "être joué",
+            recycled.getDisplayName(), turnsText(turns));
     }
 
     /** @return le symbole imposé par le Bingo de {@code card} s'il est retiré des rouleaux, sinon {@code null}. */
@@ -403,7 +406,7 @@ public class GameController {
     }
 
     private static String turnsText(int turns) {
-        return turns + (turns > 1 ? " tours" : " tour");
+        return Lang.f(Lang.plural(turns) ? "{0} tours" : "{0} tour", turns);
     }
 
     /**
@@ -444,7 +447,7 @@ public class GameController {
         PlayContext playContext = new PlayContext(player);
         for (int i = 0; i < taxes; i++) { // Taxe du Comptable : chaque carte jouée la paie
             int taxed = player.payTax(EnemySymbol.TAX_PERCENT, EnemySymbol.TAX_FLAT);
-            playContext.addPopups(List.of(new EffectPopup("TAXE -" + taxed, EffectPopup.Style.DAMAGE,
+            playContext.addPopups(List.of(new EffectPopup(Lang.f("TAXE -{0}", taxed), EffectPopup.Style.DAMAGE,
                 PopupScale.SECONDARY_INTENSITY)));
         }
         boolean doubling = doubleNext;
@@ -452,7 +455,7 @@ public class GameController {
         // Double ou rien : la carte compte deux fois, sauf si elle demande un choix (le doublement attend la suivante)
         if (doubling && playContext.getChoice() == null && !playContext.isDoubleRequested()) {
             doubleNext = false;
-            playContext.addPopups(List.of(new EffectPopup("DOUBLE !", EffectPopup.Style.SPECIAL,
+            playContext.addPopups(List.of(new EffectPopup(Lang.t("DOUBLE !"), EffectPopup.Style.SPECIAL,
                 PopupScale.MAX_INTENSITY)));
             playEffects(card, playContext, true);
         }
@@ -650,8 +653,8 @@ public class GameController {
         if (cursed) {
             int lost = gameState.getPlayer().consumeGainsPercent(roulette.penaltyPercent() / 100f);
             List<EffectPopup> popups = new ArrayList<>(List.of(
-                new EffectPopup("JOKER MAUDIT !", EffectPopup.Style.DAMAGE, PopupScale.MAX_INTENSITY),
-                EffectPopup.scaled("GAINS -" + lost, EffectPopup.Style.DAMAGE, lost, PopupScale.SPIN_GAINS)));
+                new EffectPopup(Lang.t("JOKER MAUDIT !"), EffectPopup.Style.DAMAGE, PopupScale.MAX_INTENSITY),
+                EffectPopup.scaled(Lang.f("GAINS -{0}", lost), EffectPopup.Style.DAMAGE, lost, PopupScale.SPIN_GAINS)));
             popups.addAll(pistol.getPopups());
             return new RouletteOutcome(true, popups);
         }

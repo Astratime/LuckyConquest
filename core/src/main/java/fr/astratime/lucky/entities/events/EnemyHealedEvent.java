@@ -1,5 +1,6 @@
 package fr.astratime.lucky.entities.events;
 
+import fr.astratime.lucky.i18n.Lang;
 import fr.astratime.lucky.popups.EffectPopup;
 import fr.astratime.lucky.popups.PopupScale;
 
@@ -17,6 +18,6 @@ public class EnemyHealedEvent extends Event {
 
     @Override
     public List<EffectPopup> getPopups() {
-        return List.of(EffectPopup.scaled("SOIN +" + amount, EffectPopup.Style.DRAIN, amount, PopupScale.ENEMY_HEAL));
+        return List.of(EffectPopup.scaled(Lang.f("SOIN +{0}", amount), EffectPopup.Style.DRAIN, amount, PopupScale.ENEMY_HEAL));
     }
 }

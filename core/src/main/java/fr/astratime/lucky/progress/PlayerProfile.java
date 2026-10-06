@@ -5,6 +5,7 @@ import fr.astratime.lucky.entities.Symbol;
 import fr.astratime.lucky.entities.exploration.Dungeon;
 import fr.astratime.lucky.entities.exploration.Place;
 import fr.astratime.lucky.entities.tower.Chapter;
+import fr.astratime.lucky.i18n.Lang;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -339,12 +340,13 @@ public class PlayerProfile {
         int total = 0;
         for (Map.Entry<String, Integer> entry : candidate.entrySet()) {
             int copies = entry.getValue();
-            if (copies < 0) return "Nombre d'exemplaires négatif";
-            if (copies > MAX_COPIES) return "Pas plus de " + MAX_COPIES + " exemplaires d'une carte";
-            if (copies > getOwnedCopies(entry.getKey())) return "Carte pas assez possédée : " + entry.getKey();
+            if (copies < 0) return Lang.t("Nombre d'exemplaires négatif");
+            if (copies > MAX_COPIES) return Lang.f("Pas plus de {0} exemplaires d'une carte", MAX_COPIES);
+            if (copies > getOwnedCopies(entry.getKey())) return Lang.f("Carte pas assez possédée : {0}",
+                entry.getKey());
             total += copies;
         }
-        if (total != DECK_SIZE) return "Le deck doit faire " + DECK_SIZE + " cartes (" + total + " ici)";
+        if (total != DECK_SIZE) return Lang.f("Le deck doit faire {0} cartes ({1} ici)", DECK_SIZE, total);
         return null;
     }
 
@@ -507,13 +509,13 @@ public class PlayerProfile {
      *         rouleaux possédés, tous différents, sans le Joker
      */
     public String machineProblem(List<Symbol> candidate) {
-        if (new HashSet<>(candidate).size() != candidate.size()) return "Un rouleau ne peut être mis qu'une fois";
+        if (new HashSet<>(candidate).size() != candidate.size()) return Lang.t("Un rouleau ne peut être mis qu'une fois");
         for (Symbol symbol : candidate) {
-            if (symbol == null || symbol == Symbol.JOKER) return "Le Joker ne se met pas dans la machine";
-            if (!ownsReel(symbol)) return "Rouleau pas possédé : " + symbol.getDisplayName();
+            if (symbol == null || symbol == Symbol.JOKER) return Lang.t("Le Joker ne se met pas dans la machine");
+            if (!ownsReel(symbol)) return Lang.f("Rouleau pas possédé : {0}", symbol.getDisplayName());
         }
         if (candidate.size() != Symbol.MACHINE_SIZE) {
-            return "La machine doit avoir " + Symbol.MACHINE_SIZE + " rouleaux (" + candidate.size() + " ici)";
+            return Lang.f("La machine doit avoir {0} rouleaux ({1} ici)", Symbol.MACHINE_SIZE, candidate.size());
         }
         return null;
     }
@@ -611,7 +613,7 @@ public class PlayerProfile {
         String digits = String.valueOf(Math.abs(amount));
         StringBuilder text = new StringBuilder();
         for (int i = 0; i < digits.length(); i++) {
-            if (i > 0 && (digits.length() - i) % 3 == 0) text.append(' ');
+            if (i > 0 && (digits.length() - i) % 3 == 0) text.append(Lang.thousands());
             text.append(digits.charAt(i));
         }
         return (amount < 0 ? "-" : "") + text;

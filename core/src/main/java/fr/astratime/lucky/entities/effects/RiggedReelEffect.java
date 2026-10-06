@@ -3,6 +3,7 @@ package fr.astratime.lucky.entities.effects;
 import fr.astratime.lucky.entities.choices.RiggedReelChoice;
 import fr.astratime.lucky.entities.context.PlayContext;
 import fr.astratime.lucky.entities.context.TurnContext;
+import fr.astratime.lucky.i18n.Lang;
 import fr.astratime.lucky.popups.EffectPopup;
 import fr.astratime.lucky.popups.EffectSound;
 import fr.astratime.lucky.popups.PopupScale;
@@ -26,11 +27,11 @@ public class RiggedReelEffect extends Effect {
     public void apply(TurnContext context) { }
 
     @Override
-    public String getDescription() { return "Choisis le symbole du rouleau du milieu."; }
+    public String getDescription() { return Lang.t("Choisis le symbole du rouleau du milieu."); }
 
     @Override
     public List<EffectPopup> getPopups() {
-        return List.of(new EffectPopup("ROULEAU TRUQUÉ !", EffectPopup.Style.SPECIAL, PopupScale.MAX_INTENSITY));
+        return List.of(new EffectPopup(Lang.t("ROULEAU TRUQUÉ !"), EffectPopup.Style.SPECIAL, PopupScale.MAX_INTENSITY));
     }
 
     @Override

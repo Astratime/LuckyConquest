@@ -3,6 +3,7 @@ package fr.astratime.lucky.entities.enemy;
 import fr.astratime.lucky.entities.Card;
 import fr.astratime.lucky.entities.Enemy;
 import fr.astratime.lucky.entities.exploration.Place;
+import fr.astratime.lucky.i18n.Lang;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -676,11 +677,11 @@ public enum EnemyKind {
     }
 
     /** @return le nom affiché (ex : "Gardien de la Banque"). */
-    public String getDisplayName() { return displayName; }
+    public String getDisplayName() { return Lang.t(displayName); }
     /** @return le nom court affiché dans sa barre de vie (ex : "GARDIEN"). */
-    public String getBarName() { return barName; }
+    public String getBarName() { return Lang.t(barName); }
     /** @return sa présentation, en quelques phrases courtes. */
-    public String getDescription() { return description; }
+    public String getDescription() { return Lang.t(description); }
     /**
      * @return ses points de vie maximum : ceux de la Tour des épreuves sont
      *         multipliés par {@link #TOWER_HP_FACTOR}, car le rang du joueur le
@@ -774,7 +775,7 @@ public enum EnemyKind {
     public String powerText() {
         float factor = getPower() / 100f;
         String text = factor == Math.round(factor) ? String.valueOf(Math.round(factor)) : String.valueOf(factor);
-        return "x" + text.replace('.', ',');
+        return "x" + Lang.decimal(text);
     }
 
     /** @return la part des dégâts du joueur renvoyée par chaque Épines, en %. */
@@ -878,10 +879,10 @@ public enum EnemyKind {
     /** @return le texte qui annonce sa phase {@code phase}, quand il y entre. */
     public String phaseText(int phase) {
         return switch (this) {
-            case PRETENDANT -> phase == 2 ? "ÉCLAT PERDU : FINI LE ROULEAU INTERDIT" : "ÉCLAT PERDU : FINIE LA MISE ROYALE";
-            case MAISON -> phase == 2 ? "LA FAÇADE TOMBE : PLUS DE DÉFENSE" : "LE COFFRE TOMBE : PLUS DE SOINS";
-            case MACHINE_ORIGINELLE -> "ELLE TE VOLE UN ROULEAU !";
-            default -> "PHASE " + phase + " !";
+            case PRETENDANT -> phase == 2 ? Lang.t("ÉCLAT PERDU : FINI LE ROULEAU INTERDIT") : Lang.t("ÉCLAT PERDU : FINIE LA MISE ROYALE");
+            case MAISON -> phase == 2 ? Lang.t("LA FAÇADE TOMBE : PLUS DE DÉFENSE") : Lang.t("LE COFFRE TOMBE : PLUS DE SOINS");
+            case MACHINE_ORIGINELLE -> Lang.t("ELLE TE VOLE UN ROULEAU !");
+            default -> Lang.f("PHASE {0} !", phase);
         };
     }
 
@@ -961,7 +962,7 @@ public enum EnemyKind {
         List<String> parts = new ArrayList<>();
         int total = weights.values().stream().mapToInt(Integer::intValue).sum();
         for (Map.Entry<EnemySymbol, Integer> entry : weights.entrySet()) {
-            parts.add(entry.getKey().getDisplayName() + " " + Math.round(100f * entry.getValue() / total) + " %");
+            parts.add(Lang.f("{0} {1} %", entry.getKey().getDisplayName(), Math.round(100f * entry.getValue() / total)));
         }
         return String.join(", ", parts);
     }

@@ -1,5 +1,7 @@
 package fr.astratime.lucky.entities;
 
+import fr.astratime.lucky.i18n.Lang;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumMap;
@@ -106,9 +108,9 @@ public class LastingEffects {
         }
 
         /** @return le nom court de la règle (panneau des effets). */
-        public String getShortName() { return shortName; }
+        public String getShortName() { return Lang.t(shortName); }
         /** @return le texte qui annonce la règle. */
-        public String getAnnounce() { return announce; }
+        public String getAnnounce() { return Lang.t(announce); }
     }
 
     /** Retire {@code symbol} des rouleaux pour les {@code turns} prochains tirages (prolonge s'il l'est déjà). */

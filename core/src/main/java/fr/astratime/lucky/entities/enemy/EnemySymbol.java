@@ -1,5 +1,7 @@
 package fr.astratime.lucky.entities.enemy;
 
+import fr.astratime.lucky.i18n.Lang;
+
 /**
  * Symboles de la machine à sous de l'ennemi. Leur effet de base est renforcé
  * par les cartes que l'ennemi joue (voir {@link EnemyCards}).
@@ -134,7 +136,7 @@ public enum EnemySymbol {
     }
 
     /** @return le nom affiché du symbole (ex : "ÉPÉE"). */
-    public String getDisplayName() { return displayName; }
+    public String getDisplayName() { return Lang.t(displayName); }
 
     /**
      * @return la description de l'effet de base du symbole chez l'ennemi
@@ -143,46 +145,61 @@ public enum EnemySymbol {
      */
     public String getDescription(EnemyKind kind) {
         return switch (this) {
-            case SWORD  -> "Épée : attaque de " + kind.empowered(kind.swordDamage());
-            case SHIELD -> "Bouclier : défense +" + kind.empowered(kind.shieldDefense()) + " pendant le tour suivant";
-            case POTION -> "Potion : soigne " + percent(kind.potionPercent(0)) + " % des PV max";
-            case THORNS -> "Épines : renvoie " + kind.thornsPercent() + " % de tes dégâts. Au début de son tour";
-            case FANG   -> "Croc : mord de " + kind.empowered(FANG_DAMAGE) + ". Chaque PV volé lui rend "
-                + percent(kind.drainPercent()) + " % de ses PV max";
-            case RAGE   -> "Rage : attaque +" + kind.empowered(RAGE_ATTACK) + ". Jusqu'à la fin du combat";
-            case LOADED_DIE -> "Dé pipé : tes jauges (Coffre, Sang, Lames) perdent " + kind.diePercent() + " %";
-            case INTEREST -> "Intérêts : il prend " + kind.interestPercent() + " % de tes gains. Attaque +1 par " + INTEREST_PER_ATTACK + " volés, au prochain coup. Sans gains, il mord";
-            case ZERO   -> "Zéro : rouge, ses attaques doublent. Noir, ses Boucliers. Zéro, les deux";
-            case MIRROR -> "Reflet : il rejoue ta dernière carte. À moitié de sa force";
-            case HOURGLASS -> "Sablier : +1. À " + HOURGLASS_MAX + ", il explose (" + kind.empowered(HOURGLASS_DAMAGE)
-                + "). Tes gros coups le font reculer";
-            case ALL_IN -> "Tapis : à son prochain tour, ses attaques doublent. Touche-le avant pour l'annuler";
-            case NIBBLE -> "Grignotage : il ronge une carte. Au prochain tour, une carte de ta main part à la défausse";
-            case DRUNK  -> "Ivresse : à ton prochain tirage, un rouleau tourne deux fois et garde le pire résultat";
-            case BLIND  -> "Aveuglement : au prochain tour, tes cartes en main sont faces cachées";
-            case BOARDING -> "Abordage : il vole ta meilleure carte en main pour tout le combat. Il la joue contre toi";
-            case NUGGET -> "Pépite : à ton prochain tirage, tes symboles de gain deviennent des pierres. Ils ne rapportent rien";
-            case DRILL  -> "Forage : attaque de " + kind.empowered(kind.swordDamage()) + ". Traverse ton bouclier";
-            case ANVIL  -> "Enclume : attaque +" + kind.empowered(ANVIL_ATTACK) + ". Jusqu'à la fin du combat, sans limite";
-            case SONG   -> "Chant : au début de ton prochain tour, une carte au hasard de ta main est jouée d'office";
-            case BANK_BITE -> "Morsure : il dévore " + kind.empowered(BANK_BITE_PERCENT) + " % de tes gains et se soigne d'autant. Sans gains, il mord";
-            case FAKE_MONEY -> "Fausse monnaie : " + kind.fakePercent() + " % de tes gains deviennent faux. Dépense-les avant ton tirage, ou ils disparaissent";
-            case PREDICTION -> "Prédiction : il annonce un de tes symboles. S'il sort à ton tirage, ses attaques du tour triplent";
-            case DUEL -> "Duel : chacun tire une carte de son deck. La plus haute frappe l'autre. Tes As et tes figures comptent";
-            case TAX -> "Taxe : au prochain tour, chaque carte jouée te coûte " + TAX_PERCENT + " % de tes gains, puis "
-                + TAX_FLAT + ". Tes gains peuvent passer sous zéro";
-            case NEW_RULE -> "Nouvelle règle : pendant " + NEW_RULE_TURNS + " tours, plus de combinaisons, ou plus de Bingo, ou tes rouleaux tournent deux fois (le pire reste)";
-            case FRISK -> "Fouille : il confisque une carte de ton deck jusqu'à la fin du combat. Une de plus par "
-                + FRISK_GAINS_STEP + " gains";
-            case BANKRUPTCY -> "Faillite : si tes gains dépassent sa fortune (" + BANKRUPTCY_FORTUNE_PERCENT
-                + " % de ses PV), il te prend tout. Sinon, il perd " + BANKRUPTCY_HP_PERCENT + " % de ses PV";
+            case SWORD  -> Lang.f("Épée : attaque de {0}", kind.empowered(kind.swordDamage()));
+            case SHIELD -> Lang.f("Bouclier : défense +{0} pendant le tour suivant",
+                kind.empowered(kind.shieldDefense()));
+            case POTION -> Lang.f("Potion : soigne {0} % des PV max", percent(kind.potionPercent(0)));
+            case THORNS -> Lang.f("Épines : renvoie {0} % de tes dégâts. Au début de son tour", kind.thornsPercent());
+            case FANG   -> Lang.f("Croc : mord de {0}. Chaque PV volé lui rend {1} % de ses PV max",
+                kind.empowered(FANG_DAMAGE), percent(kind.drainPercent()));
+            case RAGE   -> Lang.f("Rage : attaque +{0}. Jusqu'à la fin du combat", kind.empowered(RAGE_ATTACK));
+            case LOADED_DIE -> Lang.f("Dé pipé : tes jauges (Coffre, Sang, Lames) perdent {0} %", kind.diePercent());
+            case INTEREST -> Lang.f("Intérêts : il prend {0} % de tes gains. Attaque +1 par {1} volés, au prochain coup. Sans gains, "
+                + "il mord",
+                kind.interestPercent(), INTEREST_PER_ATTACK);
+            case ZERO   -> Lang.t("Zéro : rouge, ses attaques doublent. Noir, ses Boucliers. Zéro, les deux");
+            case MIRROR -> Lang.t("Reflet : il rejoue ta dernière carte. À moitié de sa force");
+            case HOURGLASS -> Lang.f("Sablier : +1. À {0}, il explose ({1}). Tes gros coups le font reculer",
+                HOURGLASS_MAX, kind.empowered(HOURGLASS_DAMAGE));
+            case ALL_IN -> Lang.t("Tapis : à son prochain tour, ses attaques doublent. Touche-le avant pour l'annuler");
+            case NIBBLE -> Lang.t("Grignotage : il ronge une carte. Au prochain tour, une carte de ta main part à la défausse");
+            case DRUNK  -> Lang.t("Ivresse : à ton prochain tirage, un rouleau tourne deux fois et garde le pire résultat");
+            case BLIND  -> Lang.t("Aveuglement : au prochain tour, tes cartes en main sont faces cachées");
+            case BOARDING -> Lang.t("Abordage : il vole ta meilleure carte en main pour tout le combat. Il la joue contre toi");
+            case NUGGET -> Lang.t("Pépite : à ton prochain tirage, tes symboles de gain deviennent des pierres. Ils ne rapportent "
+                + "rien");
+            case DRILL  -> Lang.f("Forage : attaque de {0}. Traverse ton bouclier",
+                kind.empowered(kind.swordDamage()));
+            case ANVIL  -> Lang.f("Enclume : attaque +{0}. Jusqu'à la fin du combat, sans limite",
+                kind.empowered(ANVIL_ATTACK));
+            case SONG   -> Lang.t("Chant : au début de ton prochain tour, une carte au hasard de ta main est jouée d'office");
+            case BANK_BITE -> Lang.f("Morsure : il dévore {0} % de tes gains et se soigne d'autant. Sans gains, il mord",
+                kind.empowered(BANK_BITE_PERCENT));
+            case FAKE_MONEY -> Lang.f("Fausse monnaie : {0} % de tes gains deviennent faux. Dépense-les avant ton tirage, ou ils "
+                + "disparaissent",
+                kind.fakePercent());
+            case PREDICTION -> Lang.t("Prédiction : il annonce un de tes symboles. S'il sort à ton tirage, ses attaques du tour "
+                + "triplent");
+            case DUEL -> Lang.t("Duel : chacun tire une carte de son deck. La plus haute frappe l'autre. Tes As et tes figures "
+                + "comptent");
+            case TAX -> Lang.f("Taxe : au prochain tour, chaque carte jouée te coûte {0} % de tes gains, puis {1}. Tes gains "
+                + "peuvent passer sous zéro",
+                TAX_PERCENT, TAX_FLAT);
+            case NEW_RULE -> Lang.f("Nouvelle règle : pendant {0} tours, plus de combinaisons, ou plus de Bingo, ou tes rouleaux "
+                + "tournent deux fois (le pire reste)",
+                NEW_RULE_TURNS);
+            case FRISK -> Lang.f("Fouille : il confisque une carte de ton deck jusqu'à la fin du combat. Une de plus par {0} gains",
+                FRISK_GAINS_STEP);
+            case BANKRUPTCY -> Lang.f("Faillite : si tes gains dépassent sa fortune ({0} % de ses PV), il te prend tout. Sinon, il "
+                + "perd {1} % de ses PV",
+                BANKRUPTCY_FORTUNE_PERCENT, BANKRUPTCY_HP_PERCENT);
         };
     }
 
     /** @return {@code value} sans décimale inutile (ex : "30", "1,5"). */
     private static String percent(float value) {
         return value == Math.round(value) ? String.valueOf(Math.round(value))
-            : String.valueOf(Math.round(value * 10f) / 10f).replace('.', ',');
+            : Lang.decimal(String.valueOf(Math.round(value * 10f) / 10f));
     }
 
     /** @return la description de l'effet de base du symbole (chez le croupier), pour son infobulle. */

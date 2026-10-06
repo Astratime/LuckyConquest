@@ -22,6 +22,7 @@ import fr.astratime.lucky.assets.CardTextures;
 import fr.astratime.lucky.entities.Card;
 import fr.astratime.lucky.entities.DrawResult;
 import fr.astratime.lucky.entities.Player;
+import fr.astratime.lucky.i18n.Lang;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -79,7 +80,7 @@ public class HandView {
     private void showTooltip(CardImage cardImage) {
         if (hiddenImages.contains(cardImage)) { // Aveuglement : la carte reste un mystère
             Vector2 pos = cardImage.localToStageCoordinates(new Vector2(0, cardHeight + TOOLTIP_GAP));
-            tooltip.show("Carte cachée", "Aveuglement : tu joues sans savoir laquelle.", pos.x, pos.y);
+            tooltip.show(Lang.t("Carte cachée"), Lang.t("Aveuglement : tu joues sans savoir laquelle."), pos.x, pos.y);
             return;
         }
         Card card = cardOf.get(cardImage);

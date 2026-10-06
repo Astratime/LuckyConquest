@@ -1,5 +1,6 @@
 package fr.astratime.lucky.entities.events;
 
+import fr.astratime.lucky.i18n.Lang;
 import fr.astratime.lucky.popups.EffectPopup;
 import fr.astratime.lucky.popups.PopupScale;
 
@@ -17,7 +18,7 @@ public class AllInLostEvent extends GainsLostEvent {
     @Override
     public List<EffectPopup> getPopups() {
         return List.of(
-            new EffectPopup("TAPIS PERDU !", EffectPopup.Style.DAMAGE, PopupScale.MAX_INTENSITY),
-            EffectPopup.scaled("GAINS -" + amount, EffectPopup.Style.DAMAGE, amount, PopupScale.SPIN_GAINS));
+            new EffectPopup(Lang.t("TAPIS PERDU !"), EffectPopup.Style.DAMAGE, PopupScale.MAX_INTENSITY),
+            EffectPopup.scaled(Lang.f("GAINS -{0}", amount), EffectPopup.Style.DAMAGE, amount, PopupScale.SPIN_GAINS));
     }
 }

@@ -24,6 +24,7 @@ import fr.astratime.lucky.assets.CardTextures;
 import fr.astratime.lucky.assets.HudTextures;
 import fr.astratime.lucky.assets.Palette;
 import fr.astratime.lucky.entities.Symbol;
+import fr.astratime.lucky.i18n.Lang;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -110,7 +111,7 @@ public class CardChoiceOverlay implements Disposable {
      */
     public void showBet(List<Symbol> options, Function<Symbol, TextureRegion> regionOf,
                         Consumer<Symbol> onPicked) {
-        showSymbols("PARI", "Choisis un symbole : gains x2, x3 ou x4 s'il sort 1, 2 ou 3 fois.\nS'il ne sort pas : gains /2.",
+        showSymbols(Lang.t("PARI"), Lang.t("Choisis un symbole : gains x2, x3 ou x4 s'il sort 1, 2 ou 3 fois.\nS'il ne sort pas : gains /2."),
             options, regionOf, onPicked);
     }
 
@@ -121,7 +122,7 @@ public class CardChoiceOverlay implements Disposable {
      */
     public void showRiggedReel(List<Symbol> options, Function<Symbol, TextureRegion> regionOf,
                                Consumer<Symbol> onPicked) {
-        showSymbols("ROULEAU TRUQUÉ", "Choisis le symbole du rouleau du milieu.", options, regionOf, onPicked);
+        showSymbols(Lang.t("ROULEAU TRUQUÉ"), Lang.t("Choisis le symbole du rouleau du milieu."), options, regionOf, onPicked);
     }
 
     /** Fenêtre de choix d'un symbole parmi {@code options}. */
@@ -179,8 +180,9 @@ public class CardChoiceOverlay implements Disposable {
      */
     public void showRoulette(List<Boolean> cursed, int multiplier, int cursedMultiplier, int penaltyPercent,
                              IntConsumer onPicked) {
-        open("ROULETTE RUSSE", "Retourne une carte. Pistolet : degats d'un symbole x" + multiplier
-            + ".\nJoker maudit : pistolet x" + cursedMultiplier + " et -" + penaltyPercent + "% de gains.");
+        open(Lang.t("ROULETTE RUSSE"), Lang.f("Retourne une carte. Pistolet : degats d'un symbole x{0}.\nJoker maudit : pistolet x{1} et -{2}% "
+            + "de gains.",
+            multiplier, cursedMultiplier, penaltyPercent));
         Table row = new Table();
         Label result = new Label(" ", new Label.LabelStyle(resultFont, Color.WHITE));
         result.setAlignment(Align.center);
@@ -218,8 +220,9 @@ public class CardChoiceOverlay implements Disposable {
                     boolean lost = cursed.get(index);
                     flip(card, lost ? cursedFace : rouletteFace, 0f);
                     card.addAction(Actions.delay(FLIP_TIME * 2f, Actions.run(() -> {
-                        result.setText(lost ? "JOKER MAUDIT !  -" + penaltyPercent + "% DE GAINS, PISTOLET x" + cursedMultiplier
-                            : "PAN ! PISTOLET CHARGE  x" + multiplier);
+                        result.setText(lost ? Lang.f("JOKER MAUDIT !  -{0}% DE GAINS, PISTOLET x{1}",
+                            penaltyPercent, cursedMultiplier)
+                            : Lang.f("PAN ! PISTOLET CHARGE  x{0}", multiplier));
                         result.setColor(lost ? Palette.TEXT_ALERT : Palette.TEXT_TITLE);
                         result.setOrigin(Align.center);
                         result.setFontScale(1f);

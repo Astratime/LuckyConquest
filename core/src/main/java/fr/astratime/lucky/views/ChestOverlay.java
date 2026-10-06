@@ -26,6 +26,7 @@ import fr.astratime.lucky.assets.Palette;
 import fr.astratime.lucky.entities.Card;
 import fr.astratime.lucky.entities.Symbol;
 import fr.astratime.lucky.entities.exploration.Dungeon;
+import fr.astratime.lucky.i18n.Lang;
 import fr.astratime.lucky.progress.PlayerProfile;
 
 /**
@@ -91,7 +92,7 @@ public class ChestOverlay implements Disposable {
         veil = new Image(new TextureRegionDrawable(new TextureRegion(hud.pixel)));
         veil.setColor(0f, 0f, 0f, 0.88f);
         veil.setTouchable(Touchable.enabled); // bloque les clics vers le jeu
-        title = new Label("COFFRE AU TRÉSOR", new Label.LabelStyle(titleFont, Color.WHITE));
+        title = new Label(Lang.t("COFFRE AU TRÉSOR"), new Label.LabelStyle(titleFont, Color.WHITE));
         title.setAlignment(Align.center);
         subtitle = new Label("", new Label.LabelStyle(textFont, Color.WHITE));
         subtitle.setAlignment(Align.center);
@@ -100,7 +101,7 @@ public class ChestOverlay implements Disposable {
             @Override
             public void clicked(InputEvent event, float x, float y) { open(); }
         });
-        hint = new Label("Clique sur le coffre", new Label.LabelStyle(textFont, Color.WHITE));
+        hint = new Label(Lang.t("Clique sur le coffre"), new Label.LabelStyle(textFont, Color.WHITE));
         hint.setAlignment(Align.center);
         card = new Image();
         card.setTouchable(Touchable.disabled);
@@ -149,8 +150,8 @@ public class ChestOverlay implements Disposable {
         hide();
         opened = false;
         subtitle.setText(dungeon.getSuit() != null
-            ? dungeon.getName().toUpperCase() + " TERMINÉ !"
-            : "VICTOIRE : " + dungeon.getName().toUpperCase() + " !");
+            ? Lang.f("{0} TERMINÉ !", dungeon.getName().toUpperCase())
+            : Lang.f("VICTOIRE : {0} !", dungeon.getName().toUpperCase()));
         ((TextureRegionDrawable) chest.getDrawable()).setRegion(new TextureRegion(enemyTextures.chestClosed));
         chest.setTouchable(Touchable.enabled);
         card.setDrawable(new TextureRegionDrawable(new TextureRegion(cardTextures.get(found))));
@@ -159,12 +160,12 @@ public class ChestOverlay implements Disposable {
         String description = found.getDescription().replace("\n", ". ");
         cardText.setText(description.endsWith(".") ? description : description + ".");
         copiesText.setText(reward.newCopy()
-            ? "NOUVELLE CARTE ! " + reward.copies() + "/" + PlayerProfile.MAX_COPIES + " EXEMPLAIRES"
-            : "DÉJÀ " + PlayerProfile.MAX_COPIES + " EXEMPLAIRES : "
-                + PlayerProfile.formatCoins(PlayerProfile.DUPLICATE_COINS) + " PIÈCES EN PLUS");
-        coinsText.setText("PIÈCES +" + PlayerProfile.formatCoins(reward.coins()));
+            ? Lang.f("NOUVELLE CARTE ! {0}/{1} EXEMPLAIRES", reward.copies(), PlayerProfile.MAX_COPIES)
+            : Lang.f("DÉJÀ {0} EXEMPLAIRES : {1} PIÈCES EN PLUS",
+                PlayerProfile.MAX_COPIES, PlayerProfile.formatCoins(PlayerProfile.DUPLICATE_COINS)));
+        coinsText.setText(Lang.f("PIÈCES +{0}", PlayerProfile.formatCoins(reward.coins())));
         reelText.setText(earnedReel == null ? ""
-            : "NOUVEAU ROULEAU : " + earnedReel.getDisplayName() + " ! (TABLE DU CROUPIER)");
+            : Lang.f("NOUVEAU ROULEAU : {0} ! (TABLE DU CROUPIER)", earnedReel.getDisplayName()));
         earnedReel = null; // annoncé une seule fois, au premier coffre
         for (Label label : new Label[] {cardName, cardText, copiesText, coinsText, reelText}) label.setVisible(false);
         hint.setVisible(true);

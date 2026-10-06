@@ -3,6 +3,7 @@ package fr.astratime.lucky.entities.effects;
 import fr.astratime.lucky.entities.Symbol;
 import fr.astratime.lucky.entities.context.PlayContext;
 import fr.astratime.lucky.entities.context.TurnContext;
+import fr.astratime.lucky.i18n.Lang;
 import fr.astratime.lucky.popups.EffectPopup;
 import fr.astratime.lucky.popups.EffectSound;
 import fr.astratime.lucky.popups.PopupScale;
@@ -32,7 +33,7 @@ public class SpyglassEffect extends Effect {
         if (options.isEmpty()) return;
         ForceReelEffect seen = new ForceReelEffect(options.get(random.nextInt(options.size())));
         context.queueForSpin(seen);
-        context.addPopups(List.of(new EffectPopup("LONGUE-VUE", EffectPopup.Style.SPECIAL, PopupScale.SECONDARY_INTENSITY)));
+        context.addPopups(List.of(new EffectPopup(Lang.t("LONGUE-VUE"), EffectPopup.Style.SPECIAL, PopupScale.SECONDARY_INTENSITY)));
         context.addPopups(seen.getPopups());
     }
 
@@ -41,11 +42,11 @@ public class SpyglassEffect extends Effect {
     public void apply(TurnContext context) { }
 
     @Override
-    public String getDescription() { return "Montre le prochain résultat du rouleau du milieu."; }
+    public String getDescription() { return Lang.t("Montre le prochain résultat du rouleau du milieu."); }
 
     @Override
     public List<EffectPopup> getPopups() {
-        return List.of(new EffectPopup("LONGUE-VUE", EffectPopup.Style.SPECIAL, PopupScale.SECONDARY_INTENSITY));
+        return List.of(new EffectPopup(Lang.t("LONGUE-VUE"), EffectPopup.Style.SPECIAL, PopupScale.SECONDARY_INTENSITY));
     }
 
     @Override

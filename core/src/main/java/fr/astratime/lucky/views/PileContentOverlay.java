@@ -19,6 +19,7 @@ import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 import com.badlogic.gdx.utils.Disposable;
 import fr.astratime.lucky.assets.Textures;
 import fr.astratime.lucky.entities.Card;
+import fr.astratime.lucky.i18n.Lang;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -84,7 +85,7 @@ public class PileContentOverlay implements Disposable {
         Label.LabelStyle style = new Label.LabelStyle(font, Color.WHITE);
         title = new Label("", style);
         title.setFontScale(1.5f);
-        hint  = new Label("Clic sur une carte : sa fiche. Ailleurs (ou Echap) : fermer", new Label.LabelStyle(font, Color.LIGHT_GRAY));
+        hint  = new Label(Lang.t("Clic sur une carte : sa fiche. Ailleurs (ou Echap) : fermer"), new Label.LabelStyle(font, Color.LIGHT_GRAY));
 
         scrollPane = new ScrollPane(grid);
         scrollPane.setScrollingDisabled(true, false);
@@ -123,7 +124,7 @@ public class PileContentOverlay implements Disposable {
 
         background.setSize(worldWidth, worldHeight);
 
-        title.setText(name + " : " + cards.size() + " carte(s)");
+        title.setText(Lang.f("{0} : {1} carte(s)", name, cards.size()));
         title.pack();
         title.setPosition((worldWidth - title.getWidth()) / 2f, worldHeight - MARGIN - title.getHeight());
 
@@ -134,7 +135,7 @@ public class PileContentOverlay implements Disposable {
         float cellWidth = cardWidth + CARD_PAD * 2;
         int columns = Math.clamp((int) ((worldWidth - MARGIN * 2) / cellWidth), 1, MAX_COLUMNS);
         if (sorted.isEmpty()) {
-            grid.add(new Label("Aucune carte", new Label.LabelStyle(hint.getStyle().font, Color.WHITE)));
+            grid.add(new Label(Lang.t("Aucune carte"), new Label.LabelStyle(hint.getStyle().font, Color.WHITE)));
         }
         for (int i = 0; i < sorted.size(); i++) {
             Card card = sorted.get(i);

@@ -2,6 +2,7 @@ package fr.astratime.lucky.entities.effects;
 
 import fr.astratime.lucky.entities.context.PlayContext;
 import fr.astratime.lucky.entities.context.TurnContext;
+import fr.astratime.lucky.i18n.Lang;
 import fr.astratime.lucky.popups.EffectPopup;
 import fr.astratime.lucky.popups.EffectSound;
 import fr.astratime.lucky.popups.PopupScale;
@@ -22,11 +23,11 @@ public class HelmetEffect extends Effect {
     public void apply(TurnContext context) { }
 
     @Override
-    public String getDescription() { return "Bloque entièrement le prochain coup que tu reçois."; }
+    public String getDescription() { return Lang.t("Bloque entièrement le prochain coup que tu reçois."); }
 
     @Override
     public List<EffectPopup> getPopups() {
-        return List.of(new EffectPopup("CASQUE !", EffectPopup.Style.DEFENSE, PopupScale.SECONDARY_INTENSITY));
+        return List.of(new EffectPopup(Lang.t("CASQUE !"), EffectPopup.Style.DEFENSE, PopupScale.SECONDARY_INTENSITY));
     }
 
     @Override

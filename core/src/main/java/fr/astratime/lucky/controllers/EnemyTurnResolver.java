@@ -30,6 +30,7 @@ import fr.astratime.lucky.entities.events.PlayerDamagedEvent;
 import fr.astratime.lucky.entities.events.ReelForbiddenEvent;
 import fr.astratime.lucky.entities.events.StatusEvent;
 import fr.astratime.lucky.entities.exploration.PlaceRule;
+import fr.astratime.lucky.i18n.Lang;
 import fr.astratime.lucky.popups.EffectPopup;
 import fr.astratime.lucky.entities.events.ThornsEvent;
 
@@ -146,7 +147,8 @@ public class EnemyTurnResolver {
         }
         boolean foreseen = enemy.takePredictionHit(); // sa Prédiction est sortie au tirage du joueur
         if (foreseen) {
-            openingEvents.add(new StatusEvent("PRÉDICTION RÉALISÉE : ATTAQUES x" + EnemySymbol.PREDICTION_FACTOR,
+            openingEvents.add(new StatusEvent(Lang.f("PRÉDICTION RÉALISÉE : ATTAQUES x{0}",
+                EnemySymbol.PREDICTION_FACTOR),
                 EffectPopup.Style.ATTACK));
         }
         if (enemy.raiseStake()) openingEvents.add(new EnemyStakeEvent(enemy.getStake(), false));
@@ -157,12 +159,12 @@ public class EnemyTurnResolver {
         int harpooned = enemy.takeHarpoons(); // Harpon : une carte de moins
         if (harpooned > 0) {
             plays = Math.max(0, plays - harpooned);
-            openingEvents.add(new StatusEvent("HARPON : " + harpooned + " CARTE" + (harpooned > 1 ? "S" : "")
-                + " DE MOINS", EffectPopup.Style.ATTACK));
+            openingEvents.add(new StatusEvent(Lang.f(Lang.plural(harpooned) ? "HARPON : {0} CARTES DE MOINS"
+                : "HARPON : {0} CARTE DE MOINS", harpooned), EffectPopup.Style.ATTACK));
         }
         if (enemy.takeMutiny()) { // Mutinerie : son équipage refuse de jouer une partie de ses cartes
             plays = Math.max(0, plays - MutinyEffect.CARDS_LESS);
-            openingEvents.add(new StatusEvent("MUTINERIE : " + MutinyEffect.CARDS_LESS + " CARTES DE MOINS",
+            openingEvents.add(new StatusEvent(Lang.f("MUTINERIE : {0} CARTES DE MOINS", MutinyEffect.CARDS_LESS),
                 EffectPopup.Style.SPECIAL));
         }
         List<Card> played = kind.playsAtRandom() ? chooseAtRandom(drawn, plays)
@@ -211,7 +213,7 @@ public class EnemyTurnResolver {
         boolean loadedCoin = enemy.takeLoadedCoin(); // Pièce truquée : pas de Jackpot ce tirage
         if (jackpot && loadedCoin) {
             jackpot = false;
-            openingEvents.add(new StatusEvent("PIÈCE TRUQUÉE : PAS DE JACKPOT", EffectPopup.Style.SPECIAL));
+            openingEvents.add(new StatusEvent(Lang.t("PIÈCE TRUQUÉE : PAS DE JACKPOT"), EffectPopup.Style.SPECIAL));
         }
         if (jackpot) {
             turn.attackFactor *= EnemySymbol.JACKPOT_FACTOR;
@@ -223,7 +225,7 @@ public class EnemyTurnResolver {
         for (int i = 0; i < symbols.length; i++) {
             List<Event> events = new ArrayList<>();
             if (jackpot && i == 0) {
-                events.add(new StatusEvent("JACKPOT ! TOUT x" + EnemySymbol.JACKPOT_FACTOR, EffectPopup.Style.SPECIAL));
+                events.add(new StatusEvent(Lang.f("JACKPOT ! TOUT x{0}", EnemySymbol.JACKPOT_FACTOR), EffectPopup.Style.SPECIAL));
             }
             Event parried = parry(symbols[i], player);
             if (parried != null) { // Piège à rats, Cage à requin : le mauvais sort tombe à l'eau
@@ -271,35 +273,35 @@ public class EnemyTurnResolver {
                 }
                 case NIBBLE -> {
                     curses.addNibble();
-                    events.add(new StatusEvent("GRIGNOTAGE : UNE CARTE RONGÉE AU PROCHAIN TOUR", EffectPopup.Style.DAMAGE));
+                    events.add(new StatusEvent(Lang.t("GRIGNOTAGE : UNE CARTE RONGÉE AU PROCHAIN TOUR"), EffectPopup.Style.DAMAGE));
                 }
                 case DRUNK -> {
                     curses.addDrunk();
-                    events.add(new StatusEvent("IVRESSE : UN ROULEAU TITUBERA", EffectPopup.Style.DAMAGE));
+                    events.add(new StatusEvent(Lang.t("IVRESSE : UN ROULEAU TITUBERA"), EffectPopup.Style.DAMAGE));
                 }
                 case BLIND -> {
                     curses.blind();
-                    events.add(new StatusEvent("AVEUGLEMENT : MAIN CACHÉE AU PROCHAIN TOUR", EffectPopup.Style.DAMAGE));
+                    events.add(new StatusEvent(Lang.t("AVEUGLEMENT : MAIN CACHÉE AU PROCHAIN TOUR"), EffectPopup.Style.DAMAGE));
                 }
                 case BOARDING -> board(turn, events);
                 case NUGGET -> {
                     curses.addNugget();
-                    events.add(new StatusEvent("PÉPITE : TES GAINS SERONT DES PIERRES", EffectPopup.Style.DAMAGE));
+                    events.add(new StatusEvent(Lang.t("PÉPITE : TES GAINS SERONT DES PIERRES"), EffectPopup.Style.DAMAGE));
                 }
                 case DRILL  -> {
-                    events.add(new StatusEvent("FORAGE !", EffectPopup.Style.ATTACK));
+                    events.add(new StatusEvent(Lang.t("FORAGE !"), EffectPopup.Style.ATTACK));
                     boolean propped = player.getLastingEffects().getPropTurns() > 0; // Étai : le bouclier tient
-                    if (propped) events.add(new StatusEvent("ÉTAI : LE FORAGE NE PERCE PAS", EffectPopup.Style.DEFENSE));
+                    if (propped) events.add(new StatusEvent(Lang.t("ÉTAI : LE FORAGE NE PERCE PAS"), EffectPopup.Style.DEFENSE));
                     events.add(turn.strike(kind.swordDamage(), !propped));
                 }
                 case ANVIL  -> {
                     enemy.addAnvil(EnemySymbol.ANVIL_ATTACK);
-                    events.add(new StatusEvent("ENCLUME : ATTAQUE +" + kind.empowered(enemy.getAnvil()),
+                    events.add(new StatusEvent(Lang.f("ENCLUME : ATTAQUE +{0}", kind.empowered(enemy.getAnvil())),
                         EffectPopup.Style.ATTACK));
                 }
                 case SONG   -> {
                     curses.addSong();
-                    events.add(new StatusEvent("CHANT : UNE CARTE JOUÉE D'OFFICE", EffectPopup.Style.DAMAGE));
+                    events.add(new StatusEvent(Lang.t("CHANT : UNE CARTE JOUÉE D'OFFICE"), EffectPopup.Style.DAMAGE));
                 }
                 case BANK_BITE -> {
                     int stolen = Math.round(player.getGains() * kind.empowered(EnemySymbol.BANK_BITE_PERCENT) / 100f);
@@ -316,7 +318,7 @@ public class EnemyTurnResolver {
                     int faked = Math.round(real * kind.fakePercent() / 100f);
                     if (faked > 0) {
                         curses.addFakeGains(faked);
-                        events.add(new StatusEvent("FAUSSE MONNAIE : " + faked + " GAINS FAUX", EffectPopup.Style.DAMAGE));
+                        events.add(new StatusEvent(Lang.f("FAUSSE MONNAIE : {0} GAINS FAUX", faked), EffectPopup.Style.DAMAGE));
                     } else {
                         events.add(turn.strike(EnemySymbol.FANG_DAMAGE)); // rien à contrefaire : il frappe
                     }
@@ -325,18 +327,18 @@ public class EnemyTurnResolver {
                     List<Symbol> reels = player.getSlotMachine().getReels();
                     Symbol foretold = reels.get(random.nextInt(reels.size()));
                     enemy.predict(foretold);
-                    events.add(new StatusEvent("PRÉDICTION : " + foretold.getDisplayName(), EffectPopup.Style.SPECIAL));
+                    events.add(new StatusEvent(Lang.f("PRÉDICTION : {0}", foretold.getDisplayName()), EffectPopup.Style.SPECIAL));
                 }
                 case DUEL   -> duel(turn, events);
                 case TAX    -> {
                     curses.addTax();
-                    events.add(new StatusEvent("TAXE SUR TES PROCHAINES CARTES", EffectPopup.Style.DAMAGE));
+                    events.add(new StatusEvent(Lang.t("TAXE SUR TES PROCHAINES CARTES"), EffectPopup.Style.DAMAGE));
                 }
                 case NEW_RULE -> {
                     LastingEffects.HouseRule[] rules = LastingEffects.HouseRule.values();
                     LastingEffects.HouseRule rule = rules[random.nextInt(rules.length)];
                     curses.setHouseRule(rule, EnemySymbol.NEW_RULE_TURNS);
-                    events.add(new StatusEvent("NOUVELLE RÈGLE : " + rule.getAnnounce(), EffectPopup.Style.SPECIAL));
+                    events.add(new StatusEvent(Lang.f("NOUVELLE RÈGLE : {0}", rule.getAnnounce()), EffectPopup.Style.SPECIAL));
                 }
                 case FRISK  -> {
                     int count = Math.min(EnemySymbol.FRISK_MAX, 1 + Math.max(0, player.getGains()) / EnemySymbol.FRISK_GAINS_STEP);
@@ -346,19 +348,19 @@ public class EnemyTurnResolver {
                         if (card != null) taken.add(card.getName().toUpperCase());
                     }
                     events.add(taken.isEmpty() ? turn.strike(EnemySymbol.FANG_DAMAGE)
-                        : new StatusEvent("FOUILLE : " + String.join(", ", taken) + " CONFISQUÉ"
-                            + (taken.size() > 1 ? "ES" : "E"), EffectPopup.Style.DAMAGE));
+                        : new StatusEvent(Lang.f(Lang.plural(taken.size()) ? "FOUILLE : {0} CONFISQUÉES" : "FOUILLE : {0} CONFISQUÉE",
+                            String.join(", ", taken)), EffectPopup.Style.DAMAGE));
                 }
                 case BANKRUPTCY -> {
                     int fortune = Math.round(enemy.getHp() * EnemySymbol.BANKRUPTCY_FORTUNE_PERCENT / 100f);
                     if (player.getGains() > fortune) {
                         int lost = player.getGains();
                         player.addGains(-lost);
-                        events.add(new StatusEvent("FAILLITE : IL TE PREND TOUT", EffectPopup.Style.DAMAGE));
+                        events.add(new StatusEvent(Lang.t("FAILLITE : IL TE PREND TOUT"), EffectPopup.Style.DAMAGE));
                         events.add(new GainsStolenEvent(lost, 0));
                     } else {
                         int lost = enemy.takeDamage(Math.round(enemy.getHp() * EnemySymbol.BANKRUPTCY_HP_PERCENT / 100f));
-                        events.add(new StatusEvent("FAILLITE : IL PERD " + lost + " PV", EffectPopup.Style.SPECIAL));
+                        events.add(new StatusEvent(Lang.f("FAILLITE : IL PERD {0} PV", lost), EffectPopup.Style.SPECIAL));
                     }
                 }
             }
@@ -402,15 +404,16 @@ public class EnemyTurnResolver {
     static Event parry(EnemySymbol symbol, Player player) {
         LastingEffects lasting = player.getLastingEffects();
         String spell = switch (symbol) {
-            case NIBBLE   -> "GRIGNOTAGE";
-            case BLIND    -> "AVEUGLEMENT";
-            case SONG     -> "CHANT";
-            case BOARDING -> "ABORDAGE";
-            case FRISK    -> "FOUILLE";
+            case NIBBLE   -> Lang.t("GRIGNOTAGE");
+            case BLIND    -> Lang.t("AVEUGLEMENT");
+            case SONG     -> Lang.t("CHANT");
+            case BOARDING -> Lang.t("ABORDAGE");
+            case FRISK    -> Lang.t("FOUILLE");
             default       -> null;
         };
         if (spell != null && lasting.useTrap()) {
-            return new StatusEvent("PIÈGE À RATS : " + spell + " ANNULÉ" + (symbol == EnemySymbol.FRISK ? "E" : ""),
+            return new StatusEvent(Lang.f(symbol == EnemySymbol.FRISK ? "PIÈGE À RATS : {0} ANNULÉE"
+                : "PIÈGE À RATS : {0} ANNULÉ", spell),
                 EffectPopup.Style.DEFENSE);
         }
         boolean takesGains = switch (symbol) {
@@ -418,7 +421,7 @@ public class EnemyTurnResolver {
             default -> false;
         };
         if (takesGains && lasting.getCageTurns() > 0 && player.getGains() > 0) {
-            return new StatusEvent("CAGE À REQUIN : GAINS PROTÉGÉS", EffectPopup.Style.DEFENSE);
+            return new StatusEvent(Lang.t("CAGE À REQUIN : GAINS PROTÉGÉS"), EffectPopup.Style.DEFENSE);
         }
         return null;
     }
@@ -435,14 +438,14 @@ public class EnemyTurnResolver {
         Card theirs = randomCard(turn.enemy.getDeckCards().isEmpty() ? turn.enemy.getDiscardCards()
             : turn.enemy.getDeckCards());
         int myRank = duelRank(mine), theirRank = duelRank(theirs);
-        events.add(new StatusEvent("DUEL : " + duelName(mine) + " CONTRE " + duelName(theirs),
+        events.add(new StatusEvent(Lang.f("DUEL : {0} CONTRE {1}", duelName(mine), duelName(theirs)),
             EffectPopup.Style.SPECIAL));
         if (theirRank > myRank) {
             events.add(turn.strike(EnemySymbol.SWORD_DAMAGE + theirRank));
         } else if (myRank > theirRank) {
             Enemy enemy = turn.enemy;
             int lost = enemy.takeDamage(Math.round(enemy.getMaxHp() * myRank * EnemySymbol.DUEL_PER_MILLE_PER_RANK / 1000f));
-            events.add(new StatusEvent("DUEL GAGNÉ : -" + lost + " PV", EffectPopup.Style.ATTACK));
+            events.add(new StatusEvent(Lang.f("DUEL GAGNÉ : -{0} PV", lost), EffectPopup.Style.ATTACK));
         }
     }
 
@@ -457,7 +460,7 @@ public class EnemyTurnResolver {
     }
 
     private static String duelName(Card card) {
-        return card == null ? "RIEN" : card.getName().toUpperCase();
+        return card == null ? Lang.t("RIEN") : card.getName().toUpperCase();
     }
 
     /** Croc : il mord, et chaque PV volé lui rend une part de ses PV max. */
@@ -519,7 +522,7 @@ public class EnemyTurnResolver {
             events.add(turn.strike(turn.enemy.getKind().swordDamage()));
             return;
         }
-        events.add(new StatusEvent("ABORDAGE : " + stolen.getName().toUpperCase() + " VOLÉE", EffectPopup.Style.DAMAGE));
+        events.add(new StatusEvent(Lang.f("ABORDAGE : {0} VOLÉE", stolen.getName().toUpperCase()), EffectPopup.Style.DAMAGE));
         Enemy enemy = turn.enemy;
         if (stolen.getSuit() == null) {
             events.add(turn.strike(turn.enemy.getKind().swordDamage()));

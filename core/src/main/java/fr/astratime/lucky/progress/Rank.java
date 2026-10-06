@@ -1,6 +1,7 @@
 package fr.astratime.lucky.progress;
 
 import fr.astratime.lucky.entities.RankBonus;
+import fr.astratime.lucky.i18n.Lang;
 
 /**
  * Rangs achetés à la boutique, dans l'ordre. Chacun augmente les PV max du
@@ -43,9 +44,9 @@ public enum Rank {
     }
 
     /** @return le nom du rang (ex : "Avare"). */
-    public String getTitle() { return title; }
+    public String getTitle() { return Lang.t(title); }
     /** @return sa présentation, en une phrase courte. */
-    public String getDescription() { return description; }
+    public String getDescription() { return Lang.t(description); }
     /** @return ses bonus en combat. */
     public RankBonus getBonus() { return bonus; }
     /** @return son prix, en pièces. */
@@ -53,7 +54,7 @@ public enum Rank {
 
     /** @return ses bonus écrits en phrases courtes (ex : "PV +100. Attaque +100. ..."). */
     public String getBonusText() {
-        return "PV +" + bonus.hp() + ". Rouleaux d'attaque +" + bonus.attack() + ". Rouleaux de défense +"
-            + bonus.defense() + ". Rouleaux de gains +" + bonus.gains() + ".";
+        return Lang.f("PV +{0}. Rouleaux d'attaque +{1}. Rouleaux de défense +{2}. Rouleaux de gains +{3}.",
+            bonus.hp(), bonus.attack(), bonus.defense(), bonus.gains());
     }
 }

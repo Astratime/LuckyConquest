@@ -2,6 +2,7 @@ package fr.astratime.lucky.entities.enemy;
 
 import fr.astratime.lucky.entities.Card;
 import fr.astratime.lucky.entities.CardFamily;
+import fr.astratime.lucky.i18n.Lang;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -56,7 +57,7 @@ public final class EnemyCards {
 
     /** @return la carte sombre de rang {@code rank} et de couleur {@code suit}. */
     public static Card card(Card.Suit suit, int rank) {
-        String name = rank + " de " + suitName(suit);
+        String name = Lang.f("{0} de {1}", rank, suitName(suit));
         return new Card("enemy_" + suit.cardId(rank), name, "cards/dark/" + rank + "-" + letter(suit) + ".png",
             List.of(), suit, rank);
     }
@@ -101,12 +102,12 @@ public final class EnemyCards {
 
     /** @return la description de l'effet de la carte chez un ennemi {@code kind} (bonus renforcés par sa force). */
     public static String describe(Card card, EnemyKind kind) {
-        if (card.getSuit() == null) return "Bloque un de tes rouleaux à ton prochain tirage. Pas de Bingo possible";
+        if (card.getSuit() == null) return Lang.t("Bloque un de tes rouleaux à ton prochain tirage. Pas de Bingo possible");
         return switch (card.getSuit()) {
-            case PIQUE   -> "Épées et Crocs : attaque +" + kind.empowered(kind.swordBonus(card));
-            case COEUR   -> "Potions : soin +" + healBonus(card) + " % des PV max";
-            case CARREAU -> "Boucliers : défense +" + kind.empowered(kind.shieldBonus(card));
-            case TREFLE  -> "Un symbole au hasard : chance +" + luckBonus(card) + " %";
+            case PIQUE   -> Lang.f("Épées et Crocs : attaque +{0}", kind.empowered(kind.swordBonus(card)));
+            case COEUR   -> Lang.f("Potions : soin +{0} % des PV max", healBonus(card));
+            case CARREAU -> Lang.f("Boucliers : défense +{0}", kind.empowered(kind.shieldBonus(card)));
+            case TREFLE  -> Lang.f("Un symbole au hasard : chance +{0} %", luckBonus(card));
         };
     }
 
@@ -127,10 +128,10 @@ public final class EnemyCards {
 
     private static String suitName(Card.Suit suit) {
         return switch (suit) {
-            case PIQUE   -> "Pique";
-            case COEUR   -> "Coeur";
-            case CARREAU -> "Carreau";
-            case TREFLE  -> "Trèfle";
+            case PIQUE   -> Lang.t("Pique");
+            case COEUR   -> Lang.t("Coeur");
+            case CARREAU -> Lang.t("Carreau");
+            case TREFLE  -> Lang.t("Trèfle");
         };
     }
 }

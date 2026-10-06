@@ -3,6 +3,7 @@ package fr.astratime.lucky.entities.effects;
 import fr.astratime.lucky.entities.context.CombatContext;
 import fr.astratime.lucky.entities.context.TurnContext;
 import fr.astratime.lucky.entities.events.CardBonusEvent;
+import fr.astratime.lucky.i18n.Lang;
 import fr.astratime.lucky.popups.EffectPopup;
 import fr.astratime.lucky.popups.EffectSound;
 import fr.astratime.lucky.popups.PopupScale;
@@ -27,19 +28,20 @@ public class GuillotineEffect extends Effect {
         int blades = combat.getPlayer().getLastingEffects().consumeBlades();
         if (blades <= 0) return;
         combat.addExecution(blades * percentPerBlade);
-        context.addEvent(new CardBonusEvent("Guillotine : " + blades + " lames", List.of(
-            new EffectPopup("GUILLOTINE : " + blades + " LAMES", EffectPopup.Style.ATTACK, PopupScale.MAX_INTENSITY))));
+        context.addEvent(new CardBonusEvent(Lang.f("Guillotine : {0} lames", blades), List.of(
+            new EffectPopup(Lang.f("GUILLOTINE : {0} LAMES", blades), EffectPopup.Style.ATTACK, PopupScale.MAX_INTENSITY))));
     }
 
     @Override
     public String getDescription() {
-        return "Encaisse toutes les Lames. Chaque Lame inflige " + percentPerBlade
-            + "% des PV restants de l'ennemi. Ignore la défense";
+        return Lang.f("Encaisse toutes les Lames. Chaque Lame inflige {0}% des PV restants de l'ennemi. Ignore la "
+            + "défense",
+            percentPerBlade);
     }
 
     @Override
     public List<EffectPopup> getPopups() {
-        return List.of(new EffectPopup("GUILLOTINE", EffectPopup.Style.ATTACK, PopupScale.MAX_INTENSITY));
+        return List.of(new EffectPopup(Lang.t("GUILLOTINE"), EffectPopup.Style.ATTACK, PopupScale.MAX_INTENSITY));
     }
 
     @Override

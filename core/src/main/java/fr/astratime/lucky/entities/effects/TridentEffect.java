@@ -1,6 +1,7 @@
 package fr.astratime.lucky.entities.effects;
 
 import fr.astratime.lucky.entities.context.TurnContext;
+import fr.astratime.lucky.i18n.Lang;
 import fr.astratime.lucky.popups.EffectPopup;
 import fr.astratime.lucky.popups.EffectSound;
 import fr.astratime.lucky.popups.PopupScale;
@@ -25,12 +26,12 @@ public class TridentEffect extends Effect {
 
     @Override
     public String getDescription() {
-        return "Ton attaque frappe " + HITS + " fois, à " + HIT_PERCENT + " %. Attaque x1,5.";
+        return Lang.f("Ton attaque frappe {0} fois, à {1} %. Attaque x1,5.", HITS, HIT_PERCENT);
     }
 
     @Override
     public List<EffectPopup> getPopups() {
-        return List.of(new EffectPopup("TRIDENT : " + HITS + " COUPS", EffectPopup.Style.ATTACK, PopupScale.SECONDARY_INTENSITY));
+        return List.of(new EffectPopup(Lang.f("TRIDENT : {0} COUPS", HITS), EffectPopup.Style.ATTACK, PopupScale.SECONDARY_INTENSITY));
     }
 
     @Override

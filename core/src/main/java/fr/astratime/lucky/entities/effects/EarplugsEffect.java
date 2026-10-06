@@ -2,6 +2,7 @@ package fr.astratime.lucky.entities.effects;
 
 import fr.astratime.lucky.entities.context.PlayContext;
 import fr.astratime.lucky.entities.context.TurnContext;
+import fr.astratime.lucky.i18n.Lang;
 import fr.astratime.lucky.popups.EffectPopup;
 import fr.astratime.lucky.popups.EffectSound;
 import fr.astratime.lucky.popups.PopupScale;
@@ -29,11 +30,12 @@ public class EarplugsEffect extends Effect {
     public void apply(TurnContext context) { }
 
     @Override
-    public String getDescription() { return "Le Chant n'a plus d'effet pendant " + draws + " tours. Tu choisis tes cartes."; }
+    public String getDescription() { return Lang.f("Le Chant n'a plus d'effet pendant {0} tours. Tu choisis tes cartes.",
+        draws); }
 
     @Override
     public List<EffectPopup> getPopups() {
-        return List.of(new EffectPopup("BOUCHONS D'OREILLE", EffectPopup.Style.DEFENSE, PopupScale.SECONDARY_INTENSITY));
+        return List.of(new EffectPopup(Lang.t("BOUCHONS D'OREILLE"), EffectPopup.Style.DEFENSE, PopupScale.SECONDARY_INTENSITY));
     }
 
     @Override

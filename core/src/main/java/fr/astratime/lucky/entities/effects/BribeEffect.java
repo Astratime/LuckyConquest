@@ -1,6 +1,7 @@
 package fr.astratime.lucky.entities.effects;
 
 import fr.astratime.lucky.entities.context.TurnContext;
+import fr.astratime.lucky.i18n.Lang;
 import fr.astratime.lucky.popups.EffectPopup;
 import fr.astratime.lucky.popups.EffectSound;
 import fr.astratime.lucky.popups.PopupScale;
@@ -16,11 +17,11 @@ public class BribeEffect extends Effect {
     }
 
     @Override
-    public String getDescription() { return "La défense de l'ennemi tombe à 0. Elle se reforme à son tour."; }
+    public String getDescription() { return Lang.t("La défense de l'ennemi tombe à 0. Elle se reforme à son tour."); }
 
     @Override
     public List<EffectPopup> getPopups() {
-        return List.of(new EffectPopup("POT-DE-VIN : DÉFENSE 0", EffectPopup.Style.ATTACK, PopupScale.MAX_INTENSITY));
+        return List.of(new EffectPopup(Lang.t("POT-DE-VIN : DÉFENSE 0"), EffectPopup.Style.ATTACK, PopupScale.MAX_INTENSITY));
     }
 
     @Override

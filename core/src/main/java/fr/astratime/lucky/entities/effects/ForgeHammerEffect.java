@@ -2,6 +2,7 @@ package fr.astratime.lucky.entities.effects;
 
 import fr.astratime.lucky.entities.context.PlayContext;
 import fr.astratime.lucky.entities.context.TurnContext;
+import fr.astratime.lucky.i18n.Lang;
 import fr.astratime.lucky.popups.EffectPopup;
 import fr.astratime.lucky.popups.EffectSound;
 import fr.astratime.lucky.popups.PopupScale;
@@ -26,11 +27,12 @@ public class ForgeHammerEffect extends Effect {
     }
 
     @Override
-    public String getDescription() { return "Attaque +" + ATTACK_PERCENT + " %. Si tu tires un BAR ou un double BAR, attaque +" + BAR_PERCENT + " % à la place."; }
+    public String getDescription() { return Lang.f("Attaque +{0} %. Si tu tires un BAR ou un double BAR, attaque +{1} % à la place.",
+        ATTACK_PERCENT, BAR_PERCENT); }
 
     @Override
     public List<EffectPopup> getPopups() {
-        return List.of(new EffectPopup("MARTEAU : ATTAQUE +" + ATTACK_PERCENT + " %", EffectPopup.Style.ATTACK, PopupScale.SECONDARY_INTENSITY));
+        return List.of(new EffectPopup(Lang.f("MARTEAU : ATTAQUE +{0} %", ATTACK_PERCENT), EffectPopup.Style.ATTACK, PopupScale.SECONDARY_INTENSITY));
     }
 
     @Override
