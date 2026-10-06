@@ -44,8 +44,9 @@ public class CometCutscene extends Cutscene {
     public static final float STARS_END    = 6.7f;
     /** La météorite apparaît dans le coin en haut à droite. */
     public static final float METEOR_START = 5.8f;
-    /** Les enseignes grésillent et s'éteignent une à une ; les passants lèvent la tête. */
+    /** Les lumières de la ville s'éteignent de gauche à droite, de SIGNS_OUT à LIGHTS_OFF ; les passants lèvent la tête. */
     public static final float SIGNS_OUT    = 7.6f;
+    public static final float LIGHTS_OFF   = 9.4f;
     public static final float LOOK_UP      = 7.8f;
     /** La météorite s'écrase derrière la ville. */
     public static final float IMPACT       = 9.6f;
@@ -53,8 +54,7 @@ public class CometCutscene extends Cutscene {
     public static final float WHITE_START  = 9.9f;
     /** L'écran est tout blanc : la présentation du boss apparaît dessous. */
     public static final float WHITE_FULL   = 10.8f;
-    /** Les enseignes du premier plan : position (fraction de la largeur) et couleur. */
-    private static final float[] SIGNS     = {0.08f, 0.27f, 0.62f, 0.83f};
+    /** Les enseignes de la rue, avant la nuit des étoiles filantes : leurs couleurs. */
     private static final Color[] NEONS     = {c("ff4fa0"), c("4fd8ff"), c("ffc93a"), c("ff4fa0")};
     /** Les passants : position (fraction de la largeur). */
     private static final float[] PEOPLE    = {0.17f, 0.21f, 0.39f, 0.52f, 0.56f, 0.74f, 0.92f};
@@ -74,7 +74,7 @@ public class CometCutscene extends Cutscene {
     private static final Color FIRE_RED    = c("c92a12");
     private static final Color SMOKE       = c("2a1a1e");
 
-    private final TextureRegion  meteor, city, moon, slot, die, walker, watcher;
+    private final TextureRegion  meteor, city, cityDark, moon, slot, die, walker, watcher;
 
     private final float[] starX = new float[STAR_COUNT], starY = new float[STAR_COUNT];
     private final float[] starSize = new float[STAR_COUNT], starPhase = new float[STAR_COUNT];
@@ -89,7 +89,8 @@ public class CometCutscene extends Cutscene {
     public CometCutscene(VisualSettings settings, ScreenShake shake, Sound sound) {
         super(settings, shake, sound);
         meteor = region(meteorRock(), false);
-        city   = region(skyline(), false);
+        city   = region(skyline(true), false);
+        cityDark = region(skyline(false), false);
         moon   = region(crescent(), false);
         Color[] slotColors = {c("140a0a"), c("e0283a"), c("7a0f20"), c("ffc93a"), c("fff6c8"), c("f4ecdc"),
             c("1a1418"), c("c8c8d4")};
@@ -304,11 +305,13 @@ public class CometCutscene extends Cutscene {
         float cityWidth = city.getRegionWidth() * CITY_SCALE, cityHeight = city.getRegionHeight() * CITY_SCALE;
         float cityLight = 0.55f + 0.45f * Math.max(glow * glow, blast);
         batch.setColor(cityLight, cityLight * 0.85f, cityLight * 0.8f, 1f);
+        // Les lumières s'éteignent de gauche à droite à mesure que la météorite approche.
+        float cut = MathUtils.lerp(left, right, progress(SIGNS_OUT, LIGHTS_OFF));
         for (float x = impactX() - cityWidth * 0.49f; x > left; x -= cityWidth) {
-            batch.draw(city, x - cityWidth, horizon - cityHeight * 0.18f, cityWidth, cityHeight);
+            drawCity(batch, x - cityWidth, horizon - cityHeight * 0.18f, cityWidth, cityHeight, cut);
         }
         for (float x = impactX() - cityWidth * 0.49f; x < right; x += cityWidth) {
-            batch.draw(city, x, horizon - cityHeight * 0.18f, cityWidth, cityHeight);
+            drawCity(batch, x, horizon - cityHeight * 0.18f, cityWidth, cityHeight, cut);
         }
         batch.setColor(c("0b0712"));
         batch.draw(pixel, left, bottom, right - left, horizon - cityHeight * 0.18f - bottom + 1f);
@@ -400,41 +403,12 @@ public class CometCutscene extends Cutscene {
     }
 
     /**
-     * Le premier plan : enseignes au néon au bas des façades (elles grésillent
-     * et s'éteignent une à une quand la météorite approche) et passants, qui
-     * lèvent la tête vers le ciel.
+     * Le premier plan : les passants, qui lèvent la tête vers le ciel.
      */
     private void drawForeground(Batch batch, float fire) {
         float width = worldWidth(), height = worldHeight();
         float base = height * 0.05f, u = height / 90f;
         normal(batch);
-        for (int i = 0; i < SIGNS.length; i++) {
-            float out = SIGNS_OUT + i * 0.35f;
-            boolean on = time < out || (time < out + 0.3f && random.nextFloat() < 0.5f);   // il grésille, puis s'éteint
-            Color neon = NEONS[i];
-            float sx = width * SIGNS[i], sy = base + 18f * u, sw = 22f * u, sh = 6f * u;
-            // La devanture du casino qui porte l'enseigne : façade, toit, porte éclairée.
-            float fw = sw * 1.4f, fh = sy + sh + 3f * u - base;
-            batch.setColor(c("120a1c"));
-            batch.draw(pixel, sx - fw / 2f, -MARGIN, fw, fh + base + MARGIN);
-            batch.setColor(c("2a1a36"));
-            batch.draw(pixel, sx - fw / 2f - u, base + fh, fw + 2f * u, 1.2f * u);
-            float door = on ? 0.55f : 0.2f;
-            batch.setColor(1f, 0.8f, 0.4f, door);
-            batch.draw(pixel, sx - 3f * u, base, 6f * u, 10f * u);
-            batch.setColor(c("120a1c"));
-            batch.draw(pixel, sx - 0.4f * u, base, 0.8f * u, 10f * u);
-            if (on) glow(batch, sx, sy + sh / 2f, sw * 2f, neon, 0.4f);
-            batch.setColor(on ? neon : tmp.set(neon).mul(0.25f, 0.25f, 0.25f, 1f));
-            batch.draw(pixel, sx - sw / 2f, sy, sw, 0.8f * u);
-            batch.draw(pixel, sx - sw / 2f, sy + sh - 0.8f * u, sw, 0.8f * u);
-            batch.draw(pixel, sx - sw / 2f, sy, 0.8f * u, sh);
-            batch.draw(pixel, sx + sw / 2f - 0.8f * u, sy, 0.8f * u, sh);
-            for (int k = 0; k < 4; k++) batch.draw(pixel, sx - sw / 2f + sw * (0.15f + k * 0.2f), sy + sh * 0.3f, sw * 0.1f, sh * 0.4f);
-            if (time >= out && time < out + 0.3f) {                       // les étincelles du néon qui grille
-                glow(batch, sx + (random.nextFloat() - 0.5f) * sw, sy + sh, 4f * u, Color.WHITE, 0.8f);
-            }
-        }
         for (int i = 0; i < PEOPLE.length; i++) {
             boolean looking = time >= LOOK_UP + i * 0.12f;
             TextureRegion pose = looking ? watcher : walker;
@@ -445,6 +419,13 @@ public class CometCutscene extends Cutscene {
                 pose.getRegionHeight() * scale);
         }
         batch.setBlendFunction(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
+    }
+
+    /** Un morceau de ville : éteint à gauche de {@code cut}, encore allumé à droite. */
+    private void drawCity(Batch batch, float x, float y, float w, float h, float cut) {
+        float off = MathUtils.clamp((cut - x) / w, 0f, 1f);
+        if (off > 0f) batch.draw(cityDark.getTexture(), x, y, w * off, h, 0f, 1f, off, 0f);
+        if (off < 1f) batch.draw(city.getTexture(), x + w * off, y, w * (1f - off), h, off, 1f, 1f, 0f);
     }
 
     private void drawFlames(Batch batch) {
@@ -639,13 +620,17 @@ public class CometCutscene extends Cutscene {
     }
 
     /** @return la ville de casinos en ombre chinoise : immeubles, enseignes et une tour à étoile, fenêtres dorées. */
-    private static Pixmap skyline() {
+    private static Pixmap skyline(boolean lit) {
         int width = 340, height = 72;
         int towerX = 160, towerWidth = 16;                       // la tour du grand casino
         Pixmap pixmap = new Pixmap(width, height, Pixmap.Format.RGBA8888);
         pixmap.setBlending(Pixmap.Blending.None);
         Random random = new Random(42);
         Color body = c("0b0712"), window = c("ffcf5a"), windowDim = c("8a5a2a"), neon = c("ff4fa0"), neon2 = c("4fd8ff");
+        if (!lit) {                                                  // la même ville, lumières éteintes
+            window = windowDim = c("1c1424");
+            neon = neon2 = c("24182c");
+        }
         int x = 0;
         while (x < width) {
             boolean tower = x >= towerX - 4 && x <= towerX + 4;
