@@ -20,7 +20,7 @@ import java.util.Set;
  * contenue dans un brelan ne compte pas en plus ; une paire d'un autre rang,
  * si (Brelan et Paire, x10.5). L'ordre dans lequel les cartes sont jouées ne
  * compte pas.
- *
+ * <p>
  * Elles poussent le joueur à varier les cartes qu'il pose, plutôt que de ne
  * jouer que les plus fortes. Leurs multiplicateurs sont hauts (+3 depuis
  * l'Exploration) pour que les cartes à suite gardent leur place dans le deck
@@ -30,63 +30,91 @@ public enum Combo {
 
     // Déclarées de la plus forte à la plus faible.
 
-    /** Trois cartes du même rang. */
+    /**
+     * Trois cartes du même rang.
+     */
     BRELAN("BRELAN", 6f, "3 cartes du même rang"),
-    /** Au moins trois cartes, toutes de la même suite. */
+    /**
+     * Au moins trois cartes, toutes de la même suite.
+     */
     COULEUR("COULEUR", 5f, "3 cartes ou plus de la même suite"),
-    /** Trois rangs qui se suivent (l'As compte avant le 2 ou après le Roi). */
+    /**
+     * Trois rangs qui se suivent (l'As compte avant le 2 ou après le Roi).
+     */
     SUITE("SUITE", 5f, "3 rangs qui se suivent"),
-    /** Deux cartes du même rang. */
+    /**
+     * Deux cartes du même rang.
+     */
     PAIRE("PAIRE", 4.5f, "2 cartes du même rang");
 
-    /** Nombre de cartes minimum pour une suite, une couleur ou un brelan. */
+    /**
+     * Nombre de cartes minimum pour une suite, une couleur ou un brelan.
+     */
     private static final int MIN_CARDS = 3;
     private static final int ACE  = 1;
     private static final int KING = 13;
 
     private final String displayName;
-    private final float  factor;
+    private final float factor;
     private final String rule;
 
     Combo(String displayName, float factor, String rule) {
         this.displayName = displayName;
-        this.factor      = factor;
-        this.rule        = rule;
+        this.factor = factor;
+        this.rule = rule;
     }
 
-    /** @return le nom affiché de la combinaison. */
-    public String getDisplayName() { return Lang.t(displayName); }
+    /**
+     * @return le nom affiché de la combinaison.
+     */
+    public String getDisplayName() {
+        return Lang.t(displayName);
+    }
 
-    /** @return le multiplicateur des gains et de l'attaque quand elle est formée. */
-    public float getFactor() { return factor; }
+    /**
+     * @return le multiplicateur des gains et de l'attaque quand elle est formée.
+     */
+    public float getFactor() {
+        return factor;
+    }
 
-    /** @return le multiplicateur, sans décimale inutile (ex : "2", "1.5"). */
-    public String formatFactor() { return formatFactor(factor); }
+    /**
+     * @return le multiplicateur, sans décimale inutile (ex : "2", "1.5").
+     */
+    public String formatFactor() {
+        return formatFactor(factor);
+    }
 
-    /** @return la règle, en quelques mots (ex : "2 cartes du même rang"). */
-    public String getRule() { return Lang.t(rule); }
+    /**
+     * @return la règle, en quelques mots (ex : "2 cartes du même rang").
+     */
+    public String getRule() {
+        return Lang.t(rule);
+    }
 
-    /** @return {@code true} si, formée, elle remplit la jauge de chaque carte jouée (Couleur, Suite). */
-    public boolean fillsGauges() { return this == COULEUR || this == SUITE; }
+    /**
+     * @return {@code true} si, formée, elle remplit la jauge de chaque carte jouée (Couleur, Suite).
+     */
+    public boolean fillsGauges() {
+        return this == COULEUR || this == SUITE;
+    }
 
     /**
      * @return les combinaisons formées par les cartes de {@code played}, de la
-     *         plus forte à la plus faible ; la Paire n'est comptée avec un Brelan
-     *         que si elle est d'un autre rang
+     * plus forte à la plus faible ; la Paire n'est comptée avec un Brelan
+     * que si elle est d'un autre rang
      */
     public static List<Combo> formed(List<Card> played) {
         EnumSet<Combo> formed = EnumSet.noneOf(Combo.class);
         for (Combo combo : values()) {
             if (combo.matches(played)) formed.add(combo);
         }
-        if (formed.contains(BRELAN)) {
-            long ranksWithPair = countByRank(played).values().stream().filter(count -> count >= 2).count();
-            if (ranksWithPair < 2) formed.remove(PAIRE); // la seule paire est celle du brelan
-        }
         return List.copyOf(formed);
     }
 
-    /** @return la somme des multiplicateurs de {@code combos} (1 s'il n'y en a aucune). */
+    /**
+     * @return la somme des multiplicateurs de {@code combos} (1 s'il n'y en a aucune).
+     */
     public static float totalFactor(Collection<Combo> combos) {
         if (combos.isEmpty()) return 1f;
         float total = 0f;
@@ -94,25 +122,32 @@ public enum Combo {
         return total;
     }
 
-    /** @return {@code factor} sans décimale inutile (ex : "2", "1.5"). */
+    /**
+     * @return {@code factor} sans décimale inutile (ex : "2", "1.5").
+     */
     public static String formatFactor(float factor) {
         return factor == (int) factor ? String.valueOf((int) factor) : String.valueOf(factor);
     }
 
-    /** @return {@code true} si les cartes à suite de {@code played} forment cette combinaison. */
+    /**
+     * @return {@code true} si les cartes à suite de {@code played} forment cette combinaison.
+     */
     public boolean matches(List<Card> played) {
         List<Card> suited = suited(played);
         Map<Integer, Integer> byRank = countByRank(played);
 
         return switch (this) {
-            case PAIRE   -> byRank.values().stream().anyMatch(count -> count >= 2);
-            case SUITE   -> hasStraight(byRank.keySet());
+            case PAIRE -> byRank.values().stream().anyMatch(count -> count >= 2);
+            case SUITE -> hasStraight(byRank.keySet());
             case COULEUR -> suited.size() >= MIN_CARDS
                 && suited.stream().map(Card::getSuit).distinct().count() == 1;
-            case BRELAN  -> byRank.values().stream().anyMatch(count -> count >= MIN_CARDS);
+            case BRELAN -> byRank.values().stream().anyMatch(count -> count >= MIN_CARDS);
         };
     }
 
+    /**
+     * @return {@code true} si une suite de cartes jouee
+     */
     private static boolean hasStraight(Set<Integer> ranks) {
         Set<Integer> all = new HashSet<>(ranks);
         if (all.contains(ACE)) all.add(KING + 1); // l'As après le Roi
@@ -122,12 +157,17 @@ public enum Combo {
         return false;
     }
 
-    /** @return les cartes à suite de {@code played} (les cartes spéciales n'ont pas de rang pertinent). */
+    /**
+     * @return les cartes à suite de {@code played} (les cartes spéciales n'ont pas de rang pertinent).
+     */
     private static List<Card> suited(List<Card> played) {
         return played.stream().filter(card -> card.getSuit() != null).toList();
     }
 
-    /** @return le nombre de cartes à suite de chaque rang parmi {@code played}. */
+    /**
+     * Key : rang, Value : nombre de fois played
+     * @return le nombre de cartes à suite de chaque rang parmi {@code played}.
+     */
     private static Map<Integer, Integer> countByRank(List<Card> played) {
         Map<Integer, Integer> byRank = new HashMap<>();
         suited(played).forEach(card -> byRank.merge(card.getRank(), 1, Integer::sum));

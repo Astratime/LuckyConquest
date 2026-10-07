@@ -143,7 +143,9 @@ public class PreparationResolver {
         combat.multiplyGains(total);
         combat.multiplyAttack(total);
         for (Combo combo : combos) {
-            if (combo.fillsGauges()) fillGauges(player);
+            if (combo.fillsGauges()){
+                fillGauges(player);
+            }
             turnContext.addEvent(new ComboEvent(combo));
         }
     }
