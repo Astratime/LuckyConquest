@@ -956,13 +956,13 @@ public class GameScreen extends ScreenAdapter {
         int cost   = gameController.getSpinCost();
         int staked = gameController.getStakeAmount();
         TurnResult result = gameController.spin();
-        payForSpin(cost, staked);
         if (tutorial != null) tutorial.onSpin();
         lastSpinBingo = result.isJackpot();
         table.setReelsRainbow(false); // la bordure d'un jackpot précédent s'arrête au lancer suivant
         // Gains et PV du tirage ne se montrent qu'à l'apparition de leurs textes, après l'arrêt des rouleaux.
         gainsNotYetShown += sumOf(result, GainsEarnedEvent.class, gains -> gains.amount)
             - sumOf(result, GainsLostEvent.class, lost -> lost.amount);
+        payForSpin(cost, staked); // seuls le coût et la Mise partent tout de suite
         int enemyHeal = sumOf(result, EnemyHealedEvent.class, heal -> heal.amount);
         hud.holdBack(enemyHpBefore - gameController.getGameState().getEnemy().getHp() + enemyHeal, enemyHeal,
             sumOf(result, PlayerDamagedEvent.class, hit -> hit.damage),
@@ -1297,12 +1297,20 @@ public class GameScreen extends ScreenAdapter {
         });
     }
 
+    /** @return la dette qui suit le compteur affiché : elle change quand les gains du tirage apparaissent. */
+    private SpinEconomy.Debt shownDebt() {
+        return SpinEconomy.debt(player().getGains() - gainsNotYetShown,
+            gameController.getGameState().getEnemy().getKind().getSpinCost());
+    }
+
     /** Le texte d'un gain (ou d'une perte) du tirage vient d'apparaître : le compteur du panneau le suit. */
     private void onGainsShown(int amount) {
         if (amount > 0) sounds.coinsGain.play();
         else if (amount < 0) sounds.coinsLoss.play();
+        SpinEconomy.Debt before = shownDebt();
         gainsNotYetShown -= amount;
         refreshGains();
+        if (shownDebt() != before) refreshEffects(); // Endetté ou Huissier, au rythme du compteur
     }
 
     /** Affiche par-dessus le jeu les cartes restant dans le deck (triées, pas dans l'ordre de pioche). */
@@ -1782,9 +1790,9 @@ public class GameScreen extends ScreenAdapter {
         List<SidePanel.EffectRow> rows = new ArrayList<>();
         LastingEffects lasting = player().getLastingEffects();
         TextureRegion cross = new TextureRegion(hudTextures.iconCross);
-        SpinEconomy.Debt debt = gameController.getDebt();
+        int cost = gameController.getGameState().getEnemy().getKind().getSpinCost();
+        SpinEconomy.Debt debt = shownDebt();
         if (debt != SpinEconomy.Debt.NONE) {
-            int cost = gameController.getGameState().getEnemy().getKind().getSpinCost();
             String limit = SidePanel.formatGains(SpinEconomy.BAILIFF_SPINS * cost);
             rows.add(debt == SpinEconomy.Debt.BAILIFF
                 ? new SidePanel.EffectRow(new TextureRegion(hudTextures.coin), cross, Lang.t("Huissier"),
