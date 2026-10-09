@@ -30,14 +30,14 @@ class CombatResolverTest {
         Player player = new Player("Joueur", 100, List.of());
         Enemy  enemy  = new Enemy("Ennemi", 1000);
         CombatContext context = new CombatContext(player, enemy);
-        context.addReflectPercentBonus(390);
+        context.addReflectHpPercent(3.75f);
         Symbol[] symbols = { Symbol.GRAPE, null, null };
         List<SymbolAction> actions = List.of(
             new SymbolAction(Symbol.GRAPE, 0, SymbolRegistry.getAction(Symbol.GRAPE).orElseThrow()));
 
         resolver.resolve(context, actions, symbols, List.of());
 
-        assertEquals(390, context.getTotalReflectPercent(), "le renvoi vaudra pour le tour de l'ennemi");
+        assertEquals(3.75f, context.getReflectHpPercent(), 1e-6, "le renvoi vaudra pour le tour de l'ennemi");
     }
 
     @Test
@@ -45,11 +45,11 @@ class CombatResolverTest {
         Player player = new Player("Joueur", 100, List.of());
         Enemy  enemy  = new Enemy("Ennemi", 1000);
         CombatContext context = new CombatContext(player, enemy);
-        context.addReflectPercentBonus(390);
+        context.addReflectHpPercent(3.75f);
 
         resolver.resolve(context, List.of(), noSymbols, List.of());
 
-        assertEquals(0, context.getTotalReflectPercent());
+        assertEquals(0f, context.getReflectHpPercent(), 1e-6);
     }
 
     @Test
@@ -127,36 +127,53 @@ class CombatResolverTest {
     }
 
     @Test
-    void pistolMultipliesTheStrongestAttackSymbol() {
+    void pistolReplaysTheStrongestHitOfTheTurn() {
         Player player = new Player("Joueur", 100, List.of());
         Enemy  enemy  = new Enemy("Ennemi", 100_000); // défense 30
         CombatContext context = new CombatContext(player, enemy);
-        context.addPistolShot(50);
+        context.multiplyAttack(10f); // le coup rejoué garde ses multiplicateurs
+        context.addPistolShot(100);
         Symbol[] symbols = { Symbol.BAR, Symbol.SEVEN, Symbol.GRAPE };
 
         TurnResult result = resolver.resolve(context,
             List.of(action(Symbol.BAR, 0), action(Symbol.SEVEN, 1), action(Symbol.GRAPE, 2)), symbols, List.of());
 
         PistolShotEvent shot = (PistolShotEvent) result.getPistolEvents().get(0);
-        assertEquals(1, shot.slotIndex, "le SEPT (30) est le symbole d'attaque le plus fort");
-        assertEquals(30 * 50, shot.rawDamage);
-        assertEquals(30 * 50, shot.damage, "BAR (10) et SEPT (30) ont déjà usé les 30 de défense");
+        assertEquals(1, shot.slotIndex, "le SEPT (30 x 10) est le coup le plus fort");
+        assertEquals(300, shot.rawDamage, "le coup rejoué tel qu'il a frappé, multiplicateurs compris");
+        assertEquals(300, shot.damage, "BAR (100) a usé les 30 de défense");
         assertEquals(0, shot.blocked);
-        assertEquals(100_000 - 0 - 10 - shot.damage, enemy.getHp(), "BAR est bloqué, SEPT passe de 10");
+        assertEquals(100_000 - 70 - 300 - shot.damage, enemy.getHp());
     }
 
     @Test
-    void pistolWithoutAttackSymbolUsesItsBaseDamage() {
+    void theCursedJokerReplaysOnlyPartOfTheHit() {
         Player player = new Player("Joueur", 100, List.of());
         Enemy  enemy  = new Enemy("Ennemi", 100_000);
         CombatContext context = new CombatContext(player, enemy);
-        context.addPistolShot(50);
+        context.addPistolShot(80);
+        Symbol[] symbols = { Symbol.SEVEN, null, null };
+
+        TurnResult result = resolver.resolve(context, List.of(action(Symbol.SEVEN, 0)), symbols, List.of());
+
+        PistolShotEvent shot = (PistolShotEvent) result.getPistolEvents().get(0);
+        assertEquals(24, shot.rawDamage, "80 % des 30 du SEPT");
+    }
+
+    @Test
+    void pistolWithoutAttackSymbolFiresBlank() {
+        Player player = new Player("Joueur", 100, List.of());
+        Enemy  enemy  = new Enemy("Ennemi", 100_000);
+        CombatContext context = new CombatContext(player, enemy);
+        context.addPistolShot(100);
 
         TurnResult result = resolver.resolve(context, List.of(), noSymbols, List.of());
 
         PistolShotEvent shot = (PistolShotEvent) result.getPistolEvents().get(0);
+        assertTrue(shot.blank);
         assertEquals(-1, shot.slotIndex);
-        assertEquals(CombatResolver.PISTOL_BASE_DAMAGE * 50, shot.rawDamage);
+        assertEquals(0, shot.damage);
+        assertEquals(100_000, enemy.getHp());
     }
 
     @Test

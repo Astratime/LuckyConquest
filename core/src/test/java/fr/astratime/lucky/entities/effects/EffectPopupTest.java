@@ -39,8 +39,8 @@ class EffectPopupTest {
         List<Effect> effects = List.of(
             new HeartDrainEffect(12), new AceOfHeartsEffect(),
             new ClubGainAttackEffect(20, 10), new AceOfClubsEffect(),
-            new DiamondReflectEffect(330, 33), new AceOfDiamondsEffect(),
-            new SpadeIgnoreDefenseEffect(11, 1), new AceOfSpadesEffect(), new CorruptionEffect(3),
+            new DiamondReflectEffect(3.5f, 33), new AceOfDiamondsEffect(),
+            new SpadeIgnoreDefenseEffect(11, 1, 40), new AceOfSpadesEffect(), new CorruptionEffect(3),
             new AttackEffect(5), new DefenseEffect(5), new MultiplierEffect(1.5f),
             new BoostSymbolEffect(Symbol.values()[0], 50), new ExtraDrawEffect(3), new GainEffect(500)
         );

@@ -140,6 +140,17 @@ public class EnemyTurnResolver {
      */
     public EnemyTurnResult resolve(Enemy enemy, Player player, int reflectPercent, float vaultShare,
                                    int shieldReflect, List<Event> thornsEvents) {
+        return resolve(enemy, player, reflectPercent, vaultShare, shieldReflect, thornsEvents, 0f);
+    }
+
+    /**
+     * Comme {@link #resolve(Enemy, Player, int, float, int, List)}, avec le
+     * renvoi des cartes Carreau du joueur.
+     *
+     * @param reflectHpPercent part (%) des PV max de l'ennemi qui lui est renvoyée s'il attaque (cartes Carreau)
+     */
+    public EnemyTurnResult resolve(Enemy enemy, Player player, int reflectPercent, float vaultShare,
+                                   int shieldReflect, List<Event> thornsEvents, float reflectHpPercent) {
         EnemyKind kind = enemy.getKind();
         List<Event> openingEvents = new ArrayList<>();
         if (enemy.enterPhaseTwo()) {
@@ -373,10 +384,19 @@ public class EnemyTurnResolver {
             afterEvents.add(new DamageReflectedEvent((int) enemy.skinned(shieldReflect)));
             enemy.takeDamage(shieldReflect);
         }
+        // Le Coffre arme le renvoi : une part de son contenu s'ajoute aux dégâts renvoyés.
+        float vaultReflect = player.getLastingEffects().getVault() * vaultShare;
         if (turn.totalAttack > 0 && reflectPercent > 0 && !enemy.isDefeated()) {
-            // Le Coffre arme le renvoi : une part de son contenu s'ajoute à l'attaque renvoyée.
-            float reflectBase = turn.totalAttack + player.getLastingEffects().getVault() * vaultShare;
+            float reflectBase = turn.totalAttack + vaultReflect;
             int reflected = Math.round(reflectBase * (reflectPercent / 100f));
+            if (reflected > 0) {
+                afterEvents.add(new DamageReflectedEvent((int) enemy.skinned(reflected)));
+                enemy.takeDamage(reflected);
+            }
+        }
+        if (turn.totalAttack > 0 && reflectHpPercent > 0 && !enemy.isDefeated()) {
+            // Cartes Carreau : une part de ses PV max, quel que soit le lieu.
+            int reflected = Math.round(enemy.getMaxHp() * (reflectHpPercent / 100f) + vaultReflect);
             if (reflected > 0) {
                 afterEvents.add(new DamageReflectedEvent((int) enemy.skinned(reflected)));
                 enemy.takeDamage(reflected);

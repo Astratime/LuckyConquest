@@ -17,8 +17,8 @@ import java.util.List;
  * Lit dans le CombatContext :
  *  - attackBonus    : bonus plat ajouté à chaque attaque (cartes jouées)
  *  - attackFactor / symbolPower : multiplicateurs des dégâts (combos, Bingo)
- *  - ignoreDefense  : si vrai (Pique), la défense de l'ennemi est ignorée ;
- *                     sinon elle absorbe ce qu'elle peut du coup et s'use d'autant
+ *  - piercePercent  : part (%) du coup qui traverse la défense (Pique ; 100 : elle est ignorée) ;
+ *                     la défense absorbe ce qu'elle peut du reste et s'use d'autant
  *  - lifeDrainPercent : si > 0 (Coeur), soigne le joueur d'un % des dégâts infligés ;
  *                     le soin au-delà des PV max remplit le Sang
  *  - gainsFromDamage  : si vrai (As de Pique), convertit les dégâts en gains
@@ -60,13 +60,13 @@ public class AttackAction extends Action {
         int unscaled = base + context.getAttackBonus(); // avant les multiplicateurs : ce que vise le pistolet
         long rawDamage = enemy.capHit(Math.round((double) unscaled
             * context.getAttackFactor() * context.getSymbolPower()));
-        boolean pierced = piercing || context.isIgnoreDefense();
-        int blocked     = pierced ? 0 : enemy.absorb(rawDamage); // la défense s'use à chaque coup
+        int pierce      = piercing ? 100 : context.getPiercePercent(); // Pique : une part du coup traverse la défense
+        int blocked     = enemy.absorb(rawDamage, pierce); // la défense s'use à chaque coup
         long damage     = enemy.skinned(rawDamage - blocked); // une peau d'or encaisse la moitié
 
         int lost = enemy.takeDamage(rawDamage - blocked);
         if (lost < damage && !enemy.isDefeated()) damage = lost; // coup annulé (la Maison) ou fatal évité (Machine Originelle)
-        events.add(new EnemyDamagedEvent(damage, rawDamage, unscaled, blocked, enemy.getDefense(), pierced));
+        events.add(new EnemyDamagedEvent(damage, rawDamage, unscaled, blocked, enemy.getDefense(), pierce));
 
         if (context.getLifeDrainPercent() > 0 && damage > 0) {
             int drained = Math.round(damage * (context.getLifeDrainPercent() / 100f));

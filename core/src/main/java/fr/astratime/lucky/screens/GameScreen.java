@@ -834,7 +834,7 @@ public class GameScreen extends ScreenAdapter {
                 refreshEffects();
             });
         } else if (choice instanceof RouletteChoice roulette) {
-            choiceOverlay.showRoulette(roulette.cursed(), roulette.pistolMultiplier(), roulette.cursedMultiplier(),
+            choiceOverlay.showRoulette(roulette.cursed(), roulette.pistolPercent(), roulette.cursedPercent(),
                 roulette.penaltyPercent(),
                 index -> {
                     GameController.RouletteOutcome outcome = gameController.pickRouletteCard(index);
@@ -1042,11 +1042,11 @@ public class GameScreen extends ScreenAdapter {
         symbolStrikes.play(outcome.getSymbol(), reel, target, delay);
     }
 
-    /** Le pistolet surgit au-dessus du symbole qu'il multiplie et tire sur l'ennemi à l'instant {@code shotAt}. */
+    /** Le pistolet surgit au-dessus du symbole qu'il rejoue et tire sur l'ennemi à l'instant {@code shotAt}. */
     private void aimPistol(TurnResult result, Vector2 target, float shotAt) {
         PistolShotEvent shot = result.getPistolEvents().stream()
             .filter(e -> e instanceof PistolShotEvent).map(e -> (PistolShotEvent) e).findFirst().orElse(null);
-        if (shot == null) return; // contre-attaque du Coffre seule : pas de pistolet
+        if (shot == null || shot.blank) return; // contre-attaque du Coffre seule, ou tir à blanc
         Vector2 from = slots.getReelCenter(shot.slotIndex >= 0 ? shot.slotIndex : 1);
         stage.addAction(Actions.delay(Math.max(0f, shotAt - PistolShotAnimation.AIM_TIME),
             Actions.run(() -> pistolAnimation.play(from, target))));

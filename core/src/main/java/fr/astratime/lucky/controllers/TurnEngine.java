@@ -146,7 +146,7 @@ public class TurnEngine {
                 int shieldReflect = result.isShieldBingo() ? player.getShield() : 0;
                 enemyTurn = enemyTurnResolver.resolve(enemy, player,
                     turnContext.getCombatContext().getTotalReflectPercent(), CombatResolver.VAULT_REFLECT_SHARE,
-                    shieldReflect, thorns);
+                    shieldReflect, thorns, turnContext.getCombatContext().getReflectHpPercent());
             }
         }
 

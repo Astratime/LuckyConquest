@@ -54,8 +54,10 @@ class SuitGaugesTest {
 
     @Test
     void spadesAddBladesThatBoostEveryAttackForTheCombat() {
-        prepare(new SpadeIgnoreDefenseEffect(113, 3));
+        CombatContext combat = prepare(new SpadeIgnoreDefenseEffect(113, 3, 10)).getCombatContext();
         assertEquals(3, lasting.getBlades());
+        assertEquals(10, combat.getPiercePercent());
+        assertFalse(combat.isIgnoreDefense(), "une petite Pique ne perce qu'une part de la défense");
 
         TurnContext nextTurn = prepare();
         assertEquals(3 * PreparationResolver.BLADE_ATTACK, nextTurn.getCombatContext().getAttackBonus(),

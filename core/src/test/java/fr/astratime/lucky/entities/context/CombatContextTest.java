@@ -22,21 +22,25 @@ class CombatContextTest {
 
     @Test
     void diamondReflectNeedsADefenseSymbol() {
-        context.addReflectPercentBonus(330);
+        context.addReflectHpPercent(3.5f);
 
-        assertEquals(0, context.getTotalReflectPercent(), "sans symbole de défense, pas de renvoi");
+        assertEquals(0f, context.getReflectHpPercent(), 1e-6, "sans symbole de défense, pas de renvoi");
 
         context.markDefenseSymbolDrawn();
-        assertEquals(330, context.getTotalReflectPercent());
+        assertEquals(3.5f, context.getReflectHpPercent(), 1e-6);
+        assertEquals(0, context.getTotalReflectPercent(), "les Carreaux ne renvoient pas l'attaque ennemie");
     }
 
     @Test
-    void diamondReflectsAddUp() {
-        context.addReflectPercentBonus(330);
-        context.addReflectPercentBonus(390);
+    void diamondReflectsAddUpToTheirCap() {
+        context.addReflectHpPercent(3.5f);
+        context.addReflectHpPercent(3.75f);
         context.markDefenseSymbolDrawn();
+        assertEquals(7.25f, context.getReflectHpPercent(), 1e-6);
 
-        assertEquals(720, context.getTotalReflectPercent());
+        context.addReflectHpPercent(3.25f);
+        context.addReflectHpPercent(3f);
+        assertEquals(CombatContext.MAX_REFLECT_HP_PERCENT, context.getReflectHpPercent(), 1e-6, "12 % au plus");
     }
 
     @Test
@@ -55,11 +59,12 @@ class CombatContextTest {
     }
 
     @Test
-    void guaranteedAndDiamondReflectsAddUp() {
+    void guaranteedAndDiamondReflectsStaySeparate() {
         context.addGuaranteedReflect(500, 1000);
-        context.addReflectPercentBonus(390);
+        context.addReflectHpPercent(3.75f);
         context.markDefenseSymbolDrawn();
 
-        assertEquals(890, context.getTotalReflectPercent());
+        assertEquals(500, context.getTotalReflectPercent());
+        assertEquals(3.75f, context.getReflectHpPercent(), 1e-6);
     }
 }

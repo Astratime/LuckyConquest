@@ -47,8 +47,6 @@ public class CombatResolver {
     private static final int GAINS_PAIR    = 500;
     /** Gains accordés quand les trois symboles tirés sont identiques (jackpot). */
     private static final int GAINS_JACKPOT = 2000;
-    /** Dégâts de base du pistolet quand aucun symbole d'attaque n'est sorti. */
-    static final int   PISTOL_BASE_DAMAGE = 10;
     /** Part du Coffre (Carreau) ajoutée à l'attaque ennemie pour calculer le renvoi (voir EnemyTurnResolver). */
     static final float VAULT_REFLECT_SHARE = 0.2f;
     /** Part des PV restants de l'ennemi que la Guillotine peut infliger au plus en un coup. */
@@ -145,32 +143,38 @@ public class CombatResolver {
     }
 
     /**
-     * Chaque tir de pistolet multiplie l'attaque, avant les multiplicateurs
-     * (combos, Bingo, Corruption...), du symbole d'attaque le plus fort du tirage
-     * ({@link #PISTOL_BASE_DAMAGE} si aucun n'est sorti), puis touche l'ennemi
-     * (sa défense absorbe et s'use, sauf Pique). Rien si l'ennemi est déjà vaincu.
+     * Chaque tir de pistolet rejoue le coup le plus fort du tour : le plus gros
+     * coup d'un symbole, avec tous ses multiplicateurs (combos, Bingo,
+     * Corruption...), à {@code percent} % (moins avec le Joker maudit). Il
+     * touche l'ennemi comme un coup normal (sa défense absorbe et s'use, sauf
+     * la part percée par une Pique). Sans symbole d'attaque, il tire à blanc.
+     * Rien si l'ennemi est déjà vaincu.
      */
     private List<Event> firePistol(CombatContext context, List<SymbolOutcome> outcomes) {
         List<Event> shots = new ArrayList<>();
-        long bestRaw = PISTOL_BASE_DAMAGE;
+        long bestRaw = 0;
         int bestSlot = -1;
         for (SymbolOutcome outcome : outcomes) {
             for (Event event : outcome.getEvents()) {
-                if (event instanceof EnemyDamagedEvent hit && (bestSlot < 0 || hit.baseDamage > bestRaw)) {
-                    bestRaw  = hit.baseDamage;
+                if (event instanceof EnemyDamagedEvent hit && (bestSlot < 0 || hit.rawDamage > bestRaw)) {
+                    bestRaw  = hit.rawDamage;
                     bestSlot = outcome.getSlotIndex();
                 }
             }
         }
         Enemy enemy = context.getEnemy();
-        for (int multiplier : context.getPistolShots()) {
+        for (int percent : context.getPistolShots()) {
             if (enemy.isDefeated()) break;
-            long raw        = enemy.capHit(bestRaw * multiplier);
-            boolean pierced = context.isIgnoreDefense();
-            int blocked     = pierced ? 0 : enemy.absorb(raw);
-            long damage     = enemy.skinned(raw - blocked);
+            if (bestSlot < 0) {
+                shots.add(PistolShotEvent.blank(enemy.getDefense(), percent));
+                continue;
+            }
+            long raw    = enemy.capHit(Math.round(bestRaw * percent / 100.0));
+            int pierce  = context.getPiercePercent();
+            int blocked = enemy.absorb(raw, pierce);
+            long damage = enemy.skinned(raw - blocked);
             enemy.takeDamage(raw - blocked);
-            shots.add(new PistolShotEvent(damage, raw, blocked, enemy.getDefense(), pierced, bestSlot, multiplier));
+            shots.add(new PistolShotEvent(damage, raw, blocked, enemy.getDefense(), pierce, bestSlot, percent));
         }
         return shots;
     }
