@@ -80,6 +80,21 @@ public class SymbolRegistry {
         return result;
     }
 
+    /**
+     * @return les symboles d'attaque de la machine de {@code player} qui peuvent
+     *         sortir (ni retirés par le Recyclage) : ceux que les As boostent au hasard
+     */
+    public static List<Symbol> getAttackSymbols(Player player) {
+        List<Symbol> result = new ArrayList<>();
+        for (Symbol symbol : getAttackSymbols()) {
+            if (player.getSlotMachine().getReels().contains(symbol)
+                    && !player.getLastingEffects().getRemovedSymbols().containsKey(symbol)) {
+                result.add(symbol);
+            }
+        }
+        return result;
+    }
+
     /** Symboles dont l'action est une défense — boostés par les cartes Carreau. */
     public static List<Symbol> getDefenseSymbols() {
         List<Symbol> result = new ArrayList<>();

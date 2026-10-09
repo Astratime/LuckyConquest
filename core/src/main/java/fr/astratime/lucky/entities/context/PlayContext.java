@@ -46,6 +46,9 @@ public class PlayContext {
         this.spinCost = spinCost;
     }
 
+    /** @return le joueur qui joue la carte. */
+    public Player getPlayer() { return player; }
+
     /** @return le coût d'un tirage dans ce combat, en gains. */
     public int getSpinCost() { return spinCost; }
 

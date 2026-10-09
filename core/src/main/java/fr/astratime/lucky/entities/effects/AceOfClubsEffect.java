@@ -54,7 +54,7 @@ public class AceOfClubsEffect extends Effect {
         ));
 
         context.queueForSpin(new AttackEffect(attackBoost));
-        List<Symbol> attackSymbols = SymbolRegistry.getAttackSymbols();
+        List<Symbol> attackSymbols = SymbolRegistry.getAttackSymbols(context.getPlayer()); // ceux de sa machine
         if (!attackSymbols.isEmpty()) {
             Symbol target = attackSymbols.get(RANDOM.nextInt(attackSymbols.size()));
             context.queueForSpin(new BoostSymbolEffect(target, weightBoost));

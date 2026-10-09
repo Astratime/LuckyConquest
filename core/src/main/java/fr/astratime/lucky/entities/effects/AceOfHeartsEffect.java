@@ -30,7 +30,7 @@ public class AceOfHeartsEffect extends Effect {
 
     @Override
     public void apply(TurnContext context) {
-        List<Symbol> attackSymbols = SymbolRegistry.getAttackSymbols();
+        List<Symbol> attackSymbols = SymbolRegistry.getAttackSymbols(context.getCombatContext().getPlayer()); // ceux de sa machine
         if (!attackSymbols.isEmpty()) {
             Symbol target = attackSymbols.get(RANDOM.nextInt(attackSymbols.size()));
             context.getSpinContext().addWeightBoost(target, BOOST_AMOUNT);
