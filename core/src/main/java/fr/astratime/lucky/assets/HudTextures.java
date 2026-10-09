@@ -36,6 +36,16 @@ public class HudTextures implements Disposable {
     public final Texture chipPlayer      = load("hud/chip_player.png");
     /** Jeton de la Mise, posé sur la table. */
     public final Texture chipStake       = load("hud/chip_stake.png");
+    /** Levier de la machine du joueur (bouton de lancer) : au repos, survolé, tiré, désactivé. */
+    public final Texture lever           = load("hud/lever.png");
+    public final Texture leverOver       = load("hud/lever_over.png");
+    public final Texture leverDown       = load("hud/lever_down.png");
+    public final Texture leverDisabled   = load("hud/lever_disabled.png");
+    /** Pile de jetons de la Mise (bouton) : au repos, survolée, enfoncée, désactivée. */
+    public final Texture stake           = load("hud/stake.png");
+    public final Texture stakeOver       = load("hud/stake_over.png");
+    public final Texture stakeDown       = load("hud/stake_down.png");
+    public final Texture stakeDisabled   = load("hud/stake_disabled.png");
     public final Texture coin            = load("hud/coin.png");
     /** Trèfle du Porte-bonheur, dans les effets actifs du panneau latéral. */
     public final Texture iconClover      = load("hud/icon_clover.png");
@@ -105,6 +115,14 @@ public class HudTextures implements Disposable {
         chipEnemy.dispose();
         chipPlayer.dispose();
         chipStake.dispose();
+        lever.dispose();
+        leverOver.dispose();
+        leverDown.dispose();
+        leverDisabled.dispose();
+        stake.dispose();
+        stakeOver.dispose();
+        stakeDown.dispose();
+        stakeDisabled.dispose();
         coin.dispose();
     }
 }

@@ -825,7 +825,6 @@
   "Bouclier": "Shield",
   "Ton bouclier": "Your shield",
   "Absorbe les attaques de l'ennemi et s'use à chaque coup\nGagné avec les symboles de défense ; ce qui reste en fin de tour remplit le Coffre": "Absorbs the enemy's attacks and wears down with each hit\nEarned with defense symbols; what's left at the end of the turn fills the Vault",
-  "Lancer machine": "Spin machine",
   "Recommencer": "Restart",
   "Menu principal": "Main menu",
   "Pause": "Pause",
@@ -1317,8 +1316,6 @@
   "Ton jeton est sur la table. Lance la machine.": "Your chip is on the table. Spin the machine.",
   "Ta Paire et ta Mise ont multiplié tout le tirage : attaque, gains et bouclier.": "Your Pair and your stake multiplied the whole draw: attack, gains and shield.",
   "Attention : la mise est perdue, même sur un mauvais tirage. Et sous 0 gains, tu es endetté. Tes symboles faiblissent. Plus bas, l'Huissier arrive.": "Careful: the stake is spent, even on a bad draw. And below 0 gains, you are in debt. Your symbols weaken. Lower still, the Bailiff shows up.",
-  "Mise : aucune": "Stake: none",
-  "Mise {0} % : x{1}": "Stake {0}%: x{1}",
   "PAS DE GAINS À MISER": "NO GAINS TO STAKE",
   "TIRAGE -{0}": "DRAW -{0}",
   "MISE -{0}": "STAKE -{0}",
@@ -1327,5 +1324,10 @@
   "Huissier": "Bailiff",
   "Tu dois plus de {0} gains. Attaque et bouclier des symboles -50 %. L'ennemi joue une carte de plus. Une Paire ou un Bingo te renfloue.": "You owe more than {0} gains. Symbol attack and shield -50%. The enemy plays one more card. A Pair or a Bingo bails you out.",
   "Endetté": "In debt",
-  "Tes gains sont sous 0. Attaque et bouclier des symboles -25 %. Sous -{0}, l'Huissier arrive.": "Your gains are below 0. Symbol attack and shield -25%. Below -{0}, the Bailiff shows up."
+  "Tes gains sont sous 0. Attaque et bouclier des symboles -25 %. Sous -{0}, l'Huissier arrive.": "Your gains are below 0. Symbol attack and shield -25%. Below -{0}, the Bailiff shows up.",
+  "Lancer la machine": "Spin the machine",
+  "Tire le levier : les rouleaux tournent. Touche F.": "Pull the lever: the reels spin. Key F.",
+  "Mise": "Stake",
+  "Mise une part de tes gains avant de lancer. 10 % : symboles x2. 25 % : x3. 50 % : x5. La mise est perdue, même sur un mauvais tirage.": "Stake part of your gains before you spin. 10%: symbols x2. 25%: x3. 50%: x5. The stake is spent, even on a bad draw.",
+  "{0} % : x{1}": "{0}%: x{1}"
 }
