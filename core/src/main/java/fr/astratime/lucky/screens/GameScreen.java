@@ -9,7 +9,6 @@ import com.badlogic.gdx.ScreenAdapter;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
-import com.badlogic.gdx.graphics.g2d.GlyphLayout;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.Rectangle;
@@ -18,10 +17,8 @@ import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.Group;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.InputListener;
-import com.badlogic.gdx.scenes.scene2d.ui.Image;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
-import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.Touchable;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
@@ -59,14 +56,11 @@ import fr.astratime.lucky.assets.HudTextures;
 import fr.astratime.lucky.assets.Palette;
 import fr.astratime.lucky.assets.TableTextures;
 import fr.astratime.lucky.controllers.GameController;
-import fr.astratime.lucky.controllers.PreparationResolver;
 import fr.astratime.lucky.entities.Card;
 import fr.astratime.lucky.entities.CardPlayResult;
 import fr.astratime.lucky.entities.Combo;
 import fr.astratime.lucky.entities.DrawResult;
 import fr.astratime.lucky.entities.GameState;
-import fr.astratime.lucky.entities.LastingEffects;
-import fr.astratime.lucky.entities.Enemy;
 import fr.astratime.lucky.entities.Player;
 import fr.astratime.lucky.entities.SpinEconomy;
 import fr.astratime.lucky.entities.Symbol;
@@ -105,10 +99,6 @@ import fr.astratime.lucky.entities.events.PistolShotEvent;
 import fr.astratime.lucky.entities.events.PlayerHealedEvent;
 import fr.astratime.lucky.entities.events.ShieldGainedEvent;
 import fr.astratime.lucky.entities.exploration.DungeonRun;
-import fr.astratime.lucky.entities.exploration.PlaceRule;
-import fr.astratime.lucky.entities.effects.CorruptionEffect;
-import fr.astratime.lucky.entities.effects.GoldVeinEffect;
-import fr.astratime.lucky.entities.effects.MutinyEffect;
 import fr.astratime.lucky.entities.run.CombatRun;
 import fr.astratime.lucky.i18n.Lang;
 import fr.astratime.lucky.progress.PlayerProfile;
@@ -129,13 +119,13 @@ import fr.astratime.lucky.views.GuideOverlay;
 import fr.astratime.lucky.views.HandView;
 import fr.astratime.lucky.views.MinimumScreenViewport;
 import fr.astratime.lucky.views.HealthBarView;
-import fr.astratime.lucky.views.IconButton;
 import fr.astratime.lucky.views.PileContentOverlay;
 import fr.astratime.lucky.views.PilesView;
 import fr.astratime.lucky.views.PauseOverlay;
 import fr.astratime.lucky.views.PlayArea;
 import fr.astratime.lucky.views.ShieldBadge;
-import fr.astratime.lucky.views.StakeChips;
+import fr.astratime.lucky.views.SpinControls;
+import fr.astratime.lucky.views.ShopIcon;
 import fr.astratime.lucky.views.ShopOverlay;
 import fr.astratime.lucky.views.SidePanel;
 import fr.astratime.lucky.views.SlotView;
@@ -144,9 +134,7 @@ import fr.astratime.lucky.views.Tooltip;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.function.ToIntFunction;
-import java.util.stream.Collectors;
 
 /**
  * Écran de combat. Responsabilité : orchestrer l'affichage et transmettre les
@@ -156,7 +144,9 @@ import java.util.stream.Collectors;
  * de casino et ses emplacements), {@link HandView} (la main), {@link PilesView}
  * (deck et défausse), {@link SlotView} (symboles tirés et textes du tirage),
  * {@link CombatHud} (barres de vie), {@link SidePanel} (panneau latéral gauche :
- * gains). Ces vues se placent dans la zone de jeu ({@link PlayArea}), à droite
+ * gains), {@link SpinControls} (levier et Mise), {@link ShopIcon} (icône de
+ * l'échoppe). Les lignes du panneau des effets viennent de {@link CombatEffectRows},
+ * le journal du tirage de {@link TurnLog}. Ces vues se placent dans la zone de jeu ({@link PlayArea}), à droite
  * du panneau ; la main, les symboles et les piles se posent aux emplacements de
  * la table. Cet écran possède les ressources partagées, les boutons et le
  * clavier, et enchaîne les phases du tour : annonce « À TOI DE JOUER ! » et
@@ -193,14 +183,6 @@ public class GameScreen extends ScreenAdapter {
     private static final String CARD_BACK_PATH = "cards/light/BACK.png";
 
     private static final float BUTTON_MARGIN = 20f;   // boutons en bas à gauche, sous la table
-    private static final float LEVER_HOLD          = 0.5f; // secondes où le levier reste tiré au lancer
-    private static final float LEVER_GAP           = 28f; // entre le levier et la machine du joueur
-    private static final float PILE_MAT_PAD        = 16f; // marge du tapis de la défausse autour de la pile
-    private static final float STAKE_BUTTON_GAP    = 24f; // entre la Mise et le tapis de la défausse, au plus près
-    private static final float STAKE_SHIELD_GAP    = 16f; // entre le bouclier du joueur et la Mise, à sa droite
-    private static final String STAKE_SHIELD_ROOM  = " 0000"; // la Mise laisse au bouclier la place de 4 chiffres
-    private static final float STAKE_LABEL_GAP     = 2f;  // entre la Mise et son palier, dessous
-    private static final float STAKE_CHIPS_GAP     = 10f; // les jetons misés tombent sur la table, à droite de la Mise
 
     /** Dégâts à partir desquels un coup sur l'ennemi fige l'image un instant (micro-arrêt). */
     private static final int   BIG_HIT               = 60;
@@ -231,11 +213,8 @@ public class GameScreen extends ScreenAdapter {
     private static final float END_BUTTONS_GAP    = 30f;
     private static final float END_BUTTONS_HEIGHT = 0.46f;  // sous l'annonce, au-dessus de la rangée de cartes
     private static final float END_BUTTONS_FADE   = 0.4f;
-    /** Icône de l'échoppe : taille de l'image, marge au bord et agrandissement au survol. */
-    private static final float SHOP_ICON_WIDTH  = 150f;
-    private static final float SHOP_ICON_HEIGHT = 108f;
+    /** Icône de l'échoppe : marge au bord de la zone de jeu. */
     private static final float SHOP_ICON_MARGIN = 30f;
-    private static final float SHOP_HOVER_SCALE = 1.12f;
     /** Carte achetée : posée une fois l'échoppe refermée. */
     private static final float PURCHASE_DELAY   = 0.9f;
     /** Étape de la Tour des épreuves : en haut à gauche de la zone de jeu. */
@@ -306,7 +285,7 @@ public class GameScreen extends ScreenAdapter {
     /** Menu pause (Échap ou bouton pause) : options, recommencer, menu principal ; le jeu est figé tant qu'il est ouvert. */
     private final PauseOverlay        pauseOverlay;
     /** Icône de l'échoppe (en haut à droite de la zone de jeu), qui ouvre la boutique. */
-    private final Group               shopIcon = new Group();
+    private final ShopIcon            shopIcon;
     /** Transitions de la Tour des épreuves : choix de l'adversaire, apparition du boss. */
     private final EnemyPickOverlay    pickOverlay;
     /** Exploration : le coffre au trésor, au bout d'un donjon. */
@@ -336,16 +315,8 @@ public class GameScreen extends ScreenAdapter {
     private final SlotView   slots;
     /** Calque des textes animés (bonus des cartes, résultats du tirage) : au-dessus du jeu, sous le voile des piles. */
     private final Group      popupLayer = new Group();
-    /** Levier de la machine du joueur, à gauche de ses rouleaux : lance le tirage. */
-    private final IconButton spinButton;
-    /** Mise du prochain tirage (aucune, 10 %, 25 %, 50 %), à droite du bouton de lancer. */
-    private final IconButton stakeButton;
-    /** Palier de la Mise, sous son bouton (« Mise », « 25 % : x3 »). */
-    private final Label      stakeLabel;
-    /** Jetons de la Mise posés sur la table, à droite du bouclier du joueur. */
-    private final StakeChips stakeChips;
-    /** Largeur du bouclier du joueur quand la Mise a été placée (elle le suit s'il s'élargit). */
-    private float stakeShieldWidth;
+    /** Le levier, à gauche des rouleaux du joueur, et la Mise, à droite de son bouclier. */
+    private final SpinControls spinControls;
     /** Cartes jouées ce tour sur la limite (« Cartes 2/4 »), coût du tirage et Mise, à droite du bouton de Mise. */
     private final Label      playsLabel;
     private final TextButton restartButton;
@@ -450,20 +421,11 @@ public class GameScreen extends ScreenAdapter {
             sidePanel::getCoinCenter, sidePanel::bumpCoin, fireworkSounds);
         hud        = new CombatHud(playArea, hudTextures, gameController::getGameState);
 
-        spinButton    = new IconButton(hudTextures.lever, hudTextures.leverOver, hudTextures.leverDown,
-            hudTextures.leverDisabled, true, sounds.spinButton, this::onSpin);
-        addTooltip(spinButton, Lang.t("Lancer la machine"), Lang.t("Tire le levier : les rouleaux tournent. Touche F."));
+        spinControls  = new SpinControls(table, playerShield, hudTextures, playsFont, shieldFont, tooltip,
+            sounds.spinButton, sounds.buttonClick, this::onSpin, this::onStake);
         restartButton = buttons.createAction(Lang.t("Recommencer"), sounds.buttonClick, this::onRestart);
         menuButton    = buttons.createAction(Lang.t("Menu principal"), sounds.buttonClick, this::onBackToMenu);
         pauseButton   = buttons.create(Lang.t("Pause"), sounds.buttonClick, this::showPauseMenu);
-        stakeButton   = new IconButton(hudTextures.stake, hudTextures.stakeOver, hudTextures.stakeDown,
-            hudTextures.stakeDisabled, false, sounds.buttonClick, this::onStake);
-        addTooltip(stakeButton, Lang.t("Mise"), Lang.t("Mise une part de tes gains avant de lancer. "
-            + "10 % : symboles x2. 25 % : x3. 50 % : x5. La mise est perdue, même sur un mauvais tirage."));
-        stakeLabel    = new Label(stakeText(SpinEconomy.Stake.NONE), new Label.LabelStyle(playsFont, Color.WHITE));
-        stakeLabel.setTouchable(Touchable.disabled);
-        stakeChips    = new StakeChips(hudTextures.chipStake);
-        setSpinDisabled(true);
         playsLabel    = new Label("", new Label.LabelStyle(playsFont, Color.WHITE));
         endButtons.add(restartButton).size(restartButton.getWidth(), restartButton.getHeight());
         endButtons.add(menuButton).size(menuButton.getWidth(), menuButton.getHeight()).padLeft(END_BUTTONS_GAP);
@@ -519,7 +481,7 @@ public class GameScreen extends ScreenAdapter {
         }
         hand.setBlockedReason(this::unplayableReason, this::onCardRefused);
         pileOverlay.setOnInspect(this::showCardDetail);
-        buildShopIcon();
+        shopIcon = new ShopIcon(hudTextures.shop, shopFont, sounds.shopHover, this::openShop);
 
         layout();
         refreshAll();
@@ -530,11 +492,8 @@ public class GameScreen extends ScreenAdapter {
         stage.addActor(sidePanel.getActor());
         piles.addTo(stage);
         hud.addTo(stage);
-        stage.addActor(spinButton);
+        spinControls.addTo(stage);
         stage.addActor(pauseButton);
-        stage.addActor(stakeButton);
-        stage.addActor(stakeLabel);
-        stage.addActor(stakeChips);
         stage.addActor(playsLabel);
         stage.addActor(slots.getActor());
         stage.addActor(hand.getActor());
@@ -730,49 +689,12 @@ public class GameScreen extends ScreenAdapter {
         };
     }
 
-    /** Icône de l'échoppe : l'étal du marché et son nom ; au survol elle grossit, au clic elle ouvre la boutique. */
-    private void buildShopIcon() {
-        Image stall = new Image(new TextureRegionDrawable(new TextureRegion(hudTextures.shop)));
-        stall.setSize(SHOP_ICON_WIDTH, SHOP_ICON_HEIGHT);
-        Label name = new Label(Lang.t("ÉCHOPPE"), new Label.LabelStyle(shopFont, Color.WHITE));
-        name.pack();
-        name.setPosition((SHOP_ICON_WIDTH - name.getWidth()) / 2f, 0f);
-        stall.setPosition(0f, name.getHeight());
-        shopIcon.addActor(stall);
-        shopIcon.addActor(name);
-        shopIcon.setSize(SHOP_ICON_WIDTH, SHOP_ICON_HEIGHT + name.getHeight());
-        shopIcon.setOrigin(SHOP_ICON_WIDTH / 2f, 0f);
-        shopIcon.addListener(new ClickListener() {
-            @Override
-            public void enter(InputEvent event, float x, float y, int pointer, Actor fromActor) {
-                super.enter(event, x, y, pointer, fromActor);
-                if (pointer != -1) return;
-                sounds.shopHover.play();
-                shopIcon.clearActions();
-                shopIcon.addAction(Actions.scaleTo(SHOP_HOVER_SCALE, SHOP_HOVER_SCALE, 0.12f, Interpolation.pow2Out));
-            }
-
-            @Override
-            public void exit(InputEvent event, float x, float y, int pointer, Actor toActor) {
-                super.exit(event, x, y, pointer, toActor);
-                if (pointer != -1) return;
-                shopIcon.clearActions();
-                shopIcon.addAction(Actions.scaleTo(1f, 1f, 0.12f));
-            }
-
-            @Override
-            public void clicked(InputEvent event, float x, float y) {
-                openShop();
-            }
-        });
-    }
-
     /**
      * Ouvre l'échoppe pendant le tour du joueur (main piochée, machine pas encore
      * lancée), sauf pendant une animation ou une fenêtre, ou une fois le combat terminé.
      */
     private void openShop() {
-        if (isBusy() || isCombatOver() || spinButton.isDisabled()) return;
+        if (isBusy() || isCombatOver() || spinControls.isDisabled()) return;
         sounds.buttonClick.play();
         shopOverlay.show(gameController.getShopOffers(), () -> player().getGains(), cardTextures::get,
             (text, action) -> buttons.create(text, sounds.buttonClick, action),
@@ -810,21 +732,7 @@ public class GameScreen extends ScreenAdapter {
         if (purchase.addedToHand()) {
             at = hand.conjure(card);
         } else {
-            CardImage image = new CardImage(new TextureRegionDrawable(new TextureRegion(cardTextures.get(card))));
-            image.setSize(CARD_WIDTH, CARD_HEIGHT);
-            image.setTouchable(Touchable.disabled);
-            image.setOrigin(CARD_WIDTH / 2f, CARD_HEIGHT / 2f);
-            float x = piles.deck().getTopX(), y = piles.deck().getTopY();
-            image.setPosition(x, y + CARD_HEIGHT * 0.6f);
-            image.setScale(0f);
-            stage.addActor(image);
-            image.addAction(Actions.sequence(
-                Actions.scaleTo(1f, 1f, 0.35f, Interpolation.swingOut),
-                Actions.delay(0.4f),
-                Actions.moveTo(x, y, 0.3f, Interpolation.pow2In),
-                Actions.run(() -> piles.refresh(player())),
-                Actions.removeActor()));
-            at = new Vector2(x + CARD_WIDTH / 2f, y + CARD_HEIGHT * 1.1f);
+            at = dropOnPile(card, piles.deck().getTopX(), piles.deck().getTopY(), () -> piles.refresh(player()));
         }
         confetti.burst(at.x, at.y, POT_CONFETTI);
         effectPopupAnimator.play(List.of(new EffectPopup(card.getName().toUpperCase() + " !", EffectPopup.Style.SPECIAL,
@@ -833,11 +741,21 @@ public class GameScreen extends ScreenAdapter {
 
     /** Table pleine : le Pot de Lutin apparaît au-dessus de la défausse et s'y pose. @return son centre */
     private Vector2 potToDiscard(Card pot) {
-        CardImage image = new CardImage(new TextureRegionDrawable(new TextureRegion(cardTextures.get(pot))));
+        return dropOnPile(pot, piles.discard().getTopX(), piles.discard().getTopY(), () -> {
+            piles.onCardLanded();
+            piles.refresh(player());
+        });
+    }
+
+    /**
+     * {@code card} surgit au-dessus de la pile posée en ({@code x}, {@code y}),
+     * puis s'y pose ; {@code landed} quand elle y arrive. @return le point au-dessus de la pile
+     */
+    private Vector2 dropOnPile(Card card, float x, float y, Runnable landed) {
+        CardImage image = new CardImage(new TextureRegionDrawable(new TextureRegion(cardTextures.get(card))));
         image.setSize(CARD_WIDTH, CARD_HEIGHT);
         image.setTouchable(Touchable.disabled);
         image.setOrigin(CARD_WIDTH / 2f, CARD_HEIGHT / 2f);
-        float x = piles.discard().getTopX(), y = piles.discard().getTopY();
         image.setPosition(x, y + CARD_HEIGHT * 0.6f);
         image.setScale(0f);
         stage.addActor(image);
@@ -845,10 +763,7 @@ public class GameScreen extends ScreenAdapter {
             Actions.scaleTo(1f, 1f, 0.35f, Interpolation.swingOut),
             Actions.delay(0.4f),
             Actions.moveTo(x, y, 0.3f, Interpolation.pow2In),
-            Actions.run(() -> {
-                piles.onCardLanded();
-                piles.refresh(player());
-            }),
+            Actions.run(landed),
             Actions.removeActor()));
         return new Vector2(x + CARD_WIDTH / 2f, y + CARD_HEIGHT * 1.1f);
     }
@@ -917,37 +832,14 @@ public class GameScreen extends ScreenAdapter {
      * ou repasse la main à la phase de pioche sinon.
      */
     private void onSpin() {
-        if (spinButton.isDisabled() || isBusy()) return;
+        if (spinControls.isDisabled() || isBusy()) return;
         if (tutorial != null && !tutorial.allowsSpin()) return; // le Croupier n'a pas encore demandé de lancer
         spin();
     }
 
     /** Active ou désactive le lancer, et la Mise avec lui (elle se choisit avant le lancer). */
     private void setSpinDisabled(boolean disabled) {
-        spinButton.setDisabled(disabled);
-        if (stakeButton != null) stakeButton.setDisabled(disabled);
-    }
-
-    /** @return le texte sous le bouton de Mise pour le palier {@code stake} (« Mise », « 25 % : x3 »). */
-    private static String stakeText(SpinEconomy.Stake stake) {
-        return stake == SpinEconomy.Stake.NONE ? Lang.t("Mise") : Lang.f("{0} % : x{1}", stake.percent, stake.factor);
-    }
-
-    /** Une infobulle ({@code heading}, {@code text}) au-dessus de {@code actor}, au survol. */
-    private void addTooltip(Actor actor, String heading, String text) {
-        actor.addListener(new InputListener() {
-            @Override
-            public void enter(InputEvent event, float x, float y, int pointer, Actor fromActor) {
-                if (pointer != -1) return;
-                Vector2 top = actor.localToStageCoordinates(new Vector2(actor.getWidth() / 2f, actor.getHeight()));
-                tooltip.show(heading, text, top.x, top.y + 6f);
-            }
-
-            @Override
-            public void exit(InputEvent event, float x, float y, int pointer, Actor toActor) {
-                if (pointer == -1) tooltip.hide();
-            }
-        });
+        spinControls.setDisabled(disabled);
     }
 
     /**
@@ -955,16 +847,16 @@ public class GameScreen extends ScreenAdapter {
      * gains), et un jeton de casino tombe sur la table. On ne mise que ce qu'on a.
      */
     private void onStake() {
-        if (stakeButton.isDisabled() || isBusy()) return;
+        if (spinControls.isStakeDisabled() || isBusy()) return;
         if (tutorial != null && !tutorial.allowsStake()) return;
         if (!gameController.canStake()) {
+            Vector2 above = spinControls.aboveStake();
             effectPopupAnimator.play(List.of(new EffectPopup(Lang.t("PAS DE GAINS À MISER"), EffectPopup.Style.DAMAGE,
-                PopupScale.SECONDARY_INTENSITY)), stakeButton.getX() + stakeButton.getWidth() / 2f,
-                stakeButton.getY() + stakeButton.getHeight() * 1.5f);
+                PopupScale.SECONDARY_INTENSITY)), above.x, above.y);
             return;
         }
         SpinEconomy.Stake stake = gameController.nextStake();
-        stakeChips.show(stake.ordinal());
+        spinControls.dropChips(stake);
         if (stake != SpinEconomy.Stake.NONE) sounds.cardDeal.play();
         refreshPlays();
         if (tutorial != null) tutorial.onStake(stake);
@@ -1011,16 +903,12 @@ public class GameScreen extends ScreenAdapter {
         refreshEffects(); // les symboles retirés se rapprochent de leur retour
         refreshPlays();   // nouveau tour : le compteur de cartes repart à zéro
 
-        logSymbolOutcomes(result);
-        Gdx.app.log("GameScreen", result.getEvents().stream()
-            .map(Event::describe)
-            .collect(Collectors.joining(" | ")));
+        TurnLog.log(result);
     }
 
     /** Le tirage est payé : le coût (et la Mise) quittent les gains, les jetons glissent dans la machine. */
     private void payForSpin(int cost, int staked) {
-        spinButton.hold(LEVER_HOLD); // le levier reste tiré le temps que les rouleaux partent
-        stakeChips.spend(table.getPlayerReelsRight() - stakeChips.getX());
+        spinControls.pull(); // le levier reste tiré, les jetons misés glissent dans la machine
         if (cost <= 0 && staked <= 0) return;
         List<EffectPopup> popups = new ArrayList<>();
         if (cost > 0) popups.add(new EffectPopup(Lang.f("TIRAGE -{0}", SidePanel.formatGains(cost)), EffectPopup.Style.DAMAGE,
@@ -1632,7 +1520,7 @@ public class GameScreen extends ScreenAdapter {
     }
 
     // -------------------------------------------------------------------------
-    // Fin de combat, sons et journal
+    // Fin de combat et sons
     // -------------------------------------------------------------------------
 
     /** @return les pièces gagnées à la fin de ce combat (voir {@link PlayerProfile#combatReward}). */
@@ -1666,8 +1554,8 @@ public class GameScreen extends ScreenAdapter {
         @Override public Rectangle playerBar() { return GuideOverlay.boundsOf(hud.getPlayerHealthBar()); }
         @Override public Rectangle enemy()     { return GuideOverlay.around(enemyView.getCroupierCenter(), 260f, 260f); }
         @Override public Rectangle hand(java.util.function.Predicate<Card> which) { return GameScreen.this.hand.boundsOf(which); }
-        @Override public Rectangle spinButton() { return GuideOverlay.boundsOf(GameScreen.this.spinButton); }
-        @Override public Rectangle stakeButton() { return GuideOverlay.boundsOf(GameScreen.this.stakeButton); }
+        @Override public Rectangle spinButton() { return GuideOverlay.boundsOf(spinControls.getLever()); }
+        @Override public Rectangle stakeButton() { return GuideOverlay.boundsOf(spinControls.getStakeButton()); }
         @Override public Rectangle reels() {
             Vector2 first = slots.getReelCenter(0), last = slots.getReelCenter(slots.getReelCount() - 1);
             return new Rectangle(first.x - SlotView.CELL_WIDTH / 2f, first.y - SlotView.CELL_HEIGHT / 2f,
@@ -1744,33 +1632,6 @@ public class GameScreen extends ScreenAdapter {
         }
     }
 
-    /**
-     * Journalise, pour chaque symbole tiré, son effet de base (voir
-     * {@link Symbol#getDescription()}), ses dégâts finaux — base + bonus
-     * d'attaque des cartes jouées, {@code avant} défense de l'ennemi — et le
-     * résultat complet obtenu ce tour (dégâts réellement encaissés par
-     * l'ennemi après défense, drain de vie, gains, etc.).
-     */
-    private void logSymbolOutcomes(TurnResult result) {
-        for (SymbolOutcome outcome : result.getSymbolOutcomes()) {
-            Symbol symbol = outcome.getSymbol();
-            String resultText = outcome.getEvents().isEmpty()
-                ? "aucun effet"
-                : outcome.getEvents().stream().map(Event::describe).collect(Collectors.joining(", "));
-
-            List<EnemyDamagedEvent> damageEvents = outcome.getEvents().stream()
-                .filter(e -> e instanceof EnemyDamagedEvent)
-                .map(e -> (EnemyDamagedEvent) e)
-                .toList();
-            String finalDamageText = damageEvents.isEmpty()
-                ? ""
-                : " | degats finaux (avec buffs, avant defense): " + damageEvents.stream().mapToLong(e -> e.rawDamage).sum();
-
-            Gdx.app.log("GameScreen", symbol + " - base: " + symbol.getDescription()
-                + finalDamageText + " | resultat: " + resultText);
-        }
-    }
-
     // -------------------------------------------------------------------------
     // Rafraîchissement et positionnement
     // -------------------------------------------------------------------------
@@ -1802,257 +1663,18 @@ public class GameScreen extends ScreenAdapter {
         if (gameController.getStake() != SpinEconomy.Stake.NONE) {
             text.append("   ").append(Lang.f("Mise -{0}", SidePanel.formatGains(gameController.getStakeAmount())));
         }
-        stakeLabel.setText(stakeText(gameController.getStake()));
-        placeStakeButton();
+        spinControls.showStake(gameController.getStake());
         playsLabel.setText(text);
         playsLabel.setColor(gameController.isPlayLimitReached() ? Palette.TEXT_ALERT : Palette.TEXT_TITLE);
         playsLabel.pack();
     }
 
     /**
-     * Met à jour les effets de cartes actifs du panneau latéral : symboles
-     * retirés des rouleaux (et tirages restants), Porte-bonheur, paris en cours.
+     * Met à jour les effets actifs du panneau latéral (voir {@link CombatEffectRows}).
      * Chaque effet a son nom et sa description, pour son infobulle et sa fiche.
      */
     private void refreshEffects() {
-        List<SidePanel.EffectRow> rows = new ArrayList<>();
-        LastingEffects lasting = player().getLastingEffects();
-        TextureRegion cross = new TextureRegion(hudTextures.iconCross);
-        int cost = gameController.getGameState().getEnemy().getKind().getSpinCost();
-        SpinEconomy.Debt debt = shownDebt();
-        if (debt != SpinEconomy.Debt.NONE) {
-            String limit = SidePanel.formatGains(SpinEconomy.BAILIFF_SPINS * cost);
-            rows.add(debt == SpinEconomy.Debt.BAILIFF
-                ? new SidePanel.EffectRow(new TextureRegion(hudTextures.coin), cross, Lang.t("Huissier"),
-                    Lang.t("Huissier"), Lang.f("Tu dois plus de {0} gains. Attaque et bouclier des symboles -50 %. "
-                        + "L'ennemi joue une carte de plus. Une Paire ou un Bingo te renfloue.", limit))
-                : new SidePanel.EffectRow(new TextureRegion(hudTextures.coin), cross, Lang.t("Endetté"),
-                    Lang.t("Endetté"), Lang.f("Tes gains sont sous 0. Attaque et bouclier des symboles -25 %. "
-                        + "Sous -{0}, l'Huissier arrive.", limit)));
-        }
-        for (Map.Entry<Symbol, Integer> removed : lasting.getRemovedSymbols().entrySet()) {
-            int turns = removed.getValue();
-            rows.add(new SidePanel.EffectRow(slots.regionOf(removed.getKey()), cross,
-                Lang.f("Retiré {0}", turns(turns)), Lang.t("Recyclage"),
-                Lang.f("{0} est retiré de tes rouleaux. Il revient dans {1}.",
-                    removed.getKey().getDisplayName(), turns(turns))));
-        }
-        if (lasting.getGainBonus() > 0f) {
-            int percent = Math.round(lasting.getGainBonus() * 100f);
-            rows.add(new SidePanel.EffectRow(new TextureRegion(hudTextures.iconClover), null,
-                Lang.f("Gains +{0} %", percent), Lang.t("Porte-bonheur"),
-                Lang.f("Tes gains +{0} %. Jusqu'à la fin du combat.", percent)));
-        }
-        if (lasting.getCorruptionTurns() > 0) {
-            int turns = lasting.getCorruptionTurns();
-            rows.add(new SidePanel.EffectRow(new TextureRegion(hudTextures.iconCorruption), null,
-                Lang.f("Corruption {0}", turns(turns)), Lang.t("Corruption"),
-                Lang.f("Attaque et bouclier des symboles x{0}. Chaque tour coûte {1} % de tes gains. Encore {2}.",
-                    CorruptionEffect.FACTOR, CorruptionEffect.GAINS_PERCENT, turns(turns))));
-        }
-        if (lasting.getExtraPlaysTurns() > 0) {
-            int turns = lasting.getExtraPlaysTurns();
-            rows.add(new SidePanel.EffectRow(new TextureRegion(hudTextures.iconSleeve), null,
-                Lang.f("{0} cartes, {1}", lasting.getExtraPlays(), turns(turns)), Lang.t("Dans la manche"),
-                Lang.f("{0} cartes jouables par tour. Encore {1}.", lasting.getExtraPlays(), turns(turns))));
-        }
-        if (lasting.getBlades() > 0) {
-            int blades = lasting.getBlades();
-            rows.add(new SidePanel.EffectRow(new TextureRegion(hudTextures.iconBlade), null,
-                Lang.f("Lames {0} (+{1})", blades, blades * PreparationResolver.BLADE_ATTACK), Lang.t("Lames"),
-                Lang.f("Jauge de Pique. Chaque Lame donne +{0} d'attaque à tes symboles. Tes Piques jouées en Couleur "
-                    + "ou en Suite la remplissent. L'As de Pique et la Guillotine l'encaissent.",
-                    PreparationResolver.BLADE_ATTACK)));
-        }
-        if (lasting.getBlood() > 0) {
-            rows.add(new SidePanel.EffectRow(new TextureRegion(hudTextures.iconBlood), null,
-                Lang.f("Sang {0}", lasting.getBlood()), Lang.t("Sang"),
-                Lang.t("Jauge de Coeur. Le soin au-delà de tes PV max s'y garde. Tes Coeurs joués en Couleur ou en "
-                    + "Suite la remplissent. L'As de Coeur ajoute tout le Sang à ton attaque.")));
-        }
-        if (lasting.getVault() > 0) {
-            rows.add(new SidePanel.EffectRow(new TextureRegion(hudTextures.iconVault), null,
-                Lang.f("Coffre {0}", lasting.getVault()), Lang.t("Coffre"),
-                Lang.t("Jauge de Carreau. Ton bouclier inutilisé s'y garde. Tes Carreaux joués en Couleur ou en Suite "
-                    + "la remplissent. L'As de Carreau le vide sur l'ennemi.")));
-        }
-        for (int[] safe : lasting.getSafes()) {
-            rows.add(new SidePanel.EffectRow(new TextureRegion(hudTextures.iconSafe), null,
-                "+" + safe[0] + ", " + turns(safe[1]), Lang.t("Coffre-fort"),
-                Lang.f("{0} gains mis de côté, déjà doublés. Ils reviennent dans {1}.",
-                    PlayerProfile.formatCoins(safe[0]), turns(safe[1]))));
-        }
-        for (Symbol bet : gameController.getBetsThisTurn()) {
-            rows.add(new SidePanel.EffectRow(slots.regionOf(bet), null, Lang.t("Pari x2 à x4"), Lang.t("Pari"),
-                Lang.f("Tu as parié sur {0}. S'il sort 1, 2 ou 3 fois : gains x2, x3 ou x4. Sinon : gains /2.",
-                    bet.getDisplayName())));
-        }
-        if (gameController.isDoubleNextPending()) {
-            rows.add(new SidePanel.EffectRow(new TextureRegion(hudTextures.iconDouble), null, Lang.t("Carte suivante x2"),
-                Lang.t("Double ou rien"), Lang.t("La prochaine carte jouée ce tour compte deux fois.")));
-        }
-        addPlaceRows(rows, lasting);
-        sidePanel.setActiveEffects(rows);
-    }
-
-    /** @return {@code count} suivi de « tour » ou « tours ». */
-    private static String turns(int count) {
-        return Lang.f(Lang.plural(count) ? "{0} tours" : "{0} tour", count);
-    }
-
-    /**
-     * Exploration : la règle du lieu (Scorbut, prochain coup de grisou, niveau de
-     * la marée), les cartes des lieux qui durent (Veine d'or, Bulle d'air,
-     * Casque) et les mauvais sorts de l'ennemi qui attendent le prochain tour.
-     */
-    private void addPlaceRows(List<SidePanel.EffectRow> rows, LastingEffects lasting) {
-        GameState state = gameController.getGameState();
-        TextureRegion skull = new TextureRegion(hudTextures.iconCorruption);
-        int turn = state.getTurnNumber();
-        PlaceRule rule = state.getPlaceRule();
-        switch (state.getActiveRule()) {
-            case SCORBUT -> {
-                int turns = PlaceRule.SCURVY_PERIOD - (turn - 1) % PlaceRule.SCURVY_PERIOD;
-                rows.add(new SidePanel.EffectRow(skull, null, Lang.f("Scorbut : {0}", turns(turns)), rule.getName(),
-                    Lang.f("{0} Prochain Scorbut dans {1}.", rule.getDescription(), turns(turns))));
-            }
-            case GRISOU -> {
-                int turns = PlaceRule.turnsBeforeFiredamp(turn);
-                rows.add(new SidePanel.EffectRow(skull, null, turns == 1 ? Lang.t("Grisou : ce tour")
-                    : Lang.f("Grisou : {0} tours", turns), rule.getName(), rule.getDescription()
-                    + (turns == 1 ? Lang.t(" Explosion à la fin de ce tour.") : Lang.f(" Prochaine explosion dans {0}.",
-                        turns(turns)))));
-            }
-            case MAREE -> rows.add(new SidePanel.EffectRow(skull, null, Lang.f("Marée {0}/{1}{2}",
-                PlaceRule.tide(turn), PlaceRule.TIDE_CYCLE, (rule.isHighTide(turn) ? Lang.t(" : haute") : "")), rule.getName(),
-                Lang.f("{0} Niveau actuel : {1}.", rule.getDescription(), PlaceRule.tide(turn))));
-            case NONE -> { }
-        }
-        if (lasting.getBubbleTurns() > 0) {
-            int turns = lasting.getBubbleTurns();
-            rows.add(new SidePanel.EffectRow(new TextureRegion(hudTextures.iconSleeve), null,
-                Lang.f("Bulle : {0}", turns(turns)), Lang.t("Bulle d'air"),
-                Lang.f("La règle du lieu ne joue plus. Encore {0}.", turns(turns))));
-        }
-        if (lasting.getGoldVeinTurns() > 0) {
-            int turns = lasting.getGoldVeinTurns();
-            rows.add(new SidePanel.EffectRow(new TextureRegion(hudTextures.iconClover), null,
-                Lang.f("Veine x{0} ({1})", GoldVeinEffect.FACTOR, turns), Lang.t("Veine d'or"),
-                Lang.f("Tes gains x{0}. Encore {1}.", GoldVeinEffect.FACTOR, turns(turns))));
-        }
-        if (player().getHelmets() > 0) {
-            int helmets = player().getHelmets();
-            rows.add(new SidePanel.EffectRow(new TextureRegion(hudTextures.iconVault), null,
-                Lang.f("Casque x{0}", helmets), Lang.t("Casque"), Lang.f("Bloque entièrement le prochain coup que tu reçois. {0}",
-                    (helmets > 1 ? Lang.f("{0} casques : un par coup.", helmets) : Lang.t("Un seul coup.")))));
-        }
-        // Parades des cartes des coffres des lieux
-        TextureRegion guard = new TextureRegion(hudTextures.iconVault);
-        Enemy target = gameController.getGameState().getEnemy();
-        if (lasting.getTraps() > 0) rows.add(new SidePanel.EffectRow(guard, null, Lang.f("Piège x{0}",
-            lasting.getTraps()),
-            Lang.t("Piège à rats"), Lang.t("Le prochain mauvais sort sur ta main est annulé (Grignotage, Aveuglement, Chant, Abordage, "
-                + "Fouille).")));
-        if (lasting.getLanternDraws() > 0) rows.add(new SidePanel.EffectRow(guard, null,
-            Lang.f("Lanterne ({0})", lasting.getLanternDraws()), Lang.t("Lanterne"),
-            Lang.f("Ta main ne peut pas être cachée. Encore {0}.", turns(lasting.getLanternDraws()))));
-        if (lasting.getEarplugDraws() > 0) rows.add(new SidePanel.EffectRow(guard, null,
-            Lang.f("Bouchons ({0})", lasting.getEarplugDraws()), Lang.t("Bouchons d'oreille"),
-            Lang.f("Le Chant n'a pas d'effet. Encore {0}.", turns(lasting.getEarplugDraws()))));
-        if (lasting.getPropTurns() > 0) rows.add(new SidePanel.EffectRow(guard, null,
-            Lang.f("Étai ({0})", lasting.getPropTurns()), Lang.t("Étai"),
-            Lang.f("Le Forage ne perce pas ton bouclier. Encore {0}.", turns(lasting.getPropTurns()))));
-        if (lasting.getLamps() > 0) rows.add(new SidePanel.EffectRow(guard, null, Lang.f("Lampe x{0}",
-            lasting.getLamps()),
-            Lang.t("Lampe à carbure"), Lang.t("Le prochain coup de grisou ne t'atteint pas.")));
-        if (lasting.getCageTurns() > 0) rows.add(new SidePanel.EffectRow(guard, null,
-            Lang.f("Cage ({0})", lasting.getCageTurns()), Lang.t("Cage à requin"),
-            Lang.f("Rien ne peut prendre tes gains. Encore {0}.", turns(lasting.getCageTurns()))));
-        if (lasting.getAnchorTurns() > 0) rows.add(new SidePanel.EffectRow(guard, null,
-            Lang.f("Ancre ({0})", lasting.getAnchorTurns()), Lang.t("Ancre"),
-            Lang.f("La marée haute ne baisse pas ton attaque. Encore {0}.", turns(lasting.getAnchorTurns()))));
-        if (lasting.getTemperPercent() > 0) rows.add(new SidePanel.EffectRow(guard, null,
-            Lang.f("Trempe +{0} %", lasting.getTemperPercent()), Lang.t("Trempe"),
-            Lang.f("Ton attaque est à +{0} %. Elle monte encore à chaque tour.", lasting.getTemperPercent())));
-        if (player().hasRope()) rows.add(new SidePanel.EffectRow(guard, null, Lang.t("Corde de rappel"), Lang.t("Corde de rappel"),
-            Lang.t("Si un coup devait te tuer, tu restes à 1 PV.")));
-        if (target.isDazzled()) rows.add(new SidePanel.EffectRow(guard, null, Lang.t("Ennemi ébloui"), Lang.t("Rayon du phare"),
-            Lang.t("L'ennemi passe son prochain tour.")));
-        if (target.getMutinies() > 0) rows.add(new SidePanel.EffectRow(guard, null, Lang.t("Mutinerie"), Lang.t("Mutinerie"),
-            Lang.f("À son prochain tour, l'ennemi joue {0} cartes de moins.", MutinyEffect.CARDS_LESS)));
-        if (target.getLoadedCoins() > 0) rows.add(new SidePanel.EffectRow(guard, null, Lang.t("Pièce truquée"), Lang.t("Pièce truquée"),
-            Lang.t("Le prochain tirage de l'ennemi ne peut pas faire de Jackpot.")));
-        if (target.getHarpoons() > 0) rows.add(new SidePanel.EffectRow(guard, null, Lang.f("Harpon x{0}",
-            target.getHarpoons()),
-            Lang.t("Harpon"), Lang.f(Lang.plural(target.getHarpoons())
-                ? "À son prochain tour, l'ennemi joue {0} cartes de moins."
-                : "À son prochain tour, l'ennemi joue {0} carte de moins.", target.getHarpoons())));
-        Enemy foe = gameController.getGameState().getEnemy();
-        EnemyKind kind = foe.getKind();
-        if (lasting.getNibbles() > 0) rows.add(curse(skull, Lang.f("Grignotage x{0}", lasting.getNibbles()), EnemySymbol.NIBBLE, kind));
-        if (lasting.getDrunk() > 0) rows.add(curse(skull, Lang.f("Ivresse x{0}", lasting.getDrunk()), EnemySymbol.DRUNK, kind));
-        if (lasting.isBlind()) rows.add(curse(skull, Lang.t("Aveuglement"), EnemySymbol.BLIND, kind));
-        if (lasting.hasNugget()) rows.add(curse(skull, Lang.t("Pépite"), EnemySymbol.NUGGET, kind));
-        if (lasting.getSongs() > 0) rows.add(curse(skull, Lang.f("Chant x{0}", lasting.getSongs()), EnemySymbol.SONG, kind));
-        if (lasting.getFakeGains() > 0) {
-            rows.add(new SidePanel.EffectRow(skull, null, Lang.f("Faux : {0}", lasting.getFakeGains()), Lang.t("Fausse monnaie"),
-                Lang.f("{0} de tes gains sont faux. Dépense-les avant ton tirage, ou ils disparaissent.",
-                    PlayerProfile.formatCoins(lasting.getFakeGains()))));
-        }
-        if (lasting.getTaxes() > 0) rows.add(curse(skull, Lang.f("Taxe x{0}", lasting.getTaxes()), EnemySymbol.TAX, kind));
-        if (lasting.getHouseRule() != null) {
-            LastingEffects.HouseRule houseRule = lasting.getHouseRule();
-            rows.add(new SidePanel.EffectRow(skull, null,
-                houseRule.getShortName() + " (" + lasting.getHouseRuleTurns() + ")", Lang.t("Nouvelle règle"),
-                Lang.f("{0} Encore {1}.", houseRuleText(houseRule), turns(lasting.getHouseRuleTurns()))));
-        }
-        if (foe.getBannedFamily() != null) {
-            String family = foe.getBannedFamily().getDisplayName();
-            rows.add(new SidePanel.EffectRow(skull, null, Lang.f("Banni : {0}", family), Lang.t("Cartes bannies"),
-                Lang.f("L'ennemi laisse dehors les cartes {0}. Tu ne peux pas les jouer. Jusqu'à la fin du combat.",
-                    family)));
-        }
-        if (foe.getPrediction() != null) {
-            rows.add(new SidePanel.EffectRow(skull, null, Lang.f("Prédit : {0}",
-                foe.getPrediction().getDisplayName().toLowerCase()),
-                Lang.t("Prédiction"), Lang.f("Symbole annoncé : {0}. {1}",
-                    foe.getPrediction().getDisplayName(), sentence(EnemySymbol.PREDICTION.getDescription(kind)))));
-        }
-        if (foe.getStolenReels() > 0) {
-            int stolen = foe.getStolenReels();
-            String reels = Lang.f(Lang.plural(stolen) ? "{0} rouleaux" : "{0} rouleau", stolen);
-            rows.add(new SidePanel.EffectRow(skull, null, Lang.f("Vol : {0}", reels), Lang.t("Rouleaux volés"),
-                Lang.f("L'ennemi t'a volé {0}. Ils restent bloqués tant qu'il les garde.", reels)));
-        }
-        int limit = kind.getTurnLimit();
-        if (limit > 0) {
-            int left = Math.max(0, limit - state.getTurnNumber() + 1);
-            rows.add(new SidePanel.EffectRow(skull, null, Lang.f("Temps : {0} tours", left), Lang.t("Temps compté"),
-                Lang.f("Le combat dure {0} tours. Après, tu perds. Encore {1}.", limit, turns(left))));
-        }
-    }
-
-    /** @return la ligne d'un mauvais sort de l'ennemi, décrit comme sur ses rouleaux. */
-    private static SidePanel.EffectRow curse(TextureRegion icon, String text, EnemySymbol symbol, EnemyKind kind) {
-        String name = symbol.getDisplayName().charAt(0) + symbol.getDisplayName().substring(1).toLowerCase();
-        return new SidePanel.EffectRow(icon, null, text, name, sentence(symbol.getDescription(kind)));
-    }
-
-    /** @return la description d'un symbole ennemi (« Nom : texte ») sans son nom, terminée par un point. */
-    private static String sentence(String description) {
-        int colon = description.indexOf(':');
-        String text = colon >= 0 ? description.substring(colon + 1).trim() : description;
-        text = Character.toUpperCase(text.charAt(0)) + text.substring(1);
-        return text.endsWith(".") ? text : text + ".";
-    }
-
-    /** @return ce que change la règle du Directeur des Jeux. */
-    private static String houseRuleText(LastingEffects.HouseRule rule) {
-        return switch (rule) {
-            case NO_COMBOS   -> Lang.t("Les combinaisons de cartes ne comptent plus.");
-            case NO_BINGO    -> Lang.t("Tes rouleaux ne peuvent plus faire de Bingo.");
-            case DOUBLE_SPIN -> Lang.t("Chaque rouleau tourne deux fois. Le pire résultat reste.");
-        };
+        sidePanel.setActiveEffects(new CombatEffectRows(gameController, hudTextures, slots::regionOf, shownDebt()).rows());
     }
 
     /** Met à jour le compteur de gains, sans les gains du tirage dont le texte n'est pas encore apparu. */
@@ -2060,33 +1682,11 @@ public class GameScreen extends ScreenAdapter {
         sidePanel.setGains(player().getGains() - gainsNotYetShown);
     }
 
-    /**
-     * Place la Mise juste à droite du bouclier du joueur (sans jamais toucher
-     * le tapis de la défausse) : son bouton, son palier dessous, et à sa droite
-     * les jetons misés qui tombent sur la table. La place laissée au bouclier tient 4 chiffres ;
-     * au-delà, la Mise suit son texte.
-     */
-    private void placeStakeButton() {
-        float room = ShieldBadge.ICON_SIZE + ShieldBadge.LABEL_GAP
-            + new GlyphLayout(shieldFont, Lang.t("Bouclier") + STAKE_SHIELD_ROOM).width;
-        stakeShieldWidth = playerShield.getWidth();
-        float x = Math.min(playerShield.getX() + Math.max(room, stakeShieldWidth) + STAKE_SHIELD_GAP,
-            table.getEnemyDeckX() - PILE_MAT_PAD - STAKE_BUTTON_GAP - StakeChips.CHIP_SIZE - STAKE_CHIPS_GAP
-                - stakeButton.getWidth());
-        float y = table.getReelRowY() + (SlotView.CELL_HEIGHT - stakeButton.getHeight()) / 2f;
-        stakeButton.setPosition(x, y);
-        stakeLabel.pack();
-        stakeLabel.setPosition(x + (stakeButton.getWidth() - stakeLabel.getWidth()) / 2f,
-            y - stakeLabel.getHeight() - STAKE_LABEL_GAP);
-        stakeChips.setPosition(x + stakeButton.getWidth() + STAKE_CHIPS_GAP, y);
-    }
-
     /** Place le bouclier du joueur à droite de ses rouleaux, et son levier à leur gauche. */
     private void placePlayerShield() {
         playerShield.setPosition(table.getPlayerReelsRight() + PLAYER_SHIELD_GAP,
             table.getReelRowY() + (SlotView.CELL_HEIGHT - playerShield.getHeight()) / 2f);
-        spinButton.setPosition(table.getPlayerReelRowX() - LEVER_GAP - spinButton.getWidth(),
-            table.getReelRowY() + (SlotView.CELL_HEIGHT - spinButton.getHeight()) / 2f);
+        spinControls.placeLever();
     }
 
     /** Place (ou replace après un redimensionnement) les éléments qui dépendent de la taille de l'écran. */
@@ -2096,7 +1696,7 @@ public class GameScreen extends ScreenAdapter {
         placePlayerShield();
         pauseButton.setPosition(playArea.getX() + playArea.getWidth() - pauseButton.getWidth() - BUTTON_MARGIN,
             BUTTON_MARGIN);
-        placeStakeButton();
+        spinControls.placeStake();
         playsLabel.pack();
         playsLabel.setPosition(playArea.getX() + BUTTON_MARGIN,
             BUTTON_MARGIN + (pauseButton.getHeight() - playsLabel.getHeight()) / 2f);
@@ -2107,7 +1707,7 @@ public class GameScreen extends ScreenAdapter {
         hand.layout(false);
         endButtons.setPosition(playArea.getCenterX() - endButtons.getWidth() / 2f,
             playArea.getHeight() * END_BUTTONS_HEIGHT);
-        shopIcon.setPosition(playArea.getX() + playArea.getWidth() - SHOP_ICON_WIDTH - SHOP_ICON_MARGIN,
+        shopIcon.setPosition(playArea.getX() + playArea.getWidth() - shopIcon.getWidth() - SHOP_ICON_MARGIN,
             playArea.getHeight() - shopIcon.getHeight() - SHOP_ICON_MARGIN);
         if (stageLabel != null) {
             stageLabel.pack();
@@ -2162,7 +1762,7 @@ public class GameScreen extends ScreenAdapter {
                     || rainbowAnimation.isPlaying()) {
                     return true; // un choix ou une animation de carte est en cours
                 }
-                if (keycode == Input.Keys.F && !spinButton.isDisabled()) {
+                if (keycode == Input.Keys.F && !spinControls.isDisabled()) {
                     onSpin();
                     return true;
                 }
@@ -2200,7 +1800,7 @@ public class GameScreen extends ScreenAdapter {
         } else {
             stage.act(delta);
         }
-        if (playerShield.getWidth() != stakeShieldWidth) placeStakeButton();
+        spinControls.followShield();
         stage.getViewport().apply();
         stage.draw();
 
