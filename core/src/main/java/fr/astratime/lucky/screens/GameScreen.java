@@ -9,6 +9,7 @@ import com.badlogic.gdx.ScreenAdapter;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
+import com.badlogic.gdx.graphics.g2d.GlyphLayout;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.Rectangle;
@@ -67,6 +68,7 @@ import fr.astratime.lucky.entities.GameState;
 import fr.astratime.lucky.entities.LastingEffects;
 import fr.astratime.lucky.entities.Enemy;
 import fr.astratime.lucky.entities.Player;
+import fr.astratime.lucky.entities.SpinEconomy;
 import fr.astratime.lucky.entities.Symbol;
 import fr.astratime.lucky.entities.SymbolOutcome;
 import fr.astratime.lucky.entities.SymbolRegistry;
@@ -127,11 +129,13 @@ import fr.astratime.lucky.views.GuideOverlay;
 import fr.astratime.lucky.views.HandView;
 import fr.astratime.lucky.views.MinimumScreenViewport;
 import fr.astratime.lucky.views.HealthBarView;
+import fr.astratime.lucky.views.IconButton;
 import fr.astratime.lucky.views.PileContentOverlay;
 import fr.astratime.lucky.views.PilesView;
 import fr.astratime.lucky.views.PauseOverlay;
 import fr.astratime.lucky.views.PlayArea;
 import fr.astratime.lucky.views.ShieldBadge;
+import fr.astratime.lucky.views.StakeChips;
 import fr.astratime.lucky.views.ShopOverlay;
 import fr.astratime.lucky.views.SidePanel;
 import fr.astratime.lucky.views.SlotView;
@@ -189,7 +193,14 @@ public class GameScreen extends ScreenAdapter {
     private static final String CARD_BACK_PATH = "cards/light/BACK.png";
 
     private static final float BUTTON_MARGIN = 20f;   // boutons en bas à gauche, sous la table
-    private static final float PLAYS_LABEL_GAP = 16f; // entre le bouton de lancer et le compteur de cartes
+    private static final float LEVER_HOLD          = 0.5f; // secondes où le levier reste tiré au lancer
+    private static final float LEVER_GAP           = 28f; // entre le levier et la machine du joueur
+    private static final float PILE_MAT_PAD        = 16f; // marge du tapis de la défausse autour de la pile
+    private static final float STAKE_BUTTON_GAP    = 24f; // entre la Mise et le tapis de la défausse, au plus près
+    private static final float STAKE_SHIELD_GAP    = 16f; // entre le bouclier du joueur et la Mise, à sa droite
+    private static final String STAKE_SHIELD_ROOM  = " 0000"; // la Mise laisse au bouclier la place de 4 chiffres
+    private static final float STAKE_LABEL_GAP     = 2f;  // entre la Mise et son palier, dessous
+    private static final float STAKE_CHIPS_OVERLAP = 12f; // les jetons misés tombent sur la pile du bouton
 
     /** Dégâts à partir desquels un coup sur l'ennemi fige l'image un instant (micro-arrêt). */
     private static final int   BIG_HIT               = 60;
@@ -325,8 +336,17 @@ public class GameScreen extends ScreenAdapter {
     private final SlotView   slots;
     /** Calque des textes animés (bonus des cartes, résultats du tirage) : au-dessus du jeu, sous le voile des piles. */
     private final Group      popupLayer = new Group();
-    private final TextButton spinButton;
-    /** Cartes jouées ce tour sur la limite (« Cartes 2/4 »), à droite du bouton de lancer. */
+    /** Levier de la machine du joueur, à gauche de ses rouleaux : lance le tirage. */
+    private final IconButton spinButton;
+    /** Mise du prochain tirage (aucune, 10 %, 25 %, 50 %), à droite du bouton de lancer. */
+    private final IconButton stakeButton;
+    /** Palier de la Mise, sous son bouton (« Mise », « 25 % : x3 »). */
+    private final Label      stakeLabel;
+    /** Jetons de la Mise posés sur la table, à droite du bouclier du joueur. */
+    private final StakeChips stakeChips;
+    /** Largeur du bouclier du joueur quand la Mise a été placée (elle le suit s'il s'élargit). */
+    private float stakeShieldWidth;
+    /** Cartes jouées ce tour sur la limite (« Cartes 2/4 »), coût du tirage et Mise, à droite du bouton de Mise. */
     private final Label      playsLabel;
     private final TextButton restartButton;
     private final TextButton menuButton;
@@ -430,11 +450,20 @@ public class GameScreen extends ScreenAdapter {
             sidePanel::getCoinCenter, sidePanel::bumpCoin, fireworkSounds);
         hud        = new CombatHud(playArea, hudTextures, gameController::getGameState);
 
-        spinButton    = buttons.createAction(Lang.t("Lancer machine"), sounds.spinButton, this::onSpin);
+        spinButton    = new IconButton(hudTextures.lever, hudTextures.leverOver, hudTextures.leverDown,
+            hudTextures.leverDisabled, true, sounds.spinButton, this::onSpin);
+        addTooltip(spinButton, Lang.t("Lancer la machine"), Lang.t("Tire le levier : les rouleaux tournent. Touche F."));
         restartButton = buttons.createAction(Lang.t("Recommencer"), sounds.buttonClick, this::onRestart);
         menuButton    = buttons.createAction(Lang.t("Menu principal"), sounds.buttonClick, this::onBackToMenu);
         pauseButton   = buttons.create(Lang.t("Pause"), sounds.buttonClick, this::showPauseMenu);
-        spinButton.setDisabled(true);
+        stakeButton   = new IconButton(hudTextures.stake, hudTextures.stakeOver, hudTextures.stakeDown,
+            hudTextures.stakeDisabled, false, sounds.buttonClick, this::onStake);
+        addTooltip(stakeButton, Lang.t("Mise"), Lang.t("Mise une part de tes gains avant de lancer. "
+            + "10 % : symboles x2. 25 % : x3. 50 % : x5. La mise est perdue, même sur un mauvais tirage."));
+        stakeLabel    = new Label(stakeText(SpinEconomy.Stake.NONE), new Label.LabelStyle(playsFont, Color.WHITE));
+        stakeLabel.setTouchable(Touchable.disabled);
+        stakeChips    = new StakeChips(hudTextures.chipStake);
+        setSpinDisabled(true);
         playsLabel    = new Label("", new Label.LabelStyle(playsFont, Color.WHITE));
         endButtons.add(restartButton).size(restartButton.getWidth(), restartButton.getHeight());
         endButtons.add(menuButton).size(menuButton.getWidth(), menuButton.getHeight()).padLeft(END_BUTTONS_GAP);
@@ -503,6 +532,9 @@ public class GameScreen extends ScreenAdapter {
         hud.addTo(stage);
         stage.addActor(spinButton);
         stage.addActor(pauseButton);
+        stage.addActor(stakeButton);
+        stage.addActor(stakeLabel);
+        stage.addActor(stakeChips);
         stage.addActor(playsLabel);
         stage.addActor(slots.getActor());
         stage.addActor(hand.getActor());
@@ -541,7 +573,7 @@ public class GameScreen extends ScreenAdapter {
      * annonce « À TOI DE JOUER ! », puis pioche automatique de la main.
      */
     private void startPlayerTurn() {
-        spinButton.setDisabled(true);
+        setSpinDisabled(true);
         turnBanner.play(TurnBanner.Side.PLAYER, playArea.getCenterX(), turnBannerY(), playArea.getWidth());
         stage.addAction(Actions.delay(TurnBanner.DURATION, Actions.run(this::drawHand)));
     }
@@ -564,7 +596,7 @@ public class GameScreen extends ScreenAdapter {
             refreshEffects(); // les mauvais sorts de l'ennemi s'appliquent : ils quittent le panneau
         }
         refreshPlays();
-        spinButton.setDisabled(false);
+        setSpinDisabled(false);
         if (tutorial != null) tutorial.beat(TutorialDirector.Beat.HAND_DEALT, () -> { });
         // Chant de l'ennemi : une fois la main distribuée, des cartes partent d'office.
         float dealt = drawn.getAddedToHand().size() * CardDealAnimator.DEAL_STAGGER_DELAY + SONG_DELAY;
@@ -870,7 +902,7 @@ public class GameScreen extends ScreenAdapter {
      */
     private void playBingo(CardImage image, List<EffectPopup> popups) {
         hand.setLocked(true);
-        spinButton.setDisabled(true);
+        setSpinDisabled(true);
         float centerX = playArea.getCenterX();
         float centerY = stage.getViewport().getWorldHeight() * BINGO_CARD_HEIGHT;
         effectPopupAnimator.play(popups, centerX, centerY + CARD_HEIGHT * 1.3f, 0.5f); // avec le son de la carte
@@ -890,6 +922,54 @@ public class GameScreen extends ScreenAdapter {
         spin();
     }
 
+    /** Active ou désactive le lancer, et la Mise avec lui (elle se choisit avant le lancer). */
+    private void setSpinDisabled(boolean disabled) {
+        spinButton.setDisabled(disabled);
+        if (stakeButton != null) stakeButton.setDisabled(disabled);
+    }
+
+    /** @return le texte sous le bouton de Mise pour le palier {@code stake} (« Mise », « 25 % : x3 »). */
+    private static String stakeText(SpinEconomy.Stake stake) {
+        return stake == SpinEconomy.Stake.NONE ? Lang.t("Mise") : Lang.f("{0} % : x{1}", stake.percent, stake.factor);
+    }
+
+    /** Une infobulle ({@code heading}, {@code text}) au-dessus de {@code actor}, au survol. */
+    private void addTooltip(Actor actor, String heading, String text) {
+        actor.addListener(new InputListener() {
+            @Override
+            public void enter(InputEvent event, float x, float y, int pointer, Actor fromActor) {
+                if (pointer != -1) return;
+                Vector2 top = actor.localToStageCoordinates(new Vector2(actor.getWidth() / 2f, actor.getHeight()));
+                tooltip.show(heading, text, top.x, top.y + 6f);
+            }
+
+            @Override
+            public void exit(InputEvent event, float x, float y, int pointer, Actor toActor) {
+                if (pointer == -1) tooltip.hide();
+            }
+        });
+    }
+
+    /**
+     * Bouton de Mise : passe au palier suivant (aucune, 10 %, 25 %, 50 % des
+     * gains), et un jeton de casino tombe sur la table. On ne mise que ce qu'on a.
+     */
+    private void onStake() {
+        if (stakeButton.isDisabled() || isBusy()) return;
+        if (tutorial != null && !tutorial.allowsStake()) return;
+        if (!gameController.canStake()) {
+            effectPopupAnimator.play(List.of(new EffectPopup(Lang.t("PAS DE GAINS À MISER"), EffectPopup.Style.DAMAGE,
+                PopupScale.SECONDARY_INTENSITY)), stakeButton.getX() + stakeButton.getWidth() / 2f,
+                stakeButton.getY() + stakeButton.getHeight() * 1.5f);
+            return;
+        }
+        SpinEconomy.Stake stake = gameController.nextStake();
+        stakeChips.show(stake.ordinal());
+        if (stake != SpinEconomy.Stake.NONE) sounds.cardDeal.play();
+        refreshPlays();
+        if (tutorial != null) tutorial.onStake(stake);
+    }
+
     /** @return {@code true} si une fenêtre ou une animation attend : ni pioche ni lancer possibles. */
     private boolean isBusy() {
         return pileOverlay.isShown() || choiceOverlay.isShown() || shopOverlay.isShown() || cardDetail.isShown()
@@ -899,6 +979,8 @@ public class GameScreen extends ScreenAdapter {
     /** Lance la machine (bouton, touche F, ou d'elle-même après une carte Bingo). */
     private void spin() {
         int enemyHpBefore = gameController.getGameState().getEnemy().getHp();
+        int cost   = gameController.getSpinCost();
+        int staked = gameController.getStakeAmount();
         TurnResult result = gameController.spin();
         if (tutorial != null) tutorial.onSpin();
         lastSpinBingo = result.isJackpot();
@@ -906,12 +988,13 @@ public class GameScreen extends ScreenAdapter {
         // Gains et PV du tirage ne se montrent qu'à l'apparition de leurs textes, après l'arrêt des rouleaux.
         gainsNotYetShown += sumOf(result, GainsEarnedEvent.class, gains -> gains.amount)
             - sumOf(result, GainsLostEvent.class, lost -> lost.amount);
+        payForSpin(cost, staked); // seuls le coût et la Mise partent tout de suite
         int enemyHeal = sumOf(result, EnemyHealedEvent.class, heal -> heal.amount);
         hud.holdBack(enemyHpBefore - gameController.getGameState().getEnemy().getHp() + enemyHeal, enemyHeal,
             sumOf(result, PlayerDamagedEvent.class, hit -> hit.damage),
             sumOf(result, PlayerHealedEvent.class, heal -> heal.amount));
         hand.discardAll();
-        spinButton.setDisabled(true); // le tour du joueur se termine : la suite attend l'arrêt des rouleaux
+        setSpinDisabled(true); // le tour du joueur se termine : la suite attend l'arrêt des rouleaux
         showReelCount(result.getDrawnSymbols().length);
         Symbol[] rerolled = result.getRerolledDraw();
         if (rerolled == null) {
@@ -932,6 +1015,23 @@ public class GameScreen extends ScreenAdapter {
         Gdx.app.log("GameScreen", result.getEvents().stream()
             .map(Event::describe)
             .collect(Collectors.joining(" | ")));
+    }
+
+    /** Le tirage est payé : le coût (et la Mise) quittent les gains, les jetons glissent dans la machine. */
+    private void payForSpin(int cost, int staked) {
+        spinButton.hold(LEVER_HOLD); // le levier reste tiré le temps que les rouleaux partent
+        stakeChips.spend(table.getPlayerReelsRight() - stakeChips.getX());
+        if (cost <= 0 && staked <= 0) return;
+        List<EffectPopup> popups = new ArrayList<>();
+        if (cost > 0) popups.add(new EffectPopup(Lang.f("TIRAGE -{0}", SidePanel.formatGains(cost)), EffectPopup.Style.DAMAGE,
+            PopupScale.SECONDARY_INTENSITY));
+        if (staked > 0) popups.add(new EffectPopup(Lang.f("MISE -{0}", SidePanel.formatGains(staked)), EffectPopup.Style.DAMAGE,
+            PopupScale.SECONDARY_INTENSITY));
+        Vector2 coin = sidePanel.getCoinCenter();
+        effectPopupAnimator.play(popups, coin.x, coin.y);
+        sounds.coinsLoss.play();
+        refreshGains();
+        refreshEffects(); // dette : Endetté ou Huissier
     }
 
     /**
@@ -1224,12 +1324,20 @@ public class GameScreen extends ScreenAdapter {
         });
     }
 
+    /** @return la dette qui suit le compteur affiché : elle change quand les gains du tirage apparaissent. */
+    private SpinEconomy.Debt shownDebt() {
+        return SpinEconomy.debt(player().getGains() - gainsNotYetShown,
+            gameController.getGameState().getEnemy().getKind().getSpinCost());
+    }
+
     /** Le texte d'un gain (ou d'une perte) du tirage vient d'apparaître : le compteur du panneau le suit. */
     private void onGainsShown(int amount) {
         if (amount > 0) sounds.coinsGain.play();
         else if (amount < 0) sounds.coinsLoss.play();
+        SpinEconomy.Debt before = shownDebt();
         gainsNotYetShown -= amount;
         refreshGains();
+        if (shownDebt() != before) refreshEffects(); // Endetté ou Huissier, au rythme du compteur
     }
 
     /** Affiche par-dessus le jeu les cartes restant dans le deck (triées, pas dans l'ordre de pioche). */
@@ -1559,6 +1667,7 @@ public class GameScreen extends ScreenAdapter {
         @Override public Rectangle enemy()     { return GuideOverlay.around(enemyView.getCroupierCenter(), 260f, 260f); }
         @Override public Rectangle hand(java.util.function.Predicate<Card> which) { return GameScreen.this.hand.boundsOf(which); }
         @Override public Rectangle spinButton() { return GuideOverlay.boundsOf(GameScreen.this.spinButton); }
+        @Override public Rectangle stakeButton() { return GuideOverlay.boundsOf(GameScreen.this.stakeButton); }
         @Override public Rectangle reels() {
             Vector2 first = slots.getReelCenter(0), last = slots.getReelCenter(slots.getReelCount() - 1);
             return new Rectangle(first.x - SlotView.CELL_WIDTH / 2f, first.y - SlotView.CELL_HEIGHT / 2f,
@@ -1591,7 +1700,7 @@ public class GameScreen extends ScreenAdapter {
      * défaite, puis affiche les boutons pour recommencer ou revenir au menu principal.
      */
     private void endCombat() {
-        spinButton.setDisabled(true);
+        setSpinDisabled(true);
         luckyGame.getProfile().addCoins(combatReward(gameController.getGameState().getEnemy().isDefeated()));
         buildEndButtons(gameController.getGameState().getEnemy().isDefeated());
         Runnable showRestart = () -> {
@@ -1680,10 +1789,22 @@ public class GameScreen extends ScreenAdapter {
         piles.refresh(player());
     }
 
-    /** Met à jour le compteur de cartes jouées ce tour (en rouge une fois la limite atteinte). */
+    /**
+     * Met à jour le compteur de cartes jouées ce tour (en rouge une fois la limite
+     * atteinte), suivi du coût du tirage et de la Mise ; et le bouton de Mise.
+     */
     private void refreshPlays() {
-        playsLabel.setText(Lang.f("Cartes {0}/{1}",
+        StringBuilder text = new StringBuilder(Lang.f("Cartes {0}/{1}",
             gameController.getCardsPlayedThisTurn(), gameController.getPlayLimit()));
+        if (gameController.getSpinCost() > 0) {
+            text.append("   ").append(Lang.f("Tirage -{0}", SidePanel.formatGains(gameController.getSpinCost())));
+        }
+        if (gameController.getStake() != SpinEconomy.Stake.NONE) {
+            text.append("   ").append(Lang.f("Mise -{0}", SidePanel.formatGains(gameController.getStakeAmount())));
+        }
+        stakeLabel.setText(stakeText(gameController.getStake()));
+        placeStakeButton();
+        playsLabel.setText(text);
         playsLabel.setColor(gameController.isPlayLimitReached() ? Palette.TEXT_ALERT : Palette.TEXT_TITLE);
         playsLabel.pack();
     }
@@ -1697,6 +1818,18 @@ public class GameScreen extends ScreenAdapter {
         List<SidePanel.EffectRow> rows = new ArrayList<>();
         LastingEffects lasting = player().getLastingEffects();
         TextureRegion cross = new TextureRegion(hudTextures.iconCross);
+        int cost = gameController.getGameState().getEnemy().getKind().getSpinCost();
+        SpinEconomy.Debt debt = shownDebt();
+        if (debt != SpinEconomy.Debt.NONE) {
+            String limit = SidePanel.formatGains(SpinEconomy.BAILIFF_SPINS * cost);
+            rows.add(debt == SpinEconomy.Debt.BAILIFF
+                ? new SidePanel.EffectRow(new TextureRegion(hudTextures.coin), cross, Lang.t("Huissier"),
+                    Lang.t("Huissier"), Lang.f("Tu dois plus de {0} gains. Attaque et bouclier des symboles -50 %. "
+                        + "L'ennemi joue une carte de plus. Une Paire ou un Bingo te renfloue.", limit))
+                : new SidePanel.EffectRow(new TextureRegion(hudTextures.coin), cross, Lang.t("Endetté"),
+                    Lang.t("Endetté"), Lang.f("Tes gains sont sous 0. Attaque et bouclier des symboles -25 %. "
+                        + "Sous -{0}, l'Huissier arrive.", limit)));
+        }
         for (Map.Entry<Symbol, Integer> removed : lasting.getRemovedSymbols().entrySet()) {
             int turns = removed.getValue();
             rows.add(new SidePanel.EffectRow(slots.regionOf(removed.getKey()), cross,
@@ -1927,10 +2060,33 @@ public class GameScreen extends ScreenAdapter {
         sidePanel.setGains(player().getGains() - gainsNotYetShown);
     }
 
-    /** Place le bouclier du joueur à droite de ses rouleaux. */
+    /**
+     * Place la Mise juste à droite du bouclier du joueur (sans jamais toucher
+     * le tapis de la défausse) : son bouton, son palier dessous, et les jetons
+     * misés qui tombent dessus. La place laissée au bouclier tient 4 chiffres ;
+     * au-delà, la Mise suit son texte.
+     */
+    private void placeStakeButton() {
+        float room = ShieldBadge.ICON_SIZE + ShieldBadge.LABEL_GAP
+            + new GlyphLayout(shieldFont, Lang.t("Bouclier") + STAKE_SHIELD_ROOM).width;
+        stakeShieldWidth = playerShield.getWidth();
+        float x = Math.min(playerShield.getX() + Math.max(room, stakeShieldWidth) + STAKE_SHIELD_GAP,
+            table.getEnemyDeckX() - PILE_MAT_PAD - STAKE_BUTTON_GAP - stakeButton.getWidth());
+        float y = table.getReelRowY() + (SlotView.CELL_HEIGHT - stakeButton.getHeight()) / 2f;
+        stakeButton.setPosition(x, y);
+        stakeLabel.pack();
+        stakeLabel.setPosition(x + (stakeButton.getWidth() - stakeLabel.getWidth()) / 2f,
+            y - stakeLabel.getHeight() - STAKE_LABEL_GAP);
+        stakeChips.setPosition(x + (stakeButton.getWidth() - StakeChips.CHIP_SIZE) / 2f,
+            y + stakeButton.getHeight() - STAKE_CHIPS_OVERLAP);
+    }
+
+    /** Place le bouclier du joueur à droite de ses rouleaux, et son levier à leur gauche. */
     private void placePlayerShield() {
         playerShield.setPosition(table.getPlayerReelsRight() + PLAYER_SHIELD_GAP,
             table.getReelRowY() + (SlotView.CELL_HEIGHT - playerShield.getHeight()) / 2f);
+        spinButton.setPosition(table.getPlayerReelRowX() - LEVER_GAP - spinButton.getWidth(),
+            table.getReelRowY() + (SlotView.CELL_HEIGHT - spinButton.getHeight()) / 2f);
     }
 
     /** Place (ou replace après un redimensionnement) les éléments qui dépendent de la taille de l'écran. */
@@ -1938,12 +2094,12 @@ public class GameScreen extends ScreenAdapter {
         table.layout();
         enemyView.layout();
         placePlayerShield();
-        spinButton.setPosition(playArea.getX() + BUTTON_MARGIN, BUTTON_MARGIN);
         pauseButton.setPosition(playArea.getX() + playArea.getWidth() - pauseButton.getWidth() - BUTTON_MARGIN,
             BUTTON_MARGIN);
+        placeStakeButton();
         playsLabel.pack();
-        playsLabel.setPosition(spinButton.getX() + spinButton.getWidth() + PLAYS_LABEL_GAP,
-            spinButton.getY() + (spinButton.getHeight() - playsLabel.getHeight()) / 2f);
+        playsLabel.setPosition(playArea.getX() + BUTTON_MARGIN,
+            BUTTON_MARGIN + (pauseButton.getHeight() - playsLabel.getHeight()) / 2f);
         sidePanel.layout(stage);
         hud.layout();
         piles.layout(table.getDeckX(), table.getPilesY());
@@ -2044,6 +2200,7 @@ public class GameScreen extends ScreenAdapter {
         } else {
             stage.act(delta);
         }
+        if (playerShield.getWidth() != stakeShieldWidth) placeStakeButton();
         stage.getViewport().apply();
         stage.draw();
 

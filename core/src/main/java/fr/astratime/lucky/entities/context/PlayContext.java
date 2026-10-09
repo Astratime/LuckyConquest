@@ -1,5 +1,6 @@
 package fr.astratime.lucky.entities.context;
 
+import fr.astratime.lucky.entities.SpinEconomy;
 import fr.astratime.lucky.entities.LastingEffects;
 import fr.astratime.lucky.entities.Player;
 import fr.astratime.lucky.entities.Symbol;
@@ -23,6 +24,7 @@ import java.util.List;
 public class PlayContext {
 
     private final Player            player;
+    private final int               spinCost;
     private final List<Effect>      effectsForSpin = new ArrayList<>();
     private final List<EffectPopup> popups         = new ArrayList<>();
     private int cardsToDraw = 0;
@@ -35,8 +37,20 @@ public class PlayContext {
 
     /** @param player joueur qui joue la carte (ses gains peuvent être consommés immédiatement) */
     public PlayContext(Player player) {
-        this.player = player;
+        this(player, SpinEconomy.BASE_SPIN_COST);
     }
+
+    /** @param spinCost coût d'un tirage dans ce combat (gains comptés en tirages, voir {@link SpinEconomy}) */
+    public PlayContext(Player player, int spinCost) {
+        this.player   = player;
+        this.spinCost = spinCost;
+    }
+
+    /** @return le joueur qui joue la carte. */
+    public Player getPlayer() { return player; }
+
+    /** @return le coût d'un tirage dans ce combat, en gains. */
+    public int getSpinCost() { return spinCost; }
 
     /** Casque : le prochain coup reçu par le joueur est bloqué entièrement. */
     public void addHelmet() { player.addHelmet(); }

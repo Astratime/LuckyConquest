@@ -56,6 +56,33 @@ public enum Symbol {
     /** @return {@code true} pour un des 11 rouleaux classiques (les autres s'achètent à la boutique). */
     public boolean isClassic() { return CLASSIC.contains(this); }
 
+    /**
+     * Rareté d'un symbole, comme sur la table de gains d'une vraie machine : ce
+     * que rapporte son Bingo, en coûts de tirage (voir SpinEconomy).
+     */
+    public enum Rarity {
+        /** Cerise, BAR, Raisin, Cloche. */
+        COMMON(20),
+        /** Sept, Double BAR, Pastèque, Diamant. */
+        MEDIUM(30),
+        /** Triple Cerise, Triple Sept, Lingot, et tous les rouleaux de la boutique et de la Mine. */
+        RARE(50);
+
+        /** Gains d'un Bingo de ce symbole, en coûts de tirage. */
+        public final int jackpotSpins;
+
+        Rarity(int jackpotSpins) { this.jackpotSpins = jackpotSpins; }
+    }
+
+    /** @return la rareté du symbole (table de gains des Bingos). */
+    public Rarity getRarity() {
+        return switch (this) {
+            case CHERRY, BAR, GRAPE, BELL                -> Rarity.COMMON;
+            case SEVEN, DOUBLE_BAR, WATERMELON, DIAMOND  -> Rarity.MEDIUM;
+            default                                      -> Rarity.RARE;
+        };
+    }
+
     /** @return le chemin de la texture du symbole, relatif au dossier assets. */
     public String getAssetPath() {
         return "symbols/" + assetName + ".png";

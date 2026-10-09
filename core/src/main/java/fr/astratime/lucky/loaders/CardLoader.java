@@ -306,6 +306,8 @@ public class CardLoader {
                 return new LuckyCharmEffect(json.getInt("percent"));
             case "RAINBOW":
                 return new RainbowEffect(json.getString("card"));
+            case "SPIN_GAINS":
+                return new SpinGainsEffect(json.getInt("spins"), json.getInt("gauges", 1));
             case "GAINS_MULTIPLIER":
                 return new GainsMultiplierEffect(json.getInt("percent"), json.getInt("gauges", 1));
             case "CORRUPTION":

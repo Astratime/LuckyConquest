@@ -12,6 +12,7 @@ import fr.astratime.lucky.entities.effects.FortuneEffect;
 import fr.astratime.lucky.entities.effects.FourLeafCloverEffect;
 import fr.astratime.lucky.entities.effects.GainEffect;
 import fr.astratime.lucky.entities.effects.GainsMultiplierEffect;
+import fr.astratime.lucky.entities.effects.SpinGainsEffect;
 import fr.astratime.lucky.entities.effects.GoldVeinEffect;
 import fr.astratime.lucky.entities.effects.GuillotineEffect;
 import fr.astratime.lucky.entities.effects.RussianRouletteEffect;
@@ -32,7 +33,7 @@ public enum CardFamily {
     PIOCHE("Pioche", List.of(ExtraDrawEffect.class)),
     /** Les cartes qui rapportent des gains : les Trèfles, Gains +500, Fortune... */
     GAINS("Gains", List.of(ClubGainAttackEffect.class, AceOfClubsEffect.class, GainEffect.class,
-        GainsMultiplierEffect.class, FortuneEffect.class, FourLeafCloverEffect.class, GoldVeinEffect.class,
+        GainsMultiplierEffect.class, SpinGainsEffect.class, FortuneEffect.class, FourLeafCloverEffect.class, GoldVeinEffect.class,
         BetEffect.class)),
     /** Les cartes qui attaquent : les Piques, la Guillotine, le Trident, la Roulette russe... */
     ATTAQUE("Attaque", List.of(SpadeIgnoreDefenseEffect.class, AceOfSpadesEffect.class, AttackEffect.class,

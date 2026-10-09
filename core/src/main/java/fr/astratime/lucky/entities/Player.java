@@ -164,6 +164,15 @@ public class Player {
     }
 
     /**
+     * Paie le coût d'un tirage : les gains peuvent passer sous zéro (la dette,
+     * voir {@link SpinEconomy.Debt}) ; la Fausse monnaie part la première.
+     */
+    public void paySpin(int cost) {
+        lastingEffects.spendFakeGains(Math.max(0, Math.min(gains, cost)));
+        gains -= cost;
+    }
+
+    /**
      * Consomme un pourcentage des gains actuels (ex : coût d'un As de Trèfle).
      *
      * @param percent pourcentage à consommer (0.3f = 30%)

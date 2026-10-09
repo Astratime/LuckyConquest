@@ -60,8 +60,8 @@ class CombatResolverTest {
 
         TurnResult result = resolver.resolve(new CombatContext(player, enemy), List.of(), symbols, List.of());
 
-        assertEquals(2000, result.getGainsFromPairOrJackpot());
-        assertEquals(2000, player.getGains());
+        assertEquals(3000, result.getGainsFromPairOrJackpot(), "Bingo de Sept : 30 tirages de 100");
+        assertEquals(3000, player.getGains());
         assertTrue(result.isJackpot());
         assertTrue(result.getEvents().stream().anyMatch(e -> e instanceof JackpotEvent));
     }
@@ -86,7 +86,7 @@ class CombatResolverTest {
 
         TurnResult result = resolver.resolve(new CombatContext(player, enemy), List.of(), symbols, List.of());
 
-        assertEquals(500, result.getGainsFromPairOrJackpot());
+        assertEquals(300, result.getGainsFromPairOrJackpot(), "Paire : 3 tirages de 100");
         assertTrue(result.isPair());
         assertFalse(result.isJackpot());
     }
@@ -186,7 +186,7 @@ class CombatResolverTest {
 
         TurnResult result = resolver.resolve(context, List.of(), symbols, List.of());
 
-        assertEquals((1000 + 500) * 3, player.getGains(), "paire créditée (500), puis gains x3 (2 cerises)");
+        assertEquals((1000 + 300) * 3, player.getGains(), "paire créditée (300), puis gains x3 (2 cerises)");
         assertTrue(result.getPairOrJackpotEvents().stream().anyMatch(e -> e instanceof BetWonEvent won && won.multiplier == 3));
     }
 
@@ -213,7 +213,7 @@ class CombatResolverTest {
 
         TurnResult result = resolver.resolve(context, List.of(), symbols, List.of());
 
-        assertEquals(750, result.getGainsFromPairOrJackpot());
+        assertEquals(450, result.getGainsFromPairOrJackpot());
     }
 
     @Test

@@ -2,6 +2,7 @@ package fr.astratime.lucky.entities.context;
 
 import fr.astratime.lucky.entities.Enemy;
 import fr.astratime.lucky.entities.Player;
+import fr.astratime.lucky.entities.SpinEconomy;
 import fr.astratime.lucky.entities.Symbol;
 
 import java.util.ArrayList;
@@ -24,6 +25,7 @@ public class CombatContext {
 
     private final Player player;
     private final Enemy enemy;
+    private final int   spinCost;
 
     private int   attackBonus    = 0;
     private int   defenseBonus   = 0;   // shield additionnel par DefenseAction (cartes Carreau)
@@ -68,7 +70,11 @@ public class CombatContext {
     public CombatContext(Player player, Enemy enemy) {
         this.player = player;
         this.enemy  = enemy;
+        this.spinCost = enemy != null ? enemy.getKind().getSpinCost() : SpinEconomy.BASE_SPIN_COST;
     }
+
+    /** @return le coût d'un tirage dans ce combat, en gains (voir {@link SpinEconomy}). */
+    public int getSpinCost() { return spinCost; }
 
     /** @return le joueur du combat en cours. */
     public Player getPlayer() { return player; }

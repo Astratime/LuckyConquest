@@ -76,6 +76,8 @@ public class Enemy {
     private       boolean     dazzled;
     /** Mutinerie : à son prochain tour, ses cartes se retournent contre lui. */
     private       int         mutinies;
+    /** Huissier : le joueur est très endetté, il joue une carte de plus à son prochain tour. */
+    private       boolean     bailiff;
     /** Pièce truquée : ses prochains tirages ne font pas de Jackpot. */
     private       int         loadedCoins;
     /** Harpon : cartes de moins à son prochain tour. */
@@ -268,6 +270,15 @@ public class Enemy {
         if (mutinies <= 0) return false;
         mutinies--;
         return true;
+    }
+
+    /** Huissier (le joueur est très endetté) : il joue une carte de plus à son prochain tour. */
+    public void sendBailiff() { bailiff = true; }
+    /** Son tour : l'Huissier vaut pour celui-ci. @return {@code true} s'il était là */
+    public boolean takeBailiff() {
+        boolean was = bailiff;
+        bailiff = false;
+        return was;
     }
 
     /** Pièce truquée : son prochain tirage ne fera pas de Jackpot. */
