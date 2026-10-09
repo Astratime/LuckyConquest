@@ -10,6 +10,7 @@ import fr.astratime.lucky.entities.GameState;
 import fr.astratime.lucky.entities.LastingEffects;
 import fr.astratime.lucky.entities.Player;
 import fr.astratime.lucky.entities.SlotMachine;
+import fr.astratime.lucky.entities.SpinEconomy;
 import fr.astratime.lucky.entities.Symbol;
 import fr.astratime.lucky.entities.TurnResult;
 import fr.astratime.lucky.entities.choices.BetChoice;
@@ -96,6 +97,12 @@ public class GameController {
     /** Double ou rien : la prochaine carte jouée ce tour compte deux fois. */
     private boolean doubleNext = false;
 
+    /** Le tirage coûte des gains (voir {@link SpinEconomy}) : vrai dès le premier {@link #restart} (pas dans les tests qui n'en font pas). */
+    private boolean spinCostActive = false;
+
+    /** Mise choisie pour le prochain tirage. */
+    private SpinEconomy.Stake stake = SpinEconomy.Stake.NONE;
+
     /** Paris placés ce tour, pour les afficher en attendant le tirage. */
     private final List<Symbol> betsThisTurn = new ArrayList<>();
 
@@ -176,6 +183,8 @@ public class GameController {
         Player player = playerFactory.apply(starterDeck.get());
         this.gameState = new GameState(player, createEnemy(kind, player));
         gameState.setPlaceRule(placeRule);
+        spinCostActive = true;
+        player.addGains(SpinEconomy.startingGains(kind.getSpinCost())); // une fois par chapitre de la Tour
         treasureMaps = 0;
         clearTurn();
     }
@@ -221,6 +230,42 @@ public class GameController {
         taxes = 0;
         turnNotices.clear();
         originals.clear();
+        stake = SpinEconomy.Stake.NONE;
+    }
+
+    // -------------------------------------------------------------------------
+    // Coût du tirage et Mise
+    // -------------------------------------------------------------------------
+
+    /** @return le coût d'un tirage dans ce combat, en gains (0 si le tirage est gratuit, hors combat réel). */
+    public int getSpinCost() {
+        return spinCostActive ? gameState.getEnemy().getKind().getSpinCost() : 0;
+    }
+
+    /** @return la Mise choisie pour le prochain tirage. */
+    public SpinEconomy.Stake getStake() { return stake; }
+
+    /** @return les gains que coûtera la Mise choisie, sur les gains actuels. */
+    public int getStakeAmount() { return stake.amount(gameState.getPlayer().getGains()); }
+
+    /** @return {@code true} si le joueur peut miser : il faut avoir des gains (on ne mise que ce qu'on a). */
+    public boolean canStake() { return gameState.getPlayer().getGains() > 0; }
+
+    /**
+     * Passe au palier de Mise suivant (aucune, 10 %, 25 %, 50 %, puis aucune).
+     * Sans gains, la Mise reste à zéro.
+     *
+     * @return le palier choisi
+     */
+    public SpinEconomy.Stake nextStake() {
+        stake = canStake() ? stake.next() : SpinEconomy.Stake.NONE;
+        return stake;
+    }
+
+    /** @return la dette du joueur en ce moment (voir {@link SpinEconomy.Debt}). */
+    public SpinEconomy.Debt getDebt() {
+        int cost = gameState.getEnemy().getKind().getSpinCost();
+        return SpinEconomy.debt(gameState.getPlayer().getGains(), cost);
     }
 
     // -------------------------------------------------------------------------
@@ -680,7 +725,16 @@ public class GameController {
         // La carte « Bingo » (symbole au hasard), seule, offre un Bingo si son Bingo est de gains.
         boolean bingoCardPlayed = pendingEffects.stream()
             .anyMatch(effect -> effect instanceof BingoEffect bingo && bingo.getSymbol() == null);
-        TurnResult result = turnEngine.playTurn(gameState, pendingEffects);
+        // La Mise puis le coût du tirage sont payés ; seul ce coût peut faire passer les gains sous 0.
+        Player player = gameState.getPlayer();
+        SpinEconomy.Stake placed = canStake() ? stake : SpinEconomy.Stake.NONE;
+        int staked = placed.amount(player.getGains());
+        if (staked > 0) player.addGains(-staked);
+        if (staked == 0) placed = SpinEconomy.Stake.NONE;
+        int cost = getSpinCost();
+        if (cost > 0) player.paySpin(cost);
+        TurnResult result = turnEngine.playTurn(gameState, pendingEffects, placed);
+        stake = SpinEconomy.Stake.NONE;
         if (bingoCardPlayed && result.getGainBingoSymbol() != null) bingoGiftPending = true;
         pendingEffects.clear();
         betsThisTurn.clear();

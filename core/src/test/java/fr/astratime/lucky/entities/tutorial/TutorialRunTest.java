@@ -4,6 +4,7 @@ import fr.astratime.lucky.controllers.GameController;
 import fr.astratime.lucky.entities.Card;
 import fr.astratime.lucky.entities.Player;
 import fr.astratime.lucky.entities.RankBonus;
+import fr.astratime.lucky.entities.SpinEconomy;
 import fr.astratime.lucky.entities.Symbol;
 import fr.astratime.lucky.entities.TurnResult;
 import fr.astratime.lucky.loaders.CardLoader;
@@ -68,16 +69,18 @@ class TutorialRunTest {
             play(controller, TutorialRun.GAINS_CARD);
             play(controller, TutorialRun.CLUB_SEVEN);
             controller.rigSpin(TutorialRun.rigged(1));
+            assertEquals(1000, controller.getGameState().getPlayer().getGains(), "500 au départ, puis le Gains +500");
             TurnResult first = controller.spin();
             assertArrayEquals(TutorialRun.rigged(1), first.getSymbols());
             assertFalse(controller.getGameState().getEnemy().isDefeated(), "l'ennemi tient le premier tour");
             assertFalse(controller.getGameState().getPlayer().isDefeated());
 
-            // Tour 2 : la Paire de 7, le Porte-bonheur.
+            // Tour 2 : la Paire de 7, le Porte-bonheur, une Mise de 10 %.
             controller.drawCards();
             assertEquals(TutorialRun.HANDS.get(1), handIds(controller));
             TutorialRun.PAIR.forEach(id -> play(controller, id));
             play(controller, TutorialRun.LUCKY_CHARM);
+            assertEquals(SpinEconomy.Stake.LOW, controller.nextStake());
             controller.rigSpin(TutorialRun.rigged(2));
             controller.spin();
             assertFalse(controller.getGameState().getEnemy().isDefeated(), "l'ennemi tient le deuxième tour");

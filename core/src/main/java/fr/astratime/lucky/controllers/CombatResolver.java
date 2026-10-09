@@ -4,6 +4,7 @@ import fr.astratime.lucky.entities.context.CombatContext;
 import fr.astratime.lucky.entities.Enemy;
 import fr.astratime.lucky.entities.Player;
 import fr.astratime.lucky.entities.SlotMachine;
+import fr.astratime.lucky.entities.SpinEconomy;
 import fr.astratime.lucky.entities.Symbol;
 import fr.astratime.lucky.entities.SymbolOutcome;
 import fr.astratime.lucky.entities.TurnResult;
@@ -43,10 +44,6 @@ import java.util.Optional;
  */
 public class CombatResolver {
 
-    /** Gains accordés quand deux des trois symboles tirés sont identiques. */
-    private static final int GAINS_PAIR    = 500;
-    /** Gains accordés quand les trois symboles tirés sont identiques (jackpot). */
-    private static final int GAINS_JACKPOT = 2000;
     /** Part du Coffre (Carreau) ajoutée à l'attaque ennemie pour calculer le renvoi (voir EnemyTurnResolver). */
     static final float VAULT_REFLECT_SHARE = 0.2f;
     /** Part des PV restants de l'ennemi que la Guillotine peut infliger au plus en un coup. */
@@ -115,10 +112,10 @@ public class CombatResolver {
         int gains = 0;
         Symbol jackpot = SlotMachine.jackpotSymbol(symbols);
         if (jackpot != null) {
-            gains = GAINS_JACKPOT;
+            gains = SpinEconomy.jackpotGains(jackpot, combatContext.getSpinCost());
             pairOrJackpotEvents.add(new JackpotEvent(jackpot));
         } else if (hasPair(symbols)) {
-            gains = GAINS_PAIR;
+            gains = SpinEconomy.pairGains(combatContext.getSpinCost());
         }
         gains = Math.round(gains * combatContext.getGainFactor());
         if (gains > 0) {

@@ -178,6 +178,10 @@ public class EnemyTurnResolver {
             openingEvents.add(new StatusEvent(Lang.f("MUTINERIE : {0} CARTES DE MOINS", MutinyEffect.CARDS_LESS),
                 EffectPopup.Style.SPECIAL));
         }
+        if (enemy.takeBailiff()) { // Huissier : le joueur est très endetté, il en profite
+            plays++;
+            openingEvents.add(new StatusEvent(Lang.t("HUISSIER : UNE CARTE DE PLUS"), EffectPopup.Style.ATTACK));
+        }
         List<Card> played = kind.playsAtRandom() ? chooseAtRandom(drawn, plays)
             : choose(drawn, enemy.getHpRatio(), kind, plays);
 

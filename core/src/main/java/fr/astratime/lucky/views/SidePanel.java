@@ -322,7 +322,7 @@ public class SidePanel implements Disposable {
     }
 
     /** @return le montant avec un séparateur entre chaque groupe de trois chiffres (ex : "12 500", en anglais "12,500"). */
-    static String formatGains(int gains) {
+    public static String formatGains(int gains) {
         String digits = Integer.toString(Math.abs(gains));
         StringBuilder text = new StringBuilder();
         for (int i = 0; i < digits.length(); i++) {

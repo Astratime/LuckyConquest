@@ -1,6 +1,7 @@
 package fr.astratime.lucky.controllers;
 
 import fr.astratime.lucky.entities.*;
+import fr.astratime.lucky.entities.context.CombatContext;
 import fr.astratime.lucky.entities.context.SpinContext;
 import fr.astratime.lucky.entities.context.TurnContext;
 import fr.astratime.lucky.entities.enemy.EnemyTurnResult;
@@ -48,6 +49,15 @@ public class TurnEngine {
      * @return le journal d'événements et le résultat du spin pour ce tour
      */
     public TurnResult playTurn(GameState gameState, List<Effect> pendingEffects) {
+        return playTurn(gameState, pendingEffects, SpinEconomy.Stake.NONE);
+    }
+
+    /**
+     * Comme {@link #playTurn(GameState, List)}, avec la Mise {@code stake} déjà
+     * payée (et le coût du tirage aussi) : elle multiplie les symboles du tirage.
+     * La dette du joueur, après ce paiement, affaiblit ses symboles (voir {@link SpinEconomy.Debt}).
+     */
+    public TurnResult playTurn(GameState gameState, List<Effect> pendingEffects, SpinEconomy.Stake stake) {
 
         // Phase 1 : effets des cartes → TurnContext
         TurnContext turnContext = preparationResolver.resolve(
@@ -57,6 +67,7 @@ public class TurnEngine {
             gameState.getActiveRule(),
             gameState.getTurnNumber()
         );
+        applyEconomy(turnContext, gameState, stake);
 
         // Phase 2 : spin avec SpinContext, puis les Jokers prennent leur valeur
         Player      player  = gameState.getPlayer();
@@ -194,6 +205,25 @@ public class TurnEngine {
         gameState.nextTurn();
 
         return result;
+    }
+
+    /** Mise (symboles multipliés) et dette (symboles affaiblis, Huissier) du tirage. */
+    private static void applyEconomy(TurnContext turnContext, GameState gameState, SpinEconomy.Stake stake) {
+        CombatContext combat = turnContext.getCombatContext();
+        if (stake != SpinEconomy.Stake.NONE) {
+            combat.multiplySymbolPower(stake.factor);
+            turnContext.addEvent(new StatusEvent(Lang.f("MISE : SYMBOLES x{0}", stake.factor), EffectPopup.Style.SPECIAL));
+        }
+        SpinEconomy.Debt debt = SpinEconomy.debt(gameState.getPlayer().getGains(), combat.getSpinCost());
+        if (debt == SpinEconomy.Debt.NONE) return;
+        combat.multiplyAttack(debt.factor);
+        combat.multiplyDefense(debt.factor);
+        if (debt == SpinEconomy.Debt.BAILIFF) {
+            gameState.getEnemy().sendBailiff();
+            turnContext.addEvent(new StatusEvent(Lang.t("HUISSIER : SYMBOLES -50 %"), EffectPopup.Style.DAMAGE));
+        } else {
+            turnContext.addEvent(new StatusEvent(Lang.t("ENDETTÉ : SYMBOLES -25 %"), EffectPopup.Style.DAMAGE));
+        }
     }
 
     /**

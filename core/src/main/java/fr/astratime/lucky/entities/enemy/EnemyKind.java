@@ -2,6 +2,7 @@ package fr.astratime.lucky.entities.enemy;
 
 import fr.astratime.lucky.entities.Card;
 import fr.astratime.lucky.entities.Enemy;
+import fr.astratime.lucky.entities.SpinEconomy;
 import fr.astratime.lucky.entities.exploration.Place;
 import fr.astratime.lucky.i18n.Lang;
 
@@ -720,6 +721,23 @@ public enum EnemyKind {
      */
     public int getPower() {
         return isTower() && towerHard ? chapterPower() * HARD_POWER_FACTOR : chapterPower();
+    }
+
+    /**
+     * @return le coût d'un tirage contre lui, en gains : celui de son lieu en
+     *         Exploration ; dans la Tour, selon le chapitre (100 aux chapitres 1
+     *         et 2, 500 aux 3 et 4, 2 000 au 5, 5 000 au 6, mode difficile compris) ;
+     *         100 à l'Entraînement
+     */
+    public int getSpinCost() {
+        Place place = Place.of(this);
+        if (place != null) return place.getSpinCost();
+        if (!isTower()) return SpinEconomy.BASE_SPIN_COST;
+        int power = chapterPower();
+        if (power >= CHAPTER_6_POWER) return 5_000;
+        if (power >= CHAPTER_5_POWER) return 2_000;
+        if (power >= CHAPTER_3_POWER) return 500;
+        return SpinEconomy.BASE_SPIN_COST;
     }
 
     /** @return sa force en mode normal, en %, selon son chapitre. */

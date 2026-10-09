@@ -17,22 +17,22 @@ public enum Place {
     PRAIRIE("La prairie", "La prairie",
         "L'herbe est haute. Le vent est doux. Quatre donjons dorment sous les collines. "
             + "Chacun garde un coffre au trésor.",
-        PlaceRule.NONE, 0, 0, 0, List.of(Dungeon.PIQUE, Dungeon.TREFLE, Dungeon.COEUR, Dungeon.CARREAU)),
+        PlaceRule.NONE, 0, 0, 0, 100, List.of(Dungeon.PIQUE, Dungeon.TREFLE, Dungeon.COEUR, Dungeon.CARREAU)),
 
     PORT("Le Port des Contrebandiers", "Le Port",
         "Les bateaux n'apportent plus d'épices. Ils apportent des cartes truquées. Sur les quais, tout s'achète. "
             + "Même la chance.",
-        PlaceRule.SCORBUT, 50, 1_000, 10, List.of(Dungeon.CALE, Dungeon.TAVERNE, Dungeon.PHARE, Dungeon.GALION)),
+        PlaceRule.SCORBUT, 50, 1_000, 10, 500, List.of(Dungeon.CALE, Dungeon.TAVERNE, Dungeon.PHARE, Dungeon.GALION)),
 
     MINES("Les Mines d'Or", "Les Mines",
         "Sous la montagne, l'or de la comète coule encore. Les mineurs creusent sans fin. Ils ont oublié la lumière. "
             + "Pas leur cupidité.",
-        PlaceRule.GRISOU, 150, 10_000, 20, List.of(Dungeon.FILON, Dungeon.PUITS, Dungeon.FORGE, Dungeon.GOUFFRE)),
+        PlaceRule.GRISOU, 150, 10_000, 20, 2_000, List.of(Dungeon.FILON, Dungeon.PUITS, Dungeon.FORGE, Dungeon.GOUFFRE)),
 
     CASINO("Le Casino Englouti", "Le Casino",
         "Le plus grand casino du monde a sombré une nuit de jackpot. Sous l'eau, les machines tournent toujours. "
             + "Les joueurs aussi.",
-        PlaceRule.MAREE, 400, 50_000, 30, List.of(Dungeon.BAR, Dungeon.MACHINES, Dungeon.COFFRES, Dungeon.VIP));
+        PlaceRule.MAREE, 400, 50_000, 30, 5_000, List.of(Dungeon.BAR, Dungeon.MACHINES, Dungeon.COFFRES, Dungeon.VIP));
 
     private final String        name;
     private final String        shortName;
@@ -41,15 +41,17 @@ public enum Place {
     private final int           swordDamage;
     private final int           shieldDefense;
     private final int           healPercent;
+    private final int           spinCost;
     private final List<Dungeon> dungeons;
 
     /**
      * @param swordDamage   dégâts de base d'une Épée de ses ennemis (0 : ceux de base)
      * @param shieldDefense défense de base d'un Bouclier de ses ennemis (0 : celle de base)
      * @param healPercent   soin de base d'une Potion de ses ennemis, en % de leurs PV max (0 : celui de base)
+     * @param spinCost      coût d'un tirage dans ses combats, en gains
      */
     Place(String name, String shortName, String description, PlaceRule rule,
-          int swordDamage, int shieldDefense, int healPercent, List<Dungeon> dungeons) {
+          int swordDamage, int shieldDefense, int healPercent, int spinCost, List<Dungeon> dungeons) {
         this.name          = name;
         this.shortName     = shortName;
         this.description   = description;
@@ -57,6 +59,7 @@ public enum Place {
         this.swordDamage   = swordDamage;
         this.shieldDefense = shieldDefense;
         this.healPercent   = healPercent;
+        this.spinCost      = spinCost;
         this.dungeons      = dungeons;
     }
 
@@ -66,6 +69,8 @@ public enum Place {
     public int getShieldDefense() { return shieldDefense; }
     /** @return le soin de base d'une Potion de ses ennemis, en % de leurs PV max, ou 0 s'ils gardent celui de base. */
     public int getHealPercent() { return healPercent; }
+    /** @return le coût d'un tirage dans ses combats, en gains (voir {@link fr.astratime.lucky.entities.SpinEconomy}). */
+    public int getSpinCost() { return spinCost; }
 
     /** @return le lieu où l'on combat {@code kind} (soldat ou roi d'un de ses donjons), ou {@code null}. */
     public static Place of(EnemyKind kind) {

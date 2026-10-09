@@ -2,6 +2,7 @@ package fr.astratime.lucky.screens;
 
 import com.badlogic.gdx.math.Rectangle;
 import fr.astratime.lucky.entities.Card;
+import fr.astratime.lucky.entities.SpinEconomy;
 import fr.astratime.lucky.entities.Symbol;
 import fr.astratime.lucky.entities.tutorial.TutorialRun;
 import fr.astratime.lucky.i18n.Lang;
@@ -43,6 +44,7 @@ final class TutorialDirector {
         Rectangle enemy();
         Rectangle hand(Predicate<Card> which);
         Rectangle spinButton();
+        Rectangle stakeButton();
         Rectangle reels();
         Rectangle playerShield();
         Rectangle enemyDefense();
@@ -73,6 +75,10 @@ final class TutorialDirector {
     /** Ce que la réplique en cours laisse faire : les cartes jouables ({@code null} : toutes) et la machine. */
     private Set<String> allowed;
     private boolean     spinAllowed = true;
+    /** Le palier de Mise choisi en dernier. */
+    private SpinEconomy.Stake stake = SpinEconomy.Stake.NONE;
+    /** La Mise se choisit : le Croupier ne parle pas, ou il la demande. */
+    private boolean     stakeAllowed = true;
 
     TutorialDirector(GuideOverlay overlay, Board board) {
         this.overlay = overlay;
@@ -86,6 +92,7 @@ final class TutorialDirector {
         played.clear();
         spins = 0;
         purchases = 0;
+        stake = SpinEconomy.Stake.NONE;
         restrict(null, true);
     }
 
@@ -110,6 +117,8 @@ final class TutorialDirector {
 
     void onPurchase() { purchases++; }
 
+    void onStake(SpinEconomy.Stake chosen) { stake = chosen; }
+
     /** @return pourquoi {@code card} ne se joue pas maintenant (le Croupier en attend une autre), ou {@code null}. */
     String refusal(Card card) {
         if (!overlay.isActive() || allowed == null) return null;
@@ -118,6 +127,9 @@ final class TutorialDirector {
 
     /** @return {@code true} si la machine peut être lancée (le Croupier ne parle pas, ou il le demande). */
     boolean allowsSpin() { return !overlay.isActive() || spinAllowed; }
+
+    /** @return {@code true} si la Mise peut changer (le Croupier ne parle pas, ou il la demande). */
+    boolean allowsStake() { return !overlay.isActive() || stakeAllowed; }
 
     // -------------------------------------------------------------------------
     // Le script
@@ -149,10 +161,12 @@ final class TutorialDirector {
                 steps.add(say(Lang.t("Ta main. Chaque tour, tu pioches 6 cartes. Tu en joues 4 au plus."),
                     () -> board.hand(card -> true)));
                 steps.add(play(Lang.t("Joue la carte Gains +500. Clique dessus."), Set.of(TutorialRun.GAINS_CARD), 1));
-                steps.add(say(Lang.t("Tes gains montent. Ils servent à acheter des cartes à l'échoppe."), board::gains));
+                steps.add(say(Lang.t("Tes gains montent. Tu en avais 500 au départ. Chaque tirage en coûte 100."), board::gains));
+                steps.add(say(Lang.t("Une Paire sur les rouleaux en rapporte 300. Un Bingo, bien plus. Tes gains servent aussi "
+                    + "à l'échoppe."), board::gains));
                 steps.add(play(Lang.t("Survole une carte pour lire son effet. Clic droit : sa fiche. Joue le 7 de Trèfle."),
                     Set.of(TutorialRun.CLUB_SEVEN), 1));
-                steps.add(spin(Lang.t("Tes cartes sont posées. Lance la machine."), TutorialRun.rigged(1)));
+                steps.add(spin(Lang.t("Tes cartes sont posées. Lance la machine. Elle te prend 100 gains."), TutorialRun.rigged(1)));
             }
             case 2 -> {
                 steps.add(play(Lang.t("Deux cartes de même valeur font une Paire. Joue tes deux 7."),
@@ -161,7 +175,9 @@ final class TutorialDirector {
                     + "c'est x9,5."), board::combos));
                 steps.add(play(Lang.t("Joue le Porte-bonheur."), Set.of(TutorialRun.LUCKY_CHARM), 1));
                 steps.add(say(Lang.t("Ses effets durent. Ils s'affichent ici. Survole-les pour les relire."), board::effects));
-                steps.add(spin(Lang.t("Lance la machine."), TutorialRun.rigged(2)));
+                steps.add(stake(Lang.t("Avant de lancer, mise une part de tes gains. Clique sur Mise : 10 %, tes symboles x2. "
+                    + "Encore : 25 %, x3. Puis 50 %, x5.")));
+                steps.add(spin(Lang.t("Ton jeton est sur la table. Lance la machine."), TutorialRun.rigged(2)));
             }
             case 3 -> {
                 steps.add(play(Lang.t("Mon bouclier est épais. Les Piques le percent en partie. Joue le Valet de Pique."),
@@ -192,7 +208,12 @@ final class TutorialDirector {
                     board::enemyDefense));
                 steps.add(say(Lang.t("À moi de jouer. Regarde bien.")));
             }
-            case 2 -> steps.add(say(Lang.t("Ta Paire a multiplié tout le tirage : attaque, gains et bouclier."), board::reels));
+            case 2 -> {
+                steps.add(say(Lang.t("Ta Paire et ta Mise ont multiplié tout le tirage : attaque, gains et bouclier."),
+                    board::reels));
+                steps.add(say(Lang.t("Attention : la mise est perdue, même sur un mauvais tirage. Et sous 0 gains, tu es "
+                    + "endetté. Tes symboles faiblissent. Plus bas, l'Huissier arrive."), board::gains));
+            }
             case 3 -> {
                 if (board.lastSpinWasBingo()) {
                     steps.add(say(Lang.t("BINGO ! Trois symboles pareils. Leur effet est multiplié."), board::reels));
@@ -223,6 +244,15 @@ final class TutorialDirector {
             });
     }
 
+    /** Le joueur doit miser (au moins 10 %) ; seul le bouton de Mise répond. */
+    private Step stake(String text) {
+        return Step.action(text, board::stakeButton, () -> stake != SpinEconomy.Stake.NONE)
+            .onStart(() -> {
+                restrict(Set.of(), false);
+                stakeAllowed = true;
+            });
+    }
+
     /** Le joueur doit lancer la machine ; le tirage affichera {@code rigged}. */
     private Step spin(String text, Symbol[] rigged) {
         int[] before = new int[1];
@@ -238,6 +268,7 @@ final class TutorialDirector {
     private void restrict(Set<String> ids, boolean spin) {
         allowed = ids;
         spinAllowed = spin;
+        stakeAllowed = false;
         board.refreshHand();
     }
 }

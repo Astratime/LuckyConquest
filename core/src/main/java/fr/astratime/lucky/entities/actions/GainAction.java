@@ -1,5 +1,6 @@
 package fr.astratime.lucky.entities.actions;
 
+import fr.astratime.lucky.entities.SpinEconomy;
 import fr.astratime.lucky.entities.context.CombatContext;
 import fr.astratime.lucky.entities.events.Event;
 import fr.astratime.lucky.entities.events.GainsEarnedEvent;
@@ -21,7 +22,10 @@ public class GainAction extends Action {
     /** @param baseGain gain de base avant application du multiplicateur. */
     public GainAction(int baseGain) { this.baseGain = baseGain; }
 
-    /** Crédite au joueur {@code (baseGain + bonus du rang) * gainMultiplier * gainFactor * symbolPower} (arrondi). */
+    /**
+     * Crédite au joueur {@code (baseGain + bonus du rang) * gainMultiplier * gainFactor * symbolPower},
+     * à l'échelle du coût du tirage (x1 pour 100, x50 pour 5 000), arrondi.
+     */
     @Override
     public List<Event> resolve(CombatContext context) {
         if (context.isStoneGains()) { // Pépite de l'ennemi : le symbole n'est qu'une pierre
@@ -29,7 +33,7 @@ public class GainAction extends Action {
         }
         int base = baseGain + context.getPlayer().getRankBonus().gains() * context.getRankFactor();
         int gain = Math.round(base * context.getGainMultiplier() * context.getGainFactor()
-            * context.getSymbolPower());
+            * context.getSymbolPower() * SpinEconomy.gainScale(context.getSpinCost()));
         context.getPlayer().addGains(gain);
         return List.of(new GainsEarnedEvent(gain));
     }

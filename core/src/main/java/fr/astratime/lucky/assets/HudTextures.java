@@ -34,6 +34,8 @@ public class HudTextures implements Disposable {
     public final Texture pixel           = Textures.solidColor(Color.WHITE);
     public final Texture chipEnemy       = load("hud/chip_enemy.png");
     public final Texture chipPlayer      = load("hud/chip_player.png");
+    /** Jeton de la Mise, posé sur la table. */
+    public final Texture chipStake       = load("hud/chip_stake.png");
     public final Texture coin            = load("hud/coin.png");
     /** Trèfle du Porte-bonheur, dans les effets actifs du panneau latéral. */
     public final Texture iconClover      = load("hud/icon_clover.png");
@@ -102,6 +104,7 @@ public class HudTextures implements Disposable {
         pixel.dispose();
         chipEnemy.dispose();
         chipPlayer.dispose();
+        chipStake.dispose();
         coin.dispose();
     }
 }

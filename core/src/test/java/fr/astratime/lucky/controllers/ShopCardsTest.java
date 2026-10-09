@@ -118,7 +118,7 @@ class ShopCardsTest {
         CombatContext context = new CombatContext(player, new Enemy("Ennemi", 100_000));
         context.addAllIn();
         TurnResult turn = resolve(context, Symbol.BAR, Symbol.BAR, Symbol.SEVEN);
-        int beforeAllIn = 1000 + 500; // + bonus de paire
+        int beforeAllIn = 1000 + 300; // + bonus de paire
         assertEquals(beforeAllIn * 3, player.getGains());
         assertTrue(turn.getPairOrJackpotEvents().stream().anyMatch(e -> e instanceof AllInWonEvent));
     }
