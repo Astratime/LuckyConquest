@@ -35,7 +35,7 @@ public class BladesAttackEffect extends Effect {
 
     @Override
     public void apply(TurnContext context) {
-        context.getCombatContext().addAttackBonus(attackBonus);
+        context.getCombatContext().addAttackBonus(attackBonus, "Cartes");
     }
 
     @Override

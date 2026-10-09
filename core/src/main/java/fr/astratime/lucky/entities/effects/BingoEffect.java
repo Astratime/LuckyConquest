@@ -53,7 +53,7 @@ public class BingoEffect extends Effect {
         } else {
             context.getSpinContext().forceJackpot();
         }
-        context.getCombatContext().multiplySymbolPower(power);
+        context.getCombatContext().multiplySymbolPower(power, "Bingo");
     }
 
     @Override

@@ -41,8 +41,8 @@ public class AceOfHeartsEffect extends Effect {
         Player player = combat.getPlayer();
         float factor = 1f + FRENZY_PER_MISSING_HP * (1f - player.getHpRatio());
         int   blood  = player.getLastingEffects().consumeBlood();
-        combat.multiplyAttack(factor);
-        combat.addAttackBonus(blood);
+        combat.multiplyAttack(factor, "As de Coeur");
+        combat.addAttackBonus(blood, "Sang");
         String times = String.valueOf(Math.round(factor * 10f) / 10f);
         context.addEvent(new CardBonusEvent(Lang.f("Frenesie : attaque x{0}, sang +{1}", times, blood), List.of(
             new EffectPopup(Lang.f("FRÉNÉSIE : ATTAQUE x{0}", times), EffectPopup.Style.DRAIN, PopupScale.MAX_INTENSITY),

@@ -21,7 +21,7 @@ public class TridentEffect extends Effect {
 
     @Override
     public void apply(TurnContext context) {
-        context.getCombatContext().multiplyAttack(HITS * HIT_PERCENT / 100f);
+        context.getCombatContext().multiplyAttack(HITS * HIT_PERCENT / 100f, "Trident");
     }
 
     @Override

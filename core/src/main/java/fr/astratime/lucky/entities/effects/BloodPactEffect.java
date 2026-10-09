@@ -36,7 +36,7 @@ public class BloodPactEffect extends Effect {
 
     @Override
     public void apply(TurnContext context) {
-        context.getCombatContext().multiplyAttack(attackFactor);
+        context.getCombatContext().multiplyAttack(attackFactor, "Pacte de sang");
     }
 
     @Override

@@ -1,6 +1,7 @@
 package fr.astratime.lucky.entities.actions;
 
 import fr.astratime.lucky.entities.context.CombatContext;
+import fr.astratime.lucky.entities.DamageBreakdown;
 import fr.astratime.lucky.entities.Enemy;
 import fr.astratime.lucky.entities.events.EnemyDamagedEvent;
 import fr.astratime.lucky.entities.events.Event;
@@ -55,18 +56,22 @@ public class AttackAction extends Action {
         List<Event> events = new ArrayList<>();
         Enemy enemy = context.getEnemy();
 
-        int base = rollBaseDamage() + context.getPlayer().getRankBonus().attack() * context.getRankFactor();
+        int symbol = rollBaseDamage();
+        int rank   = context.getPlayer().getRankBonus().attack() * context.getRankFactor();
+        int base   = symbol + rank;
         // En long et en double : un gros combo dépasse le milliard de dégâts.
         int unscaled = base + context.getAttackBonus(); // avant les multiplicateurs : ce que vise le pistolet
-        long rawDamage = enemy.capHit(Math.round((double) unscaled
-            * context.getAttackFactor() * context.getSymbolPower()));
+        long uncapped  = Math.round((double) unscaled * context.getAttackFactor() * context.getSymbolPower());
+        long rawDamage = enemy.capHit(uncapped);
         int pierce      = piercing ? 100 : context.getPiercePercent(); // Pique : une part du coup traverse la défense
         int blocked     = enemy.absorb(rawDamage, pierce); // la défense s'use à chaque coup
         long damage     = enemy.skinned(rawDamage - blocked); // une peau d'or encaisse la moitié
 
         int lost = enemy.takeDamage(rawDamage - blocked);
         if (lost < damage && !enemy.isDefeated()) damage = lost; // coup annulé (la Maison) ou fatal évité (Machine Originelle)
-        events.add(new EnemyDamagedEvent(damage, rawDamage, unscaled, blocked, enemy.getDefense(), pierce));
+        events.add(new EnemyDamagedEvent(damage, rawDamage, unscaled, blocked, enemy.getDefense(), pierce)
+            .withBreakdown(new DamageBreakdown(symbol, rank, context.getAttackSteps(), uncapped, rawDamage, pierce,
+                blocked, damage)));
 
         if (context.getLifeDrainPercent() > 0 && damage > 0) {
             int drained = Math.round(damage * (context.getLifeDrainPercent() / 100f));

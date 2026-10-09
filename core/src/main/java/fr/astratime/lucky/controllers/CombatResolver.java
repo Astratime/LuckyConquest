@@ -188,19 +188,20 @@ public class CombatResolver {
         boolean bar = java.util.Arrays.stream(symbols).anyMatch(s -> s == Symbol.BAR || s == Symbol.DOUBLE_BAR);
         if (context.getHammers() > 0 && bar) {
             float boost = (1f + ForgeHammerEffect.BAR_PERCENT / 100f) / (1f + ForgeHammerEffect.ATTACK_PERCENT / 100f);
-            context.multiplyAttack((float) Math.pow(boost, context.getHammers()));
+            context.multiplyAttack((float) Math.pow(boost, context.getHammers()), "Marteau de forge");
             events.add(new StatusEvent(Lang.f("MARTEAU SUR LE BAR : ATTAQUE +{0} %", ForgeHammerEffect.BAR_PERCENT),
                 EffectPopup.Style.ATTACK));
         }
         if (context.getLevers() > 0 && hasPair(symbols)) {
-            context.multiplyAttack((float) Math.pow(1f + RustyLeverEffect.ATTACK_PERCENT / 100f, context.getLevers()));
+            context.multiplyAttack((float) Math.pow(1f + RustyLeverEffect.ATTACK_PERCENT / 100f, context.getLevers()),
+                "Levier rouillé");
             events.add(new StatusEvent(Lang.f("LEVIER : PAIRE ! ATTAQUE +{0} %", RustyLeverEffect.ATTACK_PERCENT),
                 EffectPopup.Style.ATTACK));
         }
         if (context.getSunkenJackpots() > 0 && SlotMachine.jackpotSymbol(symbols) != null) {
             for (int i = 0; i < context.getSunkenJackpots(); i++) {
                 context.multiplyGains(SunkenJackpotEffect.GAINS_FACTOR);
-                context.multiplyAttack(SunkenJackpotEffect.ATTACK_FACTOR);
+                context.multiplyAttack(SunkenJackpotEffect.ATTACK_FACTOR, "Jackpot englouti");
             }
             events.add(new StatusEvent(Lang.f("JACKPOT ENGLOUTI : GAINS x{0}, ATTAQUE x{1}",
                 SunkenJackpotEffect.GAINS_FACTOR, SunkenJackpotEffect.ATTACK_FACTOR), EffectPopup.Style.GAINS));

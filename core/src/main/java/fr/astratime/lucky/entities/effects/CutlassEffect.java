@@ -22,7 +22,7 @@ public class CutlassEffect extends Effect {
 
     @Override
     public void apply(TurnContext context) {
-        context.getCombatContext().multiplyAttack(1f + attackPercent / 100f);
+        context.getCombatContext().multiplyAttack(1f + attackPercent / 100f, "Sabre d'abordage");
         context.getCombatContext().setIgnoreDefense(true);
     }
 

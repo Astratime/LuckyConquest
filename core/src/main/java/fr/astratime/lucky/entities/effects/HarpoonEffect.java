@@ -22,7 +22,7 @@ public class HarpoonEffect extends Effect {
 
     @Override
     public void apply(TurnContext context) {
-        context.getCombatContext().multiplyAttack(1f + attackPercent / 100f);
+        context.getCombatContext().multiplyAttack(1f + attackPercent / 100f, "Harpon");
         context.getCombatContext().getEnemy().harpoon();
     }
 

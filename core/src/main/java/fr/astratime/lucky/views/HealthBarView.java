@@ -1,5 +1,7 @@
 package fr.astratime.lucky.views;
 
+import fr.astratime.lucky.i18n.Lang;
+
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Batch;
@@ -128,12 +130,9 @@ public class HealthBarView extends Group {
         fitName();
     }
 
-    /** @return les PV, abrégés en millions au-delà d'un million (ex : "5,5M") pour laisser la place au nom. */
+    /** @return les PV, abrégés à partir d'un million (ex : « 5,5 M ») pour laisser la place au nom. */
     static String hpText(int hp) {
-        if (Math.abs(hp) < 1_000_000) return Integer.toString(hp);
-        int tenths = Math.round(hp / 100_000f);
-        String text = tenths % 10 == 0 ? Integer.toString(tenths / 10) : (tenths / 10) + "," + Math.abs(tenths % 10);
-        return text + "M";
+        return Lang.big(hp);
     }
 
     /** Rétrécit le nom quand il chevauche le texte des PV (ex : « Machine Originelle »). */

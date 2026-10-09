@@ -45,7 +45,7 @@ public class SpadeIgnoreDefenseEffect extends Effect {
     @Override
     public void apply(TurnContext context) {
         context.getCombatContext().pierceDefense(piercePercent);
-        context.getCombatContext().addAttackBonus(attackBonus);
+        context.getCombatContext().addAttackBonus(attackBonus, "Cartes");
     }
 
     @Override

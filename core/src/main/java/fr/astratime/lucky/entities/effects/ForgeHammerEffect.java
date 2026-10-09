@@ -22,7 +22,7 @@ public class ForgeHammerEffect extends Effect {
 
     @Override
     public void apply(TurnContext context) {
-        context.getCombatContext().multiplyAttack(1f + ATTACK_PERCENT / 100f);
+        context.getCombatContext().multiplyAttack(1f + ATTACK_PERCENT / 100f, "Marteau de forge");
         context.getCombatContext().addHammer();
     }
 

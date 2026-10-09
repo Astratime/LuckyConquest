@@ -1,5 +1,6 @@
 package fr.astratime.lucky.entities.events;
 
+import fr.astratime.lucky.entities.DamageBreakdown;
 import fr.astratime.lucky.i18n.Lang;
 import fr.astratime.lucky.popups.EffectPopup;
 import fr.astratime.lucky.popups.PopupScale;
@@ -27,6 +28,8 @@ public class EnemyDamagedEvent extends Event {
     public final boolean pierced;
     /** Part (%) du coup qui a traversé la défense (Pique) ; 100 si elle a été ignorée. */
     public final int piercePercent;
+    /** Le calcul du coup étape par étape (détail du coup), ou {@code null} s'il ne vient pas d'un symbole. */
+    private DamageBreakdown breakdown;
 
     /**
      * @param damage      dégâts effectivement infligés à l'ennemi (après défense)
@@ -63,6 +66,15 @@ public class EnemyDamagedEvent extends Event {
         this.pierced       = piercePercent >= 100;
     }
 
+    /** Joint à ce coup son calcul étape par étape (détail du coup). @return cet événement */
+    public EnemyDamagedEvent withBreakdown(DamageBreakdown breakdown) {
+        this.breakdown = breakdown;
+        return this;
+    }
+
+    /** @return le calcul du coup étape par étape, ou {@code null} s'il ne vient pas d'un symbole. */
+    public DamageBreakdown getBreakdown() { return breakdown; }
+
     @Override
     public String describe() {
         return "Ennemi -" + damage + " PV" + (blocked > 0 ? " (" + blocked + " bloqués)" : "")
@@ -78,7 +90,7 @@ public class EnemyDamagedEvent extends Event {
     public List<EffectPopup> getPopups() {
         List<EffectPopup> popups = new ArrayList<>();
         if (damage > 0 || blocked == 0) {
-            popups.add(EffectPopup.scaled(Lang.f("DÉGÂTS {0}", damage), EffectPopup.Style.ATTACK, damage, PopupScale.SPIN_DAMAGE));
+            popups.add(EffectPopup.scaled(Lang.f("DÉGÂTS {0}", Lang.big(damage)), EffectPopup.Style.ATTACK, damage, PopupScale.SPIN_DAMAGE));
         }
         if (blocked > 0) popups.add(blockedPopup(blocked, damage == 0));
         if (piercePercent > 0 && piercePercent < 100) {
@@ -93,7 +105,7 @@ public class EnemyDamagedEvent extends Event {
      * @return le texte « BLOQUÉ » d'une défense qui a absorbé {@code blocked} dégâts
      */
     static EffectPopup blockedPopup(int blocked, boolean full) {
-        return new EffectPopup((full ? Lang.t("BLOQUÉ ! -") : Lang.t("BLOQUÉ -")) + blocked, EffectPopup.Style.DEFENSE,
+        return new EffectPopup((full ? Lang.t("BLOQUÉ ! -") : Lang.t("BLOQUÉ -")) + Lang.big(blocked), EffectPopup.Style.DEFENSE,
             full ? PopupScale.SECONDARY_INTENSITY : PopupScale.SECONDARY_INTENSITY * 0.75f);
     }
 }

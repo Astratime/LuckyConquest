@@ -46,7 +46,7 @@ public class AceOfSpadesEffect extends Effect {
         int   blades = lasting.consumeBlades();
         float factor = 1f + FACTOR_PER_BLADE * blades;
         context.getCombatContext().setIgnoreDefense(true);
-        context.getCombatContext().multiplyAttack(factor);
+        context.getCombatContext().multiplyAttack(factor, "As de Pique");
         String times = factor == (int) factor ? String.valueOf((int) factor) : String.valueOf(factor);
         context.addEvent(new CardBonusEvent(Lang.f("Execution : {0} lames, attaque x{1}", blades, times), List.of(
             new EffectPopup(Lang.f("EXÉCUTION : {0} LAMES", blades), EffectPopup.Style.ATTACK, PopupScale.MAX_INTENSITY),

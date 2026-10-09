@@ -140,6 +140,33 @@ public final class Lang {
         return isEnglish() ? number : number.replace('.', ',');
     }
 
+    /** @return {@code number} avec le séparateur des milliers (12 500 ; en anglais 12,500). */
+    public static String grouped(long number) {
+        String digits = Long.toString(Math.abs(number));
+        StringBuilder text = new StringBuilder(number < 0 ? "-" : "");
+        for (int i = 0; i < digits.length(); i++) {
+            if (i > 0 && (digits.length() - i) % 3 == 0) text.append(thousands());
+            text.append(digits.charAt(i));
+        }
+        return text.toString();
+    }
+
+    /**
+     * @return {@code number} abrégé à partir d'un million, avec une décimale au
+     *         plus : 5 500 000 → « 5,5 M » (« 5.5M » en anglais), 2 000 000 000 →
+     *         « 2 Md » (« 2B ») ; en dessous, avec le séparateur des milliers
+     */
+    public static String big(long number) {
+        long size = Math.abs(number);
+        if (size < 1_000_000L) return grouped(number);
+        boolean billions = size >= 999_950_000L;
+        long tenths = Math.round(number / (billions ? 100_000_000d : 100_000d));
+        String value = tenths % 10 == 0 ? grouped(tenths / 10) : grouped(tenths / 10) + (isEnglish() ? "." : ",") + Math.abs(tenths % 10);
+        if (tenths < 0 && tenths / 10 == 0) value = "-" + value;
+        if (isEnglish()) return value + (billions ? "B" : "M");
+        return value + (billions ? " Md" : " M");
+    }
+
     /** @return le séparateur des milliers : une espace en français, une virgule en anglais (1 000 / 1,000). */
     public static char thousands() { return isEnglish() ? ',' : ' '; }
 

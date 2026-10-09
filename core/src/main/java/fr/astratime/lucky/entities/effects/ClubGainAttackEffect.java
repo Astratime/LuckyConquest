@@ -29,7 +29,7 @@ public class ClubGainAttackEffect extends Effect {
     @Override
     public void apply(TurnContext context) {
         context.getCombatContext().addGainMultiplier(gainMultiplierAdd);
-        context.getCombatContext().addAttackBonus(attackBonus);
+        context.getCombatContext().addAttackBonus(attackBonus, "Cartes");
     }
 
     @Override

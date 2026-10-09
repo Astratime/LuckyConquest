@@ -18,7 +18,7 @@ public class AttackEffect extends Effect {
 
     @Override
     public void apply(TurnContext context) {
-        context.getCombatContext().addAttackBonus(bonus);
+        context.getCombatContext().addAttackBonus(bonus, "Cartes");
     }
 
     @Override

@@ -211,12 +211,12 @@ public class TurnEngine {
     private static void applyEconomy(TurnContext turnContext, GameState gameState, SpinEconomy.Stake stake) {
         CombatContext combat = turnContext.getCombatContext();
         if (stake != SpinEconomy.Stake.NONE) {
-            combat.multiplySymbolPower(stake.factor);
+            combat.multiplySymbolPower(stake.factor, "Mise");
             turnContext.addEvent(new StatusEvent(Lang.f("MISE : SYMBOLES x{0}", stake.factor), EffectPopup.Style.SPECIAL));
         }
         SpinEconomy.Debt debt = SpinEconomy.debt(gameState.getPlayer().getGains(), combat.getSpinCost());
         if (debt == SpinEconomy.Debt.NONE) return;
-        combat.multiplyAttack(debt.factor);
+        combat.multiplyAttack(debt.factor, debt == SpinEconomy.Debt.BAILIFF ? "Huissier" : "Endetté");
         combat.multiplyDefense(debt.factor);
         if (debt == SpinEconomy.Debt.BAILIFF) {
             gameState.getEnemy().sendBailiff();

@@ -24,6 +24,6 @@ public class CounterAttackEvent extends EnemyDamagedEvent {
     public List<EffectPopup> getPopups() {
         return List.of(
             new EffectPopup(Lang.t("CONTRE-ATTAQUE !"), EffectPopup.Style.DEFENSE, PopupScale.MAX_INTENSITY),
-            EffectPopup.scaled(Lang.f("DÉGÂTS {0}", damage), EffectPopup.Style.ATTACK, damage, PopupScale.SPIN_DAMAGE));
+            EffectPopup.scaled(Lang.f("DÉGÂTS {0}", Lang.big(damage)), EffectPopup.Style.ATTACK, damage, PopupScale.SPIN_DAMAGE));
     }
 }
