@@ -25,6 +25,7 @@ import fr.astratime.lucky.entities.Symbol;
 import fr.astratime.lucky.entities.SymbolOutcome;
 import fr.astratime.lucky.entities.TurnResult;
 import fr.astratime.lucky.entities.events.Event;
+import fr.astratime.lucky.i18n.Lang;
 import fr.astratime.lucky.popups.EffectPopup;
 
 import java.util.ArrayList;
@@ -103,6 +104,8 @@ public class SlotView implements Disposable {
     private final Table                      table    = new Table();
     /** Rouleaux, de gauche à droite (le 4e ne s'affiche qu'avec la Machine en surchauffe). */
     private final List<ReelActor<Symbol>>    reels    = new ArrayList<>();
+    /** Détail du coup de chaque rouleau au dernier tirage (lignes du calcul), affiché au survol. */
+    private final Map<Integer, List<String>> hitDetails = new HashMap<>();
     /** Case de chaque rouleau : le rouleau et sa croix. */
     private final List<Stack>                cells    = new ArrayList<>();
     /** Rouleaux affichés (-1 avant le premier affichage). */
@@ -301,6 +304,7 @@ public class SlotView implements Disposable {
     /** Vide les fenêtres des rouleaux, les libère et arrête tout défilement (nouveau combat). */
     public void clear() {
         stopSpinSounds();
+        hitDetails.clear();
         table.clearActions();
         reels.forEach(ReelActor::empty);
         for (int i = 0; i < reelCount; i++) tableView.clearReelHighlight(i);
@@ -371,6 +375,7 @@ public class SlotView implements Disposable {
 
         for (SymbolOutcome outcome : result.getSymbolOutcomes()) {
             int slot = outcome.getSlotIndex();
+            rememberHit(outcome);
             if (slot < 0 || slot >= reelCount) { // symbole hors de la ligne : pas de texte à attendre
                 outcome.getEvents().forEach(onEventShown);
                 continue;
@@ -433,7 +438,23 @@ public class SlotView implements Disposable {
         void play(SymbolOutcome outcome, Vector2 reel, float delay);
     }
 
-    /** Affiche au survol la description du symbole arrêté sur le rouleau. Pas de clic : un symbole ne se joue pas. */
+    /** Garde le détail de ce qu'a fait {@code outcome} (dégâts, bouclier, gains), pour l'infobulle de son rouleau. */
+    private void rememberHit(SymbolOutcome outcome) {
+        if (outcome.getSlotIndex() < 0) return;
+        List<String> lines = new ArrayList<>();
+        for (Event event : outcome.getEvents()) {
+            if (event.getBreakdown() == null) continue;
+            if (!lines.isEmpty()) lines.add("");
+            lines.addAll(event.getBreakdown().lines(outcome.getSymbol()));
+        }
+        if (!lines.isEmpty()) hitDetails.put(outcome.getSlotIndex(), lines);
+    }
+
+    /**
+     * Affiche au survol la description du symbole arrêté sur le rouleau et,
+     * après un tirage, le détail de ce qu'il a fait (dégâts, bouclier, gains). Pas de clic : un
+     * symbole ne se joue pas.
+     */
     private void addTooltip(ReelActor<Symbol> reel) {
         reel.addListener(new InputListener() {
 
@@ -442,7 +463,10 @@ public class SlotView implements Disposable {
                 Symbol symbol = reel.getSymbol();
                 if (pointer != -1 || symbol == null) return;
                 Vector2 pos = reel.localToStageCoordinates(new Vector2(0, SYMBOL_HEIGHT + TOOLTIP_GAP));
-                tooltip.show(symbol.getDisplayName(), symbol.getDescription(), pos.x, pos.y);
+                List<String> hit = hitDetails.get(reels.indexOf(reel));
+                String text = hit == null ? symbol.getDescription()
+                    : symbol.getDescription() + "\n\n" + Lang.t("Détail du coup") + "\n" + String.join("\n", hit);
+                tooltip.show(symbol.getDisplayName(), text, pos.x, pos.y);
             }
 
             @Override

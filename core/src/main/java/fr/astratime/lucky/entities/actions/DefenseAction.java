@@ -1,6 +1,7 @@
 package fr.astratime.lucky.entities.actions;
 
 import fr.astratime.lucky.entities.context.CombatContext;
+import fr.astratime.lucky.entities.BoostBreakdown;
 import fr.astratime.lucky.entities.Player;
 import fr.astratime.lucky.entities.events.Event;
 import fr.astratime.lucky.entities.events.ShieldGainedEvent;
@@ -31,11 +32,13 @@ public class DefenseAction extends Action {
         List<Event> events = new ArrayList<>();
         Player player = context.getPlayer();
 
-        int base   = baseShield + player.getRankBonus().defense() * context.getRankFactor();
+        int rank   = player.getRankBonus().defense() * context.getRankFactor();
+        int base   = baseShield + rank;
         int shield = Math.round((base + context.getDefenseBonus()) * context.getSymbolPower()
             * context.getDefenseFactor());
         player.addShield(shield);
-        events.add(new ShieldGainedEvent(shield));
+        events.add(new ShieldGainedEvent(shield).withBreakdown(new BoostBreakdown(BoostBreakdown.Kind.SHIELD,
+            baseShield, rank, context.getSteps(CombatContext.Target.DEFENSE), shield)));
 
         context.markDefenseSymbolDrawn();
 

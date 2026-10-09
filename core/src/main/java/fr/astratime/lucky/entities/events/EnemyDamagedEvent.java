@@ -78,7 +78,7 @@ public class EnemyDamagedEvent extends Event {
     public List<EffectPopup> getPopups() {
         List<EffectPopup> popups = new ArrayList<>();
         if (damage > 0 || blocked == 0) {
-            popups.add(EffectPopup.scaled(Lang.f("DÉGÂTS {0}", damage), EffectPopup.Style.ATTACK, damage, PopupScale.SPIN_DAMAGE));
+            popups.add(EffectPopup.scaled(Lang.f("DÉGÂTS {0}", Lang.big(damage)), EffectPopup.Style.ATTACK, damage, PopupScale.SPIN_DAMAGE));
         }
         if (blocked > 0) popups.add(blockedPopup(blocked, damage == 0));
         if (piercePercent > 0 && piercePercent < 100) {
@@ -93,7 +93,7 @@ public class EnemyDamagedEvent extends Event {
      * @return le texte « BLOQUÉ » d'une défense qui a absorbé {@code blocked} dégâts
      */
     static EffectPopup blockedPopup(int blocked, boolean full) {
-        return new EffectPopup((full ? Lang.t("BLOQUÉ ! -") : Lang.t("BLOQUÉ -")) + blocked, EffectPopup.Style.DEFENSE,
+        return new EffectPopup((full ? Lang.t("BLOQUÉ ! -") : Lang.t("BLOQUÉ -")) + Lang.big(blocked), EffectPopup.Style.DEFENSE,
             full ? PopupScale.SECONDARY_INTENSITY : PopupScale.SECONDARY_INTENSITY * 0.75f);
     }
 }

@@ -67,7 +67,7 @@ public class TurnEngine {
             gameState.getActiveRule(),
             gameState.getTurnNumber()
         );
-        applyEconomy(turnContext, gameState, stake);
+        applyDebt(turnContext, gameState);
 
         // Phase 2 : spin avec SpinContext, puis les Jokers prennent leur valeur
         Player      player  = gameState.getPlayer();
@@ -114,6 +114,8 @@ public class TurnEngine {
             drawn   = unbingoed;
             symbols = machine.resolveJokers(unbingoed, spin);
         }
+
+        applyStake(turnContext, stake, SlotMachine.jackpotSymbol(symbols) != null);
 
         // Prédiction de la Cartomancienne : son symbole est-il sorti ?
         gameState.getEnemy().checkPrediction(symbols);
@@ -207,17 +209,29 @@ public class TurnEngine {
         return result;
     }
 
-    /** Mise (symboles multipliés) et dette (symboles affaiblis, Huissier) du tirage. */
-    private static void applyEconomy(TurnContext turnContext, GameState gameState, SpinEconomy.Stake stake) {
-        CombatContext combat = turnContext.getCombatContext();
-        if (stake != SpinEconomy.Stake.NONE) {
-            combat.multiplySymbolPower(stake.factor);
-            turnContext.addEvent(new StatusEvent(Lang.f("MISE : SYMBOLES x{0}", stake.factor), EffectPopup.Style.SPECIAL));
+    /**
+     * Mise du tirage : elle ne compte que sur un Bingo, où elle multiplie les
+     * symboles ; sans Bingo, elle est perdue.
+     */
+    private static void applyStake(TurnContext turnContext, SpinEconomy.Stake stake, boolean bingo) {
+        if (stake == SpinEconomy.Stake.NONE) return;
+        if (bingo) {
+            turnContext.getCombatContext().multiplySymbolPower(stake.factor, "Mise");
+            turnContext.addEvent(new StatusEvent(Lang.f("MISE : BINGO ! SYMBOLES x{0}", stake.factor),
+                EffectPopup.Style.SPECIAL));
+        } else {
+            turnContext.addEvent(new StatusEvent(Lang.t("MISE PERDUE : PAS DE BINGO"), EffectPopup.Style.DAMAGE));
         }
+    }
+
+    /** Dette du tirage : symboles affaiblis (Endetté), et l'Huissier. */
+    private static void applyDebt(TurnContext turnContext, GameState gameState) {
+        CombatContext combat = turnContext.getCombatContext();
         SpinEconomy.Debt debt = SpinEconomy.debt(gameState.getPlayer().getGains(), combat.getSpinCost());
         if (debt == SpinEconomy.Debt.NONE) return;
-        combat.multiplyAttack(debt.factor);
-        combat.multiplyDefense(debt.factor);
+        String debtLabel = debt == SpinEconomy.Debt.BAILIFF ? "Huissier" : "Endetté";
+        combat.multiplyAttack(debt.factor, debtLabel);
+        combat.multiplyDefense(debt.factor, debtLabel);
         if (debt == SpinEconomy.Debt.BAILIFF) {
             gameState.getEnemy().sendBailiff();
             turnContext.addEvent(new StatusEvent(Lang.t("HUISSIER : SYMBOLES -50 %"), EffectPopup.Style.DAMAGE));

@@ -37,7 +37,7 @@ public class PowderKegEffect extends Effect {
     }
 
     @Override
-    public void apply(TurnContext context) { context.getCombatContext().multiplyAttack(factor); }
+    public void apply(TurnContext context) { context.getCombatContext().multiplyAttack(factor, "Fût de poudre"); }
 
     @Override
     public String getDescription() { return Lang.f("Attaque x{0} ce tour. L'explosion te retire {1} % de tes PV.",

@@ -24,7 +24,7 @@ public class ShadowDaggerEffect extends Effect {
     public void apply(TurnContext context) {
         CombatContext combat = context.getCombatContext();
         combat.setIgnoreDefense(true);
-        combat.addAttackBonus(attackPerBlade * combat.getPlayer().getLastingEffects().getBlades());
+        combat.addAttackBonus(attackPerBlade * combat.getPlayer().getLastingEffects().getBlades(), "Dague de l'ombre");
     }
 
     @Override

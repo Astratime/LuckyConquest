@@ -39,7 +39,7 @@ public class FortuneEffect extends Effect {
     @Override
     public void apply(TurnContext context) {
         CombatContext combat = context.getCombatContext();
-        combat.addAttackBonus(Math.round(combat.getPlayer().getGains() * attackPercent / 100f));
+        combat.addAttackBonus(Math.round(combat.getPlayer().getGains() * attackPercent / 100f), "Fortune");
     }
 
     @Override

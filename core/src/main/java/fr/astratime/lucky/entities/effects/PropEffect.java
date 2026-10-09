@@ -35,7 +35,7 @@ public class PropEffect extends Effect {
     }
 
     @Override
-    public void apply(TurnContext context) { context.getCombatContext().multiplyDefense(1f + defensePercent / 100f); }
+    public void apply(TurnContext context) { context.getCombatContext().multiplyDefense(1f + defensePercent / 100f, "Étai"); }
 
     @Override
     public String getDescription() { return Lang.f("Défense +{0} %. Le Forage ne perce plus ton bouclier pendant {1} tours.",

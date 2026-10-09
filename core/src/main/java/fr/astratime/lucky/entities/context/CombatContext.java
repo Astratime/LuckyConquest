@@ -22,6 +22,8 @@ public class CombatContext {
     public static final float LOW_HP_RATIO = 0.2f;
     /** Renvoi des cartes Carreau au plus, en % des PV max de l'ennemi, par tour ennemi. */
     public static final float MAX_REFLECT_HP_PERCENT = 12f;
+    /** Nom d'une étape du détail d'un symbole dont l'origine n'est pas précisée. */
+    private static final String OTHER_EFFECTS = "Autres effets";
 
     private final Player player;
     private final Enemy enemy;
@@ -38,6 +40,8 @@ public class CombatContext {
     private int   counterAttack  = 0;   // As de Carreau : multiplicateur du Coffre infligé en contre-attaque (0 : aucune)
     private int   executionPercent = 0; // Guillotine : % des PV restants de l'ennemi infligés d'un coup (0 : aucun)
 
+    /** Ce qui a changé l'attaque, le bouclier et les gains des symboles ce tour, dans l'ordre (voir {@link #getSteps}). */
+    private final List<PowerStep> steps = new ArrayList<>();
     private final List<Symbol>  bets        = new ArrayList<>(); // Pari : symboles sur lesquels le joueur a parié
     private final List<Integer> pistolShots = new ArrayList<>(); // Roulette russe : part (%) du meilleur coup rejouée par chaque tir
 
@@ -187,25 +191,72 @@ public class CombatContext {
         return defenseSymbolDrawn ? Math.min(MAX_REFLECT_HP_PERCENT, reflectHpPercent) : 0f;
     }
 
+    /** Ce que change une étape du calcul : l'attaque, le bouclier, les gains, ou les trois (valeur des symboles). */
+    public enum Target { ATTACK, DEFENSE, GAINS, SYMBOLS }
+
+    /**
+     * Une étape du calcul d'un symbole, pour son détail au survol du rouleau :
+     * {@code label} ajoute {@code bonus} (bonus plat) ou multiplie par {@code factor}.
+     */
+    public record PowerStep(Target target, String label, int bonus, float factor) {
+        /** @return {@code true} pour un multiplicateur, {@code false} pour un bonus plat. */
+        public boolean isFactor() { return bonus == 0; }
+    }
+
+    /** @return ce qui a changé {@code target} ce tour (valeur des symboles comprise), dans l'ordre. */
+    public List<PowerStep> getSteps(Target target) {
+        return steps.stream().filter(step -> step.target() == target || step.target() == Target.SYMBOLS).toList();
+    }
+
     /** Ajoute {@code bonus} au bonus d'attaque du tour. */
-    public void addAttackBonus(int bonus)         { attackBonus  += bonus; }
+    public void addAttackBonus(int bonus)         { addAttackBonus(bonus, OTHER_EFFECTS); }
+    /** Ajoute {@code bonus} au bonus d'attaque du tour, venu de {@code label} (détail du symbole). */
+    public void addAttackBonus(int bonus, String label) {
+        attackBonus += bonus;
+        if (bonus != 0) steps.add(new PowerStep(Target.ATTACK, label, bonus, 1f));
+    }
     /** Ajoute {@code bonus} au bonus de bouclier du tour. */
-    public void addDefenseBonus(int bonus)        { defenseBonus += bonus; }
+    public void addDefenseBonus(int bonus)        { addDefenseBonus(bonus, OTHER_EFFECTS); }
+    /** Ajoute {@code bonus} au bonus de bouclier du tour, venu de {@code label} (détail du symbole). */
+    public void addDefenseBonus(int bonus, String label) {
+        defenseBonus += bonus;
+        if (bonus != 0) steps.add(new PowerStep(Target.DEFENSE, label, bonus, 1f));
+    }
     /** Ajoute {@code amount} au multiplicateur de gains du tour. */
     public void addGainMultiplier(float amount)   { gainMultiplier += amount; }
 
     /** Multiplie tous les gains du tirage par {@code factor}. */
-    public void multiplyGains(float factor)       { gainFactor   *= factor; }
+    public void multiplyGains(float factor)       { multiplyGains(factor, OTHER_EFFECTS); }
+    /** Multiplie tous les gains du tirage par {@code factor}, venu de {@code label} (détail du symbole). */
+    public void multiplyGains(float factor, String label) {
+        gainFactor *= factor;
+        if (factor != 1f) steps.add(new PowerStep(Target.GAINS, label, 0, factor));
+    }
     /** Multiplie les dégâts de chaque symbole par {@code factor}. */
-    public void multiplyAttack(float factor)      { attackFactor *= factor; }
+    public void multiplyAttack(float factor)      { multiplyAttack(factor, OTHER_EFFECTS); }
+    /** Multiplie les dégâts de chaque symbole par {@code factor}, venu de {@code label} (détail du symbole). */
+    public void multiplyAttack(float factor, String label) {
+        attackFactor *= factor;
+        if (factor != 1f) steps.add(new PowerStep(Target.ATTACK, label, 0, factor));
+    }
     /** Multiplie le bouclier de chaque symbole par {@code factor}. */
-    public void multiplyDefense(float factor)     { defenseFactor *= factor; }
+    public void multiplyDefense(float factor)     { multiplyDefense(factor, OTHER_EFFECTS); }
+    /** Multiplie le bouclier de chaque symbole par {@code factor}, venu de {@code label} (détail du symbole). */
+    public void multiplyDefense(float factor, String label) {
+        defenseFactor *= factor;
+        if (factor != 1f) steps.add(new PowerStep(Target.DEFENSE, label, 0, factor));
+    }
     /** Contre-attaque (As de Carreau) : le Coffre, multiplié par {@code factor}, est infligé à l'ennemi. */
     public void addCounterAttack(int factor)      { counterAttack += factor; }
     /** Guillotine : ajoute {@code percent} % des PV restants de l'ennemi, infligés d'un coup après le tirage. */
     public void addExecution(int percent)         { executionPercent += percent; }
     /** Multiplie la valeur de chaque symbole (dégâts, bouclier, gains) par {@code factor}. */
-    public void multiplySymbolPower(int factor)   { symbolPower  *= factor; }
+    public void multiplySymbolPower(int factor)   { multiplySymbolPower(factor, OTHER_EFFECTS); }
+    /** Comme {@link #multiplySymbolPower(int)}, venu de {@code label} (détail du symbole). */
+    public void multiplySymbolPower(int factor, String label) {
+        symbolPower *= factor;
+        if (factor != 1) steps.add(new PowerStep(Target.SYMBOLS, label, 0, factor));
+    }
     /** Parie sur l'apparition de {@code symbol} au tirage. */
     public void addBet(Symbol symbol)             { bets.add(symbol); }
     /** Ajoute un tir de pistolet qui rejoue {@code percent} % du coup le plus fort du tour. */

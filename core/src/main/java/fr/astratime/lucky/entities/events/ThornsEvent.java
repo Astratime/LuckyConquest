@@ -30,7 +30,7 @@ public class ThornsEvent extends PlayerDamagedEvent {
     @Override
     public List<EffectPopup> getPopups() {
         List<EffectPopup> popups = new ArrayList<>();
-        popups.add(EffectPopup.scaled(Lang.f("ÉPINES -{0}", damage), EffectPopup.Style.DAMAGE, damage, PopupScale.SPIN_LIFE_LOST));
+        popups.add(EffectPopup.scaled(Lang.f("ÉPINES -{0}", Lang.big(damage)), EffectPopup.Style.DAMAGE, damage, PopupScale.SPIN_LIFE_LOST));
         if (blocked > 0) popups.add(EnemyDamagedEvent.blockedPopup(blocked, damage == 0));
         return popups;
     }

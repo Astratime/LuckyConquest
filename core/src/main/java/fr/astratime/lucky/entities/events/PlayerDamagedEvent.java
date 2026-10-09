@@ -46,7 +46,7 @@ public class PlayerDamagedEvent extends Event {
             return List.of(new EffectPopup(Lang.t("BLOQUÉ !"), EffectPopup.Style.DEFENSE, PopupScale.SECONDARY_INTENSITY));
         }
         List<EffectPopup> popups = new ArrayList<>();
-        if (damage > 0) popups.add(EffectPopup.scaled(Lang.f("PV -{0}", damage), EffectPopup.Style.DAMAGE, damage, PopupScale.SPIN_LIFE_LOST));
+        if (damage > 0) popups.add(EffectPopup.scaled(Lang.f("PV -{0}", Lang.big(damage)), EffectPopup.Style.DAMAGE, damage, PopupScale.SPIN_LIFE_LOST));
         if (blocked > 0) popups.add(EnemyDamagedEvent.blockedPopup(blocked, damage == 0));
         return popups;
     }

@@ -82,17 +82,17 @@ public class PreparationResolver {
         if (houseRule != null) {
             turnContext.addEvent(new StatusEvent(Lang.f("RÈGLE : {0}", houseRule.getAnnounce()), EffectPopup.Style.DAMAGE));
         }
-        if (lasting.getGainBonus() != 0f) combatContext.multiplyGains(1f + lasting.getGainBonus());
-        combatContext.addAttackBonus(lasting.getBlades() * BLADE_ATTACK);
+        if (lasting.getGainBonus() != 0f) combatContext.multiplyGains(1f + lasting.getGainBonus(), "Porte-bonheur");
+        combatContext.addAttackBonus(lasting.getBlades() * BLADE_ATTACK, "Lames");
         if (lasting.getCorruptionTurns() > 0) {
             int consumed = player.consumeGainsPercent(CorruptionEffect.GAINS_PERCENT / 100f);
-            combatContext.multiplyAttack(CorruptionEffect.FACTOR);
-            combatContext.multiplyDefense(CorruptionEffect.FACTOR);
+            combatContext.multiplyAttack(CorruptionEffect.FACTOR, "Corruption");
+            combatContext.multiplyDefense(CorruptionEffect.FACTOR, "Corruption");
             turnContext.addEvent(new CorruptionEvent(consumed, CorruptionEffect.FACTOR));
         }
 
         if (lasting.getGoldVeinTurns() > 0) {
-            combatContext.multiplyGains(GoldVeinEffect.FACTOR);
+            combatContext.multiplyGains(GoldVeinEffect.FACTOR, "Veine d'or");
             turnContext.addEvent(new StatusEvent(Lang.f("VEINE D'OR : GAINS x{0}", GoldVeinEffect.FACTOR), EffectPopup.Style.GAINS));
         }
         if (lasting.takeNugget()) { // Pépite de l'ennemi
@@ -100,20 +100,20 @@ public class PreparationResolver {
             turnContext.addEvent(new StatusEvent(Lang.t("PÉPITE : TES GAINS SONT DES PIERRES"), EffectPopup.Style.DAMAGE));
         }
         if (rule == PlaceRule.SCORBUT && hasScurvy(player)) {
-            combatContext.multiplyAttack(PlaceRule.SCURVY_FACTOR);
-            combatContext.multiplyDefense(PlaceRule.SCURVY_FACTOR);
-            combatContext.multiplyGains(PlaceRule.SCURVY_FACTOR);
+            combatContext.multiplyAttack(PlaceRule.SCURVY_FACTOR, "Scorbut");
+            combatContext.multiplyDefense(PlaceRule.SCURVY_FACTOR, "Scorbut");
+            combatContext.multiplyGains(PlaceRule.SCURVY_FACTOR, "Scorbut");
             turnContext.addEvent(new StatusEvent(Lang.t("SCORBUT : TIRAGE DIVISÉ PAR 2"), EffectPopup.Style.DAMAGE));
         }
         if (lasting.getTemperPercent() > 0) { // Trempe : l'épée durcit à chaque tour
-            combatContext.multiplyAttack(1f + lasting.getTemperPercent() / 100f);
+            combatContext.multiplyAttack(1f + lasting.getTemperPercent() / 100f, "Trempe");
             turnContext.addEvent(new StatusEvent(Lang.f("TREMPE : ATTAQUE +{0} %", lasting.getTemperPercent()),
                 EffectPopup.Style.ATTACK));
         }
         if (rule.isHighTide(turn) && lasting.getAnchorTurns() > 0) {
             turnContext.addEvent(new StatusEvent(Lang.t("ANCRE : LA MARÉE HAUTE NE TE GÊNE PAS"), EffectPopup.Style.DEFENSE));
         } else if (rule.isHighTide(turn)) {
-            combatContext.multiplyAttack(1f - PlaceRule.HIGH_TIDE_MALUS / 100f);
+            combatContext.multiplyAttack(1f - PlaceRule.HIGH_TIDE_MALUS / 100f, "Marée haute");
             turnContext.addEvent(new StatusEvent(Lang.f("MARÉE HAUTE : ATTAQUE -{0} %", PlaceRule.HIGH_TIDE_MALUS),
                 EffectPopup.Style.DAMAGE));
         }
@@ -140,8 +140,9 @@ public class PreparationResolver {
         List<Combo> combos = Combo.formed(player.getPlayedCards());
         if (combos.isEmpty()) return;
         float total = Combo.totalFactor(combos) + combat.getComboBonus() * combos.size(); // Chope
-        combat.multiplyGains(total);
-        combat.multiplyAttack(total);
+        String names = combos.stream().map(Combo::getDisplayName).collect(java.util.stream.Collectors.joining(" + "));
+        combat.multiplyGains(total, names);
+        combat.multiplyAttack(total, names);
         for (Combo combo : combos) {
             if (combo.fillsGauges()){
                 fillGauges(player);

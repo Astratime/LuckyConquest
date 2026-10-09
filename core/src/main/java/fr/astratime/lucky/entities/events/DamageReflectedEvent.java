@@ -20,6 +20,6 @@ public class DamageReflectedEvent extends Event {
     /** Dégâts renvoyés à l'ennemi, taille maximale selon {@link PopupScale}. */
     @Override
     public List<EffectPopup> getPopups() {
-        return List.of(EffectPopup.scaled(Lang.f("RENVOI {0}", damage), EffectPopup.Style.REFLECT, damage, PopupScale.SPIN_REFLECT));
+        return List.of(EffectPopup.scaled(Lang.f("RENVOI {0}", Lang.big(damage)), EffectPopup.Style.REFLECT, damage, PopupScale.SPIN_REFLECT));
     }
 }
