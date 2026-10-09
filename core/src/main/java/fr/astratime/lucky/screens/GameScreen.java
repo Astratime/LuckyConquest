@@ -9,6 +9,7 @@ import com.badlogic.gdx.ScreenAdapter;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
+import com.badlogic.gdx.graphics.g2d.GlyphLayout;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.Rectangle;
@@ -195,7 +196,9 @@ public class GameScreen extends ScreenAdapter {
     private static final float LEVER_HOLD          = 0.5f; // secondes où le levier reste tiré au lancer
     private static final float LEVER_GAP           = 28f; // entre le levier et la machine du joueur
     private static final float PILE_MAT_PAD        = 16f; // marge du tapis de la défausse autour de la pile
-    private static final float STAKE_BUTTON_GAP    = 24f; // entre la Mise et le tapis de la défausse
+    private static final float STAKE_BUTTON_GAP    = 24f; // entre la Mise et le tapis de la défausse, au plus près
+    private static final float STAKE_SHIELD_GAP    = 16f; // entre le bouclier du joueur et la Mise, à sa droite
+    private static final String STAKE_SHIELD_ROOM  = " 0000"; // la Mise laisse au bouclier la place de 4 chiffres
     private static final float STAKE_LABEL_GAP     = 2f;  // entre la Mise et son palier, dessous
     private static final float STAKE_CHIPS_OVERLAP = 12f; // les jetons misés tombent sur la pile du bouton
 
@@ -339,8 +342,10 @@ public class GameScreen extends ScreenAdapter {
     private final IconButton stakeButton;
     /** Palier de la Mise, sous son bouton (« Mise », « 25 % : x3 »). */
     private final Label      stakeLabel;
-    /** Jetons de la Mise posés sur la table, à gauche de la machine du joueur. */
+    /** Jetons de la Mise posés sur la table, à droite du bouclier du joueur. */
     private final StakeChips stakeChips;
+    /** Largeur du bouclier du joueur quand la Mise a été placée (elle le suit s'il s'élargit). */
+    private float stakeShieldWidth;
     /** Cartes jouées ce tour sur la limite (« Cartes 2/4 »), coût du tirage et Mise, à droite du bouton de Mise. */
     private final Label      playsLabel;
     private final TextButton restartButton;
@@ -2056,11 +2061,17 @@ public class GameScreen extends ScreenAdapter {
     }
 
     /**
-     * Place la Mise à droite du bouclier du joueur, contre sa défausse : son
-     * bouton, son palier dessous, et les jetons misés qui tombent dessus.
+     * Place la Mise juste à droite du bouclier du joueur (sans jamais toucher
+     * le tapis de la défausse) : son bouton, son palier dessous, et les jetons
+     * misés qui tombent dessus. La place laissée au bouclier tient 4 chiffres ;
+     * au-delà, la Mise suit son texte.
      */
     private void placeStakeButton() {
-        float x = table.getEnemyDeckX() - PILE_MAT_PAD - STAKE_BUTTON_GAP - stakeButton.getWidth();
+        float room = ShieldBadge.ICON_SIZE + ShieldBadge.LABEL_GAP
+            + new GlyphLayout(shieldFont, Lang.t("Bouclier") + STAKE_SHIELD_ROOM).width;
+        stakeShieldWidth = playerShield.getWidth();
+        float x = Math.min(playerShield.getX() + Math.max(room, stakeShieldWidth) + STAKE_SHIELD_GAP,
+            table.getEnemyDeckX() - PILE_MAT_PAD - STAKE_BUTTON_GAP - stakeButton.getWidth());
         float y = table.getReelRowY() + (SlotView.CELL_HEIGHT - stakeButton.getHeight()) / 2f;
         stakeButton.setPosition(x, y);
         stakeLabel.pack();
@@ -2189,6 +2200,7 @@ public class GameScreen extends ScreenAdapter {
         } else {
             stage.act(delta);
         }
+        if (playerShield.getWidth() != stakeShieldWidth) placeStakeButton();
         stage.getViewport().apply();
         stage.draw();
 

@@ -12,7 +12,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * La Mise posée sur la table, à gauche de la machine du joueur : un jeton de
+ * La Mise posée sur la table, à droite du bouclier du joueur : un jeton de
  * casino par palier (10 %, 25 %, 50 %), qui tombe et rebondit quand le joueur
  * mise plus. Au lancer, les jetons glissent vers la machine et disparaissent ;
  * quand la Mise revient à zéro, ils s'effacent.

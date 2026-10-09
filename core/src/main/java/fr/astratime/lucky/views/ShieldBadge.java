@@ -30,7 +30,7 @@ public class ShieldBadge extends Group {
 
     /** Côté de l'icône du bouclier (16 pixels x3). */
     public static final float ICON_SIZE    = 48f;
-    private static final float LABEL_GAP   = 8f;
+    public static final float LABEL_GAP    = 8f;
     private static final float SPLIT       = 3f;     // écart des deux moitiés d'un bouclier brisé
     private static final float SPLIT_ANGLE = 14f;
     private static final float BREAK_TIME  = 0.25f;
