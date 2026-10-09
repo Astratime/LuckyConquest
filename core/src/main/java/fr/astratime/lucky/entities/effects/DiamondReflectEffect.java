@@ -36,7 +36,7 @@ public class DiamondReflectEffect extends Effect {
     @Override
     public void apply(TurnContext context) {
         context.getCombatContext().addReflectHpPercent(hpPercent);
-        context.getCombatContext().addDefenseBonus(defenseBoost); // bouclier en plus : il remplit le Coffre
+        context.getCombatContext().addDefenseBonus(defenseBoost, "Cartes"); // bouclier en plus : il remplit le Coffre
         if (defenseBoost > 0) {
             for (Symbol symbol : SymbolRegistry.getDefenseSymbols()) {
                 context.getSpinContext().addWeightBoost(symbol, defenseBoost);

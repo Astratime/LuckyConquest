@@ -35,7 +35,7 @@ public class LanternEffect extends Effect {
     }
 
     @Override
-    public void apply(TurnContext context) { context.getCombatContext().multiplyDefense(1f + defensePercent / 100f); }
+    public void apply(TurnContext context) { context.getCombatContext().multiplyDefense(1f + defensePercent / 100f, "Lanterne"); }
 
     @Override
     public String getDescription() { return Lang.f("Ta main reste visible pendant {0} tours. Défense +{1} %.",

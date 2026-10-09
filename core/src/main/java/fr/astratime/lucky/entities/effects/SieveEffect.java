@@ -23,7 +23,7 @@ public class SieveEffect extends Effect {
     @Override
     public void apply(TurnContext context) {
         context.getCombatContext().restoreGains();
-        context.getCombatContext().multiplyGains(1f + gainsPercent / 100f);
+        context.getCombatContext().multiplyGains(1f + gainsPercent / 100f, "Tamis");
     }
 
     private String factorText() {

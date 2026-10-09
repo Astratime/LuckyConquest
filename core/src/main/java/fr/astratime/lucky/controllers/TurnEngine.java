@@ -216,8 +216,9 @@ public class TurnEngine {
         }
         SpinEconomy.Debt debt = SpinEconomy.debt(gameState.getPlayer().getGains(), combat.getSpinCost());
         if (debt == SpinEconomy.Debt.NONE) return;
-        combat.multiplyAttack(debt.factor, debt == SpinEconomy.Debt.BAILIFF ? "Huissier" : "Endetté");
-        combat.multiplyDefense(debt.factor);
+        String debtLabel = debt == SpinEconomy.Debt.BAILIFF ? "Huissier" : "Endetté";
+        combat.multiplyAttack(debt.factor, debtLabel);
+        combat.multiplyDefense(debt.factor, debtLabel);
         if (debt == SpinEconomy.Debt.BAILIFF) {
             gameState.getEnemy().sendBailiff();
             turnContext.addEvent(new StatusEvent(Lang.t("HUISSIER : SYMBOLES -50 %"), EffectPopup.Style.DAMAGE));

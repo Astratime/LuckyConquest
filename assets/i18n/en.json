@@ -1344,5 +1344,8 @@
   "{0} : {1}": "{0}: {1}",
   "{0} : +{1}": "{0}: +{1}",
   "{0} : x{1}": "{0}: x{1}",
-  "Détail du coup": "Hit breakdown"
+  "Détail du coup": "Hit breakdown",
+  "= {0} de bouclier": "= {0} shield",
+  "= {0} gains": "= {0} gains",
+  "Coût du tirage": "Draw cost"
 }

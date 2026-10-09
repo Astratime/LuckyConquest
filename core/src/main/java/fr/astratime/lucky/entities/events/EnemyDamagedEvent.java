@@ -1,6 +1,5 @@
 package fr.astratime.lucky.entities.events;
 
-import fr.astratime.lucky.entities.DamageBreakdown;
 import fr.astratime.lucky.i18n.Lang;
 import fr.astratime.lucky.popups.EffectPopup;
 import fr.astratime.lucky.popups.PopupScale;
@@ -28,8 +27,6 @@ public class EnemyDamagedEvent extends Event {
     public final boolean pierced;
     /** Part (%) du coup qui a traversé la défense (Pique) ; 100 si elle a été ignorée. */
     public final int piercePercent;
-    /** Le calcul du coup étape par étape (détail du coup), ou {@code null} s'il ne vient pas d'un symbole. */
-    private DamageBreakdown breakdown;
 
     /**
      * @param damage      dégâts effectivement infligés à l'ennemi (après défense)
@@ -65,15 +62,6 @@ public class EnemyDamagedEvent extends Event {
         this.piercePercent = piercePercent;
         this.pierced       = piercePercent >= 100;
     }
-
-    /** Joint à ce coup son calcul étape par étape (détail du coup). @return cet événement */
-    public EnemyDamagedEvent withBreakdown(DamageBreakdown breakdown) {
-        this.breakdown = breakdown;
-        return this;
-    }
-
-    /** @return le calcul du coup étape par étape, ou {@code null} s'il ne vient pas d'un symbole. */
-    public DamageBreakdown getBreakdown() { return breakdown; }
 
     @Override
     public String describe() {

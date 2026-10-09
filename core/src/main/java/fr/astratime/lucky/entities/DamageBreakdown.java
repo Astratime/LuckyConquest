@@ -1,6 +1,6 @@
 package fr.astratime.lucky.entities;
 
-import fr.astratime.lucky.entities.context.CombatContext.AttackStep;
+import fr.astratime.lucky.entities.context.CombatContext.PowerStep;
 import fr.astratime.lucky.i18n.Lang;
 
 import java.util.ArrayList;
@@ -21,24 +21,19 @@ import java.util.List;
  * @param blocked  dégâts absorbés par la défense
  * @param damage   dégâts infligés
  */
-public record DamageBreakdown(int base, int rank, List<AttackStep> steps, long uncapped, long raw, int pierce,
-                              int blocked, long damage) {
+public record DamageBreakdown(int base, int rank, List<PowerStep> steps, long uncapped, long raw, int pierce,
+                              int blocked, long damage) implements SymbolBreakdown {
 
     public DamageBreakdown {
         steps = List.copyOf(steps);
     }
 
-    /** @return les lignes du détail, la première pour {@code symbol}, la dernière pour les dégâts infligés. */
+    @Override
     public List<String> lines(Symbol symbol) {
         List<String> lines = new ArrayList<>();
         lines.add(Lang.f("{0} : {1}", symbol.getDisplayName(), Lang.big(base)));
         if (rank != 0) lines.add(Lang.f("{0} : +{1}", Lang.t("Rang"), Lang.big(rank)));
-        for (AttackStep step : steps) {
-            if (!step.isFactor()) lines.add(Lang.f("{0} : +{1}", Lang.t(step.label()), Lang.big(step.bonus())));
-        }
-        for (AttackStep step : steps) {
-            if (step.isFactor()) lines.add(Lang.f("{0} : x{1}", Lang.t(step.label()), factor(step.factor())));
-        }
+        addSteps(lines, steps);
         if (raw < uncapped) lines.add(Lang.f("Plafond (PV max) : {0}", Lang.big(raw)));
         if (pierce >= 100) {
             lines.add(Lang.t("Défense ignorée"));
@@ -49,6 +44,16 @@ public record DamageBreakdown(int base, int rank, List<AttackStep> steps, long u
         if (damage < raw - blocked) lines.add(Lang.f("Encaissé par l'ennemi : -{0}", Lang.big(raw - blocked - damage)));
         lines.add(Lang.f("= {0} dégâts", Lang.big(damage)));
         return lines;
+    }
+
+    /** Ajoute à {@code lines} les bonus plats de {@code steps} (ils s'ajoutent d'abord), puis leurs multiplicateurs. */
+    static void addSteps(List<String> lines, List<PowerStep> steps) {
+        for (PowerStep step : steps) {
+            if (!step.isFactor()) lines.add(Lang.f("{0} : +{1}", Lang.t(step.label()), Lang.big(step.bonus())));
+        }
+        for (PowerStep step : steps) {
+            if (step.isFactor()) lines.add(Lang.f("{0} : x{1}", Lang.t(step.label()), factor(step.factor())));
+        }
     }
 
     /** @return {@code factor} avec deux décimales au plus, sans zéro inutile (x9,5 ; x0,75). */

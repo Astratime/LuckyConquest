@@ -1,5 +1,6 @@
 package fr.astratime.lucky.entities.events;
 
+import fr.astratime.lucky.entities.SymbolBreakdown;
 import fr.astratime.lucky.popups.EffectPopup;
 
 import java.util.List;
@@ -10,6 +11,18 @@ import java.util.List;
  * Cette structure prépare le terrain pour les animations futures.
  */
 public abstract class Event {
+    /** Le calcul de ce qu'a fait le symbole, étape par étape, ou {@code null} (voir {@link #withBreakdown}). */
+    private SymbolBreakdown breakdown;
+
+    /** Joint à cet événement le calcul du symbole qui l'a produit (dégâts, bouclier, gains). @return cet événement */
+    public Event withBreakdown(SymbolBreakdown breakdown) {
+        this.breakdown = breakdown;
+        return this;
+    }
+
+    /** @return le calcul du symbole qui a produit cet événement, ou {@code null} s'il ne vient pas d'un symbole. */
+    public SymbolBreakdown getBreakdown() { return breakdown; }
+
     /** @return une description textuelle de l'événement, destinée au journal/log affiché en jeu. */
     public abstract String describe();
 

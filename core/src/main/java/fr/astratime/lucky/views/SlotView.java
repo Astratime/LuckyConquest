@@ -24,7 +24,6 @@ import fr.astratime.lucky.entities.SlotMachine;
 import fr.astratime.lucky.entities.Symbol;
 import fr.astratime.lucky.entities.SymbolOutcome;
 import fr.astratime.lucky.entities.TurnResult;
-import fr.astratime.lucky.entities.events.EnemyDamagedEvent;
 import fr.astratime.lucky.entities.events.Event;
 import fr.astratime.lucky.i18n.Lang;
 import fr.astratime.lucky.popups.EffectPopup;
@@ -439,22 +438,21 @@ public class SlotView implements Disposable {
         void play(SymbolOutcome outcome, Vector2 reel, float delay);
     }
 
-    /** Garde le détail des coups de {@code outcome} sur l'ennemi, pour l'infobulle de son rouleau. */
+    /** Garde le détail de ce qu'a fait {@code outcome} (dégâts, bouclier, gains), pour l'infobulle de son rouleau. */
     private void rememberHit(SymbolOutcome outcome) {
         if (outcome.getSlotIndex() < 0) return;
         List<String> lines = new ArrayList<>();
         for (Event event : outcome.getEvents()) {
-            if (event instanceof EnemyDamagedEvent hit && hit.getBreakdown() != null) {
-                if (!lines.isEmpty()) lines.add("");
-                lines.addAll(hit.getBreakdown().lines(outcome.getSymbol()));
-            }
+            if (event.getBreakdown() == null) continue;
+            if (!lines.isEmpty()) lines.add("");
+            lines.addAll(event.getBreakdown().lines(outcome.getSymbol()));
         }
         if (!lines.isEmpty()) hitDetails.put(outcome.getSlotIndex(), lines);
     }
 
     /**
      * Affiche au survol la description du symbole arrêté sur le rouleau et,
-     * après un tirage, le détail de son coup sur l'ennemi. Pas de clic : un
+     * après un tirage, le détail de ce qu'il a fait (dégâts, bouclier, gains). Pas de clic : un
      * symbole ne se joue pas.
      */
     private void addTooltip(ReelActor<Symbol> reel) {

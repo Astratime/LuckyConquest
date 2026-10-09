@@ -1,5 +1,6 @@
 package fr.astratime.lucky.entities.actions;
 
+import fr.astratime.lucky.entities.BoostBreakdown;
 import fr.astratime.lucky.entities.SpinEconomy;
 import fr.astratime.lucky.entities.context.CombatContext;
 import fr.astratime.lucky.entities.events.Event;
@@ -8,6 +9,7 @@ import fr.astratime.lucky.entities.events.StatusEvent;
 import fr.astratime.lucky.i18n.Lang;
 import fr.astratime.lucky.popups.EffectPopup;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -31,11 +33,21 @@ public class GainAction extends Action {
         if (context.isStoneGains()) { // Pépite de l'ennemi : le symbole n'est qu'une pierre
             return List.of(new StatusEvent(Lang.t("PIERRE : GAINS 0"), EffectPopup.Style.DAMAGE));
         }
-        int base = baseGain + context.getPlayer().getRankBonus().gains() * context.getRankFactor();
+        int rank = context.getPlayer().getRankBonus().gains() * context.getRankFactor();
+        int base = baseGain + rank;
+        float scale = SpinEconomy.gainScale(context.getSpinCost());
         int gain = Math.round(base * context.getGainMultiplier() * context.getGainFactor()
-            * context.getSymbolPower() * SpinEconomy.gainScale(context.getSpinCost()));
+            * context.getSymbolPower() * scale);
         context.getPlayer().addGains(gain);
-        return List.of(new GainsEarnedEvent(gain));
+        // Le détail : les cartes Trèfle (multiplicateur additionné) et le coût du tirage s'ajoutent aux étapes du tour.
+        List<CombatContext.PowerStep> steps = new ArrayList<>();
+        if (context.getGainMultiplier() != 1f) {
+            steps.add(new CombatContext.PowerStep(CombatContext.Target.GAINS, "Cartes", 0, context.getGainMultiplier()));
+        }
+        steps.addAll(context.getSteps(CombatContext.Target.GAINS));
+        if (scale != 1f) steps.add(new CombatContext.PowerStep(CombatContext.Target.GAINS, "Coût du tirage", 0, scale));
+        return List.of(new GainsEarnedEvent(gain).withBreakdown(
+            new BoostBreakdown(BoostBreakdown.Kind.GAINS, baseGain, rank, steps, gain)));
     }
 
     @Override

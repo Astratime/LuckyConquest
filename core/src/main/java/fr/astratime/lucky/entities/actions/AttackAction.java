@@ -70,7 +70,7 @@ public class AttackAction extends Action {
         int lost = enemy.takeDamage(rawDamage - blocked);
         if (lost < damage && !enemy.isDefeated()) damage = lost; // coup annulé (la Maison) ou fatal évité (Machine Originelle)
         events.add(new EnemyDamagedEvent(damage, rawDamage, unscaled, blocked, enemy.getDefense(), pierce)
-            .withBreakdown(new DamageBreakdown(symbol, rank, context.getAttackSteps(), uncapped, rawDamage, pierce,
+            .withBreakdown(new DamageBreakdown(symbol, rank, context.getSteps(CombatContext.Target.ATTACK), uncapped, rawDamage, pierce,
                 blocked, damage)));
 
         if (context.getLifeDrainPercent() > 0 && damage > 0) {

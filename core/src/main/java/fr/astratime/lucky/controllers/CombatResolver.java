@@ -200,7 +200,7 @@ public class CombatResolver {
         }
         if (context.getSunkenJackpots() > 0 && SlotMachine.jackpotSymbol(symbols) != null) {
             for (int i = 0; i < context.getSunkenJackpots(); i++) {
-                context.multiplyGains(SunkenJackpotEffect.GAINS_FACTOR);
+                context.multiplyGains(SunkenJackpotEffect.GAINS_FACTOR, "Jackpot englouti");
                 context.multiplyAttack(SunkenJackpotEffect.ATTACK_FACTOR, "Jackpot englouti");
             }
             events.add(new StatusEvent(Lang.f("JACKPOT ENGLOUTI : GAINS x{0}, ATTAQUE x{1}",

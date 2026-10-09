@@ -35,7 +35,7 @@ public class AnchorEffect extends Effect {
     }
 
     @Override
-    public void apply(TurnContext context) { context.getCombatContext().multiplyDefense(1f + defensePercent / 100f); }
+    public void apply(TurnContext context) { context.getCombatContext().multiplyDefense(1f + defensePercent / 100f, "Ancre"); }
 
     @Override
     public String getDescription() { return Lang.f("Pendant {0} tours, la marée haute ne baisse plus ton attaque. Défense +{1} %.",
