@@ -489,7 +489,7 @@ public class GameController {
         }
 
         cardsPlayedThisTurn++;
-        PlayContext playContext = new PlayContext(player);
+        PlayContext playContext = new PlayContext(player, gameState.getEnemy().getKind().getSpinCost());
         for (int i = 0; i < taxes; i++) { // Taxe du Comptable : chaque carte jouée la paie
             int taxed = player.payTax(EnemySymbol.TAX_PERCENT, EnemySymbol.TAX_FLAT);
             playContext.addPopups(List.of(new EffectPopup(Lang.f("TAXE -{0}", taxed), EffectPopup.Style.DAMAGE,

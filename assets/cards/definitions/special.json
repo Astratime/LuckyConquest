@@ -144,8 +144,8 @@
     "consumable": true,
     "effects": [
       {
-        "type": "GAINS_MULTIPLIER",
-        "percent": 50,
+        "type": "SPIN_GAINS",
+        "spins": 5,
         "gauges": 2
       }
     ]

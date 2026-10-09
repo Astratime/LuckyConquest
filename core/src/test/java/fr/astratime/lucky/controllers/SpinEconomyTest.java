@@ -192,4 +192,25 @@ class SpinEconomyTest {
         assertFalse(controller.canStake());
         assertEquals(Stake.NONE, controller.nextStake());
     }
+
+    @Test
+    void thePotDeLutinPaysFiveSpins() {
+        Card pot = new Card("pot", "pot", "x.png",
+            List.of(new fr.astratime.lucky.entities.effects.SpinGainsEffect(5, 2)), null, 1, true);
+        GameController controller = new GameController(() -> {
+            List<Card> cards = plainCards();
+            cards.add(pot);
+            return cards;
+        });
+        controller.restart(Place.PORT.getDungeons().get(0).getSoldier());
+        int before = player(controller).getGains();
+        controller.drawCards();
+        Card inHand = player(controller).getCurrentHand().stream().filter(c -> c.getId().equals("pot")).findFirst()
+            .orElseGet(() -> {
+                player(controller).addToHandOrDeck(pot);
+                return pot;
+            });
+        controller.playCard(inHand);
+        assertEquals(before + 5 * 500, player(controller).getGains(), "5 tirages de 500 au Port");
+    }
 }

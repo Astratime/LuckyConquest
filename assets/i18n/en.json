@@ -1329,5 +1329,7 @@
   "Tire le levier : les rouleaux tournent. Touche F.": "Pull the lever: the reels spin. Key F.",
   "Mise": "Stake",
   "Mise une part de tes gains avant de lancer. 10 % : symboles x2. 25 % : x3. 50 % : x5. La mise est perdue, même sur un mauvais tirage.": "Stake part of your gains before you spin. 10%: symbols x2. 25%: x3. 50%: x5. The stake is spent, even on a bad draw.",
-  "{0} % : x{1}": "{0}%: x{1}"
+  "{0} % : x{1}": "{0}%: x{1}",
+  "Gains : {0} tirages{1}": "Gains: {0} draws{1}",
+  "GAINS : {0} TIRAGES": "GAINS: {0} DRAWS"
 }
