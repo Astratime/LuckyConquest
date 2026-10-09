@@ -178,11 +178,27 @@ class SpinEconomyTest {
         assertEquals(125, staked.getStakeAmount(), "25 % de 500");
         staked.rigSpin(Symbol.SEVEN, Symbol.BAR, Symbol.BELL);
         TurnResult result = staked.spin();
-        assertEquals(damageDealt(base) * 3, damageDealt(result));
+        assertEquals(damageDealt(base), damageDealt(result), "sans Bingo, la Mise ne multiplie rien");
         int bell = base.getEvents().stream().filter(e -> e instanceof GainsEarnedEvent)
             .mapToInt(e -> ((GainsEarnedEvent) e).amount).sum();
-        assertEquals(500 - 125 - 100 + bell * 3, player(staked).getGains());
+        assertEquals(500 - 125 - 100 + bell, player(staked).getGains(), "la Mise est perdue");
         assertEquals(Stake.NONE, staked.getStake(), "la Mise ne vaut que pour un tirage");
+    }
+
+    @Test
+    void theStakeOnlyCountsOnABingo() {
+        GameController plain = fight(EnemyKind.CROUPIER);
+        plain.drawCards();
+        plain.rigSpin(Symbol.SEVEN, Symbol.SEVEN, Symbol.SEVEN);
+        long base = damageDealt(plain.spin());
+
+        GameController staked = fight(EnemyKind.CROUPIER);
+        staked.drawCards();
+        staked.nextStake();
+        staked.nextStake();
+        staked.nextStake(); // 50 % : x5
+        staked.rigSpin(Symbol.SEVEN, Symbol.SEVEN, Symbol.SEVEN);
+        assertEquals(base * 5, damageDealt(staked.spin()));
     }
 
     @Test

@@ -63,7 +63,7 @@ public class SpinControls {
         addTooltip(lever, Lang.t("Lancer la machine"), Lang.t("Tire le levier : les rouleaux tournent. Touche F."));
         stakeButton = new IconButton(hud.stake, hud.stakeOver, hud.stakeDown, hud.stakeDisabled, false, stakeSound, onStake);
         addTooltip(stakeButton, Lang.t("Mise"), Lang.t("Mise une part de tes gains avant de lancer. "
-            + "10 % : symboles x2. 25 % : x3. 50 % : x5. La mise est perdue, même sur un mauvais tirage."));
+            + "Sur un Bingo, 10 % : symboles x2. 25 % : x3. 50 % : x5. Sans Bingo, la mise est perdue."));
         stakeLabel = new Label(stakeText(SpinEconomy.Stake.NONE), new Label.LabelStyle(labelFont, Color.WHITE));
         stakeLabel.setTouchable(Touchable.disabled);
         chips = new StakeChips(hud.chipStake);
