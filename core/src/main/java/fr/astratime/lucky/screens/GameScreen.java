@@ -200,7 +200,7 @@ public class GameScreen extends ScreenAdapter {
     private static final float STAKE_SHIELD_GAP    = 16f; // entre le bouclier du joueur et la Mise, à sa droite
     private static final String STAKE_SHIELD_ROOM  = " 0000"; // la Mise laisse au bouclier la place de 4 chiffres
     private static final float STAKE_LABEL_GAP     = 2f;  // entre la Mise et son palier, dessous
-    private static final float STAKE_CHIPS_OVERLAP = 12f; // les jetons misés tombent sur la pile du bouton
+    private static final float STAKE_CHIPS_GAP     = 10f; // les jetons misés tombent sur la table, à droite de la Mise
 
     /** Dégâts à partir desquels un coup sur l'ennemi fige l'image un instant (micro-arrêt). */
     private static final int   BIG_HIT               = 60;
@@ -2062,8 +2062,8 @@ public class GameScreen extends ScreenAdapter {
 
     /**
      * Place la Mise juste à droite du bouclier du joueur (sans jamais toucher
-     * le tapis de la défausse) : son bouton, son palier dessous, et les jetons
-     * misés qui tombent dessus. La place laissée au bouclier tient 4 chiffres ;
+     * le tapis de la défausse) : son bouton, son palier dessous, et à sa droite
+     * les jetons misés qui tombent sur la table. La place laissée au bouclier tient 4 chiffres ;
      * au-delà, la Mise suit son texte.
      */
     private void placeStakeButton() {
@@ -2071,14 +2071,14 @@ public class GameScreen extends ScreenAdapter {
             + new GlyphLayout(shieldFont, Lang.t("Bouclier") + STAKE_SHIELD_ROOM).width;
         stakeShieldWidth = playerShield.getWidth();
         float x = Math.min(playerShield.getX() + Math.max(room, stakeShieldWidth) + STAKE_SHIELD_GAP,
-            table.getEnemyDeckX() - PILE_MAT_PAD - STAKE_BUTTON_GAP - stakeButton.getWidth());
+            table.getEnemyDeckX() - PILE_MAT_PAD - STAKE_BUTTON_GAP - StakeChips.CHIP_SIZE - STAKE_CHIPS_GAP
+                - stakeButton.getWidth());
         float y = table.getReelRowY() + (SlotView.CELL_HEIGHT - stakeButton.getHeight()) / 2f;
         stakeButton.setPosition(x, y);
         stakeLabel.pack();
         stakeLabel.setPosition(x + (stakeButton.getWidth() - stakeLabel.getWidth()) / 2f,
             y - stakeLabel.getHeight() - STAKE_LABEL_GAP);
-        stakeChips.setPosition(x + (stakeButton.getWidth() - StakeChips.CHIP_SIZE) / 2f,
-            y + stakeButton.getHeight() - STAKE_CHIPS_OVERLAP);
+        stakeChips.setPosition(x + stakeButton.getWidth() + STAKE_CHIPS_GAP, y);
     }
 
     /** Place le bouclier du joueur à droite de ses rouleaux, et son levier à leur gauche. */
