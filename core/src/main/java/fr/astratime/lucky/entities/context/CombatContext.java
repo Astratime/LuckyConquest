@@ -19,6 +19,8 @@ public class CombatContext {
 
     /** Seuil de vie (en proportion) sous lequel le renvoi garanti de l'As de Carreau est renforcé. */
     public static final float LOW_HP_RATIO = 0.2f;
+    /** Renvoi des cartes Carreau au plus, en % des PV max de l'ennemi, par tour ennemi. */
+    public static final float MAX_REFLECT_HP_PERCENT = 12f;
 
     private final Player player;
     private final Enemy enemy;
@@ -35,7 +37,7 @@ public class CombatContext {
     private int   executionPercent = 0; // Guillotine : % des PV restants de l'ennemi infligés d'un coup (0 : aucun)
 
     private final List<Symbol>  bets        = new ArrayList<>(); // Pari : symboles sur lesquels le joueur a parié
-    private final List<Integer> pistolShots = new ArrayList<>(); // Roulette russe : multiplicateur de chaque tir de pistolet
+    private final List<Integer> pistolShots = new ArrayList<>(); // Roulette russe : part (%) du meilleur coup rejouée par chaque tir
 
     private int     rankFactor = 1;      // Jeton de rang : multiplicateur du bonus du rang
     private int     allIn      = 0;      // Tapis : nombre de mises de tous les gains sur une paire
@@ -50,12 +52,12 @@ public class CombatContext {
     private int   forgedBlades  = 0;  // Lame forgée : coups d'épée en plus, à une part de la plus grosse attaque
     private int   dynamitePercent = 0; // Dynamite : % des PV max de l'ennemi infligés, sans peau ni défense
     private int   goldenHearts  = 0;  // Cœur d'or : les gains du tirage frappent aussi l'ennemi
-    private boolean ignoreDefense  = false; // Pique : les attaques ignorent la défense ennemie
+    private int     piercePercent  = 0;     // Pique : part (%) de chaque coup qui traverse la défense ennemie
     private int     lifeDrainPercent = 0;   // Coeur : % des dégâts infligés rendus en soin
     private boolean gainsFromDamage  = false; // As de Pique : convertit les dégâts infligés en gains
 
-    private int     reflectPercentBonus  = 0;     // Carreau : renvoi additionné sur toutes les cartes, actif si un symbole de défense sort
-    private boolean defenseSymbolDrawn   = false; // un symbole de défense est sorti ce tour (active reflectPercentBonus)
+    private float   reflectHpPercent     = 0f;    // Carreau : renvoi en % des PV max ennemis, additionné, actif si un symbole de défense sort
+    private boolean defenseSymbolDrawn   = false; // un symbole de défense est sorti ce tour (active reflectHpPercent)
     private int     guaranteedReflectPercent      = 0; // As de Carreau : renvoi garanti, sans symbole de défense
     private int     guaranteedReflectLowHpPercent = 0; // As de Carreau : renvoi garanti si le joueur est sous LOW_HP_RATIO
 
@@ -94,7 +96,7 @@ public class CombatContext {
     public int   getSymbolPower()    { return symbolPower; }
     /** @return les symboles sur lesquels le joueur a parié ce tour (vue non modifiable). */
     public List<Symbol>  getBets()        { return Collections.unmodifiableList(bets); }
-    /** @return le multiplicateur de chaque tir de pistolet de ce tour (vue non modifiable). */
+    /** @return la part (%) du meilleur coup rejouée par chaque tir de pistolet de ce tour (vue non modifiable). */
     public List<Integer> getPistolShots() { return Collections.unmodifiableList(pistolShots); }
 
     /** @return le multiplicateur du bonus du rang ce tour (1 si aucun Jeton de rang). */
@@ -149,26 +151,34 @@ public class CombatContext {
     /** @return les Cœurs d'or joués ce tour. */
     public int getGoldenHearts() { return goldenHearts; }
 
-    /** @return {@code true} si les attaques de ce tour ignorent la défense ennemie. */
-    public boolean isIgnoreDefense()    { return ignoreDefense; }
+    /** @return {@code true} si les attaques de ce tour ignorent toute la défense ennemie. */
+    public boolean isIgnoreDefense()    { return piercePercent >= 100; }
+    /** @return la part (%) de chaque coup de ce tour qui traverse la défense ennemie (100 : elle est ignorée). */
+    public int     getPiercePercent()   { return piercePercent; }
     /** @return le pourcentage de drain de vie accumulé ce tour. */
     public int     getLifeDrainPercent() { return lifeDrainPercent; }
     /** @return {@code true} si les dégâts infligés sont convertis en gains ce tour. */
     public boolean isGainsFromDamage()  { return gainsFromDamage; }
 
-    /** @return le renvoi de dégâts des cartes Carreau, additionné sur toutes les cartes jouées ce tour. */
-    public int     getReflectPercentBonus() { return reflectPercentBonus; }
+    /** @return le renvoi des cartes Carreau en % des PV max ennemis, additionné sur toutes les cartes jouées ce tour. */
+    public float   getReflectHpBonus()      { return reflectHpPercent; }
     /** @return {@code true} si un symbole de défense est sorti ce tour. */
     public boolean isDefenseSymbolDrawn()   { return defenseSymbolDrawn; }
 
     /**
-     * Pourcentage de l'attaque ennemie renvoyé lors de la riposte : renvoi garanti
-     * (As de Carreau, selon la vie actuelle du joueur) + renvoi des cartes Carreau
-     * si au moins un symbole de défense est sorti ce tour.
+     * Pourcentage de l'attaque ennemie renvoyé lors de la riposte : le renvoi
+     * garanti (As de Carreau, Miroir taillé), selon la vie actuelle du joueur.
      */
     public int getTotalReflectPercent() {
-        int guaranteed = player.getHpRatio() < LOW_HP_RATIO ? guaranteedReflectLowHpPercent : guaranteedReflectPercent;
-        return guaranteed + (defenseSymbolDrawn ? reflectPercentBonus : 0);
+        return player.getHpRatio() < LOW_HP_RATIO ? guaranteedReflectLowHpPercent : guaranteedReflectPercent;
+    }
+
+    /**
+     * Renvoi des cartes Carreau (2 à Roi), en % des PV max de l'ennemi : actif si
+     * au moins un symbole de défense est sorti ce tour, plafonné à {@link #MAX_REFLECT_HP_PERCENT}.
+     */
+    public float getReflectHpPercent() {
+        return defenseSymbolDrawn ? Math.min(MAX_REFLECT_HP_PERCENT, reflectHpPercent) : 0f;
     }
 
     /** Ajoute {@code bonus} au bonus d'attaque du tour. */
@@ -192,18 +202,20 @@ public class CombatContext {
     public void multiplySymbolPower(int factor)   { symbolPower  *= factor; }
     /** Parie sur l'apparition de {@code symbol} au tirage. */
     public void addBet(Symbol symbol)             { bets.add(symbol); }
-    /** Ajoute un tir de pistolet qui multiplie par {@code multiplier} les dégâts d'un symbole d'attaque. */
-    public void addPistolShot(int multiplier)     { pistolShots.add(multiplier); }
+    /** Ajoute un tir de pistolet qui rejoue {@code percent} % du coup le plus fort du tour. */
+    public void addPistolShot(int percent)        { pistolShots.add(percent); }
 
-    /** Active ou désactive l'ignorance de la défense ennemie pour ce tour. */
-    public void setIgnoreDefense(boolean value)     { ignoreDefense = value; }
+    /** Active ou désactive l'ignorance de toute la défense ennemie pour ce tour. */
+    public void setIgnoreDefense(boolean value)     { piercePercent = value ? 100 : 0; }
+    /** Pique : {@code percent} % de chaque coup traverse la défense ; seul le meilleur perçage du tour compte. */
+    public void pierceDefense(int percent)          { piercePercent = Math.max(piercePercent, Math.min(100, percent)); }
     /** Ajoute {@code percent} au pourcentage de drain de vie du tour. */
     public void addLifeDrainPercent(int percent)    { lifeDrainPercent += percent; }
     /** Active ou désactive la conversion des dégâts infligés en gains pour ce tour. */
     public void setGainsFromDamage(boolean value)   { gainsFromDamage = value; }
 
-    /** Ajoute {@code percent} au renvoi des cartes Carreau (actif si un symbole de défense sort). */
-    public void addReflectPercentBonus(int percent) { reflectPercentBonus += percent; }
+    /** Ajoute {@code percent} % des PV max ennemis au renvoi des cartes Carreau (actif si un symbole de défense sort). */
+    public void addReflectHpPercent(float percent)  { reflectHpPercent += percent; }
     /** Signale qu'un symbole de défense est sorti ce tour : le renvoi des cartes Carreau s'active. */
     public void markDefenseSymbolDrawn()            { defenseSymbolDrawn = true; }
 

@@ -23,8 +23,10 @@ public class EnemyDamagedEvent extends Event {
     public final int blocked;
     /** Défense de l'ennemi restante après ce coup. */
     public final int defenseLeft;
-    /** {@code true} si l'attaque a ignoré la défense de l'ennemi (Pique). */
+    /** {@code true} si l'attaque a ignoré toute la défense de l'ennemi (As de Pique...). */
     public final boolean pierced;
+    /** Part (%) du coup qui a traversé la défense (Pique) ; 100 si elle a été ignorée. */
+    public final int piercePercent;
 
     /**
      * @param damage      dégâts effectivement infligés à l'ennemi (après défense)
@@ -43,12 +45,22 @@ public class EnemyDamagedEvent extends Event {
      */
     public EnemyDamagedEvent(long damage, long rawDamage, long baseDamage, int blocked, int defenseLeft,
                              boolean pierced) {
-        this.damage      = damage;
-        this.rawDamage   = rawDamage;
-        this.baseDamage  = baseDamage;
-        this.blocked     = blocked;
-        this.defenseLeft = defenseLeft;
-        this.pierced     = pierced;
+        this(damage, rawDamage, baseDamage, blocked, defenseLeft, pierced ? 100 : 0);
+    }
+
+    /**
+     * Comme {@link #EnemyDamagedEvent(long, long, long, int, int, boolean)}, avec
+     * {@code piercePercent}, la part (%) du coup qui a traversé la défense.
+     */
+    public EnemyDamagedEvent(long damage, long rawDamage, long baseDamage, int blocked, int defenseLeft,
+                             int piercePercent) {
+        this.damage        = damage;
+        this.rawDamage     = rawDamage;
+        this.baseDamage    = baseDamage;
+        this.blocked       = blocked;
+        this.defenseLeft   = defenseLeft;
+        this.piercePercent = piercePercent;
+        this.pierced       = piercePercent >= 100;
     }
 
     @Override
@@ -69,6 +81,10 @@ public class EnemyDamagedEvent extends Event {
             popups.add(EffectPopup.scaled(Lang.f("DÉGÂTS {0}", damage), EffectPopup.Style.ATTACK, damage, PopupScale.SPIN_DAMAGE));
         }
         if (blocked > 0) popups.add(blockedPopup(blocked, damage == 0));
+        if (piercePercent > 0 && piercePercent < 100) {
+            popups.add(new EffectPopup(Lang.f("DÉFENSE PERCÉE {0}%", piercePercent), EffectPopup.Style.SPECIAL,
+                PopupScale.SECONDARY_INTENSITY * 0.75f));
+        }
         return popups;
     }
 

@@ -259,13 +259,14 @@ public class CardLoader {
 
             // --- Carreau ---
             case "DIAMOND_REFLECT":
-                return new DiamondReflectEffect(json.getInt("percent"), json.getInt("defenseBoost", 0));
+                return new DiamondReflectEffect(json.getFloat("hpPercent"), json.getInt("defenseBoost", 0));
             case "ACE_OF_DIAMONDS":
                 return new AceOfDiamondsEffect();
 
             // --- Pique ---
             case "SPADE_IGNORE_DEFENSE":
-                return new SpadeIgnoreDefenseEffect(json.getInt("attackBonus"), json.getInt("blades", 1));
+                return new SpadeIgnoreDefenseEffect(json.getInt("attackBonus"), json.getInt("blades", 1),
+                    json.getInt("piercePercent"));
             case "ACE_OF_SPADES":
                 return new AceOfSpadesEffect();
 
@@ -297,7 +298,7 @@ public class CardLoader {
             case "BET":
                 return new BetEffect();
             case "RUSSIAN_ROULETTE":
-                return new RussianRouletteEffect(json.getInt("multiplier"), json.getInt("cursedMultiplier"),
+                return new RussianRouletteEffect(json.getInt("percent"), json.getInt("cursedPercent"),
                     json.getInt("penaltyPercent"));
             case "EXTRA_PLAYS":
                 return new ExtraPlaysEffect(json.getInt("plays"), json.getInt("turns"));

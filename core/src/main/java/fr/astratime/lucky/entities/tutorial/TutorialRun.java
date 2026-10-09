@@ -33,7 +33,7 @@ public class TutorialRun implements CombatRun {
 
     /**
      * Les cartes que le Croupier fait jouer, dans l'ordre : le Gains +500 et le 7 de Trèfle, les deux 7 (une
-     * Paire), le Porte-bonheur, puis le Valet de Pique (il perce la défense) et la carte Bingo achetée.
+     * Paire), le Porte-bonheur, puis le Valet de Pique (il perce 40 % de la défense) et la carte Bingo achetée.
      */
     public static final String GAINS_CARD = "gain_500";
     public static final String CLUB_SEVEN = "7_trefle";

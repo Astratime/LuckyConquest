@@ -648,7 +648,7 @@ public class GameController {
         }
         pendingChoice = null;
         boolean cursed = roulette.cursed().get(index);
-        PistolEffect pistol = new PistolEffect(cursed ? roulette.cursedMultiplier() : roulette.pistolMultiplier());
+        PistolEffect pistol = new PistolEffect(cursed ? roulette.cursedPercent() : roulette.pistolPercent());
         pendingEffects.add(pistol);
         if (cursed) {
             int lost = gameState.getPlayer().consumeGainsPercent(roulette.penaltyPercent() / 100f);

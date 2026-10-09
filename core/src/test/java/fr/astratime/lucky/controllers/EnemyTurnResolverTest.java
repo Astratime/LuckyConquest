@@ -91,6 +91,28 @@ class EnemyTurnResolverTest {
     }
 
     @Test
+    void diamondsReflectAShareOfTheEnemysMaxHpWhenItAttacks() {
+        List<Card> spades = new ArrayList<>();
+        for (int i = 0; i < 8; i++) spades.add(card(Card.Suit.PIQUE, 1));
+        boolean attacked = false;
+        for (int seed = 0; seed < 40 && !attacked; seed++) {
+            Enemy  enemy  = new Enemy("Ennemi", 1_000_000, spades);
+            Player player = new Player("Joueur", 1000, List.of());
+            player.addShield(1000);
+
+            EnemyTurnResult turn = new EnemyTurnResolver(new Random(seed))
+                .resolve(enemy, player, 0, 0f, 0, List.of(), 3.75f);
+
+            boolean swords = java.util.Arrays.stream(turn.symbols()).anyMatch(s -> s == EnemySymbol.SWORD);
+            boolean reflected = turn.afterEvents().stream()
+                .anyMatch(e -> e instanceof DamageReflectedEvent r && r.damage == 37_500);
+            if (swords) assertTrue(reflected, "3,75 % de 1 000 000 renvoyés quand il attaque");
+            attacked = swords;
+        }
+        assertTrue(attacked, "au moins un tirage avec une Épée");
+    }
+
+    @Test
     void thePlayersShieldAbsorbsSwordsAndTheReflectHitsBack() {
         List<Card> spades = new ArrayList<>();
         for (int i = 0; i < 8; i++) spades.add(card(Card.Suit.PIQUE, 1)); // +5 par Épée

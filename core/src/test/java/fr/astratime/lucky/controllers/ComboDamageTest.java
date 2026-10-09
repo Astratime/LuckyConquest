@@ -56,45 +56,45 @@ class ComboDamageTest {
     /**
      * Chaque Triple Sept frappe de (90 + attaque du rang + 20 par Lame + bonus de
      * l'As de Trèfle) x (1 + 0,5 par Lame) x 2 (Corruption) x 4,5 (Paire des deux As)
-     * x 10 (Bingo) ; le pistolet tire ensuite l'attaque du symbole avant ces
-     * multiplicateurs, x50. AUCUN : pas de rang.
+     * x 10 (Bingo) ; le pistolet rejoue ensuite le coup le plus fort du tour, tel
+     * qu'il a frappé (un Triple Sept de plus). AUCUN : pas de rang.
      */
     @ParameterizedTest(name = "{0} gains, rang {1} : {8} dégâts")
     @CsvSource({
         // gains, rang, As de Trèfle (consommé, attaque), As de Pique (consommé, Lames), par Triple Sept, pistolet, total
-        "10000, AUCUN, 3000, 663, 700, 2, 142740, 39650, 467870",
-        "10000, AVARE, 3000, 663, 700, 2, 160740, 44650, 526870",
-        "10000, PARIEUR, 3000, 663, 700, 2, 178740, 49650, 585870",
-        "10000, FLAMBEUR, 3000, 663, 700, 2, 205740, 57150, 674370",
-        "10000, HABITUE, 3000, 663, 700, 2, 232740, 64650, 762870",
-        "10000, REQUIN, 3000, 663, 700, 2, 277740, 77150, 910370",
-        "10000, GROS_BONNET, 3000, 663, 700, 2, 322740, 89650, 1057870",
-        "10000, BARON, 3000, 663, 700, 2, 394740, 109650, 1293870",
-        "10000, MAGNAT, 3000, 663, 700, 2, 502740, 139650, 1647870",
-        "10000, ROI_DU_CASINO, 3000, 663, 700, 2, 646740, 179650, 2119870",
-        "10000, LEGENDE, 3000, 663, 700, 2, 862740, 239650, 2827870",
-        "100000, AUCUN, 30000, 1847, 7000, 5, 641655, 101850, 2026815",
-        "100000, AVARE, 30000, 1847, 7000, 5, 673155, 106850, 2126315",
-        "100000, PARIEUR, 30000, 1847, 7000, 5, 704655, 111850, 2225815",
-        "100000, FLAMBEUR, 30000, 1847, 7000, 5, 751905, 119350, 2375065",
-        "100000, HABITUE, 30000, 1847, 7000, 5, 799155, 126850, 2524315",
-        "100000, REQUIN, 30000, 1847, 7000, 5, 877905, 139350, 2773065",
-        "100000, GROS_BONNET, 30000, 1847, 7000, 5, 956655, 151850, 3021815",
-        "100000, BARON, 30000, 1847, 7000, 5, 1082655, 171850, 3419815",
-        "100000, MAGNAT, 30000, 1847, 7000, 5, 1271655, 201850, 4016815",
-        "100000, ROI_DU_CASINO, 30000, 1847, 7000, 5, 1523655, 241850, 4812815",
-        "100000, LEGENDE, 30000, 1847, 7000, 5, 1901655, 301850, 6006815",
-        "1000000, AUCUN, 300000, 5592, 70000, 5, 1821330, 289100, 5753090",
-        "1000000, AVARE, 300000, 5592, 70000, 5, 1852830, 294100, 5852590",
-        "1000000, PARIEUR, 300000, 5592, 70000, 5, 1884330, 299100, 5952090",
-        "1000000, FLAMBEUR, 300000, 5592, 70000, 5, 1931580, 306600, 6101340",
-        "1000000, HABITUE, 300000, 5592, 70000, 5, 1978830, 314100, 6250590",
-        "1000000, REQUIN, 300000, 5592, 70000, 5, 2057580, 326600, 6499340",
-        "1000000, GROS_BONNET, 300000, 5592, 70000, 5, 2136330, 339100, 6748090",
-        "1000000, BARON, 300000, 5592, 70000, 5, 2262330, 359100, 7146090",
-        "1000000, MAGNAT, 300000, 5592, 70000, 5, 2451330, 389100, 7743090",
-        "1000000, ROI_DU_CASINO, 300000, 5592, 70000, 5, 2703330, 429100, 8539090",
-        "1000000, LEGENDE, 300000, 5592, 70000, 5, 3081330, 489100, 9733090",
+        "10000, AUCUN, 3000, 663, 700, 2, 142740, 142740, 570960",
+        "10000, AVARE, 3000, 663, 700, 2, 160740, 160740, 642960",
+        "10000, PARIEUR, 3000, 663, 700, 2, 178740, 178740, 714960",
+        "10000, FLAMBEUR, 3000, 663, 700, 2, 205740, 205740, 822960",
+        "10000, HABITUE, 3000, 663, 700, 2, 232740, 232740, 930960",
+        "10000, REQUIN, 3000, 663, 700, 2, 277740, 277740, 1110960",
+        "10000, GROS_BONNET, 3000, 663, 700, 2, 322740, 322740, 1290960",
+        "10000, BARON, 3000, 663, 700, 2, 394740, 394740, 1578960",
+        "10000, MAGNAT, 3000, 663, 700, 2, 502740, 502740, 2010960",
+        "10000, ROI_DU_CASINO, 3000, 663, 700, 2, 646740, 646740, 2586960",
+        "10000, LEGENDE, 3000, 663, 700, 2, 862740, 862740, 3450960",
+        "100000, AUCUN, 30000, 1847, 7000, 5, 641655, 641655, 2566620",
+        "100000, AVARE, 30000, 1847, 7000, 5, 673155, 673155, 2692620",
+        "100000, PARIEUR, 30000, 1847, 7000, 5, 704655, 704655, 2818620",
+        "100000, FLAMBEUR, 30000, 1847, 7000, 5, 751905, 751905, 3007620",
+        "100000, HABITUE, 30000, 1847, 7000, 5, 799155, 799155, 3196620",
+        "100000, REQUIN, 30000, 1847, 7000, 5, 877905, 877905, 3511620",
+        "100000, GROS_BONNET, 30000, 1847, 7000, 5, 956655, 956655, 3826620",
+        "100000, BARON, 30000, 1847, 7000, 5, 1082655, 1082655, 4330620",
+        "100000, MAGNAT, 30000, 1847, 7000, 5, 1271655, 1271655, 5086620",
+        "100000, ROI_DU_CASINO, 30000, 1847, 7000, 5, 1523655, 1523655, 6094620",
+        "100000, LEGENDE, 30000, 1847, 7000, 5, 1901655, 1901655, 7606620",
+        "1000000, AUCUN, 300000, 5592, 70000, 5, 1821330, 1821330, 7285320",
+        "1000000, AVARE, 300000, 5592, 70000, 5, 1852830, 1852830, 7411320",
+        "1000000, PARIEUR, 300000, 5592, 70000, 5, 1884330, 1884330, 7537320",
+        "1000000, FLAMBEUR, 300000, 5592, 70000, 5, 1931580, 1931580, 7726320",
+        "1000000, HABITUE, 300000, 5592, 70000, 5, 1978830, 1978830, 7915320",
+        "1000000, REQUIN, 300000, 5592, 70000, 5, 2057580, 2057580, 8230320",
+        "1000000, GROS_BONNET, 300000, 5592, 70000, 5, 2136330, 2136330, 8545320",
+        "1000000, BARON, 300000, 5592, 70000, 5, 2262330, 2262330, 9049320",
+        "1000000, MAGNAT, 300000, 5592, 70000, 5, 2451330, 2451330, 9805320",
+        "1000000, ROI_DU_CASINO, 300000, 5592, 70000, 5, 2703330, 2703330, 10813320",
+        "1000000, LEGENDE, 300000, 5592, 70000, 5, 3081330, 3081330, 12325320",
     })
     void asTrefleAsPiqueRouletteCorruptionEtBingoTripleSept(int gains, String rank, int clubsConsumed,
                                                            int clubsAttack, int spadesConsumed, int blades,
@@ -144,8 +144,8 @@ class ComboDamageTest {
         List<PistolShotEvent> shots = turn.getPistolEvents().stream()
             .filter(PistolShotEvent.class::isInstance).map(PistolShotEvent.class::cast).toList();
         assertEquals(1, shots.size());
-        assertEquals(50, shots.get(0).multiplier);
-        assertEquals(base * 50, pistol, "pistolet : attaque du symbole avant les multiplicateurs, x50");
+        assertEquals(100, shots.get(0).percent);
+        assertEquals(perSymbol, pistol, "pistolet : le coup le plus fort du tour, rejoué en entier");
         assertEquals(pistol, shots.get(0).damage);
 
         assertEquals(total, hits.stream().mapToLong(hit -> hit.damage).sum() + shots.get(0).damage);
@@ -156,7 +156,7 @@ class ComboDamageTest {
         Player player = new Player("Joueur", 100, List.of());
         CombatContext context = new CombatContext(player, new Enemy("Ennemi", 1_000_000));
         context.multiplySymbolPower(1_000_000); // 90 x 1 000 000 : 90 millions de dégâts
-        context.addPistolShot(100_000);          // 90 x 100 000 : 9 millions
+        context.addPistolShot(100);              // rejoue le coup plafonné
         Symbol[] symbols = {Symbol.TRIPLE_SEVEN, null, null};
         TurnResult turn = new CombatResolver().resolve(context, new ActionResolver().resolve(symbols), symbols,
             List.of());
@@ -166,17 +166,17 @@ class ComboDamageTest {
     }
 
     @Test
-    void lePistoletTireLAttaqueAvantLesMultiplicateurs() {
+    void lePistoletRejoueLeCoupAvecSesMultiplicateurs() {
         Player player = new Player("Joueur", 100, List.of());
         CombatContext context = new CombatContext(player, new Enemy("Ennemi", 1_000_000));
         context.multiplySymbolPower(10);
-        context.addPistolShot(50);
+        context.addPistolShot(100);
         Symbol[] symbols = {Symbol.TRIPLE_SEVEN, null, null};
         TurnResult turn = new CombatResolver().resolve(context, new ActionResolver().resolve(symbols), symbols,
             List.of());
         assertEquals(900, symbolHits(turn).get(0).rawDamage, "Triple Sept 90 x10");
         PistolShotEvent shot = (PistolShotEvent) turn.getPistolEvents().get(0);
-        assertEquals(90 * 50, shot.rawDamage, "le pistolet ignore le x10 du Bingo");
+        assertEquals(900, shot.rawDamage, "le pistolet garde le x10 du Bingo");
     }
 
     private static void play(GameController controller, String id) {

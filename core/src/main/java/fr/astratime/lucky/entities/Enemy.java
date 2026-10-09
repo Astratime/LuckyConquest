@@ -425,6 +425,17 @@ public class Enemy {
      * @param damage dégâts bruts de l'attaque
      * @return les dégâts absorbés par la défense (le reste touche l'ennemi)
      */
+    /**
+     * Comme {@link #absorb(long)}, quand {@code piercePercent} % du coup traverse
+     * la défense (Pique) : seul le reste peut être absorbé.
+     *
+     * @return les dégâts absorbés
+     */
+    public int absorb(long damage, int piercePercent) {
+        int pierce = Math.max(0, Math.min(100, piercePercent));
+        return absorb(damage - damage * pierce / 100);
+    }
+
     public int absorb(long damage) {
         int absorbed = (int) Math.min(defense, Math.max(0, damage));
         defense -= absorbed;

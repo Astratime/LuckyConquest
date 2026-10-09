@@ -164,7 +164,7 @@ final class TutorialDirector {
                 steps.add(spin(Lang.t("Lance la machine."), TutorialRun.rigged(2)));
             }
             case 3 -> {
-                steps.add(play(Lang.t("Mon bouclier est épais. Les Piques le transpercent. Joue le Valet de Pique."),
+                steps.add(play(Lang.t("Mon bouclier est épais. Les Piques le percent en partie. Joue le Valet de Pique."),
                     Set.of(TutorialRun.SPADE), 1));
                 steps.add(Step.action(Lang.t("Tes gains se dépensent à l'échoppe. Ouvre-la."), board::shopIcon, board::shopShown)
                     .onStart(() -> restrict(Set.of(), false)));

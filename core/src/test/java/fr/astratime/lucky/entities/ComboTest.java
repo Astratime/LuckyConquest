@@ -42,15 +42,26 @@ class ComboTest {
     }
 
     @Test
+    void carreNeedsFourCardsOfTheSameRankAndKeepsBrelanAndPaire() {
+        List<Card> fourAces = List.of(card(1, Card.Suit.COEUR), card(1, Card.Suit.PIQUE),
+            card(1, Card.Suit.TREFLE), card(1, Card.Suit.CARREAU));
+        assertTrue(Combo.CARRE.matches(fourAces));
+        assertFalse(Combo.CARRE.matches(fourAces.subList(0, 3)));
+        assertEquals(List.of(Combo.CARRE, Combo.BRELAN, Combo.PAIRE), Combo.formed(fourAces));
+        assertEquals(20.5f, Combo.totalFactor(Combo.formed(fourAces)), 1e-6, "Carré + Brelan + Paire : 10 + 6 + 4.5");
+    }
+
+    @Test
     void paireNeedsTwoCardsOfTheSameRank() {
         assertTrue(Combo.PAIRE.matches(List.of(card(12, Card.Suit.COEUR), card(12, Card.Suit.PIQUE))));
         assertFalse(Combo.PAIRE.matches(List.of(card(12, Card.Suit.COEUR), card(13, Card.Suit.COEUR), special())));
     }
 
     @Test
-    void combosAddUpButABrelanDoesNotAlsoCountItsOwnPair() {
+    void combosAddUpAndABrelanAlsoCountsItsPair() {
         List<Card> brelan = List.of(card(12, Card.Suit.COEUR), card(12, Card.Suit.PIQUE), card(12, Card.Suit.TREFLE));
-        assertEquals(List.of(Combo.BRELAN), Combo.formed(brelan), "pas de Paire en plus du Brelan");
+        assertEquals(List.of(Combo.BRELAN, Combo.PAIRE), Combo.formed(brelan), "la Paire validée reste avec le Brelan");
+        assertEquals(10.5f, Combo.totalFactor(Combo.formed(brelan)), 1e-6, "Brelan + Paire : 6 + 4.5");
 
         List<Card> brelanAndPair = List.of(card(12, Card.Suit.COEUR), card(12, Card.Suit.PIQUE),
             card(12, Card.Suit.TREFLE), card(1, Card.Suit.COEUR), card(1, Card.Suit.CARREAU));

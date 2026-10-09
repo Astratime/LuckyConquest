@@ -16,9 +16,10 @@ import java.util.Set;
  * sont vérifiées automatiquement au lancer de la machine : chaque combinaison
  * formée ({@link #formed}) apporte son multiplicateur, et ceux de toutes
  * les combinaisons formées s'additionnent avant de multiplier les gains et
- * l'attaque du tirage (ex : Suite et Paire, 5 + 4.5 = x9.5). Une paire
- * contenue dans un brelan ne compte pas en plus ; une paire d'un autre rang,
- * si (Brelan et Paire, x10.5). L'ordre dans lequel les cartes sont jouées ne
+ * l'attaque du tirage (ex : Suite et Paire, 5 + 4.5 = x9.5). Une combinaison
+ * validée est gardée jusqu'au tirage : un Brelan contient aussi une Paire
+ * (3 As, 6 + 4.5 = x10.5), un Carré un Brelan et une Paire (4 As,
+ * 10 + 6 + 4.5 = x20.5). L'ordre dans lequel les cartes sont jouées ne
  * compte pas.
  * <p>
  * Elles poussent le joueur à varier les cartes qu'il pose, plutôt que de ne
@@ -30,6 +31,10 @@ public enum Combo {
 
     // Déclarées de la plus forte à la plus faible.
 
+    /**
+     * Quatre cartes du même rang.
+     */
+    CARRE("CARRÉ", 10f, "4 cartes du même rang"),
     /**
      * Trois cartes du même rang.
      */
@@ -51,6 +56,10 @@ public enum Combo {
      * Nombre de cartes minimum pour une suite, une couleur ou un brelan.
      */
     private static final int MIN_CARDS = 3;
+    /**
+     * Nombre de cartes du même rang pour un carré.
+     */
+    private static final int SQUARE_CARDS = 4;
     private static final int ACE  = 1;
     private static final int KING = 13;
 
@@ -101,8 +110,7 @@ public enum Combo {
 
     /**
      * @return les combinaisons formées par les cartes de {@code played}, de la
-     * plus forte à la plus faible ; la Paire n'est comptée avec un Brelan
-     * que si elle est d'un autre rang
+     * plus forte à la plus faible (un Carré compte aussi Brelan et Paire)
      */
     public static List<Combo> formed(List<Card> played) {
         EnumSet<Combo> formed = EnumSet.noneOf(Combo.class);
@@ -142,6 +150,7 @@ public enum Combo {
             case COULEUR -> suited.size() >= MIN_CARDS
                 && suited.stream().map(Card::getSuit).distinct().count() == 1;
             case BRELAN -> byRank.values().stream().anyMatch(count -> count >= MIN_CARDS);
+            case CARRE -> byRank.values().stream().anyMatch(count -> count >= SQUARE_CARDS);
         };
     }
 

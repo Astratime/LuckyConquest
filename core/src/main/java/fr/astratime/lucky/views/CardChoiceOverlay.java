@@ -175,14 +175,14 @@ public class CardChoiceOverlay implements Disposable {
      * {@code onPicked} quand la fenêtre se referme.
      *
      * @param cursed pour chaque carte, {@code true} si c'est le Joker maudit
-     * @param multiplier multiplicateur du pistolet, {@code cursedMultiplier} celui du Joker maudit et
-     *                   {@code penaltyPercent} les gains qu'il fait perdre (pour le texte)
+     * @param percent part (%) du meilleur coup rejouée par le pistolet, {@code cursedPercent} celle du Joker
+     *                maudit et {@code penaltyPercent} les gains qu'il fait perdre (pour le texte)
      */
-    public void showRoulette(List<Boolean> cursed, int multiplier, int cursedMultiplier, int penaltyPercent,
+    public void showRoulette(List<Boolean> cursed, int percent, int cursedPercent, int penaltyPercent,
                              IntConsumer onPicked) {
-        open(Lang.t("ROULETTE RUSSE"), Lang.f("Retourne une carte. Pistolet : degats d'un symbole x{0}.\nJoker maudit : pistolet x{1} et -{2}% "
-            + "de gains.",
-            multiplier, cursedMultiplier, penaltyPercent));
+        open(Lang.t("ROULETTE RUSSE"), Lang.f("Retourne une carte. Pistolet : rejoue le coup le plus fort du tour.\n"
+            + "Joker maudit : le coup rejoué perd {0}% et -{1}% de gains.",
+            percent - cursedPercent, penaltyPercent));
         Table row = new Table();
         Label result = new Label(" ", new Label.LabelStyle(resultFont, Color.WHITE));
         result.setAlignment(Align.center);
@@ -220,9 +220,9 @@ public class CardChoiceOverlay implements Disposable {
                     boolean lost = cursed.get(index);
                     flip(card, lost ? cursedFace : rouletteFace, 0f);
                     card.addAction(Actions.delay(FLIP_TIME * 2f, Actions.run(() -> {
-                        result.setText(lost ? Lang.f("JOKER MAUDIT !  -{0}% DE GAINS, PISTOLET x{1}",
-                            penaltyPercent, cursedMultiplier)
-                            : Lang.f("PAN ! PISTOLET CHARGE  x{0}", multiplier));
+                        result.setText(lost ? Lang.f("JOKER MAUDIT !  -{0}% DE GAINS, COUP REJOUÉ À {1}%",
+                            penaltyPercent, cursedPercent)
+                            : Lang.t("PISTOLET CHARGÉ : MEILLEUR COUP REJOUÉ"));
                         result.setColor(lost ? Palette.TEXT_ALERT : Palette.TEXT_TITLE);
                         result.setOrigin(Align.center);
                         result.setFontScale(1f);

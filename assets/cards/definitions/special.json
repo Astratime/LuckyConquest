@@ -96,8 +96,8 @@
     "effects": [
       {
         "type": "RUSSIAN_ROULETTE",
-        "multiplier": 50,
-        "cursedMultiplier": 20,
+        "percent": 100,
+        "cursedPercent": 80,
         "penaltyPercent": 20
       }
     ]
