@@ -93,7 +93,7 @@ public class CardDetailOverlay implements Disposable {
      * @param texture image de la carte
      * @param price   prix à l'échoppe, ou {@code null} si la carte n'y est pas vendue
      */
-    public void show(Card card, Texture texture, Integer price) {
+    public void show(Card card, Texture texture, Double price) {
         show(card, texture, price != null ? Lang.t("Prix à l'échoppe") : null,
             price != null ? Lang.f("{0} gains", SidePanel.formatGains(price)) : null);
     }

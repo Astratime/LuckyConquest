@@ -10,15 +10,15 @@ import java.util.List;
 public class AllInLostEvent extends GainsLostEvent {
 
     /** @param amount gains perdus */
-    public AllInLostEvent(int amount) { super(amount); }
+    public AllInLostEvent(double amount) { super(amount); }
 
     @Override
-    public String describe() { return "Tapis perdu : -" + amount + " gains"; }
+    public String describe() { return "Tapis perdu : -" + Lang.big(amount) + " gains"; }
 
     @Override
     public List<EffectPopup> getPopups() {
         return List.of(
             new EffectPopup(Lang.t("TAPIS PERDU !"), EffectPopup.Style.DAMAGE, PopupScale.MAX_INTENSITY),
-            EffectPopup.scaled(Lang.f("GAINS -{0}", amount), EffectPopup.Style.DAMAGE, amount, PopupScale.SPIN_GAINS));
+            EffectPopup.scaled(Lang.f("GAINS -{0}", Lang.big(amount)), EffectPopup.Style.DAMAGE, amount, PopupScale.SPIN_GAINS));
     }
 }

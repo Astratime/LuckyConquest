@@ -9,16 +9,16 @@ import java.util.List;
 /** Événement émis quand le joueur perd des gains (pari perdu). */
 public class GainsLostEvent extends Event {
     /** Montant de gains perdus. */
-    public final int amount;
+    public final double amount;
 
     /** @param amount montant de gains perdus. */
-    public GainsLostEvent(int amount) { this.amount = amount; }
+    public GainsLostEvent(double amount) { this.amount = amount; }
 
     @Override
-    public String describe() { return "-" + amount + " gains"; }
+    public String describe() { return "-" + Lang.big(amount) + " gains"; }
 
     @Override
     public List<EffectPopup> getPopups() {
-        return List.of(EffectPopup.scaled(Lang.f("GAINS -{0}", amount), EffectPopup.Style.DAMAGE, amount, PopupScale.SPIN_GAINS));
+        return List.of(EffectPopup.scaled(Lang.f("GAINS -{0}", Lang.big(amount)), EffectPopup.Style.DAMAGE, amount, PopupScale.SPIN_GAINS));
     }
 }

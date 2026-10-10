@@ -1,5 +1,6 @@
 package fr.astratime.lucky.entities.actions;
 
+import fr.astratime.lucky.entities.BigNumber;
 import fr.astratime.lucky.entities.BoostBreakdown;
 import fr.astratime.lucky.entities.SpinEconomy;
 import fr.astratime.lucky.entities.context.CombatContext;
@@ -36,7 +37,7 @@ public class GainAction extends Action {
         int rank = context.getPlayer().getRankBonus().gains() * context.getRankFactor();
         int base = baseGain + rank;
         float scale = SpinEconomy.gainScale(context.getSpinCost());
-        int gain = Math.round(base * context.getGainMultiplier() * context.getGainFactor()
+        double gain = BigNumber.round((double) base * context.getGainMultiplier() * context.getGainFactor()
             * context.getSymbolPower() * scale);
         context.getPlayer().addGains(gain);
         // Le détail : les cartes Trèfle (multiplicateur additionné) et le coût du tirage s'ajoutent aux étapes du tour.

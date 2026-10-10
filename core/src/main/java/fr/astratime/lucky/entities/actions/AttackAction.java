@@ -60,7 +60,7 @@ public class AttackAction extends Action {
         int rank   = context.getPlayer().getRankBonus().attack() * context.getRankFactor();
         int base   = symbol + rank;
         // En long et en double : un gros combo dépasse le milliard de dégâts.
-        int unscaled = base + context.getAttackBonus(); // avant les multiplicateurs : ce que vise le pistolet
+        long unscaled = base + context.getAttackBonus(); // avant les multiplicateurs : ce que vise le pistolet
         long uncapped  = Math.round((double) unscaled * context.getAttackFactor() * context.getSymbolPower());
         long rawDamage = enemy.capHit(uncapped);
         int pierce      = piercing ? 100 : context.getPiercePercent(); // Pique : une part du coup traverse la défense
@@ -86,7 +86,7 @@ public class AttackAction extends Action {
         }
 
         if (context.isGainsFromDamage() && damage > 0) {
-            int earned = (int) Math.min(damage, Integer.MAX_VALUE); // les gains restent un int
+            double earned = damage;
             context.getPlayer().addGains(earned);
             events.add(new GainsEarnedEvent(earned));
         }

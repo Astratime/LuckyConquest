@@ -111,11 +111,19 @@ class DungeonCardsTest {
     }
 
     @Test
-    void kingsFortuneDoublesGainsThenAddsTenPercentToAttack() {
+    void kingsFortuneAddsSevenPercentGainsThenTenPercentOfThemToAttack() {
         player.addGains(2000);
         TurnContext turn = play("fortune_du_roi");
-        assertEquals(4000, player.getGains());
-        assertEquals(400, turn.getCombatContext().getAttackBonus());
+        assertEquals(2140, player.getGains(), "+7 % de 2 000");
+        assertEquals(14, turn.getCombatContext().getAttackBonus(), "10 % des 140 gagnés");
+    }
+
+    @Test
+    void upgradedKingsFortuneAddsTenPercentGainsThenFifteenPercentOfThem() {
+        player.addGains(2000);
+        TurnContext turn = play(Card.upgradedId("fortune_du_roi"));
+        assertEquals(2200, player.getGains(), "+10 % de 2 000");
+        assertEquals(30, turn.getCombatContext().getAttackBonus(), "15 % des 200 gagnés");
     }
 
     @Test

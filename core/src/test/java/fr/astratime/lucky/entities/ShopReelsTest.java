@@ -39,7 +39,7 @@ class ShopReelsTest {
         resolve(player, new Enemy("Ennemi", 100_000), Symbol.GRAPE, null, null);
         assertEquals(8 + 50, player.getShield(), "Raisin : 8 + 50 du rang");
 
-        int gains = player.getGains();
+        double gains = player.getGains();
         resolve(player, new Enemy("Ennemi", 100_000), Symbol.BELL, null, null);
         assertEquals(gains + 8 + 70, player.getGains(), "Cloche : 8 + 70 du rang");
     }

@@ -33,7 +33,7 @@ public class Player {
     private final int         maxHp;
 
     /** Monnaie gagnée en combat. Servira à acheter des bonus en combat. */
-    private int gains = 0;
+    private double gains = 0; // en double : les gains dépassent vite le milliard (voir BigNumber)
 
     /** Bouclier accumulé ce tour par les DefenseAction. */
     private int shield = 0;
@@ -48,8 +48,21 @@ public class Player {
     private boolean ropeUsed  = false;
     /** La Corde de rappel vient de retenir le joueur (texte à montrer). */
     private boolean ropeSaved = false;
-    /** Cartes volées (Abordage) ou confisquées (Fouille) : absentes du combat, elles reviennent au suivant. */
+    /** Cartes confisquées (Fouille) : absentes du combat, elles reviennent au suivant. */
     private final List<Card> confiscated = new ArrayList<>();
+    /** Cartes volées (Abordage), avec les tours du joueur qu'il leur reste à passer chez l'ennemi. */
+    private final List<StolenCard> stolen = new ArrayList<>();
+
+    /** Une carte volée par l'Abordage et les tours qu'elle doit encore manquer. */
+    private static final class StolenCard {
+        final Card card;
+        int turnsLeft;
+
+        StolenCard(Card card, int turnsLeft) {
+            this.card      = card;
+            this.turnsLeft = turnsLeft;
+        }
+    }
 
     /**
      * @param name     nom affiché du joueur
@@ -143,9 +156,9 @@ public class Player {
      * les gains sous 0 (ni n'aggrave une dette de la Taxe) ; ce qui est perdu ou
      * dépensé l'est d'abord en Fausse monnaie.
      */
-    public void addGains(int amount) {
-        int before = gains;
-        gains = amount >= 0 ? (int) Math.min(Integer.MAX_VALUE, (long) gains + amount) // pas de dépassement
+    public void addGains(double amount) {
+        double before = gains;
+        gains = amount >= 0 ? BigNumber.add(gains, amount)
                             : Math.max(Math.min(0, gains), gains + amount);
         if (gains < before) lastingEffects.spendFakeGains(before - gains);
     }
@@ -156,8 +169,8 @@ public class Player {
      *
      * @return les gains retirés
      */
-    public int payTax(int percent, int flat) {
-        int taxed = Math.round(Math.max(0, gains) * percent / 100f) + flat;
+    public double payTax(int percent, int flat) {
+        double taxed = BigNumber.percent(Math.max(0, gains), percent) + flat;
         lastingEffects.spendFakeGains(Math.max(0, Math.min(gains, taxed)));
         gains -= taxed;
         return taxed;
@@ -178,8 +191,8 @@ public class Player {
      * @param percent pourcentage à consommer (0.3f = 30%)
      * @return le montant effectivement consommé
      */
-    public int consumeGainsPercent(float percent) {
-        int amount = Math.round(Math.max(0, gains) * percent);
+    public double consumeGainsPercent(float percent) {
+        double amount = BigNumber.round(Math.max(0, gains) * percent);
         lastingEffects.spendFakeGains(amount);
         gains -= amount;
         return amount;
@@ -299,7 +312,8 @@ public class Player {
         cards.addAll(discardPile.getCards());
         cards.addAll(currentHand);
         cards.addAll(playedCards);
-        cards.addAll(confiscated); // volées ou confisquées le temps d'un combat seulement
+        cards.addAll(confiscated); // confisquées le temps d'un combat seulement
+        for (StolenCard theft : stolen) cards.add(theft.card); // volées : elles reviennent au plus tard au combat suivant
         Player next = new Player(name, maxHp - rankBonus.hp(), cards, rankBonus, slotMachine.getReels());
         next.hp = hp; // les PV perdus ne reviennent pas d'un combat à l'autre
         next.gains = gains;
@@ -367,14 +381,37 @@ public class Player {
 
     /**
      * Abordage : {@code card} est volée, sur la table ou parmi les cartes
-     * jouées ; elle ne revient pas de tout le combat.
+     * jouées ; elle manque les {@code turns} prochains tours du joueur, puis
+     * revient dans son deck (voir {@link #returnStolenCards()}).
      *
      * @return {@code false} si le joueur ne l'avait ni en main ni parmi les cartes jouées
      */
-    public boolean steal(Card card) {
+    public boolean steal(Card card, int turns) {
         if (!currentHand.remove(card) && !playedCards.remove(card)) return false;
-        confiscated.add(card);
+        stolen.add(new StolenCard(card, turns));
         return true;
+    }
+
+    /**
+     * Début du tour du joueur, avant la pioche : chaque carte volée passe un
+     * tour de plus chez l'ennemi ; celles qui ont manqué tous leurs tours
+     * reviennent dans le deck, à une place au hasard.
+     *
+     * @return les cartes rendues ce tour
+     */
+    public List<Card> returnStolenCards() {
+        List<Card> returned = new ArrayList<>();
+        for (java.util.Iterator<StolenCard> it = stolen.iterator(); it.hasNext(); ) {
+            StolenCard theft = it.next();
+            if (theft.turnsLeft > 0) {
+                theft.turnsLeft--;
+                continue;
+            }
+            it.remove();
+            deck.insertRandomly(theft.card);
+            returned.add(theft.card);
+        }
+        return returned;
     }
 
     /**
@@ -393,8 +430,11 @@ public class Player {
         return card;
     }
 
-    /** @return les cartes volées ou confisquées ce combat. */
+    /** @return les cartes confisquées ce combat (Fouille). */
     public List<Card> getConfiscated() { return Collections.unmodifiableList(confiscated); }
+
+    /** @return les cartes volées en ce moment (Abordage), qui reviendront dans le deck. */
+    public List<Card> getStolen() { return stolen.stream().map(theft -> theft.card).toList(); }
 
     /** @return toutes les cartes du joueur ce combat : deck, défausse, main et cartes jouées. */
     public List<Card> getAllCards() {
@@ -444,7 +484,7 @@ public class Player {
     /** @return les cartes jouées ce tour (vue non modifiable). */
     public List<Card>  getPlayedCards()             { return Collections.unmodifiableList(playedCards); }
     /** @return les gains accumulés. */
-    public int         getGains()                   { return gains; }
+    public double      getGains()                   { return gains; }
     /** @return le bouclier accumulé ce tour. */
     public int         getShield()                  { return shield; }
 }

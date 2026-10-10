@@ -210,7 +210,7 @@ class GameControllerTest {
             assertEquals(1, choice.cursed().stream().filter(c -> c).count(), "un seul Joker maudit");
 
             GameController.RouletteOutcome outcome = controller.pickRouletteCard(index);
-            int gainsAfterPick = player(controller).getGains();
+            double gainsAfterPick = player(controller).getGains();
             TurnResult turn = controller.spin();
 
             assertEquals(choice.cursed().get(index), outcome.cursed());

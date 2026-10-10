@@ -10,15 +10,15 @@ import java.util.List;
 public class AllInWonEvent extends GainsEarnedEvent {
 
     /** @param amount gains crédités par le Tapis */
-    public AllInWonEvent(int amount) { super(amount); }
+    public AllInWonEvent(double amount) { super(amount); }
 
     @Override
-    public String describe() { return "Tapis gagne : gains x3 (+" + amount + ")"; }
+    public String describe() { return "Tapis gagne : gains x3 (+" + Lang.big(amount) + ")"; }
 
     @Override
     public List<EffectPopup> getPopups() {
         return List.of(
             new EffectPopup(Lang.t("TAPIS GAGNÉ ! GAINS x3"), EffectPopup.Style.GAINS, PopupScale.MAX_INTENSITY),
-            EffectPopup.scaled(Lang.f("GAINS +{0}", amount), EffectPopup.Style.GAINS, amount, PopupScale.SPIN_GAINS));
+            EffectPopup.scaled(Lang.f("GAINS +{0}", Lang.big(amount)), EffectPopup.Style.GAINS, amount, PopupScale.SPIN_GAINS));
     }
 }

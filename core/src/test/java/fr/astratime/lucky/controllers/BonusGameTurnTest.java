@@ -36,16 +36,16 @@ class BonusGameTurnTest {
     void theTestCardOpensTheBonusGameAndItsGainsAreCredited() {
         GameState state = fight();
         TurnEngine engine = new TurnEngine();
-        long before = state.getPlayer().getGains();
+        double before = state.getPlayer().getGains();
 
         TurnResult result = engine.playTurn(state, List.of(new BingoEffect(1, Symbol.SWORD, true)));
 
         BonusGame bonus = result.getBonusGame();
         assertNotNull(bonus);
         assertTrue(result.isJackpot());
-        long fromTurn = result.getEvents().stream()
+        double fromTurn = result.getEvents().stream()
             .filter(e -> e instanceof fr.astratime.lucky.entities.events.GainsEarnedEvent)
-            .mapToLong(e -> ((fr.astratime.lucky.entities.events.GainsEarnedEvent) e).amount).sum();
+            .mapToDouble(e -> ((fr.astratime.lucky.entities.events.GainsEarnedEvent) e).amount).sum();
         assertEquals(before + fromTurn + bonus.getTotal(), state.getPlayer().getGains(),
             "les gains du Jeu bonus s'ajoutent à ceux du tirage");
     }

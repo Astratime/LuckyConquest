@@ -45,8 +45,8 @@ public class EffectPopup {
      * Construit un popup dont l'intensité est {@code value / maxValue} : la valeur
      * de référence {@code maxValue} (et au-delà) donne la taille de texte maximale.
      */
-    public static EffectPopup scaled(String text, Style style, float value, float maxValue) {
-        return new EffectPopup(text, style, value / maxValue);
+    public static EffectPopup scaled(String text, Style style, double value, float maxValue) {
+        return new EffectPopup(text, style, (float) Math.min(1d, value / maxValue));
     }
 
     /** @return le texte affiché. */

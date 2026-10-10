@@ -116,11 +116,12 @@ final class CombatEffectRows {
                 Lang.t("Jauge de Carreau. Ton bouclier inutilisé s'y garde. Tes Carreaux joués en Couleur ou en Suite "
                     + "la remplissent. L'As de Carreau le vide sur l'ennemi.")));
         }
-        for (int[] safe : lasting.getSafes()) {
+        for (double[] safe : lasting.getSafes()) {
+            int turnsLeft = (int) safe[1];
             rows.add(new SidePanel.EffectRow(new TextureRegion(hud.iconSafe), null,
-                "+" + safe[0] + ", " + turns(safe[1]), Lang.t("Coffre-fort"),
+                "+" + Lang.big(safe[0]) + ", " + turns(turnsLeft), Lang.t("Coffre-fort"),
                 Lang.f("{0} gains mis de côté, déjà doublés. Ils reviennent dans {1}.",
-                    PlayerProfile.formatCoins(safe[0]), turns(safe[1]))));
+                    SidePanel.formatGains(safe[0]), turns(turnsLeft))));
         }
         for (Symbol bet : controller.getBetsThisTurn()) {
             rows.add(new SidePanel.EffectRow(symbols.apply(bet), null, Lang.t("Pari x2 à x4"), Lang.t("Pari"),
@@ -235,9 +236,9 @@ final class CombatEffectRows {
         if (lasting.hasNugget()) rows.add(curse(skull, Lang.t("Pépite"), EnemySymbol.NUGGET, kind));
         if (lasting.getSongs() > 0) rows.add(curse(skull, Lang.f("Chant x{0}", lasting.getSongs()), EnemySymbol.SONG, kind));
         if (lasting.getFakeGains() > 0) {
-            rows.add(new SidePanel.EffectRow(skull, null, Lang.f("Faux : {0}", lasting.getFakeGains()), Lang.t("Fausse monnaie"),
+            rows.add(new SidePanel.EffectRow(skull, null, Lang.f("Faux : {0}", Lang.big(lasting.getFakeGains())), Lang.t("Fausse monnaie"),
                 Lang.f("{0} de tes gains sont faux. Dépense-les avant ton tirage, ou ils disparaissent.",
-                    PlayerProfile.formatCoins(lasting.getFakeGains()))));
+                    SidePanel.formatGains(lasting.getFakeGains()))));
         }
         if (lasting.getTaxes() > 0) rows.add(curse(skull, Lang.f("Taxe x{0}", lasting.getTaxes()), EnemySymbol.TAX, kind));
         if (lasting.getHouseRule() != null) {

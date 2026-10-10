@@ -43,6 +43,20 @@ class DamageBreakdownTest {
     }
 
     @Test
+    void hugeNumbersAreWrittenWithTheirPowerOfTen() {
+        assertEquals("999,9 Md", Lang.big(999_900_000_000d));
+        assertEquals("1e12", Lang.big(1e12));
+        assertEquals("1,25e12", Lang.big(1.25e12));
+        assertEquals("3,5e15", Lang.big(3.5e15));
+        assertEquals("1e16", Lang.big(9.999e15), "9,999 s'arrondit à la puissance suivante");
+        assertEquals("1,8e308", Lang.big(Double.MAX_VALUE));
+        assertEquals("-2e20", Lang.big(-2e20));
+
+        Lang.use(Lang.Language.ENGLISH, "{}");
+        assertEquals("1.25e12", Lang.big(1.25e12));
+    }
+
+    @Test
     void anAttackKeepsItsCalculationStepByStep() {
         Player player = new Player("Joueur", Player.BASE_HP, List.of(), RankBonus.NONE, Symbol.classicReels());
         Enemy enemy = new Enemy(EnemyKind.ENTRAINEMENT);

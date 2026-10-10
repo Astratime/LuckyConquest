@@ -1,5 +1,6 @@
 package fr.astratime.lucky.progress;
 
+import fr.astratime.lucky.entities.BigNumber;
 import fr.astratime.lucky.entities.Card;
 import fr.astratime.lucky.entities.RankBonus;
 import fr.astratime.lucky.entities.Symbol;
@@ -763,8 +764,8 @@ public class PlayerProfile {
      * @param gains     les gains du joueur à la fin du combat
      * @return les pièces à ajouter au profil
      */
-    public static int combatReward(boolean victory, boolean lastFight, int gains) {
-        return victory && lastFight ? Math.max(0, gains) : 0;
+    public static long combatReward(boolean victory, boolean lastFight, double gains) {
+        return victory && lastFight ? Math.max(0, BigNumber.toLong(gains)) : 0;
     }
 
     /** Ajoute {@code amount} pièces (rien si négatif) et enregistre le profil. */

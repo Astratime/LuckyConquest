@@ -46,9 +46,9 @@ public final class SpinEconomy {
     }
 
     /** @return la dette du joueur qui a {@code gains} gains, quand un tirage coûte {@code spinCost}. */
-    public static Debt debt(long gains, int spinCost) {
+    public static Debt debt(double gains, int spinCost) {
         if (gains >= 0) return Debt.NONE;
-        return gains <= -(long) BAILIFF_SPINS * spinCost ? Debt.BAILIFF : Debt.INDEBTED;
+        return gains <= -(double) BAILIFF_SPINS * spinCost ? Debt.BAILIFF : Debt.INDEBTED;
     }
 
     /** @return les gains de départ d'un combat où un tirage coûte {@code spinCost}. */
@@ -63,27 +63,22 @@ public final class SpinEconomy {
     /** @return le facteur des gains des symboles de gains : ils suivent le coût du tirage (x1 pour 100). */
     public static float gainScale(int spinCost) { return spinCost / (float) BASE_SPIN_COST; }
 
-    /** Paliers de la Mise : une part des gains, posée avant le tirage, multiplie les symboles. */
+    /**
+     * Paliers de la Mise : posée avant le tirage, elle multiplie les gains d'un
+     * Bingo. Elle ne coûte rien : sans Bingo, elle ne rapporte rien.
+     */
     public enum Stake {
-        NONE(0, 1),
-        LOW(10, 2),
-        MEDIUM(25, 3),
-        HIGH(50, 5);
+        NONE(1),
+        LOW(2),
+        MEDIUM(3),
+        HIGH(5);
 
-        /** Part des gains misée, en %. */
-        public final int percent;
-        /** Multiplicateur de l'attaque, du bouclier et des gains des symboles du tirage. */
+        /** Multiplicateur des gains du tirage, sur un Bingo. */
         public final int factor;
 
-        Stake(int percent, int factor) {
-            this.percent = percent;
-            this.factor  = factor;
-        }
+        Stake(int factor) { this.factor = factor; }
 
         /** @return le palier suivant (le dernier revient à 0). */
         public Stake next() { return values()[(ordinal() + 1) % values().length]; }
-
-        /** @return la mise de ce palier pour {@code gains} gains (0 sans gains). */
-        public int amount(int gains) { return gains <= 0 ? 0 : (int) ((long) gains * percent / 100); }
     }
 }

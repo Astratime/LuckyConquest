@@ -76,8 +76,8 @@ public class SidePanel implements Disposable {
     private final Image coin;
     private final Label gainsLabel;
     private final float gainsMaxWidth;
-    private       int   shownGains;
-    private       int   targetGains;
+    private       double shownGains;
+    private       double targetGains;
     private final Table effectsBox  = new Table();
     private final Table gainsBox    = new Table();
     private final Table combosBox   = new Table();
@@ -282,9 +282,9 @@ public class SidePanel implements Disposable {
     }
 
     /** Fait défiler le montant affiché jusqu'à {@code gains} ; la pièce rebondit si les gains augmentent. */
-    public void setGains(int gains) {
+    public void setGains(double gains) {
         if (gains == targetGains) return;
-        int from = shownGains;
+        double from = shownGains;
         if (gains > targetGains) bumpCoin();
         targetGains = gains;
 
@@ -292,7 +292,7 @@ public class SidePanel implements Disposable {
         gainsLabel.addAction(new TemporalAction(COUNT_DURATION, Interpolation.pow2Out) {
             @Override
             protected void update(float percent) {
-                showGains(Math.round(from + (gains - from) * percent));
+                showGains(Math.rint(from + (gains - from) * percent));
             }
         });
     }
@@ -313,7 +313,7 @@ public class SidePanel implements Disposable {
     }
 
     /** Affiche {@code gains}, réduit si besoin pour tenir à côté de la pièce. */
-    private void showGains(int gains) {
+    private void showGains(double gains) {
         shownGains = gains;
         gainsLabel.setText(formatGains(gains));
         gainsLabel.setFontScale(1f);
@@ -321,15 +321,13 @@ public class SidePanel implements Disposable {
         if (width > gainsMaxWidth) gainsLabel.setFontScale(gainsMaxWidth / width);
     }
 
-    /** @return le montant avec un séparateur entre chaque groupe de trois chiffres (ex : "12 500", en anglais "12,500"). */
-    public static String formatGains(int gains) {
-        String digits = Integer.toString(Math.abs(gains));
-        StringBuilder text = new StringBuilder();
-        for (int i = 0; i < digits.length(); i++) {
-            if (i > 0 && (digits.length() - i) % 3 == 0) text.append(Lang.thousands());
-            text.append(digits.charAt(i));
-        }
-        return gains < 0 ? "-" + text : text.toString();
+    /**
+     * @return le montant avec un séparateur entre chaque groupe de trois chiffres (ex : "12 500", en anglais "12,500") ;
+     *         à partir de mille milliards, en puissance de 10 ("1,25e12", voir {@link Lang#big(double)})
+     */
+    public static String formatGains(double gains) {
+        if (Math.abs(gains) >= 1e12) return Lang.big(gains);
+        return Lang.grouped(Math.round(gains));
     }
 
     @Override

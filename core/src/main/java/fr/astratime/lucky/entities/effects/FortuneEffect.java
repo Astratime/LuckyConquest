@@ -1,5 +1,6 @@
 package fr.astratime.lucky.entities.effects;
 
+import fr.astratime.lucky.entities.BigNumber;
 import fr.astratime.lucky.entities.context.CombatContext;
 import fr.astratime.lucky.entities.context.PlayContext;
 import fr.astratime.lucky.entities.context.TurnContext;
@@ -12,46 +13,57 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Fortune (donjon du Trèfle) : multiplie les gains dès la pose (Fortune du
- * Roi), puis, au tirage, donne un bonus d'attaque égal à une part des gains
- * (Bourse garnie, Fortune du Roi).
+ * Fortune (donjon du Trèfle). Fortune du Roi : ajoute une part des gains dès la
+ * pose, puis, au tirage, une part de ces gains gagnés s'ajoute à l'attaque.
+ * Bourse garnie : au tirage, une part de tous les gains s'ajoute à l'attaque.
  */
 public class FortuneEffect extends Effect {
 
-    private final int gainFactor;
+    private final int gainPercent;
     private final int attackPercent;
 
     /**
-     * @param gainFactor    multiplicateur des gains à la pose (1 : aucun)
-     * @param attackPercent part des gains ajoutée à l'attaque au tirage, en %
+     * @param gainPercent   part des gains actuels ajoutée à la pose, en % (0 : aucune)
+     * @param attackPercent part ajoutée à l'attaque au tirage, en % : des gains gagnés à la
+     *                      pose si {@code gainPercent > 0}, sinon de tous les gains
      */
-    public FortuneEffect(int gainFactor, int attackPercent) {
-        this.gainFactor    = gainFactor;
+    public FortuneEffect(int gainPercent, int attackPercent) {
+        this.gainPercent   = gainPercent;
         this.attackPercent = attackPercent;
     }
 
     @Override
     public void onPlay(PlayContext context) {
-        if (gainFactor > 1) context.multiplyGains(gainFactor);
+        if (gainPercent > 0) {
+            double added = context.addGainsPercent(gainPercent);
+            int attack = BigNumber.toInt(BigNumber.percent(added, attackPercent));
+            context.queueForSpin(new AttackEffect(attack));
+            context.addPopups(List.of(
+                EffectPopup.scaled(Lang.f("GAINS +{0}", Lang.big(added)), EffectPopup.Style.GAINS, added, PopupScale.SPIN_GAINS),
+                new EffectPopup(Lang.f("ATTAQUE +{0}", Lang.big(attack)), EffectPopup.Style.ATTACK, PopupScale.SECONDARY_INTENSITY)));
+            return;
+        }
         super.onPlay(context);
     }
 
     @Override
     public void apply(TurnContext context) {
+        if (gainPercent > 0) return; // Fortune du Roi : son attaque est mise en attente à la pose
         CombatContext combat = context.getCombatContext();
-        combat.addAttackBonus(Math.round(combat.getPlayer().getGains() * attackPercent / 100f), "Fortune");
+        combat.addAttackBonus(BigNumber.toInt(BigNumber.percent(combat.getPlayer().getGains(), attackPercent)), "Fortune");
     }
 
     @Override
     public String getDescription() {
-        String attack = Lang.f("Attaque +{0}% des gains", attackPercent);
-        return gainFactor > 1 ? Lang.f("Gains x{0}. {1}", gainFactor, attack) : attack;
+        return gainPercent > 0
+            ? Lang.f("Gains +{0} % de tes gains actuels. Attaque +{1} % des gains gagnés", gainPercent, attackPercent)
+            : Lang.f("Attaque +{0}% des gains", attackPercent);
     }
 
     @Override
     public List<EffectPopup> getPopups() {
+        if (gainPercent > 0) return List.of(); // les valeurs dépendent des gains (voir onPlay)
         List<EffectPopup> popups = new ArrayList<>();
-        if (gainFactor > 1) popups.add(new EffectPopup(Lang.f("GAINS x{0}", gainFactor), EffectPopup.Style.GAINS, PopupScale.MAX_INTENSITY));
         popups.add(new EffectPopup(Lang.f("ATTAQUE +{0}% DES GAINS", attackPercent), EffectPopup.Style.ATTACK, PopupScale.SECONDARY_INTENSITY));
         return popups;
     }

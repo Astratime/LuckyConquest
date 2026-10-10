@@ -84,17 +84,17 @@ class ComboDamageTest {
         "100000, MAGNAT, 30000, 1847, 7000, 5, 1271655, 1271655, 5086590",
         "100000, ROI_DU_CASINO, 30000, 1847, 7000, 5, 1523655, 1523655, 6094590",
         "100000, LEGENDE, 30000, 1847, 7000, 5, 1901655, 1901655, 7606590",
-        "1000000, AUCUN, 300000, 5592, 70000, 5, 1821330, 1821330, 7285290",
-        "1000000, AVARE, 300000, 5592, 70000, 5, 1852830, 1852830, 7411290",
-        "1000000, PARIEUR, 300000, 5592, 70000, 5, 1884330, 1884330, 7537290",
-        "1000000, FLAMBEUR, 300000, 5592, 70000, 5, 1931580, 1931580, 7726290",
-        "1000000, HABITUE, 300000, 5592, 70000, 5, 1978830, 1978830, 7915290",
-        "1000000, REQUIN, 300000, 5592, 70000, 5, 2057580, 2057580, 8230290",
-        "1000000, GROS_BONNET, 300000, 5592, 70000, 5, 2136330, 2136330, 8545290",
-        "1000000, BARON, 300000, 5592, 70000, 5, 2262330, 2262330, 9049290",
-        "1000000, MAGNAT, 300000, 5592, 70000, 5, 2451330, 2451330, 9805290",
-        "1000000, ROI_DU_CASINO, 300000, 5592, 70000, 5, 2703330, 2703330, 10813290",
-        "1000000, LEGENDE, 300000, 5592, 70000, 5, 3081330, 3081330, 12325290",
+        "1000000, AUCUN, 300000, 3115, 70000, 5, 1041075, 1041075, 4164270",
+        "1000000, AVARE, 300000, 3115, 70000, 5, 1072575, 1072575, 4290270",
+        "1000000, PARIEUR, 300000, 3115, 70000, 5, 1104075, 1104075, 4416270",
+        "1000000, FLAMBEUR, 300000, 3115, 70000, 5, 1151325, 1151325, 4605270",
+        "1000000, HABITUE, 300000, 3115, 70000, 5, 1198575, 1198575, 4794270",
+        "1000000, REQUIN, 300000, 3115, 70000, 5, 1277325, 1277325, 5109270",
+        "1000000, GROS_BONNET, 300000, 3115, 70000, 5, 1356075, 1356075, 5424270",
+        "1000000, BARON, 300000, 3115, 70000, 5, 1482075, 1482075, 5928270",
+        "1000000, MAGNAT, 300000, 3115, 70000, 5, 1671075, 1671075, 6684270",
+        "1000000, ROI_DU_CASINO, 300000, 3115, 70000, 5, 1923075, 1923075, 7692270",
+        "1000000, LEGENDE, 300000, 3115, 70000, 5, 2301075, 2301075, 9204270",
     })
     void asTrefleAsPiqueRouletteCorruptionEtBingoTripleSept(int gains, String rank, int clubsConsumed,
                                                            int clubsAttack, int spadesConsumed, int blades,
@@ -130,7 +130,8 @@ class ComboDamageTest {
         assertArrayEquals(new Symbol[] {Symbol.TRIPLE_SEVEN, Symbol.TRIPLE_SEVEN, Symbol.TRIPLE_SEVEN},
             turn.getSymbols());
 
-        assertEquals(clubsAttack, 115 + Math.round(10f * (float) Math.sqrt(clubsConsumed)), "attaque de l'As de Trèfle");
+        assertEquals(clubsAttack, 115 + Math.min(3_000, Math.round(10f * (float) Math.sqrt(clubsConsumed))),
+            "attaque de l'As de Trèfle : la racine des gains consommés, +3 000 au plus");
         long base = 90 + rankBonus.attack() + blades * PreparationResolver.BLADE_ATTACK + clubsAttack;
         assertEquals(perSymbol, Math.round(base * (1 + 0.5 * blades) * 2 * 4.5 * 10));
 

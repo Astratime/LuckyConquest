@@ -133,7 +133,7 @@ class PlayerTest {
     void consumeGainsPercentReturnsAndDeductsTheComputedAmount() {
         player.addGains(1000);
 
-        int consumed = player.consumeGainsPercent(0.3f);
+        double consumed = player.consumeGainsPercent(0.3f);
 
         assertEquals(300, consumed);
         assertEquals(700, player.getGains());
@@ -146,5 +146,31 @@ class PlayerTest {
         player.resetTurnDefenses();
 
         assertEquals(0, player.getShield());
+    }
+    @Test
+    void aStolenCardMissesTwoTurnsThenComesBackToTheDeck() {
+        Player p = new Player("Joueur", 100, cards(10));
+        p.draw(5);
+        Card card = p.getCurrentHand().get(0);
+
+        assertTrue(p.steal(card, 2));
+        assertFalse(p.getAllCards().contains(card));
+        assertEquals(List.of(card), p.getStolen());
+
+        assertTrue(p.returnStolenCards().isEmpty(), "1er tour du joueur : la carte manque");
+        assertTrue(p.returnStolenCards().isEmpty(), "2e tour du joueur : la carte manque encore");
+        assertEquals(List.of(card), p.returnStolenCards(), "3e tour : elle revient");
+        assertTrue(p.getDeck().getCards().contains(card));
+        assertTrue(p.getStolen().isEmpty());
+    }
+
+    @Test
+    void aStolenCardComesBackForTheNextFight() {
+        Player p = new Player("Joueur", 100, cards(10));
+        p.draw(5);
+        Card card = p.getCurrentHand().get(0);
+        p.steal(card, 2);
+
+        assertTrue(p.nextCombat().getAllCards().contains(card));
     }
 }

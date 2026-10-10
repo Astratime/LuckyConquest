@@ -59,6 +59,7 @@ import fr.astratime.lucky.assets.HudTextures;
 import fr.astratime.lucky.assets.Palette;
 import fr.astratime.lucky.assets.TableTextures;
 import fr.astratime.lucky.controllers.GameController;
+import fr.astratime.lucky.entities.BigNumber;
 import fr.astratime.lucky.entities.BonusGame;
 import fr.astratime.lucky.entities.Card;
 import fr.astratime.lucky.entities.CardPlayResult;
@@ -89,6 +90,7 @@ import fr.astratime.lucky.entities.tutorial.TutorialRun;
 import fr.astratime.lucky.entities.RankBonus;
 import fr.astratime.lucky.entities.enemy.EnemySymbol;
 import fr.astratime.lucky.entities.enemy.EnemyTurnResult;
+import fr.astratime.lucky.entities.events.EnemyHpLostEvent;
 import fr.astratime.lucky.entities.events.ComboEvent;
 import fr.astratime.lucky.entities.events.DamageReflectedEvent;
 import fr.astratime.lucky.entities.events.EnemyHealedEvent;
@@ -356,7 +358,7 @@ public class GameScreen extends ScreenAdapter {
      * Gains du dernier tirage dont le texte n'est pas encore apparu : le compteur
      * du panneau ne les ajoute qu'à l'apparition de leur texte « GAINS + ».
      */
-    private int gainsNotYetShown = 0;
+    private double gainsNotYetShown = 0;
 
     /** Durée de l'annonce « TOUR ENNEMI » du tirage en cours (0 si l'ennemi, vaincu, ne riposte pas). */
     private TurnResult currentResult;
@@ -743,7 +745,7 @@ public class GameScreen extends ScreenAdapter {
 
     /** Affiche la fiche de {@code card} (avec son prix si elle est vendue à l'échoppe), par-dessus tout le reste. */
     private void showCardDetail(Card card) {
-        Integer price = gameController.getShopOffers().stream()
+        Double price = gameController.getShopOffers().stream()
             .filter(offer -> offer.card().getId().equals(card.getId()))
             .map(GameController.ShopOffer::price).findFirst().orElse(null);
         sounds.cardInspect.play();
@@ -875,12 +877,6 @@ public class GameScreen extends ScreenAdapter {
     private void onStake() {
         if (spinControls.isStakeDisabled() || isBusy()) return;
         if (tutorial != null && !tutorial.allowsStake()) return;
-        if (!gameController.canStake()) {
-            Vector2 above = spinControls.aboveStake();
-            effectPopupAnimator.play(List.of(new EffectPopup(Lang.t("PAS DE GAINS À MISER"), EffectPopup.Style.DAMAGE,
-                PopupScale.SECONDARY_INTENSITY)), above.x, above.y);
-            return;
-        }
         SpinEconomy.Stake stake = gameController.nextStake();
         spinControls.dropChips(stake);
         if (stake != SpinEconomy.Stake.NONE) sounds.cardDeal.play();
@@ -898,16 +894,17 @@ public class GameScreen extends ScreenAdapter {
     private void spin() {
         int enemyHpBefore = gameController.getGameState().getEnemy().getHp();
         int cost   = gameController.getSpinCost();
-        int staked = gameController.getStakeAmount();
         TurnResult result = gameController.spin();
         if (tutorial != null) tutorial.onSpin();
         lastSpinBingo = result.isJackpot();
         table.setReelsRainbow(false); // la bordure d'un jackpot précédent s'arrête au lancer suivant
         // Gains et PV du tirage ne se montrent qu'à l'apparition de leurs textes, après l'arrêt des rouleaux.
-        gainsNotYetShown += sumOf(result, GainsEarnedEvent.class, gains -> gains.amount)
-            - sumOf(result, GainsLostEvent.class, lost -> lost.amount);
+        gainsNotYetShown += result.getEvents().stream().filter(e -> e instanceof GainsEarnedEvent)
+            .mapToDouble(e -> ((GainsEarnedEvent) e).amount).sum()
+            - result.getEvents().stream().filter(e -> e instanceof GainsLostEvent)
+            .mapToDouble(e -> ((GainsLostEvent) e).amount).sum();
         if (result.getBonusGame() != null) gainsNotYetShown += result.getBonusGame().getTotal(); // à la fin du Jeu bonus
-        payForSpin(cost, staked); // seuls le coût et la Mise partent tout de suite
+        payForSpin(cost); // seul le coût part tout de suite
         int enemyHeal = sumOf(result, EnemyHealedEvent.class, heal -> heal.amount);
         hud.holdBack(enemyHpBefore - gameController.getGameState().getEnemy().getHp() + enemyHeal, enemyHeal,
             sumOf(result, PlayerDamagedEvent.class, hit -> hit.damage),
@@ -934,13 +931,11 @@ public class GameScreen extends ScreenAdapter {
     }
 
     /** Le tirage est payé : le coût (et la Mise) quittent les gains, les jetons glissent dans la machine. */
-    private void payForSpin(int cost, int staked) {
+    private void payForSpin(int cost) {
         spinControls.pull(); // le levier reste tiré, les jetons misés glissent dans la machine
-        if (cost <= 0 && staked <= 0) return;
+        if (cost <= 0) return;
         List<EffectPopup> popups = new ArrayList<>();
-        if (cost > 0) popups.add(new EffectPopup(Lang.f("TIRAGE -{0}", SidePanel.formatGains(cost)), EffectPopup.Style.DAMAGE,
-            PopupScale.SECONDARY_INTENSITY));
-        if (staked > 0) popups.add(new EffectPopup(Lang.f("MISE -{0}", SidePanel.formatGains(staked)), EffectPopup.Style.DAMAGE,
+        popups.add(new EffectPopup(Lang.f("TIRAGE -{0}", SidePanel.formatGains(cost)), EffectPopup.Style.DAMAGE,
             PopupScale.SECONDARY_INTENSITY));
         Vector2 coin = sidePanel.getCoinCenter();
         effectPopupAnimator.play(popups, coin.x, coin.y);
@@ -989,7 +984,7 @@ public class GameScreen extends ScreenAdapter {
             if (event instanceof JackpotEvent jackpot) bingo = jackpot.symbol;
         }
         BonusGame bonus = result.getBonusGame();
-        long best = bestHit, earned = gains + (bonus != null ? Math.max(0, bonus.getTotal()) : 0);
+        long best = bestHit, earned = BigNumber.toLong(gains + (bonus != null ? Math.max(0, bonus.getTotal()) : 0));
         boolean squared = square;
         Symbol bingoSymbol = bingo;
         luckyGame.getProfile().recordStats(stats -> {
@@ -1176,6 +1171,8 @@ public class GameScreen extends ScreenAdapter {
             if (hit.damage > 0) onEnemyHit(hit.damage);
         } else if (event instanceof DamageReflectedEvent reflect && reflect.damage > 0) {
             onEnemyHit(reflect.damage);
+        } else if (event instanceof EnemyHpLostEvent self && self.lost > 0) {
+            onEnemyHit(self.lost); // Faillite, Duel gagné : sa barre descend aussi
         } else if (event instanceof PlayerDamagedEvent hit) {
             if (hit.blocked > 0) onPlayerBlocked(hit);
             if (hit.damage > 0) onPlayerHit(hit.damage);
@@ -1341,7 +1338,7 @@ public class GameScreen extends ScreenAdapter {
     }
 
     /** Le texte d'un gain (ou d'une perte) du tirage vient d'apparaître : le compteur du panneau le suit. */
-    private void onGainsShown(int amount) {
+    private void onGainsShown(double amount) {
         if (amount > 0) sounds.coinsGain.play();
         else if (amount < 0) sounds.coinsLoss.play();
         SpinEconomy.Debt before = shownDebt();
@@ -1604,7 +1601,7 @@ public class GameScreen extends ScreenAdapter {
             shown.add(buttons.create(backText(), sounds.buttonClick, this::onBackToChapters));
         }
         // Les gains affichés, versés en pièces pour la boutique après le roi d'un donjon.
-        int earned = combatReward(victory);
+        long earned = combatReward(victory);
         if (earned > 0) {
             Label coinsLabel = new Label(Lang.f("PIÈCES +{0}", PlayerProfile.formatCoins(earned)), new Label.LabelStyle(shopFont, Palette.GOLD));
             endButtons.add(coinsLabel).colspan(shown.size()).padBottom(14f).row();
@@ -1667,7 +1664,7 @@ public class GameScreen extends ScreenAdapter {
     // -------------------------------------------------------------------------
 
     /** @return les pièces gagnées à la fin de ce combat (voir {@link PlayerProfile#combatReward}). */
-    private int combatReward(boolean victory) {
+    private long combatReward(boolean victory) {
         if (!isDungeon()) return 0; // seule l'Exploration rapporte des pièces (ni Entraînement, ni Tour)
         return PlayerProfile.combatReward(victory, run.isBossStage(),
             gameController.getGameState().getPlayer().getGains());
@@ -1733,7 +1730,7 @@ public class GameScreen extends ScreenAdapter {
     private void endCombat() {
         setSpinDisabled(true);
         boolean won = gameController.getGameState().getEnemy().isDefeated();
-        int reward = combatReward(won);
+        long reward = combatReward(won);
         luckyGame.getProfile().addCoins(reward);
         buildEndButtons(won);
         if (won && tutorial == null) {
@@ -1812,9 +1809,6 @@ public class GameScreen extends ScreenAdapter {
             gameController.getCardsPlayedThisTurn(), gameController.getPlayLimit()));
         if (gameController.getSpinCost() > 0) {
             text.append("   ").append(Lang.f("Tirage -{0}", SidePanel.formatGains(gameController.getSpinCost())));
-        }
-        if (gameController.getStake() != SpinEconomy.Stake.NONE) {
-            text.append("   ").append(Lang.f("Mise -{0}", SidePanel.formatGains(gameController.getStakeAmount())));
         }
         spinControls.showStake(gameController.getStake());
         playsLabel.setText(text);

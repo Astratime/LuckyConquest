@@ -154,17 +154,45 @@ public final class Lang {
     /**
      * @return {@code number} abrégé à partir d'un million, avec une décimale au
      *         plus : 5 500 000 → « 5,5 M » (« 5.5M » en anglais), 2 000 000 000 →
-     *         « 2 Md » (« 2B ») ; en dessous, avec le séparateur des milliers
+     *         « 2 Md » (« 2B ») ; en dessous, avec le séparateur des milliers.
+     *         À partir de mille milliards, en puissance de 10 (voir {@link #big(double)}).
      */
-    public static String big(long number) {
-        long size = Math.abs(number);
-        if (size < 1_000_000L) return grouped(number);
-        boolean billions = size >= 999_950_000L;
+    public static String big(long number) { return big((double) number); }
+
+    /**
+     * Comme {@link #big(long)}, pour les grands nombres du jeu ({@link fr.astratime.lucky.entities.BigNumber}) :
+     * à partir de mille milliards, le nombre s'écrit avec sa puissance de 10, deux décimales au plus :
+     * 1 250 000 000 000 → « 1,25e12 » (« 1.25e12 » en anglais).
+     */
+    public static String big(double number) {
+        if (Double.isNaN(number)) return "0";
+        double size = Math.abs(number);
+        if (size < 1_000_000d) return grouped(Math.round(number));
+        if (size >= 999_995_000_000d) return scientific(number);
+        boolean billions = size >= 999_950_000d;
         long tenths = Math.round(number / (billions ? 100_000_000d : 100_000d));
         String value = tenths % 10 == 0 ? grouped(tenths / 10) : grouped(tenths / 10) + (isEnglish() ? "." : ",") + Math.abs(tenths % 10);
         if (tenths < 0 && tenths / 10 == 0) value = "-" + value;
         if (isEnglish()) return value + (billions ? "B" : "M");
         return value + (billions ? " Md" : " M");
+    }
+
+    /** @return {@code number} (au moins mille milliards) en puissance de 10 : « 1,25e12 », « 3e15 ». */
+    private static String scientific(double number) {
+        double size = Math.abs(number);
+        int exponent = (int) Math.floor(Math.log10(size));
+        long hundredths = Math.round(size / Math.pow(10, exponent) * 100);
+        if (hundredths >= 1000) { // 9,999 arrondi : 10,00 → 1,00 et une puissance de plus
+            exponent++;
+            hundredths = Math.round(hundredths / 10d);
+        }
+        String mantissa = Long.toString(hundredths / 100);
+        long decimals = hundredths % 100;
+        if (decimals != 0) {
+            String digits = decimals % 10 == 0 ? Long.toString(decimals / 10) : String.format("%02d", decimals);
+            mantissa += (isEnglish() ? "." : ",") + digits;
+        }
+        return (number < 0 ? "-" : "") + mantissa + "e" + exponent;
     }
 
     /** @return le séparateur des milliers : une espace en français, une virgule en anglais (1 000 / 1,000). */

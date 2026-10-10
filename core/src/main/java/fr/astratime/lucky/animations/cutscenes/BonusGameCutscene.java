@@ -484,7 +484,7 @@ public class BonusGameCutscene extends Cutscene {
             if (time < at + 0.9f && time < totalAt) {
                 float k = progress(at, at + 0.9f);
                 font.getData().setScale(1.3f);
-                caption(batch, font, "+" + Lang.grouped(line.gains()), b[0], b[1] + cellHeight() * (0.4f + 0.5f * k),
+                caption(batch, font, "+" + Lang.big(line.gains()), b[0], b[1] + cellHeight() * (0.4f + 0.5f * k),
                     1f - k * k);
                 font.getData().setScale(1f);
             }
@@ -509,7 +509,7 @@ public class BonusGameCutscene extends Cutscene {
         } else {
             float pop = Interpolation.swingOut.apply(progress(totalAt, totalAt + 0.4f));
             String text = game.getLines().isEmpty() ? Lang.t("AUCUN ALIGNEMENT")
-                : Lang.f("GAINS +{0}", Lang.grouped(game.getTotal()));
+                : Lang.f("GAINS +{0}", Lang.big(game.getTotal()));
             glow(batch, worldWidth() / 2f, y, 360f, GOLD, 0.3f * pop);
             font.getData().setScale(Math.max(0.01f, 2.4f * pop));
             caption(batch, font, text, worldWidth() / 2f, y, 1f);

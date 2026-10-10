@@ -16,18 +16,18 @@ public class BetLostEvent extends GainsLostEvent {
      * @param symbol symbole parié
      * @param amount gains perdus
      */
-    public BetLostEvent(Symbol symbol, int amount) {
+    public BetLostEvent(Symbol symbol, double amount) {
         super(amount);
         this.symbol = symbol;
     }
 
     @Override
-    public String describe() { return "Pari perdu sur " + symbol + " : -" + amount + " gains"; }
+    public String describe() { return "Pari perdu sur " + symbol + " : -" + Lang.big(amount) + " gains"; }
 
     @Override
     public List<EffectPopup> getPopups() {
         return List.of(
             new EffectPopup(Lang.t("PARI PERDU : GAINS ÷2"), EffectPopup.Style.DAMAGE, PopupScale.MAX_INTENSITY),
-            EffectPopup.scaled(Lang.f("GAINS -{0}", amount), EffectPopup.Style.DAMAGE, amount, PopupScale.SPIN_GAINS));
+            EffectPopup.scaled(Lang.f("GAINS -{0}", Lang.big(amount)), EffectPopup.Style.DAMAGE, amount, PopupScale.SPIN_GAINS));
     }
 }

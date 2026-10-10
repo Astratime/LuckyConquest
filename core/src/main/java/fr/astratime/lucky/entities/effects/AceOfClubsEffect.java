@@ -31,8 +31,10 @@ public class AceOfClubsEffect extends Effect {
     private static final int   ATTACK_BOOST_AMOUNT = 115;
     /** Attaque ajoutée par racine carrée des gains consommés (1 000 gains : +316). */
     static final float          ATTACK_PER_SQRT_GAIN  = 10f;
-    /** Boost de poids au plus obtenu avec les gains consommés. */
-    static final int            MAX_WEIGHT_FROM_GAINS = 1500;
+    /** Boost de poids au plus obtenu avec les gains consommés (un Bingo d'attaque ne doit pas être assuré). */
+    static final int            MAX_WEIGHT_FROM_GAINS = 300;
+    /** Attaque au plus obtenue avec les gains consommés (90 000 gains consommés l'atteignent). */
+    static final int            MAX_ATTACK_FROM_GAINS = 3_000;
     private static final Random RANDOM             = new Random();
 
     /** Puissance de la carte : 1, ou {@link fr.astratime.lucky.entities.Card#UPGRADE_FACTOR} pour sa version « + ». */
@@ -50,10 +52,11 @@ public class AceOfClubsEffect extends Effect {
      */
     @Override
     public void onPlay(PlayContext context) {
-        int consumed = context.consumeGainsPercent(CONSUME_PERCENT);
-        // Rendement décroissant : l'attaque suit la racine des gains consommés, le boost est plafonné.
-        int weightBoost = Math.round((WEIGHT_BOOST_AMOUNT + Math.min(consumed, MAX_WEIGHT_FROM_GAINS)) * power);
-        int attackBoost = Math.round((ATTACK_BOOST_AMOUNT + ATTACK_PER_SQRT_GAIN * (float) Math.sqrt(consumed)) * power);
+        double consumed = context.consumeGainsPercent(CONSUME_PERCENT);
+        // Rendement décroissant : l'attaque suit la racine des gains consommés ; l'attaque et le boost sont plafonnés.
+        int weightBoost = Math.round((WEIGHT_BOOST_AMOUNT + (float) Math.min(consumed, MAX_WEIGHT_FROM_GAINS)) * power);
+        int attackBoost = Math.round((ATTACK_BOOST_AMOUNT
+            + Math.min(MAX_ATTACK_FROM_GAINS, ATTACK_PER_SQRT_GAIN * (float) Math.sqrt(consumed))) * power);
 
         context.addPopups(List.of(
             EffectPopup.scaled(Lang.t("-30% GAINS"), EffectPopup.Style.GAINS, consumed, PopupScale.ACE_OF_CLUBS_CONSUMED),
@@ -76,8 +79,8 @@ public class AceOfClubsEffect extends Effect {
     @Override
     public String getDescription() {
         return Lang.f("Consomme 30% des gains. Un symbole d'attaque devient bien plus fréquent et gagne +{0} "
-            + "d'attaque, plus selon les gains consommés",
-            Math.round(ATTACK_BOOST_AMOUNT * power));
+            + "d'attaque, plus selon les gains consommés (jusqu'à +{1})",
+            Math.round(ATTACK_BOOST_AMOUNT * power), Math.round((ATTACK_BOOST_AMOUNT + MAX_ATTACK_FROM_GAINS) * power));
     }
 
     /** Textes fixes : aucun, toutes les valeurs dépendent des gains consommés (voir {@link #onPlay}). */

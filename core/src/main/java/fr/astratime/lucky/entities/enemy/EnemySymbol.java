@@ -120,6 +120,8 @@ public enum EnemySymbol {
     public static final int TAX_FLAT = 1_000;
     /** Tours pendant lesquels vaut la Nouvelle règle. */
     public static final int NEW_RULE_TURNS = 2;
+    /** Tours du joueur pendant lesquels une carte volée par l'Abordage reste absente, avant de revenir dans son deck. */
+    public static final int BOARDING_TURNS = 2;
     /** Une Fouille confisque une carte de plus par tranche de ces gains du joueur. */
     public static final int FRISK_GAINS_STEP = 100_000;
     /** Une Fouille ne confisque pas plus de cartes. */
@@ -165,7 +167,8 @@ public enum EnemySymbol {
             case NIBBLE -> Lang.t("Grignotage : il ronge une carte. Au prochain tour, une carte de ta main part à la défausse");
             case DRUNK  -> Lang.t("Ivresse : à ton prochain tirage, un rouleau tourne deux fois et garde le pire résultat");
             case BLIND  -> Lang.t("Aveuglement : au prochain tour, tes cartes en main sont faces cachées");
-            case BOARDING -> Lang.t("Abordage : il vole ta meilleure carte en main pour tout le combat. Il la joue contre toi");
+            case BOARDING -> Lang.f("Abordage : il vole ta meilleure carte en main pendant {0} tours. Il la joue contre toi",
+                BOARDING_TURNS);
             case NUGGET -> Lang.t("Pépite : à ton prochain tirage, tes symboles de gain deviennent des pierres. Ils ne rapportent "
                 + "rien");
             case DRILL  -> Lang.f("Forage : attaque de {0}. Traverse ton bouclier",
@@ -190,8 +193,8 @@ public enum EnemySymbol {
                 NEW_RULE_TURNS);
             case FRISK -> Lang.f("Fouille : il confisque une carte de ton deck jusqu'à la fin du combat. Une de plus par {0} gains",
                 FRISK_GAINS_STEP);
-            case BANKRUPTCY -> Lang.f("Faillite : si tes gains dépassent sa fortune ({0} % de ses PV), il te prend tout. Sinon, il "
-                + "perd {1} % de ses PV",
+            case BANKRUPTCY -> Lang.f("Faillite : si tes gains dépassent sa fortune ({0} % de ses PV restants), il te prend tout. "
+                + "Sinon, il perd {1} % de ses PV restants",
                 BANKRUPTCY_FORTUNE_PERCENT, BANKRUPTCY_HP_PERCENT);
         };
     }
