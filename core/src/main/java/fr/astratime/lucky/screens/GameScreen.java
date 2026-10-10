@@ -1267,8 +1267,8 @@ public class GameScreen extends ScreenAdapter {
                 + "diagonale. Le Joker compte pour n'importe lequel.")),
             GuideOverlay.Step.say(Lang.t("Plus l'alignement est long et le symbole rare, plus tu gagnes. "
                 + "Les gains tombent à la fin.")),
-            GuideOverlay.Step.say(Lang.t("Comme tes symboles de gains, la grille profite de ton rang, de tes "
-                + "cartes Trèfle et de tes combinaisons du tour."))), () -> {
+            GuideOverlay.Step.say(Lang.t("Ton rang, tes cartes Trèfle et tes combinaisons du tour ajoutent "
+                + "un petit bonus à chaque alignement."))), () -> {
                 profile.markSeen(PlayerProfile.GUIDE_BONUS);
                 scene.resumeGrid();
             });

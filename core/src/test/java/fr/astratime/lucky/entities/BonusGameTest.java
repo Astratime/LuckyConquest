@@ -60,18 +60,18 @@ class BonusGameTest {
     }
 
     @Test
-    void theRankAndTheTurnMultipliersBoostEveryLine() {
+    void theTurnMultipliersOnlyBoostTheBonusPartOfEachLine() {
         BonusGame game = BonusGame.play(Symbol.classicReels(), 100, new Random(4));
-        BonusGame boosted = game.boosted(70, 2f);
+        BonusGame boosted = game.boosted(5, 70, 2f);
         long expected = 0;
         for (int i = 0; i < game.getLines().size(); i++) {
             BonusGame.Line line = game.getLines().get(i);
-            int gains = (line.gains() + 70 * line.length()) * 2;
+            int gains = line.gains() + (5 * line.length() + 70) * 2;
             assertEquals(gains, boosted.getLines().get(i).gains());
             expected += gains;
         }
         assertEquals(expected, boosted.getTotal());
-        assertEquals(game.getTotal(), game.boosted(0, 1f).getTotal());
+        assertEquals(game.getTotal(), game.boosted(0, 0, 1000f).getTotal());
     }
 
     @Test

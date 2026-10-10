@@ -220,17 +220,21 @@ public class TurnEngine {
 
     /**
      * @return le Jeu bonus qui suit le Bingo de {@code result} (une fois sur dix,
-     *         à coup sûr avec la carte de test), compté comme les symboles de gains
-     *         du tour (rang, puis multiplicateurs), ses gains déjà crédités au joueur ;
+     *         à coup sûr avec la carte de test) : ses gains de base restent fixes, et
+     *         seul un petit bonus (par symbole aligné, plus le rang par alignement)
+     *         reçoit les multiplicateurs du tour ; ses gains déjà crédités au joueur ;
      *         {@code null} sans Bingo ou si la grille ne s'ouvre pas
      */
     private BonusGame bonusGame(TurnResult result, SpinContext spin, Player player, CombatContext combat) {
         if (!bonusGameEnabled || !result.isJackpot() || player.isDefeated()) return null;
         if (!spin.isBonusGameForced() && random.nextFloat() >= BonusGame.TRIGGER_CHANCE) return null;
         int spinCost = combat.getSpinCost();
-        int rank = Math.round(player.getRankBonus().gains() * combat.getRankFactor() * SpinEconomy.gainScale(spinCost));
+        float scale = SpinEconomy.gainScale(spinCost);
+        int perSymbol = Math.round(BonusGame.GAINS_PER_SYMBOL * scale);
+        int rank = Math.round(player.getRankBonus().gains() * combat.getRankFactor() * scale);
         float factor = combat.getGainMultiplier() * combat.getGainFactor() * combat.getSymbolPower();
-        BonusGame bonus = BonusGame.play(player.getSlotMachine().getReels(), spinCost, random).boosted(rank, factor);
+        BonusGame bonus = BonusGame.play(player.getSlotMachine().getReels(), spinCost, random)
+            .boosted(perSymbol, rank, factor);
         player.addGains(bonus.getTotal());
         return bonus;
     }

@@ -72,7 +72,7 @@ class BonusGameTurnTest {
     }
 
     @Test
-    void theBonusGameCountsLikeTheGainSymbolsOfTheTurn() {
+    void onlyTheBonusPartOfTheGridIsMultiplied() {
         RankBonus rank = new RankBonus(0, 0, 0, 70);
         GameController controller = new GameController(BonusGameTurnTest::plainCards, id -> null, java.util.Map.of(),
             cards -> new Player("Joueur", Player.BASE_HP, cards, rank, Symbol.classicReels()));
@@ -83,8 +83,9 @@ class BonusGameTurnTest {
         BonusGame bonus = result.getBonusGame();
         long expected = 0;
         for (BonusGame.Line line : bonus.getLines()) {
-            // le bonus du rang par symbole aligné, puis les cartes Trèfle (1 + 9 = x10)
-            expected += (BonusGame.gains(line.symbol(), line.length(), 100) + 70L * line.length()) * 10;
+            // la base reste fixe ; 5 par symbole aligné et le rang par alignement, multipliés par les Trèfle (1 + 9 = x10)
+            expected += BonusGame.gains(line.symbol(), line.length(), 100)
+                + (BonusGame.GAINS_PER_SYMBOL * line.length() + 70L) * 10;
         }
         assertEquals(expected, bonus.getTotal());
     }

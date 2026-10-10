@@ -35,6 +35,8 @@ public final class BonusGame {
     public static final int   JOKER_ONE_IN   = 20;
     /** Chances qu'un Bingo ouvre le Jeu bonus. */
     public static final float TRIGGER_CHANCE = 0.10f;
+    /** Bonus par symbole aligné, à la Prairie, que multiplient les cartes du tour (voir {@link #boosted}). */
+    public static final int   GAINS_PER_SYMBOL = 5;
 
     /**
      * Un alignement de la grille finale.
@@ -95,19 +97,22 @@ public final class BonusGame {
     }
 
     /**
-     * Le Jeu bonus compté comme les symboles de gains du tour : chaque alignement
-     * reçoit le bonus de gains du rang pour chacun de ses symboles, puis les
-     * multiplicateurs de gains du tour (cartes Trèfle, combinaisons, Porte-bonheur,
-     * Mise, carte Bingo).
+     * Le petit bonus que les cartes et le rang ajoutent au Jeu bonus. Les gains de
+     * base de chaque alignement restent fixes (jamais multipliés) ; s'y ajoutent
+     * {@code perSymbol} par symbole aligné et le bonus de gains du rang une fois par
+     * alignement, et seule cette part reçoit les multiplicateurs de gains du tour
+     * (cartes Trèfle, combinaisons, Porte-bonheur, Mise, carte Bingo).
      *
-     * @param rankPerSymbol bonus de gains du rang par symbole aligné, déjà à l'échelle du coût du tirage
-     * @param factor        multiplicateurs de gains du tour
+     * @param perSymbol bonus par symbole aligné, déjà à l'échelle du coût du tirage
+     * @param rankPerLine bonus de gains du rang par alignement, déjà à l'échelle du coût du tirage
+     * @param factor    multiplicateurs de gains du tour
      * @return ce Jeu bonus, ses gains ainsi comptés
      */
-    public BonusGame boosted(int rankPerSymbol, float factor) {
+    public BonusGame boosted(int perSymbol, int rankPerLine, float factor) {
         List<Line> boosted = new ArrayList<>();
         for (Line line : lines) {
-            double gains = ((double) line.gains() + (double) rankPerSymbol * line.length()) * factor;
+            double extra = ((double) perSymbol * line.length() + rankPerLine) * factor;
+            double gains = line.gains() + extra;
             boosted.add(new Line(line.symbol(), line.cells(), (int) Math.min(Integer.MAX_VALUE, Math.round(gains))));
         }
         return new BonusGame(grids, frozen, boosted);

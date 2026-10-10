@@ -1360,5 +1360,5 @@
   "La grille tourne trois fois. Les symboles alignés se figent en doré, les autres relancent.": "The grid spins three times. Lined-up symbols freeze in gold, the others spin again.",
   "Aligne au moins trois symboles identiques : en ligne, en colonne ou en diagonale. Le Joker compte pour n'importe lequel.": "Line up at least three identical symbols: in a row, a column or a diagonal. The Joker counts as any of them.",
   "Plus l'alignement est long et le symbole rare, plus tu gagnes. Les gains tombent à la fin.": "The longer the line and the rarer the symbol, the more you win. Gains are paid at the end.",
-  "Comme tes symboles de gains, la grille profite de ton rang, de tes cartes Trèfle et de tes combinaisons du tour.": "Like your gain symbols, the grid gets your rank, your Clubs cards and your combinations of the turn."
+  "Ton rang, tes cartes Trèfle et tes combinaisons du tour ajoutent un petit bonus à chaque alignement.": "Your rank, your Clubs cards and your combinations of the turn add a small bonus to every line."
 }
