@@ -1327,9 +1327,9 @@
   "Endetté": "In debt",
   "Tes gains sont sous 0. Attaque et bouclier des symboles -25 %. Sous -{0}, l'Huissier arrive.": "Your gains are below 0. Symbol attack and shield -25%. Below -{0}, the Bailiff shows up.",
   "Lancer la machine": "Spin the machine",
-  "Tire le levier : les rouleaux tournent. Touche F.": "Pull the lever: the reels spin. Key F.",
+  "Tire le levier : les rouleaux tournent. Touche Espace ou F.": "Pull the lever: the reels spin. Key Space or F.",
   "Mise": "Stake",
-  "Mise une part de tes gains avant de lancer. Sur un Bingo, 10 % : symboles x2. 25 % : x3. 50 % : x5. Sans Bingo, la mise est perdue.": "Stake part of your gains before you spin. On a Bingo, 10%: symbols x2. 25%: x3. 50%: x5. Without a Bingo, the stake is lost.",
+  "Mise une part de tes gains avant de lancer. Sur un Bingo, 10 % : symboles x2. 25 % : x3. 50 % : x5. Sans Bingo, la mise est perdue. Touche M.": "Stake part of your gains before you spin. On a Bingo, 10%: symbols x2. 25%: x3. 50%: x5. Without a Bingo, the stake is lost. Key M.",
   "{0} % : x{1}": "{0}%: x{1}",
   "Gains : {0} tirages{1}": "Gains: {0} draws{1}",
   "GAINS : {0} TIRAGES": "GAINS: {0} DRAWS",
@@ -1434,5 +1434,6 @@
   "Fusionner une carte « + » à la Table du croupier.": "Fuse a \"+\" card at the Dealer's Table.",
   "Ta sauvegarde a été modifiée en dehors du jeu, ou abîmée, et sa copie de secours aussi. Je ne peux pas les reprendre : ta partie repart de zéro. L'ancien fichier est gardé à côté, en .refuse.": "Your save was changed outside the game, or damaged, and so was its backup. I can't load them: your game starts over. The old file is kept next to it, as .refuse.",
   "Ta sauvegarde a été modifiée en dehors du jeu, ou abîmée. J'ai repris sa copie de secours : tes tout derniers progrès sont peut-être perdus.": "Your save was changed outside the game, or damaged. I loaded its backup: your very latest progress may be lost.",
-  "Compris": "Got it"
+  "Compris": "Got it",
+  "Touche {0}.": "Key {0}."
 }

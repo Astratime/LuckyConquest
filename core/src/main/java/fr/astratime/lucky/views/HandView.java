@@ -86,6 +86,8 @@ public class HandView {
         Card card = cardOf.get(cardImage);
         String reason = blockedReason.apply(card);
         String text = reason == null ? card.getDescription() : card.getDescription() + "\n\n" + reason;
+        int key = images.indexOf(cardImage) + 1;
+        if (key >= 1 && key <= 9) text += "\n" + Lang.f("Touche {0}.", key);
         Vector2 pos = cardImage.localToStageCoordinates(new Vector2(0, cardHeight + TOOLTIP_GAP));
         tooltip.show(card.getName(), text, pos.x, pos.y);
     }
@@ -375,24 +377,46 @@ public class HandView {
                     if (onInspect != null && !hiddenImages.contains(cardImage)) onInspect.accept(cardOf.get(cardImage));
                     return true;
                 }
-                Vector2 clickPos   = cardImage.localToStageCoordinates(new Vector2(x, y));
-                Vector2 cardCenter = cardImage.localToStageCoordinates(new Vector2(cardWidth / 2f, cardHeight / 2f));
-                String reason = blockedReason.apply(cardOf.get(cardImage));
-                if (reason != null) { // la carte ne peut pas être jouée : elle tremble et reste dans la main
-                    refuse(cardImage);
-                    showTooltip(cardImage); // avec la raison du refus
-                    if (refusedListener != null) refusedListener.onCardRefused(cardOf.get(cardImage), reason, cardCenter);
-                    return true;
-                }
-                Card card = cardOf.remove(cardImage);
-                images.remove(cardImage);
-                hiddenImages.remove(cardImage);
-                detach(cardImage);
-                tooltip.hide();
-                clickListener.onCardClicked(card, cardImage, cardCenter, clickPos);
+                play(cardImage, cardImage.localToStageCoordinates(new Vector2(x, y)));
                 return true;
             }
         });
+    }
+
+    /**
+     * Joue la carte de {@code cardImage} (clic, ou touche 1 à 9) : une carte qui ne
+     * peut pas être jouée tremble et reste dans la main, avec la raison dans son infobulle.
+     *
+     * @param clickPos point cliqué (coordonnées du Stage)
+     */
+    private void play(CardImage cardImage, Vector2 clickPos) {
+        Vector2 cardCenter = cardImage.localToStageCoordinates(new Vector2(cardWidth / 2f, cardHeight / 2f));
+        String reason = blockedReason.apply(cardOf.get(cardImage));
+        if (reason != null) { // la carte ne peut pas être jouée : elle tremble et reste dans la main
+            refuse(cardImage);
+            showTooltip(cardImage); // avec la raison du refus
+            if (refusedListener != null) refusedListener.onCardRefused(cardOf.get(cardImage), reason, cardCenter);
+            return;
+        }
+        Card card = cardOf.remove(cardImage);
+        images.remove(cardImage);
+        hiddenImages.remove(cardImage);
+        detach(cardImage);
+        tooltip.hide();
+        clickListener.onCardClicked(card, cardImage, cardCenter, clickPos);
+    }
+
+    /**
+     * Touches 1 à 9 : joue la carte à la place {@code index} de la main (0 : la plus
+     * à gauche), comme un clic.
+     *
+     * @return {@code false} si la main est bloquée ou s'il n'y a pas de carte à cette place
+     */
+    public boolean playAt(int index) {
+        if (locked || group.getTouchable() == Touchable.disabled || index < 0 || index >= images.size()) return false;
+        if (!(images.get(index) instanceof CardImage cardImage)) return false;
+        play(cardImage, cardImage.localToStageCoordinates(new Vector2(cardWidth / 2f, cardHeight / 2f)));
+        return true;
     }
 
     /**
