@@ -60,9 +60,9 @@ public final class BonusGame {
         this.grids  = grids;
         this.frozen = frozen;
         this.lines  = List.copyOf(lines);
-        int sum = 0;
+        long sum = 0;
         for (Line line : lines) sum += line.gains();
-        this.total = sum;
+        this.total = (int) Math.min(Integer.MAX_VALUE, sum);
     }
 
     /**
@@ -92,6 +92,25 @@ public final class BonusGame {
             frozen.add(kept);
         }
         return new BonusGame(grids, frozen, lines(grid, spinCost));
+    }
+
+    /**
+     * Le Jeu bonus compté comme les symboles de gains du tour : chaque alignement
+     * reçoit le bonus de gains du rang pour chacun de ses symboles, puis les
+     * multiplicateurs de gains du tour (cartes Trèfle, combinaisons, Porte-bonheur,
+     * Mise, carte Bingo).
+     *
+     * @param rankPerSymbol bonus de gains du rang par symbole aligné, déjà à l'échelle du coût du tirage
+     * @param factor        multiplicateurs de gains du tour
+     * @return ce Jeu bonus, ses gains ainsi comptés
+     */
+    public BonusGame boosted(int rankPerSymbol, float factor) {
+        List<Line> boosted = new ArrayList<>();
+        for (Line line : lines) {
+            double gains = ((double) line.gains() + (double) rankPerSymbol * line.length()) * factor;
+            boosted.add(new Line(line.symbol(), line.cells(), (int) Math.min(Integer.MAX_VALUE, Math.round(gains))));
+        }
+        return new BonusGame(grids, frozen, boosted);
     }
 
     /** @return une case tirée au hasard : un Joker, une fois sur {@link #JOKER_ONE_IN}, sinon un des rouleaux. */

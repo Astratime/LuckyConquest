@@ -60,6 +60,21 @@ class BonusGameTest {
     }
 
     @Test
+    void theRankAndTheTurnMultipliersBoostEveryLine() {
+        BonusGame game = BonusGame.play(Symbol.classicReels(), 100, new Random(4));
+        BonusGame boosted = game.boosted(70, 2f);
+        long expected = 0;
+        for (int i = 0; i < game.getLines().size(); i++) {
+            BonusGame.Line line = game.getLines().get(i);
+            int gains = (line.gains() + 70 * line.length()) * 2;
+            assertEquals(gains, boosted.getLines().get(i).gains());
+            expected += gains;
+        }
+        assertEquals(expected, boosted.getTotal());
+        assertEquals(game.getTotal(), game.boosted(0, 1f).getTotal());
+    }
+
+    @Test
     void theJokerCountsAsAnySymbol() {
         List<int[]> runs = BonusGame.runs(new Symbol[] {CHERRY, JOKER, CHERRY, BAR, BELL, GRAPE});
         assertEquals(1, runs.size());

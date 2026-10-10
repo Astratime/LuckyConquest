@@ -140,7 +140,7 @@ public class TurnEngine {
         );
 
         // Jeu bonus : après un Bingo, une fois sur dix, la grille s'ouvre ; ses gains sont crédités tout de suite.
-        BonusGame bonus = bonusGame(result, turnContext.getSpinContext(), player, turnContext.getCombatContext().getSpinCost());
+        BonusGame bonus = bonusGame(result, turnContext.getSpinContext(), player, turnContext.getCombatContext());
 
         // Tour de l'ennemi, s'il a survécu : le bouclier du joueur (ses symboles de
         // défense) absorbe ses attaques, et le renvoi dépend des cartes jouées ce tour.
@@ -220,13 +220,17 @@ public class TurnEngine {
 
     /**
      * @return le Jeu bonus qui suit le Bingo de {@code result} (une fois sur dix,
-     *         à coup sûr avec la carte de test), ses gains déjà crédités au joueur ;
+     *         à coup sûr avec la carte de test), compté comme les symboles de gains
+     *         du tour (rang, puis multiplicateurs), ses gains déjà crédités au joueur ;
      *         {@code null} sans Bingo ou si la grille ne s'ouvre pas
      */
-    private BonusGame bonusGame(TurnResult result, SpinContext spin, Player player, int spinCost) {
+    private BonusGame bonusGame(TurnResult result, SpinContext spin, Player player, CombatContext combat) {
         if (!bonusGameEnabled || !result.isJackpot() || player.isDefeated()) return null;
         if (!spin.isBonusGameForced() && random.nextFloat() >= BonusGame.TRIGGER_CHANCE) return null;
-        BonusGame bonus = BonusGame.play(player.getSlotMachine().getReels(), spinCost, random);
+        int spinCost = combat.getSpinCost();
+        int rank = Math.round(player.getRankBonus().gains() * combat.getRankFactor() * SpinEconomy.gainScale(spinCost));
+        float factor = combat.getGainMultiplier() * combat.getGainFactor() * combat.getSymbolPower();
+        BonusGame bonus = BonusGame.play(player.getSlotMachine().getReels(), spinCost, random).boosted(rank, factor);
         player.addGains(bonus.getTotal());
         return bonus;
     }

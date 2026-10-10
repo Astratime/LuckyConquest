@@ -3,9 +3,12 @@ package fr.astratime.lucky.controllers;
 import fr.astratime.lucky.entities.BonusGame;
 import fr.astratime.lucky.entities.Card;
 import fr.astratime.lucky.entities.GameState;
+import fr.astratime.lucky.entities.Player;
+import fr.astratime.lucky.entities.RankBonus;
 import fr.astratime.lucky.entities.Symbol;
 import fr.astratime.lucky.entities.TurnResult;
 import fr.astratime.lucky.entities.effects.BingoEffect;
+import fr.astratime.lucky.entities.effects.MultiplierEffect;
 import fr.astratime.lucky.entities.enemy.EnemyKind;
 import org.junit.jupiter.api.Test;
 
@@ -66,6 +69,24 @@ class BonusGameTurnTest {
             if (engine.playTurn(fight(), List.of(new BingoEffect(1, Symbol.SWORD))).getBonusGame() != null) opened++;
         }
         assertEquals(bingos * BonusGame.TRIGGER_CHANCE, opened, 25);
+    }
+
+    @Test
+    void theBonusGameCountsLikeTheGainSymbolsOfTheTurn() {
+        RankBonus rank = new RankBonus(0, 0, 0, 70);
+        GameController controller = new GameController(BonusGameTurnTest::plainCards, id -> null, java.util.Map.of(),
+            cards -> new Player("Joueur", Player.BASE_HP, cards, rank, Symbol.classicReels()));
+        controller.restart(EnemyKind.ENTRAINEMENT);
+        TurnResult result = new TurnEngine().playTurn(controller.getGameState(),
+            List.of(new MultiplierEffect(9), new BingoEffect(1, Symbol.SWORD, true)));
+
+        BonusGame bonus = result.getBonusGame();
+        long expected = 0;
+        for (BonusGame.Line line : bonus.getLines()) {
+            // le bonus du rang par symbole aligné, puis les cartes Trèfle (1 + 9 = x10)
+            expected += (BonusGame.gains(line.symbol(), line.length(), 100) + 70L * line.length()) * 10;
+        }
+        assertEquals(expected, bonus.getTotal());
     }
 
     @Test

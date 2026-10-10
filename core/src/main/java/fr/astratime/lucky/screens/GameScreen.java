@@ -1266,7 +1266,9 @@ public class GameScreen extends ScreenAdapter {
             GuideOverlay.Step.say(Lang.t("Aligne au moins trois symboles identiques : en ligne, en colonne ou en "
                 + "diagonale. Le Joker compte pour n'importe lequel.")),
             GuideOverlay.Step.say(Lang.t("Plus l'alignement est long et le symbole rare, plus tu gagnes. "
-                + "Les gains tombent à la fin."))), () -> {
+                + "Les gains tombent à la fin.")),
+            GuideOverlay.Step.say(Lang.t("Comme tes symboles de gains, la grille profite de ton rang, de tes "
+                + "cartes Trèfle et de tes combinaisons du tour."))), () -> {
                 profile.markSeen(PlayerProfile.GUIDE_BONUS);
                 scene.resumeGrid();
             });
