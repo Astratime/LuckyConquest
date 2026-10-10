@@ -61,6 +61,8 @@ public class GameSounds implements Disposable {
     public final Sound resultPair;
     /** Les trois symboles alignés : le son de Bingo d'origine, joué avec celui de la scène du symbole ({@link #bingo}). */
     public final Sound bingoClassic;
+    /** Un succès atteint : petite fanfare de casino. */
+    public final Sound achievement;
 
     /** Coup encaissé par le joueur, ou par l'ennemi. */
     public final Sound playerHurt;
@@ -110,6 +112,7 @@ public class GameSounds implements Disposable {
         resultNone   = load("sounds/slots/result_none.ogg");
         resultPair   = load("sounds/slots/result_pair.ogg");
         bingoClassic = load("sounds/bingo_3_symbols.wav");
+        achievement  = load("sounds/ui/achievement.ogg");
 
         playerHurt   = load("sounds/combat/player_hurt.ogg");
         enemyHurt    = load("sounds/combat/enemy_hurt.ogg");

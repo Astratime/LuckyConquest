@@ -3,7 +3,7 @@ package fr.astratime.lucky.progress;
 /**
  * Où le {@link PlayerProfile} est enregistré entre deux lancements du jeu :
  * quelques valeurs texte, par clé. Dans le jeu, les préférences de libGDX
- * ({@link GdxProfileStorage}) ; dans les tests, une simple table en mémoire.
+ * ({@link SecureProfileStorage}, voir {@link GdxProfileStorage}) ; dans les tests, une simple table en mémoire.
  */
 public interface ProfileStorage {
 

@@ -173,6 +173,10 @@ class LangTest {
             texts.add(rule::getShortName);
             texts.add(rule::getAnnounce);
         }
+        for (fr.astratime.lucky.progress.Achievement achievement : fr.astratime.lucky.progress.Achievement.values()) {
+            texts.add(achievement::getName);
+            texts.add(achievement::getDescription);
+        }
         for (Supplier<String> text : texts) {
             String french = text.get();
             if (french != null && !english.containsKey(french)) missing.add(french);

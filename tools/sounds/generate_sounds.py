@@ -2126,6 +2126,18 @@ def shop_card_upgrade():
     return reverb(track.buf, wet=0.22, size=0.9, tail=0.5)
 
 
+
+@sound('ui/achievement', -17)
+def ui_achievement():
+    """Un succès atteint : petite fanfare de casino, clochette de caisse et quelques pièces."""
+    track = Track(1.6)
+    track.add(power_up(['G5', 'C6', 'E6', 'G6'], step=0.06, last=0.3), 0.0, 0.6)
+    track.add(brass_chord(['C4', 'G4', 'C5', 'E5'], 0.8, 0.6), 0.22, 0.6)
+    track.add(cash_register_bell(), 0.3, 0.5)
+    track.add(coin_shower(0.9, 8), 0.35, 0.35)
+    track.add(sparkle(0.8, count=8), 0.25, 0.35)
+    return reverb(track.buf, wet=0.2, size=0.9, tail=0.5)
+
 def main(prefixes):
     done = 0
     for name, level, fmt, trim, loop, fn in SOUNDS:

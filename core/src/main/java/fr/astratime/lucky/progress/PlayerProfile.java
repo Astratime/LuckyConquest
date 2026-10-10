@@ -69,6 +69,8 @@ public class PlayerProfile {
     static final String KEY_ADMIN_MACHINE = "adminMachine";
     static final String KEY_GUIDES        = "guides";
     static final String KEY_BINGOS        = "bingos";
+    static final String KEY_STATS         = "stats";
+    static final String KEY_ACHIEVEMENTS  = "achievements";
 
     /** Guides du Croupier (voir {@link #hasSeen(String)}) : le tutoriel, sa proposition au premier lancement, la visite du menu. */
     public static final String GUIDE_TUTORIAL    = "tutorial";
@@ -112,6 +114,10 @@ public class PlayerProfile {
     private final java.util.Set<String> seenGuides = new java.util.LinkedHashSet<>();
     /** Symboles dont la célébration de Bingo a été vue jusqu'au bout, par nom : elle se passe d'un clic. */
     private final java.util.Set<String> seenBingos = new java.util.LinkedHashSet<>();
+    /** Statistiques de la partie (le mode ADMIN et le tutoriel n'y comptent pas). */
+    private final PlayerStats stats;
+    /** Succès atteints, dans l'ordre (leur récompense est déjà versée). */
+    private final java.util.Set<Achievement> achievements = java.util.EnumSet.noneOf(Achievement.class);
 
     /**
      * Charge le profil enregistré dans {@code storage} ; au premier lancement
@@ -149,6 +155,12 @@ public class PlayerProfile {
         readNames(storage.get(KEY_HARD_CHAPTERS), clearedHardChapters);
         readNames(storage.get(KEY_GUIDES), seenGuides);
         readNames(storage.get(KEY_BINGOS), seenBingos);
+        stats = PlayerStats.decode(storage.get(KEY_STATS));
+        java.util.Set<String> achieved = new java.util.LinkedHashSet<>();
+        readNames(storage.get(KEY_ACHIEVEMENTS), achieved);
+        for (Achievement achievement : Achievement.values()) {
+            if (achieved.contains(achievement.name())) achievements.add(achievement);
+        }
         String savedDungeons = storage.get(KEY_DUNGEONS);
         if (savedDungeons != null) {
             for (String name : savedDungeons.split(",")) if (!name.isBlank()) clearedDungeons.add(name.trim());
@@ -260,6 +272,77 @@ public class PlayerProfile {
         if (!seenBingos.add(symbol.name())) return;
         storage.put(KEY_BINGOS, String.join(",", seenBingos));
         storage.flush();
+    }
+
+    // -------------------------------------------------------------------------
+    // Statistiques et succès
+    // -------------------------------------------------------------------------
+
+    /** @return les statistiques de la partie (à lire seulement : voir {@link #recordStats}). */
+    public PlayerStats getStats() { return stats; }
+
+    /**
+     * Met à jour les statistiques avec {@code change}, puis les enregistre ;
+     * rien en mode ADMIN (ses combats ne comptent pas).
+     */
+    public void recordStats(java.util.function.Consumer<PlayerStats> change) {
+        if (admin) return;
+        change.accept(stats);
+        storage.put(KEY_STATS, stats.encode());
+        storage.flush();
+    }
+
+    /** @return {@code true} si le succès {@code achievement} est atteint (sa récompense versée). */
+    public boolean isUnlocked(Achievement achievement) { return achievements.contains(achievement); }
+
+    /**
+     * Atteint les succès dont l'objectif est rempli : leur récompense est
+     * versée, et le profil enregistré. Les objectifs déjà remplis par une
+     * ancienne partie comptent aussi. Rien en mode ADMIN.
+     *
+     * @return les succès atteints à l'instant (vide si aucun), dans l'ordre de la liste
+     */
+    public List<Achievement> checkAchievements() {
+        if (admin) return List.of();
+        List<Achievement> unlocked = new ArrayList<>();
+        for (Achievement achievement : Achievement.values()) {
+            if (achievements.contains(achievement) || !isAchieved(achievement)) continue;
+            achievements.add(achievement);
+            coins += achievement.getReward();
+            unlocked.add(achievement);
+        }
+        if (!unlocked.isEmpty()) save();
+        return unlocked;
+    }
+
+    /** @return {@code true} si l'objectif de {@code achievement} est rempli (progression réelle, hors ADMIN). */
+    private boolean isAchieved(Achievement achievement) {
+        return switch (achievement) {
+            case FIRST_WIN       -> stats.get(PlayerStats.Stat.WINS) >= 1;
+            case VETERAN         -> stats.get(PlayerStats.Stat.WINS) >= 50;
+            case FIRST_BINGO     -> stats.get(PlayerStats.Stat.BINGOS) >= 1;
+            case HUNDRED_BINGOS  -> stats.get(PlayerStats.Stat.BINGOS) >= 100;
+            case BINGO_COLLECTOR -> stats.bingoSymbolCount() >= 10;
+            case BONUS_GAME      -> stats.get(PlayerStats.Stat.BONUS_GAMES) >= 1;
+            case SQUARE          -> stats.get(PlayerStats.Stat.SQUARES) >= 1;
+            case MILLION_HIT     -> stats.get(PlayerStats.Stat.BEST_HIT) >= 1_000_000L;
+            case BILLION_HIT     -> stats.get(PlayerStats.Stat.BEST_HIT) >= 1_000_000_000L;
+            case HIGH_ROLLER     -> stats.get(PlayerStats.Stat.GAINS) >= 10_000_000L;
+            case FIRST_DUNGEON   -> !clearedDungeons.isEmpty();
+            case PRAIRIE         -> placeCleared(Place.PRAIRIE);
+            case PORT            -> placeCleared(Place.PORT);
+            case MINES           -> placeCleared(Place.MINES);
+            case CASINO          -> placeCleared(Place.CASINO);
+            case COMET           -> clearedChapters.contains(Chapter.GENESE.name());
+            case ORIGIN          -> clearedChapters.contains(Chapter.LE_JACKPOT.name());
+            case HARD_CHAPTER    -> !clearedHardChapters.isEmpty();
+            case FIRST_RANK      -> ranks >= 1;
+            case UPGRADED_CARD   -> collection.keySet().stream().anyMatch(Card::isUpgradedId);
+        };
+    }
+
+    private boolean placeCleared(Place place) {
+        return place.getDungeons().stream().allMatch(dungeon -> clearedDungeons.contains(dungeon.name()));
     }
 
     // -------------------------------------------------------------------------
@@ -676,7 +759,10 @@ public class PlayerProfile {
     // Enregistrement
     // -------------------------------------------------------------------------
 
-    /** Enregistre la collection, le deck, les pièces, le rang, les rouleaux, les donjons vidés, les chapitres terminés et le mode difficile. */
+    /**
+     * Enregistre la collection, le deck, les pièces, le rang, les rouleaux, les donjons vidés,
+     * les chapitres terminés, le mode difficile, les statistiques et les succès.
+     */
     public void save() {
         storage.put(KEY_TOWER_HARD, String.valueOf(towerHard));
         storage.put(KEY_COLLECTION, encode(collection));
@@ -690,6 +776,8 @@ public class PlayerProfile {
         storage.put(KEY_HARD_CHAPTERS, String.join(",", clearedHardChapters));
         storage.put(KEY_ADMIN_DECK, encode(adminDeck));
         storage.put(KEY_ADMIN_MACHINE, encodeSymbols(adminMachine));
+        storage.put(KEY_STATS, stats.encode());
+        storage.put(KEY_ACHIEVEMENTS, achievements.stream().map(Enum::name).collect(java.util.stream.Collectors.joining(",")));
         storage.flush();
     }
 

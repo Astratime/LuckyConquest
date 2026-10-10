@@ -32,6 +32,8 @@ import fr.astratime.lucky.settings.AudioSettings;
 import fr.astratime.lucky.settings.DisplaySettings;
 import fr.astratime.lucky.settings.VisualSettings;
 import fr.astratime.lucky.entities.tutorial.TutorialRun;
+import fr.astratime.lucky.views.AchievementToast;
+import fr.astratime.lucky.views.AchievementsOverlay;
 import fr.astratime.lucky.views.CasinoButtons;
 import fr.astratime.lucky.views.GuideOverlay;
 import fr.astratime.lucky.views.MenuDecor;
@@ -64,6 +66,7 @@ public class MenuScreen extends ScreenAdapter {
 
     /** Bruitage du clic (CC0, Kenney.nl — voir assets/sounds/CREDITS.txt). */
     private static final String CLICK_SOUND = "sounds/button-click.ogg";
+    private static final String ACHIEVEMENT_SOUND = "sounds/ui/achievement.ogg";
     /** Survol d'une option (synthétisé, voir tools/sounds/generate_sounds.py). */
     private static final String HOVER_SOUND = "sounds/ui/menu_hover.ogg";
     private static final String TITLE       = "LUCKY CONQUEST";
@@ -105,6 +108,10 @@ public class MenuScreen extends ScreenAdapter {
     private final Texture           croupier = EnemyTextures.newCroupierPortrait();
     private final CasinoButtons     guideButtons = new CasinoButtons();
     private final GuideOverlay      guide;
+    /** Statistiques et succès (Options) ; annonce des succès atteints. */
+    private final AchievementsOverlay achievements;
+    private final AchievementToast    toast;
+    private final Sound               achievementSound;
     private boolean                 leaving;
     private float                   parallaxX, parallaxY;
 
@@ -132,10 +139,17 @@ public class MenuScreen extends ScreenAdapter {
         showMainPage();
         guide = new GuideOverlay(hud, croupier);
         stage.addActor(guide);
+        achievements = new AchievementsOverlay(hud, guideButtons, clickSound);
+        stage.addActor(achievements.getActor());
+        achievementSound = new VolumeSound(Gdx.audio.newSound(Gdx.files.internal(ACHIEVEMENT_SOUND)), audio);
+        toast = new AchievementToast(hud, achievementSound);
+        stage.addActor(toast);
         stage.addActor(fade);                     // en dernier : fondu d'ouverture et de sortie
         fade.addAction(Actions.fadeOut(FADE_TIME));
         layout();
         stage.addAction(Actions.delay(GUIDE_DELAY, Actions.run(this::startGuide)));
+        // Succès atteints ailleurs (ou par une partie d'avant les succès) : annoncés en arrivant au menu.
+        stage.addAction(Actions.delay(GUIDE_DELAY, Actions.run(() -> toast.show(luckyGame.getProfile().checkAchievements()))));
     }
 
     // -------------------------------------------------------------------------
@@ -179,6 +193,7 @@ public class MenuScreen extends ScreenAdapter {
         };
         entries.add(new OptionsMenu.Entry(() -> Lang.f("Langue : {0}", Lang.get().label), toggleLanguage,
             direction -> toggleLanguage.run()));
+        entries.add(OptionsMenu.Entry.button(Lang.t("Statistiques et succès"), this::showAchievements));
         entries.add(OptionsMenu.Entry.button(Lang.t("Rejouer le tutoriel"), this::onTutorial));
         PlayerProfile profile = luckyGame.getProfile();
         Runnable toggleAdmin = () -> profile.setAdmin(!profile.isAdmin());
@@ -187,6 +202,14 @@ public class MenuScreen extends ScreenAdapter {
             toggleAdmin, direction -> toggleAdmin.run()));
         entries.add(OptionsMenu.Entry.button(Lang.t("Retour"), this::showMainPage));
         showPage(Lang.t("OPTIONS"), entries, selected);
+    }
+
+    /** Ouvre la fenêtre des statistiques et des succès ; le menu attend qu'elle se ferme. */
+    private void showAchievements() {
+        menu.setActive(false);
+        achievements.show(luckyGame.getProfile(), () -> menu.setActive(true));
+        toast.toFront();
+        fade.toFront();
     }
 
     private void showPage(String caption, List<OptionsMenu.Entry> entries) {
@@ -208,7 +231,11 @@ public class MenuScreen extends ScreenAdapter {
         float width  = stage.getViewport().getWorldWidth();
         float height = stage.getViewport().getWorldHeight();
         if (width <= 0f || height <= 0f) return;
-        int extra = menu.hasCaption() ? 0 : Math.max(0, menu.size() - MAIN_ENTRIES);
+        if (menu.hasCaption()) {
+            menu.layout(width / 2f, height / 2f); // page des options : la plus longue, au centre de l'écran
+            return;
+        }
+        int extra = Math.max(0, menu.size() - MAIN_ENTRIES);
         menu.layout(width / 2f, height * PANEL_CENTER_Y - extra * OptionsMenu.OPTION_STEP / 2f);
     }
 
@@ -217,11 +244,23 @@ public class MenuScreen extends ScreenAdapter {
     // -------------------------------------------------------------------------
 
     /**
-     * Premier lancement : le Croupier propose le tutoriel (« Plus tard » : il
+     * Sauvegarde refusée ou reprise de sa copie de secours : le Croupier prévient
+     * d'abord. Premier lancement : le Croupier propose le tutoriel (« Plus tard » : il
      * reste dans les Options). Tutoriel fini ou passé : il présente le menu, une fois.
      */
     private void startGuide() {
         if (leaving || menu.hasCaption()) return;
+        // Sauvegarde refusée ou reprise de la copie de secours : le Croupier le dit d'abord, au lancement.
+        String notice = luckyGame.takeSaveNotice();
+        if (notice != null) {
+            GuideOverlay.Step step = GuideOverlay.Step.say(Lang.t(notice)).buttons(
+                guideButtons.create(Lang.t("Compris"), clickSound, () -> {
+                    guide.stop();
+                    startGuide();
+                }));
+            guide.play(List.of(step), null);
+            return;
+        }
         PlayerProfile profile = luckyGame.getProfile();
         if (!profile.hasSeen(PlayerProfile.GUIDE_TUTORIAL) && !profile.hasSeen(PlayerProfile.GUIDE_OFFER)) {
             offerTutorial(profile);
@@ -373,6 +412,13 @@ public class MenuScreen extends ScreenAdapter {
             public boolean keyDown(int keycode) {
                 if (leaving) return false;
                 if (guide.isActive()) return true; // le Croupier parle : le menu attend
+                if (achievements.isShown()) {
+                    if (keycode == Input.Keys.ESCAPE) {
+                        clickSound.play();
+                        achievements.hide();
+                    }
+                    return true;
+                }
                 if (keycode == Input.Keys.ESCAPE && menu.hasCaption()) {
                     clickSound.play();
                     showMainPage();
@@ -389,6 +435,7 @@ public class MenuScreen extends ScreenAdapter {
     public void resize(int width, int height) {
         stage.getViewport().update(width, height, true);
         layout();
+        achievements.layout();
     }
 
     @Override
@@ -405,6 +452,9 @@ public class MenuScreen extends ScreenAdapter {
     public void dispose() {
         stage.dispose();
         guide.dispose();
+        achievements.dispose();
+        toast.dispose();
+        achievementSound.dispose();
         croupier.dispose();
         guideButtons.dispose();
         decor.dispose();
