@@ -33,6 +33,28 @@ public class Card {
     private final Suit         suit;
     private final int          rank;
     private final boolean      consumable;
+    /** Version « + », obtenue en fusionnant {@link #UPGRADE_COST} exemplaires de la carte (valeurs +50 %). */
+    private final boolean      upgraded;
+    /** {@code true} si la carte a une version « + » (au moins une valeur à améliorer). */
+    private final boolean      upgradable;
+
+    /** Suffixe de l'identifiant d'une carte « + » (ex : "13_trefle+"). */
+    public static final String UPGRADE_SUFFIX = "+";
+    /** Exemplaires d'une carte fusionnés en un exemplaire de sa version « + ». */
+    public static final int    UPGRADE_COST   = 3;
+    /** Les valeurs d'une carte « + » : celles de la carte x {@value}. */
+    public static final float  UPGRADE_FACTOR = 1.5f;
+
+    /** @return l'identifiant de la version « + » de la carte {@code id}. */
+    public static String upgradedId(String id) { return isUpgradedId(id) ? id : id + UPGRADE_SUFFIX; }
+
+    /** @return {@code true} si {@code id} est celui d'une carte « + ». */
+    public static boolean isUpgradedId(String id) { return id.endsWith(UPGRADE_SUFFIX); }
+
+    /** @return l'identifiant de la carte de base de {@code id} (lui-même si ce n'est pas une carte « + »). */
+    public static String baseId(String id) {
+        return isUpgradedId(id) ? id.substring(0, id.length() - UPGRADE_SUFFIX.length()) : id;
+    }
 
     /**
      * @param id        identifiant unique de la carte (tel que défini dans le JSON)
@@ -54,6 +76,18 @@ public class Card {
      */
     public Card(String id, String name, String assetPath,
                 List<Effect> effects, Suit suit, int rank, boolean consumable) {
+        this(id, name, assetPath, effects, suit, rank, consumable, false, false);
+    }
+
+    /**
+     * @param upgraded   {@code true} pour une carte « + » (son id finit par {@link #UPGRADE_SUFFIX})
+     * @param upgradable {@code true} si la carte a une version « + »
+     * @see #Card(String, String, String, List, Suit, int, boolean)
+     */
+    public Card(String id, String name, String assetPath, List<Effect> effects, Suit suit, int rank,
+                boolean consumable, boolean upgraded, boolean upgradable) {
+        this.upgraded   = upgraded;
+        this.upgradable = upgradable;
         this.consumable = consumable;
         this.id        = id;
         this.name      = name;
@@ -65,8 +99,12 @@ public class Card {
 
     /** @return l'identifiant unique de la carte. */
     public String       getId()        { return id; }
-    /** @return le nom affiché de la carte. */
-    public String       getName()      { return Lang.t(name); }
+    /** @return le nom affiché de la carte, suivi de « + » pour une carte « + ». */
+    public String       getName()      { return upgraded ? Lang.t(name) + " +" : Lang.t(name); }
+    /** @return {@code true} pour une carte « + » (valeurs +50 %, liseré doré). */
+    public boolean      isUpgraded()   { return upgraded; }
+    /** @return {@code true} si la carte a une version « + » (voir {@link #isUpgraded()}). */
+    public boolean      isUpgradable() { return upgradable; }
     /** @return la suite de la carte, ou {@code null} si elle n'en a pas. */
     public Suit         getSuit()      { return suit; }
     /** @return le rang de la carte. */
@@ -89,5 +127,5 @@ public class Card {
 
     /** @return le nom affiché de la carte (voir {@link #getName()}). */
     @Override
-    public String toString() { return name; }
+    public String toString() { return upgraded ? name + " +" : name; }
 }

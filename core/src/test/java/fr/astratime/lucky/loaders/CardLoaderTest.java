@@ -211,4 +211,55 @@ class CardLoaderTest {
             assertFalse(boutique.containsKey(chest), chest + " ne s'obtient qu'au coffre");
         }
     }
+
+    @Test
+    void aPlusCardHasTheSameCardWithValuesUpByHalf() {
+        java.util.function.Function<String, Card> factory = CardLoader.cardFactory(READER);
+        Card king = factory.apply("13_trefle");
+        Card plus = factory.apply("13_trefle+");
+
+        assertTrue(king.isUpgradable());
+        assertTrue(plus.isUpgraded());
+        assertEquals("13_trefle+", plus.getId());
+        assertEquals(king.getSuit(), plus.getSuit());
+        assertEquals(king.getRank(), plus.getRank());
+        assertTrue(plus.getName().endsWith(" +"));
+        // Roi de Trèfle : gains x26 et attaque +23, puis x39 et +35.
+        assertTrue(plus.getDescription().contains("39"), plus.getDescription());
+        assertTrue(plus.getDescription().contains("35"), plus.getDescription());
+    }
+
+    @Test
+    void theSpadesPierceStopsAtAHundredPercent() {
+        Card plus = CardLoader.cardFactory(READER).apply("13_pique+");
+        assertTrue(plus.getDescription().contains("90%"), plus.getDescription());
+    }
+
+    @Test
+    void theAcesHaveAPlusVersion() {
+        java.util.function.Function<String, Card> factory = CardLoader.cardFactory(READER);
+        for (String ace : List.of("1_coeur", "1_trefle", "1_carreau", "1_pique")) {
+            assertTrue(factory.apply(ace).isUpgradable(), ace);
+            assertNotEquals(factory.apply(ace).getDescription(), factory.apply(ace + "+").getDescription(), ace);
+        }
+    }
+
+    @Test
+    void aCardWithoutAValueToImproveHasNoPlusVersion() {
+        java.util.function.Function<String, Card> factory = CardLoader.cardFactory(READER);
+        assertFalse(factory.apply("bet").isUpgradable());
+        assertThrows(IllegalArgumentException.class, () -> factory.apply("bet+"));
+    }
+
+    @Test
+    void aDeckCanHoldPlusCards() {
+        List<Card> deck = CardLoader.loadDeck(Map.of("13_coeur+", 2, "magnet", 1), READER);
+        assertEquals(2, deck.stream().filter(Card::isUpgraded).count());
+    }
+
+    @Test
+    void theRainbowPlusAddsAPotPlus() {
+        Card rainbow = CardLoader.cardFactory(READER).apply("rainbow+");
+        assertTrue(rainbow.getDescription().contains("Lutin +"), rainbow.getDescription());
+    }
 }

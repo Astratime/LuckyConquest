@@ -34,6 +34,10 @@ public class RainbowEffect extends Effect {
 
     @Override
     public String getDescription() {
+        if (fr.astratime.lucky.entities.Card.isUpgradedId(cardId)) {
+            return Lang.t("Toute la main prend une même suite, tirée au hasard, jusqu'à la fin du tour. Ajoute un Pot de "
+                + "Lutin + sur la table");
+        }
         return Lang.t("Toute la main prend une même suite, tirée au hasard, jusqu'à la fin du tour. Ajoute un Pot de "
             + "Lutin sur la table");
     }

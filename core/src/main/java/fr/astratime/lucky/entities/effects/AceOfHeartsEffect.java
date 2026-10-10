@@ -28,18 +28,27 @@ public class AceOfHeartsEffect extends Effect {
     static final float          FRENZY_PER_MISSING_HP = 2f;
     private static final Random RANDOM       = new Random();
 
+    /** Puissance de la carte : 1, ou {@link fr.astratime.lucky.entities.Card#UPGRADE_FACTOR} pour sa version « + ». */
+    private final float power;
+
+    public AceOfHeartsEffect() { this(1f); }
+
+    /** @param power puissance : ses valeurs sont multipliées par autant (version « + » de la carte) */
+    public AceOfHeartsEffect(float power) { this.power = power; }
+
     @Override
     public void apply(TurnContext context) {
         List<Symbol> attackSymbols = SymbolRegistry.getAttackSymbols(context.getCombatContext().getPlayer()); // ceux de sa machine
         if (!attackSymbols.isEmpty()) {
             Symbol target = attackSymbols.get(RANDOM.nextInt(attackSymbols.size()));
-            context.getSpinContext().addWeightBoost(target, BOOST_AMOUNT);
-            context.addEvent(new SymbolBoostedEvent(target, BOOST_AMOUNT));
+            int boost = Math.round(BOOST_AMOUNT * power);
+            context.getSpinContext().addWeightBoost(target, boost);
+            context.addEvent(new SymbolBoostedEvent(target, boost));
         }
 
         CombatContext combat = context.getCombatContext();
         Player player = combat.getPlayer();
-        float factor = 1f + FRENZY_PER_MISSING_HP * (1f - player.getHpRatio());
+        float factor = 1f + FRENZY_PER_MISSING_HP * power * (1f - player.getHpRatio());
         int   blood  = player.getLastingEffects().consumeBlood();
         combat.multiplyAttack(factor, "As de Coeur");
         combat.addAttackBonus(blood, "Sang");
@@ -53,7 +62,7 @@ public class AceOfHeartsEffect extends Effect {
     public String getDescription() {
         return Lang.f("Frénésie : un symbole d'attaque devient plus fréquent. Attaque multipliée jusqu'à x{0} selon la "
             + "vie perdue. Tout le Sang s'ajoute à l'attaque",
-            Math.round(1 + FRENZY_PER_MISSING_HP));
+            Math.round(1 + FRENZY_PER_MISSING_HP * power));
     }
 
     @Override

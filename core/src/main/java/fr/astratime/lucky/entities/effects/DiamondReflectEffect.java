@@ -64,7 +64,7 @@ public class DiamondReflectEffect extends Effect {
     /** @return {@code percent} sans décimale inutile, avec la virgule en français (ex : "3,75", "1"). */
     private static String formatPercent(float percent) {
         String text = percent == (int) percent ? String.valueOf((int) percent)
-            : java.math.BigDecimal.valueOf(percent).stripTrailingZeros().toPlainString();
+            : new java.math.BigDecimal(Float.toString(percent)).stripTrailingZeros().toPlainString();
         return !Lang.isEnglish() ? text.replace('.', ',') : text;
     }
 

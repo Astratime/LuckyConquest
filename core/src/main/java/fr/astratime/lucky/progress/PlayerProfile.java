@@ -1,5 +1,6 @@
 package fr.astratime.lucky.progress;
 
+import fr.astratime.lucky.entities.Card;
 import fr.astratime.lucky.entities.RankBonus;
 import fr.astratime.lucky.entities.Symbol;
 import fr.astratime.lucky.entities.exploration.Dungeon;
@@ -101,6 +102,8 @@ public class PlayerProfile {
     private boolean admin;
     /** Toutes les cartes à collectionner, par id (voir {@link #setCatalog(Collection)}). */
     private final java.util.Set<String> catalog = new java.util.LinkedHashSet<>();
+    /** Cartes qui ont une version « + », par id (voir {@link #setUpgradable(Collection)}). */
+    private final java.util.Set<String> upgradable = new java.util.LinkedHashSet<>();
     /** Deck et machine du mode ADMIN, séparés de ceux de la partie. */
     private final Map<String, Integer> adminDeck    = new LinkedHashMap<>();
     private final List<Symbol>         adminMachine = new ArrayList<>();
@@ -170,6 +173,20 @@ public class PlayerProfile {
      */
     public void setCatalog(Collection<String> cardIds) {
         catalog.addAll(cardIds);
+        for (String id : cardIds) if (upgradable.contains(id)) catalog.add(Card.upgradedId(id));
+        loadAdminLoadout();
+    }
+
+    /**
+     * Indique les cartes qui ont une version « + » (voir {@link #upgradeCard(String)}) ;
+     * le mode ADMIN met aussi dans la collection la version « + » de celles du catalogue.
+     */
+    public void setUpgradable(Collection<String> cardIds) {
+        upgradable.clear();
+        upgradable.addAll(cardIds);
+        for (String id : List.copyOf(catalog)) {
+            if (upgradable.contains(id)) catalog.add(Card.upgradedId(id));
+        }
         loadAdminLoadout();
     }
 
@@ -364,6 +381,94 @@ public class PlayerProfile {
         target.clear();
         newDeck.forEach((id, copies) -> { if (copies > 0) target.put(id, copies); });
         save();
+    }
+
+    // -------------------------------------------------------------------------
+    // Amélioration des cartes
+    // -------------------------------------------------------------------------
+
+    /** @return {@code true} si la carte {@code id} a une version « + ». */
+    public boolean isUpgradable(String id) { return !Card.isUpgradedId(id) && upgradable.contains(id); }
+
+    /**
+     * @return pourquoi la carte {@code id} ne peut pas être améliorée, ou
+     *         {@code null} si elle peut l'être (voir {@link #upgradeCard(String)})
+     */
+    public String upgradeProblem(String id) {
+        if (admin) return Lang.t("Pas de fusion en mode ADMIN");
+        if (!isUpgradable(id)) return Lang.t("Cette carte n'a pas de version +");
+        if (getOwnedCopies(id) < Card.UPGRADE_COST) return Lang.f("Il faut {0} exemplaires pour fusionner",
+            Card.UPGRADE_COST);
+        if (getOwnedCopies(Card.upgradedId(id)) >= MAX_COPIES) return Lang.f("Tu as déjà {0} cartes + de celle-ci",
+            MAX_COPIES);
+        if (deckAfterUpgrade(id) == null) return Lang.f("Il te resterait moins de {0} cartes pour ton deck",
+            DECK_SIZE);
+        return null;
+    }
+
+    /**
+     * Fusionne {@link Card#UPGRADE_COST} exemplaires de la carte {@code id} en un
+     * exemplaire de sa version « + » (valeurs +50 %). Dans le deck enregistré, la
+     * carte « + » prend la place d'un exemplaire fusionné ; les autres places sont
+     * reprises par des cartes de la collection, dans son ordre. Le profil est enregistré.
+     *
+     * @return {@code false} si elle ne peut pas l'être (voir {@link #upgradeProblem(String)})
+     */
+    public boolean upgradeCard(String id) {
+        if (upgradeProblem(id) != null) return false;
+        String plus = Card.upgradedId(id);
+        Map<String, Integer> newDeck = deckAfterUpgrade(id);
+        Map<String, Integer> newCollection = new LinkedHashMap<>();
+        for (Map.Entry<String, Integer> entry : collection.entrySet()) {
+            String key = entry.getKey();
+            if (key.equals(plus)) continue;
+            int count = key.equals(id) ? entry.getValue() - Card.UPGRADE_COST : entry.getValue();
+            if (count > 0) newCollection.put(key, count);
+            if (key.equals(id)) newCollection.put(plus, collection.getOrDefault(plus, 0) + 1); // à côté de la carte
+        }
+        collection.clear();
+        collection.putAll(newCollection);
+        deck.clear();
+        deck.putAll(newDeck);
+        save();
+        return true;
+    }
+
+    /**
+     * @return le deck enregistré après la fusion de la carte {@code id} (voir
+     *         {@link #upgradeCard(String)}), ou {@code null} si la collection ne
+     *         suffit plus à remplir le deck
+     */
+    private Map<String, Integer> deckAfterUpgrade(String id) {
+        String plus = Card.upgradedId(id);
+        Map<String, Integer> owned = new LinkedHashMap<>(collection);
+        owned.merge(id, -Card.UPGRADE_COST, Integer::sum);
+        owned.merge(plus, 1, Integer::sum);
+        Map<String, Integer> result = new LinkedHashMap<>(deck);
+        int missing = 0;
+        for (Map.Entry<String, Integer> entry : deck.entrySet()) {
+            int allowed = Math.min(MAX_COPIES, Math.max(0, owned.getOrDefault(entry.getKey(), 0)));
+            if (entry.getValue() > allowed) {
+                missing += entry.getValue() - allowed;
+                result.put(entry.getKey(), allowed);
+            }
+        }
+        if (missing > 0) {
+            int room = Math.min(MAX_COPIES, owned.get(plus)) - result.getOrDefault(plus, 0);
+            int added = Math.min(missing, Math.max(0, room));
+            if (added > 0) result.merge(plus, added, Integer::sum);
+            missing -= added;
+        }
+        for (Map.Entry<String, Integer> entry : owned.entrySet()) {
+            if (missing <= 0) break;
+            int room = Math.min(MAX_COPIES, entry.getValue()) - result.getOrDefault(entry.getKey(), 0);
+            int added = Math.min(missing, Math.max(0, room));
+            if (added > 0) result.merge(entry.getKey(), added, Integer::sum);
+            missing -= added;
+        }
+        if (missing > 0) return null;
+        result.values().removeIf(count -> count <= 0);
+        return result;
     }
 
     // -------------------------------------------------------------------------

@@ -28,6 +28,14 @@ public class AceOfSpadesEffect extends Effect {
     /** Multiplicateur d'attaque ajouté par Lame encaissée. */
     static final float FACTOR_PER_BLADE = 0.5f;
 
+    /** Puissance de la carte : 1, ou {@link fr.astratime.lucky.entities.Card#UPGRADE_FACTOR} pour sa version « + ». */
+    private final float power;
+
+    public AceOfSpadesEffect() { this(1f); }
+
+    /** @param power puissance : ses valeurs sont multipliées par autant (version « + » de la carte) */
+    public AceOfSpadesEffect(float power) { this.power = power; }
+
     @Override
     public void onPlay(PlayContext context) {
         int consumed = context.consumeGainsPercent(CONSUME_PERCENT);
@@ -44,7 +52,7 @@ public class AceOfSpadesEffect extends Effect {
     public void apply(TurnContext context) {
         LastingEffects lasting = context.getCombatContext().getPlayer().getLastingEffects();
         int   blades = lasting.consumeBlades();
-        float factor = 1f + FACTOR_PER_BLADE * blades;
+        float factor = 1f + FACTOR_PER_BLADE * power * blades;
         context.getCombatContext().setIgnoreDefense(true);
         context.getCombatContext().multiplyAttack(factor, "As de Pique");
         String times = factor == (int) factor ? String.valueOf((int) factor) : String.valueOf(factor);
@@ -56,8 +64,8 @@ public class AceOfSpadesEffect extends Effect {
     @Override
     public String getDescription() {
         return Lang.f("Exécution : consomme 10% des gains. +1 Lame tous les {0} gains consommés. Attaque multipliée "
-            + "par (1 + 0,5 x Lame). Les symboles d'attaque ignorent la défense",
-            GAINS_PER_BLADE);
+            + "par (1 + {1} x Lame). Les symboles d'attaque ignorent la défense",
+            GAINS_PER_BLADE, Lang.decimal(String.valueOf(FACTOR_PER_BLADE * power)));
     }
 
     /** Textes fixes : aucun, ils dépendent des gains consommés (voir {@link #onPlay}). */

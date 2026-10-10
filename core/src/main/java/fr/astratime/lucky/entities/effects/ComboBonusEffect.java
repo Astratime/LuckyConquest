@@ -23,7 +23,7 @@ public class ComboBonusEffect extends Effect {
     @Override
     public void apply(TurnContext context) { context.getCombatContext().addComboBonus(bonus); }
 
-    private String bonusText() { return bonus == Math.round(bonus) ? String.valueOf(Math.round(bonus)) : String.valueOf(bonus); }
+    private String bonusText() { return bonus == Math.round(bonus) ? String.valueOf(Math.round(bonus)) : Lang.decimal(String.valueOf(bonus)); }
 
     @Override
     public String getDescription() { return Lang.f("Ce tour, chaque combinaison compte +{0} au multiplicateur.",

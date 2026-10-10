@@ -49,6 +49,7 @@ import fr.astratime.lucky.views.GuideOverlay;
 import fr.astratime.lucky.views.MenuDecor;
 import fr.astratime.lucky.views.MinimumScreenViewport;
 import fr.astratime.lucky.views.Tooltip;
+import fr.astratime.lucky.views.UpgradeOverlay;
 
 import java.util.ArrayList;
 import java.util.EnumMap;
@@ -75,12 +76,17 @@ import java.util.function.Supplier;
  * exactement {@link PlayerProfile#DECK_SIZE} cartes ; « Retour » abandonne les changements.
  * Dans l'onglet « Rouleaux », un clic place un rouleau dans la machine ou l'en
  * retire. « Enregistrer » enregistre le deck et la machine, complets tous les deux.
+ *
+ * Une carte possédée en {@link Card#UPGRADE_COST} exemplaires montre le bouton
+ * « FUSIONNER » : ils deviennent un exemplaire de sa version « + » (voir
+ * {@link PlayerProfile#upgradeCard(String)}), tout de suite enregistré.
  */
 public class CroupierTableScreen extends ScreenAdapter {
 
     private static final String CLICK_SOUND  = "sounds/button-click.ogg";
     private static final String DEAL_SOUND   = "sounds/card-deal.ogg";
     private static final String REFUSE_SOUND = "sounds/coins/loss.ogg";
+    private static final String UPGRADE_SOUND = "sounds/shop/card_upgrade.ogg";
     private static final String MUSIC        = "music/main_menu.ogg";
     private static final float  MUSIC_LEVEL  = 0.3f;
 
@@ -118,6 +124,10 @@ public class CroupierTableScreen extends ScreenAdapter {
     private final Sound           clickSound;
     private final Sound           dealSound;
     private final Sound           refuseSound;
+    private final Sound           upgradeSound;
+    /** Fenêtre de fusion d'une carte en sa version « + ». */
+    private final UpgradeOverlay  upgradeOverlay;
+    private final Function<String, Card> factory = CardLoader.cardFactory();
     private final BackgroundMusic music;
     private final BitmapFont      titleFont   = Fonts.jersey(84, Palette.GOLD, 6f, Palette.TEXT_SHADE);
     private final BitmapFont      headFont    = Fonts.jersey(44, Palette.GOLD, 3f, Palette.TEXT_SHADE);
@@ -125,6 +135,7 @@ public class CroupierTableScreen extends ScreenAdapter {
     private final BitmapFont      countFont   = Fonts.jersey(28, Color.WHITE, 2f, Palette.TEXT_SHADE);
     private final BitmapFont      rowFont     = Fonts.jersey(30, Color.WHITE, 2f, Palette.TEXT_SHADE);
     private final BitmapFont      hintFont    = Fonts.jersey(26, Palette.CREAM, 2f, Palette.TEXT_SHADE);
+    private final BitmapFont      upgradeFont = Fonts.jersey(22, Color.WHITE, 2f, Palette.TEXT_SHADE);
 
     /** Une carte de chaque sorte possédée, par id, dans l'ordre de la collection. */
     private final Map<String, Card> cards = new LinkedHashMap<>();
@@ -140,6 +151,8 @@ public class CroupierTableScreen extends ScreenAdapter {
     private final ScrollPane  scroll;
     private final List<Group> cells = new ArrayList<>();
     private final Map<String, Label> cellCounts = new LinkedHashMap<>();
+    /** Bouton « FUSIONNER » de chaque carte de la collection, par id. */
+    private final Map<String, Group> cellUpgrades = new LinkedHashMap<>();
     private final Table       deckList = new Table();
     /** Images des rouleaux possédés. */
     private final Map<Symbol, Texture> reelTextures = new EnumMap<>(Symbol.class);
@@ -175,10 +188,9 @@ public class CroupierTableScreen extends ScreenAdapter {
         clickSound  = new VolumeSound(Gdx.audio.newSound(Gdx.files.internal(CLICK_SOUND)), audio);
         dealSound   = new VolumeSound(Gdx.audio.newSound(Gdx.files.internal(DEAL_SOUND)), audio);
         refuseSound = new VolumeSound(Gdx.audio.newSound(Gdx.files.internal(REFUSE_SOUND)), audio);
+        upgradeSound = new VolumeSound(Gdx.audio.newSound(Gdx.files.internal(UPGRADE_SOUND)), audio);
         music       = new BackgroundMusic(MUSIC, audio, MUSIC_LEVEL);
 
-        Function<String, Card> factory = CardLoader.cardFactory();
-        for (String id : profile.getCollection().keySet()) cards.put(id, factory.apply(id));
 
         TextureRegionDrawable pixel = new TextureRegionDrawable(new TextureRegion(hud.pixel));
         veil = new Image(pixel);
@@ -195,7 +207,7 @@ public class CroupierTableScreen extends ScreenAdapter {
         counter        = new Label("", new Label.LabelStyle(counterFont, Color.WHITE));
         hint = new Label(Lang.t("Clic gauche : ajouter. Clic droit : retirer."), new Label.LabelStyle(hintFont, Color.WHITE));
 
-        for (Card card : cards.values()) cells.add(buildCell(card));
+        buildCollection();
         scroll = new ScrollPane(grid);
         scroll.setScrollingDisabled(true, false);
         scroll.setFadeScrollBars(false);
@@ -221,6 +233,8 @@ public class CroupierTableScreen extends ScreenAdapter {
         });
         backButton    = buttons.create(Lang.t("Retour"), clickSound, this::onBack);
         tutorialButton = buttons.create(Lang.t("Tutoriel"), clickSound, this::replayGuide);
+
+        upgradeOverlay = new UpgradeOverlay(hud, buttons, clickSound, upgradeSound);
 
         fade = new Image(pixel);
         fade.setColor(Color.BLACK);
@@ -248,6 +262,7 @@ public class CroupierTableScreen extends ScreenAdapter {
         stage.addActor(backButton);
         stage.addActor(tutorialButton);
         stage.addActor(tooltip.getActor());
+        stage.addActor(upgradeOverlay.getActor());
         stage.addActor(fade);
         fade.addAction(Actions.fadeOut(FADE_TIME));
 
@@ -278,6 +293,9 @@ public class CroupierTableScreen extends ScreenAdapter {
         steps.add(GuideOverlay.Step.action(Lang.t("Ajoute une carte : clic gauche sur une carte de ta collection. Clic droit l'enlève du deck."),
                 () -> GuideOverlay.boundsOf(collectionPanel), () -> draft.size() > before[0])
             .onStart(() -> before[0] = draft.size()));
+        steps.add(GuideOverlay.Step.say(Lang.f("Quand tu as {0} exemplaires d'une carte, FUSIONNER apparaît dessus : ils "
+            + "deviennent une carte +, avec un liseré doré et des valeurs +50 %.", Card.UPGRADE_COST),
+            () -> GuideOverlay.boundsOf(collectionPanel)));
         steps.add(GuideOverlay.Step.action(Lang.t("Ta machine a ses propres rouleaux. Ouvre l'onglet Rouleaux."),
             () -> GuideOverlay.boundsOf(reelsTab), () -> showingReels));
         steps.add(GuideOverlay.Step.say(Lang.f("Tes rouleaux. Ceux en or tournent dans ta machine. Elle en prend {0}, tous différents.",
@@ -415,6 +433,22 @@ public class CroupierTableScreen extends ScreenAdapter {
         cell.addActor(count);
         cellCounts.put(card.getId(), count);
 
+        // « FUSIONNER », en bas de la carte, quand elle peut devenir une carte « + ».
+        Group upgrade = new Group();
+        upgrade.setBounds(0f, 0f, CARD_WIDTH, 34f);
+        Image band = new Image(new TextureRegionDrawable(new TextureRegion(hud.pixel)));
+        band.setColor(0.12f, 0.07f, 0.02f, 0.88f);
+        band.setSize(CARD_WIDTH, 34f);
+        Label upgradeText = new Label(Lang.t("FUSIONNER"), new Label.LabelStyle(upgradeFont, Color.WHITE));
+        upgradeText.setColor(Palette.GOLD);
+        upgradeText.setAlignment(Align.center);
+        upgradeText.setBounds(0f, 2f, CARD_WIDTH, 30f);
+        upgrade.addActor(band);
+        upgrade.addActor(upgradeText);
+        upgrade.setVisible(false);
+        holder.addActor(upgrade);
+        cellUpgrades.put(card.getId(), upgrade);
+
         ClickListener listener = new ClickListener(-1) {
             @Override
             public void enter(InputEvent event, float x, float y, int pointer, Actor fromActor) {
@@ -424,6 +458,7 @@ public class CroupierTableScreen extends ScreenAdapter {
                 holder.addAction(Actions.scaleTo(HOVER_SCALE, HOVER_SCALE, 0.1f, Interpolation.pow2Out));
                 Vector2 pos = holder.localToStageCoordinates(new Vector2(0f, CARD_HEIGHT + 8f));
                 tooltip.show(card.getName(), card.getDescription(), pos.x, pos.y);
+                if (upgrade.isVisible()) upgradeText.setColor(Color.WHITE);
             }
 
             @Override
@@ -433,16 +468,42 @@ public class CroupierTableScreen extends ScreenAdapter {
                 holder.clearActions();
                 holder.addAction(Actions.scaleTo(1f, 1f, 0.1f, Interpolation.pow2Out));
                 tooltip.hide();
+                upgradeText.setColor(Palette.GOLD);
             }
 
             @Override
             public void clicked(InputEvent event, float x, float y) {
-                if (event.getButton() == Input.Buttons.RIGHT) removeCard(card.getId());
+                if (upgrade.isVisible() && event.getTarget().isDescendantOf(upgrade)) openUpgrade(card);
+                else if (event.getButton() == Input.Buttons.RIGHT) removeCard(card.getId());
                 else addCard(card.getId(), holder);
             }
         };
         cell.addListener(listener);
         return cell;
+    }
+
+    /** Crée une case par carte de la collection (dans son ordre). */
+    private void buildCollection() {
+        cards.clear();
+        cells.clear();
+        cellCounts.clear();
+        cellUpgrades.clear();
+        for (String id : profile.getCollection().keySet()) cards.put(id, factory.apply(id));
+        for (Card card : cards.values()) cells.add(buildCell(card));
+        grid.clearChildren(); // la grille se refait à la mise en page
+    }
+
+    /** Ouvre la fenêtre de fusion de la carte {@code card} en sa version « + ». */
+    private void openUpgrade(Card card) {
+        String id = card.getId();
+        Card plus = factory.apply(Card.upgradedId(id));
+        tooltip.hide();
+        upgradeOverlay.show(card, cardTextures.get(card), plus, cardTextures.get(plus), () -> {
+            if (!profile.upgradeCard(id)) return;
+            draft.afterUpgrade(id);
+            buildCollection();
+            refresh();
+        }, () -> stage.setScrollFocus(scroll));
     }
 
     /** Ajoute un exemplaire de la carte {@code id} au deck, ou dit pourquoi ce n'est pas possible. */
@@ -487,6 +548,7 @@ public class CroupierTableScreen extends ScreenAdapter {
             Label count = entry.getValue();
             count.setText(inDeck + " / " + max);
             count.setColor(inDeck >= max ? Palette.GOLD : inDeck > 0 ? Color.WHITE : Palette.CREAM);
+            cellUpgrades.get(id).setVisible(profile.upgradeProblem(id) == null);
         }
         int index = 0;
         for (String id : cards.keySet()) {
@@ -678,6 +740,7 @@ public class CroupierTableScreen extends ScreenAdapter {
         classicButton.setPosition(clearButton.getX() - 24f - classicButton.getWidth(), buttonY);
         backButton.setPosition(MARGIN, buttonY);
         tutorialButton.setPosition(backButton.getX() + backButton.getWidth() + 20f, buttonY);
+        upgradeOverlay.layout(width, height);
     }
 
     /** Stage d'abord (souris), puis clavier : Échap revient au menu principal sans enregistrer. */
@@ -688,7 +751,8 @@ public class CroupierTableScreen extends ScreenAdapter {
             public boolean keyDown(int keycode) {
                 if (leaving || keycode != Input.Keys.ESCAPE) return false;
                 clickSound.play();
-                onBack();
+                if (upgradeOverlay.isShown()) upgradeOverlay.hide();
+                else onBack();
                 return true;
             }
         };
@@ -723,6 +787,8 @@ public class CroupierTableScreen extends ScreenAdapter {
         clickSound.dispose();
         dealSound.dispose();
         refuseSound.dispose();
+        upgradeSound.dispose();
+        upgradeOverlay.dispose();
         music.dispose();
         hud.dispose();
         Fonts.release(titleFont);
@@ -731,5 +797,6 @@ public class CroupierTableScreen extends ScreenAdapter {
         Fonts.release(countFont);
         Fonts.release(rowFont);
         Fonts.release(hintFont);
+        Fonts.release(upgradeFont);
     }
 }

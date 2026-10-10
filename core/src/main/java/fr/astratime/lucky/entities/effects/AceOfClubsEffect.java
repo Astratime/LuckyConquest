@@ -35,6 +35,14 @@ public class AceOfClubsEffect extends Effect {
     static final int            MAX_WEIGHT_FROM_GAINS = 1500;
     private static final Random RANDOM             = new Random();
 
+    /** Puissance de la carte : 1, ou {@link fr.astratime.lucky.entities.Card#UPGRADE_FACTOR} pour sa version « + ». */
+    private final float power;
+
+    public AceOfClubsEffect() { this(1f); }
+
+    /** @param power puissance : ses valeurs sont multipliées par autant (version « + » de la carte) */
+    public AceOfClubsEffect(float power) { this.power = power; }
+
     /**
      * Consomme 30% des gains du joueur, calcule les bonus qui en découlent
      * (poids + attaque) sur un symbole d'attaque tiré au hasard, les met en
@@ -44,8 +52,8 @@ public class AceOfClubsEffect extends Effect {
     public void onPlay(PlayContext context) {
         int consumed = context.consumeGainsPercent(CONSUME_PERCENT);
         // Rendement décroissant : l'attaque suit la racine des gains consommés, le boost est plafonné.
-        int weightBoost = WEIGHT_BOOST_AMOUNT + Math.min(consumed, MAX_WEIGHT_FROM_GAINS);
-        int attackBoost = ATTACK_BOOST_AMOUNT + Math.round(ATTACK_PER_SQRT_GAIN * (float) Math.sqrt(consumed));
+        int weightBoost = Math.round((WEIGHT_BOOST_AMOUNT + Math.min(consumed, MAX_WEIGHT_FROM_GAINS)) * power);
+        int attackBoost = Math.round((ATTACK_BOOST_AMOUNT + ATTACK_PER_SQRT_GAIN * (float) Math.sqrt(consumed)) * power);
 
         context.addPopups(List.of(
             EffectPopup.scaled(Lang.t("-30% GAINS"), EffectPopup.Style.GAINS, consumed, PopupScale.ACE_OF_CLUBS_CONSUMED),
@@ -69,7 +77,7 @@ public class AceOfClubsEffect extends Effect {
     public String getDescription() {
         return Lang.f("Consomme 30% des gains. Un symbole d'attaque devient bien plus fréquent et gagne +{0} "
             + "d'attaque, plus selon les gains consommés",
-            ATTACK_BOOST_AMOUNT);
+            Math.round(ATTACK_BOOST_AMOUNT * power));
     }
 
     /** Textes fixes : aucun, toutes les valeurs dépendent des gains consommés (voir {@link #onPlay}). */

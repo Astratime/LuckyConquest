@@ -25,11 +25,21 @@ public class AceOfDiamondsEffect extends Effect {
     static final int COUNTER        = 3;
     static final int COUNTER_LOW_HP = 5;
 
+    /** Puissance de la carte : 1, ou {@link fr.astratime.lucky.entities.Card#UPGRADE_FACTOR} pour sa version « + ». */
+    private final float power;
+
+    public AceOfDiamondsEffect() { this(1f); }
+
+    /** @param power puissance : ses valeurs sont multipliées par autant (version « + » de la carte) */
+    public AceOfDiamondsEffect(float power) { this.power = power; }
+
+    private int scaled(int value) { return Math.round(value * power); }
+
     @Override
     public void apply(TurnContext context) {
         CombatContext combat = context.getCombatContext();
-        combat.addGuaranteedReflect(REFLECT_PERCENT, REFLECT_PERCENT_LOW_HP);
-        combat.addCounterAttack(combat.getPlayer().getHpRatio() < CombatContext.LOW_HP_RATIO ? COUNTER_LOW_HP : COUNTER);
+        combat.addGuaranteedReflect(scaled(REFLECT_PERCENT), scaled(REFLECT_PERCENT_LOW_HP));
+        combat.addCounterAttack(scaled(combat.getPlayer().getHpRatio() < CombatContext.LOW_HP_RATIO ? COUNTER_LOW_HP : COUNTER));
     }
 
     @Override
@@ -37,14 +47,14 @@ public class AceOfDiamondsEffect extends Effect {
         int lowHp = Math.round(CombatContext.LOW_HP_RATIO * 100);
         return Lang.f("Contre-attaque : vide le Coffre sur l'ennemi x{0} (x{1} sous {2}% de vie), en ignorant sa "
             + "défense. Renvoie {3}% des attaques ennemies ({4}% sous {5}% de vie)",
-            COUNTER, COUNTER_LOW_HP, lowHp, REFLECT_PERCENT, REFLECT_PERCENT_LOW_HP, lowHp);
+            scaled(COUNTER), scaled(COUNTER_LOW_HP), lowHp, scaled(REFLECT_PERCENT), scaled(REFLECT_PERCENT_LOW_HP), lowHp);
     }
 
     @Override
     public List<EffectPopup> getPopups() {
         return List.of(
             new EffectPopup(Lang.t("CONTRE-ATTAQUE"), EffectPopup.Style.DEFENSE, PopupScale.MAX_INTENSITY),
-            new EffectPopup(Lang.f("RENVOI {0}-{1}%", REFLECT_PERCENT, REFLECT_PERCENT_LOW_HP),
+            new EffectPopup(Lang.f("RENVOI {0}-{1}%", scaled(REFLECT_PERCENT), scaled(REFLECT_PERCENT_LOW_HP)),
                 EffectPopup.Style.REFLECT, PopupScale.SECONDARY_INTENSITY)
         );
     }
