@@ -140,9 +140,13 @@ class TowerChapters456Test {
         assertEquals(0, holder[0].getGains());
 
         Enemy[] foe = new Enemy[1];
-        turnWith(EnemySymbol.BANKRUPTCY, () -> foe[0] = new Enemy(EnemyKind.BANQUEROUTE),
+        EnemyTurnResult turn = turnWith(EnemySymbol.BANKRUPTCY, () -> foe[0] = new Enemy(EnemyKind.BANQUEROUTE),
             () -> new Player("Joueur", 1_000_000, List.of()));
         assertTrue(foe[0].getHp() < foe[0].getMaxHp(), "plus pauvre que lui : c'est lui qui perd");
+        int shown = turn.outcomes().stream().flatMap(List::stream)
+            .filter(e -> e instanceof fr.astratime.lucky.entities.events.EnemyHpLostEvent)
+            .mapToInt(e -> ((fr.astratime.lucky.entities.events.EnemyHpLostEvent) e).lost).sum();
+        assertEquals(foe[0].getMaxHp() - foe[0].getHp(), shown, "sa barre de vie descend d'autant");
     }
 
     @Test

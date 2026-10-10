@@ -13,6 +13,7 @@ import fr.astratime.lucky.entities.enemy.EnemyKind;
 import fr.astratime.lucky.entities.enemy.EnemySlotMachine;
 import fr.astratime.lucky.entities.enemy.EnemySymbol;
 import fr.astratime.lucky.entities.enemy.EnemyTurnResult;
+import fr.astratime.lucky.entities.events.EnemyHpLostEvent;
 import fr.astratime.lucky.entities.events.DamageReflectedEvent;
 import fr.astratime.lucky.entities.events.EnemyDrainEvent;
 import fr.astratime.lucky.entities.events.EnemyHourglassEvent;
@@ -376,7 +377,7 @@ public class EnemyTurnResolver {
                         events.add(new GainsStolenEvent(lost, 0));
                     } else {
                         int lost = enemy.takeDamage(Math.round(enemy.getHp() * EnemySymbol.BANKRUPTCY_HP_PERCENT / 100f));
-                        events.add(new StatusEvent(Lang.f("FAILLITE : IL PERD {0} PV", lost), EffectPopup.Style.SPECIAL));
+                        events.add(new EnemyHpLostEvent(Lang.f("FAILLITE : IL PERD {0} PV", Lang.big(lost)), EffectPopup.Style.SPECIAL, lost));
                     }
                 }
             }
@@ -470,7 +471,7 @@ public class EnemyTurnResolver {
         } else if (myRank > theirRank) {
             Enemy enemy = turn.enemy;
             int lost = enemy.takeDamage(Math.round(enemy.getMaxHp() * myRank * EnemySymbol.DUEL_PER_MILLE_PER_RANK / 1000f));
-            events.add(new StatusEvent(Lang.f("DUEL GAGNÉ : -{0} PV", lost), EffectPopup.Style.ATTACK));
+            events.add(new EnemyHpLostEvent(Lang.f("DUEL GAGNÉ : -{0} PV", Lang.big(lost)), EffectPopup.Style.ATTACK, lost));
         }
     }
 

@@ -90,6 +90,7 @@ import fr.astratime.lucky.entities.tutorial.TutorialRun;
 import fr.astratime.lucky.entities.RankBonus;
 import fr.astratime.lucky.entities.enemy.EnemySymbol;
 import fr.astratime.lucky.entities.enemy.EnemyTurnResult;
+import fr.astratime.lucky.entities.events.EnemyHpLostEvent;
 import fr.astratime.lucky.entities.events.ComboEvent;
 import fr.astratime.lucky.entities.events.DamageReflectedEvent;
 import fr.astratime.lucky.entities.events.EnemyHealedEvent;
@@ -1170,6 +1171,8 @@ public class GameScreen extends ScreenAdapter {
             if (hit.damage > 0) onEnemyHit(hit.damage);
         } else if (event instanceof DamageReflectedEvent reflect && reflect.damage > 0) {
             onEnemyHit(reflect.damage);
+        } else if (event instanceof EnemyHpLostEvent self && self.lost > 0) {
+            onEnemyHit(self.lost); // Faillite, Duel gagné : sa barre descend aussi
         } else if (event instanceof PlayerDamagedEvent hit) {
             if (hit.blocked > 0) onPlayerBlocked(hit);
             if (hit.damage > 0) onPlayerHit(hit.damage);
