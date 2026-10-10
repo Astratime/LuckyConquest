@@ -165,3 +165,4 @@ Thumbs.db
 
 ## Git patches
 /patches/*
+__pycache__/

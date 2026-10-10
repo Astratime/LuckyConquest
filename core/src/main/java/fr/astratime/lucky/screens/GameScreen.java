@@ -50,6 +50,7 @@ import fr.astratime.lucky.animations.SymbolStrikes;
 import fr.astratime.lucky.animations.RainbowChipsAnimation;
 import fr.astratime.lucky.animations.ScreenShake;
 import fr.astratime.lucky.assets.BackgroundMusic;
+import fr.astratime.lucky.assets.CombatMusic;
 import fr.astratime.lucky.assets.CardTextures;
 import fr.astratime.lucky.assets.EnemyTextures;
 import fr.astratime.lucky.assets.Fonts;
@@ -276,8 +277,8 @@ public class GameScreen extends ScreenAdapter {
     private final TableTextures       tableTextures = new TableTextures();
     private final AudioSettings       audio         = new AudioSettings();
     private final GameSounds          sounds        = new GameSounds(audio);
-    /** Musique du combat (fournie par Astra), gardée basse pour ne pas couvrir les bruitages. */
-    private final BackgroundMusic     music         = new BackgroundMusic("music/combat.ogg", audio, COMBAT_MUSIC_LEVEL);
+    /** Musique du combat (une par lieu, voir {@link CombatMusic}), gardée basse pour ne pas couvrir les bruitages. */
+    private final BackgroundMusic     music         = new BackgroundMusic(CombatMusic.DEFAULT, audio, COMBAT_MUSIC_LEVEL);
     private final CardClickParticles  cardClickParticles = new CardClickParticles();
     private final EffectPopupAnimator effectPopupAnimator;
     private final JackpotCelebration  jackpotCelebration;
@@ -1405,6 +1406,7 @@ public class GameScreen extends ScreenAdapter {
 
     /** Remet tout l'affichage à l'état d'un début de combat, puis lance le tour du joueur. */
     private void resetBoard() {
+        music.switchTo(CombatMusic.of(run), CombatMusic.DEFAULT); // nouveau combat : sa musique (le boss de la Tour a la sienne)
         stage.getRoot().clearActions(); // la suite du tour en cours (tour de l'ennemi, fin du tour) n'a plus lieu
         hand.reset();
         effectPopupAnimator.cancel(); // les gains en attente ne seront jamais affichés
@@ -1909,6 +1911,7 @@ public class GameScreen extends ScreenAdapter {
         };
         gameInput = new InputMultiplexer(stage, keyboardInput);
         Gdx.input.setInputProcessor(pauseOverlay.isShown() ? pauseOverlay.getInput() : gameInput);
+        music.switchTo(CombatMusic.of(run), CombatMusic.DEFAULT);
         music.play();
     }
 
