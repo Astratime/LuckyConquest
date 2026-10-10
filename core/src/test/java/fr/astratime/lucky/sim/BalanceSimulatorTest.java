@@ -17,11 +17,22 @@ class BalanceSimulatorTest {
         new BalanceSimulator(Paths.get("../assets").toAbsolutePath().normalize(), BalanceSimulator.Sizes.QUICK);
 
     @Test
-    void theQuickReportCoversTheThreeSections() {
+    void theQuickReportCoversTheFiveSections() {
         String report = simulator.report();
         assertTrue(report.contains("## 1. Tirages"));
         assertTrue(report.contains("## 2. Jeu bonus"));
         assertTrue(report.contains("## 3. Donjons"));
+        assertTrue(report.contains("## 4. Joueur au maximum"));
+        assertTrue(report.contains("## 5. Progression"));
+    }
+
+    @Test
+    void theStrongDecksAreLegalDecks() {
+        for (BalanceSimulator.Gear gear : BalanceSimulator.topGears()) {
+            assertEquals(20, gear.deck().values().stream().mapToInt(Integer::intValue).sum(), gear.name());
+            assertTrue(gear.deck().values().stream().allMatch(copies -> copies <= 3), gear.name());
+            assertEquals(11, java.util.Set.copyOf(gear.reels()).size(), gear.name());
+        }
     }
 
     @Test

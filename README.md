@@ -80,7 +80,11 @@ Le jeu est écrit en Java 21 avec [libGDX](https://libgdx.com/).
 1. **Tirages** : ce que rapporte un tirage, en coûts de tirage, par lieu (objectif : 0 à 5 en gains
    de base), avec la part de Paires, de Bingos et de dette ;
 2. **Jeu bonus** : ses gains moyens (objectif : environ 100 coûts de tirage sur la machine classique) ;
-3. **Donjons** : la part de victoires et les pièces gagnées par donjon, selon le rang du joueur.
+3. **Donjons** : la part de victoires et les pièces gagnées par donjon, selon le rang du joueur ;
+4. **Joueur au maximum** : les donjons du Port, des Mines et du Casino avec des decks de cartes « + »,
+   les rouleaux rares et des achats à l'échoppe, du rang Flambeur à Légende du Jackpot ;
+5. **Progression** : le premier rang qui gagne chaque donjon, et combien de descentes il faut pour
+   payer chaque rang.
 
 Le robot joue moins bien qu'un vrai joueur : le rapport sert à comparer le jeu avant et après un
 changement de règles. `-Pquick` donne un essai rapide. Une version courte tourne avec les tests et
