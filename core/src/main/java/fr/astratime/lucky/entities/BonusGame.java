@@ -139,13 +139,16 @@ public final class BonusGame {
         return Math.round(baseSpins(length) * spinCost * rarityFactor(symbol));
     }
 
-    /** @return les gains de base d'un alignement de {@code length} cases, en coûts de tirage. */
+    /**
+     * @return les gains de base d'un alignement de {@code length} cases, en coûts de tirage
+     *         (réglés pour qu'un Jeu bonus rapporte en moyenne 100 coûts de tirage sur la machine classique)
+     */
     public static int baseSpins(int length) {
         return switch (length) {
-            case 3  -> 2;
-            case 4  -> 5;
-            case 5  -> 20;
-            default -> length >= 6 ? 100 : 0;
+            case 3  -> 5;
+            case 4  -> 15;
+            case 5  -> 60;
+            default -> length >= 6 ? 300 : 0;
         };
     }
 

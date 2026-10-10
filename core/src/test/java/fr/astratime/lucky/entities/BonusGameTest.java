@@ -34,20 +34,29 @@ class BonusGameTest {
     }
 
     @Test
-    void fourSevensInARowPaySevenHundredFiftyAtThePrairie() {
+    void fourSevensInARowPayTwoThousandTwoHundredFiftyAtThePrairie() {
         Symbol[][] grid = emptyGrid();
         grid[0] = new Symbol[] {SEVEN, SEVEN, SEVEN, SEVEN, BAR, CHERRY};
         List<BonusGame.Line> lines = BonusGame.lines(grid, 100);
 
         BonusGame.Line line = lines.stream().filter(l -> l.symbol() == SEVEN && l.length() == 4).findFirst().orElseThrow();
-        assertEquals(750, line.gains()); // 5 C x 100 x 1,5
+        assertEquals(2_250, line.gains()); // 15 C x 100 x 1,5
     }
 
     @Test
-    void sixCrownsPayTwentyFiveThousand() {
-        assertEquals(25_000, BonusGame.gains(CROWN, 6, 100)); // 100 C x 100 x 2,5
-        assertEquals(200, BonusGame.gains(CHERRY, 3, 100));
-        assertEquals(2_000, BonusGame.gains(BELL, 5, 100));
+    void sixCrownsPaySeventyFiveThousand() {
+        assertEquals(75_000, BonusGame.gains(CROWN, 6, 100)); // 300 C x 100 x 2,5
+        assertEquals(500, BonusGame.gains(CHERRY, 3, 100));
+        assertEquals(6_000, BonusGame.gains(BELL, 5, 100));
+    }
+
+    @Test
+    void aBonusGamePaysAboutOneHundredSpinCostsOnAverage() {
+        java.util.Random random = new java.util.Random(1);
+        long total = 0;
+        int games = 20_000;
+        for (int i = 0; i < games; i++) total += BonusGame.play(Symbol.classicReels(), 100, random).getTotal();
+        assertEquals(100.0, total / (double) games / 100, 5.0); // en coûts de tirage, machine classique
     }
 
     @Test
@@ -70,7 +79,7 @@ class BonusGameTest {
         BonusGame.Line line = BonusGame.lines(grid, 100).stream()
             .filter(l -> l.symbol() == JOKER).findFirst().orElseThrow();
         assertEquals(6, line.length());
-        assertEquals(25_000, line.gains());
+        assertEquals(75_000, line.gains());
     }
 
     @Test
