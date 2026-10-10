@@ -25,6 +25,7 @@ import com.badlogic.gdx.utils.Align;
 import com.badlogic.gdx.utils.ScreenUtils;
 import fr.astratime.lucky.LuckyGame;
 import fr.astratime.lucky.animations.ScreenShake;
+import fr.astratime.lucky.animations.cutscenes.BonusGameCutscene;
 import fr.astratime.lucky.animations.cutscenes.Cutscene;
 import fr.astratime.lucky.animations.cutscenes.CutsceneKit;
 import fr.astratime.lucky.animations.cutscenes.Cutscenes;
@@ -37,6 +38,8 @@ import fr.astratime.lucky.assets.GameSounds;
 import fr.astratime.lucky.assets.HudTextures;
 import fr.astratime.lucky.assets.Palette;
 import fr.astratime.lucky.assets.VolumeSound;
+import fr.astratime.lucky.entities.BonusGame;
+import fr.astratime.lucky.entities.SpinEconomy;
 import fr.astratime.lucky.entities.Symbol;
 import fr.astratime.lucky.entities.enemy.EnemyKind;
 import fr.astratime.lucky.entities.events.LastDrawEvent;
@@ -53,6 +56,7 @@ import fr.astratime.lucky.views.MinimumScreenViewport;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 import java.util.function.Function;
 
 /**
@@ -60,7 +64,7 @@ import java.util.function.Function;
  * du jeu, sur le modèle de l'écran de la Tour des épreuves.
  *
  * À gauche, les groupes : les boss de la Tour, les fins et le duel des leviers,
- * puis les rois de chaque lieu de l'Exploration. À droite, les cinématiques du
+ * puis les rois de chaque lieu de l'Exploration, et le Jeu bonus. À droite, les cinématiques du
  * groupe choisi, avec le portrait (ou l'illustration) de celle sélectionnée.
  * Un clic sur une cinématique (ou Entrée, ou « Lancer ») la joue par-dessus
  * l'écran ; finie ou passée (clic, ou une touche), on revient ici. Échap ou
@@ -222,7 +226,7 @@ public class CinematicScreen extends ScreenAdapter {
     // Les cinématiques
     // -------------------------------------------------------------------------
 
-    /** Les groupes : boss de la Tour (par chapitre), fins et duel, puis les rois de chaque lieu. */
+    /** Les groupes : boss de la Tour (par chapitre), fins et duel, les rois de chaque lieu, puis le Jeu bonus. */
     private void buildGroups() {
         List<Entry> bosses = new ArrayList<>();
         for (Chapter chapter : Chapter.values()) {
@@ -265,6 +269,14 @@ public class CinematicScreen extends ScreenAdapter {
             }
             addGroup(place.getShortName(), place.getName(), kings);
         }
+
+        List<Symbol> machine = luckyGame.getProfile().getMachine();
+        addGroup(Lang.t("Jeu bonus"), Lang.t("Le Jeu bonus"), List.of(new Entry(Lang.t("Jeu bonus"),
+            Lang.t("Après un Bingo, une fois sur dix : la grille de 6 x 6 et ses trois tirages, sur ta machine. "
+                + "Une nouvelle grille à chaque fois."),
+            cardTextures.get("cards/test/jeu_bonus.png"),
+            kit -> new BonusGameCutscene(kit, BonusGame.play(machine, SpinEconomy.BASE_SPIN_COST, new Random()),
+                machine))));
     }
 
     private void addGroup(String label, String groupName, List<Entry> entries) {

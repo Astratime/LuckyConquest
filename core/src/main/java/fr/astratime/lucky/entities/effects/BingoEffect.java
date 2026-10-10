@@ -22,8 +22,10 @@ import java.util.List;
  */
 public class BingoEffect extends Effect {
 
-    private final int    power;
-    private final Symbol symbol;
+    private final int     power;
+    private final Symbol  symbol;
+    /** Carte de test « Jeu bonus » (mode ADMIN) : le Jeu bonus s'ouvre à coup sûr après ce Bingo. */
+    private final boolean bonusGame;
 
     /** @param power multiplicateur de la valeur de chaque symbole. */
     public BingoEffect(int power) { this(power, null); }
@@ -33,12 +35,21 @@ public class BingoEffect extends Effect {
      * @param symbol symbole aligné sur les trois rouleaux ; {@code null} : tiré au hasard
      */
     public BingoEffect(int power, Symbol symbol) {
-        this.power  = power;
-        this.symbol = symbol;
+        this(power, symbol, false);
+    }
+
+    /** @param bonusGame {@code true} : le Jeu bonus s'ouvre à coup sûr après ce Bingo */
+    public BingoEffect(int power, Symbol symbol, boolean bonusGame) {
+        this.power     = power;
+        this.symbol    = symbol;
+        this.bonusGame = bonusGame;
     }
 
     /** @return le symbole imposé au jackpot, ou {@code null} s'il est tiré au hasard. */
     public Symbol getSymbol() { return symbol; }
+
+    /** @return {@code true} pour la carte de test « Jeu bonus » : le Jeu bonus s'ouvre à coup sûr. */
+    public boolean isBonusGame() { return bonusGame; }
 
     @Override
     public void onPlay(PlayContext context) {
@@ -53,11 +64,13 @@ public class BingoEffect extends Effect {
         } else {
             context.getSpinContext().forceJackpot();
         }
+        if (bonusGame) context.getSpinContext().forceBonusGame();
         context.getCombatContext().multiplySymbolPower(power, "Bingo");
     }
 
     @Override
     public String getDescription() {
+        if (bonusGame) return Lang.t("Test : lance la machine avec un Bingo garanti, et le Jeu bonus s'ouvre à coup sûr");
         String bingo = symbol != null ? Lang.f("Bingo {0}", symbol.getDisplayName()) : Lang.t("Bingo");
         return Lang.f("Lance la machine avec un {0} garanti{1}. Bingo de bouclier : s'il attaque, ton bouclier lui est "
             + "renvoyé{2}",

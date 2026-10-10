@@ -77,6 +77,8 @@ public class PlayerProfile {
     public static final String GUIDE_TABLE       = "table";
     public static final String GUIDE_SHOP        = "shop";
     public static final String GUIDE_TOWER       = "tower";
+    /** Première ouverture du Jeu bonus, en combat. */
+    public static final String GUIDE_BONUS       = "bonus";
 
     private final ProfileStorage       storage;
     private final Map<String, Integer> starterDeck;

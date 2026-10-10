@@ -46,9 +46,9 @@ class CardLoaderTest {
     void everyCardDefinitionLoads() {
         List<Card> cards = CardLoader.loadAll(READER);
 
-        assertEquals(52 + 25 + 12 + 37 + 20, cards.size(),
+        assertEquals(52 + 25 + 12 + 37 + 20 + 1, cards.size(),
             "4 suites de 13 cartes + 25 cartes spéciales + 12 cartes des donjons + 37 cartes des lieux"
-                + " + 20 cartes de test (Bingo par symbole)");
+                + " + 20 cartes de test (Bingo par symbole) + la carte de test du Jeu bonus");
         assertEquals(cards.size(), cards.stream().map(Card::getId).distinct().count(), "les ids doivent être uniques");
     }
 
@@ -152,12 +152,25 @@ class CardLoaderTest {
     }
 
     @Test
+    void theBonusGameTestCardForcesABingoAndTheBonusGame() {
+        Card card = CardLoader.cardFactory(READER).apply("jeu_bonus");
+        TurnContext context = new TurnContext(new SpinContext(),
+            new CombatContext(new Player("Joueur", 100, List.of()), new Enemy("Ennemi", 100)));
+        card.getEffects().forEach(effect -> effect.apply(context));
+
+        assertTrue(card.isConsumable());
+        assertTrue(context.getSpinContext().isJackpotForced());
+        assertTrue(context.getSpinContext().isBonusGameForced());
+    }
+
+    @Test
     void shopSellsConsumableCardsThatAreNotInTheStarterDeck() {
         Map<String, Integer> shop = CardLoader.loadShop(READER);
         Map<String, Integer> expected = new java.util.LinkedHashMap<>();
         expected.put("bingo", 20000);
         expected.put("russian_roulette", 15000);
         expected.put("corruption", 10000);
+        expected.put("jeu_bonus", 0); // carte de test du Jeu bonus (mode ADMIN seulement, voir GameScreen)
         for (Symbol symbol : Symbol.values()) {
             if (symbol != Symbol.JOKER) expected.put("bingo_" + symbol.name().toLowerCase(), 0); // cartes de test
         }

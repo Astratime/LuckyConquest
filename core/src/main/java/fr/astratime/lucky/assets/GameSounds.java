@@ -169,6 +169,14 @@ public class GameSounds implements Disposable {
         return cutscenes.computeIfAbsent(name, key -> load("sounds/cutscene/" + key + ".ogg"));
     }
 
+    /**
+     * @return la boucle de la cinématique {@code name} (sounds/cutscene/{@code name}.wav, sans blanc au raccord),
+     * chargée la première fois qu'elle sert, puis gardée.
+     */
+    public Sound cutsceneLoop(String name) {
+        return cutscenes.computeIfAbsent(name, key -> load("sounds/cutscene/" + key + ".wav"));
+    }
+
     private Sound load(String path) {
         Sound sound = new VolumeSound(Gdx.audio.newSound(Gdx.files.internal(path)), audio);
         all.add(sound);

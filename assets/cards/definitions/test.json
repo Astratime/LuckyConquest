@@ -258,5 +258,18 @@
         "symbol": "NUGGET"
       }
     ]
+  },
+  {
+    "id": "jeu_bonus",
+    "name": "Jeu bonus",
+    "assetPath": "cards/test/jeu_bonus.png",
+    "consumable": true,
+    "effects": [
+      {
+        "type": "BINGO",
+        "power": 1,
+        "bonusGame": true
+      }
+    ]
   }
 ]

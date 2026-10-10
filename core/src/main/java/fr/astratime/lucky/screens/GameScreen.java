@@ -32,6 +32,7 @@ import fr.astratime.lucky.animations.BingoCardAnimation;
 import fr.astratime.lucky.animations.CardClickParticles;
 import fr.astratime.lucky.animations.CardDealAnimator;
 import fr.astratime.lucky.animations.CardDiscardAnimator;
+import fr.astratime.lucky.animations.cutscenes.BonusGameCutscene;
 import fr.astratime.lucky.animations.cutscenes.Cutscene;
 import fr.astratime.lucky.animations.cutscenes.CutsceneKit;
 import fr.astratime.lucky.animations.cutscenes.Cutscenes;
@@ -56,6 +57,7 @@ import fr.astratime.lucky.assets.HudTextures;
 import fr.astratime.lucky.assets.Palette;
 import fr.astratime.lucky.assets.TableTextures;
 import fr.astratime.lucky.controllers.GameController;
+import fr.astratime.lucky.entities.BonusGame;
 import fr.astratime.lucky.entities.Card;
 import fr.astratime.lucky.entities.CardPlayResult;
 import fr.astratime.lucky.entities.Combo;
@@ -133,7 +135,9 @@ import fr.astratime.lucky.views.TableView;
 import fr.astratime.lucky.views.Tooltip;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.function.ToIntFunction;
 
 /**
@@ -181,6 +185,8 @@ public class GameScreen extends ScreenAdapter {
     private static final float  CARD_WIDTH     = 95f;
     private static final float  CARD_HEIGHT    = 135f;
     private static final String CARD_BACK_PATH = "cards/light/BACK.png";
+    /** Carte de test de l'échoppe qui ouvre le Jeu bonus à coup sûr (mode ADMIN seulement). */
+    private static final String BONUS_GAME_CARD = "jeu_bonus";
 
     private static final float BUTTON_MARGIN = 20f;   // boutons en bas à gauche, sous la table
 
@@ -297,6 +303,8 @@ public class GameScreen extends ScreenAdapter {
     private final TutorialDirector    tutorial;
     /** Tutoriel : le dernier tirage était un Bingo. */
     private boolean                   lastSpinBingo;
+    /** Le Croupier qui explique le Jeu bonus la première fois qu'il s'ouvre ({@code null} avant). */
+    private GuideOverlay              bonusGuide;
 
     // -------------------------------------------------------------------------
     // Vues et acteurs Scene2D
@@ -372,11 +380,14 @@ public class GameScreen extends ScreenAdapter {
                 CardLoader.cardFactory(), TutorialRun.shop(),
                 cards -> new Player(Lang.t("Joueur"), Player.BASE_HP, cards, RankBonus.NONE, Symbol.classicReels()));
         } else {
+            Map<String, Integer> shop = new LinkedHashMap<>(CardLoader.loadShop());
+            if (!profile.isAdmin()) shop.remove(BONUS_GAME_CARD); // carte de test du Jeu bonus : mode ADMIN seulement
             this.gameController = new GameController(() -> CardLoader.loadDeck(profile.getDeck()),
-                CardLoader.cardFactory(), CardLoader.loadShop(),
+                CardLoader.cardFactory(), shop,
                 cards -> new Player(Lang.t("Joueur"), Player.BASE_HP, cards, profile.getRankBonus(), profile.getMachine()));
         }
         if (run != null) gameController.setPlaceRule(run.getPlaceRule()); // Exploration : la règle du lieu
+        gameController.setBonusGameEnabled(!(run instanceof TutorialRun)); // pas de Jeu bonus dans le tutoriel
         EnemyKind.setTowerHard(run instanceof TowerRun tower && tower.isHard()); // Tour : mode difficile
         gameController.restart(firstEnemy()); // le premier ennemi du chapitre, ou le croupier d'entraînement
         if (run instanceof TutorialRun) {
@@ -880,6 +891,7 @@ public class GameScreen extends ScreenAdapter {
         // Gains et PV du tirage ne se montrent qu'à l'apparition de leurs textes, après l'arrêt des rouleaux.
         gainsNotYetShown += sumOf(result, GainsEarnedEvent.class, gains -> gains.amount)
             - sumOf(result, GainsLostEvent.class, lost -> lost.amount);
+        if (result.getBonusGame() != null) gainsNotYetShown += result.getBonusGame().getTotal(); // à la fin du Jeu bonus
         payForSpin(cost, staked); // seuls le coût et la Mise partent tout de suite
         int enemyHeal = sumOf(result, EnemyHealedEvent.class, heal -> heal.amount);
         hud.holdBack(enemyHpBefore - gameController.getGameState().getEnemy().getHp() + enemyHeal, enemyHeal,
@@ -1207,9 +1219,57 @@ public class GameScreen extends ScreenAdapter {
         // Le son de Bingo d'origine du jeu retentit quand « BINGO! » apparaît.
         jackpotCelebration.play(symbol, () -> sounds.bingoClassic.play(), () -> {
             table.setLightsParty(false);
-            // Après la célébration et les derniers textes du tirage, au tour de l'ennemi.
-            stage.addAction(Actions.delay(SlotView.RIPOSTE_AFTER_BONUS, Actions.run(this::afterPlayerSpin)));
+            // Après la célébration (et le Jeu bonus, s'il s'ouvre) et les derniers textes du tirage, au tour de l'ennemi.
+            playBonusGame(() -> stage.addAction(Actions.delay(SlotView.RIPOSTE_AFTER_BONUS,
+                Actions.run(this::afterPlayerSpin))));
         });
+    }
+
+    /**
+     * Le Jeu bonus du tirage, s'il s'est ouvert : sa scène joue par-dessus le
+     * combat (la première fois, le Croupier l'explique sur la grille ouverte),
+     * puis ses gains rejoignent le compteur, et {@code then}. Sans Jeu bonus,
+     * {@code then} tout de suite.
+     */
+    private void playBonusGame(Runnable then) {
+        BonusGame bonus = currentResult.getBonusGame();
+        if (bonus == null) {
+            then.run();
+            return;
+        }
+        BonusGameCutscene scene = new BonusGameCutscene(cutsceneKit, bonus, player().getSlotMachine().getReels());
+        PlayerProfile profile = luckyGame.getProfile();
+        if (!profile.hasSeen(PlayerProfile.GUIDE_BONUS)) scene.pauseOnGrid(() -> explainBonusGame(scene));
+        playCutscene(scene, () -> {
+            onGainsShown(bonus.getTotal());
+            then.run();
+        });
+    }
+
+    /** Première fois : le Croupier explique le Jeu bonus sur la grille ouverte, puis les tirages commencent. */
+    private void explainBonusGame(BonusGameCutscene scene) {
+        PlayerProfile profile = luckyGame.getProfile();
+        if (bonusGuide == null) {
+            bonusGuide = new GuideOverlay(hudTextures, enemyTextures.portrait(EnemyKind.ENTRAINEMENT));
+            bonusGuide.setSkipButton(buttons.create(Lang.t("Passer"), sounds.buttonClick, () -> {
+                bonusGuide.stop();
+                profile.markSeen(PlayerProfile.GUIDE_BONUS);
+                scene.resumeGrid();
+            }));
+            stage.addActor(bonusGuide);
+        }
+        bonusGuide.toFront();
+        bonusGuide.play(List.of(
+            GuideOverlay.Step.say(Lang.t("Le Jeu bonus ! Après un Bingo, il s'ouvre une fois sur dix.")),
+            GuideOverlay.Step.say(Lang.t("La grille tourne trois fois. Les symboles alignés se figent en doré, "
+                + "les autres relancent.")),
+            GuideOverlay.Step.say(Lang.t("Aligne au moins trois symboles identiques : en ligne, en colonne ou en "
+                + "diagonale. Le Joker compte pour n'importe lequel.")),
+            GuideOverlay.Step.say(Lang.t("Plus l'alignement est long et le symbole rare, plus tu gagnes. "
+                + "Les gains tombent à la fin."))), () -> {
+                profile.markSeen(PlayerProfile.GUIDE_BONUS);
+                scene.resumeGrid();
+            });
     }
 
     /** @return la dette qui suit le compteur affiché : elle change quand les gains du tirage apparaissent. */
@@ -1843,6 +1903,7 @@ public class GameScreen extends ScreenAdapter {
         rainbowAnimation.dispose();
         if (cutscene != null) cutscene.dispose();
         if (guide != null) guide.dispose();
+        if (bonusGuide != null) bonusGuide.dispose();
         shopOverlay.dispose();
         cardDetail.dispose();
         pauseOverlay.dispose();

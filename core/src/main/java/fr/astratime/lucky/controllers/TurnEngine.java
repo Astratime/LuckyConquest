@@ -39,6 +39,11 @@ public class TurnEngine {
     private final CombatResolver      combatResolver      = new CombatResolver();
     private final EnemyTurnResolver   enemyTurnResolver   = new EnemyTurnResolver();
     private final Random              random              = new Random();
+    /** Le Jeu bonus peut s'ouvrir après un Bingo (pas dans le tutoriel). */
+    private boolean                   bonusGameEnabled    = true;
+
+    /** Ouvre ou ferme le Jeu bonus après les Bingos (fermé dans le tutoriel). */
+    public void setBonusGameEnabled(boolean enabled) { bonusGameEnabled = enabled; }
 
     /**
      * Joue un tour complet : applique les effets en attente, lance la machine
@@ -134,6 +139,9 @@ public class TurnEngine {
             turnContext.getEvents()
         );
 
+        // Jeu bonus : après un Bingo, une fois sur dix, la grille s'ouvre ; ses gains sont crédités tout de suite.
+        BonusGame bonus = bonusGame(result, turnContext.getSpinContext(), player, turnContext.getCombatContext().getSpinCost());
+
         // Tour de l'ennemi, s'il a survécu : le bouclier du joueur (ses symboles de
         // défense) absorbe ses attaques, et le renvoi dépend des cartes jouées ce tour.
         Enemy enemy = gameState.getEnemy();
@@ -202,11 +210,25 @@ public class TurnEngine {
         }
         result = result.withEnemyTurn(enemyTurn, endEvents);
         if (rerolled != null) result = result.withReroll(rerolled);
+        if (bonus != null) result = result.withBonusGame(bonus);
 
         player.getLastingEffects().endTurn();
         gameState.nextTurn();
 
         return result;
+    }
+
+    /**
+     * @return le Jeu bonus qui suit le Bingo de {@code result} (une fois sur dix,
+     *         à coup sûr avec la carte de test), ses gains déjà crédités au joueur ;
+     *         {@code null} sans Bingo ou si la grille ne s'ouvre pas
+     */
+    private BonusGame bonusGame(TurnResult result, SpinContext spin, Player player, int spinCost) {
+        if (!bonusGameEnabled || !result.isJackpot() || player.isDefeated()) return null;
+        if (!spin.isBonusGameForced() && random.nextFloat() >= BonusGame.TRIGGER_CHANCE) return null;
+        BonusGame bonus = BonusGame.play(player.getSlotMachine().getReels(), spinCost, random);
+        player.addGains(bonus.getTotal());
+        return bonus;
     }
 
     /**

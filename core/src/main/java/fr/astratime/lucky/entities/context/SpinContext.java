@@ -32,6 +32,8 @@ public class SpinContext {
     private boolean noBingo = false;
     /** Nouvelle règle du Directeur des Jeux : chaque rouleau tourne deux fois et garde le pire résultat. */
     private boolean doubleSpin = false;
+    /** Le Jeu bonus s'ouvre à coup sûr si le tirage fait un Bingo (carte de test « Jeu bonus »). */
+    private boolean bonusGame = false;
     /** Symboles imposés à certains rouleaux (Rouleau truqué, Rouleau fantôme), par indice de rouleau. */
     private final Map<Integer, Symbol> forcedReels = new TreeMap<>();
     /** Relances accordées si le tirage n'a pas de paire (Relance). */
@@ -122,4 +124,10 @@ public class SpinContext {
 
     /** @return {@code true} si le tirage de ce tour est un jackpot garanti. */
     public boolean isJackpotForced() { return forceJackpot; }
+
+    /** Le Jeu bonus s'ouvrira à coup sûr après le Bingo de ce tirage. */
+    public void forceBonusGame() { bonusGame = true; }
+
+    /** @return {@code true} si le Jeu bonus s'ouvre à coup sûr après un Bingo. */
+    public boolean isBonusGameForced() { return bonusGame; }
 }
