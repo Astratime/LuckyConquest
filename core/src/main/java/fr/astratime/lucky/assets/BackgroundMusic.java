@@ -15,7 +15,9 @@ public class BackgroundMusic implements Disposable {
     /** Volume gardé quand la musique s'efface derrière une cinématique. */
     private static final float DUCKED = 0.15f;
 
-    private final Music         music;
+    private Music               music;
+    private String              path;
+    private boolean             playing;
     private final AudioSettings audio;
     private final float         level;
     private float               applied = -1f;
@@ -26,16 +28,37 @@ public class BackgroundMusic implements Disposable {
      * @param level volume de la musique quand le réglage est à 100 %
      */
     public BackgroundMusic(String path, AudioSettings audio, float level) {
-        this.music = Gdx.audio.newMusic(Gdx.files.internal(path));
         this.audio = audio;
         this.level = level;
+        load(path);
+    }
+
+    private void load(String path) {
+        this.path  = path;
+        this.music = Gdx.audio.newMusic(Gdx.files.internal(path));
         music.setLooping(true);
+        applied = -1f;
     }
 
     /** Lance (ou reprend) la musique. */
     public void play() {
         update();
         music.play();
+        playing = true;
+    }
+
+    /**
+     * Passe à la musique {@code path}, ou à {@code fallback} si son fichier n'existe
+     * pas ; elle reprend du début, et joue tout de suite si la précédente jouait.
+     * Rien ne change si c'est déjà celle-là.
+     */
+    public void switchTo(String path, String fallback) {
+        String next = Gdx.files.internal(path).exists() ? path : fallback;
+        if (next.equals(this.path)) return;
+        music.stop();
+        music.dispose();
+        load(next);
+        if (playing) play();
     }
 
     /** Applique le réglage « Musique » s'il a changé ; à appeler à chaque image. */
