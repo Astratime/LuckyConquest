@@ -7,6 +7,7 @@ import fr.astratime.lucky.i18n.Lang;
 import fr.astratime.lucky.entities.Card;
 import fr.astratime.lucky.loaders.CardLoader;
 import fr.astratime.lucky.progress.GdxProfileStorage;
+import fr.astratime.lucky.progress.SecureProfileStorage;
 import fr.astratime.lucky.progress.PlayerProfile;
 import fr.astratime.lucky.screens.MenuScreen;
 import fr.astratime.lucky.settings.ScreenMode;
@@ -25,6 +26,8 @@ public class LuckyGame extends Game {
 
     /** Collection, deck et pièces du joueur, gardés d'une partie à l'autre (chargés au lancement). */
     private PlayerProfile profile;
+    /** Message sur la sauvegarde à dire au lancement (voir {@link #takeSaveNotice()}). */
+    private String saveNotice;
 
     /** Jeu sans réglage du mode d'affichage (plateformes sans fenêtre, tests). */
     public LuckyGame() {
@@ -44,8 +47,17 @@ public class LuckyGame extends Game {
     public void create() {
         batch = new SpriteBatch();
         Lang.load();
-        profile = new PlayerProfile(GdxProfileStorage.open(), CardLoader.loadStartingCollection(),
+        SecureProfileStorage storage = GdxProfileStorage.open();
+        profile = new PlayerProfile(storage, CardLoader.loadStartingCollection(),
             CardLoader.loadStarterDeckCopies());
+        if (storage.isRejected()) {
+            saveNotice = "Ta sauvegarde a été modifiée en dehors du jeu, ou abîmée, et sa copie de secours aussi. "
+                + "Je ne peux pas les reprendre : ta partie repart de zéro. L'ancien fichier est gardé à côté, "
+                + "en .refuse.";
+        } else if (storage.isRestoredFromBackup()) {
+            saveNotice = "Ta sauvegarde a été modifiée en dehors du jeu, ou abîmée. J'ai repris sa copie de "
+                + "secours : tes tout derniers progrès sont peut-être perdus.";
+        }
         // Mode ADMIN : toutes les cartes à collectionner (celles des coffres, le profil les connaît déjà).
         List<String> catalog = new ArrayList<>(CardLoader.loadStartingCollection().keySet());
         catalog.addAll(CardLoader.loadBoutique().keySet());
@@ -53,6 +65,17 @@ public class LuckyGame extends Game {
         profile.setUpgradable(CardLoader.loadAll().stream().filter(Card::isUpgradable).map(Card::getId).toList());
 
         setScreen(new MenuScreen(this));
+    }
+
+    /**
+     * @return ce que le Croupier dit au joueur sur sa sauvegarde (refusée, ou
+     *         reprise depuis la copie de secours), en français ; {@code null}
+     *         si tout va bien ou si c'est déjà dit (une seule fois par lancement)
+     */
+    public String takeSaveNotice() {
+        String notice = saveNotice;
+        saveNotice = null;
+        return notice;
     }
 
     /** Délègue le rendu à l'écran actif (voir {@link Game#render()}). */

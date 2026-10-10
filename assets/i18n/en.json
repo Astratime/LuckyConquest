@@ -1431,5 +1431,8 @@
   "Premier rang": "First rank",
   "Acheter un rang à la boutique.": "Buy a rank at the shop.",
   "Carte en or": "Golden card",
-  "Fusionner une carte « + » à la Table du croupier.": "Fuse a \"+\" card at the Dealer's Table."
+  "Fusionner une carte « + » à la Table du croupier.": "Fuse a \"+\" card at the Dealer's Table.",
+  "Ta sauvegarde a été modifiée en dehors du jeu, ou abîmée, et sa copie de secours aussi. Je ne peux pas les reprendre : ta partie repart de zéro. L'ancien fichier est gardé à côté, en .refuse.": "Your save was changed outside the game, or damaged, and so was its backup. I can't load them: your game starts over. The old file is kept next to it, as .refuse.",
+  "Ta sauvegarde a été modifiée en dehors du jeu, ou abîmée. J'ai repris sa copie de secours : tes tout derniers progrès sont peut-être perdus.": "Your save was changed outside the game, or damaged. I loaded its backup: your very latest progress may be lost.",
+  "Compris": "Got it"
 }
