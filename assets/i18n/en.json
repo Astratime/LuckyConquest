@@ -597,7 +597,7 @@
   "Taxe : au prochain tour, chaque carte jouée te coûte {0} % de tes gains, puis {1}. Tes gains peuvent passer sous zéro": "Tax: next turn, each card you play costs {0}% of your gains, then {1}. Your gains can go below zero",
   "Nouvelle règle : pendant {0} tours, plus de combinaisons, ou plus de Bingo, ou tes rouleaux tournent deux fois (le pire reste)": "New rule: for {0} turns, no more combos, or no more Bingo, or your reels spin twice (the worse stays)",
   "Fouille : il confisque une carte de ton deck jusqu'à la fin du combat. Une de plus par {0} gains": "Frisk: confiscates a card from your deck until the end of the fight. One more per {0} gains",
-  "Faillite : si tes gains dépassent sa fortune ({0} % de ses PV), il te prend tout. Sinon, il perd {1} % de ses PV": "Bankruptcy: if your gains exceed its fortune ({0}% of its HP), it takes everything. Otherwise, it loses {1}% of its HP",
+  "Faillite : si tes gains dépassent sa fortune ({0} % de ses PV restants), il te prend tout. Sinon, il perd {1} % de ses PV restants": "Bankruptcy: if your gains exceed its fortune ({0}% of its remaining HP), it takes everything. Otherwise, it loses {1}% of its remaining HP",
   "TAPIS PERDU !": "ALL-IN LOST!",
   "TAPIS GAGNÉ ! GAINS x3": "ALL-IN WON! GAINS x3",
   "PARI PERDU : GAINS ÷2": "BET LOST: GAINS ÷2",

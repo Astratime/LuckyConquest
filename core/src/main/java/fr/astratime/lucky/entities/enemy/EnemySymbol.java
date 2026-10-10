@@ -193,8 +193,8 @@ public enum EnemySymbol {
                 NEW_RULE_TURNS);
             case FRISK -> Lang.f("Fouille : il confisque une carte de ton deck jusqu'à la fin du combat. Une de plus par {0} gains",
                 FRISK_GAINS_STEP);
-            case BANKRUPTCY -> Lang.f("Faillite : si tes gains dépassent sa fortune ({0} % de ses PV), il te prend tout. Sinon, il "
-                + "perd {1} % de ses PV",
+            case BANKRUPTCY -> Lang.f("Faillite : si tes gains dépassent sa fortune ({0} % de ses PV restants), il te prend tout. "
+                + "Sinon, il perd {1} % de ses PV restants",
                 BANKRUPTCY_FORTUNE_PERCENT, BANKRUPTCY_HP_PERCENT);
         };
     }
