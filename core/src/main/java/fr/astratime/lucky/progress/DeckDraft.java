@@ -65,6 +65,12 @@ public class DeckDraft {
         return true;
     }
 
+    /** Remplace le deck en cours par {@code deck} (le deck d'un autre emplacement). */
+    public void load(Map<String, Integer> deck) {
+        copies.clear();
+        copies.putAll(deck);
+    }
+
     /** Vide le deck. */
     public void clear() { copies.clear(); }
 
@@ -103,8 +109,17 @@ public class DeckDraft {
      * @return {@code true} s'il a été enregistré, {@code false} s'il n'est pas complet
      */
     public boolean save() {
+        return save(profile.getDeckSlot());
+    }
+
+    /**
+     * Enregistre le deck dans l'emplacement {@code slot} du profil, qui devient le deck joué.
+     *
+     * @return {@code true} s'il a été enregistré, {@code false} s'il n'est pas complet
+     */
+    public boolean save(int slot) {
         if (profile.deckProblem(copies) != null) return false;
-        profile.setDeck(copies);
+        profile.setDeck(slot, copies);
         return true;
     }
 }

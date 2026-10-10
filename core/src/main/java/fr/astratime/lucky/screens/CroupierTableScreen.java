@@ -97,6 +97,7 @@ public class CroupierTableScreen extends ScreenAdapter {
     private static final float PANEL_TOP    = 190f;
     private static final float BOTTOM_SPACE = 130f;
     private static final float PANEL_PAD    = 30f;
+    private static final float SLOT_WIDTH   = 126f;
     private static final float DECK_WIDTH   = 470f;
     private static final float CARD_WIDTH   = 110f;
     private static final float CARD_HEIGHT  = 154f;   // images 480 x 672
@@ -107,6 +108,8 @@ public class CroupierTableScreen extends ScreenAdapter {
     private static final float FADE_TIME    = 0.4f;
     private static final Color REFUSED      = new Color(1f, 0.45f, 0.45f, 1f);
     private static final Color USED_UP      = new Color(0.6f, 0.6f, 0.6f, 1f);
+    /** Emplacement de deck qu'on ne modifie pas : bien plus sombre que celui qu'on modifie. */
+    private static final Color OTHER_SLOT   = new Color(0.35f, 0.35f, 0.35f, 1f);
 
     private final LuckyGame       luckyGame;
     private final PlayerProfile   profile;
@@ -178,6 +181,9 @@ public class CroupierTableScreen extends ScreenAdapter {
     /** Onglet « Rouleaux » affiché (sinon « Deck »). */
     private boolean showingReels;
     private boolean leaving;
+    /** Emplacements de deck (« Deck 1 » à « Deck 3 ») ; celui qu'on modifie, enregistré par « Enregistrer ». */
+    private final List<TextButton> slotButtons = new ArrayList<>();
+    private int editingSlot;
 
     public CroupierTableScreen(LuckyGame luckyGame) {
         this.luckyGame = luckyGame;
@@ -232,6 +238,13 @@ public class CroupierTableScreen extends ScreenAdapter {
             refresh();
         });
         backButton    = buttons.create(Lang.t("Retour"), clickSound, this::onBack);
+        editingSlot = profile.getDeckSlot();
+        for (int i = 0; i < PlayerProfile.DECK_SLOTS; i++) {
+            int slot = i;
+            TextButton button = buttons.create(Lang.f("Deck {0}", i + 1), clickSound, () -> selectSlot(slot));
+            button.setWidth(SLOT_WIDTH);
+            slotButtons.add(button);
+        }
         tutorialButton = buttons.create(Lang.t("Tutoriel"), clickSound, this::replayGuide);
 
         upgradeOverlay = new UpgradeOverlay(hud, buttons, clickSound, upgradeSound);
@@ -261,6 +274,7 @@ public class CroupierTableScreen extends ScreenAdapter {
         stage.addActor(clearButton);
         stage.addActor(backButton);
         stage.addActor(tutorialButton);
+        slotButtons.forEach(stage::addActor);
         stage.addActor(tooltip.getActor());
         stage.addActor(upgradeOverlay.getActor());
         stage.addActor(fade);
@@ -327,6 +341,7 @@ public class CroupierTableScreen extends ScreenAdapter {
         scroll.setVisible(!reels);
         deckList.setVisible(!reels);
         starterButton.setVisible(!reels);
+        for (TextButton button : slotButtons) button.setVisible(!reels && !profile.isAdmin()); // le mode ADMIN a un seul deck
         reelScroll.setVisible(reels);
         machineList.setVisible(reels);
         classicButton.setVisible(reels);
@@ -561,6 +576,7 @@ public class CroupierTableScreen extends ScreenAdapter {
         }
 
         refreshMachine();
+        for (int i = 0; i < slotButtons.size(); i++) slotButtons.get(i).setColor(i == editingSlot ? Color.WHITE : OTHER_SLOT);
         saveButton.setDisabled(!draft.isComplete() || !machineDraft.isComplete());
         hint.setColor(Color.WHITE);
         if (showingReels) {
@@ -648,9 +664,21 @@ public class CroupierTableScreen extends ScreenAdapter {
         }
     }
 
-    /** Enregistre le deck et la machine (complets) et revient au menu principal. */
+    /**
+     * Modifie le deck de l'emplacement {@code slot} : son deck enregistré, ou le
+     * deck en cours s'il est vide. Les changements non enregistrés de l'autre sont perdus.
+     */
+    private void selectSlot(int slot) {
+        if (slot == editingSlot) return;
+        editingSlot = slot;
+        if (profile.isDeckSlotUsed(slot)) draft.load(profile.getDeckInSlot(slot));
+        refresh();
+    }
+
+    /** Enregistre le deck (dans son emplacement, qui devient le deck joué) et la machine, et revient au menu principal. */
     private void onSave() {
-        if (leaving || !draft.isComplete() || !machineDraft.isComplete() || !draft.save() || !machineDraft.save()) return;
+        if (leaving || !draft.isComplete() || !machineDraft.isComplete() || !draft.save(editingSlot)
+            || !machineDraft.save()) return;
         leaveTo(() -> new MenuScreen(luckyGame));
     }
 
@@ -743,6 +771,11 @@ public class CroupierTableScreen extends ScreenAdapter {
         classicButton.setPosition(clearButton.getX() - 24f - classicButton.getWidth(), buttonY);
         backButton.setPosition(MARGIN, buttonY);
         tutorialButton.setPosition(backButton.getX() + backButton.getWidth() + 20f, buttonY);
+        // Les emplacements de deck, à gauche des boutons du deck.
+        for (int i = slotButtons.size() - 1; i >= 0; i--) {
+            float right = i == slotButtons.size() - 1 ? starterButton.getX() - 48f : slotButtons.get(i + 1).getX() - 12f;
+            slotButtons.get(i).setPosition(right - SLOT_WIDTH, buttonY);
+        }
         upgradeOverlay.layout(width, height);
     }
 
