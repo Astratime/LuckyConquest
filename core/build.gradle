@@ -24,3 +24,17 @@ jar {
 test {
   useJUnitPlatform()
 }
+
+// Simulateur d'équilibrage : ./gradlew :core:simulate (rapport dans core/build/simulation/equilibrage.md),
+// -Pquick pour un essai rapide.
+tasks.register('simulate', JavaExec) {
+  group = 'verification'
+  description = "Simule des milliers de tours et écrit le rapport d'équilibrage."
+  dependsOn testClasses
+  classpath = sourceSets.test.runtimeClasspath
+  mainClass = 'fr.astratime.lucky.sim.BalanceSimulator'
+  jvmArgs '-Dstdout.encoding=UTF-8', '-Dfile.encoding=UTF-8'
+  systemProperty 'lucky.assets', rootProject.file('assets').absolutePath
+  systemProperty 'lucky.simulation.out', layout.buildDirectory.file('simulation/equilibrage.md').get().asFile.absolutePath
+  if (project.hasProperty('quick')) args '--quick'
+}

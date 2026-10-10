@@ -1,57 +1,93 @@
 # Lucky Conquest
 
-A [libGDX](https://libgdx.com/) project generated with [gdx-liftoff](https://github.com/libgdx/gdx-liftoff).
+Un jeu de combat au tour par tour où l'on se bat avec un **deck de cartes** et une **machine à sous**.
+Chaque tour, on joue des cartes pour truquer la machine, on tire le levier, et les symboles alignés
+attaquent, protègent, soignent ou rapportent des gains. Trois symboles identiques : **Bingo !**
 
-This project was generated with a template including simple application launchers and an `ApplicationAdapter` extension that draws libGDX logo.
+*In English: Lucky Conquest is a turn-based fighting game played with a deck of cards and a slot
+machine. Play cards to rig the reels, pull the lever, and let the symbols fight for you. The game is
+available in French and English (Options > Language).*
 
-## Platforms
+## Le jeu
 
-- `core`: Main module with the application logic shared by all platforms.
-- `lwjgl3`: Primary desktop platform using LWJGL3; was called 'desktop' in older docs.
+### Un tour de combat
+1. **Les cartes** : on pioche, puis on joue jusqu'à 4 cartes. Elles renforcent un symbole, forcent un
+   rouleau, protègent ou attaquent. Plusieurs cartes forment des **combinaisons** (Paire, Brelan,
+   Suite, Couleur, Carré) qui multiplient l'attaque et les gains du tirage.
+2. **Le tirage** : il coûte des gains (le prix dépend du lieu). On peut aussi **miser** une part de
+   ses gains : la Mise ne paie que sur un Bingo.
+3. **Le résultat** : chaque symbole agit (épée, bouclier, cœur, pièces…). Deux symboles identiques
+   font une Paire, trois font un **Bingo**, avec sa propre mise en scène, et parfois un **Jeu bonus**
+   (une grille 6 x 6 et trois tirages).
+4. **L'ennemi** joue à son tour, ses cartes et sa propre machine.
 
-## Gradle
+### Les modes
+- **Entraînement** : un combat contre le Croupier, pour s'exercer. Il ne rapporte rien.
+- **Tour des épreuves** : six chapitres de combats et leurs boss, avec une histoire et ses
+  cinématiques, puis un mode difficile. Elle ne rapporte pas de pièces.
+- **Exploration** : quatre lieux (la Prairie, le Port des Contrebandiers, les Mines d'Or, le Casino
+  Englouti), chacun avec quatre donjons, leurs rois, leurs coffres et une règle propre au lieu.
+  Ce sont les seuls combats qui rapportent des **pièces**.
+- **Table du croupier** : on y compose son deck de 20 cartes et les 11 rouleaux de sa machine, et on
+  y fusionne 3 exemplaires d'une carte en sa version **« + »**.
+- **Boutique** : les pièces achètent des **rangs** (des bonus pour tous les combats), des cartes et des
+  rouleaux.
 
-This project uses [Gradle](https://gradle.org/) to manage dependencies.
-The Gradle wrapper was included, so you can run Gradle tasks using `gradlew.bat` or `./gradlew` commands.
-Useful Gradle tasks and flags:
+Un **tutoriel** guidé par le Croupier se lance au premier démarrage (il se rejoue depuis les Options).
+Les Options règlent aussi l'affichage, les effets, la vitesse des animations, le son et la langue,
+et montrent les **statistiques et les succès**.
 
-- `--continue`: when using this flag, errors will not stop the tasks from running.
-- `--daemon`: thanks to this flag, Gradle daemon will be used to run chosen tasks.
-- `--offline`: when using this flag, cached dependency archives will be used.
-- `--refresh-dependencies`: this flag forces validation of all dependencies. Useful for snapshot versions.
-- `build`: builds sources and archives of every project.
-- `cleanEclipse`: removes Eclipse project data.
-- `cleanIdea`: removes IntelliJ project data.
-- `clean`: removes `build` folders, which store compiled classes and built archives.
-- `eclipse`: generates Eclipse project data.
-- `idea`: generates IntelliJ project data.
-- `lwjgl3:jar`: builds application's runnable jar, which can be found at `lwjgl3/build/libs`.
-- `lwjgl3:run`: starts the application.
-- `test`: runs unit tests (if any).
+## Télécharger et jouer
 
-Note that most tasks that are not specific to a single project can be run with `name:` prefix, where the `name` should be replaced with the ID of a specific project.
-For example, `core:clean` removes `build` folder only from the `core` project.
+Les versions à télécharger se trouvent dans les
+[Releases](https://github.com/Astratime/LuckyConquest/releases) du dépôt : un zip par système
+(Windows, macOS Apple Silicon, macOS Intel, Linux), avec son propre Java. Il n'y a rien à installer :
+on dézippe et on lance le jeu.
 
-## Distribution
+Le jeu n'est pas signé :
+- sur **Windows**, SmartScreen demande de confirmer (*Informations complémentaires* > *Exécuter quand même*) ;
+- sur **macOS**, le premier lancement se fait par clic droit > *Ouvrir*.
 
-Each package is a zip holding the game and its own Java runtime, so players have nothing to install:
+La partie est enregistrée dans `~/.prefs/lucky-conquest-save` (dans le dossier de l'utilisateur),
+avec une copie de secours `.bak`. Le fichier est signé : modifié à la main, il est refusé.
 
-- `lwjgl3:packageWinX64`, `lwjgl3:packageMacM1`, `lwjgl3:packageMacX64`, `lwjgl3:packageLinuxX64`: build the package for one platform, in `lwjgl3/build/construo/dist`.
-- The **Exécutables** GitHub workflow builds all four packages:
-  - run it by hand from the Actions tab (*Run workflow*); the zips can be downloaded at the bottom of the run page;
-  - or push a `v*` tag (e.g. `git tag v1.0.0 && git push origin v1.0.0`); the zips are then also published in a GitHub Release, whose link can be shared.
+## Pour les développeurs
 
-The game is not signed: Windows SmartScreen asks to confirm (*More info* > *Run anyway*), and on macOS the first launch needs a right-click > *Open*.
+Le jeu est écrit en Java 21 avec [libGDX](https://libgdx.com/).
 
-## Presentation
-Card Game: LUCKY CONQUEST
+| Commande | Ce qu'elle fait |
+|---|---|
+| `./gradlew lwjgl3:run` | Lance le jeu. |
+| `./gradlew test` | Lance les tests. |
+| `./gradlew :core:simulate` | Simule des milliers de tours et écrit le rapport d'équilibrage (voir plus bas). |
+| `./gradlew lwjgl3:packageWinX64` | Fabrique le zip Windows ; aussi `packageMacM1`, `packageMacX64`, `packageLinuxX64` (dans `lwjgl3/build/construo/dist`). |
 
-Gameplay: Battle between two characters (player and bot). The player has a deck of cards and a slot machine. The battle is turn-based. A turn is divided into three phases. 
-Phase 1 --> Draw cards to rig the slot machine and improve the odds for certain symbols (the exact effects are to be determined, but the goal is to create an advantageous situation for Phase 2). 
-Phase 2 --> Spin the slot machine, which will display symbols. The symbols determine the actions to be taken (attack, bonus, penalty, and others to be determined later)
-Phase 3 --> bonus phase, which is activated only if the machine lines up three identical symbols (even with Phase 1 in play, this should be an extremely rare occurrence). This phase is designed to boost the machine’s outcome (enhanced attacks, penalty cancellation, jackpot).
-The rest of the battle follows standard rules: characters lose health points until one of them is defeated.
+### Organisation du code
+- `core` : tout le jeu.
+  - `entities` : les règles (cartes, symboles, ennemis, combinaisons, Jeu bonus…).
+  - `controllers` : le déroulement d'un combat (`GameController`, résolution des tirages).
+  - `screens` et `views` : les écrans et leurs éléments ; `animations` : les mises en scène.
+  - `progress` : le profil du joueur (collection, deck, pièces, rangs, sauvegarde, statistiques, succès).
+- `lwjgl3` : le lanceur pour ordinateur.
+- `assets` : images, sons, polices, cartes (`assets/cards`) et traductions (`assets/i18n/en.json`).
+  Chaque texte du jeu est écrit en français dans le code et traduit dans `en.json` ; un test vérifie
+  qu'aucun ne manque.
+- `tools/sounds` : le générateur des bruitages (`python3 generate_sounds.py <nom>`).
 
-Deck Building: The player can upgrade their cards, use new cards, and change the reels on their slot machine to achieve better synergy.
+### Simulateur d'équilibrage
+`./gradlew :core:simulate` fait jouer un robot avec le vrai moteur du jeu et écrit
+`core/build/simulation/equilibrage.md` :
+1. **Tirages** : ce que rapporte un tirage, en coûts de tirage, par lieu (objectif : 0 à 5 en gains
+   de base), avec la part de Paires, de Bingos et de dette ;
+2. **Jeu bonus** : ses gains moyens (objectif : environ 100 coûts de tirage sur la machine classique) ;
+3. **Donjons** : la part de victoires et les pièces gagnées par donjon, selon le rang du joueur.
 
-Conquest: The player must explore and conquer dungeons to obtain new cards. Some dungeons will specialize in a particular symbol to yield cards related to that symbol (the first dungeons will offer all types of cards to give players a glimpse of the deck-building possibilities).
+Le robot joue moins bien qu'un vrai joueur : le rapport sert à comparer le jeu avant et après un
+changement de règles. `-Pquick` donne un essai rapide. Une version courte tourne avec les tests et
+vérifie que les objectifs des tirages et du Jeu bonus sont tenus.
+
+### Exécutables
+Le workflow GitHub **Exécutables** fabrique les quatre zips :
+- lancé à la main depuis l'onglet *Actions* (*Run workflow*), les zips sont en bas de la page du lancement ;
+- en poussant une étiquette `v*` (par exemple `git tag v1.0.0 && git push origin v1.0.0`), ils sont
+  aussi publiés dans une Release, dont le lien se partage.
