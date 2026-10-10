@@ -599,9 +599,9 @@ public class EnemyTurnResolver {
 
         /** Comme {@link #strike(int)} ; avec {@code pierce} (Forage), le coup traverse le bouclier du joueur. */
         PlayerDamagedEvent strike(int base, boolean pierce) {
-            int attack = enemy.getKind().hurt(
+            int attack = (int) Math.min(Integer.MAX_VALUE, (long) enemy.getKind().hurt(
                 (base + swordBonus + enemy.getRage() + enemy.getAnvil() + enemy.spendInterest())
-                    * enemy.getStake() * attackFactor);
+                    * enemy.getStake() * attackFactor) * enemy.attackPercent() / 100); // un roi en phase 2 frappe plus fort
             totalAttack += attack;
             int shieldBefore = player.getShield();
             int lost = player.takeDamage(attack, pierce);

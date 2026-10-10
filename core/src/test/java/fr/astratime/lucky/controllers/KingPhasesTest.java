@@ -52,4 +52,23 @@ class KingPhasesTest {
         for (EnemySymbol symbol : turn.symbols()) assertTrue(king.getSymbols().contains(symbol), symbol.name());
         assertFalse(new Enemy(EnemyKind.SOLDAT_PIQUE).enterPhaseTwo());
     }
+
+    @Test
+    void aKingInPhaseTwoHitsHarderAndHealsLess() {
+        Enemy king = new Enemy(EnemyKind.ROI_COEUR);
+        assertEquals(100, king.attackPercent());
+        king.takeDamage(king.getMaxHp() / 2 + 1000);
+        int before = king.getHp();
+        assertEquals(1000, king.heal(1000), "phase 1 : soin entier");
+        king.takeDamage(1000);
+        assertTrue(king.enterPhaseTwo());
+        assertEquals(EnemyKind.KING_PHASE_ATTACK_PERCENT, king.attackPercent());
+        assertEquals(1000 * EnemyKind.KING_PHASE_HEAL_PERCENT / 100, king.heal(1000), "phase 2 : soin réduit");
+        assertTrue(king.getHp() < before + 1000);
+
+        Enemy soldier = new Enemy(EnemyKind.SOLDAT_COEUR);
+        soldier.takeDamage(soldier.getMaxHp() - 10);
+        assertEquals(100, soldier.attackPercent());
+        assertEquals(5, soldier.heal(5), "un soldat se soigne toujours en entier");
+    }
 }

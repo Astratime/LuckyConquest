@@ -926,6 +926,10 @@ public enum EnemyKind {
 
     /** Poids du symbole qu'un roi ajoute en phase 2. */
     public static final int KING_PHASE_WEIGHT = 1;
+    /** En phase 2, les attaques d'un roi valent ce % de leur valeur (il est plus fort)... */
+    public static final int KING_PHASE_ATTACK_PERCENT = 125;
+    /** ... et ses soins ce % de leur valeur : il ne remonte pas à sa vie pleine. */
+    public static final int KING_PHASE_HEAL_PERCENT = 50;
 
     /**
      * @return sa phase quand il lui reste {@code hpRatio} de ses PV : l'Éclat
