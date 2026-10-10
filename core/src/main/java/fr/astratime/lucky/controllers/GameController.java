@@ -283,10 +283,15 @@ public class GameController {
     public DrawResult drawCards() {
         Player player = gameState.getPlayer();
         LastingEffects lasting = player.getLastingEffects();
+        turnNotices.clear();
+        // Abordage : les cartes volées depuis assez longtemps reviennent dans le deck, avant la pioche.
+        for (Card back : player.returnStolenCards()) {
+            turnNotices.add(new EffectPopup(Lang.f("ABORDAGE : {0} RENDUE", back.getName().toUpperCase()),
+                EffectPopup.Style.DEFENSE, PopupScale.SECONDARY_INTENSITY));
+        }
         DrawResult drawn = player.draw(DEFAULT_DRAW_COUNT);
         List<Card> added     = new ArrayList<>(drawn.getAddedToHand());
         List<Card> discarded = new ArrayList<>(drawn.getDiscarded());
-        turnNotices.clear();
 
         // Grignotage de l'ennemi : des cartes piochées sont rongées et partent à la défausse.
         int nibbles = lasting.takeNibbles();
@@ -341,7 +346,7 @@ public class GameController {
         return new DrawResult(added, discarded);
     }
 
-    /** @return les textes du début du tour (Grignotage, Scorbut, Aveuglement, Chant), après {@link #drawCards()}. */
+    /** @return les textes du début du tour (Abordage, Grignotage, Scorbut, Aveuglement, Chant), après {@link #drawCards()}. */
     public List<EffectPopup> getTurnNotices() { return List.copyOf(turnNotices); }
 
     /** @return {@code true} si la main de ce tour est face cachée (Aveuglement de l'ennemi). */

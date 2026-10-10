@@ -48,8 +48,21 @@ public class Player {
     private boolean ropeUsed  = false;
     /** La Corde de rappel vient de retenir le joueur (texte à montrer). */
     private boolean ropeSaved = false;
-    /** Cartes volées (Abordage) ou confisquées (Fouille) : absentes du combat, elles reviennent au suivant. */
+    /** Cartes confisquées (Fouille) : absentes du combat, elles reviennent au suivant. */
     private final List<Card> confiscated = new ArrayList<>();
+    /** Cartes volées (Abordage), avec les tours du joueur qu'il leur reste à passer chez l'ennemi. */
+    private final List<StolenCard> stolen = new ArrayList<>();
+
+    /** Une carte volée par l'Abordage et les tours qu'elle doit encore manquer. */
+    private static final class StolenCard {
+        final Card card;
+        int turnsLeft;
+
+        StolenCard(Card card, int turnsLeft) {
+            this.card      = card;
+            this.turnsLeft = turnsLeft;
+        }
+    }
 
     /**
      * @param name     nom affiché du joueur
@@ -299,7 +312,8 @@ public class Player {
         cards.addAll(discardPile.getCards());
         cards.addAll(currentHand);
         cards.addAll(playedCards);
-        cards.addAll(confiscated); // volées ou confisquées le temps d'un combat seulement
+        cards.addAll(confiscated); // confisquées le temps d'un combat seulement
+        for (StolenCard theft : stolen) cards.add(theft.card); // volées : elles reviennent au plus tard au combat suivant
         Player next = new Player(name, maxHp - rankBonus.hp(), cards, rankBonus, slotMachine.getReels());
         next.hp = hp; // les PV perdus ne reviennent pas d'un combat à l'autre
         next.gains = gains;
@@ -367,14 +381,37 @@ public class Player {
 
     /**
      * Abordage : {@code card} est volée, sur la table ou parmi les cartes
-     * jouées ; elle ne revient pas de tout le combat.
+     * jouées ; elle manque les {@code turns} prochains tours du joueur, puis
+     * revient dans son deck (voir {@link #returnStolenCards()}).
      *
      * @return {@code false} si le joueur ne l'avait ni en main ni parmi les cartes jouées
      */
-    public boolean steal(Card card) {
+    public boolean steal(Card card, int turns) {
         if (!currentHand.remove(card) && !playedCards.remove(card)) return false;
-        confiscated.add(card);
+        stolen.add(new StolenCard(card, turns));
         return true;
+    }
+
+    /**
+     * Début du tour du joueur, avant la pioche : chaque carte volée passe un
+     * tour de plus chez l'ennemi ; celles qui ont manqué tous leurs tours
+     * reviennent dans le deck, à une place au hasard.
+     *
+     * @return les cartes rendues ce tour
+     */
+    public List<Card> returnStolenCards() {
+        List<Card> returned = new ArrayList<>();
+        for (java.util.Iterator<StolenCard> it = stolen.iterator(); it.hasNext(); ) {
+            StolenCard theft = it.next();
+            if (theft.turnsLeft > 0) {
+                theft.turnsLeft--;
+                continue;
+            }
+            it.remove();
+            deck.insertRandomly(theft.card);
+            returned.add(theft.card);
+        }
+        return returned;
     }
 
     /**
@@ -393,8 +430,11 @@ public class Player {
         return card;
     }
 
-    /** @return les cartes volées ou confisquées ce combat. */
+    /** @return les cartes confisquées ce combat (Fouille). */
     public List<Card> getConfiscated() { return Collections.unmodifiableList(confiscated); }
+
+    /** @return les cartes volées en ce moment (Abordage), qui reviendront dans le deck. */
+    public List<Card> getStolen() { return stolen.stream().map(theft -> theft.card).toList(); }
 
     /** @return toutes les cartes du joueur ce combat : deck, défausse, main et cartes jouées. */
     public List<Card> getAllCards() {

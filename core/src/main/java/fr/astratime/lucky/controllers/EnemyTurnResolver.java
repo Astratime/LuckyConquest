@@ -533,8 +533,8 @@ public class EnemyTurnResolver {
 
     /**
      * Abordage : il vole la meilleure carte du joueur (la plus forte de sa main,
-     * sinon parmi celles qu'il a jouées ; jamais le Scorbut), pour tout le
-     * combat, et la joue contre lui à pleine force : Pique, il frappe ; Cœur, il
+     * sinon parmi celles qu'il a jouées ; jamais le Scorbut), pendant
+     * {@link EnemySymbol#BOARDING_TURNS} tours, et la joue contre lui à pleine force : Pique, il frappe ; Cœur, il
      * se soigne ; Carreau et Trèfle, il se protège. Une carte sans couleur lui
      * sert d'arme. Sans rien à voler, il frappe simplement.
      */
@@ -542,7 +542,7 @@ public class EnemyTurnResolver {
         Player player = turn.player;
         Card stolen = bestCard(player.getCurrentHand());
         if (stolen == null) stolen = bestCard(player.getPlayedCards());
-        if (stolen == null || !player.steal(stolen)) {
+        if (stolen == null || !player.steal(stolen, EnemySymbol.BOARDING_TURNS)) {
             events.add(turn.strike(turn.enemy.getKind().swordDamage()));
             return;
         }
