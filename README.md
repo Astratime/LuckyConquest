@@ -35,7 +35,9 @@ available in French and English (Options > Language).*
 
 Un **tutoriel** guidé par le Croupier se lance au premier démarrage (il se rejoue depuis les Options).
 Les Options règlent aussi l'affichage, les effets, la vitesse des animations, le son et la langue,
-et montrent les **statistiques et les succès**.
+et montrent les **statistiques et les succès**, ainsi que le **bestiaire et la collection** : les ennemis
+rencontrés et vaincus, leur fiche, le compte des cartes et des rouleaux possédés, et les cinématiques
+déjà vues, à revoir.
 
 ## Télécharger et jouer
 

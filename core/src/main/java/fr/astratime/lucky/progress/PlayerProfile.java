@@ -3,6 +3,7 @@ package fr.astratime.lucky.progress;
 import fr.astratime.lucky.entities.Card;
 import fr.astratime.lucky.entities.RankBonus;
 import fr.astratime.lucky.entities.Symbol;
+import fr.astratime.lucky.entities.enemy.EnemyKind;
 import fr.astratime.lucky.entities.exploration.Dungeon;
 import fr.astratime.lucky.entities.exploration.Place;
 import fr.astratime.lucky.entities.tower.Chapter;
@@ -71,6 +72,8 @@ public class PlayerProfile {
     static final String KEY_BINGOS        = "bingos";
     static final String KEY_STATS         = "stats";
     static final String KEY_ACHIEVEMENTS  = "achievements";
+    static final String KEY_MET           = "met";
+    static final String KEY_DEFEATED      = "defeated";
 
     /** Guides du Croupier (voir {@link #hasSeen(String)}) : le tutoriel, sa proposition au premier lancement, la visite du menu. */
     public static final String GUIDE_TUTORIAL    = "tutorial";
@@ -118,6 +121,9 @@ public class PlayerProfile {
     private final PlayerStats stats;
     /** Succès atteints, dans l'ordre (leur récompense est déjà versée). */
     private final java.util.Set<Achievement> achievements = java.util.EnumSet.noneOf(Achievement.class);
+    /** Bestiaire : ennemis rencontrés, et parmi eux ceux qui ont été vaincus. */
+    private final java.util.Set<EnemyKind> metEnemies      = java.util.EnumSet.noneOf(EnemyKind.class);
+    private final java.util.Set<EnemyKind> defeatedEnemies = java.util.EnumSet.noneOf(EnemyKind.class);
 
     /**
      * Charge le profil enregistré dans {@code storage} ; au premier lancement
@@ -175,8 +181,84 @@ public class PlayerProfile {
         for (Place place : Place.values()) {
             for (Dungeon dungeon : place.getDungeons()) dungeon.getLoot().forEach(loot -> catalog.add(loot.cardId()));
         }
+        loadBestiary();
         loadAdminLoadout();
     }
+
+    /**
+     * Lit le bestiaire ; un profil d'avant le bestiaire le retrouve en partie :
+     * le soldat et le roi des donjons vidés, le premier ennemi et le boss des
+     * chapitres terminés.
+     */
+    private void loadBestiary() {
+        String savedMet = storage.get(KEY_MET);
+        if (savedMet != null) {
+            readEnemies(savedMet, metEnemies);
+            readEnemies(storage.get(KEY_DEFEATED), defeatedEnemies);
+        } else {
+            for (Place place : Place.values()) {
+                for (Dungeon dungeon : place.getDungeons()) {
+                    if (!isCleared(dungeon)) continue;
+                    defeatedEnemies.add(dungeon.getSoldier());
+                    defeatedEnemies.add(dungeon.getKing());
+                }
+            }
+            for (Chapter chapter : Chapter.values()) {
+                if (!isCleared(chapter, false) && !isCleared(chapter, true)) continue;
+                defeatedEnemies.add(chapter.getFirstEnemy());
+                defeatedEnemies.add(chapter.getBoss());
+            }
+        }
+        metEnemies.addAll(defeatedEnemies);
+    }
+
+    private static void readEnemies(String text, java.util.Set<EnemyKind> enemies) {
+        java.util.Set<String> names = new java.util.LinkedHashSet<>();
+        readNames(text, names);
+        for (EnemyKind kind : EnemyKind.values()) if (names.contains(kind.name())) enemies.add(kind);
+    }
+
+    // -------------------------------------------------------------------------
+    // Bestiaire et collection
+    // -------------------------------------------------------------------------
+
+    /** @return {@code true} si le joueur a déjà rencontré {@code kind} en combat (tout est découvert en mode ADMIN). */
+    public boolean hasMet(EnemyKind kind) { return admin || metEnemies.contains(kind); }
+
+    /** @return {@code true} si le joueur a déjà vaincu {@code kind} (tout en mode ADMIN). */
+    public boolean hasDefeated(EnemyKind kind) { return admin || defeatedEnemies.contains(kind); }
+
+    /** Un combat contre {@code kind} commence : il entre au bestiaire, enregistré tout de suite. Rien en mode ADMIN. */
+    public void meet(EnemyKind kind) {
+        if (admin || !metEnemies.add(kind)) return;
+        saveBestiary();
+    }
+
+    /** {@code kind} est vaincu : noté au bestiaire, enregistré tout de suite. Rien en mode ADMIN. */
+    public void defeat(EnemyKind kind) {
+        if (admin) return;
+        boolean changed = metEnemies.add(kind);
+        if (!defeatedEnemies.add(kind) && !changed) return;
+        saveBestiary();
+    }
+
+    private void saveBestiary() {
+        storage.put(KEY_MET, metEnemies.stream().map(Enum::name).collect(java.util.stream.Collectors.joining(",")));
+        storage.put(KEY_DEFEATED,
+            defeatedEnemies.stream().map(Enum::name).collect(java.util.stream.Collectors.joining(",")));
+        storage.flush();
+    }
+
+    /** @return le nombre de cartes différentes à collectionner : celles de départ, de la boutique, des coffres et leurs « + ». */
+    public int getCatalogSize() { return catalog.size(); }
+
+    /** @return le nombre de cartes différentes du catalogue que le joueur possède. */
+    public int getCollectedCardCount() {
+        return (int) catalog.stream().filter(id -> getOwnedCopies(id) > 0).count();
+    }
+
+    /** @return le nombre de rouleaux qui existent (classiques, de la boutique et des lieux). */
+    public static int getReelCount() { return allReels().size(); }
 
     // -------------------------------------------------------------------------
     // Mode ADMIN
@@ -761,7 +843,7 @@ public class PlayerProfile {
 
     /**
      * Enregistre la collection, le deck, les pièces, le rang, les rouleaux, les donjons vidés,
-     * les chapitres terminés, le mode difficile, les statistiques et les succès.
+     * les chapitres terminés, le mode difficile, les statistiques, les succès et le bestiaire.
      */
     public void save() {
         storage.put(KEY_TOWER_HARD, String.valueOf(towerHard));
@@ -778,7 +860,7 @@ public class PlayerProfile {
         storage.put(KEY_ADMIN_MACHINE, encodeSymbols(adminMachine));
         storage.put(KEY_STATS, stats.encode());
         storage.put(KEY_ACHIEVEMENTS, achievements.stream().map(Enum::name).collect(java.util.stream.Collectors.joining(",")));
-        storage.flush();
+        saveBestiary();
     }
 
     /** Ajoute à {@code names} les noms de {@code text} ("a,b,c" ; rien si {@code null}). */
