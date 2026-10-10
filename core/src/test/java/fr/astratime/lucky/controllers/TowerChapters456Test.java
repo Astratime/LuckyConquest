@@ -74,11 +74,11 @@ class TowerChapters456Test {
             return holder[0];
         });
         Player player = holder[0];
-        int fake = player.getLastingEffects().getFakeGains();
+        double fake = player.getLastingEffects().getFakeGains();
         assertTrue(fake > 0);
         player.addGains(-1_000); // un achat : la fausse monnaie part d'abord
         assertEquals(fake - 1_000, player.getLastingEffects().getFakeGains());
-        int before = player.getGains();
+        double before = player.getGains();
         new PreparationResolver().resolve(List.of(), player, new Enemy(EnemyKind.FAUSSAIRE));
         assertEquals(before - (fake - 1_000), player.getGains());
         assertEquals(0, player.getLastingEffects().getFakeGains());

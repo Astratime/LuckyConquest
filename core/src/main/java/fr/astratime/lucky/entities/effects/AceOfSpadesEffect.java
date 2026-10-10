@@ -40,8 +40,8 @@ public class AceOfSpadesEffect extends Effect {
 
     @Override
     public void onPlay(PlayContext context) {
-        int consumed = context.consumeGainsPercent(CONSUME_PERCENT);
-        int blades   = Math.min(MAX_BOUGHT_BLADES, consumed / GAINS_PER_BLADE);
+        double consumed = context.consumeGainsPercent(CONSUME_PERCENT);
+        int blades   = (int) Math.min(MAX_BOUGHT_BLADES, consumed / GAINS_PER_BLADE);
         context.getLastingEffects().addBlades(blades);
         context.queueForSpin(this);
         context.addPopups(List.of(

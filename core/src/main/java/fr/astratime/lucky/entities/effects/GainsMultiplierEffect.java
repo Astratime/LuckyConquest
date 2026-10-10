@@ -29,10 +29,10 @@ public class GainsMultiplierEffect extends Effect {
 
     @Override
     public void onPlay(PlayContext context) {
-        int added = context.addGainsPercent(percent);
+        double added = context.addGainsPercent(percent);
         context.addPopups(List.of(
             new EffectPopup(Lang.f("GAINS +{0}%", percent), EffectPopup.Style.GAINS, PopupScale.MAX_INTENSITY),
-            EffectPopup.scaled(Lang.f("GAINS +{0}", added), EffectPopup.Style.GAINS, added, PopupScale.SPIN_GAINS)));
+            EffectPopup.scaled(Lang.f("GAINS +{0}", Lang.big(added)), EffectPopup.Style.GAINS, added, PopupScale.SPIN_GAINS)));
         if (gaugeFactor > 1) {
             context.getLastingEffects().multiplyGauges(gaugeFactor);
             context.addPopups(List.of(new EffectPopup(Lang.f("JAUGES x{0}", gaugeFactor), EffectPopup.Style.SPECIAL,

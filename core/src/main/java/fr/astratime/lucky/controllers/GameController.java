@@ -1,5 +1,6 @@
 package fr.astratime.lucky.controllers;
 
+import fr.astratime.lucky.entities.BigNumber;
 import fr.astratime.lucky.entities.Card;
 import fr.astratime.lucky.entities.CardFamily;
 import fr.astratime.lucky.entities.CardPlayResult;
@@ -116,7 +117,9 @@ public class GameController {
     private final Function<String, Card> cardFactory;
 
     /** Cartes proposées à l'échoppe. */
-    private final List<ShopOffer> shopOffers;
+    private final List<ShopOffer> shopOffers; // prix de base, ceux de la Prairie
+    /** Bingos achetés à l'échoppe dans ce combat : chacun double le prix du suivant. */
+    private int bingosBought = 0;
 
     private final Random random = new Random();
 
@@ -186,6 +189,7 @@ public class GameController {
         spinCostActive = true;
         player.addGains(SpinEconomy.startingGains(kind.getSpinCost())); // une fois par chapitre de la Tour
         treasureMaps = 0;
+        bingosBought = 0;
         clearTurn();
     }
 
@@ -198,6 +202,7 @@ public class GameController {
         Player player = gameState.getPlayer().nextCombat();
         this.gameState = new GameState(player, createEnemy(kind, player));
         gameState.setPlaceRule(placeRule);
+        bingosBought = 0;
         clearTurn();
     }
 
@@ -245,20 +250,14 @@ public class GameController {
     /** @return la Mise choisie pour le prochain tirage. */
     public SpinEconomy.Stake getStake() { return stake; }
 
-    /** @return les gains que coûtera la Mise choisie, sur les gains actuels. */
-    public int getStakeAmount() { return stake.amount(gameState.getPlayer().getGains()); }
-
-    /** @return {@code true} si le joueur peut miser : il faut avoir des gains (on ne mise que ce qu'on a). */
-    public boolean canStake() { return gameState.getPlayer().getGains() > 0; }
-
     /**
-     * Passe au palier de Mise suivant (aucune, 10 %, 25 %, 50 %, puis aucune).
-     * Sans gains, la Mise reste à zéro.
+     * Passe au palier de Mise suivant (aucune, x2, x3, x5, puis aucune). La Mise
+     * ne coûte rien : elle multiplie seulement les gains d'un Bingo.
      *
      * @return le palier choisi
      */
     public SpinEconomy.Stake nextStake() {
-        stake = canStake() ? stake.next() : SpinEconomy.Stake.NONE;
+        stake = stake.next();
         return stake;
     }
 
@@ -395,7 +394,10 @@ public class GameController {
      * @param card  aperçu de la carte (l'achat en crée une nouvelle instance)
      * @param price prix, en gains
      */
-    public record ShopOffer(Card card, int price) { }
+    public record ShopOffer(Card card, double price) { }
+
+    /** Identifiant de la carte « Bingo » de l'échoppe : son prix double à chaque achat dans un combat. */
+    public static final String SHOP_BINGO = "bingo";
 
     /**
      * Carte achetée.
@@ -406,7 +408,23 @@ public class GameController {
     public record Purchase(Card card, boolean addedToHand) { }
 
     /** @return les cartes proposées à l'échoppe. */
-    public List<ShopOffer> getShopOffers() { return shopOffers; }
+    public List<ShopOffer> getShopOffers() {
+        return shopOffers.stream().map(offer -> new ShopOffer(offer.card(), priceOf(offer))).toList();
+    }
+
+    /**
+     * @return le prix de {@code offer} dans ce combat : son prix de base (celui de
+     *         la Prairie) suit le coût du tirage du lieu, et celui du Bingo double à
+     *         chaque Bingo déjà acheté dans le combat
+     */
+    private double priceOf(ShopOffer offer) {
+        ShopOffer base = shopOffers.stream().filter(o -> o.card().getId().equals(offer.card().getId()))
+            .findFirst().orElse(offer);
+        int cost = getSpinCost();
+        double price = cost > 0 ? base.price() * SpinEconomy.gainScale(cost) : base.price();
+        if (SHOP_BINGO.equals(base.card().getId())) price *= Math.pow(2, bingosBought);
+        return BigNumber.round(price);
+    }
 
     /**
      * @return pourquoi {@code offer} ne peut pas être achetée en ce moment (hors
@@ -468,8 +486,10 @@ public class GameController {
      */
     public Purchase buy(ShopOffer offer) {
         Player player = gameState.getPlayer();
-        if (unavailableReason(offer) != null || player.getGains() < offer.price()) return null;
-        player.addGains(-offer.price());
+        double price = priceOf(offer);
+        if (unavailableReason(offer) != null || player.getGains() < price) return null;
+        player.addGains(-price);
+        if (SHOP_BINGO.equals(offer.card().getId())) bingosBought++;
         Card card = cardFactory.apply(offer.card().getId());
         Enemy enemy = gameState.getEnemy();
         if (enemy.getKind().copiesPurchases()) { // le Pilleur en garde une copie : un As sombre
@@ -496,8 +516,8 @@ public class GameController {
         cardsPlayedThisTurn++;
         PlayContext playContext = new PlayContext(player, gameState.getEnemy().getKind().getSpinCost());
         for (int i = 0; i < taxes; i++) { // Taxe du Comptable : chaque carte jouée la paie
-            int taxed = player.payTax(EnemySymbol.TAX_PERCENT, EnemySymbol.TAX_FLAT);
-            playContext.addPopups(List.of(new EffectPopup(Lang.f("TAXE -{0}", taxed), EffectPopup.Style.DAMAGE,
+            double taxed = player.payTax(EnemySymbol.TAX_PERCENT, EnemySymbol.TAX_FLAT);
+            playContext.addPopups(List.of(new EffectPopup(Lang.f("TAXE -{0}", Lang.big(taxed)), EffectPopup.Style.DAMAGE,
                 PopupScale.SECONDARY_INTENSITY)));
         }
         boolean doubling = doubleNext;
@@ -704,10 +724,10 @@ public class GameController {
         PistolEffect pistol = new PistolEffect(cursed ? roulette.cursedPercent() : roulette.pistolPercent());
         pendingEffects.add(pistol);
         if (cursed) {
-            int lost = gameState.getPlayer().consumeGainsPercent(roulette.penaltyPercent() / 100f);
+            double lost = gameState.getPlayer().consumeGainsPercent(roulette.penaltyPercent() / 100f);
             List<EffectPopup> popups = new ArrayList<>(List.of(
                 new EffectPopup(Lang.t("JOKER MAUDIT !"), EffectPopup.Style.DAMAGE, PopupScale.MAX_INTENSITY),
-                EffectPopup.scaled(Lang.f("GAINS -{0}", lost), EffectPopup.Style.DAMAGE, lost, PopupScale.SPIN_GAINS)));
+                EffectPopup.scaled(Lang.f("GAINS -{0}", Lang.big(lost)), EffectPopup.Style.DAMAGE, lost, PopupScale.SPIN_GAINS)));
             popups.addAll(pistol.getPopups());
             return new RouletteOutcome(true, popups);
         }
@@ -733,12 +753,9 @@ public class GameController {
         // La carte « Bingo » (symbole au hasard), seule, offre un Bingo si son Bingo est de gains.
         boolean bingoCardPlayed = pendingEffects.stream()
             .anyMatch(effect -> effect instanceof BingoEffect bingo && bingo.getSymbol() == null && !bingo.isBonusGame());
-        // La Mise puis le coût du tirage sont payés ; seul ce coût peut faire passer les gains sous 0.
+        // Le coût du tirage est payé (il peut faire passer les gains sous 0) ; la Mise, elle, ne coûte rien.
         Player player = gameState.getPlayer();
-        SpinEconomy.Stake placed = canStake() ? stake : SpinEconomy.Stake.NONE;
-        int staked = placed.amount(player.getGains());
-        if (staked > 0) player.addGains(-staked);
-        if (staked == 0) placed = SpinEconomy.Stake.NONE;
+        SpinEconomy.Stake placed = stake;
         int cost = getSpinCost();
         if (cost > 0) player.paySpin(cost);
         TurnResult result = turnEngine.playTurn(gameState, pendingEffects, placed);

@@ -22,8 +22,8 @@ public class GainsPercentEffect extends Effect {
 
     @Override
     public void onPlay(PlayContext context) {
-        int added = context.addGainsPercent(percent);
-        context.addPopups(List.of(EffectPopup.scaled(Lang.f("GAINS +{0}", added), EffectPopup.Style.GAINS, added,
+        double added = context.addGainsPercent(percent);
+        context.addPopups(List.of(EffectPopup.scaled(Lang.f("GAINS +{0}", Lang.big(added)), EffectPopup.Style.GAINS, added,
             PopupScale.SPIN_GAINS)));
     }
 

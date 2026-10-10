@@ -1,5 +1,6 @@
 package fr.astratime.lucky.entities.effects;
 
+import fr.astratime.lucky.entities.BigNumber;
 import fr.astratime.lucky.entities.context.CombatContext;
 import fr.astratime.lucky.entities.context.PlayContext;
 import fr.astratime.lucky.entities.context.TurnContext;
@@ -34,12 +35,12 @@ public class FortuneEffect extends Effect {
     @Override
     public void onPlay(PlayContext context) {
         if (gainPercent > 0) {
-            int added = context.addGainsPercent(gainPercent);
-            int attack = (int) ((long) added * attackPercent / 100);
+            double added = context.addGainsPercent(gainPercent);
+            int attack = BigNumber.toInt(BigNumber.percent(added, attackPercent));
             context.queueForSpin(new AttackEffect(attack));
             context.addPopups(List.of(
-                EffectPopup.scaled(Lang.f("GAINS +{0}", added), EffectPopup.Style.GAINS, added, PopupScale.SPIN_GAINS),
-                new EffectPopup(Lang.f("ATTAQUE +{0}", attack), EffectPopup.Style.ATTACK, PopupScale.SECONDARY_INTENSITY)));
+                EffectPopup.scaled(Lang.f("GAINS +{0}", Lang.big(added)), EffectPopup.Style.GAINS, added, PopupScale.SPIN_GAINS),
+                new EffectPopup(Lang.f("ATTAQUE +{0}", Lang.big(attack)), EffectPopup.Style.ATTACK, PopupScale.SECONDARY_INTENSITY)));
             return;
         }
         super.onPlay(context);
@@ -49,7 +50,7 @@ public class FortuneEffect extends Effect {
     public void apply(TurnContext context) {
         if (gainPercent > 0) return; // Fortune du Roi : son attaque est mise en attente à la pose
         CombatContext combat = context.getCombatContext();
-        combat.addAttackBonus(Math.round(combat.getPlayer().getGains() * attackPercent / 100f), "Fortune");
+        combat.addAttackBonus(BigNumber.toInt(BigNumber.percent(combat.getPlayer().getGains(), attackPercent)), "Fortune");
     }
 
     @Override

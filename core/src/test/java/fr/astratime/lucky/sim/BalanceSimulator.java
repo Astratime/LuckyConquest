@@ -235,7 +235,7 @@ public final class BalanceSimulator {
             if (isOver(game.getGameState())) game.restart(kind);
             TurnResult result = playTurn(game, random, playCards, false);
             if (game.getDebt() != SpinEconomy.Debt.NONE) debt++;
-            int gains = result.getGainsFromPairOrJackpot();
+            double gains = result.getGainsFromPairOrJackpot();
             for (SymbolOutcome outcome : result.getSymbolOutcomes()) {
                 for (Event event : outcome.getEvents()) if (event instanceof GainsEarnedEvent earned) gains += earned.amount;
             }

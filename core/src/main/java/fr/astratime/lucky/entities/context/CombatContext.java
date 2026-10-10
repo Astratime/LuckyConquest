@@ -1,5 +1,6 @@
 package fr.astratime.lucky.entities.context;
 
+import fr.astratime.lucky.entities.BigNumber;
 import fr.astratime.lucky.entities.Enemy;
 import fr.astratime.lucky.entities.Player;
 import fr.astratime.lucky.entities.SpinEconomy;
@@ -29,7 +30,7 @@ public class CombatContext {
     private final Enemy enemy;
     private final int   spinCost;
 
-    private int   attackBonus    = 0;
+    private long  attackBonus    = 0;   // en long : l'As de Trèfle et la Fortune en ajoutent beaucoup
     private int   defenseBonus   = 0;   // shield additionnel par DefenseAction (cartes Carreau)
     private float gainMultiplier = 1f;  // multiplicateur des gains (cartes Trèfle)
 
@@ -86,7 +87,7 @@ public class CombatContext {
     public Enemy  getEnemy()  { return enemy; }
 
     /** @return le bonus d'attaque plat accumulé ce tour. */
-    public int   getAttackBonus()    { return attackBonus; }
+    public long  getAttackBonus()    { return attackBonus; }
     /** @return le bonus de bouclier plat accumulé ce tour. */
     public int   getDefenseBonus()   { return defenseBonus; }
     /** @return le multiplicateur de gains accumulé ce tour. */
@@ -212,7 +213,7 @@ public class CombatContext {
     public void addAttackBonus(int bonus)         { addAttackBonus(bonus, OTHER_EFFECTS); }
     /** Ajoute {@code bonus} au bonus d'attaque du tour, venu de {@code label} (détail du symbole). */
     public void addAttackBonus(int bonus, String label) {
-        attackBonus += bonus;
+        attackBonus = BigNumber.toLong(BigNumber.add(attackBonus, bonus));
         if (bonus != 0) steps.add(new PowerStep(Target.ATTACK, label, bonus, 1f));
     }
     /** Ajoute {@code bonus} au bonus de bouclier du tour. */

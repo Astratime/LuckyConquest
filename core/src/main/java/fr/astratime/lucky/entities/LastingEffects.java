@@ -48,7 +48,7 @@ public class LastingEffects {
     /** Rouleau bloqué au prochain tirage par le Rouleau interdit de l'ennemi (-1 : aucun). */
     private int forbiddenReel = -1;
     /** Coffres-forts : gains mis de côté (déjà doublés) et tours restants avant leur ouverture. */
-    private final List<int[]> safes = new ArrayList<>();
+    private final List<double[]> safes = new ArrayList<>();
     /** Veine d'or : tirages restants dont les gains sont multipliés (0 : inactive). */
     private int goldVeinTurns = 0;
     /** Bulle d'air : tours restants pendant lesquels la règle du lieu ne joue pas (0 : inactive). */
@@ -64,7 +64,7 @@ public class LastingEffects {
     /** Pépite : au prochain tirage, les symboles de gain ne rapportent rien. */
     private boolean nugget = false;
     /** Gains devenus faux (Fausse monnaie) : ils disparaissent au prochain tirage, sauf ce qui est dépensé avant. */
-    private int fakeGains = 0;
+    private double fakeGains = 0;
     /** Taxes (le Comptable) pour le prochain tour : chaque carte jouée paie autant de fois la Taxe. */
     private int taxes = 0;
     /** Règle changée par le Directeur des Jeux ({@code null} : aucune), et ses tirages restants. */
@@ -208,11 +208,11 @@ public class LastingEffects {
     }
 
     /** Coffre-fort : {@code amount} gains reviennent à la fin du {@code turns}-ième tour, celui-ci compris. */
-    public void addSafe(int amount, int turns) { safes.add(new int[] {amount, turns}); }
+    public void addSafe(double amount, int turns) { safes.add(new double[] {amount, turns}); }
 
     /** @return les Coffres-forts fermés : pour chacun, ses gains et ses tours restants. */
-    public List<int[]> getSafes() {
-        List<int[]> copy = new ArrayList<>();
+    public List<double[]> getSafes() {
+        List<double[]> copy = new ArrayList<>();
         safes.forEach(safe -> copy.add(safe.clone()));
         return copy;
     }
@@ -223,12 +223,12 @@ public class LastingEffects {
      *
      * @return les gains rendus
      */
-    public int openSafes(boolean all) {
-        int total = 0;
-        for (Iterator<int[]> it = safes.iterator(); it.hasNext(); ) {
-            int[] safe = it.next();
+    public double openSafes(boolean all) {
+        double total = 0;
+        for (Iterator<double[]> it = safes.iterator(); it.hasNext(); ) {
+            double[] safe = it.next();
             if (all || safe[1] <= 1) {
-                total += safe[0];
+                total = BigNumber.add(total, safe[0]);
                 it.remove();
             }
         }
@@ -281,17 +281,17 @@ public class LastingEffects {
     public boolean takeNugget() { boolean was = nugget; nugget = false; return was; }
 
     /** Fausse monnaie : {@code amount} gains de plus deviennent faux. */
-    public void addFakeGains(int amount) { fakeGains += Math.max(0, amount); }
+    public void addFakeGains(double amount) { fakeGains += Math.max(0, amount); }
 
     /** @return les gains faux, qui disparaîtront au prochain tirage. */
-    public int getFakeGains() { return fakeGains; }
+    public double getFakeGains() { return fakeGains; }
 
     /** Des gains sont perdus ou dépensés : la Fausse monnaie part la première. */
-    public void spendFakeGains(int amount) { fakeGains = Math.max(0, fakeGains - Math.max(0, amount)); }
+    public void spendFakeGains(double amount) { fakeGains = Math.max(0, fakeGains - Math.max(0, amount)); }
 
     /** Tirage : la Fausse monnaie qui reste disparaît. @return les gains faux à retirer */
-    public int takeFakeGains() {
-        int fake = fakeGains;
+    public double takeFakeGains() {
+        double fake = fakeGains;
         fakeGains = 0;
         return fake;
     }

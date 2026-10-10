@@ -52,9 +52,9 @@ public class AceOfClubsEffect extends Effect {
      */
     @Override
     public void onPlay(PlayContext context) {
-        int consumed = context.consumeGainsPercent(CONSUME_PERCENT);
+        double consumed = context.consumeGainsPercent(CONSUME_PERCENT);
         // Rendement décroissant : l'attaque suit la racine des gains consommés ; l'attaque et le boost sont plafonnés.
-        int weightBoost = Math.round((WEIGHT_BOOST_AMOUNT + Math.min(consumed, MAX_WEIGHT_FROM_GAINS)) * power);
+        int weightBoost = Math.round((WEIGHT_BOOST_AMOUNT + (float) Math.min(consumed, MAX_WEIGHT_FROM_GAINS)) * power);
         int attackBoost = Math.round((ATTACK_BOOST_AMOUNT
             + Math.min(MAX_ATTACK_FROM_GAINS, ATTACK_PER_SQRT_GAIN * (float) Math.sqrt(consumed))) * power);
 

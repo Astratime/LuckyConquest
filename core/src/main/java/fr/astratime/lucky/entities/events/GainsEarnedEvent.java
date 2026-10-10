@@ -9,17 +9,17 @@ import java.util.List;
 /** Événement émis quand le joueur gagne des points (GainAction, bonus de paire/jackpot, etc.). */
 public class GainsEarnedEvent extends Event {
     /** Montant de gains crédités. */
-    public final int amount;
+    public final double amount;
 
     /** @param amount montant de gains crédités. */
-    public GainsEarnedEvent(int amount) { this.amount = amount; }
+    public GainsEarnedEvent(double amount) { this.amount = amount; }
 
     @Override
-    public String describe() { return "+" + amount + " gains"; }
+    public String describe() { return "+" + Lang.big(amount) + " gains"; }
 
     /** Gains crédités, taille maximale selon {@link PopupScale}. */
     @Override
     public List<EffectPopup> getPopups() {
-        return List.of(EffectPopup.scaled(Lang.f("GAINS +{0}", amount), EffectPopup.Style.GAINS, amount, PopupScale.SPIN_GAINS));
+        return List.of(EffectPopup.scaled(Lang.f("GAINS +{0}", Lang.big(amount)), EffectPopup.Style.GAINS, amount, PopupScale.SPIN_GAINS));
     }
 }

@@ -1,5 +1,6 @@
 package fr.astratime.lucky.controllers;
 
+import fr.astratime.lucky.entities.BigNumber;
 import fr.astratime.lucky.entities.*;
 import fr.astratime.lucky.entities.context.CombatContext;
 import fr.astratime.lucky.entities.context.SpinContext;
@@ -203,7 +204,7 @@ public class TurnEngine {
         endEvents.addAll(0, firedamp);
         endEvents.addAll(0, afterCombat);
         // Coffres-forts : ceux arrivés à terme s'ouvrent ; tous, si l'ennemi est vaincu
-        int safe = player.getLastingEffects().openSafes(enemy.isDefeated());
+        double safe = player.getLastingEffects().openSafes(enemy.isDefeated());
         if (safe > 0 && !player.isDefeated()) {
             player.addGains(safe);
             endEvents.add(new SafeOpenedEvent(safe));
@@ -250,7 +251,7 @@ public class TurnEngine {
             turnContext.addEvent(new StatusEvent(Lang.f("MISE : BINGO ! GAINS x{0}", stake.factor),
                 EffectPopup.Style.SPECIAL));
         } else {
-            turnContext.addEvent(new StatusEvent(Lang.t("MISE PERDUE : PAS DE BINGO"), EffectPopup.Style.DAMAGE));
+            turnContext.addEvent(new StatusEvent(Lang.t("MISE : PAS DE BINGO"), EffectPopup.Style.DAMAGE));
         }
     }
 

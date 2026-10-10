@@ -40,7 +40,7 @@ public class SpinControls {
     private final IconButton  lever;
     /** Mise du prochain tirage (aucune, 10 %, 25 %, 50 %). */
     private final IconButton  stakeButton;
-    /** Palier de la Mise, sous son bouton (« Mise », « 25 % : x3 »). */
+    /** Palier de la Mise, sous son bouton (« Mise », « Gains x3 »). */
     private final Label       stakeLabel;
     /** Jetons de la Mise posés sur la table. */
     private final StakeChips  chips;
@@ -62,8 +62,8 @@ public class SpinControls {
         lever = new IconButton(hud.lever, hud.leverOver, hud.leverDown, hud.leverDisabled, true, leverSound, onSpin);
         addTooltip(lever, Lang.t("Lancer la machine"), Lang.t("Tire le levier : les rouleaux tournent. Touche Espace ou F."));
         stakeButton = new IconButton(hud.stake, hud.stakeOver, hud.stakeDown, hud.stakeDisabled, false, stakeSound, onStake);
-        addTooltip(stakeButton, Lang.t("Mise"), Lang.t("Mise une part de tes gains avant de lancer. "
-            + "Sur un Bingo, 10 % : gains x2. 25 % : x3. 50 % : x5. Sans Bingo, la mise est perdue. Touche M."));
+        addTooltip(stakeButton, Lang.t("Mise"), Lang.t("Choisis ta Mise avant de lancer. Elle ne coûte rien. "
+            + "Sur un Bingo, tes gains x2, x3 ou x5. Sans Bingo, elle ne rapporte rien. Touche M."));
         stakeLabel = new Label(stakeText(SpinEconomy.Stake.NONE), new Label.LabelStyle(labelFont, Color.WHITE));
         stakeLabel.setTouchable(Touchable.disabled);
         chips = new StakeChips(hud.chipStake);
@@ -147,9 +147,9 @@ public class SpinControls {
         if (shield.getX() != shieldX || shield.getWidth() != shieldWidth) placeStake();
     }
 
-    /** @return le texte sous le bouton de Mise pour le palier {@code stake} (« Mise », « 25 % : x3 »). */
+    /** @return le texte sous le bouton de Mise pour le palier {@code stake} (« Mise », « Gains x3 »). */
     private static String stakeText(SpinEconomy.Stake stake) {
-        return stake == SpinEconomy.Stake.NONE ? Lang.t("Mise") : Lang.f("{0} % : x{1}", stake.percent, stake.factor);
+        return stake == SpinEconomy.Stake.NONE ? Lang.t("Mise") : Lang.f("Gains x{0}", stake.factor);
     }
 
     /** Une infobulle ({@code heading}, {@code text}) au-dessus de {@code actor}, au survol. */

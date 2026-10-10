@@ -1,5 +1,6 @@
 package fr.astratime.lucky.entities.context;
 
+import fr.astratime.lucky.entities.BigNumber;
 import fr.astratime.lucky.entities.SpinEconomy;
 import fr.astratime.lucky.entities.LastingEffects;
 import fr.astratime.lucky.entities.Player;
@@ -28,7 +29,7 @@ public class PlayContext {
     private final List<Effect>      effectsForSpin = new ArrayList<>();
     private final List<EffectPopup> popups         = new ArrayList<>();
     private int cardsToDraw = 0;
-    private int gains       = 0;
+    private double gains    = 0;
     private CardChoice choice;
     private boolean    autoSpin = false;
     private String     rainbowCardId;
@@ -75,10 +76,10 @@ public class PlayContext {
     public int getCardsToDraw() { return cardsToDraw; }
 
     /** Demande à créditer immédiatement {@code amount} gains au joueur. */
-    public void addGains(int amount) { gains += amount; }
+    public void addGains(double amount) { gains = BigNumber.add(gains, amount); }
 
     /** @return les gains à créditer immédiatement suite aux effets de la carte jouée. */
-    public int getGains() { return gains; }
+    public double getGains() { return gains; }
 
     /**
      * Consomme immédiatement un pourcentage des gains actuels du joueur.
@@ -86,7 +87,7 @@ public class PlayContext {
      * @param percent pourcentage à consommer (0.3f = 30%)
      * @return le montant effectivement consommé
      */
-    public int consumeGainsPercent(float percent) { return player.consumeGainsPercent(percent); }
+    public double consumeGainsPercent(float percent) { return player.consumeGainsPercent(percent); }
 
     /**
      * Soigne immédiatement le joueur de {@code percent} % de ses PV max ; ce qui
@@ -150,9 +151,9 @@ public class PlayContext {
      *
      * @return les gains ajoutés
      */
-    public int multiplyGains(int factor) {
-        int added = (player.getGains() + gains) * (factor - 1);
-        gains += added;
+    public double multiplyGains(int factor) {
+        double added = BigNumber.cap((player.getGains() + gains) * (factor - 1));
+        gains = BigNumber.add(gains, added);
         return added;
     }
 
@@ -162,9 +163,9 @@ public class PlayContext {
      *
      * @return les gains ajoutés
      */
-    public int addGainsPercent(int percent) {
-        int added = (int) ((long) (player.getGains() + gains) * percent / 100);
-        gains += added;
+    public double addGainsPercent(int percent) {
+        double added = BigNumber.percent(player.getGains() + gains, percent);
+        gains = BigNumber.add(gains, added);
         return added;
     }
 

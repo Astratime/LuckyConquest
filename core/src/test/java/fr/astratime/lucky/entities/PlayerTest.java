@@ -133,7 +133,7 @@ class PlayerTest {
     void consumeGainsPercentReturnsAndDeductsTheComputedAmount() {
         player.addGains(1000);
 
-        int consumed = player.consumeGainsPercent(0.3f);
+        double consumed = player.consumeGainsPercent(0.3f);
 
         assertEquals(300, consumed);
         assertEquals(700, player.getGains());

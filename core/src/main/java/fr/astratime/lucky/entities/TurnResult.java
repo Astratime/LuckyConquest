@@ -18,7 +18,7 @@ public class TurnResult {
 
     private final List<Event>         events;
     private final Symbol[]            symbols;
-    private final int                 gainsFromPairOrJackpot;
+    private final double              gainsFromPairOrJackpot;
     private final List<SymbolOutcome> symbolOutcomes;
     private final List<Event>         pairOrJackpotEvents;
     private final List<Event>         enemyTurnEvents;
@@ -39,7 +39,7 @@ public class TurnResult {
      * @param pairOrJackpotEvents    événements du bonus de paire/jackpot (vide si aucun)
      * @param enemyTurnEvents        événements de fin de tour, après celui de l'ennemi (ex : Coffre rempli)
      */
-    public TurnResult(List<Event> events, Symbol[] symbols, int gainsFromPairOrJackpot,
+    public TurnResult(List<Event> events, Symbol[] symbols, double gainsFromPairOrJackpot,
                        List<SymbolOutcome> symbolOutcomes,
                        List<Event> pairOrJackpotEvents, List<Event> enemyTurnEvents) {
         this(events, symbols, symbols, gainsFromPairOrJackpot, symbolOutcomes, List.of(), List.of(),
@@ -52,14 +52,14 @@ public class TurnResult {
      * @param pistolEvents tirs de pistolet de la Roulette russe (vide si aucun)
      * @see #TurnResult(List, Symbol[], int, List, List, List)
      */
-    public TurnResult(List<Event> events, Symbol[] symbols, Symbol[] drawnSymbols, int gainsFromPairOrJackpot,
+    public TurnResult(List<Event> events, Symbol[] symbols, Symbol[] drawnSymbols, double gainsFromPairOrJackpot,
                       List<SymbolOutcome> symbolOutcomes, List<Event> cardEvents, List<Event> pistolEvents,
                       List<Event> pairOrJackpotEvents, List<Event> enemyTurnEvents) {
         this(events, symbols, drawnSymbols, gainsFromPairOrJackpot, symbolOutcomes, cardEvents, pistolEvents,
             pairOrJackpotEvents, enemyTurnEvents, null, null, null);
     }
 
-    private TurnResult(List<Event> events, Symbol[] symbols, Symbol[] drawnSymbols, int gainsFromPairOrJackpot,
+    private TurnResult(List<Event> events, Symbol[] symbols, Symbol[] drawnSymbols, double gainsFromPairOrJackpot,
                        List<SymbolOutcome> symbolOutcomes, List<Event> cardEvents, List<Event> pistolEvents,
                        List<Event> pairOrJackpotEvents, List<Event> enemyTurnEvents, EnemyTurnResult enemyTurn,
                        Symbol[] rerolledDraw, BonusGame bonusGame) {
@@ -88,7 +88,7 @@ public class TurnResult {
     /** @return les tirs de pistolet de la Roulette russe (vide si aucun). */
     public List<Event> getPistolEvents() { return pistolEvents; }
     /** @return les gains issus uniquement du bonus de paire/jackpot. */
-    public int         getGainsFromPairOrJackpot() { return gainsFromPairOrJackpot; }
+    public double      getGainsFromPairOrJackpot() { return gainsFromPairOrJackpot; }
     /** @return pour chaque symbole tiré ayant une action enregistrée, son effet de base et le résultat obtenu ce tour. */
     public List<SymbolOutcome> getSymbolOutcomes() { return symbolOutcomes; }
     /** @return les événements du bonus de paire/jackpot de ce tour (vide si aucun). */

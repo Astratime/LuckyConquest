@@ -66,7 +66,7 @@ class BonusGameTest {
         long expected = 0;
         for (int i = 0; i < game.getLines().size(); i++) {
             BonusGame.Line line = game.getLines().get(i);
-            int gains = line.gains() + (5 * line.length() + 70) * 2;
+            double gains = line.gains() + (5 * line.length() + 70) * 2;
             assertEquals(gains, boosted.getLines().get(i).gains());
             expected += gains;
         }
@@ -147,7 +147,7 @@ class BonusGameTest {
     @Test
     void theTotalIsTheSumOfTheFinalLines() {
         BonusGame game = BonusGame.play(Symbol.classicReels(), 500, new Random(3));
-        assertEquals(game.getLines().stream().mapToInt(BonusGame.Line::gains).sum(), game.getTotal());
+        assertEquals(game.getLines().stream().mapToDouble(BonusGame.Line::gains).sum(), game.getTotal());
         assertEquals(BonusGame.lines(game.getGrid(BonusGame.SPINS - 1), 500).size(), game.getLines().size());
     }
 

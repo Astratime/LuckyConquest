@@ -45,7 +45,7 @@ public final class BonusGame {
      * @param cells  ses cases, dans l'ordre, chacune {@code {ligne, colonne}}
      * @param gains  ce qu'il rapporte
      */
-    public record Line(Symbol symbol, List<int[]> cells, int gains) {
+    public record Line(Symbol symbol, List<int[]> cells, double gains) {
         /** @return le nombre de cases alignées. */
         public int length() { return cells.size(); }
     }
@@ -56,15 +56,15 @@ public final class BonusGame {
     private final List<boolean[][]> frozen;
     /** Alignements de la grille finale, qui paient. */
     private final List<Line> lines;
-    private final int total;
+    private final double total;
 
     private BonusGame(List<Symbol[][]> grids, List<boolean[][]> frozen, List<Line> lines) {
         this.grids  = grids;
         this.frozen = frozen;
         this.lines  = List.copyOf(lines);
-        long sum = 0;
-        for (Line line : lines) sum += line.gains();
-        this.total = (int) Math.min(Integer.MAX_VALUE, sum);
+        double sum = 0;
+        for (Line line : lines) sum = BigNumber.add(sum, line.gains());
+        this.total = sum;
     }
 
     /**
@@ -113,7 +113,7 @@ public final class BonusGame {
         for (Line line : lines) {
             double extra = ((double) perSymbol * line.length() + rankPerLine) * factor;
             double gains = line.gains() + extra;
-            boosted.add(new Line(line.symbol(), line.cells(), (int) Math.min(Integer.MAX_VALUE, Math.round(gains))));
+            boosted.add(new Line(line.symbol(), line.cells(), BigNumber.round(gains)));
         }
         return new BonusGame(grids, frozen, boosted);
     }
@@ -134,7 +134,7 @@ public final class BonusGame {
     public List<Line> getLines() { return lines; }
 
     /** @return les gains du Jeu bonus. */
-    public int getTotal() { return total; }
+    public double getTotal() { return total; }
 
     // -------------------------------------------------------------------------
     // Alignements et gains

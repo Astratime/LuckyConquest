@@ -1,5 +1,6 @@
 package fr.astratime.lucky.controllers;
 
+import fr.astratime.lucky.entities.BigNumber;
 import fr.astratime.lucky.entities.effects.MutinyEffect;
 import fr.astratime.lucky.entities.Card;
 import fr.astratime.lucky.entities.Enemy;
@@ -266,10 +267,10 @@ public class EnemyTurnResolver {
                     events.add(new GaugesDrainedEvent(kind.diePercent(), drained));
                 }
                 case INTEREST -> {
-                    int stolen = Math.round(player.getGains() * kind.interestPercent() / 100f);
+                    double stolen = BigNumber.percent(player.getGains(), kind.interestPercent());
                     if (stolen > 0) {
                         player.addGains(-stolen);
-                        events.add(new GainsStolenEvent(stolen, enemy.addInterest(stolen)));
+                        events.add(new GainsStolenEvent(stolen, enemy.addInterest(BigNumber.toInt(stolen))));
                     } else {
                         events.add(turn.strike(EnemySymbol.FANG_DAMAGE)); // rien à prendre : il mord
                     }
@@ -319,21 +320,21 @@ public class EnemyTurnResolver {
                     events.add(new StatusEvent(Lang.t("CHANT : UNE CARTE JOUÉE D'OFFICE"), EffectPopup.Style.DAMAGE));
                 }
                 case BANK_BITE -> {
-                    int stolen = Math.round(player.getGains() * kind.empowered(EnemySymbol.BANK_BITE_PERCENT) / 100f);
+                    double stolen = BigNumber.percent(player.getGains(), kind.empowered(EnemySymbol.BANK_BITE_PERCENT));
                     if (stolen > 0) {
                         player.addGains(-stolen);
                         events.add(new GainsStolenEvent(stolen, 0));
-                        events.add(new EnemyHealedEvent(enemy.heal(stolen)));
+                        events.add(new EnemyHealedEvent(enemy.heal(BigNumber.toInt(stolen))));
                     } else {
                         events.add(turn.strike(EnemySymbol.FANG_DAMAGE)); // rien à dévorer : il mord
                     }
                 }
                 case FAKE_MONEY -> {
-                    int real = Math.max(0, player.getGains() - curses.getFakeGains());
-                    int faked = Math.round(real * kind.fakePercent() / 100f);
+                    double real = Math.max(0, player.getGains() - curses.getFakeGains());
+                    double faked = BigNumber.percent(real, kind.fakePercent());
                     if (faked > 0) {
                         curses.addFakeGains(faked);
-                        events.add(new StatusEvent(Lang.f("FAUSSE MONNAIE : {0} GAINS FAUX", faked), EffectPopup.Style.DAMAGE));
+                        events.add(new StatusEvent(Lang.f("FAUSSE MONNAIE : {0} GAINS FAUX", Lang.big(faked)), EffectPopup.Style.DAMAGE));
                     } else {
                         events.add(turn.strike(EnemySymbol.FANG_DAMAGE)); // rien à contrefaire : il frappe
                     }
@@ -356,7 +357,7 @@ public class EnemyTurnResolver {
                     events.add(new StatusEvent(Lang.f("NOUVELLE RÈGLE : {0}", rule.getAnnounce()), EffectPopup.Style.SPECIAL));
                 }
                 case FRISK  -> {
-                    int count = Math.min(EnemySymbol.FRISK_MAX, 1 + Math.max(0, player.getGains()) / EnemySymbol.FRISK_GAINS_STEP);
+                    int count = Math.min(EnemySymbol.FRISK_MAX, (int) Math.min(EnemySymbol.FRISK_MAX, 1 + Math.max(0, player.getGains()) / EnemySymbol.FRISK_GAINS_STEP));
                     List<String> taken = new ArrayList<>();
                     for (int k = 0; k < count; k++) {
                         Card card = player.frisk(random);
@@ -369,7 +370,7 @@ public class EnemyTurnResolver {
                 case BANKRUPTCY -> {
                     int fortune = Math.round(enemy.getHp() * EnemySymbol.BANKRUPTCY_FORTUNE_PERCENT / 100f);
                     if (player.getGains() > fortune) {
-                        int lost = player.getGains();
+                        double lost = player.getGains();
                         player.addGains(-lost);
                         events.add(new StatusEvent(Lang.t("FAILLITE : IL TE PREND TOUT"), EffectPopup.Style.DAMAGE));
                         events.add(new GainsStolenEvent(lost, 0));

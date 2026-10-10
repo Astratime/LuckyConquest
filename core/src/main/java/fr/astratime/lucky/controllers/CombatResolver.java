@@ -1,5 +1,6 @@
 package fr.astratime.lucky.controllers;
 
+import fr.astratime.lucky.entities.BigNumber;
 import fr.astratime.lucky.entities.context.CombatContext;
 import fr.astratime.lucky.entities.Enemy;
 import fr.astratime.lucky.entities.Player;
@@ -88,7 +89,7 @@ public class CombatResolver {
         priorEvents = new ArrayList<>(priorEvents);
         priorEvents.addAll(cardsOnDraw(combatContext, symbols)); // Marteau de forge, Levier rouillé, Jackpot englouti
         List<Event> events = new ArrayList<>(priorEvents);
-        int gainsBefore = combatContext.getPlayer().getGains(); // pour le Cœur d'or
+        double gainsBefore = combatContext.getPlayer().getGains(); // pour le Cœur d'or
 
         // Chaque action résout elle-même sa logique et retourne ses événements ;
         // on les rattache aussi au symbole qui les a produits pour le journal détaillé.
@@ -109,7 +110,7 @@ public class CombatResolver {
 
         // Bonus de paire/jackpot
         List<Event> pairOrJackpotEvents = new ArrayList<>();
-        int gains = 0;
+        double gains = 0;
         Symbol jackpot = SlotMachine.jackpotSymbol(symbols);
         if (jackpot != null) {
             gains = SpinEconomy.jackpotGains(jackpot, combatContext.getSpinCost());
@@ -117,7 +118,7 @@ public class CombatResolver {
         } else if (hasPair(symbols)) {
             gains = SpinEconomy.pairGains(combatContext.getSpinCost());
         }
-        gains = Math.round(gains * combatContext.getGainFactor());
+        gains = BigNumber.round(gains * combatContext.getGainFactor());
         if (gains > 0) {
             combatContext.getPlayer().addGains(gains);
             pairOrJackpotEvents.add(new GainsEarnedEvent(gains));
@@ -246,10 +247,10 @@ public class CombatResolver {
     }
 
     /** Cœur d'or : les gains gagnés ce tour frappent aussi l'ennemi (une fois par carte), sans tenir compte de sa défense. */
-    private Optional<Event> goldenHeart(CombatContext context, int gainsEarned) {
+    private Optional<Event> goldenHeart(CombatContext context, double gainsEarned) {
         Enemy enemy = context.getEnemy();
         if (context.getGoldenHearts() <= 0 || gainsEarned <= 0 || enemy.isDefeated()) return Optional.empty();
-        long hit    = enemy.capHit((long) gainsEarned * context.getGoldenHearts());
+        long hit    = enemy.capHit(BigNumber.toLong(gainsEarned * context.getGoldenHearts()));
         long damage = enemy.skinned(hit);
         enemy.takeDamage(hit);
         return Optional.of(new CardStrikeEvent(Lang.t("CŒUR D'OR !"), damage, hit, enemy.getDefense()));
@@ -298,7 +299,7 @@ public class CombatResolver {
             return new BetLostEvent(bet, player.consumeGainsPercent(BET_LOSS));
         }
         int multiplier = count + 1;
-        int won = player.getGains() * (multiplier - 1);
+        double won = BigNumber.cap(player.getGains() * (multiplier - 1));
         player.addGains(won);
         return new BetWonEvent(bet, multiplier, won);
     }
@@ -306,7 +307,7 @@ public class CombatResolver {
     /** Tapis : avec une paire, les gains du joueur sont triplés ; sans paire, il les perd tous. */
     private Event resolveAllIn(Player player, boolean pair) {
         if (!pair) return new AllInLostEvent(player.consumeGainsPercent(1f));
-        int won = player.getGains() * (ALL_IN_FACTOR - 1);
+        double won = BigNumber.cap(player.getGains() * (ALL_IN_FACTOR - 1));
         player.addGains(won);
         return new AllInWonEvent(won);
     }

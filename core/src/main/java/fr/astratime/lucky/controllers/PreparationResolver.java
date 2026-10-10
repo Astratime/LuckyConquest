@@ -70,11 +70,11 @@ public class PreparationResolver {
         int stolen = enemy.getStolenReels();
         if (stolen >= 1) spinContext.blockReel(SlotMachine.SYMBOL_COUNT - 1);
         if (stolen >= 2) spinContext.blockReel(0);
-        int fake = lasting.takeFakeGains(); // la Fausse monnaie pas dépensée disparaît
+        double fake = lasting.takeFakeGains(); // la Fausse monnaie pas dépensée disparaît
         if (fake > 0 && player.getGains() > 0) {
-            int lost = Math.min(fake, player.getGains());
+            double lost = Math.min(fake, player.getGains());
             player.addGains(-lost);
-            turnContext.addEvent(new StatusEvent(Lang.f("FAUSSE MONNAIE : -{0} GAINS", lost), EffectPopup.Style.DAMAGE));
+            turnContext.addEvent(new StatusEvent(Lang.f("FAUSSE MONNAIE : -{0} GAINS", Lang.big(lost)), EffectPopup.Style.DAMAGE));
         }
         LastingEffects.HouseRule houseRule = lasting.useHouseRule(); // Nouvelle règle du Directeur des Jeux
         if (houseRule == LastingEffects.HouseRule.NO_BINGO) spinContext.forbidBingo();
@@ -85,7 +85,7 @@ public class PreparationResolver {
         if (lasting.getGainBonus() != 0f) combatContext.multiplyGains(1f + lasting.getGainBonus(), "Porte-bonheur");
         combatContext.addAttackBonus(lasting.getBlades() * BLADE_ATTACK, "Lames");
         if (lasting.getCorruptionTurns() > 0) {
-            int consumed = player.consumeGainsPercent(CorruptionEffect.GAINS_PERCENT / 100f);
+            double consumed = player.consumeGainsPercent(CorruptionEffect.GAINS_PERCENT / 100f);
             combatContext.multiplyAttack(CorruptionEffect.FACTOR, "Corruption");
             combatContext.multiplyDefense(CorruptionEffect.FACTOR, "Corruption");
             turnContext.addEvent(new CorruptionEvent(consumed, CorruptionEffect.FACTOR));

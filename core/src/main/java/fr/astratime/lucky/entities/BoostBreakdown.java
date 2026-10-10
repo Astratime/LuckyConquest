@@ -17,7 +17,7 @@ import java.util.List;
  * @param steps  bonus plats et multiplicateurs du tour, dans l'ordre
  * @param result bouclier ou gains obtenus
  */
-public record BoostBreakdown(Kind kind, int base, int rank, List<PowerStep> steps, int result)
+public record BoostBreakdown(Kind kind, int base, int rank, List<PowerStep> steps, double result)
     implements SymbolBreakdown {
 
     /** Ce que donne le symbole. */

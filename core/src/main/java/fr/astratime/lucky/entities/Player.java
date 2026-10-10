@@ -33,7 +33,7 @@ public class Player {
     private final int         maxHp;
 
     /** Monnaie gagnée en combat. Servira à acheter des bonus en combat. */
-    private int gains = 0;
+    private double gains = 0; // en double : les gains dépassent vite le milliard (voir BigNumber)
 
     /** Bouclier accumulé ce tour par les DefenseAction. */
     private int shield = 0;
@@ -156,9 +156,9 @@ public class Player {
      * les gains sous 0 (ni n'aggrave une dette de la Taxe) ; ce qui est perdu ou
      * dépensé l'est d'abord en Fausse monnaie.
      */
-    public void addGains(int amount) {
-        int before = gains;
-        gains = amount >= 0 ? (int) Math.min(Integer.MAX_VALUE, (long) gains + amount) // pas de dépassement
+    public void addGains(double amount) {
+        double before = gains;
+        gains = amount >= 0 ? BigNumber.add(gains, amount)
                             : Math.max(Math.min(0, gains), gains + amount);
         if (gains < before) lastingEffects.spendFakeGains(before - gains);
     }
@@ -169,8 +169,8 @@ public class Player {
      *
      * @return les gains retirés
      */
-    public int payTax(int percent, int flat) {
-        int taxed = Math.round(Math.max(0, gains) * percent / 100f) + flat;
+    public double payTax(int percent, int flat) {
+        double taxed = BigNumber.percent(Math.max(0, gains), percent) + flat;
         lastingEffects.spendFakeGains(Math.max(0, Math.min(gains, taxed)));
         gains -= taxed;
         return taxed;
@@ -191,8 +191,8 @@ public class Player {
      * @param percent pourcentage à consommer (0.3f = 30%)
      * @return le montant effectivement consommé
      */
-    public int consumeGainsPercent(float percent) {
-        int amount = Math.round(Math.max(0, gains) * percent);
+    public double consumeGainsPercent(float percent) {
+        double amount = BigNumber.round(Math.max(0, gains) * percent);
         lastingEffects.spendFakeGains(amount);
         gains -= amount;
         return amount;
@@ -484,7 +484,7 @@ public class Player {
     /** @return les cartes jouées ce tour (vue non modifiable). */
     public List<Card>  getPlayedCards()             { return Collections.unmodifiableList(playedCards); }
     /** @return les gains accumulés. */
-    public int         getGains()                   { return gains; }
+    public double      getGains()                   { return gains; }
     /** @return le bouclier accumulé ce tour. */
     public int         getShield()                  { return shield; }
 }

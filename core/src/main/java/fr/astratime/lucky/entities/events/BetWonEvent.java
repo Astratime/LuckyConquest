@@ -19,19 +19,19 @@ public class BetWonEvent extends GainsEarnedEvent {
      * @param multiplier multiplicateur appliqué aux gains du joueur
      * @param amount     gains crédités par le pari
      */
-    public BetWonEvent(Symbol symbol, int multiplier, int amount) {
+    public BetWonEvent(Symbol symbol, int multiplier, double amount) {
         super(amount);
         this.symbol     = symbol;
         this.multiplier = multiplier;
     }
 
     @Override
-    public String describe() { return "Pari gagne sur " + symbol + " : gains x" + multiplier + " (+" + amount + ")"; }
+    public String describe() { return "Pari gagne sur " + symbol + " : gains x" + multiplier + " (+" + Lang.big(amount) + ")"; }
 
     @Override
     public List<EffectPopup> getPopups() {
         return List.of(
             new EffectPopup(Lang.f("PARI GAGNÉ ! GAINS x{0}", multiplier), EffectPopup.Style.GAINS, PopupScale.MAX_INTENSITY),
-            EffectPopup.scaled(Lang.f("GAINS +{0}", amount), EffectPopup.Style.GAINS, amount, PopupScale.SPIN_GAINS));
+            EffectPopup.scaled(Lang.f("GAINS +{0}", Lang.big(amount)), EffectPopup.Style.GAINS, amount, PopupScale.SPIN_GAINS));
     }
 }

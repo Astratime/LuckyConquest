@@ -159,11 +159,7 @@ class SpinEconomyTest {
     }
 
     @Test
-    void theStakeIsAShareOfTheGainsAndMultipliesTheSymbols() {
-        assertEquals(100, Stake.LOW.amount(1_000));
-        assertEquals(250, Stake.MEDIUM.amount(1_000));
-        assertEquals(500, Stake.HIGH.amount(1_000));
-        assertEquals(0, Stake.HIGH.amount(-300), "on ne mise que ce qu'on a");
+    void theStakeCostsNothingAndOnlyCountsOnABingo() {
         assertEquals(Stake.NONE, Stake.HIGH.next());
 
         GameController plain = fight(EnemyKind.CROUPIER);
@@ -175,13 +171,10 @@ class SpinEconomyTest {
         staked.drawCards();
         assertEquals(Stake.LOW, staked.nextStake());
         assertEquals(Stake.MEDIUM, staked.nextStake());
-        assertEquals(125, staked.getStakeAmount(), "25 % de 500");
         staked.rigSpin(Symbol.SEVEN, Symbol.BAR, Symbol.BELL);
         TurnResult result = staked.spin();
         assertEquals(damageDealt(base), damageDealt(result), "sans Bingo, la Mise ne multiplie rien");
-        int bell = base.getEvents().stream().filter(e -> e instanceof GainsEarnedEvent)
-            .mapToInt(e -> ((GainsEarnedEvent) e).amount).sum();
-        assertEquals(500 - 125 - 100 + bell, player(staked).getGains(), "la Mise est perdue");
+        assertEquals(player(plain).getGains(), player(staked).getGains(), "la Mise ne coûte rien");
         assertEquals(Stake.NONE, staked.getStake(), "la Mise ne vaut que pour un tirage");
     }
 
@@ -191,32 +184,76 @@ class SpinEconomyTest {
         plain.setBonusGameEnabled(false); // pas de Jeu bonus au hasard après le Bingo
         plain.drawCards();
         plain.rigSpin(Symbol.SEVEN, Symbol.SEVEN, Symbol.SEVEN);
-        int before = player(plain).getGains();
+        double before = player(plain).getGains();
         long base = damageDealt(plain.spin());
-        int earned = player(plain).getGains() - before + plain.getSpinCost();
+        double earned = player(plain).getGains() - before + plain.getSpinCost();
 
         GameController staked = fight(EnemyKind.CROUPIER);
         staked.setBonusGameEnabled(false);
         staked.drawCards();
         staked.nextStake();
         staked.nextStake();
-        staked.nextStake(); // 50 % : x5
-        int stakedBefore = player(staked).getGains();
-        int stake = staked.getStakeAmount();
+        staked.nextStake(); // x5
+        double stakedBefore = player(staked).getGains();
         staked.rigSpin(Symbol.SEVEN, Symbol.SEVEN, Symbol.SEVEN);
         assertEquals(base, damageDealt(staked.spin()), "la Mise ne touche pas à l'attaque");
-        int stakedEarned = player(staked).getGains() - stakedBefore + staked.getSpinCost() + stake;
+        double stakedEarned = player(staked).getGains() - stakedBefore + staked.getSpinCost();
         assertTrue(earned > 0);
-        assertEquals(earned * 5, stakedEarned, "les gains du Bingo x5");
+        assertEquals(earned * 5, stakedEarned, "les gains du Bingo x5, et rien n'est misé");
     }
 
     @Test
-    void noStakeWithoutGains() {
+    void theStakeWorksEvenWithoutGains() {
         GameController controller = fight(EnemyKind.CROUPIER);
         player(controller).paySpin(500);
-        assertFalse(controller.canStake());
-        assertEquals(Stake.NONE, controller.nextStake());
+        assertEquals(Stake.LOW, controller.nextStake(), "elle ne coûte rien : pas besoin de gains");
     }
+
+    @Test
+    void gainsGoFarBeyondTwoBillion() {
+        GameController controller = fight(EnemyKind.CROUPIER);
+        Player player = player(controller);
+        player.addGains(2_000_000_000);
+        player.addGains(2_000_000_000);
+        assertEquals(4_000_000_500d, player.getGains(), "plus de limite à 2,1 milliards");
+        player.addGains(1e300);
+        player.addGains(1e308);
+        player.addGains(1e308);
+        assertEquals(fr.astratime.lucky.entities.BigNumber.MAX, player.getGains(), "jamais l'infini");
+        player.addGains(-1e308);
+        assertTrue(player.getGains() > 0 && Double.isFinite(player.getGains()));
+    }
+
+    @Test
+    void theShopFollowsThePlaceAndTheBingoDoublesAtEachPurchase() {
+        GameController controller = new GameController(SpinEconomyTest::plainCards,
+            id -> new Card(id, id, "x.png", List.of(), null, 1),
+            new java.util.LinkedHashMap<>(java.util.Map.of(GameController.SHOP_BINGO, 20_000, "corruption", 10_000)));
+        controller.restart(Place.CASINO.getDungeons().get(0).getSoldier()); // tirage à 5 000 : x50
+        Player player = player(controller);
+        player.addGains(10_000_000);
+        assertEquals(1_000_000, price(controller, GameController.SHOP_BINGO));
+        assertEquals(500_000, price(controller, "corruption"));
+        assertNotNull(controller.buy(offer(controller, GameController.SHOP_BINGO)));
+        assertEquals(2_000_000, price(controller, GameController.SHOP_BINGO), "le Bingo suivant coûte le double");
+        assertNotNull(controller.buy(offer(controller, "corruption")));
+        assertEquals(500_000, price(controller, "corruption"), "la Corruption ne double pas");
+        assertNotNull(controller.buy(offer(controller, GameController.SHOP_BINGO)));
+        assertEquals(4_000_000, price(controller, GameController.SHOP_BINGO));
+        assertEquals(10_000_000 + 25_000 - 1_000_000 - 500_000 - 2_000_000, player.getGains());
+
+        controller.startCombat(Place.CASINO.getDungeons().get(0).getKing());
+        assertEquals(1_000_000, price(controller, GameController.SHOP_BINGO), "chaque combat repart du prix de base");
+
+        controller.restart(Place.PRAIRIE.getDungeons().get(0).getSoldier());
+        assertEquals(20_000, price(controller, GameController.SHOP_BINGO), "Prairie : prix inchangé");
+    }
+
+    private static GameController.ShopOffer offer(GameController controller, String id) {
+        return controller.getShopOffers().stream().filter(o -> o.card().getId().equals(id)).findFirst().orElseThrow();
+    }
+
+    private static double price(GameController controller, String id) { return offer(controller, id).price(); }
 
     @Test
     void thePotDeLutinPaysFiveSpins() {
@@ -228,7 +265,7 @@ class SpinEconomyTest {
             return cards;
         });
         controller.restart(Place.PORT.getDungeons().get(0).getSoldier());
-        int before = player(controller).getGains();
+        double before = player(controller).getGains();
         controller.drawCards();
         Card inHand = player(controller).getCurrentHand().stream().filter(c -> c.getId().equals("pot")).findFirst()
             .orElseGet(() -> {

@@ -1,5 +1,6 @@
 package fr.astratime.lucky.entities.effects;
 
+import fr.astratime.lucky.entities.BigNumber;
 import fr.astratime.lucky.entities.context.PlayContext;
 import fr.astratime.lucky.entities.context.TurnContext;
 import fr.astratime.lucky.i18n.Lang;
@@ -30,11 +31,11 @@ public class SafeEffect extends Effect {
 
     @Override
     public void onPlay(PlayContext context) {
-        int stored = context.consumeGainsPercent(percent / 100f);
-        context.getLastingEffects().addSafe(stored * 2, turns);
+        double stored = context.consumeGainsPercent(percent / 100f);
+        context.getLastingEffects().addSafe(BigNumber.cap(stored * 2), turns);
         List<EffectPopup> popups = new ArrayList<>(getPopups());
         if (stored > 0) {
-            popups.add(EffectPopup.scaled(Lang.f("GAINS -{0}", stored), EffectPopup.Style.DAMAGE, stored, PopupScale.SPIN_GAINS));
+            popups.add(EffectPopup.scaled(Lang.f("GAINS -{0}", Lang.big(stored)), EffectPopup.Style.DAMAGE, stored, PopupScale.SPIN_GAINS));
         }
         context.addPopups(popups);
     }

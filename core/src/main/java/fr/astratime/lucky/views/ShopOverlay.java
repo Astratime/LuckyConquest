@@ -33,7 +33,7 @@ import java.util.List;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
-import java.util.function.IntSupplier;
+import java.util.function.DoubleSupplier;
 import java.util.function.Predicate;
 
 /**
@@ -121,18 +121,19 @@ public class ShopOverlay implements Disposable {
      * @param buy       tente l'achat : {@code true} s'il a eu lieu (gains suffisants)
      * @param inspect   affiche la fiche d'une carte (clic sur son image)
      */
-    public void show(List<ShopOffer> offers, IntSupplier gains, Function<Card, Texture> textureOf,
+    public void show(List<ShopOffer> offers, DoubleSupplier gains, Function<Card, Texture> textureOf,
                      BiFunction<String, Runnable, Actor> button, Function<ShopOffer, String> unavailable,
                      Predicate<ShopOffer> buy, Consumer<ShopOffer> inspect) {
         int columns = Math.min(COLUMNS, Math.max(1, offers.size()));
         panel.clearChildren();
         panel.add(new Label(Lang.t("ÉCHOPPE"), new Label.LabelStyle(titleFont, Color.WHITE))).colspan(columns);
         panel.row();
-        Label wallet = new Label(walletText(gains.getAsInt()), new Label.LabelStyle(textFont, Color.WHITE));
+        Label wallet = new Label(walletText(gains.getAsDouble()), new Label.LabelStyle(textFont, Color.WHITE));
         panel.add(wallet).colspan(columns);
         panel.row();
         panel.add(new Label(Lang.t("Survole une carte pour son effet, clique dessus pour sa fiche. Les cartes achetées "
-            + "disparaissent une fois jouées."), new Label.LabelStyle(hintFont, Color.WHITE))).colspan(columns);
+            + "disparaissent une fois jouées.") + " " + Lang.t("Le prix du Bingo double à chaque achat dans un combat."),
+            new Label.LabelStyle(hintFont, Color.WHITE))).colspan(columns);
         panel.row();
         // Avertissement (carte indisponible) : ligne réservée, vide tant qu'il n'y a rien à dire.
         Label notice = new Label(" ", new Label.LabelStyle(textFont, Palette.TEXT_ALERT));
@@ -194,7 +195,7 @@ public class ShopOverlay implements Disposable {
                     notice.getColor().a = 1f;
                     notice.addAction(Actions.sequence(Actions.delay(NOTICE_TIME), Actions.fadeOut(0.4f)));
                 } else if (buy.test(offer)) {
-                    wallet.setText(walletText(gains.getAsInt()));
+                    wallet.setText(walletText(gains.getAsDouble()));
                     status.setText(Lang.t("Acheté !"));
                     status.setColor(Palette.TEXT_TITLE);
                     root.setTouchable(Touchable.disabled);
@@ -228,7 +229,7 @@ public class ShopOverlay implements Disposable {
         stage.setScrollFocus(scroll); // la molette fait défiler les cartes
     }
 
-    private static String walletText(int gains) {
+    private static String walletText(double gains) {
         return Lang.f("Tes gains : {0}", SidePanel.formatGains(gains));
     }
 
