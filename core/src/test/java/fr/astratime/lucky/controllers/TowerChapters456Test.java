@@ -166,9 +166,27 @@ class TowerChapters456Test {
         assertTrue(house.enterPhaseTwo());
         assertEquals(0, house.getBaseDefense(), "la Façade est tombée");
         assertFalse(house.getWeights().containsKey(EnemySymbol.SHIELD));
+        house.resetDamageTaken(); // un nouveau tour : sa Garde repart
         house.takeDamage(house.getMaxHp() / 3);
         assertTrue(house.enterPhaseTwo());
         assertEquals(Map.of(EnemySymbol.SWORD, 1), house.getWeights(), "le Coffre est tombé : plus de soins");
+    }
+
+    @Test
+    void aBossLosesAtMostHalfItsHpPerTurnAndItsGuardSendsItToPhaseTwo() {
+        Enemy machine = new Enemy(EnemyKind.MACHINE_ORIGINELLE);
+        int max = machine.getMaxHp();
+        assertEquals(max / 2, machine.takeDamage(max), "la Garde arrête le coup à la moitié de ses PV max");
+        assertEquals(0, machine.takeDamage(1_000), "plus rien ne passe ce tour-ci");
+        assertNotNull(machine.takeNotice());
+        assertTrue(machine.enterPhaseTwo(), "sa Garde le fait passer en phase 2");
+        machine.resetDamageTaken(); // un nouveau tour
+        assertEquals(1_000, machine.takeDamage(1_000));
+
+        Enemy soldier = new Enemy(EnemyKind.SOLDAT_COEUR);
+        assertEquals(soldier.getMaxHp(), soldier.takeDamage(soldier.getMaxHp()), "un soldat n'a pas de Garde");
+        Enemy prairieKing = new Enemy(EnemyKind.ROI_COEUR);
+        assertEquals(prairieKing.getMaxHp(), prairieKing.takeDamage(prairieKing.getMaxHp()), "ni un roi de la prairie");
     }
 
     @Test
@@ -180,13 +198,15 @@ class TowerChapters456Test {
         assertTrue(machine.enterPhaseTwo());
         assertEquals(6, machine.getReelCount());
         assertEquals(1, machine.getStolenReels());
-        machine.takeDamage(machine.getMaxHp() * 35 / 100);
+        machine.resetDamageTaken(); // un nouveau tour : sa Garde repart
+        machine.takeDamage(machine.getMaxHp() * 45 / 100);
         assertTrue(machine.enterPhaseTwo());
         assertEquals(2, machine.getStolenReels(), "le joueur n'a plus qu'un rouleau");
 
         TurnContext spin = new PreparationResolver().resolve(List.of(), new Player("Joueur", 100, List.of()), machine);
         assertEquals(java.util.Set.of(0, 2), spin.getSpinContext().getBlockedReels());
 
+        machine.resetDamageTaken();
         machine.takeDamage(machine.getMaxHp());
         assertFalse(machine.isDefeated(), "elle résiste au coup fatal");
         assertEquals(1, machine.getHp());

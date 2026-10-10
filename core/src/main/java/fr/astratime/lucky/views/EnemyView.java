@@ -196,6 +196,12 @@ public class EnemyView implements Disposable {
                 : Lang.f("Phase 2 : attaques +{0} %, soins -{1} %",
                     EnemyKind.KING_PHASE_ATTACK_PERCENT - 100, 100 - EnemyKind.KING_PHASE_HEAL_PERCENT));
         }
+        if (kind.hasGuard()) {
+            line(text, kind.phaseFor(EnemyKind.PHASE_TWO_RATIO - 0.01f) >= 2
+                ? Lang.f("Garde : il ne perd pas plus de {0} % de ses PV max par tour. Elle le fait passer en phase 2",
+                    EnemyKind.GUARD_PERCENT)
+                : Lang.f("Garde : il ne perd pas plus de {0} % de ses PV max par tour", EnemyKind.GUARD_PERCENT));
+        }
         if (kind.playsAtRandom()) line(text, Lang.t("Joue ses cartes au hasard"));
         if (kind.potionShields()) line(text, Lang.t("Ses Potions reforment aussi sa défense"));
         if (kind.royalBet()) line(text, Lang.t("Mise royale : ses Trèfles comptent double sous la moitié de ses PV"));

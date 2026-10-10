@@ -641,6 +641,14 @@ public enum EnemyKind {
     /** Sous cette part de vie, l'Éclat Originel passe à sa deuxième phase. */
     public static final float PHASE_TWO_RATIO = 0.5f;
 
+    /** Garde des boss : un boss ou un roi ne perd pas plus de ce % de ses PV max en un tour du joueur. */
+    public static final int GUARD_PERCENT = 50;
+
+    /** @return {@code true} s'il a une Garde : les boss de la Tour et les rois, sauf ceux de la prairie (le lieu des débutants). */
+    public boolean hasGuard() {
+        return isBoss() && this != ROI_PIQUE && this != ROI_COEUR && this != ROI_CARREAU && this != ROI_TREFLE;
+    }
+
     /** Symboles de l'Éclat Originel dans sa deuxième phase : ceux du chapitre 3. */
     private static final Map<EnemySymbol, Integer> ECLAT_PHASE_TWO = Collections.unmodifiableMap(weights(
         EnemySymbol.SHIELD, 3, EnemySymbol.MIRROR, 1, EnemySymbol.HOURGLASS, 1, EnemySymbol.ALL_IN, 1));

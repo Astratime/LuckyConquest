@@ -59,7 +59,7 @@ public class TurnEngine {
 
     /**
      * Comme {@link #playTurn(GameState, List)}, avec la Mise {@code stake} déjà
-     * payée (et le coût du tirage aussi) : elle multiplie les symboles du tirage.
+     * payée (et le coût du tirage aussi) : elle multiplie les gains du tirage.
      * La dette du joueur, après ce paiement, affaiblit ses symboles (voir {@link SpinEconomy.Debt}).
      */
     public TurnResult playTurn(GameState gameState, List<Effect> pendingEffects, SpinEconomy.Stake stake) {
@@ -241,13 +241,13 @@ public class TurnEngine {
 
     /**
      * Mise du tirage : elle ne compte que sur un Bingo, où elle multiplie les
-     * symboles ; sans Bingo, elle est perdue.
+     * gains (pas l'attaque ni le bouclier) ; sans Bingo, elle est perdue.
      */
     private static void applyStake(TurnContext turnContext, SpinEconomy.Stake stake, boolean bingo) {
         if (stake == SpinEconomy.Stake.NONE) return;
         if (bingo) {
-            turnContext.getCombatContext().multiplySymbolPower(stake.factor, "Mise");
-            turnContext.addEvent(new StatusEvent(Lang.f("MISE : BINGO ! SYMBOLES x{0}", stake.factor),
+            turnContext.getCombatContext().multiplyGains(stake.factor, "Mise");
+            turnContext.addEvent(new StatusEvent(Lang.f("MISE : BINGO ! GAINS x{0}", stake.factor),
                 EffectPopup.Style.SPECIAL));
         } else {
             turnContext.addEvent(new StatusEvent(Lang.t("MISE PERDUE : PAS DE BINGO"), EffectPopup.Style.DAMAGE));

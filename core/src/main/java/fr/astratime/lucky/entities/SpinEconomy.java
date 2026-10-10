@@ -63,7 +63,7 @@ public final class SpinEconomy {
     /** @return le facteur des gains des symboles de gains : ils suivent le coût du tirage (x1 pour 100). */
     public static float gainScale(int spinCost) { return spinCost / (float) BASE_SPIN_COST; }
 
-    /** Paliers de la Mise : une part des gains, posée avant le tirage, multiplie les symboles. */
+    /** Paliers de la Mise : une part des gains, posée avant le tirage, multiplie les gains d'un Bingo. */
     public enum Stake {
         NONE(0, 1),
         LOW(10, 2),
@@ -72,7 +72,7 @@ public final class SpinEconomy {
 
         /** Part des gains misée, en %. */
         public final int percent;
-        /** Multiplicateur de l'attaque, du bouclier et des gains des symboles du tirage. */
+        /** Multiplicateur des gains du tirage, sur un Bingo. */
         public final int factor;
 
         Stake(int percent, int factor) {

@@ -366,8 +366,7 @@ public class CardLoader {
             case "FOUR_LEAF_CLOVER":
                 return new FourLeafCloverEffect(v.i("gainMultiplier"), v.i("gainBoost"));
             case "FORTUNE":
-                int gainFactor = json.getInt("gainFactor", 1);
-                return new FortuneEffect(gainFactor > 1 ? v.i("gainFactor") : 1, v.i("attackPercent"));
+                return new FortuneEffect(json.has("gainPercent") ? v.i("gainPercent") : 0, v.i("attackPercent"));
             case "TRANSFUSION":
                 return new TransfusionEffect(v.i("percent"));
             case "BLOOD_PACT":
@@ -476,7 +475,12 @@ public class CardLoader {
 
         float factor() { return upgraded ? Card.UPGRADE_FACTOR : 1f; }
 
-        int i(String key) { reads++; return Math.round(json.getInt(key) * factor()); }
+        /** Valeur entière ; une carte « + » prend {@code key + "Plus"} s'il est écrit, sinon la valeur x1,5 arrondie. */
+        int i(String key) {
+            reads++;
+            if (upgraded && json.has(key + "Plus")) return json.getInt(key + "Plus");
+            return Math.round(json.getInt(key) * factor());
+        }
 
         int i(String key, int fallback) { reads++; return Math.round(json.getInt(key, fallback) * factor()); }
 

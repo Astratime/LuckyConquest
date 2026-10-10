@@ -186,19 +186,28 @@ class SpinEconomyTest {
     }
 
     @Test
-    void theStakeOnlyCountsOnABingo() {
+    void theStakeOnlyMultipliesTheGainsOfABingo() {
         GameController plain = fight(EnemyKind.CROUPIER);
+        plain.setBonusGameEnabled(false); // pas de Jeu bonus au hasard après le Bingo
         plain.drawCards();
         plain.rigSpin(Symbol.SEVEN, Symbol.SEVEN, Symbol.SEVEN);
+        int before = player(plain).getGains();
         long base = damageDealt(plain.spin());
+        int earned = player(plain).getGains() - before + plain.getSpinCost();
 
         GameController staked = fight(EnemyKind.CROUPIER);
+        staked.setBonusGameEnabled(false);
         staked.drawCards();
         staked.nextStake();
         staked.nextStake();
         staked.nextStake(); // 50 % : x5
+        int stakedBefore = player(staked).getGains();
+        int stake = staked.getStakeAmount();
         staked.rigSpin(Symbol.SEVEN, Symbol.SEVEN, Symbol.SEVEN);
-        assertEquals(base * 5, damageDealt(staked.spin()));
+        assertEquals(base, damageDealt(staked.spin()), "la Mise ne touche pas à l'attaque");
+        int stakedEarned = player(staked).getGains() - stakedBefore + staked.getSpinCost() + stake;
+        assertTrue(earned > 0);
+        assertEquals(earned * 5, stakedEarned, "les gains du Bingo x5");
     }
 
     @Test

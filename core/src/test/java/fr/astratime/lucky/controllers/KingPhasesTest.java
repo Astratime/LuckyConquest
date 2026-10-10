@@ -57,9 +57,12 @@ class KingPhasesTest {
     void aKingInPhaseTwoHitsHarderAndHealsLess() {
         Enemy king = new Enemy(EnemyKind.ROI_COEUR);
         assertEquals(100, king.attackPercent());
-        king.takeDamage(king.getMaxHp() / 2 + 1000);
+        king.takeDamage(king.getMaxHp() / 2 - 1000);
+        king.resetDamageTaken();
+        king.takeDamage(2000);
         int before = king.getHp();
         assertEquals(1000, king.heal(1000), "phase 1 : soin entier");
+        king.resetDamageTaken(); // un nouveau tour : sa Garde repart
         king.takeDamage(1000);
         assertTrue(king.enterPhaseTwo());
         assertEquals(EnemyKind.KING_PHASE_ATTACK_PERCENT, king.attackPercent());
