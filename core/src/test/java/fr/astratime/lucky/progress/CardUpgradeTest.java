@@ -31,6 +31,7 @@ class CardUpgradeTest {
     private static PlayerProfile profile(PlayerProfileTest.MemoryStorage storage) {
         PlayerProfile profile = new PlayerProfile(storage, collection(), deck());
         profile.setUpgradable(List.of("triple", "carte_0"));
+        if (profile.getCoins() == 0) profile.addCoins(Card.UPGRADE_PRICE + 500);
         return profile;
     }
 
@@ -43,6 +44,7 @@ class CardUpgradeTest {
 
         assertEquals(0, profile.getOwnedCopies("triple"));
         assertEquals(1, profile.getOwnedCopies("triple+"));
+        assertEquals(500, profile.getCoins(), "la fusion coûte 10 millions de pièces");
         assertEquals("triple+", profile.getCollection().keySet().iterator().next(), "à la place de la carte fusionnée");
     }
 
@@ -80,12 +82,26 @@ class CardUpgradeTest {
     }
 
     @Test
+    void aFusionCostsTenMillionCoins() {
+        PlayerProfile profile = new PlayerProfile(new PlayerProfileTest.MemoryStorage(), collection(), deck());
+        profile.setUpgradable(List.of("triple"));
+        profile.addCoins(Card.UPGRADE_PRICE - 1);
+
+        assertNull(profile.upgradeOffer("triple"), "FUSIONNER s'affiche, la fenêtre dit le prix");
+        assertNotNull(profile.upgradeProblem("triple"), "il manque une pièce");
+        assertFalse(profile.upgradeCard("triple"));
+        assertEquals(3, profile.getOwnedCopies("triple"));
+        assertEquals(Card.UPGRADE_PRICE - 1, profile.getCoins());
+    }
+
+    @Test
     void aFusionIsRefusedWhenTheDeckCouldNotBeFilled() {
         Map<String, Integer> small = new LinkedHashMap<>();
         small.put("triple", 3);
         for (int i = 0; i < 17; i++) small.put("carte_" + i, 1);
         PlayerProfile profile = new PlayerProfile(new PlayerProfileTest.MemoryStorage(), small, deck());
         profile.setUpgradable(List.of("triple"));
+        profile.addCoins(Card.UPGRADE_PRICE);
 
         assertNotNull(profile.upgradeProblem("triple"), "18 cartes après la fusion");
         assertFalse(profile.upgradeCard("triple"));

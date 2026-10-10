@@ -1374,6 +1374,8 @@
   "Il faut {0} exemplaires pour fusionner": "You need {0} copies to fuse",
   "Tu as déjà {0} cartes + de celle-ci": "You already have {0} + copies of this card",
   "Il te resterait moins de {0} cartes pour ton deck": "You would have fewer than {0} cards left for your deck",
-  "Quand tu as {0} exemplaires d'une carte, FUSIONNER apparaît dessus : ils deviennent une carte +, avec un liseré doré et des valeurs +50 %.": "When you have {0} copies of a card, FUSE appears on it: they become a + card, with a golden edge and +50% values.",
-  "FUSIONNER": "FUSE"
+  "FUSIONNER": "FUSE",
+  "Quand tu as {0} exemplaires d'une carte, FUSIONNER apparaît dessus. Pour {1} pièces, ils deviennent une carte +, avec un liseré doré et des valeurs +50 %.": "When you have {0} copies of a card, FUSE appears on it. For {1} coins, they become a + card, with a golden edge and +50% values.",
+  "Prix : {0} pièces. Tu en as {1}.": "Price: {0} coins. You have {1}.",
+  "Il te manque {0} pièces": "You are {0} coins short"
 }

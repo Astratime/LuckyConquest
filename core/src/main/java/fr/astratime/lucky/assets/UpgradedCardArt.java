@@ -14,9 +14,11 @@ public final class UpgradedCardArt {
     /** Épaisseur du liseré, en part de la largeur de la carte. */
     static final float BORDER = 0.04f;
     /** Rayon de la pastille « + », en part de la largeur de la carte. */
-    static final float BADGE  = 0.11f;
+    static final float BADGE  = 0.12f;
 
     private static final int OUTLINE   = rgba(0x3a, 0x22, 0x00);
+    /** Noir des contours du pixel art du jeu. */
+    private static final int INK       = rgba(0x14, 0x0c, 0x08);
     private static final int GOLD_DARK = rgba(0xb0, 0x74, 0x0c);
     private static final int GOLD      = rgba(0xff, 0xd5, 0x4a);
     private static final int GOLD_LIGHT = rgba(0xff, 0xf3, 0xb8);
@@ -90,31 +92,50 @@ public final class UpgradedCardArt {
         return d[y * width + x];
     }
 
-    /** La pastille dorée « + », dans le coin supérieur droit, à l'intérieur du liseré. */
+    /**
+     * La pastille « + », dans le coin supérieur droit : un petit dessin en pixel
+     * art ({@link #BADGE_CELLS} x {@link #BADGE_CELLS} gros pixels), comme les
+     * images du jeu : contour noir épais, or éclairé en haut et sombre en bas,
+     * « + » blanc cerné de noir.
+     */
     private static void drawBadge(int[] pixels, int width, int height, int border) {
-        float radius = width * BADGE;
-        float cx = width - border * 0.5f - radius * 0.95f;
-        float cy = border * 0.5f + radius * 0.95f;
-        float outline = Math.max(1.5f, radius * 0.14f);
-        float arm = radius * 0.58f, half = Math.max(1f, radius * 0.16f);
-        int minX = Math.max(0, (int) (cx - radius - 1)), maxX = Math.min(width - 1, (int) (cx + radius + 1));
-        int minY = Math.max(0, (int) (cy - radius - 1)), maxY = Math.min(height - 1, (int) (cy + radius + 1));
-        for (int y = minY; y <= maxY; y++) {
-            for (int x = minX; x <= maxX; x++) {
-                float dx = x + 0.5f - cx, dy = y + 0.5f - cy;
-                float r = (float) Math.sqrt(dx * dx + dy * dy);
-                if (r > radius) continue;
-                int color;
-                boolean cross = Math.abs(dx) <= half && Math.abs(dy) <= arm || Math.abs(dy) <= half && Math.abs(dx) <= arm;
-                boolean crossEdge = Math.abs(dx) <= half + outline * 0.7f && Math.abs(dy) <= arm + outline * 0.7f
-                    || Math.abs(dy) <= half + outline * 0.7f && Math.abs(dx) <= arm + outline * 0.7f;
-                if (r > radius - outline) color = OUTLINE;
-                else if (cross) color = 0xffffffff;
-                else if (crossEdge) color = OUTLINE;
-                else color = mix(GOLD_LIGHT, GOLD_DARK, Math.max(0f, Math.min(1f, (dy / radius + 1f) / 2f)));
-                pixels[y * width + x] = color;
+        int cell = Math.max(2, Math.round(width * BADGE * 2f / BADGE_CELLS));
+        int size = cell * BADGE_CELLS;
+        int left = width - size - Math.max(0, border / 3);
+        int top  = Math.max(0, border / 3);
+        for (int row = 0; row < BADGE_CELLS; row++) {
+            for (int col = 0; col < BADGE_CELLS; col++) {
+                int color = badgeCell(row, col);
+                if (color == 0) continue;
+                for (int y = top + row * cell; y < top + (row + 1) * cell && y < height; y++) {
+                    for (int x = left + col * cell; x < left + (col + 1) * cell && x < width; x++) {
+                        if (x >= 0) pixels[y * width + x] = color;
+                    }
+                }
             }
         }
+    }
+
+    /** Côté de la pastille, en gros pixels. */
+    static final int BADGE_CELLS = 14;
+
+    /** @return la couleur du gros pixel ({@code row}, {@code col}) de la pastille, 0 en dehors */
+    static int badgeCell(int row, int col) {
+        float center = (BADGE_CELLS - 1) / 2f;
+        float dx = col - center, dy = row - center;
+        float r = (float) Math.sqrt(dx * dx + dy * dy);
+        if (r > center + 0.45f) return 0;
+        if (r > center - 0.75f) return INK; // contour d'un gros pixel
+        if (isCross(dx, dy)) return 0xffffffff;
+        if (isCross(dx + 1, dy) || isCross(dx - 1, dy) || isCross(dx, dy + 1) || isCross(dx, dy - 1)) return INK;
+        if (dy <= -4f || dy <= -3f && dx <= -2f) return GOLD_LIGHT;
+        if (dy >= 4f) return GOLD_DARK;
+        return GOLD;
+    }
+
+    /** @return {@code true} pour les gros pixels du « + » : deux barres de 2 de large et 6 de long. */
+    private static boolean isCross(float dx, float dy) {
+        return Math.abs(dx) <= 0.5f && Math.abs(dy) <= 3f || Math.abs(dy) <= 0.5f && Math.abs(dx) <= 3f;
     }
 
     private static int alpha(int rgba) { return rgba & 0xff; }

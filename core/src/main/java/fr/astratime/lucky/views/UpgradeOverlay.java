@@ -32,7 +32,7 @@ import fr.astratime.lucky.i18n.Lang;
 public class UpgradeOverlay implements Disposable {
 
     private static final float PANEL_WIDTH  = 1180f;
-    private static final float PANEL_HEIGHT = 800f;
+    private static final float PANEL_HEIGHT = 900f;
     private static final float CARD_WIDTH   = 200f;
     private static final float CARD_HEIGHT  = 280f;
     private static final float TEXT_WIDTH   = 460f;
@@ -40,6 +40,7 @@ public class UpgradeOverlay implements Disposable {
     private static final float FADE         = 0.2f;
     /** Transparence de la carte « + » avant la fusion (un aperçu). */
     private static final float PREVIEW      = 0.45f;
+    private static final Color REFUSED      = new Color(1f, 0.45f, 0.45f, 1f);
 
     private final Group      root = new Group();
     private final Image      veil;
@@ -53,6 +54,8 @@ public class UpgradeOverlay implements Disposable {
     private final Label      upgradedName;
     private final Label      before;
     private final Label      after;
+    /** Prix de la fusion et pièces du joueur (ou ce qu'il lui manque). */
+    private final Label      price;
     private final TextButton confirm;
     private final TextButton cancel;
     private final TextButton close;
@@ -86,6 +89,7 @@ public class UpgradeOverlay implements Disposable {
         upgradedName = label(nameFont, Palette.GOLD);
         before = label(textFont, Palette.CREAM);
         after  = label(textFont, Color.WHITE);
+        price  = label(nameFont, Palette.GOLD);
         before.setWrap(true);
         after.setWrap(true);
         confirm = buttons.createAction(Lang.t("Fusionner"), clickSound, this::fuse);
@@ -103,6 +107,7 @@ public class UpgradeOverlay implements Disposable {
         root.addActor(upgradedName);
         root.addActor(before);
         root.addActor(after);
+        root.addActor(price);
         root.addActor(confirm);
         root.addActor(cancel);
         root.addActor(close);
@@ -129,10 +134,12 @@ public class UpgradeOverlay implements Disposable {
     /**
      * Ouvre la fenêtre pour fusionner la carte {@code base} en {@code plus}.
      *
+     * @param cost      prix de la fusion et pièces du joueur, déjà mis en forme
+     * @param problem   pourquoi la fusion n'est pas possible (pièces manquantes), ou {@code null}
      * @param onConfirm fait la fusion (appelé au clic sur « Fusionner »)
      * @param onClose   appelé à la fermeture, qu'il y ait eu fusion ou non
      */
-    public void show(Card base, Texture baseTexture, Card plus, Texture plusTexture,
+    public void show(Card base, Texture baseTexture, Card plus, Texture plusTexture, String cost, String problem,
                      Runnable onConfirm, Runnable onClose) {
         this.onConfirm = onConfirm;
         this.onClose   = onClose;
@@ -159,10 +166,15 @@ public class UpgradeOverlay implements Disposable {
         upgradedName.setText(plus.getName());
         before.setText(Lang.t("Avant :") + "\n" + base.getDescription());
         after.setText(Lang.t("Après :") + "\n" + plus.getDescription());
+        price.setText(problem != null ? cost + "\n" + problem + "." : cost);
+        price.setColor(problem != null ? REFUSED : Palette.GOLD);
+        price.setAlignment(Align.center);
+        price.clearActions();
+        price.getColor().a = 1f;
         confirm.setVisible(true);
         cancel.setVisible(true);
         close.setVisible(false);
-        confirm.setDisabled(false);
+        confirm.setDisabled(problem != null);
         layout(root.getStage() != null ? root.getStage().getWidth() : 1920f,
             root.getStage() != null ? root.getStage().getHeight() : 1080f);
         root.clearActions();
@@ -174,7 +186,7 @@ public class UpgradeOverlay implements Disposable {
 
     /** Fusionne : les trois cartes glissent sur la carte « + », qui s'allume. */
     private void fuse() {
-        if (onConfirm == null) return;
+        if (onConfirm == null || confirm.isDisabled()) return;
         Runnable fusion = onConfirm;
         onConfirm = null;
         fusion.run();
@@ -193,6 +205,7 @@ public class UpgradeOverlay implements Disposable {
                 Actions.visible(false)));
         }
         arrow.addAction(Actions.fadeOut(0.3f));
+        price.addAction(Actions.fadeOut(0.3f));
         float lit = 0.12f * (copies.length - 1) + 0.4f;
         upgraded.addAction(Actions.sequence(
             Actions.delay(lit),
@@ -249,6 +262,9 @@ public class UpgradeOverlay implements Disposable {
         after.setPosition(rightCenter - TEXT_WIDTH / 2f, textTop - after.getHeight());
 
         float buttonY = bottom + 40f;
+        price.pack();
+        price.setPosition(left + (PANEL_WIDTH - price.getWidth()) / 2f,
+            Math.min(before.getY(), after.getY()) - 28f - price.getHeight());
         float gap = 30f;
         cancel.setPosition(left + PANEL_WIDTH / 2f - gap / 2f - cancel.getWidth(), buttonY);
         confirm.setPosition(left + PANEL_WIDTH / 2f + gap / 2f, buttonY);

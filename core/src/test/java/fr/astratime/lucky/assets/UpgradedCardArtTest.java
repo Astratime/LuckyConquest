@@ -8,11 +8,12 @@ import static org.junit.jupiter.api.Assertions.*;
 class UpgradedCardArtTest {
 
     private static final int WHITE = 0xffffffff;
+    private static final int GRAY  = 0x808080ff;
 
-    /** Carte blanche de 100 x 140, aux coins transparents. */
+    /** Carte grise de 100 x 140, aux coins transparents. */
     private static int[] card() {
         int[] pixels = new int[100 * 140];
-        java.util.Arrays.fill(pixels, WHITE);
+        java.util.Arrays.fill(pixels, GRAY);
         pixels[0] = 0;
         pixels[99] = 0;
         return pixels;
@@ -23,19 +24,29 @@ class UpgradedCardArtTest {
         int[] gilded = UpgradedCardArt.gild(card(), 100, 140);
 
         int edge = gilded[70 * 100 + 2];
-        assertNotEquals(WHITE, edge, "le bord change");
+        assertNotEquals(GRAY, edge, "le bord change");
         assertTrue((edge >>> 24) > (edge >>> 8 & 0xff), "plus rouge que bleu : de l'or");
-        assertEquals(WHITE, gilded[70 * 100 + 50], "le milieu ne change pas");
+        assertEquals(GRAY, gilded[70 * 100 + 50], "le milieu ne change pas");
         assertEquals(0, gilded[0], "les coins transparents le restent");
+    }
+
+    @Test
+    void theBadgeIsAPixelCoinWithAWhitePlusAndABlackOutline() {
+        int middle = UpgradedCardArt.BADGE_CELLS / 2;
+        assertEquals(WHITE, UpgradedCardArt.badgeCell(middle, middle), "le « + » au centre");
+        assertEquals(0, UpgradedCardArt.badgeCell(0, 0), "les coins restent la carte");
+        int edge = UpgradedCardArt.badgeCell(middle, 0);
+        assertTrue((edge >>> 24) < 0x30, "un contour noir sur le bord");
     }
 
     @Test
     void theBadgeSitsInTheTopRightCorner() {
         int[] gilded = UpgradedCardArt.gild(card(), 100, 140);
-        int radius = Math.round(100 * UpgradedCardArt.BADGE);
-        int center = Math.round(100 - 100 * UpgradedCardArt.BORDER * 0.5f - radius * 0.95f);
-        assertEquals(WHITE, gilded[Math.round(100 * UpgradedCardArt.BORDER * 0.5f + radius * 0.95f) * 100 + center],
-            "le centre du « + » est blanc");
-        assertNotEquals(WHITE, gilded[(radius) * 100 + center + radius / 2 + 1], "la pastille est dorée autour");
+        assertEquals(GRAY, gilded[70 * 100 + 50], "loin de la pastille, rien ne change");
+        boolean found = false;
+        for (int x = 70; x < 100 && !found; x++) {
+            for (int y = 0; y < 30; y++) if (gilded[y * 100 + x] == WHITE) found = true;
+        }
+        assertTrue(found, "le « + » blanc est en haut à droite");
     }
 }

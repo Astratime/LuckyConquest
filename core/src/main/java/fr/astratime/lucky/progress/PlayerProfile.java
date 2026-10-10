@@ -395,6 +395,18 @@ public class PlayerProfile {
      *         {@code null} si elle peut l'être (voir {@link #upgradeCard(String)})
      */
     public String upgradeProblem(String id) {
+        String problem = upgradeOffer(id);
+        if (problem != null) return problem;
+        if (coins < Card.UPGRADE_PRICE) return Lang.f("Il te manque {0} pièces",
+            formatCoins(Card.UPGRADE_PRICE - coins));
+        return null;
+    }
+
+    /**
+     * @return pourquoi la fusion de la carte {@code id} n'est pas proposée, ou
+     *         {@code null} si elle l'est (même si les pièces manquent encore)
+     */
+    public String upgradeOffer(String id) {
         if (admin) return Lang.t("Pas de fusion en mode ADMIN");
         if (!isUpgradable(id)) return Lang.t("Cette carte n'a pas de version +");
         if (getOwnedCopies(id) < Card.UPGRADE_COST) return Lang.f("Il faut {0} exemplaires pour fusionner",
@@ -408,7 +420,7 @@ public class PlayerProfile {
 
     /**
      * Fusionne {@link Card#UPGRADE_COST} exemplaires de la carte {@code id} en un
-     * exemplaire de sa version « + » (valeurs +50 %). Dans le deck enregistré, la
+     * exemplaire de sa version « + » (valeurs +50 %), pour {@link Card#UPGRADE_PRICE} pièces. Dans le deck enregistré, la
      * carte « + » prend la place d'un exemplaire fusionné ; les autres places sont
      * reprises par des cartes de la collection, dans son ordre. Le profil est enregistré.
      *
@@ -430,6 +442,7 @@ public class PlayerProfile {
         collection.putAll(newCollection);
         deck.clear();
         deck.putAll(newDeck);
+        coins -= Card.UPGRADE_PRICE;
         save();
         return true;
     }

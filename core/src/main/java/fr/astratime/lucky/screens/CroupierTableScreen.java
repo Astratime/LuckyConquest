@@ -293,8 +293,9 @@ public class CroupierTableScreen extends ScreenAdapter {
         steps.add(GuideOverlay.Step.action(Lang.t("Ajoute une carte : clic gauche sur une carte de ta collection. Clic droit l'enlève du deck."),
                 () -> GuideOverlay.boundsOf(collectionPanel), () -> draft.size() > before[0])
             .onStart(() -> before[0] = draft.size()));
-        steps.add(GuideOverlay.Step.say(Lang.f("Quand tu as {0} exemplaires d'une carte, FUSIONNER apparaît dessus : ils "
-            + "deviennent une carte +, avec un liseré doré et des valeurs +50 %.", Card.UPGRADE_COST),
+        steps.add(GuideOverlay.Step.say(Lang.f("Quand tu as {0} exemplaires d'une carte, FUSIONNER apparaît dessus. Pour {1} "
+            + "pièces, ils deviennent une carte +, avec un liseré doré et des valeurs +50 %.", Card.UPGRADE_COST,
+            PlayerProfile.formatCoins(Card.UPGRADE_PRICE)),
             () -> GuideOverlay.boundsOf(collectionPanel)));
         steps.add(GuideOverlay.Step.action(Lang.t("Ta machine a ses propres rouleaux. Ouvre l'onglet Rouleaux."),
             () -> GuideOverlay.boundsOf(reelsTab), () -> showingReels));
@@ -498,7 +499,9 @@ public class CroupierTableScreen extends ScreenAdapter {
         String id = card.getId();
         Card plus = factory.apply(Card.upgradedId(id));
         tooltip.hide();
-        upgradeOverlay.show(card, cardTextures.get(card), plus, cardTextures.get(plus), () -> {
+        String cost = Lang.f("Prix : {0} pièces. Tu en as {1}.", PlayerProfile.formatCoins(Card.UPGRADE_PRICE),
+            PlayerProfile.formatCoins(profile.getCoins()));
+        upgradeOverlay.show(card, cardTextures.get(card), plus, cardTextures.get(plus), cost, profile.upgradeProblem(id), () -> {
             if (!profile.upgradeCard(id)) return;
             draft.afterUpgrade(id);
             buildCollection();
@@ -548,7 +551,7 @@ public class CroupierTableScreen extends ScreenAdapter {
             Label count = entry.getValue();
             count.setText(inDeck + " / " + max);
             count.setColor(inDeck >= max ? Palette.GOLD : inDeck > 0 ? Color.WHITE : Palette.CREAM);
-            cellUpgrades.get(id).setVisible(profile.upgradeProblem(id) == null);
+            cellUpgrades.get(id).setVisible(profile.upgradeOffer(id) == null); // même sans les pièces : la fenêtre dit le prix
         }
         int index = 0;
         for (String id : cards.keySet()) {
