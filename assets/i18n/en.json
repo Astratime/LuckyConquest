@@ -1465,5 +1465,7 @@
   "Phase 2, sous la moitié de ses PV : attaques +{0} %, soins -{1} %": "Phase 2, under half its HP: attacks +{0}%, healing -{1}%",
   "Phase 2 : attaques +{0} %, soins -{1} %": "Phase 2: attacks +{0}%, healing -{1}%",
   "Deck {0}": "Deck {0}",
-  "Deck joué : {0}": "Playing deck: {0}"
+  "Deck joué : {0}": "Playing deck: {0}",
+  "Tours {0}  ·  Dégâts infligés {1}  ·  Plus gros coup {2}": "Turns {0}  ·  Damage dealt {1}  ·  Biggest hit {2}",
+  "Dégâts subis {0}  ·  Bingos {1}  ·  Cartes jouées {2}": "Damage taken {0}  ·  Bingos {1}  ·  Cards played {2}"
 }

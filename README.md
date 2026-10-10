@@ -21,6 +21,9 @@ available in French and English (Options > Language).*
    (une grille 6 x 6 et trois tirages).
 4. **L'ennemi** joue à son tour, ses cartes et sa propre machine.
 
+À la fin du combat, un **récapitulatif** donne les tours joués, les dégâts infligés et subis, le plus
+gros coup, les Bingos et les cartes jouées.
+
 ### Les modes
 - **Entraînement** : un combat contre le Croupier, pour s'exercer. Il ne rapporte rien.
 - **Tour des épreuves** : six chapitres de combats et leurs boss, avec une histoire et ses
