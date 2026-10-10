@@ -2113,6 +2113,19 @@ def cutscene_bonus_game_total():
     return reverb(track.buf, wet=0.2, size=1.0, tail=0.6)
 
 
+@sound('shop/card_upgrade', -17)
+def shop_card_upgrade():
+    """Fusion à la Table du croupier : trois cartes glissées l'une sur l'autre, puis la carte « + » brille."""
+    track = Track(2.0)
+    for k in range(3):
+        track.add(card_flick(0.07), k * 0.12, 0.7)
+        track.add(card_slap(0.14), k * 0.12 + 0.05, 0.5)
+    track.add(power_up(['C5', 'E5', 'G5', 'C6', 'E6', 'G6'], step=0.05, last=0.35), 0.42, 0.7)
+    track.add(cash_register_bell(), 0.75, 0.6)
+    track.add(sparkle(1.0), 0.75, 0.5)
+    return reverb(track.buf, wet=0.22, size=0.9, tail=0.5)
+
+
 def main(prefixes):
     done = 0
     for name, level, fmt, trim, loop, fn in SOUNDS:

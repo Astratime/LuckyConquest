@@ -25,6 +25,9 @@ import java.util.function.Function;
  * assets/cards/decks/collection.json : liste d'ids de cartes, chacun avec son
  * nombre d'exemplaires ("copies", 1 si absent).
  *
+ * Chaque carte qui a au moins une valeur à améliorer a aussi sa version « + »
+ * (id suivi de « + », voir {@link Card#upgradedId}) : les mêmes effets, valeurs x1,5.
+ *
  * Ajouter une nouvelle carte = ajouter une entrée dans le JSON correspondant.
  * Ajouter un nouveau type d'effet = ajouter un case dans parseEffect().
  *
@@ -67,7 +70,7 @@ public class CardLoader {
     public static List<Card> loadAll(AssetReader reader) {
         List<Card> cards = new ArrayList<>();
         for (JsonValue cardJson : loadDefinitions(reader).values()) {
-            cards.add(parseCard(cardJson));
+            cards.add(parseCard(cardJson, false));
         }
         return cards;
     }
@@ -128,9 +131,10 @@ public class CardLoader {
         Map<String, JsonValue> definitions = loadDefinitions(reader);
         List<Card> cards = new ArrayList<>();
         for (Map.Entry<String, Integer> entry : copies.entrySet()) {
-            JsonValue definition = definitions.get(entry.getKey());
-            if (definition == null) throw new IllegalArgumentException("Carte inconnue dans le deck : " + entry.getKey());
-            for (int i = 0; i < entry.getValue(); i++) cards.add(parseCard(definition));
+            if (parseCard(definitions, entry.getKey()) == null) {
+                throw new IllegalArgumentException("Carte inconnue dans le deck : " + entry.getKey());
+            }
+            for (int i = 0; i < entry.getValue(); i++) cards.add(parseCard(definitions, entry.getKey()));
         }
         return cards;
     }
@@ -191,9 +195,9 @@ public class CardLoader {
     public static Function<String, Card> cardFactory(AssetReader reader) {
         Map<String, JsonValue> definitions = loadDefinitions(reader);
         return id -> {
-            JsonValue definition = definitions.get(id);
-            if (definition == null) throw new IllegalArgumentException("Carte inconnue : " + id);
-            return parseCard(definition);
+            Card card = parseCard(definitions, id);
+            if (card == null) throw new IllegalArgumentException("Carte inconnue : " + id);
+            return card;
         };
     }
 
@@ -214,8 +218,10 @@ public class CardLoader {
     /**
      * Construit une {@link Card} à partir de son objet JSON (id, name, assetPath,
      * rank optionnel, suit optionnelle, et la liste de ses effets).
+     *
+     * @param upgraded {@code true} pour sa version « + » (id suivi de {@link Card#UPGRADE_SUFFIX}, valeurs +50 %)
      */
-    private static Card parseCard(JsonValue json) {
+    private static Card parseCard(JsonValue json, boolean upgraded) {
         String id       = json.getString("id");
         String name     = json.getString("name");
         String assetPath = json.getString("assetPath");
@@ -225,67 +231,81 @@ public class CardLoader {
         Card.Suit suit  = suitStr != null ? Card.Suit.valueOf(suitStr) : null;
 
         List<Effect> effects = new ArrayList<>();
+        int improved = 0;
         JsonValue effectsJson = json.get("effects");
         if (effectsJson != null) {
             for (JsonValue effectJson = effectsJson.child; effectJson != null; effectJson = effectJson.next) {
-                effects.add(parseEffect(effectJson));
+                Values values = new Values(effectJson, upgraded);
+                effects.add(parseEffect(effectJson, values));
+                improved += values.reads;
             }
         }
 
-        return new Card(id, name, assetPath, effects, suit, rank, json.getBoolean("consumable", false));
+        return new Card(upgraded ? Card.upgradedId(id) : id, name, assetPath, effects, suit, rank,
+            json.getBoolean("consumable", false), upgraded, improved > 0);
+    }
+
+    /** @return la carte {@code id} (sa version « + » si {@code id} finit par « + »), ou {@code null} si elle n'existe pas */
+    private static Card parseCard(Map<String, JsonValue> definitions, String id) {
+        JsonValue definition = definitions.get(Card.baseId(id));
+        if (definition == null) return null;
+        if (!Card.isUpgradedId(id)) return parseCard(definition, false);
+        Card upgraded = parseCard(definition, true);
+        return upgraded.isUpgradable() ? upgraded : null;
     }
 
     /**
      * Mappe un objet JSON d'effet vers l'instance Effect correspondante.
      * Chaque type correspond à une classe d'effet du package effects.
+     * Les valeurs lues avec {@code v} sont celles qu'améliore la version « + » de la carte.
      */
-    private static Effect parseEffect(JsonValue json) {
+    private static Effect parseEffect(JsonValue json, Values v) {
         String type = json.getString("type");
         switch (type) {
             // --- Coeur ---
             case "HEART_DRAIN":
-                return new HeartDrainEffect(json.getInt("percent"));
+                return new HeartDrainEffect(v.i("percent"));
             case "ACE_OF_HEARTS":
-                return new AceOfHeartsEffect();
+                return new AceOfHeartsEffect(v.power());
 
             // --- Trefle ---
             case "CLUB_GAIN_ATTACK":
                 return new ClubGainAttackEffect(
-                    json.getInt("gainMultiplier"),
-                    json.getInt("attackBonus")
+                    v.i("gainMultiplier"),
+                    v.i("attackBonus")
                 );
             case "ACE_OF_CLUBS":
-                return new AceOfClubsEffect();
+                return new AceOfClubsEffect(v.power());
 
             // --- Carreau ---
             case "DIAMOND_REFLECT":
-                return new DiamondReflectEffect(json.getFloat("hpPercent"), json.getInt("defenseBoost", 0));
+                return new DiamondReflectEffect(v.f("hpPercent"), v.i("defenseBoost", 0));
             case "ACE_OF_DIAMONDS":
-                return new AceOfDiamondsEffect();
+                return new AceOfDiamondsEffect(v.power());
 
             // --- Pique ---
             case "SPADE_IGNORE_DEFENSE":
-                return new SpadeIgnoreDefenseEffect(json.getInt("attackBonus"), json.getInt("blades", 1),
-                    json.getInt("piercePercent"));
+                return new SpadeIgnoreDefenseEffect(v.i("attackBonus"), v.i("blades", 1),
+                    Math.min(100, v.i("piercePercent")));
             case "ACE_OF_SPADES":
-                return new AceOfSpadesEffect();
+                return new AceOfSpadesEffect(v.power());
 
             // --- Effets génériques ---
             case "BOOST_SYMBOL":
                 return new BoostSymbolEffect(
                     Symbol.valueOf(json.getString("symbol")),
-                    json.getInt("amount")
+                    v.i("amount")
                 );
             case "ATTACK":
-                return new AttackEffect(json.getInt("bonus"));
+                return new AttackEffect(v.i("bonus"));
             case "DEFENSE":
-                return new DefenseEffect(json.getInt("bonus"));
+                return new DefenseEffect(v.i("bonus"));
             case "EXTRA_DRAW":
-                return new ExtraDrawEffect(json.getInt("extraCards"));
+                return new ExtraDrawEffect(v.i("extraCards"));
             case "GAIN":
-                return new GainEffect(json.getInt("amount"));
+                return new GainEffect(v.i("amount"));
             case "MULTIPLIER":
-                return new MultiplierEffect(json.getFloat("amount"));
+                return new MultiplierEffect(v.f("amount"));
 
             // --- Cartes de casino ---
             case "BINGO":
@@ -293,24 +313,24 @@ public class CardLoader {
                     json.has("symbol") ? Symbol.valueOf(json.getString("symbol")) : null,
                     json.getBoolean("bonusGame", false));
             case "MAGNET":
-                return new MagnetEffect(json.getInt("percent"));
+                return new MagnetEffect(v.i("percent"));
             case "RECYCLE":
-                return new RecycleEffect(json.getInt("turns"));
+                return new RecycleEffect(v.i("turns"));
             case "BET":
                 return new BetEffect();
             case "RUSSIAN_ROULETTE":
                 return new RussianRouletteEffect(json.getInt("percent"), json.getInt("cursedPercent"),
                     json.getInt("penaltyPercent"));
             case "EXTRA_PLAYS":
-                return new ExtraPlaysEffect(json.getInt("plays"), json.getInt("turns"));
+                return new ExtraPlaysEffect(v.i("plays"), json.getInt("turns"));
             case "LUCKY_CHARM":
-                return new LuckyCharmEffect(json.getInt("percent"));
+                return new LuckyCharmEffect(v.i("percent"));
             case "RAINBOW":
-                return new RainbowEffect(json.getString("card"));
+                return new RainbowEffect(v.id(json.getString("card")));
             case "SPIN_GAINS":
-                return new SpinGainsEffect(json.getInt("spins"), json.getInt("gauges", 1));
+                return new SpinGainsEffect(v.i("spins"), json.getInt("gauges", 1));
             case "GAINS_MULTIPLIER":
-                return new GainsMultiplierEffect(json.getInt("percent"), json.getInt("gauges", 1));
+                return new GainsMultiplierEffect(v.i("percent"), json.getInt("gauges", 1));
             case "CORRUPTION":
                 return new CorruptionEffect(json.getInt("turns"));
 
@@ -326,9 +346,9 @@ public class CardLoader {
             case "ALL_IN":
                 return new AllInEffect();
             case "SAFE":
-                return new SafeEffect(json.getInt("percent"), json.getInt("turns"));
+                return new SafeEffect(v.i("percent"), json.getInt("turns"));
             case "INSURANCE":
-                return new InsuranceEffect(json.getInt("percent"));
+                return new InsuranceEffect(v.lower("percent"));
             case "BRIBE":
                 return new BribeEffect();
             case "DOUBLE_OR_NOTHING":
@@ -338,25 +358,26 @@ public class CardLoader {
 
             // --- Cartes des donjons (Exploration) ---
             case "BLADES_ATTACK":
-                return new BladesAttackEffect(json.getInt("blades"), json.getInt("attackBonus"));
+                return new BladesAttackEffect(v.i("blades"), v.i("attackBonus"));
             case "SHADOW_DAGGER":
-                return new ShadowDaggerEffect(json.getInt("attackPerBlade"));
+                return new ShadowDaggerEffect(v.i("attackPerBlade"));
             case "GUILLOTINE":
-                return new GuillotineEffect(json.getInt("percentPerBlade"));
+                return new GuillotineEffect(v.i("percentPerBlade"));
             case "FOUR_LEAF_CLOVER":
-                return new FourLeafCloverEffect(json.getInt("gainMultiplier"), json.getInt("gainBoost"));
+                return new FourLeafCloverEffect(v.i("gainMultiplier"), v.i("gainBoost"));
             case "FORTUNE":
-                return new FortuneEffect(json.getInt("gainFactor", 1), json.getInt("attackPercent"));
+                int gainFactor = json.getInt("gainFactor", 1);
+                return new FortuneEffect(gainFactor > 1 ? v.i("gainFactor") : 1, v.i("attackPercent"));
             case "TRANSFUSION":
-                return new TransfusionEffect(json.getInt("percent"));
+                return new TransfusionEffect(v.i("percent"));
             case "BLOOD_PACT":
-                return new BloodPactEffect(json.getInt("hpPercent"), json.getFloat("attackFactor"));
+                return new BloodPactEffect(json.getInt("hpPercent"), v.f("attackFactor"));
             case "RAMPART":
-                return new RampartEffect(json.getInt("shield"), json.getInt("defenseBoost"));
+                return new RampartEffect(v.i("shield"), v.i("defenseBoost"));
             case "GUARANTEED_REFLECT":
-                return new GuaranteedReflectEffect(json.getInt("percent"));
+                return new GuaranteedReflectEffect(v.i("percent"));
             case "ROUGH_DIAMOND":
-                return new RoughDiamondEffect(json.getInt("counter"));
+                return new RoughDiamondEffect(v.i("counter"));
 
             // ----- Lieux de l'Exploration -----
             case "SCURVY":
@@ -368,9 +389,9 @@ public class CardLoader {
             case "HELMET":
                 return new HelmetEffect();
             case "GOLD_VEIN":
-                return new GoldVeinEffect(json.getInt("turns"));
+                return new GoldVeinEffect(v.i("turns"));
             case "BUBBLE":
-                return new BubbleEffect(json.getInt("turns"));
+                return new BubbleEffect(v.i("turns"));
             case "BLACK_PEARL":
                 return new ForceReelEffect(ForceReelEffect.LEFT_REEL, Symbol.JOKER);
             case "TRIDENT":
@@ -380,45 +401,45 @@ public class CardLoader {
             case "RAT_TRAP":
                 return new RatTrapEffect();
             case "GAINS_PERCENT":
-                return new GainsPercentEffect(json.getInt("percent"));
+                return new GainsPercentEffect(v.i("percent"));
             case "COMBO_BONUS":
-                return new ComboBonusEffect(json.getFloat("bonus"));
+                return new ComboBonusEffect(v.f("bonus"));
             case "BEST_OF_TWO":
                 return new BestOfTwoEffect();
             case "POWDER_KEG":
-                return new PowderKegEffect(json.getInt("factor"), json.getInt("hpPercent"));
+                return new PowderKegEffect(v.i("factor"), json.getInt("hpPercent"));
             case "LANTERN":
-                return new LanternEffect(json.getInt("draws"), json.getInt("defensePercent"));
+                return new LanternEffect(v.i("draws"), v.i("defensePercent"));
             case "DAZZLE":
                 return new DazzleEffect();
             case "CUTLASS":
-                return new CutlassEffect(json.getInt("attackPercent"));
+                return new CutlassEffect(v.i("attackPercent"));
             case "BLACK_FLAG":
                 return new BlackFlagEffect();
             case "MUTINY":
                 return new MutinyEffect();
             case "SIEVE":
-                return new SieveEffect(json.getInt("gainsPercent"));
+                return new SieveEffect(v.i("gainsPercent"));
             case "PROP":
-                return new PropEffect(json.getInt("turns"), json.getInt("defensePercent"));
+                return new PropEffect(v.i("turns"), v.i("defensePercent"));
             case "ROPE":
                 return new RopeEffect();
             case "FORGE_HAMMER":
                 return new ForgeHammerEffect();
             case "TEMPER":
-                return new TemperEffect(json.getInt("percent"));
+                return new TemperEffect(v.i("percent"));
             case "FORGED_BLADE":
                 return new ForgedBladeEffect();
             case "DYNAMITE":
-                return new DynamiteEffect(json.getInt("percent"));
+                return new DynamiteEffect(v.i("percent"));
             case "CARBIDE_LAMP":
                 return new CarbideLampEffect();
             case "GOLDEN_HEART":
                 return new GoldenHeartEffect();
             case "EARPLUGS":
-                return new EarplugsEffect(json.getInt("draws"));
+                return new EarplugsEffect(v.i("draws"));
             case "BONUS_PLAYS":
-                return new BonusPlaysEffect(json.getInt("plays"));
+                return new BonusPlaysEffect(v.i("plays"));
             case "LOADED_COIN":
                 return new LoadedCoinEffect();
             case "RUSTY_LEVER":
@@ -426,14 +447,55 @@ public class CardLoader {
             case "SUNKEN_JACKPOT":
                 return new SunkenJackpotEffect();
             case "SHARK_CAGE":
-                return new SharkCageEffect(json.getInt("turns"));
+                return new SharkCageEffect(v.i("turns"));
             case "HARPOON":
-                return new HarpoonEffect(json.getInt("attackPercent"));
+                return new HarpoonEffect(v.i("attackPercent"));
             case "ANCHOR":
-                return new AnchorEffect(json.getInt("turns"), json.getInt("defensePercent"));
+                return new AnchorEffect(v.i("turns"), v.i("defensePercent"));
 
             default:
                 throw new IllegalArgumentException("Type d'effet inconnu dans le JSON : " + type);
         }
+    }
+
+    /**
+     * Lit les valeurs d'un effet qu'améliore la version « + » d'une carte :
+     * multipliées par {@link Card#UPGRADE_FACTOR} pour une carte « + », telles
+     * quelles sinon. Compte celles qu'il a lues : une carte n'a de version « + »
+     * que si au moins une de ses valeurs s'améliore.
+     */
+    private static final class Values {
+        private final JsonValue json;
+        private final boolean   upgraded;
+        private int             reads;
+
+        Values(JsonValue json, boolean upgraded) {
+            this.json     = json;
+            this.upgraded = upgraded;
+        }
+
+        float factor() { return upgraded ? Card.UPGRADE_FACTOR : 1f; }
+
+        int i(String key) { reads++; return Math.round(json.getInt(key) * factor()); }
+
+        int i(String key, int fallback) { reads++; return Math.round(json.getInt(key, fallback) * factor()); }
+
+        float f(String key) { return f(key, json.getFloat(key)); }
+
+        /** Valeur décimale, arrondie au dixième pour une carte « + » (3,25 % devient 4,9 %). */
+        float f(String key, float fallback) {
+            reads++;
+            float value = json.getFloat(key, fallback);
+            return upgraded ? Math.round(value * factor() * 10f) / 10f : value;
+        }
+
+        /** Une valeur dont la plus petite est la meilleure (ex : PV perdus au plus) : divisée par le facteur. */
+        int lower(String key) { reads++; return Math.round(json.getInt(key) / factor()); }
+
+        /** La puissance d'un effet sans valeur écrite (les As) : 1 ou le facteur. */
+        float power() { reads++; return factor(); }
+
+        /** Une carte créée par l'effet : sa version « + » pour une carte « + ». */
+        String id(String cardId) { reads++; return upgraded ? Card.upgradedId(cardId) : cardId; }
     }
 }

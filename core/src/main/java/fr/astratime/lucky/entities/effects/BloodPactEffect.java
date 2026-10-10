@@ -50,7 +50,7 @@ public class BloodPactEffect extends Effect {
     }
 
     private String factorText() {
-        return attackFactor == (int) attackFactor ? String.valueOf((int) attackFactor) : String.valueOf(attackFactor);
+        return attackFactor == (int) attackFactor ? String.valueOf((int) attackFactor) : Lang.decimal(String.valueOf(attackFactor));
     }
 
     @Override

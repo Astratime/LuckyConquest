@@ -1,5 +1,6 @@
 package fr.astratime.lucky.progress;
 
+import fr.astratime.lucky.entities.Card;
 import fr.astratime.lucky.i18n.Lang;
 
 import java.util.Collections;
@@ -67,10 +68,33 @@ public class DeckDraft {
     /** Vide le deck. */
     public void clear() { copies.clear(); }
 
-    /** Remet le deck de départ. */
+    /**
+     * Remet le deck de départ. Une carte fusionnée (voir {@link PlayerProfile#upgradeCard(String)})
+     * y est remplacée par sa version « + », tant qu'il y en a.
+     */
     public void resetToStarter() {
         copies.clear();
-        copies.putAll(profile.getStarterDeck());
+        profile.getStarterDeck().forEach((id, count) -> {
+            int kept = Math.min(count, getMaxCopies(id));
+            if (kept > 0) copies.merge(id, kept, Integer::sum);
+            String plus = Card.upgradedId(id);
+            int upgraded = Math.min(count - kept, getMaxCopies(plus) - getCopies(plus));
+            if (upgraded > 0) copies.merge(plus, upgraded, Integer::sum);
+        });
+    }
+
+    /**
+     * Après la fusion de la carte {@code id} : ses exemplaires qui ne sont plus
+     * possédés quittent le deck, et sa version « + » en prend la place, tant
+     * qu'il y en a. Le deck peut ne plus être complet.
+     */
+    public void afterUpgrade(String id) {
+        int removed = getCopies(id) - getMaxCopies(id);
+        if (removed <= 0) return;
+        for (int i = 0; i < removed; i++) remove(id);
+        String plus = Card.upgradedId(id);
+        int added = Math.min(removed, getMaxCopies(plus) - getCopies(plus));
+        if (added > 0) copies.merge(plus, added, Integer::sum);
     }
 
     /**

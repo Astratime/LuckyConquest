@@ -4,6 +4,7 @@ import com.badlogic.gdx.Game;
 import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import fr.astratime.lucky.i18n.Lang;
+import fr.astratime.lucky.entities.Card;
 import fr.astratime.lucky.loaders.CardLoader;
 import fr.astratime.lucky.progress.GdxProfileStorage;
 import fr.astratime.lucky.progress.PlayerProfile;
@@ -49,6 +50,7 @@ public class LuckyGame extends Game {
         List<String> catalog = new ArrayList<>(CardLoader.loadStartingCollection().keySet());
         catalog.addAll(CardLoader.loadBoutique().keySet());
         profile.setCatalog(catalog);
+        profile.setUpgradable(CardLoader.loadAll().stream().filter(Card::isUpgradable).map(Card::getId).toList());
 
         setScreen(new MenuScreen(this));
     }
