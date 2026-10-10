@@ -60,6 +60,25 @@ class PlacesTest {
     }
 
     @Test
+    void thePrairieDungeonsSetHowHardTheirEnemiesHit() {
+        assertEquals(48,  EnemyKind.SOLDAT_PIQUE.damagePercent(), "Pique : les coups portent moins");
+        assertEquals(48,  EnemyKind.ROI_PIQUE.damagePercent());
+        assertEquals(165, EnemyKind.ROI_TREFLE.damagePercent(), "les autres donjons frappent plus fort");
+        assertEquals(210, EnemyKind.ROI_COEUR.damagePercent());
+        assertEquals(165, EnemyKind.ROI_CARREAU.damagePercent());
+        assertEquals(100, EnemyKind.CROUPIER.damagePercent(), "la Tour ne change pas");
+        assertEquals(100, EnemyKind.KRAKEN.damagePercent(), "les autres lieux non plus");
+        assertEquals(Math.round(EnemySymbol.SWORD_DAMAGE * 0.48), EnemyKind.ROI_PIQUE.hurt(EnemySymbol.SWORD_DAMAGE));
+        assertEquals(Math.round(EnemySymbol.SWORD_DAMAGE * 2.1), EnemyKind.ROI_COEUR.hurt(EnemySymbol.SWORD_DAMAGE));
+
+        Player player = new Player("Joueur", Player.BASE_HP, List.of());
+        Enemy king = new Enemy(EnemyKind.ROI_COEUR);
+        int before = player.getHp();
+        new EnemyTurnResolver.Turn(king, player, 0).strike(EnemySymbol.SWORD_DAMAGE);
+        assertEquals(Math.round(EnemySymbol.SWORD_DAMAGE * 2.1), before - player.getHp(), "le coup porté suit le réglage");
+    }
+
+    @Test
     void scurvyComesBackEveryThreeTurnsStartingWithTheFirst() {
         assertTrue(PlaceRule.SCORBUT.scurvyArrives(1));
         assertFalse(PlaceRule.SCORBUT.scurvyArrives(2));

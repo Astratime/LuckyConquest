@@ -311,7 +311,7 @@ public class EnemyTurnResolver {
                 }
                 case ANVIL  -> {
                     enemy.addAnvil(EnemySymbol.ANVIL_ATTACK);
-                    events.add(new StatusEvent(Lang.f("ENCLUME : ATTAQUE +{0}", kind.empowered(enemy.getAnvil())),
+                    events.add(new StatusEvent(Lang.f("ENCLUME : ATTAQUE +{0}", kind.hurt(enemy.getAnvil())),
                         EffectPopup.Style.ATTACK));
                 }
                 case SONG   -> {
@@ -576,7 +576,7 @@ public class EnemyTurnResolver {
     }
 
     /** Ce qui vaut pour toutes ses attaques et ses Boucliers d'un tour. */
-    private static final class Turn {
+    static final class Turn {
         final Enemy  enemy;
         final Player player;
         final int    swordBonus;
@@ -599,7 +599,7 @@ public class EnemyTurnResolver {
 
         /** Comme {@link #strike(int)} ; avec {@code pierce} (Forage), le coup traverse le bouclier du joueur. */
         PlayerDamagedEvent strike(int base, boolean pierce) {
-            int attack = enemy.getKind().empowered(
+            int attack = enemy.getKind().hurt(
                 (base + swordBonus + enemy.getRage() + enemy.getAnvil() + enemy.spendInterest())
                     * enemy.getStake() * attackFactor);
             totalAttack += attack;

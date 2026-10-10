@@ -104,7 +104,7 @@ public final class EnemyCards {
     public static String describe(Card card, EnemyKind kind) {
         if (card.getSuit() == null) return Lang.t("Bloque un de tes rouleaux à ton prochain tirage. Pas de Bingo possible");
         return switch (card.getSuit()) {
-            case PIQUE   -> Lang.f("Épées et Crocs : attaque +{0}", kind.empowered(kind.swordBonus(card)));
+            case PIQUE   -> Lang.f("Épées et Crocs : attaque +{0}", kind.hurt(kind.swordBonus(card)));
             case COEUR   -> Lang.f("Potions : soin +{0} % des PV max", healBonus(card));
             case CARREAU -> Lang.f("Boucliers : défense +{0}", kind.empowered(kind.shieldBonus(card)));
             case TREFLE  -> Lang.f("Un symbole au hasard : chance +{0} %", luckBonus(card));

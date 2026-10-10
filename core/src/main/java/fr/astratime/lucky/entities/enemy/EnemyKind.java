@@ -789,6 +789,31 @@ public enum EnemyKind {
     /** @return {@code value} multiplié par sa {@linkplain #getPower() force} (arrondi). */
     public int empowered(int value) { return Math.round(value * getPower() / 100f); }
 
+    /**
+     * @return la part de ses coups qui porte, en % : dans la prairie, réglée donjon
+     *         par donjon pour qu'un joueur sans rang en gagne environ 7 sur 10
+     *         (simulateur d'équilibrage) ; 100 partout ailleurs
+     */
+    public int damagePercent() {
+        return switch (this) {
+            case SOLDAT_PIQUE,   ROI_PIQUE   -> PIQUE_DAMAGE;
+            case SOLDAT_TREFLE,  ROI_TREFLE  -> TREFLE_DAMAGE;
+            case SOLDAT_COEUR,   ROI_COEUR   -> COEUR_DAMAGE;
+            case SOLDAT_CARREAU, ROI_CARREAU -> CARREAU_DAMAGE;
+            default -> 100;
+        };
+    }
+
+    /** Dégâts des ennemis des donjons de la prairie, en % (voir {@link #damagePercent()}). */
+    static final int PIQUE_DAMAGE = 48, TREFLE_DAMAGE = 165, COEUR_DAMAGE = 210, CARREAU_DAMAGE = 165;
+
+    /** @return l'attaque {@code value} renforcée par sa {@linkplain #getPower() force}, puis à la {@linkplain #damagePercent() part qui porte}. */
+    public int hurt(int value) {
+        int empowered = empowered(value);
+        int percent = damagePercent();
+        return percent == 100 ? empowered : (int) Math.round((double) empowered * percent / 100);
+    }
+
     /** @return sa force en multiplicateur affichable (ex : "x1,5"). */
     public String powerText() {
         float factor = getPower() / 100f;
