@@ -18,7 +18,7 @@ class BoutiqueTest {
     void thereAreTenRanksAndTheFirstIsTheMiser() {
         assertEquals(10, Rank.values().length);
         assertEquals("Avare", Rank.AVARE.getTitle());
-        assertEquals(new RankBonus(100, 100, 50, 70), Rank.AVARE.getBonus());
+        assertEquals(new RankBonus(100, 100, 10, 70), Rank.AVARE.getBonus());
         assertEquals(1_000_000L, Rank.AVARE.getPrice());
         for (int i = 1; i < Rank.values().length; i++) {
             Rank previous = Rank.values()[i - 1], rank = Rank.values()[i];

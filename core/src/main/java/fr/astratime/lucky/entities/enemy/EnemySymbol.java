@@ -145,14 +145,14 @@ public enum EnemySymbol {
      */
     public String getDescription(EnemyKind kind) {
         return switch (this) {
-            case SWORD  -> Lang.f("Épée : attaque de {0}", kind.empowered(kind.swordDamage()));
+            case SWORD  -> Lang.f("Épée : attaque de {0}", kind.hurt(kind.swordDamage()));
             case SHIELD -> Lang.f("Bouclier : défense +{0} pendant le tour suivant",
                 kind.empowered(kind.shieldDefense()));
             case POTION -> Lang.f("Potion : soigne {0} % des PV max", percent(kind.potionPercent(0)));
             case THORNS -> Lang.f("Épines : renvoie {0} % de tes dégâts. Au début de son tour", kind.thornsPercent());
             case FANG   -> Lang.f("Croc : mord de {0}. Chaque PV volé lui rend {1} % de ses PV max",
-                kind.empowered(FANG_DAMAGE), percent(kind.drainPercent()));
-            case RAGE   -> Lang.f("Rage : attaque +{0}. Jusqu'à la fin du combat", kind.empowered(RAGE_ATTACK));
+                kind.hurt(FANG_DAMAGE), percent(kind.drainPercent()));
+            case RAGE   -> Lang.f("Rage : attaque +{0}. Jusqu'à la fin du combat", kind.hurt(RAGE_ATTACK));
             case LOADED_DIE -> Lang.f("Dé pipé : tes jauges (Coffre, Sang, Lames) perdent {0} %", kind.diePercent());
             case INTEREST -> Lang.f("Intérêts : il prend {0} % de tes gains. Attaque +1 par {1} volés, au prochain coup. Sans gains, "
                 + "il mord",
@@ -160,7 +160,7 @@ public enum EnemySymbol {
             case ZERO   -> Lang.t("Zéro : rouge, ses attaques doublent. Noir, ses Boucliers. Zéro, les deux");
             case MIRROR -> Lang.t("Reflet : il rejoue ta dernière carte. À moitié de sa force");
             case HOURGLASS -> Lang.f("Sablier : +1. À {0}, il explose ({1}). Tes gros coups le font reculer",
-                HOURGLASS_MAX, kind.empowered(HOURGLASS_DAMAGE));
+                HOURGLASS_MAX, kind.hurt(HOURGLASS_DAMAGE));
             case ALL_IN -> Lang.t("Tapis : à son prochain tour, ses attaques doublent. Touche-le avant pour l'annuler");
             case NIBBLE -> Lang.t("Grignotage : il ronge une carte. Au prochain tour, une carte de ta main part à la défausse");
             case DRUNK  -> Lang.t("Ivresse : à ton prochain tirage, un rouleau tourne deux fois et garde le pire résultat");
@@ -169,9 +169,9 @@ public enum EnemySymbol {
             case NUGGET -> Lang.t("Pépite : à ton prochain tirage, tes symboles de gain deviennent des pierres. Ils ne rapportent "
                 + "rien");
             case DRILL  -> Lang.f("Forage : attaque de {0}. Traverse ton bouclier",
-                kind.empowered(kind.swordDamage()));
+                kind.hurt(kind.swordDamage()));
             case ANVIL  -> Lang.f("Enclume : attaque +{0}. Jusqu'à la fin du combat, sans limite",
-                kind.empowered(ANVIL_ATTACK));
+                kind.hurt(ANVIL_ATTACK));
             case SONG   -> Lang.t("Chant : au début de ton prochain tour, une carte au hasard de ta main est jouée d'office");
             case BANK_BITE -> Lang.f("Morsure : il dévore {0} % de tes gains et se soigne d'autant. Sans gains, il mord",
                 kind.empowered(BANK_BITE_PERCENT));

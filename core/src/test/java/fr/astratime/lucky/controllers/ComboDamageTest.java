@@ -62,39 +62,39 @@ class ComboDamageTest {
     @ParameterizedTest(name = "{0} gains, rang {1} : {8} dégâts")
     @CsvSource({
         // gains, rang, As de Trèfle (consommé, attaque), As de Pique (consommé, Lames), par Triple Sept, pistolet, total
-        "10000, AUCUN, 3000, 663, 700, 2, 142740, 142740, 570960",
-        "10000, AVARE, 3000, 663, 700, 2, 160740, 160740, 642960",
-        "10000, PARIEUR, 3000, 663, 700, 2, 178740, 178740, 714960",
-        "10000, FLAMBEUR, 3000, 663, 700, 2, 205740, 205740, 822960",
-        "10000, HABITUE, 3000, 663, 700, 2, 232740, 232740, 930960",
-        "10000, REQUIN, 3000, 663, 700, 2, 277740, 277740, 1110960",
-        "10000, GROS_BONNET, 3000, 663, 700, 2, 322740, 322740, 1290960",
-        "10000, BARON, 3000, 663, 700, 2, 394740, 394740, 1578960",
-        "10000, MAGNAT, 3000, 663, 700, 2, 502740, 502740, 2010960",
-        "10000, ROI_DU_CASINO, 3000, 663, 700, 2, 646740, 646740, 2586960",
-        "10000, LEGENDE, 3000, 663, 700, 2, 862740, 862740, 3450960",
-        "100000, AUCUN, 30000, 1847, 7000, 5, 641655, 641655, 2566620",
-        "100000, AVARE, 30000, 1847, 7000, 5, 673155, 673155, 2692620",
-        "100000, PARIEUR, 30000, 1847, 7000, 5, 704655, 704655, 2818620",
-        "100000, FLAMBEUR, 30000, 1847, 7000, 5, 751905, 751905, 3007620",
-        "100000, HABITUE, 30000, 1847, 7000, 5, 799155, 799155, 3196620",
-        "100000, REQUIN, 30000, 1847, 7000, 5, 877905, 877905, 3511620",
-        "100000, GROS_BONNET, 30000, 1847, 7000, 5, 956655, 956655, 3826620",
-        "100000, BARON, 30000, 1847, 7000, 5, 1082655, 1082655, 4330620",
-        "100000, MAGNAT, 30000, 1847, 7000, 5, 1271655, 1271655, 5086620",
-        "100000, ROI_DU_CASINO, 30000, 1847, 7000, 5, 1523655, 1523655, 6094620",
-        "100000, LEGENDE, 30000, 1847, 7000, 5, 1901655, 1901655, 7606620",
-        "1000000, AUCUN, 300000, 5592, 70000, 5, 1821330, 1821330, 7285320",
-        "1000000, AVARE, 300000, 5592, 70000, 5, 1852830, 1852830, 7411320",
-        "1000000, PARIEUR, 300000, 5592, 70000, 5, 1884330, 1884330, 7537320",
-        "1000000, FLAMBEUR, 300000, 5592, 70000, 5, 1931580, 1931580, 7726320",
-        "1000000, HABITUE, 300000, 5592, 70000, 5, 1978830, 1978830, 7915320",
-        "1000000, REQUIN, 300000, 5592, 70000, 5, 2057580, 2057580, 8230320",
-        "1000000, GROS_BONNET, 300000, 5592, 70000, 5, 2136330, 2136330, 8545320",
-        "1000000, BARON, 300000, 5592, 70000, 5, 2262330, 2262330, 9049320",
-        "1000000, MAGNAT, 300000, 5592, 70000, 5, 2451330, 2451330, 9805320",
-        "1000000, ROI_DU_CASINO, 300000, 5592, 70000, 5, 2703330, 2703330, 10813320",
-        "1000000, LEGENDE, 300000, 5592, 70000, 5, 3081330, 3081330, 12325320",
+        "10000, AUCUN, 3000, 663, 700, 2, 142740, 142740, 570930",
+        "10000, AVARE, 3000, 663, 700, 2, 160740, 160740, 642930",
+        "10000, PARIEUR, 3000, 663, 700, 2, 178740, 178740, 714930",
+        "10000, FLAMBEUR, 3000, 663, 700, 2, 205740, 205740, 822930",
+        "10000, HABITUE, 3000, 663, 700, 2, 232740, 232740, 930930",
+        "10000, REQUIN, 3000, 663, 700, 2, 277740, 277740, 1110930",
+        "10000, GROS_BONNET, 3000, 663, 700, 2, 322740, 322740, 1290930",
+        "10000, BARON, 3000, 663, 700, 2, 394740, 394740, 1578930",
+        "10000, MAGNAT, 3000, 663, 700, 2, 502740, 502740, 2010930",
+        "10000, ROI_DU_CASINO, 3000, 663, 700, 2, 646740, 646740, 2586930",
+        "10000, LEGENDE, 3000, 663, 700, 2, 862740, 862740, 3450930",
+        "100000, AUCUN, 30000, 1847, 7000, 5, 641655, 641655, 2566590",
+        "100000, AVARE, 30000, 1847, 7000, 5, 673155, 673155, 2692590",
+        "100000, PARIEUR, 30000, 1847, 7000, 5, 704655, 704655, 2818590",
+        "100000, FLAMBEUR, 30000, 1847, 7000, 5, 751905, 751905, 3007590",
+        "100000, HABITUE, 30000, 1847, 7000, 5, 799155, 799155, 3196590",
+        "100000, REQUIN, 30000, 1847, 7000, 5, 877905, 877905, 3511590",
+        "100000, GROS_BONNET, 30000, 1847, 7000, 5, 956655, 956655, 3826590",
+        "100000, BARON, 30000, 1847, 7000, 5, 1082655, 1082655, 4330590",
+        "100000, MAGNAT, 30000, 1847, 7000, 5, 1271655, 1271655, 5086590",
+        "100000, ROI_DU_CASINO, 30000, 1847, 7000, 5, 1523655, 1523655, 6094590",
+        "100000, LEGENDE, 30000, 1847, 7000, 5, 1901655, 1901655, 7606590",
+        "1000000, AUCUN, 300000, 5592, 70000, 5, 1821330, 1821330, 7285290",
+        "1000000, AVARE, 300000, 5592, 70000, 5, 1852830, 1852830, 7411290",
+        "1000000, PARIEUR, 300000, 5592, 70000, 5, 1884330, 1884330, 7537290",
+        "1000000, FLAMBEUR, 300000, 5592, 70000, 5, 1931580, 1931580, 7726290",
+        "1000000, HABITUE, 300000, 5592, 70000, 5, 1978830, 1978830, 7915290",
+        "1000000, REQUIN, 300000, 5592, 70000, 5, 2057580, 2057580, 8230290",
+        "1000000, GROS_BONNET, 300000, 5592, 70000, 5, 2136330, 2136330, 8545290",
+        "1000000, BARON, 300000, 5592, 70000, 5, 2262330, 2262330, 9049290",
+        "1000000, MAGNAT, 300000, 5592, 70000, 5, 2451330, 2451330, 9805290",
+        "1000000, ROI_DU_CASINO, 300000, 5592, 70000, 5, 2703330, 2703330, 10813290",
+        "1000000, LEGENDE, 300000, 5592, 70000, 5, 3081330, 3081330, 12325290",
     })
     void asTrefleAsPiqueRouletteCorruptionEtBingoTripleSept(int gains, String rank, int clubsConsumed,
                                                            int clubsAttack, int spadesConsumed, int blades,
@@ -109,7 +109,7 @@ class ComboDamageTest {
         GameController controller = new GameController(() -> new ArrayList<>(deck), CARDS, Map.of(),
             cards -> new Player("Joueur", Player.BASE_HP, cards, rankBonus, Symbol.classicReels()));
         Player player = controller.getGameState().getPlayer();
-        // Une cible sans défense, avec le plus de PV possible : elle encaisse tous les coups.
+        // Une cible à la défense de base, avec le plus de PV possible : elle encaisse tous les coups.
         setGameState(controller, new GameState(player, new Enemy("Cible", Integer.MAX_VALUE)));
         player.addGains(gains);
         player.getLastingEffects().addBonusPlays(1);
@@ -136,9 +136,13 @@ class ComboDamageTest {
 
         List<EnemyDamagedEvent> hits = symbolHits(turn);
         assertEquals(3, hits.size());
-        for (EnemyDamagedEvent hit : hits) {
+        // L'As de Pique perce 80 % de chaque coup : les 20 % restants usent la défense de base
+        // de la cible (30) dès le premier coup ; les suivants passent en entier.
+        assertEquals(Enemy.BASE_DEFENSE, hits.get(0).blocked, "le premier coup use la défense");
+        assertEquals(perSymbol - Enemy.BASE_DEFENSE, hits.get(0).damage);
+        for (EnemyDamagedEvent hit : hits.subList(1, hits.size())) {
             assertEquals(perSymbol, hit.damage);
-            assertEquals(0, hit.blocked, "l'As de Pique ignore la défense");
+            assertEquals(0, hit.blocked, "la défense est usée");
         }
 
         List<PistolShotEvent> shots = turn.getPistolEvents().stream()

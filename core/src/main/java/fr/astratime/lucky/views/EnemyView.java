@@ -458,7 +458,7 @@ public class EnemyView implements Disposable {
     private static String bonusText(Card card, EnemyKind kind) {
         if (card.getSuit() == null) return Lang.t("ROULEAU INTERDIT");
         return switch (card.getSuit()) {
-            case PIQUE   -> Lang.f("ATTAQUE +{0}", kind.empowered(kind.swordBonus(card)));
+            case PIQUE   -> Lang.f("ATTAQUE +{0}", kind.hurt(kind.swordBonus(card)));
             case COEUR   -> Lang.f("POTION +{0}%", EnemyCards.healBonus(card));
             case CARREAU -> Lang.f("BOUCLIER +{0}", kind.empowered(kind.shieldBonus(card)));
             case TREFLE  -> Lang.f("CHANCE +{0}%", EnemyCards.luckBonus(card));
