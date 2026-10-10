@@ -245,32 +245,47 @@ public class OptionsMenu implements Disposable {
     // -------------------------------------------------------------------------
 
     /**
-     * @param onEffectsChanged appelé après la bascule des effets (ex : arrêter une secousse en cours)
      * @return les réglages du jeu, communs au menu principal et au menu pause :
-     *         affichage, effets visuels, vitesse des animations, volume de la musique, volume des sons
+     *         affichage, vitesse des animations, volume de la musique, volume des sons
+     *         (l'accessibilité à part : {@link #accessibilityEntries})
      */
     public static List<Entry> settingsEntries(LuckyGame game, VisualSettings visual, AudioSettings audio,
-                                              DisplaySettings display, Runnable onEffectsChanged) {
+                                              DisplaySettings display) {
         Runnable toggleScreenMode = () -> {
             ScreenMode mode = display.getScreenMode().toggled();
             display.setScreenMode(mode);
             game.applyScreenMode(mode);
         };
-        Runnable toggleEffects = () -> {
-            visual.setReducedEffects(!visual.isReducedEffects());
-            onEffectsChanged.run();
-        };
         return List.of(
             new Entry(() -> Lang.f("Affichage : {0}", display.getScreenMode().getLabel()), toggleScreenMode,
                 direction -> toggleScreenMode.run()),
-            new Entry(() -> visual.isReducedEffects() ? Lang.t("Effets : réduits") : Lang.t("Effets : normaux"), toggleEffects,
-                direction -> toggleEffects.run()),
             new Entry(() -> visual.getAnimationSpeed().label(), () -> visual.stepAnimationSpeed(1),
                 visual::stepAnimationSpeed),
             new Entry(() -> Lang.f("Musique : {0} %", AudioSettings.percent(audio.getMusicVolume())),
                 () -> cycle(audio::stepMusicVolume, audio.getMusicVolume()), audio::stepMusicVolume),
             new Entry(() -> Lang.f("Sons : {0} %", AudioSettings.percent(audio.getSoundVolume())),
                 () -> cycle(audio::stepSoundVolume, audio.getSoundVolume()), audio::stepSoundVolume));
+    }
+
+    /**
+     * @param onEffectsChanged appelé après la bascule des effets (ex : arrêter une secousse en cours)
+     * @return les réglages d'accessibilité : effets réduits, enseignes renforcées (jeu à quatre
+     *         couleurs), grand texte des infobulles
+     */
+    public static List<Entry> accessibilityEntries(VisualSettings visual, Runnable onEffectsChanged) {
+        Runnable toggleEffects = () -> {
+            visual.setReducedEffects(!visual.isReducedEffects());
+            onEffectsChanged.run();
+        };
+        Runnable toggleSuits    = () -> visual.setStrongSuitColors(!visual.isStrongSuitColors());
+        Runnable toggleTooltips = () -> visual.setLargeTooltips(!visual.isLargeTooltips());
+        return List.of(
+            new Entry(() -> visual.isReducedEffects() ? Lang.t("Effets : réduits") : Lang.t("Effets : normaux"), toggleEffects,
+                direction -> toggleEffects.run()),
+            new Entry(() -> visual.isStrongSuitColors() ? Lang.t("Enseignes : renforcées") : Lang.t("Enseignes : normales"),
+                toggleSuits, direction -> toggleSuits.run()),
+            new Entry(() -> visual.isLargeTooltips() ? Lang.t("Infobulles : grand texte") : Lang.t("Infobulles : texte normal"),
+                toggleTooltips, direction -> toggleTooltips.run()));
     }
 
     /** Volume au clic : palier suivant, puis retour à 0 après le maximum. */

@@ -1467,5 +1467,11 @@
   "Deck {0}": "Deck {0}",
   "Deck joué : {0}": "Playing deck: {0}",
   "Tours {0}  ·  Dégâts infligés {1}  ·  Plus gros coup {2}": "Turns {0}  ·  Damage dealt {1}  ·  Biggest hit {2}",
-  "Dégâts subis {0}  ·  Bingos {1}  ·  Cartes jouées {2}": "Damage taken {0}  ·  Bingos {1}  ·  Cards played {2}"
+  "Dégâts subis {0}  ·  Bingos {1}  ·  Cartes jouées {2}": "Damage taken {0}  ·  Bingos {1}  ·  Cards played {2}",
+  "Enseignes : renforcées": "Suits: high contrast",
+  "Enseignes : normales": "Suits: normal",
+  "Infobulles : grand texte": "Tooltips: large text",
+  "Infobulles : texte normal": "Tooltips: normal text",
+  "Accessibilité": "Accessibility",
+  "ACCESSIBILITÉ": "ACCESSIBILITY"
 }
