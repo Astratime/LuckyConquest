@@ -900,22 +900,47 @@ public enum EnemyKind {
     /** @return {@code true} si ses Trèfles comptent double quand sa vie est basse (la Reine des Tables). */
     public boolean royalBet() { return this == REINE; }
 
-    /** @return {@code true} s'il change de symboles sous {@link #PHASE_TWO_RATIO} de vie (l'Éclat Originel). */
-    public boolean hasPhaseTwo() { return this == ECLAT; }
+    /**
+     * @return {@code true} s'il change de symboles sous {@link #PHASE_TWO_RATIO} de vie : l'Éclat
+     *         Originel, et les rois de l'Exploration (ils gagnent un symbole, voir {@link #kingPhaseSymbol()})
+     */
+    public boolean hasPhaseTwo() { return this == ECLAT || kingPhaseSymbol() != null; }
+
+    /**
+     * @return le symbole qu'un roi de l'Exploration ajoute à ses rouleaux en phase 2, sous
+     *         {@link #PHASE_TWO_RATIO} de vie (poids {@link #KING_PHASE_WEIGHT}), ou {@code null}
+     */
+    public EnemySymbol kingPhaseSymbol() {
+        return switch (this) {
+            case ROI_PIQUE, SIRENE, BARON_OR -> EnemySymbol.FANG;
+            case ROI_COEUR, TAVERNIER, GARDIEN_PHARE, MAITRE_FORGE, REQUIN_BANQUIER -> EnemySymbol.RAGE;
+            case ROI_CARREAU, JACKPOT_VIVANT -> EnemySymbol.INTEREST;
+            case ROI_TREFLE -> EnemySymbol.DRUNK;
+            case CAPITAINE_RAT -> EnemySymbol.BOARDING;
+            case CAPITAINE_NOIR, KRAKEN -> EnemySymbol.BLIND;
+            case GRAND_FOREUR -> EnemySymbol.THORNS;
+            case COEUR_MONTAGNE -> EnemySymbol.ANVIL;
+            default -> null;
+        };
+    }
+
+    /** Poids du symbole qu'un roi ajoute en phase 2. */
+    public static final int KING_PHASE_WEIGHT = 1;
 
     /**
      * @return sa phase quand il lui reste {@code hpRatio} de ses PV : l'Éclat
      *         Originel passe à 2 sous la moitié ; le Prétendant perd un éclat et
      *         la Maison une de ses parties à chaque tiers ; la Machine
      *         Originelle vole un rouleau sous la moitié, puis un autre sous
-     *         {@link #MACHINE_LAST_RATIO}. Les autres restent en phase 1.
+     *         {@link #MACHINE_LAST_RATIO} ; les rois de l'Exploration passent à 2
+     *         sous la moitié. Les autres restent en phase 1.
      */
     public int phaseFor(float hpRatio) {
         return switch (this) {
             case ECLAT -> hpRatio < PHASE_TWO_RATIO ? 2 : 1;
             case PRETENDANT, MAISON -> hpRatio * 3f <= 1f ? 3 : hpRatio * 3f <= 2f ? 2 : 1;
             case MACHINE_ORIGINELLE -> hpRatio < MACHINE_LAST_RATIO ? 3 : hpRatio < PHASE_TWO_RATIO ? 2 : 1;
-            default -> 1;
+            default -> kingPhaseSymbol() != null && hpRatio < PHASE_TWO_RATIO ? 2 : 1;
         };
     }
 
@@ -925,6 +950,22 @@ public enum EnemyKind {
             case PRETENDANT -> phase == 2 ? Lang.t("ÉCLAT PERDU : FINI LE ROULEAU INTERDIT") : Lang.t("ÉCLAT PERDU : FINIE LA MISE ROYALE");
             case MAISON -> phase == 2 ? Lang.t("LA FAÇADE TOMBE : PLUS DE DÉFENSE") : Lang.t("LE COFFRE TOMBE : PLUS DE SOINS");
             case MACHINE_ORIGINELLE -> Lang.t("ELLE TE VOLE UN ROULEAU !");
+            case ROI_PIQUE -> Lang.t("LAMES ASSOIFFÉES : CROC !");
+            case ROI_COEUR -> Lang.t("CŒUR FURIEUX : RAGE !");
+            case ROI_CARREAU -> Lang.t("LE TRÉSOR RAPPORTE : INTÉRÊTS !");
+            case ROI_TREFLE -> Lang.t("LA TABLE TOURNE : IVRESSE !");
+            case CAPITAINE_RAT -> Lang.t("LES RATS MONTENT À BORD : ABORDAGE !");
+            case TAVERNIER -> Lang.t("BAGARRE DE TAVERNE : RAGE !");
+            case GARDIEN_PHARE -> Lang.t("LA TEMPÊTE SE LÈVE : RAGE !");
+            case CAPITAINE_NOIR -> Lang.t("BORDÉE DE FUMÉE : AVEUGLEMENT !");
+            case BARON_OR -> Lang.t("AVIDITÉ : CROC !");
+            case GRAND_FOREUR -> Lang.t("ÉCLATS DE ROCHE : ÉPINES !");
+            case MAITRE_FORGE -> Lang.t("FORGE ARDENTE : RAGE !");
+            case COEUR_MONTAGNE -> Lang.t("LE CŒUR DURCIT : ENCLUME !");
+            case SIRENE -> Lang.t("CHANT MORTEL : CROC !");
+            case JACKPOT_VIVANT -> Lang.t("MISE MAXIMALE : INTÉRÊTS !");
+            case REQUIN_BANQUIER -> Lang.t("FRÉNÉSIE : RAGE !");
+            case KRAKEN -> Lang.t("NUAGE D'ENCRE : AVEUGLEMENT !");
             default -> Lang.f("PHASE {0} !", phase);
         };
     }
@@ -964,7 +1005,12 @@ public enum EnemyKind {
 
     /** @return les symboles de ses rouleaux et leur poids dans la phase {@code phase} (1 ou 2). */
     public Map<EnemySymbol, Integer> getWeights(int phase) {
-        if (phase >= 2 && hasPhaseTwo()) return ECLAT_PHASE_TWO;
+        if (phase >= 2 && this == ECLAT) return ECLAT_PHASE_TWO;
+        if (phase >= 2 && kingPhaseSymbol() != null) {
+            Map<EnemySymbol, Integer> king = new LinkedHashMap<>(weights);
+            king.merge(kingPhaseSymbol(), KING_PHASE_WEIGHT, Integer::sum);
+            return Collections.unmodifiableMap(king);
+        }
         if (this == MAISON && phase >= 3) return HOUSE_PHASE_THREE;
         if (this == MAISON && phase == 2) return HOUSE_PHASE_TWO;
         return weights;
