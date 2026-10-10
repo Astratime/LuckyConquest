@@ -1850,8 +1850,9 @@ public class GameScreen extends ScreenAdapter {
 
     /**
      * Installe le processeur d'entrée de l'écran : le Stage (clics, survols)
-     * en priorité, puis les raccourcis clavier : F lance la machine si
-     * possible ; Échap ferme la fenêtre ouverte (carte, échoppe, pile) ou, s'il
+     * en priorité, puis les raccourcis clavier : Espace ou F lance la machine si
+     * possible, M change la Mise, 1 à 9 jouent la carte à cette place de la main,
+     * B ouvre l'échoppe ; Échap ferme la fenêtre ouverte (carte, échoppe, pile) ou, s'il
      * n'y en a pas, ouvre le menu pause. La pioche est automatique au début de
      * chaque tour du joueur.
      */
@@ -1887,8 +1888,20 @@ public class GameScreen extends ScreenAdapter {
                     || rainbowAnimation.isPlaying()) {
                     return true; // un choix ou une animation de carte est en cours
                 }
-                if (keycode == Input.Keys.F && !spinControls.isDisabled()) {
+                if ((keycode == Input.Keys.F || keycode == Input.Keys.SPACE) && !spinControls.isDisabled()) {
                     onSpin();
+                    return true;
+                }
+                // M : la touche M d'un clavier AZERTY arrive comme le point-virgule (place QWERTY)
+                if (keycode == Input.Keys.M || keycode == Input.Keys.SEMICOLON) {
+                    onStake();
+                    return true;
+                }
+                if (guide != null && guide.isActive()) return false; // le Croupier guide : cartes et échoppe à la souris
+                int card = cardKey(keycode);
+                if (card >= 0 && !spinControls.isDisabled()) return hand.playAt(card);
+                if (keycode == Input.Keys.B) {
+                    openShop();
                     return true;
                 }
                 return false;
@@ -1897,6 +1910,13 @@ public class GameScreen extends ScreenAdapter {
         gameInput = new InputMultiplexer(stage, keyboardInput);
         Gdx.input.setInputProcessor(pauseOverlay.isShown() ? pauseOverlay.getInput() : gameInput);
         music.play();
+    }
+
+    /** @return la place dans la main (0 à 8) de la touche 1 à 9 (rangée du haut ou pavé numérique), sinon -1. */
+    private static int cardKey(int keycode) {
+        if (keycode >= Input.Keys.NUM_1 && keycode <= Input.Keys.NUM_9) return keycode - Input.Keys.NUM_1;
+        if (keycode >= Input.Keys.NUMPAD_1 && keycode <= Input.Keys.NUMPAD_9) return keycode - Input.Keys.NUMPAD_1;
+        return -1;
     }
 
     /** Met à jour le viewport puis repositionne les éléments qui dépendent de la taille de l'écran. */
