@@ -28,6 +28,8 @@ public class TurnResult {
     private final EnemyTurnResult     enemyTurn;
     /** Premier tirage, relancé faute de paire (Relance) ; {@code null} sans relance. */
     private final Symbol[]            rerolledDraw;
+    /** Jeu bonus ouvert par le Bingo de ce tour (ses gains déjà crédités) ; {@code null} sans Jeu bonus. */
+    private final BonusGame           bonusGame;
 
     /**
      * @param events                 journal des événements survenus pendant le tour
@@ -54,14 +56,15 @@ public class TurnResult {
                       List<SymbolOutcome> symbolOutcomes, List<Event> cardEvents, List<Event> pistolEvents,
                       List<Event> pairOrJackpotEvents, List<Event> enemyTurnEvents) {
         this(events, symbols, drawnSymbols, gainsFromPairOrJackpot, symbolOutcomes, cardEvents, pistolEvents,
-            pairOrJackpotEvents, enemyTurnEvents, null, null);
+            pairOrJackpotEvents, enemyTurnEvents, null, null, null);
     }
 
     private TurnResult(List<Event> events, Symbol[] symbols, Symbol[] drawnSymbols, int gainsFromPairOrJackpot,
                        List<SymbolOutcome> symbolOutcomes, List<Event> cardEvents, List<Event> pistolEvents,
                        List<Event> pairOrJackpotEvents, List<Event> enemyTurnEvents, EnemyTurnResult enemyTurn,
-                       Symbol[] rerolledDraw) {
+                       Symbol[] rerolledDraw, BonusGame bonusGame) {
         this.enemyTurn = enemyTurn;
+        this.bonusGame = bonusGame;
         this.rerolledDraw = rerolledDraw == null ? null : rerolledDraw.clone();
         this.events  = List.copyOf(events);
         this.symbols = symbols.clone();
@@ -108,7 +111,7 @@ public class TurnResult {
         List<Event> end = new ArrayList<>(enemyTurnEvents);
         end.addAll(endEvents);
         return new TurnResult(all, symbols, drawnSymbols, gainsFromPairOrJackpot, symbolOutcomes, cardEvents,
-            pistolEvents, pairOrJackpotEvents, end, enemyTurn, rerolledDraw);
+            pistolEvents, pairOrJackpotEvents, end, enemyTurn, rerolledDraw, bonusGame);
     }
 
     /**
@@ -117,8 +120,20 @@ public class TurnResult {
      */
     public TurnResult withReroll(Symbol[] firstDraw) {
         return new TurnResult(events, symbols, drawnSymbols, gainsFromPairOrJackpot, symbolOutcomes, cardEvents,
-            pistolEvents, pairOrJackpotEvents, enemyTurnEvents, enemyTurn, firstDraw);
+            pistolEvents, pairOrJackpotEvents, enemyTurnEvents, enemyTurn, firstDraw, bonusGame);
     }
+
+    /**
+     * @param bonus Jeu bonus ouvert par le Bingo de ce tour (ses gains déjà crédités)
+     * @return ce résultat, avec le Jeu bonus à jouer après la célébration du Bingo
+     */
+    public TurnResult withBonusGame(BonusGame bonus) {
+        return new TurnResult(events, symbols, drawnSymbols, gainsFromPairOrJackpot, symbolOutcomes, cardEvents,
+            pistolEvents, pairOrJackpotEvents, enemyTurnEvents, enemyTurn, rerolledDraw, bonus);
+    }
+
+    /** @return le Jeu bonus ouvert par le Bingo de ce tour, ou {@code null} s'il ne s'est pas ouvert. */
+    public BonusGame getBonusGame() { return bonusGame; }
 
     /** @return une copie du premier tirage, relancé faute de paire (Relance), ou {@code null} sans relance. */
     public Symbol[] getRerolledDraw() { return rerolledDraw == null ? null : rerolledDraw.clone(); }

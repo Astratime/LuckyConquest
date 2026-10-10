@@ -290,7 +290,8 @@ public class CardLoader {
             // --- Cartes de casino ---
             case "BINGO":
                 return new BingoEffect(json.getInt("power"),
-                    json.has("symbol") ? Symbol.valueOf(json.getString("symbol")) : null);
+                    json.has("symbol") ? Symbol.valueOf(json.getString("symbol")) : null,
+                    json.getBoolean("bonusGame", false));
             case "MAGNET":
                 return new MagnetEffect(json.getInt("percent"));
             case "RECYCLE":

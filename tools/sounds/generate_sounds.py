@@ -2032,6 +2032,87 @@ def king_kraken():
     return king(prelude, entrance_kraken(), gesture)
 
 
+# --- Jeu bonus ---------------------------------------------------------------
+# Les instants reprennent BonusGameCutscene : « JEU BONUS ! » à 0 s, les lumières s'éteignent (LIGHTS_OUT 1,0 à
+# 2,0 s, une rangée d'ampoules par 0,33 s), les portes de la machine s'ouvrent (DOORS 2,0 à 3,0 s) sur la grille.
+
+@sound('cutscene/bonus_game', -17)
+def cutscene_bonus_game():
+    """Ouverture du Jeu bonus : fanfare, les lumières du casino s'éteignent une à une, la machine s'ouvre."""
+    track = Track(3.6)
+    track.add(bingo_jingle('C5', 'square', hold=0.7), 0.0, 1.0)
+    track.add(brass_chord(['C4', 'E4', 'G4', 'C5'], 0.9, 0.6), 0.25, 0.8)
+    for k, at in enumerate((1.0, 1.33, 1.66)):                                  # clac : une rangée d'ampoules s'éteint
+        track.add(mix((thump(160 - 30 * k, 50, 0.25, 0.06), 0, 1.0), (click(0.008, 800, 4000), 0, 0.8)), at, 0.8)
+        track.add(osc(sweep(220 - 40 * k, 60, 0.3), 0.3, 'saw') * expdec(0.3, 0.1) * 0.15, at, 1.0)
+    track.add(lp(noise(1.0), 400) * ramp(1.0, 0.0, 1.0) * fade_out(1.0, 0.2), 2.0, 0.4)   # les portes glissent
+    track.add(rattle(1.0, 30, 12, 1500, 4000), 2.0, 0.35)
+    track.add(whoosh(1.0, 300, 2400), 2.0, 0.4)
+    track.add(mix((metal_hit(520, 0.6), 0, 0.6), (impact(0.4, 120, 50), 0, 0.8)), 3.0, 0.7)
+    track.add(sparkle(0.8, count=16), 3.0, 0.5)
+    return reverb(track.buf, wet=0.2, size=1.2, tail=0.6)
+
+
+@sound('cutscene/bonus_game_music', -22, fmt='wav', loop=True)
+def cutscene_bonus_game_music():
+    """
+    Musique du Jeu bonus, en boucle tant que la grille tourne : casino rétro à 132 battements par minute,
+    basse qui saute, accords sur les contretemps, petite mélodie en carré (Do, La mineur, Ré mineur, Sol, deux fois).
+    Ce qui déborde de la boucle est replié sur son début : elle se raccorde sans blanc.
+    """
+    beat = 60 / 132
+    bars = 8
+    d = bars * 4 * beat
+    N = n(d)
+    track = Track(d + 2.0)
+    chords = [('C3', ['C4', 'E4', 'G4']), ('A2', ['A3', 'C4', 'E4']), ('D3', ['D4', 'F4', 'A4']),
+              ('G2', ['G3', 'B3', 'D4', 'F4'])] * 2
+    melody = [['E5', 'G5', 'C6', 'G5'], ['E5', 'A5', 'C6', 'A5'], ['F5', 'A5', 'D6', 'A5'], ['G5', 'B5', 'D6', 'F6'],
+              ['G5', 'E5', 'C6', 'E6'], ['C6', 'A5', 'E5', 'A5'], ['D6', 'F5', 'A5', 'F6'], ['D6', 'B5', 'G5', 'B5']]
+    for bar, (root, chord) in enumerate(chords):
+        t0 = bar * 4 * beat
+        for k in range(4):
+            note = root if k % 2 == 0 else transpose(hz(root), 7)
+            f = hz(note) if isinstance(note, str) else note
+            track.add(pluck(f, beat * 0.9, tau=0.25, bright=1800), t0 + k * beat, 0.55)   # basse
+            track.add(thump(110, 45, 0.2, 0.05), t0 + k * beat, 0.5 if k % 2 == 0 else 0.3)  # grosse caisse
+            stab = stack(*(chip(hz(c), beat * 0.35, 'square', 0.5, dc=0.04, s=0.4, r=0.03) for c in chord))
+            track.add(lp(stab, 3000), t0 + (k + 0.5) * beat, 0.16)                       # accords sur le contretemps
+            hat = bp(noise(0.04), 6000, 12000) * expdec(0.04, 0.01)
+            track.add(hat, t0 + (k + 0.5) * beat, 0.12)
+            track.add(hat, t0 + k * beat, 0.06)
+        for k, note in enumerate(melody[bar]):
+            track.add(chip(hz(note), beat * 0.8, 'square', 0.25, dc=0.05, s=0.5, r=0.08, vib=0.004),
+                      t0 + k * beat, 0.22)
+        if bar % 2 == 1:
+            track.add(sparkle(0.5, count=6), t0 + 3.5 * beat, 0.12)
+    buf = pad(track.buf, d + 2.0)
+    loop = buf[:N].copy()
+    loop[:len(buf) - N] += buf[N:]
+    return loop
+
+
+@sound('cutscene/bonus_game_freeze', -20)
+def cutscene_bonus_game_freeze():
+    """Des symboles alignés se figent en doré : carillon qui monte et scintillement."""
+    track = Track(0.9)
+    for k, note in enumerate(['G5', 'C6', 'E6', 'G6']):
+        track.add(modal(hz(note), 0.6, GLASS_RATIOS, [0.25, 0.1, 0.05, 0.02], [1, 0.3, 0.12, 0.05]), k * 0.05, 0.4)
+    track.add(sparkle(0.7, count=12), 0.05, 0.5)
+    return track.buf
+
+
+@sound('cutscene/bonus_game_total', -16)
+def cutscene_bonus_game_total():
+    """Les gains du Jeu bonus s'affichent : caisse enregistreuse, fanfare et pluie de pièces."""
+    track = Track(2.2)
+    track.add(cash_register_bell(), 0.0, 0.8)
+    track.add(bingo_jingle('G5', 'square', hold=0.9), 0.1, 1.0)
+    track.add(brass_chord(['C4', 'G4', 'C5', 'E5'], 1.2, 0.7), 0.35, 0.8)
+    track.add(coin_shower(1.6, 18), 0.3, 0.5)
+    return reverb(track.buf, wet=0.2, size=1.0, tail=0.6)
+
+
 def main(prefixes):
     done = 0
     for name, level, fmt, trim, loop, fn in SOUNDS:

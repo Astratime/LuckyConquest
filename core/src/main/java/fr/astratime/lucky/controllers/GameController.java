@@ -647,6 +647,9 @@ public class GameController {
         return rigged.getPopups();
     }
 
+    /** Ouvre ou ferme le Jeu bonus après les Bingos (fermé dans le tutoriel). */
+    public void setBonusGameEnabled(boolean enabled) { turnEngine.setBonusGameEnabled(enabled); }
+
     /** Tutoriel : le prochain tirage affiche {@code symbols}, de gauche à droite (sans texte ni son). */
     public void rigSpin(Symbol... symbols) {
         for (int reel = 0; reel < symbols.length; reel++) pendingEffects.add(new ForceReelEffect(reel, symbols[reel]));
@@ -724,7 +727,7 @@ public class GameController {
     public TurnResult spin() {
         // La carte « Bingo » (symbole au hasard), seule, offre un Bingo si son Bingo est de gains.
         boolean bingoCardPlayed = pendingEffects.stream()
-            .anyMatch(effect -> effect instanceof BingoEffect bingo && bingo.getSymbol() == null);
+            .anyMatch(effect -> effect instanceof BingoEffect bingo && bingo.getSymbol() == null && !bingo.isBonusGame());
         // La Mise puis le coût du tirage sont payés ; seul ce coût peut faire passer les gains sous 0.
         Player player = gameState.getPlayer();
         SpinEconomy.Stake placed = canStake() ? stake : SpinEconomy.Stake.NONE;

@@ -21,6 +21,12 @@ public record CutsceneKit(VisualSettings settings, ScreenShake shake, GameSounds
     /** @return le son de la cinématique {@code name} (sounds/cutscene/{@code name}.ogg), {@code null} sans sons. */
     public Sound sound(String name) { return sounds == null ? null : sounds.cutscene(name); }
 
+    /** @return la boucle de la cinématique {@code name} (sounds/cutscene/{@code name}.wav), {@code null} sans sons. */
+    public Sound loop(String name) { return sounds == null ? null : sounds.cutsceneLoop(name); }
+
+    /** @return les bruitages du jeu, {@code null} sans sons. */
+    public GameSounds gameSounds() { return sounds; }
+
     /** @return l'illustration en pixel art du chapitre {@code chapter}. */
     public TextureRegion chapterArt(Chapter chapter) { return new TextureRegion(enemies.chapterArt(chapter)); }
 

@@ -1348,5 +1348,17 @@
   "= {0} de bouclier": "= {0} shield",
   "= {0} gains": "= {0} gains",
   "Coût du tirage": "Draw cost",
-  "MISE PERDUE : PAS DE BINGO": "STAKE LOST: NO BINGO"
+  "MISE PERDUE : PAS DE BINGO": "STAKE LOST: NO BINGO",
+  "JEU BONUS !": "BONUS GAME!",
+  "TIRAGE {0}/{1}": "DRAW {0}/{1}",
+  "AUCUN ALIGNEMENT": "NO LINES",
+  "Jeu bonus": "Bonus game",
+  "Le Jeu bonus": "The bonus game",
+  "Après un Bingo, une fois sur dix : la grille de 6 x 6 et ses trois tirages, sur ta machine. Une nouvelle grille à chaque fois.": "After a Bingo, one time in ten: the 6 x 6 grid and its three draws, on your machine. A new grid every time.",
+  "Test : lance la machine avec un Bingo garanti, et le Jeu bonus s'ouvre à coup sûr": "Test: spins the machine with a guaranteed Bingo, and the bonus game always opens",
+  "Le Jeu bonus ! Après un Bingo, il s'ouvre une fois sur dix.": "The bonus game! After a Bingo, it opens one time in ten.",
+  "La grille tourne trois fois. Les symboles alignés se figent en doré, les autres relancent.": "The grid spins three times. Lined-up symbols freeze in gold, the others spin again.",
+  "Aligne au moins trois symboles identiques : en ligne, en colonne ou en diagonale. Le Joker compte pour n'importe lequel.": "Line up at least three identical symbols: in a row, a column or a diagonal. The Joker counts as any of them.",
+  "Plus l'alignement est long et le symbole rare, plus tu gagnes. Les gains tombent à la fin.": "The longer the line and the rarer the symbol, the more you win. Gains are paid at the end.",
+  "Ton rang, tes cartes Trèfle et tes combinaisons du tour ajoutent un petit bonus à chaque alignement.": "Your rank, your Clubs cards and your combinations of the turn add a small bonus to every line."
 }
