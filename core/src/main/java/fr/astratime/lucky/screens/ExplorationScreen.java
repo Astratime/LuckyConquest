@@ -134,6 +134,8 @@ public class ExplorationScreen extends ScreenAdapter {
     private final Label            ruleText;
     private final TextButton       enterButton;
     private final TextButton       backButton;
+    /** Choix rapide du deck joué parmi les emplacements enregistrés à la Table du croupier. */
+    private final TextButton       deckButton;
     /** Rejoue la présentation du Croupier. */
     private final TextButton       tutorialButton;
     private final Image            fade;
@@ -202,6 +204,9 @@ public class ExplorationScreen extends ScreenAdapter {
         enterButton = buttons.createAction(Lang.t("Entrer"), clickSound, this::launch);
         backButton  = buttons.create(Lang.t("Retour"), clickSound, this::onBack);
         tutorialButton = buttons.create(Lang.t("Tutoriel"), clickSound, this::replayGuide);
+        deckButton  = buttons.create(deckText(), clickSound, this::nextDeck);
+        // Un seul deck enregistré (ou le mode ADMIN, qui a le sien) : rien à choisir.
+        deckButton.setVisible(!profile.isAdmin() && profile.nextUsedDeckSlot(profile.getDeckSlot()) != profile.getDeckSlot());
 
         fade = new Image(pixel);
         fade.setColor(Color.BLACK);
@@ -221,6 +226,7 @@ public class ExplorationScreen extends ScreenAdapter {
         stage.addActor(ruleName);
         stage.addActor(ruleText);
         stage.addActor(enterButton);
+        stage.addActor(deckButton);
         stage.addActor(backButton);
         stage.addActor(tutorialButton);
         stage.addActor(fade);
@@ -353,6 +359,17 @@ public class ExplorationScreen extends ScreenAdapter {
         }
     }
 
+    /** Joue le deck enregistré suivant. */
+    private void nextDeck() {
+        profile.selectDeckSlot(profile.nextUsedDeckSlot(profile.getDeckSlot()));
+        deckButton.setText(deckText());
+    }
+
+    /** @return le texte du bouton du deck joué (un clic passe au deck enregistré suivant). */
+    private String deckText() {
+        return Lang.f("Deck joué : {0}", profile.getDeckSlot() + 1);
+    }
+
     /** Entre dans le donjon choisi : fondu au noir puis combat contre son soldat. */
     private void launch() {
         if (leaving || selected < 0 || !profile.isOpen(place)) return;
@@ -470,6 +487,7 @@ public class ExplorationScreen extends ScreenAdapter {
         dungeonText.setPosition(infoX, panelBottom + PANEL_PAD);
 
         enterButton.setPosition(detailX + detailWidth - enterButton.getWidth(), (BOTTOM_SPACE - enterButton.getHeight()) / 2f);
+        deckButton.setPosition(enterButton.getX() - 24f - deckButton.getWidth(), enterButton.getY());
         backButton.setPosition(MARGIN, (BOTTOM_SPACE - backButton.getHeight()) / 2f);
         tutorialButton.setPosition(backButton.getX() + backButton.getWidth() + 20f, backButton.getY());
         bobSelectedGate(); // les entrées viennent d'être replacées

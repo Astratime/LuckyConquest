@@ -28,8 +28,9 @@ available in French and English (Options > Language).*
 - **Exploration** : quatre lieux (la Prairie, le Port des Contrebandiers, les Mines d'Or, le Casino
   Englouti), chacun avec quatre donjons, leurs rois, leurs coffres et une règle propre au lieu.
   Ce sont les seuls combats qui rapportent des **pièces**.
-- **Table du croupier** : on y compose son deck de 20 cartes et les 11 rouleaux de sa machine, et on
-  y fusionne 3 exemplaires d'une carte en sa version **« + »**.
+- **Table du croupier** : on y compose son deck de 20 cartes (jusqu'à **3 decks enregistrés**, à choisir
+  aussi depuis l'Exploration) et les 11 rouleaux de sa machine, et on y fusionne 3 exemplaires d'une
+  carte en sa version **« + »**.
 - **Boutique** : les pièces achètent des **rangs** (des bonus pour tous les combats), des cartes et des
   rouleaux.
 

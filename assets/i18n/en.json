@@ -1463,5 +1463,7 @@
   "FRÉNÉSIE : RAGE !": "FRENZY: RAGE!",
   "NUAGE D'ENCRE : AVEUGLEMENT !": "INK CLOUD: BLINDNESS!",
   "Phase 2, sous la moitié de ses PV : attaques +{0} %, soins -{1} %": "Phase 2, under half its HP: attacks +{0}%, healing -{1}%",
-  "Phase 2 : attaques +{0} %, soins -{1} %": "Phase 2: attacks +{0}%, healing -{1}%"
+  "Phase 2 : attaques +{0} %, soins -{1} %": "Phase 2: attacks +{0}%, healing -{1}%",
+  "Deck {0}": "Deck {0}",
+  "Deck joué : {0}": "Playing deck: {0}"
 }

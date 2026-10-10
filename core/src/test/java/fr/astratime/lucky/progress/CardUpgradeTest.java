@@ -62,6 +62,23 @@ class CardUpgradeTest {
     }
 
     @Test
+    void theOtherSavedDecksStayValidAfterAFusion() {
+        PlayerProfile profile = profile(new PlayerProfileTest.MemoryStorage());
+        Map<String, Integer> other = new LinkedHashMap<>(deck());
+        other.remove("carte_0");
+        other.put("carte_19", 1);
+        profile.setDeck(1, other);
+        profile.selectDeckSlot(0);
+
+        assertTrue(profile.upgradeCard("triple"));
+
+        Map<String, Integer> repaired = profile.getDeckInSlot(1);
+        assertNull(profile.deckProblem(repaired), "l'autre deck enregistré reste jouable");
+        assertEquals(1, repaired.get("triple+"));
+        assertFalse(repaired.containsKey("triple"));
+    }
+
+    @Test
     void theFusionIsSaved() {
         PlayerProfileTest.MemoryStorage storage = new PlayerProfileTest.MemoryStorage();
         profile(storage).upgradeCard("triple");

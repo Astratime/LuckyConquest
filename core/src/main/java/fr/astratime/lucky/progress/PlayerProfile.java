@@ -49,6 +49,8 @@ public class PlayerProfile {
 
     /** Nombre de cartes d'un deck, ni plus ni moins. */
     public static final int DECK_SIZE   = 20;
+    /** Emplacements de deck enregistrés à la Table du croupier. */
+    public static final int DECK_SLOTS  = 3;
     /** Exemplaires au plus d'une même carte, dans la collection comme dans le deck. */
     public static final int MAX_COPIES  = 3;
     /** Pièces données par chaque coffre de donjon. */
@@ -72,6 +74,8 @@ public class PlayerProfile {
     static final String KEY_BINGOS        = "bingos";
     static final String KEY_STATS         = "stats";
     static final String KEY_ACHIEVEMENTS  = "achievements";
+    static final String KEY_DECK_SLOTS    = "deckSlots";
+    static final String KEY_DECK_SLOT     = "deckSlot";
     static final String KEY_MET           = "met";
     static final String KEY_DEFEATED      = "defeated";
 
@@ -91,6 +95,9 @@ public class PlayerProfile {
     private final Map<String, Integer> starterDeck;
     private final Map<String, Integer> collection = new LinkedHashMap<>();
     private final Map<String, Integer> deck       = new LinkedHashMap<>();
+    /** Decks enregistrés, par emplacement (vide : pas encore utilisé) ; celui de {@link #deckSlot} est {@link #deck}. */
+    private final List<Map<String, Integer>> deckSlots = new ArrayList<>();
+    private int deckSlot;
     private long coins;
     /** Nombre de rangs achetés (0 : aucun rang). */
     private int  ranks;
@@ -142,6 +149,7 @@ public class PlayerProfile {
         String savedDeck = storage.get(KEY_DECK);
         Map<String, Integer> loadedDeck = savedDeck != null ? decode(savedDeck) : starterDeck;
         deck.putAll(deckProblem(loadedDeck) == null ? loadedDeck : starterDeck);
+        loadDeckSlots();
         String savedCoins = storage.get(KEY_COINS);
         coins = parseCoins(savedCoins);
         ranks = Math.max(0, Math.min(Rank.values().length, (int) parseCoins(storage.get(KEY_RANK))));
@@ -561,9 +569,71 @@ public class PlayerProfile {
         String problem = deckProblem(newDeck);
         if (problem != null) throw new IllegalArgumentException(problem);
         Map<String, Integer> target = admin ? adminDeck : deck;
+        Map<String, Integer> copy = new LinkedHashMap<>(newDeck); // newDeck peut être une vue de target (getDeck())
         target.clear();
-        newDeck.forEach((id, copies) -> { if (copies > 0) target.put(id, copies); });
+        copy.forEach((id, copies) -> { if (copies > 0) target.put(id, copies); });
+        if (!admin) deckSlots.set(deckSlot, new LinkedHashMap<>(deck));
         save();
+    }
+
+    // -------------------------------------------------------------------------
+    // Decks enregistrés
+    // -------------------------------------------------------------------------
+
+    /** Lit les emplacements de deck ; une partie d'avant les emplacements a son deck dans le premier. */
+    private void loadDeckSlots() {
+        String saved = storage.get(KEY_DECK_SLOTS);
+        String[] parts = saved == null ? new String[0] : saved.split("\\|", -1);
+        for (int i = 0; i < DECK_SLOTS; i++) {
+            Map<String, Integer> slot = i < parts.length ? decode(parts[i]) : new LinkedHashMap<>();
+            deckSlots.add(deckProblem(slot) == null ? slot : new LinkedHashMap<>());
+        }
+        deckSlot = Math.max(0, Math.min(DECK_SLOTS - 1, (int) parseCoins(storage.get(KEY_DECK_SLOT))));
+        deckSlots.set(deckSlot, new LinkedHashMap<>(deck)); // le deck joué est celui de son emplacement
+    }
+
+    /** @return l'emplacement du deck joué (0 à {@link #DECK_SLOTS} - 1). */
+    public int getDeckSlot() { return deckSlot; }
+
+    /** @return le deck enregistré dans l'emplacement {@code slot} (vide s'il n'a jamais servi). */
+    public Map<String, Integer> getDeckInSlot(int slot) { return Collections.unmodifiableMap(deckSlots.get(slot)); }
+
+    /** @return {@code true} si l'emplacement {@code slot} contient un deck. */
+    public boolean isDeckSlotUsed(int slot) { return !deckSlots.get(slot).isEmpty(); }
+
+    /**
+     * Joue le deck de l'emplacement {@code slot} (rien en mode ADMIN, qui a son propre deck).
+     *
+     * @return {@code false} si l'emplacement est vide
+     */
+    public boolean selectDeckSlot(int slot) {
+        if (admin || slot < 0 || slot >= DECK_SLOTS || !isDeckSlotUsed(slot)) return false;
+        if (slot == deckSlot) return true;
+        deckSlot = slot;
+        deck.clear();
+        deck.putAll(deckSlots.get(slot));
+        save();
+        return true;
+    }
+
+    /**
+     * Enregistre {@code newDeck} dans l'emplacement {@code slot} et le joue (en mode ADMIN,
+     * le deck du mode ADMIN, sans emplacement).
+     *
+     * @throws IllegalArgumentException si {@code newDeck} n'est pas valide (voir {@link #deckProblem(Map)})
+     */
+    public void setDeck(int slot, Map<String, Integer> newDeck) {
+        if (!admin && slot >= 0 && slot < DECK_SLOTS) deckSlot = slot;
+        setDeck(newDeck);
+    }
+
+    /** @return le prochain emplacement utilisé après {@code slot} ({@code slot} lui-même s'il n'y en a pas d'autre). */
+    public int nextUsedDeckSlot(int slot) {
+        for (int i = 1; i <= DECK_SLOTS; i++) {
+            int next = (slot + i) % DECK_SLOTS;
+            if (isDeckSlotUsed(next)) return next;
+        }
+        return slot;
     }
 
     // -------------------------------------------------------------------------
@@ -596,7 +666,7 @@ public class PlayerProfile {
             Card.UPGRADE_COST);
         if (getOwnedCopies(Card.upgradedId(id)) >= MAX_COPIES) return Lang.f("Tu as déjà {0} cartes + de celle-ci",
             MAX_COPIES);
-        if (deckAfterUpgrade(id) == null) return Lang.f("Il te resterait moins de {0} cartes pour ton deck",
+        if (deckAfterUpgrade(id, deck) == null) return Lang.f("Il te resterait moins de {0} cartes pour ton deck",
             DECK_SIZE);
         return null;
     }
@@ -612,7 +682,13 @@ public class PlayerProfile {
     public boolean upgradeCard(String id) {
         if (upgradeProblem(id) != null) return false;
         String plus = Card.upgradedId(id);
-        Map<String, Integer> newDeck = deckAfterUpgrade(id);
+        Map<String, Integer> newDeck = deckAfterUpgrade(id, deck);
+        List<Map<String, Integer>> newSlots = new ArrayList<>();
+        for (int i = 0; i < DECK_SLOTS; i++) {
+            Map<String, Integer> slot = deckSlots.get(i);
+            Map<String, Integer> repaired = i == deckSlot ? newDeck : slot.isEmpty() ? slot : deckAfterUpgrade(id, slot);
+            newSlots.add(new LinkedHashMap<>(repaired != null ? repaired : newDeck)); // irréparable : le deck joué
+        }
         Map<String, Integer> newCollection = new LinkedHashMap<>();
         for (Map.Entry<String, Integer> entry : collection.entrySet()) {
             String key = entry.getKey();
@@ -625,17 +701,18 @@ public class PlayerProfile {
         collection.putAll(newCollection);
         deck.clear();
         deck.putAll(newDeck);
+        for (int i = 0; i < DECK_SLOTS; i++) deckSlots.set(i, newSlots.get(i));
         coins -= Card.UPGRADE_PRICE;
         save();
         return true;
     }
 
     /**
-     * @return le deck enregistré après la fusion de la carte {@code id} (voir
+     * @return le deck {@code deck} après la fusion de la carte {@code id} (voir
      *         {@link #upgradeCard(String)}), ou {@code null} si la collection ne
-     *         suffit plus à remplir le deck
+     *         suffit plus à le remplir
      */
-    private Map<String, Integer> deckAfterUpgrade(String id) {
+    private Map<String, Integer> deckAfterUpgrade(String id, Map<String, Integer> deck) {
         String plus = Card.upgradedId(id);
         Map<String, Integer> owned = new LinkedHashMap<>(collection);
         owned.merge(id, -Card.UPGRADE_COST, Integer::sum);
@@ -849,6 +926,9 @@ public class PlayerProfile {
         storage.put(KEY_TOWER_HARD, String.valueOf(towerHard));
         storage.put(KEY_COLLECTION, encode(collection));
         storage.put(KEY_DECK, encode(deck));
+        storage.put(KEY_DECK_SLOTS, deckSlots.stream().map(PlayerProfile::encode)
+            .collect(java.util.stream.Collectors.joining("|")));
+        storage.put(KEY_DECK_SLOT, String.valueOf(deckSlot));
         storage.put(KEY_COINS, String.valueOf(coins));
         storage.put(KEY_RANK, String.valueOf(ranks));
         storage.put(KEY_REELS, encodeSymbols(boughtReels));
