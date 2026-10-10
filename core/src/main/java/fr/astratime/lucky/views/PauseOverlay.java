@@ -74,8 +74,9 @@ public class PauseOverlay implements Disposable {
         veil.setColor(Palette.VEIL);
         stage.addActor(veil);
         menu = new OptionsMenu(stage, hud, clickSound, hoverSound);
-        settingsEntries = OptionsMenu.settingsEntries(game, settings, new AudioSettings(), new DisplaySettings(),
-            listener::onEffectsChanged);
+        settingsEntries = new ArrayList<>(OptionsMenu.settingsEntries(game, settings, new AudioSettings(),
+            new DisplaySettings()));
+        settingsEntries.addAll(OptionsMenu.accessibilityEntries(settings, listener::onEffectsChanged));
 
         InputAdapter keyboard = new InputAdapter() {
             @Override
@@ -125,7 +126,7 @@ public class PauseOverlay implements Disposable {
             })));
     }
 
-    /** Page des options : affichage, effets visuels, musique, sons, Retour. */
+    /** Page des options : affichage, animations, musique, sons, accessibilité, Retour. */
     private void showOptionsPage() {
         optionsPage = true;
         List<OptionsMenu.Entry> entries = new ArrayList<>(settingsEntries);

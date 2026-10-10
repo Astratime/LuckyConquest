@@ -93,6 +93,8 @@ public class MenuScreen extends ScreenAdapter {
     private final LuckyGame      luckyGame;
     private final Stage          stage;
     private final VisualSettings settings = new VisualSettings();
+    /** Échap sur une sous-page (Accessibilité) : retour à sa page parente ; {@code null} : à la page principale. */
+    private Runnable escapeBack;
     private final AudioSettings  audio    = new AudioSettings();
     private final DisplaySettings display = new DisplaySettings();
     private final HudTextures    hud      = new HudTextures();
@@ -182,7 +184,7 @@ public class MenuScreen extends ScreenAdapter {
         showPage(null, entries);
     }
 
-    /** Page des options : affichage, effets visuels, musique, sons, langue, tutoriel, mode ADMIN, Retour. */
+    /** Page des options : affichage, animations, musique, sons, accessibilité, langue, tutoriel, mode ADMIN, Retour. */
     private void showOptionsPage() {
         showOptionsPage(0);
     }
@@ -190,7 +192,9 @@ public class MenuScreen extends ScreenAdapter {
     /** @param selected l'option sélectionnée à l'ouverture de la page */
     private void showOptionsPage(int selected) {
         List<OptionsMenu.Entry> entries = new ArrayList<>(
-            OptionsMenu.settingsEntries(luckyGame, settings, audio, display, () -> { }));
+            OptionsMenu.settingsEntries(luckyGame, settings, audio, display));
+        int accessibilityIndex = entries.size();
+        entries.add(OptionsMenu.Entry.button(Lang.t("Accessibilité"), () -> showAccessibilityPage(accessibilityIndex)));
         int languageIndex = entries.size();
         // Langue : la page est redessinée (au prochain rendu) pour que tous ses textes changent.
         Runnable toggleLanguage = () -> {
@@ -209,6 +213,14 @@ public class MenuScreen extends ScreenAdapter {
             toggleAdmin, direction -> toggleAdmin.run()));
         entries.add(OptionsMenu.Entry.button(Lang.t("Retour"), this::showMainPage));
         showPage(Lang.t("OPTIONS"), entries, selected);
+    }
+
+    /** Page Accessibilité : effets réduits, enseignes renforcées, grand texte des infobulles, Retour. */
+    private void showAccessibilityPage(int optionsIndex) {
+        List<OptionsMenu.Entry> entries = new ArrayList<>(OptionsMenu.accessibilityEntries(settings, () -> { }));
+        entries.add(OptionsMenu.Entry.button(Lang.t("Retour"), () -> showOptionsPage(optionsIndex)));
+        showPage(Lang.t("ACCESSIBILITÉ"), entries, 0);
+        escapeBack = () -> showOptionsPage(optionsIndex);
     }
 
     /** Ouvre la fenêtre des statistiques et des succès ; le menu attend qu'elle se ferme. */
@@ -239,6 +251,7 @@ public class MenuScreen extends ScreenAdapter {
     }
 
     private void showPage(String caption, List<OptionsMenu.Entry> entries, int selected) {
+        escapeBack = null;
         menu.setEntries(caption, entries, selected);
         placeMenu();
         fade.toFront();
@@ -450,7 +463,8 @@ public class MenuScreen extends ScreenAdapter {
                 }
                 if (keycode == Input.Keys.ESCAPE && menu.hasCaption()) {
                     clickSound.play();
-                    showMainPage();
+                    if (escapeBack != null) escapeBack.run();
+                    else showMainPage();
                     return true;
                 }
                 return menu.keyDown(keycode);

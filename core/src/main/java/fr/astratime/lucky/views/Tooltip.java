@@ -15,32 +15,42 @@ import com.badlogic.gdx.utils.Disposable;
 import fr.astratime.lucky.assets.Fonts;
 import fr.astratime.lucky.assets.HudTextures;
 import fr.astratime.lucky.assets.Palette;
+import fr.astratime.lucky.settings.VisualSettings;
 
 /**
  * Infobulle au thème du casino, partagée par tous les acteurs survolables de
  * l'écran (cartes, symboles, piles...) : fond laqué sombre à double liseré
  * doré et rivets rouges, titre doré souligné d'un filet, puis le texte en
  * crème, renvoyé à la ligne. Elle apparaît en fondu avec un léger zoom et
- * reste toujours entièrement à l'écran.
+ * reste toujours entièrement à l'écran. L'option « Grand texte » des
+ * infobulles (accessibilité) grossit son titre et son texte.
  */
 public class Tooltip implements Disposable {
 
     private static final float PAD        = 16f;
     private static final float MAX_WIDTH  = 380f;   // largeur du texte avant retour à la ligne
+    private static final float LARGE_MAX_WIDTH = 500f; // la même, en grand texte
     private static final float RULE_GAP   = 6f;
     private static final float MARGIN     = 8f;     // distance minimale au bord de l'écran
     private static final float APPEAR     = 0.12f;
 
     private final BitmapFont titleFont = Fonts.jersey(30, Palette.TEXT_TITLE, 2f, Palette.TEXT_SHADE);
     private final BitmapFont bodyFont  = Fonts.jersey(24, Palette.TEXT_BODY, 2f, Palette.TEXT_SHADE);
+    private final BitmapFont largeTitleFont = Fonts.jersey(40, Palette.TEXT_TITLE, 2f, Palette.TEXT_SHADE);
+    private final BitmapFont largeBodyFont  = Fonts.jersey(32, Palette.TEXT_BODY, 2f, Palette.TEXT_SHADE);
+    private final Label.LabelStyle titleStyle      = new Label.LabelStyle(titleFont, Color.WHITE);
+    private final Label.LabelStyle bodyStyle       = new Label.LabelStyle(bodyFont, Color.WHITE);
+    private final Label.LabelStyle largeTitleStyle = new Label.LabelStyle(largeTitleFont, Color.WHITE);
+    private final Label.LabelStyle largeBodyStyle  = new Label.LabelStyle(largeBodyFont, Color.WHITE);
+    private final VisualSettings settings = new VisualSettings();
     private final Label      title;
     private final Image      rule;
     private final Label      body;
     private final Table      table = new Table();
 
     public Tooltip(HudTextures hud) {
-        title = new Label("", new Label.LabelStyle(titleFont, Color.WHITE));
-        body  = new Label("", new Label.LabelStyle(bodyFont, Color.WHITE));
+        title = new Label("", titleStyle);
+        body  = new Label("", bodyStyle);
         body.setWrap(true);
         rule  = new Image(new TextureRegionDrawable(new TextureRegion(hud.tooltipRule)));
         table.setBackground(hud.tooltipDrawable());
@@ -67,6 +77,10 @@ public class Tooltip implements Disposable {
      */
     public void show(String heading, String text, float x, float y) {
         table.clearChildren();
+        boolean large = settings.isLargeTooltips();
+        title.setStyle(large ? largeTitleStyle : titleStyle);
+        body.setStyle(large ? largeBodyStyle : bodyStyle);
+        float maxWidth = large ? LARGE_MAX_WIDTH : MAX_WIDTH;
         if (heading != null) {
             title.setText(heading);
             table.add(title).left();
@@ -75,8 +89,8 @@ public class Tooltip implements Disposable {
             table.row();
         }
         body.setText(text);
-        body.setWidth(MAX_WIDTH);
-        float bodyWidth = Math.min(MAX_WIDTH, naturalWidth(text));
+        body.setWidth(maxWidth);
+        float bodyWidth = Math.min(maxWidth, naturalWidth(text));
         if (heading != null) bodyWidth = Math.max(bodyWidth, title.getPrefWidth());
         table.add(body).width(bodyWidth).left();
         table.pack();
@@ -114,5 +128,7 @@ public class Tooltip implements Disposable {
     public void dispose() {
         Fonts.release(titleFont);
         Fonts.release(bodyFont);
+        Fonts.release(largeTitleFont);
+        Fonts.release(largeBodyFont);
     }
 }
