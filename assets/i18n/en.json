@@ -1435,5 +1435,6 @@
   "Ta sauvegarde a été modifiée en dehors du jeu, ou abîmée, et sa copie de secours aussi. Je ne peux pas les reprendre : ta partie repart de zéro. L'ancien fichier est gardé à côté, en .refuse.": "Your save was changed outside the game, or damaged, and so was its backup. I can't load them: your game starts over. The old file is kept next to it, as .refuse.",
   "Ta sauvegarde a été modifiée en dehors du jeu, ou abîmée. J'ai repris sa copie de secours : tes tout derniers progrès sont peut-être perdus.": "Your save was changed outside the game, or damaged. I loaded its backup: your very latest progress may be lost.",
   "Compris": "Got it",
-  "Touche {0}.": "Key {0}."
+  "Touche {0}.": "Key {0}.",
+  "Le jeu a planté la dernière fois. Désolé ! Le rapport est ici : {0}. Envoie-le avec ton signalement du bug, il aide à le corriger.": "The game crashed last time. Sorry! The report is here: {0}. Send it with your bug report, it helps fix it."
 }

@@ -5,13 +5,20 @@ import com.badlogic.gdx.backends.lwjgl3.Lwjgl3Application;
 import com.badlogic.gdx.backends.lwjgl3.Lwjgl3ApplicationConfiguration;
 import com.badlogic.gdx.backends.lwjgl3.Lwjgl3Preferences;
 import fr.astratime.lucky.LuckyGame;
+import fr.astratime.lucky.progress.CrashReport;
 import fr.astratime.lucky.settings.DisplaySettings;
 
 /** Launches the desktop (LWJGL3) application. */
 public class Lwjgl3Launcher {
     public static void main(String[] args) {
         if (StartupHelper.startNewJvmIfRequired()) return; // This handles macOS support and helps on Windows.
-        createApplication();
+        // Plantage : l'erreur est écrite dans ~/.prefs/lucky-conquest-crash.log, et le Croupier le dira au prochain lancement.
+        try {
+            createApplication();
+        } catch (Throwable error) {
+            CrashReport.write(CrashReport.DEFAULT_FILE, error);
+            throw error;
+        }
     }
 
     private static Lwjgl3Application createApplication() {
