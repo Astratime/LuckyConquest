@@ -14,8 +14,8 @@ import java.util.List;
 /**
  * As de Pique, « Exécution » : à la pose, il consomme une part des gains pour
  * aiguiser de nouvelles Lames ; au lancer, il encaisse toutes les Lames :
- * l'attaque du tour est multipliée selon leur nombre, et elle ignore la
- * défense ennemie. Les Lames comptent encore pour ce tirage, puis sont vidées.
+ * l'attaque du tour est multipliée selon leur nombre, et {@link #PIERCE_PERCENT} %
+ * de chaque coup traverse la défense ennemie (tout, pour sa version « + »). Les Lames comptent encore pour ce tirage, puis sont vidées.
  */
 public class AceOfSpadesEffect extends Effect {
 
@@ -27,6 +27,8 @@ public class AceOfSpadesEffect extends Effect {
     static final int   MAX_BOUGHT_BLADES = 5;
     /** Multiplicateur d'attaque ajouté par Lame encaissée. */
     static final float FACTOR_PER_BLADE = 0.5f;
+    /** Part (%) de chaque coup qui traverse la défense ennemie (Astra : 80, au lieu de toute la défense). */
+    static final int   PIERCE_PERCENT = 80;
 
     /** Puissance de la carte : 1, ou {@link fr.astratime.lucky.entities.Card#UPGRADE_FACTOR} pour sa version « + ». */
     private final float power;
@@ -47,13 +49,13 @@ public class AceOfSpadesEffect extends Effect {
             new EffectPopup(Lang.f("-10% GAINS : LAMES +{0}", blades), EffectPopup.Style.GAINS, PopupScale.SECONDARY_INTENSITY)));
     }
 
-    /** Encaisse les Lames : attaque multipliée pour ce tour, défense ennemie ignorée. */
+    /** Encaisse les Lames : attaque multipliée pour ce tour, défense ennemie percée de {@link #piercePercent()} %. */
     @Override
     public void apply(TurnContext context) {
         LastingEffects lasting = context.getCombatContext().getPlayer().getLastingEffects();
         int   blades = lasting.consumeBlades();
         float factor = 1f + FACTOR_PER_BLADE * power * blades;
-        context.getCombatContext().setIgnoreDefense(true);
+        context.getCombatContext().pierceDefense(piercePercent());
         context.getCombatContext().multiplyAttack(factor, "As de Pique");
         String times = factor == (int) factor ? String.valueOf((int) factor) : String.valueOf(factor);
         context.addEvent(new CardBonusEvent(Lang.f("Execution : {0} lames, attaque x{1}", blades, times), List.of(
@@ -61,11 +63,14 @@ public class AceOfSpadesEffect extends Effect {
             new EffectPopup(Lang.f("ATTAQUE x{0}", times), EffectPopup.Style.ATTACK, PopupScale.SECONDARY_INTENSITY))));
     }
 
+    /** @return la part (%) de chaque coup qui traverse la défense, au plus 100 (version « + »). */
+    public int piercePercent() { return Math.min(100, Math.round(PIERCE_PERCENT * power)); }
+
     @Override
     public String getDescription() {
         return Lang.f("Exécution : consomme 10% des gains. +1 Lame tous les {0} gains consommés. Attaque multipliée "
-            + "par (1 + {1} x Lame). Les symboles d'attaque ignorent la défense",
-            GAINS_PER_BLADE, Lang.decimal(String.valueOf(FACTOR_PER_BLADE * power)));
+            + "par (1 + {1} x Lame). Les symboles d'attaque percent {2} % de la défense",
+            GAINS_PER_BLADE, Lang.decimal(String.valueOf(FACTOR_PER_BLADE * power)), piercePercent());
     }
 
     /** Textes fixes : aucun, ils dépendent des gains consommés (voir {@link #onPlay}). */

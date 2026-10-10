@@ -163,7 +163,7 @@
   "Execution : {0} lames, attaque x{1}": "Execution: {0} blades, attack x{1}",
   "EXÉCUTION : {0} LAMES": "EXECUTION: {0} BLADES",
   "ATTAQUE x{0}": "ATTACK x{0}",
-  "Exécution : consomme 10% des gains. +1 Lame tous les {0} gains consommés. Attaque multipliée par (1 + {1} x Lame). Les symboles d'attaque ignorent la défense": "Execution: uses up 10% of gains. +1 Blade per {0} gains used up. Attack multiplied by (1 + {1} x Blades). Attack symbols ignore defense",
+  "Exécution : consomme 10% des gains. +1 Lame tous les {0} gains consommés. Attaque multipliée par (1 + {1} x Lame). Les symboles d'attaque percent {2} % de la défense": "Execution: uses up 10% of gains. +1 Blade per {0} gains used up. Attack multiplied by (1 + {1} x Blades). Attack symbols pierce {2}% of defense",
   "Mise tous tes gains. Paire : gains x3. Sinon, tu perds tout.": "Bet all your gains. Pair: gains x3. Otherwise, you lose everything.",
   "TAPIS !": "ALL-IN!",
   "Pendant {0} tours, la marée haute ne baisse plus ton attaque. Défense +{1} %.": "For {0} turns, high tide no longer lowers your attack. Defense +{1}%.",
