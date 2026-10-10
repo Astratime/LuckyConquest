@@ -1436,5 +1436,14 @@
   "Ta sauvegarde a été modifiée en dehors du jeu, ou abîmée. J'ai repris sa copie de secours : tes tout derniers progrès sont peut-être perdus.": "Your save was changed outside the game, or damaged. I loaded its backup: your very latest progress may be lost.",
   "Compris": "Got it",
   "Touche {0}.": "Key {0}.",
-  "Le jeu a planté la dernière fois. Désolé ! Le rapport est ici : {0}. Envoie-le avec ton signalement du bug, il aide à le corriger.": "The game crashed last time. Sorry! The report is here: {0}. Send it with your bug report, it helps fix it."
+  "Le jeu a planté la dernière fois. Désolé ! Le rapport est ici : {0}. Envoie-le avec ton signalement du bug, il aide à le corriger.": "The game crashed last time. Sorry! The report is here: {0}. Send it with your bug report, it helps fix it.",
+  "Bestiaire et collection": "Bestiary and collection",
+  "BESTIAIRE ET COLLECTION": "BESTIARY AND COLLECTION",
+  "Ennemis rencontrés : {0} / {1}     Vaincus : {2} / {1}     Cartes : {3} / {4}     Rouleaux : {5} / {6}     Cinématiques : {7} / {8}": "Enemies met: {0} / {1}     Defeated: {2} / {1}     Cards: {3} / {4}     Reels: {5} / {6}     Cutscenes: {7} / {8}",
+  "Vaincu": "Defeated",
+  "Rencontré, pas encore vaincu": "Met, not defeated yet",
+  "Pas encore rencontré": "Not met yet",
+  "Affronte-le pour découvrir sa fiche.": "Fight it to unlock its entry.",
+  "Revoir les cinématiques": "Watch cutscenes again",
+  "Tour des épreuves, {0}": "Tower of Trials, {0}"
 }

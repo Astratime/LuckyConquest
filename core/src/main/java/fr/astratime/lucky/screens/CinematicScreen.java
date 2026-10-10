@@ -47,6 +47,8 @@ import fr.astratime.lucky.entities.exploration.Dungeon;
 import fr.astratime.lucky.entities.exploration.Place;
 import fr.astratime.lucky.entities.tower.Chapter;
 import fr.astratime.lucky.i18n.Lang;
+import fr.astratime.lucky.progress.Bestiary;
+import fr.astratime.lucky.progress.PlayerProfile;
 import fr.astratime.lucky.settings.AudioSettings;
 import fr.astratime.lucky.settings.VisualSettings;
 import fr.astratime.lucky.views.CasinoButtons;
@@ -60,8 +62,9 @@ import java.util.Random;
 import java.util.function.Function;
 
 /**
- * Mode Cinématique (mode ADMIN seulement) : rejoue n'importe quelle cinématique
- * du jeu, sur le modèle de l'écran de la Tour des épreuves.
+ * Mode Cinématique : rejoue n'importe quelle cinématique du jeu en mode ADMIN,
+ * ou celles déjà vues depuis le Bestiaire (voir {@link Bestiary}), sur le modèle
+ * de l'écran de la Tour des épreuves.
  *
  * À gauche, les groupes : les boss de la Tour, les fins et le duel des leviers,
  * puis les rois de chaque lieu de l'Exploration, et le Jeu bonus. À droite, les cinématiques du
@@ -228,9 +231,11 @@ public class CinematicScreen extends ScreenAdapter {
 
     /** Les groupes : boss de la Tour (par chapitre), fins et duel, les rois de chaque lieu, puis le Jeu bonus. */
     private void buildGroups() {
+        PlayerProfile profile = luckyGame.getProfile();
         List<Entry> bosses = new ArrayList<>();
         for (Chapter chapter : Chapter.values()) {
             EnemyKind boss = chapter.getBoss();
+            if (!Bestiary.bossCutsceneSeen(profile, boss)) continue;
             bosses.add(new Entry(chapter.getNumber() + ". " + boss.getDisplayName(),
                 Lang.f("{0}, « {1} » : avant le combat contre le boss.", chapter.getLabel(), chapter.getTitle()),
                 enemyTextures.portrait(boss), kit -> Cutscenes.beforeBoss(kit, boss)));
@@ -239,18 +244,21 @@ public class CinematicScreen extends ScreenAdapter {
 
         List<Entry> endings = new ArrayList<>();
         Symbol[] reels = Symbol.classicReels().toArray(new Symbol[0]);
-        endings.add(new Entry(Lang.t("Duel des leviers : victoire"),
-            Lang.t("Le Dernier tirage de la Machine Originelle. Tire ton levier à la souris. Une égalité, puis tu "
-                + "gagnes."),
-            enemyTextures.portrait(EnemyKind.MACHINE_ORIGINELLE),
-            kit -> new LastDrawCutscene(kit, new LastDrawEvent(List.of(reels),
-                List.of(Symbol.BELL, Symbol.SEVEN), List.of(Symbol.BELL, Symbol.GOLD_BAR), true))));
-        endings.add(new Entry(Lang.t("Duel des leviers : défaite"),
-            Lang.t("Le Dernier tirage de la Machine Originelle. Tire ton levier à la souris. La Machine gagne."),
-            enemyTextures.portrait(EnemyKind.MACHINE_ORIGINELLE),
-            kit -> new LastDrawCutscene(kit, new LastDrawEvent(List.of(reels),
-                List.of(Symbol.CHERRY), List.of(Symbol.DIAMOND), false))));
-        for (Chapter chapter : List.of(Chapter.DERNIER_TIRAGE, Chapter.LE_JACKPOT)) { // voir Cutscenes.ending
+        if (Bestiary.duelSeen(profile)) {
+            endings.add(new Entry(Lang.t("Duel des leviers : victoire"),
+                Lang.t("Le Dernier tirage de la Machine Originelle. Tire ton levier à la souris. Une égalité, puis tu "
+                    + "gagnes."),
+                enemyTextures.portrait(EnemyKind.MACHINE_ORIGINELLE),
+                kit -> new LastDrawCutscene(kit, new LastDrawEvent(List.of(reels),
+                    List.of(Symbol.BELL, Symbol.SEVEN), List.of(Symbol.BELL, Symbol.GOLD_BAR), true))));
+            endings.add(new Entry(Lang.t("Duel des leviers : défaite"),
+                Lang.t("Le Dernier tirage de la Machine Originelle. Tire ton levier à la souris. La Machine gagne."),
+                enemyTextures.portrait(EnemyKind.MACHINE_ORIGINELLE),
+                kit -> new LastDrawCutscene(kit, new LastDrawEvent(List.of(reels),
+                    List.of(Symbol.CHERRY), List.of(Symbol.DIAMOND), false))));
+        }
+        for (Chapter chapter : Bestiary.ENDINGS) { // voir Cutscenes.ending
+            if (!Bestiary.endingSeen(profile, chapter)) continue;
             endings.add(new Entry(Lang.f("Fin du {0}", chapter.getLabel().toLowerCase()),
                 Lang.f("La fin de « {0} », après la victoire contre {1}.",
                     chapter.getTitle(), chapter.getBoss().getDisplayName()),
@@ -262,6 +270,7 @@ public class CinematicScreen extends ScreenAdapter {
             List<Entry> kings = new ArrayList<>();
             for (Dungeon dungeon : place.getDungeons()) {
                 EnemyKind king = dungeon.getKing();
+                if (!Bestiary.bossCutsceneSeen(profile, king)) continue;
                 kings.add(new Entry(king.getDisplayName(),
                     Lang.f("{0}, « {1} » : l'entrée en scène du roi, après le soldat.",
                         place.getName(), dungeon.getName()),
@@ -270,8 +279,8 @@ public class CinematicScreen extends ScreenAdapter {
             addGroup(place.getShortName(), place.getName(), kings);
         }
 
-        List<Symbol> machine = luckyGame.getProfile().getMachine();
-        addGroup(Lang.t("Jeu bonus"), Lang.t("Le Jeu bonus"), List.of(new Entry(Lang.t("Jeu bonus"),
+        List<Symbol> machine = profile.getMachine();
+        if (Bestiary.bonusGameSeen(profile)) addGroup(Lang.t("Jeu bonus"), Lang.t("Le Jeu bonus"), List.of(new Entry(Lang.t("Jeu bonus"),
             Lang.t("Après un Bingo, une fois sur dix : la grille de 6 x 6 et ses trois tirages, sur ta machine. "
                 + "Une nouvelle grille à chaque fois."),
             cardTextures.get("cards/test/jeu_bonus.png"),
@@ -280,6 +289,7 @@ public class CinematicScreen extends ScreenAdapter {
     }
 
     private void addGroup(String label, String groupName, List<Entry> entries) {
+        if (entries.isEmpty()) return; // aucune encore vue (hors mode ADMIN)
         int groupIndex = groups.size();
         Label.LabelStyle style = new Label.LabelStyle(itemFont, Color.WHITE);
         List<MenuOption> rows = new ArrayList<>();

@@ -1407,6 +1407,7 @@ public class GameScreen extends ScreenAdapter {
     /** Remet tout l'affichage à l'état d'un début de combat, puis lance le tour du joueur. */
     private void resetBoard() {
         music.switchTo(CombatMusic.of(run), CombatMusic.DEFAULT); // nouveau combat : sa musique (le boss de la Tour a la sienne)
+        if (tutorial == null) luckyGame.getProfile().meet(gameController.getGameState().getEnemy().getKind());
         stage.getRoot().clearActions(); // la suite du tour en cours (tour de l'ennemi, fin du tour) n'a plus lieu
         hand.reset();
         effectPopupAnimator.cancel(); // les gains en attente ne seront jamais affichés
@@ -1711,6 +1712,7 @@ public class GameScreen extends ScreenAdapter {
         luckyGame.getProfile().addCoins(reward);
         buildEndButtons(won);
         if (won && tutorial == null) {
+            luckyGame.getProfile().defeat(gameController.getGameState().getEnemy().getKind());
             luckyGame.getProfile().recordStats(stats -> {
                 stats.add(PlayerStats.Stat.WINS, 1);
                 stats.add(PlayerStats.Stat.COINS, reward);
@@ -1912,6 +1914,7 @@ public class GameScreen extends ScreenAdapter {
         gameInput = new InputMultiplexer(stage, keyboardInput);
         Gdx.input.setInputProcessor(pauseOverlay.isShown() ? pauseOverlay.getInput() : gameInput);
         music.switchTo(CombatMusic.of(run), CombatMusic.DEFAULT);
+        if (tutorial == null) luckyGame.getProfile().meet(gameController.getGameState().getEnemy().getKind());
         music.play();
     }
 

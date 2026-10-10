@@ -20,6 +20,7 @@ import com.badlogic.gdx.scenes.scene2d.ui.Image;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 import com.badlogic.gdx.utils.ScreenUtils;
 import fr.astratime.lucky.LuckyGame;
+import fr.astratime.lucky.assets.CardTextures;
 import fr.astratime.lucky.assets.EnemyTextures;
 import fr.astratime.lucky.assets.Fonts;
 import fr.astratime.lucky.assets.HudTextures;
@@ -34,6 +35,7 @@ import fr.astratime.lucky.settings.VisualSettings;
 import fr.astratime.lucky.entities.tutorial.TutorialRun;
 import fr.astratime.lucky.views.AchievementToast;
 import fr.astratime.lucky.views.AchievementsOverlay;
+import fr.astratime.lucky.views.BestiaryOverlay;
 import fr.astratime.lucky.views.CasinoButtons;
 import fr.astratime.lucky.views.GuideOverlay;
 import fr.astratime.lucky.views.MenuDecor;
@@ -111,6 +113,10 @@ public class MenuScreen extends ScreenAdapter {
     /** Statistiques et succès (Options) ; annonce des succès atteints. */
     private final AchievementsOverlay achievements;
     private final AchievementToast    toast;
+    /** Bestiaire et collection (Options) ; ses portraits ne se chargent qu'à sa première ouverture. */
+    private CardTextures              cardTextures;
+    private EnemyTextures             enemyTextures;
+    private BestiaryOverlay           bestiary;
     private final Sound               achievementSound;
     private boolean                 leaving;
     private float                   parallaxX, parallaxY;
@@ -194,6 +200,7 @@ public class MenuScreen extends ScreenAdapter {
         entries.add(new OptionsMenu.Entry(() -> Lang.f("Langue : {0}", Lang.get().label), toggleLanguage,
             direction -> toggleLanguage.run()));
         entries.add(OptionsMenu.Entry.button(Lang.t("Statistiques et succès"), this::showAchievements));
+        entries.add(OptionsMenu.Entry.button(Lang.t("Bestiaire et collection"), this::showBestiary));
         entries.add(OptionsMenu.Entry.button(Lang.t("Rejouer le tutoriel"), this::onTutorial));
         PlayerProfile profile = luckyGame.getProfile();
         Runnable toggleAdmin = () -> profile.setAdmin(!profile.isAdmin());
@@ -208,6 +215,21 @@ public class MenuScreen extends ScreenAdapter {
     private void showAchievements() {
         menu.setActive(false);
         achievements.show(luckyGame.getProfile(), () -> menu.setActive(true));
+        toast.toFront();
+        fade.toFront();
+    }
+
+    /** Ouvre la fenêtre du bestiaire et de la collection ; le menu attend qu'elle se ferme. */
+    private void showBestiary() {
+        if (bestiary == null) {
+            cardTextures  = new CardTextures();
+            enemyTextures = new EnemyTextures(cardTextures);
+            bestiary = new BestiaryOverlay(hud, enemyTextures, guideButtons, clickSound,
+                () -> goTo(() -> new CinematicScreen(luckyGame)));
+            stage.addActor(bestiary.getActor());
+        }
+        menu.setActive(false);
+        bestiary.show(luckyGame.getProfile(), () -> { if (!leaving) menu.setActive(true); });
         toast.toFront();
         fade.toFront();
     }
@@ -419,6 +441,13 @@ public class MenuScreen extends ScreenAdapter {
                     }
                     return true;
                 }
+                if (bestiary != null && bestiary.isShown()) {
+                    if (keycode == Input.Keys.ESCAPE) {
+                        clickSound.play();
+                        bestiary.hide();
+                    }
+                    return true;
+                }
                 if (keycode == Input.Keys.ESCAPE && menu.hasCaption()) {
                     clickSound.play();
                     showMainPage();
@@ -436,6 +465,7 @@ public class MenuScreen extends ScreenAdapter {
         stage.getViewport().update(width, height, true);
         layout();
         achievements.layout();
+        if (bestiary != null) bestiary.layout();
     }
 
     @Override
@@ -453,6 +483,11 @@ public class MenuScreen extends ScreenAdapter {
         stage.dispose();
         guide.dispose();
         achievements.dispose();
+        if (bestiary != null) {
+            bestiary.dispose();
+            enemyTextures.dispose();
+            cardTextures.dispose();
+        }
         toast.dispose();
         achievementSound.dispose();
         croupier.dispose();
