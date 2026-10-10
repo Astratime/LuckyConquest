@@ -312,4 +312,19 @@ class PlayerProfileTest {
         profile(storage).setAdmin(true);
         assertFalse(profile(storage).isAdmin(), "désactivé au lancement suivant, même activé avant");
     }
+
+    @Test
+    void aBingoSeenToTheEndIsRememberedFromOneLaunchToTheNext() {
+        MemoryStorage storage = new MemoryStorage();
+        PlayerProfile profile = profile(storage);
+        assertFalse(profile.hasSeenBingo(Symbol.SEVEN));
+
+        profile.markBingoSeen(Symbol.SEVEN);
+        profile.markBingoSeen(Symbol.BELL);
+
+        PlayerProfile next = profile(storage);
+        assertTrue(next.hasSeenBingo(Symbol.SEVEN));
+        assertTrue(next.hasSeenBingo(Symbol.BELL));
+        assertFalse(next.hasSeenBingo(Symbol.CHERRY));
+    }
 }

@@ -147,6 +147,9 @@ public abstract class Cutscene extends Actor implements Disposable {
     /** @return {@code true} tant que la scène joue, jusqu'à ce que le fondu final commence à s'estomper. */
     public boolean isPlaying() { return isVisible() && coverAt < 0f; }
 
+    /** @return {@code true} si la scène joue sa propre musique (elle garde alors sa vitesse normale). */
+    public boolean hasSoundtrack() { return sound != null; }
+
     /** Passe la scène : l'écran se couvre tout de suite. */
     public void skip() {
         if (!isPlaying() || skipAt >= 0f || time >= coverStart()) return;

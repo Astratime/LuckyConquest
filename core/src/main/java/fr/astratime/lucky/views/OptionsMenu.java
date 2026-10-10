@@ -247,7 +247,7 @@ public class OptionsMenu implements Disposable {
     /**
      * @param onEffectsChanged appelé après la bascule des effets (ex : arrêter une secousse en cours)
      * @return les réglages du jeu, communs au menu principal et au menu pause :
-     *         affichage, effets visuels, volume de la musique, volume des sons
+     *         affichage, effets visuels, vitesse des animations, volume de la musique, volume des sons
      */
     public static List<Entry> settingsEntries(LuckyGame game, VisualSettings visual, AudioSettings audio,
                                               DisplaySettings display, Runnable onEffectsChanged) {
@@ -265,6 +265,8 @@ public class OptionsMenu implements Disposable {
                 direction -> toggleScreenMode.run()),
             new Entry(() -> visual.isReducedEffects() ? Lang.t("Effets : réduits") : Lang.t("Effets : normaux"), toggleEffects,
                 direction -> toggleEffects.run()),
+            new Entry(() -> visual.getAnimationSpeed().label(), () -> visual.stepAnimationSpeed(1),
+                visual::stepAnimationSpeed),
             new Entry(() -> Lang.f("Musique : {0} %", AudioSettings.percent(audio.getMusicVolume())),
                 () -> cycle(audio::stepMusicVolume, audio.getMusicVolume()), audio::stepMusicVolume),
             new Entry(() -> Lang.f("Sons : {0} %", AudioSettings.percent(audio.getSoundVolume())),

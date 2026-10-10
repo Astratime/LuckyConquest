@@ -2,6 +2,7 @@ package fr.astratime.lucky.screens;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
+import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.InputAdapter;
 import com.badlogic.gdx.InputMultiplexer;
 import com.badlogic.gdx.InputProcessor;
@@ -1213,11 +1214,15 @@ public class GameScreen extends ScreenAdapter {
      * Le tour de l'ennemi attend la fin de la célébration.
      */
     private void onJackpotShown(Symbol symbol) {
-        sounds.bingo(symbol).play(BINGO_SCENE_VOLUME); // accordé à la mise en scène du symbole
+        Sound scene   = sounds.bingo(symbol);
+        long  sceneId = scene.play(BINGO_SCENE_VOLUME); // accordé à la mise en scène du symbole
         table.setReelsRainbow(true);
         table.setLightsParty(true);
-        // Le son de Bingo d'origine du jeu retentit quand « BINGO! » apparaît.
-        jackpotCelebration.play(symbol, () -> sounds.bingoClassic.play(), () -> {
+        PlayerProfile profile = luckyGame.getProfile();
+        // Le son de Bingo d'origine du jeu retentit quand « BINGO! » apparaît. Déjà vue, la célébration se passe d'un clic.
+        jackpotCelebration.play(symbol, profile.hasSeenBingo(symbol), () -> sounds.bingoClassic.play(), () -> {
+            if (jackpotCelebration.wasSkipped()) scene.stop(sceneId);
+            profile.markBingoSeen(symbol);
             table.setLightsParty(false);
             // Après la célébration (et le Jeu bonus, s'il s'ouvre) et les derniers textes du tirage, au tour de l'ennemi.
             playBonusGame(() -> stage.addAction(Actions.delay(SlotView.RIPOSTE_AFTER_BONUS,
@@ -1819,6 +1824,7 @@ public class GameScreen extends ScreenAdapter {
                     cutscene.skip(); // n'importe quelle autre touche passe la cinématique
                     return true;
                 }
+                if (jackpotCelebration.skip()) return true; // une touche passe aussi un Bingo déjà vu
                 if (choiceOverlay.isShown() || shopOverlay.isShown() || pickOverlay.isShown() || chestOverlay.isShown()
                     || bingoAnimation.isPlaying()
                     || rainbowAnimation.isPlaying()) {
@@ -1858,9 +1864,9 @@ public class GameScreen extends ScreenAdapter {
         if (pauseOverlay.isShown()) {
             // En pause : le jeu reste affiché, figé, sous le menu.
         } else if (hitStop > 0f) {
-            hitStop -= delta; // micro-arrêt : l'image reste figée un instant sur un gros coup
+            hitStop -= delta * animationSpeed(); // micro-arrêt : l'image reste figée un instant sur un gros coup
         } else {
-            stage.act(delta);
+            stage.act(delta * animationSpeed());
         }
         spinControls.followShield();
         stage.getViewport().apply();
@@ -1872,6 +1878,15 @@ public class GameScreen extends ScreenAdapter {
         batch.end();
 
         pauseOverlay.render(delta);
+    }
+
+    /**
+     * @return le facteur de vitesse des animations (Options) ; une cinématique
+     *         accompagnée de sa musique reste à vitesse normale, pour rester accordée
+     */
+    private float animationSpeed() {
+        if (cutscene != null && cutscene.isPlaying() && cutscene.hasSoundtrack()) return 1f;
+        return settings.getAnimationSpeed().factor();
     }
 
     /** Libère toutes les ressources natives (Stage, polices, textures, sons) possédées par cet écran. */
