@@ -87,6 +87,7 @@ import fr.astratime.lucky.entities.tutorial.TutorialRun;
 import fr.astratime.lucky.entities.RankBonus;
 import fr.astratime.lucky.entities.enemy.EnemySymbol;
 import fr.astratime.lucky.entities.enemy.EnemyTurnResult;
+import fr.astratime.lucky.entities.events.ComboEvent;
 import fr.astratime.lucky.entities.events.DamageReflectedEvent;
 import fr.astratime.lucky.entities.events.EnemyHealedEvent;
 import fr.astratime.lucky.entities.events.EnemyDamagedEvent;
@@ -105,6 +106,8 @@ import fr.astratime.lucky.entities.exploration.DungeonRun;
 import fr.astratime.lucky.entities.run.CombatRun;
 import fr.astratime.lucky.i18n.Lang;
 import fr.astratime.lucky.progress.PlayerProfile;
+import fr.astratime.lucky.progress.PlayerStats;
+import fr.astratime.lucky.views.AchievementToast;
 import fr.astratime.lucky.loaders.CardLoader;
 import fr.astratime.lucky.popups.EffectPopup;
 import fr.astratime.lucky.popups.PopupScale;
@@ -278,6 +281,8 @@ public class GameScreen extends ScreenAdapter {
     private final CardClickParticles  cardClickParticles = new CardClickParticles();
     private final EffectPopupAnimator effectPopupAnimator;
     private final JackpotCelebration  jackpotCelebration;
+    /** Annonce des succès atteints pendant le combat. */
+    private final AchievementToast    achievementToast;
     /** Annonces « À TOI DE JOUER ! » et « TOUR ENNEMI ». */
     private final TurnBanner          turnBanner = new TurnBanner();
     private final Tooltip             tooltip;
@@ -429,6 +434,7 @@ public class GameScreen extends ScreenAdapter {
             }
         });
         sidePanel  = new SidePanel(hudTextures);
+        achievementToast = new AchievementToast(hudTextures, sounds.achievement);
         jackpotCelebration = new JackpotCelebration(playArea, screenShake, settings, hudTextures,
             sidePanel::getCoinCenter, sidePanel::bumpCoin, fireworkSounds);
         hud        = new CombatHud(playArea, hudTextures, gameController::getGameState);
@@ -522,6 +528,7 @@ public class GameScreen extends ScreenAdapter {
         stage.addActor(confetti);
         stage.addActor(damageVignette);
         stage.addActor(jackpotCelebration); // par-dessus le jeu et le panneau : bloque les clics pendant la fête
+        stage.addActor(achievementToast);   // passe devant tout quand il s'affiche, sans bloquer les clics
         stage.addActor(bingoAnimation);         // carte Bingo : faisceaux et téléportation, bloque les clics
         stage.addActor(rainbowAnimation);       // carte Arc-en-ciel : jetons et poussière d'étoiles, bloque les clics
         stage.addActor(choiceOverlay.getActor()); // choix demandé par une carte (Pari, Roulette russe)
@@ -942,6 +949,7 @@ public class GameScreen extends ScreenAdapter {
      */
     private void onReelsStopped(TurnResult result) {
         currentResult = result;
+        recordTurn(result);
         Vector2 enemyBar    = hud.getEnemyBarCenter();
         Vector2 pistolTexts = new Vector2(enemyBar.x, enemyBar.y - PISTOL_TEXT_BELOW);
         float shotAt = slots.playResultPopups(result, pistolTexts, this::onEventShown, this::playSymbolStrike);
@@ -951,6 +959,45 @@ public class GameScreen extends ScreenAdapter {
         if (result.isPair()) celebratePair(result.getSymbols());
         if (result.isJackpot()) return; // voir onJackpotShown
         stage.addAction(Actions.delay(SlotView.popupsDuration(result), Actions.run(this::afterPlayerSpin)));
+    }
+
+    /**
+     * Compte le tirage dans les statistiques (plus gros coup, gains, Bingo,
+     * Carré, Jeu bonus ; pas dans le tutoriel) et annonce les succès atteints.
+     */
+    private void recordTurn(TurnResult result) {
+        if (tutorial != null) return;
+        java.util.Set<Event> events = java.util.Collections.newSetFromMap(new java.util.IdentityHashMap<>());
+        events.addAll(result.getEvents());
+        events.addAll(result.getCardEvents());
+        long bestHit = 0L;
+        long gains   = 0L;
+        boolean square = false;
+        Symbol bingo = null;
+        for (Event event : events) {
+            if (event instanceof EnemyDamagedEvent hit) bestHit = Math.max(bestHit, hit.damage);
+            if (event instanceof GainsEarnedEvent earned) gains += Math.max(0, earned.amount);
+            if (event instanceof ComboEvent combo && combo.combo == Combo.CARRE) square = true;
+            if (event instanceof JackpotEvent jackpot) bingo = jackpot.symbol;
+        }
+        BonusGame bonus = result.getBonusGame();
+        long best = bestHit, earned = gains + (bonus != null ? Math.max(0, bonus.getTotal()) : 0);
+        boolean squared = square;
+        Symbol bingoSymbol = bingo;
+        luckyGame.getProfile().recordStats(stats -> {
+            stats.record(PlayerStats.Stat.BEST_HIT, best);
+            stats.add(PlayerStats.Stat.GAINS, earned);
+            if (squared) stats.add(PlayerStats.Stat.SQUARES, 1);
+            if (bingoSymbol != null) stats.addBingo(bingoSymbol);
+            if (bonus != null) stats.add(PlayerStats.Stat.BONUS_GAMES, 1);
+        });
+        announceAchievements();
+    }
+
+    /** Annonce les succès qui viennent d'être atteints (aucun dans le tutoriel ni en mode ADMIN). */
+    private void announceAchievements() {
+        if (tutorial != null) return;
+        achievementToast.show(luckyGame.getProfile().checkAchievements());
     }
 
     /** Les résultats du tirage sont affichés : le Croupier du tutoriel les commente, puis le tour de l'ennemi. */
@@ -1428,6 +1475,7 @@ public class GameScreen extends ScreenAdapter {
         // Ouvre peut-être le lieu suivant ; le dernier donjon des Mines donne le Rouleau de la Mine.
         Symbol earnedReel = luckyGame.getProfile().clearDungeon(dungeonRun.getDungeon().name());
         chestOverlay.setEarnedReel(earnedReel);
+        announceAchievements();
         openChest(dungeonRun.getChestCards());
     }
 
@@ -1656,8 +1704,17 @@ public class GameScreen extends ScreenAdapter {
      */
     private void endCombat() {
         setSpinDisabled(true);
-        luckyGame.getProfile().addCoins(combatReward(gameController.getGameState().getEnemy().isDefeated()));
-        buildEndButtons(gameController.getGameState().getEnemy().isDefeated());
+        boolean won = gameController.getGameState().getEnemy().isDefeated();
+        int reward = combatReward(won);
+        luckyGame.getProfile().addCoins(reward);
+        buildEndButtons(won);
+        if (won && tutorial == null) {
+            luckyGame.getProfile().recordStats(stats -> {
+                stats.add(PlayerStats.Stat.WINS, 1);
+                stats.add(PlayerStats.Stat.COINS, reward);
+            });
+        }
+        announceAchievements();
         Runnable showRestart = () -> {
             endButtons.setTouchable(Touchable.childrenOnly);
             endButtons.setVisible(true);
@@ -1925,6 +1982,7 @@ public class GameScreen extends ScreenAdapter {
         cardDetail.dispose();
         pauseOverlay.dispose();
         jackpotCelebration.dispose();
+        achievementToast.dispose();
         turnBanner.dispose();
         damageVignette.dispose();
         combatEnd.dispose();

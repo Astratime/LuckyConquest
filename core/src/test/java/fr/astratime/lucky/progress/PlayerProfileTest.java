@@ -327,4 +327,73 @@ class PlayerProfileTest {
         assertTrue(next.hasSeenBingo(Symbol.BELL));
         assertFalse(next.hasSeenBingo(Symbol.CHERRY));
     }
+
+    @Test
+    void statisticsAreSavedAndReadBack() {
+        MemoryStorage storage = new MemoryStorage();
+        PlayerProfile profile = profile(storage);
+        profile.recordStats(stats -> {
+            stats.add(PlayerStats.Stat.WINS, 2);
+            stats.record(PlayerStats.Stat.BEST_HIT, 5_000_000_000L);
+            stats.record(PlayerStats.Stat.BEST_HIT, 12L);
+            stats.addBingo(Symbol.SEVEN);
+            stats.addBingo(Symbol.SEVEN);
+            stats.addBingo(Symbol.BELL);
+        });
+
+        PlayerStats stats = profile(storage).getStats();
+        assertEquals(2, stats.get(PlayerStats.Stat.WINS));
+        assertEquals(5_000_000_000L, stats.get(PlayerStats.Stat.BEST_HIT), "un record ne redescend pas");
+        assertEquals(3, stats.get(PlayerStats.Stat.BINGOS));
+        assertEquals(2, stats.bingoSymbolCount());
+        assertEquals(0, stats.get(PlayerStats.Stat.SQUARES));
+    }
+
+    @Test
+    void anAchievementPaysItsRewardOnce() {
+        MemoryStorage storage = new MemoryStorage();
+        PlayerProfile profile = profile(storage);
+        assertEquals(java.util.List.of(), profile.checkAchievements());
+
+        profile.recordStats(stats -> stats.add(PlayerStats.Stat.WINS, 1));
+        assertEquals(java.util.List.of(Achievement.FIRST_WIN), profile.checkAchievements());
+        assertEquals(Achievement.FIRST_WIN.getReward(), profile.getCoins());
+        assertEquals(java.util.List.of(), profile.checkAchievements(), "une seule fois");
+
+        PlayerProfile next = profile(storage);
+        assertTrue(next.isUnlocked(Achievement.FIRST_WIN));
+        assertEquals(java.util.List.of(), next.checkAchievements());
+        assertEquals(Achievement.FIRST_WIN.getReward(), next.getCoins());
+    }
+
+    @Test
+    void progressFromBeforeTheAchievementsCountsAtOnce() {
+        MemoryStorage storage = new MemoryStorage();
+        PlayerProfile profile = profile(storage);
+        for (Dungeon dungeon : Place.PRAIRIE.getDungeons()) profile.clearDungeon(dungeon.name());
+        profile.clearChapter(Chapter.GENESE, false);
+
+        java.util.List<Achievement> unlocked = profile.checkAchievements();
+        assertEquals(java.util.List.of(Achievement.FIRST_DUNGEON, Achievement.PRAIRIE, Achievement.COMET), unlocked);
+    }
+
+    @Test
+    void adminModeCountsNothing() {
+        PlayerProfile profile = profile(new MemoryStorage());
+        profile.setAdmin(true);
+        profile.recordStats(stats -> stats.add(PlayerStats.Stat.WINS, 1));
+        assertEquals(0, profile.getStats().get(PlayerStats.Stat.WINS));
+        assertEquals(java.util.List.of(), profile.checkAchievements());
+        profile.setAdmin(false);
+        assertEquals(java.util.List.of(), profile.checkAchievements());
+    }
+
+    @Test
+    void unreadableStatisticsAreIgnored() {
+        PlayerStats stats = PlayerStats.decode("WINS:3,PIRATE:9,BINGOS:abc,SYMBOLS:SEVEN+NOPE,GAINS:-5");
+        assertEquals(3, stats.get(PlayerStats.Stat.WINS));
+        assertEquals(0, stats.get(PlayerStats.Stat.BINGOS));
+        assertEquals(0, stats.get(PlayerStats.Stat.GAINS));
+        assertEquals(1, stats.bingoSymbolCount());
+    }
 }

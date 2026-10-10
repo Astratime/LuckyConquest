@@ -44,7 +44,7 @@ public class LuckyGame extends Game {
     public void create() {
         batch = new SpriteBatch();
         Lang.load();
-        profile = new PlayerProfile(new GdxProfileStorage(), CardLoader.loadStartingCollection(),
+        profile = new PlayerProfile(GdxProfileStorage.open(), CardLoader.loadStartingCollection(),
             CardLoader.loadStarterDeckCopies());
         // Mode ADMIN : toutes les cartes à collectionner (celles des coffres, le profil les connaît déjà).
         List<String> catalog = new ArrayList<>(CardLoader.loadStartingCollection().keySet());
