@@ -6,6 +6,7 @@ import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import fr.astratime.lucky.i18n.Lang;
 import fr.astratime.lucky.entities.Card;
 import fr.astratime.lucky.loaders.CardLoader;
+import fr.astratime.lucky.progress.CrashReport;
 import fr.astratime.lucky.progress.GdxProfileStorage;
 import fr.astratime.lucky.progress.SecureProfileStorage;
 import fr.astratime.lucky.progress.PlayerProfile;
@@ -26,8 +27,8 @@ public class LuckyGame extends Game {
 
     /** Collection, deck et pièces du joueur, gardés d'une partie à l'autre (chargés au lancement). */
     private PlayerProfile profile;
-    /** Message sur la sauvegarde à dire au lancement (voir {@link #takeSaveNotice()}). */
-    private String saveNotice;
+    /** Messages à dire au lancement, déjà traduits (voir {@link #takeNotice()}). */
+    private final List<String> notices = new ArrayList<>();
 
     /** Jeu sans réglage du mode d'affichage (plateformes sans fenêtre, tests). */
     public LuckyGame() {
@@ -51,12 +52,16 @@ public class LuckyGame extends Game {
         profile = new PlayerProfile(storage, CardLoader.loadStartingCollection(),
             CardLoader.loadStarterDeckCopies());
         if (storage.isRejected()) {
-            saveNotice = "Ta sauvegarde a été modifiée en dehors du jeu, ou abîmée, et sa copie de secours aussi. "
+            notices.add(Lang.t("Ta sauvegarde a été modifiée en dehors du jeu, ou abîmée, et sa copie de secours aussi. "
                 + "Je ne peux pas les reprendre : ta partie repart de zéro. L'ancien fichier est gardé à côté, "
-                + "en .refuse.";
+                + "en .refuse."));
         } else if (storage.isRestoredFromBackup()) {
-            saveNotice = "Ta sauvegarde a été modifiée en dehors du jeu, ou abîmée. J'ai repris sa copie de "
-                + "secours : tes tout derniers progrès sont peut-être perdus.";
+            notices.add(Lang.t("Ta sauvegarde a été modifiée en dehors du jeu, ou abîmée. J'ai repris sa copie de "
+                + "secours : tes tout derniers progrès sont peut-être perdus."));
+        }
+        if (CrashReport.takePending(CrashReport.DEFAULT_FILE)) {
+            notices.add(Lang.f("Le jeu a planté la dernière fois. Désolé ! Le rapport est ici : {0}. "
+                + "Envoie-le avec ton signalement du bug, il aide à le corriger.", CrashReport.DEFAULT_FILE));
         }
         // Mode ADMIN : toutes les cartes à collectionner (celles des coffres, le profil les connaît déjà).
         List<String> catalog = new ArrayList<>(CardLoader.loadStartingCollection().keySet());
@@ -68,14 +73,12 @@ public class LuckyGame extends Game {
     }
 
     /**
-     * @return ce que le Croupier dit au joueur sur sa sauvegarde (refusée, ou
-     *         reprise depuis la copie de secours), en français ; {@code null}
-     *         si tout va bien ou si c'est déjà dit (une seule fois par lancement)
+     * @return le prochain message que le Croupier dit au lancement (sauvegarde refusée
+     *         ou reprise depuis la copie de secours, plantage du lancement d'avant),
+     *         traduit ; {@code null} s'il n'y en a plus (chacun n'est dit qu'une fois)
      */
-    public String takeSaveNotice() {
-        String notice = saveNotice;
-        saveNotice = null;
-        return notice;
+    public String takeNotice() {
+        return notices.isEmpty() ? null : notices.remove(0);
     }
 
     /** Délègue le rendu à l'écran actif (voir {@link Game#render()}). */

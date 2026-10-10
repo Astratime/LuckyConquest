@@ -244,16 +244,16 @@ public class MenuScreen extends ScreenAdapter {
     // -------------------------------------------------------------------------
 
     /**
-     * Sauvegarde refusée ou reprise de sa copie de secours : le Croupier prévient
-     * d'abord. Premier lancement : le Croupier propose le tutoriel (« Plus tard » : il
+     * Sauvegarde refusée ou reprise de sa copie de secours, ou plantage au lancement
+     * d'avant : le Croupier prévient d'abord. Premier lancement : le Croupier propose le tutoriel (« Plus tard » : il
      * reste dans les Options). Tutoriel fini ou passé : il présente le menu, une fois.
      */
     private void startGuide() {
         if (leaving || menu.hasCaption()) return;
-        // Sauvegarde refusée ou reprise de la copie de secours : le Croupier le dit d'abord, au lancement.
-        String notice = luckyGame.takeSaveNotice();
+        // Sauvegarde refusée, copie de secours ou plantage : le Croupier le dit d'abord, au lancement.
+        String notice = luckyGame.takeNotice();
         if (notice != null) {
-            GuideOverlay.Step step = GuideOverlay.Step.say(Lang.t(notice)).buttons(
+            GuideOverlay.Step step = GuideOverlay.Step.say(notice).buttons(
                 guideButtons.create(Lang.t("Compris"), clickSound, () -> {
                     guide.stop();
                     startGuide();
