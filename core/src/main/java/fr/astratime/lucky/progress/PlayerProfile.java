@@ -68,6 +68,7 @@ public class PlayerProfile {
     static final String KEY_ADMIN_DECK    = "adminDeck";
     static final String KEY_ADMIN_MACHINE = "adminMachine";
     static final String KEY_GUIDES        = "guides";
+    static final String KEY_BINGOS        = "bingos";
 
     /** Guides du Croupier (voir {@link #hasSeen(String)}) : le tutoriel, sa proposition au premier lancement, la visite du menu. */
     public static final String GUIDE_TUTORIAL    = "tutorial";
@@ -109,6 +110,8 @@ public class PlayerProfile {
     private final List<Symbol>         adminMachine = new ArrayList<>();
     /** Guides du Croupier déjà vus, par nom (voir {@link #GUIDE_TUTORIAL}...). */
     private final java.util.Set<String> seenGuides = new java.util.LinkedHashSet<>();
+    /** Symboles dont la célébration de Bingo a été vue jusqu'au bout, par nom : elle se passe d'un clic. */
+    private final java.util.Set<String> seenBingos = new java.util.LinkedHashSet<>();
 
     /**
      * Charge le profil enregistré dans {@code storage} ; au premier lancement
@@ -145,6 +148,7 @@ public class PlayerProfile {
         }
         readNames(storage.get(KEY_HARD_CHAPTERS), clearedHardChapters);
         readNames(storage.get(KEY_GUIDES), seenGuides);
+        readNames(storage.get(KEY_BINGOS), seenBingos);
         String savedDungeons = storage.get(KEY_DUNGEONS);
         if (savedDungeons != null) {
             for (String name : savedDungeons.split(",")) if (!name.isBlank()) clearedDungeons.add(name.trim());
@@ -241,6 +245,20 @@ public class PlayerProfile {
     public void markSeen(String guide) {
         if (!seenGuides.add(guide)) return;
         storage.put(KEY_GUIDES, String.join(",", seenGuides));
+        storage.flush();
+    }
+
+    // -------------------------------------------------------------------------
+    // Bingos déjà vus
+    // -------------------------------------------------------------------------
+
+    /** @return {@code true} si la célébration du Bingo de {@code symbol} a déjà été vue : un clic la passe. */
+    public boolean hasSeenBingo(Symbol symbol) { return seenBingos.contains(symbol.name()); }
+
+    /** La célébration du Bingo de {@code symbol} a été vue jusqu'au bout : enregistré tout de suite. */
+    public void markBingoSeen(Symbol symbol) {
+        if (!seenBingos.add(symbol.name())) return;
+        storage.put(KEY_BINGOS, String.join(",", seenBingos));
         storage.flush();
     }
 

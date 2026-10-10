@@ -1377,5 +1377,7 @@
   "FUSIONNER": "FUSE",
   "Quand tu as {0} exemplaires d'une carte, FUSIONNER apparaît dessus. Pour {1} pièces, ils deviennent une carte +, avec un liseré doré et des valeurs +50 %.": "When you have {0} copies of a card, FUSE appears on it. For {1} coins, they become a + card, with a golden edge and +50% values.",
   "Prix : {0} pièces. Tu en as {1}.": "Price: {0} coins. You have {1}.",
-  "Il te manque {0} pièces": "You are {0} coins short"
+  "Il te manque {0} pièces": "You are {0} coins short",
+  "Animations : x{0}": "Animations: x{0}",
+  "Clic : passer": "Click: skip"
 }

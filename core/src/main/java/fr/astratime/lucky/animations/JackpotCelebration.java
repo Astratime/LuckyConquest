@@ -8,9 +8,12 @@ import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.scenes.scene2d.Group;
+import com.badlogic.gdx.scenes.scene2d.InputEvent;
+import com.badlogic.gdx.scenes.scene2d.InputListener;
 import com.badlogic.gdx.scenes.scene2d.Touchable;
 import com.badlogic.gdx.scenes.scene2d.actions.Actions;
 import com.badlogic.gdx.scenes.scene2d.ui.Image;
+import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 import com.badlogic.gdx.utils.Disposable;
 import fr.astratime.lucky.assets.Fonts;
@@ -18,6 +21,7 @@ import fr.astratime.lucky.assets.Palette;
 import fr.astratime.lucky.assets.HudTextures;
 import fr.astratime.lucky.assets.Textures;
 import fr.astratime.lucky.entities.Symbol;
+import fr.astratime.lucky.i18n.Lang;
 import fr.astratime.lucky.settings.VisualSettings;
 import fr.astratime.lucky.views.PlayArea;
 
@@ -63,7 +67,8 @@ import java.util.function.Supplier;
  *
  * Pendant {@link #DURATION}, le calque intercepte les clics : le joueur ne peut
  * pas continuer avant la fin. Les dernières particules finissent ensuite de
- * tomber sans bloquer le jeu.
+ * tomber sans bloquer le jeu. Une célébration déjà vue se passe d'un clic
+ * ({@link #skip()}) : la mise en scène s'efface et le combat reprend.
  */
 public class JackpotCelebration extends Group implements Disposable {
 
@@ -71,6 +76,12 @@ public class JackpotCelebration extends Group implements Disposable {
     public static final float DURATION = 3f;
 
     private static final float FLASH_ALPHA = 0.7f;
+    /** Fondu de la mise en scène quand le joueur passe la célébration. */
+    private static final float SKIP_FADE   = 0.25f;
+    /** L'indication « Clic : passer » apparaît en fondu, dans le bas du panneau de gauche (libre pendant le combat). */
+    private static final float HINT_DELAY  = 0.3f;
+    private static final float HINT_FADE   = 0.3f;
+    private static final float HINT_Y      = 200f;
     /** Hauteur (fraction de l'écran) où les projecteurs dessinent leurs flaques de lumière sur la table. */
     private static final float SPOTLIGHT_FLOOR = 0.14f;
     private static final float FLASH_TIME  = 0.35f;
@@ -120,6 +131,7 @@ public class JackpotCelebration extends Group implements Disposable {
     private static final String  BANNER_TEXT  = "BINGO!!!";
 
     private final BitmapFont     bannerFont   = Fonts.jersey(170, Color.WHITE, 7f, Palette.TEXT_SHADE, BANNER_TEXT);
+    private final BitmapFont     hintFont     = Fonts.jersey(30, Color.WHITE, 3f, Palette.TEXT_SHADE);
 
     private final Image        flash;
     /** Projecteurs disco multicolores qui balaient la table pendant toute la fête. */
@@ -155,6 +167,9 @@ public class JackpotCelebration extends Group implements Disposable {
         gemCut, safe, katana, horseshoe, shieldWall, swords, heartbeat, tripleDice, shootingStar, bomb, coronation,
         mine);
     private final Group        bannerLayer = new Group();
+    /** La mise en scène au premier plan (objets, bannière, mot géant, flash) : elle s'efface quand on passe. */
+    private final Group        foreground  = new Group();
+    private final Label        skipHint;
     /** Une bannière par symbole, créée à son premier Bingo (ses lettres ont les couleurs du symbole). */
     private final Map<Symbol, BingoBanner> banners = new EnumMap<>(Symbol.class);
 
@@ -169,6 +184,8 @@ public class JackpotCelebration extends Group implements Disposable {
     private float      wordAt;
 
     private boolean  running;
+    private boolean  skippable;
+    private boolean  skipped;
     private float    elapsed;
     private Runnable onFinished;
 
@@ -206,23 +223,43 @@ public class JackpotCelebration extends Group implements Disposable {
         addActor(fireworks);
         addActor(symbols);
         addActor(coins);
-        addActor(bullseye);
-        addActor(churchBell);
-        for (BingoScene scene : scenes) addActor(scene);
-        addActor(frontGlitter);
-        addActor(bannerLayer);
-        addActor(giantWord);
-        addActor(flash);
+        foreground.setTransform(false);
+        foreground.setTouchable(Touchable.disabled);
+        foreground.addActor(bullseye);
+        foreground.addActor(churchBell);
+        for (BingoScene scene : scenes) foreground.addActor(scene);
+        foreground.addActor(frontGlitter);
+        foreground.addActor(bannerLayer);
+        foreground.addActor(giantWord);
+        foreground.addActor(flash);
+        addActor(foreground);
+
+        skipHint = new Label(Lang.t("Clic : passer"), new Label.LabelStyle(hintFont, Color.WHITE));
+        skipHint.setTouchable(Touchable.disabled);
+        skipHint.setVisible(false);
+        addActor(skipHint);
+
+        addListener(new InputListener() {
+            @Override
+            public boolean touchDown(InputEvent event, float x, float y, int pointer, int button) {
+                skip();
+                return true;
+            }
+        });
     }
 
     /**
      * Lance la célébration du Bingo de {@code symbol} ; {@code onWord} est appelé
      * quand « BINGO! » apparaît (bannière ou mot géant de la scène),
-     * {@code onFinished} au bout de {@link #DURATION}.
+     * {@code onFinished} au bout de {@link #DURATION} (ou dès que le joueur la passe).
+     *
+     * @param skippable {@code true} si la célébration a déjà été vue : un clic la passe
      */
-    public void play(Symbol symbol, Runnable onWord, Runnable onFinished) {
+    public void play(Symbol symbol, boolean skippable, Runnable onWord, Runnable onFinished) {
         cancel();
         this.onFinished = onFinished;
+        this.skippable  = skippable;
+        skipped         = false;
         running         = true;
         elapsed         = 0f;
         style           = BingoStyle.of(symbol);
@@ -249,6 +286,60 @@ public class JackpotCelebration extends Group implements Disposable {
         emitted = new int[emitters.size()];
 
         if (showBanner) banner(symbol).play(playArea.getCenterX(), height * BANNER_Y, width);
+
+        if (skippable) {
+            skipHint.setText(Lang.t("Clic : passer"));
+            skipHint.pack();
+            skipHint.setPosition(playArea.getX() / 2f - skipHint.getWidth() / 2f, HINT_Y);
+            skipHint.getColor().a = 0f;
+            skipHint.setVisible(true);
+            skipHint.addAction(Actions.sequence(Actions.delay(HINT_DELAY), Actions.fadeIn(HINT_FADE)));
+        }
+    }
+
+    /** @return {@code true} si la dernière célébration a été passée par le joueur. */
+    public boolean wasSkipped() { return skipped; }
+
+    /** @return {@code true} pendant la célébration, tant qu'elle bloque le jeu. */
+    public boolean isRunning() { return running; }
+
+    /**
+     * Passe la célébration, si elle a déjà été vue : la mise en scène s'efface,
+     * le son de la scène s'arrête (voir {@code onFinished}) et le combat reprend tout de suite.
+     * Les pièces et les étincelles déjà lancées finissent de tomber.
+     *
+     * @return {@code true} si la célébration a été passée
+     */
+    public boolean skip() {
+        if (!running || !skippable) return false;
+        running = false;
+        skipped = true;
+        setTouchable(Touchable.disabled);
+        emitters.clear();
+        spotlights.stop();
+        screenShake.stop();
+        hideHint();
+        foreground.clearActions();
+        foreground.addAction(Actions.sequence(Actions.fadeOut(SKIP_FADE), Actions.run(this::hideForeground),
+            Actions.alpha(1f)));
+        onFinished.run();
+        return true;
+    }
+
+    /** Cache tout de suite les objets de la mise en scène (pas les particules qui tombent). */
+    private void hideForeground() {
+        for (BingoBanner banner : banners.values()) banner.hide();
+        bullseye.hide();
+        churchBell.hide();
+        for (BingoScene scene : scenes) scene.hide();
+        giantWord.hide();
+        flash.clearActions();
+        flash.getColor().a = 0f;
+    }
+
+    private void hideHint() {
+        skipHint.clearActions();
+        skipHint.addAction(Actions.sequence(Actions.fadeOut(HINT_FADE / 2f), Actions.visible(false)));
     }
 
     /** Arrête tout immédiatement (nouvelle partie), sans appeler la fin de la célébration. */
@@ -263,13 +354,11 @@ public class JackpotCelebration extends Group implements Disposable {
         glitter.removeAll();
         frontGlitter.removeAll();
         shockwaves.removeAll();
-        for (BingoBanner banner : banners.values()) banner.hide();
-        bullseye.hide();
-        churchBell.hide();
-        for (BingoScene scene : scenes) scene.hide();
-        giantWord.hide();
-        flash.clearActions();
-        flash.getColor().a = 0f;
+        foreground.clearActions();
+        foreground.getColor().a = 1f;
+        hideForeground();
+        skipHint.clearActions();
+        skipHint.setVisible(false);
         screenShake.stop();
     }
 
@@ -291,6 +380,7 @@ public class JackpotCelebration extends Group implements Disposable {
         if (elapsed >= DURATION) {
             running = false;
             setTouchable(Touchable.disabled);
+            if (skippable) hideHint();
             onFinished.run();
         }
     }
@@ -1144,6 +1234,7 @@ public class JackpotCelebration extends Group implements Disposable {
         for (Texture band : styleBands) band.dispose();
         for (Texture icon : icons.values()) icon.dispose();
         Fonts.release(bannerFont);
+        Fonts.release(hintFont);
         bullseye.dispose();
         churchBell.dispose();
         for (BingoScene scene : scenes) scene.dispose();
