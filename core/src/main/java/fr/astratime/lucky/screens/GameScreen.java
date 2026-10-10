@@ -62,6 +62,7 @@ import fr.astratime.lucky.controllers.GameController;
 import fr.astratime.lucky.entities.BonusGame;
 import fr.astratime.lucky.entities.Card;
 import fr.astratime.lucky.entities.CardPlayResult;
+import fr.astratime.lucky.entities.CombatRecap;
 import fr.astratime.lucky.entities.Combo;
 import fr.astratime.lucky.entities.DrawResult;
 import fr.astratime.lucky.entities.GameState;
@@ -224,6 +225,8 @@ public class GameScreen extends ScreenAdapter {
     private static final float END_BUTTONS_GAP    = 30f;
     private static final float END_BUTTONS_HEIGHT = 0.46f;  // sous l'annonce, au-dessus de la rangée de cartes
     private static final float END_BUTTONS_FADE   = 0.4f;
+    /** Écart entre les boutons de fin et le récapitulatif du combat, en dessous. */
+    private static final float RECAP_GAP          = 18f;
     /** Icône de l'échoppe : marge au bord de la zone de jeu. */
     private static final float SHOP_ICON_MARGIN = 30f;
     /** Carte achetée : posée une fois l'échoppe refermée. */
@@ -308,6 +311,8 @@ public class GameScreen extends ScreenAdapter {
     /** Tutoriel : le Croupier, sa bulle et son voile, et ce qu'il fait faire ({@code null} hors du tutoriel). */
     private final GuideOverlay        guide;
     private final TutorialDirector    tutorial;
+    /** Chiffres du combat en cours, montrés au-dessus des boutons de fin. */
+    private final CombatRecap         recap = new CombatRecap();
     /** Tutoriel : le dernier tirage était un Bingo. */
     private boolean                   lastSpinBingo;
     /** Le Croupier qui explique le Jeu bonus la première fois qu'il s'ouvre ({@code null} avant). */
@@ -609,6 +614,7 @@ public class GameScreen extends ScreenAdapter {
 
         List<Combo> combosBefore = gameController.getCurrentCombos();
         CardPlayResult playResult = gameController.playCard(card);
+        recap.cardPlayed();
         if (tutorial != null) tutorial.onCardPlayed(card);
         int maps = gameController.takeTreasureMaps(); // Carte au trésor : le coffre du donjon grossit
         if (run instanceof DungeonRun dungeonRun) for (int i = 0; i < maps; i++) dungeonRun.addTreasureMap();
@@ -967,6 +973,7 @@ public class GameScreen extends ScreenAdapter {
      * Carré, Jeu bonus ; pas dans le tutoriel) et annonce les succès atteints.
      */
     private void recordTurn(TurnResult result) {
+        recap.record(result);
         if (tutorial != null) return;
         java.util.Set<Event> events = java.util.Collections.newSetFromMap(new java.util.IdentityHashMap<>());
         events.addAll(result.getEvents());
@@ -1408,6 +1415,7 @@ public class GameScreen extends ScreenAdapter {
     private void resetBoard() {
         music.switchTo(CombatMusic.of(run), CombatMusic.DEFAULT); // nouveau combat : sa musique (le boss de la Tour a la sienne)
         if (tutorial == null) luckyGame.getProfile().meet(gameController.getGameState().getEnemy().getKind());
+        recap.reset();
         stage.getRoot().clearActions(); // la suite du tour en cours (tour de l'ennemi, fin du tour) n'a plus lieu
         hand.reset();
         effectPopupAnimator.cancel(); // les gains en attente ne seront jamais affichés
@@ -1615,9 +1623,26 @@ public class GameScreen extends ScreenAdapter {
             TextButton button = shown.get(i);
             endButtons.add(button).size(button.getWidth(), button.getHeight()).padLeft(i == 0 ? 0f : END_BUTTONS_GAP);
         }
+        // Sous les boutons, le récapitulatif du combat dans un cadre (lisible sur la main et la bannière de fin).
+        Label recapLabel = new Label(recapText(), new Label.LabelStyle(playsFont, Color.WHITE));
+        recapLabel.setAlignment(Align.center);
+        Table recapBox = new Table();
+        recapBox.setBackground(hudTextures.panelDrawable());
+        recapBox.add(recapLabel).pad(14f, 28f, 14f, 28f);
+        endButtons.row();
+        endButtons.add(recapBox).colspan(shown.size()).padTop(RECAP_GAP);
         endButtons.pack();
+        // Les boutons restent à leur place : le cadre descend en dessous.
         endButtons.setPosition(playArea.getCenterX() - endButtons.getWidth() / 2f,
-            playArea.getHeight() * END_BUTTONS_HEIGHT);
+            playArea.getHeight() * END_BUTTONS_HEIGHT - recapBox.getPrefHeight() - RECAP_GAP);
+    }
+
+    /** @return le récapitulatif du combat, sur deux lignes (voir {@link CombatRecap}). */
+    private String recapText() {
+        return Lang.f("Tours {0}  ·  Dégâts infligés {1}  ·  Plus gros coup {2}",
+                recap.getTurns(), Lang.big(recap.getDamageDealt()), Lang.big(recap.getBestHit()))
+            + "\n" + Lang.f("Dégâts subis {0}  ·  Bingos {1}  ·  Cartes jouées {2}",
+                Lang.big(recap.getDamageTaken()), recap.getBingos(), recap.getCardsPlayed());
     }
 
     /** Étape de la Tour des épreuves, en haut à gauche de la zone de jeu (rien pour un combat seul). */
