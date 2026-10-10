@@ -328,9 +328,20 @@ public class Enemy {
      * @return les points de vie réellement rendus
      */
     public int heal(int amount) {
+        amount = (int) ((long) amount * healPercent() / 100); // un roi en phase 2 se soigne moins
         int healed = Math.min(maxHp, hp + amount) - hp;
         hp += healed;
         return healed;
+    }
+
+    /** @return le % de ses attaques : plus fortes pour un roi de l'Exploration en phase 2. */
+    public int attackPercent() {
+        return phase >= 2 && kind.kingPhaseSymbol() != null ? EnemyKind.KING_PHASE_ATTACK_PERCENT : 100;
+    }
+
+    /** @return le % de ses soins : réduits pour un roi de l'Exploration en phase 2. */
+    public int healPercent() {
+        return phase >= 2 && kind.kingPhaseSymbol() != null ? EnemyKind.KING_PHASE_HEAL_PERCENT : 100;
     }
 
     /** @return {@code true} si l'ennemi n'a plus de points de vie. */

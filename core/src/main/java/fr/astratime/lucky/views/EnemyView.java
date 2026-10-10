@@ -189,6 +189,13 @@ public class EnemyView implements Disposable {
         if (kind.hasPhaseTwo() && current.getPhase() < 2) {
             line(text, Lang.f("Sous la moitié de ses PV : {0}", kind.describeReels(2)));
         }
+        if (kind.kingPhaseSymbol() != null) {
+            line(text, current.getPhase() < 2
+                ? Lang.f("Phase 2, sous la moitié de ses PV : attaques +{0} %, soins -{1} %",
+                    EnemyKind.KING_PHASE_ATTACK_PERCENT - 100, 100 - EnemyKind.KING_PHASE_HEAL_PERCENT)
+                : Lang.f("Phase 2 : attaques +{0} %, soins -{1} %",
+                    EnemyKind.KING_PHASE_ATTACK_PERCENT - 100, 100 - EnemyKind.KING_PHASE_HEAL_PERCENT));
+        }
         if (kind.playsAtRandom()) line(text, Lang.t("Joue ses cartes au hasard"));
         if (kind.potionShields()) line(text, Lang.t("Ses Potions reforment aussi sa défense"));
         if (kind.royalBet()) line(text, Lang.t("Mise royale : ses Trèfles comptent double sous la moitié de ses PV"));
