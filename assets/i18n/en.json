@@ -580,7 +580,7 @@
   "Intérêts : il prend {0} % de tes gains. Attaque +1 par {1} volés, au prochain coup. Sans gains, il mord": "Interest: takes {0}% of your gains. Attack +1 per {1} stolen, on the next hit. Without gains, it bites",
   "Zéro : rouge, ses attaques doublent. Noir, ses Boucliers. Zéro, les deux": "Zero: red, its attacks double. Black, its Shields. Zero, both",
   "Reflet : il rejoue ta dernière carte. À moitié de sa force": "Reflection: replays your last card. At half strength",
-  "Sablier : +1. À {0}, il explose ({1}). Tes gros coups le font reculer": "Hourglass: +1. At {0}, it explodes ({1}). Your big hits push it back",
+  "Sablier : +1. À {0}, il explose ({1}), à travers ton bouclier. Tes gros coups le font reculer": "Hourglass: +1. At {0}, it explodes ({1}), through your shield. Your big hits push it back",
   "Tapis : à son prochain tour, ses attaques doublent. Touche-le avant pour l'annuler": "All-in: on its next turn, its attacks double. Hit it first to cancel it",
   "Grignotage : il ronge une carte. Au prochain tour, une carte de ta main part à la défausse": "Nibble: gnaws a card. Next turn, a card from your hand goes to the discard pile",
   "Ivresse : à ton prochain tirage, un rouleau tourne deux fois et garde le pire résultat": "Drunkenness: on your next draw, a reel spins twice and keeps the worse result",

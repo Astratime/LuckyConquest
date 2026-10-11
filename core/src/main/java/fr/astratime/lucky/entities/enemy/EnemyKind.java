@@ -810,7 +810,8 @@ public enum EnemyKind {
     /**
      * @return la part de ses coups qui porte, en % : dans la prairie, réglée donjon
      *         par donjon pour qu'un joueur sans rang en gagne environ 7 sur 10
-     *         (simulateur d'équilibrage) ; 100 partout ailleurs
+     *         (simulateur d'équilibrage) ; {@link #TOWER_LATE_DAMAGE} dans la Tour à
+     *         partir du chapitre 3 ; 100 partout ailleurs
      */
     public int damagePercent() {
         return switch (this) {
@@ -818,9 +819,16 @@ public enum EnemyKind {
             case SOLDAT_TREFLE,  ROI_TREFLE  -> TREFLE_DAMAGE;
             case SOLDAT_COEUR,   ROI_COEUR   -> COEUR_DAMAGE;
             case SOLDAT_CARREAU, ROI_CARREAU -> CARREAU_DAMAGE;
-            default -> 100;
+            default -> chapterPower() >= CHAPTER_3_POWER ? TOWER_LATE_DAMAGE : 100;
         };
     }
+
+    /**
+     * Dégâts des ennemis de la Tour à partir du chapitre 3, en % (choix d'Astra, 2026-10-11 :
+     * l'Épée du chapitre 3 frappe à 100, soit 20 x3 x1,67). Les chapitres 4 à 6 gardent le même
+     * écart avec le chapitre 3 : Épée à 134, 167 et 200 (le double en mode difficile).
+     */
+    static final int TOWER_LATE_DAMAGE = 167;
 
     /** Dégâts des ennemis des donjons de la prairie, en % (voir {@link #damagePercent()}). */
     static final int PIQUE_DAMAGE = 48, TREFLE_DAMAGE = 165, COEUR_DAMAGE = 210, CARREAU_DAMAGE = 165;
