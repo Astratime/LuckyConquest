@@ -6,6 +6,7 @@ import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.scenes.scene2d.Touchable;
 import com.badlogic.gdx.scenes.scene2d.ui.Image;
 import com.badlogic.gdx.scenes.scene2d.utils.Drawable;
+import fr.astratime.lucky.assets.FoilShader;
 
 /**
  * Carte de la main, vivante comme dans Balatro : au repos elle ondule
@@ -17,6 +18,9 @@ import com.badlogic.gdx.scenes.scene2d.utils.Drawable;
  * non cliquable et garde seul la main sur son échelle et sa rotation. La
  * levée et l'ombre sont dessinées sans toucher à la position de la carte, qui
  * reste celle de la rangée.
+ *
+ * Une carte spéciale en pleine illustration porte en plus un reflet
+ * arc-en-ciel ({@link FoilShader}), coupé avec les effets réduits.
  */
 public class CardImage extends Image {
 
@@ -34,9 +38,15 @@ public class CardImage extends Image {
     private float   lift;
     private float   pointerTilt;
     private boolean hovered;
+    private boolean foil;
 
     public CardImage(Drawable drawable) {
         super(drawable);
+    }
+
+    /** Active le reflet arc-en-ciel des cartes spéciales en pleine illustration. */
+    public void setFoil(boolean foil) {
+        this.foil = foil;
     }
 
     /** Survol : la carte se soulève et s'incline vers la souris, ou retombe. */
@@ -72,7 +82,7 @@ public class CardImage extends Image {
     @Override
     public void draw(Batch batch, float parentAlpha) {
         if (!inHand()) {
-            super.draw(batch, parentAlpha);
+            drawFace(batch, parentAlpha);
             return;
         }
         float x = getX(), y = getY();
@@ -87,8 +97,15 @@ public class CardImage extends Image {
 
         color.set(r, g, b, a);
         setPosition(x, y + lift);
-        super.draw(batch, parentAlpha);
+        drawFace(batch, parentAlpha);
         setPosition(x, y);
+    }
+
+    /** Dessine la face de la carte, avec son reflet arc-en-ciel si elle en a un. */
+    private void drawFace(Batch batch, float parentAlpha) {
+        boolean shine = foil && FoilShader.begin(batch, phase);
+        super.draw(batch, parentAlpha);
+        if (shine) FoilShader.end(batch);
     }
 
     private boolean inHand() {
