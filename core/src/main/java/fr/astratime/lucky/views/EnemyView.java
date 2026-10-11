@@ -25,6 +25,7 @@ import fr.astratime.lucky.entities.Card;
 import fr.astratime.lucky.entities.Enemy;
 import fr.astratime.lucky.entities.enemy.EnemyCards;
 import fr.astratime.lucky.entities.enemy.EnemyKind;
+import fr.astratime.lucky.entities.enemy.EnemySignature;
 import fr.astratime.lucky.entities.enemy.EnemySlotMachine;
 import fr.astratime.lucky.entities.enemy.EnemySymbol;
 import fr.astratime.lucky.entities.enemy.EnemyTurnResult;
@@ -234,8 +235,11 @@ public class EnemyView implements Disposable {
             line(text, Lang.f("Interdit : les cartes {0}", current.getBannedFamily().getDisplayName()));
         }
         if (current.getLoot() > 0) line(text, Lang.f("Butin : {0} As volés", current.getLoot()));
-        if (current.getPrediction() != null) line(text, Lang.f("Prédiction : {0}", current.getPrediction().getDisplayName()));
-        if (kind.getTurnLimit() > 0) line(text, Lang.f("Le combat dure {0} tours", kind.getTurnLimit()));
+        if (current.getPrediction() != null) line(text, current.getSecondPrediction() == null
+            ? Lang.f("Prédiction : {0}", current.getPrediction().getDisplayName())
+            : Lang.f("Prédiction : {0} ou {1}", current.getPrediction().getDisplayName(),
+                current.getSecondPrediction().getDisplayName()));
+        if (current.getTurnLimit() > 0) line(text, Lang.f("Le combat dure {0} tours", current.getTurnLimit()));
         if (current.getAnvil() > 0) line(text, Lang.f("Enclume : attaque +{0}", current.getAnvil()));
         if (current.getRage() > 0) line(text, Lang.f("Rage : attaque +{0}", current.getRage()));
         if (current.getThornsPercent() > 0) {
@@ -469,6 +473,16 @@ public class EnemyView implements Disposable {
 
     /** @return le bonus d'une carte jouée, en quelques mots (ex : "ÉPÉE +10"), chez un ennemi {@code kind}. */
     private static String bonusText(Card card, EnemyKind kind) {
+        EnemySignature signature = EnemySignature.of(card);
+        if (signature != null) return signature.getBonusText();
+        EnemyCards.ShadowRole role = EnemyCards.shadowRoleOf(card);
+        if (role != null) return switch (role) {
+            case ATTACK -> Lang.t("TA CARTE : ATTAQUE");
+            case GAINS  -> Lang.t("TA CARTE : VOL DE GAINS");
+            case BINGO  -> Lang.t("TA CARTE : ÉPÉE PROBABLE");
+            case HEAL   -> Lang.t("TA CARTE : SOIN");
+            case SHIELD -> Lang.t("TA CARTE : BOUCLIER");
+        };
         if (card.getSuit() == null) return Lang.t("ROULEAU INTERDIT");
         return switch (card.getSuit()) {
             case PIQUE   -> Lang.f("ATTAQUE +{0}", kind.hurt(kind.swordBonus(card)));
@@ -479,6 +493,7 @@ public class EnemyView implements Disposable {
     }
 
     private static EffectPopup.Style styleOf(Card card) {
+        if (EnemySignature.of(card) != null) return EffectPopup.Style.SPECIAL;
         if (card.getSuit() == null) return EffectPopup.Style.DAMAGE;
         return switch (card.getSuit()) {
             case PIQUE   -> EffectPopup.Style.ATTACK;

@@ -126,8 +126,8 @@ public enum EnemySymbol {
     public static final int FRISK_GAINS_STEP = 100_000;
     /** Une Fouille ne confisque pas plus de cartes. */
     public static final int FRISK_MAX = 3;
-    /** Fortune de la Banqueroute, en pourcentage de ses PV restants. */
-    public static final int BANKRUPTCY_FORTUNE_PERCENT = 20;
+    /** Fortune de la Banqueroute, en pourcentage de ses PV restants (40 %, choix d'Astra ; sa Saisie la baisse). */
+    public static final int BANKRUPTCY_FORTUNE_PERCENT = 40;
     /** PV perdus par la Banqueroute quand sa Faillite tourne mal, en pourcentage de ses PV restants. */
     public static final int BANKRUPTCY_HP_PERCENT = 20;
 

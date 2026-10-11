@@ -56,17 +56,19 @@ public class LastingEffects {
     /** Grignotage : cartes rongées dans la main, à la prochaine pioche. */
     private int nibbles = 0;
     /** Aveuglement : la prochaine main est piochée face cachée. */
-    private boolean blind = false;
+    private int blindTurns = 0;
     /** Chant : cartes de la prochaine main jouées d'office, au hasard. */
     private int songs = 0;
     /** Ivresse : rouleaux qui tourneront deux fois au prochain tirage (le pire résultat reste). */
     private int drunk = 0;
     /** Pépite : au prochain tirage, les symboles de gain ne rapportent rien. */
-    private boolean nugget = false;
+    private int nuggetDraws = 0;
     /** Gains devenus faux (Fausse monnaie) : ils disparaissent au prochain tirage, sauf ce qui est dépensé avant. */
     private double fakeGains = 0;
     /** Taxes (le Comptable) pour le prochain tour : chaque carte jouée paie autant de fois la Taxe. */
     private int taxes = 0;
+    /** Taxes du tour d'après (Redressement : une Taxe qui dure 2 tours). */
+    private int laterTaxes = 0;
     /** Règle changée par le Directeur des Jeux ({@code null} : aucune), et ses tirages restants. */
     private HouseRule houseRule;
     private int houseRuleTurns = 0;
@@ -253,11 +255,18 @@ public class LastingEffects {
     public int takeNibbles() { int n = nibbles; nibbles = 0; return n; }
 
     /** Aveuglement : la prochaine main sera face cachée. */
-    public void blind() { blind = true; }
+    public void blind() { blind(1); }
+
+    /** Aveuglement : main cachée pendant les {@code turns} prochains tours du joueur (Lanterne : 2). */
+    public void blind(int turns) { blindTurns = Math.max(blindTurns, turns); }
     /** @return {@code true} si la prochaine main sera face cachée. */
-    public boolean isBlind() { return blind; }
+    public boolean isBlind() { return blindTurns > 0; }
     /** Pioche : l'Aveuglement vaut pour cette main. @return {@code true} s'il était actif */
-    public boolean takeBlind() { boolean was = blind; blind = false; return was; }
+    public boolean takeBlind() {
+        if (blindTurns <= 0) return false;
+        blindTurns--;
+        return true;
+    }
 
     /** Chant : une carte de plus sera jouée d'office au prochain tour. */
     public void addSong() { songs++; }
@@ -274,11 +283,18 @@ public class LastingEffects {
     public int takeDrunk() { int n = drunk; drunk = 0; return n; }
 
     /** Pépite : au prochain tirage, les symboles de gain ne rapportent rien. */
-    public void addNugget() { nugget = true; }
+    public void addNugget() { addNugget(1); }
+
+    /** Pépite : les {@code draws} prochains tirages du joueur ne rapportent rien (Tamis noir : 2). */
+    public void addNugget(int draws) { nuggetDraws = Math.max(nuggetDraws, draws); }
     /** @return {@code true} si les symboles de gain ne rapporteront rien au prochain tirage. */
-    public boolean hasNugget() { return nugget; }
+    public boolean hasNugget() { return nuggetDraws > 0; }
     /** Tirage : la Pépite vaut pour celui-ci. @return {@code true} si elle était active */
-    public boolean takeNugget() { boolean was = nugget; nugget = false; return was; }
+    public boolean takeNugget() {
+        if (nuggetDraws <= 0) return false;
+        nuggetDraws--;
+        return true;
+    }
 
     /** Fausse monnaie : {@code amount} gains de plus deviennent faux. */
     public void addFakeGains(double amount) { fakeGains += Math.max(0, amount); }
@@ -297,7 +313,13 @@ public class LastingEffects {
     }
 
     /** Taxe : une Taxe de plus sur chaque carte du prochain tour. */
-    public void addTax() { taxes++; }
+    public void addTax() { addTax(1); }
+
+    /** Taxe : sur chaque carte des {@code turns} prochains tours (Redressement : 2). */
+    public void addTax(int turns) {
+        taxes++;
+        if (turns >= 2) laterTaxes++;
+    }
 
     /** @return les Taxes en attente pour le prochain tour. */
     public int getTaxes() { return taxes; }
@@ -305,7 +327,8 @@ public class LastingEffects {
     /** Début du tour : les Taxes valent pour ce tour. @return leur nombre */
     public int takeTaxes() {
         int taken = taxes;
-        taxes = 0;
+        taxes = laterTaxes;
+        laterTaxes = 0;
         return taken;
     }
 
@@ -420,8 +443,8 @@ public class LastingEffects {
     public boolean isEmpty() {
         return removedSymbols.isEmpty() && gainBonus == 0f && corruptionTurns == 0 && extraPlaysTurns == 0
             && blades == 0 && blood == 0 && vault == 0 && safes.isEmpty() && goldVeinTurns == 0 && bubbleTurns == 0
-            && nibbles == 0 && !blind && songs == 0 && drunk == 0 && !nugget
-            && fakeGains == 0 && taxes == 0 && houseRuleTurns == 0
+            && nibbles == 0 && blindTurns == 0 && songs == 0 && drunk == 0 && nuggetDraws == 0
+            && fakeGains == 0 && taxes == 0 && laterTaxes == 0 && houseRuleTurns == 0
             && traps == 0 && lanternDraws == 0 && earplugDraws == 0 && propTurns == 0 && lamps == 0
             && cageTurns == 0 && anchorTurns == 0 && temperPercent == 0 && bonusPlays == 0;
     }

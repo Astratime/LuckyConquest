@@ -190,7 +190,7 @@ public class TurnEngine {
         if (enemy.isLastDrawPending() && !player.isDefeated()) firedamp.addAll(lastDraw(player, enemy));
 
         // Le Temps Mort : le dernier tour est passé, le joueur a perdu.
-        int limit = enemy.getKind().getTurnLimit();
+        int limit = enemy.getTurnLimit(); // moins ses Comptes à rebours
         if (limit > 0 && gameState.getTurnNumber() >= limit && !enemy.isDefeated() && !player.isDefeated()) {
             firedamp.add(new StatusEvent(Lang.t("TEMPS MORT : LE TEMPS EST ÉCOULÉ"), EffectPopup.Style.DAMAGE));
             firedamp.add(new PlayerDamagedEvent(player.loseAllHp(), 0, player.getShield()));

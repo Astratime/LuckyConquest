@@ -10,6 +10,7 @@ import fr.astratime.lucky.entities.SlotMachine;
 import fr.astratime.lucky.entities.Symbol;
 import fr.astratime.lucky.entities.enemy.EnemyCards;
 import fr.astratime.lucky.entities.enemy.EnemyKind;
+import fr.astratime.lucky.entities.enemy.EnemySignature;
 import fr.astratime.lucky.entities.enemy.EnemySlotMachine;
 import fr.astratime.lucky.entities.enemy.EnemySymbol;
 import fr.astratime.lucky.entities.enemy.EnemyTurnResult;
@@ -42,6 +43,7 @@ import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.function.Predicate;
 
 /**
  * Tour de l'ennemi : ses Épines du tour précédent piquent le joueur, puis il
@@ -185,29 +187,58 @@ public class EnemyTurnResolver {
             openingEvents.add(new StatusEvent(Lang.t("HUISSIER : UNE CARTE DE PLUS"), EffectPopup.Style.ATTACK));
         }
         List<Card> played = kind.playsAtRandom() ? chooseAtRandom(drawn, plays)
-            : choose(drawn, enemy.getHpRatio(), kind, plays);
+            : choose(drawn, enemy.getHpRatio(), kind, plays, card -> playable(card, enemy));
+
+        // Ses cartes propres d'abord : celles du tour, celles qui attendent leur symbole, celles qui agissent tout de suite.
+        Map<EnemySignature, Integer> boosts = new EnumMap<>(EnemySignature.class);
+        List<EnemySignature> now = new ArrayList<>();
+        List<EnemyCards.ShadowRole> shadows = new ArrayList<>();
+        boolean forbidReel = false;
+        for (Card card : played) {
+            EnemySignature signature = EnemySignature.of(card);
+            if (signature == EnemySignature.ECLAT_VOLE) { // une carte de la Reine ou de l'Éclat, au hasard
+                if (random.nextBoolean()) signature = EnemySignature.MAIN_DE_LA_REINE;
+                else {
+                    forbidReel = true;
+                    continue;
+                }
+            }
+            if (signature != null) {
+                switch (signature.getTiming()) {
+                    case TURN -> boosts.merge(signature, 1, Integer::sum);
+                    case NEXT -> enemy.addCharge(signature);
+                    case NOW  -> now.add(signature);
+                }
+            }
+            EnemyCards.ShadowRole role = EnemyCards.shadowRoleOf(card);
+            if (role != null) shadows.add(role);
+        }
 
         int swordBonus = 0, healBonus = 0, shieldBonus = 0;
-        // Mise royale : la Reine blessée, ou le Prétendant tant qu'il porte l'éclat de la Reine
+        // Mise royale : la Reine blessée, ou le Prétendant tant qu'il porte l'éclat de la Reine, ou la Main de la Reine
         boolean royal = kind.royalBet() && enemy.getHpRatio() < LOW_HP_RATIO
-            || kind == EnemyKind.PRETENDANT && EnemyKind.shards(enemy.getPhase()) >= 2;
+            || kind == EnemyKind.PRETENDANT && EnemyKind.shards(enemy.getPhase()) >= 2
+            || boosts.containsKey(EnemySignature.MAIN_DE_LA_REINE);
         int luckFactor = royal ? 2 : 1;
         Map<EnemySymbol, Integer> luck = new EnumMap<>(EnemySymbol.class);
-        boolean forbidReel = false;
+        for (EnemyCards.ShadowRole role : shadows) {
+            if (role == EnemyCards.ShadowRole.BINGO) luck.merge(EnemySymbol.SWORD, EnemyCards.SHADOW_BINGO_LUCK, Integer::sum);
+        }
         for (Card card : played) {
             if (EnemyCards.isForbiddenReel(card)) {
                 // le Prétendant n'a plus le Rouleau interdit une fois l'éclat de l'Éclat Originel perdu
                 forbidReel = kind != EnemyKind.PRETENDANT || EnemyKind.shards(enemy.getPhase()) >= 3;
                 continue;
             }
-            switch (card.getSuit()) {
-                case PIQUE   -> swordBonus  += kind.swordBonus(card);
-                case COEUR   -> healBonus   += EnemyCards.healBonus(card);
-                case CARREAU -> shieldBonus += kind.shieldBonus(card);
-                case TREFLE  -> {
-                    List<EnemySymbol> symbols = enemy.getSymbols();
-                    EnemySymbol lucky = symbols.get(random.nextInt(symbols.size()));
-                    luck.merge(lucky, EnemyCards.luckBonus(card) * luckFactor, Integer::sum);
+            if (card.getSuit() == null) continue; // carte propre, ou carte spéciale copiée par l'Ombre
+            // Sac de butin : ses As volés à l'échoppe comptent double
+            int times = EnemyCards.isLoot(card) ? 1 + boosts.getOrDefault(EnemySignature.SAC_DE_BUTIN, 0) : 1;
+            for (int k = 0; k < times; k++) {
+                switch (card.getSuit()) {
+                    case PIQUE   -> swordBonus  += kind.swordBonus(card);
+                    case COEUR   -> healBonus   += EnemyCards.healBonus(card);
+                    case CARREAU -> shieldBonus += kind.shieldBonus(card);
+                    case TREFLE  -> luck.merge(luckyTarget(enemy), EnemyCards.luckBonus(card) * luckFactor, Integer::sum);
                 }
             }
         }
@@ -219,7 +250,9 @@ public class EnemyTurnResolver {
         EnemyRouletteEvent[] roulettes = new EnemyRouletteEvent[symbols.length];
         for (int i = 0; i < symbols.length; i++) {
             if (symbols[i] != EnemySymbol.ZERO) continue;
-            roulettes[i] = new EnemyRouletteEvent(spinRoulette());
+            // Bille truquée : la bille tombe sur le zéro
+            roulettes[i] = new EnemyRouletteEvent(enemy.takeCharge(EnemySignature.BILLE_TRUQUEE)
+                ? EnemyRouletteEvent.Pocket.ZERO : spinRoulette());
             if (roulettes[i].pocket != EnemyRouletteEvent.Pocket.NOIR) turn.attackFactor *= 2;
             if (roulettes[i].pocket != EnemyRouletteEvent.Pocket.ROUGE) turn.shieldFactor *= 2;
         }
@@ -238,6 +271,9 @@ public class EnemyTurnResolver {
         }
 
         LastingEffects curses = player.getLastingEffects(); // les mauvais sorts pour le prochain tour du joueur
+        // Queue de comète : son meilleur symbole du tour agit deux fois
+        int best = boosts.containsKey(EnemySignature.QUEUE_DE_COMETE) ? bestSymbol(symbols) : -1;
+        int healFactor = 100 + healBonus; // les Cœurs renforcent aussi ce que rendent ses Crocs et ses Morsures
         List<List<Event>> outcomes = new ArrayList<>();
         for (int i = 0; i < symbols.length; i++) {
             List<Event> events = new ArrayList<>();
@@ -250,25 +286,34 @@ public class EnemyTurnResolver {
                 outcomes.add(events);
                 continue;
             }
-            switch (symbols[i]) {
+            int repeats = i == best ? 1 + boosts.get(EnemySignature.QUEUE_DE_COMETE) : 1;
+            if (repeats > 1) events.add(new StatusEvent(Lang.t("QUEUE DE COMÈTE : IL AGIT DEUX FOIS"), EffectPopup.Style.SPECIAL));
+            for (int r = 0; r < repeats; r++) switch (symbols[i]) {
                 case SWORD  -> events.add(turn.strike(enemy.getKind().swordDamage()));
-                case FANG   -> bite(turn, events);
+                case FANG   -> bite(turn, events,
+                    healFactor * (100 + EnemySignature.SAIGNEE_PERCENT * boosts.getOrDefault(EnemySignature.SAIGNEE, 0)) / 100);
                 case THORNS -> {
-                    enemy.addThorns(kind.thornsPercent());
-                    events.add(new EnemyThornsEvent(kind.thornsPercent(), enemy.getThornsPercent()));
+                    int thorns = kind.thornsPercent() + EnemySignature.RONCES_PERCENT * boosts.getOrDefault(EnemySignature.RONCES, 0);
+                    enemy.addThorns(thorns);
+                    events.add(new EnemyThornsEvent(thorns, enemy.getThornsPercent()));
                 }
-                case RAGE   -> events.add(rage(enemy));
+                case RAGE   -> {
+                    for (int k = 0; k <= boosts.getOrDefault(EnemySignature.PROVOCATION, 0); k++) events.add(rage(enemy));
+                }
                 case SHIELD -> events.add(turn.shield(kind.shieldDefense() + shieldBonus));
                 case POTION -> {
                     events.add(heal(enemy, kind.potionPercent(healBonus)));
                     if (kind.potionShields()) events.add(turn.shield(kind.shieldDefense() + shieldBonus));
                 }
                 case LOADED_DIE -> {
-                    int drained = player.getLastingEffects().drainGauges(kind.diePercent());
-                    events.add(new GaugesDrainedEvent(kind.diePercent(), drained));
+                    int percent = Math.min(100, kind.diePercent()
+                        + EnemySignature.DE_CHARGE_PERCENT * boosts.getOrDefault(EnemySignature.DE_CHARGE, 0));
+                    int drained = player.getLastingEffects().drainGauges(percent);
+                    events.add(new GaugesDrainedEvent(percent, drained));
                 }
                 case INTEREST -> {
-                    double stolen = BigNumber.percent(player.getGains(), kind.interestPercent());
+                    double stolen = BigNumber.percent(player.getGains(), Math.min(100, kind.interestPercent()
+                        + EnemySignature.TAUX_PERCENT * boosts.getOrDefault(EnemySignature.TAUX_USURAIRE, 0)));
                     if (stolen > 0) {
                         player.addGains(-stolen);
                         events.add(new GainsStolenEvent(stolen, enemy.addInterest(BigNumber.toInt(stolen))));
@@ -277,7 +322,7 @@ public class EnemyTurnResolver {
                     }
                 }
                 case ZERO   -> events.add(roulettes[i]);
-                case MIRROR -> mirror(turn, events);
+                case MIRROR -> mirror(turn, events, enemy.takeCharge(EnemySignature.MIROIR_DEFORMANT));
                 case HOURGLASS -> {
                     boolean exploded = enemy.tickHourglass();
                     events.add(new EnemyHourglassEvent(exploded ? EnemySymbol.HOURGLASS_MAX : enemy.getHourglass(),
@@ -286,53 +331,71 @@ public class EnemyTurnResolver {
                 }
                 case ALL_IN -> {
                     enemy.goAllIn();
+                    if (enemy.takeCharge(EnemySignature.TOUT_SUR_LE_ROUGE)) enemy.holdAllIn();
                     events.add(new EnemyStakeEvent(enemy.getStake(), true));
                 }
                 case NIBBLE -> {
+                    boolean twice = enemy.takeCharge(EnemySignature.DENTS_DE_RAT);
                     curses.addNibble();
-                    events.add(new StatusEvent(Lang.t("GRIGNOTAGE : UNE CARTE RONGÉE AU PROCHAIN TOUR"), EffectPopup.Style.DAMAGE));
+                    if (twice) curses.addNibble();
+                    events.add(new StatusEvent(twice ? Lang.t("GRIGNOTAGE : DEUX CARTES RONGÉES AU PROCHAIN TOUR")
+                        : Lang.t("GRIGNOTAGE : UNE CARTE RONGÉE AU PROCHAIN TOUR"), EffectPopup.Style.DAMAGE));
                 }
                 case DRUNK -> {
+                    boolean twice = enemy.takeCharge(EnemySignature.TOURNEE);
                     curses.addDrunk();
-                    events.add(new StatusEvent(Lang.t("IVRESSE : UN ROULEAU TITUBERA"), EffectPopup.Style.DAMAGE));
+                    if (twice) curses.addDrunk();
+                    events.add(new StatusEvent(twice ? Lang.t("IVRESSE : DEUX ROULEAUX TITUBERONT")
+                        : Lang.t("IVRESSE : UN ROULEAU TITUBERA"), EffectPopup.Style.DAMAGE));
                 }
                 case BLIND -> {
-                    curses.blind();
-                    events.add(new StatusEvent(Lang.t("AVEUGLEMENT : MAIN CACHÉE AU PROCHAIN TOUR"), EffectPopup.Style.DAMAGE));
+                    boolean twice = enemy.takeCharge(EnemySignature.LANTERNE);
+                    curses.blind(twice ? 2 : 1);
+                    events.add(new StatusEvent(twice ? Lang.t("AVEUGLEMENT : MAIN CACHÉE 2 TOURS")
+                        : Lang.t("AVEUGLEMENT : MAIN CACHÉE AU PROCHAIN TOUR"), EffectPopup.Style.DAMAGE));
                 }
-                case BOARDING -> board(turn, events);
+                case BOARDING -> board(turn, events, enemy.takeCharge(EnemySignature.GRAPPIN));
                 case NUGGET -> {
-                    curses.addNugget();
-                    events.add(new StatusEvent(Lang.t("PÉPITE : TES GAINS SERONT DES PIERRES"), EffectPopup.Style.DAMAGE));
+                    boolean twice = enemy.takeCharge(EnemySignature.TAMIS_NOIR);
+                    curses.addNugget(twice ? 2 : 1);
+                    events.add(new StatusEvent(twice ? Lang.t("PÉPITE : TES GAINS SERONT DES PIERRES 2 TIRAGES")
+                        : Lang.t("PÉPITE : TES GAINS SERONT DES PIERRES"), EffectPopup.Style.DAMAGE));
                 }
                 case DRILL  -> {
                     events.add(new StatusEvent(Lang.t("FORAGE !"), EffectPopup.Style.ATTACK));
                     boolean propped = player.getLastingEffects().getPropTurns() > 0; // Étai : le bouclier tient
                     if (propped) events.add(new StatusEvent(Lang.t("ÉTAI : LE FORAGE NE PERCE PAS"), EffectPopup.Style.DEFENSE));
-                    events.add(turn.strike(kind.swordDamage(), !propped));
+                    int meche = EnemySignature.MECHE_PERCENT * boosts.getOrDefault(EnemySignature.MECHE_DE_DIAMANT, 0);
+                    events.add(turn.strike(kind.swordDamage() * (100 + meche) / 100, !propped));
                 }
                 case ANVIL  -> {
-                    enemy.addAnvil(EnemySymbol.ANVIL_ATTACK);
+                    boolean twice = enemy.takeCharge(EnemySignature.TREMPE);
+                    enemy.addAnvil(EnemySymbol.ANVIL_ATTACK * (twice ? 2 : 1));
                     events.add(new StatusEvent(Lang.f("ENCLUME : ATTAQUE +{0}", kind.hurt(enemy.getAnvil())),
                         EffectPopup.Style.ATTACK));
                 }
                 case SONG   -> {
+                    boolean twice = enemy.takeCharge(EnemySignature.REFRAIN);
                     curses.addSong();
-                    events.add(new StatusEvent(Lang.t("CHANT : UNE CARTE JOUÉE D'OFFICE"), EffectPopup.Style.DAMAGE));
+                    if (twice) curses.addSong();
+                    events.add(new StatusEvent(twice ? Lang.t("CHANT : DEUX CARTES JOUÉES D'OFFICE")
+                        : Lang.t("CHANT : UNE CARTE JOUÉE D'OFFICE"), EffectPopup.Style.DAMAGE));
                 }
                 case BANK_BITE -> {
-                    double stolen = BigNumber.percent(player.getGains(), kind.empowered(EnemySymbol.BANK_BITE_PERCENT));
+                    double stolen = BigNumber.percent(player.getGains(), Math.min(100, kind.empowered(EnemySymbol.BANK_BITE_PERCENT)
+                        + EnemySignature.FRENESIE_PERCENT * boosts.getOrDefault(EnemySignature.FRENESIE, 0)));
                     if (stolen > 0) {
                         player.addGains(-stolen);
                         events.add(new GainsStolenEvent(stolen, 0));
-                        events.add(new EnemyHealedEvent(enemy.heal(BigNumber.toInt(stolen))));
+                        events.add(new EnemyHealedEvent(enemy.heal(BigNumber.toInt(stolen) * healFactor / 100)));
                     } else {
                         events.add(turn.strike(EnemySymbol.FANG_DAMAGE)); // rien à dévorer : il mord
                     }
                 }
                 case FAKE_MONEY -> {
                     double real = Math.max(0, player.getGains() - curses.getFakeGains());
-                    double faked = BigNumber.percent(real, kind.fakePercent());
+                    double faked = BigNumber.percent(real, Math.min(100, kind.fakePercent()
+                        + EnemySignature.PLANCHE_PERCENT * boosts.getOrDefault(EnemySignature.PLANCHE_A_BILLETS, 0)));
                     if (faked > 0) {
                         curses.addFakeGains(faked);
                         events.add(new StatusEvent(Lang.f("FAUSSE MONNAIE : {0} GAINS FAUX", Lang.big(faked)), EffectPopup.Style.DAMAGE));
@@ -343,22 +406,33 @@ public class EnemyTurnResolver {
                 case PREDICTION -> {
                     List<Symbol> reels = player.getSlotMachine().getReels();
                     Symbol foretold = reels.get(random.nextInt(reels.size()));
-                    enemy.predict(foretold);
-                    events.add(new StatusEvent(Lang.f("PRÉDICTION : {0}", foretold.getDisplayName()), EffectPopup.Style.SPECIAL));
+                    Symbol second = null;
+                    if (enemy.takeCharge(EnemySignature.TAROT)) { // Tarot : un deuxième symbole, différent si possible
+                        List<Symbol> others = reels.stream().filter(symbol -> symbol != foretold).toList();
+                        second = others.isEmpty() ? foretold : others.get(random.nextInt(others.size()));
+                    }
+                    enemy.predict(foretold, second);
+                    events.add(new StatusEvent(second == null ? Lang.f("PRÉDICTION : {0}", foretold.getDisplayName())
+                        : Lang.f("PRÉDICTION : {0} OU {1}", foretold.getDisplayName(), second.getDisplayName()),
+                        EffectPopup.Style.SPECIAL));
                 }
-                case DUEL   -> duel(turn, events);
+                case DUEL   -> duel(turn, events, enemy.takeCharge(EnemySignature.BOTTE_SECRETE) ? EnemySignature.BOTTE_RANKS : 0);
                 case TAX    -> {
-                    curses.addTax();
-                    events.add(new StatusEvent(Lang.t("TAXE SUR TES PROCHAINES CARTES"), EffectPopup.Style.DAMAGE));
+                    boolean twice = enemy.takeCharge(EnemySignature.REDRESSEMENT);
+                    curses.addTax(twice ? 2 : 1);
+                    events.add(new StatusEvent(twice ? Lang.t("TAXE SUR TES CARTES DES 2 PROCHAINS TOURS")
+                        : Lang.t("TAXE SUR TES PROCHAINES CARTES"), EffectPopup.Style.DAMAGE));
                 }
                 case NEW_RULE -> {
                     LastingEffects.HouseRule[] rules = LastingEffects.HouseRule.values();
                     LastingEffects.HouseRule rule = rules[random.nextInt(rules.length)];
-                    curses.setHouseRule(rule, EnemySymbol.NEW_RULE_TURNS);
+                    curses.setHouseRule(rule, EnemySymbol.NEW_RULE_TURNS
+                        + (enemy.takeCharge(EnemySignature.REGLEMENT_INTERIEUR) ? 1 : 0));
                     events.add(new StatusEvent(Lang.f("NOUVELLE RÈGLE : {0}", rule.getAnnounce()), EffectPopup.Style.SPECIAL));
                 }
                 case FRISK  -> {
-                    int count = Math.min(EnemySymbol.FRISK_MAX, (int) Math.min(EnemySymbol.FRISK_MAX, 1 + Math.max(0, player.getGains()) / EnemySymbol.FRISK_GAINS_STEP));
+                    int count = Math.min(EnemySymbol.FRISK_MAX, (int) Math.min(EnemySymbol.FRISK_MAX, 1 + Math.max(0, player.getGains()) / EnemySymbol.FRISK_GAINS_STEP))
+                        + (enemy.takeCharge(EnemySignature.CAMERAS) ? 1 : 0); // Caméras : une carte de plus
                     List<String> taken = new ArrayList<>();
                     for (int k = 0; k < count; k++) {
                         Card card = player.frisk(random);
@@ -369,7 +443,10 @@ public class EnemyTurnResolver {
                             String.join(", ", taken)), EffectPopup.Style.DAMAGE));
                 }
                 case BANKRUPTCY -> {
-                    int fortune = Math.round(enemy.getHp() * EnemySymbol.BANKRUPTCY_FORTUNE_PERCENT / 100f);
+                    // Saisie : le seuil baisse de 10 points par carte, jamais sous 10 %
+                    int percent = Math.max(EnemySignature.SAISIE_FLOOR, EnemySymbol.BANKRUPTCY_FORTUNE_PERCENT
+                        - EnemySignature.SAISIE_POINTS * boosts.getOrDefault(EnemySignature.SAISIE, 0));
+                    int fortune = Math.round(enemy.getHp() * percent / 100f);
                     if (player.getGains() > fortune) {
                         double lost = player.getGains();
                         player.addGains(-lost);
@@ -385,6 +462,8 @@ public class EnemyTurnResolver {
         }
 
         List<Event> afterEvents = new ArrayList<>();
+        playNow(now, turn, curses, afterEvents);
+        playShadows(shadows, turn, afterEvents);
         if (turn.totalAttack > 0 && shieldReflect > 0) {
             // Bingo de bouclier : il frappe dans le bouclier, qui lui est renvoyé entier.
             afterEvents.add(new DamageReflectedEvent((int) enemy.skinned(shieldReflect)));
@@ -454,16 +533,20 @@ public class EnemyTurnResolver {
 
     /**
      * Duel : le joueur et l'ennemi tirent chacun une carte au hasard de leur
-     * deck (l'As vaut 14, une carte sans couleur 0). La plus haute frappe :
+     * deck (l'As vaut 14, une carte sans couleur 0 ; {@code penalty} rangs de
+     * moins pour le joueur après une Botte secrète). La plus haute frappe :
      * l'ennemi attaque comme une Épée, plus le rang de sa carte ; le joueur lui
      * retire {@link EnemySymbol#DUEL_PER_MILLE_PER_RANK} pour mille de ses PV max
      * par rang. À égalité, rien.
      */
-    private void duel(Turn turn, List<Event> events) {
+    private void duel(Turn turn, List<Event> events, int penalty) {
         Card mine   = randomCard(turn.player.getAllCards());
-        Card theirs = randomCard(turn.enemy.getDeckCards().isEmpty() ? turn.enemy.getDiscardCards()
-            : turn.enemy.getDeckCards());
-        int myRank = duelRank(mine), theirRank = duelRank(theirs);
+        // il tire parmi ses cartes de couleur : ses cartes propres ne se battent pas en duel
+        List<Card> pool = new ArrayList<>(turn.enemy.getDeckCards());
+        pool.addAll(turn.enemy.getDiscardCards());
+        List<Card> suited = pool.stream().filter(card -> card.getSuit() != null).toList();
+        Card theirs = randomCard(suited.isEmpty() ? pool : suited);
+        int myRank = Math.max(0, duelRank(mine) - penalty), theirRank = duelRank(theirs); // Botte secrète
         events.add(new StatusEvent(Lang.f("DUEL : {0} CONTRE {1}", duelName(mine), duelName(theirs)),
             EffectPopup.Style.SPECIAL));
         if (theirRank > myRank) {
@@ -489,12 +572,15 @@ public class EnemyTurnResolver {
         return card == null ? Lang.t("RIEN") : card.getName().toUpperCase();
     }
 
-    /** Croc : il mord, et chaque PV volé lui rend une part de ses PV max. */
-    private static void bite(Turn turn, List<Event> events) {
+    /**
+     * Croc : il mord, et chaque PV volé lui rend une part de ses PV max, à
+     * {@code healPercent} % (renforcée par ses Cœurs et ses Saignées).
+     */
+    private static void bite(Turn turn, List<Event> events, int healPercent) {
         PlayerDamagedEvent hit = turn.strike(EnemySymbol.FANG_DAMAGE);
         events.add(hit);
         Enemy enemy = turn.enemy;
-        int drained = Math.round(enemy.getMaxHp() * hit.damage * enemy.getKind().drainPercent() / 100f);
+        int drained = Math.round(enemy.getMaxHp() * hit.damage * enemy.getKind().drainPercent() / 100f * healPercent / 100f);
         if (drained > 0) events.add(new EnemyDrainEvent(enemy.heal(drained)));
     }
 
@@ -510,11 +596,11 @@ public class EnemyTurnResolver {
 
     /**
      * Reflet : il rejoue la dernière carte (d'une couleur) jouée par le joueur
-     * ce tour, à moitié de sa force, comme une de ses cartes sombres : Pique, il
+     * ce tour, à moitié de sa force (à pleine force avec {@code full}, le Miroir déformant), comme une de ses cartes sombres : Pique, il
      * frappe ; Cœur, il se soigne ; Carreau et Trèfle, il se protège.
      * Sans carte à copier, il frappe simplement.
      */
-    private static void mirror(Turn turn, List<Event> events) {
+    private static void mirror(Turn turn, List<Event> events, boolean full) {
         Card copied = null;
         List<Card> playedByPlayer = turn.player.getPlayedCards();
         for (int i = playedByPlayer.size() - 1; i >= 0 && copied == null; i--) {
@@ -526,27 +612,35 @@ public class EnemyTurnResolver {
             return;
         }
         Enemy enemy = turn.enemy;
+        int divisor = full ? 1 : 2; // Miroir déformant : à pleine force
         switch (copied.getSuit()) {
-            case PIQUE   -> events.add(turn.strike(turn.enemy.getKind().swordDamage() + turn.enemy.getKind().swordBonus(copied) / 2));
-            case COEUR   -> events.add(heal(enemy, enemy.getKind().potionPercent(EnemyCards.healBonus(copied)) / 2f));
-            case CARREAU, TREFLE -> events.add(turn.shield((turn.enemy.getKind().shieldDefense() + turn.enemy.getKind().shieldBonus(copied)) / 2));
+            case PIQUE   -> events.add(turn.strike(turn.enemy.getKind().swordDamage() + turn.enemy.getKind().swordBonus(copied) / divisor));
+            case COEUR   -> events.add(heal(enemy, enemy.getKind().potionPercent(EnemyCards.healBonus(copied)) / divisor));
+            case CARREAU, TREFLE -> events.add(turn.shield((turn.enemy.getKind().shieldDefense() + turn.enemy.getKind().shieldBonus(copied)) / divisor));
         }
     }
 
     /**
      * Abordage : il vole la meilleure carte du joueur (la plus forte de sa main,
      * sinon parmi celles qu'il a jouées ; jamais le Scorbut), pendant
-     * {@link EnemySymbol#BOARDING_TURNS} tours, et la joue contre lui à pleine force : Pique, il frappe ; Cœur, il
+     * {@link EnemySymbol#BOARDING_TURNS} tours (avec le Grappin, la 2e meilleure aussi), et la joue contre lui à pleine force : Pique, il frappe ; Cœur, il
      * se soigne ; Carreau et Trèfle, il se protège. Une carte sans couleur lui
      * sert d'arme. Sans rien à voler, il frappe simplement.
      */
-    private static void board(Turn turn, List<Event> events) {
+    private static void board(Turn turn, List<Event> events, boolean grapple) {
         Player player = turn.player;
         Card stolen = bestCard(player.getCurrentHand());
         if (stolen == null) stolen = bestCard(player.getPlayedCards());
         if (stolen == null || !player.steal(stolen, EnemySymbol.BOARDING_TURNS)) {
             events.add(turn.strike(turn.enemy.getKind().swordDamage()));
             return;
+        }
+        if (grapple) { // Grappin : il vole aussi la 2e meilleure carte (sans la jouer)
+            Card second = bestCard(player.getCurrentHand());
+            if (second == null) second = bestCard(player.getPlayedCards());
+            if (second != null && player.steal(second, EnemySymbol.BOARDING_TURNS)) {
+                events.add(new StatusEvent(Lang.f("GRAPPIN : {0} VOLÉE", second.getName().toUpperCase()), EffectPopup.Style.DAMAGE));
+            }
         }
         events.add(new StatusEvent(Lang.f("ABORDAGE : {0} VOLÉE", stolen.getName().toUpperCase()), EffectPopup.Style.DAMAGE));
         Enemy enemy = turn.enemy;
@@ -641,12 +735,130 @@ public class EnemyTurnResolver {
 
     /** Comme {@link #choose(List, float, EnemyKind)}, en jouant {@code plays} cartes (les bras du Kraken). */
     static List<Card> choose(List<Card> hand, float hpRatio, EnemyKind kind, int plays) {
+        return choose(hand, hpRatio, kind, plays, card -> true);
+    }
+
+    /**
+     * Comme {@link #choose(List, float, EnemyKind, int)} : ses cartes sans couleur
+     * (cartes propres, Rouleau interdit, cartes spéciales copiées par l'Ombre) passent
+     * avant ses couleurs, sauf au-delà de leur limite par tour ou si {@code playable}
+     * les refuse (un Compte à rebours qui ne retire plus de tour) : celles-là passent en dernier.
+     */
+    static List<Card> choose(List<Card> hand, float hpRatio, EnemyKind kind, int plays, Predicate<Card> playable) {
         List<Card.Suit> priority = hpRatio < LOW_HP_RATIO ? kind.getLowHpPriority() : kind.getPriority();
-        return hand.stream()
+        List<Card> sorted = hand.stream()
             .sorted(Comparator.comparingInt((Card card) -> card.getSuit() == null ? -1 : priority.indexOf(card.getSuit()))
                 .thenComparing(Comparator.comparingInt(Card::getRank).reversed()))
-            .limit(plays)
             .toList();
+        List<Card> chosen = new ArrayList<>(), later = new ArrayList<>();
+        Map<EnemySignature, Integer> counted = new EnumMap<>(EnemySignature.class);
+        for (Card card : sorted) {
+            EnemySignature signature = EnemySignature.of(card);
+            boolean capped = signature != null && signature.maxPerTurn() > 0
+                && counted.getOrDefault(signature, 0) >= signature.maxPerTurn();
+            if (capped || !playable.test(card)) {
+                later.add(card);
+                continue;
+            }
+            if (signature != null) counted.merge(signature, 1, Integer::sum);
+            chosen.add(card);
+        }
+        chosen.addAll(later);
+        return List.copyOf(chosen.subList(0, Math.min(plays, chosen.size())));
+    }
+
+    /** @return {@code true} si {@code card} sert encore à quelque chose (un Compte à rebours, tant que le combat peut perdre un tour). */
+    private static boolean playable(Card card, Enemy enemy) {
+        return EnemySignature.of(card) != EnemySignature.COMPTE_A_REBOURS
+            || enemy.getTurnLimit() > 0 && enemy.getLostTurns() < EnemySignature.COMPTE_MAX;
+    }
+
+    /**
+     * @return le symbole que rend plus probable une de ses cartes Trèfle : un de ses
+     *         rouleaux spéciaux au hasard (ni Épée, ni Bouclier, ni Potion), ou n'importe
+     *         lequel s'il n'en a pas
+     */
+    private EnemySymbol luckyTarget(Enemy enemy) {
+        List<EnemySymbol> symbols = enemy.getSymbols();
+        List<EnemySymbol> special = symbols.stream().filter(symbol -> !isBasic(symbol)).toList();
+        List<EnemySymbol> pool = special.isEmpty() ? symbols : special;
+        return pool.get(random.nextInt(pool.size()));
+    }
+
+    /** @return {@code true} pour un symbole de base : Épée, Bouclier ou Potion. */
+    static boolean isBasic(EnemySymbol symbol) {
+        return symbol == EnemySymbol.SWORD || symbol == EnemySymbol.SHIELD || symbol == EnemySymbol.POTION;
+    }
+
+    /** @return la place de son meilleur symbole du tirage (un symbole spécial, sinon l'Épée, le Bouclier, la Potion), ou -1. */
+    static int bestSymbol(EnemySymbol[] symbols) {
+        int best = -1, bestValue = -1;
+        for (int i = 0; i < symbols.length; i++) {
+            int value = switch (symbols[i]) {
+                case POTION -> 1;
+                case SHIELD -> 2;
+                case SWORD  -> 3;
+                default     -> 4;
+            };
+            if (value > bestValue) {
+                best = i;
+                bestValue = value;
+            }
+        }
+        return best;
+    }
+
+    /** Ses cartes propres qui agissent tout de suite : Remontoir, Compte à rebours, Encre. */
+    private static void playNow(List<EnemySignature> now, Turn turn, LastingEffects curses, List<Event> events) {
+        Enemy enemy = turn.enemy;
+        for (EnemySignature signature : now) {
+            switch (signature) {
+                case REMONTOIR -> {
+                    boolean exploded = enemy.tickHourglass();
+                    events.add(new EnemyHourglassEvent(exploded ? EnemySymbol.HOURGLASS_MAX : enemy.getHourglass(),
+                        EnemySymbol.HOURGLASS_MAX, exploded));
+                    if (exploded) events.add(turn.strike(EnemySymbol.HOURGLASS_DAMAGE));
+                }
+                case COMPTE_A_REBOURS -> {
+                    if (enemy.loseTurn()) {
+                        events.add(new StatusEvent(Lang.f("COMPTE À REBOURS : PLUS QUE {0} TOURS", enemy.getTurnLimit()),
+                            EffectPopup.Style.DAMAGE));
+                    }
+                }
+                case ENCRE -> {
+                    curses.blind(1);
+                    events.add(new StatusEvent(Lang.t("ENCRE : MAIN CACHÉE AU PROCHAIN TOUR"), EffectPopup.Style.DAMAGE));
+                }
+                default -> { }
+            }
+        }
+    }
+
+    /**
+     * Cartes spéciales du joueur copiées par son Ombre : chacune agit comme le
+     * Reflet, à pleine force (une carte de rang {@link EnemyCards#SHADOW_SPECIAL_RANK}).
+     * La carte Bingo a déjà rendu son Épée plus probable.
+     */
+    private static void playShadows(List<EnemyCards.ShadowRole> shadows, Turn turn, List<Event> events) {
+        Enemy enemy = turn.enemy;
+        EnemyKind kind = enemy.getKind();
+        Player player = turn.player;
+        Card ten = EnemyCards.card(Card.Suit.PIQUE, EnemyCards.SHADOW_SPECIAL_RANK);
+        for (EnemyCards.ShadowRole role : shadows) {
+            switch (role) {
+                case ATTACK -> events.add(turn.strike(kind.swordDamage() + kind.swordBonus(ten)));
+                case GAINS  -> {
+                    double stolen = BigNumber.percent(player.getGains(), kind.interestPercent());
+                    if (stolen > 0) {
+                        player.addGains(-stolen);
+                        events.add(new GainsStolenEvent(stolen, 0));
+                    }
+                }
+                case HEAL   -> events.add(heal(enemy, kind.potionPercent(EnemyCards.healBonus(ten))));
+                case SHIELD -> events.add(turn.shield(kind.shieldDefense() + kind.shieldBonus(ten)));
+                case BINGO  -> { }
+            }
+        }
     }
 
     /** IA de la Roulette Vivante : elle n'en a pas, ses {@code plays} cartes sortent au hasard. */

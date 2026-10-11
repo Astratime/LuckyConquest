@@ -254,10 +254,11 @@ final class CombatEffectRows {
                     family)));
         }
         if (foe.getPrediction() != null) {
-            rows.add(new SidePanel.EffectRow(skull, null, Lang.f("Prédit : {0}",
-                foe.getPrediction().getDisplayName().toLowerCase()),
+            String foretold = foe.getSecondPrediction() == null ? foe.getPrediction().getDisplayName()
+                : Lang.f("{0} ou {1}", foe.getPrediction().getDisplayName(), foe.getSecondPrediction().getDisplayName());
+            rows.add(new SidePanel.EffectRow(skull, null, Lang.f("Prédit : {0}", foretold.toLowerCase()),
                 Lang.t("Prédiction"), Lang.f("Symbole annoncé : {0}. {1}",
-                    foe.getPrediction().getDisplayName(), sentence(EnemySymbol.PREDICTION.getDescription(kind)))));
+                    foretold, sentence(EnemySymbol.PREDICTION.getDescription(kind)))));
         }
         if (foe.getStolenReels() > 0) {
             int stolen = foe.getStolenReels();
@@ -265,7 +266,7 @@ final class CombatEffectRows {
             rows.add(new SidePanel.EffectRow(skull, null, Lang.f("Vol : {0}", reels), Lang.t("Rouleaux volés"),
                 Lang.f("L'ennemi t'a volé {0}. Ils restent bloqués tant qu'il les garde.", reels)));
         }
-        int limit = kind.getTurnLimit();
+        int limit = foe.getTurnLimit(); // moins ses Comptes à rebours
         if (limit > 0) {
             int left = Math.max(0, limit - state.getTurnNumber() + 1);
             rows.add(new SidePanel.EffectRow(skull, null, Lang.f("Temps : {0} tours", left), Lang.t("Temps compté"),

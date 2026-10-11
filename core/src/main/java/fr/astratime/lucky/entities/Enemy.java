@@ -2,12 +2,14 @@ package fr.astratime.lucky.entities;
 
 import fr.astratime.lucky.entities.enemy.EnemyCards;
 import fr.astratime.lucky.entities.enemy.EnemyKind;
+import fr.astratime.lucky.entities.enemy.EnemySignature;
 import fr.astratime.lucky.entities.enemy.EnemySymbol;
 import fr.astratime.lucky.i18n.Lang;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 
@@ -86,6 +88,10 @@ public class Enemy {
     private       int         harpoons;
     /** Harpon : bras coupés au Kraken, pour tout le combat. */
     private       int         cutArms;
+    private       Symbol      secondPrediction;
+    private       int         allInHolds;
+    private       int         lostTurns;
+    private final Map<EnemySignature, Integer> charges = new EnumMap<>(EnemySignature.class);
 
     /**
      * Ennemi avec le deck de départ du jeu sombre.
@@ -133,8 +139,12 @@ public class Enemy {
         hp -= lost;
         damageTaken += lost;
         if (lost <= 0) return 0;
-        stake = 1;
-        allIn = false;
+        if (allInHolds > 0 && (allIn || stake > 1)) {
+            allInHolds--; // Tout sur le rouge : son Tapis tient ce coup
+        } else {
+            stake = 1;
+            allIn = false;
+        }
         if (hourglass > 0 && lost * 1000L >= (long) maxHp * EnemySymbol.HOURGLASS_HIT_PER_MILLE) hourglass--;
         return lost;
     }
@@ -194,7 +204,16 @@ public class Enemy {
     }
 
     /** Sa Prédiction annonce {@code symbol} pour le prochain tirage du joueur. */
-    public void predict(Symbol symbol) { prediction = symbol; }
+    public void predict(Symbol symbol) { predict(symbol, null); }
+
+    /** Sa Prédiction annonce {@code symbol}, et {@code second} avec le Tarot ({@code null} sinon). */
+    public void predict(Symbol symbol, Symbol second) {
+        prediction       = symbol;
+        secondPrediction = second;
+    }
+
+    /** @return le deuxième symbole annoncé (Tarot), ou {@code null}. */
+    public Symbol getSecondPrediction() { return secondPrediction; }
 
     /** @return le symbole annoncé par sa Prédiction, ou {@code null}. */
     public Symbol getPrediction() { return prediction; }
@@ -206,8 +225,11 @@ public class Enemy {
      */
     public boolean checkPrediction(Symbol[] symbols) {
         if (prediction == null) return false;
-        for (Symbol symbol : symbols) if (symbol == prediction) predictionHit = true;
-        prediction = null;
+        for (Symbol symbol : symbols) {
+            if (symbol == prediction || symbol != null && symbol == secondPrediction) predictionHit = true;
+        }
+        prediction       = null;
+        secondPrediction = null;
         return predictionHit;
     }
 
@@ -226,7 +248,7 @@ public class Enemy {
 
     /** Le Pilleur garde une copie d'un achat : un As sombre de la couleur {@code suit} rejoint son deck. */
     public void addLoot(Card.Suit suit) {
-        deck.insertRandomly(EnemyCards.card(suit, 14));
+        deck.insertRandomly(EnemyCards.loot(suit));
         loot++;
     }
 
@@ -486,6 +508,47 @@ public class Enemy {
 
     /** Envoie {@code cards} dans la défausse (fin du tour de l'ennemi). */
     public void discard(List<Card> cards) { discardPile.addAll(cards); }
+
+    /** Carte propre {@code signature} jouée : son effet attend le prochain symbole qu'elle renforce. */
+    public void addCharge(EnemySignature signature) { charges.merge(signature, 1, Integer::sum); }
+
+    /** @return les cartes propres en attente de leur symbole, et leur nombre. */
+    public Map<EnemySignature, Integer> getCharges() { return Collections.unmodifiableMap(charges); }
+
+    /** @return {@code true} (et la consomme) si une carte {@code signature} attendait son symbole. */
+    public boolean takeCharge(EnemySignature signature) {
+        Integer count = charges.get(signature);
+        if (count == null || count <= 0) return false;
+        if (count == 1) charges.remove(signature);
+        else charges.put(signature, count - 1);
+        return true;
+    }
+
+    /** Tout sur le rouge : son Tapis tient un coup de plus avant de retomber. */
+    public void holdAllIn() { allInHolds++; }
+
+    /** @return les coups que son Tapis peut encore encaisser sans retomber. */
+    public int getAllInHolds() { return allInHolds; }
+
+    /**
+     * Compte à rebours : le combat perd un tour (au plus {@link EnemySignature#COMPTE_MAX} sur tout le combat).
+     *
+     * @return {@code true} si le combat a perdu un tour
+     */
+    public boolean loseTurn() {
+        if (lostTurns >= EnemySignature.COMPTE_MAX || kind.getTurnLimit() <= 0) return false;
+        lostTurns++;
+        return true;
+    }
+
+    /** @return les tours retirés au combat par ses Comptes à rebours. */
+    public int getLostTurns() { return lostTurns; }
+
+    /** @return les tours que dure le combat contre lui (Temps Mort, moins ses Comptes à rebours), 0 sans limite. */
+    public int getTurnLimit() {
+        int limit = kind.getTurnLimit();
+        return limit > 0 ? limit - lostTurns : 0;
+    }
 
     /** @return le type d'ennemi : ses rouleaux, sa façon de jouer, son portrait. */
     public EnemyKind getKind()     { return kind; }

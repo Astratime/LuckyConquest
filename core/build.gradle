@@ -38,3 +38,14 @@ tasks.register('simulate', JavaExec) {
   systemProperty 'lucky.simulation.out', layout.buildDirectory.file('simulation/equilibrage.md').get().asFile.absolutePath
   if (project.hasProperty('quick')) args '--quick'
 }
+
+// Images des cartes propres des ennemis : ./gradlew :core:enemyCards (dans assets/cards/dark/sig/).
+tasks.register('enemyCards', JavaExec) {
+  group = 'assets'
+  description = "Dessine les cartes propres des ennemis."
+  dependsOn testClasses
+  classpath = sourceSets.test.runtimeClasspath
+  mainClass = 'fr.astratime.lucky.assets.EnemyCardArt'
+  systemProperty 'lucky.assets', rootProject.file('assets').absolutePath
+  systemProperty 'java.awt.headless', 'true'
+}

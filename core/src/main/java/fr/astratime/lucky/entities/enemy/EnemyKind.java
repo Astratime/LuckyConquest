@@ -9,6 +9,8 @@ import fr.astratime.lucky.i18n.Lang;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumMap;
+import java.util.EnumSet;
+import java.util.Set;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -1040,16 +1042,99 @@ public enum EnemyKind {
     /** @return les couleurs qu'il joue en priorité quand sa vie est basse. */
     public List<Card.Suit> getLowHpPriority() { return lowHpPriority; }
 
-    /** @return un deck neuf, aux cartes de sa composition. */
+    /**
+     * @return un deck neuf : les cartes de sa composition, sans les couleurs qui
+     *         ne servent pas ses rouleaux (voir {@link #removedSuits()}), et
+     *         {@link EnemySignature#COPIES} exemplaires de chacune de ses cartes propres
+     */
     public List<Card> createDeck() {
         List<Card> cards = new ArrayList<>();
+        Set<Card.Suit> removed = removedSuits();
         for (Map.Entry<Card.Suit, int[]> entry : deck.entrySet()) {
+            if (removed.contains(entry.getKey())) continue;
             for (int rank : entry.getValue()) cards.add(EnemyCards.card(entry.getKey(), rank));
+        }
+        for (EnemySignature signature : getSignatures()) {
+            for (int i = 0; i < EnemySignature.COPIES; i++) cards.add(signature.card());
         }
         if (forbidsReels()) {
             for (int i = 0; i < FORBIDDEN_REELS; i++) cards.add(EnemyCards.forbiddenReel());
         }
         return cards;
+    }
+
+    /**
+     * @return {@code true} s'il garde le deck de base, toutes couleurs, sans carte
+     *         propre : les premiers ennemis, qui apprennent les couleurs au joueur
+     *         (le croupier de l'Entraînement, le Croupier démoniaque et les soldats de la prairie)
+     */
+    public boolean keepsBaseDeck() {
+        return switch (this) {
+            case ENTRAINEMENT, CROUPIER, SOLDAT_PIQUE, SOLDAT_COEUR, SOLDAT_CARREAU, SOLDAT_TREFLE -> true;
+            default -> false;
+        };
+    }
+
+    /**
+     * @return les couleurs retirées de son deck, car elles ne font rien chez lui :
+     *         le Cœur sans Potion, Croc ni Morsure (ce qu'il renforce), le Carreau
+     *         sans Bouclier. Aucune pour un ennemi qui {@linkplain #keepsBaseDeck() garde son deck de base}.
+     */
+    public Set<Card.Suit> removedSuits() {
+        Set<Card.Suit> removed = EnumSet.noneOf(Card.Suit.class);
+        if (keepsBaseDeck()) return removed;
+        if (!weights.containsKey(EnemySymbol.POTION) && !weights.containsKey(EnemySymbol.FANG)
+            && !weights.containsKey(EnemySymbol.BANK_BITE)) removed.add(Card.Suit.COEUR);
+        if (!weights.containsKey(EnemySymbol.SHIELD)) removed.add(Card.Suit.CARREAU);
+        return removed;
+    }
+
+    /** @return ses cartes propres, liées à ses rouleaux (voir le document « Cartes des ennemis »). */
+    public List<EnemySignature> getSignatures() {
+        return switch (this) {
+            case GARDIEN, ROI_CARREAU -> List.of(EnemySignature.RONCES);
+            case SANGSUE, ROI_COEUR -> List.of(EnemySignature.SAIGNEE);
+            case BRETTEUR, ROI_PIQUE, JACKPOT_VIVANT -> List.of(EnemySignature.PROVOCATION);
+            case COMETE -> List.of(EnemySignature.QUEUE_DE_COMETE);
+            case TRICHEUR -> List.of(EnemySignature.DE_CHARGE);
+            case USURIER -> List.of(EnemySignature.TAUX_USURAIRE);
+            case ROULETTE, PIEUVRE -> List.of(EnemySignature.BILLE_TRUQUEE);
+            case REINE -> List.of(EnemySignature.MAIN_DE_LA_REINE);
+            case GARDIENNE -> List.of(EnemySignature.RONCES, EnemySignature.SAIGNEE, EnemySignature.PROVOCATION);
+            case MIROIR -> List.of(EnemySignature.MIROIR_DEFORMANT);
+            case HORLOGER -> List.of(EnemySignature.REMONTOIR);
+            case FOU -> List.of(EnemySignature.TOUT_SUR_LE_ROUGE);
+            case PILLEUR -> List.of(EnemySignature.SAC_DE_BUTIN);
+            case FAUSSAIRE -> List.of(EnemySignature.PLANCHE_A_BILLETS);
+            case CARTOMANCIENNE -> List.of(EnemySignature.TAROT);
+            case DUELLISTE -> List.of(EnemySignature.BOTTE_SECRETE);
+            case PRETENDANT -> List.of(EnemySignature.ECLAT_VOLE);
+            case COMPTABLE -> List.of(EnemySignature.REDRESSEMENT);
+            case DIRECTEUR -> List.of(EnemySignature.REGLEMENT_INTERIEUR);
+            case SECURITE -> List.of(EnemySignature.CAMERAS);
+            case GARDIEN_LEVIER -> List.of(EnemySignature.PLANCHE_A_BILLETS, EnemySignature.REDRESSEMENT,
+                EnemySignature.BOTTE_SECRETE);
+            case BANQUEROUTE -> List.of(EnemySignature.SAISIE);
+            case TEMPS_MORT -> List.of(EnemySignature.COMPTE_A_REBOURS);
+            case ROI_TREFLE -> List.of(EnemySignature.TAUX_USURAIRE, EnemySignature.DE_CHARGE);
+            case RAT_CALES -> List.of(EnemySignature.DENTS_DE_RAT);
+            case CAPITAINE_RAT -> List.of(EnemySignature.DENTS_DE_RAT, EnemySignature.SAIGNEE);
+            case BUVEUR, TAVERNIER -> List.of(EnemySignature.TOURNEE);
+            case GUETTEUR -> List.of(EnemySignature.LANTERNE);
+            case GARDIEN_PHARE -> List.of(EnemySignature.LANTERNE, EnemySignature.RONCES);
+            case PIRATE -> List.of(EnemySignature.GRAPPIN);
+            case CAPITAINE_NOIR -> List.of(EnemySignature.GRAPPIN, EnemySignature.PROVOCATION);
+            case CHERCHEUR_OR -> List.of(EnemySignature.TAMIS_NOIR);
+            case BARON_OR -> List.of(EnemySignature.TAMIS_NOIR, EnemySignature.TAUX_USURAIRE);
+            case FOREUR -> List.of(EnemySignature.MECHE_DE_DIAMANT);
+            case GRAND_FOREUR -> List.of(EnemySignature.MECHE_DE_DIAMANT, EnemySignature.PROVOCATION);
+            case FORGERON, MAITRE_FORGE -> List.of(EnemySignature.TREMPE);
+            case BARMAN_NOYE, SIRENE -> List.of(EnemySignature.REFRAIN);
+            case REQUIN -> List.of(EnemySignature.FRENESIE);
+            case REQUIN_BANQUIER -> List.of(EnemySignature.FRENESIE, EnemySignature.SAIGNEE);
+            case KRAKEN -> List.of(EnemySignature.ENCRE);
+            default -> List.of();
+        };
     }
 
     /** @return la phrase qui résume ses rouleaux, pour son infobulle (ex : "Épée, Bouclier x2, Épines x2"). */

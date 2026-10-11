@@ -266,9 +266,15 @@ class TowerChapters456Test {
         assertEquals(4, shadow.size());
         assertEquals(Card.Suit.COEUR, shadow.get(0).getSuit());
         assertEquals(14, shadow.get(0).getRank());
-        assertEquals(Card.Suit.CARREAU, shadow.get(1).getSuit());
-        assertEquals(Card.Suit.TREFLE, shadow.get(2).getSuit());
-        assertEquals(Card.Suit.PIQUE, shadow.get(3).getSuit());
+        // Ses cartes spéciales restent les tiennes (nom, image), en version sombre, et agissent selon leur rôle.
+        assertNull(shadow.get(1).getSuit());
+        assertEquals("Pioche", shadow.get(1).getName());
+        assertEquals("x.png", shadow.get(1).getAssetPath());
+        assertTrue(EnemyCards.isShadow(shadow.get(1)));
+        assertEquals(EnemyCards.ShadowRole.SHIELD, EnemyCards.shadowRoleOf(shadow.get(1)));
+        assertEquals(EnemyCards.ShadowRole.GAINS, EnemyCards.shadowRoleOf(shadow.get(2)));
+        assertEquals(EnemyCards.ShadowRole.ATTACK, EnemyCards.shadowRoleOf(shadow.get(3)));
+        assertNull(EnemyCards.shadowRoleOf(shadow.get(0)), "une carte de couleur agit par sa couleur");
     }
 
     @Test
