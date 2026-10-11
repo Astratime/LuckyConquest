@@ -19,7 +19,7 @@ import java.util.Map;
  * Les cartes spéciales s'affichent au style des cartes classiques : l'image de {@value #CLASSIC_DIR}
  * (version blanche) remplace celle de {@value #SPECIAL_DIR} et des cartes Bingo de {@value #TEST_DIR},
  * gardées telles quelles. À défaut, l'image pleine illustration de {@value #FULL_ART_DIR} est prise.
- * Les versions en couleurs ({@value #CLASSIC_COLOR_DIR}) ne sont pas encore affichées.
+ * Avec l'option « Cartes spéciales : colorées », c'est la version en couleurs de {@value #CLASSIC_COLOR_DIR}.
  */
 public class CardTextures implements Disposable {
 
@@ -29,7 +29,7 @@ public class CardTextures implements Disposable {
     static final String FULL_ART_DIR = "cards/special_full/";
     /** Dossier des cartes Bingo par symbole et de la carte du Jeu bonus. */
     static final String TEST_DIR     = "cards/test/";
-    /** Dossier des cartes spéciales au style des cartes classiques, version blanche (celle du jeu). */
+    /** Dossier des cartes spéciales au style des cartes classiques, version blanche (celle par défaut). */
     static final String CLASSIC_DIR  = "cards/special_classic/blanc/";
     /** Même dossier, version aux couleurs de chaque donjon. */
     static final String CLASSIC_COLOR_DIR = "cards/special_classic/couleurs/";
@@ -46,7 +46,7 @@ public class CardTextures implements Disposable {
      */
     public Texture get(Card card) {
         if (!card.isUpgraded()) return get(card.getAssetPath());
-        String path = art(card.getAssetPath());
+        String path = art(card.getAssetPath(), settings.isColoredCards());
         boolean strong = strongSuits(path);
         return textures.computeIfAbsent(path + Card.UPGRADE_SUFFIX + (strong ? STRONG_SUFFIX : ""),
             key -> build(path, strong, true));
@@ -57,15 +57,22 @@ public class CardTextures implements Disposable {
         return !art(card.getAssetPath()).equals(card.getAssetPath());
     }
 
+    /** @return l'image à afficher pour {@code path}, en version blanche (voir {@link #art(String, boolean)}). */
+    static String art(String path) {
+        return art(path, false);
+    }
+
     /**
+     * @param colored true pour la version en couleurs des cartes au style classique
      * @return l'image à afficher pour {@code path} : sa version au style classique si elle existe,
      *         sinon sa version pleine illustration, sinon {@code path}
      */
-    static String art(String path) {
+    static String art(String path, boolean colored) {
         if (path == null) return path;
         String dir = path.startsWith(SPECIAL_DIR) ? SPECIAL_DIR : path.startsWith(TEST_DIR) ? TEST_DIR : null;
         if (dir == null || Gdx.files == null) return path;
         String name = path.substring(dir.length());
+        if (colored && Gdx.files.internal(CLASSIC_COLOR_DIR + name).exists()) return CLASSIC_COLOR_DIR + name;
         if (Gdx.files.internal(CLASSIC_DIR + name).exists()) return CLASSIC_DIR + name;
         if (dir.equals(SPECIAL_DIR) && Gdx.files.internal(FULL_ART_DIR + name).exists()) return FULL_ART_DIR + name;
         return path;
@@ -73,7 +80,7 @@ public class CardTextures implements Disposable {
 
     /** @return la texture de l'image de carte {@code original} (face ou dos), chargée à la demande puis mise en cache. */
     public Texture get(String original) {
-        String path = art(original);
+        String path = art(original, settings.isColoredCards());
         if (!strongSuits(path)) return textures.computeIfAbsent(path, p -> new Texture(Gdx.files.internal(p)));
         return textures.computeIfAbsent(path + STRONG_SUFFIX, key -> build(path, true, false));
     }
@@ -83,7 +90,7 @@ public class CardTextures implements Disposable {
 
     /** @return la texture de l'image {@code path} en version sombre (les cartes copiées par l'Ombre du Joueur). */
     public Texture getDark(String original) {
-        String path = art(original);
+        String path = art(original, settings.isColoredCards());
         return textures.computeIfAbsent(path + DARK_SUFFIX, key -> {
             Pixmap source = new Pixmap(Gdx.files.internal(path));
             Pixmap pixmap = new Pixmap(source.getWidth(), source.getHeight(), Pixmap.Format.RGBA8888);

@@ -35,6 +35,7 @@ import fr.astratime.lucky.popups.EffectPopup;
 import fr.astratime.lucky.popups.PopupScale;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
@@ -118,8 +119,8 @@ public class GameController {
 
     /** Cartes proposées à l'échoppe. */
     private final List<ShopOffer> shopOffers; // prix de base, ceux de la Prairie
-    /** Bingos achetés à l'échoppe dans ce combat : chacun double le prix du suivant. */
-    private int bingosBought = 0;
+    /** Cartes achetées à l'échoppe dans ce combat, par id : chaque achat double le prix de la suivante. */
+    private final Map<String, Integer> bought = new HashMap<>();
 
     private final Random random = new Random();
 
@@ -189,7 +190,7 @@ public class GameController {
         spinCostActive = true;
         player.addGains(SpinEconomy.startingGains(kind.getSpinCost())); // une fois par chapitre de la Tour
         treasureMaps = 0;
-        bingosBought = 0;
+        bought.clear();
         clearTurn();
     }
 
@@ -202,7 +203,7 @@ public class GameController {
         Player player = gameState.getPlayer().nextCombat();
         this.gameState = new GameState(player, createEnemy(kind, player));
         gameState.setPlaceRule(placeRule);
-        bingosBought = 0;
+        bought.clear();
         clearTurn();
     }
 
@@ -409,7 +410,7 @@ public class GameController {
      */
     public record ShopOffer(Card card, double price) { }
 
-    /** Identifiant de la carte « Bingo » de l'échoppe : son prix double à chaque achat dans un combat. */
+    /** Identifiant de la carte « Bingo » de l'échoppe. */
     public static final String SHOP_BINGO = "bingo";
 
     /**
@@ -427,15 +428,15 @@ public class GameController {
 
     /**
      * @return le prix de {@code offer} dans ce combat : son prix de base (celui de
-     *         la Prairie) suit le coût du tirage du lieu, et celui du Bingo double à
-     *         chaque Bingo déjà acheté dans le combat
+     *         la Prairie) suit le coût du tirage du lieu, et double à chaque achat
+     *         de la même carte dans le combat (Bingo, Roulette, Corruption)
      */
     private double priceOf(ShopOffer offer) {
         ShopOffer base = shopOffers.stream().filter(o -> o.card().getId().equals(offer.card().getId()))
             .findFirst().orElse(offer);
         int cost = getSpinCost();
         double price = cost > 0 ? base.price() * SpinEconomy.gainScale(cost) : base.price();
-        if (SHOP_BINGO.equals(base.card().getId())) price *= Math.pow(2, bingosBought);
+        price *= Math.pow(2, bought.getOrDefault(base.card().getId(), 0));
         return BigNumber.round(price);
     }
 
@@ -502,7 +503,7 @@ public class GameController {
         double price = priceOf(offer);
         if (unavailableReason(offer) != null || player.getGains() < price) return null;
         player.addGains(-price);
-        if (SHOP_BINGO.equals(offer.card().getId())) bingosBought++;
+        bought.merge(offer.card().getId(), 1, Integer::sum);
         Card card = cardFactory.apply(offer.card().getId());
         Enemy enemy = gameState.getEnemy();
         if (enemy.getKind().copiesPurchases()) { // le Pilleur en garde une copie : un As sombre

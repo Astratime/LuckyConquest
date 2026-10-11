@@ -184,22 +184,47 @@ public class MenuScreen extends ScreenAdapter {
         showPage(null, entries);
     }
 
-    /** Page des options : affichage, animations, musique, sons, accessibilité, langue, tutoriel, mode ADMIN, Retour. */
+    /** Onglets de la page des options. */
+    private static final List<String> OPTION_TABS = List.of(OptionsMenu.TAB_VISUAL, OptionsMenu.TAB_AUDIO,
+        OptionsMenu.TAB_ACCESSIBILITY, OptionsMenu.TAB_GAME);
+    private static final int GAME_TAB = 3;
+
+    /** Page des options, sur son premier onglet (Visuel). */
     private void showOptionsPage() {
-        showOptionsPage(0);
+        showOptionsPage(0, 0);
     }
 
-    /** @param selected l'option sélectionnée à l'ouverture de la page */
-    private void showOptionsPage(int selected) {
-        List<OptionsMenu.Entry> entries = new ArrayList<>(
-            OptionsMenu.settingsEntries(luckyGame, settings, audio, display));
-        int accessibilityIndex = entries.size();
-        entries.add(OptionsMenu.Entry.button(Lang.t("Accessibilité"), () -> showAccessibilityPage(accessibilityIndex)));
+    /**
+     * Page des options, en onglets : Visuel (affichage, animations, cartes colorées), Audio
+     * (musique, sons), Accessibilité, Jeu (langue, statistiques, bestiaire, tutoriel, mode ADMIN) ;
+     * chaque onglet finit par Retour.
+     *
+     * @param tab      l'onglet affiché
+     * @param selected l'option sélectionnée à l'ouverture de l'onglet
+     */
+    private void showOptionsPage(int tab, int selected) {
+        List<List<OptionsMenu.Entry>> pages = List.of(
+            OptionsMenu.visualEntries(luckyGame, settings, display),
+            OptionsMenu.audioEntries(audio),
+            OptionsMenu.accessibilityEntries(settings, () -> { }),
+            gameEntries());
+        int rows = 0;
+        for (List<OptionsMenu.Entry> page : pages) rows = Math.max(rows, page.size() + 1);
+        List<OptionsMenu.Entry> entries = new ArrayList<>(pages.get(tab));
+        entries.add(OptionsMenu.Entry.button(Lang.t("Retour"), this::showMainPage));
+        List<String> labels = OPTION_TABS.stream().map(Lang::t).toList();
+        showPage(Lang.t("OPTIONS"), new OptionsMenu.Tabs(labels, tab, other -> showOptionsPage(other, 0), rows),
+            entries, selected);
+    }
+
+    /** @return l'onglet Jeu des options : langue, statistiques, bestiaire, tutoriel, mode ADMIN. */
+    private List<OptionsMenu.Entry> gameEntries() {
+        List<OptionsMenu.Entry> entries = new ArrayList<>();
         int languageIndex = entries.size();
         // Langue : la page est redessinée (au prochain rendu) pour que tous ses textes changent.
         Runnable toggleLanguage = () -> {
             Lang.set(Lang.get().next());
-            Gdx.app.postRunnable(() -> showOptionsPage(languageIndex));
+            Gdx.app.postRunnable(() -> showOptionsPage(GAME_TAB, languageIndex));
         };
         entries.add(new OptionsMenu.Entry(() -> Lang.f("Langue : {0}", Lang.get().label), toggleLanguage,
             direction -> toggleLanguage.run()));
@@ -211,16 +236,7 @@ public class MenuScreen extends ScreenAdapter {
         entries.add(new OptionsMenu.Entry(() -> Lang.f("Mode ADMIN : {0}",
             (profile.isAdmin() ? Lang.t("activé") : Lang.t("désactivé"))),
             toggleAdmin, direction -> toggleAdmin.run()));
-        entries.add(OptionsMenu.Entry.button(Lang.t("Retour"), this::showMainPage));
-        showPage(Lang.t("OPTIONS"), entries, selected);
-    }
-
-    /** Page Accessibilité : effets réduits, enseignes renforcées, grand texte des infobulles, Retour. */
-    private void showAccessibilityPage(int optionsIndex) {
-        List<OptionsMenu.Entry> entries = new ArrayList<>(OptionsMenu.accessibilityEntries(settings, () -> { }));
-        entries.add(OptionsMenu.Entry.button(Lang.t("Retour"), () -> showOptionsPage(optionsIndex)));
-        showPage(Lang.t("ACCESSIBILITÉ"), entries, 0);
-        escapeBack = () -> showOptionsPage(optionsIndex);
+        return entries;
     }
 
     /** Ouvre la fenêtre des statistiques et des succès ; le menu attend qu'elle se ferme. */
@@ -251,8 +267,12 @@ public class MenuScreen extends ScreenAdapter {
     }
 
     private void showPage(String caption, List<OptionsMenu.Entry> entries, int selected) {
+        showPage(caption, null, entries, selected);
+    }
+
+    private void showPage(String caption, OptionsMenu.Tabs tabs, List<OptionsMenu.Entry> entries, int selected) {
         escapeBack = null;
-        menu.setEntries(caption, entries, selected);
+        menu.setEntries(caption, tabs, entries, selected);
         placeMenu();
         fade.toFront();
     }

@@ -132,7 +132,7 @@ public class ShopOverlay implements Disposable {
         panel.add(wallet).colspan(columns);
         panel.row();
         panel.add(new Label(Lang.t("Survole une carte pour son effet, clique dessus pour sa fiche. Les cartes achetées "
-            + "disparaissent une fois jouées.") + " " + Lang.t("Le prix du Bingo double à chaque achat dans un combat."),
+            + "disparaissent une fois jouées.") + " " + Lang.t("Le prix d'une carte double à chaque achat dans un combat."),
             new Label.LabelStyle(hintFont, Color.WHITE))).colspan(columns);
         panel.row();
         // Avertissement (carte indisponible) : ligne réservée, vide tant qu'il n'y a rien à dire.

@@ -226,7 +226,7 @@ class SpinEconomyTest {
     }
 
     @Test
-    void theShopFollowsThePlaceAndTheBingoDoublesAtEachPurchase() {
+    void theShopFollowsThePlaceAndEachCardDoublesAtEachPurchase() {
         GameController controller = new GameController(SpinEconomyTest::plainCards,
             id -> new Card(id, id, "x.png", List.of(), null, 1),
             new java.util.LinkedHashMap<>(java.util.Map.of(GameController.SHOP_BINGO, 20_000, "corruption", 10_000)));
@@ -238,7 +238,7 @@ class SpinEconomyTest {
         assertNotNull(controller.buy(offer(controller, GameController.SHOP_BINGO)));
         assertEquals(2_000_000, price(controller, GameController.SHOP_BINGO), "le Bingo suivant coûte le double");
         assertNotNull(controller.buy(offer(controller, "corruption")));
-        assertEquals(500_000, price(controller, "corruption"), "la Corruption ne double pas");
+        assertEquals(1_000_000, price(controller, "corruption"), "la Corruption double aussi, à part du Bingo");
         assertNotNull(controller.buy(offer(controller, GameController.SHOP_BINGO)));
         assertEquals(4_000_000, price(controller, GameController.SHOP_BINGO));
         assertEquals(10_000_000 + 25_000 - 1_000_000 - 500_000 - 2_000_000, player.getGains());
