@@ -68,6 +68,43 @@
     ]
   },
   {
+    "id": "masque_du_joker",
+    "name": "Masque du Joker",
+    "assetPath": "cards/special/masque_du_joker.png",
+    "consumable": true,
+    "effects": [
+      { "type": "BOOST_SYMBOL", "symbol": "JOKER", "amount": 80 },
+      { "type": "DAZZLE" }
+    ]
+  },
+  {
+    "id": "joker_de_cour",
+    "name": "Joker de cour",
+    "assetPath": "cards/special/joker_de_cour.png",
+    "effects": [
+      { "type": "BOOST_SYMBOL", "symbol": "JOKER", "amount": 60 },
+      { "type": "EXTRA_DRAW", "extraCards": 1 }
+    ]
+  },
+  {
+    "id": "joker_malveillant",
+    "name": "Joker malveillant",
+    "assetPath": "cards/special/joker_malveillant.png",
+    "effects": [
+      { "type": "GHOST_REEL" },
+      { "type": "BLOOD_PACT", "hpPercent": 10, "attackFactor": 1.5 }
+    ]
+  },
+  {
+    "id": "marotte_du_joker",
+    "name": "Marotte du Joker",
+    "assetPath": "cards/special/marotte_du_joker.png",
+    "effects": [
+      { "type": "BOOST_SYMBOL", "symbol": "JOKER", "amount": 60 },
+      { "type": "GAINS_PERCENT", "percent": 30 }
+    ]
+  },
+  {
     "id": "recycle",
     "name": "Recyclage de rouleau",
     "assetPath": "cards/special/recycle.png",

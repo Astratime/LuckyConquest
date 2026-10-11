@@ -10,7 +10,8 @@ import com.badlogic.gdx.Preferences;
  * accélère le combat ({@link AnimationSpeed}). Pour l'accessibilité, les
  * enseignes renforcées donnent un jeu à quatre couleurs
  * ({@link fr.astratime.lucky.assets.SuitColors}) et le grand texte grossit les
- * infobulles.
+ * infobulles. Les cartes spéciales s'affichent en version blanche (comme les
+ * cartes classiques) ou en couleurs (une couleur par donjon).
  */
 public class VisualSettings {
 
@@ -19,6 +20,7 @@ public class VisualSettings {
     private static final String ANIMATION_SPEED = "animationSpeed";
     private static final String STRONG_SUITS    = "strongSuitColors";
     private static final String LARGE_TOOLTIPS  = "largeTooltips";
+    private static final String COLORED_CARDS   = "coloredCards";
 
     private final Preferences preferences = Gdx.app.getPreferences(PREFERENCES);
 
@@ -63,6 +65,17 @@ public class VisualSettings {
     /** Active ou désactive le grand texte des infobulles, et mémorise le choix. */
     public void setLargeTooltips(boolean large) {
         preferences.putBoolean(LARGE_TOOLTIPS, large);
+        preferences.flush();
+    }
+
+    /** @return true si les cartes spéciales s'affichent en couleurs (blanches par défaut). */
+    public boolean isColoredCards() {
+        return preferences.getBoolean(COLORED_CARDS, false);
+    }
+
+    /** Affiche les cartes spéciales en couleurs ou en blanc, et mémorise le choix. */
+    public void setColoredCards(boolean colored) {
+        preferences.putBoolean(COLORED_CARDS, colored);
         preferences.flush();
     }
 }

@@ -55,7 +55,8 @@ public class PauseOverlay implements Disposable {
     private final Image       veil;
     private final OptionsMenu menu;
     private final Listener    listener;
-    private final List<OptionsMenu.Entry> settingsEntries;
+    /** Onglets des options : Visuel, Audio, Accessibilité. */
+    private final List<List<OptionsMenu.Entry>> optionTabs;
     private final InputProcessor input;
     private boolean shown;
     private boolean optionsPage;
@@ -74,9 +75,10 @@ public class PauseOverlay implements Disposable {
         veil.setColor(Palette.VEIL);
         stage.addActor(veil);
         menu = new OptionsMenu(stage, hud, clickSound, hoverSound);
-        settingsEntries = new ArrayList<>(OptionsMenu.settingsEntries(game, settings, new AudioSettings(),
-            new DisplaySettings()));
-        settingsEntries.addAll(OptionsMenu.accessibilityEntries(settings, listener::onEffectsChanged));
+        optionTabs = List.of(
+            OptionsMenu.visualEntries(game, settings, new DisplaySettings()),
+            OptionsMenu.audioEntries(new AudioSettings()),
+            OptionsMenu.accessibilityEntries(settings, listener::onEffectsChanged));
 
         InputAdapter keyboard = new InputAdapter() {
             @Override
@@ -126,12 +128,21 @@ public class PauseOverlay implements Disposable {
             })));
     }
 
-    /** Page des options : affichage, animations, musique, sons, accessibilité, Retour. */
+    /** Page des options, sur son premier onglet. */
     private void showOptionsPage() {
+        showOptionsPage(0);
+    }
+
+    /** Page des options, en onglets (Visuel, Audio, Accessibilité) ; chacun finit par Retour. */
+    private void showOptionsPage(int tab) {
         optionsPage = true;
-        List<OptionsMenu.Entry> entries = new ArrayList<>(settingsEntries);
+        int rows = 0;
+        for (List<OptionsMenu.Entry> page : optionTabs) rows = Math.max(rows, page.size() + 1);
+        List<OptionsMenu.Entry> entries = new ArrayList<>(optionTabs.get(tab));
         entries.add(OptionsMenu.Entry.button(Lang.t("Retour"), this::showPausePage));
-        menu.setEntries(Lang.t("OPTIONS"), entries);
+        List<String> labels = List.of(OptionsMenu.TAB_VISUAL, OptionsMenu.TAB_AUDIO, OptionsMenu.TAB_ACCESSIBILITY)
+            .stream().map(Lang::t).toList();
+        menu.setEntries(Lang.t("OPTIONS"), new OptionsMenu.Tabs(labels, tab, this::showOptionsPage, rows), entries, 0);
     }
 
     private void resume() {

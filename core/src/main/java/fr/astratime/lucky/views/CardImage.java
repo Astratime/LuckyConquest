@@ -2,10 +2,12 @@ package fr.astratime.lucky.views;
 
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.g2d.Batch;
+import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.scenes.scene2d.Touchable;
 import com.badlogic.gdx.scenes.scene2d.ui.Image;
 import com.badlogic.gdx.scenes.scene2d.utils.Drawable;
+import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 import fr.astratime.lucky.assets.FoilShader;
 
 /**
@@ -19,7 +21,7 @@ import fr.astratime.lucky.assets.FoilShader;
  * levée et l'ombre sont dessinées sans toucher à la position de la carte, qui
  * reste celle de la rangée.
  *
- * Une carte spéciale en pleine illustration porte en plus un reflet
+ * Une carte spéciale dans sa nouvelle illustration porte en plus un reflet
  * arc-en-ciel ({@link FoilShader}), coupé avec les effets réduits.
  */
 public class CardImage extends Image {
@@ -44,7 +46,7 @@ public class CardImage extends Image {
         super(drawable);
     }
 
-    /** Active le reflet arc-en-ciel des cartes spéciales en pleine illustration. */
+    /** Active le reflet arc-en-ciel des cartes spéciales dans leur nouvelle illustration. */
     public void setFoil(boolean foil) {
         this.foil = foil;
     }
@@ -103,7 +105,9 @@ public class CardImage extends Image {
 
     /** Dessine la face de la carte, avec son reflet arc-en-ciel si elle en a un. */
     private void drawFace(Batch batch, float parentAlpha) {
-        boolean shine = foil && FoilShader.begin(batch, phase);
+        TextureRegion region = getDrawable() instanceof TextureRegionDrawable drawable ? drawable.getRegion() : null;
+        boolean shine = foil && region != null
+            && FoilShader.begin(batch, phase, region.getRegionWidth(), region.getRegionHeight());
         super.draw(batch, parentAlpha);
         if (shine) FoilShader.end(batch);
     }

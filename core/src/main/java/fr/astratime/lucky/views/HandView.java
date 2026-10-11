@@ -222,7 +222,7 @@ public class HandView {
         return cardImage;
     }
 
-    /** @return true si {@code card} porte le reflet arc-en-ciel (carte spéciale en pleine illustration, effets normaux). */
+    /** @return true si {@code card} porte le reflet arc-en-ciel (carte spéciale dans sa nouvelle illustration, effets normaux). */
     private boolean foil(Card card) {
         return CardTextures.isFullArt(card) && !visualSettings.isReducedEffects();
     }

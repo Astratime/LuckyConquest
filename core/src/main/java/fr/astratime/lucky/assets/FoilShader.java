@@ -38,13 +38,14 @@ public final class FoilShader {
         + "uniform sampler2D u_texture;\n"
         + "uniform float u_time;\n"
         + "uniform float u_phase;\n"
+        + "uniform vec2 u_grid;\n"
         + "vec3 hue(float h) {\n"
         + "  return clamp(abs(mod(h * 6.0 + vec3(0.0, 4.0, 2.0), 6.0) - 3.0) - 1.0, 0.0, 1.0);\n"
         + "}\n"
         + "void main() {\n"
         + "  vec4 c = texture2D(u_texture, v_uv);\n"
-        + "  vec2 cell = floor(v_uv * vec2(80.0, 112.0));\n"
-        + "  float d = (cell.x + cell.y * 0.7) / 158.4;\n"
+        + "  vec2 cell = floor(v_uv * u_grid);\n"
+        + "  float d = (cell.x / u_grid.x * 80.0 + cell.y / u_grid.y * 78.4) / 158.4;\n"
         + "  float t = u_time + u_phase;\n"
         // bande qui traverse la carte puis marque une pause hors de la carte
         + "  float sweep = fract(t * 0.16) * 2.2 - 0.6;\n"
@@ -66,16 +67,28 @@ public final class FoilShader {
     /**
      * Passe {@code batch} sur le reflet (à rendre ensuite avec {@link #end}).
      *
-     * @param phase décalage propre à chaque carte, pour qu'elles ne brillent pas toutes en même temps
+     * @param phase  décalage propre à chaque carte, pour qu'elles ne brillent pas toutes en même temps
+     * @param width  largeur de l'image de la carte, en pixels
+     * @param height hauteur de l'image de la carte, en pixels
      * @return {@code false} si le reflet n'est pas disponible (le batch n'est alors pas modifié)
      */
-    public static boolean begin(Batch batch, float phase) {
+    public static boolean begin(Batch batch, float phase, int width, int height) {
         ShaderProgram shader = program();
         if (shader == null) return false;
         batch.setShader(shader);
         shader.setUniformf("u_time", (System.nanoTime() / 1_000_000L % 3_600_000L) / 1000f);
         shader.setUniformf("u_phase", phase);
+        float pixel = pixelSize(width, height);
+        shader.setUniformf("u_grid", width / pixel, height / pixel);
         return true;
+    }
+
+    /**
+     * @return la taille d'un pixel de dessin dans une image de carte : 6 pour les pleines illustrations
+     *         (grille 80x112, 480x672), 5 pour les cartes au style classique (grille 38x54, 190x270)
+     */
+    static float pixelSize(int width, int height) {
+        return width % 80 == 0 && height * 80 == width * 112 ? width / 80f : 5f;
     }
 
     /** Rend au batch son programme par défaut. */

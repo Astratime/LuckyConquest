@@ -46,8 +46,8 @@ class CardLoaderTest {
     void everyCardDefinitionLoads() {
         List<Card> cards = CardLoader.loadAll(READER);
 
-        assertEquals(52 + 25 + 12 + 37 + 20 + 1, cards.size(),
-            "4 suites de 13 cartes + 25 cartes spéciales + 12 cartes des donjons + 37 cartes des lieux"
+        assertEquals(52 + 29 + 12 + 37 + 20 + 1, cards.size(),
+            "4 suites de 13 cartes + 29 cartes spéciales (dont les 4 variantes du Joker) + 12 cartes des donjons + 37 cartes des lieux"
                 + " + 20 cartes de test (Bingo par symbole) + la carte de test du Jeu bonus");
         assertEquals(cards.size(), cards.stream().map(Card::getId).distinct().count(), "les ids doivent être uniques");
     }
@@ -57,6 +57,21 @@ class CardLoaderTest {
         for (Card card : CardLoader.loadAll(READER)) {
             assertTrue(Files.exists(ASSETS.resolve(card.getAssetPath())),
                 card.getId() + " : image introuvable " + card.getAssetPath());
+        }
+    }
+
+    @Test
+    void everySpecialCardHasItsClassicStyleArtInWhiteAndInColor() {
+        for (Card card : CardLoader.loadAll(READER)) {
+            String path = card.getAssetPath();
+            if (!path.startsWith("cards/special/") && !path.startsWith("cards/test/")) continue;
+            String name = path.substring(path.lastIndexOf('/') + 1);
+            for (String dir : List.of("cards/special_classic/blanc/", "cards/special_classic/couleurs/")) {
+                assertTrue(Files.exists(ASSETS.resolve(dir + name)), card.getId() + " : image introuvable " + dir + name);
+            }
+        }
+        for (String face : List.of("cursed_joker.png", "russian_roulette.png")) {
+            assertTrue(Files.exists(ASSETS.resolve("cards/special_classic/blanc/" + face)), face);
         }
     }
 
