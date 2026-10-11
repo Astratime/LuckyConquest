@@ -69,7 +69,7 @@ class DamageBreakdownTest {
         DamageBreakdown breakdown = (DamageBreakdown) hit.getBreakdown();
         assertNotNull(breakdown);
         assertEquals(30, breakdown.base());
-        assertEquals((30 + 20) * 2.5 * 3, breakdown.uncapped());
+        assertEquals((30 + 20) * 2.5 * 3, breakdown.raw());
         assertEquals(hit.damage, breakdown.damage());
 
         List<String> lines = breakdown.lines(Symbol.SEVEN);

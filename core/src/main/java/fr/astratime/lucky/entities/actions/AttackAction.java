@@ -61,17 +61,19 @@ public class AttackAction extends Action {
         int base   = symbol + rank;
         // En long et en double : un gros combo dépasse le milliard de dégâts.
         long unscaled = base + context.getAttackBonus(); // avant les multiplicateurs : ce que vise le pistolet
-        long uncapped  = Math.round((double) unscaled * context.getAttackFactor() * context.getSymbolPower());
-        long rawDamage = enemy.capHit(uncapped);
+        long rawDamage = Math.round((double) unscaled * context.getAttackFactor() * context.getSymbolPower());
+        long hit        = enemy.capHit(rawDamage); // ce qui touche vraiment sa défense et ses PV
         int pierce      = piercing ? 100 : context.getPiercePercent(); // Pique : une part du coup traverse la défense
-        int blocked     = enemy.absorb(rawDamage, pierce); // la défense s'use à chaque coup
-        long damage     = enemy.skinned(rawDamage - blocked); // une peau d'or encaisse la moitié
+        int blocked     = enemy.absorb(hit, pierce); // la défense s'use à chaque coup
+        long damage     = enemy.skinned(hit - blocked); // une peau d'or encaisse la moitié
+        long shown      = enemy.skinned(rawDamage - blocked); // le vrai coup, affiché même s'il dépasse ses PV
 
-        int lost = enemy.takeDamage(rawDamage - blocked);
-        if (lost < damage && !enemy.isDefeated()) damage = lost; // coup annulé (la Maison) ou fatal évité (Machine Originelle)
-        events.add(new EnemyDamagedEvent(damage, rawDamage, unscaled, blocked, enemy.getDefense(), pierce)
-            .withBreakdown(new DamageBreakdown(symbol, rank, context.getSteps(CombatContext.Target.ATTACK), uncapped, rawDamage, pierce,
-                blocked, damage)));
+        int lost = enemy.takeDamage(hit - blocked);
+        if (lost < damage && !enemy.isDefeated()) damage = shown = lost; // coup annulé (la Maison), Garde, ou fatal évité (Machine Originelle)
+        damage = Math.min(damage, enemy.getMaxHp()); // drain de vie et gains : jamais plus que ses PV max, comme avant
+        events.add(new EnemyDamagedEvent(shown, rawDamage, unscaled, blocked, enemy.getDefense(), pierce)
+            .withBreakdown(new DamageBreakdown(symbol, rank, context.getSteps(CombatContext.Target.ATTACK), rawDamage, pierce,
+                blocked, shown)));
 
         if (context.getLifeDrainPercent() > 0 && damage > 0) {
             int drained = Math.round(damage * (context.getLifeDrainPercent() / 100f));
