@@ -167,11 +167,12 @@ public class CombatResolver {
                 shots.add(PistolShotEvent.blank(enemy.getDefense(), percent));
                 continue;
             }
-            long raw    = enemy.capHit(Math.round(bestRaw * percent / 100.0));
+            long raw    = Math.round(bestRaw * percent / 100.0); // le vrai coup, sans plafond
+            long hit    = enemy.capHit(raw);
             int pierce  = context.getPiercePercent();
-            int blocked = enemy.absorb(raw, pierce);
+            int blocked = enemy.absorb(hit, pierce);
             long damage = enemy.skinned(raw - blocked);
-            enemy.takeDamage(raw - blocked);
+            enemy.takeDamage(hit - blocked);
             shots.add(new PistolShotEvent(damage, raw, blocked, enemy.getDefense(), pierce, bestSlot, percent));
         }
         return shots;
@@ -228,11 +229,12 @@ public class CombatResolver {
             if (event instanceof PistolShotEvent shot) best = Math.max(best, shot.rawDamage);
         }
         Enemy enemy = context.getEnemy();
-        long hit = enemy.capHit(Math.round(best * ForgedBladeEffect.PERCENT / 100.0));
+        long raw = Math.round(best * ForgedBladeEffect.PERCENT / 100.0); // le vrai coup, sans plafond
+        long hit = enemy.capHit(raw);
         for (int i = 0; i < context.getForgedBlades() && hit > 0 && !enemy.isDefeated(); i++) {
-            long damage = enemy.skinned(hit);
+            long damage = enemy.skinned(raw);
             enemy.takeDamage(hit);
-            strikes.add(new CardStrikeEvent(Lang.t("LAME FORGÉE !"), damage, hit, enemy.getDefense()));
+            strikes.add(new CardStrikeEvent(Lang.t("LAME FORGÉE !"), damage, raw, enemy.getDefense()));
         }
         return strikes;
     }
@@ -250,10 +252,10 @@ public class CombatResolver {
     private Optional<Event> goldenHeart(CombatContext context, double gainsEarned) {
         Enemy enemy = context.getEnemy();
         if (context.getGoldenHearts() <= 0 || gainsEarned <= 0 || enemy.isDefeated()) return Optional.empty();
-        long hit    = enemy.capHit(BigNumber.toLong(gainsEarned * context.getGoldenHearts()));
-        long damage = enemy.skinned(hit);
-        enemy.takeDamage(hit);
-        return Optional.of(new CardStrikeEvent(Lang.t("COEUR D'OR !"), damage, hit, enemy.getDefense()));
+        long raw    = BigNumber.toLong(gainsEarned * context.getGoldenHearts()); // le vrai coup, sans plafond
+        long damage = enemy.skinned(raw);
+        enemy.takeDamage(enemy.capHit(raw));
+        return Optional.of(new CardStrikeEvent(Lang.t("COEUR D'OR !"), damage, raw, enemy.getDefense()));
     }
 
     /**
@@ -265,9 +267,9 @@ public class CombatResolver {
         Enemy enemy = context.getEnemy();
         LastingEffects lasting = context.getPlayer().getLastingEffects();
         if (context.getCounterAttack() <= 0 || enemy.isDefeated() || lasting.getVault() <= 0) return Optional.empty();
-        long hit    = enemy.capHit((long) lasting.consumeVault() * context.getCounterAttack());
-        long damage = enemy.skinned(hit);
-        enemy.takeDamage(hit);
+        long raw    = (long) lasting.consumeVault() * context.getCounterAttack(); // le vrai coup, sans plafond
+        long damage = enemy.skinned(raw);
+        enemy.takeDamage(enemy.capHit(raw));
         return Optional.of(new CounterAttackEvent(damage, enemy.getDefense()));
     }
 

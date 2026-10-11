@@ -10,18 +10,17 @@ import java.util.List;
  * Le calcul d'un coup d'un symbole sur l'ennemi, étape par étape, pour le
  * détail du coup affiché au survol du rouleau : attaque du symbole, bonus du
  * rang et des cartes, multiplicateurs (combinaisons, Bingo, Mise,
- * Corruption...), plafond, puis défense absorbée ou percée.
+ * Corruption...), puis défense absorbée ou percée.
  *
  * @param base     attaque du symbole
  * @param rank     bonus d'attaque du rang (Jeton de rang compris)
  * @param steps    bonus plats et multiplicateurs du tour, dans l'ordre
- * @param uncapped coup avant le plafond (les PV max de l'ennemi)
- * @param raw      coup qui frappe la défense
+ * @param raw      coup qui frappe la défense (sans plafond : le vrai nombre, même au-delà des PV)
  * @param pierce   part (%) du coup qui traverse la défense
  * @param blocked  dégâts absorbés par la défense
  * @param damage   dégâts infligés
  */
-public record DamageBreakdown(int base, int rank, List<PowerStep> steps, long uncapped, long raw, int pierce,
+public record DamageBreakdown(int base, int rank, List<PowerStep> steps, long raw, int pierce,
                               int blocked, long damage) implements SymbolBreakdown {
 
     public DamageBreakdown {
@@ -34,7 +33,6 @@ public record DamageBreakdown(int base, int rank, List<PowerStep> steps, long un
         lines.add(Lang.f("{0} : {1}", symbol.getDisplayName(), Lang.big(base)));
         if (rank != 0) lines.add(Lang.f("{0} : +{1}", Lang.t("Rang"), Lang.big(rank)));
         addSteps(lines, steps);
-        if (raw < uncapped) lines.add(Lang.f("Plafond (PV max) : {0}", Lang.big(raw)));
         if (pierce >= 100) {
             lines.add(Lang.t("Défense ignorée"));
         } else if (pierce > 0) {

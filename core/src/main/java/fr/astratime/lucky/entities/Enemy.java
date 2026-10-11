@@ -319,10 +319,12 @@ public class Enemy {
 
     /** @return les dégâts qui le touchent vraiment : la moitié, tant que sa peau d'or tient (plus de la moitié de ses PV). */
     /**
-     * Plafond des dégâts d'un coup : jamais plus que ses PV max (un coup de
-     * plusieurs milliards ne s'affiche pas sur un ennemi qui en a quelques millions).
+     * Part d'un coup qui compte vraiment contre lui : de quoi user toute sa
+     * défense et tous ses PV, même à travers sa peau d'or (au-delà, ça ne
+     * change rien, et les calculs restent loin des limites des nombres).
+     * Le nombre affiché, lui, reste le vrai coup.
      */
-    public long capHit(long damage) { return Math.min(damage, maxHp); }
+    public long capHit(long damage) { return Math.min(damage, 2L * maxHp + defense); }
 
     public long skinned(long damage) {
         return hasGoldSkin() ? damage / 2 : damage;

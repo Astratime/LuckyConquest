@@ -8,6 +8,7 @@ import fr.astratime.lucky.entities.RankBonus;
 import fr.astratime.lucky.entities.Symbol;
 import fr.astratime.lucky.entities.TurnResult;
 import fr.astratime.lucky.entities.choices.RouletteChoice;
+import fr.astratime.lucky.entities.enemy.EnemyKind;
 import fr.astratime.lucky.entities.context.CombatContext;
 import fr.astratime.lucky.entities.effects.BingoEffect;
 import fr.astratime.lucky.entities.events.EnemyDamagedEvent;
@@ -157,17 +158,38 @@ class ComboDamageTest {
     }
 
     @Test
-    void unCoupNeDepassePasLesPvMaxDeLEnnemi() {
+    void unCoupAfficheSesVraisDegatsMemeAuDelaDesPvDeLEnnemi() {
         Player player = new Player("Joueur", 100, List.of());
-        CombatContext context = new CombatContext(player, new Enemy("Ennemi", 1_000_000));
+        Enemy enemy = new Enemy("Ennemi", 1_000_000);
+        CombatContext context = new CombatContext(player, enemy);
         context.multiplySymbolPower(1_000_000); // 90 x 1 000 000 : 90 millions de dégâts
-        context.addPistolShot(100);              // rejoue le coup plafonné
         Symbol[] symbols = {Symbol.TRIPLE_SEVEN, null, null};
         TurnResult turn = new CombatResolver().resolve(context, new ActionResolver().resolve(symbols), symbols,
             List.of());
         EnemyDamagedEvent hit = symbolHits(turn).get(0);
-        assertEquals(1_000_000, hit.rawDamage, "plafonné aux PV max");
-        assertTrue(context.getEnemy().isDefeated());
+        assertEquals(90_000_000, hit.rawDamage, "plus de plafond : le vrai coup");
+        assertEquals(90_000_000 - hit.blocked, hit.damage, "affiché tel quel, même au-delà des PV");
+        assertTrue(enemy.isDefeated());
+        assertEquals(0, enemy.getHp(), "ses PV ne descendent pas sous 0");
+    }
+
+    @Test
+    void lePistoletRejoueLeVraiCoupSansPlafond() {
+        Player player = new Player("Joueur", 100, List.of());
+        Enemy boss = new Enemy(EnemyKind.COMETE); // une Garde : il survit au premier coup
+        CombatContext context = new CombatContext(player, boss);
+        context.multiplySymbolPower(1_000_000_000);
+        context.addPistolShot(100);
+        Symbol[] symbols = {Symbol.TRIPLE_SEVEN, null, null};
+        TurnResult turn = new CombatResolver().resolve(context, new ActionResolver().resolve(symbols), symbols,
+            List.of());
+        EnemyDamagedEvent hit = symbolHits(turn).get(0);
+        assertTrue(hit.rawDamage > boss.getMaxHp(), "le coup n'est plus plafonné aux PV max");
+        PistolShotEvent shot = turn.getPistolEvents().stream()
+            .filter(PistolShotEvent.class::isInstance).map(PistolShotEvent.class::cast).findFirst().orElseThrow();
+        assertEquals(hit.rawDamage, shot.rawDamage, "le pistolet rejoue le vrai coup");
+        assertEquals(boss.getMaxHp() - (long) boss.getMaxHp() * EnemyKind.GUARD_PERCENT / 100, boss.getHp(),
+            "la Garde tient toujours : pas plus de la moitié de ses PV par tour");
     }
 
     @Test
