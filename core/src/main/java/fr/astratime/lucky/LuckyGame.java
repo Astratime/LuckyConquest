@@ -8,6 +8,7 @@ import fr.astratime.lucky.entities.Card;
 import fr.astratime.lucky.loaders.CardLoader;
 import fr.astratime.lucky.progress.CrashReport;
 import fr.astratime.lucky.progress.GdxProfileStorage;
+import fr.astratime.lucky.progress.SaveSlots;
 import fr.astratime.lucky.progress.SecureProfileStorage;
 import fr.astratime.lucky.progress.PlayerProfile;
 import fr.astratime.lucky.screens.MenuScreen;
@@ -25,10 +26,16 @@ public class LuckyGame extends Game {
 
     private final ScreenModeSwitcher screenModeSwitcher;
 
-    /** Collection, deck et pièces du joueur, gardés d'une partie à l'autre (chargés au lancement). */
+    /** Les emplacements de sauvegarde. */
+    private SaveSlots slots;
+    /** Emplacement de la partie chargée ({@link #profile}). */
+    private int slot;
+    /** Collection, deck et pièces du joueur, gardés d'une partie à l'autre (ceux de l'emplacement {@link #slot}). */
     private PlayerProfile profile;
     /** Messages à dire au lancement, déjà traduits (voir {@link #takeNotice()}). */
     private final List<String> notices = new ArrayList<>();
+    /** Message sur la sauvegarde de la partie chargée (refusée ou reprise de sa copie), déjà traduit. */
+    private String saveNotice;
 
     /** Jeu sans réglage du mode d'affichage (plateformes sans fenêtre, tests). */
     public LuckyGame() {
@@ -48,28 +55,75 @@ public class LuckyGame extends Game {
     public void create() {
         batch = new SpriteBatch();
         Lang.load();
-        SecureProfileStorage storage = GdxProfileStorage.open();
-        profile = new PlayerProfile(storage, CardLoader.loadStartingCollection(),
-            CardLoader.loadStarterDeckCopies());
-        if (storage.isRejected()) {
-            notices.add(Lang.t("Ta sauvegarde a été modifiée en dehors du jeu, ou abîmée, et sa copie de secours aussi. "
-                + "Je ne peux pas les reprendre : ta partie repart de zéro. L'ancien fichier est gardé à côté, "
-                + "en .refuse."));
-        } else if (storage.isRestoredFromBackup()) {
-            notices.add(Lang.t("Ta sauvegarde a été modifiée en dehors du jeu, ou abîmée. J'ai repris sa copie de "
-                + "secours : tes tout derniers progrès sont peut-être perdus."));
-        }
+        slots = GdxProfileStorage.slots();
         if (CrashReport.takePending(CrashReport.DEFAULT_FILE)) {
             notices.add(Lang.f("Le jeu a planté la dernière fois. Désolé ! Le rapport est ici : {0}. "
                 + "Envoie-le avec ton signalement du bug, il aide à le corriger.", CrashReport.DEFAULT_FILE));
+        }
+        // La dernière partie jouée est chargée tout de suite (l'emplacement 1 s'il n'y en a aucune) :
+        // « Continuer partie » la reprend, « Nouvelle partie » en ouvre une autre.
+        int last = slots.lastUsed();
+        load(last == 0 ? 1 : last, false);
+
+        setScreen(new MenuScreen(this, true));
+    }
+
+    /**
+     * Charge la partie de l'emplacement {@code newSlot} (rien à faire si c'est déjà
+     * elle) et la note comme la dernière jouée. Le mode ADMIN reste tel qu'il était.
+     *
+     * @param newSlot l'emplacement, de 1 à {@link SaveSlots#COUNT}
+     */
+    public void continueSlot(int newSlot) {
+        if (newSlot != slot) load(newSlot, false);
+        slots.setLastUsed(slot);
+    }
+
+    /**
+     * Efface la partie de l'emplacement {@code newSlot} et y commence une nouvelle
+     * partie, enregistrée tout de suite (l'emplacement est pris), notée comme la dernière jouée.
+     */
+    public void newGame(int newSlot) {
+        slots.erase(newSlot);
+        load(newSlot, true);
+        profile.save();
+        slots.setLastUsed(slot);
+    }
+
+    /** @return les emplacements de sauvegarde. */
+    public SaveSlots getSlots() {
+        return slots;
+    }
+
+    /** @return l'emplacement de la partie chargée. */
+    public int getSlot() {
+        return slot;
+    }
+
+    /** Charge la partie de l'emplacement {@code newSlot} ; {@code fresh} : une partie neuve, sans l'ancien profil. */
+    private void load(int newSlot, boolean fresh) {
+        boolean admin = profile != null && profile.isAdmin();
+        SecureProfileStorage storage = fresh
+            ? new SecureProfileStorage(slots.file(newSlot), java.util.Map::of, () -> { })
+            : GdxProfileStorage.open(slots, newSlot);
+        slot    = newSlot;
+        profile = new PlayerProfile(storage, CardLoader.loadStartingCollection(),
+            CardLoader.loadStarterDeckCopies());
+        saveNotice = null;
+        if (storage.isRejected()) {
+            saveNotice = Lang.t("Ta sauvegarde a été modifiée en dehors du jeu, ou abîmée, et sa copie de secours aussi. "
+                + "Je ne peux pas les reprendre : ta partie repart de zéro. L'ancien fichier est gardé à côté, "
+                + "en .refuse.");
+        } else if (storage.isRestoredFromBackup()) {
+            saveNotice = Lang.t("Ta sauvegarde a été modifiée en dehors du jeu, ou abîmée. J'ai repris sa copie de "
+                + "secours : tes tout derniers progrès sont peut-être perdus.");
         }
         // Mode ADMIN : toutes les cartes à collectionner (celles des coffres, le profil les connaît déjà).
         List<String> catalog = new ArrayList<>(CardLoader.loadStartingCollection().keySet());
         catalog.addAll(CardLoader.loadBoutique().keySet());
         profile.setCatalog(catalog);
         profile.setUpgradable(CardLoader.loadAll().stream().filter(Card::isUpgradable).map(Card::getId).toList());
-
-        setScreen(new MenuScreen(this));
+        profile.setAdmin(admin);
     }
 
     /**
@@ -78,6 +132,11 @@ public class LuckyGame extends Game {
      *         traduit ; {@code null} s'il n'y en a plus (chacun n'est dit qu'une fois)
      */
     public String takeNotice() {
+        if (saveNotice != null) {
+            String notice = saveNotice;
+            saveNotice = null;
+            return notice;
+        }
         return notices.isEmpty() ? null : notices.remove(0);
     }
 

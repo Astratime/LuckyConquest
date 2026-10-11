@@ -55,8 +55,10 @@ Le jeu n'est pas signé :
 - sur **Windows**, SmartScreen demande de confirmer (*Informations complémentaires* > *Exécuter quand même*) ;
 - sur **macOS**, le premier lancement se fait par clic droit > *Ouvrir*.
 
-La partie est enregistrée dans `~/.prefs/lucky-conquest-save` (dans le dossier de l'utilisateur),
-avec une copie de secours `.bak`. Le fichier est signé : modifié à la main, il est refusé.
+Le jeu garde trois parties, dans `~/.prefs/lucky-conquest-save` (emplacement 1, celui des
+versions d'avant), `lucky-conquest-save-2` et `lucky-conquest-save-3` (dans le dossier de
+l'utilisateur), chacune avec une copie de secours `.bak`. Les fichiers sont signés : modifiés à
+la main, ils sont refusés. Les options (affichage, son, langue) sont communes aux trois parties.
 
 ## Pour les développeurs
 

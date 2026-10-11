@@ -105,7 +105,7 @@ public class SecureProfileStorage implements ProfileStorage {
     }
 
     /** @return les valeurs de la sauvegarde {@code path}, ou {@code null} si elle manque ou n'est pas valide. */
-    private static Map<String, String> read(Path path) {
+    static Map<String, String> read(Path path) {
         if (!Files.isRegularFile(path)) return null;
         try {
             return SaveCodec.decode(Files.readString(path, StandardCharsets.UTF_8));
