@@ -165,8 +165,9 @@ class TowerChaptersTest {
         List<Event> events = turn.outcomes().get(reel);
         assertTrue(((EnemyHourglassEvent) events.get(0)).exploded, "à 5/5, il explose");
         PlayerDamagedEvent boom = (PlayerDamagedEvent) events.get(1);
-        assertEquals(EnemyKind.HORLOGER.hurt(EnemySymbol.HOURGLASS_DAMAGE), boom.damage, "malgré le bouclier");
-        assertEquals(0, boom.blocked);
+        // Au moins ses dégâts de base : ses Piques jouées ce tour (deck mélangé au hasard) s'y ajoutent.
+        assertTrue(boom.damage >= EnemyKind.HORLOGER.hurt(EnemySymbol.HOURGLASS_DAMAGE), "malgré le bouclier");
+        assertEquals(0, boom.blocked, "le bouclier n'arrête rien");
     }
 
     @Test
