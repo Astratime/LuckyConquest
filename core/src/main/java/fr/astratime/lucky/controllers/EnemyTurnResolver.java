@@ -198,8 +198,8 @@ public class EnemyTurnResolver {
             plays++;
             openingEvents.add(new StatusEvent(Lang.t("HUISSIER : UNE CARTE DE PLUS"), EffectPopup.Style.ATTACK));
         }
-        // Ses cartes propres se jouent en plus de ses cartes habituelles (une de chaque sorte par tour) :
-        // elles ne prennent pas la place de ses couleurs, il n'est jamais moins fort qu'avant elles.
+        // Ses cartes propres se jouent en plus de ses cartes habituelles, une seule par tour (jusqu'à 3 au
+        // chapitre 6) : elles ne prennent pas la place de ses couleurs, il n'est jamais moins fort qu'avant elles.
         List<Card> regular = drawn.stream().filter(card -> EnemySignature.of(card) == null).toList();
         List<Card> played = new ArrayList<>(ownCards(drawn, enemy));
         played.addAll(kind.playsAtRandom() ? chooseAtRandom(regular, plays) : choose(regular, enemy.getHpRatio(), kind, plays));
@@ -916,14 +916,16 @@ public class EnemyTurnResolver {
 
     /**
      * @return les cartes propres de sa main qu'il joue ce tour, en plus de ses autres
-     *         cartes : une de chaque sorte, sauf un Compte à rebours qui ne retire plus de tour
+     *         cartes : au plus {@link EnemyKind#getOwnPlaysPerTurn()}, jamais deux de la même
+     *         sorte, sauf un Compte à rebours qui ne retire plus de tour
      */
     static List<Card> ownCards(List<Card> hand, Enemy enemy) {
+        int max = enemy.getKind().getOwnPlaysPerTurn();
         List<Card> chosen = new ArrayList<>();
         java.util.Set<EnemySignature> seen = java.util.EnumSet.noneOf(EnemySignature.class);
         for (Card card : hand) {
             EnemySignature signature = EnemySignature.of(card);
-            if (signature != null && playable(card, enemy) && seen.add(signature)) chosen.add(card);
+            if (chosen.size() < max && signature != null && playable(card, enemy) && seen.add(signature)) chosen.add(card);
         }
         return chosen;
     }

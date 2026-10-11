@@ -864,6 +864,15 @@ public enum EnemyKind {
             default      -> Enemy.PLAYS_PER_TURN;
         };
     }
+    /**
+     * @return les cartes propres qu'il joue au plus à chaque tour, en plus de ses cartes
+     *         habituelles : une, ou jusqu'à 3 pour les ennemis du chapitre 6 (choix d'Astra)
+     */
+    public int getOwnPlaysPerTurn() {
+        return chapterPower() == CHAPTER_6_POWER ? CHAPTER_6_OWN_PLAYS : 1;
+    }
+    /** Cartes propres jouées au plus à chaque tour par un ennemi du chapitre 6. */
+    static final int CHAPTER_6_OWN_PLAYS = 3;
     /** @return {@code true} pour le boss d'un chapitre ou le roi d'un donjon. */
     public boolean isBoss() {
         return switch (this) {
