@@ -176,14 +176,13 @@ public class EnemyTurnResolver {
         openingEvents.addAll(thornsEvents); // ses Épines ont piqué pour les coups du tour du joueur
         enemy.resetDefense(); // la défense de son tour précédent ne valait que pour le tour du joueur
         List<Card> drawn  = new ArrayList<>(enemy.draw(Enemy.HAND_SIZE));
-        // Ses cartes propres ne comptent pas dans sa main : il repioche une carte pour chacune.
-        for (int extra = signatures(drawn); extra > 0 && drawn.size() < 2 * Enemy.HAND_SIZE; ) {
-            List<Card> more = enemy.draw(Math.min(extra, 2 * Enemy.HAND_SIZE - drawn.size()));
+        int plays = enemy.getPlaysPerTurn(); // le Kraken joue une carte par bras qui lui reste
+        // Main trop pleine de cartes propres : il pioche juste assez pour jouer ses cartes habituelles.
+        for (int tries = 0; drawn.size() - signatures(drawn) < plays && tries < Enemy.HAND_SIZE; tries++) {
+            List<Card> more = enemy.draw(1);
             if (more.isEmpty()) break;
             drawn.addAll(more);
-            extra = signatures(more);
         }
-        int plays = enemy.getPlaysPerTurn(); // le Kraken joue une carte par bras qui lui reste
         int harpooned = enemy.takeHarpoons(); // Harpon : une carte de moins
         if (harpooned > 0) {
             plays = Math.max(0, plays - harpooned);
