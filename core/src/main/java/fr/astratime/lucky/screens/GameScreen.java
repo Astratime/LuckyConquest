@@ -902,7 +902,7 @@ public class GameScreen extends ScreenAdapter {
     /** Lance la machine (bouton, touche F, ou d'elle-même après une carte Bingo). */
     private void spin() {
         int enemyHpBefore = gameController.getGameState().getEnemy().getHp();
-        int cost   = gameController.getSpinCost();
+        double cost = gameController.getSpinPrice();
         TurnResult result = gameController.spin();
         if (tutorial != null) tutorial.onSpin();
         lastSpinBingo = result.isJackpot();
@@ -946,7 +946,7 @@ public class GameScreen extends ScreenAdapter {
     }
 
     /** Le tirage est payé : le coût (et la Mise) quittent les gains, les jetons glissent dans la machine. */
-    private void payForSpin(int cost) {
+    private void payForSpin(double cost) {
         spinControls.pull(); // le levier reste tiré, les jetons misés glissent dans la machine
         if (cost <= 0) return;
         List<EffectPopup> popups = new ArrayList<>();
@@ -1842,7 +1842,7 @@ public class GameScreen extends ScreenAdapter {
         StringBuilder text = new StringBuilder(Lang.f("Cartes {0}/{1}",
             gameController.getCardsPlayedThisTurn(), gameController.getPlayLimit()));
         if (gameController.getSpinCost() > 0) {
-            text.append("   ").append(Lang.f("Tirage -{0}", SidePanel.formatGains(gameController.getSpinCost())));
+            text.append("   ").append(Lang.f("Tirage -{0}", SidePanel.formatGains(gameController.getSpinPrice())));
         }
         spinControls.showStake(gameController.getStake());
         playsLabel.setText(text);

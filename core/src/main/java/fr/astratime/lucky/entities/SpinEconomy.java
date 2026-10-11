@@ -64,8 +64,8 @@ public final class SpinEconomy {
     public static float gainScale(int spinCost) { return spinCost / (float) BASE_SPIN_COST; }
 
     /**
-     * Paliers de la Mise : posée avant le tirage, elle multiplie les gains d'un
-     * Bingo. Elle ne coûte rien : sans Bingo, elle ne rapporte rien.
+     * Paliers de la Mise : posée avant le tirage, elle multiplie son prix et les
+     * gains d'un Bingo. Sans Bingo, elle ne rapporte rien.
      */
     public enum Stake {
         NONE(1),
@@ -73,7 +73,7 @@ public final class SpinEconomy {
         MEDIUM(3),
         HIGH(5);
 
-        /** Multiplicateur des gains du tirage, sur un Bingo. */
+        /** Multiplicateur du prix du tirage, et de ses gains sur un Bingo. */
         public final int factor;
 
         Stake(int factor) { this.factor = factor; }

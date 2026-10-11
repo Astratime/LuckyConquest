@@ -188,7 +188,7 @@ public class Player {
      * Paie le coût d'un tirage : les gains peuvent passer sous zéro (la dette,
      * voir {@link SpinEconomy.Debt}) ; la Fausse monnaie part la première.
      */
-    public void paySpin(int cost) {
+    public void paySpin(double cost) {
         lastingEffects.spendFakeGains(Math.max(0, Math.min(gains, cost)));
         gains -= cost;
     }

@@ -175,7 +175,7 @@ final class TutorialDirector {
                     + "c'est x9,5."), board::combos));
                 steps.add(play(Lang.t("Joue le Porte-bonheur."), Set.of(TutorialRun.LUCKY_CHARM), 1));
                 steps.add(say(Lang.t("Ses effets durent. Ils s'affichent ici. Survole-les pour les relire."), board::effects));
-                steps.add(stake(Lang.t("Avant de lancer, choisis ta Mise. Elle ne coûte rien. Clique sur Mise : sur un Bingo, "
+                steps.add(stake(Lang.t("Avant de lancer, choisis ta Mise. Clique sur Mise : le tirage coûte x2, et sur un Bingo, "
                     + "tes gains x2. Encore : x3. Puis x5.")));
                 steps.add(spin(Lang.t("Ton jeton est sur la table. Lance la machine."), TutorialRun.rigged(2)));
             }

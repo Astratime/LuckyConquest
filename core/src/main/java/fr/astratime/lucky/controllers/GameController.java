@@ -247,12 +247,20 @@ public class GameController {
         return spinCostActive ? gameState.getEnemy().getKind().getSpinCost() : 0;
     }
 
+    /**
+     * @return le prix du prochain tirage : son coût multiplié par la Mise (une Mise x5
+     *         fait payer 5 tirages, choix d'Astra)
+     */
+    public double getSpinPrice() {
+        return (double) getSpinCost() * stake.factor;
+    }
+
     /** @return la Mise choisie pour le prochain tirage. */
     public SpinEconomy.Stake getStake() { return stake; }
 
     /**
      * Passe au palier de Mise suivant (aucune, x2, x3, x5, puis aucune). La Mise
-     * ne coûte rien : elle multiplie seulement les gains d'un Bingo.
+     * multiplie le prix du tirage et les gains d'un Bingo (pas l'attaque).
      *
      * @return le palier choisi
      */
@@ -758,10 +766,10 @@ public class GameController {
         // La carte « Bingo » (symbole au hasard), seule, offre un Bingo si son Bingo est de gains.
         boolean bingoCardPlayed = pendingEffects.stream()
             .anyMatch(effect -> effect instanceof BingoEffect bingo && bingo.getSymbol() == null && !bingo.isBonusGame());
-        // Le coût du tirage est payé (il peut faire passer les gains sous 0) ; la Mise, elle, ne coûte rien.
+        // Le prix du tirage, multiplié par la Mise, est payé (il peut faire passer les gains sous 0).
         Player player = gameState.getPlayer();
         SpinEconomy.Stake placed = stake;
-        int cost = getSpinCost();
+        double cost = getSpinPrice();
         if (cost > 0) player.paySpin(cost);
         TurnResult result = turnEngine.playTurn(gameState, pendingEffects, placed);
         stake = SpinEconomy.Stake.NONE;
