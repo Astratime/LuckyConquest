@@ -16,8 +16,10 @@ import java.util.Map;
  * pas elles-mêmes les textures obtenues. Avec l'option « Enseignes renforcées », les
  * Carreaux et les Trèfles classiques sont recolorés (voir {@link SuitColors}).
  *
- * Les cartes spéciales s'affichent en pleine illustration : l'image de
- * {@value #FULL_ART_DIR} remplace celle de {@value #SPECIAL_DIR}, gardée telle quelle.
+ * Les cartes spéciales s'affichent au style des cartes classiques : l'image de {@value #CLASSIC_DIR}
+ * (version blanche) remplace celle de {@value #SPECIAL_DIR} et des cartes Bingo de {@value #TEST_DIR},
+ * gardées telles quelles. À défaut, l'image pleine illustration de {@value #FULL_ART_DIR} est prise.
+ * Les versions en couleurs ({@value #CLASSIC_COLOR_DIR}) ne sont pas encore affichées.
  */
 public class CardTextures implements Disposable {
 
@@ -25,6 +27,12 @@ public class CardTextures implements Disposable {
     static final String SPECIAL_DIR  = "cards/special/";
     /** Dossier des cartes spéciales en pleine illustration, mêmes noms de fichiers. */
     static final String FULL_ART_DIR = "cards/special_full/";
+    /** Dossier des cartes Bingo par symbole et de la carte du Jeu bonus. */
+    static final String TEST_DIR     = "cards/test/";
+    /** Dossier des cartes spéciales au style des cartes classiques, version blanche (celle du jeu). */
+    static final String CLASSIC_DIR  = "cards/special_classic/blanc/";
+    /** Même dossier, version aux couleurs de chaque donjon. */
+    static final String CLASSIC_COLOR_DIR = "cards/special_classic/couleurs/";
 
     /** Clé de cache des images aux enseignes renforcées. */
     private static final String STRONG_SUFFIX = "#4";
@@ -44,16 +52,23 @@ public class CardTextures implements Disposable {
             key -> build(path, strong, true));
     }
 
-    /** @return true si la carte {@code card} s'affiche en pleine illustration (elle reçoit alors le reflet arc-en-ciel). */
+    /** @return true si la carte {@code card} s'affiche dans sa nouvelle illustration (elle reçoit alors le reflet arc-en-ciel). */
     public static boolean isFullArt(Card card) {
         return !art(card.getAssetPath()).equals(card.getAssetPath());
     }
 
-    /** @return l'image à afficher pour {@code path} : sa version pleine illustration si elle existe, sinon {@code path}. */
+    /**
+     * @return l'image à afficher pour {@code path} : sa version au style classique si elle existe,
+     *         sinon sa version pleine illustration, sinon {@code path}
+     */
     static String art(String path) {
-        if (path == null || !path.startsWith(SPECIAL_DIR)) return path;
-        String full = FULL_ART_DIR + path.substring(SPECIAL_DIR.length());
-        return Gdx.files != null && Gdx.files.internal(full).exists() ? full : path;
+        if (path == null) return path;
+        String dir = path.startsWith(SPECIAL_DIR) ? SPECIAL_DIR : path.startsWith(TEST_DIR) ? TEST_DIR : null;
+        if (dir == null || Gdx.files == null) return path;
+        String name = path.substring(dir.length());
+        if (Gdx.files.internal(CLASSIC_DIR + name).exists()) return CLASSIC_DIR + name;
+        if (dir.equals(SPECIAL_DIR) && Gdx.files.internal(FULL_ART_DIR + name).exists()) return FULL_ART_DIR + name;
+        return path;
     }
 
     /** @return la texture de l'image de carte {@code original} (face ou dos), chargée à la demande puis mise en cache. */
