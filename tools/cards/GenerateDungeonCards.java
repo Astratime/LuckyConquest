@@ -3,6 +3,7 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Dessine les images des cartes des donjons de l'Exploration
@@ -23,6 +24,8 @@ public class GenerateDungeonCards {
     /** Or de la pièce, sur laquelle l'icône est dessinée. */
     private static final int COIN = 0xffeeba3c;
     private static final int OUTLINE = 0xff190e08;
+    /** Cartes redessinées en pleine illustration (tools/cards/full_art) : ne pas les écraser. */
+    private static final Set<String> FULL_ART = Set.of("fortune_du_roi");
 
     public static void main(String[] args) throws Exception {
         int[][] template = load(TEMPLATE);
@@ -222,6 +225,7 @@ public class GenerateDungeonCards {
     /** Écrit l'image de la carte {@code name} : cadre recoloré par {@code frame}, icône {@code icon} au centre. */
     private static void write(int[][] template, int[] frame, String name, String[] icon, Map<Character, Integer> palette)
             throws Exception {
+        if (FULL_ART.contains(name)) return;
         Map<Integer, Integer> recolor = new HashMap<>();
         recolor.put(FRAME_DARK, frame[0]);
         recolor.put(FRAME, frame[1]);
