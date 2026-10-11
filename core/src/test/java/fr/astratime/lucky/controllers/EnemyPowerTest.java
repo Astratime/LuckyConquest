@@ -205,4 +205,14 @@ class EnemyPowerTest {
         assertEquals(EnemySymbol.SWORD_DAMAGE, EnemyKind.CROUPIER.swordDamage(), "le croupier de la Tour ne change pas");
         assertEquals(25_000, EnemyKind.CROUPIER.getMaxHp(), "PV de la Tour x5");
     }
+
+    @Test
+    void towerSwordsHitHarderFromChapterThree() {
+        int sword = EnemySymbol.SWORD_DAMAGE;
+        assertEquals(sword * 2, EnemyKind.CHEF.hurt(sword), "chapitre 2 inchangé");
+        assertEquals(100, EnemyKind.HORLOGER.hurt(sword), "chapitre 3 : Épée à 100 (choix d'Astra)");
+        assertEquals(134, EnemyKind.PILLEUR.hurt(sword));
+        assertEquals(167, EnemyKind.PORTIER.hurt(sword));
+        assertEquals(200, EnemyKind.MACHINE_ORIGINELLE.hurt(sword));
+    }
 }

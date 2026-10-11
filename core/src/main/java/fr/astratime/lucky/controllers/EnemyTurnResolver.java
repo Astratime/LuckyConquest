@@ -377,7 +377,7 @@ public class EnemyTurnResolver {
                     boolean exploded = enemy.tickHourglass();
                     events.add(new EnemyHourglassEvent(exploded ? EnemySymbol.HOURGLASS_MAX : enemy.getHourglass(),
                         EnemySymbol.HOURGLASS_MAX, exploded));
-                    if (exploded) events.add(turn.strike(EnemySymbol.HOURGLASS_DAMAGE));
+                    if (exploded) events.add(turn.strike(EnemySymbol.HOURGLASS_DAMAGE, true)); // traverse le bouclier
                 }
                 case ALL_IN -> {
                     enemy.goAllIn();
@@ -1062,7 +1062,7 @@ public class EnemyTurnResolver {
                     boolean exploded = enemy.tickHourglass();
                     events.add(new EnemyHourglassEvent(exploded ? EnemySymbol.HOURGLASS_MAX : enemy.getHourglass(),
                         EnemySymbol.HOURGLASS_MAX, exploded));
-                    if (exploded) events.add(turn.strike(EnemySymbol.HOURGLASS_DAMAGE));
+                    if (exploded) events.add(turn.strike(EnemySymbol.HOURGLASS_DAMAGE, true)); // traverse le bouclier
                 }
                 case COMPTE_A_REBOURS -> {
                     if (enemy.loseTurn()) {
