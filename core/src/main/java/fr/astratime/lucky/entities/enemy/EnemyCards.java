@@ -2,6 +2,11 @@ package fr.astratime.lucky.entities.enemy;
 
 import fr.astratime.lucky.entities.Card;
 import fr.astratime.lucky.entities.CardFamily;
+import fr.astratime.lucky.entities.effects.AceOfHeartsEffect;
+import fr.astratime.lucky.entities.effects.BingoEffect;
+import fr.astratime.lucky.entities.effects.GoldenHeartEffect;
+import fr.astratime.lucky.entities.effects.HeartDrainEffect;
+import fr.astratime.lucky.entities.effects.TransfusionEffect;
 import fr.astratime.lucky.i18n.Lang;
 
 import java.util.ArrayList;
@@ -18,6 +23,8 @@ import java.util.List;
  * </ul>
  * Le Rouleau interdit ({@link #forbiddenReel()}), sans couleur, n'est que dans le
  * deck de l'Éclat Originel : il bloque un rouleau du joueur à son prochain tirage.
+ * Les autres cartes sans couleur sont les cartes propres des ennemis ({@link EnemySignature}),
+ * et les cartes spéciales du joueur copiées par son Ombre ({@link #shadowDeck}).
  * Les bonus d'attaque et de défense grandissent avec la force de l'ennemi
  * ({@link EnemyKind#getPower()}), comme ses symboles.
  */
@@ -62,31 +69,88 @@ public final class EnemyCards {
             List.of(), suit, rank);
     }
 
+    /** Préfixe des As volés par le Pilleur (copies des cartes achetées à l'échoppe). */
+    static final String LOOT_PREFIX = "enemy_loot_";
+
+    /** @return l'As sombre de {@code suit} que le Pilleur garde d'une carte achetée à l'échoppe. */
+    public static Card loot(Card.Suit suit) {
+        Card ace = card(suit, MAX_RANK);
+        return new Card(LOOT_PREFIX + suit.cardId(MAX_RANK), Lang.f("{0} de {1}", MAX_RANK, suitName(suit)),
+            ace.getAssetPath(), List.of(), suit, MAX_RANK);
+    }
+
+    /** @return {@code true} pour un As volé par le Pilleur. */
+    public static boolean isLoot(Card card) { return card.getId().startsWith(LOOT_PREFIX); }
+
     /**
-     * L'Ombre du Joueur : le deck du joueur, carte pour carte, en cartes sombres.
-     * Une carte de couleur garde sa couleur et son rang (l'As vaut 14) ; une
-     * carte spéciale devient un 10 de la couleur de sa famille : Attaque en
-     * Pique, Gains en Trèfle, Pioche en Carreau, les autres en Cœur.
+     * Rôle d'une carte spéciale du joueur dans le deck de son Ombre : elle agit
+     * comme le Reflet, à pleine force.
+     */
+    public enum ShadowRole {
+        /** Une carte d'attaque devient un coup. */
+        ATTACK,
+        /** Une carte de gains vole ses gains, comme les Intérêts. */
+        GAINS,
+        /** Une carte Bingo rend son Épée bien plus probable. */
+        BINGO,
+        /** Une carte de soin la soigne. */
+        HEAL,
+        /** Les autres deviennent un Bouclier. */
+        SHIELD
+    }
+
+    /** Préfixe des cartes copiées par l'Ombre du Joueur. */
+    public static final String SHADOW_PREFIX = "enemy_shadow_";
+
+    /**
+     * L'Ombre du Joueur : le deck du joueur, carte pour carte, en version
+     * sombre (même image, même nom). Une carte de couleur garde sa couleur et son
+     * rang (l'As vaut 14). Une carte spéciale agit comme le Reflet, à pleine
+     * force, selon son rôle ({@link ShadowRole}).
      *
      * @return le deck sombre copié sur {@code playerCards}
      */
     public static List<Card> shadowDeck(List<Card> playerCards) {
         List<Card> cards = new ArrayList<>();
         for (Card card : playerCards) {
-            if (card.getSuit() != null) {
-                cards.add(card(card.getSuit(), card.getRank() == 1 ? MAX_RANK : Math.clamp(card.getRank(), 2, MAX_RANK)));
-            } else {
-                Card.Suit suit = CardFamily.ATTAQUE.contains(card) ? Card.Suit.PIQUE
-                    : CardFamily.GAINS.contains(card) ? Card.Suit.TREFLE
-                    : CardFamily.PIOCHE.contains(card) ? Card.Suit.CARREAU : Card.Suit.COEUR;
-                cards.add(card(suit, SHADOW_SPECIAL_RANK));
-            }
+            boolean suited = card.getSuit() != null;
+            int rank = suited ? (card.getRank() == 1 ? MAX_RANK : Math.clamp(card.getRank(), 2, MAX_RANK)) : SHADOW_SPECIAL_RANK;
+            String role = suited ? "suit" : shadowRole(card).name().toLowerCase();
+            cards.add(new Card(SHADOW_PREFIX + role + "_" + card.getId(), card.getName(), card.getAssetPath(), List.of(),
+                card.getSuit(), rank));
         }
         return cards.isEmpty() ? starterDeck() : cards;
     }
 
+    /** @return le rôle de la carte spéciale {@code card} du joueur, copiée par son Ombre. */
+    static ShadowRole shadowRole(Card card) {
+        if (CardFamily.ATTAQUE.contains(card)) return ShadowRole.ATTACK;
+        if (CardFamily.GAINS.contains(card)) return ShadowRole.GAINS;
+        if (card.getEffects().stream().anyMatch(BingoEffect.class::isInstance)) return ShadowRole.BINGO;
+        if (card.getEffects().stream().anyMatch(effect -> effect instanceof AceOfHeartsEffect
+            || effect instanceof GoldenHeartEffect || effect instanceof HeartDrainEffect
+            || effect instanceof TransfusionEffect)) return ShadowRole.HEAL;
+        return ShadowRole.SHIELD;
+    }
+
+    /** @return {@code true} pour une carte copiée par l'Ombre du Joueur. */
+    public static boolean isShadow(Card card) { return card.getId().startsWith(SHADOW_PREFIX); }
+
+    /** @return le rôle de la carte spéciale copiée {@code card}, ou {@code null} (carte de couleur, ou pas de l'Ombre). */
+    public static ShadowRole shadowRoleOf(Card card) {
+        if (!isShadow(card) || card.getSuit() != null) return null;
+        String rest = card.getId().substring(SHADOW_PREFIX.length());
+        for (ShadowRole role : ShadowRole.values()) {
+            if (rest.startsWith(role.name().toLowerCase() + "_")) return role;
+        }
+        return ShadowRole.SHIELD;
+    }
+
+    /** Chance ajoutée à son Épée par une carte Bingo copiée par l'Ombre, en %. */
+    public static final int SHADOW_BINGO_LUCK = 100;
+
     /** Rang des cartes spéciales du joueur, copiées par l'Ombre du Joueur. */
-    static final int SHADOW_SPECIAL_RANK = 10;
+    public static final int SHADOW_SPECIAL_RANK = 10;
 
     /** @return l'attaque ajoutée à chaque Épée et chaque Croc par une carte Pique. */
     public static int swordBonus(Card card)   { return scaled(card, SWORD_MIN, SWORD_MAX); }
@@ -102,12 +166,31 @@ public final class EnemyCards {
 
     /** @return la description de l'effet de la carte chez un ennemi {@code kind} (bonus renforcés par sa force). */
     public static String describe(Card card, EnemyKind kind) {
+        EnemySignature signature = EnemySignature.of(card);
+        if (signature != null) return signature.getDescription();
+        ShadowRole role = shadowRoleOf(card);
+        if (role != null) return describe(role, kind);
         if (card.getSuit() == null) return Lang.t("Bloque un de tes rouleaux à ton prochain tirage. Pas de Bingo possible");
         return switch (card.getSuit()) {
             case PIQUE   -> Lang.f("Épées et Crocs : attaque +{0}", kind.hurt(kind.swordBonus(card)));
             case COEUR   -> Lang.f("Potions : soin +{0} % des PV max", healBonus(card));
             case CARREAU -> Lang.f("Boucliers : défense +{0}", kind.empowered(kind.shieldBonus(card)));
             case TREFLE  -> Lang.f("Un symbole au hasard : chance +{0} %", luckBonus(card));
+        };
+    }
+
+    /** @return l'effet d'une carte spéciale du joueur copiée par son Ombre, de rôle {@code role}. */
+    private static String describe(ShadowRole role, EnemyKind kind) {
+        Card ten = card(Card.Suit.PIQUE, SHADOW_SPECIAL_RANK);
+        return switch (role) {
+            case ATTACK -> Lang.f("Ta carte, retournée contre toi : attaque de {0}",
+                kind.hurt(kind.swordDamage() + kind.swordBonus(ten)));
+            case GAINS  -> Lang.f("Ta carte, retournée contre toi : elle prend {0} % de tes gains", kind.interestPercent());
+            case BINGO  -> Lang.f("Ta carte, retournée contre toi : son Épée devient {0} % plus probable", SHADOW_BINGO_LUCK);
+            case HEAL   -> Lang.f("Ta carte, retournée contre toi : elle se soigne de {0} % de ses PV max",
+                Math.round(kind.potionPercent(healBonus(ten))));
+            case SHIELD -> Lang.f("Ta carte, retournée contre toi : défense +{0}",
+                kind.empowered(kind.shieldDefense() + kind.shieldBonus(ten)));
         };
     }
 
@@ -126,7 +209,7 @@ public final class EnemyCards {
         };
     }
 
-    private static String suitName(Card.Suit suit) {
+    static String suitName(Card.Suit suit) {
         return switch (suit) {
             case PIQUE   -> Lang.t("Pique");
             case COEUR   -> Lang.t("Coeur");

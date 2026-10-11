@@ -25,6 +25,7 @@ import fr.astratime.lucky.entities.Card;
 import fr.astratime.lucky.entities.Enemy;
 import fr.astratime.lucky.entities.enemy.EnemyCards;
 import fr.astratime.lucky.entities.enemy.EnemyKind;
+import fr.astratime.lucky.entities.enemy.EnemySignature;
 import fr.astratime.lucky.entities.enemy.EnemySlotMachine;
 import fr.astratime.lucky.entities.enemy.EnemySymbol;
 import fr.astratime.lucky.entities.enemy.EnemyTurnResult;
@@ -209,8 +210,17 @@ public class EnemyView implements Disposable {
         if (kind.hasGoldSkin()) {
             line(text, Lang.t("Peau d'or : tes dégâts sont divisés par 2 tant qu'il a plus de la moitié de ses PV"));
         }
+        if (kind.hasGoldSkin() && current.getPlatingTurns() > 0) {
+            line(text, Lang.f("Placage : sa peau d'or tient encore {0} tour(s)", current.getPlatingTurns()));
+        }
         if (kind.hitsJackpots()) {
             line(text, Lang.f("Jackpot : 3 symboles identiques, attaques et Boucliers x{0}", EnemySymbol.JACKPOT_FACTOR));
+        }
+        if (kind.getSymbols().contains(EnemySymbol.SWALLOWED_COIN)) {
+            line(text, Lang.f("Pièces avalées : {0}/{1}", current.getCoins(), EnemySymbol.COINS_FOR_JACKPOT));
+        }
+        if (kind == EnemyKind.MACHINE_ORIGINELLE) {
+            line(text, Lang.f("Jackpot originel : 3 symboles pareils, ce symbole agit {0} fois", EnemySymbol.ORIGINAL_JACKPOT_ACTS));
         }
         line(text, Lang.f("Pioche {0} cartes et en joue {1} à chaque tour", Enemy.HAND_SIZE, current.getPlaysPerTurn()));
         if (kind.hasArms()) line(text, Lang.t("Chaque bras perdu lui retire une carte jouée"));
@@ -234,8 +244,11 @@ public class EnemyView implements Disposable {
             line(text, Lang.f("Interdit : les cartes {0}", current.getBannedFamily().getDisplayName()));
         }
         if (current.getLoot() > 0) line(text, Lang.f("Butin : {0} As volés", current.getLoot()));
-        if (current.getPrediction() != null) line(text, Lang.f("Prédiction : {0}", current.getPrediction().getDisplayName()));
-        if (kind.getTurnLimit() > 0) line(text, Lang.f("Le combat dure {0} tours", kind.getTurnLimit()));
+        if (current.getPrediction() != null) line(text, current.getSecondPrediction() == null
+            ? Lang.f("Prédiction : {0}", current.getPrediction().getDisplayName())
+            : Lang.f("Prédiction : {0} ou {1}", current.getPrediction().getDisplayName(),
+                current.getSecondPrediction().getDisplayName()));
+        if (current.getTurnLimit() > 0) line(text, Lang.f("Le combat dure {0} tours", current.getTurnLimit()));
         if (current.getAnvil() > 0) line(text, Lang.f("Enclume : attaque +{0}", current.getAnvil()));
         if (current.getRage() > 0) line(text, Lang.f("Rage : attaque +{0}", current.getRage()));
         if (current.getThornsPercent() > 0) {
@@ -469,6 +482,16 @@ public class EnemyView implements Disposable {
 
     /** @return le bonus d'une carte jouée, en quelques mots (ex : "ÉPÉE +10"), chez un ennemi {@code kind}. */
     private static String bonusText(Card card, EnemyKind kind) {
+        EnemySignature signature = EnemySignature.of(card);
+        if (signature != null) return signature.getBonusText();
+        EnemyCards.ShadowRole role = EnemyCards.shadowRoleOf(card);
+        if (role != null) return switch (role) {
+            case ATTACK -> Lang.t("TA CARTE : ATTAQUE");
+            case GAINS  -> Lang.t("TA CARTE : VOL DE GAINS");
+            case BINGO  -> Lang.t("TA CARTE : ÉPÉE PROBABLE");
+            case HEAL   -> Lang.t("TA CARTE : SOIN");
+            case SHIELD -> Lang.t("TA CARTE : BOUCLIER");
+        };
         if (card.getSuit() == null) return Lang.t("ROULEAU INTERDIT");
         return switch (card.getSuit()) {
             case PIQUE   -> Lang.f("ATTAQUE +{0}", kind.hurt(kind.swordBonus(card)));
@@ -479,6 +502,7 @@ public class EnemyView implements Disposable {
     }
 
     private static EffectPopup.Style styleOf(Card card) {
+        if (EnemySignature.of(card) != null) return EffectPopup.Style.SPECIAL;
         if (card.getSuit() == null) return EffectPopup.Style.DAMAGE;
         return switch (card.getSuit()) {
             case PIQUE   -> EffectPopup.Style.ATTACK;

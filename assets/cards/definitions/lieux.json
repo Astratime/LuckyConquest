@@ -168,7 +168,7 @@
   },
   {
     "id": "coeur_d_or",
-    "name": "Cœur d'or",
+    "name": "Coeur d'or",
     "assetPath": "cards/special/coeur_d_or.png",
     "effects": [ { "type": "GOLDEN_HEART" } ]
   },

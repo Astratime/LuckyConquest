@@ -253,7 +253,7 @@ public class CombatResolver {
         long hit    = enemy.capHit(BigNumber.toLong(gainsEarned * context.getGoldenHearts()));
         long damage = enemy.skinned(hit);
         enemy.takeDamage(hit);
-        return Optional.of(new CardStrikeEvent(Lang.t("CŒUR D'OR !"), damage, hit, enemy.getDefense()));
+        return Optional.of(new CardStrikeEvent(Lang.t("COEUR D'OR !"), damage, hit, enemy.getDefense()));
     }
 
     /**

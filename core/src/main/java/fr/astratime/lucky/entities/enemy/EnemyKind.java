@@ -9,6 +9,8 @@ import fr.astratime.lucky.i18n.Lang;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumMap;
+import java.util.EnumSet;
+import java.util.Set;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -103,7 +105,8 @@ public enum EnemyKind {
     CHEF("Croupier en chef", "CROUPIER EN CHEF",
         "Le croupier a pris du galon. Il frappe. Il se protège. Ses Potions reforment aussi sa défense.",
         20_000, 100, 40,
-        weights(EnemySymbol.SWORD, 1, EnemySymbol.SHIELD, 1, EnemySymbol.POTION, 1),
+        weights(EnemySymbol.SWORD, 2, EnemySymbol.SHIELD, 2, EnemySymbol.POTION, 2, EnemySymbol.NOTHING_GOES, 1,
+            EnemySymbol.RAKE, 1),
         deck(new int[] {2, 5, 8, 11, 14}, new int[] {2, 5, 8, 11, 14},
             new int[] {2, 5, 8, 11, 14}, new int[] {2, 5, 8, 11, 14}),
         List.of(Card.Suit.PIQUE, Card.Suit.CARREAU, Card.Suit.TREFLE, Card.Suit.COEUR),
@@ -186,7 +189,7 @@ public enum EnemyKind {
         List.of(Card.Suit.PIQUE, Card.Suit.TREFLE, Card.Suit.CARREAU, Card.Suit.COEUR)),
 
     ECLAT("Éclat Originel", "ÉCLAT ORIGINEL",
-        "Le cœur de la comète. Il est le hasard. Blessé, il change de jeu.",
+        "Le coeur de la comète. Il est le hasard. Blessé, il change de jeu.",
         400_000, 120, 5,
         weights(EnemySymbol.SHIELD, 3, EnemySymbol.THORNS, 1, EnemySymbol.FANG, 1, EnemySymbol.RAGE, 1),
         deck(new int[] {4, 9, 14}, new int[] {4, 8, 12, 14},
@@ -388,7 +391,7 @@ public enum EnemyKind {
     GOLEM_OR("Golem d'or", "GOLEM D'OR",
         "Un tas d'or qui marche. Tant qu'il a plus de la moitié de ses PV, sa peau d'or encaisse la moitié de tes coups.",
         600_000, 100, 10,
-        weights(EnemySymbol.SWORD, 1, EnemySymbol.SHIELD, 2),
+        weights(EnemySymbol.SWORD, 2, EnemySymbol.SHIELD, 2, EnemySymbol.PLATING, 1, EnemySymbol.INGOT, 1),
         deck(new int[] {3, 6, 9, 12, 14}, new int[] {4, 8, 12},
             new int[] {5, 9, 13}, new int[] {3, 7, 11}),
         List.of(Card.Suit.PIQUE, Card.Suit.CARREAU, Card.Suit.TREFLE, Card.Suit.COEUR),
@@ -396,7 +399,8 @@ public enum EnemyKind {
     COEUR_MONTAGNE("Coeur de la Montagne", "COEUR DE LA MONTAGNE",
         "La montagne est vivante. Tant qu'il a plus de la moitié de ses PV, il ne prend que la moitié de tes dégâts.",
         1_200_000, 150, 6,
-        weights(EnemySymbol.SWORD, 2, EnemySymbol.SHIELD, 2, EnemySymbol.POTION, 1),
+        weights(EnemySymbol.SWORD, 2, EnemySymbol.SHIELD, 2, EnemySymbol.POTION, 1, EnemySymbol.ROCKFALL, 1,
+            EnemySymbol.HEARTBEAT, 1),
         deck(new int[] {3, 6, 9, 12, 14}, new int[] {4, 8, 12},
             new int[] {5, 9, 13}, new int[] {3, 7, 11}),
         List.of(Card.Suit.PIQUE, Card.Suit.CARREAU, Card.Suit.TREFLE, Card.Suit.COEUR),
@@ -423,7 +427,7 @@ public enum EnemyKind {
     BANDIT_MANCHOT("Bandit manchot", "BANDIT MANCHOT",
         "Une machine à sous rouillée. Trois symboles pareils : Jackpot. Il frappe cinq fois plus fort.",
         1_500_000, 80, 5,
-        weights(EnemySymbol.SWORD, 1, EnemySymbol.SHIELD, 1),
+        weights(EnemySymbol.SWORD, 2, EnemySymbol.SHIELD, 2, EnemySymbol.SWALLOWED_COIN, 1, EnemySymbol.ARMED_ARM, 1),
         deck(new int[] {3, 6, 9, 12, 14}, new int[] {4, 8, 12},
             new int[] {5, 9, 13}, new int[] {3, 7, 11}),
         List.of(Card.Suit.PIQUE, Card.Suit.CARREAU, Card.Suit.TREFLE, Card.Suit.COEUR),
@@ -516,7 +520,8 @@ public enum EnemyKind {
     PORTIER("Le Portier", "PORTIER",
         "Il filtre l'entrée. Une famille de cartes reste dehors tout le combat.",
         400_000, 150, 4,
-        weights(EnemySymbol.SWORD, 2, EnemySymbol.SHIELD, 2, EnemySymbol.POTION, 1),
+        weights(EnemySymbol.SWORD, 2, EnemySymbol.SHIELD, 2, EnemySymbol.POTION, 1, EnemySymbol.CLOAKROOM, 1,
+            EnemySymbol.BOUNCER, 1),
         deck(new int[] {3, 6, 9, 12, 14}, new int[] {4, 8, 12},
             new int[] {5, 9, 13, 14}, new int[] {3, 7, 11}),
         List.of(Card.Suit.PIQUE, Card.Suit.CARREAU, Card.Suit.TREFLE, Card.Suit.COEUR),
@@ -548,7 +553,8 @@ public enum EnemyKind {
     MAISON("La Maison", "LA MAISON",
         "Pas un ennemi. Un lieu vivant. La Façade protège, le Coffre soigne, la Salle de jeu frappe. La Maison gagne toujours : une fois, elle annule ton plus gros coup.",
         1_400_000, 150, 3,
-        weights(EnemySymbol.SHIELD, 2, EnemySymbol.SWORD, 2, EnemySymbol.POTION, 1),
+        weights(EnemySymbol.SHIELD, 2, EnemySymbol.SWORD, 2, EnemySymbol.POTION, 1, EnemySymbol.LOAD_BEARING, 1,
+            EnemySymbol.SAFE, 1, EnemySymbol.HOUSE_EDGE, 1),
         deck(new int[] {3, 6, 9, 12, 14}, new int[] {4, 8, 12},
             new int[] {5, 9, 13, 14}, new int[] {3, 7, 11}),
         List.of(Card.Suit.PIQUE, Card.Suit.CARREAU, Card.Suit.TREFLE, Card.Suit.COEUR),
@@ -591,7 +597,8 @@ public enum EnemyKind {
     MACHINE_ORIGINELLE("La Machine Originelle", "MACHINE ORIGINELLE",
         "La machine qui a créé la comète. Cinq rouleaux contre tes trois. Blessée, elle te vole tes rouleaux. Achevée, elle tente un dernier tirage.",
         2_000_000, 150, 2,
-        weights(EnemySymbol.SWORD, 2, EnemySymbol.SHIELD, 1, EnemySymbol.POTION, 1, EnemySymbol.RAGE, 1),
+        weights(EnemySymbol.SWORD, 2, EnemySymbol.SHIELD, 1, EnemySymbol.POTION, 1, EnemySymbol.RAGE, 1,
+            EnemySymbol.GEAR, 1, EnemySymbol.SHORT_CIRCUIT, 1, EnemySymbol.GOLDEN_COMET, 1, EnemySymbol.ASPIRATION, 1),
         deck(new int[] {3, 6, 9, 12, 14}, new int[] {4, 8, 12},
             new int[] {5, 9, 13, 14}, new int[] {3, 7, 11}),
         List.of(Card.Suit.PIQUE, Card.Suit.CARREAU, Card.Suit.TREFLE, Card.Suit.COEUR),
@@ -653,11 +660,14 @@ public enum EnemyKind {
     private static final Map<EnemySymbol, Integer> ECLAT_PHASE_TWO = Collections.unmodifiableMap(weights(
         EnemySymbol.SHIELD, 3, EnemySymbol.MIRROR, 1, EnemySymbol.HOURGLASS, 1, EnemySymbol.ALL_IN, 1));
 
-    /** Symboles de la Maison sans sa Façade (plus de Boucliers), puis sans son Coffre (plus de Potions). */
+    /**
+     * Symboles de la Maison sans sa Façade (plus de Boucliers ni de Mur porteur), puis sans
+     * son Coffre (plus de Potions ni de Coffre-fort) : la Salle de jeu garde son Avantage.
+     */
     private static final Map<EnemySymbol, Integer> HOUSE_PHASE_TWO = Collections.unmodifiableMap(weights(
-        EnemySymbol.SWORD, 2, EnemySymbol.POTION, 1));
+        EnemySymbol.SWORD, 2, EnemySymbol.POTION, 1, EnemySymbol.SAFE, 1, EnemySymbol.HOUSE_EDGE, 1));
     private static final Map<EnemySymbol, Integer> HOUSE_PHASE_THREE = Collections.unmodifiableMap(weights(
-        EnemySymbol.SWORD, 1));
+        EnemySymbol.SWORD, 2, EnemySymbol.HOUSE_EDGE, 1));
 
     private final String                     displayName;
     private final String                     barName;
@@ -854,6 +864,15 @@ public enum EnemyKind {
             default      -> Enemy.PLAYS_PER_TURN;
         };
     }
+    /**
+     * @return les cartes propres qu'il joue au plus à chaque tour, en plus de ses cartes
+     *         habituelles : une, ou jusqu'à 3 pour les ennemis du chapitre 6 (choix d'Astra)
+     */
+    public int getOwnPlaysPerTurn() {
+        return chapterPower() == CHAPTER_6_POWER ? CHAPTER_6_OWN_PLAYS : 1;
+    }
+    /** Cartes propres jouées au plus à chaque tour par un ennemi du chapitre 6. */
+    static final int CHAPTER_6_OWN_PLAYS = 3;
     /** @return {@code true} pour le boss d'un chapitre ou le roi d'un donjon. */
     public boolean isBoss() {
         return switch (this) {
@@ -963,7 +982,7 @@ public enum EnemyKind {
             case MAISON -> phase == 2 ? Lang.t("LA FAÇADE TOMBE : PLUS DE DÉFENSE") : Lang.t("LE COFFRE TOMBE : PLUS DE SOINS");
             case MACHINE_ORIGINELLE -> Lang.t("ELLE TE VOLE UN ROULEAU !");
             case ROI_PIQUE -> Lang.t("LAMES ASSOIFFÉES : CROC !");
-            case ROI_COEUR -> Lang.t("CŒUR FURIEUX : RAGE !");
+            case ROI_COEUR -> Lang.t("COEUR FURIEUX : RAGE !");
             case ROI_CARREAU -> Lang.t("LE TRÉSOR RAPPORTE : INTÉRÊTS !");
             case ROI_TREFLE -> Lang.t("LA TABLE TOURNE : IVRESSE !");
             case CAPITAINE_RAT -> Lang.t("LES RATS MONTENT À BORD : ABORDAGE !");
@@ -973,7 +992,7 @@ public enum EnemyKind {
             case BARON_OR -> Lang.t("AVIDITÉ : CROC !");
             case GRAND_FOREUR -> Lang.t("ÉCLATS DE ROCHE : ÉPINES !");
             case MAITRE_FORGE -> Lang.t("FORGE ARDENTE : RAGE !");
-            case COEUR_MONTAGNE -> Lang.t("LE CŒUR DURCIT : ENCLUME !");
+            case COEUR_MONTAGNE -> Lang.t("LE COEUR DURCIT : ENCLUME !");
             case SIRENE -> Lang.t("CHANT MORTEL : CROC !");
             case JACKPOT_VIVANT -> Lang.t("MISE MAXIMALE : INTÉRÊTS !");
             case REQUIN_BANQUIER -> Lang.t("FRÉNÉSIE : RAGE !");
@@ -1040,16 +1059,107 @@ public enum EnemyKind {
     /** @return les couleurs qu'il joue en priorité quand sa vie est basse. */
     public List<Card.Suit> getLowHpPriority() { return lowHpPriority; }
 
-    /** @return un deck neuf, aux cartes de sa composition. */
+    /**
+     * @return un deck neuf : les cartes de sa composition, sans les couleurs qui
+     *         ne servent pas ses rouleaux (voir {@link #removedSuits()}), et
+     *         {@link EnemySignature#COPIES} exemplaires de chacune de ses cartes propres
+     */
     public List<Card> createDeck() {
         List<Card> cards = new ArrayList<>();
+        Set<Card.Suit> removed = removedSuits();
         for (Map.Entry<Card.Suit, int[]> entry : deck.entrySet()) {
+            if (removed.contains(entry.getKey())) continue;
             for (int rank : entry.getValue()) cards.add(EnemyCards.card(entry.getKey(), rank));
+        }
+        for (EnemySignature signature : getSignatures()) {
+            for (int i = 0; i < EnemySignature.COPIES; i++) cards.add(signature.card());
         }
         if (forbidsReels()) {
             for (int i = 0; i < FORBIDDEN_REELS; i++) cards.add(EnemyCards.forbiddenReel());
         }
         return cards;
+    }
+
+    /**
+     * @return {@code true} s'il garde le deck de base, toutes couleurs, sans carte
+     *         propre : les premiers ennemis, qui apprennent les couleurs au joueur
+     *         (le croupier de l'Entraînement, le Croupier démoniaque et les soldats de la prairie)
+     */
+    public boolean keepsBaseDeck() {
+        return switch (this) {
+            case ENTRAINEMENT, CROUPIER, SOLDAT_PIQUE, SOLDAT_COEUR, SOLDAT_CARREAU, SOLDAT_TREFLE -> true;
+            default -> false;
+        };
+    }
+
+    /**
+     * @return les couleurs retirées de son deck, car elles ne font rien chez lui :
+     *         le Cœur sans Potion, Croc ni Morsure (ce qu'il renforce), le Carreau
+     *         sans Bouclier. Aucune pour un ennemi qui {@linkplain #keepsBaseDeck() garde son deck de base}.
+     */
+    public Set<Card.Suit> removedSuits() {
+        Set<Card.Suit> removed = EnumSet.noneOf(Card.Suit.class);
+        if (keepsBaseDeck()) return removed;
+        if (!weights.containsKey(EnemySymbol.POTION) && !weights.containsKey(EnemySymbol.FANG)
+            && !weights.containsKey(EnemySymbol.BANK_BITE)) removed.add(Card.Suit.COEUR);
+        if (!weights.containsKey(EnemySymbol.SHIELD)) removed.add(Card.Suit.CARREAU);
+        return removed;
+    }
+
+    /** @return ses cartes propres, liées à ses rouleaux (voir le document « Cartes des ennemis »). */
+    public List<EnemySignature> getSignatures() {
+        return switch (this) {
+            case GARDIEN, ROI_CARREAU -> List.of(EnemySignature.RONCES);
+            case SANGSUE, ROI_COEUR -> List.of(EnemySignature.SAIGNEE);
+            case BRETTEUR, ROI_PIQUE, JACKPOT_VIVANT -> List.of(EnemySignature.PROVOCATION);
+            case COMETE -> List.of(EnemySignature.QUEUE_DE_COMETE);
+            case TRICHEUR -> List.of(EnemySignature.DE_CHARGE);
+            case USURIER -> List.of(EnemySignature.TAUX_USURAIRE);
+            case ROULETTE, PIEUVRE -> List.of(EnemySignature.BILLE_TRUQUEE);
+            case REINE -> List.of(EnemySignature.MAIN_DE_LA_REINE);
+            case GARDIENNE -> List.of(EnemySignature.RONCES, EnemySignature.SAIGNEE, EnemySignature.PROVOCATION);
+            case MIROIR -> List.of(EnemySignature.MIROIR_DEFORMANT);
+            case HORLOGER -> List.of(EnemySignature.REMONTOIR);
+            case FOU -> List.of(EnemySignature.TOUT_SUR_LE_ROUGE);
+            case PILLEUR -> List.of(EnemySignature.SAC_DE_BUTIN);
+            case FAUSSAIRE -> List.of(EnemySignature.PLANCHE_A_BILLETS);
+            case CARTOMANCIENNE -> List.of(EnemySignature.TAROT);
+            case DUELLISTE -> List.of(EnemySignature.BOTTE_SECRETE);
+            case PRETENDANT -> List.of(EnemySignature.ECLAT_VOLE);
+            case COMPTABLE -> List.of(EnemySignature.REDRESSEMENT);
+            case DIRECTEUR -> List.of(EnemySignature.REGLEMENT_INTERIEUR);
+            case SECURITE -> List.of(EnemySignature.CAMERAS);
+            case GARDIEN_LEVIER -> List.of(EnemySignature.PLANCHE_A_BILLETS, EnemySignature.REDRESSEMENT,
+                EnemySignature.BOTTE_SECRETE);
+            case BANQUEROUTE -> List.of(EnemySignature.SAISIE);
+            case TEMPS_MORT -> List.of(EnemySignature.COMPTE_A_REBOURS);
+            case CHEF -> List.of(EnemySignature.ANNONCE, EnemySignature.COUP_DE_RATEAU);
+            case PORTIER -> List.of(EnemySignature.TENUE_EXIGEE, EnemySignature.PAS_CE_SOIR);
+            case MAISON -> List.of(EnemySignature.MACONNERIE, EnemySignature.DOUBLE_SERRURE, EnemySignature.BANQUE_GAGNE);
+            case MACHINE_ORIGINELLE -> List.of(EnemySignature.HUILE_NOIRE, EnemySignature.PLUIE_D_ETOILES,
+                EnemySignature.SURTENSION, EnemySignature.GRANDE_ASPIRATION);
+            case GOLEM_OR -> List.of(EnemySignature.OR_MASSIF, EnemySignature.POIDS_DE_L_OR);
+            case COEUR_MONTAGNE -> List.of(EnemySignature.GRONDEMENT, EnemySignature.FILON);
+            case BANDIT_MANCHOT -> List.of(EnemySignature.MONNAIE, EnemySignature.LEVIER_GRILLE);
+            case ROI_TREFLE -> List.of(EnemySignature.TAUX_USURAIRE, EnemySignature.DE_CHARGE);
+            case RAT_CALES -> List.of(EnemySignature.DENTS_DE_RAT);
+            case CAPITAINE_RAT -> List.of(EnemySignature.DENTS_DE_RAT, EnemySignature.SAIGNEE);
+            case BUVEUR, TAVERNIER -> List.of(EnemySignature.TOURNEE);
+            case GUETTEUR -> List.of(EnemySignature.LANTERNE);
+            case GARDIEN_PHARE -> List.of(EnemySignature.LANTERNE, EnemySignature.RONCES);
+            case PIRATE -> List.of(EnemySignature.GRAPPIN);
+            case CAPITAINE_NOIR -> List.of(EnemySignature.GRAPPIN, EnemySignature.PROVOCATION);
+            case CHERCHEUR_OR -> List.of(EnemySignature.TAMIS_NOIR);
+            case BARON_OR -> List.of(EnemySignature.TAMIS_NOIR, EnemySignature.TAUX_USURAIRE);
+            case FOREUR -> List.of(EnemySignature.MECHE_DE_DIAMANT);
+            case GRAND_FOREUR -> List.of(EnemySignature.MECHE_DE_DIAMANT, EnemySignature.PROVOCATION);
+            case FORGERON, MAITRE_FORGE -> List.of(EnemySignature.TREMPE);
+            case BARMAN_NOYE, SIRENE -> List.of(EnemySignature.REFRAIN);
+            case REQUIN -> List.of(EnemySignature.FRENESIE);
+            case REQUIN_BANQUIER -> List.of(EnemySignature.FRENESIE, EnemySignature.SAIGNEE);
+            case KRAKEN -> List.of(EnemySignature.ENCRE);
+            default -> List.of();
+        };
     }
 
     /** @return la phrase qui résume ses rouleaux, pour son infobulle (ex : "Épée, Bouclier x2, Épines x2"). */

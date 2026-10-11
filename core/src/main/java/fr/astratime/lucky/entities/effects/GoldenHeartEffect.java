@@ -23,7 +23,7 @@ public class GoldenHeartEffect extends Effect {
 
     @Override
     public List<EffectPopup> getPopups() {
-        return List.of(new EffectPopup(Lang.t("CŒUR D'OR : GAINS = ATTAQUE"), EffectPopup.Style.GAINS, PopupScale.SECONDARY_INTENSITY));
+        return List.of(new EffectPopup(Lang.t("COEUR D'OR : GAINS = ATTAQUE"), EffectPopup.Style.GAINS, PopupScale.SECONDARY_INTENSITY));
     }
 
     @Override

@@ -159,7 +159,7 @@ class SpinEconomyTest {
     }
 
     @Test
-    void theStakeCostsNothingAndOnlyCountsOnABingo() {
+    void theStakeMultipliesTheSpinPriceAndOnlyCountsOnABingo() {
         assertEquals(Stake.NONE, Stake.HIGH.next());
 
         GameController plain = fight(EnemyKind.CROUPIER);
@@ -171,10 +171,11 @@ class SpinEconomyTest {
         staked.drawCards();
         assertEquals(Stake.LOW, staked.nextStake());
         assertEquals(Stake.MEDIUM, staked.nextStake());
+        assertEquals(3.0 * staked.getSpinCost(), staked.getSpinPrice(), "Mise x3 : le tirage coûte 3 fois plus");
         staked.rigSpin(Symbol.SEVEN, Symbol.BAR, Symbol.BELL);
         TurnResult result = staked.spin();
         assertEquals(damageDealt(base), damageDealt(result), "sans Bingo, la Mise ne multiplie rien");
-        assertEquals(player(plain).getGains(), player(staked).getGains(), "la Mise ne coûte rien");
+        assertEquals(player(plain).getGains() - 2.0 * plain.getSpinCost(), player(staked).getGains(), "Mise x3 : 2 tirages de plus payés");
         assertEquals(Stake.NONE, staked.getStake(), "la Mise ne vaut que pour un tirage");
     }
 
@@ -197,16 +198,16 @@ class SpinEconomyTest {
         double stakedBefore = player(staked).getGains();
         staked.rigSpin(Symbol.SEVEN, Symbol.SEVEN, Symbol.SEVEN);
         assertEquals(base, damageDealt(staked.spin()), "la Mise ne touche pas à l'attaque");
-        double stakedEarned = player(staked).getGains() - stakedBefore + staked.getSpinCost();
+        double stakedEarned = player(staked).getGains() - stakedBefore + 5.0 * staked.getSpinCost(); // Mise x5 : 5 tirages payés
         assertTrue(earned > 0);
-        assertEquals(earned * 5, stakedEarned, "les gains du Bingo x5, et rien n'est misé");
+        assertEquals(earned * 5, stakedEarned, "les gains du Bingo x5");
     }
 
     @Test
     void theStakeWorksEvenWithoutGains() {
         GameController controller = fight(EnemyKind.CROUPIER);
         player(controller).paySpin(500);
-        assertEquals(Stake.LOW, controller.nextStake(), "elle ne coûte rien : pas besoin de gains");
+        assertEquals(Stake.LOW, controller.nextStake(), "pas besoin de gains : le tirage misé peut endetter");
     }
 
     @Test

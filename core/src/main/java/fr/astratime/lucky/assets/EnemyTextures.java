@@ -5,6 +5,7 @@ import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.utils.Disposable;
 import fr.astratime.lucky.entities.Card;
+import fr.astratime.lucky.entities.enemy.EnemyCards;
 import fr.astratime.lucky.entities.enemy.EnemyKind;
 import fr.astratime.lucky.entities.enemy.EnemySymbol;
 import fr.astratime.lucky.entities.exploration.Dungeon;
@@ -54,34 +55,7 @@ public class EnemyTextures implements Disposable {
         int[][] croupierGrid = croupierGrid();
         croupier      = texture(croupierGrid, false);
         croupierFlash = texture(croupierGrid, true);
-        symbols.put(EnemySymbol.SWORD,  texture(swordGrid(), false));
-        symbols.put(EnemySymbol.SHIELD, texture(shieldGrid(), false));
-        symbols.put(EnemySymbol.POTION, texture(potionGrid(), false));
-        symbols.put(EnemySymbol.THORNS, texture(EnemyPortraits.thorns(), false));
-        symbols.put(EnemySymbol.FANG,   texture(EnemyPortraits.fang(), false));
-        symbols.put(EnemySymbol.RAGE,   texture(EnemyPortraits.rage(), false));
-        symbols.put(EnemySymbol.LOADED_DIE, texture(Chapter2Art.loadedDie(), false));
-        symbols.put(EnemySymbol.INTEREST,   texture(Chapter2Art.interest(), false));
-        symbols.put(EnemySymbol.ZERO,       texture(Chapter2Art.zero(), false));
-        symbols.put(EnemySymbol.MIRROR,     texture(Chapter3Art.mirror(), false));
-        symbols.put(EnemySymbol.HOURGLASS,  texture(Chapter3Art.hourglass(), false));
-        symbols.put(EnemySymbol.ALL_IN,     texture(Chapter3Art.allIn(), false));
-        symbols.put(EnemySymbol.NIBBLE,     texture(PlacesArt.nibble(), false));
-        symbols.put(EnemySymbol.DRUNK,      texture(PlacesArt.drunk(), false));
-        symbols.put(EnemySymbol.BLIND,      texture(PlacesArt.blind(), false));
-        symbols.put(EnemySymbol.BOARDING,   texture(PlacesArt.boarding(), false));
-        symbols.put(EnemySymbol.NUGGET,     texture(PlacesArt.nugget(), false));
-        symbols.put(EnemySymbol.DRILL,      texture(PlacesArt.drill(), false));
-        symbols.put(EnemySymbol.ANVIL,      texture(PlacesArt.anvil(), false));
-        symbols.put(EnemySymbol.SONG,       texture(PlacesArt.song(), false));
-        symbols.put(EnemySymbol.BANK_BITE,  texture(PlacesArt.bankBite(), false));
-        symbols.put(EnemySymbol.FAKE_MONEY, texture(Chapter456Art.fakeMoney(), false));
-        symbols.put(EnemySymbol.PREDICTION, texture(Chapter456Art.prediction(), false));
-        symbols.put(EnemySymbol.DUEL,       texture(Chapter456Art.duel(), false));
-        symbols.put(EnemySymbol.TAX,        texture(Chapter456Art.tax(), false));
-        symbols.put(EnemySymbol.NEW_RULE,   texture(Chapter456Art.newRule(), false));
-        symbols.put(EnemySymbol.FRISK,      texture(Chapter456Art.frisk(), false));
-        symbols.put(EnemySymbol.BANKRUPTCY, texture(Chapter456Art.bankruptcy(), false));
+        for (EnemySymbol symbol : EnemySymbol.values()) symbols.put(symbol, texture(symbolGrid(symbol), false));
         portraits.put(EnemyKind.CROUPIER, croupier);
         flashes.put(EnemyKind.CROUPIER, croupierFlash);
         portraits.put(EnemyKind.ENTRAINEMENT, croupier); // le même croupier, en mode Entraînement
@@ -171,6 +145,7 @@ public class EnemyTextures implements Disposable {
 
     /** @return la face de la carte sombre {@code card} (chargée une fois, puis gardée). */
     public Texture card(Card card) {
+        if (EnemyCards.isShadow(card)) return cards.getDark(card.getAssetPath()); // ta carte, en version sombre
         return cards.get(card);
     }
 
@@ -282,6 +257,57 @@ public class EnemyTextures implements Disposable {
         g[32][28] = red;
         g[32][29] = red;
         return outlined(g);
+    }
+
+    /** @return le dessin du symbole {@code symbol} de ses rouleaux (aussi sur ses cartes propres, voir EnemyCardArt). */
+    static int[][] symbolGrid(EnemySymbol symbol) {
+        return switch (symbol) {
+            case SWORD      -> swordGrid();
+            case SHIELD     -> shieldGrid();
+            case POTION     -> potionGrid();
+            case THORNS     -> EnemyPortraits.thorns();
+            case FANG       -> EnemyPortraits.fang();
+            case RAGE       -> EnemyPortraits.rage();
+            case LOADED_DIE -> Chapter2Art.loadedDie();
+            case INTEREST   -> Chapter2Art.interest();
+            case ZERO       -> Chapter2Art.zero();
+            case MIRROR     -> Chapter3Art.mirror();
+            case HOURGLASS  -> Chapter3Art.hourglass();
+            case ALL_IN     -> Chapter3Art.allIn();
+            case NIBBLE     -> PlacesArt.nibble();
+            case DRUNK      -> PlacesArt.drunk();
+            case BLIND      -> PlacesArt.blind();
+            case BOARDING   -> PlacesArt.boarding();
+            case NUGGET     -> PlacesArt.nugget();
+            case DRILL      -> PlacesArt.drill();
+            case ANVIL      -> PlacesArt.anvil();
+            case SONG       -> PlacesArt.song();
+            case BANK_BITE  -> PlacesArt.bankBite();
+            case FAKE_MONEY -> Chapter456Art.fakeMoney();
+            case PREDICTION -> Chapter456Art.prediction();
+            case DUEL       -> Chapter456Art.duel();
+            case TAX        -> Chapter456Art.tax();
+            case NEW_RULE   -> Chapter456Art.newRule();
+            case FRISK      -> Chapter456Art.frisk();
+            case BANKRUPTCY -> Chapter456Art.bankruptcy();
+            case NOTHING_GOES   -> NewReelsArt.nothingGoes();
+            case RAKE           -> NewReelsArt.rake();
+            case CLOAKROOM      -> NewReelsArt.cloakroom();
+            case BOUNCER        -> NewReelsArt.bouncer();
+            case LOAD_BEARING   -> NewReelsArt.loadBearing();
+            case SAFE           -> NewReelsArt.safe();
+            case HOUSE_EDGE     -> NewReelsArt.houseEdge();
+            case GEAR           -> NewReelsArt.gear();
+            case SHORT_CIRCUIT  -> NewReelsArt.shortCircuit();
+            case GOLDEN_COMET   -> NewReelsArt.goldenComet();
+            case ASPIRATION     -> NewReelsArt.aspiration();
+            case PLATING        -> NewReelsArt.plating();
+            case INGOT          -> NewReelsArt.ingot();
+            case ROCKFALL       -> NewReelsArt.rockfall();
+            case HEARTBEAT      -> NewReelsArt.heartbeat();
+            case SWALLOWED_COIN -> NewReelsArt.swallowedCoin();
+            case ARMED_ARM      -> NewReelsArt.armedArm();
+        };
     }
 
     /** Épée, lame en diagonale vers le haut à droite, garde et pommeau dorés. */

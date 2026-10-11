@@ -12,6 +12,8 @@ import fr.astratime.lucky.entities.context.TurnContext;
 import fr.astratime.lucky.entities.effects.CorruptionEffect;
 import fr.astratime.lucky.entities.effects.Effect;
 import fr.astratime.lucky.entities.effects.GoldVeinEffect;
+import fr.astratime.lucky.entities.enemy.AspirationRule;
+import fr.astratime.lucky.entities.enemy.EnemySymbol;
 import fr.astratime.lucky.entities.events.ComboEvent;
 import fr.astratime.lucky.entities.events.CorruptionEvent;
 import fr.astratime.lucky.entities.events.StatusEvent;
@@ -70,6 +72,15 @@ public class PreparationResolver {
         int stolen = enemy.getStolenReels();
         if (stolen >= 1) spinContext.blockReel(SlotMachine.SYMBOL_COUNT - 1);
         if (stolen >= 2) spinContext.blockReel(0);
+        lasting.takeVoidReels().forEach(spinContext::blockReel); // Rien ne va plus du Croupier en chef
+        aspire(lasting.takeAspirations(), player, enemy, spinContext, turnContext);
+        int edges = lasting.takeHouseEdges(); // Avantage de la maison
+        if (edges > 0) {
+            float kept = (float) Math.pow(1f - EnemySymbol.HOUSE_EDGE_PERCENT / 100f, edges);
+            combatContext.multiplyGains(kept, "Avantage de la maison");
+            turnContext.addEvent(new StatusEvent(Lang.f("AVANTAGE DE LA MAISON : GAINS -{0} %", Math.round((1f - kept) * 100f)),
+                EffectPopup.Style.DAMAGE));
+        }
         double fake = lasting.takeFakeGains(); // la Fausse monnaie pas dépensée disparaît
         if (fake > 0 && player.getGains() > 0) {
             double lost = Math.min(fake, player.getGains());
@@ -122,6 +133,34 @@ public class PreparationResolver {
         if (houseRule != LastingEffects.HouseRule.NO_COMBOS) applyCombos(turnContext, player);
 
         return turnContext;
+    }
+
+    /**
+     * Aspirations de la Machine Originelle : pour chaque règle que les cartes jouées
+     * ce tour ne respectent pas, elle aspire un rouleau pour ce tirage (celui de
+     * droite d'abord, puis celui de gauche, puis celui du milieu).
+     */
+    static void aspire(List<AspirationRule> rules, Player player, Enemy enemy, SpinContext spin, TurnContext turn) {
+        int aspired = 0;
+        for (AspirationRule rule : rules) {
+            if (rule.isMet(player.getPlayedCards())) {
+                turn.addEvent(new StatusEvent(Lang.t("ASPIRATION CONTRÉE !"), EffectPopup.Style.DEFENSE));
+                continue;
+            }
+            int reel = aspiredReel(spin.getBlockedReels());
+            if (reel < 0) continue;
+            spin.blockReel(reel);
+            aspired++;
+            turn.addEvent(new StatusEvent(Lang.t("ASPIRATION : ROULEAU ASPIRÉ"), EffectPopup.Style.DAMAGE));
+        }
+        enemy.setAspired(aspired);
+    }
+
+    /** @return le prochain rouleau que l'Aspiration prend (droite, gauche, milieu), ou -1 s'ils sont tous bloqués. */
+    public static int aspiredReel(java.util.Set<Integer> blocked) {
+        int[] order = {SlotMachine.SYMBOL_COUNT - 1, 0, 1};
+        for (int reel : order) if (!blocked.contains(reel)) return reel;
+        return -1;
     }
 
     /** @return {@code true} si le joueur garde une carte Scorbut en main, sans l'avoir jouée. */

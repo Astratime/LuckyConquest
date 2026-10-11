@@ -2,12 +2,14 @@ package fr.astratime.lucky.entities;
 
 import fr.astratime.lucky.entities.enemy.EnemyCards;
 import fr.astratime.lucky.entities.enemy.EnemyKind;
+import fr.astratime.lucky.entities.enemy.EnemySignature;
 import fr.astratime.lucky.entities.enemy.EnemySymbol;
 import fr.astratime.lucky.i18n.Lang;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 
@@ -86,6 +88,20 @@ public class Enemy {
     private       int         harpoons;
     /** Harpon : bras coupés au Kraken, pour tout le combat. */
     private       int         cutArms;
+    private       Symbol      secondPrediction;
+    private       int         allInHolds;
+    private       int         lostTurns;
+    /** Tours du joueur pendant lesquels la Machine Originelle garde encore le rouleau volé en phase 2. */
+    private       int         theftTurns;
+    /** Mur porteur : sa défense ne s'use pas sous les coups jusqu'à son prochain tour. */
+    private       boolean     solidDefense;
+    /** Placage, Battement : tours où sa peau d'or tient, même sous la moitié de ses PV. */
+    private       int         platingTurns;
+    /** Pièces avalées par le Bandit manchot. */
+    private       int         coins;
+    /** Rouleaux du joueur aspirés à son dernier tirage (Aspiration de la Machine Originelle). */
+    private       int         aspired;
+    private final Map<EnemySignature, Integer> charges = new EnumMap<>(EnemySignature.class);
 
     /**
      * Ennemi avec le deck de départ du jeu sombre.
@@ -133,8 +149,12 @@ public class Enemy {
         hp -= lost;
         damageTaken += lost;
         if (lost <= 0) return 0;
-        stake = 1;
-        allIn = false;
+        if (allInHolds > 0 && (allIn || stake > 1)) {
+            allInHolds--; // Tout sur le rouge : son Tapis tient ce coup
+        } else {
+            stake = 1;
+            allIn = false;
+        }
         if (hourglass > 0 && lost * 1000L >= (long) maxHp * EnemySymbol.HOURGLASS_HIT_PER_MILLE) hourglass--;
         return lost;
     }
@@ -194,7 +214,16 @@ public class Enemy {
     }
 
     /** Sa Prédiction annonce {@code symbol} pour le prochain tirage du joueur. */
-    public void predict(Symbol symbol) { prediction = symbol; }
+    public void predict(Symbol symbol) { predict(symbol, null); }
+
+    /** Sa Prédiction annonce {@code symbol}, et {@code second} avec le Tarot ({@code null} sinon). */
+    public void predict(Symbol symbol, Symbol second) {
+        prediction       = symbol;
+        secondPrediction = second;
+    }
+
+    /** @return le deuxième symbole annoncé (Tarot), ou {@code null}. */
+    public Symbol getSecondPrediction() { return secondPrediction; }
 
     /** @return le symbole annoncé par sa Prédiction, ou {@code null}. */
     public Symbol getPrediction() { return prediction; }
@@ -206,8 +235,11 @@ public class Enemy {
      */
     public boolean checkPrediction(Symbol[] symbols) {
         if (prediction == null) return false;
-        for (Symbol symbol : symbols) if (symbol == prediction) predictionHit = true;
-        prediction = null;
+        for (Symbol symbol : symbols) {
+            if (symbol == prediction || symbol != null && symbol == secondPrediction) predictionHit = true;
+        }
+        prediction       = null;
+        secondPrediction = null;
         return predictionHit;
     }
 
@@ -226,7 +258,7 @@ public class Enemy {
 
     /** Le Pilleur garde une copie d'un achat : un As sombre de la couleur {@code suit} rejoint son deck. */
     public void addLoot(Card.Suit suit) {
-        deck.insertRandomly(EnemyCards.card(suit, 14));
+        deck.insertRandomly(EnemyCards.loot(suit));
         loot++;
     }
 
@@ -234,10 +266,56 @@ public class Enemy {
     public int getLoot() { return loot; }
 
     /** @return le nombre de rouleaux de sa machine, dans sa phase. */
-    public int getReelCount() { return kind.getReelCount(phase); }
+    public int getReelCount() {
+        return kind == EnemyKind.MACHINE_ORIGINELLE ? EnemyKind.MACHINE_REELS + getStolenReels() : kind.getReelCount(phase);
+    }
 
     /** @return les rouleaux qu'il a volés au joueur (la Machine Originelle blessée). */
-    public int getStolenReels() { return kind.stolenReels(phase); }
+    public int getStolenReels() {
+        if (kind != EnemyKind.MACHINE_ORIGINELLE) return kind.stolenReels(phase);
+        // le rouleau de la phase 2 revient au bout de quelques tours ; celui de la phase 3 reste (choix d'Astra)
+        return (phase >= 2 && theftTurns > 0 ? 1 : 0) + (phase >= 3 ? 1 : 0);
+    }
+
+    /** @return les tours du joueur pendant lesquels elle garde encore le rouleau volé en phase 2. */
+    public int getTheftTurns() { return theftTurns; }
+
+    /** Début de son tour : le rouleau volé en phase 2 a passé un tour de plus chez elle. */
+    public void tickTheft() { if (theftTurns > 0) theftTurns--; }
+
+    /** Mur porteur : sa défense ne s'use pas jusqu'à son prochain tour. */
+    public void holdDefense() { solidDefense = true; }
+
+    /** @return {@code true} si sa défense ne s'use pas sous les coups (Mur porteur). */
+    public boolean isDefenseSolid() { return solidDefense; }
+
+    /** Placage, Battement : sa peau d'or tient {@code turns} tours, même sous la moitié de ses PV. */
+    public void plate(int turns) { platingTurns = Math.max(platingTurns, turns); }
+
+    /** @return les tours où sa peau d'or tient encore grâce à un Placage ou un Battement. */
+    public int getPlatingTurns() { return platingTurns; }
+
+    /** Début de son tour : son Placage a tenu un tour de plus. */
+    public void tickPlating() { if (platingTurns > 0) platingTurns--; }
+
+    /** Pièce avalée : {@code count} pièces de plus. @return ses pièces */
+    public int swallowCoins(int count) { return coins += count; }
+
+    /** @return ses pièces avalées. */
+    public int getCoins() { return coins; }
+
+    /** @return {@code true} (et les dépense) s'il a assez de pièces pour un Jackpot. */
+    public boolean spendCoins() {
+        if (coins < EnemySymbol.COINS_FOR_JACKPOT) return false;
+        coins -= EnemySymbol.COINS_FOR_JACKPOT;
+        return true;
+    }
+
+    /** Aspiration : {@code count} rouleaux du joueur aspirés à son dernier tirage. */
+    public void setAspired(int count) { aspired = count; }
+
+    /** @return les rouleaux aspirés au dernier tirage du joueur. */
+    public int getAspired() { return aspired; }
 
     /** @return les dégâts qui le touchent vraiment : la moitié, tant que sa peau d'or tient (plus de la moitié de ses PV). */
     /**
@@ -251,7 +329,7 @@ public class Enemy {
     }
 
     /** @return {@code true} si sa peau d'or encaisse la moitié des coups en ce moment. */
-    public boolean hasGoldSkin() { return kind.hasGoldSkin() && hp * 2L > maxHp; }
+    public boolean hasGoldSkin() { return kind.hasGoldSkin() && (hp * 2L > maxHp || platingTurns > 0); }
 
     /**
      * @return les cartes qu'il joue ce tour : celles de son type, ou une par bras
@@ -363,7 +441,10 @@ public class Enemy {
     public void addShieldDefense(int amount) { defense += amount; }
 
     /** Reforme la défense de base, sans les Boucliers du tour précédent (au début d'un nouveau tour de l'ennemi). */
-    public void resetDefense() { defense = getBaseDefense(); }
+    public void resetDefense() {
+        defense = getBaseDefense();
+        solidDefense = false;
+    }
 
     /** Pot-de-vin : sa défense tombe à 0 jusqu'à son tour. @return la défense retirée */
     public int bribe() {
@@ -450,6 +531,7 @@ public class Enemy {
         float ratio = guardBroken ? Math.min(getHpRatio(), EnemyKind.PHASE_TWO_RATIO - 0.01f) : getHpRatio();
         int reached = kind.phaseFor(ratio);
         if (reached <= phase) return false;
+        if (kind == EnemyKind.MACHINE_ORIGINELLE && phase < 2) theftTurns = EnemySymbol.MACHINE_THEFT_TURNS;
         phase = reached;
         return true;
     }
@@ -474,7 +556,7 @@ public class Enemy {
 
     public int absorb(long damage) {
         int absorbed = (int) Math.min(defense, Math.max(0, damage));
-        defense -= absorbed;
+        if (!solidDefense) defense -= absorbed; // Mur porteur : la défense tient
         return absorbed;
     }
 
@@ -486,6 +568,47 @@ public class Enemy {
 
     /** Envoie {@code cards} dans la défausse (fin du tour de l'ennemi). */
     public void discard(List<Card> cards) { discardPile.addAll(cards); }
+
+    /** Carte propre {@code signature} jouée : son effet attend le prochain symbole qu'elle renforce. */
+    public void addCharge(EnemySignature signature) { charges.merge(signature, 1, Integer::sum); }
+
+    /** @return les cartes propres en attente de leur symbole, et leur nombre. */
+    public Map<EnemySignature, Integer> getCharges() { return Collections.unmodifiableMap(charges); }
+
+    /** @return {@code true} (et la consomme) si une carte {@code signature} attendait son symbole. */
+    public boolean takeCharge(EnemySignature signature) {
+        Integer count = charges.get(signature);
+        if (count == null || count <= 0) return false;
+        if (count == 1) charges.remove(signature);
+        else charges.put(signature, count - 1);
+        return true;
+    }
+
+    /** Tout sur le rouge : son Tapis tient un coup de plus avant de retomber. */
+    public void holdAllIn() { allInHolds++; }
+
+    /** @return les coups que son Tapis peut encore encaisser sans retomber. */
+    public int getAllInHolds() { return allInHolds; }
+
+    /**
+     * Compte à rebours : le combat perd un tour (au plus {@link EnemySignature#COMPTE_MAX} sur tout le combat).
+     *
+     * @return {@code true} si le combat a perdu un tour
+     */
+    public boolean loseTurn() {
+        if (lostTurns >= EnemySignature.COMPTE_MAX || kind.getTurnLimit() <= 0) return false;
+        lostTurns++;
+        return true;
+    }
+
+    /** @return les tours retirés au combat par ses Comptes à rebours. */
+    public int getLostTurns() { return lostTurns; }
+
+    /** @return les tours que dure le combat contre lui (Temps Mort, moins ses Comptes à rebours), 0 sans limite. */
+    public int getTurnLimit() {
+        int limit = kind.getTurnLimit();
+        return limit > 0 ? limit - lostTurns : 0;
+    }
 
     /** @return le type d'ennemi : ses rouleaux, sa façon de jouer, son portrait. */
     public EnemyKind getKind()     { return kind; }

@@ -5,6 +5,7 @@ import fr.astratime.lucky.entities.Enemy;
 import fr.astratime.lucky.entities.Player;
 import fr.astratime.lucky.entities.enemy.EnemyCards;
 import fr.astratime.lucky.entities.enemy.EnemyKind;
+import fr.astratime.lucky.entities.enemy.EnemySignature;
 import fr.astratime.lucky.entities.enemy.EnemySymbol;
 import fr.astratime.lucky.entities.enemy.EnemyTurnResult;
 import fr.astratime.lucky.entities.events.EnemyHealedEvent;
@@ -26,6 +27,11 @@ import static org.junit.jupiter.api.Assertions.*;
 
 /** Les ennemis des chapitres 2 et 3 de la Tour des épreuves et leurs nouveaux symboles. */
 class TowerChaptersTest {
+    /** @return un ennemi {@code kind} sans ses cartes propres : ses symboles agissent seuls, comme avant elles. */
+    static Enemy plain(EnemyKind kind) {
+        return new Enemy(kind, kind.createDeck().stream().filter(card -> EnemySignature.of(card) == null).toList());
+    }
+
 
     /** Un tour de {@code enemy} dont les rouleaux montrent {@code symbol} (en cherchant la graine). */
     private static EnemyTurnResult turnWith(EnemySymbol symbol, Supplier<Enemy> enemy, Supplier<Player> player) {
@@ -47,7 +53,7 @@ class TowerChaptersTest {
     @Test
     void aLoadedDieEmptiesPartOfThePlayerGauges() {
         Player[] holder = new Player[1];
-        EnemyTurnResult turn = turnWith(EnemySymbol.LOADED_DIE, () -> new Enemy(EnemyKind.TRICHEUR), () -> {
+        EnemyTurnResult turn = turnWith(EnemySymbol.LOADED_DIE, () -> plain(EnemyKind.TRICHEUR), () -> {
             holder[0] = new Player("Joueur", 1_000_000, List.of());
             holder[0].getLastingEffects().addVault(100);
             holder[0].getLastingEffects().addBlood(40);
@@ -66,7 +72,7 @@ class TowerChaptersTest {
 
     @Test
     void interestTakesGainsAndArmsTheNextBlow() {
-        Enemy enemy = new Enemy(EnemyKind.USURIER);
+        Enemy enemy = plain(EnemyKind.USURIER);
         Player player = new Player("Joueur", 1_000_000, List.of());
         player.addGains(10_000);
         assertEquals(EnemySymbol.INTEREST_MAX, enemy.addInterest(1_000_000), "plafonnée");
@@ -74,7 +80,7 @@ class TowerChaptersTest {
         assertEquals(0, enemy.getInterest(), "dépensée au premier coup");
 
         Player[] holder = new Player[1];
-        EnemyTurnResult turn = turnWith(EnemySymbol.INTEREST, () -> new Enemy(EnemyKind.USURIER), () -> {
+        EnemyTurnResult turn = turnWith(EnemySymbol.INTEREST, () -> plain(EnemyKind.USURIER), () -> {
             holder[0] = new Player("Joueur", 1_000_000, List.of());
             holder[0].addGains(10_000);
             return holder[0];
@@ -91,7 +97,7 @@ class TowerChaptersTest {
     void theZeroSpinsOneRoulettePerSymbol() {
         for (int seed = 0; seed < 60; seed++) {
             EnemyTurnResult turn = new EnemyTurnResolver(new java.util.Random(seed))
-                .resolve(new Enemy(EnemyKind.ROULETTE), new Player("Joueur", 1_000_000, List.of()), 0, 0f);
+                .resolve(plain(EnemyKind.ROULETTE), new Player("Joueur", 1_000_000, List.of()), 0, 0f);
             List<EnemyRouletteEvent> roulettes = events(turn, EnemyRouletteEvent.class);
             assertEquals(count(turn, EnemySymbol.ZERO), roulettes.size());
             if (roulettes.size() == 1 && roulettes.get(0).pocket == EnemyRouletteEvent.Pocket.NOIR) {
@@ -113,7 +119,7 @@ class TowerChaptersTest {
             player.playCard(player.getCurrentHand().get(0));
             return player;
         };
-        EnemyTurnResult turn = turnWith(EnemySymbol.MIRROR, () -> new Enemy(EnemyKind.MIROIR), playerWithADiamond);
+        EnemyTurnResult turn = turnWith(EnemySymbol.MIRROR, () -> plain(EnemyKind.MIROIR), playerWithADiamond);
         List<EnemyMirrorEvent> mirrors = events(turn, EnemyMirrorEvent.class);
         assertEquals(count(turn, EnemySymbol.MIRROR), mirrors.size());
         assertEquals("13 de Carreau", mirrors.get(0).cardName);
@@ -125,7 +131,7 @@ class TowerChaptersTest {
 
     @Test
     void theHourglassExplodesAtTheEndAndBigHitsPushItBack() {
-        Enemy enemy = new Enemy(EnemyKind.HORLOGER);
+        Enemy enemy = plain(EnemyKind.HORLOGER);
         for (int i = 1; i < EnemySymbol.HOURGLASS_MAX; i++) assertFalse(enemy.tickHourglass());
         assertEquals(EnemySymbol.HOURGLASS_MAX - 1, enemy.getHourglass());
         enemy.takeDamage(100); // trop petit pour compter
@@ -136,14 +142,14 @@ class TowerChaptersTest {
         assertTrue(enemy.tickHourglass(), "au bout, il explose");
         assertEquals(0, enemy.getHourglass());
 
-        EnemyTurnResult turn = turnWith(EnemySymbol.HOURGLASS, () -> new Enemy(EnemyKind.HORLOGER),
+        EnemyTurnResult turn = turnWith(EnemySymbol.HOURGLASS, () -> plain(EnemyKind.HORLOGER),
             () -> new Player("Joueur", 1_000_000, List.of()));
         assertEquals(count(turn, EnemySymbol.HOURGLASS), events(turn, EnemyHourglassEvent.class).size());
     }
 
     @Test
     void allInDoublesTheStakeNextTurnUnlessTheEnemyIsHit() {
-        Enemy enemy = new Enemy(EnemyKind.FOU);
+        Enemy enemy = plain(EnemyKind.FOU);
         enemy.goAllIn();
         assertTrue(enemy.raiseStake());
         assertEquals(2, enemy.getStake());
@@ -160,7 +166,7 @@ class TowerChaptersTest {
 
     @Test
     void theOriginalShardChangesItsReelsBelowHalfLife() {
-        Enemy enemy = new Enemy(EnemyKind.ECLAT);
+        Enemy enemy = plain(EnemyKind.ECLAT);
         assertFalse(enemy.enterPhaseTwo());
         enemy.takeDamage(enemy.getMaxHp() / 2 + 1);
         EnemyTurnResult turn = new EnemyTurnResolver(new java.util.Random(1))
@@ -170,7 +176,7 @@ class TowerChaptersTest {
         for (EnemySymbol symbol : turn.symbols()) assertTrue(enemy.getSymbols().contains(symbol), symbol.name());
         assertTrue(enemy.getSymbols().contains(EnemySymbol.MIRROR));
         assertFalse(enemy.getSymbols().contains(EnemySymbol.THORNS));
-        assertFalse(new Enemy(EnemyKind.REINE).enterPhaseTwo(), "seul l'Éclat a deux phases");
+        assertFalse(plain(EnemyKind.REINE).enterPhaseTwo(), "seul l'Éclat a deux phases");
     }
 
     @Test
@@ -181,7 +187,7 @@ class TowerChaptersTest {
 
         int life = EnemyKind.REINE.getMaxHp();
         EnemyTurnResult turn = turnWith(EnemySymbol.POTION, () -> {
-            Enemy q = new Enemy(EnemyKind.REINE);
+            Enemy q = plain(EnemyKind.REINE);
             q.takeDamage(life * 9 / 10);
             return q;
         }, () -> new Player("Joueur", 1_000_000, List.of()));

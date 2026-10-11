@@ -4,6 +4,7 @@ import fr.astratime.lucky.entities.Card;
 import fr.astratime.lucky.entities.Enemy;
 import fr.astratime.lucky.entities.Player;
 import fr.astratime.lucky.entities.enemy.EnemyKind;
+import fr.astratime.lucky.entities.enemy.EnemySignature;
 import fr.astratime.lucky.entities.enemy.EnemySymbol;
 import fr.astratime.lucky.entities.enemy.EnemyTurnResult;
 import fr.astratime.lucky.entities.events.EnemyDrainEvent;
@@ -24,6 +25,11 @@ import static org.junit.jupiter.api.Assertions.*;
 
 /** Les ennemis de la Tour des épreuves : leurs rouleaux, leur deck, et leurs nouveaux symboles. */
 class EnemyKindsTest {
+    /** @return un ennemi {@code kind} sans ses cartes propres : ses symboles agissent seuls, comme avant elles. */
+    static Enemy plain(EnemyKind kind) {
+        return new Enemy(kind, kind.createDeck().stream().filter(card -> EnemySignature.of(card) == null).toList());
+    }
+
 
     @Test
     void eachChapterHasTheRequestedLife() {
@@ -50,7 +56,9 @@ class EnemyKindsTest {
                 for (EnemySymbol symbol : turn.symbols()) {
                     assertTrue(kind.getSymbols().contains(symbol), kind + " ne tire pas " + symbol);
                 }
-                assertEquals(kind.getPlaysPerTurn(), turn.played().size());
+                // ses cartes propres se jouent en plus (une de chaque sorte)
+                assertEquals(kind.getPlaysPerTurn(), turn.played().stream()
+                    .filter(card -> EnemySignature.of(card) == null).count());
             }
         }
     }
@@ -63,7 +71,7 @@ class EnemyKindsTest {
 
     @Test
     void thornsReturnPartOfThePlayersDamageAtTheStartOfTheEnemysTurn() {
-        Enemy  enemy  = new Enemy(EnemyKind.GARDIEN);
+        Enemy  enemy  = plain(EnemyKind.GARDIEN);
         Player player = new Player("Joueur", 1_000, List.of());
         enemy.addThorns(4);
         enemy.takeDamage(500); // coups du tour du joueur
@@ -77,7 +85,7 @@ class EnemyKindsTest {
 
     @Test
     void thornsOnlyCountTheNextPlayerTurnAndTheShieldAbsorbsThem() {
-        Enemy  enemy  = new Enemy(EnemyKind.GARDIEN);
+        Enemy  enemy  = plain(EnemyKind.GARDIEN);
         enemy.takeDamage(900); // avant ses Épines : ne compte pas
         enemy.resetDamageTaken();
         enemy.addThorns(10);
@@ -94,7 +102,7 @@ class EnemyKindsTest {
 
     @Test
     void thornsNeverSendBackMoreThanTheirCap() {
-        Enemy enemy = new Enemy(EnemyKind.GARDIEN);
+        Enemy enemy = plain(EnemyKind.GARDIEN);
         enemy.addThorns(2);
         enemy.takeDamage(9_000); // 2 % de 9 000 = 180
         assertEquals(EnemySymbol.THORNS_MAX, enemy.collectThorns());
@@ -103,7 +111,7 @@ class EnemyKindsTest {
     @Test
     void aThornsSymbolArmsTheThornsForTheNextPlayerTurn() {
         for (int seed = 0; seed < 50; seed++) {
-            Enemy enemy = new Enemy(EnemyKind.GARDIEN);
+            Enemy enemy = plain(EnemyKind.GARDIEN);
             EnemyTurnResult turn = new EnemyTurnResolver(new Random(seed))
                 .resolve(enemy, new Player("Joueur", 1_000_000, List.of()), 0, 0f);
             long thorns = Arrays.stream(turn.symbols()).filter(s -> s == EnemySymbol.THORNS).count();
@@ -116,7 +124,7 @@ class EnemyKindsTest {
     void aFangBitesAndHealsTheEnemyForEachStolenPoint() {
         int bites = 0;
         for (int seed = 0; seed < 50 && bites == 0; seed++) {
-            Enemy enemy = new Enemy(EnemyKind.SANGSUE);
+            Enemy enemy = plain(EnemyKind.SANGSUE);
             enemy.takeDamage(enemy.getMaxHp() * 9 / 10);
             Player player = new Player("Joueur", 1_000_000, List.of());
 
@@ -129,8 +137,9 @@ class EnemyKindsTest {
                 int stolen = ((PlayerDamagedEvent) events.get(0)).damage;
                 assertTrue(stolen >= EnemySymbol.FANG_DAMAGE);
                 EnemyDrainEvent drain = (EnemyDrainEvent) events.get(1);
-                assertTrue(drain.amount > 0 && drain.amount <= stolen * enemy.getMaxHp() / 100,
-                    "1 % de ses PV max par PV volé, au plus");
+                // ses Cœurs renforcent le soin du Croc : +20 % au plus par carte, 3 cartes par tour
+                assertTrue(drain.amount > 0 && drain.amount <= stolen * enemy.getMaxHp() / 100 * 160 / 100,
+                    "1 % de ses PV max par PV volé, plus ses Cœurs, au plus");
             }
         }
         assertTrue(bites > 0, "au moins un Croc");
@@ -139,7 +148,7 @@ class EnemyKindsTest {
     @Test
     void aBlockedFangHealsNothing() {
         for (int seed = 0; seed < 30; seed++) {
-            Enemy enemy = new Enemy(EnemyKind.SANGSUE);
+            Enemy enemy = plain(EnemyKind.SANGSUE);
             enemy.takeDamage(5_000);
             Player player = new Player("Joueur", 100, List.of());
             player.addShield(10_000);
@@ -152,7 +161,7 @@ class EnemyKindsTest {
 
     @Test
     void rageMakesEveryLaterAttackStrongerUpToItsCap() {
-        Enemy enemy = new Enemy(EnemyKind.BRETTEUR);
+        Enemy enemy = plain(EnemyKind.BRETTEUR);
         assertEquals(EnemySymbol.RAGE_ATTACK, enemy.addRage(EnemySymbol.RAGE_ATTACK));
         for (int i = 0; i < 20; i++) enemy.addRage(EnemySymbol.RAGE_ATTACK);
         assertEquals(EnemySymbol.RAGE_MAX, enemy.getRage());
@@ -176,7 +185,7 @@ class EnemyKindsTest {
     @Test
     void aRageSymbolIsAnnounced() {
         for (int seed = 0; seed < 30; seed++) {
-            Enemy enemy = new Enemy(EnemyKind.BRETTEUR);
+            Enemy enemy = plain(EnemyKind.BRETTEUR);
             EnemyTurnResult turn = new EnemyTurnResolver(new Random(seed))
                 .resolve(enemy, new Player("Joueur", 1_000_000, List.of()), 0, 0f);
             long rages = Arrays.stream(turn.symbols()).filter(s -> s == EnemySymbol.RAGE).count();
