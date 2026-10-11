@@ -273,8 +273,9 @@ public enum EnemySymbol {
                 + "ta paire ou ton Bingo");
             case GOLDEN_COMET -> Lang.f("Comète : la Comète Dorée tombe, {0} % de tes PV max. Ignore ton bouclier",
                 GOLDEN_COMET_PERCENT);
-            case ASPIRATION -> Lang.t("Aspiration : elle annonce une règle. Si tes cartes du prochain tour ne la respectent pas, "
-                + "elle aspire un de tes rouleaux pour ce tirage");
+            case ASPIRATION -> Lang.t("Aspiration : elle annonce une règle, 2 cartes à jouer pour la première, 1 carte pour "
+                + "chaque suivante, 3 règles au plus. Chaque règle que tes cartes du prochain tour ne respectent pas lui fait "
+                + "aspirer un de tes rouleaux pour ce tirage");
             case PLATING -> Lang.t("Placage : sa peau d'or tient 1 tour, même sous la moitié de ses PV");
             case INGOT -> Lang.t("Lingot : un coup qui grandit avec sa défense du moment, jusqu'à x3");
             case ROCKFALL -> Lang.f("Éboulement : attaque de {0}. Tu pioches 1 carte de moins au prochain tour",

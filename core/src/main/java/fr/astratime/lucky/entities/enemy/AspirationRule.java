@@ -3,7 +3,6 @@ package fr.astratime.lucky.entities.enemy;
 import fr.astratime.lucky.entities.Card;
 import fr.astratime.lucky.i18n.Lang;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
@@ -63,33 +62,25 @@ public final class AspirationRule {
             };
             return Lang.f(template, count);
         }
-
-        /** @return {@code true} si {@code other} compte les mêmes cartes (seul son nombre change). */
-        boolean sameAs(Condition other) {
-            return kind == other.kind && rank == other.rank && suit == other.suit;
-        }
-
-        Condition plusOne() { return new Condition(kind, count + 1, rank, suit); }
     }
 
     private static Condition rank(int count, int rank) { return new Condition(Kind.RANK, count, rank, null); }
     private static Condition special(int count) { return new Condition(Kind.SPECIAL, count, 0, null); }
     private static Condition suit(int count, Card.Suit suit) { return new Condition(Kind.SUIT, count, 0, suit); }
 
-    /** Règles possibles (choix d'Astra), toutes faisables avec 4 cartes. */
-    public static final List<List<Condition>> RULES = List.of(
-        List.of(rank(1, 11), special(2)),
-        List.of(rank(1, 1), suit(2, Card.Suit.CARREAU)),
-        List.of(suit(4, Card.Suit.TREFLE)),
-        List.of(suit(3, Card.Suit.PIQUE)),
-        List.of(rank(1, 12), suit(2, Card.Suit.COEUR)),
-        List.of(rank(1, 13), special(1)),
-        List.of(new Condition(Kind.COLORS, 3, 0, null)),
-        List.of(new Condition(Kind.FACES, 2, 0, null)));
+    /** Règles au plus par tirage (choix d'Astra) : une par rouleau du joueur. */
+    public static final int MAX_RULES = 3;
 
-    /** Conditions qu'une Grande aspiration peut ajouter. */
-    static final List<Condition> EXTRAS = List.of(special(1), suit(1, Card.Suit.PIQUE), suit(1, Card.Suit.COEUR),
-        suit(1, Card.Suit.CARREAU), suit(1, Card.Suit.TREFLE), new Condition(Kind.FACES, 1, 0, null));
+    /**
+     * Première règle du tour (choix d'Astra) : 2 cartes à jouer, cartes spéciales,
+     * figures ou cartes d'une même suite.
+     */
+    public static final List<Condition> FIRST_RULES = List.of(special(2), new Condition(Kind.FACES, 2, 0, null),
+        suit(2, Card.Suit.PIQUE), suit(2, Card.Suit.COEUR), suit(2, Card.Suit.CARREAU), suit(2, Card.Suit.TREFLE));
+
+    /** Règles suivantes : 1 carte à jouer chacune. */
+    public static final List<Condition> EXTRA_RULES = List.of(special(1), new Condition(Kind.FACES, 1, 0, null),
+        suit(1, Card.Suit.PIQUE), suit(1, Card.Suit.COEUR), suit(1, Card.Suit.CARREAU), suit(1, Card.Suit.TREFLE));
 
     private final List<Condition> conditions;
 
@@ -98,20 +89,12 @@ public final class AspirationRule {
     }
 
     /**
-     * @param grand Grande aspiration : une condition de plus (ou une carte de plus
-     *              pour une condition qu'elle a déjà)
+     * @param first {@code true} pour la première règle du tour (2 cartes), sinon 1 carte
      * @return une règle tirée au hasard
      */
-    public static AspirationRule random(Random random, boolean grand) {
-        List<Condition> conditions = new ArrayList<>(RULES.get(random.nextInt(RULES.size())));
-        if (grand) {
-            Condition extra = EXTRAS.get(random.nextInt(EXTRAS.size()));
-            int same = -1;
-            for (int i = 0; i < conditions.size(); i++) if (conditions.get(i).sameAs(extra)) same = i;
-            if (same >= 0) conditions.set(same, conditions.get(same).plusOne());
-            else conditions.add(extra);
-        }
-        return new AspirationRule(conditions);
+    public static AspirationRule random(Random random, boolean first) {
+        List<Condition> pool = first ? FIRST_RULES : EXTRA_RULES;
+        return new AspirationRule(List.of(pool.get(random.nextInt(pool.size()))));
     }
 
     /** @return ses conditions, dans l'ordre affiché. */

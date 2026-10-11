@@ -575,9 +575,14 @@ public class EnemyTurnResolver {
                     for (int k = 0; k < falls; k++) events.add(turn.comet(EnemySymbol.GOLDEN_COMET_PERCENT));
                 }
                 case ASPIRATION -> {
-                    AspirationRule rule = AspirationRule.random(random, enemy.takeCharge(EnemySignature.GRANDE_ASPIRATION));
-                    curses.addAspiration(rule);
-                    events.add(new StatusEvent(Lang.f("ASPIRATION : {0}", rule.text().toUpperCase()), EffectPopup.Style.SPECIAL));
+                    // La première règle demande 2 cartes, chaque suivante 1 carte, et 3 règles au plus.
+                    int rules = enemy.takeCharge(EnemySignature.GRANDE_ASPIRATION) ? 2 : 1;
+                    for (int added = 0; added < rules && curses.getAspirations().size() < AspirationRule.MAX_RULES; added++) {
+                        AspirationRule rule = AspirationRule.random(random, curses.getAspirations().isEmpty());
+                        curses.addAspiration(rule);
+                        events.add(new StatusEvent(Lang.f("ASPIRATION : {0}", rule.text().toUpperCase()),
+                            EffectPopup.Style.SPECIAL));
+                    }
                 }
                 case PLATING -> {
                     int turns = EnemySymbol.PLATING_TURNS * (enemy.takeCharge(EnemySignature.OR_MASSIF) ? 2 : 1);
