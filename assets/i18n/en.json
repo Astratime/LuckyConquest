@@ -878,7 +878,7 @@
   "Jauge de Pique. Chaque Lame donne +{0} d'attaque à tes symboles. Tes Piques jouées en Couleur ou en Suite la remplissent. L'As de Pique et la Guillotine l'encaissent.": "Spades gauge. Each Blade gives +{0} attack to your symbols. Your Spades played in a Flush or a Straight fill it. The Ace of Spades and the Guillotine cash it in.",
   "Sang {0}": "Blood {0}",
   "Sang": "Blood",
-  "Jauge de Coeur. Le soin au-delà de tes PV max s'y garde. Tes Coeurs joués en Couleur ou en Suite la remplissent. L'As de Coeur ajoute tout le Sang à ton attaque.": "Hearts gauge. Healing above your max HP is stored here. Your Hearts played in a Flush or a Straight fill it. The Ace of Hearts adds all the Blood to your attack.",
+  "Jauge de Coeur. Le soin au-delà de tes PV max s'y garde, jusqu'à {0}. Tes Coeurs joués en Couleur ou en Suite la remplissent. L'As de Coeur ajoute tout le Sang à ton attaque.": "Hearts gauge. Healing above your max HP is stored here, up to {0}. Your Hearts played in a Flush or a Straight fill it. The Ace of Hearts adds all the Blood to your attack.",
   "Coffre {0}": "Vault {0}",
   "Coffre": "Vault",
   "Jauge de Carreau. Ton bouclier inutilisé s'y garde. Tes Carreaux joués en Couleur ou en Suite la remplissent. L'As de Carreau le vide sur l'ennemi.": "Diamonds gauge. Your unused shield is stored here. Your Diamonds played in a Flush or a Straight fill it. The Ace of Diamonds empties it onto the enemy.",

@@ -147,6 +147,21 @@ class SuitGaugesTest {
         assertEquals(60, lasting.getVault());
     }
 
+    @Test
+    void theBloodNeverExceedsItsCap() {
+        lasting.addBlood(LastingEffects.MAX_BLOOD - 10);
+        lasting.addBlood(500);
+        assertEquals(LastingEffects.MAX_BLOOD, lasting.getBlood(), "le surplus de soin est perdu au-delà du plafond");
+
+        lasting.addBlood(Integer.MAX_VALUE);
+        assertEquals(LastingEffects.MAX_BLOOD, lasting.getBlood(), "pas de débordement");
+
+        lasting.consumeBlood();
+        lasting.addBlood(60_000);
+        prepare(new GainsMultiplierEffect(50, 2));
+        assertEquals(LastingEffects.MAX_BLOOD, lasting.getBlood(), "le Pot de Lutin ne dépasse pas non plus le plafond");
+    }
+
     // --- Échoppe -----------------------------------------------------------
 
     private static Card corruption() {

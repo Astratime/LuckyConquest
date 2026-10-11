@@ -107,8 +107,9 @@ final class CombatEffectRows {
         if (lasting.getBlood() > 0) {
             rows.add(new SidePanel.EffectRow(new TextureRegion(hud.iconBlood), null,
                 Lang.f("Sang {0}", lasting.getBlood()), Lang.t("Sang"),
-                Lang.t("Jauge de Coeur. Le soin au-delà de tes PV max s'y garde. Tes Coeurs joués en Couleur ou en "
-                    + "Suite la remplissent. L'As de Coeur ajoute tout le Sang à ton attaque.")));
+                Lang.f("Jauge de Coeur. Le soin au-delà de tes PV max s'y garde, jusqu'à {0}. Tes Coeurs joués en "
+                    + "Couleur ou en Suite la remplissent. L'As de Coeur ajoute tout le Sang à ton attaque.",
+                    LastingEffects.MAX_BLOOD)));
         }
         if (lasting.getVault() > 0) {
             rows.add(new SidePanel.EffectRow(new TextureRegion(hud.iconVault), null,

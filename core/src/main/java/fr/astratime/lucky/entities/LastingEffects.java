@@ -170,12 +170,17 @@ public class LastingEffects {
     /** Vide les Lames. @return leur nombre avant d'être vidées */
     public int consumeBlades() { int n = blades; blades = 0; return n; }
 
-    /** Ajoute {@code amount} au Sang. */
-    public void addBlood(int amount) { blood += amount; }
+    /** Sang maximum qu'on peut accumuler (la mécanique est déjà très forte). */
+    public static final int MAX_BLOOD = 100_000;
+
+    /** Ajoute {@code amount} au Sang, sans dépasser {@link #MAX_BLOOD}. */
+    public void addBlood(int amount) { blood = capBlood((long) blood + amount); }
     /** @return la réserve de Sang. */
     public int getBlood() { return blood; }
     /** Vide le Sang. @return la réserve avant d'être vidée */
     public int consumeBlood() { int n = blood; blood = 0; return n; }
+
+    private static int capBlood(long value) { return (int) Math.max(0, Math.min(MAX_BLOOD, value)); }
 
     /** Ajoute {@code amount} au Coffre. */
     public void addVault(int amount) { vault += amount; }
@@ -187,7 +192,7 @@ public class LastingEffects {
     /** Multiplie les trois jauges (Lames, Sang, Coffre) par {@code factor} (ex : Pot de Lutin). */
     public void multiplyGauges(int factor) {
         blades *= factor;
-        blood  *= factor;
+        blood   = capBlood((long) blood * factor);
         vault  *= factor;
     }
 
