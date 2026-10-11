@@ -210,8 +210,17 @@ public class EnemyView implements Disposable {
         if (kind.hasGoldSkin()) {
             line(text, Lang.t("Peau d'or : tes dégâts sont divisés par 2 tant qu'il a plus de la moitié de ses PV"));
         }
+        if (kind.hasGoldSkin() && current.getPlatingTurns() > 0) {
+            line(text, Lang.f("Placage : sa peau d'or tient encore {0} tour(s)", current.getPlatingTurns()));
+        }
         if (kind.hitsJackpots()) {
             line(text, Lang.f("Jackpot : 3 symboles identiques, attaques et Boucliers x{0}", EnemySymbol.JACKPOT_FACTOR));
+        }
+        if (kind.getSymbols().contains(EnemySymbol.SWALLOWED_COIN)) {
+            line(text, Lang.f("Pièces avalées : {0}/{1}", current.getCoins(), EnemySymbol.COINS_FOR_JACKPOT));
+        }
+        if (kind == EnemyKind.MACHINE_ORIGINELLE) {
+            line(text, Lang.f("Jackpot originel : 3 symboles pareils, ce symbole agit {0} fois", EnemySymbol.ORIGINAL_JACKPOT_ACTS));
         }
         line(text, Lang.f("Pioche {0} cartes et en joue {1} à chaque tour", Enemy.HAND_SIZE, current.getPlaysPerTurn()));
         if (kind.hasArms()) line(text, Lang.t("Chaque bras perdu lui retire une carte jouée"));

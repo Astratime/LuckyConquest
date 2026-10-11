@@ -173,7 +173,7 @@ class TowerChapters456Test {
         house.resetDamageTaken(); // un nouveau tour : sa Garde repart
         house.takeDamage(house.getMaxHp() / 3);
         assertTrue(house.enterPhaseTwo());
-        assertEquals(Map.of(EnemySymbol.SWORD, 1), house.getWeights(), "le Coffre est tombé : plus de soins");
+        assertEquals(Map.of(EnemySymbol.SWORD, 2, EnemySymbol.HOUSE_EDGE, 1), house.getWeights(), "le Coffre est tombé : plus de soins");
     }
 
     @Test

@@ -63,7 +63,41 @@ public enum EnemySymbol {
     /** Il confisque une carte du deck du joueur jusqu'à la fin du combat (plus s'il a gros gains). */
     FRISK("FOUILLE"),
     /** Tout ou rien : plus riche que lui, le joueur perd tous ses gains ; sinon, lui perd une part de ses PV. */
-    BANKRUPTCY("FAILLITE");
+    BANKRUPTCY("FAILLITE"),
+    /** Croupier en chef : à son prochain tirage, un rouleau du joueur est bloqué sur un symbole vide. */
+    NOTHING_GOES("RIEN NE VA PLUS"),
+    /** Croupier en chef : il ramasse une part des gains du joueur et en fait de la défense. */
+    RAKE("RÂTEAU"),
+    /** Portier : il garde la meilleure carte du joueur jusqu'à la fin de son tour suivant. */
+    CLOAKROOM("VESTIAIRE"),
+    /** Portier : un coup qui ignore la moitié du bouclier du joueur. */
+    BOUNCER("VIDEUR"),
+    /** Maison (la Façade) : un Bouclier, et sa défense ne s'use pas sous les coups jusqu'à son tour. */
+    LOAD_BEARING("MUR PORTEUR"),
+    /** Maison (le Coffre) : il se soigne et vole une part des gains. */
+    SAFE("COFFRE-FORT"),
+    /** Maison (la Salle de jeu) : un coup, et les gains du prochain tirage du joueur sont réduits. */
+    HOUSE_EDGE("AVANTAGE DE LA MAISON"),
+    /** Machine Originelle : chaque Engrenage renforce ses autres symboles du tirage. */
+    GEAR("ENGRENAGE"),
+    /** Machine Originelle : au prochain tirage du joueur, son meilleur rouleau devient son pire. */
+    SHORT_CIRCUIT("COURT-CIRCUIT"),
+    /** Machine Originelle : la Comète Dorée tombe, une part des PV max du joueur qui ignore son bouclier. */
+    GOLDEN_COMET("COMÈTE"),
+    /** Machine Originelle : une règle ; au prochain tirage, un rouleau aspiré si les cartes jouées ne la respectent pas. */
+    ASPIRATION("ASPIRATION"),
+    /** Golem d'or : sa peau d'or tient un tour, même sous la moitié de ses PV. */
+    PLATING("PLACAGE"),
+    /** Golem d'or : un coup aussi fort que sa défense du moment. */
+    INGOT("LINGOT"),
+    /** Cœur de la Montagne : un coup, et le joueur pioche une carte de moins au prochain tour. */
+    ROCKFALL("ÉBOULEMENT"),
+    /** Cœur de la Montagne : il se soigne, et sa peau d'or revient un tour. */
+    HEARTBEAT("BATTEMENT"),
+    /** Bandit manchot : il avale une part des gains ; à 3 pièces, son prochain tirage est un Jackpot. */
+    SWALLOWED_COIN("PIÈCE AVALÉE"),
+    /** Bandit manchot : il relance son pire rouleau, pour viser le Jackpot. */
+    ARMED_ARM("BRAS ARMÉ");
 
     /** Dégâts de base d'une Épée. */
     public static final int SWORD_DAMAGE   = 20;
@@ -131,6 +165,33 @@ public enum EnemySymbol {
     /** PV perdus par la Banqueroute quand sa Faillite tourne mal, en pourcentage de ses PV restants. */
     public static final int BANKRUPTCY_HP_PERCENT = 20;
 
+    /** Râteau : part des gains ramassée, en %. */
+    public static final int RAKE_PERCENT = 10;
+    /** Le Râteau ne donne pas plus de défense que ce nombre de ses Boucliers. */
+    public static final int RAKE_MAX_SHIELDS = 5;
+    /** Tours du joueur que manque une carte gardée au Vestiaire. */
+    public static final int CLOAKROOM_TURNS = 1;
+    /** Part du bouclier du joueur ignorée par le Videur, en %. */
+    public static final int BOUNCER_PIERCE_PERCENT = 50;
+    /** Coffre-fort : soin, en % de ses PV max, et part des gains volée, en %. */
+    public static final int SAFE_HEAL_PERCENT = 5, SAFE_STEAL_PERCENT = 5;
+    /** Avantage de la maison : gains du prochain tirage du joueur en moins, en %. */
+    public static final int HOUSE_EDGE_PERCENT = 10;
+    /** Engrenage : force en plus de ses autres symboles du tirage, en %. */
+    public static final int GEAR_PERCENT = 25;
+    /** Comète Dorée : dégâts en % des PV max du joueur, à travers son bouclier. */
+    public static final int GOLDEN_COMET_PERCENT = 5;
+    /** Tours que tient la peau d'or d'un Placage ou d'un Battement. */
+    public static final int PLATING_TURNS = 1;
+    /** Battement : soin, en % de ses PV max. */
+    public static final int HEARTBEAT_PERCENT = 10;
+    /** Pièce avalée : part des gains prise, en %, et pièces qu'il lui faut pour un Jackpot. */
+    public static final int COIN_PERCENT = 5, COINS_FOR_JACKPOT = 3;
+    /** Jackpot originel : trois symboles pareils sur les rouleaux de la Machine, et ce symbole agit autant de fois. */
+    public static final int ORIGINAL_JACKPOT_COUNT = 3, ORIGINAL_JACKPOT_ACTS = 5;
+    /** Tours du joueur pendant lesquels la Machine garde le rouleau volé en phase 2 (choix d'Astra). */
+    public static final int MACHINE_THEFT_TURNS = 3;
+
     private final String displayName;
 
     EnemySymbol(String displayName) {
@@ -196,6 +257,33 @@ public enum EnemySymbol {
             case BANKRUPTCY -> Lang.f("Faillite : si tes gains dépassent sa fortune ({0} % de ses PV restants), il te prend tout. "
                 + "Sinon, il perd {1} % de ses PV restants",
                 BANKRUPTCY_FORTUNE_PERCENT, BANKRUPTCY_HP_PERCENT);
+            case NOTHING_GOES -> Lang.t("Rien ne va plus : à ton prochain tirage, un de tes rouleaux est bloqué sur un symbole vide");
+            case RAKE -> Lang.f("Râteau : il ramasse {0} % de tes gains et en fait de la défense. Sans gains, il frappe",
+                RAKE_PERCENT);
+            case CLOAKROOM -> Lang.t("Vestiaire : il garde ta meilleure carte jusqu'à la fin de ton prochain tour");
+            case BOUNCER -> Lang.f("Videur : attaque de {0}. Ignore la moitié de ton bouclier", kind.hurt(kind.swordDamage()));
+            case LOAD_BEARING -> Lang.t("Mur porteur : Bouclier, et sa défense ne s'use pas sous tes coups jusqu'à son tour");
+            case SAFE -> Lang.f("Coffre-fort : il se soigne de {0} % de ses PV max et te vole {1} % de tes gains",
+                SAFE_HEAL_PERCENT, SAFE_STEAL_PERCENT);
+            case HOUSE_EDGE -> Lang.f("Avantage de la maison : attaque de {0}. Tes gains du prochain tirage baissent de {1} %",
+                kind.hurt(kind.swordDamage()), HOUSE_EDGE_PERCENT);
+            case GEAR -> Lang.f("Engrenage : ses autres symboles du tirage sont {0} % plus forts. Un de plus par rouleau qu'elle "
+                + "t'a pris", GEAR_PERCENT);
+            case SHORT_CIRCUIT -> Lang.t("Court-circuit : à ton prochain tirage, ton meilleur rouleau devient ton pire. Il casse "
+                + "ta paire ou ton Bingo");
+            case GOLDEN_COMET -> Lang.f("Comète : la Comète Dorée tombe, {0} % de tes PV max. Ignore ton bouclier",
+                GOLDEN_COMET_PERCENT);
+            case ASPIRATION -> Lang.t("Aspiration : elle annonce une règle. Si tes cartes du prochain tour ne la respectent pas, "
+                + "elle aspire un de tes rouleaux pour ce tirage");
+            case PLATING -> Lang.t("Placage : sa peau d'or tient 1 tour, même sous la moitié de ses PV");
+            case INGOT -> Lang.t("Lingot : un coup qui grandit avec sa défense du moment, jusqu'à x3");
+            case ROCKFALL -> Lang.f("Éboulement : attaque de {0}. Tu pioches 1 carte de moins au prochain tour",
+                kind.hurt(kind.swordDamage()));
+            case HEARTBEAT -> Lang.f("Battement : il se soigne de {0} % de ses PV max. Sa peau d'or revient 1 tour",
+                HEARTBEAT_PERCENT);
+            case SWALLOWED_COIN -> Lang.f("Pièce avalée : il te prend {0} % de tes gains et garde la pièce. À {1} pièces, son "
+                + "prochain tirage est un Jackpot", COIN_PERCENT, COINS_FOR_JACKPOT);
+            case ARMED_ARM -> Lang.t("Bras armé : il relance son pire rouleau, pour viser le Jackpot");
         };
     }
 

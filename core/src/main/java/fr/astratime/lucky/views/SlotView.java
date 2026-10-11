@@ -91,6 +91,8 @@ public class SlotView implements Disposable {
 
     /** Croix d'un rouleau bloqué : la fenêtre barrée de la carte Rouleau interdit. */
     private static final String LOCK_ASSET = "cards/dark/FORBIDDEN_REEL.png";
+    /** Teinte des chaînes d'une Aspiration (le violet de la Machine Originelle). */
+    private static final Color  CHAIN_COLOR = new Color(0.75f, 0.45f, 1f, 0.9f);
     private static final int    LOCK_X = 40, LOCK_Y = 60, LOCK_SIZE_X = 110, LOCK_SIZE_Y = 120;
 
     private final TableView                  tableView;
@@ -112,6 +114,8 @@ public class SlotView implements Disposable {
     private int                              reelCount = -1;
     /** Croix posée sur chaque rouleau quand il est bloqué (Rouleau interdit). */
     private final List<Image>                locks    = new ArrayList<>();
+    /** Chaînes violettes des rouleaux menacés par une Aspiration de la Machine Originelle. */
+    private final List<Image>                chains   = new ArrayList<>();
     private final Texture                    lockTexture;
     /** Rouleaux bloqués (Rouleau interdit, rouleaux volés par la Machine Originelle). */
     private final java.util.Set<Integer>     blockedReels = new java.util.TreeSet<>();
@@ -155,9 +159,14 @@ public class SlotView implements Disposable {
             Image lock = new Image(lockRegion);
             lock.setTouchable(Touchable.disabled);
             lock.setVisible(false);
-            cells.add(new Stack(reel, lock));
+            Image chain = new Image(lockRegion);
+            chain.setTouchable(Touchable.disabled);
+            chain.setVisible(false);
+            chain.setColor(CHAIN_COLOR);
+            cells.add(new Stack(reel, lock, chain));
             reels.add(reel);
             locks.add(lock);
+            chains.add(chain);
         }
         setReelCount(SlotMachine.SYMBOL_COUNT);
     }
@@ -335,6 +344,26 @@ public class SlotView implements Disposable {
             } else if (!blocked) {
                 lock.clearActions();
                 lock.setVisible(false);
+            }
+        }
+    }
+
+    /**
+     * Enchaîne les rouleaux {@code threatened} (une Aspiration les menace) : une
+     * chaîne violette qui pulse ; un ensemble vide brise toutes les chaînes.
+     */
+    public void setThreatenedReels(java.util.Set<Integer> threatened) {
+        for (int i = 0; i < chains.size(); i++) {
+            Image chain = chains.get(i);
+            boolean shown = threatened.contains(i) && !blockedReels.contains(i);
+            if (shown && !chain.isVisible()) {
+                chain.setVisible(true);
+                chain.getColor().a = 0.9f;
+                chain.addAction(Actions.forever(Actions.sequence(Actions.alpha(0.35f, 0.5f), Actions.alpha(0.9f, 0.5f))));
+            } else if (!shown && chain.isVisible()) {
+                chain.clearActions();
+                chain.addAction(Actions.sequence(Actions.parallel(Actions.alpha(0f, 0.25f),
+                    Actions.scaleTo(1.3f, 1.3f, 0.25f)), Actions.scaleTo(1f, 1f), Actions.visible(false)));
             }
         }
     }

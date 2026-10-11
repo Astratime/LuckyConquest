@@ -19,6 +19,7 @@ import fr.astratime.lucky.popups.EffectPopup;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 
 /**
@@ -103,6 +104,17 @@ public class TurnEngine {
             Symbol[] twice = drunkReel(machine, drawn, turnContext);
             drawn   = twice;
             symbols = machine.resolveJokers(twice, turnContext.getSpinContext());
+        }
+
+        // Court-circuit (Machine Originelle) : le meilleur rouleau devient le pire
+        int shorts = player.getLastingEffects().takeShortCircuits();
+        for (int i = 0; i < shorts; i++) {
+            Symbol[] burnt = shortCircuit(machine, drawn, turnContext.getSpinContext());
+            if (burnt != drawn) {
+                turnContext.addEvent(new StatusEvent(Lang.t("COURT-CIRCUIT : ROULEAU GRILLÉ"), EffectPopup.Style.DAMAGE));
+            }
+            drawn   = burnt;
+            symbols = machine.resolveJokers(burnt, turnContext.getSpinContext());
         }
 
         // Nouvelle règle du Directeur des Jeux : les rouleaux tournent deux fois (le pire reste)…
@@ -290,6 +302,37 @@ public class TurnEngine {
         SpinContext spin = turnContext.getSpinContext();
         boolean worse = matches(machine.resolveJokers(twice, spin)) <= matches(machine.resolveJokers(drawn, spin));
         return worse ? twice : drawn;
+    }
+
+    /**
+     * Court-circuit : un rouleau du plus grand groupe de symboles identiques (ni vide
+     * ni imposé) tourne à nouveau jusqu'à casser ce groupe : la paire ou le Bingo
+     * tombe. Sans groupe, un rouleau au hasard tourne une seconde fois, le pire reste.
+     *
+     * @return les symboles arrêtés sur les rouleaux, après le Court-circuit ({@code drawn} s'il n'a rien changé)
+     */
+    private Symbol[] shortCircuit(SlotMachine machine, Symbol[] drawn, SpinContext spin) {
+        Symbol[] resolved = machine.resolveJokers(drawn, spin);
+        Map<Symbol, Integer> counts = new java.util.HashMap<>();
+        for (Symbol symbol : resolved) if (symbol != null) counts.merge(symbol, 1, Integer::sum);
+        Symbol group = counts.entrySet().stream().filter(entry -> entry.getValue() >= 2)
+            .max(Map.Entry.comparingByValue()).map(Map.Entry::getKey).orElse(null);
+        List<Integer> open = new ArrayList<>();
+        for (int i = 0; i < drawn.length; i++) {
+            if (drawn[i] != null && !spin.getForcedReels().containsKey(i) && (group == null || resolved[i] == group)) open.add(i);
+        }
+        if (open.isEmpty()) return drawn;
+        int reel = open.get(random.nextInt(open.size()));
+        if (group == null) {
+            Symbol[] twice = drawn.clone();
+            twice[reel] = machine.spin(spin)[reel];
+            return matches(machine.resolveJokers(twice, spin)) <= matches(resolved) ? twice : drawn;
+        }
+        Symbol[] result = drawn.clone();
+        for (int tries = 0; tries < 50 && machine.resolveJokers(result, spin)[reel] == group; tries++) {
+            result[reel] = machine.spin(spin)[reel];
+        }
+        return result;
     }
 
     /**

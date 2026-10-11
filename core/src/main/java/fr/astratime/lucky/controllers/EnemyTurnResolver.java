@@ -8,6 +8,7 @@ import fr.astratime.lucky.entities.LastingEffects;
 import fr.astratime.lucky.entities.Player;
 import fr.astratime.lucky.entities.SlotMachine;
 import fr.astratime.lucky.entities.Symbol;
+import fr.astratime.lucky.entities.enemy.AspirationRule;
 import fr.astratime.lucky.entities.enemy.EnemyCards;
 import fr.astratime.lucky.entities.enemy.EnemyKind;
 import fr.astratime.lucky.entities.enemy.EnemySignature;
@@ -156,6 +157,12 @@ public class EnemyTurnResolver {
                                    int shieldReflect, List<Event> thornsEvents, float reflectHpPercent) {
         EnemyKind kind = enemy.getKind();
         List<Event> openingEvents = new ArrayList<>();
+        boolean heldReel = enemy.getStolenReels() > 0;
+        enemy.tickTheft(); // le rouleau volé en phase 2 passe un tour de plus chez la Machine
+        enemy.tickPlating(); // son Placage a tenu le tour du joueur
+        if (heldReel && enemy.getStolenReels() == 0) {
+            openingEvents.add(new StatusEvent(Lang.t("ELLE TE REND TON ROULEAU"), EffectPopup.Style.DEFENSE));
+        }
         if (enemy.enterPhaseTwo()) {
             openingEvents.add(new EnemyPhaseEvent(enemy.getPhase(), kind.phaseText(enemy.getPhase())));
         }
@@ -253,6 +260,12 @@ public class EnemyTurnResolver {
         }
 
         EnemySymbol[] symbols = machine.spin(enemy.getWeights(), luck, enemy.getReelCount());
+        Map<Integer, List<Event>> reelEvents = new java.util.HashMap<>(); // ce qui arrive à un rouleau avant qu'il agisse
+        if (enemy.spendCoins()) { // Pièces avalées : le Bandit manchot s'offre un Jackpot
+            java.util.Arrays.fill(symbols, EnemySymbol.SWORD);
+            openingEvents.add(new StatusEvent(Lang.t("PIÈCES AVALÉES : JACKPOT !"), EffectPopup.Style.SPECIAL));
+        }
+        armedArms(enemy, symbols, luck, reelEvents);
         // Les roulettes du Zéro tournent d'abord : elles valent pour tout le tour.
         Turn turn = new Turn(enemy, player, swordBonus);
         if (foreseen) turn.attackFactor *= EnemySymbol.PREDICTION_FACTOR;
@@ -278,6 +291,19 @@ public class EnemyTurnResolver {
             turn.attackFactor *= EnemySymbol.JACKPOT_FACTOR;
             turn.shieldFactor *= EnemySymbol.JACKPOT_FACTOR;
         }
+        // Jackpot originel (Machine Originelle) : trois symboles pareils, et ce symbole agit cinq fois.
+        int originalJackpot = kind == EnemyKind.MACHINE_ORIGINELLE ? originalJackpot(symbols) : -1;
+        // Engrenages : ses autres symboles sont plus forts ; un de plus par rouleau qu'elle a pris au joueur.
+        int gears = (int) java.util.Arrays.stream(symbols).filter(symbol -> symbol == EnemySymbol.GEAR).count()
+            * (1 + boosts.getOrDefault(EnemySignature.HUILE_NOIRE, 0));
+        if (kind == EnemyKind.MACHINE_ORIGINELLE) {
+            int taken = enemy.getStolenReels() + enemy.getAspired();
+            if (taken > 0) {
+                gears += taken;
+                openingEvents.add(new StatusEvent(Lang.f("ROULEAUX PRIS : ENGRENAGES +{0}", taken), EffectPopup.Style.SPECIAL));
+            }
+        }
+        turn.boostPercent = EnemySymbol.GEAR_PERCENT * gears;
 
         LastingEffects curses = player.getLastingEffects(); // les mauvais sorts pour le prochain tour du joueur
         // Queue de comète : son meilleur symbole du tour agit deux fois
@@ -295,8 +321,24 @@ public class EnemyTurnResolver {
                 outcomes.add(events);
                 continue;
             }
+            events.addAll(reelEvents.getOrDefault(i, List.of()));
             int repeats = i == best ? 1 + boosts.get(EnemySignature.QUEUE_DE_COMETE) : 1;
             if (repeats > 1) events.add(new StatusEvent(Lang.t("QUEUE DE COMÈTE : IL AGIT DEUX FOIS"), EffectPopup.Style.SPECIAL));
+            if (i == originalJackpot) {
+                EnemySymbol triple = symbols[i];
+                int same = (int) java.util.Arrays.stream(symbols).filter(symbol -> symbol == triple).count();
+                repeats += Math.max(0, EnemySymbol.ORIGINAL_JACKPOT_ACTS - same);
+                events.add(new StatusEvent(Lang.f("JACKPOT ORIGINEL : {0} x{1}", symbols[i].getDisplayName(),
+                    EnemySymbol.ORIGINAL_JACKPOT_ACTS), EffectPopup.Style.SPECIAL));
+            }
+            // Maçonnerie, Double serrure, La banque ne saute jamais : le rouleau de la Maison agit deux fois
+            EnemySignature house = switch (symbols[i]) {
+                case LOAD_BEARING -> EnemySignature.MACONNERIE;
+                case SAFE         -> EnemySignature.DOUBLE_SERRURE;
+                case HOUSE_EDGE   -> EnemySignature.BANQUE_GAGNE;
+                default           -> null;
+            };
+            if (house != null) repeats += boosts.getOrDefault(house, 0);
             for (int r = 0; r < repeats; r++) switch (symbols[i]) {
                 case SWORD  -> events.add(turn.strike(enemy.getKind().swordDamage()));
                 case FANG   -> bite(turn, events,
@@ -466,6 +508,110 @@ public class EnemyTurnResolver {
                         events.add(new EnemyHpLostEvent(Lang.f("FAILLITE : IL PERD {0} PV", Lang.big(lost)), EffectPopup.Style.SPECIAL, lost));
                     }
                 }
+                case NOTHING_GOES -> {
+                    int count = 1 + (enemy.takeCharge(EnemySignature.ANNONCE) ? 1 : 0);
+                    events.add(new StatusEvent(Lang.t("RIEN NE VA PLUS !"), EffectPopup.Style.DAMAGE));
+                    for (int k = 0; k < count; k++) {
+                        int reel = freeReel(curses.getForbiddenReels());
+                        if (reel < 0) break;
+                        curses.voidReel(reel);
+                        events.add(new ReelForbiddenEvent(reel));
+                    }
+                }
+                case RAKE -> {
+                    int percent = EnemySymbol.RAKE_PERCENT * (enemy.takeCharge(EnemySignature.COUP_DE_RATEAU) ? 2 : 1);
+                    double raked = BigNumber.percent(player.getGains(), percent);
+                    if (raked > 0) {
+                        player.addGains(-raked);
+                        events.add(new GainsStolenEvent(raked, 0));
+                        events.add(turn.shield((int) Math.min(raked, (double) kind.shieldDefense() * EnemySymbol.RAKE_MAX_SHIELDS)));
+                    } else {
+                        events.add(turn.strike(EnemySymbol.FANG_DAMAGE)); // rien à ramasser : il frappe
+                    }
+                }
+                case CLOAKROOM -> {
+                    int count = 1 + (enemy.takeCharge(EnemySignature.TENUE_EXIGEE) ? 1 : 0);
+                    List<String> kept = new ArrayList<>();
+                    for (int k = 0; k < count; k++) {
+                        Card card = bestCard(player.getCurrentHand());
+                        if (card == null) card = bestCard(player.getPlayedCards());
+                        if (card != null && player.steal(card, EnemySymbol.CLOAKROOM_TURNS)) kept.add(card.getName().toUpperCase());
+                    }
+                    events.add(kept.isEmpty() ? turn.strike(EnemySymbol.FANG_DAMAGE)
+                        : new StatusEvent(Lang.f("VESTIAIRE : {0} AU VESTIAIRE", String.join(", ", kept)), EffectPopup.Style.DAMAGE));
+                }
+                case BOUNCER -> events.add(turn.strike(kind.swordDamage()
+                    * (100 + EnemySignature.VIDEUR_PERCENT * boosts.getOrDefault(EnemySignature.PAS_CE_SOIR, 0)) / 100,
+                    100 - EnemySymbol.BOUNCER_PIERCE_PERCENT));
+                case LOAD_BEARING -> {
+                    events.add(turn.shield(kind.shieldDefense() + shieldBonus));
+                    enemy.holdDefense();
+                    events.add(new StatusEvent(Lang.t("MUR PORTEUR : SA DÉFENSE NE S'USE PAS"), EffectPopup.Style.DEFENSE));
+                }
+                case SAFE -> {
+                    events.add(heal(enemy, EnemySymbol.SAFE_HEAL_PERCENT * healFactor / 100f));
+                    double stolen = BigNumber.percent(player.getGains(), EnemySymbol.SAFE_STEAL_PERCENT);
+                    if (stolen > 0) {
+                        player.addGains(-stolen);
+                        events.add(new GainsStolenEvent(stolen, 0));
+                    }
+                }
+                case HOUSE_EDGE -> {
+                    events.add(turn.strike(kind.swordDamage())); // la Salle de jeu frappe, et la Maison prend sa part
+                    curses.addHouseEdge();
+                    events.add(new StatusEvent(Lang.f("AVANTAGE DE LA MAISON : TES GAINS -{0} %", EnemySymbol.HOUSE_EDGE_PERCENT),
+                        EffectPopup.Style.DAMAGE));
+                }
+                case GEAR -> events.add(new StatusEvent(Lang.f("ENGRENAGE : SES SYMBOLES +{0} %", turn.boostPercent),
+                    EffectPopup.Style.SPECIAL));
+                case SHORT_CIRCUIT -> {
+                    boolean twice = enemy.takeCharge(EnemySignature.SURTENSION);
+                    curses.addShortCircuit(twice ? 2 : 1);
+                    events.add(new StatusEvent(twice ? Lang.t("COURT-CIRCUIT : 2 ROULEAUX GRILLERONT")
+                        : Lang.t("COURT-CIRCUIT : TON MEILLEUR ROULEAU GRILLERA"), EffectPopup.Style.DAMAGE));
+                }
+                case GOLDEN_COMET -> {
+                    int falls = enemy.takeCharge(EnemySignature.PLUIE_D_ETOILES) ? 2 : 1;
+                    events.add(new StatusEvent(Lang.t("LA COMÈTE DORÉE TOMBE !"), EffectPopup.Style.ATTACK));
+                    for (int k = 0; k < falls; k++) events.add(turn.comet(EnemySymbol.GOLDEN_COMET_PERCENT));
+                }
+                case ASPIRATION -> {
+                    AspirationRule rule = AspirationRule.random(random, enemy.takeCharge(EnemySignature.GRANDE_ASPIRATION));
+                    curses.addAspiration(rule);
+                    events.add(new StatusEvent(Lang.f("ASPIRATION : {0}", rule.text().toUpperCase()), EffectPopup.Style.SPECIAL));
+                }
+                case PLATING -> {
+                    int turns = EnemySymbol.PLATING_TURNS * (enemy.takeCharge(EnemySignature.OR_MASSIF) ? 2 : 1);
+                    enemy.plate(turns);
+                    events.add(new StatusEvent(Lang.plural(turns) ? Lang.f("PLACAGE : PEAU D'OR {0} TOURS", turns)
+                        : Lang.t("PLACAGE : PEAU D'OR 1 TOUR"), EffectPopup.Style.DEFENSE));
+                }
+                case INGOT -> events.add(turn.strike(kind.swordDamage() * ingotPercent(enemy)
+                    / 100 * (100 + EnemySignature.LINGOT_PERCENT * boosts.getOrDefault(EnemySignature.POIDS_DE_L_OR, 0)) / 100));
+                case ROCKFALL -> {
+                    events.add(turn.strike(kind.swordDamage()));
+                    boolean twice = enemy.takeCharge(EnemySignature.GRONDEMENT);
+                    curses.addRockfall(twice ? 2 : 1);
+                    events.add(new StatusEvent(twice ? Lang.t("ÉBOULEMENT : 2 CARTES DE MOINS")
+                        : Lang.t("ÉBOULEMENT : 1 CARTE DE MOINS"), EffectPopup.Style.DAMAGE));
+                }
+                case HEARTBEAT -> {
+                    int beats = enemy.takeCharge(EnemySignature.FILON) ? 2 : 1;
+                    for (int k = 0; k < beats; k++) events.add(heal(enemy, EnemySymbol.HEARTBEAT_PERCENT * healFactor / 100f));
+                    enemy.plate(EnemySymbol.PLATING_TURNS);
+                    events.add(new StatusEvent(Lang.t("BATTEMENT : SA PEAU D'OR REVIENT"), EffectPopup.Style.DEFENSE));
+                }
+                case SWALLOWED_COIN -> {
+                    double stolen = BigNumber.percent(player.getGains(), EnemySymbol.COIN_PERCENT);
+                    if (stolen > 0) {
+                        player.addGains(-stolen);
+                        events.add(new GainsStolenEvent(stolen, 0));
+                    }
+                    int coins = enemy.swallowCoins(enemy.takeCharge(EnemySignature.MONNAIE) ? 2 : 1);
+                    events.add(new StatusEvent(Lang.f("PIÈCE AVALÉE : {0}/{1}", Math.min(coins, EnemySymbol.COINS_FOR_JACKPOT),
+                        EnemySymbol.COINS_FOR_JACKPOT), EffectPopup.Style.SPECIAL));
+                }
+                case ARMED_ARM -> { } // son effet a joué avant les autres : il a relancé son pire rouleau
             }
             outcomes.add(events);
         }
@@ -523,6 +669,7 @@ public class EnemyTurnResolver {
             case SONG     -> Lang.t("CHANT");
             case BOARDING -> Lang.t("ABORDAGE");
             case FRISK    -> Lang.t("FOUILLE");
+            case CLOAKROOM -> Lang.t("VESTIAIRE");
             default       -> null;
         };
         if (spell != null && lasting.useTrap()) {
@@ -531,7 +678,7 @@ public class EnemyTurnResolver {
                 EffectPopup.Style.DEFENSE);
         }
         boolean takesGains = switch (symbol) {
-            case INTEREST, BANK_BITE, FAKE_MONEY, BANKRUPTCY -> true;
+            case INTEREST, BANK_BITE, FAKE_MONEY, BANKRUPTCY, RAKE, SWALLOWED_COIN -> true;
             default -> false;
         };
         if (takesGains && lasting.getCageTurns() > 0 && player.getGains() > 0) {
@@ -687,6 +834,8 @@ public class EnemyTurnResolver {
         final int    swordBonus;
         int attackFactor = 1;
         int shieldFactor = 1;
+        /** Force en plus de ses coups et de ses Boucliers (Engrenages), en %. */
+        int boostPercent;
         int totalAttack;
 
         Turn(Enemy enemy, Player player, int swordBonus) {
@@ -703,19 +852,33 @@ public class EnemyTurnResolver {
         PlayerDamagedEvent strike(int base) { return strike(base, false); }
 
         /** Comme {@link #strike(int)} ; avec {@code pierce} (Forage), le coup traverse le bouclier du joueur. */
-        PlayerDamagedEvent strike(int base, boolean pierce) {
+        PlayerDamagedEvent strike(int base, boolean pierce) { return strike(base, pierce ? 0 : 100); }
+
+        /** Comme {@link #strike(int)}, quand seuls {@code shieldPercent} % du bouclier du joueur l'arrêtent (le Videur). */
+        PlayerDamagedEvent strike(int base, int shieldPercent) {
             int attack = (int) Math.min(Integer.MAX_VALUE, (long) enemy.getKind().hurt(
                 (base + swordBonus + enemy.getRage() + enemy.getAnvil() + enemy.spendInterest())
-                    * enemy.getStake() * attackFactor) * enemy.attackPercent() / 100); // un roi en phase 2 frappe plus fort
+                    * enemy.getStake() * attackFactor) * enemy.attackPercent() / 100 // un roi en phase 2 frappe plus fort
+                * (100 + boostPercent) / 100); // ses Engrenages
             totalAttack += attack;
             int shieldBefore = player.getShield();
-            int lost = player.takeDamage(attack, pierce);
+            int lost = player.takeDamage(attack, shieldPercent);
+            return new PlayerDamagedEvent(lost, shieldBefore - player.getShield(), player.getShield());
+        }
+
+        /** La Comète Dorée : {@code percent} % des PV max du joueur, à travers son bouclier. */
+        PlayerDamagedEvent comet(int percent) {
+            int attack = (int) Math.min(Integer.MAX_VALUE, (long) player.getMaxHp() * percent / 100 * attackFactor);
+            totalAttack += attack;
+            int shieldBefore = player.getShield();
+            int lost = player.takeDamage(attack, true);
             return new PlayerDamagedEvent(lost, shieldBefore - player.getShield(), player.getShield());
         }
 
         /** Il se protège de {@code defense}, multipliée par la roulette du Zéro et sa force. */
         EnemyShieldedEvent shield(int defense) {
-            int total = enemy.getKind().empowered(defense * shieldFactor);
+            int total = (int) Math.min(Integer.MAX_VALUE,
+                (long) enemy.getKind().empowered(defense * shieldFactor) * (100 + boostPercent) / 100);
             enemy.addShieldDefense(total);
             return new EnemyShieldedEvent(total);
         }
@@ -764,6 +927,78 @@ public class EnemyTurnResolver {
             if (signature != null && playable(card, enemy) && seen.add(signature)) chosen.add(card);
         }
         return chosen;
+    }
+
+    /** @return un rouleau du joueur pas encore bloqué, au hasard, ou -1. */
+    private int freeReel(java.util.Set<Integer> blocked) {
+        List<Integer> free = new ArrayList<>();
+        for (int reel = 0; reel < SlotMachine.SYMBOL_COUNT; reel++) if (!blocked.contains(reel)) free.add(reel);
+        return free.isEmpty() ? -1 : free.get(random.nextInt(free.size()));
+    }
+
+    /** Lingot : la force de son coup, en % d'une Épée, selon sa défense du moment (de x1 à x3). */
+    static int ingotPercent(Enemy enemy) {
+        int base = Math.max(1, enemy.getKind().getBaseDefense());
+        return (int) Math.max(100, Math.min(300, (long) enemy.getDefense() * 100 / base));
+    }
+
+    /**
+     * Bras armé (Bandit manchot) : pour chacun (deux avec le Levier grillé), il relance
+     * son pire rouleau, celui qui l'éloigne le plus du Jackpot : un rouleau qui n'a pas
+     * son symbole le plus fréquent (un Bras armé en dernier).
+     */
+    private void armedArms(Enemy enemy, EnemySymbol[] symbols, Map<EnemySymbol, Integer> luck,
+                           Map<Integer, List<Event>> reelEvents) {
+        long arms = java.util.Arrays.stream(symbols).filter(symbol -> symbol == EnemySymbol.ARMED_ARM).count();
+        if (arms == 0) return;
+        if (enemy.takeCharge(EnemySignature.LEVIER_GRILLE)) arms++;
+        for (int k = 0; k < arms; k++) {
+            int reel = worstReel(symbols);
+            if (reel < 0) return;
+            symbols[reel] = machine.spin(enemy.getWeights(), luck, 1)[0];
+            reelEvents.computeIfAbsent(reel, r -> new ArrayList<>())
+                .add(new StatusEvent(Lang.t("BRAS ARMÉ : ROULEAU RELANCÉ"), EffectPopup.Style.SPECIAL));
+        }
+    }
+
+    /** @return le rouleau qui l'éloigne le plus du Jackpot (voir {@link #armedArms}), ou -1 s'il l'a déjà. */
+    static int worstReel(EnemySymbol[] symbols) {
+        Map<EnemySymbol, Integer> counts = new EnumMap<>(EnemySymbol.class);
+        for (EnemySymbol symbol : symbols) if (symbol != EnemySymbol.ARMED_ARM) counts.merge(symbol, 1, Integer::sum);
+        EnemySymbol target = counts.entrySet().stream()
+            .max(Map.Entry.<EnemySymbol, Integer>comparingByValue().thenComparing(entry -> value(entry.getKey())))
+            .map(Map.Entry::getKey).orElse(null);
+        int worst = -1;
+        for (int i = 0; i < symbols.length; i++) {
+            if (symbols[i] == target) continue;
+            if (worst < 0 || symbols[worst] == EnemySymbol.ARMED_ARM && symbols[i] != EnemySymbol.ARMED_ARM
+                || symbols[i] != EnemySymbol.ARMED_ARM && symbols[worst] != EnemySymbol.ARMED_ARM
+                    && value(symbols[i]) < value(symbols[worst])) {
+                worst = i;
+            }
+        }
+        return worst;
+    }
+
+    /** @return la place du premier symbole sorti au moins trois fois sur ses rouleaux (Jackpot originel), ou -1. */
+    static int originalJackpot(EnemySymbol[] symbols) {
+        for (int i = 0; i < symbols.length; i++) {
+            EnemySymbol symbol = symbols[i];
+            if (java.util.Arrays.stream(symbols).filter(other -> other == symbol).count() >= EnemySymbol.ORIGINAL_JACKPOT_COUNT) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    /** @return la valeur d'un symbole pour lui : un symbole spécial, puis l'Épée, le Bouclier, la Potion. */
+    private static int value(EnemySymbol symbol) {
+        return switch (symbol) {
+            case POTION -> 1;
+            case SHIELD -> 2;
+            case SWORD  -> 3;
+            default     -> 4;
+        };
     }
 
     /** @return le nombre de cartes propres dans {@code cards}. */

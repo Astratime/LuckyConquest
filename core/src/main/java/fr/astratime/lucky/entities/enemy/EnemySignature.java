@@ -80,7 +80,43 @@ public enum EnemySignature {
     FRENESIE("Frénésie", EnemySymbol.BANK_BITE, Timing.TURN,
         "Ses Morsures de ce tour dévorent {0} % de tes gains en plus", "MORSURE +{0}%"),
     ENCRE("Encre", EnemySymbol.BLIND, Timing.NOW,
-        "Tes cartes en main sont faces cachées au prochain tour", "ENCRE");
+        "Tes cartes en main sont faces cachées au prochain tour", "ENCRE"),
+
+    // Les rouleaux ajoutés aux ennemis qui n'avaient que des rouleaux de base (choix d'Astra).
+    ANNONCE("Annonce", EnemySymbol.NOTHING_GOES, Timing.NEXT,
+        "Son prochain Rien ne va plus bloque 2 de tes rouleaux", "2 ROULEAUX BLOQUÉS"),
+    COUP_DE_RATEAU("Coup de râteau", EnemySymbol.RAKE, Timing.NEXT,
+        "Son prochain Râteau ramasse 20 % de tes gains", "RÂTEAU x2"),
+    TENUE_EXIGEE("Tenue exigée", EnemySymbol.CLOAKROOM, Timing.NEXT,
+        "Son prochain Vestiaire garde 2 de tes cartes", "VESTIAIRE x2"),
+    PAS_CE_SOIR("Pas ce soir", EnemySymbol.BOUNCER, Timing.TURN,
+        "Ses Videurs de ce tour frappent {0} % plus fort", "VIDEUR +{0}%"),
+    MACONNERIE("Maçonnerie", EnemySymbol.LOAD_BEARING, Timing.TURN,
+        "Ses Murs porteurs de ce tour agissent deux fois", "MUR PORTEUR x2"),
+    DOUBLE_SERRURE("Double serrure", EnemySymbol.SAFE, Timing.TURN,
+        "Ses Coffres-forts de ce tour agissent deux fois", "COFFRE-FORT x2"),
+    BANQUE_GAGNE("La banque ne saute jamais", EnemySymbol.HOUSE_EDGE, Timing.TURN,
+        "Ses Avantages de la maison de ce tour agissent deux fois", "AVANTAGE x2"),
+    HUILE_NOIRE("Huile noire", EnemySymbol.GEAR, Timing.TURN,
+        "Ses Engrenages de ce tour comptent double", "ENGRENAGES x2"),
+    PLUIE_D_ETOILES("Pluie d'étoiles", EnemySymbol.GOLDEN_COMET, Timing.NEXT,
+        "Sa prochaine Comète tombe deux fois", "COMÈTE x2"),
+    SURTENSION("Surtension", EnemySymbol.SHORT_CIRCUIT, Timing.NEXT,
+        "Son prochain Court-circuit touche 2 de tes rouleaux", "COURT-CIRCUIT x2"),
+    GRANDE_ASPIRATION("Grande aspiration", EnemySymbol.ASPIRATION, Timing.NEXT,
+        "Sa prochaine Aspiration demande une condition de plus", "ASPIRATION +1"),
+    OR_MASSIF("Or massif", EnemySymbol.PLATING, Timing.NEXT,
+        "Son prochain Placage dure 2 tours", "PLACAGE 2 TOURS"),
+    POIDS_DE_L_OR("Poids de l'or", EnemySymbol.INGOT, Timing.TURN,
+        "Ses Lingots de ce tour frappent {0} % plus fort", "LINGOT +{0}%"),
+    GRONDEMENT("Grondement", EnemySymbol.ROCKFALL, Timing.NEXT,
+        "Son prochain Éboulement te retire 2 cartes", "ÉBOULEMENT x2"),
+    FILON("Filon", EnemySymbol.HEARTBEAT, Timing.NEXT,
+        "Son prochain Battement le soigne deux fois", "BATTEMENT x2"),
+    MONNAIE("Monnaie", EnemySymbol.SWALLOWED_COIN, Timing.NEXT,
+        "Sa prochaine Pièce avalée compte pour 2", "PIÈCE x2"),
+    LEVIER_GRILLE("Levier grillé", EnemySymbol.ARMED_ARM, Timing.NEXT,
+        "Son prochain Bras armé relance 2 rouleaux", "BRAS ARMÉ x2");
 
     /** Exemplaires de chaque carte propre dans le deck d'un ennemi (choix d'Astra). */
     public static final int COPIES = 4;
@@ -107,6 +143,8 @@ public enum EnemySignature {
     public static final int MECHE_PERCENT = 25;
     /** Frénésie : part des gains dévorée en plus par chaque Morsure du tour, en points. */
     public static final int FRENESIE_PERCENT = 5;
+    /** Pas ce soir, Poids de l'or : force en plus des Videurs, des Lingots du tour, en %. */
+    public static final int VIDEUR_PERCENT = 25, LINGOT_PERCENT = 25;
 
     /** Moment où agit une carte propre. */
     public enum Timing { TURN, NEXT, NOW }
@@ -150,6 +188,8 @@ public enum EnemySignature {
             case COMPTE_A_REBOURS  -> Lang.f(description, COMPTE_MAX);
             case MECHE_DE_DIAMANT  -> Lang.f(description, MECHE_PERCENT);
             case FRENESIE          -> Lang.f(description, FRENESIE_PERCENT);
+            case PAS_CE_SOIR       -> Lang.f(description, VIDEUR_PERCENT);
+            case POIDS_DE_L_OR     -> Lang.f(description, LINGOT_PERCENT);
             default                -> Lang.t(description);
         };
     }
@@ -166,6 +206,8 @@ public enum EnemySignature {
             case SAISIE            -> Lang.f(bonus, SAISIE_POINTS);
             case MECHE_DE_DIAMANT  -> Lang.f(bonus, MECHE_PERCENT);
             case FRENESIE          -> Lang.f(bonus, FRENESIE_PERCENT);
+            case PAS_CE_SOIR       -> Lang.f(bonus, VIDEUR_PERCENT);
+            case POIDS_DE_L_OR     -> Lang.f(bonus, LINGOT_PERCENT);
             default                -> Lang.t(bonus);
         };
     }

@@ -105,7 +105,8 @@ public enum EnemyKind {
     CHEF("Croupier en chef", "CROUPIER EN CHEF",
         "Le croupier a pris du galon. Il frappe. Il se protège. Ses Potions reforment aussi sa défense.",
         20_000, 100, 40,
-        weights(EnemySymbol.SWORD, 1, EnemySymbol.SHIELD, 1, EnemySymbol.POTION, 1),
+        weights(EnemySymbol.SWORD, 2, EnemySymbol.SHIELD, 2, EnemySymbol.POTION, 2, EnemySymbol.NOTHING_GOES, 1,
+            EnemySymbol.RAKE, 1),
         deck(new int[] {2, 5, 8, 11, 14}, new int[] {2, 5, 8, 11, 14},
             new int[] {2, 5, 8, 11, 14}, new int[] {2, 5, 8, 11, 14}),
         List.of(Card.Suit.PIQUE, Card.Suit.CARREAU, Card.Suit.TREFLE, Card.Suit.COEUR),
@@ -390,7 +391,7 @@ public enum EnemyKind {
     GOLEM_OR("Golem d'or", "GOLEM D'OR",
         "Un tas d'or qui marche. Tant qu'il a plus de la moitié de ses PV, sa peau d'or encaisse la moitié de tes coups.",
         600_000, 100, 10,
-        weights(EnemySymbol.SWORD, 1, EnemySymbol.SHIELD, 2),
+        weights(EnemySymbol.SWORD, 2, EnemySymbol.SHIELD, 2, EnemySymbol.PLATING, 1, EnemySymbol.INGOT, 1),
         deck(new int[] {3, 6, 9, 12, 14}, new int[] {4, 8, 12},
             new int[] {5, 9, 13}, new int[] {3, 7, 11}),
         List.of(Card.Suit.PIQUE, Card.Suit.CARREAU, Card.Suit.TREFLE, Card.Suit.COEUR),
@@ -398,7 +399,8 @@ public enum EnemyKind {
     COEUR_MONTAGNE("Coeur de la Montagne", "COEUR DE LA MONTAGNE",
         "La montagne est vivante. Tant qu'il a plus de la moitié de ses PV, il ne prend que la moitié de tes dégâts.",
         1_200_000, 150, 6,
-        weights(EnemySymbol.SWORD, 2, EnemySymbol.SHIELD, 2, EnemySymbol.POTION, 1),
+        weights(EnemySymbol.SWORD, 2, EnemySymbol.SHIELD, 2, EnemySymbol.POTION, 1, EnemySymbol.ROCKFALL, 1,
+            EnemySymbol.HEARTBEAT, 1),
         deck(new int[] {3, 6, 9, 12, 14}, new int[] {4, 8, 12},
             new int[] {5, 9, 13}, new int[] {3, 7, 11}),
         List.of(Card.Suit.PIQUE, Card.Suit.CARREAU, Card.Suit.TREFLE, Card.Suit.COEUR),
@@ -425,7 +427,7 @@ public enum EnemyKind {
     BANDIT_MANCHOT("Bandit manchot", "BANDIT MANCHOT",
         "Une machine à sous rouillée. Trois symboles pareils : Jackpot. Il frappe cinq fois plus fort.",
         1_500_000, 80, 5,
-        weights(EnemySymbol.SWORD, 1, EnemySymbol.SHIELD, 1),
+        weights(EnemySymbol.SWORD, 2, EnemySymbol.SHIELD, 2, EnemySymbol.SWALLOWED_COIN, 1, EnemySymbol.ARMED_ARM, 1),
         deck(new int[] {3, 6, 9, 12, 14}, new int[] {4, 8, 12},
             new int[] {5, 9, 13}, new int[] {3, 7, 11}),
         List.of(Card.Suit.PIQUE, Card.Suit.CARREAU, Card.Suit.TREFLE, Card.Suit.COEUR),
@@ -518,7 +520,8 @@ public enum EnemyKind {
     PORTIER("Le Portier", "PORTIER",
         "Il filtre l'entrée. Une famille de cartes reste dehors tout le combat.",
         400_000, 150, 4,
-        weights(EnemySymbol.SWORD, 2, EnemySymbol.SHIELD, 2, EnemySymbol.POTION, 1),
+        weights(EnemySymbol.SWORD, 2, EnemySymbol.SHIELD, 2, EnemySymbol.POTION, 1, EnemySymbol.CLOAKROOM, 1,
+            EnemySymbol.BOUNCER, 1),
         deck(new int[] {3, 6, 9, 12, 14}, new int[] {4, 8, 12},
             new int[] {5, 9, 13, 14}, new int[] {3, 7, 11}),
         List.of(Card.Suit.PIQUE, Card.Suit.CARREAU, Card.Suit.TREFLE, Card.Suit.COEUR),
@@ -550,7 +553,8 @@ public enum EnemyKind {
     MAISON("La Maison", "LA MAISON",
         "Pas un ennemi. Un lieu vivant. La Façade protège, le Coffre soigne, la Salle de jeu frappe. La Maison gagne toujours : une fois, elle annule ton plus gros coup.",
         1_400_000, 150, 3,
-        weights(EnemySymbol.SHIELD, 2, EnemySymbol.SWORD, 2, EnemySymbol.POTION, 1),
+        weights(EnemySymbol.SHIELD, 2, EnemySymbol.SWORD, 2, EnemySymbol.POTION, 1, EnemySymbol.LOAD_BEARING, 1,
+            EnemySymbol.SAFE, 1, EnemySymbol.HOUSE_EDGE, 1),
         deck(new int[] {3, 6, 9, 12, 14}, new int[] {4, 8, 12},
             new int[] {5, 9, 13, 14}, new int[] {3, 7, 11}),
         List.of(Card.Suit.PIQUE, Card.Suit.CARREAU, Card.Suit.TREFLE, Card.Suit.COEUR),
@@ -593,7 +597,8 @@ public enum EnemyKind {
     MACHINE_ORIGINELLE("La Machine Originelle", "MACHINE ORIGINELLE",
         "La machine qui a créé la comète. Cinq rouleaux contre tes trois. Blessée, elle te vole tes rouleaux. Achevée, elle tente un dernier tirage.",
         2_000_000, 150, 2,
-        weights(EnemySymbol.SWORD, 2, EnemySymbol.SHIELD, 1, EnemySymbol.POTION, 1, EnemySymbol.RAGE, 1),
+        weights(EnemySymbol.SWORD, 2, EnemySymbol.SHIELD, 1, EnemySymbol.POTION, 1, EnemySymbol.RAGE, 1,
+            EnemySymbol.GEAR, 1, EnemySymbol.SHORT_CIRCUIT, 1, EnemySymbol.GOLDEN_COMET, 1, EnemySymbol.ASPIRATION, 1),
         deck(new int[] {3, 6, 9, 12, 14}, new int[] {4, 8, 12},
             new int[] {5, 9, 13, 14}, new int[] {3, 7, 11}),
         List.of(Card.Suit.PIQUE, Card.Suit.CARREAU, Card.Suit.TREFLE, Card.Suit.COEUR),
@@ -655,11 +660,14 @@ public enum EnemyKind {
     private static final Map<EnemySymbol, Integer> ECLAT_PHASE_TWO = Collections.unmodifiableMap(weights(
         EnemySymbol.SHIELD, 3, EnemySymbol.MIRROR, 1, EnemySymbol.HOURGLASS, 1, EnemySymbol.ALL_IN, 1));
 
-    /** Symboles de la Maison sans sa Façade (plus de Boucliers), puis sans son Coffre (plus de Potions). */
+    /**
+     * Symboles de la Maison sans sa Façade (plus de Boucliers ni de Mur porteur), puis sans
+     * son Coffre (plus de Potions ni de Coffre-fort) : la Salle de jeu garde son Avantage.
+     */
     private static final Map<EnemySymbol, Integer> HOUSE_PHASE_TWO = Collections.unmodifiableMap(weights(
-        EnemySymbol.SWORD, 2, EnemySymbol.POTION, 1));
+        EnemySymbol.SWORD, 2, EnemySymbol.POTION, 1, EnemySymbol.SAFE, 1, EnemySymbol.HOUSE_EDGE, 1));
     private static final Map<EnemySymbol, Integer> HOUSE_PHASE_THREE = Collections.unmodifiableMap(weights(
-        EnemySymbol.SWORD, 1));
+        EnemySymbol.SWORD, 2, EnemySymbol.HOUSE_EDGE, 1));
 
     private final String                     displayName;
     private final String                     barName;
@@ -1116,6 +1124,14 @@ public enum EnemyKind {
                 EnemySignature.BOTTE_SECRETE);
             case BANQUEROUTE -> List.of(EnemySignature.SAISIE);
             case TEMPS_MORT -> List.of(EnemySignature.COMPTE_A_REBOURS);
+            case CHEF -> List.of(EnemySignature.ANNONCE, EnemySignature.COUP_DE_RATEAU);
+            case PORTIER -> List.of(EnemySignature.TENUE_EXIGEE, EnemySignature.PAS_CE_SOIR);
+            case MAISON -> List.of(EnemySignature.MACONNERIE, EnemySignature.DOUBLE_SERRURE, EnemySignature.BANQUE_GAGNE);
+            case MACHINE_ORIGINELLE -> List.of(EnemySignature.HUILE_NOIRE, EnemySignature.PLUIE_D_ETOILES,
+                EnemySignature.SURTENSION, EnemySignature.GRANDE_ASPIRATION);
+            case GOLEM_OR -> List.of(EnemySignature.OR_MASSIF, EnemySignature.POIDS_DE_L_OR);
+            case COEUR_MONTAGNE -> List.of(EnemySignature.GRONDEMENT, EnemySignature.FILON);
+            case BANDIT_MANCHOT -> List.of(EnemySignature.MONNAIE, EnemySignature.LEVIER_GRILLE);
             case ROI_TREFLE -> List.of(EnemySignature.TAUX_USURAIRE, EnemySignature.DE_CHARGE);
             case RAT_CALES -> List.of(EnemySignature.DENTS_DE_RAT);
             case CAPITAINE_RAT -> List.of(EnemySignature.DENTS_DE_RAT, EnemySignature.SAIGNEE);

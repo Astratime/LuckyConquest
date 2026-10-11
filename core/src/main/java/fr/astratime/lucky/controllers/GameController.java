@@ -288,7 +288,12 @@ public class GameController {
             turnNotices.add(new EffectPopup(Lang.f("ABORDAGE : {0} RENDUE", back.getName().toUpperCase()),
                 EffectPopup.Style.DEFENSE, PopupScale.SECONDARY_INTENSITY));
         }
-        DrawResult drawn = player.draw(DEFAULT_DRAW_COUNT);
+        int buried = lasting.takeRockfalls(); // Éboulement : des cartes de moins
+        DrawResult drawn = player.draw(Math.max(1, DEFAULT_DRAW_COUNT - buried));
+        if (buried > 0) {
+            turnNotices.add(new EffectPopup(Lang.f(Lang.plural(buried) ? "ÉBOULEMENT : {0} CARTES DE MOINS"
+                : "ÉBOULEMENT : {0} CARTE DE MOINS", buried), EffectPopup.Style.DAMAGE, PopupScale.SECONDARY_INTENSITY));
+        }
         List<Card> added     = new ArrayList<>(drawn.getAddedToHand());
         List<Card> discarded = new ArrayList<>(drawn.getDiscarded());
 

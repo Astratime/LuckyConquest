@@ -28,6 +28,9 @@ import com.badlogic.gdx.scenes.scene2d.actions.Actions;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.utils.Align;
 import com.badlogic.gdx.utils.ScreenUtils;
+import fr.astratime.lucky.controllers.PreparationResolver;
+import fr.astratime.lucky.entities.enemy.AspirationRule;
+import fr.astratime.lucky.views.AspirationPanel;
 import fr.astratime.lucky.LuckyGame;
 import fr.astratime.lucky.animations.BingoCardAnimation;
 import fr.astratime.lucky.animations.CardClickParticles;
@@ -341,6 +344,8 @@ public class GameScreen extends ScreenAdapter {
     private final SpinControls spinControls;
     /** Cartes jouées ce tour sur la limite (« Cartes 2/4 »), coût du tirage et Mise, à droite du bouton de Mise. */
     private final Label      playsLabel;
+    /** Panneau de la Machine Originelle : les règles de ses Aspirations, au-dessus de la main. */
+    private final AspirationPanel aspirationPanel;
     private final TextButton restartButton;
     private final TextButton menuButton;
     /** Bouton pause, en bas à droite : ouvre le même menu qu'Échap. */
@@ -453,6 +458,7 @@ public class GameScreen extends ScreenAdapter {
         menuButton    = buttons.createAction(Lang.t("Menu principal"), sounds.buttonClick, this::onBackToMenu);
         pauseButton   = buttons.create(Lang.t("Pause"), sounds.buttonClick, this::showPauseMenu);
         playsLabel    = new Label("", new Label.LabelStyle(playsFont, Color.WHITE));
+        aspirationPanel = new AspirationPanel(hudTextures);
         endButtons.add(restartButton).size(restartButton.getWidth(), restartButton.getHeight());
         endButtons.add(menuButton).size(menuButton.getWidth(), menuButton.getHeight()).padLeft(END_BUTTONS_GAP);
         endButtons.pack();
@@ -521,6 +527,7 @@ public class GameScreen extends ScreenAdapter {
         spinControls.addTo(stage);
         stage.addActor(pauseButton);
         stage.addActor(playsLabel);
+        stage.addActor(aspirationPanel);
         stage.addActor(slots.getActor());
         stage.addActor(hand.getActor());
         stage.addActor(shopIcon);
@@ -570,7 +577,8 @@ public class GameScreen extends ScreenAdapter {
         refreshCombos(); // les combinaisons du tour précédent s'éteignent
         hand.setLocked(false); // une carte achetée entre deux tours reste sur la table
         showReelCount(gameController.getReelCount()); // le 4e rouleau de la surchauffe ne dure qu'un tour
-        slots.setBlockedReels(blockedReels(player().getLastingEffects().getForbiddenReel())); // Rouleau interdit, rouleaux volés
+        slots.setBlockedReels(blockedReels()); // Rouleau interdit, Rien ne va plus, rouleaux volés
+        refreshAspiration();
         GameController.Purchase gift = gameController.claimBonusCard(); // Bingo glissé dans le deck après un Bingo de gains
         if (gift != null) placePurchase(gift);
         DrawResult drawn = gameController.drawCards(); // Grignotage, Scorbut, Aveuglement et Chant s'y appliquent
@@ -631,6 +639,7 @@ public class GameScreen extends ScreenAdapter {
         refreshEffects();
         hand.refreshBlocked(); // limite de cartes atteinte, ou Bingo rendu injouable par un Recyclage
         refreshPlays();
+        refreshAspiration(); // les conditions remplies s'allument
         showReelCount(gameController.getReelCount()); // Machine en surchauffe : un 4e rouleau surgit
         announceCombos(combosBefore);
 
@@ -912,6 +921,12 @@ public class GameScreen extends ScreenAdapter {
         hand.discardAll();
         setSpinDisabled(true); // le tour du joueur se termine : la suite attend l'arrêt des rouleaux
         showReelCount(result.getDrawnSymbols().length);
+        // Aspiration : le panneau s'efface ; un rouleau aspiré (vide au tirage) est barré comme un rouleau bloqué
+        aspirationPanel.update(List.of(), List.of());
+        slots.setThreatenedReels(java.util.Set.of());
+        java.util.Set<Integer> empty = new java.util.TreeSet<>();
+        for (int i = 0; i < result.getDrawnSymbols().length; i++) if (result.getDrawnSymbols()[i] == null) empty.add(i);
+        slots.setBlockedReels(empty);
         Symbol[] rerolled = result.getRerolledDraw();
         if (rerolled == null) {
             slots.spin(result.getDrawnSymbols(), result.getSymbols(), this::onJokerTransformed,
@@ -1187,7 +1202,7 @@ public class GameScreen extends ScreenAdapter {
             if (heal.amount > 0) hud.revealEnemyHeal(heal.amount);
             enemyView.heal();
         } else if (event instanceof ReelForbiddenEvent forbidden) {
-            slots.setBlockedReels(blockedReels(forbidden.reel));
+            slots.setBlockedReels(blockedReels());
             sounds.shieldBreak.play();
             screenShake.shake(0.25f, 7f);
         }
@@ -1197,9 +1212,8 @@ public class GameScreen extends ScreenAdapter {
      * @return les rouleaux du joueur barrés au prochain tirage : {@code forbidden}
      *         (Rouleau interdit, -1 : aucun) et ceux volés par la Machine Originelle
      */
-    private java.util.Set<Integer> blockedReels(int forbidden) {
-        java.util.Set<Integer> blocked = new java.util.TreeSet<>();
-        if (forbidden >= 0) blocked.add(forbidden);
+    private java.util.Set<Integer> blockedReels() {
+        java.util.Set<Integer> blocked = new java.util.TreeSet<>(player().getLastingEffects().getForbiddenReels());
         int stolen = gameController.getGameState().getEnemy().getStolenReels();
         if (stolen >= 1) blocked.add(SlotMachine.SYMBOL_COUNT - 1);
         if (stolen >= 2) blocked.add(0);
@@ -1804,6 +1818,26 @@ public class GameScreen extends ScreenAdapter {
      * Met à jour le compteur de cartes jouées ce tour (en rouge une fois la limite
      * atteinte), suivi du coût du tirage et de la Mise ; et le bouton de Mise.
      */
+    /**
+     * Panneau des Aspirations de la Machine Originelle : les règles et les cartes
+     * jouées ce tour ; les rouleaux qu'elle aspirera si rien ne change portent une chaîne.
+     */
+    private void refreshAspiration() {
+        List<AspirationRule> rules = player().getLastingEffects().getAspirations();
+        List<Card> played = player().getPlayedCards();
+        aspirationPanel.update(rules, played);
+        java.util.Set<Integer> blocked = blockedReels(), threatened = new java.util.TreeSet<>();
+        for (AspirationRule rule : rules) {
+            if (rule.isMet(played)) continue;
+            java.util.Set<Integer> taken = new java.util.TreeSet<>(blocked);
+            taken.addAll(threatened);
+            int reel = PreparationResolver.aspiredReel(taken);
+            if (reel >= 0) threatened.add(reel);
+        }
+        slots.setThreatenedReels(threatened);
+        aspirationPanel.setPosition(playArea.getX() + BUTTON_MARGIN, table.getHandRowY() + CARD_HEIGHT + BUTTON_MARGIN);
+    }
+
     private void refreshPlays() {
         StringBuilder text = new StringBuilder(Lang.f("Cartes {0}/{1}",
             gameController.getCardsPlayedThisTurn(), gameController.getPlayLimit()));
@@ -2028,6 +2062,7 @@ public class GameScreen extends ScreenAdapter {
         pauseOverlay.dispose();
         jackpotCelebration.dispose();
         achievementToast.dispose();
+        aspirationPanel.dispose();
         turnBanner.dispose();
         damageVignette.dispose();
         combatEnd.dispose();

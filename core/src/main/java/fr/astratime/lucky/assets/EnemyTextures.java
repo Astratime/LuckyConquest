@@ -290,6 +290,23 @@ public class EnemyTextures implements Disposable {
             case NEW_RULE   -> Chapter456Art.newRule();
             case FRISK      -> Chapter456Art.frisk();
             case BANKRUPTCY -> Chapter456Art.bankruptcy();
+            case NOTHING_GOES   -> NewReelsArt.nothingGoes();
+            case RAKE           -> NewReelsArt.rake();
+            case CLOAKROOM      -> NewReelsArt.cloakroom();
+            case BOUNCER        -> NewReelsArt.bouncer();
+            case LOAD_BEARING   -> NewReelsArt.loadBearing();
+            case SAFE           -> NewReelsArt.safe();
+            case HOUSE_EDGE     -> NewReelsArt.houseEdge();
+            case GEAR           -> NewReelsArt.gear();
+            case SHORT_CIRCUIT  -> NewReelsArt.shortCircuit();
+            case GOLDEN_COMET   -> NewReelsArt.goldenComet();
+            case ASPIRATION     -> NewReelsArt.aspiration();
+            case PLATING        -> NewReelsArt.plating();
+            case INGOT          -> NewReelsArt.ingot();
+            case ROCKFALL       -> NewReelsArt.rockfall();
+            case HEARTBEAT      -> NewReelsArt.heartbeat();
+            case SWALLOWED_COIN -> NewReelsArt.swallowedCoin();
+            case ARMED_ARM      -> NewReelsArt.armedArm();
         };
     }
 

@@ -104,11 +104,19 @@ public class Player {
      * coup traverse le bouclier sans l'user. Un Casque bloque le coup entier.
      */
     public int takeDamage(int damage, boolean pierceShield) {
+        return takeDamage(damage, pierceShield ? 0 : 100);
+    }
+
+    /**
+     * Comme {@link #takeDamage(int)}, quand seuls {@code shieldPercent} % du
+     * bouclier peuvent absorber le coup (le Videur : 50 % ; le Forage : 0 %).
+     */
+    public int takeDamage(int damage, int shieldPercent) {
         if (damage > 0 && helmets > 0) { // Casque : le coup rebondit
             helmets--;
             return 0;
         }
-        int absorbed  = pierceShield ? 0 : Math.min(shield, damage);
+        int absorbed  = Math.min((int) ((long) shield * Math.max(0, Math.min(100, shieldPercent)) / 100), damage);
         shield -= absorbed;
         int remaining = damage - absorbed;
         int actualLoss = Math.min(hp, remaining);
