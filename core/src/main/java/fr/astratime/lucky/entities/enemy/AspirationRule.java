@@ -54,7 +54,7 @@ public final class AspirationRule {
                 case SPECIAL -> many ? "{0} cartes spéciales" : "{0} carte spéciale";
                 case SUIT -> switch (suit) {
                     case PIQUE   -> many ? "{0} Piques" : "{0} Pique";
-                    case COEUR   -> many ? "{0} Cœurs" : "{0} Cœur";
+                    case COEUR   -> many ? "{0} Coeurs" : "{0} Coeur";
                     case CARREAU -> many ? "{0} Carreaux" : "{0} Carreau";
                     case TREFLE  -> many ? "{0} Trèfles" : "{0} Trèfle";
                 };

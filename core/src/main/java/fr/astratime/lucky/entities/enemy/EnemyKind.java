@@ -189,7 +189,7 @@ public enum EnemyKind {
         List.of(Card.Suit.PIQUE, Card.Suit.TREFLE, Card.Suit.CARREAU, Card.Suit.COEUR)),
 
     ECLAT("Éclat Originel", "ÉCLAT ORIGINEL",
-        "Le cœur de la comète. Il est le hasard. Blessé, il change de jeu.",
+        "Le coeur de la comète. Il est le hasard. Blessé, il change de jeu.",
         400_000, 120, 5,
         weights(EnemySymbol.SHIELD, 3, EnemySymbol.THORNS, 1, EnemySymbol.FANG, 1, EnemySymbol.RAGE, 1),
         deck(new int[] {4, 9, 14}, new int[] {4, 8, 12, 14},
@@ -973,7 +973,7 @@ public enum EnemyKind {
             case MAISON -> phase == 2 ? Lang.t("LA FAÇADE TOMBE : PLUS DE DÉFENSE") : Lang.t("LE COFFRE TOMBE : PLUS DE SOINS");
             case MACHINE_ORIGINELLE -> Lang.t("ELLE TE VOLE UN ROULEAU !");
             case ROI_PIQUE -> Lang.t("LAMES ASSOIFFÉES : CROC !");
-            case ROI_COEUR -> Lang.t("CŒUR FURIEUX : RAGE !");
+            case ROI_COEUR -> Lang.t("COEUR FURIEUX : RAGE !");
             case ROI_CARREAU -> Lang.t("LE TRÉSOR RAPPORTE : INTÉRÊTS !");
             case ROI_TREFLE -> Lang.t("LA TABLE TOURNE : IVRESSE !");
             case CAPITAINE_RAT -> Lang.t("LES RATS MONTENT À BORD : ABORDAGE !");
@@ -983,7 +983,7 @@ public enum EnemyKind {
             case BARON_OR -> Lang.t("AVIDITÉ : CROC !");
             case GRAND_FOREUR -> Lang.t("ÉCLATS DE ROCHE : ÉPINES !");
             case MAITRE_FORGE -> Lang.t("FORGE ARDENTE : RAGE !");
-            case COEUR_MONTAGNE -> Lang.t("LE CŒUR DURCIT : ENCLUME !");
+            case COEUR_MONTAGNE -> Lang.t("LE COEUR DURCIT : ENCLUME !");
             case SIRENE -> Lang.t("CHANT MORTEL : CROC !");
             case JACKPOT_VIVANT -> Lang.t("MISE MAXIMALE : INTÉRÊTS !");
             case REQUIN_BANQUIER -> Lang.t("FRÉNÉSIE : RAGE !");
