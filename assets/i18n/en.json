@@ -1737,5 +1737,15 @@
   "Levier grillé": "Fried lever",
   "Son prochain Bras armé relance 2 rouleaux": "Its next Cocked arm re-spins 2 reels",
   "BRAS ARMÉ x2": "COCKED ARM x2",
-  "Avantage de la maison : attaque de {0}. Tes gains du prochain tirage baissent de {1} %": "House edge: {0} attack. Your winnings on your next spin drop by {1}%"
+  "Avantage de la maison : attaque de {0}. Tes gains du prochain tirage baissent de {1} %": "House edge: {0} attack. Your winnings on your next spin drop by {1}%",
+  "Continuer partie": "Continue game",
+  "Nouvelle partie": "New game",
+  "NOUVELLE PARTIE": "NEW GAME",
+  "CONTINUER PARTIE": "CONTINUE GAME",
+  "Partie {0} : vide": "Game {0}: empty",
+  "Partie {0} : abîmée": "Game {0}: damaged",
+  "Partie {0} : sans rang": "Game {0}: no rank",
+  "Partie {0} : {1}": "Game {0}: {1}",
+  "Attention : l'emplacement {0} a déjà une partie. Une nouvelle partie l'efface pour de bon : pièces, cartes, rang, tout repart de zéro.": "Careful: slot {0} already has a game. A new game erases it for good: coins, cards, rank, everything starts over.",
+  "Effacer et commencer": "Erase and start"
 }

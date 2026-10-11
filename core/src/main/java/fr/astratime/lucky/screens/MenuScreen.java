@@ -29,6 +29,8 @@ import fr.astratime.lucky.assets.BackgroundMusic;
 import fr.astratime.lucky.assets.VolumeSound;
 import fr.astratime.lucky.i18n.Lang;
 import fr.astratime.lucky.progress.PlayerProfile;
+import fr.astratime.lucky.progress.Rank;
+import fr.astratime.lucky.progress.SaveSlots;
 import fr.astratime.lucky.settings.AudioSettings;
 import fr.astratime.lucky.settings.DisplaySettings;
 import fr.astratime.lucky.settings.VisualSettings;
@@ -51,6 +53,12 @@ import java.util.function.Supplier;
  * Écran d'accueil, devant l'intérieur animé d'un casino ({@link MenuDecor}) qui
  * se décale légèrement avec la souris (parallaxe) : le titre, sur lequel passe
  * un reflet, flotte au-dessus d'un panneau d'options.
+ *
+ * Au lancement, l'écran s'ouvre sur l'accueil : « Continuer partie » (la dernière
+ * partie jouée, ou le choix de la partie quand plusieurs emplacements en ont une),
+ * « Nouvelle partie » (choix d'un des {@link SaveSlots#COUNT} emplacements ; le Croupier
+ * prévient avant d'effacer une partie), « Options » et « Quitter ». Une partie
+ * choisie mène à la page principale, qui a un « Retour » vers l'accueil.
  *
  * Page principale : « Entraînement » (lance un combat contre le croupier d'entraînement, {@link GameScreen}), « Tour des
  * épreuves » (choix d'un chapitre, {@link TowerScreen}), « Options » et « Quitter ». Page des options : affichage (fenêtre agrandie ou plein
@@ -82,7 +90,8 @@ public class MenuScreen extends ScreenAdapter {
     private static final float TITLE_TOP      = 230f;   // du haut de l'écran au centre du titre
     private static final float TITLE_FLOAT    = 8f;     // amplitude du flottement du titre
     private static final float PANEL_CENTER_Y = 0.46f;  // fraction de la hauteur de l'écran
-    /** Options de la page principale hors mode ADMIN. */
+    private static final float PANEL_MARGIN   = 40f;    // le bord du panneau et un peu d'espace sous lui
+    /** Options d'une page sans en-tête qui restent centrées ; au-delà, le panneau descend (voir {@link #placeMenu()}). */
     private static final int   MAIN_ENTRIES   = 7;
     private static final float FADE_TIME      = 0.4f;
     private static final float PARALLAX       = 18f;    // décalage maximal du décor, en pixels
@@ -121,11 +130,23 @@ public class MenuScreen extends ScreenAdapter {
     private BestiaryOverlay           bestiary;
     private final Sound               achievementSound;
     private boolean                 leaving;
+    /** L'accueil (ou le choix d'une partie) est affiché : aucune partie n'est encore choisie. */
+    private boolean                 home;
     private float                   parallaxX, parallaxY;
 
     /** @param luckyGame instance de jeu : SpriteBatch partagé et changement d'écran */
     public MenuScreen(LuckyGame luckyGame) {
+        this(luckyGame, false);
+    }
+
+    /**
+     * @param luckyGame instance de jeu : SpriteBatch partagé et changement d'écran
+     * @param home      {@code true} : l'accueil (lancement du jeu) ; {@code false} : la page
+     *                  principale de la partie chargée (retour d'un autre écran)
+     */
+    public MenuScreen(LuckyGame luckyGame, boolean home) {
         this.luckyGame = luckyGame;
+        this.home      = home;
         this.stage     = new Stage(new MinimumScreenViewport(MIN_WIDTH, MIN_HEIGHT), luckyGame.getBatch());
 
         clickSound  = new VolumeSound(Gdx.audio.newSound(Gdx.files.internal(CLICK_SOUND)), audio);
@@ -144,7 +165,8 @@ public class MenuScreen extends ScreenAdapter {
         stage.addActor(title);
         menu = new OptionsMenu(stage, hud, clickSound, hoverSound);
 
-        showMainPage();
+        if (home) showHomePage();
+        else showMainPage();
         guide = new GuideOverlay(hud, croupier);
         stage.addActor(guide);
         achievements = new AchievementsOverlay(hud, guideButtons, clickSound);
@@ -155,9 +177,110 @@ public class MenuScreen extends ScreenAdapter {
         stage.addActor(fade);                     // en dernier : fondu d'ouverture et de sortie
         fade.addAction(Actions.fadeOut(FADE_TIME));
         layout();
+        if (!home) welcome();
+    }
+
+    /**
+     * Arrivée sur la page principale : le Croupier parle (voir {@link #startGuide()}) et les
+     * succès atteints ailleurs (ou par une partie d'avant les succès) sont annoncés.
+     */
+    private void welcome() {
         stage.addAction(Actions.delay(GUIDE_DELAY, Actions.run(this::startGuide)));
-        // Succès atteints ailleurs (ou par une partie d'avant les succès) : annoncés en arrivant au menu.
         stage.addAction(Actions.delay(GUIDE_DELAY, Actions.run(() -> toast.show(luckyGame.getProfile().checkAchievements()))));
+    }
+
+    // -------------------------------------------------------------------------
+    // Accueil et emplacements de sauvegarde
+    // -------------------------------------------------------------------------
+
+    /**
+     * Accueil : Continuer partie (s'il y a une partie enregistrée), Nouvelle partie,
+     * Options, Quitter.
+     */
+    private void showHomePage() {
+        home = true;
+        List<OptionsMenu.Entry> entries = new ArrayList<>();
+        List<Integer> used = luckyGame.getSlots().usedSlots();
+        if (!used.isEmpty()) {
+            entries.add(OptionsMenu.Entry.button(Lang.t("Continuer partie"), () -> {
+                if (used.size() == 1) enterGame(used.get(0), false);
+                else showSlotsPage(false);
+            }));
+        }
+        entries.add(OptionsMenu.Entry.button(Lang.t("Nouvelle partie"), () -> showSlotsPage(true)));
+        entries.add(OptionsMenu.Entry.button(Lang.t("Options"), () -> showOptionsPage(0, 0)));
+        entries.add(OptionsMenu.Entry.button(Lang.t("Quitter"), this::onQuit));
+        showPage(null, entries);
+    }
+
+    /**
+     * Choix d'un emplacement : pour une nouvelle partie, les {@link SaveSlots#COUNT}
+     * emplacements (le Croupier prévient avant d'effacer une partie) ; pour continuer,
+     * ceux qui ont une partie, le dernier joué sélectionné.
+     */
+    private void showSlotsPage(boolean newGame) {
+        SaveSlots slots = luckyGame.getSlots();
+        List<OptionsMenu.Entry> entries = new ArrayList<>();
+        int selected = 0;
+        for (int slot = 1; slot <= SaveSlots.COUNT; slot++) {
+            int chosen = slot;
+            boolean used = slots.isUsed(slot);
+            if (!newGame && !used) continue;
+            if (!newGame && slot == slots.lastUsed()) selected = entries.size();
+            entries.add(OptionsMenu.Entry.button(slotLabel(slot), () -> {
+                if (!newGame) enterGame(chosen, false);
+                else if (used) confirmReplace(chosen);
+                else enterGame(chosen, true);
+            }));
+        }
+        entries.add(OptionsMenu.Entry.button(Lang.t("Retour"), this::showHomePage));
+        showPage(newGame ? Lang.t("NOUVELLE PARTIE") : Lang.t("CONTINUER PARTIE"), entries, selected);
+        escapeBack = this::showHomePage;
+    }
+
+    /** @return le nom d'un emplacement et ce qu'il contient : vide, ou le rang de sa partie. */
+    private String slotLabel(int slot) {
+        SaveSlots slots = luckyGame.getSlots();
+        if (!slots.isUsed(slot)) return Lang.f("Partie {0} : vide", slot);
+        if (slots.peek(slot) == null) return Lang.f("Partie {0} : abîmée", slot);
+        Rank rank = slots.rank(slot);
+        return rank == null ? Lang.f("Partie {0} : sans rang", slot) : Lang.f("Partie {0} : {1}", slot, rank.getTitle());
+    }
+
+    /** L'emplacement {@code slot} a déjà une partie : le Croupier prévient avant de l'effacer. */
+    private void confirmReplace(int slot) {
+        menu.setActive(false);
+        GuideOverlay.Step warning = GuideOverlay.Step.say(Lang.f("Attention : l'emplacement {0} a déjà une partie. "
+            + "Une nouvelle partie l'efface pour de bon : pièces, cartes, rang, tout repart de zéro.", slot)).buttons(
+            guideButtons.create(Lang.t("Effacer et commencer"), clickSound, () -> {
+                guide.stop();
+                enterGame(slot, true);
+            }),
+            guideButtons.create(Lang.t("Annuler"), clickSound, () -> {
+                guide.stop();
+                menu.setActive(true);
+            }));
+        guide.toFront();
+        fade.toFront();
+        guide.play(List.of(warning), null);
+    }
+
+    /**
+     * Charge la partie de l'emplacement {@code slot} ({@code newGame} : en commence
+     * une nouvelle) et passe à la page principale.
+     */
+    private void enterGame(int slot, boolean newGame) {
+        if (newGame) luckyGame.newGame(slot);
+        else luckyGame.continueSlot(slot);
+        home = false;
+        menu.setActive(true);
+        showMainPage();
+        // Les options de la page viennent d'être ajoutées : le Croupier et les fenêtres repassent devant.
+        achievements.getActor().toFront();
+        guide.toFront();
+        toast.toFront();
+        fade.toFront();
+        welcome();
     }
 
     // -------------------------------------------------------------------------
@@ -166,7 +289,7 @@ public class MenuScreen extends ScreenAdapter {
 
     /**
      * Page principale : Entraînement, Tour des épreuves, Exploration, Table du croupier, Boutique,
-     * Cinématique (en mode ADMIN seulement), Options, Quitter.
+     * Cinématique (en mode ADMIN seulement), Options, Retour (vers l'accueil), Quitter.
      */
     private void showMainPage() {
         List<OptionsMenu.Entry> entries = new ArrayList<>(List.of(
@@ -180,6 +303,7 @@ public class MenuScreen extends ScreenAdapter {
             entries.add(OptionsMenu.Entry.button(Lang.t("Cinématique"), () -> goTo(() -> new CinematicScreen(luckyGame))));
         }
         entries.add(OptionsMenu.Entry.button(Lang.t("Options"), this::showOptionsPage));
+        entries.add(OptionsMenu.Entry.button(Lang.t("Retour"), this::showHomePage));
         entries.add(OptionsMenu.Entry.button(Lang.t("Quitter"), this::onQuit));
         showPage(null, entries);
     }
@@ -196,8 +320,8 @@ public class MenuScreen extends ScreenAdapter {
 
     /**
      * Page des options, en onglets : Visuel (affichage, animations, cartes colorées), Audio
-     * (musique, sons), Accessibilité, Jeu (langue, statistiques, bestiaire, tutoriel, mode ADMIN) ;
-     * chaque onglet finit par Retour.
+     * (musique, sons), Accessibilité, Jeu (langue, puis, une partie choisie, statistiques,
+     * bestiaire, tutoriel, mode ADMIN) ; chaque onglet finit par Retour (vers l'accueil ou la page principale).
      *
      * @param tab      l'onglet affiché
      * @param selected l'option sélectionnée à l'ouverture de l'onglet
@@ -211,13 +335,17 @@ public class MenuScreen extends ScreenAdapter {
         int rows = 0;
         for (List<OptionsMenu.Entry> page : pages) rows = Math.max(rows, page.size() + 1);
         List<OptionsMenu.Entry> entries = new ArrayList<>(pages.get(tab));
-        entries.add(OptionsMenu.Entry.button(Lang.t("Retour"), this::showMainPage));
+        entries.add(OptionsMenu.Entry.button(Lang.t("Retour"), home ? this::showHomePage : this::showMainPage));
         List<String> labels = OPTION_TABS.stream().map(Lang::t).toList();
         showPage(Lang.t("OPTIONS"), new OptionsMenu.Tabs(labels, tab, other -> showOptionsPage(other, 0), rows),
             entries, selected);
+        if (home) escapeBack = this::showHomePage;
     }
 
-    /** @return l'onglet Jeu des options : langue, statistiques, bestiaire, tutoriel, mode ADMIN. */
+    /**
+     * @return l'onglet Jeu des options : langue, puis (une partie choisie) statistiques,
+     *         bestiaire, tutoriel, mode ADMIN
+     */
     private List<OptionsMenu.Entry> gameEntries() {
         List<OptionsMenu.Entry> entries = new ArrayList<>();
         int languageIndex = entries.size();
@@ -228,6 +356,7 @@ public class MenuScreen extends ScreenAdapter {
         };
         entries.add(new OptionsMenu.Entry(() -> Lang.f("Langue : {0}", Lang.get().label), toggleLanguage,
             direction -> toggleLanguage.run()));
+        if (home) return entries; // à l'accueil, aucune partie n'est encore choisie
         entries.add(OptionsMenu.Entry.button(Lang.t("Statistiques et succès"), this::showAchievements));
         entries.add(OptionsMenu.Entry.button(Lang.t("Bestiaire et collection"), this::showBestiary));
         entries.add(OptionsMenu.Entry.button(Lang.t("Rejouer le tutoriel"), this::onTutorial));
@@ -279,7 +408,7 @@ public class MenuScreen extends ScreenAdapter {
 
     /**
      * Centre le panneau des options ; une page principale plus longue que
-     * {@link #MAIN_ENTRIES} options (« Cinématique » en mode ADMIN) descend,
+     * {@link #MAIN_ENTRIES} options (« Retour », « Cinématique » en mode ADMIN) descend,
      * pour que son haut ne couvre pas davantage le titre.
      */
     private void placeMenu() {
@@ -291,7 +420,9 @@ public class MenuScreen extends ScreenAdapter {
             return;
         }
         int extra = Math.max(0, menu.size() - MAIN_ENTRIES);
-        menu.layout(width / 2f, height * PANEL_CENTER_Y - extra * OptionsMenu.OPTION_STEP / 2f);
+        // Le bas du panneau reste à l'écran (page principale en mode ADMIN : Cinématique et Retour en plus).
+        float lowest = menu.size() * OptionsMenu.OPTION_STEP / 2f + PANEL_MARGIN;
+        menu.layout(width / 2f, Math.max(lowest, height * PANEL_CENTER_Y - extra * OptionsMenu.OPTION_STEP / 2f));
     }
 
     // -------------------------------------------------------------------------
@@ -304,7 +435,7 @@ public class MenuScreen extends ScreenAdapter {
      * reste dans les Options). Tutoriel fini ou passé : il présente le menu, une fois.
      */
     private void startGuide() {
-        if (leaving || menu.hasCaption()) return;
+        if (leaving || home || menu.hasCaption()) return;
         // Sauvegarde refusée, copie de secours ou plantage : le Croupier le dit d'abord, au lancement.
         String notice = luckyGame.takeNotice();
         if (notice != null) {

@@ -28,6 +28,7 @@ public class MenuOption extends Group {
     private static final float CHIP_FPS       = 12f;
     private static final float SELECTED_SCALE = 1.06f;
     private static final float ANIM_TIME      = 0.12f;
+    private static final float TEXT_MARGIN    = 16f;   // de chaque côté du texte, dans le cadre
 
     private final Label          label;
     private final Image          frame;
@@ -57,6 +58,7 @@ public class MenuOption extends Group {
         label.setColor(IDLE_COLOR);
         label.setTouchable(Touchable.disabled);
         addActor(label);
+        fitText();
 
         float chipY = (height - CHIP_SIZE) / 2f;
         leftChip  = chip(chipStrip, -CHIP_GAP - CHIP_SIZE, chipY, 0);
@@ -99,5 +101,14 @@ public class MenuOption extends Group {
     /** Change le texte de l'option (ex : réglage basculé). */
     public void setText(String text) {
         label.setText(text);
+        fitText();
+    }
+
+    /** Un texte plus large que l'option (ex : « Partie 2 : Baron du tapis vert ») est réduit pour tenir dans son cadre. */
+    private void fitText() {
+        label.setFontScale(1f);
+        float room = getWidth() - TEXT_MARGIN * 2f;
+        float width = label.getPrefWidth();
+        if (width > room) label.setFontScale(room / width);
     }
 }
