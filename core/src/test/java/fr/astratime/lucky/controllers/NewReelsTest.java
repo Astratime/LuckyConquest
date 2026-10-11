@@ -65,23 +65,36 @@ class NewReelsTest {
 
     @Test
     void anAspirationRuleCountsEachConditionApart() {
-        AspirationRule rule = new AspirationRule(AspirationRule.RULES.get(1)); // un As et 2 Carreaux
+        AspirationRule rule = new AspirationRule(List.of(new AspirationRule.Condition(AspirationRule.Kind.RANK, 1, 1, null),
+            new AspirationRule.Condition(AspirationRule.Kind.SUIT, 2, 0, Card.Suit.CARREAU))); // un As et 2 Carreaux
         assertFalse(rule.isMet(List.of(card(Card.Suit.PIQUE, 1), card(Card.Suit.CARREAU, 5))));
         assertTrue(rule.isMet(List.of(card(Card.Suit.CARREAU, 1), card(Card.Suit.CARREAU, 5))),
             "l'As de Carreau compte pour l'As et pour un Carreau");
-        AspirationRule colors = new AspirationRule(AspirationRule.RULES.get(6));
-        assertTrue(colors.isMet(List.of(card(Card.Suit.PIQUE, 2), card(Card.Suit.COEUR, 3), card(Card.Suit.TREFLE, 4))));
-        assertFalse(colors.isMet(List.of(card(Card.Suit.PIQUE, 2), card(Card.Suit.PIQUE, 3), card(Card.Suit.TREFLE, 4))));
     }
 
     @Test
-    void aGreatAspirationAddsACondition() {
+    void theFirstAspirationRuleAsksForTwoCardsTheNextOnesForOne() {
         for (int seed = 0; seed < 30; seed++) {
-            AspirationRule plain = AspirationRule.random(new Random(seed), false);
-            AspirationRule great = AspirationRule.random(new Random(seed), true);
-            int plainCards = plain.getConditions().stream().mapToInt(AspirationRule.Condition::count).sum();
-            int greatCards = great.getConditions().stream().mapToInt(AspirationRule.Condition::count).sum();
-            assertEquals(plainCards + 1, greatCards, "graine " + seed);
+            AspirationRule first = AspirationRule.random(new Random(seed), true);
+            AspirationRule next = AspirationRule.random(new Random(seed), false);
+            assertEquals(2, first.getConditions().stream().mapToInt(AspirationRule.Condition::count).sum(), "graine " + seed);
+            assertEquals(1, next.getConditions().stream().mapToInt(AspirationRule.Condition::count).sum(), "graine " + seed);
+        }
+    }
+
+    @Test
+    void theMachineAnnouncesAtMostThreeAspirationRules() {
+        for (int seed = 0; seed < 300; seed++) {
+            Enemy enemy = new Enemy(EnemyKind.MACHINE_ORIGINELLE);
+            Player player = player();
+            player.addGains(10_000);
+            new EnemyTurnResolver(new Random(seed)).resolve(enemy, player, 0, 0f);
+            List<AspirationRule> rules = player.getLastingEffects().getAspirations();
+            assertTrue(rules.size() <= AspirationRule.MAX_RULES, "graine " + seed);
+            for (int i = 0; i < rules.size(); i++) {
+                assertEquals(i == 0 ? 2 : 1, rules.get(i).getConditions().stream()
+                    .mapToInt(AspirationRule.Condition::count).sum(), "graine " + seed);
+            }
         }
     }
 

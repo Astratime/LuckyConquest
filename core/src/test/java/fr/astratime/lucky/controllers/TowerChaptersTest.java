@@ -17,6 +17,7 @@ import fr.astratime.lucky.entities.events.EnemyShieldedEvent;
 import fr.astratime.lucky.entities.events.Event;
 import fr.astratime.lucky.entities.events.GainsStolenEvent;
 import fr.astratime.lucky.entities.events.GaugesDrainedEvent;
+import fr.astratime.lucky.entities.events.PlayerDamagedEvent;
 import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
@@ -145,6 +146,28 @@ class TowerChaptersTest {
         EnemyTurnResult turn = turnWith(EnemySymbol.HOURGLASS, () -> plain(EnemyKind.HORLOGER),
             () -> new Player("Joueur", 1_000_000, List.of()));
         assertEquals(count(turn, EnemySymbol.HOURGLASS), events(turn, EnemyHourglassEvent.class).size());
+    }
+
+    @Test
+    void theHourglassExplosionGoesThroughTheShield() {
+        Supplier<Enemy> ready = () -> {
+            Enemy enemy = plain(EnemyKind.HORLOGER);
+            for (int i = 1; i < EnemySymbol.HOURGLASS_MAX; i++) enemy.tickHourglass();
+            return enemy;
+        };
+        Player[] player = new Player[1];
+        EnemyTurnResult turn = turnWith(EnemySymbol.HOURGLASS, ready, () -> {
+            player[0] = new Player("Joueur", 1_000_000, List.of());
+            player[0].addShield(1_000_000);
+            return player[0];
+        });
+        int reel = Arrays.asList(turn.symbols()).indexOf(EnemySymbol.HOURGLASS);
+        List<Event> events = turn.outcomes().get(reel);
+        assertTrue(((EnemyHourglassEvent) events.get(0)).exploded, "à 5/5, il explose");
+        PlayerDamagedEvent boom = (PlayerDamagedEvent) events.get(1);
+        // Au moins ses dégâts de base : ses Piques jouées ce tour (deck mélangé au hasard) s'y ajoutent.
+        assertTrue(boom.damage >= EnemyKind.HORLOGER.hurt(EnemySymbol.HOURGLASS_DAMAGE), "malgré le bouclier");
+        assertEquals(0, boom.blocked, "le bouclier n'arrête rien");
     }
 
     @Test

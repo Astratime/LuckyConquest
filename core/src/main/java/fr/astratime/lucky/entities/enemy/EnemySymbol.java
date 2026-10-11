@@ -129,7 +129,7 @@ public enum EnemySymbol {
     public static final int ZERO_POCKETS   = 5;
     /** Tours de Sablier avant l'explosion. */
     public static final int HOURGLASS_MAX  = 5;
-    /** Dégâts de l'explosion du Sablier (plus sa Rage). */
+    /** Dégâts de l'explosion du Sablier (plus sa Rage), à travers le bouclier du joueur. */
     public static final int HOURGLASS_DAMAGE = 35;
     /** Un coup du joueur d'au moins cette part de ses PV max (en pour mille) fait reculer son Sablier. */
     public static final int HOURGLASS_HIT_PER_MILLE = 10;
@@ -222,7 +222,7 @@ public enum EnemySymbol {
                 kind.interestPercent(), INTEREST_PER_ATTACK);
             case ZERO   -> Lang.t("Zéro : rouge, ses attaques doublent. Noir, ses Boucliers. Zéro, les deux");
             case MIRROR -> Lang.t("Reflet : il rejoue ta dernière carte. À moitié de sa force");
-            case HOURGLASS -> Lang.f("Sablier : +1. À {0}, il explose ({1}). Tes gros coups le font reculer",
+            case HOURGLASS -> Lang.f("Sablier : +1. À {0}, il explose ({1}), à travers ton bouclier. Tes gros coups le font reculer",
                 HOURGLASS_MAX, kind.hurt(HOURGLASS_DAMAGE));
             case ALL_IN -> Lang.t("Tapis : à son prochain tour, ses attaques doublent. Touche-le avant pour l'annuler");
             case NIBBLE -> Lang.t("Grignotage : il ronge une carte. Au prochain tour, une carte de ta main part à la défausse");
@@ -273,8 +273,9 @@ public enum EnemySymbol {
                 + "ta paire ou ton Bingo");
             case GOLDEN_COMET -> Lang.f("Comète : la Comète Dorée tombe, {0} % de tes PV max. Ignore ton bouclier",
                 GOLDEN_COMET_PERCENT);
-            case ASPIRATION -> Lang.t("Aspiration : elle annonce une règle. Si tes cartes du prochain tour ne la respectent pas, "
-                + "elle aspire un de tes rouleaux pour ce tirage");
+            case ASPIRATION -> Lang.t("Aspiration : elle annonce une règle, 2 cartes à jouer pour la première, 1 carte pour "
+                + "chaque suivante, 3 règles au plus. Chaque règle que tes cartes du prochain tour ne respectent pas lui fait "
+                + "aspirer un de tes rouleaux pour ce tirage");
             case PLATING -> Lang.t("Placage : sa peau d'or tient 1 tour, même sous la moitié de ses PV");
             case INGOT -> Lang.t("Lingot : un coup qui grandit avec sa défense du moment, jusqu'à x3");
             case ROCKFALL -> Lang.f("Éboulement : attaque de {0}. Tu pioches 1 carte de moins au prochain tour",

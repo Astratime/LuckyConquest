@@ -104,7 +104,7 @@ public enum EnemySignature {
     SURTENSION("Surtension", EnemySymbol.SHORT_CIRCUIT, Timing.NEXT,
         "Son prochain Court-circuit touche 2 de tes rouleaux", "COURT-CIRCUIT x2"),
     GRANDE_ASPIRATION("Grande aspiration", EnemySymbol.ASPIRATION, Timing.NEXT,
-        "Sa prochaine Aspiration demande une condition de plus", "ASPIRATION +1"),
+        "Sa prochaine Aspiration annonce une règle de plus", "ASPIRATION +1"),
     OR_MASSIF("Or massif", EnemySymbol.PLATING, Timing.NEXT,
         "Son prochain Placage dure 2 tours", "PLACAGE 2 TOURS"),
     POIDS_DE_L_OR("Poids de l'or", EnemySymbol.INGOT, Timing.TURN,

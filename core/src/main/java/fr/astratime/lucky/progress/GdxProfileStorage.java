@@ -8,21 +8,32 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
- * Le profil du joueur dans le jeu : une sauvegarde signée ({@link SecureProfileStorage})
- * dans le dossier {@code .prefs} de l'utilisateur. L'ancien profil (préférences
- * de libGDX, non signé) est repris au premier lancement de cette version, puis effacé.
+ * Les parties du joueur dans le jeu : {@link SaveSlots#COUNT} sauvegardes signées
+ * ({@link SecureProfileStorage}) dans le dossier {@code .prefs} de l'utilisateur.
+ * L'ancien profil (préférences de libGDX, non signé) est repris dans l'emplacement 1
+ * au premier lancement d'une version signée, puis effacé.
  */
 public final class GdxProfileStorage {
 
     private static final String LEGACY_PREFERENCES = "lucky-conquest-profile";
-    private static final String SAVE_FILE          = ".prefs/lucky-conquest-save";
+    private static final String SAVE_FOLDER        = ".prefs";
 
     private GdxProfileStorage() {}
 
-    /** @return le stockage du profil, chargé depuis le disque. */
-    public static SecureProfileStorage open() {
+    /** @return les emplacements de sauvegarde, dans le dossier {@code .prefs} de l'utilisateur. */
+    public static SaveSlots slots() {
+        return new SaveSlots(Gdx.files.external(SAVE_FOLDER).file().toPath());
+    }
+
+    /**
+     * @param slots emplacements de sauvegarde
+     * @param slot  l'emplacement à ouvrir (de 1 à {@link SaveSlots#COUNT})
+     * @return le stockage de la partie de l'emplacement {@code slot}, chargé depuis le disque
+     */
+    public static SecureProfileStorage open(SaveSlots slots, int slot) {
+        Path file = slots.file(slot);
+        if (slot != 1) return new SecureProfileStorage(file, Map::of, () -> { });
         Preferences legacy = Gdx.app.getPreferences(LEGACY_PREFERENCES);
-        Path file = Gdx.files.external(SAVE_FILE).file().toPath();
         return new SecureProfileStorage(file, () -> {
             Map<String, String> values = new LinkedHashMap<>();
             legacy.get().forEach((key, value) -> values.put(key, String.valueOf(value)));
