@@ -8,8 +8,8 @@ import java.util.List;
 /**
  * Cartes propres des ennemis : des cartes sombres sans couleur, liées à un de
  * leurs rouleaux (voir {@link EnemyKind#getSignatures()}). Elles sont en
- * {@link #COPIES} exemplaires dans son deck, et il les joue avant ses cartes
- * de couleur. Leur effet vaut :
+ * {@link #COPIES} exemplaires dans son deck. Il en joue une de chaque sorte
+ * piochée, en plus de ses cartes de couleur habituelles. Leur effet vaut :
  * <ul>
  *   <li>{@link Timing#TURN} : pour tous les symboles {@link #getSymbol()} de son tirage du tour ;</li>
  *   <li>{@link Timing#NEXT} : pour le prochain symbole {@link #getSymbol()} qu'il tire, même à un tour suivant ;</li>
@@ -136,9 +136,6 @@ public enum EnemySignature {
 
     /** @return le moment où elle agit. */
     public Timing getTiming() { return timing; }
-
-    /** @return les exemplaires qu'il peut jouer au plus en un tour (0 : pas de limite). */
-    public int maxPerTurn() { return this == COMPTE_A_REBOURS ? 1 : 0; }
 
     /** @return la description de son effet, pour son infobulle. */
     public String getDescription() {

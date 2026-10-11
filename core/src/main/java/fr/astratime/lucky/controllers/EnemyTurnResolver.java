@@ -43,7 +43,6 @@ import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
-import java.util.function.Predicate;
 
 /**
  * Tour de l'ennemi : ses Épines du tour précédent piquent le joueur, puis il
@@ -169,7 +168,14 @@ public class EnemyTurnResolver {
         if (enemy.raiseStake()) openingEvents.add(new EnemyStakeEvent(enemy.getStake(), false));
         openingEvents.addAll(thornsEvents); // ses Épines ont piqué pour les coups du tour du joueur
         enemy.resetDefense(); // la défense de son tour précédent ne valait que pour le tour du joueur
-        List<Card> drawn  = enemy.draw(Enemy.HAND_SIZE);
+        List<Card> drawn  = new ArrayList<>(enemy.draw(Enemy.HAND_SIZE));
+        // Ses cartes propres ne comptent pas dans sa main : il repioche une carte pour chacune.
+        for (int extra = signatures(drawn); extra > 0 && drawn.size() < 2 * Enemy.HAND_SIZE; ) {
+            List<Card> more = enemy.draw(Math.min(extra, 2 * Enemy.HAND_SIZE - drawn.size()));
+            if (more.isEmpty()) break;
+            drawn.addAll(more);
+            extra = signatures(more);
+        }
         int plays = enemy.getPlaysPerTurn(); // le Kraken joue une carte par bras qui lui reste
         int harpooned = enemy.takeHarpoons(); // Harpon : une carte de moins
         if (harpooned > 0) {
@@ -186,8 +192,11 @@ public class EnemyTurnResolver {
             plays++;
             openingEvents.add(new StatusEvent(Lang.t("HUISSIER : UNE CARTE DE PLUS"), EffectPopup.Style.ATTACK));
         }
-        List<Card> played = kind.playsAtRandom() ? chooseAtRandom(drawn, plays)
-            : choose(drawn, enemy.getHpRatio(), kind, plays, card -> playable(card, enemy));
+        // Ses cartes propres se jouent en plus de ses cartes habituelles (une de chaque sorte par tour) :
+        // elles ne prennent pas la place de ses couleurs, il n'est jamais moins fort qu'avant elles.
+        List<Card> regular = drawn.stream().filter(card -> EnemySignature.of(card) == null).toList();
+        List<Card> played = new ArrayList<>(ownCards(drawn, enemy));
+        played.addAll(kind.playsAtRandom() ? chooseAtRandom(regular, plays) : choose(regular, enemy.getHpRatio(), kind, plays));
 
         // Ses cartes propres d'abord : celles du tour, celles qui attendent leur symbole, celles qui agissent tout de suite.
         Map<EnemySignature, Integer> boosts = new EnumMap<>(EnemySignature.class);
@@ -735,36 +744,31 @@ public class EnemyTurnResolver {
 
     /** Comme {@link #choose(List, float, EnemyKind)}, en jouant {@code plays} cartes (les bras du Kraken). */
     static List<Card> choose(List<Card> hand, float hpRatio, EnemyKind kind, int plays) {
-        return choose(hand, hpRatio, kind, plays, card -> true);
+        List<Card.Suit> priority = hpRatio < LOW_HP_RATIO ? kind.getLowHpPriority() : kind.getPriority();
+        return hand.stream()
+            .sorted(Comparator.comparingInt((Card card) -> card.getSuit() == null ? -1 : priority.indexOf(card.getSuit()))
+                .thenComparing(Comparator.comparingInt(Card::getRank).reversed()))
+            .limit(plays)
+            .toList();
     }
 
     /**
-     * Comme {@link #choose(List, float, EnemyKind, int)} : ses cartes sans couleur
-     * (cartes propres, Rouleau interdit, cartes spéciales copiées par l'Ombre) passent
-     * avant ses couleurs, sauf au-delà de leur limite par tour ou si {@code playable}
-     * les refuse (un Compte à rebours qui ne retire plus de tour) : celles-là passent en dernier.
+     * @return les cartes propres de sa main qu'il joue ce tour, en plus de ses autres
+     *         cartes : une de chaque sorte, sauf un Compte à rebours qui ne retire plus de tour
      */
-    static List<Card> choose(List<Card> hand, float hpRatio, EnemyKind kind, int plays, Predicate<Card> playable) {
-        List<Card.Suit> priority = hpRatio < LOW_HP_RATIO ? kind.getLowHpPriority() : kind.getPriority();
-        List<Card> sorted = hand.stream()
-            .sorted(Comparator.comparingInt((Card card) -> card.getSuit() == null ? -1 : priority.indexOf(card.getSuit()))
-                .thenComparing(Comparator.comparingInt(Card::getRank).reversed()))
-            .toList();
-        List<Card> chosen = new ArrayList<>(), later = new ArrayList<>();
-        Map<EnemySignature, Integer> counted = new EnumMap<>(EnemySignature.class);
-        for (Card card : sorted) {
+    static List<Card> ownCards(List<Card> hand, Enemy enemy) {
+        List<Card> chosen = new ArrayList<>();
+        java.util.Set<EnemySignature> seen = java.util.EnumSet.noneOf(EnemySignature.class);
+        for (Card card : hand) {
             EnemySignature signature = EnemySignature.of(card);
-            boolean capped = signature != null && signature.maxPerTurn() > 0
-                && counted.getOrDefault(signature, 0) >= signature.maxPerTurn();
-            if (capped || !playable.test(card)) {
-                later.add(card);
-                continue;
-            }
-            if (signature != null) counted.merge(signature, 1, Integer::sum);
-            chosen.add(card);
+            if (signature != null && playable(card, enemy) && seen.add(signature)) chosen.add(card);
         }
-        chosen.addAll(later);
-        return List.copyOf(chosen.subList(0, Math.min(plays, chosen.size())));
+        return chosen;
+    }
+
+    /** @return le nombre de cartes propres dans {@code cards}. */
+    private static int signatures(List<Card> cards) {
+        return (int) cards.stream().filter(card -> EnemySignature.of(card) != null).count();
     }
 
     /** @return {@code true} si {@code card} sert encore à quelque chose (un Compte à rebours, tant que le combat peut perdre un tour). */

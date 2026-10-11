@@ -56,7 +56,9 @@ class EnemyKindsTest {
                 for (EnemySymbol symbol : turn.symbols()) {
                     assertTrue(kind.getSymbols().contains(symbol), kind + " ne tire pas " + symbol);
                 }
-                assertEquals(kind.getPlaysPerTurn(), turn.played().size());
+                // ses cartes propres se jouent en plus (une de chaque sorte)
+                assertEquals(kind.getPlaysPerTurn(), turn.played().stream()
+                    .filter(card -> EnemySignature.of(card) == null).count());
             }
         }
     }

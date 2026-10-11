@@ -104,16 +104,19 @@ class EnemySignaturesTest {
     }
 
     @Test
-    void ownCardsArePlayedFirstButOnlyOneCountdownPerTurn() {
-        List<Card> hand = new ArrayList<>(List.of(EnemyCards.card(Card.Suit.PIQUE, 14), EnemyCards.card(Card.Suit.PIQUE, 13),
-            EnemySignature.SAISIE.card()));
-        List<Card> played = EnemyTurnResolver.choose(hand, 1f, EnemyKind.BANQUEROUTE, 3);
-        assertEquals(EnemySignature.SAISIE, EnemySignature.of(played.get(0)));
+    void ownCardsArePlayedOnTopOfTheSuitsButOnlyOneOfEachPerTurn() {
+        List<Card> hand = List.of(EnemySignature.SAISIE.card(), EnemySignature.SAISIE.card(),
+            EnemyCards.card(Card.Suit.PIQUE, 14), EnemyCards.card(Card.Suit.PIQUE, 13));
+        List<Card> own = EnemyTurnResolver.ownCards(hand, new Enemy(EnemyKind.BANQUEROUTE));
+        assertEquals(1, own.size());
+        assertEquals(EnemySignature.SAISIE, EnemySignature.of(own.get(0)));
 
+        Enemy deadTime = new Enemy(EnemyKind.TEMPS_MORT);
         List<Card> countdowns = List.of(EnemySignature.COMPTE_A_REBOURS.card(), EnemySignature.COMPTE_A_REBOURS.card(),
-            EnemyCards.card(Card.Suit.PIQUE, 14), EnemyCards.card(Card.Suit.CARREAU, 9));
-        played = EnemyTurnResolver.choose(countdowns, 1f, EnemyKind.TEMPS_MORT, 3);
-        assertEquals(1, played.stream().filter(card -> EnemySignature.of(card) == EnemySignature.COMPTE_A_REBOURS).count());
+            EnemyCards.card(Card.Suit.PIQUE, 14));
+        assertEquals(1, EnemyTurnResolver.ownCards(countdowns, deadTime).size());
+        for (int i = 0; i < EnemySignature.COMPTE_MAX; i++) deadTime.loseTurn();
+        assertTrue(EnemyTurnResolver.ownCards(countdowns, deadTime).isEmpty(), "plus de tour à retirer : il le garde");
     }
 
     @Test
@@ -130,7 +133,7 @@ class EnemySignaturesTest {
     void brambleThornsReturnMoreDamage() {
         EnemyTurnResult turn = turnWith(EnemySymbol.THORNS, () -> only(EnemyKind.GARDIEN, EnemySignature.RONCES, 3), EnemySignaturesTest::player);
         EnemyThornsEvent thorns = events(turn, EnemyThornsEvent.class).get(0);
-        assertEquals(EnemyKind.GARDIEN.thornsPercent() + 3 * EnemySignature.RONCES_PERCENT, thorns.percent);
+        assertEquals(EnemyKind.GARDIEN.thornsPercent() + EnemySignature.RONCES_PERCENT, thorns.percent, "une Ronce par tour");
     }
 
     @Test
