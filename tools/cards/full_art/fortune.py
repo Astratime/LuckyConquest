@@ -133,4 +133,4 @@ def build():
 
 
 if __name__ == '__main__':
-    up(build()).save('assets/cards/special/fortune_du_roi.png')
+    up(build()).save('assets/cards/special_full/fortune_du_roi.png')

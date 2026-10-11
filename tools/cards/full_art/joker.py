@@ -130,4 +130,4 @@ def build():
 
 
 if __name__ == '__main__':
-    up(build()).save('assets/cards/special/joker.png')
+    up(build()).save('assets/cards/special_full/joker.png')

@@ -111,4 +111,4 @@ def build():
 
 
 if __name__ == '__main__':
-    up(build()).save('assets/cards/special/russian_roulette.png')
+    up(build()).save('assets/cards/special_full/russian_roulette.png')

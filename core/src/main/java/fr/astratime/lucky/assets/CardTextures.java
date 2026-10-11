@@ -15,8 +15,16 @@ import java.util.Map;
  * Partagé par toutes les vues de l'écran de jeu (main, ennemi, fenêtres), qui ne disposent
  * pas elles-mêmes les textures obtenues. Avec l'option « Enseignes renforcées », les
  * Carreaux et les Trèfles classiques sont recolorés (voir {@link SuitColors}).
+ *
+ * Les cartes spéciales s'affichent en pleine illustration : l'image de
+ * {@value #FULL_ART_DIR} remplace celle de {@value #SPECIAL_DIR}, gardée telle quelle.
  */
 public class CardTextures implements Disposable {
+
+    /** Dossier des anciennes images des cartes spéciales (cadre et pièce d'or). */
+    static final String SPECIAL_DIR  = "cards/special/";
+    /** Dossier des cartes spéciales en pleine illustration, mêmes noms de fichiers. */
+    static final String FULL_ART_DIR = "cards/special_full/";
 
     /** Clé de cache des images aux enseignes renforcées. */
     private static final String STRONG_SUFFIX = "#4";
@@ -30,13 +38,27 @@ public class CardTextures implements Disposable {
      */
     public Texture get(Card card) {
         if (!card.isUpgraded()) return get(card.getAssetPath());
-        boolean strong = strongSuits(card.getAssetPath());
-        return textures.computeIfAbsent(card.getAssetPath() + Card.UPGRADE_SUFFIX + (strong ? STRONG_SUFFIX : ""),
-            key -> build(card.getAssetPath(), strong, true));
+        String path = art(card.getAssetPath());
+        boolean strong = strongSuits(path);
+        return textures.computeIfAbsent(path + Card.UPGRADE_SUFFIX + (strong ? STRONG_SUFFIX : ""),
+            key -> build(path, strong, true));
     }
 
-    /** @return la texture de l'image de carte {@code path} (face ou dos), chargée à la demande puis mise en cache. */
-    public Texture get(String path) {
+    /** @return true si la carte {@code card} s'affiche en pleine illustration (elle reçoit alors le reflet arc-en-ciel). */
+    public static boolean isFullArt(Card card) {
+        return !art(card.getAssetPath()).equals(card.getAssetPath());
+    }
+
+    /** @return l'image à afficher pour {@code path} : sa version pleine illustration si elle existe, sinon {@code path}. */
+    static String art(String path) {
+        if (path == null || !path.startsWith(SPECIAL_DIR)) return path;
+        String full = FULL_ART_DIR + path.substring(SPECIAL_DIR.length());
+        return Gdx.files != null && Gdx.files.internal(full).exists() ? full : path;
+    }
+
+    /** @return la texture de l'image de carte {@code original} (face ou dos), chargée à la demande puis mise en cache. */
+    public Texture get(String original) {
+        String path = art(original);
         if (!strongSuits(path)) return textures.computeIfAbsent(path, p -> new Texture(Gdx.files.internal(p)));
         return textures.computeIfAbsent(path + STRONG_SUFFIX, key -> build(path, true, false));
     }
@@ -45,7 +67,8 @@ public class CardTextures implements Disposable {
     private static final String DARK_SUFFIX = "#dark";
 
     /** @return la texture de l'image {@code path} en version sombre (les cartes copiées par l'Ombre du Joueur). */
-    public Texture getDark(String path) {
+    public Texture getDark(String original) {
+        String path = art(original);
         return textures.computeIfAbsent(path + DARK_SUFFIX, key -> {
             Pixmap source = new Pixmap(Gdx.files.internal(path));
             Pixmap pixmap = new Pixmap(source.getWidth(), source.getHeight(), Pixmap.Format.RGBA8888);

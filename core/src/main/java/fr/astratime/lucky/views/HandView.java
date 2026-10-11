@@ -19,6 +19,7 @@ import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 import fr.astratime.lucky.animations.CardDealAnimator;
 import fr.astratime.lucky.animations.CardDiscardAnimator;
 import fr.astratime.lucky.assets.CardTextures;
+import fr.astratime.lucky.settings.VisualSettings;
 import fr.astratime.lucky.entities.Card;
 import fr.astratime.lucky.entities.DrawResult;
 import fr.astratime.lucky.entities.Player;
@@ -125,6 +126,7 @@ public class HandView {
     private boolean                hidden;
     /** Images de la main montrées face cachée. */
     private final java.util.Set<Image> hiddenImages = new java.util.HashSet<>();
+    private final VisualSettings visualSettings = new VisualSettings();
 
     public HandView(TableView table, float cardWidth, float cardHeight, CardTextures cardTextures, Tooltip tooltip,
              Sound hoverSound, PilesView piles, Supplier<Player> player,
@@ -210,6 +212,7 @@ public class HandView {
     private CardImage createImage(Card card) {
         Texture face = hidden ? cardTextures.get(BACK_PATH) : cardTextures.get(card);
         CardImage cardImage = new CardImage(new TextureRegionDrawable(new TextureRegion(face)));
+        cardImage.setFoil(!hidden && foil(card));
         if (hidden) hiddenImages.add(cardImage);
         cardImage.setSize(cardWidth, cardHeight);
         addListeners(cardImage);
@@ -217,6 +220,11 @@ public class HandView {
         group.addActor(cardImage);
         images.add(cardImage);
         return cardImage;
+    }
+
+    /** @return true si {@code card} porte le reflet arc-en-ciel (carte spéciale en pleine illustration, effets normaux). */
+    private boolean foil(Card card) {
+        return CardTextures.isFullArt(card) && !visualSettings.isReducedEffects();
     }
 
     /** @return le centre (Stage) de l'image de {@code card} dans la main, ou {@code null} si elle n'y est pas. */
@@ -252,6 +260,7 @@ public class HandView {
             if (cardOf.get(image) != before) continue;
             if (!hiddenImages.contains(image)) { // une carte cachée le reste
                 image.setDrawable(new TextureRegionDrawable(new TextureRegion(cardTextures.get(after))));
+                if (image instanceof CardImage cardImage) cardImage.setFoil(foil(after));
             }
             cardOf.put(image, after);
             image.setScale(RECOLOR_POP); // la carte se rétablit d'elle-même à sa taille (voir CardImage)
