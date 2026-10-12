@@ -1747,5 +1747,10 @@
   "Partie {0} : sans rang": "Game {0}: no rank",
   "Partie {0} : {1}": "Game {0}: {1}",
   "Attention : l'emplacement {0} a déjà une partie. Une nouvelle partie l'efface pour de bon : pièces, cartes, rang, tout repart de zéro.": "Careful: slot {0} already has a game. A new game erases it for good: coins, cards, rank, everything starts over.",
-  "Effacer et commencer": "Erase and start"
+  "Effacer et commencer": "Erase and start",
+  "ELLE RÉSISTE : PHASE {0} À SON TOUR": "SHE HOLDS ON: PHASE {0} ON HER TURN",
+  "Seuils de phase : ses PV s'arrêtent à {0} % puis à {1} % de ses PV max, le surplus est perdu. Elle change de phase à son tour": "Phase thresholds: her HP stops at {0} % then at {1} % of her max HP, extra damage is lost. She changes phase on her turn",
+  "Machine Originelle : phase {0}": "Original Machine: phase {0}",
+  "À la moitié de ses PV, elle t'arrache un rouleau.": "At half her HP, she tears one of your reels away.",
+  "À 10 % de ses PV, elle se fend et verrouille un rouleau pour de bon.": "At 10 % of her HP, she cracks open and locks a reel away for good."
 }

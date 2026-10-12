@@ -1340,6 +1340,51 @@ def cutscene_machine():
     return buf * hush
 
 
+def machine_phase(phase):
+    """
+    Changement de phase de la Machine Originelle (MachinePhaseCutscene) : l'alarme à deux tons à partir de 0,6 s (un
+    battement toutes les 0,5 s) ; la chaîne descend (1,5 à 2,4 s), la pince se referme (2,4 s), la chaîne remonte
+    (2,7 à 3,9 s) ; ton rouleau entre dans son flanc et cogne (3,9 s), il tourne pour elle. Phase 3 : grondement,
+    craquements et étincelles des fissures, puis les chaînes rouges qui verrouillent le rouleau (4,3 s). Fondu à 6 s.
+    """
+    track = Track(6.6)
+    root = ['A1', 'E2', 'A2'] if phase == 2 else ['F1', 'C2', 'F#2']
+    track.add(drone(root, 6.0, 'tri', fout=0.8), 0.0, 0.18 if phase == 2 else 0.26)
+    track.add(ambience(6.0, 150, 700, 0.15), 0.0, 1.0)
+    for k in range(10):                                                        # l'alarme, deux tons
+        at = 0.6 + k * 0.5
+        f = hz('E5') if k % 2 == 0 else hz('C5')
+        track.add(chip(f, 0.22, 'square', dc=0.1, s=0.4), at, 0.22)
+        track.add(thump(70, 40, 0.25, 0.08), at, 0.5)
+    track.add(rattle(0.9, 10, 22, 1800, 4500), 1.5, 0.5)                       # la chaîne descend
+    track.add(mix((metal_hit(520, 0.5), 0, 1.0), (click(0.01, 1500, 6000), 0, 0.8)), 2.4, 0.8)   # la pince
+    track.add(rattle(1.2, 22, 12, 1800, 4500), 2.7, 0.5)                       # la chaîne remonte
+    track.add(mix((metal_hit(160, 1.1), 0, 1.0), (impact(0.6, 110, 35), 0, 1.0)), 3.9, 1.0)      # dans son flanc
+    track.add(rattle(0.9, 26, 6, 2000, 5000), 3.95, 0.45)                     # ton rouleau tourne pour elle
+    if phase >= 3:
+        track.add(lp(noise(4.6), 140) * ramp(4.6, 0.4, 1.0), 0.6, 0.8)          # le sol gronde
+        for k in range(14):                                                    # les fissures craquent
+            track.add(crack_hit(), 0.7 + k * 0.33 + rand(0.0, 0.12), rand(0.25, 0.5))
+        track.add(hp(noise(4.4), 4000) * 0.12, 0.7, 0.4)                       # étincelles
+        for k in range(3):                                                     # les chaînes rouges claquent
+            track.add(metal_hit(300 - k * 40, 0.7), 4.3 + k * 0.09, 0.7)
+        track.add(brass_chord(['F2', 'G#2', 'B2', 'F3'], 1.3, 0.7), 4.4, 1.0)
+    else:
+        track.add(brass_chord(['A2', 'C3', 'D#3', 'A3'], 1.2, 0.6), 4.1, 0.9)
+    track.add(swell(0.8, 300, 3000), 4.9, 0.3)
+    return reverb(track.buf, wet=0.25, size=1.6, tail=0.8)
+
+
+@sound('cutscene/machine_phase_2', -18)
+def cutscene_machine_phase_2():
+    return machine_phase(2)
+
+
+@sound('cutscene/machine_phase_3', -17)
+def cutscene_machine_phase_3():
+    return machine_phase(3)
+
+
 @sound('cutscene/last_draw', -18)
 def cutscene_last_draw():
     """
