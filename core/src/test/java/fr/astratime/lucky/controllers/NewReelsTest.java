@@ -125,6 +125,59 @@ class NewReelsTest {
         }
     }
 
+    private static AspirationRule rule(AspirationRule.Kind kind, int count, Card.Suit suit) {
+        return new AspirationRule(List.of(new AspirationRule.Condition(kind, count, 0, suit)));
+    }
+
+    /** @return la Machine Originelle passée en phase 2, qui a volé le rouleau de droite du joueur. */
+    private static Enemy machineInPhaseTwo() {
+        Enemy machine = new Enemy(EnemyKind.MACHINE_ORIGINELLE, List.of());
+        machine.takeDamage(machine.getMaxHp() * 6L / 10);
+        machine.resetDamageTaken();
+        assertTrue(machine.enterPhaseTwo());
+        assertEquals(1, machine.getStolenReels());
+        return machine;
+    }
+
+    private static void play(Player player, Card... cards) {
+        for (Card card : cards) {
+            assertTrue(player.addToHandOrDeck(card));
+            assertTrue(player.playCard(card));
+        }
+    }
+
+    @Test
+    void inPhaseTwoTheStolenReelStaysAndAnUnmetAspirationTakesTheLeftOne() {
+        Enemy machine = machineInPhaseTwo();
+        Player player = player();
+        player.getLastingEffects().addAspiration(rule(AspirationRule.Kind.SUIT, 2, Card.Suit.CARREAU));
+        play(player, card(Card.Suit.PIQUE, 3), card(Card.Suit.PIQUE, 5)); // pas de Carreaux : règle ratée
+
+        SpinContext spin = new PreparationResolver().resolve(List.of(), player, machine).getSpinContext();
+        assertEquals(Set.of(SlotMachine.SYMBOL_COUNT - 1, 0), spin.getBlockedReels(),
+            "le rouleau de droite est volé, l'Aspiration prend celui de gauche");
+        assertEquals(1, machine.getAspired());
+    }
+
+    @Test
+    void threeAspirationRulesAllMetTakeNoReelButTheStolenOneStays() {
+        // 3 règles : 2 Carreaux, 1 figure, 1 Pique. Le 3 et le 5 de Carreau et la Dame de Pique les remplissent toutes.
+        for (boolean phaseTwo : new boolean[] {false, true}) {
+            Enemy machine = phaseTwo ? machineInPhaseTwo() : new Enemy(EnemyKind.MACHINE_ORIGINELLE, List.of());
+            Player player = player();
+            player.getLastingEffects().addAspiration(rule(AspirationRule.Kind.SUIT, 2, Card.Suit.CARREAU));
+            player.getLastingEffects().addAspiration(rule(AspirationRule.Kind.FACES, 1, null));
+            player.getLastingEffects().addAspiration(rule(AspirationRule.Kind.SUIT, 1, Card.Suit.PIQUE));
+            play(player, card(Card.Suit.CARREAU, 3), card(Card.Suit.CARREAU, 5), card(Card.Suit.PIQUE, 12));
+
+            SpinContext spin = new PreparationResolver().resolve(List.of(), player, machine).getSpinContext();
+            assertEquals(0, machine.getAspired(), "aucun rouleau aspiré");
+            assertEquals(phaseTwo ? Set.of(SlotMachine.SYMBOL_COUNT - 1) : Set.of(), spin.getBlockedReels(),
+                phaseTwo ? "seul le rouleau volé en phase 2 reste pris" : "tous les rouleaux sont libres");
+            assertTrue(player.getLastingEffects().getAspirations().isEmpty(), "les règles ne valent que pour ce tirage");
+        }
+    }
+
     @Test
     void anUnmetAspirationTakesTheRightReelThenTheLeftOne() {
         assertEquals(2, PreparationResolver.aspiredReel(Set.of()));
