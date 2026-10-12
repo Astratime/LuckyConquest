@@ -41,6 +41,7 @@ import fr.astratime.lucky.animations.cutscenes.Cutscene;
 import fr.astratime.lucky.animations.cutscenes.CutsceneKit;
 import fr.astratime.lucky.animations.cutscenes.Cutscenes;
 import fr.astratime.lucky.animations.cutscenes.LastDrawCutscene;
+import fr.astratime.lucky.animations.cutscenes.MachinePhaseCutscene;
 import fr.astratime.lucky.animations.CombatEndAnimation;
 import fr.astratime.lucky.animations.Confetti;
 import fr.astratime.lucky.animations.DamageVignette;
@@ -94,6 +95,7 @@ import fr.astratime.lucky.entities.RankBonus;
 import fr.astratime.lucky.entities.enemy.EnemySymbol;
 import fr.astratime.lucky.entities.enemy.EnemyTurnResult;
 import fr.astratime.lucky.entities.events.EnemyHpLostEvent;
+import fr.astratime.lucky.entities.events.EnemyPhaseEvent;
 import fr.astratime.lucky.entities.events.ComboEvent;
 import fr.astratime.lucky.entities.events.DamageReflectedEvent;
 import fr.astratime.lucky.entities.events.EnemyHealedEvent;
@@ -1035,9 +1037,19 @@ public class GameScreen extends ScreenAdapter {
             endTurn();
             return;
         }
-        announceEnemyTurn();
-        stage.addAction(Actions.delay(TurnBanner.DURATION,
-            Actions.run(() -> enemyView.playTurn(enemyTurn, this::onEventShown, this::endTurn))));
+        Runnable play = () -> {
+            announceEnemyTurn();
+            stage.addAction(Actions.delay(TurnBanner.DURATION,
+                Actions.run(() -> enemyView.playTurn(enemyTurn, this::onEventShown, this::endTurn))));
+        };
+        // La Machine Originelle change de phase : sa cinématique de transition joue d'abord.
+        int phase = enemyTurn.openingEvents().stream().filter(event -> event instanceof EnemyPhaseEvent)
+            .mapToInt(event -> ((EnemyPhaseEvent) event).phase).max().orElse(0);
+        if (phase >= 2 && gameController.getGameState().getEnemy().getKind() == EnemyKind.MACHINE_ORIGINELLE) {
+            playCutscene(new MachinePhaseCutscene(cutsceneKit, phase), play);
+        } else {
+            play.run();
+        }
     }
 
     /**

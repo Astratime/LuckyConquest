@@ -72,6 +72,8 @@ public class Enemy {
     private       String      notice;
     /** Sa Garde a arrêté un coup : il passe en phase 2 à son prochain tour (s'il en a une). */
     private       boolean     guardBroken;
+    /** La Machine Originelle a atteint le seuil de sa phase suivante : elle y passe à son prochain tour. */
+    private       boolean     phaseWallReached;
     /** Famille de cartes interdite tout le combat (le Portier), ou {@code null}. */
     private       CardFamily  bannedFamily;
     /** As sombres gardés en copie des achats du joueur (le Pilleur). */
@@ -182,12 +184,32 @@ public class Enemy {
                 if (notice == null) notice = Lang.f("GARDE : PAS PLUS DE {0} % DE SES PV PAR TOUR", EnemyKind.GUARD_PERCENT);
             }
         }
+        long wall = phaseWall();
+        if (wall > 0 && hp - damage < wall) {           // seuil de phase : le surplus ne passe pas avant son tour
+            damage = Math.max(0, hp - wall);
+            phaseWallReached = true;
+            notice = Lang.f("ELLE RÉSISTE : PHASE {0} À SON TOUR", phase + 1);
+        }
         if (kind.hasLastDraw() && !lastDrawDone && damage >= hp) {
             lastDrawPending = true;
             notice = Lang.t("ELLE RÉSISTE ! DERNIER TIRAGE");
             return hp - 1;
         }
         return damage;
+    }
+
+    /**
+     * Seuils de phase de la Machine Originelle (choix d'Astra) : ses PV ne descendent pas sous
+     * {@link EnemyKind#PHASE_TWO_RATIO} de ses PV max avant sa phase 2, ni sous
+     * {@link EnemyKind#MACHINE_LAST_RATIO} avant sa phase 3 ; elle change de phase à son tour.
+     *
+     * @return les PV sous lesquels elle ne descend pas encore, ou 0
+     */
+    private long phaseWall() {
+        if (kind != EnemyKind.MACHINE_ORIGINELLE) return 0;
+        if (phase < 2) return (long) Math.ceil(maxHp * (double) EnemyKind.PHASE_TWO_RATIO);
+        if (phase < 3) return (long) Math.ceil(maxHp * (double) EnemyKind.MACHINE_LAST_RATIO);
+        return 0;
     }
 
     /** @return ce qu'il vient de faire à un coup (coup annulé, résistance), une seule fois, ou {@code null}. */
@@ -532,6 +554,8 @@ public class Enemy {
         // Sa Garde a arrêté un coup : il compte comme passé sous la moitié de ses PV.
         float ratio = guardBroken ? Math.min(getHpRatio(), EnemyKind.PHASE_TWO_RATIO - 0.01f) : getHpRatio();
         int reached = kind.phaseFor(ratio);
+        if (phaseWallReached) reached = Math.max(reached, phase + 1); // la Machine a atteint son seuil de phase
+        phaseWallReached = false;
         if (reached <= phase) return false;
         if (kind == EnemyKind.MACHINE_ORIGINELLE && phase < 2) theftTurns = EnemySymbol.MACHINE_THEFT_TURNS;
         phase = reached;

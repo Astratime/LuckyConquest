@@ -30,6 +30,7 @@ import fr.astratime.lucky.animations.cutscenes.Cutscene;
 import fr.astratime.lucky.animations.cutscenes.CutsceneKit;
 import fr.astratime.lucky.animations.cutscenes.Cutscenes;
 import fr.astratime.lucky.animations.cutscenes.LastDrawCutscene;
+import fr.astratime.lucky.animations.cutscenes.MachinePhaseCutscene;
 import fr.astratime.lucky.assets.BackgroundMusic;
 import fr.astratime.lucky.assets.CardTextures;
 import fr.astratime.lucky.assets.EnemyTextures;
@@ -239,6 +240,15 @@ public class CinematicScreen extends ScreenAdapter {
             bosses.add(new Entry(chapter.getNumber() + ". " + boss.getDisplayName(),
                 Lang.f("{0}, « {1} » : avant le combat contre le boss.", chapter.getLabel(), chapter.getTitle()),
                 enemyTextures.portrait(boss), kit -> Cutscenes.beforeBoss(kit, boss)));
+        }
+        if (Bestiary.bossCutsceneSeen(profile, EnemyKind.MACHINE_ORIGINELLE)) {
+            for (int phase = 2; phase <= 3; phase++) {
+                int shown = phase;
+                bosses.add(new Entry(Lang.f("Machine Originelle : phase {0}", phase),
+                    phase == 2 ? Lang.t("À la moitié de ses PV, elle t'arrache un rouleau.")
+                        : Lang.t("À 10 % de ses PV, elle se fend et verrouille un rouleau pour de bon."),
+                    enemyTextures.portrait(EnemyKind.MACHINE_ORIGINELLE), kit -> new MachinePhaseCutscene(kit, shown)));
+            }
         }
         addGroup(Lang.t("Tour : boss"), Lang.t("Les boss de la Tour"), bosses);
 
