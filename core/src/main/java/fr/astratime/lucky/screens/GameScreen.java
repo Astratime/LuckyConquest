@@ -37,6 +37,7 @@ import fr.astratime.lucky.animations.CardClickParticles;
 import fr.astratime.lucky.animations.CardDealAnimator;
 import fr.astratime.lucky.animations.CardDiscardAnimator;
 import fr.astratime.lucky.animations.cutscenes.BonusGameCutscene;
+import fr.astratime.lucky.animations.cutscenes.CometPhaseCutscene;
 import fr.astratime.lucky.animations.cutscenes.Cutscene;
 import fr.astratime.lucky.animations.cutscenes.CutsceneKit;
 import fr.astratime.lucky.animations.cutscenes.Cutscenes;
@@ -1022,7 +1023,15 @@ public class GameScreen extends ScreenAdapter {
     /** Les résultats du tirage sont affichés : le Croupier du tutoriel les commente, puis le tour de l'ennemi. */
     private void afterPlayerSpin() {
         if (tutorial != null) tutorial.beat(TutorialDirector.Beat.SPIN_RESOLVED, this::playEnemyTurn);
-        else playEnemyTurn();
+        else playCutscene(cometPhaseCutscene(), this::playEnemyTurn);
+    }
+
+    /** @return la cinématique de la Comète Dorée qui s'embrase, si elle passe en phase 2 à ce tour ({@code null} sinon). */
+    private Cutscene cometPhaseCutscene() {
+        EnemyTurnResult enemyTurn = currentResult.getEnemyTurn();
+        if (enemyTurn == null || gameController.getGameState().getEnemy().getKind() != EnemyKind.COMETE) return null;
+        boolean entering = enemyTurn.openingEvents().stream().anyMatch(event -> event instanceof EnemyPhaseEvent);
+        return entering ? new CometPhaseCutscene(cutsceneKit) : null;
     }
 
     /**
@@ -1177,7 +1186,7 @@ public class GameScreen extends ScreenAdapter {
     /** Le texte d'un événement du tirage vient d'apparaître : met à jour ce qui en dépend. */
     private void onEventShown(Event event) {
         if (event instanceof EnemyPhaseEvent) {
-            switchMusic(); // la Machine Originelle change de musique à sa phase 2
+            switchMusic(); // la Comète et la Machine Originelle changent de musique à leur phase 2
         } else if (event instanceof GainsEarnedEvent gains) {
             onGainsShown(gains.amount);
         } else if (event instanceof GainsLostEvent lost) {

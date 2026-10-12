@@ -14,8 +14,8 @@ import java.util.Map;
  * des épreuves et une pour ses boss. La Prairie, l'Entraînement et le tutoriel
  * gardent la musique de combat d'origine. Certains ennemis ont leur propre
  * musique (fournie par Astra, dans {@code assets/music/boss}), jouée pendant
- * leur combat à la place de celle du lieu ; la Machine Originelle en change à
- * sa phase 2.
+ * leur combat à la place de celle du lieu ; la Comète Dorée et la Machine
+ * Originelle en changent à leur phase 2.
  *
  * <p>Pour changer une musique, il suffit de remplacer son fichier dans
  * {@code assets/music} (même nom, en .ogg). Un fichier absent reprend la
@@ -31,6 +31,8 @@ public final class CombatMusic {
     public static final String TOWER   = "music/combat_tour.ogg";
     public static final String BOSS    = "music/combat_boss.ogg";
 
+    /** La musique de la Comète Dorée en phase 2, quand elle s'embrase sous la moitié de ses PV. */
+    public static final String COMETE_PHASE_2  = "music/boss/comete_impact.mp3";
     /** La musique de la Machine Originelle à partir de sa phase 2. */
     public static final String MACHINE_PHASE_2 = "music/boss/machine_originelle_phase_2.mp3";
 
@@ -75,7 +77,9 @@ public final class CombatMusic {
         EnemyKind kind = enemy == null ? null : enemy.getKind();
         String own = null;
         if (run instanceof TowerRun) {
-            own = kind == EnemyKind.MACHINE_ORIGINELLE && enemy.getPhase() >= 2 ? MACHINE_PHASE_2 : TOWER_ENEMIES.get(kind);
+            boolean phaseTwo = enemy.getPhase() >= 2;
+            own = phaseTwo && kind == EnemyKind.MACHINE_ORIGINELLE ? MACHINE_PHASE_2
+                : phaseTwo && kind == EnemyKind.COMETE ? COMETE_PHASE_2 : TOWER_ENEMIES.get(kind);
         } else if (run instanceof DungeonRun) {
             own = EXPLORATION_ENEMIES.get(kind);
         }

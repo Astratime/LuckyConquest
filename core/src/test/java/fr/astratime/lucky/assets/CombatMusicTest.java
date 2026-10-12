@@ -64,9 +64,19 @@ class CombatMusicTest {
     }
 
     @Test
+    void theCometChangesMusicInPhaseTwo() {
+        TowerRun tower = new TowerRun(Chapter.GENESE);
+        Enemy comet = new Enemy(EnemyKind.COMETE);
+        assertEquals("music/boss/comete.mp3", CombatMusic.of(tower, comet));
+        comet.takeDamage(comet.getMaxHp() * 6 / 10);
+        assertTrue(comet.enterPhaseTwo(), "sous la moitié de ses PV, elle s'embrase");
+        assertEquals(CombatMusic.COMETE_PHASE_2, CombatMusic.of(tower, comet));
+    }
+
+    @Test
     void everyMusicFileExists() {
         List<String> paths = new ArrayList<>(List.of(CombatMusic.DEFAULT, CombatMusic.PORT, CombatMusic.MINES,
-            CombatMusic.CASINO, CombatMusic.TOWER, CombatMusic.BOSS, CombatMusic.MACHINE_PHASE_2));
+            CombatMusic.CASINO, CombatMusic.TOWER, CombatMusic.BOSS, CombatMusic.MACHINE_PHASE_2, CombatMusic.COMETE_PHASE_2));
         paths.addAll(CombatMusic.TOWER_ENEMIES.values());
         paths.addAll(CombatMusic.EXPLORATION_ENEMIES.values());
         for (String path : paths) {
