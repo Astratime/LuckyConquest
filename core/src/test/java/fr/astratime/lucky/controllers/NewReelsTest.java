@@ -3,6 +3,10 @@ package fr.astratime.lucky.controllers;
 import fr.astratime.lucky.entities.Card;
 import fr.astratime.lucky.entities.Enemy;
 import fr.astratime.lucky.entities.Player;
+import fr.astratime.lucky.entities.SlotMachine;
+import fr.astratime.lucky.entities.context.CombatContext;
+import fr.astratime.lucky.entities.context.SpinContext;
+import fr.astratime.lucky.entities.context.TurnContext;
 import fr.astratime.lucky.entities.enemy.AspirationRule;
 import fr.astratime.lucky.entities.enemy.EnemyCards;
 import fr.astratime.lucky.entities.enemy.EnemyKind;
@@ -95,6 +99,29 @@ class NewReelsTest {
                 assertEquals(i == 0 ? 2 : 1, rules.get(i).getConditions().stream()
                     .mapToInt(AspirationRule.Condition::count).sum(), "graine " + seed);
             }
+        }
+    }
+
+    @Test
+    void twoAspirationsWithOnlyOneRuleMetTakeOnlyOneReel() {
+        // 2 rouleaux Aspiration : une règle de 2 Carreaux, puis une règle d'1 figure.
+        AspirationRule diamonds = new AspirationRule(List.of(
+            new AspirationRule.Condition(AspirationRule.Kind.SUIT, 2, 0, Card.Suit.CARREAU)));
+        AspirationRule face = new AspirationRule(List.of(new AspirationRule.Condition(AspirationRule.Kind.FACES, 1, 0, null)));
+        Player player = player();
+        Enemy machine = new Enemy(EnemyKind.MACHINE_ORIGINELLE);
+        for (Card card : List.of(card(Card.Suit.CARREAU, 3), card(Card.Suit.CARREAU, 5))) { // les Carreaux, pas de figure
+            assertTrue(player.addToHandOrDeck(card));
+            assertTrue(player.playCard(card));
+        }
+        SpinContext spin = new SpinContext();
+        PreparationResolver.aspire(List.of(diamonds, face), player, machine,
+            spin, new TurnContext(spin, new CombatContext(player, machine)));
+
+        assertEquals(Set.of(SlotMachine.SYMBOL_COUNT - 1), spin.getBlockedReels(), "seul le rouleau de droite est aspiré");
+        assertEquals(1, machine.getAspired());
+        for (int reel = 0; reel < SlotMachine.SYMBOL_COUNT - 1; reel++) {
+            assertFalse(spin.getBlockedReels().contains(reel), "le rouleau " + reel + " reste libre");
         }
     }
 
