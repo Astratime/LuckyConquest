@@ -26,6 +26,7 @@ import com.badlogic.gdx.utils.ScreenUtils;
 import fr.astratime.lucky.LuckyGame;
 import fr.astratime.lucky.animations.ScreenShake;
 import fr.astratime.lucky.animations.cutscenes.BonusGameCutscene;
+import fr.astratime.lucky.animations.cutscenes.CometPhaseCutscene;
 import fr.astratime.lucky.animations.cutscenes.Cutscene;
 import fr.astratime.lucky.animations.cutscenes.CutsceneKit;
 import fr.astratime.lucky.animations.cutscenes.Cutscenes;
@@ -239,6 +240,8 @@ public class CinematicScreen extends ScreenAdapter {
             bosses.add(new Entry(chapter.getNumber() + ". " + boss.getDisplayName(),
                 Lang.f("{0}, « {1} » : avant le combat contre le boss.", chapter.getLabel(), chapter.getTitle()),
                 enemyTextures.portrait(boss), kit -> Cutscenes.beforeBoss(kit, boss)));
+            if (boss == EnemyKind.COMETE) bosses.add(new Entry(Lang.t("Comète Dorée : phase 2"),
+                Lang.t("À la moitié de ses PV, elle s'embrase."), enemyTextures.portrait(boss), CometPhaseCutscene::new));
         }
         addGroup(Lang.t("Tour : boss"), Lang.t("Les boss de la Tour"), bosses);
 

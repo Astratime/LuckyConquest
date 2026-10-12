@@ -37,6 +37,7 @@ import fr.astratime.lucky.animations.CardClickParticles;
 import fr.astratime.lucky.animations.CardDealAnimator;
 import fr.astratime.lucky.animations.CardDiscardAnimator;
 import fr.astratime.lucky.animations.cutscenes.BonusGameCutscene;
+import fr.astratime.lucky.animations.cutscenes.CometPhaseCutscene;
 import fr.astratime.lucky.animations.cutscenes.Cutscene;
 import fr.astratime.lucky.animations.cutscenes.CutsceneKit;
 import fr.astratime.lucky.animations.cutscenes.Cutscenes;
@@ -94,6 +95,7 @@ import fr.astratime.lucky.entities.RankBonus;
 import fr.astratime.lucky.entities.enemy.EnemySymbol;
 import fr.astratime.lucky.entities.enemy.EnemyTurnResult;
 import fr.astratime.lucky.entities.events.EnemyHpLostEvent;
+import fr.astratime.lucky.entities.events.EnemyPhaseEvent;
 import fr.astratime.lucky.entities.events.ComboEvent;
 import fr.astratime.lucky.entities.events.DamageReflectedEvent;
 import fr.astratime.lucky.entities.events.EnemyHealedEvent;
@@ -1021,7 +1023,15 @@ public class GameScreen extends ScreenAdapter {
     /** Les résultats du tirage sont affichés : le Croupier du tutoriel les commente, puis le tour de l'ennemi. */
     private void afterPlayerSpin() {
         if (tutorial != null) tutorial.beat(TutorialDirector.Beat.SPIN_RESOLVED, this::playEnemyTurn);
-        else playEnemyTurn();
+        else playCutscene(cometPhaseCutscene(), this::playEnemyTurn);
+    }
+
+    /** @return la cinématique de la Comète Dorée qui s'embrase, si elle passe en phase 2 à ce tour ({@code null} sinon). */
+    private Cutscene cometPhaseCutscene() {
+        EnemyTurnResult enemyTurn = currentResult.getEnemyTurn();
+        if (enemyTurn == null || gameController.getGameState().getEnemy().getKind() != EnemyKind.COMETE) return null;
+        boolean entering = enemyTurn.openingEvents().stream().anyMatch(event -> event instanceof EnemyPhaseEvent);
+        return entering ? new CometPhaseCutscene(cutsceneKit) : null;
     }
 
     /**
@@ -1175,7 +1185,9 @@ public class GameScreen extends ScreenAdapter {
 
     /** Le texte d'un événement du tirage vient d'apparaître : met à jour ce qui en dépend. */
     private void onEventShown(Event event) {
-        if (event instanceof GainsEarnedEvent gains) {
+        if (event instanceof EnemyPhaseEvent) {
+            switchMusic(); // la Comète et la Machine Originelle changent de musique à leur phase 2
+        } else if (event instanceof GainsEarnedEvent gains) {
             onGainsShown(gains.amount);
         } else if (event instanceof GainsLostEvent lost) {
             onGainsShown(-lost.amount);
@@ -1422,9 +1434,15 @@ public class GameScreen extends ScreenAdapter {
         resetBoard();
     }
 
+    /** Passe à la musique du combat en cours, ou à celle du lieu si son fichier manque. */
+    private void switchMusic() {
+        music.switchTo(CombatMusic.of(run, gameController.getGameState().getEnemy()),
+            Gdx.files.internal(CombatMusic.of(run)).exists() ? CombatMusic.of(run) : CombatMusic.DEFAULT);
+    }
+
     /** Remet tout l'affichage à l'état d'un début de combat, puis lance le tour du joueur. */
     private void resetBoard() {
-        music.switchTo(CombatMusic.of(run), CombatMusic.DEFAULT); // nouveau combat : sa musique (le boss de la Tour a la sienne)
+        switchMusic(); // nouveau combat : sa musique (celle de l'ennemi s'il en a une)
         if (tutorial == null) luckyGame.getProfile().meet(gameController.getGameState().getEnemy().getKind());
         recap.reset();
         stage.getRoot().clearActions(); // la suite du tour en cours (tour de l'ennemi, fin du tour) n'a plus lieu
@@ -1966,7 +1984,7 @@ public class GameScreen extends ScreenAdapter {
         };
         gameInput = new InputMultiplexer(stage, keyboardInput);
         Gdx.input.setInputProcessor(pauseOverlay.isShown() ? pauseOverlay.getInput() : gameInput);
-        music.switchTo(CombatMusic.of(run), CombatMusic.DEFAULT);
+        switchMusic();
         if (tutorial == null) luckyGame.getProfile().meet(gameController.getGameState().getEnemy().getKind());
         music.play();
     }

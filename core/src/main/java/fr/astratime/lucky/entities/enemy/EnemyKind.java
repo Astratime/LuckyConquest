@@ -976,7 +976,7 @@ public enum EnemyKind {
      */
     public int phaseFor(float hpRatio) {
         return switch (this) {
-            case ECLAT -> hpRatio < PHASE_TWO_RATIO ? 2 : 1;
+            case ECLAT, COMETE -> hpRatio < PHASE_TWO_RATIO ? 2 : 1;
             case PRETENDANT, MAISON -> hpRatio * 3f <= 1f ? 3 : hpRatio * 3f <= 2f ? 2 : 1;
             case MACHINE_ORIGINELLE -> hpRatio < MACHINE_LAST_RATIO ? 3 : hpRatio < PHASE_TWO_RATIO ? 2 : 1;
             default -> kingPhaseSymbol() != null && hpRatio < PHASE_TWO_RATIO ? 2 : 1;
@@ -989,6 +989,7 @@ public enum EnemyKind {
             case PRETENDANT -> phase == 2 ? Lang.t("ÉCLAT PERDU : FINI LE ROULEAU INTERDIT") : Lang.t("ÉCLAT PERDU : FINIE LA MISE ROYALE");
             case MAISON -> phase == 2 ? Lang.t("LA FAÇADE TOMBE : PLUS DE DÉFENSE") : Lang.t("LE COFFRE TOMBE : PLUS DE SOINS");
             case MACHINE_ORIGINELLE -> Lang.t("ELLE TE VOLE UN ROULEAU !");
+            case COMETE -> Lang.t("LA COMÈTE S'EMBRASE !");
             case ROI_PIQUE -> Lang.t("LAMES ASSOIFFÉES : CROC !");
             case ROI_COEUR -> Lang.t("COEUR FURIEUX : RAGE !");
             case ROI_CARREAU -> Lang.t("LE TRÉSOR RAPPORTE : INTÉRÊTS !");

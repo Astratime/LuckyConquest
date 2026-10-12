@@ -1196,6 +1196,34 @@ def cutscene_queen():
     return reverb(track.buf, wet=0.22, size=1.4, tail=1.0)
 
 
+@sound('cutscene/comet_phase_2', -17)
+def cutscene_comet_phase_2():
+    """
+    La Comète Dorée s'embrase (CometPhaseCutscene) : un vent de nuit, sa lueur qui bat de plus en plus vite (BEATS),
+    puis l'embrasement (IGNITE = 2,7 s) : boum, souffle de feu, onde de choc, et des météores qui sifflent jusqu'au
+    fondu orange (COVER_FULL = 5,3 s).
+    """
+    beats, ignite, end = [0.6, 1.2, 1.7, 2.1, 2.4], 2.7, 5.3
+    track = Track(end + 1.2)
+    track.add(ambience(end, 150, 900, 0.25), 0.0, 1.0)                          # vent de nuit
+    track.add(heartbeat(beats, f=55), 0.0, 0.9)                                 # sa lueur qui bat
+    for k, at in enumerate(beats):
+        track.add(sparkle(0.3, count=3 + k, lo=3000, hi=8000), at, 0.12 + 0.04 * k)
+    rise = ignite - 0.5                                                         # le feu qui monte en elle
+    track.add(svf(noise(rise), sweep(200, 2500, rise), q=0.8) * ramp(rise, 0.0, 1.0, 2.0), 0.5, 0.35)
+    boom = mix((crack(0.06, 0.01, 300, 9000), 0, 1.0), (thump(80, 30, 1.6, 0.5), 0, 1.2),
+               (fire_burst(2.6), 0.02, 1.0))
+    track.add(reverb(boom, wet=0.3, size=1.5, tail=1.2), ignite, 1.0)
+    for k in range(8):                                                          # les météores qui sifflent
+        d = 0.5
+        whistle = osc(sweep(rand(2200, 3000), rand(600, 900), d), d, 'tri') * expdec(d, 0.25, attack=0.05)
+        track.add(whistle, ignite + 0.2 + k * 0.22, 0.05)
+        track.add(impact(0.25, 120, 50), ignite + 0.5 + k * 0.22, 0.25)
+    gliss = stack(*(osc(sweep(hz(n) / 2, hz(n), 1.6), 1.6, 'tri') for n in ('A4', 'C#5', 'E5')))
+    track.add(gliss * ramp(1.6, 0.0, 1.0, 1.5), end - 1.4, 0.12)                # le fondu orange
+    return track.buf
+
+
 @sound('cutscene/shard', -17)
 def cutscene_shard():
     """
