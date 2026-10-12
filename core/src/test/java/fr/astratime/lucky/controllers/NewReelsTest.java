@@ -46,6 +46,30 @@ class NewReelsTest {
     }
 
     @Test
+    void theMachineStopsAtEachPhaseThresholdUntilHerTurn() {
+        Enemy machine = new Enemy(EnemyKind.MACHINE_ORIGINELLE, List.of());
+        int half = (int) Math.ceil(machine.getMaxHp() * (double) EnemyKind.PHASE_TWO_RATIO);
+        machine.takeDamage(machine.getMaxHp() * 4L / 10);
+        machine.takeDamage(machine.getMaxHp() * 3L / 10);               // le surplus, au-delà de la moitié, est perdu
+        assertEquals(half, machine.getHp(), "ses PV s'arrêtent à la moitié");
+        assertEquals(0, machine.takeDamage(1_000), "plus rien ne passe avant son tour");
+        assertEquals(1, machine.getPhase());
+        machine.resetDamageTaken();
+        assertTrue(machine.enterPhaseTwo(), "à son tour, elle passe en phase 2");
+        assertEquals(2, machine.getPhase());
+        assertEquals(1, machine.getStolenReels());
+
+        int tenth = (int) Math.ceil(machine.getMaxHp() * (double) EnemyKind.MACHINE_LAST_RATIO);
+        machine.takeDamage(machine.getHp() - 1L);                      // un coup qui l'aurait achevée
+        assertEquals(tenth, machine.getHp(), "ses PV s'arrêtent à 10 %");
+        assertFalse(machine.isLastDrawPending(), "pas de Dernier tirage avant la phase 3");
+        machine.resetDamageTaken();
+        assertTrue(machine.enterPhaseTwo());
+        assertEquals(3, machine.getPhase());
+        assertEquals(2, machine.getStolenReels(), "le rouleau de la phase 3 s'ajoute à celui de la phase 2");
+    }
+
+    @Test
     void theMachineGivesThePhaseTwoReelBackAfterThreeTurnsButKeepsTheLastOne() {
         Enemy machine = new Enemy(EnemyKind.MACHINE_ORIGINELLE, List.of());
         machine.takeDamage(machine.getMaxHp() * 6L / 10);
