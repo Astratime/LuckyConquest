@@ -94,6 +94,7 @@ import fr.astratime.lucky.entities.RankBonus;
 import fr.astratime.lucky.entities.enemy.EnemySymbol;
 import fr.astratime.lucky.entities.enemy.EnemyTurnResult;
 import fr.astratime.lucky.entities.events.EnemyHpLostEvent;
+import fr.astratime.lucky.entities.events.EnemyPhaseEvent;
 import fr.astratime.lucky.entities.events.ComboEvent;
 import fr.astratime.lucky.entities.events.DamageReflectedEvent;
 import fr.astratime.lucky.entities.events.EnemyHealedEvent;
@@ -1175,7 +1176,9 @@ public class GameScreen extends ScreenAdapter {
 
     /** Le texte d'un événement du tirage vient d'apparaître : met à jour ce qui en dépend. */
     private void onEventShown(Event event) {
-        if (event instanceof GainsEarnedEvent gains) {
+        if (event instanceof EnemyPhaseEvent) {
+            switchMusic(); // la Machine Originelle change de musique à sa phase 2
+        } else if (event instanceof GainsEarnedEvent gains) {
             onGainsShown(gains.amount);
         } else if (event instanceof GainsLostEvent lost) {
             onGainsShown(-lost.amount);
@@ -1422,9 +1425,15 @@ public class GameScreen extends ScreenAdapter {
         resetBoard();
     }
 
+    /** Passe à la musique du combat en cours, ou à celle du lieu si son fichier manque. */
+    private void switchMusic() {
+        music.switchTo(CombatMusic.of(run, gameController.getGameState().getEnemy()),
+            Gdx.files.internal(CombatMusic.of(run)).exists() ? CombatMusic.of(run) : CombatMusic.DEFAULT);
+    }
+
     /** Remet tout l'affichage à l'état d'un début de combat, puis lance le tour du joueur. */
     private void resetBoard() {
-        music.switchTo(CombatMusic.of(run), CombatMusic.DEFAULT); // nouveau combat : sa musique (le boss de la Tour a la sienne)
+        switchMusic(); // nouveau combat : sa musique (celle de l'ennemi s'il en a une)
         if (tutorial == null) luckyGame.getProfile().meet(gameController.getGameState().getEnemy().getKind());
         recap.reset();
         stage.getRoot().clearActions(); // la suite du tour en cours (tour de l'ennemi, fin du tour) n'a plus lieu
@@ -1966,7 +1975,7 @@ public class GameScreen extends ScreenAdapter {
         };
         gameInput = new InputMultiplexer(stage, keyboardInput);
         Gdx.input.setInputProcessor(pauseOverlay.isShown() ? pauseOverlay.getInput() : gameInput);
-        music.switchTo(CombatMusic.of(run), CombatMusic.DEFAULT);
+        switchMusic();
         if (tutorial == null) luckyGame.getProfile().meet(gameController.getGameState().getEnemy().getKind());
         music.play();
     }
