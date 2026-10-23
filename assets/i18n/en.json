@@ -1760,7 +1760,7 @@
   "Roi battu : tes gains du combat (cadre Gains) deviennent des pièces.": "King beaten: your fight gains (Gains panel) become coins.",
   "Coffre : {0} pièces ({1} tirages à {2}).": "Chest: {0} coins ({1} spins at {2}).",
   "Carte du coffre déjà en {0} exemplaires : {1} pièces en plus.": "Chest card already owned {0} times: {1} extra coins.",
-  "Défaite : tu gardes {0} % de tes gains, en pièces.": "Defeat: you keep {0} % of your gains as coins.",
+  "Défaite : tu gardes {0} % de tes gains, en pièces (au plus {1}).": "Defeat: you keep {0} % of your gains as coins (at most {1}).",
   "Carte au trésor jouée : un coffre de plus.": "Treasure Map played: one more chest.",
   "Les quatre donjons du lieu vidés : le rouleau {0}.": "All four dungeons of the place cleared: the {0} reel.",
   "Chance : {0} %": "Chance: {0} %",

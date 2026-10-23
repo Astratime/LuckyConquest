@@ -1704,7 +1704,8 @@ public class GameScreen extends ScreenAdapter {
     private long combatReward(boolean victory) {
         if (!isDungeon()) return 0; // seule l'Exploration rapporte des pièces (ni Entraînement, ni Tour)
         return PlayerProfile.combatReward(victory, run.isBossStage(),
-            gameController.getGameState().getPlayer().getGains());
+            gameController.getGameState().getPlayer().getGains(),
+            Place.of(((DungeonRun) run).getDungeon()).getSpinCost());
     }
 
     /** @return l'ennemi du combat en cours de la Tour ou du donjon, ou le croupier d'entraînement. */

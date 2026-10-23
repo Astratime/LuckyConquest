@@ -130,6 +130,19 @@ public final class BalanceSimulator {
     private final Map<String, Integer> stall;
     /** Descentes déjà simulées, par donjon, rang et équipement (les sections 3, 4 et 5 en partagent). */
     private final Map<String, DungeonStats> dungeonCache = new ConcurrentHashMap<>();
+    /** Les descentes elles-mêmes (deck de départ), pour comparer des règles de pièces (section 7). */
+    private final Map<String, List<Run>> runCache = new ConcurrentHashMap<>();
+
+    /**
+     * Une descente.
+     *
+     * @param won    soldat et roi battus
+     * @param gains  gains à la fin du dernier combat joué
+     * @param turns  tours joués (soldat + roi)
+     * @param effort part du donjon faite, de 0 à 1 : la moitié pour le soldat, la moitié pour le roi,
+     *               chacun au prorata des PV qu'il a perdus
+     */
+    record Run(boolean won, double gains, int turns, double effort) {}
 
     BalanceSimulator(Path assets, Sizes sizes) {
         this.sizes = sizes;
@@ -169,6 +182,7 @@ public final class BalanceSimulator {
         topGearSection(out);
         progressionSection(out);
         coinsByRankSection(out);
+        policySection(out);
         return out.toString();
     }
 
@@ -304,7 +318,11 @@ public final class BalanceSimulator {
      * @param averageWin   pièces moyennes d'une victoire, coffre compris
      * @param averageLoss  pièces moyennes d'une défaite
      */
-    record DungeonStats(double winRate, long medianCoins, double averageCoins, double averageWin, double averageLoss) {}
+    record DungeonStats(double winRate, long medianCoins, double averageCoins, double averageWin, double averageLoss,
+                        double averageTurns) {
+        /** @return les pièces moyennes par tour joué (la rentabilité en temps). */
+        double coinsPerTurn() { return averageTurns == 0 ? 0 : averageCoins / averageTurns; }
+    }
 
     private void dungeonSection(StringBuilder out) {
         out.append("## 3. Donjons\n\n")
@@ -344,14 +362,21 @@ public final class BalanceSimulator {
         List<Long> coins = new ArrayList<>();
         long chest = PlayerProfile.chestCoins(place.getSpinCost());
         double winTotal = 0, lossTotal = 0;
+        int[] turns = {0};
+        List<Run> played = new ArrayList<>();
         for (int run = 0; run < runs; run++) {
+            int before = turns[0];
             game.restart(dungeon.getSoldier());
-            boolean won = fight(game, random, gear);
+            boolean won = fight(game, random, gear, turns);
+            double effort = 0.5 * (1 - Math.max(0, game.getGameState().getEnemy().getHpRatio()));
             if (won) {
                 game.startCombat(dungeon.getKing());
-                won = fight(game, random, gear);
+                won = fight(game, random, gear, turns);
+                effort = 0.5 + 0.5 * (1 - Math.max(0, game.getGameState().getEnemy().getHpRatio()));
             }
-            long reward = PlayerProfile.combatReward(won, true, game.getGameState().getPlayer().getGains());
+            played.add(new Run(won, game.getGameState().getPlayer().getGains(), turns[0] - before, won ? 1 : effort));
+            long reward = PlayerProfile.combatReward(won, true, game.getGameState().getPlayer().getGains(),
+                place.getSpinCost());
             if (!won) {
                 lossTotal += reward;
                 continue;
@@ -363,15 +388,21 @@ public final class BalanceSimulator {
         int wins = coins.size(), losses = runs - wins;
         DungeonStats stats = new DungeonStats(wins / (double) runs,
             coins.isEmpty() ? 0 : coins.get(coins.size() / 2), (winTotal + lossTotal) / runs,
-            wins == 0 ? 0 : winTotal / wins, losses == 0 ? 0 : lossTotal / losses);
+            wins == 0 ? 0 : winTotal / wins, losses == 0 ? 0 : lossTotal / losses, turns[0] / (double) runs);
         dungeonCache.put(key, stats);
+        runCache.put(key, played);
         return stats;
     }
 
-    /** Joue le combat en cours jusqu'au bout (au plus {@link Sizes#maxTurns} tours). @return {@code true} si gagné. */
-    private boolean fight(GameController game, Random random, Gear gear) {
+    /**
+     * Joue le combat en cours jusqu'au bout (au plus {@link Sizes#maxTurns} tours), en comptant ses tours dans {@code turns[0]}.
+     *
+     * @return {@code true} si gagné
+     */
+    private boolean fight(GameController game, Random random, Gear gear, int[] turns) {
         for (int turn = 0; turn < sizes.maxTurns() && !isOver(game.getGameState()); turn++) {
             playTurn(game, random, true, gear.buysAtStall());
+            turns[0]++;
         }
         return game.getGameState().getEnemy().isDefeated();
     }
@@ -579,6 +610,47 @@ public final class BalanceSimulator {
             }
         }
 
+        out.append("\n### Pièces par tour joué (rentabilité en temps)\n\n")
+            .append("Pièces moyennes d'une descente / tours moyens d'une descente (soldat + roi, défaites comprises).\n\n| Donjon |");
+        for (Rank rank : ranks) out.append(' ').append(title(rank)).append(" |");
+        out.append("\n|---|");
+        for (int i = 0; i < ranks.size(); i++) out.append("---:|");
+        out.append('\n');
+        for (Place place : Place.values()) {
+            for (Dungeon dungeon : place.getDungeons()) {
+                out.append("| ").append(place.getShortName()).append(" : ").append(dungeon.getShortName()).append(" |");
+                for (Rank rank : ranks) {
+                    DungeonStats stats = dungeon(dungeon, place, rank, Gear.STARTER, sizes.dungeonRuns(), SEED);
+                    out.append(String.format(Locale.ROOT, " %s (%.0f t) |", abbreviated(stats.coinsPerTurn()),
+                        stats.averageTurns()));
+                }
+                out.append('\n');
+            }
+        }
+
+        out.append("\n### Meilleur donjon par tour joué, par rang\n\n")
+            .append("| Rang | Meilleur donjon | Victoires | Pièces par tour | Rang suivant | Tours pour le payer |\n|---|---|---:|---:|---|---:|\n");
+        for (int i = 0; i < ranks.size(); i++) {
+            Rank rank = ranks.get(i);
+            String bestName = "-";
+            double best = 0, bestWins = 0;
+            for (Place place : Place.values()) {
+                for (Dungeon dungeon : place.getDungeons()) {
+                    DungeonStats stats = dungeon(dungeon, place, rank, Gear.STARTER, sizes.dungeonRuns(), SEED);
+                    if (stats.coinsPerTurn() > best) {
+                        best = stats.coinsPerTurn();
+                        bestWins = stats.winRate();
+                        bestName = place.getShortName() + " : " + dungeon.getShortName();
+                    }
+                }
+            }
+            Rank next = i + 1 < ranks.size() ? ranks.get(i + 1) : null;
+            out.append(String.format(Locale.ROOT, "| %s | %s | %.0f %% | %s | %s | %s |%n", title(rank), bestName,
+                bestWins * 100, best == 0 ? "-" : abbreviated(best),
+                next == null ? "-" : next.getTitle() + " (" + PlayerProfile.formatCoins(next.getPrice()) + ")",
+                next == null || best == 0 ? "-" : String.valueOf((long) Math.ceil(next.getPrice() / best))));
+        }
+
         out.append("\n### Détail : victoire / défaite\n\n")
             .append("Pièces moyennes d'une victoire (coffre compris) / d'une défaite (part gardée). « - » : jamais arrivé.\n\n")
             .append("| Donjon |");
@@ -623,6 +695,96 @@ public final class BalanceSimulator {
                 next == null || best == 0 ? "-" : String.valueOf((long) Math.ceil(next.getPrice() / best))));
         }
         out.append('\n');
+    }
+
+    // -------------------------------------------------------------------------
+    // 7. Règles de pièces comparées
+    // -------------------------------------------------------------------------
+
+    /** Une règle de pièces : ce que rapporte une descente {@code run} dans un lieu dont le coffre vaut {@code chest}. */
+    record Policy(String name, String text, java.util.function.BiFunction<Run, Long, Double> coins) {}
+
+    static List<Policy> policies() {
+        double keep = PlayerProfile.DEFEAT_KEEP_PERCENT / 100.0;
+        return List.of(
+            new Policy("Actuelle (PR #79)", "victoire : gains + coffre ; défaite : 20 % des gains, au plus le coffre",
+                (run, chest) -> run.won() ? Math.max(0, run.gains()) + chest
+                    : Math.min(Math.max(0, run.gains()) * keep, chest)),
+            new Policy("A. Plafond", "victoire : gains au plus 2 coffres, + coffre ; défaite : comme l'actuelle",
+                (run, chest) -> run.won() ? Math.min(Math.max(0, run.gains()), 2.0 * chest) + chest
+                    : Math.min(Math.max(0, run.gains()) * keep, chest)),
+            new Policy("B. Effort", "victoire : gains + coffre ; défaite : part gardée x part du donjon faite",
+                (run, chest) -> run.won() ? Math.max(0, run.gains()) + chest
+                    : Math.min(Math.max(0, run.gains()) * keep, chest) * run.effort()),
+            new Policy("C. Plafond + effort", "A pour la victoire, B pour la défaite",
+                (run, chest) -> run.won() ? Math.min(Math.max(0, run.gains()), 2.0 * chest) + chest
+                    : Math.min(Math.max(0, run.gains()) * keep, chest) * run.effort()),
+            new Policy("C3. Plafond 3 + effort", "comme C, gains au plus 3 coffres",
+                (run, chest) -> run.won() ? Math.min(Math.max(0, run.gains()), 3.0 * chest) + chest
+                    : Math.min(Math.max(0, run.gains()) * keep, chest) * run.effort()),
+            new Policy("C5. Plafond 5 + effort", "comme C, gains au plus 5 coffres",
+                (run, chest) -> run.won() ? Math.min(Math.max(0, run.gains()), 5.0 * chest) + chest
+                    : Math.min(Math.max(0, run.gains()) * keep, chest) * run.effort()),
+            new Policy("D. Change 25 %", "victoire : 25 % des gains + coffre ; défaite : comme B",
+                (run, chest) -> run.won() ? Math.max(0, run.gains()) * 0.25 + chest
+                    : Math.min(Math.max(0, run.gains()) * keep, chest) * run.effort()));
+    }
+
+    /** Meilleur donjon pour un rang et une règle : pièces par tour. */
+    record Best(String name, double coinsPerTurn, double winRate) {}
+
+    private Best best(Policy policy, Rank rank) {
+        Best best = new Best("-", 0, 0);
+        for (Place place : Place.values()) {
+            long chest = PlayerProfile.chestCoins(place.getSpinCost());
+            for (Dungeon dungeon : place.getDungeons()) {
+                DungeonStats stats = dungeon(dungeon, place, rank, Gear.STARTER, sizes.dungeonRuns(), SEED);
+                List<Run> runs = runCache.get(dungeon.name() + '/' + rank + '/' + Gear.STARTER.name() + '/'
+                    + sizes.dungeonRuns() + '/' + SEED);
+                double coins = 0;
+                int turns = 0;
+                for (Run run : runs) {
+                    coins += policy.coins().apply(run, chest);
+                    turns += run.turns();
+                }
+                double perTurn = turns == 0 ? 0 : coins / turns;
+                if (perTurn > best.coinsPerTurn()) {
+                    best = new Best(place.getShortName() + " : " + dungeon.getShortName(), perTurn, stats.winRate());
+                }
+            }
+        }
+        return best;
+    }
+
+    private void policySection(StringBuilder out) {
+        List<Policy> policies = policies();
+        List<Rank> ranks = allRanks();
+        out.append("## 7. Règles de pièces comparées\n\n")
+            .append("Mêmes descentes (deck de départ), autres règles de pièces. Pour chaque rang, le donjon qui rapporte ")
+            .append("le plus par tour joué. « Tours » : tours pour payer tous les rangs dans l'ordre, en jouant ")
+            .append("toujours le meilleur donjon du rang qu'on a.\n\n");
+        for (Policy policy : policies) out.append("- **").append(policy.name()).append("** : ").append(policy.text()).append('\n');
+        out.append("\n| Rang |");
+        for (Policy policy : policies) out.append(' ').append(policy.name()).append(" |");
+        out.append("\n|---|");
+        for (int i = 0; i < policies.size(); i++) out.append("---|");
+        out.append('\n');
+        double[] totals = new double[policies.size()];
+        for (int i = 0; i < ranks.size(); i++) {
+            Rank rank = ranks.get(i);
+            Rank next = i + 1 < ranks.size() ? ranks.get(i + 1) : null;
+            out.append("| ").append(title(rank)).append(" |");
+            for (int p = 0; p < policies.size(); p++) {
+                Best best = best(policies.get(p), rank);
+                if (next != null && best.coinsPerTurn() > 0) totals[p] += next.getPrice() / best.coinsPerTurn();
+                out.append(String.format(Locale.ROOT, " %s, %s/tour (%.0f %% vict.) |", best.name(),
+                    abbreviated(best.coinsPerTurn()), best.winRate() * 100));
+            }
+            out.append('\n');
+        }
+        out.append("| **Tours pour tous les rangs** |");
+        for (double total : totals) out.append(String.format(Locale.ROOT, " **%,.0f** |", total).replace(',', ' '));
+        out.append("\n\n");
     }
 
     /** @return {@code coins} en abrégé (« 52 k », « 1,3 M »). */

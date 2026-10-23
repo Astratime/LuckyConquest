@@ -758,18 +758,21 @@ public class PlayerProfile {
      * Pièces versées à la fin d'un combat de l'Exploration : les gains affichés
      * dans le cadre « Gains » après la victoire contre le roi du donjon, et
      * {@link #DEFEAT_KEEP_PERCENT} % de ces gains après une défaite (contre le
-     * soldat ou le roi). Le soldat battu ne rapporte rien tout de suite : ses
+     * soldat ou le roi), au plus la valeur du coffre du lieu ({@link #chestCoins}).
+     * Le soldat battu ne rapporte rien tout de suite : ses
      * gains sont gardés pour le roi. L'Entraînement et la Tour des épreuves ne
      * rapportent aucune pièce.
      *
      * @param victory   l'ennemi est vaincu
      * @param lastFight c'était le dernier combat du donjon (le roi)
      * @param gains     les gains du joueur à la fin du combat
+     * @param spinCost  coût d'un tirage dans le lieu du donjon (fixe la limite après une défaite)
      * @return les pièces à ajouter au profil
      */
-    public static long combatReward(boolean victory, boolean lastFight, double gains) {
+    public static long combatReward(boolean victory, boolean lastFight, double gains, int spinCost) {
         if (victory) return lastFight ? Math.max(0, BigNumber.toLong(gains)) : 0;
-        return Math.max(0, BigNumber.toLong(gains * DEFEAT_KEEP_PERCENT / 100.0));
+        long kept = Math.max(0, BigNumber.toLong(gains * DEFEAT_KEEP_PERCENT / 100.0));
+        return Math.min(kept, chestCoins(spinCost));
     }
 
     /** Ajoute {@code amount} pièces (rien si négatif) et enregistre le profil. */
