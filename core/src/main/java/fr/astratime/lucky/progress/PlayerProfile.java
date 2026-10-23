@@ -54,10 +54,12 @@ public class PlayerProfile {
     public static final int DECK_SLOTS  = 3;
     /** Exemplaires au plus d'une même carte, dans la collection comme dans le deck. */
     public static final int MAX_COPIES  = 3;
-    /** Pièces données par chaque coffre de donjon. */
-    public static final int CHEST_COINS = 10_000;
-    /** Pièces données en plus quand la carte du coffre est déjà au maximum d'exemplaires. */
-    public static final int DUPLICATE_COINS = 5_000;
+    /** Pièces d'un coffre de donjon, en coûts de tirage du lieu (Prairie : 500 x 100 = 50 000). */
+    public static final int CHEST_SPINS = 500;
+    /** Pièces en plus quand la carte du coffre est déjà au maximum d'exemplaires, en coûts de tirage. */
+    public static final int DUPLICATE_SPINS = 250;
+    /** Part des gains gardée en pièces après une défaite dans un donjon, en %. */
+    public static final int DEFEAT_KEEP_PERCENT = 20;
 
     static final String KEY_COLLECTION = "collection";
     static final String KEY_DECK       = "deck";
@@ -754,10 +756,11 @@ public class PlayerProfile {
 
     /**
      * Pièces versées à la fin d'un combat de l'Exploration : les gains affichés
-     * dans le cadre « Gains », seulement après la victoire contre le roi du
-     * donjon. Une défaite ne rapporte rien, le soldat non plus : ses gains sont
-     * gardés pour le roi. L'Entraînement et la Tour des épreuves ne rapportent
-     * aucune pièce.
+     * dans le cadre « Gains » après la victoire contre le roi du donjon, et
+     * {@link #DEFEAT_KEEP_PERCENT} % de ces gains après une défaite (contre le
+     * soldat ou le roi). Le soldat battu ne rapporte rien tout de suite : ses
+     * gains sont gardés pour le roi. L'Entraînement et la Tour des épreuves ne
+     * rapportent aucune pièce.
      *
      * @param victory   l'ennemi est vaincu
      * @param lastFight c'était le dernier combat du donjon (le roi)
@@ -765,7 +768,8 @@ public class PlayerProfile {
      * @return les pièces à ajouter au profil
      */
     public static long combatReward(boolean victory, boolean lastFight, double gains) {
-        return victory && lastFight ? Math.max(0, BigNumber.toLong(gains)) : 0;
+        if (victory) return lastFight ? Math.max(0, BigNumber.toLong(gains)) : 0;
+        return Math.max(0, BigNumber.toLong(gains * DEFEAT_KEEP_PERCENT / 100.0));
     }
 
     /** Ajoute {@code amount} pièces (rien si négatif) et enregistre le profil. */
@@ -778,16 +782,17 @@ public class PlayerProfile {
     /**
      * Ouvre un coffre de donjon qui contient la carte {@code cardId} : un
      * exemplaire de plus dans la collection (au plus {@link #MAX_COPIES}) et
-     * {@link #CHEST_COINS} pièces ; si la carte est déjà au maximum,
-     * {@link #DUPLICATE_COINS} pièces en plus à la place. Le profil est enregistré.
+     * {@link #chestCoins} pièces ; si la carte est déjà au maximum,
+     * {@link #duplicateCoins} pièces en plus à la place. Le profil est enregistré.
      *
+     * @param spinCost coût d'un tirage dans le lieu du donjon (100 à la Prairie)
      * @return ce que le joueur a reçu
      */
-    public ChestReward openChest(String cardId) {
+    public ChestReward openChest(String cardId, int spinCost) {
         if (admin) return new ChestReward(cardId, false, MAX_COPIES, 0); // le mode ADMIN ne rapporte rien
         int owned = getOwnedCopies(cardId);
         boolean newCopy = owned < MAX_COPIES;
-        int reward = CHEST_COINS + (newCopy ? 0 : DUPLICATE_COINS);
+        long reward = chestCoins(spinCost) + (newCopy ? 0 : duplicateCoins(spinCost));
         if (newCopy) collection.put(cardId, owned + 1);
         coins += reward;
         save();
@@ -802,7 +807,13 @@ public class PlayerProfile {
      * @param copies  exemplaires possédés de la carte après l'ouverture
      * @param coins   pièces reçues
      */
-    public record ChestReward(String cardId, boolean newCopy, int copies, int coins) { }
+    public record ChestReward(String cardId, boolean newCopy, int copies, long coins) { }
+
+    /** @return les pièces d'un coffre de donjon quand un tirage coûte {@code spinCost} (Prairie : 50 000). */
+    public static long chestCoins(int spinCost) { return (long) CHEST_SPINS * spinCost; }
+
+    /** @return les pièces en plus d'un coffre dont la carte est déjà au maximum (Prairie : 25 000). */
+    public static long duplicateCoins(int spinCost) { return (long) DUPLICATE_SPINS * spinCost; }
 
     // -------------------------------------------------------------------------
     // Boutique : rangs, cartes, rouleaux

@@ -112,6 +112,7 @@ import fr.astratime.lucky.entities.events.PistolShotEvent;
 import fr.astratime.lucky.entities.events.PlayerHealedEvent;
 import fr.astratime.lucky.entities.events.ShieldGainedEvent;
 import fr.astratime.lucky.entities.exploration.DungeonRun;
+import fr.astratime.lucky.entities.exploration.Place;
 import fr.astratime.lucky.entities.run.CombatRun;
 import fr.astratime.lucky.i18n.Lang;
 import fr.astratime.lucky.progress.PlayerProfile;
@@ -1526,7 +1527,8 @@ public class GameScreen extends ScreenAdapter {
     private void openChest(int left) {
         DungeonRun dungeonRun = (DungeonRun) run;
         String cardId = dungeonRun.getDungeon().rollLoot(new java.util.Random());
-        PlayerProfile.ChestReward reward = luckyGame.getProfile().openChest(cardId);
+        PlayerProfile.ChestReward reward = luckyGame.getProfile().openChest(cardId,
+            Place.of(dungeonRun.getDungeon()).getSpinCost());
         chestOverlay.getActor().toFront();
         TextButton next = left > 1
             ? buttons.createAction(Lang.t("Coffre suivant"), sounds.buttonClick, () -> openChest(left - 1))
@@ -1632,10 +1634,13 @@ public class GameScreen extends ScreenAdapter {
             shown.add(buttons.createAction(Lang.t("Continuer"), sounds.buttonClick, this::onContinue));
             shown.add(buttons.create(backText(), sounds.buttonClick, this::onBackToChapters));
         }
-        // Les gains affichés, versés en pièces pour la boutique après le roi d'un donjon.
+        // Les gains affichés, versés en pièces pour la boutique après le roi d'un donjon (une part après une défaite).
         long earned = combatReward(victory);
         if (earned > 0) {
-            Label coinsLabel = new Label(Lang.f("PIÈCES +{0}", PlayerProfile.formatCoins(earned)), new Label.LabelStyle(shopFont, Palette.GOLD));
+            String coinsText = victory ? Lang.f("PIÈCES +{0}", PlayerProfile.formatCoins(earned))
+                : Lang.f("PIÈCES +{0} ({1} % DES GAINS GARDÉS)", PlayerProfile.formatCoins(earned),
+                    PlayerProfile.DEFEAT_KEEP_PERCENT);
+            Label coinsLabel = new Label(coinsText, new Label.LabelStyle(shopFont, Palette.GOLD));
             endButtons.add(coinsLabel).colspan(shown.size()).padBottom(14f).row();
         }
         String ending = run != null && victory && run.isBossStage() ? run.getEnding() : null;
@@ -1771,6 +1776,8 @@ public class GameScreen extends ScreenAdapter {
                 stats.add(PlayerStats.Stat.WINS, 1);
                 stats.add(PlayerStats.Stat.COINS, reward);
             });
+        } else if (reward > 0) { // défaite dans un donjon : une part des gains est gardée
+            luckyGame.getProfile().recordStats(stats -> stats.add(PlayerStats.Stat.COINS, reward));
         }
         announceAchievements();
         Runnable showRestart = () -> {
