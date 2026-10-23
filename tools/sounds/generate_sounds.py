@@ -1413,6 +1413,56 @@ def cutscene_machine_phase_3():
     return machine_phase(3)
 
 
+@sound('cutscene/boss_phase', -17)
+def cutscene_boss_phase():
+    """
+    Un boss ou un roi passe à sa phase suivante (BossMomentCutscene, PHASE) : un bourdon grave, sa lueur qui bat de
+    plus en plus vite (BEATS), le souffle qui monte, puis l'explosion de puissance (BURST = 2,2 s) : boum, souffle,
+    onde de choc et un accord de cuivres menaçant pendant que la phase s'annonce. Fondu noir à 4,8 s.
+    """
+    beats, burst, end = [0.5, 1.0, 1.4, 1.75, 2.0], 2.2, 4.8
+    track = Track(end + 1.0)
+    track.add(drone(['D1', 'A1', 'D2'], end, 'tri', fout=0.8), 0.0, 0.2)
+    track.add(ambience(end, 150, 800, 0.2), 0.0, 1.0)
+    track.add(heartbeat(beats, f=55), 0.0, 0.9)
+    for k, at in enumerate(beats):
+        track.add(sparkle(0.25, count=2 + k, lo=2500, hi=7000), at, 0.1 + 0.03 * k)
+    rise = burst - 0.4
+    track.add(svf(noise(rise), sweep(150, 2200, rise), q=0.8) * ramp(rise, 0.0, 1.0, 2.0), 0.4, 0.3)
+    boom = mix((crack(0.06, 0.01, 300, 9000), 0, 1.0), (thump(70, 28, 1.5, 0.5), 0, 1.2), (fire_burst(1.8), 0.02, 0.8))
+    track.add(reverb(boom, wet=0.3, size=1.5, tail=1.2), burst, 1.0)
+    track.add(brass_chord(['D2', 'F2', 'G#2', 'D3'], 1.8, 0.8), burst + 0.25, 0.9)
+    track.add(swell(0.8, 300, 2600), end - 0.9, 0.25)
+    return track.buf
+
+
+@sound('cutscene/boss_death', -17)
+def cutscene_boss_death():
+    """
+    Un boss ou un roi meurt (BossMomentCutscene, DEATH) : il tremble (grondement qui monte, craquements de plus en
+    plus serrés, deux secousses à 1,2 et 2,0 s), il vole en éclats (SHATTER = 2,5 s) : explosion de verre et de
+    métal, puis une pluie de pièces et un accord qui descend jusqu'au fondu noir (5,6 s).
+    """
+    shatter, end = 2.5, 5.6
+    track = Track(end + 1.2)
+    track.add(lp(noise(shatter), 140) * ramp(shatter, 0.2, 1.0, 1.5), 0.0, 0.8)    # il tremble
+    at = 0.3
+    while at < shatter - 0.1:                                                     # des craquements de plus en plus serrés
+        track.add(crack_hit(), at, rand(0.2, 0.4))
+        at += max(0.08, 0.45 - 0.16 * at)
+    for hit in (1.2, 2.0):
+        track.add(impact(0.4, 120, 40), hit, 0.6)
+    boom = mix((crack(0.08, 0.012, 400, 10000), 0, 1.0), (thump(60, 25, 1.8, 0.6), 0, 1.3),
+               (hp(noise(1.2), 3000) * expdec(1.2, 0.25), 0.01, 0.6), (metal_hit(420, 1.0), 0.02, 0.6))
+    track.add(reverb(boom, wet=0.35, size=1.7, tail=1.5), shatter, 1.0)
+    for k in range(18):                                                           # la pluie de pièces
+        track.add(coin(rand(1700, 2600), 0.35), shatter + 0.2 + k * 0.15 + rand(0.0, 0.08), rand(0.08, 0.16))
+    fall = stack(*(osc(sweep(hz(note), hz(note) / 2, 2.2), 2.2, 'tri') for note in ('A3', 'C4', 'E4')))
+    track.add(fall * expdec(2.2, 1.2, attack=0.05), shatter + 0.4, 0.12)
+    track.add(drone(['A1', 'E2'], end - shatter, 'sine', fin=0.3, fout=1.0), shatter, 0.2)
+    return track.buf
+
+
 @sound('cutscene/last_draw', -18)
 def cutscene_last_draw():
     """

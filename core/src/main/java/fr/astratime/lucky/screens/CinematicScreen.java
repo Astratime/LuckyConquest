@@ -26,12 +26,11 @@ import com.badlogic.gdx.utils.ScreenUtils;
 import fr.astratime.lucky.LuckyGame;
 import fr.astratime.lucky.animations.ScreenShake;
 import fr.astratime.lucky.animations.cutscenes.BonusGameCutscene;
-import fr.astratime.lucky.animations.cutscenes.CometPhaseCutscene;
+import fr.astratime.lucky.animations.cutscenes.BossTheme;
 import fr.astratime.lucky.animations.cutscenes.Cutscene;
 import fr.astratime.lucky.animations.cutscenes.CutsceneKit;
 import fr.astratime.lucky.animations.cutscenes.Cutscenes;
 import fr.astratime.lucky.animations.cutscenes.LastDrawCutscene;
-import fr.astratime.lucky.animations.cutscenes.MachinePhaseCutscene;
 import fr.astratime.lucky.assets.BackgroundMusic;
 import fr.astratime.lucky.assets.CardTextures;
 import fr.astratime.lucky.assets.EnemyTextures;
@@ -148,6 +147,10 @@ public class CinematicScreen extends ScreenAdapter {
 
     private int      group = -1;
     private int      selected = -1;
+    /** Première cinématique visible du groupe (la liste défile quand elle est trop longue). */
+    private int      scroll;
+    private final Label more;
+    private boolean  wheel;
     private boolean  leaving;
     private Cutscene cutscene;
 
@@ -198,6 +201,8 @@ public class CinematicScreen extends ScreenAdapter {
         description = new Label("", new Label.LabelStyle(bodyFont, Color.WHITE));
         description.setWrap(true);
         description.setAlignment(Align.topLeft);
+        more = new Label("", new Label.LabelStyle(labelFont, Color.WHITE));
+        more.setTouchable(Touchable.disabled);
         playButton  = buttons.createAction(Lang.t("Lancer"), clickSound, this::launch);
         backButton  = buttons.create(Lang.t("Retour"), clickSound, this::onBack);
 
@@ -215,6 +220,7 @@ public class CinematicScreen extends ScreenAdapter {
         stage.addActor(groupLabel);
         stage.addActor(groupTitle);
         for (Group g : groups) g.rows().forEach(stage::addActor);
+        stage.addActor(more);
         stage.addActor(artFrame);
         stage.addActor(art);
         stage.addActor(description);
@@ -241,17 +247,7 @@ public class CinematicScreen extends ScreenAdapter {
             bosses.add(new Entry(chapter.getNumber() + ". " + boss.getDisplayName(),
                 Lang.f("{0}, « {1} » : avant le combat contre le boss.", chapter.getLabel(), chapter.getTitle()),
                 enemyTextures.portrait(boss), kit -> Cutscenes.beforeBoss(kit, boss)));
-            if (boss == EnemyKind.COMETE) bosses.add(new Entry(Lang.t("Comète Dorée : phase 2"),
-                Lang.t("À la moitié de ses PV, elle s'embrase."), enemyTextures.portrait(boss), CometPhaseCutscene::new));
-        }
-        if (Bestiary.bossCutsceneSeen(profile, EnemyKind.MACHINE_ORIGINELLE)) {
-            for (int phase = 2; phase <= 3; phase++) {
-                int shown = phase;
-                bosses.add(new Entry(Lang.f("Machine Originelle : phase {0}", phase),
-                    phase == 2 ? Lang.t("À la moitié de ses PV, elle t'arrache un rouleau.")
-                        : Lang.t("À 10 % de ses PV, elle se fend et verrouille un rouleau pour de bon."),
-                    enemyTextures.portrait(EnemyKind.MACHINE_ORIGINELLE), kit -> new MachinePhaseCutscene(kit, shown)));
-            }
+            addMoments(bosses, profile, boss);
         }
         addGroup(Lang.t("Tour : boss"), Lang.t("Les boss de la Tour"), bosses);
 
@@ -288,6 +284,7 @@ public class CinematicScreen extends ScreenAdapter {
                     Lang.f("{0}, « {1} » : l'entrée en scène du roi, après le soldat.",
                         place.getName(), dungeon.getName()),
                     enemyTextures.portrait(king), kit -> Cutscenes.beforeBoss(kit, king)));
+                addMoments(kings, profile, king);
             }
             addGroup(place.getShortName(), place.getName(), kings);
         }
@@ -299,6 +296,38 @@ public class CinematicScreen extends ScreenAdapter {
             cardTextures.get("cards/test/jeu_bonus.png"),
             kit -> new BonusGameCutscene(kit, BonusGame.play(machine, SpinEconomy.BASE_SPIN_COST, new Random()),
                 machine))));
+    }
+
+    /**
+     * Ajoute à {@code entries} les cinématiques de phase du boss {@code boss} (vues dès
+     * qu'il a été rencontré) et celle de sa mort (vue une fois qu'il a été battu).
+     */
+    private void addMoments(List<Entry> entries, PlayerProfile profile, EnemyKind boss) {
+        Texture portrait = enemyTextures.portrait(boss);
+        float[] thresholds = boss.phaseThresholds();
+        if (Bestiary.bossCutsceneSeen(profile, boss)) {
+            for (int phase = 2; phase <= boss.phaseCount(); phase++) {
+                int shown = phase;
+                entries.add(new Entry(Lang.f("{0} : phase {1}", boss.getDisplayName(), phase),
+                    phaseDescription(boss, phase, Math.round(thresholds[phase - 2] * 100)),
+                    portrait, kit -> Cutscenes.phase(kit, boss, shown)));
+            }
+        }
+        if (Bestiary.deathSeen(profile, boss)) {
+            entries.add(new Entry(Lang.f("{0} : la fin", boss.getDisplayName()),
+                Lang.f("Le coup final : il vole en éclats. « {0} »", BossTheme.of(boss).deathLine()),
+                portrait, kit -> Cutscenes.death(kit, boss)));
+        }
+    }
+
+    /** @return l'explication de la cinématique de la phase {@code phase} du boss {@code boss}, à {@code percent} % de ses PV. */
+    private static String phaseDescription(EnemyKind boss, int phase, int percent) {
+        if (boss == EnemyKind.COMETE) return Lang.t("À la moitié de ses PV, elle s'embrase.");
+        if (boss == EnemyKind.MACHINE_ORIGINELLE) {
+            return phase == 2 ? Lang.t("À la moitié de ses PV, elle t'arrache un rouleau.")
+                : Lang.t("À 10 % de ses PV, elle se fend et verrouille un rouleau pour de bon.");
+        }
+        return Lang.f("À {0} % de ses PV, phase {1} : « {2} »", percent, phase, boss.phaseText(phase));
     }
 
     private void addGroup(String label, String groupName, List<Entry> entries) {
@@ -346,6 +375,7 @@ public class CinematicScreen extends ScreenAdapter {
         groupLabel.setText(current.label().toUpperCase());
         groupTitle.setText(current.title());
         selected = -1;
+        scroll = 0;
         select(0, false);
         fadeIn(groupLabel);
         fadeIn(groupTitle);
@@ -442,11 +472,32 @@ public class CinematicScreen extends ScreenAdapter {
         groupTitle.setPosition(innerX, groupLabel.getY() - groupTitle.getHeight());
 
         // Les cinématiques du groupe, en colonne sous le titre.
+        // Trop de cinématiques pour la hauteur : la liste défile avec la sélection (ou la molette).
         float itemsTop = groupTitle.getY() - 24f;
-        for (Group g : groups) {
-            for (int i = 0; i < g.rows().size(); i++) {
-                g.rows().get(i).setPosition(innerX, itemsTop - ITEM_HEIGHT - i * (ITEM_HEIGHT + ITEM_GAP));
+        int rows = visibleRows(itemsTop, panelBottom);
+        for (int g = 0; g < groups.size(); g++) {
+            List<MenuOption> options = groups.get(g).rows();
+            int count = options.size();
+            if (g == group) {
+                if (!wheel && selected >= 0 && selected < scroll) scroll = selected;
+                if (!wheel && selected >= scroll + rows) scroll = selected - rows + 1;
+                scroll = Math.max(0, Math.min(scroll, count - rows));
             }
+            for (int i = 0; i < count; i++) {
+                int slot = g == group ? i - scroll : i;
+                options.get(i).setPosition(innerX, itemsTop - ITEM_HEIGHT - slot * (ITEM_HEIGHT + ITEM_GAP));
+                if (g == group) options.get(i).setVisible(slot >= 0 && slot < rows);
+            }
+        }
+        int hidden = groups.isEmpty() || group < 0 ? 0 : groups.get(group).rows().size() - rows;
+        more.setVisible(hidden > 0);
+        if (hidden > 0) {
+            int above = scroll, below = hidden - scroll;
+            more.setText(above > 0 && below > 0 ? Lang.f("{0} au-dessus, {1} en dessous (molette ou flèches)", above, below)
+                : above > 0 ? Lang.f("{0} au-dessus (molette ou flèches)", above)
+                : Lang.f("{0} en dessous (molette ou flèches)", below));
+            more.pack();
+            more.setPosition(innerX + (ITEM_WIDTH - more.getWidth()) / 2f, panelBottom + PANEL_PAD / 2f - 6f);
         }
 
         // À droite des cinématiques : l'image de celle sélectionnée, puis son explication.
@@ -477,6 +528,21 @@ public class CinematicScreen extends ScreenAdapter {
         backButton.setPosition(MARGIN, (BOTTOM_SPACE - backButton.getHeight()) / 2f);
     }
 
+    /** @return le nombre de cinématiques qui tiennent en colonne entre {@code itemsTop} et le bas du panneau. */
+    private static int visibleRows(float itemsTop, float panelBottom) {
+        float room = itemsTop - panelBottom - PANEL_PAD;
+        return Math.max(1, (int) ((room + ITEM_GAP) / (ITEM_HEIGHT + ITEM_GAP)));
+    }
+
+    /** La molette fait défiler la liste du groupe, sans changer la sélection. */
+    private void scrollBy(int rows) {
+        if (group < 0 || groups.isEmpty()) return;
+        scroll += rows;
+        wheel = true; // la sélection ne ramène pas la liste à elle pendant ce défilement
+        layout();
+        wheel = false;
+    }
+
     /**
      * Stage d'abord (souris), puis clavier : pendant une cinématique, une touche
      * la passe. Sinon gauche/droite (ou Tab) changent de groupe, haut/bas
@@ -485,6 +551,13 @@ public class CinematicScreen extends ScreenAdapter {
     @Override
     public void show() {
         InputAdapter keyboard = new InputAdapter() {
+            @Override
+            public boolean scrolled(float amountX, float amountY) {
+                if (leaving || isPlaying() || amountY == 0f) return false;
+                scrollBy(amountY > 0f ? 1 : -1);
+                return true;
+            }
+
             @Override
             public boolean keyDown(int keycode) {
                 if (leaving) return false;

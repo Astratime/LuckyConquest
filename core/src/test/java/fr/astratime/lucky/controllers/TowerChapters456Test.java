@@ -190,7 +190,9 @@ class TowerChapters456Test {
         Enemy soldier = new Enemy(EnemyKind.SOLDAT_COEUR);
         assertEquals(soldier.getMaxHp(), soldier.takeDamage(soldier.getMaxHp()), "un soldat n'a pas de Garde");
         Enemy prairieKing = new Enemy(EnemyKind.ROI_COEUR);
-        assertEquals(prairieKing.getMaxHp(), prairieKing.takeDamage(prairieKing.getMaxHp()), "ni un roi de la prairie");
+        int kingMax = prairieKing.getMaxHp();
+        assertEquals(kingMax - (int) Math.ceil(kingMax / 2.0), prairieKing.takeDamage(kingMax),
+            "ni un roi de la prairie : seul son seuil de phase l'arrête");
     }
 
     @Test

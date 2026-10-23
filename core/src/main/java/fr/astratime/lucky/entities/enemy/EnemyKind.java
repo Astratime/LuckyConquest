@@ -942,6 +942,27 @@ public enum EnemyKind {
     public boolean hasPhaseTwo() { return this == ECLAT || kingPhaseSymbol() != null; }
 
     /**
+     * Seuils de phase (choix d'Astra) : la part de ses PV max sous laquelle il ne descend
+     * pas avant d'être passé à la phase suivante, à son tour. Le surplus d'un coup qui
+     * franchit un seuil est perdu. Tous les boss et rois en ont : la moitié de leurs PV ;
+     * le Prétendant et la Maison, les deux tiers puis le tiers ; la Machine Originelle,
+     * la moitié puis {@link #MACHINE_LAST_RATIO}.
+     *
+     * @return ses seuils, de la phase 1 à la dernière (vide s'il n'a qu'une phase)
+     */
+    public float[] phaseThresholds() {
+        if (!isBoss()) return new float[0];
+        return switch (this) {
+            case PRETENDANT, MAISON -> new float[] {2f / 3f, 1f / 3f};
+            case MACHINE_ORIGINELLE -> new float[] {PHASE_TWO_RATIO, MACHINE_LAST_RATIO};
+            default -> new float[] {PHASE_TWO_RATIO};
+        };
+    }
+
+    /** @return le nombre de ses phases (1 s'il n'en change pas). */
+    public int phaseCount() { return phaseThresholds().length + 1; }
+
+    /**
      * @return le symbole qu'un roi de l'Exploration ajoute à ses rouleaux en phase 2, sous
      *         {@link #PHASE_TWO_RATIO} de vie (poids {@link #KING_PHASE_WEIGHT}), ou {@code null}
      */
@@ -968,7 +989,7 @@ public enum EnemyKind {
 
     /**
      * @return sa phase quand il lui reste {@code hpRatio} de ses PV : l'Éclat
-     *         Originel passe à 2 sous la moitié ; le Prétendant perd un éclat et
+     *         Originel, la Comète Dorée et la Reine des Tables (sa Mise royale) passent à 2 sous la moitié ; le Prétendant perd un éclat et
      *         la Maison une de ses parties à chaque tiers ; la Machine
      *         Originelle vole un rouleau sous la moitié, puis un autre sous
      *         {@link #MACHINE_LAST_RATIO} ; les rois de l'Exploration passent à 2
@@ -976,7 +997,7 @@ public enum EnemyKind {
      */
     public int phaseFor(float hpRatio) {
         return switch (this) {
-            case ECLAT, COMETE -> hpRatio < PHASE_TWO_RATIO ? 2 : 1;
+            case ECLAT, COMETE, REINE -> hpRatio < PHASE_TWO_RATIO ? 2 : 1;
             case PRETENDANT, MAISON -> hpRatio * 3f <= 1f ? 3 : hpRatio * 3f <= 2f ? 2 : 1;
             case MACHINE_ORIGINELLE -> hpRatio < MACHINE_LAST_RATIO ? 3 : hpRatio < PHASE_TWO_RATIO ? 2 : 1;
             default -> kingPhaseSymbol() != null && hpRatio < PHASE_TWO_RATIO ? 2 : 1;
@@ -990,6 +1011,8 @@ public enum EnemyKind {
             case MAISON -> phase == 2 ? Lang.t("LA FAÇADE TOMBE : PLUS DE DÉFENSE") : Lang.t("LE COFFRE TOMBE : PLUS DE SOINS");
             case MACHINE_ORIGINELLE -> Lang.t("ELLE TE VOLE UN ROULEAU !");
             case COMETE -> Lang.t("LA COMÈTE S'EMBRASE !");
+            case REINE -> Lang.t("MISE ROYALE : SES TRÈFLES COMPTENT DOUBLE !");
+            case ECLAT -> Lang.t("L'ÉCLAT SE FEND : NOUVEAUX SYMBOLES !");
             case ROI_PIQUE -> Lang.t("LAMES ASSOIFFÉES : CROC !");
             case ROI_COEUR -> Lang.t("COEUR FURIEUX : RAGE !");
             case ROI_CARREAU -> Lang.t("LE TRÉSOR RAPPORTE : INTÉRÊTS !");

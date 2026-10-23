@@ -83,11 +83,17 @@ class BestiaryTest {
         PlayerProfile profile = profile(new MemoryStorage());
         int[] none = Bestiary.cutscenes(profile);
         assertEquals(0, none[0]);
-        assertEquals(Chapter.values().length + Place.values().length * 4 + 2 + Bestiary.ENDINGS.size() + 1, none[1]);
+        int bosses = 0;
+        for (Chapter chapter : Chapter.values()) bosses += chapter.getBoss().phaseCount() + 1;      // entrée, phases, mort
+        for (Place place : Place.values()) {
+            for (var dungeon : place.getDungeons()) bosses += dungeon.getKing().phaseCount() + 1;
+        }
+        assertEquals(bosses + 2 + Bestiary.ENDINGS.size() + 1, none[1]);
 
         profile.meet(Chapter.GENESE.getBoss());
         assertTrue(Bestiary.bossCutsceneSeen(profile, Chapter.GENESE.getBoss()));
-        assertEquals(1, Bestiary.cutscenes(profile)[0]);
+        assertEquals(2, Bestiary.cutscenes(profile)[0], "son entrée et sa phase 2");
+        assertFalse(Bestiary.deathSeen(profile, Chapter.GENESE.getBoss()));
 
         profile.setAdmin(true);
         assertEquals(none[1], Bestiary.cutscenes(profile)[0]);

@@ -37,12 +37,10 @@ import fr.astratime.lucky.animations.CardClickParticles;
 import fr.astratime.lucky.animations.CardDealAnimator;
 import fr.astratime.lucky.animations.CardDiscardAnimator;
 import fr.astratime.lucky.animations.cutscenes.BonusGameCutscene;
-import fr.astratime.lucky.animations.cutscenes.CometPhaseCutscene;
 import fr.astratime.lucky.animations.cutscenes.Cutscene;
 import fr.astratime.lucky.animations.cutscenes.CutsceneKit;
 import fr.astratime.lucky.animations.cutscenes.Cutscenes;
 import fr.astratime.lucky.animations.cutscenes.LastDrawCutscene;
-import fr.astratime.lucky.animations.cutscenes.MachinePhaseCutscene;
 import fr.astratime.lucky.animations.CombatEndAnimation;
 import fr.astratime.lucky.animations.Confetti;
 import fr.astratime.lucky.animations.DamageVignette;
@@ -1024,15 +1022,7 @@ public class GameScreen extends ScreenAdapter {
     /** Les résultats du tirage sont affichés : le Croupier du tutoriel les commente, puis le tour de l'ennemi. */
     private void afterPlayerSpin() {
         if (tutorial != null) tutorial.beat(TutorialDirector.Beat.SPIN_RESOLVED, this::playEnemyTurn);
-        else playCutscene(cometPhaseCutscene(), this::playEnemyTurn);
-    }
-
-    /** @return la cinématique de la Comète Dorée qui s'embrase, si elle passe en phase 2 à ce tour ({@code null} sinon). */
-    private Cutscene cometPhaseCutscene() {
-        EnemyTurnResult enemyTurn = currentResult.getEnemyTurn();
-        if (enemyTurn == null || gameController.getGameState().getEnemy().getKind() != EnemyKind.COMETE) return null;
-        boolean entering = enemyTurn.openingEvents().stream().anyMatch(event -> event instanceof EnemyPhaseEvent);
-        return entering ? new CometPhaseCutscene(cutsceneKit) : null;
+        else playEnemyTurn();
     }
 
     /**
@@ -1051,14 +1041,12 @@ public class GameScreen extends ScreenAdapter {
             stage.addAction(Actions.delay(TurnBanner.DURATION,
                 Actions.run(() -> enemyView.playTurn(enemyTurn, this::onEventShown, this::endTurn))));
         };
-        // La Machine Originelle change de phase : sa cinématique de transition joue d'abord.
+        // Un boss ou un roi change de phase : sa cinématique de transition joue d'abord.
         int phase = enemyTurn.openingEvents().stream().filter(event -> event instanceof EnemyPhaseEvent)
             .mapToInt(event -> ((EnemyPhaseEvent) event).phase).max().orElse(0);
-        if (phase >= 2 && gameController.getGameState().getEnemy().getKind() == EnemyKind.MACHINE_ORIGINELLE) {
-            playCutscene(new MachinePhaseCutscene(cutsceneKit, phase), play);
-        } else {
-            play.run();
-        }
+        Cutscene transition = phase >= 2 && tutorial == null
+            ? Cutscenes.phase(cutsceneKit, gameController.getGameState().getEnemy().getKind(), phase) : null;
+        playCutscene(transition, play);
     }
 
     /**
@@ -1792,25 +1780,32 @@ public class GameScreen extends ScreenAdapter {
             endButtons.toFront();
         };
         if (gameController.getGameState().getEnemy().isDefeated()) {
-            table.setLightsParty(true);
-            HealthBarView enemyBar = hud.getEnemyHealthBar();
-            enemyBar.hit(Color.WHITE, 0.4f);
-            enemyBar.addAction(Actions.fadeOut(0.5f)); // l'ennemi part en jetons
-            enemyView.defeat();
-            // Fin de l'histoire (chapitres 3 et 6) : sa cinématique, puis la phrase de fin et les boutons.
-            Cutscene ending = run instanceof TowerRun tower && run.isBossStage()
-                ? Cutscenes.ending(cutsceneKit, tower.getChapter()) : null;
-            Runnable afterVictory = ending == null ? showRestart : () -> playCutscene(ending, showRestart);
-            if (tutorial != null) { // tutoriel réussi : le Croupier conclut, puis le menu
-                luckyGame.getProfile().markSeen(PlayerProfile.GUIDE_TUTORIAL);
-                afterVictory = () -> tutorial.beat(TutorialDirector.Beat.VICTORY, showRestart);
-            }
-            combatEnd.playVictory(hud.getEnemyChipCenter(), afterVictory);
-            sounds.victory.play();
+            // Un boss ou un roi vaincu : sa cinématique de mort d'abord, la victoire apparaît sous son fondu.
+            Cutscene death = tutorial == null ? Cutscenes.death(cutsceneKit, gameController.getGameState().getEnemy().getKind()) : null;
+            playCutscene(death, () -> showVictory(showRestart));
         } else {
             combatEnd.playDefeat(showRestart);
             sounds.defeat.play();
         }
+    }
+
+    /** L'ennemi est vaincu : il part en jetons, la fin du chapitre s'il y en a une, puis {@code showRestart}. */
+    private void showVictory(Runnable showRestart) {
+        table.setLightsParty(true);
+        HealthBarView enemyBar = hud.getEnemyHealthBar();
+        enemyBar.hit(Color.WHITE, 0.4f);
+        enemyBar.addAction(Actions.fadeOut(0.5f)); // l'ennemi part en jetons
+        enemyView.defeat();
+        // Fin de l'histoire (chapitres 3 et 6) : sa cinématique, puis la phrase de fin et les boutons.
+        Cutscene ending = run instanceof TowerRun tower && run.isBossStage()
+            ? Cutscenes.ending(cutsceneKit, tower.getChapter()) : null;
+        Runnable afterVictory = ending == null ? showRestart : () -> playCutscene(ending, showRestart);
+        if (tutorial != null) { // tutoriel réussi : le Croupier conclut, puis le menu
+            luckyGame.getProfile().markSeen(PlayerProfile.GUIDE_TUTORIAL);
+            afterVictory = () -> tutorial.beat(TutorialDirector.Beat.VICTORY, showRestart);
+        }
+        combatEnd.playVictory(hud.getEnemyChipCenter(), afterVictory);
+        sounds.victory.play();
     }
 
     /**
