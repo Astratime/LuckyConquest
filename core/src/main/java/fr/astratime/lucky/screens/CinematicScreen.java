@@ -313,7 +313,7 @@ public class CinematicScreen extends ScreenAdapter {
                     portrait, kit -> Cutscenes.phase(kit, boss, shown)));
             }
         }
-        if (Bestiary.deathSeen(profile, boss)) {
+        if (Cutscenes.hasDeath(boss) && Bestiary.deathSeen(profile, boss)) {
             entries.add(new Entry(Lang.f("{0} : la fin", boss.getDisplayName()),
                 Lang.f("Le coup final : il vole en éclats. « {0} »", BossTheme.of(boss).deathLine()),
                 portrait, kit -> Cutscenes.death(kit, boss)));

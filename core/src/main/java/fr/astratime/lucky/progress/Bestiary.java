@@ -101,9 +101,10 @@ public final class Bestiary {
         for (Place place : Place.values()) for (Dungeon dungeon : place.getDungeons()) bosses.add(dungeon.getKing());
         for (EnemyKind boss : bosses) {
             int phases = boss.phaseCount() - 1;          // une cinématique par nouvelle phase (voir Cutscenes.phase)
-            total += 1 + phases + 1;                     // l'entrée, les phases, la mort
+            boolean death = boss != EnemyKind.MACHINE_ORIGINELLE; // sa fin : le duel des leviers et « Le Jackpot »
+            total += 1 + phases + (death ? 1 : 0);       // l'entrée, les phases, la mort
             if (bossCutsceneSeen(profile, boss)) seen += 1 + phases;
-            if (deathSeen(profile, boss)) seen++;
+            if (death && deathSeen(profile, boss)) seen++;
         }
         total += 2;
         if (duelSeen(profile)) seen += 2;
