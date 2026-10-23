@@ -39,6 +39,18 @@ tasks.register('simulate', JavaExec) {
   if (project.hasProperty('quick')) args '--quick'
 }
 
+// Dégâts des quatre suites : ./gradlew :core:simulateSuits (-Pquick pour un essai rapide).
+tasks.register('simulateSuits', JavaExec) {
+  group = 'verification'
+  description = "Compare les dégâts d'un deck de chaque suite (Pique, Coeur, Trèfle, Carreau)."
+  dependsOn testClasses
+  classpath = sourceSets.test.runtimeClasspath
+  mainClass = 'fr.astratime.lucky.sim.SuitStraightSimulator'
+  jvmArgs '-Dstdout.encoding=UTF-8', '-Dfile.encoding=UTF-8'
+  systemProperty 'lucky.assets', rootProject.file('assets').absolutePath
+  if (project.hasProperty('quick')) args '--quick'
+}
+
 // Images des cartes propres des ennemis : ./gradlew :core:enemyCards (dans assets/cards/dark/sig/).
 tasks.register('enemyCards', JavaExec) {
   group = 'assets'

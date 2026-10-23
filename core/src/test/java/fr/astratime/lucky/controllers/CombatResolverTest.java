@@ -228,6 +228,6 @@ class CombatResolverTest {
             symbols, List.of());
 
         assertEquals(100_000 - (3000 - 30), enemy.getHp());
-        assertEquals(800, player.getGains(), "cloche : 8 x 100");
+        assertEquals(1200, player.getGains(), "cloche : 12 x 100");
     }
 }

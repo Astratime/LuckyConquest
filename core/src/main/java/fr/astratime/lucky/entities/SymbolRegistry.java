@@ -38,8 +38,8 @@ public class SymbolRegistry {
 
         // Symboles de défense / gains de base
         ACTIONS.put(Symbol.GRAPE,      new DefenseAction(8));
-        ACTIONS.put(Symbol.BELL,       new GainAction(8));
-        ACTIONS.put(Symbol.WATERMELON, new GainAction(12));
+        ACTIONS.put(Symbol.BELL,       new GainAction(12));
+        ACTIONS.put(Symbol.WATERMELON, new GainAction(8));
 
         // Symboles rares liés aux suites (thème renforcé)
         ACTIONS.put(Symbol.DIAMOND,       new DefenseAction(20)); // theme Carreau : defense/reflect

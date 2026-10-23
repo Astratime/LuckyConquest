@@ -107,8 +107,8 @@ class SpinEconomyTest {
         Enemy portSoldier = new Enemy(Place.PORT.getDungeons().get(0).getSoldier());
         Player player = new Player("Joueur", Player.BASE_HP, plainCards());
         CombatContext context = new CombatContext(player, portSoldier);
-        new GainAction(8).resolve(context);
-        assertEquals(40, player.getGains(), "Cloche au Port : 8 x 5");
+        new GainAction(12).resolve(context);
+        assertEquals(60, player.getGains(), "Cloche au Port : 12 x 5");
     }
 
     @Test
