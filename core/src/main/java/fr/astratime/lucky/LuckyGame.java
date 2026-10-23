@@ -53,6 +53,9 @@ public class LuckyGame extends Game {
      */
     @Override
     public void create() {
+        // Posé avant toute lecture d'asset : rétablit à la volée les fichiers
+        // brouillés du build livré, transparent si les assets sont en clair (dev).
+        fr.astratime.lucky.security.ObfuscatedFiles.install();
         batch = new SpriteBatch();
         Lang.load();
         slots = GdxProfileStorage.slots();
