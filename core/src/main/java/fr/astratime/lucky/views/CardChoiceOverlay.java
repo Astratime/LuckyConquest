@@ -125,6 +125,28 @@ public class CardChoiceOverlay implements Disposable {
         showSymbols(Lang.t("ROULEAU TRUQUÉ"), Lang.t("Choisis le symbole du rouleau du milieu."), options, regionOf, onPicked);
     }
 
+    /**
+     * Atelier du Joker : le joueur choisit ce que vaut le Joker à ce tirage.
+     *
+     * @param onPicked reçoit le symbole choisi, une fois la fenêtre fermée
+     */
+    public void showJokerWorkshop(List<Symbol> options, Function<Symbol, TextureRegion> regionOf,
+                                  Consumer<Symbol> onPicked) {
+        showSymbols(Lang.t("ATELIER DU JOKER"), Lang.t("Choisis ce que vaut le Joker à ce tirage."), options, regionOf, onPicked);
+    }
+
+    /**
+     * Calibrage : le joueur choisit le symbole qui quitte ses rouleaux.
+     *
+     * @param turns    tirages sans le symbole choisi, celui-ci compris
+     * @param onPicked reçoit le symbole choisi, une fois la fenêtre fermée
+     */
+    public void showCalibration(List<Symbol> options, int turns, Function<Symbol, TextureRegion> regionOf,
+                                Consumer<Symbol> onPicked) {
+        showSymbols(Lang.t("CALIBRAGE"), Lang.f("Choisis le symbole qui quitte tes rouleaux pendant {0} tirages.", turns),
+            options, regionOf, onPicked);
+    }
+
     /** Fenêtre de choix d'un symbole parmi {@code options}. */
     private void showSymbols(String title, String text, List<Symbol> options, Function<Symbol, TextureRegion> regionOf,
                              Consumer<Symbol> onPicked) {

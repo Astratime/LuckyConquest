@@ -168,6 +168,10 @@ class LangTest {
             texts.add(combo::getRule);
         }
         for (CardFamily family : CardFamily.values()) texts.add(family::getDisplayName);
+        for (fr.astratime.lucky.entities.Archetype archetype : fr.astratime.lucky.entities.Archetype.values()) {
+            texts.add(archetype::getDisplayName);
+            texts.add(archetype::getDescription);
+        }
         for (ScreenMode mode : ScreenMode.values()) texts.add(mode::getLabel);
         for (LastingEffects.HouseRule rule : LastingEffects.HouseRule.values()) {
             texts.add(rule::getShortName);

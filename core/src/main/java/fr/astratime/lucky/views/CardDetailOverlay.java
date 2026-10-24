@@ -114,6 +114,7 @@ public class CardDetailOverlay implements Disposable {
         if (card.getSuit() != null) lines.add(new String[] {Lang.t("Rang"), rankName(card.getRank())});
         lines.add(new String[] {Lang.t("Type"), card.isConsumable() ? Lang.t("Consommable : disparaît une fois jouée")
             : card.getSuit() != null ? Lang.t("Carte à suite") : Lang.t("Carte spéciale")});
+        if (card.getArchetype() != null) lines.add(new String[] {Lang.t("Archétype"), card.getArchetype().getDisplayName()});
         if (price != null) lines.add(new String[] {priceKey, price});
         List<String> effects = new ArrayList<>();
         for (Effect effect : card.getEffects()) effects.addAll(List.of(effect.getDescription().split("\n")));

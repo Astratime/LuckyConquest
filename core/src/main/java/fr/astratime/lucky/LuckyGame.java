@@ -133,7 +133,10 @@ public class LuckyGame extends Game {
         List<String> catalog = new ArrayList<>(CardLoader.loadStartingCollection().keySet());
         catalog.addAll(CardLoader.loadBoutique().keySet());
         profile.setCatalog(catalog);
-        profile.setUpgradable(CardLoader.loadAll().stream().filter(Card::isUpgradable).map(Card::getId).toList());
+        List<Card> all = CardLoader.loadAll();
+        profile.setUpgradable(all.stream().filter(Card::isUpgradable).map(Card::getId).toList());
+        // Les cartes des archétypes pas encore vendues : le mode ADMIN les donne, en attendant les donjons des futurs lieux.
+        profile.setAdminOnlyCards(all.stream().filter(card -> card.getArchetype() != null).map(Card::getId).toList());
         profile.setAdmin(admin);
     }
 

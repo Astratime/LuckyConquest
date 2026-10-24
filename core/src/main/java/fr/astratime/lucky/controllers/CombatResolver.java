@@ -10,6 +10,13 @@ import fr.astratime.lucky.entities.Symbol;
 import fr.astratime.lucky.entities.SymbolOutcome;
 import fr.astratime.lucky.entities.TurnResult;
 import fr.astratime.lucky.entities.LastingEffects;
+import fr.astratime.lucky.entities.Combo;
+import fr.astratime.lucky.entities.SymbolRegistry;
+import fr.astratime.lucky.entities.actions.AttackAction;
+import fr.astratime.lucky.entities.actions.BombAction;
+import fr.astratime.lucky.entities.actions.GainAction;
+import fr.astratime.lucky.entities.actions.MixedAction;
+import fr.astratime.lucky.entities.actions.RandomAttackAction;
 import fr.astratime.lucky.entities.effects.ForgeHammerEffect;
 import fr.astratime.lucky.entities.effects.ForgedBladeEffect;
 import fr.astratime.lucky.entities.effects.RustyLeverEffect;
@@ -88,6 +95,7 @@ public class CombatResolver {
                               List<Event>        priorEvents) {
         priorEvents = new ArrayList<>(priorEvents);
         priorEvents.addAll(cardsOnDraw(combatContext, symbols)); // Marteau de forge, Levier rouillé, Jackpot englouti
+        priorEvents.addAll(archetypesOnDraw(combatContext, symbols, drawnSymbols)); // Joker sauvage, Couronne du Fou...
         List<Event> events = new ArrayList<>(priorEvents);
         double gainsBefore = combatContext.getPlayer().getGains(); // pour le Cœur d'or
 
@@ -106,6 +114,8 @@ public class CombatResolver {
         execution(combatContext).ifPresent(pistolEvents::add);
         pistolEvents.addAll(forgedBlades(combatContext, symbolOutcomes, pistolEvents));
         dynamite(combatContext).ifPresent(pistolEvents::add);
+        List<Event> collected = debtCollection(combatContext); // Recouvrement : le coup, puis ses gains
+        collected.stream().filter(e -> !(e instanceof GainsEarnedEvent)).forEach(pistolEvents::add);
         events.addAll(pistolEvents);
 
         // Bonus de paire/jackpot
@@ -133,6 +143,10 @@ public class CombatResolver {
             pairOrJackpotEvents.add(resolveAllIn(combatContext.getPlayer(), hasPair(symbols)));
         }
         goldenHeart(combatContext, combatContext.getPlayer().getGains() - gainsBefore).ifPresent(pairOrJackpotEvents::add);
+        collected.stream().filter(e -> e instanceof GainsEarnedEvent).forEach(pairOrJackpotEvents::add);
+        List<Event> hits = new ArrayList<>(events);
+        hits.addAll(pistolEvents);
+        pairOrJackpotEvents.addAll(archetypesAfterDraw(combatContext, symbols, drawnSymbols, hits, gainsBefore));
         events.addAll(pairOrJackpotEvents);
 
         List<Event> cardEvents = priorEvents.stream().filter(e -> !e.getPopups().isEmpty()).toList();
@@ -209,6 +223,165 @@ public class CombatResolver {
                 SunkenJackpotEffect.GAINS_FACTOR, SunkenJackpotEffect.ATTACK_FACTOR), EffectPopup.Style.GAINS));
         }
         return events;
+    }
+
+    /**
+     * Cartes des archétypes qui dépendent du tirage, avant que les symboles
+     * agissent : le Joker sauvage (attaque par Joker sorti), la Couronne du Fou
+     * (Bingo fait avec un Joker), le Taux variable (Créances par symbole de
+     * gains) et le Coup de bluff (attaque par malus de l'ennemi).
+     *
+     * @param drawn symboles arrêtés sur les rouleaux, Jokers compris
+     * @return les textes de ces bonus
+     */
+    private List<Event> archetypesOnDraw(CombatContext context, Symbol[] symbols, Symbol[] drawn) {
+        List<Event> events = new ArrayList<>();
+        int jokers = (int) java.util.Arrays.stream(drawn).filter(s -> s == Symbol.JOKER).count();
+        if (context.getWildJokerPercent() > 0 && jokers > 0) {
+            int percent = context.getWildJokerPercent() * jokers;
+            context.multiplyAttack(1f + percent / 100f, "Joker sauvage");
+            events.add(new StatusEvent(Lang.f("JOKER SAUVAGE : ATTAQUE +{0} %", percent), EffectPopup.Style.ATTACK));
+        }
+        if (context.getFoolCrownFactor() > 1f && jokers > 0 && SlotMachine.jackpotSymbol(symbols) != null) {
+            context.multiplyGains(context.getFoolCrownFactor(), "Couronne du Fou");
+            events.add(new StatusEvent(Lang.f("COURONNE DU FOU : GAINS x{0}", Combo.formatFactor(context.getFoolCrownFactor())),
+                EffectPopup.Style.GAINS));
+        }
+        if (context.getVariableRate() > 0) {
+            int gainSymbols = (int) java.util.Arrays.stream(symbols).filter(CombatResolver::isGainSymbol).count();
+            int added = context.getEnemy().addClaims(gainSymbols * context.getVariableRate());
+            events.add(new StatusEvent(Lang.f("TAUX VARIABLE : CRÉANCES +{0}", added), EffectPopup.Style.DRAIN));
+        }
+        if (context.getBluffPercent() > 0) {
+            int maluses = context.getEnemy().getActiveMaluses();
+            int percent = Math.min(context.getBluffMax(), context.getBluffPercent() * maluses);
+            if (percent > 0) context.multiplyAttack(1f + percent / 100f, "Coup de bluff");
+            events.add(new StatusEvent(Lang.f("COUP DE BLUFF : {0} MALUS, ATTAQUE +{1} %", maluses, percent), EffectPopup.Style.ATTACK));
+        }
+        return events;
+    }
+
+    /** @return {@code true} pour un symbole qui rapporte des gains (seul, ou avec autre chose : Étoile, Pépite). */
+    static boolean isGainSymbol(Symbol symbol) {
+        if (symbol == null) return false;
+        return SymbolRegistry.getAction(symbol).map(action -> action instanceof GainAction
+            || action instanceof MixedAction mixed
+            && mixed.getActions().stream().anyMatch(part -> part instanceof GainAction)).orElse(false);
+    }
+
+    /** @return {@code true} pour un symbole d'attaque (frappe seule, Dé, Bombe). */
+    static boolean isAttackSymbol(Symbol symbol) {
+        if (symbol == null) return false;
+        return SymbolRegistry.getAction(symbol).map(action -> action instanceof AttackAction
+            || action instanceof RandomAttackAction || action instanceof BombAction).orElse(false);
+    }
+
+    /**
+     * Recouvrement : toutes les Créances de l'ennemi sont encaissées d'un coup,
+     * une part de ses PV max par Créance (sa défense n'y fait rien, sa Garde si),
+     * et des gains par Créance.
+     *
+     * @return le coup et les gains, ou un texte s'il n'y avait rien à encaisser
+     */
+    private List<Event> debtCollection(CombatContext context) {
+        List<Event> events = new ArrayList<>();
+        Enemy enemy = context.getEnemy();
+        if (context.getCollectionHpPercent() <= 0f || enemy.isDefeated()) return events;
+        int claims = enemy.takeClaims();
+        if (claims == 0) {
+            events.add(new StatusEvent(Lang.t("RECOUVREMENT : AUCUNE CRÉANCE"), EffectPopup.Style.DRAIN));
+            return events;
+        }
+        long raw = Math.max(1L, Math.round((double) enemy.getMaxHp() * claims * context.getCollectionHpPercent() / 100.0));
+        long damage = enemy.skinned(raw);
+        enemy.takeDamage(raw);
+        events.add(new CardStrikeEvent(Lang.f("RECOUVREMENT : {0} CRÉANCES", claims), damage, raw, enemy.getDefense()));
+        double gains = (double) claims * context.getCollectionSpins() * context.getSpinCost();
+        if (gains > 0) {
+            context.getPlayer().addGains(gains);
+            events.add(new GainsEarnedEvent(gains));
+        }
+        return events;
+    }
+
+    /**
+     * Cartes des archétypes qui agissent une fois le tirage joué : Chapeau du
+     * Lutin (gains par coup), Gigue du Lutin (Lames par gains), Farce du Lutin
+     * (défense tombée), Marteau du cordonnier (ennemi vaincu), Bout de
+     * l'arc-en-ciel (Pot de Lutin dans la pioche), Rire du Joker (pioche du tour
+     * suivant) et Martingale (tirage sans paire).
+     *
+     * @param hits        tous les événements du tirage (coups des symboles, des cartes, du pistolet)
+     * @param gainsBefore gains du joueur avant le tirage
+     */
+    private List<Event> archetypesAfterDraw(CombatContext context, Symbol[] symbols, Symbol[] drawn, List<Event> hits,
+                                            double gainsBefore) {
+        List<Event> events = new ArrayList<>();
+        Player player = context.getPlayer();
+        Enemy  enemy  = context.getEnemy();
+        LastingEffects lasting = player.getLastingEffects();
+        int spinCost = context.getSpinCost();
+
+        int hatPercent = lasting.getHatPercent();
+        if (hatPercent > 0) {
+            int touched = (int) hits.stream().filter(e -> e instanceof EnemyDamagedEvent hit && hit.damage > 0).count();
+            double gains = (double) touched * spinCost * hatPercent / 100.0;
+            if (gains > 0) {
+                player.addGains(gains);
+                events.add(new StatusEvent(Lang.f(Lang.plural(touched) ? "CHAPEAU DU LUTIN : {0} COUPS" : "CHAPEAU DU LUTIN : {0} COUP",
+                    touched), EffectPopup.Style.GAINS));
+                events.add(new GainsEarnedEvent(gains));
+            }
+        }
+        if (context.getPrankSpins() > 0 && context.getEnemyDefenseAtStart() > 0 && enemy.getDefense() <= 0) {
+            double gains = (double) context.getPrankSpins() * spinCost;
+            player.addGains(gains);
+            lasting.addBlades(context.getPrankBlades());
+            events.add(new StatusEvent(Lang.f("FARCE DU LUTIN : DÉFENSE BRISÉE, LAMES +{0}", context.getPrankBlades()),
+                EffectPopup.Style.ATTACK));
+            events.add(new GainsEarnedEvent(gains));
+        }
+        if (context.getCobblerPercent() > 0 && enemy.isDefeated() && player.getGains() > 0) {
+            double gains = BigNumber.percent(player.getGains(), context.getCobblerPercent());
+            player.addGains(gains);
+            events.add(new StatusEvent(Lang.f("MARTEAU DU CORDONNIER : GAINS DU COMBAT +{0} %", context.getCobblerPercent()),
+                EffectPopup.Style.GAINS));
+            events.add(new GainsEarnedEvent(gains));
+        }
+        if (context.getJigSpinsPerBlade() > 0) {
+            double earned = player.getGains() - gainsBefore;
+            int blades = earned <= 0 ? 0 : (int) Math.min(context.getJigMaxBlades(),
+                Math.floor(earned / ((double) context.getJigSpinsPerBlade() * spinCost)));
+            if (blades > 0) lasting.addBlades(blades);
+            events.add(new StatusEvent(Lang.f("GIGUE DU LUTIN : LAMES +{0}", blades), EffectPopup.Style.ATTACK));
+        }
+        if (!context.getRainbowsEnds().isEmpty() && hasAttackPair(symbols)) {
+            context.getRainbowsEnds().forEach(lasting::addDeckCard);
+            events.add(new StatusEvent(Lang.t("BOUT DE L'ARC-EN-CIEL : UN POT DE LUTIN DANS TA PIOCHE"), EffectPopup.Style.GAINS));
+        }
+        if (context.getJokerLaughs() > 0 && java.util.Arrays.stream(drawn).anyMatch(s -> s == Symbol.JOKER)) {
+            lasting.addNextDraws(context.getJokerLaughs());
+            events.add(new StatusEvent(Lang.f("RIRE DU JOKER : +{0} CARTES AU PROCHAIN TOUR", context.getJokerLaughs()),
+                EffectPopup.Style.DRAW));
+        }
+        boolean pair = hasPair(symbols);
+        lasting.updateMartingale(context.isMartingale(), pair, context.getMartingaleAttack(), context.getMartingalePair());
+        if (context.isMartingale() && !pair) {
+            events.add(new StatusEvent(Lang.f("MARTINGALE x{0} : LE PROCHAIN TIRAGE SERA MEILLEUR", lasting.getMartingale()),
+                EffectPopup.Style.SPECIAL));
+        }
+        return events;
+    }
+
+    /** @return {@code true} si au moins deux symboles d'attaque identiques sont sortis. */
+    private static boolean hasAttackPair(Symbol[] symbols) {
+        for (Symbol symbol : symbols) {
+            if (!isAttackSymbol(symbol)) continue;
+            int count = 0;
+            for (Symbol other : symbols) if (other == symbol) count++;
+            if (count >= 2) return true;
+        }
+        return false;
     }
 
     /**

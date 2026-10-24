@@ -229,6 +229,7 @@ final class CombatEffectRows {
             Lang.t("Harpon"), Lang.f(Lang.plural(target.getHarpoons())
                 ? "À son prochain tour, l'ennemi joue {0} cartes de moins."
                 : "À son prochain tour, l'ennemi joue {0} carte de moins.", target.getHarpoons())));
+        addArchetypeRows(rows, lasting, target, guard);
         Enemy foe = controller.getGameState().getEnemy();
         EnemyKind kind = foe.getKind();
         if (lasting.getNibbles() > 0) rows.add(curse(skull, Lang.f("Grignotage x{0}", lasting.getNibbles()), EnemySymbol.NIBBLE, kind));
@@ -313,5 +314,48 @@ final class CombatEffectRows {
             case NO_BINGO    -> Lang.t("Tes rouleaux ne peuvent plus faire de Bingo.");
             case DOUBLE_SPIN -> Lang.t("Chaque rouleau tourne deux fois. Le pire résultat reste.");
         };
+    }
+
+    /**
+     * Les effets des cartes des archétypes : Créances et malus du Bluffeur sur
+     * l'ennemi, Chapeau du Lutin, Rente viagère, Martingale et Rire du Joker.
+     */
+    private void addArchetypeRows(List<SidePanel.EffectRow> rows, LastingEffects lasting, Enemy target, TextureRegion icon) {
+        if (target.getClaims() > 0) rows.add(new SidePanel.EffectRow(icon, null, Lang.f("Créances x{0}", target.getClaims()),
+            Lang.t("Créances"), Lang.f("À chacun de ses tours, l'ennemi perd {0} % de ses PV max et tu gagnes {1}.",
+                percentText(target.getClaims() * Enemy.CLAIM_HP_PER_MILLE / 10f),
+                SidePanel.formatGains((double) target.getClaims() * Enemy.CLAIM_SPINS * target.getKind().getSpinCost()))));
+        if (target.getCompoundTurns() > 0) rows.add(new SidePanel.EffectRow(icon, null,
+            Lang.f("Intérêts ({0})", target.getCompoundTurns()), Lang.t("Intérêts composés"),
+            Lang.f("Les Créances de l'ennemi grossissent à chacun de tes tirages. Encore {0}.", turns(target.getCompoundTurns()))));
+        if (target.getIntimidation() > 0) rows.add(new SidePanel.EffectRow(icon, null, Lang.t("Intimidé"), Lang.t("Intimidation"),
+            Lang.f("À son prochain tour, ses attaques baissent de {0} %.", target.malusShare(target.getIntimidation()))));
+        if (target.getMarkedTurns() > 0) rows.add(new SidePanel.EffectRow(icon, null,
+            Lang.f("Cartes marquées ({0})", target.getMarkedTurns()), Lang.t("Cartes marquées"),
+            Lang.f("Ses cartes à couleur perdent {0} % de leur effet. Encore {1}.",
+                target.malusShare(fr.astratime.lucky.controllers.EnemyTurnResolver.MARKED_CARDS_PERCENT),
+                turns(target.getMarkedTurns()))));
+        if (target.getRedHerrings() > 0) rows.add(new SidePanel.EffectRow(icon, null, Lang.t("Fausse piste"), Lang.t("Fausse piste"),
+            Lang.t("À son prochain tirage, un de ses rouleaux ne tourne pas (une chance sur deux contre un boss ou un roi).")));
+        if (target.getSleights() > 0) rows.add(new SidePanel.EffectRow(icon, null, Lang.f("Passe-passe x{0}", target.getSleights()),
+            Lang.t("Tour de passe-passe"),
+            Lang.t("Son prochain effet spécial est annulé (une chance sur deux contre un boss ou un roi).")));
+        if (lasting.getHatTurns() > 0) rows.add(new SidePanel.EffectRow(icon, null, Lang.f("Chapeau ({0})", lasting.getHatTurns()),
+            Lang.t("Chapeau du Lutin"), Lang.f("Chaque coup qui touche l'ennemi te rapporte {0} % d'un tirage en gains. Encore {1}.",
+                lasting.getHatPercent(), turns(lasting.getHatTurns()))));
+        if (lasting.getAnnuityTurns() > 0) rows.add(new SidePanel.EffectRow(icon, null, Lang.f("Rente ({0})", lasting.getAnnuityTurns()),
+            Lang.t("Rente viagère"), Lang.f("À chacun de tes tours : une Créance sur l'ennemi et {0} tirages de gains. Encore {1}.",
+                lasting.getAnnuitySpins(), turns(lasting.getAnnuityTurns()))));
+        if (lasting.getMartingale() > 0) rows.add(new SidePanel.EffectRow(icon, null, Lang.f("Martingale x{0}", lasting.getMartingale()),
+            Lang.t("Martingale"), Lang.f("Au prochain tirage : attaque +{0} % et paire +{1} %.", lasting.getMartingaleAttack(),
+                lasting.getMartingalePair())));
+        if (lasting.getNextDraws() > 0) rows.add(new SidePanel.EffectRow(icon, null, Lang.f("Pioche +{0}", lasting.getNextDraws()),
+            Lang.t("Rire du Joker"), Lang.f("Tu pioches {0} cartes de plus au prochain tour.", lasting.getNextDraws())));
+    }
+
+    /** @return {@code percent} sans décimale inutile, avec la virgule en français (ex : "2,5"). */
+    private static String percentText(float percent) {
+        String text = percent == (int) percent ? String.valueOf((int) percent) : String.valueOf(percent);
+        return !Lang.isEnglish() ? text.replace('.', ',') : text;
     }
 }

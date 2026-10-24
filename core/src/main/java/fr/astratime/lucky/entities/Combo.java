@@ -113,6 +113,31 @@ public enum Combo {
      * plus forte à la plus faible (un Carré compte aussi Brelan et Paire)
      */
     public static List<Combo> formed(List<Card> played) {
+        if (played.stream().noneMatch(Card::isWild)) return formedAsPlayed(played);
+        // Joker caméléon : chaque carte joker prend, l'une après l'autre, la couleur et le rang qui rapportent le plus.
+        List<Card> cards = new java.util.ArrayList<>(played);
+        for (int i = 0; i < cards.size(); i++) {
+            if (!cards.get(i).isWild()) continue;
+            Card best = null;
+            float bestTotal = -1f;
+            for (Card.Suit suit : Card.Suit.values()) {
+                for (int rank = ACE; rank <= KING; rank++) {
+                    Card stand = new Card(cards.get(i).getId(), "", null, List.of(), suit, rank);
+                    cards.set(i, stand);
+                    float total = totalFactor(formedAsPlayed(cards));
+                    if (total > bestTotal) {
+                        bestTotal = total;
+                        best = stand;
+                    }
+                }
+            }
+            cards.set(i, best);
+        }
+        return formedAsPlayed(cards);
+    }
+
+    /** @return les combinaisons formées par les cartes de {@code played} telles qu'elles sont (sans carte joker). */
+    private static List<Combo> formedAsPlayed(List<Card> played) {
         EnumSet<Combo> formed = EnumSet.noneOf(Combo.class);
         for (Combo combo : values()) {
             if (combo.matches(played)) formed.add(combo);

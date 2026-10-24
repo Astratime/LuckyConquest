@@ -31,6 +31,8 @@ public class Card {
     private final String       assetPath;
     private final List<Effect> effects;
     private final Suit         suit;
+    /** Archétype de deck de la carte ({@code null} : aucun). */
+    private final Archetype    archetype;
     private final int          rank;
     private final boolean      consumable;
     /** Version « + », obtenue en fusionnant {@link #UPGRADE_COST} exemplaires de la carte (valeurs +50 %). */
@@ -88,6 +90,16 @@ public class Card {
      */
     public Card(String id, String name, String assetPath, List<Effect> effects, Suit suit, int rank,
                 boolean consumable, boolean upgraded, boolean upgradable) {
+        this(id, name, assetPath, effects, suit, rank, consumable, upgraded, upgradable, null);
+    }
+
+    /**
+     * @param archetype archétype de deck de la carte, ou {@code null} si elle n'en a pas
+     * @see #Card(String, String, String, List, Suit, int, boolean, boolean, boolean)
+     */
+    public Card(String id, String name, String assetPath, List<Effect> effects, Suit suit, int rank,
+                boolean consumable, boolean upgraded, boolean upgradable, Archetype archetype) {
+        this.archetype  = archetype;
         this.upgraded   = upgraded;
         this.upgradable = upgradable;
         this.consumable = consumable;
@@ -99,6 +111,8 @@ public class Card {
         this.rank      = rank;
     }
 
+    /** @return l'archétype de deck de la carte, ou {@code null} si elle n'en a pas. */
+    public Archetype    getArchetype() { return archetype; }
     /** @return l'identifiant unique de la carte. */
     public String       getId()        { return id; }
     /** @return le nom affiché de la carte, suivi de « + » pour une carte « + ». */
@@ -115,6 +129,14 @@ public class Card {
     public boolean      isConsumable() { return consumable; }
     /** @return les effets déclenchés quand la carte est jouée (liste immuable). */
     public List<Effect> getEffects()   { return effects; }
+
+    /**
+     * @return {@code true} pour une carte joker (Joker caméléon) : pour les
+     *         combinaisons, elle prend la couleur et le rang qui rapportent le plus
+     */
+    public boolean isWild() {
+        return effects.stream().anyMatch(effect -> effect instanceof fr.astratime.lucky.entities.effects.WildCardEffect);
+    }
 
     /** @return le chemin de la texture de la carte, tel que défini dans le JSON. */
     public String getAssetPath() { return assetPath; }

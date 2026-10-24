@@ -42,6 +42,10 @@ public class SpinContext {
     private int     bestOfTwo = 0;
     /** Rouleaux en plus des {@link SlotMachine#SYMBOL_COUNT} habituels (Machine en surchauffe). */
     private int     extraReels = 0;
+    /** Atelier du Joker : ce que vaut le Joker à ce tirage ({@code null} : le meilleur symbole du tirage). */
+    private Symbol  jokerValue;
+    /** Second levier : relances du rouleau qui manque au Bingo, si le tirage fait une paire. */
+    private int     secondLevers = 0;
 
     /** Ajoute {@code amount} au boost de poids du symbole (cumulable sur plusieurs cartes). */
     public void addWeightBoost(Symbol symbol, int amount) {
@@ -130,4 +134,16 @@ public class SpinContext {
 
     /** @return {@code true} si le Jeu bonus s'ouvre à coup sûr après un Bingo. */
     public boolean isBonusGameForced() { return bonusGame; }
+
+    /** Atelier du Joker : le Joker vaut {@code symbol} à ce tirage (le dernier choisi l'emporte). */
+    public void setJokerValue(Symbol symbol) { jokerValue = symbol; }
+
+    /** @return ce que vaut le Joker à ce tirage, ou {@code null} : le meilleur symbole du tirage. */
+    public Symbol getJokerValue() { return jokerValue; }
+
+    /** Second levier : {@code tries} relances de plus du rouleau qui manque au Bingo. */
+    public void addSecondLevers(int tries) { secondLevers += tries; }
+
+    /** @return les relances du Second levier à ce tirage. */
+    public int getSecondLevers() { return secondLevers; }
 }

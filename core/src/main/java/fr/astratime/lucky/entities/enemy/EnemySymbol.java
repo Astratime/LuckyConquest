@@ -202,6 +202,12 @@ public enum EnemySymbol {
     public String getDisplayName() { return Lang.t(displayName); }
 
     /**
+     * @return {@code true} pour un effet spécial (tout sauf l'Épée, le Bouclier et la
+     *         Potion) : celui qu'annule un Tour de passe-passe
+     */
+    public boolean isSpecial() { return this != SWORD && this != SHIELD && this != POTION; }
+
+    /**
      * @return la description de l'effet de base du symbole chez l'ennemi
      *         {@code kind} (renforcé par sa force ; ses Potions et ses Crocs
      *         soignent selon sa force de soin)

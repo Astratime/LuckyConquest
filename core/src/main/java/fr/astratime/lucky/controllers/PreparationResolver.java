@@ -16,6 +16,7 @@ import fr.astratime.lucky.entities.enemy.AspirationRule;
 import fr.astratime.lucky.entities.enemy.EnemySymbol;
 import fr.astratime.lucky.entities.events.ComboEvent;
 import fr.astratime.lucky.entities.events.CorruptionEvent;
+import fr.astratime.lucky.entities.events.GainsEarnedEvent;
 import fr.astratime.lucky.entities.events.StatusEvent;
 import fr.astratime.lucky.entities.exploration.PlaceRule;
 import fr.astratime.lucky.i18n.Lang;
@@ -129,10 +130,39 @@ public class PreparationResolver {
                 EffectPopup.Style.DAMAGE));
         }
 
+        archetypes(player, enemy, spinContext, combatContext, turnContext);
+
         pendingEffects.forEach(effect -> effect.apply(turnContext));
         if (houseRule != LastingEffects.HouseRule.NO_COMBOS) applyCombos(turnContext, player);
 
         return turnContext;
+    }
+
+    /**
+     * Cartes des archétypes qui durent : les Intérêts composés font grossir les
+     * Créances de l'ennemi, la Rente viagère pose une Créance et paie, la
+     * Martingale récompense les tirages ratés d'affilée.
+     */
+    private static void archetypes(Player player, Enemy enemy, SpinContext spin, CombatContext combat, TurnContext turn) {
+        LastingEffects lasting = player.getLastingEffects();
+        int grown = enemy.growClaims();
+        if (grown > 0) {
+            turn.addEvent(new StatusEvent(Lang.f("INTÉRÊTS COMPOSÉS : CRÉANCES +{0}", grown), EffectPopup.Style.DRAIN));
+        }
+        int[] annuity = lasting.takeAnnuity();
+        if (annuity != null) {
+            int added = enemy.addClaims(annuity[0]);
+            double gains = (double) annuity[1] * combat.getSpinCost();
+            player.addGains(gains);
+            turn.addEvent(new StatusEvent(Lang.f("RENTE VIAGÈRE : CRÉANCES +{0}", added), EffectPopup.Style.DRAIN));
+            turn.addEvent(new GainsEarnedEvent(gains));
+        }
+        if (lasting.getMartingale() > 0) {
+            spin.addPairChance(lasting.getMartingalePair() / 100f);
+            combat.multiplyAttack(1f + lasting.getMartingaleAttack() / 100f, "Martingale");
+            turn.addEvent(new StatusEvent(Lang.f("MARTINGALE : ATTAQUE +{0} %, PAIRE +{1} %", lasting.getMartingaleAttack(),
+                lasting.getMartingalePair()), EffectPopup.Style.SPECIAL));
+        }
     }
 
     /**

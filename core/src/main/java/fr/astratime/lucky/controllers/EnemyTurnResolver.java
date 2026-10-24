@@ -258,7 +258,26 @@ public class EnemyTurnResolver {
             }
         }
 
-        EnemySymbol[] symbols = machine.spin(enemy.getWeights(), luck, enemy.getReelCount());
+        // Cartes marquées (Bluffeur) : ses cartes à couleur ne valent qu'une part de leur effet
+        if (enemy.takeMarkedCards()) {
+            int kept = 100 - enemy.malusShare(MARKED_CARDS_PERCENT);
+            swordBonus  = swordBonus * kept / 100;
+            healBonus   = healBonus * kept / 100;
+            shieldBonus = shieldBonus * kept / 100;
+            luck.replaceAll((symbol, bonus) -> bonus * kept / 100);
+            openingEvents.add(new StatusEvent(Lang.f("CARTES MARQUÉES : SES CARTES -{0} %", 100 - kept), EffectPopup.Style.DEFENSE));
+        }
+        // Fausse piste (Bluffeur) : un de ses rouleaux ne tourne pas (une chance sur deux pour un boss ou un roi)
+        int reelCount = enemy.getReelCount();
+        if (enemy.takeRedHerring()) {
+            if (kind.isBoss() && random.nextBoolean()) {
+                openingEvents.add(new StatusEvent(Lang.t("FAUSSE PISTE : IL NE S'Y LAISSE PAS PRENDRE"), EffectPopup.Style.SPECIAL));
+            } else if (reelCount > 1) {
+                reelCount--;
+                openingEvents.add(new StatusEvent(Lang.t("FAUSSE PISTE : UN ROULEAU DE MOINS"), EffectPopup.Style.DEFENSE));
+            }
+        }
+        EnemySymbol[] symbols = machine.spin(enemy.getWeights(), luck, reelCount);
         Map<Integer, List<Event>> reelEvents = new java.util.HashMap<>(); // ce qui arrive à un rouleau avant qu'il agisse
         if (enemy.spendCoins()) { // Pièces avalées : le Bandit manchot s'offre un Jackpot
             java.util.Arrays.fill(symbols, EnemySymbol.SWORD);
@@ -268,6 +287,11 @@ public class EnemyTurnResolver {
         // Les roulettes du Zéro tournent d'abord : elles valent pour tout le tour.
         Turn turn = new Turn(enemy, player, swordBonus);
         if (foreseen) turn.attackFactor *= EnemySymbol.PREDICTION_FACTOR;
+        int intimidated = enemy.takeIntimidation(); // Intimidation (Bluffeur) : ses attaques baissent
+        if (intimidated > 0) {
+            turn.malusPercent = 100 - intimidated;
+            openingEvents.add(new StatusEvent(Lang.f("INTIMIDÉ : SES ATTAQUES -{0} %", intimidated), EffectPopup.Style.DEFENSE));
+        }
         EnemyRouletteEvent[] roulettes = new EnemyRouletteEvent[symbols.length];
         for (int i = 0; i < symbols.length; i++) {
             if (symbols[i] != EnemySymbol.ZERO) continue;
@@ -319,6 +343,16 @@ public class EnemyTurnResolver {
                 events.add(parried);
                 outcomes.add(events);
                 continue;
+            }
+            if (symbols[i].isSpecial() && enemy.getSleights() > 0) { // Tour de passe-passe (Bluffeur)
+                enemy.takeSleight();
+                if (!kind.isBoss() || random.nextBoolean()) {
+                    events.add(new StatusEvent(Lang.f("TOUR DE PASSE-PASSE : {0} ANNULÉ", symbols[i].getDisplayName()),
+                        EffectPopup.Style.DEFENSE));
+                    outcomes.add(events);
+                    continue;
+                }
+                events.add(new StatusEvent(Lang.t("TOUR DE PASSE-PASSE RATÉ"), EffectPopup.Style.SPECIAL));
             }
             events.addAll(reelEvents.getOrDefault(i, List.of()));
             int repeats = i == best ? 1 + boosts.get(EnemySignature.QUEUE_DE_COMETE) : 1;
@@ -832,12 +866,17 @@ public class EnemyTurnResolver {
     }
 
     /** Ce qui vaut pour toutes ses attaques et ses Boucliers d'un tour. */
+    /** Cartes marquées (Bluffeur) : part de l'effet de ses cartes à couleur perdue, en % (moitié moins pour un boss). */
+    public static final int MARKED_CARDS_PERCENT = 50;
+
     static final class Turn {
         final Enemy  enemy;
         final Player player;
         final int    swordBonus;
         int attackFactor = 1;
         int shieldFactor = 1;
+        /** Intimidation (Bluffeur) : part de ses attaques qui porte, en %. */
+        int malusPercent = 100;
         /** Force en plus de ses coups et de ses Boucliers (Engrenages), en %. */
         int boostPercent;
         int totalAttack;
@@ -863,7 +902,8 @@ public class EnemyTurnResolver {
             int attack = (int) Math.min(Integer.MAX_VALUE, (long) enemy.getKind().hurt(
                 (base + swordBonus + enemy.getRage() + enemy.getAnvil() + enemy.spendInterest())
                     * enemy.getStake() * attackFactor) * enemy.attackPercent() / 100 // un roi en phase 2 frappe plus fort
-                * (100 + boostPercent) / 100); // ses Engrenages
+                * (100 + boostPercent) / 100 // ses Engrenages
+                * malusPercent / 100); // l'Intimidation du joueur
             totalAttack += attack;
             int shieldBefore = player.getShield();
             int lost = player.takeDamage(attack, shieldPercent);
@@ -872,7 +912,8 @@ public class EnemyTurnResolver {
 
         /** La Comète Dorée : {@code percent} % des PV max du joueur, à travers son bouclier. */
         PlayerDamagedEvent comet(int percent) {
-            int attack = (int) Math.min(Integer.MAX_VALUE, (long) player.getMaxHp() * percent / 100 * attackFactor);
+            int attack = (int) Math.min(Integer.MAX_VALUE, (long) player.getMaxHp() * percent / 100 * attackFactor
+                * malusPercent / 100);
             totalAttack += attack;
             int shieldBefore = player.getShield();
             int lost = player.takeDamage(attack, true);

@@ -98,6 +98,20 @@ public class TurnEngine {
             }
         }
 
+        // Second levier : une paire sans Bingo, le rouleau qui manque relance pour tenter le Bingo
+        int levers = turnContext.getSpinContext().getSecondLevers();
+        if (levers > 0) {
+            Symbol[] levered = secondLever(machine, drawn, turnContext.getSpinContext(), levers);
+            if (levered != null) {
+                if (rerolled == null) rerolled = drawn;
+                drawn   = levered;
+                symbols = machine.resolveJokers(levered, turnContext.getSpinContext());
+                turnContext.addEvent(new StatusEvent(Lang.t("SECOND LEVIER : BINGO !"), EffectPopup.Style.SPECIAL));
+            } else if (SlotMachine.hasPair(symbols) && SlotMachine.jackpotSymbol(symbols) == null) {
+                turnContext.addEvent(new StatusEvent(Lang.t("SECOND LEVIER : PAS DE BINGO"), EffectPopup.Style.SPECIAL));
+            }
+        }
+
         // Ivresse (ennemi) : un rouleau tourne deux fois et garde le pire résultat
         int drunk = player.getLastingEffects().takeDrunk();
         for (int i = 0; i < drunk; i++) {
@@ -133,6 +147,7 @@ public class TurnEngine {
             symbols = machine.resolveJokers(unbingoed, spin);
         }
 
+        player.getLastingEffects().setLastDrawn(drawn); // Rouleau retenu, Mémoire de la machine
         applyStake(turnContext, stake, SlotMachine.jackpotSymbol(symbols) != null);
 
         // Prédiction de la Cartomancienne : son symbole est-il sorti ?
@@ -162,6 +177,9 @@ public class TurnEngine {
         String notice = enemy.takeNotice(); // un coup annulé ou une résistance passés inaperçus
         if (notice != null) afterCombat.add(new StatusEvent(notice, EffectPopup.Style.SPECIAL));
         if (enemy.isLastDrawPending() && !player.isDefeated()) afterCombat.addAll(lastDraw(player, enemy));
+
+        // Créances (Rentier) : au début de son tour, elles lui coûtent des PV et rapportent des gains au joueur
+        if (!enemy.isDefeated() && !player.isDefeated()) afterCombat.addAll(chargeClaims(enemy, player, turnContext.getCombatContext()));
 
         EnemyTurnResult enemyTurn = null;
         if (!enemy.isDefeated() && !player.isDefeated() && enemy.takeDazzle()) {
@@ -281,6 +299,55 @@ public class TurnEngine {
         } else {
             turnContext.addEvent(new StatusEvent(Lang.t("ENDETTÉ : SYMBOLES -25 %"), EffectPopup.Style.DAMAGE));
         }
+    }
+
+    /**
+     * Créances de l'ennemi (Rentier), au début de son tour : chacune lui retire
+     * {@link Enemy#CLAIM_HP_PER_MILLE} pour mille de ses PV max (sa défense n'y
+     * fait rien, sa Garde si) et rapporte {@link Enemy#CLAIM_SPINS} coût de tirage
+     * de gains au joueur. Elles restent jusqu'à la fin du combat.
+     *
+     * @return le coup des Créances et leurs gains (rien sans Créance)
+     */
+    static List<Event> chargeClaims(Enemy enemy, Player player, CombatContext combat) {
+        List<Event> events = new ArrayList<>();
+        int claims = enemy.getClaims();
+        if (claims <= 0) return events;
+        long raw = Math.max(1L, (long) enemy.getMaxHp() * claims * Enemy.CLAIM_HP_PER_MILLE / 1000);
+        long damage = enemy.skinned(raw);
+        enemy.takeDamage(raw);
+        events.add(new fr.astratime.lucky.entities.events.CardStrikeEvent(Lang.f("CRÉANCES x{0}", claims), damage, raw,
+            enemy.getDefense()));
+        double gains = (double) claims * Enemy.CLAIM_SPINS * combat.getSpinCost();
+        player.addGains(gains);
+        events.add(new fr.astratime.lucky.entities.events.GainsEarnedEvent(gains));
+        return events;
+    }
+
+    /**
+     * Second levier : si le tirage fait une paire sans Bingo, un rouleau qui
+     * n'en fait pas partie (ni vide ni imposé) relance jusqu'à {@code tries} fois ;
+     * le premier Bingo obtenu reste.
+     *
+     * @return les symboles du Bingo obtenu, ou {@code null} sans paire, avec déjà un Bingo, ou si aucun Bingo ne sort
+     */
+    private Symbol[] secondLever(SlotMachine machine, Symbol[] drawn, SpinContext spin, int tries) {
+        Symbol[] resolved = machine.resolveJokers(drawn, spin);
+        if (!SlotMachine.hasPair(resolved) || SlotMachine.jackpotSymbol(resolved) != null) return null;
+        Map<Symbol, Integer> counts = new java.util.HashMap<>();
+        for (Symbol symbol : resolved) if (symbol != null) counts.merge(symbol, 1, Integer::sum);
+        Symbol group = counts.entrySet().stream().max(Map.Entry.comparingByValue()).map(Map.Entry::getKey).orElse(null);
+        int reel = -1;
+        for (int i = 0; i < drawn.length && reel < 0; i++) {
+            if (drawn[i] != null && resolved[i] != group && !spin.getForcedReels().containsKey(i)) reel = i;
+        }
+        if (reel < 0) return null;
+        for (int i = 0; i < tries; i++) {
+            Symbol[] again = drawn.clone();
+            again[reel] = machine.spin(spin)[reel];
+            if (SlotMachine.jackpotSymbol(machine.resolveJokers(again, spin)) != null) return again;
+        }
+        return null;
     }
 
     /**
