@@ -59,6 +59,27 @@ public class CombatContext {
     private int   forgedBlades  = 0;  // Lame forgée : coups d'épée en plus, à une part de la plus grosse attaque
     private int   dynamitePercent = 0; // Dynamite : % des PV max de l'ennemi infligés, sans peau ni défense
     private int   goldenHearts  = 0;  // Cœur d'or : les gains du tirage frappent aussi l'ennemi
+    // ----- Archétypes de deck -----
+    private int   wildJokerPercent = 0; // Joker sauvage : attaque en plus par Joker sorti, en %
+    private int   jokerLaughs   = 0;  // Rire du Joker : cartes de plus à la prochaine pioche si un Joker sort
+    private float foolCrownFactor = 1f; // Couronne du Fou : gains d'un Bingo fait avec un Joker
+    private final List<String> rainbowsEnds = new ArrayList<>(); // Bout de l'arc-en-ciel : cartes glissées dans la pioche
+    private int   cobblerPercent = 0; // Marteau du cordonnier : gains du combat en plus si l'ennemi tombe ce tour, en %
+    private int   prankSpins    = 0;  // Farce du Lutin : gains (en coûts de tirage) si toute sa défense tombe
+    private int   prankBlades   = 0;  // Farce du Lutin : Lames si toute sa défense tombe
+    private int   jigSpinsPerBlade = 0; // Gigue du Lutin : coûts de tirage gagnés pour une Lame (0 : aucune Gigue)
+    private int   jigMaxBlades  = 0;  // Gigue du Lutin : Lames au plus
+    private int   variableRate  = 0;  // Taux variable : Créances par symbole de gains sorti
+    private float collectionHpPercent = 0f; // Recouvrement : % des PV max de l'ennemi par Créance encaissée
+    private int   collectionSpins = 0; // Recouvrement : gains (en coûts de tirage) par Créance encaissée
+    private int   bluffPercent  = 0;  // Coup de bluff : attaque en plus par malus de l'ennemi, en %
+    private int   bluffMax      = 0;  // Coup de bluff : attaque en plus au plus, en %
+    private boolean martingale  = false; // Martingale jouée ce tour
+    private int   martingaleAttack = 0;  // Martingale : attaque par tirage raté au tirage suivant, en %
+    private int   martingalePair   = 0;  // Martingale : chance de paire par tirage raté au tirage suivant, en %
+    /** Défense de l'ennemi au début du tour, avant les cartes (Farce du Lutin). */
+    private final int enemyDefenseAtStart;
+
     private int     piercePercent  = 0;     // Pique : part (%) de chaque coup qui traverse la défense ennemie
     private int     lifeDrainPercent = 0;   // Coeur : % des dégâts infligés rendus en soin
     private boolean gainsFromDamage  = false; // As de Pique : convertit les dégâts infligés en gains
@@ -76,7 +97,95 @@ public class CombatContext {
         this.player = player;
         this.enemy  = enemy;
         this.spinCost = enemy != null ? enemy.getKind().getSpinCost() : SpinEconomy.BASE_SPIN_COST;
+        this.enemyDefenseAtStart = enemy != null ? enemy.getDefense() : 0;
     }
+
+    // ----- Archétypes de deck -----
+
+    /** Joker sauvage : chaque Joker sorti ce tour ajoute {@code percent} % d'attaque. */
+    public void addWildJoker(int percent) { wildJokerPercent += percent; }
+    /** @return l'attaque en plus par Joker sorti ce tour, en % (0 : aucun Joker sauvage). */
+    public int getWildJokerPercent() { return wildJokerPercent; }
+
+    /** Rire du Joker : {@code cards} cartes de plus à la prochaine pioche si un Joker sort. */
+    public void addJokerLaugh(int cards) { jokerLaughs += cards; }
+    /** @return les cartes de plus à la prochaine pioche si un Joker sort ce tour. */
+    public int getJokerLaughs() { return jokerLaughs; }
+
+    /** Couronne du Fou : un Bingo fait avec un Joker multiplie les gains du tirage par {@code factor}. */
+    public void addFoolCrown(float factor) { foolCrownFactor *= factor; }
+    /** @return le multiplicateur des gains d'un Bingo fait avec un Joker (1 : aucune Couronne). */
+    public float getFoolCrownFactor() { return foolCrownFactor; }
+
+    /** Bout de l'arc-en-ciel : la carte {@code cardId} rejoint la pioche si deux symboles d'attaque sortent ensemble. */
+    public void addRainbowsEnd(String cardId) { rainbowsEnds.add(cardId); }
+    /** @return les cartes du Bout de l'arc-en-ciel joué ce tour, par id. */
+    public List<String> getRainbowsEnds() { return Collections.unmodifiableList(rainbowsEnds); }
+
+    /** Marteau du cordonnier : si l'ennemi tombe ce tour, gains du combat +{@code percent} %. */
+    public void addCobbler(int percent) { cobblerPercent += percent; }
+    /** @return les gains du combat en plus si l'ennemi tombe ce tour, en %. */
+    public int getCobblerPercent() { return cobblerPercent; }
+
+    /** Farce du Lutin : si toute la défense de l'ennemi tombe ce tour, {@code spins} coûts de tirage et {@code blades} Lames. */
+    public void addPrank(int spins, int blades) {
+        prankSpins  += spins;
+        prankBlades += blades;
+    }
+    /** @return les gains de la Farce du Lutin, en coûts de tirage. */
+    public int getPrankSpins() { return prankSpins; }
+    /** @return les Lames de la Farce du Lutin. */
+    public int getPrankBlades() { return prankBlades; }
+    /** @return la défense de l'ennemi au début du tour, avant les cartes. */
+    public int getEnemyDefenseAtStart() { return enemyDefenseAtStart; }
+
+    /** Gigue du Lutin : une Lame par {@code spinsPerBlade} coûts de tirage gagnés ce tour, {@code maxBlades} au plus. */
+    public void addJig(int spinsPerBlade, int maxBlades) {
+        jigSpinsPerBlade = jigSpinsPerBlade == 0 ? spinsPerBlade : Math.min(jigSpinsPerBlade, spinsPerBlade);
+        jigMaxBlades += maxBlades;
+    }
+    /** @return les coûts de tirage gagnés pour une Lame (0 : aucune Gigue du Lutin). */
+    public int getJigSpinsPerBlade() { return jigSpinsPerBlade; }
+    /** @return les Lames de la Gigue du Lutin au plus. */
+    public int getJigMaxBlades() { return jigMaxBlades; }
+
+    /** Taux variable : {@code perSymbol} Créances par symbole de gains sorti ce tour. */
+    public void addVariableRate(int perSymbol) { variableRate += perSymbol; }
+    /** @return les Créances par symbole de gains sorti ce tour. */
+    public int getVariableRate() { return variableRate; }
+
+    /** Recouvrement : les Créances sont encaissées ({@code hpPercent} % des PV max et {@code spins} coûts de tirage chacune). */
+    public void addDebtCollection(float hpPercent, int spins) {
+        collectionHpPercent += hpPercent;
+        collectionSpins     += spins;
+    }
+    /** @return les PV max de l'ennemi retirés par Créance encaissée, en % (0 : aucun Recouvrement). */
+    public float getCollectionHpPercent() { return collectionHpPercent; }
+    /** @return les gains par Créance encaissée, en coûts de tirage. */
+    public int getCollectionSpins() { return collectionSpins; }
+
+    /** Coup de bluff : {@code percent} % d'attaque par malus de l'ennemi, {@code max} % au plus. */
+    public void addBluffCall(int percent, int max) {
+        bluffPercent += percent;
+        bluffMax     += max;
+    }
+    /** @return l'attaque en plus par malus de l'ennemi, en %. */
+    public int getBluffPercent() { return bluffPercent; }
+    /** @return l'attaque en plus du Coup de bluff au plus, en %. */
+    public int getBluffMax() { return bluffMax; }
+
+    /** Martingale : si ce tirage n'a pas de paire, le suivant aura {@code attackPercent} % d'attaque et {@code pairPercent} % de paire en plus. */
+    public void addMartingale(int attackPercent, int pairPercent) {
+        martingale       = true;
+        martingaleAttack = Math.max(martingaleAttack, attackPercent);
+        martingalePair   = Math.max(martingalePair, pairPercent);
+    }
+    /** @return {@code true} si une Martingale a été jouée ce tour. */
+    public boolean isMartingale() { return martingale; }
+    /** @return l'attaque de la Martingale par tirage raté, en %. */
+    public int getMartingaleAttack() { return martingaleAttack; }
+    /** @return la chance de paire de la Martingale par tirage raté, en %. */
+    public int getMartingalePair() { return martingalePair; }
 
     /** @return le coût d'un tirage dans ce combat, en gains (voir {@link SpinEconomy}). */
     public int getSpinCost() { return spinCost; }

@@ -43,6 +43,7 @@ public class CardLoader {
         "cards/definitions/special.json",
         "cards/definitions/donjons.json",
         "cards/definitions/lieux.json",
+        "cards/definitions/archetypes.json",
         "cards/definitions/test.json"
     };
 
@@ -241,8 +242,10 @@ public class CardLoader {
             }
         }
 
+        String archetype = json.getString("archetype", null);
         return new Card(upgraded ? Card.upgradedId(id) : id, name, assetPath, effects, suit, rank,
-            json.getBoolean("consumable", false), upgraded, improved > 0);
+            json.getBoolean("consumable", false), upgraded, improved > 0,
+            archetype != null ? fr.astratime.lucky.entities.Archetype.valueOf(archetype) : null);
     }
 
     /** @return la carte {@code id} (sa version « + » si {@code id} finit par « + »), ou {@code null} si elle n'existe pas */
@@ -452,6 +455,58 @@ public class CardLoader {
                 return new HarpoonEffect(v.i("attackPercent"));
             case "ANCHOR":
                 return new AnchorEffect(v.i("turns"), v.i("defensePercent"));
+
+            // ----- Archétypes de deck -----
+            case "WILD_JOKER":
+                return new WildJokerEffect(v.i("attackPercent"));
+            case "JOKER_LAUGH":
+                return new JokerLaughEffect(v.i("extraCards"));
+            case "FOOL_CROWN":
+                return new FoolCrownEffect(v.i("factor"));
+            case "JOKER_WORKSHOP":
+                return new JokerWorkshopEffect();
+            case "WILD_CARD":
+                return new WildCardEffect();
+            case "LEPRECHAUN_HAT":
+                return new LeprechaunHatEffect(json.getInt("turns"), v.i("percent"));
+            case "LEPRECHAUN_JIG":
+                return new LeprechaunJigEffect(v.lower("spinsPerBlade"), v.i("maxBlades"));
+            case "RAINBOWS_END":
+                return new RainbowsEndEffect(v.id(json.getString("card")));
+            case "COBBLER_HAMMER":
+                return new CobblerHammerEffect(v.i("attackPercent"), v.i("gainsPercent"));
+            case "LEPRECHAUN_PRANK":
+                return new LeprechaunPrankEffect(v.i("spins"), v.i("blades"));
+            case "CLAIMS":
+                return new ClaimsEffect(v.i("count"));
+            case "VARIABLE_RATE":
+                return new VariableRateEffect(v.i("perSymbol"));
+            case "COMPOUND_INTEREST":
+                return new CompoundInterestEffect(json.getInt("turns"), v.i("percent"));
+            case "DEBT_COLLECTION":
+                return new DebtCollectionEffect(v.f("hpPercent"), v.i("spins"));
+            case "ANNUITY":
+                return new AnnuityEffect(json.getInt("turns"), json.getInt("claims"), v.i("spins"));
+            case "INTIMIDATION":
+                return new IntimidationEffect(v.i("percent"));
+            case "MARKED_CARDS":
+                return new MarkedCardsEffect(v.i("turns"));
+            case "RED_HERRING":
+                return new RedHerringEffect();
+            case "SLEIGHT_OF_HAND":
+                return new SleightOfHandEffect();
+            case "BLUFF_CALL":
+                return new BluffCallEffect(v.i("percent"), v.i("maxPercent"));
+            case "HELD_REEL":
+                return new HeldReelEffect();
+            case "MACHINE_MEMORY":
+                return new MachineMemoryEffect(v.i("amount"));
+            case "CALIBRATION":
+                return new CalibrationEffect(json.getInt("turns"), v.i("percent"));
+            case "SECOND_LEVER":
+                return new SecondLeverEffect(v.i("tries"));
+            case "MARTINGALE":
+                return new MartingaleEffect(v.i("attackPercent"), v.i("pairPercent"));
 
             default:
                 throw new IllegalArgumentException("Type d'effet inconnu dans le JSON : " + type);

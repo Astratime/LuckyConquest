@@ -117,6 +117,8 @@ public class PlayerProfile {
     private boolean admin;
     /** Toutes les cartes à collectionner, par id (voir {@link #setCatalog(Collection)}). */
     private final java.util.Set<String> catalog = new java.util.LinkedHashSet<>();
+    /** Cartes que seul le mode ADMIN donne (voir {@link #setAdminOnlyCards(Collection)}). */
+    private final java.util.Set<String> adminOnly = new java.util.LinkedHashSet<>();
     /** Cartes qui ont une version « + », par id (voir {@link #setUpgradable(Collection)}). */
     private final java.util.Set<String> upgradable = new java.util.LinkedHashSet<>();
     /** Deck et machine du mode ADMIN, séparés de ceux de la partie. */
@@ -294,6 +296,22 @@ public class PlayerProfile {
         upgradable.addAll(cardIds);
         for (String id : List.copyOf(catalog)) {
             if (upgradable.contains(id)) catalog.add(Card.upgradedId(id));
+        }
+        loadAdminLoadout();
+    }
+
+    /**
+     * Cartes que seul le mode ADMIN met dans la collection : celles qui ne
+     * s'obtiennent pas encore (les cartes des archétypes, en attendant les
+     * donjons des futurs lieux), avec leur version « + ». Elles ne comptent pas
+     * dans le catalogue de la collection.
+     */
+    public void setAdminOnlyCards(Collection<String> cardIds) {
+        adminOnly.clear();
+        for (String id : cardIds) {
+            if (catalog.contains(id)) continue;
+            adminOnly.add(id);
+            if (upgradable.contains(id)) adminOnly.add(Card.upgradedId(id));
         }
         loadAdminLoadout();
     }
@@ -528,12 +546,13 @@ public class PlayerProfile {
         Map<String, Integer> everything = new LinkedHashMap<>();
         for (String id : collection.keySet()) everything.put(id, MAX_COPIES);
         for (String id : catalog) everything.put(id, MAX_COPIES);
+        for (String id : adminOnly) everything.put(id, MAX_COPIES);
         return Collections.unmodifiableMap(everything);
     }
 
     /** @return le nombre d'exemplaires possédés de la carte {@code id} (0 si aucun). */
     public int getOwnedCopies(String id) {
-        if (admin && (catalog.contains(id) || collection.containsKey(id))) return MAX_COPIES;
+        if (admin && (catalog.contains(id) || adminOnly.contains(id) || collection.containsKey(id))) return MAX_COPIES;
         return collection.getOrDefault(id, 0);
     }
 

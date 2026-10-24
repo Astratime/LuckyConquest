@@ -17,12 +17,15 @@ import fr.astratime.lucky.entities.TurnResult;
 import fr.astratime.lucky.entities.choices.BetChoice;
 import fr.astratime.lucky.entities.choices.CardChoice;
 import fr.astratime.lucky.entities.choices.RiggedReelChoice;
+import fr.astratime.lucky.entities.choices.JokerWorkshopChoice;
+import fr.astratime.lucky.entities.choices.CalibrationChoice;
 import fr.astratime.lucky.entities.choices.RouletteChoice;
 import fr.astratime.lucky.entities.context.PlayContext;
 import fr.astratime.lucky.entities.effects.BetOnSymbolEffect;
 import fr.astratime.lucky.entities.effects.BingoEffect;
 import fr.astratime.lucky.entities.effects.Effect;
 import fr.astratime.lucky.entities.effects.ForceReelEffect;
+import fr.astratime.lucky.entities.effects.JokerValueEffect;
 import fr.astratime.lucky.entities.effects.OverheatEffect;
 import fr.astratime.lucky.entities.effects.PistolEffect;
 import fr.astratime.lucky.entities.enemy.EnemyCards;
@@ -298,7 +301,12 @@ public class GameController {
                 EffectPopup.Style.DEFENSE, PopupScale.SECONDARY_INTENSITY));
         }
         int buried = lasting.takeRockfalls(); // Éboulement : des cartes de moins
-        DrawResult drawn = player.draw(Math.max(1, DEFAULT_DRAW_COUNT - buried));
+        int laughs = lasting.takeNextDraws(); // Rire du Joker : des cartes de plus
+        DrawResult drawn = player.draw(Math.max(1, DEFAULT_DRAW_COUNT - buried + laughs));
+        if (laughs > 0) {
+            turnNotices.add(new EffectPopup(Lang.f("RIRE DU JOKER : {0} CARTES DE PLUS", laughs), EffectPopup.Style.DRAW,
+                PopupScale.SECONDARY_INTENSITY));
+        }
         if (buried > 0) {
             turnNotices.add(new EffectPopup(Lang.f(Lang.plural(buried) ? "ÉBOULEMENT : {0} CARTES DE MOINS"
                 : "ÉBOULEMENT : {0} CARTE DE MOINS", buried), EffectPopup.Style.DAMAGE, PopupScale.SECONDARY_INTENSITY));
@@ -686,6 +694,34 @@ public class GameController {
         return rigged.getPopups();
     }
 
+    /**
+     * Réponse à l'Atelier du Joker : le Joker vaut {@code symbol} au prochain spin.
+     *
+     * @return les textes à afficher
+     * @throws IllegalStateException si aucun Atelier du Joker n'est en attente de choix
+     */
+    public List<EffectPopup> shapeJoker(Symbol symbol) {
+        if (!(pendingChoice instanceof JokerWorkshopChoice)) throw new IllegalStateException("Aucun Atelier du Joker en attente");
+        pendingChoice = null;
+        JokerValueEffect value = new JokerValueEffect(symbol);
+        pendingEffects.add(value);
+        return value.getPopups();
+    }
+
+    /**
+     * Réponse au Calibrage : {@code symbol} quitte les rouleaux pendant quelques tirages, celui-ci compris.
+     *
+     * @return les textes à afficher
+     * @throws IllegalStateException si aucun Calibrage n'est en attente de choix
+     */
+    public List<EffectPopup> calibrate(Symbol symbol) {
+        if (!(pendingChoice instanceof CalibrationChoice calibration)) throw new IllegalStateException("Aucun Calibrage en attente");
+        pendingChoice = null;
+        gameState.getPlayer().getLastingEffects().removeSymbol(symbol, calibration.turns());
+        return List.of(new EffectPopup(Lang.f("CALIBRAGE : {0} RETIRÉ", symbol.getDisplayName()), EffectPopup.Style.SPECIAL,
+            PopupScale.SECONDARY_INTENSITY));
+    }
+
     /** Ouvre ou ferme le Jeu bonus après les Bingos (fermé dans le tutoriel). */
     public void setBonusGameEnabled(boolean enabled) { turnEngine.setBonusGameEnabled(enabled); }
 
@@ -774,6 +810,8 @@ public class GameController {
         if (cost > 0) player.paySpin(cost);
         TurnResult result = turnEngine.playTurn(gameState, pendingEffects, placed);
         stake = SpinEconomy.Stake.NONE;
+        // Bout de l'arc-en-ciel : ses Pots de Lutin rejoignent la pioche, à une place au hasard
+        for (String id : player.getLastingEffects().takeDeckCards()) player.getDeck().insertRandomly(cardFactory.apply(id));
         if (bingoCardPlayed && result.getGainBingoSymbol() != null) bingoGiftPending = true;
         pendingEffects.clear();
         betsThisTurn.clear();

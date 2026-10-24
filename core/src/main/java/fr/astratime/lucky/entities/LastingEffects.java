@@ -102,6 +102,29 @@ public class LastingEffects {
     /** Cocktail des abysses : cartes jouables en plus, ce tour seulement. */
     private int bonusPlays = 0;
 
+    // ----- Archétypes de deck -----
+    /** Symboles arrêtés sur les rouleaux au dernier tirage, Jokers compris ({@code null} : aucun tirage encore). */
+    private Symbol[] lastDrawn;
+    /** Rire du Joker : cartes piochées en plus à la prochaine pioche. */
+    private int nextDraws = 0;
+    /** Chapeau du Lutin : tirages restants où chaque coup rapporte des gains, et combien (% d'un coût de tirage). */
+    private int hatTurns = 0;
+    private int hatPercent = 0;
+    /** Rente viagère : tours restants, Créances posées et gains (en coûts de tirage) à chacun. */
+    private int annuityTurns = 0;
+    private int annuityClaims = 0;
+    private int annuitySpins = 0;
+    /** Martingale : tirages ratés d'affilée (au plus {@link #MAX_MARTINGALE}), et ses bonus par tirage raté, en %. */
+    private int martingale = 0;
+    private int martingaleAttack = 0;
+    private int martingalePair = 0;
+
+    /** Bout de l'arc-en-ciel : cartes à glisser dans la pioche du joueur après ce tirage, par id. */
+    private final List<String> deckCards = new ArrayList<>();
+
+    /** Tirages ratés d'affilée que la Martingale peut cumuler. */
+    public static final int MAX_MARTINGALE = 3;
+
     /** Règles que peut changer le Directeur des Jeux (Nouvelle règle). */
     public enum HouseRule {
         /** Les combinaisons de cartes ne comptent plus. */
@@ -487,6 +510,87 @@ public class LastingEffects {
     /** @return les cartes jouables en plus ce tour (Cocktail des abysses). */
     public int getBonusPlays() { return bonusPlays; }
 
+    /** Retient les symboles arrêtés sur les rouleaux à ce tirage (Rouleau retenu, Mémoire de la machine). */
+    public void setLastDrawn(Symbol[] drawn) { lastDrawn = drawn == null ? null : drawn.clone(); }
+    /** @return les symboles du dernier tirage, Jokers compris, ou {@code null} s'il n'y en a pas encore eu. */
+    public Symbol[] getLastDrawn() { return lastDrawn == null ? null : lastDrawn.clone(); }
+
+    /** Bout de l'arc-en-ciel : la carte {@code cardId} sera glissée dans la pioche après ce tirage. */
+    public void addDeckCard(String cardId) { deckCards.add(cardId); }
+    /** @return les cartes à glisser dans la pioche, par id, et les oublie. */
+    public List<String> takeDeckCards() {
+        List<String> taken = List.copyOf(deckCards);
+        deckCards.clear();
+        return taken;
+    }
+
+    /** Rire du Joker : {@code count} cartes de plus à la prochaine pioche. */
+    public void addNextDraws(int count) { nextDraws += count; }
+    /** @return les cartes de plus à la prochaine pioche. */
+    public int getNextDraws() { return nextDraws; }
+    /** Pioche : les cartes en plus valent pour celle-ci. @return leur nombre */
+    public int takeNextDraws() { int n = nextDraws; nextDraws = 0; return n; }
+
+    /** Chapeau du Lutin : pendant {@code turns} tirages, chaque coup rapporte {@code percent} % d'un coût de tirage. */
+    public void addHat(int turns, int percent) {
+        hatTurns   = Math.max(hatTurns, turns);
+        hatPercent = Math.max(hatPercent, percent);
+    }
+    /** @return les tirages restants sous le Chapeau du Lutin (0 : inactif). */
+    public int getHatTurns() { return hatTurns; }
+    /** @return ce que rapporte chaque coup sous le Chapeau du Lutin, en % d'un coût de tirage (0 : inactif). */
+    public int getHatPercent() { return hatTurns > 0 ? hatPercent : 0; }
+
+    /** Rente viagère : pendant {@code turns} tours, {@code claims} Créances et {@code spins} coûts de tirage de gains. */
+    public void addAnnuity(int turns, int claims, int spins) {
+        annuityTurns  = Math.max(annuityTurns, turns);
+        annuityClaims = Math.max(annuityClaims, claims);
+        annuitySpins  = Math.max(annuitySpins, spins);
+    }
+    /** @return les tours restants de la Rente viagère (0 : inactive). */
+    public int getAnnuityTurns() { return annuityTurns; }
+    /** @return les gains de la Rente viagère à chaque tour, en coûts de tirage. */
+    public int getAnnuitySpins() { return annuitySpins; }
+    /**
+     * Début d'un tirage : la Rente viagère paie ce tour-ci.
+     *
+     * @return {Créances posées, gains en coûts de tirage}, ou {@code null} si elle est inactive
+     */
+    public int[] takeAnnuity() {
+        if (annuityTurns <= 0) return null;
+        int[] paid = {annuityClaims, annuitySpins};
+        if (--annuityTurns == 0) {
+            annuityClaims = 0;
+            annuitySpins  = 0;
+        }
+        return paid;
+    }
+
+    /**
+     * Martingale : après un tirage sans paire où elle est jouée, un tirage raté de
+     * plus (au plus {@link #MAX_MARTINGALE}) ; sinon la série retombe à 0.
+     *
+     * @param played       {@code true} si une Martingale a été jouée à ce tirage
+     * @param pair         {@code true} si ce tirage a fait une paire
+     * @param attackPercent attaque en plus par tirage raté, au tirage suivant
+     * @param pairPercent   chance de paire en plus par tirage raté, au tirage suivant
+     */
+    public void updateMartingale(boolean played, boolean pair, int attackPercent, int pairPercent) {
+        if (played && !pair) {
+            martingale       = Math.min(MAX_MARTINGALE, martingale + 1);
+            martingaleAttack = Math.max(martingaleAttack, attackPercent);
+            martingalePair   = Math.max(martingalePair, pairPercent);
+        } else {
+            martingale = martingaleAttack = martingalePair = 0;
+        }
+    }
+    /** @return les tirages ratés d'affilée sous la Martingale (0 : aucun bonus au prochain tirage). */
+    public int getMartingale() { return martingale; }
+    /** @return l'attaque en plus de la Martingale au prochain tirage, en %. */
+    public int getMartingaleAttack() { return martingale * martingaleAttack; }
+    /** @return la chance de paire en plus de la Martingale au prochain tirage, en %. */
+    public int getMartingalePair() { return martingale * martingalePair; }
+
     /** Fin d'un tirage : chaque symbole retiré se rapproche de son retour, la Corruption et Dans la manche de leur fin. */
     public void endTurn() {
         removedSymbols.replaceAll((symbol, turns) -> turns - 1);
@@ -501,6 +605,7 @@ public class LastingEffects {
         if (anchorTurns > 0) anchorTurns--;
         temperPercent += temperCards; // la Trempe durcit l'épée à chaque tour
         bonusPlays = 0;
+        if (hatTurns > 0 && --hatTurns == 0) hatPercent = 0;
     }
 
     /** @return {@code true} si aucun effet n'est actif et les jauges sont vides. */
@@ -511,6 +616,7 @@ public class LastingEffects {
             && fakeGains == 0 && taxes == 0 && laterTaxes == 0 && houseRuleTurns == 0
             && traps == 0 && lanternDraws == 0 && earplugDraws == 0 && propTurns == 0 && lamps == 0
             && cageTurns == 0 && anchorTurns == 0 && temperPercent == 0 && bonusPlays == 0
-            && voidReels.isEmpty() && shortCircuits == 0 && houseEdges == 0 && rockfalls == 0 && aspirations.isEmpty();
+            && voidReels.isEmpty() && shortCircuits == 0 && houseEdges == 0 && rockfalls == 0 && aspirations.isEmpty()
+            && nextDraws == 0 && hatTurns == 0 && annuityTurns == 0 && martingale == 0;
     }
 }

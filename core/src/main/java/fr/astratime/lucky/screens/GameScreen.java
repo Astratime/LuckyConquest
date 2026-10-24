@@ -84,6 +84,8 @@ import fr.astratime.lucky.entities.actions.MixedAction;
 import fr.astratime.lucky.entities.TurnResult;
 import fr.astratime.lucky.entities.choices.BetChoice;
 import fr.astratime.lucky.entities.choices.RiggedReelChoice;
+import fr.astratime.lucky.entities.choices.JokerWorkshopChoice;
+import fr.astratime.lucky.entities.choices.CalibrationChoice;
 import fr.astratime.lucky.entities.choices.CardChoice;
 import fr.astratime.lucky.entities.choices.RouletteChoice;
 import fr.astratime.lucky.entities.SlotMachine;
@@ -817,6 +819,16 @@ public class GameScreen extends ScreenAdapter {
         } else if (choice instanceof RiggedReelChoice) {
             choiceOverlay.showRiggedReel(gameController.getBetOptions(), slots::regionOf, symbol -> {
                 effectPopupAnimator.play(gameController.rigReel(symbol), cardCenter.x, cardCenter.y);
+                refreshEffects();
+            });
+        } else if (choice instanceof JokerWorkshopChoice) {
+            choiceOverlay.showJokerWorkshop(gameController.getBetOptions(), slots::regionOf, symbol -> {
+                effectPopupAnimator.play(gameController.shapeJoker(symbol), cardCenter.x, cardCenter.y);
+                refreshEffects();
+            });
+        } else if (choice instanceof CalibrationChoice calibration) {
+            choiceOverlay.showCalibration(gameController.getBetOptions(), calibration.turns(), slots::regionOf, symbol -> {
+                effectPopupAnimator.play(gameController.calibrate(symbol), cardCenter.x, cardCenter.y);
                 refreshEffects();
             });
         } else if (choice instanceof RouletteChoice roulette) {

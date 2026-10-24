@@ -140,7 +140,9 @@ public class SlotMachine {
         if (jokers == 0) return resolved;
 
         Symbol value;
-        if (counts.isEmpty()) {
+        if (spinContext.getJokerValue() != null) { // Atelier du Joker : le joueur a choisi ce qu'il vaut
+            value = spinContext.getJokerValue();
+        } else if (counts.isEmpty()) {
             value = weightedRandom(spinContext, false);
         } else {
             int best = counts.values().stream().max(Integer::compare).orElse(0);

@@ -34,6 +34,12 @@ FAMILIES = {
     'j_cour':        ('#eef4ff', '#b8cdf0', '#7a92c0'),
     'j_malveillant': ('#f0e8fa', '#c4b0e0', '#8670ac'),
     'j_marotte':     ('#fff8e0', '#f0d890', '#b89c50'),
+    # --- archétypes de deck (2026-10-23) ---
+    'arch_joker':     ('#f4ecfc', '#d4bcec', '#9a7cbc'),   # violet du fou
+    'arch_lutin':     ('#eafaea', '#a8e0a4', '#68a464'),   # vert trèfle
+    'arch_rentier':   ('#fdf6e4', '#e8d4a0', '#ae9a60'),   # parchemin
+    'arch_bluffeur':  ('#eceef4', '#b4b8c8', '#767a90'),   # gris fumée
+    'arch_relanceur': ('#e6f2fc', '#a4c8ec', '#6890b8'),   # bleu machine
 }
 
 CARD_FAMILY = {
@@ -61,4 +67,14 @@ CARD_FAMILY = {
     'bingo': 'echoppe', 'russian_roulette': 'echoppe', 'corruption': 'echoppe', 'cursed_joker': 'echoppe',
     'joker': 'j_souriant', 'masque_du_joker': 'j_masque', 'joker_de_cour': 'j_cour',
     'joker_malveillant': 'j_malveillant', 'marotte_du_joker': 'j_marotte',
+    'joker_sauvage': 'arch_joker', 'rire_du_joker': 'arch_joker', 'couronne_du_fou': 'arch_joker',
+    'atelier_du_joker': 'arch_joker', 'joker_cameleon': 'arch_joker',
+    'chapeau_du_lutin': 'arch_lutin', 'gigue_du_lutin': 'arch_lutin', 'bout_de_l_arc_en_ciel': 'arch_lutin',
+    'marteau_du_cordonnier': 'arch_lutin', 'farce_du_lutin': 'arch_lutin',
+    'reconnaissance_de_dette': 'arch_rentier', 'taux_variable': 'arch_rentier', 'interets_composes': 'arch_rentier',
+    'recouvrement': 'arch_rentier', 'rente_viagere': 'arch_rentier',
+    'intimidation': 'arch_bluffeur', 'cartes_marquees': 'arch_bluffeur', 'fausse_piste': 'arch_bluffeur',
+    'tour_de_passe_passe': 'arch_bluffeur', 'coup_de_bluff': 'arch_bluffeur',
+    'rouleau_retenu': 'arch_relanceur', 'memoire_de_la_machine': 'arch_relanceur', 'calibrage': 'arch_relanceur',
+    'second_levier': 'arch_relanceur', 'martingale': 'arch_relanceur',
 }

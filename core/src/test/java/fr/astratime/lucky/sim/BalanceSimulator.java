@@ -846,6 +846,10 @@ public final class BalanceSimulator {
                 game.pickRouletteCard(random.nextInt(roulette.cursed().size()));
             } else if (choice instanceof RiggedReelChoice) {
                 game.rigReel(pick(game.getBetOptions(), random));
+            } else if (choice instanceof fr.astratime.lucky.entities.choices.JokerWorkshopChoice) {
+                game.shapeJoker(pick(game.getBetOptions(), random));
+            } else if (choice instanceof fr.astratime.lucky.entities.choices.CalibrationChoice) {
+                game.calibrate(pick(game.getBetOptions(), random));
             }
         }
         return game.spin();
