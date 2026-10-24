@@ -28,9 +28,29 @@ public final class AssetScrambler {
     /** En-tête reconnaissable en tête d'un fichier brouillé ("LCX1"). */
     static final byte[] MAGIC = {'L', 'C', 'X', '1'};
 
-    /** Clé du XOR roulant. Volontairement fixe : simple barrière, pas un secret. */
-    private static final byte[] KEY =
-        "LuckyConquest/astratime/©".getBytes(java.nio.charset.StandardCharsets.UTF_8);
+    /**
+     * Clé du XOR roulant, DÉRIVÉE au lieu d'être écrite en clair : on recombine
+     * trois fragments rangés sous forme codée ({@link Hidden}) puis on en prend
+     * l'empreinte SHA-256. Aucune chaîne de clé lisible n'apparaît donc dans le
+     * binaire. Reste une barrière, pas un secret (la dérivation est dans le
+     * code), mais nettement plus pénible à retrouver qu'une chaîne en dur.
+     */
+    private static final byte[] KEY = deriveKey();
+
+    private static byte[] deriveKey() {
+        String combined =
+              Hidden.reveal(new int[]{0x77, 0x35, 0x26, 0x21, 0x36})
+            + Hidden.reveal(new int[]{0x78, 0x2f, 0x2b, 0x3b, 0x3a, 0x31, 0x2a, 0x2a, 0x59, 0x52,
+                0x0c, 0x01, 0x03, 0x0e, 0xe0})
+            + Hidden.reveal(new int[]{0x48, 0x21, 0x29, 0x3e, 0x6c, 0x66, 0x69, 0x6c, 0x55, 0x47,
+                0x02, 0x10, 0x11});
+        try {
+            return java.security.MessageDigest.getInstance("SHA-256")
+                .digest(combined.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+        } catch (java.security.NoSuchAlgorithmException e) {
+            throw new IllegalStateException(e);
+        }
+    }
 
     /**
      * Extensions brouillées : l'art et les données du jeu, lus via
@@ -126,5 +146,6 @@ public final class AssetScrambler {
             }
         }
         System.out.println("[AssetScrambler] " + count[0] + " fichier(s) brouillé(s) dans " + root);
+        AssetIntegrity.writeManifest(root);
     }
 }
