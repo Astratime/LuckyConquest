@@ -5,6 +5,7 @@ import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.Interpolation;
 import com.badlogic.gdx.math.MathUtils;
+import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.utils.Array;
 import fr.astratime.lucky.entities.enemy.EnemyKind;
 import fr.astratime.lucky.entities.enemy.EnemySymbol;
@@ -196,6 +197,7 @@ final class TowerBossScenes {
         static final float SLIP = 0.5f, LAND = 1.15f, DUST = 3.0f;
         /** Sa couronne dans son portrait : colonnes 9 à 25, lignes 0 à 9. */
         private static final int CROWN_X = 9, CROWN_W = 17, CROWN_H = 10;
+        private static final Color HAIR = c("6a1e6a");
         private final TextureRegion crown, left, right, body, scepter, back;
         private boolean collapsed, dusted;
         private final float[] halves = new float[8];                // x, y, rotation, vx des deux moitiés
@@ -284,6 +286,7 @@ final class TowerBossScenes {
                 batch.draw(body, x0, y0, body.getRegionWidth() * scale, body.getRegionHeight() * scale);
                 batch.draw(scepter, x0 + (CROWN_X + CROWN_W) * scale, y0 + body.getRegionHeight() * scale,
                     scepter.getRegionWidth() * scale, CROWN_H * scale);
+                cap(batch, x0, y0, scale, CROWN_H - 1, CROWN_X, CROWN_X + CROWN_W - 1, HAIR, light, poseAlpha);   // ses cheveux, sous la couronne
             }
         }
 
@@ -523,14 +526,21 @@ final class TowerBossScenes {
         }
     }
 
-    /** Il tombe et lâche tous ses jetons ; sa couronne s'envole ; son âme monte au ciel avec le fantôme de la Reine, puis ils disparaissent. */
+    /**
+     * Ses propres jetons tournent autour de lui puis le transpercent un à un ; sa couronne s'envole et il tombe au
+     * sol. Son corps s'efface, et son âme monte au ciel avec celle de la Reine.
+     */
     static final class PretenderDeath extends PretenderScene {
-        static final float SOUL = 3.1f;
+        static final float FIRST_HIT = 0.9f, HIT_STEP = 0.15f, FLY = 0.12f, FALL = CLIMAX_DEATH, FADE = 3.1f, SOUL = 3.3f;
         /** Sa couronne dans son portrait : colonnes 9 à 25, lignes 0 à 9. */
         private static final int CROWN_X = 9, CROWN_W = 17, CROWN_H = 10;
+        private static final Color HAIR = c("8a3a1a"), HIT = c("ff3a5a");
+        /** Là où chaque jeton le transperce, en pixels de son portrait. */
+        private static final float[][] HITS = {{17, 31}, {11, 35}, {23, 34}, {14, 24}, {21, 22}, {17, 38}, {8, 30},
+            {26, 29}, {12, 40}, {22, 39}};
         private final TextureRegion crown, body, sideLeft, sideRight, queen;
-        private int fallen;
-        private static final int CHIPS = 28;
+        private final Vector2 at = new Vector2();
+        private float pivotX, pivotY, rot;
 
         PretenderDeath(CutsceneKit kit) {
             super(kit, Moment.DEATH, 0);
@@ -541,78 +551,127 @@ final class TowerBossScenes {
             queen     = kit.portrait(EnemyKind.REINE);
         }
 
-        @Override protected void restart() { fallen = 0; }
+        private float hitTime(int i) { return FIRST_HIT + i * HIT_STEP + FLY; }
 
-        /** @return la place du jeton {@code i} du trône (un dossier haut et deux accoudoirs). */
-        private float[] chipAt(int i) {
-            float size = 56f, x0 = bossX(), base = groundY() + 10f;
-            if (i < 12) return new float[] {x0 - 2.5f * size + (i % 6) * size, base + (i / 6) * size * 0.6f};
-            if (i < 22) return new float[] {x0 - 2.5f * size + (i % 2 == 0 ? 0 : 5) * size, base + (2 + (i - 12) / 2) * size * 0.6f};
-            return new float[] {x0 - 1.5f * size + (i - 22) % 4 * size, base + (7 + (i - 22) / 4) * size * 0.6f};
+        /** Il tombe à gauche, en tournant autour du coin bas-gauche de son portrait, jusqu'à être couché au sol. */
+        private void pose() {
+            float fall = Interpolation.bounceOut.apply(progress(FALL, FALL + 0.6f));
+            pivotX = bossX() - bossWidth() / 2f;
+            pivotY = MathUtils.lerp(bossBottom(), groundY(), fall);
+            rot = 86f * fall;
+            if (time < FALL && time > FIRST_HIT) pivotX += (random.nextFloat() - 0.5f) * 6f;   // chaque jeton le secoue
+        }
+
+        /** @return la place à l'écran du pixel ({@code px}, {@code py}) de son portrait, tel qu'il est tombé. */
+        private Vector2 map(float px, float py) {
+            float s = bossScale(), dx = px * s, dy = (boss.getRegionHeight() - py) * s;
+            float cos = MathUtils.cosDeg(rot), sin = MathUtils.sinDeg(rot);
+            return at.set(pivotX + dx * cos - dy * sin, pivotY + dx * sin + dy * cos);
+        }
+
+        /** Dessine le morceau ({@code px}, {@code py}, {@code pw}, {@code ph}) de son portrait, tourné avec lui. */
+        private void part(Batch batch, TextureRegion region, float px, float py, float pw, float ph) {
+            float s = bossScale(), x = pivotX + px * s, y = pivotY + (boss.getRegionHeight() - py - ph) * s;
+            batch.draw(region, x, y, pivotX - x, pivotY - y, pw * s, ph * s, 1f, 1f, rot);
+        }
+
+        /** Son portrait sans couronne, le haut du crâne complété. */
+        private void crownless(Batch batch, float r, float g, float b, float light, float alpha) {
+            batch.setColor(r * light, g * light, b * light, alpha);
+            part(batch, body, 0, CROWN_H, body.getRegionWidth(), body.getRegionHeight());
+            part(batch, sideLeft, 0, 0, CROWN_X, CROWN_H);
+            part(batch, sideRight, CROWN_X + CROWN_W, 0, sideRight.getRegionWidth(), CROWN_H);
+            cap(batch, pivotX, pivotY, bossScale(), CROWN_H, CROWN_X + 1, CROWN_X + CROWN_W - 2, HAIR, light, alpha, rot);
         }
 
         @Override
         protected void step(float delta) {
-            if (time >= CLIMAX_DEATH) {                                 // le trône s'effondre jeton par jeton
-                int target = Math.min(CHIPS, (int) ((time - CLIMAX_DEATH) * 30f) + 1);
-                while (fallen < target) {
-                    float[] p = chipAt(CHIPS - 1 - fallen);
-                    Particle piece = place(chip, p[0], p[1], (random.nextFloat() - 0.5f) * 600f, 300f * random.nextFloat(),
-                        fit(56f, chip.getRegionHeight()), 1.8f);
-                    piece.gravity = 1800f;
-                    piece.spin = (random.nextFloat() - 0.5f) * 720f;
-                    fallen++;
+            pose();
+            for (int i = 0; i < HITS.length; i++) {
+                if (at(hitTime(i))) {                                  // un jeton le transperce
+                    Vector2 p = map(HITS[i][0], HITS[i][1]);
+                    sparks(p.x, p.y, 16, HIT, 600f, 10f);
+                    rumble(0.1f, 5f);
                 }
             }
-            if (at(CLIMAX_DEATH)) { rumble(0.8f, 12f); chips(bossX(), bossY(), 40, 1100f); }   // il lâche tous ses jetons
+            if (at(FALL)) { rumble(0.6f, 10f); chips(bossX(), bossY(), 16, 800f); }
+            if (at(FALL + 0.6f)) {                                      // il touche le sol
+                rumble(0.4f, 9f);
+                sparks(bossX() - bossHeight() * 0.5f, groundY(), 40, c("d8c8a8"), 500f, 12f);
+            }
+            if (at(FADE)) {
+                Vector2 p = map(17f, 26f);
+                sparks(p.x, p.y, 60, WHITE, 400f, 10f);
+            }
         }
 
         @Override
         protected void back(Batch batch) {
-            for (int i = 0; i < CHIPS - fallen; i++) {
-                float[] p = chipAt(i);
-                float wobble = time > 1.2f ? (random.nextFloat() - 0.5f) * 6f * progress(1.2f, CLIMAX_DEATH) : 0f;
-                draw(batch, chip, p[0] + wobble, p[1], fit(56f, chip.getRegionHeight()), 0f, WHITE, 1f);
+            pose();
+            showBoss = false;
+            float light = 1f - 0.35f * progress(FALL, FALL + 0.6f), alpha = 1f - progress(FADE, FADE + 0.6f);
+            if (alpha <= 0f) return;
+            if (time < FALL) {
+                batch.setColor(light, light, light, alpha);
+                part(batch, boss, 0, 0, boss.getRegionWidth(), boss.getRegionHeight());
+            } else {
+                crownless(batch, 1f, 1f, 1f, light, alpha);
             }
-            float drop = Interpolation.bounceOut.apply(progress(CLIMAX_DEATH + 0.3f, CLIMAX_DEATH + 0.9f));
-            poseY = 140f - 160f * drop;                                 // assis sur le trône, puis au sol
-            poseTilt = 0f;
-            poseShadow = 0.4f * drop + 0.3f * progress(SOUL, SOUL + 0.6f);
-            // dès que sa couronne s'envole, son portrait reste sans elle
-            showBoss = time < CLIMAX_DEATH;
-            if (!showBoss) {
-                float scale = bossScale(), x0 = bossX() - bossWidth() / 2f, y0 = bossBottom() + poseY;
-                float light = 1f - poseShadow;
-                batch.setColor(light, light, light, 1f);
-                batch.draw(body, x0, y0, body.getRegionWidth() * scale, body.getRegionHeight() * scale);
-                float top = y0 + body.getRegionHeight() * scale;
-                batch.draw(sideLeft, x0, top, CROWN_X * scale, CROWN_H * scale);
-                batch.draw(sideRight, x0 + (CROWN_X + CROWN_W) * scale, top, sideRight.getRegionWidth() * scale, CROWN_H * scale);
+            // les jetons plantés en lui
+            float size = fit(44f, chip.getRegionHeight());
+            for (int i = 0; i < HITS.length; i++) {
+                if (time < hitTime(i)) continue;
+                Vector2 p = map(HITS[i][0], HITS[i][1]);
+                draw(batch, chip, p.x, p.y, size, rot + i * 37f, tmp.set(light, light, light, 1f), alpha);
             }
         }
 
         @Override
         protected void front(Batch batch) {
-            if (time >= CLIMAX_DEATH) {                                 // sa couronne s'envole
-                float k = progress(CLIMAX_DEATH, CLIMAX_DEATH + 1.6f);
+            // ses jetons montent du sol, tournent autour de lui, puis foncent sur lui un à un
+            float size = fit(44f, chip.getRegionHeight());
+            for (int i = 0; i < HITS.length; i++) {
+                float start = hitTime(i) - FLY;
+                if (time >= hitTime(i)) continue;
+                float t = Math.min(time, start), r = bossWidth() * 0.95f * Interpolation.pow2Out.apply(progress(0f, 0.7f));
+                float angle = t * 220f + i * 36f;
+                float ox = bossX() + MathUtils.cosDeg(angle) * r;
+                float oy = MathUtils.lerp(groundY(), bossY() + MathUtils.sinDeg(angle) * r * 0.5f, progress(0f, 0.7f));
+                float x = ox, y = oy;
+                if (time >= start) {
+                    float k = Interpolation.pow2In.apply(progress(start, hitTime(i)));
+                    Vector2 p = map(HITS[i][0], HITS[i][1]);
+                    x = MathUtils.lerp(ox, p.x, k);
+                    y = MathUtils.lerp(oy, p.y, k);
+                    line(batch, HIT, 0.6f * k, ox, oy, x, y, 6f);
+                }
+                glow(batch, x, y, 70f, HIT, 0.5f * progress(0.1f, 0.5f));
+                draw(batch, chip, x, y, size, time * 500f + i * 40f, WHITE, progress(0.1f, 0.5f));
+            }
+            if (time >= FALL) {                                         // sa couronne s'envole
+                float k = progress(FALL, FALL + 1.6f);
                 float x = portraitX(CROWN_X + CROWN_W / 2f) + worldWidth() * 0.45f * Interpolation.pow2In.apply(k);
                 float y = MathUtils.lerp(portraitY(CROWN_H / 2f), worldHeight() + 200f, Interpolation.pow2In.apply(k))
                     + 40f * MathUtils.sin(k * 10f);
                 draw(batch, crown, x, y, bossScale(), -400f * k, WHITE, 1f);
             }
-            // son âme monte au ciel avec le fantôme de la Reine, puis tous deux s'effacent
-            float soul = progress(SOUL, SOUL + 0.4f) * (1f - progress(4.3f, 4.9f));
+            // son âme, debout, monte au ciel avec celle de la Reine, puis toutes deux s'effacent
+            float soul = progress(SOUL, SOUL + 0.4f) * (1f - progress(4.4f, 5.0f));
             if (soul > 0f) {
-                float rise = Interpolation.pow2In.apply(progress(SOUL, 4.9f)) * worldHeight() * 0.5f;
-                float scale = bossScale(), w = boss.getRegionWidth() * scale, h = boss.getRegionHeight() * scale;
+                float rise = Interpolation.pow2In.apply(progress(SOUL, 5.0f)) * worldHeight() * 0.5f;
+                float s = bossScale(), w = boss.getRegionWidth() * s;
+                float keepX = pivotX, keepY = pivotY, keepRot = rot;
+                pivotX = bossX() - w / 2f - 130f;
+                pivotY = bossBottom() + rise;
+                rot = 0f;
                 additive(batch);
-                batch.setColor(0.9f, 0.9f, 1f, 0.5f * soul);
-                batch.draw(body, bossX() - w / 2f - 130f, bossBottom() + poseY + rise, w, body.getRegionHeight() * scale);
-                float qw = queen.getRegionWidth() * scale, qh = queen.getRegionHeight() * scale;
+                crownless(batch, 0.9f, 0.9f, 1f, 1f, 0.5f * soul);
+                float qw = queen.getRegionWidth() * s, qh = queen.getRegionHeight() * s;
                 batch.setColor(0.75f, 0.85f, 1f, 0.45f * soul);
                 batch.draw(queen, bossX() + 150f - qw / 2f, bossBottom() + 40f + rise * 1.05f, qw, qh);
                 normal(batch);
-                glow(batch, bossX(), bossBottom() + h * 0.6f + rise, w * 2.2f, WHITE, 0.25f * soul);
+                glow(batch, bossX(), bossY() + rise, w * 2.2f, WHITE, 0.25f * soul);
+                pivotX = keepX; pivotY = keepY; rot = keepRot;
             }
         }
     }

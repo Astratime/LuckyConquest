@@ -39,7 +39,6 @@ final class CasinoBossScenes {
     static final String[] GLASS = {"owwwwwwwo", ".oppppyo.", "..oppppo.", "...oppo..", "....oo...", "....wo...", "....wo...",
         "...owwo..", "..owwwwo."};
     static final String[] FIN = {"....s", "...ss", "..sss", ".ssss", "sssss"};
-    static final String[] CROWN = {"g..g..g", "gg.g.gg", "ggggggg", "grgbgrg", "ggggggg"};
 
     static Color c(String hex) { return Color.valueOf(hex); }
 
@@ -499,12 +498,15 @@ final class CasinoBossScenes {
 
     /** Ses huit bras lâchent le salon VIP un à un ; il coule ; sa couronne remonte seule. */
     static final class KrakenDeath extends BossScene {
-        private static final Color ARM = c("6a2a8a");
-        private final TextureRegion crown;
+        private static final Color ARM = c("6a2a8a"), HEAD = c("8a1e2a");
+        /** Sa couronne dans son portrait : colonnes 9 à 25, lignes 0 à 6. */
+        private static final int CROWN_X = 9, CROWN_W = 17, CROWN_H = 7;
+        private final TextureRegion crown, body;
 
         KrakenDeath(CutsceneKit kit) {
             super(kit, Moment.DEATH, EnemyKind.KRAKEN, 0);
-            crown = art("grb", new Color[] {c("ffc93a"), c("c8102e"), c("3a7aff")}, CROWN);
+            crown = new TextureRegion(boss, CROWN_X, 0, CROWN_W, CROWN_H);
+            body  = new TextureRegion(boss, 0, CROWN_H, boss.getRegionWidth(), boss.getRegionHeight() - CROWN_H);
         }
 
         private float letGo(int i) { return 0.4f + i * 0.25f; }
@@ -537,11 +539,10 @@ final class CasinoBossScenes {
             poseShadow = 0.3f + 0.5f * progress(CLIMAX_DEATH, 4.4f);
             if (time >= CLIMAX_DEATH) {                                 // sa couronne s'est détachée : on la retire du portrait
                 showBoss = false;
-                int cut = Math.round(boss.getRegionHeight() * 0.2f), rows = boss.getRegionHeight() - cut;
-                TextureRegion body = new TextureRegion(boss, 0, cut, boss.getRegionWidth(), rows);
-                float light = 1f - poseShadow;
+                float light = 1f - poseShadow, x0 = bossX() - bossWidth() / 2f, y0 = bossBottom() + poseY;
                 batch.setColor(light, light, light, 1f);
-                batch.draw(body, bossX() - bossWidth() / 2f, bossBottom() + poseY, bossWidth(), rows * bossScale());
+                batch.draw(body, x0, y0, bossWidth(), body.getRegionHeight() * bossScale());
+                cap(batch, x0, y0, bossScale(), CROWN_H - 1, CROWN_X + 2, CROWN_X + CROWN_W - 3, HEAD, light, 1f);   // le haut de sa tête
             }
         }
 
@@ -551,11 +552,11 @@ final class CasinoBossScenes {
             // sa couronne se détache et remonte seule
             if (time < CLIMAX_DEATH) return;
             float k = progress(CLIMAX_DEATH, 4.8f);
-            float crownStart = bossBottom() + bossHeight() * 0.9f;
+            float crownStart = portraitY(CROWN_H / 2f);
             float y = time < CLIMAX_DEATH ? crownStart : crownStart + worldHeight() * 0.35f * Interpolation.pow2Out.apply(k);
             float x = bossX() + MathUtils.sin(time * 2.4f) * 20f * k;
             glow(batch, x, y, 200f, GOLD, 0.5f * k);
-            draw(batch, crown, x, y, fit(70f, 5), MathUtils.sin(time * 3f) * 10f * k, WHITE, 1f);
+            draw(batch, crown, x, y, bossScale(), MathUtils.sin(time * 3f) * 10f * k, WHITE, 1f);
         }
     }
 }

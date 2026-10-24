@@ -313,6 +313,47 @@ public abstract class BossScene extends Cutscene {
         return bossBottom() + poseY + (boss.getRegionHeight() - py) * bossScale() * poseScale;
     }
 
+    private static final int[] CAP_INSETS = {0, 1, 3};
+    private static final Color CAP_LINE = c("1a0f0f");
+
+    /**
+     * Le haut du crâne sous une couronne qu'on lui retire : un dôme en pixels de {@code fill}, cerné de noir.
+     * Sa base est la ligne {@code row} du portrait, de la colonne {@code left} à {@code right} ; il monte de
+     * trois lignes. Le portrait est posé avec son coin bas-gauche en ({@code x0}, {@code y0}), à l'échelle
+     * {@code scale}, éclairé à {@code light}.
+     */
+    protected void cap(Batch batch, float x0, float y0, float scale, int row, int left, int right, Color fill,
+                       float light, float alpha) {
+        cap(batch, x0, y0, scale, row, left, right, fill, light, alpha, 0f);
+    }
+
+    /** {@link #cap}, le portrait tourné de {@code rotation} degrés autour de son coin bas-gauche. */
+    protected void cap(Batch batch, float x0, float y0, float scale, int row, int left, int right, Color fill,
+                       float light, float alpha, float rotation) {
+        int height = boss.getRegionHeight();
+        for (int k = 0; k <= CAP_INSETS.length; k++) {
+            int y = row - k;
+            int inset = CAP_INSETS[Math.min(k, CAP_INSETS.length - 1)];
+            float py = (height - 1 - y) * scale;
+            if (k == CAP_INSETS.length) {                              // le trait du dessus
+                capRect(batch, CAP_LINE, light, alpha, x0, y0, (left + inset) * scale, py, (right - left - 2 * inset + 1) * scale, scale, rotation);
+                break;
+            }
+            capRect(batch, fill, light, alpha, x0, y0, (left + inset) * scale, py, (right - left - 2 * inset + 1) * scale, scale, rotation);
+            int next = k + 1 < CAP_INSETS.length ? CAP_INSETS[k + 1] : inset;
+            // les bords : du bord de cette ligne jusqu'au bord de la ligne du dessus
+            float edge = Math.max(1, next - inset);
+            capRect(batch, CAP_LINE, light, alpha, x0, y0, (left + inset - 1) * scale, py, edge * scale, scale, rotation);
+            capRect(batch, CAP_LINE, light, alpha, x0, y0, (right - inset + 2 - edge) * scale, py, edge * scale, scale, rotation);
+        }
+    }
+
+    private void capRect(Batch batch, Color color, float light, float alpha, float x0, float y0, float dx, float dy,
+                         float w, float h, float rotation) {
+        batch.setColor(color.r * light, color.g * light, color.b * light, alpha);
+        batch.draw(pixel, x0 + dx, y0 + dy, -dx, -dy, w, h, 1f, 1f, rotation);
+    }
+
     /** Une onde de choc qui part de ({@code x}, {@code y}) à {@code at} et s'efface en {@code length} secondes. */
     protected void wave(Batch batch, float at, float length, float x, float y, Color color, float size) {
         float k = progress(at, at + length);
