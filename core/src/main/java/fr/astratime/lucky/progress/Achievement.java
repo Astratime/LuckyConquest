@@ -21,9 +21,11 @@ public enum Achievement {
     // Exploration
     FIRST_DUNGEON("Premier donjon", "Vider un donjon.", 10_000),
     PRAIRIE("Maître de la prairie", "Vider les 4 donjons de la prairie.", 50_000),
+    FOIRE("Roi de la fête", "Vider les 4 donjons de la Fête foraine.", 100_000),
     PORT("Loup de mer", "Vider les 4 donjons du Port des Contrebandiers.", 250_000),
     MINES("Chercheur d'or", "Vider les 4 donjons des Mines d'Or.", 500_000),
     CASINO("Maître du Casino", "Vider les 4 donjons du Casino Englouti.", 1_000_000),
+    DESERT("Tueur de dragon", "Vider les 4 donjons du Désert de Braise.", 1_000_000),
     // Tour des épreuves
     COMET("Comète abattue", "Finir le chapitre 1 de la Tour des épreuves.", 25_000),
     ORIGIN("Fin de la Machine", "Finir le chapitre 6 de la Tour des épreuves.", 1_000_000),

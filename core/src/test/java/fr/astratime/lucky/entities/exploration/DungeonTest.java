@@ -56,18 +56,30 @@ class DungeonTest {
     }
 
     @Test
-    void theNewPlacesHaveTenTimesTheHpAndAChiefAtTheEnd() {
-        int[][] hp = {{250_000, 500_000}, {600_000, 1_200_000}, {1_500_000, 3_000_000}};
-        Place[] places = {Place.PORT, Place.MINES, Place.CASINO};
-        for (int i = 0; i < places.length; i++) {
-            assertEquals(4, places[i].getDungeons().size(), places[i].name());
-            assertEquals(Place.values()[i], places[i].getPrevious(), "ordre d'ouverture");
-            for (Dungeon dungeon : places[i].getDungeons()) {
-                assertEquals(hp[i][0], new Enemy(dungeon.getSoldier()).getMaxHp(), dungeon.name());
-                assertEquals(hp[i][1], new Enemy(dungeon.getKing()).getMaxHp(), dungeon.name());
+    void thePlacesOpenInOrderWithTheirHpAndAChiefAtTheEnd() {
+        Place[] order = {Place.PRAIRIE, Place.FOIRE, Place.PORT, Place.MINES, Place.CASINO, Place.DESERT};
+        assertEquals(List.of(order), List.of(Place.values()));
+        // PV du soldat (le roi en a le double), choix d'Astra 2026-10-24 : le Gouffre, la Salle des machines,
+        // les Coffres et le Tombeau à part
+        Map<Dungeon, Integer> hp = new HashMap<>();
+        for (Dungeon d : Place.FOIRE.getDungeons()) hp.put(d, 30_000);
+        for (Dungeon d : Place.PORT.getDungeons()) hp.put(d, 200_000);
+        for (Dungeon d : Place.MINES.getDungeons()) hp.put(d, 300_000);
+        for (Dungeon d : Place.CASINO.getDungeons()) hp.put(d, 1_200_000);
+        for (Dungeon d : Place.DESERT.getDungeons()) hp.put(d, 1_500_000);
+        hp.put(Dungeon.GOUFFRE, 200_000);
+        hp.put(Dungeon.MACHINES, 900_000);
+        hp.put(Dungeon.COFFRES, 2_500_000);
+        hp.put(Dungeon.TOMBEAU, 1_050_000);
+        for (int i = 1; i < order.length; i++) {
+            assertEquals(4, order[i].getDungeons().size(), order[i].name());
+            assertEquals(order[i - 1], order[i].getPrevious(), "ordre d'ouverture");
+            for (Dungeon dungeon : order[i].getDungeons()) {
+                assertEquals((int) hp.get(dungeon), new Enemy(dungeon.getSoldier()).getMaxHp(), dungeon.name());
+                assertEquals(2 * hp.get(dungeon), new Enemy(dungeon.getKing()).getMaxHp(), dungeon.name());
                 assertTrue(dungeon.getKing().isBoss(), dungeon.name());
                 assertFalse(dungeon.getSoldier().isBoss(), dungeon.name());
-                assertEquals(places[i], Place.of(dungeon));
+                assertEquals(order[i], Place.of(dungeon));
             }
         }
     }

@@ -195,6 +195,11 @@ public abstract class BossScene extends Cutscene {
     /** @return {@code true} une seule fois : à l'image où le temps passe {@code moment}. */
     protected boolean at(float moment) { return previous < moment && time >= moment; }
 
+    /** Une lueur qui pulse, entre {@code low} et 1. */
+    protected float pulse(float speed, float low) {
+        return low + (1f - low) * (0.5f + 0.5f * MathUtils.sin(time * speed));
+    }
+
     /** @return de 0 à 1 puis 0, entre {@code from} et {@code to} (un geste aller-retour). */
     protected float gesture(float from, float to) { return MathUtils.sin(progress(from, to) * MathUtils.PI); }
 

@@ -37,6 +37,7 @@ tasks.register('simulate', JavaExec) {
   systemProperty 'lucky.assets', rootProject.file('assets').absolutePath
   systemProperty 'lucky.simulation.out', layout.buildDirectory.file('simulation/equilibrage.md').get().asFile.absolutePath
   if (project.hasProperty('quick')) args '--quick'
+  if (project.hasProperty('tower')) args '--tower'
 }
 
 // Dégâts des quatre suites : ./gradlew :core:simulateSuits (-Pquick pour un essai rapide).

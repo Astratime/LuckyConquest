@@ -46,6 +46,7 @@ public class SpinContext {
     private Symbol  jokerValue;
     /** Second levier : relances du rouleau qui manque au Bingo, si le tirage fait une paire. */
     private int     secondLevers = 0;
+    private int     knockdowns   = 0; // Chamboule-tout : relances des rouleaux hors paire
 
     /** Ajoute {@code amount} au boost de poids du symbole (cumulable sur plusieurs cartes). */
     public void addWeightBoost(Symbol symbol, int amount) {
@@ -146,4 +147,10 @@ public class SpinContext {
 
     /** @return les relances du Second levier à ce tirage. */
     public int getSecondLevers() { return secondLevers; }
+
+    /** Chamboule-tout : chaque rouleau qui ne fait pas partie d'une paire relance une fois de plus. */
+    public void addKnockdown() { knockdowns++; }
+
+    /** @return les relances du Chamboule-tout à ce tirage. */
+    public int getKnockdowns() { return knockdowns; }
 }

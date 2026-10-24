@@ -323,6 +323,26 @@ public class GameController {
             turnNotices.add(new EffectPopup(Lang.f("GRIGNOTAGE : {0} RONGÉE", eaten.getName().toUpperCase()),
                 EffectPopup.Style.DAMAGE, PopupScale.SECONDARY_INTENSITY));
         }
+        // Jonglage de l'ennemi : les meilleures cartes piochées repartent à la défausse, d'autres arrivent.
+        int juggles = lasting.takeJuggles();
+        if (juggles > 0) {
+            int thrown = 0;
+            for (int i = 0; i < juggles && !added.isEmpty(); i++) {
+                Card best = EnemyTurnResolver.bestCard(added);
+                if (best == null) break;
+                added.remove(best);
+                player.discardFromHand(best);
+                discarded.add(best);
+                thrown++;
+            }
+            if (thrown > 0) {
+                DrawResult again = player.draw(thrown);
+                added.addAll(again.getAddedToHand());
+                discarded.addAll(again.getDiscarded());
+                turnNotices.add(new EffectPopup(Lang.f("JONGLAGE : {0} CARTES ÉCHANGÉES", thrown), EffectPopup.Style.DAMAGE,
+                    PopupScale.SECONDARY_INTENSITY));
+            }
+        }
         // Scorbut (Port des Contrebandiers) : il remplace une carte piochée.
         if (gameState.getActiveRule().scurvyArrives(gameState.getTurnNumber()) && !added.isEmpty()) {
             int index = random.nextInt(added.size());

@@ -64,6 +64,8 @@ public class PlayerProfile {
     static final String KEY_REELS      = "reels";
     static final String KEY_MACHINE    = "machine";
     static final String KEY_DUNGEONS   = "dungeons";
+    /** Lieux ouverts avant l'arrivée de la Fête foraine et du Désert : ils restent ouverts. */
+    static final String KEY_PLACES     = "places";
     static final String KEY_TOWER_HARD = "towerHard";
     static final String KEY_CHAPTERS      = "chapters";
     static final String KEY_HARD_CHAPTERS = "hardChapters";
@@ -110,6 +112,8 @@ public class PlayerProfile {
     private final List<Symbol> machine     = new ArrayList<>();
     /** Donjons de l'Exploration vidés (leur chef battu), par nom. */
     private final java.util.Set<String> clearedDungeons = new java.util.LinkedHashSet<>();
+    /** Lieux ouverts par l'ancien ordre (Prairie, Port, Mines, Casino), gardés ouverts. */
+    private final java.util.Set<String> openedPlaces = new java.util.LinkedHashSet<>();
     /** Chapitres de la Tour terminés (leur boss battu), en mode normal puis en mode difficile, par nom. */
     private final java.util.Set<String> clearedChapters     = new java.util.LinkedHashSet<>();
     private final java.util.Set<String> clearedHardChapters = new java.util.LinkedHashSet<>();
@@ -189,6 +193,14 @@ public class PlayerProfile {
                     clearedDungeons.add(dungeon.name());
                 }
             }
+        }
+        String savedPlaces = storage.get(KEY_PLACES);
+        if (savedPlaces != null) {
+            readNames(savedPlaces, openedPlaces);
+        } else {
+            // Profil d'avant la Fête foraine et le Désert : les lieux ouverts par l'ancien ordre restent ouverts.
+            Place[][] legacy = {{Place.PRAIRIE, Place.PORT}, {Place.PORT, Place.MINES}, {Place.MINES, Place.CASINO}};
+            for (Place[] step : legacy) if (placeCleared(step[0])) openedPlaces.add(step[1].name());
         }
         for (Place place : Place.values()) {
             for (Dungeon dungeon : place.getDungeons()) dungeon.getLoot().forEach(loot -> catalog.add(loot.cardId()));
@@ -443,6 +455,8 @@ public class PlayerProfile {
             case PORT            -> placeCleared(Place.PORT);
             case MINES           -> placeCleared(Place.MINES);
             case CASINO          -> placeCleared(Place.CASINO);
+            case FOIRE           -> placeCleared(Place.FOIRE);
+            case DESERT          -> placeCleared(Place.DESERT);
             case COMET           -> clearedChapters.contains(Chapter.GENESE.name());
             case ORIGIN          -> clearedChapters.contains(Chapter.LE_JACKPOT.name());
             case HARD_CHAPTER    -> !clearedHardChapters.isEmpty();
@@ -450,6 +464,9 @@ public class PlayerProfile {
             case UPGRADED_CARD   -> collection.keySet().stream().anyMatch(Card::isUpgradedId);
         };
     }
+
+    /** @return {@code true} si les quatre donjons du lieu {@code place} sont vidés. */
+    public boolean isPlaceCleared(Place place) { return placeCleared(place); }
 
     private boolean placeCleared(Place place) {
         return place.getDungeons().stream().allMatch(dungeon -> clearedDungeons.contains(dungeon.name()));
@@ -532,6 +549,7 @@ public class PlayerProfile {
     /** @return {@code true} si le lieu {@code place} est ouvert : le premier, ou tous les donjons du précédent vidés. */
     public boolean isOpen(Place place) {
         if (admin) return true;
+        if (openedPlaces.contains(place.name())) return true;
         Place previous = place.getPrevious();
         return previous == null || previous.getDungeons().stream().allMatch(this::isCleared);
     }
@@ -977,6 +995,7 @@ public class PlayerProfile {
         storage.put(KEY_REELS, encodeSymbols(boughtReels));
         storage.put(KEY_MACHINE, encodeSymbols(machine));
         storage.put(KEY_DUNGEONS, String.join(",", clearedDungeons));
+        storage.put(KEY_PLACES, String.join(",", openedPlaces));
         storage.put(KEY_CHAPTERS, String.join(",", clearedChapters));
         storage.put(KEY_HARD_CHAPTERS, String.join(",", clearedHardChapters));
         storage.put(KEY_ADMIN_DECK, encode(adminDeck));

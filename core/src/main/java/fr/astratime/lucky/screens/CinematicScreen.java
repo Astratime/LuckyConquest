@@ -289,6 +289,11 @@ public class CinematicScreen extends ScreenAdapter {
                     enemyTextures.portrait(king), kit -> Cutscenes.beforeBoss(kit, king)));
                 addMoments(kings, kings, profile, king);
             }
+            if (place == Place.DESERT && Bestiary.explorationEndingSeen(profile)) {
+                kings.add(new Entry(Lang.t("Fin de l'Exploration"),
+                    Lang.t("Les six lieux vidés : le Croupier fait le tour du monde et pose l'écaille d'or d'Ignar sur la table."),
+                    enemyTextures.portrait(EnemyKind.CROUPIER), Cutscenes::explorationEnding));
+            }
             addGroup(place.getShortName(), place.getName(), kings);
         }
 

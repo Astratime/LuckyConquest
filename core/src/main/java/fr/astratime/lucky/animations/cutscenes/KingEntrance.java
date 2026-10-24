@@ -15,7 +15,7 @@ import fr.astratime.lucky.entities.enemy.EnemyKind;
  * part), puis le roi apparaît ; en place, il fait un geste et son nom
  * s'affiche ; fondu noir et sa présentation. Chaque lieu dessine ses quatre
  * rois ({@link PrairieKings}, {@link PortKings}, {@link MinesKings},
- * {@link CasinoKings}) ; le son est cutscene/king_<i>roi</i>.
+ * {@link CasinoKings}, {@link FairKings}, {@link DesertKings}) ; le son est cutscene/king_<i>roi</i>.
  *
  * L'entrée a sa propre horloge : pendant {@link #step} et {@link #draw},
  * {@link #time} part de 0 à la fin du décor.
@@ -53,6 +53,8 @@ public abstract class KingEntrance extends Cutscene {
             case CAPITAINE_RAT, TAVERNIER, GARDIEN_PHARE, CAPITAINE_NOIR -> new PortKings(kit, king);
             case BARON_OR, GRAND_FOREUR, MAITRE_FORGE, COEUR_MONTAGNE -> new MinesKings(kit, king);
             case SIRENE, JACKPOT_VIVANT, REQUIN_BANQUIER, KRAKEN -> new CasinoKings(kit, king);
+            case MONSIEUR_LOYAL, CONDUCTEUR, ROUE_FORTUNE, ROI_FORAIN -> new FairKings(kit, king);
+            case EMIR, PHARAON, DJINN, DRAGON -> new DesertKings(kit, king);
             default -> null;
         };
     }

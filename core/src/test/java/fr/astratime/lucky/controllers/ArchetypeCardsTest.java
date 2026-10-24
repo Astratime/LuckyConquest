@@ -45,10 +45,23 @@ class ArchetypeCardsTest {
     }
 
     @Test
-    void eachArchetypeHasFiveCards() {
+    void eachArchetypeHasFiveCardsAndThoseOfTheChestsOneMore() {
         Map<Archetype, Long> counts = archetypeCards().stream()
             .collect(Collectors.groupingBy(Card::getArchetype, Collectors.counting()));
-        for (Archetype archetype : Archetype.values()) assertEquals(5L, counts.get(archetype), archetype.name());
+        for (Archetype archetype : Archetype.values()) {
+            assertEquals(archetype == Archetype.BLUFFEUR ? 5L : 6L, counts.get(archetype), archetype.name());
+        }
+    }
+
+    @Test
+    void theOtherArchetypeCardsAreTheTreasuresOfTheNewPlaces() {
+        java.util.Set<String> loot = new java.util.HashSet<>();
+        for (fr.astratime.lucky.entities.exploration.Dungeon dungeon : fr.astratime.lucky.entities.exploration.Dungeon.values()) {
+            dungeon.getLoot().forEach(entry -> loot.add(entry.cardId()));
+        }
+        for (Card card : archetypeCards()) {
+            assertEquals(card.getArchetype() != Archetype.BLUFFEUR, loot.contains(card.getId()), card.getId());
+        }
     }
 
     @Test
@@ -146,5 +159,55 @@ class ArchetypeCardsTest {
         assertArrayEquals(new int[]{1, 2}, lasting.takeAnnuity());
         assertArrayEquals(new int[]{1, 2}, lasting.takeAnnuity());
         assertNull(lasting.takeAnnuity());
+    }
+
+    @Test
+    void thePharaohSealDoublesTheClaimsForThreeEnemyTurns() {
+        Enemy enemy = new Enemy(EnemyKind.ENTRAINEMENT, List.of());
+        Player player = new Player("Joueur", 1_000_000, List.of());
+        CombatContext combat = new CombatContext(player, enemy);
+        card("sceau_du_pharaon").getEffects().forEach(effect -> effect.apply(new fr.astratime.lucky.entities.context.TurnContext(new fr.astratime.lucky.entities.context.SpinContext(), combat)));
+        assertEquals(4, enemy.getClaims());
+        assertEquals(3, enemy.getPharaohSealTurns());
+        for (int turn = 1; turn <= 4; turn++) {
+            double gains = player.getGains();
+            TurnEngine.chargeClaims(enemy, player, combat);
+            int counted = turn <= 3 ? 8 : 4;
+            assertEquals(gains + counted * Enemy.CLAIM_SPINS * combat.getSpinCost(), player.getGains(), 1e-6, "tour " + turn);
+        }
+    }
+
+    @Test
+    void theDragonHoardPaysEachHitAndGrowsTheAttackUntilItEnds() {
+        LastingEffects lasting = new LastingEffects();
+        lasting.addHoard(3, 2, 5, 50);
+        assertEquals(2, lasting.getHoardSpins());
+        assertEquals(15, lasting.growHoard(3));
+        assertEquals(50, lasting.growHoard(20), "+50 % au plus");
+        lasting.endTurn();
+        lasting.endTurn();
+        assertEquals(50, lasting.getHoardPercent());
+        lasting.endTurn();
+        assertEquals(0, lasting.getHoardTurns());
+        assertEquals(0, lasting.getHoardPercent(), "le Magot est fini");
+        assertEquals(0, lasting.getHoardSpins());
+    }
+
+    @Test
+    void theJackInTheBoxKeepsItsJokerUntilTheEndOfTheFight() {
+        LastingEffects lasting = new LastingEffects();
+        assertEquals(20, lasting.addJokerBox(20, 50));
+        assertEquals(30, lasting.addJokerBox(40, 50), "+50 au plus");
+        for (int i = 0; i < 10; i++) lasting.endTurn();
+        assertEquals(50, lasting.getJokerBox(), "il dure tout le combat");
+    }
+
+    @Test
+    void theNewChestCardsShowTheirNameWhenPlayed() {
+        for (String id : List.of("diable_en_boite", "chamboule_tout", "sceau_du_pharaon", "magot_du_dragon")) {
+            Card card = card(id);
+            assertNotNull(card.getArchetype(), id);
+            assertFalse(card.getEffects().isEmpty(), id);
+        }
     }
 }

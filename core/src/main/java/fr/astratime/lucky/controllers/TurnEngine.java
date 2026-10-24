@@ -5,6 +5,7 @@ import fr.astratime.lucky.entities.*;
 import fr.astratime.lucky.entities.context.CombatContext;
 import fr.astratime.lucky.entities.context.SpinContext;
 import fr.astratime.lucky.entities.context.TurnContext;
+import fr.astratime.lucky.entities.enemy.EnemySymbol;
 import fr.astratime.lucky.entities.enemy.EnemyTurnResult;
 import fr.astratime.lucky.entities.events.Event;
 import fr.astratime.lucky.entities.events.GaugeFilledEvent;
@@ -66,6 +67,10 @@ public class TurnEngine {
      */
     public TurnResult playTurn(GameState gameState, List<Effect> pendingEffects, SpinEconomy.Stake stake) {
 
+        // Soif (Désert de Braise) : les soins du tour sont divisés
+        gameState.getPlayer().setHealDivisor(gameState.getActiveRule().isThirsty() ? PlaceRule.THIRST_HEAL_DIVISOR : 1);
+        gameState.getPlayer().takeHealed();
+
         // Phase 1 : effets des cartes → TurnContext
         TurnContext turnContext = preparationResolver.resolve(
             pendingEffects,
@@ -96,6 +101,16 @@ public class TurnEngine {
                 drawn   = again;
                 symbols = machine.resolveJokers(again, turnContext.getSpinContext());
             }
+        }
+
+        // Chamboule-tout : chaque rouleau hors paire relance une fois
+        for (int i = 0; i < turnContext.getSpinContext().getKnockdowns(); i++) {
+            Symbol[] knocked = knockDown(machine, drawn, turnContext.getSpinContext());
+            if (knocked == drawn) continue;
+            if (rerolled == null) rerolled = drawn;
+            drawn   = knocked;
+            symbols = machine.resolveJokers(knocked, turnContext.getSpinContext());
+            turnContext.addEvent(new StatusEvent(Lang.t("CHAMBOULE-TOUT : ROULEAUX RELANCÉS"), EffectPopup.Style.SPECIAL));
         }
 
         // Second levier : une paire sans Bingo, le rouleau qui manque relance pour tenter le Bingo
@@ -131,6 +146,23 @@ public class TurnEngine {
             symbols = machine.resolveJokers(burnt, turnContext.getSpinContext());
         }
 
+        // Tunnel (Fête foraine) : un rouleau passe dans le noir et prend un symbole au hasard
+        int tunnels = player.getLastingEffects().takeTunnels();
+        for (int i = 0; i < tunnels; i++) {
+            Symbol[] dark = tunnel(machine, drawn, turnContext.getSpinContext(), false);
+            if (dark != drawn) turnContext.addEvent(new StatusEvent(Lang.t("TUNNEL : UN ROULEAU DANS LE NOIR"), EffectPopup.Style.DAMAGE));
+            drawn   = dark;
+            symbols = machine.resolveJokers(dark, turnContext.getSpinContext());
+        }
+        // Tourniquet (Fête foraine) : un rouleau du meilleur groupe est relancé une fois
+        int turnstiles = player.getLastingEffects().takeTurnstiles();
+        for (int i = 0; i < turnstiles; i++) {
+            Symbol[] turned = tunnel(machine, drawn, turnContext.getSpinContext(), true);
+            if (turned != drawn) turnContext.addEvent(new StatusEvent(Lang.t("TOURNIQUET : ROULEAU RELANCÉ"), EffectPopup.Style.DAMAGE));
+            drawn   = turned;
+            symbols = machine.resolveJokers(turned, turnContext.getSpinContext());
+        }
+
         // Nouvelle règle du Directeur des Jeux : les rouleaux tournent deux fois (le pire reste)…
         SpinContext spin = turnContext.getSpinContext();
         if (spin.isDoubleSpin()) {
@@ -149,6 +181,8 @@ public class TurnEngine {
 
         player.getLastingEffects().setLastDrawn(drawn); // Rouleau retenu, Mémoire de la machine
         applyStake(turnContext, stake, SlotMachine.jackpotSymbol(symbols) != null);
+
+        riggedGames(turnContext, player.getLastingEffects(), symbols);
 
         // Prédiction de la Cartomancienne : son symbole est-il sorti ?
         gameState.getEnemy().checkPrediction(symbols);
@@ -213,6 +247,20 @@ public class TurnEngine {
             int lost = player.takeDamage(Math.round(player.getMaxHp() * PlaceRule.FIREDAMP_PERCENT / 100f));
             firedamp.add(new StatusEvent(Lang.t("COUP DE GRISOU !"), EffectPopup.Style.DAMAGE));
             firedamp.add(new PlayerDamagedEvent(lost, shieldBefore - player.getShield(), player.getShield()));
+        }
+
+        // Venin (Désert de Braise) : chaque Venin mord, à travers le bouclier
+        int venoms = player.isDefeated() || enemy.isDefeated() ? 0 : player.getLastingEffects().tickVenoms();
+        if (venoms > 0) {
+            int lost = player.takeDamage((int) Math.max(1L, (long) player.getMaxHp() * venoms * EnemySymbol.VENOM_PERCENT / 100), 0);
+            firedamp.add(new StatusEvent(Lang.f("VENIN x{0}", venoms), EffectPopup.Style.DAMAGE));
+            firedamp.add(new PlayerDamagedEvent(lost, 0, player.getShield()));
+        }
+        // Soif (Désert de Braise) : un tour sans soin coûte des PV, à travers le bouclier
+        if (gameState.getActiveRule().isThirsty() && !player.takeHealed() && !player.isDefeated() && !enemy.isDefeated()) {
+            int lost = player.takeDamage((int) Math.max(1L, (long) player.getMaxHp() * PlaceRule.THIRST_PERCENT / 100), 0);
+            firedamp.add(new StatusEvent(Lang.t("SOIF !"), EffectPopup.Style.DAMAGE));
+            firedamp.add(new PlayerDamagedEvent(lost, 0, player.getShield()));
         }
 
         notice = enemy.takeNotice(); // pendant son tour (renvoi de dégâts, Duel...)
@@ -313,6 +361,7 @@ public class TurnEngine {
         List<Event> events = new ArrayList<>();
         int claims = enemy.getClaims();
         if (claims <= 0) return events;
+        if (enemy.takePharaohSeal()) claims *= 2; // Sceau du Pharaon
         long raw = Math.max(1L, (long) enemy.getMaxHp() * claims * Enemy.CLAIM_HP_PER_MILLE / 1000);
         long damage = enemy.skinned(raw);
         enemy.takeDamage(raw);
@@ -400,6 +449,70 @@ public class TurnEngine {
             result[reel] = machine.spin(spin)[reel];
         }
         return result;
+    }
+
+    /**
+     * Chamboule-tout : chaque rouleau (ni vide ni imposé) dont le symbole ne fait
+     * pas partie d'une paire tourne à nouveau, et le nouveau symbole reste.
+     *
+     * @return les symboles arrêtés sur les rouleaux ({@code drawn} si aucun rouleau ne relance)
+     */
+    private static Symbol[] knockDown(SlotMachine machine, Symbol[] drawn, SpinContext spin) {
+        Symbol[] resolved = machine.resolveJokers(drawn, spin);
+        Map<Symbol, Integer> counts = new java.util.HashMap<>();
+        for (Symbol symbol : resolved) if (symbol != null) counts.merge(symbol, 1, Integer::sum);
+        Symbol[] again = null;
+        Symbol[] result = drawn.clone();
+        for (int i = 0; i < drawn.length; i++) {
+            if (drawn[i] == null || spin.getForcedReels().containsKey(i) || counts.getOrDefault(resolved[i], 0) >= 2) continue;
+            if (again == null) again = machine.spin(spin);
+            result[i] = again[i];
+        }
+        return again == null ? drawn : result;
+    }
+
+    /**
+     * Tunnel : un rouleau au hasard (ni vide ni imposé) tourne à nouveau, et le
+     * nouveau symbole reste. Tourniquet ({@code best}) : le rouleau est pris dans
+     * le plus grand groupe de symboles identiques, s'il y en a un.
+     *
+     * @return les symboles arrêtés sur les rouleaux ({@code drawn} si aucun rouleau ne pouvait tourner)
+     */
+    private Symbol[] tunnel(SlotMachine machine, Symbol[] drawn, SpinContext spin, boolean best) {
+        Symbol[] resolved = machine.resolveJokers(drawn, spin);
+        Map<Symbol, Integer> counts = new java.util.HashMap<>();
+        for (Symbol symbol : resolved) if (symbol != null) counts.merge(symbol, 1, Integer::sum);
+        Symbol group = !best ? null : counts.entrySet().stream().filter(entry -> entry.getValue() >= 2)
+            .max(Map.Entry.comparingByValue()).map(Map.Entry::getKey).orElse(null);
+        List<Integer> open = new ArrayList<>();
+        for (int i = 0; i < drawn.length; i++) {
+            if (drawn[i] != null && !spin.getForcedReels().containsKey(i) && (group == null || resolved[i] == group)) open.add(i);
+        }
+        if (open.isEmpty()) return drawn;
+        int reel = open.get(random.nextInt(open.size()));
+        Symbol[] result = drawn.clone();
+        result[reel] = machine.spin(spin)[reel];
+        return result;
+    }
+
+    /**
+     * Lot truqué : un tirage avec une Paire (sans Bingo) ne rapporte aucun gain.
+     * Jeu truqué : sans Paire ni Bingo, les dégâts du tour sont divisés.
+     */
+    private static void riggedGames(TurnContext turnContext, LastingEffects lasting, Symbol[] symbols) {
+        boolean pair = SlotMachine.hasPair(symbols);
+        boolean bingo = SlotMachine.jackpotSymbol(symbols) != null;
+        if (lasting.getRiggedPrizes() > 0 && pair && !bingo && lasting.takeRiggedPrize()) {
+            turnContext.getCombatContext().multiplyGains(0f, "Lot truqué");
+            turnContext.addEvent(new StatusEvent(Lang.t("LOT TRUQUÉ : TA PAIRE NE PAIE PAS"), EffectPopup.Style.DAMAGE));
+        } else if (lasting.getRiggedPrizes() > 0 && !pair) {
+            lasting.takeRiggedPrize(); // le tirage est passé sans Paire : le lot est perdu
+        }
+        int divisor = lasting.takeRiggedGame();
+        if (divisor > 1 && !pair && !bingo) {
+            turnContext.getCombatContext().multiplyAttack(1f / divisor, "Jeu truqué");
+            turnContext.addEvent(new StatusEvent(Lang.f("JEU TRUQUÉ : DÉGÂTS /{0}", divisor), EffectPopup.Style.DAMAGE));
+        }
     }
 
     /**

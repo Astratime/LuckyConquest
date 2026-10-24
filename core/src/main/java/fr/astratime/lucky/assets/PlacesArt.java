@@ -196,6 +196,11 @@ public final class PlacesArt {
                 plate = rgba("a87a1e");
                 plateDark = rgba("6a4a10");
             }
+            case FOIRE, DESERT -> {
+                int[] colors = FairDesertArt.gateDecor(g, place == Place.FOIRE);
+                plate = colors[0];
+                plateDark = colors[1];
+            }
             default -> {
                 int coral = rgba("e86a8a"), coralDark = rgba("a83a5a"), sand = rgba("e8d49a");
                 g.rect(0, 23, 25, 25, sand);
@@ -222,6 +227,8 @@ public final class PlacesArt {
 
     /** Emblème 7 x 7 de chaque donjon ('X' : plein). */
     private static String[] emblem(Dungeon dungeon) {
+        String[] fairDesert = FairDesertArt.emblem(dungeon);
+        if (fairDesert != null) return fairDesert;
         return switch (dungeon) {
             case CALE -> new String[] {".XXXXX.", "X.....X", "XXXXXXX", "X.....X", "XXXXXXX", "X.....X", ".XXXXX."}; // tonneau
             case TAVERNE -> new String[] {"XXXXX..", "XXXXX..", "X...XXX", "X...X.X", "X...XXX", "X...X..", "XXXXX.."}; // chope

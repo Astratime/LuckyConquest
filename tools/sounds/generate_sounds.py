@@ -2261,6 +2261,180 @@ def ui_achievement():
     track.add(sparkle(0.8, count=8), 0.25, 0.35)
     return reverb(track.buf, wet=0.2, size=0.9, tail=0.5)
 
+
+# --- Fête foraine et Désert de Braise (2026-10-24) : les temps suivent FairKings et DesertKings. ---
+
+def calliope(notes, step=0.16, d=None):
+    """Un orgue de barbarie : des notes carrées un peu tremblées."""
+    d = d or step * len(notes) + 0.4
+    track = Track(d)
+    for k, note in enumerate(notes):
+        f = hz(note)
+        track.add(chip(vibrato(f, step * 1.2, 6.0, 0.008), step * 1.2, 'square', 0.35), k * step, 0.35)
+        track.add(chip(f * 2, step * 1.2, 'tri'), k * step, 0.15)
+    return track.buf
+
+
+def whip_crack():
+    """Un coup de fouet : le sifflement, puis le claquement."""
+    return mix((whoosh(0.18, 600, 4000, q=1.5), 0, 0.5), (crack(0.05, 0.004, 1500, 10000), 0.16, 1.2))
+
+
+@sound('cutscene/king_monsieur_loyal', -17)
+def king_monsieur_loyal():
+    """Monsieur Loyal : le projecteur (1,3 s), le fouet (1,1 s), les bannières (1,5 s), il lève son chapeau (3,6 / 4,5 s)."""
+    prelude = [(ambience(2.0, 300, 1400, 0.3), 0.0, 0.5), (calliope(['C5', 'E5', 'G5', 'E5', 'C5', 'G4'], 0.15), 0.3, 0.4)]
+    entrance = Track(5.0)
+    entrance.add(whip_crack(), 1.1, 0.8)
+    entrance.add(mix((thump(120, 50, 0.3), 0, 1.0), (hp(noise(0.4), 4000) * expdec(0.4, 0.1), 0, 0.3)), 1.3, 0.8)
+    entrance.add(whoosh(0.6, 300, 1500, q=0.8), 1.5, 0.5)
+    entrance.add(brass_chord(['C3', 'G3', 'C4', 'E4'], 1.2, 0.6), 1.5, 0.7)
+    gesture = [(whoosh(0.3, 400, 2000), 3.6, 0.4), (brass_chord(['F3', 'C4', 'F4', 'A4'], 0.5, 0.5), 3.6, 0.5),
+               (brass_chord(['C3', 'G3', 'C4', 'E4', 'G4'], 1.4, 0.6), 4.5, 0.8), (sparkle(1.0), 4.5, 0.4)]
+    return king(prelude, reverb(entrance.buf, wet=0.2, size=1.2), gesture)
+
+
+@sound('cutscene/king_conducteur', -17)
+def king_conducteur():
+    """Le Conducteur : la porte du wagon (0,35 s), le train s'arrête (1,4 s), il tire la cloche (3,6 s)."""
+    prelude = [(rattle(2.0, 6, 9, 300, 1500, wood=True), 0.0, 0.5), (lp(noise(2.0), 250) * ramp(2.0, 0.3, 1.0), 0.0, 0.5)]
+    entrance = Track(5.0)
+    entrance.add(rattle(1.4, 9, 3, 300, 1500, wood=True), 0.0, 0.5)
+    entrance.add(mix((wood_break(), 0, 0.5), (thump(160, 70, 0.2), 0, 0.8)), 0.35, 0.7)
+    entrance.add(screech(1.0, 3200), 0.6, 0.35)
+    entrance.add(hiss(1.2), 1.4, 0.4)
+    entrance.add(impact(0.5, 120, 40), 1.4, 0.8)
+    gesture = [(bell_toll(hz('A5'), 1.6), 3.6, 0.6), (bell_toll(hz('E6'), 1.4), 3.85, 0.4),
+               (brass_chord(['A2', 'E3', 'A3', 'C#4'], 1.2, 0.5), 3.7, 0.5)]
+    return king(prelude, reverb(entrance.buf, wet=0.2, size=1.2), gesture)
+
+
+@sound('cutscene/king_roue_fortune', -17)
+def king_roue_fortune():
+    """La Roue de la Fortune : les ampoules s'allument (0,2 à 1,8 s), l'œil s'ouvre (0,4 s), elle roule (1,6 à 2,8 s)."""
+    prelude = [(ambience(2.0, 400, 1600, 0.3), 0.0, 0.5), (calliope(['G4', 'C5', 'E5', 'G5'], 0.2), 0.8, 0.3)]
+    entrance = Track(5.0)
+    for k in range(12):
+        entrance.add(chip(hz('C6') * 2 ** (k / 12), 0.08, 'square', 0.25), 0.2 + k * 0.133, 0.25)
+    entrance.add(osc(sweep(150, 600, 0.6), 0.6, 'sine') * expdec(0.6, 0.3), 0.4, 0.5)
+    entrance.add(rattle(1.2, 22, 6, 1800, 4200), 1.6, 0.7)
+    entrance.add(thump(180, 60, 0.3), 2.8, 0.8)
+    entrance.add(bingo_jingle('G5'), 2.9, 0.5)
+    gesture = [(rattle(1.0, 18, 4, 2000, 4500), 3.4, 0.5), (cash_register_bell(), 4.4, 0.6), (coin_shower(1.0, 10), 4.5, 0.4)]
+    return king(prelude, reverb(entrance.buf, wet=0.2, size=1.2), gesture)
+
+
+@sound('cutscene/king_roi_forain', -17)
+def king_roi_forain():
+    """Le Roi forain : il sort de sa boîte (0,5 s), son maillet frappe (3,5 s), la cloche du « tester » sonne (3,85 s)."""
+    prelude = [(calliope(['E5', 'D5', 'C5', 'D5', 'E5', 'E5', 'E5'], 0.18), 0.4, 0.4), (ambience(2.0, 300, 1200, 0.3), 0.0, 0.4)]
+    entrance = Track(5.0)
+    entrance.add(osc(sweep(300, 1400, 0.3), 0.3, 'square', 0.3) * expdec(0.3, 0.15), 0.4, 0.4)
+    entrance.add(mix((thump(200, 80, 0.15), 0, 0.8), (pluck(hz('C4'), 0.6), 0.02, 0.6)), 0.5, 0.8)
+    for k in range(5):
+        entrance.add(osc(sweep(400 - k * 50, 200, 0.12), 0.12, 'tri') * expdec(0.12, 0.05), 0.6 + k * 0.12, 0.3)
+    entrance.add(brass_chord(['C3', 'G3', 'C4', 'E4'], 1.0, 0.5), 1.2, 0.6)
+    gesture = [(whoosh(0.3, 200, 1200), 3.2, 0.5), (impact(0.4, 160, 50), 3.5, 1.0), (wood_break(), 3.5, 0.4),
+               (osc(sweep(300, 1500, 0.35), 0.35, 'sine') * expdec(0.35, 0.2), 3.5, 0.3),
+               (bell_toll(hz('C6'), 1.6), 3.85, 0.7), (sparkle(0.9), 3.9, 0.4)]
+    return king(prelude, reverb(entrance.buf, wet=0.2, size=1.2), gesture)
+
+
+def desert_wind(d):
+    """Le vent chaud du désert : un souffle sablé qui monte et descend."""
+    return bp(noise(d), 300, 1800) * (0.6 + 0.4 * osc(0.5, d, 'sine')) * fade_out(d, 0.4)
+
+
+@sound('cutscene/king_emir', -17)
+def king_emir():
+    """L'Émir : les serviteurs s'agenouillent (0,2 s), il appose son sceau (4,5 s)."""
+    prelude = [(desert_wind(2.0), 0.0, 0.5), (drone(['D3', 'A3'], 2.0, 'tri'), 0.0, 0.25)]
+    entrance = Track(5.0)
+    entrance.add(rustle(0.8), 0.2, 0.6)
+    entrance.add(thump(140, 60, 0.15), 0.3, 0.5)
+    entrance.add(coin_shower(1.0, 8), 0.8, 0.3)
+    entrance.add(brass_chord(['D3', 'A3', 'D4', 'F4'], 1.4, 0.5), 1.0, 0.6)
+    gesture = [(whoosh(0.4, 300, 1200), 4.1, 0.4), (impact(0.4, 130, 45), 4.5, 1.0), (metal_hit(1400, 0.6), 4.5, 0.4),
+               (brass_chord(['D3', 'A3', 'D4', 'F4', 'A4'], 1.0, 0.5), 4.55, 0.6)]
+    return king(prelude, reverb(entrance.buf, wet=0.25, size=1.4), gesture)
+
+
+@sound('cutscene/king_pharaon', -17)
+def king_pharaon():
+    """Le Pharaon : le couvercle du sarcophage glisse (0,2 s) puis tombe (0,9 s), il se lève (1,3 s), ses yeux s'allument (3,6 s)."""
+    prelude = [(desert_wind(2.0), 0.0, 0.3), (drone(['A2', 'E3'], 2.0, 'sine'), 0.0, 0.4)]
+    entrance = Track(5.0)
+    entrance.add(lp(noise(0.7), 600) * ramp(0.7, 0.3, 1.0), 0.2, 0.6)
+    entrance.add(impact(0.6, 110, 35), 0.9, 1.0)
+    entrance.add(lp(noise(1.0), 400) * expdec(1.0, 0.4), 0.95, 0.4)
+    entrance.add(rustle(1.0), 1.3, 0.4)
+    entrance.add(drone(['A2', 'C3', 'E3'], 2.0, 'tri', 0.4, 0.8), 1.3, 0.3)
+    gesture = [(osc(sweep(800, 2400, 0.4), 0.4, 'sine') * expdec(0.4, 0.2), 3.6, 0.4), (swell(0.6, 300, 2000) * fade_out(0.6, 0.2), 3.6, 0.3),
+               (brass_chord(['A2', 'E3', 'A3', 'C4'], 1.2, 0.5), 3.7, 0.6)]
+    return king(prelude, reverb(entrance.buf, wet=0.3, size=1.6), gesture)
+
+
+@sound('cutscene/king_djinn', -17)
+def king_djinn():
+    """Le Djinn : la lampe est frottée (0,8 s), il en jaillit (0,8 s de son entrée), le mirage tremble (3,6 s)."""
+    prelude = [(desert_wind(2.0), 0.0, 0.3)]
+    for k in range(4):
+        prelude.append((hp(noise(0.2), 2000) * expdec(0.2, 0.08, attack=0.05), 0.8 + k * 0.25, 0.3))
+    entrance = Track(5.0)
+    entrance.add(whoosh(1.2, 200, 3000, q=0.8), 0.6, 0.7)
+    entrance.add(sparkle(1.4, count=20), 0.8, 0.5)
+    entrance.add(power_up(['D5', 'F5', 'A5', 'C6', 'D6'], step=0.08, wave='tri', last=0.4), 0.8, 0.4)
+    entrance.add(drone(['D3', 'G#3', 'D4'], 2.4, 'sine', 0.4, 1.0), 1.6, 0.35)
+    gesture = [(osc(vibrato(hz('D5'), 1.4, 7.0, 0.04), 1.4, 'sine') * fade_out(1.4, 0.6), 3.6, 0.3),
+               (swell(1.0, 400, 2400) * fade_out(1.0, 0.4), 3.6, 0.3), (sparkle(1.0), 3.8, 0.3)]
+    return king(prelude, reverb(entrance.buf, wet=0.3, size=1.6), gesture)
+
+
+def roar(d=1.6, f=90):
+    """Le rugissement du dragon : un grondement bourdonnant et râpeux."""
+    body = drive(osc(sweep(f * 1.6, f * 0.8, d), d, 'saw') * expdec(d, d * 0.5, attack=0.12), 3.0)
+    grit = bp(noise(d), 200, 1400) * expdec(d, d * 0.5, attack=0.1)
+    return mix((lp(body, 900), 0, 0.8), (grit, 0, 0.7), (boom(d, 45), 0, 0.5))
+
+
+def wing_flap():
+    """Un battement d'ailes : un grand souffle sourd."""
+    return lp(noise(0.5), 500) * expdec(0.5, 0.15, attack=0.08)
+
+
+@sound('cutscene/king_dragon', -17, trim=False)
+def king_dragon():
+    """Ignar : son œil s'ouvre (0,3 s), il sort de la lave (0,9 s), ses ailes (2 s), l'or tombe (2,3 s), il rugit (3,6 s)."""
+    prelude = [(lp(noise(2.0), 180) * ramp(2.0, 0.4, 1.0), 0.0, 0.7), (bubbles(2.0, 10, 80, 300), 0.0, 0.4)]
+    entrance = Track(7.0)
+    entrance.add(osc(sweep(60, 180, 0.4), 0.4, 'saw') * expdec(0.4, 0.2) * 0.3, 0.3, 0.5)
+    entrance.add(fire_burst(1.4), 0.9, 0.7)
+    entrance.add(boom(1.6, 50), 0.9, 0.8)
+    entrance.add(bubbles(1.2, 14, 80, 400), 0.9, 0.5)
+    entrance.add(wing_flap(), 2.0, 0.9)
+    entrance.add(wing_flap(), 2.45, 0.7)
+    entrance.add(coin_shower(1.2, 14), 2.3, 0.5)
+    gesture = [(roar(1.8), 3.6, 1.0), (fire_burst(1.2), 3.9, 0.5), (brass_chord(['C2', 'G2', 'C3', 'D#3'], 1.6, 0.6), 3.7, 0.6)]
+    return king(prelude, reverb(entrance.buf, wet=0.3, size=1.6), gesture, d=9.0)
+
+
+@sound('cutscene/exploration_ending', -17, trim=False)
+def cutscene_exploration_ending():
+    """Fin de l'Exploration : six lieux s'allument (0,6 s puis toutes les 0,55 s), la table (4,2 s), l'écaille d'or (5 s), le sourire (5,5 s)."""
+    track = Track(8.0)
+    track.add(drone(['C3', 'G3'], 4.2, 'sine', 0.4, 0.6), 0.0, 0.3)
+    for k, note in enumerate(['C5', 'D5', 'E5', 'G5', 'A5', 'C6']):
+        track.add(chip(hz(note), 0.3, 'square', 0.25), 0.6 + k * 0.55, 0.4)
+        track.add(sparkle(0.6, count=8), 0.6 + k * 0.55, 0.3)
+    track.add(whoosh(0.5, 300, 1500), 4.0, 0.4)
+    track.add(ambience(3.8, 300, 1200, 0.3), 4.2, 0.4)
+    track.add(mix((thump(200, 70, 0.2), 0, 1.0), (metal_hit(1800, 0.8), 0, 0.5)), 5.0, 0.8)
+    track.add(coin_shower(1.0, 10), 5.0, 0.4)
+    track.add(brass_chord(['C3', 'G3', 'C4', 'E4', 'G4'], 1.8, 0.7), 5.5, 0.8)
+    track.add(cash_register_bell(), 5.55, 0.5)
+    return reverb(track.buf, wet=0.25, size=1.3)
+
+
 def main(prefixes):
     done = 0
     for name, level, fmt, trim, loop, fn in SOUNDS:

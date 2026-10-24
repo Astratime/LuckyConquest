@@ -97,7 +97,37 @@ public enum EnemySymbol {
     /** Bandit manchot : il avale une part des gains ; à 3 pièces, son prochain tirage est un Jackpot. */
     SWALLOWED_COIN("PIÈCE AVALÉE"),
     /** Bandit manchot : il relance son pire rouleau, pour viser le Jackpot. */
-    ARMED_ARM("BRAS ARMÉ");
+    ARMED_ARM("BRAS ARMÉ"),
+    /** Fête foraine : deux cartes de la main échangées avec la pioche, au prochain tour. */
+    JUGGLE("JONGLAGE"),
+    /** Il annonce une famille : si le joueur n'en joue aucune, son prochain coup frappe x2. */
+    ACT("NUMÉRO"),
+    /** Le prochain tirage du joueur donne moins d'attaque. */
+    SCARE("FRAYEUR"),
+    /** Un rouleau du joueur passe dans le noir : il prend un symbole au hasard. */
+    TUNNEL("TUNNEL"),
+    /** Le meilleur rouleau du joueur est relancé après son tirage. */
+    TURNSTILE("TOURNIQUET"),
+    /** Sa roue tombe sur une case : deux Épées, deux Boucliers, une Potion ou rien. */
+    BIG_WHEEL("GRAND TOUR"),
+    /** Les Paires du prochain tirage du joueur ne rapportent rien. */
+    RIGGED_PRIZE("LOT TRUQUÉ"),
+    /** Sans Paire ni Bingo au prochain tirage, les dégâts du joueur sont divisés par 2. */
+    RIGGED_GAME("JEU TRUQUÉ"),
+    /** Désert : le prochain tirage coûte un tirage de plus. */
+    TOLL("PÉAGE"),
+    /** Il pose des Créances sur le joueur. */
+    BILL("LETTRE DE CHANGE"),
+    /** Une carte de la main est ligotée : elle ne se joue pas pendant 2 tours. */
+    WRAP("BANDELETTES"),
+    /** Venin : PV perdus à chaque tour du joueur, pendant 3 tours. */
+    VENOM("VENIN"),
+    /** Un rouleau du joueur montre un mirage : il ne compte pas. */
+    MIRAGE("MIRAGE"),
+    /** Le bouclier du joueur fond de moitié. */
+    BURN("BRÛLURE"),
+    /** Un souffle qui passe le bouclier et brûle une carte de la main. */
+    FIRE_BREATH("SOUFFLE DE FEU");
 
     /** Dégâts de base d'une Épée. */
     public static final int SWORD_DAMAGE   = 20;
@@ -139,6 +169,12 @@ public enum EnemySymbol {
     public static final int ANVIL_ATTACK   = 5;
     /** Part des gains du joueur dévorée par chaque Morsure de la banque, en pourcentage. */
     public static final int BANK_BITE_PERCENT = 10;
+    /**
+     * Morsure : soin au plus, en % de ses PV max, à chaque Morsure (2026-10-24 : avec de gros gains, le
+     * soin dépassait la limite d'un int et devenait négatif, la Morsure blessait le requin et les Coffres
+     * devenaient le donjon le plus rentable du jeu).
+     */
+    public static final int BANK_BITE_HEAL_MAX = 3;
     /** Les trois rouleaux de l'ennemi identiques (Jackpot) : ses attaques et ses Boucliers du tour sont multipliés d'autant. */
     public static final int JACKPOT_FACTOR = 5;
 
@@ -192,6 +228,27 @@ public enum EnemySymbol {
     /** Tours du joueur pendant lesquels la Machine garde le rouleau volé en phase 2 (choix d'Astra). */
     public static final int MACHINE_THEFT_TURNS = 3;
 
+    /** Jonglage : cartes de la main échangées avec la pioche. */
+    public static final int JUGGLE_CARDS = 2;
+    /** Numéro : son prochain coup est multiplié d'autant si le joueur ne joue pas la famille annoncée. */
+    public static final int ACT_FACTOR = 2;
+    /** Frayeur : attaque du prochain tirage en moins, en %, et Frayeurs cumulées au plus. */
+    public static final int SCARE_PERCENT = 30, SCARE_MAX = 2;
+    /** Jeu truqué : les dégâts du joueur sont divisés d'autant sans Paire ni Bingo. */
+    public static final int RIGGED_GAME_DIVISOR = 2;
+    /** Péage : coûts de tirage pris en plus, par Péage. */
+    public static final int TOLL_SPINS = 1;
+    /** Lettre de change : Créances posées sur le joueur, au plus, et PV perdus par Créance (pour mille des PV max). */
+    public static final int BILL_MAX = 10, BILL_PER_MILLE = 5, BILL_CLAIMS = 2;
+    /** Bandelettes : tours pendant lesquels la carte ligotée ne se joue pas. */
+    public static final int WRAP_TURNS = 2;
+    /** Venin : PV perdus à chaque tour du joueur (en % des PV max), tours, et Venins en même temps au plus. */
+    public static final int VENOM_PERCENT = 1, VENOM_TURNS = 3, VENOM_MAX = 3;
+    /** Brûlure : part du bouclier du joueur qui fond, en %. */
+    public static final int BURN_PERCENT = 50;
+    /** Sarcophage du Pharaon : soin en % de ses PV max quand il s'y enferme. */
+    public static final int SARCOPHAGUS_HEAL_PERCENT = 10;
+
     private final String displayName;
 
     EnemySymbol(String displayName) {
@@ -243,8 +300,8 @@ public enum EnemySymbol {
             case ANVIL  -> Lang.f("Enclume : attaque +{0}. Jusqu'à la fin du combat, sans limite",
                 kind.hurt(ANVIL_ATTACK));
             case SONG   -> Lang.t("Chant : au début de ton prochain tour, une carte au hasard de ta main est jouée d'office");
-            case BANK_BITE -> Lang.f("Morsure : il dévore {0} % de tes gains et se soigne d'autant. Sans gains, il mord",
-                kind.empowered(BANK_BITE_PERCENT));
+            case BANK_BITE -> Lang.f("Morsure : il dévore {0} % de tes gains et se soigne d'autant ({1} % de ses PV max au plus). "
+                + "Sans gains, il mord", kind.empowered(BANK_BITE_PERCENT), BANK_BITE_HEAL_MAX);
             case FAKE_MONEY -> Lang.f("Fausse monnaie : {0} % de tes gains deviennent faux. Dépense-les avant ton tirage, ou ils "
                 + "disparaissent",
                 kind.fakePercent());
@@ -291,6 +348,30 @@ public enum EnemySymbol {
             case SWALLOWED_COIN -> Lang.f("Pièce avalée : il te prend {0} % de tes gains et garde la pièce. À {1} pièces, son "
                 + "prochain tirage est un Jackpot", COIN_PERCENT, COINS_FOR_JACKPOT);
             case ARMED_ARM -> Lang.t("Bras armé : il relance son pire rouleau, pour viser le Jackpot");
+            case JUGGLE -> Lang.f("Jonglage : au début de ton prochain tour, {0} cartes de ta main sont échangées avec ta pioche",
+                JUGGLE_CARDS);
+            case ACT -> Lang.f("Numéro : il annonce une famille. Si tu n'en joues aucune carte, son prochain coup frappe x{0}",
+                ACT_FACTOR);
+            case SCARE -> Lang.f("Frayeur : ton prochain tirage donne {0} % d'attaque en moins ({1} fois au plus)",
+                SCARE_PERCENT, SCARE_MAX);
+            case TUNNEL -> Lang.t("Tunnel : à ton prochain tirage, un de tes rouleaux passe dans le noir et prend un symbole au "
+                + "hasard");
+            case TURNSTILE -> Lang.t("Tourniquet : à ton prochain tirage, ton meilleur rouleau est relancé une fois");
+            case BIG_WHEEL -> Lang.f("Grand tour : sa roue tombe sur deux Épées ({0} chacune), deux Boucliers, une Potion, ou rien",
+                kind.hurt(kind.swordDamage()));
+            case RIGGED_PRIZE -> Lang.t("Lot truqué : à ton prochain tirage, tes Paires ne rapportent aucun gain");
+            case RIGGED_GAME -> Lang.f("Jeu truqué : si ton prochain tirage ne fait ni Paire ni Bingo, tes dégâts du tour sont "
+                + "divisés par {0}", RIGGED_GAME_DIVISOR);
+            case TOLL -> Lang.f("Péage : ton prochain tirage coûte {0} tirage de plus en gains", TOLL_SPINS);
+            case BILL -> Lang.f("Lettre de change : {0} Créances sur toi ({1} au plus). À chacun de ses tours, chacune te coûte "
+                + "{2} % de tes PV max. Chaque Trèfle joué en retire une", BILL_CLAIMS, BILL_MAX, Lang.decimal("0.5"));
+            case WRAP -> Lang.f("Bandelettes : il ligote une carte de ta main. Elle ne se joue pas pendant {0} tours", WRAP_TURNS);
+            case VENOM -> Lang.f("Venin : {0} % de tes PV max à chacun de tes tours, pendant {1} tours ({2} Venins au plus)",
+                VENOM_PERCENT, VENOM_TURNS, VENOM_MAX);
+            case MIRAGE -> Lang.t("Mirage : à ton prochain tirage, un de tes rouleaux montre un mirage. Il ne compte pas");
+            case BURN -> Lang.f("Brûlure : ton bouclier fond de {0} %", BURN_PERCENT);
+            case FIRE_BREATH -> Lang.f("Souffle de feu : attaque de {0}, à travers ton bouclier. Il brûle une carte de ta main au "
+                + "prochain tour", kind.hurt(kind.swordDamage()));
         };
     }
 

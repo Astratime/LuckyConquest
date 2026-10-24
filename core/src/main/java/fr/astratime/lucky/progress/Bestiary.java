@@ -87,6 +87,11 @@ public final class Bestiary {
         return profile.isAdmin() || profile.getStats().get(PlayerStats.Stat.BONUS_GAMES) > 0;
     }
 
+    /** @return {@code true} si la fin de l'Exploration a été vue (le Désert de Braise est vidé). */
+    public static boolean explorationEndingSeen(PlayerProfile profile) {
+        return profile.isAdmin() || profile.isPlaceCleared(Place.DESERT);
+    }
+
     /** Chapitres qui finissent sur une cinématique (voir {@code Cutscenes.ending}). */
     public static final List<Chapter> ENDINGS = List.of(Chapter.DERNIER_TIRAGE, Chapter.LE_JACKPOT);
 
@@ -112,6 +117,8 @@ public final class Bestiary {
             total++;
             if (endingSeen(profile, chapter)) seen++;
         }
+        total++;                                         // la fin de l'Exploration
+        if (explorationEndingSeen(profile)) seen++;
         total++;
         if (bonusGameSeen(profile)) seen++;
         return new int[] {seen, total};

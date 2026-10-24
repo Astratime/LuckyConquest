@@ -61,6 +61,8 @@ public class CombatContext {
     private int   goldenHearts  = 0;  // Cœur d'or : les gains du tirage frappent aussi l'ennemi
     // ----- Archétypes de deck -----
     private int   wildJokerPercent = 0; // Joker sauvage : attaque en plus par Joker sorti, en %
+    private int   jackStep      = 0;  // Diable en boîte : Joker en plus (tout le combat) par Joker sorti
+    private int   jackMax       = 0;  // Diable en boîte : Joker en plus au plus
     private int   jokerLaughs   = 0;  // Rire du Joker : cartes de plus à la prochaine pioche si un Joker sort
     private float foolCrownFactor = 1f; // Couronne du Fou : gains d'un Bingo fait avec un Joker
     private final List<String> rainbowsEnds = new ArrayList<>(); // Bout de l'arc-en-ciel : cartes glissées dans la pioche
@@ -108,6 +110,16 @@ public class CombatContext {
     public int getWildJokerPercent() { return wildJokerPercent; }
 
     /** Rire du Joker : {@code cards} cartes de plus à la prochaine pioche si un Joker sort. */
+    /** Diable en boîte : chaque Joker sorti ce tour donne {@code step} Joker de plus jusqu'à la fin du combat. */
+    public void addJackInTheBox(int step, int max) {
+        jackStep += step;
+        jackMax = Math.max(jackMax, max);
+    }
+    /** @return le Joker gagné par Joker sorti (0 : aucun Diable en boîte). */
+    public int getJackStep() { return jackStep; }
+    /** @return le Joker gagné au plus avec le Diable en boîte. */
+    public int getJackMax() { return jackMax; }
+
     public void addJokerLaugh(int cards) { jokerLaughs += cards; }
     /** @return les cartes de plus à la prochaine pioche si un Joker sort ce tour. */
     public int getJokerLaughs() { return jokerLaughs; }

@@ -321,6 +321,8 @@ final class CombatEffectRows {
      * l'ennemi, Chapeau du Lutin, Rente viagère, Martingale et Rire du Joker.
      */
     private void addArchetypeRows(List<SidePanel.EffectRow> rows, LastingEffects lasting, Enemy target, TextureRegion icon) {
+        if (target.getPharaohSealTurns() > 0) rows.add(new SidePanel.EffectRow(icon, null, Lang.f("Sceau ({0})", target.getPharaohSealTurns()),
+            Lang.t("Sceau du Pharaon"), Lang.f("Ses Créances comptent double. Encore {0}.", turns(target.getPharaohSealTurns()))));
         if (target.getClaims() > 0) rows.add(new SidePanel.EffectRow(icon, null, Lang.f("Créances x{0}", target.getClaims()),
             Lang.t("Créances"), Lang.f("À chacun de ses tours, l'ennemi perd {0} % de ses PV max et tu gagnes {1}.",
                 percentText(target.getClaims() * Enemy.CLAIM_HP_PER_MILLE / 10f),
@@ -343,6 +345,11 @@ final class CombatEffectRows {
         if (lasting.getHatTurns() > 0) rows.add(new SidePanel.EffectRow(icon, null, Lang.f("Chapeau ({0})", lasting.getHatTurns()),
             Lang.t("Chapeau du Lutin"), Lang.f("Chaque coup qui touche l'ennemi te rapporte {0} % d'un tirage en gains. Encore {1}.",
                 lasting.getHatPercent(), turns(lasting.getHatTurns()))));
+        if (lasting.getHoardTurns() > 0) rows.add(new SidePanel.EffectRow(icon, null, Lang.f("Magot ({0})", lasting.getHoardTurns()),
+            Lang.t("Magot du dragon"), Lang.f("Chaque coup qui touche te rapporte {0} tirages de gains et un peu d'attaque. Attaque +{1} %. Encore {2}.",
+                lasting.getHoardSpins(), lasting.getHoardPercent(), turns(lasting.getHoardTurns()))));
+        if (lasting.getJokerBox() > 0) rows.add(new SidePanel.EffectRow(icon, null, Lang.f("Diable +{0}", lasting.getJokerBox()),
+            Lang.t("Diable en boîte"), Lang.f("Joker +{0} à chaque tirage, jusqu'à la fin du combat.", lasting.getJokerBox())));
         if (lasting.getAnnuityTurns() > 0) rows.add(new SidePanel.EffectRow(icon, null, Lang.f("Rente ({0})", lasting.getAnnuityTurns()),
             Lang.t("Rente viagère"), Lang.f("À chacun de tes tours : une Créance sur l'ennemi et {0} tirages de gains. Encore {1}.",
                 lasting.getAnnuitySpins(), turns(lasting.getAnnuityTurns()))));
