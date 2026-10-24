@@ -141,7 +141,8 @@ public class DungeonRewardsOverlay implements Disposable {
             PlayerProfile.CHEST_SPINS, PlayerProfile.formatCoins(cost)));
         lines.add(Lang.f("Carte du coffre déjà en {0} exemplaires : {1} pièces en plus.", PlayerProfile.MAX_COPIES,
             PlayerProfile.formatCoins(PlayerProfile.duplicateCoins(cost))));
-        lines.add(Lang.f("Défaite : tu gardes {0} % de tes gains, en pièces (au plus {1}).",
+        lines.add(Lang.f("Défaite : tu gardes {0} % de tes gains, en pièces (au plus {1}), selon la part du "
+                + "donjon faite.",
             PlayerProfile.DEFEAT_KEEP_PERCENT, PlayerProfile.formatCoins(PlayerProfile.chestCoins(cost))));
         lines.add(Lang.t("Carte au trésor jouée : un coffre de plus."));
         Symbol reel = place.getReelReward();

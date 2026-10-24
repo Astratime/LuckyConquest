@@ -1638,8 +1638,7 @@ public class GameScreen extends ScreenAdapter {
         long earned = combatReward(victory);
         if (earned > 0) {
             String coinsText = victory ? Lang.f("PIÈCES +{0}", PlayerProfile.formatCoins(earned))
-                : Lang.f("PIÈCES +{0} ({1} % DES GAINS GARDÉS)", PlayerProfile.formatCoins(earned),
-                    PlayerProfile.DEFEAT_KEEP_PERCENT);
+                : Lang.f("PIÈCES +{0} (PART DES GAINS GARDÉE)", PlayerProfile.formatCoins(earned));
             Label coinsLabel = new Label(coinsText, new Label.LabelStyle(shopFont, Palette.GOLD));
             endButtons.add(coinsLabel).colspan(shown.size()).padBottom(14f).row();
         }
@@ -1705,7 +1704,8 @@ public class GameScreen extends ScreenAdapter {
         if (!isDungeon()) return 0; // seule l'Exploration rapporte des pièces (ni Entraînement, ni Tour)
         return PlayerProfile.combatReward(victory, run.isBossStage(),
             gameController.getGameState().getPlayer().getGains(),
-            Place.of(((DungeonRun) run).getDungeon()).getSpinCost());
+            Place.of(((DungeonRun) run).getDungeon()).getSpinCost(),
+            PlayerProfile.dungeonProgress(run.isBossStage(), gameController.getGameState().getEnemy().getHpRatio()));
     }
 
     /** @return l'ennemi du combat en cours de la Tour ou du donjon, ou le croupier d'entraînement. */

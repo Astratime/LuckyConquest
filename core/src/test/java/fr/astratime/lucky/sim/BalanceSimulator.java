@@ -376,7 +376,7 @@ public final class BalanceSimulator {
             }
             played.add(new Run(won, game.getGameState().getPlayer().getGains(), turns[0] - before, won ? 1 : effort));
             long reward = PlayerProfile.combatReward(won, true, game.getGameState().getPlayer().getGains(),
-                place.getSpinCost());
+                place.getSpinCost(), effort);
             if (!won) {
                 lossTotal += reward;
                 continue;
@@ -707,26 +707,11 @@ public final class BalanceSimulator {
     static List<Policy> policies() {
         double keep = PlayerProfile.DEFEAT_KEEP_PERCENT / 100.0;
         return List.of(
-            new Policy("Actuelle (PR #79)", "victoire : gains + coffre ; défaite : 20 % des gains, au plus le coffre",
+            new Policy("Sans l'effort", "victoire : gains + coffre ; défaite : 20 % des gains, au plus le coffre",
                 (run, chest) -> run.won() ? Math.max(0, run.gains()) + chest
                     : Math.min(Math.max(0, run.gains()) * keep, chest)),
-            new Policy("A. Plafond", "victoire : gains au plus 2 coffres, + coffre ; défaite : comme l'actuelle",
-                (run, chest) -> run.won() ? Math.min(Math.max(0, run.gains()), 2.0 * chest) + chest
-                    : Math.min(Math.max(0, run.gains()) * keep, chest)),
-            new Policy("B. Effort", "victoire : gains + coffre ; défaite : part gardée x part du donjon faite",
+            new Policy("Actuelle", "comme « Sans l'effort », la part gardée en défaite x la part du donjon faite",
                 (run, chest) -> run.won() ? Math.max(0, run.gains()) + chest
-                    : Math.min(Math.max(0, run.gains()) * keep, chest) * run.effort()),
-            new Policy("C. Plafond + effort", "A pour la victoire, B pour la défaite",
-                (run, chest) -> run.won() ? Math.min(Math.max(0, run.gains()), 2.0 * chest) + chest
-                    : Math.min(Math.max(0, run.gains()) * keep, chest) * run.effort()),
-            new Policy("C3. Plafond 3 + effort", "comme C, gains au plus 3 coffres",
-                (run, chest) -> run.won() ? Math.min(Math.max(0, run.gains()), 3.0 * chest) + chest
-                    : Math.min(Math.max(0, run.gains()) * keep, chest) * run.effort()),
-            new Policy("C5. Plafond 5 + effort", "comme C, gains au plus 5 coffres",
-                (run, chest) -> run.won() ? Math.min(Math.max(0, run.gains()), 5.0 * chest) + chest
-                    : Math.min(Math.max(0, run.gains()) * keep, chest) * run.effort()),
-            new Policy("D. Change 25 %", "victoire : 25 % des gains + coffre ; défaite : comme B",
-                (run, chest) -> run.won() ? Math.max(0, run.gains()) * 0.25 + chest
                     : Math.min(Math.max(0, run.gains()) * keep, chest) * run.effort()));
     }
 

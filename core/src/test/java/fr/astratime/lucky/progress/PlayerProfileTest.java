@@ -170,14 +170,20 @@ class PlayerProfileTest {
 
     @Test
     void combatCoinsAreTheShownGainsAfterTheKingAndAFifthOfThemAfterADefeat() {
-        assertEquals(32_000, PlayerProfile.combatReward(true, true, 32_000, 100), "les gains affichés, pas plus");
-        assertEquals(0, PlayerProfile.combatReward(true, false, 32_000, 100), "rien après le soldat");
-        assertEquals(6_400, PlayerProfile.combatReward(false, true, 32_000, 100), "20 % après une défaite contre le roi");
-        assertEquals(6_400, PlayerProfile.combatReward(false, false, 32_000, 100), "20 % après une défaite contre le soldat");
-        assertEquals(0, PlayerProfile.combatReward(false, true, -5_000, 100), "rien avec des gains négatifs");
-        assertEquals(50_000, PlayerProfile.combatReward(false, true, 10_000_000, 100), "au plus le coffre de la Prairie");
-        assertEquals(2_500_000, PlayerProfile.combatReward(false, true, 1e12, 5_000), "au plus le coffre du Casino");
-        assertEquals(1_000_000_000_000L, PlayerProfile.combatReward(true, true, 1e12, 5_000), "victoire : sans limite");
+        assertEquals(32_000, PlayerProfile.combatReward(true, true, 32_000, 100, 1), "les gains affichés, pas plus");
+        assertEquals(0, PlayerProfile.combatReward(true, false, 32_000, 100, 1), "rien après le soldat");
+        assertEquals(6_400, PlayerProfile.combatReward(false, true, 32_000, 100, 1), "20 % après une défaite contre le roi");
+        assertEquals(6_400, PlayerProfile.combatReward(false, false, 32_000, 100, 1), "20 % après une défaite contre le soldat");
+        assertEquals(0, PlayerProfile.combatReward(false, true, -5_000, 100, 1), "rien avec des gains négatifs");
+        assertEquals(50_000, PlayerProfile.combatReward(false, true, 10_000_000, 100, 1), "au plus le coffre de la Prairie");
+        assertEquals(2_500_000, PlayerProfile.combatReward(false, true, 1e12, 5_000, 1), "au plus le coffre du Casino");
+        assertEquals(1_000_000_000_000L, PlayerProfile.combatReward(true, true, 1e12, 5_000, 1), "victoire : sans limite");
+        assertEquals(3_200, PlayerProfile.combatReward(false, true, 32_000, 100, 0.5), "la moitié du donjon faite : la moitié");
+        assertEquals(0, PlayerProfile.combatReward(false, false, 32_000, 100, 0), "mort au premier tour : rien");
+        assertEquals(0.0, PlayerProfile.dungeonProgress(false, 1), 1e-9);
+        assertEquals(0.25, PlayerProfile.dungeonProgress(false, 0.5), 1e-9);
+        assertEquals(0.75, PlayerProfile.dungeonProgress(true, 0.5), 1e-9);
+        assertEquals(1.0, PlayerProfile.dungeonProgress(true, 0), 1e-9);
     }
 
     @Test

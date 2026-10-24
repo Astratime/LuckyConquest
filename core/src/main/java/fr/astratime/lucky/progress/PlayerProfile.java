@@ -758,7 +758,8 @@ public class PlayerProfile {
      * Pièces versées à la fin d'un combat de l'Exploration : les gains affichés
      * dans le cadre « Gains » après la victoire contre le roi du donjon, et
      * {@link #DEFEAT_KEEP_PERCENT} % de ces gains après une défaite (contre le
-     * soldat ou le roi), au plus la valeur du coffre du lieu ({@link #chestCoins}).
+     * soldat ou le roi), au plus la valeur du coffre du lieu ({@link #chestCoins}),
+     * multipliés par la part du donjon faite ({@link #dungeonProgress}).
      * Le soldat battu ne rapporte rien tout de suite : ses
      * gains sont gardés pour le roi. L'Entraînement et la Tour des épreuves ne
      * rapportent aucune pièce.
@@ -767,12 +768,27 @@ public class PlayerProfile {
      * @param lastFight c'était le dernier combat du donjon (le roi)
      * @param gains     les gains du joueur à la fin du combat
      * @param spinCost  coût d'un tirage dans le lieu du donjon (fixe la limite après une défaite)
+     * @param progress  après une défaite, part du donjon faite, de 0 à 1 (voir {@link #dungeonProgress})
      * @return les pièces à ajouter au profil
      */
-    public static long combatReward(boolean victory, boolean lastFight, double gains, int spinCost) {
+    public static long combatReward(boolean victory, boolean lastFight, double gains, int spinCost, double progress) {
         if (victory) return lastFight ? Math.max(0, BigNumber.toLong(gains)) : 0;
-        long kept = Math.max(0, BigNumber.toLong(gains * DEFEAT_KEEP_PERCENT / 100.0));
-        return Math.min(kept, chestCoins(spinCost));
+        long kept = Math.min(Math.max(0, BigNumber.toLong(gains * DEFEAT_KEEP_PERCENT / 100.0)), chestCoins(spinCost));
+        return Math.round(kept * Math.max(0, Math.min(1, progress)));
+    }
+
+    /**
+     * Part d'un donjon faite au moment d'une défaite : la moitié pour le soldat,
+     * la moitié pour le roi, chacun au prorata des PV qu'il a perdus. Mourir au
+     * premier tour contre le soldat vaut presque 0, perdre contre un roi à moitié
+     * mort vaut 0,75.
+     *
+     * @param bossStage le combat perdu était celui du roi (le soldat est donc battu)
+     * @param hpRatio   PV restants de l'ennemi qui a gagné, de 0 à 1
+     */
+    public static double dungeonProgress(boolean bossStage, double hpRatio) {
+        double done = 1 - Math.max(0, Math.min(1, hpRatio));
+        return (bossStage ? 0.5 : 0) + 0.5 * done;
     }
 
     /** Ajoute {@code amount} pièces (rien si négatif) et enregistre le profil. */
