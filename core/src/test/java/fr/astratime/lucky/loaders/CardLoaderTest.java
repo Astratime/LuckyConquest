@@ -242,8 +242,8 @@ class CardLoaderTest {
         assertEquals(king.getSuit(), plus.getSuit());
         assertEquals(king.getRank(), plus.getRank());
         assertTrue(plus.getName().endsWith(" +"));
-        // Roi de Trèfle : gains x26 et attaque +23, puis x39 et +35.
-        assertTrue(plus.getDescription().contains("39"), plus.getDescription());
+        // Roi de Trèfle : gains +13 et attaque +23, puis +20 et +35.
+        assertTrue(plus.getDescription().contains("+20"), plus.getDescription());
         assertTrue(plus.getDescription().contains("35"), plus.getDescription());
     }
 

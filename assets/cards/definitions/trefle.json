@@ -20,7 +20,7 @@
     "effects": [
       {
         "type": "CLUB_GAIN_ATTACK",
-        "gainMultiplier": 4,
+        "gainMultiplier": 2,
         "attackBonus": 12
       }
     ]
@@ -34,7 +34,7 @@
     "effects": [
       {
         "type": "CLUB_GAIN_ATTACK",
-        "gainMultiplier": 6,
+        "gainMultiplier": 3,
         "attackBonus": 13
       }
     ]
@@ -48,7 +48,7 @@
     "effects": [
       {
         "type": "CLUB_GAIN_ATTACK",
-        "gainMultiplier": 8,
+        "gainMultiplier": 4,
         "attackBonus": 14
       }
     ]
@@ -62,7 +62,7 @@
     "effects": [
       {
         "type": "CLUB_GAIN_ATTACK",
-        "gainMultiplier": 10,
+        "gainMultiplier": 5,
         "attackBonus": 15
       }
     ]
@@ -76,7 +76,7 @@
     "effects": [
       {
         "type": "CLUB_GAIN_ATTACK",
-        "gainMultiplier": 12,
+        "gainMultiplier": 6,
         "attackBonus": 16
       }
     ]
@@ -90,7 +90,7 @@
     "effects": [
       {
         "type": "CLUB_GAIN_ATTACK",
-        "gainMultiplier": 14,
+        "gainMultiplier": 7,
         "attackBonus": 17
       }
     ]
@@ -104,7 +104,7 @@
     "effects": [
       {
         "type": "CLUB_GAIN_ATTACK",
-        "gainMultiplier": 16,
+        "gainMultiplier": 8,
         "attackBonus": 18
       }
     ]
@@ -118,7 +118,7 @@
     "effects": [
       {
         "type": "CLUB_GAIN_ATTACK",
-        "gainMultiplier": 18,
+        "gainMultiplier": 9,
         "attackBonus": 19
       }
     ]
@@ -132,7 +132,7 @@
     "effects": [
       {
         "type": "CLUB_GAIN_ATTACK",
-        "gainMultiplier": 20,
+        "gainMultiplier": 10,
         "attackBonus": 20
       }
     ]
@@ -146,7 +146,7 @@
     "effects": [
       {
         "type": "CLUB_GAIN_ATTACK",
-        "gainMultiplier": 22,
+        "gainMultiplier": 11,
         "attackBonus": 21
       }
     ]
@@ -160,7 +160,7 @@
     "effects": [
       {
         "type": "CLUB_GAIN_ATTACK",
-        "gainMultiplier": 24,
+        "gainMultiplier": 12,
         "attackBonus": 22
       }
     ]
@@ -174,7 +174,7 @@
     "effects": [
       {
         "type": "CLUB_GAIN_ATTACK",
-        "gainMultiplier": 26,
+        "gainMultiplier": 13,
         "attackBonus": 23
       }
     ]

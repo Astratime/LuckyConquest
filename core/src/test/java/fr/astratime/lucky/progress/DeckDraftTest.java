@@ -44,7 +44,7 @@ class DeckDraftTest {
     @Test
     void atMostThreeCopiesOfACardEvenWhenMoreAreOwned() {
         PlayerProfile profile = profile();
-        for (int i = 0; i < 5; i++) profile.openChest("rare");
+        for (int i = 0; i < 5; i++) profile.openChest("rare", fr.astratime.lucky.entities.exploration.Place.PRAIRIE);
         DeckDraft draft = new DeckDraft(profile);
         for (int i = 0; i < 4; i++) draft.remove("carte_" + i);
 

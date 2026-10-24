@@ -41,6 +41,7 @@ import fr.astratime.lucky.i18n.Lang;
 import fr.astratime.lucky.loaders.CardLoader;
 import fr.astratime.lucky.progress.PlayerProfile;
 import fr.astratime.lucky.settings.AudioSettings;
+import fr.astratime.lucky.views.DungeonRewardsOverlay;
 import fr.astratime.lucky.views.CasinoButtons;
 import fr.astratime.lucky.views.MenuDecor;
 import fr.astratime.lucky.views.MenuOption;
@@ -138,6 +139,8 @@ public class ExplorationScreen extends ScreenAdapter {
     private final TextButton       deckButton;
     /** Rejoue la présentation du Croupier. */
     private final TextButton       tutorialButton;
+    private final TextButton       rewardsButton;
+    private final DungeonRewardsOverlay rewards;
     private final Image            fade;
 
     private Place   place = Place.values()[0];
@@ -204,6 +207,8 @@ public class ExplorationScreen extends ScreenAdapter {
         enterButton = buttons.createAction(Lang.t("Entrer"), clickSound, this::launch);
         backButton  = buttons.create(Lang.t("Retour"), clickSound, this::onBack);
         tutorialButton = buttons.create(Lang.t("Tutoriel"), clickSound, this::replayGuide);
+        rewardsButton  = buttons.create(Lang.t("Récompenses"), clickSound, this::showRewards);
+        rewards = new DungeonRewardsOverlay(stage, hud, cardTextures, factory);
         deckButton  = buttons.create(deckText(), clickSound, this::nextDeck);
         // Un seul deck enregistré (ou le mode ADMIN, qui a le sien) : rien à choisir.
         deckButton.setVisible(!profile.isAdmin() && profile.nextUsedDeckSlot(profile.getDeckSlot()) != profile.getDeckSlot());
@@ -229,6 +234,8 @@ public class ExplorationScreen extends ScreenAdapter {
         stage.addActor(deckButton);
         stage.addActor(backButton);
         stage.addActor(tutorialButton);
+        stage.addActor(rewardsButton);
+        stage.addActor(rewards.getActor());
         stage.addActor(fade);
         fade.addAction(Actions.fadeOut(FADE_TIME));
 
@@ -287,6 +294,7 @@ public class ExplorationScreen extends ScreenAdapter {
 
                 @Override
                 public void clicked(InputEvent event, float x, float y) {
+                    if (rewards.isShown()) return;
                     if (selected == index) {
                         clickSound.play();
                         launch();
@@ -295,6 +303,17 @@ public class ExplorationScreen extends ScreenAdapter {
                     }
                 }
             });
+            // Clic droit : le détail de ses récompenses (pièces, cartes du coffre et leurs effets).
+            ClickListener rightClick = new ClickListener() {
+                @Override
+                public void clicked(InputEvent event, float x, float y) {
+                    selectDungeon(index, false);
+                    clickSound.play();
+                    showRewards();
+                }
+            };
+            rightClick.setButton(Input.Buttons.RIGHT);
+            gate.addListener(rightClick);
             Label label = new Label(dungeon.getShortName(), new Label.LabelStyle(gateFont, Color.WHITE));
             label.setAlignment(Align.center);
             label.setTouchable(Touchable.disabled);
@@ -334,10 +353,12 @@ public class ExplorationScreen extends ScreenAdapter {
             PlayerProfile.formatCoins(dungeon.getSoldier().getMaxHp())));
         text.append('\n').append(Lang.f("Combat 2 : {0} ({1} PV)", dungeon.getKing().getDisplayName(),
             PlayerProfile.formatCoins(dungeon.getKing().getMaxHp())));
-        text.append("\n\n").append(Lang.t("Coffre :"));
+        text.append("\n\n").append(Lang.f("Coffre : {0} pièces + 1 carte",
+            PlayerProfile.formatCoins(place.getChestCoins())));
         for (Dungeon.Loot loot : dungeon.getLoot()) {
             text.append('\n').append(Lang.f("{0} {1} %", cardNames.get(loot.cardId()), loot.percent()));
         }
+        text.append("\n\n").append(Lang.t("Clic droit ou R : détail des récompenses."));
         dungeonText.setText(text);
         for (Actor actor : List.of(dungeonName, dungeonText)) {
             actor.clearActions();
@@ -378,6 +399,13 @@ public class ExplorationScreen extends ScreenAdapter {
             luckyGame.setScreen(new GameScreen(luckyGame, new DungeonRun(dungeon)));
             dispose();
         });
+    }
+
+    /** Ouvre le détail des récompenses du donjon choisi. */
+    private void showRewards() {
+        if (leaving || selected < 0) return;
+        rewards.show(place.getDungeons().get(selected), profile);
+        fade.toFront();
     }
 
     /** Retour au menu principal. */
@@ -490,6 +518,9 @@ public class ExplorationScreen extends ScreenAdapter {
         deckButton.setPosition(enterButton.getX() - 24f - deckButton.getWidth(), enterButton.getY());
         backButton.setPosition(MARGIN, (BOTTOM_SPACE - backButton.getHeight()) / 2f);
         tutorialButton.setPosition(backButton.getX() + backButton.getWidth() + 20f, backButton.getY());
+        float rewardsRight = deckButton.isVisible() ? deckButton.getX() : enterButton.getX();
+        rewardsButton.setPosition(rewardsRight - 24f - rewardsButton.getWidth(), enterButton.getY());
+        if (rewards.isShown()) rewards.layout();
         bobSelectedGate(); // les entrées viennent d'être replacées
     }
 
@@ -503,6 +534,12 @@ public class ExplorationScreen extends ScreenAdapter {
             @Override
             public boolean keyDown(int keycode) {
                 if (leaving) return false;
+                if (rewards.isShown()) { // le détail des récompenses ouvert : Échap (ou Entrée) le referme
+                    if (keycode != Input.Keys.ESCAPE && keycode != Input.Keys.ENTER && keycode != Input.Keys.R) return true;
+                    clickSound.play();
+                    rewards.hide();
+                    return true;
+                }
                 int count = place.getDungeons().size();
                 switch (keycode) {
                     case Input.Keys.LEFT, Input.Keys.A, Input.Keys.UP, Input.Keys.W ->
@@ -516,6 +553,10 @@ public class ExplorationScreen extends ScreenAdapter {
                     case Input.Keys.ESCAPE -> {
                         clickSound.play();
                         onBack();
+                    }
+                    case Input.Keys.R -> {
+                        clickSound.play();
+                        showRewards();
                     }
                     default -> { return false; }
                 }
@@ -559,6 +600,7 @@ public class ExplorationScreen extends ScreenAdapter {
         Fonts.release(nameFont);
         Fonts.release(bodyFont);
         Fonts.release(gateFont);
+        rewards.dispose();
     }
 
     /** Bouton « Tutoriel » : le Croupier présente l'écran de nouveau. */

@@ -54,10 +54,8 @@ public class PlayerProfile {
     public static final int DECK_SLOTS  = 3;
     /** Exemplaires au plus d'une même carte, dans la collection comme dans le deck. */
     public static final int MAX_COPIES  = 3;
-    /** Pièces données par chaque coffre de donjon. */
-    public static final int CHEST_COINS = 10_000;
-    /** Pièces données en plus quand la carte du coffre est déjà au maximum d'exemplaires. */
-    public static final int DUPLICATE_COINS = 5_000;
+    /** Part des gains gardée en pièces après une défaite dans un donjon, en %. */
+    public static final int DEFEAT_KEEP_PERCENT = 20;
 
     static final String KEY_COLLECTION = "collection";
     static final String KEY_DECK       = "deck";
@@ -757,18 +755,39 @@ public class PlayerProfile {
 
     /**
      * Pièces versées à la fin d'un combat de l'Exploration : les gains affichés
-     * dans le cadre « Gains », seulement après la victoire contre le roi du
-     * donjon. Une défaite ne rapporte rien, le soldat non plus : ses gains sont
-     * gardés pour le roi. L'Entraînement et la Tour des épreuves ne rapportent
-     * aucune pièce.
+     * dans le cadre « Gains » après la victoire contre le roi du donjon, et
+     * {@link #DEFEAT_KEEP_PERCENT} % de ces gains après une défaite (contre le
+     * soldat ou le roi), au plus {@link Place#getDefeatCap} (500 coûts de tirage du lieu),
+     * multipliés par la part du donjon faite ({@link #dungeonProgress}).
+     * Le soldat battu ne rapporte rien tout de suite : ses
+     * gains sont gardés pour le roi. L'Entraînement et la Tour des épreuves ne
+     * rapportent aucune pièce.
      *
      * @param victory   l'ennemi est vaincu
      * @param lastFight c'était le dernier combat du donjon (le roi)
      * @param gains     les gains du joueur à la fin du combat
+     * @param place     lieu du donjon (il fixe la limite après une défaite)
+     * @param progress  après une défaite, part du donjon faite, de 0 à 1 (voir {@link #dungeonProgress})
      * @return les pièces à ajouter au profil
      */
-    public static long combatReward(boolean victory, boolean lastFight, double gains) {
-        return victory && lastFight ? Math.max(0, BigNumber.toLong(gains)) : 0;
+    public static long combatReward(boolean victory, boolean lastFight, double gains, Place place, double progress) {
+        if (victory) return lastFight ? Math.max(0, BigNumber.toLong(gains)) : 0;
+        long kept = Math.min(Math.max(0, BigNumber.toLong(gains * DEFEAT_KEEP_PERCENT / 100.0)), place.getDefeatCap());
+        return Math.round(kept * Math.max(0, Math.min(1, progress)));
+    }
+
+    /**
+     * Part d'un donjon faite au moment d'une défaite : la moitié pour le soldat,
+     * la moitié pour le roi, chacun au prorata des PV qu'il a perdus. Mourir au
+     * premier tour contre le soldat vaut presque 0, perdre contre un roi à moitié
+     * mort vaut 0,75.
+     *
+     * @param bossStage le combat perdu était celui du roi (le soldat est donc battu)
+     * @param hpRatio   PV restants de l'ennemi qui a gagné, de 0 à 1
+     */
+    public static double dungeonProgress(boolean bossStage, double hpRatio) {
+        double done = 1 - Math.max(0, Math.min(1, hpRatio));
+        return (bossStage ? 0.5 : 0) + 0.5 * done;
     }
 
     /** Ajoute {@code amount} pièces (rien si négatif) et enregistre le profil. */
@@ -781,16 +800,17 @@ public class PlayerProfile {
     /**
      * Ouvre un coffre de donjon qui contient la carte {@code cardId} : un
      * exemplaire de plus dans la collection (au plus {@link #MAX_COPIES}) et
-     * {@link #CHEST_COINS} pièces ; si la carte est déjà au maximum,
-     * {@link #DUPLICATE_COINS} pièces en plus à la place. Le profil est enregistré.
+     * {@link Place#getChestCoins} pièces ; si la carte est déjà au maximum,
+     * {@link Place#getDuplicateCoins} pièces en plus. Le profil est enregistré.
      *
+     * @param place lieu du donjon
      * @return ce que le joueur a reçu
      */
-    public ChestReward openChest(String cardId) {
+    public ChestReward openChest(String cardId, Place place) {
         if (admin) return new ChestReward(cardId, false, MAX_COPIES, 0); // le mode ADMIN ne rapporte rien
         int owned = getOwnedCopies(cardId);
         boolean newCopy = owned < MAX_COPIES;
-        int reward = CHEST_COINS + (newCopy ? 0 : DUPLICATE_COINS);
+        long reward = place.getChestCoins() + (newCopy ? 0 : place.getDuplicateCoins());
         if (newCopy) collection.put(cardId, owned + 1);
         coins += reward;
         save();
@@ -805,7 +825,7 @@ public class PlayerProfile {
      * @param copies  exemplaires possédés de la carte après l'ouverture
      * @param coins   pièces reçues
      */
-    public record ChestReward(String cardId, boolean newCopy, int copies, int coins) { }
+    public record ChestReward(String cardId, boolean newCopy, int copies, long coins) { }
 
     // -------------------------------------------------------------------------
     // Boutique : rangs, cartes, rouleaux
