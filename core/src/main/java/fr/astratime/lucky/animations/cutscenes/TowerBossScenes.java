@@ -689,7 +689,7 @@ final class TowerBossScenes {
         static final Color HELL_TOP = c("1a0204"), HELL_LOW = c("c81a0a"), ROOM = c("3a1420"), FLOOR = c("6a2a1a");
         /** Le corps central de son portrait (colonnes 8 à 26, lignes 13 à 37), ses yeux-fenêtres. */
         static final float BODY_LEFT = 8f, BODY_RIGHT = 27f, BODY_TOP = 13f, BODY_BOTTOM = 38f;
-        static final float[][] WINDOW_EYES = {{13f, 22f}, {23f, 22f}};
+        static final float[][] WINDOW_EYES = {{12f, 22f}, {22f, 22f}};
         protected final TextureRegion machine, wing, horn;
         protected float evil, holy;
 
