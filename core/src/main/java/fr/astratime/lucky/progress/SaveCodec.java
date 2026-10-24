@@ -31,7 +31,11 @@ public final class SaveCodec {
     /** Version du format, écrite dans chaque sauvegarde (les anciennes versions restent lisibles). */
     public static final int VERSION = 1;
 
-    private static final String HEADER  = "LUCKY-CONQUEST-SAVE";
+    // Rangé sous forme codée (fr.astratime.lucky.security.Hidden) : l'en-tête du
+    // format de sauvegarde n'apparaît pas en clair dans le binaire.
+    private static final String HEADER  = fr.astratime.lucky.security.Hidden.reveal(
+        new int[]{0x77, 0x15, 0x06, 0x01, 0x16, 0x79, 0x1a, 0x11, 0x2d, 0x39, 0x38, 0x37, 0x24, 0x28,
+            0xac, 0xd5, 0xca, 0xc6, 0xd0});
     private static final String VERSION_LINE = "version=";
     private static final String DATA_LINE    = "data=";
     private static final String SIGN_LINE    = "sign=";

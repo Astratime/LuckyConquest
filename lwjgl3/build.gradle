@@ -2,9 +2,12 @@
 buildscript {
   repositories {
     gradlePluginPortal()
+    mavenCentral()
   }
   dependencies {
     classpath "io.github.fourlastor:construo:2.1.0"
+    // Obfuscation du .jar livré (activée au build avec -Pobfuscate).
+    classpath "com.guardsquare:proguard-gradle:7.6.1"
     if(enableGraalNative == 'true') {
       classpath "org.graalvm.buildtools.native:org.graalvm.buildtools.native.gradle.plugin:0.9.28"
     }
@@ -209,4 +212,46 @@ tasks.withType(JavaExec.class).configureEach {
 
 if(enableGraalNative == 'true') {
   apply from: file("nativeimage.gradle")
+}
+// =============================================================================
+// Sécurisation du build livré (activée avec -Pobfuscate, voir release.yml)
+//
+//  - brouillage des assets (art + données) dans le .jar : illisibles en le
+//    dézippant, rétablis à la lecture par fr.astratime.lucky.security ;
+//  - obfuscation du code du jeu (fr.astratime.lucky.**) par ProGuard.
+//
+// Sans le flag, rien ne change : le jeu se lance et se développe comme avant.
+// =============================================================================
+def obfuscate = project.hasProperty('obfuscate')
+
+// Brouille les assets copiés dans les ressources, juste avant la mise en .jar.
+tasks.register('scrambleAssets', JavaExec) {
+  group = 'build'
+  description = "Brouille l'art et les données dans les ressources du .jar."
+  dependsOn processResources, ':core:classes'
+  mustRunAfter processResources
+  classpath = project(':core').sourceSets.main.runtimeClasspath
+  mainClass = 'fr.astratime.lucky.security.AssetScrambler'
+  args sourceSets.main.output.resourcesDir.absolutePath
+}
+
+// Obfusque le « fat jar » sur place, DANS la tâche jar elle-même : ainsi tout
+// ce qui part du jar (installDist, packaging construo) embarque forcément la
+// version obfusquée, sans dépendre de l'ordre des tâches.
+if (obfuscate) {
+  jar.dependsOn scrambleAssets
+  jar.doLast {
+    def input  = jar.archiveFile.get().asFile
+    def output = new File(input.getParentFile(), 'obfuscated-tmp.jar')
+    def config = new proguard.Configuration()
+    def args = ['@' + file('proguard-rules.pro').absolutePath,
+                '-injars',  input.absolutePath,
+                '-outjars', output.absolutePath] as String[]
+    new proguard.ConfigurationParser(args, System.getProperties()).parse(config)
+    new proguard.ProGuard(config).execute()
+    java.nio.file.Files.copy(output.toPath(), input.toPath(),
+      java.nio.file.StandardCopyOption.REPLACE_EXISTING)
+    output.delete()
+    logger.lifecycle("[obfuscate] ${input.name} obfusqué (code du jeu renommé).")
+  }
 }

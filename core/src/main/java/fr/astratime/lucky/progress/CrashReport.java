@@ -20,9 +20,12 @@ import java.time.format.DateTimeFormatter;
  */
 public final class CrashReport {
 
-    /** Le rapport, dans le dossier de la sauvegarde. */
-    public static final Path DEFAULT_FILE = Paths.get(System.getProperty("user.home"), ".prefs",
-        "lucky-conquest-crash.log");
+    /** Le rapport, dans le dossier de la sauvegarde (noms rangés sous forme codée). */
+    public static final Path DEFAULT_FILE = Paths.get(System.getProperty("user.home"),
+        fr.astratime.lucky.security.Hidden.reveal(new int[]{0x15, 0x30, 0x37, 0x2f, 0x29, 0x27}),
+        fr.astratime.lucky.security.Hidden.reveal(new int[]{0x57, 0x35, 0x26, 0x21, 0x36, 0x79, 0x3a,
+            0x31, 0x0d, 0x19, 0x18, 0x17, 0x04, 0x08, 0xac, 0xe5, 0xf9, 0xf1, 0xe6, 0xf2, 0xb1, 0xc8,
+            0xc6, 0xc9}));
 
     private CrashReport() {}
 

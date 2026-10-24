@@ -22,8 +22,13 @@ public final class SaveSlots {
     /** Nombre d'emplacements. */
     public static final int COUNT = 3;
 
-    private static final String SAVE_NAME = "lucky-conquest-save";
-    private static final String LAST_NAME = "lucky-conquest-last-slot";
+    // Chaînes rangées sous forme codée (fr.astratime.lucky.security.Hidden).
+    private static final String SAVE_NAME = fr.astratime.lucky.security.Hidden.reveal(
+        new int[]{0x57, 0x35, 0x26, 0x21, 0x36, 0x79, 0x3a, 0x31, 0x0d, 0x19, 0x18, 0x17, 0x04, 0x08,
+            0xac, 0xf5, 0xea, 0xe6, 0xf0});
+    private static final String LAST_NAME = fr.astratime.lucky.security.Hidden.reveal(
+        new int[]{0x57, 0x35, 0x26, 0x21, 0x36, 0x79, 0x3a, 0x31, 0x0d, 0x19, 0x18, 0x17, 0x04, 0x08,
+            0xac, 0xea, 0xea, 0xe3, 0xe1, 0xb7, 0xec, 0xc8, 0xc6, 0xda});
 
     private final Path folder;
 

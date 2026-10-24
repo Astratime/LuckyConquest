@@ -53,8 +53,19 @@ public class LuckyGame extends Game {
      */
     @Override
     public void create() {
+        // Contrôle d'intégrité AVANT de poser la couche de lecture : on compare
+        // les octets bruts livrés au manifeste embarqué (build -Pobfuscate).
+        int tampered = fr.astratime.lucky.security.AssetIntegrity.check();
+        // Posé avant toute lecture d'asset : rétablit à la volée les fichiers
+        // brouillés du build livré, transparent si les assets sont en clair (dev).
+        fr.astratime.lucky.security.ObfuscatedFiles.install();
         batch = new SpriteBatch();
         Lang.load();
+        if (tampered > 0) {
+            notices.add(Lang.f("Attention : {0} fichier(s) du jeu ont été modifiés ou remplacés. "
+                + "Si tu n'as rien fait exprès, réinstalle le jeu : une version trafiquée peut "
+                + "mal fonctionner.", tampered));
+        }
         slots = GdxProfileStorage.slots();
         if (CrashReport.takePending(CrashReport.DEFAULT_FILE)) {
             notices.add(Lang.f("Le jeu a planté la dernière fois. Désolé ! Le rapport est ici : {0}. "
