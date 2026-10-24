@@ -230,8 +230,8 @@ public class EnemyTurnResolver {
         }
 
         int swordBonus = 0, healBonus = 0, shieldBonus = 0;
-        // Mise royale : la Reine blessée, ou le Prétendant tant qu'il porte l'éclat de la Reine, ou la Main de la Reine
-        boolean royal = kind.royalBet() && enemy.getHpRatio() < LOW_HP_RATIO
+        // Mise royale : la Reine en phase 2 (sous la moitié de ses PV), ou le Prétendant tant qu'il porte l'éclat de la Reine, ou la Main de la Reine
+        boolean royal = kind.royalBet() && enemy.getPhase() >= 2
             || kind == EnemyKind.PRETENDANT && EnemyKind.shards(enemy.getPhase()) >= 2
             || boosts.containsKey(EnemySignature.MAIN_DE_LA_REINE);
         int luckFactor = royal ? 2 : 1;

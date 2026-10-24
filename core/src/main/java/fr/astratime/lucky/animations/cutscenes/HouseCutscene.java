@@ -64,39 +64,10 @@ public class HouseCutscene extends Cutscene {
         house = kit.chapterArt(Chapter.LA_MAISON);
         coin  = load("hud/coin.png");
         font  = kit.font();
-        // Les As des fenêtres : un grand A au centre, cerné de noir pour trancher sur le manoir doré.
-        String[] ace = {
-            "oooooooooo",
-            "owwwwwwwwo",
-            "owrwwwwwwo",
-            "owwwwwwwwo",
-            "owwwrrwwwo",
-            "owwrwwrwwo",
-            "owwrwwrwwo",
-            "owwrrrrwwo",
-            "owwrwwrwwo",
-            "owwrwwrwwo",
-            "owwwwwwwwo",
-            "owwwwwwrwo",
-            "owwwwwwwwo",
-            "oooooooooo"};
-        aceRed   = art("owr", new Color[] {c("1a0a10"), c("f4ecdc"), c("c8283c")}, ace);
-        aceBlack = art("owr", new Color[] {c("1a0a10"), c("f4ecdc"), c("1a1a24")}, ace);
-        cardBack = art("owr", new Color[] {c("1a0a10"), c("8a1424"), c("c8283c")},
-            "oooooooooo",
-            "owwwwwwwwo",
-            "owrwrwrwwo",
-            "owwrwrwrwo",
-            "owrwrwrwwo",
-            "owwrwrwrwo",
-            "owrwrwrwwo",
-            "owwrwrwrwo",
-            "owrwrwrwwo",
-            "owwrwrwrwo",
-            "owrwrwrwwo",
-            "owwrwrwrwo",
-            "owwwwwwwwo",
-            "oooooooooo");
+        // Les As des fenêtres : les vraies cartes du jeu (As de Coeur, As de Pique, et leur dos).
+        aceRed   = gameCard("cards/light/1-H.png");
+        aceBlack = gameCard("cards/light/1-P.png");
+        cardBack = gameCard("cards/light/BACK.png");
         Color[] shade = {c("05030a"), c("2a2030")};
         butlerTop = art("ow", shade,
             "...ooo...",

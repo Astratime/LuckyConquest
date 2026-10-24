@@ -54,7 +54,7 @@ public class Enemy {
     private       int         stake = 1;
     /** Tapis posé à son dernier tour : sa mise doublera à son tour suivant, s'il n'est pas touché d'ici là. */
     private       boolean     allIn;
-    /** Sa phase (1, puis 2 pour l'Éclat Originel blessé). */
+    /** Sa phase (1, puis 2 sous le premier seuil d'un boss, voir {@link EnemyKind#phaseThresholds()}). */
     private       int         phase = 1;
     /** Bonus d'attaque de ses Enclumes, gardé jusqu'à la fin du combat, sans limite. */
     private       int         anvil;
@@ -72,6 +72,8 @@ public class Enemy {
     private       String      notice;
     /** Sa Garde a arrêté un coup : il passe en phase 2 à son prochain tour (s'il en a une). */
     private       boolean     guardBroken;
+    /** Il a atteint le seuil de sa phase suivante : il y passe à son prochain tour. */
+    private       boolean     phaseWallReached;
     /** Famille de cartes interdite tout le combat (le Portier), ou {@code null}. */
     private       CardFamily  bannedFamily;
     /** As sombres gardés en copie des achats du joueur (le Pilleur). */
@@ -182,6 +184,13 @@ public class Enemy {
                 if (notice == null) notice = Lang.f("GARDE : PAS PLUS DE {0} % DE SES PV PAR TOUR", EnemyKind.GUARD_PERCENT);
             }
         }
+        long wall = phaseWall();
+        if (wall > 0 && damage > 0 && hp - damage <= wall) { // seuil de phase : le surplus ne passe pas avant son tour
+            damage = Math.max(0, hp - wall);
+            phaseWallReached = true;
+            notice = kind == EnemyKind.MACHINE_ORIGINELLE ? Lang.f("ELLE RÉSISTE : PHASE {0} À SON TOUR", phase + 1)
+                : Lang.f("SEUIL ATTEINT : PHASE {0} À SON TOUR", phase + 1);
+        }
         if (kind.hasLastDraw() && !lastDrawDone && damage >= hp) {
             lastDrawPending = true;
             notice = Lang.t("ELLE RÉSISTE ! DERNIER TIRAGE");
@@ -189,6 +198,21 @@ public class Enemy {
         }
         return damage;
     }
+
+    /**
+     * Seuils de phase des boss et des rois (choix d'Astra, voir {@link EnemyKind#phaseThresholds()}) :
+     * ses PV ne descendent pas sous le seuil de sa phase avant qu'il soit passé à la suivante, à son tour.
+     *
+     * @return les PV sous lesquels il ne descend pas encore, ou 0
+     */
+    private long phaseWall() {
+        float[] thresholds = kind.phaseThresholds();
+        if (phase > thresholds.length) return 0;
+        return (long) Math.ceil(maxHp * (double) thresholds[phase - 1]);
+    }
+
+    /** @return {@code true} s'il a atteint le seuil de sa phase : il passera à la suivante à son tour. */
+    public boolean isPhaseWallReached() { return phaseWallReached; }
 
     /** @return ce qu'il vient de faire à un coup (coup annulé, résistance), une seule fois, ou {@code null}. */
     public String takeNotice() {
@@ -532,6 +556,9 @@ public class Enemy {
         // Sa Garde a arrêté un coup : il compte comme passé sous la moitié de ses PV.
         float ratio = guardBroken ? Math.min(getHpRatio(), EnemyKind.PHASE_TWO_RATIO - 0.01f) : getHpRatio();
         int reached = kind.phaseFor(ratio);
+        if (phaseWallReached) reached = Math.max(reached, phase + 1); // il a atteint son seuil de phase
+        phaseWallReached = false;
+        reached = Math.min(reached, Math.min(phase + 1, kind.phaseCount())); // une phase à la fois : chacune s'annonce
         if (reached <= phase) return false;
         if (kind == EnemyKind.MACHINE_ORIGINELLE && phase < 2) theftTurns = EnemySymbol.MACHINE_THEFT_TURNS;
         phase = reached;

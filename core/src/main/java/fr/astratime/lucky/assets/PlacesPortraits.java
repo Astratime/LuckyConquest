@@ -552,41 +552,80 @@ final class PlacesPortraits {
     }
 
     /**
-     * Bandit manchot : une machine à sous rouillée, un œil dans chaque fenêtre
-     * et un seul bras, le levier. Le Jackpot vivant est en or et affiche 777.
+     * Bandit manchot : une machine à sous rouillée, un oeil dans chaque fenêtre
+     * et un seul bras, le levier.
      */
     private static int[][] bandit(boolean jackpot) {
+        if (jackpot) return jackpotFish();
         PixelCanvas g = new PixelCanvas(W, H);
-        int body = jackpot ? GOLD : rgba("9a5a3a"), bodyDark = jackpot ? GOLD_DARK : rgba("6a3a24");
-        int rust = jackpot ? GOLD_LIGHT : rgba("c87a40"), window = rgba("f6f0e2");
+        int body = rgba("9a5a3a"), bodyDark = rgba("6a3a24");
+        int rust = rgba("c87a40"), window = rgba("f6f0e2");
         // Fronton arrondi et caisse.
         g.ellipseShaded(15f, 9f, 11f, 6f, body, bodyDark, 4f);
         g.rect(4, 9, 26, 41, body);
         g.rect(20, 9, 26, 41, bodyDark);
-        g.rect(7, 4, 23, 7, jackpot ? RED : rgba("5a3a2a"));
+        g.rect(7, 4, 23, 7, rgba("5a3a2a"));
         // Fenêtres.
         g.rect(6, 14, 24, 23, EYE);
         for (int i = 0; i < 3; i++) g.rect(7 + i * 6, 15, 11 + i * 6, 22, window);
-        if (jackpot) {
-            for (int i = 0; i < 3; i++) {
-                int x = 7 + i * 6;
-                g.rect(x, 16, x + 4, 16, RED);
-                g.line(x + 4, 17, x + 2, 21, RED);
-            }
-            for (int x = 6; x <= 24; x += 3) g.set(x, 2, GOLD_LIGHT);
-        } else {
-            for (int i = 0; i < 3; i++) { g.rect(8 + i * 6, 17, 10 + i * 6, 20, EYE); g.set(9 + i * 6, 18, RED); }
-            g.set(6, 28, rust); g.set(7, 29, rust); g.set(22, 33, rust); g.set(12, 38, rust);
-        }
+        for (int i = 0; i < 3; i++) { g.rect(8 + i * 6, 17, 10 + i * 6, 20, EYE); g.set(9 + i * 6, 18, RED); }
+        g.set(6, 28, rust); g.set(7, 29, rust); g.set(22, 33, rust); g.set(12, 38, rust);
         // Bouche-fente à pièces, plateau.
         g.rect(10, 27, 20, 29, EYE);
-        g.rect(11, 28, 19, 28, jackpot ? GOLD_LIGHT : STEEL_DARK);
+        g.rect(11, 28, 19, 28, STEEL_DARK);
         g.rect(4, 34, 26, 36, bodyDark);
-        if (jackpot) for (int x = 8; x <= 22; x += 3) g.rect(x, 33, x + 1, 33, GOLD_LIGHT);
         // Le levier, son seul bras.
         g.rect(27, 24, 29, 27, STEEL_DARK);
         g.rect(29, 8, 30, 26, STEEL);
         g.ellipse(29.5f, 6f, 2.5f, 2.5f, RED);
+        return g.outlined();
+    }
+
+    /** Colonne du levier du Jackpot vivant (ses deux pixels : x et x + 1) ; sa scène de phase 2 le reprend. */
+    private static final int JACKPOT_LEVER_X = 24;
+    /** Haut du corps du Jackpot vivant, là où son levier est planté. */
+    private static final int JACKPOT_LEVER_BASE = 14;
+
+    /**
+     * Jackpot vivant : un gros poisson d'or tourné vers la gauche. Ses trois
+     * fenêtres affichent 777 sur ses flancs, sa nageoire dorsale est une
+     * enseigne rouge à ampoules, sa bouche une fente à pièces, et le levier
+     * de machine à sous lui sort du dos.
+     */
+    private static int[][] jackpotFish() {
+        PixelCanvas g = new PixelCanvas(W, H);
+        int window = rgba("f6f0e2");
+        // Queue et nageoires.
+        g.triangle(26, 24, 32, 13, 32, 35, GOLD_DARK);
+        g.line(28, 21, 31, 16, GOLD);
+        g.line(28, 27, 31, 32, GOLD);
+        g.triangle(8, 15, 20, 15, 12, 7, RED);
+        for (int x = 10; x <= 17; x += 3) g.set(x, 13, GOLD_LIGHT);
+        g.set(12, 10, GOLD_LIGHT);
+        g.triangle(11, 33, 19, 33, 13, 40, GOLD_DARK);
+        // Le corps, ventre clair et écailles.
+        g.ellipseShaded(15f, 24f, 13f, 11f, GOLD, GOLD_DARK, 8f);
+        g.ellipse(14f, 30f, 9f, 3.5f, GOLD_LIGHT);
+        for (int x = 9; x <= 21; x += 3) g.rect(x, 31, x + 1, 31, GOLD);
+        g.set(12, 16, GOLD_DARK); g.set(16, 16, GOLD_DARK); g.set(20, 17, GOLD_DARK);
+        g.set(27, 22, GOLD_DARK); g.set(26, 26, GOLD_DARK);
+        // Les fenêtres : 777.
+        g.rect(8, 19, 26, 27, EYE);
+        for (int i = 0; i < 3; i++) {
+            int x = 9 + i * 6;
+            g.rect(x, 20, x + 4, 26, window);
+            g.rect(x, 21, x + 4, 21, RED);
+            g.line(x + 4, 22, x + 2, 26, RED);
+        }
+        // Son oeil et sa bouche-fente à pièces.
+        g.ellipse(5f, 21f, 2f, 2f, WHITE);
+        g.rect(4, 21, 5, 22, EYE);
+        g.rect(1, 25, 5, 27, EYE);
+        g.rect(2, 26, 4, 26, GOLD_LIGHT);
+        // Le levier, planté dans son dos.
+        g.rect(JACKPOT_LEVER_X - 1, JACKPOT_LEVER_BASE - 1, JACKPOT_LEVER_X + 2, JACKPOT_LEVER_BASE + 1, STEEL_DARK);
+        g.rect(JACKPOT_LEVER_X, 6, JACKPOT_LEVER_X + 1, JACKPOT_LEVER_BASE - 1, STEEL);
+        g.ellipse(JACKPOT_LEVER_X + 0.5f, 4f, 2.5f, 2.5f, RED);
         return g.outlined();
     }
 

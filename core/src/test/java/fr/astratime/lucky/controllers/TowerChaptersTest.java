@@ -199,7 +199,7 @@ class TowerChaptersTest {
         for (EnemySymbol symbol : turn.symbols()) assertTrue(enemy.getSymbols().contains(symbol), symbol.name());
         assertTrue(enemy.getSymbols().contains(EnemySymbol.MIRROR));
         assertFalse(enemy.getSymbols().contains(EnemySymbol.THORNS));
-        assertFalse(plain(EnemyKind.REINE).enterPhaseTwo(), "seul l'Éclat a deux phases");
+        assertFalse(plain(EnemyKind.REINE).enterPhaseTwo(), "pleine vie : pas encore de phase 2");
     }
 
     @Test
