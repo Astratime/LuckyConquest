@@ -108,7 +108,7 @@ class ShopCardsTest {
         context.multiplyRankBonus(RankTokenEffect.FACTOR);
         resolve(context, Symbol.GRAPE, Symbol.BELL, null);
         assertEquals(8 + 100, player.getShield(), "Raisin : 8 + 2 x 50");
-        assertEquals(8 + 140, player.getGains(), "Cloche : 8 + 2 x 70");
+        assertEquals(12 + 140, player.getGains(), "Cloche : 12 + 2 x 70");
     }
 
     @Test

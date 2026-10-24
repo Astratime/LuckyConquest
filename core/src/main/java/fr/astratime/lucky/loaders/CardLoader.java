@@ -366,7 +366,8 @@ public class CardLoader {
             case "FOUR_LEAF_CLOVER":
                 return new FourLeafCloverEffect(v.i("gainMultiplier"), v.i("gainBoost"));
             case "FORTUNE":
-                return new FortuneEffect(json.has("gainPercent") ? v.i("gainPercent") : 0, v.i("attackPercent"));
+                return new FortuneEffect(json.has("gainPercent") ? v.i("gainPercent") : 0, v.i("attackPercent"),
+                    json.has("attackCapSpins") ? v.i("attackCapSpins") : 0);
             case "TRANSFUSION":
                 return new TransfusionEffect(v.i("percent"));
             case "BLOOD_PACT":

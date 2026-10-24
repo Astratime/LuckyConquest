@@ -242,6 +242,7 @@
   "LAME FORGÉE": "FORGED BLADE",
   "Attaque +{0}% des gains": "Attack +{0}% of gains",
   "Gains +{0} % de tes gains actuels. Attaque +{1} % des gains gagnés": "Gains +{0}% of your current gains. Attack +{1}% of the gains won",
+  " (au plus {0} fois le prix du tirage)": " (at most {0} times the spin cost)",
   "GAINS x{0}": "GAINS x{0}",
   "ATTAQUE +{0}% DES GAINS": "ATTACK +{0}% OF GAINS",
   "Les symboles de gain sortent plus souvent": "Gains symbols show up more often",

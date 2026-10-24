@@ -41,12 +41,12 @@ public final class ReelShop {
             case SEVEN         -> Lang.t("Attaque 30.");
             case BAR           -> Lang.t("Attaque 10.");
             case GRAPE         -> Lang.t("Bouclier 8.");
-            case BELL          -> Lang.t("Gains 8.");
+            case BELL          -> Lang.t("Gains 12.");
             case DIAMOND       -> Lang.t("Bouclier 20.");
             case TRIPLE_CHERRY -> Lang.t("Attaque 45.");
             case TRIPLE_SEVEN  -> Lang.t("Attaque 90.");
             case GOLD_BAR      -> Lang.t("Gains 25.");
-            case WATERMELON    -> Lang.t("Gains 12.");
+            case WATERMELON    -> Lang.t("Gains 8.");
             case HORSESHOE     -> Lang.t("Gains 40.");
             case ECU           -> Lang.t("Bouclier 40.");
             case SWORD         -> Lang.t("Attaque 70. Ignore la défense.");

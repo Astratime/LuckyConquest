@@ -4,6 +4,7 @@ import fr.astratime.lucky.entities.Card;
 import fr.astratime.lucky.entities.Enemy;
 import fr.astratime.lucky.entities.LastingEffects;
 import fr.astratime.lucky.entities.Player;
+import fr.astratime.lucky.entities.SpinEconomy;
 import fr.astratime.lucky.entities.Symbol;
 import fr.astratime.lucky.entities.SymbolRegistry;
 import fr.astratime.lucky.entities.context.CombatContext;
@@ -42,7 +43,12 @@ class DungeonCardsTest {
 
     /** Joue {@code id} : ses effets à la pose, puis ceux mis en attente pour le tirage. */
     private TurnContext play(String id) {
-        PlayContext playContext = new PlayContext(player);
+        return play(id, SpinEconomy.BASE_SPIN_COST);
+    }
+
+    /** Comme {@link #play(String)}, dans un lieu où le tirage coûte {@code spinCost}. */
+    private TurnContext play(String id, int spinCost) {
+        PlayContext playContext = new PlayContext(player, spinCost);
         Card card = CARDS.apply(id);
         card.getEffects().forEach(effect -> effect.onPlay(playContext));
         if (playContext.getGains() != 0) player.addGains(playContext.getGains());
@@ -111,6 +117,13 @@ class DungeonCardsTest {
     }
 
     @Test
+    void fullPurseAttackIsCappedAtThirtySpinCosts() {
+        player.addGains(10_000_000);
+        TurnContext turn = play("bourse_garnie");
+        assertEquals(3_000, turn.getCombatContext().getAttackBonus(), "30 x 100 au plus (au lieu de 500 000)");
+    }
+
+    @Test
     void kingsFortuneAddsSevenPercentGainsThenTenPercentOfThemToAttack() {
         player.addGains(2000);
         TurnContext turn = play("fortune_du_roi");
@@ -124,6 +137,22 @@ class DungeonCardsTest {
         TurnContext turn = play(Card.upgradedId("fortune_du_roi"));
         assertEquals(2200, player.getGains(), "+10 % de 2 000");
         assertEquals(30, turn.getCombatContext().getAttackBonus(), "15 % des 200 gagnés");
+    }
+
+    @Test
+    void kingsFortuneAttackIsCappedAtThirtySpinCosts() {
+        player.addGains(10_000_000);
+        TurnContext turn = play("fortune_du_roi");
+        assertEquals(10_700_000, player.getGains(), "les gains ne sont pas limités");
+        assertEquals(3_000, turn.getCombatContext().getAttackBonus(), "Prairie : 30 x 100 au plus (au lieu de 70 000)");
+    }
+
+    @Test
+    void kingsFortuneCapFollowsThePlaceAndThePlusVersion() {
+        player.addGains(100_000_000);
+        assertEquals(150_000, play("fortune_du_roi", 5_000).getCombatContext().getAttackBonus(), "Casino : 30 x 5 000");
+        assertEquals(6_750, play(Card.upgradedId("fortune_du_roi"), 150).getCombatContext().getAttackBonus(),
+            "version + : 45 x le tirage");
     }
 
     @Test

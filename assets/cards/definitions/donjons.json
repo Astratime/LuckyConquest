@@ -27,13 +27,13 @@
     "id": "bourse_garnie",
     "name": "Bourse garnie",
     "assetPath": "cards/special/bourse_garnie.png",
-    "effects": [ { "type": "GAIN", "amount": 1500 }, { "type": "FORTUNE", "attackPercent": 5 } ]
+    "effects": [ { "type": "GAIN", "amount": 1500 }, { "type": "FORTUNE", "attackPercent": 5, "attackCapSpins": 30 } ]
   },
   {
     "id": "fortune_du_roi",
     "name": "Fortune du Roi",
     "assetPath": "cards/special/fortune_du_roi.png",
-    "effects": [ { "type": "FORTUNE", "gainPercent": 7, "gainPercentPlus": 10, "attackPercent": 10 } ]
+    "effects": [ { "type": "FORTUNE", "gainPercent": 7, "gainPercentPlus": 10, "attackPercent": 10, "attackCapSpins": 30 } ]
   },
   {
     "id": "transfusion",
