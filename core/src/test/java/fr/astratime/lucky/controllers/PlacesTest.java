@@ -140,6 +140,7 @@ class PlacesTest {
         assertEquals(EnemyKind.KRAKEN_ARMS, kraken.getPlaysPerTurn());
         kraken.takeDamage(kraken.getMaxHp() / 2);
         assertEquals(EnemyKind.KRAKEN_ARMS / 2, kraken.getPlaysPerTurn());
+        assertTrue(kraken.enterPhaseTwo()); // son seuil de phase : il passe en phase 2 à son tour
         kraken.resetDamageTaken(); // un nouveau tour : sa Garde repart
         kraken.takeDamage(kraken.getMaxHp());
         assertEquals(1, kraken.getPlaysPerTurn(), "toujours au moins un bras");

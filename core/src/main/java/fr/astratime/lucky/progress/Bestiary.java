@@ -71,6 +71,9 @@ public final class Bestiary {
     /** @return {@code true} si la cinématique d'entrée du boss ou du roi {@code boss} a été vue. */
     public static boolean bossCutsceneSeen(PlayerProfile profile, EnemyKind boss) { return profile.hasMet(boss); }
 
+    /** @return {@code true} si la cinématique de la mort du boss ou du roi {@code boss} a été vue (il a été battu). */
+    public static boolean deathSeen(PlayerProfile profile, EnemyKind boss) { return profile.hasDefeated(boss); }
+
     /** @return {@code true} si le duel des leviers a été vu (la Machine Originelle battue). */
     public static boolean duelSeen(PlayerProfile profile) { return profile.hasDefeated(EnemyKind.MACHINE_ORIGINELLE); }
 
@@ -87,15 +90,21 @@ public final class Bestiary {
     /** Chapitres qui finissent sur une cinématique (voir {@code Cutscenes.ending}). */
     public static final List<Chapter> ENDINGS = List.of(Chapter.DERNIER_TIRAGE, Chapter.LE_JACKPOT);
 
-    /** @return {seen, total} : les cinématiques déjà vues et toutes celles du jeu (le duel en compte deux). */
+    /**
+     * @return {seen, total} : les cinématiques déjà vues et toutes celles du jeu (le duel en compte deux ;
+     *         chaque boss, son entrée, une par nouvelle phase et sa mort)
+     */
     public static int[] cutscenes(PlayerProfile profile) {
         int seen = 0, total = 0;
         List<EnemyKind> bosses = new ArrayList<>();
         for (Chapter chapter : Chapter.values()) bosses.add(chapter.getBoss());
         for (Place place : Place.values()) for (Dungeon dungeon : place.getDungeons()) bosses.add(dungeon.getKing());
         for (EnemyKind boss : bosses) {
-            total++;
-            if (bossCutsceneSeen(profile, boss)) seen++;
+            int phases = boss.phaseCount() - 1;          // une cinématique par nouvelle phase (voir Cutscenes.phase)
+            boolean death = boss != EnemyKind.MACHINE_ORIGINELLE && boss != EnemyKind.ECLAT; // leurs fins existent déjà
+            total += 1 + phases + (death ? 1 : 0);       // l'entrée, les phases, la mort
+            if (bossCutsceneSeen(profile, boss)) seen += 1 + phases;
+            if (death && deathSeen(profile, boss)) seen++;
         }
         total += 2;
         if (duelSeen(profile)) seen += 2;

@@ -33,8 +33,11 @@ jobs:
 
       - uses: gradle/actions/setup-gradle@v4
 
+      # -Pobfuscate : brouille les assets (art + données) et obfusque le code du
+      # jeu dans le .jar embarqué. Voir lwjgl3/proguard-rules.pro et
+      # core/.../security/.
       - name: Fabrication
-        run: ./gradlew :lwjgl3:package${{ matrix.target }}
+        run: ./gradlew :lwjgl3:package${{ matrix.target }} -Pobfuscate
 
       - name: Renommage
         run: mv lwjgl3/build/construo/dist/*.zip "LuckyConquest-${{ matrix.file }}.zip"

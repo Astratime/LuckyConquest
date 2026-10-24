@@ -67,8 +67,11 @@ public class PlayerProfile {
     static final String KEY_TOWER_HARD = "towerHard";
     static final String KEY_CHAPTERS      = "chapters";
     static final String KEY_HARD_CHAPTERS = "hardChapters";
-    static final String KEY_ADMIN_DECK    = "adminDeck";
-    static final String KEY_ADMIN_MACHINE = "adminMachine";
+    // Clés du mode ADMIN rangées sous forme codée (fr.astratime.lucky.security.Hidden).
+    static final String KEY_ADMIN_DECK    = fr.astratime.lucky.security.Hidden.reveal(
+        new int[]{0x5a, 0x24, 0x28, 0x23, 0x21, 0x10, 0x3c, 0x3d, 0x08});
+    static final String KEY_ADMIN_MACHINE = fr.astratime.lucky.security.Hidden.reveal(
+        new int[]{0x5a, 0x24, 0x28, 0x23, 0x21, 0x19, 0x38, 0x3d, 0x0b, 0x01, 0x03, 0x17});
     static final String KEY_GUIDES        = "guides";
     static final String KEY_BINGOS        = "bingos";
     static final String KEY_STATS         = "stats";

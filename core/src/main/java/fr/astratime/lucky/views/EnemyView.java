@@ -197,6 +197,18 @@ public class EnemyView implements Disposable {
                 : Lang.f("Phase 2 : attaques +{0} %, soins -{1} %",
                     EnemyKind.KING_PHASE_ATTACK_PERCENT - 100, 100 - EnemyKind.KING_PHASE_HEAL_PERCENT));
         }
+        float[] thresholds = kind.phaseThresholds();
+        if (kind == EnemyKind.MACHINE_ORIGINELLE && current.getPhase() < 3) {
+            line(text, Lang.f("Seuils de phase : ses PV s'arrêtent à {0} % puis à {1} % de ses PV max, le surplus est perdu. "
+                + "Elle change de phase à son tour", Math.round(EnemyKind.PHASE_TWO_RATIO * 100),
+                Math.round(EnemyKind.MACHINE_LAST_RATIO * 100)));
+        } else if (thresholds.length == 2 && current.getPhase() < 3) {
+            line(text, Lang.f("Seuils de phase : ses PV s'arrêtent à {0} % puis à {1} % de ses PV max, le surplus est perdu. "
+                + "Phase suivante à son tour", Math.round(thresholds[0] * 100), Math.round(thresholds[1] * 100)));
+        } else if (thresholds.length == 1 && current.getPhase() < 2) {
+            line(text, Lang.f("Seuil de phase : ses PV s'arrêtent à {0} % de ses PV max, le surplus est perdu. "
+                + "Phase 2 à son tour", Math.round(thresholds[0] * 100)));
+        }
         if (kind.hasGuard()) {
             line(text, kind.phaseFor(EnemyKind.PHASE_TWO_RATIO - 0.01f) >= 2
                 ? Lang.f("Garde : il ne perd pas plus de {0} % de ses PV max par tour. Elle le fait passer en phase 2",

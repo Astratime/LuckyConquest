@@ -15,8 +15,13 @@ import java.util.Map;
  */
 public final class GdxProfileStorage {
 
-    private static final String LEGACY_PREFERENCES = "lucky-conquest-profile";
-    private static final String SAVE_FOLDER        = ".prefs";
+    // Chaînes rangées sous forme codée (voir fr.astratime.lucky.security.Hidden)
+    // pour ne pas exposer en clair l'agencement des sauvegardes dans le binaire.
+    private static final String LEGACY_PREFERENCES = fr.astratime.lucky.security.Hidden.reveal(
+        new int[]{0x57, 0x35, 0x26, 0x21, 0x36, 0x79, 0x3a, 0x31, 0x0d, 0x19, 0x18, 0x17, 0x04, 0x08,
+            0xac, 0xf6, 0xf9, 0xff, 0xf3, 0xf3, 0xf3, 0xc1});
+    private static final String SAVE_FOLDER        = fr.astratime.lucky.security.Hidden.reveal(
+        new int[]{0x15, 0x30, 0x37, 0x2f, 0x29, 0x27});
 
     private GdxProfileStorage() {}
 

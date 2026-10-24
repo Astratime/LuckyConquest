@@ -57,6 +57,8 @@ public class QueenCutscene extends Cutscene {
     private static final Color RED = c("e0283a"), GOLD = c("ffc93a"), GREEN = c("2fbf5a");
 
     private final TextureRegion wheel, city, throne, die, queen, lady, back;
+    /** Les cartes du jeu font 19 x 27 pixels : on les réduit pour garder la taille des anciennes (9 x 13). */
+    private static final float CARD = 13f / 27f;
     private final float[] trailX = new float[TRAIL], trailY = new float[TRAIL];
     private int   trailCount;
     private final Array<Particle> dust = new Array<>(false, 64);
@@ -77,35 +79,8 @@ public class QueenCutscene extends Cutscene {
         throne = region(copy(throneShape), false);
         die    = region(diePixmap(), false);
         queen  = kit.portrait(EnemyKind.REINE);
-        Color[] card = {c("1a0a0e"), c("f4ecdc"), c("e0283a"), c("ffc93a")};
-        lady = art("owrg", card,
-            "ooooooooo",
-            "owwwwwwwo",
-            "owrwwwwwo",
-            "owwwgwgwo",
-            "owwwgggwo",
-            "owwrrrrwo",
-            "owwrwwrwo",
-            "owwrwwrwo",
-            "owwrwwrwo",
-            "owwrrrrwo",
-            "owwwrwwwo",
-            "owwwwwrwo",
-            "ooooooooo");
-        back = art("orw", card,
-            "ooooooooo",
-            "orrrrrrro",
-            "orwrwrwro",
-            "orrwrwrro",
-            "orwrwrwro",
-            "orrwrwrro",
-            "orwrwrwro",
-            "orrwrwrro",
-            "orwrwrwro",
-            "orrwrwrro",
-            "orwrwrwro",
-            "orrrrrrro",
-            "ooooooooo");
+        lady   = gameCard("cards/light/12-H.png");      // la Dame de Coeur du jeu
+        back   = gameCard("cards/light/BACK.png");
     }
 
     @Override protected float coverStart() { return COVER_START; }
@@ -222,7 +197,7 @@ public class QueenCutscene extends Cutscene {
         float size = radius * 2f;
         batch.draw(wheel, -radius, -radius, radius, radius, size, size, 1f, 1f, wheelAngle);
         if (time >= CARD_STUCK) {                                      // la Dame de cœur, collée au centre
-            float cs = radius * 0.035f;
+            float cs = radius * 0.035f * CARD;
             batch.draw(lady, -lady.getRegionWidth() * cs / 2f, -lady.getRegionHeight() * cs / 2f,
                 lady.getRegionWidth() * cs / 2f, lady.getRegionHeight() * cs / 2f, lady.getRegionWidth() * cs,
                 lady.getRegionHeight() * cs, 1f, 1f, wheelAngle + 20f);
@@ -274,7 +249,7 @@ public class QueenCutscene extends Cutscene {
         float y = MathUtils.lerp(worldHeight() * 0.7f, wheelY(), Interpolation.pow2In.apply(k))
             + MathUtils.sin(k * MathUtils.PI * 3f) * worldHeight() * 0.06f * (1f - k);
         float flip = MathUtils.cos(k * MathUtils.PI * 5f);                // elle tournoie : face, dos, face...
-        float scale = MathUtils.lerp(14f, wheelRadius() * 0.035f, k);
+        float scale = MathUtils.lerp(14f, wheelRadius() * 0.035f, k) * CARD;
         TextureRegion face = flip >= 0f ? lady : back;
         float w = face.getRegionWidth() * scale * Math.max(0.1f, Math.abs(flip)), h = face.getRegionHeight() * scale;
         batch.setColor(Color.WHITE);
@@ -286,7 +261,7 @@ public class QueenCutscene extends Cutscene {
         if (time < CROWN) return;
         float land = Interpolation.bounceOut.apply(progress(CROWN, CROWN + 0.6f));
         float laugh = time >= LAUGH && time < DICE + 0.3f ? MathUtils.sin((time - LAUGH) * 40f) * 4f : 0f;
-        float scale = 10f;
+        float scale = 10f * CARD;
         float x = centerX(), y = MathUtils.lerp(worldHeight() + 150f, throneY() + throneScale() * 15f + 30f, land);
         glow(batch, x, y, 260f, RED, 0.3f * land);
         for (int i = -2; i <= 2; i++) {

@@ -17,14 +17,14 @@ public final class ReelShop {
     private static final Map<Symbol, Long> PRICES = new LinkedHashMap<>();
 
     static {
-        PRICES.put(Symbol.HORSESHOE, 1_500_000L);
-        PRICES.put(Symbol.ECU,       1_500_000L);
-        PRICES.put(Symbol.SWORD,     3_000_000L);
-        PRICES.put(Symbol.HEART,     3_000_000L);
-        PRICES.put(Symbol.DIE,       4_000_000L);
-        PRICES.put(Symbol.STAR,      5_000_000L);
-        PRICES.put(Symbol.BOMB,      6_000_000L);
-        PRICES.put(Symbol.CROWN,     10_000_000L);
+        PRICES.put(Symbol.HORSESHOE, 3_000_000L);
+        PRICES.put(Symbol.ECU,       3_000_000L);
+        PRICES.put(Symbol.SWORD,     6_000_000L);
+        PRICES.put(Symbol.HEART,     6_000_000L);
+        PRICES.put(Symbol.DIE,       8_000_000L);
+        PRICES.put(Symbol.STAR,      10_000_000L);
+        PRICES.put(Symbol.BOMB,      12_000_000L);
+        PRICES.put(Symbol.CROWN,     20_000_000L);
     }
 
     /** @return les rouleaux en vente et leur prix, dans l'ordre d'affichage. */

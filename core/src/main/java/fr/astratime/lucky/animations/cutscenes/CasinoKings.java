@@ -49,6 +49,8 @@ public class CasinoKings extends KingEntrance {
 
     private final BitmapFont font;
     private final TextureRegion glass, note, machine, shark, coin, disc, ghost, safe;
+    /** Les cartes du jeu : As de Coeur, As de Pique et le Joker. */
+    private final TextureRegion aceHeart, aceSpade, joker;
     /** Le centre et l'angle de la carte au bout de chaque bras, pour l'éventail. */
     private final float[] cardX = new float[ARM_COUNT], cardY = new float[ARM_COUNT], cardA = new float[ARM_COUNT];
     private final Array<Particle> bubbles = new Array<>(false, 128);
@@ -106,6 +108,9 @@ public class CasinoKings extends KingEntrance {
         circle.setColor(Color.WHITE);
         circle.fillCircle(8, 8, 7);
         disc = region(circle, false);
+        aceHeart = gameCard("cards/light/1-H.png");
+        aceSpade = gameCard("cards/light/1-P.png");
+        joker    = gameCard("cards/special_classic/blanc/joker.png");
         ghost = art("o", new Color[] {Color.WHITE},
             "..oooo..",
             ".oooooo.",
@@ -196,7 +201,7 @@ public class CasinoKings extends KingEntrance {
                 if (at(SPIT)) {                                  // la machine te crache des pièces dessus
                     rumble(0.3f, 9f);
                     for (int i = 0; i < 40; i++) {
-                        Particle piece = particle(cx(), kingY() + 22f * KING_SCALE, 360f * random.nextFloat(),
+                        Particle piece = particle(cx() - 14f * KING_SCALE, kingY() + 16f * KING_SCALE, 360f * random.nextFloat(),   // par sa bouche
                             600f + 900f * random.nextFloat(), 1.0f + 0.4f * random.nextFloat(), 1.5f + 2.5f * random.nextFloat());
                         piece.gravity = 600f;
                         piece.region = coin;
@@ -293,7 +298,7 @@ public class CasinoKings extends KingEntrance {
             float bx = cx() + 20f + 240f * grow + 60f * MathUtils.sin(rise * 2f);
             float by = counter - 60f + 22f * KING_SCALE + 120f * grow + rise * 140f;
             glow(batch, bx, by, size * 2.6f, FOAM, 0.25f);
-            drawCard(batch, bx, by, 15f * MathUtils.sin(time * 2f), 0.9f * grow, c("e0283a"));
+            drawCard(batch, bx, by, 15f * MathUtils.sin(time * 2f), 0.9f * grow, aceHeart);
             batch.setColor(FOAM.r, FOAM.g, FOAM.b, 0.8f);
             batch.draw(ring, bx - size, by - size, size * 2f, size * 2f);
             glow(batch, bx - size * 0.4f, by + size * 0.4f, size * 0.4f, Color.WHITE, 0.6f);
@@ -457,10 +462,8 @@ public class CasinoKings extends KingEntrance {
             if (rise > 0.6f) {                                       // la carte au bout du bras (battue après le geste)
                 float cardAngle = angle - 90f;
                 if (time < GESTURE) {
-                    batch.setColor(c("0a0808"));
-                    batch.draw(pixel, x - 34f, y - 2f, 34f, 0f, 68f, 96f, 1f, 1f, cardAngle);
-                    batch.setColor(c("f4ecdc"));
-                    batch.draw(pixel, x - 30f, y + 2f, 30f, -4f, 60f, 88f, 1f, 1f, cardAngle);
+                    batch.setColor(Color.WHITE);
+                    batch.draw(i % 2 == 0 ? aceHeart : aceSpade, x - 34f, y - 2f, 34f, 0f, 68f, 96f, 1f, 1f, cardAngle);
                 }
                 // Le logo au centre de la carte : on tourne sa position avec la carte, puis le losange sur lui-même.
                 float logoX = x - MathUtils.sinDeg(cardAngle) * 46f;
@@ -468,10 +471,6 @@ public class CasinoKings extends KingEntrance {
                 cardX[i] = logoX;
                 cardY[i] = logoY;
                 cardA[i] = cardAngle;
-                if (time < GESTURE) {
-                    batch.setColor(i % 2 == 0 ? c("e0283a") : c("0a0808"));
-                    batch.draw(pixel, logoX - 9f, logoY - 9f, 9f, 9f, 18f, 18f, 1f, 1f, cardAngle + 45f);
-                }
             }
         }
         if (time >= GESTURE) drawShuffle(batch);
@@ -498,34 +497,23 @@ public class CasinoKings extends KingEntrance {
             float fanAngle = (slot - ARM_COUNT / 2f) * 11f;
             float fx = cx() - MathUtils.sinDeg(fanAngle) * 420f, fy = fanY() - 420f + MathUtils.cosDeg(fanAngle) * 420f;
             drawCard(batch, MathUtils.lerp(sx, fx, fan), MathUtils.lerp(sy, fy, fan), MathUtils.lerp(sa, fanAngle, fan),
-                MathUtils.lerp(1f, 1.5f, fan), i % 2 == 0 ? c("e0283a") : c("0a0808"));
+                MathUtils.lerp(1f, 1.5f, fan), i % 2 == 0 ? aceHeart : aceSpade);
         }
         if (time >= JOKER) {                                           // le Joker, au centre de l'éventail
             float k = Interpolation.swingOut.apply(progress(JOKER, JOKER + 0.35f));
             glow(batch, cx(), fanY(), 500f * k, GOLD, 0.6f * pulse(6f, 0.6f));
-            drawCard(batch, cx(), MathUtils.lerp(fanY() - 200f, fanY() + 30f, k), 0f, 1.9f * k, c("8a2adf"));
-            if (k > 0.5f) {
-                font.getData().setScale(1.4f * k);
-                caption(batch, font, Lang.t("JOKER"), cx(), fanY() + 30f - 52f * k, Math.min(1f, (k - 0.5f) * 2f));
-                font.getData().setScale(1f);
-            }
+            drawCard(batch, cx(), MathUtils.lerp(fanY() - 200f, fanY() + 30f, k), 0f, 1.9f * k, joker);
         }
     }
 
     private float fanY() { return worldHeight() * 0.62f; }
 
-    /** Une carte à jouer centrée sur ({@code x}, {@code y}), tournée de {@code angle}, son logo de couleur {@code logo}. */
-    private void drawCard(Batch batch, float x, float y, float angle, float scale, Color logo) {
+    /** La carte du jeu {@code card} centrée sur ({@code x}, {@code y}), tournée de {@code angle}. */
+    private void drawCard(Batch batch, float x, float y, float angle, float scale, TextureRegion card) {
         if (scale <= 0f) return;
         float w = 68f * scale, h = 96f * scale;
-        batch.setColor(c("0a0808"));
-        batch.draw(pixel, x - w / 2f, y - h / 2f, w / 2f, h / 2f, w, h, 1f, 1f, angle);
-        batch.setColor(c("f4ecdc"));
-        batch.draw(pixel, x - w / 2f + 4f * scale, y - h / 2f + 4f * scale, w / 2f - 4f * scale, h / 2f - 4f * scale,
-            w - 8f * scale, h - 8f * scale, 1f, 1f, angle);
-        batch.setColor(logo);
-        float d = 18f * scale;
-        batch.draw(pixel, x - d / 2f, y - d / 2f, d / 2f, d / 2f, d, d, 1f, 1f, angle + 45f);
+        batch.setColor(Color.WHITE);
+        batch.draw(card, x - w / 2f, y - h / 2f, w / 2f, h / 2f, w, h, 1f, 1f, angle);
     }
 
     /** Une ellipse pleine, en lignes horizontales. */
@@ -676,7 +664,7 @@ public class CasinoKings extends KingEntrance {
             float x = width * ((i * 0.083f + 0.04f) % 1f) + 50f * MathUtils.sin(time * 1.5f + i);
             float y = height + 120f - (time * (90f + (i % 4) * 30f) + (i * 137 % 500)) ;
             drawCard(batch, x, y, 30f * MathUtils.sin(time * (1f + i * 0.1f) + i), 1f + (i % 3) * 0.3f,
-                i % 2 == 0 ? c("e0283a") : c("0a0808"));
+                i % 2 == 0 ? aceHeart : aceSpade);
         }
         fill(batch, Color.BLACK, 0.75f * Interpolation.pow2In.apply(progress(0.2f, PRELUDE)));
         float eyes = progress(1.2f, 1.5f);                                               // un éclat jaune, tout au fond
