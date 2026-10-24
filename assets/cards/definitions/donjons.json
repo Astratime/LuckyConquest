@@ -27,7 +27,7 @@
     "id": "bourse_garnie",
     "name": "Bourse garnie",
     "assetPath": "cards/special/bourse_garnie.png",
-    "effects": [ { "type": "GAIN", "amount": 1500 }, { "type": "FORTUNE", "attackPercent": 5 } ]
+    "effects": [ { "type": "GAIN", "amount": 1500 }, { "type": "FORTUNE", "attackPercent": 5, "attackCapSpins": 30 } ]
   },
   {
     "id": "fortune_du_roi",

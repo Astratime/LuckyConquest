@@ -117,6 +117,13 @@ class DungeonCardsTest {
     }
 
     @Test
+    void fullPurseAttackIsCappedAtThirtySpinCosts() {
+        player.addGains(10_000_000);
+        TurnContext turn = play("bourse_garnie");
+        assertEquals(3_000, turn.getCombatContext().getAttackBonus(), "30 x 100 au plus (au lieu de 500 000)");
+    }
+
+    @Test
     void kingsFortuneAddsSevenPercentGainsThenTenPercentOfThemToAttack() {
         player.addGains(2000);
         TurnContext turn = play("fortune_du_roi");
