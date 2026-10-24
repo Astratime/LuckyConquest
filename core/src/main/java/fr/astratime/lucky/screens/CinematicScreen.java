@@ -94,6 +94,7 @@ public class CinematicScreen extends ScreenAdapter {
     private static final float ITEM_HEIGHT  = 64f;
     private static final float ITEM_GAP     = 14f;
     private static final float PANEL_PAD    = 40f;
+    private static final float MORE_SPACE   = 50f;
     private static final float PANEL_TOP    = 210f;    // du haut de l'écran au haut des panneaux
     private static final float BOTTOM_SPACE = 130f;    // sous les panneaux : boutons
     private static final float ART_SCALE    = 4f;      // pixels du portrait
@@ -241,13 +242,14 @@ public class CinematicScreen extends ScreenAdapter {
     private void buildGroups() {
         PlayerProfile profile = luckyGame.getProfile();
         List<Entry> bosses = new ArrayList<>();
+        List<Entry> deaths = new ArrayList<>();                     // les fins des boss vont dans « Tour : fins »
         for (Chapter chapter : Chapter.values()) {
             EnemyKind boss = chapter.getBoss();
             if (!Bestiary.bossCutsceneSeen(profile, boss)) continue;
             bosses.add(new Entry(chapter.getNumber() + ". " + boss.getDisplayName(),
                 Lang.f("{0}, « {1} » : avant le combat contre le boss.", chapter.getLabel(), chapter.getTitle()),
                 enemyTextures.portrait(boss), kit -> Cutscenes.beforeBoss(kit, boss)));
-            addMoments(bosses, profile, boss);
+            addMoments(bosses, deaths, profile, boss);
         }
         addGroup(Lang.t("Tour : boss"), Lang.t("Les boss de la Tour"), bosses);
 
@@ -273,6 +275,7 @@ public class CinematicScreen extends ScreenAdapter {
                     chapter.getTitle(), chapter.getBoss().getDisplayName()),
                 enemyTextures.chapterArt(chapter), kit -> Cutscenes.ending(kit, chapter)));
         }
+        endings.addAll(deaths);
         addGroup(Lang.t("Tour : fins"), Lang.t("Le duel et les fins"), endings);
 
         for (Place place : Place.values()) {
@@ -284,7 +287,7 @@ public class CinematicScreen extends ScreenAdapter {
                     Lang.f("{0}, « {1} » : l'entrée en scène du roi, après le soldat.",
                         place.getName(), dungeon.getName()),
                     enemyTextures.portrait(king), kit -> Cutscenes.beforeBoss(kit, king)));
-                addMoments(kings, profile, king);
+                addMoments(kings, kings, profile, king);
             }
             addGroup(place.getShortName(), place.getName(), kings);
         }
@@ -300,9 +303,9 @@ public class CinematicScreen extends ScreenAdapter {
 
     /**
      * Ajoute à {@code entries} les cinématiques de phase du boss {@code boss} (vues dès
-     * qu'il a été rencontré) et celle de sa mort (vue une fois qu'il a été battu).
+     * qu'il a été rencontré), et à {@code deaths} celle de sa mort (vue une fois qu'il a été battu).
      */
-    private void addMoments(List<Entry> entries, PlayerProfile profile, EnemyKind boss) {
+    private void addMoments(List<Entry> entries, List<Entry> deaths, PlayerProfile profile, EnemyKind boss) {
         Texture portrait = enemyTextures.portrait(boss);
         float[] thresholds = boss.phaseThresholds();
         if (Bestiary.bossCutsceneSeen(profile, boss)) {
@@ -314,8 +317,8 @@ public class CinematicScreen extends ScreenAdapter {
             }
         }
         if (Cutscenes.hasDeath(boss) && Bestiary.deathSeen(profile, boss)) {
-            entries.add(new Entry(Lang.f("{0} : la fin", boss.getDisplayName()),
-                Lang.f("Le coup final : il vole en éclats. « {0} »", BossTheme.of(boss).deathLine()),
+            deaths.add(new Entry(Lang.f("{0} : la fin", boss.getDisplayName()),
+                Lang.f("Le coup final. « {0} »", BossTheme.of(boss).deathLine()),
                 portrait, kit -> Cutscenes.death(kit, boss)));
         }
     }
@@ -475,6 +478,8 @@ public class CinematicScreen extends ScreenAdapter {
         // Trop de cinématiques pour la hauteur : la liste défile avec la sélection (ou la molette).
         float itemsTop = groupTitle.getY() - 24f;
         int rows = visibleRows(itemsTop, panelBottom);
+        int shownCount = groups.isEmpty() || group < 0 ? 0 : groups.get(group).rows().size();
+        if (shownCount > rows) rows = visibleRows(itemsTop, panelBottom + MORE_SPACE); // la place du texte « au-dessus / en dessous »
         for (int g = 0; g < groups.size(); g++) {
             List<MenuOption> options = groups.get(g).rows();
             int count = options.size();
@@ -496,8 +501,13 @@ public class CinematicScreen extends ScreenAdapter {
             more.setText(above > 0 && below > 0 ? Lang.f("{0} au-dessus, {1} en dessous (molette ou flèches)", above, below)
                 : above > 0 ? Lang.f("{0} au-dessus (molette ou flèches)", above)
                 : Lang.f("{0} en dessous (molette ou flèches)", below));
+            more.setFontScale(1f);
             more.pack();
-            more.setPosition(innerX + (ITEM_WIDTH - more.getWidth()) / 2f, panelBottom + PANEL_PAD / 2f - 6f);
+            if (more.getWidth() > ITEM_WIDTH) {                       // il tient dans la colonne des cinématiques
+                more.setFontScale(ITEM_WIDTH / more.getWidth());
+                more.pack();
+            }
+            more.setPosition(innerX + (ITEM_WIDTH - more.getWidth()) / 2f, panelBottom + PANEL_PAD);
         }
 
         // À droite des cinématiques : l'image de celle sélectionnée, puis son explication.

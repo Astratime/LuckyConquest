@@ -269,14 +269,48 @@ public abstract class BossScene extends Cutscene {
         batch.draw(region, x - w / 2f, y - h / 2f, w / 2f, h / 2f, w, h, 1f, 1f, rotation);
     }
 
-    /** Ses yeux s'allument : deux lueurs {@code color} sur son visage (en part de son portrait). */
-    protected void eyes(Batch batch, float alpha, Color color, float height, float gap) {
+    /**
+     * Ses yeux s'allument : une lueur {@code color} sur chaque œil. {@code eyes} donne leurs centres en pixels
+     * du portrait ({x, y}, depuis le coin en haut à gauche), pour que la lueur tombe pile sur ses yeux.
+     */
+    protected void eyes(Batch batch, float alpha, Color color, float[]... eyes) {
         if (alpha <= 0f) return;
-        float y = bossBottom() + poseY + bossHeight() * poseScale * height, dx = bossWidth() * poseScale * gap;
-        for (int side = -1; side <= 1; side += 2) {
-            glow(batch, bossX() + poseX + side * dx, y, 70f, color, 0.9f * alpha);
-            glow(batch, bossX() + poseX + side * dx, y, 22f, WHITE, alpha);
+        float size = bossScale() * poseScale;
+        for (float[] eye : eyes) {
+            float x = portraitX(eye[0]), y = portraitY(eye[1]);
+            glow(batch, x, y, size * 6f, color, 0.9f * alpha);
+            glow(batch, x, y, size * 2.2f, WHITE, alpha);
         }
+    }
+
+    /** Une fissure en zigzag, comme un éclair, de ({@code x}, {@code y}) vers {@code angle} sur {@code length}. */
+    protected void crack(Batch batch, float x, float y, float angle, float length, long seed, Color color, float alpha, float thick) {
+        java.util.Random zig = new java.util.Random(seed);
+        int steps = 7;
+        float px = x, py = y;
+        for (int i = 1; i <= steps; i++) {
+            float along = length * i / steps, side = i == steps ? 0f : (zig.nextFloat() - 0.5f) * length * 0.35f;
+            float nx = x + MathUtils.cosDeg(angle) * along - MathUtils.sinDeg(angle) * side;
+            float ny = y + MathUtils.sinDeg(angle) * along + MathUtils.cosDeg(angle) * side;
+            line(batch, color, alpha, px, py, nx, ny, thick);
+            if (i == 3 && length > 60f) {                              // une petite branche
+                float branch = angle + (zig.nextBoolean() ? 35f : -35f);
+                line(batch, color, alpha, nx, ny, nx + MathUtils.cosDeg(branch) * length * 0.25f,
+                    ny + MathUtils.sinDeg(branch) * length * 0.25f, thick * 0.6f);
+            }
+            px = nx;
+            py = ny;
+        }
+    }
+
+    /** @return l'abscisse à l'écran du pixel {@code px} du portrait (avec son geste). */
+    protected float portraitX(float px) {
+        return bossX() + poseX + (px - boss.getRegionWidth() / 2f) * bossScale() * poseScale;
+    }
+
+    /** @return l'ordonnée à l'écran du pixel {@code py} du portrait, compté depuis le haut (avec son geste). */
+    protected float portraitY(float py) {
+        return bossBottom() + poseY + (boss.getRegionHeight() - py) * bossScale() * poseScale;
     }
 
     /** Une onde de choc qui part de ({@code x}, {@code y}) à {@code at} et s'efface en {@code length} secondes. */

@@ -116,7 +116,7 @@ final class PrairieBossScenes {
         protected void front(Batch batch) {
             float red = progress(0.3f, 1.8f);
             draw(batch, sword, swordX(), swordY(), fit(worldHeight() * 0.2f, 14), 180f, tmp.set(WHITE).lerp(RED, 0.7f * red), 1f);
-            eyes(batch, progress(CLIMAX_PHASE - 0.1f, CLIMAX_PHASE + 0.2f), RED, 0.72f, 0.1f);
+            eyes(batch, progress(CLIMAX_PHASE - 0.1f, CLIMAX_PHASE + 0.2f), RED, new float[] {14f, 13.5f}, new float[] {21f, 13.5f});
             wave(batch, CLIMAX_PHASE, 0.8f, bossX(), bossY(), RED, worldWidth() * 1.3f);
             flash(batch, RED, CLIMAX_PHASE, 0.3f, 0.45f);
         }
@@ -201,7 +201,9 @@ final class PrairieBossScenes {
         @Override
         protected void step(float delta) {
             if (time > 0.8f && time < 2.0f) {                           // la bouteille se vide
-                Particle drop = particle(bottleX() - 30f, bottleY() - 40f, 260f, 120f, 0.6f, 14f);
+                float rot = 120f * tilt();                              // l'alcool sort du goulot
+                Particle drop = particle(bottleX() - MathUtils.sinDeg(rot) * 100f, bottleY() + MathUtils.cosDeg(rot) * 100f,
+                    rot + 90f, 160f, 0.6f, 14f);
                 drop.gravity = 1400f;
                 drop.color.set(DRINK);
                 glows.add(drop);
@@ -211,6 +213,7 @@ final class PrairieBossScenes {
 
         private float bottleX() { return bossX() + bossWidth() * 0.45f; }
         private float bottleY() { return tableY() + 180f; }
+        private float tilt() { return Interpolation.pow2Out.apply(progress(0.5f, 0.9f)) * (1f - progress(2.0f, 2.3f)); }
 
         @Override
         protected void back(Batch batch) {
@@ -224,9 +227,8 @@ final class PrairieBossScenes {
             float w = worldWidth() * 0.8f;
             rect(batch, WOOD, 1f, bossX() - w / 2f, groundY() - 10f, w, 70f);
             float spill = progress(0.8f, 2.0f);                          // la flaque sur la table
-            rect(batch, DRINK, 0.8f, bossX() - 40f - 160f * spill, tableY() - 4f, 320f * spill + 40f, 8f);
-            float tilt = Interpolation.pow2Out.apply(progress(0.5f, 0.9f)) * (1f - progress(2.0f, 2.3f));
-            draw(batch, bottle, bottleX(), bottleY(), fit(210f, 10), 120f * tilt, WHITE, 1f);
+            rect(batch, DRINK, 0.8f, bottleX() - 90f - 20f - 160f * spill, tableY() - 4f, 320f * spill + 40f, 8f);
+            draw(batch, bottle, bottleX(), bottleY(), fit(210f, 10), 120f * tilt(), WHITE, 1f);
             // les pièces glissent avec le tangage
             float slide = time < CLIMAX_PHASE ? 0f : (time - CLIMAX_PHASE);
             for (int i = 0; i < 7; i++) {
@@ -353,7 +355,7 @@ final class PrairieBossScenes {
             additive(batch);
             for (int i = 0; i < 6; i++) {
                 float angle = 30f + i * 60f + (i % 2) * 17f, len = size * 0.45f * Math.min(1f, cracks * 6f - i);
-                if (len > 0f) line(batch, RED, 0.9f, x, y, x + MathUtils.cosDeg(angle) * len, y + MathUtils.sinDeg(angle) * len, 9f);
+                if (len > 0f) crack(batch, x, y, angle, len, 11L * (i + 1), RED, 0.95f, 8f);
             }
             normal(batch);
             poseTintColor.set(RED);

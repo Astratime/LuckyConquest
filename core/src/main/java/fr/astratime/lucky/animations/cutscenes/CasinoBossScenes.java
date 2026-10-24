@@ -115,13 +115,13 @@ final class CasinoBossScenes {
 
         @Override
         protected void front(Batch batch) {
-            eyes(batch, progress(CLIMAX_PHASE - 0.1f, CLIMAX_PHASE + 0.2f), PINK, 0.7f, 0.08f);
+            eyes(batch, progress(CLIMAX_PHASE - 0.1f, CLIMAX_PHASE + 0.2f), PINK, new float[] {14f, 16f}, new float[] {21f, 16f});
             wave(batch, CLIMAX_PHASE, 0.8f, bossX(), bossY(), PINK, worldWidth() * 1.3f);
             flash(batch, PINK, CLIMAX_PHASE, 0.3f, 0.4f);
         }
     }
 
-    /** Une fausse note, un verre se fend ; elle se dissout en écume et en bulles. */
+    /** Elle chante une dernière fois : le verre se brise en morceaux ; elle se dissout en écume et en bulles. */
     static final class SirenDeath extends BossScene {
         private final TextureRegion note, glass;
 
@@ -136,10 +136,19 @@ final class CasinoBossScenes {
 
         @Override
         protected void step(float delta) {
-            if (at(1.3f)) rumble(0.3f, 6f);                              // la fausse note
-            if (at(CLIMAX_DEATH)) {
+            if (at(CLIMAX_DEATH)) {                                     // sa dernière note brise le verre
                 rumble(0.4f, 7f);
                 sparks(glassX(), glassY(), 30, WHITE, 600f, 14f);
+                int w = glass.getRegionWidth(), h = glass.getRegionHeight();
+                for (int py = 0; py < h; py += 2) {
+                    for (int px = 0; px < w; px += 2) {
+                        Particle shard = place(new TextureRegion(glass, px, py, Math.min(2, w - px), Math.min(2, h - py)),
+                            glassX() + (px - w / 2f) * fit(120f, 9), glassY() + (h / 2f - py) * fit(120f, 9),
+                            (random.nextFloat() - 0.5f) * 700f, 200f + 500f * random.nextFloat(), fit(120f, 9), 1.6f);
+                        shard.gravity = 1600f;
+                        shard.spin = (random.nextFloat() - 0.5f) * 720f;
+                    }
+                }
             }
             if (time > CLIMAX_DEATH && time < 4.4f) {                   // elle se défait en écume et en bulles
                 float level = progress(CLIMAX_DEATH, 4.2f);
@@ -164,26 +173,24 @@ final class CasinoBossScenes {
             float scale = bossScale(), width = boss.getRegionWidth() * scale;
             batch.setColor(1f, 1f, 1f, 1f - 0.3f * melt);
             TextureRegion top = new TextureRegion(boss, 0, 0, boss.getRegionWidth(), keep);
-            float shake = time > 1.3f && time < 1.8f ? (random.nextFloat() - 0.5f) * 10f : 0f;
-            batch.draw(top, bossX() - width / 2f + shake, bossBottom() + (rows - keep) * scale, width, keep * scale);
+            float sing = 6f * MathUtils.sin(time * 5f) * (1f - melt);   // elle se balance en chantant
+            batch.draw(top, bossX() - width / 2f + sing, bossBottom() + (rows - keep) * scale, width, keep * scale);
         }
 
         @Override
         protected void front(Batch batch) {
-            // ses notes, justes, puis la fausse note qui part de travers
-            for (int i = 0; i < 5; i++) {
-                float k = ((time * 0.5f + i / 5f) % 1f);
-                float x = bossX() - bossWidth() * 0.6f - k * 200f, y = bossY() + k * 300f;
-                float wrong = time > 1.3f ? 1f : 0f;
-                draw(batch, note, x + wrong * (random.nextFloat() - 0.5f) * 20f, y, fit(46f, 6), wrong * 40f * MathUtils.sin(time * 30f + i),
-                    wrong > 0f ? c("8a8aa0") : WHITE, (1f - k) * (1f - progress(CLIMAX_DEATH, CLIMAX_DEATH + 0.5f)));
+            // son dernier chant : des notes de plus en plus grandes, qui filent vers le verre
+            for (int i = 0; i < 6; i++) {
+                float k = ((time * 0.6f + i / 6f) % 1f);
+                float x = MathUtils.lerp(bossX() + bossWidth() * 0.1f, glassX(), k);
+                float y = bossY() + bossHeight() * 0.15f + MathUtils.sin(k * MathUtils.PI) * 160f;
+                float grow = 1f + 0.8f * progress(0.8f, CLIMAX_DEATH);
+                draw(batch, note, x, y, fit(46f * grow, 6), 10f * MathUtils.sin(time * 6f + i), tmp.set(WHITE).lerp(c("ff7ad8"), k),
+                    (1f - k * 0.5f) * (1f - progress(CLIMAX_DEATH, CLIMAX_DEATH + 0.3f)));
             }
-            draw(batch, glass, glassX(), glassY(), fit(120f, 9), 0f, WHITE, 1f);
-            float crack = progress(1.3f, CLIMAX_DEATH);                  // le verre se fend
-            for (int i = 0; i < 4; i++) {
-                float a = -60f + i * 40f, len = 60f * Math.min(1f, crack * 4f - i);
-                if (len > 0f) line(batch, Color.BLACK, 0.9f, glassX(), glassY() + 40f, glassX() + MathUtils.cosDeg(a) * len,
-                    glassY() + 40f + MathUtils.sinDeg(a) * len, 3f);
+            if (time < CLIMAX_DEATH) {                                  // le verre vibre, puis se brise
+                float buzz = (random.nextFloat() - 0.5f) * 8f * progress(1.4f, CLIMAX_DEATH);
+                draw(batch, glass, glassX() + buzz, glassY(), fit(120f, 9), 0f, WHITE, 1f);
             }
             fill(batch, c("e0f0ff"), 0.15f * progress(CLIMAX_DEATH, CLIMAX_DEATH + 1f));
         }
@@ -197,6 +204,10 @@ final class CasinoBossScenes {
     static final class JackpotPhase extends BossScene {
         private final TextureRegion[] symbols;
         private static final Color[] BULBS = {c("ff3a5a"), c("ffd23a"), c("3aff8a"), c("3ab0ff"), c("ff7ad8")};
+        /** Le levier dans son portrait de poisson : planté en (25, 14), boule en (25, 4.5). */
+        private static final float LEVER_X = 25f, LEVER_BASE = 14f, LEVER_LENGTH = 9.5f;
+        /** Les morceaux de son portrait autour du levier : {x, y, largeur, hauteur} en pixels, depuis le haut. */
+        private static final int[][] BODY_PARTS = {{0, 0, 21, 13}, {29, 0, 5, 13}, {0, 13, 34, 29}};
 
         JackpotPhase(CutsceneKit kit) {
             super(kit, Moment.PHASE, EnemyKind.JACKPOT_VIVANT, 2);
@@ -209,11 +220,19 @@ final class CasinoBossScenes {
             if (at(0.7f)) rumble(0.2f, 6f);
             if (at(CLIMAX_PHASE)) rumble(0.8f, 14f);
             if (time > CLIMAX_PHASE && time < 3.8f && random.nextFloat() < 0.6f) {   // il crache des pièces
-                spray(coin, bossX(), bossBottom() + bossHeight() * 0.4f, 3, 30f, 150f, 1300f, coinScale(0.04f), 1600f, 1.8f);
+                spray(coin, portraitX(3f), portraitY(26f), 3, 90f, 170f, 1300f, coinScale(0.04f), 1600f, 1.8f);   // par sa bouche-fente
             }
         }
 
-        private float leverX() { return bossX() + bossWidth() * 0.62f; }
+        /** Son portrait sans le levier (qui est redessiné à part, pour qu'il bouge). */
+        private void drawBody(Batch batch) {
+            float s = bossScale(), x0 = bossX() + poseX - boss.getRegionWidth() * s / 2f, y0 = bossBottom() + poseY;
+            batch.setColor(Color.WHITE);
+            for (int[] part : BODY_PARTS) {
+                batch.draw(new TextureRegion(boss, part[0], part[1], part[2], part[3]), x0 + part[0] * s,
+                    y0 + (boss.getRegionHeight() - part[1] - part[3]) * s, part[2] * s, part[3] * s);
+            }
+        }
 
         @Override
         protected void back(Batch batch) {
@@ -228,16 +247,22 @@ final class CasinoBossScenes {
             }
             poseX = (random.nextFloat() - 0.5f) * 10f * crazy;
             poseY = 6f * Math.abs(MathUtils.sin(time * 20f)) * crazy;
+            showBoss = false;
+            drawBody(batch);
         }
 
         @Override
         protected void front(Batch batch) {
             // le levier : il descend tout seul
             float pull = Interpolation.pow2In.apply(progress(0.4f, 0.7f)) * (1f - progress(1.0f, 1.4f));
-            float base = bossBottom() + bossHeight() * 0.55f, angle = 80f - 150f * pull;
-            float tx = leverX() + 30f + MathUtils.cosDeg(angle) * 160f, ty = base + MathUtils.sinDeg(angle) * 160f;
-            line(batch, c("c8c8d0"), 1f, leverX() + 30f, base, tx, ty, 12f);
-            glow(batch, tx, ty, 70f, c("ff3a5a"), 1f);
+            float px = portraitX(LEVER_X), py = portraitY(LEVER_BASE), angle = 90f - 150f * pull;
+            float length = LEVER_LENGTH * bossScale(), ball = 5f * bossScale();
+            float tx = px + MathUtils.cosDeg(angle) * length, ty = py + MathUtils.sinDeg(angle) * length;
+            line(batch, c("1a1018"), 1f, px, py, tx, ty, 2.8f * bossScale());
+            line(batch, c("b8c0cc"), 1f, px, py, tx, ty, 2f * bossScale());
+            rect(batch, c("1a1018"), 1f, tx - ball / 2f - bossScale(), ty - ball / 2f - bossScale(), ball + 2f * bossScale(), ball + 2f * bossScale());
+            rect(batch, c("d8202c"), 1f, tx - ball / 2f, ty - ball / 2f, ball, ball);
+            glow(batch, tx, ty, 70f, c("ff3a5a"), 0.8f);
             // trois rouleaux au-dessus de lui, qui tournent de plus en plus vite
             float w = worldHeight() * 0.12f, y = worldHeight() * 0.74f;
             float speed = MathUtils.lerp(2f, 30f, progress(0.7f, CLIMAX_PHASE));
@@ -375,7 +400,7 @@ final class CasinoBossScenes {
         protected void front(Batch batch) {
             float[] f = finAt();
             if (MathUtils.sinDeg(angle) <= 0f) drawFin(batch, f);
-            eyes(batch, progress(CLIMAX_PHASE - 0.1f, CLIMAX_PHASE + 0.2f), RED, 0.68f, 0.1f);
+            eyes(batch, progress(CLIMAX_PHASE - 0.1f, CLIMAX_PHASE + 0.2f), RED, new float[] {11.5f, 14f}, new float[] {23.5f, 14f});
             flash(batch, RED, CLIMAX_PHASE, 0.3f, 0.45f);
         }
     }
@@ -459,7 +484,7 @@ final class CasinoBossScenes {
                 batch.setColor(INK.r, INK.g, INK.b, 0.7f * ink);
                 batch.draw(soft, x - 400f, y - 400f, 800f, 800f);
             }
-            eyes(batch, progress(1.2f, 1.6f), PURPLE, 0.7f, 0.1f);
+            eyes(batch, progress(1.2f, 1.6f), PURPLE, new float[] {14f, 21f}, new float[] {22f, 21f});
             // les bras surgissent de l'encre, des bords vers lui
             for (int i = 0; i < EDGES.length; i++) {
                 float out = Interpolation.pow2Out.apply(progress(1.4f + i * 0.08f, CLIMAX_PHASE + i * 0.04f));

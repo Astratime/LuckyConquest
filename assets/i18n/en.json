@@ -1765,7 +1765,7 @@
   "{0} : PHASE {1}": "{0}: PHASE {1}",
   "{0} : phase {1}": "{0}: phase {1}",
   "{0} : la fin": "{0}: the end",
-  "Le coup final : il vole en éclats. « {0} »": "The final blow: it shatters. \"{0}\"",
+  "Le coup final. « {0} »": "The final blow. \"{0}\"",
   "À {0} % de ses PV, phase {1} : « {2} »": "At {0} % HP, phase {1}: \"{2}\"",
   "{0} au-dessus, {1} en dessous (molette ou flèches)": "{0} above, {1} below (wheel or arrows)",
   "{0} au-dessus (molette ou flèches)": "{0} above (wheel or arrows)",

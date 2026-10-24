@@ -462,7 +462,7 @@ final class MinesBossScenes {
 
         @Override
         protected void front(Batch batch) {
-            float x = bossX(), y = bossBottom() + bossHeight() * 0.5f;
+            float x = portraitX(17f), y = portraitY(33.5f);                // au centre de son cœur doré
             glow(batch, x, y, 260f * (1f + 0.3f * beat), RED, 0.5f + 0.4f * beat);
             draw(batch, heart, x, y, fit(70f * (1f + 0.15f * beat), 10), 0f, WHITE, 0.9f * (1f - progress(1.6f, CLIMAX_PHASE)));
             for (int i = 0; i < PLATES.length; i++) {                   // les plaques de cristal
@@ -534,7 +534,7 @@ final class MinesBossScenes {
         protected void front(Batch batch) {
             float beat = beat();
             if (time < CLIMAX_DEATH) {
-                float x = bossX(), y = bossBottom() + bossHeight() * 0.5f;
+                float x = portraitX(17f), y = portraitY(33.5f);                // au centre de son cœur doré
                 glow(batch, x, y, 240f * (1f + 0.3f * beat), RED, 0.2f + 0.5f * beat);
                 draw(batch, heart, x, y, fit(70f * (1f + 0.15f * beat), 10), 0f, tmp.set(WHITE).lerp(STONE, progress(0.3f, 2.2f)), 0.9f);
             } else {                                                    // il se fend avec la montagne : ses deux moitiés s'écartent

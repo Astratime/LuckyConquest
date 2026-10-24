@@ -88,7 +88,7 @@ class BestiaryTest {
         for (Place place : Place.values()) {
             for (var dungeon : place.getDungeons()) bosses += dungeon.getKing().phaseCount() + 1;
         }
-        bosses -= 1; // la Machine Originelle n'a pas de cinématique de mort : le duel et « Le Jackpot » la remplacent
+        bosses -= 2; // la Machine Originelle et l'Éclat Originel n'ont pas de cinématique de mort : leurs fins existent déjà
         assertEquals(bosses + 2 + Bestiary.ENDINGS.size() + 1, none[1]);
 
         profile.meet(Chapter.GENESE.getBoss());

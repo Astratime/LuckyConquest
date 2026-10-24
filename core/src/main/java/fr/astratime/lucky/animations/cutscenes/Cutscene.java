@@ -545,6 +545,22 @@ public abstract class Cutscene extends Actor implements Disposable {
         return region(pixmap, false);
     }
 
+    /**
+     * @return la carte du jeu {@code path} (par exemple {@code cards/light/1-C.png}), ramenée à sa grille de
+     *         19 x 27 pixels : la même carte que dans la main du joueur, à agrandir comme le reste du pixel art.
+     */
+    protected TextureRegion gameCard(String path) {
+        Pixmap full = new Pixmap(com.badlogic.gdx.Gdx.files.internal(path));
+        int cols = 19, rows = 27, cell = full.getWidth() / cols;
+        Pixmap grid = new Pixmap(cols, rows, Pixmap.Format.RGBA8888);
+        grid.setBlending(Pixmap.Blending.None);
+        for (int y = 0; y < rows; y++) {
+            for (int x = 0; x < cols; x++) grid.drawPixel(x, y, full.getPixel(x * cell + cell / 2, y * cell + cell / 2));
+        }
+        full.dispose();
+        return region(grid, false);
+    }
+
     /** @return l'image {@code path} des ressources du jeu, libérée avec la scène. */
     protected TextureRegion load(String path) {
         Texture texture = new Texture(com.badlogic.gdx.Gdx.files.internal(path));

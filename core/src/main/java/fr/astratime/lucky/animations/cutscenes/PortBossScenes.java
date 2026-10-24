@@ -129,7 +129,7 @@ final class PortBossScenes {
                 float y = groundY() - 10f + (r * 53 % 9) * 12f + Math.abs(MathUtils.sin(time * 18f + r)) * 8f;
                 stretch(batch, rat, x, y, fit(54f, 11) * side, fit(54f, 11), 0f, WHITE, 1f);
             }
-            eyes(batch, progress(CLIMAX_PHASE - 0.1f, CLIMAX_PHASE + 0.2f), c("ff2a3a"), 0.7f, 0.08f);
+            eyes(batch, progress(CLIMAX_PHASE - 0.1f, CLIMAX_PHASE + 0.2f), c("ff2a3a"), new float[] {14f, 18f}, new float[] {21f, 18f});
             flash(batch, c("e0283a"), CLIMAX_PHASE, 0.3f, 0.35f);
         }
     }
@@ -497,10 +497,10 @@ final class PortBossScenes {
             }
             fill(batch, c("1a1a22"), 0.75f * progress(1.4f, CLIMAX_PHASE));
             if (k > 0f) {
-                float x = bossX() + bossWidth() * 0.08f, y = bossBottom() + bossHeight() * 0.72f;
+                float x = portraitX(21f), y = portraitY(16f);                 // son œil, à côté du bandeau
                 float pulse = 0.8f + 0.2f * MathUtils.sin(time * 6f);
-                glow(batch, x, y, 260f * k * pulse, EYE, 0.8f);
-                glow(batch, x, y, 50f * k, WHITE, 1f);
+                glow(batch, x, y, bossScale() * 14f * k * pulse, EYE, 0.8f);
+                glow(batch, x, y, bossScale() * 2.5f * k, WHITE, 1f);
             }
             flash(batch, FIRE, 0.6f, 0.15f, 0.3f);
         }

@@ -40,7 +40,8 @@ public final class Cutscenes {
 
     /**
      * @return la cinématique de la mort du boss ou du roi {@code boss} ({@code null} si ce n'est pas un boss,
-     *         ou pour la Machine Originelle : sa fin est déjà le duel des leviers puis « Le Jackpot »)
+     *         ou pour la Machine Originelle et l'Éclat Originel : leurs fins existent déjà, le duel
+     *         des leviers puis « Le Jackpot » pour l'une, la fin du chapitre « Dernier tirage » pour l'autre)
      */
     public static Cutscene death(CutsceneKit kit, EnemyKind boss) {
         return hasDeath(boss) ? BossScenes.death(kit, boss) : null;
@@ -48,7 +49,7 @@ public final class Cutscenes {
 
     /** @return {@code true} si le boss {@code boss} a une cinématique de mort (voir {@link #death}). */
     public static boolean hasDeath(EnemyKind boss) {
-        return boss.isBoss() && boss != EnemyKind.MACHINE_ORIGINELLE;
+        return boss.isBoss() && boss != EnemyKind.MACHINE_ORIGINELLE && boss != EnemyKind.ECLAT; // leurs fins existent déjà
     }
 
     /** @return la cinématique de fin du chapitre {@code chapter}, quand il clôt l'histoire ({@code null} sinon). */
