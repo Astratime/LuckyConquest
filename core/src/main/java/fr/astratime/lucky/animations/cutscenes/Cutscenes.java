@@ -34,7 +34,7 @@ public final class Cutscenes {
         return switch (boss) {
             case COMETE -> new CometPhaseCutscene(kit);
             case MACHINE_ORIGINELLE -> new MachinePhaseCutscene(kit, phase);
-            default -> BossMomentCutscene.phase(kit, boss, phase);
+            default -> BossScenes.phase(kit, boss, phase);
         };
     }
 
@@ -43,7 +43,7 @@ public final class Cutscenes {
      *         ou pour la Machine Originelle : sa fin est déjà le duel des leviers puis « Le Jackpot »)
      */
     public static Cutscene death(CutsceneKit kit, EnemyKind boss) {
-        return hasDeath(boss) ? BossMomentCutscene.death(kit, boss) : null;
+        return hasDeath(boss) ? BossScenes.death(kit, boss) : null;
     }
 
     /** @return {@code true} si le boss {@code boss} a une cinématique de mort (voir {@link #death}). */
