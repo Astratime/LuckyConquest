@@ -163,7 +163,7 @@ public class ChestOverlay implements Disposable {
         copiesText.setText(reward.newCopy()
             ? Lang.f("NOUVELLE CARTE ! {0}/{1} EXEMPLAIRES", reward.copies(), PlayerProfile.MAX_COPIES)
             : Lang.f("DÉJÀ {0} EXEMPLAIRES : {1} PIÈCES EN PLUS",
-                PlayerProfile.MAX_COPIES, PlayerProfile.formatCoins(PlayerProfile.duplicateCoins(Place.of(dungeon).getSpinCost()))));
+                PlayerProfile.MAX_COPIES, PlayerProfile.formatCoins(Place.of(dungeon).getDuplicateCoins())));
         coinsText.setText(Lang.f("PIÈCES +{0}", PlayerProfile.formatCoins(reward.coins())));
         reelText.setText(earnedReel == null ? ""
             : Lang.f("NOUVEAU ROULEAU : {0} ! (TABLE DU CROUPIER)", earnedReel.getDisplayName()));

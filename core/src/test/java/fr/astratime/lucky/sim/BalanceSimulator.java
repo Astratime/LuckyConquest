@@ -360,7 +360,7 @@ public final class BalanceSimulator {
         GameController game = controller(rank == null ? RankBonus.NONE : rank.getBonus(), gear);
         game.setPlaceRule(place.getRule());
         List<Long> coins = new ArrayList<>();
-        long chest = PlayerProfile.chestCoins(place.getSpinCost());
+        long chest = place.getChestCoins();
         double winTotal = 0, lossTotal = 0;
         int[] turns = {0};
         List<Run> played = new ArrayList<>();
@@ -376,7 +376,7 @@ public final class BalanceSimulator {
             }
             played.add(new Run(won, game.getGameState().getPlayer().getGains(), turns[0] - before, won ? 1 : effort));
             long reward = PlayerProfile.combatReward(won, true, game.getGameState().getPlayer().getGains(),
-                place.getSpinCost(), effort);
+                place, effort);
             if (!won) {
                 lossTotal += reward;
                 continue;
@@ -583,13 +583,13 @@ public final class BalanceSimulator {
         List<Rank> ranks = allRanks();
         out.append("## 6. Pièces moyennes d'une descente, par rang\n\n")
             .append("Deck de départ, sans échoppe. Une descente = le soldat puis le roi. Victoire : gains du combat + coffre ")
-            .append("(").append(PlayerProfile.CHEST_SPINS).append(" coûts de tirage du lieu, sans la carte en double ni ")
+            .append("(Prairie 500, Port 1 500, Mines 4 500, Casino 13 500 coûts de tirage, sans la carte en double ni ")
             .append("Carte au trésor). Défaite : ").append(PlayerProfile.DEFEAT_KEEP_PERCENT).append(" % des gains au ")
             .append("moment de la défaite. Moyenne sur toutes les descentes, défaites comprises.\n\n")
             .append("Coffres : ");
         List<String> chests = new ArrayList<>();
         for (Place place : Place.values()) {
-            chests.add(place.getShortName() + " " + PlayerProfile.formatCoins(PlayerProfile.chestCoins(place.getSpinCost())));
+            chests.add(place.getShortName() + " " + PlayerProfile.formatCoins(place.getChestCoins()));
         }
         out.append(String.join(", ", chests)).append(".\n\n");
 
@@ -701,18 +701,36 @@ public final class BalanceSimulator {
     // 7. Règles de pièces comparées
     // -------------------------------------------------------------------------
 
-    /** Une règle de pièces : ce que rapporte une descente {@code run} dans un lieu dont le coffre vaut {@code chest}. */
-    record Policy(String name, String text, java.util.function.BiFunction<Run, Long, Double> coins) {}
+    /** Une règle de pièces : ce que rapporte une descente {@code run} dans le lieu {@code place}. */
+    record Policy(String name, String text, java.util.function.BiFunction<Run, Place, Double> coins) {}
+
+    /**
+     * @param chestSpins coût du coffre de chaque lieu, en coûts de tirage (dans l'ordre de {@link Place})
+     * @return la règle actuelle (gains + coffre ; défaite : 20 % des gains, au plus 500 tirages, x la part faite)
+     *         avec ces coffres
+     */
+    static Policy withChests(String name, int... chestSpins) {
+        double keep = PlayerProfile.DEFEAT_KEEP_PERCENT / 100.0;
+        StringBuilder text = new StringBuilder("coffres de ");
+        for (int i = 0; i < chestSpins.length; i++) {
+            text.append(i == 0 ? "" : " / ").append(chestSpins[i]);
+        }
+        text.append(" coûts de tirage (Prairie / Port / Mines / Casino)");
+        return new Policy(name, text.toString(), (run, place) -> {
+            double chest = (double) chestSpins[place.ordinal()] * place.getSpinCost();
+            double gains = Math.max(0, run.gains());
+            return run.won() ? gains + chest : Math.min(gains * keep, place.getDefeatCap()) * run.effort();
+        });
+    }
 
     static List<Policy> policies() {
-        double keep = PlayerProfile.DEFEAT_KEEP_PERCENT / 100.0;
+        int base = Place.PRAIRIE.getChestSpins();
+        int[] now = new int[Place.values().length];
+        for (Place place : Place.values()) now[place.ordinal()] = place.getChestSpins();
         return List.of(
-            new Policy("Sans l'effort", "victoire : gains + coffre ; défaite : 20 % des gains, au plus le coffre",
-                (run, chest) -> run.won() ? Math.max(0, run.gains()) + chest
-                    : Math.min(Math.max(0, run.gains()) * keep, chest)),
-            new Policy("Actuelle", "comme « Sans l'effort », la part gardée en défaite x la part du donjon faite",
-                (run, chest) -> run.won() ? Math.max(0, run.gains()) + chest
-                    : Math.min(Math.max(0, run.gains()) * keep, chest) * run.effort()));
+            withChests("Coffres égaux", base, base, base, base),
+            withChests("Coffres x1/x2/x4/x8", base, base * 2, base * 4, base * 8),
+            withChests("Actuelle", now));
     }
 
     /** Meilleur donjon pour un rang et une règle : pièces par tour. */
@@ -721,7 +739,6 @@ public final class BalanceSimulator {
     private Best best(Policy policy, Rank rank) {
         Best best = new Best("-", 0, 0);
         for (Place place : Place.values()) {
-            long chest = PlayerProfile.chestCoins(place.getSpinCost());
             for (Dungeon dungeon : place.getDungeons()) {
                 DungeonStats stats = dungeon(dungeon, place, rank, Gear.STARTER, sizes.dungeonRuns(), SEED);
                 List<Run> runs = runCache.get(dungeon.name() + '/' + rank + '/' + Gear.STARTER.name() + '/'
@@ -729,7 +746,7 @@ public final class BalanceSimulator {
                 double coins = 0;
                 int turns = 0;
                 for (Run run : runs) {
-                    coins += policy.coins().apply(run, chest);
+                    coins += policy.coins().apply(run, place);
                     turns += run.turns();
                 }
                 double perTurn = turns == 0 ? 0 : coins / turns;

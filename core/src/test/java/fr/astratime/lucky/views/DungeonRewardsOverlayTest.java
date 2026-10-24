@@ -18,7 +18,7 @@ class DungeonRewardsOverlayTest {
         assertTrue(prairie.contains("Défaite : tu gardes 20 % de tes gains, en pièces (au plus 50 000), selon la part du donjon faite."), prairie.toString());
 
         List<String> casino = DungeonRewardsOverlay.coinLines(Place.CASINO, false);
-        assertTrue(casino.contains("Coffre : 2 500 000 pièces (500 tirages à 5 000)."), casino.toString());
+        assertTrue(casino.contains("Coffre : 67 500 000 pièces (13 500 tirages à 5 000)."), casino.toString());
 
         List<String> mines = DungeonRewardsOverlay.coinLines(Place.MINES, false);
         assertEquals(prairie.size() + 1, mines.size(), "le Rouleau de la Mine en plus");

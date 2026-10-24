@@ -17,22 +17,22 @@ public enum Place {
     PRAIRIE("La prairie", "La prairie",
         "L'herbe est haute. Le vent est doux. Quatre donjons dorment sous les collines. "
             + "Chacun garde un coffre au trésor.",
-        PlaceRule.NONE, 0, 0, 0, 100, List.of(Dungeon.PIQUE, Dungeon.TREFLE, Dungeon.COEUR, Dungeon.CARREAU)),
+        PlaceRule.NONE, 0, 0, 0, 100, 500, List.of(Dungeon.PIQUE, Dungeon.TREFLE, Dungeon.COEUR, Dungeon.CARREAU)),
 
     PORT("Le Port des Contrebandiers", "Le Port",
         "Les bateaux n'apportent plus d'épices. Ils apportent des cartes truquées. Sur les quais, tout s'achète. "
             + "Même la chance.",
-        PlaceRule.SCORBUT, 50, 1_000, 10, 500, List.of(Dungeon.CALE, Dungeon.TAVERNE, Dungeon.PHARE, Dungeon.GALION)),
+        PlaceRule.SCORBUT, 50, 1_000, 10, 500, 1_500, List.of(Dungeon.CALE, Dungeon.TAVERNE, Dungeon.PHARE, Dungeon.GALION)),
 
     MINES("Les Mines d'Or", "Les Mines",
         "Sous la montagne, l'or de la comète coule encore. Les mineurs creusent sans fin. Ils ont oublié la lumière. "
             + "Pas leur cupidité.",
-        PlaceRule.GRISOU, 150, 10_000, 20, 2_000, List.of(Dungeon.FILON, Dungeon.PUITS, Dungeon.FORGE, Dungeon.GOUFFRE)),
+        PlaceRule.GRISOU, 150, 10_000, 20, 2_000, 4_500, List.of(Dungeon.FILON, Dungeon.PUITS, Dungeon.FORGE, Dungeon.GOUFFRE)),
 
     CASINO("Le Casino Englouti", "Le Casino",
         "Le plus grand casino du monde a sombré une nuit de jackpot. Sous l'eau, les machines tournent toujours. "
             + "Les joueurs aussi.",
-        PlaceRule.MAREE, 400, 50_000, 30, 5_000, List.of(Dungeon.BAR, Dungeon.MACHINES, Dungeon.COFFRES, Dungeon.VIP));
+        PlaceRule.MAREE, 400, 50_000, 30, 5_000, 13_500, List.of(Dungeon.BAR, Dungeon.MACHINES, Dungeon.COFFRES, Dungeon.VIP));
 
     private final String        name;
     private final String        shortName;
@@ -42,6 +42,7 @@ public enum Place {
     private final int           shieldDefense;
     private final int           healPercent;
     private final int           spinCost;
+    private final int           chestSpins;
     private final List<Dungeon> dungeons;
 
     /**
@@ -49,9 +50,10 @@ public enum Place {
      * @param shieldDefense défense de base d'un Bouclier de ses ennemis (0 : celle de base)
      * @param healPercent   soin de base d'une Potion de ses ennemis, en % de leurs PV max (0 : celui de base)
      * @param spinCost      coût d'un tirage dans ses combats, en gains
+     * @param chestSpins    pièces du coffre de ses donjons, en coûts de tirage (x3 d'un lieu au suivant)
      */
     Place(String name, String shortName, String description, PlaceRule rule,
-          int swordDamage, int shieldDefense, int healPercent, int spinCost, List<Dungeon> dungeons) {
+          int swordDamage, int shieldDefense, int healPercent, int spinCost, int chestSpins, List<Dungeon> dungeons) {
         this.name          = name;
         this.shortName     = shortName;
         this.description   = description;
@@ -60,6 +62,7 @@ public enum Place {
         this.shieldDefense = shieldDefense;
         this.healPercent   = healPercent;
         this.spinCost      = spinCost;
+        this.chestSpins    = chestSpins;
         this.dungeons      = dungeons;
     }
 
@@ -71,6 +74,21 @@ public enum Place {
     public int getHealPercent() { return healPercent; }
     /** @return le coût d'un tirage dans ses combats, en gains (voir {@link fr.astratime.lucky.entities.SpinEconomy}). */
     public int getSpinCost() { return spinCost; }
+
+    /** @return les pièces du coffre de ses donjons, en coûts de tirage (Prairie 500, Port 1 500, Mines 4 500, Casino 13 500). */
+    public int getChestSpins() { return chestSpins; }
+
+    /** @return les pièces d'un coffre de ses donjons (Prairie 50 000 … Casino 67 500 000). */
+    public long getChestCoins() { return (long) chestSpins * spinCost; }
+
+    /** Part gardée après une défaite, au plus : 500 coûts de tirage (Prairie 50 000 … Casino 2 500 000). */
+    public static final int DEFEAT_CAP_SPINS = 500;
+
+    /** @return les pièces gardées au plus après une défaite dans un de ses donjons. */
+    public long getDefeatCap() { return (long) DEFEAT_CAP_SPINS * spinCost; }
+
+    /** @return les pièces en plus d'un coffre dont la carte est déjà au maximum d'exemplaires : la moitié du coffre. */
+    public long getDuplicateCoins() { return getChestCoins() / 2; }
 
     /** @return le lieu où l'on combat {@code kind} (soldat ou roi d'un de ses donjons), ou {@code null}. */
     public static Place of(EnemyKind kind) {

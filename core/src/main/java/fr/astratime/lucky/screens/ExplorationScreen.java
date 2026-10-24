@@ -354,7 +354,7 @@ public class ExplorationScreen extends ScreenAdapter {
         text.append('\n').append(Lang.f("Combat 2 : {0} ({1} PV)", dungeon.getKing().getDisplayName(),
             PlayerProfile.formatCoins(dungeon.getKing().getMaxHp())));
         text.append("\n\n").append(Lang.f("Coffre : {0} pièces + 1 carte",
-            PlayerProfile.formatCoins(PlayerProfile.chestCoins(place.getSpinCost()))));
+            PlayerProfile.formatCoins(place.getChestCoins())));
         for (Dungeon.Loot loot : dungeon.getLoot()) {
             text.append('\n').append(Lang.f("{0} {1} %", cardNames.get(loot.cardId()), loot.percent()));
         }

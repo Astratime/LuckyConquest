@@ -1528,7 +1528,7 @@ public class GameScreen extends ScreenAdapter {
         DungeonRun dungeonRun = (DungeonRun) run;
         String cardId = dungeonRun.getDungeon().rollLoot(new java.util.Random());
         PlayerProfile.ChestReward reward = luckyGame.getProfile().openChest(cardId,
-            Place.of(dungeonRun.getDungeon()).getSpinCost());
+            Place.of(dungeonRun.getDungeon()));
         chestOverlay.getActor().toFront();
         TextButton next = left > 1
             ? buttons.createAction(Lang.t("Coffre suivant"), sounds.buttonClick, () -> openChest(left - 1))
@@ -1704,7 +1704,7 @@ public class GameScreen extends ScreenAdapter {
         if (!isDungeon()) return 0; // seule l'Exploration rapporte des pièces (ni Entraînement, ni Tour)
         return PlayerProfile.combatReward(victory, run.isBossStage(),
             gameController.getGameState().getPlayer().getGains(),
-            Place.of(((DungeonRun) run).getDungeon()).getSpinCost(),
+            Place.of(((DungeonRun) run).getDungeon()),
             PlayerProfile.dungeonProgress(run.isBossStage(), gameController.getGameState().getEnemy().getHpRatio()));
     }
 

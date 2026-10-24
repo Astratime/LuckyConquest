@@ -137,13 +137,13 @@ public class DungeonRewardsOverlay implements Disposable {
         List<String> lines = new ArrayList<>();
         if (admin) lines.add(Lang.t("Mode ADMIN : ses combats ne rapportent rien."));
         lines.add(Lang.t("Roi battu : tes gains du combat (cadre Gains) deviennent des pièces."));
-        lines.add(Lang.f("Coffre : {0} pièces ({1} tirages à {2}).", PlayerProfile.formatCoins(PlayerProfile.chestCoins(cost)),
-            PlayerProfile.CHEST_SPINS, PlayerProfile.formatCoins(cost)));
+        lines.add(Lang.f("Coffre : {0} pièces ({1} tirages à {2}).", PlayerProfile.formatCoins(place.getChestCoins()),
+            PlayerProfile.formatCoins(place.getChestSpins()), PlayerProfile.formatCoins(cost)));
         lines.add(Lang.f("Carte du coffre déjà en {0} exemplaires : {1} pièces en plus.", PlayerProfile.MAX_COPIES,
-            PlayerProfile.formatCoins(PlayerProfile.duplicateCoins(cost))));
+            PlayerProfile.formatCoins(place.getDuplicateCoins())));
         lines.add(Lang.f("Défaite : tu gardes {0} % de tes gains, en pièces (au plus {1}), selon la part du "
                 + "donjon faite.",
-            PlayerProfile.DEFEAT_KEEP_PERCENT, PlayerProfile.formatCoins(PlayerProfile.chestCoins(cost))));
+            PlayerProfile.DEFEAT_KEEP_PERCENT, PlayerProfile.formatCoins(place.getDefeatCap())));
         lines.add(Lang.t("Carte au trésor jouée : un coffre de plus."));
         Symbol reel = place.getReelReward();
         if (reel != null) {

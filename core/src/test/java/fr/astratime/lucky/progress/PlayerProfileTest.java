@@ -85,7 +85,7 @@ class PlayerProfileTest {
     void noCardCanHaveMoreThanThreeCopiesInTheDeckEvenIfOwned() {
         MemoryStorage storage = new MemoryStorage();
         PlayerProfile profile = profile(storage);
-        for (int i = 0; i < 5; i++) profile.openChest("rare", 100);
+        for (int i = 0; i < 5; i++) profile.openChest("rare", Place.PRAIRIE);
 
         Map<String, Integer> deck = new LinkedHashMap<>();
         for (int i = 0; i < 16; i++) deck.put("carte_" + i, 1);
@@ -103,7 +103,7 @@ class PlayerProfileTest {
         deck.put("double", 2);
         profile.setDeck(deck);
         profile.addCoins(1234);
-        profile.openChest("guillotine", 100);
+        profile.openChest("guillotine", Place.PRAIRIE);
 
         PlayerProfile reloaded = profile(storage);
         assertEquals(deck, reloaded.getDeck());
@@ -113,22 +113,22 @@ class PlayerProfileTest {
     }
 
     @Test
-    void aChestAddsACopyAndFiveHundredSpinsOfCoinsThenHalfMoreOnceTheCardIsMaxedOut() {
+    void aChestAddsACopyAndItsPlaceCoinsThenHalfMoreOnceTheCardIsMaxedOut() {
         PlayerProfile profile = profile(new MemoryStorage());
 
         for (int copy = 1; copy <= PlayerProfile.MAX_COPIES; copy++) {
-            PlayerProfile.ChestReward reward = profile.openChest("guillotine", 100);
+            PlayerProfile.ChestReward reward = profile.openChest("guillotine", Place.PRAIRIE);
             assertTrue(reward.newCopy());
             assertEquals(copy, reward.copies());
             assertEquals(50_000, reward.coins(), "Prairie : 500 tirages à 100");
         }
-        PlayerProfile.ChestReward extra = profile.openChest("guillotine", 100);
+        PlayerProfile.ChestReward extra = profile.openChest("guillotine", Place.PRAIRIE);
         assertFalse(extra.newCopy());
         assertEquals(PlayerProfile.MAX_COPIES, profile.getOwnedCopies("guillotine"));
         assertEquals(75_000, extra.coins());
         assertEquals(3L * 50_000 + 75_000, profile.getCoins());
-        assertEquals(2_500_000L + 1_250_000L, profile.openChest("guillotine", 5_000).coins(),
-            "Casino : 500 x 5 000, plus 250 x 5 000 pour la carte en double");
+        assertEquals(67_500_000L + 33_750_000L, profile.openChest("guillotine", Place.CASINO).coins(),
+            "Casino : 13 500 x 5 000, plus la moitié pour la carte en double");
     }
 
     @Test
@@ -170,16 +170,16 @@ class PlayerProfileTest {
 
     @Test
     void combatCoinsAreTheShownGainsAfterTheKingAndAFifthOfThemAfterADefeat() {
-        assertEquals(32_000, PlayerProfile.combatReward(true, true, 32_000, 100, 1), "les gains affichés, pas plus");
-        assertEquals(0, PlayerProfile.combatReward(true, false, 32_000, 100, 1), "rien après le soldat");
-        assertEquals(6_400, PlayerProfile.combatReward(false, true, 32_000, 100, 1), "20 % après une défaite contre le roi");
-        assertEquals(6_400, PlayerProfile.combatReward(false, false, 32_000, 100, 1), "20 % après une défaite contre le soldat");
-        assertEquals(0, PlayerProfile.combatReward(false, true, -5_000, 100, 1), "rien avec des gains négatifs");
-        assertEquals(50_000, PlayerProfile.combatReward(false, true, 10_000_000, 100, 1), "au plus le coffre de la Prairie");
-        assertEquals(2_500_000, PlayerProfile.combatReward(false, true, 1e12, 5_000, 1), "au plus le coffre du Casino");
-        assertEquals(1_000_000_000_000L, PlayerProfile.combatReward(true, true, 1e12, 5_000, 1), "victoire : sans limite");
-        assertEquals(3_200, PlayerProfile.combatReward(false, true, 32_000, 100, 0.5), "la moitié du donjon faite : la moitié");
-        assertEquals(0, PlayerProfile.combatReward(false, false, 32_000, 100, 0), "mort au premier tour : rien");
+        assertEquals(32_000, PlayerProfile.combatReward(true, true, 32_000, Place.PRAIRIE, 1), "les gains affichés, pas plus");
+        assertEquals(0, PlayerProfile.combatReward(true, false, 32_000, Place.PRAIRIE, 1), "rien après le soldat");
+        assertEquals(6_400, PlayerProfile.combatReward(false, true, 32_000, Place.PRAIRIE, 1), "20 % après une défaite contre le roi");
+        assertEquals(6_400, PlayerProfile.combatReward(false, false, 32_000, Place.PRAIRIE, 1), "20 % après une défaite contre le soldat");
+        assertEquals(0, PlayerProfile.combatReward(false, true, -5_000, Place.PRAIRIE, 1), "rien avec des gains négatifs");
+        assertEquals(50_000, PlayerProfile.combatReward(false, true, 10_000_000, Place.PRAIRIE, 1), "au plus 500 tirages de la Prairie");
+        assertEquals(2_500_000, PlayerProfile.combatReward(false, true, 1e12, Place.CASINO, 1), "au plus 500 tirages du Casino");
+        assertEquals(1_000_000_000_000L, PlayerProfile.combatReward(true, true, 1e12, Place.CASINO, 1), "victoire : sans limite");
+        assertEquals(3_200, PlayerProfile.combatReward(false, true, 32_000, Place.PRAIRIE, 0.5), "la moitié du donjon faite : la moitié");
+        assertEquals(0, PlayerProfile.combatReward(false, false, 32_000, Place.PRAIRIE, 0), "mort au premier tour : rien");
         assertEquals(0.0, PlayerProfile.dungeonProgress(false, 1), 1e-9);
         assertEquals(0.25, PlayerProfile.dungeonProgress(false, 0.5), 1e-9);
         assertEquals(0.75, PlayerProfile.dungeonProgress(true, 0.5), 1e-9);
@@ -297,7 +297,7 @@ class PlayerProfileTest {
         profile.addCoins(5_000);
         assertNull(profile.clearDungeon(Place.PRAIRIE.getDungeons().get(0).name()));
         assertFalse(profile.clearChapter(Chapter.GENESE, false));
-        assertEquals(0, profile.openChest(loot, 100).coins());
+        assertEquals(0, profile.openChest(loot, Place.PRAIRIE).coins());
         assertEquals(1_000L, profile.getCoins());
 
         profile.setAdmin(false);
