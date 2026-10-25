@@ -240,7 +240,9 @@ public class GameScreen extends ScreenAdapter {
     private static final float SHOP_ICON_MARGIN = 30f;
     /** Carte achetée : posée une fois l'échoppe refermée. */
     private static final float PURCHASE_DELAY   = 0.9f;
-    /** Étape de la Tour des épreuves : en haut à gauche de la zone de jeu. */
+    /** Bouton pause : écart au cadre des gains, à gauche (il est centré en hauteur sur la barre de vie de l'ennemi). */
+    private static final float PAUSE_BUTTON_MARGIN = 30f;
+    /** Étape du donjon ou de la Tour : marge en haut à gauche (passer le tutoriel) et en bas à droite (l'étape). */
     private static final float STAGE_LABEL_MARGIN = 30f;
     /** Coffre au trésor ouvert : gerbe de confettis. */
     private static final int   CHEST_CONFETTI        = 70;
@@ -352,7 +354,7 @@ public class GameScreen extends ScreenAdapter {
     private final AspirationPanel aspirationPanel;
     private final TextButton restartButton;
     private final TextButton menuButton;
-    /** Bouton pause, en bas à droite : ouvre le même menu qu'Échap. */
+    /** Bouton pause, en haut entre le cadre des gains et la barre de vie de l'ennemi : ouvre le même menu qu'Échap. */
     private final TextButton pauseButton;
     /** Boutons de fin de combat (Recommencer, Menu principal), centrés sous l'annonce de victoire ou de défaite. */
     private final Table      endButtons = new Table();
@@ -1695,7 +1697,7 @@ public class GameScreen extends ScreenAdapter {
                 Lang.big(recap.getDamageTaken()), recap.getBingos(), recap.getCardsPlayed());
     }
 
-    /** Étape de la Tour des épreuves, en haut à gauche de la zone de jeu (rien pour un combat seul). */
+    /** Étape du donjon ou de la Tour, en bas à droite de la zone de jeu (rien pour un combat seul). */
     private void refreshStageLabel() {
         if (run == null) {
             stageLabel.setText("");
@@ -1703,13 +1705,20 @@ public class GameScreen extends ScreenAdapter {
         }
         if (run instanceof TutorialRun) {
             stageLabel.setText(run.getLabel().toUpperCase());
-            stageLabel.pack();
+            placeStageLabel();
             return;
         }
         String step = run.isBossStage() ? (isDungeon() ? Lang.t("ROI") : Lang.t("BOSS"))
             : Lang.f("COMBAT {0}/{1}", (run.getStage() + 1), run.getStageCount());
         stageLabel.setText(run.getLabel().toUpperCase() + " · " + step);
+        placeStageLabel();
+    }
+
+    /** Étape en bas à droite (à la place de l'ancien bouton pause), alignée à droite : replacée quand son texte change. */
+    private void placeStageLabel() {
         stageLabel.pack();
+        stageLabel.setPosition(playArea.getX() + playArea.getWidth() - stageLabel.getWidth() - BUTTON_MARGIN,
+            BUTTON_MARGIN + (CasinoButtons.HEIGHT - stageLabel.getHeight()) / 2f);
     }
 
     // -------------------------------------------------------------------------
@@ -1925,14 +1934,16 @@ public class GameScreen extends ScreenAdapter {
         table.layout();
         enemyView.layout();
         placePlayerShield();
-        pauseButton.setPosition(playArea.getX() + playArea.getWidth() - pauseButton.getWidth() - BUTTON_MARGIN,
-            BUTTON_MARGIN);
+        hud.layout(); // avant la pause, qui se cale sur la barre de vie de l'ennemi
+        // Pause : en haut, à droite du cadre des gains, à hauteur de la barre de vie de l'ennemi.
+        HealthBarView enemyBar = hud.getEnemyHealthBar();
+        pauseButton.setPosition(playArea.getX() + PAUSE_BUTTON_MARGIN,
+            enemyBar.getY() + (HealthBarView.HEIGHT - pauseButton.getHeight()) / 2f);
         spinControls.placeStake();
         playsLabel.pack();
         playsLabel.setPosition(playArea.getX() + BUTTON_MARGIN,
             BUTTON_MARGIN + (pauseButton.getHeight() - playsLabel.getHeight()) / 2f);
         sidePanel.layout(stage);
-        hud.layout();
         piles.layout(table.getDeckX(), table.getPilesY());
         slots.layout();
         hand.layout(false);
@@ -1940,11 +1951,7 @@ public class GameScreen extends ScreenAdapter {
             playArea.getHeight() * END_BUTTONS_HEIGHT);
         shopIcon.setPosition(playArea.getX() + playArea.getWidth() - shopIcon.getWidth() - SHOP_ICON_MARGIN,
             playArea.getHeight() - shopIcon.getHeight() - SHOP_ICON_MARGIN);
-        if (stageLabel != null) {
-            stageLabel.pack();
-            stageLabel.setPosition(playArea.getX() + STAGE_LABEL_MARGIN,
-                playArea.getHeight() - stageLabel.getHeight() - STAGE_LABEL_MARGIN);
-        }
+        if (stageLabel != null) placeStageLabel();
         if (guide != null) { // « Passer le tutoriel » sous « TUTORIEL », loin de l'échoppe
             guide.setSkipCorner(playArea.getX() + STAGE_LABEL_MARGIN,
                 playArea.getHeight() - STAGE_LABEL_MARGIN - stageLabel.getHeight() - STAGE_LABEL_MARGIN / 2f);
