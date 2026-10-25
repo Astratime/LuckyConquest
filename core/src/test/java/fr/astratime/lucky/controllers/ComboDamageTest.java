@@ -176,7 +176,7 @@ class ComboDamageTest {
     @Test
     void lePistoletRejoueLeVraiCoupSansPlafond() {
         Player player = new Player("Joueur", 100, List.of());
-        Enemy boss = new Enemy(EnemyKind.COMETE); // une Garde : il survit au premier coup
+        Enemy boss = new Enemy(EnemyKind.COMETE); // sa Garde : il survit au premier coup, arrêté à son seuil
         CombatContext context = new CombatContext(player, boss);
         context.multiplySymbolPower(1_000_000_000);
         context.addPistolShot(100);
@@ -188,8 +188,8 @@ class ComboDamageTest {
         PistolShotEvent shot = turn.getPistolEvents().stream()
             .filter(PistolShotEvent.class::isInstance).map(PistolShotEvent.class::cast).findFirst().orElseThrow();
         assertEquals(hit.rawDamage, shot.rawDamage, "le pistolet rejoue le vrai coup");
-        assertEquals(boss.getMaxHp() - (long) boss.getMaxHp() * EnemyKind.GUARD_PERCENT / 100, boss.getHp(),
-            "la Garde tient toujours : pas plus de la moitié de ses PV par tour");
+        assertEquals((long) Math.ceil(boss.getMaxHp() * (double) EnemyKind.PHASE_TWO_RATIO), boss.getHp(),
+            "la Garde tient : il s'arrête au seuil de sa phase 2");
     }
 
     @Test
