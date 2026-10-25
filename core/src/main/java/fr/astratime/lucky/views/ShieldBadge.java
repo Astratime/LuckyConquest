@@ -31,6 +31,8 @@ public class ShieldBadge extends Group {
     /** Côté de l'icône du bouclier (16 pixels x3). */
     public static final float ICON_SIZE    = 48f;
     public static final float LABEL_GAP    = 8f;
+    /** Valeur seule (voir {@link #setCompact}) : écart sous l'icône. */
+    private static final float COMPACT_GAP = 2f;
     private static final float SPLIT       = 3f;     // écart des deux moitiés d'un bouclier brisé
     private static final float SPLIT_ANGLE = 14f;
     private static final float BREAK_TIME  = 0.25f;
@@ -49,6 +51,8 @@ public class ShieldBadge extends Group {
     private int     value;
     private boolean broken;
     private boolean pierced;
+    /** Pas la place pour « Bouclier 1000 » à droite de l'icône : la valeur seule, sous l'icône. */
+    private boolean compact;
 
     /**
      * @param name      mot affiché devant la valeur (ex : "Défense")
@@ -83,6 +87,19 @@ public class ShieldBadge extends Group {
         addActor(strike);
         setValue(baseValue);
     }
+
+    /**
+     * Valeur seule, centrée sous l'icône (sans le mot), quand la place manque à droite ;
+     * sinon le mot et la valeur à droite de l'icône.
+     */
+    public void setCompact(boolean compact) {
+        if (this.compact == compact) return;
+        this.compact = compact;
+        refresh();
+    }
+
+    /** @return {@code true} si la valeur s'affiche seule, sous l'icône. */
+    public boolean isCompact() { return compact; }
 
     /** @return la valeur affichée. */
     public int getValue() { return value; }
@@ -208,19 +225,20 @@ public class ShieldBadge extends Group {
 
     /** Texte, couleur et trait de la valeur selon l'état du bouclier. */
     private void refresh() {
-        label.setText(name + " " + value);
+        label.setText(compact ? String.valueOf(value) : name + " " + value);
         Color color = pierced ? Palette.TEXT_ALERT
             : broken || value == 0 ? Palette.STEEL
             : value > baseValue ? Palette.SKY : Palette.TEXT_BODY;
         label.setColor(color);
         label.pack();
-        label.setPosition(ICON_SIZE + LABEL_GAP, (ICON_SIZE - label.getHeight()) / 2f);
+        if (compact) label.setPosition((ICON_SIZE - label.getWidth()) / 2f, -label.getHeight() - COMPACT_GAP);
+        else         label.setPosition(ICON_SIZE + LABEL_GAP, (ICON_SIZE - label.getHeight()) / 2f);
 
         strike.setVisible(pierced);
         strike.setSize(label.getWidth() + 8f, 3f);
         strike.setOrigin(strike.getWidth() / 2f, strike.getHeight() / 2f);
         strike.setRotation(STRIKE_ANGLE);
         strike.setPosition(label.getX() - 4f, label.getY() + label.getHeight() / 2f - 1.5f);
-        setSize(label.getX() + label.getWidth(), ICON_SIZE);
+        setSize(Math.max(ICON_SIZE, label.getX() + label.getWidth()), ICON_SIZE);
     }
 }

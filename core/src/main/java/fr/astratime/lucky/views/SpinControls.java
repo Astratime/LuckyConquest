@@ -26,9 +26,9 @@ public class SpinControls {
     private static final float  LEVER_HOLD        = 0.5f;
     private static final float  LEVER_GAP         = 28f;  // entre le levier et la machine du joueur
     private static final float  PILE_MAT_PAD      = 16f;  // marge du tapis de la défausse autour de la pile
-    private static final float  STAKE_BUTTON_GAP  = 24f;  // entre la Mise et le tapis de la défausse, au plus près
-    private static final float  STAKE_SHIELD_GAP  = 16f;  // entre le bouclier du joueur et la Mise, à sa droite
-    private static final String STAKE_SHIELD_ROOM = " 0000"; // la Mise laisse au bouclier la place de 4 chiffres
+    private static final float  STAKE_BUTTON_GAP  = 12f;  // entre les jetons de la Mise et le tapis de la défausse
+    private static final float  STAKE_SHIELD_GAP  = 16f;  // au moins entre le texte du bouclier et la Mise
+    private static final String STAKE_SHIELD_ROOM = "0000";  // la Mise laisse au bouclier la place de 4 chiffres
     private static final float  STAKE_LABEL_GAP   = 2f;   // entre la Mise et son palier, dessous
     private static final float  STAKE_CHIPS_GAP   = 10f;  // les jetons misés tombent sur la table, à droite de la Mise
 
@@ -121,19 +121,23 @@ public class SpinControls {
     }
 
     /**
-     * Place la Mise juste à droite du bouclier du joueur (sans jamais toucher
-     * le tapis de la défausse) : son bouton, son palier dessous, et à sa droite
-     * les jetons misés qui tombent sur la table. La place laissée au bouclier
-     * tient 4 chiffres ; au-delà, la Mise suit son texte.
+     * Place la Mise au plus à droite, juste avant le tapis de la défausse, en gardant
+     * la place de ses jetons (elle ne bouge donc pas quand on mise) : son bouton,
+     * son palier dessous, et à sa droite les jetons misés. Si « Bouclier » et sa valeur
+     * (au moins 4 chiffres) ne tiennent pas entre l'icône du bouclier et la Mise,
+     * le bouclier n'affiche que sa valeur, sous son icône.
      */
     public void placeStake() {
+        float maxX = table.getEnemyDeckX() - PILE_MAT_PAD - STAKE_BUTTON_GAP - StakeChips.CHIP_SIZE - STAKE_CHIPS_GAP
+            - stakeButton.getWidth();
+        String digits = String.valueOf(shield.getValue());
+        if (digits.length() < STAKE_SHIELD_ROOM.length()) digits = STAKE_SHIELD_ROOM;
         float room = ShieldBadge.ICON_SIZE + ShieldBadge.LABEL_GAP
-            + new GlyphLayout(shieldFont, Lang.t("Bouclier") + STAKE_SHIELD_ROOM).width;
+            + new GlyphLayout(shieldFont, Lang.t("Bouclier") + " " + digits).width;
+        shield.setCompact(shield.getX() + room + STAKE_SHIELD_GAP > maxX);
         shieldX     = shield.getX();
         shieldWidth = shield.getWidth();
-        float x = Math.min(shieldX + Math.max(room, shieldWidth) + STAKE_SHIELD_GAP,
-            table.getEnemyDeckX() - PILE_MAT_PAD - STAKE_BUTTON_GAP - StakeChips.CHIP_SIZE - STAKE_CHIPS_GAP
-                - stakeButton.getWidth());
+        float x = maxX;
         float y = table.getReelRowY() + (SlotView.CELL_HEIGHT - stakeButton.getHeight()) / 2f;
         stakeButton.setPosition(x, y);
         stakeLabel.pack();
