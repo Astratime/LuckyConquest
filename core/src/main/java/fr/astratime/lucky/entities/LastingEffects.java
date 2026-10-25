@@ -110,6 +110,12 @@ public class LastingEffects {
     /** Chapeau du Lutin : tirages restants où chaque coup rapporte des gains, et combien (% d'un coût de tirage). */
     private int hatTurns = 0;
     private int hatPercent = 0;
+    private int jokerBox = 0;      // Diable en boîte : Joker en plus jusqu'à la fin du combat
+    private int hoardTurns = 0;    // Magot du dragon : tirages restants
+    private int hoardSpins = 0;    // Magot du dragon : gains par coup, en coûts de tirage
+    private int hoardStep = 0;     // Magot du dragon : attaque en plus par coup, en %
+    private int hoardMax = 0;      // Magot du dragon : attaque en plus au plus, en %
+    private int hoardPercent = 0;  // Magot du dragon : attaque en plus gagnée, en %
     /** Rente viagère : tours restants, Créances posées et gains (en coûts de tirage) à chacun. */
     private int annuityTurns = 0;
     private int annuityClaims = 0;
@@ -123,6 +129,19 @@ public class LastingEffects {
     private final List<String> deckCards = new ArrayList<>();
 
     /** Tirages ratés d'affilée que la Martingale peut cumuler. */
+    /** Fête foraine et Désert : Jonglage (cartes), Frayeur, Tunnel, Tourniquet, Lot truqué, Jeu truqué (diviseur), Péage. */
+    private int juggles = 0;
+    private int scares = 0;
+    private int tunnels = 0;
+    private int turnstiles = 0;
+    private int riggedPrizes = 0;
+    private int riggedGame = 0;
+    private int tolls = 0;
+    /** Lettres de change : Créances posées sur le joueur. */
+    private int bills = 0;
+    /** Venins : tours restants de chacun. */
+    private final List<Integer> venoms = new ArrayList<>();
+
     public static final int MAX_MARTINGALE = 3;
 
     /** Règles que peut changer le Directeur des Jeux (Nouvelle règle). */
@@ -541,6 +560,37 @@ public class LastingEffects {
     /** @return ce que rapporte chaque coup sous le Chapeau du Lutin, en % d'un coût de tirage (0 : inactif). */
     public int getHatPercent() { return hatTurns > 0 ? hatPercent : 0; }
 
+    /** Diable en boîte : {@code amount} Joker de plus jusqu'à la fin du combat, {@code max} au plus. @return le Joker ajouté */
+    public int addJokerBox(int amount, int max) {
+        int before = jokerBox;
+        jokerBox = Math.max(jokerBox, Math.min(max, jokerBox + amount));
+        return jokerBox - before;
+    }
+    /** @return le Joker en plus du Diable en boîte, à chaque tirage du combat. */
+    public int getJokerBox() { return jokerBox; }
+
+    /**
+     * Magot du dragon : pendant {@code turns} tirages, chaque coup qui touche rapporte {@code spins}
+     * coûts de tirage et {@code step} % d'attaque ({@code max} % au plus).
+     */
+    public void addHoard(int turns, int spins, int step, int max) {
+        hoardTurns = Math.max(hoardTurns, turns);
+        hoardSpins = Math.max(hoardSpins, spins);
+        hoardStep  = Math.max(hoardStep, step);
+        hoardMax   = Math.max(hoardMax, max);
+    }
+    /** @return les tirages restants du Magot du dragon (0 : inactif). */
+    public int getHoardTurns() { return hoardTurns; }
+    /** @return les gains du Magot du dragon par coup, en coûts de tirage (0 : inactif). */
+    public int getHoardSpins() { return hoardTurns > 0 ? hoardSpins : 0; }
+    /** @return l'attaque en plus gagnée avec le Magot du dragon, en %. */
+    public int getHoardPercent() { return hoardTurns > 0 ? hoardPercent : 0; }
+    /** Magot du dragon : {@code hits} coups ont touché. @return l'attaque en plus, en % */
+    public int growHoard(int hits) {
+        hoardPercent = Math.min(hoardMax, hoardPercent + hits * hoardStep);
+        return hoardPercent;
+    }
+
     /** Rente viagère : pendant {@code turns} tours, {@code claims} Créances et {@code spins} coûts de tirage de gains. */
     public void addAnnuity(int turns, int claims, int spins) {
         annuityTurns  = Math.max(annuityTurns, turns);
@@ -591,6 +641,73 @@ public class LastingEffects {
     /** @return la chance de paire en plus de la Martingale au prochain tirage, en %. */
     public int getMartingalePair() { return martingale * martingalePair; }
 
+    /** Jonglage : {@code cards} cartes de la prochaine main repartent. */
+    public void addJuggle(int cards) { juggles += cards; }
+    public int getJuggles() { return juggles; }
+    public int takeJuggles() { int n = juggles; juggles = 0; return n; }
+
+    /** Frayeur : le prochain tirage donne moins d'attaque ({@code max} Frayeurs au plus). */
+    public void addScare(int count, int max) { scares = Math.min(max, scares + count); }
+    public int getScares() { return scares; }
+    public int takeScares() { int n = scares; scares = 0; return n; }
+
+    /** Tunnel : un rouleau du prochain tirage prend un symbole au hasard. */
+    public void addTunnel(int count) { tunnels += count; }
+    public int getTunnels() { return tunnels; }
+    public int takeTunnels() { int n = tunnels; tunnels = 0; return n; }
+
+    /** Tourniquet : le meilleur rouleau du prochain tirage est relancé. */
+    public void addTurnstile(int count) { turnstiles += count; }
+    public int getTurnstiles() { return turnstiles; }
+    public int takeTurnstiles() { int n = turnstiles; turnstiles = 0; return n; }
+
+    /** Lot truqué : les {@code draws} prochains tirages avec une Paire ne rapportent rien. */
+    public void addRiggedPrize(int draws) { riggedPrizes = Math.max(riggedPrizes, draws); }
+    public int getRiggedPrizes() { return riggedPrizes; }
+    public boolean takeRiggedPrize() {
+        if (riggedPrizes <= 0) return false;
+        riggedPrizes--;
+        return true;
+    }
+
+    /** Jeu truqué : sans Paire ni Bingo au prochain tirage, les dégâts sont divisés par {@code divisor}. */
+    public void addRiggedGame(int divisor) { riggedGame = Math.max(riggedGame, divisor); }
+    public int getRiggedGame() { return riggedGame; }
+    public int takeRiggedGame() { int n = riggedGame; riggedGame = 0; return n; }
+
+    /** Péage : le prochain tirage coûte {@code spins} tirages de plus. */
+    public void addToll(int spins) { tolls += spins; }
+    public int getTolls() { return tolls; }
+    public int takeTolls() { int n = tolls; tolls = 0; return n; }
+
+    /** Lettre de change : {@code count} Créances de plus sur le joueur, {@code max} au plus. @return celles posées */
+    public int addBills(int count, int max) {
+        int before = bills;
+        bills = Math.min(max, bills + count);
+        return bills - before;
+    }
+    public int getBills() { return bills; }
+    /** Trèfles joués : chacun retire une Créance. @return celles retirées */
+    public int payBills(int count) {
+        int paid = Math.min(bills, Math.max(0, count));
+        bills -= paid;
+        return paid;
+    }
+
+    /** Venin : un de plus pour {@code turns} tours ({@code max} Venins au plus, le plus court est remplacé). */
+    public void addVenom(int turns, int max) {
+        if (venoms.size() >= max) venoms.remove(venoms.indexOf(Collections.min(venoms)));
+        venoms.add(turns);
+    }
+    public int getVenoms() { return venoms.size(); }
+    /** Un tour de Venin passe. @return les Venins qui ont mordu ce tour */
+    public int tickVenoms() {
+        int active = venoms.size();
+        venoms.replaceAll(turns -> turns - 1);
+        venoms.removeIf(turns -> turns <= 0);
+        return active;
+    }
+
     /** Fin d'un tirage : chaque symbole retiré se rapproche de son retour, la Corruption et Dans la manche de leur fin. */
     public void endTurn() {
         removedSymbols.replaceAll((symbol, turns) -> turns - 1);
@@ -606,6 +723,7 @@ public class LastingEffects {
         temperPercent += temperCards; // la Trempe durcit l'épée à chaque tour
         bonusPlays = 0;
         if (hatTurns > 0 && --hatTurns == 0) hatPercent = 0;
+        if (hoardTurns > 0 && --hoardTurns == 0) hoardPercent = 0;
     }
 
     /** @return {@code true} si aucun effet n'est actif et les jauges sont vides. */
@@ -617,6 +735,8 @@ public class LastingEffects {
             && traps == 0 && lanternDraws == 0 && earplugDraws == 0 && propTurns == 0 && lamps == 0
             && cageTurns == 0 && anchorTurns == 0 && temperPercent == 0 && bonusPlays == 0
             && voidReels.isEmpty() && shortCircuits == 0 && houseEdges == 0 && rockfalls == 0 && aspirations.isEmpty()
-            && nextDraws == 0 && hatTurns == 0 && annuityTurns == 0 && martingale == 0;
+            && nextDraws == 0 && hatTurns == 0 && jokerBox == 0 && hoardTurns == 0 && annuityTurns == 0 && martingale == 0
+            && juggles == 0 && scares == 0 && tunnels == 0 && turnstiles == 0 && riggedPrizes == 0 && riggedGame == 0
+            && tolls == 0 && bills == 0 && venoms.isEmpty();
     }
 }

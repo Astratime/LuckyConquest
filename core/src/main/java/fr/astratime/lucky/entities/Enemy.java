@@ -104,12 +104,18 @@ public class Enemy {
     /** Rouleaux du joueur aspirés à son dernier tirage (Aspiration de la Machine Originelle). */
     private       int         aspired;
     private final Map<EnemySignature, Integer> charges = new EnumMap<>(EnemySignature.class);
+    /** Numéro (Monsieur Loyal) : la famille annoncée pour le tour du joueur, et ce que vaut le coup s'il la rate. */
+    private       Card.Suit   actSuit;
+    private       int         actFactor;
+    /** Sarcophage (Pharaon maudit) : aucun coup ne passe jusqu'à son prochain tour. */
+    private       boolean     sealed;
 
     // ----- Archétypes de deck : Rentier (Créances) et Bluffeur (malus) -----
     /** Créances (Rentier) : chacune lui coûte des PV et rapporte des gains au joueur, au début de son tour. */
     private       int         claims;
     /** Intérêts composés : tirages du joueur où ses Créances grossissent encore, et de combien (%). */
     private       int         compoundTurns;
+    private       int         pharaohSealTurns; // Sceau du Pharaon : ses tours où les Créances comptent double
     private       int         compoundPercent;
     /** Intimidation : baisse de ses attaques à son prochain tour, en % (0 : aucune). */
     private       int         intimidation;
@@ -188,6 +194,10 @@ public class Enemy {
         if (kind.houseWins() && !houseUsed && damage * 100 >= (long) maxHp * EnemyKind.HOUSE_CANCEL_PERCENT) {
             houseUsed = true;
             notice = Lang.t("LA MAISON GAGNE TOUJOURS : COUP ANNULÉ");
+            return 0;
+        }
+        if (sealed && damage > 0) {                     // Sarcophage : rien ne passe avant son tour
+            if (notice == null) notice = Lang.t("SARCOPHAGE : AUCUN COUP NE PASSE");
             return 0;
         }
         if (lastDrawPending) return 0;                  // à 1 PV, elle attend le Dernier tirage : plus rien ne la touche
@@ -465,6 +475,17 @@ public class Enemy {
         return n;
     }
 
+    /** Sceau du Pharaon : ses Créances comptent double pendant ses {@code turns} prochains tours. */
+    public void pharaohSeal(int turns) { pharaohSealTurns = Math.max(pharaohSealTurns, turns); }
+    /** @return ses prochains tours sous le Sceau du Pharaon. */
+    public int getPharaohSealTurns() { return pharaohSealTurns; }
+    /** Son tour : le Sceau du Pharaon vaut pour celui-ci. @return {@code true} si ses Créances comptent double */
+    public boolean takePharaohSeal() {
+        if (pharaohSealTurns <= 0) return false;
+        pharaohSealTurns--;
+        return true;
+    }
+
     /** Intérêts composés : ses Créances grossissent de {@code percent} % pendant {@code turns} tirages du joueur. */
     public void compound(int turns, int percent) {
         compoundTurns   = Math.max(compoundTurns, turns);
@@ -676,6 +697,38 @@ public class Enemy {
         stake = Math.min(EnemySymbol.ALL_IN_MAX, stake * 2);
         return stake > before;
     }
+
+    /** Numéro : il annonce la famille {@code suit} ; si le joueur n'en joue pas, ses attaques suivantes valent x{@code factor}. */
+    public void announceAct(Card.Suit suit, int factor) {
+        actSuit = suit;
+        actFactor = Math.max(actFactor, factor);
+    }
+
+    /** @return la famille annoncée par son Numéro, ou {@code null} */
+    public Card.Suit getActSuit() { return actSuit; }
+
+    /**
+     * Début de son tour : son Numéro est-il raté ?
+     *
+     * @return le facteur de ses attaques du tour (1 si le joueur a joué la famille annoncée, ou sans Numéro)
+     */
+    public int takeActFactor(List<Card> played) {
+        if (actSuit == null) return 1;
+        Card.Suit suit = actSuit;
+        int factor = actFactor;
+        actSuit = null;
+        actFactor = 0;
+        return played.stream().anyMatch(card -> card.getSuit() == suit) ? 1 : factor;
+    }
+
+    /** Sarcophage : il s'y enferme jusqu'à son prochain tour. */
+    public void seal() { sealed = true; }
+
+    /** Début de son tour : le Sarcophage s'ouvre. */
+    public void unseal() { sealed = false; }
+
+    /** @return {@code true} s'il est enfermé dans son Sarcophage. */
+    public boolean isSealed() { return sealed; }
 
     /**
      * Début de son tour : l'Éclat Originel passe à sa deuxième phase sous

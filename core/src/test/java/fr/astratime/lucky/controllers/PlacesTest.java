@@ -67,7 +67,8 @@ class PlacesTest {
         assertEquals(210, EnemyKind.ROI_COEUR.damagePercent());
         assertEquals(165, EnemyKind.ROI_CARREAU.damagePercent());
         assertEquals(100, EnemyKind.CROUPIER.damagePercent(), "la Tour ne change pas");
-        assertEquals(100, EnemyKind.KRAKEN.damagePercent(), "les autres lieux non plus");
+        assertEquals(18, EnemyKind.KRAKEN.damagePercent(), "le Casino frappe moins (Désert de Braise après lui)");
+        assertEquals(75, EnemyKind.DRAGON.damagePercent());
         assertEquals(Math.round(EnemySymbol.SWORD_DAMAGE * 0.48), EnemyKind.ROI_PIQUE.hurt(EnemySymbol.SWORD_DAMAGE));
         assertEquals(Math.round(EnemySymbol.SWORD_DAMAGE * 2.1), EnemyKind.ROI_COEUR.hurt(EnemySymbol.SWORD_DAMAGE));
 
@@ -145,5 +146,18 @@ class PlacesTest {
         kraken.takeDamage(kraken.getMaxHp());
         assertEquals(1, kraken.getPlaysPerTurn(), "toujours au moins un bras");
         assertEquals(5, new Enemy(EnemyKind.PIEUVRE).getPlaysPerTurn());
+    }
+
+    @Test
+    void theSharkBiteNeverHurtsTheSharkEvenWithHugeGains() {
+        for (long seed = 0; seed < 30; seed++) {
+            Enemy shark = new Enemy(EnemyKind.REQUIN_BANQUIER);
+            shark.takeDamage(shark.getMaxHp() * 3 / 10);
+            Player player = new Player("Joueur", 1_000_000, List.of());
+            player.addGains(3e8); // une Morsure de 30 M : x100, plus grand qu'un int
+            long before = shark.getHp();
+            new EnemyTurnResolver(new java.util.Random(seed)).resolve(shark, player, 0, 0f);
+            assertTrue(shark.getHp() >= before, "la Morsure soigne, elle ne blesse pas (graine " + seed + ")");
+        }
     }
 }

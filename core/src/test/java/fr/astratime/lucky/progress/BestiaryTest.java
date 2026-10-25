@@ -89,7 +89,7 @@ class BestiaryTest {
             for (var dungeon : place.getDungeons()) bosses += dungeon.getKing().phaseCount() + 1;
         }
         bosses -= 2; // la Machine Originelle et l'Éclat Originel n'ont pas de cinématique de mort : leurs fins existent déjà
-        assertEquals(bosses + 2 + Bestiary.ENDINGS.size() + 1, none[1]);
+        assertEquals(bosses + 2 + Bestiary.ENDINGS.size() + 1 + 1, none[1]); // + la fin de l'Exploration
 
         profile.meet(Chapter.GENESE.getBoss());
         assertTrue(Bestiary.bossCutsceneSeen(profile, Chapter.GENESE.getBoss()));

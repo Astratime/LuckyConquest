@@ -64,6 +64,10 @@ public class Player {
         }
     }
 
+    /** Soif : diviseur des soins, et si le joueur s'est soigné ce tour. */
+    private int healDivisor = 1;
+    private boolean healedThisTurn;
+
     /**
      * @param name     nom affiché du joueur
      * @param maxHp    points de vie maximum (le joueur démarre à pleine vie)
@@ -137,9 +141,32 @@ public class Player {
      * @return les points de vie réellement rendus (0 si le joueur était déjà au maximum)
      */
     public int heal(int amount) {
+        if (amount > 0) healedThisTurn = true;
+        if (healDivisor > 1) amount /= healDivisor; // Soif (Désert de Braise)
         int healed = Math.min(maxHp, hp + amount) - hp;
         hp += healed;
         return healed;
+    }
+
+    /** Soif : les soins sont divisés par {@code divisor} (1 : soins entiers). */
+    public void setHealDivisor(int divisor) { healDivisor = Math.max(1, divisor); }
+
+    /** @return {@code true} si le joueur s'est soigné depuis le dernier appel (la Soif le surveille), et l'oublie. */
+    public boolean takeHealed() {
+        boolean healed = healedThisTurn;
+        healedThisTurn = false;
+        return healed;
+    }
+
+    /**
+     * Brûlure : {@code percent} % du bouclier fondent.
+     *
+     * @return le bouclier perdu
+     */
+    public int meltShield(int percent) {
+        int melted = (int) ((long) shield * Math.max(0, Math.min(100, percent)) / 100);
+        shield -= melted;
+        return melted;
     }
     /**
      * Retire {@code amount} points de vie sans passer par le bouclier, sans

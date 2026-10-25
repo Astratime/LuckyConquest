@@ -60,4 +60,9 @@ public final class Cutscenes {
             default -> null;
         };
     }
+
+    /** @return la fin de l'Exploration, quand le Désert de Braise est vidé pour la première fois. */
+    public static Cutscene explorationEnding(CutsceneKit kit) {
+        return new ExplorationEndingCutscene(kit);
+    }
 }

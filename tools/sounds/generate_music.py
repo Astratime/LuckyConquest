@@ -289,6 +289,106 @@ def combat_casino():
     return looped_reverb(loop_of(out, d), wet=0.28, size=1.4, tail=0.9)
 
 
+@music('combat_foire')
+def combat_foire():
+    """
+    La Fête foraine : valse d'orgue de Barbarie en Sol majeur, à 3/4 (168 battements par minute), qui
+    déraille un peu (l'orgue se désaccorde par moments). Basse « oum », accords « pa-pa », mélodie de
+    calliope en carré, grosse caisse et cymbale de manège, rires de foire au loin. 32 mesures.
+    """
+    beat = 60 / 168
+    bar = 3 * beat
+    bars = 32
+    d = bars * bar
+    track = Track(d + 4)
+    prog = ['G', 'G', 'D', 'D', 'C', 'G', 'D', 'G', 'Em', 'Em', 'C', 'G', 'A', 'D', 'D', 'G']
+    roots = {'G': ('G', 'M'), 'D': ('D', '7'), 'C': ('C', 'M'), 'Em': ('E', 'm'), 'A': ('A', '7')}
+    a = [[4, 6, 7], [9, None, 7], [8, None, 6], [4, None, None], [5, 7, 9], [11, None, 9], [8, 6, 4], [7, None, None]]
+    b = [[9, 8, 9], [11, None, 9], [7, 6, 7], [9, None, None], [8, 7, 8], [10, None, 8], [6, 5, 3], [4, None, None]]
+    melody = a + b
+    major = (0, 2, 4, 5, 7, 9, 11)
+    for i in range(bars):
+        t0 = i * bar
+        root, kind = roots[prog[i % 16]]
+        chord = chord_notes(root, kind, 4)
+        track.add(bass(f'{root}2', beat * 0.9, bright=800), t0, 0.6)                  # oum
+        for k in (1, 2):                                                              # pa-pa
+            for f in chord[:3]:
+                track.add(chip(f, beat * 0.55, 'square', 0.5, a=0.004, dc=0.05, s=0.4, r=0.04), t0 + k * beat, 0.07)
+        track.add(kick(0.8), t0, 0.5)
+        if i % 4 == 3:
+            track.add(hat(open_=True), t0 + 2 * beat, 0.25)
+        detune = 1.0 + (0.012 if i % 8 in (5, 6) else 0.0)                           # l'orgue déraille
+        for k, deg in enumerate(melody[i % 16]):
+            if deg is None:
+                continue
+            length = 1
+            while k + length < 3 and melody[i % 16][k + length] is None:
+                length += 1
+            o, step = divmod(deg, 7)
+            f = transpose(hz('G4'), 12 * o + major[step]) * detune
+            track.add(lead(f, length * beat * 0.9, duty=0.25, vib=0.012), t0 + k * beat, 0.2)
+            track.add(lead(f * 2, length * beat * 0.9, duty=0.125, vib=0.012), t0 + k * beat, 0.06)
+    for k in range(10):                                                               # rires et cris au loin
+        laugh = bp(noise(0.5), 600, 1800) * (0.5 + 0.5 * np.sin(2 * np.pi * 9 * np.arange(n(0.5)) / SR)) * expdec(0.5, 0.2)
+        track.add(laugh, rand(0, d), 0.06)
+    track.add(lp(noise(d), 400), 0, 0.05)
+    return looped_reverb(loop_of(track, d), wet=0.22, size=1.2, tail=0.7)
+
+
+@music('combat_desert')
+def combat_desert():
+    """
+    Le Désert de Braise : Ré « hijaz » (phrygien dominant), 96 battements par minute. Darbouka et
+    tambour de caravane, bourdon de basse, luth pincé, mélodie de flûte ney (sinus soufflé) ; le
+    vent de sable passe, et le volcan gronde toutes les huit mesures. 32 mesures.
+    """
+    beat = 60 / 96
+    bar = 4 * beat
+    bars = 32
+    d = bars * bar
+    track = Track(d + 4)
+    hijaz = (0, 1, 4, 5, 7, 8, 10)
+
+    def deg_note(degree, octave):
+        o, k = divmod(degree, 7)
+        return transpose(hz(f'D{octave}'), 12 * o + hijaz[k])
+
+    line = [[4, None, 3, 2], [1, None, 0, None], [2, 3, 4, 5], [4, None, None, None],
+            [7, None, 6, 5], [4, 3, 2, 1], [2, None, 1, None], [0, None, None, None]]
+    for i in range(bars):
+        t0 = i * bar
+        track.add(lp(osc(hz('D2'), bar, 'saw'), 300) * 0.6, t0, 0.22)                 # bourdon
+        for k, (t, f) in enumerate([(0, 90), (1.5, 180), (2, 90), (3, 180), (3.5, 180)]):  # darbouka : doum-tek
+            hit = tom(f, 0.3) if f < 100 else bp(noise(0.08), 2000, 8000) * expdec(0.08, 0.02)
+            track.add(hit, t0 + t * beat, 0.6 if f < 100 else 0.3)
+        for k in range(8):                                                            # luth pincé
+            f = deg_note([0, 4, 2, 4, 1, 4, 2, 4][k], 3)
+            track.add(pluck(f, beat * 0.8, tau=0.25, bright=3000), t0 + k * beat / 2, 0.16)
+        if i >= 4:                                                                    # flûte ney
+            for k, deg in enumerate(line[i % 8]):
+                if deg is None:
+                    continue
+                length = 1
+                while k + length < 4 and line[i % 8][k + length] is None:
+                    length += 1
+                f = deg_note(deg, 5)
+                tone = osc(vibrato(f, length * beat * 0.95, 5.0, 0.006), length * beat * 0.95, 'sine')
+                breath = bp(noise(length * beat * 0.95), f, f * 3) * 0.15
+                env = adsr_env(length * beat * 0.95)
+                track.add((tone + breath) * env, t0 + k * beat, 0.22)
+        if i % 8 == 7:                                                                # le volcan gronde
+            track.add(lp(noise(bar * 1.5), 90) * expdec(bar * 1.5, bar * 0.6, attack=0.4), t0, 0.9)
+    wind = bp(noise(d), 300, 1600) * (0.4 + 0.6 * np.sin(2 * np.pi * np.arange(n(d)) / n(bar * 8)) ** 2)
+    track.add(wind, 0, 0.1)
+    return looped_reverb(loop_of(track, d), wet=0.25, size=1.5, tail=0.9)
+
+
+def adsr_env(d):
+    N = n(d)
+    return np.minimum(1, np.arange(N) / n(0.08)) * np.minimum(1, (N - np.arange(N)) / n(0.12))
+
+
 @music('combat_tour')
 def combat_tour():
     """

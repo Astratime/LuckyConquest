@@ -333,6 +333,25 @@ public class CombatResolver {
                 events.add(new GainsEarnedEvent(gains));
             }
         }
+        int hoardSpins = lasting.getHoardSpins();
+        if (hoardSpins > 0) {
+            int touched = (int) hits.stream().filter(e -> e instanceof EnemyDamagedEvent hit && hit.damage > 0).count();
+            if (touched > 0) {
+                double gains = (double) touched * spinCost * hoardSpins;
+                player.addGains(gains);
+                int attack = lasting.growHoard(touched);
+                events.add(new StatusEvent(Lang.f("MAGOT DU DRAGON : ATTAQUE +{0} %", attack), EffectPopup.Style.GAINS));
+                events.add(new GainsEarnedEvent(gains));
+            }
+        }
+        if (context.getJackStep() > 0 && drawn != null) {
+            int jokers = 0;
+            for (Symbol symbol : drawn) if (symbol == Symbol.JOKER) jokers++;
+            int added = jokers == 0 ? 0 : lasting.addJokerBox(jokers * context.getJackStep(), context.getJackMax());
+            if (added > 0) {
+                events.add(new StatusEvent(Lang.f("DIABLE EN BOÎTE : JOKER +{0}", lasting.getJokerBox()), EffectPopup.Style.SPECIAL));
+            }
+        }
         if (context.getPrankSpins() > 0 && context.getEnemyDefenseAtStart() > 0 && enemy.getDefense() <= 0) {
             double gains = (double) context.getPrankSpins() * spinCost;
             player.addGains(gains);

@@ -77,4 +77,6 @@ CARD_FAMILY = {
     'tour_de_passe_passe': 'arch_bluffeur', 'coup_de_bluff': 'arch_bluffeur',
     'rouleau_retenu': 'arch_relanceur', 'memoire_de_la_machine': 'arch_relanceur', 'calibrage': 'arch_relanceur',
     'second_levier': 'arch_relanceur', 'martingale': 'arch_relanceur',
+    'diable_en_boite': 'arch_joker', 'chamboule_tout': 'arch_relanceur', 'sceau_du_pharaon': 'arch_rentier',
+    'magot_du_dragon': 'arch_lutin',
 }

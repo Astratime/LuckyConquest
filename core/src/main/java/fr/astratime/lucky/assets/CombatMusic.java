@@ -28,6 +28,8 @@ public final class CombatMusic {
     public static final String PORT    = "music/combat_port.ogg";
     public static final String MINES   = "music/combat_mines.ogg";
     public static final String CASINO  = "music/combat_casino.ogg";
+    public static final String FOIRE   = "music/combat_foire.ogg";
+    public static final String DESERT  = "music/combat_desert.ogg";
     public static final String TOWER   = "music/combat_tour.ogg";
     public static final String BOSS    = "music/combat_boss.ogg";
 
@@ -63,6 +65,8 @@ public final class CombatMusic {
                 case PORT    -> PORT;
                 case MINES   -> MINES;
                 case CASINO  -> CASINO;
+                case FOIRE   -> FOIRE;
+                case DESERT  -> DESERT;
             };
         }
         return DEFAULT;

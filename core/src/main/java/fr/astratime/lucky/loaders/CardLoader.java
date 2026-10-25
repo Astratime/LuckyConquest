@@ -505,6 +505,14 @@ public class CardLoader {
                 return new CalibrationEffect(json.getInt("turns"), v.i("percent"));
             case "SECOND_LEVER":
                 return new SecondLeverEffect(v.i("tries"));
+            case "JACK_IN_THE_BOX":
+                return new JackInTheBoxEffect(v.i("step"), v.i("max"));
+            case "KNOCKDOWN":
+                return new KnockdownEffect();
+            case "PHARAOH_SEAL":
+                return new PharaohSealEffect(v.i("claims"), json.getInt("turns"));
+            case "DRAGON_HOARD":
+                return new DragonHoardEffect(json.getInt("turns"), v.i("spins"), v.i("step"), v.i("max"));
             case "MARTINGALE":
                 return new MartingaleEffect(v.i("attackPercent"), v.i("pairPercent"));
 

@@ -34,6 +34,9 @@ import java.util.List;
  */
 public class PreparationResolver {
 
+    /** Le hasard du Manège (Fête foraine). */
+    private final java.util.Random carousel = new java.util.Random();
+
     /** Attaque ajoutée à chaque symbole par Lame (Pique). */
     public static final int BLADE_ATTACK = 20;
 
@@ -74,6 +77,14 @@ public class PreparationResolver {
         if (stolen >= 1) spinContext.blockReel(SlotMachine.SYMBOL_COUNT - 1);
         if (stolen >= 2) spinContext.blockReel(0);
         lasting.takeVoidReels().forEach(spinContext::blockReel); // Rien ne va plus du Croupier en chef
+        if (rule.carouselTurns(turn)) { // Manège (Fête foraine) : un rouleau au hasard tourne avec le manège
+            List<Integer> free = new java.util.ArrayList<>();
+            for (int reel = 0; reel < SlotMachine.SYMBOL_COUNT; reel++) if (!spinContext.getBlockedReels().contains(reel)) free.add(reel);
+            if (!free.isEmpty()) {
+                spinContext.blockReel(free.get(carousel.nextInt(free.size())));
+                turnContext.addEvent(new StatusEvent(Lang.t("MANÈGE : UN ROULEAU TOURNE SANS TOI"), EffectPopup.Style.DAMAGE));
+            }
+        }
         aspire(lasting.takeAspirations(), player, enemy, spinContext, turnContext);
         int edges = lasting.takeHouseEdges(); // Avantage de la maison
         if (edges > 0) {
@@ -122,6 +133,23 @@ public class PreparationResolver {
             turnContext.addEvent(new StatusEvent(Lang.f("TREMPE : ATTAQUE +{0} %", lasting.getTemperPercent()),
                 EffectPopup.Style.ATTACK));
         }
+        int scares = lasting.takeScares(); // Frayeur (Fête foraine)
+        if (scares > 0) {
+            int malus = Math.min(90, EnemySymbol.SCARE_PERCENT * scares);
+            combatContext.multiplyAttack(1f - malus / 100f, "Frayeur");
+            turnContext.addEvent(new StatusEvent(Lang.f("FRAYEUR : ATTAQUE -{0} %", malus), EffectPopup.Style.DAMAGE));
+        }
+        int tolls = lasting.takeTolls(); // Péage (Désert de Braise) : des tirages de plus à payer
+        if (tolls > 0) {
+            player.paySpin((double) combatContext.getSpinCost() * tolls);
+            turnContext.addEvent(new StatusEvent(Lang.f("PÉAGE : -{0} GAINS", Lang.big((double) combatContext.getSpinCost() * tolls)),
+                EffectPopup.Style.DAMAGE));
+        }
+        int clubs = (int) player.getPlayedCards().stream().filter(card -> card.getSuit() == Card.Suit.TREFLE).count();
+        int paid = lasting.payBills(clubs); // Lettres de change : chaque Trèfle joué en paie une
+        if (paid > 0) {
+            turnContext.addEvent(new StatusEvent(Lang.f("CRÉANCES PAYÉES : -{0}", paid), EffectPopup.Style.DEFENSE));
+        }
         if (rule.isHighTide(turn) && lasting.getAnchorTurns() > 0) {
             turnContext.addEvent(new StatusEvent(Lang.t("ANCRE : LA MARÉE HAUTE NE TE GÊNE PAS"), EffectPopup.Style.DEFENSE));
         } else if (rule.isHighTide(turn)) {
@@ -156,6 +184,12 @@ public class PreparationResolver {
             player.addGains(gains);
             turn.addEvent(new StatusEvent(Lang.f("RENTE VIAGÈRE : CRÉANCES +{0}", added), EffectPopup.Style.DRAIN));
             turn.addEvent(new GainsEarnedEvent(gains));
+        }
+        if (lasting.getJokerBox() > 0) spin.addWeightBoost(fr.astratime.lucky.entities.Symbol.JOKER, lasting.getJokerBox());
+        if (lasting.getHoardPercent() > 0) {
+            combat.multiplyAttack(1f + lasting.getHoardPercent() / 100f, "Magot du dragon");
+            turn.addEvent(new StatusEvent(Lang.f("MAGOT DU DRAGON : ATTAQUE +{0} %", lasting.getHoardPercent()),
+                EffectPopup.Style.ATTACK));
         }
         if (lasting.getMartingale() > 0) {
             spin.addPairChance(lasting.getMartingalePair() / 100f);

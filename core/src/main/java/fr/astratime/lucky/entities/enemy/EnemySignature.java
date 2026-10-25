@@ -116,7 +116,41 @@ public enum EnemySignature {
     MONNAIE("Monnaie", EnemySymbol.SWALLOWED_COIN, Timing.NEXT,
         "Sa prochaine Pièce avalée compte pour 2", "PIÈCE x2"),
     LEVIER_GRILLE("Levier grillé", EnemySymbol.ARMED_ARM, Timing.NEXT,
-        "Son prochain Bras armé relance 2 rouleaux", "BRAS ARMÉ x2");
+        "Son prochain Bras armé relance 2 rouleaux", "BRAS ARMÉ x2"),
+
+    // La Fête foraine
+    MASSUES("Massues", EnemySymbol.JUGGLE, Timing.NEXT,
+        "Son prochain Jonglage échange 2 cartes de plus", "JONGLAGE x2"),
+    ROULEMENT_DE_TAMBOUR("Roulement de tambour", EnemySymbol.ACT, Timing.NEXT,
+        "Son prochain Numéro raté frappe x3 au lieu de x2", "NUMÉRO x3"),
+    BOUH("Bouh !", EnemySymbol.SCARE, Timing.NEXT,
+        "Sa prochaine Frayeur compte double", "FRAYEUR x2"),
+    TUNNEL_SANS_FIN("Tunnel sans fin", EnemySymbol.TUNNEL, Timing.NEXT,
+        "Son prochain Tunnel plonge 2 rouleaux dans le noir", "TUNNEL x2"),
+    TOUR_DE_MANIVELLE("Tour de manivelle", EnemySymbol.TURNSTILE, Timing.NEXT,
+        "Son prochain Tourniquet relance aussi ton 2e meilleur rouleau", "TOURNIQUET x2"),
+    ROUE_LESTEE("Roue lestée", EnemySymbol.BIG_WHEEL, Timing.TURN,
+        "Ses Grands tours de ce tour ne tombent jamais sur la case vide", "PAS DE CASE VIDE"),
+    LOT_DE_CONSOLATION("Lot de consolation", EnemySymbol.RIGGED_PRIZE, Timing.NEXT,
+        "Son prochain Lot truqué vaut aussi pour le tirage suivant", "LOT TRUQUÉ x2"),
+    CARTE_BISEAUTEE("Carte biseautée", EnemySymbol.RIGGED_GAME, Timing.NEXT,
+        "Son prochain Jeu truqué divise tes dégâts par 3", "JEU TRUQUÉ /3"),
+
+    // Le Désert de Braise
+    OCTROI("Octroi", EnemySymbol.TOLL, Timing.NEXT,
+        "Son prochain Péage coûte 2 tirages de plus", "PÉAGE x2"),
+    USURE("Usure", EnemySymbol.BILL, Timing.TURN,
+        "Ses Lettres de change de ce tour posent 2 Créances de plus", "CRÉANCES +2"),
+    MOMIFICATION("Momification", EnemySymbol.WRAP, Timing.NEXT,
+        "Ses prochaines Bandelettes ligotent 2 cartes", "BANDELETTES x2"),
+    DARD("Dard", EnemySymbol.VENOM, Timing.NEXT,
+        "Son prochain Venin dure 2 tours de plus", "VENIN +2 TOURS"),
+    FATA_MORGANA("Fata Morgana", EnemySymbol.MIRAGE, Timing.NEXT,
+        "Son prochain Mirage touche 2 de tes rouleaux", "MIRAGE x2"),
+    COULEE_DE_LAVE("Coulée de lave", EnemySymbol.BURN, Timing.TURN,
+        "Ses Brûlures de ce tour font fondre tout ton bouclier", "BOUCLIER FONDU"),
+    BRAISE("Braise", EnemySymbol.FIRE_BREATH, Timing.NEXT,
+        "Son prochain Souffle de feu brûle 2 cartes", "SOUFFLE x2");
 
     /** Exemplaires de chaque carte propre dans le deck d'un ennemi (choix d'Astra). */
     public static final int COPIES = 4;

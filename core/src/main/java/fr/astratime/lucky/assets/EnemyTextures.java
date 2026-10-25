@@ -89,12 +89,15 @@ public class EnemyTextures implements Disposable {
         maps.put(Place.PORT, texture(PlacesArt.port(), false));
         maps.put(Place.MINES, texture(PlacesArt.mines(), false));
         maps.put(Place.CASINO, texture(PlacesArt.casino(), false));
+        maps.put(Place.FOIRE, texture(FairDesertArt.foire(), false));
+        maps.put(Place.DESERT, texture(FairDesertArt.desert(), false));
         for (Dungeon dungeon : Dungeon.values()) {
             int[][] grid = dungeon.getSuit() != null ? ExplorationArt.gate(dungeon.getSuit()) : PlacesArt.gate(dungeon);
             gates.put(dungeon, texture(grid, false));
         }
         for (EnemyKind kind : EnemyKind.values()) {
             int[][] grid = PlacesPortraits.of(kind);
+            if (grid == null) grid = FairDesertPortraits.of(kind);
             if (grid != null) addPortrait(kind, grid);
         }
         chapterArt.put(Chapter.GENESE, texture(EnemyPortraits.genesis(), false));
@@ -307,6 +310,21 @@ public class EnemyTextures implements Disposable {
             case HEARTBEAT      -> NewReelsArt.heartbeat();
             case SWALLOWED_COIN -> NewReelsArt.swallowedCoin();
             case ARMED_ARM      -> NewReelsArt.armedArm();
+            case JUGGLE         -> FairDesertArt.juggle();
+            case ACT            -> FairDesertArt.act();
+            case SCARE          -> FairDesertArt.scare();
+            case TUNNEL         -> FairDesertArt.tunnel();
+            case TURNSTILE      -> FairDesertArt.turnstile();
+            case BIG_WHEEL      -> FairDesertArt.bigWheel();
+            case RIGGED_PRIZE   -> FairDesertArt.riggedPrize();
+            case RIGGED_GAME    -> FairDesertArt.riggedGame();
+            case TOLL           -> FairDesertArt.toll();
+            case BILL           -> FairDesertArt.bill();
+            case WRAP           -> FairDesertArt.wrap();
+            case VENOM          -> FairDesertArt.venom();
+            case MIRAGE         -> FairDesertArt.mirage();
+            case BURN           -> FairDesertArt.burn();
+            case FIRE_BREATH    -> FairDesertArt.fireBreath();
         };
     }
 

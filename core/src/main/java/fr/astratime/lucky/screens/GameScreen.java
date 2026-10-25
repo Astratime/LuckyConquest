@@ -1525,10 +1525,16 @@ public class GameScreen extends ScreenAdapter {
     private void openChest() {
         DungeonRun dungeonRun = (DungeonRun) run;
         // Ouvre peut-être le lieu suivant ; le dernier donjon des Mines donne le Rouleau de la Mine.
-        Symbol earnedReel = luckyGame.getProfile().clearDungeon(dungeonRun.getDungeon().name());
+        PlayerProfile profile = luckyGame.getProfile();
+        boolean desertBefore = profile.isPlaceCleared(Place.DESERT);
+        Symbol earnedReel = profile.clearDungeon(dungeonRun.getDungeon().name());
         chestOverlay.setEarnedReel(earnedReel);
         announceAchievements();
-        openChest(dungeonRun.getChestCards());
+        // Le Désert de Braise vidé pour la première fois : la fin de l'Exploration, puis le coffre.
+        Cutscene ending = !desertBefore && profile.isPlaceCleared(Place.DESERT)
+            ? Cutscenes.explorationEnding(cutsceneKit) : null;
+        if (ending == null) openChest(dungeonRun.getChestCards());
+        else playCutscene(ending, () -> openChest(dungeonRun.getChestCards()));
     }
 
     /**

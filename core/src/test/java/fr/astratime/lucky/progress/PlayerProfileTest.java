@@ -127,8 +127,10 @@ class PlayerProfileTest {
         assertEquals(PlayerProfile.MAX_COPIES, profile.getOwnedCopies("guillotine"));
         assertEquals(75_000, extra.coins());
         assertEquals(3L * 50_000 + 75_000, profile.getCoins());
-        assertEquals(67_500_000L + 33_750_000L, profile.openChest("guillotine", Place.CASINO).coins(),
-            "Casino : 13 500 x 5 000, plus la moitié pour la carte en double");
+        assertEquals(8_000_000L + 4_000_000L, profile.openChest("guillotine", Place.CASINO).coins(),
+            "Casino : 4 000 x 2 000, plus la moitié pour la carte en double");
+        assertEquals(15_000_000L + 7_500_000L, profile.openChest("guillotine", Place.DESERT).coins(),
+            "Désert de Braise : 5 000 x 3 000, plus la moitié");
     }
 
     @Test
@@ -176,7 +178,7 @@ class PlayerProfileTest {
         assertEquals(6_400, PlayerProfile.combatReward(false, false, 32_000, Place.PRAIRIE, 1), "20 % après une défaite contre le soldat");
         assertEquals(0, PlayerProfile.combatReward(false, true, -5_000, Place.PRAIRIE, 1), "rien avec des gains négatifs");
         assertEquals(50_000, PlayerProfile.combatReward(false, true, 10_000_000, Place.PRAIRIE, 1), "au plus 500 tirages de la Prairie");
-        assertEquals(2_500_000, PlayerProfile.combatReward(false, true, 1e12, Place.CASINO, 1), "au plus 500 tirages du Casino");
+        assertEquals(1_000_000, PlayerProfile.combatReward(false, true, 1e12, Place.CASINO, 1), "au plus 500 tirages du Casino");
         assertEquals(1_000_000_000_000L, PlayerProfile.combatReward(true, true, 1e12, Place.CASINO, 1), "victoire : sans limite");
         assertEquals(3_200, PlayerProfile.combatReward(false, true, 32_000, Place.PRAIRIE, 0.5), "la moitié du donjon faite : la moitié");
         assertEquals(0, PlayerProfile.combatReward(false, false, 32_000, Place.PRAIRIE, 0), "mort au premier tour : rien");
@@ -191,11 +193,30 @@ class PlayerProfileTest {
         MemoryStorage storage = new MemoryStorage();
         PlayerProfile profile = profile(storage);
         assertTrue(profile.isOpen(Place.PRAIRIE));
-        assertFalse(profile.isOpen(Place.PORT));
+        assertFalse(profile.isOpen(Place.FOIRE));
         for (Dungeon dungeon : Place.PRAIRIE.getDungeons()) profile.clearDungeon(dungeon.name());
+        assertTrue(profile.isOpen(Place.FOIRE), "la Fête foraine suit la prairie");
+        assertFalse(profile.isOpen(Place.PORT));
+        for (Dungeon dungeon : Place.FOIRE.getDungeons()) profile.clearDungeon(dungeon.name());
         assertTrue(profile.isOpen(Place.PORT));
-        assertFalse(profile.isOpen(Place.MINES));
         assertTrue(profile(storage).isOpen(Place.PORT), "sauvegardé");
+        assertFalse(profile.isOpen(Place.DESERT), "le Désert de Braise vient après le Casino");
+    }
+
+    @Test
+    void anOldSaveKeepsThePlacesItHadOpened() {
+        MemoryStorage storage = new MemoryStorage();
+        PlayerProfile old = profile(storage);
+        for (Dungeon dungeon : Place.PRAIRIE.getDungeons()) old.clearDungeon(dungeon.name());
+        for (Dungeon dungeon : Place.PORT.getDungeons()) old.clearDungeon(dungeon.name());
+        storage.put(PlayerProfile.KEY_PLACES, null); // sauvegarde d'avant la Fête foraine
+
+        PlayerProfile profile = profile(storage);
+        assertTrue(profile.isOpen(Place.FOIRE));
+        assertTrue(profile.isOpen(Place.PORT), "ouvert par l'ancien ordre : il le reste");
+        assertTrue(profile.isOpen(Place.MINES));
+        assertFalse(profile.isOpen(Place.CASINO));
+        assertFalse(profile.isOpen(Place.DESERT));
     }
 
     @Test

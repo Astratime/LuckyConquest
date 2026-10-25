@@ -162,7 +162,9 @@ public final class BalanceSimulator {
     public static void main(String[] args) throws IOException {
         boolean quick = List.of(args).contains("--quick");
         Path assets = Paths.get(System.getProperty("lucky.assets", "../assets")).toAbsolutePath().normalize();
-        String report = new BalanceSimulator(assets, quick ? Sizes.QUICK : Sizes.FULL).report();
+        BalanceSimulator simulator = new BalanceSimulator(assets, quick ? Sizes.QUICK : Sizes.FULL);
+        String report = List.of(args).contains("--tower") ? simulator.towerReport()
+            : List.of(args).contains("--tune") ? simulator.tuneReport() : simulator.report();
         System.out.println(report);
         Path out = Paths.get(System.getProperty("lucky.simulation.out", "build/simulation/equilibrage.md"));
         if (out.getParent() != null) Files.createDirectories(out.getParent());
@@ -183,6 +185,7 @@ public final class BalanceSimulator {
         progressionSection(out);
         coinsByRankSection(out);
         policySection(out);
+        towerSection(out);
         return out.toString();
     }
 
@@ -698,7 +701,7 @@ public final class BalanceSimulator {
     }
 
     // -------------------------------------------------------------------------
-    // 7. Règles de pièces comparées
+    // 7. Meilleur donjon par rang
     // -------------------------------------------------------------------------
 
     /** Une règle de pièces : ce que rapporte une descente {@code run} dans le lieu {@code place}. */
@@ -715,7 +718,9 @@ public final class BalanceSimulator {
         for (int i = 0; i < chestSpins.length; i++) {
             text.append(i == 0 ? "" : " / ").append(chestSpins[i]);
         }
-        text.append(" coûts de tirage (Prairie / Port / Mines / Casino)");
+        StringBuilder names = new StringBuilder();
+        for (Place place : Place.values()) names.append(names.isEmpty() ? "" : " / ").append(place.getShortName());
+        text.append(" coûts de tirage (").append(names).append(')');
         return new Policy(name, text.toString(), (run, place) -> {
             double chest = (double) chestSpins[place.ordinal()] * place.getSpinCost();
             double gains = Math.max(0, run.gains());
@@ -724,13 +729,9 @@ public final class BalanceSimulator {
     }
 
     static List<Policy> policies() {
-        int base = Place.PRAIRIE.getChestSpins();
         int[] now = new int[Place.values().length];
         for (Place place : Place.values()) now[place.ordinal()] = place.getChestSpins();
-        return List.of(
-            withChests("Coffres égaux", base, base, base, base),
-            withChests("Coffres x1/x2/x4/x8", base, base * 2, base * 4, base * 8),
-            withChests("Actuelle", now));
+        return List.of(withChests("Actuelle", now));
     }
 
     /** Meilleur donjon pour un rang et une règle : pièces par tour. */
@@ -761,8 +762,8 @@ public final class BalanceSimulator {
     private void policySection(StringBuilder out) {
         List<Policy> policies = policies();
         List<Rank> ranks = allRanks();
-        out.append("## 7. Règles de pièces comparées\n\n")
-            .append("Mêmes descentes (deck de départ), autres règles de pièces. Pour chaque rang, le donjon qui rapporte ")
+        out.append("## 7. Meilleur donjon par rang\n\n")
+            .append("Deck de départ. Pour chaque rang, le donjon qui rapporte ")
             .append("le plus par tour joué. « Tours » : tours pour payer tous les rangs dans l'ordre, en jouant ")
             .append("toujours le meilleur donjon du rang qu'on a.\n\n");
         for (Policy policy : policies) out.append("- **").append(policy.name()).append("** : ").append(policy.text()).append('\n');
@@ -795,6 +796,109 @@ public final class BalanceSimulator {
         if (coins >= 1e6) return String.format(Locale.FRANCE, "%.1f M", coins / 1e6);
         if (coins >= 1e4) return String.format(Locale.FRANCE, "%.0f k", coins / 1e3);
         return PlayerProfile.formatCoins(Math.round(coins));
+    }
+
+    // -------------------------------------------------------------------------
+    // 8. Tour des épreuves
+    // -------------------------------------------------------------------------
+
+    /**
+     * Réglage des lieux (option --tune) : victoires et pièces par descente et par tour, deck de départ,
+     * pour chaque donjon et chaque rang ; -Dproto.places=FOIRE,DESERT pour quelques lieux seulement.
+     */
+    String tuneReport() {
+        String only = System.getProperty("proto.places", "");
+        List<Rank> ranks = allRanks();
+        List<Runnable> jobs = new ArrayList<>();
+        List<Place> places = new ArrayList<>();
+        for (Place place : Place.values()) if (only.isEmpty() || only.contains(place.name())) places.add(place);
+        for (Place place : places) for (Dungeon dungeon : place.getDungeons()) for (Rank rank : ranks)
+            jobs.add(() -> dungeon(dungeon, place, rank, Gear.STARTER, sizes.dungeonRuns(), SEED));
+        jobs.parallelStream().forEach(Runnable::run);
+        StringBuilder out = new StringBuilder("| Donjon |");
+        for (Rank rank : ranks) out.append(' ').append(title(rank)).append(" |");
+        out.append('\n');
+        for (Place place : places) for (Dungeon dungeon : place.getDungeons()) {
+            out.append("| ").append(place.getShortName()).append(" : ").append(dungeon.getShortName()).append(" |");
+            for (Rank rank : ranks) {
+                DungeonStats st = dungeon(dungeon, place, rank, Gear.STARTER, sizes.dungeonRuns(), SEED);
+                out.append(String.format(Locale.ROOT, " %.0f%% %s %s/t |", st.winRate() * 100,
+                    PlayerProfile.formatCoins((long) st.averageCoins()),
+                    PlayerProfile.formatCoins((long) (st.averageCoins() / Math.max(1, st.averageTurns())))));
+            }
+            out.append('\n');
+        }
+        return out.toString();
+    }
+
+    /** @return le rapport de la Tour seule (victoires par chapitre et par rang). */
+    String towerReport() {
+        StringBuilder out = new StringBuilder();
+        towerSection(out);
+        return out.toString();
+    }
+
+    /** Part de chapitres gagnés (premier ennemi, un challenger au hasard, boss), mode normal. */
+    double towerWinRate(fr.astratime.lucky.entities.tower.Chapter chapter, Rank rank, Gear gear, int runs, long seed) {
+        Random random = new Random(seed);
+        GameController game = controller(rank == null ? RankBonus.NONE : rank.getBonus(), gear);
+        game.setPlaceRule(fr.astratime.lucky.entities.exploration.PlaceRule.NONE);
+        int wins = 0;
+        int[] turns = {0};
+        for (int run = 0; run < runs; run++) {
+            game.restart(chapter.getFirstEnemy());
+            if (!fight(game, random, gear, turns)) continue;
+            game.startCombat(chapter.getChallengers().get(random.nextInt(chapter.getChallengers().size())));
+            if (!fight(game, random, gear, turns)) continue;
+            game.startCombat(chapter.getBoss());
+            if (fight(game, random, gear, turns)) wins++;
+        }
+        return wins / (double) runs;
+    }
+
+    private void towerSection(StringBuilder out) {
+        out.append("## 8. Tour des épreuves\n\n")
+            .append("Part des chapitres gagnés (premier ennemi, un challenger au hasard, puis le boss), mode normal.\n\n");
+        EnemyKind.setTowerHard(false);
+        List<Rank> ranks = allRanks();
+        fr.astratime.lucky.entities.tower.Chapter[] chapters = fr.astratime.lucky.entities.tower.Chapter.values();
+        Map<String, Double> starter = new ConcurrentHashMap<>(), top = new ConcurrentHashMap<>();
+        Map<String, String> topGear = new ConcurrentHashMap<>();
+        List<Runnable> jobs = new ArrayList<>();
+        for (var chapter : chapters) {
+            for (Rank rank : ranks) {
+                String key = chapter.name() + '/' + rank;
+                jobs.add(() -> starter.put(key, towerWinRate(chapter, rank, Gear.STARTER, sizes.dungeonRuns(), SEED)));
+                if (rank == null || rank.ordinal() < Rank.FLAMBEUR.ordinal()) continue;
+                for (Gear gear : topGears()) {
+                    jobs.add(() -> {
+                        double rate = towerWinRate(chapter, rank, gear, sizes.dungeonRuns() / 2, SEED);
+                        synchronized (top) {
+                            if (rate > top.getOrDefault(key, -1.0)) { top.put(key, rate); topGear.put(key, gear.name()); }
+                        }
+                    });
+                }
+            }
+        }
+        jobs.parallelStream().forEach(Runnable::run);
+        for (int pass = 0; pass < 2; pass++) {
+            Map<String, Double> rates = pass == 0 ? starter : top;
+            out.append(pass == 0 ? "### Deck de départ\n\n" : "### Meilleur équipement au maximum\n\n");
+            out.append("| Chapitre |");
+            for (Rank rank : ranks) out.append(' ').append(title(rank)).append(" |");
+            out.append("\n|---|");
+            for (int i = 0; i < ranks.size(); i++) out.append("---:|");
+            out.append('\n');
+            for (var chapter : chapters) {
+                out.append("| ").append(chapter.getLabel()).append(" |");
+                for (Rank rank : ranks) {
+                    Double rate = rates.get(chapter.name() + '/' + rank);
+                    out.append(rate == null ? " - |" : String.format(Locale.ROOT, " %.0f %% |", rate * 100));
+                }
+                out.append('\n');
+            }
+            out.append('\n');
+        }
     }
 
     // -------------------------------------------------------------------------

@@ -212,17 +212,18 @@ public class AchievementsOverlay implements Disposable {
         float columnWidth = (px + PANEL_WIDTH - PAD - ax - PAD) / 2f;
         int perColumn = (names.length + 1) / 2;
         float rowsTop = headY - achievementsTitle.getHeight() - 16f;
+        float rowHeight = Math.min(ROW_HEIGHT, (rowsTop - py - PAD / 2f) / perColumn); // tous les succès tiennent dans le cadre
         for (int i = 0; i < names.length; i++) {
             float cx = ax + (i / perColumn) * (columnWidth + PAD);
-            float ry = rowsTop - (i % perColumn + 1) * ROW_HEIGHT;
-            icons[i].setBounds(cx, ry + (ROW_HEIGHT - ICON) / 2f, ICON, ICON);
+            float ry = rowsTop - (i % perColumn + 1) * rowHeight;
+            icons[i].setBounds(cx, ry + (rowHeight - ICON) / 2f, ICON, ICON);
             names[i].pack();
             descriptions[i].pack();
             rewards[i].pack();
             float textX = cx + ICON + 14f;
-            names[i].setPosition(textX, ry + ROW_HEIGHT / 2f);
-            descriptions[i].setPosition(textX, ry + ROW_HEIGHT / 2f - descriptions[i].getHeight() - 2f);
-            rewards[i].setPosition(cx + columnWidth - rewards[i].getWidth(), ry + ROW_HEIGHT / 2f);
+            names[i].setPosition(textX, ry + rowHeight / 2f);
+            descriptions[i].setPosition(textX, ry + rowHeight / 2f - descriptions[i].getHeight() - 2f);
+            rewards[i].setPosition(cx + columnWidth - rewards[i].getWidth(), ry + rowHeight / 2f);
         }
 
         back.setPosition(sx + (STATS_WIDTH - back.getWidth()) / 2f, py + PAD);

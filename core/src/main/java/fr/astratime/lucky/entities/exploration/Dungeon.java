@@ -37,6 +37,28 @@ public enum Dungeon {
         EnemyKind.SOLDAT_CARREAU, EnemyKind.ROI_CARREAU,
         List.of(new Loot("rempart", 40), new Loot("miroir_taille", 40), new Loot("diamant_brut", 20))),
 
+    // ----- La Fête foraine -----
+
+    CHAPITEAU("Le Chapiteau", "Chapiteau",
+        "La piste est noire. Un projecteur s'allume. Le spectacle commence, et tu en fais partie.",
+        EnemyKind.CLOWN, EnemyKind.MONSIEUR_LOYAL,
+        List.of(new Loot("joker_sauvage", 40), new Loot("rire_du_joker", 40), new Loot("couronne_du_fou", 20))),
+
+    TRAIN_FANTOME("Le Train fantôme", "Train fantôme",
+        "Les wagons grincent dans le noir. Des squelettes rient. Tu ne vois plus tes rouleaux.",
+        EnemyKind.SQUELETTE, EnemyKind.CONDUCTEUR,
+        List.of(new Loot("atelier_du_joker", 40), new Loot("joker_cameleon", 40), new Loot("diable_en_boite", 20))),
+
+    GRANDE_ROUE("La Grande Roue", "Grande Roue",
+        "Elle tourne sans fin au-dessus de la foire. Elle relance tes rouleaux. Et ta chance.",
+        EnemyKind.FORAIN, EnemyKind.ROUE_FORTUNE,
+        List.of(new Loot("rouleau_retenu", 40), new Loot("memoire_de_la_machine", 40), new Loot("second_levier", 20))),
+
+    STANDS("Les Stands", "Stands",
+        "Pêche aux canards, tir, chamboule-tout. Tous les jeux sont truqués. Tous les lots aussi.",
+        EnemyKind.BONIMENTEUR, EnemyKind.ROI_FORAIN,
+        List.of(new Loot("calibrage", 40), new Loot("martingale", 40), new Loot("chamboule_tout", 20))),
+
     // ----- Le Port des Contrebandiers -----
 
     CALE("La Cale", "Cale",
@@ -101,7 +123,30 @@ public enum Dungeon {
     VIP("La Salle VIP", "VIP",
         "Une table immense. Huit bras qui distribuent. Le Kraken attend son tour.",
         EnemyKind.PIEUVRE, EnemyKind.KRAKEN,
-        List.of(new Loot("harpon", 40), new Loot("ancre", 40), new Loot("trident", 20)));
+        List.of(new Loot("harpon", 40), new Loot("ancre", 40), new Loot("trident", 20))),
+
+    // ----- Le Désert de Braise -----
+
+    CARAVANE("La Caravane", "Caravane",
+        "Des chameaux chargés d'or traversent les dunes. Ici, chaque pas se paie.",
+        EnemyKind.CARAVANIER, EnemyKind.EMIR,
+        List.of(new Loot("reconnaissance_de_dette", 40), new Loot("taux_variable", 40), new Loot("interets_composes", 20))),
+
+    TOMBEAU("Le Tombeau", "Tombeau",
+        "Un couloir de torches sous le sable. Les morts n'oublient jamais une dette.",
+        EnemyKind.MOMIE, EnemyKind.PHARAON,
+        List.of(new Loot("recouvrement", 40), new Loot("rente_viagere", 40), new Loot("sceau_du_pharaon", 20))),
+
+    OASIS("L'Oasis", "Oasis",
+        "De l'eau, des palmiers, de l'ombre. Trop beau pour être vrai.",
+        EnemyKind.SCORPION, EnemyKind.DJINN,
+        List.of(new Loot("chapeau_du_lutin", 40), new Loot("gigue_du_lutin", 40), new Loot("bout_de_l_arc_en_ciel", 20))),
+
+    VOLCAN("Le Volcan", "Volcan",
+        "La lave coule. Le sol tremble. Tout au fond, un dragon dort sur l'or de la comète.",
+        EnemyKind.SALAMANDRE, EnemyKind.DRAGON,
+        List.of(new Loot("marteau_du_cordonnier", 40), new Loot("farce_du_lutin", 40), new Loot("magot_du_dragon", 20)));
+
 
     private final String     name;
     private final String     shortName;

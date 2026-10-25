@@ -307,6 +307,8 @@ public final class ExplorationArt {
             case PORT    -> PlacesArt.PORT_GATES;
             case MINES   -> PlacesArt.MINES_GATES;
             case CASINO  -> PlacesArt.CASINO_GATES;
+            case FOIRE   -> FairDesertArt.FOIRE_GATES;
+            case DESERT  -> FairDesertArt.DESERT_GATES;
         };
     }
 

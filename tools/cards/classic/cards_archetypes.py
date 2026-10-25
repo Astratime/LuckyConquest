@@ -536,10 +536,123 @@ def martingale(pal):
     return finish(pal, stack(A, L), RELANCE_I, XP)
 
 
+# ======================================================== Nouveaux lieux (2026-10-24)
+def diable_en_boite(pal):
+    """Une boîte à ressort d'où jaillit une tête de Joker en bonnet de fou."""
+    def box(d):
+        d.rectangle([9, 34, 29, 47], fill=R)
+        d.rectangle([9, 34, 29, 35], fill=RL)
+        d.rectangle([27, 36, 29, 47], fill=RD)
+        poly(d, [(9, 34), (4, 29), (6, 27), (11, 33)], RD)
+    L = ob(box)
+    d = ImageDraw.Draw(L)
+    for x in (13, 19, 25):
+        d.rectangle([x - 1, 39, x + 1, 42], fill=Y)
+    d.rectangle([30, 39, 32, 40], fill=ST)
+
+    def spring(d):
+        for k in range(4):
+            y = 32 - k * 3
+            d.line([(16, y), (22, y - 2)], fill=STL, width=1)
+            d.line([(22, y - 2), (16, y - 3)], fill=ST, width=1)
+    Sp = ob(spring)
+
+    def head(d):
+        d.ellipse([12, 14, 26, 25], fill=S)
+        d.arc([15, 18, 23, 24], 20, 160, fill=RD, width=1)
+        d.point([(16, 18), (22, 18)], fill=INK)
+        d.ellipse([18, 19, 20, 21], fill=R)
+    H = ob(head)
+    hat = ob(lambda d: jester_hat(d, 19, 5, w=7))
+    return finish(pal, stack(Sp, L, H, hat), JOKER_I, JP)
+
+
+def chamboule_tout(pal):
+    """Une pyramide de boîtes de conserve qui dégringole sous une balle."""
+    cols = [(R, RD, RL), (B, BD, BL), (G, GD, GL)]
+
+    def cans(d):
+        spots = [(9, 39), (17, 39), (25, 39), (13, 30), (22, 27)]
+        for i, (x, y) in enumerate(spots):
+            c, cd, cl = cols[i % 3]
+            d.rectangle([x, y, x + 6, y + 8], fill=c)
+            d.rectangle([x, y, x + 6, y + 1], fill=STL)
+            d.rectangle([x, y + 7, x + 6, y + 8], fill=ST)
+            d.line([(x + 1, y + 2), (x + 1, y + 6)], fill=cl)
+            d.line([(x + 5, y + 2), (x + 5, y + 6)], fill=cd)
+    L = ob(cans)
+
+    def tilted(d):
+        poly(d, [(24, 16), (30, 14), (32, 21), (26, 23)], Y)
+        d.line([(24, 16), (30, 14)], fill=STL)
+    T = ob(tilted)
+
+    def ball(d):
+        d.ellipse([5, 11, 13, 19], fill=WDL)
+        d.arc([6, 12, 12, 18], 200, 300, fill=WHITE)
+    Bl = ob(ball)
+    bd = ImageDraw.Draw(Bl)
+    for k in range(3):
+        bd.point((14 + 2 * k, 18 + k), fill=STD)
+    return finish(pal, stack(L, T, Bl), RELANCE_I, XP)
+
+
+def sceau_du_pharaon(pal):
+    """Un parchemin scellé d'un grand sceau d'or à l'oeil du Pharaon."""
+    def scroll(d):
+        d.rectangle([8, 12, 30, 40], fill=PAPER)
+        d.rectangle([6, 9, 32, 13], fill=PAPERD)
+        d.rectangle([6, 39, 32, 43], fill=PAPERD)
+        for y in (17, 21, 25):
+            d.line([(11, y), (27, y)], fill=PAPERD)
+    L = ob(scroll)
+
+    def seal(d):
+        d.ellipse([12, 25, 28, 41], fill=YD)
+        d.ellipse([13, 26, 27, 40], fill=Y)
+        d.ellipse([15, 28, 25, 38], fill=YD)
+    Se = ob(seal)
+    sd = ImageDraw.Draw(Se)
+    sd.ellipse([16, 31, 24, 35], fill=WHITE)
+    sd.ellipse([19, 31, 21, 35], fill=B)
+    sd.point((20, 33), fill=INK)
+    sd.line([(16, 33), (14, 33)], fill=INK)
+    sd.line([(20, 36), (19, 38)], fill=INK)
+    sd.point((14, 27), fill=YL)
+    ribbon = ob(lambda d: (poly(d, [(15, 40), (18, 40), (16, 47), (13, 45)], R),
+                           poly(d, [(22, 40), (25, 40), (27, 45), (24, 47)], R)))
+    return finish(pal, stack(L, ribbon, Se), RENTE_I, RP)
+
+
+def magot_du_dragon(pal):
+    """Un tas d'or sous une griffe de dragon et une écaille rouge."""
+    def hoard(d):
+        poly(d, [(5, 47), (12, 34), (19, 30), (27, 34), (33, 47)], Y)
+        poly(d, [(19, 30), (27, 34), (33, 47), (24, 47)], YD)
+    L = ob(hoard)
+    d = ImageDraw.Draw(L)
+    for x, y in ((11, 40), (17, 36), (23, 41), (15, 44), (27, 44)):
+        d.ellipse([x, y, x + 3, y + 2], fill=YL)
+    sparkle(d, 20, 33)
+    sparkle(d, 9, 43)
+
+    def claw(d):
+        poly(d, [(14, 8), (26, 8), (28, 18), (12, 18)], R)
+        for x in (12, 18, 24):
+            poly(d, [(x, 18), (x + 4, 18), (x + 2, 27)], WHITE)
+        d.line([(15, 10), (25, 10)], fill=RL)
+    C_ = ob(claw)
+    cd = ImageDraw.Draw(C_)
+    for x in (16, 22):
+        cd.arc([x - 2, 12, x + 2, 16], 0, 180, fill=RD)
+    return finish(pal, stack(L, C_), LUTIN_I, LP)
+
+
 DESIGNS = {f.__name__: f for f in (
     joker_sauvage, rire_du_joker, couronne_du_fou, atelier_du_joker, joker_cameleon,
     chapeau_du_lutin, gigue_du_lutin, bout_de_l_arc_en_ciel, marteau_du_cordonnier, farce_du_lutin,
     reconnaissance_de_dette, taux_variable, interets_composes, recouvrement, rente_viagere,
     intimidation, cartes_marquees, fausse_piste, tour_de_passe_passe, coup_de_bluff,
     rouleau_retenu, memoire_de_la_machine, calibrage, second_levier, martingale,
+    diable_en_boite, chamboule_tout, sceau_du_pharaon, magot_du_dragon,
 )}

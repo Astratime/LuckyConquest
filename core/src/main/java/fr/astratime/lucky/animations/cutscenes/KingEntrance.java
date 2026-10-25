@@ -15,7 +15,7 @@ import fr.astratime.lucky.entities.enemy.EnemyKind;
  * part), puis le roi apparaît ; en place, il fait un geste et son nom
  * s'affiche ; fondu noir et sa présentation. Chaque lieu dessine ses quatre
  * rois ({@link PrairieKings}, {@link PortKings}, {@link MinesKings},
- * {@link CasinoKings}) ; le son est cutscene/king_<i>roi</i>.
+ * {@link CasinoKings}, {@link FairKings}, {@link DesertKings}) ; le son est cutscene/king_<i>roi</i>.
  *
  * L'entrée a sa propre horloge : pendant {@link #step} et {@link #draw},
  * {@link #time} part de 0 à la fin du décor.
@@ -53,6 +53,8 @@ public abstract class KingEntrance extends Cutscene {
             case CAPITAINE_RAT, TAVERNIER, GARDIEN_PHARE, CAPITAINE_NOIR -> new PortKings(kit, king);
             case BARON_OR, GRAND_FOREUR, MAITRE_FORGE, COEUR_MONTAGNE -> new MinesKings(kit, king);
             case SIRENE, JACKPOT_VIVANT, REQUIN_BANQUIER, KRAKEN -> new CasinoKings(kit, king);
+            case MONSIEUR_LOYAL, CONDUCTEUR, ROUE_FORTUNE, ROI_FORAIN -> new FairKings(kit, king);
+            case EMIR, PHARAON, DJINN, DRAGON -> new DesertKings(kit, king);
             default -> null;
         };
     }
@@ -163,6 +165,33 @@ public abstract class KingEntrance extends Cutscene {
         float light = 1f - shadow;
         batch.setColor(light, light, light, alpha);
         batch.draw(king, x + poseX - width / 2f, y + poseY, width / 2f, 0f, width, height, 1f, 1f, poseTilt);
+    }
+
+    /**
+     * Dessine {@code region} sur le roi tel que {@link #drawKing} le pose en ({@code x}, {@code y}) à l'échelle
+     * {@code scale} : son coin haut-gauche au pixel ({@code left}, {@code top}) du portrait, un pixel de
+     * {@code region} valant {@code pixels} pixels du portrait. Elle suit son geste, comme si elle faisait partie du dessin.
+     */
+    protected void drawOnKing(Batch batch, TextureRegion region, float left, float top, float pixels, float x, float y,
+                              float scale, float shadow, float alpha) {
+        float sx = 1f - poseStretch * 0.5f, sy = 1f + poseStretch;
+        float w = region.getRegionWidth() * pixels * scale * sx, h = region.getRegionHeight() * pixels * scale * sy;
+        float footX = x + poseX, footY = y + poseY;
+        float rx = footX + (left - king.getRegionWidth() / 2f) * scale * sx;
+        float ry = footY + (king.getRegionHeight() - top - region.getRegionHeight() * pixels) * scale * sy;
+        float light = 1f - shadow;
+        batch.setColor(light, light, light, alpha);
+        batch.draw(region, rx, ry, footX - rx, footY - ry, w, h, 1f, 1f, poseTilt);
+    }
+
+    /** @return l'abscisse à l'écran du pixel {@code px} du roi posé en {@code x} (sans son inclinaison). */
+    protected float kingPixelX(float px, float x, float scale) {
+        return x + poseX + (px - king.getRegionWidth() / 2f) * scale * (1f - poseStretch * 0.5f);
+    }
+
+    /** @return l'ordonnée à l'écran du pixel {@code py} (compté du haut) du roi posé en {@code y} (sans son inclinaison). */
+    protected float kingPixelY(float py, float y, float scale) {
+        return y + poseY + (king.getRegionHeight() - py) * scale * (1f + poseStretch);
     }
 
     /** Une gerbe de {@code count} étincelles de couleur {@code color} autour de ({@code x}, {@code y}). */

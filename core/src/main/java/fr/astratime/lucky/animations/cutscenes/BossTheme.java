@@ -52,6 +52,16 @@ public record BossTheme(Color skyTop, Color skyLow, Color ground, Color accent, 
             case JACKPOT_VIVANT -> king(kind, "ffd23a", "LE JACKPOT EST VIDÉ !");
             case REQUIN_BANQUIER -> king(kind, "7ad0ff", "LA BANQUE DU REQUIN FAIT FAILLITE");
             case KRAKEN -> king(kind, "b05aff", "LE KRAKEN RETOURNE AUX ABYSSES");
+            // ----- La Fête foraine -----
+            case MONSIEUR_LOYAL -> king(kind, "ff3a3a", "LE RIDEAU TOMBE SUR MONSIEUR LOYAL");
+            case CONDUCTEUR -> king(kind, "6ad86a", "LE TRAIN FANTÔME FINIT SA COURSE");
+            case ROUE_FORTUNE -> king(kind, "ffd23a", "HUÉE, LA ROUE VOLE EN ÉCLATS");
+            case ROI_FORAIN -> king(kind, "ff9a3a", "LE ROI DES FORAINS A PERDU LA MAIN");
+            // ----- Le Désert de Braise -----
+            case EMIR -> king(kind, "ffd23a", "L'ÉMIR RETOURNE AU SABLE");
+            case PHARAON -> king(kind, "6aff6a", "LE PHARAON RETOURNE À LA POUSSIÈRE");
+            case DJINN -> king(kind, "a05aff", "LE DJINN RETOURNE DANS SA LAMPE");
+            case DRAGON -> king(kind, "ff6a1e", "IGNAR S'ÉTEINT DANS SON VOLCAN");
             default -> tower("05071a", "2b1a4a", "0e0a12", "ffc93a", "VAINCU !");
         };
     }
@@ -68,6 +78,8 @@ public record BossTheme(Color skyTop, Color skyLow, Color ground, Color accent, 
             case PORT -> { top = "040a18"; low = "0f2a44"; ground = "06101c"; }       // la nuit sur la mer
             case MINES -> { top = "120a04"; low = "3a2210"; ground = "140c06"; }      // la roche et l'or
             case CASINO -> { top = "02101a"; low = "0a3a4a"; ground = "031016"; }     // sous la mer
+            case FOIRE -> { top = "0a0614"; low = "2a0a2a"; ground = "140a10"; }      // la nuit sous le chapiteau
+            case DESERT -> { top = "2a0a0a"; low = "c8501e"; ground = "8a5a2a"; }     // le sable brûlant
             default -> { top = "1c1a28"; low = "2e2a3e"; ground = "141220"; }         // le donjon de pierre
         }
         return tower(top, low, ground, accent, line);

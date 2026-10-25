@@ -4,16 +4,19 @@
   {"id": "couronne_du_fou", "name": "Couronne du Fou", "archetype": "JOKER", "assetPath": "cards/special/couronne_du_fou.png", "effects": [{"type": "BOOST_SYMBOL", "symbol": "JOKER", "amount": 60}, {"type": "FOOL_CROWN", "factor": 2}]},
   {"id": "atelier_du_joker", "name": "Atelier du Joker", "archetype": "JOKER", "assetPath": "cards/special/atelier_du_joker.png", "effects": [{"type": "BOOST_SYMBOL", "symbol": "JOKER", "amount": 50}, {"type": "JOKER_WORKSHOP"}]},
   {"id": "joker_cameleon", "name": "Joker caméléon", "archetype": "JOKER", "assetPath": "cards/special/joker_cameleon.png", "effects": [{"type": "BOOST_SYMBOL", "symbol": "JOKER", "amount": 30}, {"type": "WILD_CARD"}]},
+  {"id": "diable_en_boite", "name": "Diable en boîte", "archetype": "JOKER", "assetPath": "cards/special/diable_en_boite.png", "effects": [{"type": "BOOST_SYMBOL", "symbol": "JOKER", "amount": 40}, {"type": "JACK_IN_THE_BOX", "step": 10, "max": 50}]},
   {"id": "chapeau_du_lutin", "name": "Chapeau du Lutin", "archetype": "LUTIN", "assetPath": "cards/special/chapeau_du_lutin.png", "effects": [{"type": "LEPRECHAUN_HAT", "turns": 3, "percent": 100}]},
   {"id": "gigue_du_lutin", "name": "Gigue du Lutin", "archetype": "LUTIN", "assetPath": "cards/special/gigue_du_lutin.png", "effects": [{"type": "LEPRECHAUN_JIG", "spinsPerBlade": 10, "maxBlades": 5}]},
   {"id": "bout_de_l_arc_en_ciel", "name": "Bout de l'arc-en-ciel", "archetype": "LUTIN", "assetPath": "cards/special/bout_de_l_arc_en_ciel.png", "effects": [{"type": "RAINBOWS_END", "card": "pot_de_lutin"}]},
   {"id": "marteau_du_cordonnier", "name": "Marteau du cordonnier", "archetype": "LUTIN", "assetPath": "cards/special/marteau_du_cordonnier.png", "effects": [{"type": "COBBLER_HAMMER", "attackPercent": 30, "gainsPercent": 25}]},
   {"id": "farce_du_lutin", "name": "Farce du Lutin", "archetype": "LUTIN", "assetPath": "cards/special/farce_du_lutin.png", "effects": [{"type": "LEPRECHAUN_PRANK", "spins": 5, "blades": 2}]},
+  {"id": "magot_du_dragon", "name": "Magot du dragon", "archetype": "LUTIN", "assetPath": "cards/special/magot_du_dragon.png", "effects": [{"type": "DRAGON_HOARD", "turns": 3, "spins": 2, "step": 5, "max": 50}]},
   {"id": "reconnaissance_de_dette", "name": "Reconnaissance de dette", "archetype": "RENTIER", "assetPath": "cards/special/reconnaissance_de_dette.png", "effects": [{"type": "CLAIMS", "count": 3}]},
   {"id": "taux_variable", "name": "Taux variable", "archetype": "RENTIER", "assetPath": "cards/special/taux_variable.png", "effects": [{"type": "VARIABLE_RATE", "perSymbol": 1}]},
   {"id": "interets_composes", "name": "Intérêts composés", "archetype": "RENTIER", "assetPath": "cards/special/interets_composes.png", "effects": [{"type": "COMPOUND_INTEREST", "turns": 3, "percent": 25}]},
   {"id": "recouvrement", "name": "Recouvrement", "archetype": "RENTIER", "assetPath": "cards/special/recouvrement.png", "effects": [{"type": "DEBT_COLLECTION", "hpPercent": 1, "spins": 2}]},
   {"id": "rente_viagere", "name": "Rente viagère", "archetype": "RENTIER", "assetPath": "cards/special/rente_viagere.png", "effects": [{"type": "ANNUITY", "turns": 5, "claims": 1, "spins": 2}]},
+  {"id": "sceau_du_pharaon", "name": "Sceau du Pharaon", "archetype": "RENTIER", "assetPath": "cards/special/sceau_du_pharaon.png", "effects": [{"type": "PHARAOH_SEAL", "claims": 4, "turns": 3}]},
   {"id": "intimidation", "name": "Intimidation", "archetype": "BLUFFEUR", "assetPath": "cards/special/intimidation.png", "effects": [{"type": "INTIMIDATION", "percent": 30}]},
   {"id": "cartes_marquees", "name": "Cartes marquées", "archetype": "BLUFFEUR", "assetPath": "cards/special/cartes_marquees.png", "effects": [{"type": "MARKED_CARDS", "turns": 2}]},
   {"id": "fausse_piste", "name": "Fausse piste", "archetype": "BLUFFEUR", "assetPath": "cards/special/fausse_piste.png", "effects": [{"type": "RED_HERRING"}]},
@@ -23,5 +26,6 @@
   {"id": "memoire_de_la_machine", "name": "Mémoire de la machine", "archetype": "RELANCEUR", "assetPath": "cards/special/memoire_de_la_machine.png", "effects": [{"type": "MACHINE_MEMORY", "amount": 60}]},
   {"id": "calibrage", "name": "Calibrage", "archetype": "RELANCEUR", "assetPath": "cards/special/calibrage.png", "effects": [{"type": "CALIBRATION", "turns": 2, "percent": 20}]},
   {"id": "second_levier", "name": "Second levier", "archetype": "RELANCEUR", "assetPath": "cards/special/second_levier.png", "effects": [{"type": "SECOND_LEVER", "tries": 2}]},
-  {"id": "martingale", "name": "Martingale", "archetype": "RELANCEUR", "assetPath": "cards/special/martingale.png", "effects": [{"type": "MARTINGALE", "attackPercent": 20, "pairPercent": 30}]}
+  {"id": "martingale", "name": "Martingale", "archetype": "RELANCEUR", "assetPath": "cards/special/martingale.png", "effects": [{"type": "MARTINGALE", "attackPercent": 20, "pairPercent": 30}]},
+  {"id": "chamboule_tout", "name": "Chamboule-tout", "archetype": "RELANCEUR", "assetPath": "cards/special/chamboule_tout.png", "effects": [{"type": "KNOCKDOWN"}]}
 ]
