@@ -55,7 +55,7 @@ public record BossTheme(Color skyTop, Color skyLow, Color ground, Color accent, 
             // ----- La Fête foraine -----
             case MONSIEUR_LOYAL -> king(kind, "ff3a3a", "LE RIDEAU TOMBE SUR MONSIEUR LOYAL");
             case CONDUCTEUR -> king(kind, "6ad86a", "LE TRAIN FANTÔME FINIT SA COURSE");
-            case ROUE_FORTUNE -> king(kind, "ffd23a", "LA ROUE S'ARRÊTE SUR RIEN");
+            case ROUE_FORTUNE -> king(kind, "ffd23a", "HUÉE, LA ROUE VOLE EN ÉCLATS");
             case ROI_FORAIN -> king(kind, "ff9a3a", "LE ROI DES FORAINS A PERDU LA MAIN");
             // ----- Le Désert de Braise -----
             case EMIR -> king(kind, "ffd23a", "L'ÉMIR RETOURNE AU SABLE");

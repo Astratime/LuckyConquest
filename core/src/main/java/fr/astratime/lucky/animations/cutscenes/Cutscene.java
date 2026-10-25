@@ -528,6 +528,16 @@ public abstract class Cutscene extends Actor implements Disposable {
         return new TextureRegion(texture);
     }
 
+    /** @return une image en pixel art tirée d'une grille de couleurs RGBA8888 ({@code grid[y][x]}, 0 = vide). */
+    protected TextureRegion pixels(int[][] grid) {
+        Pixmap pixmap = new Pixmap(grid[0].length, grid.length, Pixmap.Format.RGBA8888);
+        pixmap.setBlending(Pixmap.Blending.None);
+        for (int y = 0; y < grid.length; y++) {
+            for (int x = 0; x < grid[y].length; x++) if (grid[y][x] != 0) pixmap.drawPixel(x, y, grid[y][x]);
+        }
+        return region(pixmap, false);
+    }
+
     /** @return une image en pixel art : chaque caractère de {@code rows} est un pixel ({@code palette}, '.' = vide). */
     protected TextureRegion art(String palette, Color[] colors, String... rows) {
         int width = 0;

@@ -5,6 +5,7 @@ import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.Interpolation;
 import com.badlogic.gdx.math.MathUtils;
+import fr.astratime.lucky.assets.FairDesertPortraits;
 import fr.astratime.lucky.entities.enemy.EnemyKind;
 import fr.astratime.lucky.entities.enemy.EnemySymbol;
 
@@ -46,6 +47,16 @@ final class FairBossScenes {
         ".oo....oo.", "obbo..obbo", ".obbbbbbo.", "obbbbbbbbo", "obkbbbbkbo", "obbbmmbbbo", ".obbbbbbo.", "obbbbbbbbo",
         "obbbbbbbbo", ".oo....oo."};
     static final String[] BELL = {"....o....", "...ogo...", "..ogggo..", "..oggwo..", ".ogggwgo.", ".ogggggo.", "ogggggggo", "ooooooooo"};
+
+    static final String[] TOMATO = {
+        "...g...", ".oogoo.", "orrrrwo", "orrrrro", "orrrrro", ".orrro.", "..ooo.."};
+    static final String[] SPLAT = {
+        "r...r..r.", ".rr.rrr..", "..rrrrrr.", "rrrrsrrrr", ".rrrrrrr.", "..rr.rrr.", ".r....r.r"};
+
+    /** Roi des forains : la carte qu'il tient, un vrai 2 de Carreau du jeu, posée sur celle de son portrait. */
+    static final String FAIR_KING_CARD = "cards/light/2-D.png";
+    /** Sa place sur le portrait : coin haut-gauche (pixels du portrait) et taille d'un pixel de la carte. */
+    static final float CARD_LEFT = 26f, CARD_TOP = 18.6f, CARD_PIXELS = 0.42f;
 
     static Color c(String hex) { return Color.valueOf(hex); }
 
@@ -104,7 +115,7 @@ final class FairBossScenes {
                 float card = progress(CLIMAX_PHASE - 0.1f, CLIMAX_PHASE + 0.1f);
                 if (card > 0f) draw(batch, aces[i], x, y, fit(220f, 27), 10f * MathUtils.sinDeg(angle), WHITE, card);
             }
-            eyes(batch, progress(CLIMAX_PHASE, CLIMAX_PHASE + 0.2f), RED, new float[] {13.5f, 15.5f}, new float[] {20.5f, 15.5f});
+            eyes(batch, progress(CLIMAX_PHASE, CLIMAX_PHASE + 0.2f), RED, new float[] {14f, 16f}, new float[] {21f, 16f});
             flash(batch, RED, CLIMAX_PHASE, 0.3f, 0.35f);
         }
     }
@@ -206,7 +217,7 @@ final class FairBossScenes {
             float dark = progress(0.4f, 0.7f) * (1f - progress(1.6f, 1.8f));                 // le tunnel
             if (dark > 0f) {
                 fill(batch, Color.BLACK, dark);
-                eyes(batch, dark, c("eaffea"), new float[] {13.5f, 15.5f}, new float[] {20.5f, 15.5f});
+                eyes(batch, dark, c("eaffea"), new float[] {14f, 16f}, new float[] {21f, 16f});
                 glow(batch, portraitX(29f), portraitY(31f), 200f, c("6ad86a"), dark);
             }
             if (time >= CLIMAX_PHASE) glow(batch, bossX(), bossY(), bossHeight() * 1.6f, BLUE_FIRE, 0.4f * pulse(10f, 0.6f));
@@ -267,26 +278,71 @@ final class FairBossScenes {
     // Roue de la Fortune
     // -------------------------------------------------------------------------
 
-    /** Elle tourne de plus en plus vite ; ses nacelles se détachent et l'entourent ; toutes ses cases deviennent « Épée x2 ». */
-    static final class WheelPhase extends BossScene {
+    /**
+     * La Roue de la Fortune en trois calques (pied, roue, visage et flèche), pour faire tourner la roue seule :
+     * le pied et son visage ne bougent pas.
+     */
+    abstract static class WheelScene extends BossScene {
+        protected final TextureRegion stand, disc, face;
+        protected final int[][] discPixels;
+
+        WheelScene(CutsceneKit kit, Moment moment, int phase) {
+            super(kit, moment, EnemyKind.ROUE_FORTUNE, phase);
+            stand = pixels(FairDesertPortraits.wheelLayer(0));
+            discPixels = FairDesertPortraits.wheelLayer(1);
+            disc = pixels(discPixels);
+            face = pixels(FairDesertPortraits.wheelLayer(2));
+        }
+
+        /** @return le centre de la roue à l'écran (le pixel 17, 19 du portrait). */
+        protected float hubX() { return portraitX(17.5f); }
+        protected float hubY() { return portraitY(19.5f); }
+
+        /** Le pied, la roue tournée de {@code angle} degrés autour de son moyeu, puis le visage ; teinte {@code tint}. */
+        protected void drawWheel(Batch batch, float angle, Color tint, boolean withDisc, boolean withFace) {
+            float scale = bossScale() * poseScale;
+            float w = boss.getRegionWidth() * scale, h = boss.getRegionHeight() * scale;
+            float x = bossX() + poseX - w / 2f, y = bossBottom() + poseY;
+            batch.setColor(tint);
+            batch.draw(stand, x, y, w, h);
+            if (withDisc) batch.draw(disc, x, y, hubX() - x, hubY() - y, w, h, 1f, 1f, angle);
+            if (withFace) batch.draw(face, x, y, w, h);
+        }
+    }
+
+    /** Sa roue tourne de plus en plus vite (lui ne bouge pas) ; ses nacelles se détachent et l'entourent ; toutes ses cases deviennent « Épée x2 ». */
+    static final class WheelPhase extends WheelScene {
         private final TextureRegion sword;
 
         WheelPhase(CutsceneKit kit) {
-            super(kit, Moment.PHASE, EnemyKind.ROUE_FORTUNE, 2);
+            super(kit, Moment.PHASE, 2);
             sword = symbol(EnemySymbol.SWORD);
         }
 
-        private float angle() { return 140f * time * time; }
+        private float angle() { return -140f * time * time; }
 
         @Override
         protected void step(float delta) {
-            if (time > 0.6f && random.nextFloat() < 0.6f) sparks(bossX(), bossY(), 2, GOLD, 600f, 8f);
-            if (at(CLIMAX_PHASE)) { rumble(0.6f, 12f); sparks(bossX(), bossY(), 60, Color.WHITE, 800f, 14f); }
+            if (time > 0.6f && random.nextFloat() < 0.6f) {                                 // les étincelles du cerclage
+                float a = random.nextFloat() * 360f, r = bossScale() * 15f;
+                sparks(hubX() + MathUtils.cosDeg(a) * r, hubY() + MathUtils.sinDeg(a) * r, 2, GOLD, 600f, 8f);
+            }
+            if (at(CLIMAX_PHASE)) { rumble(0.6f, 12f); sparks(hubX(), hubY(), 60, Color.WHITE, 800f, 14f); }
         }
 
         @Override
         protected void back(Batch batch) {
-            poseTilt = -angle();
+            showBoss = false;
+            poseX = 6f * MathUtils.sin(time * 40f) * progress(1.2f, CLIMAX_PHASE);           // elle tremble sur son pied
+            drawWheel(batch, angle(), WHITE, true, true);
+            if (time > 1.0f) {                                                               // le flou de la vitesse
+                tmp.set(1f, 1f, 1f, 0.25f * progress(1.0f, 2.0f));
+                batch.setColor(tmp);
+                float scale = bossScale(), w = boss.getRegionWidth() * scale, h = boss.getRegionHeight() * scale;
+                float x = bossX() + poseX - w / 2f, y = bossBottom();
+                batch.draw(disc, x, y, hubX() - x, hubY() - y, w, h, 1f, 1f, angle() + 20f);
+                batch.draw(face, x, y, w, h);
+            }
         }
 
         @Override
@@ -294,8 +350,8 @@ final class FairBossScenes {
             float out = Interpolation.pow2Out.apply(progress(1.0f, 1.8f));
             float swords = progress(CLIMAX_PHASE - 0.1f, CLIMAX_PHASE + 0.1f);
             for (int i = 0; i < 8; i++) {                                                    // les nacelles qui l'entourent
-                float a = angle() * 0.6f + i * 45f, r = bossWidth() * (0.5f + 0.35f * out);
-                float x = bossX() + MathUtils.cosDeg(a) * r, y = bossY() + MathUtils.sinDeg(a) * r;
+                float a = -angle() * 0.6f + i * 45f, r = bossWidth() * (0.5f + 0.35f * out);
+                float x = hubX() + MathUtils.cosDeg(a) * r, y = hubY() + MathUtils.sinDeg(a) * r;
                 if (out <= 0f) continue;
                 rect(batch, i % 2 == 0 ? c("e86a8a") : GOLD, 1f - swords, x - 30f, y - 24f, 60f, 48f);
                 if (swords > 0f) {
@@ -305,50 +361,126 @@ final class FairBossScenes {
             }
             float blade = progress(CLIMAX_PHASE, CLIMAX_PHASE + 0.2f);                       // sa flèche devient une lame
             if (blade > 0f) {
-                float top = bossBottom() + bossHeight();
-                line(batch, c("dce4ee"), blade, bossX(), top - 40f, bossX(), top + 160f * blade, 26f);
-                line(batch, WHITE, blade, bossX() - 4f, top - 40f, bossX() - 4f, top + 150f * blade, 8f);
+                float top = portraitY(0f);
+                line(batch, c("dce4ee"), blade, bossX() + poseX, top - 40f, bossX() + poseX, top + 160f * blade, 26f);
+                line(batch, WHITE, blade, bossX() + poseX - 4f, top - 40f, bossX() + poseX - 4f, top + 150f * blade, 8f);
             }
-            eyes(batch, progress(CLIMAX_PHASE, CLIMAX_PHASE + 0.2f), c("ff3a3a"), new float[] {14.5f, 17.5f}, new float[] {19.5f, 17.5f});
+            eyes(batch, progress(CLIMAX_PHASE, CLIMAX_PHASE + 0.2f), c("ff3a3a"), new float[] {15f, 18f}, new float[] {20f, 18f});
             flash(batch, GOLD, CLIMAX_PHASE, 0.3f, 0.35f);
         }
     }
 
-    /** Elle ralentit, tic... tic... s'arrête sur Rien ; ses lumières s'éteignent ; elle bascule comme une pièce qui tombe, puis se couche. */
-    static final class WheelDeath extends BossScene {
+    /**
+     * Le public la bombarde de tomates : elles l'éclaboussent pendant qu'elle ralentit ; la dernière, énorme,
+     * la fait voler en éclats. Il ne reste que son pied, couvert de jus.
+     */
+    static final class WheelDeath extends WheelScene {
+        /** Les tomates : lancées à ces moments, chacune vise un point de la roue (rayon, angle). */
+        private static final float[] THROWS = {0.15f, 0.45f, 0.7f, 0.95f, 1.15f, 1.35f, 1.5f, 1.65f, 1.8f, 1.95f, 2.05f};
+        private static final float FLIGHT = 0.45f;
+        private final TextureRegion tomato, splat;
+        private final float[] aimRadius = new float[THROWS.length], aimAngle = new float[THROWS.length], fromX = new float[THROWS.length];
+        /** Les taches restées collées sur la roue : angle sur la roue (elle tourne avec), rayon, rotation. */
+        private final com.badlogic.gdx.utils.FloatArray stains = new com.badlogic.gdx.utils.FloatArray();
+        private boolean broken;
 
-        WheelDeath(CutsceneKit kit) { super(kit, Moment.DEATH, EnemyKind.ROUE_FORTUNE, 0); }
+        WheelDeath(CutsceneKit kit) {
+            super(kit, Moment.DEATH, 0);
+            tomato = art("ogrw", new Color[] {c("6a0a0a"), c("3a8a2a"), c("d8202c"), c("ff8a8a")}, TOMATO);
+            splat = art("rs", new Color[] {c("c8102e"), c("f0d060")}, SPLAT);
+            java.util.Random seed = new java.util.Random(11);
+            for (int i = 0; i < THROWS.length; i++) {
+                aimRadius[i] = 3f + 9f * seed.nextFloat();
+                aimAngle[i] = seed.nextFloat() * 360f;
+                fromX[i] = seed.nextBoolean() ? -0.1f - 0.2f * seed.nextFloat() : 1.1f + 0.2f * seed.nextFloat();
+            }
+        }
 
-        /** Ses crans : de plus en plus espacés, le dernier tombe sur la case Rien. */
-        private static final float[] TICKS = {0.2f, 0.45f, 0.75f, 1.1f, 1.5f, 1.95f, 2.45f};
+        @Override
+        protected void restart() { stains.clear(); broken = false; }
+
+        /** Elle ralentit et s'arrête pile à l'impact final, revenue à sa position de départ (deux tours). */
+        private float angle() {
+            float t = Math.min(time, CLIMAX_DEATH);
+            return -576f * (t - t * t / (2f * CLIMAX_DEATH));
+        }
+
+        /** @return où la tomate {@code i} touche la roue à l'écran, maintenant. */
+        private float aimX(int i) { return hubX() + MathUtils.cosDeg(aimAngle[i] + angle()) * aimRadius[i] * bossScale(); }
+        private float aimY(int i) { return hubY() + MathUtils.sinDeg(aimAngle[i] + angle()) * aimRadius[i] * bossScale(); }
 
         @Override
         protected void step(float delta) {
-            for (float tick : TICKS) if (at(tick)) { rumble(0.06f, 3f); sparks(bossX(), bossBottom() + bossHeight(), 6, GOLD, 200f, 6f); }
-            if (at(3.6f)) rumble(0.4f, 10f);
+            for (int i = 0; i < THROWS.length; i++) {
+                if (!at(THROWS[i] + FLIGHT)) continue;                                       // splatch !
+                rumble(0.08f, 3f);
+                stains.addAll(aimAngle[i], aimRadius[i], random.nextFloat() * 360f);
+                spray(splat, aimX(i), aimY(i), 4, 0f, 360f, 300f, fit(18f, 7), 1400f, 0.7f);
+            }
+            if (at(CLIMAX_DEATH)) {                                                          // la dernière : la roue vole en éclats
+                broken = true;
+                rumble(0.8f, 16f);
+                shatter();
+                spray(splat, hubX(), hubY(), 14, 0f, 360f, 700f, fit(40f, 7), 1400f, 1.4f);
+                sparks(hubX(), hubY(), 50, c("ff4a4a"), 800f, 16f);
+            }
+        }
+
+        /** Les morceaux de la roue et de son visage, projetés de tous côtés. */
+        private void shatter() {
+            int piece = 4, width = boss.getRegionWidth();
+            float scale = bossScale();
+            int[][] faceGrid = FairDesertPortraits.wheelLayer(2);
+            for (int ty = 0; ty < 36; ty += piece) {
+                for (int tx = 0; tx < width; tx += piece) {
+                    boolean filled = false;
+                    for (int y = ty; y < ty + piece && y < 36; y++) {
+                        for (int x = tx; x < tx + piece && x < width; x++) filled |= discPixels[y][x] != 0 || faceGrid[y][x] != 0;
+                    }
+                    if (!filled) continue;
+                    float x = portraitX(tx + piece / 2f), y = portraitY(ty + piece / 2f);
+                    float away = MathUtils.atan2(y - hubY(), x - hubX()), speed = 500f + 700f * random.nextFloat();
+                    for (TextureRegion layer : new TextureRegion[] {disc, face}) {
+                        Particle bit = place(new TextureRegion(layer, tx, ty, piece, piece), x, y,
+                            MathUtils.cos(away) * speed, MathUtils.sin(away) * speed + 400f, scale, 1.6f + 0.6f * random.nextFloat());
+                        bit.gravity = 1600f;
+                        bit.spin = (random.nextFloat() - 0.5f) * 900f;
+                    }
+                }
+            }
         }
 
         @Override
         protected void back(Batch batch) {
-            int passed = 0;
-            for (float tick : TICKS) if (time >= tick) passed++;
-            poseTilt = -45f * passed;                                                        // un cran à chaque tic
-            float topple = progress(2.9f, 3.6f), wobble = MathUtils.sin(topple * 30f) * (1f - topple);
-            poseStretch = -0.9f * topple + 0.1f * wobble;                                   // elle tombe à plat, comme une pièce
-            poseTilt += 20f * wobble;
-            poseShadow = 0.6f * progress(2.5f, 3.2f);                                        // ses lumières s'éteignent
+            showBoss = false;
+            float juice = Math.min(1f, stains.size / 3f / THROWS.length);
+            tmp.set(1f, 1f - 0.25f * juice, 1f - 0.3f * juice, 1f);                          // elle rougit sous les tomates
+            drawWheel(batch, angle(), tmp, !broken, !broken);
+            if (broken) return;
+            float scale = bossScale();
+            for (int k = 0; k < stains.size; k += 3) {                                       // les taches tournent avec elle
+                float a = stains.get(k) + angle(), r = stains.get(k + 1) * scale;
+                draw(batch, splat, hubX() + MathUtils.cosDeg(a) * r, hubY() + MathUtils.sinDeg(a) * r, scale * 0.9f,
+                    stains.get(k + 2), WHITE, 1f);
+            }
         }
 
         @Override
         protected void front(Batch batch) {
-            if (time < 2.9f) {
-                for (int i = 0; i < 8; i++) {                                                // les lumières, une à une
-                    if (time > 2.5f + i * 0.05f) continue;
-                    float a = i * 45f + 22f;
-                    glow(batch, bossX() + MathUtils.cosDeg(a) * bossWidth() * 0.45f, bossY() + MathUtils.sinDeg(a) * bossWidth() * 0.45f,
-                        90f, GOLD, 0.7f);
-                }
+            for (int i = 0; i < THROWS.length; i++) {                                        // les tomates en vol
+                float k = progress(THROWS[i], THROWS[i] + FLIGHT);
+                if (k <= 0f || k >= 1f) continue;
+                float sx = worldWidth() * fromX[i], sy = -60f;
+                float x = MathUtils.lerp(sx, aimX(i), k), y = MathUtils.lerp(sy, aimY(i), k) + 260f * MathUtils.sin(k * MathUtils.PI);
+                draw(batch, tomato, x, y, fit(70f, 7) * (1.3f - 0.4f * k), 400f * k, WHITE, 1f);
             }
+            float big = progress(CLIMAX_DEATH - 0.5f, CLIMAX_DEATH);                         // la dernière, énorme
+            if (big > 0f && big < 1f) {
+                float x = MathUtils.lerp(worldWidth() * 0.5f, hubX(), big);
+                float y = MathUtils.lerp(-120f, hubY(), big) + 200f * MathUtils.sin(big * MathUtils.PI);
+                draw(batch, tomato, x, y, fit(200f, 7) * (1.4f - 0.4f * big), 200f * big, WHITE, 1f);
+            }
+            flash(batch, c("ff4a4a"), CLIMAX_DEATH, 0.3f, 0.4f);
         }
     }
 
@@ -360,8 +492,11 @@ final class FairBossScenes {
     static final class FairKingPhase extends BossScene {
         private final TextureRegion bear, bell;
 
+        private final TextureRegion card;
+
         FairKingPhase(CutsceneKit kit) {
             super(kit, Moment.PHASE, EnemyKind.ROI_FORAIN, 2);
+            card = gameCard(FAIR_KING_CARD);
             bear = art("obkm", new Color[] {c("3a2412"), c("c8904a"), c("e0283a"), c("5a2a1a")}, BEAR);
             bell = art("ogw", new Color[] {c("4a3008"), GOLD, c("fff0a0")}, BELL);
         }
@@ -399,22 +534,26 @@ final class FairBossScenes {
 
         @Override
         protected void front(Batch batch) {
+            float shine = progress(CLIMAX_PHASE, CLIMAX_PHASE + 0.3f);                       // sa carte truquée luit
+            if (shine > 0f) glow(batch, portraitX(30f), portraitY(24f), 260f, RED, 0.6f * shine * pulse(8f, 0.5f));
+            onPortrait(batch, card, CARD_LEFT, CARD_TOP, CARD_PIXELS, 1f);                  // un vrai 2 de Carreau
             float spikes = progress(CLIMAX_PHASE + 0.3f, CLIMAX_PHASE + 0.6f);               // sa couronne se hérisse
             for (int k = 0; k < 5 && spikes > 0f; k++) {
                 float x = portraitX(10f + k * 3.5f), y = portraitY(1f);
                 line(batch, c("dce4ee"), spikes, x, y, x + (k - 2) * 10f, y + 70f * spikes, 10f);
             }
-            eyes(batch, progress(CLIMAX_PHASE, CLIMAX_PHASE + 0.2f), RED, new float[] {13.5f, 15.5f}, new float[] {20.5f, 15.5f});
+            eyes(batch, progress(CLIMAX_PHASE, CLIMAX_PHASE + 0.2f), RED, new float[] {14f, 16f}, new float[] {21f, 16f});
             flash(batch, RED, CLIMAX_PHASE, 0.3f, 0.35f);
         }
     }
 
     /** Il frappe une dernière fois et rate ; le palet retombe sur sa couronne ; il s'effondre ; les peluches pleuvent ; un ticket doré flotte vers toi. */
     static final class FairKingDeath extends BossScene {
-        private final TextureRegion bear, ticket;
+        private final TextureRegion bear, ticket, card;
 
         FairKingDeath(CutsceneKit kit) {
             super(kit, Moment.DEATH, EnemyKind.ROI_FORAIN, 0);
+            card = gameCard(FAIR_KING_CARD);
             bear = art("obkm", new Color[] {c("3a2412"), c("c8904a"), c("1a1018"), c("5a2a1a")}, BEAR);
             ticket = art("oyr", new Color[] {c("8a5a10"), c("ffd23a"), c("fff2a0")}, TICKET);
         }
@@ -435,6 +574,7 @@ final class FairBossScenes {
 
         @Override
         protected void front(Batch batch) {
+            onPortrait(batch, card, CARD_LEFT, CARD_TOP, CARD_PIXELS, 1f);                  // sa carte : un vrai 2 de Carreau
             float fall = Interpolation.pow2In.apply(progress(1.6f, CLIMAX_DEATH));           // le palet retombe sur sa couronne
             if (fall > 0f && time < CLIMAX_DEATH + 0.6f) {
                 float y = MathUtils.lerp(worldHeight() + 60f, portraitY(1f), fall);

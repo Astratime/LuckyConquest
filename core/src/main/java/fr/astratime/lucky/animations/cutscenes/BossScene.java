@@ -308,6 +308,25 @@ public abstract class BossScene extends Cutscene {
         }
     }
 
+    /**
+     * Dessine {@code region} sur le portrait du boss : son coin haut-gauche au pixel ({@code left}, {@code top}),
+     * un pixel de {@code region} valant {@code pixels} pixels du portrait. Elle suit tout son geste (bascule,
+     * étirement, ombre, enfoncement), comme si elle faisait partie du dessin.
+     */
+    protected void onPortrait(Batch batch, TextureRegion region, float left, float top, float pixels, float alpha) {
+        int height = boss.getRegionHeight();
+        int rows = Math.max(1, Math.round(height * (1f - MathUtils.clamp(poseSink, 0f, 1f))));
+        if (top >= rows) return;
+        float scale = bossScale() * poseScale, sx = 1f - poseStretch * 0.5f, sy = 1f + poseStretch;
+        float w = region.getRegionWidth() * pixels * scale * sx, h = region.getRegionHeight() * pixels * scale * sy;
+        float footX = bossX() + poseX, footY = bossBottom() + poseY;
+        float rx = footX + (left - boss.getRegionWidth() / 2f) * scale * sx;
+        float ry = footY + (rows - top - region.getRegionHeight() * pixels) * scale * sy;
+        float light = 1f - poseShadow;
+        batch.setColor(light, light, light, alpha * poseAlpha);
+        batch.draw(region, rx, ry, footX - rx, footY - ry, w, h, 1f, 1f, poseTilt);
+    }
+
     /** @return l'abscisse à l'écran du pixel {@code px} du portrait (avec son geste). */
     protected float portraitX(float px) {
         return bossX() + poseX + (px - boss.getRegionWidth() / 2f) * bossScale() * poseScale;

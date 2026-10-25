@@ -8,7 +8,7 @@ import static fr.astratime.lucky.assets.PixelCanvas.rgba;
  * Portraits en pixel art des ennemis de la Fête foraine et du Désert de Braise,
  * en buste, à la taille du croupier (voir {@link PlacesPortraits}).
  */
-final class FairDesertPortraits {
+public final class FairDesertPortraits {
 
     private static final int W = EnemyPortraits.WIDTH, H = EnemyPortraits.HEIGHT;
 
@@ -20,6 +20,12 @@ final class FairDesertPortraits {
     private static final int BLUE = rgba("2a5ad8"), BLUE_DARK = rgba("1a3a8e");
 
     private FairDesertPortraits() {}
+
+    /**
+     * @return les pixels du portrait de l'ennemi {@code kind} ({@code [y][x]}, RGBA8888, 0 = vide), pour les
+     *         cinématiques qui le défont pixel par pixel ; {@code null} s'il n'est pas de ces lieux.
+     */
+    public static int[][] pixels(EnemyKind kind) { return of(kind); }
 
     /** @return le portrait de l'ennemi {@code kind}, ou {@code null} s'il n'est pas d'un de ces lieux. */
     static int[][] of(EnemyKind kind) {
@@ -188,6 +194,29 @@ final class FairDesertPortraits {
     /** Roue de la Fortune : une roue vivante, rayons dorés, un visage au moyeu. */
     private static int[][] roue() {
         PixelCanvas g = new PixelCanvas(W, H);
+        wheelDisc(g);
+        wheelFace(g);
+        wheelStand(g);
+        return g.outlined();
+    }
+
+    /**
+     * Un calque de la Roue de la Fortune, pour que les cinématiques fassent tourner la roue seule :
+     * {@code 0} le pied, {@code 1} la roue (cases et lumières), {@code 2} le visage du moyeu et la flèche.
+     * Posés l'un sur l'autre, ils redonnent son portrait.
+     */
+    public static int[][] wheelLayer(int layer) {
+        PixelCanvas g = new PixelCanvas(W, H);
+        switch (layer) {
+            case 0 -> wheelStand(g);
+            case 1 -> wheelDisc(g);
+            default -> wheelFace(g);
+        }
+        return g.outlined();
+    }
+
+    /** Les cases de couleur, le cerclage doré et ses lumières (centre 17, 19). */
+    private static void wheelDisc(PixelCanvas g) {
         int[] wedges = {RED, WHITE, BLUE, GOLD, rgba("2a8a3a"), WHITE, rgba("e86a8a"), rgba("1a1018")};
         for (int y = 0; y < H; y++) {
             for (int x = 0; x < W; x++) {
@@ -202,16 +231,22 @@ final class FairDesertPortraits {
             double r = Math.toRadians(a);
             g.set((int) Math.round(17 + 14.7 * Math.cos(r)), (int) Math.round(19 + 14.7 * Math.sin(r)), GOLD_LIGHT);
         }
+    }
+
+    /** Le visage au moyeu et la flèche en haut. */
+    private static void wheelFace(PixelCanvas g) {
         g.ellipseShaded(17f, 19f, 6f, 6f, GOLD, GOLD_DARK, 1.5f);
         g.rect(14, 17, 15, 18, EYE);
         g.rect(19, 17, 20, 18, EYE);
         g.line(14, 21, 20, 21, RED_DARK);
         g.set(13, 20, RED_DARK); g.set(21, 20, RED_DARK);
-        // Le pied et la flèche.
+        g.triangle(14, 0, 20, 0, 17, 5, RED);
+    }
+
+    /** Le pied de bois. */
+    private static void wheelStand(PixelCanvas g) {
         g.rect(15, 35, 19, 41, rgba("6e4524"));
         g.rect(10, 39, 24, 41, rgba("4a2e18"));
-        g.triangle(14, 0, 20, 0, 17, 5, RED);
-        return g.outlined();
     }
 
     /** Bonimenteur : canotier, nœud papillon, sourire en or, porte-voix. */

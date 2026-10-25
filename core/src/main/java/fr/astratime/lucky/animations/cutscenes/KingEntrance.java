@@ -167,6 +167,33 @@ public abstract class KingEntrance extends Cutscene {
         batch.draw(king, x + poseX - width / 2f, y + poseY, width / 2f, 0f, width, height, 1f, 1f, poseTilt);
     }
 
+    /**
+     * Dessine {@code region} sur le roi tel que {@link #drawKing} le pose en ({@code x}, {@code y}) à l'échelle
+     * {@code scale} : son coin haut-gauche au pixel ({@code left}, {@code top}) du portrait, un pixel de
+     * {@code region} valant {@code pixels} pixels du portrait. Elle suit son geste, comme si elle faisait partie du dessin.
+     */
+    protected void drawOnKing(Batch batch, TextureRegion region, float left, float top, float pixels, float x, float y,
+                              float scale, float shadow, float alpha) {
+        float sx = 1f - poseStretch * 0.5f, sy = 1f + poseStretch;
+        float w = region.getRegionWidth() * pixels * scale * sx, h = region.getRegionHeight() * pixels * scale * sy;
+        float footX = x + poseX, footY = y + poseY;
+        float rx = footX + (left - king.getRegionWidth() / 2f) * scale * sx;
+        float ry = footY + (king.getRegionHeight() - top - region.getRegionHeight() * pixels) * scale * sy;
+        float light = 1f - shadow;
+        batch.setColor(light, light, light, alpha);
+        batch.draw(region, rx, ry, footX - rx, footY - ry, w, h, 1f, 1f, poseTilt);
+    }
+
+    /** @return l'abscisse à l'écran du pixel {@code px} du roi posé en {@code x} (sans son inclinaison). */
+    protected float kingPixelX(float px, float x, float scale) {
+        return x + poseX + (px - king.getRegionWidth() / 2f) * scale * (1f - poseStretch * 0.5f);
+    }
+
+    /** @return l'ordonnée à l'écran du pixel {@code py} (compté du haut) du roi posé en {@code y} (sans son inclinaison). */
+    protected float kingPixelY(float py, float y, float scale) {
+        return y + poseY + (king.getRegionHeight() - py) * scale * (1f + poseStretch);
+    }
+
     /** Une gerbe de {@code count} étincelles de couleur {@code color} autour de ({@code x}, {@code y}). */
     protected void sparks(float x, float y, int count, Color color, float speed, float size) {
         for (int i = 0; i < count; i++) {

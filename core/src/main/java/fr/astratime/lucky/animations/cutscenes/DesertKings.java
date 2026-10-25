@@ -12,7 +12,8 @@ import fr.astratime.lucky.entities.enemy.EnemyKind;
  * <ul>
  *   <li>Émir des sables : les dunes au coucher du soleil, une caravane à l'horizon. Le premier chameau
  *   s'agenouille, l'Émir descend sous son ombrelle ; il déroule un contrat jusqu'à toi et le scelle.</li>
- *   <li>Pharaon maudit : un couloir de torches, des hiéroglyphes en symboles de machine. Le couvercle du
+ *   <li>Pharaon maudit : un couloir de torches, des hiéroglyphes gravés en symboles de casino (cerise, sept,
+ *   cloche, diamant, pièce, fer à cheval, trèfle). Le couvercle du
  *   sarcophage glisse, des mains bandées en sortent ; il se lève, yeux verts, crosse et fléau.</li>
  *   <li>Djinn du Mirage : une oasis qui ondule. Une lampe se frotte toute seule, sa fumée violette devient
  *   le Djinn ; derrière lui, l'oasis clignote : c'était un mirage.</li>
@@ -44,6 +45,16 @@ public class DesertKings extends KingEntrance {
         ".gg...gg.", "g..g.g..g", "....g....", "...ggg...", "....b....", "....b....", "...b.....", "...b.....",
         "....b....", "....b...."};
 
+    /** Les hiéroglyphes du tombeau : des symboles de casino gravés dans la pierre (dessinés ici, sans fond). */
+    private static final String[][] GLYPHS = {
+        {"......oo...", ".....o..o..", "....o....o.", "..ooo...ooo", ".ooooo.oooo", ".ooooo.oooo", "..ooo...oo."},   // cerise
+        {"ooooooo", "ooooooo", ".....oo", "....oo.", "...oo..", "..oo...", "..oo...", "..oo..."},                       // sept
+        {"...o...", "..ooo..", ".ooooo.", ".ooooo.", ".ooooo.", "ooooooo", "...o..."},                                   // cloche
+        {"...o...", "..ooo..", ".ooooo.", "ooooooo", ".ooooo.", "..ooo..", "...o..."},                                   // diamant
+        {"..ooo..", ".o...o.", "o..o..o", "o.ooo.o", "o..o..o", ".o...o.", "..ooo.."},                                   // pièce
+        {".oo.oo.", "o..o..o", "o.....o", "o.....o", ".o...o.", ".o...o.", ".o...o."},                                   // fer à cheval
+        {"..oo...", ".oooo..", "..oo.oo", "oo.oooo", "oooo.o.", ".oo..o.", ".....o."}};                                  // trèfle
+
     private final TextureRegion camel, lamp, palm, coin;
     private final TextureRegion[] glyphs;
 
@@ -53,9 +64,8 @@ public class DesertKings extends KingEntrance {
         lamp = art("og", new Color[] {c("4a3008"), GOLD}, LAMP);
         palm = art("gb", new Color[] {c("3a9a3a"), c("8a5a2a")}, PALM);
         coin = load("hud/coin.png");
-        glyphs = kind == EnemyKind.PHARAON
-            ? new TextureRegion[] {load("symbols/2-cherry.png"), load("symbols/3-seven.png"), load("symbols/6-bell.png")}
-            : new TextureRegion[0];
+        glyphs = new TextureRegion[kind == EnemyKind.PHARAON ? GLYPHS.length : 0];
+        for (int i = 0; i < glyphs.length; i++) glyphs[i] = art("o", new Color[] {Color.WHITE}, GLYPHS[i]);
     }
 
     @Override protected float coverStart() { return kind == EnemyKind.DRAGON ? DRAGON_COVER_START : super.coverStart(); }
@@ -206,7 +216,7 @@ public class DesertKings extends KingEntrance {
     // Pharaon maudit
     // -------------------------------------------------------------------------
 
-    /** Le couloir du tombeau : des torches, des hiéroglyphes en symboles de machine. */
+    /** Le couloir du tombeau : des torches, des hiéroglyphes gravés en symboles de casino. */
     private void drawCorridor(Batch batch) {
         float width = worldWidth(), height = worldHeight();
         fill(batch, c("2a1a0e"), 1f);
@@ -216,9 +226,20 @@ public class DesertKings extends KingEntrance {
                 rect(batch, c("3a2414"), x, y, width / 9f - 8f, height / 7f - 8f);
             }
         }
-        for (int i = 0; i < 12 && glyphs.length > 0; i++) {               // les hiéroglyphes : Cerise, Sept, Cloche
-            batch.setColor(0.85f, 0.7f, 0.45f, 0.55f);
-            sprite(batch, glyphs[i % glyphs.length], width * (0.08f + 0.168f * (i % 6)), height * (i < 6 ? 0.78f : 0.6f), 0.8f, 0f);
+        if (glyphs.length > 0) {                                           // les hiéroglyphes, en colonnes gravées
+            for (int col = 0; col < 7; col++) {
+                float x = width * (0.07f + 0.143f * col);
+                rect(batch, c("2a180a"), x - 52f, height * 0.36f, 6f, height * 0.56f);   // les traits entre les colonnes
+                rect(batch, c("2a180a"), x + 46f, height * 0.36f, 6f, height * 0.56f);
+                for (int row = 0; row < 3; row++) {
+                    TextureRegion glyph = glyphs[(col * 3 + row * 2) % glyphs.length];
+                    float y = height * (0.84f - 0.17f * row);
+                    batch.setColor(0.72f, 0.52f, 0.28f, 0.55f);                 // le bord éclairé de la gravure
+                    sprite(batch, glyph, x + 3f, y - 3f, 10f, 0f);
+                    batch.setColor(0.09f, 0.05f, 0.02f, 0.85f);                 // le creux
+                    sprite(batch, glyph, x, y, 10f, 0f);
+                }
+            }
         }
         for (int t = 0; t < 2; t++) {                                      // les torches
             float x = t == 0 ? width * 0.1f : width * 0.9f, y = height * 0.5f;
@@ -260,10 +281,10 @@ public class DesertKings extends KingEntrance {
             for (int k = 0; k < 3; k++) line(batch, c("1a3a8e"), cx() + 220f, y0 + 300f, cx() + 260f + k * 20f, y0 + 220f, 8f);
         }
         float eyes = progress(GREEN_EYES, GREEN_EYES + 0.3f);
-        if (eyes > 0f) {
-            float ey = base + 60f + (42f - 14.5f) * KING_SCALE;
-            glow(batch, cx() - 3.5f * KING_SCALE, ey, 160f, GREEN, eyes);
-            glow(batch, cx() + 3.5f * KING_SCALE, ey, 160f, GREEN, eyes);
+        if (eyes > 0f) {                                                   // pile sur ses yeux (pixels 12-15 et 19-22, ligne 14-15)
+            float ey = kingPixelY(15f, base + 60f, KING_SCALE);
+            glow(batch, kingPixelX(14f, cx(), KING_SCALE), ey, 160f, GREEN, eyes);
+            glow(batch, kingPixelX(21f, cx(), KING_SCALE), ey, 160f, GREEN, eyes);
         }
     }
 

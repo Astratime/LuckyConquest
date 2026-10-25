@@ -5,6 +5,9 @@ import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.Interpolation;
 import com.badlogic.gdx.math.MathUtils;
+import com.badlogic.gdx.utils.Array;
+import com.badlogic.gdx.utils.FloatArray;
+import fr.astratime.lucky.assets.FairDesertPortraits;
 import fr.astratime.lucky.entities.enemy.EnemyKind;
 import fr.astratime.lucky.entities.enemy.EnemySymbol;
 
@@ -12,14 +15,15 @@ import fr.astratime.lucky.entities.enemy.EnemySymbol;
  * Les rois de la Fête foraine entrent en scène (choix d'Astra, 2026-10-24) :
  * <ul>
  *   <li>Monsieur Loyal : le chapiteau est noir, un projecteur s'allume sur la piste. Il fait claquer son
- *   fouet, quatre bannières tombent (Pique, Coeur, Trèfle, Carreau). Il salue, son chapeau fait un tour
- *   en l'air.</li>
+ *   fouet, quatre bannières tombent (Pique, Coeur, Trèfle, Carreau). Il salue : son chapeau quitte sa tête,
+ *   fait un tour en l'air et retombe dessus.</li>
  *   <li>Conducteur fantôme : des rails dans le noir, deux phares approchent. Le train défonce une porte en
  *   carton peinte d'une tête de mort ; il fait sonner la cloche, les squelettes des wagons saluent.</li>
- *   <li>Roue de la Fortune : la grande roue dort, ses lumières s'allument une à une. Un oeil s'ouvre au
- *   centre, les nacelles deviennent des cases (Épée, Bouclier, Potion, Rien) ; elle roule vers toi.</li>
+ *   <li>Roue de la Fortune : la grande roue dort, ses lumières s'allument une à une. Elle se défait : ses
+ *   morceaux se rejoignent et forment la Roue. Ses yeux s'ouvrent, quatre cases apparaissent (Épée, Bouclier,
+ *   Potion, Rien) ; elle roule vers toi.</li>
  *   <li>Roi des forains : des stands, des lanternes, des canards. Il surgit derrière son comptoir avec un
- *   maillet géant et frappe la machine à mesurer la force : la cloche sonne.</li>
+ *   maillet géant et frappe la machine à mesurer la force : la cloche sonne. Dans sa main, son 2 de Carreau.</li>
  * </ul>
  */
 public class FairKings extends KingEntrance {
@@ -28,14 +32,20 @@ public class FairKings extends KingEntrance {
     static final float SPOT_ON = 1.3f, LOYAL_IN = 0.3f, WHIP = 1.1f, BANNERS = 1.5f, HAT_UP = 3.6f, HAT_DOWN = 4.5f;
     /** Conducteur : la porte en carton vole en éclats, la cloche sonne. */
     static final float DOOR_BREAK = 0.35f, TRAIN_STOP = 1.4f, BELL = 3.6f;
-    /** Roue : ses lumières s'allument (décor), l'oeil s'ouvre, les cases, elle roule vers toi. */
-    static final float LIGHTS_FROM = 0.2f, LIGHTS_TO = 1.8f, EYE_OPEN = 0.4f, CELLS = 1.0f, ROLL_FROM = 1.6f, ROLL_TO = 2.8f;
+    /** Roue : ses lumières s'allument (décor), ses morceaux se rejoignent, l'oeil s'ouvre, les cases, elle roule vers toi. */
+    static final float LIGHTS_FROM = 0.2f, LIGHTS_TO = 1.8f, ASSEMBLED = 1.3f, EYE_OPEN = 1.4f, CELLS = 1.8f,
+        ROLL_FROM = 2.3f, ROLL_TO = 3.2f;
+    /** Les morceaux de la Roue : des carrés de {@value #PIECE} pixels du portrait. */
+    private static final int PIECE = 4;
     /** Roi des forains : il surgit, il frappe, le palet monte, la cloche sonne. */
     static final float KING_POP = 0.5f, HIT = 3.5f, RING = 3.85f;
 
     private static final Color RED = c("d8202c"), GOLD = c("ffc93a"), SPOT = c("fff2c0"), NIGHT = c("0a0814");
-    private static final String[] TOP_HAT = {
-        "..oooooo..", "..obbbbo..", "..obbbbo..", "..orrrro..", "oooooooooo", "oobbbbbboo"};
+    /** Monsieur Loyal : les lignes du haut de son portrait qui font son haut-de-forme. */
+    private static final int HAT_ROWS = 10;
+    /** Ses cheveux sous le chapeau : de la colonne 11 à 23, lignes 7 à 10 du portrait. */
+    private static final String[] LOYAL_HAIR = {
+        "....ooooo....", "..oohhhhhoo..", ".ohhhhhhhhho.", "ohhhhhhhhhhho"};
     private static final String[] SKULL = {
         ".oooooo.", "owwwwwwo", "owkwwkwo", "owkwwkwo", "owwwkwwo", ".owwwwo.", ".okwkwo.", "..oooo.."};
     private static final String[] DUCK = {
@@ -43,17 +53,26 @@ public class FairKings extends KingEntrance {
     private static final String[] BELL_ART = {
         "....o....", "...ogo...", "..ogggo..", "..oggwo..", ".ogggwgo.", ".ogggggo.", "ogggggggo", "ooooooooo"};
 
-    private final TextureRegion hat, skull, duck, bell;
+    private final TextureRegion skull, duck, bell;
+    /** Monsieur Loyal : son chapeau (le haut de son portrait), le reste de lui, et ses cheveux sous le chapeau. */
+    private TextureRegion loyalHat, loyalBody, loyalHair;
+    /** Roi des forains : la vraie carte qu'il tient. */
+    private TextureRegion heldCard;
+    /** Roue : ses morceaux (image, place dans le portrait, nacelle de départ, départ, vrille). */
+    private final Array<TextureRegion> pieces = new Array<>();
+    private final FloatArray pieceData = new FloatArray();
     private final TextureRegion[] banners = new TextureRegion[4];
     private final TextureRegion[] cells = new TextureRegion[4];
 
     public FairKings(CutsceneKit kit, EnemyKind kind) {
         super(kit, kind);
-        hat = art("obr", new Color[] {c("0a0608"), c("1a1418"), RED}, TOP_HAT);
         skull = art("owk", new Color[] {c("0a0608"), c("eae4d0"), c("1a1018")}, SKULL);
         duck = art("oyk", new Color[] {c("4a3008"), c("ffd23a"), c("1a1018")}, DUCK);
         bell = art("ogw", new Color[] {c("4a3008"), GOLD, c("fff0a0")}, BELL_ART);
         if (kind == EnemyKind.MONSIEUR_LOYAL) {
+            loyalHat = new TextureRegion(king, 0, 0, king.getRegionWidth(), HAT_ROWS);
+            loyalBody = new TextureRegion(king, 0, HAT_ROWS + 1, king.getRegionWidth(), king.getRegionHeight() - HAT_ROWS - 1);
+            loyalHair = art("oh", new Color[] {c("1a0f0f"), c("3a2a1e")}, LOYAL_HAIR);
             String[] aces = {"cards/light/1-P.png", "cards/light/1-H.png", "cards/light/1-C.png", "cards/light/1-D.png"};
             for (int i = 0; i < 4; i++) banners[i] = gameCard(aces[i]);
         }
@@ -61,6 +80,30 @@ public class FairKings extends KingEntrance {
             cells[0] = kit.symbol(EnemySymbol.SWORD);
             cells[1] = kit.symbol(EnemySymbol.SHIELD);
             cells[2] = kit.symbol(EnemySymbol.POTION);
+        }
+        if (kind == EnemyKind.ROUE_FORTUNE) cutPieces();
+        if (kind == EnemyKind.ROI_FORAIN) heldCard = gameCard(FairBossScenes.FAIR_KING_CARD);
+    }
+
+    /** Coupe le portrait de la Roue en carrés, chacun parti d'une nacelle de la grande roue. */
+    private void cutPieces() {
+        int[][][] layers = {FairDesertPortraits.wheelLayer(0), FairDesertPortraits.wheelLayer(1), FairDesertPortraits.wheelLayer(2)};
+        int width = king.getRegionWidth(), height = king.getRegionHeight();
+        java.util.Random seed = new java.util.Random(7);
+        for (int ty = 0; ty < height; ty += PIECE) {
+            for (int tx = 0; tx < width; tx += PIECE) {
+                int w = Math.min(PIECE, width - tx), h = Math.min(PIECE, height - ty);
+                boolean filled = false;
+                for (int y = ty; y < ty + h && !filled; y++) {
+                    for (int x = tx; x < tx + w && !filled; x++) {
+                        for (int[][] layer : layers) if (layer[y][x] != 0) { filled = true; break; }
+                    }
+                }
+                if (!filled) continue;
+                pieces.add(new TextureRegion(king, tx, ty, w, h));
+                pieceData.addAll(tx + w / 2f, ty + h / 2f, seed.nextInt(12), seed.nextFloat() * 0.45f,
+                    (seed.nextFloat() - 0.5f) * 1080f);
+            }
         }
     }
 
@@ -117,7 +160,10 @@ public class FairKings extends KingEntrance {
                 if (at(BELL)) sparks(cx() + 300f, kingY() + 560f, 20, GOLD, 300f, 10f);
             }
             case ROUE_FORTUNE -> {
-                if (at(EYE_OPEN)) sparks(cx(), wheelY(), 30, GOLD, 500f, 12f);
+                if (at(ASSEMBLED)) {
+                    rumble(0.25f, 8f);
+                    sparks(cx(), kingY() + worldHeight() * 0.18f + 19f * KING_SCALE * 0.55f, 40, GOLD, 500f, 12f);
+                }
                 if (at(ROLL_TO)) {
                     rumble(0.45f, 14f);
                     sparks(cx(), kingY(), 40, c("ffe8a0"), 700f, 14f);
@@ -185,7 +231,14 @@ public class FairKings extends KingEntrance {
         float appear = progress(LOYAL_IN, LOYAL_IN + 0.35f);
         float bow = gesture(HAT_UP - 0.2f, HAT_DOWN + 0.2f);
         pose(0f, -20f * bow, 0f, -0.08f * bow);                            // il salue, penché
-        drawKing(batch, cx(), kingY(), KING_SCALE, 1f - appear, appear);
+        float up = progress(HAT_UP, HAT_DOWN);
+        boolean hatOff = up > 0f && up < 1f;
+        if (hatOff) {                                                      // tête nue : ses cheveux, sous le chapeau
+            drawOnKing(batch, loyalBody, 0f, HAT_ROWS + 1, 1f, cx(), kingY(), KING_SCALE, 0f, 1f);
+            drawOnKing(batch, loyalHair, 11f, HAT_ROWS - 3, 1f, cx(), kingY(), KING_SCALE, 0f, 1f);
+        } else {
+            drawKing(batch, cx(), kingY(), KING_SCALE, 1f - appear, appear);
+        }
         // Le fouet qui claque, au bout de son bras.
         float whip = gesture(WHIP - 0.15f, WHIP + 0.2f);
         if (whip > 0f) {
@@ -205,12 +258,12 @@ public class FairKings extends KingEntrance {
             batch.setColor(Color.WHITE);
             sprite(batch, banners[i], x, bottom + 170f, 9f, 0f);
         }
-        // Son chapeau fait un tour en l'air et retombe sur sa tête.
-        float up = progress(HAT_UP, HAT_DOWN);
-        if (up > 0f && up < 1f) {
-            float y = kingY() + 46f * KING_SCALE + 420f * MathUtils.sin(up * MathUtils.PI);
+        // Son chapeau quitte sa tête, fait un tour en l'air et retombe dessus.
+        if (hatOff) {
+            float x = kingPixelX(king.getRegionWidth() / 2f, cx(), KING_SCALE);
+            float y = kingPixelY(HAT_ROWS / 2f, kingY(), KING_SCALE) + 420f * MathUtils.sin(up * MathUtils.PI);
             batch.setColor(Color.WHITE);
-            sprite(batch, hat, cx(), y, KING_SCALE * 1.4f, up * 360f);
+            sprite(batch, loyalHat, x, y, KING_SCALE, up * 360f);
         }
     }
 
@@ -300,7 +353,6 @@ public class FairKings extends KingEntrance {
         }
     }
 
-    private float wheelY() { return kingY() + 19f * KING_SCALE; }
 
     private void drawWheel(Batch batch) {
         float width = worldWidth(), height = worldHeight();
@@ -312,10 +364,14 @@ public class FairKings extends KingEntrance {
         float spin = gesture(GESTURE, GESTURE + 1.6f);
         float scale = KING_SCALE * MathUtils.lerp(0.55f, 1f, roll);
         pose(0f, MathUtils.lerp(height * 0.18f, 0f, roll), -roll * 720f - spin * 360f, 0f);
-        drawKing(batch, cx(), kingY(), scale, 1f - progress(0f, EYE_OPEN), 1f);
+        if (time < ASSEMBLED) drawPieces(batch, scale);                    // la grande roue se défait et la forme
+        else drawKing(batch, cx(), kingY(), scale, 0f, 1f);
         float eye = progress(EYE_OPEN, EYE_OPEN + 0.3f) * (1f - roll);
-        if (eye > 0f) glow(batch, cx(), kingY() + height * 0.18f + 19f * scale, 260f, GOLD, 0.8f * eye);
-        // Ses nacelles se changent en cases : Épée, Bouclier, Potion, Rien.
+        if (eye > 0f) {                                                    // ses yeux s'ouvrent
+            glow(batch, kingPixelX(15f, cx(), scale), kingPixelY(18f, kingY(), scale), 160f, GOLD, 0.9f * eye * (1f - progress(CELLS, ROLL_FROM)));
+            glow(batch, kingPixelX(20f, cx(), scale), kingPixelY(18f, kingY(), scale), 160f, GOLD, 0.9f * eye * (1f - progress(CELLS, ROLL_FROM)));
+        }
+        // Quatre cases apparaissent autour d'elle : Épée, Bouclier, Potion, Rien.
         float show = progress(CELLS, CELLS + 0.3f) * (1f - progress(ROLL_FROM, ROLL_FROM + 0.3f));
         if (show > 0f) {
             for (int i = 0; i < 4; i++) {
@@ -327,6 +383,39 @@ public class FairKings extends KingEntrance {
                     sprite(batch, cells[i], p[0], p[1], 6f, 0f);
                 }
             }
+        }
+    }
+
+    /**
+     * La grande roue du décor se défait : ses rayons s'effacent et, de chaque nacelle, des morceaux s'envolent
+     * et se rejoignent pour former la Roue de la Fortune (en place à {@link #ASSEMBLED}).
+     */
+    private void drawPieces(Batch batch, float scale) {
+        float height = worldHeight(), x0 = worldWidth() / 2f, y0 = height * 0.55f, r = height * 0.32f;
+        float fade = 1f - progress(0f, 0.5f);
+        if (fade > 0f) {                                                   // la grande roue, qui se défait
+            tmp.set(c("2a3048")).mul(1f, 1f, 1f, fade);
+            line(batch, tmp, x0, y0, x0 - r * 0.6f, height * 0.2f, 14f);
+            line(batch, tmp, x0, y0, x0 + r * 0.6f, height * 0.2f, 14f);
+            for (int i = 0; i < 12; i++) {
+                float[] p = cabin(i, x0, y0, r, 0f);
+                line(batch, tmp, x0, y0, p[0], p[1], 6f);
+            }
+            for (int i = 0; i < 12; i++) {                                 // ses nacelles éclatent en morceaux
+                float[] p = cabin(i, x0, y0, r, 0f);
+                tmp.set(i % 2 == 0 ? c("e86a8a") : GOLD).mul(1f, 1f, 1f, fade);
+                rect(batch, tmp, p[0] - 22f, p[1] - 22f, 44f, 36f);
+            }
+        }
+        for (int i = 0; i < pieces.size; i++) {
+            float px = pieceData.get(i * 5), py = pieceData.get(i * 5 + 1);
+            float[] from = cabin((int) pieceData.get(i * 5 + 2), x0, y0, r, 0f);
+            float delay = pieceData.get(i * 5 + 3), twist = pieceData.get(i * 5 + 4);
+            float k = Interpolation.pow2Out.apply(MathUtils.clamp((time - delay) / (ASSEMBLED - 0.45f), 0f, 1f));
+            float tx = kingPixelX(px, cx(), scale), ty = kingPixelY(py, kingY(), scale);
+            float x = MathUtils.lerp(from[0], tx, k), y = MathUtils.lerp(from[1], ty, k) + 120f * MathUtils.sin(k * MathUtils.PI);
+            batch.setColor(1f, 1f, 1f, Math.min(1f, 0.4f + k));
+            sprite(batch, pieces.get(i), x, y, scale, (1f - k) * twist);
         }
     }
 
@@ -379,7 +468,10 @@ public class FairKings extends KingEntrance {
         float pop = Interpolation.swingOut.apply(progress(KING_POP, KING_POP + 0.4f));
         float swingHit = gesture(HIT - 0.4f, HIT + 0.25f);
         pose(60f * swingHit, 0f, -12f * swingHit, 0f);
-        drawKing(batch, cx(), MathUtils.lerp(counterTop() - 500f, counterTop() - 60f, pop), KING_SCALE, 0f, pop > 0f ? 1f : 0f);
+        float kingBottom = MathUtils.lerp(counterTop() - 500f, counterTop() - 60f, pop);
+        drawKing(batch, cx(), kingBottom, KING_SCALE, 0f, pop > 0f ? 1f : 0f);
+        if (pop > 0f) drawOnKing(batch, heldCard, FairBossScenes.CARD_LEFT, FairBossScenes.CARD_TOP, FairBossScenes.CARD_PIXELS,
+            cx(), kingBottom, KING_SCALE, 0f, 1f);                         // sa carte : un vrai 2 de Carreau
         // Le maillet géant, levé puis abattu.
         if (pop > 0f) {
             float angle = time < HIT - 0.4f ? 60f : time < HIT ? MathUtils.lerp(120f, -10f, progress(HIT - 0.4f, HIT)) : -10f;
