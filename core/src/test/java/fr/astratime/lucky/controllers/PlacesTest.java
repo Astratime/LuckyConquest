@@ -67,8 +67,12 @@ class PlacesTest {
         assertEquals(210, EnemyKind.ROI_COEUR.damagePercent());
         assertEquals(165, EnemyKind.ROI_CARREAU.damagePercent());
         assertEquals(100, EnemyKind.CROUPIER.damagePercent(), "la Tour ne change pas");
-        assertEquals(18, EnemyKind.KRAKEN.damagePercent(), "le Casino frappe moins (Désert de Braise après lui)");
-        assertEquals(75, EnemyKind.DRAGON.damagePercent());
+        assertEquals(24, EnemyKind.KRAKEN.damagePercent(), "le Casino frappe moins (Désert de Braise après lui)");
+        assertEquals(98, EnemyKind.DRAGON.damagePercent());
+        // Astra 2026-10-25 : une Épée de la Foire frappe 5 de plus (28), celle du Port 12 de plus (52)
+        assertEquals(28, EnemyKind.CLOWN.hurt(EnemyKind.CLOWN.swordDamage()));
+        assertEquals(52, EnemyKind.RAT_CALES.hurt(EnemyKind.RAT_CALES.swordDamage()));
+        assertTrue(EnemyKind.DRAGON.getBaseDefense() > EnemyKind.KRAKEN.getBaseDefense(), "le Désert se défend mieux que le Casino");
         assertEquals(Math.round(EnemySymbol.SWORD_DAMAGE * 0.48), EnemyKind.ROI_PIQUE.hurt(EnemySymbol.SWORD_DAMAGE));
         assertEquals(Math.round(EnemySymbol.SWORD_DAMAGE * 2.1), EnemyKind.ROI_COEUR.hurt(EnemySymbol.SWORD_DAMAGE));
 

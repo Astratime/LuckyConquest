@@ -275,7 +275,7 @@ public enum EnemyKind {
 
     CLOWN("Clown jongleur", "CLOWN JONGLEUR",
         "Il jongle avec tout. Avec ses massues. Avec tes cartes aussi.",
-        30_000, 40, 25,
+        50_000, 40, 25,
         weights(EnemySymbol.SWORD, 2, EnemySymbol.JUGGLE, 1, EnemySymbol.SHIELD, 1),
         deck(new int[] {3, 6, 9, 12, 14}, new int[] {4, 8, 12},
             new int[] {5, 9, 13}, new int[] {3, 7, 11}),
@@ -283,7 +283,7 @@ public enum EnemyKind {
         List.of(Card.Suit.COEUR, Card.Suit.CARREAU, Card.Suit.PIQUE, Card.Suit.TREFLE)),
     MONSIEUR_LOYAL("Monsieur Loyal", "MONSIEUR LOYAL",
         "Il annonce chaque numéro. Rate le sien, et son fouet claque deux fois.",
-        60_000, 40, 25,
+        100_000, 40, 25,
         weights(EnemySymbol.SWORD, 2, EnemySymbol.ACT, 1, EnemySymbol.RAGE, 1, EnemySymbol.SHIELD, 1),
         deck(new int[] {3, 6, 9, 12, 14}, new int[] {4, 8, 12},
             new int[] {5, 9, 13}, new int[] {3, 7, 11}),
@@ -291,7 +291,7 @@ public enum EnemyKind {
         List.of(Card.Suit.COEUR, Card.Suit.CARREAU, Card.Suit.PIQUE, Card.Suit.TREFLE)),
     SQUELETTE("Squelette farceur", "SQUELETTE",
         "Il surgit dans le noir. Bouh ! Ta main tremble.",
-        30_000, 40, 25,
+        50_000, 40, 25,
         weights(EnemySymbol.SWORD, 2, EnemySymbol.SCARE, 1, EnemySymbol.SHIELD, 1),
         deck(new int[] {3, 6, 9, 12, 14}, new int[] {4, 8, 12},
             new int[] {5, 9, 13}, new int[] {3, 7, 11}),
@@ -299,7 +299,7 @@ public enum EnemyKind {
         List.of(Card.Suit.COEUR, Card.Suit.CARREAU, Card.Suit.PIQUE, Card.Suit.TREFLE)),
     CONDUCTEUR("Conducteur fantôme", "CONDUCTEUR",
         "Il conduit ce train depuis cent ans. Dans son tunnel, tes rouleaux ne se voient plus.",
-        60_000, 40, 25,
+        100_000, 40, 25,
         weights(EnemySymbol.SWORD, 1, EnemySymbol.TUNNEL, 1, EnemySymbol.FANG, 1, EnemySymbol.SHIELD, 1),
         deck(new int[] {3, 6, 9, 12, 14}, new int[] {4, 8, 12},
             new int[] {5, 9, 13}, new int[] {3, 7, 11}),
@@ -307,7 +307,7 @@ public enum EnemyKind {
         List.of(Card.Suit.COEUR, Card.Suit.CARREAU, Card.Suit.PIQUE, Card.Suit.TREFLE)),
     FORAIN("Forain de la roue", "FORAIN",
         "Il pousse la roue d'une main. De l'autre, il relance ta chance.",
-        30_000, 40, 25,
+        50_000, 40, 25,
         weights(EnemySymbol.SWORD, 2, EnemySymbol.TURNSTILE, 1, EnemySymbol.POTION, 1),
         deck(new int[] {3, 6, 9, 12, 14}, new int[] {4, 8, 12},
             new int[] {5, 9, 13}, new int[] {3, 7, 11}),
@@ -315,7 +315,7 @@ public enum EnemyKind {
         List.of(Card.Suit.COEUR, Card.Suit.CARREAU, Card.Suit.PIQUE, Card.Suit.TREFLE)),
     ROUE_FORTUNE("Roue de la Fortune", "ROUE DE LA FORTUNE",
         "Une roue vivante. Où va-t-elle tomber ? Même elle ne le sait pas.",
-        60_000, 40, 25,
+        100_000, 40, 25,
         weights(EnemySymbol.BIG_WHEEL, 2, EnemySymbol.ZERO, 1, EnemySymbol.SWORD, 1),
         deck(new int[] {3, 6, 9, 12, 14}, new int[] {4, 8, 12},
             new int[] {5, 9, 13}, new int[] {3, 7, 11}),
@@ -323,7 +323,7 @@ public enum EnemyKind {
         List.of(Card.Suit.COEUR, Card.Suit.CARREAU, Card.Suit.PIQUE, Card.Suit.TREFLE)),
     BONIMENTEUR("Bonimenteur", "BONIMENTEUR",
         "« Approchez ! Un lot à chaque coup ! » Tous ses lots sont truqués.",
-        30_000, 40, 25,
+        50_000, 40, 25,
         weights(EnemySymbol.SWORD, 1, EnemySymbol.RIGGED_PRIZE, 1, EnemySymbol.INTEREST, 1, EnemySymbol.SHIELD, 1),
         deck(new int[] {3, 6, 9, 12, 14}, new int[] {4, 8, 12},
             new int[] {5, 9, 13}, new int[] {3, 7, 11}),
@@ -331,7 +331,7 @@ public enum EnemyKind {
         List.of(Card.Suit.COEUR, Card.Suit.CARREAU, Card.Suit.PIQUE, Card.Suit.TREFLE)),
     ROI_FORAIN("Roi des forains", "ROI DES FORAINS",
         "Il règne sur tous les stands. Contre lui, on ne gagne qu'avec une Paire.",
-        60_000, 40, 25,
+        100_000, 40, 25,
         weights(EnemySymbol.SWORD, 2, EnemySymbol.RIGGED_GAME, 1, EnemySymbol.THORNS, 1, EnemySymbol.SHIELD, 1),
         deck(new int[] {3, 6, 9, 12, 14}, new int[] {4, 8, 12},
             new int[] {5, 9, 13}, new int[] {3, 7, 11}),
@@ -967,12 +967,13 @@ public enum EnemyKind {
     static final int TOWER_LATE_DAMAGE = 167;
 
     /**
-     * Dégâts des donjons réglés à part dans les autres lieux, en % (simulateur, 2026-10-24) : la Grande Roue
+     * Dégâts des donjons réglés à part dans les autres lieux, en % (simulateur, 2026-10-24 ; relevés avec leur lieu
+     * le 2026-10-25, choix d'Astra : Foire +5 et Port +12 par Épée, lieux suivants +30 %) : la Grande Roue
      * (Fête foraine), le Galion (Port), le Puits (Mines), la Salle des machines et les Coffres (Casino), l'Oasis (Désert).
      * Les autres ennemis d'un lieu frappent à la part de leur lieu ({@link Place#getDamagePercent()}).
      */
-    static final int WHEEL_DAMAGE = 60, GALLEON_DAMAGE = 70, SHAFT_DAMAGE = 30, MACHINES_DAMAGE = 10,
-        VAULTS_DAMAGE = 27, OASIS_DAMAGE = 45;
+    static final int WHEEL_DAMAGE = 77, GALLEON_DAMAGE = 94, SHAFT_DAMAGE = 39, MACHINES_DAMAGE = 13,
+        VAULTS_DAMAGE = 35, OASIS_DAMAGE = 59;
 
     /** Dégâts des ennemis des donjons de la prairie, en % (voir {@link #damagePercent()}). */
     static final int PIQUE_DAMAGE = 48, TREFLE_DAMAGE = 165, COEUR_DAMAGE = 210, CARREAU_DAMAGE = 165;
