@@ -65,8 +65,8 @@ public class LastingEffects {
     private int bubbleTurns = 0;
     /** Grignotage : cartes rongées dans la main, à la prochaine pioche. */
     private int nibbles = 0;
-    /** Aveuglement : la prochaine main est piochée face cachée. */
-    private int blindTurns = 0;
+    /** Aveuglement : cartes de la prochaine main piochées face cachée (une par Aveuglement, ils se cumulent). */
+    private int blindCards = 0;
     /** Chant : cartes de la prochaine main jouées d'office, au hasard. */
     private int songs = 0;
     /** Ivresse : rouleaux qui tourneront deux fois au prochain tirage (le pire résultat reste). */
@@ -360,19 +360,17 @@ public class LastingEffects {
     /** Pioche : les cartes à ronger le sont. @return leur nombre */
     public int takeNibbles() { int n = nibbles; nibbles = 0; return n; }
 
-    /** Aveuglement : la prochaine main sera face cachée. */
+    /** Aveuglement : une carte de plus sera cachée dans la prochaine main. */
     public void blind() { blind(1); }
 
-    /** Aveuglement : main cachée pendant les {@code turns} prochains tours du joueur (Lanterne : 2). */
-    public void blind(int turns) { blindTurns = Math.max(blindTurns, turns); }
-    /** @return {@code true} si la prochaine main sera face cachée. */
-    public boolean isBlind() { return blindTurns > 0; }
-    /** Pioche : l'Aveuglement vaut pour cette main. @return {@code true} s'il était actif */
-    public boolean takeBlind() {
-        if (blindTurns <= 0) return false;
-        blindTurns--;
-        return true;
-    }
+    /** Aveuglement : {@code cards} cartes de plus cachées dans la prochaine main (Lanterne de l'ennemi : 2). Ils se cumulent. */
+    public void blind(int cards) { blindCards += Math.max(0, cards); }
+    /** @return {@code true} si des cartes de la prochaine main seront cachées. */
+    public boolean isBlind() { return blindCards > 0; }
+    /** @return le nombre de cartes de la prochaine main qui seront cachées (Aveuglements cumulés). */
+    public int getBlindCards() { return blindCards; }
+    /** Pioche : les Aveuglements valent pour cette main. @return le nombre de cartes à cacher */
+    public int takeBlind() { int n = blindCards; blindCards = 0; return n; }
 
     /** Chant : une carte de plus sera jouée d'office au prochain tour. */
     public void addSong() { songs++; }
@@ -730,7 +728,7 @@ public class LastingEffects {
     public boolean isEmpty() {
         return removedSymbols.isEmpty() && gainBonus == 0f && corruptionTurns == 0 && extraPlaysTurns == 0
             && blades == 0 && blood == 0 && vault == 0 && safes.isEmpty() && goldVeinTurns == 0 && bubbleTurns == 0
-            && nibbles == 0 && blindTurns == 0 && songs == 0 && drunk == 0 && nuggetDraws == 0
+            && nibbles == 0 && blindCards == 0 && songs == 0 && drunk == 0 && nuggetDraws == 0
             && fakeGains == 0 && taxes == 0 && laterTaxes == 0 && houseRuleTurns == 0
             && traps == 0 && lanternDraws == 0 && earplugDraws == 0 && propTurns == 0 && lamps == 0
             && cageTurns == 0 && anchorTurns == 0 && temperPercent == 0 && bonusPlays == 0

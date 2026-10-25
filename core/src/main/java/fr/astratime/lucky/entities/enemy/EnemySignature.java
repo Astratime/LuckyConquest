@@ -66,7 +66,7 @@ public enum EnemySignature {
     TOURNEE("Tournée", EnemySymbol.DRUNK, Timing.NEXT,
         "Sa prochaine Ivresse touche 2 rouleaux", "IVRESSE x2"),
     LANTERNE("Lanterne", EnemySymbol.BLIND, Timing.NEXT,
-        "Son prochain Aveuglement dure 2 tours", "AVEUGLEMENT x2"),
+        "Son prochain Aveuglement cache 2 cartes", "AVEUGLEMENT x2"),
     GRAPPIN("Grappin", EnemySymbol.BOARDING, Timing.NEXT,
         "Son prochain Abordage vole aussi ta 2e meilleure carte", "ABORDAGE x2"),
     TAMIS_NOIR("Tamis noir", EnemySymbol.NUGGET, Timing.NEXT,
@@ -80,7 +80,7 @@ public enum EnemySignature {
     FRENESIE("Frénésie", EnemySymbol.BANK_BITE, Timing.TURN,
         "Ses Morsures de ce tour dévorent {0} % de tes gains en plus", "MORSURE +{0}%"),
     ENCRE("Encre", EnemySymbol.BLIND, Timing.NOW,
-        "Tes cartes en main sont faces cachées au prochain tour", "ENCRE"),
+        "Une carte de ta main est face cachée au prochain tour. Se cumule avec l'Aveuglement", "ENCRE"),
 
     // Les rouleaux ajoutés aux ennemis qui n'avaient que des rouleaux de base (choix d'Astra).
     ANNONCE("Annonce", EnemySymbol.NOTHING_GOES, Timing.NEXT,

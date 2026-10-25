@@ -454,8 +454,8 @@ public class EnemyTurnResolver {
                 case BLIND -> {
                     boolean twice = enemy.takeCharge(EnemySignature.LANTERNE);
                     curses.blind(twice ? 2 : 1);
-                    events.add(new StatusEvent(twice ? Lang.t("AVEUGLEMENT : MAIN CACHÉE 2 TOURS")
-                        : Lang.t("AVEUGLEMENT : MAIN CACHÉE AU PROCHAIN TOUR"), EffectPopup.Style.DAMAGE));
+                    events.add(new StatusEvent(twice ? Lang.t("AVEUGLEMENT : DEUX CARTES CACHÉES AU PROCHAIN TOUR")
+                        : Lang.t("AVEUGLEMENT : UNE CARTE CACHÉE AU PROCHAIN TOUR"), EffectPopup.Style.DAMAGE));
                 }
                 case BOARDING -> board(turn, events, enemy.takeCharge(EnemySignature.GRAPPIN));
                 case NUGGET -> {
@@ -1259,7 +1259,7 @@ public class EnemyTurnResolver {
                 }
                 case ENCRE -> {
                     curses.blind(1);
-                    events.add(new StatusEvent(Lang.t("ENCRE : MAIN CACHÉE AU PROCHAIN TOUR"), EffectPopup.Style.DAMAGE));
+                    events.add(new StatusEvent(Lang.t("ENCRE : UNE CARTE CACHÉE AU PROCHAIN TOUR"), EffectPopup.Style.DAMAGE));
                 }
                 default -> { }
             }
