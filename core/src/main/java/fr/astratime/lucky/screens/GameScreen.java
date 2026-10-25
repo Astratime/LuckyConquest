@@ -128,6 +128,7 @@ import fr.astratime.lucky.views.CardChoiceOverlay;
 import fr.astratime.lucky.views.ChestOverlay;
 import fr.astratime.lucky.views.CardDetailOverlay;
 import fr.astratime.lucky.views.CardImage;
+import fr.astratime.lucky.views.CardPileView;
 import fr.astratime.lucky.views.CasinoButtons;
 import fr.astratime.lucky.views.CombatHud;
 import fr.astratime.lucky.views.EnemyPickOverlay;
@@ -236,11 +237,13 @@ public class GameScreen extends ScreenAdapter {
     private static final float END_BUTTONS_FADE   = 0.4f;
     /** Écart entre les boutons de fin et le récapitulatif du combat, en dessous. */
     private static final float RECAP_GAP          = 18f;
-    /** Icône de l'échoppe : marge au bord de la zone de jeu. */
-    private static final float SHOP_ICON_MARGIN = 30f;
+    /** « Passer le tutoriel » : écart à droite de la barre de vie de l'ennemi. */
+    private static final float SKIP_BUTTON_GAP = 30f;
     /** Carte achetée : posée une fois l'échoppe refermée. */
     private static final float PURCHASE_DELAY   = 0.9f;
-    /** Étape de la Tour des épreuves : en haut à gauche de la zone de jeu. */
+    /** Bouton pause : écart au cadre des gains, à gauche (il est centré en hauteur sur la barre de vie de l'ennemi). */
+    private static final float PAUSE_BUTTON_MARGIN = 30f;
+    /** Étape du donjon ou de la Tour : marge en haut à gauche (passer le tutoriel) et en bas à droite (l'étape). */
     private static final float STAGE_LABEL_MARGIN = 30f;
     /** Coffre au trésor ouvert : gerbe de confettis. */
     private static final int   CHEST_CONFETTI        = 70;
@@ -352,7 +355,7 @@ public class GameScreen extends ScreenAdapter {
     private final AspirationPanel aspirationPanel;
     private final TextButton restartButton;
     private final TextButton menuButton;
-    /** Bouton pause, en bas à droite : ouvre le même menu qu'Échap. */
+    /** Bouton pause, en haut entre le cadre des gains et la barre de vie de l'ennemi : ouvre le même menu qu'Échap. */
     private final TextButton pauseButton;
     /** Boutons de fin de combat (Recommencer, Menu principal), centrés sous l'annonce de victoire ou de défaite. */
     private final Table      endButtons = new Table();
@@ -1695,7 +1698,7 @@ public class GameScreen extends ScreenAdapter {
                 Lang.big(recap.getDamageTaken()), recap.getBingos(), recap.getCardsPlayed());
     }
 
-    /** Étape de la Tour des épreuves, en haut à gauche de la zone de jeu (rien pour un combat seul). */
+    /** Étape du donjon ou de la Tour, en bas à droite de la zone de jeu (rien pour un combat seul). */
     private void refreshStageLabel() {
         if (run == null) {
             stageLabel.setText("");
@@ -1703,13 +1706,20 @@ public class GameScreen extends ScreenAdapter {
         }
         if (run instanceof TutorialRun) {
             stageLabel.setText(run.getLabel().toUpperCase());
-            stageLabel.pack();
+            placeStageLabel();
             return;
         }
         String step = run.isBossStage() ? (isDungeon() ? Lang.t("ROI") : Lang.t("BOSS"))
             : Lang.f("COMBAT {0}/{1}", (run.getStage() + 1), run.getStageCount());
         stageLabel.setText(run.getLabel().toUpperCase() + " · " + step);
+        placeStageLabel();
+    }
+
+    /** Étape en bas à droite (à la place de l'ancien bouton pause), alignée à droite : replacée quand son texte change. */
+    private void placeStageLabel() {
         stageLabel.pack();
+        stageLabel.setPosition(playArea.getX() + playArea.getWidth() - stageLabel.getWidth() - BUTTON_MARGIN,
+            BUTTON_MARGIN + (CasinoButtons.HEIGHT - stageLabel.getHeight()) / 2f);
     }
 
     // -------------------------------------------------------------------------
@@ -1925,30 +1935,39 @@ public class GameScreen extends ScreenAdapter {
         table.layout();
         enemyView.layout();
         placePlayerShield();
-        pauseButton.setPosition(playArea.getX() + playArea.getWidth() - pauseButton.getWidth() - BUTTON_MARGIN,
-            BUTTON_MARGIN);
+        hud.layout(); // avant la pause, qui se cale sur la barre de vie de l'ennemi
+        // Pause : en haut, à droite du cadre des gains, à hauteur de la barre de vie de l'ennemi.
+        HealthBarView enemyBar = hud.getEnemyHealthBar();
+        pauseButton.setPosition(playArea.getX() + PAUSE_BUTTON_MARGIN,
+            enemyBar.getY() + (HealthBarView.HEIGHT - pauseButton.getHeight()) / 2f);
         spinControls.placeStake();
         playsLabel.pack();
         playsLabel.setPosition(playArea.getX() + BUTTON_MARGIN,
             BUTTON_MARGIN + (pauseButton.getHeight() - playsLabel.getHeight()) / 2f);
         sidePanel.layout(stage);
-        hud.layout();
         piles.layout(table.getDeckX(), table.getPilesY());
         slots.layout();
         hand.layout(false);
         endButtons.setPosition(playArea.getCenterX() - endButtons.getWidth() / 2f,
             playArea.getHeight() * END_BUTTONS_HEIGHT);
-        shopIcon.setPosition(playArea.getX() + playArea.getWidth() - shopIcon.getWidth() - SHOP_ICON_MARGIN,
-            playArea.getHeight() - shopIcon.getHeight() - SHOP_ICON_MARGIN);
-        if (stageLabel != null) {
-            stageLabel.pack();
-            stageLabel.setPosition(playArea.getX() + STAGE_LABEL_MARGIN,
-                playArea.getHeight() - stageLabel.getHeight() - STAGE_LABEL_MARGIN);
+        placeShopIcon();
+        if (stageLabel != null) placeStageLabel();
+        if (guide != null) { // « Passer le tutoriel » à droite de la barre de vie de l'ennemi
+            guide.setSkipAnchor(enemyBar.getRight() + SKIP_BUTTON_GAP, enemyBar.getY() + HealthBarView.HEIGHT / 2f);
         }
-        if (guide != null) { // « Passer le tutoriel » sous « TUTORIEL », loin de l'échoppe
-            guide.setSkipCorner(playArea.getX() + STAGE_LABEL_MARGIN,
-                playArea.getHeight() - STAGE_LABEL_MARGIN - stageLabel.getHeight() - STAGE_LABEL_MARGIN / 2f);
-        }
+    }
+
+    /**
+     * Échoppe à droite de la table, entre le deck de l'ennemi (en haut) et la défausse
+     * du joueur (en bas) : centrée sur leur colonne et dans l'espace libre entre leurs tapis.
+     */
+    private void placeShopIcon() {
+        CardPileView discard = piles.discard();
+        float columnCenter = discard.getX() + discard.getWidth() / 2f;
+        float gapBottom    = discard.getY() + discard.getHeight();
+        float gapTop       = table.getEnemyPilesY();
+        shopIcon.setPosition(columnCenter - shopIcon.getWidth() / 2f,
+            (gapBottom + gapTop) / 2f - shopIcon.getHeight() / 2f);
     }
 
     // -------------------------------------------------------------------------

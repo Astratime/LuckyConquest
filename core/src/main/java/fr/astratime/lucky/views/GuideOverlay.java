@@ -120,8 +120,8 @@ public class GuideOverlay extends Group implements Disposable {
     private final Table         buttonRow = new Table();
     private final Cell<Label>   textCell;
     private Actor               skip;
-    /** Coin haut gauche du bouton « Passer » (Stage) ; {@code null} : en haut à droite de l'écran. */
-    private Vector2             skipCorner;
+    /** Bord gauche du bouton « Passer », à mi-hauteur (Stage) ; {@code null} : en haut à droite de l'écran. */
+    private Vector2             skipAnchor;
 
     private final List<Step> queue = new ArrayList<>();
     private Step       step;
@@ -179,9 +179,9 @@ public class GuideOverlay extends Group implements Disposable {
         addActor(button);
     }
 
-    /** Place le bouton « Passer » sous {@code (x, top)} (Stage), au lieu du coin haut droit de l'écran. */
-    public void setSkipCorner(float x, float top) {
-        skipCorner = new Vector2(x, top);
+    /** Place le bouton « Passer » à droite de {@code x}, centré en hauteur sur {@code centerY} (Stage), au lieu du coin haut droit de l'écran. */
+    public void setSkipAnchor(float x, float centerY) {
+        skipAnchor = new Vector2(x, centerY);
     }
 
     /** Joue {@code steps} dans l'ordre, puis {@code then} (rien : {@code null}). Remplace ce qui se jouait. */
@@ -296,7 +296,7 @@ public class GuideOverlay extends Group implements Disposable {
             }
         }
         bubble.setPosition(MathUtils.clamp(x, MARGIN, width - w - MARGIN), MathUtils.clamp(y, MARGIN, height - h - MARGIN));
-        if (skip != null && skipCorner != null) skip.setPosition(skipCorner.x, skipCorner.y - skip.getHeight());
+        if (skip != null && skipAnchor != null) skip.setPosition(skipAnchor.x, skipAnchor.y - skip.getHeight() / 2f);
         else if (skip != null) skip.setPosition(width - skip.getWidth() - MARGIN, height - skip.getHeight() - MARGIN);
         // La bulle ne cache pas le bouton « Passer » : elle se pousse à sa gauche, sinon dessous.
         if (skip != null && bubble.getX() < skip.getX() + skip.getWidth() && bubble.getX() + w > skip.getX()
