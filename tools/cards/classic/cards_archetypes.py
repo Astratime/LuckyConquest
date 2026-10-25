@@ -1,5 +1,7 @@
 """Cartes des 5 archétypes de deck (Joker, Lutin, Rentier, Bluffeur, Relanceur), au style des cartes classiques
-(voir base.py et README.md). Aucun texte, aucun chiffre."""
+(voir base.py et README.md). Aucun texte. Seule exception à « aucun chiffre » : le rang de la carte (pour les
+combinaisons, demande d'Astra du 2026-10-25), en index dans le coin haut gauche comme sur les cartes classiques
+(2 à 10, J, Q, K : les mêmes que les cartes classiques) ; l'emblème de l'archétype reste dans le coin bas droit."""
 import os
 import sys
 
@@ -648,7 +650,63 @@ def magot_du_dragon(pal):
     return finish(pal, stack(L, C_), LUTIN_I, LP)
 
 
-DESIGNS = {f.__name__: f for f in (
+# Rang de chaque carte, comme son "rank" dans assets/cards/definitions/archetypes.json (le Joker caméléon,
+# carte joker, n'en a pas et garde son emblème dans les deux coins).
+RANKS = {
+    'atelier_du_joker': 9, 'diable_en_boite': 10, 'rire_du_joker': 11, 'joker_sauvage': 12, 'couronne_du_fou': 13,
+    'gigue_du_lutin': 2, 'farce_du_lutin': 3, 'marteau_du_cordonnier': 4, 'chapeau_du_lutin': 5,
+    'bout_de_l_arc_en_ciel': 6, 'magot_du_dragon': 7,
+    'reconnaissance_de_dette': 5, 'taux_variable': 6, 'recouvrement': 7, 'interets_composes': 8,
+    'rente_viagere': 9, 'sceau_du_pharaon': 10,
+    'cartes_marquees': 3, 'fausse_piste': 4, 'intimidation': 5, 'tour_de_passe_passe': 6, 'coup_de_bluff': 7,
+    'rouleau_retenu': 6, 'memoire_de_la_machine': 7, 'calibrage': 8, 'second_levier': 9, 'martingale': 10,
+    'chamboule_tout': 11,
+}
+
+# Index de rang, 3 cases de large sur 5 de haut (le « 1 » du 10 en fait 1).
+GLYPHS = {
+    '1': ['k', 'k', 'k', 'k', 'k'],
+    '0': ['kkk', 'k.k', 'k.k', 'k.k', 'kkk'],
+    '2': ['kkk', '..k', 'kkk', 'k..', 'kkk'],
+    '3': ['kkk', '..k', 'kkk', '..k', 'kkk'],
+    '4': ['k.k', 'k.k', 'kkk', '..k', '..k'],
+    '5': ['kkk', 'k..', 'kkk', '..k', 'kkk'],
+    '6': ['kkk', 'k..', 'kkk', 'k.k', 'kkk'],
+    '7': ['kkk', '..k', '..k', '.k.', '.k.'],
+    '8': ['kkk', 'k.k', 'kkk', 'k.k', 'kkk'],
+    '9': ['kkk', 'k.k', 'kkk', '..k', 'kkk'],
+    'J': ['..k', '..k', '..k', 'k.k', 'kkk'],
+    'Q': ['kkk', 'k.k', 'k.k', 'kk.', '.kk'],
+    'K': ['k.k', 'k.k', 'kk.', 'k.k', 'k.k'],
+}
+RANK_TEXT = {11: 'J', 12: 'Q', 13: 'K'}
+
+
+def rank_index(im, pal, rank):
+    """Pose l'index du rang dans le coin haut gauche, à l'échelle de celui des cartes classiques (cases de 2x2),
+    cerné de la couleur de la face (à la place de l'emblème, qui reste en bas à droite)."""
+    text = RANK_TEXT.get(rank, str(rank))
+    rows = ['', '', '', '', '']
+    for n, ch in enumerate(text):
+        for j in range(5):
+            rows[j] += ('.' if n else '') + GLYPHS[ch][j]
+    big = [''.join(c * 2 for c in row) for row in rows for _ in range(2)]
+    glyph = layer()
+    sprite(ImageDraw.Draw(glyph), X0 + 2, Y0 + 2, big, {'k': INK})
+    # Liseré de la couleur de la face (2 cases) autour du chiffre, pour qu'il se lise sur le dessin.
+    halo = outline(outline(glyph, pal[0]), pal[0])
+    clip(im, halo)
+    return im
+
+
+def ranked(cid, fn):
+    rank = RANKS.get(cid)
+    if rank is None:
+        return fn
+    return lambda pal: rank_index(fn(pal), pal, rank)
+
+
+DESIGNS = {f.__name__: ranked(f.__name__, f) for f in (
     joker_sauvage, rire_du_joker, couronne_du_fou, atelier_du_joker, joker_cameleon,
     chapeau_du_lutin, gigue_du_lutin, bout_de_l_arc_en_ciel, marteau_du_cordonnier, farce_du_lutin,
     reconnaissance_de_dette, taux_variable, interets_composes, recouvrement, rente_viagere,

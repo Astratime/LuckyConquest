@@ -11,8 +11,10 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * Combinaisons de poker formées par les cartes à suite jouées pendant le tour
- * (les cartes spéciales, sans suite ni rang pertinent, sont ignorées). Elles
+ * Combinaisons de poker formées par les cartes à rang jouées pendant le tour :
+ * les cartes à suite et les cartes d'archétype numérotées (les autres cartes
+ * spéciales, sans rang, sont ignorées). Pour la Couleur, l'archétype d'une
+ * carte d'archétype tient lieu de suite (3 cartes Lutin font une Couleur). Elles
  * sont vérifiées automatiquement au lancer de la machine : chaque combinaison
  * formée ({@link #formed}) apporte son multiplicateur, et ceux de toutes
  * les combinaisons formées s'additionnent avant de multiplier les gains et
@@ -40,9 +42,9 @@ public enum Combo {
      */
     BRELAN("BRELAN", 6f, "3 cartes du même rang"),
     /**
-     * Au moins trois cartes, toutes de la même suite.
+     * Au moins trois cartes, toutes de la même suite (ou toutes du même archétype).
      */
-    COULEUR("COULEUR", 5f, "3 cartes ou plus de la même suite"),
+    COULEUR("COULEUR", 5f, "3 cartes ou plus de la même suite ou du même archétype"),
     /**
      * Trois rangs qui se suivent (l'As compte avant le 2 ou après le Roi).
      */
@@ -120,15 +122,21 @@ public enum Combo {
             if (!cards.get(i).isWild()) continue;
             Card best = null;
             float bestTotal = -1f;
-            for (Card.Suit suit : Card.Suit.values()) {
-                for (int rank = ACE; rank <= KING; rank++) {
-                    Card stand = new Card(cards.get(i).getId(), "", null, List.of(), suit, rank);
-                    cards.set(i, stand);
-                    float total = totalFactor(formedAsPlayed(cards));
-                    if (total > bestTotal) {
-                        bestTotal = total;
-                        best = stand;
-                    }
+            String id = cards.get(i).getId();
+            // Chaque suite, puis chaque archétype (pour une Couleur avec des cartes d'archétype).
+            List<Card> stands = new java.util.ArrayList<>();
+            for (int rank = ACE; rank <= KING; rank++) {
+                for (Card.Suit suit : Card.Suit.values()) stands.add(new Card(id, "", null, List.of(), suit, rank));
+                for (Archetype archetype : Archetype.values()) {
+                    stands.add(new Card(id, "", null, List.of(), null, rank, false, false, false, archetype));
+                }
+            }
+            for (Card stand : stands) {
+                cards.set(i, stand);
+                float total = totalFactor(formedAsPlayed(cards));
+                if (total > bestTotal) {
+                    bestTotal = total;
+                    best = stand;
                 }
             }
             cards.set(i, best);
@@ -173,7 +181,7 @@ public enum Combo {
             case PAIRE -> byRank.values().stream().anyMatch(count -> count >= 2);
             case SUITE -> hasStraight(byRank.keySet());
             case COULEUR -> suited.size() >= MIN_CARDS
-                && suited.stream().map(Card::getSuit).distinct().count() == 1;
+                && suited.stream().map(Card::comboColor).distinct().count() == 1;
             case BRELAN -> byRank.values().stream().anyMatch(count -> count >= MIN_CARDS);
             case CARRE -> byRank.values().stream().anyMatch(count -> count >= SQUARE_CARDS);
         };
@@ -192,15 +200,16 @@ public enum Combo {
     }
 
     /**
-     * @return les cartes à suite de {@code played} (les cartes spéciales n'ont pas de rang pertinent).
+     * @return les cartes à rang de {@code played} : à suite ou d'archétype numérotées (les autres cartes
+     * spéciales n'ont pas de rang pertinent).
      */
     private static List<Card> suited(List<Card> played) {
-        return played.stream().filter(card -> card.getSuit() != null).toList();
+        return played.stream().filter(Card::hasRank).toList();
     }
 
     /**
      * Key : rang, Value : nombre de fois played
-     * @return le nombre de cartes à suite de chaque rang parmi {@code played}.
+     * @return le nombre de cartes à rang de chaque rang parmi {@code played}.
      */
     private static Map<Integer, Integer> countByRank(List<Card> played) {
         Map<Integer, Integer> byRank = new HashMap<>();

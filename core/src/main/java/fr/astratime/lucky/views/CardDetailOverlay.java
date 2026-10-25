@@ -111,7 +111,7 @@ public class CardDetailOverlay implements Disposable {
         List<String[]> lines = new ArrayList<>();
         lines.add(new String[] {Lang.t("Nom"), card.getName()});
         lines.add(new String[] {Lang.t("Couleur"), suitName(card.getSuit())});
-        if (card.getSuit() != null) lines.add(new String[] {Lang.t("Rang"), rankName(card.getRank())});
+        if (card.hasRank()) lines.add(new String[] {Lang.t("Rang"), rankName(card.getRank())});
         lines.add(new String[] {Lang.t("Type"), card.isConsumable() ? Lang.t("Consommable : disparaît une fois jouée")
             : card.getSuit() != null ? Lang.t("Carte à suite") : Lang.t("Carte spéciale")});
         if (card.getArchetype() != null) lines.add(new String[] {Lang.t("Archétype"), card.getArchetype().getDisplayName()});

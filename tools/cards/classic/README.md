@@ -11,6 +11,9 @@ Demande d'Astra (2026-10-11) : redessiner toutes les cartes spéciales dans le s
   (petit motif ~5x5 en haut à gauche, retourné en bas à droite, comme la lettre des cartes classiques).
 - AUCUN TEXTE, AUCUN CHIFFRE, AUCUNE LETTRE sur les cartes (le jeu est multilingue). Pour « Pioche +2 » ou
   « Gains +500 », montrer la quantité par le dessin (2 cartes, une pile de pièces…), jamais par un chiffre.
+  Seule exception : les cartes d'archétype numérotées (`cards_archetypes.py`, demande d'Astra du 2026-10-25)
+  portent leur rang en index dans le coin haut gauche (2 à 10, J, Q, K, comme les cartes classiques), pour
+  les combinaisons ; leur emblème reste en bas à droite.
 - Contours en `base.INK` (comme les enseignes des cartes classiques) ; couleurs vives et lisibles, sujet
   centré, ~24x30 cases, qui se lit au premier coup d'oeil même en petit. Laisser un peu de face visible
   autour du sujet (comme les Joker), ne pas remplir toute la face d'un décor.

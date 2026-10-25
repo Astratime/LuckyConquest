@@ -226,7 +226,8 @@ public class CardLoader {
         String id       = json.getString("id");
         String name     = json.getString("name");
         String assetPath = json.getString("assetPath");
-        int    rank     = json.getInt("rank", 1);
+        // Une carte d'archétype sans rang écrit n'en a pas (0) : elle ne compte pas pour les combinaisons.
+        int    rank     = json.getInt("rank", json.has("archetype") ? 0 : 1);
 
         String suitStr  = json.getString("suit", null);
         Card.Suit suit  = suitStr != null ? Card.Suit.valueOf(suitStr) : null;
@@ -465,6 +466,8 @@ public class CardLoader {
                 return new FoolCrownEffect(v.i("factor"));
             case "JOKER_WORKSHOP":
                 return new JokerWorkshopEffect();
+            case "ARCHETYPE_STATS":
+                return new ArchetypeStatsEffect(v.i("attack", 0), v.i("defense", 0), v.f("gains", 0f));
             case "WILD_CARD":
                 return new WildCardEffect();
             case "LEPRECHAUN_HAT":

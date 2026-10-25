@@ -125,6 +125,23 @@ public class Card {
     public Suit         getSuit()      { return suit; }
     /** @return le rang de la carte. */
     public int          getRank()      { return rank; }
+
+    /**
+     * @return {@code true} si la carte a un rang qui compte pour les combinaisons :
+     *         les cartes à suite, et les cartes d'archétype numérotées (rang écrit dans leur JSON)
+     */
+    public boolean hasRank() {
+        return suit != null || (archetype != null && rank > 0);
+    }
+
+    /**
+     * @return la « couleur » de la carte pour la combinaison Couleur : sa suite, ou son archétype pour une carte
+     *         d'archétype numérotée (3 cartes Lutin font une Couleur) ; {@code null} si elle n'a pas de rang
+     */
+    public Object comboColor() {
+        if (suit != null) return suit;
+        return hasRank() ? archetype : null;
+    }
     /** @return {@code true} si la carte disparaît une fois jouée (elle ne rejoint pas la défausse). */
     public boolean      isConsumable() { return consumable; }
     /** @return les effets déclenchés quand la carte est jouée (liste immuable). */

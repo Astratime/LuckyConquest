@@ -280,4 +280,23 @@ class CardLoaderTest {
         Card rainbow = CardLoader.cardFactory(READER).apply("rainbow+");
         assertTrue(rainbow.getDescription().contains("Lutin +"), rainbow.getDescription());
     }
+
+    @Test
+    void everyArchetypeCardButTheWildOneHasARankAndStatBonuses() {
+        java.util.function.Function<String, Card> factory = CardLoader.cardFactory(READER);
+        for (String id : List.of("joker_sauvage", "gigue_du_lutin", "sceau_du_pharaon", "intimidation", "chamboule_tout")) {
+            Card card = factory.apply(id);
+            assertTrue(card.hasRank(), id);
+            assertTrue(card.getEffects().stream().anyMatch(effect ->
+                effect instanceof fr.astratime.lucky.entities.effects.ArchetypeStatsEffect), id);
+        }
+        assertEquals(12, factory.apply("joker_sauvage").getRank());
+        assertFalse(factory.apply("joker_cameleon").hasRank(), "le Joker caméléon reste une carte joker");
+        assertFalse(factory.apply("magnet").hasRank(), "une carte spéciale sans archétype n'a pas de rang");
+        fr.astratime.lucky.entities.effects.ArchetypeStatsEffect plus = factory.apply("joker_sauvage+").getEffects().stream()
+            .filter(fr.astratime.lucky.entities.effects.ArchetypeStatsEffect.class::isInstance)
+            .map(fr.astratime.lucky.entities.effects.ArchetypeStatsEffect.class::cast).findFirst().orElseThrow();
+        assertEquals(150, plus.getAttackBonus(), "carte « + » : x1,5");
+        assertEquals(4.5f, plus.getGainMultiplierAdd(), 1e-6);
+    }
 }
