@@ -290,7 +290,8 @@ class CardLoaderTest {
             assertTrue(card.getEffects().stream().anyMatch(effect ->
                 effect instanceof fr.astratime.lucky.entities.effects.ArchetypeStatsEffect), id);
         }
-        assertEquals(12, factory.apply("joker_sauvage").getRank());
+        assertEquals(13, factory.apply("joker_sauvage").getRank());
+        assertEquals(1, factory.apply("couronne_du_fou").getRank(), "chaque archétype part de l'As");
         assertFalse(factory.apply("joker_cameleon").hasRank(), "le Joker caméléon reste une carte joker");
         assertFalse(factory.apply("magnet").hasRank(), "une carte spéciale sans archétype n'a pas de rang");
         fr.astratime.lucky.entities.effects.ArchetypeStatsEffect plus = factory.apply("joker_sauvage+").getEffects().stream()
