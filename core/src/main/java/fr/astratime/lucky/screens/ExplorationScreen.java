@@ -31,6 +31,7 @@ import fr.astratime.lucky.assets.ExplorationArt;
 import fr.astratime.lucky.assets.Fonts;
 import fr.astratime.lucky.assets.HudTextures;
 import fr.astratime.lucky.assets.Palette;
+import fr.astratime.lucky.assets.Textures;
 import fr.astratime.lucky.assets.VolumeSound;
 import fr.astratime.lucky.entities.Card;
 import fr.astratime.lucky.entities.exploration.Dungeon;
@@ -92,6 +93,10 @@ public class ExplorationScreen extends ScreenAdapter {
     private static final float LOCKED_ALPHA = 0.4f;
     /** Teinte de la carte et des entrées d'un lieu fermé. */
     private static final Color LOCKED_TINT  = new Color(0.35f, 0.35f, 0.4f, 1f);
+    /** Taille de la pastille « vaincu », en part de la taille d'une entrée de donjon. */
+    private static final float BADGE_SHARE  = 0.42f;
+    /** Taille de la pastille d'un lieu entièrement vidé, dans la liste. */
+    private static final float ROW_BADGE    = 36f;
 
     private final LuckyGame       luckyGame;
     private final Stage           stage;
@@ -104,6 +109,8 @@ public class ExplorationScreen extends ScreenAdapter {
     private final CasinoButtons   buttons = new CasinoButtons();
     private final MenuDecor       decor  = new MenuDecor();
     private final Texture         chipTexture = new Texture(Gdx.files.internal(CHIP_PATH));
+    /** Pastille verte cochée : donjon dont le roi est battu, lieu dont les quatre rois le sont. */
+    private final Texture         badgeTexture = Textures.clearedBadge();
     private final Sound           clickSound;
     private final Sound           hoverSound;
     private final BackgroundMusic music;
@@ -128,6 +135,11 @@ public class ExplorationScreen extends ScreenAdapter {
     private final Image            map;
     private final List<Image>      gates = new ArrayList<>();
     private final List<Label>      gateLabels = new ArrayList<>();
+    /** Pastilles des donjons vaincus du lieu montré (suivent leur entrée, voir {@link #badgeFor}). */
+    private final List<Image>      badges = new ArrayList<>();
+    /** Dans la liste, à droite de chaque lieu ouvert : donjons vidés « 2/4 », ou une pastille s'ils le sont tous. */
+    private final List<Label>      rowCounts = new ArrayList<>();
+    private final List<Image>      rowBadges = new ArrayList<>();
     private final Label            dungeonName;
     private final Label            dungeonText;
     /** Sous la carte : le nom de la règle du lieu, puis ce qu'elle fait. */
@@ -189,6 +201,16 @@ public class ExplorationScreen extends ScreenAdapter {
                 public void clicked(InputEvent event, float x, float y) { selectPlace(rowPlace); }
             });
             rows.add(row);
+            int cleared = clearedCount(rowPlace);
+            int total = rowPlace.getDungeons().size();
+            Label count = new Label(cleared + "/" + total, new Label.LabelStyle(gateFont, Palette.CREAM));
+            count.setTouchable(Touchable.disabled);
+            count.setVisible(profile.isOpen(rowPlace) && cleared < total);
+            rowCounts.add(count);
+            Image rowBadge = pixelImage(badgeTexture);
+            rowBadge.setTouchable(Touchable.disabled);
+            rowBadge.setVisible(cleared == total);
+            rowBadges.add(rowBadge);
         }
 
         placeLabel = new Label("", new Label.LabelStyle(placeFont, Color.WHITE));
@@ -223,6 +245,8 @@ public class ExplorationScreen extends ScreenAdapter {
         stage.addActor(listPanel);
         stage.addActor(detailPanel);
         rows.forEach(stage::addActor);
+        rowCounts.forEach(stage::addActor);
+        rowBadges.forEach(stage::addActor);
         stage.addActor(placeLabel);
         stage.addActor(mapFrame);
         stage.addActor(map);
@@ -269,8 +293,10 @@ public class ExplorationScreen extends ScreenAdapter {
         map.setColor(open ? Color.WHITE : LOCKED_TINT);
         gates.forEach(Actor::remove);
         gateLabels.forEach(Actor::remove);
+        badges.forEach(Actor::remove);
         gates.clear();
         gateLabels.clear();
+        badges.clear();
         List<Dungeon> dungeons = place.getDungeons();
         for (int i = 0; i < dungeons.size(); i++) {
             int index = i;
@@ -321,6 +347,11 @@ public class ExplorationScreen extends ScreenAdapter {
             gateLabels.add(label);
             stage.addActor(gate);
             stage.addActor(label);
+            if (profile.isCleared(dungeon)) {
+                Image badge = badgeFor(gate);
+                badges.add(badge);
+                stage.addActor(badge);
+            }
         }
         if (firstVisit != null) firstVisit.toFront(); // les portes passent sous le Croupier
         fade.toFront();
@@ -345,6 +376,8 @@ public class ExplorationScreen extends ScreenAdapter {
             String previous = place.getPrevious().getName();
             text.append(Lang.f("Lieu fermé. Termine d'abord {0}.",
                 Character.toLowerCase(previous.charAt(0)) + previous.substring(1)));
+            text.append('\n').append(Lang.f("Donjons vaincus là-bas : {0}/{1}",
+                clearedCount(place.getPrevious()), place.getPrevious().getDungeons().size()));
         } else {
             text.append(dungeon.getDescription());
             if (profile.isCleared(dungeon)) text.append('\n').append(Lang.t("Déjà vidé."));
@@ -366,6 +399,38 @@ public class ExplorationScreen extends ScreenAdapter {
             actor.addAction(Actions.fadeIn(0.25f, Interpolation.pow2Out));
         }
         layout();
+    }
+
+    /** @return le nombre de donjons de {@code p} dont le roi est battu. */
+    private int clearedCount(Place p) {
+        return (int) p.getDungeons().stream().filter(profile::isCleared).count();
+    }
+
+    /** @return une image pixel art affichée sans lissage. */
+    private static Image pixelImage(Texture texture) {
+        texture.setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest);
+        return new Image(new TextureRegionDrawable(new TextureRegion(texture)));
+    }
+
+    /**
+     * @return la pastille « vaincu » de l'entrée {@code gate} : posée sur son coin
+     *         en haut à droite, elle la suit quand elle grandit ou flotte.
+     */
+    private Image badgeFor(Image gate) {
+        Image badge = new Image(new TextureRegionDrawable(new TextureRegion(badgeTexture))) {
+            @Override
+            public void act(float delta) {
+                super.act(delta);
+                float scale = gate.getScaleX();
+                float size = gate.getWidth() * BADGE_SHARE * scale;
+                float right = gate.getX() + gate.getWidth() / 2f + gate.getWidth() * scale / 2f;
+                float top = gate.getY() + gate.getHeight() * scale;
+                setBounds(right - size * 0.85f, top - size * 0.85f, size, size);
+            }
+        };
+        badge.setTouchable(Touchable.disabled);
+        badge.act(0f);
+        return badge;
     }
 
     /** L'entrée du donjon choisi flotte doucement (à relancer après chaque mise en page). */
@@ -443,7 +508,13 @@ public class ExplorationScreen extends ScreenAdapter {
         listPanel.setBounds(MARGIN, panelBottom, LIST_WIDTH, panelHeight);
         float rowX = MARGIN + (LIST_WIDTH - ROW_WIDTH) / 2f;
         for (int i = 0; i < rows.size(); i++) {
-            rows.get(i).setPosition(rowX, panelTop - PANEL_PAD - ROW_HEIGHT - i * (ROW_HEIGHT + ROW_GAP));
+            float rowY = panelTop - PANEL_PAD - ROW_HEIGHT - i * (ROW_HEIGHT + ROW_GAP);
+            rows.get(i).setPosition(rowX, rowY);
+            Label count = rowCounts.get(i);
+            count.pack();
+            count.setPosition(rowX + ROW_WIDTH - 14f - count.getWidth(), rowY + (ROW_HEIGHT - count.getHeight()) / 2f);
+            rowBadges.get(i).setBounds(rowX + ROW_WIDTH - 10f - ROW_BADGE, rowY + (ROW_HEIGHT - ROW_BADGE) / 2f,
+                ROW_BADGE, ROW_BADGE);
         }
 
         float detailX     = MARGIN + LIST_WIDTH + MARGIN / 2f;
@@ -590,6 +661,7 @@ public class ExplorationScreen extends ScreenAdapter {
         cardTextures.dispose();
         buttons.dispose();
         chipTexture.dispose();
+        badgeTexture.dispose();
         clickSound.dispose();
         hoverSound.dispose();
         music.dispose();
