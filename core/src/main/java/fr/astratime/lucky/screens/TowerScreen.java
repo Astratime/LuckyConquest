@@ -124,7 +124,16 @@ public class TowerScreen extends ScreenAdapter {
     private boolean hard;
 
     public TowerScreen(LuckyGame luckyGame) {
+        this(luckyGame, Chapter.values()[0], false);
+    }
+
+    /**
+     * Écran des chapitres ouvert sur {@code chapter} dans le mode {@code hardMode} :
+     * au retour d'un combat, le chapitre qui vient d'être joué.
+     */
+    public TowerScreen(LuckyGame luckyGame, Chapter chapter, boolean hardMode) {
         this.luckyGame = luckyGame;
+        this.hard      = hardMode && luckyGame.getProfile().isTowerHardOpen();
         this.stage     = new Stage(new MinimumScreenViewport(MIN_WIDTH, MIN_HEIGHT), luckyGame.getBatch());
         clickSound = new VolumeSound(Gdx.audio.newSound(Gdx.files.internal(CLICK_SOUND)), audio);
         hoverSound = new VolumeSound(Gdx.audio.newSound(Gdx.files.internal(HOVER_SOUND)), audio);
@@ -177,7 +186,7 @@ public class TowerScreen extends ScreenAdapter {
         tutorialButton = buttons.create(Lang.t("Tutoriel"), clickSound, this::replayGuide);
         // Mode difficile : ouvert après la Machine Originelle ; le bouton bascule entre les deux modes.
         modeButton   = buttons.create(Lang.t("Mode difficile"), clickSound, this::toggleMode);
-        modeButton.setText(Lang.t("Mode normal"));
+        modeButton.setText(hard ? Lang.t("Mode difficile") : Lang.t("Mode normal"));
         modeButton.setVisible(luckyGame.getProfile().isTowerHardOpen());
 
         fade = new Image(pixel);
@@ -203,7 +212,7 @@ public class TowerScreen extends ScreenAdapter {
         stage.addActor(fade);
         fade.addAction(Actions.fadeOut(FADE_TIME));
 
-        select(0, false);
+        select(chapter.ordinal(), false);
         layout();
         firstVisit = new FirstVisitGuide(stage, hud, clickSound, luckyGame.getProfile(), PlayerProfile.GUIDE_TOWER,
             Lang.t("La Tour des épreuves. Six chapitres, de plus en plus durs."),

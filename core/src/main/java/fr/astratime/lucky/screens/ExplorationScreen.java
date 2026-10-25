@@ -163,7 +163,16 @@ public class ExplorationScreen extends ScreenAdapter {
     private boolean leaving;
 
     public ExplorationScreen(LuckyGame luckyGame) {
+        this(luckyGame, null);
+    }
+
+    /**
+     * Écran de l'Exploration ouvert sur le lieu de {@code played}, ce donjon choisi :
+     * au retour d'un combat, celui qui vient d'être joué ({@code null} : le premier lieu).
+     */
+    public ExplorationScreen(LuckyGame luckyGame, Dungeon played) {
         this.luckyGame = luckyGame;
+        if (played != null) place = Place.of(played);
         this.profile   = luckyGame.getProfile();
         this.stage     = new Stage(new MinimumScreenViewport(MIN_WIDTH, MIN_HEIGHT), luckyGame.getBatch());
         clickSound = new VolumeSound(Gdx.audio.newSound(Gdx.files.internal(CLICK_SOUND)), audio);
@@ -264,6 +273,7 @@ public class ExplorationScreen extends ScreenAdapter {
         fade.addAction(Actions.fadeOut(FADE_TIME));
 
         selectPlace(place);
+        if (played != null) selectDungeon(place.getDungeons().indexOf(played), false);
         firstVisit = new FirstVisitGuide(stage, hud, clickSound, luckyGame.getProfile(), PlayerProfile.GUIDE_EXPLORATION,
             Lang.t("L'Exploration. Choisis un lieu, puis un de ses donjons."),
             Lang.t("Dans chaque donjon, un soldat, puis son roi. Bats le roi : son coffre s'ouvre. Une carte et des "

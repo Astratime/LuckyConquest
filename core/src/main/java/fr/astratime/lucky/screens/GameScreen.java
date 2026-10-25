@@ -1532,7 +1532,14 @@ public class GameScreen extends ScreenAdapter {
     private void onBackToChapters() {
         endButtons.setTouchable(Touchable.disabled);
         Gdx.app.postRunnable(() -> {
-            luckyGame.setScreen(isDungeon() ? new ExplorationScreen(luckyGame) : new TowerScreen(luckyGame));
+            // Retour sur le lieu (et le donjon) ou le chapitre (et son mode) qui vient d'être joué.
+            if (run instanceof DungeonRun dungeonRun) {
+                luckyGame.setScreen(new ExplorationScreen(luckyGame, dungeonRun.getDungeon()));
+            } else if (run instanceof TowerRun tower) {
+                luckyGame.setScreen(new TowerScreen(luckyGame, tower.getChapter(), tower.isHard()));
+            } else {
+                luckyGame.setScreen(new TowerScreen(luckyGame));
+            }
             dispose();
         });
     }
