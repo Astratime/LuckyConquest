@@ -199,21 +199,15 @@ public class EnemyView implements Disposable {
         }
         float[] thresholds = kind.phaseThresholds();
         if (kind == EnemyKind.MACHINE_ORIGINELLE && current.getPhase() < 3) {
-            line(text, Lang.f("Seuils de phase : ses PV s'arrêtent à {0} % puis à {1} % de ses PV max, le surplus est perdu. "
-                + "Elle change de phase à son tour", Math.round(EnemyKind.PHASE_TWO_RATIO * 100),
+            line(text, Lang.f("Garde : ses PV s'arrêtent à {0} % puis à {1} % de ses PV max, le surplus est perdu et elle est "
+                + "invincible jusqu'à son tour, où elle change de phase", Math.round(EnemyKind.PHASE_TWO_RATIO * 100),
                 Math.round(EnemyKind.MACHINE_LAST_RATIO * 100)));
         } else if (thresholds.length == 2 && current.getPhase() < 3) {
-            line(text, Lang.f("Seuils de phase : ses PV s'arrêtent à {0} % puis à {1} % de ses PV max, le surplus est perdu. "
-                + "Phase suivante à son tour", Math.round(thresholds[0] * 100), Math.round(thresholds[1] * 100)));
+            line(text, Lang.f("Garde : ses PV s'arrêtent à {0} % puis à {1} % de ses PV max, le surplus est perdu et il est "
+                + "invincible jusqu'à son tour, où il change de phase", Math.round(thresholds[0] * 100), Math.round(thresholds[1] * 100)));
         } else if (thresholds.length == 1 && current.getPhase() < 2) {
-            line(text, Lang.f("Seuil de phase : ses PV s'arrêtent à {0} % de ses PV max, le surplus est perdu. "
-                + "Phase 2 à son tour", Math.round(thresholds[0] * 100)));
-        }
-        if (kind.hasGuard()) {
-            line(text, kind.phaseFor(EnemyKind.PHASE_TWO_RATIO - 0.01f) >= 2
-                ? Lang.f("Garde : il ne perd pas plus de {0} % de ses PV max par tour. Elle le fait passer en phase 2",
-                    EnemyKind.GUARD_PERCENT)
-                : Lang.f("Garde : il ne perd pas plus de {0} % de ses PV max par tour", EnemyKind.GUARD_PERCENT));
+            line(text, Lang.f("Garde : ses PV s'arrêtent à {0} % de ses PV max, le surplus est perdu et il est "
+                + "invincible jusqu'à son tour, où il passe en phase 2", Math.round(thresholds[0] * 100)));
         }
         if (kind.playsAtRandom()) line(text, Lang.t("Joue ses cartes au hasard"));
         if (kind.potionShields()) line(text, Lang.t("Ses Potions reforment aussi sa défense"));

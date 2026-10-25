@@ -48,7 +48,6 @@ class BossPhaseWallsTest {
             float[] thresholds = boss.phaseThresholds();
             for (int k = 0; k < thresholds.length; k++) {
                 long wall = (long) Math.ceil(enemy.getMaxHp() * (double) thresholds[k]);
-                enemy.resetDamageTaken();                        // un nouveau tour du joueur : sa Garde repart
                 enemy.takeDamage(HUGE);
                 assertEquals(wall, enemy.getHp(), boss.name() + " s'arrête au seuil " + (k + 1));
                 assertNotNull(enemy.takeNotice());
@@ -61,10 +60,31 @@ class BossPhaseWallsTest {
             enemy.resetDamageTaken();
             enemy.takeDamage(HUGE);
             if (boss.hasLastDraw()) assertEquals(1, enemy.getHp(), "la Machine attend son Dernier tirage");
-            else if (!boss.hasGuard()) assertTrue(enemy.isDefeated(), boss.name() + " : après sa dernière phase, il tombe");
-            else assertTrue(enemy.getHp() < Math.ceil(enemy.getMaxHp() * (double) thresholds[thresholds.length - 1]),
-                boss.name() + " : après sa dernière phase, il peut descendre plus bas");
+            else assertTrue(enemy.isDefeated(), boss.name() + " : après sa dernière phase, il tombe d'un coup");
         }
+    }
+
+    @Test
+    void noMoreHalfHpCapPerTurnAboveTheThreshold() {
+        // Plus de limite à 50 % des PV max par tour : seule la Garde au seuil de phase arrête les coups.
+        // Un roi sans phase franchie perd d'un coup tout ce qui le sépare de son seuil, puis plus rien.
+        Enemy king = new Enemy(EnemyKind.TAVERNIER);
+        king.takeDamage(king.getMaxHp() / 4);
+        king.takeDamage(king.getMaxHp() / 4);
+        king.takeDamage(king.getMaxHp() / 4);
+        assertEquals((long) Math.ceil(king.getMaxHp() / 2.0), king.getHp(), "arrêté à son seuil, pas avant");
+        assertEquals(0, king.takeDamage(king.getMaxHp()), "invincible jusqu'à son tour");
+        assertTrue(king.enterPhaseTwo(), "phase 2 à son tour");
+        assertEquals(2, king.getPhase());
+        assertTrue(king.takeDamage(1) > 0, "l'invincibilité a disparu");
+    }
+
+    @Test
+    void aKingAboveHisThresholdStaysInPhaseOne() {
+        Enemy king = new Enemy(EnemyKind.TAVERNIER);
+        king.takeDamage(king.getMaxHp() / 3);
+        assertFalse(king.enterPhaseTwo(), "au-dessus de la moitié : pas de phase 2 (plus de Garde par tour)");
+        assertEquals(1, king.getPhase());
     }
 
     @Test

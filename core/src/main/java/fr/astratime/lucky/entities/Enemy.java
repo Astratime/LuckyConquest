@@ -70,8 +70,6 @@ public class Enemy {
     private       boolean     lastDrawDone;
     /** Ce qu'il vient de faire à un coup (Maison, Machine Originelle), à annoncer ({@code null} : rien). */
     private       String      notice;
-    /** Sa Garde a arrêté un coup : il passe en phase 2 à son prochain tour (s'il en a une). */
-    private       boolean     guardBroken;
     /** Il a atteint le seuil de sa phase suivante : il y passe à son prochain tour. */
     private       boolean     phaseWallReached;
     /** Famille de cartes interdite tout le combat (le Portier), ou {@code null}. */
@@ -185,8 +183,8 @@ public class Enemy {
     /**
      * Ce que deviennent {@code damage} dégâts qui le touchent : la Maison annule
      * une fois le premier gros coup (au moins {@link EnemyKind#HOUSE_CANCEL_PERCENT} %
-     * de ses PV max) ; un boss ou un roi (hors prairie) ne perd pas plus de {@link EnemyKind#GUARD_PERCENT} %
-     * de ses PV max en un tour (sa Garde, comptée depuis la fin de son dernier tour) ;
+     * de ses PV max) ; la Garde d'un boss ou d'un roi l'arrête au seuil de sa phase (le surplus est perdu)
+     * et le rend invincible jusqu'à son tour, où il change de phase (choix d'Astra : plus de limite par tour) ;
      * la Machine Originelle résiste au premier coup fatal, à 1 PV,
      * et le Dernier tirage décidera (les coups suivants du même tour ne la touchent plus). Ce qui arrive est à lire dans {@link #takeNotice()}.
      */
@@ -201,20 +199,12 @@ public class Enemy {
             return 0;
         }
         if (lastDrawPending) return 0;                  // à 1 PV, elle attend le Dernier tirage : plus rien ne la touche
-        if (kind.hasGuard()) {                          // Garde : pas plus de la moitié de ses PV max par tour
-            long room = Math.max(0, (long) maxHp * EnemyKind.GUARD_PERCENT / 100 - damageTaken);
-            if (damage > room) {
-                damage = room;
-                guardBroken = true;
-                if (notice == null) notice = Lang.f("GARDE : PAS PLUS DE {0} % DE SES PV PAR TOUR", EnemyKind.GUARD_PERCENT);
-            }
-        }
         long wall = phaseWall();
-        if (wall > 0 && damage > 0 && hp - damage <= wall) { // seuil de phase : le surplus ne passe pas avant son tour
+        if (wall > 0 && damage > 0 && hp - damage <= wall) { // Garde : au seuil de phase, invincible jusqu'à son tour
             damage = Math.max(0, hp - wall);
             phaseWallReached = true;
             notice = kind == EnemyKind.MACHINE_ORIGINELLE ? Lang.f("ELLE RÉSISTE : PHASE {0} À SON TOUR", phase + 1)
-                : Lang.f("SEUIL ATTEINT : PHASE {0} À SON TOUR", phase + 1);
+                : Lang.f("GARDE : INVINCIBLE JUSQU'À SON TOUR, PHASE {0}", phase + 1);
         }
         if (kind.hasLastDraw() && !lastDrawDone && damage >= hp) {
             lastDrawPending = true;
@@ -732,14 +722,12 @@ public class Enemy {
 
     /**
      * Début de son tour : l'Éclat Originel passe à sa deuxième phase sous
-     * {@link EnemyKind#PHASE_TWO_RATIO} de vie (ou dès que sa Garde a arrêté un coup).
+     * {@link EnemyKind#PHASE_TWO_RATIO} de vie (ou dès que sa Garde l'a arrêté au seuil de sa phase).
      *
      * @return {@code true} s'il vient de changer de phase
      */
     public boolean enterPhaseTwo() {
-        // Sa Garde a arrêté un coup : il compte comme passé sous la moitié de ses PV.
-        float ratio = guardBroken ? Math.min(getHpRatio(), EnemyKind.PHASE_TWO_RATIO - 0.01f) : getHpRatio();
-        int reached = kind.phaseFor(ratio);
+        int reached = kind.phaseFor(getHpRatio());
         if (phaseWallReached) reached = Math.max(reached, phase + 1); // il a atteint son seuil de phase
         phaseWallReached = false;
         reached = Math.min(reached, Math.min(phase + 1, kind.phaseCount())); // une phase à la fois : chacune s'annonce
