@@ -144,7 +144,7 @@ final class CombatEffectRows {
 
     /**
      * Exploration : la règle du lieu (Scorbut, prochain coup de grisou, niveau de
-     * la marée), les cartes des lieux qui durent (Veine d'or, Bulle d'air,
+     * la marée, prochain tour de manège, Soif), les cartes des lieux qui durent (Veine d'or, Bulle d'air,
      * Casque) et les mauvais sorts de l'ennemi qui attendent le prochain tour.
      */
     private void addPlaceRows(List<SidePanel.EffectRow> rows, LastingEffects lasting) {
@@ -167,7 +167,21 @@ final class CombatEffectRows {
             }
             case MAREE -> rows.add(new SidePanel.EffectRow(skull, null, Lang.f("Marée {0}/{1}{2}",
                 PlaceRule.tide(turn), PlaceRule.TIDE_CYCLE, (rule.isHighTide(turn) ? Lang.t(" : haute") : "")), rule.getName(),
-                Lang.f("{0} Niveau actuel : {1}.", rule.getDescription(), PlaceRule.tide(turn))));
+                Lang.f("{0} Niveau actuel : {1}.", rule.getDescription(), PlaceRule.tide(turn))
+                    + (!rule.isHighTide(turn) && rule.isHighTide(turn + 1)
+                        ? Lang.f(" Marée haute au prochain tour : attaque -{0} %.", PlaceRule.HIGH_TIDE_MALUS) : "")));
+            case MANEGE -> {
+                int turns = PlaceRule.turnsBeforeCarousel(turn);
+                rows.add(new SidePanel.EffectRow(skull, null, turns == 1 ? Lang.t("Manège ce tour")
+                    : Lang.f("Manège {0}/{1}", PlaceRule.CAROUSEL_PERIOD - turns + 1, PlaceRule.CAROUSEL_PERIOD),
+                    rule.getName(), rule.getDescription()
+                    + (turns == 1 ? Lang.t(" C'est ce tour-ci : le manège tourne à ton tirage !")
+                        : turns == 2 ? Lang.t(" Le manège tournera au prochain tour.")
+                        : Lang.f(" Le manège tournera dans {0}.", turns(turns - 1)))));
+            }
+            case SOIF -> rows.add(new SidePanel.EffectRow(skull, null,
+                Lang.f("Soif : soins /{0}", PlaceRule.THIRST_HEAL_DIVISOR), rule.getName(),
+                rule.getDescription() + Lang.t(" Pense à te soigner à chaque tour.")));
             case NONE -> { }
         }
         if (lasting.getBubbleTurns() > 0) {
