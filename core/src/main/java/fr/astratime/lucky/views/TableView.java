@@ -67,7 +67,6 @@ public class TableView {
 
     // Côté de l'ennemi : le reflet de celui du joueur, de l'autre côté du filet
     private static final float CROUPIER_GAP = 8f;      // entre la rangée de cartes de l'ennemi et le croupier
-    private static final float SHOP_CLEARANCE = 36f;   // piles de l'ennemi abaissées : l'échoppe est au-dessus
 
     private final PlayArea playArea;
     private final float    cardWidth;
@@ -227,7 +226,7 @@ public class TableView {
     public float getEnemyPilesY() {
         float tableTop = BOTTOM + playArea.getHeight() - BOTTOM - TOP_MARGIN;
         float matHeight = MAT_PAD + cardHeight + PILE_STACK + MAT_LABEL_SPACE;
-        return tableTop - RAIL - PILE_MARGIN - SHOP_CLEARANCE - matHeight + MAT_PAD;
+        return tableTop - RAIL - PILE_MARGIN - matHeight + MAT_PAD;
     }
 
     /** @return l'abscisse (Stage) de la défausse de l'ennemi, en haut à gauche (au-dessus du deck du joueur). */

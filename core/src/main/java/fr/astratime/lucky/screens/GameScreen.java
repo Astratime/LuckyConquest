@@ -128,6 +128,7 @@ import fr.astratime.lucky.views.CardChoiceOverlay;
 import fr.astratime.lucky.views.ChestOverlay;
 import fr.astratime.lucky.views.CardDetailOverlay;
 import fr.astratime.lucky.views.CardImage;
+import fr.astratime.lucky.views.CardPileView;
 import fr.astratime.lucky.views.CasinoButtons;
 import fr.astratime.lucky.views.CombatHud;
 import fr.astratime.lucky.views.EnemyPickOverlay;
@@ -236,8 +237,8 @@ public class GameScreen extends ScreenAdapter {
     private static final float END_BUTTONS_FADE   = 0.4f;
     /** Écart entre les boutons de fin et le récapitulatif du combat, en dessous. */
     private static final float RECAP_GAP          = 18f;
-    /** Icône de l'échoppe : marge au bord de la zone de jeu. */
-    private static final float SHOP_ICON_MARGIN = 30f;
+    /** « Passer le tutoriel » : écart à droite de la barre de vie de l'ennemi. */
+    private static final float SKIP_BUTTON_GAP = 30f;
     /** Carte achetée : posée une fois l'échoppe refermée. */
     private static final float PURCHASE_DELAY   = 0.9f;
     /** Bouton pause : écart au cadre des gains, à gauche (il est centré en hauteur sur la barre de vie de l'ennemi). */
@@ -1949,13 +1950,24 @@ public class GameScreen extends ScreenAdapter {
         hand.layout(false);
         endButtons.setPosition(playArea.getCenterX() - endButtons.getWidth() / 2f,
             playArea.getHeight() * END_BUTTONS_HEIGHT);
-        shopIcon.setPosition(playArea.getX() + playArea.getWidth() - shopIcon.getWidth() - SHOP_ICON_MARGIN,
-            playArea.getHeight() - shopIcon.getHeight() - SHOP_ICON_MARGIN);
+        placeShopIcon();
         if (stageLabel != null) placeStageLabel();
-        if (guide != null) { // « Passer le tutoriel » sous « TUTORIEL », loin de l'échoppe
-            guide.setSkipCorner(playArea.getX() + STAGE_LABEL_MARGIN,
-                playArea.getHeight() - STAGE_LABEL_MARGIN - stageLabel.getHeight() - STAGE_LABEL_MARGIN / 2f);
+        if (guide != null) { // « Passer le tutoriel » à droite de la barre de vie de l'ennemi
+            guide.setSkipAnchor(enemyBar.getRight() + SKIP_BUTTON_GAP, enemyBar.getY() + HealthBarView.HEIGHT / 2f);
         }
+    }
+
+    /**
+     * Échoppe à droite de la table, entre le deck de l'ennemi (en haut) et la défausse
+     * du joueur (en bas) : centrée sur leur colonne et dans l'espace libre entre leurs tapis.
+     */
+    private void placeShopIcon() {
+        CardPileView discard = piles.discard();
+        float columnCenter = discard.getX() + discard.getWidth() / 2f;
+        float gapBottom    = discard.getY() + discard.getHeight();
+        float gapTop       = table.getEnemyPilesY();
+        shopIcon.setPosition(columnCenter - shopIcon.getWidth() / 2f,
+            (gapBottom + gapTop) / 2f - shopIcon.getHeight() / 2f);
     }
 
     // -------------------------------------------------------------------------
