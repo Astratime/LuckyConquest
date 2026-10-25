@@ -22,7 +22,7 @@ public class CombatContext {
     /** Seuil de vie (en proportion) sous lequel le renvoi garanti de l'As de Carreau est renforcé. */
     public static final float LOW_HP_RATIO = 0.2f;
     /** Renvoi des cartes Carreau au plus, en % des PV max de l'ennemi, par tour ennemi. */
-    public static final float MAX_REFLECT_HP_PERCENT = 12f;
+    public static final float MAX_REFLECT_HP_PERCENT = 20f;
     /** Nom d'une étape du détail d'un symbole dont l'origine n'est pas précisée. */
     private static final String OTHER_EFFECTS = "Autres effets";
 
