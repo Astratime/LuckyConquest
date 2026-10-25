@@ -148,7 +148,12 @@ public class ExplorationEndingCutscene extends Cutscene {
         float smile = progress(SMILE, SMILE + 0.3f);                           // son sourire
         if (smile > 0f) {
             glow(batch, w / 2f, h * 0.28f + 21f * 14f, 300f * smile, GOLD, 0.4f * smile);
-            if (font != null) caption(batch, font, Lang.t("LA CHANCE A FAIT LE TOUR DU MONDE"), w / 2f, h * 0.9f, smile);
+            if (font != null) {
+                float scale = font.getData().scaleX;
+                font.getData().setScale(scale * 2.2f);                         // la réplique, en grand
+                caption(batch, font, Lang.t("LA CHANCE A FAIT LE TOUR DU MONDE"), w / 2f, h * 0.9f, smile);
+                font.getData().setScale(scale);
+            }
         }
     }
 
