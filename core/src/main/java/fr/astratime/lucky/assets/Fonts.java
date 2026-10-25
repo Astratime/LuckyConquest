@@ -15,8 +15,14 @@ import java.util.Map;
  * Les polices sont partagées : deux demandes identiques (taille, couleurs, contour,
  * caractères) renvoient la même instance, générée une seule fois. Chaque police
  * obtenue doit être rendue par {@link #release(BitmapFont)} (et jamais disposée
- * directement) : elle n'est libérée qu'une fois rendue par tous ses utilisateurs.
- * Le générateur FreeType reste ouvert tant qu'une police est en service.
+ * directement).
+ *
+ * Une police au jeu de caractères habituel reste en mémoire quand plus personne ne
+ * s'en sert : l'écran suivant (le prochain combat, le retour au menu) la retrouve
+ * sans la regénérer, ce qui représentait plus de la moitié du chargement d'un combat.
+ * Une police réduite à quelques caractères (grands titres) est libérée dès qu'elle
+ * n'est plus utilisée, comme avant. Le générateur FreeType reste ouvert tant qu'une
+ * police est en mémoire.
  */
 public final class Fonts {
 
@@ -35,6 +41,9 @@ public final class Fonts {
     private static final Map<Key, BitmapFont>          fonts   = new HashMap<>();
     private static final Map<BitmapFont, Entry>        entries = new IdentityHashMap<>();
     private static FreeTypeFontGenerator               generator;
+
+    /** Le jeu de caractères habituel, trié comme les clés (voir {@link #distinct(String)}). */
+    private static final String DEFAULT_CHARS = distinct(FreeTypeFontGenerator.DEFAULT_CHARS);
 
     /**
      * @return la police Jersey 10 à la taille {@code size} (en pixels), de la couleur
@@ -70,14 +79,19 @@ public final class Fonts {
      */
     public static BitmapFont jerseyMarkup(int size, Color color, float borderWidth, Color borderColor) {
         return obtain(new Key(size, new Color(color), borderWidth, new Color(borderColor),
-            FreeTypeFontGenerator.DEFAULT_CHARS, true));
+            DEFAULT_CHARS, true));
     }
 
-    /** Rend une police obtenue par {@code jersey} : elle est disposée quand plus personne ne s'en sert. */
+    /**
+     * Rend une police obtenue par {@code jersey}. Quand plus personne ne s'en sert, une
+     * police au jeu de caractères habituel reste en mémoire pour le prochain écran ;
+     * une police réduite à quelques caractères est disposée.
+     */
     public static void release(BitmapFont font) {
         Entry entry = entries.get(font);
-        if (entry == null) throw new IllegalArgumentException("Police inconnue ou déjà rendue");
+        if (entry == null || entry.users <= 0) throw new IllegalArgumentException("Police inconnue ou déjà rendue");
         if (--entry.users > 0) return;
+        if (entry.key.characters().equals(DEFAULT_CHARS)) return; // gardée pour le prochain écran
         entries.remove(font);
         fonts.remove(entry.key);
         font.dispose();
@@ -101,7 +115,13 @@ public final class Fonts {
             fonts.put(key, font);
             entries.put(font, new Entry(key));
         }
-        entries.get(font).users++;
+        Entry entry = entries.get(font);
+        if (entry.users == 0) {
+            // Police gardée en mémoire : remise dans l'état d'une police neuve.
+            font.getData().setScale(1f);
+            font.setColor(Color.WHITE);
+        }
+        entry.users++;
         return font;
     }
 

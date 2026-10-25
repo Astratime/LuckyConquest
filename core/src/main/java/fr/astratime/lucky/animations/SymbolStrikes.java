@@ -142,8 +142,15 @@ public class SymbolStrikes extends Actor implements Disposable {
     private final VisualSettings settings;
     private final ScreenShake    shake;
     private final Runnable       onCoinArrived;
-    private final Map<Symbol, TextureRegion> symbolArt = new EnumMap<>(Symbol.class);
-    private final List<Texture>  textures  = new ArrayList<>();
+    /**
+     * Images partagées par tous les combats (symboles détourés, points, anneaux…) : dessinées
+     * une seule fois, au premier combat, puis gardées jusqu'à la fermeture du jeu au lieu
+     * d'être refaites à chaque combat.
+     */
+    private static final Map<Symbol, TextureRegion> SHARED_ART = new EnumMap<>(Symbol.class);
+    private static TextureRegion sharedDot, sharedRing, sharedHandle, sharedGrain, sharedSeed;
+
+    private final Map<Symbol, TextureRegion> symbolArt = SHARED_ART;
     private final TextureRegion  pixel, coin, dot, ring, handle, grain, seed;
     private final List<Strike>   strikes   = new ArrayList<>();
     private final List<Particle> particles = new ArrayList<>();
@@ -161,14 +168,21 @@ public class SymbolStrikes extends Actor implements Disposable {
         this.pixel         = pixel;
         this.coin          = new TextureRegion(coinTexture);
         this.onCoinArrived = onCoinArrived;
-        for (Symbol symbol : Symbol.values()) {
-            symbolArt.put(symbol, region(cutOut(new Pixmap(Gdx.files.internal(symbol.getAssetPath())))));
+        if (SHARED_ART.isEmpty()) {
+            for (Symbol symbol : Symbol.values()) {
+                SHARED_ART.put(symbol, region(cutOut(new Pixmap(Gdx.files.internal(symbol.getAssetPath())))));
+            }
+            sharedDot    = region(dotPixmap());
+            sharedRing   = region(ringPixmap());
+            sharedHandle = region(handlePixmap());
+            sharedGrain  = region(grainPixmap());
+            sharedSeed   = region(seedPixmap());
         }
-        dot    = region(dotPixmap());
-        ring   = region(ringPixmap());
-        handle = region(handlePixmap());
-        grain  = region(grainPixmap());
-        seed   = region(seedPixmap());
+        dot    = sharedDot;
+        ring   = sharedRing;
+        handle = sharedHandle;
+        grain  = sharedGrain;
+        seed   = sharedSeed;
         setTouchable(Touchable.disabled);
     }
 
@@ -1105,10 +1119,9 @@ public class SymbolStrikes extends Actor implements Disposable {
     // Petites images en pixel art
     // -------------------------------------------------------------------------
 
-    private TextureRegion region(Pixmap pixmap) {
+    private static TextureRegion region(Pixmap pixmap) {
         Texture texture = new Texture(pixmap);
         pixmap.dispose();
-        textures.add(texture);
         return new TextureRegion(texture);
     }
 
@@ -1235,6 +1248,6 @@ public class SymbolStrikes extends Actor implements Disposable {
 
     @Override
     public void dispose() {
-        for (Texture texture : textures) texture.dispose();
+        // Les images partagées (SHARED_ART…) restent pour le prochain combat.
     }
 }
