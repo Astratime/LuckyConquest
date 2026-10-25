@@ -62,7 +62,7 @@ class DungeonTest {
         // PV du soldat (le roi en a le double), choix d'Astra 2026-10-24 : le Gouffre, la Salle des machines,
         // les Coffres et le Tombeau à part
         Map<Dungeon, Integer> hp = new HashMap<>();
-        for (Dungeon d : Place.FOIRE.getDungeons()) hp.put(d, 30_000);
+        for (Dungeon d : Place.FOIRE.getDungeons()) hp.put(d, 50_000); // Astra 2026-10-25
         for (Dungeon d : Place.PORT.getDungeons()) hp.put(d, 200_000);
         for (Dungeon d : Place.MINES.getDungeons()) hp.put(d, 300_000);
         for (Dungeon d : Place.CASINO.getDungeons()) hp.put(d, 1_200_000);

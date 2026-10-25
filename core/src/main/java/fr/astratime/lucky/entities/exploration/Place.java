@@ -22,28 +22,28 @@ public enum Place {
     FOIRE("La Fête foraine", "La Foire",
         "Une fête foraine s'est installée au bord de la prairie. La nuit, les manèges tournent seuls. "
             + "Les forains, eux, trichent toujours.",
-        PlaceRule.MANEGE, 30, 300, 15, 75, 250, 1_000,
+        PlaceRule.MANEGE, 30, 300, 15, 93, 250, 1_000,
         List.of(Dungeon.CHAPITEAU, Dungeon.TRAIN_FANTOME, Dungeon.GRANDE_ROUE, Dungeon.STANDS)),
 
     PORT("Le Port des Contrebandiers", "Le Port",
         "Les bateaux n'apportent plus d'épices. Ils apportent des cartes truquées. Sur les quais, tout s'achète. "
             + "Même la chance.",
-        PlaceRule.SCORBUT, 50, 1_000, 10, 80, 500, 1_500, List.of(Dungeon.CALE, Dungeon.TAVERNE, Dungeon.PHARE, Dungeon.GALION)),
+        PlaceRule.SCORBUT, 50, 1_000, 10, 104, 500, 1_500, List.of(Dungeon.CALE, Dungeon.TAVERNE, Dungeon.PHARE, Dungeon.GALION)),
 
     MINES("Les Mines d'Or", "Les Mines",
         "Sous la montagne, l'or de la comète coule encore. Les mineurs creusent sans fin. Ils ont oublié la lumière. "
             + "Pas leur cupidité.",
-        PlaceRule.GRISOU, 150, 10_000, 20, 40, 1_000, 2_500, List.of(Dungeon.FILON, Dungeon.PUITS, Dungeon.FORGE, Dungeon.GOUFFRE)),
+        PlaceRule.GRISOU, 150, 10_000, 20, 52, 1_000, 2_500, List.of(Dungeon.FILON, Dungeon.PUITS, Dungeon.FORGE, Dungeon.GOUFFRE)),
 
     CASINO("Le Casino Englouti", "Le Casino",
         "Le plus grand casino du monde a sombré une nuit de jackpot. Sous l'eau, les machines tournent toujours. "
             + "Les joueurs aussi.",
-        PlaceRule.MAREE, 400, 50_000, 30, 18, 2_000, 4_000, List.of(Dungeon.BAR, Dungeon.MACHINES, Dungeon.COFFRES, Dungeon.VIP)),
+        PlaceRule.MAREE, 400, 50_000, 30, 24, 2_000, 4_000, List.of(Dungeon.BAR, Dungeon.MACHINES, Dungeon.COFFRES, Dungeon.VIP)),
 
     DESERT("Le Désert de Braise", "Le Désert",
         "Au-delà du Casino Englouti, la mer s'est retirée. Il ne reste qu'un désert brûlant. Au loin, un volcan fume. "
             + "On dit qu'un dragon y dort sur l'or de la comète.",
-        PlaceRule.SOIF, 250, 25_000, 25, 75, 3_000, 5_000,
+        PlaceRule.SOIF, 250, 60_000, 25, 98, 3_000, 5_000,
         List.of(Dungeon.CARAVANE, Dungeon.TOMBEAU, Dungeon.OASIS, Dungeon.VOLCAN));
 
     private final String        name;
