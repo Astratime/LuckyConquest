@@ -2193,5 +2193,6 @@
   "IGNAR S'ÉTEINT DANS SON VOLCAN": "IGNAR FADES OUT IN HIS VOLCANO",
   "Attaque +{0} sur chaque symbole d'attaque": "Attack +{0} on each attack symbol",
   "Symboles de défense : bouclier +{0} et plus fréquents": "Defense symbols: shield +{0} and more frequent",
-  "Multiplicateur de gains +{0}": "Gains multiplier +{0}"
+  "Multiplicateur de gains +{0}": "Gains multiplier +{0}",
+  "Donjons vaincus là-bas : {0}/{1}": "Dungeons beaten there: {0}/{1}"
 }

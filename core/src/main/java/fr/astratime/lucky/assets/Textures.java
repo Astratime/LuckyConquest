@@ -75,5 +75,55 @@ public final class Textures {
         return texture;
     }
 
+    /** Pastille « donjon vaincu », 15 x 15 pixels : '#' contour, 'o' or, 'd' or sombre, 'g' vert, 'G' vert clair, 'w' coche. */
+    private static final String[] CLEARED_BADGE = {
+        ".....#####.....",
+        "...##ooooo##...",
+        "..#oogggggdd#..",
+        ".#ogGGggggggd#.",
+        ".#oGGgggggwwd#.",
+        "#ogGgggggwwwgd#",
+        "#oggggggwwwggd#",
+        "#ogwwgggwwgggd#",
+        "#oggwwgwwwgggd#",
+        "#ogggwwwwggggd#",
+        ".#oggwwwgggdd#.",
+        ".#dggggwggggd#.",
+        "..#ddgggggdd#..",
+        "...##ddddd##...",
+        ".....#####.....",
+    };
+
+    /**
+     * @return la pastille pixel art posée sur l'entrée d'un donjon vaincu :
+     *         médaille verte cerclée d'or, coche blanche. À afficher sans
+     *         lissage ; l'appelant en est propriétaire et doit la disposer.
+     */
+    public static Texture clearedBadge() {
+        int size = CLEARED_BADGE.length;
+        Color goldDark = Palette.GOLD.cpy().mul(0.62f, 0.5f, 0.3f, 1f);
+        Color green      = Color.valueOf("2fa85a");
+        Color greenLight = Color.valueOf("6fe39a");
+        Pixmap pixmap = new Pixmap(size, size, Pixmap.Format.RGBA8888);
+        pixmap.setBlending(Pixmap.Blending.None);
+        for (int y = 0; y < size; y++) {
+            for (int x = 0; x < size; x++) {
+                Color color = switch (CLEARED_BADGE[y].charAt(x)) {
+                    case '#' -> Palette.OUTLINE;
+                    case 'o' -> Palette.GOLD;
+                    case 'd' -> goldDark;
+                    case 'g' -> green;
+                    case 'G' -> greenLight;
+                    case 'w' -> Color.WHITE;
+                    default  -> null;
+                };
+                pixmap.drawPixel(x, y, color == null ? 0 : Color.rgba8888(color));
+            }
+        }
+        Texture texture = new Texture(pixmap);
+        pixmap.dispose();
+        return texture;
+    }
+
     private Textures() {}
 }
