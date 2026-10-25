@@ -20,7 +20,7 @@
     "effects": [
       {
         "type": "DIAMOND_REFLECT",
-        "hpPercent": 1,
+        "hpPercent": 2,
         "defenseBoost": 6
       }
     ]
@@ -34,7 +34,7 @@
     "effects": [
       {
         "type": "DIAMOND_REFLECT",
-        "hpPercent": 1.25,
+        "hpPercent": 2.5,
         "defenseBoost": 9
       }
     ]
@@ -48,7 +48,7 @@
     "effects": [
       {
         "type": "DIAMOND_REFLECT",
-        "hpPercent": 1.5,
+        "hpPercent": 3,
         "defenseBoost": 12
       }
     ]
@@ -62,7 +62,7 @@
     "effects": [
       {
         "type": "DIAMOND_REFLECT",
-        "hpPercent": 1.75,
+        "hpPercent": 3.5,
         "defenseBoost": 15
       }
     ]
@@ -76,7 +76,7 @@
     "effects": [
       {
         "type": "DIAMOND_REFLECT",
-        "hpPercent": 2,
+        "hpPercent": 4,
         "defenseBoost": 18
       }
     ]
@@ -90,7 +90,7 @@
     "effects": [
       {
         "type": "DIAMOND_REFLECT",
-        "hpPercent": 2.25,
+        "hpPercent": 4.5,
         "defenseBoost": 21
       }
     ]
@@ -104,7 +104,7 @@
     "effects": [
       {
         "type": "DIAMOND_REFLECT",
-        "hpPercent": 2.5,
+        "hpPercent": 5,
         "defenseBoost": 24
       }
     ]
@@ -118,7 +118,7 @@
     "effects": [
       {
         "type": "DIAMOND_REFLECT",
-        "hpPercent": 2.75,
+        "hpPercent": 5.5,
         "defenseBoost": 27
       }
     ]
@@ -132,7 +132,7 @@
     "effects": [
       {
         "type": "DIAMOND_REFLECT",
-        "hpPercent": 3,
+        "hpPercent": 6,
         "defenseBoost": 30
       }
     ]
@@ -146,7 +146,7 @@
     "effects": [
       {
         "type": "DIAMOND_REFLECT",
-        "hpPercent": 3.25,
+        "hpPercent": 6.5,
         "defenseBoost": 33
       }
     ]
@@ -160,7 +160,7 @@
     "effects": [
       {
         "type": "DIAMOND_REFLECT",
-        "hpPercent": 3.5,
+        "hpPercent": 7,
         "defenseBoost": 36
       }
     ]
@@ -174,7 +174,7 @@
     "effects": [
       {
         "type": "DIAMOND_REFLECT",
-        "hpPercent": 3.75,
+        "hpPercent": 7.5,
         "defenseBoost": 39
       }
     ]
