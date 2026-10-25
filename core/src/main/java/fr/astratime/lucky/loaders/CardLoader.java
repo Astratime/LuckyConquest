@@ -8,9 +8,11 @@ import fr.astratime.lucky.entities.Symbol;
 import fr.astratime.lucky.entities.effects.*;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.WeakHashMap;
 import java.util.function.Function;
 
 /**
@@ -202,8 +204,24 @@ public class CardLoader {
         };
     }
 
+    /**
+     * Définitions déjà lues, par lecteur : les fichiers ne sont analysés qu'une fois, au
+     * lieu de l'être à chaque combat (les cartes, elles, restent créées neuves à chaque
+     * fois). Les objets JSON ne sont que lus ensuite, jamais modifiés.
+     */
+    private static final Map<AssetReader, Map<String, JsonValue>> DEFINITIONS_CACHE =
+        Collections.synchronizedMap(new WeakHashMap<>());
+
     /** @return l'objet JSON de chaque carte définie, indexé par id (dans l'ordre des fichiers). */
     private static Map<String, JsonValue> loadDefinitions(AssetReader assetReader) {
+        Map<String, JsonValue> cached = DEFINITIONS_CACHE.get(assetReader);
+        if (cached != null) return cached;
+        Map<String, JsonValue> definitions = readDefinitions(assetReader);
+        DEFINITIONS_CACHE.put(assetReader, definitions);
+        return definitions;
+    }
+
+    private static Map<String, JsonValue> readDefinitions(AssetReader assetReader) {
         Map<String, JsonValue> definitions = new LinkedHashMap<>();
         JsonReader reader = new JsonReader();
 
@@ -213,7 +231,7 @@ public class CardLoader {
                 definitions.put(cardJson.getString("id"), cardJson);
             }
         }
-        return definitions;
+        return Collections.unmodifiableMap(definitions);
     }
 
     /**

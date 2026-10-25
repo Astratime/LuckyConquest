@@ -296,7 +296,14 @@ public class GameScreen extends ScreenAdapter {
     private final BackgroundMusic     music         = new BackgroundMusic(CombatMusic.DEFAULT, audio, COMBAT_MUSIC_LEVEL);
     private final CardClickParticles  cardClickParticles = new CardClickParticles();
     private final EffectPopupAnimator effectPopupAnimator;
-    private final JackpotCelebration  jackpotCelebration;
+    /**
+     * Fête du Bingo, préparée au premier lancer du combat seulement (voir
+     * {@link #jackpotCelebration()}) : ses nombreuses textures ne retardent plus l'ouverture
+     * du combat. Elle prend place dans {@link #jackpotLayer}, à son rang dans le Stage.
+     */
+    private JackpotCelebration        jackpotCelebration;
+    private final Group               jackpotLayer = new Group();
+    private Fireworks.Sounds          jackpotFireworkSounds;
     /** Annonce des succès atteints pendant le combat. */
     private final AchievementToast    achievementToast;
     /** Annonces « À TOI DE JOUER ! » et « TOUR ENNEMI ». */
@@ -455,8 +462,8 @@ public class GameScreen extends ScreenAdapter {
         });
         sidePanel  = new SidePanel(hudTextures);
         achievementToast = new AchievementToast(hudTextures, sounds.achievement);
-        jackpotCelebration = new JackpotCelebration(playArea, screenShake, settings, hudTextures,
-            sidePanel::getCoinCenter, sidePanel::bumpCoin, fireworkSounds);
+        jackpotFireworkSounds = fireworkSounds;
+        jackpotLayer.setTouchable(Touchable.childrenOnly);
         hud        = new CombatHud(playArea, hudTextures, gameController::getGameState);
 
         spinControls  = new SpinControls(table, playerShield, hudTextures, playsFont, shieldFont, tooltip,
@@ -549,7 +556,7 @@ public class GameScreen extends ScreenAdapter {
         stage.addActor(chestOverlay.getActor()); // Exploration : coffre au trésor
         stage.addActor(confetti);
         stage.addActor(damageVignette);
-        stage.addActor(jackpotCelebration); // par-dessus le jeu et le panneau : bloque les clics pendant la fête
+        stage.addActor(jackpotLayer); // par-dessus le jeu et le panneau : bloque les clics pendant la fête
         stage.addActor(achievementToast);   // passe devant tout quand il s'affiche, sans bloquer les clics
         stage.addActor(bingoAnimation);         // carte Bingo : faisceaux et téléportation, bloque les clics
         stage.addActor(rainbowAnimation);       // carte Arc-en-ciel : jetons et poussière d'étoiles, bloque les clics
@@ -891,6 +898,16 @@ public class GameScreen extends ScreenAdapter {
         spin();
     }
 
+    /** @return la fête du Bingo, créée à la première demande (premier lancer du combat). */
+    private JackpotCelebration jackpotCelebration() {
+        if (jackpotCelebration == null) {
+            jackpotCelebration = new JackpotCelebration(playArea, screenShake, settings, hudTextures,
+                sidePanel::getCoinCenter, sidePanel::bumpCoin, jackpotFireworkSounds);
+            jackpotLayer.addActor(jackpotCelebration);
+        }
+        return jackpotCelebration;
+    }
+
     /** Active ou désactive le lancer, et la Mise avec lui (elle se choisit avant le lancer). */
     private void setSpinDisabled(boolean disabled) {
         spinControls.setDisabled(disabled);
@@ -918,6 +935,7 @@ public class GameScreen extends ScreenAdapter {
 
     /** Lance la machine (bouton, touche F, ou d'elle-même après une carte Bingo). */
     private void spin() {
+        jackpotCelebration(); // prête avant que les rouleaux ne puissent aligner un Bingo
         int enemyHpBefore = gameController.getGameState().getEnemy().getHp();
         double cost = gameController.getSpinPrice();
         TurnResult result = gameController.spin();
@@ -1313,6 +1331,7 @@ public class GameScreen extends ScreenAdapter {
         table.setLightsParty(true);
         PlayerProfile profile = luckyGame.getProfile();
         // Le son de Bingo d'origine du jeu retentit quand « BINGO! » apparaît. Déjà vue, la célébration se passe d'un clic.
+        JackpotCelebration jackpotCelebration = jackpotCelebration();
         jackpotCelebration.play(symbol, profile.hasSeenBingo(symbol), () -> sounds.bingoClassic.play(), () -> {
             if (jackpotCelebration.wasSkipped()) scene.stop(sceneId);
             profile.markBingoSeen(symbol);
@@ -1463,7 +1482,7 @@ public class GameScreen extends ScreenAdapter {
         stage.getRoot().clearActions(); // la suite du tour en cours (tour de l'ennemi, fin du tour) n'a plus lieu
         hand.reset();
         effectPopupAnimator.cancel(); // les gains en attente ne seront jamais affichés
-        jackpotCelebration.cancel();
+        if (jackpotCelebration != null) jackpotCelebration.cancel();
         turnBanner.hide();
         bingoAnimation.cancel();
         pistolAnimation.cancel();
@@ -2008,7 +2027,7 @@ public class GameScreen extends ScreenAdapter {
                     cutscene.skip(); // n'importe quelle autre touche passe la cinématique
                     return true;
                 }
-                if (jackpotCelebration.skip()) return true; // une touche passe aussi un Bingo déjà vu
+                if (jackpotCelebration != null && jackpotCelebration.skip()) return true; // une touche passe aussi un Bingo déjà vu
                 if (choiceOverlay.isShown() || shopOverlay.isShown() || pickOverlay.isShown() || chestOverlay.isShown()
                     || bingoAnimation.isPlaying()
                     || rainbowAnimation.isPlaying()) {
@@ -2129,7 +2148,7 @@ public class GameScreen extends ScreenAdapter {
         shopOverlay.dispose();
         cardDetail.dispose();
         pauseOverlay.dispose();
-        jackpotCelebration.dispose();
+        if (jackpotCelebration != null) jackpotCelebration.dispose();
         achievementToast.dispose();
         aspirationPanel.dispose();
         turnBanner.dispose();
