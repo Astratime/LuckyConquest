@@ -27,12 +27,12 @@ public final class AspirationRule {
         /** @return où en est la condition avec les cartes {@code cards} (jusqu'à {@link #count}). */
         public int progress(List<Card> cards) {
             int done = switch (kind) {
-                case RANK    -> (int) cards.stream().filter(card -> card.getSuit() != null && card.getRank() == rank).count();
+                case RANK    -> (int) cards.stream().filter(card -> card.hasRank() && card.getRank() == rank).count();
                 case SPECIAL -> (int) cards.stream().filter(card -> card.getSuit() == null).count();
                 case SUIT    -> (int) cards.stream().filter(card -> card.getSuit() == suit).count();
                 case COLORS  -> (int) cards.stream().map(Card::getSuit).filter(java.util.Objects::nonNull).distinct().count();
                 case FACES   -> (int) cards.stream()
-                    .filter(card -> card.getSuit() != null && card.getRank() >= 11 && card.getRank() <= 13).count();
+                    .filter(card -> card.hasRank() && card.getRank() >= 11 && card.getRank() <= 13).count();
             };
             return Math.min(count, done);
         }

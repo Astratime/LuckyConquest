@@ -91,4 +91,37 @@ class ComboTest {
             assertTrue(strongestFirst[i - 1].getFactor() >= strongestFirst[i].getFactor(), strongestFirst[i - 1].name());
         }
     }
+
+    private static Card archetype(int rank, Archetype archetype) {
+        return new Card(rank + "_" + archetype, rank + " " + archetype, "x.png", List.of(), null, rank,
+            false, false, false, archetype);
+    }
+
+    @Test
+    void archetypeCardsWithARankFormCombos() {
+        assertTrue(Combo.PAIRE.matches(List.of(archetype(7, Archetype.LUTIN), card(7, Card.Suit.PIQUE))),
+            "un 7 Lutin et un 7 de Pique font une Paire");
+        assertTrue(Combo.SUITE.matches(List.of(archetype(5, Archetype.LUTIN), archetype(6, Archetype.RENTIER),
+            card(7, Card.Suit.COEUR))));
+        assertTrue(Combo.BRELAN.matches(List.of(archetype(9, Archetype.JOKER), archetype(9, Archetype.JOKER),
+            archetype(9, Archetype.RELANCEUR))));
+    }
+
+    @Test
+    void threeCardsOfTheSameArchetypeMakeACouleur() {
+        assertTrue(Combo.COULEUR.matches(List.of(archetype(2, Archetype.LUTIN), archetype(5, Archetype.LUTIN),
+            archetype(7, Archetype.LUTIN))));
+        assertFalse(Combo.COULEUR.matches(List.of(archetype(2, Archetype.LUTIN), archetype(5, Archetype.LUTIN),
+            archetype(7, Archetype.RENTIER))));
+        assertFalse(Combo.COULEUR.matches(List.of(archetype(2, Archetype.LUTIN), archetype(5, Archetype.LUTIN),
+            card(7, Card.Suit.COEUR))), "une suite et un archétype ne font pas une Couleur");
+    }
+
+    @Test
+    void archetypeCardsWithoutARankAreIgnored() {
+        Card unranked = archetype(0, Archetype.BLUFFEUR);
+        assertFalse(unranked.hasRank());
+        assertFalse(Combo.PAIRE.matches(List.of(unranked, archetype(0, Archetype.BLUFFEUR))));
+        assertFalse(Combo.COULEUR.matches(List.of(unranked, archetype(0, Archetype.BLUFFEUR), archetype(0, Archetype.BLUFFEUR))));
+    }
 }

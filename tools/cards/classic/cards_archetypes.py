@@ -1,11 +1,17 @@
 """Cartes des 5 archétypes de deck (Joker, Lutin, Rentier, Bluffeur, Relanceur), au style des cartes classiques
-(voir base.py et README.md). Aucun texte, aucun chiffre."""
+(voir base.py et README.md). Aucun texte. Seule exception à « aucun chiffre » : le rang de la carte (pour les
+combinaisons, demandes d'Astra du 2026-10-25), en index dans le coin haut gauche comme sur les cartes classiques
+(A, K, Q, J, 10, 9 : les mêmes lettres que les cartes classiques), suivi de l'emblème de l'archétype.
+L'index ne doit cacher aucune partie du dessin : le dessin est placé sous l'index et, s'il ne tient pas, resserré
+en retirant les lignes et colonnes qui changent le moins le dessin (voir fit_art)."""
 import os
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from base import *  # noqa: E402,F401
-from cards_w1 import poly, ob, stack, finish, sparkle, coin_stack, big_coin  # noqa: E402
+import numpy as np  # noqa: E402
+import cards_w1  # noqa: E402
+from cards_w1 import poly, ob, stack, sparkle, coin_stack, big_coin  # noqa: E402
 
 R, RD, RL = hexc('#d8333f'), hexc('#8e1420'), hexc('#ff8a8a')
 G, GD, GL = hexc('#3fae4a'), hexc('#23793a'), hexc('#8ef05a')
@@ -648,7 +654,142 @@ def magot_du_dragon(pal):
     return finish(pal, stack(L, C_), LUTIN_I, LP)
 
 
-DESIGNS = {f.__name__: f for f in (
+# Rang de chaque carte, comme son "rank" dans assets/cards/definitions/archetypes.json (le Joker caméléon,
+# carte joker, n'en a pas et garde son emblème dans les deux coins).
+# Rang de chaque carte, comme son "rank" dans assets/cards/definitions/archetypes.json : chaque archétype part de
+# l'As (1), puis Roi, Dame, Valet, 10, 9. Le Joker caméléon, carte joker, n'en a pas et garde son emblème
+# dans les deux coins.
+RANKS = {
+    'couronne_du_fou': 1, 'joker_sauvage': 13, 'rire_du_joker': 12, 'diable_en_boite': 11, 'atelier_du_joker': 10,
+    'magot_du_dragon': 1, 'bout_de_l_arc_en_ciel': 13, 'chapeau_du_lutin': 12, 'marteau_du_cordonnier': 11,
+    'farce_du_lutin': 10, 'gigue_du_lutin': 9,
+    'sceau_du_pharaon': 1, 'rente_viagere': 13, 'interets_composes': 12, 'recouvrement': 11, 'taux_variable': 10,
+    'reconnaissance_de_dette': 9,
+    'coup_de_bluff': 1, 'tour_de_passe_passe': 13, 'intimidation': 12, 'fausse_piste': 11, 'cartes_marquees': 10,
+    'chamboule_tout': 1, 'martingale': 13, 'second_levier': 12, 'calibrage': 11, 'memoire_de_la_machine': 10,
+    'rouleau_retenu': 9,
+}
+
+# Index de rang, 3 cases de large sur 5 de haut (le « 1 » du 10 en fait 1), posé à l'échelle des index des
+# cartes classiques (chaque case en fait 2x2).
+GLYPHS = {
+    '1': ['k', 'k', 'k', 'k', 'k'],
+    '0': ['kkk', 'k.k', 'k.k', 'k.k', 'kkk'],
+    '9': ['kkk', 'k.k', 'kkk', '..k', 'kkk'],
+    'A': ['.k.', 'k.k', 'kkk', 'k.k', 'k.k'],
+    'J': ['..k', '..k', '..k', 'k.k', 'kkk'],
+    'Q': ['kkk', 'k.k', 'k.k', 'kk.', '.kk'],
+    'K': ['k.k', 'k.k', 'kk.', 'k.k', 'k.k'],
+}
+RANK_TEXT = {1: 'A', 11: 'J', 12: 'Q', 13: 'K'}
+INDEX_X, INDEX_Y = X0 + 2, Y0 + 2   # coin haut gauche de l'index
+INDEX_H = 10                        # hauteur de l'index (5 cases x 2)
+INDEX_GAP = 2                       # entre l'index et l'emblème, et autour de la zone réservée
+
+_current = {}                       # rang de la carte en cours de rendu (voir ranked)
+
+
+def rank_rows(rank):
+    """@return les lignes du sprite de l'index du rang, à l'échelle 2."""
+    text = RANK_TEXT.get(rank, str(rank))
+    rows = ['', '', '', '', '']
+    for n, ch in enumerate(text):
+        for j in range(5):
+            rows[j] += ('.' if n else '') + GLYPHS[ch][j]
+    return [''.join(c * 2 for c in row) for row in rows for _ in range(2)]
+
+
+def _line_cost(a, i, axis):
+    """Nombre de pixels qui changent si on retire la ligne (axis 0) ou colonne (axis 1) i de a."""
+    return int((np.take(a, i, axis) != np.take(a, i - 1, axis)).any(axis=-1).sum())
+
+
+def _cheapest(a, axis):
+    n = a.shape[axis]
+    if n < 8:
+        return None
+    # jamais les 2 premières ni les 2 dernières lignes (contours)
+    return min(range(2, n - 2), key=lambda i: (_line_cost(a, i, axis), abs(i - n / 2)))
+
+
+def _place(a, zw, zh):
+    """@return la position (x, y) du dessin a la plus centrée où il reste dans la face sans toucher la zone de
+    l'index (zw x zh cases dans le coin haut gauche), ou None."""
+    h, w = a.shape[:2]
+    m = a[:, :, 3] > 0
+    best = None
+    for y in range(Y0, Y1 + 2 - h):
+        for x in range(X0, X1 + 2 - w):
+            top = Y0 + zh - y      # lignes du dessin dans la hauteur de la zone
+            left = X0 + zw - x     # colonnes du dessin dans la largeur de la zone
+            if top > 0 and left > 0 and m[:top, :left].any():
+                continue
+            score = abs(x + w / 2 - (X0 + X1 + 1) / 2) + abs(y + h / 2 - (Y0 + Y1 + 1) / 2)
+            if best is None or score < best[0]:
+                best = (score, x, y)
+    return best[1:] if best else None
+
+
+def fit_art(L, zw, zh):
+    """Place le calque L sous la zone de l'index : s'il ne tient pas, retire une à une la ligne (de préférence)
+    ou la colonne qui change le moins le dessin, jusqu'à ce qu'il tienne. @return le calque placé."""
+    L = L.copy()
+    m = Image.new('L', (W, H), 0)
+    ImageDraw.Draw(m).rectangle([X0, Y0, X1, Y1], fill=255)
+    from PIL import ImageChops
+    L.putalpha(ImageChops.multiply(L.split()[3], m))
+    a = np.array(L.crop(L.getbbox()))
+    while True:
+        pos = _place(a, zw, zh)
+        if pos:
+            break
+        r, c = _cheapest(a, 0), _cheapest(a, 1)
+        if r is not None and (c is None or _line_cost(a, r, 0) <= 3 * _line_cost(a, c, 1)):
+            a = np.delete(a, r, 0)
+        else:
+            a = np.delete(a, c, 1)
+    out = layer()
+    out.alpha_composite(Image.fromarray(a), pos)
+    return out
+
+
+def finish(pal, L, idx, ipal, dx=0, dy=0):
+    """Comme cards_w1.finish, mais pour une carte à rang : index du rang puis emblème dans le coin haut gauche,
+    et le dessin à côté, sans que l'index en cache une partie."""
+    rank = _current.get('rank')
+    if rank is None:
+        return cards_w1.finish(pal, L, idx, ipal, dx, dy)
+    if dx or dy:
+        L2 = layer()
+        L2.alpha_composite(L, (max(dx, 0), max(dy, 0)), (max(-dx, 0), max(-dy, 0)))
+        L = L2
+    rows = rank_rows(rank)
+    emblem_x = INDEX_X + len(rows[0]) + INDEX_GAP
+    zw = emblem_x + len(idx[0]) + INDEX_GAP - X0
+    zh = INDEX_Y + INDEX_H + INDEX_GAP - Y0
+    im = card(*pal)
+    clip(im, fit_art(L, zw, zh))
+    d = ImageDraw.Draw(im)
+    sprite(d, INDEX_X, INDEX_Y, rows, {'k': INK})
+    sprite(d, emblem_x, INDEX_Y + (INDEX_H - len(idx)) // 2, idx, ipal)
+    return im
+
+
+def ranked(cid, fn):
+    rank = RANKS.get(cid)
+    if rank is None:
+        return fn
+
+    def draw(pal):
+        _current['rank'] = rank
+        try:
+            return fn(pal)
+        finally:
+            _current.pop('rank', None)
+    return draw
+
+
+DESIGNS = {f.__name__: ranked(f.__name__, f) for f in (
     joker_sauvage, rire_du_joker, couronne_du_fou, atelier_du_joker, joker_cameleon,
     chapeau_du_lutin, gigue_du_lutin, bout_de_l_arc_en_ciel, marteau_du_cordonnier, farce_du_lutin,
     reconnaissance_de_dette, taux_variable, interets_composes, recouvrement, rente_viagere,
