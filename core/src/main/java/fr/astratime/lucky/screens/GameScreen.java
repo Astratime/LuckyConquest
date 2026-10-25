@@ -596,7 +596,7 @@ public class GameScreen extends ScreenAdapter {
         GameController.Purchase gift = gameController.claimBonusCard(); // Bingo glissé dans le deck après un Bingo de gains
         if (gift != null) placePurchase(gift);
         DrawResult drawn = gameController.drawCards(); // Grignotage, Scorbut, Aveuglement et Chant s'y appliquent
-        hand.setHidden(gameController.isHandHidden());
+        hand.setHidden(gameController.getHiddenCards());
         hand.deal(drawn);
         List<EffectPopup> notices = gameController.getTurnNotices();
         if (!notices.isEmpty()) {

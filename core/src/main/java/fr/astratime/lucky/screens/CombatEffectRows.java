@@ -248,7 +248,12 @@ final class CombatEffectRows {
         EnemyKind kind = foe.getKind();
         if (lasting.getNibbles() > 0) rows.add(curse(skull, Lang.f("Grignotage x{0}", lasting.getNibbles()), EnemySymbol.NIBBLE, kind));
         if (lasting.getDrunk() > 0) rows.add(curse(skull, Lang.f("Ivresse x{0}", lasting.getDrunk()), EnemySymbol.DRUNK, kind));
-        if (lasting.isBlind()) rows.add(curse(skull, Lang.t("Aveuglement"), EnemySymbol.BLIND, kind));
+        if (lasting.isBlind()) {
+            int blinds = lasting.getBlindCards();
+            rows.add(new SidePanel.EffectRow(skull, null, Lang.f("Aveuglement x{0}", blinds), Lang.t("Aveuglement"),
+                Lang.f(Lang.plural(blinds) ? "Au prochain tour, {0} cartes de ta main seront faces cachées. Les Aveuglements se cumulent."
+                    : "Au prochain tour, {0} carte de ta main sera face cachée. Les Aveuglements se cumulent.", blinds)));
+        }
         if (lasting.hasNugget()) rows.add(curse(skull, Lang.t("Pépite"), EnemySymbol.NUGGET, kind));
         if (lasting.getSongs() > 0) rows.add(curse(skull, Lang.f("Chant x{0}", lasting.getSongs()), EnemySymbol.SONG, kind));
         java.util.Set<Integer> voids = new java.util.TreeSet<>(lasting.getForbiddenReels());

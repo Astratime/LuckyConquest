@@ -76,6 +76,30 @@ class GameControllerTest {
     }
 
     @Test
+    void blindnessStacksOneHiddenCardEach() {
+        GameController controller = controllerWith(plainCards(20));
+        player(controller).getLastingEffects().blind();
+        player(controller).getLastingEffects().blind();
+        player(controller).getLastingEffects().blind();
+
+        controller.drawCards();
+
+        assertEquals(3, controller.getHiddenCards().size(), "3 Aveuglements : 3 cartes cachées");
+        assertTrue(player(controller).getCurrentHand().containsAll(controller.getHiddenCards()));
+        assertFalse(player(controller).getLastingEffects().isBlind(), "les Aveuglements sont consommés");
+    }
+
+    @Test
+    void blindnessNeverHidesMoreCardsThanTheHand() {
+        GameController controller = controllerWith(plainCards(20));
+        player(controller).getLastingEffects().blind(GameController.DEFAULT_DRAW_COUNT + 4);
+
+        controller.drawCards();
+
+        assertEquals(GameController.DEFAULT_DRAW_COUNT, controller.getHiddenCards().size());
+    }
+
+    @Test
     void playedCardEffectsAreAppliedOnceAtSpin() {
         CountingEffect effect = new CountingEffect();
         GameController controller = controllerWith(List.of(card("compteur", effect)));

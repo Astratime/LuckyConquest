@@ -122,8 +122,8 @@ public class HandView {
     private Function<Card, String> blockedReason = card -> null;
     private CardRefusedListener    refusedListener;
     private boolean                locked;
-    /** Les cartes piochées arrivent face cachée (Aveuglement de l'ennemi). */
-    private boolean                hidden;
+    /** Cartes à montrer face cachée quand elles arrivent dans la main (Aveuglement de l'ennemi). */
+    private java.util.Set<Card>    toHide = java.util.Set.of();
     /** Images de la main montrées face cachée. */
     private final java.util.Set<Image> hiddenImages = new java.util.HashSet<>();
     private final VisualSettings visualSettings = new VisualSettings();
@@ -182,10 +182,10 @@ public class HandView {
     }
 
     /**
-     * Aveuglement : les cartes piochées ensuite arrivent face cachée (jusqu'à
-     * {@code false}). Une carte cachée se joue sans qu'on sache laquelle.
+     * Aveuglement : ces cartes, quand elles sont distribuées, arrivent face
+     * cachée (une par Aveuglement). Une carte cachée se joue sans qu'on sache laquelle.
      */
-    public void setHidden(boolean hidden) { this.hidden = hidden; }
+    public void setHidden(java.util.Set<Card> cards) { this.toHide = cards; }
 
     /**
      * Joue {@code card} d'office (Chant de l'ennemi), comme si le joueur avait
@@ -210,6 +210,7 @@ public class HandView {
 
     /** Crée l'image de {@code card} et l'ajoute à la main (à la fin de la rangée). */
     private CardImage createImage(Card card) {
+        boolean hidden = toHide.contains(card);
         Texture face = hidden ? cardTextures.get(BACK_PATH) : cardTextures.get(card);
         CardImage cardImage = new CardImage(new TextureRegionDrawable(new TextureRegion(face)));
         cardImage.setFoil(!hidden && foil(card));
@@ -275,10 +276,10 @@ public class HandView {
      * @return le centre (Stage) de son emplacement
      */
     public Vector2 conjure(Card card) {
-        boolean wasHidden = hidden;
-        hidden = false; // une carte qui surgit (achat, Arc-en-ciel) se voit, même sous l'Aveuglement
+        java.util.Set<Card> wasHidden = toHide;
+        toHide = java.util.Set.of(); // une carte qui surgit (achat, Arc-en-ciel) se voit, même sous l'Aveuglement
         CardImage cardImage = createImage(card);
-        hidden = wasHidden;
+        toHide = wasHidden;
         cardImage.setVisible(false); // placée directement sur son emplacement, sans glisser
         layout(true);
         cardImage.setVisible(true);
@@ -297,7 +298,7 @@ public class HandView {
         images.clear();
         cardOf.clear();
         hiddenImages.clear();
-        hidden = false;
+        toHide = java.util.Set.of();
     }
 
     /**
@@ -310,7 +311,7 @@ public class HandView {
         images.clear();
         cardOf.clear();
         hiddenImages.clear();
-        hidden = false;
+        toHide = java.util.Set.of();
         group.clearChildren();
     }
 

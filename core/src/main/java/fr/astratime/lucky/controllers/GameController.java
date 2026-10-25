@@ -76,8 +76,8 @@ public class GameController {
     /** Textes du début du tour : mauvais sorts de l'ennemi et règle du lieu. */
     private final List<EffectPopup> turnNotices = new ArrayList<>();
 
-    /** La main de ce tour est face cachée (Aveuglement de l'ennemi). */
-    private boolean handHidden = false;
+    /** Cartes de la main de ce tour piochées face cachée (une par Aveuglement de l'ennemi). */
+    private final java.util.Set<Card> hiddenCards = java.util.Collections.newSetFromMap(new java.util.IdentityHashMap<>());
 
     /** Cartes à jouer d'office au début de ce tour (Chant de l'ennemi). */
     private int songs = 0;
@@ -234,7 +234,7 @@ public class GameController {
         handLocked    = false;
         doubleNext    = false;
         bingoGiftPending = false;
-        handHidden = false;
+        hiddenCards.clear();
         songs = 0;
         taxes = 0;
         turnNotices.clear();
@@ -354,15 +354,23 @@ public class GameController {
             discarded.add(replaced);
             turnNotices.add(new EffectPopup(Lang.t("SCORBUT !"), EffectPopup.Style.DAMAGE, PopupScale.MAX_INTENSITY));
         }
-        handHidden = lasting.takeBlind();
-        if (lasting.useLantern() && handHidden) { // Lanterne : la main reste visible
-            handHidden = false;
+        // Aveuglement de l'ennemi : une carte piochée cachée par Aveuglement (ils se cumulent).
+        hiddenCards.clear();
+        int blinds = lasting.takeBlind();
+        if (blinds > 0 && lasting.useLantern()) { // Lanterne : la main reste visible
+            blinds = 0;
             turnNotices.add(new EffectPopup(Lang.t("LANTERNE : AVEUGLEMENT DISSIPÉ"), EffectPopup.Style.DEFENSE,
                 PopupScale.SECONDARY_INTENSITY));
         }
-        if (handHidden) {
-            turnNotices.add(new EffectPopup(Lang.t("AVEUGLEMENT : MAIN CACHÉE"), EffectPopup.Style.DAMAGE,
-                PopupScale.SECONDARY_INTENSITY));
+        if (blinds > 0 && !added.isEmpty()) {
+            List<Card> candidates = new ArrayList<>(added);
+            while (hiddenCards.size() < blinds && !candidates.isEmpty()) {
+                hiddenCards.add(candidates.remove(random.nextInt(candidates.size())));
+            }
+            int hidden = hiddenCards.size();
+            turnNotices.add(new EffectPopup(hidden >= added.size() ? Lang.t("AVEUGLEMENT : MAIN CACHÉE")
+                : Lang.f(Lang.plural(hidden) ? "AVEUGLEMENT : {0} CARTES CACHÉES" : "AVEUGLEMENT : {0} CARTE CACHÉE", hidden),
+                EffectPopup.Style.DAMAGE, PopupScale.SECONDARY_INTENSITY));
         }
         taxes = lasting.takeTaxes();
         if (taxes > 0) {
@@ -390,8 +398,8 @@ public class GameController {
     /** @return les textes du début du tour (Abordage, Grignotage, Scorbut, Aveuglement, Chant), après {@link #drawCards()}. */
     public List<EffectPopup> getTurnNotices() { return List.copyOf(turnNotices); }
 
-    /** @return {@code true} si la main de ce tour est face cachée (Aveuglement de l'ennemi). */
-    public boolean isHandHidden() { return handHidden; }
+    /** @return les cartes de la main de ce tour piochées face cachée (une par Aveuglement de l'ennemi). */
+    public java.util.Set<Card> getHiddenCards() { return java.util.Collections.unmodifiableSet(hiddenCards); }
 
     /**
      * Chant de l'ennemi : les cartes de la main à jouer d'office ce tour, tirées
@@ -841,7 +849,7 @@ public class GameController {
         doubleNext    = false;
         gameState.getPlayer().restoreCards(originals); // l'effet de l'Arc-en-ciel ne dure que le tour
         originals.clear();
-        handHidden = false;
+        hiddenCards.clear();
         // Le Scorbut resté en main disparaît : il ne revient que par la règle du lieu.
         for (Card card : new ArrayList<>(gameState.getPlayer().getCurrentHand())) {
             if (PlaceRule.SCURVY_CARD.equals(card.getId())) gameState.getPlayer().removeFromHand(card);

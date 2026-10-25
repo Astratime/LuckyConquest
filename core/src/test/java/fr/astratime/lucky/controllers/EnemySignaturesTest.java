@@ -190,10 +190,11 @@ class EnemySignaturesTest {
     @Test
     void lanternAndReassessmentLastTwoTurns() {
         Player player = player();
-        player.getLastingEffects().blind(2);
-        assertTrue(player.getLastingEffects().takeBlind());
-        assertTrue(player.getLastingEffects().takeBlind());
-        assertFalse(player.getLastingEffects().takeBlind());
+        player.getLastingEffects().blind(2); // Lanterne : 2 cartes cachées
+        player.getLastingEffects().blind();  // un autre Aveuglement s'y ajoute
+        assertEquals(3, player.getLastingEffects().getBlindCards());
+        assertEquals(3, player.getLastingEffects().takeBlind());
+        assertEquals(0, player.getLastingEffects().takeBlind());
 
         player.getLastingEffects().addTax(2);
         assertEquals(1, player.getLastingEffects().takeTaxes());

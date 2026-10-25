@@ -290,7 +290,7 @@ public enum EnemySymbol {
             case ALL_IN -> Lang.t("Tapis : à son prochain tour, ses attaques doublent. Touche-le avant pour l'annuler");
             case NIBBLE -> Lang.t("Grignotage : il ronge une carte. Au prochain tour, une carte de ta main part à la défausse");
             case DRUNK  -> Lang.t("Ivresse : à ton prochain tirage, un rouleau tourne deux fois et garde le pire résultat");
-            case BLIND  -> Lang.t("Aveuglement : au prochain tour, tes cartes en main sont faces cachées");
+            case BLIND  -> Lang.t("Aveuglement : au prochain tour, une carte de ta main est face cachée. Ils se cumulent");
             case BOARDING -> Lang.f("Abordage : il vole ta meilleure carte en main pendant {0} tours. Il la joue contre toi",
                 BOARDING_TURNS);
             case NUGGET -> Lang.t("Pépite : à ton prochain tirage, tes symboles de gain deviennent des pierres. Ils ne rapportent "
