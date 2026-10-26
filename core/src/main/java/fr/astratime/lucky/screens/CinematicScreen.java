@@ -11,6 +11,7 @@ import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.Interpolation;
+import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.Stage;
@@ -151,6 +152,9 @@ public class CinematicScreen extends ScreenAdapter {
     /** Première cinématique visible du groupe (la liste défile quand elle est trop longue). */
     private int      scroll;
     private final Label more;
+    /** Premier groupe visible dans le panneau de gauche (la colonne des lieux défile quand elle est trop haute). */
+    private int      groupScroll;
+    private final Label groupMore;
     private boolean  wheel;
     private boolean  leaving;
     private Cutscene cutscene;
@@ -204,6 +208,8 @@ public class CinematicScreen extends ScreenAdapter {
         description.setAlignment(Align.topLeft);
         more = new Label("", new Label.LabelStyle(labelFont, Color.WHITE));
         more.setTouchable(Touchable.disabled);
+        groupMore = new Label("", new Label.LabelStyle(labelFont, Color.WHITE));
+        groupMore.setTouchable(Touchable.disabled);
         playButton  = buttons.createAction(Lang.t("Lancer"), clickSound, this::launch);
         backButton  = buttons.create(Lang.t("Retour"), clickSound, this::onBack);
 
@@ -222,6 +228,7 @@ public class CinematicScreen extends ScreenAdapter {
         stage.addActor(groupTitle);
         for (Group g : groups) g.rows().forEach(stage::addActor);
         stage.addActor(more);
+        stage.addActor(groupMore);
         stage.addActor(artFrame);
         stage.addActor(art);
         stage.addActor(description);
@@ -464,10 +471,7 @@ public class CinematicScreen extends ScreenAdapter {
         float panelBottom = BOTTOM_SPACE;
         float panelHeight = panelTop - panelBottom;
         listPanel.setBounds(MARGIN, panelBottom, LIST_WIDTH, panelHeight);
-        float rowX = MARGIN + (LIST_WIDTH - ROW_WIDTH) / 2f;
-        for (int i = 0; i < groupRows.size(); i++) {
-            groupRows.get(i).setPosition(rowX, panelTop - PANEL_PAD - ROW_HEIGHT - i * (ROW_HEIGHT + ROW_GAP));
-        }
+        layoutGroupRows(panelTop, panelBottom);
 
         float detailX     = MARGIN + LIST_WIDTH + MARGIN / 2f;
         float detailWidth = width - detailX - MARGIN;
@@ -543,10 +547,60 @@ public class CinematicScreen extends ScreenAdapter {
         backButton.setPosition(MARGIN, (BOTTOM_SPACE - backButton.getHeight()) / 2f);
     }
 
+    /**
+     * La colonne des groupes, dans le panneau de gauche. Trop de groupes pour la hauteur :
+     * elle défile avec le groupe choisi (ou la molette), et le bas du panneau dit combien sont cachés.
+     */
+    private void layoutGroupRows(float panelTop, float panelBottom) {
+        float rowX = MARGIN + (LIST_WIDTH - ROW_WIDTH) / 2f;
+        float rowsTop = panelTop - PANEL_PAD;
+        int count = groupRows.size();
+        int rows = visibleGroupRows(rowsTop, panelBottom);
+        if (count > rows) rows = visibleGroupRows(rowsTop, panelBottom + MORE_SPACE); // la place du texte « au-dessus / en dessous »
+        if (!wheel && group >= 0 && group < groupScroll) groupScroll = group;
+        if (!wheel && group >= groupScroll + rows) groupScroll = group - rows + 1;
+        groupScroll = Math.max(0, Math.min(groupScroll, count - rows));
+        for (int i = 0; i < count; i++) {
+            int slot = i - groupScroll;
+            groupRows.get(i).setPosition(rowX, rowsTop - ROW_HEIGHT - slot * (ROW_HEIGHT + ROW_GAP));
+            groupRows.get(i).setVisible(slot >= 0 && slot < rows);
+        }
+        int hidden = count - rows;
+        groupMore.setVisible(hidden > 0);
+        if (hidden <= 0) return;
+        int above = groupScroll, below = hidden - groupScroll;
+        groupMore.setText(above > 0 && below > 0 ? Lang.f("{0} au-dessus, {1} en dessous", above, below)
+            : above > 0 ? Lang.f("{0} au-dessus", above)
+            : Lang.f("{0} en dessous", below));
+        groupMore.setFontScale(1f);
+        groupMore.pack();
+        float room = LIST_WIDTH - PANEL_PAD;
+        if (groupMore.getWidth() > room) {                       // il tient dans le panneau de gauche
+            groupMore.setFontScale(room / groupMore.getWidth());
+            groupMore.pack();
+        }
+        groupMore.setPosition(MARGIN + (LIST_WIDTH - groupMore.getWidth()) / 2f, panelBottom + PANEL_PAD);
+    }
+
+    /** @return le nombre de groupes qui tiennent en colonne entre {@code rowsTop} et le bas du panneau. */
+    private static int visibleGroupRows(float rowsTop, float panelBottom) {
+        float room = rowsTop - panelBottom - PANEL_PAD;
+        return Math.max(1, (int) ((room + ROW_GAP) / (ROW_HEIGHT + ROW_GAP)));
+    }
+
     /** @return le nombre de cinématiques qui tiennent en colonne entre {@code itemsTop} et le bas du panneau. */
     private static int visibleRows(float itemsTop, float panelBottom) {
         float room = itemsTop - panelBottom - PANEL_PAD;
         return Math.max(1, (int) ((room + ITEM_GAP) / (ITEM_HEIGHT + ITEM_GAP)));
+    }
+
+    /** La molette au-dessus du panneau de gauche fait défiler la colonne des groupes, sans changer la sélection. */
+    private void scrollGroupsBy(int rows) {
+        if (groups.isEmpty()) return;
+        groupScroll += rows;
+        wheel = true; // le groupe choisi ne ramène pas la colonne à lui pendant ce défilement
+        layout();
+        wheel = false;
     }
 
     /** La molette fait défiler la liste du groupe, sans changer la sélection. */
@@ -569,7 +623,9 @@ public class CinematicScreen extends ScreenAdapter {
             @Override
             public boolean scrolled(float amountX, float amountY) {
                 if (leaving || isPlaying() || amountY == 0f) return false;
-                scrollBy(amountY > 0f ? 1 : -1);
+                Vector2 mouse = stage.screenToStageCoordinates(new Vector2(Gdx.input.getX(), Gdx.input.getY()));
+                if (mouse.x < MARGIN + LIST_WIDTH + MARGIN / 4f) scrollGroupsBy(amountY > 0f ? 1 : -1);
+                else scrollBy(amountY > 0f ? 1 : -1);
                 return true;
             }
 
