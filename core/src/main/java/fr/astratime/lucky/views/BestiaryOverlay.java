@@ -54,7 +54,7 @@ public class BestiaryOverlay implements Disposable {
     private static final float TOWER_LABEL  = 196f;
     private static final float PLACE_LABEL  = 200f;
     private static final float BLOCK_GAP    = 60f;
-    private static final float ART          = 220f;
+    private static final float ART          = 160f;
     private static final float FADE         = 0.2f;
     /** Couleur d'un portrait pas encore découvert : une silhouette sombre. */
     private static final Color UNKNOWN      = new Color(0.06f, 0.05f, 0.08f, 1f);
@@ -332,24 +332,25 @@ public class BestiaryOverlay implements Disposable {
             selection.setVisible(false);
         }
 
-        // La fiche, sous l'Exploration.
-        float ficheTop = placesBottom - 30f;
+        // La fiche, sous l'Exploration : le nom, puis le lieu et l'état sur une ligne, puis la description.
+        float ficheTop = placesBottom - 20f;
         artFrame.setBounds(ex, ficheTop - ART, ART, ART);
-        fit(art, ex + 12f, ficheTop - ART + 12f, ART - 24f);
+        fit(art, ex + 10f, ficheTop - ART + 10f, ART - 20f);
         float textX = ex + ART + 30f;
         float textWidth = ex + placeWidth - textX;
         name.pack();
         name.setPosition(textX, ficheTop - name.getHeight());
         where.pack();
-        where.setPosition(textX, name.getY() - 6f - where.getHeight());
+        where.setPosition(textX, name.getY() - 4f - where.getHeight());
         status.pack();
-        status.setPosition(textX, where.getY() - 4f - status.getHeight());
+        status.setPosition(where.getX() + where.getWidth() + 24f, where.getY());
         description.setWidth(textWidth);
         description.pack();
         description.setWidth(textWidth);
-        description.setPosition(textX, status.getY() - 12f - description.getHeight());
+        description.setPosition(textX, where.getY() - 10f - description.getHeight());
 
-        back.setPosition(ex + placeWidth - back.getWidth(), py + PAD);
+        // Les boutons, sous la Tour : ils ne cachent plus la fiche.
+        back.setPosition(tx + towerWidth - back.getWidth(), py + PAD);
         cutscenes.setPosition(back.getX() - 24f - cutscenes.getWidth(), py + PAD);
     }
 
