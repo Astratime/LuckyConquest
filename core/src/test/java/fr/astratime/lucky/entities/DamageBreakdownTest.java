@@ -57,6 +57,27 @@ class DamageBreakdownTest {
     }
 
     @Test
+    void eachCardBonusShowsTheNameOfItsCard() {
+        Player player = new Player("Joueur", Player.BASE_HP, List.of(), RankBonus.NONE, Symbol.classicReels());
+        player.addGains(10_000);
+        Enemy enemy = new Enemy(EnemyKind.ENTRAINEMENT);
+        var first  = new fr.astratime.lucky.entities.effects.AttackEffect(20);
+        var second = new fr.astratime.lucky.entities.effects.AttackEffect(20);
+        var purse  = new fr.astratime.lucky.entities.effects.FortuneEffect(0, 5);
+        first.setSourceName("Lame forgée");
+        second.setSourceName("Lame forgée");
+        purse.setSourceName("Bourse garnie");
+        CombatContext context = new fr.astratime.lucky.controllers.PreparationResolver()
+            .resolve(List.of(first, second, purse), player, enemy).getCombatContext();
+
+        EnemyDamagedEvent hit = (EnemyDamagedEvent) new AttackAction(30).resolve(context).get(0);
+        List<String> lines = hit.getBreakdown().lines(Symbol.SEVEN);
+        assertTrue(lines.contains("Lame forgée : +40"), "deux copies d'une carte : une seule ligne, " + lines);
+        assertTrue(lines.contains("Bourse garnie : +500"), lines.toString());
+        assertFalse(lines.stream().anyMatch(line -> line.startsWith("Fortune") || line.startsWith("Cartes")), lines.toString());
+    }
+
+    @Test
     void anAttackKeepsItsCalculationStepByStep() {
         Player player = new Player("Joueur", Player.BASE_HP, List.of(), RankBonus.NONE, Symbol.classicReels());
         Enemy enemy = new Enemy(EnemyKind.ENTRAINEMENT);

@@ -581,6 +581,7 @@ public class GameController {
         }
         if (playContext.isDoubleRequested()) doubleNext = true;
         treasureMaps += playContext.getTreasureMaps();
+        playContext.getEffectsForSpin().forEach(effect -> effect.setSourceName(card.getName()));
         pendingEffects.addAll(playContext.getEffectsForSpin());
 
         if (playContext.getGains() != 0) player.addGains(playContext.getGains());

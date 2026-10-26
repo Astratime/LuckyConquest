@@ -160,7 +160,11 @@ public class PreparationResolver {
 
         archetypes(player, enemy, spinContext, combatContext, turnContext);
 
-        pendingEffects.forEach(effect -> effect.apply(turnContext));
+        for (Effect effect : pendingEffects) { // chaque bonus porte le nom de sa carte dans le détail des symboles
+            combatContext.setSource(effect.getSourceName());
+            effect.apply(turnContext);
+        }
+        combatContext.setSource(null);
         if (houseRule != LastingEffects.HouseRule.NO_COMBOS) applyCombos(turnContext, player);
 
         return turnContext;

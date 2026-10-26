@@ -26,6 +26,9 @@ public class CombatContext {
     /** Nom d'une étape du détail d'un symbole dont l'origine n'est pas précisée. */
     private static final String OTHER_EFFECTS = "Autres effets";
 
+    /** Nom de la carte dont l'effet s'applique en ce moment, ou {@code null} (voir {@link #setSource(String)}). */
+    private String source;
+
     private final Player player;
     private final Enemy enemy;
     private final int   spinCost;
@@ -330,19 +333,28 @@ public class CombatContext {
         return steps.stream().filter(step -> step.target() == target || step.target() == Target.SYMBOLS).toList();
     }
 
+    /**
+     * Les étapes ajoutées ensuite portent le nom de la carte {@code cardName} (au lieu
+     * de « Cartes », « Fortune »...), pour que le détail d'un symbole dise quelle carte
+     * donne quel bonus. {@code null} : chaque étape garde son propre nom.
+     */
+    public void setSource(String cardName) { source = cardName; }
+
+    private String shown(String label) { return source != null ? source : label; }
+
     /** Ajoute {@code bonus} au bonus d'attaque du tour. */
     public void addAttackBonus(int bonus)         { addAttackBonus(bonus, OTHER_EFFECTS); }
     /** Ajoute {@code bonus} au bonus d'attaque du tour, venu de {@code label} (détail du symbole). */
     public void addAttackBonus(int bonus, String label) {
         attackBonus = BigNumber.toLong(BigNumber.add(attackBonus, bonus));
-        if (bonus != 0) steps.add(new PowerStep(Target.ATTACK, label, bonus, 1f));
+        if (bonus != 0) steps.add(new PowerStep(Target.ATTACK, shown(label), bonus, 1f));
     }
     /** Ajoute {@code bonus} au bonus de bouclier du tour. */
     public void addDefenseBonus(int bonus)        { addDefenseBonus(bonus, OTHER_EFFECTS); }
     /** Ajoute {@code bonus} au bonus de bouclier du tour, venu de {@code label} (détail du symbole). */
     public void addDefenseBonus(int bonus, String label) {
         defenseBonus += bonus;
-        if (bonus != 0) steps.add(new PowerStep(Target.DEFENSE, label, bonus, 1f));
+        if (bonus != 0) steps.add(new PowerStep(Target.DEFENSE, shown(label), bonus, 1f));
     }
     /** Ajoute {@code amount} au multiplicateur de gains du tour. */
     public void addGainMultiplier(float amount)   { gainMultiplier += amount; }
@@ -352,21 +364,21 @@ public class CombatContext {
     /** Multiplie tous les gains du tirage par {@code factor}, venu de {@code label} (détail du symbole). */
     public void multiplyGains(float factor, String label) {
         gainFactor *= factor;
-        if (factor != 1f) steps.add(new PowerStep(Target.GAINS, label, 0, factor));
+        if (factor != 1f) steps.add(new PowerStep(Target.GAINS, shown(label), 0, factor));
     }
     /** Multiplie les dégâts de chaque symbole par {@code factor}. */
     public void multiplyAttack(float factor)      { multiplyAttack(factor, OTHER_EFFECTS); }
     /** Multiplie les dégâts de chaque symbole par {@code factor}, venu de {@code label} (détail du symbole). */
     public void multiplyAttack(float factor, String label) {
         attackFactor *= factor;
-        if (factor != 1f) steps.add(new PowerStep(Target.ATTACK, label, 0, factor));
+        if (factor != 1f) steps.add(new PowerStep(Target.ATTACK, shown(label), 0, factor));
     }
     /** Multiplie le bouclier de chaque symbole par {@code factor}. */
     public void multiplyDefense(float factor)     { multiplyDefense(factor, OTHER_EFFECTS); }
     /** Multiplie le bouclier de chaque symbole par {@code factor}, venu de {@code label} (détail du symbole). */
     public void multiplyDefense(float factor, String label) {
         defenseFactor *= factor;
-        if (factor != 1f) steps.add(new PowerStep(Target.DEFENSE, label, 0, factor));
+        if (factor != 1f) steps.add(new PowerStep(Target.DEFENSE, shown(label), 0, factor));
     }
     /** Contre-attaque (As de Carreau) : le Coffre, multiplié par {@code factor}, est infligé à l'ennemi. */
     public void addCounterAttack(int factor)      { counterAttack += factor; }
@@ -377,7 +389,7 @@ public class CombatContext {
     /** Comme {@link #multiplySymbolPower(int)}, venu de {@code label} (détail du symbole). */
     public void multiplySymbolPower(int factor, String label) {
         symbolPower *= factor;
-        if (factor != 1) steps.add(new PowerStep(Target.SYMBOLS, label, 0, factor));
+        if (factor != 1) steps.add(new PowerStep(Target.SYMBOLS, shown(label), 0, factor));
     }
     /** Parie sur l'apparition de {@code symbol} au tirage. */
     public void addBet(Symbol symbol)             { bets.add(symbol); }

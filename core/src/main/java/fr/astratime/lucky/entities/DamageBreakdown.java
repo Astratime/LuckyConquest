@@ -44,14 +44,19 @@ public record DamageBreakdown(int base, int rank, List<PowerStep> steps, long ra
         return lines;
     }
 
-    /** Ajoute à {@code lines} les bonus plats de {@code steps} (ils s'ajoutent d'abord), puis leurs multiplicateurs. */
+    /**
+     * Ajoute à {@code lines} les bonus plats de {@code steps} (ils s'ajoutent d'abord), puis leurs multiplicateurs.
+     * Les étapes de même nom (ex : deux copies d'une carte) tiennent sur une seule ligne.
+     */
     static void addSteps(List<String> lines, List<PowerStep> steps) {
+        java.util.Map<String, Double> bonuses = new java.util.LinkedHashMap<>();
+        java.util.Map<String, Float>  factors = new java.util.LinkedHashMap<>();
         for (PowerStep step : steps) {
-            if (!step.isFactor()) lines.add(Lang.f("{0} : +{1}", Lang.t(step.label()), Lang.big(step.bonus())));
+            if (step.isFactor()) factors.merge(step.label(), step.factor(), (a, b) -> a * b);
+            else bonuses.merge(step.label(), (double) step.bonus(), BigNumber::add);
         }
-        for (PowerStep step : steps) {
-            if (step.isFactor()) lines.add(Lang.f("{0} : x{1}", Lang.t(step.label()), factor(step.factor())));
-        }
+        bonuses.forEach((label, bonus) -> lines.add(Lang.f("{0} : +{1}", Lang.t(label), Lang.big(bonus))));
+        factors.forEach((label, factor) -> lines.add(Lang.f("{0} : x{1}", Lang.t(label), factor(factor))));
     }
 
     /** @return {@code factor} avec deux décimales au plus, sans zéro inutile (x9,5 ; x0,75). */
