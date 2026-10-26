@@ -17,6 +17,15 @@ import java.util.List;
  */
 public abstract class Effect {
 
+    /** Nom de la carte qui a posé l'effet, affiché dans le détail des symboles ({@code null} : aucun). */
+    private String sourceName;
+
+    /** @return le nom de la carte qui a posé l'effet, ou {@code null}. */
+    public String getSourceName() { return sourceName; }
+
+    /** Retient que l'effet vient de la carte {@code cardName} (détail des symboles). */
+    public void setSourceName(String cardName) { sourceName = cardName; }
+
     /**
      * Appelé dès que la carte est jouée. Par défaut, l'effet est mis en attente
      * pour le spin et ses textes ({@link #getPopups()}) sont affichés.
