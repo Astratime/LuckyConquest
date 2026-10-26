@@ -1087,13 +1087,13 @@ public enum EnemyKind {
     public static final int CHEF_POTION_PERCENT = 10;
     /** Croupier en chef : chance de base, à chaque tour, que son Rien ne va plus sorte (sur un seul rouleau). */
     public static final int CHEF_NOTHING_GOES_PERCENT = 5;
-    /** Croupier en chef : chance de Rien ne va plus en plus pour chaque Trèfle qu'il joue, et pour son Annonce. */
+    /** Croupier en chef : chance de Rien ne va plus en plus pour chaque carte Annonce jouée dans le combat (se cumule). */
     public static final int CHEF_NOTHING_GOES_CARD_PERCENT = 2;
 
     /**
      * @return {@code true} si son Rien ne va plus ne tourne pas sur ses rouleaux, mais sort au plus une fois
      *         par tour avec {@link #CHEF_NOTHING_GOES_PERCENT} % de chance, plus
-     *         {@link #CHEF_NOTHING_GOES_CARD_PERCENT} % par Trèfle (le Croupier en chef)
+     *         {@link #CHEF_NOTHING_GOES_CARD_PERCENT} % par carte Annonce jouée dans le combat (le Croupier en chef)
      */
     public boolean rollsNothingGoesApart() { return this == CHEF; }
 
@@ -1417,7 +1417,7 @@ public enum EnemyKind {
             parts.add(Lang.f("{0} {1} %", entry.getKey().getDisplayName(), Math.round(100f * entry.getValue() / total)));
         }
         if (rollsNothingGoesApart()) {
-            parts.add(Lang.f("{0} {1} % par tour (+{2} % par Trèfle)", EnemySymbol.NOTHING_GOES.getDisplayName(),
+            parts.add(Lang.f("{0} {1} % par tour (+{2} % par Annonce)", EnemySymbol.NOTHING_GOES.getDisplayName(),
                 CHEF_NOTHING_GOES_PERCENT, CHEF_NOTHING_GOES_CARD_PERCENT));
         }
         return String.join(", ", parts);

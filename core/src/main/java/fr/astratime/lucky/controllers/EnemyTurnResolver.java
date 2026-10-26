@@ -271,20 +271,9 @@ public class EnemyTurnResolver {
                     case PIQUE   -> swordBonus  += kind.swordBonus(card);
                     case COEUR   -> healBonus   += EnemyCards.healBonus(card);
                     case CARREAU -> shieldBonus += kind.shieldBonus(card);
-                    case TREFLE  -> {
-                        if (kind.rollsNothingGoesApart()) { // Croupier en chef : chaque Trèfle, +2 % de Rien ne va plus
-                            luck.merge(EnemySymbol.NOTHING_GOES, EnemyKind.CHEF_NOTHING_GOES_CARD_PERCENT * luckFactor, Integer::sum);
-                        } else {
-                            luck.merge(luckyTarget(enemy), EnemyCards.luckBonus(card) * luckFactor, Integer::sum);
-                        }
-                    }
+                    case TREFLE  -> luck.merge(luckyTarget(enemy), EnemyCards.luckBonus(card) * luckFactor, Integer::sum);
                 }
             }
-        }
-        // Annonce (Croupier en chef) : +2 % de Rien ne va plus ce tour
-        int announced = boosts.getOrDefault(EnemySignature.ANNONCE, 0);
-        if (announced > 0) {
-            luck.merge(EnemySymbol.NOTHING_GOES, EnemyKind.CHEF_NOTHING_GOES_CARD_PERCENT * announced, Integer::sum);
         }
 
         // Cartes marquées (Bluffeur) : ses cartes à couleur ne valent qu'une part de leur effet
@@ -307,9 +296,10 @@ public class EnemyTurnResolver {
             }
         }
         EnemySymbol[] symbols = machine.spin(enemy.getSpinWeights(), luck, reelCount);
-        // Croupier en chef : son Rien ne va plus sort au plus une fois par tour, 5 % de chance + 2 % par Trèfle et Annonce
-        if (kind.rollsNothingGoesApart() && symbols.length > 0 && random.nextInt(100)
-                < EnemyKind.CHEF_NOTHING_GOES_PERCENT + luck.getOrDefault(EnemySymbol.NOTHING_GOES, 0)) {
+        // Croupier en chef : son Rien ne va plus sort au plus une fois par tour, 5 % de chance
+        // + 2 % par carte Annonce jouée depuis le début du combat (ses Trèfles ne le rendent pas plus probable)
+        if (kind.rollsNothingGoesApart() && symbols.length > 0 && random.nextInt(100) < EnemyKind.CHEF_NOTHING_GOES_PERCENT
+                + EnemyKind.CHEF_NOTHING_GOES_CARD_PERCENT * enemy.getCharges().getOrDefault(EnemySignature.ANNONCE, 0)) {
             symbols[random.nextInt(symbols.length)] = EnemySymbol.NOTHING_GOES;
         }
         Map<Integer, List<Event>> reelEvents = new java.util.HashMap<>(); // ce qui arrive à un rouleau avant qu'il agisse

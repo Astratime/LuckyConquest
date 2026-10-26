@@ -83,8 +83,8 @@ public enum EnemySignature {
         "Une carte de ta main est face cachée au prochain tour. Se cumule avec l'Aveuglement", "ENCRE"),
 
     // Les rouleaux ajoutés aux ennemis qui n'avaient que des rouleaux de base (choix d'Astra).
-    ANNONCE("Annonce", EnemySymbol.NOTHING_GOES, Timing.TURN,
-        "Ce tour, son Rien ne va plus a {0} % de chance en plus de sortir", "RIEN NE VA PLUS +{0}%"),
+    ANNONCE("Annonce", EnemySymbol.NOTHING_GOES, Timing.NEXT,
+        "Son Rien ne va plus a {0} % de chance en plus de sortir, jusqu'à la fin du combat (se cumule)", "RIEN NE VA PLUS +{0}%"),
     COUP_DE_RATEAU("Coup de râteau", EnemySymbol.RAKE, Timing.NEXT,
         "Son prochain Râteau ramasse 20 % de tes gains", "RÂTEAU x2"),
     TENUE_EXIGEE("Tenue exigée", EnemySymbol.CLOAKROOM, Timing.NEXT,
