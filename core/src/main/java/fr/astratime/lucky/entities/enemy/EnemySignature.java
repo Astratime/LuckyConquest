@@ -83,8 +83,8 @@ public enum EnemySignature {
         "Une carte de ta main est face cachée au prochain tour. Se cumule avec l'Aveuglement", "ENCRE"),
 
     // Les rouleaux ajoutés aux ennemis qui n'avaient que des rouleaux de base (choix d'Astra).
-    ANNONCE("Annonce", EnemySymbol.NOTHING_GOES, Timing.NEXT,
-        "Son prochain Rien ne va plus bloque 2 de tes rouleaux", "2 ROULEAUX BLOQUÉS"),
+    ANNONCE("Annonce", EnemySymbol.NOTHING_GOES, Timing.TURN,
+        "Ce tour, son Rien ne va plus a {0} % de chance en plus de sortir", "RIEN NE VA PLUS +{0}%"),
     COUP_DE_RATEAU("Coup de râteau", EnemySymbol.RAKE, Timing.NEXT,
         "Son prochain Râteau ramasse 20 % de tes gains", "RÂTEAU x2"),
     TENUE_EXIGEE("Tenue exigée", EnemySymbol.CLOAKROOM, Timing.NEXT,
@@ -223,6 +223,7 @@ public enum EnemySignature {
             case MECHE_DE_DIAMANT  -> Lang.f(description, MECHE_PERCENT);
             case FRENESIE          -> Lang.f(description, FRENESIE_PERCENT);
             case PAS_CE_SOIR       -> Lang.f(description, VIDEUR_PERCENT);
+            case ANNONCE           -> Lang.f(description, EnemyKind.CHEF_NOTHING_GOES_CARD_PERCENT);
             case POIDS_DE_L_OR     -> Lang.f(description, LINGOT_PERCENT);
             default                -> Lang.t(description);
         };
@@ -241,6 +242,7 @@ public enum EnemySignature {
             case MECHE_DE_DIAMANT  -> Lang.f(bonus, MECHE_PERCENT);
             case FRENESIE          -> Lang.f(bonus, FRENESIE_PERCENT);
             case PAS_CE_SOIR       -> Lang.f(bonus, VIDEUR_PERCENT);
+            case ANNONCE           -> Lang.f(bonus, EnemyKind.CHEF_NOTHING_GOES_CARD_PERCENT);
             case POIDS_DE_L_OR     -> Lang.f(bonus, LINGOT_PERCENT);
             default                -> Lang.t(bonus);
         };

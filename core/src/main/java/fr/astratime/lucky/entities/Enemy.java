@@ -827,6 +827,9 @@ public class Enemy {
     public int    getPhase()       { return phase; }
     /** @return les symboles de ses rouleaux et leur poids, dans sa phase. */
     public Map<EnemySymbol, Integer> getWeights() { return kind.getWeights(phase); }
+
+    /** @return les poids que ses rouleaux tirent vraiment (sans le Rien ne va plus du Croupier en chef, tiré à part). */
+    public Map<EnemySymbol, Integer> getSpinWeights() { return kind.getSpinWeights(phase); }
     /** @return les symboles qui peuvent sortir sur ses rouleaux, dans sa phase. */
     public List<EnemySymbol> getSymbols() { return kind.getSymbols(phase); }
     /** @return la part des dégâts du joueur que renverront ses Épines, en %. */

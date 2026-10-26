@@ -1068,6 +1068,7 @@ public enum EnemyKind {
 
     /** @return les points de vie que rend une Potion renforcée de {@code bonusPercent} (Cœurs), en % de ses PV max. */
     public float potionPercent(int bonusPercent) {
+        if (this == CHEF) return CHEF_POTION_PERCENT * (EnemySymbol.POTION_PERCENT + bonusPercent) / (float) EnemySymbol.POTION_PERCENT;
         Place place = Place.of(this);
         if (place != null && place.getHealPercent() > 0) { // soin fixé par son lieu, les Cœurs en proportion
             return place.getHealPercent() * (EnemySymbol.POTION_PERCENT + bonusPercent)
@@ -1081,6 +1082,29 @@ public enum EnemyKind {
 
     /** @return {@code true} s'il joue ses cartes au hasard (la Roulette Vivante). */
     public boolean playsAtRandom() { return this == ROULETTE; }
+
+    /** Croupier en chef (nerf d'Astra) : sa Potion soigne 10 % de ses PV max (plus les Cœurs, en proportion). */
+    public static final int CHEF_POTION_PERCENT = 10;
+    /** Croupier en chef : chance de base, à chaque tour, que son Rien ne va plus sorte (sur un seul rouleau). */
+    public static final int CHEF_NOTHING_GOES_PERCENT = 5;
+    /** Croupier en chef : chance de Rien ne va plus en plus pour chaque carte Annonce jouée ce tour. */
+    public static final int CHEF_NOTHING_GOES_CARD_PERCENT = 2;
+
+    /**
+     * @return {@code true} si son Rien ne va plus ne tourne pas sur ses rouleaux, mais sort au plus une fois
+     *         par tour avec {@link #CHEF_NOTHING_GOES_PERCENT} % de chance, plus
+     *         {@link #CHEF_NOTHING_GOES_CARD_PERCENT} % par carte Annonce jouée ce tour (le Croupier en chef)
+     */
+    public boolean rollsNothingGoesApart() { return this == CHEF; }
+
+    /** @return les poids de ses rouleaux dans la phase {@code phase}, sans le symbole qu'il tire à part. */
+    public Map<EnemySymbol, Integer> getSpinWeights(int phase) {
+        Map<EnemySymbol, Integer> weights = getWeights(phase);
+        if (!rollsNothingGoesApart()) return weights;
+        Map<EnemySymbol, Integer> spin = new LinkedHashMap<>(weights);
+        spin.remove(EnemySymbol.NOTHING_GOES);
+        return Collections.unmodifiableMap(spin);
+    }
 
     /** @return {@code true} si ses Potions reforment aussi sa défense (le Croupier en chef). */
     public boolean potionShields() { return this == CHEF; }
@@ -1386,11 +1410,15 @@ public enum EnemyKind {
 
     /** @return comme {@link #describeReels()}, pour la phase {@code phase}. */
     public String describeReels(int phase) {
-        Map<EnemySymbol, Integer> weights = getWeights(phase);
+        Map<EnemySymbol, Integer> weights = getSpinWeights(phase);
         List<String> parts = new ArrayList<>();
         int total = weights.values().stream().mapToInt(Integer::intValue).sum();
         for (Map.Entry<EnemySymbol, Integer> entry : weights.entrySet()) {
             parts.add(Lang.f("{0} {1} %", entry.getKey().getDisplayName(), Math.round(100f * entry.getValue() / total)));
+        }
+        if (rollsNothingGoesApart()) {
+            parts.add(Lang.f("{0} {1} % par tour (+{2} % par Annonce)", EnemySymbol.NOTHING_GOES.getDisplayName(),
+                CHEF_NOTHING_GOES_PERCENT, CHEF_NOTHING_GOES_CARD_PERCENT));
         }
         return String.join(", ", parts);
     }

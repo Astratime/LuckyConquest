@@ -295,7 +295,13 @@ public class EnemyTurnResolver {
                 openingEvents.add(new StatusEvent(Lang.t("FAUSSE PISTE : UN ROULEAU DE MOINS"), EffectPopup.Style.DEFENSE));
             }
         }
-        EnemySymbol[] symbols = machine.spin(enemy.getWeights(), luck, reelCount);
+        EnemySymbol[] symbols = machine.spin(enemy.getSpinWeights(), luck, reelCount);
+        // Croupier en chef : son Rien ne va plus sort au plus une fois par tour, 5 % de chance
+        // + 2 % par carte Annonce jouée ce tour (ses Trèfles ne le rendent pas plus probable)
+        if (kind.rollsNothingGoesApart() && symbols.length > 0 && random.nextInt(100) < EnemyKind.CHEF_NOTHING_GOES_PERCENT
+                + EnemyKind.CHEF_NOTHING_GOES_CARD_PERCENT * boosts.getOrDefault(EnemySignature.ANNONCE, 0)) {
+            symbols[random.nextInt(symbols.length)] = EnemySymbol.NOTHING_GOES;
+        }
         Map<Integer, List<Event>> reelEvents = new java.util.HashMap<>(); // ce qui arrive à un rouleau avant qu'il agisse
         if (enemy.spendCoins()) { // Pièces avalées : le Bandit manchot s'offre un Jackpot
             java.util.Arrays.fill(symbols, EnemySymbol.SWORD);
@@ -562,12 +568,10 @@ public class EnemyTurnResolver {
                         events.add(new EnemyHpLostEvent(Lang.f("FAILLITE : IL PERD {0} PV", Lang.big(lost)), EffectPopup.Style.SPECIAL, lost));
                     }
                 }
-                case NOTHING_GOES -> {
-                    int count = 1 + (enemy.takeCharge(EnemySignature.ANNONCE) ? 1 : 0);
+                case NOTHING_GOES -> { // un seul rouleau bloqué (nerf d'Astra)
                     events.add(new StatusEvent(Lang.t("RIEN NE VA PLUS !"), EffectPopup.Style.DAMAGE));
-                    for (int k = 0; k < count; k++) {
-                        int reel = freeReel(curses.getForbiddenReels());
-                        if (reel < 0) break;
+                    int reel = freeReel(curses.getForbiddenReels());
+                    if (reel >= 0) {
                         curses.voidReel(reel);
                         events.add(new ReelForbiddenEvent(reel));
                     }
@@ -1148,7 +1152,7 @@ public class EnemyTurnResolver {
         for (int k = 0; k < arms; k++) {
             int reel = worstReel(symbols);
             if (reel < 0) return;
-            symbols[reel] = machine.spin(enemy.getWeights(), luck, 1)[0];
+            symbols[reel] = machine.spin(enemy.getSpinWeights(), luck, 1)[0];
             reelEvents.computeIfAbsent(reel, r -> new ArrayList<>())
                 .add(new StatusEvent(Lang.t("BRAS ARMÉ : ROULEAU RELANCÉ"), EffectPopup.Style.SPECIAL));
         }
