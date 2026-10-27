@@ -259,10 +259,10 @@ public class GameController {
 
     /**
      * @return ce que coûtera la Mise choisie au prochain tirage : sa part des gains
-     *         du moment (rien sans gains), versée à la cagnotte du Jeu bonus
+     *         du moment, hors ceux rapportés par la cagnotte (rien sans gains), versée à la cagnotte du Jeu bonus
      */
     public double getStakeAmount() {
-        return stake.amount(gameState.getPlayer().getGains());
+        return stake.amount(gameState.getPlayer().getStakeableGains());
     }
 
     /** @return la Mise choisie pour le prochain tirage. */
@@ -270,12 +270,12 @@ public class GameController {
 
     /**
      * Passe au palier de Mise suivant (aucune, 5 %, 10 %, 15 % des gains, puis
-     * aucune). Sans gains, il n'y a rien à miser : la Mise reste à 0.
+     * aucune). Sans gains à miser (ceux de la cagnotte ne se misent pas), la Mise reste à 0.
      *
      * @return le palier choisi
      */
     public SpinEconomy.Stake nextStake() {
-        stake = gameState.getPlayer().getGains() > 0 ? stake.next() : SpinEconomy.Stake.NONE;
+        stake = gameState.getPlayer().getStakeableGains() > 0 ? stake.next() : SpinEconomy.Stake.NONE;
         return stake;
     }
 

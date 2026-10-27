@@ -76,7 +76,8 @@ final class CombatEffectRows {
             rows.add(new SidePanel.EffectRow(new TextureRegion(hud.coin), null,
                 Lang.f("Cagnotte {0}", SidePanel.formatGains(pot)), Lang.t("Cagnotte"),
                 Lang.f("Tes Mises s'y accumulent. Au prochain Jeu bonus, chaque alignement rapporte sa valeur "
-                    + "plus toute la cagnotte, puis elle repart de 0. Ici, un Bingo ouvre le Jeu bonus {0} fois sur 10.",
+                    + "plus toute la cagnotte, puis elle repart de 0. Ce qu'elle rapporte ne se mise pas avant la fin "
+                    + "de la descente. Ici, un Bingo ouvre le Jeu bonus {0} fois sur 10.",
                     inTen)));
         }
         for (Map.Entry<Symbol, Integer> removed : lasting.getRemovedSymbols().entrySet()) {

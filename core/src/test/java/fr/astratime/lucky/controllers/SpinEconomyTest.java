@@ -245,6 +245,12 @@ class SpinEconomyTest {
         for (BonusGame.Line line : bonus.getLines()) {
             assertTrue(line.gains() >= bonus.getPot(), "chaque alignement : sa valeur + la cagnotte");
         }
+        Player player = player(controller);
+        assertEquals(Math.max(0, player.getGains() - bonus.getPot() * bonus.getLines().size()),
+            player.getStakeableGains(), 1e-6, "ce que la cagnotte a rapporté ne se remise pas");
+        player.addGains(1_000);
+        assertEquals(1_000, player.nextCombat().getStakeableGains() - Math.max(0,
+            player.getGains() - 1_000 - bonus.getPot() * bonus.getLines().size()), 1e-6, "ni au combat suivant de la descente");
     }
 
     @Test

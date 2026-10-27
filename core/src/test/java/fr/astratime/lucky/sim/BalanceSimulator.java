@@ -75,6 +75,9 @@ public final class BalanceSimulator {
     /** Mise du robot à chaque tirage ({@code -Dlucky.stake=5}, 10 ou 15 ; aucune par défaut). */
     static final SpinEconomy.Stake STAKE = stakeOf(Integer.getInteger("lucky.stake", 0));
 
+    /** Essai ({@code -Dlucky.potPerRun=true}) : la cagnotte repart de 0 à chaque descente d'un donjon. */
+    static final boolean POT_PER_RUN = Boolean.getBoolean("lucky.potPerRun");
+
     private static SpinEconomy.Stake stakeOf(int percent) {
         for (SpinEconomy.Stake stake : SpinEconomy.Stake.values()) if (stake.percent == percent) return stake;
         throw new IllegalArgumentException("Mise inconnue : " + percent + " % (0, 5, 10 ou 15)");
@@ -387,6 +390,7 @@ public final class BalanceSimulator {
         List<Run> played = new ArrayList<>();
         for (int run = 0; run < runs; run++) {
             int before = turns[0];
+            if (POT_PER_RUN) game.getPot().take(); // essai : une cagnotte neuve à chaque descente
             game.restart(dungeon.getSoldier());
             boolean won = fight(game, random, gear, turns);
             double effort = 0.5 * (1 - Math.max(0, game.getGameState().getEnemy().getHpRatio()));

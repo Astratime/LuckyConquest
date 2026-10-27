@@ -334,6 +334,7 @@ public class TurnEngine {
             .boosted(perSymbol, rank, factor)
             .withPot(pot.take()); // la cagnotte n'est pas multipliée par le tour
         player.addGains(bonus.getTotal());
+        player.addPotWinnings(bonus.getPot() * bonus.getLines().size()); // ce que la cagnotte a rapporté ne se remise pas
         return bonus;
     }
 
