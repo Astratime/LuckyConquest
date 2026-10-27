@@ -64,10 +64,9 @@ class DungeonTest {
         Map<Dungeon, Integer> hp = new HashMap<>();
         for (Dungeon d : Place.FOIRE.getDungeons()) hp.put(d, 50_000); // Astra 2026-10-25
         for (Dungeon d : Place.PORT.getDungeons()) hp.put(d, 200_000);
-        for (Dungeon d : Place.MINES.getDungeons()) hp.put(d, 300_000);
+        for (Dungeon d : Place.MINES.getDungeons()) hp.put(d, 500_000); // Astra 2026-10-27, Gouffre compris
         for (Dungeon d : Place.CASINO.getDungeons()) hp.put(d, 1_200_000);
         for (Dungeon d : Place.DESERT.getDungeons()) hp.put(d, 1_500_000);
-        hp.put(Dungeon.GOUFFRE, 200_000);
         hp.put(Dungeon.MACHINES, 900_000);
         hp.put(Dungeon.COFFRES, 2_500_000);
         hp.put(Dungeon.TOMBEAU, 1_050_000);
