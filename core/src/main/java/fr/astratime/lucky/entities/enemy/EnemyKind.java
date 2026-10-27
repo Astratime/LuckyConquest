@@ -1005,7 +1005,10 @@ public enum EnemyKind {
     public int fakePercent() { return Math.min(100, empowered(EnemySymbol.FAKE_PERCENT)); }
 
     /** @return la part des gains du joueur prise par chaque Intérêts, en %. */
-    public int interestPercent() { return empowered(EnemySymbol.INTEREST_PERCENT); }
+    public int interestPercent() { return empowered(EnemySymbol.INTEREST_PERCENT) + EnemySymbol.THEFT_BONUS_PERCENT; }
+
+    /** @return la part des gains que prend sa Morsure bancaire, en % (sa puissance, plus le vol relevé). */
+    public int bankBitePercent() { return empowered(EnemySymbol.BANK_BITE_PERCENT) + EnemySymbol.THEFT_BONUS_PERCENT; }
 
     /** @return {@code true} si son deck contient le Rouleau interdit (l'Éclat Originel). */
     public boolean forbidsReels() { return this == ECLAT || this == PRETENDANT; }

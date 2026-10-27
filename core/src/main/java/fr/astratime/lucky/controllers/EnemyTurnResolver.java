@@ -491,7 +491,7 @@ public class EnemyTurnResolver {
                         : Lang.t("CHANT : UNE CARTE JOUÉE D'OFFICE"), EffectPopup.Style.DAMAGE));
                 }
                 case BANK_BITE -> {
-                    double stolen = BigNumber.percent(player.getGains(), Math.min(100, kind.empowered(EnemySymbol.BANK_BITE_PERCENT)
+                    double stolen = BigNumber.percent(player.getGains(), Math.min(100, kind.bankBitePercent()
                         + EnemySignature.FRENESIE_PERCENT * boosts.getOrDefault(EnemySignature.FRENESIE, 0)));
                     if (stolen > 0) {
                         player.addGains(-stolen);

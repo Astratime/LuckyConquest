@@ -151,6 +151,12 @@ public enum EnemySymbol {
     public static final int DIE_PERCENT    = 25;
     /** Part des gains du joueur prise par chaque Intérêts, en pourcentage. */
     public static final int INTEREST_PERCENT = 5;
+    /**
+     * Points ajoutés à chaque vol de gains en % (Intérêts, Morsure bancaire, et les
+     * constantes déjà relevées : Râteau, Coffre, Pièce avalée) : choix d'Astra (2026-10-27),
+     * la Mise mettant une part des gains à l'abri dans la cagnotte.
+     */
+    public static final int THEFT_BONUS_PERCENT = 5;
     /** Gains volés pour chaque point d'attaque ajouté par les Intérêts. */
     public static final int INTEREST_PER_ATTACK = 100;
     /** Les Intérêts n'ajoutent pas plus que cette attaque. */
@@ -202,7 +208,7 @@ public enum EnemySymbol {
     public static final int BANKRUPTCY_HP_PERCENT = 20;
 
     /** Râteau : part des gains ramassée, en %. */
-    public static final int RAKE_PERCENT = 10;
+    public static final int RAKE_PERCENT = 15; // 10, +5 points avec la cagnotte (Astra, 2026-10-27)
     /** Le Râteau ne donne pas plus de défense que ce nombre de ses Boucliers. */
     public static final int RAKE_MAX_SHIELDS = 5;
     /** Tours du joueur que manque une carte gardée au Vestiaire. */
@@ -210,7 +216,7 @@ public enum EnemySymbol {
     /** Part du bouclier du joueur ignorée par le Videur, en %. */
     public static final int BOUNCER_PIERCE_PERCENT = 50;
     /** Coffre-fort : soin, en % de ses PV max, et part des gains volée, en %. */
-    public static final int SAFE_HEAL_PERCENT = 5, SAFE_STEAL_PERCENT = 5;
+    public static final int SAFE_HEAL_PERCENT = 5, SAFE_STEAL_PERCENT = 10; // vol 5, +5 points (Astra, 2026-10-27)
     /** Avantage de la maison : gains du prochain tirage du joueur en moins, en %. */
     public static final int HOUSE_EDGE_PERCENT = 10;
     /** Engrenage : force en plus de ses autres symboles du tirage, en %. */
@@ -222,7 +228,7 @@ public enum EnemySymbol {
     /** Battement : soin, en % de ses PV max. */
     public static final int HEARTBEAT_PERCENT = 10;
     /** Pièce avalée : part des gains prise, en %, et pièces qu'il lui faut pour un Jackpot. */
-    public static final int COIN_PERCENT = 5, COINS_FOR_JACKPOT = 3;
+    public static final int COIN_PERCENT = 10, COINS_FOR_JACKPOT = 3; // 5, +5 points (Astra, 2026-10-27)
     /** Jackpot originel : trois symboles pareils sur les rouleaux de la Machine, et ce symbole agit autant de fois. */
     public static final int ORIGINAL_JACKPOT_COUNT = 3, ORIGINAL_JACKPOT_ACTS = 5;
     /** Tours du joueur pendant lesquels la Machine garde le rouleau volé en phase 2 (choix d'Astra). */
@@ -301,7 +307,7 @@ public enum EnemySymbol {
                 kind.hurt(ANVIL_ATTACK));
             case SONG   -> Lang.t("Chant : au début de ton prochain tour, une carte au hasard de ta main est jouée d'office");
             case BANK_BITE -> Lang.f("Morsure : il dévore {0} % de tes gains et se soigne d'autant ({1} % de ses PV max au plus). "
-                + "Sans gains, il mord", kind.empowered(BANK_BITE_PERCENT), BANK_BITE_HEAL_MAX);
+                + "Sans gains, il mord", kind.bankBitePercent(), BANK_BITE_HEAL_MAX);
             case FAKE_MONEY -> Lang.f("Fausse monnaie : {0} % de tes gains deviennent faux. Dépense-les avant ton tirage, ou ils "
                 + "disparaissent",
                 kind.fakePercent());
