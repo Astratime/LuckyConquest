@@ -614,6 +614,7 @@ public class GameScreen extends ScreenAdapter {
             refreshEffects(); // les mauvais sorts de l'ennemi s'appliquent : ils quittent le panneau
         }
         refreshPlays();
+        spinControls.dropChips(gameController.getStake()); // la Mise reste posée d'un tour à l'autre
         setSpinDisabled(false);
         if (tutorial != null) tutorial.beat(TutorialDirector.Beat.HAND_DEALT, () -> { });
         // Chant de l'ennemi : une fois la main distribuée, des cartes partent d'office.
@@ -1969,6 +1970,16 @@ public class GameScreen extends ScreenAdapter {
     /** Met à jour le compteur de gains, sans les gains du tirage dont le texte n'est pas encore apparu. */
     private void refreshGains() {
         sidePanel.setGains(player().getGains() - gainsNotYetShown);
+        refreshPot();
+    }
+
+    /** La cagnotte du Jeu bonus, sous les gains, avec son infobulle. */
+    private void refreshPot() {
+        int inTen = Math.round(gameController.getBonusGameChance() * 10);
+        sidePanel.setPot(gameController.getPot().getAmount(), Lang.t("Cagnotte"),
+            Lang.f("Tes Mises s'y accumulent. Au prochain Jeu bonus, chaque alignement rapporte sa valeur "
+                + "plus toute la cagnotte, puis elle repart de 0. Ce qu'elle rapporte ne se mise pas avant la fin "
+                + "de la descente. Ici, un Bingo ouvre le Jeu bonus {0} fois sur 10.", inTen));
     }
 
     /** Place le bouclier du joueur à droite de ses rouleaux, et son levier à leur gauche. */

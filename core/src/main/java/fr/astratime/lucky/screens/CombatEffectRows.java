@@ -70,16 +70,6 @@ final class CombatEffectRows {
                     Lang.t("Endetté"), Lang.f("Tes gains sont sous 0. Attaque et bouclier des symboles -25 %. "
                         + "Sous -{0}, l'Huissier arrive.", limit)));
         }
-        double pot = controller.getPot().getAmount();
-        if (pot > 0) {
-            int inTen = Math.round(controller.getBonusGameChance() * 10);
-            rows.add(new SidePanel.EffectRow(new TextureRegion(hud.coin), null,
-                Lang.f("Cagnotte {0}", SidePanel.formatGains(pot)), Lang.t("Cagnotte"),
-                Lang.f("Tes Mises s'y accumulent. Au prochain Jeu bonus, chaque alignement rapporte sa valeur "
-                    + "plus toute la cagnotte, puis elle repart de 0. Ce qu'elle rapporte ne se mise pas avant la fin "
-                    + "de la descente. Ici, un Bingo ouvre le Jeu bonus {0} fois sur 10.",
-                    inTen)));
-        }
         for (Map.Entry<Symbol, Integer> removed : lasting.getRemovedSymbols().entrySet()) {
             int turns = removed.getValue();
             rows.add(new SidePanel.EffectRow(symbols.apply(removed.getKey()), cross,

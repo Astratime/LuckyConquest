@@ -196,7 +196,12 @@ class SpinEconomyTest {
             "la Mise est payée en plus du tirage");
         assertEquals(gains * 0.15, staked.getPot().getAmount(), 1e-6, "elle part dans la cagnotte");
         assertEquals(0, plain.getPot().getAmount(), "sans Mise, la cagnotte ne bouge pas");
-        assertEquals(Stake.NONE, staked.getStake(), "la Mise ne vaut que pour un tirage");
+        assertEquals(Stake.HIGH, staked.getStake(), "la Mise reste posée d'un tour à l'autre (Astra)");
+        staked.drawCards();
+        assertEquals(player(staked).getStakeableGains() * 0.15, staked.getStakeAmount(), 1.0,
+            "au tour suivant, 15 % des gains du moment");
+        staked.restart(EnemyKind.CROUPIER);
+        assertEquals(Stake.NONE, staked.getStake(), "un nouveau combat repart sans Mise");
     }
 
     @Test

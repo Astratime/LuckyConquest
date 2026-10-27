@@ -196,6 +196,7 @@ public class GameController {
         treasureMaps = 0;
         bought.clear();
         clearTurn();
+        stake = SpinEconomy.Stake.NONE; // nouveau combat depuis le début : pas de Mise
     }
 
     /**
@@ -240,7 +241,6 @@ public class GameController {
         taxes = 0;
         turnNotices.clear();
         originals.clear();
-        stake = SpinEconomy.Stake.NONE;
     }
 
     // -------------------------------------------------------------------------
@@ -862,7 +862,7 @@ public class GameController {
         double cost = getSpinPrice();
         if (cost > 0) player.paySpin(cost);
         TurnResult result = turnEngine.playTurn(gameState, pendingEffects, placed);
-        stake = SpinEconomy.Stake.NONE;
+        // La Mise reste posée pour les tirages suivants (choix d'Astra) : on la change quand on veut.
         // Bout de l'arc-en-ciel : ses Pots de Lutin rejoignent la pioche, à une place au hasard
         for (String id : player.getLastingEffects().takeDeckCards()) player.getDeck().insertRandomly(cardFactory.apply(id));
         if (bingoCardPlayed && result.getGainBingoSymbol() != null) bingoGiftPending = true;

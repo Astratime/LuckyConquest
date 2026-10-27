@@ -2,6 +2,7 @@ package fr.astratime.lucky.views;
 
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.graphics.Color;
+import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.Interpolation;
@@ -55,6 +56,9 @@ public class SidePanel implements Disposable {
     private static final float INSET_PADDING  = 16f;
     private static final float COIN_SIZE      = 60f;
     private static final float COIN_GAP       = 12f;
+    /** Hauteur des trois pierres de la cagnotte, sous les gains (l'image fait 115 x 50). */
+    private static final float POT_ICON_HEIGHT = 30f;
+    private static final float POT_GAP         = 6f;
     private static final float COUNT_DURATION = 0.6f;
     private static final float BUMP_SCALE     = 1.3f;
     private static final float EFFECT_ICON    = 52f;
@@ -75,6 +79,11 @@ public class SidePanel implements Disposable {
     private final Table root = new Table();
     private final Image coin;
     private final Label gainsLabel;
+    /** Cagnotte du Jeu bonus, sous les gains : ses trois pierres et son montant. */
+    private final Table potRow = new Table();
+    private final Label potLabel;
+    /** Nom et description de la cagnotte, pour son infobulle. */
+    private       String potName = "", potDescription = "";
     private final float gainsMaxWidth;
     private       double shownGains;
     private       double targetGains;
@@ -122,6 +131,15 @@ public class SidePanel implements Disposable {
         gainsBox.row();
         gainsBox.add(coin).size(COIN_SIZE).padRight(COIN_GAP);
         gainsBox.add(gainsLabel).growX().left();
+        gainsBox.row();
+        potLabel = new Label("0", new Label.LabelStyle(captionFont, Color.WHITE));
+        Texture gems = hud.iconPot;
+        potRow.add(new Image(new TextureRegionDrawable(new TextureRegion(gems))))
+            .size(POT_ICON_HEIGHT * gems.getWidth() / gems.getHeight(), POT_ICON_HEIGHT).padRight(POT_GAP);
+        potRow.add(potLabel).left();
+        potRow.setVisible(false);
+        addPotHelp();
+        gainsBox.add(potRow).colspan(2).left().padTop(POT_GAP);
         root.add(gainsBox).width(insetWidth).padTop(SECTION_GAP);
         root.row();
 
@@ -240,6 +258,37 @@ public class SidePanel implements Disposable {
         }
         effectsBox.setVisible(!rows.isEmpty());
         root.invalidateHierarchy();
+    }
+
+    /**
+     * Montre la cagnotte du Jeu bonus sous les gains.
+     *
+     * @param amount      ce qu'elle contient
+     * @param name        son nom, pour l'infobulle
+     * @param description ce qu'elle fait, pour l'infobulle
+     */
+    public void setPot(double amount, String name, String description) {
+        potLabel.setText(formatGains(amount));
+        potName = name;
+        potDescription = description;
+        potRow.setVisible(true);
+    }
+
+    /** Survoler la cagnotte affiche son infobulle, à droite du panneau. */
+    private void addPotHelp() {
+        potRow.addListener(new InputListener() {
+            @Override
+            public void enter(InputEvent event, float x, float y, int pointer, Actor fromActor) {
+                if (pointer != -1 || tooltip == null) return;
+                Vector2 bottom = potRow.localToStageCoordinates(new Vector2(0f, 0f));
+                tooltip.show(potName, potDescription, WIDTH + TOOLTIP_GAP, bottom.y);
+            }
+
+            @Override
+            public void exit(InputEvent event, float x, float y, int pointer, Actor toActor) {
+                if (pointer == -1 && tooltip != null) tooltip.hide();
+            }
+        });
     }
 
     /** Survoler {@code line} affiche l'infobulle de l'effet, à droite du panneau ; un clic droit ouvre sa fiche. */

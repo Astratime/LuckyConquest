@@ -2204,10 +2204,10 @@
   "Mise -{0}": "Stake -{0}",
   "MISE -{0} : CAGNOTTE": "STAKE -{0}: POT",
   "PAS DE GAINS À MISER": "NO GAINS TO STAKE",
-  "Cagnotte {0}": "Pot {0}",
   "Cagnotte": "Pot",
   "CAGNOTTE +{0} PAR ALIGNEMENT": "POT +{0} PER LINE",
   "Avant de lancer, choisis ta Mise. Clique sur Mise : 5 % de tes gains vont dans la cagnotte, et ton attaque et ta défense x1,1. Encore : 10 %, puis 15 %.": "Before you spin, choose your Stake. Click Stake: 5% of your gains go into the pot, and your attack and defense x1.1. Again: 10%, then 15%.",
   "Ta Paire a multiplié tout le tirage : attaque, gains et bouclier. Ta Mise attend dans la cagnotte : au Jeu bonus, chaque alignement la rapporte.": "Your Pair multiplied the whole draw: attack, gains and shield. Your Stake waits in the pot: in the Bonus game, every line pays it.",
-  "Tes Mises s'y accumulent. Au prochain Jeu bonus, chaque alignement rapporte sa valeur plus toute la cagnotte, puis elle repart de 0. Ce qu'elle rapporte ne se mise pas avant la fin de la descente. Ici, un Bingo ouvre le Jeu bonus {0} fois sur 10.": "Your Stakes pile up here. At the next Bonus game, every line pays its value plus the whole pot, then it goes back to 0. What it pays can't be staked until the end of the run. Here, a Bingo opens the Bonus game {0} times out of 10."
+  "Tes Mises s'y accumulent. Au prochain Jeu bonus, chaque alignement rapporte sa valeur plus toute la cagnotte, puis elle repart de 0. Ce qu'elle rapporte ne se mise pas avant la fin de la descente. Ici, un Bingo ouvre le Jeu bonus {0} fois sur 10.": "Your Stakes pile up here. At the next Bonus game, every line pays its value plus the whole pot, then it goes back to 0. What it pays can't be staked until the end of the run. Here, a Bingo opens the Bonus game {0} times out of 10.",
+  "Cagnotte : {0}": "Pot: {0}"
 }
