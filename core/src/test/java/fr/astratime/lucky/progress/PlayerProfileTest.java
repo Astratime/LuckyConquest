@@ -429,4 +429,32 @@ class PlayerProfileTest {
         assertEquals(0, stats.get(PlayerStats.Stat.GAINS));
         assertEquals(1, stats.bingoSymbolCount());
     }
+
+    @Test
+    void eachPlaceKeepsItsOwnBonusPotFromOneLaunchToTheNext() {
+        MemoryStorage storage = new MemoryStorage();
+        PlayerProfile profile = profile(storage);
+        profile.getPot(Place.PRAIRIE).add(1_500);
+        profile.getPot(PlayerProfile.POT_TRAINING).add(200);
+        assertEquals(1_500, profile.getPot(Place.PRAIRIE).getAmount(), "partagée par les donjons du lieu");
+        assertEquals(0, profile.getPot(Place.FOIRE).getAmount(), "chaque lieu a la sienne");
+
+        PlayerProfile again = profile(storage);
+        assertEquals(1_500, again.getPot(Place.PRAIRIE).getAmount(), "gardée d'un lancement à l'autre");
+        assertEquals(200, again.getPot(PlayerProfile.POT_TRAINING).getAmount());
+        again.getPot(Place.PRAIRIE).take();
+        assertEquals(0, profile(storage).getPot(Place.PRAIRIE).getAmount(), "vidée par le Jeu bonus");
+    }
+
+    @Test
+    void theAdminPotIsNeverSaved() {
+        MemoryStorage storage = new MemoryStorage();
+        PlayerProfile profile = profile(storage);
+        profile.setAdmin(true);
+        profile.getPot(Place.CASINO).add(9_999);
+        assertEquals(9_999, profile.getPot(Place.CASINO).getAmount(), "elle sert pendant le mode ADMIN");
+        profile.setAdmin(false);
+        assertEquals(0, profile.getPot(Place.CASINO).getAmount(), "la partie n'en garde rien");
+        assertEquals(0, profile(storage).getPot(Place.CASINO).getAmount());
+    }
 }

@@ -1,5 +1,9 @@
 package fr.astratime.lucky.entities;
 
+import fr.astratime.lucky.i18n.Lang;
+
+import java.util.Locale;
+
 /**
  * Les gains en combat : chaque tirage coûte des gains, et ce que rapportent
  * les Paires, les Bingos et les symboles de gains se compte en coûts de
@@ -10,7 +14,8 @@ package fr.astratime.lucky.entities;
  *   <li>Paire : {@link #PAIR_SPINS} C ; Bingo : 20, 30 ou 50 C selon la {@linkplain Symbol.Rarity rareté}.</li>
  *   <li>Dette : seul le coût du tirage fait passer les gains sous 0. Endetté (jusqu'à
  *       -{@link #BAILIFF_SPINS} C) : symboles -25 % ; Huissier (au-delà) : -50 %, et l'ennemi joue une carte de plus.</li>
- *   <li>Mise : avant le tirage, une part des gains renforce les symboles ({@link Stake}).</li>
+ *   <li>Mise : avant le tirage, une part des gains part dans la cagnotte du Jeu bonus
+ *       ({@link BonusPot}) et renforce l'attaque et la défense du tour ({@link Stake}).</li>
  * </ul>
  */
 public final class SpinEconomy {
@@ -64,21 +69,38 @@ public final class SpinEconomy {
     public static float gainScale(int spinCost) { return spinCost / (float) BASE_SPIN_COST; }
 
     /**
-     * Paliers de la Mise : posée avant le tirage, elle multiplie son prix et les
-     * gains d'un Bingo. Sans Bingo, elle ne rapporte rien.
+     * Paliers de la Mise (choix d'Astra, 2026-10-27) : posée avant le tirage, elle
+     * prend {@link #percent} % des gains (en plus du prix du tirage), qui partent dans
+     * la cagnotte du Jeu bonus ({@link BonusPot}), et multiplie l'attaque et la
+     * défense du tour par {@link #power}. Elle ne touche pas aux gains du tirage.
      */
     public enum Stake {
-        NONE(1),
-        LOW(2),
-        MEDIUM(3),
-        HIGH(5);
+        NONE(0, 1f),
+        LOW(5, 1.1f),
+        MEDIUM(10, 1.2f),
+        HIGH(15, 1.3f);
 
-        /** Multiplicateur du prix du tirage, et de ses gains sur un Bingo. */
-        public final int factor;
+        /** Part des gains misée, en %. */
+        public final int   percent;
+        /** Multiplicateur de l'attaque et de la défense du tour. */
+        public final float power;
 
-        Stake(int factor) { this.factor = factor; }
+        Stake(int percent, float power) {
+            this.percent = percent;
+            this.power   = power;
+        }
 
         /** @return le palier suivant (le dernier revient à 0). */
         public Stake next() { return values()[(ordinal() + 1) % values().length]; }
+
+        /** @return ce que coûte cette Mise au joueur qui a {@code gains} gains (rien sans gains). */
+        public double amount(double gains) {
+            return gains > 0 ? BigNumber.percent(gains, percent) : 0;
+        }
+
+        /** @return le multiplicateur écrit pour l'écran (« 1,2 », « 1.2 » en anglais). */
+        public String powerText() {
+            return Lang.decimal(String.format(Locale.ROOT, "%.1f", power));
+        }
     }
 }

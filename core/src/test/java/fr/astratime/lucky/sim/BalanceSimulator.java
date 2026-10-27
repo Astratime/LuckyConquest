@@ -59,7 +59,9 @@ import java.util.function.Function;
  *       gardée après une défaite) dans chaque donjon, à chaque rang.</li>
  * </ol>
  *
- * Le robot joue ses cartes au hasard, sans Mise. Avec le deck de départ (ou aucune
+ * Le robot joue ses cartes au hasard, sans Mise (avec {@code -Pstake=5}, 10 ou 15, il mise
+ * ce palier à chaque tirage ; sa cagnotte reste d'une descente à l'autre du même donjon,
+ * et dans la Tour elle repart de 0 à chaque chapitre). Avec le deck de départ (ou aucune
  * carte, pour les gains de base), il n'achète rien à l'échoppe ; avec un équipement
  * « au maximum », il y achète Corruption, Bingo et Roulette russe dès qu'il peut.
  * Il joue moins bien qu'un vrai joueur : les chiffres comparent deux versions du
@@ -69,6 +71,22 @@ import java.util.function.Function;
  * {@code core/build/simulation/equilibrage.md}) ; {@code -Pquick} pour un essai rapide.
  */
 public final class BalanceSimulator {
+
+    /** Mise du robot à chaque tirage ({@code -Dlucky.stake=5}, 10 ou 15 ; aucune par défaut). */
+    static final SpinEconomy.Stake STAKE = stakeOf(Integer.getInteger("lucky.stake", 0));
+
+    private static SpinEconomy.Stake stakeOf(int percent) {
+        for (SpinEconomy.Stake stake : SpinEconomy.Stake.values()) if (stake.percent == percent) return stake;
+        throw new IllegalArgumentException("Mise inconnue : " + percent + " % (0, 5, 10 ou 15)");
+    }
+
+    /** Le robot pose sa Mise avant de tirer (s'il a des gains), puis tire. */
+    private static TurnResult stakeAndSpin(GameController game) {
+        while (game.getStake() != STAKE) {
+            if (game.nextStake() == SpinEconomy.Stake.NONE && STAKE != SpinEconomy.Stake.NONE) break; // rien à miser
+        }
+        return game.spin();
+    }
 
     /** Nombre de tours ou de parties de chaque mesure. */
     record Sizes(int spins, int bonusGames, int dungeonRuns, int maxTurns) {
@@ -843,9 +861,11 @@ public final class BalanceSimulator {
         Random random = new Random(seed);
         GameController game = controller(rank == null ? RankBonus.NONE : rank.getBonus(), gear);
         game.setPlaceRule(fr.astratime.lucky.entities.exploration.PlaceRule.NONE);
+        game.setBonusGameChance(fr.astratime.lucky.entities.BonusGame.TOWER_TRIGGER_CHANCE);
         int wins = 0;
         int[] turns = {0};
         for (int run = 0; run < runs; run++) {
+            game.getPot().take(); // la cagnotte de la Tour s'efface à chaque chapitre
             game.restart(chapter.getFirstEnemy());
             if (!fight(game, random, gear, turns)) continue;
             game.startCombat(chapter.getChallengers().get(random.nextInt(chapter.getChallengers().size())));
@@ -927,7 +947,7 @@ public final class BalanceSimulator {
      */
     private static TurnResult playTurn(GameController game, Random random, boolean playCards, boolean buysAtStall) {
         game.drawCards();
-        if (!playCards) return game.spin();
+        if (!playCards) return stakeAndSpin(game);
         if (buysAtStall) {
             Player player = game.getGameState().getPlayer();
             for (GameController.ShopOffer offer : game.getShopOffers()) {
@@ -956,7 +976,7 @@ public final class BalanceSimulator {
                 game.calibrate(pick(game.getBetOptions(), random));
             }
         }
-        return game.spin();
+        return stakeAndSpin(game);
     }
 
     private static <T> T pick(List<T> options, Random random) { return options.get(random.nextInt(options.size())); }

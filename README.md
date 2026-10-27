@@ -14,8 +14,10 @@ available in French and English (Options > Language).*
 1. **Les cartes** : on pioche, puis on joue jusqu'à 4 cartes. Elles renforcent un symbole, forcent un
    rouleau, protègent ou attaquent. Plusieurs cartes forment des **combinaisons** (Paire, Brelan,
    Suite, Couleur, Carré) qui multiplient l'attaque et les gains du tirage.
-2. **Le tirage** : il coûte des gains (le prix dépend du lieu). On peut aussi **miser** une part de
-   ses gains : la Mise ne paie que sur un Bingo.
+2. **Le tirage** : il coûte des gains (le prix dépend du lieu). On peut aussi **miser** 5, 10 ou 15 %
+   de ses gains : l'attaque et la défense du tour x1,1, x1,2 ou x1,3, et la mise part dans la
+   **cagnotte** (une par lieu de l'Exploration, une pour l'Entraînement, une par chapitre de la Tour).
+   Au prochain Jeu bonus, chaque alignement rapporte sa valeur plus toute la cagnotte.
 3. **Le résultat** : chaque symbole agit (épée, bouclier, cœur, pièces…). Deux symboles identiques
    font une Paire, trois font un **Bingo**, avec sa propre mise en scène, et parfois un **Jeu bonus**
    (une grille 6 x 6 et trois tirages).

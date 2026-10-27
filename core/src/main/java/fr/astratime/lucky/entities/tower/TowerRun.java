@@ -1,5 +1,6 @@
 package fr.astratime.lucky.entities.tower;
 
+import fr.astratime.lucky.entities.BonusPot;
 import fr.astratime.lucky.entities.enemy.EnemyKind;
 import fr.astratime.lucky.entities.run.CombatRun;
 import fr.astratime.lucky.i18n.Lang;
@@ -30,6 +31,8 @@ public class TowerRun implements CombatRun {
     private int           stage;
     private EnemyKind     enemy;
     private List<EnemyKind> choices = List.of();
+    /** Cagnotte du Jeu bonus de cette ascension : partagée par ses combats, effacée à la fin du chapitre. */
+    private final BonusPot pot = new BonusPot();
 
     public TowerRun(Chapter chapter) {
         this(chapter, false);
@@ -60,6 +63,8 @@ public class TowerRun implements CombatRun {
     public int getStageCount() { return STAGES; }
     @Override
     public EnemyKind getEnemy() { return enemy; }
+    /** @return la cagnotte du Jeu bonus de cette ascension du chapitre. */
+    public BonusPot getPot() { return pot; }
     /** @return {@code true} en mode difficile. */
     public boolean isHard() { return hard; }
     @Override
@@ -93,9 +98,10 @@ public class TowerRun implements CombatRun {
         return enemy;
     }
 
-    /** Défaite : le chapitre recommence au premier combat. */
+    /** Défaite : le chapitre recommence au premier combat, sa cagnotte effacée. */
     @Override
     public void restart() {
+        pot.take();
         stage   = 0;
         enemy   = chapter.getFirstEnemy();
         choices = List.of();
