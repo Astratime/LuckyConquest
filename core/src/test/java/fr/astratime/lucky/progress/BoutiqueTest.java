@@ -19,7 +19,7 @@ class BoutiqueTest {
         assertEquals(10, Rank.values().length);
         assertEquals("Avare", Rank.AVARE.getTitle());
         assertEquals(new RankBonus(100, 100, 10, 70), Rank.AVARE.getBonus());
-        assertEquals(1_000_000L, Rank.AVARE.getPrice());
+        assertEquals(3_000_000L, Rank.AVARE.getPrice());
         for (int i = 1; i < Rank.values().length; i++) {
             Rank previous = Rank.values()[i - 1], rank = Rank.values()[i];
             assertTrue(rank.getPrice() > previous.getPrice(), rank.name());
@@ -34,9 +34,9 @@ class BoutiqueTest {
         assertNull(profile.getRank());
         assertEquals(RankBonus.NONE, profile.getRankBonus());
 
-        profile.addCoins(999_999);
+        profile.addCoins(2_999_999);
         assertFalse(profile.buyNextRank(), "pas assez de pièces");
-        profile.addCoins(1 + 2_500_000);
+        profile.addCoins(1 + 7_500_000);
         assertTrue(profile.buyNextRank());
         assertEquals(Rank.AVARE, profile.getRank());
         assertEquals(Rank.PARIEUR, profile.getNextRank());
