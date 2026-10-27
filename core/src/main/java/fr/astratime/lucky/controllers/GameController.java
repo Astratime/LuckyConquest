@@ -1,6 +1,7 @@
 package fr.astratime.lucky.controllers;
 
 import fr.astratime.lucky.entities.BigNumber;
+import fr.astratime.lucky.entities.BonusPot;
 import fr.astratime.lucky.entities.Card;
 import fr.astratime.lucky.entities.CardFamily;
 import fr.astratime.lucky.entities.CardPlayResult;
@@ -195,6 +196,7 @@ public class GameController {
         treasureMaps = 0;
         bought.clear();
         clearTurn();
+        stake = SpinEconomy.Stake.NONE; // nouveau combat depuis le début : pas de Mise
     }
 
     /**
@@ -239,7 +241,6 @@ public class GameController {
         taxes = 0;
         turnNotices.clear();
         originals.clear();
-        stake = SpinEconomy.Stake.NONE;
     }
 
     // -------------------------------------------------------------------------
@@ -251,27 +252,44 @@ public class GameController {
         return spinCostActive ? gameState.getEnemy().getKind().getSpinCost() : 0;
     }
 
-    /**
-     * @return le prix du prochain tirage : son coût multiplié par la Mise (une Mise x5
-     *         fait payer 5 tirages, choix d'Astra)
-     */
+    /** @return le prix du prochain tirage, sans la Mise (0 si le tirage est gratuit, hors combat réel). */
     public double getSpinPrice() {
-        return (double) getSpinCost() * stake.factor;
+        return getSpinCost();
+    }
+
+    /**
+     * @return ce que coûtera la Mise choisie au prochain tirage : sa part des gains
+     *         du moment, hors ceux rapportés par la cagnotte (rien sans gains), versée à la cagnotte du Jeu bonus
+     */
+    public double getStakeAmount() {
+        return stake.amount(gameState.getPlayer().getStakeableGains());
     }
 
     /** @return la Mise choisie pour le prochain tirage. */
     public SpinEconomy.Stake getStake() { return stake; }
 
     /**
-     * Passe au palier de Mise suivant (aucune, x2, x3, x5, puis aucune). La Mise
-     * multiplie le prix du tirage et les gains d'un Bingo (pas l'attaque).
+     * Passe au palier de Mise suivant (aucune, 5 %, 10 %, 15 % des gains, puis
+     * aucune). Sans gains à miser (ceux de la cagnotte ne se misent pas), la Mise reste à 0.
      *
      * @return le palier choisi
      */
     public SpinEconomy.Stake nextStake() {
-        stake = stake.next();
+        stake = gameState.getPlayer().getStakeableGains() > 0 ? stake.next() : SpinEconomy.Stake.NONE;
         return stake;
     }
+
+    /** @return la cagnotte du Jeu bonus de ce combat (celle du lieu, de l'Entraînement ou du chapitre). */
+    public BonusPot getPot() { return turnEngine.getPot(); }
+
+    /** Change la cagnotte du Jeu bonus : celle du lieu, de l'Entraînement ou du chapitre de la Tour. */
+    public void setPot(BonusPot pot) { turnEngine.setPot(pot); }
+
+    /** Change les chances qu'un Bingo ouvre le Jeu bonus (30 % dans la Tour). */
+    public void setBonusGameChance(float chance) { turnEngine.setBonusGameChance(chance); }
+
+    /** @return les chances qu'un Bingo ouvre le Jeu bonus. */
+    public float getBonusGameChance() { return turnEngine.getBonusGameChance(); }
 
     /** @return la dette du joueur en ce moment (voir {@link SpinEconomy.Debt}). */
     public SpinEconomy.Debt getDebt() {
@@ -832,13 +850,19 @@ public class GameController {
         // La carte « Bingo » (symbole au hasard), seule, offre un Bingo si son Bingo est de gains.
         boolean bingoCardPlayed = pendingEffects.stream()
             .anyMatch(effect -> effect instanceof BingoEffect bingo && bingo.getSymbol() == null && !bingo.isBonusGame());
-        // Le prix du tirage, multiplié par la Mise, est payé (il peut faire passer les gains sous 0).
+        // La Mise prend sa part des gains (versée à la cagnotte), puis le prix du tirage
+        // est payé (il peut faire passer les gains sous 0). Sans gains à miser, pas de Mise.
         Player player = gameState.getPlayer();
-        SpinEconomy.Stake placed = stake;
+        double staked = getStakeAmount();
+        SpinEconomy.Stake placed = staked > 0 ? stake : SpinEconomy.Stake.NONE;
+        if (staked > 0) {
+            player.paySpin(staked);
+            turnEngine.getPot().add(staked);
+        }
         double cost = getSpinPrice();
         if (cost > 0) player.paySpin(cost);
         TurnResult result = turnEngine.playTurn(gameState, pendingEffects, placed);
-        stake = SpinEconomy.Stake.NONE;
+        // La Mise reste posée pour les tirages suivants (choix d'Astra) : on la change quand on veut.
         // Bout de l'arc-en-ciel : ses Pots de Lutin rejoignent la pioche, à une place au hasard
         for (String id : player.getLastingEffects().takeDeckCards()) player.getDeck().insertRandomly(cardFactory.apply(id));
         if (bingoCardPlayed && result.getGainBingoSymbol() != null) bingoGiftPending = true;

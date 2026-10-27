@@ -1,5 +1,6 @@
 package fr.astratime.lucky.controllers;
 
+import fr.astratime.lucky.entities.BonusGame;
 import fr.astratime.lucky.entities.Card;
 import fr.astratime.lucky.entities.Enemy;
 import fr.astratime.lucky.entities.Player;
@@ -13,8 +14,11 @@ import fr.astratime.lucky.entities.context.CombatContext;
 import fr.astratime.lucky.entities.enemy.EnemyKind;
 import fr.astratime.lucky.entities.events.EnemyDamagedEvent;
 import fr.astratime.lucky.entities.events.GainsEarnedEvent;
+import fr.astratime.lucky.entities.events.ShieldGainedEvent;
 import fr.astratime.lucky.entities.events.StatusEvent;
 import fr.astratime.lucky.entities.exploration.Place;
+import fr.astratime.lucky.entities.tower.Chapter;
+import fr.astratime.lucky.entities.tower.TowerRun;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
@@ -160,56 +164,121 @@ class SpinEconomyTest {
         assertEquals(EnemyKind.CROUPIER.getPlaysPerTurn() + 1, result.getEnemyTurn().played().size());
     }
 
+    private static int shieldGained(TurnResult result) {
+        return result.getSymbolOutcomes().stream().flatMap(o -> o.getEvents().stream())
+            .filter(e -> e instanceof ShieldGainedEvent).mapToInt(e -> ((ShieldGainedEvent) e).amount).sum();
+    }
+
     @Test
-    void theStakeMultipliesTheSpinPriceAndOnlyCountsOnABingo() {
+    void theStakeTakesAShareOfTheGainsIntoThePotAndStrengthensAttackAndDefense() {
         assertEquals(Stake.NONE, Stake.HIGH.next());
+        assertEquals(List.of(0, 5, 10, 15), java.util.Arrays.stream(Stake.values()).map(stake -> stake.percent).toList());
+        assertEquals(List.of(1f, 1.1f, 1.2f, 1.3f), java.util.Arrays.stream(Stake.values()).map(stake -> stake.power).toList());
 
         GameController plain = fight(EnemyKind.CROUPIER);
         plain.drawCards();
-        plain.rigSpin(Symbol.SEVEN, Symbol.BAR, Symbol.BELL);
+        plain.rigSpin(Symbol.SEVEN, Symbol.GRAPE, Symbol.BELL);
         TurnResult base = plain.spin();
 
         GameController staked = fight(EnemyKind.CROUPIER);
         staked.drawCards();
+        double gains = player(staked).getGains();
         assertEquals(Stake.LOW, staked.nextStake());
         assertEquals(Stake.MEDIUM, staked.nextStake());
-        assertEquals(3.0 * staked.getSpinCost(), staked.getSpinPrice(), "Mise x3 : le tirage coûte 3 fois plus");
-        staked.rigSpin(Symbol.SEVEN, Symbol.BAR, Symbol.BELL);
+        assertEquals(Stake.HIGH, staked.nextStake());
+        assertEquals(gains * 0.15, staked.getStakeAmount(), 1e-6, "Mise 15 % : 15 % des gains");
+        assertEquals(staked.getSpinCost(), staked.getSpinPrice(), "le prix du tirage ne change pas");
+        staked.rigSpin(Symbol.SEVEN, Symbol.GRAPE, Symbol.BELL);
         TurnResult result = staked.spin();
-        assertEquals(damageDealt(base), damageDealt(result), "sans Bingo, la Mise ne multiplie rien");
-        assertEquals(player(plain).getGains() - 2.0 * plain.getSpinCost(), player(staked).getGains(), "Mise x3 : 2 tirages de plus payés");
-        assertEquals(Stake.NONE, staked.getStake(), "la Mise ne vaut que pour un tirage");
+        assertEquals(damageDealt(base) * 1.3, damageDealt(result), 1.0, "attaque x1,3");
+        assertEquals(shieldGained(base) * 1.3, shieldGained(result), 1.0, "défense x1,3");
+        assertEquals(player(plain).getGains() - gains * 0.15, player(staked).getGains(), 1e-6,
+            "la Mise est payée en plus du tirage");
+        assertEquals(gains * 0.15, staked.getPot().getAmount(), 1e-6, "elle part dans la cagnotte");
+        assertEquals(0, plain.getPot().getAmount(), "sans Mise, la cagnotte ne bouge pas");
+        assertEquals(Stake.HIGH, staked.getStake(), "la Mise reste posée d'un tour à l'autre (Astra)");
+        staked.drawCards();
+        assertEquals(player(staked).getStakeableGains() * 0.15, staked.getStakeAmount(), 1.0,
+            "au tour suivant, 15 % des gains du moment");
+        staked.restart(EnemyKind.CROUPIER);
+        assertEquals(Stake.NONE, staked.getStake(), "un nouveau combat repart sans Mise");
     }
 
     @Test
-    void theStakeOnlyMultipliesTheGainsOfABingo() {
+    void theStakeDoesNotTouchTheGainsOfABingo() {
         GameController plain = fight(EnemyKind.CROUPIER);
         plain.setBonusGameEnabled(false); // pas de Jeu bonus au hasard après le Bingo
         plain.drawCards();
         plain.rigSpin(Symbol.SEVEN, Symbol.SEVEN, Symbol.SEVEN);
         double before = player(plain).getGains();
-        long base = damageDealt(plain.spin());
-        double earned = player(plain).getGains() - before + plain.getSpinCost();
+        plain.spin();
+        double earned = player(plain).getGains() - before;
 
         GameController staked = fight(EnemyKind.CROUPIER);
         staked.setBonusGameEnabled(false);
         staked.drawCards();
         staked.nextStake();
-        staked.nextStake();
-        staked.nextStake(); // x5
         double stakedBefore = player(staked).getGains();
+        double stake = staked.getStakeAmount();
         staked.rigSpin(Symbol.SEVEN, Symbol.SEVEN, Symbol.SEVEN);
-        assertEquals(base, damageDealt(staked.spin()), "la Mise ne touche pas à l'attaque");
-        double stakedEarned = player(staked).getGains() - stakedBefore + 5.0 * staked.getSpinCost(); // Mise x5 : 5 tirages payés
-        assertTrue(earned > 0);
-        assertEquals(earned * 5, stakedEarned, "les gains du Bingo x5");
+        staked.spin();
+        assertEquals(earned, player(staked).getGains() - stakedBefore + stake, 1e-6, "les gains du Bingo, sans x");
     }
 
     @Test
-    void theStakeWorksEvenWithoutGains() {
+    void thereIsNothingToStakeWithoutGains() {
         GameController controller = fight(EnemyKind.CROUPIER);
-        player(controller).paySpin(500);
-        assertEquals(Stake.LOW, controller.nextStake(), "pas besoin de gains : le tirage misé peut endetter");
+        player(controller).paySpin(player(controller).getGains());
+        assertEquals(Stake.NONE, controller.nextStake(), "pas de gains : rien à miser");
+        assertEquals(0, controller.getStakeAmount());
+    }
+
+    @Test
+    void theBonusGamePaysThePotOnEveryLineThenEmptiesIt() {
+        GameController controller = fight(EnemyKind.CROUPIER);
+        controller.setBonusGameChance(1f); // le Jeu bonus s'ouvre à coup sûr après le Bingo
+        controller.getPot().add(10_000);
+        controller.drawCards();
+        controller.nextStake(); // Mise 5 %, versée à la cagnotte avant le tirage
+        double stake = controller.getStakeAmount();
+        controller.rigSpin(Symbol.SEVEN, Symbol.SEVEN, Symbol.SEVEN);
+        TurnResult result = controller.spin();
+        BonusGame bonus = result.getBonusGame();
+        assertNotNull(bonus);
+        assertEquals(10_000 + stake, bonus.getPot(), 1e-6, "la Mise du tirage est déjà dans la cagnotte");
+        assertEquals(0, controller.getPot().getAmount(), "la cagnotte repart de 0");
+        for (BonusGame.Line line : bonus.getLines()) {
+            assertTrue(line.gains() >= bonus.getPot(), "chaque alignement : sa valeur + la cagnotte");
+        }
+        Player player = player(controller);
+        assertEquals(Math.max(0, player.getGains() - bonus.getPot() * bonus.getLines().size()),
+            player.getStakeableGains(), 1e-6, "ce que la cagnotte a rapporté ne se remise pas");
+        player.addGains(1_000);
+        assertEquals(1_000, player.nextCombat().getStakeableGains() - Math.max(0,
+            player.getGains() - 1_000 - bonus.getPot() * bonus.getLines().size()), 1e-6, "ni au combat suivant de la descente");
+    }
+
+    @Test
+    void thePotIsAddedToEachLineWithoutMultiplier() {
+        BonusGame game = BonusGame.play(Symbol.classicReels(), 100, new java.util.Random(7));
+        assertFalse(game.getLines().isEmpty());
+        BonusGame paid = game.withPot(1_000);
+        assertEquals(game.getTotal() + 1_000.0 * game.getLines().size(), paid.getTotal(), 1e-6);
+        for (int i = 0; i < game.getLines().size(); i++) {
+            assertEquals(game.getLines().get(i).gains() + 1_000, paid.getLines().get(i).gains(), 1e-6);
+        }
+        assertSame(game, game.withPot(0), "sans cagnotte, rien ne change");
+    }
+
+    @Test
+    void theTowerPotIsSharedByTheChapterAndClearedWhenItStartsOver() {
+        TowerRun run = new TowerRun(Chapter.values()[0]);
+        run.getPot().add(500);
+        run.win();
+        assertEquals(500, run.getPot().getAmount(), "partagée d'un combat à l'autre");
+        run.restart();
+        assertEquals(0, run.getPot().getAmount(), "effacée quand le chapitre recommence");
+        assertEquals(0.30f, BonusGame.TOWER_TRIGGER_CHANCE, "un Bingo ouvre le Jeu bonus 3 fois sur 10 dans la Tour");
     }
 
     @Test

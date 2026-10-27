@@ -97,6 +97,9 @@ public class ExplorationScreen extends ScreenAdapter {
     private static final float BADGE_SHARE  = 0.42f;
     /** Taille de la pastille d'un lieu entièrement vidé, dans la liste. */
     private static final float ROW_BADGE    = 36f;
+    /** Pierres de la cagnotte du lieu, à droite de son nom. */
+    private static final float POT_ICON_HEIGHT = 32f;
+    private static final float POT_ICON_GAP    = 10f;
 
     private final LuckyGame       luckyGame;
     private final Stage           stage;
@@ -137,6 +140,9 @@ public class ExplorationScreen extends ScreenAdapter {
     private final List<Label>      gateLabels = new ArrayList<>();
     /** Pastilles des donjons vaincus du lieu montré (suivent leur entrée, voir {@link #badgeFor}). */
     private final List<Image>      badges = new ArrayList<>();
+    /** Cagnotte du Jeu bonus du lieu montré : ses trois pierres et son montant. */
+    private final Image potIcon;
+    private final Label potText;
     /** Dans la liste, à droite de chaque lieu ouvert : donjons vidés « 2/4 », ou une pastille s'ils le sont tous. */
     private final List<Label>      rowCounts = new ArrayList<>();
     private final List<Image>      rowBadges = new ArrayList<>();
@@ -223,6 +229,10 @@ public class ExplorationScreen extends ScreenAdapter {
         }
 
         placeLabel = new Label("", new Label.LabelStyle(placeFont, Color.WHITE));
+        potIcon = new Image(new TextureRegionDrawable(new TextureRegion(hud.iconPot)));
+        potIcon.setTouchable(Touchable.disabled);
+        potText = new Label("", new Label.LabelStyle(ruleFont, Color.WHITE));
+        potText.setTouchable(Touchable.disabled);
         mapFrame   = new Image(hud.insetDrawable());
         map        = new Image(new TextureRegionDrawable(new TextureRegion(enemyTextures.map(place))));
         map.setTouchable(Touchable.disabled);
@@ -257,6 +267,8 @@ public class ExplorationScreen extends ScreenAdapter {
         rowCounts.forEach(stage::addActor);
         rowBadges.forEach(stage::addActor);
         stage.addActor(placeLabel);
+        stage.addActor(potIcon);
+        stage.addActor(potText);
         stage.addActor(mapFrame);
         stage.addActor(map);
         stage.addActor(dungeonName);
@@ -292,6 +304,10 @@ public class ExplorationScreen extends ScreenAdapter {
         place = newPlace;
         for (int i = 0; i < rows.size(); i++) rows.get(i).setSelected(Place.values()[i] == place);
         placeLabel.setText(place.getName().toUpperCase());
+        // La cagnotte du Jeu bonus de ce lieu, partagée par ses donjons, à récupérer au prochain Jeu bonus.
+        potText.setText(Lang.f("Cagnotte : {0}", Lang.big(profile.getPot(place).getAmount())));
+        potIcon.setVisible(profile.isOpen(place));
+        potText.setVisible(profile.isOpen(place));
         PlaceRule rule = place.getRule();
         boolean hasRule = rule != PlaceRule.NONE;
         ruleName.setText(hasRule ? Lang.f("Règle du lieu : {0}", rule.getName()) : "");
@@ -589,7 +605,25 @@ public class ExplorationScreen extends ScreenAdapter {
         dungeonName.setWidth(infoWidth);
         dungeonName.pack();
         dungeonName.setWidth(infoWidth);
-        dungeonName.setPosition(infoX, mapTop - dungeonName.getHeight());
+        // La cagnotte du lieu : sur la ligne de son nom, contre le bord droit du panneau.
+        // Si le nom est trop long, elle passe en haut de la colonne du donjon.
+        potText.pack();
+        float potIconWidth = POT_ICON_HEIGHT * hud.iconPot.getWidth() / hud.iconPot.getHeight();
+        float potRight = detailX + detailWidth - PANEL_PAD;
+        float potLeft = potRight - potText.getWidth() - POT_ICON_GAP - potIconWidth;
+        float infoTop = mapTop;
+        float potCenter;
+        if (potLeft >= placeLabel.getX() + placeLabel.getWidth() + PANEL_PAD) {
+            potCenter = placeLabel.getY() + placeLabel.getHeight() / 2f;
+        } else {
+            potRight = infoX + potText.getWidth() + POT_ICON_GAP + potIconWidth;
+            potCenter = mapTop - POT_ICON_HEIGHT / 2f;
+            if (potText.isVisible()) infoTop = mapTop - POT_ICON_HEIGHT - 12f;
+        }
+        potText.setPosition(potRight - potText.getWidth(), potCenter - potText.getHeight() / 2f);
+        potIcon.setBounds(potText.getX() - POT_ICON_GAP - potIconWidth, potCenter - POT_ICON_HEIGHT / 2f,
+            potIconWidth, POT_ICON_HEIGHT);
+        dungeonName.setPosition(infoX, infoTop - dungeonName.getHeight());
         dungeonText.setWidth(infoWidth);
         float textTop = dungeonName.getY() - 12f;
         dungeonText.setHeight(Math.max(60f, textTop - panelBottom - PANEL_PAD));

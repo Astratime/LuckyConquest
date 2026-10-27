@@ -38,6 +38,8 @@ tasks.register('simulate', JavaExec) {
   systemProperty 'lucky.simulation.out', layout.buildDirectory.file('simulation/equilibrage.md').get().asFile.absolutePath
   if (project.hasProperty('quick')) args '--quick'
   if (project.hasProperty('tower')) args '--tower'
+  if (project.hasProperty('stake')) systemProperty 'lucky.stake', project.property('stake')
+  if (project.hasProperty('potPerRun')) systemProperty 'lucky.potPerRun', 'true'
 }
 
 // Dégâts des quatre suites : ./gradlew :core:simulateSuits (-Pquick pour un essai rapide).

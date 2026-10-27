@@ -75,7 +75,7 @@ class TutorialRunTest {
             assertFalse(controller.getGameState().getEnemy().isDefeated(), "l'ennemi tient le premier tour");
             assertFalse(controller.getGameState().getPlayer().isDefeated());
 
-            // Tour 2 : la Paire de 7, le Porte-bonheur, une Mise de 10 %.
+            // Tour 2 : la Paire de 7, le Porte-bonheur, une Mise de 5 %.
             controller.drawCards();
             assertEquals(TutorialRun.HANDS.get(1), handIds(controller));
             TutorialRun.PAIR.forEach(id -> play(controller, id));

@@ -499,13 +499,18 @@ public class BonusGameCutscene extends Cutscene {
             int spin = Math.max(0, currentSpin());
             font.getData().setScale(1.4f);
             caption(batch, font, Lang.f("TIRAGE {0}/{1}", spin + 1, BonusGame.SPINS), worldWidth() / 2f, y, 1f);
+            if (game.getPot() > 0) { // la cagnotte : chaque alignement la rapporte
+                font.getData().setScale(1.1f);
+                caption(batch, font, Lang.f("CAGNOTTE +{0} PAR ALIGNEMENT", Lang.big(game.getPot())), worldWidth() / 2f,
+                    y - cellHeight() * 0.55f, 1f);
+            }
         } else if (time < totalAt) {
-            long sum = 0;
+            double sum = 0;
             for (int i = 0; i < game.getLines().size() && time >= payout + i * lineStep; i++) {
                 sum += game.getLines().get(i).gains();
             }
             font.getData().setScale(1.6f);
-            caption(batch, font, Lang.f("GAINS +{0}", Lang.grouped(sum)), worldWidth() / 2f, y, 1f);
+            caption(batch, font, Lang.f("GAINS +{0}", Lang.big(sum)), worldWidth() / 2f, y, 1f);
         } else {
             float pop = Interpolation.swingOut.apply(progress(totalAt, totalAt + 0.4f));
             String text = game.getLines().isEmpty() ? Lang.t("AUCUN ALIGNEMENT")

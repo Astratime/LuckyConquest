@@ -1,6 +1,7 @@
 package fr.astratime.lucky.progress;
 
 import fr.astratime.lucky.entities.BigNumber;
+import fr.astratime.lucky.entities.BonusPot;
 import fr.astratime.lucky.entities.Card;
 import fr.astratime.lucky.entities.RankBonus;
 import fr.astratime.lucky.entities.Symbol;
@@ -82,6 +83,9 @@ public class PlayerProfile {
     static final String KEY_DECK_SLOT     = "deckSlot";
     static final String KEY_MET           = "met";
     static final String KEY_DEFEATED      = "defeated";
+    static final String KEY_POTS          = "pots";
+    /** Cagnotte de l'Entraînement (les lieux de l'Exploration ont la leur, par nom). */
+    public static final String POT_TRAINING = "TRAINING";
 
     /** Guides du Croupier (voir {@link #hasSeen(String)}) : le tutoriel, sa proposition au premier lancement, la visite du menu. */
     public static final String GUIDE_TUTORIAL    = "tutorial";
@@ -139,6 +143,10 @@ public class PlayerProfile {
     /** Bestiaire : ennemis rencontrés, et parmi eux ceux qui ont été vaincus. */
     private final java.util.Set<EnemyKind> metEnemies      = java.util.EnumSet.noneOf(EnemyKind.class);
     private final java.util.Set<EnemyKind> defeatedEnemies = java.util.EnumSet.noneOf(EnemyKind.class);
+    /** Cagnottes du Jeu bonus gardées d'une partie à l'autre : une par lieu de l'Exploration, et l'Entraînement. */
+    private final Map<String, Double> pots      = new LinkedHashMap<>();
+    /** Cagnottes du mode ADMIN : jamais enregistrées, ses combats ne rapportent rien. */
+    private final Map<String, Double> adminPots = new LinkedHashMap<>();
 
     /**
      * Charge le profil enregistré dans {@code storage} ; au premier lancement
@@ -207,6 +215,7 @@ public class PlayerProfile {
         }
         loadBestiary();
         loadAdminLoadout();
+        pots.putAll(decodePots(storage.get(KEY_POTS)));
     }
 
     /**
@@ -366,6 +375,59 @@ public class PlayerProfile {
             if (reward != null && !reels.contains(reward)) reels.add(reward);
         }
         return reels;
+    }
+
+    // -------------------------------------------------------------------------
+    // Cagnottes du Jeu bonus
+    // -------------------------------------------------------------------------
+
+    /**
+     * @param key un lieu de l'Exploration ({@link Place#name()}) ou {@link #POT_TRAINING}
+     * @return la cagnotte du Jeu bonus de ce lieu (ou de l'Entraînement) : elle se
+     *         remplit avec les Mises et chaque changement est enregistré tout de suite.
+     *         En mode ADMIN, une cagnotte à part, jamais enregistrée.
+     */
+    public BonusPot getPot(String key) {
+        Map<String, Double> table = admin ? adminPots : pots;
+        boolean saved = !admin;
+        return new BonusPot(table.getOrDefault(key, 0d), amount -> {
+            if (amount > 0) table.put(key, amount); else table.remove(key);
+            if (saved) {
+                storage.put(KEY_POTS, encodePots(pots));
+                storage.flush();
+            }
+        });
+    }
+
+    /** @return la cagnotte du lieu {@code place}, partagée par ses donjons. */
+    public BonusPot getPot(Place place) { return getPot(place.name()); }
+
+    /** @return {@code pots} écrit "CLE:montant,CLE:montant". */
+    static String encodePots(Map<String, Double> pots) {
+        StringBuilder text = new StringBuilder();
+        pots.forEach((key, amount) -> {
+            if (!(amount > 0)) return;
+            if (text.length() > 0) text.append(',');
+            text.append(key).append(':').append(amount);
+        });
+        return text.toString();
+    }
+
+    /** @return les cagnottes écrites par {@link #encodePots(Map)} (les entrées illisibles sont ignorées). */
+    static Map<String, Double> decodePots(String text) {
+        Map<String, Double> pots = new LinkedHashMap<>();
+        if (text == null || text.isBlank()) return pots;
+        for (String entry : text.split(",")) {
+            int colon = entry.lastIndexOf(':');
+            if (colon <= 0) continue;
+            try {
+                double amount = Double.parseDouble(entry.substring(colon + 1).trim());
+                if (amount > 0 && Double.isFinite(amount)) pots.put(entry.substring(0, colon).trim(), amount);
+            } catch (NumberFormatException ignored) {
+                // entrée abîmée : ignorée
+            }
+        }
+        return pots;
     }
 
     // -------------------------------------------------------------------------
@@ -981,7 +1043,7 @@ public class PlayerProfile {
 
     /**
      * Enregistre la collection, le deck, les pièces, le rang, les rouleaux, les donjons vidés,
-     * les chapitres terminés, le mode difficile, les statistiques, les succès et le bestiaire.
+     * les chapitres terminés, le mode difficile, les statistiques, les succès, les cagnottes et le bestiaire.
      */
     public void save() {
         storage.put(KEY_TOWER_HARD, String.valueOf(towerHard));
@@ -1002,6 +1064,7 @@ public class PlayerProfile {
         storage.put(KEY_ADMIN_MACHINE, encodeSymbols(adminMachine));
         storage.put(KEY_STATS, stats.encode());
         storage.put(KEY_ACHIEVEMENTS, achievements.stream().map(Enum::name).collect(java.util.stream.Collectors.joining(",")));
+        storage.put(KEY_POTS, encodePots(pots));
         saveBestiary();
     }
 

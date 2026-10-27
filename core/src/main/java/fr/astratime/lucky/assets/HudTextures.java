@@ -47,6 +47,8 @@ public class HudTextures implements Disposable {
     public final Texture stakeDown       = load("hud/stake_down.png");
     public final Texture stakeDisabled   = load("hud/stake_disabled.png");
     public final Texture coin            = load("hud/coin.png");
+    /** Cagnotte du Jeu bonus : un rubis, un diamant et une émeraude, sous les gains. */
+    public final Texture iconPot         = load("hud/icon_pot.png");
     /** Trèfle du Porte-bonheur, dans les effets actifs du panneau latéral. */
     public final Texture iconClover      = load("hud/icon_clover.png");
     /** Croix posée sur un symbole retiré des rouleaux (Recyclage). */
@@ -99,6 +101,7 @@ public class HudTextures implements Disposable {
         iconBlade.dispose();
         iconBlood.dispose();
         iconVault.dispose();
+        iconPot.dispose();
         iconCorruption.dispose();
         iconSleeve.dispose();
         iconSafe.dispose();

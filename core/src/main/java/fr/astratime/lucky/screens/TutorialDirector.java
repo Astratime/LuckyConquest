@@ -175,8 +175,8 @@ final class TutorialDirector {
                     + "c'est x9,5."), board::combos));
                 steps.add(play(Lang.t("Joue le Porte-bonheur."), Set.of(TutorialRun.LUCKY_CHARM), 1));
                 steps.add(say(Lang.t("Ses effets durent. Ils s'affichent ici. Survole-les pour les relire."), board::effects));
-                steps.add(stake(Lang.t("Avant de lancer, choisis ta Mise. Clique sur Mise : le tirage coûte x2, et sur un Bingo, "
-                    + "tes gains x2. Encore : x3. Puis x5.")));
+                steps.add(stake(Lang.t("Avant de lancer, choisis ta Mise. Clique sur Mise : 5 % de tes gains vont dans la "
+                    + "cagnotte, et ton attaque et ta défense x1,1. Encore : 10 %, puis 15 %.")));
                 steps.add(spin(Lang.t("Ton jeton est sur la table. Lance la machine."), TutorialRun.rigged(2)));
             }
             case 3 -> {
@@ -209,8 +209,8 @@ final class TutorialDirector {
                 steps.add(say(Lang.t("À moi de jouer. Regarde bien.")));
             }
             case 2 -> {
-                steps.add(say(Lang.t("Ta Paire a multiplié tout le tirage : attaque, gains et bouclier. Pas de Bingo : "
-                    + "ta Mise ne rapporte rien."),
+                steps.add(say(Lang.t("Ta Paire a multiplié tout le tirage : attaque, gains et bouclier. Ta Mise attend dans la "
+                    + "cagnotte : au Jeu bonus, chaque alignement la rapporte."),
                     board::reels));
                 steps.add(say(Lang.t("Attention : sous 0 gains, tu es endetté. Tes symboles faiblissent. "
                     + "Plus bas, l'Huissier arrive."), board::gains));
@@ -245,7 +245,7 @@ final class TutorialDirector {
             });
     }
 
-    /** Le joueur doit miser (au moins 10 %) ; seul le bouton de Mise répond. */
+    /** Le joueur doit miser (au moins 5 %) ; seul le bouton de Mise répond. */
     private Step stake(String text) {
         return Step.action(text, board::stakeButton, () -> stake != SpinEconomy.Stake.NONE)
             .onStart(() -> {

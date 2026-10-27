@@ -421,6 +421,16 @@ public class GameScreen extends ScreenAdapter {
         }
         if (run != null) gameController.setPlaceRule(run.getPlaceRule()); // Exploration : la règle du lieu
         gameController.setBonusGameEnabled(!(run instanceof TutorialRun)); // pas de Jeu bonus dans le tutoriel
+        // Cagnotte du Jeu bonus : celle du lieu (partagée par ses donjons) ou de l'Entraînement, gardées ;
+        // celle de l'ascension dans la Tour, où un Bingo ouvre plus souvent le Jeu bonus.
+        if (run instanceof DungeonRun dungeonRun) {
+            gameController.setPot(profile.getPot(Place.of(dungeonRun.getDungeon())));
+        } else if (run instanceof TowerRun tower) {
+            gameController.setPot(tower.getPot());
+            gameController.setBonusGameChance(BonusGame.TOWER_TRIGGER_CHANCE);
+        } else if (run == null) {
+            gameController.setPot(profile.getPot(PlayerProfile.POT_TRAINING));
+        }
         EnemyKind.setTowerHard(run instanceof TowerRun tower && tower.isHard()); // Tour : mode difficile
         gameController.restart(firstEnemy()); // le premier ennemi du chapitre, ou le croupier d'entraînement
         if (run instanceof TutorialRun) {
@@ -604,6 +614,7 @@ public class GameScreen extends ScreenAdapter {
             refreshEffects(); // les mauvais sorts de l'ennemi s'appliquent : ils quittent le panneau
         }
         refreshPlays();
+        spinControls.dropChips(gameController.getStake()); // la Mise reste posée d'un tour à l'autre
         setSpinDisabled(false);
         if (tutorial != null) tutorial.beat(TutorialDirector.Beat.HAND_DEALT, () -> { });
         // Chant de l'ennemi : une fois la main distribuée, des cartes partent d'office.
@@ -914,13 +925,20 @@ public class GameScreen extends ScreenAdapter {
     }
 
     /**
-     * Bouton de Mise : passe au palier suivant (aucune, 10 %, 25 %, 50 % des
+     * Bouton de Mise : passe au palier suivant (aucune, 5 %, 10 %, 15 % des
      * gains), et un jeton de casino tombe sur la table. On ne mise que ce qu'on a.
      */
     private void onStake() {
         if (spinControls.isStakeDisabled() || isBusy()) return;
         if (tutorial != null && !tutorial.allowsStake()) return;
+        SpinEconomy.Stake before = gameController.getStake();
         SpinEconomy.Stake stake = gameController.nextStake();
+        if (stake == SpinEconomy.Stake.NONE && before == SpinEconomy.Stake.NONE) { // pas de gains : rien à miser
+            Vector2 above = spinControls.aboveStake();
+            effectPopupAnimator.play(List.of(new EffectPopup(Lang.t("PAS DE GAINS À MISER"), EffectPopup.Style.DAMAGE,
+                PopupScale.SECONDARY_INTENSITY)), above.x, above.y);
+            return;
+        }
         spinControls.dropChips(stake);
         if (stake != SpinEconomy.Stake.NONE) sounds.cardDeal.play();
         refreshPlays();
@@ -938,6 +956,7 @@ public class GameScreen extends ScreenAdapter {
         jackpotCelebration(); // prête avant que les rouleaux ne puissent aligner un Bingo
         int enemyHpBefore = gameController.getGameState().getEnemy().getHp();
         double cost = gameController.getSpinPrice();
+        double staked = gameController.getStakeAmount();
         TurnResult result = gameController.spin();
         if (tutorial != null) tutorial.onSpin();
         lastSpinBingo = result.isJackpot();
@@ -948,7 +967,7 @@ public class GameScreen extends ScreenAdapter {
             - result.getEvents().stream().filter(e -> e instanceof GainsLostEvent)
             .mapToDouble(e -> ((GainsLostEvent) e).amount).sum();
         if (result.getBonusGame() != null) gainsNotYetShown += result.getBonusGame().getTotal(); // à la fin du Jeu bonus
-        payForSpin(cost); // seul le coût part tout de suite
+        payForSpin(cost, staked); // seuls le coût et la Mise partent tout de suite
         int enemyHeal = sumOf(result, EnemyHealedEvent.class, heal -> heal.amount);
         hud.holdBack(enemyHpBefore - gameController.getGameState().getEnemy().getHp() + enemyHeal, enemyHeal,
             sumOf(result, PlayerDamagedEvent.class, hit -> hit.damage),
@@ -980,13 +999,15 @@ public class GameScreen extends ScreenAdapter {
         TurnLog.log(result);
     }
 
-    /** Le tirage est payé : le coût (et la Mise) quittent les gains, les jetons glissent dans la machine. */
-    private void payForSpin(double cost) {
+    /** Le tirage est payé : le coût (et la Mise, versée à la cagnotte) quittent les gains, les jetons glissent dans la machine. */
+    private void payForSpin(double cost, double staked) {
         spinControls.pull(); // le levier reste tiré, les jetons misés glissent dans la machine
         if (cost <= 0) return;
         List<EffectPopup> popups = new ArrayList<>();
         popups.add(new EffectPopup(Lang.f("TIRAGE -{0}", SidePanel.formatGains(cost)), EffectPopup.Style.DAMAGE,
             PopupScale.SECONDARY_INTENSITY));
+        if (staked > 0) popups.add(new EffectPopup(Lang.f("MISE -{0} : CAGNOTTE", SidePanel.formatGains(staked)),
+            EffectPopup.Style.SPECIAL, PopupScale.SECONDARY_INTENSITY));
         Vector2 coin = sidePanel.getCoinCenter();
         effectPopupAnimator.play(popups, coin.x, coin.y);
         sounds.coinsLoss.play();
@@ -1929,6 +1950,8 @@ public class GameScreen extends ScreenAdapter {
             gameController.getCardsPlayedThisTurn(), gameController.getPlayLimit()));
         if (gameController.getSpinCost() > 0) {
             text.append("   ").append(Lang.f("Tirage -{0}", SidePanel.formatGains(gameController.getSpinPrice())));
+            double staked = gameController.getStakeAmount();
+            if (staked > 0) text.append("   ").append(Lang.f("Mise -{0}", SidePanel.formatGains(staked)));
         }
         spinControls.showStake(gameController.getStake());
         playsLabel.setText(text);
@@ -1947,6 +1970,16 @@ public class GameScreen extends ScreenAdapter {
     /** Met à jour le compteur de gains, sans les gains du tirage dont le texte n'est pas encore apparu. */
     private void refreshGains() {
         sidePanel.setGains(player().getGains() - gainsNotYetShown);
+        refreshPot();
+    }
+
+    /** La cagnotte du Jeu bonus, sous les gains, avec son infobulle. */
+    private void refreshPot() {
+        int inTen = Math.round(gameController.getBonusGameChance() * 10);
+        sidePanel.setPot(gameController.getPot().getAmount(), Lang.t("Cagnotte"),
+            Lang.f("Tes Mises s'y accumulent. Au prochain Jeu bonus, chaque alignement rapporte sa valeur "
+                + "plus toute la cagnotte, puis elle repart de 0. Ce qu'elle rapporte ne se mise pas avant la fin "
+                + "de la descente. Ici, un Bingo ouvre le Jeu bonus {0} fois sur 10.", inTen));
     }
 
     /** Place le bouclier du joueur à droite de ses rouleaux, et son levier à leur gauche. */

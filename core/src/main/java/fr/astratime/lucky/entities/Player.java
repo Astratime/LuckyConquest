@@ -34,6 +34,8 @@ public class Player {
 
     /** Monnaie gagnée en combat. Servira à acheter des bonus en combat. */
     private double gains = 0; // en double : les gains dépassent vite le milliard (voir BigNumber)
+    /** Gains rapportés par la cagnotte du Jeu bonus pendant cette descente : ils ne se misent pas. */
+    private double potWinnings = 0;
 
     /** Bouclier accumulé ce tour par les DefenseAction. */
     private int shield = 0;
@@ -191,6 +193,16 @@ public class Player {
      * les gains sous 0 (ni n'aggrave une dette de la Taxe) ; ce qui est perdu ou
      * dépensé l'est d'abord en Fausse monnaie.
      */
+    /** La cagnotte du Jeu bonus a rapporté {@code amount} gains : ils ne pourront pas être misés (voir {@link #getStakeableGains}). */
+    public void addPotWinnings(double amount) { potWinnings = BigNumber.add(potWinnings, Math.max(0, amount)); }
+
+    /**
+     * @return les gains que la Mise peut prendre : tous, sauf ceux rapportés par la
+     *         cagnotte pendant cette descente (sinon la cagnotte se nourrirait d'elle-même
+     *         et grossirait sans fin d'un Jeu bonus à l'autre)
+     */
+    public double getStakeableGains() { return Math.max(0, gains - potWinnings); }
+
     public void addGains(double amount) {
         double before = gains;
         gains = amount >= 0 ? BigNumber.add(gains, amount)
@@ -352,6 +364,7 @@ public class Player {
         Player next = new Player(name, maxHp - rankBonus.hp(), cards, rankBonus, slotMachine.getReels());
         next.hp = hp; // les PV perdus ne reviennent pas d'un combat à l'autre
         next.gains = gains;
+        next.potWinnings = potWinnings;
         return next;
     }
 

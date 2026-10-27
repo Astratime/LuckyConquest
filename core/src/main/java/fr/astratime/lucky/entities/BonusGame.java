@@ -35,6 +35,8 @@ public final class BonusGame {
     public static final int   JOKER_ONE_IN   = 20;
     /** Chances qu'un Bingo ouvre le Jeu bonus. */
     public static final float TRIGGER_CHANCE = 0.10f;
+    /** Chances qu'un Bingo ouvre le Jeu bonus dans la Tour des épreuves (choix d'Astra, 2026-10-27). */
+    public static final float TOWER_TRIGGER_CHANCE = 0.30f;
     /** Bonus par symbole aligné, à la Prairie, que multiplient les cartes du tour (voir {@link #boosted}). */
     public static final int   GAINS_PER_SYMBOL = 5;
 
@@ -57,10 +59,17 @@ public final class BonusGame {
     /** Alignements de la grille finale, qui paient. */
     private final List<Line> lines;
     private final double total;
+    /** Cagnotte ajoutée à chaque alignement (voir {@link #withPot}), 0 sans cagnotte. */
+    private final double pot;
 
     private BonusGame(List<Symbol[][]> grids, List<boolean[][]> frozen, List<Line> lines) {
+        this(grids, frozen, lines, 0);
+    }
+
+    private BonusGame(List<Symbol[][]> grids, List<boolean[][]> frozen, List<Line> lines, double pot) {
         this.grids  = grids;
         this.frozen = frozen;
+        this.pot    = pot;
         this.lines  = List.copyOf(lines);
         double sum = 0;
         for (Line line : lines) sum = BigNumber.add(sum, line.gains());
@@ -115,8 +124,22 @@ public final class BonusGame {
             double gains = line.gains() + extra;
             boosted.add(new Line(line.symbol(), line.cells(), BigNumber.round(gains)));
         }
-        return new BonusGame(grids, frozen, boosted);
+        return new BonusGame(grids, frozen, boosted, pot);
     }
+
+    /**
+     * @return ce Jeu bonus où chaque alignement paie en plus toute la cagnotte
+     *         {@code pot} ({@link BonusPot}) : sa valeur + la cagnotte (choix d'Astra)
+     */
+    public BonusGame withPot(double pot) {
+        if (pot <= 0) return this;
+        List<Line> paid = new ArrayList<>();
+        for (Line line : lines) paid.add(new Line(line.symbol(), line.cells(), BigNumber.add(line.gains(), pot)));
+        return new BonusGame(grids, frozen, paid, BigNumber.add(this.pot, pot));
+    }
+
+    /** @return la cagnotte payée par chaque alignement (0 sans cagnotte). */
+    public double getPot() { return pot; }
 
     /** @return une case tirée au hasard : un Joker, une fois sur {@link #JOKER_ONE_IN}, sinon un des rouleaux. */
     private static Symbol draw(List<Symbol> reels, Random random) {

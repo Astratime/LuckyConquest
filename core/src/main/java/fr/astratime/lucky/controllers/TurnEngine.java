@@ -45,8 +45,25 @@ public class TurnEngine {
     /** Le Jeu bonus peut s'ouvrir après un Bingo (pas dans le tutoriel). */
     private boolean                   bonusGameEnabled    = true;
 
+    /** Chances qu'un Bingo ouvre le Jeu bonus (plus haut dans la Tour, voir {@link BonusGame#TOWER_TRIGGER_CHANCE}). */
+    private float                     bonusGameChance     = BonusGame.TRIGGER_CHANCE;
+    /** Cagnotte du Jeu bonus, que remplit la Mise. */
+    private BonusPot                  pot                 = new BonusPot();
+
     /** Ouvre ou ferme le Jeu bonus après les Bingos (fermé dans le tutoriel). */
     public void setBonusGameEnabled(boolean enabled) { bonusGameEnabled = enabled; }
+
+    /** Change les chances qu'un Bingo ouvre le Jeu bonus. */
+    public void setBonusGameChance(float chance) { bonusGameChance = chance; }
+
+    /** @return les chances qu'un Bingo ouvre le Jeu bonus. */
+    public float getBonusGameChance() { return bonusGameChance; }
+
+    /** Change la cagnotte du Jeu bonus (celle du lieu, de l'Entraînement ou du chapitre). */
+    public void setPot(BonusPot pot) { this.pot = pot; }
+
+    /** @return la cagnotte du Jeu bonus. */
+    public BonusPot getPot() { return pot; }
 
     /**
      * Joue un tour complet : applique les effets en attente, lance la machine
@@ -62,7 +79,7 @@ public class TurnEngine {
 
     /**
      * Comme {@link #playTurn(GameState, List)}, avec la Mise {@code stake} déjà
-     * payée (et le coût du tirage aussi) : elle multiplie les gains du tirage.
+     * payée (et le coût du tirage aussi) : elle multiplie l'attaque et la défense du tour.
      * La dette du joueur, après ce paiement, affaiblit ses symboles (voir {@link SpinEconomy.Debt}).
      */
     public TurnResult playTurn(GameState gameState, List<Effect> pendingEffects, SpinEconomy.Stake stake) {
@@ -80,6 +97,7 @@ public class TurnEngine {
             gameState.getTurnNumber()
         );
         applyDebt(turnContext, gameState);
+        applyStake(turnContext, stake);
 
         // Phase 2 : spin avec SpinContext, puis les Jokers prennent leur valeur
         Player      player  = gameState.getPlayer();
@@ -180,7 +198,6 @@ public class TurnEngine {
         }
 
         player.getLastingEffects().setLastDrawn(drawn); // Rouleau retenu, Mémoire de la machine
-        applyStake(turnContext, stake, SlotMachine.jackpotSymbol(symbols) != null);
 
         riggedGames(turnContext, player.getLastingEffects(), symbols);
 
@@ -298,39 +315,40 @@ public class TurnEngine {
     }
 
     /**
-     * @return le Jeu bonus qui suit le Bingo de {@code result} (une fois sur dix,
-     *         à coup sûr avec la carte de test) : ses gains de base restent fixes, et
+     * @return le Jeu bonus qui suit le Bingo de {@code result} (une fois sur dix, trois
+     *         dans la Tour, à coup sûr avec la carte de test) : ses gains de base restent fixes,
      *         seul un petit bonus (par symbole aligné, plus le rang par alignement)
-     *         reçoit les multiplicateurs du tour ; ses gains déjà crédités au joueur ;
+     *         reçoit les multiplicateurs du tour, et chaque alignement paie en plus toute la
+     *         cagnotte, qui repart de 0 ; ses gains déjà crédités au joueur ;
      *         {@code null} sans Bingo ou si la grille ne s'ouvre pas
      */
     private BonusGame bonusGame(TurnResult result, SpinContext spin, Player player, CombatContext combat) {
         if (!bonusGameEnabled || !result.isJackpot() || player.isDefeated()) return null;
-        if (!spin.isBonusGameForced() && random.nextFloat() >= BonusGame.TRIGGER_CHANCE) return null;
+        if (!spin.isBonusGameForced() && random.nextFloat() >= bonusGameChance) return null;
         int spinCost = combat.getSpinCost();
         float scale = SpinEconomy.gainScale(spinCost);
         int perSymbol = Math.round(BonusGame.GAINS_PER_SYMBOL * scale);
         int rank = Math.round(player.getRankBonus().gains() * combat.getRankFactor() * scale);
         float factor = combat.getGainMultiplier() * combat.getGainFactor() * combat.getSymbolPower();
         BonusGame bonus = BonusGame.play(player.getSlotMachine().getReels(), spinCost, random)
-            .boosted(perSymbol, rank, factor);
+            .boosted(perSymbol, rank, factor)
+            .withPot(pot.take()); // la cagnotte n'est pas multipliée par le tour
         player.addGains(bonus.getTotal());
+        player.addPotWinnings(bonus.getPot() * bonus.getLines().size()); // ce que la cagnotte a rapporté ne se remise pas
         return bonus;
     }
 
     /**
-     * Mise du tirage : elle ne compte que sur un Bingo, où elle multiplie les
-     * gains (pas l'attaque ni le bouclier) ; sans Bingo, elle est perdue.
+     * Mise du tirage (choix d'Astra, 2026-10-27) : déjà payée et versée à la
+     * cagnotte, elle multiplie l'attaque et la défense de tous les symboles du tour.
      */
-    private static void applyStake(TurnContext turnContext, SpinEconomy.Stake stake, boolean bingo) {
+    private static void applyStake(TurnContext turnContext, SpinEconomy.Stake stake) {
         if (stake == SpinEconomy.Stake.NONE) return;
-        if (bingo) {
-            turnContext.getCombatContext().multiplyGains(stake.factor, "Mise");
-            turnContext.addEvent(new StatusEvent(Lang.f("MISE : BINGO ! GAINS x{0}", stake.factor),
-                EffectPopup.Style.SPECIAL));
-        } else {
-            turnContext.addEvent(new StatusEvent(Lang.t("MISE : PAS DE BINGO"), EffectPopup.Style.DAMAGE));
-        }
+        CombatContext combat = turnContext.getCombatContext();
+        combat.multiplyAttack(stake.power, "Mise");
+        combat.multiplyDefense(stake.power, "Mise");
+        turnContext.addEvent(new StatusEvent(Lang.f("MISE : ATTAQUE ET DÉFENSE x{0}", stake.powerText()),
+            EffectPopup.Style.SPECIAL));
     }
 
     /** Dette du tirage : symboles affaiblis (Endetté), et l'Huissier. */
