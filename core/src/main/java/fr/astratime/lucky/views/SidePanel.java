@@ -17,6 +17,7 @@ import com.badlogic.gdx.scenes.scene2d.actions.TemporalAction;
 import com.badlogic.gdx.scenes.scene2d.ui.Container;
 import com.badlogic.gdx.scenes.scene2d.ui.Image;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
+import com.badlogic.gdx.scenes.scene2d.ui.ScrollPane;
 import com.badlogic.gdx.scenes.scene2d.ui.Stack;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
@@ -40,7 +41,9 @@ import java.util.function.Consumer;
  * en or, avec leur multiplicateur total), puis encadré des effets de cartes
  * actifs (symboles retirés, Porte-bonheur, paris en cours ; masqué s'il n'y
  * en a pas). Survoler un effet affiche sa description ; un clic droit ouvre
- * sa fiche.
+ * sa fiche. Les textes trop longs passent à la ligne ; s'il y a plus d'effets
+ * que de place jusqu'en bas du panneau, l'encadré défile (molette, ou en
+ * glissant) et une barre à droite montre où l'on en est.
  *
  * Quand les gains changent, le montant défile jusqu'à sa nouvelle valeur et la
  * pièce rebondit (seulement si les gains augmentent).
@@ -64,6 +67,9 @@ public class SidePanel implements Disposable {
     private static final float EFFECT_ICON    = 52f;
     private static final float OVERLAY_ICON   = 30f;   // croix posée dans le coin de l'icône
     private static final float EFFECT_GAP     = 8f;
+    /** Barre de défilement des effets, à droite des lignes, et l'espace qui la sépare du texte. */
+    private static final float SCROLL_BAR     = 6f;
+    private static final float SCROLL_GAP     = 6f;
     private static final float COMBO_GAP      = 2f;
     private static final float COMBO_IDLE     = 0.5f;  // opacité des combinaisons non formées
     private static final float COMBO_PULSE    = 1.15f;
@@ -91,6 +97,10 @@ public class SidePanel implements Disposable {
     private final Table gainsBox    = new Table();
     private final Table combosBox   = new Table();
     private final Table effectsRows = new Table();
+    /** Fait défiler les effets quand ils ne tiennent pas dans le panneau. */
+    private final ScrollPane effectsScroll;
+    /** Largeur du texte d'un effet, pour qu'il passe à la ligne au lieu de sortir de l'encadré. */
+    private final float effectTextWidth;
     private final Map<Combo, Label[]> comboLabels = new EnumMap<>(Combo.class); // nom, multiplicateur
     private       List<Combo>         shownCombos = List.of();
     private       Label[]             totalLabels;                                  // "Total", multiplicateur
@@ -162,9 +172,19 @@ public class SidePanel implements Disposable {
         effectsBox.pad(INSET_PADDING).top().left();
         effectsBox.add(new Label(Lang.t("EFFETS"), new Label.LabelStyle(captionFont, Color.WHITE))).left();
         effectsBox.row();
-        effectsBox.add(effectsRows).growX().left();
+        effectTextWidth = insetWidth - INSET_PADDING * 2 - EFFECT_ICON - EFFECT_GAP - SCROLL_BAR - SCROLL_GAP;
+        effectsRows.top().left().padRight(SCROLL_BAR + SCROLL_GAP); // la barre ne recouvre jamais le texte
+        effectsScroll = new ScrollPane(effectsRows, scrollStyle(hud));
+        effectsScroll.setScrollingDisabled(true, false);
+        effectsScroll.setOverscroll(false, false);
+        effectsScroll.setFadeScrollBars(false);
+        effectsScroll.setScrollbarsOnTop(true);
+        effectsScroll.setScrollBarPositions(false, true);
+        addWheelFocus(effectsScroll);
+        // Au moins une ligne visible ; au-delà de la place restante, l'encadré défile au lieu de déborder.
+        effectsBox.add(effectsScroll).growX().minHeight(EFFECT_ICON + EFFECT_GAP).left();
         effectsBox.setVisible(false);
-        root.add(effectsBox).width(insetWidth).padTop(SECTION_GAP);
+        root.add(effectsBox).width(insetWidth).padTop(SECTION_GAP).top();
         root.row();
 
         root.add().expandY(); // place libre pour de futures informations
@@ -251,13 +271,46 @@ public class SidePanel implements Disposable {
             Table line = new Table();
             line.setTouchable(Touchable.enabled); // toute la ligne réagit, l'espace entre l'icône et le texte compris
             line.add(icon).size(EFFECT_ICON).padRight(EFFECT_GAP);
-            line.add(new Label(row.text(), new Label.LabelStyle(effectFont, Color.WHITE))).growX().left();
+            Label text = new Label(row.text(), new Label.LabelStyle(effectFont, Color.WHITE));
+            text.setWrap(true);              // un texte trop long passe à la ligne au lieu de sortir de l'encadré
+            text.setWidth(effectTextWidth);  // sa hauteur est juste dès la première mise en page
+            line.add(text).width(effectTextWidth).left();
             addHelp(line, row);
             effectsRows.add(line).padTop(EFFECT_GAP).growX().left();
             effectsRows.row();
         }
         effectsBox.setVisible(!rows.isEmpty());
         root.invalidateHierarchy();
+    }
+
+    /** Barre de défilement fine, couleur or, sur un rail sombre. */
+    private static ScrollPane.ScrollPaneStyle scrollStyle(HudTextures hud) {
+        ScrollPane.ScrollPaneStyle style = new ScrollPane.ScrollPaneStyle();
+        TextureRegionDrawable knob = new TextureRegionDrawable(new TextureRegion(hud.pixel));
+        knob.setMinWidth(SCROLL_BAR);
+        knob.setMinHeight(EFFECT_ICON / 2f);
+        style.vScrollKnob = knob.tint(Palette.TEXT_TITLE);
+        TextureRegionDrawable rail = new TextureRegionDrawable(new TextureRegion(hud.pixel));
+        rail.setMinWidth(SCROLL_BAR);
+        style.vScroll = rail.tint(new Color(0f, 0f, 0f, 0.35f));
+        return style;
+    }
+
+    /** La molette fait défiler {@code scroll} tant que la souris est dessus. */
+    private static void addWheelFocus(ScrollPane scroll) {
+        scroll.addListener(new InputListener() {
+            @Override
+            public void enter(InputEvent event, float x, float y, int pointer, Actor fromActor) {
+                if (pointer == -1 && event.getStage() != null) event.getStage().setScrollFocus(scroll);
+            }
+
+            @Override
+            public void exit(InputEvent event, float x, float y, int pointer, Actor toActor) {
+                if (pointer != -1 || event.getStage() == null) return;
+                if (toActor != null && toActor.isDescendantOf(scroll)) return; // encore au-dessus d'une ligne
+                if (event.getStage().getScrollFocus() == scroll) event.getStage().setScrollFocus(null);
+            }
+        });
     }
 
     /**
