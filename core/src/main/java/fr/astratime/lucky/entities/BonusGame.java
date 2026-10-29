@@ -28,13 +28,13 @@ public final class BonusGame {
     /** Côté de la grille, en cases. */
     public static final int   SIZE           = 6;
     /** Tirages de la grille. */
-    public static final int   SPINS          = 3;
+    public static final int   SPINS          = 5;
     /** Symboles qui se suivent, au moins, pour faire un alignement. */
     public static final int   MIN_LINE       = 3;
     /** Une case sur autant, en moyenne, est un Joker. */
     public static final int   JOKER_ONE_IN   = 20;
     /** Chances qu'un Bingo ouvre le Jeu bonus. */
-    public static final float TRIGGER_CHANCE = 0.10f;
+    public static final float TRIGGER_CHANCE = 0.20f;
     /** Chances qu'un Bingo ouvre le Jeu bonus dans la Tour des épreuves (choix d'Astra, 2026-10-27). */
     public static final float TOWER_TRIGGER_CHANCE = 0.30f;
     /** Bonus par symbole aligné, à la Prairie, que multiplient les cartes du tour (voir {@link #boosted}). */
