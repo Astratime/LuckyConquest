@@ -15,23 +15,23 @@ public enum Rank {
     AVARE("Avare", "Il garde chaque pièce.",
         new RankBonus(100, 100, 10, 70), 1_500_000L),
     PARIEUR("Parieur", "Il mise sans trembler.",
-        new RankBonus(200, 200, 20, 150), 3_700_000L),
+        new RankBonus(200, 200, 20, 150), 11_000_000L),
     FLAMBEUR("Flambeur", "Il brûle ses billets pour rire.",
-        new RankBonus(350, 350, 35, 250), 10_000_000L),
+        new RankBonus(350, 350, 35, 250), 28_000_000L),
     HABITUE("Habitué", "Le croupier connaît son nom.",
-        new RankBonus(500, 500, 50, 400), 18_000_000L),
+        new RankBonus(500, 500, 50, 400), 114_000_000L),
     REQUIN("Requin", "Il flaire les pigeons.",
-        new RankBonus(1_100, 1_100, 110, 550), 47_000_000L),
+        new RankBonus(1_200, 1_200, 120, 550), 280_000_000L),
     GROS_BONNET("Gros bonnet", "Sa table est toujours pleine.",
-        new RankBonus(1_200, 1_200, 120, 750), 90_000_000L),
+        new RankBonus(1_350, 1_350, 135, 750), 1_440_000_000L),
     BARON("Baron du tapis vert", "Il règne sur la salle.",
-        new RankBonus(1_800, 1_800, 180, 1_000), 132_000_000L),
+        new RankBonus(2_200, 2_200, 220, 1_000), 2_140_000_000L),
     MAGNAT("Magnat", "Il possède la moitié du casino.",
-        new RankBonus(2_000, 2_000, 200, 1_400), 445_000_000L),
+        new RankBonus(2_800, 2_800, 280, 1_400), 16_300_000_000L),
     ROI_DU_CASINO("Roi du casino", "Il possède l'autre moitié.",
-        new RankBonus(5_500, 5_500, 550, 2_000), 715_000_000L),
+        new RankBonus(5_500, 5_500, 550, 2_000), 30_000_000_000L),
     LEGENDE("Légende du Jackpot", "Les tables murmurent son nom.",
-        new RankBonus(7_000, 7_000, 700, 2_800), 1_880_000_000L);
+        new RankBonus(7_000, 7_000, 700, 2_800), 90_000_000_000L);
 
     private final String    title;
     private final String    description;

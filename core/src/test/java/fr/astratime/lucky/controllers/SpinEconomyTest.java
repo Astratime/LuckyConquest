@@ -62,9 +62,10 @@ class SpinEconomyTest {
         assertEquals(500, EnemyKind.PRETENDANT.getSpinCost(), "chapitre 4");
         assertEquals(2_000, EnemyKind.PORTIER.getSpinCost(), "chapitre 5");
         assertEquals(5_000, EnemyKind.MACHINE_ORIGINELLE.getSpinCost(), "chapitre 6");
-        // Ordre d'ouverture : prairie, Fête foraine, Port, Mines, Casino (moins cher qu'avant), Désert de Braise
-        Map<Place, Integer> costs = Map.of(Place.PRAIRIE, 100, Place.FOIRE, 250, Place.PORT, 500,
-            Place.MINES, 1_000, Place.CASINO, 2_000, Place.DESERT, 3_000);
+        // Ordre d'ouverture : prairie, Fête foraine, Port, Mines, Casino, Désert de Braise ; coûts étirés
+        // (Astra, 2026-10-29) pour qu'un lieu paie au moins deux fois le lieu d'avant
+        Map<Place, Integer> costs = Map.of(Place.PRAIRIE, 100, Place.FOIRE, 700, Place.PORT, 3_000,
+            Place.MINES, 12_000, Place.CASINO, 45_000, Place.DESERT, 140_000);
         for (Place place : Place.values()) {
             for (var dungeon : place.getDungeons()) {
                 assertEquals((int) costs.get(place), dungeon.getSoldier().getSpinCost(), place + " soldat");
@@ -84,7 +85,7 @@ class SpinEconomyTest {
         assertEquals(400, player(controller).getGains());
 
         GameController casino = fight(Place.CASINO.getDungeons().get(0).getSoldier());
-        assertEquals(10_000, player(casino).getGains());
+        assertEquals(225_000, player(casino).getGains());
     }
 
     @Test
@@ -118,7 +119,7 @@ class SpinEconomyTest {
         Player player = new Player("Joueur", Player.BASE_HP, plainCards());
         CombatContext context = new CombatContext(player, portSoldier);
         new GainAction(12).resolve(context);
-        assertEquals(60, player.getGains(), "Cloche au Port : 12 x 5");
+        assertEquals(360, player.getGains(), "Cloche au Port : 12 x 30");
     }
 
     @Test
@@ -305,21 +306,21 @@ class SpinEconomyTest {
         GameController controller = new GameController(SpinEconomyTest::plainCards,
             id -> new Card(id, id, "x.png", List.of(), null, 1),
             new LinkedHashMap<>(Map.of(GameController.SHOP_BINGO, 20_000, "corruption", 10_000)));
-        controller.restart(Place.CASINO.getDungeons().get(0).getSoldier()); // tirage à 2 000 : x20
+        controller.restart(Place.CASINO.getDungeons().get(0).getSoldier()); // tirage à 45 000 : x450
         Player player = player(controller);
-        player.addGains(10_000_000);
-        assertEquals(400_000, price(controller, GameController.SHOP_BINGO));
-        assertEquals(200_000, price(controller, "corruption"));
+        player.addGains(100_000_000);
+        assertEquals(9_000_000, price(controller, GameController.SHOP_BINGO));
+        assertEquals(4_500_000, price(controller, "corruption"));
         assertNotNull(controller.buy(offer(controller, GameController.SHOP_BINGO)));
-        assertEquals(800_000, price(controller, GameController.SHOP_BINGO), "le Bingo suivant coûte le double");
+        assertEquals(18_000_000, price(controller, GameController.SHOP_BINGO), "le Bingo suivant coûte le double");
         assertNotNull(controller.buy(offer(controller, "corruption")));
-        assertEquals(400_000, price(controller, "corruption"), "la Corruption double aussi, à part du Bingo");
+        assertEquals(9_000_000, price(controller, "corruption"), "la Corruption double aussi, à part du Bingo");
         assertNotNull(controller.buy(offer(controller, GameController.SHOP_BINGO)));
-        assertEquals(1_600_000, price(controller, GameController.SHOP_BINGO));
-        assertEquals(10_000_000 + 10_000 - 400_000 - 200_000 - 800_000, player.getGains());
+        assertEquals(36_000_000, price(controller, GameController.SHOP_BINGO));
+        assertEquals(100_000_000 + 225_000 - 9_000_000 - 4_500_000 - 18_000_000, player.getGains());
 
         controller.startCombat(Place.CASINO.getDungeons().get(0).getKing());
-        assertEquals(400_000, price(controller, GameController.SHOP_BINGO), "chaque combat repart du prix de base");
+        assertEquals(9_000_000, price(controller, GameController.SHOP_BINGO), "chaque combat repart du prix de base");
 
         controller.restart(Place.PRAIRIE.getDungeons().get(0).getSoldier());
         assertEquals(20_000, price(controller, GameController.SHOP_BINGO), "Prairie : prix inchangé");
@@ -349,6 +350,6 @@ class SpinEconomyTest {
                 return pot;
             });
         controller.playCard(inHand);
-        assertEquals(before + 5 * 500, player(controller).getGains(), "5 tirages de 500 au Port");
+        assertEquals(before + 5 * 3_000, player(controller).getGains(), "5 tirages de 3 000 au Port");
     }
 }

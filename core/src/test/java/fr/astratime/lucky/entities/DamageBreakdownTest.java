@@ -123,9 +123,9 @@ class DamageBreakdownTest {
         List<String> gainLines = gains.getBreakdown().lines(Symbol.BELL);
         assertTrue(gainLines.contains("Porte-bonheur : x1,5"));
         assertTrue(gainLines.contains("Mise : x3"));
-        assertTrue(gainLines.contains("Coût du tirage : x5"), "Port : un tirage coûte 500");
+        assertTrue(gainLines.contains("Coût du tirage : x30"), "Port : un tirage coûte 3 000");
         assertFalse(gainLines.contains("Corruption : x2"));
-        assertEquals(Math.round(8 * 1.5f * 3 * 5), gains.amount);
+        assertEquals(Math.round(8 * 1.5f * 3 * 30), gains.amount);
         assertEquals("= " + Lang.big(gains.amount) + " gains", gainLines.get(gainLines.size() - 1));
     }
 

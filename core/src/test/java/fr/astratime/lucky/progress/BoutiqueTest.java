@@ -52,7 +52,7 @@ class BoutiqueTest {
     void thePlayerPlaysWithAnyOwnedRankAndTheChoiceIsSaved() {
         MemoryStorage storage = new MemoryStorage();
         PlayerProfile profile = profile(storage);
-        profile.addCoins(3_000_000L + 7_500_000L + 15_000_000L);
+        profile.addCoins(Rank.AVARE.getPrice() + Rank.PARIEUR.getPrice() + Rank.FLAMBEUR.getPrice());
         for (int i = 0; i < 3; i++) assertTrue(profile.buyNextRank());
         assertEquals(Rank.FLAMBEUR, profile.getActiveRank(), "un rang acheté se joue tout de suite");
 
