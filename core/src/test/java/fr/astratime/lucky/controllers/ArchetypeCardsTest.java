@@ -1,5 +1,6 @@
 package fr.astratime.lucky.controllers;
 
+import fr.astratime.lucky.entities.EnemyMaluses;
 import fr.astratime.lucky.entities.Archetype;
 import fr.astratime.lucky.entities.Card;
 import fr.astratime.lucky.entities.Combo;
@@ -76,8 +77,8 @@ class ArchetypeCardsTest {
     @Test
     void claimsAreCappedAndPaidOnTheEnemyTurn() {
         Enemy enemy = new Enemy(EnemyKind.ENTRAINEMENT, List.of());
-        assertEquals(Enemy.MAX_CLAIMS, enemy.addClaims(50), "pas plus de 20 Créances");
-        assertEquals(0, enemy.addClaims(1));
+        assertEquals(EnemyMaluses.MAX_CLAIMS, enemy.getMaluses().addClaims(50), "pas plus de 20 Créances");
+        assertEquals(0, enemy.getMaluses().addClaims(1));
 
         Player player = new Player("Joueur", 1_000_000, List.of());
         CombatContext combat = new CombatContext(player, enemy);
@@ -85,21 +86,21 @@ class ArchetypeCardsTest {
         double gains = player.getGains();
         TurnEngine.chargeClaims(enemy, player, combat);
         assertTrue(enemy.getHp() < hp, "les Créances blessent l'ennemi");
-        assertEquals(gains + Enemy.MAX_CLAIMS * Enemy.CLAIM_SPINS * combat.getSpinCost(), player.getGains(), 1e-6);
-        assertEquals(Enemy.MAX_CLAIMS, enemy.getClaims(), "elles restent après avoir payé");
-        assertEquals(Enemy.MAX_CLAIMS, enemy.takeClaims());
-        assertEquals(0, enemy.getClaims(), "Recouvrement : tout est encaissé");
+        assertEquals(gains + EnemyMaluses.MAX_CLAIMS * EnemyMaluses.CLAIM_SPINS * combat.getSpinCost(), player.getGains(), 1e-6);
+        assertEquals(EnemyMaluses.MAX_CLAIMS, enemy.getMaluses().getClaims(), "elles restent après avoir payé");
+        assertEquals(EnemyMaluses.MAX_CLAIMS, enemy.getMaluses().takeClaims());
+        assertEquals(0, enemy.getMaluses().getClaims(), "Recouvrement : tout est encaissé");
     }
 
     @Test
     void compoundInterestGrowsTheClaimsForAFewSpins() {
         Enemy enemy = new Enemy(EnemyKind.ENTRAINEMENT, List.of());
-        enemy.addClaims(4);
-        enemy.compound(2, 25);
-        assertEquals(1, enemy.growClaims());
-        assertEquals(2, enemy.growClaims(), "25 % de 5, arrondi au-dessus");
-        assertEquals(0, enemy.growClaims(), "les Intérêts composés sont finis");
-        assertEquals(7, enemy.getClaims());
+        enemy.getMaluses().addClaims(4);
+        enemy.getMaluses().compound(2, 25);
+        assertEquals(1, enemy.getMaluses().growClaims());
+        assertEquals(2, enemy.getMaluses().growClaims(), "25 % de 5, arrondi au-dessus");
+        assertEquals(0, enemy.getMaluses().growClaims(), "les Intérêts composés sont finis");
+        assertEquals(7, enemy.getMaluses().getClaims());
     }
 
     @Test
@@ -107,30 +108,30 @@ class ArchetypeCardsTest {
         Enemy normal = new Enemy(EnemyKind.CROUPIER, List.of());
         Enemy king = new Enemy(EnemyKind.ROI_PIQUE, List.of());
         assertTrue(king.getKind().isBoss());
-        normal.intimidate(30);
-        king.intimidate(30);
-        assertEquals(30, normal.takeIntimidation());
-        assertEquals(15, king.takeIntimidation(), "un roi n'en subit que la moitié");
-        assertEquals(0, king.takeIntimidation(), "l'Intimidation vaut pour un seul tour");
+        normal.getMaluses().intimidate(30);
+        king.getMaluses().intimidate(30);
+        assertEquals(30, normal.getMaluses().takeIntimidation());
+        assertEquals(15, king.getMaluses().takeIntimidation(), "un roi n'en subit que la moitié");
+        assertEquals(0, king.getMaluses().takeIntimidation(), "l'Intimidation vaut pour un seul tour");
     }
 
     @Test
     void bluffMalusesAreCountedAndSpentOneByOne() {
         Enemy enemy = new Enemy(EnemyKind.CROUPIER, List.of());
-        assertEquals(0, enemy.getActiveMaluses());
-        enemy.markCards(2);
-        enemy.addRedHerring();
-        enemy.addSleight();
-        enemy.addClaims(1);
-        assertEquals(4, enemy.getActiveMaluses());
-        assertTrue(enemy.takeMarkedCards());
-        assertTrue(enemy.takeMarkedCards());
-        assertFalse(enemy.takeMarkedCards(), "Cartes marquées : 2 tours");
-        assertTrue(enemy.takeRedHerring());
-        assertFalse(enemy.takeRedHerring());
-        assertTrue(enemy.takeSleight());
-        assertFalse(enemy.takeSleight());
-        assertEquals(1, enemy.getActiveMaluses());
+        assertEquals(0, enemy.getMaluses().getActiveMaluses());
+        enemy.getMaluses().markCards(2);
+        enemy.getMaluses().addRedHerring();
+        enemy.getMaluses().addSleight();
+        enemy.getMaluses().addClaims(1);
+        assertEquals(4, enemy.getMaluses().getActiveMaluses());
+        assertTrue(enemy.getMaluses().takeMarkedCards());
+        assertTrue(enemy.getMaluses().takeMarkedCards());
+        assertFalse(enemy.getMaluses().takeMarkedCards(), "Cartes marquées : 2 tours");
+        assertTrue(enemy.getMaluses().takeRedHerring());
+        assertFalse(enemy.getMaluses().takeRedHerring());
+        assertTrue(enemy.getMaluses().takeSleight());
+        assertFalse(enemy.getMaluses().takeSleight());
+        assertEquals(1, enemy.getMaluses().getActiveMaluses());
     }
 
     @Test
@@ -168,13 +169,13 @@ class ArchetypeCardsTest {
         Player player = new Player("Joueur", 1_000_000, List.of());
         CombatContext combat = new CombatContext(player, enemy);
         card("sceau_du_pharaon").getEffects().forEach(effect -> effect.apply(new fr.astratime.lucky.entities.context.TurnContext(new fr.astratime.lucky.entities.context.SpinContext(), combat)));
-        assertEquals(4, enemy.getClaims());
-        assertEquals(3, enemy.getPharaohSealTurns());
+        assertEquals(4, enemy.getMaluses().getClaims());
+        assertEquals(3, enemy.getMaluses().getPharaohSealTurns());
         for (int turn = 1; turn <= 4; turn++) {
             double gains = player.getGains();
             TurnEngine.chargeClaims(enemy, player, combat);
             int counted = turn <= 3 ? 8 : 4;
-            assertEquals(gains + counted * Enemy.CLAIM_SPINS * combat.getSpinCost(), player.getGains(), 1e-6, "tour " + turn);
+            assertEquals(gains + counted * EnemyMaluses.CLAIM_SPINS * combat.getSpinCost(), player.getGains(), 1e-6, "tour " + turn);
         }
     }
 

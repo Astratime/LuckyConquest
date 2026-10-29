@@ -1,5 +1,6 @@
 package fr.astratime.lucky.controllers;
 
+import fr.astratime.lucky.entities.EnemyMaluses;
 import fr.astratime.lucky.entities.*;
 import fr.astratime.lucky.entities.context.CombatContext;
 import fr.astratime.lucky.entities.context.SpinContext;
@@ -298,7 +299,7 @@ public class TurnEngine {
         if (!enemy.isDefeated() && !player.isDefeated()) afterCombat.addAll(chargeClaims(enemy, player, turnContext.getCombatContext()));
 
         EnemyTurnResult enemyTurn = null;
-        if (!enemy.isDefeated() && !player.isDefeated() && enemy.takeDazzle()) {
+        if (!enemy.isDefeated() && !player.isDefeated() && enemy.getMaluses().takeDazzle()) {
             // Rayon du phare : ébloui, il passe son tour (sa défense ne valait que pour celui du joueur).
             enemy.collectThorns(); // ses Épines ne piquent pas non plus
             enemy.resetDefense();
@@ -413,7 +414,7 @@ public class TurnEngine {
         combat.multiplyAttack(debt.factor, debtLabel);
         combat.multiplyDefense(debt.factor, debtLabel);
         if (debt == SpinEconomy.Debt.BAILIFF) {
-            gameState.getEnemy().sendBailiff();
+            gameState.getEnemy().getMaluses().sendBailiff();
             turnContext.addEvent(new StatusEvent(Lang.t("HUISSIER : SYMBOLES -50 %"), EffectPopup.Style.DAMAGE));
         } else {
             turnContext.addEvent(new StatusEvent(Lang.t("ENDETTÉ : SYMBOLES -25 %"), EffectPopup.Style.DAMAGE));
@@ -430,15 +431,15 @@ public class TurnEngine {
      */
     static List<Event> chargeClaims(Enemy enemy, Player player, CombatContext combat) {
         List<Event> events = new ArrayList<>();
-        int claims = enemy.getClaims();
+        int claims = enemy.getMaluses().getClaims();
         if (claims <= 0) return events;
-        if (enemy.takePharaohSeal()) claims *= 2; // Sceau du Pharaon
-        long raw = Math.max(1L, (long) enemy.getMaxHp() * claims * Enemy.CLAIM_HP_PER_MILLE / 1000);
+        if (enemy.getMaluses().takePharaohSeal()) claims *= 2; // Sceau du Pharaon
+        long raw = Math.max(1L, (long) enemy.getMaxHp() * claims * EnemyMaluses.CLAIM_HP_PER_MILLE / 1000);
         long damage = enemy.skinned(raw);
         enemy.takeDamage(raw);
         events.add(new fr.astratime.lucky.entities.events.CardStrikeEvent(Lang.f("CRÉANCES x{0}", claims), damage, raw,
             enemy.getDefense()));
-        double gains = (double) claims * Enemy.CLAIM_SPINS * combat.getSpinCost();
+        double gains = (double) claims * EnemyMaluses.CLAIM_SPINS * combat.getSpinCost();
         player.addGains(gains);
         events.add(new fr.astratime.lucky.entities.events.GainsEarnedEvent(gains));
         return events;

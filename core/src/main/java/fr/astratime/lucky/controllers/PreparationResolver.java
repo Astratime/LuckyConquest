@@ -181,13 +181,13 @@ public class PreparationResolver {
      */
     private static void archetypes(Player player, Enemy enemy, SpinContext spin, CombatContext combat, TurnContext turn) {
         LastingEffects lasting = player.getLastingEffects();
-        int grown = enemy.growClaims();
+        int grown = enemy.getMaluses().growClaims();
         if (grown > 0) {
             turn.addEvent(new StatusEvent(Lang.f("INTÉRÊTS COMPOSÉS : CRÉANCES +{0}", grown), EffectPopup.Style.DRAIN));
         }
         int[] annuity = lasting.takeAnnuity();
         if (annuity != null) {
-            int added = enemy.addClaims(annuity[0]);
+            int added = enemy.getMaluses().addClaims(annuity[0]);
             double gains = (double) annuity[1] * combat.getSpinCost();
             player.addGains(gains);
             turn.addEvent(new StatusEvent(Lang.f("RENTE VIAGÈRE : CRÉANCES +{0}", added), EffectPopup.Style.DRAIN));

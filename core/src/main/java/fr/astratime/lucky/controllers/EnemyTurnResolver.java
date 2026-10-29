@@ -14,6 +14,7 @@ import fr.astratime.lucky.entities.enemy.EnemyKind;
 import fr.astratime.lucky.entities.enemy.EnemySignature;
 import fr.astratime.lucky.entities.enemy.EnemySlotMachine;
 import fr.astratime.lucky.entities.enemy.EnemySymbol;
+import fr.astratime.lucky.entities.enemy.EnemyTrait;
 import fr.astratime.lucky.entities.enemy.EnemyTurnResult;
 import fr.astratime.lucky.entities.events.EnemyHpLostEvent;
 import fr.astratime.lucky.entities.events.DamageReflectedEvent;
@@ -262,18 +263,18 @@ public class EnemyTurnResolver {
                 if (more.isEmpty()) break;
                 drawn.addAll(more);
             }
-            int harpooned = enemy.takeHarpoons(); // Harpon : une carte de moins
+            int harpooned = enemy.getMaluses().takeHarpoons(); // Harpon : une carte de moins
             if (harpooned > 0) {
                 plays = Math.max(0, plays - harpooned);
                 openingEvents.add(new StatusEvent(Lang.f(Lang.plural(harpooned) ? "HARPON : {0} CARTES DE MOINS"
                     : "HARPON : {0} CARTE DE MOINS", harpooned), EffectPopup.Style.ATTACK));
             }
-            if (enemy.takeMutiny()) { // Mutinerie : son équipage refuse de jouer une partie de ses cartes
+            if (enemy.getMaluses().takeMutiny()) { // Mutinerie : son équipage refuse de jouer une partie de ses cartes
                 plays = Math.max(0, plays - MutinyEffect.CARDS_LESS);
                 openingEvents.add(new StatusEvent(Lang.f("MUTINERIE : {0} CARTES DE MOINS", MutinyEffect.CARDS_LESS),
                     EffectPopup.Style.SPECIAL));
             }
-            if (enemy.takeBailiff()) { // Huissier : le joueur est très endetté, il en profite
+            if (enemy.getMaluses().takeBailiff()) { // Huissier : le joueur est très endetté, il en profite
                 plays++;
                 openingEvents.add(new StatusEvent(Lang.t("HUISSIER : UNE CARTE DE PLUS"), EffectPopup.Style.ATTACK));
             }
@@ -310,7 +311,7 @@ public class EnemyTurnResolver {
 
             // Mise royale : la Reine en phase 2 (sous la moitié de ses PV), ou le Prétendant tant qu'il porte l'éclat de la Reine, ou la Main de la Reine
             boolean royal = kind.royalBet() && enemy.getPhase() >= 2
-                || kind == EnemyKind.PRETENDANT && EnemyKind.shards(enemy.getPhase()) >= 2
+                || kind.has(EnemyTrait.SHARDS) && EnemyKind.shards(enemy.getPhase()) >= 2
                 || boosts.containsKey(EnemySignature.MAIN_DE_LA_REINE);
             int luckFactor = royal ? 2 : 1;
             for (EnemyCards.ShadowRole role : shadows) {
@@ -319,7 +320,7 @@ public class EnemyTurnResolver {
             for (Card card : played) {
                 if (EnemyCards.isForbiddenReel(card)) {
                     // le Prétendant n'a plus le Rouleau interdit une fois l'éclat de l'Éclat Originel perdu
-                    forbidReel = kind != EnemyKind.PRETENDANT || EnemyKind.shards(enemy.getPhase()) >= 3;
+                    forbidReel = !kind.has(EnemyTrait.SHARDS) || EnemyKind.shards(enemy.getPhase()) >= 3;
                     continue;
                 }
                 if (card.getSuit() == null) continue; // carte propre, ou carte spéciale copiée par l'Ombre
@@ -336,8 +337,8 @@ public class EnemyTurnResolver {
             }
 
             // Cartes marquées (Bluffeur) : ses cartes à couleur ne valent qu'une part de leur effet
-            if (enemy.takeMarkedCards()) {
-                int kept = 100 - enemy.malusShare(MARKED_CARDS_PERCENT);
+            if (enemy.getMaluses().takeMarkedCards()) {
+                int kept = 100 - enemy.getMaluses().malusShare(MARKED_CARDS_PERCENT);
                 swordBonus  = swordBonus * kept / 100;
                 healBonus   = healBonus * kept / 100;
                 shieldBonus = shieldBonus * kept / 100;
@@ -350,7 +351,7 @@ public class EnemyTurnResolver {
         void spinReels() {
             // Fausse piste (Bluffeur) : un de ses rouleaux ne tourne pas (une chance sur deux pour un boss ou un roi)
             int reelCount = enemy.getReelCount();
-            if (enemy.takeRedHerring()) {
+            if (enemy.getMaluses().takeRedHerring()) {
                 if (kind.isBoss() && random.nextBoolean()) {
                     openingEvents.add(new StatusEvent(Lang.t("FAUSSE PISTE : IL NE S'Y LAISSE PAS PRENDRE"), EffectPopup.Style.SPECIAL));
                 } else if (reelCount > 1) {
@@ -374,7 +375,7 @@ public class EnemyTurnResolver {
             turn = new Turn(enemy, player, swordBonus);
             if (foreseen) turn.attackFactor *= EnemySymbol.PREDICTION_FACTOR;
             turn.attackFactor *= actFactor;
-            int intimidated = enemy.takeIntimidation(); // Intimidation (Bluffeur) : ses attaques baissent
+            int intimidated = enemy.getMaluses().takeIntimidation(); // Intimidation (Bluffeur) : ses attaques baissent
             if (intimidated > 0) {
                 turn.malusPercent = 100 - intimidated;
                 openingEvents.add(new StatusEvent(Lang.f("INTIMIDÉ : SES ATTAQUES -{0} %", intimidated), EffectPopup.Style.DEFENSE));
@@ -392,7 +393,7 @@ public class EnemyTurnResolver {
             // Jackpot (Bandit manchot, Jackpot Vivant) : trois symboles identiques, tout le tour est multiplié.
             jackpot = kind.hitsJackpots() && symbols.length > 0
                 && Arrays.stream(symbols).allMatch(symbol -> symbol == symbols[0]);
-            boolean loadedCoin = enemy.takeLoadedCoin(); // Pièce truquée : pas de Jackpot ce tirage
+            boolean loadedCoin = enemy.getMaluses().takeLoadedCoin(); // Pièce truquée : pas de Jackpot ce tirage
             if (jackpot && loadedCoin) {
                 jackpot = false;
                 openingEvents.add(new StatusEvent(Lang.t("PIÈCE TRUQUÉE : PAS DE JACKPOT"), EffectPopup.Style.SPECIAL));
@@ -402,11 +403,11 @@ public class EnemyTurnResolver {
                 turn.shieldFactor *= EnemySymbol.JACKPOT_FACTOR;
             }
             // Jackpot originel (Machine Originelle) : trois symboles pareils, et ce symbole agit cinq fois.
-            originalJackpot = kind == EnemyKind.MACHINE_ORIGINELLE ? originalJackpot(symbols) : -1;
+            originalJackpot = kind.has(EnemyTrait.ORIGINAL_JACKPOT) ? originalJackpot(symbols) : -1;
             // Engrenages : ses autres symboles sont plus forts ; un de plus par rouleau qu'elle a pris au joueur.
             int gears = (int) Arrays.stream(symbols).filter(symbol -> symbol == EnemySymbol.GEAR).count()
                 * (1 + boosts.getOrDefault(EnemySignature.HUILE_NOIRE, 0));
-            if (kind == EnemyKind.MACHINE_ORIGINELLE) {
+            if (kind.has(EnemyTrait.REEL_THEFT)) {
                 int taken = enemy.getStolenReels() + enemy.getAspired();
                 if (taken > 0) {
                     gears += taken;
@@ -437,8 +438,8 @@ public class EnemyTurnResolver {
                 events.add(parried);
                 return events;
             }
-            if (symbols[i].isSpecial() && enemy.getSleights() > 0) { // Tour de passe-passe (Bluffeur)
-                enemy.takeSleight();
+            if (symbols[i].isSpecial() && enemy.getMaluses().getSleights() > 0) { // Tour de passe-passe (Bluffeur)
+                enemy.getMaluses().takeSleight();
                 if (!kind.isBoss() || random.nextBoolean()) {
                     events.add(new StatusEvent(Lang.f("TOUR DE PASSE-PASSE : {0} ANNULÉ", symbols[i].getDisplayName()),
                         EffectPopup.Style.DEFENSE));

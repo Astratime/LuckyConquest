@@ -987,8 +987,11 @@ public enum EnemyKind {
     /** @return la part des gains que prend sa Morsure bancaire, en % (sa puissance, plus le vol relevé). */
     public int bankBitePercent(boolean hard) { return empowered(EnemySymbol.BANK_BITE_PERCENT, hard) + EnemySymbol.THEFT_BONUS_PERCENT; }
 
+    /** @return {@code true} s'il a la capacité {@code trait} (voir {@link EnemyTrait}). */
+    public boolean has(EnemyTrait trait) { return trait.of(this); }
+
     /** @return {@code true} si son deck contient le Rouleau interdit (l'Éclat Originel). */
-    public boolean forbidsReels() { return this == ECLAT || this == PRETENDANT; }
+    public boolean forbidsReels() { return has(EnemyTrait.FORBIDDEN_REEL); }
     /** @return les cartes qu'il joue à chaque tour, parmi celles piochées. */
     public int getPlaysPerTurn() {
         return switch (this) {
@@ -1024,20 +1027,20 @@ public enum EnemyKind {
     public static final int KRAKEN_ARMS = 8;
 
     /** @return {@code true} si sa peau d'or encaisse la moitié des coups tant qu'il a plus de la moitié de ses PV. */
-    public boolean hasGoldSkin() { return this == GOLEM_OR || this == COEUR_MONTAGNE; }
+    public boolean hasGoldSkin() { return has(EnemyTrait.GOLD_SKIN); }
 
     /** @return {@code true} si ses trois rouleaux identiques font un Jackpot (attaques et Boucliers x{@link EnemySymbol#JACKPOT_FACTOR}). */
-    public boolean hitsJackpots() { return this == BANDIT_MANCHOT || this == JACKPOT_VIVANT; }
+    public boolean hitsJackpots() { return has(EnemyTrait.JACKPOTS); }
 
     /** @return {@code true} s'il joue une carte par bras, et perd un bras à chaque huitième de ses PV (le Kraken). */
-    public boolean hasArms() { return this == KRAKEN; }
+    public boolean hasArms() { return has(EnemyTrait.ARMS); }
 
     /**
      * @return {@code true} s'il s'enferme dans son sarcophage en passant en phase 2 (le Pharaon maudit) :
      *         pendant le tour suivant du joueur, il ne prend aucun dégât, et il se soigne de
      *         {@link EnemySymbol#SARCOPHAGUS_HEAL_PERCENT} % de ses PV max
      */
-    public boolean hasSarcophagus() { return this == PHARAON; }
+    public boolean hasSarcophagus() { return has(EnemyTrait.SARCOPHAGUS); }
 
     /**
      * @return la force de ses soins (Potions et Crocs), en pourcentage de ceux
@@ -1061,7 +1064,7 @@ public enum EnemyKind {
     public float drainPercent(boolean hard) { return EnemySymbol.FANG_DRAIN * healScale * getPower(hard) / 10_000f; }
 
     /** @return {@code true} s'il joue ses cartes au hasard (la Roulette Vivante). */
-    public boolean playsAtRandom() { return this == ROULETTE; }
+    public boolean playsAtRandom() { return has(EnemyTrait.RANDOM_PLAYS); }
 
     /** Croupier en chef (nerf d'Astra) : sa Potion soigne 10 % de ses PV max (plus les Cœurs, en proportion). */
     public static final int CHEF_POTION_PERCENT = 10;
@@ -1075,7 +1078,7 @@ public enum EnemyKind {
      *         par tour avec {@link #CHEF_NOTHING_GOES_PERCENT} % de chance, plus
      *         {@link #CHEF_NOTHING_GOES_CARD_PERCENT} % par carte Annonce jouée ce tour (le Croupier en chef)
      */
-    public boolean rollsNothingGoesApart() { return this == CHEF; }
+    public boolean rollsNothingGoesApart() { return has(EnemyTrait.NOTHING_GOES_APART); }
 
     /** @return les poids de ses rouleaux dans la phase {@code phase}, sans le symbole qu'il tire à part. */
     public Map<EnemySymbol, Integer> getSpinWeights(int phase) {
@@ -1087,10 +1090,10 @@ public enum EnemyKind {
     }
 
     /** @return {@code true} si ses Potions reforment aussi sa défense (le Croupier en chef). */
-    public boolean potionShields() { return this == CHEF; }
+    public boolean potionShields() { return has(EnemyTrait.SHIELDING_POTIONS); }
 
     /** @return {@code true} si ses Trèfles comptent double quand sa vie est basse (la Reine des Tables). */
-    public boolean royalBet() { return this == REINE; }
+    public boolean royalBet() { return has(EnemyTrait.ROYAL_BET); }
 
     /**
      * @return {@code true} s'il change de symboles sous {@link #PHASE_TWO_RATIO} de vie : l'Éclat
@@ -1216,25 +1219,25 @@ public enum EnemyKind {
     }
 
     /** @return les rouleaux qu'il a volés au joueur dans la phase {@code phase} (la Machine Originelle). */
-    public int stolenReels(int phase) { return this == MACHINE_ORIGINELLE ? phase - 1 : 0; }
+    public int stolenReels(int phase) { return has(EnemyTrait.REEL_THEFT) ? phase - 1 : 0; }
 
     /** @return {@code true} s'il garde une copie (un As sombre) de chaque carte achetée à l'échoppe (le Pilleur). */
-    public boolean copiesPurchases() { return this == PILLEUR; }
+    public boolean copiesPurchases() { return has(EnemyTrait.COPIES_PURCHASES); }
 
     /** @return {@code true} s'il interdit une famille de cartes tout le combat (le Portier). */
-    public boolean bansFamily() { return this == PORTIER; }
+    public boolean bansFamily() { return has(EnemyTrait.BANS_FAMILY); }
 
     /** @return {@code true} s'il joue avec une copie du deck du joueur (l'Ombre du Joueur). */
-    public boolean copiesPlayerDeck() { return this == OMBRE; }
+    public boolean copiesPlayerDeck() { return has(EnemyTrait.COPIES_PLAYER_DECK); }
 
     /** @return les tours que dure le combat (le Temps Mort), 0 s'il n'y a pas de limite. */
     public int getTurnLimit() { return this == TEMPS_MORT ? TIME_LIMIT : 0; }
 
     /** @return {@code true} si une fois par combat, il annule le plus gros coup du joueur (la Maison). */
-    public boolean houseWins() { return this == MAISON; }
+    public boolean houseWins() { return has(EnemyTrait.HOUSE_WINS); }
 
     /** @return {@code true} si, achevé, il résiste et tente un dernier tirage (la Machine Originelle). */
-    public boolean hasLastDraw() { return this == MACHINE_ORIGINELLE; }
+    public boolean hasLastDraw() { return has(EnemyTrait.LAST_DRAW); }
 
     /** @return les symboles de ses rouleaux et leur poids (dans l'ordre de tirage), en première phase. */
     public Map<EnemySymbol, Integer> getWeights() { return weights; }

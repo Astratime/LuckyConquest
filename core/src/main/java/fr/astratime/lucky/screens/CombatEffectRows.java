@@ -5,6 +5,7 @@ import fr.astratime.lucky.assets.HudTextures;
 import fr.astratime.lucky.controllers.GameController;
 import fr.astratime.lucky.controllers.PreparationResolver;
 import fr.astratime.lucky.entities.Enemy;
+import fr.astratime.lucky.entities.EnemyMaluses;
 import fr.astratime.lucky.entities.GameState;
 import fr.astratime.lucky.entities.LastingEffects;
 import fr.astratime.lucky.entities.Player;
@@ -244,17 +245,17 @@ final class CombatEffectRows {
             Lang.f("Ton attaque est à +{0} %. Elle monte encore à chaque tour.", lasting.getTemperPercent())));
         if (player.hasRope()) rows.add(new SidePanel.EffectRow(guard, null, Lang.t("Corde de rappel"), Lang.t("Corde de rappel"),
             Lang.t("Si un coup devait te tuer, tu restes à 1 PV.")));
-        if (target.isDazzled()) rows.add(new SidePanel.EffectRow(guard, null, Lang.t("Ennemi ébloui"), Lang.t("Rayon du phare"),
+        if (target.getMaluses().isDazzled()) rows.add(new SidePanel.EffectRow(guard, null, Lang.t("Ennemi ébloui"), Lang.t("Rayon du phare"),
             Lang.t("L'ennemi passe son prochain tour.")));
-        if (target.getMutinies() > 0) rows.add(new SidePanel.EffectRow(guard, null, Lang.t("Mutinerie"), Lang.t("Mutinerie"),
+        if (target.getMaluses().getMutinies() > 0) rows.add(new SidePanel.EffectRow(guard, null, Lang.t("Mutinerie"), Lang.t("Mutinerie"),
             Lang.f("À son prochain tour, l'ennemi joue {0} cartes de moins.", MutinyEffect.CARDS_LESS)));
-        if (target.getLoadedCoins() > 0) rows.add(new SidePanel.EffectRow(guard, null, Lang.t("Pièce truquée"), Lang.t("Pièce truquée"),
+        if (target.getMaluses().getLoadedCoins() > 0) rows.add(new SidePanel.EffectRow(guard, null, Lang.t("Pièce truquée"), Lang.t("Pièce truquée"),
             Lang.t("Le prochain tirage de l'ennemi ne peut pas faire de Jackpot.")));
-        if (target.getHarpoons() > 0) rows.add(new SidePanel.EffectRow(guard, null, Lang.f("Harpon x{0}",
-            target.getHarpoons()),
-            Lang.t("Harpon"), Lang.f(Lang.plural(target.getHarpoons())
+        if (target.getMaluses().getHarpoons() > 0) rows.add(new SidePanel.EffectRow(guard, null, Lang.f("Harpon x{0}",
+            target.getMaluses().getHarpoons()),
+            Lang.t("Harpon"), Lang.f(Lang.plural(target.getMaluses().getHarpoons())
                 ? "À son prochain tour, l'ennemi joue {0} cartes de moins."
-                : "À son prochain tour, l'ennemi joue {0} carte de moins.", target.getHarpoons())));
+                : "À son prochain tour, l'ennemi joue {0} carte de moins.", target.getMaluses().getHarpoons())));
         addArchetypeRows(rows, lasting, target, guard);
     }
 
@@ -357,25 +358,25 @@ final class CombatEffectRows {
      * l'ennemi, Chapeau du Lutin, Rente viagère, Martingale et Rire du Joker.
      */
     private void addArchetypeRows(List<SidePanel.EffectRow> rows, LastingEffects lasting, Enemy target, TextureRegion icon) {
-        if (target.getPharaohSealTurns() > 0) rows.add(new SidePanel.EffectRow(icon, null, Lang.f("Sceau ({0})", target.getPharaohSealTurns()),
-            Lang.t("Sceau du Pharaon"), Lang.f("Ses Créances comptent double. Encore {0}.", turns(target.getPharaohSealTurns()))));
-        if (target.getClaims() > 0) rows.add(new SidePanel.EffectRow(icon, null, Lang.f("Créances x{0}", target.getClaims()),
+        if (target.getMaluses().getPharaohSealTurns() > 0) rows.add(new SidePanel.EffectRow(icon, null, Lang.f("Sceau ({0})", target.getMaluses().getPharaohSealTurns()),
+            Lang.t("Sceau du Pharaon"), Lang.f("Ses Créances comptent double. Encore {0}.", turns(target.getMaluses().getPharaohSealTurns()))));
+        if (target.getMaluses().getClaims() > 0) rows.add(new SidePanel.EffectRow(icon, null, Lang.f("Créances x{0}", target.getMaluses().getClaims()),
             Lang.t("Créances"), Lang.f("À chacun de ses tours, l'ennemi perd {0} % de ses PV max et tu gagnes {1}.",
-                percentText(target.getClaims() * Enemy.CLAIM_HP_PER_MILLE / 10f),
-                SidePanel.formatGains((double) target.getClaims() * Enemy.CLAIM_SPINS * target.getKind().getSpinCost()))));
-        if (target.getCompoundTurns() > 0) rows.add(new SidePanel.EffectRow(icon, null,
-            Lang.f("Intérêts ({0})", target.getCompoundTurns()), Lang.t("Intérêts composés"),
-            Lang.f("Les Créances de l'ennemi grossissent à chacun de tes tirages. Encore {0}.", turns(target.getCompoundTurns()))));
-        if (target.getIntimidation() > 0) rows.add(new SidePanel.EffectRow(icon, null, Lang.t("Intimidé"), Lang.t("Intimidation"),
-            Lang.f("À son prochain tour, ses attaques baissent de {0} %.", target.malusShare(target.getIntimidation()))));
-        if (target.getMarkedTurns() > 0) rows.add(new SidePanel.EffectRow(icon, null,
-            Lang.f("Cartes marquées ({0})", target.getMarkedTurns()), Lang.t("Cartes marquées"),
+                percentText(target.getMaluses().getClaims() * EnemyMaluses.CLAIM_HP_PER_MILLE / 10f),
+                SidePanel.formatGains((double) target.getMaluses().getClaims() * EnemyMaluses.CLAIM_SPINS * target.getKind().getSpinCost()))));
+        if (target.getMaluses().getCompoundTurns() > 0) rows.add(new SidePanel.EffectRow(icon, null,
+            Lang.f("Intérêts ({0})", target.getMaluses().getCompoundTurns()), Lang.t("Intérêts composés"),
+            Lang.f("Les Créances de l'ennemi grossissent à chacun de tes tirages. Encore {0}.", turns(target.getMaluses().getCompoundTurns()))));
+        if (target.getMaluses().getIntimidation() > 0) rows.add(new SidePanel.EffectRow(icon, null, Lang.t("Intimidé"), Lang.t("Intimidation"),
+            Lang.f("À son prochain tour, ses attaques baissent de {0} %.", target.getMaluses().malusShare(target.getMaluses().getIntimidation()))));
+        if (target.getMaluses().getMarkedTurns() > 0) rows.add(new SidePanel.EffectRow(icon, null,
+            Lang.f("Cartes marquées ({0})", target.getMaluses().getMarkedTurns()), Lang.t("Cartes marquées"),
             Lang.f("Ses cartes à couleur perdent {0} % de leur effet. Encore {1}.",
-                target.malusShare(fr.astratime.lucky.controllers.EnemyTurnResolver.MARKED_CARDS_PERCENT),
-                turns(target.getMarkedTurns()))));
-        if (target.getRedHerrings() > 0) rows.add(new SidePanel.EffectRow(icon, null, Lang.t("Fausse piste"), Lang.t("Fausse piste"),
+                target.getMaluses().malusShare(fr.astratime.lucky.controllers.EnemyTurnResolver.MARKED_CARDS_PERCENT),
+                turns(target.getMaluses().getMarkedTurns()))));
+        if (target.getMaluses().getRedHerrings() > 0) rows.add(new SidePanel.EffectRow(icon, null, Lang.t("Fausse piste"), Lang.t("Fausse piste"),
             Lang.t("À son prochain tirage, un de ses rouleaux ne tourne pas (une chance sur deux contre un boss ou un roi).")));
-        if (target.getSleights() > 0) rows.add(new SidePanel.EffectRow(icon, null, Lang.f("Passe-passe x{0}", target.getSleights()),
+        if (target.getMaluses().getSleights() > 0) rows.add(new SidePanel.EffectRow(icon, null, Lang.f("Passe-passe x{0}", target.getMaluses().getSleights()),
             Lang.t("Tour de passe-passe"),
             Lang.t("Son prochain effet spécial est annulé (une chance sur deux contre un boss ou un roi).")));
         if (lasting.getHatTurns() > 0) rows.add(new SidePanel.EffectRow(icon, null, Lang.f("Chapeau ({0})", lasting.getHatTurns()),

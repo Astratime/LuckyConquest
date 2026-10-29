@@ -250,11 +250,11 @@ public class CombatResolver {
         }
         if (context.getVariableRate() > 0) {
             int gainSymbols = (int) Arrays.stream(symbols).filter(CombatResolver::isGainSymbol).count();
-            int added = context.getEnemy().addClaims(gainSymbols * context.getVariableRate());
+            int added = context.getEnemy().getMaluses().addClaims(gainSymbols * context.getVariableRate());
             events.add(new StatusEvent(Lang.f("TAUX VARIABLE : CRÉANCES +{0}", added), EffectPopup.Style.DRAIN));
         }
         if (context.getBluffPercent() > 0) {
-            int maluses = context.getEnemy().getActiveMaluses();
+            int maluses = context.getEnemy().getMaluses().getActiveMaluses();
             int percent = Math.min(context.getBluffMax(), context.getBluffPercent() * maluses);
             if (percent > 0) context.multiplyAttack(1f + percent / 100f, "Coup de bluff");
             events.add(new StatusEvent(Lang.f("COUP DE BLUFF : {0} MALUS, ATTAQUE +{1} %", maluses, percent), EffectPopup.Style.ATTACK));
@@ -288,7 +288,7 @@ public class CombatResolver {
         List<Event> events = new ArrayList<>();
         Enemy enemy = context.getEnemy();
         if (context.getCollectionHpPercent() <= 0f || enemy.isDefeated()) return events;
-        int claims = enemy.takeClaims();
+        int claims = enemy.getMaluses().takeClaims();
         if (claims == 0) {
             events.add(new StatusEvent(Lang.t("RECOUVREMENT : AUCUNE CRÉANCE"), EffectPopup.Style.DRAIN));
             return events;

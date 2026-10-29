@@ -1,6 +1,5 @@
 package fr.astratime.lucky.entities.effects;
 
-import fr.astratime.lucky.entities.context.PlayContext;
 import fr.astratime.lucky.entities.context.TurnContext;
 import fr.astratime.lucky.i18n.Lang;
 import fr.astratime.lucky.popups.EffectPopup;
@@ -16,7 +15,7 @@ import java.util.List;
 public class LoadedCoinEffect extends Effect {
 
     @Override
-    public void apply(TurnContext context) { context.getCombatContext().getEnemy().addLoadedCoin(); }
+    public void apply(TurnContext context) { context.getCombatContext().getEnemy().getMaluses().addLoadedCoin(); }
 
     @Override
     public String getDescription() { return Lang.t("Le prochain tirage de l'ennemi ne peut pas faire 3 symboles pareils."); }
