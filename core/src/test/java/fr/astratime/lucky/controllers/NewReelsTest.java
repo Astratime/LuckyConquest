@@ -116,7 +116,7 @@ class NewReelsTest {
             Enemy enemy = new Enemy(EnemyKind.MACHINE_ORIGINELLE);
             Player player = player();
             player.addGains(10_000);
-            new EnemyTurnResolver(new Random(seed)).resolve(enemy, player, 0, 0f);
+            new EnemyTurnResolver(new Random(seed)).resolve(enemy, player);
             List<AspirationRule> rules = player.getLastingEffects().getAspirations();
             assertTrue(rules.size() <= AspirationRule.MAX_RULES, "graine " + seed);
             for (int i = 0; i < rules.size(); i++) {
@@ -289,7 +289,7 @@ class NewReelsTest {
                 Enemy enemy = new Enemy(kind);
                 Player player = player();
                 player.addGains(10_000);
-                var turn = new EnemyTurnResolver(new Random(seed)).resolve(enemy, player, 0, 0f);
+                var turn = new EnemyTurnResolver(new Random(seed)).resolve(enemy, player);
                 for (EnemySymbol symbol : turn.symbols()) seen.add(symbol);
                 var curses = player.getLastingEffects();
                 if (List.of(turn.symbols()).contains(EnemySymbol.NOTHING_GOES)) assertFalse(curses.getForbiddenReels().isEmpty());

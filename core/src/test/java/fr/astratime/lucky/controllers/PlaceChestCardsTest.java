@@ -158,10 +158,10 @@ class PlaceChestCardsTest {
         int plays = enemy.getPlaysPerTurn();
         enemy.addMutiny();
         EnemyTurnResult turn = new EnemyTurnResolver(new Random(1))
-            .resolve(enemy, new Player("Joueur", 100, List.of()), 0, 0f);
+            .resolve(enemy, new Player("Joueur", 100, List.of()));
         assertEquals(Math.max(0, plays - MutinyEffect.CARDS_LESS), turn.played().size());
         EnemyTurnResult next = new EnemyTurnResolver(new Random(1))
-            .resolve(enemy, new Player("Joueur", 100, List.of()), 0, 0f);
+            .resolve(enemy, new Player("Joueur", 100, List.of()));
         assertEquals(plays, next.played().size(), "un seul tour");
     }
 

@@ -1,6 +1,5 @@
 package fr.astratime.lucky.controllers;
 
-import fr.astratime.lucky.entities.BigNumber;
 import fr.astratime.lucky.entities.*;
 import fr.astratime.lucky.entities.context.CombatContext;
 import fr.astratime.lucky.entities.context.SpinContext;
@@ -248,9 +247,10 @@ public class TurnEngine {
             } else {
                 // Bingo de bouclier : s'il frappe, tout le bouclier lui est renvoyé.
                 int shieldReflect = result.isShieldBingo() ? player.getShield() : 0;
-                enemyTurn = enemyTurnResolver.resolve(enemy, player,
+                EnemyTurnResolver.Reflection reflection = new EnemyTurnResolver.Reflection(
                     turnContext.getCombatContext().getTotalReflectPercent(), CombatResolver.VAULT_REFLECT_SHARE,
-                    shieldReflect, thorns, turnContext.getCombatContext().getReflectHpPercent());
+                    shieldReflect, turnContext.getCombatContext().getReflectHpPercent());
+                enemyTurn = enemyTurnResolver.resolve(enemy, player, reflection, thorns);
             }
         }
 

@@ -161,7 +161,7 @@ class PlacesTest {
             Player player = new Player("Joueur", 1_000_000, List.of());
             player.addGains(3e8); // une Morsure de 30 M : x100, plus grand qu'un int
             long before = shark.getHp();
-            new EnemyTurnResolver(new Random(seed)).resolve(shark, player, 0, 0f);
+            new EnemyTurnResolver(new Random(seed)).resolve(shark, player);
             assertTrue(shark.getHp() >= before, "la Morsure soigne, elle ne blesse pas (graine " + seed + ")");
         }
     }

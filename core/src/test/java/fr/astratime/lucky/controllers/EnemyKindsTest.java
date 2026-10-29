@@ -52,7 +52,7 @@ class EnemyKindsTest {
             for (int seed = 0; seed < 20; seed++) {
                 Enemy enemy = new Enemy(kind);
                 EnemyTurnResult turn = new EnemyTurnResolver(new Random(seed))
-                    .resolve(enemy, new Player("Joueur", 1_000_000, List.of()), 0, 0f);
+                    .resolve(enemy, new Player("Joueur", 1_000_000, List.of()));
                 for (EnemySymbol symbol : turn.symbols()) {
                     assertTrue(kind.getSymbols().contains(symbol), kind + " ne tire pas " + symbol);
                 }
@@ -76,7 +76,7 @@ class EnemyKindsTest {
         enemy.addThorns(4);
         enemy.takeDamage(500); // coups du tour du joueur
 
-        EnemyTurnResult turn = new EnemyTurnResolver(new Random(3)).resolve(enemy, player, 0, 0f);
+        EnemyTurnResult turn = new EnemyTurnResolver(new Random(3)).resolve(enemy, player);
 
         ThornsEvent thorns = (ThornsEvent) turn.openingEvents().get(0);
         assertEquals(20, thorns.damage, "4 % de 500");
@@ -93,7 +93,7 @@ class EnemyKindsTest {
         Player player = new Player("Joueur", 1_000, List.of());
         player.addShield(10);
 
-        EnemyTurnResult turn = new EnemyTurnResolver(new Random(3)).resolve(enemy, player, 0, 0f);
+        EnemyTurnResult turn = new EnemyTurnResolver(new Random(3)).resolve(enemy, player);
 
         ThornsEvent thorns = (ThornsEvent) turn.openingEvents().get(0);
         assertEquals(10, thorns.blocked);
@@ -113,7 +113,7 @@ class EnemyKindsTest {
         for (int seed = 0; seed < 50; seed++) {
             Enemy enemy = plain(EnemyKind.GARDIEN);
             EnemyTurnResult turn = new EnemyTurnResolver(new Random(seed))
-                .resolve(enemy, new Player("Joueur", 1_000_000, List.of()), 0, 0f);
+                .resolve(enemy, new Player("Joueur", 1_000_000, List.of()));
             long thorns = Arrays.stream(turn.symbols()).filter(s -> s == EnemySymbol.THORNS).count();
             assertEquals(thorns * EnemySymbol.THORNS_PERCENT, enemy.getThornsPercent());
             assertEquals(thorns, turn.events().stream().filter(e -> e instanceof EnemyThornsEvent).count());
@@ -128,7 +128,7 @@ class EnemyKindsTest {
             enemy.takeDamage(enemy.getMaxHp() * 9 / 10);
             Player player = new Player("Joueur", 1_000_000, List.of());
 
-            EnemyTurnResult turn = new EnemyTurnResolver(new Random(seed)).resolve(enemy, player, 0, 0f);
+            EnemyTurnResult turn = new EnemyTurnResolver(new Random(seed)).resolve(enemy, player);
 
             for (int i = 0; i < 3; i++) {
                 if (turn.symbols()[i] != EnemySymbol.FANG) continue;
@@ -153,7 +153,7 @@ class EnemyKindsTest {
             Player player = new Player("Joueur", 100, List.of());
             player.addShield(10_000);
 
-            EnemyTurnResult turn = new EnemyTurnResolver(new Random(seed)).resolve(enemy, player, 0, 0f);
+            EnemyTurnResult turn = new EnemyTurnResolver(new Random(seed)).resolve(enemy, player);
 
             assertTrue(turn.events().stream().noneMatch(e -> e instanceof EnemyDrainEvent), "rien de volé, rien de soigné");
         }
@@ -173,7 +173,7 @@ class EnemyKindsTest {
             Enemy bretteur = new Enemy("Bretteur", 1000, clubs);
             bretteur.addRage(9);
             Player player = new Player("Joueur", 1_000_000, List.of());
-            EnemyTurnResult turn = new EnemyTurnResolver(new Random(seed)).resolve(bretteur, player, 0, 0f);
+            EnemyTurnResult turn = new EnemyTurnResolver(new Random(seed)).resolve(bretteur, player);
             for (int i = 0; i < 3; i++) {
                 if (turn.symbols()[i] == EnemySymbol.SWORD) {
                     assertEquals(EnemySymbol.SWORD_DAMAGE + 9, ((PlayerDamagedEvent) turn.outcomes().get(i).get(0)).damage);
@@ -187,7 +187,7 @@ class EnemyKindsTest {
         for (int seed = 0; seed < 30; seed++) {
             Enemy enemy = plain(EnemyKind.BRETTEUR);
             EnemyTurnResult turn = new EnemyTurnResolver(new Random(seed))
-                .resolve(enemy, new Player("Joueur", 1_000_000, List.of()), 0, 0f);
+                .resolve(enemy, new Player("Joueur", 1_000_000, List.of()));
             long rages = Arrays.stream(turn.symbols()).filter(s -> s == EnemySymbol.RAGE).count();
             assertEquals(rages * EnemySymbol.RAGE_ATTACK, enemy.getRage());
             assertEquals(rages, turn.events().stream().filter(e -> e instanceof EnemyRageEvent).count());

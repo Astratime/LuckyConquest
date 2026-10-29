@@ -38,7 +38,7 @@ class TowerChaptersTest {
     /** Un tour de {@code enemy} dont les rouleaux montrent {@code symbol} (en cherchant la graine). */
     private static EnemyTurnResult turnWith(EnemySymbol symbol, Supplier<Enemy> enemy, Supplier<Player> player) {
         for (int seed = 0; seed < 500; seed++) {
-            EnemyTurnResult turn = new EnemyTurnResolver(new Random(seed)).resolve(enemy.get(), player.get(), 0, 0f);
+            EnemyTurnResult turn = new EnemyTurnResolver(new Random(seed)).resolve(enemy.get(), player.get());
             if (Arrays.asList(turn.symbols()).contains(symbol)) return turn;
         }
         throw new AssertionError("aucun tirage avec " + symbol);
@@ -99,7 +99,7 @@ class TowerChaptersTest {
     void theZeroSpinsOneRoulettePerSymbol() {
         for (int seed = 0; seed < 60; seed++) {
             EnemyTurnResult turn = new EnemyTurnResolver(new Random(seed))
-                .resolve(plain(EnemyKind.ROULETTE), new Player("Joueur", 1_000_000, List.of()), 0, 0f);
+                .resolve(plain(EnemyKind.ROULETTE), new Player("Joueur", 1_000_000, List.of()));
             List<EnemyRouletteEvent> roulettes = events(turn, EnemyRouletteEvent.class);
             assertEquals(count(turn, EnemySymbol.ZERO), roulettes.size());
             if (roulettes.size() == 1 && roulettes.get(0).pocket == EnemyRouletteEvent.Pocket.NOIR) {
@@ -194,7 +194,7 @@ class TowerChaptersTest {
         assertFalse(enemy.enterPhaseTwo());
         enemy.takeDamage(enemy.getMaxHp() / 2 + 1);
         EnemyTurnResult turn = new EnemyTurnResolver(new Random(1))
-            .resolve(enemy, new Player("Joueur", 1_000_000, List.of()), 0, 0f);
+            .resolve(enemy, new Player("Joueur", 1_000_000, List.of()));
         assertInstanceOf(EnemyPhaseEvent.class, turn.openingEvents().get(0));
         assertEquals(2, enemy.getPhase());
         for (EnemySymbol symbol : turn.symbols()) assertTrue(enemy.getSymbols().contains(symbol), symbol.name());

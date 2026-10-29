@@ -46,7 +46,7 @@ class EnemyPowerTest {
         for (int seed = 0; seed < 200; seed++) {
             Player player = new Player("Joueur", 1_000_000, List.of());
             EnemyTurnResult turn = new EnemyTurnResolver(new Random(seed))
-                .resolve(new Enemy(EnemyKind.TRICHEUR), player, 0, 0f);
+                .resolve(new Enemy(EnemyKind.TRICHEUR), player);
             for (var event : turn.events()) {
                 if (event instanceof PlayerDamagedEvent hit) {
                     int attack = hit.damage + hit.blocked;
@@ -71,7 +71,7 @@ class EnemyPowerTest {
         for (int seed = 0; seed < 50; seed++) {
             Player player = new Player("Joueur", 1_000_000, List.of());
             EnemyTurnResult turn = new EnemyTurnResolver(new Random(seed))
-                .resolve(new Enemy(EnemyKind.ECLAT), player, 0, 0f);
+                .resolve(new Enemy(EnemyKind.ECLAT), player);
             boolean played = turn.played().stream().anyMatch(EnemyCards::isForbiddenReel);
             assertEquals(played, turn.drawn().stream().anyMatch(EnemyCards::isForbiddenReel),
                 "tiré, il est toujours joué");

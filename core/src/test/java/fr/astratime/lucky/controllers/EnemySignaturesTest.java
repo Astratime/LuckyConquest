@@ -43,7 +43,7 @@ class EnemySignaturesTest {
     /** Un tour où les rouleaux de l'ennemi montrent {@code symbol} (en cherchant la graine). */
     private static EnemyTurnResult turnWith(EnemySymbol symbol, Supplier<Enemy> enemy, Supplier<Player> player) {
         for (int seed = 0; seed < 500; seed++) {
-            EnemyTurnResult turn = new EnemyTurnResolver(new Random(seed)).resolve(enemy.get(), player.get(), 0, 0f);
+            EnemyTurnResult turn = new EnemyTurnResolver(new Random(seed)).resolve(enemy.get(), player.get());
             if (Arrays.asList(turn.symbols()).contains(symbol)) return turn;
         }
         throw new AssertionError("aucun tirage avec " + symbol);
@@ -135,7 +135,7 @@ class EnemySignaturesTest {
     void theCountdownShortensTheDeadTimeThreeTimesAtMost() {
         Enemy enemy = only(EnemyKind.TEMPS_MORT, EnemySignature.COMPTE_A_REBOURS, 12);
         assertEquals(EnemyKind.TIME_LIMIT, enemy.getTurnLimit());
-        for (int turn = 0; turn < 6; turn++) new EnemyTurnResolver(new Random(turn)).resolve(enemy, player(), 0, 0f);
+        for (int turn = 0; turn < 6; turn++) new EnemyTurnResolver(new Random(turn)).resolve(enemy, player());
         assertEquals(EnemySignature.COMPTE_MAX, enemy.getLostTurns());
         assertEquals(EnemyKind.TIME_LIMIT - EnemySignature.COMPTE_MAX, enemy.getTurnLimit());
         assertFalse(new Enemy(EnemyKind.MAISON).loseTurn(), "sans limite de tours, rien à retirer");
@@ -152,7 +152,7 @@ class EnemySignaturesTest {
     void theRiggedBallAlwaysLandsOnZero() {
         for (int seed = 0; seed < 40; seed++) {
             Enemy enemy = only(EnemyKind.ROULETTE, EnemySignature.BILLE_TRUQUEE, 3);
-            EnemyTurnResult turn = new EnemyTurnResolver(new Random(seed)).resolve(enemy, player(), 0, 0f);
+            EnemyTurnResult turn = new EnemyTurnResolver(new Random(seed)).resolve(enemy, player());
             List<EnemyRouletteEvent> roulettes = events(turn, EnemyRouletteEvent.class);
             if (roulettes.isEmpty()) continue;
             assertEquals(EnemyRouletteEvent.Pocket.ZERO, roulettes.get(0).pocket, "seed " + seed);
@@ -181,7 +181,7 @@ class EnemySignaturesTest {
         int seed = 0;
         EnemyTurnResult turn;
         do {
-            turn = new EnemyTurnResolver(new Random(seed++)).resolve(enemy, player, 0, 0f);
+            turn = new EnemyTurnResolver(new Random(seed++)).resolve(enemy, player);
         } while (!Arrays.asList(turn.symbols()).contains(EnemySymbol.ANVIL) && seed < 500);
         long anvils = Arrays.stream(turn.symbols()).filter(symbol -> symbol == EnemySymbol.ANVIL).count();
         assertTrue(enemy.getAnvil() > anvils * EnemySymbol.ANVIL_ATTACK, "la Trempe double au moins une Enclume");
@@ -209,7 +209,7 @@ class EnemySignaturesTest {
             List<Card> clubs = new ArrayList<>();
             for (int i = 0; i < 8; i++) clubs.add(EnemyCards.card(Card.Suit.TREFLE, 10));
             EnemyTurnResult turn = new EnemyTurnResolver(new Random(seed))
-                .resolve(new Enemy(EnemyKind.TRICHEUR, clubs), player(), 0, 0f);
+                .resolve(new Enemy(EnemyKind.TRICHEUR, clubs), player());
             assertEquals(Set.of(EnemySymbol.LOADED_DIE), turn.luck().keySet(), "seed " + seed);
         }
     }
@@ -227,7 +227,7 @@ class EnemySignaturesTest {
         Player player = player();
         player.addGains(10_000);
         Enemy enemy = new Enemy(EnemyKind.OMBRE, shadow);
-        EnemyTurnResult turn = new EnemyTurnResolver(new Random(3)).resolve(enemy, player, 0, 0f);
+        EnemyTurnResult turn = new EnemyTurnResolver(new Random(3)).resolve(enemy, player);
         assertEquals(3, turn.played().size());
         long stealing = turn.played().stream().filter(card -> EnemyCards.shadowRoleOf(card) == EnemyCards.ShadowRole.GAINS).count();
         assertEquals(stealing, events(turn, GainsStolenEvent.class).size(),

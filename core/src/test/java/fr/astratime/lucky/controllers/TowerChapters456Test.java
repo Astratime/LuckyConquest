@@ -33,7 +33,7 @@ class TowerChapters456Test {
     /** Un tour de {@code enemy} dont les rouleaux montrent {@code symbol} (en cherchant la graine). */
     private static EnemyTurnResult turnWith(EnemySymbol symbol, Supplier<Enemy> enemy, Supplier<Player> player) {
         for (int seed = 0; seed < 500; seed++) {
-            EnemyTurnResult turn = new EnemyTurnResolver(new Random(seed)).resolve(enemy.get(), player.get(), 0, 0f);
+            EnemyTurnResult turn = new EnemyTurnResolver(new Random(seed)).resolve(enemy.get(), player.get());
             if (Arrays.asList(turn.symbols()).contains(symbol)) return turn;
         }
         throw new AssertionError("aucun tirage avec " + symbol);
