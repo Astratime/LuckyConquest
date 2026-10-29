@@ -44,8 +44,8 @@ class DungeonTest {
         for (Dungeon dungeon : Place.PRAIRIE.getDungeons()) {
             assertEquals(10_000, new Enemy(dungeon.getSoldier()).getMaxHp(), dungeon.name());
             assertEquals(20_000, new Enemy(dungeon.getKing()).getMaxHp(), dungeon.name());
-            assertEquals(100, dungeon.getSoldier().getPower(), "force du chapitre 1");
-            assertEquals(100, dungeon.getKing().getPower());
+            assertEquals(100, dungeon.getSoldier().getPower(false), "force du chapitre 1");
+            assertEquals(100, dungeon.getKing().getPower(false));
             assertTrue(dungeon.getKing().isBoss());
             assertFalse(dungeon.getSoldier().isBoss());
             assertTrue(dungeon.getSoldier().getDisplayName().startsWith("Soldat de"));

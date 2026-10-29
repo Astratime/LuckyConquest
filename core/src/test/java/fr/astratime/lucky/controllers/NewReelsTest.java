@@ -246,9 +246,9 @@ class NewReelsTest {
     void theIngotGrowsWithItsDefenseUpToThreeTimes() {
         Enemy golem = new Enemy(EnemyKind.GOLEM_OR, List.of());
         assertEquals(100, EnemyTurnResolver.ingotPercent(golem));
-        golem.addShieldDefense(golem.getKind().getBaseDefense());
+        golem.addShieldDefense(golem.getKind().getBaseDefense(false));
         assertEquals(200, EnemyTurnResolver.ingotPercent(golem));
-        golem.addShieldDefense(golem.getKind().getBaseDefense() * 10);
+        golem.addShieldDefense(golem.getKind().getBaseDefense(false) * 10);
         assertEquals(300, EnemyTurnResolver.ingotPercent(golem));
     }
 

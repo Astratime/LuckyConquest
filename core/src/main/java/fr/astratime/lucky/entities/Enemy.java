@@ -30,6 +30,8 @@ public class Enemy {
     public static final int BASE_DEFENSE   = 30;
 
     private final EnemyKind   kind;
+    /** Mode difficile de la Tour : ses PV et sa force sont multipliés (voir {@link EnemyKind#HARD_POWER_FACTOR}). */
+    private final boolean     hard;
     private final String      name;
     private final int         maxHp;
     private       int         hp;
@@ -136,25 +138,36 @@ public class Enemy {
 
     /** @param cards cartes composant le deck de l'ennemi (mélangées) */
     public Enemy(String name, int maxHp, List<Card> cards) {
-        this(EnemyKind.CROUPIER, name, maxHp, cards);
+        this(EnemyKind.CROUPIER, name, maxHp, cards, false);
     }
 
     /** Ennemi {@code kind} : son nom, ses PV, sa défense, ses rouleaux et son deck. */
     public Enemy(EnemyKind kind) {
-        this(kind, kind.getDisplayName(), kind.getMaxHp(), kind.createDeck());
+        this(kind, false);
+    }
+
+    /** Comme {@link #Enemy(EnemyKind)}, en mode difficile si {@code hard} (Tour des épreuves). */
+    public Enemy(EnemyKind kind, boolean hard) {
+        this(kind, kind.getDisplayName(), kind.getMaxHp(hard), kind.createDeck(), hard);
     }
 
     /** Ennemi {@code kind} qui joue avec le deck {@code cards} (l'Ombre du Joueur, qui a celui du joueur). */
     public Enemy(EnemyKind kind, List<Card> cards) {
-        this(kind, kind.getDisplayName(), kind.getMaxHp(), cards);
+        this(kind, cards, false);
     }
 
-    private Enemy(EnemyKind kind, String name, int maxHp, List<Card> cards) {
+    /** Comme {@link #Enemy(EnemyKind, List)}, en mode difficile si {@code hard}. */
+    public Enemy(EnemyKind kind, List<Card> cards, boolean hard) {
+        this(kind, kind.getDisplayName(), kind.getMaxHp(hard), cards, hard);
+    }
+
+    private Enemy(EnemyKind kind, String name, int maxHp, List<Card> cards, boolean hard) {
         this.kind    = kind;
+        this.hard    = hard;
         this.name    = name;
         this.maxHp   = maxHp;
         this.hp      = maxHp;
-        this.defense = kind.getBaseDefense();
+        this.defense = kind.getBaseDefense(hard);
         this.deck    = new Deck(cards, discardPile);
     }
 
@@ -627,7 +640,7 @@ public class Enemy {
      * @return les dégâts à renvoyer au joueur (part des dégâts encaissés depuis la fin de son dernier tour)
      */
     public int collectThorns() {
-        int thorns = Math.min(kind.thornsMax(), Math.round(damageTaken * thornsPercent / 100f));
+        int thorns = Math.min(kind.thornsMax(hard), Math.round(damageTaken * thornsPercent / 100f));
         thornsPercent = 0;
         return thorns;
     }
@@ -813,6 +826,8 @@ public class Enemy {
 
     /** @return le type d'ennemi : ses rouleaux, sa façon de jouer, son portrait. */
     public EnemyKind getKind()     { return kind; }
+    /** @return {@code true} s'il est en mode difficile (Tour des épreuves). */
+    public boolean isHard()        { return hard; }
     /** @return le bonus d'attaque de sa Rage. */
     public int    getRage()        { return rage; }
     /** @return l'attaque que ses Intérêts ajouteront à son prochain coup. */
@@ -835,7 +850,7 @@ public class Enemy {
     /** @return la part des dégâts du joueur que renverront ses Épines, en %. */
     public int    getThornsPercent() { return thornsPercent; }
     /** @return sa défense de base, reformée à chacun de ses tours. */
-    public int    getBaseDefense() { return kind == EnemyKind.MAISON && phase >= 2 ? 0 : kind.getBaseDefense(); }
+    public int    getBaseDefense() { return kind == EnemyKind.MAISON && phase >= 2 ? 0 : kind.getBaseDefense(hard); }
     /** @return le nom affiché de l'ennemi. */
     public String getName()        { return name; }
     /** @return les points de vie actuels. */

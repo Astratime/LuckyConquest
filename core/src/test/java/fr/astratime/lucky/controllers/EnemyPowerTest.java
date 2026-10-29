@@ -29,16 +29,16 @@ class EnemyPowerTest {
 
     @Test
     void enemiesGrowStrongerWithEachChapter() {
-        assertEquals(100, EnemyKind.CROUPIER.getPower());
-        assertEquals(100, EnemyKind.COMETE.getPower());
-        assertEquals(EnemyKind.CHAPTER_2_POWER, EnemyKind.REINE.getPower());
-        assertEquals(EnemyKind.CHAPTER_3_POWER, EnemyKind.ECLAT.getPower());
-        assertEquals(30, EnemyKind.CROUPIER.getBaseDefense(), "le croupier ne change pas");
-        assertEquals(120 * EnemyKind.CHAPTER_3_POWER / 100, EnemyKind.ECLAT.getBaseDefense());
-        assertEquals(EnemySymbol.THORNS_PERCENT * EnemyKind.CHAPTER_3_POWER / 100, EnemyKind.GARDIENNE.thornsPercent());
+        assertEquals(100, EnemyKind.CROUPIER.getPower(false));
+        assertEquals(100, EnemyKind.COMETE.getPower(false));
+        assertEquals(EnemyKind.CHAPTER_2_POWER, EnemyKind.REINE.getPower(false));
+        assertEquals(EnemyKind.CHAPTER_3_POWER, EnemyKind.ECLAT.getPower(false));
+        assertEquals(30, EnemyKind.CROUPIER.getBaseDefense(false), "le croupier ne change pas");
+        assertEquals(120 * EnemyKind.CHAPTER_3_POWER / 100, EnemyKind.ECLAT.getBaseDefense(false));
+        assertEquals(EnemySymbol.THORNS_PERCENT * EnemyKind.CHAPTER_3_POWER / 100, EnemyKind.GARDIENNE.thornsPercent(false));
         assertTrue(EnemyKind.CHAPTER_2_POWER > 100 && EnemyKind.CHAPTER_3_POWER > EnemyKind.CHAPTER_2_POWER);
-        assertEquals("x1", EnemyKind.CROUPIER.powerText());
-        assertTrue(EnemyKind.ECLAT.diePercent() <= 100);
+        assertEquals("x1", EnemyKind.CROUPIER.powerText(false));
+        assertTrue(EnemyKind.ECLAT.diePercent(false) <= 100);
     }
 
     @Test
@@ -50,7 +50,7 @@ class EnemyPowerTest {
             for (var event : turn.events()) {
                 if (event instanceof PlayerDamagedEvent hit) {
                     int attack = hit.damage + hit.blocked;
-                    assertTrue(attack >= EnemyKind.TRICHEUR.empowered(EnemySymbol.SWORD_DAMAGE), "coup renforcé par sa force");
+                    assertTrue(attack >= EnemyKind.TRICHEUR.empowered(EnemySymbol.SWORD_DAMAGE, false), "coup renforcé par sa force");
                 }
             }
         }
@@ -200,19 +200,19 @@ class EnemyPowerTest {
 
     @Test
     void theTrainingCroupierIsGentle() {
-        assertEquals(1_000, EnemyKind.ENTRAINEMENT.getMaxHp());
-        assertEquals(10, EnemyKind.ENTRAINEMENT.empowered(EnemyKind.ENTRAINEMENT.swordDamage()));
+        assertEquals(1_000, EnemyKind.ENTRAINEMENT.getMaxHp(false));
+        assertEquals(10, EnemyKind.ENTRAINEMENT.empowered(EnemyKind.ENTRAINEMENT.swordDamage(), false));
         assertEquals(EnemySymbol.SWORD_DAMAGE, EnemyKind.CROUPIER.swordDamage(), "le croupier de la Tour ne change pas");
-        assertEquals(25_000, EnemyKind.CROUPIER.getMaxHp(), "PV de la Tour x5");
+        assertEquals(25_000, EnemyKind.CROUPIER.getMaxHp(false), "PV de la Tour x5");
     }
 
     @Test
     void towerSwordsHitHarderFromChapterThree() {
         int sword = EnemySymbol.SWORD_DAMAGE;
-        assertEquals(sword * 2, EnemyKind.CHEF.hurt(sword), "chapitre 2 inchangé");
-        assertEquals(100, EnemyKind.HORLOGER.hurt(sword), "chapitre 3 : Épée à 100 (choix d'Astra)");
-        assertEquals(134, EnemyKind.PILLEUR.hurt(sword));
-        assertEquals(167, EnemyKind.PORTIER.hurt(sword));
-        assertEquals(200, EnemyKind.MACHINE_ORIGINELLE.hurt(sword));
+        assertEquals(sword * 2, EnemyKind.CHEF.hurt(sword, false), "chapitre 2 inchangé");
+        assertEquals(100, EnemyKind.HORLOGER.hurt(sword, false), "chapitre 3 : Épée à 100 (choix d'Astra)");
+        assertEquals(134, EnemyKind.PILLEUR.hurt(sword, false));
+        assertEquals(167, EnemyKind.PORTIER.hurt(sword, false));
+        assertEquals(200, EnemyKind.MACHINE_ORIGINELLE.hurt(sword, false));
     }
 }

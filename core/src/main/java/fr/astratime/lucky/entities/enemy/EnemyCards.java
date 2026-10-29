@@ -162,35 +162,35 @@ public final class EnemyCards {
     public static int luckBonus(Card card)    { return scaled(card, LUCK_MIN, LUCK_MAX); }
 
     /** @return la description de l'effet de la carte, pour son infobulle. */
-    public static String describe(Card card) { return describe(card, EnemyKind.CROUPIER); }
+    public static String describe(Card card) { return describe(card, EnemyKind.CROUPIER, false); }
 
     /** @return la description de l'effet de la carte chez un ennemi {@code kind} (bonus renforcés par sa force). */
-    public static String describe(Card card, EnemyKind kind) {
+    public static String describe(Card card, EnemyKind kind, boolean hard) {
         EnemySignature signature = EnemySignature.of(card);
         if (signature != null) return signature.getDescription();
         ShadowRole role = shadowRoleOf(card);
-        if (role != null) return describe(role, kind);
+        if (role != null) return describe(role, kind, hard);
         if (card.getSuit() == null) return Lang.t("Bloque un de tes rouleaux à ton prochain tirage. Pas de Bingo possible");
         return switch (card.getSuit()) {
-            case PIQUE   -> Lang.f("Épées et Crocs : attaque +{0}", kind.hurt(kind.swordBonus(card)));
+            case PIQUE   -> Lang.f("Épées et Crocs : attaque +{0}", kind.hurt(kind.swordBonus(card), hard));
             case COEUR   -> Lang.f("Potions : soin +{0} % des PV max", healBonus(card));
-            case CARREAU -> Lang.f("Boucliers : défense +{0}", kind.empowered(kind.shieldBonus(card)));
+            case CARREAU -> Lang.f("Boucliers : défense +{0}", kind.empowered(kind.shieldBonus(card), hard));
             case TREFLE  -> Lang.f("Un symbole au hasard : chance +{0} %", luckBonus(card));
         };
     }
 
     /** @return l'effet d'une carte spéciale du joueur copiée par son Ombre, de rôle {@code role}. */
-    private static String describe(ShadowRole role, EnemyKind kind) {
+    private static String describe(ShadowRole role, EnemyKind kind, boolean hard) {
         Card ten = card(Card.Suit.PIQUE, SHADOW_SPECIAL_RANK);
         return switch (role) {
             case ATTACK -> Lang.f("Ta carte, retournée contre toi : attaque de {0}",
-                kind.hurt(kind.swordDamage() + kind.swordBonus(ten)));
-            case GAINS  -> Lang.f("Ta carte, retournée contre toi : elle prend {0} % de tes gains", kind.interestPercent());
+                kind.hurt(kind.swordDamage() + kind.swordBonus(ten), hard));
+            case GAINS  -> Lang.f("Ta carte, retournée contre toi : elle prend {0} % de tes gains", kind.interestPercent(hard));
             case BINGO  -> Lang.f("Ta carte, retournée contre toi : son Épée devient {0} % plus probable", SHADOW_BINGO_LUCK);
             case HEAL   -> Lang.f("Ta carte, retournée contre toi : elle se soigne de {0} % de ses PV max",
-                Math.round(kind.potionPercent(healBonus(ten))));
+                Math.round(kind.potionPercent(healBonus(ten), hard)));
             case SHIELD -> Lang.f("Ta carte, retournée contre toi : défense +{0}",
-                kind.empowered(kind.shieldDefense() + kind.shieldBonus(ten)));
+                kind.empowered(kind.shieldDefense() + kind.shieldBonus(ten), hard));
         };
     }
 

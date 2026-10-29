@@ -885,7 +885,6 @@ public final class BalanceSimulator {
     private void towerSection(StringBuilder out) {
         out.append("## 8. Tour des épreuves\n\n")
             .append("Part des chapitres gagnés (premier ennemi, un challenger au hasard, puis le boss), mode normal.\n\n");
-        EnemyKind.setTowerHard(false);
         List<Rank> ranks = allRanks();
         fr.astratime.lucky.entities.tower.Chapter[] chapters = fr.astratime.lucky.entities.tower.Chapter.values();
         Map<String, Double> starter = new ConcurrentHashMap<>(), top = new ConcurrentHashMap<>();

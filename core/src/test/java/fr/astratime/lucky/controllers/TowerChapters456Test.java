@@ -52,17 +52,17 @@ class TowerChapters456Test {
             Chapter chapter = chapters[i];
             assertEquals(4 + i, chapter.getNumber());
             int power = (4 + i) * 100;
-            assertEquals(hp[i][0], chapter.getFirstEnemy().getMaxHp(), chapter.name());
-            assertEquals(hp[i][2], chapter.getBoss().getMaxHp(), chapter.name());
+            assertEquals(hp[i][0], chapter.getFirstEnemy().getMaxHp(false), chapter.name());
+            assertEquals(hp[i][2], chapter.getBoss().getMaxHp(false), chapter.name());
             assertTrue(chapter.getBoss().isBoss());
             for (EnemyKind challenger : chapter.getChallengers()) {
-                if (challenger != EnemyKind.TEMPS_MORT) assertEquals(hp[i][1], challenger.getMaxHp(), challenger.name());
-                assertEquals(power, challenger.getPower());
+                if (challenger != EnemyKind.TEMPS_MORT) assertEquals(hp[i][1], challenger.getMaxHp(false), challenger.name());
+                assertEquals(power, challenger.getPower(false));
                 assertTrue(challenger.isTower());
             }
-            assertEquals(power, chapter.getBoss().getPower());
+            assertEquals(power, chapter.getBoss().getPower(false));
         }
-        assertTrue(EnemyKind.TEMPS_MORT.getMaxHp() < 4_500_000, "le Temps Mort a moins de PV");
+        assertTrue(EnemyKind.TEMPS_MORT.getMaxHp(false) < 4_500_000, "le Temps Mort a moins de PV");
         assertEquals("Tu as tiré le levier. Le monde a recommencé.", Chapter.LE_JACKPOT.getEnding());
     }
 

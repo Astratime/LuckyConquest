@@ -437,7 +437,7 @@ public class GameScreen extends ScreenAdapter {
         } else if (run == null) {
             gameController.setPot(profile.getPot(PlayerProfile.POT_TRAINING));
         }
-        EnemyKind.setTowerHard(run instanceof TowerRun tower && tower.isHard()); // Tour : mode difficile
+        gameController.setHardMode(run instanceof TowerRun tower && tower.isHard()); // Tour : mode difficile
         gameController.restart(firstEnemy()); // le premier ennemi du chapitre, ou le croupier d'entraînement
         if (run instanceof TutorialRun) {
             TutorialRun.arrange(player().getDeck().getCards());

@@ -272,27 +272,27 @@ public enum EnemySymbol {
 
     /**
      * @return la description de l'effet de base du symbole chez l'ennemi
-     *         {@code kind} (renforcé par sa force ; ses Potions et ses Crocs
+     *         {@code kind}, en mode difficile si {@code hard} (renforcé par sa force ; ses Potions et ses Crocs
      *         soignent selon sa force de soin)
      */
-    public String getDescription(EnemyKind kind) {
+    public String getDescription(EnemyKind kind, boolean hard) {
         return switch (this) {
-            case SWORD  -> Lang.f("Épée : attaque de {0}", kind.hurt(kind.swordDamage()));
+            case SWORD  -> Lang.f("Épée : attaque de {0}", kind.hurt(kind.swordDamage(), hard));
             case SHIELD -> Lang.f("Bouclier : défense +{0} pendant le tour suivant",
-                kind.empowered(kind.shieldDefense()));
-            case POTION -> Lang.f("Potion : soigne {0} % des PV max", percent(kind.potionPercent(0)));
-            case THORNS -> Lang.f("Épines : renvoie {0} % de tes dégâts. Au début de son tour", kind.thornsPercent());
+                kind.empowered(kind.shieldDefense(), hard));
+            case POTION -> Lang.f("Potion : soigne {0} % des PV max", percent(kind.potionPercent(0, hard)));
+            case THORNS -> Lang.f("Épines : renvoie {0} % de tes dégâts. Au début de son tour", kind.thornsPercent(hard));
             case FANG   -> Lang.f("Croc : mord de {0}. Chaque PV volé lui rend {1} % de ses PV max",
-                kind.hurt(FANG_DAMAGE), percent(kind.drainPercent()));
-            case RAGE   -> Lang.f("Rage : attaque +{0}. Jusqu'à la fin du combat", kind.hurt(RAGE_ATTACK));
-            case LOADED_DIE -> Lang.f("Dé pipé : tes jauges (Coffre, Sang, Lames) perdent {0} %", kind.diePercent());
+                kind.hurt(FANG_DAMAGE, hard), percent(kind.drainPercent(hard)));
+            case RAGE   -> Lang.f("Rage : attaque +{0}. Jusqu'à la fin du combat", kind.hurt(RAGE_ATTACK, hard));
+            case LOADED_DIE -> Lang.f("Dé pipé : tes jauges (Coffre, Sang, Lames) perdent {0} %", kind.diePercent(hard));
             case INTEREST -> Lang.f("Intérêts : il prend {0} % de tes gains. Attaque +1 par {1} volés, au prochain coup. Sans gains, "
                 + "il mord",
-                kind.interestPercent(), INTEREST_PER_ATTACK);
+                kind.interestPercent(hard), INTEREST_PER_ATTACK);
             case ZERO   -> Lang.t("Zéro : rouge, ses attaques doublent. Noir, ses Boucliers. Zéro, les deux");
             case MIRROR -> Lang.t("Reflet : il rejoue ta dernière carte. À moitié de sa force");
             case HOURGLASS -> Lang.f("Sablier : +1. À {0}, il explose ({1}), à travers ton bouclier. Tes gros coups le font reculer",
-                HOURGLASS_MAX, kind.hurt(HOURGLASS_DAMAGE));
+                HOURGLASS_MAX, kind.hurt(HOURGLASS_DAMAGE, hard));
             case ALL_IN -> Lang.t("Tapis : à son prochain tour, ses attaques doublent. Touche-le avant pour l'annuler");
             case NIBBLE -> Lang.t("Grignotage : il ronge une carte. Au prochain tour, une carte de ta main part à la défausse");
             case DRUNK  -> Lang.t("Ivresse : à ton prochain tirage, un rouleau tourne deux fois et garde le pire résultat");
@@ -302,15 +302,15 @@ public enum EnemySymbol {
             case NUGGET -> Lang.t("Pépite : à ton prochain tirage, tes symboles de gain deviennent des pierres. Ils ne rapportent "
                 + "rien");
             case DRILL  -> Lang.f("Forage : attaque de {0}. Traverse ton bouclier",
-                kind.hurt(kind.swordDamage()));
+                kind.hurt(kind.swordDamage(), hard));
             case ANVIL  -> Lang.f("Enclume : attaque +{0}. Jusqu'à la fin du combat, sans limite",
-                kind.hurt(ANVIL_ATTACK));
+                kind.hurt(ANVIL_ATTACK, hard));
             case SONG   -> Lang.t("Chant : au début de ton prochain tour, une carte au hasard de ta main est jouée d'office");
             case BANK_BITE -> Lang.f("Morsure : il dévore {0} % de tes gains et se soigne d'autant ({1} % de ses PV max au plus). "
-                + "Sans gains, il mord", kind.bankBitePercent(), BANK_BITE_HEAL_MAX);
+                + "Sans gains, il mord", kind.bankBitePercent(hard), BANK_BITE_HEAL_MAX);
             case FAKE_MONEY -> Lang.f("Fausse monnaie : {0} % de tes gains deviennent faux. Dépense-les avant ton tirage, ou ils "
                 + "disparaissent",
-                kind.fakePercent());
+                kind.fakePercent(hard));
             case PREDICTION -> Lang.t("Prédiction : il annonce un de tes symboles. S'il sort à ton tirage, ses attaques du tour "
                 + "triplent");
             case DUEL -> Lang.t("Duel : chacun tire une carte de son deck. La plus haute frappe l'autre. Tes As et tes figures "
@@ -330,12 +330,12 @@ public enum EnemySymbol {
             case RAKE -> Lang.f("Râteau : il ramasse {0} % de tes gains et en fait de la défense. Sans gains, il frappe",
                 RAKE_PERCENT);
             case CLOAKROOM -> Lang.t("Vestiaire : il garde ta meilleure carte jusqu'à la fin de ton prochain tour");
-            case BOUNCER -> Lang.f("Videur : attaque de {0}. Ignore la moitié de ton bouclier", kind.hurt(kind.swordDamage()));
+            case BOUNCER -> Lang.f("Videur : attaque de {0}. Ignore la moitié de ton bouclier", kind.hurt(kind.swordDamage(), hard));
             case LOAD_BEARING -> Lang.t("Mur porteur : Bouclier, et sa défense ne s'use pas sous tes coups jusqu'à son tour");
             case SAFE -> Lang.f("Coffre-fort : il se soigne de {0} % de ses PV max et te vole {1} % de tes gains",
                 SAFE_HEAL_PERCENT, SAFE_STEAL_PERCENT);
             case HOUSE_EDGE -> Lang.f("Avantage de la maison : attaque de {0}. Tes gains du prochain tirage baissent de {1} %",
-                kind.hurt(kind.swordDamage()), HOUSE_EDGE_PERCENT);
+                kind.hurt(kind.swordDamage(), hard), HOUSE_EDGE_PERCENT);
             case GEAR -> Lang.f("Engrenage : ses autres symboles du tirage sont {0} % plus forts. Un de plus par rouleau qu'elle "
                 + "t'a pris", GEAR_PERCENT);
             case SHORT_CIRCUIT -> Lang.t("Court-circuit : à ton prochain tirage, ton meilleur rouleau devient ton pire. Il casse "
@@ -348,7 +348,7 @@ public enum EnemySymbol {
             case PLATING -> Lang.t("Placage : sa peau d'or tient 1 tour, même sous la moitié de ses PV");
             case INGOT -> Lang.t("Lingot : un coup qui grandit avec sa défense du moment, jusqu'à x3");
             case ROCKFALL -> Lang.f("Éboulement : attaque de {0}. Tu pioches 1 carte de moins au prochain tour",
-                kind.hurt(kind.swordDamage()));
+                kind.hurt(kind.swordDamage(), hard));
             case HEARTBEAT -> Lang.f("Battement : il se soigne de {0} % de ses PV max. Sa peau d'or revient 1 tour",
                 HEARTBEAT_PERCENT);
             case SWALLOWED_COIN -> Lang.f("Pièce avalée : il te prend {0} % de tes gains et garde la pièce. À {1} pièces, son "
@@ -364,7 +364,7 @@ public enum EnemySymbol {
                 + "hasard");
             case TURNSTILE -> Lang.t("Tourniquet : à ton prochain tirage, ton meilleur rouleau est relancé une fois");
             case BIG_WHEEL -> Lang.f("Grand tour : sa roue tombe sur deux Épées ({0} chacune), deux Boucliers, une Potion, ou rien",
-                kind.hurt(kind.swordDamage()));
+                kind.hurt(kind.swordDamage(), hard));
             case RIGGED_PRIZE -> Lang.t("Lot truqué : à ton prochain tirage, tes Paires ne rapportent aucun gain");
             case RIGGED_GAME -> Lang.f("Jeu truqué : si ton prochain tirage ne fait ni Paire ni Bingo, tes dégâts du tour sont "
                 + "divisés par {0}", RIGGED_GAME_DIVISOR);
@@ -377,7 +377,7 @@ public enum EnemySymbol {
             case MIRAGE -> Lang.t("Mirage : à ton prochain tirage, un de tes rouleaux montre un mirage. Il ne compte pas");
             case BURN -> Lang.f("Brûlure : ton bouclier fond de {0} %", BURN_PERCENT);
             case FIRE_BREATH -> Lang.f("Souffle de feu : attaque de {0}, à travers ton bouclier. Il brûle une carte de ta main au "
-                + "prochain tour", kind.hurt(kind.swordDamage()));
+                + "prochain tour", kind.hurt(kind.swordDamage(), hard));
         };
     }
 
@@ -389,6 +389,6 @@ public enum EnemySymbol {
 
     /** @return la description de l'effet de base du symbole (chez le croupier), pour son infobulle. */
     public String getDescription() {
-        return getDescription(EnemyKind.CROUPIER);
+        return getDescription(EnemyKind.CROUPIER, false);
     }
 }

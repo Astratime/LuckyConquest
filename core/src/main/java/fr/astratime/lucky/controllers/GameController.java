@@ -65,6 +65,8 @@ public class GameController {
     /** Cartes que le joueur peut jouer par tour (plus sous l'effet de Dans la manche). */
     public static final int DEFAULT_PLAY_LIMIT = 4;
 
+    /** Ennemis en mode difficile (Tour des épreuves), voir {@link #setHardMode(boolean)}. */
+    private boolean hardMode;
     private       GameState  gameState;
     private final TurnEngine turnEngine = new TurnEngine();
 
@@ -221,8 +223,8 @@ public class GameController {
      *         qu'il laisse dehors
      */
     private Enemy createEnemy(EnemyKind kind, Player player) {
-        Enemy enemy = kind.copiesPlayerDeck() ? new Enemy(kind, EnemyCards.shadowDeck(player.getAllCards()))
-            : new Enemy(kind);
+        Enemy enemy = kind.copiesPlayerDeck() ? new Enemy(kind, EnemyCards.shadowDeck(player.getAllCards()), hardMode)
+            : new Enemy(kind, hardMode);
         if (kind.bansFamily()) {
             CardFamily[] families = CardFamily.values();
             enemy.banFamily(families[random.nextInt(families.length)]);
@@ -287,6 +289,9 @@ public class GameController {
 
     /** Change la cagnotte du Jeu bonus : celle du lieu, de l'Entraînement ou du chapitre de la Tour. */
     public void setPot(BonusPot pot) { turnEngine.setPot(pot); }
+
+    /** Règle la difficulté des ennemis des combats qui suivent : le mode difficile de la Tour, ou non. */
+    public void setHardMode(boolean hard) { this.hardMode = hard; }
 
     /** Change les chances qu'un Bingo ouvre le Jeu bonus (30 % dans la Tour). */
     public void setBonusGameChance(float chance) { turnEngine.setBonusGameChance(chance); }

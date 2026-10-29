@@ -2,15 +2,11 @@ package fr.astratime.lucky.entities.tower;
 
 import fr.astratime.lucky.entities.Enemy;
 import fr.astratime.lucky.entities.enemy.EnemyKind;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 class TowerHardModeTest {
-
-    @AfterEach
-    void backToNormal() { EnemyKind.setTowerHard(false); }
 
     @Test
     void aHardRunIsLabelledAndRemembered() {
@@ -23,22 +19,22 @@ class TowerHardModeTest {
 
     @Test
     void hardModeDoublesTheHpAndPowerOfTowerEnemiesOnly() {
-        int hp = EnemyKind.MACHINE_ORIGINELLE.getMaxHp();
-        int power = EnemyKind.MACHINE_ORIGINELLE.getPower();
-        int croupierPower = EnemyKind.CROUPIER.getPower();
-        int dungeonHp = EnemyKind.ROI_PIQUE.getMaxHp();
-        int trainingPower = EnemyKind.ENTRAINEMENT.getPower();
+        int hp = EnemyKind.MACHINE_ORIGINELLE.getMaxHp(false);
+        int power = EnemyKind.MACHINE_ORIGINELLE.getPower(false);
+        int croupierPower = EnemyKind.CROUPIER.getPower(false);
+        int dungeonHp = EnemyKind.ROI_PIQUE.getMaxHp(false);
+        int trainingPower = EnemyKind.ENTRAINEMENT.getPower(false);
 
-        EnemyKind.setTowerHard(true);
-        assertEquals(hp * EnemyKind.HARD_HP_FACTOR, EnemyKind.MACHINE_ORIGINELLE.getMaxHp());
-        assertEquals(power * EnemyKind.HARD_POWER_FACTOR, EnemyKind.MACHINE_ORIGINELLE.getPower());
-        assertEquals(croupierPower * EnemyKind.HARD_POWER_FACTOR, EnemyKind.CROUPIER.getPower(), "dès le chapitre 1");
-        assertEquals(20_000_000, new Enemy(EnemyKind.MACHINE_ORIGINELLE).getMaxHp());
-        assertEquals(dungeonHp, EnemyKind.ROI_PIQUE.getMaxHp(), "l'Exploration ne change pas");
-        assertEquals(trainingPower, EnemyKind.ENTRAINEMENT.getPower(), "l'Entraînement non plus");
+        assertEquals(hp * EnemyKind.HARD_HP_FACTOR, EnemyKind.MACHINE_ORIGINELLE.getMaxHp(true));
+        assertEquals(power * EnemyKind.HARD_POWER_FACTOR, EnemyKind.MACHINE_ORIGINELLE.getPower(true));
+        assertEquals(croupierPower * EnemyKind.HARD_POWER_FACTOR, EnemyKind.CROUPIER.getPower(true), "dès le chapitre 1");
+        assertEquals(20_000_000, new Enemy(EnemyKind.MACHINE_ORIGINELLE, true).getMaxHp());
+        assertTrue(new Enemy(EnemyKind.MACHINE_ORIGINELLE, true).isHard());
+        assertEquals(dungeonHp, EnemyKind.ROI_PIQUE.getMaxHp(true), "l'Exploration ne change pas");
+        assertEquals(trainingPower, EnemyKind.ENTRAINEMENT.getPower(true), "l'Entraînement non plus");
 
-        EnemyKind.setTowerHard(false);
-        assertEquals(hp, EnemyKind.MACHINE_ORIGINELLE.getMaxHp());
-        assertEquals(power, EnemyKind.MACHINE_ORIGINELLE.getPower());
+        // Plus d'état global : un ennemi normal créé ensuite reste normal.
+        assertEquals(hp, new Enemy(EnemyKind.MACHINE_ORIGINELLE).getMaxHp());
+        assertFalse(new Enemy(EnemyKind.MACHINE_ORIGINELLE).isHard());
     }
 }

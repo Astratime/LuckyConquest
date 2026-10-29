@@ -409,9 +409,9 @@ public class ExplorationScreen extends ScreenAdapter {
             if (profile.isCleared(dungeon)) text.append('\n').append(Lang.t("Déjà vidé."));
         }
         text.append("\n\n").append(Lang.f("Combat 1 : {0} ({1} PV)", dungeon.getSoldier().getDisplayName(),
-            PlayerProfile.formatCoins(dungeon.getSoldier().getMaxHp())));
+            PlayerProfile.formatCoins(dungeon.getSoldier().getMaxHp(false))));
         text.append('\n').append(Lang.f("Combat 2 : {0} ({1} PV)", dungeon.getKing().getDisplayName(),
-            PlayerProfile.formatCoins(dungeon.getKing().getMaxHp())));
+            PlayerProfile.formatCoins(dungeon.getKing().getMaxHp(false))));
         text.append("\n\n").append(Lang.f("Coffre : {0} pièces + 1 carte",
             PlayerProfile.formatCoins(place.getChestCoins())));
         for (Dungeon.Loot loot : dungeon.getLoot()) {

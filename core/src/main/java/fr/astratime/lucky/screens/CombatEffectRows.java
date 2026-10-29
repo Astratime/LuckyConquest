@@ -248,37 +248,37 @@ final class CombatEffectRows {
         addArchetypeRows(rows, lasting, target, guard);
         Enemy foe = controller.getGameState().getEnemy();
         EnemyKind kind = foe.getKind();
-        if (lasting.getNibbles() > 0) rows.add(curse(skull, Lang.f("Grignotage x{0}", lasting.getNibbles()), EnemySymbol.NIBBLE, kind));
-        if (lasting.getDrunk() > 0) rows.add(curse(skull, Lang.f("Ivresse x{0}", lasting.getDrunk()), EnemySymbol.DRUNK, kind));
+        if (lasting.getNibbles() > 0) rows.add(curse(skull, Lang.f("Grignotage x{0}", lasting.getNibbles()), EnemySymbol.NIBBLE, foe));
+        if (lasting.getDrunk() > 0) rows.add(curse(skull, Lang.f("Ivresse x{0}", lasting.getDrunk()), EnemySymbol.DRUNK, foe));
         if (lasting.isBlind()) {
             int blinds = lasting.getBlindCards();
             rows.add(new SidePanel.EffectRow(skull, null, Lang.f("Aveuglement x{0}", blinds), Lang.t("Aveuglement"),
                 Lang.f(Lang.plural(blinds) ? "Au prochain tour, {0} cartes de ta main seront faces cachées. Les Aveuglements se cumulent."
                     : "Au prochain tour, {0} carte de ta main sera face cachée. Les Aveuglements se cumulent.", blinds)));
         }
-        if (lasting.hasNugget()) rows.add(curse(skull, Lang.t("Pépite"), EnemySymbol.NUGGET, kind));
-        if (lasting.getSongs() > 0) rows.add(curse(skull, Lang.f("Chant x{0}", lasting.getSongs()), EnemySymbol.SONG, kind));
+        if (lasting.hasNugget()) rows.add(curse(skull, Lang.t("Pépite"), EnemySymbol.NUGGET, foe));
+        if (lasting.getSongs() > 0) rows.add(curse(skull, Lang.f("Chant x{0}", lasting.getSongs()), EnemySymbol.SONG, foe));
         Set<Integer> voids = new TreeSet<>(lasting.getForbiddenReels());
         voids.remove(lasting.getForbiddenReel()); // le Rouleau interdit a sa propre ligne
-        if (!voids.isEmpty()) rows.add(curse(skull, Lang.f("Rien ne va plus x{0}", voids.size()), EnemySymbol.NOTHING_GOES, kind));
+        if (!voids.isEmpty()) rows.add(curse(skull, Lang.f("Rien ne va plus x{0}", voids.size()), EnemySymbol.NOTHING_GOES, foe));
         if (lasting.getShortCircuits() > 0) {
-            rows.add(curse(skull, Lang.f("Court-circuit x{0}", lasting.getShortCircuits()), EnemySymbol.SHORT_CIRCUIT, kind));
+            rows.add(curse(skull, Lang.f("Court-circuit x{0}", lasting.getShortCircuits()), EnemySymbol.SHORT_CIRCUIT, foe));
         }
         if (lasting.getHouseEdges() > 0) {
-            rows.add(curse(skull, Lang.f("Avantage x{0}", lasting.getHouseEdges()), EnemySymbol.HOUSE_EDGE, kind));
+            rows.add(curse(skull, Lang.f("Avantage x{0}", lasting.getHouseEdges()), EnemySymbol.HOUSE_EDGE, foe));
         }
         if (lasting.getRockfalls() > 0) {
-            rows.add(curse(skull, Lang.f("Éboulement : -{0}", lasting.getRockfalls()), EnemySymbol.ROCKFALL, kind));
+            rows.add(curse(skull, Lang.f("Éboulement : -{0}", lasting.getRockfalls()), EnemySymbol.ROCKFALL, foe));
         }
         if (!lasting.getAspirations().isEmpty()) {
-            rows.add(curse(skull, Lang.f("Aspiration x{0}", lasting.getAspirations().size()), EnemySymbol.ASPIRATION, kind));
+            rows.add(curse(skull, Lang.f("Aspiration x{0}", lasting.getAspirations().size()), EnemySymbol.ASPIRATION, foe));
         }
         if (lasting.getFakeGains() > 0) {
             rows.add(new SidePanel.EffectRow(skull, null, Lang.f("Faux : {0}", Lang.big(lasting.getFakeGains())), Lang.t("Fausse monnaie"),
                 Lang.f("{0} de tes gains sont faux. Dépense-les avant ton tirage, ou ils disparaissent.",
                     SidePanel.formatGains(lasting.getFakeGains()))));
         }
-        if (lasting.getTaxes() > 0) rows.add(curse(skull, Lang.f("Taxe x{0}", lasting.getTaxes()), EnemySymbol.TAX, kind));
+        if (lasting.getTaxes() > 0) rows.add(curse(skull, Lang.f("Taxe x{0}", lasting.getTaxes()), EnemySymbol.TAX, foe));
         if (lasting.getHouseRule() != null) {
             LastingEffects.HouseRule houseRule = lasting.getHouseRule();
             rows.add(new SidePanel.EffectRow(skull, null,
@@ -296,7 +296,7 @@ final class CombatEffectRows {
                 : Lang.f("{0} ou {1}", foe.getPrediction().getDisplayName(), foe.getSecondPrediction().getDisplayName());
             rows.add(new SidePanel.EffectRow(skull, null, Lang.f("Prédit : {0}", foretold.toLowerCase()),
                 Lang.t("Prédiction"), Lang.f("Symbole annoncé : {0}. {1}",
-                    foretold, sentence(EnemySymbol.PREDICTION.getDescription(kind)))));
+                    foretold, sentence(EnemySymbol.PREDICTION.getDescription(kind, foe.isHard())))));
         }
         if (foe.getStolenReels() > 0) {
             int stolen = foe.getStolenReels();
@@ -315,9 +315,9 @@ final class CombatEffectRows {
     }
 
     /** @return la ligne d'un mauvais sort de l'ennemi, décrit comme sur ses rouleaux. */
-    private static SidePanel.EffectRow curse(TextureRegion icon, String text, EnemySymbol symbol, EnemyKind kind) {
+    private static SidePanel.EffectRow curse(TextureRegion icon, String text, EnemySymbol symbol, Enemy foe) {
         String name = symbol.getDisplayName().charAt(0) + symbol.getDisplayName().substring(1).toLowerCase();
-        return new SidePanel.EffectRow(icon, null, text, name, sentence(symbol.getDescription(kind)));
+        return new SidePanel.EffectRow(icon, null, text, name, sentence(symbol.getDescription(foe.getKind(), foe.isHard())));
     }
 
     /** @return la description d'un symbole ennemi (« Nom : texte ») sans son nom, terminée par un point. */
