@@ -283,10 +283,11 @@ public class GameScreen extends ScreenAdapter {
     private final BitmapFont          playsFont = Fonts.jersey(24, Color.WHITE, 2f, Palette.TEXT_SHADE);
     private final BitmapFont          shieldFont = Fonts.jersey(26, Color.WHITE, 2f, Palette.TEXT_SHADE);
     private final Texture             cardBackTexture;
-    private final CardTextures        cardTextures  = new CardTextures();
-    private final EnemyTextures       enemyTextures = new EnemyTextures(cardTextures);
-    private final CasinoButtons       buttons       = new CasinoButtons();
-    private final HudTextures         hudTextures   = new HudTextures();
+    /** Communs à tous les écrans (voir {@link SharedAssets}) : ne jamais les libérer ici. */
+    private final CardTextures        cardTextures;
+    private final EnemyTextures       enemyTextures;
+    private final CasinoButtons       buttons;
+    private final HudTextures         hudTextures;
     private final VisualSettings      settings      = new VisualSettings();
     private final ScreenShake         screenShake   = new ScreenShake(settings);
     private CutsceneKit               cutsceneKit;
@@ -411,6 +412,11 @@ public class GameScreen extends ScreenAdapter {
     public GameScreen(LuckyGame luckyGame, CombatRun run) {
         this.luckyGame = luckyGame;
         this.run       = run;
+        SharedAssets assets = luckyGame.getAssets();
+        cardTextures  = assets.cardTextures();
+        enemyTextures = assets.enemyTextures();
+        buttons       = assets.buttons;
+        hudTextures   = assets.hud;
         // Le deck construit par le joueur (ou le deck de départ), relu à chaque nouveau combat.
         PlayerProfile profile = luckyGame.getProfile();
         if (run instanceof TutorialRun) {
@@ -2169,14 +2175,10 @@ public class GameScreen extends ScreenAdapter {
         Fonts.release(shieldFont);
         Fonts.release(pileFont);
         tableTextures.dispose();
-        cardTextures.dispose();
-        buttons.dispose();
         tooltip.dispose();
         enemyView.dispose();
-        enemyTextures.dispose();
         hud.dispose();
         sidePanel.dispose();
-        hudTextures.dispose();
         symbolStrikes.dispose();
         slots.dispose();
         sounds.dispose();

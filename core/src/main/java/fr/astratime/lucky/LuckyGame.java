@@ -1,5 +1,6 @@
 package fr.astratime.lucky;
 
+import fr.astratime.lucky.screens.SharedAssets;
 import com.badlogic.gdx.Game;
 import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
@@ -24,6 +25,8 @@ public class LuckyGame extends Game {
 
     /** SpriteBatch partagé par tous les écrans (créé une seule fois, réutilisé partout). */
     private SpriteBatch batch;
+    /** Textures, boutons et bruits communs à tous les écrans (chargés une seule fois). */
+    private SharedAssets assets;
 
     private final ScreenModeSwitcher screenModeSwitcher;
 
@@ -61,6 +64,7 @@ public class LuckyGame extends Game {
         // brouillés du build livré, transparent si les assets sont en clair (dev).
         fr.astratime.lucky.security.ObfuscatedFiles.install();
         batch = new SpriteBatch();
+        assets = new SharedAssets();
         Lang.load();
         if (tampered > 0) {
             notices.add(Lang.f("Attention : {0} fichier(s) du jeu ont été modifiés ou remplacés. "
@@ -100,6 +104,11 @@ public class LuckyGame extends Game {
         load(newSlot, true);
         profile.save();
         slots.setLastUsed(slot);
+    }
+
+    /** @return les ressources communes à tous les écrans (à ne jamais libérer depuis un écran). */
+    public SharedAssets getAssets() {
+        return assets;
     }
 
     /** @return les emplacements de sauvegarde. */
@@ -171,6 +180,7 @@ public class LuckyGame extends Game {
         Screen current = getScreen();
         super.dispose();
         if (current != null) current.dispose();
+        assets.dispose();
         batch.dispose();
     }
 

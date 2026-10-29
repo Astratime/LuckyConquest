@@ -2,10 +2,6 @@ package fr.astratime.lucky.screens;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
-import com.badlogic.gdx.InputAdapter;
-import com.badlogic.gdx.InputMultiplexer;
-import com.badlogic.gdx.ScreenAdapter;
-import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
@@ -13,7 +9,6 @@ import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.Interpolation;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
-import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.Touchable;
 import com.badlogic.gdx.scenes.scene2d.actions.Actions;
 import com.badlogic.gdx.scenes.scene2d.ui.Image;
@@ -22,17 +17,13 @@ import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 import com.badlogic.gdx.utils.Align;
-import com.badlogic.gdx.utils.ScreenUtils;
 import fr.astratime.lucky.LuckyGame;
-import fr.astratime.lucky.assets.BackgroundMusic;
 import fr.astratime.lucky.assets.CardTextures;
 import fr.astratime.lucky.assets.EnemyTextures;
 import fr.astratime.lucky.assets.ExplorationArt;
 import fr.astratime.lucky.assets.Fonts;
-import fr.astratime.lucky.assets.HudTextures;
 import fr.astratime.lucky.assets.Palette;
 import fr.astratime.lucky.assets.Textures;
-import fr.astratime.lucky.assets.VolumeSound;
 import fr.astratime.lucky.entities.Card;
 import fr.astratime.lucky.entities.exploration.Dungeon;
 import fr.astratime.lucky.entities.exploration.DungeonRun;
@@ -41,12 +32,8 @@ import fr.astratime.lucky.entities.exploration.PlaceRule;
 import fr.astratime.lucky.i18n.Lang;
 import fr.astratime.lucky.loaders.CardLoader;
 import fr.astratime.lucky.progress.PlayerProfile;
-import fr.astratime.lucky.settings.AudioSettings;
 import fr.astratime.lucky.views.DungeonRewardsOverlay;
-import fr.astratime.lucky.views.CasinoButtons;
-import fr.astratime.lucky.views.MenuDecor;
 import fr.astratime.lucky.views.MenuOption;
-import fr.astratime.lucky.views.MinimumScreenViewport;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -66,17 +53,10 @@ import java.util.function.Function;
  * (voir {@link DungeonRun}, {@link GameScreen}). Échap ou « Retour » ramène au
  * menu principal.
  */
-public class ExplorationScreen extends ScreenAdapter {
+public class ExplorationScreen extends CasinoMenuScreen {
 
-    private static final String CLICK_SOUND = "sounds/button-click.ogg";
-    private static final String HOVER_SOUND = "sounds/ui/menu_hover.ogg";
     private static final String CHIP_PATH   = "menu/chip_spin.png";
-    private static final String MUSIC       = "music/main_menu.ogg";
-    private static final float  MUSIC_LEVEL = 0.3f;
 
-    private static final float MIN_WIDTH    = 1600f;
-    private static final float MIN_HEIGHT   = 1080f;
-    private static final float MARGIN       = 60f;
     private static final float TITLE_TOP    = 110f;    // du haut de l'écran au centre du titre
     private static final float LIST_WIDTH   = 420f;
     private static final float ROW_WIDTH    = 340f;
@@ -88,7 +68,6 @@ public class ExplorationScreen extends ScreenAdapter {
     private static final float INFO_WIDTH   = 300f;    // colonne du donjon choisi, à droite de la carte
     private static final float GATE_HOVER   = 1.12f;
     private static final float RULE_GAP     = 24f;     // entre le bas de la carte et la règle du lieu
-    private static final float FADE_TIME    = 0.4f;
     /** Opacité du nom d'un lieu fermé, dans la liste. */
     private static final float LOCKED_ALPHA = 0.4f;
     /** Teinte de la carte et des entrées d'un lieu fermé. */
@@ -101,23 +80,13 @@ public class ExplorationScreen extends ScreenAdapter {
     private static final float POT_ICON_HEIGHT = 32f;
     private static final float POT_ICON_GAP    = 10f;
 
-    private final LuckyGame       luckyGame;
-    private final Stage           stage;
-    private final AudioSettings   audio  = new AudioSettings();
-    private final HudTextures     hud    = new HudTextures();
     /** Première visite : le Croupier présente l'écran. */
     private final FirstVisitGuide firstVisit;
-    private final CardTextures    cardTextures = new CardTextures();
-    private final EnemyTextures   enemyTextures = new EnemyTextures(cardTextures);
-    private final CasinoButtons   buttons = new CasinoButtons();
-    private final MenuDecor       decor  = new MenuDecor();
+    private final CardTextures    cardTextures = assets.cardTextures();
+    private final EnemyTextures   enemyTextures = assets.enemyTextures();
     private final Texture         chipTexture = new Texture(Gdx.files.internal(CHIP_PATH));
     /** Pastille verte cochée : donjon dont le roi est battu, lieu dont les quatre rois le sont. */
     private final Texture         badgeTexture = Textures.clearedBadge();
-    private final Sound           clickSound;
-    private final Sound           hoverSound;
-    private final BackgroundMusic music;
-    private final BitmapFont      titleFont = Fonts.jersey(96, Palette.GOLD, 6f, Palette.TEXT_SHADE);
     private final BitmapFont      rowFont   = Fonts.jersey(50, Color.WHITE, 4f, Palette.TEXT_SHADE);
     private final BitmapFont      placeFont = Fonts.jersey(64, Palette.GOLD, 5f, Palette.TEXT_SHADE);
     private final BitmapFont      nameFont  = Fonts.jersey(44, Palette.GOLD, 3f, Palette.TEXT_SHADE);
@@ -128,8 +97,6 @@ public class ExplorationScreen extends ScreenAdapter {
     /** Nom de chaque carte, par id, pour le contenu des coffres. */
     private final Map<String, String> cardNames;
 
-    private final Image            veil;
-    private final Label            title;
     private final Image            listPanel;
     private final Image            detailPanel;
     private final List<MenuOption> rows = new ArrayList<>();
@@ -159,14 +126,12 @@ public class ExplorationScreen extends ScreenAdapter {
     private final TextButton       tutorialButton;
     private final TextButton       rewardsButton;
     private final DungeonRewardsOverlay rewards;
-    private final Image            fade;
 
     private Place   place = Place.values()[0];
     /** Profil du joueur : les donjons vidés ouvrent les lieux suivants. */
     private final PlayerProfile profile;
     private int     selected = -1;   // donjon choisi sur la carte, -1 : aucun
     private float   mapScale = 4f;
-    private boolean leaving;
 
     public ExplorationScreen(LuckyGame luckyGame) {
         this(luckyGame, null);
@@ -177,13 +142,9 @@ public class ExplorationScreen extends ScreenAdapter {
      * au retour d'un combat, celui qui vient d'être joué ({@code null} : le premier lieu).
      */
     public ExplorationScreen(LuckyGame luckyGame, Dungeon played) {
-        this.luckyGame = luckyGame;
+        super(luckyGame, Lang.t("EXPLORATION"), 96, VEIL_ALPHA);
         if (played != null) place = Place.of(played);
         this.profile   = luckyGame.getProfile();
-        this.stage     = new Stage(new MinimumScreenViewport(MIN_WIDTH, MIN_HEIGHT), luckyGame.getBatch());
-        clickSound = new VolumeSound(Gdx.audio.newSound(Gdx.files.internal(CLICK_SOUND)), audio);
-        hoverSound = new VolumeSound(Gdx.audio.newSound(Gdx.files.internal(HOVER_SOUND)), audio);
-        music      = new BackgroundMusic(MUSIC, audio, MUSIC_LEVEL);
         Function<String, Card> factory = CardLoader.cardFactory();
         cardNames = new HashMap<>();
         for (Place p : Place.values()) {
@@ -191,13 +152,7 @@ public class ExplorationScreen extends ScreenAdapter {
                 for (Dungeon.Loot loot : dungeon.getLoot()) cardNames.put(loot.cardId(), factory.apply(loot.cardId()).getName());
             }
         }
-
         TextureRegionDrawable pixel = new TextureRegionDrawable(new TextureRegion(hud.pixel));
-        veil = new Image(pixel);
-        veil.setColor(0f, 0f, 0f, 0.6f);
-        veil.setTouchable(Touchable.disabled);
-        title = new Label(Lang.t("EXPLORATION"), new Label.LabelStyle(titleFont, Color.WHITE));
-        title.pack();
         listPanel   = new Image(hud.panelDrawable());
         detailPanel = new Image(hud.panelDrawable());
         listPanel.setTouchable(Touchable.disabled);
@@ -253,14 +208,6 @@ public class ExplorationScreen extends ScreenAdapter {
         deckButton  = buttons.create(deckText(), clickSound, this::nextDeck);
         // Un seul deck enregistré (ou le mode ADMIN, qui a le sien) : rien à choisir.
         deckButton.setVisible(!profile.isAdmin() && profile.nextUsedDeckSlot(profile.getDeckSlot()) != profile.getDeckSlot());
-
-        fade = new Image(pixel);
-        fade.setColor(Color.BLACK);
-        fade.setTouchable(Touchable.disabled);
-
-        stage.addActor(decor);
-        stage.addActor(veil);
-        stage.addActor(title);
         stage.addActor(listPanel);
         stage.addActor(detailPanel);
         rows.forEach(stage::addActor);
@@ -281,8 +228,7 @@ public class ExplorationScreen extends ScreenAdapter {
         stage.addActor(tutorialButton);
         stage.addActor(rewardsButton);
         stage.addActor(rewards.getActor());
-        stage.addActor(fade);
-        fade.addAction(Actions.fadeOut(FADE_TIME));
+        reveal();
 
         selectPlace(place);
         if (played != null) selectDungeon(place.getDungeons().indexOf(played), false);
@@ -486,10 +432,7 @@ public class ExplorationScreen extends ScreenAdapter {
     private void launch() {
         if (leaving || selected < 0 || !profile.isOpen(place)) return;
         Dungeon dungeon = place.getDungeons().get(selected);
-        fadeOutThen(() -> {
-            luckyGame.setScreen(new GameScreen(luckyGame, new DungeonRun(dungeon)));
-            dispose();
-        });
+        goTo(() -> new GameScreen(luckyGame, new DungeonRun(dungeon)));
     }
 
     /** Ouvre le détail des récompenses du donjon choisi. */
@@ -499,33 +442,15 @@ public class ExplorationScreen extends ScreenAdapter {
         fade.toFront();
     }
 
-    /** Retour au menu principal. */
-    private void onBack() {
-        if (leaving) return;
-        fadeOutThen(() -> {
-            luckyGame.setScreen(new MenuScreen(luckyGame));
-            dispose();
-        });
-    }
 
-    private void fadeOutThen(Runnable next) {
-        leaving = true;
-        fade.clearActions();
-        fade.addAction(Actions.sequence(Actions.fadeIn(FADE_TIME), Actions.run(() -> Gdx.app.postRunnable(next))));
-    }
 
     // -------------------------------------------------------------------------
     // Mise en page et cycle de vie
     // -------------------------------------------------------------------------
 
     /** Place le titre, les deux panneaux, la carte, ses entrées, les informations et les boutons. */
-    private void layout() {
-        float width  = stage.getViewport().getWorldWidth();
-        float height = stage.getViewport().getWorldHeight();
-        decor.layout(width, height);
-        decor.setPosition(0f, 0f);
-        veil.setBounds(0f, 0f, width, height);
-        fade.setBounds(0f, 0f, width, height);
+    @Override
+    protected void layoutContent(float width, float height) {
         title.setPosition((width - title.getWidth()) / 2f, height - TITLE_TOP - title.getHeight() / 2f);
 
         float panelTop    = height - PANEL_TOP;
@@ -640,82 +565,53 @@ public class ExplorationScreen extends ScreenAdapter {
     }
 
     /**
-     * Stage d'abord (souris), puis clavier : gauche/droite pour choisir un
-     * donjon, Entrée ou Espace pour y entrer, Échap pour revenir au menu principal.
+     * Gauche/droite pour choisir un donjon, Entrée ou Espace pour y entrer, R pour
+     * ses récompenses, Échap pour revenir au menu principal.
      */
     @Override
-    public void show() {
-        InputAdapter keyboard = new InputAdapter() {
-            @Override
-            public boolean keyDown(int keycode) {
-                if (leaving) return false;
-                if (rewards.isShown()) { // le détail des récompenses ouvert : Échap (ou Entrée) le referme
-                    if (keycode != Input.Keys.ESCAPE && keycode != Input.Keys.ENTER && keycode != Input.Keys.R) return true;
-                    clickSound.play();
-                    rewards.hide();
-                    return true;
-                }
-                int count = place.getDungeons().size();
-                switch (keycode) {
-                    case Input.Keys.LEFT, Input.Keys.A, Input.Keys.UP, Input.Keys.W ->
-                        selectDungeon((selected + count - 1) % count, true);
-                    case Input.Keys.RIGHT, Input.Keys.D, Input.Keys.DOWN, Input.Keys.S ->
-                        selectDungeon((selected + 1) % count, true);
-                    case Input.Keys.ENTER, Input.Keys.SPACE -> {
-                        clickSound.play();
-                        launch();
-                    }
-                    case Input.Keys.ESCAPE -> {
-                        clickSound.play();
-                        onBack();
-                    }
-                    case Input.Keys.R -> {
-                        clickSound.play();
-                        showRewards();
-                    }
-                    default -> { return false; }
-                }
-                return true;
+    protected boolean onKey(int keycode) {
+        if (rewards.isShown()) { // le détail des récompenses ouvert : Échap (ou Entrée) le referme
+            if (keycode != Input.Keys.ESCAPE && keycode != Input.Keys.ENTER && keycode != Input.Keys.R) return true;
+            clickSound.play();
+            rewards.hide();
+            return true;
+        }
+        int count = place.getDungeons().size();
+        switch (keycode) {
+            case Input.Keys.LEFT, Input.Keys.A, Input.Keys.UP, Input.Keys.W ->
+                selectDungeon((selected + count - 1) % count, true);
+            case Input.Keys.RIGHT, Input.Keys.D, Input.Keys.DOWN, Input.Keys.S ->
+                selectDungeon((selected + 1) % count, true);
+            case Input.Keys.ENTER, Input.Keys.SPACE -> {
+                clickSound.play();
+                launch();
             }
-        };
-        Gdx.input.setInputProcessor(new InputMultiplexer(stage, keyboard));
-        music.play();
-    }
-
-    @Override
-    public void resize(int width, int height) {
-        stage.getViewport().update(width, height, true);
-        layout();
-    }
-
-    @Override
-    public void render(float delta) {
-        ScreenUtils.clear(Color.BLACK);
-        music.update();
-        stage.act(delta);
-        stage.draw();
+            case Input.Keys.ESCAPE -> {
+                clickSound.play();
+                onBack();
+            }
+            case Input.Keys.R -> {
+                clickSound.play();
+                showRewards();
+            }
+            default -> { return false; }
+        }
+        return true;
     }
 
     @Override
     public void dispose() {
-        stage.dispose();
+        super.dispose();
         firstVisit.dispose();
-        decor.dispose();
-        enemyTextures.dispose();
-        cardTextures.dispose();
-        buttons.dispose();
         chipTexture.dispose();
         badgeTexture.dispose();
-        clickSound.dispose();
-        hoverSound.dispose();
-        music.dispose();
-        hud.dispose();
-        Fonts.release(titleFont);
         Fonts.release(rowFont);
         Fonts.release(placeFont);
         Fonts.release(nameFont);
         Fonts.release(bodyFont);
         Fonts.release(gateFont);
+        Fonts.release(ruleFont);
+        Fonts.release(ruleBody);
         rewards.dispose();
     }
 

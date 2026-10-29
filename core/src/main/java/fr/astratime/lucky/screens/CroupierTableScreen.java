@@ -2,10 +2,7 @@ package fr.astratime.lucky.screens;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
-import com.badlogic.gdx.InputAdapter;
-import com.badlogic.gdx.InputMultiplexer;
 import com.badlogic.gdx.Screen;
-import com.badlogic.gdx.ScreenAdapter;
 import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Texture;
@@ -16,7 +13,6 @@ import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.Group;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
-import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.Touchable;
 import com.badlogic.gdx.scenes.scene2d.actions.Actions;
 import com.badlogic.gdx.scenes.scene2d.ui.Image;
@@ -27,12 +23,9 @@ import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 import com.badlogic.gdx.utils.Align;
-import com.badlogic.gdx.utils.ScreenUtils;
 import fr.astratime.lucky.LuckyGame;
-import fr.astratime.lucky.assets.BackgroundMusic;
 import fr.astratime.lucky.assets.CardTextures;
 import fr.astratime.lucky.assets.Fonts;
-import fr.astratime.lucky.assets.HudTextures;
 import fr.astratime.lucky.assets.Palette;
 import fr.astratime.lucky.assets.VolumeSound;
 import fr.astratime.lucky.entities.Card;
@@ -43,11 +36,7 @@ import fr.astratime.lucky.progress.DeckDraft;
 import fr.astratime.lucky.progress.MachineDraft;
 import fr.astratime.lucky.progress.ReelShop;
 import fr.astratime.lucky.progress.PlayerProfile;
-import fr.astratime.lucky.settings.AudioSettings;
-import fr.astratime.lucky.views.CasinoButtons;
 import fr.astratime.lucky.views.GuideOverlay;
-import fr.astratime.lucky.views.MenuDecor;
-import fr.astratime.lucky.views.MinimumScreenViewport;
 import fr.astratime.lucky.views.Tooltip;
 import fr.astratime.lucky.views.UpgradeOverlay;
 
@@ -81,18 +70,12 @@ import java.util.function.Supplier;
  * « FUSIONNER » : ils deviennent un exemplaire de sa version « + » (voir
  * {@link PlayerProfile#upgradeCard(String)}), tout de suite enregistré.
  */
-public class CroupierTableScreen extends ScreenAdapter {
+public class CroupierTableScreen extends CasinoMenuScreen {
 
-    private static final String CLICK_SOUND  = "sounds/button-click.ogg";
     private static final String DEAL_SOUND   = "sounds/card-deal.ogg";
     private static final String REFUSE_SOUND = "sounds/coins/loss.ogg";
     private static final String UPGRADE_SOUND = "sounds/shop/card_upgrade.ogg";
-    private static final String MUSIC        = "music/main_menu.ogg";
-    private static final float  MUSIC_LEVEL  = 0.3f;
 
-    private static final float MIN_WIDTH    = 1600f;
-    private static final float MIN_HEIGHT   = 1080f;
-    private static final float MARGIN       = 60f;
     private static final float TITLE_TOP    = 100f;
     private static final float PANEL_TOP    = 190f;
     private static final float BOTTOM_SPACE = 130f;
@@ -105,34 +88,24 @@ public class CroupierTableScreen extends ScreenAdapter {
     private static final float REEL_HEIGHT  = 120f;
     private static final float CELL_GAP     = 16f;
     private static final float HOVER_SCALE  = 1.06f;
-    private static final float FADE_TIME    = 0.4f;
     private static final Color REFUSED      = new Color(1f, 0.45f, 0.45f, 1f);
     private static final Color USED_UP      = new Color(0.6f, 0.6f, 0.6f, 1f);
     /** Emplacement de deck qu'on ne modifie pas : bien plus sombre que celui qu'on modifie. */
     private static final Color OTHER_SLOT   = new Color(0.35f, 0.35f, 0.35f, 1f);
 
-    private final LuckyGame       luckyGame;
     private final PlayerProfile   profile;
     private final DeckDraft       draft;
     private final MachineDraft    machineDraft;
-    private final Stage           stage;
-    private final AudioSettings   audio  = new AudioSettings();
-    private final HudTextures     hud    = new HudTextures();
     /** Première visite : le Croupier présente l'écran. */
     private final FirstVisitGuide firstVisit;
-    private final CardTextures    cardTextures = new CardTextures();
-    private final CasinoButtons   buttons = new CasinoButtons();
-    private final MenuDecor       decor  = new MenuDecor();
+    private final CardTextures    cardTextures = assets.cardTextures();
     private final Tooltip         tooltip = new Tooltip(hud);
-    private final Sound           clickSound;
     private final Sound           dealSound;
     private final Sound           refuseSound;
     private final Sound           upgradeSound;
     /** Fenêtre de fusion d'une carte en sa version « + ». */
     private final UpgradeOverlay  upgradeOverlay;
     private final Function<String, Card> factory = CardLoader.cardFactory();
-    private final BackgroundMusic music;
-    private final BitmapFont      titleFont   = Fonts.jersey(84, Palette.GOLD, 6f, Palette.TEXT_SHADE);
     private final BitmapFont      headFont    = Fonts.jersey(44, Palette.GOLD, 3f, Palette.TEXT_SHADE);
     private final BitmapFont      counterFont = Fonts.jersey(64, Color.WHITE, 4f, Palette.TEXT_SHADE);
     private final BitmapFont      countFont   = Fonts.jersey(28, Color.WHITE, 2f, Palette.TEXT_SHADE);
@@ -143,8 +116,6 @@ public class CroupierTableScreen extends ScreenAdapter {
     /** Une carte de chaque sorte possédée, par id, dans l'ordre de la collection. */
     private final Map<String, Card> cards = new LinkedHashMap<>();
 
-    private final Image       veil;
-    private final Label       title;
     private final Image       collectionPanel;
     private final Image       deckPanel;
     private final Label       collectionHead;
@@ -174,36 +145,24 @@ public class CroupierTableScreen extends ScreenAdapter {
     private final TextButton  backButton;
     /** Rejoue la présentation du Croupier. */
     private final TextButton  tutorialButton;
-    private final Image       fade;
 
     private int     columns = 6;
     private int     reelColumns = 4;
     /** Onglet « Rouleaux » affiché (sinon « Deck »). */
     private boolean showingReels;
-    private boolean leaving;
     /** Emplacements de deck (« Deck 1 » à « Deck 3 ») ; celui qu'on modifie, enregistré par « Enregistrer ». */
     private final List<TextButton> slotButtons = new ArrayList<>();
     private int editingSlot;
 
     public CroupierTableScreen(LuckyGame luckyGame) {
-        this.luckyGame = luckyGame;
+        super(luckyGame, Lang.t("TABLE DU CROUPIER"), 84, 0.65f);
         this.profile   = luckyGame.getProfile();
         this.draft     = new DeckDraft(profile);
         this.machineDraft = new MachineDraft(profile);
-        this.stage     = new Stage(new MinimumScreenViewport(MIN_WIDTH, MIN_HEIGHT), luckyGame.getBatch());
-        clickSound  = new VolumeSound(Gdx.audio.newSound(Gdx.files.internal(CLICK_SOUND)), audio);
-        dealSound   = new VolumeSound(Gdx.audio.newSound(Gdx.files.internal(DEAL_SOUND)), audio);
-        refuseSound = new VolumeSound(Gdx.audio.newSound(Gdx.files.internal(REFUSE_SOUND)), audio);
-        upgradeSound = new VolumeSound(Gdx.audio.newSound(Gdx.files.internal(UPGRADE_SOUND)), audio);
-        music       = new BackgroundMusic(MUSIC, audio, MUSIC_LEVEL);
-
-
+        dealSound   = new VolumeSound(Gdx.audio.newSound(Gdx.files.internal(DEAL_SOUND)), assets.audio);
+        refuseSound = new VolumeSound(Gdx.audio.newSound(Gdx.files.internal(REFUSE_SOUND)), assets.audio);
+        upgradeSound = new VolumeSound(Gdx.audio.newSound(Gdx.files.internal(UPGRADE_SOUND)), assets.audio);
         TextureRegionDrawable pixel = new TextureRegionDrawable(new TextureRegion(hud.pixel));
-        veil = new Image(pixel);
-        veil.setColor(0f, 0f, 0f, 0.65f);
-        veil.setTouchable(Touchable.disabled);
-        title = new Label(Lang.t("TABLE DU CROUPIER"), new Label.LabelStyle(titleFont, Color.WHITE));
-        title.pack();
         collectionPanel = new Image(hud.panelDrawable());
         deckPanel       = new Image(hud.panelDrawable());
         collectionPanel.setTouchable(Touchable.disabled);
@@ -248,14 +207,6 @@ public class CroupierTableScreen extends ScreenAdapter {
         tutorialButton = buttons.create(Lang.t("Tutoriel"), clickSound, this::replayGuide);
 
         upgradeOverlay = new UpgradeOverlay(hud, buttons, clickSound, upgradeSound);
-
-        fade = new Image(pixel);
-        fade.setColor(Color.BLACK);
-        fade.setTouchable(Touchable.disabled);
-
-        stage.addActor(decor);
-        stage.addActor(veil);
-        stage.addActor(title);
         stage.addActor(collectionPanel);
         stage.addActor(deckPanel);
         stage.addActor(collectionHead);
@@ -277,8 +228,7 @@ public class CroupierTableScreen extends ScreenAdapter {
         slotButtons.forEach(stage::addActor);
         stage.addActor(tooltip.getActor());
         stage.addActor(upgradeOverlay.getActor());
-        stage.addActor(fade);
-        fade.addAction(Actions.fadeOut(FADE_TIME));
+        reveal();
 
         layout();
         showTab(false);
@@ -683,32 +633,23 @@ public class CroupierTableScreen extends ScreenAdapter {
     }
 
     /** Retour au menu principal, sans enregistrer. */
-    private void onBack() {
-        if (leaving) return;
+    @Override
+    protected void onBack() {
         leaveTo(() -> new MenuScreen(luckyGame));
     }
 
     private void leaveTo(Supplier<Screen> next) {
-        leaving = true;
+        if (leaving) return;
         tooltip.hide();
-        fade.clearActions();
-        fade.addAction(Actions.sequence(Actions.fadeIn(FADE_TIME), Actions.run(() -> Gdx.app.postRunnable(() -> {
-            luckyGame.setScreen(next.get());
-            dispose();
-        }))));
+        goTo(next);
     }
 
     // -------------------------------------------------------------------------
     // Mise en page et cycle de vie
     // -------------------------------------------------------------------------
 
-    private void layout() {
-        float width  = stage.getViewport().getWorldWidth();
-        float height = stage.getViewport().getWorldHeight();
-        decor.layout(width, height);
-        decor.setPosition(0f, 0f);
-        veil.setBounds(0f, 0f, width, height);
-        fade.setBounds(0f, 0f, width, height);
+    @Override
+    protected void layoutContent(float width, float height) {
         title.setPosition(MARGIN, height - TITLE_TOP - title.getHeight() / 2f);
         reelsTab.setPosition(width - MARGIN - reelsTab.getWidth(), height - TITLE_TOP - reelsTab.getHeight() / 2f);
         deckTab.setPosition(reelsTab.getX() - 20f - deckTab.getWidth(), reelsTab.getY());
@@ -779,55 +720,34 @@ public class CroupierTableScreen extends ScreenAdapter {
         upgradeOverlay.layout(width, height);
     }
 
-    /** Stage d'abord (souris), puis clavier : Échap revient au menu principal sans enregistrer. */
+    /** Échap referme l'amélioration d'une carte, sinon revient au menu principal sans enregistrer. */
+    @Override
+    protected boolean onKey(int keycode) {
+        if (keycode != Input.Keys.ESCAPE) return false;
+        clickSound.play();
+        if (upgradeOverlay.isShown()) upgradeOverlay.hide();
+        else onBack();
+        return true;
+    }
+
     @Override
     public void show() {
-        InputAdapter keyboard = new InputAdapter() {
-            @Override
-            public boolean keyDown(int keycode) {
-                if (leaving || keycode != Input.Keys.ESCAPE) return false;
-                clickSound.play();
-                if (upgradeOverlay.isShown()) upgradeOverlay.hide();
-                else onBack();
-                return true;
-            }
-        };
-        Gdx.input.setInputProcessor(new InputMultiplexer(stage, keyboard));
+        super.show();
         stage.setScrollFocus(showingReels ? reelScroll : scroll);
-        music.play();
     }
 
-    @Override
-    public void resize(int width, int height) {
-        stage.getViewport().update(width, height, true);
-        layout();
-    }
 
-    @Override
-    public void render(float delta) {
-        ScreenUtils.clear(Color.BLACK);
-        music.update();
-        stage.act(delta);
-        stage.draw();
-    }
 
     @Override
     public void dispose() {
-        stage.dispose();
+        super.dispose();
         firstVisit.dispose();
-        decor.dispose();
-        cardTextures.dispose();
         reelTextures.values().forEach(Texture::dispose);
-        buttons.dispose();
         tooltip.dispose();
-        clickSound.dispose();
         dealSound.dispose();
         refuseSound.dispose();
         upgradeSound.dispose();
         upgradeOverlay.dispose();
-        music.dispose();
-        hud.dispose();
-        Fonts.release(titleFont);
         Fonts.release(headFont);
         Fonts.release(counterFont);
         Fonts.release(countFont);

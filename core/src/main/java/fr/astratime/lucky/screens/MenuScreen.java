@@ -20,7 +20,6 @@ import com.badlogic.gdx.scenes.scene2d.ui.Image;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 import com.badlogic.gdx.utils.ScreenUtils;
 import fr.astratime.lucky.LuckyGame;
-import fr.astratime.lucky.assets.CardTextures;
 import fr.astratime.lucky.assets.EnemyTextures;
 import fr.astratime.lucky.assets.Fonts;
 import fr.astratime.lucky.assets.HudTextures;
@@ -74,11 +73,7 @@ import java.util.function.Supplier;
  */
 public class MenuScreen extends ScreenAdapter {
 
-    /** Bruitage du clic (CC0, Kenney.nl — voir assets/sounds/CREDITS.txt). */
-    private static final String CLICK_SOUND = "sounds/button-click.ogg";
     private static final String ACHIEVEMENT_SOUND = "sounds/ui/achievement.ogg";
-    /** Survol d'une option (synthétisé, voir tools/sounds/generate_sounds.py). */
-    private static final String HOVER_SOUND = "sounds/ui/menu_hover.ogg";
     private static final String TITLE       = "LUCKY CONQUEST";
     /** Musique du menu (fournie par Astra) et son volume au réglage maximal : pas de bruitage à couvrir ici. */
     private static final String MUSIC       = "music/main_menu.ogg";
@@ -100,13 +95,15 @@ public class MenuScreen extends ScreenAdapter {
     private static final float GUIDE_DELAY    = 0.9f;
 
     private final LuckyGame      luckyGame;
+    /** Communs à tous les écrans (voir {@link SharedAssets}) : ne jamais les libérer ici. */
+    private final AudioSettings  audio;
+    private final HudTextures    hud;
+    private final CasinoButtons  guideButtons;
     private final Stage          stage;
     private final VisualSettings settings = new VisualSettings();
     /** Échap sur une sous-page (Accessibilité) : retour à sa page parente ; {@code null} : à la page principale. */
     private Runnable escapeBack;
-    private final AudioSettings  audio    = new AudioSettings();
     private final DisplaySettings display = new DisplaySettings();
-    private final HudTextures    hud      = new HudTextures();
     private final BitmapFont     titleFont;
     private final BitmapFont     shineFont;
     private final Sound          clickSound;
@@ -119,14 +116,11 @@ public class MenuScreen extends ScreenAdapter {
     private final Image             fade;
     /** Le Croupier : il propose le tutoriel au premier lancement, puis présente le menu après le tutoriel. */
     private final Texture           croupier = EnemyTextures.newCroupierPortrait();
-    private final CasinoButtons     guideButtons = new CasinoButtons();
     private final GuideOverlay      guide;
     /** Statistiques et succès (Options) ; annonce des succès atteints. */
     private final AchievementsOverlay achievements;
     private final AchievementToast    toast;
     /** Bestiaire et collection (Options) ; ses portraits ne se chargent qu'à sa première ouverture. */
-    private CardTextures              cardTextures;
-    private EnemyTextures             enemyTextures;
     private BestiaryOverlay           bestiary;
     private final Sound               achievementSound;
     private boolean                 leaving;
@@ -147,10 +141,14 @@ public class MenuScreen extends ScreenAdapter {
     public MenuScreen(LuckyGame luckyGame, boolean home) {
         this.luckyGame = luckyGame;
         this.home      = home;
+        SharedAssets assets = luckyGame.getAssets();
+        this.audio        = assets.audio;
+        this.hud          = assets.hud;
+        this.guideButtons = assets.buttons;
         this.stage     = new Stage(new MinimumScreenViewport(MIN_WIDTH, MIN_HEIGHT), luckyGame.getBatch());
 
-        clickSound  = new VolumeSound(Gdx.audio.newSound(Gdx.files.internal(CLICK_SOUND)), audio);
-        hoverSound  = new VolumeSound(Gdx.audio.newSound(Gdx.files.internal(HOVER_SOUND)), audio);
+        clickSound  = assets.clickSound;
+        hoverSound  = assets.hoverSound;
         music       = new BackgroundMusic(MUSIC, audio, MUSIC_LEVEL);
         Color shadow = Palette.TEXT_SHADE;
         titleFont   = Fonts.jersey(128, Palette.GOLD, 7f, shadow, TITLE);
@@ -379,9 +377,7 @@ public class MenuScreen extends ScreenAdapter {
     /** Ouvre la fenêtre du bestiaire et de la collection ; le menu attend qu'elle se ferme. */
     private void showBestiary() {
         if (bestiary == null) {
-            cardTextures  = new CardTextures();
-            enemyTextures = new EnemyTextures(cardTextures);
-            bestiary = new BestiaryOverlay(hud, enemyTextures, guideButtons, clickSound,
+            bestiary = new BestiaryOverlay(hud, luckyGame.getAssets().enemyTextures(), guideButtons, clickSound,
                 () -> goTo(() -> new CinematicScreen(luckyGame)));
             stage.addActor(bestiary.getActor());
         }
@@ -650,20 +646,14 @@ public class MenuScreen extends ScreenAdapter {
         achievements.dispose();
         if (bestiary != null) {
             bestiary.dispose();
-            enemyTextures.dispose();
-            cardTextures.dispose();
         }
         toast.dispose();
         achievementSound.dispose();
         croupier.dispose();
-        guideButtons.dispose();
         decor.dispose();
         Fonts.release(titleFont);
         Fonts.release(shineFont);
         menu.dispose();
-        clickSound.dispose();
-        hoverSound.dispose();
         music.dispose();
-        hud.dispose();
     }
 }

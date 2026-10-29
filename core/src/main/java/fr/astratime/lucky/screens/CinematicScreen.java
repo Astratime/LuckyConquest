@@ -2,10 +2,6 @@ package fr.astratime.lucky.screens;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
-import com.badlogic.gdx.InputAdapter;
-import com.badlogic.gdx.InputMultiplexer;
-import com.badlogic.gdx.ScreenAdapter;
-import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
@@ -14,7 +10,6 @@ import com.badlogic.gdx.math.Interpolation;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
-import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.Touchable;
 import com.badlogic.gdx.scenes.scene2d.actions.Actions;
 import com.badlogic.gdx.scenes.scene2d.ui.Image;
@@ -23,7 +18,6 @@ import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 import com.badlogic.gdx.utils.Align;
-import com.badlogic.gdx.utils.ScreenUtils;
 import fr.astratime.lucky.LuckyGame;
 import fr.astratime.lucky.animations.ScreenShake;
 import fr.astratime.lucky.animations.cutscenes.BonusGameCutscene;
@@ -32,14 +26,11 @@ import fr.astratime.lucky.animations.cutscenes.Cutscene;
 import fr.astratime.lucky.animations.cutscenes.CutsceneKit;
 import fr.astratime.lucky.animations.cutscenes.Cutscenes;
 import fr.astratime.lucky.animations.cutscenes.LastDrawCutscene;
-import fr.astratime.lucky.assets.BackgroundMusic;
 import fr.astratime.lucky.assets.CardTextures;
 import fr.astratime.lucky.assets.EnemyTextures;
 import fr.astratime.lucky.assets.Fonts;
 import fr.astratime.lucky.assets.GameSounds;
-import fr.astratime.lucky.assets.HudTextures;
 import fr.astratime.lucky.assets.Palette;
-import fr.astratime.lucky.assets.VolumeSound;
 import fr.astratime.lucky.entities.BonusGame;
 import fr.astratime.lucky.entities.SpinEconomy;
 import fr.astratime.lucky.entities.Symbol;
@@ -51,12 +42,8 @@ import fr.astratime.lucky.entities.tower.Chapter;
 import fr.astratime.lucky.i18n.Lang;
 import fr.astratime.lucky.progress.Bestiary;
 import fr.astratime.lucky.progress.PlayerProfile;
-import fr.astratime.lucky.settings.AudioSettings;
 import fr.astratime.lucky.settings.VisualSettings;
-import fr.astratime.lucky.views.CasinoButtons;
-import fr.astratime.lucky.views.MenuDecor;
 import fr.astratime.lucky.views.MenuOption;
-import fr.astratime.lucky.views.MinimumScreenViewport;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -75,17 +62,10 @@ import java.util.function.Function;
  * l'écran ; finie ou passée (clic, ou une touche), on revient ici. Échap ou
  * « Retour » ramène au menu principal.
  */
-public class CinematicScreen extends ScreenAdapter {
+public class CinematicScreen extends CasinoMenuScreen {
 
-    private static final String CLICK_SOUND = "sounds/button-click.ogg";
-    private static final String HOVER_SOUND = "sounds/ui/menu_hover.ogg";
     private static final String CHIP_PATH   = "menu/chip_spin.png";
-    private static final String MUSIC       = "music/main_menu.ogg";
-    private static final float  MUSIC_LEVEL = 0.3f;
 
-    private static final float MIN_WIDTH    = 1600f;
-    private static final float MIN_HEIGHT   = 1080f;
-    private static final float MARGIN       = 60f;
     private static final float TITLE_TOP    = 110f;    // du haut de l'écran au centre du titre
     private static final float LIST_WIDTH   = 420f;
     private static final float ROW_WIDTH    = 340f;
@@ -99,7 +79,6 @@ public class CinematicScreen extends ScreenAdapter {
     private static final float PANEL_TOP    = 210f;    // du haut de l'écran au haut des panneaux
     private static final float BOTTOM_SPACE = 130f;    // sous les panneaux : boutons
     private static final float ART_SCALE    = 4f;      // pixels du portrait
-    private static final float FADE_TIME    = 0.4f;
 
     /** Une cinématique de la liste : son nom, une ligne d'explication, son image et de quoi la créer. */
     private record Entry(String name, String description, Texture art, Function<CutsceneKit, Cutscene> create) { }
@@ -107,22 +86,12 @@ public class CinematicScreen extends ScreenAdapter {
     /** Un groupe de cinématiques (une ligne du panneau de gauche). */
     private record Group(String label, String title, List<Entry> entries, List<MenuOption> rows) { }
 
-    private final LuckyGame       luckyGame;
-    private final Stage           stage;
     private final VisualSettings  settings = new VisualSettings();
-    private final AudioSettings   audio  = new AudioSettings();
-    private final HudTextures     hud    = new HudTextures();
-    private final CardTextures    cardTextures = new CardTextures();
-    private final EnemyTextures   enemyTextures = new EnemyTextures(cardTextures);
-    private final GameSounds      sounds = new GameSounds(audio);
+    private final CardTextures    cardTextures = assets.cardTextures();
+    private final EnemyTextures   enemyTextures = assets.enemyTextures();
+    private final GameSounds      sounds = new GameSounds(assets.audio);
     private final ScreenShake     shake  = new ScreenShake(settings);
-    private final CasinoButtons   buttons = new CasinoButtons();
-    private final MenuDecor       decor  = new MenuDecor();
     private final Texture         chipTexture = new Texture(Gdx.files.internal(CHIP_PATH));
-    private final Sound           clickSound;
-    private final Sound           hoverSound;
-    private final BackgroundMusic music;
-    private final BitmapFont      titleFont   = Fonts.jersey(96, Palette.GOLD, 6f, Palette.TEXT_SHADE);
     private final BitmapFont      rowFont     = Fonts.jersey(50, Color.WHITE, 4f, Palette.TEXT_SHADE);
     private final BitmapFont      itemFont    = Fonts.jersey(40, Color.WHITE, 3f, Palette.TEXT_SHADE);
     private final BitmapFont      labelFont   = Fonts.jersey(36, Palette.CREAM, 3f, Palette.TEXT_SHADE);
@@ -132,8 +101,6 @@ public class CinematicScreen extends ScreenAdapter {
     private final BitmapFont      cutsceneFont = Fonts.jersey(30, Palette.GOLD, 2f, Palette.TEXT_SHADE);
     private final CutsceneKit     kit;
 
-    private final Image             veil;
-    private final Label             title;
     private final Image             listPanel;
     private final Image             detailPanel;
     private final List<Group>       groups = new ArrayList<>();
@@ -145,7 +112,6 @@ public class CinematicScreen extends ScreenAdapter {
     private final Label             description;
     private final TextButton        playButton;
     private final TextButton        backButton;
-    private final Image             fade;
 
     private int      group = -1;
     private int      selected = -1;
@@ -156,23 +122,12 @@ public class CinematicScreen extends ScreenAdapter {
     private int      groupScroll;
     private final Label groupMore;
     private boolean  wheel;
-    private boolean  leaving;
     private Cutscene cutscene;
 
     public CinematicScreen(LuckyGame luckyGame) {
-        this.luckyGame = luckyGame;
-        this.stage     = new Stage(new MinimumScreenViewport(MIN_WIDTH, MIN_HEIGHT), luckyGame.getBatch());
-        clickSound = new VolumeSound(Gdx.audio.newSound(Gdx.files.internal(CLICK_SOUND)), audio);
-        hoverSound = new VolumeSound(Gdx.audio.newSound(Gdx.files.internal(HOVER_SOUND)), audio);
-        music      = new BackgroundMusic(MUSIC, audio, MUSIC_LEVEL);
+        super(luckyGame, Lang.t("CINÉMATIQUES"), 96, VEIL_ALPHA);
         kit        = new CutsceneKit(settings, shake, sounds, enemyTextures, cutsceneFont);
-
         TextureRegionDrawable pixel = new TextureRegionDrawable(new TextureRegion(hud.pixel));
-        veil = new Image(pixel);
-        veil.setColor(0f, 0f, 0f, 0.6f);
-        veil.setTouchable(Touchable.disabled);
-        title = new Label(Lang.t("CINÉMATIQUES"), new Label.LabelStyle(titleFont, Color.WHITE));
-        title.pack();
         listPanel   = new Image(hud.panelDrawable());
         detailPanel = new Image(hud.panelDrawable());
         listPanel.setTouchable(Touchable.disabled);
@@ -213,14 +168,7 @@ public class CinematicScreen extends ScreenAdapter {
         playButton  = buttons.createAction(Lang.t("Lancer"), clickSound, this::launch);
         backButton  = buttons.create(Lang.t("Retour"), clickSound, this::onBack);
 
-        fade = new Image(pixel);
-        fade.setColor(Color.BLACK);
-        fade.setTouchable(Touchable.disabled);
-
-        stage.addActor(shake);                   // invisible : met à jour la caméra
-        stage.addActor(decor);
-        stage.addActor(veil);
-        stage.addActor(title);
+        stage.getRoot().addActorAt(0, shake);   // invisible : met à jour la caméra (avant le décor, comme avant)
         stage.addActor(listPanel);
         stage.addActor(detailPanel);
         groupRows.forEach(stage::addActor);
@@ -234,8 +182,7 @@ public class CinematicScreen extends ScreenAdapter {
         stage.addActor(description);
         stage.addActor(playButton);
         stage.addActor(backButton);
-        stage.addActor(fade);
-        fade.addAction(Actions.fadeOut(FADE_TIME));
+        reveal();
 
         selectGroup(0, false);
         layout();
@@ -441,16 +388,11 @@ public class CinematicScreen extends ScreenAdapter {
         return cutscene != null && cutscene.isPlaying();
     }
 
-    /** Retour au menu principal. */
-    private void onBack() {
-        if (leaving || isPlaying()) return;
-        leaving = true;
-        fade.clearActions();
-        fade.toFront();
-        fade.addAction(Actions.sequence(Actions.fadeIn(FADE_TIME), Actions.run(() -> Gdx.app.postRunnable(() -> {
-            luckyGame.setScreen(new MenuScreen(luckyGame));
-            dispose();
-        }))));
+    /** Retour au menu principal (pas pendant une cinématique). */
+    @Override
+    protected void onBack() {
+        if (isPlaying()) return;
+        super.onBack();
     }
 
     // -------------------------------------------------------------------------
@@ -458,13 +400,8 @@ public class CinematicScreen extends ScreenAdapter {
     // -------------------------------------------------------------------------
 
     /** Place le titre, les deux panneaux, leur contenu et les boutons selon la taille de l'écran. */
-    private void layout() {
-        float width  = stage.getViewport().getWorldWidth();
-        float height = stage.getViewport().getWorldHeight();
-        decor.layout(width, height);
-        decor.setPosition(0f, 0f);
-        veil.setBounds(0f, 0f, width, height);
-        fade.setBounds(0f, 0f, width, height);
+    @Override
+    protected void layoutContent(float width, float height) {
         title.setPosition((width - title.getWidth()) / 2f, height - TITLE_TOP - title.getHeight() / 2f);
 
         float panelTop    = height - PANEL_TOP;
@@ -612,83 +549,53 @@ public class CinematicScreen extends ScreenAdapter {
         wheel = false;
     }
 
+    /** Molette : la liste des groupes à gauche, la liste des cinématiques à droite (pas pendant une cinématique). */
+    @Override
+    protected boolean onScroll(float amountY) {
+        if (isPlaying() || amountY == 0f) return false;
+        Vector2 mouse = stage.screenToStageCoordinates(new Vector2(Gdx.input.getX(), Gdx.input.getY()));
+        if (mouse.x < MARGIN + LIST_WIDTH + MARGIN / 4f) scrollGroupsBy(amountY > 0f ? 1 : -1);
+        else scrollBy(amountY > 0f ? 1 : -1);
+        return true;
+    }
+
     /**
-     * Stage d'abord (souris), puis clavier : pendant une cinématique, une touche
-     * la passe. Sinon gauche/droite (ou Tab) changent de groupe, haut/bas
-     * choisissent une cinématique, Entrée ou Espace la lance, Échap revient au menu.
+     * Pendant une cinématique, une touche la passe. Sinon gauche/droite (ou Tab)
+     * changent de groupe, haut/bas choisissent une cinématique, Entrée ou Espace
+     * la lance, Échap revient au menu.
      */
     @Override
-    public void show() {
-        InputAdapter keyboard = new InputAdapter() {
-            @Override
-            public boolean scrolled(float amountX, float amountY) {
-                if (leaving || isPlaying() || amountY == 0f) return false;
-                Vector2 mouse = stage.screenToStageCoordinates(new Vector2(Gdx.input.getX(), Gdx.input.getY()));
-                if (mouse.x < MARGIN + LIST_WIDTH + MARGIN / 4f) scrollGroupsBy(amountY > 0f ? 1 : -1);
-                else scrollBy(amountY > 0f ? 1 : -1);
-                return true;
+    protected boolean onKey(int keycode) {
+        if (isPlaying()) {
+            cutscene.skip();
+            return true;
+        }
+        int count = groups.get(group).entries().size();
+        switch (keycode) {
+            case Input.Keys.UP, Input.Keys.W -> select((selected + count - 1) % count, true);
+            case Input.Keys.DOWN, Input.Keys.S -> select((selected + 1) % count, true);
+            case Input.Keys.LEFT, Input.Keys.A -> selectGroup((group + groups.size() - 1) % groups.size(), true);
+            case Input.Keys.RIGHT, Input.Keys.D, Input.Keys.TAB -> selectGroup((group + 1) % groups.size(), true);
+            case Input.Keys.ENTER, Input.Keys.SPACE -> {
+                clickSound.play();
+                launch();
             }
-
-            @Override
-            public boolean keyDown(int keycode) {
-                if (leaving) return false;
-                if (isPlaying()) {
-                    cutscene.skip();
-                    return true;
-                }
-                int count = groups.get(group).entries().size();
-                switch (keycode) {
-                    case Input.Keys.UP, Input.Keys.W -> select((selected + count - 1) % count, true);
-                    case Input.Keys.DOWN, Input.Keys.S -> select((selected + 1) % count, true);
-                    case Input.Keys.LEFT, Input.Keys.A -> selectGroup((group + groups.size() - 1) % groups.size(), true);
-                    case Input.Keys.RIGHT, Input.Keys.D, Input.Keys.TAB -> selectGroup((group + 1) % groups.size(), true);
-                    case Input.Keys.ENTER, Input.Keys.SPACE -> {
-                        clickSound.play();
-                        launch();
-                    }
-                    case Input.Keys.ESCAPE -> {
-                        clickSound.play();
-                        onBack();
-                    }
-                    default -> { return false; }
-                }
-                return true;
+            case Input.Keys.ESCAPE -> {
+                clickSound.play();
+                onBack();
             }
-        };
-        Gdx.input.setInputProcessor(new InputMultiplexer(stage, keyboard));
-        music.play();
-    }
-
-    @Override
-    public void resize(int width, int height) {
-        stage.getViewport().update(width, height, true);
-        layout();
-    }
-
-    @Override
-    public void render(float delta) {
-        ScreenUtils.clear(Color.BLACK);
-        music.update();
-        stage.act(delta);
-        stage.draw();
+            default -> { return false; }
+        }
+        return true;
     }
 
     @Override
     public void dispose() {
         if (cutscene != null) cutscene.cancel();
-        stage.dispose();
+        super.dispose();
         if (cutscene != null) cutscene.dispose();
-        decor.dispose();
-        enemyTextures.dispose();
-        cardTextures.dispose();
         sounds.dispose();
-        buttons.dispose();
         chipTexture.dispose();
-        clickSound.dispose();
-        hoverSound.dispose();
-        music.dispose();
-        hud.dispose();
-        Fonts.release(titleFont);
         Fonts.release(rowFont);
         Fonts.release(itemFont);
         Fonts.release(labelFont);
