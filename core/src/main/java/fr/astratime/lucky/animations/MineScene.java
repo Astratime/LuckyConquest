@@ -11,6 +11,8 @@ import com.badlogic.gdx.scenes.scene2d.ui.Image;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 import fr.astratime.lucky.assets.Palette;
 
+import static fr.astratime.lucky.assets.Palette.hex;
+
 /**
  * Bingo de la Pépite : la mine. Un gros rocher veiné d'or est posé sur la
  * table ; une pioche le frappe trois fois (à {@link #HITS}), la fissure
@@ -145,7 +147,7 @@ public class MineScene extends BingoScene {
             Actions.scaleTo(1.15f, 1.15f, 0.15f, Interpolation.pow2Out),
             Actions.scaleTo(1f, 1f, 0.15f),
             Actions.forever(Actions.sequence(
-                Actions.color(c("fff6c8"), 0.15f),
+                Actions.color(hex("fff6c8"), 0.15f),
                 Actions.color(Color.WHITE, 0.15f)))));
     }
 
@@ -174,13 +176,13 @@ public class MineScene extends BingoScene {
      */
     private static Pixmap rock(int cracks, int half) {
         Pixmap pixmap = pixmap(ROCK_WIDTH, ROCK_HEIGHT);
-        Color stone = c("7a7a88"), light = c("a0a0b0"), dark = c("50505e"), vein = Palette.GOLD;
+        Color stone = hex("7a7a88"), light = hex("a0a0b0"), dark = hex("50505e"), vein = Palette.GOLD;
         Shape shape = (x, y) -> inRock(x, y) && (half == 0 || (half < 0 ? x < crackX(y) : x >= crackX(y)));
         fillShape(pixmap, shape, (x, y) -> {
             // Paillettes d'or éparses.
             int fleck = Math.floorMod(x * 7919 ^ y * 104729, 47);
             if (fleck == 0 && y > 5) return vein;
-            if (fleck == 1 && y > 5) return c("ffe9a0");
+            if (fleck == 1 && y > 5) return hex("ffe9a0");
             float dx = x - ROCK_WIDTH * 0.35f, dy = y - ROCK_HEIGHT * 0.3f;
             if (dx * dx + dy * dy < 40f) return light;
             if (y > ROCK_HEIGHT - 6 || x > ROCK_WIDTH - 9) return dark;
@@ -209,7 +211,7 @@ public class MineScene extends BingoScene {
     private static Pixmap goldCore() {
         int width = 22, height = 20;
         Pixmap pixmap = pixmap(width, height);
-        Color gold = Palette.GOLD, pale = c("fff3a8"), dark = c("c88a10");
+        Color gold = Palette.GOLD, pale = hex("fff3a8"), dark = hex("c88a10");
         fillShape(pixmap, (x, y) -> {
             float dx = (x + 0.5f - width / 2f) / (width / 2f), dy = (y + 0.5f - height) / height;
             return dx * dx + dy * dy <= 1f;
@@ -236,7 +238,7 @@ public class MineScene extends BingoScene {
         });
         // Douille, où le manche traverse le fer.
         fillOutlined(pixmap, HANDLE_X - 2, 1, 6, 8, Palette.IRON);
-        hLine(pixmap, HANDLE_X - 1, HANDLE_X + 2, 2, c("8a8a9c"));
+        hLine(pixmap, HANDLE_X - 1, HANDLE_X + 2, 2, hex("8a8a9c"));
         return pixmap;
     }
 }

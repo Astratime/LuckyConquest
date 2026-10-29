@@ -11,6 +11,8 @@ import com.badlogic.gdx.scenes.scene2d.ui.Image;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 import fr.astratime.lucky.assets.Palette;
 
+import static fr.astratime.lucky.assets.Palette.hex;
+
 /**
  * Bingo du Sept : un gros dé roule sur la table depuis la gauche en
  * rebondissant et en tournoyant, ses faces défilant à chaque rebond, puis
@@ -108,7 +110,7 @@ public class FlamingDieScene extends BingoScene {
             Actions.scaleTo(1.18f, 0.82f, 0.06f),
             Actions.scaleTo(1f, 1f, 0.25f, Interpolation.elasticOut),
             Actions.forever(Actions.sequence(
-                Actions.color(c("ffd0a0"), 0.18f),
+                Actions.color(hex("ffd0a0"), 0.18f),
                 Actions.color(Color.WHITE, 0.18f)))));
     }
 
@@ -119,7 +121,7 @@ public class FlamingDieScene extends BingoScene {
     /** @return une face du dé : {@code value} points (1 à 6), ou un grand « 7 » rouge pour 0 (reprise par {@link TripleDiceScene}). */
     static Pixmap face(int value) {
         Pixmap pixmap = pixmap(SIZE, SIZE);
-        Color body = c("f5f0e6"), shade = c("cfc6b4"), light = Color.WHITE;
+        Color body = hex("f5f0e6"), shade = hex("cfc6b4"), light = Color.WHITE;
         fillOutlined(pixmap, 0, 0, SIZE, SIZE, body);
         hLine(pixmap, 2, SIZE - 3, 1, light);
         hLine(pixmap, 1, SIZE - 2, SIZE - 2, shade);
@@ -144,9 +146,9 @@ public class FlamingDieScene extends BingoScene {
             };
             for (int[] pip : layout) {
                 int px = 5 + pip[0] * 7, py = 5 + pip[1] * 7;
-                pixmap.setColor(value == 1 ? c("d42a34") : c("2a2030"));
+                pixmap.setColor(value == 1 ? hex("d42a34") : hex("2a2030"));
                 pixmap.fillRectangle(px, py, 4, 4);
-                pixmap.setColor(value == 1 ? c("ff7a80") : c("5a5068"));
+                pixmap.setColor(value == 1 ? hex("ff7a80") : hex("5a5068"));
                 pixmap.drawPixel(px, py);
             }
         }
@@ -166,7 +168,7 @@ public class FlamingDieScene extends BingoScene {
                 pixmap.fillRectangle(x - 1 - grow, y - (y == 9 ? grow : 0), 4 + grow * 2, 1 + (y == 20 ? grow : 0));
             }
         }
-        pixmap.setColor(c("ff8a90"));
+        pixmap.setColor(hex("ff8a90"));
         pixmap.drawLine(7, 6, 18, 6);
     }
 

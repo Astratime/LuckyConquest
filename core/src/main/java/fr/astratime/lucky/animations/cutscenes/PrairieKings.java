@@ -8,6 +8,8 @@ import com.badlogic.gdx.math.MathUtils;
 import fr.astratime.lucky.entities.enemy.EnemyKind;
 import java.util.Random;
 
+import static fr.astratime.lucky.assets.Palette.hex;
+
 /**
  * Les rois de la prairie entrent en scène, au fond de leur donjon de pierre :
  * <ul>
@@ -54,15 +56,15 @@ public class PrairieKings extends KingEntrance {
     public PrairieKings(CutsceneKit kit, EnemyKind kind) {
         super(kit, kind);
         tint = switch (kind) {
-            case ROI_PIQUE -> c("6a8ad8");
-            case ROI_TREFLE -> c("3fbf5a");
-            case ROI_COEUR -> c("e0283a");
-            default -> c("ff9a2a");
+            case ROI_PIQUE -> hex("6a8ad8");
+            case ROI_TREFLE -> hex("3fbf5a");
+            case ROI_COEUR -> hex("e0283a");
+            default -> hex("ff9a2a");
         };
-        wall = c("2e2a3e");
-        wallDark = c("1c1a28");
-        floor = c("141220");
-        Color[] metal = {c("140a0a"), c("e8e8f0"), c("9a9ab0"), c("ffc93a"), c("6b3a1e")};
+        wall = hex("2e2a3e");
+        wallDark = hex("1c1a28");
+        floor = hex("141220");
+        Color[] metal = {hex("140a0a"), hex("e8e8f0"), hex("9a9ab0"), hex("ffc93a"), hex("6b3a1e")};
         blade = art("owsgb", metal,
             ".ggg.",
             ".gog.",
@@ -79,7 +81,7 @@ public class PrairieKings extends KingEntrance {
             ".sws.",
             "..s..");
         coin = load("hud/coin.png");
-        Color[] red = {c("1a0a0e"), c("e0283a"), c("ff8a9a"), c("8a1020")};
+        Color[] red = {hex("1a0a0e"), hex("e0283a"), hex("ff8a9a"), hex("8a1020")};
         String[] heartRows = {
             ".ooo...ooo.",
             "orrro.orrro",
@@ -94,8 +96,8 @@ public class PrairieKings extends KingEntrance {
         heart = art("orwd", red, heartRows);
         heartLeft = new TextureRegion(heart, 0, 0, 6, 10);
         heartRight = new TextureRegion(heart, 5, 0, 6, 10);
-        leaf = art("orwd", new Color[] {c("0a1a0c"), c("3fbf5a"), c("9af0a8"), c("1f7a34")}, heartRows);
-        Color[] glassColors = {c("140a10"), c("e0283a"), c("ff8a9a"), c("ffc93a"), c("8a1020")};
+        leaf = art("orwd", new Color[] {hex("0a1a0c"), hex("3fbf5a"), hex("9af0a8"), hex("1f7a34")}, heartRows);
+        Color[] glassColors = {hex("140a10"), hex("e0283a"), hex("ff8a9a"), hex("ffc93a"), hex("8a1020")};
         stainedGlass = art("orpyd", glassColors,
             ".ooo...ooo.",
             "oyrro.orrpo",
@@ -122,13 +124,13 @@ public class PrairieKings extends KingEntrance {
                 for (float bolt : BOLTS) if (at(bolt)) rumble(0.3f, 8f);
             }
             case ROI_TREFLE -> {
-                if (at(CLOVER_SHINE)) sparks(cx(), cloverY(), 30, c("bfffc8"), 500f, 12f);
+                if (at(CLOVER_SHINE)) sparks(cx(), cloverY(), 30, hex("bfffc8"), 500f, 12f);
             }
             case ROI_COEUR -> {
-                if (at(GLASS_FULL)) sparks(cx(), glassY(), 30, c("ff8a9a"), 500f, 14f);
+                if (at(GLASS_FULL)) sparks(cx(), glassY(), 30, hex("ff8a9a"), 500f, 14f);
             }
             default -> {
-                if (at(X_MARK)) sparks(markX(), markY(), 26, c("ff4a3a"), 400f, 12f);
+                if (at(X_MARK)) sparks(markX(), markY(), 26, hex("ff4a3a"), 400f, 12f);
             }
         }
     }
@@ -183,10 +185,10 @@ public class PrairieKings extends KingEntrance {
                     bursting = true;
                     rumble(0.35f, 12f);
                     debris(cx(), kingY() + 80f, 50, coin, 1.1f, 1300f);
-                    sparks(cx(), kingY() + 200f, 40, c("ffc93a"), 800f, 16f);
+                    sparks(cx(), kingY() + 200f, 40, hex("ffc93a"), 800f, 16f);
                 }
-                if (at(CATCH)) sparks(catchX(), catchY(), 20, c("ffe58a"), 300f, 10f);
-                if (at(POCKET)) sparks(pocketX(), pocketY(), 14, c("ffe58a"), 200f, 8f);
+                if (at(CATCH)) sparks(catchX(), catchY(), 20, hex("ffe58a"), 300f, 10f);
+                if (at(POCKET)) sparks(pocketX(), pocketY(), 14, hex("ffe58a"), 200f, 8f);
             }
             case ROI_COEUR -> {
                 for (float beat : HEART_BEATS) if (at(beat)) rumble(0.12f, 3f);
@@ -201,7 +203,7 @@ public class PrairieKings extends KingEntrance {
                     debris(cx() + (random.nextFloat() - 0.5f) * 400f, kingY() + 120f, 2, coin, 0.6f, 500f);
                 }
                 if (at(DIAMOND_RISE)) rumble(0.4f, 10f);
-                if (at(DIAMOND_FLASH)) sparks(diamondX(), diamondY(), 30, c("bfe8ff"), 600f, 14f);
+                if (at(DIAMOND_FLASH)) sparks(diamondX(), diamondY(), 30, hex("bfe8ff"), 600f, 14f);
                 if (at(SHIELD_DOWN)) {
                     rumble(0.3f, 8f);
                     for (int side = -1; side <= 1; side += 2) {      // les pièces glissent de chaque côté du tas
@@ -246,10 +248,10 @@ public class PrairieKings extends KingEntrance {
         glow(batch, cx(), height * 0.35f, width * 1.1f, tint, 0.18f);
         for (int side = -1; side <= 1; side += 2) {                // torches
             float x = cx() + side * width * 0.38f, y = height * 0.6f;
-            rect(batch, c("4a2614"), x - 8f, y - 60f, 16f, 60f);
+            rect(batch, hex("4a2614"), x - 8f, y - 60f, 16f, 60f);
             float flicker = pulse(19f + side * 3f, 0.75f);
-            glow(batch, x, y + 10f, 340f * flicker, c("ff7a1a"), 0.4f);
-            glow(batch, x, y + 10f, 70f * flicker, c("ffe066"), 0.9f);
+            glow(batch, x, y + 10f, 340f * flicker, hex("ff7a1a"), 0.4f);
+            glow(batch, x, y + 10f, 70f * flicker, hex("ffe066"), 0.9f);
         }
         // Vignette sombre.
         batch.setColor(0f, 0f, 0f, 0.5f);
@@ -335,7 +337,7 @@ public class PrairieKings extends KingEntrance {
                 float k = Interpolation.pow2In.apply(progress(GESTURE, POCKET));
                 float x = MathUtils.lerp(catchX(), pocketX(), k), y = MathUtils.lerp(catchY(), pocketY(), k)
                     + 60f * MathUtils.sin(k * MathUtils.PI);
-                glow(batch, x, y, 160f, c("ffc93a"), 0.7f * pulse(8f, 0.5f));
+                glow(batch, x, y, 160f, hex("ffc93a"), 0.7f * pulse(8f, 0.5f));
                 batch.setColor(Color.WHITE);
                 sprite(batch, coin, x, y, 1.4f * (1f - 0.5f * k), 0f);
             }
@@ -383,7 +385,7 @@ public class PrairieKings extends KingEntrance {
         if (time >= HEART_OPEN) {                                 // le roi, derrière le cœur
             glow(batch, heartX, heartY, 1100f * open, tint, 0.5f);
             drawKing(batch, cx(), kingY(), KING_SCALE, 1f - open, open);
-            glow(batch, cx() + 12f * KING_SCALE, kingY() + 20f * KING_SCALE, 200f, c("ffc93a"), 0.6f * open
+            glow(batch, cx() + 12f * KING_SCALE, kingY() + 20f * KING_SCALE, 200f, hex("ffc93a"), 0.6f * open
                 * pulse(7f, 0.5f));
         }
         float scale = 40f * (1f + 0.12f * beat);
@@ -401,11 +403,11 @@ public class PrairieKings extends KingEntrance {
             float k = Interpolation.pow2In.apply(progress(DROP, DROP_LAND));
             float y = MathUtils.lerp(cupY(), kingY() + 6f, k);
             glow(batch, cupX(), y, 90f, tint, 0.7f);
-            rect(batch, c("8a1020"), cupX() - 8f, y - 10f, 16f, 22f);
+            rect(batch, hex("8a1020"), cupX() - 8f, y - 10f, 16f, 22f);
             rect(batch, tint, cupX() - 5f, y - 8f, 10f, 18f);
         } else if (time >= DROP_LAND) {                           // la tache sur le sol
             float k = progress(DROP_LAND, DROP_LAND + 0.2f);
-            rect(batch, c("8a1020"), cupX() - 30f * k, kingY() - 2f, 60f * k, 10f);
+            rect(batch, hex("8a1020"), cupX() - 30f * k, kingY() - 2f, 60f * k, 10f);
         }
         flash(batch, tint, HEART_OPEN, 0.25f, 0.5f);
     }
@@ -434,7 +436,7 @@ public class PrairieKings extends KingEntrance {
         for (int i = 0; i < 7; i++) {
             float gx = cx() + (i - 3) * 90f + MathUtils.sin(time * 40f + i) * shake, gy = worldHeight() * 0.04f
                 + 40f + (i % 3) * 50f;
-            Color gem = i % 2 == 0 ? c("4fd8ff") : c("e0283a");
+            Color gem = i % 2 == 0 ? hex("4fd8ff") : hex("e0283a");
             glow(batch, gx, gy, 70f, gem, 0.6f * pulse(5f + i, 0.4f));
             rect(batch, gem, gx - 9f, gy - 9f, 18f, 18f);
         }
@@ -448,7 +450,7 @@ public class PrairieKings extends KingEntrance {
             batch.draw(trail, diamondX() - size, diamondY() - 6f, size, 6f, size, 12f, 1f, 1f, 90f);
             batch.draw(trail, diamondX() - size, diamondY() - 6f, size, 6f, size, 12f, 1f, 1f, 270f);
             normal(batch);
-            glow(batch, diamondX(), diamondY(), 220f, c("bfe8ff"), 1f - k);
+            glow(batch, diamondX(), diamondY(), 220f, hex("bfe8ff"), 1f - k);
         }
     }
 
@@ -465,7 +467,7 @@ public class PrairieKings extends KingEntrance {
         float lit = 0f;
         for (float bolt : BOLTS) if (time >= bolt) lit = Math.max(lit, 1f - (time - bolt) / 0.3f);
         lit = Math.max(0f, lit);
-        gradient(batch, c("0a0c18"), c("262c4a"));
+        gradient(batch, hex("0a0c18"), hex("262c4a"));
         for (int i = 0; i < 14; i++) {                               // les nuages qui roulent
             float x = ((i * 233f + time * (40f + i * 6f)) % (width + 600f)) - 300f;
             float y = height * (0.72f + 0.05f * (i % 4)), size = 420f + 60f * (i % 5);
@@ -478,32 +480,32 @@ public class PrairieKings extends KingEntrance {
             bolt(batch, width * (i == 0 ? 0.3f : 0.68f), height * 0.3f, 11L + i, alpha);
         }
         // Le donjon en ombre, ses tours et ses créneaux.
-        Color wallColor = tmp.set(0.03f, 0.03f, 0.06f, 1f).lerp(c("2e2a3e"), 0.5f * lit);
+        Color wallColor = tmp.set(0.03f, 0.03f, 0.06f, 1f).lerp(hex("2e2a3e"), 0.5f * lit);
         rect(batch, wallColor, -MARGIN, -MARGIN, width + 2f * MARGIN, height * 0.22f + MARGIN);
         for (int t = 0; t < 3; t++) {
             float x = width * (0.18f + t * 0.32f), w = t == 1 ? 260f : 180f, h = height * (t == 1 ? 0.5f : 0.36f);
             rect(batch, wallColor, x - w / 2f, height * 0.2f, w, h);
             for (int k = 0; k < 4; k++) rect(batch, wallColor, x - w / 2f + k * w / 3.5f, height * 0.2f + h, w / 7f, 34f);
-            glow(batch, x, height * 0.2f + h * 0.6f, 60f, c("ffb040"), 0.6f * pulse(9f + t, 0.6f));
+            glow(batch, x, height * 0.2f + h * 0.6f, 60f, hex("ffb040"), 0.6f * pulse(9f + t, 0.6f));
         }
         rain(batch, 160, 0.35f);
-        fill(batch, c("c8d8ff"), 0.45f * lit * (settings.isReducedEffects() ? 0.3f : 1f));
+        fill(batch, hex("c8d8ff"), 0.45f * lit * (settings.isReducedEffects() ? 0.3f : 1f));
     }
 
     /** Trèfle : la prairie au crépuscule ; un trèfle à quatre feuilles pousse au milieu. */
     private void drawClover(Batch batch) {
         float width = worldWidth(), height = worldHeight(), ground = height * 0.24f;
-        gradient(batch, c("2a3a3a"), c("0e1430"));
-        glow(batch, width * 0.8f, height * 0.8f, 300f, c("fff2c0"), 0.5f);              // la lune
-        rect(batch, c("123a1e"), -MARGIN, -MARGIN, width + 2f * MARGIN, ground + MARGIN);
+        gradient(batch, hex("2a3a3a"), hex("0e1430"));
+        glow(batch, width * 0.8f, height * 0.8f, 300f, hex("fff2c0"), 0.5f);              // la lune
+        rect(batch, hex("123a1e"), -MARGIN, -MARGIN, width + 2f * MARGIN, ground + MARGIN);
         for (int i = 0; i < 90; i++) {                                                 // l'herbe qui ondule
             float x = i * (width + 2f * MARGIN) / 90f - MARGIN, h = 50f + (i * 37 % 7) * 14f;
             float sway = 10f * MathUtils.sin(time * 2f + i * 0.5f);
-            line(batch, i % 3 == 0 ? c("2a7a3e") : c("1d5a2c"), x, ground - 10f, x + sway, ground + h, 7f);
+            line(batch, i % 3 == 0 ? hex("2a7a3e") : hex("1d5a2c"), x, ground - 10f, x + sway, ground + h, 7f);
         }
         float grow = Interpolation.pow2Out.apply(progress(STEM, LEAVES));
         float top = MathUtils.lerp(ground, cloverY(), grow);
-        if (grow > 0f) line(batch, c("2f9a46"), cx(), ground - 10f, cx() + 8f * MathUtils.sin(time * 2f), top, 26f);
+        if (grow > 0f) line(batch, hex("2f9a46"), cx(), ground - 10f, cx() + 8f * MathUtils.sin(time * 2f), top, 26f);
         for (int i = 0; i < 4; i++) {
             float start = LEAVES + i * LEAF_STEP;
             float open = Interpolation.swingOut.apply(progress(start, start + 0.3f));
@@ -514,11 +516,11 @@ public class PrairieKings extends KingEntrance {
                 24f * open, angle - 90f);
         }
         float shine = progress(CLOVER_SHINE, CLOVER_SHINE + 0.3f);
-        if (shine > 0f) glow(batch, cx(), top, 700f, c("9af0a8"), 0.5f * shine * pulse(6f, 0.7f));
+        if (shine > 0f) glow(batch, cx(), top, 700f, hex("9af0a8"), 0.5f * shine * pulse(6f, 0.7f));
         for (int i = 0; i < 12; i++) {                                                 // des lucioles
             float x = width * ((i * 0.137f + 0.05f * MathUtils.sin(time + i)) % 1f), y = ground + 60f + (i * 53 % 300)
                 + 30f * MathUtils.sin(time * 1.5f + i * 2f);
-            glow(batch, x, y, 40f, c("e8ff8a"), 0.7f * pulse(4f + i, 0.2f));
+            glow(batch, x, y, 40f, hex("e8ff8a"), 0.7f * pulse(4f + i, 0.2f));
         }
     }
 
@@ -541,8 +543,8 @@ public class PrairieKings extends KingEntrance {
         normal(batch);
         glow(batch, cx(), height * 0.18f, width * 0.6f, tint, 0.35f * light);
         glow(batch, cx(), glassY(), w * 1.6f, tint, 0.5f * light * pulse(5f, 0.8f));
-        rect(batch, c("100c18"), cx() - w / 2f - 30f, glassY() - h / 2f - 30f, w + 60f, h + 60f);
-        rect(batch, c("6a6078"), cx() - w / 2f, glassY() - h / 2f, w, h);                // la pierre derrière le plomb
+        rect(batch, hex("100c18"), cx() - w / 2f - 30f, glassY() - h / 2f - 30f, w + 60f, h + 60f);
+        rect(batch, hex("6a6078"), cx() - w / 2f, glassY() - h / 2f, w, h);                // la pierre derrière le plomb
         float shade = MathUtils.lerp(0.18f, 1f, light);
         batch.setColor(shade, shade, shade, 1f);
         sprite(batch, stainedGlass, cx(), glassY(), scale, 0f);
@@ -553,27 +555,27 @@ public class PrairieKings extends KingEntrance {
     /** Carreau : une carte au trésor se déroule sur la table ; un chemin, puis une croix rouge. */
     private void drawMap(Batch batch) {
         float width = worldWidth(), height = worldHeight();
-        rect(batch, c("2a180e"), -MARGIN, -MARGIN, width + 2f * MARGIN, height + 2f * MARGIN);
-        for (int i = 0; i < 9; i++) rect(batch, c("3a2416"), -MARGIN, i * 130f, width + 2f * MARGIN, 120f);
-        glow(batch, width * 0.12f, height * 0.75f, 600f, c("ff9a2a"), 0.35f * pulse(13f, 0.8f));     // une bougie
+        rect(batch, hex("2a180e"), -MARGIN, -MARGIN, width + 2f * MARGIN, height + 2f * MARGIN);
+        for (int i = 0; i < 9; i++) rect(batch, hex("3a2416"), -MARGIN, i * 130f, width + 2f * MARGIN, 120f);
+        glow(batch, width * 0.12f, height * 0.75f, 600f, hex("ff9a2a"), 0.35f * pulse(13f, 0.8f));     // une bougie
         float left = width * 0.18f, mapW = width * 0.64f, mapH = height * 0.58f, bottom = height * 0.2f;
         float unroll = Interpolation.pow2Out.apply(progress(UNROLL, UNROLLED));
         float edge = left + 40f + (mapW - 40f) * unroll;
-        rect(batch, c("b8945a"), left - 8f, bottom - 8f, edge - left + 16f, mapH + 16f);
-        rect(batch, c("e8d4a0"), left, bottom, edge - left, mapH);
+        rect(batch, hex("b8945a"), left - 8f, bottom - 8f, edge - left + 16f, mapH + 16f);
+        rect(batch, hex("e8d4a0"), left, bottom, edge - left, mapH);
         // Les dessins de la carte, découverts à mesure qu'elle se déroule.
         Random marks = new Random(5);
         for (int i = 0; i < 16; i++) {
             float x = left + 40f + (mapW - 80f) * marks.nextFloat(), y = bottom + 40f + (mapH - 80f) * marks.nextFloat();
             if (x > edge - 30f) continue;
             if (i % 3 == 0) {                                                          // une montagne
-                for (int k = 0; k < 4; k++) rect(batch, c("8a6a3a"), x - 36f + k * 9f, y + k * 14f, 72f - k * 18f, 14f);
+                for (int k = 0; k < 4; k++) rect(batch, hex("8a6a3a"), x - 36f + k * 9f, y + k * 14f, 72f - k * 18f, 14f);
             } else if (i % 3 == 1) {                                                   // un arbre
-                rect(batch, c("4a6a2a"), x - 18f, y + 14f, 36f, 30f);
-                rect(batch, c("5a3a1a"), x - 4f, y, 8f, 14f);
+                rect(batch, hex("4a6a2a"), x - 18f, y + 14f, 36f, 30f);
+                rect(batch, hex("5a3a1a"), x - 4f, y, 8f, 14f);
             } else {                                                                   // une vague
-                rect(batch, c("4a7aa0"), x - 30f, y, 24f, 6f);
-                rect(batch, c("4a7aa0"), x, y + 6f, 24f, 6f);
+                rect(batch, hex("4a7aa0"), x - 30f, y, 24f, 6f);
+                rect(batch, hex("4a7aa0"), x, y + 6f, 24f, 6f);
             }
         }
         // Le chemin en pointillés jusqu'à la croix.
@@ -583,18 +585,18 @@ public class PrairieKings extends KingEntrance {
             if (k > path) break;
             float x = MathUtils.lerp(left + 90f, markX(), k), y = MathUtils.lerp(bottom + 70f, markY(), k)
                 + 90f * MathUtils.sin(k * MathUtils.PI * 2f);
-            rect(batch, c("7a2a1a"), x - 7f, y - 4f, 14f, 8f);
+            rect(batch, hex("7a2a1a"), x - 7f, y - 4f, 14f, 8f);
         }
         float mark = Interpolation.swingOut.apply(progress(X_MARK, X_MARK + 0.25f));
         if (mark > 0f) {
             float size = 70f * mark;
-            glow(batch, markX(), markY(), 300f, c("ff4a3a"), 0.4f * mark * pulse(8f, 0.6f));
-            line(batch, c("c41e1e"), markX() - size, markY() - size, markX() + size, markY() + size, 22f);
-            line(batch, c("c41e1e"), markX() - size, markY() + size, markX() + size, markY() - size, 22f);
+            glow(batch, markX(), markY(), 300f, hex("ff4a3a"), 0.4f * mark * pulse(8f, 0.6f));
+            line(batch, hex("c41e1e"), markX() - size, markY() - size, markX() + size, markY() + size, 22f);
+            line(batch, hex("c41e1e"), markX() - size, markY() + size, markX() + size, markY() - size, 22f);
         }
         if (unroll < 1f) {                                                             // le rouleau qui reste à dérouler
-            rect(batch, c("a07a44"), edge - 20f, bottom - 20f, 60f, mapH + 40f);
-            rect(batch, c("d8bc84"), edge - 10f, bottom - 20f, 14f, mapH + 40f);
+            rect(batch, hex("a07a44"), edge - 20f, bottom - 20f, 60f, mapH + 40f);
+            rect(batch, hex("d8bc84"), edge - 10f, bottom - 20f, 14f, mapH + 40f);
         }
     }
 

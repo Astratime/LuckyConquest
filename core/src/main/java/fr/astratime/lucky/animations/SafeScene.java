@@ -12,6 +12,8 @@ import com.badlogic.gdx.scenes.scene2d.actions.SequenceAction;
 import com.badlogic.gdx.scenes.scene2d.ui.Image;
 import fr.astratime.lucky.assets.Palette;
 
+import static fr.astratime.lucky.assets.Palette.hex;
+
 /**
  * Bingo du Lingot : le coffre-fort. Un lourd coffre tombe du ciel et s'écrase
  * sur la table ; sa molette tourne cran par cran pour composer la
@@ -99,13 +101,13 @@ public class SafeScene extends BingoScene {
             Actions.delay(OPEN_TIME),
             Actions.scaleTo(0.1f, 1f, OPEN_DURATION * 0.6f, Interpolation.pow2In),
             Actions.scaleTo(-0.35f, 1f, OPEN_DURATION * 0.4f, Interpolation.pow2Out)));
-        door.addAction(Actions.sequence(Actions.delay(OPEN_TIME), Actions.color(c("6a7680"), OPEN_DURATION)));
+        door.addAction(Actions.sequence(Actions.delay(OPEN_TIME), Actions.color(hex("6a7680"), OPEN_DURATION)));
     }
 
     /** @return la caisse du coffre : acier sombre biseauté, charnières, pieds. */
     private static Pixmap body() {
         Pixmap pixmap = pixmap(BODY_WIDTH, BODY_HEIGHT);
-        Color steel = c("37474f"), light = c("5b6e78"), dark = c("263238");
+        Color steel = hex("37474f"), light = hex("5b6e78"), dark = hex("263238");
         fillOutlined(pixmap, 0, 0, BODY_WIDTH, BODY_HEIGHT - 3, steel);
         hLine(pixmap, 1, BODY_WIDTH - 2, 1, light);
         pixmap.setColor(light);
@@ -129,15 +131,15 @@ public class SafeScene extends BingoScene {
     /** @return l'intérieur du coffre : fond sombre et piles de lingots d'or. */
     private static Pixmap inside() {
         Pixmap pixmap = pixmap(DOOR_WIDTH, DOOR_HEIGHT);
-        fillOutlined(pixmap, 0, 0, DOOR_WIDTH, DOOR_HEIGHT, c("1a1418"));
-        hLine(pixmap, 1, DOOR_WIDTH - 2, DOOR_HEIGHT / 2, c("3a3038")); // étagère
+        fillOutlined(pixmap, 0, 0, DOOR_WIDTH, DOOR_HEIGHT, hex("1a1418"));
+        hLine(pixmap, 1, DOOR_WIDTH - 2, DOOR_HEIGHT / 2, hex("3a3038")); // étagère
         for (int shelf = 0; shelf < 2; shelf++) {
             int base = shelf == 0 ? DOOR_HEIGHT / 2 - 1 : DOOR_HEIGHT - 2;
             for (int row = 0; row < 3; row++) {
                 for (int i = 0; i < 4 - row; i++) {
                     int x = 3 + row * 4 + i * 9, y = base - 4 - row * 4;
                     fillOutlined(pixmap, x, y, 9, 5, Palette.GOLD);
-                    hLine(pixmap, x + 1, x + 7, y + 1, c("fff0a0"));
+                    hLine(pixmap, x + 1, x + 7, y + 1, hex("fff0a0"));
                 }
             }
         }
@@ -147,13 +149,13 @@ public class SafeScene extends BingoScene {
     /** @return la porte blindée : panneau en creux, rivets, poignée à trois branches. */
     private static Pixmap door() {
         Pixmap pixmap = pixmap(DOOR_WIDTH, DOOR_HEIGHT);
-        fillOutlined(pixmap, 0, 0, DOOR_WIDTH, DOOR_HEIGHT, c("455a64"));
-        hLine(pixmap, 1, DOOR_WIDTH - 2, 1, c("6a8290"));
-        hLine(pixmap, 1, DOOR_WIDTH - 2, DOOR_HEIGHT - 2, c("2e3d44"));
-        pixmap.setColor(c("2e3d44"));
+        fillOutlined(pixmap, 0, 0, DOOR_WIDTH, DOOR_HEIGHT, hex("455a64"));
+        hLine(pixmap, 1, DOOR_WIDTH - 2, 1, hex("6a8290"));
+        hLine(pixmap, 1, DOOR_WIDTH - 2, DOOR_HEIGHT - 2, hex("2e3d44"));
+        pixmap.setColor(hex("2e3d44"));
         pixmap.drawRectangle(4, 4, DOOR_WIDTH - 8, DOOR_HEIGHT - 8);
         for (int[] rivet : new int[][] {{2, 2}, {DOOR_WIDTH - 4, 2}, {2, DOOR_HEIGHT - 4}, {DOOR_WIDTH - 4, DOOR_HEIGHT - 4}}) {
-            pixmap.setColor(c("a8b4c2"));
+            pixmap.setColor(hex("a8b4c2"));
             pixmap.fillRectangle(rivet[0], rivet[1], 2, 2);
         }
         // Poignée à droite de la molette.
@@ -172,7 +174,7 @@ public class SafeScene extends BingoScene {
         fillOutlinedCircle(pixmap, center, center, center - 1, Palette.STEEL_LIGHT);
         pixmap.setColor(Palette.STEEL);
         pixmap.fillCircle(center, center, center - 4);
-        pixmap.setColor(c("2e3d44"));
+        pixmap.setColor(hex("2e3d44"));
         for (int i = 0; i < 8; i++) {
             float angle = i * 45f;
             pixmap.drawPixel(center + Math.round(MathUtils.cosDeg(angle) * (center - 3)),

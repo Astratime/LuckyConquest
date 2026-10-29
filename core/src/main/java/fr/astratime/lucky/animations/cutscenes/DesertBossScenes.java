@@ -9,6 +9,8 @@ import fr.astratime.lucky.entities.enemy.EnemyKind;
 import fr.astratime.lucky.entities.enemy.EnemySymbol;
 import java.util.Random;
 
+import static fr.astratime.lucky.assets.Palette.hex;
+
 /** Les scènes de phase et de mort des quatre rois du Désert de Braise (choix d'Astra, 2026-10-24). */
 final class DesertBossScenes {
 
@@ -36,8 +38,8 @@ final class DesertBossScenes {
 
     // ----- Accessoires -----
 
-    static final Color SAND = c("e8b86a"), SAND_DARK = c("b8843a"), LAVA = c("ff6a1e"), EMBER = c("ffb84a"),
-        GREEN = c("6aff6a"), PURPLE = c("a05aff");
+    static final Color SAND = hex("e8b86a"), SAND_DARK = hex("b8843a"), LAVA = hex("ff6a1e"), EMBER = hex("ffb84a"),
+        GREEN = hex("6aff6a"), PURPLE = hex("a05aff");
     static final String[] CAMEL = {
         "...........oo..", "..........oyyo.", "...oo.....oyo..", "..oyyo...oyo...", ".oyyyyoooyyo...",
         "oyyyyyyyyyyo...", "oyyyyyyyyyo....", ".oyyyyyyyo.....", ".oyo..oyo......", ".oyo..oyo......", ".oo...oo......."};
@@ -51,7 +53,6 @@ final class DesertBossScenes {
     static final String[] CUP = {"ooooooo", "oyywyyo", ".oyyyo.", "..oyo..", "...y...", "..yyy..", ".ddddd."};
     static final String[] RUBY = {".ooo.", "orrwo", "orrro", ".oro.", "..o.."};
 
-    static Color c(String hex) { return Color.valueOf(hex); }
 
     /**
      * Le couvercle du sarcophage du Pharaon, debout : un corps d'or, la coiffe rayée bleu et or, le masque
@@ -59,7 +60,7 @@ final class DesertBossScenes {
      */
     static void sarcophagus(BossScene scene, Batch batch, float x, float bottom, float w, float h, float alpha) {
         if (alpha <= 0f) return;
-        Color line = c("1a0e06"), gold = c("c4891e"), light = c("ffd54a"), blue = c("1a3a8e");
+        Color line = hex("1a0e06"), gold = hex("c4891e"), light = hex("ffd54a"), blue = hex("1a3a8e");
         float headW = w * 0.8f, headY = bottom + h * 0.6f;
         scene.rect(batch, line, alpha, x - w / 2f - 6f, bottom - 6f, w + 12f, h * 0.66f + 12f);
         scene.rect(batch, line, alpha, x - headW / 2f - 6f, headY - 6f, headW + 12f, h * 0.4f + 12f);
@@ -71,12 +72,12 @@ final class DesertBossScenes {
             scene.rect(batch, k % 2 == 0 ? blue : light, alpha, x - headW / 2f + k * headW / 8f, headY, headW / 8f, h * 0.4f);
         }
         float faceW = w * 0.38f, faceY = bottom + h * 0.7f;
-        scene.rect(batch, c("e8b84a"), alpha, x - faceW / 2f, faceY, faceW, h * 0.22f);           // le masque
+        scene.rect(batch, hex("e8b84a"), alpha, x - faceW / 2f, faceY, faceW, h * 0.22f);           // le masque
         scene.rect(batch, line, alpha, x - faceW * 0.32f, faceY + h * 0.13f, faceW * 0.18f, h * 0.025f);
         scene.rect(batch, line, alpha, x + faceW * 0.14f, faceY + h * 0.13f, faceW * 0.18f, h * 0.025f);
         scene.rect(batch, line, alpha, x - faceW * 0.15f, faceY + h * 0.05f, faceW * 0.3f, h * 0.012f);
         scene.rect(batch, light, alpha, x - w * 0.05f, faceY - h * 0.1f, w * 0.1f, h * 0.1f);   // la barbe
-        scene.rect(batch, c("2a8a6a"), alpha, x - w / 2f, bottom + h * 0.52f, w, h * 0.05f);    // le collier
+        scene.rect(batch, hex("2a8a6a"), alpha, x - w / 2f, bottom + h * 0.52f, w, h * 0.05f);    // le collier
         scene.rect(batch, light, alpha, x - w / 2f, bottom + h * 0.5f, w, h * 0.02f);
     }
 
@@ -108,7 +109,7 @@ final class DesertBossScenes {
         @Override
         protected void step(float delta) {
             if (at(0.3f)) rumble(1.6f, 4f);
-            if (at(1.0f)) sparks(bossX(), bossY(), 30, c("f0e2b8"), 500f, 10f);
+            if (at(1.0f)) sparks(bossX(), bossY(), 30, hex("f0e2b8"), 500f, 10f);
             if (at(CLIMAX_PHASE)) { rumble(0.5f, 12f); sparks(bossX(), bossY(), 50, GOLD, 700f, 14f); }
         }
 
@@ -130,7 +131,7 @@ final class DesertBossScenes {
                 float x0 = bossX() - bossWidth() * 0.55f, y0 = bossY();
                 for (int k = 0; k < 8; k++) {
                     float t0 = k / 8f, t1 = (k + 1) / 8f;
-                    line(batch, c("dce4ee"), blade, x0 + 40f * MathUtils.sin(t0 * 2f), y0 + t0 * 360f * blade,
+                    line(batch, hex("dce4ee"), blade, x0 + 40f * MathUtils.sin(t0 * 2f), y0 + t0 * 360f * blade,
                         x0 + 40f * MathUtils.sin(t1 * 2f), y0 + t1 * 360f * blade, 22f - k * 2f);
                 }
             }
@@ -146,7 +147,7 @@ final class DesertBossScenes {
         EmirDeath(CutsceneKit kit) {
             super(kit, Moment.DEATH, EnemyKind.EMIR, 0);
             bill = symbol(EnemySymbol.BILL);
-            camel = art("oy", new Color[] {c("3a2412"), c("a8784a")}, CAMEL);
+            camel = art("oy", new Color[] {hex("3a2412"), hex("a8784a")}, CAMEL);
         }
 
         @Override
@@ -178,9 +179,9 @@ final class DesertBossScenes {
             float stay = progress(3.6f, 3.9f);                                              // l'ombrelle plantée
             if (stay > 0f) {
                 float x = bossX() + 60f, y = groundY() + 60f;
-                line(batch, c("6e4524"), 1f, x, y, x, y + 300f, 10f);
+                line(batch, hex("6e4524"), 1f, x, y, x, y + 300f, 10f);
                 for (int k = 0; k < 9; k++) {
-                    line(batch, k % 2 == 0 ? c("e0283a") : GOLD, 1f, x, y + 300f, x + MathUtils.cosDeg(160f - k * 17.5f) * 200f,
+                    line(batch, k % 2 == 0 ? hex("e0283a") : GOLD, 1f, x, y + 300f, x + MathUtils.cosDeg(160f - k * 17.5f) * 200f,
                         y + 260f + MathUtils.sinDeg(160f - k * 17.5f) * 60f, 26f);
                 }
             }
@@ -259,13 +260,13 @@ final class DesertBossScenes {
             float show = progress(REELS_IN, REELS_IN + 0.4f);                                // les rouleaux apparaissent
             if (show > 0f && symbols != null) {
                 float w = window();
-                rect(batch, c("1a0e06"), show, reelX(0) - 14f, reelY() - 14f, reelX(2) - reelX(0) + w + 28f, w + 28f);
+                rect(batch, hex("1a0e06"), show, reelX(0) - 14f, reelY() - 14f, reelX(2) - reelX(0) + w + 28f, w + 28f);
                 for (int r = 0; r < 3; r++) {
                     float offset;
                     if (time < SPIN) offset = venom + 1f;                                       // au repos, sur la Potion
                     else if (time >= STOPS[r]) offset = venom + 5f * (r + 2);
                     else offset = venom + 5f * (r + 2) - (STOPS[r] - time) * 16f;
-                    rect(batch, c("f0e2b8"), show, reelX(r) - 4f, reelY() - 4f, w + 8f, w + 8f);
+                    rect(batch, hex("f0e2b8"), show, reelX(r) - 4f, reelY() - 4f, w + 8f, w + 8f);
                     batch.setColor(1f, 1f, 1f, show);
                     reel(batch, symbols, reelX(r), reelY(), w, w, offset);
                     if (time >= STOPS[r]) glow(batch, reelX(r) + w / 2f, reelY() + w / 2f, w * 2.2f, GREEN, 0.5f * pulse(9f, 0.5f));
@@ -275,10 +276,10 @@ final class DesertBossScenes {
             if (lever > 0f) {
                 float a = leverAngle(), length = caseH() * 0.36f * lever;
                 float ex = leverX() + MathUtils.cosDeg(a) * length, ey = leverY() + MathUtils.sinDeg(a) * length;
-                rect(batch, c("1a0e06"), 1f, leverX() - 14f, leverY() - 22f, 28f, 44f);
-                line(batch, c("8a97a8"), 1f, leverX(), leverY(), ex, ey, 14f);
-                rect(batch, c("1a0e06"), 1f, ex - 22f, ey - 22f, 44f, 44f);
-                rect(batch, c("c8102e"), 1f, ex - 18f, ey - 18f, 36f, 36f);
+                rect(batch, hex("1a0e06"), 1f, leverX() - 14f, leverY() - 22f, 28f, 44f);
+                line(batch, hex("8a97a8"), 1f, leverX(), leverY(), ex, ey, 14f);
+                rect(batch, hex("1a0e06"), 1f, ex - 22f, ey - 22f, 44f, 44f);
+                rect(batch, hex("c8102e"), 1f, ex - 18f, ey - 18f, 36f, 36f);
             }
         }
 
@@ -328,13 +329,13 @@ final class DesertBossScenes {
         protected void back(Batch batch) {
             for (int t = 0; t < 4; t++) {                                                    // les torches, qui s'éteignent une à une
                 float x = worldWidth() * (t < 2 ? 0.08f + 0.12f * t : 0.8f + 0.12f * (t - 2)), on = 1f - progress(4.3f + t * 0.2f, 4.4f + t * 0.2f);
-                rect(batch, c("6e4524"), 1f, x - 10f, worldHeight() * 0.4f, 20f, 120f);
-                if (on > 0f) glow(batch, x, worldHeight() * 0.4f + 140f, 300f * pulse(17f + t, 0.75f), c("ff9a3a"), 0.7f * on);
+                rect(batch, hex("6e4524"), 1f, x - 10f, worldHeight() * 0.4f, 20f, 120f);
+                if (on > 0f) glow(batch, x, worldHeight() * 0.4f + 140f, 300f * pulse(17f + t, 0.75f), hex("ff9a3a"), 0.7f * on);
             }
             float w = caseW(), h = caseH(), x = bossX();
-            rect(batch, c("1a0e06"), 1f, x - w / 2f - 6f, bossBottom() - 6f, w + 12f, h + 12f);   // la cuve ouverte, dressée
-            rect(batch, c("c4891e"), 1f, x - w / 2f, bossBottom(), w, h);
-            rect(batch, c("140a04"), 1f, x - w / 2f + 24f, bossBottom() + 20f, w - 48f, h - 44f);
+            rect(batch, hex("1a0e06"), 1f, x - w / 2f - 6f, bossBottom() - 6f, w + 12f, h + 12f);   // la cuve ouverte, dressée
+            rect(batch, hex("c4891e"), 1f, x - w / 2f, bossBottom(), w, h);
+            rect(batch, hex("140a04"), 1f, x - w / 2f + 24f, bossBottom() + 20f, w - 48f, h - 44f);
             poseX = time > 0.8f && time < CLIMAX_DEATH ? (random.nextFloat() - 0.5f) * 8f * progress(0.8f, CLIMAX_DEATH) : 0f;
             showBoss = time < CLIMAX_DEATH;
         }
@@ -343,8 +344,8 @@ final class DesertBossScenes {
         protected void front(Batch batch) {
             float cracks = progress(0.8f, CLIMAX_DEATH);                                     // il se fend
             if (cracks > 0f && time < CLIMAX_DEATH) {
-                crack(batch, portraitX(17f), portraitY(8f), -80f, bossHeight() * 0.5f * cracks, 3L, c("ffe8a0"), cracks, 5f);
-                crack(batch, portraitX(12f), portraitY(20f), -120f, bossHeight() * 0.3f * cracks, 9L, c("ffe8a0"), cracks, 4f);
+                crack(batch, portraitX(17f), portraitY(8f), -80f, bossHeight() * 0.5f * cracks, 3L, hex("ffe8a0"), cracks, 5f);
+                crack(batch, portraitX(12f), portraitY(20f), -120f, bossHeight() * 0.3f * cracks, 9L, hex("ffe8a0"), cracks, 4f);
             }
             if (time >= CLIMAX_DEATH) drawDust(batch);
             float close = Interpolation.bounceOut.apply(progress(CLOSE, CLOSE + 0.6f));      // le couvercle glisse et se ferme
@@ -389,7 +390,7 @@ final class DesertBossScenes {
         @Override
         protected void step(float delta) {
             if (at(1.0f)) sparks(bossX(), bossY(), 40, PURPLE, 600f, 12f);
-            if (at(CLIMAX_PHASE)) { rumble(0.6f, 10f); sparks(bossX(), bossY(), 50, c("fff2c0"), 700f, 14f); }
+            if (at(CLIMAX_PHASE)) { rumble(0.6f, 10f); sparks(bossX(), bossY(), 50, hex("fff2c0"), 700f, 14f); }
         }
 
         @Override
@@ -397,10 +398,10 @@ final class DesertBossScenes {
             float reels = progress(1.4f, 1.8f);
             for (int r = 0; r < 4; r++) {                                                    // les palmiers devenus rouleaux
                 float x = worldWidth() * (0.08f + 0.28f * r), w = 150f, h = 130f;
-                rect(batch, c("3a9a3a"), 1f - reels, x + w / 2f - 10f, groundY(), 20f, 360f);
+                rect(batch, hex("3a9a3a"), 1f - reels, x + w / 2f - 10f, groundY(), 20f, 360f);
                 if (reels > 0f) {
-                    rect(batch, c("1a1018"), reels, x - 10f, groundY() + 200f, w + 20f, h + 20f);
-                    rect(batch, c("f6f0e2"), reels, x, groundY() + 210f, w, h);
+                    rect(batch, hex("1a1018"), reels, x - 10f, groundY() + 200f, w + 20f, h + 20f);
+                    rect(batch, hex("f6f0e2"), reels, x, groundY() + 210f, w, h);
                     batch.setColor(1f, 1f, 1f, reels);
                     reel(batch, symbols, x, groundY() + 210f, w, h, time * (6f + r));
                 }
@@ -429,7 +430,7 @@ final class DesertBossScenes {
 
         DjinnDeath(CutsceneKit kit) {
             super(kit, Moment.DEATH, EnemyKind.DJINN, 0);
-            lamp = art("og", new Color[] {c("4a3008"), GOLD}, LAMP);
+            lamp = art("og", new Color[] {hex("4a3008"), GOLD}, LAMP);
         }
 
         private float lampX() { return bossX() + bossWidth() * 0.9f - 400f * progress(3.4f, 4.6f); }
@@ -437,16 +438,16 @@ final class DesertBossScenes {
 
         @Override
         protected void step(float delta) {
-            if (at(0.5f)) for (int side = -1; side <= 1; side += 2) sparks(bossX() + side * bossWidth() * 1.1f, bossY(), 30, c("d8c8ff"), 500f, 12f);
+            if (at(0.5f)) for (int side = -1; side <= 1; side += 2) sparks(bossX() + side * bossWidth() * 1.1f, bossY(), 30, hex("d8c8ff"), 500f, 12f);
             if (at(CLIMAX_DEATH)) rumble(0.4f, 8f);
         }
 
         @Override
         protected void back(Batch batch) {
             float dry = progress(3.6f, 4.8f);                                                // l'oasis s'évapore
-            rect(batch, c("2a8ad8"), 1f - dry, bossX() - bossWidth() * 1.4f, groundY() - 40f, bossWidth() * 2.8f, 60f);
+            rect(batch, hex("2a8ad8"), 1f - dry, bossX() - bossWidth() * 1.4f, groundY() - 40f, bossWidth() * 2.8f, 60f);
             for (int k = 0; k < 16 && dry > 0f; k++) {
-                crack(batch, (k * 211f) % worldWidth(), groundY() * 0.5f, 10f + k * 23f, 120f, k, c("8a5a2a"), dry, 4f);
+                crack(batch, (k * 211f) % worldWidth(), groundY() * 0.5f, 10f + k * 23f, 120f, k, hex("8a5a2a"), dry, 4f);
             }
             if (time < 0.5f) {                                                               // ses copies, avant d'éclater
                 for (int side = -1; side <= 1; side += 2) {
@@ -464,7 +465,7 @@ final class DesertBossScenes {
 
         @Override
         protected void front(Batch batch) {
-            for (int side = -1; side <= 1; side += 2) wave(batch, 0.5f, 0.5f, bossX() + side * bossWidth() * 1.1f, bossY(), c("d8c8ff"), 600f);
+            for (int side = -1; side <= 1; side += 2) wave(batch, 0.5f, 0.5f, bossX() + side * bossWidth() * 1.1f, bossY(), hex("d8c8ff"), 600f);
             float roll = progress(3.4f, 4.6f);                                               // la lampe se renverse et roule
             draw(batch, lamp, lampX(), lampY(), fit(110f, 7), 90f * progress(3.1f, 3.4f) + 540f * roll, WHITE, 1f);
         }
@@ -496,7 +497,7 @@ final class DesertBossScenes {
             float peak = worldHeight() * 0.55f;
             for (int x = -40; x < worldWidth() + 40; x += 14) {                              // le volcan, derrière lui
                 float y = peak - Math.abs(x - worldWidth() / 2f) * 0.8f;
-                rect(batch, c("3a1e18"), 1f, x, -MARGIN, 16f, Math.max(0f, y) + MARGIN);
+                rect(batch, hex("3a1e18"), 1f, x, -MARGIN, 16f, Math.max(0f, y) + MARGIN);
             }
             glow(batch, worldWidth() / 2f, peak, 900f * progress(0.6f, 1.2f), LAVA, 0.8f);
             float fly = Interpolation.pow2Out.apply(progress(0.2f, 1.2f));
@@ -526,13 +527,13 @@ final class DesertBossScenes {
 
         DragonDeath(CutsceneKit kit) {
             super(kit, Moment.DEATH, EnemyKind.DRAGON, 0);
-            Color[] gold = {c("6a4008"), c("ffd23a"), c("fff6c8"), c("c4891e"), c("3ad0ff"), c("ff3a5a")};
+            Color[] gold = {hex("6a4008"), hex("ffd23a"), hex("fff6c8"), hex("c4891e"), hex("3ad0ff"), hex("ff3a5a")};
             treasure = new TextureRegion[] {
                 art("oywd", new Color[] {gold[0], gold[1], gold[2], gold[3]}, INGOT),
-                art("obw", new Color[] {c("0a3a5a"), gold[4], gold[2]}, GEM),
+                art("obw", new Color[] {hex("0a3a5a"), gold[4], gold[2]}, GEM),
                 art("ydrb", new Color[] {gold[1], gold[3], gold[5], gold[4]}, CROWN),
                 art("oywd", new Color[] {gold[0], gold[1], gold[2], gold[3]}, CUP),
-                art("orw", new Color[] {c("5a0a1a"), gold[5], c("ffc8d0")}, RUBY),
+                art("orw", new Color[] {hex("5a0a1a"), gold[5], hex("ffc8d0")}, RUBY),
                 coin};
         }
 
@@ -576,7 +577,7 @@ final class DesertBossScenes {
             float quiet = 1f - progress(CLIMAX_DEATH + 0.3f, 3.6f);
             for (int x = -40; x < worldWidth() + 40; x += 14) {
                 float y = crater() - Math.abs(x - worldWidth() / 2f) * 0.7f;
-                rect(batch, c("3a1e18"), 1f, x, -MARGIN, 16f, Math.max(0f, y) + MARGIN);
+                rect(batch, hex("3a1e18"), 1f, x, -MARGIN, 16f, Math.max(0f, y) + MARGIN);
             }
             glow(batch, worldWidth() / 2f, crater(), 700f, LAVA, 0.3f + 0.5f * quiet);
             float erupt = progress(ERUPT_FROM - 0.2f, ERUPT_FROM + 0.2f) * (1f - progress(ERUPT_TO, ERUPT_TO + 0.6f));
@@ -584,7 +585,7 @@ final class DesertBossScenes {
                 glow(batch, worldWidth() / 2f, crater(), 1100f, GOLD, 0.8f * erupt * pulse(12f, 0.7f));
                 for (int k = 0; k < 5; k++) {
                     float spread = (k - 2) * 26f;
-                    rect(batch, k % 2 == 0 ? GOLD : c("fff2a0"), 0.8f * erupt, worldWidth() / 2f + spread - 14f, crater(), 28f,
+                    rect(batch, k % 2 == 0 ? GOLD : hex("fff2a0"), 0.8f * erupt, worldWidth() / 2f + spread - 14f, crater(), 28f,
                         worldHeight() * (0.3f + 0.08f * MathUtils.sin(time * 20f + k)));
                 }
             }

@@ -9,6 +9,8 @@ import com.badlogic.gdx.utils.Array;
 import fr.astratime.lucky.entities.enemy.EnemyKind;
 import java.util.Random;
 
+import static fr.astratime.lucky.assets.Palette.hex;
+
 /**
  * Les rois des Mines d'Or entrent en scène :
  * <ul>
@@ -56,7 +58,7 @@ public class MinesKings extends KingEntrance {
         ".oo.oo.",
         ".oo.oo."};
 
-    private static final Color ROCK = c("2a1c14"), ROCK_DARK = c("180f0a"), GOLD = c("ffc93a"), EMBER = c("ff6a1a");
+    private static final Color ROCK = hex("2a1c14"), ROCK_DARK = hex("180f0a"), GOLD = hex("ffc93a"), EMBER = hex("ff6a1a");
 
     private final TextureRegion cart, anvil, boulder, pebble, miner, lantern;
     private final Array<Particle> rocks = new Array<>(false, 64);
@@ -65,7 +67,7 @@ public class MinesKings extends KingEntrance {
 
     public MinesKings(CutsceneKit kit, EnemyKind kind) {
         super(kit, kind);
-        Color[] cartColors = {c("140a0a"), c("4a4a5a"), c("6a6a7a"), c("ffc93a"), c("ffe58a"), c("9a9aa8")};
+        Color[] cartColors = {hex("140a0a"), hex("4a4a5a"), hex("6a6a7a"), hex("ffc93a"), hex("ffe58a"), hex("9a9aa8")};
         cart = art("oiIgGw", cartColors,
             "...gGgggGgggGgggGg..",
             "..gggGgggggGggggGgg.",
@@ -79,7 +81,7 @@ public class MinesKings extends KingEntrance {
             "..owwo........owwo..",
             "..owwo........owwo..",
             "...oo..........oo...");
-        Color[] anvilColors = {c("0a0808"), c("8a8a9a"), c("4a4a5a"), c("2e2e3a")};
+        Color[] anvilColors = {hex("0a0808"), hex("8a8a9a"), hex("4a4a5a"), hex("2e2e3a")};
         anvil = art("oLgd", anvilColors,
             "oooooooooooooooooooooo",
             "oLLLLLLLLLLLLLLLLLLLLo",
@@ -90,7 +92,7 @@ public class MinesKings extends KingEntrance {
             "....oddddddddddo......",
             "...oddddddddddddo.....",
             "...oooooooooooooo.....");
-        Color[] rockColors = {c("1a0e06"), c("ffc93a"), c("b8801f"), c("fff0a0")};
+        Color[] rockColors = {hex("1a0e06"), hex("ffc93a"), hex("b8801f"), hex("fff0a0")};
         boulder = art("ogdw", rockColors,
             "..oooo..",
             ".ogwggo.",
@@ -100,13 +102,13 @@ public class MinesKings extends KingEntrance {
             "oggdddgo",
             ".odddgo.",
             "..oooo..");
-        pebble = art("od", new Color[] {c("1a0e06"), c("5a4030")},
+        pebble = art("od", new Color[] {hex("1a0e06"), hex("5a4030")},
             ".oo.",
             "oddo",
             "oddo",
             ".oo.");
-        miner = art("oyhsbl", new Color[] {c("0a0808"), c("ffe066"), c("d8a020"), c("e8b080"), c("4a5a8a"),
-                c("6b4a2a")},
+        miner = art("oyhsbl", new Color[] {hex("0a0808"), hex("ffe066"), hex("d8a020"), hex("e8b080"), hex("4a5a8a"),
+                hex("6b4a2a")},
             "...oyo...",
             "..ohhho..",
             ".ohhhhho.",
@@ -120,7 +122,7 @@ public class MinesKings extends KingEntrance {
             "..olllo..",
             "..ol.lo..",
             "..oo.oo..");
-        lantern = art("odyw", new Color[] {c("0a0808"), c("3a3a48"), c("ffb040"), c("fff0a0")},
+        lantern = art("odyw", new Color[] {hex("0a0808"), hex("3a3a48"), hex("ffb040"), hex("fff0a0")},
             "..oo..",
             ".o..o.",
             "dddddd",
@@ -274,7 +276,7 @@ public class MinesKings extends KingEntrance {
                     rumble(0.3f, 10f);
                     sparks(cx(), kingY() + 300f, 40, GOLD, 800f, 14f);
                 }
-                if (at(HEART)) sparks(heartX(), heartY(), 24, c("ffe58a"), 400f, 12f);
+                if (at(HEART)) sparks(heartX(), heartY(), 24, hex("ffe58a"), 400f, 12f);
                 for (float thump : THUMPS) {
                     if (!at(thump)) continue;
                     rumble(0.25f, 10f);
@@ -316,16 +318,16 @@ public class MinesKings extends KingEntrance {
             batch.draw(pixel, x, y, 0f, 3f, length, 6f, 1f, 1f, angle);
         }
         normal(batch);
-        rect(batch, c("120a06"), -MARGIN, -MARGIN, width + 2f * MARGIN, height * 0.16f + MARGIN);
+        rect(batch, hex("120a06"), -MARGIN, -MARGIN, width + 2f * MARGIN, height * 0.16f + MARGIN);
         for (int side = -1; side <= 1; side += 2) {                 // poutres et lanternes
             float x = cx() + side * width * 0.42f;
-            rect(batch, c("4a2a14"), x - 26f, -MARGIN, 52f, height + 2f * MARGIN);
-            rect(batch, c("6b3e1e"), x - 26f, -MARGIN, 12f, height + 2f * MARGIN);
-            glow(batch, x - side * 70f, height * 0.62f, 380f * pulse(13f, 0.85f), c("ff9a2a"), 0.35f);
-            glow(batch, x - side * 70f, height * 0.62f, 60f, c("ffe066"), 0.9f);
+            rect(batch, hex("4a2a14"), x - 26f, -MARGIN, 52f, height + 2f * MARGIN);
+            rect(batch, hex("6b3e1e"), x - 26f, -MARGIN, 12f, height + 2f * MARGIN);
+            glow(batch, x - side * 70f, height * 0.62f, 380f * pulse(13f, 0.85f), hex("ff9a2a"), 0.35f);
+            glow(batch, x - side * 70f, height * 0.62f, 60f, hex("ffe066"), 0.9f);
         }
-        rect(batch, c("4a2a14"), -MARGIN, height * 0.88f, width + 2f * MARGIN, 44f);
-        rect(batch, c("6b3e1e"), -MARGIN, height * 0.88f + 32f, width + 2f * MARGIN, 12f);
+        rect(batch, hex("4a2a14"), -MARGIN, height * 0.88f, width + 2f * MARGIN, 44f);
+        rect(batch, hex("6b3e1e"), -MARGIN, height * 0.88f + 32f, width + 2f * MARGIN, 12f);
     }
 
     // -------------------------------------------------------------------------
@@ -341,10 +343,10 @@ public class MinesKings extends KingEntrance {
             float k = ((i / 12f + time * 0.9f * speed) % 1f);
             float y = MathUtils.lerp(vanishY, -MARGIN, k * k);
             float half = MathUtils.lerp(20f, width * 0.32f, k * k);
-            rect(batch, c("3a2414"), cx() - half * 1.15f, y - 6f * k, half * 2.3f, 14f * k + 2f);
+            rect(batch, hex("3a2414"), cx() - half * 1.15f, y - 6f * k, half * 2.3f, 14f * k + 2f);
         }
         for (int side = -1; side <= 1; side += 2) {
-            batch.setColor(c("9a9aa8"));
+            batch.setColor(hex("9a9aa8"));
             float x0 = cx() + side * 20f, x1 = cx() + side * width * 0.32f;
             float dx = x1 - x0, dy = -MARGIN - vanishY, length = (float) Math.sqrt(dx * dx + dy * dy);
             batch.draw(pixel, x0, vanishY - 3f, 0f, 3f, length, 6f, 1f, 1f, MathUtils.atan2(dy, dx) * MathUtils.radiansToDegrees);
@@ -391,7 +393,7 @@ public class MinesKings extends KingEntrance {
         Random blocks = new Random(7);
         for (int i = 0; i < 60; i++) {
             float bx = width * blocks.nextFloat() - 100f, by = height * blocks.nextFloat() - 60f;
-            rect(batch, blocks.nextBoolean() ? c("3a281c") : c("241810"), bx, by, 160f + 160f * blocks.nextFloat(),
+            rect(batch, blocks.nextBoolean() ? hex("3a281c") : hex("241810"), bx, by, 160f + 160f * blocks.nextFloat(),
                 90f + 90f * blocks.nextFloat());
         }
         float hole = Interpolation.pow2Out.apply(progress(DRILL_IN, DRILL_IN + 0.3f));
@@ -404,7 +406,7 @@ public class MinesKings extends KingEntrance {
             float k = progress(DRILLER, DRILLER + 0.4f);
             float spit = gesture(SPIT - 0.25f, SPIT + 0.3f);            // il se penche pour cracher
             pose(0f, -20f * spit, -4f * spit, -0.03f * spit);
-            glow(batch, cx(), kingY() + 280f, 900f, c("ff9a2a"), 0.3f * k);
+            glow(batch, cx(), kingY() + 280f, 900f, hex("ff9a2a"), 0.3f * k);
             drawKing(batch, cx(), kingY(), KING_SCALE, 1f - k, k);
             if (time >= GESTURE) {                                      // les lunettes, retirées et jetées
                 float off = Interpolation.pow2Out.apply(progress(GESTURE, GOGGLES_OFF));
@@ -412,11 +414,11 @@ public class MinesKings extends KingEntrance {
                 float gx = faceX() + 300f * toss, gy = MathUtils.lerp(faceY() + 3f * KING_SCALE, faceY() + 14f
                     * KING_SCALE, off) - 700f * toss * toss;
                 for (int side = -1; side <= 1; side += 2) {
-                    batch.setColor(c("2a2a34"));
+                    batch.setColor(hex("2a2a34"));
                     batch.draw(soft, gx + side * 50f - 46f, gy - 46f, 92f, 92f);
-                    glow(batch, gx + side * 50f, gy, 70f, c("8ad8ff"), 0.8f);
+                    glow(batch, gx + side * 50f, gy, 70f, hex("8ad8ff"), 0.8f);
                 }
-                line(batch, c("2a2a34"), gx - 100f, gy, gx + 100f, gy, 10f);
+                line(batch, hex("2a2a34"), gx - 100f, gy, gx + 100f, gy, 10f);
             }
         }
         // La foreuse vue de face : une pointe qui tourne, qui grossit en perçant puis repart.
@@ -426,14 +428,14 @@ public class MinesKings extends KingEntrance {
                 * (1f - out);
             for (int ring = 0; ring < 5; ring++) {                       // le cône d'acier, en anneaux
                 float r = size * (1f - ring * 0.18f);
-                batch.setColor(tmp.set(c("3a3a48")).lerp(c("d8d8e8"), ring / 4f));
+                batch.setColor(tmp.set(hex("3a3a48")).lerp(hex("d8d8e8"), ring / 4f));
                 batch.draw(soft, cx() - r, y - r, r * 2f, r * 2f);
             }
             for (int arm = 0; arm < 3; arm++) {                         // les rainures en spirale qui tournent
                 for (int k = 2; k < 24; k++) {
                     float r = size * 0.62f * k / 24f, angle = arm * 120f + k * 22f - time * 1100f;
                     float dot = size * 0.05f * (0.4f + k / 24f);
-                    batch.setColor(c("1a1a24"));
+                    batch.setColor(hex("1a1a24"));
                     batch.draw(pixel, cx() + MathUtils.cosDeg(angle) * r - dot / 2f,
                         y + MathUtils.sinDeg(angle) * r - dot / 2f, dot, dot);
                 }
@@ -458,10 +460,10 @@ public class MinesKings extends KingEntrance {
             drawKing(batch, cx(), anvilTop() - 40f, KING_SCALE, 1f - k, k);
         }
         // Le baquet d'eau, où il trempera la lame.
-        rect(batch, c("3a2414"), barrelX() - 110f, barrelTop() - 220f, 220f, 220f);
-        rect(batch, c("6a6a7a"), barrelX() - 116f, barrelTop() - 60f, 232f, 14f);
-        rect(batch, c("6a6a7a"), barrelX() - 116f, barrelTop() - 180f, 232f, 14f);
-        rect(batch, c("2a5a7a"), barrelX() - 100f, barrelTop() - 16f, 200f, 16f);
+        rect(batch, hex("3a2414"), barrelX() - 110f, barrelTop() - 220f, 220f, 220f);
+        rect(batch, hex("6a6a7a"), barrelX() - 116f, barrelTop() - 60f, 232f, 14f);
+        rect(batch, hex("6a6a7a"), barrelX() - 116f, barrelTop() - 180f, 232f, 14f);
+        rect(batch, hex("2a5a7a"), barrelX() - 100f, barrelTop() - 16f, 200f, 16f);
         // La lame rouge, levée à bout de bras, puis trempée dans l'eau.
         if (time >= BLADE_UP) {
             float k = Interpolation.swingOut.apply(progress(BLADE_UP, BLADE_UP + 0.35f));
@@ -471,11 +473,11 @@ public class MinesKings extends KingEntrance {
             float baseX = bladeX(), baseY = kingY() + 22f * KING_SCALE;
             glow(batch, baseX + MathUtils.cosDeg(angle) * 180f, baseY + MathUtils.sinDeg(angle) * 180f, 420f, EMBER,
                 0.6f * pulse(9f, 0.7f) * (1f - cool));
-            batch.setColor(c("1a0a0a"));
+            batch.setColor(hex("1a0a0a"));
             batch.draw(pixel, baseX, baseY - 18f, 0f, 18f, 400f, 36f, 1f, 1f, angle);
-            batch.setColor(tmp.set(c("ff4a1a")).lerp(c("6a6a7a"), cool));
+            batch.setColor(tmp.set(hex("ff4a1a")).lerp(hex("6a6a7a"), cool));
             batch.draw(pixel, baseX, baseY - 12f, 0f, 12f, 390f, 24f, 1f, 1f, angle);
-            batch.setColor(tmp.set(c("ffd060")).lerp(c("c8c8d8"), cool));
+            batch.setColor(tmp.set(hex("ffd060")).lerp(hex("c8c8d8"), cool));
             batch.draw(pixel, baseX, baseY - 4f, 0f, 4f, 380f, 8f, 1f, 1f, angle);
         }
         // L'enclume.
@@ -489,13 +491,13 @@ public class MinesKings extends KingEntrance {
             float k = time < hit ? Interpolation.pow2In.apply(progress(hit - 0.25f, hit)) : 1f;
             float angle = MathUtils.lerp(70f, 0f, k);
             float pivotX = cx() + 520f, pivotY = anvilTop() + 40f;
-            batch.setColor(c("6b3a1e"));
+            batch.setColor(hex("6b3a1e"));
             batch.draw(pixel, pivotX, pivotY - 12f, 0f, 12f, -400f, 24f, 1f, 1f, -angle);
             float headX = pivotX - MathUtils.cosDeg(angle) * 420f, headY = pivotY + MathUtils.sinDeg(angle) * 420f;
-            rect(batch, c("2e2e3a"), headX - 60f, headY - 40f, 120f, 90f);
-            rect(batch, c("6a6a7a"), headX - 60f, headY + 30f, 120f, 20f);
+            rect(batch, hex("2e2e3a"), headX - 60f, headY - 40f, 120f, 90f);
+            rect(batch, hex("6a6a7a"), headX - 60f, headY + 30f, 120f, 20f);
         }
-        flash(batch, c("ffe0a0"), HITS[2], 0.15f, 0.35f);
+        flash(batch, hex("ffe0a0"), HITS[2], 0.15f, 0.35f);
     }
 
     private float anvilTop() { return worldHeight() * 0.32f; }
@@ -545,7 +547,7 @@ public class MinesKings extends KingEntrance {
             float beat = 0f;
             for (float thump : THUMPS) if (time >= thump) beat = Math.max(beat, 1f - (time - thump) / 0.3f);
             beat = Math.max(0f, beat);
-            glow(batch, heartX(), heartY(), 260f * pulse(8f, 0.7f) * (1f + beat), c("ffe58a"), 0.9f * k);
+            glow(batch, heartX(), heartY(), 260f * pulse(8f, 0.7f) * (1f + beat), hex("ffe58a"), 0.9f * k);
             glow(batch, heartX(), heartY(), 600f * pulse(8f, 0.7f) * (1f + 1.5f * beat), GOLD, 0.4f * k + 0.4f * beat);
         }
         // Les murs se fissurent à chaque battement : des éclairs d'or dans la roche.
@@ -559,7 +561,7 @@ public class MinesKings extends KingEntrance {
             for (int s = 0; s < 9; s++) {
                 float nx = x + (i < 5 ? 1f : -1f) * (30f + 40f * cracks.nextFloat()), ny = y + (cracks.nextFloat() - 0.5f) * 90f;
                 if (s < shown) {
-                    line(batch, c("0a0604"), x, y, nx, ny, 16f);
+                    line(batch, hex("0a0604"), x, y, nx, ny, 16f);
                     additive(batch);
                     line(batch, tmp.set(GOLD.r, GOLD.g, GOLD.b, 0.8f), x, y, nx, ny, 6f);
                     normal(batch);
@@ -585,20 +587,20 @@ public class MinesKings extends KingEntrance {
         fill(batch, Color.BLACK, 0.65f);
         for (int i = 0; i < 12; i++) {
             float k = i / 12f, y = MathUtils.lerp(vanishY, -MARGIN, k * k), half = MathUtils.lerp(20f, width * 0.32f, k * k);
-            rect(batch, c("1e140c"), cx() - half * 1.15f, y - 6f * k, half * 2.3f, 14f * k + 2f);
+            rect(batch, hex("1e140c"), cx() - half * 1.15f, y - 6f * k, half * 2.3f, 14f * k + 2f);
         }
         for (int side = -1; side <= 1; side += 2) {
             float x0 = cx() + side * 20f, x1 = cx() + side * width * 0.32f;
-            line(batch, c("4a4a58"), x0, vanishY, x1, -MARGIN, 6f);
+            line(batch, hex("4a4a58"), x0, vanishY, x1, -MARGIN, 6f);
             for (float glint : GLINTS) {                                 // le reflet qui file vers toi
                 float k = progress(glint, glint + 0.7f);
                 if (k <= 0f || k >= 1f) continue;
                 float e = k * k;
                 float gx = MathUtils.lerp(x0, x1, e), gy = MathUtils.lerp(vanishY, -MARGIN, e);
-                glow(batch, gx, gy, 60f + 260f * e, c("fff0c0"), 0.9f * (1f - k * 0.5f));
+                glow(batch, gx, gy, 60f + 260f * e, hex("fff0c0"), 0.9f * (1f - k * 0.5f));
             }
         }
-        glow(batch, cx(), vanishY, 160f, c("ffb040"), 0.6f * pulse(7f, 0.5f));          // une lueur au bout du tunnel
+        glow(batch, cx(), vanishY, 160f, hex("ffb040"), 0.6f * pulse(7f, 0.5f));          // une lueur au bout du tunnel
     }
 
     /** Foreur : des lanternes au plafond, qui tremblent de plus en plus. */
@@ -610,9 +612,9 @@ public class MinesKings extends KingEntrance {
             float x = width * (0.2f + 0.2f * i), angle = shake * MathUtils.sin(time * (9f + i * 2f) + i);
             float length = 260f + 80f * (i % 2);
             float lx = x + MathUtils.sinDeg(angle) * length, ly = beam - MathUtils.cosDeg(angle) * length;
-            line(batch, c("2a2a34"), x, beam, lx, ly, 6f);
+            line(batch, hex("2a2a34"), x, beam, lx, ly, 6f);
             float flicker = pulse(17f + i, 0.6f);
-            glow(batch, lx, ly - 50f, 520f * flicker, c("ff9a2a"), 0.4f);
+            glow(batch, lx, ly - 50f, 520f * flicker, hex("ff9a2a"), 0.4f);
             batch.setColor(Color.WHITE);
             sprite(batch, lantern, lx, ly - 50f, 18f, angle);
         }
@@ -625,8 +627,8 @@ public class MinesKings extends KingEntrance {
         float blow = 0f;
         for (float pump : PUMPS) blow = Math.max(blow, gesture(pump, pump + 0.45f));
         // Le foyer : une bouche de pierre pleine de braises.
-        rect(batch, c("1a100a"), cx() - 340f, forgeY() - 160f, 680f, 420f);
-        rect(batch, c("0a0604"), cx() - 260f, forgeY() - 60f, 520f, 240f);
+        rect(batch, hex("1a100a"), cx() - 340f, forgeY() - 160f, 680f, 420f);
+        rect(batch, hex("0a0604"), cx() - 260f, forgeY() - 60f, 520f, 240f);
         glow(batch, cx(), forgeY(), 900f * (1f + 0.6f * blow), EMBER, 0.45f + 0.4f * blow);
         for (int i = 0; i < 14; i++) {
             float heat = pulse(6f + i, 0.5f) * (0.6f + 0.4f * blow);
@@ -635,13 +637,13 @@ public class MinesKings extends KingEntrance {
         // Le soufflet, à gauche, qui se ferme et s'ouvre.
         float bx = width * 0.18f, by = forgeY() + 40f, open = 1f - blow;
         float h = MathUtils.lerp(70f, 220f, open);
-        rect(batch, c("5a3018"), bx - 170f, by - h / 2f, 300f, h);
-        for (int f = 0; f < 4; f++) rect(batch, c("3a1e0e"), bx - 150f + f * 70f, by - h / 2f, 12f, h);
-        rect(batch, c("8a5236"), bx - 190f, by + h / 2f, 340f, 24f);
-        rect(batch, c("8a5236"), bx - 190f, by - h / 2f - 24f, 340f, 24f);
-        line(batch, c("6a6a7a"), bx + 130f, by, cx() - 300f, forgeY(), 26f);                  // la buse
-        line(batch, c("6b3e1e"), bx - 190f, by + h / 2f + 12f, bx - 320f, by + h / 2f + 60f, 20f); // les poignées
-        line(batch, c("6b3e1e"), bx - 190f, by - h / 2f - 12f, bx - 320f, by - h / 2f - 60f, 20f);
+        rect(batch, hex("5a3018"), bx - 170f, by - h / 2f, 300f, h);
+        for (int f = 0; f < 4; f++) rect(batch, hex("3a1e0e"), bx - 150f + f * 70f, by - h / 2f, 12f, h);
+        rect(batch, hex("8a5236"), bx - 190f, by + h / 2f, 340f, 24f);
+        rect(batch, hex("8a5236"), bx - 190f, by - h / 2f - 24f, 340f, 24f);
+        line(batch, hex("6a6a7a"), bx + 130f, by, cx() - 300f, forgeY(), 26f);                  // la buse
+        line(batch, hex("6b3e1e"), bx - 190f, by + h / 2f + 12f, bx - 320f, by + h / 2f + 60f, 20f); // les poignées
+        line(batch, hex("6b3e1e"), bx - 190f, by - h / 2f - 12f, bx - 320f, by - h / 2f - 60f, 20f);
     }
 
     /** Coeur de la Montagne : des mineurs lâchent leurs pioches et s'enfuient. */
@@ -658,11 +660,11 @@ public class MinesKings extends KingEntrance {
             float drop = Interpolation.bounceOut.apply(progress(DROP_PICKS, DROP_PICKS + 0.35f));
             float px = home + 120f, py = MathUtils.lerp(ground + mh * 0.5f, ground + 10f, drop);
             float pa = MathUtils.lerp(60f, 10f, drop);
-            line(batch, c("6b3e1e"), px, py, px + MathUtils.cosDeg(pa) * 240f, py + MathUtils.sinDeg(pa) * 240f, 20f);
+            line(batch, hex("6b3e1e"), px, py, px + MathUtils.cosDeg(pa) * 240f, py + MathUtils.sinDeg(pa) * 240f, 20f);
             float hx = px + MathUtils.cosDeg(pa) * 240f, hy = py + MathUtils.sinDeg(pa) * 240f;
-            line(batch, c("9a9aa8"), hx + MathUtils.sinDeg(pa) * 80f, hy - MathUtils.cosDeg(pa) * 80f,
+            line(batch, hex("9a9aa8"), hx + MathUtils.sinDeg(pa) * 80f, hy - MathUtils.cosDeg(pa) * 80f,
                 hx - MathUtils.sinDeg(pa) * 80f, hy + MathUtils.cosDeg(pa) * 80f, 24f);
-            glow(batch, x + shiver, ground + mh - 20f + hop, 320f, c("ffe066"), 0.45f);            // la lampe du casque
+            glow(batch, x + shiver, ground + mh - 20f + hop, 320f, hex("ffe066"), 0.45f);            // la lampe du casque
             batch.setColor(Color.WHITE);
             batch.draw(miner, dir < 0 ? x + shiver + mw / 2f : x + shiver - mw / 2f, ground + hop, dir < 0 ? -mw : mw, mh);
         }

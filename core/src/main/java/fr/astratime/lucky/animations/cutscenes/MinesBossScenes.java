@@ -10,6 +10,8 @@ import fr.astratime.lucky.entities.enemy.EnemyKind;
 import fr.astratime.lucky.entities.enemy.EnemySymbol;
 import java.util.Random;
 
+import static fr.astratime.lucky.assets.Palette.hex;
+
 /** Les scènes de phase et de mort des quatre rois des Mines d'Or (choix d'Astra, 2026-10-24). */
 final class MinesBossScenes {
 
@@ -37,7 +39,7 @@ final class MinesBossScenes {
 
     // ----- Accessoires -----
 
-    static final Color ROCK = c("2a1a0e"), ROCK_LIGHT = c("4a3020"), LAVA = c("ff5a1a"), STONE = c("8a8a90");
+    static final Color ROCK = hex("2a1a0e"), ROCK_LIGHT = hex("4a3020"), LAVA = hex("ff5a1a"), STONE = hex("8a8a90");
     static final String[] ANVIL = {
         "oooooooooooooooooooooo", "oLLLLLLLLLLLLLLLLLLLLo", "ogggggggggggggggggggo.", ".ooggggggggggggggoo...",
         "....oggggggggggo......", ".....oddddddddo.......", "....oddddddddddo......", "...oddddddddddddo.....",
@@ -53,7 +55,6 @@ final class MinesBossScenes {
         ".ooo...ooo.", "orrro.orrro", "orwrrorrrro", "orwrrrrrrro", "orrrrrrrrdo", ".orrrrrrdo.", "..orrrrdo..",
         "...orrdo...", "....odo....", ".....o....."};
 
-    static Color c(String hex) { return Color.valueOf(hex); }
 
     /** Les parois de la mine, à gauche et à droite. */
     static void walls(BossScene scene, Batch batch) {
@@ -156,12 +157,12 @@ final class MinesBossScenes {
 
         BaronDeath(CutsceneKit kit) {
             super(kit, Moment.DEATH, EnemyKind.BARON_OR, 0);
-            hat = art("oy", new Color[] {c("141018"), c("ffc93a")}, TOP_HAT);
+            hat = art("oy", new Color[] {hex("141018"), hex("ffc93a")}, TOP_HAT);
         }
 
         @Override
         protected void step(float delta) {
-            if (at(CLIMAX_DEATH)) { rumble(0.7f, 12f); crumble(this, 6, c("9a9aa0"), 300f); sparks(bossX(), bossY(), 40, STONE, 600f, 20f); }
+            if (at(CLIMAX_DEATH)) { rumble(0.7f, 12f); crumble(this, 6, hex("9a9aa0"), 300f); sparks(bossX(), bossY(), 40, STONE, 600f, 20f); }
         }
 
         @Override
@@ -205,7 +206,7 @@ final class MinesBossScenes {
         DrillPhase(CutsceneKit kit) {
             super(kit, Moment.PHASE, EnemyKind.GRAND_FOREUR, 2);
             drill = symbol(EnemySymbol.DRILL);
-            spike = art("odw", new Color[] {c("1a0e06"), c("6a4a30"), c("a08060")}, SPIKE);
+            spike = art("odw", new Color[] {hex("1a0e06"), hex("6a4a30"), hex("a08060")}, SPIKE);
         }
 
         @Override protected void restart() { spin = 0f; }
@@ -217,7 +218,7 @@ final class MinesBossScenes {
         protected void step(float delta) {
             spin += delta * MathUtils.lerp(200f, 2000f, progress(0f, CLIMAX_PHASE));
             if (time > 0.4f && time < CLIMAX_PHASE && random.nextFloat() < 0.5f) sparks(drillX(), drillY(), 2, LAVA, 600f, 12f);
-            if (at(CLIMAX_PHASE)) { rumble(0.8f, 16f); sparks(bossX(), groundY(), 80, c("a08060"), 900f, 20f); }
+            if (at(CLIMAX_PHASE)) { rumble(0.8f, 16f); sparks(bossX(), groundY(), 80, hex("a08060"), 900f, 20f); }
         }
 
         @Override
@@ -230,7 +231,7 @@ final class MinesBossScenes {
         protected void front(Batch batch) {
             float heat = progress(0.3f, CLIMAX_PHASE);
             glow(batch, drillX(), drillY(), 300f * (0.6f + heat), LAVA, 0.7f * heat);
-            draw(batch, drill, drillX() + poseX, drillY(), iconScale(0.26f), -spin % 30f, tmp.set(WHITE).lerp(c("ff4a2a"), heat), 1f);
+            draw(batch, drill, drillX() + poseX, drillY(), iconScale(0.26f), -spin % 30f, tmp.set(WHITE).lerp(hex("ff4a2a"), heat), 1f);
             // les pics de roche qui jaillissent du sol, du centre vers les bords
             for (int i = 0; i < 14; i++) {
                 float delay = CLIMAX_PHASE + Math.abs(i - 6.5f) * 0.05f;
@@ -252,8 +253,8 @@ final class MinesBossScenes {
         DrillDeath(CutsceneKit kit) {
             super(kit, Moment.DEATH, EnemyKind.GRAND_FOREUR, 0);
             drill = symbol(EnemySymbol.DRILL);
-            boulder = art("odw", new Color[] {c("1a0e06"), c("5a4030"), c("8a6a50")}, BOULDER);
-            pebble = art("od", new Color[] {c("1a0e06"), c("5a4030")}, PEBBLE);
+            boulder = art("odw", new Color[] {hex("1a0e06"), hex("5a4030"), hex("8a6a50")}, BOULDER);
+            pebble = art("od", new Color[] {hex("1a0e06"), hex("5a4030")}, PEBBLE);
         }
 
         @Override protected void restart() { steam.clear(); }
@@ -299,7 +300,7 @@ final class MinesBossScenes {
                 batch.draw(soft, p.x - size / 2f, p.y - size / 2f, size, size);
             }
             float dust = progress(CLIMAX_DEATH + 0.5f, CLIMAX_DEATH + 0.9f) * (1f - progress(3.6f, 5.0f));
-            fill(batch, c("6a5a4a"), 0.55f * dust);                     // la poussière, qui retombe
+            fill(batch, hex("6a5a4a"), 0.55f * dust);                     // la poussière, qui retombe
             flash(batch, WHITE, CLIMAX_DEATH, 0.3f, 0.5f);
         }
     }
@@ -315,8 +316,8 @@ final class MinesBossScenes {
 
         ForgePhase(CutsceneKit kit) {
             super(kit, Moment.PHASE, EnemyKind.MAITRE_FORGE, 2);
-            anvil = art("oLgd", new Color[] {c("0a0808"), c("8a8a9a"), c("4a4a5a"), c("2e2e3a")}, ANVIL);
-            sword = art("wsgb", new Color[] {c("e8e8f0"), c("9a9ab0"), c("ffc93a"), c("6b3a1e")}, SWORD);
+            anvil = art("oLgd", new Color[] {hex("0a0808"), hex("8a8a9a"), hex("4a4a5a"), hex("2e2e3a")}, ANVIL);
+            sword = art("wsgb", new Color[] {hex("e8e8f0"), hex("9a9ab0"), hex("ffc93a"), hex("6b3a1e")}, SWORD);
         }
 
         private float anvilX() { return bossX() + bossWidth() * 0.75f; }
@@ -368,9 +369,9 @@ final class MinesBossScenes {
 
         ForgeDeath(CutsceneKit kit) {
             super(kit, Moment.DEATH, EnemyKind.MAITRE_FORGE, 0);
-            anvil = art("oLgd", new Color[] {c("0a0808"), c("8a8a9a"), c("4a4a5a"), c("2e2e3a")}, ANVIL);
-            sword = art("wsgb", new Color[] {c("e8e8f0"), c("9a9ab0"), c("ffc93a"), c("6b3a1e")}, SWORD);
-            hammer = art("odb", new Color[] {c("1a1a20"), c("5a5a66"), c("6b3a1e")}, HAMMER);
+            anvil = art("oLgd", new Color[] {hex("0a0808"), hex("8a8a9a"), hex("4a4a5a"), hex("2e2e3a")}, ANVIL);
+            sword = art("wsgb", new Color[] {hex("e8e8f0"), hex("9a9ab0"), hex("ffc93a"), hex("6b3a1e")}, SWORD);
+            hammer = art("odb", new Color[] {hex("1a1a20"), hex("5a5a66"), hex("6b3a1e")}, HAMMER);
         }
 
         private float anvilX() { return bossX() + bossWidth() * 0.75f; }
@@ -402,7 +403,7 @@ final class MinesBossScenes {
         protected void front(Batch batch) {
             float fire = 1f - progress(0.2f, CLIMAX_DEATH);
             float poolX = worldWidth() * 0.25f;
-            rect(batch, tmp.set(c("3a1a0a")).lerp(LAVA, fire), 1f, poolX - 200f, groundY() - 20f, 400f, 40f);
+            rect(batch, tmp.set(hex("3a1a0a")).lerp(LAVA, fire), 1f, poolX - 200f, groundY() - 20f, 400f, 40f);
             float cool = progress(1.0f, 4.2f);                          // l'arme posée, du rouge au gris
             draw(batch, sword, anvilX(), anvilY() + 30f, fit(170f, 12), 90f, tmp.set(LAVA).lerp(STONE, cool), 1f);
             draw(batch, anvil, anvilX(), anvilY(), fit(140f, 9), 0f, WHITE, 1f);
@@ -422,7 +423,7 @@ final class MinesBossScenes {
 
     /** Un cœur bat dans la roche ; une armure de cristal pousse sur lui, plaque après plaque. */
     static final class MountainPhase extends BossScene {
-        private static final Color RED = c("ff3a3a"), CRYSTAL_COLOR = c("7ae8ff");
+        private static final Color RED = hex("ff3a3a"), CRYSTAL_COLOR = hex("7ae8ff");
         private static final float[][] PLATES = {
             {-0.45f, 0.2f}, {0.45f, 0.2f}, {-0.5f, 0.5f}, {0.5f, 0.5f}, {-0.35f, 0.8f}, {0.35f, 0.8f}, {0f, 1.0f}, {-0.2f, 0.35f},
             {0.2f, 0.35f}, {0f, 0.6f}};
@@ -431,8 +432,8 @@ final class MinesBossScenes {
 
         MountainPhase(CutsceneKit kit) {
             super(kit, Moment.PHASE, EnemyKind.COEUR_MONTAGNE, 2);
-            heart = art("orwd", new Color[] {c("1a0606"), RED, c("ff9a9a"), c("8a1010")}, HEART);
-            crystal = art("ow#", new Color[] {c("0a2a3a"), c("e0ffff"), CRYSTAL_COLOR}, CRYSTAL);
+            heart = art("orwd", new Color[] {hex("1a0606"), RED, hex("ff9a9a"), hex("8a1010")}, HEART);
+            crystal = art("ow#", new Color[] {hex("0a2a3a"), hex("e0ffff"), CRYSTAL_COLOR}, CRYSTAL);
         }
 
         @Override protected void restart() { beat = 0f; nextBeat = 0.2f; }
@@ -480,15 +481,15 @@ final class MinesBossScenes {
 
     /** Ses battements ralentissent ; la montagne se fend ; la grotte s'effondre ; une veine d'or brille dans la faille. */
     static final class MountainDeath extends BossScene {
-        private static final Color RED = c("ff3a3a");
+        private static final Color RED = hex("ff3a3a");
         private static final float[] BEATS = {0.3f, 1.0f, 1.9f};
         private final TextureRegion heart, boulder, pebble;
 
         MountainDeath(CutsceneKit kit) {
             super(kit, Moment.DEATH, EnemyKind.COEUR_MONTAGNE, 0);
-            heart = art("orwd", new Color[] {c("1a0606"), RED, c("ff9a9a"), c("8a1010")}, HEART);
-            boulder = art("odw", new Color[] {c("1a0e06"), c("5a4030"), c("8a6a50")}, BOULDER);
-            pebble = art("od", new Color[] {c("1a0e06"), c("5a4030")}, PEBBLE);
+            heart = art("orwd", new Color[] {hex("1a0606"), RED, hex("ff9a9a"), hex("8a1010")}, HEART);
+            boulder = art("odw", new Color[] {hex("1a0e06"), hex("5a4030"), hex("8a6a50")}, BOULDER);
+            pebble = art("od", new Color[] {hex("1a0e06"), hex("5a4030")}, PEBBLE);
         }
 
         private float beat() {
@@ -549,7 +550,7 @@ final class MinesBossScenes {
                 batch.draw(right, bossX() + shift, bossBottom(), 0f, 0f, right.getRegionWidth() * scale, height, 1f, 1f, -10f * open);
             }
             float dust = progress(CLIMAX_DEATH, CLIMAX_DEATH + 0.4f) * (1f - progress(3.2f, 4.4f));
-            fill(batch, c("6a5a4a"), 0.45f * dust);
+            fill(batch, hex("6a5a4a"), 0.45f * dust);
             flash(batch, WHITE, CLIMAX_DEATH, 0.3f, 0.5f);
         }
     }

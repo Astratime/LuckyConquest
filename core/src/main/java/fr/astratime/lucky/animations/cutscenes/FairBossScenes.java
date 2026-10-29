@@ -10,6 +10,8 @@ import fr.astratime.lucky.entities.enemy.EnemyKind;
 import fr.astratime.lucky.entities.enemy.EnemySymbol;
 import java.util.Random;
 
+import static fr.astratime.lucky.assets.Palette.hex;
+
 /** Les scènes de phase et de mort des quatre rois de la Fête foraine (choix d'Astra, 2026-10-24). */
 final class FairBossScenes {
 
@@ -37,7 +39,7 @@ final class FairBossScenes {
 
     // ----- Accessoires -----
 
-    static final Color RED = c("d8202c"), CURTAIN = c("8a0a1e"), SPOT = c("fff2c0"), BLUE_FIRE = c("5ab4ff");
+    static final Color RED = hex("d8202c"), CURTAIN = hex("8a0a1e"), SPOT = hex("fff2c0"), BLUE_FIRE = hex("5ab4ff");
     static final String[] TOP_HAT = {"..oooooo..", "..obbbbo..", "..obbbbo..", "..orrrro..", "oooooooooo", "oobbbbbboo"};
     static final String[] RABBIT = {
         ".ow..wo.", ".ow..wo.", ".ow..wo.", ".owwwwo.", "owwwwwwo", "owkwwkwo", "owwpwwwo", ".owwwwo.", "owwwwwwo",
@@ -59,7 +61,6 @@ final class FairBossScenes {
     /** Sa place sur le portrait : coin haut-gauche (pixels du portrait) et taille d'un pixel de la carte. */
     static final float CARD_LEFT = 26f, CARD_TOP = 18.6f, CARD_PIXELS = 0.42f;
 
-    static Color c(String hex) { return Color.valueOf(hex); }
 
     /** Le projecteur : un cône de lumière {@code color} sur le boss. */
     static void spotlight(BossScene scene, Batch batch, Color color, float alpha) {
@@ -90,7 +91,7 @@ final class FairBossScenes {
         protected void step(float delta) {
             for (int k = 0; k < 12; k++) if (at(0.2f + k * 0.08f)) rumble(0.05f, 2f);      // le roulement de tambour
             if (at(1.2f)) sparks(bossX(), bossY(), 60, GOLD, 600f, 10f);                    // l'habit arraché, les paillettes
-            if (at(CLIMAX_PHASE)) { rumble(0.6f, 12f); sparks(bossX(), bossY() + bossHeight() * 0.5f, 50, c("ff7a1e"), 700f, 16f); }
+            if (at(CLIMAX_PHASE)) { rumble(0.6f, 12f); sparks(bossX(), bossY() + bossHeight() * 0.5f, 50, hex("ff7a1e"), 700f, 16f); }
         }
 
         @Override
@@ -110,8 +111,8 @@ final class FairBossScenes {
                 float angle = time * 260f + i * 90f, x = bossX() + MathUtils.cosDeg(angle) * 300f, y = top + MathUtils.sinDeg(angle) * 70f;
                 float clubs = progress(0.8f, 1.2f) * (1f - progress(CLIMAX_PHASE - 0.1f, CLIMAX_PHASE));
                 if (clubs > 0f) {                                                            // les massues en feu
-                    glow(batch, x, y, 180f, c("ff7a1e"), clubs);
-                    line(batch, c("f6f0e2"), clubs, x, y - 40f, x, y + 30f, 18f);
+                    glow(batch, x, y, 180f, hex("ff7a1e"), clubs);
+                    line(batch, hex("f6f0e2"), clubs, x, y - 40f, x, y + 30f, 18f);
                 }
                 float card = progress(CLIMAX_PHASE - 0.1f, CLIMAX_PHASE + 0.1f);
                 if (card > 0f) draw(batch, aces[i], x, y, fit(220f, 27), 10f * MathUtils.sinDeg(angle), WHITE, card);
@@ -127,8 +128,8 @@ final class FairBossScenes {
 
         LoyalDeath(CutsceneKit kit) {
             super(kit, Moment.DEATH, EnemyKind.MONSIEUR_LOYAL, 0);
-            hat = art("obr", new Color[] {c("0a0608"), c("1a1418"), RED}, TOP_HAT);
-            rabbit = art("owkp", new Color[] {c("0a0608"), c("f6f0e2"), c("1a1018"), c("e89aa8")}, RABBIT);
+            hat = art("obr", new Color[] {hex("0a0608"), hex("1a1418"), RED}, TOP_HAT);
+            rabbit = art("owkp", new Color[] {hex("0a0608"), hex("f6f0e2"), hex("1a1018"), hex("e89aa8")}, RABBIT);
             joker = gameCard("cards/special_classic/blanc/joker.png");
         }
 
@@ -163,14 +164,14 @@ final class FairBossScenes {
                 int turns = (int) (6 * coil);
                 for (int k = 0; k < turns; k++) {
                     float y = bossBottom() + bossHeight() * (0.2f + k * 0.11f);
-                    line(batch, c("3a2a1e"), 1f, bossX() - bossWidth() * 0.4f, y, bossX() + bossWidth() * 0.4f, y + 30f, 10f);
+                    line(batch, hex("3a2a1e"), 1f, bossX() - bossWidth() * 0.4f, y, bossX() + bossWidth() * 0.4f, y + 30f, 10f);
                 }
             }
             float drop = curtain();                                                          // le rideau
             if (drop > 0f) {
                 float bottom = MathUtils.lerp(worldHeight(), -MARGIN, drop);
                 rect(batch, CURTAIN, 1f, -MARGIN, bottom, worldWidth() + 2f * MARGIN, worldHeight() - bottom + MARGIN);
-                for (int k = 0; k < 12; k++) rect(batch, c("5a0614"), 0.8f, k * worldWidth() / 11f, bottom, 18f, worldHeight() - bottom + MARGIN);
+                for (int k = 0; k < 12; k++) rect(batch, hex("5a0614"), 0.8f, k * worldWidth() / 11f, bottom, 18f, worldHeight() - bottom + MARGIN);
                 rect(batch, GOLD, 1f, -MARGIN, bottom, worldWidth() + 2f * MARGIN, 16f);
             }
             if (time >= 3.6f) {                                                              // le haut-de-forme, et le lapin
@@ -194,7 +195,7 @@ final class FairBossScenes {
 
         ConductorPhase(CutsceneKit kit) {
             super(kit, Moment.PHASE, EnemyKind.CONDUCTEUR, 2);
-            ticket = art("oyr", new Color[] {c("4a3008"), c("ffd23a"), c("1a1018")}, TICKET);
+            ticket = art("oyr", new Color[] {hex("4a3008"), hex("ffd23a"), hex("1a1018")}, TICKET);
         }
 
         @Override
@@ -218,8 +219,8 @@ final class FairBossScenes {
             float dark = progress(0.4f, 0.7f) * (1f - progress(1.6f, 1.8f));                 // le tunnel
             if (dark > 0f) {
                 fill(batch, Color.BLACK, dark);
-                eyes(batch, dark, c("eaffea"), new float[] {14f, 16f}, new float[] {21f, 16f});
-                glow(batch, portraitX(29f), portraitY(31f), 200f, c("6ad86a"), dark);
+                eyes(batch, dark, hex("eaffea"), new float[] {14f, 16f}, new float[] {21f, 16f});
+                glow(batch, portraitX(29f), portraitY(31f), 200f, hex("6ad86a"), dark);
             }
             if (time >= CLIMAX_PHASE) glow(batch, bossX(), bossY(), bossHeight() * 1.6f, BLUE_FIRE, 0.4f * pulse(10f, 0.6f));
             float punch = progress(2.8f, 3.1f);                                              // clac : le ticket poinçonné
@@ -237,14 +238,14 @@ final class FairBossScenes {
 
         ConductorDeath(CutsceneKit kit) {
             super(kit, Moment.DEATH, EnemyKind.CONDUCTEUR, 0);
-            cap = art("oby", new Color[] {c("0a0608"), c("2a2a4a"), c("ffd54a")}, CAP);
+            cap = art("oby", new Color[] {hex("0a0608"), hex("2a2a4a"), hex("ffd54a")}, CAP);
         }
 
         @Override
         protected void step(float delta) {
             if (time > 0.6f && time < 1.9f) {                                                // le train freine
-                sparks(bossX() - bossWidth() * 0.6f, groundY(), 3, c("ffb84a"), 500f, 8f);
-                sparks(bossX() + bossWidth() * 0.6f, groundY(), 3, c("ffb84a"), 500f, 8f);
+                sparks(bossX() - bossWidth() * 0.6f, groundY(), 3, hex("ffb84a"), 500f, 8f);
+                sparks(bossX() + bossWidth() * 0.6f, groundY(), 3, hex("ffb84a"), 500f, 8f);
             }
             if (at(0.6f)) rumble(1.2f, 6f);
             if (time > CLIMAX_DEATH && time < 3.6f && random.nextFloat() < 0.6f) {           // la brume
@@ -258,7 +259,7 @@ final class FairBossScenes {
         @Override
         protected void back(Batch batch) {
             float lantern = 1f - progress(0.2f, 0.5f);
-            glow(batch, portraitX(29f), portraitY(31f), 240f, c("6ad86a"), lantern);
+            glow(batch, portraitX(29f), portraitY(31f), 240f, hex("6ad86a"), lantern);
             poseAlpha = 0.8f * (1f - progress(CLIMAX_DEATH, 3.5f));
             showBoss = poseAlpha > 0f;
         }
@@ -269,8 +270,8 @@ final class FairBossScenes {
             float leave = Interpolation.pow2In.apply(progress(3.6f, 5.0f));                  // les wagons repartent, vides
             for (int w = 0; w < 3; w++) {
                 float x = -worldWidth() * 0.6f + w * 360f + leave * worldWidth() * 1.8f;
-                rect(batch, c("2a1a3a"), 1f, x, groundY() - 10f, 320f, 160f);
-                rect(batch, c("1a1a30"), 1f, x + 20f, groundY() + 150f, 280f, 20f);
+                rect(batch, hex("2a1a3a"), 1f, x, groundY() - 10f, 320f, 160f);
+                rect(batch, hex("1a1a30"), 1f, x + 20f, groundY() + 150f, 280f, 20f);
             }
         }
     }
@@ -354,7 +355,7 @@ final class FairBossScenes {
                 float a = -angle() * 0.6f + i * 45f, r = bossWidth() * (0.5f + 0.35f * out);
                 float x = hubX() + MathUtils.cosDeg(a) * r, y = hubY() + MathUtils.sinDeg(a) * r;
                 if (out <= 0f) continue;
-                rect(batch, i % 2 == 0 ? c("e86a8a") : GOLD, 1f - swords, x - 30f, y - 24f, 60f, 48f);
+                rect(batch, i % 2 == 0 ? hex("e86a8a") : GOLD, 1f - swords, x - 30f, y - 24f, 60f, 48f);
                 if (swords > 0f) {
                     draw(batch, sword, x - 18f, y, iconScale(0.06f), 0f, WHITE, swords);
                     draw(batch, sword, x + 18f, y, iconScale(0.06f), 0f, WHITE, swords);
@@ -363,10 +364,10 @@ final class FairBossScenes {
             float blade = progress(CLIMAX_PHASE, CLIMAX_PHASE + 0.2f);                       // sa flèche devient une lame
             if (blade > 0f) {
                 float top = portraitY(0f);
-                line(batch, c("dce4ee"), blade, bossX() + poseX, top - 40f, bossX() + poseX, top + 160f * blade, 26f);
+                line(batch, hex("dce4ee"), blade, bossX() + poseX, top - 40f, bossX() + poseX, top + 160f * blade, 26f);
                 line(batch, WHITE, blade, bossX() + poseX - 4f, top - 40f, bossX() + poseX - 4f, top + 150f * blade, 8f);
             }
-            eyes(batch, progress(CLIMAX_PHASE, CLIMAX_PHASE + 0.2f), c("ff3a3a"), new float[] {15f, 18f}, new float[] {20f, 18f});
+            eyes(batch, progress(CLIMAX_PHASE, CLIMAX_PHASE + 0.2f), hex("ff3a3a"), new float[] {15f, 18f}, new float[] {20f, 18f});
             flash(batch, GOLD, CLIMAX_PHASE, 0.3f, 0.35f);
         }
     }
@@ -387,8 +388,8 @@ final class FairBossScenes {
 
         WheelDeath(CutsceneKit kit) {
             super(kit, Moment.DEATH, 0);
-            tomato = art("ogrw", new Color[] {c("6a0a0a"), c("3a8a2a"), c("d8202c"), c("ff8a8a")}, TOMATO);
-            splat = art("rs", new Color[] {c("c8102e"), c("f0d060")}, SPLAT);
+            tomato = art("ogrw", new Color[] {hex("6a0a0a"), hex("3a8a2a"), hex("d8202c"), hex("ff8a8a")}, TOMATO);
+            splat = art("rs", new Color[] {hex("c8102e"), hex("f0d060")}, SPLAT);
             Random seed = new Random(11);
             for (int i = 0; i < THROWS.length; i++) {
                 aimRadius[i] = 3f + 9f * seed.nextFloat();
@@ -423,7 +424,7 @@ final class FairBossScenes {
                 rumble(0.8f, 16f);
                 shatter();
                 spray(splat, hubX(), hubY(), 14, 0f, 360f, 700f, fit(40f, 7), 1400f, 1.4f);
-                sparks(hubX(), hubY(), 50, c("ff4a4a"), 800f, 16f);
+                sparks(hubX(), hubY(), 50, hex("ff4a4a"), 800f, 16f);
             }
         }
 
@@ -481,7 +482,7 @@ final class FairBossScenes {
                 float y = MathUtils.lerp(-120f, hubY(), big) + 200f * MathUtils.sin(big * MathUtils.PI);
                 draw(batch, tomato, x, y, fit(200f, 7) * (1.4f - 0.4f * big), 200f * big, WHITE, 1f);
             }
-            flash(batch, c("ff4a4a"), CLIMAX_DEATH, 0.3f, 0.4f);
+            flash(batch, hex("ff4a4a"), CLIMAX_DEATH, 0.3f, 0.4f);
         }
     }
 
@@ -498,8 +499,8 @@ final class FairBossScenes {
         FairKingPhase(CutsceneKit kit) {
             super(kit, Moment.PHASE, EnemyKind.ROI_FORAIN, 2);
             card = gameCard(FAIR_KING_CARD);
-            bear = art("obkm", new Color[] {c("3a2412"), c("c8904a"), c("e0283a"), c("5a2a1a")}, BEAR);
-            bell = art("ogw", new Color[] {c("4a3008"), GOLD, c("fff0a0")}, BELL);
+            bear = art("obkm", new Color[] {hex("3a2412"), hex("c8904a"), hex("e0283a"), hex("5a2a1a")}, BEAR);
+            bell = art("ogw", new Color[] {hex("4a3008"), GOLD, hex("fff0a0")}, BELL);
         }
 
         @Override
@@ -516,7 +517,7 @@ final class FairBossScenes {
         protected void back(Batch batch) {
             float red = progress(CLIMAX_PHASE, CLIMAX_PHASE + 0.3f);
             for (int l = 0; l < 6; l++) {                                                    // les lampes, qui virent au rouge
-                tmp.set(c("ffb84a")).lerp(RED, red);
+                tmp.set(hex("ffb84a")).lerp(RED, red);
                 glow(batch, worldWidth() * (0.1f + 0.16f * l), worldHeight() * 0.88f, 220f, tmp, 0.7f);
             }
             float rise = Interpolation.swingOut.apply(progress(CLIMAX_PHASE + 0.2f, CLIMAX_PHASE + 0.8f));
@@ -541,7 +542,7 @@ final class FairBossScenes {
             float spikes = progress(CLIMAX_PHASE + 0.3f, CLIMAX_PHASE + 0.6f);               // sa couronne se hérisse
             for (int k = 0; k < 5 && spikes > 0f; k++) {
                 float x = portraitX(10f + k * 3.5f), y = portraitY(1f);
-                line(batch, c("dce4ee"), spikes, x, y, x + (k - 2) * 10f, y + 70f * spikes, 10f);
+                line(batch, hex("dce4ee"), spikes, x, y, x + (k - 2) * 10f, y + 70f * spikes, 10f);
             }
             eyes(batch, progress(CLIMAX_PHASE, CLIMAX_PHASE + 0.2f), RED, new float[] {14f, 16f}, new float[] {21f, 16f});
             flash(batch, RED, CLIMAX_PHASE, 0.3f, 0.35f);
@@ -555,8 +556,8 @@ final class FairBossScenes {
         FairKingDeath(CutsceneKit kit) {
             super(kit, Moment.DEATH, EnemyKind.ROI_FORAIN, 0);
             card = gameCard(FAIR_KING_CARD);
-            bear = art("obkm", new Color[] {c("3a2412"), c("c8904a"), c("1a1018"), c("5a2a1a")}, BEAR);
-            ticket = art("oyr", new Color[] {c("8a5a10"), c("ffd23a"), c("fff2a0")}, TICKET);
+            bear = art("obkm", new Color[] {hex("3a2412"), hex("c8904a"), hex("1a1018"), hex("5a2a1a")}, BEAR);
+            ticket = art("oyr", new Color[] {hex("8a5a10"), hex("ffd23a"), hex("fff2a0")}, TICKET);
         }
 
         @Override
@@ -579,9 +580,9 @@ final class FairBossScenes {
             float fall = Interpolation.pow2In.apply(progress(1.6f, CLIMAX_DEATH));           // le palet retombe sur sa couronne
             if (fall > 0f && time < CLIMAX_DEATH + 0.6f) {
                 float y = MathUtils.lerp(worldHeight() + 60f, portraitY(1f), fall);
-                rect(batch, c("dce4ee"), 1f, portraitX(17f) - 40f, y, 80f, 40f);
+                rect(batch, hex("dce4ee"), 1f, portraitX(17f) - 40f, y, 80f, 40f);
             }
-            rect(batch, c("6a3a1a"), 1f, -MARGIN, -MARGIN, worldWidth() + 2f * MARGIN, bossBottom() + MARGIN + 40f); // le comptoir
+            rect(batch, hex("6a3a1a"), 1f, -MARGIN, -MARGIN, worldWidth() + 2f * MARGIN, bossBottom() + MARGIN + 40f); // le comptoir
             rect(batch, GOLD, 1f, -MARGIN, bossBottom() + 30f, worldWidth() + 2f * MARGIN, 12f);
             float drift = progress(3.4f, 5.2f);                                              // le ticket doré
             if (drift > 0f) {

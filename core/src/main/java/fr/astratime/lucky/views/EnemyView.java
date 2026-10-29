@@ -43,6 +43,8 @@ import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
+import static fr.astratime.lucky.assets.Palette.hex;
+
 /**
  * Côté de l'ennemi, sur la table (voir {@link TableView}) : son portrait (le
  * croupier démoniaque, ou un ennemi de la Tour des épreuves), sa machine à
@@ -547,12 +549,12 @@ public class EnemyView implements Disposable {
         reelStopSound.play();
         if (events.stream().anyMatch(event -> event instanceof PlayerDamagedEvent)) lunge(); // il frappe
         switch (symbol) {
-            case RAGE, ALL_IN -> pulse(Color.valueOf("ff4a3aff"));
-            case THORNS       -> pulse(Color.valueOf("7dd87aff"));
-            case LOADED_DIE   -> pulse(Color.valueOf("c060ffff"));
-            case INTEREST, HOURGLASS -> pulse(Color.valueOf("ffd54aff"));
-            case MIRROR       -> pulse(Color.valueOf("b8e0ffff"));
-            case ZERO         -> pulse(Color.valueOf("2ec060ff"));
+            case RAGE, ALL_IN -> pulse(hex("ff4a3aff"));
+            case THORNS       -> pulse(hex("7dd87aff"));
+            case LOADED_DIE   -> pulse(hex("c060ffff"));
+            case INTEREST, HOURGLASS -> pulse(hex("ffd54aff"));
+            case MIRROR       -> pulse(hex("b8e0ffff"));
+            case ZERO         -> pulse(hex("2ec060ff"));
             default           -> { }
         }
 
@@ -564,7 +566,7 @@ public class EnemyView implements Disposable {
         for (Event event : events) {
             if (event instanceof EnemyShieldedEvent shield) {
                 defense.add(shield.defense);
-                pulse(Color.valueOf("6ab0ffff"));
+                pulse(hex("6ab0ffff"));
             }
             onEventShown.accept(event);
         }
@@ -661,7 +663,7 @@ public class EnemyView implements Disposable {
 
     /** Il se soigne : sa silhouette luit en vert. */
     public void heal() {
-        pulse(Color.valueOf("7dff8aff"));
+        pulse(hex("7dff8aff"));
     }
 
     /** Vaincu : il bascule en arrière et disparaît. */

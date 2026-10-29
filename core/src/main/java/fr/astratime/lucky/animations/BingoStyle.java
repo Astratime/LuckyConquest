@@ -4,6 +4,8 @@ import com.badlogic.gdx.graphics.Color;
 import fr.astratime.lucky.assets.Palette;
 import fr.astratime.lucky.entities.Symbol;
 
+import static fr.astratime.lucky.assets.Palette.hex;
+
 /**
  * Couleurs de la célébration d'un Bingo selon le symbole aligné : bannière
  * (corps, galons, lettres, bande de travers), éclairs, flash de l'écran et
@@ -26,26 +28,26 @@ public record BingoStyle(Color body, Color trim, Color letterA, Color letterB, C
     /** @return le style de la célébration d'un Bingo de {@code symbol}. */
     public static BingoStyle of(Symbol symbol) {
         return switch (symbol) {
-            case SEVEN -> new BingoStyle(c("7a0f12"), Palette.ORANGE, c("ffb347"), Palette.GOLD_PALE, Palette.BANNER_SHADOW,
-                c("ff5a1f"), c("ffe0a0"), c("ff6a2a"), palette(c("ff3b1f"), Palette.ORANGE, Palette.GOLD, Color.WHITE));
-            case DOUBLE_BAR -> new BingoStyle(c("3d4a5c"), Palette.STEEL_LIGHT, c("e8eef5"), c("8fd3ff"), back("0b0f14"),
-                c("8fd3ff"), Color.WHITE, c("dfe8f0"), null);
-            case BAR -> new BingoStyle(c("1d1d24"), c("f2f2f2"), Color.WHITE, Palette.RUBY, back("5a0d12"),
+            case SEVEN -> new BingoStyle(hex("7a0f12"), Palette.ORANGE, hex("ffb347"), Palette.GOLD_PALE, Palette.BANNER_SHADOW,
+                hex("ff5a1f"), hex("ffe0a0"), hex("ff6a2a"), palette(hex("ff3b1f"), Palette.ORANGE, Palette.GOLD, Color.WHITE));
+            case DOUBLE_BAR -> new BingoStyle(hex("3d4a5c"), Palette.STEEL_LIGHT, hex("e8eef5"), hex("8fd3ff"), back("0b0f14"),
+                hex("8fd3ff"), Color.WHITE, hex("dfe8f0"), null);
+            case BAR -> new BingoStyle(hex("1d1d24"), hex("f2f2f2"), Color.WHITE, Palette.RUBY, back("5a0d12"),
                 Color.WHITE, Color.WHITE, Color.WHITE, null);
-            case CHERRY -> new BingoStyle(c("c2185b"), c("ffd1e0"), Color.WHITE, c("ffc1d6"), back("3a0614"),
-                c("ff7ab0"), c("fff0f6"), c("ff8fb8"), palette(c("ff4a7a"), c("ff8fb8"), Color.WHITE, c("ff2050")));
-            case TRIPLE_CHERRY -> new BingoStyle(c("a3001e"), c("ff4a7a"), c("ffe3ec"), c("ff9ab8"), back("22020a"),
-                c("ff3060"), c("ffe0e8"), c("ff4060"), palette(c("ff2050"), c("ff4a7a"), c("ffb0c8"), Color.WHITE));
-            case GRAPE -> new BingoStyle(c("4a1a7a"), c("b388ff"), c("e6d6ff"), Palette.VIOLET, back("14061f"),
-                Palette.VIOLET, c("f3e8ff"), c("a070ff"), palette(c("9b4dff"), Palette.VIOLET, c("e6d6ff")));
-            case BELL -> new BingoStyle(c("8a5a00"), Palette.GOLD, c("fff7d6"), Palette.GOLD, back("1f1200"),
-                c("ffe680"), Color.WHITE, c("fff0b0"), palette(Palette.GOLD, c("fff7d6")));
-            case DIAMOND -> new BingoStyle(c("0d4f6b"), c("7df9ff"), Color.WHITE, c("b3f5ff"), back("021520"),
-                c("7df9ff"), Color.WHITE, c("c8fbff"), palette(c("7df9ff"), c("b3f5ff"), Color.WHITE, Palette.SKY));
-            case GOLD_BAR -> new BingoStyle(c("a06a00"), c("ffe066"), Color.WHITE, c("ffe066"), back("1a1000"),
-                Palette.GOLD, c("fffbe0"), c("ffe066"), palette(Palette.GOLD, c("ffe066"), Color.WHITE));
-            case WATERMELON -> new BingoStyle(c("1f7a2e"), c("ff5a78"), c("ff8fa3"), c("eaffea"), back("0a200e"),
-                c("7dff9a"), c("f0fff0"), c("7dff9a"), palette(Palette.MINT, c("ff5a78"), c("ff8fa3"), c("eaffea")));
+            case CHERRY -> new BingoStyle(hex("c2185b"), hex("ffd1e0"), Color.WHITE, hex("ffc1d6"), back("3a0614"),
+                hex("ff7ab0"), hex("fff0f6"), hex("ff8fb8"), palette(hex("ff4a7a"), hex("ff8fb8"), Color.WHITE, hex("ff2050")));
+            case TRIPLE_CHERRY -> new BingoStyle(hex("a3001e"), hex("ff4a7a"), hex("ffe3ec"), hex("ff9ab8"), back("22020a"),
+                hex("ff3060"), hex("ffe0e8"), hex("ff4060"), palette(hex("ff2050"), hex("ff4a7a"), hex("ffb0c8"), Color.WHITE));
+            case GRAPE -> new BingoStyle(hex("4a1a7a"), hex("b388ff"), hex("e6d6ff"), Palette.VIOLET, back("14061f"),
+                Palette.VIOLET, hex("f3e8ff"), hex("a070ff"), palette(hex("9b4dff"), Palette.VIOLET, hex("e6d6ff")));
+            case BELL -> new BingoStyle(hex("8a5a00"), Palette.GOLD, hex("fff7d6"), Palette.GOLD, back("1f1200"),
+                hex("ffe680"), Color.WHITE, hex("fff0b0"), palette(Palette.GOLD, hex("fff7d6")));
+            case DIAMOND -> new BingoStyle(hex("0d4f6b"), hex("7df9ff"), Color.WHITE, hex("b3f5ff"), back("021520"),
+                hex("7df9ff"), Color.WHITE, hex("c8fbff"), palette(hex("7df9ff"), hex("b3f5ff"), Color.WHITE, Palette.SKY));
+            case GOLD_BAR -> new BingoStyle(hex("a06a00"), hex("ffe066"), Color.WHITE, hex("ffe066"), back("1a1000"),
+                Palette.GOLD, hex("fffbe0"), hex("ffe066"), palette(Palette.GOLD, hex("ffe066"), Color.WHITE));
+            case WATERMELON -> new BingoStyle(hex("1f7a2e"), hex("ff5a78"), hex("ff8fa3"), hex("eaffea"), back("0a200e"),
+                hex("7dff9a"), hex("f0fff0"), hex("7dff9a"), palette(Palette.MINT, hex("ff5a78"), hex("ff8fa3"), hex("eaffea")));
             // Rouleaux de la boutique : les couleurs d'un classique de leur type
             case HORSESHOE -> of(Symbol.BELL);
             case CROWN, NUGGET -> of(Symbol.GOLD_BAR);
@@ -53,16 +55,15 @@ public record BingoStyle(Color body, Color trim, Color letterA, Color letterB, C
             case HEART     -> of(Symbol.CHERRY);
             case SWORD, DIE -> of(Symbol.SEVEN);
             // Étoile : nuit bleue et or, feu d'artifice rouge, bleu et or.
-            case STAR -> new BingoStyle(c("1a2a6a"), Palette.GOLD, Palette.GOLD, Color.WHITE, back("060a1f"),
-                c("8fd3ff"), Color.WHITE, c("fff0b0"), palette(c("ff3040"), c("3a7bff"), Palette.GOLD));
+            case STAR -> new BingoStyle(hex("1a2a6a"), Palette.GOLD, Palette.GOLD, Color.WHITE, back("060a1f"),
+                hex("8fd3ff"), Color.WHITE, hex("fff0b0"), palette(hex("ff3040"), hex("3a7bff"), Palette.GOLD));
             case BOMB      -> of(Symbol.TRIPLE_CHERRY);
             // Triple Sept (et Joker, qui ne s'aligne jamais seul) : la célébration d'origine.
             case TRIPLE_SEVEN, JOKER -> new BingoStyle(null, null, Palette.GOLD, Color.WHITE, Palette.BANNER_SHADOW,
-                c("ffcc26"), c("ffffd9"), Color.WHITE, null);
+                hex("ffcc26"), hex("ffffd9"), Color.WHITE, null);
         };
     }
 
-    private static Color c(String hex) { return Color.valueOf(hex + "ff"); }
 
     /** Bande de travers : légèrement transparente, comme celle d'origine. */
     private static Color back(String hex) { return Color.valueOf(hex + "eb"); }

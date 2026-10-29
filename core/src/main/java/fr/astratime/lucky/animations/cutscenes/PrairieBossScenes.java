@@ -7,6 +7,8 @@ import com.badlogic.gdx.math.Interpolation;
 import com.badlogic.gdx.math.MathUtils;
 import fr.astratime.lucky.entities.enemy.EnemyKind;
 
+import static fr.astratime.lucky.assets.Palette.hex;
+
 /** Les scènes de phase et de mort des quatre rois de la prairie (choix d'Astra, 2026-10-24). */
 final class PrairieBossScenes {
 
@@ -34,7 +36,7 @@ final class PrairieBossScenes {
 
     // ----- Accessoires -----
 
-    static final Color[] METAL = {c("140a0a"), c("e8e8f0"), c("9a9ab0"), c("ffc93a"), c("6b3a1e")};
+    static final Color[] METAL = {hex("140a0a"), hex("e8e8f0"), hex("9a9ab0"), hex("ffc93a"), hex("6b3a1e")};
     /** Une lame (pointe en bas, garde dorée en haut). */
     static final String[] BLADE = {
         ".ggg.", ".gog.", "..b..", "..b..", "ggggg", ".sws.", ".sws.", ".sws.", ".sws.", ".sws.", ".sws.", ".sws.",
@@ -69,7 +71,7 @@ final class PrairieBossScenes {
 
     /** Son épée ruisselle de rouge, le cercle de lames se dresse et se tourne vers le joueur, ses yeux rougissent. */
     static final class SpadePhase extends BossScene {
-        private static final Color RED = c("ff2a3a");
+        private static final Color RED = hex("ff2a3a");
         private final TextureRegion blade, sword;
 
         SpadePhase(CutsceneKit kit) {
@@ -187,12 +189,12 @@ final class PrairieBossScenes {
 
     /** Il vide une bouteille sur la table ; l'écran tangue, les pièces glissent. */
     static final class ClubPhase extends BossScene {
-        private static final Color GREEN = c("3fbf5a"), WOOD = c("5a3a1e"), DRINK = c("c8902a");
+        private static final Color GREEN = hex("3fbf5a"), WOOD = hex("5a3a1e"), DRINK = hex("c8902a");
         private final TextureRegion bottle;
 
         ClubPhase(CutsceneKit kit) {
             super(kit, Moment.PHASE, EnemyKind.ROI_TREFLE, 2);
-            bottle = art("ogw", new Color[] {c("0a1a0c"), c("2a8a3a"), c("bfffc8")}, BOTTLE);
+            bottle = art("ogw", new Color[] {hex("0a1a0c"), hex("2a8a3a"), hex("bfffc8")}, BOTTLE);
         }
 
         private float sway() { return 5f * MathUtils.sin(time * 2.6f) * progress(CLIMAX_PHASE - 0.6f, CLIMAX_PHASE + 0.3f); }
@@ -245,11 +247,11 @@ final class PrairieBossScenes {
     static final class ClubDeath extends BossScene {
         private final TextureRegion leaf;
         private static final float[] DROPS = {1.0f, 1.6f, 2.1f};
-        private static final Color POCKET = c("e8e0d0");
+        private static final Color POCKET = hex("e8e0d0");
 
         ClubDeath(CutsceneKit kit) {
             super(kit, Moment.DEATH, EnemyKind.ROI_TREFLE, 0);
-            leaf = art("orwd", new Color[] {c("0a1a0c"), c("3fbf5a"), c("9af0a8"), c("1f7a34")}, HEART);
+            leaf = art("orwd", new Color[] {hex("0a1a0c"), hex("3fbf5a"), hex("9af0a8"), hex("1f7a34")}, HEART);
         }
 
         private float cloverX() { return bossX() - bossWidth() * 0.75f; }
@@ -293,14 +295,14 @@ final class PrairieBossScenes {
                 draw(batch, leaf, x + MathUtils.cosDeg(angle + 90f) * 50f, y + MathUtils.sinDeg(angle + 90f) * 50f,
                     fit(84f, 10), angle, WHITE, 1f);
             }
-            glow(batch, cloverX(), cloverY(), 200f, c("3fbf5a"), 0.4f * (1f - progress(0.6f, CLIMAX_DEATH)));
+            glow(batch, cloverX(), cloverY(), 200f, hex("3fbf5a"), 0.4f * (1f - progress(0.6f, CLIMAX_DEATH)));
             // ses poches retournées, vides
             float out = Interpolation.swingOut.apply(progress(CLIMAX_DEATH + 0.2f, CLIMAX_DEATH + 0.6f));
             for (int side = -1; side <= 1; side += 2) {
                 float x = bossX() + poseX + side * bossWidth() * 0.42f, y = bossBottom() + poseY + bossHeight() * 0.3f;
                 rect(batch, POCKET, out, x - 34f, y - 80f * out, 68f, 80f * out);
             }
-            if (out > 0.5f && random.nextFloat() < 0.04f) sparks(bossX(), bossBottom() + bossHeight() * 0.25f, 4, c("aaaaaa"), 120f, 8f);
+            if (out > 0.5f && random.nextFloat() < 0.04f) sparks(bossX(), bossBottom() + bossHeight() * 0.25f, 4, hex("aaaaaa"), 120f, 8f);
         }
     }
 
@@ -310,14 +312,14 @@ final class PrairieBossScenes {
 
     /** Son vitrail se fissure en rouge et bat plus vite ; il écrase sa coupe ; une brume rouge monte. */
     static final class HeartPhase extends BossScene {
-        private static final Color RED = c("e0283a");
+        private static final Color RED = hex("e0283a");
         private final TextureRegion glass, cup;
         private float beat, nextBeat;
 
         HeartPhase(CutsceneKit kit) {
             super(kit, Moment.PHASE, EnemyKind.ROI_COEUR, 2);
-            glass = art("orpyd", new Color[] {c("140a10"), c("e0283a"), c("ff8a9a"), c("ffc93a"), c("8a1020")}, STAINED_GLASS);
-            cup = art("oyw", new Color[] {c("4a3008"), c("ffc93a"), c("fff0a0")}, CUP);
+            glass = art("orpyd", new Color[] {hex("140a10"), hex("e0283a"), hex("ff8a9a"), hex("ffc93a"), hex("8a1020")}, STAINED_GLASS);
+            cup = art("oyw", new Color[] {hex("4a3008"), hex("ffc93a"), hex("fff0a0")}, CUP);
         }
 
         @Override protected void restart() { beat = 0f; nextBeat = 0.2f; }
@@ -375,14 +377,14 @@ final class PrairieBossScenes {
 
     /** Un tracé de battements ralentit puis devient plat ; le vitrail se défait en pétales. */
     static final class HeartDeath extends BossScene {
-        private static final Color RED = c("e0283a"), LINE = c("6aff8a");
+        private static final Color RED = hex("e0283a"), LINE = hex("6aff8a");
         private static final float[] BEATS = {0.3f, 0.9f, 1.6f, 2.5f};
         private final TextureRegion glass, petal;
 
         HeartDeath(CutsceneKit kit) {
             super(kit, Moment.DEATH, EnemyKind.ROI_COEUR, 0);
-            glass = art("orpyd", new Color[] {c("140a10"), c("e0283a"), c("ff8a9a"), c("ffc93a"), c("8a1020")}, STAINED_GLASS);
-            petal = art("rp", new Color[] {c("e0283a"), c("ff8a9a")}, ".rr.", "rppr", "rrrr", ".rr.");
+            glass = art("orpyd", new Color[] {hex("140a10"), hex("e0283a"), hex("ff8a9a"), hex("ffc93a"), hex("8a1020")}, STAINED_GLASS);
+            petal = art("rp", new Color[] {hex("e0283a"), hex("ff8a9a")}, ".rr.", "rppr", "rrrr", ".rr.");
         }
 
         @Override
@@ -407,7 +409,7 @@ final class PrairieBossScenes {
                 float x = bossX(), y = worldHeight() * 0.7f, size = worldHeight() * 0.5f;
                 float dim = progress(0.3f, CLIMAX_DEATH);
                 glow(batch, x, y, size * 1.4f, RED, 0.35f * (1f - dim));
-                draw(batch, glass, x, y, fit(size, 10), 0f, tmp.set(WHITE).lerp(c("806070"), dim), 0.9f);
+                draw(batch, glass, x, y, fit(size, 10), 0f, tmp.set(WHITE).lerp(hex("806070"), dim), 0.9f);
             }
             poseShadow = 0.6f * progress(1.0f, CLIMAX_DEATH + 0.8f);
             poseY = -16f * progress(CLIMAX_DEATH, CLIMAX_DEATH + 1f);
@@ -440,13 +442,13 @@ final class PrairieBossScenes {
 
     /** Ses pièces se dédoublent, les piles montent comme des tours ; un grand livre d'or tourne ses pages. */
     static final class DiamondPhase extends BossScene {
-        private static final Color ORANGE = c("ff9a2a");
+        private static final Color ORANGE = hex("ff9a2a");
         private final TextureRegion book, page;
 
         DiamondPhase(CutsceneKit kit) {
             super(kit, Moment.PHASE, EnemyKind.ROI_CARREAU, 2);
-            book = art("oyw", new Color[] {c("4a2a08"), c("ffc93a"), c("fff0c0")}, BOOK);
-            page = art("w", new Color[] {c("fff0c0")}, "wwwww", "wwwww", "wwwww", "wwwww", "wwwww", "wwwww", "wwwww");
+            book = art("oyw", new Color[] {hex("4a2a08"), hex("ffc93a"), hex("fff0c0")}, BOOK);
+            page = art("w", new Color[] {hex("fff0c0")}, "wwwww", "wwwww", "wwwww", "wwwww", "wwwww", "wwwww", "wwwww");
         }
 
         private int doublings() { return Math.min(5, (int) (time / 0.4f)); }
@@ -489,11 +491,11 @@ final class PrairieBossScenes {
     /** Son tas de trésor l'avale comme des sables mouvants ; son bouclier tourne sur le sol et tombe à plat. */
     static final class DiamondDeath extends BossScene {
         private final TextureRegion shield;
-        private static final Color PILE = c("d8a020"), PILE_LIGHT = c("ffd860");
+        private static final Color PILE = hex("d8a020"), PILE_LIGHT = hex("ffd860");
 
         DiamondDeath(CutsceneKit kit) {
             super(kit, Moment.DEATH, EnemyKind.ROI_CARREAU, 0);
-            shield = art("oyr", new Color[] {c("3a1a04"), c("ffc93a"), c("ff9a2a")}, SHIELD);
+            shield = art("oyr", new Color[] {hex("3a1a04"), hex("ffc93a"), hex("ff9a2a")}, SHIELD);
         }
 
         @Override
@@ -539,5 +541,4 @@ final class PrairieBossScenes {
         }
     }
 
-    static Color c(String hex) { return Color.valueOf(hex); }
 }

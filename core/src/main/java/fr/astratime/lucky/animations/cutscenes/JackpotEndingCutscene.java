@@ -9,6 +9,8 @@ import com.badlogic.gdx.utils.Array;
 import fr.astratime.lucky.entities.Symbol;
 import java.util.Arrays;
 
+import static fr.astratime.lucky.assets.Palette.hex;
+
 /**
  * Fin du chapitre 6, après le Dernier tirage : la Machine Originelle s'éteint,
  * ses cinq yeux se ferment un par un (le dernier cligne deux fois), puis elle
@@ -42,7 +44,7 @@ public class JackpotEndingCutscene extends MachineCutscene {
     public static final float COVER_START = 9.5f;
     public static final float COVER_FULL  = 10.3f;
 
-    private static final Color GOLD = c("ffc93a"), HOT = c("fff6c8"), ORANGE = c("ff7a1a");
+    private static final Color GOLD = hex("ffc93a"), HOT = hex("fff6c8"), ORANGE = hex("ff7a1a");
 
     private final TextureRegion city;
     /** Les rouleaux de la petite machine du chapitre 1 : cerise, sept, cloche. */
@@ -167,24 +169,24 @@ public class JackpotEndingCutscene extends MachineCutscene {
         float u = height / 75f;
         float bw = 46f * u, bh = 70f * u, bx = width * 0.66f;
         float by = MathUtils.lerp(-bh - MARGIN, -MARGIN, come);
-        rect(batch, c("07040c"), bx - bw / 2f, by, bw, bh);                      // l'immeuble, en ombre
-        rect(batch, c("07040c"), bx - bw / 2f + 6f * u, by + bh, bw - 12f * u, 4f * u);
+        rect(batch, hex("07040c"), bx - bw / 2f, by, bw, bh);                      // l'immeuble, en ombre
+        rect(batch, hex("07040c"), bx - bw / 2f + 6f * u, by + bh, bw - 12f * u, 4f * u);
         for (int row = 0; row < 5; row++) {                                       // des fenêtres éteintes
             for (int col = 0; col < 4; col++) {
                 if (row == 3 && (col == 1 || col == 2)) continue;
-                rect(batch, c("2a1a20"), bx - bw / 2f + (5f + col * 10f) * u, by + (8f + row * 12f) * u, 6f * u, 6f * u);
+                rect(batch, hex("2a1a20"), bx - bw / 2f + (5f + col * 10f) * u, by + (8f + row * 12f) * u, 6f * u, 6f * u);
             }
         }
         float wx = bx - bw / 2f + 14f * u, wy = by + 40f * u, ww = 18f * u, wh = 15f * u;     // la fenêtre
         float lit = progress(WINDOW_LIT, WINDOW_LIT + 0.25f);
-        rect(batch, c("2a1a20"), wx, wy, ww, wh);
+        rect(batch, hex("2a1a20"), wx, wy, ww, wh);
         if (lit > 0f) {
-            glow(batch, wx + ww / 2f, wy + wh / 2f, 60f * u, c("ffb040"), 0.45f * lit);
+            glow(batch, wx + ww / 2f, wy + wh / 2f, 60f * u, hex("ffb040"), 0.45f * lit);
             batch.setColor(1f, 0.8f, 0.45f, lit);
             batch.draw(pixel, wx, wy, ww, wh);
         }
-        rect(batch, c("07040c"), wx + ww / 2f - 0.5f * u, wy, u, wh);                 // croisillons
-        rect(batch, c("07040c"), wx, wy + wh * 0.62f, ww, u);
+        rect(batch, hex("07040c"), wx + ww / 2f - 0.5f * u, wy, u, wh);                 // croisillons
+        rect(batch, hex("07040c"), wx, wy + wh * 0.62f, ww, u);
         if (lit <= 0f) return;
         // La petite machine, derrière la vitre.
         float mw = 10f * u, mh = 9f * u, mx = wx + ww / 2f - mw / 2f - u, my = wy + 1f * u;
@@ -204,7 +206,7 @@ public class JackpotEndingCutscene extends MachineCutscene {
             float lx = mx + (1f + i * 2.6f) * u, ly = my + mh - 1.2f * u;
             batch.setColor(on ? 1f : 0.5f, on ? 0.95f : 0.4f, on ? 0.6f : 0.2f, lit);
             batch.draw(pixel, lx, ly, 0.9f * u, 0.9f * u);
-            if (on) glow(batch, lx + 0.45f * u, ly + 0.45f * u, 3f * u, c("ffc93a"), 0.5f * lit);
+            if (on) glow(batch, lx + 0.45f * u, ly + 0.45f * u, 3f * u, hex("ffc93a"), 0.5f * lit);
         }
         float pull = Interpolation.pow2In.apply(progress(FIRST_PULL, FIRST_PULL + 0.25f));    // le levier
         float angle = MathUtils.lerp(75f, -55f, pull), length = 4.5f * u;
@@ -237,7 +239,7 @@ public class JackpotEndingCutscene extends MachineCutscene {
         drawTower(batch, width / 2f, baseY);
         if (collapsed) {
             float dust = Math.max(0f, 1f - (time - COLLAPSE) / 1.6f);
-            glow(batch, width / 2f, baseY + 10f * 14f, width * 0.9f, c("8a6a40"), 0.6f * dust);
+            glow(batch, width / 2f, baseY + 10f * 14f, width * 0.9f, hex("8a6a40"), 0.6f * dust);
         }
         drawParticles(batch, coins);
         drawParticles(batch, fire);

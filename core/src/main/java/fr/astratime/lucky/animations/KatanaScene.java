@@ -9,6 +9,8 @@ import com.badlogic.gdx.scenes.scene2d.actions.Actions;
 import com.badlogic.gdx.scenes.scene2d.ui.Image;
 import fr.astratime.lucky.assets.Palette;
 
+import static fr.astratime.lucky.assets.Palette.hex;
+
 /**
  * Bingo de la Pastèque : le sabre. Une pastèque entière est lancée en l'air
  * en tournant ; au sommet de sa course, un éclair de lame la tranche net. Les
@@ -133,15 +135,15 @@ public class KatanaScene extends BingoScene {
                 // Distance à la coupe (au milieu) : la face coupée montre la chair.
                 int fromCut = rightHalf ? px : width - 1 - px;
                 if (d > 0.84f)                         color = OUTLINE;
-                else if (half && fromCut == 0)         color = c("ffe3ec");      // bord de la coupe
+                else if (half && fromCut == 0)         color = hex("ffe3ec");      // bord de la coupe
                 else if (half && fromCut < 7 && d < 0.62f) {
                     boolean seed = (x * 7 + y * 3) % 11 == 0 && d < 0.5f;
-                    color = seed ? c("1a1a1a") : (d < 0.3f ? c("ff5a6a") : Palette.RED);
-                } else if (half && fromCut < 7 && d < 0.74f) color = c("eaffea"); // blanc de l'écorce
+                    color = seed ? hex("1a1a1a") : (d < 0.3f ? hex("ff5a6a") : Palette.RED);
+                } else if (half && fromCut < 7 && d < 0.74f) color = hex("eaffea"); // blanc de l'écorce
                 else {
                     boolean stripe = ((int) (dx * 6f + 20f + dy * dy * 2f)) % 2 == 0;
-                    color = stripe ? c("1f7a2e") : c("3fa84a");
-                    if (dy < -0.5f && dx < -0.1f && d < 0.7f) color = c("6cc45a");  // reflet
+                    color = stripe ? hex("1f7a2e") : hex("3fa84a");
+                    if (dy < -0.5f && dx < -0.1f && d < 0.7f) color = hex("6cc45a");  // reflet
                 }
                 pixmap.setColor(color);
                 pixmap.drawPixel(px, y);

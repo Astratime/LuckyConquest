@@ -12,6 +12,8 @@ import fr.astratime.lucky.entities.enemy.EnemyKind;
 import fr.astratime.lucky.i18n.Lang;
 import java.util.Random;
 
+import static fr.astratime.lucky.assets.Palette.hex;
+
 /**
  * Les rois du Casino Englouti entrent en scène, sous la mer :
  * <ul>
@@ -45,8 +47,8 @@ public class CasinoKings extends KingEntrance {
     static final float FAN = 4.3f, FANNED = 4.8f, JOKER = 4.85f;
 
     private static final int ARM_COUNT = 8;
-    private static final Color DEEP = c("03101a"), SHALLOW = c("0c3a4a"), FOAM = c("bfeeff"), GOLD = c("ffc93a");
-    private static final Color TENTACLE = c("8a2a4a"), TENTACLE_LIGHT = c("c25a7a");
+    private static final Color DEEP = hex("03101a"), SHALLOW = hex("0c3a4a"), FOAM = hex("bfeeff"), GOLD = hex("ffc93a");
+    private static final Color TENTACLE = hex("8a2a4a"), TENTACLE_LIGHT = hex("c25a7a");
 
     private final BitmapFont font;
     private final TextureRegion glass, note, machine, shark, coin, disc, ghost, safe;
@@ -61,7 +63,7 @@ public class CasinoKings extends KingEntrance {
     public CasinoKings(CutsceneKit kit, EnemyKind kind) {
         super(kit, kind);
         font = kit.font();
-        Color[] glassColors = {c("0a1418"), c("d8f4ff"), c("ff4fa0"), c("ffe066")};
+        Color[] glassColors = {hex("0a1418"), hex("d8f4ff"), hex("ff4fa0"), hex("ffe066")};
         glass = art("owpy", glassColors,
             "owwwwwwwo",
             ".oppppyo.",
@@ -79,7 +81,7 @@ public class CasinoKings extends KingEntrance {
             "..w..",
             "www..",
             "www..");
-        Color[] slotColors = {c("0a0808"), c("ffc93a"), c("b8801f"), c("f4ecdc"), c("e0283a")};
+        Color[] slotColors = {hex("0a0808"), hex("ffc93a"), hex("b8801f"), hex("f4ecdc"), hex("e0283a")};
         machine = art("ogdwr", slotColors,
             "..oooooooooo..",
             ".oggggggggggo.",
@@ -124,7 +126,7 @@ public class CasinoKings extends KingEntrance {
             "oooooooo",
             "oooooooo",
             "o.o..o.o");
-        safe = art("ogdk", new Color[] {c("0a0808"), c("9a9aa8"), c("5a5a6a"), c("2a2a34")},
+        safe = art("ogdk", new Color[] {hex("0a0808"), hex("9a9aa8"), hex("5a5a6a"), hex("2a2a34")},
             "oooooooooooo",
             "ogggggggggdo",
             "ogkkkkkkkkdo",
@@ -194,7 +196,7 @@ public class CasinoKings extends KingEntrance {
         }
         switch (kind) {
             case SIRENE -> {
-                if (at(SIREN)) sparks(cx(), kingY() + 300f, 30, c("ff9ad0"), 500f, 14f);
+                if (at(SIREN)) sparks(cx(), kingY() + 300f, 30, hex("ff9ad0"), 500f, 14f);
             }
             case JACKPOT_VIVANT -> {
                 for (int i = 0; i < 4; i++) if (at(WALK + 0.15f + i * 0.22f)) rumble(0.15f, 7f);
@@ -215,7 +217,7 @@ public class CasinoKings extends KingEntrance {
             case REQUIN_BANQUIER -> {
                 if (at(STAMP)) {
                     rumble(0.25f, 10f);
-                    sparks(cx(), chequeY(), 20, c("ff4a3a"), 400f, 10f);
+                    sparks(cx(), chequeY(), 20, hex("ff4a3a"), 400f, 10f);
                 }
                 if (at(LUNGE)) {
                     rumble(0.4f, 14f);
@@ -265,7 +267,7 @@ public class CasinoKings extends KingEntrance {
             batch.draw(trail, x, height + 40f, 0f, 60f, height * 1.3f, 120f, 1f, 1f, 250f + i * 2f);
         }
         normal(batch);
-        rect(batch, c("041820"), -MARGIN, -MARGIN, width + 2f * MARGIN, height * 0.12f + MARGIN);
+        rect(batch, hex("041820"), -MARGIN, -MARGIN, width + 2f * MARGIN, height * 0.12f + MARGIN);
     }
 
     // -------------------------------------------------------------------------
@@ -289,7 +291,7 @@ public class CasinoKings extends KingEntrance {
         if (time >= SIREN) {
             float blow = gesture(GESTURE, BUBBLE_END);
             pose(0f, 0f, -3f * blow, 0.02f * blow);
-            glow(batch, cx(), counter + 350f, 1100f, c("ff9ad0"), 0.35f * appear);
+            glow(batch, cx(), counter + 350f, 1100f, hex("ff9ad0"), 0.35f * appear);
             drawKing(batch, cx(), counter - 60f, KING_SCALE, 1f - appear, appear);
         }
         if (time >= GESTURE) {                                      // la bulle soufflée, une carte dedans
@@ -305,8 +307,8 @@ public class CasinoKings extends KingEntrance {
             glow(batch, bx - size * 0.4f, by + size * 0.4f, size * 0.4f, Color.WHITE, 0.6f);
         }
         // Le comptoir englouti.
-        rect(batch, c("1a2a2e"), -MARGIN, -MARGIN, width + 2f * MARGIN, counter + MARGIN);
-        rect(batch, c("3a5a5e"), -MARGIN, counter - 24f, width + 2f * MARGIN, 24f);
+        rect(batch, hex("1a2a2e"), -MARGIN, -MARGIN, width + 2f * MARGIN, counter + MARGIN);
+        rect(batch, hex("3a5a5e"), -MARGIN, counter - 24f, width + 2f * MARGIN, 24f);
         // Les verres qui dansent.
         for (int i = 0; i < 6; i++) {
             float x = width * (0.12f + i * 0.152f);
@@ -352,7 +354,7 @@ public class CasinoKings extends KingEntrance {
             }
             font.getData().setScale(1f);
         }
-        rect(batch, c("0a1a20"), -MARGIN, -MARGIN, width + 2f * MARGIN, floor + MARGIN);
+        rect(batch, hex("0a1a20"), -MARGIN, -MARGIN, width + 2f * MARGIN, floor + MARGIN);
         // La grande machine se lève et marche vers toi, pas à pas.
         if (time >= WALK) {
             float k = progress(WALK, WALK_END);
@@ -423,12 +425,12 @@ public class CasinoKings extends KingEntrance {
         // L'œil s'ouvre sous la table, dans la fente.
         float open = Interpolation.pow2Out.apply(progress(EYE, EYE + 0.4f));
         // La table VIP : rebord doré, tapis vert, la fente qui s'ouvre.
-        ellipse(batch, c("b8801f"), cx(), tableY, rx + 24f, ry + 14f);
-        ellipse(batch, c("1f6e3a"), cx(), tableY, rx, ry);
+        ellipse(batch, hex("b8801f"), cx(), tableY, rx + 24f, ry + 14f);
+        ellipse(batch, hex("1f6e3a"), cx(), tableY, rx, ry);
         float crack = progress(CRACK, CRACK + 0.2f);
         if (crack > 0f) {
             float gap = 10f + 40f * progress(ARMS, EYE) + 60f * open;
-            batch.setColor(c("020608"));
+            batch.setColor(hex("020608"));
             for (int k = 0; k < 12; k++) {
                 float x0 = cx() - rx * 0.9f * crack + k * rx * 1.8f * crack / 12f;
                 float wobble = (k % 2 == 0 ? 1f : -1f) * 10f;
@@ -437,10 +439,10 @@ public class CasinoKings extends KingEntrance {
         }
         if (open > 0f) {
             float eyeW = 300f, eyeH = 130f * open;
-            glow(batch, cx(), tableY, 800f, c("ffe066"), 0.4f * open);
-            ellipse(batch, c("f4ecdc"), cx(), tableY, eyeW, eyeH);
-            ellipse(batch, c("ffc93a"), cx(), tableY, eyeH * 0.95f, eyeH * 0.95f);
-            ellipse(batch, c("0a0808"), cx(), tableY, eyeH * 0.18f, eyeH * 0.85f);
+            glow(batch, cx(), tableY, 800f, hex("ffe066"), 0.4f * open);
+            ellipse(batch, hex("f4ecdc"), cx(), tableY, eyeW, eyeH);
+            ellipse(batch, hex("ffc93a"), cx(), tableY, eyeH * 0.95f, eyeH * 0.95f);
+            ellipse(batch, hex("0a0808"), cx(), tableY, eyeH * 0.18f, eyeH * 0.85f);
         }
         // Les huit bras, chacun une carte au bout.
         for (int i = 0; i < ARM_COUNT; i++) {
@@ -475,7 +477,7 @@ public class CasinoKings extends KingEntrance {
             }
         }
         if (time >= GESTURE) drawShuffle(batch);
-        flash(batch, c("ffe066"), EYE, 0.2f, 0.35f);
+        flash(batch, hex("ffe066"), EYE, 0.2f, 0.35f);
     }
 
     /**
@@ -535,26 +537,26 @@ public class CasinoKings extends KingEntrance {
     private void drawCheque(Batch batch) {
         float in = Interpolation.pow2Out.apply(progress(GESTURE, GESTURE + 0.3f));
         float x = cx() - worldWidth() * 0.22f, y = MathUtils.lerp(-200f, chequeY(), in), w = 460f, h = 200f;
-        batch.setColor(c("3a3020"));
+        batch.setColor(hex("3a3020"));
         batch.draw(pixel, x - w / 2f - 6f, y - h / 2f - 6f, w / 2f + 6f, h / 2f + 6f, w + 12f, h + 12f, 1f, 1f, -6f);
-        batch.setColor(c("f0e6c8"));
+        batch.setColor(hex("f0e6c8"));
         batch.draw(pixel, x - w / 2f, y - h / 2f, w / 2f, h / 2f, w, h, 1f, 1f, -6f);
         for (int i = 0; i < 3; i++) {                                  // les lignes du chèque
-            batch.setColor(c("a89a78"));
+            batch.setColor(hex("a89a78"));
             batch.draw(pixel, x - w * 0.4f, y + 40f - i * 45f, w * 0.4f, 2f, w * (i == 2 ? 0.4f : 0.8f), 4f, 1f, 1f, -6f);
         }
         // Le tampon descend, puis « REFUSÉ » en rouge.
         float press = Interpolation.pow2In.apply(progress(STAMP - 0.3f, STAMP));
         if (time < STAMP + 0.2f) {
             float sy = MathUtils.lerp(y + 400f, y + 40f, press);
-            rect(batch, c("4a2a14"), x - 26f, sy + 60f, 52f, 140f);
-            rect(batch, c("2a2a34"), x - 90f, sy, 180f, 60f);
+            rect(batch, hex("4a2a14"), x - 26f, sy + 60f, 52f, 140f);
+            rect(batch, hex("2a2a34"), x - 90f, sy, 180f, 60f);
         }
         if (time >= STAMP) {
             float k = progress(STAMP, STAMP + 0.12f);
             font.getData().setScale(MathUtils.lerp(4.4f, 3.2f, k));
             Color old = font.getColor().cpy();
-            font.setColor(c("d81e1e"));
+            font.setColor(hex("d81e1e"));
             caption(batch, font, Lang.t("REFUSÉ"), x, y, 1f);
             font.setColor(old);
             font.getData().setScale(1f);
@@ -570,15 +572,15 @@ public class CasinoKings extends KingEntrance {
     /** Sirène : un verre glisse seul sur le comptoir englouti, et s'arrête devant toi. */
     private void drawSlidingGlass(Batch batch) {
         float width = worldWidth(), height = worldHeight(), counter = height * 0.3f;
-        glow(batch, cx(), counter + 300f, 900f, c("ff9ad0"), 0.15f);
-        rect(batch, c("1a2a2e"), -MARGIN, -MARGIN, width + 2f * MARGIN, counter + MARGIN);
-        rect(batch, c("3a5a5e"), -MARGIN, counter - 24f, width + 2f * MARGIN, 24f);
+        glow(batch, cx(), counter + 300f, 900f, hex("ff9ad0"), 0.15f);
+        rect(batch, hex("1a2a2e"), -MARGIN, -MARGIN, width + 2f * MARGIN, counter + MARGIN);
+        rect(batch, hex("3a5a5e"), -MARGIN, counter - 24f, width + 2f * MARGIN, 24f);
         float k = Interpolation.pow2Out.apply(progress(0.1f, SLIDE_END));
         float x = MathUtils.lerp(-120f, cx(), k);
         float wobble = time >= SLIDE_END ? 6f * MathUtils.sin((time - SLIDE_END) * 25f) * Math.max(0f, 1f - (time
             - SLIDE_END) * 2f) : -4f;
         float scale = 22f;
-        glow(batch, x, counter + 120f, 300f, c("ff4fa0"), 0.3f);
+        glow(batch, x, counter + 120f, 300f, hex("ff4fa0"), 0.3f);
         batch.setColor(Color.WHITE);
         batch.draw(glass, x - glass.getRegionWidth() * scale / 2f, counter, glass.getRegionWidth() * scale / 2f, 0f,
             glass.getRegionWidth() * scale, glass.getRegionHeight() * scale, 1f, 1f, wobble);
@@ -592,7 +594,7 @@ public class CasinoKings extends KingEntrance {
     /** Jackpot Vivant : un joueur fantôme tire le levier d'une machine ; rien ; il s'efface. */
     private void drawGhost(Batch batch) {
         float width = worldWidth(), height = worldHeight(), floor = height * 0.3f;
-        rect(batch, c("0a1a20"), -MARGIN, -MARGIN, width + 2f * MARGIN, floor + MARGIN);
+        rect(batch, hex("0a1a20"), -MARGIN, -MARGIN, width + 2f * MARGIN, floor + MARGIN);
         float scale = 26f, mw = machine.getRegionWidth() * scale, mh = machine.getRegionHeight() * scale;
         float mx = cx() + 120f;
         float pull = gesture(PULL - 0.25f, PULL + 0.25f);
@@ -609,14 +611,14 @@ public class CasinoKings extends KingEntrance {
         }
         // Le levier sur le côté.
         float leverX = mx + mw / 2f + 10f, leverY = floor + mh * 0.55f, angle = MathUtils.lerp(80f, -60f, pull);
-        line(batch, c("9a9aa8"), leverX, leverY, leverX + MathUtils.cosDeg(angle) * 200f, leverY + MathUtils.sinDeg(angle)
+        line(batch, hex("9a9aa8"), leverX, leverY, leverX + MathUtils.cosDeg(angle) * 200f, leverY + MathUtils.sinDeg(angle)
             * 200f, 14f);
-        glow(batch, leverX + MathUtils.cosDeg(angle) * 200f, leverY + MathUtils.sinDeg(angle) * 200f, 60f, c("e0283a"), 1f);
+        glow(batch, leverX + MathUtils.cosDeg(angle) * 200f, leverY + MathUtils.sinDeg(angle) * 200f, 60f, hex("e0283a"), 1f);
         // Le fantôme, transparent, qui s'efface après le « rien ».
         float alpha = 0.45f * (1f - progress(GHOST_FADE, PRELUDE - 0.2f)) * (0.85f + 0.15f * MathUtils.sin(time * 6f));
         float gs = 24f, gw = ghost.getRegionWidth() * gs, gh = ghost.getRegionHeight() * gs;
         float gx = leverX + 230f, gy = floor + 20f + 15f * MathUtils.sin(time * 3f) + 200f * progress(GHOST_FADE, PRELUDE);
-        glow(batch, gx, gy + gh * 0.5f, 600f, c("a8f0ff"), alpha * 0.6f);
+        glow(batch, gx, gy + gh * 0.5f, 600f, hex("a8f0ff"), alpha * 0.6f);
         batch.setColor(0.75f, 0.95f, 1f, alpha);
         batch.draw(ghost, gx - gw / 2f, gy, gw, gh);
         if (time >= NOTHING && time < GHOST_FADE + 0.4f) {
@@ -630,10 +632,10 @@ public class CasinoKings extends KingEntrance {
     private void drawBank(Batch batch) {
         float width = worldWidth(), height = worldHeight(), floor = height * 0.12f;
         float bx = cx() - 160f, bw = 760f, bh = height * 0.5f;
-        rect(batch, c("1a3a48"), bx - bw / 2f, floor, bw, bh);                          // la façade
-        rect(batch, c("24505e"), bx - bw / 2f - 30f, floor + bh, bw + 60f, 40f);
-        for (int i = 0; i < 4; i++) rect(batch, c("3a6a78"), bx - bw / 2f + 60f + i * 200f, floor, 60f, bh);   // les colonnes
-        for (int r = 0; r < 4; r++) rect(batch, c("24505e"), bx - (bw / 2f - r * 90f), floor + bh + 40f + r * 34f,
+        rect(batch, hex("1a3a48"), bx - bw / 2f, floor, bw, bh);                          // la façade
+        rect(batch, hex("24505e"), bx - bw / 2f - 30f, floor + bh, bw + 60f, 40f);
+        for (int i = 0; i < 4; i++) rect(batch, hex("3a6a78"), bx - bw / 2f + 60f + i * 200f, floor, 60f, bh);   // les colonnes
+        for (int r = 0; r < 4; r++) rect(batch, hex("24505e"), bx - (bw / 2f - r * 90f), floor + bh + 40f + r * 34f,
             bw - r * 180f, 34f);                                                            // le fronton
         font.getData().setScale(2.2f);
         caption(batch, font, Lang.t("BANQUE"), bx, floor + bh - 50f, 0.8f);
@@ -649,8 +651,8 @@ public class CasinoKings extends KingEntrance {
         }
         float swing = 70f + 6f * MathUtils.sin(time * 2f);                              // la porte, entrouverte, qui ondule
         float doorW = sw * MathUtils.cosDeg(swing);
-        rect(batch, c("5a5a6a"), sx - sw / 2f - doorW, floor + 10f, doorW, sh - 20f);
-        glow(batch, sx - sw / 2f - doorW * 0.5f, floor + sh * 0.5f, 120f, c("c8c8d8"), 0.5f);
+        rect(batch, hex("5a5a6a"), sx - sw / 2f - doorW, floor + 10f, doorW, sh - 20f);
+        glow(batch, sx - sw / 2f - doorW * 0.5f, floor + sh * 0.5f, 120f, hex("c8c8d8"), 0.5f);
         for (int i = 0; i < 6; i++) {                                                   // des éclats d'or
             float t = (time * 1.3f + i * 0.37f) % 1f;
             glow(batch, sx - sw * 0.35f + (i * 97 % 100) / 100f * sw * 0.7f, floor + 60f + (i * 53 % 100) / 100f * sh * 0.6f,
@@ -669,6 +671,6 @@ public class CasinoKings extends KingEntrance {
         }
         fill(batch, Color.BLACK, 0.75f * Interpolation.pow2In.apply(progress(0.2f, PRELUDE)));
         float eyes = progress(1.2f, 1.5f);                                               // un éclat jaune, tout au fond
-        if (eyes > 0f) glow(batch, cx(), height * 0.2f, 200f, c("ffe066"), 0.4f * eyes * pulse(5f, 0.5f));
+        if (eyes > 0f) glow(batch, cx(), height * 0.2f, 200f, hex("ffe066"), 0.4f * eyes * pulse(5f, 0.5f));
     }
 }

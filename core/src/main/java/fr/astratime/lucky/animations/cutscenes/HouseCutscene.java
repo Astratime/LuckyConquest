@@ -10,6 +10,8 @@ import com.badlogic.gdx.utils.Array;
 import fr.astratime.lucky.entities.tower.Chapter;
 import fr.astratime.lucky.i18n.Lang;
 
+import static fr.astratime.lucky.assets.Palette.hex;
+
 /**
  * Avant la Maison (chapitre 5) : un escalier de jetons monte à travers les
  * nuages ; on le gravit jusqu'à un manoir doré. Un majordome en ombre ouvre les
@@ -49,9 +51,9 @@ public class HouseCutscene extends Cutscene {
         {106.6f, 55f}};
     /** La porte de l'illustration : centre et taille, en pixels de l'image. */
     private static final float DOOR_X = 64.5f, DOOR_Y = 53f, DOOR_W = 4.9f, DOOR_H = 18.7f;
-    private static final Color GOLD = c("ffc93a"), HOT = c("fff6c8"), CURTAIN = c("8a1426"), CURTAIN_LIGHT = c("c8283c");
+    private static final Color GOLD = hex("ffc93a"), HOT = hex("fff6c8"), CURTAIN = hex("8a1426"), CURTAIN_LIGHT = hex("c8283c");
     /** Les couleurs des jetons de l'escalier. */
-    private static final Color[] CHIPS = {c("c8283c"), c("2a5ad8"), c("1f9a4a"), c("1a1a24"), c("e8b020")};
+    private static final Color[] CHIPS = {hex("c8283c"), hex("2a5ad8"), hex("1f9a4a"), hex("1a1a24"), hex("e8b020")};
 
     private final TextureRegion house, coin, butlerLegs, butlerTop, aceRed, aceBlack, cardBack;
     private final BitmapFont    font;
@@ -68,7 +70,7 @@ public class HouseCutscene extends Cutscene {
         aceRed   = gameCard("cards/light/1-H.png");
         aceBlack = gameCard("cards/light/1-P.png");
         cardBack = gameCard("cards/light/BACK.png");
-        Color[] shade = {c("05030a"), c("2a2030")};
+        Color[] shade = {hex("05030a"), hex("2a2030")};
         butlerTop = art("ow", shade,
             "...ooo...",
             "..ooooo..",
@@ -82,7 +84,7 @@ public class HouseCutscene extends Cutscene {
             "oo.ooo.oo",
             "oo.ooo.oo",
             "...ooo...");
-        butlerLegs = art("o", new Color[] {c("05030a")},
+        butlerLegs = art("o", new Color[] {hex("05030a")},
             "..ooooo..",
             ".ooooooo.",
             ".ooo.ooo.",
@@ -141,7 +143,7 @@ public class HouseCutscene extends Cutscene {
             return;
         }
         float width = worldWidth(), height = worldHeight();
-        fill(batch, c("1a1640"), 1f);
+        fill(batch, hex("1a1640"), 1f);
         // Le manoir : on s'approche lentement de sa porte.
         float zoom = artZoom();
         float lights = progress(LIGHTS, LIGHTS + 0.3f);
@@ -158,7 +160,7 @@ public class HouseCutscene extends Cutscene {
             float x = artX(WINDOWS[i][0]), y = artY(WINDOWS[i][1]);
             float w = 5f * zoom * Math.abs(MathUtils.cos(flip * MathUtils.PI)), h = 7f * zoom;
             if (flip < 1f) {
-                batch.setColor(flip < 0.5f ? c("f4ecdc") : c("ffe9a0"));
+                batch.setColor(flip < 0.5f ? hex("f4ecdc") : hex("ffe9a0"));
                 batch.draw(pixel, x - w / 2f, y - h / 2f, w, h);
             }
             glow(batch, x, y, 14f * zoom, flip < 1f ? HOT : GOLD, (flip < 1f ? 0.5f : 0.2f) + 0.2f * lights);
@@ -208,7 +210,7 @@ public class HouseCutscene extends Cutscene {
      */
     private void drawStairs(Batch batch) {
         float width = worldWidth(), height = worldHeight();
-        gradient(batch, c("6a5aa0"), c("1a1640"));
+        gradient(batch, hex("6a5aa0"), hex("1a1640"));
         float climb = Interpolation.sine.apply(progress(0f, STAIRS_END));
         // Le manoir, au loin, en haut des marches.
         float zoom = height * 0.32f / house.getRegionHeight() * (1f + 0.4f * climb);

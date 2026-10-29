@@ -9,6 +9,8 @@ import com.badlogic.gdx.utils.Array;
 import fr.astratime.lucky.entities.enemy.EnemyKind;
 import fr.astratime.lucky.entities.tower.Chapter;
 
+import static fr.astratime.lucky.assets.Palette.hex;
+
 /**
  * Avant le Prétendant (chapitre 4) : gros plan sur une table renversée, une main
  * lâche un éclat qui roule dans la rue. Une ville en flammes, des joueurs qui se
@@ -44,10 +46,10 @@ public class PretenderCutscene extends Cutscene {
     private static final float EYES_Y = 24.5f;
 
     /** Les couleurs des trois éclats : la Comète, la Reine, l'Éclat Originel. */
-    private static final Color[] SHARDS = {c("ffc93a"), c("e0283a"), c("fff6c8")};
+    private static final Color[] SHARDS = {hex("ffc93a"), hex("e0283a"), hex("fff6c8")};
     /** Où brillent les éclats dans la ville (fractions de l'écran). */
     private static final float[][] SHARD_AT = {{0.22f, 0.42f}, {0.78f, 0.47f}, {0.52f, 0.33f}};
-    private static final Color FIRE = c("ff7a1a"), GOLD = c("ffc93a");
+    private static final Color FIRE = hex("ff7a1a"), GOLD = hex("ffc93a");
 
     private final TextureRegion city, pretender, gem, crown, hand;
     private final Array<Particle> embers = new Array<>(false, 256);
@@ -60,13 +62,13 @@ public class PretenderCutscene extends Cutscene {
         super(kit.settings(), kit.shake(), kit.sound("pretender"));
         city = kit.chapterArt(Chapter.MONDE_SANS_MAITRE);
         pretender = kit.portrait(EnemyKind.PRETENDANT);
-        gem = art("o#w", new Color[] {c("1a0a0e"), Color.WHITE, c("ffffff")},
+        gem = art("o#w", new Color[] {hex("1a0a0e"), Color.WHITE, hex("ffffff")},
             "..o..",
             ".o#o.",
             "o###o",
             ".o#o.",
             "..o..");
-        Color[] gold = {c("1a0a0e"), c("ffc93a"), c("b8801f"), c("e0283a")};
+        Color[] gold = {hex("1a0a0e"), hex("ffc93a"), hex("b8801f"), hex("e0283a")};
         crown = art("ogdr", gold,
             "o.....o.....o",
             "go...ogo...og",
@@ -75,7 +77,7 @@ public class PretenderCutscene extends Cutscene {
             "ggggggrgggggg",
             "ddddddddddddd",
             "ooooooooooooo");
-        hand = art("osd", new Color[] {c("1a0a0e"), c("f0c8a0"), c("b88a68")},
+        hand = art("osd", new Color[] {hex("1a0a0e"), hex("f0c8a0"), hex("b88a68")},
             "..oooooooo....",
             ".ossssssssoo..",
             "osssssssssssoo",
@@ -229,23 +231,23 @@ public class PretenderCutscene extends Cutscene {
             city.getRegionWidth() * zoom, city.getRegionHeight() * zoom);
         glow(batch, width * 0.5f, height * 0.2f, width * 1.4f, FIRE, 0.3f * flicker);
         float ground = height * 0.25f;
-        batch.setColor(c("1a0f0c"));
+        batch.setColor(hex("1a0f0c"));
         batch.draw(pixel, -MARGIN, -MARGIN, width + 2f * MARGIN, ground + MARGIN);
-        batch.setColor(c("2e1c14"));
+        batch.setColor(hex("2e1c14"));
         for (int i = 0; i < 9; i++) batch.draw(pixel, -MARGIN + i * width / 8f, ground - 8f, width / 8f - 10f, 6f);
         // La table, renversée sur le flanc : le plateau de feutre debout face à nous, les pieds de côté.
         float tx = width * 0.3f, ty = ground - 20f, tw = width * 0.36f, th = height * 0.42f;
-        batch.setColor(c("2a160a"));
+        batch.setColor(hex("2a160a"));
         for (int k = 0; k < 2; k++) batch.draw(pixel, tx + tw - 20f, ty + th * (0.2f + 0.55f * k), width * 0.12f, 22f);
-        batch.setColor(c("3a2010"));
+        batch.setColor(hex("3a2010"));
         batch.draw(pixel, tx, ty, tw / 2f, 0f, tw, th, 1f, 1f, 4f);
-        batch.setColor(c("1f7a3a"));
+        batch.setColor(hex("1f7a3a"));
         batch.draw(pixel, tx + 16f, ty + 16f, tw / 2f - 16f, -16f, tw - 32f, th - 32f, 1f, 1f, 4f);
-        batch.setColor(c("f4ecdc"));                                          // les lignes du tapis de jeu
+        batch.setColor(hex("f4ecdc"));                                          // les lignes du tapis de jeu
         batch.draw(pixel, tx + tw * 0.2f, ty + th * 0.5f, tw * 0.3f, -th * 0.5f, tw * 0.6f, 4f, 1f, 1f, 4f);
         batch.draw(pixel, tx + tw * 0.48f, ty + th * 0.2f, 2f, th * 0.3f, 4f, th * 0.6f, 1f, 1f, 4f);
         for (int k = 0; k < 5; k++) {                                          // des jetons renversés au sol
-            Color color = k % 3 == 0 ? c("c8283c") : k % 3 == 1 ? c("2a5ad8") : c("1f9a4a");
+            Color color = k % 3 == 0 ? hex("c8283c") : k % 3 == 1 ? hex("2a5ad8") : hex("1f9a4a");
             float cx = width * (0.12f + k * 0.18f), cy = ground * (0.35f + 0.2f * (k % 2));
             batch.setColor(color);
             batch.draw(pixel, cx, cy, 70f, 22f);
@@ -291,7 +293,7 @@ public class PretenderCutscene extends Cutscene {
             float x = width * (0.08f + i * 0.105f), y = height * 0.035f + (i % 2) * 10f;
             float melt = time < SHADOW_START ? 0f : MathUtils.clamp((shadowX - x) / (width * 0.12f), 0f, 1f);
             float w = 70f * (1f + 0.6f * melt), h = 22f * (1f - 0.65f * melt);
-            Color color = i % 3 == 0 ? c("c8283c") : i % 3 == 1 ? c("2a5ad8") : c("1f9a4a");
+            Color color = i % 3 == 0 ? hex("c8283c") : i % 3 == 1 ? hex("2a5ad8") : hex("1f9a4a");
             float d = 1f - 0.5f * melt;
             batch.setColor(0f, 0f, 0f, 0.6f);
             batch.draw(pixel, x - w / 2f - 2f, y - 2f, w + 4f, h + 4f);

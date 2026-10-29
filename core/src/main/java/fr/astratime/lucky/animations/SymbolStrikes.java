@@ -1,5 +1,6 @@
 package fr.astratime.lucky.animations;
 
+import fr.astratime.lucky.assets.Palette;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
@@ -463,7 +464,7 @@ public class SymbolStrikes extends Actor implements Disposable {
                 if (crossed(before, now, IMPACT_TIME)) {
                     flashAt(s.toX, s.toY, Color.WHITE, 170f);
                     for (int i = 0; i < 14; i++) { // les points du dé s'éparpillent
-                        Particle p = particle(s.toX, s.toY, Color.valueOf("1a0f0fff"), MathUtils.random(200f, 420f),
+                        Particle p = particle(s.toX, s.toY, Palette.OUTLINE, MathUtils.random(200f, 420f),
                             MathUtils.random(0.4f, 0.7f), MathUtils.random(8f, 12f), false);
                         p.square = true;
                         p.gravity = 900f;

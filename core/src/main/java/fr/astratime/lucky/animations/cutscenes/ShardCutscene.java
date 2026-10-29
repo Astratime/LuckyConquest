@@ -9,6 +9,8 @@ import com.badlogic.gdx.utils.Array;
 import fr.astratime.lucky.entities.enemy.EnemyKind;
 import fr.astratime.lucky.entities.tower.Chapter;
 
+import static fr.astratime.lucky.assets.Palette.hex;
+
 /**
  * Avant l'Éclat Originel (chapitre 3) : au bord du cratère, les restes de la
  * Comète fument encore, des pièces fondues brillent. Puis le cratère vu du ciel.
@@ -44,7 +46,7 @@ public class ShardCutscene extends Cutscene {
     /** Ce que montrent les trois rouleaux à chaque raté (0 : le 7, 1 : la cerise). */
     private static final int[][] MISS_SHOWN = {{0, 0, 1}, {0, 1, 0}};
 
-    private static final Color GOLD = c("ffc93a"), HOT = c("fff6c8"), ORANGE = c("ff8a1e"), DEEP = c("1a0e08");
+    private static final Color GOLD = hex("ffc93a"), HOT = hex("fff6c8"), ORANGE = hex("ff8a1e"), DEEP = hex("1a0e08");
 
     private final TextureRegion crater, shard, coin;
     private final TextureRegion[] symbols;
@@ -201,24 +203,24 @@ public class ShardCutscene extends Cutscene {
      */
     private void drawRim(Batch batch) {
         float width = worldWidth(), height = worldHeight();
-        gradient(batch, c("3a1a10"), c("0a0612"));
+        gradient(batch, hex("3a1a10"), hex("0a0612"));
         float zoom = Math.max(width / crater.getRegionWidth(), height / crater.getRegionHeight()) * 2.4f;
         batch.setColor(0.6f, 0.45f, 0.38f, 1f);                        // le cratère, loin derrière
         batch.draw(crater, (width - crater.getRegionWidth() * zoom) / 2f, -crater.getRegionHeight() * zoom * 0.62f,
             crater.getRegionWidth() * zoom, crater.getRegionHeight() * zoom);
         float ground = height * 0.3f, slide = progress(0f, RIM_END) * 40f;
-        batch.setColor(c("1a100c"));
+        batch.setColor(hex("1a100c"));
         batch.draw(pixel, -MARGIN, -MARGIN, width + 2f * MARGIN, ground + MARGIN);
         // Le rocher de la Comète, en blocs, avec ses fissures de lave qui respirent.
         float rx = width * 0.5f - slide, ry = ground - 40f, u = height / 32f;
         glow(batch, rx, ry + 6f * u, 40f * u, ORANGE, 0.35f);
         int[][] blocks = {{-9, 0, 18, 7}, {-7, 7, 14, 5}, {-5, 12, 9, 3}, {-12, 0, 4, 4}, {9, 0, 4, 3}};
         for (int[] b : blocks) {
-            batch.setColor(c("0e0a0c"));
+            batch.setColor(hex("0e0a0c"));
             batch.draw(pixel, rx + (b[0] - 0.5f) * u, ry + (b[1] - 0.5f) * u, (b[2] + 1f) * u, (b[3] + 1f) * u);
-            batch.setColor(c("3a2c30"));
+            batch.setColor(hex("3a2c30"));
             batch.draw(pixel, rx + b[0] * u, ry + b[1] * u, b[2] * u, b[3] * u);
-            batch.setColor(c("4e3c40"));
+            batch.setColor(hex("4e3c40"));
             batch.draw(pixel, rx + b[0] * u, ry + (b[1] + b[3] - 1f) * u, b[2] * u, 0.6f * u);
         }
         float lava = 0.6f + 0.4f * MathUtils.sin(time * 5f);
@@ -234,9 +236,9 @@ public class ShardCutscene extends Cutscene {
             float px = width * (0.12f + i * 0.13f) - slide * 1.4f, py = ground * (0.25f + 0.3f * ((i * 37) % 3) / 2f);
             float glowing = 0.6f + 0.4f * MathUtils.sin(time * 3f + i * 1.3f);
             glow(batch, px, py, 160f, GOLD, 0.35f * glowing);
-            batch.setColor(c("e8a020"));
+            batch.setColor(hex("e8a020"));
             batch.draw(pixel, px - 50f, py - 8f, 100f, 16f);
-            batch.setColor(c("ffe58a"));
+            batch.setColor(hex("ffe58a"));
             batch.draw(pixel, px - 30f, py + 2f, 50f, 5f);
             if (i % 2 == 0) {                                               // une pièce encore entière, à moitié fondue
                 batch.setColor(1f, 0.9f, 0.7f, 1f);
@@ -286,11 +288,11 @@ public class ShardCutscene extends Cutscene {
             float rw = w * depth, rh = h * depth;
             // Cadre doré et vitre blanche.
             glow(batch, x, y, rw * 2.2f, GOLD, 0.35f);
-            batch.setColor(c("1a0e08"));
+            batch.setColor(hex("1a0e08"));
             batch.draw(pixel, x - rw / 2f - 14f, y - rh / 2f - 14f, rw + 28f, rh + 28f);
             batch.setColor(GOLD);
             batch.draw(pixel, x - rw / 2f - 10f, y - rh / 2f - 10f, rw + 20f, rh + 20f);
-            batch.setColor(c("f4ecdc"));
+            batch.setColor(hex("f4ecdc"));
             batch.draw(pixel, x - rw / 2f, y - rh / 2f, rw, rh);
             batch.setColor(Color.WHITE);
             float shown = spin + i * 0.37f * (stopped ? 0f : 1f);

@@ -8,6 +8,8 @@ import com.badlogic.gdx.math.MathUtils;
 import fr.astratime.lucky.entities.enemy.EnemyKind;
 import fr.astratime.lucky.entities.enemy.EnemySymbol;
 
+import static fr.astratime.lucky.assets.Palette.hex;
+
 /**
  * Avant la Machine Originelle (chapitre 6) : on traverse les étages de la Tour
  * en montant ; dans chacun, un ancien boss figé dans le verre (la Comète, la
@@ -54,12 +56,12 @@ public class MachineCutscene extends Cutscene {
     private static final EnemyKind[] FROZEN = {EnemyKind.COMETE, EnemyKind.REINE, EnemyKind.ECLAT,
         EnemyKind.PRETENDANT, EnemyKind.MAISON};
 
-    private static final Color OUT = c("140a0a"), GOLD = c("ffc93a"), GOLD_LIGHT = c("ffe58a"), GOLD_DARK = c("b8801f");
-    private static final Color GLASS = c("f4ecdc"), RED = c("e0283a"), SKY_TOP = c("05071a"), SKY_LOW = c("2b1a4a");
-    private static final Color STONE = c("3b3550"), STONE_DARK = c("262238");
+    private static final Color OUT = hex("140a0a"), GOLD = hex("ffc93a"), GOLD_LIGHT = hex("ffe58a"), GOLD_DARK = hex("b8801f");
+    private static final Color GLASS = hex("f4ecdc"), RED = hex("e0283a"), SKY_TOP = hex("05071a"), SKY_LOW = hex("2b1a4a");
+    private static final Color STONE = hex("3b3550"), STONE_DARK = hex("262238");
 
-    private static final Color NIGHT_LOW = c("5a2c5e"), HOT_FLAME = c("fff2b0");
-    private static final Color ICE = c("9fd8ff"), PIPE = c("6a4a1a"), WALL = c("1a1626");
+    private static final Color NIGHT_LOW = hex("5a2c5e"), HOT_FLAME = hex("fff2b0");
+    private static final Color ICE = hex("9fd8ff"), PIPE = hex("6a4a1a"), WALL = hex("1a1626");
 
     private final Starfield stars = new Starfield(200, 0f);
     private final Color low = new Color();
@@ -84,7 +86,7 @@ public class MachineCutscene extends Cutscene {
 
     protected MachineCutscene(CutsceneKit kit, String sound) {
         super(kit.settings(), kit.shake(), kit.sound(sound));
-        Color[] eyeColors = {OUT, Color.WHITE, c("e0283a"), c("ffc93a"), c("6e0f1e")};
+        Color[] eyeColors = {OUT, Color.WHITE, hex("e0283a"), hex("ffc93a"), hex("6e0f1e")};
         eye = art("owrgd", eyeColors,
             "...oooooo...",
             ".oowwwwwwoo.",
@@ -161,7 +163,7 @@ public class MachineCutscene extends Cutscene {
         float baseY = height * 0.04f - camera;           // bas de la machine à l'écran
         // Halo derrière la machine.
         float lit = progress(LIGHT_START, LIGHT_START + REELS * LIGHT_STEP);
-        glow(batch, cx, baseY + 30f * U, 140f * U, c("6a4aff"), 0.25f);
+        glow(batch, cx, baseY + 30f * U, 140f * U, hex("6a4aff"), 0.25f);
         glow(batch, cx, baseY + 30f * U, 110f * U, GOLD, 0.15f + 0.35f * lit);
         // Rayons de lumière quand tout s'allume.
         if (lit > 0f) {
@@ -210,7 +212,7 @@ public class MachineCutscene extends Cutscene {
             for (int side = -1; side <= 1; side += 2) {                // torches de part et d'autre
                 float tx = x + side * 26f * u, ty = base + 24f * u;
                 float flicker = 0.75f + 0.25f * MathUtils.sin(time * 17f + i * 3f + side);
-                glow(batch, tx, ty, 26f * u, c("ff9a3a"), 0.35f * flicker);
+                glow(batch, tx, ty, 26f * u, hex("ff9a3a"), 0.35f * flicker);
                 batch.setColor(OUT);
                 batch.draw(pixel, tx - 0.8f * u, ty - 6f * u, 1.6f * u, 6f * u);
                 glow(batch, tx, ty + u, 5f * u, HOT_FLAME, 0.9f * flicker);
@@ -226,7 +228,7 @@ public class MachineCutscene extends Cutscene {
         batch.draw(pixel, x - w / 2f - 2f * u, base - u, w + 4f * u, 3f * u);       // socle
         batch.setColor(GOLD_DARK);
         batch.draw(pixel, x - w / 2f - u, base, w + 2f * u, 2f * u);
-        batch.setColor(c("0d1a2e"));
+        batch.setColor(hex("0d1a2e"));
         batch.draw(pixel, x - w / 2f, bottom, w, h);
         float scale = (h - 6f * u) / Math.max(boss.getRegionWidth(), boss.getRegionHeight());
         float pw = boss.getRegionWidth() * scale;
@@ -311,7 +313,7 @@ public class MachineCutscene extends Cutscene {
         float open = Interpolation.pow2Out.apply(progress(SLOT_OPEN, SLOT_OPEN + 0.25f));
         float sw = 7f * U * open;
         rect(batch, OUT, sx - sw / 2f - 0.5f * U, sy - U, sw + U, 2f * U);
-        rect(batch, c("05030a"), sx - sw / 2f, sy - 0.5f * U, sw, U);
+        rect(batch, hex("05030a"), sx - sw / 2f, sy - 0.5f * U, sw, U);
         if (time >= COIN_IN) {                                              // la pièce est passée : la fente luit
             glow(batch, sx, sy, 16f * U, GOLD, 0.6f * Math.max(0f, 1f - (time - COIN_IN) / 0.8f) * bright);
             return;
@@ -366,12 +368,12 @@ public class MachineCutscene extends Cutscene {
         rect(batch, GOLD_DARK, pivotX, pivotY - 2f * U, 3f * U, 4f * U);
         batch.setColor(OUT);
         batch.draw(pixel, pivotX + U, pivotY - 1.5f * U, 0f, 1.5f * U, length, 3f * U, 1f, 1f, angle);
-        batch.setColor(c("d8d8e0"));
+        batch.setColor(hex("d8d8e0"));
         batch.draw(pixel, pivotX + U, pivotY - 0.7f * U, 0f, 0.7f * U, length, 1.4f * U, 1f, 1f, angle);
         float knobX = pivotX + U + MathUtils.cosDeg(angle) * length, knobY = pivotY + MathUtils.sinDeg(angle) * length;
         rect(batch, OUT, knobX - 3.5f * U, knobY - 3.5f * U, 7f * U, 7f * U);
         rect(batch, RED, knobX - 2.5f * U, knobY - 2.5f * U, 5f * U, 5f * U);
-        rect(batch, c("ff8a9a"), knobX - 1.5f * U, knobY + 0.5f * U, 1.5f * U, 1.5f * U);
+        rect(batch, hex("ff8a9a"), knobX - 1.5f * U, knobY + 0.5f * U, 1.5f * U, 1.5f * U);
 
         // Corps.
         rect(batch, OUT, left - U, bottom - U, w + 2f * U, h + 2f * U);
@@ -400,7 +402,7 @@ public class MachineCutscene extends Cutscene {
             for (float y : new float[] {bottom + h - 1.5f * U, bottom + 1.5f * U}) {
                 rect(batch, OUT, x - U, y - U, 2f * U, 2f * U);
                 if (on) glow(batch, x, y, 6f * U, GOLD, 0.6f * bright);
-                rect(batch, on ? c("fff6c8") : GOLD_DARK, x - 0.5f * U, y - 0.5f * U, U, U);
+                rect(batch, on ? hex("fff6c8") : GOLD_DARK, x - 0.5f * U, y - 0.5f * U, U, U);
             }
         }
 
@@ -439,7 +441,7 @@ public class MachineCutscene extends Cutscene {
         // Plateau à pièces.
         float trayW = 40f * U, trayY = bottom + 4f * U;
         rect(batch, OUT, cx - trayW / 2f, trayY, trayW, 7f * U);
-        rect(batch, c("2a1a10"), cx - trayW / 2f + U, trayY + U, trayW - 2f * U, 5f * U);
+        rect(batch, hex("2a1a10"), cx - trayW / 2f + U, trayY + U, trayW - 2f * U, 5f * U);
         for (int i = 0; i < 9; i++) {
             float x = cx - trayW / 2f + 3f * U + i * 4f * U;
             rect(batch, GOLD, x, trayY + U, 3f * U, 2f * U + (i % 3) * U);

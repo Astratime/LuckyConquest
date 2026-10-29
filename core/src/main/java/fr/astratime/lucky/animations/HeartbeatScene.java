@@ -10,6 +10,8 @@ import com.badlogic.gdx.scenes.scene2d.actions.Actions;
 import com.badlogic.gdx.scenes.scene2d.actions.SequenceAction;
 import com.badlogic.gdx.scenes.scene2d.ui.Image;
 
+import static fr.astratime.lucky.assets.Palette.hex;
+
 /**
  * Bingo du Cœur : un cœur géant surgit au milieu de la table et bat trois fois
  * (à {@link #BEATS}), de plus en plus fort, un halo rose palpitant derrière
@@ -34,7 +36,7 @@ public class HeartbeatScene extends BingoScene {
     private final Vector2 center = new Vector2();
 
     public HeartbeatScene() {
-        glow  = image(texture(halo(56, c("ff6fa0"))));
+        glow  = image(texture(halo(56, hex("ff6fa0"))));
         glow.setOrigin(glow.getWidth() / 2f, glow.getHeight() / 2f);
         heart = image(new TextureRegion(texture(heart())), HEART_SCALE);
         heart.setOrigin(heart.getWidth() / 2f, heart.getHeight() / 2f);
@@ -67,7 +69,7 @@ public class HeartbeatScene extends BingoScene {
             beats.addAction(Actions.delay(BEATS[i] - at));
             beats.addAction(Actions.parallel(
                 Actions.scaleTo(strength, strength, 0.07f, Interpolation.pow2Out),
-                Actions.color(c("ffd0e0"), 0.07f)));
+                Actions.color(hex("ffd0e0"), 0.07f)));
             beats.addAction(Actions.parallel(
                 Actions.scaleTo(1f, 1f, 0.22f, Interpolation.pow2In),
                 Actions.color(Color.WHITE, 0.22f)));
@@ -80,7 +82,7 @@ public class HeartbeatScene extends BingoScene {
         beats.addAction(Actions.delay(BURST_TIME - SWELL_TIME - at));
         beats.addAction(Actions.parallel(
             Actions.scaleTo(1.5f, 1.5f, SWELL_TIME, Interpolation.pow2In),
-            Actions.color(c("ffe0ec"), SWELL_TIME)));
+            Actions.color(hex("ffe0ec"), SWELL_TIME)));
         beats.addAction(Actions.visible(false));
         heart.addAction(beats);
         pulses.addAction(Actions.delay(BURST_TIME - BEATS[BEATS.length - 1] - 0.3f));
@@ -108,7 +110,7 @@ public class HeartbeatScene extends BingoScene {
             float a = u * u + v * v - 1f;
             return a * a * a - u * u * v * v * v <= 0f;
         };
-        Color red = c("e8264f"), light = c("ff7a9a"), shine = c("ffd0dc"), dark = c("a8123a");
+        Color red = hex("e8264f"), light = hex("ff7a9a"), shine = hex("ffd0dc"), dark = hex("a8123a");
         fillShape(pixmap, shape, (x, y) -> {
             float dx = x - HEART_WIDTH / 2f, dy = y - HEART_HEIGHT * 0.4f;
             if (x >= 5 && x <= 7 && y >= 4 && y <= 6 && !(x == 7 && y == 6)) return shine;

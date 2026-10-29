@@ -7,6 +7,8 @@ import com.badlogic.gdx.math.Interpolation;
 import com.badlogic.gdx.math.MathUtils;
 import fr.astratime.lucky.entities.enemy.EnemyKind;
 
+import static fr.astratime.lucky.assets.Palette.hex;
+
 /** Les scènes de phase et de mort des quatre rois du Port des Contrebandiers (choix d'Astra, 2026-10-24). */
 final class PortBossScenes {
 
@@ -59,7 +61,6 @@ final class PortBossScenes {
     static final String[] CHEST = {".yyyyyyyy.", "yddddddddy", "yddddddddy", "yyyyyyyyyy", "ydddgddddy", "yddddddddy",
         "yddddddddy", "yyyyyyyyyy"};
 
-    static Color c(String hex) { return Color.valueOf(hex); }
 
     /** La mer : son niveau {@code level} (en y), une ligne d'écume qui ondule. */
     static void sea(BossScene scene, Batch batch, float level, float alpha) {
@@ -77,13 +78,13 @@ final class PortBossScenes {
     /** Grappins lancés : une nuée de rats grimpe aux cordes et envahit l'écran par les bords. */
     static final class RatPhase extends BossScene {
         private static final float[][] HOOKS = {{-0.02f, 0.92f}, {1.02f, 0.88f}, {-0.02f, 0.55f}, {1.02f, 0.5f}};
-        private static final Color ROPE = c("b89a6a");
+        private static final Color ROPE = hex("b89a6a");
         private final TextureRegion rat, hook;
 
         RatPhase(CutsceneKit kit) {
             super(kit, Moment.PHASE, EnemyKind.CAPITAINE_RAT, 2);
-            rat = art("ogrp", new Color[] {c("0a0808"), c("4a4048"), c("e0283a"), c("c87a8a")}, RAT);
-            hook = art("o", new Color[] {c("9a9ab0")}, HOOK);
+            rat = art("ogrp", new Color[] {hex("0a0808"), hex("4a4048"), hex("e0283a"), hex("c87a8a")}, RAT);
+            hook = art("o", new Color[] {hex("9a9ab0")}, HOOK);
         }
 
         private float hookTime(int i) { return 0.3f + i * 0.25f; }
@@ -94,7 +95,7 @@ final class PortBossScenes {
         @Override
         protected void step(float delta) {
             for (int i = 0; i < HOOKS.length; i++) if (at(hookTime(i) + 0.3f)) rumble(0.15f, 5f);
-            if (at(CLIMAX_PHASE)) { rumble(0.7f, 12f); sparks(bossX(), bossY(), 50, c("e0283a"), 700f, 20f); }
+            if (at(CLIMAX_PHASE)) { rumble(0.7f, 12f); sparks(bossX(), bossY(), 50, hex("e0283a"), 700f, 20f); }
         }
 
         @Override
@@ -129,8 +130,8 @@ final class PortBossScenes {
                 float y = groundY() - 10f + (r * 53 % 9) * 12f + Math.abs(MathUtils.sin(time * 18f + r)) * 8f;
                 stretch(batch, rat, x, y, fit(54f, 11) * side, fit(54f, 11), 0f, WHITE, 1f);
             }
-            eyes(batch, progress(CLIMAX_PHASE - 0.1f, CLIMAX_PHASE + 0.2f), c("ff2a3a"), new float[] {14f, 18f}, new float[] {21f, 18f});
-            flash(batch, c("e0283a"), CLIMAX_PHASE, 0.3f, 0.35f);
+            eyes(batch, progress(CLIMAX_PHASE - 0.1f, CLIMAX_PHASE + 0.2f), hex("ff2a3a"), new float[] {14f, 18f}, new float[] {21f, 18f});
+            flash(batch, hex("e0283a"), CLIMAX_PHASE, 0.3f, 0.35f);
         }
     }
 
@@ -140,8 +141,8 @@ final class PortBossScenes {
 
         RatDeath(CutsceneKit kit) {
             super(kit, Moment.DEATH, EnemyKind.CAPITAINE_RAT, 0);
-            rat = art("ogrp", new Color[] {c("0a0808"), c("4a4048"), c("e0283a"), c("c87a8a")}, RAT);
-            hat = art("ow", new Color[] {c("1a1410"), c("e8e0d0")}, HAT);
+            rat = art("ogrp", new Color[] {hex("0a0808"), hex("4a4048"), hex("e0283a"), hex("c87a8a")}, RAT);
+            hat = art("ow", new Color[] {hex("1a1410"), hex("e8e0d0")}, HAT);
         }
 
         private float list() { return -9f * Interpolation.pow2Out.apply(progress(0.2f, 1.6f)); }
@@ -204,13 +205,13 @@ final class PortBossScenes {
     /** Il fracasse une chope : les tabourets volent, une bagarre éclate en ombres chinoises. */
     static final class TavernPhase extends BossScene {
         private final TextureRegion mug, sailor, stool;
-        private static final Color BEER = c("ffc040"), LAMP = c("ff9a3a");
+        private static final Color BEER = hex("ffc040"), LAMP = hex("ff9a3a");
 
         TavernPhase(CutsceneKit kit) {
             super(kit, Moment.PHASE, EnemyKind.TAVERNIER, 2);
-            mug = art("owbdg", new Color[] {c("1a0e06"), c("f4f0e0"), c("ffb030"), c("c87a10"), c("8a6a3a")}, MUG);
+            mug = art("owbdg", new Color[] {hex("1a0e06"), hex("f4f0e0"), hex("ffb030"), hex("c87a10"), hex("8a6a3a")}, MUG);
             sailor = art("o", new Color[] {Color.WHITE}, SAILOR);
-            stool = art("o", new Color[] {c("6a4020")}, STOOL);
+            stool = art("o", new Color[] {hex("6a4020")}, STOOL);
         }
 
         private float mugX() { return bossX() + bossWidth() * 0.6f; }
@@ -264,7 +265,7 @@ final class PortBossScenes {
     /** Il essuie son comptoir et souffle les bougies une à une ; les portes battantes se referment. */
     static final class TavernDeath extends BossScene {
         private static final float[] PUFFS = {1.1f, 1.6f, 2.1f, 2.5f, 2.9f};
-        private static final Color FLAME = c("ffb040"), CLOTH = c("e8e0d0"), DOOR = c("6a4020");
+        private static final Color FLAME = hex("ffb040"), CLOTH = hex("e8e0d0"), DOOR = hex("6a4020");
 
         TavernDeath(CutsceneKit kit) { super(kit, Moment.DEATH, EnemyKind.TAVERNIER, 0); }
 
@@ -336,7 +337,7 @@ final class PortBossScenes {
 
     /** La tempête : pluie et éclairs ; le faisceau du phare tourne de plus en plus vite et vire au rouge. */
     static final class LighthousePhase extends BossScene {
-        private static final Color BEAM = c("fff07a"), RED = c("ff3a2a");
+        private static final Color BEAM = hex("fff07a"), RED = hex("ff3a2a");
         private static final float[] BOLTS = {0.7f, 1.5f, CLIMAX_PHASE, 3.3f};
         private float angle;
 
@@ -382,12 +383,12 @@ final class PortBossScenes {
 
     /** La lampe vacille, balaie une dernière fois et se fend ; dans le noir, une petite barque passe, sauvée. */
     static final class LighthouseDeath extends BossScene {
-        private static final Color BEAM = c("fff07a");
+        private static final Color BEAM = hex("fff07a");
         private final TextureRegion ship;
 
         LighthouseDeath(CutsceneKit kit) {
             super(kit, Moment.DEATH, EnemyKind.GARDIEN_PHARE, 0);
-            ship = art("kwpshy", new Color[] {c("0a0608"), c("f0f0f0"), c("3a2618"), c("d8d0c0"), c("1c120c"), c("ffd060")}, SHIP);
+            ship = art("kwpshy", new Color[] {hex("0a0608"), hex("f0f0f0"), hex("3a2618"), hex("d8d0c0"), hex("1c120c"), hex("ffd060")}, SHIP);
         }
 
         private float lampY() { return bossBottom() + bossHeight() * 0.95f; }
@@ -449,7 +450,7 @@ final class PortBossScenes {
 
     /** Une bordée de canons : la fumée couvre l'écran, seul son œil brille dans le noir. */
     static final class BlackPhase extends BossScene {
-        private static final Color FIRE = c("ffb040"), EYE = c("9a5aff");
+        private static final Color FIRE = hex("ffb040"), EYE = hex("9a5aff");
 
         private final com.badlogic.gdx.utils.Array<Particle> smoke = new com.badlogic.gdx.utils.Array<>(false, 128);
 
@@ -495,7 +496,7 @@ final class PortBossScenes {
                 batch.setColor(0.32f, 0.32f, 0.36f, 0.8f * (1f - puff.life() * puff.life()));
                 batch.draw(soft, puff.x - size / 2f, puff.y - size / 2f, size, size);
             }
-            fill(batch, c("1a1a22"), 0.75f * progress(1.4f, CLIMAX_PHASE));
+            fill(batch, hex("1a1a22"), 0.75f * progress(1.4f, CLIMAX_PHASE));
             if (k > 0f) {
                 float x = portraitX(21f), y = portraitY(16f);                 // son œil, à côté du bandeau
                 float pulse = 0.8f + 0.2f * MathUtils.sin(time * 6f);
@@ -512,9 +513,9 @@ final class PortBossScenes {
 
         BlackDeath(CutsceneKit kit) {
             super(kit, Moment.DEATH, EnemyKind.CAPITAINE_NOIR, 0);
-            ship = art("kwpshy", new Color[] {c("0a0608"), c("3a3a44"), c("2a1a10"), c("2a2a34"), c("140c08"), c("9a5aff")}, SHIP);
-            flag = art("owk", new Color[] {c("0a0a0a"), c("e8e8e8"), c("0a0a0a")}, FLAG);
-            chest = art("ydg", new Color[] {c("ffc93a"), c("6a3a14"), c("fff0a0")}, CHEST);
+            ship = art("kwpshy", new Color[] {hex("0a0608"), hex("3a3a44"), hex("2a1a10"), hex("2a2a34"), hex("140c08"), hex("9a5aff")}, SHIP);
+            flag = art("owk", new Color[] {hex("0a0a0a"), hex("e8e8e8"), hex("0a0a0a")}, FLAG);
+            chest = art("ydg", new Color[] {hex("ffc93a"), hex("6a3a14"), hex("fff0a0")}, CHEST);
         }
 
         private float sink() { return Interpolation.pow2In.apply(progress(0.4f, CLIMAX_DEATH + 0.8f)); }

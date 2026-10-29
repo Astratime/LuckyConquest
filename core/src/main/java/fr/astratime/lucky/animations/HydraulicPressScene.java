@@ -8,6 +8,8 @@ import com.badlogic.gdx.scenes.scene2d.actions.Actions;
 import com.badlogic.gdx.scenes.scene2d.ui.Image;
 import fr.astratime.lucky.assets.Palette;
 
+import static fr.astratime.lucky.assets.Palette.hex;
+
 /**
  * Bingo du Double Bar : une presse hydraulique. Deux lourdes mâchoires d'acier,
  * poussées par leurs vérins depuis le haut et le bas de l'écran, se
@@ -97,7 +99,7 @@ public class HydraulicPressScene extends BingoScene {
         // Bande de danger, rayures en biais.
         for (int y = JAW_HEIGHT - 5; y < JAW_HEIGHT - 1; y++) {
             for (int x = 1; x < JAW_WIDTH - 1; x++) {
-                pixmap.setColor(((x + y) / 3) % 2 == 0 ? Palette.GOLD : c("2a2a33"));
+                pixmap.setColor(((x + y) / 3) % 2 == 0 ? Palette.GOLD : hex("2a2a33"));
                 pixmap.drawPixel(x, y);
             }
         }
@@ -107,8 +109,8 @@ public class HydraulicPressScene extends BingoScene {
     /** @return un tronçon de vérin chromé (étiré en hauteur). */
     private static Pixmap rod() {
         Pixmap pixmap = pixmap(ROD_WIDTH, 1);
-        Color[] columns = {OUTLINE, c("5a6676"), Palette.STEEL_LIGHT, Color.WHITE, Palette.STEEL_LIGHT, c("a8b4c2"),
-                           Palette.STEEL, Palette.STEEL, c("6a7684"), c("5a6676"), Palette.STEEL_DARK, OUTLINE};
+        Color[] columns = {OUTLINE, hex("5a6676"), Palette.STEEL_LIGHT, Color.WHITE, Palette.STEEL_LIGHT, hex("a8b4c2"),
+                           Palette.STEEL, Palette.STEEL, hex("6a7684"), hex("5a6676"), Palette.STEEL_DARK, OUTLINE};
         for (int x = 0; x < ROD_WIDTH; x++) {
             pixmap.setColor(columns[x]);
             pixmap.drawPixel(x, 0);

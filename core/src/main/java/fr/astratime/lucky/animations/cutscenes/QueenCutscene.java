@@ -10,6 +10,8 @@ import com.badlogic.gdx.math.Matrix4;
 import com.badlogic.gdx.utils.Array;
 import fr.astratime.lucky.entities.enemy.EnemyKind;
 
+import static fr.astratime.lucky.assets.Palette.hex;
+
 /**
  * Avant la Reine des Tables (chapitre 2) : une cité en ruine, la nuit. Du vent ;
  * une carte vole entre les ruines et se colle à la roulette : une Dame de cœur.
@@ -53,8 +55,8 @@ public class QueenCutscene extends Cutscene {
     /** La traînée rouge de la bille : ses dernières positions. */
     private static final int     TRAIL    = 14;
 
-    private static final Color SKY_TOP = c("070516"), SKY_LOW = c("2a1236"), GROUND = c("120910");
-    private static final Color RED = c("e0283a"), GOLD = c("ffc93a"), GREEN = c("2fbf5a");
+    private static final Color SKY_TOP = hex("070516"), SKY_LOW = hex("2a1236"), GROUND = hex("120910");
+    private static final Color RED = hex("e0283a"), GOLD = hex("ffc93a"), GREEN = hex("2fbf5a");
 
     private final TextureRegion wheel, city, throne, die, queen, lady, back;
     /** Les cartes du jeu font 19 x 27 pixels : on les réduit pour garder la taille des anciennes (9 x 13). */
@@ -217,9 +219,9 @@ public class QueenCutscene extends Cutscene {
         if (time >= BALL_START) {
             float x = ballX(), y = ballY();
             glow(batch, x, y, 90f, Color.WHITE, 0.6f);
-            batch.setColor(c("1a1418"));
+            batch.setColor(hex("1a1418"));
             batch.draw(pixel, x - 11f, y - 11f, 22f, 22f);
-            batch.setColor(c("f4f4ff"));
+            batch.setColor(hex("f4f4ff"));
             batch.draw(pixel, x - 9f, y - 9f, 18f, 18f);
             batch.setColor(Color.WHITE);
             batch.draw(pixel, x - 7f, y + 1f, 6f, 6f);
@@ -332,8 +334,8 @@ public class QueenCutscene extends Cutscene {
         Pixmap pixmap = new Pixmap(size, size, Pixmap.Format.RGBA8888);
         pixmap.setBlending(Pixmap.Blending.None);
         float center = (size - 1) / 2f, step = 360f / POCKETS;
-        Color gold = c("ffc93a"), goldDark = c("b07a1a"), black = c("1a1418"), red = c("c41e30"), green = c("1f9e48");
-        Color wood = c("6b3a1e"), woodDark = c("4a2614");
+        Color gold = hex("ffc93a"), goldDark = hex("b07a1a"), black = hex("1a1418"), red = hex("c41e30"), green = hex("1f9e48");
+        Color wood = hex("6b3a1e"), woodDark = hex("4a2614");
         for (int y = 0; y < size; y++) {
             for (int x = 0; x < size; x++) {
                 float dx = x - center, dy = center - y;
@@ -347,7 +349,7 @@ public class QueenCutscene extends Cutscene {
                 else if (d > 44f) {
                     if (within < 0.9f) color = gold;                      // séparateurs dorés
                     else color = pocket == 0 ? green : pocket % 2 == 1 ? red : black;
-                    if (d > 52f && d < 55f && pocket % 2 == 0 && pocket > 0) color = c("2a2226");
+                    if (d > 52f && d < 55f && pocket % 2 == 0 && pocket > 0) color = hex("2a2226");
                 } else if (d > 42f) color = gold;
                 else if (d > 12f) {
                     int spoke = (int) (angle / 45f);
@@ -364,7 +366,7 @@ public class QueenCutscene extends Cutscene {
     private static Pixmap thronePixmap() {
         Pixmap p = new Pixmap(24, 30, Pixmap.Format.RGBA8888);
         p.setBlending(Pixmap.Blending.None);
-        Color gold = c("ffc93a"), goldDark = c("a8701a"), velvet = c("a3172b"), velvetDark = c("6e0f1e"), out = c("1a0a0e");
+        Color gold = hex("ffc93a"), goldDark = hex("a8701a"), velvet = hex("a3172b"), velvetDark = hex("6e0f1e"), out = hex("1a0a0e");
         p.setColor(out);
         p.fillRectangle(3, 4, 18, 26);
         p.setColor(gold);
@@ -384,7 +386,7 @@ public class QueenCutscene extends Cutscene {
         p.drawPixel(11, 1);
         p.drawPixel(12, 1);
         p.drawPixel(16, 1);
-        p.setColor(c("e0283a"));
+        p.setColor(hex("e0283a"));
         p.drawPixel(11, 2);
         p.drawPixel(12, 2);
         p.setColor(goldDark);                                          // assise et accoudoirs
@@ -406,13 +408,13 @@ public class QueenCutscene extends Cutscene {
     private static Pixmap diePixmap() {
         Pixmap p = new Pixmap(11, 11, Pixmap.Format.RGBA8888);
         p.setBlending(Pixmap.Blending.None);
-        p.setColor(c("1a0a0e"));
+        p.setColor(hex("1a0a0e"));
         p.fillRectangle(0, 0, 11, 11);
-        p.setColor(c("f4ecdc"));
+        p.setColor(hex("f4ecdc"));
         p.fillRectangle(1, 1, 9, 9);
-        p.setColor(c("cfc4b0"));
+        p.setColor(hex("cfc4b0"));
         p.fillRectangle(1, 8, 9, 2);
-        p.setColor(c("e0283a"));
+        p.setColor(hex("e0283a"));
         int[][] pips = {{2, 2}, {7, 2}, {5, 5}, {2, 7}, {7, 7}};
         for (int[] pip : pips) p.fillRectangle(pip[0], pip[1], 2, 2);
         return p;
