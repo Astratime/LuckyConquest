@@ -52,6 +52,12 @@ public interface CombatRun {
     /** @return la règle du lieu, qui joue dans tous les combats (aucune hors de l'Exploration). */
     default PlaceRule getPlaceRule() { return PlaceRule.NONE; }
 
+    /** @return {@code true} si un Bingo peut ouvrir le Jeu bonus (pas dans le tutoriel). */
+    default boolean hasBonusGame() { return true; }
+
+    /** @return {@code true} si ses ennemis sont en mode difficile (seulement dans la Tour). */
+    default boolean isHard() { return false; }
+
     /** @return la phrase de fin, affichée après le dernier combat gagné, ou {@code null}. */
     default String getEnding() { return null; }
 

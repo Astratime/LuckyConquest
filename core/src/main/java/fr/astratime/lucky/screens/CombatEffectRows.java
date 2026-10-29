@@ -17,7 +17,6 @@ import fr.astratime.lucky.entities.enemy.EnemyKind;
 import fr.astratime.lucky.entities.enemy.EnemySymbol;
 import fr.astratime.lucky.entities.exploration.PlaceRule;
 import fr.astratime.lucky.i18n.Lang;
-import fr.astratime.lucky.progress.PlayerProfile;
 import fr.astratime.lucky.views.SidePanel;
 
 import java.util.ArrayList;
@@ -152,6 +151,13 @@ final class CombatEffectRows {
     private void addPlaceRows(List<SidePanel.EffectRow> rows, LastingEffects lasting) {
         GameState state = controller.getGameState();
         TextureRegion skull = new TextureRegion(hud.iconCorruption);
+        addPlaceRuleRow(rows, state, skull);
+        addProtectionRows(rows, lasting);
+        addEnemyCurseRows(rows, lasting, state, skull);
+    }
+
+    /** La règle du lieu : Scorbut, prochain coup de grisou, niveau de la marée, prochain tour de manège, Soif. */
+    private void addPlaceRuleRow(List<SidePanel.EffectRow> rows, GameState state, TextureRegion skull) {
         int turn = state.getTurnNumber();
         PlaceRule rule = state.getPlaceRule();
         switch (state.getActiveRule()) {
@@ -186,6 +192,10 @@ final class CombatEffectRows {
                 rule.getDescription() + Lang.t(" Pense à te soigner à chaque tour.")));
             case NONE -> { }
         }
+    }
+
+    /** Les cartes des lieux qui durent (Bulle d'air, Veine d'or, Casque), les parades des coffres et les archétypes. */
+    private void addProtectionRows(List<SidePanel.EffectRow> rows, LastingEffects lasting) {
         if (lasting.getBubbleTurns() > 0) {
             int turns = lasting.getBubbleTurns();
             rows.add(new SidePanel.EffectRow(new TextureRegion(hud.iconSleeve), null,
@@ -246,6 +256,11 @@ final class CombatEffectRows {
                 ? "À son prochain tour, l'ennemi joue {0} cartes de moins."
                 : "À son prochain tour, l'ennemi joue {0} carte de moins.", target.getHarpoons())));
         addArchetypeRows(rows, lasting, target, guard);
+    }
+
+    /** Les mauvais sorts de l'ennemi qui attendent le prochain tour, ce qu'il a pris ou banni, le temps compté. */
+    private void addEnemyCurseRows(List<SidePanel.EffectRow> rows, LastingEffects lasting, GameState state,
+                                   TextureRegion skull) {
         Enemy foe = controller.getGameState().getEnemy();
         EnemyKind kind = foe.getKind();
         if (lasting.getNibbles() > 0) rows.add(curse(skull, Lang.f("Grignotage x{0}", lasting.getNibbles()), EnemySymbol.NIBBLE, foe));

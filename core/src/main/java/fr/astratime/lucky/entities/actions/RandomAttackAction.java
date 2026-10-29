@@ -5,7 +5,7 @@ import fr.astratime.lucky.i18n.Lang;
 import java.util.Random;
 
 /** Dé : inflige des dégâts de base tirés au hasard entre {@code min} et {@code max}, puis comme une attaque. */
-public class RandomAttackAction extends AttackAction {
+public final class RandomAttackAction extends AttackAction {
 
     private final int    min;
     private final int    max;

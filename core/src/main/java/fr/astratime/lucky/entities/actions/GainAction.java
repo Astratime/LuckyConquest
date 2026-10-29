@@ -18,7 +18,7 @@ import java.util.List;
  * le facteur de gains du tirage (combos, Porte-bonheur) et la puissance des
  * symboles (Bingo). Le bonus de gains du rang du joueur s'ajoute aux gains de base.
  */
-public class GainAction extends Action {
+public final class GainAction extends Action {
 
     private final int baseGain;
 
