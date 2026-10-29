@@ -7,6 +7,7 @@ import com.badlogic.gdx.math.Interpolation;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.utils.Array;
 import fr.astratime.lucky.entities.Symbol;
+import java.util.Arrays;
 
 /**
  * Fin du chapitre 6, après le Dernier tirage : la Machine Originelle s'éteint,
@@ -72,7 +73,7 @@ public class JackpotEndingCutscene extends MachineCutscene {
         collapsed = launched = false;
         fireDebt = streakDebt = 0f;
         bright = 1f;
-        java.util.Arrays.fill(lids, 0f);
+        Arrays.fill(lids, 0f);
     }
 
     @Override

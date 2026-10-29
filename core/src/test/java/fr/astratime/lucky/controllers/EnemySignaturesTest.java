@@ -125,7 +125,7 @@ class EnemySignaturesTest {
             EnemySignature.BOTTE_SECRETE.card(), EnemyCards.card(Card.Suit.PIQUE, 14));
         assertEquals(3, EnemyTurnResolver.ownCards(lever, new Enemy(EnemyKind.GARDIEN_LEVIER)).size(), "chapitre 6 : 3 + 3 cartes");
         for (EnemyKind kind : List.of(EnemyKind.MAISON, EnemyKind.ROI_PIQUE, EnemyKind.KRAKEN)) {
-            List<Card> hand = new java.util.ArrayList<>();
+            List<Card> hand = new ArrayList<>();
             for (EnemySignature signature : kind.getSignatures()) hand.add(signature.card());
             assertTrue(EnemyTurnResolver.ownCards(hand, new Enemy(kind)).size() <= 1, kind + " : une carte propre par tour");
         }

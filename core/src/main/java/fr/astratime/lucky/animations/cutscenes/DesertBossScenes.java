@@ -7,6 +7,7 @@ import com.badlogic.gdx.math.Interpolation;
 import com.badlogic.gdx.math.MathUtils;
 import fr.astratime.lucky.entities.enemy.EnemyKind;
 import fr.astratime.lucky.entities.enemy.EnemySymbol;
+import java.util.Random;
 
 /** Les scènes de phase et de mort des quatre rois du Désert de Braise (choix d'Astra, 2026-10-24). */
 final class DesertBossScenes {
@@ -302,7 +303,7 @@ final class DesertBossScenes {
             delay = new float[w * h];
             speedX = new float[w * h];
             speedY = new float[w * h];
-            java.util.Random seed = new java.util.Random(5);
+            Random seed = new Random(5);
             for (int y = 0; y < h; y++) {
                 for (int x = 0; x < w; x++) {                                                // il s'effrite du haut vers le bas
                     int i = y * w + x;

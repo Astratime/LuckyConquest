@@ -40,6 +40,7 @@ import fr.astratime.lucky.entities.events.PistolShotEvent;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.Arrays;
 
 /**
  * Résout le tour du joueur : exécute les actions, calcule les gains de
@@ -201,7 +202,7 @@ public class CombatResolver {
      */
     private List<Event> cardsOnDraw(CombatContext context, Symbol[] symbols) {
         List<Event> events = new ArrayList<>();
-        boolean bar = java.util.Arrays.stream(symbols).anyMatch(s -> s == Symbol.BAR || s == Symbol.DOUBLE_BAR);
+        boolean bar = Arrays.stream(symbols).anyMatch(s -> s == Symbol.BAR || s == Symbol.DOUBLE_BAR);
         if (context.getHammers() > 0 && bar) {
             float boost = (1f + ForgeHammerEffect.BAR_PERCENT / 100f) / (1f + ForgeHammerEffect.ATTACK_PERCENT / 100f);
             context.multiplyAttack((float) Math.pow(boost, context.getHammers()), "Marteau de forge");
@@ -236,7 +237,7 @@ public class CombatResolver {
      */
     private List<Event> archetypesOnDraw(CombatContext context, Symbol[] symbols, Symbol[] drawn) {
         List<Event> events = new ArrayList<>();
-        int jokers = (int) java.util.Arrays.stream(drawn).filter(s -> s == Symbol.JOKER).count();
+        int jokers = (int) Arrays.stream(drawn).filter(s -> s == Symbol.JOKER).count();
         if (context.getWildJokerPercent() > 0 && jokers > 0) {
             int percent = context.getWildJokerPercent() * jokers;
             context.multiplyAttack(1f + percent / 100f, "Joker sauvage");
@@ -248,7 +249,7 @@ public class CombatResolver {
                 EffectPopup.Style.GAINS));
         }
         if (context.getVariableRate() > 0) {
-            int gainSymbols = (int) java.util.Arrays.stream(symbols).filter(CombatResolver::isGainSymbol).count();
+            int gainSymbols = (int) Arrays.stream(symbols).filter(CombatResolver::isGainSymbol).count();
             int added = context.getEnemy().addClaims(gainSymbols * context.getVariableRate());
             events.add(new StatusEvent(Lang.f("TAUX VARIABLE : CRÉANCES +{0}", added), EffectPopup.Style.DRAIN));
         }
@@ -378,7 +379,7 @@ public class CombatResolver {
             context.getRainbowsEnds().forEach(lasting::addDeckCard);
             events.add(new StatusEvent(Lang.t("BOUT DE L'ARC-EN-CIEL : UN POT DE LUTIN DANS TA PIOCHE"), EffectPopup.Style.GAINS));
         }
-        if (context.getJokerLaughs() > 0 && java.util.Arrays.stream(drawn).anyMatch(s -> s == Symbol.JOKER)) {
+        if (context.getJokerLaughs() > 0 && Arrays.stream(drawn).anyMatch(s -> s == Symbol.JOKER)) {
             lasting.addNextDraws(context.getJokerLaughs());
             events.add(new StatusEvent(Lang.f("RIRE DU JOKER : +{0} CARTES AU PROCHAIN TOUR", context.getJokerLaughs()),
                 EffectPopup.Style.DRAW));

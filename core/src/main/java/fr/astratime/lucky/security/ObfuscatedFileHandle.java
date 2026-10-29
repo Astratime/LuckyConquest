@@ -7,6 +7,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.nio.charset.Charset;
+import java.io.File;
 
 /**
  * {@link FileHandle} qui rétablit à la volée un fichier d'asset brouillé par
@@ -109,7 +110,7 @@ final class ObfuscatedFileHandle extends FileHandle {
     @Override public String nameWithoutExtension() { return delegate.nameWithoutExtension(); }
     @Override public String pathWithoutExtension() { return delegate.pathWithoutExtension(); }
     @Override public com.badlogic.gdx.Files.FileType type() { return delegate.type(); }
-    @Override public java.io.File file()           { return delegate.file(); }
+    @Override public File file()           { return delegate.file(); }
     @Override public boolean exists()              { return delegate.exists(); }
     @Override public boolean isDirectory()         { return delegate.isDirectory(); }
     @Override public long lastModified()           { return delegate.lastModified(); }

@@ -16,6 +16,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
+import java.util.Map;
 
 /** Le Jeu bonus dans un tour : il suit un Bingo, ses gains sont crédités, et le tutoriel n'en a pas. */
 class BonusGameTurnTest {
@@ -74,7 +75,7 @@ class BonusGameTurnTest {
     @Test
     void onlyTheBonusPartOfTheGridIsMultiplied() {
         RankBonus rank = new RankBonus(0, 0, 0, 70);
-        GameController controller = new GameController(BonusGameTurnTest::plainCards, id -> null, java.util.Map.of(),
+        GameController controller = new GameController(BonusGameTurnTest::plainCards, id -> null, Map.of(),
             cards -> new Player("Joueur", Player.BASE_HP, cards, rank, Symbol.classicReels()));
         controller.restart(EnemyKind.ENTRAINEMENT);
         TurnResult result = new TurnEngine().playTurn(controller.getGameState(),

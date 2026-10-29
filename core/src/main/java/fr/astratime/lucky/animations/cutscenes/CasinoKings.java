@@ -10,6 +10,7 @@ import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.utils.Array;
 import fr.astratime.lucky.entities.enemy.EnemyKind;
 import fr.astratime.lucky.i18n.Lang;
+import java.util.Random;
 
 /**
  * Les rois du Casino Englouti entrent en scène, sous la mer :
@@ -344,7 +345,7 @@ public class CasinoKings extends KingEntrance {
         // JACKPOT clignote partout.
         if (time >= BLINK && time < WALK + 0.5f) {
             font.getData().setScale(3f);
-            java.util.Random spots = new java.util.Random((int) (time * 6f));
+            Random spots = new Random((int) (time * 6f));
             for (int i = 0; i < 4; i++) {
                 float x = width * (0.15f + 0.7f * spots.nextFloat()), y = height * (0.6f + 0.3f * spots.nextFloat());
                 caption(batch, font, Lang.t("JACKPOT"), x, y, 1f - progress(WALK, WALK + 0.5f));

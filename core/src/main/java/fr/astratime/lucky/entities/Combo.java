@@ -9,6 +9,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.ArrayList;
 
 /**
  * Combinaisons de poker formées par les cartes à rang jouées pendant le tour :
@@ -117,14 +118,14 @@ public enum Combo {
     public static List<Combo> formed(List<Card> played) {
         if (played.stream().noneMatch(Card::isWild)) return formedAsPlayed(played);
         // Joker caméléon : chaque carte joker prend, l'une après l'autre, la couleur et le rang qui rapportent le plus.
-        List<Card> cards = new java.util.ArrayList<>(played);
+        List<Card> cards = new ArrayList<>(played);
         for (int i = 0; i < cards.size(); i++) {
             if (!cards.get(i).isWild()) continue;
             Card best = null;
             float bestTotal = -1f;
             String id = cards.get(i).getId();
             // Chaque suite, puis chaque archétype (pour une Couleur avec des cartes d'archétype).
-            List<Card> stands = new java.util.ArrayList<>();
+            List<Card> stands = new ArrayList<>();
             for (int rank = ACE; rank <= KING; rank++) {
                 for (Card.Suit suit : Card.Suit.values()) stands.add(new Card(id, "", null, List.of(), suit, rank));
                 for (Archetype archetype : Archetype.values()) {

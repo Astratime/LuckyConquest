@@ -8,6 +8,7 @@ import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.utils.Array;
 import fr.astratime.lucky.entities.enemy.EnemyKind;
 import fr.astratime.lucky.entities.enemy.EnemySymbol;
+import java.util.Random;
 
 /** Les scènes de phase et de mort des quatre rois des Mines d'Or (choix d'Astra, 2026-10-24). */
 final class MinesBossScenes {
@@ -117,7 +118,7 @@ final class MinesBossScenes {
             for (int v = 0; v < 8; v++) {
                 float side = v % 2 == 0 ? -1f : 1f, x = side < 0 ? 0f : worldWidth(), y = worldHeight() * (0.15f + 0.11f * v);
                 int segments = (int) (10 * run);
-                java.util.Random zig = new java.util.Random(v * 17L);
+                Random zig = new Random(v * 17L);
                 for (int s = 0; s < segments; s++) {
                     float nx = x - side * (40f + 30f * zig.nextFloat()), ny = y + (zig.nextFloat() - 0.5f) * 60f;
                     line(batch, GOLD, 0.9f, x, y, nx, ny, 8f);
@@ -514,7 +515,7 @@ final class MinesBossScenes {
                 rect(batch, Color.BLACK, 1f, w - gap / 2f, -60f, gap, worldHeight() + 120f);
                 float vein = progress(3.4f, 4.2f);
                 additive(batch);
-                java.util.Random zig = new java.util.Random(5L);
+                Random zig = new Random(5L);
                 float y = -60f, x = w;
                 while (y < worldHeight() + 60f) {
                     float nx = w + (zig.nextFloat() - 0.5f) * gap * 0.6f, ny = y + 60f;

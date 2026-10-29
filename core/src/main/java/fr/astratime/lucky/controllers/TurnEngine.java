@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.HashMap;
 
 /**
  * Orchestre un tour complet en séquençant les phases :
@@ -401,7 +402,7 @@ public class TurnEngine {
     private Symbol[] secondLever(SlotMachine machine, Symbol[] drawn, SpinContext spin, int tries) {
         Symbol[] resolved = machine.resolveJokers(drawn, spin);
         if (!SlotMachine.hasPair(resolved) || SlotMachine.jackpotSymbol(resolved) != null) return null;
-        Map<Symbol, Integer> counts = new java.util.HashMap<>();
+        Map<Symbol, Integer> counts = new HashMap<>();
         for (Symbol symbol : resolved) if (symbol != null) counts.merge(symbol, 1, Integer::sum);
         Symbol group = counts.entrySet().stream().max(Map.Entry.comparingByValue()).map(Map.Entry::getKey).orElse(null);
         int reel = -1;
@@ -447,7 +448,7 @@ public class TurnEngine {
      */
     private Symbol[] shortCircuit(SlotMachine machine, Symbol[] drawn, SpinContext spin) {
         Symbol[] resolved = machine.resolveJokers(drawn, spin);
-        Map<Symbol, Integer> counts = new java.util.HashMap<>();
+        Map<Symbol, Integer> counts = new HashMap<>();
         for (Symbol symbol : resolved) if (symbol != null) counts.merge(symbol, 1, Integer::sum);
         Symbol group = counts.entrySet().stream().filter(entry -> entry.getValue() >= 2)
             .max(Map.Entry.comparingByValue()).map(Map.Entry::getKey).orElse(null);
@@ -477,7 +478,7 @@ public class TurnEngine {
      */
     private static Symbol[] knockDown(SlotMachine machine, Symbol[] drawn, SpinContext spin) {
         Symbol[] resolved = machine.resolveJokers(drawn, spin);
-        Map<Symbol, Integer> counts = new java.util.HashMap<>();
+        Map<Symbol, Integer> counts = new HashMap<>();
         for (Symbol symbol : resolved) if (symbol != null) counts.merge(symbol, 1, Integer::sum);
         Symbol[] again = null;
         Symbol[] result = drawn.clone();
@@ -498,7 +499,7 @@ public class TurnEngine {
      */
     private Symbol[] tunnel(SlotMachine machine, Symbol[] drawn, SpinContext spin, boolean best) {
         Symbol[] resolved = machine.resolveJokers(drawn, spin);
-        Map<Symbol, Integer> counts = new java.util.HashMap<>();
+        Map<Symbol, Integer> counts = new HashMap<>();
         for (Symbol symbol : resolved) if (symbol != null) counts.merge(symbol, 1, Integer::sum);
         Symbol group = !best ? null : counts.entrySet().stream().filter(entry -> entry.getValue() >= 2)
             .max(Map.Entry.comparingByValue()).map(Map.Entry::getKey).orElse(null);

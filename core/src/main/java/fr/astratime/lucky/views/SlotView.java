@@ -35,6 +35,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.IntConsumer;
+import java.util.Set;
+import java.util.TreeSet;
 
 /**
  * Les rouleaux de la machine à sous, dans les fenêtres dessinées sur la table
@@ -118,7 +120,7 @@ public class SlotView implements Disposable {
     private final List<Image>                chains   = new ArrayList<>();
     private final Texture                    lockTexture;
     /** Rouleaux bloqués (Rouleau interdit, rouleaux volés par la Machine Originelle). */
-    private final java.util.Set<Integer>     blockedReels = new java.util.TreeSet<>();
+    private final Set<Integer>     blockedReels = new TreeSet<>();
     /** Rouleaux pas encore arrêtés pendant un lancer. */
     private int                              reelsSpinning;
     /** Boucle du bruit des rouleaux et suspense en cours (-1 : aucun). */
@@ -217,7 +219,7 @@ public class SlotView implements Disposable {
      * @param onAllStopped appelé quand les rouleaux sont arrêtés et les Jokers transformés
      */
     public void spin(Symbol[] symbols, Symbol[] resolved, IntConsumer onJoker, Runnable onAllStopped) {
-        java.util.Set<Integer> blocked = new java.util.TreeSet<>(blockedReels);
+        Set<Integer> blocked = new TreeSet<>(blockedReels);
         clear();
         setReelCount(symbols.length);
         setBlockedReels(blocked); // les rouleaux bloqués restent barrés pendant le tirage
@@ -325,12 +327,12 @@ public class SlotView implements Disposable {
      * ne tournera pas au prochain tirage ; -1 libère tous les rouleaux.
      */
     public void setBlockedReel(int reel) {
-        setBlockedReels(reel >= 0 ? java.util.Set.of(reel) : java.util.Set.of());
+        setBlockedReels(reel >= 0 ? Set.of(reel) : Set.of());
     }
 
     /** Comme {@link #setBlockedReel(int)}, pour plusieurs rouleaux à la fois ; un ensemble vide les libère tous. */
-    public void setBlockedReels(java.util.Set<Integer> reelsToBlock) {
-        java.util.Set<Integer> wanted = new java.util.TreeSet<>(reelsToBlock);
+    public void setBlockedReels(Set<Integer> reelsToBlock) {
+        Set<Integer> wanted = new TreeSet<>(reelsToBlock);
         blockedReels.clear();
         blockedReels.addAll(wanted);
         for (int i = 0; i < locks.size(); i++) {
@@ -352,7 +354,7 @@ public class SlotView implements Disposable {
      * Enchaîne les rouleaux {@code threatened} (une Aspiration les menace) : une
      * chaîne violette qui pulse ; un ensemble vide brise toutes les chaînes.
      */
-    public void setThreatenedReels(java.util.Set<Integer> threatened) {
+    public void setThreatenedReels(Set<Integer> threatened) {
         for (int i = 0; i < chains.size(); i++) {
             Image chain = chains.get(i);
             boolean shown = threatened.contains(i) && !blockedReels.contains(i);

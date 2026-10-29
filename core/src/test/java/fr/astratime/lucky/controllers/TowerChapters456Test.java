@@ -25,6 +25,7 @@ import java.util.Random;
 import java.util.function.Supplier;
 
 import static org.junit.jupiter.api.Assertions.*;
+import java.util.Set;
 
 /** Les chapitres 4 à 6 de la Tour des épreuves : leurs ennemis, leurs symboles et la Machine Originelle. */
 class TowerChapters456Test {
@@ -210,7 +211,7 @@ class TowerChapters456Test {
         assertEquals(2, machine.getStolenReels(), "le joueur n'a plus qu'un rouleau");
 
         TurnContext spin = new PreparationResolver().resolve(List.of(), new Player("Joueur", 100, List.of()), machine);
-        assertEquals(java.util.Set.of(0, 2), spin.getSpinContext().getBlockedReels());
+        assertEquals(Set.of(0, 2), spin.getSpinContext().getBlockedReels());
 
         machine.resetDamageTaken();
         machine.takeDamage(machine.getMaxHp());
@@ -236,7 +237,7 @@ class TowerChapters456Test {
         assertTrue(TurnEngine.score(Symbol.TRIPLE_CHERRY) > TurnEngine.score(Symbol.CHERRY));
         assertTrue(TurnEngine.score(Symbol.DOUBLE_BAR) > TurnEngine.score(Symbol.BAR));
         assertEquals(1, TurnEngine.score(Symbol.CHERRY));
-        assertEquals(Symbol.values().length, java.util.Arrays.stream(Symbol.values()).map(TurnEngine::score)
+        assertEquals(Symbol.values().length, Arrays.stream(Symbol.values()).map(TurnEngine::score)
             .distinct().filter(rank -> rank >= 1).count(), "un rang distinct pour chaque symbole");
     }
 

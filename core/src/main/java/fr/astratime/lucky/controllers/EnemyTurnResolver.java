@@ -44,6 +44,11 @@ import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.EnumSet;
+import java.util.HashMap;
+import java.util.Set;
 
 /**
  * Tour de l'ennemi : ses Épines du tour précédent piquent le joueur, puis il
@@ -302,9 +307,9 @@ public class EnemyTurnResolver {
                 + EnemyKind.CHEF_NOTHING_GOES_CARD_PERCENT * boosts.getOrDefault(EnemySignature.ANNONCE, 0)) {
             symbols[random.nextInt(symbols.length)] = EnemySymbol.NOTHING_GOES;
         }
-        Map<Integer, List<Event>> reelEvents = new java.util.HashMap<>(); // ce qui arrive à un rouleau avant qu'il agisse
+        Map<Integer, List<Event>> reelEvents = new HashMap<>(); // ce qui arrive à un rouleau avant qu'il agisse
         if (enemy.spendCoins()) { // Pièces avalées : le Bandit manchot s'offre un Jackpot
-            java.util.Arrays.fill(symbols, EnemySymbol.SWORD);
+            Arrays.fill(symbols, EnemySymbol.SWORD);
             openingEvents.add(new StatusEvent(Lang.t("PIÈCES AVALÉES : JACKPOT !"), EffectPopup.Style.SPECIAL));
         }
         armedArms(enemy, symbols, luck, reelEvents);
@@ -329,7 +334,7 @@ public class EnemyTurnResolver {
 
         // Jackpot (Bandit manchot, Jackpot Vivant) : trois symboles identiques, tout le tour est multiplié.
         boolean jackpot = kind.hitsJackpots() && symbols.length > 0
-            && java.util.Arrays.stream(symbols).allMatch(symbol -> symbol == symbols[0]);
+            && Arrays.stream(symbols).allMatch(symbol -> symbol == symbols[0]);
         boolean loadedCoin = enemy.takeLoadedCoin(); // Pièce truquée : pas de Jackpot ce tirage
         if (jackpot && loadedCoin) {
             jackpot = false;
@@ -342,7 +347,7 @@ public class EnemyTurnResolver {
         // Jackpot originel (Machine Originelle) : trois symboles pareils, et ce symbole agit cinq fois.
         int originalJackpot = kind == EnemyKind.MACHINE_ORIGINELLE ? originalJackpot(symbols) : -1;
         // Engrenages : ses autres symboles sont plus forts ; un de plus par rouleau qu'elle a pris au joueur.
-        int gears = (int) java.util.Arrays.stream(symbols).filter(symbol -> symbol == EnemySymbol.GEAR).count()
+        int gears = (int) Arrays.stream(symbols).filter(symbol -> symbol == EnemySymbol.GEAR).count()
             * (1 + boosts.getOrDefault(EnemySignature.HUILE_NOIRE, 0));
         if (kind == EnemyKind.MACHINE_ORIGINELLE) {
             int taken = enemy.getStolenReels() + enemy.getAspired();
@@ -384,7 +389,7 @@ public class EnemyTurnResolver {
             if (repeats > 1) events.add(new StatusEvent(Lang.t("QUEUE DE COMÈTE : IL AGIT DEUX FOIS"), EffectPopup.Style.SPECIAL));
             if (i == originalJackpot) {
                 EnemySymbol triple = symbols[i];
-                int same = (int) java.util.Arrays.stream(symbols).filter(symbol -> symbol == triple).count();
+                int same = (int) Arrays.stream(symbols).filter(symbol -> symbol == triple).count();
                 repeats += Math.max(0, EnemySymbol.ORIGINAL_JACKPOT_ACTS - same);
                 events.add(new StatusEvent(Lang.f("JACKPOT ORIGINEL : {0} x{1}", symbols[i].getDisplayName(),
                     EnemySymbol.ORIGINAL_JACKPOT_ACTS), EffectPopup.Style.SPECIAL));
@@ -1118,7 +1123,7 @@ public class EnemyTurnResolver {
     static List<Card> ownCards(List<Card> hand, Enemy enemy) {
         int max = enemy.getKind().getOwnPlaysPerTurn();
         List<Card> chosen = new ArrayList<>();
-        java.util.Set<EnemySignature> seen = java.util.EnumSet.noneOf(EnemySignature.class);
+        Set<EnemySignature> seen = EnumSet.noneOf(EnemySignature.class);
         for (Card card : hand) {
             EnemySignature signature = EnemySignature.of(card);
             if (chosen.size() < max && signature != null && playable(card, enemy) && seen.add(signature)) chosen.add(card);
@@ -1127,7 +1132,7 @@ public class EnemyTurnResolver {
     }
 
     /** @return un rouleau du joueur pas encore bloqué, au hasard, ou -1. */
-    private int freeReel(java.util.Set<Integer> blocked) {
+    private int freeReel(Set<Integer> blocked) {
         List<Integer> free = new ArrayList<>();
         for (int reel = 0; reel < SlotMachine.SYMBOL_COUNT; reel++) if (!blocked.contains(reel)) free.add(reel);
         return free.isEmpty() ? -1 : free.get(random.nextInt(free.size()));
@@ -1146,7 +1151,7 @@ public class EnemyTurnResolver {
      */
     private void armedArms(Enemy enemy, EnemySymbol[] symbols, Map<EnemySymbol, Integer> luck,
                            Map<Integer, List<Event>> reelEvents) {
-        long arms = java.util.Arrays.stream(symbols).filter(symbol -> symbol == EnemySymbol.ARMED_ARM).count();
+        long arms = Arrays.stream(symbols).filter(symbol -> symbol == EnemySymbol.ARMED_ARM).count();
         if (arms == 0) return;
         if (enemy.takeCharge(EnemySignature.LEVIER_GRILLE)) arms++;
         for (int k = 0; k < arms; k++) {
@@ -1181,7 +1186,7 @@ public class EnemyTurnResolver {
     static int originalJackpot(EnemySymbol[] symbols) {
         for (int i = 0; i < symbols.length; i++) {
             EnemySymbol symbol = symbols[i];
-            if (java.util.Arrays.stream(symbols).filter(other -> other == symbol).count() >= EnemySymbol.ORIGINAL_JACKPOT_COUNT) {
+            if (Arrays.stream(symbols).filter(other -> other == symbol).count() >= EnemySymbol.ORIGINAL_JACKPOT_COUNT) {
                 return i;
             }
         }
@@ -1300,7 +1305,7 @@ public class EnemyTurnResolver {
     /** IA de la Roulette Vivante : elle n'en a pas, ses {@code plays} cartes sortent au hasard. */
     private List<Card> chooseAtRandom(List<Card> hand, int plays) {
         List<Card> shuffled = new ArrayList<>(hand);
-        java.util.Collections.shuffle(shuffled, random);
+        Collections.shuffle(shuffled, random);
         return List.copyOf(shuffled.subList(0, Math.min(plays, shuffled.size())));
     }
 }

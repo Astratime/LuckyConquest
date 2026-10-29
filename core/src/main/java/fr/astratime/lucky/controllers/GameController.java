@@ -46,6 +46,9 @@ import java.util.Map;
 import java.util.Random;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.Collections;
+import java.util.Locale;
+import java.util.Set;
 
 /**
  * Gère la progression globale de la partie : possède le GameState,
@@ -78,7 +81,7 @@ public class GameController {
     private final List<EffectPopup> turnNotices = new ArrayList<>();
 
     /** Cartes de la main de ce tour piochées face cachée (une par Aveuglement de l'ennemi). */
-    private final java.util.Set<Card> hiddenCards = java.util.Collections.newSetFromMap(new java.util.IdentityHashMap<>());
+    private final Set<Card> hiddenCards = Collections.newSetFromMap(new IdentityHashMap<>());
 
     /** Cartes à jouer d'office au début de ce tour (Chant de l'ennemi). */
     private int songs = 0;
@@ -417,7 +420,7 @@ public class GameController {
     public List<EffectPopup> getTurnNotices() { return List.copyOf(turnNotices); }
 
     /** @return les cartes de la main de ce tour piochées face cachée (une par Aveuglement de l'ennemi). */
-    public java.util.Set<Card> getHiddenCards() { return java.util.Collections.unmodifiableSet(hiddenCards); }
+    public Set<Card> getHiddenCards() { return Collections.unmodifiableSet(hiddenCards); }
 
     /**
      * Chant de l'ennemi : les cartes de la main à jouer d'office ce tour, tirées
@@ -674,7 +677,7 @@ public class GameController {
 
     /** @return l'id de la carte Bingo qui impose {@code symbol} (« bingo_bell »…). */
     public static String bingoGiftId(Symbol symbol) {
-        return BINGO_GIFT_PREFIX + symbol.name().toLowerCase(java.util.Locale.ROOT);
+        return BINGO_GIFT_PREFIX + symbol.name().toLowerCase(Locale.ROOT);
     }
 
     /** @return le choix demandé au joueur par la dernière carte jouée, ou {@code null} si aucun. */

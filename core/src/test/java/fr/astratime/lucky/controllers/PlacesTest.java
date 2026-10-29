@@ -16,6 +16,7 @@ import org.junit.jupiter.api.Test;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
+import java.util.Random;
 
 /** Règles des lieux de l'Exploration (Scorbut, grisou, marée) et ennemis qui en dépendent. */
 class PlacesTest {
@@ -160,7 +161,7 @@ class PlacesTest {
             Player player = new Player("Joueur", 1_000_000, List.of());
             player.addGains(3e8); // une Morsure de 30 M : x100, plus grand qu'un int
             long before = shark.getHp();
-            new EnemyTurnResolver(new java.util.Random(seed)).resolve(shark, player, 0, 0f);
+            new EnemyTurnResolver(new Random(seed)).resolve(shark, player, 0, 0f);
             assertTrue(shark.getHp() >= before, "la Morsure soigne, elle ne blesse pas (graine " + seed + ")");
         }
     }

@@ -9,6 +9,7 @@ import java.util.EnumSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.TreeSet;
 
 /**
  * Modificateurs liés au spin pour le tour en cours.
@@ -27,7 +28,7 @@ public class SpinContext {
     /** Symbole imposé au jackpot garanti ; {@code null} : tiré au hasard. */
     private Symbol  jackpotSymbol;
     /** Rouleaux bloqués (Rouleau interdit, rouleaux volés par la Machine Originelle) : ils ne tournent pas et ne donnent rien. */
-    private final java.util.Set<Integer> blockedReels = new java.util.TreeSet<>();
+    private final Set<Integer> blockedReels = new TreeSet<>();
     /** Nouvelle règle du Directeur des Jeux : pas de Bingo possible à ce tirage. */
     private boolean noBingo = false;
     /** Nouvelle règle du Directeur des Jeux : chaque rouleau tourne deux fois et garde le pire résultat. */
@@ -86,7 +87,7 @@ public class SpinContext {
     public void blockReel(int reel) { if (reel >= 0) blockedReels.add(reel); }
 
     /** @return les rouleaux bloqués ce tirage. */
-    public java.util.Set<Integer> getBlockedReels() { return java.util.Collections.unmodifiableSet(blockedReels); }
+    public Set<Integer> getBlockedReels() { return Collections.unmodifiableSet(blockedReels); }
 
     /** Nouvelle règle : ce tirage ne peut pas faire de Bingo. */
     public void forbidBingo() { noBingo = true; }

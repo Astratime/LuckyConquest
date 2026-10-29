@@ -23,6 +23,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.*;
+import java.util.HashSet;
 
 /** Les 25 cartes des archétypes de deck (Joker, Lutin, Rentier, Bluffeur, Relanceur). */
 class ArchetypeCardsTest {
@@ -55,7 +56,7 @@ class ArchetypeCardsTest {
 
     @Test
     void theOtherArchetypeCardsAreTheTreasuresOfTheNewPlaces() {
-        java.util.Set<String> loot = new java.util.HashSet<>();
+        Set<String> loot = new HashSet<>();
         for (fr.astratime.lucky.entities.exploration.Dungeon dungeon : fr.astratime.lucky.entities.exploration.Dungeon.values()) {
             dungeon.getLoot().forEach(entry -> loot.add(entry.cardId()));
         }

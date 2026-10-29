@@ -23,6 +23,10 @@ import fr.astratime.lucky.i18n.Lang;
 import fr.astratime.lucky.popups.EffectPopup;
 
 import java.util.List;
+import java.util.ArrayList;
+import java.util.Random;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Phase 1 : applique les effets des cartes jouées par le joueur
@@ -35,7 +39,7 @@ import java.util.List;
 public class PreparationResolver {
 
     /** Le hasard du Manège (Fête foraine). */
-    private final java.util.Random carousel = new java.util.Random();
+    private final Random carousel = new Random();
 
     /** Attaque ajoutée à chaque symbole par Lame (Pique). */
     public static final int BLADE_ATTACK = 20;
@@ -78,7 +82,7 @@ public class PreparationResolver {
         if (stolen >= 2) spinContext.blockReel(0);
         lasting.takeVoidReels().forEach(spinContext::blockReel); // Rien ne va plus du Croupier en chef
         if (rule.carouselTurns(turn)) { // Manège (Fête foraine) : un rouleau au hasard tourne avec le manège
-            List<Integer> free = new java.util.ArrayList<>();
+            List<Integer> free = new ArrayList<>();
             for (int reel = 0; reel < SlotMachine.SYMBOL_COUNT; reel++) if (!spinContext.getBlockedReels().contains(reel)) free.add(reel);
             if (!free.isEmpty()) {
                 spinContext.blockReel(free.get(carousel.nextInt(free.size())));
@@ -225,7 +229,7 @@ public class PreparationResolver {
     }
 
     /** @return le prochain rouleau que l'Aspiration prend (droite, gauche, milieu), ou -1 s'ils sont tous bloqués. */
-    public static int aspiredReel(java.util.Set<Integer> blocked) {
+    public static int aspiredReel(Set<Integer> blocked) {
         int[] order = {SlotMachine.SYMBOL_COUNT - 1, 0, 1};
         for (int reel : order) if (!blocked.contains(reel)) return reel;
         return -1;
@@ -247,7 +251,7 @@ public class PreparationResolver {
         List<Combo> combos = Combo.formed(player.getPlayedCards());
         if (combos.isEmpty()) return;
         float total = Combo.totalFactor(combos) + combat.getComboBonus() * combos.size(); // Chope
-        String names = combos.stream().map(Combo::getDisplayName).collect(java.util.stream.Collectors.joining(" + "));
+        String names = combos.stream().map(Combo::getDisplayName).collect(Collectors.joining(" + "));
         combat.multiplyGains(total, names);
         combat.multiplyAttack(total, names);
         for (Combo combo : combos) {

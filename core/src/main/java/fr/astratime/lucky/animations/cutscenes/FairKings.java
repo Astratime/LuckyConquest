@@ -10,6 +10,7 @@ import com.badlogic.gdx.utils.FloatArray;
 import fr.astratime.lucky.assets.FairDesertPortraits;
 import fr.astratime.lucky.entities.enemy.EnemyKind;
 import fr.astratime.lucky.entities.enemy.EnemySymbol;
+import java.util.Random;
 
 /**
  * Les rois de la Fête foraine entrent en scène (choix d'Astra, 2026-10-24) :
@@ -89,7 +90,7 @@ public class FairKings extends KingEntrance {
     private void cutPieces() {
         int[][][] layers = {FairDesertPortraits.wheelLayer(0), FairDesertPortraits.wheelLayer(1), FairDesertPortraits.wheelLayer(2)};
         int width = king.getRegionWidth(), height = king.getRegionHeight();
-        java.util.Random seed = new java.util.Random(7);
+        Random seed = new Random(7);
         for (int ty = 0; ty < height; ty += PIECE) {
             for (int tx = 0; tx < width; tx += PIECE) {
                 int w = Math.min(PIECE, width - tx), h = Math.min(PIECE, height - ty);

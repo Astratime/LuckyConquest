@@ -33,6 +33,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
+import java.util.Map;
 
 /** Les nouvelles cartes de la boutique. */
 class ShopCardsTest {
@@ -138,7 +139,7 @@ class ShopCardsTest {
     void theSafeKeepsGainsAsideAndGivesThemBackDoubledAfterThreeTurns() {
         Card safe = card("coffre", new SafeEffect(30, 3));
         // Un joueur solide : il ne doit pas tomber avant l'ouverture du coffre
-        GameController controller = new GameController(() -> new ArrayList<>(List.of(safe)), id -> null, java.util.Map.of(),
+        GameController controller = new GameController(() -> new ArrayList<>(List.of(safe)), id -> null, Map.of(),
             cards -> new Player("Joueur", 1_000_000, cards));
         controller.drawCards();
         player(controller).addGains(1000);

@@ -7,6 +7,7 @@ import com.badlogic.gdx.math.Interpolation;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.utils.Array;
 import fr.astratime.lucky.entities.enemy.EnemyKind;
+import java.util.Random;
 
 /**
  * Les rois des Mines d'Or entrent en scène :
@@ -306,7 +307,7 @@ public class MinesKings extends KingEntrance {
     private void drawCave(Batch batch) {
         float width = worldWidth(), height = worldHeight();
         gradient(batch, ROCK, ROCK_DARK);
-        java.util.Random veins = new java.util.Random(kind.ordinal() * 31L);
+        Random veins = new Random(kind.ordinal() * 31L);
         additive(batch);
         for (int i = 0; i < 18; i++) {                              // veines d'or
             float x = width * veins.nextFloat(), y = height * (0.2f + 0.8f * veins.nextFloat());
@@ -387,7 +388,7 @@ public class MinesKings extends KingEntrance {
     private void drawDriller(Batch batch) {
         float width = worldWidth(), height = worldHeight(), y = height * 0.5f;
         // Le mur de roche, en gros blocs.
-        java.util.Random blocks = new java.util.Random(7);
+        Random blocks = new Random(7);
         for (int i = 0; i < 60; i++) {
             float bx = width * blocks.nextFloat() - 100f, by = height * blocks.nextFloat() - 60f;
             rect(batch, blocks.nextBoolean() ? c("3a281c") : c("241810"), bx, by, 160f + 160f * blocks.nextFloat(),
@@ -548,7 +549,7 @@ public class MinesKings extends KingEntrance {
             glow(batch, heartX(), heartY(), 600f * pulse(8f, 0.7f) * (1f + 1.5f * beat), GOLD, 0.4f * k + 0.4f * beat);
         }
         // Les murs se fissurent à chaque battement : des éclairs d'or dans la roche.
-        java.util.Random cracks = new java.util.Random(3);
+        Random cracks = new Random(3);
         for (int i = 0; i < 9; i++) {
             float sx = worldWidth() * (i < 5 ? 0.02f + 0.06f * i : 0.98f - 0.06f * (i - 5)), sy = worldHeight()
                 * (0.3f + 0.6f * cracks.nextFloat());

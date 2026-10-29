@@ -8,6 +8,7 @@ import com.badlogic.gdx.math.Interpolation;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.utils.Array;
 import fr.astratime.lucky.entities.enemy.EnemyKind;
+import java.util.Random;
 
 /**
  * L'entrée en scène d'un roi de l'Exploration, entre le soldat et le roi :
@@ -251,7 +252,7 @@ public abstract class KingEntrance extends Cutscene {
     /** Un éclair zigzag de ({@code x}, haut de l'écran) jusqu'à {@code bottom}, dessiné {@code seed} par {@code seed}. */
     protected void bolt(Batch batch, float x, float bottom, long seed, float alpha) {
         if (alpha <= 0f) return;
-        java.util.Random zig = new java.util.Random(seed);
+        Random zig = new Random(seed);
         float y = worldHeight() + MARGIN, step = (y - bottom) / 9f;
         additive(batch);
         for (int i = 0; i < 9; i++) {

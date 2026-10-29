@@ -4,6 +4,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Iterator;
+import java.util.Random;
 
 /**
  * Le joueur : points de vie, deck/défausse/main courante, machine à sous
@@ -449,7 +451,7 @@ public class Player {
      */
     public List<Card> returnStolenCards() {
         List<Card> returned = new ArrayList<>();
-        for (java.util.Iterator<StolenCard> it = stolen.iterator(); it.hasNext(); ) {
+        for (Iterator<StolenCard> it = stolen.iterator(); it.hasNext(); ) {
             StolenCard theft = it.next();
             if (theft.turnsLeft > 0) {
                 theft.turnsLeft--;
@@ -468,7 +470,7 @@ public class Player {
      *
      * @return la carte confisquée, ou {@code null} s'il n'y en avait plus
      */
-    public Card frisk(java.util.Random random) {
+    public Card frisk(Random random) {
         List<Card> pile = !deck.getCards().isEmpty() ? deck.getCards() : discardPile.getCards();
         if (pile.isEmpty()) return null;
         Card card = pile.get(random.nextInt(pile.size()));

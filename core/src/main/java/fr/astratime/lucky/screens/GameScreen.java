@@ -155,6 +155,12 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.ToIntFunction;
+import java.util.Collections;
+import java.util.IdentityHashMap;
+import java.util.Random;
+import java.util.Set;
+import java.util.TreeSet;
+import java.util.function.Predicate;
 
 /**
  * Écran de combat. Responsabilité : orchestrer l'affichage et transmettre les
@@ -977,8 +983,8 @@ public class GameScreen extends ScreenAdapter {
         showReelCount(result.getDrawnSymbols().length);
         // Aspiration : le panneau s'efface ; un rouleau aspiré (vide au tirage) est barré comme un rouleau bloqué
         aspirationPanel.update(List.of(), List.of());
-        slots.setThreatenedReels(java.util.Set.of());
-        java.util.Set<Integer> empty = new java.util.TreeSet<>();
+        slots.setThreatenedReels(Set.of());
+        Set<Integer> empty = new TreeSet<>();
         for (int i = 0; i < result.getDrawnSymbols().length; i++) if (result.getDrawnSymbols()[i] == null) empty.add(i);
         slots.setBlockedReels(empty);
         Symbol[] rerolled = result.getRerolledDraw();
@@ -1041,7 +1047,7 @@ public class GameScreen extends ScreenAdapter {
     private void recordTurn(TurnResult result) {
         recap.record(result);
         if (tutorial != null) return;
-        java.util.Set<Event> events = java.util.Collections.newSetFromMap(new java.util.IdentityHashMap<>());
+        Set<Event> events = Collections.newSetFromMap(new IdentityHashMap<>());
         events.addAll(result.getEvents());
         events.addAll(result.getCardEvents());
         long bestHit = 0L;
@@ -1278,8 +1284,8 @@ public class GameScreen extends ScreenAdapter {
      * @return les rouleaux du joueur barrés au prochain tirage : {@code forbidden}
      *         (Rouleau interdit, -1 : aucun) et ceux volés par la Machine Originelle
      */
-    private java.util.Set<Integer> blockedReels() {
-        java.util.Set<Integer> blocked = new java.util.TreeSet<>(player().getLastingEffects().getForbiddenReels());
+    private Set<Integer> blockedReels() {
+        Set<Integer> blocked = new TreeSet<>(player().getLastingEffects().getForbiddenReels());
         int stolen = gameController.getGameState().getEnemy().getStolenReels();
         if (stolen >= 1) blocked.add(SlotMachine.SYMBOL_COUNT - 1);
         if (stolen >= 2) blocked.add(0);
@@ -1593,7 +1599,7 @@ public class GameScreen extends ScreenAdapter {
      */
     private void openChest(int left) {
         DungeonRun dungeonRun = (DungeonRun) run;
-        String cardId = dungeonRun.getDungeon().rollLoot(new java.util.Random());
+        String cardId = dungeonRun.getDungeon().rollLoot(new Random());
         PlayerProfile.ChestReward reward = luckyGame.getProfile().openChest(cardId,
             Place.of(dungeonRun.getDungeon()));
         chestOverlay.getActor().toFront();
@@ -1805,7 +1811,7 @@ public class GameScreen extends ScreenAdapter {
         @Override public Rectangle enemyBar()  { return GuideOverlay.boundsOf(hud.getEnemyHealthBar()); }
         @Override public Rectangle playerBar() { return GuideOverlay.boundsOf(hud.getPlayerHealthBar()); }
         @Override public Rectangle enemy()     { return GuideOverlay.around(enemyView.getCroupierCenter(), 260f, 260f); }
-        @Override public Rectangle hand(java.util.function.Predicate<Card> which) { return GameScreen.this.hand.boundsOf(which); }
+        @Override public Rectangle hand(Predicate<Card> which) { return GameScreen.this.hand.boundsOf(which); }
         @Override public Rectangle spinButton() { return GuideOverlay.boundsOf(spinControls.getLever()); }
         @Override public Rectangle stakeButton() { return GuideOverlay.boundsOf(spinControls.getStakeButton()); }
         @Override public Rectangle reels() {
@@ -1933,10 +1939,10 @@ public class GameScreen extends ScreenAdapter {
         List<AspirationRule> rules = player().getLastingEffects().getAspirations();
         List<Card> played = player().getPlayedCards();
         aspirationPanel.update(rules, played);
-        java.util.Set<Integer> blocked = blockedReels(), threatened = new java.util.TreeSet<>();
+        Set<Integer> blocked = blockedReels(), threatened = new TreeSet<>();
         for (AspirationRule rule : rules) {
             if (rule.isMet(played)) continue;
-            java.util.Set<Integer> taken = new java.util.TreeSet<>(blocked);
+            Set<Integer> taken = new TreeSet<>(blocked);
             taken.addAll(threatened);
             int reel = PreparationResolver.aspiredReel(taken);
             if (reel >= 0) threatened.add(reel);

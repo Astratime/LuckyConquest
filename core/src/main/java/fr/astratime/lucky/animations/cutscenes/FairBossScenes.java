@@ -8,6 +8,7 @@ import com.badlogic.gdx.math.MathUtils;
 import fr.astratime.lucky.assets.FairDesertPortraits;
 import fr.astratime.lucky.entities.enemy.EnemyKind;
 import fr.astratime.lucky.entities.enemy.EnemySymbol;
+import java.util.Random;
 
 /** Les scènes de phase et de mort des quatre rois de la Fête foraine (choix d'Astra, 2026-10-24). */
 final class FairBossScenes {
@@ -388,7 +389,7 @@ final class FairBossScenes {
             super(kit, Moment.DEATH, 0);
             tomato = art("ogrw", new Color[] {c("6a0a0a"), c("3a8a2a"), c("d8202c"), c("ff8a8a")}, TOMATO);
             splat = art("rs", new Color[] {c("c8102e"), c("f0d060")}, SPLAT);
-            java.util.Random seed = new java.util.Random(11);
+            Random seed = new Random(11);
             for (int i = 0; i < THROWS.length; i++) {
                 aimRadius[i] = 3f + 9f * seed.nextFloat();
                 aimAngle[i] = seed.nextFloat() * 360f;

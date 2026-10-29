@@ -12,6 +12,7 @@ import com.badlogic.gdx.utils.Array;
 import fr.astratime.lucky.entities.enemy.EnemyKind;
 import fr.astratime.lucky.entities.enemy.EnemySymbol;
 import fr.astratime.lucky.i18n.Lang;
+import java.util.Random;
 
 /**
  * Socle des cinématiques de phase et de mort des boss et des rois : chaque boss a
@@ -290,7 +291,7 @@ public abstract class BossScene extends Cutscene {
 
     /** Une fissure en zigzag, comme un éclair, de ({@code x}, {@code y}) vers {@code angle} sur {@code length}. */
     protected void crack(Batch batch, float x, float y, float angle, float length, long seed, Color color, float alpha, float thick) {
-        java.util.Random zig = new java.util.Random(seed);
+        Random zig = new Random(seed);
         int steps = 7;
         float px = x, py = y;
         for (int i = 1; i <= steps; i++) {
@@ -428,7 +429,7 @@ public abstract class BossScene extends Cutscene {
     /** Un éclair zigzag du haut de l'écran jusqu'à {@code bottom}. */
     protected void bolt(Batch batch, float x, float bottom, long seed, float alpha) {
         if (alpha <= 0f) return;
-        java.util.Random zig = new java.util.Random(seed);
+        Random zig = new Random(seed);
         float y = worldHeight() + MARGIN, stepY = (y - bottom) / 9f;
         additive(batch);
         for (int i = 0; i < 9; i++) {

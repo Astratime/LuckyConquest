@@ -17,6 +17,7 @@ import fr.astratime.lucky.settings.ScreenModeSwitcher;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 /** {@link com.badlogic.gdx.ApplicationListener} implementation shared by all platforms. */
 public class LuckyGame extends Game {
@@ -115,7 +116,7 @@ public class LuckyGame extends Game {
     private void load(int newSlot, boolean fresh) {
         boolean admin = profile != null && profile.isAdmin();
         SecureProfileStorage storage = fresh
-            ? new SecureProfileStorage(slots.file(newSlot), java.util.Map::of, () -> { })
+            ? new SecureProfileStorage(slots.file(newSlot), Map::of, () -> { })
             : GdxProfileStorage.open(slots, newSlot);
         slot    = newSlot;
         profile = new PlayerProfile(storage, CardLoader.loadStartingCollection(),

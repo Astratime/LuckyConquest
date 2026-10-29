@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.function.Supplier;
 
 import static org.junit.jupiter.api.Assertions.*;
+import java.util.Random;
 
 /** Les ennemis des chapitres 2 et 3 de la Tour des épreuves et leurs nouveaux symboles. */
 class TowerChaptersTest {
@@ -37,7 +38,7 @@ class TowerChaptersTest {
     /** Un tour de {@code enemy} dont les rouleaux montrent {@code symbol} (en cherchant la graine). */
     private static EnemyTurnResult turnWith(EnemySymbol symbol, Supplier<Enemy> enemy, Supplier<Player> player) {
         for (int seed = 0; seed < 500; seed++) {
-            EnemyTurnResult turn = new EnemyTurnResolver(new java.util.Random(seed)).resolve(enemy.get(), player.get(), 0, 0f);
+            EnemyTurnResult turn = new EnemyTurnResolver(new Random(seed)).resolve(enemy.get(), player.get(), 0, 0f);
             if (Arrays.asList(turn.symbols()).contains(symbol)) return turn;
         }
         throw new AssertionError("aucun tirage avec " + symbol);
@@ -97,7 +98,7 @@ class TowerChaptersTest {
     @Test
     void theZeroSpinsOneRoulettePerSymbol() {
         for (int seed = 0; seed < 60; seed++) {
-            EnemyTurnResult turn = new EnemyTurnResolver(new java.util.Random(seed))
+            EnemyTurnResult turn = new EnemyTurnResolver(new Random(seed))
                 .resolve(plain(EnemyKind.ROULETTE), new Player("Joueur", 1_000_000, List.of()), 0, 0f);
             List<EnemyRouletteEvent> roulettes = events(turn, EnemyRouletteEvent.class);
             assertEquals(count(turn, EnemySymbol.ZERO), roulettes.size());
@@ -192,7 +193,7 @@ class TowerChaptersTest {
         Enemy enemy = plain(EnemyKind.ECLAT);
         assertFalse(enemy.enterPhaseTwo());
         enemy.takeDamage(enemy.getMaxHp() / 2 + 1);
-        EnemyTurnResult turn = new EnemyTurnResolver(new java.util.Random(1))
+        EnemyTurnResult turn = new EnemyTurnResolver(new Random(1))
             .resolve(enemy, new Player("Joueur", 1_000_000, List.of()), 0, 0f);
         assertInstanceOf(EnemyPhaseEvent.class, turn.openingEvents().get(0));
         assertEquals(2, enemy.getPhase());

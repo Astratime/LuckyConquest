@@ -19,6 +19,7 @@ import java.util.List;
 import java.util.Random;
 
 import static org.junit.jupiter.api.Assertions.*;
+import java.util.Arrays;
 
 class EnemyTurnResolverTest {
 
@@ -103,7 +104,7 @@ class EnemyTurnResolverTest {
             EnemyTurnResult turn = new EnemyTurnResolver(new Random(seed))
                 .resolve(enemy, player, 0, 0f, 0, List.of(), 3.75f);
 
-            boolean swords = java.util.Arrays.stream(turn.symbols()).anyMatch(s -> s == EnemySymbol.SWORD);
+            boolean swords = Arrays.stream(turn.symbols()).anyMatch(s -> s == EnemySymbol.SWORD);
             boolean reflected = turn.afterEvents().stream()
                 .anyMatch(e -> e instanceof DamageReflectedEvent r && r.damage == 37_500);
             if (swords) assertTrue(reflected, "3,75 % de 1 000 000 renvoyés quand il attaque");
@@ -124,7 +125,7 @@ class EnemyTurnResolverTest {
 
             EnemyTurnResult turn = new EnemyTurnResolver(new Random(seed)).resolve(enemy, player, 50, 0f);
 
-            int swords = (int) java.util.Arrays.stream(turn.symbols()).filter(s -> s == EnemySymbol.SWORD).count();
+            int swords = (int) Arrays.stream(turn.symbols()).filter(s -> s == EnemySymbol.SWORD).count();
             if (swords == 0) continue;
             attacked = swords;
             assertEquals(1000, player.getHp(), "le bouclier absorbe les Épées");

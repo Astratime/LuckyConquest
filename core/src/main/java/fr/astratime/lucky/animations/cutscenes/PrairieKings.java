@@ -6,6 +6,7 @@ import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.Interpolation;
 import com.badlogic.gdx.math.MathUtils;
 import fr.astratime.lucky.entities.enemy.EnemyKind;
+import java.util.Random;
 
 /**
  * Les rois de la prairie entrent en scène, au fond de leur donjon de pierre :
@@ -561,7 +562,7 @@ public class PrairieKings extends KingEntrance {
         rect(batch, c("b8945a"), left - 8f, bottom - 8f, edge - left + 16f, mapH + 16f);
         rect(batch, c("e8d4a0"), left, bottom, edge - left, mapH);
         // Les dessins de la carte, découverts à mesure qu'elle se déroule.
-        java.util.Random marks = new java.util.Random(5);
+        Random marks = new Random(5);
         for (int i = 0; i < 16; i++) {
             float x = left + 40f + (mapW - 80f) * marks.nextFloat(), y = bottom + 40f + (mapH - 80f) * marks.nextFloat();
             if (x > edge - 30f) continue;

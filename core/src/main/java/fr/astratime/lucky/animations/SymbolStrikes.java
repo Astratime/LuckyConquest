@@ -21,6 +21,7 @@ import java.util.EnumMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.ArrayDeque;
 
 /**
  * Animation propre à chaque symbole tiré par le joueur, qui part de son
@@ -1140,7 +1141,7 @@ public class SymbolStrikes extends Actor implements Disposable {
         int width = source.getWidth(), height = source.getHeight();
         int background = source.getPixel(0, 0);
         boolean[] clear = new boolean[width * height];
-        java.util.ArrayDeque<Integer> queue = new java.util.ArrayDeque<>();
+        ArrayDeque<Integer> queue = new ArrayDeque<>();
         for (int x = 0; x < width; x++) { queue.add(x); queue.add((height - 1) * width + x); }
         for (int y = 0; y < height; y++) { queue.add(y * width); queue.add(y * width + width - 1); }
         while (!queue.isEmpty()) {

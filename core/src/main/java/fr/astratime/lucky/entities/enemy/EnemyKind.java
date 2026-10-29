@@ -1,5 +1,6 @@
 package fr.astratime.lucky.entities.enemy;
 
+import fr.astratime.lucky.entities.tower.Chapter;
 import fr.astratime.lucky.entities.Card;
 import fr.astratime.lucky.entities.Enemy;
 import fr.astratime.lucky.entities.SpinEconomy;
@@ -739,15 +740,17 @@ public enum EnemyKind {
         List.of(Card.Suit.COEUR, Card.Suit.CARREAU, Card.Suit.PIQUE, Card.Suit.TREFLE));
 
     /** Force des ennemis du chapitre 2, en % : leurs attaques, défenses et effets sont multipliés d'autant. */
-    public static final int CHAPTER_2_POWER = 200;
+    /** Force gagnée à chaque chapitre de la Tour, en % (chapitre n : n x 100 %). */
+    public static final int CHAPTER_POWER_STEP = 100;
+    public static final int CHAPTER_2_POWER = 2 * CHAPTER_POWER_STEP;
     /** Multiplicateur des PV des ennemis de la Tour des épreuves (le joueur gagne des rangs à la boutique). */
     public static final int TOWER_HP_FACTOR = 5;
     /** Force des ennemis du chapitre 3, en %. */
-    public static final int CHAPTER_3_POWER = 300;
+    public static final int CHAPTER_3_POWER = 3 * CHAPTER_POWER_STEP;
     /** Force des ennemis des chapitres 4, 5 et 6, en % (choix d'Astra : le rang rendra le joueur plus fort). */
-    public static final int CHAPTER_4_POWER = 400;
-    public static final int CHAPTER_5_POWER = 500;
-    public static final int CHAPTER_6_POWER = 600;
+    public static final int CHAPTER_4_POWER = 4 * CHAPTER_POWER_STEP;
+    public static final int CHAPTER_5_POWER = 5 * CHAPTER_POWER_STEP;
+    public static final int CHAPTER_6_POWER = 6 * CHAPTER_POWER_STEP;
 
     /**
      * Mode difficile de la Tour (« Nouveau tirage + », ouvert après la Machine
@@ -839,15 +842,7 @@ public enum EnemyKind {
 
     /** @return {@code true} pour un ennemi de la Tour des épreuves (voir {@link fr.astratime.lucky.entities.tower.Chapter}). */
     public boolean isTower() {
-        return switch (this) {
-            case CROUPIER, GARDIEN, SANGSUE, BRETTEUR, COMETE,
-                 CHEF, TRICHEUR, USURIER, ROULETTE, REINE,
-                 GARDIENNE, MIROIR, HORLOGER, FOU, ECLAT,
-                 PILLEUR, FAUSSAIRE, CARTOMANCIENNE, DUELLISTE, PRETENDANT,
-                 PORTIER, COMPTABLE, DIRECTEUR, SECURITE, MAISON,
-                 GARDIEN_LEVIER, OMBRE, BANQUEROUTE, TEMPS_MORT, MACHINE_ORIGINELLE -> true;
-            default -> false;
-        };
+        return Chapter.of(this) != null;
     }
     /**
      * @return sa défense de base (renforcée par sa {@linkplain #getPower() force}), reformée à chacun de ses tours :
@@ -884,16 +879,10 @@ public enum EnemyKind {
         return SpinEconomy.BASE_SPIN_COST;
     }
 
-    /** @return sa force en mode normal, en %, selon son chapitre. */
+    /** @return sa force en mode normal, en % : 100 par numéro de chapitre de la Tour, 100 hors de la Tour. */
     private int chapterPower() {
-        return switch (this) {
-            case CHEF, TRICHEUR, USURIER, ROULETTE, REINE -> CHAPTER_2_POWER;
-            case GARDIENNE, MIROIR, HORLOGER, FOU, ECLAT  -> CHAPTER_3_POWER;
-            case PILLEUR, FAUSSAIRE, CARTOMANCIENNE, DUELLISTE, PRETENDANT -> CHAPTER_4_POWER;
-            case PORTIER, COMPTABLE, DIRECTEUR, SECURITE, MAISON -> CHAPTER_5_POWER;
-            case GARDIEN_LEVIER, OMBRE, BANQUEROUTE, TEMPS_MORT, MACHINE_ORIGINELLE -> CHAPTER_6_POWER;
-            default -> 100;
-        };
+        Chapter chapter = Chapter.of(this);
+        return chapter == null ? CHAPTER_POWER_STEP : chapter.getNumber() * CHAPTER_POWER_STEP;
     }
 
     /** Dégâts de base d'une Épée du croupier d'entraînement. */

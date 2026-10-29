@@ -19,6 +19,11 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.EnumSet;
+import java.util.LinkedHashSet;
+import java.util.Set;
+import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 /**
  * Ce que le joueur garde d'une partie à l'autre, enregistré dans un
@@ -115,34 +120,34 @@ public class PlayerProfile {
     /** Rouleaux de la machine du joueur. */
     private final List<Symbol> machine     = new ArrayList<>();
     /** Donjons de l'Exploration vidés (leur chef battu), par nom. */
-    private final java.util.Set<String> clearedDungeons = new java.util.LinkedHashSet<>();
+    private final Set<String> clearedDungeons = new LinkedHashSet<>();
     /** Lieux ouverts par l'ancien ordre (Prairie, Port, Mines, Casino), gardés ouverts. */
-    private final java.util.Set<String> openedPlaces = new java.util.LinkedHashSet<>();
+    private final Set<String> openedPlaces = new LinkedHashSet<>();
     /** Chapitres de la Tour terminés (leur boss battu), en mode normal puis en mode difficile, par nom. */
-    private final java.util.Set<String> clearedChapters     = new java.util.LinkedHashSet<>();
-    private final java.util.Set<String> clearedHardChapters = new java.util.LinkedHashSet<>();
+    private final Set<String> clearedChapters     = new LinkedHashSet<>();
+    private final Set<String> clearedHardChapters = new LinkedHashSet<>();
     /** Mode ADMIN : tout le contenu du jeu est ouvert, sans toucher à la progression enregistrée. */
     private boolean admin;
     /** Toutes les cartes à collectionner, par id (voir {@link #setCatalog(Collection)}). */
-    private final java.util.Set<String> catalog = new java.util.LinkedHashSet<>();
+    private final Set<String> catalog = new LinkedHashSet<>();
     /** Cartes que seul le mode ADMIN donne (voir {@link #setAdminOnlyCards(Collection)}). */
-    private final java.util.Set<String> adminOnly = new java.util.LinkedHashSet<>();
+    private final Set<String> adminOnly = new LinkedHashSet<>();
     /** Cartes qui ont une version « + », par id (voir {@link #setUpgradable(Collection)}). */
-    private final java.util.Set<String> upgradable = new java.util.LinkedHashSet<>();
+    private final Set<String> upgradable = new LinkedHashSet<>();
     /** Deck et machine du mode ADMIN, séparés de ceux de la partie. */
     private final Map<String, Integer> adminDeck    = new LinkedHashMap<>();
     private final List<Symbol>         adminMachine = new ArrayList<>();
     /** Guides du Croupier déjà vus, par nom (voir {@link #GUIDE_TUTORIAL}...). */
-    private final java.util.Set<String> seenGuides = new java.util.LinkedHashSet<>();
+    private final Set<String> seenGuides = new LinkedHashSet<>();
     /** Symboles dont la célébration de Bingo a été vue jusqu'au bout, par nom : elle se passe d'un clic. */
-    private final java.util.Set<String> seenBingos = new java.util.LinkedHashSet<>();
+    private final Set<String> seenBingos = new LinkedHashSet<>();
     /** Statistiques de la partie (le mode ADMIN et le tutoriel n'y comptent pas). */
     private final PlayerStats stats;
     /** Succès atteints, dans l'ordre (leur récompense est déjà versée). */
-    private final java.util.Set<Achievement> achievements = java.util.EnumSet.noneOf(Achievement.class);
+    private final Set<Achievement> achievements = EnumSet.noneOf(Achievement.class);
     /** Bestiaire : ennemis rencontrés, et parmi eux ceux qui ont été vaincus. */
-    private final java.util.Set<EnemyKind> metEnemies      = java.util.EnumSet.noneOf(EnemyKind.class);
-    private final java.util.Set<EnemyKind> defeatedEnemies = java.util.EnumSet.noneOf(EnemyKind.class);
+    private final Set<EnemyKind> metEnemies      = EnumSet.noneOf(EnemyKind.class);
+    private final Set<EnemyKind> defeatedEnemies = EnumSet.noneOf(EnemyKind.class);
     /** Cagnottes du Jeu bonus gardées d'une partie à l'autre : une par lieu de l'Exploration, et l'Entraînement. */
     private final Map<String, Double> pots      = new LinkedHashMap<>();
     /** Cagnottes du mode ADMIN : jamais enregistrées, ses combats ne rapportent rien. */
@@ -186,7 +191,7 @@ public class PlayerProfile {
         readNames(storage.get(KEY_GUIDES), seenGuides);
         readNames(storage.get(KEY_BINGOS), seenBingos);
         stats = PlayerStats.decode(storage.get(KEY_STATS));
-        java.util.Set<String> achieved = new java.util.LinkedHashSet<>();
+        Set<String> achieved = new LinkedHashSet<>();
         readNames(storage.get(KEY_ACHIEVEMENTS), achieved);
         for (Achievement achievement : Achievement.values()) {
             if (achieved.contains(achievement.name())) achievements.add(achievement);
@@ -245,8 +250,8 @@ public class PlayerProfile {
         metEnemies.addAll(defeatedEnemies);
     }
 
-    private static void readEnemies(String text, java.util.Set<EnemyKind> enemies) {
-        java.util.Set<String> names = new java.util.LinkedHashSet<>();
+    private static void readEnemies(String text, Set<EnemyKind> enemies) {
+        Set<String> names = new LinkedHashSet<>();
         readNames(text, names);
         for (EnemyKind kind : EnemyKind.values()) if (names.contains(kind.name())) enemies.add(kind);
     }
@@ -276,9 +281,9 @@ public class PlayerProfile {
     }
 
     private void saveBestiary() {
-        storage.put(KEY_MET, metEnemies.stream().map(Enum::name).collect(java.util.stream.Collectors.joining(",")));
+        storage.put(KEY_MET, metEnemies.stream().map(Enum::name).collect(Collectors.joining(",")));
         storage.put(KEY_DEFEATED,
-            defeatedEnemies.stream().map(Enum::name).collect(java.util.stream.Collectors.joining(",")));
+            defeatedEnemies.stream().map(Enum::name).collect(Collectors.joining(",")));
         storage.flush();
     }
 
@@ -469,7 +474,7 @@ public class PlayerProfile {
      * Met à jour les statistiques avec {@code change}, puis les enregistre ;
      * rien en mode ADMIN (ses combats ne comptent pas).
      */
-    public void recordStats(java.util.function.Consumer<PlayerStats> change) {
+    public void recordStats(Consumer<PlayerStats> change) {
         if (admin) return;
         change.accept(stats);
         storage.put(KEY_STATS, stats.encode());
@@ -1050,7 +1055,7 @@ public class PlayerProfile {
         storage.put(KEY_COLLECTION, encode(collection));
         storage.put(KEY_DECK, encode(deck));
         storage.put(KEY_DECK_SLOTS, deckSlots.stream().map(PlayerProfile::encode)
-            .collect(java.util.stream.Collectors.joining("|")));
+            .collect(Collectors.joining("|")));
         storage.put(KEY_DECK_SLOT, String.valueOf(deckSlot));
         storage.put(KEY_COINS, String.valueOf(coins));
         storage.put(KEY_RANK, String.valueOf(ranks));
@@ -1063,13 +1068,13 @@ public class PlayerProfile {
         storage.put(KEY_ADMIN_DECK, encode(adminDeck));
         storage.put(KEY_ADMIN_MACHINE, encodeSymbols(adminMachine));
         storage.put(KEY_STATS, stats.encode());
-        storage.put(KEY_ACHIEVEMENTS, achievements.stream().map(Enum::name).collect(java.util.stream.Collectors.joining(",")));
+        storage.put(KEY_ACHIEVEMENTS, achievements.stream().map(Enum::name).collect(Collectors.joining(",")));
         storage.put(KEY_POTS, encodePots(pots));
         saveBestiary();
     }
 
     /** Ajoute à {@code names} les noms de {@code text} ("a,b,c" ; rien si {@code null}). */
-    private static void readNames(String text, java.util.Set<String> names) {
+    private static void readNames(String text, Set<String> names) {
         if (text == null) return;
         for (String name : text.split(",")) if (!name.isBlank()) names.add(name.trim());
     }

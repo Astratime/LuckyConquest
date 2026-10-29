@@ -24,6 +24,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
+import java.util.Set;
+import java.util.TreeSet;
 
 /**
  * Les lignes du panneau « Effets » de l'écran de combat : chaque effet actif
@@ -256,7 +258,7 @@ final class CombatEffectRows {
         }
         if (lasting.hasNugget()) rows.add(curse(skull, Lang.t("Pépite"), EnemySymbol.NUGGET, kind));
         if (lasting.getSongs() > 0) rows.add(curse(skull, Lang.f("Chant x{0}", lasting.getSongs()), EnemySymbol.SONG, kind));
-        java.util.Set<Integer> voids = new java.util.TreeSet<>(lasting.getForbiddenReels());
+        Set<Integer> voids = new TreeSet<>(lasting.getForbiddenReels());
         voids.remove(lasting.getForbiddenReel()); // le Rouleau interdit a sa propre ligne
         if (!voids.isEmpty()) rows.add(curse(skull, Lang.f("Rien ne va plus x{0}", voids.size()), EnemySymbol.NOTHING_GOES, kind));
         if (lasting.getShortCircuits() > 0) {

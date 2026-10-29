@@ -5,6 +5,7 @@ import fr.astratime.lucky.entities.events.Event;
 
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Stream;
 
 /**
  * Déroulé du tour de l'ennemi, pour l'affichage : les cartes piochées, les
@@ -31,7 +32,7 @@ public record EnemyTurnResult(List<Card> drawn, List<Card> played, Map<EnemySymb
 
     /** @return tous les événements du tour de l'ennemi, dans l'ordre. */
     public List<Event> events() {
-        return java.util.stream.Stream.of(openingEvents.stream(), outcomes.stream().flatMap(List::stream),
+        return Stream.of(openingEvents.stream(), outcomes.stream().flatMap(List::stream),
             afterEvents.stream()).flatMap(s -> s).toList();
     }
 }

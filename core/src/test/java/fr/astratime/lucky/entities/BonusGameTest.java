@@ -52,7 +52,7 @@ class BonusGameTest {
 
     @Test
     void aBonusGamePaysAboutOneHundredSpinCostsOnAverage() {
-        java.util.Random random = new java.util.Random(1);
+        Random random = new Random(1);
         long total = 0;
         int games = 20_000;
         for (int i = 0; i < games; i++) total += BonusGame.play(Symbol.classicReels(), 100, random).getTotal();
