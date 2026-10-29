@@ -25,13 +25,13 @@ public enum Rank {
     GROS_BONNET("Gros bonnet", "Sa table est toujours pleine.",
         new RankBonus(1_200, 1_200, 120, 750), 90_000_000L),
     BARON("Baron du tapis vert", "Il règne sur la salle.",
-        new RankBonus(1_400, 1_400, 140, 1_000), 132_000_000L),
+        new RankBonus(1_800, 1_800, 180, 1_000), 132_000_000L),
     MAGNAT("Magnat", "Il possède la moitié du casino.",
-        new RankBonus(2_000, 2_000, 200, 1_400), 364_000_000L),
+        new RankBonus(2_000, 2_000, 200, 1_400), 445_000_000L),
     ROI_DU_CASINO("Roi du casino", "Il possède l'autre moitié.",
-        new RankBonus(2_800, 2_800, 280, 2_000), 1_300_000_000L),
+        new RankBonus(2_800, 2_800, 280, 2_000), 715_000_000L),
     LEGENDE("Légende du Jackpot", "Les tables murmurent son nom.",
-        new RankBonus(4_000, 4_000, 400, 2_800), 2_070_000_000L);
+        new RankBonus(4_000, 4_000, 400, 2_800), 1_700_000_000L);
 
     private final String    title;
     private final String    description;
