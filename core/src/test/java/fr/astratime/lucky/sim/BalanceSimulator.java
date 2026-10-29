@@ -51,7 +51,7 @@ import java.util.function.BiFunction;
  *   <li><b>Tirages</b> : ce que rapporte un tirage, en coûts de tirage (gains de base :
  *       symboles, Paire et Bingo ; objectif 0 à 5 sans carte), la part
  *       des Paires et des Bingos, et du temps passé en dette ;</li>
- *   <li><b>Jeu bonus</b> : ses gains moyens, en coûts de tirage (objectif ≈ 100 sur la machine classique) ;</li>
+ *   <li><b>Jeu bonus</b> : ses gains moyens, en coûts de tirage (≈ 215 depuis les 5 tirages sur la machine classique) ;</li>
  *   <li><b>Donjons</b> : victoires et pièces gagnées (au roi) par donjon, selon le rang du joueur ;</li>
  *   <li><b>Joueur au maximum</b> : les donjons du Port, des Mines et du Casino avec le
  *       meilleur équipement (cartes « + », rouleaux rares, échoppe) et les plus hauts rangs ;</li>
@@ -300,7 +300,7 @@ public final class BalanceSimulator {
     private void bonusSection(StringBuilder out) {
         out.append("## 2. Jeu bonus\n\n")
             .append("Gains d'un Jeu bonus, en coûts de tirage (part fixe, sans le bonus multiplié). Objectif d'Astra : "
-                + "≈ 100 sur la machine classique.\n\n")
+                + "≈ 215 sur la machine classique (5 tirages).\n\n")
             .append("| Machine | Moyenne | Médiane | 9 sur 10 sous | Sans ligne |\n")
             .append("|---|---:|---:|---:|---:|\n");
         bonusRow(out, "Classique", Symbol.classicReels());
