@@ -29,9 +29,9 @@ public enum Rank {
     MAGNAT("Magnat", "Il possède la moitié du casino.",
         new RankBonus(2_000, 2_000, 200, 1_400), 445_000_000L),
     ROI_DU_CASINO("Roi du casino", "Il possède l'autre moitié.",
-        new RankBonus(2_800, 2_800, 280, 2_000), 715_000_000L),
+        new RankBonus(5_500, 5_500, 550, 2_000), 715_000_000L),
     LEGENDE("Légende du Jackpot", "Les tables murmurent son nom.",
-        new RankBonus(4_000, 4_000, 400, 2_800), 1_700_000_000L);
+        new RankBonus(7_000, 7_000, 700, 2_800), 1_880_000_000L);
 
     private final String    title;
     private final String    description;
