@@ -19,7 +19,7 @@ import java.util.List;
  * de dégâts des cartes Carreau (calculé lors de la riposte par CombatResolver).
  * Le bonus de défense du rang du joueur s'ajoute au bouclier de base.
  */
-public class DefenseAction extends Action {
+public final class DefenseAction extends Action {
 
     private final int baseShield;
 

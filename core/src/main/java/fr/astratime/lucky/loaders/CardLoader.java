@@ -10,6 +10,7 @@ import fr.astratime.lucky.entities.effects.*;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.WeakHashMap;
@@ -276,270 +277,202 @@ public class CardLoader {
         return upgraded.isUpgradable() ? upgraded : null;
     }
 
+    /** Fabrique d'un effet à partir de son objet JSON et de ses valeurs (améliorées pour une carte « + »). */
+    @FunctionalInterface
+    private interface EffectFactory {
+        Effect create(JsonValue json, Values v);
+    }
+
     /**
-     * Mappe un objet JSON d'effet vers l'instance Effect correspondante.
-     * Chaque type correspond à une classe d'effet du package effects.
-     * Les valeurs lues avec {@code v} sont celles qu'améliore la version « + » de la carte.
+     * Fabrique de chaque type d'effet écrit dans le JSON ({@code "type"}) : chaque type
+     * correspond à une classe d'effet du package effects. Les valeurs lues avec
+     * {@code v} sont celles qu'améliore la version « + » de la carte.
      */
+    private static final Map<String, EffectFactory> EFFECTS = effectFactories();
+
+    private static Map<String, EffectFactory> effectFactories() {
+        Map<String, EffectFactory> effects = new HashMap<>();
+        suitEffects(effects);
+        genericEffects(effects);
+        casinoEffects(effects);
+        shopEffects(effects);
+        dungeonEffects(effects);
+        placeEffects(effects);
+        placeChestEffects(effects);
+        archetypeEffects(effects);
+        return Collections.unmodifiableMap(effects);
+    }
+
+    private static void add(Map<String, EffectFactory> effects, String type, EffectFactory factory) {
+        if (effects.put(type, factory) != null) throw new IllegalStateException("Type d'effet en double : " + type);
+    }
+
+    /** Effets des cartes de chaque couleur. */
+    private static void suitEffects(Map<String, EffectFactory> effects) {
+        // --- Coeur ---
+        add(effects, "HEART_DRAIN", (json, v) -> new HeartDrainEffect(v.i("percent")));
+        add(effects, "ACE_OF_HEARTS", (json, v) -> new AceOfHeartsEffect(v.power()));
+
+        // --- Trefle ---
+        add(effects, "CLUB_GAIN_ATTACK", (json, v) -> new ClubGainAttackEffect(
+            v.i("gainMultiplier"),
+            v.i("attackBonus")
+        ));
+        add(effects, "ACE_OF_CLUBS", (json, v) -> new AceOfClubsEffect(v.power()));
+
+        // --- Carreau ---
+        add(effects, "DIAMOND_REFLECT", (json, v) -> new DiamondReflectEffect(v.f("hpPercent"), v.i("defenseBoost", 0)));
+        add(effects, "ACE_OF_DIAMONDS", (json, v) -> new AceOfDiamondsEffect(v.power()));
+
+        // --- Pique ---
+        add(effects, "SPADE_IGNORE_DEFENSE", (json, v) -> new SpadeIgnoreDefenseEffect(v.i("attackBonus"), v.i("blades", 1),
+            Math.min(100, v.i("piercePercent"))));
+        add(effects, "ACE_OF_SPADES", (json, v) -> new AceOfSpadesEffect(v.power()));
+    }
+
+    /** Effets génériques, partagés par plusieurs cartes. */
+    private static void genericEffects(Map<String, EffectFactory> effects) {
+        add(effects, "BOOST_SYMBOL", (json, v) -> new BoostSymbolEffect(
+            Symbol.valueOf(json.getString("symbol")),
+            v.i("amount")
+        ));
+        add(effects, "ATTACK", (json, v) -> new AttackEffect(v.i("bonus")));
+        add(effects, "DEFENSE", (json, v) -> new DefenseEffect(v.i("bonus")));
+        add(effects, "EXTRA_DRAW", (json, v) -> new ExtraDrawEffect(v.i("extraCards")));
+        add(effects, "GAIN", (json, v) -> new GainEffect(v.i("amount")));
+        add(effects, "MULTIPLIER", (json, v) -> new MultiplierEffect(v.f("amount")));
+    }
+
+    /** Cartes de casino. */
+    private static void casinoEffects(Map<String, EffectFactory> effects) {
+        add(effects, "BINGO", (json, v) -> new BingoEffect(json.getInt("power"),
+            json.has("symbol") ? Symbol.valueOf(json.getString("symbol")) : null,
+            json.getBoolean("bonusGame", false)));
+        add(effects, "MAGNET", (json, v) -> new MagnetEffect(v.i("percent")));
+        add(effects, "RECYCLE", (json, v) -> new RecycleEffect(v.i("turns")));
+        add(effects, "BET", (json, v) -> new BetEffect());
+        add(effects, "RUSSIAN_ROULETTE", (json, v) -> new RussianRouletteEffect(json.getInt("percent"), json.getInt("cursedPercent"),
+            json.getInt("penaltyPercent")));
+        add(effects, "EXTRA_PLAYS", (json, v) -> new ExtraPlaysEffect(v.i("plays"), json.getInt("turns")));
+        add(effects, "LUCKY_CHARM", (json, v) -> new LuckyCharmEffect(v.i("percent")));
+        add(effects, "RAINBOW", (json, v) -> new RainbowEffect(v.id(json.getString("card"))));
+        add(effects, "SPIN_GAINS", (json, v) -> new SpinGainsEffect(v.i("spins"), json.getInt("gauges", 1)));
+        add(effects, "GAINS_MULTIPLIER", (json, v) -> new GainsMultiplierEffect(v.i("percent"), json.getInt("gauges", 1)));
+        add(effects, "CORRUPTION", (json, v) -> new CorruptionEffect(json.getInt("turns")));
+    }
+
+    /** Cartes de la boutique. */
+    private static void shopEffects(Map<String, EffectFactory> effects) {
+        add(effects, "REROLL", (json, v) -> new RerollEffect());
+        add(effects, "RIGGED_REEL", (json, v) -> new RiggedReelEffect());
+        add(effects, "GHOST_REEL", (json, v) -> new ForceReelEffect(Symbol.JOKER));
+        add(effects, "RANK_TOKEN", (json, v) -> new RankTokenEffect());
+        add(effects, "ALL_IN", (json, v) -> new AllInEffect());
+        add(effects, "SAFE", (json, v) -> new SafeEffect(v.i("percent"), json.getInt("turns")));
+        add(effects, "INSURANCE", (json, v) -> new InsuranceEffect(v.lower("percent")));
+        add(effects, "BRIBE", (json, v) -> new BribeEffect());
+        add(effects, "DOUBLE_OR_NOTHING", (json, v) -> new DoubleOrNothingEffect());
+        add(effects, "OVERHEAT", (json, v) -> new OverheatEffect(json.getInt("hpPercent")));
+    }
+
+    /** Cartes des donjons (Exploration). */
+    private static void dungeonEffects(Map<String, EffectFactory> effects) {
+        add(effects, "BLADES_ATTACK", (json, v) -> new BladesAttackEffect(v.i("blades"), v.i("attackBonus")));
+        add(effects, "SHADOW_DAGGER", (json, v) -> new ShadowDaggerEffect(v.i("attackPerBlade")));
+        add(effects, "GUILLOTINE", (json, v) -> new GuillotineEffect(v.i("percentPerBlade")));
+        add(effects, "FOUR_LEAF_CLOVER", (json, v) -> new FourLeafCloverEffect(v.i("gainMultiplier"), v.i("gainBoost")));
+        add(effects, "FORTUNE", (json, v) -> new FortuneEffect(json.has("gainPercent") ? v.i("gainPercent") : 0, v.i("attackPercent"),
+            json.has("attackCapSpins") ? v.i("attackCapSpins") : 0));
+        add(effects, "TRANSFUSION", (json, v) -> new TransfusionEffect(v.i("percent")));
+        add(effects, "BLOOD_PACT", (json, v) -> new BloodPactEffect(json.getInt("hpPercent"), v.f("attackFactor")));
+        add(effects, "RAMPART", (json, v) -> new RampartEffect(v.i("shield"), v.i("defenseBoost")));
+        add(effects, "GUARANTEED_REFLECT", (json, v) -> new GuaranteedReflectEffect(v.i("percent")));
+        add(effects, "ROUGH_DIAMOND", (json, v) -> new RoughDiamondEffect(v.i("counter")));
+    }
+
+    /** Cartes des lieux de l'Exploration. */
+    private static void placeEffects(Map<String, EffectFactory> effects) {
+        add(effects, "SCURVY", (json, v) -> new ScurvyEffect());
+        add(effects, "SPYGLASS", (json, v) -> new SpyglassEffect());
+        add(effects, "TREASURE_MAP", (json, v) -> new TreasureMapEffect());
+        add(effects, "HELMET", (json, v) -> new HelmetEffect());
+        add(effects, "GOLD_VEIN", (json, v) -> new GoldVeinEffect(v.i("turns")));
+        add(effects, "BUBBLE", (json, v) -> new BubbleEffect(v.i("turns")));
+        add(effects, "BLACK_PEARL", (json, v) -> new ForceReelEffect(ForceReelEffect.LEFT_REEL, Symbol.JOKER));
+        add(effects, "TRIDENT", (json, v) -> new TridentEffect());
+    }
+
+    /** Cartes des coffres des donjons des lieux. */
+    private static void placeChestEffects(Map<String, EffectFactory> effects) {
+        add(effects, "RAT_TRAP", (json, v) -> new RatTrapEffect());
+        add(effects, "GAINS_PERCENT", (json, v) -> new GainsPercentEffect(v.i("percent")));
+        add(effects, "COMBO_BONUS", (json, v) -> new ComboBonusEffect(v.f("bonus")));
+        add(effects, "BEST_OF_TWO", (json, v) -> new BestOfTwoEffect());
+        add(effects, "POWDER_KEG", (json, v) -> new PowderKegEffect(v.i("factor"), json.getInt("hpPercent")));
+        add(effects, "LANTERN", (json, v) -> new LanternEffect(v.i("draws"), v.i("defensePercent")));
+        add(effects, "DAZZLE", (json, v) -> new DazzleEffect());
+        add(effects, "CUTLASS", (json, v) -> new CutlassEffect(v.i("attackPercent")));
+        add(effects, "BLACK_FLAG", (json, v) -> new BlackFlagEffect());
+        add(effects, "MUTINY", (json, v) -> new MutinyEffect());
+        add(effects, "SIEVE", (json, v) -> new SieveEffect(v.i("gainsPercent")));
+        add(effects, "PROP", (json, v) -> new PropEffect(v.i("turns"), v.i("defensePercent")));
+        add(effects, "ROPE", (json, v) -> new RopeEffect());
+        add(effects, "FORGE_HAMMER", (json, v) -> new ForgeHammerEffect());
+        add(effects, "TEMPER", (json, v) -> new TemperEffect(v.i("percent")));
+        add(effects, "FORGED_BLADE", (json, v) -> new ForgedBladeEffect());
+        add(effects, "DYNAMITE", (json, v) -> new DynamiteEffect(v.i("percent")));
+        add(effects, "CARBIDE_LAMP", (json, v) -> new CarbideLampEffect());
+        add(effects, "GOLDEN_HEART", (json, v) -> new GoldenHeartEffect());
+        add(effects, "EARPLUGS", (json, v) -> new EarplugsEffect(v.i("draws")));
+        add(effects, "BONUS_PLAYS", (json, v) -> new BonusPlaysEffect(v.i("plays")));
+        add(effects, "LOADED_COIN", (json, v) -> new LoadedCoinEffect());
+        add(effects, "RUSTY_LEVER", (json, v) -> new RustyLeverEffect());
+        add(effects, "SUNKEN_JACKPOT", (json, v) -> new SunkenJackpotEffect());
+        add(effects, "SHARK_CAGE", (json, v) -> new SharkCageEffect(v.i("turns")));
+        add(effects, "HARPOON", (json, v) -> new HarpoonEffect(v.i("attackPercent")));
+        add(effects, "ANCHOR", (json, v) -> new AnchorEffect(v.i("turns"), v.i("defensePercent")));
+    }
+
+    /** Cartes des archétypes de deck. */
+    private static void archetypeEffects(Map<String, EffectFactory> effects) {
+        add(effects, "WILD_JOKER", (json, v) -> new WildJokerEffect(v.i("attackPercent")));
+        add(effects, "JOKER_LAUGH", (json, v) -> new JokerLaughEffect(v.i("extraCards")));
+        add(effects, "FOOL_CROWN", (json, v) -> new FoolCrownEffect(v.i("factor")));
+        add(effects, "JOKER_WORKSHOP", (json, v) -> new JokerWorkshopEffect());
+        add(effects, "ARCHETYPE_STATS", (json, v) -> new ArchetypeStatsEffect(v.i("attack", 0), v.i("defense", 0), v.f("gains", 0f)));
+        add(effects, "WILD_CARD", (json, v) -> new WildCardEffect());
+        add(effects, "LEPRECHAUN_HAT", (json, v) -> new LeprechaunHatEffect(json.getInt("turns"), v.i("percent")));
+        add(effects, "LEPRECHAUN_JIG", (json, v) -> new LeprechaunJigEffect(v.lower("spinsPerBlade"), v.i("maxBlades")));
+        add(effects, "RAINBOWS_END", (json, v) -> new RainbowsEndEffect(v.id(json.getString("card"))));
+        add(effects, "COBBLER_HAMMER", (json, v) -> new CobblerHammerEffect(v.i("attackPercent"), v.i("gainsPercent")));
+        add(effects, "LEPRECHAUN_PRANK", (json, v) -> new LeprechaunPrankEffect(v.i("spins"), v.i("blades")));
+        add(effects, "CLAIMS", (json, v) -> new ClaimsEffect(v.i("count")));
+        add(effects, "VARIABLE_RATE", (json, v) -> new VariableRateEffect(v.i("perSymbol")));
+        add(effects, "COMPOUND_INTEREST", (json, v) -> new CompoundInterestEffect(json.getInt("turns"), v.i("percent")));
+        add(effects, "DEBT_COLLECTION", (json, v) -> new DebtCollectionEffect(v.f("hpPercent"), v.i("spins")));
+        add(effects, "ANNUITY", (json, v) -> new AnnuityEffect(json.getInt("turns"), json.getInt("claims"), v.i("spins")));
+        add(effects, "INTIMIDATION", (json, v) -> new IntimidationEffect(v.i("percent")));
+        add(effects, "MARKED_CARDS", (json, v) -> new MarkedCardsEffect(v.i("turns")));
+        add(effects, "RED_HERRING", (json, v) -> new RedHerringEffect());
+        add(effects, "SLEIGHT_OF_HAND", (json, v) -> new SleightOfHandEffect());
+        add(effects, "BLUFF_CALL", (json, v) -> new BluffCallEffect(v.i("percent"), v.i("maxPercent")));
+        add(effects, "HELD_REEL", (json, v) -> new HeldReelEffect());
+        add(effects, "MACHINE_MEMORY", (json, v) -> new MachineMemoryEffect(v.i("amount")));
+        add(effects, "CALIBRATION", (json, v) -> new CalibrationEffect(json.getInt("turns"), v.i("percent")));
+        add(effects, "SECOND_LEVER", (json, v) -> new SecondLeverEffect(v.i("tries")));
+        add(effects, "JACK_IN_THE_BOX", (json, v) -> new JackInTheBoxEffect(v.i("step"), v.i("max")));
+        add(effects, "KNOCKDOWN", (json, v) -> new KnockdownEffect());
+        add(effects, "PHARAOH_SEAL", (json, v) -> new PharaohSealEffect(v.i("claims"), json.getInt("turns")));
+        add(effects, "DRAGON_HOARD", (json, v) -> new DragonHoardEffect(json.getInt("turns"), v.i("spins"), v.i("step"), v.i("max")));
+        add(effects, "MARTINGALE", (json, v) -> new MartingaleEffect(v.i("attackPercent"), v.i("pairPercent")));
+    }
+
+    /** @return l'effet décrit par {@code json} ({@code v} : ses valeurs, améliorées pour une carte « + ») */
     private static Effect parseEffect(JsonValue json, Values v) {
         String type = json.getString("type");
-        switch (type) {
-            // --- Coeur ---
-            case "HEART_DRAIN":
-                return new HeartDrainEffect(v.i("percent"));
-            case "ACE_OF_HEARTS":
-                return new AceOfHeartsEffect(v.power());
-
-            // --- Trefle ---
-            case "CLUB_GAIN_ATTACK":
-                return new ClubGainAttackEffect(
-                    v.i("gainMultiplier"),
-                    v.i("attackBonus")
-                );
-            case "ACE_OF_CLUBS":
-                return new AceOfClubsEffect(v.power());
-
-            // --- Carreau ---
-            case "DIAMOND_REFLECT":
-                return new DiamondReflectEffect(v.f("hpPercent"), v.i("defenseBoost", 0));
-            case "ACE_OF_DIAMONDS":
-                return new AceOfDiamondsEffect(v.power());
-
-            // --- Pique ---
-            case "SPADE_IGNORE_DEFENSE":
-                return new SpadeIgnoreDefenseEffect(v.i("attackBonus"), v.i("blades", 1),
-                    Math.min(100, v.i("piercePercent")));
-            case "ACE_OF_SPADES":
-                return new AceOfSpadesEffect(v.power());
-
-            // --- Effets génériques ---
-            case "BOOST_SYMBOL":
-                return new BoostSymbolEffect(
-                    Symbol.valueOf(json.getString("symbol")),
-                    v.i("amount")
-                );
-            case "ATTACK":
-                return new AttackEffect(v.i("bonus"));
-            case "DEFENSE":
-                return new DefenseEffect(v.i("bonus"));
-            case "EXTRA_DRAW":
-                return new ExtraDrawEffect(v.i("extraCards"));
-            case "GAIN":
-                return new GainEffect(v.i("amount"));
-            case "MULTIPLIER":
-                return new MultiplierEffect(v.f("amount"));
-
-            // --- Cartes de casino ---
-            case "BINGO":
-                return new BingoEffect(json.getInt("power"),
-                    json.has("symbol") ? Symbol.valueOf(json.getString("symbol")) : null,
-                    json.getBoolean("bonusGame", false));
-            case "MAGNET":
-                return new MagnetEffect(v.i("percent"));
-            case "RECYCLE":
-                return new RecycleEffect(v.i("turns"));
-            case "BET":
-                return new BetEffect();
-            case "RUSSIAN_ROULETTE":
-                return new RussianRouletteEffect(json.getInt("percent"), json.getInt("cursedPercent"),
-                    json.getInt("penaltyPercent"));
-            case "EXTRA_PLAYS":
-                return new ExtraPlaysEffect(v.i("plays"), json.getInt("turns"));
-            case "LUCKY_CHARM":
-                return new LuckyCharmEffect(v.i("percent"));
-            case "RAINBOW":
-                return new RainbowEffect(v.id(json.getString("card")));
-            case "SPIN_GAINS":
-                return new SpinGainsEffect(v.i("spins"), json.getInt("gauges", 1));
-            case "GAINS_MULTIPLIER":
-                return new GainsMultiplierEffect(v.i("percent"), json.getInt("gauges", 1));
-            case "CORRUPTION":
-                return new CorruptionEffect(json.getInt("turns"));
-
-            // --- Cartes de la boutique ---
-            case "REROLL":
-                return new RerollEffect();
-            case "RIGGED_REEL":
-                return new RiggedReelEffect();
-            case "GHOST_REEL":
-                return new ForceReelEffect(Symbol.JOKER);
-            case "RANK_TOKEN":
-                return new RankTokenEffect();
-            case "ALL_IN":
-                return new AllInEffect();
-            case "SAFE":
-                return new SafeEffect(v.i("percent"), json.getInt("turns"));
-            case "INSURANCE":
-                return new InsuranceEffect(v.lower("percent"));
-            case "BRIBE":
-                return new BribeEffect();
-            case "DOUBLE_OR_NOTHING":
-                return new DoubleOrNothingEffect();
-            case "OVERHEAT":
-                return new OverheatEffect(json.getInt("hpPercent"));
-
-            // --- Cartes des donjons (Exploration) ---
-            case "BLADES_ATTACK":
-                return new BladesAttackEffect(v.i("blades"), v.i("attackBonus"));
-            case "SHADOW_DAGGER":
-                return new ShadowDaggerEffect(v.i("attackPerBlade"));
-            case "GUILLOTINE":
-                return new GuillotineEffect(v.i("percentPerBlade"));
-            case "FOUR_LEAF_CLOVER":
-                return new FourLeafCloverEffect(v.i("gainMultiplier"), v.i("gainBoost"));
-            case "FORTUNE":
-                return new FortuneEffect(json.has("gainPercent") ? v.i("gainPercent") : 0, v.i("attackPercent"),
-                    json.has("attackCapSpins") ? v.i("attackCapSpins") : 0);
-            case "TRANSFUSION":
-                return new TransfusionEffect(v.i("percent"));
-            case "BLOOD_PACT":
-                return new BloodPactEffect(json.getInt("hpPercent"), v.f("attackFactor"));
-            case "RAMPART":
-                return new RampartEffect(v.i("shield"), v.i("defenseBoost"));
-            case "GUARANTEED_REFLECT":
-                return new GuaranteedReflectEffect(v.i("percent"));
-            case "ROUGH_DIAMOND":
-                return new RoughDiamondEffect(v.i("counter"));
-
-            // ----- Lieux de l'Exploration -----
-            case "SCURVY":
-                return new ScurvyEffect();
-            case "SPYGLASS":
-                return new SpyglassEffect();
-            case "TREASURE_MAP":
-                return new TreasureMapEffect();
-            case "HELMET":
-                return new HelmetEffect();
-            case "GOLD_VEIN":
-                return new GoldVeinEffect(v.i("turns"));
-            case "BUBBLE":
-                return new BubbleEffect(v.i("turns"));
-            case "BLACK_PEARL":
-                return new ForceReelEffect(ForceReelEffect.LEFT_REEL, Symbol.JOKER);
-            case "TRIDENT":
-                return new TridentEffect();
-
-            // ----- Coffres des donjons des lieux -----
-            case "RAT_TRAP":
-                return new RatTrapEffect();
-            case "GAINS_PERCENT":
-                return new GainsPercentEffect(v.i("percent"));
-            case "COMBO_BONUS":
-                return new ComboBonusEffect(v.f("bonus"));
-            case "BEST_OF_TWO":
-                return new BestOfTwoEffect();
-            case "POWDER_KEG":
-                return new PowderKegEffect(v.i("factor"), json.getInt("hpPercent"));
-            case "LANTERN":
-                return new LanternEffect(v.i("draws"), v.i("defensePercent"));
-            case "DAZZLE":
-                return new DazzleEffect();
-            case "CUTLASS":
-                return new CutlassEffect(v.i("attackPercent"));
-            case "BLACK_FLAG":
-                return new BlackFlagEffect();
-            case "MUTINY":
-                return new MutinyEffect();
-            case "SIEVE":
-                return new SieveEffect(v.i("gainsPercent"));
-            case "PROP":
-                return new PropEffect(v.i("turns"), v.i("defensePercent"));
-            case "ROPE":
-                return new RopeEffect();
-            case "FORGE_HAMMER":
-                return new ForgeHammerEffect();
-            case "TEMPER":
-                return new TemperEffect(v.i("percent"));
-            case "FORGED_BLADE":
-                return new ForgedBladeEffect();
-            case "DYNAMITE":
-                return new DynamiteEffect(v.i("percent"));
-            case "CARBIDE_LAMP":
-                return new CarbideLampEffect();
-            case "GOLDEN_HEART":
-                return new GoldenHeartEffect();
-            case "EARPLUGS":
-                return new EarplugsEffect(v.i("draws"));
-            case "BONUS_PLAYS":
-                return new BonusPlaysEffect(v.i("plays"));
-            case "LOADED_COIN":
-                return new LoadedCoinEffect();
-            case "RUSTY_LEVER":
-                return new RustyLeverEffect();
-            case "SUNKEN_JACKPOT":
-                return new SunkenJackpotEffect();
-            case "SHARK_CAGE":
-                return new SharkCageEffect(v.i("turns"));
-            case "HARPOON":
-                return new HarpoonEffect(v.i("attackPercent"));
-            case "ANCHOR":
-                return new AnchorEffect(v.i("turns"), v.i("defensePercent"));
-
-            // ----- Archétypes de deck -----
-            case "WILD_JOKER":
-                return new WildJokerEffect(v.i("attackPercent"));
-            case "JOKER_LAUGH":
-                return new JokerLaughEffect(v.i("extraCards"));
-            case "FOOL_CROWN":
-                return new FoolCrownEffect(v.i("factor"));
-            case "JOKER_WORKSHOP":
-                return new JokerWorkshopEffect();
-            case "ARCHETYPE_STATS":
-                return new ArchetypeStatsEffect(v.i("attack", 0), v.i("defense", 0), v.f("gains", 0f));
-            case "WILD_CARD":
-                return new WildCardEffect();
-            case "LEPRECHAUN_HAT":
-                return new LeprechaunHatEffect(json.getInt("turns"), v.i("percent"));
-            case "LEPRECHAUN_JIG":
-                return new LeprechaunJigEffect(v.lower("spinsPerBlade"), v.i("maxBlades"));
-            case "RAINBOWS_END":
-                return new RainbowsEndEffect(v.id(json.getString("card")));
-            case "COBBLER_HAMMER":
-                return new CobblerHammerEffect(v.i("attackPercent"), v.i("gainsPercent"));
-            case "LEPRECHAUN_PRANK":
-                return new LeprechaunPrankEffect(v.i("spins"), v.i("blades"));
-            case "CLAIMS":
-                return new ClaimsEffect(v.i("count"));
-            case "VARIABLE_RATE":
-                return new VariableRateEffect(v.i("perSymbol"));
-            case "COMPOUND_INTEREST":
-                return new CompoundInterestEffect(json.getInt("turns"), v.i("percent"));
-            case "DEBT_COLLECTION":
-                return new DebtCollectionEffect(v.f("hpPercent"), v.i("spins"));
-            case "ANNUITY":
-                return new AnnuityEffect(json.getInt("turns"), json.getInt("claims"), v.i("spins"));
-            case "INTIMIDATION":
-                return new IntimidationEffect(v.i("percent"));
-            case "MARKED_CARDS":
-                return new MarkedCardsEffect(v.i("turns"));
-            case "RED_HERRING":
-                return new RedHerringEffect();
-            case "SLEIGHT_OF_HAND":
-                return new SleightOfHandEffect();
-            case "BLUFF_CALL":
-                return new BluffCallEffect(v.i("percent"), v.i("maxPercent"));
-            case "HELD_REEL":
-                return new HeldReelEffect();
-            case "MACHINE_MEMORY":
-                return new MachineMemoryEffect(v.i("amount"));
-            case "CALIBRATION":
-                return new CalibrationEffect(json.getInt("turns"), v.i("percent"));
-            case "SECOND_LEVER":
-                return new SecondLeverEffect(v.i("tries"));
-            case "JACK_IN_THE_BOX":
-                return new JackInTheBoxEffect(v.i("step"), v.i("max"));
-            case "KNOCKDOWN":
-                return new KnockdownEffect();
-            case "PHARAOH_SEAL":
-                return new PharaohSealEffect(v.i("claims"), json.getInt("turns"));
-            case "DRAGON_HOARD":
-                return new DragonHoardEffect(json.getInt("turns"), v.i("spins"), v.i("step"), v.i("max"));
-            case "MARTINGALE":
-                return new MartingaleEffect(v.i("attackPercent"), v.i("pairPercent"));
-
-            default:
-                throw new IllegalArgumentException("Type d'effet inconnu dans le JSON : " + type);
-        }
+        EffectFactory factory = EFFECTS.get(type);
+        if (factory == null) throw new IllegalArgumentException("Type d'effet inconnu dans le JSON : " + type);
+        return factory.create(json, v);
     }
 
     /**

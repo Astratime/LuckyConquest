@@ -16,6 +16,8 @@ import fr.astratime.lucky.assets.Palette;
 import java.util.ArrayList;
 import java.util.List;
 
+import static fr.astratime.lucky.assets.Palette.hex;
+
 /**
  * Décor animé d'une célébration de Bingo (dé, presse, forge, coffre-fort…) :
  * des objets en pixel art — petites images dessinées au lancement du jeu puis
@@ -207,10 +209,6 @@ public abstract class BingoScene extends Group implements Disposable {
         return pixmap;
     }
 
-    /** @return la couleur {@code hex} (« rrggbb »), opaque. */
-    protected static Color c(String hex) {
-        return Color.valueOf(hex + "ff");
-    }
 
     @Override
     public void dispose() {

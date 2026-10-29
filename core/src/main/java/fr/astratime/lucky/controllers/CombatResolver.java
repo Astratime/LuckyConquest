@@ -40,6 +40,7 @@ import fr.astratime.lucky.entities.events.PistolShotEvent;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.Arrays;
 
 /**
  * Résout le tour du joueur : exécute les actions, calcule les gains de
@@ -201,7 +202,7 @@ public class CombatResolver {
      */
     private List<Event> cardsOnDraw(CombatContext context, Symbol[] symbols) {
         List<Event> events = new ArrayList<>();
-        boolean bar = java.util.Arrays.stream(symbols).anyMatch(s -> s == Symbol.BAR || s == Symbol.DOUBLE_BAR);
+        boolean bar = Arrays.stream(symbols).anyMatch(s -> s == Symbol.BAR || s == Symbol.DOUBLE_BAR);
         if (context.getHammers() > 0 && bar) {
             float boost = (1f + ForgeHammerEffect.BAR_PERCENT / 100f) / (1f + ForgeHammerEffect.ATTACK_PERCENT / 100f);
             context.multiplyAttack((float) Math.pow(boost, context.getHammers()), "Marteau de forge");
@@ -236,7 +237,7 @@ public class CombatResolver {
      */
     private List<Event> archetypesOnDraw(CombatContext context, Symbol[] symbols, Symbol[] drawn) {
         List<Event> events = new ArrayList<>();
-        int jokers = (int) java.util.Arrays.stream(drawn).filter(s -> s == Symbol.JOKER).count();
+        int jokers = (int) Arrays.stream(drawn).filter(s -> s == Symbol.JOKER).count();
         if (context.getWildJokerPercent() > 0 && jokers > 0) {
             int percent = context.getWildJokerPercent() * jokers;
             context.multiplyAttack(1f + percent / 100f, "Joker sauvage");
@@ -248,12 +249,12 @@ public class CombatResolver {
                 EffectPopup.Style.GAINS));
         }
         if (context.getVariableRate() > 0) {
-            int gainSymbols = (int) java.util.Arrays.stream(symbols).filter(CombatResolver::isGainSymbol).count();
-            int added = context.getEnemy().addClaims(gainSymbols * context.getVariableRate());
+            int gainSymbols = (int) Arrays.stream(symbols).filter(CombatResolver::isGainSymbol).count();
+            int added = context.getEnemy().getMaluses().addClaims(gainSymbols * context.getVariableRate());
             events.add(new StatusEvent(Lang.f("TAUX VARIABLE : CRÉANCES +{0}", added), EffectPopup.Style.DRAIN));
         }
         if (context.getBluffPercent() > 0) {
-            int maluses = context.getEnemy().getActiveMaluses();
+            int maluses = context.getEnemy().getMaluses().getActiveMaluses();
             int percent = Math.min(context.getBluffMax(), context.getBluffPercent() * maluses);
             if (percent > 0) context.multiplyAttack(1f + percent / 100f, "Coup de bluff");
             events.add(new StatusEvent(Lang.f("COUP DE BLUFF : {0} MALUS, ATTAQUE +{1} %", maluses, percent), EffectPopup.Style.ATTACK));
@@ -287,7 +288,7 @@ public class CombatResolver {
         List<Event> events = new ArrayList<>();
         Enemy enemy = context.getEnemy();
         if (context.getCollectionHpPercent() <= 0f || enemy.isDefeated()) return events;
-        int claims = enemy.takeClaims();
+        int claims = enemy.getMaluses().takeClaims();
         if (claims == 0) {
             events.add(new StatusEvent(Lang.t("RECOUVREMENT : AUCUNE CRÉANCE"), EffectPopup.Style.DRAIN));
             return events;
@@ -328,7 +329,8 @@ public class CombatResolver {
             double gains = (double) touched * spinCost * hatPercent / 100.0;
             if (gains > 0) {
                 player.addGains(gains);
-                events.add(new StatusEvent(Lang.f(Lang.plural(touched) ? "CHAPEAU DU LUTIN : {0} COUPS" : "CHAPEAU DU LUTIN : {0} COUP",
+                events.add(new StatusEvent(Lang.n(touched, "CHAPEAU DU LUTIN : {0} COUP",
+                    "CHAPEAU DU LUTIN : {0} COUPS",
                     touched), EffectPopup.Style.GAINS));
                 events.add(new GainsEarnedEvent(gains));
             }
@@ -378,7 +380,7 @@ public class CombatResolver {
             context.getRainbowsEnds().forEach(lasting::addDeckCard);
             events.add(new StatusEvent(Lang.t("BOUT DE L'ARC-EN-CIEL : UN POT DE LUTIN DANS TA PIOCHE"), EffectPopup.Style.GAINS));
         }
-        if (context.getJokerLaughs() > 0 && java.util.Arrays.stream(drawn).anyMatch(s -> s == Symbol.JOKER)) {
+        if (context.getJokerLaughs() > 0 && Arrays.stream(drawn).anyMatch(s -> s == Symbol.JOKER)) {
             lasting.addNextDraws(context.getJokerLaughs());
             events.add(new StatusEvent(Lang.f("RIRE DU JOKER : +{0} CARTES AU PROCHAIN TOUR", context.getJokerLaughs()),
                 EffectPopup.Style.DRAW));

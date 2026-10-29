@@ -83,7 +83,7 @@ public final class AssetIntegrity {
                 problems++;
             }
         }
-        if (problems > 0) System.out.println("[AssetIntegrity] " + problems + " fichier(s) modifié(s) ou manquant(s).");
+        if (problems > 0) Gdx.app.error("AssetIntegrity", problems + " fichier(s) modifié(s) ou manquant(s).");
         return problems;
     }
 

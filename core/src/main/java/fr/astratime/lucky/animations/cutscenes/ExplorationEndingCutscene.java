@@ -12,6 +12,8 @@ import fr.astratime.lucky.entities.enemy.EnemyKind;
 import fr.astratime.lucky.entities.exploration.Place;
 import fr.astratime.lucky.i18n.Lang;
 
+import static fr.astratime.lucky.assets.Palette.hex;
+
 /**
  * Fin de l'Exploration (choix d'Astra, 2026-10-24), la première fois que les quatre donjons du
  * Désert de Braise sont vidés : le Croupier marche sur la carte du monde, les six lieux
@@ -27,7 +29,7 @@ public class ExplorationEndingCutscene extends Cutscene {
     public static final float TABLE = 4.2f, SCALE_DOWN = 5.0f, SMILE = 5.5f;
     public static final float COVER_START = 7.0f, COVER_FULL = 7.7f;
 
-    private static final Color GOLD = c("ffc93a"), FELT = c("1e6a3a"), FELT_DARK = c("124a28"), WOOD = c("6a3a1a");
+    private static final Color GOLD = hex("ffc93a"), FELT = hex("1e6a3a"), FELT_DARK = hex("124a28"), WOOD = hex("6a3a1a");
     private static final String[] SCALE = {"..oo..", ".oyyo.", "oyyyyo", "oyyyyo", ".oyyo.", "..oo.."};
 
     private final TextureRegion croupier, scale;
@@ -39,7 +41,7 @@ public class ExplorationEndingCutscene extends Cutscene {
     public ExplorationEndingCutscene(CutsceneKit kit) {
         super(kit.settings(), kit.shake(), kit.sound("exploration_ending"));
         croupier = kit.portrait(EnemyKind.CROUPIER);
-        scale = art("oy", new Color[] {c("8a5a10"), c("ffd23a")}, SCALE);
+        scale = art("oy", new Color[] {hex("8a5a10"), hex("ffd23a")}, SCALE);
         for (Place place : Place.values()) {
             Texture map = kit.enemies() == null ? null : kit.enemies().map(place);
             maps[place.ordinal()] = map == null ? null : new TextureRegion(map);
@@ -103,7 +105,7 @@ public class ExplorationEndingCutscene extends Cutscene {
 
     /** La carte du monde : six vignettes qui s'allument, le Croupier qui marche de l'une à l'autre. */
     private void drawWorld(Batch batch, float w, float h) {
-        fill(batch, c("0a0814"), 1f);
+        fill(batch, hex("0a0814"), 1f);
         float tileW = w * 0.24f, tileH = tileW * 96f / 160f;
         int lit = 0;
         for (int i = 0; i < maps.length; i++) {
@@ -112,10 +114,10 @@ public class ExplorationEndingCutscene extends Cutscene {
             if (on) lit = i;
             if (i > 0) {                                                       // le chemin d'un lieu au suivant
                 float[] q = spot(i - 1);
-                tmp.set(on ? GOLD : c("2a2a3a"));
+                tmp.set(on ? GOLD : hex("2a2a3a"));
                 line(batch, tmp, q[0], q[1], p[0], p[1], on ? 8f : 4f);
             }
-            rect(batch, c("1a1018"), p[0] - tileW / 2f - 8f, p[1] - tileH / 2f - 8f, tileW + 16f, tileH + 16f);
+            rect(batch, hex("1a1018"), p[0] - tileW / 2f - 8f, p[1] - tileH / 2f - 8f, tileW + 16f, tileH + 16f);
             if (maps[i] != null) {
                 float light = on ? 1f : 0.2f;
                 batch.setColor(light, light, light, 1f);
@@ -134,8 +136,8 @@ public class ExplorationEndingCutscene extends Cutscene {
 
     /** La table de jeu : il pose l'écaille d'or d'Ignar, et sourit. */
     private void drawTable(Batch batch, float w, float h) {
-        gradient(batch, c("1a0a0a"), c("05030a"));
-        glow(batch, w / 2f, h * 0.6f, w, c("ffb84a"), 0.25f);
+        gradient(batch, hex("1a0a0a"), hex("05030a"));
+        glow(batch, w / 2f, h * 0.6f, w, hex("ffb84a"), 0.25f);
         portrait(batch, croupier, w / 2f, h * 0.28f, 14f, 0f, 1f);
         rect(batch, WOOD, -MARGIN, -MARGIN, w + 2f * MARGIN, h * 0.32f + MARGIN);
         rect(batch, FELT_DARK, w * 0.05f, -MARGIN, w * 0.9f, h * 0.3f + MARGIN);

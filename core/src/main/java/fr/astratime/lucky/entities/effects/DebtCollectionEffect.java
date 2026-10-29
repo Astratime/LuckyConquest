@@ -8,6 +8,7 @@ import fr.astratime.lucky.popups.EffectSound;
 import fr.astratime.lucky.popups.PopupScale;
 
 import java.util.List;
+import java.math.BigDecimal;
 
 /**
  * Recouvrement (archétype Rentier) : toutes les Créances de l'ennemi sont encaissées d'un coup
@@ -47,7 +48,7 @@ public class DebtCollectionEffect extends Effect {
     /** @return {@code percent} sans décimale inutile, avec la virgule en français (ex : "1,5", "1"). */
     private static String formatPercent(float percent) {
         String text = percent == (int) percent ? String.valueOf((int) percent)
-            : new java.math.BigDecimal(Float.toString(percent)).stripTrailingZeros().toPlainString();
+            : new BigDecimal(Float.toString(percent)).stripTrailingZeros().toPlainString();
         return !Lang.isEnglish() ? text.replace('.', ',') : text;
     }
 }

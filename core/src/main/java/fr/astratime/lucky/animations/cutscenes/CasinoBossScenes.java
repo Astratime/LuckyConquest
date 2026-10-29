@@ -8,6 +8,8 @@ import com.badlogic.gdx.math.MathUtils;
 import fr.astratime.lucky.entities.enemy.EnemyKind;
 import fr.astratime.lucky.entities.enemy.EnemySymbol;
 
+import static fr.astratime.lucky.assets.Palette.hex;
+
 /** Les scènes de phase et de mort des quatre rois du Casino Englouti (choix d'Astra, 2026-10-24). */
 final class CasinoBossScenes {
 
@@ -40,7 +42,6 @@ final class CasinoBossScenes {
         "...owwo..", "..owwwwo."};
     static final String[] FIN = {"....s", "...ss", "..sss", ".ssss", "sssss"};
 
-    static Color c(String hex) { return Color.valueOf(hex); }
 
     /** Le boss dessiné en bandes qui ondulent comme sous l'eau ({@code amount} : la force de l'onde). */
     static void ripple(BossScene scene, Batch batch, float amount, float alpha, Color tint) {
@@ -80,7 +81,7 @@ final class CasinoBossScenes {
 
     /** Ses notes deviennent des spirales, l'image ondule, ses yeux s'allument. */
     static final class SirenPhase extends BossScene {
-        private static final Color PINK = c("ff7ad8");
+        private static final Color PINK = hex("ff7ad8");
         private final TextureRegion note;
 
         SirenPhase(CutsceneKit kit) {
@@ -127,7 +128,7 @@ final class CasinoBossScenes {
         SirenDeath(CutsceneKit kit) {
             super(kit, Moment.DEATH, EnemyKind.SIRENE, 0);
             note = art("w", new Color[] {Color.WHITE}, NOTE);
-            glass = art("owpy", new Color[] {c("1a0a1a"), c("e8f0ff"), c("ff7ad8"), c("ffd860")}, GLASS);
+            glass = art("owpy", new Color[] {hex("1a0a1a"), hex("e8f0ff"), hex("ff7ad8"), hex("ffd860")}, GLASS);
         }
 
         private float glassX() { return bossX() + bossWidth() * 0.75f; }
@@ -184,14 +185,14 @@ final class CasinoBossScenes {
                 float x = MathUtils.lerp(bossX() + bossWidth() * 0.1f, glassX(), k);
                 float y = bossY() + bossHeight() * 0.15f + MathUtils.sin(k * MathUtils.PI) * 160f;
                 float grow = 1f + 0.8f * progress(0.8f, CLIMAX_DEATH);
-                draw(batch, note, x, y, fit(46f * grow, 6), 10f * MathUtils.sin(time * 6f + i), tmp.set(WHITE).lerp(c("ff7ad8"), k),
+                draw(batch, note, x, y, fit(46f * grow, 6), 10f * MathUtils.sin(time * 6f + i), tmp.set(WHITE).lerp(hex("ff7ad8"), k),
                     (1f - k * 0.5f) * (1f - progress(CLIMAX_DEATH, CLIMAX_DEATH + 0.3f)));
             }
             if (time < CLIMAX_DEATH) {                                  // le verre vibre, puis se brise
                 float buzz = (random.nextFloat() - 0.5f) * 8f * progress(1.4f, CLIMAX_DEATH);
                 draw(batch, glass, glassX() + buzz, glassY(), fit(120f, 9), 0f, WHITE, 1f);
             }
-            fill(batch, c("e0f0ff"), 0.15f * progress(CLIMAX_DEATH, CLIMAX_DEATH + 1f));
+            fill(batch, hex("e0f0ff"), 0.15f * progress(CLIMAX_DEATH, CLIMAX_DEATH + 1f));
         }
     }
 
@@ -202,7 +203,7 @@ final class CasinoBossScenes {
     /** Son levier se tire tout seul : les rouleaux s'affolent, les lumières clignotent, il crache des pièces. */
     static final class JackpotPhase extends BossScene {
         private final TextureRegion[] symbols;
-        private static final Color[] BULBS = {c("ff3a5a"), c("ffd23a"), c("3aff8a"), c("3ab0ff"), c("ff7ad8")};
+        private static final Color[] BULBS = {hex("ff3a5a"), hex("ffd23a"), hex("3aff8a"), hex("3ab0ff"), hex("ff7ad8")};
         /** Le levier dans son portrait de poisson : planté en (25, 14), boule en (25, 4.5). */
         private static final float LEVER_X = 25f, LEVER_BASE = 14f, LEVER_LENGTH = 9.5f;
         /** Les morceaux de son portrait autour du levier : {x, y, largeur, hauteur} en pixels, depuis le haut. */
@@ -257,17 +258,17 @@ final class CasinoBossScenes {
             float px = portraitX(LEVER_X), py = portraitY(LEVER_BASE), angle = 90f - 150f * pull;
             float length = LEVER_LENGTH * bossScale(), ball = 5f * bossScale();
             float tx = px + MathUtils.cosDeg(angle) * length, ty = py + MathUtils.sinDeg(angle) * length;
-            line(batch, c("1a1018"), 1f, px, py, tx, ty, 2.8f * bossScale());
-            line(batch, c("b8c0cc"), 1f, px, py, tx, ty, 2f * bossScale());
-            rect(batch, c("1a1018"), 1f, tx - ball / 2f - bossScale(), ty - ball / 2f - bossScale(), ball + 2f * bossScale(), ball + 2f * bossScale());
-            rect(batch, c("d8202c"), 1f, tx - ball / 2f, ty - ball / 2f, ball, ball);
-            glow(batch, tx, ty, 70f, c("ff3a5a"), 0.8f);
+            line(batch, hex("1a1018"), 1f, px, py, tx, ty, 2.8f * bossScale());
+            line(batch, hex("b8c0cc"), 1f, px, py, tx, ty, 2f * bossScale());
+            rect(batch, hex("1a1018"), 1f, tx - ball / 2f - bossScale(), ty - ball / 2f - bossScale(), ball + 2f * bossScale(), ball + 2f * bossScale());
+            rect(batch, hex("d8202c"), 1f, tx - ball / 2f, ty - ball / 2f, ball, ball);
+            glow(batch, tx, ty, 70f, hex("ff3a5a"), 0.8f);
             // trois rouleaux au-dessus de lui, qui tournent de plus en plus vite
             float w = worldHeight() * 0.12f, y = worldHeight() * 0.74f;
             float speed = MathUtils.lerp(2f, 30f, progress(0.7f, CLIMAX_PHASE));
             for (int r = 0; r < 3; r++) {
                 float x = bossX() + (r - 1) * w * 1.15f - w / 2f;
-                rect(batch, c("f4ecdc"), progress(0.6f, 0.9f), x - 6f, y - 6f, w + 12f, w + 12f);
+                rect(batch, hex("f4ecdc"), progress(0.6f, 0.9f), x - 6f, y - 6f, w + 12f, w + 12f);
                 batch.setColor(1f, 1f, 1f, progress(0.6f, 0.9f));
                 reel(batch, symbols, x, y, w, w, time * speed * (1f + 0.2f * r) + r * 2f);
             }
@@ -294,7 +295,7 @@ final class CasinoBossScenes {
             for (int r = 0; r < 3; r++) if (at(STOPS[r])) rumble(0.1f, 4f);
             if (at(CLIMAX_DEATH)) {                                       // perdu : des étincelles
                 rumble(0.5f, 9f);
-                sparks(bossX(), bossBottom() + bossHeight() * 0.6f, 90, c("7ad0ff"), 900f, 18f);
+                sparks(bossX(), bossBottom() + bossHeight() * 0.6f, 90, hex("7ad0ff"), 900f, 18f);
             }
         }
 
@@ -316,7 +317,7 @@ final class CasinoBossScenes {
                     float left = STOPS[r] - time;
                     offset = RESULT[r] - left * 18f;
                 }
-                rect(batch, c("f4ecdc"), 1f - dark, reelX(r) - 6f, y - 6f, w + 12f, w + 12f);
+                rect(batch, hex("f4ecdc"), 1f - dark, reelX(r) - 6f, y - 6f, w + 12f, w + 12f);
                 batch.setColor(1f, 1f, 1f, 1f - dark);
                 reel(batch, symbols, reelX(r), y, w, w, offset);
             }
@@ -330,7 +331,7 @@ final class CasinoBossScenes {
                 glow(batch, x, yy, 180f * (1f + 2f * k), GOLD, 0.5f);
                 stretch(batch, coin, x, yy, s * Math.abs(MathUtils.cos(time * 8f)) + s * 0.15f, s, 0f, WHITE, 1f);
             }
-            flash(batch, c("7ad0ff"), CLIMAX_DEATH, 0.3f, 0.4f);
+            flash(batch, hex("7ad0ff"), CLIMAX_DEATH, 0.3f, 0.4f);
         }
     }
 
@@ -340,13 +341,13 @@ final class CasinoBossScenes {
 
     /** Un nuage rouge : il tourne en cercles de plus en plus rapides, son aileron fend une pluie de billets. */
     static final class SharkPhase extends BossScene {
-        private static final Color RED = c("c8102e"), BLUE = c("7ad0ff");
+        private static final Color RED = hex("c8102e"), BLUE = hex("7ad0ff");
         private final TextureRegion fin, bill;
         private float angle;
 
         SharkPhase(CutsceneKit kit) {
             super(kit, Moment.PHASE, EnemyKind.REQUIN_BANQUIER, 2);
-            fin = art("s", new Color[] {c("5a7a9a")}, FIN);
+            fin = art("s", new Color[] {hex("5a7a9a")}, FIN);
             bill = symbol(EnemySymbol.FAKE_MONEY);
         }
 
@@ -366,7 +367,7 @@ final class CasinoBossScenes {
             for (Particle p : sprites) {
                 if (p.region == bill && Math.abs(p.x - f[0]) < 50f && Math.abs(p.y - f[1]) < 80f && p.age < p.life) {
                     p.age = p.life;
-                    sparks(p.x, p.y, 6, c("6ad06a"), 300f, 10f);
+                    sparks(p.x, p.y, 6, hex("6ad06a"), 300f, 10f);
                 }
             }
         }
@@ -444,7 +445,7 @@ final class CasinoBossScenes {
             float shake = time < CLIMAX_DEATH ? (random.nextFloat() - 0.5f) * 10f * progress(1.2f, CLIMAX_DEATH) : 0f;
             draw(batch, safe, bossX() + shake, bellyY(), s, 0f, tmp.set(1f - poseShadow, 1f - poseShadow, 1f - poseShadow, 1f), 1f);
             // la porte du coffre qui s'ouvre (elle s'aplatit sur le côté)
-            stretch(batch, safe, bossX() - s * 8f * open + shake, bellyY(), s * (1f - 0.85f * open), s, 0f, c("8a8a98"), 1f);
+            stretch(batch, safe, bossX() - s * 8f * open + shake, bellyY(), s * (1f - 0.85f * open), s, 0f, hex("8a8a98"), 1f);
             fill(batch, Color.BLACK, 0.6f * progress(3.4f, 4.8f));      // les profondeurs
         }
     }
@@ -455,7 +456,7 @@ final class CasinoBossScenes {
 
     /** Un nuage d'encre : ses bras surgissent de l'encre par tous les bords. */
     static final class KrakenPhase extends BossScene {
-        private static final Color INK = c("12061e"), ARM = c("6a2a8a"), PURPLE = c("b05aff");
+        private static final Color INK = hex("12061e"), ARM = hex("6a2a8a"), PURPLE = hex("b05aff");
         private static final float[][] EDGES = {{-0.05f, 0.2f}, {-0.05f, 0.7f}, {1.05f, 0.25f}, {1.05f, 0.75f}, {0.2f, 1.08f},
             {0.8f, 1.08f}, {0.35f, -0.08f}, {0.65f, -0.08f}};
 
@@ -498,7 +499,7 @@ final class CasinoBossScenes {
 
     /** Ses huit bras lâchent le salon VIP un à un ; il coule ; sa couronne remonte seule. */
     static final class KrakenDeath extends BossScene {
-        private static final Color ARM = c("6a2a8a"), HEAD = c("8a1e2a");
+        private static final Color ARM = hex("6a2a8a"), HEAD = hex("8a1e2a");
         /** Sa couronne dans son portrait : colonnes 9 à 25, lignes 0 à 6. */
         private static final int CROWN_X = 9, CROWN_W = 17, CROWN_H = 7;
         private final TextureRegion crown, body;
@@ -515,7 +516,7 @@ final class CasinoBossScenes {
 
         @Override
         protected void step(float delta) {
-            for (int i = 0; i < 8; i++) if (at(letGo(i))) { rumble(0.12f, 5f); sparks(gripX(i), gripY(i), 10, c("b05aff"), 300f, 14f); }
+            for (int i = 0; i < 8; i++) if (at(letGo(i))) { rumble(0.12f, 5f); sparks(gripX(i), gripY(i), 10, hex("b05aff"), 300f, 14f); }
             if (at(CLIMAX_DEATH)) rumble(0.5f, 8f);
         }
 
@@ -526,8 +527,8 @@ final class CasinoBossScenes {
         protected void back(Batch batch) {
             bubbles(batch, 30, 0.35f);
             // le salon VIP : des colonnes dorées que ses bras tiennent
-            rect(batch, c("5a4a1a"), 1f, -60f, -60f, worldWidth() * 0.04f + 60f, worldHeight() + 120f);
-            rect(batch, c("5a4a1a"), 1f, worldWidth() * 0.96f, -60f, worldWidth() * 0.04f + 60f, worldHeight() + 120f);
+            rect(batch, hex("5a4a1a"), 1f, -60f, -60f, worldWidth() * 0.04f + 60f, worldHeight() + 120f);
+            rect(batch, hex("5a4a1a"), 1f, worldWidth() * 0.96f, -60f, worldWidth() * 0.04f + 60f, worldHeight() + 120f);
             for (int i = 0; i < 8; i++) {
                 float release = Interpolation.pow2Out.apply(progress(letGo(i), letGo(i) + 0.4f));
                 float x0 = bossX() + (i < 4 ? -1 : 1) * bossWidth() * 0.3f, y0 = bossY() - sinkY();

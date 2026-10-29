@@ -25,6 +25,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
+import java.util.Arrays;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.Random;
 
 /** Les gains en combat : coût du tirage, départ, Paires et Bingos, dette et Mise (voir {@link SpinEconomy}). */
 class SpinEconomyTest {
@@ -59,7 +63,7 @@ class SpinEconomyTest {
         assertEquals(2_000, EnemyKind.PORTIER.getSpinCost(), "chapitre 5");
         assertEquals(5_000, EnemyKind.MACHINE_ORIGINELLE.getSpinCost(), "chapitre 6");
         // Ordre d'ouverture : prairie, Fête foraine, Port, Mines, Casino (moins cher qu'avant), Désert de Braise
-        java.util.Map<Place, Integer> costs = java.util.Map.of(Place.PRAIRIE, 100, Place.FOIRE, 250, Place.PORT, 500,
+        Map<Place, Integer> costs = Map.of(Place.PRAIRIE, 100, Place.FOIRE, 250, Place.PORT, 500,
             Place.MINES, 1_000, Place.CASINO, 2_000, Place.DESERT, 3_000);
         for (Place place : Place.values()) {
             for (var dungeon : place.getDungeons()) {
@@ -172,8 +176,8 @@ class SpinEconomyTest {
     @Test
     void theStakeTakesAShareOfTheGainsIntoThePotAndStrengthensAttackAndDefense() {
         assertEquals(Stake.NONE, Stake.HIGH.next());
-        assertEquals(List.of(0, 5, 10, 15), java.util.Arrays.stream(Stake.values()).map(stake -> stake.percent).toList());
-        assertEquals(List.of(1f, 1.1f, 1.2f, 1.3f), java.util.Arrays.stream(Stake.values()).map(stake -> stake.power).toList());
+        assertEquals(List.of(0, 5, 10, 15), Arrays.stream(Stake.values()).map(stake -> stake.percent).toList());
+        assertEquals(List.of(1f, 1.1f, 1.2f, 1.3f), Arrays.stream(Stake.values()).map(stake -> stake.power).toList());
 
         GameController plain = fight(EnemyKind.CROUPIER);
         plain.drawCards();
@@ -260,7 +264,7 @@ class SpinEconomyTest {
 
     @Test
     void thePotIsAddedToEachLineWithoutMultiplier() {
-        BonusGame game = BonusGame.play(Symbol.classicReels(), 100, new java.util.Random(7));
+        BonusGame game = BonusGame.play(Symbol.classicReels(), 100, new Random(7));
         assertFalse(game.getLines().isEmpty());
         BonusGame paid = game.withPot(1_000);
         assertEquals(game.getTotal() + 1_000.0 * game.getLines().size(), paid.getTotal(), 1e-6);
@@ -300,7 +304,7 @@ class SpinEconomyTest {
     void theShopFollowsThePlaceAndEachCardDoublesAtEachPurchase() {
         GameController controller = new GameController(SpinEconomyTest::plainCards,
             id -> new Card(id, id, "x.png", List.of(), null, 1),
-            new java.util.LinkedHashMap<>(java.util.Map.of(GameController.SHOP_BINGO, 20_000, "corruption", 10_000)));
+            new LinkedHashMap<>(Map.of(GameController.SHOP_BINGO, 20_000, "corruption", 10_000)));
         controller.restart(Place.CASINO.getDungeons().get(0).getSoldier()); // tirage à 2 000 : x20
         Player player = player(controller);
         player.addGains(10_000_000);

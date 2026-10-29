@@ -25,7 +25,7 @@ import java.util.List;
  *  - gainsFromDamage  : si vrai (As de Pique), convertit les dégâts en gains
  * Le bonus d'attaque du rang du joueur s'ajoute aux dégâts de base.
  */
-public class AttackAction extends Action {
+public sealed class AttackAction extends Action permits BombAction, RandomAttackAction {
 
     private final int     baseDamage;
     /** Ce rouleau ignore toujours la défense ennemie (Épée). */

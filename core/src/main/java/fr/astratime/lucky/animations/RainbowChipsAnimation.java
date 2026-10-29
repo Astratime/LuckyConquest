@@ -16,6 +16,7 @@ import fr.astratime.lucky.settings.VisualSettings;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.IntConsumer;
+import java.util.Collections;
 
 /**
  * Carte Arc-en-ciel : des jetons de casino de toutes les couleurs traversent
@@ -93,7 +94,7 @@ public class RainbowChipsAnimation extends Actor implements Disposable {
         int count = Math.max(MIN_CHIPS, targets.size());
         List<Integer> order = new ArrayList<>();
         for (int i = 0; i < count; i++) order.add(i);
-        java.util.Collections.shuffle(order); // départs dans le désordre
+        Collections.shuffle(order); // départs dans le désordre
         endTime = 0f;
         for (int i = 0; i < count; i++) {
             Vector2 middle = i < targets.size() ? targets.get(i)

@@ -9,6 +9,8 @@ import com.badlogic.gdx.scenes.scene2d.ui.Image;
 import com.badlogic.gdx.scenes.scene2d.utils.TiledDrawable;
 import fr.astratime.lucky.assets.Palette;
 
+import static fr.astratime.lucky.assets.Palette.hex;
+
 /**
  * Bingo du Raisin : le pressoir. Une grappe géante tombe dans la cuve d'un
  * pressoir en bois ; la vis descend, la touche puis l'écrase d'un coup (le
@@ -104,16 +106,16 @@ public class WinePressScene extends BingoScene {
         Pixmap pixmap = pixmap(VAT_WIDTH, VAT_HEIGHT);
         fillOutlined(pixmap, 0, 0, VAT_WIDTH, VAT_HEIGHT, Palette.WOOD);
         for (int x = 1; x < VAT_WIDTH - 1; x++) {
-            pixmap.setColor((x / 5) % 2 == 0 ? Palette.WOOD : c("7a4a24"));
+            pixmap.setColor((x / 5) % 2 == 0 ? Palette.WOOD : hex("7a4a24"));
             pixmap.drawLine(x, 2, x, VAT_HEIGHT - 2);
             if (x % 5 == 0) {
-                pixmap.setColor(c("5a3418"));
+                pixmap.setColor(hex("5a3418"));
                 pixmap.drawLine(x, 2, x, VAT_HEIGHT - 2);
             }
         }
-        hLine(pixmap, 1, VAT_WIDTH - 2, 1, c("4e2e18"));
+        hLine(pixmap, 1, VAT_WIDTH - 2, 1, hex("4e2e18"));
         for (int hoop : new int[] {5, 15}) {
-            hLine(pixmap, 1, VAT_WIDTH - 2, hoop, c("8a8a9c"));
+            hLine(pixmap, 1, VAT_WIDTH - 2, hoop, hex("8a8a9c"));
             hLine(pixmap, 1, VAT_WIDTH - 2, hoop + 1, Palette.IRON_DARK);
         }
         return pixmap;
@@ -150,8 +152,8 @@ public class WinePressScene extends BingoScene {
                 Color color;
                 if (x == 0 || x == ROD_WIDTH - 1) color = OUTLINE;
                 else if ((x + y) % 4 == 0)       color = Palette.IRON_DARK;
-                else if (x < 3)                  color = c("a8a8b8");
-                else                             color = c("6a6a78");
+                else if (x < 3)                  color = hex("a8a8b8");
+                else                             color = hex("6a6a78");
                 pixmap.setColor(color);
                 pixmap.drawPixel(x, y);
             }

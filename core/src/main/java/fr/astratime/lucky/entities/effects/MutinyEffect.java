@@ -1,6 +1,5 @@
 package fr.astratime.lucky.entities.effects;
 
-import fr.astratime.lucky.entities.context.PlayContext;
 import fr.astratime.lucky.entities.context.TurnContext;
 import fr.astratime.lucky.i18n.Lang;
 import fr.astratime.lucky.popups.EffectPopup;
@@ -19,7 +18,7 @@ public class MutinyEffect extends Effect {
     public static final int CARDS_LESS = 2;
 
     @Override
-    public void apply(TurnContext context) { context.getCombatContext().getEnemy().addMutiny(); }
+    public void apply(TurnContext context) { context.getCombatContext().getEnemy().getMaluses().addMutiny(); }
 
     @Override
     public String getDescription() { return Lang.f("Au prochain tour de l'ennemi, l'équipage se révolte. Il joue {0} cartes de moins.",

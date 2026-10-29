@@ -12,6 +12,9 @@ import com.badlogic.gdx.utils.Array;
 import fr.astratime.lucky.entities.enemy.EnemyKind;
 import fr.astratime.lucky.entities.enemy.EnemySymbol;
 import fr.astratime.lucky.i18n.Lang;
+import java.util.Random;
+
+import static fr.astratime.lucky.assets.Palette.hex;
 
 /**
  * Socle des cinématiques de phase et de mort des boss et des rois : chaque boss a
@@ -36,7 +39,7 @@ public abstract class BossScene extends Cutscene {
     static final float PHASE_COVER_START = 4.2f, PHASE_COVER_FULL = 4.8f;
     static final float DEATH_COVER_START = 5.0f, DEATH_COVER_FULL = 5.6f;
 
-    protected static final Color WHITE = c("ffffff"), HOT = c("fff6d8"), GOLD = c("ffc93a"), BLOOD = c("c8102e");
+    protected static final Color WHITE = hex("ffffff"), HOT = hex("fff6d8"), GOLD = hex("ffc93a"), BLOOD = hex("c8102e");
 
     protected final Moment        moment;
     protected final EnemyKind     kind;
@@ -290,7 +293,7 @@ public abstract class BossScene extends Cutscene {
 
     /** Une fissure en zigzag, comme un éclair, de ({@code x}, {@code y}) vers {@code angle} sur {@code length}. */
     protected void crack(Batch batch, float x, float y, float angle, float length, long seed, Color color, float alpha, float thick) {
-        java.util.Random zig = new java.util.Random(seed);
+        Random zig = new Random(seed);
         int steps = 7;
         float px = x, py = y;
         for (int i = 1; i <= steps; i++) {
@@ -338,7 +341,7 @@ public abstract class BossScene extends Cutscene {
     }
 
     private static final int[] CAP_INSETS = {0, 1, 3};
-    private static final Color CAP_LINE = c("1a0f0f");
+    private static final Color CAP_LINE = hex("1a0f0f");
 
     /**
      * Le haut du crâne sous une couronne qu'on lui retire : un dôme en pixels de {@code fill}, cerné de noir.
@@ -428,12 +431,12 @@ public abstract class BossScene extends Cutscene {
     /** Un éclair zigzag du haut de l'écran jusqu'à {@code bottom}. */
     protected void bolt(Batch batch, float x, float bottom, long seed, float alpha) {
         if (alpha <= 0f) return;
-        java.util.Random zig = new java.util.Random(seed);
+        Random zig = new Random(seed);
         float y = worldHeight() + MARGIN, stepY = (y - bottom) / 9f;
         additive(batch);
         for (int i = 0; i < 9; i++) {
             float nx = x + (zig.nextFloat() - 0.5f) * 140f, ny = y - stepY;
-            line(batch, c("a0b4ff"), 0.5f * alpha, x, y, nx, ny, 22f);
+            line(batch, hex("a0b4ff"), 0.5f * alpha, x, y, nx, ny, 22f);
             line(batch, WHITE, alpha, x, y, nx, ny, 7f);
             x = nx;
             y = ny;

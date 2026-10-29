@@ -2,9 +2,6 @@ package fr.astratime.lucky.screens;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
-import com.badlogic.gdx.InputAdapter;
-import com.badlogic.gdx.InputMultiplexer;
-import com.badlogic.gdx.ScreenAdapter;
 import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Texture;
@@ -16,7 +13,6 @@ import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.Group;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.InputListener;
-import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.Touchable;
 import com.badlogic.gdx.scenes.scene2d.actions.Actions;
 import com.badlogic.gdx.scenes.scene2d.ui.Image;
@@ -27,12 +23,9 @@ import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 import com.badlogic.gdx.utils.Align;
-import com.badlogic.gdx.utils.ScreenUtils;
 import fr.astratime.lucky.LuckyGame;
-import fr.astratime.lucky.assets.BackgroundMusic;
 import fr.astratime.lucky.assets.CardTextures;
 import fr.astratime.lucky.assets.Fonts;
-import fr.astratime.lucky.assets.HudTextures;
 import fr.astratime.lucky.assets.Palette;
 import fr.astratime.lucky.assets.VolumeSound;
 import fr.astratime.lucky.entities.Card;
@@ -42,12 +35,9 @@ import fr.astratime.lucky.loaders.CardLoader;
 import fr.astratime.lucky.progress.PlayerProfile;
 import fr.astratime.lucky.progress.Rank;
 import fr.astratime.lucky.progress.ReelShop;
-import fr.astratime.lucky.settings.AudioSettings;
 import fr.astratime.lucky.views.CardDetailOverlay;
 import fr.astratime.lucky.views.CasinoButtons;
 import fr.astratime.lucky.views.GuideOverlay;
-import fr.astratime.lucky.views.MenuDecor;
-import fr.astratime.lucky.views.MinimumScreenViewport;
 
 import java.util.ArrayList;
 import java.util.EnumMap;
@@ -70,7 +60,7 @@ import java.util.function.Supplier;
  * </ul>
  * Un clic choisit un article ; « Acheter » le paie. Échap ou « Retour » ramène au menu principal.
  */
-public class ShopScreen extends ScreenAdapter {
+public class ShopScreen extends CasinoMenuScreen {
 
     /** Onglets de la boutique. */
     enum Tab { RANG("Rang"), CARTES("Cartes"), ROULEAU("Rouleau");
@@ -78,15 +68,9 @@ public class ShopScreen extends ScreenAdapter {
         Tab(String label) { this.label = label; }
     }
 
-    private static final String CLICK_SOUND    = "sounds/button-click.ogg";
     private static final String PURCHASE_SOUND = "sounds/shop/purchase.ogg";
     private static final String REFUSE_SOUND   = "sounds/coins/loss.ogg";
-    private static final String MUSIC          = "music/main_menu.ogg";
-    private static final float  MUSIC_LEVEL    = 0.3f;
 
-    private static final float MIN_WIDTH    = 1600f;
-    private static final float MIN_HEIGHT   = 1080f;
-    private static final float MARGIN       = 60f;
     private static final float TITLE_TOP    = 90f;
     private static final float TABS_TOP     = 175f;
     private static final float PANEL_TOP    = 220f;
@@ -99,26 +83,16 @@ public class ShopScreen extends ScreenAdapter {
     private static final float REEL_HEIGHT  = 120f;
     private static final float CELL_GAP     = 22f;
     private static final float HOVER_SCALE  = 1.06f;
-    private static final float FADE_TIME    = 0.4f;
     private static final Color SELECTED     = Palette.GOLD;
     private static final Color DIMMED       = new Color(0.55f, 0.55f, 0.55f, 1f);
     private static final Color REFUSED      = new Color(1f, 0.45f, 0.45f, 1f);
 
-    private final LuckyGame       luckyGame;
     private final PlayerProfile   profile;
-    private final Stage           stage;
-    private final AudioSettings   audio   = new AudioSettings();
-    private final HudTextures     hud     = new HudTextures();
     /** Première visite : le Croupier présente l'écran. */
     private final FirstVisitGuide firstVisit;
-    private final CardTextures    cardTextures = new CardTextures();
-    private final CasinoButtons   buttons = new CasinoButtons();
-    private final MenuDecor       decor   = new MenuDecor();
-    private final Sound           clickSound;
+    private final CardTextures    cardTextures = assets.cardTextures();
     private final Sound           purchaseSound;
     private final Sound           refuseSound;
-    private final BackgroundMusic music;
-    private final BitmapFont      titleFont = Fonts.jersey(84, Palette.GOLD, 6f, Palette.TEXT_SHADE);
     private final BitmapFont      coinsFont = Fonts.jersey(52, Palette.GOLD, 4f, Palette.TEXT_SHADE);
     private final BitmapFont      headFont  = Fonts.jersey(40, Palette.GOLD, 3f, Palette.TEXT_SHADE);
     private final BitmapFont      bodyFont  = Fonts.jersey(28, Palette.CREAM, 2f, Palette.TEXT_SHADE);
@@ -130,8 +104,6 @@ public class ShopScreen extends ScreenAdapter {
     private final List<Card> cards = new ArrayList<>();
     private final Map<String, Long> cardPrices;
 
-    private final Image      veil;
-    private final Label      title;
     private final Image      coin;
     private final Label      coins;
     private final List<TextButton> tabButtons = new ArrayList<>();
@@ -144,7 +116,6 @@ public class ShopScreen extends ScreenAdapter {
     private final TextButton backButton;
     /** Rejoue la présentation du Croupier. */
     private final TextButton tutorialButton;
-    private final Image      fade;
     /** Fiche détaillée d'une carte ou d'un rouleau (clic droit). */
     private final CardDetailOverlay detail;
 
@@ -153,7 +124,6 @@ public class ShopScreen extends ScreenAdapter {
     private Offer   selected;
     /** Acteur de l'article choisi, mis en valeur. */
     private Actor   selectedActor;
-    private boolean leaving;
 
     /**
      * Article de la boutique.
@@ -167,13 +137,10 @@ public class ShopScreen extends ScreenAdapter {
     private record Offer(String name, String text, long price, Supplier<String> blocked, BooleanSupplier purchase) { }
 
     public ShopScreen(LuckyGame luckyGame) {
-        this.luckyGame = luckyGame;
+        super(luckyGame, Lang.t("BOUTIQUE"), 84, 0.65f);
         this.profile   = luckyGame.getProfile();
-        this.stage     = new Stage(new MinimumScreenViewport(MIN_WIDTH, MIN_HEIGHT), luckyGame.getBatch());
-        clickSound    = new VolumeSound(Gdx.audio.newSound(Gdx.files.internal(CLICK_SOUND)), audio);
-        purchaseSound = new VolumeSound(Gdx.audio.newSound(Gdx.files.internal(PURCHASE_SOUND)), audio);
-        refuseSound   = new VolumeSound(Gdx.audio.newSound(Gdx.files.internal(REFUSE_SOUND)), audio);
-        music         = new BackgroundMusic(MUSIC, audio, MUSIC_LEVEL);
+        purchaseSound = new VolumeSound(Gdx.audio.newSound(Gdx.files.internal(PURCHASE_SOUND)), assets.audio);
+        refuseSound   = new VolumeSound(Gdx.audio.newSound(Gdx.files.internal(REFUSE_SOUND)), assets.audio);
 
         for (Symbol symbol : ReelShop.getPrices().keySet()) {
             reelTextures.put(symbol, new Texture(Gdx.files.internal(symbol.getAssetPath())));
@@ -181,13 +148,7 @@ public class ShopScreen extends ScreenAdapter {
         cardPrices = CardLoader.loadBoutique();
         Function<String, Card> factory = CardLoader.cardFactory();
         for (String id : cardPrices.keySet()) cards.add(factory.apply(id));
-
         TextureRegionDrawable pixel = new TextureRegionDrawable(new TextureRegion(hud.pixel));
-        veil = new Image(pixel);
-        veil.setColor(0f, 0f, 0f, 0.65f);
-        veil.setTouchable(Touchable.disabled);
-        title = new Label(Lang.t("BOUTIQUE"), new Label.LabelStyle(titleFont, Color.WHITE));
-        title.pack();
         coin = new Image(new TextureRegionDrawable(new TextureRegion(hud.coin)));
         coin.setSize(COIN_SIZE, COIN_SIZE);
         coins = new Label("", new Label.LabelStyle(coinsFont, Color.WHITE));
@@ -207,14 +168,6 @@ public class ShopScreen extends ScreenAdapter {
         buyButton  = buttons.createAction(Lang.t("Acheter"), clickSound, this::onBuy);
         backButton = buttons.create(Lang.t("Retour"), clickSound, this::onBack);
         tutorialButton = buttons.create(Lang.t("Tutoriel"), clickSound, this::replayGuide);
-
-        fade = new Image(pixel);
-        fade.setColor(Color.BLACK);
-        fade.setTouchable(Touchable.disabled);
-
-        stage.addActor(decor);
-        stage.addActor(veil);
-        stage.addActor(title);
         stage.addActor(coin);
         stage.addActor(coins);
         tabButtons.forEach(stage::addActor);
@@ -227,8 +180,7 @@ public class ShopScreen extends ScreenAdapter {
         stage.addActor(tutorialButton);
         detail = new CardDetailOverlay(stage, hud, null, CARD_WIDTH, CARD_HEIGHT);
         stage.addActor(detail.getActor());
-        stage.addActor(fade);
-        fade.addAction(Actions.fadeOut(FADE_TIME));
+        reveal();
 
         showTab(Tab.RANG);
         firstVisit = new FirstVisitGuide(stage, hud, clickSound, profile, PlayerProfile.GUIDE_SHOP, this::guideSteps);
@@ -518,20 +470,10 @@ public class ShopScreen extends ScreenAdapter {
 
     private void refreshCoins() {
         long amount = profile.getCoins();
-        coins.setText(Lang.f(Lang.plural(amount) ? "{0} pièces" : "{0} pièce", PlayerProfile.formatCoins(amount)));
+        coins.setText(Lang.n(amount, "{0} pièce", "{0} pièces", PlayerProfile.formatCoins(amount)));
         coins.pack();
     }
 
-    /** Retour au menu principal. */
-    private void onBack() {
-        if (leaving) return;
-        leaving = true;
-        fade.clearActions();
-        fade.addAction(Actions.sequence(Actions.fadeIn(FADE_TIME), Actions.run(() -> Gdx.app.postRunnable(() -> {
-            luckyGame.setScreen(new MenuScreen(luckyGame));
-            dispose();
-        }))));
-    }
 
     // -------------------------------------------------------------------------
     // Mise en page et cycle de vie
@@ -541,13 +483,8 @@ public class ShopScreen extends ScreenAdapter {
         return stage.getViewport().getWorldWidth() - MARGIN * 2 - PANEL_PAD * 2;
     }
 
-    private void layout() {
-        float width  = stage.getViewport().getWorldWidth();
-        float height = stage.getViewport().getWorldHeight();
-        decor.layout(width, height);
-        decor.setPosition(0f, 0f);
-        veil.setBounds(0f, 0f, width, height);
-        fade.setBounds(0f, 0f, width, height);
+    @Override
+    protected void layoutContent(float width, float height) {
         title.setPosition(MARGIN, height - TITLE_TOP - title.getHeight() / 2f);
 
         coins.pack();
@@ -581,24 +518,20 @@ public class ShopScreen extends ScreenAdapter {
         detailText.setPosition(detailX, detailTitle.getY() - 6f - detailText.getHeight());
     }
 
+    /** Échap referme la fiche d'un article, sinon revient au menu principal. */
+    @Override
+    protected boolean onKey(int keycode) {
+        if (keycode != Input.Keys.ESCAPE) return false;
+        clickSound.play();
+        if (detail.isShown()) detail.hide();
+        else onBack();
+        return true;
+    }
+
     @Override
     public void show() {
-        InputAdapter keyboard = new InputAdapter() {
-            @Override
-            public boolean keyDown(int keycode) {
-                if (leaving || keycode != Input.Keys.ESCAPE) return false;
-                clickSound.play();
-                if (detail.isShown()) {
-                    detail.hide();
-                    return true;
-                }
-                onBack();
-                return true;
-            }
-        };
-        Gdx.input.setInputProcessor(new InputMultiplexer(stage, keyboard));
+        super.show();
         stage.setScrollFocus(scroll);
-        music.play();
     }
 
     @Override
@@ -609,29 +542,15 @@ public class ShopScreen extends ScreenAdapter {
         detail.layout();
     }
 
-    @Override
-    public void render(float delta) {
-        ScreenUtils.clear(Color.BLACK);
-        music.update();
-        stage.act(delta);
-        stage.draw();
-    }
 
     @Override
     public void dispose() {
-        stage.dispose();
+        super.dispose();
         firstVisit.dispose();
-        decor.dispose();
-        cardTextures.dispose();
         reelTextures.values().forEach(Texture::dispose);
-        buttons.dispose();
-        clickSound.dispose();
         purchaseSound.dispose();
         refuseSound.dispose();
-        music.dispose();
         detail.dispose();
-        hud.dispose();
-        Fonts.release(titleFont);
         Fonts.release(coinsFont);
         Fonts.release(headFont);
         Fonts.release(bodyFont);

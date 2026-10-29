@@ -9,6 +9,7 @@ import org.junit.jupiter.api.Test;
 import java.nio.file.Paths;
 
 import static org.junit.jupiter.api.Assertions.*;
+import java.util.Set;
 
 /** Le simulateur d'équilibrage tourne (en petit) et ses chiffres restent dans les objectifs d'Astra. */
 class BalanceSimulatorTest {
@@ -31,7 +32,7 @@ class BalanceSimulatorTest {
         for (BalanceSimulator.Gear gear : BalanceSimulator.topGears()) {
             assertEquals(20, gear.deck().values().stream().mapToInt(Integer::intValue).sum(), gear.name());
             assertTrue(gear.deck().values().stream().allMatch(copies -> copies <= 3), gear.name());
-            assertEquals(11, java.util.Set.copyOf(gear.reels()).size(), gear.name());
+            assertEquals(11, Set.copyOf(gear.reels()).size(), gear.name());
         }
     }
 

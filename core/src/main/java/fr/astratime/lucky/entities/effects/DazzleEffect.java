@@ -1,6 +1,5 @@
 package fr.astratime.lucky.entities.effects;
 
-import fr.astratime.lucky.entities.context.PlayContext;
 import fr.astratime.lucky.entities.context.TurnContext;
 import fr.astratime.lucky.i18n.Lang;
 import fr.astratime.lucky.popups.EffectPopup;
@@ -15,7 +14,7 @@ import java.util.List;
 public class DazzleEffect extends Effect {
 
     @Override
-    public void apply(TurnContext context) { context.getCombatContext().getEnemy().dazzle(); }
+    public void apply(TurnContext context) { context.getCombatContext().getEnemy().getMaluses().dazzle(); }
 
     @Override
     public String getDescription() { return Lang.t("L'ennemi est ébloui. Il passe son prochain tour."); }

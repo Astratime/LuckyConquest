@@ -8,6 +8,8 @@ import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.scenes.scene2d.ui.Image;
 
+import static fr.astratime.lucky.assets.Palette.hex;
+
 /**
  * Bingo de l'Étoile : une étoile filante dorée traverse l'écran en diagonale,
  * depuis le coin en haut à gauche, en tournoyant et en grossissant, une
@@ -32,7 +34,7 @@ public class ShootingStarScene extends BingoScene {
     private final Vector2 from = new Vector2(), to = new Vector2(), position = new Vector2();
 
     public ShootingStarScene() {
-        glow = image(texture(halo(40, c("fff0a0"))));
+        glow = image(texture(halo(40, hex("fff0a0"))));
         glow.setOrigin(glow.getWidth() / 2f, glow.getHeight() / 2f);
         star = image(new TextureRegion(texture(star())), STAR_SCALE);
         star.setOrigin(star.getWidth() / 2f, star.getHeight() / 2f);
@@ -100,7 +102,7 @@ public class ShootingStarScene extends BingoScene {
             }
             return inside;
         };
-        Color gold = c("ffd54a"), pale = c("fff3a8"), white = Color.WHITE, dark = c("e09a1a");
+        Color gold = hex("ffd54a"), pale = hex("fff3a8"), white = Color.WHITE, dark = hex("e09a1a");
         fillShape(pixmap, shape, (x, y) -> {
             float dx = x + 0.5f - center, dy = y + 0.5f - center - 0.8f;
             float distance = (float) Math.sqrt(dx * dx + dy * dy);

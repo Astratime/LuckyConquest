@@ -43,6 +43,8 @@ import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
+import static fr.astratime.lucky.assets.Palette.hex;
+
 /**
  * Côté de l'ennemi, sur la table (voir {@link TableView}) : son portrait (le
  * croupier démoniaque, ou un ennemi de la Tour des épreuves), sa machine à
@@ -156,7 +158,7 @@ public class EnemyView implements Disposable {
             Image image = new Image(new TextureRegionDrawable(new TextureRegion(textures.symbol(shownSymbols[i]))));
             image.setSize(SYMBOL_SIZE, SYMBOL_SIZE); // réduit dans layout() quand ils sont plus de trois
             hoverTooltip(image, () -> shownSymbols[reel].getDisplayName(),
-                () -> shownSymbols[reel].getDescription(shownKind));
+                () -> shownSymbols[reel].getDescription(shownKind, enemy.get().isHard()));
             reels.add(image);
         }
 
@@ -184,7 +186,9 @@ public class EnemyView implements Disposable {
         Enemy current = enemy.get();
         EnemyKind kind = current.getKind();
         StringBuilder text = new StringBuilder(kind.getDescription());
-        if (kind.getPower() > 100) line(text, Lang.f("Force {0} : attaques, défense et effets", kind.powerText()));
+        if (kind.getPower(current.isHard()) > 100) {
+            line(text, Lang.f("Force {0} : attaques, défense et effets", kind.powerText(current.isHard())));
+        }
         line(text, Lang.f("Défense : {0}", shownDefense()));
         line(text, Lang.f("Rouleaux : {0}", kind.describeReels(current.getPhase())));
         if (kind.hasPhaseTwo() && current.getPhase() < 2) {
@@ -479,15 +483,15 @@ public class EnemyView implements Disposable {
                 flipSound.play();
                 nod();
                 EnemyKind kind = enemy.get().getKind();
-                hoverTooltip(card, played::getName, () -> EnemyCards.describe(played, kind));
-                popups.play(List.of(new EffectPopup(bonusText(played, kind), styleOf(played), PopupScale.SECONDARY_INTENSITY * 0.7f)),
+                hoverTooltip(card, played::getName, () -> EnemyCards.describe(played, kind, enemy.get().isHard()));
+                popups.play(List.of(new EffectPopup(bonusText(played, kind, enemy.get().isHard()), styleOf(played), PopupScale.SECONDARY_INTENSITY * 0.7f)),
                     card.getX() + card.getWidth() / 2f, card.getY() - CARD_POPUP_GAP);
             }),
             Actions.scaleTo(1f, 1f, FLIP_TIME, Interpolation.pow2Out)));
     }
 
     /** @return le bonus d'une carte jouée, en quelques mots (ex : "ÉPÉE +10"), chez un ennemi {@code kind}. */
-    private static String bonusText(Card card, EnemyKind kind) {
+    private static String bonusText(Card card, EnemyKind kind, boolean hard) {
         EnemySignature signature = EnemySignature.of(card);
         if (signature != null) return signature.getBonusText();
         EnemyCards.ShadowRole role = EnemyCards.shadowRoleOf(card);
@@ -500,9 +504,9 @@ public class EnemyView implements Disposable {
         };
         if (card.getSuit() == null) return Lang.t("ROULEAU INTERDIT");
         return switch (card.getSuit()) {
-            case PIQUE   -> Lang.f("ATTAQUE +{0}", kind.hurt(kind.swordBonus(card)));
+            case PIQUE   -> Lang.f("ATTAQUE +{0}", kind.hurt(kind.swordBonus(card), hard));
             case COEUR   -> Lang.f("POTION +{0}%", EnemyCards.healBonus(card));
-            case CARREAU -> Lang.f("BOUCLIER +{0}", kind.empowered(kind.shieldBonus(card)));
+            case CARREAU -> Lang.f("BOUCLIER +{0}", kind.empowered(kind.shieldBonus(card), hard));
             case TREFLE  -> Lang.f("CHANCE +{0}%", EnemyCards.luckBonus(card));
         };
     }
@@ -547,12 +551,12 @@ public class EnemyView implements Disposable {
         reelStopSound.play();
         if (events.stream().anyMatch(event -> event instanceof PlayerDamagedEvent)) lunge(); // il frappe
         switch (symbol) {
-            case RAGE, ALL_IN -> pulse(Color.valueOf("ff4a3aff"));
-            case THORNS       -> pulse(Color.valueOf("7dd87aff"));
-            case LOADED_DIE   -> pulse(Color.valueOf("c060ffff"));
-            case INTEREST, HOURGLASS -> pulse(Color.valueOf("ffd54aff"));
-            case MIRROR       -> pulse(Color.valueOf("b8e0ffff"));
-            case ZERO         -> pulse(Color.valueOf("2ec060ff"));
+            case RAGE, ALL_IN -> pulse(hex("ff4a3aff"));
+            case THORNS       -> pulse(hex("7dd87aff"));
+            case LOADED_DIE   -> pulse(hex("c060ffff"));
+            case INTEREST, HOURGLASS -> pulse(hex("ffd54aff"));
+            case MIRROR       -> pulse(hex("b8e0ffff"));
+            case ZERO         -> pulse(hex("2ec060ff"));
             default           -> { }
         }
 
@@ -564,7 +568,7 @@ public class EnemyView implements Disposable {
         for (Event event : events) {
             if (event instanceof EnemyShieldedEvent shield) {
                 defense.add(shield.defense);
-                pulse(Color.valueOf("6ab0ffff"));
+                pulse(hex("6ab0ffff"));
             }
             onEventShown.accept(event);
         }
@@ -661,7 +665,7 @@ public class EnemyView implements Disposable {
 
     /** Il se soigne : sa silhouette luit en vert. */
     public void heal() {
-        pulse(Color.valueOf("7dff8aff"));
+        pulse(hex("7dff8aff"));
     }
 
     /** Vaincu : il bascule en arrière et disparaît. */

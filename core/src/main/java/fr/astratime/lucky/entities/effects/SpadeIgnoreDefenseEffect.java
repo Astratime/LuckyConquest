@@ -50,10 +50,10 @@ public class SpadeIgnoreDefenseEffect extends Effect {
 
     @Override
     public String getDescription() {
-        return Lang.f(Lang.plural(blades)
-                ? "{3}% de chaque coup traverse la défense. Attaque +{0} sur chaque symbole d'attaque. +{1} Lames "
-                    + "(+{2} d'attaque chacune, tout le combat)"
-                : "{3}% de chaque coup traverse la défense. Attaque +{0} sur chaque symbole d'attaque. +{1} Lame "
+        return Lang.n(blades,
+                "{3}% de chaque coup traverse la défense. Attaque +{0} sur chaque symbole d'attaque. +{1} Lame "
+                    + "(+{2} d'attaque chacune, tout le combat)",
+                "{3}% de chaque coup traverse la défense. Attaque +{0} sur chaque symbole d'attaque. +{1} Lames "
                     + "(+{2} d'attaque chacune, tout le combat)",
             attackBonus, blades, PreparationResolver.BLADE_ATTACK, piercePercent);
     }

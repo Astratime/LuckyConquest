@@ -5,6 +5,7 @@ import fr.astratime.lucky.i18n.Lang;
 
 import java.util.List;
 import java.util.Random;
+import java.util.Objects;
 
 /**
  * Règle annoncée par une Aspiration de la Machine Originelle : si les cartes
@@ -30,7 +31,7 @@ public final class AspirationRule {
                 case RANK    -> (int) cards.stream().filter(card -> card.hasRank() && card.getRank() == rank).count();
                 case SPECIAL -> (int) cards.stream().filter(card -> card.getSuit() == null).count();
                 case SUIT    -> (int) cards.stream().filter(card -> card.getSuit() == suit).count();
-                case COLORS  -> (int) cards.stream().map(Card::getSuit).filter(java.util.Objects::nonNull).distinct().count();
+                case COLORS  -> (int) cards.stream().map(Card::getSuit).filter(Objects::nonNull).distinct().count();
                 case FACES   -> (int) cards.stream()
                     .filter(card -> card.hasRank() && card.getRank() >= 11 && card.getRank() <= 13).count();
             };

@@ -5,6 +5,9 @@ import fr.astratime.lucky.i18n.Lang;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.LinkedHashMap;
+import java.util.Locale;
+import java.util.Map;
 
 /**
  * Le calcul d'un coup d'un symbole sur l'ennemi, étape par étape, pour le
@@ -49,8 +52,8 @@ public record DamageBreakdown(int base, int rank, List<PowerStep> steps, long ra
      * Les étapes de même nom (ex : deux copies d'une carte) tiennent sur une seule ligne.
      */
     static void addSteps(List<String> lines, List<PowerStep> steps) {
-        java.util.Map<String, Double> bonuses = new java.util.LinkedHashMap<>();
-        java.util.Map<String, Float>  factors = new java.util.LinkedHashMap<>();
+        Map<String, Double> bonuses = new LinkedHashMap<>();
+        Map<String, Float>  factors = new LinkedHashMap<>();
         for (PowerStep step : steps) {
             if (step.isFactor()) factors.merge(step.label(), step.factor(), (a, b) -> a * b);
             else bonuses.merge(step.label(), (double) step.bonus(), BigNumber::add);
@@ -61,7 +64,7 @@ public record DamageBreakdown(int base, int rank, List<PowerStep> steps, long ra
 
     /** @return {@code factor} avec deux décimales au plus, sans zéro inutile (x9,5 ; x0,75). */
     static String factor(float factor) {
-        String text = String.format(java.util.Locale.ROOT, "%.2f", factor);
+        String text = String.format(Locale.ROOT, "%.2f", factor);
         text = text.contains(".") ? text.replaceAll("0+$", "").replaceAll("\\.$", "") : text;
         return Lang.decimal(text);
     }

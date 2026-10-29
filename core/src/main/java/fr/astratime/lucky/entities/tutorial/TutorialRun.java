@@ -115,4 +115,8 @@ public class TutorialRun implements CombatRun {
 
     @Override
     public String getLabel() { return Lang.t("Tutoriel"); }
+
+    /** Pas de Jeu bonus dans le tutoriel. */
+    @Override
+    public boolean hasBonusGame() { return false; }
 }

@@ -8,6 +8,8 @@ import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.utils.Array;
 import fr.astratime.lucky.entities.enemy.EnemyKind;
 
+import static fr.astratime.lucky.assets.Palette.hex;
+
 /**
  * La Comète Dorée passe sous la moitié de ses PV, au début de son tour : dans
  * la nuit, blessée, elle s'éteint presque ; sa lueur bat de plus en plus vite,
@@ -26,8 +28,8 @@ public class CometPhaseCutscene extends Cutscene {
     public static final float COVER_START = 4.6f;
     public static final float COVER_FULL  = 5.3f;
 
-    private static final Color SKY_TOP = c("05071a"), SKY_LOW = c("2b1a4a"), GROUND = c("0e0a12");
-    private static final Color GOLD = c("ffc93a"), HOT = c("fff6c8"), ORANGE = c("ff7a1a"), RED = c("c92a12");
+    private static final Color SKY_TOP = hex("05071a"), SKY_LOW = hex("2b1a4a"), GROUND = hex("0e0a12");
+    private static final Color GOLD = hex("ffc93a"), HOT = hex("fff6c8"), ORANGE = hex("ff7a1a"), RED = hex("c92a12");
 
     private final TextureRegion comet;
     private final Color         sky   = new Color();

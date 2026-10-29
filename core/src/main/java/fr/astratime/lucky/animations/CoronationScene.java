@@ -13,6 +13,8 @@ import com.badlogic.gdx.scenes.scene2d.ui.Image;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 import fr.astratime.lucky.assets.Palette;
 
+import static fr.astratime.lucky.assets.Palette.hex;
+
 /**
  * Bingo de la Couronne : le sacre. Un tapis rouge se déroule depuis le bas de
  * l'écran jusqu'au milieu de la table, où apparaît un coussin de velours ;
@@ -68,7 +70,7 @@ public class CoronationScene extends BingoScene {
         roll.setOrigin(roll.getWidth() / 2f, roll.getHeight() / 2f);
         cushion = image(texture(cushion()));
         cushion.setOrigin(cushion.getWidth() / 2f, 0f);
-        crownGlow = image(texture(halo(56, c("ffe066"))));
+        crownGlow = image(texture(halo(56, hex("ffe066"))));
         crownGlow.setOrigin(crownGlow.getWidth() / 2f, crownGlow.getHeight() / 2f);
         crown = image(texture(crown()));
         crown.setOrigin(crown.getWidth() / 2f, 0f);
@@ -80,7 +82,7 @@ public class CoronationScene extends BingoScene {
         note = new TextureRegion(texture(musicNote()));
         String[][] gems = {{"ff4a5a", "ffb0b8", "a8102a"}, {"4ac8ff", "c8f0ff", "1a5aa8"}, {"4affa0", "c8ffe0", "128a4a"}};
         for (int i = 0; i < gems.length; i++) {
-            jewels[i] = new TextureRegion(texture(jewel(c(gems[i][0]), c(gems[i][1]), c(gems[i][2]))));
+            jewels[i] = new TextureRegion(texture(jewel(hex(gems[i][0]), hex(gems[i][1]), hex(gems[i][2]))));
         }
         addActor(carpet);
         addActor(roll);
@@ -171,7 +173,7 @@ public class CoronationScene extends BingoScene {
             Actions.scaleTo(1.1f, 0.9f, 0.05f),
             Actions.scaleTo(1f, 1f, 0.25f, Interpolation.elasticOut),
             Actions.forever(Actions.sequence(
-                Actions.color(c("fff6c8"), 0.25f),
+                Actions.color(hex("fff6c8"), 0.25f),
                 Actions.color(Color.WHITE, 0.25f)))));
         placeOrigin(crownGlow, x, landY + crown.getHeight() * 0.5f);
         crownGlow.setScale(0.5f);
@@ -209,7 +211,7 @@ public class CoronationScene extends BingoScene {
     /** @return le tapis rouge, en perspective : il s'affine au loin, galons dorés, velours rayé de reflets. */
     private static Pixmap carpet() {
         Pixmap pixmap = pixmap(CARPET_BOTTOM, CARPET_HEIGHT);
-        Color red = c("c8102e"), light = c("e8384e"), dark = c("8a0a1e"), gold = Palette.GOLD, goldDark = c("c88a10");
+        Color red = hex("c8102e"), light = hex("e8384e"), dark = hex("8a0a1e"), gold = Palette.GOLD, goldDark = hex("c88a10");
         for (int y = 0; y < CARPET_HEIGHT; y++) {
             float width = carpetWidth(y);
             int left = Math.round((CARPET_BOTTOM - width) / 2f), right = CARPET_BOTTOM - 1 - left;
@@ -230,9 +232,9 @@ public class CoronationScene extends BingoScene {
     /** @return le rouleau du tapis encore enroulé : cylindre de velours, tranches dorées. */
     private static Pixmap roll() {
         Pixmap pixmap = pixmap(ROLL_WIDTH, ROLL_HEIGHT);
-        fillOutlined(pixmap, 0, 0, ROLL_WIDTH, ROLL_HEIGHT, c("c8102e"));
-        hLine(pixmap, 2, ROLL_WIDTH - 3, 2, c("ff6a7a"));
-        hLine(pixmap, 1, ROLL_WIDTH - 2, ROLL_HEIGHT - 2, c("8a0a1e"));
+        fillOutlined(pixmap, 0, 0, ROLL_WIDTH, ROLL_HEIGHT, hex("c8102e"));
+        hLine(pixmap, 2, ROLL_WIDTH - 3, 2, hex("ff6a7a"));
+        hLine(pixmap, 1, ROLL_WIDTH - 2, ROLL_HEIGHT - 2, hex("8a0a1e"));
         for (int x : new int[] {0, ROLL_WIDTH - 3}) fillOutlined(pixmap, x, 0, 3, ROLL_HEIGHT, Palette.GOLD);
         return pixmap;
     }
@@ -244,7 +246,7 @@ public class CoronationScene extends BingoScene {
             float dx = (x + 0.5f - CUSHION_WIDTH / 2f) / (CUSHION_WIDTH / 2f - 2f);
             float dy = (y + 0.5f - CUSHION_HEIGHT / 2f) / (CUSHION_HEIGHT / 2f);
             return dx * dx * dx * dx + dy * dy <= 1f;
-        }, (x, y) -> y < 4 ? c("9a4ac8") : y > CUSHION_HEIGHT - 4 ? c("4a1470") : c("6a2a9a"));
+        }, (x, y) -> y < 4 ? hex("9a4ac8") : y > CUSHION_HEIGHT - 4 ? hex("4a1470") : hex("6a2a9a"));
         hLine(pixmap, 4, CUSHION_WIDTH - 5, CUSHION_HEIGHT / 2, Palette.GOLD);
         for (int x : new int[] {0, CUSHION_WIDTH - 3}) {
             fillOutlined(pixmap, x, CUSHION_HEIGHT - 5, 3, 5, Palette.GOLD);
@@ -270,19 +272,19 @@ public class CoronationScene extends BingoScene {
             }
             return y >= bandTop - 4 && x >= 3 && x < CROWN_WIDTH - 3;
         };
-        Color gold = Palette.GOLD, pale = c("fff3a8"), dark = c("c88a10");
+        Color gold = Palette.GOLD, pale = hex("fff3a8"), dark = hex("c88a10");
         fillShape(pixmap, shape, (x, y) -> {
             if (y < bandTop - 4) {
                 for (int[] spike : spikes) {
                     float dx = x - spike[0], dy = y - spike[1] - 1;
-                    if (dx * dx + dy * dy <= 4.5f) return dx < 0 && dy < 0 ? Color.WHITE : c("f0ecff");
+                    if (dx * dx + dy * dy <= 4.5f) return dx < 0 && dy < 0 ? Color.WHITE : hex("f0ecff");
                 }
             }
             if (y >= CROWN_HEIGHT - 3) return dark;
             if (y == bandTop) return pale;
             return x < CROWN_WIDTH / 3 ? pale : x > CROWN_WIDTH * 2 / 3 ? dark : gold;
         });
-        Color[] gems = {c("ff4a5a"), c("4affa0"), c("4ac8ff"), c("4affa0"), c("ff4a5a")};
+        Color[] gems = {hex("ff4a5a"), hex("4affa0"), hex("4ac8ff"), hex("4affa0"), hex("ff4a5a")};
         for (int i = 0; i < gems.length; i++) {
             int gx = 4 + i * 7, gy = bandTop + 3;
             fillOutlined(pixmap, gx, gy, 4, 4, gems[i]);
@@ -295,9 +297,9 @@ public class CoronationScene extends BingoScene {
     /** @return la trompette de héraut, pavillon à droite, une bannière rouge frappée d'or sous le tube. */
     private static Pixmap trumpet() {
         Pixmap pixmap = pixmap(TRUMPET_WIDTH, TRUMPET_HEIGHT);
-        Color gold = Palette.GOLD, pale = c("fff3a8"), dark = c("c88a10");
+        Color gold = Palette.GOLD, pale = hex("fff3a8"), dark = hex("c88a10");
         // Bannière.
-        fillOutlined(pixmap, 8, 6, 14, 10, c("c8102e"));
+        fillOutlined(pixmap, 8, 6, 14, 10, hex("c8102e"));
         for (int x = 9; x < 21; x += 2) {
             pixmap.setColor(gold);
             pixmap.drawPixel(x, 16);
@@ -344,7 +346,7 @@ public class CoronationScene extends BingoScene {
             "oPGGGGo...",
             ".oGGGo....",
             "..ooo.....",
-        }, 0, 0, "oGP", OUTLINE, Palette.GOLD, c("fff3a8"));
+        }, 0, 0, "oGP", OUTLINE, Palette.GOLD, hex("fff3a8"));
         return pixmap;
     }
 

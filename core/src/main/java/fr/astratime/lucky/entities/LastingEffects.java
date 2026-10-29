@@ -8,6 +8,8 @@ import java.util.EnumMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.TreeSet;
 
 /**
  * Effets de cartes qui durent plus d'un tour, pour le combat en cours,
@@ -48,7 +50,7 @@ public class LastingEffects {
     /** Rouleau bloqué au prochain tirage par le Rouleau interdit de l'ennemi (-1 : aucun). */
     private int forbiddenReel = -1;
     /** Rien ne va plus : rouleaux bloqués sur un symbole vide au prochain tirage. */
-    private final java.util.Set<Integer> voidReels = new java.util.TreeSet<>();
+    private final Set<Integer> voidReels = new TreeSet<>();
     /** Court-circuit : rouleaux dont le meilleur devient le pire au prochain tirage. */
     private int shortCircuits;
     /** Avantage de la maison : baisses des gains du prochain tirage. */
@@ -263,15 +265,15 @@ public class LastingEffects {
     public void voidReel(int reel) { voidReels.add(reel); }
 
     /** @return les rouleaux bloqués au prochain tirage : le Rouleau interdit et ceux de Rien ne va plus. */
-    public java.util.Set<Integer> getForbiddenReels() {
-        java.util.Set<Integer> reels = new java.util.TreeSet<>(voidReels);
+    public Set<Integer> getForbiddenReels() {
+        Set<Integer> reels = new TreeSet<>(voidReels);
         if (forbiddenReel >= 0) reels.add(forbiddenReel);
         return reels;
     }
 
     /** Tirage : les rouleaux de Rien ne va plus le sont pour ce tirage, puis se libèrent. @return ces rouleaux */
-    public java.util.Set<Integer> takeVoidReels() {
-        java.util.Set<Integer> reels = new java.util.TreeSet<>(voidReels);
+    public Set<Integer> takeVoidReels() {
+        Set<Integer> reels = new TreeSet<>(voidReels);
         voidReels.clear();
         return reels;
     }

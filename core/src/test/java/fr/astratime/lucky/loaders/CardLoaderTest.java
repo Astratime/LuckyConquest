@@ -23,6 +23,11 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.*;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.Set;
+import java.util.function.Function;
 
 /**
  * Charge les vrais fichiers JSON de assets/ (sans libGDX) : toute faute de frappe
@@ -181,7 +186,7 @@ class CardLoaderTest {
     @Test
     void shopSellsConsumableCardsThatAreNotInTheStarterDeck() {
         Map<String, Integer> shop = CardLoader.loadShop(READER);
-        Map<String, Integer> expected = new java.util.LinkedHashMap<>();
+        Map<String, Integer> expected = new LinkedHashMap<>();
         expected.put("bingo", 20000);
         expected.put("russian_roulette", 15000);
         expected.put("corruption", 10000);
@@ -200,10 +205,10 @@ class CardLoaderTest {
 
     @Test
     void everyReelSymbolHasItsBingoCard() {
-        java.util.Set<String> ids = new java.util.HashSet<>();
+        Set<String> ids = new HashSet<>();
         for (Card card : CardLoader.loadAll(READER)) ids.add(card.getId());
         List<fr.astratime.lucky.entities.Symbol> symbols =
-            new java.util.ArrayList<>(fr.astratime.lucky.entities.SymbolRegistry.getAttackSymbols());
+            new ArrayList<>(fr.astratime.lucky.entities.SymbolRegistry.getAttackSymbols());
         symbols.addAll(fr.astratime.lucky.entities.SymbolRegistry.getDefenseSymbols());
         symbols.addAll(fr.astratime.lucky.entities.SymbolRegistry.getGainSymbols());
         for (fr.astratime.lucky.entities.Symbol symbol : symbols) {
@@ -219,7 +224,7 @@ class CardLoaderTest {
         assertEquals(5_000_000L, boutique.get("1_pique"), "les As gardent leur prix");
         assertEquals(4_500_000L, boutique.get("joker"), "les Jokers sont triplés");
         assertEquals(1_000_000L, boutique.get("11_coeur"), "les autres cartes sont doublées");
-        java.util.Set<String> shop = CardLoader.loadShop(READER).keySet();
+        Set<String> shop = CardLoader.loadShop(READER).keySet();
         for (Map.Entry<String, Long> entry : boutique.entrySet()) {
             Card card = CardLoader.cardFactory(READER).apply(entry.getKey());
             assertTrue(entry.getValue() > 0, card.getId());
@@ -232,7 +237,7 @@ class CardLoaderTest {
 
     @Test
     void aPlusCardHasTheSameCardWithValuesUpByHalf() {
-        java.util.function.Function<String, Card> factory = CardLoader.cardFactory(READER);
+        Function<String, Card> factory = CardLoader.cardFactory(READER);
         Card king = factory.apply("13_trefle");
         Card plus = factory.apply("13_trefle+");
 
@@ -255,7 +260,7 @@ class CardLoaderTest {
 
     @Test
     void theAcesHaveAPlusVersion() {
-        java.util.function.Function<String, Card> factory = CardLoader.cardFactory(READER);
+        Function<String, Card> factory = CardLoader.cardFactory(READER);
         for (String ace : List.of("1_coeur", "1_trefle", "1_carreau", "1_pique")) {
             assertTrue(factory.apply(ace).isUpgradable(), ace);
             assertNotEquals(factory.apply(ace).getDescription(), factory.apply(ace + "+").getDescription(), ace);
@@ -264,7 +269,7 @@ class CardLoaderTest {
 
     @Test
     void aCardWithoutAValueToImproveHasNoPlusVersion() {
-        java.util.function.Function<String, Card> factory = CardLoader.cardFactory(READER);
+        Function<String, Card> factory = CardLoader.cardFactory(READER);
         assertFalse(factory.apply("bet").isUpgradable());
         assertThrows(IllegalArgumentException.class, () -> factory.apply("bet+"));
     }
@@ -283,7 +288,7 @@ class CardLoaderTest {
 
     @Test
     void everyArchetypeCardButTheWildOneHasARankAndStatBonuses() {
-        java.util.function.Function<String, Card> factory = CardLoader.cardFactory(READER);
+        Function<String, Card> factory = CardLoader.cardFactory(READER);
         for (String id : List.of("joker_sauvage", "gigue_du_lutin", "sceau_du_pharaon", "intimidation", "chamboule_tout")) {
             Card card = factory.apply(id);
             assertTrue(card.hasRank(), id);

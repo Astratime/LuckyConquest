@@ -2,6 +2,9 @@ package fr.astratime.lucky.assets;
 
 import com.badlogic.gdx.graphics.Color;
 
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
 /**
  * Couleurs partagées du jeu : la palette de base, en pixel art, puis les rôles
  * de l'interface construits sur elle. Une couleur qui sert à plusieurs endroits
@@ -12,6 +15,9 @@ import com.badlogic.gdx.graphics.Color;
  * pour la faire varier, travailler sur une copie ({@link Color#cpy()}).
  */
 public final class Palette {
+
+    /** Couleurs déjà lues par {@link #hex(String)}, par code (déclaré avant les constantes qui s'en servent). */
+    private static final Map<String, Color> CACHE = new ConcurrentHashMap<>();
 
     // -------------------------------------------------------------------------
     // Palette de base
@@ -70,9 +76,13 @@ public final class Palette {
     /** Couleurs de la fête, tirées au hasard par les confettis et les feux d'artifice. */
     public static final Color[] FESTIVE = {GOLD, RUBY, MINT, SKY, VIOLET, Color.WHITE};
 
-    /** @return la couleur {@code rrggbb}, opaque. */
-    private static Color hex(String rrggbb) {
-        return Color.valueOf(rrggbb);
+    /**
+     * @return la couleur {@code rrggbb} (opaque) ou {@code rrggbbaa}, lue une seule fois puis gardée :
+     *         les dessins l'appellent à chaque image sans rien allouer. Comme les autres couleurs
+     *         de la palette, elle ne doit jamais être modifiée (travailler sur une {@link Color#cpy() copie}).
+     */
+    public static Color hex(String rrggbb) {
+        return CACHE.computeIfAbsent(rrggbb, Color::valueOf);
     }
 
     private Palette() {}

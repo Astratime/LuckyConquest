@@ -16,6 +16,8 @@ import fr.astratime.lucky.i18n.Lang;
 import java.util.ArrayList;
 import java.util.List;
 
+import static fr.astratime.lucky.assets.Palette.hex;
+
 /**
  * Le Jeu bonus, par-dessus le combat : « JEU BONUS ! » éclate, les lumières du
  * casino s'éteignent rangée par rangée, puis la machine ouvre ses portes sur une
@@ -53,9 +55,9 @@ public class BonusGameCutscene extends Cutscene {
     /** Symboles qui défilent par seconde dans une case qui tourne. */
     private static final float REEL_SPEED   = 14f;
 
-    private static final Color GOLD = c("ffc93a"), GOLD_LIGHT = c("ffe58a"), GOLD_DARK = c("b8801f");
-    private static final Color RED = c("c8203a"), RED_DARK = c("6e0f1e"), INK = c("1c0f24"), NIGHT = c("07040c");
-    private static final Color BULB_OFF = c("3a2a20"), CREAM = c("fff6dc");
+    private static final Color GOLD = hex("ffc93a"), GOLD_LIGHT = hex("ffe58a"), GOLD_DARK = hex("b8801f");
+    private static final Color RED = hex("c8203a"), RED_DARK = hex("6e0f1e"), INK = hex("1c0f24"), NIGHT = hex("07040c");
+    private static final Color BULB_OFF = hex("3a2a20"), CREAM = hex("fff6dc");
 
     private final BonusGame game;
     private final BitmapFont font;

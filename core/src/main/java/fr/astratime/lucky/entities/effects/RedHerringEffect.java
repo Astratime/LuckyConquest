@@ -1,6 +1,5 @@
 package fr.astratime.lucky.entities.effects;
 
-import fr.astratime.lucky.entities.context.PlayContext;
 import fr.astratime.lucky.entities.context.TurnContext;
 import fr.astratime.lucky.i18n.Lang;
 import fr.astratime.lucky.popups.EffectPopup;
@@ -18,7 +17,7 @@ public class RedHerringEffect extends Effect {
 
     @Override
     public void apply(TurnContext context) {
-        context.getCombatContext().getEnemy().addRedHerring();
+        context.getCombatContext().getEnemy().getMaluses().addRedHerring();
     }
 
     @Override

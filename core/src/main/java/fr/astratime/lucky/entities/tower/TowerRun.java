@@ -66,6 +66,7 @@ public class TowerRun implements CombatRun {
     /** @return la cagnotte du Jeu bonus de cette ascension du chapitre. */
     public BonusPot getPot() { return pot; }
     /** @return {@code true} en mode difficile. */
+    @Override
     public boolean isHard() { return hard; }
     @Override
     public String getLabel() { return hard ? Lang.f("{0} difficile", chapter.getLabel()) : chapter.getLabel(); }

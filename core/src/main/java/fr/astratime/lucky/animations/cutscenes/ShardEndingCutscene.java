@@ -8,6 +8,8 @@ import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.utils.Array;
 import fr.astratime.lucky.entities.enemy.EnemyKind;
 
+import static fr.astratime.lucky.assets.Palette.hex;
+
 /**
  * Fin du chapitre 3, après la victoire sur l'Éclat Originel : le soleil doré
  * brille au-dessus de la ville, puis s'éteint et se brise. Ses éclats retombent
@@ -33,14 +35,14 @@ public class ShardEndingCutscene extends Cutscene {
     public static final float COVER_FULL  = 10.9f;
 
     /** Les trois éclats : la Comète, la Reine, l'Éclat Originel. */
-    private static final Color[] SHARDS = {c("ffc93a"), c("e0283a"), c("fff6c8")};
+    private static final Color[] SHARDS = {hex("ffc93a"), hex("e0283a"), hex("fff6c8")};
     /** Les habitants sur les toits : position (fraction de la largeur) et quand ils lèvent les mains. */
     private static final float[][] PEOPLE = {{0.08f, 0f}, {0.15f, 0.3f}, {0.31f, 0.15f}, {0.38f, 0.5f},
         {0.57f, 0.1f}, {0.64f, 0.4f}, {0.71f, 0.2f}, {0.86f, 0.35f}, {0.93f, 0.05f}};
 
-    private static final Color GOLD = c("ffc93a"), HOT = c("fff6c8"), SKY_TOP = c("05071a"), SKY_LOW = c("2b1a4a");
+    private static final Color GOLD = hex("ffc93a"), HOT = hex("fff6c8"), SKY_TOP = hex("05071a"), SKY_LOW = hex("2b1a4a");
 
-    private static final Color DAY_LOW = c("8a4a1e"), DAY_TOP = c("3a2a10");
+    private static final Color DAY_LOW = hex("8a4a1e"), DAY_TOP = hex("3a2a10");
 
     private final TextureRegion shard, city, personDown, personUp, gem;
     private final Color low = new Color(), top = new Color();
@@ -54,7 +56,7 @@ public class ShardEndingCutscene extends Cutscene {
         super(kit.settings(), kit.shake(), kit.sound("shard_ending"));
         shard = kit.portrait(EnemyKind.ECLAT);
         city  = region(skyline(340, 72, 42, false), false);
-        Color[] ink = {c("0b0712")};
+        Color[] ink = {hex("0b0712")};
         personDown = art("o", ink,
             "..oo..",
             "..oo..",
@@ -77,7 +79,7 @@ public class ShardEndingCutscene extends Cutscene {
             "..oo..",
             ".o..o.",
             ".o..o.");
-        gem = art("o#", new Color[] {c("1a0a0e"), Color.WHITE},
+        gem = art("o#", new Color[] {hex("1a0a0e"), Color.WHITE},
             "..o..",
             ".o#o.",
             "o###o",
@@ -160,7 +162,7 @@ public class ShardEndingCutscene extends Cutscene {
         float lights = 0.45f + 0.55f * progress(BREAK + 0.5f, COVER_START);
         batch.setColor(lights, lights * 0.9f, lights * 0.85f, 1f);
         for (float x = -MARGIN - 60f; x < width + MARGIN; x += cityW) batch.draw(city, x, 0f, cityW, cityH);
-        batch.setColor(c("0b0712"));
+        batch.setColor(hex("0b0712"));
         batch.draw(pixel, -MARGIN, -MARGIN, width + 2f * MARGIN, MARGIN + 2f);
         glow(batch, width / 2f, 0f, width * 1.2f, GOLD, 0.2f * progress(BREAK, COVER_START));
         drawRooftops(batch, width, height);
@@ -182,7 +184,7 @@ public class ShardEndingCutscene extends Cutscene {
     /** Les toits au premier plan ; les habitants y sortent et tendent les mains vers la neige. */
     private void drawRooftops(Batch batch, float width, float height) {
         float roof = height * 0.1f, u = height / 110f;
-        batch.setColor(c("07040c"));
+        batch.setColor(hex("07040c"));
         batch.draw(pixel, -MARGIN, -MARGIN, width + 2f * MARGIN, roof + MARGIN);
         for (int i = 0; i < 7; i++) {                                     // cheminées et lucarnes
             float x = width * (0.05f + i * 0.15f);

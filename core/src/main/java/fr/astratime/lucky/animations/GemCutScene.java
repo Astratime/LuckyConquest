@@ -13,6 +13,8 @@ import com.badlogic.gdx.scenes.scene2d.actions.Actions;
 import com.badlogic.gdx.scenes.scene2d.ui.Image;
 import fr.astratime.lucky.assets.Palette;
 
+import static fr.astratime.lucky.assets.Palette.hex;
+
 /**
  * Bingo du Diamant : la taille. Une pierre brute tourne lentement sur
  * elle-même ; un burin la frappe d'un coup sec et elle se révèle taillée et
@@ -161,7 +163,7 @@ public class GemCutScene extends BingoScene {
         int cx = 18, cy = 14;
         for (int i = 0; i < points.length; i++) {
             int[] a = points[i], b = points[(i + 1) % points.length];
-            pixmap.setColor(c(facets[i]));
+            pixmap.setColor(hex(facets[i]));
             pixmap.fillTriangle(cx, cy, a[0], a[1], b[0], b[1]);
         }
         pixmap.setColor(OUTLINE);
@@ -169,10 +171,10 @@ public class GemCutScene extends BingoScene {
             int[] a = points[i], b = points[(i + 1) % points.length];
             pixmap.drawLine(a[0], a[1], b[0], b[1]);
         }
-        pixmap.setColor(c("3e4a58"));
+        pixmap.setColor(hex("3e4a58"));
         pixmap.drawLine(cx, cy, 31, 24);
         pixmap.drawLine(cx, cy, 5, 23);
-        pixmap.setColor(c("c8e6f0"));
+        pixmap.setColor(hex("c8e6f0"));
         pixmap.drawPixel(13, 5);
         pixmap.drawPixel(14, 5);
         pixmap.drawPixel(13, 6);
@@ -192,7 +194,7 @@ public class GemCutScene extends BingoScene {
             int center = CHISEL_WIDTH / 2;
             hLine(pixmap, center - half, center + half - 1, y, OUTLINE);
             if (half > 1) {
-                hLine(pixmap, center - half + 1, center - 1, y, c("e0e8f0"));
+                hLine(pixmap, center - half + 1, center - 1, y, hex("e0e8f0"));
                 hLine(pixmap, center, center + half - 2, y, Palette.STEEL);
             }
         }

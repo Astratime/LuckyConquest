@@ -14,6 +14,8 @@ import fr.astratime.lucky.settings.VisualSettings;
 
 import java.util.Random;
 
+import static fr.astratime.lucky.assets.Palette.hex;
+
 /**
  * Cinématique avant la Comète Dorée (boss du chapitre 1 de la Tour des
  * épreuves) : d'abord la ville de casinos, calme ; les enseignes clignotent,
@@ -55,7 +57,7 @@ public class CometCutscene extends Cutscene {
     /** L'écran est tout blanc : la présentation du boss apparaît dessous. */
     public static final float WHITE_FULL   = 10.8f;
     /** Les enseignes de la rue, avant la nuit des étoiles filantes : leurs couleurs. */
-    private static final Color[] NEONS     = {c("ff4fa0"), c("4fd8ff"), c("ffc93a"), c("ff4fa0")};
+    private static final Color[] NEONS     = {hex("ff4fa0"), hex("4fd8ff"), hex("ffc93a"), hex("ff4fa0")};
     /** Les passants : position (fraction de la largeur). */
     private static final float[] PEOPLE    = {0.17f, 0.21f, 0.39f, 0.52f, 0.56f, 0.74f, 0.92f};
     private static final int   SKY_BANDS   = 48;
@@ -65,14 +67,14 @@ public class CometCutscene extends Cutscene {
     private static final float METEOR_SCALE_FROM = 1.6f;
     private static final float METEOR_SCALE_TO   = 6.5f;
 
-    private static final Color SKY_TOP     = c("05071a");
-    private static final Color SKY_LOW     = c("2b1a4a");
-    private static final Color HORIZON     = c("5a2c5e");
-    private static final Color FIRE_HOT    = c("fff6c8");
-    private static final Color FIRE_GOLD   = c("ffc93a");
-    private static final Color FIRE_ORANGE = c("ff7a1a");
-    private static final Color FIRE_RED    = c("c92a12");
-    private static final Color SMOKE       = c("2a1a1e");
+    private static final Color SKY_TOP     = hex("05071a");
+    private static final Color SKY_LOW     = hex("2b1a4a");
+    private static final Color HORIZON     = hex("5a2c5e");
+    private static final Color FIRE_HOT    = hex("fff6c8");
+    private static final Color FIRE_GOLD   = hex("ffc93a");
+    private static final Color FIRE_ORANGE = hex("ff7a1a");
+    private static final Color FIRE_RED    = hex("c92a12");
+    private static final Color SMOKE       = hex("2a1a1e");
 
     private final TextureRegion  meteor, city, cityDark, moon, slot, die, walker, watcher;
 
@@ -92,8 +94,8 @@ public class CometCutscene extends Cutscene {
         city   = region(skyline(true), false);
         cityDark = region(skyline(false), false);
         moon   = region(crescent(), false);
-        Color[] slotColors = {c("140a0a"), c("e0283a"), c("7a0f20"), c("ffc93a"), c("fff6c8"), c("f4ecdc"),
-            c("1a1418"), c("c8c8d4")};
+        Color[] slotColors = {hex("140a0a"), hex("e0283a"), hex("7a0f20"), hex("ffc93a"), hex("fff6c8"), hex("f4ecdc"),
+            hex("1a1418"), hex("c8c8d4")};
         slot = art("ordgywkc", slotColors,
             "...gggggggggg...r",
             "..gyggyggyggyg..c",
@@ -110,7 +112,7 @@ public class CometCutscene extends Cutscene {
             "..orrrrrrrrrro...",
             "..orrrrrrrrrro...",
             "..oooooooooooo...");
-        die = art("owr", new Color[] {c("1a0a0e"), c("f4ecdc"), c("e0283a")},
+        die = art("owr", new Color[] {hex("1a0a0e"), hex("f4ecdc"), hex("e0283a")},
             "ooooooo",
             "owwwwwo",
             "owrwwwo",
@@ -118,7 +120,7 @@ public class CometCutscene extends Cutscene {
             "owwwrwo",
             "owwwwwo",
             "ooooooo");
-        Color[] ink = {c("05030a")};
+        Color[] ink = {hex("05030a")};
         walker = art("o", ink,
             ".oo.",
             ".oo.",
@@ -313,7 +315,7 @@ public class CometCutscene extends Cutscene {
         for (float x = impactX() - cityWidth * 0.49f; x < right; x += cityWidth) {
             drawCity(batch, x, horizon - cityHeight * 0.18f, cityWidth, cityHeight, cut);
         }
-        batch.setColor(c("0b0712"));
+        batch.setColor(hex("0b0712"));
         batch.draw(pixel, left, bottom, right - left, horizon - cityHeight * 0.18f - bottom + 1f);
         drawForeground(batch, Math.max(glow * glow, blast));
 
@@ -346,14 +348,14 @@ public class CometCutscene extends Cutscene {
     private void drawStreet(Batch batch) {
         float width = worldWidth(), height = worldHeight();
         float pan = progress(0f, STREET_END) * 60f;
-        fill(batch, c("1a1028"), 1f);
+        fill(batch, hex("1a1028"), 1f);
         float u = height / 80f;
         for (int i = 0; i < 4; i++) {                                   // façades et vitrines
             float x = -MARGIN + i * width * 0.28f - pan;
-            batch.setColor(i % 2 == 0 ? c("22152e") : c("2a1a36"));
+            batch.setColor(i % 2 == 0 ? hex("22152e") : hex("2a1a36"));
             batch.draw(pixel, x, height * 0.25f, width * 0.27f, height * 0.8f);
             for (int w = 0; w < 3; w++) {
-                batch.setColor(c("ffcf5a").r, c("ffcf5a").g * 0.8f, 0.3f, 0.35f + 0.1f * ((i + w) % 2));
+                batch.setColor(hex("ffcf5a").r, hex("ffcf5a").g * 0.8f, 0.3f, 0.35f + 0.1f * ((i + w) % 2));
                 batch.draw(pixel, x + width * (0.03f + w * 0.08f), height * 0.62f, width * 0.05f, height * 0.12f);
             }
             Color neon = NEONS[i % NEONS.length];                       // l'enseigne, qui clignote
@@ -367,19 +369,19 @@ public class CometCutscene extends Cutscene {
             batch.draw(pixel, sx + sw - 4f, sy, 4f, sh);
             for (int k = 0; k < 5; k++) batch.draw(pixel, sx + sw * (0.12f + k * 0.17f), sy + sh * 0.3f, sw * 0.09f, sh * 0.4f);
         }
-        batch.setColor(c("0e0816"));                                     // le trottoir
+        batch.setColor(hex("0e0816"));                                     // le trottoir
         batch.draw(pixel, -MARGIN, -MARGIN, width + 2f * MARGIN, height * 0.25f + MARGIN);
-        batch.setColor(c("2a1e36"));
+        batch.setColor(hex("2a1e36"));
         batch.draw(pixel, -MARGIN, height * 0.25f - 6f, width + 2f * MARGIN, 6f);
         // La machine à sous, seule ; ses ampoules clignotent.
         float scale = 2.8f * u, mx = width * 0.5f - pan * 0.5f, my = height * 0.18f;
-        glow(batch, mx, my + 6f * scale, 40f * scale, c("ffc93a"), 0.3f + 0.1f * MathUtils.sin(time * 6f));
+        glow(batch, mx, my + 6f * scale, 40f * scale, hex("ffc93a"), 0.3f + 0.1f * MathUtils.sin(time * 6f));
         batch.setColor(Color.WHITE);
         batch.draw(slot, mx - slot.getRegionWidth() * scale / 2f, my, slot.getRegionWidth() * scale,
             slot.getRegionHeight() * scale);
         for (int k = 0; k < 4; k++) {
             if (((int) (time * 6f) + k) % 2 == 0) glow(batch, mx + (k - 1.5f) * 3f * scale - 0.5f * scale,
-                my + 13.5f * scale, 3f * scale, c("fff6c8"), 0.8f);
+                my + 13.5f * scale, 3f * scale, hex("fff6c8"), 0.8f);
         }
     }
 
@@ -516,7 +518,7 @@ public class CometCutscene extends Cutscene {
             length = 120f + 220f * random.nextFloat();
             thickness = random.nextFloat() < 0.2f ? 6f : 3.5f;
             float hue = random.nextFloat();
-            color = hue < 0.5f ? Color.WHITE : hue < 0.8f ? c("ffe9a0") : c("b8d4ff");
+            color = hue < 0.5f ? Color.WHITE : hue < 0.8f ? hex("ffe9a0") : hex("b8d4ff");
         }
     }
 
@@ -594,8 +596,8 @@ public class CometCutscene extends Cutscene {
         float center = (size - 1) / 2f;
         float[] bumps = new float[12];
         for (int i = 0; i < bumps.length; i++) bumps[i] = 8.2f + 1.8f * random.nextFloat();
-        Color outline = c("140a0a"), dark = c("3a1f1c"), rock = c("5e3428"), light = c("8a5236");
-        Color lava = c("ff8a1e"), hot = c("ffe066");
+        Color outline = hex("140a0a"), dark = hex("3a1f1c"), rock = hex("5e3428"), light = hex("8a5236");
+        Color lava = hex("ff8a1e"), hot = hex("ffe066");
         for (int y = 0; y < size; y++) {
             for (int x = 0; x < size; x++) {
                 float dx = x - center, dy = y - center;
@@ -626,10 +628,10 @@ public class CometCutscene extends Cutscene {
         Pixmap pixmap = new Pixmap(width, height, Pixmap.Format.RGBA8888);
         pixmap.setBlending(Pixmap.Blending.None);
         Random random = new Random(42);
-        Color body = c("0b0712"), window = c("ffcf5a"), windowDim = c("8a5a2a"), neon = c("ff4fa0"), neon2 = c("4fd8ff");
+        Color body = hex("0b0712"), window = hex("ffcf5a"), windowDim = hex("8a5a2a"), neon = hex("ff4fa0"), neon2 = hex("4fd8ff");
         if (!lit) {                                                  // la même ville, lumières éteintes
-            window = windowDim = c("1c1424");
-            neon = neon2 = c("24182c");
+            window = windowDim = hex("1c1424");
+            neon = neon2 = hex("24182c");
         }
         int x = 0;
         while (x < width) {
@@ -676,7 +678,7 @@ public class CometCutscene extends Cutscene {
         int size = 21;
         Pixmap pixmap = new Pixmap(size, size, Pixmap.Format.RGBA8888);
         pixmap.setBlending(Pixmap.Blending.None);
-        Color pale = c("fff4d6"), shade = c("e8d6a8");
+        Color pale = hex("fff4d6"), shade = hex("e8d6a8");
         float center = (size - 1) / 2f, radius = 9.6f;
         for (int y = 0; y < size; y++) {
             for (int x = 0; x < size; x++) {

@@ -206,6 +206,15 @@ public final class Lang {
         return isEnglish() ? count != 1 : count > 1;
     }
 
+    /**
+     * Comme {@link #f(String, Object...)}, au singulier ({@code one}) ou au pluriel
+     * ({@code many}) selon {@code count} (voir {@link #plural(long)}) :
+     * {@code Lang.n(n, "{0} tour", "{0} tours", n)}. Chaque forme se traduit à part.
+     */
+    public static String n(long count, String one, String many, Object... args) {
+        return f(plural(count) ? many : one, args);
+    }
+
     /** @return {@code true} si la langue choisie est l'anglais (formats de nombres, pluriels). */
     public static boolean isEnglish() { return current == Language.ENGLISH; }
 }

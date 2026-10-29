@@ -10,6 +10,8 @@ import com.badlogic.gdx.scenes.scene2d.actions.Actions;
 import com.badlogic.gdx.scenes.scene2d.ui.Image;
 import fr.astratime.lucky.assets.Palette;
 
+import static fr.astratime.lucky.assets.Palette.hex;
+
 /**
  * Bingo du Fer à cheval : un poteau de bois se dresse au milieu de la table,
  * un piquet planté près de son sommet. Un fer à cheval doré géant est lancé
@@ -52,7 +54,7 @@ public class HorseshoeScene extends BingoScene {
 
     public HorseshoeScene() {
         post = image(new TextureRegion(texture(post())), HORSESHOE_SCALE);
-        glow = image(texture(halo(48, c("fff0a0"))));
+        glow = image(texture(halo(48, hex("fff0a0"))));
         glow.setOrigin(glow.getWidth() / 2f, glow.getHeight() / 2f);
         shoe = image(new TextureRegion(texture(horseshoe())), HORSESHOE_SCALE);
         shoe.setOrigin(HOOK_X * HORSESHOE_SCALE, (SHOE_SIZE - HOOK_Y) * HORSESHOE_SCALE);
@@ -118,7 +120,7 @@ public class HorseshoeScene extends BingoScene {
             Actions.scaleTo(1.15f, 0.88f, 0.05f),
             Actions.scaleTo(1f, 1f, 0.25f, Interpolation.elasticOut),
             Actions.forever(Actions.sequence(
-                Actions.color(c("fff6c8"), 0.2f),
+                Actions.color(hex("fff6c8"), 0.2f),
                 Actions.color(Color.WHITE, 0.2f)))));
         glow.setVisible(true);
         glow.getColor().a = 0f;
@@ -137,7 +139,7 @@ public class HorseshoeScene extends BingoScene {
             float inner = y < cy ? Math.abs(dx) - 7.5f : (float) Math.sqrt(dx * dx + dy * dy) - 7.5f;
             return outer <= 0f && inner > 0f;
         };
-        Color gold = Palette.GOLD, light = c("fff3a8"), shade = c("d49a1c"), dark = c("a8700c");
+        Color gold = Palette.GOLD, light = hex("fff3a8"), shade = hex("d49a1c"), dark = hex("a8700c");
         fillShape(pixmap, shape, (x, y) -> {
             float dx = x + 0.5f - cx, dy = y + 0.5f - cy;
             float radius = y < cy ? Math.abs(dx) : (float) Math.sqrt(dx * dx + dy * dy);
@@ -202,7 +204,7 @@ public class HorseshoeScene extends BingoScene {
             ".....ooSo....",
             "......oSo....",
             ".......o.....",
-        }, 0, 0, "oGLDS", OUTLINE, c("3fbf4a"), c("8af07a"), c("23852e"), c("6a4a20"));
+        }, 0, 0, "oGLDS", OUTLINE, hex("3fbf4a"), hex("8af07a"), hex("23852e"), hex("6a4a20"));
         return pixmap;
     }
 }

@@ -8,6 +8,8 @@ import com.badlogic.gdx.scenes.scene2d.actions.Actions;
 import com.badlogic.gdx.scenes.scene2d.ui.Image;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 
+import static fr.astratime.lucky.assets.Palette.hex;
+
 /**
  * Bingo du Dé : trois dés géants (ceux du Sept, voir {@link FlamingDieScene})
  * roulent sur le tapis depuis la gauche, l'un derrière l'autre, en rebondissant
@@ -42,7 +44,7 @@ public class TripleDiceScene extends BingoScene {
 
     public TripleDiceScene() {
         for (int value = 1; value <= 6; value++) faces[value] = new TextureRegion(texture(FlamingDieScene.face(value)));
-        TextureRegion glow = new TextureRegion(texture(halo(FlamingDieScene.SIZE + 14, c("ff5a1f"))));
+        TextureRegion glow = new TextureRegion(texture(halo(FlamingDieScene.SIZE + 14, hex("ff5a1f"))));
         for (int i = 0; i < dice.length; i++) {
             glows[i] = image(glow, DIE_SCALE);
             glows[i].setOrigin(glows[i].getWidth() / 2f, glows[i].getHeight() / 2f);
@@ -134,7 +136,7 @@ public class TripleDiceScene extends BingoScene {
             Actions.scaleTo(1f, 1f, 0.25f, Interpolation.elasticOut),
             Actions.delay(glowAt),
             Actions.forever(Actions.sequence(
-                Actions.color(c("ffb090"), 0.18f),
+                Actions.color(hex("ffb090"), 0.18f),
                 Actions.color(Color.WHITE, 0.18f)))));
     }
 

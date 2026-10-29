@@ -9,6 +9,8 @@ import com.badlogic.gdx.scenes.scene2d.actions.Actions;
 import com.badlogic.gdx.scenes.scene2d.ui.Image;
 import fr.astratime.lucky.assets.Palette;
 
+import static fr.astratime.lucky.assets.Palette.hex;
+
 /**
  * Bingo de l'Épée : trois épées tombent du ciel, pointe en bas, et se plantent
  * l'une après l'autre devant l'ennemi. Elles s'arrachent du sol en
@@ -99,7 +101,7 @@ public class SwordsScene extends BingoScene {
                 Actions.parallel(
                     Actions.moveBy(0f, PULL_HEIGHT + EMBED, 0.25f, Interpolation.pow2Out),
                     Actions.rotateTo(0f, 0.25f),
-                    Actions.color(c("fff0c0"), 0.25f)),
+                    Actions.color(hex("fff0c0"), 0.25f)),
                 Actions.delay(SLASH_TIME - PULL_TIME - 0.25f - 0.05f),
                 Actions.parallel(Actions.scaleTo(1.4f, 1.4f, 0.12f), Actions.fadeOut(0.12f)),
                 Actions.visible(false)));
@@ -115,7 +117,7 @@ public class SwordsScene extends BingoScene {
                 line.setOrigin(SLASH_LENGTH / 2f, thickness / 2f);
                 placeOrigin(line, x, y);
                 line.setRotation(angle);
-                line.setColor(glow ? new Color(1f, 0.6f, 0.2f, 0.5f) : c("fff6dc"));
+                line.setColor(glow ? new Color(1f, 0.6f, 0.2f, 0.5f) : hex("fff6dc"));
                 line.setScale(0f, 1f);
                 line.setVisible(false);
                 line.addAction(Actions.sequence(
@@ -135,15 +137,15 @@ public class SwordsScene extends BingoScene {
         int center = SWORD_WIDTH / 2;
         // Pommeau.
         fillOutlinedCircle(pixmap, center, 3, 3, Palette.GOLD);
-        pixmap.setColor(c("fff3a8"));
+        pixmap.setColor(hex("fff3a8"));
         pixmap.drawPixel(center - 1, 2);
         // Poignée.
-        fillOutlined(pixmap, center - 2, 6, 5, 10, c("6a3a1c"));
-        pixmap.setColor(c("9a5a2c"));
+        fillOutlined(pixmap, center - 2, 6, 5, 10, hex("6a3a1c"));
+        pixmap.setColor(hex("9a5a2c"));
         for (int y = 8; y < 15; y += 2) pixmap.drawLine(center - 1, y, center + 1, y - 1);
         // Garde.
         fillOutlined(pixmap, 0, 15, SWORD_WIDTH, 4, Palette.GOLD);
-        hLine(pixmap, 1, SWORD_WIDTH - 2, 16, c("fff3a8"));
+        hLine(pixmap, 1, SWORD_WIDTH - 2, 16, hex("fff3a8"));
         pixmap.setColor(Palette.RUBY);
         pixmap.fillRectangle(center - 1, 16, 2, 2);
         // Lame, qui s'affine en pointe.
@@ -152,7 +154,7 @@ public class SwordsScene extends BingoScene {
             int half = y < tipFrom ? 3 : Math.max(0, 3 - (y - tipFrom + 1) / 2);
             hLine(pixmap, center - half - 1, center + half + 1, y, OUTLINE);
             if (half <= 0) continue;
-            hLine(pixmap, center - half, center - 1, y, c("eef4fa"));
+            hLine(pixmap, center - half, center - 1, y, hex("eef4fa"));
             hLine(pixmap, center + 1, center + half, y, Palette.STEEL);
             pixmap.setColor(y < tipFrom ? Palette.STEEL_DARK : Palette.STEEL_LIGHT);
             pixmap.drawPixel(center, y); // gouttière

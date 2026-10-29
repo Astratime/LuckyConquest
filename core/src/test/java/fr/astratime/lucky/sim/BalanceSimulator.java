@@ -39,6 +39,8 @@ import java.util.Objects;
 import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
+import java.util.Arrays;
+import java.util.function.BiFunction;
 
 /**
  * Simulateur d'équilibrage : un robot simple joue des milliers de tours avec le
@@ -142,7 +144,7 @@ public final class BalanceSimulator {
 
     private static final long SEED = 42L;
     /** Rangs comparés pour les donjons (aucun, puis quelques paliers). */
-    private static final List<Rank> RANKS = new ArrayList<>(java.util.Arrays.asList(
+    private static final List<Rank> RANKS = new ArrayList<>(Arrays.asList(
         null, Rank.AVARE, Rank.FLAMBEUR, Rank.REQUIN, Rank.MAGNAT));
 
     private final Sizes sizes;
@@ -324,7 +326,7 @@ public final class BalanceSimulator {
         Random random = new Random(seed);
         double[] totals = new double[games];
         for (int i = 0; i < games; i++) totals[i] = BonusGame.play(reels, 100, random).getTotal() / 100.0;
-        java.util.Arrays.sort(totals);
+        Arrays.sort(totals);
         return totals;
     }
 
@@ -727,7 +729,7 @@ public final class BalanceSimulator {
     // -------------------------------------------------------------------------
 
     /** Une règle de pièces : ce que rapporte une descente {@code run} dans le lieu {@code place}. */
-    record Policy(String name, String text, java.util.function.BiFunction<Run, Place, Double> coins) {}
+    record Policy(String name, String text, BiFunction<Run, Place, Double> coins) {}
 
     /**
      * @param chestSpins coût du coffre de chaque lieu, en coûts de tirage (dans l'ordre de {@link Place})
@@ -883,7 +885,6 @@ public final class BalanceSimulator {
     private void towerSection(StringBuilder out) {
         out.append("## 8. Tour des épreuves\n\n")
             .append("Part des chapitres gagnés (premier ennemi, un challenger au hasard, puis le boss), mode normal.\n\n");
-        EnemyKind.setTowerHard(false);
         List<Rank> ranks = allRanks();
         fr.astratime.lucky.entities.tower.Chapter[] chapters = fr.astratime.lucky.entities.tower.Chapter.values();
         Map<String, Double> starter = new ConcurrentHashMap<>(), top = new ConcurrentHashMap<>();

@@ -44,7 +44,7 @@ class KingPhasesTest {
         assertFalse(king.enterPhaseTwo(), "en pleine forme : phase 1");
         king.takeDamage(king.getMaxHp() / 2 + 1);
         EnemyTurnResult turn = new EnemyTurnResolver(new Random(1))
-            .resolve(king, new Player("Joueur", 1_000_000, List.of()), 0, 0f);
+            .resolve(king, new Player("Joueur", 1_000_000, List.of()));
 
         assertInstanceOf(EnemyPhaseEvent.class, turn.openingEvents().get(0));
         assertEquals(2, king.getPhase());

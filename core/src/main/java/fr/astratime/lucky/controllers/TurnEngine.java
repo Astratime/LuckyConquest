@@ -1,6 +1,6 @@
 package fr.astratime.lucky.controllers;
 
-import fr.astratime.lucky.entities.BigNumber;
+import fr.astratime.lucky.entities.EnemyMaluses;
 import fr.astratime.lucky.entities.*;
 import fr.astratime.lucky.entities.context.CombatContext;
 import fr.astratime.lucky.entities.context.SpinContext;
@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.HashMap;
 
 /**
  * Orchestre un tour complet en séquençant les phases :
@@ -101,102 +102,12 @@ public class TurnEngine {
 
         // Phase 2 : spin avec SpinContext, puis les Jokers prennent leur valeur
         Player      player  = gameState.getPlayer();
-        SlotMachine machine = player.getSlotMachine();
-        Symbol[] drawn   = machine.spin(turnContext.getSpinContext());
-        Symbol[] symbols = machine.resolveJokers(drawn, turnContext.getSpinContext());
-        // Relance : sans paire, la machine relance (une fois par carte)
-        Symbol[] rerolled = null;
-        for (int i = 0; i < turnContext.getSpinContext().getRerolls() && !SlotMachine.hasPair(symbols); i++) {
-            if (rerolled == null) rerolled = drawn;
-            drawn   = machine.spin(turnContext.getSpinContext());
-            symbols = machine.resolveJokers(drawn, turnContext.getSpinContext());
-        }
-
-        // Tournée générale : la machine tourne encore, le meilleur tirage reste
-        for (int i = 0; i < turnContext.getSpinContext().getBestOfTwo(); i++) {
-            Symbol[] again = machine.spin(turnContext.getSpinContext());
-            if (matches(machine.resolveJokers(again, turnContext.getSpinContext())) > matches(symbols)) {
-                drawn   = again;
-                symbols = machine.resolveJokers(again, turnContext.getSpinContext());
-            }
-        }
-
-        // Chamboule-tout : chaque rouleau hors paire relance une fois
-        for (int i = 0; i < turnContext.getSpinContext().getKnockdowns(); i++) {
-            Symbol[] knocked = knockDown(machine, drawn, turnContext.getSpinContext());
-            if (knocked == drawn) continue;
-            if (rerolled == null) rerolled = drawn;
-            drawn   = knocked;
-            symbols = machine.resolveJokers(knocked, turnContext.getSpinContext());
-            turnContext.addEvent(new StatusEvent(Lang.t("CHAMBOULE-TOUT : ROULEAUX RELANCÉS"), EffectPopup.Style.SPECIAL));
-        }
-
-        // Second levier : une paire sans Bingo, le rouleau qui manque relance pour tenter le Bingo
-        int levers = turnContext.getSpinContext().getSecondLevers();
-        if (levers > 0) {
-            Symbol[] levered = secondLever(machine, drawn, turnContext.getSpinContext(), levers);
-            if (levered != null) {
-                if (rerolled == null) rerolled = drawn;
-                drawn   = levered;
-                symbols = machine.resolveJokers(levered, turnContext.getSpinContext());
-                turnContext.addEvent(new StatusEvent(Lang.t("SECOND LEVIER : BINGO !"), EffectPopup.Style.SPECIAL));
-            } else if (SlotMachine.hasPair(symbols) && SlotMachine.jackpotSymbol(symbols) == null) {
-                turnContext.addEvent(new StatusEvent(Lang.t("SECOND LEVIER : PAS DE BINGO"), EffectPopup.Style.SPECIAL));
-            }
-        }
-
-        // Ivresse (ennemi) : un rouleau tourne deux fois et garde le pire résultat
-        int drunk = player.getLastingEffects().takeDrunk();
-        for (int i = 0; i < drunk; i++) {
-            Symbol[] twice = drunkReel(machine, drawn, turnContext);
-            drawn   = twice;
-            symbols = machine.resolveJokers(twice, turnContext.getSpinContext());
-        }
-
-        // Court-circuit (Machine Originelle) : le meilleur rouleau devient le pire
-        int shorts = player.getLastingEffects().takeShortCircuits();
-        for (int i = 0; i < shorts; i++) {
-            Symbol[] burnt = shortCircuit(machine, drawn, turnContext.getSpinContext());
-            if (burnt != drawn) {
-                turnContext.addEvent(new StatusEvent(Lang.t("COURT-CIRCUIT : ROULEAU GRILLÉ"), EffectPopup.Style.DAMAGE));
-            }
-            drawn   = burnt;
-            symbols = machine.resolveJokers(burnt, turnContext.getSpinContext());
-        }
-
-        // Tunnel (Fête foraine) : un rouleau passe dans le noir et prend un symbole au hasard
-        int tunnels = player.getLastingEffects().takeTunnels();
-        for (int i = 0; i < tunnels; i++) {
-            Symbol[] dark = tunnel(machine, drawn, turnContext.getSpinContext(), false);
-            if (dark != drawn) turnContext.addEvent(new StatusEvent(Lang.t("TUNNEL : UN ROULEAU DANS LE NOIR"), EffectPopup.Style.DAMAGE));
-            drawn   = dark;
-            symbols = machine.resolveJokers(dark, turnContext.getSpinContext());
-        }
-        // Tourniquet (Fête foraine) : un rouleau du meilleur groupe est relancé une fois
-        int turnstiles = player.getLastingEffects().takeTurnstiles();
-        for (int i = 0; i < turnstiles; i++) {
-            Symbol[] turned = tunnel(machine, drawn, turnContext.getSpinContext(), true);
-            if (turned != drawn) turnContext.addEvent(new StatusEvent(Lang.t("TOURNIQUET : ROULEAU RELANCÉ"), EffectPopup.Style.DAMAGE));
-            drawn   = turned;
-            symbols = machine.resolveJokers(turned, turnContext.getSpinContext());
-        }
-
-        // Nouvelle règle du Directeur des Jeux : les rouleaux tournent deux fois (le pire reste)…
-        SpinContext spin = turnContext.getSpinContext();
-        if (spin.isDoubleSpin()) {
-            Symbol[] again = machine.spin(spin);
-            if (matches(machine.resolveJokers(again, spin)) <= matches(symbols)) {
-                drawn   = again;
-                symbols = machine.resolveJokers(again, spin);
-            }
-        }
-        // … ou le Bingo est interdit : le dernier rouleau libre retourne tant qu'il complète un Bingo.
-        if (spin.isBingoForbidden()) {
-            Symbol[] unbingoed = breakJackpot(machine, drawn, spin);
-            drawn   = unbingoed;
-            symbols = machine.resolveJokers(unbingoed, spin);
-        }
-
+        Spin draw = new Spin(player, turnContext);
+        draw.spinWithCards();
+        draw.applyCurses();
+        Symbol[] drawn    = draw.drawn;
+        Symbol[] symbols  = draw.symbols;
+        Symbol[] rerolled = draw.rerolled;
         player.getLastingEffects().setLastDrawn(drawn); // Rouleau retenu, Mémoire de la machine
 
         riggedGames(turnContext, player.getLastingEffects(), symbols);
@@ -225,6 +136,161 @@ public class TurnEngine {
         // défense) absorbe ses attaques, et le renvoi dépend des cartes jouées ce tour.
         Enemy enemy = gameState.getEnemy();
         List<Event> afterCombat = new ArrayList<>();
+        EnemyTurnResult enemyTurn = enemyPhase(player, enemy, result, turnContext, afterCombat);
+
+        List<Event> firedamp = endOfTurnHazards(gameState, player, enemy);
+
+        List<Event> endEvents = storeLeftoverShield(player);
+        endEvents.addAll(0, firedamp);
+        endEvents.addAll(0, afterCombat);
+        // Coffres-forts : ceux arrivés à terme s'ouvrent ; tous, si l'ennemi est vaincu
+        double safe = player.getLastingEffects().openSafes(enemy.isDefeated());
+        if (safe > 0 && !player.isDefeated()) {
+            player.addGains(safe);
+            endEvents.add(new SafeOpenedEvent(safe));
+        }
+        result = result.withEnemyTurn(enemyTurn, endEvents);
+        if (rerolled != null) result = result.withReroll(rerolled);
+        if (bonus != null) result = result.withBonusGame(bonus);
+
+        player.getLastingEffects().endTurn();
+        gameState.nextTurn();
+
+        return result;
+    }
+
+    /**
+     * Le tirage du joueur, rouleau par rouleau : d'abord ce que ses cartes lui offrent
+     * (relances, Tournée générale, Chamboule-tout, Second levier), puis les mauvais sorts
+     * de l'ennemi et la règle du Directeur des Jeux.
+     */
+    private final class Spin {
+        final Player      player;
+        final SlotMachine machine;
+        final TurnContext turnContext;
+        Symbol[] drawn;
+        Symbol[] symbols;
+        /** Le premier tirage, s'il a été relancé (affiché avant la relance), sinon {@code null}. */
+        Symbol[] rerolled;
+
+        Spin(Player player, TurnContext turnContext) {
+            this.player      = player;
+            this.machine     = player.getSlotMachine();
+            this.turnContext = turnContext;
+        }
+
+        /** Tirage, puis les relances et les rouleaux bonus des cartes jouées. */
+        void spinWithCards() {
+            drawn   = machine.spin(turnContext.getSpinContext());
+            symbols = machine.resolveJokers(drawn, turnContext.getSpinContext());
+            // Relance : sans paire, la machine relance (une fois par carte)
+            for (int i = 0; i < turnContext.getSpinContext().getRerolls() && !SlotMachine.hasPair(symbols); i++) {
+                if (rerolled == null) rerolled = drawn;
+                drawn   = machine.spin(turnContext.getSpinContext());
+                symbols = machine.resolveJokers(drawn, turnContext.getSpinContext());
+            }
+
+            // Tournée générale : la machine tourne encore, le meilleur tirage reste
+            for (int i = 0; i < turnContext.getSpinContext().getBestOfTwo(); i++) {
+                Symbol[] again = machine.spin(turnContext.getSpinContext());
+                if (matches(machine.resolveJokers(again, turnContext.getSpinContext())) > matches(symbols)) {
+                    drawn   = again;
+                    symbols = machine.resolveJokers(again, turnContext.getSpinContext());
+                }
+            }
+
+            // Chamboule-tout : chaque rouleau hors paire relance une fois
+            for (int i = 0; i < turnContext.getSpinContext().getKnockdowns(); i++) {
+                Symbol[] knocked = knockDown(machine, drawn, turnContext.getSpinContext());
+                if (knocked == drawn) continue;
+                if (rerolled == null) rerolled = drawn;
+                drawn   = knocked;
+                symbols = machine.resolveJokers(knocked, turnContext.getSpinContext());
+                turnContext.addEvent(new StatusEvent(Lang.t("CHAMBOULE-TOUT : ROULEAUX RELANCÉS"), EffectPopup.Style.SPECIAL));
+            }
+
+            // Second levier : une paire sans Bingo, le rouleau qui manque relance pour tenter le Bingo
+            int levers = turnContext.getSpinContext().getSecondLevers();
+            if (levers > 0) {
+                Symbol[] levered = secondLever(machine, drawn, turnContext.getSpinContext(), levers);
+                if (levered != null) {
+                    if (rerolled == null) rerolled = drawn;
+                    drawn   = levered;
+                    symbols = machine.resolveJokers(levered, turnContext.getSpinContext());
+                    turnContext.addEvent(new StatusEvent(Lang.t("SECOND LEVIER : BINGO !"), EffectPopup.Style.SPECIAL));
+                } else if (SlotMachine.hasPair(symbols) && SlotMachine.jackpotSymbol(symbols) == null) {
+                    turnContext.addEvent(new StatusEvent(Lang.t("SECOND LEVIER : PAS DE BINGO"), EffectPopup.Style.SPECIAL));
+                }
+            }
+
+        }
+
+        /** Ivresse, Court-circuit, Tunnel, Tourniquet, puis la Nouvelle règle du Directeur des Jeux. */
+        void applyCurses() {
+            SpinContext spin = turnContext.getSpinContext();
+            // Ivresse (ennemi) : un rouleau tourne deux fois et garde le pire résultat
+            int drunk = player.getLastingEffects().takeDrunk();
+            for (int i = 0; i < drunk; i++) {
+                Symbol[] twice = drunkReel(machine, drawn, turnContext);
+                drawn   = twice;
+                symbols = machine.resolveJokers(twice, turnContext.getSpinContext());
+            }
+
+            // Court-circuit (Machine Originelle) : le meilleur rouleau devient le pire
+            int shorts = player.getLastingEffects().takeShortCircuits();
+            for (int i = 0; i < shorts; i++) {
+                Symbol[] burnt = shortCircuit(machine, drawn, turnContext.getSpinContext());
+                if (burnt != drawn) {
+                    turnContext.addEvent(new StatusEvent(Lang.t("COURT-CIRCUIT : ROULEAU GRILLÉ"), EffectPopup.Style.DAMAGE));
+                }
+                drawn   = burnt;
+                symbols = machine.resolveJokers(burnt, turnContext.getSpinContext());
+            }
+
+            // Tunnel (Fête foraine) : un rouleau passe dans le noir et prend un symbole au hasard
+            int tunnels = player.getLastingEffects().takeTunnels();
+            for (int i = 0; i < tunnels; i++) {
+                Symbol[] dark = tunnel(machine, drawn, turnContext.getSpinContext(), false);
+                if (dark != drawn) turnContext.addEvent(new StatusEvent(Lang.t("TUNNEL : UN ROULEAU DANS LE NOIR"), EffectPopup.Style.DAMAGE));
+                drawn   = dark;
+                symbols = machine.resolveJokers(dark, turnContext.getSpinContext());
+            }
+            // Tourniquet (Fête foraine) : un rouleau du meilleur groupe est relancé une fois
+            int turnstiles = player.getLastingEffects().takeTurnstiles();
+            for (int i = 0; i < turnstiles; i++) {
+                Symbol[] turned = tunnel(machine, drawn, turnContext.getSpinContext(), true);
+                if (turned != drawn) turnContext.addEvent(new StatusEvent(Lang.t("TOURNIQUET : ROULEAU RELANCÉ"), EffectPopup.Style.DAMAGE));
+                drawn   = turned;
+                symbols = machine.resolveJokers(turned, turnContext.getSpinContext());
+            }
+
+            // Nouvelle règle du Directeur des Jeux : les rouleaux tournent deux fois (le pire reste)…
+            if (spin.isDoubleSpin()) {
+                Symbol[] again = machine.spin(spin);
+                if (matches(machine.resolveJokers(again, spin)) <= matches(symbols)) {
+                    drawn   = again;
+                    symbols = machine.resolveJokers(again, spin);
+                }
+            }
+            // … ou le Bingo est interdit : le dernier rouleau libre retourne tant qu'il complète un Bingo.
+            if (spin.isBingoForbidden()) {
+                Symbol[] unbingoed = breakJackpot(machine, drawn, spin);
+                drawn   = unbingoed;
+                symbols = machine.resolveJokers(unbingoed, spin);
+            }
+
+        }
+    }
+
+    /**
+     * Après les coups du joueur : annonces de l'ennemi, Dernier tirage, Créances, puis son tour
+     * (sauf s'il est ébloui, ou si ses Épines ont achevé le joueur).
+     *
+     * @param afterCombat reçoit ce qui arrive avant son tour
+     * @return son tour, ou {@code null} s'il ne l'a pas joué
+     */
+    private EnemyTurnResult enemyPhase(Player player, Enemy enemy, TurnResult result, TurnContext turnContext,
+                                       List<Event> afterCombat) {
         String notice = enemy.takeNotice(); // un coup annulé ou une résistance passés inaperçus
         if (notice != null) afterCombat.add(new StatusEvent(notice, EffectPopup.Style.SPECIAL));
         if (enemy.isLastDrawPending() && !player.isDefeated()) afterCombat.addAll(lastDraw(player, enemy));
@@ -233,7 +299,7 @@ public class TurnEngine {
         if (!enemy.isDefeated() && !player.isDefeated()) afterCombat.addAll(chargeClaims(enemy, player, turnContext.getCombatContext()));
 
         EnemyTurnResult enemyTurn = null;
-        if (!enemy.isDefeated() && !player.isDefeated() && enemy.takeDazzle()) {
+        if (!enemy.isDefeated() && !player.isDefeated() && enemy.getMaluses().takeDazzle()) {
             // Rayon du phare : ébloui, il passe son tour (sa défense ne valait que pour celui du joueur).
             enemy.collectThorns(); // ses Épines ne piquent pas non plus
             enemy.resetDefense();
@@ -247,12 +313,17 @@ public class TurnEngine {
             } else {
                 // Bingo de bouclier : s'il frappe, tout le bouclier lui est renvoyé.
                 int shieldReflect = result.isShieldBingo() ? player.getShield() : 0;
-                enemyTurn = enemyTurnResolver.resolve(enemy, player,
+                EnemyTurnResolver.Reflection reflection = new EnemyTurnResolver.Reflection(
                     turnContext.getCombatContext().getTotalReflectPercent(), CombatResolver.VAULT_REFLECT_SHARE,
-                    shieldReflect, thorns, turnContext.getCombatContext().getReflectHpPercent());
+                    shieldReflect, turnContext.getCombatContext().getReflectHpPercent());
+                enemyTurn = enemyTurnResolver.resolve(enemy, player, reflection, thorns);
             }
         }
+        return enemyTurn;
+    }
 
+    /** Fin du tour : Coup de grisou, Venin, Soif, annonces, Dernier tirage, Temps Mort, Corde de rappel. */
+    private List<Event> endOfTurnHazards(GameState gameState, Player player, Enemy enemy) {
         // Coup de grisou (Mines d'Or) : il frappe le joueur seul, son bouclier le protège
         List<Event> firedamp = new ArrayList<>();
         boolean explodes = gameState.getActiveRule().firedampExplodes(gameState.getTurnNumber()) && !player.isDefeated()
@@ -280,7 +351,7 @@ public class TurnEngine {
             firedamp.add(new PlayerDamagedEvent(lost, 0, player.getShield()));
         }
 
-        notice = enemy.takeNotice(); // pendant son tour (renvoi de dégâts, Duel...)
+        String notice = enemy.takeNotice(); // pendant son tour (renvoi de dégâts, Duel...)
         if (notice != null) firedamp.add(0, new StatusEvent(notice, EffectPopup.Style.SPECIAL));
         if (enemy.isLastDrawPending() && !player.isDefeated()) firedamp.addAll(lastDraw(player, enemy));
 
@@ -294,24 +365,7 @@ public class TurnEngine {
         if (player.takeRopeSaved()) {
             firedamp.add(new StatusEvent(Lang.t("CORDE DE RAPPEL : TU TIENS À 1 PV"), EffectPopup.Style.DEFENSE));
         }
-
-        List<Event> endEvents = storeLeftoverShield(player);
-        endEvents.addAll(0, firedamp);
-        endEvents.addAll(0, afterCombat);
-        // Coffres-forts : ceux arrivés à terme s'ouvrent ; tous, si l'ennemi est vaincu
-        double safe = player.getLastingEffects().openSafes(enemy.isDefeated());
-        if (safe > 0 && !player.isDefeated()) {
-            player.addGains(safe);
-            endEvents.add(new SafeOpenedEvent(safe));
-        }
-        result = result.withEnemyTurn(enemyTurn, endEvents);
-        if (rerolled != null) result = result.withReroll(rerolled);
-        if (bonus != null) result = result.withBonusGame(bonus);
-
-        player.getLastingEffects().endTurn();
-        gameState.nextTurn();
-
-        return result;
+        return firedamp;
     }
 
     /**
@@ -360,7 +414,7 @@ public class TurnEngine {
         combat.multiplyAttack(debt.factor, debtLabel);
         combat.multiplyDefense(debt.factor, debtLabel);
         if (debt == SpinEconomy.Debt.BAILIFF) {
-            gameState.getEnemy().sendBailiff();
+            gameState.getEnemy().getMaluses().sendBailiff();
             turnContext.addEvent(new StatusEvent(Lang.t("HUISSIER : SYMBOLES -50 %"), EffectPopup.Style.DAMAGE));
         } else {
             turnContext.addEvent(new StatusEvent(Lang.t("ENDETTÉ : SYMBOLES -25 %"), EffectPopup.Style.DAMAGE));
@@ -377,15 +431,15 @@ public class TurnEngine {
      */
     static List<Event> chargeClaims(Enemy enemy, Player player, CombatContext combat) {
         List<Event> events = new ArrayList<>();
-        int claims = enemy.getClaims();
+        int claims = enemy.getMaluses().getClaims();
         if (claims <= 0) return events;
-        if (enemy.takePharaohSeal()) claims *= 2; // Sceau du Pharaon
-        long raw = Math.max(1L, (long) enemy.getMaxHp() * claims * Enemy.CLAIM_HP_PER_MILLE / 1000);
+        if (enemy.getMaluses().takePharaohSeal()) claims *= 2; // Sceau du Pharaon
+        long raw = Math.max(1L, (long) enemy.getMaxHp() * claims * EnemyMaluses.CLAIM_HP_PER_MILLE / 1000);
         long damage = enemy.skinned(raw);
         enemy.takeDamage(raw);
         events.add(new fr.astratime.lucky.entities.events.CardStrikeEvent(Lang.f("CRÉANCES x{0}", claims), damage, raw,
             enemy.getDefense()));
-        double gains = (double) claims * Enemy.CLAIM_SPINS * combat.getSpinCost();
+        double gains = (double) claims * EnemyMaluses.CLAIM_SPINS * combat.getSpinCost();
         player.addGains(gains);
         events.add(new fr.astratime.lucky.entities.events.GainsEarnedEvent(gains));
         return events;
@@ -401,7 +455,7 @@ public class TurnEngine {
     private Symbol[] secondLever(SlotMachine machine, Symbol[] drawn, SpinContext spin, int tries) {
         Symbol[] resolved = machine.resolveJokers(drawn, spin);
         if (!SlotMachine.hasPair(resolved) || SlotMachine.jackpotSymbol(resolved) != null) return null;
-        Map<Symbol, Integer> counts = new java.util.HashMap<>();
+        Map<Symbol, Integer> counts = new HashMap<>();
         for (Symbol symbol : resolved) if (symbol != null) counts.merge(symbol, 1, Integer::sum);
         Symbol group = counts.entrySet().stream().max(Map.Entry.comparingByValue()).map(Map.Entry::getKey).orElse(null);
         int reel = -1;
@@ -447,7 +501,7 @@ public class TurnEngine {
      */
     private Symbol[] shortCircuit(SlotMachine machine, Symbol[] drawn, SpinContext spin) {
         Symbol[] resolved = machine.resolveJokers(drawn, spin);
-        Map<Symbol, Integer> counts = new java.util.HashMap<>();
+        Map<Symbol, Integer> counts = new HashMap<>();
         for (Symbol symbol : resolved) if (symbol != null) counts.merge(symbol, 1, Integer::sum);
         Symbol group = counts.entrySet().stream().filter(entry -> entry.getValue() >= 2)
             .max(Map.Entry.comparingByValue()).map(Map.Entry::getKey).orElse(null);
@@ -477,7 +531,7 @@ public class TurnEngine {
      */
     private static Symbol[] knockDown(SlotMachine machine, Symbol[] drawn, SpinContext spin) {
         Symbol[] resolved = machine.resolveJokers(drawn, spin);
-        Map<Symbol, Integer> counts = new java.util.HashMap<>();
+        Map<Symbol, Integer> counts = new HashMap<>();
         for (Symbol symbol : resolved) if (symbol != null) counts.merge(symbol, 1, Integer::sum);
         Symbol[] again = null;
         Symbol[] result = drawn.clone();
@@ -498,7 +552,7 @@ public class TurnEngine {
      */
     private Symbol[] tunnel(SlotMachine machine, Symbol[] drawn, SpinContext spin, boolean best) {
         Symbol[] resolved = machine.resolveJokers(drawn, spin);
-        Map<Symbol, Integer> counts = new java.util.HashMap<>();
+        Map<Symbol, Integer> counts = new HashMap<>();
         for (Symbol symbol : resolved) if (symbol != null) counts.merge(symbol, 1, Integer::sum);
         Symbol group = !best ? null : counts.entrySet().stream().filter(entry -> entry.getValue() >= 2)
             .max(Map.Entry.comparingByValue()).map(Map.Entry::getKey).orElse(null);

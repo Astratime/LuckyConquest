@@ -3,6 +3,7 @@ package fr.astratime.lucky.assets;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
+import java.util.Arrays;
 
 /** Le liseré doré des cartes « + ». */
 class UpgradedCardArtTest {
@@ -13,7 +14,7 @@ class UpgradedCardArtTest {
     /** Carte grise de 100 x 140, aux coins transparents. */
     private static int[] card() {
         int[] pixels = new int[100 * 140];
-        java.util.Arrays.fill(pixels, GRAY);
+        Arrays.fill(pixels, GRAY);
         pixels[0] = 0;
         pixels[99] = 0;
         return pixels;

@@ -19,6 +19,7 @@ import java.util.List;
 import java.util.Random;
 
 import static org.junit.jupiter.api.Assertions.*;
+import java.util.Arrays;
 
 class EnemyTurnResolverTest {
 
@@ -31,7 +32,7 @@ class EnemyTurnResolverTest {
         Enemy  enemy  = new Enemy("Ennemi", 5000);
         Player player = new Player("Joueur", 10_000, List.of());
 
-        EnemyTurnResult turn = new EnemyTurnResolver(new Random(1)).resolve(enemy, player, 0, 0f);
+        EnemyTurnResult turn = new EnemyTurnResolver(new Random(1)).resolve(enemy, player);
 
         assertEquals(Enemy.HAND_SIZE, turn.drawn().size());
         assertEquals(Enemy.PLAYS_PER_TURN, turn.played().size());
@@ -53,7 +54,7 @@ class EnemyTurnResolverTest {
             enemy.takeDamage(9_000);
             Player player = new Player("Joueur", 10_000, List.of());
 
-            EnemyTurnResult turn = new EnemyTurnResolver(new Random(seed)).resolve(enemy, player, 0, 0f);
+            EnemyTurnResult turn = new EnemyTurnResolver(new Random(seed)).resolve(enemy, player);
 
             assertTrue(turn.played().stream().allMatch(card -> card.getRank() == 14), "les meilleures cartes d'abord");
             int swords = 0, shields = 0, hp = 1_000;
@@ -82,7 +83,7 @@ class EnemyTurnResolverTest {
         assertEquals(Enemy.BASE_DEFENSE + 700, enemy.getDefense());
 
         EnemyTurnResult turn = new EnemyTurnResolver(new Random(2))
-            .resolve(enemy, new Player("Joueur", 10_000, List.of()), 0, 0f);
+            .resolve(enemy, new Player("Joueur", 10_000, List.of()));
 
         int shieldsThisTurn = turn.events().stream()
             .filter(e -> e instanceof EnemyShieldedEvent).mapToInt(e -> ((EnemyShieldedEvent) e).defense).sum();
@@ -101,9 +102,9 @@ class EnemyTurnResolverTest {
             player.addShield(1000);
 
             EnemyTurnResult turn = new EnemyTurnResolver(new Random(seed))
-                .resolve(enemy, player, 0, 0f, 0, List.of(), 3.75f);
+                .resolve(enemy, player, new EnemyTurnResolver.Reflection(0, 0f, 0, 3.75f), List.of());
 
-            boolean swords = java.util.Arrays.stream(turn.symbols()).anyMatch(s -> s == EnemySymbol.SWORD);
+            boolean swords = Arrays.stream(turn.symbols()).anyMatch(s -> s == EnemySymbol.SWORD);
             boolean reflected = turn.afterEvents().stream()
                 .anyMatch(e -> e instanceof DamageReflectedEvent r && r.damage == 37_500);
             if (swords) assertTrue(reflected, "3,75 % de 1 000 000 renvoyés quand il attaque");
@@ -122,9 +123,9 @@ class EnemyTurnResolverTest {
             Player player = new Player("Joueur", 1000, List.of());
             player.addShield(1000);
 
-            EnemyTurnResult turn = new EnemyTurnResolver(new Random(seed)).resolve(enemy, player, 50, 0f);
+            EnemyTurnResult turn = new EnemyTurnResolver(new Random(seed)).resolve(enemy, player, new EnemyTurnResolver.Reflection(50, 0f, 0, 0f));
 
-            int swords = (int) java.util.Arrays.stream(turn.symbols()).filter(s -> s == EnemySymbol.SWORD).count();
+            int swords = (int) Arrays.stream(turn.symbols()).filter(s -> s == EnemySymbol.SWORD).count();
             if (swords == 0) continue;
             attacked = swords;
             assertEquals(1000, player.getHp(), "le bouclier absorbe les Épées");

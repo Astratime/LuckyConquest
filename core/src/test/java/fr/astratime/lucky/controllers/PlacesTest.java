@@ -16,6 +16,7 @@ import org.junit.jupiter.api.Test;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
+import java.util.Random;
 
 /** Règles des lieux de l'Exploration (Scorbut, grisou, marée) et ennemis qui en dépendent. */
 class PlacesTest {
@@ -39,9 +40,9 @@ class PlacesTest {
             for (Dungeon dungeon : places[p].getDungeons()) {
                 for (EnemyKind kind : List.of(dungeon.getSoldier(), dungeon.getKing())) {
                     assertEquals(stats[p][0], kind.swordDamage(), kind + " : épée");
-                    assertEquals(stats[p][1], kind.getBaseDefense(), kind + " : défense de base");
+                    assertEquals(stats[p][1], kind.getBaseDefense(false), kind + " : défense de base");
                     assertEquals(stats[p][1], kind.shieldDefense(), kind + " : Bouclier à la même échelle");
-                    assertEquals(stats[p][2], kind.potionPercent(0), 1e-4, kind + " : soin");
+                    assertEquals(stats[p][2], kind.potionPercent(0, false), 1e-4, kind + " : soin");
                 }
             }
         }
@@ -55,7 +56,7 @@ class PlacesTest {
             "les Piques du Casino frappent 20 fois plus");
         assertEquals(EnemyCards.shieldBonus(tenOfDiamonds), EnemyKind.ROI_PIQUE.shieldBonus(tenOfDiamonds));
         assertEquals(EnemySymbol.SHIELD_DEFENSE, EnemyKind.CROUPIER.shieldDefense(), "la Tour ne change pas");
-        assertEquals(60f, EnemyKind.KRAKEN.potionPercent(EnemySymbol.POTION_PERCENT), 1e-4,
+        assertEquals(60f, EnemyKind.KRAKEN.potionPercent(EnemySymbol.POTION_PERCENT, false), 1e-4,
             "les Cœurs renforcent son soin en proportion");
     }
 
@@ -70,11 +71,11 @@ class PlacesTest {
         assertEquals(24, EnemyKind.KRAKEN.damagePercent(), "le Casino frappe moins (Désert de Braise après lui)");
         assertEquals(98, EnemyKind.DRAGON.damagePercent());
         // Astra 2026-10-25 : une Épée de la Foire frappe 5 de plus (28), celle du Port 12 de plus (52)
-        assertEquals(28, EnemyKind.CLOWN.hurt(EnemyKind.CLOWN.swordDamage()));
-        assertEquals(52, EnemyKind.RAT_CALES.hurt(EnemyKind.RAT_CALES.swordDamage()));
-        assertTrue(EnemyKind.DRAGON.getBaseDefense() > EnemyKind.KRAKEN.getBaseDefense(), "le Désert se défend mieux que le Casino");
-        assertEquals(Math.round(EnemySymbol.SWORD_DAMAGE * 0.48), EnemyKind.ROI_PIQUE.hurt(EnemySymbol.SWORD_DAMAGE));
-        assertEquals(Math.round(EnemySymbol.SWORD_DAMAGE * 2.1), EnemyKind.ROI_COEUR.hurt(EnemySymbol.SWORD_DAMAGE));
+        assertEquals(28, EnemyKind.CLOWN.hurt(EnemyKind.CLOWN.swordDamage(), false));
+        assertEquals(52, EnemyKind.RAT_CALES.hurt(EnemyKind.RAT_CALES.swordDamage(), false));
+        assertTrue(EnemyKind.DRAGON.getBaseDefense(false) > EnemyKind.KRAKEN.getBaseDefense(false), "le Désert se défend mieux que le Casino");
+        assertEquals(Math.round(EnemySymbol.SWORD_DAMAGE * 0.48), EnemyKind.ROI_PIQUE.hurt(EnemySymbol.SWORD_DAMAGE, false));
+        assertEquals(Math.round(EnemySymbol.SWORD_DAMAGE * 2.1), EnemyKind.ROI_COEUR.hurt(EnemySymbol.SWORD_DAMAGE, false));
 
         Player player = new Player("Joueur", Player.BASE_HP, List.of());
         Enemy king = new Enemy(EnemyKind.ROI_COEUR);
@@ -160,7 +161,7 @@ class PlacesTest {
             Player player = new Player("Joueur", 1_000_000, List.of());
             player.addGains(3e8); // une Morsure de 30 M : x100, plus grand qu'un int
             long before = shark.getHp();
-            new EnemyTurnResolver(new java.util.Random(seed)).resolve(shark, player, 0, 0f);
+            new EnemyTurnResolver(new Random(seed)).resolve(shark, player);
             assertTrue(shark.getHp() >= before, "la Morsure soigne, elle ne blesse pas (graine " + seed + ")");
         }
     }

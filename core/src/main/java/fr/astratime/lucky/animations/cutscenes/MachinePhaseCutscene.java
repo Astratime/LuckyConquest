@@ -8,6 +8,8 @@ import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.utils.Array;
 import fr.astratime.lucky.entities.Symbol;
 
+import static fr.astratime.lucky.assets.Palette.hex;
+
 /**
  * Changement de phase de la Machine Originelle, au début de son tour.
  *
@@ -37,9 +39,9 @@ public class MachinePhaseCutscene extends MachineCutscene {
     public static final float COVER_FULL  = 6.0f;
 
     private static final float U = 14f;              // le même « pixel » que la machine de MachineCutscene
-    private static final Color OUT = c("140a0a"), GOLD = c("ffc93a"), GOLD_DARK = c("b8801f"), RED = c("e0283a");
-    private static final Color STEEL = c("8a8a9a"), STEEL_DARK = c("4a4a58"), GLASS = c("f4ecdc"), SKY_RED = c("5a0a12");
-    private static final Color CRACK = c("2a0a06"), HOT = c("fff2b0");
+    private static final Color OUT = hex("140a0a"), GOLD = hex("ffc93a"), GOLD_DARK = hex("b8801f"), RED = hex("e0283a");
+    private static final Color STEEL = hex("8a8a9a"), STEEL_DARK = hex("4a4a58"), GLASS = hex("f4ecdc"), SKY_RED = hex("5a0a12");
+    private static final Color CRACK = hex("2a0a06"), HOT = hex("fff2b0");
 
     private final int phase;
     /** Les symboles de ton rouleau : cerise, sept, cloche, bar. */
@@ -59,7 +61,7 @@ public class MachinePhaseCutscene extends MachineCutscene {
 
     @Override protected float coverStart() { return COVER_START; }
     @Override protected float coverFull()  { return COVER_FULL; }
-    @Override protected Color coverColor() { return phase >= 3 ? c("1a0204") : c("3a060c"); }
+    @Override protected Color coverColor() { return phase >= 3 ? hex("1a0204") : hex("3a060c"); }
 
     @Override
     protected void reset() {
@@ -271,7 +273,7 @@ public class MachinePhaseCutscene extends MachineCutscene {
                 float x = at[0] + MathUtils.cosDeg(angle) * size * t, y = at[1] + MathUtils.sinDeg(angle) * size * t;
                 batch.setColor(OUT);
                 batch.draw(pixel, x - 1.2f * U, y - 1.2f * U, 2.4f * U, 2.4f * U);
-                batch.setColor(i % 2 == 0 ? RED : c("8a1020"));
+                batch.setColor(i % 2 == 0 ? RED : hex("8a1020"));
                 batch.draw(pixel, x - 0.7f * U, y - 0.7f * U, 1.4f * U, 1.4f * U);
             }
         }

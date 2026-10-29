@@ -13,7 +13,7 @@ import java.util.List;
  * Bombe : une grosse attaque, mais le joueur perd une part de ses PV max
  * (sans passer par le bouclier, jamais sous 1 PV).
  */
-public class BombAction extends AttackAction {
+public final class BombAction extends AttackAction {
 
     private final int baseDamage;
     private final int hpCostPercent;

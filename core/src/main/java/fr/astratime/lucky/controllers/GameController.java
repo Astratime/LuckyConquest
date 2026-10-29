@@ -46,6 +46,9 @@ import java.util.Map;
 import java.util.Random;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.Collections;
+import java.util.Locale;
+import java.util.Set;
 
 /**
  * Gère la progression globale de la partie : possède le GameState,
@@ -62,6 +65,8 @@ public class GameController {
     /** Cartes que le joueur peut jouer par tour (plus sous l'effet de Dans la manche). */
     public static final int DEFAULT_PLAY_LIMIT = 4;
 
+    /** Ennemis en mode difficile (Tour des épreuves), voir {@link #setHardMode(boolean)}. */
+    private boolean hardMode;
     private       GameState  gameState;
     private final TurnEngine turnEngine = new TurnEngine();
 
@@ -78,7 +83,7 @@ public class GameController {
     private final List<EffectPopup> turnNotices = new ArrayList<>();
 
     /** Cartes de la main de ce tour piochées face cachée (une par Aveuglement de l'ennemi). */
-    private final java.util.Set<Card> hiddenCards = java.util.Collections.newSetFromMap(new java.util.IdentityHashMap<>());
+    private final Set<Card> hiddenCards = Collections.newSetFromMap(new IdentityHashMap<>());
 
     /** Cartes à jouer d'office au début de ce tour (Chant de l'ennemi). */
     private int songs = 0;
@@ -218,8 +223,8 @@ public class GameController {
      *         qu'il laisse dehors
      */
     private Enemy createEnemy(EnemyKind kind, Player player) {
-        Enemy enemy = kind.copiesPlayerDeck() ? new Enemy(kind, EnemyCards.shadowDeck(player.getAllCards()))
-            : new Enemy(kind);
+        Enemy enemy = kind.copiesPlayerDeck() ? new Enemy(kind, EnemyCards.shadowDeck(player.getAllCards()), hardMode)
+            : new Enemy(kind, hardMode);
         if (kind.bansFamily()) {
             CardFamily[] families = CardFamily.values();
             enemy.banFamily(families[random.nextInt(families.length)]);
@@ -285,6 +290,9 @@ public class GameController {
     /** Change la cagnotte du Jeu bonus : celle du lieu, de l'Entraînement ou du chapitre de la Tour. */
     public void setPot(BonusPot pot) { turnEngine.setPot(pot); }
 
+    /** Règle la difficulté des ennemis des combats qui suivent : le mode difficile de la Tour, ou non. */
+    public void setHardMode(boolean hard) { this.hardMode = hard; }
+
     /** Change les chances qu'un Bingo ouvre le Jeu bonus (30 % dans la Tour). */
     public void setBonusGameChance(float chance) { turnEngine.setBonusGameChance(chance); }
 
@@ -326,8 +334,8 @@ public class GameController {
                 PopupScale.SECONDARY_INTENSITY));
         }
         if (buried > 0) {
-            turnNotices.add(new EffectPopup(Lang.f(Lang.plural(buried) ? "ÉBOULEMENT : {0} CARTES DE MOINS"
-                : "ÉBOULEMENT : {0} CARTE DE MOINS", buried), EffectPopup.Style.DAMAGE, PopupScale.SECONDARY_INTENSITY));
+            turnNotices.add(new EffectPopup(Lang.n(buried, "ÉBOULEMENT : {0} CARTE DE MOINS",
+                "ÉBOULEMENT : {0} CARTES DE MOINS", buried), EffectPopup.Style.DAMAGE, PopupScale.SECONDARY_INTENSITY));
         }
         List<Card> added     = new ArrayList<>(drawn.getAddedToHand());
         List<Card> discarded = new ArrayList<>(drawn.getDiscarded());
@@ -387,7 +395,7 @@ public class GameController {
             }
             int hidden = hiddenCards.size();
             turnNotices.add(new EffectPopup(hidden >= added.size() ? Lang.t("AVEUGLEMENT : MAIN CACHÉE")
-                : Lang.f(Lang.plural(hidden) ? "AVEUGLEMENT : {0} CARTES CACHÉES" : "AVEUGLEMENT : {0} CARTE CACHÉE", hidden),
+                : Lang.n(hidden, "AVEUGLEMENT : {0} CARTE CACHÉE", "AVEUGLEMENT : {0} CARTES CACHÉES", hidden),
                 EffectPopup.Style.DAMAGE, PopupScale.SECONDARY_INTENSITY));
         }
         taxes = lasting.takeTaxes();
@@ -417,7 +425,7 @@ public class GameController {
     public List<EffectPopup> getTurnNotices() { return List.copyOf(turnNotices); }
 
     /** @return les cartes de la main de ce tour piochées face cachée (une par Aveuglement de l'ennemi). */
-    public java.util.Set<Card> getHiddenCards() { return java.util.Collections.unmodifiableSet(hiddenCards); }
+    public Set<Card> getHiddenCards() { return Collections.unmodifiableSet(hiddenCards); }
 
     /**
      * Chant de l'ennemi : les cartes de la main à jouer d'office ce tour, tirées
@@ -542,7 +550,7 @@ public class GameController {
     }
 
     private static String turnsText(int turns) {
-        return Lang.f(Lang.plural(turns) ? "{0} tours" : "{0} tour", turns);
+        return Lang.n(turns, "{0} tour", "{0} tours", turns);
     }
 
     /**
@@ -674,7 +682,7 @@ public class GameController {
 
     /** @return l'id de la carte Bingo qui impose {@code symbol} (« bingo_bell »…). */
     public static String bingoGiftId(Symbol symbol) {
-        return BINGO_GIFT_PREFIX + symbol.name().toLowerCase(java.util.Locale.ROOT);
+        return BINGO_GIFT_PREFIX + symbol.name().toLowerCase(Locale.ROOT);
     }
 
     /** @return le choix demandé au joueur par la dernière carte jouée, ou {@code null} si aucun. */

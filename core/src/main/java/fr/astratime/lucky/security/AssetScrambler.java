@@ -6,6 +6,9 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.Locale;
 import java.util.stream.Stream;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 
 /**
  * Brouillage des fichiers d'assets (art + données) pour qu'ils ne soient pas
@@ -45,9 +48,9 @@ public final class AssetScrambler {
             + Hidden.reveal(new int[]{0x48, 0x21, 0x29, 0x3e, 0x6c, 0x66, 0x69, 0x6c, 0x55, 0x47,
                 0x02, 0x10, 0x11});
         try {
-            return java.security.MessageDigest.getInstance("SHA-256")
-                .digest(combined.getBytes(java.nio.charset.StandardCharsets.UTF_8));
-        } catch (java.security.NoSuchAlgorithmException e) {
+            return MessageDigest.getInstance("SHA-256")
+                .digest(combined.getBytes(StandardCharsets.UTF_8));
+        } catch (NoSuchAlgorithmException e) {
             throw new IllegalStateException(e);
         }
     }

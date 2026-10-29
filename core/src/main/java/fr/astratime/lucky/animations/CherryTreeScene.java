@@ -15,6 +15,8 @@ import fr.astratime.lucky.assets.Palette;
 import java.util.ArrayList;
 import java.util.List;
 
+import static fr.astratime.lucky.assets.Palette.hex;
+
 /**
  * Bingo de la Cerise : le cerisier. Un arbre pousse depuis la table, son
  * feuillage s'ouvre, se couvre de fleurs roses qui deviennent des cerises ;
@@ -138,7 +140,7 @@ public class CherryTreeScene extends BingoScene {
     /** @return le tronc : écorce brune éclairée à gauche, pied évasé, deux amorces de branches. */
     private static Pixmap trunk() {
         Pixmap pixmap = pixmap(TRUNK_WIDTH, TRUNK_HEIGHT);
-        Color bark = c("7a4a2a"), light = c("a8683c"), dark = c("4e2e18");
+        Color bark = hex("7a4a2a"), light = hex("a8683c"), dark = hex("4e2e18");
         int center = TRUNK_WIDTH / 2;
         for (int y = 0; y < TRUNK_HEIGHT; y++) {
             int half = y > TRUNK_HEIGHT - 5 ? 4 + (y - (TRUNK_HEIGHT - 5)) : 3; // pied évasé
@@ -163,9 +165,9 @@ public class CherryTreeScene extends BingoScene {
         Pixmap pixmap = pixmap(CANOPY_WIDTH, CANOPY_HEIGHT);
         int[][] blobs = {{32, 25, 19}, {16, 28, 14}, {48, 28, 14}, {23, 15, 13}, {41, 15, 13}};
         for (int[] b : blobs) { pixmap.setColor(OUTLINE); pixmap.fillCircle(b[0], b[1], b[2]); }
-        for (int[] b : blobs) { pixmap.setColor(c("3f9a3a")); pixmap.fillCircle(b[0], b[1], b[2] - 1); }
-        for (int[] b : blobs) { pixmap.setColor(c("2c7a2e")); pixmap.fillCircle(b[0] + 3, b[1] + 3, b[2] - 5); }
-        for (int[] b : blobs) { pixmap.setColor(c("6cc45a")); pixmap.fillCircle(b[0] - 3, b[1] - 4, b[2] / 3); }
+        for (int[] b : blobs) { pixmap.setColor(hex("3f9a3a")); pixmap.fillCircle(b[0], b[1], b[2] - 1); }
+        for (int[] b : blobs) { pixmap.setColor(hex("2c7a2e")); pixmap.fillCircle(b[0] + 3, b[1] + 3, b[2] - 5); }
+        for (int[] b : blobs) { pixmap.setColor(hex("6cc45a")); pixmap.fillCircle(b[0] - 3, b[1] - 4, b[2] / 3); }
         return pixmap;
     }
 
@@ -175,10 +177,10 @@ public class CherryTreeScene extends BingoScene {
         pixmap.setColor(OUTLINE);
         pixmap.fillRectangle(1, 0, 5, 7);
         pixmap.fillRectangle(0, 1, 7, 5);
-        pixmap.setColor(c("ffb3cf"));
+        pixmap.setColor(hex("ffb3cf"));
         pixmap.fillRectangle(2, 1, 3, 5);
         pixmap.fillRectangle(1, 2, 5, 3);
-        pixmap.setColor(c("ffe3ec"));
+        pixmap.setColor(hex("ffe3ec"));
         pixmap.drawPixel(2, 1);
         pixmap.setColor(Palette.GOLD);
         pixmap.drawPixel(3, 3);

@@ -116,7 +116,7 @@ class NewReelsTest {
             Enemy enemy = new Enemy(EnemyKind.MACHINE_ORIGINELLE);
             Player player = player();
             player.addGains(10_000);
-            new EnemyTurnResolver(new Random(seed)).resolve(enemy, player, 0, 0f);
+            new EnemyTurnResolver(new Random(seed)).resolve(enemy, player);
             List<AspirationRule> rules = player.getLastingEffects().getAspirations();
             assertTrue(rules.size() <= AspirationRule.MAX_RULES, "graine " + seed);
             for (int i = 0; i < rules.size(); i++) {
@@ -246,9 +246,9 @@ class NewReelsTest {
     void theIngotGrowsWithItsDefenseUpToThreeTimes() {
         Enemy golem = new Enemy(EnemyKind.GOLEM_OR, List.of());
         assertEquals(100, EnemyTurnResolver.ingotPercent(golem));
-        golem.addShieldDefense(golem.getKind().getBaseDefense());
+        golem.addShieldDefense(golem.getKind().getBaseDefense(false));
         assertEquals(200, EnemyTurnResolver.ingotPercent(golem));
-        golem.addShieldDefense(golem.getKind().getBaseDefense() * 10);
+        golem.addShieldDefense(golem.getKind().getBaseDefense(false) * 10);
         assertEquals(300, EnemyTurnResolver.ingotPercent(golem));
     }
 
@@ -289,7 +289,7 @@ class NewReelsTest {
                 Enemy enemy = new Enemy(kind);
                 Player player = player();
                 player.addGains(10_000);
-                var turn = new EnemyTurnResolver(new Random(seed)).resolve(enemy, player, 0, 0f);
+                var turn = new EnemyTurnResolver(new Random(seed)).resolve(enemy, player);
                 for (EnemySymbol symbol : turn.symbols()) seen.add(symbol);
                 var curses = player.getLastingEffects();
                 if (List.of(turn.symbols()).contains(EnemySymbol.NOTHING_GOES)) assertFalse(curses.getForbiddenReels().isEmpty());

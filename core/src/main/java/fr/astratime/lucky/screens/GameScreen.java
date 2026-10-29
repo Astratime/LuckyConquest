@@ -153,8 +153,16 @@ import fr.astratime.lucky.views.Tooltip;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.function.Function;
+import java.util.function.Consumer;
 import java.util.Map;
 import java.util.function.ToIntFunction;
+import java.util.Collections;
+import java.util.IdentityHashMap;
+import java.util.Random;
+import java.util.Set;
+import java.util.TreeSet;
+import java.util.function.Predicate;
 
 /**
  * Écran de combat. Responsabilité : orchestrer l'affichage et transmettre les
@@ -277,10 +285,11 @@ public class GameScreen extends ScreenAdapter {
     private final BitmapFont          playsFont = Fonts.jersey(24, Color.WHITE, 2f, Palette.TEXT_SHADE);
     private final BitmapFont          shieldFont = Fonts.jersey(26, Color.WHITE, 2f, Palette.TEXT_SHADE);
     private final Texture             cardBackTexture;
-    private final CardTextures        cardTextures  = new CardTextures();
-    private final EnemyTextures       enemyTextures = new EnemyTextures(cardTextures);
-    private final CasinoButtons       buttons       = new CasinoButtons();
-    private final HudTextures         hudTextures   = new HudTextures();
+    /** Communs à tous les écrans (voir {@link SharedAssets}) : ne jamais les libérer ici. */
+    private final CardTextures        cardTextures;
+    private final EnemyTextures       enemyTextures;
+    private final CasinoButtons       buttons;
+    private final HudTextures         hudTextures;
     private final VisualSettings      settings      = new VisualSettings();
     private final ScreenShake         screenShake   = new ScreenShake(settings);
     private CutsceneKit               cutsceneKit;
@@ -405,38 +414,13 @@ public class GameScreen extends ScreenAdapter {
     public GameScreen(LuckyGame luckyGame, CombatRun run) {
         this.luckyGame = luckyGame;
         this.run       = run;
-        // Le deck construit par le joueur (ou le deck de départ), relu à chaque nouveau combat.
-        PlayerProfile profile = luckyGame.getProfile();
-        if (run instanceof TutorialRun) {
-            // Tutoriel : son deck rangé d'avance, la machine de départ, aucun rang, une échoppe qui ne vend que le Bingo.
-            this.gameController = new GameController(() -> CardLoader.loadDeck(TutorialRun.deck()),
-                CardLoader.cardFactory(), TutorialRun.shop(),
-                cards -> new Player(Lang.t("Joueur"), Player.BASE_HP, cards, RankBonus.NONE, Symbol.classicReels()));
-        } else {
-            Map<String, Integer> shop = new LinkedHashMap<>(CardLoader.loadShop());
-            if (!profile.isAdmin()) shop.remove(BONUS_GAME_CARD); // carte de test du Jeu bonus : mode ADMIN seulement
-            this.gameController = new GameController(() -> CardLoader.loadDeck(profile.getDeck()),
-                CardLoader.cardFactory(), shop,
-                cards -> new Player(Lang.t("Joueur"), Player.BASE_HP, cards, profile.getRankBonus(), profile.getMachine()));
-        }
-        if (run != null) gameController.setPlaceRule(run.getPlaceRule()); // Exploration : la règle du lieu
-        gameController.setBonusGameEnabled(!(run instanceof TutorialRun)); // pas de Jeu bonus dans le tutoriel
-        // Cagnotte du Jeu bonus : celle du lieu (partagée par ses donjons) ou de l'Entraînement, gardées ;
-        // celle de l'ascension dans la Tour, où un Bingo ouvre plus souvent le Jeu bonus.
-        if (run instanceof DungeonRun dungeonRun) {
-            gameController.setPot(profile.getPot(Place.of(dungeonRun.getDungeon())));
-        } else if (run instanceof TowerRun tower) {
-            gameController.setPot(tower.getPot());
-            gameController.setBonusGameChance(BonusGame.TOWER_TRIGGER_CHANCE);
-        } else if (run == null) {
-            gameController.setPot(profile.getPot(PlayerProfile.POT_TRAINING));
-        }
-        EnemyKind.setTowerHard(run instanceof TowerRun tower && tower.isHard()); // Tour : mode difficile
-        gameController.restart(firstEnemy()); // le premier ennemi du chapitre, ou le croupier d'entraînement
-        if (run instanceof TutorialRun) {
-            TutorialRun.arrange(player().getDeck().getCards());
-            TutorialRun.arrange(gameController.getGameState().getEnemy());
-        }
+        SharedAssets assets = luckyGame.getAssets();
+        cardTextures  = assets.cardTextures();
+        enemyTextures = assets.enemyTextures();
+        buttons       = assets.buttons;
+        hudTextures   = assets.hud;
+        this.gameController = createController(luckyGame.getProfile(), run);
+        startRun(luckyGame.getProfile());
         // Le SpriteBatch est partagé avec LuckyGame et ne doit PAS être disposé ici.
         this.stage = new Stage(new MinimumScreenViewport(MIN_WIDTH, MIN_HEIGHT), luckyGame.getBatch());
 
@@ -455,21 +439,7 @@ public class GameScreen extends ScreenAdapter {
             () -> gameController.getGameState().getEnemy(), hudTextures.pixel);
         playerShield = new ShieldBadge(Lang.t("Bouclier"), 0, enemyTextures.symbol(EnemySymbol.SHIELD), shieldFont,
             hudTextures.pixel);
-        playerShield.addListener(new InputListener() {
-            @Override
-            public void enter(InputEvent event, float x, float y, int pointer, Actor fromActor) {
-                if (pointer != -1) return;
-                Vector2 top = playerShield.localToStageCoordinates(new Vector2(ShieldBadge.ICON_SIZE / 2f, playerShield.getHeight()));
-                tooltip.show(Lang.t("Ton bouclier"), Lang.t("Absorbe les attaques de l'ennemi et s'use à chaque coup\nGagné avec les symboles de défense ; "
-                    + "ce qui reste en fin de tour remplit le Coffre"),
-                    top.x, top.y + 6f);
-            }
-
-            @Override
-            public void exit(InputEvent event, float x, float y, int pointer, Actor toActor) {
-                if (pointer == -1) tooltip.hide();
-            }
-        });
+        addShieldTooltip();
         sidePanel  = new SidePanel(hudTextures);
         achievementToast = new AchievementToast(hudTextures, sounds.achievement);
         jackpotFireworkSounds = fireworkSounds;
@@ -542,6 +512,32 @@ public class GameScreen extends ScreenAdapter {
         layout();
         refreshAll();
 
+        addActors();
+
+        startPlayerTurn(); // le combat commence par le tour du joueur, main piochée d'office
+    }
+
+    /** Survol du bouclier du joueur : son infobulle. */
+    private void addShieldTooltip() {
+        playerShield.addListener(new InputListener() {
+            @Override
+            public void enter(InputEvent event, float x, float y, int pointer, Actor fromActor) {
+                if (pointer != -1) return;
+                Vector2 top = playerShield.localToStageCoordinates(new Vector2(ShieldBadge.ICON_SIZE / 2f, playerShield.getHeight()));
+                tooltip.show(Lang.t("Ton bouclier"), Lang.t("Absorbe les attaques de l'ennemi et s'use à chaque coup\nGagné avec les symboles de défense ; "
+                    + "ce qui reste en fin de tour remplit le Coffre"),
+                    top.x, top.y + 6f);
+            }
+
+            @Override
+            public void exit(InputEvent event, float x, float y, int pointer, Actor toActor) {
+                if (pointer == -1) tooltip.hide();
+            }
+        });
+    }
+
+    /** Ajoute les acteurs à la scène, du fond vers l'avant : l'ordre décide de ce qui passe devant. */
+    private void addActors() {
         stage.addActor(table.getActor());
         stage.addActor(enemyView.getActor());
         stage.addActor(playerShield);
@@ -577,8 +573,47 @@ public class GameScreen extends ScreenAdapter {
         stage.addActor(cardDetail.getActor());  // fiche d'une carte, par-dessus tout le reste
         stage.addActor(tooltip.getActor());     // en dernier : toujours au-dessus
         stage.addActor(screenShake);            // invisible : met à jour la caméra
+    }
 
-        startPlayerTurn(); // le combat commence par le tour du joueur, main piochée d'office
+    /**
+     * @return le contrôleur du combat : le deck construit par le joueur (ou le deck de départ),
+     *         relu à chaque nouveau combat, sa machine et son rang ; le tutoriel a les siens
+     */
+    private static GameController createController(PlayerProfile profile, CombatRun run) {
+        if (run instanceof TutorialRun) {
+            // Tutoriel : son deck rangé d'avance, la machine de départ, aucun rang, une échoppe qui ne vend que le Bingo.
+            return new GameController(() -> CardLoader.loadDeck(TutorialRun.deck()),
+                CardLoader.cardFactory(), TutorialRun.shop(),
+                cards -> new Player(Lang.t("Joueur"), Player.BASE_HP, cards, RankBonus.NONE, Symbol.classicReels()));
+        } else {
+            Map<String, Integer> shop = new LinkedHashMap<>(CardLoader.loadShop());
+            if (!profile.isAdmin()) shop.remove(BONUS_GAME_CARD); // carte de test du Jeu bonus : mode ADMIN seulement
+            return new GameController(() -> CardLoader.loadDeck(profile.getDeck()),
+                CardLoader.cardFactory(), shop,
+                cards -> new Player(Lang.t("Joueur"), Player.BASE_HP, cards, profile.getRankBonus(), profile.getMachine()));
+        }
+    }
+
+    /** Règle du lieu, Jeu bonus et sa cagnotte, difficulté, puis le premier combat. */
+    private void startRun(PlayerProfile profile) {
+        if (run != null) gameController.setPlaceRule(run.getPlaceRule()); // Exploration : la règle du lieu
+        gameController.setBonusGameEnabled(run == null || run.hasBonusGame()); // pas de Jeu bonus dans le tutoriel
+        // Cagnotte du Jeu bonus : celle du lieu (partagée par ses donjons) ou de l'Entraînement, gardées ;
+        // celle de l'ascension dans la Tour, où un Bingo ouvre plus souvent le Jeu bonus.
+        if (run instanceof DungeonRun dungeonRun) {
+            gameController.setPot(profile.getPot(Place.of(dungeonRun.getDungeon())));
+        } else if (run instanceof TowerRun tower) {
+            gameController.setPot(tower.getPot());
+            gameController.setBonusGameChance(BonusGame.TOWER_TRIGGER_CHANCE);
+        } else if (run == null) {
+            gameController.setPot(profile.getPot(PlayerProfile.POT_TRAINING));
+        }
+        gameController.setHardMode(run != null && run.isHard()); // Tour : mode difficile
+        gameController.restart(firstEnemy()); // le premier ennemi du chapitre, ou le croupier d'entraînement
+        if (run instanceof TutorialRun) {
+            TutorialRun.arrange(player().getDeck().getCards());
+            TutorialRun.arrange(gameController.getGameState().getEnemy());
+        }
     }
 
     // -------------------------------------------------------------------------
@@ -832,29 +867,18 @@ public class GameScreen extends ScreenAdapter {
 
     /** Ouvre la fenêtre du choix demandé par la carte jouée (rien si elle n'en demande pas). */
     private void askChoice(CardChoice choice, Vector2 cardCenter) {
-        if (choice instanceof BetChoice) {
-            choiceOverlay.showBet(gameController.getBetOptions(), slots::regionOf, symbol -> {
-                effectPopupAnimator.play(gameController.placeBet(symbol), cardCenter.x, cardCenter.y);
-                refreshEffects();
-            });
-        } else if (choice instanceof RiggedReelChoice) {
-            choiceOverlay.showRiggedReel(gameController.getBetOptions(), slots::regionOf, symbol -> {
-                effectPopupAnimator.play(gameController.rigReel(symbol), cardCenter.x, cardCenter.y);
-                refreshEffects();
-            });
-        } else if (choice instanceof JokerWorkshopChoice) {
-            choiceOverlay.showJokerWorkshop(gameController.getBetOptions(), slots::regionOf, symbol -> {
-                effectPopupAnimator.play(gameController.shapeJoker(symbol), cardCenter.x, cardCenter.y);
-                refreshEffects();
-            });
-        } else if (choice instanceof CalibrationChoice calibration) {
-            choiceOverlay.showCalibration(gameController.getBetOptions(), calibration.turns(), slots::regionOf, symbol -> {
-                effectPopupAnimator.play(gameController.calibrate(symbol), cardCenter.x, cardCenter.y);
-                refreshEffects();
-            });
-        } else if (choice instanceof RouletteChoice roulette) {
-            choiceOverlay.showRoulette(roulette.cursed(), roulette.pistolPercent(), roulette.cursedPercent(),
-                roulette.penaltyPercent(),
+        List<Symbol> options = gameController.getBetOptions();
+        switch (choice) {
+            case null -> { }
+            case BetChoice bet -> choiceOverlay.showBet(options, slots::regionOf, picked(gameController::placeBet, cardCenter));
+            case RiggedReelChoice rigged ->
+                choiceOverlay.showRiggedReel(options, slots::regionOf, picked(gameController::rigReel, cardCenter));
+            case JokerWorkshopChoice workshop ->
+                choiceOverlay.showJokerWorkshop(options, slots::regionOf, picked(gameController::shapeJoker, cardCenter));
+            case CalibrationChoice calibration -> choiceOverlay.showCalibration(options, calibration.turns(), slots::regionOf,
+                picked(gameController::calibrate, cardCenter));
+            case RouletteChoice roulette -> choiceOverlay.showRoulette(roulette.cursed(), roulette.pistolPercent(),
+                roulette.cursedPercent(), roulette.penaltyPercent(),
                 index -> {
                     GameController.RouletteOutcome outcome = gameController.pickRouletteCard(index);
                     effectPopupAnimator.play(outcome.popups(), cardCenter.x, cardCenter.y);
@@ -866,6 +890,14 @@ public class GameScreen extends ScreenAdapter {
                     refreshGains();
                 });
         }
+    }
+
+    /** @return ce qui suit le choix d'un symbole : {@code pick} l'applique, ses textes surgissent de la carte jouée. */
+    private Consumer<Symbol> picked(Function<Symbol, List<EffectPopup>> pick, Vector2 cardCenter) {
+        return symbol -> {
+            effectPopupAnimator.play(pick.apply(symbol), cardCenter.x, cardCenter.y);
+            refreshEffects();
+        };
     }
 
     /**
@@ -977,8 +1009,8 @@ public class GameScreen extends ScreenAdapter {
         showReelCount(result.getDrawnSymbols().length);
         // Aspiration : le panneau s'efface ; un rouleau aspiré (vide au tirage) est barré comme un rouleau bloqué
         aspirationPanel.update(List.of(), List.of());
-        slots.setThreatenedReels(java.util.Set.of());
-        java.util.Set<Integer> empty = new java.util.TreeSet<>();
+        slots.setThreatenedReels(Set.of());
+        Set<Integer> empty = new TreeSet<>();
         for (int i = 0; i < result.getDrawnSymbols().length; i++) if (result.getDrawnSymbols()[i] == null) empty.add(i);
         slots.setBlockedReels(empty);
         Symbol[] rerolled = result.getRerolledDraw();
@@ -1041,7 +1073,7 @@ public class GameScreen extends ScreenAdapter {
     private void recordTurn(TurnResult result) {
         recap.record(result);
         if (tutorial != null) return;
-        java.util.Set<Event> events = java.util.Collections.newSetFromMap(new java.util.IdentityHashMap<>());
+        Set<Event> events = Collections.newSetFromMap(new IdentityHashMap<>());
         events.addAll(result.getEvents());
         events.addAll(result.getCardEvents());
         long bestHit = 0L;
@@ -1154,20 +1186,17 @@ public class GameScreen extends ScreenAdapter {
         Action action = SymbolRegistry.getAction(outcome.getSymbol()).orElse(null);
         Vector2 target;
         Vector2 shield = playerShield.localToStageCoordinates(new Vector2(ShieldBadge.ICON_SIZE / 2f, ShieldBadge.ICON_SIZE / 2f));
-        if (action instanceof MixedAction) { // l'Étoile se divise : ennemi, bouclier et gains
-            symbolStrikes.play(outcome.getSymbol(), reel, enemyView.getCroupierCenter(), delay, shield,
-                sidePanel.getCoinCenter());
-            return;
-        } else if (action instanceof AttackAction) {
-            target = enemyView.getCroupierCenter();
-        } else if (action instanceof DefenseAction) {
-            target = shield;
-        } else if (action instanceof HealAction) {
-            target = hud.getPlayerChipCenter();
-        } else if (action instanceof GainAction) {
-            target = sidePanel.getCoinCenter();
-        } else {
-            return;
+        switch (action) {
+            case null -> { return; }
+            case MixedAction mixed -> { // l'Étoile se divise : ennemi, bouclier et gains
+                symbolStrikes.play(outcome.getSymbol(), reel, enemyView.getCroupierCenter(), delay, shield,
+                    sidePanel.getCoinCenter());
+                return;
+            }
+            case AttackAction attack  -> target = enemyView.getCroupierCenter();
+            case DefenseAction defense -> target = shield;
+            case HealAction heal       -> target = hud.getPlayerChipCenter();
+            case GainAction gain       -> target = sidePanel.getCoinCenter();
         }
         symbolStrikes.play(outcome.getSymbol(), reel, target, delay);
     }
@@ -1239,38 +1268,38 @@ public class GameScreen extends ScreenAdapter {
 
     /** Le texte d'un événement du tirage vient d'apparaître : met à jour ce qui en dépend. */
     private void onEventShown(Event event) {
-        if (event instanceof EnemyPhaseEvent) {
-            switchMusic(); // la Comète et la Machine Originelle changent de musique à leur phase 2
-        } else if (event instanceof GainsEarnedEvent gains) {
-            onGainsShown(gains.amount);
-        } else if (event instanceof GainsLostEvent lost) {
-            onGainsShown(-lost.amount);
-        } else if (event instanceof JackpotEvent jackpot) {
-            onJackpotShown(jackpot.symbol);
-        } else if (event instanceof EnemyDamagedEvent hit) {
-            onEnemyDefense(enemyView.onPlayerAttack(hit));
-            if (hit.damage > 0) onEnemyHit(hit.damage);
-        } else if (event instanceof DamageReflectedEvent reflect && reflect.damage > 0) {
-            onEnemyHit(reflect.damage);
-        } else if (event instanceof EnemyHpLostEvent self && self.lost > 0) {
-            onEnemyHit(self.lost); // Faillite, Duel gagné : sa barre descend aussi
-        } else if (event instanceof PlayerDamagedEvent hit) {
-            if (hit.blocked > 0) onPlayerBlocked(hit);
-            if (hit.damage > 0) onPlayerHit(hit.damage);
-        } else if (event instanceof ShieldGainedEvent shield && shield.amount > 0) {
-            playerShield.add(shield.amount);
-            sounds.shieldGain.play();
-        } else if (event instanceof EnemyShieldedEvent shield && shield.defense > 0) {
-            sounds.shieldGain.play(0.8f, ENEMY_SHIELD_PITCH, 0f); // un ton plus bas : c'est le bouclier de l'ennemi
-        } else if (event instanceof PlayerHealedEvent heal && heal.amount > 0) {
-            hud.revealPlayerHeal(heal.amount);
-        } else if (event instanceof EnemyHealedEvent heal) {
-            if (heal.amount > 0) hud.revealEnemyHeal(heal.amount);
-            enemyView.heal();
-        } else if (event instanceof ReelForbiddenEvent forbidden) {
-            slots.setBlockedReels(blockedReels());
-            sounds.shieldBreak.play();
-            screenShake.shake(0.25f, 7f);
+        switch (event) {
+            case EnemyPhaseEvent phase -> switchMusic(); // la Comète et la Machine Originelle changent de musique à leur phase 2
+            case GainsEarnedEvent gains -> onGainsShown(gains.amount);
+            case GainsLostEvent lost -> onGainsShown(-lost.amount);
+            case JackpotEvent jackpot -> onJackpotShown(jackpot.symbol);
+            case EnemyDamagedEvent hit -> {
+                onEnemyDefense(enemyView.onPlayerAttack(hit));
+                if (hit.damage > 0) onEnemyHit(hit.damage);
+            }
+            case DamageReflectedEvent reflect when reflect.damage > 0 -> onEnemyHit(reflect.damage);
+            case EnemyHpLostEvent self when self.lost > 0 -> onEnemyHit(self.lost); // Faillite, Duel gagné : sa barre descend aussi
+            case PlayerDamagedEvent hit -> {
+                if (hit.blocked > 0) onPlayerBlocked(hit);
+                if (hit.damage > 0) onPlayerHit(hit.damage);
+            }
+            case ShieldGainedEvent shield when shield.amount > 0 -> {
+                playerShield.add(shield.amount);
+                sounds.shieldGain.play();
+            }
+            case EnemyShieldedEvent shield when shield.defense > 0 ->
+                sounds.shieldGain.play(0.8f, ENEMY_SHIELD_PITCH, 0f); // un ton plus bas : c'est le bouclier de l'ennemi
+            case PlayerHealedEvent heal when heal.amount > 0 -> hud.revealPlayerHeal(heal.amount);
+            case EnemyHealedEvent heal -> {
+                if (heal.amount > 0) hud.revealEnemyHeal(heal.amount);
+                enemyView.heal();
+            }
+            case ReelForbiddenEvent forbidden -> {
+                slots.setBlockedReels(blockedReels());
+                sounds.shieldBreak.play();
+                screenShake.shake(0.25f, 7f);
+            }
+            default -> { }
         }
     }
 
@@ -1278,8 +1307,8 @@ public class GameScreen extends ScreenAdapter {
      * @return les rouleaux du joueur barrés au prochain tirage : {@code forbidden}
      *         (Rouleau interdit, -1 : aucun) et ceux volés par la Machine Originelle
      */
-    private java.util.Set<Integer> blockedReels() {
-        java.util.Set<Integer> blocked = new java.util.TreeSet<>(player().getLastingEffects().getForbiddenReels());
+    private Set<Integer> blockedReels() {
+        Set<Integer> blocked = new TreeSet<>(player().getLastingEffects().getForbiddenReels());
         int stolen = gameController.getGameState().getEnemy().getStolenReels();
         if (stolen >= 1) blocked.add(SlotMachine.SYMBOL_COUNT - 1);
         if (stolen >= 2) blocked.add(0);
@@ -1593,7 +1622,7 @@ public class GameScreen extends ScreenAdapter {
      */
     private void openChest(int left) {
         DungeonRun dungeonRun = (DungeonRun) run;
-        String cardId = dungeonRun.getDungeon().rollLoot(new java.util.Random());
+        String cardId = dungeonRun.getDungeon().rollLoot(new Random());
         PlayerProfile.ChestReward reward = luckyGame.getProfile().openChest(cardId,
             Place.of(dungeonRun.getDungeon()));
         chestOverlay.getActor().toFront();
@@ -1805,7 +1834,7 @@ public class GameScreen extends ScreenAdapter {
         @Override public Rectangle enemyBar()  { return GuideOverlay.boundsOf(hud.getEnemyHealthBar()); }
         @Override public Rectangle playerBar() { return GuideOverlay.boundsOf(hud.getPlayerHealthBar()); }
         @Override public Rectangle enemy()     { return GuideOverlay.around(enemyView.getCroupierCenter(), 260f, 260f); }
-        @Override public Rectangle hand(java.util.function.Predicate<Card> which) { return GameScreen.this.hand.boundsOf(which); }
+        @Override public Rectangle hand(Predicate<Card> which) { return GameScreen.this.hand.boundsOf(which); }
         @Override public Rectangle spinButton() { return GuideOverlay.boundsOf(spinControls.getLever()); }
         @Override public Rectangle stakeButton() { return GuideOverlay.boundsOf(spinControls.getStakeButton()); }
         @Override public Rectangle reels() {
@@ -1933,10 +1962,10 @@ public class GameScreen extends ScreenAdapter {
         List<AspirationRule> rules = player().getLastingEffects().getAspirations();
         List<Card> played = player().getPlayedCards();
         aspirationPanel.update(rules, played);
-        java.util.Set<Integer> blocked = blockedReels(), threatened = new java.util.TreeSet<>();
+        Set<Integer> blocked = blockedReels(), threatened = new TreeSet<>();
         for (AspirationRule rule : rules) {
             if (rule.isMet(played)) continue;
-            java.util.Set<Integer> taken = new java.util.TreeSet<>(blocked);
+            Set<Integer> taken = new TreeSet<>(blocked);
             taken.addAll(threatened);
             int reel = PreparationResolver.aspiredReel(taken);
             if (reel >= 0) threatened.add(reel);
@@ -2163,14 +2192,10 @@ public class GameScreen extends ScreenAdapter {
         Fonts.release(shieldFont);
         Fonts.release(pileFont);
         tableTextures.dispose();
-        cardTextures.dispose();
-        buttons.dispose();
         tooltip.dispose();
         enemyView.dispose();
-        enemyTextures.dispose();
         hud.dispose();
         sidePanel.dispose();
-        hudTextures.dispose();
         symbolStrikes.dispose();
         slots.dispose();
         sounds.dispose();

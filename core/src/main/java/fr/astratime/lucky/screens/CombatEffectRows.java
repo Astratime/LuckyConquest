@@ -5,6 +5,7 @@ import fr.astratime.lucky.assets.HudTextures;
 import fr.astratime.lucky.controllers.GameController;
 import fr.astratime.lucky.controllers.PreparationResolver;
 import fr.astratime.lucky.entities.Enemy;
+import fr.astratime.lucky.entities.EnemyMaluses;
 import fr.astratime.lucky.entities.GameState;
 import fr.astratime.lucky.entities.LastingEffects;
 import fr.astratime.lucky.entities.Player;
@@ -17,13 +18,14 @@ import fr.astratime.lucky.entities.enemy.EnemyKind;
 import fr.astratime.lucky.entities.enemy.EnemySymbol;
 import fr.astratime.lucky.entities.exploration.PlaceRule;
 import fr.astratime.lucky.i18n.Lang;
-import fr.astratime.lucky.progress.PlayerProfile;
 import fr.astratime.lucky.views.SidePanel;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
+import java.util.Set;
+import java.util.TreeSet;
 
 /**
  * Les lignes du panneau « Effets » de l'écran de combat : chaque effet actif
@@ -139,7 +141,7 @@ final class CombatEffectRows {
 
     /** @return {@code count} suivi de « tour » ou « tours ». */
     private static String turns(int count) {
-        return Lang.f(Lang.plural(count) ? "{0} tours" : "{0} tour", count);
+        return Lang.n(count, "{0} tour", "{0} tours", count);
     }
 
     /**
@@ -150,6 +152,13 @@ final class CombatEffectRows {
     private void addPlaceRows(List<SidePanel.EffectRow> rows, LastingEffects lasting) {
         GameState state = controller.getGameState();
         TextureRegion skull = new TextureRegion(hud.iconCorruption);
+        addPlaceRuleRow(rows, state, skull);
+        addProtectionRows(rows, lasting);
+        addEnemyCurseRows(rows, lasting, state, skull);
+    }
+
+    /** La règle du lieu : Scorbut, prochain coup de grisou, niveau de la marée, prochain tour de manège, Soif. */
+    private void addPlaceRuleRow(List<SidePanel.EffectRow> rows, GameState state, TextureRegion skull) {
         int turn = state.getTurnNumber();
         PlaceRule rule = state.getPlaceRule();
         switch (state.getActiveRule()) {
@@ -184,6 +193,10 @@ final class CombatEffectRows {
                 rule.getDescription() + Lang.t(" Pense à te soigner à chaque tour.")));
             case NONE -> { }
         }
+    }
+
+    /** Les cartes des lieux qui durent (Bulle d'air, Veine d'or, Casque), les parades des coffres et les archétypes. */
+    private void addProtectionRows(List<SidePanel.EffectRow> rows, LastingEffects lasting) {
         if (lasting.getBubbleTurns() > 0) {
             int turns = lasting.getBubbleTurns();
             rows.add(new SidePanel.EffectRow(new TextureRegion(hud.iconSleeve), null,
@@ -232,51 +245,56 @@ final class CombatEffectRows {
             Lang.f("Ton attaque est à +{0} %. Elle monte encore à chaque tour.", lasting.getTemperPercent())));
         if (player.hasRope()) rows.add(new SidePanel.EffectRow(guard, null, Lang.t("Corde de rappel"), Lang.t("Corde de rappel"),
             Lang.t("Si un coup devait te tuer, tu restes à 1 PV.")));
-        if (target.isDazzled()) rows.add(new SidePanel.EffectRow(guard, null, Lang.t("Ennemi ébloui"), Lang.t("Rayon du phare"),
+        if (target.getMaluses().isDazzled()) rows.add(new SidePanel.EffectRow(guard, null, Lang.t("Ennemi ébloui"), Lang.t("Rayon du phare"),
             Lang.t("L'ennemi passe son prochain tour.")));
-        if (target.getMutinies() > 0) rows.add(new SidePanel.EffectRow(guard, null, Lang.t("Mutinerie"), Lang.t("Mutinerie"),
+        if (target.getMaluses().getMutinies() > 0) rows.add(new SidePanel.EffectRow(guard, null, Lang.t("Mutinerie"), Lang.t("Mutinerie"),
             Lang.f("À son prochain tour, l'ennemi joue {0} cartes de moins.", MutinyEffect.CARDS_LESS)));
-        if (target.getLoadedCoins() > 0) rows.add(new SidePanel.EffectRow(guard, null, Lang.t("Pièce truquée"), Lang.t("Pièce truquée"),
+        if (target.getMaluses().getLoadedCoins() > 0) rows.add(new SidePanel.EffectRow(guard, null, Lang.t("Pièce truquée"), Lang.t("Pièce truquée"),
             Lang.t("Le prochain tirage de l'ennemi ne peut pas faire de Jackpot.")));
-        if (target.getHarpoons() > 0) rows.add(new SidePanel.EffectRow(guard, null, Lang.f("Harpon x{0}",
-            target.getHarpoons()),
-            Lang.t("Harpon"), Lang.f(Lang.plural(target.getHarpoons())
-                ? "À son prochain tour, l'ennemi joue {0} cartes de moins."
-                : "À son prochain tour, l'ennemi joue {0} carte de moins.", target.getHarpoons())));
+        if (target.getMaluses().getHarpoons() > 0) rows.add(new SidePanel.EffectRow(guard, null, Lang.f("Harpon x{0}",
+            target.getMaluses().getHarpoons()),
+            Lang.t("Harpon"), Lang.n(target.getMaluses().getHarpoons(), "À son prochain tour, l'ennemi joue {0} carte de moins.",
+                "À son prochain tour, l'ennemi joue {0} cartes de moins.", target.getMaluses().getHarpoons())));
         addArchetypeRows(rows, lasting, target, guard);
+    }
+
+    /** Les mauvais sorts de l'ennemi qui attendent le prochain tour, ce qu'il a pris ou banni, le temps compté. */
+    private void addEnemyCurseRows(List<SidePanel.EffectRow> rows, LastingEffects lasting, GameState state,
+                                   TextureRegion skull) {
         Enemy foe = controller.getGameState().getEnemy();
         EnemyKind kind = foe.getKind();
-        if (lasting.getNibbles() > 0) rows.add(curse(skull, Lang.f("Grignotage x{0}", lasting.getNibbles()), EnemySymbol.NIBBLE, kind));
-        if (lasting.getDrunk() > 0) rows.add(curse(skull, Lang.f("Ivresse x{0}", lasting.getDrunk()), EnemySymbol.DRUNK, kind));
+        if (lasting.getNibbles() > 0) rows.add(curse(skull, Lang.f("Grignotage x{0}", lasting.getNibbles()), EnemySymbol.NIBBLE, foe));
+        if (lasting.getDrunk() > 0) rows.add(curse(skull, Lang.f("Ivresse x{0}", lasting.getDrunk()), EnemySymbol.DRUNK, foe));
         if (lasting.isBlind()) {
             int blinds = lasting.getBlindCards();
             rows.add(new SidePanel.EffectRow(skull, null, Lang.f("Aveuglement x{0}", blinds), Lang.t("Aveuglement"),
-                Lang.f(Lang.plural(blinds) ? "Au prochain tour, {0} cartes de ta main seront faces cachées. Les Aveuglements se cumulent."
-                    : "Au prochain tour, {0} carte de ta main sera face cachée. Les Aveuglements se cumulent.", blinds)));
+                Lang.n(blinds, "Au prochain tour, {0} carte de ta main sera face cachée. Les Aveuglements se cumulent.",
+                    "Au prochain tour, {0} cartes de ta main seront faces cachées. Les Aveuglements se cumulent.",
+                    blinds)));
         }
-        if (lasting.hasNugget()) rows.add(curse(skull, Lang.t("Pépite"), EnemySymbol.NUGGET, kind));
-        if (lasting.getSongs() > 0) rows.add(curse(skull, Lang.f("Chant x{0}", lasting.getSongs()), EnemySymbol.SONG, kind));
-        java.util.Set<Integer> voids = new java.util.TreeSet<>(lasting.getForbiddenReels());
+        if (lasting.hasNugget()) rows.add(curse(skull, Lang.t("Pépite"), EnemySymbol.NUGGET, foe));
+        if (lasting.getSongs() > 0) rows.add(curse(skull, Lang.f("Chant x{0}", lasting.getSongs()), EnemySymbol.SONG, foe));
+        Set<Integer> voids = new TreeSet<>(lasting.getForbiddenReels());
         voids.remove(lasting.getForbiddenReel()); // le Rouleau interdit a sa propre ligne
-        if (!voids.isEmpty()) rows.add(curse(skull, Lang.f("Rien ne va plus x{0}", voids.size()), EnemySymbol.NOTHING_GOES, kind));
+        if (!voids.isEmpty()) rows.add(curse(skull, Lang.f("Rien ne va plus x{0}", voids.size()), EnemySymbol.NOTHING_GOES, foe));
         if (lasting.getShortCircuits() > 0) {
-            rows.add(curse(skull, Lang.f("Court-circuit x{0}", lasting.getShortCircuits()), EnemySymbol.SHORT_CIRCUIT, kind));
+            rows.add(curse(skull, Lang.f("Court-circuit x{0}", lasting.getShortCircuits()), EnemySymbol.SHORT_CIRCUIT, foe));
         }
         if (lasting.getHouseEdges() > 0) {
-            rows.add(curse(skull, Lang.f("Avantage x{0}", lasting.getHouseEdges()), EnemySymbol.HOUSE_EDGE, kind));
+            rows.add(curse(skull, Lang.f("Avantage x{0}", lasting.getHouseEdges()), EnemySymbol.HOUSE_EDGE, foe));
         }
         if (lasting.getRockfalls() > 0) {
-            rows.add(curse(skull, Lang.f("Éboulement : -{0}", lasting.getRockfalls()), EnemySymbol.ROCKFALL, kind));
+            rows.add(curse(skull, Lang.f("Éboulement : -{0}", lasting.getRockfalls()), EnemySymbol.ROCKFALL, foe));
         }
         if (!lasting.getAspirations().isEmpty()) {
-            rows.add(curse(skull, Lang.f("Aspiration x{0}", lasting.getAspirations().size()), EnemySymbol.ASPIRATION, kind));
+            rows.add(curse(skull, Lang.f("Aspiration x{0}", lasting.getAspirations().size()), EnemySymbol.ASPIRATION, foe));
         }
         if (lasting.getFakeGains() > 0) {
             rows.add(new SidePanel.EffectRow(skull, null, Lang.f("Faux : {0}", Lang.big(lasting.getFakeGains())), Lang.t("Fausse monnaie"),
                 Lang.f("{0} de tes gains sont faux. Dépense-les avant ton tirage, ou ils disparaissent.",
                     SidePanel.formatGains(lasting.getFakeGains()))));
         }
-        if (lasting.getTaxes() > 0) rows.add(curse(skull, Lang.f("Taxe x{0}", lasting.getTaxes()), EnemySymbol.TAX, kind));
+        if (lasting.getTaxes() > 0) rows.add(curse(skull, Lang.f("Taxe x{0}", lasting.getTaxes()), EnemySymbol.TAX, foe));
         if (lasting.getHouseRule() != null) {
             LastingEffects.HouseRule houseRule = lasting.getHouseRule();
             rows.add(new SidePanel.EffectRow(skull, null,
@@ -294,11 +312,11 @@ final class CombatEffectRows {
                 : Lang.f("{0} ou {1}", foe.getPrediction().getDisplayName(), foe.getSecondPrediction().getDisplayName());
             rows.add(new SidePanel.EffectRow(skull, null, Lang.f("Prédit : {0}", foretold.toLowerCase()),
                 Lang.t("Prédiction"), Lang.f("Symbole annoncé : {0}. {1}",
-                    foretold, sentence(EnemySymbol.PREDICTION.getDescription(kind)))));
+                    foretold, sentence(EnemySymbol.PREDICTION.getDescription(kind, foe.isHard())))));
         }
         if (foe.getStolenReels() > 0) {
             int stolen = foe.getStolenReels();
-            String reels = Lang.f(Lang.plural(stolen) ? "{0} rouleaux" : "{0} rouleau", stolen);
+            String reels = Lang.n(stolen, "{0} rouleau", "{0} rouleaux", stolen);
             rows.add(new SidePanel.EffectRow(skull, null, Lang.f("Vol : {0}", reels), Lang.t("Rouleaux volés"),
                 foe.getTheftTurns() > 0
                     ? Lang.f("L'ennemi t'a volé {0}. Le premier revient dans {1}.", reels, turns(foe.getTheftTurns()))
@@ -313,9 +331,9 @@ final class CombatEffectRows {
     }
 
     /** @return la ligne d'un mauvais sort de l'ennemi, décrit comme sur ses rouleaux. */
-    private static SidePanel.EffectRow curse(TextureRegion icon, String text, EnemySymbol symbol, EnemyKind kind) {
+    private static SidePanel.EffectRow curse(TextureRegion icon, String text, EnemySymbol symbol, Enemy foe) {
         String name = symbol.getDisplayName().charAt(0) + symbol.getDisplayName().substring(1).toLowerCase();
-        return new SidePanel.EffectRow(icon, null, text, name, sentence(symbol.getDescription(kind)));
+        return new SidePanel.EffectRow(icon, null, text, name, sentence(symbol.getDescription(foe.getKind(), foe.isHard())));
     }
 
     /** @return la description d'un symbole ennemi (« Nom : texte ») sans son nom, terminée par un point. */
@@ -340,25 +358,25 @@ final class CombatEffectRows {
      * l'ennemi, Chapeau du Lutin, Rente viagère, Martingale et Rire du Joker.
      */
     private void addArchetypeRows(List<SidePanel.EffectRow> rows, LastingEffects lasting, Enemy target, TextureRegion icon) {
-        if (target.getPharaohSealTurns() > 0) rows.add(new SidePanel.EffectRow(icon, null, Lang.f("Sceau ({0})", target.getPharaohSealTurns()),
-            Lang.t("Sceau du Pharaon"), Lang.f("Ses Créances comptent double. Encore {0}.", turns(target.getPharaohSealTurns()))));
-        if (target.getClaims() > 0) rows.add(new SidePanel.EffectRow(icon, null, Lang.f("Créances x{0}", target.getClaims()),
+        if (target.getMaluses().getPharaohSealTurns() > 0) rows.add(new SidePanel.EffectRow(icon, null, Lang.f("Sceau ({0})", target.getMaluses().getPharaohSealTurns()),
+            Lang.t("Sceau du Pharaon"), Lang.f("Ses Créances comptent double. Encore {0}.", turns(target.getMaluses().getPharaohSealTurns()))));
+        if (target.getMaluses().getClaims() > 0) rows.add(new SidePanel.EffectRow(icon, null, Lang.f("Créances x{0}", target.getMaluses().getClaims()),
             Lang.t("Créances"), Lang.f("À chacun de ses tours, l'ennemi perd {0} % de ses PV max et tu gagnes {1}.",
-                percentText(target.getClaims() * Enemy.CLAIM_HP_PER_MILLE / 10f),
-                SidePanel.formatGains((double) target.getClaims() * Enemy.CLAIM_SPINS * target.getKind().getSpinCost()))));
-        if (target.getCompoundTurns() > 0) rows.add(new SidePanel.EffectRow(icon, null,
-            Lang.f("Intérêts ({0})", target.getCompoundTurns()), Lang.t("Intérêts composés"),
-            Lang.f("Les Créances de l'ennemi grossissent à chacun de tes tirages. Encore {0}.", turns(target.getCompoundTurns()))));
-        if (target.getIntimidation() > 0) rows.add(new SidePanel.EffectRow(icon, null, Lang.t("Intimidé"), Lang.t("Intimidation"),
-            Lang.f("À son prochain tour, ses attaques baissent de {0} %.", target.malusShare(target.getIntimidation()))));
-        if (target.getMarkedTurns() > 0) rows.add(new SidePanel.EffectRow(icon, null,
-            Lang.f("Cartes marquées ({0})", target.getMarkedTurns()), Lang.t("Cartes marquées"),
+                percentText(target.getMaluses().getClaims() * EnemyMaluses.CLAIM_HP_PER_MILLE / 10f),
+                SidePanel.formatGains((double) target.getMaluses().getClaims() * EnemyMaluses.CLAIM_SPINS * target.getKind().getSpinCost()))));
+        if (target.getMaluses().getCompoundTurns() > 0) rows.add(new SidePanel.EffectRow(icon, null,
+            Lang.f("Intérêts ({0})", target.getMaluses().getCompoundTurns()), Lang.t("Intérêts composés"),
+            Lang.f("Les Créances de l'ennemi grossissent à chacun de tes tirages. Encore {0}.", turns(target.getMaluses().getCompoundTurns()))));
+        if (target.getMaluses().getIntimidation() > 0) rows.add(new SidePanel.EffectRow(icon, null, Lang.t("Intimidé"), Lang.t("Intimidation"),
+            Lang.f("À son prochain tour, ses attaques baissent de {0} %.", target.getMaluses().malusShare(target.getMaluses().getIntimidation()))));
+        if (target.getMaluses().getMarkedTurns() > 0) rows.add(new SidePanel.EffectRow(icon, null,
+            Lang.f("Cartes marquées ({0})", target.getMaluses().getMarkedTurns()), Lang.t("Cartes marquées"),
             Lang.f("Ses cartes à couleur perdent {0} % de leur effet. Encore {1}.",
-                target.malusShare(fr.astratime.lucky.controllers.EnemyTurnResolver.MARKED_CARDS_PERCENT),
-                turns(target.getMarkedTurns()))));
-        if (target.getRedHerrings() > 0) rows.add(new SidePanel.EffectRow(icon, null, Lang.t("Fausse piste"), Lang.t("Fausse piste"),
+                target.getMaluses().malusShare(fr.astratime.lucky.controllers.EnemyTurnResolver.MARKED_CARDS_PERCENT),
+                turns(target.getMaluses().getMarkedTurns()))));
+        if (target.getMaluses().getRedHerrings() > 0) rows.add(new SidePanel.EffectRow(icon, null, Lang.t("Fausse piste"), Lang.t("Fausse piste"),
             Lang.t("À son prochain tirage, un de ses rouleaux ne tourne pas (une chance sur deux contre un boss ou un roi).")));
-        if (target.getSleights() > 0) rows.add(new SidePanel.EffectRow(icon, null, Lang.f("Passe-passe x{0}", target.getSleights()),
+        if (target.getMaluses().getSleights() > 0) rows.add(new SidePanel.EffectRow(icon, null, Lang.f("Passe-passe x{0}", target.getMaluses().getSleights()),
             Lang.t("Tour de passe-passe"),
             Lang.t("Son prochain effet spécial est annulé (une chance sur deux contre un boss ou un roi).")));
         if (lasting.getHatTurns() > 0) rows.add(new SidePanel.EffectRow(icon, null, Lang.f("Chapeau ({0})", lasting.getHatTurns()),

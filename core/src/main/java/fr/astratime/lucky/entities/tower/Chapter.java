@@ -61,6 +61,17 @@ public enum Chapter {
         this.ending      = ending;
     }
 
+    /**
+     * @return le chapitre de la Tour où l'on affronte {@code kind} (premier ennemi,
+     *         challenger ou boss), ou {@code null} s'il n'est pas de la Tour
+     */
+    public static Chapter of(EnemyKind kind) {
+        for (Chapter chapter : values()) {
+            if (chapter.firstEnemy == kind || chapter.boss == kind || chapter.challengers.contains(kind)) return chapter;
+        }
+        return null;
+    }
+
     /** @return le numéro du chapitre (à partir de 1). */
     public int getNumber() { return number; }
     /** @return "Chapitre N". */

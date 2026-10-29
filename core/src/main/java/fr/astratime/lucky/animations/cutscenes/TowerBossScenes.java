@@ -10,6 +10,8 @@ import com.badlogic.gdx.utils.Array;
 import fr.astratime.lucky.entities.enemy.EnemyKind;
 import fr.astratime.lucky.entities.enemy.EnemySymbol;
 
+import static fr.astratime.lucky.assets.Palette.hex;
+
 /**
  * Les scènes de phase et de mort des boss de la Tour des épreuves (choix d'Astra, 2026-10-24).
  * La phase de la Comète et toute la Machine Originelle ont leurs propres cinématiques.
@@ -135,7 +137,7 @@ final class TowerBossScenes {
     static final class QueenPhase extends BossScene {
         static final float FLIP = 0.9f;
         private final TextureRegion card, back;
-        private static final Color FELT = c("1f6a3a"), WOOD = c("5a2a14");
+        private static final Color FELT = hex("1f6a3a"), WOOD = hex("5a2a14");
 
         QueenPhase(CutsceneKit kit) {
             super(kit, Moment.PHASE, EnemyKind.REINE, 2);
@@ -197,7 +199,7 @@ final class TowerBossScenes {
         static final float SLIP = 0.5f, LAND = 1.15f, DUST = 3.0f;
         /** Sa couronne dans son portrait : colonnes 9 à 25, lignes 0 à 9. */
         private static final int CROWN_X = 9, CROWN_W = 17, CROWN_H = 10;
-        private static final Color HAIR = c("6a1e6a");
+        private static final Color HAIR = hex("6a1e6a");
         private final TextureRegion crown, left, right, body, scepter, back;
         private boolean collapsed, dusted;
         private final float[] halves = new float[8];                // x, y, rotation, vx des deux moitiés
@@ -303,7 +305,7 @@ final class TowerBossScenes {
                 draw(batch, crown, x, y, scale, rot, WHITE, 1f);
                 float crack = progress(LAND + 0.3f, CLIMAX_DEATH);
                 if (crack > 0f) {
-                    crack(batch, groundX(), groundCrownY() + CROWN_H * scale / 2f, -90f, CROWN_H * scale * crack, 7L, c("1a0a10"), 1f, 5f);
+                    crack(batch, groundX(), groundCrownY() + CROWN_H * scale / 2f, -90f, CROWN_H * scale * crack, 7L, hex("1a0a10"), 1f, 5f);
                 }
                 return;
             }
@@ -325,7 +327,7 @@ final class TowerBossScenes {
         static final float SPLIT = CLIMAX_PHASE, MERGE = 3.6f;
         private static final EnemySymbol[] REFLECTS = {
             EnemySymbol.MIRROR, EnemySymbol.HOURGLASS, EnemySymbol.THORNS, EnemySymbol.FANG, EnemySymbol.RAGE, EnemySymbol.PREDICTION};
-        private static final Color NEW = c("ff5ad8"), OLD = c("7ae8ff");
+        private static final Color NEW = hex("ff5ad8"), OLD = hex("7ae8ff");
         private final TextureRegion[] tiles = new TextureRegion[6];
         private final TextureRegion[] icons = new TextureRegion[6];
 
@@ -401,7 +403,7 @@ final class TowerBossScenes {
 
         PretenderScene(CutsceneKit kit, Moment moment, int phase) {
             super(kit, moment, EnemyKind.PRETENDANT, phase);
-            gem  = art("o#", new Color[] {c("1a0a0e"), Color.WHITE}, GEM);
+            gem  = art("o#", new Color[] {hex("1a0a0e"), Color.WHITE}, GEM);
             chip = load("hud/chip_enemy.png");
         }
 
@@ -411,7 +413,7 @@ final class TowerBossScenes {
             float shake = crack > 0f ? (random.nextFloat() - 0.5f) * 6f * crack : 0f;
             glow(batch, x, y, scale * 14f, SHARDS[i], 0.7f * alpha);
             draw(batch, gem, x + shake, y, scale, 0f, SHARDS[i], alpha);
-            if (crack > 0f) crack(batch, x + shake, y + scale * 2.5f, -80f, scale * 5f * crack, 3L + i, c("1a0a0e"), alpha, 3f);
+            if (crack > 0f) crack(batch, x + shake, y + scale * 2.5f, -80f, scale * 5f * crack, 3L + i, hex("1a0a0e"), alpha, 3f);
         }
 
         /** L'éclat {@code i} se brise : ses morceaux et ses étincelles. */
@@ -522,7 +524,7 @@ final class TowerBossScenes {
         protected void front(Batch batch) {
             if (time < CLIMAX_PHASE) drawGem(batch, 1, progress(1.2f, CLIMAX_PHASE), 1f);
             eyes(batch, progress(CLIMAX_PHASE, CLIMAX_PHASE + 0.3f), GOLD, PRETENDER_EYES);
-            flash(batch, c("ff3a5a"), CLIMAX_PHASE, 0.3f, 0.4f);
+            flash(batch, hex("ff3a5a"), CLIMAX_PHASE, 0.3f, 0.4f);
         }
     }
 
@@ -534,7 +536,7 @@ final class TowerBossScenes {
         static final float FIRST_HIT = 0.9f, HIT_STEP = 0.15f, FLY = 0.12f, FALL = CLIMAX_DEATH, FADE = 3.1f, SOUL = 3.3f;
         /** Sa couronne dans son portrait : colonnes 9 à 25, lignes 0 à 9. */
         private static final int CROWN_X = 9, CROWN_W = 17, CROWN_H = 10;
-        private static final Color HAIR = c("8a3a1a"), HIT = c("ff3a5a");
+        private static final Color HAIR = hex("8a3a1a"), HIT = hex("ff3a5a");
         /** Là où chaque jeton le transperce, en pixels de son portrait. */
         private static final float[][] HITS = {{17, 31}, {11, 35}, {23, 34}, {14, 24}, {21, 22}, {17, 38}, {8, 30},
             {26, 29}, {12, 40}, {22, 39}};
@@ -597,7 +599,7 @@ final class TowerBossScenes {
             if (at(FALL)) { rumble(0.6f, 10f); chips(bossX(), bossY(), 16, 800f); }
             if (at(FALL + 0.6f)) {                                      // il touche le sol
                 rumble(0.4f, 9f);
-                sparks(bossX() - bossHeight() * 0.5f, groundY(), 40, c("d8c8a8"), 500f, 12f);
+                sparks(bossX() - bossHeight() * 0.5f, groundY(), 40, hex("d8c8a8"), 500f, 12f);
             }
             if (at(FADE)) {
                 Vector2 p = map(17f, 26f);
@@ -685,8 +687,8 @@ final class TowerBossScenes {
      * nuages. {@link #evil} fait virer le décor au diabolique (ciel rouge, braises), {@link #holy} à l'angélique.
      */
     abstract static class HouseScene extends BossScene {
-        static final Color SKY_TOP = c("1a1a4a"), SKY_MID = c("7a3a7a"), SKY_LOW = c("ffb46a"), HALO = c("e89a6a");
-        static final Color HELL_TOP = c("1a0204"), HELL_LOW = c("c81a0a"), ROOM = c("3a1420"), FLOOR = c("6a2a1a");
+        static final Color SKY_TOP = hex("1a1a4a"), SKY_MID = hex("7a3a7a"), SKY_LOW = hex("ffb46a"), HALO = hex("e89a6a");
+        static final Color HELL_TOP = hex("1a0204"), HELL_LOW = hex("c81a0a"), ROOM = hex("3a1420"), FLOOR = hex("6a2a1a");
         /** Le corps central de son portrait (colonnes 8 à 26, lignes 13 à 37), ses yeux-fenêtres. */
         static final float BODY_LEFT = 8f, BODY_RIGHT = 27f, BODY_TOP = 13f, BODY_BOTTOM = 38f;
         static final float[][] WINDOW_EYES = {{12f, 22f}, {22f, 22f}};
@@ -695,15 +697,18 @@ final class TowerBossScenes {
 
         HouseScene(CutsceneKit kit, Moment moment, int phase) {
             super(kit, moment, EnemyKind.MAISON, phase);
-            machine = art("ogdwr", new Color[] {c("0a0808"), c("ffc93a"), c("b8801f"), c("f4ecdc"), c("e0283a")},
+            machine = art("ogdwr", new Color[] {hex("0a0808"), hex("ffc93a"), hex("b8801f"), hex("f4ecdc"), hex("e0283a")},
                 "..oooooooooo..", ".oggggggggggo.", "oggggggggggggo", "ogoooooooooogo", "ogowwowwowwogo", "ogowrowrowrogo",
                 "ogowwowwowwogo", "ogoooooooooogo", "oggggggggggggo", "ogggddddddgggo", "oggggggggggggo", "oddddddddddddo",
                 "oooooooooooooo");
-            wing = art("wg", new Color[] {c("ffffff"), c("c8d0ec")},
+            wing = art("wg", new Color[] {hex("ffffff"), hex("c8d0ec")},
                 "......ww", "....wwww", "..wwwwwg", ".wwwwwg.", "wwwwgg..", "wwgg....", "wg......");
-            horn = art("rd", new Color[] {c("8a0a0a"), c("3a0404")},
+            horn = art("rd", new Color[] {hex("8a0a0a"), hex("3a0404")},
                 "....d", "...rd", "..rrd", ".rrd.", "rrrd.", "rrd..");
         }
+
+        /** Couleur de travail du ciel rouge, réutilisée à chaque bande (rien n'est alloué par image). */
+        private final Color hell = new Color();
 
         /** Le décor : le ciel de son entrée (qui vire au rouge avec {@link #evil}), le halo et les nuages. */
         protected void decor(Batch batch) {
@@ -713,15 +718,15 @@ final class TowerBossScenes {
                 float k = i / (float) (bands - 1);
                 if (k < 0.5f) tmp.set(SKY_LOW).lerp(SKY_MID, k * 2f);
                 else tmp.set(SKY_MID).lerp(SKY_TOP, (k - 0.5f) * 2f);
-                Color hell = new Color(HELL_LOW).lerp(HELL_TOP, k);
+                hell.set(HELL_LOW).lerp(HELL_TOP, k);
                 tmp.lerp(hell, evil);
-                if (holy > 0f) tmp.lerp(c("fff4d8"), holy * (0.55f - 0.3f * k));
+                if (holy > 0f) tmp.lerp(hex("fff4d8"), holy * (0.55f - 0.3f * k));
                 batch.setColor(tmp.r, tmp.g, tmp.b, 1f);
                 batch.draw(pixel, -MARGIN, -MARGIN + i * band - 1f, worldWidth() + 2f * MARGIN, band + 2f);
             }
             for (int i = 0; i < 40; i++) {                              // les étoiles du soir
                 float x = (i * 173.3f) % worldWidth(), y = worldHeight() * (0.72f + 0.26f * ((i * 61) % 100) / 100f);
-                rect(batch, c("e8e0ff"), 0.8f * (1f - evil) * (1f - holy), x, y, 4f, 4f);
+                rect(batch, hex("e8e0ff"), 0.8f * (1f - evil) * (1f - holy), x, y, 4f, 4f);
             }
             glow(batch, bossX(), bossY(), worldWidth() * 0.9f, tmp.set(HALO).lerp(HELL_LOW, evil).lerp(GOLD, holy), 0.45f);
             if (holy > 0f) {                                            // des rayons de lumière tombent du ciel
@@ -738,7 +743,7 @@ final class TowerBossScenes {
 
         /** Les nuages sur lesquels repose le manoir, comme à son entrée. */
         protected void clouds(Batch batch) {
-            Color pale = tmp.set(c("f6e8f0")).lerp(c("5a1a1a"), evil);
+            Color pale = tmp.set(hex("f6e8f0")).lerp(hex("5a1a1a"), evil);
             for (int i = 0; i < 16; i++) {
                 float x = worldWidth() * i / 15f, y = groundY() + 20f + 18f * MathUtils.sin(i * 1.7f), r = 150f + 40f * ((i * 7) % 3);
                 batch.setColor(pale.r, pale.g, pale.b, 1f);
@@ -776,7 +781,7 @@ final class TowerBossScenes {
                 batch.setColor(1f, 1f, 1f, alpha);
                 batch.draw(horn, x + side * 40f - (side < 0 ? hw : 0f) + (side < 0 ? hw : 0f), y - 10f, side * hw, hh);
             }
-            eyes(batch, alpha, c("ff2a0a"), WINDOW_EYES);
+            eyes(batch, alpha, hex("ff2a0a"), WINDOW_EYES);
         }
 
         /** Des braises qui montent : le décor diabolique. */
@@ -784,7 +789,7 @@ final class TowerBossScenes {
             if (random.nextFloat() >= rate) return;
             Particle ember = particle(worldWidth() * random.nextFloat(), groundY(), 85f + 10f * random.nextFloat(),
                 120f + 200f * random.nextFloat(), 2.2f, 8f + 10f * random.nextFloat());
-            ember.color.set(random.nextBoolean() ? c("ff5a1a") : c("ffb040"));
+            ember.color.set(random.nextBoolean() ? hex("ff5a1a") : hex("ffb040"));
             glows.add(ember);
         }
 
@@ -828,7 +833,7 @@ final class TowerBossScenes {
                 float k = progress(0.8f, CLIMAX_PHASE);
                 for (int i = 0; i < 4; i++) {
                     crack(batch, portraitX(10f + i * 5f), portraitY(BODY_TOP), -90f + (i - 1.5f) * 12f,
-                        (portraitY(BODY_TOP) - portraitY(BODY_BOTTOM)) * 0.8f * k, 20L + i, c("1a0808"), 1f, 5f);
+                        (portraitY(BODY_TOP) - portraitY(BODY_BOTTOM)) * 0.8f * k, 20L + i, hex("1a0808"), 1f, 5f);
                 }
             } else {                                                    // la façade bascule vers nous et tombe
                 float fall = Interpolation.pow2In.apply(progress(CLIMAX_PHASE, CLIMAX_PHASE + 0.35f));
@@ -860,7 +865,7 @@ final class TowerBossScenes {
                 rumble(0.7f, 14f);
                 MinesBossScenes.crumble(this, 3, WHITE, 500f);
             }
-            if (at(CLIMAX_PHASE)) { rumble(0.8f, 16f); sparks(bossX(), groundY() + 40f, 90, c("ff3a0a"), 1100f, 24f); }
+            if (at(CLIMAX_PHASE)) { rumble(0.8f, 16f); sparks(bossX(), groundY() + 40f, 90, hex("ff3a0a"), 1100f, 24f); }
             embers(evil * 0.8f);
         }
 
@@ -873,7 +878,7 @@ final class TowerBossScenes {
             showBoss = time < BREAK || rise > 0f;
             if (time >= BREAK) {
                 poseY = -bossHeight() * (1f - rise);
-                poseTintColor.set(c("ff1a0a"));
+                poseTintColor.set(hex("ff1a0a"));
                 poseTint = 0.35f;
                 poseShadow = 0.6f;
             }
@@ -884,7 +889,7 @@ final class TowerBossScenes {
             if (time < BREAK) interior(batch, 1f);
             if (time >= BREAK) demon(batch, progress(CLIMAX_PHASE, CLIMAX_PHASE + 0.3f));
             clouds(batch);                                              // elle sort de derrière les nuages
-            flash(batch, c("ff3a0a"), CLIMAX_PHASE, 0.3f, 0.5f);
+            flash(batch, hex("ff3a0a"), CLIMAX_PHASE, 0.3f, 0.5f);
         }
     }
 
@@ -901,8 +906,8 @@ final class TowerBossScenes {
             if (!broken && time >= CLIMAX_DEATH) {
                 broken = true;
                 rumble(0.9f, 16f);
-                MinesBossScenes.crumble(this, 3, c("ff6a4a"), 700f);
-                sparks(bossX(), bossY(), 120, c("ff5a1a"), 1200f, 26f);
+                MinesBossScenes.crumble(this, 3, hex("ff6a4a"), 700f);
+                sparks(bossX(), bossY(), 120, hex("ff5a1a"), 1200f, 26f);
             }
             embers(evil * 0.8f);
             feathers(holy * 0.35f);
@@ -914,7 +919,7 @@ final class TowerBossScenes {
             holy = progress(CLIMAX_DEATH + 0.4f, CLIMAX_DEATH + 1.6f);
             decor(batch);
             showBoss = time < CLIMAX_DEATH;
-            poseTintColor.set(c("ff1a0a"));
+            poseTintColor.set(hex("ff1a0a"));
             poseTint = 0.35f;
             poseShadow = 0.6f;
             poseX = (random.nextFloat() - 0.5f) * 10f * progress(1.0f, CLIMAX_DEATH);

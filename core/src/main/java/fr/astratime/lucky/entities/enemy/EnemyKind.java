@@ -1,5 +1,6 @@
 package fr.astratime.lucky.entities.enemy;
 
+import fr.astratime.lucky.entities.tower.Chapter;
 import fr.astratime.lucky.entities.Card;
 import fr.astratime.lucky.entities.Enemy;
 import fr.astratime.lucky.entities.SpinEconomy;
@@ -739,33 +740,23 @@ public enum EnemyKind {
         List.of(Card.Suit.COEUR, Card.Suit.CARREAU, Card.Suit.PIQUE, Card.Suit.TREFLE));
 
     /** Force des ennemis du chapitre 2, en % : leurs attaques, défenses et effets sont multipliés d'autant. */
-    public static final int CHAPTER_2_POWER = 200;
+    /** Force gagnée à chaque chapitre de la Tour, en % (chapitre n : n x 100 %). */
+    public static final int CHAPTER_POWER_STEP = 100;
+    public static final int CHAPTER_2_POWER = 2 * CHAPTER_POWER_STEP;
     /** Multiplicateur des PV des ennemis de la Tour des épreuves (le joueur gagne des rangs à la boutique). */
     public static final int TOWER_HP_FACTOR = 5;
     /** Force des ennemis du chapitre 3, en %. */
-    public static final int CHAPTER_3_POWER = 300;
+    public static final int CHAPTER_3_POWER = 3 * CHAPTER_POWER_STEP;
     /** Force des ennemis des chapitres 4, 5 et 6, en % (choix d'Astra : le rang rendra le joueur plus fort). */
-    public static final int CHAPTER_4_POWER = 400;
-    public static final int CHAPTER_5_POWER = 500;
-    public static final int CHAPTER_6_POWER = 600;
+    public static final int CHAPTER_4_POWER = 4 * CHAPTER_POWER_STEP;
+    public static final int CHAPTER_5_POWER = 5 * CHAPTER_POWER_STEP;
+    public static final int CHAPTER_6_POWER = 6 * CHAPTER_POWER_STEP;
 
     /**
      * Mode difficile de la Tour (« Nouveau tirage + », ouvert après la Machine
      * Originelle) : PV et force des ennemis de la Tour multipliés d'autant.
      */
     public static final int HARD_HP_FACTOR = 2, HARD_POWER_FACTOR = 2;
-
-    /** {@code true} pendant une ascension de la Tour en mode difficile (voir {@link #setTowerHard(boolean)}). */
-    private static boolean towerHard;
-
-    /**
-     * Règle la difficulté de la Tour pour les combats qui suivent : l'écran de
-     * jeu l'appelle à chaque nouvelle suite de combats (faux hors de la Tour).
-     */
-    public static void setTowerHard(boolean hard) { towerHard = hard; }
-
-    /** @return {@code true} si les ennemis de la Tour sont en mode difficile. */
-    public static boolean isTowerHard() { return towerHard; }
 
     /** Tours du combat contre le Temps Mort : au tour suivant, le joueur a perdu. */
     public static final int TIME_LIMIT = 10;
@@ -832,30 +823,22 @@ public enum EnemyKind {
      *         multipliés par {@link #TOWER_HP_FACTOR}, car le rang du joueur le
      *         rend bien plus fort (et encore par {@link #HARD_HP_FACTOR} en mode difficile)
      */
-    public int getMaxHp() {
+    public int getMaxHp(boolean hard) {
         if (!isTower()) return maxHp;
-        return maxHp * TOWER_HP_FACTOR * (towerHard ? HARD_HP_FACTOR : 1);
+        return maxHp * TOWER_HP_FACTOR * (hard ? HARD_HP_FACTOR : 1);
     }
 
     /** @return {@code true} pour un ennemi de la Tour des épreuves (voir {@link fr.astratime.lucky.entities.tower.Chapter}). */
     public boolean isTower() {
-        return switch (this) {
-            case CROUPIER, GARDIEN, SANGSUE, BRETTEUR, COMETE,
-                 CHEF, TRICHEUR, USURIER, ROULETTE, REINE,
-                 GARDIENNE, MIROIR, HORLOGER, FOU, ECLAT,
-                 PILLEUR, FAUSSAIRE, CARTOMANCIENNE, DUELLISTE, PRETENDANT,
-                 PORTIER, COMPTABLE, DIRECTEUR, SECURITE, MAISON,
-                 GARDIEN_LEVIER, OMBRE, BANQUEROUTE, TEMPS_MORT, MACHINE_ORIGINELLE -> true;
-            default -> false;
-        };
+        return Chapter.of(this) != null;
     }
     /**
-     * @return sa défense de base (renforcée par sa {@linkplain #getPower() force}), reformée à chacun de ses tours :
+     * @return sa défense de base (renforcée par sa {@linkplain #getPower(boolean) force}), reformée à chacun de ses tours :
      *         en Exploration, celle de son lieu
      */
-    public int getBaseDefense() {
+    public int getBaseDefense(boolean hard) {
         Place place = Place.of(this);
-        return empowered(place != null && place.getShieldDefense() > 0 ? place.getShieldDefense() : baseDefense);
+        return empowered(place != null && place.getShieldDefense() > 0 ? place.getShieldDefense() : baseDefense, hard);
     }
 
     /**
@@ -863,8 +846,8 @@ public enum EnemyKind {
      *         et de tous ses effets (100 au chapitre 1, puis plus à chaque chapitre ;
      *         multipliée par {@link #HARD_POWER_FACTOR} dans la Tour en mode difficile)
      */
-    public int getPower() {
-        return isTower() && towerHard ? chapterPower() * HARD_POWER_FACTOR : chapterPower();
+    public int getPower(boolean hard) {
+        return isTower() && hard ? chapterPower() * HARD_POWER_FACTOR : chapterPower();
     }
 
     /**
@@ -884,22 +867,16 @@ public enum EnemyKind {
         return SpinEconomy.BASE_SPIN_COST;
     }
 
-    /** @return sa force en mode normal, en %, selon son chapitre. */
+    /** @return sa force en mode normal, en % : 100 par numéro de chapitre de la Tour, 100 hors de la Tour. */
     private int chapterPower() {
-        return switch (this) {
-            case CHEF, TRICHEUR, USURIER, ROULETTE, REINE -> CHAPTER_2_POWER;
-            case GARDIENNE, MIROIR, HORLOGER, FOU, ECLAT  -> CHAPTER_3_POWER;
-            case PILLEUR, FAUSSAIRE, CARTOMANCIENNE, DUELLISTE, PRETENDANT -> CHAPTER_4_POWER;
-            case PORTIER, COMPTABLE, DIRECTEUR, SECURITE, MAISON -> CHAPTER_5_POWER;
-            case GARDIEN_LEVIER, OMBRE, BANQUEROUTE, TEMPS_MORT, MACHINE_ORIGINELLE -> CHAPTER_6_POWER;
-            default -> 100;
-        };
+        Chapter chapter = Chapter.of(this);
+        return chapter == null ? CHAPTER_POWER_STEP : chapter.getNumber() * CHAPTER_POWER_STEP;
     }
 
     /** Dégâts de base d'une Épée du croupier d'entraînement. */
     public static final int TRAINING_SWORD_DAMAGE = 10;
 
-    /** @return les dégâts de base de son Épée, avant sa {@linkplain #getPower() force}. */
+    /** @return les dégâts de base de son Épée, avant sa {@linkplain #getPower(boolean) force}. */
     public int swordDamage() {
         if (this == ENTRAINEMENT) return TRAINING_SWORD_DAMAGE;
         Place place = Place.of(this);
@@ -907,7 +884,7 @@ public enum EnemyKind {
     }
 
     /**
-     * @return la défense d'un de ses Boucliers, avant sa {@linkplain #getPower() force} : en Exploration,
+     * @return la défense d'un de ses Boucliers, avant sa {@linkplain #getPower(boolean) force} : en Exploration,
      *         à l'échelle de la défense de base de son lieu
      */
     public int shieldDefense() { return Math.round(EnemySymbol.SHIELD_DEFENSE * shieldScale()); }
@@ -930,8 +907,8 @@ public enum EnemyKind {
         return place != null && place.getShieldDefense() > 0 ? place.getShieldDefense() / (float) EnemySymbol.SHIELD_DEFENSE : 1f;
     }
 
-    /** @return {@code value} multiplié par sa {@linkplain #getPower() force} (arrondi). */
-    public int empowered(int value) { return Math.round(value * getPower() / 100f); }
+    /** @return {@code value} multiplié par sa {@linkplain #getPower(boolean) force} (arrondi). */
+    public int empowered(int value, boolean hard) { return Math.round(value * getPower(hard) / 100f); }
 
     /**
      * @return la part de ses coups qui porte, en % : dans la prairie, réglée donjon
@@ -978,40 +955,43 @@ public enum EnemyKind {
     /** Dégâts des ennemis des donjons de la prairie, en % (voir {@link #damagePercent()}). */
     static final int PIQUE_DAMAGE = 48, TREFLE_DAMAGE = 165, COEUR_DAMAGE = 210, CARREAU_DAMAGE = 165;
 
-    /** @return l'attaque {@code value} renforcée par sa {@linkplain #getPower() force}, puis à la {@linkplain #damagePercent() part qui porte}. */
-    public int hurt(int value) {
-        int empowered = empowered(value);
+    /** @return l'attaque {@code value} renforcée par sa {@linkplain #getPower(boolean) force}, puis à la {@linkplain #damagePercent() part qui porte}. */
+    public int hurt(int value, boolean hard) {
+        int empowered = empowered(value, hard);
         int percent = damagePercent();
         return percent == 100 ? empowered : (int) Math.round((double) empowered * percent / 100);
     }
 
     /** @return sa force en multiplicateur affichable (ex : "x1,5"). */
-    public String powerText() {
-        float factor = getPower() / 100f;
+    public String powerText(boolean hard) {
+        float factor = getPower(hard) / 100f;
         String text = factor == Math.round(factor) ? String.valueOf(Math.round(factor)) : String.valueOf(factor);
         return "x" + Lang.decimal(text);
     }
 
     /** @return la part des dégâts du joueur renvoyée par chaque Épines, en %. */
-    public int thornsPercent() { return empowered(EnemySymbol.THORNS_PERCENT); }
+    public int thornsPercent(boolean hard) { return empowered(EnemySymbol.THORNS_PERCENT, hard); }
 
     /** @return les dégâts maximum que ses Épines renvoient en un tour. */
-    public int thornsMax() { return empowered(EnemySymbol.THORNS_MAX); }
+    public int thornsMax(boolean hard) { return empowered(EnemySymbol.THORNS_MAX, hard); }
 
     /** @return la part des jauges du joueur vidée par chaque Dé pipé, en %. */
-    public int diePercent() { return Math.min(100, empowered(EnemySymbol.DIE_PERCENT)); }
+    public int diePercent(boolean hard) { return Math.min(100, empowered(EnemySymbol.DIE_PERCENT, hard)); }
 
     /** @return la part des gains du joueur rendue fausse par chaque Fausse monnaie, en %. */
-    public int fakePercent() { return Math.min(100, empowered(EnemySymbol.FAKE_PERCENT)); }
+    public int fakePercent(boolean hard) { return Math.min(100, empowered(EnemySymbol.FAKE_PERCENT, hard)); }
 
     /** @return la part des gains du joueur prise par chaque Intérêts, en %. */
-    public int interestPercent() { return empowered(EnemySymbol.INTEREST_PERCENT) + EnemySymbol.THEFT_BONUS_PERCENT; }
+    public int interestPercent(boolean hard) { return empowered(EnemySymbol.INTEREST_PERCENT, hard) + EnemySymbol.THEFT_BONUS_PERCENT; }
 
     /** @return la part des gains que prend sa Morsure bancaire, en % (sa puissance, plus le vol relevé). */
-    public int bankBitePercent() { return empowered(EnemySymbol.BANK_BITE_PERCENT) + EnemySymbol.THEFT_BONUS_PERCENT; }
+    public int bankBitePercent(boolean hard) { return empowered(EnemySymbol.BANK_BITE_PERCENT, hard) + EnemySymbol.THEFT_BONUS_PERCENT; }
+
+    /** @return {@code true} s'il a la capacité {@code trait} (voir {@link EnemyTrait}). */
+    public boolean has(EnemyTrait trait) { return trait.of(this); }
 
     /** @return {@code true} si son deck contient le Rouleau interdit (l'Éclat Originel). */
-    public boolean forbidsReels() { return this == ECLAT || this == PRETENDANT; }
+    public boolean forbidsReels() { return has(EnemyTrait.FORBIDDEN_REEL); }
     /** @return les cartes qu'il joue à chaque tour, parmi celles piochées. */
     public int getPlaysPerTurn() {
         return switch (this) {
@@ -1047,20 +1027,20 @@ public enum EnemyKind {
     public static final int KRAKEN_ARMS = 8;
 
     /** @return {@code true} si sa peau d'or encaisse la moitié des coups tant qu'il a plus de la moitié de ses PV. */
-    public boolean hasGoldSkin() { return this == GOLEM_OR || this == COEUR_MONTAGNE; }
+    public boolean hasGoldSkin() { return has(EnemyTrait.GOLD_SKIN); }
 
     /** @return {@code true} si ses trois rouleaux identiques font un Jackpot (attaques et Boucliers x{@link EnemySymbol#JACKPOT_FACTOR}). */
-    public boolean hitsJackpots() { return this == BANDIT_MANCHOT || this == JACKPOT_VIVANT; }
+    public boolean hitsJackpots() { return has(EnemyTrait.JACKPOTS); }
 
     /** @return {@code true} s'il joue une carte par bras, et perd un bras à chaque huitième de ses PV (le Kraken). */
-    public boolean hasArms() { return this == KRAKEN; }
+    public boolean hasArms() { return has(EnemyTrait.ARMS); }
 
     /**
      * @return {@code true} s'il s'enferme dans son sarcophage en passant en phase 2 (le Pharaon maudit) :
      *         pendant le tour suivant du joueur, il ne prend aucun dégât, et il se soigne de
      *         {@link EnemySymbol#SARCOPHAGUS_HEAL_PERCENT} % de ses PV max
      */
-    public boolean hasSarcophagus() { return this == PHARAON; }
+    public boolean hasSarcophagus() { return has(EnemyTrait.SARCOPHAGUS); }
 
     /**
      * @return la force de ses soins (Potions et Crocs), en pourcentage de ceux
@@ -1070,21 +1050,21 @@ public enum EnemyKind {
     public int getHealScale() { return healScale; }
 
     /** @return les points de vie que rend une Potion renforcée de {@code bonusPercent} (Cœurs), en % de ses PV max. */
-    public float potionPercent(int bonusPercent) {
+    public float potionPercent(int bonusPercent, boolean hard) {
         if (this == CHEF) return CHEF_POTION_PERCENT * (EnemySymbol.POTION_PERCENT + bonusPercent) / (float) EnemySymbol.POTION_PERCENT;
         Place place = Place.of(this);
         if (place != null && place.getHealPercent() > 0) { // soin fixé par son lieu, les Cœurs en proportion
             return place.getHealPercent() * (EnemySymbol.POTION_PERCENT + bonusPercent)
-                / (float) EnemySymbol.POTION_PERCENT * getPower() / 100f;
+                / (float) EnemySymbol.POTION_PERCENT * getPower(hard) / 100f;
         }
-        return (EnemySymbol.POTION_PERCENT + bonusPercent) * healScale * getPower() / 10_000f;
+        return (EnemySymbol.POTION_PERCENT + bonusPercent) * healScale * getPower(hard) / 10_000f;
     }
 
     /** @return la part de ses PV max qu'un Croc lui rend pour chaque PV volé, en %. */
-    public float drainPercent() { return EnemySymbol.FANG_DRAIN * healScale * getPower() / 10_000f; }
+    public float drainPercent(boolean hard) { return EnemySymbol.FANG_DRAIN * healScale * getPower(hard) / 10_000f; }
 
     /** @return {@code true} s'il joue ses cartes au hasard (la Roulette Vivante). */
-    public boolean playsAtRandom() { return this == ROULETTE; }
+    public boolean playsAtRandom() { return has(EnemyTrait.RANDOM_PLAYS); }
 
     /** Croupier en chef (nerf d'Astra) : sa Potion soigne 10 % de ses PV max (plus les Cœurs, en proportion). */
     public static final int CHEF_POTION_PERCENT = 10;
@@ -1098,7 +1078,7 @@ public enum EnemyKind {
      *         par tour avec {@link #CHEF_NOTHING_GOES_PERCENT} % de chance, plus
      *         {@link #CHEF_NOTHING_GOES_CARD_PERCENT} % par carte Annonce jouée ce tour (le Croupier en chef)
      */
-    public boolean rollsNothingGoesApart() { return this == CHEF; }
+    public boolean rollsNothingGoesApart() { return has(EnemyTrait.NOTHING_GOES_APART); }
 
     /** @return les poids de ses rouleaux dans la phase {@code phase}, sans le symbole qu'il tire à part. */
     public Map<EnemySymbol, Integer> getSpinWeights(int phase) {
@@ -1110,10 +1090,10 @@ public enum EnemyKind {
     }
 
     /** @return {@code true} si ses Potions reforment aussi sa défense (le Croupier en chef). */
-    public boolean potionShields() { return this == CHEF; }
+    public boolean potionShields() { return has(EnemyTrait.SHIELDING_POTIONS); }
 
     /** @return {@code true} si ses Trèfles comptent double quand sa vie est basse (la Reine des Tables). */
-    public boolean royalBet() { return this == REINE; }
+    public boolean royalBet() { return has(EnemyTrait.ROYAL_BET); }
 
     /**
      * @return {@code true} s'il change de symboles sous {@link #PHASE_TWO_RATIO} de vie : l'Éclat
@@ -1239,25 +1219,25 @@ public enum EnemyKind {
     }
 
     /** @return les rouleaux qu'il a volés au joueur dans la phase {@code phase} (la Machine Originelle). */
-    public int stolenReels(int phase) { return this == MACHINE_ORIGINELLE ? phase - 1 : 0; }
+    public int stolenReels(int phase) { return has(EnemyTrait.REEL_THEFT) ? phase - 1 : 0; }
 
     /** @return {@code true} s'il garde une copie (un As sombre) de chaque carte achetée à l'échoppe (le Pilleur). */
-    public boolean copiesPurchases() { return this == PILLEUR; }
+    public boolean copiesPurchases() { return has(EnemyTrait.COPIES_PURCHASES); }
 
     /** @return {@code true} s'il interdit une famille de cartes tout le combat (le Portier). */
-    public boolean bansFamily() { return this == PORTIER; }
+    public boolean bansFamily() { return has(EnemyTrait.BANS_FAMILY); }
 
     /** @return {@code true} s'il joue avec une copie du deck du joueur (l'Ombre du Joueur). */
-    public boolean copiesPlayerDeck() { return this == OMBRE; }
+    public boolean copiesPlayerDeck() { return has(EnemyTrait.COPIES_PLAYER_DECK); }
 
     /** @return les tours que dure le combat (le Temps Mort), 0 s'il n'y a pas de limite. */
     public int getTurnLimit() { return this == TEMPS_MORT ? TIME_LIMIT : 0; }
 
     /** @return {@code true} si une fois par combat, il annule le plus gros coup du joueur (la Maison). */
-    public boolean houseWins() { return this == MAISON; }
+    public boolean houseWins() { return has(EnemyTrait.HOUSE_WINS); }
 
     /** @return {@code true} si, achevé, il résiste et tente un dernier tirage (la Machine Originelle). */
-    public boolean hasLastDraw() { return this == MACHINE_ORIGINELLE; }
+    public boolean hasLastDraw() { return has(EnemyTrait.LAST_DRAW); }
 
     /** @return les symboles de ses rouleaux et leur poids (dans l'ordre de tirage), en première phase. */
     public Map<EnemySymbol, Integer> getWeights() { return weights; }

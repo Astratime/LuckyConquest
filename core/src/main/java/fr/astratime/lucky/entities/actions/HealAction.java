@@ -15,7 +15,7 @@ import java.util.List;
  * puissance des symboles, comme au Bingo). Le soin au-delà des PV max remplit
  * le Sang (Coeur).
  */
-public class HealAction extends Action {
+public final class HealAction extends Action {
 
     private final int percent;
 

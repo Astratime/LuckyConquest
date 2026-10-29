@@ -10,6 +10,8 @@ import com.badlogic.gdx.scenes.scene2d.actions.Actions;
 import com.badlogic.gdx.scenes.scene2d.ui.Image;
 import fr.astratime.lucky.assets.Palette;
 
+import static fr.astratime.lucky.assets.Palette.hex;
+
 /**
  * Bingo de l'Écu : le mur de boucliers. Trois écus géants tombent l'un après
  * l'autre devant le joueur et forment un mur ; des étincelles viennent
@@ -46,7 +48,7 @@ public class ShieldWallScene extends BingoScene {
     private final Vector2 blazonCenter = new Vector2();
 
     public ShieldWallScene() {
-        blazonGlow = image(texture(halo(64, c("ffe066"))));
+        blazonGlow = image(texture(halo(64, hex("ffe066"))));
         blazonGlow.setOrigin(blazonGlow.getWidth() / 2f, blazonGlow.getHeight() / 2f);
         addActor(blazonGlow);
         blazon = image(texture(blazon()));
@@ -104,7 +106,7 @@ public class ShieldWallScene extends BingoScene {
             Actions.scaleTo(1.25f, 1.25f, 0.12f, Interpolation.pow2Out),
             Actions.scaleTo(1f, 1f, 0.25f, Interpolation.swingOut),
             Actions.forever(Actions.sequence(
-                Actions.color(c("fff6c8"), 0.25f),
+                Actions.color(hex("fff6c8"), 0.25f),
                 Actions.color(Color.WHITE, 0.25f)))));
         placeOrigin(blazonGlow, blazonCenter.x, blazonCenter.y);
         blazonGlow.setScale(0.3f);
@@ -116,7 +118,7 @@ public class ShieldWallScene extends BingoScene {
         for (Image shield : shields) {
             shield.addAction(Actions.sequence(
                 Actions.delay(BLAZON_TIME),
-                Actions.color(c("ffe9a0"), 0.1f),
+                Actions.color(hex("ffe9a0"), 0.1f),
                 Actions.color(Color.WHITE, 0.4f)));
         }
     }
@@ -147,8 +149,8 @@ public class ShieldWallScene extends BingoScene {
     private static Pixmap shield() {
         Pixmap pixmap = pixmap(SHIELD_WIDTH, SHIELD_HEIGHT);
         Shape outer = shieldShape(SHIELD_WIDTH, SHIELD_HEIGHT, 0);
-        Color gold = Palette.GOLD, goldDark = c("c88a10"), blue = c("3a6fd8"), blueLight = c("6a9cff"),
-            blueDark = c("23479c");
+        Color gold = Palette.GOLD, goldDark = hex("c88a10"), blue = hex("3a6fd8"), blueLight = hex("6a9cff"),
+            blueDark = hex("23479c");
         fillShape(pixmap, outer, (x, y) -> x < SHIELD_WIDTH / 2 ? gold : goldDark);
         // Champ bleu, en retrait de la bordure dorée.
         for (int y = 3; y < SHIELD_HEIGHT; y++) {
@@ -166,10 +168,10 @@ public class ShieldWallScene extends BingoScene {
         fillOutlined(pixmap, 7, 12, SHIELD_WIDTH - 14, 6, gold);
         pixmap.setColor(gold);
         pixmap.fillRectangle(cx - 2, 7, 4, 19);
-        pixmap.setColor(c("fff3a8"));
+        pixmap.setColor(hex("fff3a8"));
         pixmap.drawLine(cx - 2, 7, cx - 2, 25);
         pixmap.drawLine(8, 13, SHIELD_WIDTH - 9, 13);
-        hLine(pixmap, 1, SHIELD_WIDTH - 2, 1, c("fff3a8"));
+        hLine(pixmap, 1, SHIELD_WIDTH - 2, 1, hex("fff3a8"));
         return pixmap;
     }
 
@@ -178,7 +180,7 @@ public class ShieldWallScene extends BingoScene {
         Pixmap pixmap = pixmap(BLAZON_WIDTH, BLAZON_HEIGHT);
         int top = 8;
         Shape outer = shieldShape(BLAZON_WIDTH, BLAZON_HEIGHT, top);
-        Color gold = Palette.GOLD, pale = c("fff3a8"), dark = c("c88a10"), red = c("b3122a"), redDark = c("7a0a1c");
+        Color gold = Palette.GOLD, pale = hex("fff3a8"), dark = hex("c88a10"), red = hex("b3122a"), redDark = hex("7a0a1c");
         fillShape(pixmap, outer, (x, y) -> x < BLAZON_WIDTH / 2 ? gold : dark);
         for (int y = top + 3; y < BLAZON_HEIGHT; y++) {
             for (int x = 3; x < BLAZON_WIDTH - 3; x++) {

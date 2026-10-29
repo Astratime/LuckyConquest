@@ -11,6 +11,8 @@ import com.badlogic.gdx.scenes.scene2d.ui.Image;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 import fr.astratime.lucky.assets.Palette;
 
+import static fr.astratime.lucky.assets.Palette.hex;
+
 /**
  * Bingo de la Bombe : une bombe géante tombe au milieu de la table, sa mèche
  * grésillant et raccourcissant ; un compte à rebours 3, 2, 1 s'affiche sur
@@ -91,7 +93,7 @@ public class BombScene extends BingoScene {
             Actions.scaleTo(1f, 1f, 0.2f, Interpolation.elasticOut),
             Actions.delay(TICKS[TICKS.length - 1] - DROP_TIME - 0.25f),
             // Au « 1 », elle rougit en palpitant jusqu'à l'explosion.
-            Actions.forever(Actions.sequence(Actions.color(c("ff9a8a"), 0.1f), Actions.color(Color.WHITE, 0.1f)))));
+            Actions.forever(Actions.sequence(Actions.color(hex("ff9a8a"), 0.1f), Actions.color(Color.WHITE, 0.1f)))));
 
         digit.setVisible(false);
         digit.setScale(0f);
@@ -115,7 +117,7 @@ public class BombScene extends BingoScene {
                 digit.setVisible(true);
                 digit.clearActions();
                 digit.setScale(1.8f);
-                digit.setColor(value == 1 ? c("ff5a5a") : Color.WHITE);
+                digit.setColor(value == 1 ? hex("ff5a5a") : Color.WHITE);
                 digit.addAction(Actions.scaleTo(1f, 1f, 0.2f, Interpolation.swingOut));
                 float swell = 1.06f + i * 0.05f;
                 bomb.addAction(Actions.sequence(Actions.scaleTo(swell, swell, 0.06f),
@@ -167,7 +169,7 @@ public class BombScene extends BingoScene {
     /** @return la bombe : boule de fonte bleu nuit, reflet, bouchon d'acier et mèche de {@code fuseLength} segments. */
     private static Pixmap bomb(int fuseLength) {
         Pixmap pixmap = pixmap(BOMB_WIDTH, BOMB_HEIGHT);
-        Color body = c("3a3f5c"), light = c("6a7090"), shine = c("b8c0e0"), dark = c("23263a");
+        Color body = hex("3a3f5c"), light = hex("6a7090"), shine = hex("b8c0e0"), dark = hex("23263a");
         fillShape(pixmap, (x, y) -> {
             float dx = x + 0.5f - BALL_X, dy = y + 0.5f - BALL_Y;
             return dx * dx + dy * dy <= BALL_RADIUS * BALL_RADIUS;
@@ -190,7 +192,7 @@ public class BombScene extends BingoScene {
         }
         for (int i = 0; i <= fuseLength; i++) {
             int[] point = FUSE[i];
-            pixmap.setColor(i % 2 == 0 ? c("c8a070") : c("8a6a40"));
+            pixmap.setColor(i % 2 == 0 ? hex("c8a070") : hex("8a6a40"));
             pixmap.drawPixel(point[0], point[1]);
         }
         // Le bout qui brûle.
@@ -224,7 +226,7 @@ public class BombScene extends BingoScene {
     private static Pixmap fireball() {
         Pixmap pixmap = pixmap(FIREBALL_SIZE, FIREBALL_SIZE);
         float center = FIREBALL_SIZE / 2f;
-        Color[] layers = {c("c8201a"), Palette.ORANGE, c("ffc640"), c("fff3c0"), Color.WHITE};
+        Color[] layers = {hex("c8201a"), Palette.ORANGE, hex("ffc640"), hex("fff3c0"), Color.WHITE};
         for (int y = 0; y < FIREBALL_SIZE; y++) {
             for (int x = 0; x < FIREBALL_SIZE; x++) {
                 float dx = x + 0.5f - center, dy = y + 0.5f - center;

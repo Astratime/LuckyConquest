@@ -1,5 +1,7 @@
 package fr.astratime.lucky.progress;
 
+import com.badlogic.gdx.Gdx;
+
 import fr.astratime.lucky.entities.Symbol;
 
 import java.util.EnumMap;
@@ -79,15 +81,26 @@ public final class PlayerStats {
             String value = part.substring(colon + 1).trim();
             if (name.equals("SYMBOLS")) {
                 for (String symbol : value.split("\\+")) {
-                    try { stats.bingoSymbols.add(Symbol.valueOf(symbol)); } catch (IllegalArgumentException ignored) { }
+                    try {
+                        stats.bingoSymbols.add(Symbol.valueOf(symbol));
+                    } catch (IllegalArgumentException e) {
+                        warn("symbole inconnu ignoré : " + symbol);
+                    }
                 }
                 continue;
             }
             try {
                 stats.values.put(Stat.valueOf(name), Math.max(0L, Long.parseLong(value)));
-            } catch (IllegalArgumentException ignored) { } // NumberFormatException aussi
+            } catch (IllegalArgumentException e) { // NumberFormatException aussi
+                warn("statistique illisible ignorée : " + part);
+            }
         }
         return stats;
+    }
+
+    /** Signale une donnée de sauvegarde illisible (sans planter : la sauvegarde reste utilisable). */
+    private static void warn(String message) {
+        if (Gdx.app != null) Gdx.app.error("PlayerStats", message);
     }
 
     private static long saturatedAdd(long a, long b) {

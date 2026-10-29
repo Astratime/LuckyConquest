@@ -12,6 +12,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
+import java.util.List;
 
 /** La collection, le deck et les pièces du joueur, et leur enregistrement d'un lancement à l'autre. */
 class PlayerProfileTest {
@@ -232,7 +233,7 @@ class PlayerProfileTest {
     void theLastMinesDungeonGivesTheMineReelOnce() {
         MemoryStorage storage = new MemoryStorage();
         PlayerProfile profile = profile(storage);
-        java.util.List<Dungeon> mines = Place.MINES.getDungeons();
+        List<Dungeon> mines = Place.MINES.getDungeons();
         for (int i = 0; i < mines.size() - 1; i++) assertNull(profile.clearDungeon(mines.get(i).name()));
         assertFalse(profile.ownsReel(Symbol.NUGGET));
         assertEquals(Symbol.NUGGET, profile.clearDungeon(mines.get(mines.size() - 1).name()));
@@ -289,7 +290,7 @@ class PlayerProfileTest {
     void theAdminModeOpensEverythingWithoutTouchingTheSave() {
         MemoryStorage storage = new MemoryStorage();
         PlayerProfile profile = profile(storage);
-        profile.setCatalog(java.util.List.of("boutique_1"));
+        profile.setCatalog(List.of("boutique_1"));
         profile.addCoins(1_000);
         Map<String, String> before = new HashMap<>(storage.values);
 
@@ -332,7 +333,7 @@ class PlayerProfileTest {
         }
 
         PlayerProfile relaunched = profile(storage);
-        relaunched.setCatalog(java.util.List.of("boutique_1"));
+        relaunched.setCatalog(List.of("boutique_1"));
         assertFalse(relaunched.isAdmin(), "désactivé, il le reste au prochain lancement");
         relaunched.setAdmin(true);
         assertEquals(adminDeck, relaunched.getDeck(), "le deck du mode ADMIN est gardé");
@@ -386,16 +387,16 @@ class PlayerProfileTest {
     void anAchievementPaysItsRewardOnce() {
         MemoryStorage storage = new MemoryStorage();
         PlayerProfile profile = profile(storage);
-        assertEquals(java.util.List.of(), profile.checkAchievements());
+        assertEquals(List.of(), profile.checkAchievements());
 
         profile.recordStats(stats -> stats.add(PlayerStats.Stat.WINS, 1));
-        assertEquals(java.util.List.of(Achievement.FIRST_WIN), profile.checkAchievements());
+        assertEquals(List.of(Achievement.FIRST_WIN), profile.checkAchievements());
         assertEquals(Achievement.FIRST_WIN.getReward(), profile.getCoins());
-        assertEquals(java.util.List.of(), profile.checkAchievements(), "une seule fois");
+        assertEquals(List.of(), profile.checkAchievements(), "une seule fois");
 
         PlayerProfile next = profile(storage);
         assertTrue(next.isUnlocked(Achievement.FIRST_WIN));
-        assertEquals(java.util.List.of(), next.checkAchievements());
+        assertEquals(List.of(), next.checkAchievements());
         assertEquals(Achievement.FIRST_WIN.getReward(), next.getCoins());
     }
 
@@ -406,8 +407,8 @@ class PlayerProfileTest {
         for (Dungeon dungeon : Place.PRAIRIE.getDungeons()) profile.clearDungeon(dungeon.name());
         profile.clearChapter(Chapter.GENESE, false);
 
-        java.util.List<Achievement> unlocked = profile.checkAchievements();
-        assertEquals(java.util.List.of(Achievement.FIRST_DUNGEON, Achievement.PRAIRIE, Achievement.COMET), unlocked);
+        List<Achievement> unlocked = profile.checkAchievements();
+        assertEquals(List.of(Achievement.FIRST_DUNGEON, Achievement.PRAIRIE, Achievement.COMET), unlocked);
     }
 
     @Test
@@ -416,9 +417,9 @@ class PlayerProfileTest {
         profile.setAdmin(true);
         profile.recordStats(stats -> stats.add(PlayerStats.Stat.WINS, 1));
         assertEquals(0, profile.getStats().get(PlayerStats.Stat.WINS));
-        assertEquals(java.util.List.of(), profile.checkAchievements());
+        assertEquals(List.of(), profile.checkAchievements());
         profile.setAdmin(false);
-        assertEquals(java.util.List.of(), profile.checkAchievements());
+        assertEquals(List.of(), profile.checkAchievements());
     }
 
     @Test

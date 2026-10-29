@@ -11,7 +11,7 @@ import java.util.List;
  * Chaque Action connaît sa propre logique et lit les modificateurs dans CombatContext.
  * CombatResolver appelle resolve() sur chaque action de la liste.
  */
-public abstract class Action {
+public abstract sealed class Action permits AttackAction, DefenseAction, GainAction, HealAction, MixedAction {
 
     /**
      * Applique l'effet de l'action au combat en cours.

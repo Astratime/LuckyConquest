@@ -16,6 +16,8 @@ import fr.astratime.lucky.i18n.Lang;
 import java.util.ArrayList;
 import java.util.List;
 
+import static fr.astratime.lucky.assets.Palette.hex;
+
 /**
  * Le Dernier tirage de la Machine Originelle, achevée : au sommet de la Tour,
  * elle est seule, fissurée, elle crache des étincelles ; ses rouleaux tournent
@@ -74,11 +76,11 @@ public class LastDrawCutscene extends Cutscene {
     private static final String WIN_LINE  = "Non... Impossible...";
     private static final String LOSE_LINE = "La Machine gagne toujours.";
 
-    private static final Color OUT = c("140a0a"), GOLD = c("ffc93a"), GOLD_LIGHT = c("ffe58a"), GOLD_DARK = c("b8801f");
-    private static final Color RED = c("c8203a"), RED_LIGHT = c("ff5a6e"), RED_DARK = c("7a0f20");
-    private static final Color CHROME = c("d8d8e0"), CHROME_DARK = c("8a8a9a"), GLASS = c("f4ecdc");
-    private static final Color SKY_TOP = c("05071a"), SKY_LOW = c("2b1a4a"), STONE = c("3b3550"), STONE_DARK = c("262238");
-    private static final Color HOT = c("fff6c8"), EYE_RED = c("ff2a3a"), BUBBLE = c("1c0f24");
+    private static final Color OUT = hex("140a0a"), GOLD = hex("ffc93a"), GOLD_LIGHT = hex("ffe58a"), GOLD_DARK = hex("b8801f");
+    private static final Color RED = hex("c8203a"), RED_LIGHT = hex("ff5a6e"), RED_DARK = hex("7a0f20");
+    private static final Color CHROME = hex("d8d8e0"), CHROME_DARK = hex("8a8a9a"), GLASS = hex("f4ecdc");
+    private static final Color SKY_TOP = hex("05071a"), SKY_LOW = hex("2b1a4a"), STONE = hex("3b3550"), STONE_DARK = hex("262238");
+    private static final Color HOT = hex("fff6c8"), EYE_RED = hex("ff2a3a"), BUBBLE = hex("1c0f24");
 
     private final LastDrawEvent draw;
     private final BitmapFont font;
@@ -127,7 +129,7 @@ public class LastDrawCutscene extends Cutscene {
             mineAt[r] = draw.playerReels.indexOf(draw.mine.get(r));
             herAt[r]  = classic.indexOf(draw.hers.get(r));
         }
-        Color[] eyeColors = {OUT, Color.WHITE, c("e0283a"), GOLD, c("6e0f1e")};
+        Color[] eyeColors = {OUT, Color.WHITE, hex("e0283a"), GOLD, hex("6e0f1e")};
         eye = art("owrgd", eyeColors,
             "...oooooo...",
             ".oowwwwwwoo.",
@@ -144,7 +146,7 @@ public class LastDrawCutscene extends Cutscene {
             "owwwo",
             ".owo.",
             "..o..");
-        glove = art("owg", new Color[] {OUT, Color.WHITE, c("c8c8d4")},
+        glove = art("owg", new Color[] {OUT, Color.WHITE, hex("c8c8d4")},
             "..oo.oo.oo..",
             ".owwowwowwo.",
             ".owwowwowwoo",
@@ -328,7 +330,7 @@ public class LastDrawCutscene extends Cutscene {
                     hers.base + hers.h * (0.2f + 0.8f * random.nextFloat()), 30f + 120f * random.nextFloat(),
                     150f + 300f * random.nextFloat(), 0.3f + 0.4f * random.nextFloat(), 10f + 12f * random.nextFloat());
                 spark.gravity = 700f;
-                spark.color.set(random.nextBoolean() ? GOLD_LIGHT : c("ff8a3a"));
+                spark.color.set(random.nextBoolean() ? GOLD_LIGHT : hex("ff8a3a"));
                 sparks.add(spark);
             }
         }
@@ -388,9 +390,9 @@ public class LastDrawCutscene extends Cutscene {
                     piece.spin = (random.nextFloat() - 0.5f) * 900f;
                     coins.add(piece);
                 }
-                burst(hers.cx, hers.reelY + hers.reelH / 2f, c("ffb040"), 50);
+                burst(hers.cx, hers.reelY + hers.reelH / 2f, hex("ffb040"), 50);
             } else {
-                burst(mine.cx, mine.reelY + mine.reelH / 2f, c("ff8a3a"), 60);
+                burst(mine.cx, mine.reelY + mine.reelH / 2f, hex("ff8a3a"), 60);
             }
         }
         if (verdict) {
@@ -405,7 +407,7 @@ public class LastDrawCutscene extends Cutscene {
                     loser.base + loser.h * random.nextFloat(), 40f + 100f * random.nextFloat(),
                     120f + 260f * random.nextFloat(), 0.3f + 0.4f * random.nextFloat(), 10f + 14f * random.nextFloat());
                 spark.gravity = 600f;
-                spark.color.set(random.nextBoolean() ? GOLD_LIGHT : c("ff8a3a"));
+                spark.color.set(random.nextBoolean() ? GOLD_LIGHT : hex("ff8a3a"));
                 sparks.add(spark);
             }
         }
@@ -477,7 +479,7 @@ public class LastDrawCutscene extends Cutscene {
         }
         normal(batch);
         glow(batch, mine.cx, mine.base + mine.h * 0.6f, mine.h * 2.2f, GOLD, 0.25f * mineLit * mineBright);
-        glow(batch, hers.cx, hers.base + hers.h * 0.6f, hers.h * 2.4f, c("6a4aff"), 0.3f * lit);
+        glow(batch, hers.cx, hers.base + hers.h * 0.6f, hers.h * 2.4f, hex("6a4aff"), 0.3f * lit);
         glow(batch, hers.cx, hers.base + hers.h * 0.6f, hers.h * 2.0f, EYE_RED, 0.2f * lit * bright
             + (verdict && !draw.playerWins ? 0.45f * progress(end, end + 0.4f) : 0f));
         boolean rising = time < RISE_END;                         // en montant, elle sort de sous les dalles
@@ -640,8 +642,8 @@ public class LastDrawCutscene extends Cutscene {
         batch.draw(pixel, pivotX, y - 0.7f * u, 0f, 0.7f * u, length, 1.4f * u, 1f, 1f, angle);
         float knobX = pivotX + MathUtils.cosDeg(angle) * length, knobY = y + MathUtils.sinDeg(angle) * length;
         rect(batch, OUT, knobX - 3f * u, knobY - 3f * u, 6f * u, 6f * u, b);
-        rect(batch, c("e0283a"), knobX - 2f * u, knobY - 2f * u, 4f * u, 4f * u, b);
-        rect(batch, c("ff8a9a"), knobX - 1.2f * u, knobY + 0.4f * u, 1.2f * u, 1.2f * u, b);
+        rect(batch, hex("e0283a"), knobX - 2f * u, knobY - 2f * u, 4f * u, 4f * u, b);
+        rect(batch, hex("ff8a9a"), knobX - 1.2f * u, knobY + 0.4f * u, 1.2f * u, 1.2f * u, b);
         return new float[] {knobX, knobY};
     }
 
@@ -660,8 +662,8 @@ public class LastDrawCutscene extends Cutscene {
             batch.draw(pixel, m.reelX, m.reelY + m.reelH - (i + 1) * u, m.reelW, u);
             batch.draw(pixel, m.reelX, m.reelY + i * u, m.reelW, u);
         }
-        rect(batch, c("e0283a"), m.reelX - 3f * u, m.reelY + m.reelH / 2f - 0.5f * u, 1.5f * u, u, b);
-        rect(batch, c("e0283a"), m.reelX + m.reelW + 1.5f * u, m.reelY + m.reelH / 2f - 0.5f * u, 1.5f * u, u, b);
+        rect(batch, hex("e0283a"), m.reelX - 3f * u, m.reelY + m.reelH / 2f - 0.5f * u, 1.5f * u, u, b);
+        rect(batch, hex("e0283a"), m.reelX + m.reelW + 1.5f * u, m.reelY + m.reelH / 2f - 0.5f * u, 1.5f * u, u, b);
         if (landed && !verdict) glow(batch, m.cx, m.reelY + m.reelH / 2f, m.reelW * 2f, GOLD,
             0.25f + 0.15f * MathUtils.sin(time * 10f));
     }
@@ -680,7 +682,7 @@ public class LastDrawCutscene extends Cutscene {
             float ex = x + MathUtils.cosDeg(angle) * length, ey = y + MathUtils.sinDeg(angle) * length;
             batch.draw(pixel, ex, ey - 0.4f * u, 0f, 0.4f * u, length * 0.5f, 0.8f * u, 1f, 1f, angle + 35f);
             glow(batch, x + MathUtils.cosDeg(angle) * length / 2f, y + MathUtils.sinDeg(angle) * length / 2f,
-                length * 1.2f, c("ff5a2a"), 0.25f * hot * b);
+                length * 1.2f, hex("ff5a2a"), 0.25f * hot * b);
         }
     }
 
@@ -701,7 +703,7 @@ public class LastDrawCutscene extends Cutscene {
     private void drawTray(Batch batch, Mine m, float b) {
         float u = m.u, trayW = m.w * 0.6f;
         rect(batch, OUT, m.cx - trayW / 2f, m.tray - 2f * u, trayW, 6f * u, b);
-        rect(batch, c("2a1a10"), m.cx - trayW / 2f + u, m.tray - u, trayW - 2f * u, 4f * u, b);
+        rect(batch, hex("2a1a10"), m.cx - trayW / 2f + u, m.tray - u, trayW - 2f * u, 4f * u, b);
     }
 
     /** Une rangée d'ampoules qui clignotent en chenillard. */

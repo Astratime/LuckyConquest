@@ -25,6 +25,7 @@ import java.util.Random;
 import java.util.function.Supplier;
 
 import static org.junit.jupiter.api.Assertions.*;
+import java.util.Set;
 
 /** Les chapitres 4 à 6 de la Tour des épreuves : leurs ennemis, leurs symboles et la Machine Originelle. */
 class TowerChapters456Test {
@@ -32,7 +33,7 @@ class TowerChapters456Test {
     /** Un tour de {@code enemy} dont les rouleaux montrent {@code symbol} (en cherchant la graine). */
     private static EnemyTurnResult turnWith(EnemySymbol symbol, Supplier<Enemy> enemy, Supplier<Player> player) {
         for (int seed = 0; seed < 500; seed++) {
-            EnemyTurnResult turn = new EnemyTurnResolver(new Random(seed)).resolve(enemy.get(), player.get(), 0, 0f);
+            EnemyTurnResult turn = new EnemyTurnResolver(new Random(seed)).resolve(enemy.get(), player.get());
             if (Arrays.asList(turn.symbols()).contains(symbol)) return turn;
         }
         throw new AssertionError("aucun tirage avec " + symbol);
@@ -51,17 +52,17 @@ class TowerChapters456Test {
             Chapter chapter = chapters[i];
             assertEquals(4 + i, chapter.getNumber());
             int power = (4 + i) * 100;
-            assertEquals(hp[i][0], chapter.getFirstEnemy().getMaxHp(), chapter.name());
-            assertEquals(hp[i][2], chapter.getBoss().getMaxHp(), chapter.name());
+            assertEquals(hp[i][0], chapter.getFirstEnemy().getMaxHp(false), chapter.name());
+            assertEquals(hp[i][2], chapter.getBoss().getMaxHp(false), chapter.name());
             assertTrue(chapter.getBoss().isBoss());
             for (EnemyKind challenger : chapter.getChallengers()) {
-                if (challenger != EnemyKind.TEMPS_MORT) assertEquals(hp[i][1], challenger.getMaxHp(), challenger.name());
-                assertEquals(power, challenger.getPower());
+                if (challenger != EnemyKind.TEMPS_MORT) assertEquals(hp[i][1], challenger.getMaxHp(false), challenger.name());
+                assertEquals(power, challenger.getPower(false));
                 assertTrue(challenger.isTower());
             }
-            assertEquals(power, chapter.getBoss().getPower());
+            assertEquals(power, chapter.getBoss().getPower(false));
         }
-        assertTrue(EnemyKind.TEMPS_MORT.getMaxHp() < 4_500_000, "le Temps Mort a moins de PV");
+        assertTrue(EnemyKind.TEMPS_MORT.getMaxHp(false) < 4_500_000, "le Temps Mort a moins de PV");
         assertEquals("Tu as tiré le levier. Le monde a recommencé.", Chapter.LE_JACKPOT.getEnding());
     }
 
@@ -210,7 +211,7 @@ class TowerChapters456Test {
         assertEquals(2, machine.getStolenReels(), "le joueur n'a plus qu'un rouleau");
 
         TurnContext spin = new PreparationResolver().resolve(List.of(), new Player("Joueur", 100, List.of()), machine);
-        assertEquals(java.util.Set.of(0, 2), spin.getSpinContext().getBlockedReels());
+        assertEquals(Set.of(0, 2), spin.getSpinContext().getBlockedReels());
 
         machine.resetDamageTaken();
         machine.takeDamage(machine.getMaxHp());
@@ -236,7 +237,7 @@ class TowerChapters456Test {
         assertTrue(TurnEngine.score(Symbol.TRIPLE_CHERRY) > TurnEngine.score(Symbol.CHERRY));
         assertTrue(TurnEngine.score(Symbol.DOUBLE_BAR) > TurnEngine.score(Symbol.BAR));
         assertEquals(1, TurnEngine.score(Symbol.CHERRY));
-        assertEquals(Symbol.values().length, java.util.Arrays.stream(Symbol.values()).map(TurnEngine::score)
+        assertEquals(Symbol.values().length, Arrays.stream(Symbol.values()).map(TurnEngine::score)
             .distinct().filter(rank -> rank >= 1).count(), "un rang distinct pour chaque symbole");
     }
 

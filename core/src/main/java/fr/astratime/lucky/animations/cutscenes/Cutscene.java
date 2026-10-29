@@ -25,6 +25,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
+import static fr.astratime.lucky.assets.Palette.hex;
+
 /**
  * Une cinématique plein écran, dessinée dans le code à chaque image : la scène
  * joue, puis tout l'écran se couvre d'une couleur ({@link #coverColor()}).
@@ -410,7 +412,7 @@ public abstract class Cutscene extends Actor implements Disposable {
         Pixmap pixmap = new Pixmap(width, height, Pixmap.Format.RGBA8888);
         pixmap.setBlending(Pixmap.Blending.None);
         Random random = new Random(seed);
-        Color body = c("0b0712"), window = c("ffcf5a"), windowDim = c("8a5a2a"), neon = c("ff4fa0"), neon2 = c("4fd8ff");
+        Color body = hex("0b0712"), window = hex("ffcf5a"), windowDim = hex("8a5a2a"), neon = hex("ff4fa0"), neon2 = hex("4fd8ff");
         int x = 0;
         while (x < width) {
             int buildingWidth = 8 + random.nextInt(14);
@@ -655,7 +657,6 @@ public abstract class Cutscene extends Actor implements Disposable {
         return pixmap;
     }
 
-    protected static Color c(String hex) { return Color.valueOf(hex); }
 
     @Override
     public void dispose() {

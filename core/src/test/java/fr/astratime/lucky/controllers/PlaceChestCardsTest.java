@@ -149,19 +149,19 @@ class PlaceChestCardsTest {
         assertEquals(arms - 1, kraken.getPlaysPerTurn());
         Enemy other = new Enemy("Ennemi", 1000);
         other.harpoon();
-        assertEquals(1, other.takeHarpoons());
+        assertEquals(1, other.getMaluses().takeHarpoons());
     }
 
     @Test
     void aMutinyMakesTheEnemyPlayTwoCardsLess() {
         Enemy enemy = new Enemy("Ennemi", 100_000);
         int plays = enemy.getPlaysPerTurn();
-        enemy.addMutiny();
+        enemy.getMaluses().addMutiny();
         EnemyTurnResult turn = new EnemyTurnResolver(new Random(1))
-            .resolve(enemy, new Player("Joueur", 100, List.of()), 0, 0f);
+            .resolve(enemy, new Player("Joueur", 100, List.of()));
         assertEquals(Math.max(0, plays - MutinyEffect.CARDS_LESS), turn.played().size());
         EnemyTurnResult next = new EnemyTurnResolver(new Random(1))
-            .resolve(enemy, new Player("Joueur", 100, List.of()), 0, 0f);
+            .resolve(enemy, new Player("Joueur", 100, List.of()));
         assertEquals(plays, next.played().size(), "un seul tour");
     }
 
@@ -170,7 +170,7 @@ class PlaceChestCardsTest {
         List<Card> deck = new ArrayList<>();
         for (int i = 0; i < 8; i++) deck.add(new Card("c" + i, "c" + i, "x.png", List.of(new ExtraDrawEffect(0)), null, 1));
         GameController controller = new GameController(() -> new ArrayList<>(deck), id -> null);
-        controller.getGameState().getEnemy().dazzle();
+        controller.getGameState().getEnemy().getMaluses().dazzle();
         controller.drawCards();
         TurnResult result = controller.spin();
         if (!controller.getGameState().getEnemy().isDefeated()) assertNull(result.getEnemyTurn());
