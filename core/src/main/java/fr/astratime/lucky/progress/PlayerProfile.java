@@ -67,6 +67,8 @@ public class PlayerProfile {
     static final String KEY_DECK       = "deck";
     static final String KEY_COINS      = "coins";
     static final String KEY_RANK       = "rank";
+    /** Rang choisi à la Table du croupier, en nombre de rangs (absent : le plus haut rang acheté). */
+    static final String KEY_CHOSEN_RANK = "chosenRank";
     static final String KEY_REELS      = "reels";
     static final String KEY_MACHINE    = "machine";
     static final String KEY_DUNGEONS   = "dungeons";
@@ -114,6 +116,10 @@ public class PlayerProfile {
     private long coins;
     /** Nombre de rangs achetés (0 : aucun rang). */
     private int  ranks;
+    /** Rang joué, choisi parmi les rangs achetés (0 : sans rang ; {@code ranks} : le plus haut). */
+    private int  chosenRanks;
+    /** Rang joué en mode ADMIN (jamais enregistré, tous les rangs au départ). */
+    private int  adminChosenRanks = Rank.values().length;
     /** Rouleaux achetés à la boutique, dans l'ordre d'achat. */
     private final List<Symbol> boughtReels = new ArrayList<>();
     private boolean            towerHard;
@@ -174,6 +180,8 @@ public class PlayerProfile {
         String savedCoins = storage.get(KEY_COINS);
         coins = parseCoins(savedCoins);
         ranks = Math.max(0, Math.min(Rank.values().length, (int) parseCoins(storage.get(KEY_RANK))));
+        String savedChosen = storage.get(KEY_CHOSEN_RANK);
+        chosenRanks = savedChosen == null ? ranks : Math.max(0, Math.min(ranks, (int) parseCoins(savedChosen)));
         for (Symbol symbol : decodeSymbols(storage.get(KEY_REELS))) {
             if (!symbol.isClassic() && symbol != Symbol.JOKER && !boughtReels.contains(symbol)) boughtReels.add(symbol);
         }
@@ -944,8 +952,41 @@ public class PlayerProfile {
     /** @return le prochain rang à acheter, ou {@code null} s'il les a tous. */
     public Rank getNextRank() { return shownRanks() >= Rank.values().length ? null : Rank.values()[shownRanks()]; }
 
-    /** @return les bonus de son rang en combat ({@link RankBonus#NONE} sans rang). */
-    public RankBonus getRankBonus() { return shownRanks() == 0 ? RankBonus.NONE : getRank().getBonus(); }
+    /**
+     * @return les bonus du rang joué en combat ({@link RankBonus#NONE} sans rang) :
+     *         celui choisi à la Table du croupier, pas forcément le plus haut acheté
+     */
+    public RankBonus getRankBonus() {
+        Rank active = getActiveRank();
+        return active == null ? RankBonus.NONE : active.getBonus();
+    }
+
+    /** @return le rang joué en combat, choisi parmi ceux achetés, ou {@code null} pour jouer sans rang. */
+    public Rank getActiveRank() {
+        int chosen = Math.min(admin ? adminChosenRanks : chosenRanks, shownRanks());
+        return chosen <= 0 ? null : Rank.values()[chosen - 1];
+    }
+
+    /** @return {@code true} si le rang {@code rank} est acheté (tous en mode ADMIN). */
+    public boolean ownsRank(Rank rank) { return rank.ordinal() < shownRanks(); }
+
+    /**
+     * Joue avec le rang {@code rank} (ou sans rang si {@code null}), parmi ceux achetés,
+     * et enregistre le profil. En mode ADMIN, le choix ne s'enregistre pas.
+     *
+     * @return {@code false} si ce rang n'est pas encore acheté
+     */
+    public boolean chooseRank(Rank rank) {
+        if (rank != null && !ownsRank(rank)) return false;
+        int chosen = rank == null ? 0 : rank.ordinal() + 1;
+        if (admin) {
+            adminChosenRanks = chosen;
+            return true;
+        }
+        chosenRanks = chosen;
+        save();
+        return true;
+    }
 
     /** @return le nombre de rangs du joueur (tous en mode ADMIN). */
     private int shownRanks() { return admin ? Rank.values().length : ranks; }
@@ -960,6 +1001,7 @@ public class PlayerProfile {
         if (next == null || coins < next.getPrice()) return false;
         coins -= next.getPrice();
         ranks++;
+        chosenRanks = ranks; // un rang acheté se joue tout de suite
         save();
         return true;
     }
@@ -1059,6 +1101,7 @@ public class PlayerProfile {
         storage.put(KEY_DECK_SLOT, String.valueOf(deckSlot));
         storage.put(KEY_COINS, String.valueOf(coins));
         storage.put(KEY_RANK, String.valueOf(ranks));
+        storage.put(KEY_CHOSEN_RANK, String.valueOf(chosenRanks));
         storage.put(KEY_REELS, encodeSymbols(boughtReels));
         storage.put(KEY_MACHINE, encodeSymbols(machine));
         storage.put(KEY_DUNGEONS, String.join(",", clearedDungeons));

@@ -36,6 +36,7 @@ import fr.astratime.lucky.progress.DeckDraft;
 import fr.astratime.lucky.progress.MachineDraft;
 import fr.astratime.lucky.progress.ReelShop;
 import fr.astratime.lucky.progress.PlayerProfile;
+import fr.astratime.lucky.progress.Rank;
 import fr.astratime.lucky.views.GuideOverlay;
 import fr.astratime.lucky.views.Tooltip;
 import fr.astratime.lucky.views.UpgradeOverlay;
@@ -49,12 +50,14 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 
 /**
- * Table du croupier : le joueur y prépare ce qu'il emmène au combat, en deux onglets.
+ * Table du croupier : le joueur y prépare ce qu'il emmène au combat, en trois onglets.
  * <ul>
  *   <li>« Deck » : les {@link PlayerProfile#DECK_SIZE} cartes de son deck, parmi
  *       celles qu'il possède (collection de départ, coffres, boutique) ;</li>
  *   <li>« Rouleaux » : les {@link Symbol#MACHINE_SIZE} rouleaux de sa machine,
- *       tous différents, parmi les classiques et ceux achetés à la boutique.</li>
+ *       tous différents, parmi les classiques et ceux achetés à la boutique ;</li>
+ *   <li>« Rang » : le {@link Rank rang} avec lequel il joue, parmi ceux achetés
+ *       à la boutique (ou sans rang), par exemple pour jouer moins fort.</li>
  * </ul>
  *
  * À gauche, sa collection : chaque carte, avec le nombre d'exemplaires déjà
@@ -64,7 +67,8 @@ import java.util.function.Supplier;
  * où un clic retire un exemplaire. « Enregistrer » n'est possible qu'avec
  * exactement {@link PlayerProfile#DECK_SIZE} cartes ; « Retour » abandonne les changements.
  * Dans l'onglet « Rouleaux », un clic place un rouleau dans la machine ou l'en
- * retire. « Enregistrer » enregistre le deck et la machine, complets tous les deux.
+ * retire. Dans l'onglet « Rang », un clic choisit un rang acheté. « Enregistrer »
+ * enregistre le deck et la machine, complets tous les deux, et le rang choisi.
  *
  * Une carte possédée en {@link Card#UPGRADE_COST} exemplaires montre le bouton
  * « FUSIONNER » : ils deviennent un exemplaire de sa version « + » (voir
@@ -92,6 +96,8 @@ public class CroupierTableScreen extends CasinoMenuScreen {
     private static final Color USED_UP      = new Color(0.6f, 0.6f, 0.6f, 1f);
     /** Emplacement de deck qu'on ne modifie pas : bien plus sombre que celui qu'on modifie. */
     private static final Color OTHER_SLOT   = new Color(0.35f, 0.35f, 0.35f, 1f);
+    /** Rang acheté mais pas choisi. */
+    private static final Color OWNED_RANK   = new Color(0.75f, 0.75f, 0.75f, 1f);
 
     private final PlayerProfile   profile;
     private final DeckDraft       draft;
@@ -137,6 +143,19 @@ public class CroupierTableScreen extends CasinoMenuScreen {
     private final Table       machineList = new Table();
     private final TextButton  deckTab;
     private final TextButton  reelsTab;
+    private final TextButton  rankTab;
+    /** Onglet « Rang » : une ligne par rang (et « Sans rang »), dans le panneau de gauche. */
+    private final Table       rankList = new Table();
+    private final ScrollPane  rankScroll;
+    /** Lignes de l'onglet « Rang », par rang ({@code null} : sans rang). */
+    private final Map<Rank, Table> rankRows = new LinkedHashMap<>();
+    private final Map<Rank, Label> rankStates = new LinkedHashMap<>();
+    /** Panneau de droite de l'onglet « Rang » : le rang choisi et ses bonus. */
+    private final Table       rankDetail = new Table();
+    private final Label       rankName;
+    private final Label       rankText;
+    /** Rang choisi, enregistré par « Enregistrer » ({@code null} : sans rang). */
+    private Rank              chosenRank;
     private final TextButton  classicButton;
     private final Label       hint;
     private final TextButton  saveButton;
@@ -148,8 +167,10 @@ public class CroupierTableScreen extends CasinoMenuScreen {
 
     private int     columns = 6;
     private int     reelColumns = 4;
-    /** Onglet « Rouleaux » affiché (sinon « Deck »). */
-    private boolean showingReels;
+    /** Onglets de la table. */
+    private enum Tab { DECK, REELS, RANK }
+    /** Onglet affiché. */
+    private Tab     tab = Tab.DECK;
     /** Emplacements de deck (« Deck 1 » à « Deck 3 ») ; celui qu'on modifie, enregistré par « Enregistrer ». */
     private final List<TextButton> slotButtons = new ArrayList<>();
     private int editingSlot;
@@ -187,13 +208,27 @@ public class CroupierTableScreen extends CasinoMenuScreen {
         reelScroll.setFadeScrollBars(false);
         reelScroll.setOverscroll(false, false);
 
-        deckTab  = buttons.create(Lang.t("Deck"), clickSound, () -> showTab(false));
-        reelsTab = buttons.create(Lang.t("Rouleaux"), clickSound, () -> showTab(true));
+        chosenRank = profile.getActiveRank();
+        rankName = new Label("", new Label.LabelStyle(headFont, Color.WHITE));
+        rankText = new Label("", new Label.LabelStyle(rowFont, Color.WHITE));
+        rankText.setWrap(true);
+        buildRankList();
+        rankScroll = new ScrollPane(rankList);
+        rankScroll.setScrollingDisabled(true, false);
+        rankScroll.setFadeScrollBars(false);
+        rankScroll.setOverscroll(false, false);
+        rankDetail.top().left();
+        rankDetail.add(rankName).left().width(DECK_WIDTH - PANEL_PAD * 2).padBottom(12f).row();
+        rankDetail.add(rankText).left().width(DECK_WIDTH - PANEL_PAD * 2).row();
+
+        deckTab  = buttons.create(Lang.t("Deck"), clickSound, () -> showTab(Tab.DECK));
+        reelsTab = buttons.create(Lang.t("Rouleaux"), clickSound, () -> showTab(Tab.REELS));
+        rankTab  = buttons.create(Lang.t("Rang"), clickSound, () -> showTab(Tab.RANK));
         saveButton    = buttons.createAction(Lang.t("Enregistrer"), clickSound, this::onSave);
         starterButton = buttons.create(Lang.t("Deck de départ"), clickSound, () -> { draft.resetToStarter(); refresh(); });
         classicButton = buttons.create(Lang.t("Rouleaux de départ"), clickSound, () -> { machineDraft.resetToClassic(); refresh(); });
         clearButton   = buttons.create(Lang.t("Vider"), clickSound, () -> {
-            if (showingReels) machineDraft.clear(); else draft.clear();
+            if (tab == Tab.REELS) machineDraft.clear(); else draft.clear();
             refresh();
         });
         backButton    = buttons.create(Lang.t("Retour"), clickSound, this::onBack);
@@ -216,8 +251,11 @@ public class CroupierTableScreen extends CasinoMenuScreen {
         stage.addActor(deckList);
         stage.addActor(reelScroll);
         stage.addActor(machineList);
+        stage.addActor(rankScroll);
+        stage.addActor(rankDetail);
         stage.addActor(deckTab);
         stage.addActor(reelsTab);
+        stage.addActor(rankTab);
         stage.addActor(classicButton);
         stage.addActor(hint);
         stage.addActor(saveButton);
@@ -231,7 +269,7 @@ public class CroupierTableScreen extends CasinoMenuScreen {
         reveal();
 
         layout();
-        showTab(false);
+        showTab(Tab.DECK);
         firstVisit = new FirstVisitGuide(stage, hud, clickSound, profile, PlayerProfile.GUIDE_TABLE, this::guideSteps);
         fade.toFront();
     }
@@ -244,7 +282,7 @@ public class CroupierTableScreen extends CasinoMenuScreen {
         int[] before = new int[1];
         List<GuideOverlay.Step> steps = new ArrayList<>();
         steps.add(GuideOverlay.Step.say(Lang.t("La Table du croupier. Ici, tu prépares ce que tu emmènes au combat."))
-            .onStart(() -> showTab(false)));
+            .onStart(() -> showTab(Tab.DECK)));
         steps.add(GuideOverlay.Step.say(Lang.t("À gauche, ta collection : toutes les cartes que tu possèdes."),
             () -> GuideOverlay.boundsOf(collectionPanel)));
         steps.add(GuideOverlay.Step.say(Lang.f("À droite, ton deck. Il fait {0} cartes, {1} exemplaires au plus de chacune. Tu le joues dans "
@@ -262,7 +300,7 @@ public class CroupierTableScreen extends CasinoMenuScreen {
             PlayerProfile.formatCoins(Card.UPGRADE_PRICE)),
             () -> GuideOverlay.boundsOf(collectionPanel)));
         steps.add(GuideOverlay.Step.action(Lang.t("Ta machine a ses propres rouleaux. Ouvre l'onglet Rouleaux."),
-            () -> GuideOverlay.boundsOf(reelsTab), () -> showingReels));
+            () -> GuideOverlay.boundsOf(reelsTab), () -> tab == Tab.REELS));
         steps.add(GuideOverlay.Step.say(Lang.f("Tes rouleaux. Ceux en or tournent dans ta machine. Elle en prend {0}, tous différents.",
             Symbol.MACHINE_SIZE), () -> GuideOverlay.boundsOf(collectionPanel)));
         steps.add(GuideOverlay.Step.action(Lang.t("Retire un rouleau : clique sur un rouleau en or, ou sur une ligne de ta machine."),
@@ -272,7 +310,9 @@ public class CroupierTableScreen extends CasinoMenuScreen {
         steps.add(GuideOverlay.Step.action(Lang.t("Place un rouleau : clique sur un rouleau qui n'est pas en or."),
                 () -> GuideOverlay.boundsOf(collectionPanel), () -> machineDraft.size() > before[0])
             .onStart(() -> before[0] = machineDraft.size()));
-        steps.add(GuideOverlay.Step.say(Lang.t("Enregistre pour garder ton deck et ta machine. Retour les laisse comme avant."),
+        steps.add(GuideOverlay.Step.say(Lang.t("L'onglet Rang te laisse choisir avec quel rang tu joues, parmi ceux que tu as achetés."),
+            () -> GuideOverlay.boundsOf(rankTab)));
+        steps.add(GuideOverlay.Step.say(Lang.t("Enregistre pour garder ton deck, ta machine et ton rang. Retour les laisse comme avant."),
             () -> GuideOverlay.boundsOf(saveButton).merge(GuideOverlay.boundsOf(backButton))));
         return steps;
     }
@@ -283,22 +323,131 @@ public class CroupierTableScreen extends CasinoMenuScreen {
         fade.toFront();
     }
 
-    /** Affiche l'onglet « Rouleaux » ({@code reels}) ou « Deck ». */
-    private void showTab(boolean reels) {
-        showingReels = reels;
-        deckTab.setColor(reels ? USED_UP : Color.WHITE);
+    /** Affiche l'onglet {@code shown}. */
+    private void showTab(Tab shown) {
+        tab = shown;
+        boolean deck = shown == Tab.DECK, reels = shown == Tab.REELS, rank = shown == Tab.RANK;
+        deckTab.setColor(deck ? Color.WHITE : USED_UP);
         reelsTab.setColor(reels ? Color.WHITE : USED_UP);
-        scroll.setVisible(!reels);
-        deckList.setVisible(!reels);
-        starterButton.setVisible(!reels);
-        for (TextButton button : slotButtons) button.setVisible(!reels && !profile.isAdmin()); // le mode ADMIN a un seul deck
+        rankTab.setColor(rank ? Color.WHITE : USED_UP);
+        scroll.setVisible(deck);
+        deckList.setVisible(deck);
+        starterButton.setVisible(deck);
+        for (TextButton button : slotButtons) button.setVisible(deck && !profile.isAdmin()); // le mode ADMIN a un seul deck
         reelScroll.setVisible(reels);
         machineList.setVisible(reels);
         classicButton.setVisible(reels);
-        collectionHead.setText(reels ? Lang.t("MES ROULEAUX") : Lang.t("MA COLLECTION"));
-        deckHead.setText(reels ? Lang.t("MA MACHINE") : Lang.t("MON DECK"));
-        stage.setScrollFocus(reels ? reelScroll : scroll);
+        clearButton.setVisible(!rank);
+        counter.setVisible(!rank);
+        rankScroll.setVisible(rank);
+        rankDetail.setVisible(rank);
+        collectionHead.setText(switch (shown) {
+            case DECK  -> Lang.t("MA COLLECTION");
+            case REELS -> Lang.t("MES ROULEAUX");
+            case RANK  -> Lang.t("MES RANGS");
+        });
+        deckHead.setText(switch (shown) {
+            case DECK  -> Lang.t("MON DECK");
+            case REELS -> Lang.t("MA MACHINE");
+            case RANK  -> Lang.t("MON RANG");
+        });
+        stage.setScrollFocus(scrollOf(shown));
         refresh();
+    }
+
+    /** @return la liste qui défile dans l'onglet {@code shown}. */
+    private ScrollPane scrollOf(Tab shown) {
+        return switch (shown) {
+            case DECK  -> scroll;
+            case REELS -> reelScroll;
+            case RANK  -> rankScroll;
+        };
+    }
+
+    // -------------------------------------------------------------------------
+    // Rang
+    // -------------------------------------------------------------------------
+
+    /**
+     * Une ligne par rang, du plus bas au plus haut, après « Sans rang » : son nom,
+     * sa présentation et ses bonus, et à droite « Joué », « Acquis » ou « À la boutique ».
+     * Un clic sur un rang acheté le choisit.
+     */
+    private void buildRankList() {
+        rankList.top().left();
+        List<Rank> choices = new ArrayList<>();
+        choices.add(null);
+        choices.addAll(List.of(Rank.values()));
+        for (Rank rank : choices) {
+            Table row = new Table();
+            row.setTouchable(Touchable.enabled);
+            row.setBackground(hud.insetDrawable());
+            row.pad(10f, 18f, 10f, 18f);
+            Label name = new Label(rankTitle(rank), new Label.LabelStyle(rowFont, Palette.GOLD));
+            Label text = new Label(rankBody(rank), new Label.LabelStyle(hintFont, Color.WHITE));
+            text.setWrap(true);
+            Label state = new Label("", new Label.LabelStyle(countFont, Color.WHITE));
+            state.setAlignment(Align.right);
+            Table left = new Table();
+            left.add(name).left().row();
+            left.add(text).growX().left();
+            row.add(left).growX().left().padRight(16f);
+            row.add(state).width(190f).right();
+            boolean owned = rank == null || profile.ownsRank(rank);
+            row.addListener(new ClickListener() {
+                @Override
+                public void enter(InputEvent event, float x, float y, int pointer, Actor fromActor) {
+                    super.enter(event, x, y, pointer, fromActor);
+                    if (pointer == -1 && owned && rank != chosenRank) name.setColor(Color.WHITE);
+                }
+
+                @Override
+                public void exit(InputEvent event, float x, float y, int pointer, Actor toActor) {
+                    super.exit(event, x, y, pointer, toActor);
+                    if (pointer == -1) name.setColor(Palette.GOLD);
+                }
+
+                @Override
+                public void clicked(InputEvent event, float x, float y) { pickRank(rank, row); }
+            });
+            rankRows.put(rank, row);
+            rankStates.put(rank, state);
+            rankList.add(row).growX().padBottom(8f).row();
+        }
+    }
+
+    /** @return le nom du rang, ou « Sans rang ». */
+    private static String rankTitle(Rank rank) { return rank == null ? Lang.t("Sans rang") : rank.getTitle(); }
+
+    /** @return la présentation du rang et ses bonus. */
+    private static String rankBody(Rank rank) {
+        return rank == null ? Lang.t("Aucun bonus de rang.") : rank.getDescription() + " " + rank.getBonusText();
+    }
+
+    /** Choisit le rang {@code rank} s'il est acheté, sinon dit qu'il s'achète à la boutique. */
+    private void pickRank(Rank rank, Actor feedback) {
+        if (rank != null && !profile.ownsRank(rank)) {
+            refuse(Lang.t("Ce rang s'achète d'abord à la boutique"), feedback);
+            return;
+        }
+        if (rank == chosenRank) return;
+        chosenRank = rank;
+        dealSound.play();
+        refresh();
+    }
+
+    /** Met à jour les lignes des rangs (joué, acquis, à la boutique) et le panneau du rang choisi. */
+    private void refreshRanks() {
+        for (Map.Entry<Rank, Table> entry : rankRows.entrySet()) {
+            Rank rank = entry.getKey();
+            boolean owned = rank == null || profile.ownsRank(rank);
+            Label state = rankStates.get(rank);
+            state.setText(rank == chosenRank ? Lang.t("Joué") : owned ? Lang.t("Acquis") : Lang.t("À la boutique"));
+            state.setColor(rank == chosenRank ? Palette.GOLD : Color.WHITE);
+            entry.getValue().setColor(rank == chosenRank ? Color.WHITE : owned ? OWNED_RANK : OTHER_SLOT);
+        }
+        rankName.setText(rankTitle(chosenRank));
+        rankText.setText(rankBody(chosenRank));
     }
 
     // -------------------------------------------------------------------------
@@ -526,10 +675,14 @@ public class CroupierTableScreen extends CasinoMenuScreen {
         }
 
         refreshMachine();
+        refreshRanks();
         for (int i = 0; i < slotButtons.size(); i++) slotButtons.get(i).setColor(i == editingSlot ? Color.WHITE : OTHER_SLOT);
         saveButton.setDisabled(!draft.isComplete() || !machineDraft.isComplete());
         hint.setColor(Color.WHITE);
-        if (showingReels) {
+        if (tab == Tab.RANK) {
+            hint.setText(chosenRank == profile.getActiveRank() ? Lang.t("Clique sur un rang acquis pour jouer avec.")
+                : Lang.t("Enregistre pour jouer avec ce rang."));
+        } else if (tab == Tab.REELS) {
             int reels = machineDraft.size();
             counter.setText(reels + " / " + Symbol.MACHINE_SIZE);
             counter.setColor(machineDraft.isComplete() ? Palette.GOLD : REFUSED);
@@ -628,7 +781,7 @@ public class CroupierTableScreen extends CasinoMenuScreen {
     /** Enregistre le deck (dans son emplacement, qui devient le deck joué) et la machine, et revient au menu principal. */
     private void onSave() {
         if (leaving || !draft.isComplete() || !machineDraft.isComplete() || !draft.save(editingSlot)
-            || !machineDraft.save()) return;
+            || !machineDraft.save() || !profile.chooseRank(chosenRank)) return;
         leaveTo(() -> new MenuScreen(luckyGame));
     }
 
@@ -651,7 +804,8 @@ public class CroupierTableScreen extends CasinoMenuScreen {
     @Override
     protected void layoutContent(float width, float height) {
         title.setPosition(MARGIN, height - TITLE_TOP - title.getHeight() / 2f);
-        reelsTab.setPosition(width - MARGIN - reelsTab.getWidth(), height - TITLE_TOP - reelsTab.getHeight() / 2f);
+        rankTab.setPosition(width - MARGIN - rankTab.getWidth(), height - TITLE_TOP - rankTab.getHeight() / 2f);
+        reelsTab.setPosition(rankTab.getX() - 20f - reelsTab.getWidth(), rankTab.getY());
         deckTab.setPosition(reelsTab.getX() - 20f - deckTab.getWidth(), reelsTab.getY());
 
         float panelTop    = height - PANEL_TOP;
@@ -690,6 +844,8 @@ public class CroupierTableScreen extends CasinoMenuScreen {
         reelGrid.top().left();
         reelScroll.setBounds(scroll.getX(), scroll.getY(), scroll.getWidth(), scroll.getHeight());
         reelScroll.layout();
+        rankScroll.setBounds(scroll.getX(), scroll.getY(), scroll.getWidth(), scroll.getHeight());
+        rankScroll.layout();
 
         deckHead.pack();
         deckHead.setPosition(deckX + PANEL_PAD, panelTop - PANEL_PAD - deckHead.getHeight());
@@ -700,6 +856,8 @@ public class CroupierTableScreen extends CasinoMenuScreen {
         deckList.setPosition(deckX + PANEL_PAD, deckHead.getY() - 20f - deckList.getHeight());
         machineList.pack();
         machineList.setPosition(deckX + PANEL_PAD, deckHead.getY() - 20f - machineList.getHeight());
+        rankDetail.pack();
+        rankDetail.setPosition(deckX + PANEL_PAD, deckHead.getY() - 20f - rankDetail.getHeight());
         hint.setWrap(true);
         hint.setWidth(DECK_WIDTH - PANEL_PAD * 2);
         hint.setHeight(hint.getPrefHeight());
@@ -733,7 +891,7 @@ public class CroupierTableScreen extends CasinoMenuScreen {
     @Override
     public void show() {
         super.show();
-        stage.setScrollFocus(showingReels ? reelScroll : scroll);
+        stage.setScrollFocus(scrollOf(tab));
     }
 
 

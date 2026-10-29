@@ -49,6 +49,49 @@ class BoutiqueTest {
     }
 
     @Test
+    void thePlayerPlaysWithAnyOwnedRankAndTheChoiceIsSaved() {
+        MemoryStorage storage = new MemoryStorage();
+        PlayerProfile profile = profile(storage);
+        profile.addCoins(3_000_000L + 7_500_000L + 15_000_000L);
+        for (int i = 0; i < 3; i++) assertTrue(profile.buyNextRank());
+        assertEquals(Rank.FLAMBEUR, profile.getActiveRank(), "un rang acheté se joue tout de suite");
+
+        assertFalse(profile.chooseRank(Rank.HABITUE), "rang pas encore acheté");
+        assertEquals(Rank.FLAMBEUR, profile.getActiveRank());
+        assertTrue(profile.chooseRank(Rank.AVARE));
+        assertEquals(Rank.AVARE.getBonus(), profile.getRankBonus());
+        assertEquals(Rank.FLAMBEUR, profile.getRank(), "le plus haut rang acheté ne change pas");
+
+        PlayerProfile reloaded = profile(storage);
+        assertEquals(Rank.AVARE, reloaded.getActiveRank());
+        assertEquals(Rank.AVARE.getBonus(), reloaded.getRankBonus());
+
+        assertTrue(reloaded.chooseRank(null));
+        assertEquals(RankBonus.NONE, reloaded.getRankBonus());
+        assertNull(profile(storage).getActiveRank());
+    }
+
+    @Test
+    void anOldSaveWithoutAChosenRankPlaysItsHighestRank() {
+        MemoryStorage storage = new MemoryStorage();
+        storage.put(PlayerProfile.KEY_RANK, "4");
+        assertEquals(Rank.HABITUE, profile(storage).getActiveRank());
+    }
+
+    @Test
+    void theAdminChoiceOfRankIsNeverSaved() {
+        MemoryStorage storage = new MemoryStorage();
+        PlayerProfile profile = profile(storage);
+        profile.setAdmin(true);
+        assertEquals(Rank.LEGENDE, profile.getActiveRank());
+        assertTrue(profile.chooseRank(Rank.BARON));
+        assertEquals(Rank.BARON.getBonus(), profile.getRankBonus());
+        profile.setAdmin(false);
+        assertNull(profile.getActiveRank());
+        assertNull(profile(storage).getActiveRank());
+    }
+
+    @Test
     void aBoughtCardJoinsTheCollectionUpToThreeCopies() {
         PlayerProfile profile = profile(new MemoryStorage());
         profile.addCoins(30_000_000);

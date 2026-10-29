@@ -806,7 +806,6 @@
   "Tes rouleaux. Ceux en or tournent dans ta machine. Elle en prend {0}, tous différents.": "Your reels. The golden ones spin in your machine. It takes {0}, all different.",
   "Retire un rouleau : clique sur un rouleau en or, ou sur une ligne de ta machine.": "Remove a reel: click a golden reel, or a line in your machine.",
   "Place un rouleau : clique sur un rouleau qui n'est pas en or.": "Place a reel: click a reel that isn't golden.",
-  "Enregistre pour garder ton deck et ta machine. Retour les laisse comme avant.": "Save to keep your deck and your machine. Back leaves them as before.",
   "MES ROULEAUX": "MY REELS",
   "MA MACHINE": "MY MACHINE",
   "La machine est prête.": "The machine is ready.",
@@ -2209,5 +2208,17 @@
   "Avant de lancer, choisis ta Mise. Clique sur Mise : 5 % de tes gains vont dans la cagnotte, et ton attaque et ta défense x1,1. Encore : 10 %, puis 15 %.": "Before you spin, choose your Stake. Click Stake: 5% of your gains go into the pot, and your attack and defense x1.1. Again: 10%, then 15%.",
   "Ta Paire a multiplié tout le tirage : attaque, gains et bouclier. Ta Mise attend dans la cagnotte : au Jeu bonus, chaque alignement la rapporte.": "Your Pair multiplied the whole draw: attack, gains and shield. Your Stake waits in the pot: in the Bonus game, every line pays it.",
   "Tes Mises s'y accumulent. Au prochain Jeu bonus, chaque alignement rapporte sa valeur plus toute la cagnotte, puis elle repart de 0. Ce qu'elle rapporte ne se mise pas avant la fin de la descente. Ici, un Bingo ouvre le Jeu bonus {0} fois sur 10.": "Your Stakes pile up here. At the next Bonus game, every line pays its value plus the whole pot, then it goes back to 0. What it pays can't be staked until the end of the run. Here, a Bingo opens the Bonus game {0} times out of 10.",
-  "Cagnotte : {0}": "Pot: {0}"
+  "Cagnotte : {0}": "Pot: {0}",
+  "MES RANGS": "MY RANKS",
+  "MON RANG": "MY RANK",
+  "Sans rang": "No rank",
+  "Aucun bonus de rang.": "No rank bonus.",
+  "Ce rang s'achète d'abord à la boutique": "Buy this rank at the shop first",
+  "Joué": "Played",
+  "À la boutique": "At the shop",
+  "Clique sur un rang acquis pour jouer avec.": "Click an owned rank to play with it.",
+  "Enregistre pour jouer avec ce rang.": "Save to play with this rank.",
+  "L'onglet Rang te laisse choisir avec quel rang tu joues, parmi ceux que tu as achetés.": "The Rank tab lets you choose which rank you play with, among the ones you bought.",
+  "Enregistre pour garder ton deck, ta machine et ton rang. Retour les laisse comme avant.": "Save to keep your deck, your machine and your rank. Back leaves them as they were.",
+  "Ton rang : {0}. Tu joues avec : {1} (Table du croupier).": "Your rank: {0}. You play with: {1} (Dealer's Table)."
 }

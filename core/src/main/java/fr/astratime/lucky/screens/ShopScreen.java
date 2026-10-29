@@ -254,8 +254,12 @@ public class ShopScreen extends CasinoMenuScreen {
     private void buildRanks() {
         content.top().left();
         Rank current = profile.getRank(), next = profile.getNextRank();
-        Label header = new Label(current == null ? Lang.t("Tu n'as pas encore de rang.") : Lang.f("Ton rang : {0}",
-            current.getTitle()),
+        Rank active = profile.getActiveRank();
+        String headerText = current == null ? Lang.t("Tu n'as pas encore de rang.")
+            : active == current ? Lang.f("Ton rang : {0}", current.getTitle())
+            : Lang.f("Ton rang : {0}. Tu joues avec : {1} (Table du croupier).", current.getTitle(),
+                active == null ? Lang.t("Sans rang") : active.getTitle());
+        Label header = new Label(headerText,
             new Label.LabelStyle(headFont, Color.WHITE));
         content.add(header).left().colspan(3).padBottom(16f).row();
         for (Rank rank : Rank.values()) {
