@@ -266,8 +266,8 @@ public class EnemyTurnResolver {
             int harpooned = enemy.getMaluses().takeHarpoons(); // Harpon : une carte de moins
             if (harpooned > 0) {
                 plays = Math.max(0, plays - harpooned);
-                openingEvents.add(new StatusEvent(Lang.f(Lang.plural(harpooned) ? "HARPON : {0} CARTES DE MOINS"
-                    : "HARPON : {0} CARTE DE MOINS", harpooned), EffectPopup.Style.ATTACK));
+                openingEvents.add(new StatusEvent(Lang.n(harpooned, "HARPON : {0} CARTE DE MOINS",
+                    "HARPON : {0} CARTES DE MOINS", harpooned), EffectPopup.Style.ATTACK));
             }
             if (enemy.getMaluses().takeMutiny()) { // Mutinerie : son équipage refuse de jouer une partie de ses cartes
                 plays = Math.max(0, plays - MutinyEffect.CARDS_LESS);
@@ -659,8 +659,8 @@ public class EnemyTurnResolver {
                 case PLATING -> {
                     int turns = EnemySymbol.PLATING_TURNS * (enemy.takeCharge(EnemySignature.OR_MASSIF) ? 2 : 1);
                     enemy.plate(turns);
-                    events.add(new StatusEvent(Lang.plural(turns) ? Lang.f("PLACAGE : PEAU D'OR {0} TOURS", turns)
-                        : Lang.t("PLACAGE : PEAU D'OR 1 TOUR"), EffectPopup.Style.DEFENSE));
+                    events.add(new StatusEvent(Lang.n(turns, "PLACAGE : PEAU D'OR 1 TOUR",
+                        "PLACAGE : PEAU D'OR {0} TOURS", turns), EffectPopup.Style.DEFENSE));
                 }
                 case INGOT -> events.add(turn.strike(kind.swordDamage() * ingotPercent(enemy)
                     / 100 * (100 + EnemySignature.LINGOT_PERCENT * boosts.getOrDefault(EnemySignature.POIDS_DE_L_OR, 0)) / 100));
@@ -723,8 +723,8 @@ public class EnemyTurnResolver {
                 case TOLL -> {
                     int spins = EnemySymbol.TOLL_SPINS * (enemy.takeCharge(EnemySignature.OCTROI) ? 3 : 1);
                     curses.addToll(spins);
-                    events.add(new StatusEvent(Lang.plural(spins) ? Lang.f("PÉAGE : {0} TIRAGES DE PLUS À PAYER", spins)
-                        : Lang.t("PÉAGE : UN TIRAGE DE PLUS À PAYER"), EffectPopup.Style.DAMAGE));
+                    events.add(new StatusEvent(Lang.n(spins, "PÉAGE : UN TIRAGE DE PLUS À PAYER",
+                        "PÉAGE : {0} TIRAGES DE PLUS À PAYER", spins), EffectPopup.Style.DAMAGE));
                 }
                 case BILL -> {
                     int added = curses.addBills(EnemySymbol.BILL_CLAIMS
@@ -765,8 +765,8 @@ public class EnemyTurnResolver {
                     events.add(turn.strike(kind.swordDamage(), true));
                     int burnt = enemy.takeCharge(EnemySignature.BRAISE) ? 2 : 1;
                     curses.addRockfall(burnt);
-                    events.add(new StatusEvent(Lang.plural(burnt) ? Lang.f("CARTES BRÛLÉES : {0} DE MOINS", burnt)
-                        : Lang.t("CARTE BRÛLÉE : 1 DE MOINS"), EffectPopup.Style.DAMAGE));
+                    events.add(new StatusEvent(Lang.n(burnt, "CARTE BRÛLÉE : 1 DE MOINS",
+                        "CARTES BRÛLÉES : {0} DE MOINS", burnt), EffectPopup.Style.DAMAGE));
                 }
                 default -> {
                     return false;
@@ -800,7 +800,7 @@ public class EnemyTurnResolver {
                 if (card != null) taken.add(card.getName().toUpperCase());
             }
             events.add(taken.isEmpty() ? turn.strike(EnemySymbol.FANG_DAMAGE)
-                : new StatusEvent(Lang.f(Lang.plural(taken.size()) ? "FOUILLE : {0} CONFISQUÉES" : "FOUILLE : {0} CONFISQUÉE",
+                : new StatusEvent(Lang.n(taken.size(), "FOUILLE : {0} CONFISQUÉE", "FOUILLE : {0} CONFISQUÉES",
                     String.join(", ", taken)), EffectPopup.Style.DAMAGE));
         }
 

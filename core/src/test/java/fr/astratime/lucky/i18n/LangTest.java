@@ -79,6 +79,22 @@ class LangTest {
     }
 
     @Test
+    void pluralsFollowEachLanguage() {
+        assertEquals("1 tour", Lang.n(1, "{0} tour", "{0} tours", 1));
+        assertEquals("0 tour", Lang.n(0, "{0} tour", "{0} tours", 0), "en français, 0 est au singulier");
+        assertEquals("2 tours", Lang.n(2, "{0} tour", "{0} tours", 2));
+        Lang.use(Lang.Language.ENGLISH, "{\"{0} tour\": \"{0} turn\", \"{0} tours\": \"{0} turns\"}");
+        assertEquals("1 turn", Lang.n(1, "{0} tour", "{0} tours", 1));
+        assertEquals("0 turns", Lang.n(0, "{0} tour", "{0} tours", 0), "en anglais, 0 est au pluriel");
+    }
+
+    @Test
+    void theTextScannerReadsBothFormsOfAPlural() {
+        String source = "Lang.n(cards.size(), \"{0} carte\", \"{0} \" + \"cartes\", cards.size()); Lang.t(\"Retour\");";
+        assertEquals(List.of("{0} carte", "{0} cartes", "Retour"), keys(source));
+    }
+
+    @Test
     void languageCycleAndCodes() {
         assertEquals(Lang.Language.ENGLISH, Lang.Language.FRENCH.next());
         assertEquals(Lang.Language.FRENCH, Lang.Language.ENGLISH.next());
@@ -197,67 +213,87 @@ class LangTest {
 
     /**
      * @return les textes passés à {@code Lang.t(…)} ou {@code Lang.f(…)} dans {@code source} : chaque
-     *         chaîne (ou suite de chaînes jointes par {@code +}) de leur premier argument
+     *         chaîne (ou suite de chaînes jointes par {@code +}) de leur premier argument ; pour
+     *         {@code Lang.n(nombre, singulier, pluriel, …)}, celles de ses deuxième et troisième arguments
      */
     static List<String> keys(String source) {
         List<String> keys = new ArrayList<>();
         int at = 0;
         while ((at = nextCall(source, at)) >= 0) {
-            int depth = 0;
-            int i = at;
-            StringBuilder key = null;
-            while (i < source.length()) {
-                char c = source.charAt(i);
-                if (c == '"') {
-                    int end = i + 1;
-                    StringBuilder literal = new StringBuilder();
-                    while (source.charAt(end) != '"') {
-                        char d = source.charAt(end);
-                        if (d == '\\') {
-                            char e = source.charAt(++end);
-                            literal.append(switch (e) {
-                                case 'n' -> '\n';
-                                case 't' -> '\t';
-                                default -> e;
-                            });
-                        } else {
-                            literal.append(d);
-                        }
-                        end++;
-                    }
-                    if (depth == 0) {
-                        if (key == null) key = new StringBuilder();
-                        key.append(literal);
-                    }
-                    i = end + 1;
-                    continue;
-                }
-                if (c == '+' || Character.isWhitespace(c)) {
-                    i++;
-                    continue;
-                }
-                if (key != null) {
-                    keys.add(key.toString());
-                    key = null;
-                }
-                if (c == '(' || c == '[' || c == '{') depth++;
-                if (c == ')' || c == ']' || c == '}') {
-                    if (depth == 0) break;
-                    depth--;
-                }
-                if (c == ',' && depth == 0) break;
-                i++;
+            if (source.charAt(at - 2) != 'n') {
+                argumentKeys(source, at, keys);
+                continue;
             }
-            if (key != null) keys.add(key.toString());
+            int end = argumentKeys(source, at, new ArrayList<>()); // le nombre
+            for (int form = 0; form < 2 && end < source.length() && source.charAt(end) == ','; form++) {
+                end = argumentKeys(source, end + 1, keys);
+            }
         }
         return keys;
     }
 
-    /** @return la position juste après le prochain {@code Lang.t(} ou {@code Lang.f(}, ou -1. */
+    /**
+     * Ajoute à {@code keys} les chaînes de l'argument qui commence en {@code from}.
+     *
+     * @return la position de la virgule ou de la parenthèse qui le termine
+     */
+    private static int argumentKeys(String source, int from, List<String> keys) {
+        int depth = 0;
+        int i = from;
+        StringBuilder key = null;
+        while (i < source.length()) {
+            char c = source.charAt(i);
+            if (c == '"') {
+                int end = i + 1;
+                StringBuilder literal = new StringBuilder();
+                while (source.charAt(end) != '"') {
+                    char d = source.charAt(end);
+                    if (d == '\\') {
+                        char e = source.charAt(++end);
+                        literal.append(switch (e) {
+                            case 'n' -> '\n';
+                            case 't' -> '\t';
+                            default -> e;
+                        });
+                    } else {
+                        literal.append(d);
+                    }
+                    end++;
+                }
+                if (depth == 0) {
+                    if (key == null) key = new StringBuilder();
+                    key.append(literal);
+                }
+                i = end + 1;
+                continue;
+            }
+            if (c == '+' || Character.isWhitespace(c)) {
+                i++;
+                continue;
+            }
+            if (key != null) {
+                keys.add(key.toString());
+                key = null;
+            }
+            if (c == '(' || c == '[' || c == '{') depth++;
+            if (c == ')' || c == ']' || c == '}') {
+                if (depth == 0) break;
+                depth--;
+            }
+            if (c == ',' && depth == 0) break;
+            i++;
+        }
+        if (key != null) keys.add(key.toString());
+        return i;
+    }
+
+    /** @return la position juste après le prochain {@code Lang.t(}, {@code Lang.f(} ou {@code Lang.n(}, ou -1. */
     private static int nextCall(String source, int from) {
-        int t = source.indexOf("Lang.t(", from);
-        int f = source.indexOf("Lang.f(", from);
-        int next = t < 0 ? f : f < 0 ? t : Math.min(t, f);
+        int next = -1;
+        for (String call : new String[] {"Lang.t(", "Lang.f(", "Lang.n("}) {
+            int at = source.indexOf(call, from);
+            if (at >= 0 && (next < 0 || at < next)) next = at;
+        }
         return next < 0 ? -1 : next + "Lang.t(".length();
     }
 }

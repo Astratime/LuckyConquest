@@ -329,7 +329,8 @@ public class CombatResolver {
             double gains = (double) touched * spinCost * hatPercent / 100.0;
             if (gains > 0) {
                 player.addGains(gains);
-                events.add(new StatusEvent(Lang.f(Lang.plural(touched) ? "CHAPEAU DU LUTIN : {0} COUPS" : "CHAPEAU DU LUTIN : {0} COUP",
+                events.add(new StatusEvent(Lang.n(touched, "CHAPEAU DU LUTIN : {0} COUP",
+                    "CHAPEAU DU LUTIN : {0} COUPS",
                     touched), EffectPopup.Style.GAINS));
                 events.add(new GainsEarnedEvent(gains));
             }

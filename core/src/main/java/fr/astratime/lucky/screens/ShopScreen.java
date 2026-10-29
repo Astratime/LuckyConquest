@@ -470,7 +470,7 @@ public class ShopScreen extends CasinoMenuScreen {
 
     private void refreshCoins() {
         long amount = profile.getCoins();
-        coins.setText(Lang.f(Lang.plural(amount) ? "{0} pièces" : "{0} pièce", PlayerProfile.formatCoins(amount)));
+        coins.setText(Lang.n(amount, "{0} pièce", "{0} pièces", PlayerProfile.formatCoins(amount)));
         coins.pack();
     }
 

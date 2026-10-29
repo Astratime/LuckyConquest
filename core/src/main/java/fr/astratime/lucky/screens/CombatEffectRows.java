@@ -141,7 +141,7 @@ final class CombatEffectRows {
 
     /** @return {@code count} suivi de « tour » ou « tours ». */
     private static String turns(int count) {
-        return Lang.f(Lang.plural(count) ? "{0} tours" : "{0} tour", count);
+        return Lang.n(count, "{0} tour", "{0} tours", count);
     }
 
     /**
@@ -253,9 +253,8 @@ final class CombatEffectRows {
             Lang.t("Le prochain tirage de l'ennemi ne peut pas faire de Jackpot.")));
         if (target.getMaluses().getHarpoons() > 0) rows.add(new SidePanel.EffectRow(guard, null, Lang.f("Harpon x{0}",
             target.getMaluses().getHarpoons()),
-            Lang.t("Harpon"), Lang.f(Lang.plural(target.getMaluses().getHarpoons())
-                ? "À son prochain tour, l'ennemi joue {0} cartes de moins."
-                : "À son prochain tour, l'ennemi joue {0} carte de moins.", target.getMaluses().getHarpoons())));
+            Lang.t("Harpon"), Lang.n(target.getMaluses().getHarpoons(), "À son prochain tour, l'ennemi joue {0} carte de moins.",
+                "À son prochain tour, l'ennemi joue {0} cartes de moins.", target.getMaluses().getHarpoons())));
         addArchetypeRows(rows, lasting, target, guard);
     }
 
@@ -269,8 +268,9 @@ final class CombatEffectRows {
         if (lasting.isBlind()) {
             int blinds = lasting.getBlindCards();
             rows.add(new SidePanel.EffectRow(skull, null, Lang.f("Aveuglement x{0}", blinds), Lang.t("Aveuglement"),
-                Lang.f(Lang.plural(blinds) ? "Au prochain tour, {0} cartes de ta main seront faces cachées. Les Aveuglements se cumulent."
-                    : "Au prochain tour, {0} carte de ta main sera face cachée. Les Aveuglements se cumulent.", blinds)));
+                Lang.n(blinds, "Au prochain tour, {0} carte de ta main sera face cachée. Les Aveuglements se cumulent.",
+                    "Au prochain tour, {0} cartes de ta main seront faces cachées. Les Aveuglements se cumulent.",
+                    blinds)));
         }
         if (lasting.hasNugget()) rows.add(curse(skull, Lang.t("Pépite"), EnemySymbol.NUGGET, foe));
         if (lasting.getSongs() > 0) rows.add(curse(skull, Lang.f("Chant x{0}", lasting.getSongs()), EnemySymbol.SONG, foe));
@@ -316,7 +316,7 @@ final class CombatEffectRows {
         }
         if (foe.getStolenReels() > 0) {
             int stolen = foe.getStolenReels();
-            String reels = Lang.f(Lang.plural(stolen) ? "{0} rouleaux" : "{0} rouleau", stolen);
+            String reels = Lang.n(stolen, "{0} rouleau", "{0} rouleaux", stolen);
             rows.add(new SidePanel.EffectRow(skull, null, Lang.f("Vol : {0}", reels), Lang.t("Rouleaux volés"),
                 foe.getTheftTurns() > 0
                     ? Lang.f("L'ennemi t'a volé {0}. Le premier revient dans {1}.", reels, turns(foe.getTheftTurns()))

@@ -334,8 +334,8 @@ public class GameController {
                 PopupScale.SECONDARY_INTENSITY));
         }
         if (buried > 0) {
-            turnNotices.add(new EffectPopup(Lang.f(Lang.plural(buried) ? "ÉBOULEMENT : {0} CARTES DE MOINS"
-                : "ÉBOULEMENT : {0} CARTE DE MOINS", buried), EffectPopup.Style.DAMAGE, PopupScale.SECONDARY_INTENSITY));
+            turnNotices.add(new EffectPopup(Lang.n(buried, "ÉBOULEMENT : {0} CARTE DE MOINS",
+                "ÉBOULEMENT : {0} CARTES DE MOINS", buried), EffectPopup.Style.DAMAGE, PopupScale.SECONDARY_INTENSITY));
         }
         List<Card> added     = new ArrayList<>(drawn.getAddedToHand());
         List<Card> discarded = new ArrayList<>(drawn.getDiscarded());
@@ -395,7 +395,7 @@ public class GameController {
             }
             int hidden = hiddenCards.size();
             turnNotices.add(new EffectPopup(hidden >= added.size() ? Lang.t("AVEUGLEMENT : MAIN CACHÉE")
-                : Lang.f(Lang.plural(hidden) ? "AVEUGLEMENT : {0} CARTES CACHÉES" : "AVEUGLEMENT : {0} CARTE CACHÉE", hidden),
+                : Lang.n(hidden, "AVEUGLEMENT : {0} CARTE CACHÉE", "AVEUGLEMENT : {0} CARTES CACHÉES", hidden),
                 EffectPopup.Style.DAMAGE, PopupScale.SECONDARY_INTENSITY));
         }
         taxes = lasting.takeTaxes();
@@ -550,7 +550,7 @@ public class GameController {
     }
 
     private static String turnsText(int turns) {
-        return Lang.f(Lang.plural(turns) ? "{0} tours" : "{0} tour", turns);
+        return Lang.n(turns, "{0} tour", "{0} tours", turns);
     }
 
     /**

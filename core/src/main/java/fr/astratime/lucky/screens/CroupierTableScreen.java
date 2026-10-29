@@ -535,14 +535,14 @@ public class CroupierTableScreen extends CasinoMenuScreen {
             counter.setColor(machineDraft.isComplete() ? Palette.GOLD : REFUSED);
             int missing = Symbol.MACHINE_SIZE - reels;
             hint.setText(machineDraft.isComplete() ? (draft.isComplete() ? Lang.t("La machine est prête.") : Lang.t("La machine est prête. Le deck n'est pas complet."))
-                : Lang.f(Lang.plural(missing) ? "Encore {0} rouleaux à choisir." : "Encore {0} rouleau à choisir.", missing));
+                : Lang.n(missing, "Encore {0} rouleau à choisir.", "Encore {0} rouleaux à choisir.", missing));
         } else {
             int size = draft.size();
             counter.setText(size + " / " + PlayerProfile.DECK_SIZE);
             counter.setColor(draft.isComplete() ? Palette.GOLD : REFUSED);
             hint.setText(draft.isComplete() ? (machineDraft.isComplete() ? Lang.t("Le deck est prêt.") : Lang.t("Le deck est prêt. La machine n'est pas complète."))
-                : size < PlayerProfile.DECK_SIZE ? Lang.f(Lang.plural(PlayerProfile.DECK_SIZE - size)
-                    ? "Encore {0} cartes à choisir." : "Encore {0} carte à choisir.", PlayerProfile.DECK_SIZE - size)
+                : size < PlayerProfile.DECK_SIZE ? Lang.n(PlayerProfile.DECK_SIZE - size, "Encore {0} carte à choisir.",
+                    "Encore {0} cartes à choisir.", PlayerProfile.DECK_SIZE - size)
                 : Lang.t("Clic droit : retirer une carte."));
         }
 
