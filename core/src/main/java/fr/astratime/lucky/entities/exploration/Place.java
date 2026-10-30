@@ -28,17 +28,17 @@ public enum Place {
     PORT("Le Port des Contrebandiers", "Le Port",
         "Les bateaux n'apportent plus d'épices. Ils apportent des cartes truquées. Sur les quais, tout s'achète. "
             + "Même la chance.",
-        PlaceRule.SCORBUT, 50, 1_000, 10, 104, 3_000, 1_500, List.of(Dungeon.CALE, Dungeon.TAVERNE, Dungeon.PHARE, Dungeon.GALION)),
+        PlaceRule.SCORBUT, 50, 1_000, 10, 135, 3_000, 1_500, List.of(Dungeon.CALE, Dungeon.TAVERNE, Dungeon.PHARE, Dungeon.GALION)),
 
     MINES("Les Mines d'Or", "Les Mines",
         "Sous la montagne, l'or de la comète coule encore. Les mineurs creusent sans fin. Ils ont oublié la lumière. "
             + "Pas leur cupidité.",
-        PlaceRule.GRISOU, 150, 10_000, 20, 52, 12_000, 2_500, List.of(Dungeon.FILON, Dungeon.PUITS, Dungeon.FORGE, Dungeon.GOUFFRE)),
+        PlaceRule.GRISOU, 150, 10_000, 20, 78, 12_000, 2_500, List.of(Dungeon.FILON, Dungeon.PUITS, Dungeon.FORGE, Dungeon.GOUFFRE)),
 
     CASINO("Le Casino Englouti", "Le Casino",
         "Le plus grand casino du monde a sombré une nuit de jackpot. Sous l'eau, les machines tournent toujours. "
             + "Les joueurs aussi.",
-        PlaceRule.MAREE, 400, 50_000, 30, 24, 45_000, 4_000, List.of(Dungeon.BAR, Dungeon.MACHINES, Dungeon.COFFRES, Dungeon.VIP)),
+        PlaceRule.MAREE, 400, 50_000, 30, 60, 45_000, 4_000, List.of(Dungeon.BAR, Dungeon.MACHINES, Dungeon.COFFRES, Dungeon.VIP)),
 
     DESERT("Le Désert de Braise", "Le Désert",
         "Au-delà du Casino Englouti, la mer s'est retirée. Il ne reste qu'un désert brûlant. Au loin, un volcan fume. "

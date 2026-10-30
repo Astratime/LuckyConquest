@@ -951,16 +951,19 @@ public enum EnemyKind {
      * le 2026-10-25, choix d'Astra : Foire +5 et Port +12 par Épée, lieux suivants +30 %) : la Grande Roue
      * (Fête foraine), le Galion (Port), le Puits (Mines), la Salle des machines et les Coffres (Casino), l'Oasis (Désert).
      * Le Désert frappe deux fois plus fort depuis le 2026-10-30 (Astra : trop facile pour un joueur qui maîtrise ses combos).
+     * Même jour, choix d'Astra : Port x1,3, Mines x1,5, Casino x2,5, pour que le rang d'avant n'y gagne plus qu'environ
+     * 25 % des descentes avec le « joueur malin » du simulateur.
      * Les autres ennemis d'un lieu frappent à la part de leur lieu ({@link Place#getDamagePercent()}).
      */
-    static final int WHEEL_DAMAGE = 77, GALLEON_DAMAGE = 94, SHAFT_DAMAGE = 39, MACHINES_DAMAGE = 13,
-        VAULTS_DAMAGE = 35, OASIS_DAMAGE = 118;
+    static final int WHEEL_DAMAGE = 77, GALLEON_DAMAGE = 122, SHAFT_DAMAGE = 58, MACHINES_DAMAGE = 32,
+        VAULTS_DAMAGE = 87, OASIS_DAMAGE = 118;
 
     /**
      * Dégâts du Bar (Barman noyé, Sirène), en % (Astra, 2026-10-29 : le Bar frappait trop peu et ses combats
      * s'éternisaient ; 34 au lieu des 24 du Casino, simulateur : un Magnat le gagne aussi souvent que la Salle VIP).
+     * x2,5 avec le Casino le 2026-10-30.
      */
-    static final int BAR_DAMAGE = 34;
+    static final int BAR_DAMAGE = 85;
 
     /** Dégâts des ennemis des donjons de la prairie, en % (voir {@link #damagePercent()}). */
     static final int PIQUE_DAMAGE = 48, TREFLE_DAMAGE = 165, COEUR_DAMAGE = 210, CARREAU_DAMAGE = 165;
