@@ -51,12 +51,13 @@ class BonusGameTest {
     }
 
     @Test
-    void aBonusGamePaysAboutOneHundredSpinCostsOnAverage() {
+    void aBonusGamePaysAboutTwoHundredSpinCostsOnAverage() {
         Random random = new Random(1);
         long total = 0;
         int games = 20_000;
         for (int i = 0; i < games; i++) total += BonusGame.play(Symbol.classicReels(), 100, random).getTotal();
-        assertEquals(100.0, total / (double) games / 100, 5.0); // en coûts de tirage, machine classique
+        // en coûts de tirage, machine classique : ~215 depuis les 5 tirages (Astra, 2026-10-29)
+        assertEquals(215.0, total / (double) games / 100, 10.0);
     }
 
     @Test

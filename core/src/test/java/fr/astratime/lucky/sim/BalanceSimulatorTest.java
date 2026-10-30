@@ -45,11 +45,11 @@ class BalanceSimulatorTest {
     }
 
     @Test
-    void aBonusGamePaysAboutAHundredSpinCostsOnTheClassicMachine() {
+    void aBonusGamePaysAboutTwoHundredSpinCostsOnTheClassicMachine() {
         double[] totals = BalanceSimulator.bonusGames(Symbol.classicReels(), 20_000, 7L);
         double sum = 0;
         for (double total : totals) sum += total;
         double average = sum / totals.length;
-        assertTrue(average > 70 && average < 130, "moyenne " + average);
+        assertTrue(average > 170 && average < 260, "moyenne " + average);
     }
 }

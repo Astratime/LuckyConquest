@@ -494,7 +494,7 @@ public enum EnemyKind {
         List.of(Card.Suit.COEUR, Card.Suit.CARREAU, Card.Suit.PIQUE, Card.Suit.TREFLE)),
     BANDIT_MANCHOT("Bandit manchot", "BANDIT MANCHOT",
         "Une machine à sous rouillée. Trois symboles pareils : Jackpot. Il frappe cinq fois plus fort.",
-        900_000, 80, 5,
+        1_200_000, 80, 5,
         weights(EnemySymbol.SWORD, 2, EnemySymbol.SHIELD, 2, EnemySymbol.SWALLOWED_COIN, 1, EnemySymbol.ARMED_ARM, 1),
         deck(new int[] {3, 6, 9, 12, 14}, new int[] {4, 8, 12},
             new int[] {5, 9, 13}, new int[] {3, 7, 11}),
@@ -502,7 +502,7 @@ public enum EnemyKind {
         List.of(Card.Suit.COEUR, Card.Suit.CARREAU, Card.Suit.PIQUE, Card.Suit.TREFLE)),
     JACKPOT_VIVANT("Jackpot Vivant", "JACKPOT VIVANT",
         "La plus grande machine du casino. Trois symboles pareils : Jackpot. Toute la salle tremble.",
-        1_800_000, 120, 3,
+        2_400_000, 120, 3,
         weights(EnemySymbol.SWORD, 1, EnemySymbol.SHIELD, 1, EnemySymbol.RAGE, 1),
         deck(new int[] {3, 6, 9, 12, 14}, new int[] {4, 8, 12},
             new int[] {5, 9, 13}, new int[] {3, 7, 11}),
@@ -510,7 +510,7 @@ public enum EnemyKind {
         List.of(Card.Suit.COEUR, Card.Suit.CARREAU, Card.Suit.PIQUE, Card.Suit.TREFLE)),
     REQUIN("Requin", "REQUIN",
         "Il sent l'argent. Sa Morsure vide tes poches. Elle le soigne.",
-        2_500_000, 80, 5,
+        1_200_000, 80, 5,
         weights(EnemySymbol.SWORD, 2, EnemySymbol.BANK_BITE, 1, EnemySymbol.SHIELD, 1),
         deck(new int[] {3, 6, 9, 12, 14}, new int[] {4, 8, 12},
             new int[] {5, 9, 13}, new int[] {3, 7, 11}),
@@ -518,7 +518,7 @@ public enum EnemyKind {
         List.of(Card.Suit.COEUR, Card.Suit.CARREAU, Card.Suit.PIQUE, Card.Suit.TREFLE)),
     REQUIN_BANQUIER("Grand Requin Banquier", "REQUIN BANQUIER",
         "Il garde les coffres engloutis. Il dévore tes gains. Chaque pièce le soigne.",
-        5_000_000, 120, 3,
+        2_400_000, 120, 3,
         weights(EnemySymbol.BANK_BITE, 2, EnemySymbol.FANG, 1, EnemySymbol.SHIELD, 1),
         deck(new int[] {3, 6, 9, 12, 14}, new int[] {4, 8, 12},
             new int[] {5, 9, 13}, new int[] {3, 7, 11}),
@@ -824,6 +824,8 @@ public enum EnemyKind {
      *         rend bien plus fort (et encore par {@link #HARD_HP_FACTOR} en mode difficile)
      */
     public int getMaxHp(boolean hard) {
+        Place place = Place.of(this);
+        if (place != null) return (int) ((long) maxHp * place.getHpPercent() / 100);
         if (!isTower()) return maxHp;
         return maxHp * TOWER_HP_FACTOR * (hard ? HARD_HP_FACTOR : 1);
     }
@@ -926,6 +928,7 @@ public enum EnemyKind {
             case PIRATE, CAPITAINE_NOIR -> GALLEON_DAMAGE;
             case FOREUR, GRAND_FOREUR -> SHAFT_DAMAGE;
             case BANDIT_MANCHOT, JACKPOT_VIVANT -> MACHINES_DAMAGE;
+            case BARMAN_NOYE, SIRENE -> BAR_DAMAGE;
             case REQUIN, REQUIN_BANQUIER -> VAULTS_DAMAGE;
             case SCORPION, DJINN -> OASIS_DAMAGE;
             default -> {
@@ -947,10 +950,20 @@ public enum EnemyKind {
      * Dégâts des donjons réglés à part dans les autres lieux, en % (simulateur, 2026-10-24 ; relevés avec leur lieu
      * le 2026-10-25, choix d'Astra : Foire +5 et Port +12 par Épée, lieux suivants +30 %) : la Grande Roue
      * (Fête foraine), le Galion (Port), le Puits (Mines), la Salle des machines et les Coffres (Casino), l'Oasis (Désert).
+     * Le Désert frappe deux fois plus fort depuis le 2026-10-30 (Astra : trop facile pour un joueur qui maîtrise ses combos).
+     * Même jour, choix d'Astra : Port x1,3, Mines x1,5, Casino x2,5, pour que le rang d'avant n'y gagne plus qu'environ
+     * 25 % des descentes avec le « joueur malin » du simulateur.
      * Les autres ennemis d'un lieu frappent à la part de leur lieu ({@link Place#getDamagePercent()}).
      */
-    static final int WHEEL_DAMAGE = 77, GALLEON_DAMAGE = 94, SHAFT_DAMAGE = 39, MACHINES_DAMAGE = 13,
-        VAULTS_DAMAGE = 35, OASIS_DAMAGE = 59;
+    static final int WHEEL_DAMAGE = 77, GALLEON_DAMAGE = 122, SHAFT_DAMAGE = 58, MACHINES_DAMAGE = 32,
+        VAULTS_DAMAGE = 87, OASIS_DAMAGE = 118;
+
+    /**
+     * Dégâts du Bar (Barman noyé, Sirène), en % (Astra, 2026-10-29 : le Bar frappait trop peu et ses combats
+     * s'éternisaient ; 34 au lieu des 24 du Casino, simulateur : un Magnat le gagne aussi souvent que la Salle VIP).
+     * x2,5 avec le Casino le 2026-10-30.
+     */
+    static final int BAR_DAMAGE = 85;
 
     /** Dégâts des ennemis des donjons de la prairie, en % (voir {@link #damagePercent()}). */
     static final int PIQUE_DAMAGE = 48, TREFLE_DAMAGE = 165, COEUR_DAMAGE = 210, CARREAU_DAMAGE = 165;

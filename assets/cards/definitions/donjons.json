@@ -33,7 +33,7 @@
     "id": "fortune_du_roi",
     "name": "Fortune du Roi",
     "assetPath": "cards/special/fortune_du_roi.png",
-    "effects": [ { "type": "FORTUNE", "gainPercent": 7, "gainPercentPlus": 10, "attackPercent": 10, "attackCapSpins": 30 } ]
+    "effects": [ { "type": "FORTUNE", "gainPercent": 7, "gainPercentPlus": 10, "attackPercent": 10, "attackCapSpins": 7, "attackCapSpinsPlus": 10 } ]
   },
   {
     "id": "transfusion",

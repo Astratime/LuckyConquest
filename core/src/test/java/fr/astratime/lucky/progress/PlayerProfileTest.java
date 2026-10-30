@@ -128,10 +128,10 @@ class PlayerProfileTest {
         assertEquals(PlayerProfile.MAX_COPIES, profile.getOwnedCopies("guillotine"));
         assertEquals(75_000, extra.coins());
         assertEquals(3L * 50_000 + 75_000, profile.getCoins());
-        assertEquals(8_000_000L + 4_000_000L, profile.openChest("guillotine", Place.CASINO).coins(),
-            "Casino : 4 000 x 2 000, plus la moitié pour la carte en double");
-        assertEquals(15_000_000L + 7_500_000L, profile.openChest("guillotine", Place.DESERT).coins(),
-            "Désert de Braise : 5 000 x 3 000, plus la moitié");
+        assertEquals(180_000_000L + 90_000_000L, profile.openChest("guillotine", Place.CASINO).coins(),
+            "Casino : 4 000 x 45 000, plus la moitié pour la carte en double");
+        assertEquals(700_000_000L + 350_000_000L, profile.openChest("guillotine", Place.DESERT).coins(),
+            "Désert de Braise : 5 000 x 140 000, plus la moitié");
     }
 
     @Test
@@ -179,7 +179,7 @@ class PlayerProfileTest {
         assertEquals(6_400, PlayerProfile.combatReward(false, false, 32_000, Place.PRAIRIE, 1), "20 % après une défaite contre le soldat");
         assertEquals(0, PlayerProfile.combatReward(false, true, -5_000, Place.PRAIRIE, 1), "rien avec des gains négatifs");
         assertEquals(50_000, PlayerProfile.combatReward(false, true, 10_000_000, Place.PRAIRIE, 1), "au plus 500 tirages de la Prairie");
-        assertEquals(1_000_000, PlayerProfile.combatReward(false, true, 1e12, Place.CASINO, 1), "au plus 500 tirages du Casino");
+        assertEquals(22_500_000, PlayerProfile.combatReward(false, true, 1e12, Place.CASINO, 1), "au plus 500 tirages du Casino");
         assertEquals(1_000_000_000_000L, PlayerProfile.combatReward(true, true, 1e12, Place.CASINO, 1), "victoire : sans limite");
         assertEquals(3_200, PlayerProfile.combatReward(false, true, 32_000, Place.PRAIRIE, 0.5), "la moitié du donjon faite : la moitié");
         assertEquals(0, PlayerProfile.combatReward(false, false, 32_000, Place.PRAIRIE, 0), "mort au premier tour : rien");

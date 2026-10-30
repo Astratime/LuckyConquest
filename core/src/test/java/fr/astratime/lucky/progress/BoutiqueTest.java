@@ -19,7 +19,7 @@ class BoutiqueTest {
         assertEquals(10, Rank.values().length);
         assertEquals("Avare", Rank.AVARE.getTitle());
         assertEquals(new RankBonus(100, 100, 10, 70), Rank.AVARE.getBonus());
-        assertEquals(3_000_000L, Rank.AVARE.getPrice());
+        assertEquals(1_500_000L, Rank.AVARE.getPrice());
         for (int i = 1; i < Rank.values().length; i++) {
             Rank previous = Rank.values()[i - 1], rank = Rank.values()[i];
             assertTrue(rank.getPrice() > previous.getPrice(), rank.name());
@@ -34,9 +34,9 @@ class BoutiqueTest {
         assertNull(profile.getRank());
         assertEquals(RankBonus.NONE, profile.getRankBonus());
 
-        profile.addCoins(2_999_999);
+        profile.addCoins(Rank.AVARE.getPrice() - 1);
         assertFalse(profile.buyNextRank(), "pas assez de pièces");
-        profile.addCoins(1 + 7_500_000);
+        profile.addCoins(1 + Rank.PARIEUR.getPrice());
         assertTrue(profile.buyNextRank());
         assertEquals(Rank.AVARE, profile.getRank());
         assertEquals(Rank.PARIEUR, profile.getNextRank());
@@ -52,7 +52,7 @@ class BoutiqueTest {
     void thePlayerPlaysWithAnyOwnedRankAndTheChoiceIsSaved() {
         MemoryStorage storage = new MemoryStorage();
         PlayerProfile profile = profile(storage);
-        profile.addCoins(3_000_000L + 7_500_000L + 15_000_000L);
+        profile.addCoins(Rank.AVARE.getPrice() + Rank.PARIEUR.getPrice() + Rank.FLAMBEUR.getPrice());
         for (int i = 0; i < 3; i++) assertTrue(profile.buyNextRank());
         assertEquals(Rank.FLAMBEUR, profile.getActiveRank(), "un rang acheté se joue tout de suite");
 

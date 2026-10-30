@@ -1,6 +1,7 @@
 package fr.astratime.lucky.entities.effects;
 
 import fr.astratime.lucky.entities.BigNumber;
+import fr.astratime.lucky.entities.SpinEconomy;
 import fr.astratime.lucky.entities.context.CombatContext;
 import fr.astratime.lucky.entities.context.PlayContext;
 import fr.astratime.lucky.entities.context.TurnContext;
@@ -16,7 +17,8 @@ import java.util.List;
  * Fortune (donjon du Trèfle). Fortune du Roi : ajoute une part des gains dès la
  * pose, puis, au tirage, une part de ces gains gagnés s'ajoute à l'attaque.
  * Ce bonus d'attaque est limité à {@code attackCapSpins} fois le coût du tirage
- * du lieu (Astra : 30, soit 3 000 à la Prairie et 150 000 au Casino).
+ * de force du lieu (Fortune du Roi : 7, 10 en « + », Astra 2026-10-30 ; Bourse garnie : 30), et les gains y sont ramenés à ce
+ * coût : l'étirement des coûts de tirage (2026-10-29) ne change pas la force qu'ils donnent.
  * Bourse garnie : au tirage, une part de tous les gains s'ajoute à l'attaque.
  */
 public class FortuneEffect extends Effect {
@@ -40,17 +42,23 @@ public class FortuneEffect extends Effect {
         this.attackCapSpins = attackCapSpins;
     }
 
-    /** @return le bonus d'attaque {@code attack}, ramené à la limite du lieu dont le tirage coûte {@code spinCost}. */
-    int capAttack(int attack, int spinCost) {
+    /**
+     * @return le bonus d'attaque tiré de {@code gains} là où un tirage coûte {@code spinCost} : les gains sont
+     *         ramenés au coût de tirage de force du lieu ({@link SpinEconomy#powerSpinCost}), puis la limite
+     *         est {@code attackCapSpins} fois ce coût
+     */
+    int attackFrom(double gains, int spinCost) {
+        int power = SpinEconomy.powerSpinCost(spinCost);
+        int attack = BigNumber.toInt(BigNumber.percent(gains * power / spinCost, attackPercent));
         if (attackCapSpins <= 0) return attack;
-        return (int) Math.min(attack, (long) attackCapSpins * spinCost);
+        return (int) Math.min(attack, (long) attackCapSpins * power);
     }
 
     @Override
     public void onPlay(PlayContext context) {
         if (gainPercent > 0) {
             double added = context.addGainsPercent(gainPercent);
-            int attack = capAttack(BigNumber.toInt(BigNumber.percent(added, attackPercent)), context.getSpinCost());
+            int attack = attackFrom(added, context.getSpinCost());
             context.queueForSpin(new AttackEffect(attack));
             context.addPopups(List.of(
                 EffectPopup.scaled(Lang.f("GAINS +{0}", Lang.big(added)), EffectPopup.Style.GAINS, added, PopupScale.SPIN_GAINS),
@@ -64,8 +72,7 @@ public class FortuneEffect extends Effect {
     public void apply(TurnContext context) {
         if (gainPercent > 0) return; // Fortune du Roi : son attaque est mise en attente à la pose
         CombatContext combat = context.getCombatContext();
-        combat.addAttackBonus(capAttack(BigNumber.toInt(BigNumber.percent(combat.getPlayer().getGains(), attackPercent)),
-            combat.getSpinCost()), "Fortune");
+        combat.addAttackBonus(attackFrom(combat.getPlayer().getGains(), combat.getSpinCost()), "Fortune");
     }
 
     @Override

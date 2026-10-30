@@ -13,25 +13,25 @@ import fr.astratime.lucky.i18n.Lang;
 public enum Rank {
 
     AVARE("Avare", "Il garde chaque pièce.",
-        new RankBonus(100, 100, 10, 70), 1_000_000L),
+        new RankBonus(100, 100, 10, 70), 1_500_000L),
     PARIEUR("Parieur", "Il mise sans trembler.",
-        new RankBonus(200, 200, 20, 150), 5_000_000L),
+        new RankBonus(200, 200, 20, 150), 11_500_000L),
     FLAMBEUR("Flambeur", "Il brûle ses billets pour rire.",
-        new RankBonus(350, 350, 35, 250), 15_000_000L),
+        new RankBonus(350, 350, 35, 250), 46_000_000L),
     HABITUE("Habitué", "Le croupier connaît son nom.",
-        new RankBonus(500, 500, 50, 400), 30_000_000L),
+        new RankBonus(500, 500, 50, 400), 265_000_000L),
     REQUIN("Requin", "Il flaire les pigeons.",
-        new RankBonus(750, 750, 75, 550), 60_000_000L),
+        new RankBonus(1_200, 1_200, 120, 550), 550_000_000L),
     GROS_BONNET("Gros bonnet", "Sa table est toujours pleine.",
-        new RankBonus(1_000, 1_000, 100, 750), 120_000_000L),
+        new RankBonus(1_350, 1_350, 135, 750), 4_600_000_000L),
     BARON("Baron du tapis vert", "Il règne sur la salle.",
-        new RankBonus(1_400, 1_400, 140, 1_000), 225_000_000L),
+        new RankBonus(2_200, 2_200, 220, 1_000), 6_900_000_000L),
     MAGNAT("Magnat", "Il possède la moitié du casino.",
-        new RankBonus(2_000, 2_000, 200, 1_400), 450_000_000L),
+        new RankBonus(2_800, 2_800, 280, 1_400), 26_000_000_000L),
     ROI_DU_CASINO("Roi du casino", "Il possède l'autre moitié.",
-        new RankBonus(2_800, 2_800, 280, 2_000), 900_000_000L),
+        new RankBonus(5_500, 5_500, 550, 2_000), 43_000_000_000L),
     LEGENDE("Légende du Jackpot", "Les tables murmurent son nom.",
-        new RankBonus(4_000, 4_000, 400, 2_800), 1_500_000_000L);
+        new RankBonus(7_000, 7_000, 700, 2_800), 315_000_000_000L);
 
     private final String    title;
     private final String    description;

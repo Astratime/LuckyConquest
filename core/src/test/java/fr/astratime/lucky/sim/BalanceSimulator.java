@@ -31,6 +31,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
@@ -51,7 +52,7 @@ import java.util.function.BiFunction;
  *   <li><b>Tirages</b> : ce que rapporte un tirage, en coûts de tirage (gains de base :
  *       symboles, Paire et Bingo ; objectif 0 à 5 sans carte), la part
  *       des Paires et des Bingos, et du temps passé en dette ;</li>
- *   <li><b>Jeu bonus</b> : ses gains moyens, en coûts de tirage (objectif ≈ 100 sur la machine classique) ;</li>
+ *   <li><b>Jeu bonus</b> : ses gains moyens, en coûts de tirage (≈ 215 depuis les 5 tirages sur la machine classique) ;</li>
  *   <li><b>Donjons</b> : victoires et pièces gagnées (au roi) par donjon, selon le rang du joueur ;</li>
  *   <li><b>Joueur au maximum</b> : les donjons du Port, des Mines et du Casino avec le
  *       meilleur équipement (cartes « + », rouleaux rares, échoppe) et les plus hauts rangs ;</li>
@@ -106,10 +107,30 @@ public final class BalanceSimulator {
      *                    ou {@code null} pour le deck de départ
      * @param reels       sa machine
      * @param buysAtStall {@code true} s'il achète à l'échoppe pendant le combat
+     * @param upgraded    {@code true} si ses cartes sont en version « + » quand elle existe
+     * @param smart       {@code true} s'il joue en « joueur malin » ({@link #playSmartTurn}) au lieu du hasard
      */
-    record Gear(String name, Map<String, Integer> deck, List<Symbol> reels, boolean buysAtStall) {
-        static final Gear STARTER = new Gear("Deck de départ", null, Symbol.classicReels(), false);
+    record Gear(String name, Map<String, Integer> deck, List<Symbol> reels, boolean buysAtStall, boolean upgraded,
+                boolean smart) {
+        static final Gear STARTER = new Gear("Deck de départ", null, Symbol.classicReels(), false, false, false);
+
+        Gear(String name, Map<String, Integer> deck, List<Symbol> reels, boolean buysAtStall) {
+            this(name, deck, reels, buysAtStall, true, false);
+        }
     }
+
+    /**
+     * Deck du « joueur malin » (conseils d'Astra, 2026-10-30) : Coeurs pour se soigner, Piques pour les dégâts,
+     * Dans la manche (6 cartes par tour), Rayon du phare et Masque du Joker (l'ennemi passe son tour), cartes à
+     * plusieurs effets (Marteau du cordonnier, Chope, Cocktail des abysses, Pacte de sang).
+     */
+    static final Map<String, Integer> SMART_DECK = deck("1_pique", 2, "13_pique", 2, "12_pique", 1, "1_coeur", 2,
+        "13_coeur", 2, "in_the_sleeve", 2, "rayon_du_phare", 2, "masque_du_joker", 1, "marteau_du_cordonnier", 2,
+        "chope", 1, "cocktail_des_abysses", 1, "pacte_de_sang", 1, "draw_3", 1);
+
+    /** Joueur malin, cartes normales puis toutes en « + » ; il achète Bingo à l'échoppe pour un gros tour. */
+    static final Gear SMART = new Gear("Joueur malin", SMART_DECK, Symbol.classicReels(), true, false, true);
+    static final Gear SMART_PLUS = new Gear("Joueur malin +", SMART_DECK, Symbol.classicReels(), true, true, true);
 
     /** Les 11 rouleaux rares (boutique et Mine) : la machine la plus chère. */
     static final List<Symbol> RARE_REELS = List.of(Symbol.HORSESHOE, Symbol.ECU, Symbol.SWORD, Symbol.HEART,
@@ -300,7 +321,7 @@ public final class BalanceSimulator {
     private void bonusSection(StringBuilder out) {
         out.append("## 2. Jeu bonus\n\n")
             .append("Gains d'un Jeu bonus, en coûts de tirage (part fixe, sans le bonus multiplié). Objectif d'Astra : "
-                + "≈ 100 sur la machine classique.\n\n")
+                + "≈ 215 sur la machine classique (5 tirages).\n\n")
             .append("| Machine | Moyenne | Médiane | 9 sur 10 sous | Sans ligne |\n")
             .append("|---|---:|---:|---:|---:|\n");
         bonusRow(out, "Classique", Symbol.classicReels());
@@ -394,11 +415,11 @@ public final class BalanceSimulator {
             int before = turns[0];
             if (POT_PER_RUN) game.getPot().take(); // essai : une cagnotte neuve à chaque descente
             game.restart(dungeon.getSoldier());
-            boolean won = fight(game, random, gear, turns);
+            boolean won = fight(game, random, gear, turns, false);
             double effort = 0.5 * (1 - Math.max(0, game.getGameState().getEnemy().getHpRatio()));
             if (won) {
                 game.startCombat(dungeon.getKing());
-                won = fight(game, random, gear, turns);
+                won = fight(game, random, gear, turns, true);
                 effort = 0.5 + 0.5 * (1 - Math.max(0, game.getGameState().getEnemy().getHpRatio()));
             }
             played.add(new Run(won, game.getGameState().getPlayer().getGains(), turns[0] - before, won ? 1 : effort));
@@ -427,8 +448,14 @@ public final class BalanceSimulator {
      * @return {@code true} si gagné
      */
     private boolean fight(GameController game, Random random, Gear gear, int[] turns) {
+        return fight(game, random, gear, turns, false);
+    }
+
+    /** Comme {@link #fight(GameController, Random, Gear, int[])} ; {@code king} : le roi du donjon. */
+    private boolean fight(GameController game, Random random, Gear gear, int[] turns, boolean king) {
         for (int turn = 0; turn < sizes.maxTurns() && !isOver(game.getGameState()); turn++) {
-            playTurn(game, random, true, gear.buysAtStall());
+            if (gear.smart()) playSmartTurn(game, random, king);
+            else playTurn(game, random, true, gear.buysAtStall());
             turns[0]++;
         }
         return game.getGameState().getEnemy().isDefeated();
@@ -931,16 +958,16 @@ public final class BalanceSimulator {
     // -------------------------------------------------------------------------
 
     private GameController controller(RankBonus bonus, Gear gear) {
-        return new GameController(() -> gear.deck() == null ? CardLoader.loadStarterDeck(reader) : build(gear.deck()),
+        return new GameController(() -> gear.deck() == null ? CardLoader.loadStarterDeck(reader) : build(gear.deck(), gear.upgraded()),
             cards, gear.buysAtStall() ? stall : Map.of(),
             deck -> new Player("Robot", Player.BASE_HP, deck, bonus, gear.reels()));
     }
 
     /** @return les cartes de {@code deck}, chacune dans sa version « + » quand elle existe. */
-    private List<Card> build(Map<String, Integer> deck) {
+    private List<Card> build(Map<String, Integer> deck, boolean upgraded) {
         List<Card> built = new ArrayList<>();
         for (Map.Entry<String, Integer> entry : deck.entrySet()) {
-            String id = cards.apply(entry.getKey()).isUpgradable() ? Card.upgradedId(entry.getKey()) : entry.getKey();
+            String id = upgraded && cards.apply(entry.getKey()).isUpgradable() ? Card.upgradedId(entry.getKey()) : entry.getKey();
             for (int i = 0; i < entry.getValue(); i++) built.add(cards.apply(id));
         }
         return built;
@@ -968,6 +995,14 @@ public final class BalanceSimulator {
             if (game.isPlayLimitReached() || game.isHandLocked()) break;
             if (game.unplayableReason(card) != null) continue;
             game.playCard(card);
+            resolveChoice(game, random);
+        }
+        return stakeAndSpin(game);
+    }
+
+    /** Le robot répond au hasard au choix qu'une carte vient d'ouvrir (pari, roulette, rouleau truqué...). */
+    private static void resolveChoice(GameController game, Random random) {
+        {
             CardChoice choice = game.getPendingChoice();
             if (choice instanceof BetChoice) {
                 game.placeBet(pick(game.getBetOptions(), random));
@@ -979,6 +1014,81 @@ public final class BalanceSimulator {
                 game.shapeJoker(pick(game.getBetOptions(), random));
             } else if (choice instanceof fr.astratime.lucky.entities.choices.CalibrationChoice) {
                 game.calibrate(pick(game.getBetOptions(), random));
+            }
+        }
+    }
+
+    /** Cartes d'attaque du joueur malin : elles comptent pour décider d'un gros tour. */
+    private static boolean isAttackCard(Card card) {
+        String id = Card.baseId(card.getId());
+        return id.endsWith("_pique") || id.equals("marteau_du_cordonnier") || id.equals("pacte_de_sang")
+            || id.equals("pierre_a_aiguiser") || id.equals("1_coeur");
+    }
+
+    /** @return l'ordre de jeu d'une carte pour le joueur malin (petit d'abord), ou -1 s'il la garde. */
+    private static int smartOrder(GameController game, Card card, boolean king) {
+        String id = Card.baseId(card.getId());
+        Player player = game.getGameState().getPlayer();
+        switch (id) {
+            case "in_the_sleeve":
+                return game.getPlayLimit() >= 6 ? -1 : 0;
+            case "cocktail_des_abysses": case "draw_3": case "draw_2": case "joker_de_cour":
+                return 1;
+            case "rayon_du_phare": case "masque_du_joker": // l'ennemi passe son tour : gardé pour le roi ou en danger
+                return king || player.getHpRatio() < 0.5f ? 2 : -1;
+            case "pacte_de_sang":
+                return player.getHpRatio() > 0.6f ? 3 : -1;
+            case "marteau_du_cordonnier": case "chope": case "pierre_a_aiguiser":
+                return 3;
+            case "bingo":
+                return 9;
+            default:
+                return id.startsWith("1_") ? 4 : 5;
+        }
+    }
+
+    /**
+     * Un tour du « joueur malin » : il joue d'abord Dans la manche et les pioches, garde Rayon du phare et Masque
+     * du Joker pour le roi (ou quand il a moins de la moitié de ses PV), puis les cartes à plusieurs effets, les As
+     * et les autres cartes. Quand il peut encore jouer au moins 3 cartes d'attaque, il achète Bingo à l'échoppe
+     * (en gardant de quoi payer 3 tirages) et le joue en dernier. Choix (pari...) au hasard.
+     */
+    private static TurnResult playSmartTurn(GameController game, Random random, boolean king) {
+        game.drawCards();
+        Player player = game.getGameState().getPlayer();
+        boolean boughtBingo = false;
+        for (int pass = 0; pass < 2; pass++) {
+            // pass 0 : préparation (Dans la manche, pioches) ; pass 1 : le reste
+            List<Card> hand = new ArrayList<>(player.getCurrentHand());
+            Collections.shuffle(hand, random);
+            hand.sort(Comparator.comparingInt(card -> smartOrder(game, card, king)));
+            if (pass == 1 && !boughtBingo) {
+                int slots = game.getPlayLimit() - game.getCardsPlayedThisTurn();
+                long attacks = hand.stream().filter(BalanceSimulator::isAttackCard)
+                    .filter(card -> game.unplayableReason(card) == null).count();
+                if (slots >= 4 && attacks >= 3) {
+                    for (GameController.ShopOffer offer : game.getShopOffers()) {
+                        if (offer.card().getId().equals("bingo") && game.unavailableReason(offer) == null
+                            && player.getGains() - offer.price() >= 3L * game.getSpinCost()) {
+                            GameController.Purchase purchase = game.buy(offer);
+                            boughtBingo = purchase != null && purchase.addedToHand();
+                        }
+                    }
+                    hand = new ArrayList<>(player.getCurrentHand());
+                    Collections.shuffle(hand, random);
+                    hand.sort(Comparator.comparingInt(card -> smartOrder(game, card, king)));
+                }
+            }
+            for (Card card : hand) {
+                if (game.isPlayLimitReached() || game.isHandLocked()) break;
+                int order = smartOrder(game, card, king);
+                if (order < 0 || (pass == 0 && order > 1)) continue;
+                if (order == 9 && !boughtBingo) continue;
+                // garde une place pour Bingo
+                if (boughtBingo && order != 9 && game.getPlayLimit() - game.getCardsPlayedThisTurn() <= 1) continue;
+                if (game.unplayableReason(card) != null) continue;
+                game.playCard(card);
+                resolveChoice(game, random);
             }
         }
         return stakeAndSpin(game);

@@ -22,28 +22,28 @@ public enum Place {
     FOIRE("La Fête foraine", "La Foire",
         "Une fête foraine s'est installée au bord de la prairie. La nuit, les manèges tournent seuls. "
             + "Les forains, eux, trichent toujours.",
-        PlaceRule.MANEGE, 30, 300, 15, 93, 250, 1_000,
+        PlaceRule.MANEGE, 30, 300, 15, 93, 700, 1_000,
         List.of(Dungeon.CHAPITEAU, Dungeon.TRAIN_FANTOME, Dungeon.GRANDE_ROUE, Dungeon.STANDS)),
 
     PORT("Le Port des Contrebandiers", "Le Port",
         "Les bateaux n'apportent plus d'épices. Ils apportent des cartes truquées. Sur les quais, tout s'achète. "
             + "Même la chance.",
-        PlaceRule.SCORBUT, 50, 1_000, 10, 104, 500, 1_500, List.of(Dungeon.CALE, Dungeon.TAVERNE, Dungeon.PHARE, Dungeon.GALION)),
+        PlaceRule.SCORBUT, 50, 1_000, 10, 135, 3_000, 1_500, List.of(Dungeon.CALE, Dungeon.TAVERNE, Dungeon.PHARE, Dungeon.GALION)),
 
     MINES("Les Mines d'Or", "Les Mines",
         "Sous la montagne, l'or de la comète coule encore. Les mineurs creusent sans fin. Ils ont oublié la lumière. "
             + "Pas leur cupidité.",
-        PlaceRule.GRISOU, 150, 10_000, 20, 52, 1_000, 2_500, List.of(Dungeon.FILON, Dungeon.PUITS, Dungeon.FORGE, Dungeon.GOUFFRE)),
+        PlaceRule.GRISOU, 150, 10_000, 20, 78, 12_000, 2_500, List.of(Dungeon.FILON, Dungeon.PUITS, Dungeon.FORGE, Dungeon.GOUFFRE)),
 
     CASINO("Le Casino Englouti", "Le Casino",
         "Le plus grand casino du monde a sombré une nuit de jackpot. Sous l'eau, les machines tournent toujours. "
             + "Les joueurs aussi.",
-        PlaceRule.MAREE, 400, 50_000, 30, 24, 2_000, 4_000, List.of(Dungeon.BAR, Dungeon.MACHINES, Dungeon.COFFRES, Dungeon.VIP)),
+        PlaceRule.MAREE, 400, 50_000, 30, 60, 45_000, 4_000, List.of(Dungeon.BAR, Dungeon.MACHINES, Dungeon.COFFRES, Dungeon.VIP)),
 
     DESERT("Le Désert de Braise", "Le Désert",
         "Au-delà du Casino Englouti, la mer s'est retirée. Il ne reste qu'un désert brûlant. Au loin, un volcan fume. "
             + "On dit qu'un dragon y dort sur l'or de la comète.",
-        PlaceRule.SOIF, 250, 60_000, 25, 98, 3_000, 5_000,
+        PlaceRule.SOIF, 250, 60_000, 25, 196, 140_000, 5_000,
         List.of(Dungeon.CARAVANE, Dungeon.TOMBEAU, Dungeon.OASIS, Dungeon.VOLCAN));
 
     private final String        name;
@@ -63,7 +63,8 @@ public enum Place {
      * @param shieldDefense défense de base d'un Bouclier de ses ennemis (0 : celle de base)
      * @param healPercent   soin de base d'une Potion de ses ennemis, en % de leurs PV max (0 : celui de base)
      * @param damagePercent part des coups de ses ennemis qui porte, en % (la prairie la règle donjon par donjon)
-     * @param spinCost      coût d'un tirage dans ses combats, en gains
+     * @param spinCost      coût d'un tirage dans ses combats, en gains : très écarté d'un lieu à l'autre (Astra,
+     *                      2026-10-29) pour qu'un rang gagne au moins deux fois plus dans son lieu que dans celui d'avant
      * @param chestSpins    pièces du coffre de ses donjons, en coûts de tirage 
      */
     Place(String name, String shortName, String description, PlaceRule rule,
@@ -93,13 +94,43 @@ public enum Place {
     /** @return le coût d'un tirage dans ses combats, en gains (voir {@link fr.astratime.lucky.entities.SpinEconomy}). */
     public int getSpinCost() { return spinCost; }
 
+    /**
+     * @return le coût de tirage d'avant l'étirement (Astra, 2026-10-29) : la force tirée des gains (Fortune,
+     *         Bourse garnie) se compte avec lui, sinon elle grimperait avec l'économie (x47 au Désert)
+     */
+    public int getPowerSpinCost() {
+        return switch (this) {
+            case PRAIRIE -> 100;
+            case FOIRE   -> 250;
+            case PORT    -> 500;
+            case MINES   -> 1_000;
+            case CASINO  -> 2_000;
+            case DESERT  -> 3_000;
+        };
+    }
+
+    /**
+     * @return les PV de ses ennemis, en % de ceux de leur fiche : relevés comme le bonus d'attaque du rang le plus
+     *         fort prévu pour le lieu (Astra, 2026-10-30) : Mines (Gros bonnet 1 000 -> 1 350), Casino (Magnat
+     *         2 000 -> 2 800), Désert (Légende 4 000 -> 7 000,
+     *         puis doublés le 2026-10-30 : un joueur qui maîtrise ses combos battait le Volcan sans peine)
+     */
+    public int getHpPercent() {
+        return switch (this) {
+            case MINES  -> 135;
+            case CASINO -> 140;
+            case DESERT -> 350;
+            default     -> 100;
+        };
+    }
+
     /** @return les pièces du coffre de ses donjons, en coûts de tirage (Prairie 500 … Désert 5 000). */
     public int getChestSpins() { return chestSpins; }
 
-    /** @return les pièces d'un coffre de ses donjons (Prairie 50 000 … Désert 15 000 000). */
+    /** @return les pièces d'un coffre de ses donjons (Prairie 50 000 … Désert 700 000 000). */
     public long getChestCoins() { return (long) chestSpins * spinCost; }
 
-    /** Part gardée après une défaite, au plus : 500 coûts de tirage (Prairie 50 000 … Désert 1 500 000). */
+    /** Part gardée après une défaite, au plus : 500 coûts de tirage (Prairie 50 000 … Désert 70 000 000). */
     public static final int DEFEAT_CAP_SPINS = 500;
 
     /** @return les pièces gardées au plus après une défaite dans un de ses donjons. */
