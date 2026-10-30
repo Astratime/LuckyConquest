@@ -109,6 +109,20 @@ public enum Place {
         };
     }
 
+    /**
+     * @return les PV de ses ennemis, en % de ceux de leur fiche : relevés comme le bonus d'attaque du rang le plus
+     *         fort prévu pour le lieu (Astra, 2026-10-30) : Mines (Gros bonnet 1 000 -> 1 350), Casino (Magnat
+     *         2 000 -> 2 800), Désert (Légende 4 000 -> 7 000)
+     */
+    public int getHpPercent() {
+        return switch (this) {
+            case MINES  -> 135;
+            case CASINO -> 140;
+            case DESERT -> 175;
+            default     -> 100;
+        };
+    }
+
     /** @return les pièces du coffre de ses donjons, en coûts de tirage (Prairie 500 … Désert 5 000). */
     public int getChestSpins() { return chestSpins; }
 

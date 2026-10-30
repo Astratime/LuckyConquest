@@ -824,6 +824,8 @@ public enum EnemyKind {
      *         rend bien plus fort (et encore par {@link #HARD_HP_FACTOR} en mode difficile)
      */
     public int getMaxHp(boolean hard) {
+        Place place = Place.of(this);
+        if (place != null) return (int) ((long) maxHp * place.getHpPercent() / 100);
         if (!isTower()) return maxHp;
         return maxHp * TOWER_HP_FACTOR * (hard ? HARD_HP_FACTOR : 1);
     }

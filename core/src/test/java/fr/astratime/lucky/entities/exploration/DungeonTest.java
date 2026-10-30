@@ -72,8 +72,9 @@ class DungeonTest {
             assertEquals(4, order[i].getDungeons().size(), order[i].name());
             assertEquals(order[i - 1], order[i].getPrevious(), "ordre d'ouverture");
             for (Dungeon dungeon : order[i].getDungeons()) {
-                assertEquals((int) hp.get(dungeon), new Enemy(dungeon.getSoldier()).getMaxHp(), dungeon.name());
-                assertEquals(2 * hp.get(dungeon), new Enemy(dungeon.getKing()).getMaxHp(), dungeon.name());
+                int soldierHp = (int) ((long) hp.get(dungeon) * order[i].getHpPercent() / 100); // Mines x1,35 ... Désert x1,75
+                assertEquals(soldierHp, new Enemy(dungeon.getSoldier()).getMaxHp(), dungeon.name());
+                assertEquals(2 * soldierHp, new Enemy(dungeon.getKing()).getMaxHp(), dungeon.name());
                 assertTrue(dungeon.getKing().isBoss(), dungeon.name());
                 assertFalse(dungeon.getSoldier().isBoss(), dungeon.name());
                 assertEquals(order[i], Place.of(dungeon));
