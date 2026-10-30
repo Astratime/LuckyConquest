@@ -132,6 +132,15 @@ class DungeonCardsTest {
     }
 
     @Test
+    void kingsFortuneAttackFollowsThePowerSpinCostOfThePlace() {
+        // Désert : tirage à 140 000, mais la force se compte comme avant l'étirement (3 000)
+        player.addGains(2_800_000);
+        TurnContext turn = play("fortune_du_roi", 140_000);
+        assertEquals(2_996_000, player.getGains(), "+7 % de 2 800 000");
+        assertEquals(420, turn.getCombatContext().getAttackBonus(), "10 % des 196 000 gagnés, ramenés de 140 000 à 3 000");
+    }
+
+    @Test
     void upgradedKingsFortuneAddsTenPercentGainsThenFifteenPercentOfThem() {
         player.addGains(2000);
         TurnContext turn = play(Card.upgradedId("fortune_du_roi"));

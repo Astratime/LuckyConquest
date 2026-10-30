@@ -94,6 +94,21 @@ public enum Place {
     /** @return le coût d'un tirage dans ses combats, en gains (voir {@link fr.astratime.lucky.entities.SpinEconomy}). */
     public int getSpinCost() { return spinCost; }
 
+    /**
+     * @return le coût de tirage d'avant l'étirement (Astra, 2026-10-29) : la force tirée des gains (Fortune,
+     *         Bourse garnie) se compte avec lui, sinon elle grimperait avec l'économie (x47 au Désert)
+     */
+    public int getPowerSpinCost() {
+        return switch (this) {
+            case PRAIRIE -> 100;
+            case FOIRE   -> 250;
+            case PORT    -> 500;
+            case MINES   -> 1_000;
+            case CASINO  -> 2_000;
+            case DESERT  -> 3_000;
+        };
+    }
+
     /** @return les pièces du coffre de ses donjons, en coûts de tirage (Prairie 500 … Désert 5 000). */
     public int getChestSpins() { return chestSpins; }
 

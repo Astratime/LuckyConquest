@@ -1,5 +1,6 @@
 package fr.astratime.lucky.entities;
 
+import fr.astratime.lucky.entities.exploration.Place;
 import fr.astratime.lucky.i18n.Lang;
 
 import java.util.Locale;
@@ -54,6 +55,15 @@ public final class SpinEconomy {
     public static Debt debt(double gains, int spinCost) {
         if (gains >= 0) return Debt.NONE;
         return gains <= -(double) BAILIFF_SPINS * spinCost ? Debt.BAILIFF : Debt.INDEBTED;
+    }
+
+    /**
+     * @return le coût de tirage qui règle la force tirée des gains là où un tirage coûte {@code spinCost} : celui
+     *         d'avant l'étirement pour un lieu d'Exploration ({@link Place#getPowerSpinCost()}), sinon {@code spinCost}
+     */
+    public static int powerSpinCost(int spinCost) {
+        for (Place place : Place.values()) if (place.getSpinCost() == spinCost) return place.getPowerSpinCost();
+        return spinCost;
     }
 
     /** @return les gains de départ d'un combat où un tirage coûte {@code spinCost}. */
