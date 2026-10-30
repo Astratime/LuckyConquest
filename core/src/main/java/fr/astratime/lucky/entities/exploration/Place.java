@@ -43,7 +43,7 @@ public enum Place {
     DESERT("Le Désert de Braise", "Le Désert",
         "Au-delà du Casino Englouti, la mer s'est retirée. Il ne reste qu'un désert brûlant. Au loin, un volcan fume. "
             + "On dit qu'un dragon y dort sur l'or de la comète.",
-        PlaceRule.SOIF, 250, 60_000, 25, 98, 140_000, 5_000,
+        PlaceRule.SOIF, 250, 60_000, 25, 196, 140_000, 5_000,
         List.of(Dungeon.CARAVANE, Dungeon.TOMBEAU, Dungeon.OASIS, Dungeon.VOLCAN));
 
     private final String        name;
@@ -112,13 +112,14 @@ public enum Place {
     /**
      * @return les PV de ses ennemis, en % de ceux de leur fiche : relevés comme le bonus d'attaque du rang le plus
      *         fort prévu pour le lieu (Astra, 2026-10-30) : Mines (Gros bonnet 1 000 -> 1 350), Casino (Magnat
-     *         2 000 -> 2 800), Désert (Légende 4 000 -> 7 000)
+     *         2 000 -> 2 800), Désert (Légende 4 000 -> 7 000,
+     *         puis doublés le 2026-10-30 : un joueur qui maîtrise ses combos battait le Volcan sans peine)
      */
     public int getHpPercent() {
         return switch (this) {
             case MINES  -> 135;
             case CASINO -> 140;
-            case DESERT -> 175;
+            case DESERT -> 350;
             default     -> 100;
         };
     }

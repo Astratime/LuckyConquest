@@ -950,10 +950,11 @@ public enum EnemyKind {
      * Dégâts des donjons réglés à part dans les autres lieux, en % (simulateur, 2026-10-24 ; relevés avec leur lieu
      * le 2026-10-25, choix d'Astra : Foire +5 et Port +12 par Épée, lieux suivants +30 %) : la Grande Roue
      * (Fête foraine), le Galion (Port), le Puits (Mines), la Salle des machines et les Coffres (Casino), l'Oasis (Désert).
+     * Le Désert frappe deux fois plus fort depuis le 2026-10-30 (Astra : trop facile pour un joueur qui maîtrise ses combos).
      * Les autres ennemis d'un lieu frappent à la part de leur lieu ({@link Place#getDamagePercent()}).
      */
     static final int WHEEL_DAMAGE = 77, GALLEON_DAMAGE = 94, SHAFT_DAMAGE = 39, MACHINES_DAMAGE = 13,
-        VAULTS_DAMAGE = 35, OASIS_DAMAGE = 59;
+        VAULTS_DAMAGE = 35, OASIS_DAMAGE = 118;
 
     /**
      * Dégâts du Bar (Barman noyé, Sirène), en % (Astra, 2026-10-29 : le Bar frappait trop peu et ses combats
