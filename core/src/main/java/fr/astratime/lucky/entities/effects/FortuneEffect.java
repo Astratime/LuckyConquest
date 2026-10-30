@@ -17,7 +17,7 @@ import java.util.List;
  * Fortune (donjon du Trèfle). Fortune du Roi : ajoute une part des gains dès la
  * pose, puis, au tirage, une part de ces gains gagnés s'ajoute à l'attaque.
  * Ce bonus d'attaque est limité à {@code attackCapSpins} fois le coût du tirage
- * de force du lieu (Astra : 30, soit 3 000 à la Prairie et 60 000 au Casino), et les gains y sont ramenés à ce
+ * de force du lieu (Fortune du Roi : 7, 10 en « + », Astra 2026-10-30 ; Bourse garnie : 30), et les gains y sont ramenés à ce
  * coût : l'étirement des coûts de tirage (2026-10-29) ne change pas la force qu'ils donnent.
  * Bourse garnie : au tirage, une part de tous les gains s'ajoute à l'attaque.
  */

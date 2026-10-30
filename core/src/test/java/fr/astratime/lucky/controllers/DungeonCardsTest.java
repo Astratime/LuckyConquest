@@ -141,6 +141,13 @@ class DungeonCardsTest {
     }
 
     @Test
+    void kingsFortuneAttackIsCappedAtSevenPowerSpinCosts() {
+        player.addGains(1_000_000_000);
+        TurnContext turn = play("fortune_du_roi", 140_000);
+        assertEquals(21_000, turn.getCombatContext().getAttackBonus(), "Désert : 7 x 3 000 au plus (Astra, 2026-10-30)");
+    }
+
+    @Test
     void upgradedKingsFortuneAddsTenPercentGainsThenFifteenPercentOfThem() {
         player.addGains(2000);
         TurnContext turn = play(Card.upgradedId("fortune_du_roi"));
@@ -149,19 +156,19 @@ class DungeonCardsTest {
     }
 
     @Test
-    void kingsFortuneAttackIsCappedAtThirtySpinCosts() {
+    void kingsFortuneAttackIsCappedAtSevenSpinCosts() {
         player.addGains(10_000_000);
         TurnContext turn = play("fortune_du_roi");
         assertEquals(10_700_000, player.getGains(), "les gains ne sont pas limités");
-        assertEquals(3_000, turn.getCombatContext().getAttackBonus(), "Prairie : 30 x 100 au plus (au lieu de 70 000)");
+        assertEquals(700, turn.getCombatContext().getAttackBonus(), "Prairie : 7 x 100 au plus (au lieu de 70 000)");
     }
 
     @Test
     void kingsFortuneCapFollowsThePlaceAndThePlusVersion() {
         player.addGains(100_000_000);
-        assertEquals(150_000, play("fortune_du_roi", 5_000).getCombatContext().getAttackBonus(), "Casino : 30 x 5 000");
-        assertEquals(6_750, play(Card.upgradedId("fortune_du_roi"), 150).getCombatContext().getAttackBonus(),
-            "version + : 45 x le tirage");
+        assertEquals(35_000, play("fortune_du_roi", 5_000).getCombatContext().getAttackBonus(), "Tour, chapitre 6 : 7 x 5 000");
+        assertEquals(1_500, play(Card.upgradedId("fortune_du_roi"), 150).getCombatContext().getAttackBonus(),
+            "version + : 10 x le tirage");
     }
 
     @Test
