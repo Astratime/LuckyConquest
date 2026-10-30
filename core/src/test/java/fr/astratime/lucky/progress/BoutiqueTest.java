@@ -19,7 +19,7 @@ class BoutiqueTest {
         assertEquals(10, Rank.values().length);
         assertEquals("Avare", Rank.AVARE.getTitle());
         assertEquals(new RankBonus(100, 100, 10, 70), Rank.AVARE.getBonus());
-        assertEquals(2_500_000L, Rank.AVARE.getPrice());
+        assertEquals(1_500_000L, Rank.AVARE.getPrice());
         for (int i = 1; i < Rank.values().length; i++) {
             Rank previous = Rank.values()[i - 1], rank = Rank.values()[i];
             assertTrue(rank.getPrice() > previous.getPrice(), rank.name());

@@ -13,9 +13,9 @@ import fr.astratime.lucky.i18n.Lang;
 public enum Rank {
 
     AVARE("Avare", "Il garde chaque pièce.",
-        new RankBonus(100, 100, 10, 70), 2_500_000L),
+        new RankBonus(100, 100, 10, 70), 1_500_000L),
     PARIEUR("Parieur", "Il mise sans trembler.",
-        new RankBonus(200, 200, 20, 150), 29_000_000L),
+        new RankBonus(200, 200, 20, 150), 11_500_000L),
     FLAMBEUR("Flambeur", "Il brûle ses billets pour rire.",
         new RankBonus(350, 350, 35, 250), 46_000_000L),
     HABITUE("Habitué", "Le croupier connaît son nom.",
