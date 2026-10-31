@@ -563,8 +563,7 @@ public class GameScreen extends ScreenAdapter {
         enemyView.setMachine(() -> enemyMachine.raise(enemyView.getReelGroup()), enemyMachine::lower);
         frontScene = new FrontScene(projection, playArea, enemyTextures, enemyView, tooltip,
             () -> gameController.getGameState().getEnemy());
-        frontScene.setDecor(run instanceof DungeonRun dungeonRun && dungeonRun.getDungeon() == Dungeon.CALE
-            ? FrontScene.Decor.CALE : FrontScene.Decor.CASINO);
+        frontScene.setDecor(frontDecor());
         // Ce qui est dessiné à plat par-dessus la table reporte ses points à leur place à l'écran.
         tooltip.setTableProjection(projection);
         effectPopupAnimator.setTableProjection(projection);
@@ -2309,6 +2308,14 @@ public class GameScreen extends ScreenAdapter {
     }
 
     /** Libère toutes les ressources natives (Stage, polices, textures, sons) possédées par cet écran. */
+    /** @return le décor de la vue de face : la Cale, la Prairie (à la couleur du donjon), sinon le casino. */
+    private FrontScene.Decor frontDecor() {
+        if (!(run instanceof DungeonRun dungeonRun)) return FrontScene.Decor.CASINO;
+        Dungeon dungeon = dungeonRun.getDungeon();
+        if (dungeon == Dungeon.CALE) return FrontScene.Decor.CALE;
+        return dungeon.getSuit() != null ? FrontScene.Decor.prairie(dungeon.getSuit()) : FrontScene.Decor.CASINO;
+    }
+
     @Override
     public void dispose() {
         stage.dispose();

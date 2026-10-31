@@ -14,9 +14,12 @@ import com.badlogic.gdx.scenes.scene2d.InputListener;
 import com.badlogic.gdx.scenes.scene2d.Touchable;
 import com.badlogic.gdx.utils.Disposable;
 import fr.astratime.lucky.assets.EnemyTextures;
+import fr.astratime.lucky.entities.Card;
 import fr.astratime.lucky.entities.Enemy;
 import fr.astratime.lucky.entities.enemy.EnemyKind;
 
+import java.util.EnumMap;
+import java.util.Map;
 import java.util.function.Supplier;
 
 /**
@@ -26,9 +29,11 @@ import java.util.function.Supplier;
  * <p>L'ennemi respire et recopie les gestes de son petit portrait de la vue
  * classique ({@link EnemyView}, caché en vue de face) : il tremble et flashe en
  * blanc quand il est touché, luit en vert quand il se soigne, hoche la tête,
- * se penche pour frapper et bascule, vaincu. Le Rat des cales a un dessin
- * détaillé en pièces détachées (tête, corps, queue, paupière, pattes), animées
- * ici ; les autres ennemis montrent pour l'instant leur portrait, agrandi.
+ * se penche pour frapper et bascule, vaincu. Les ennemis qui ont un grand
+ * dessin ({@link BigArt} : le Rat des cales, les soldats et les rois de la
+ * Prairie) l'ont en pièces détachées (corps, tête, paupière, une pièce qui se
+ * balance, mains), animées ici ; les autres montrent pour l'instant leur
+ * portrait, agrandi.
  *
  * <p>Deux acteurs : la scène elle-même, sous la table, et les pattes de
  * l'ennemi ({@link #getPaws()}), posées sur le rebord, par-dessus la table.
@@ -36,7 +41,79 @@ import java.util.function.Supplier;
 public class FrontScene extends Actor implements Disposable {
 
     /** Décor derrière l'ennemi. */
-    public enum Decor { CALE, CASINO }
+    public enum Decor {
+        CALE("front/decor_cale.png"),
+        PRAIRIE_PIQUE("front/decor_prairie_pique.png"),
+        PRAIRIE_TREFLE("front/decor_prairie_trefle.png"),
+        PRAIRIE_COEUR("front/decor_prairie_coeur.png"),
+        PRAIRIE_CARREAU("front/decor_prairie_carreau.png"),
+        CASINO("menu/casino_interior.png");
+
+        final String path;
+
+        Decor(String path) { this.path = path; }
+
+        /** @return le décor de la Prairie pour un donjon de la couleur {@code suit}. */
+        public static Decor prairie(Card.Suit suit) {
+            return switch (suit) {
+                case PIQUE   -> PRAIRIE_PIQUE;
+                case TREFLE  -> PRAIRIE_TREFLE;
+                case COEUR   -> PRAIRIE_COEUR;
+                case CARREAU -> PRAIRIE_CARREAU;
+            };
+        }
+    }
+
+    /**
+     * Grand dessin d'un ennemi, en pièces détachées dans {@code folder} : body,
+     * head, eyelid, swing (queue, plumet, sceptre...) et paw, chacune avec sa
+     * silhouette blanche *_flash. Toutes partagent le même cadre, sauf la main.
+     *
+     * @param pivotX    pied de la pièce qui se balance (pixels du dessin, origine en haut à gauche)
+     * @param swing     son balancement, en degrés, et sa vitesse
+     * @param pawLeft   bord extérieur des mains sur le rebord, en pixels du dessin
+     */
+    private record BigArt(String folder, float pivotX, float pivotY, float swing, float swingSpeed,
+                          float pawLeft, float pawRight) {
+        static BigArt soldier(String suit) { return new BigArt("front/prairie/soldat_" + suit, 65f, 12f, 6f, 1.9f, 6.5f, 123.5f); }
+        static BigArt king(String suit)    { return new BigArt("front/prairie/roi_" + suit, 114f, 108f, 2.5f, 1.3f, 6.5f, 123.5f); }
+    }
+
+    private static final Map<EnemyKind, BigArt> BIG_ART = new EnumMap<>(Map.of(
+        EnemyKind.RAT_CALES,      new BigArt("front/rat_cales", 96f, 96f, 9f, 2.3f, 6.5f, 123.5f),
+        EnemyKind.SOLDAT_PIQUE,   BigArt.soldier("pique"),
+        EnemyKind.SOLDAT_TREFLE,  BigArt.soldier("trefle"),
+        EnemyKind.SOLDAT_COEUR,   BigArt.soldier("coeur"),
+        EnemyKind.SOLDAT_CARREAU, BigArt.soldier("carreau"),
+        EnemyKind.ROI_PIQUE,      BigArt.king("pique"),
+        EnemyKind.ROI_TREFLE,     BigArt.king("trefle"),
+        EnemyKind.ROI_COEUR,      BigArt.king("coeur"),
+        EnemyKind.ROI_CARREAU,    BigArt.king("carreau")));
+
+    /** Les textures d'un grand dessin, chargées au premier combat contre cet ennemi. */
+    private static final class Parts {
+        final BigArt  art;
+        final Texture body, head, swing, eyelid, paw, bodyFlash, headFlash, swingFlash, pawFlash;
+
+        Parts(BigArt art) {
+            this.art   = art;
+            body       = load(art.folder() + "/body.png");
+            head       = load(art.folder() + "/head.png");
+            swing      = load(art.folder() + "/swing.png");
+            eyelid     = load(art.folder() + "/eyelid.png");
+            paw        = load(art.folder() + "/paw.png");
+            bodyFlash  = load(art.folder() + "/body_flash.png");
+            headFlash  = load(art.folder() + "/head_flash.png");
+            swingFlash = load(art.folder() + "/swing_flash.png");
+            pawFlash   = load(art.folder() + "/paw_flash.png");
+        }
+
+        void dispose() {
+            for (Texture texture : new Texture[] {body, head, swing, eyelid, paw, bodyFlash, headFlash, swingFlash, pawFlash}) {
+                texture.dispose();
+            }
+        }
+    }
 
     /** Place laissée en haut de l'écran (barre de vie de l'ennemi), pour régler la taille de l'ennemi. */
     private static final float TOP_ROOM        = 40f;
@@ -45,14 +122,9 @@ public class FrontScene extends Actor implements Disposable {
     /** Respiration : amplitude (en pixels du dessin) et période, en secondes. */
     private static final float BREATH          = 1f;
     private static final float BREATH_PERIOD   = 2.4f;
-    /** Clignement de l'oeil du rat : toutes les {@code BLINK_EVERY} secondes, pendant {@code BLINK_TIME}. */
+    /** Clignement des yeux : toutes les {@code BLINK_EVERY} secondes, pendant {@code BLINK_TIME}. */
     private static final float BLINK_EVERY     = 3.1f;
     private static final float BLINK_TIME      = 0.14f;
-    /** Queue du rat : son pied (pixels du dessin, origine en haut à gauche) et son balancement, en degrés. */
-    private static final float RAT_TAIL_PIVOT_X = 96f, RAT_TAIL_PIVOT_Y = 96f;
-    private static final float TAIL_SWING      = 9f;
-    /** Pattes du rat : abscisse de leur bord extérieur, en pixels du dessin. */
-    private static final float RAT_PAW_LEFT    = 6.5f, RAT_PAW_RIGHT = 123.5f;
     /** Les gestes du petit portrait sont amplifiés d'autant sur le grand. */
     private static final float GESTURE_SCALE   = 2f;
     /** Lanternes de la Cale : centre de leur flamme, en pixels du décor (origine en haut à gauche). */
@@ -66,18 +138,9 @@ public class FrontScene extends Actor implements Disposable {
     private final EnemyView       enemyView;
     private final Supplier<Enemy> enemy;
 
-    private final Texture caleDecor   = load("front/decor_cale.png");
-    private final Texture casinoDecor = load("menu/casino_interior.png");
-    private final Texture glow        = glowTexture();
-    private final Texture ratBody     = load("front/rat_cales/body.png");
-    private final Texture ratHead     = load("front/rat_cales/head.png");
-    private final Texture ratTail     = load("front/rat_cales/tail.png");
-    private final Texture ratEyelid   = load("front/rat_cales/eyelid.png");
-    private final Texture ratPaw      = load("front/rat_cales/paw.png");
-    private final Texture ratBodyFlash = load("front/rat_cales/body_flash.png");
-    private final Texture ratHeadFlash = load("front/rat_cales/head_flash.png");
-    private final Texture ratTailFlash = load("front/rat_cales/tail_flash.png");
-    private final Texture ratPawFlash  = load("front/rat_cales/paw_flash.png");
+    private final Texture glow = glowTexture();
+    private final Map<Decor, Texture>     decors = new EnumMap<>(Decor.class);
+    private final Map<EnemyKind, Parts>   parts  = new EnumMap<>(EnemyKind.class);
 
     private final Paws paws = new Paws();
     private Decor decor = Decor.CASINO;
@@ -125,11 +188,16 @@ public class FrontScene extends Actor implements Disposable {
         time += delta;
         boolean shown = projection.isEnabled();
         setVisible(shown);
-        paws.setVisible(shown && isRat());
+        paws.setVisible(shown && parts() != null);
         if (shown) place();
     }
 
-    private boolean isRat() { return enemy.get().getKind() == EnemyKind.RAT_CALES; }
+    /** @return le grand dessin de l'ennemi du combat, ou {@code null} s'il n'en a pas (son portrait, agrandi). */
+    private Parts parts() {
+        EnemyKind kind = enemy.get().getKind();
+        BigArt art = BIG_ART.get(kind);
+        return art == null ? null : parts.computeIfAbsent(kind, k -> new Parts(art));
+    }
 
     /** Taille et place de l'ennemi : debout derrière le bord de la table, la tête sous la barre de vie. */
     private void place() {
@@ -144,9 +212,10 @@ public class FrontScene extends Actor implements Disposable {
         setBounds(enemyX, enemyY, width, height); // survol : son infobulle
     }
 
-    /** @return l'image qui donne la taille de l'ennemi : le corps du rat, ou le portrait. */
+    /** @return l'image qui donne la taille de l'ennemi : le corps de son grand dessin, ou le portrait. */
     private Texture shownTexture() {
-        return isRat() ? ratBody : enemyTextures.portrait(enemy.get().getKind());
+        Parts big = parts();
+        return big != null ? big.body : enemyTextures.portrait(enemy.get().getKind());
     }
 
     @Override
@@ -162,14 +231,16 @@ public class FrontScene extends Actor implements Disposable {
         float x = enemyX + dx, y = enemyY + dy;
         float originX = getWidth() / 2f; // vaincu, il bascule en arrière autour de ses pieds
 
-        if (isRat()) {
-            float swing = MathUtils.sin(time * 2.3f) * TAIL_SWING;
-            float tailX = RAT_TAIL_PIVOT_X * pixel, tailY = (ratTail.getHeight() - RAT_TAIL_PIVOT_Y) * pixel;
-            drawPart(batch, ratTail, ratTailFlash, x, y, tailX, tailY, swing + rotation, alpha, flash);
-            drawPart(batch, ratBody, ratBodyFlash, x, y + breath * 0.5f, originX, 0f, rotation, alpha, flash);
-            drawPart(batch, ratHead, ratHeadFlash, x, y + breath, originX, 0f, rotation, alpha, flash);
+        Parts big = parts();
+        if (big != null) {
+            BigArt art = big.art;
+            float swing = MathUtils.sin(time * art.swingSpeed()) * art.swing();
+            float pivotX = art.pivotX() * pixel, pivotY = (big.swing.getHeight() - art.pivotY()) * pixel;
+            drawPart(batch, big.swing, big.swingFlash, x, y, pivotX, pivotY, swing + rotation, alpha, flash);
+            drawPart(batch, big.body, big.bodyFlash, x, y + breath * 0.5f, originX, 0f, rotation, alpha, flash);
+            drawPart(batch, big.head, big.headFlash, x, y + breath, originX, 0f, rotation, alpha, flash);
             if (time % BLINK_EVERY < BLINK_TIME) {
-                drawPart(batch, ratEyelid, null, x, y + breath, originX, 0f, rotation, alpha, flash);
+                drawPart(batch, big.eyelid, null, x, y + breath, originX, 0f, rotation, alpha, flash);
             }
         } else {
             EnemyKind kind = enemy.get().getKind();
@@ -195,7 +266,7 @@ public class FrontScene extends Actor implements Disposable {
 
     /** Le décor couvre la zone de jeu, sans lissage, centré sur la table ; les lanternes de la Cale vacillent. */
     private void drawDecor(Batch batch, float parentAlpha) {
-        Texture texture = decor == Decor.CALE ? caleDecor : casinoDecor;
+        Texture texture = decors.computeIfAbsent(decor, d -> load(d.path));
         float worldWidth  = getStage().getViewport().getWorldWidth();
         float worldHeight = getStage().getViewport().getWorldHeight();
         float areaWidth   = worldWidth - playArea.getX();
@@ -220,7 +291,7 @@ public class FrontScene extends Actor implements Disposable {
         batch.setColor(Color.WHITE);
     }
 
-    /** Les pattes du rat, agrippées au rebord de la table, qui serrent et relâchent tour à tour. */
+    /** Les pattes (ou les mains) de l'ennemi, agrippées au rebord de la table, qui serrent et relâchent tour à tour. */
     private class Paws extends Actor {
         @Override
         public void draw(Batch batch, float parentAlpha) {
@@ -228,20 +299,22 @@ public class FrontScene extends Actor implements Disposable {
             Actor portrait  = enemyView.getPortrait();
             Color flash     = enemyView.getFlashColor();
             float alpha = parentAlpha * character.getColor().a;
-            if (alpha <= 0f) return;
-            float width = ratPaw.getWidth() * pixel, height = ratPaw.getHeight() * pixel;
+            Parts big = parts();
+            if (alpha <= 0f || big == null) return;
+            Texture paw = big.paw, pawFlash = big.pawFlash;
+            float width = paw.getWidth() * pixel, height = paw.getHeight() * pixel;
             float y = projection.getTopY() - height * 0.6f + portrait.getY() * GESTURE_SCALE;
             float x = enemyX + portrait.getX() * GESTURE_SCALE;
             boolean leftGrips = time % 0.9f < 0.45f;
-            float leftX = x + RAT_PAW_LEFT * pixel, rightX = x + RAT_PAW_RIGHT * pixel - width;
-            drawPart(batch, ratPaw, ratPawFlash, leftX, y - (leftGrips ? pixel : 0f), 0f, 0f, 0f, alpha, flash);
+            float leftX = x + big.art.pawLeft() * pixel, rightX = x + big.art.pawRight() * pixel - width;
+            drawPart(batch, paw, pawFlash, leftX, y - (leftGrips ? pixel : 0f), 0f, 0f, 0f, alpha, flash);
             batch.setColor(1f, 1f, 1f, alpha);
-            batch.draw(ratPaw, rightX, y - (leftGrips ? 0f : pixel), width, height,
-                0, 0, ratPaw.getWidth(), ratPaw.getHeight(), true, false); // patte droite : en miroir
+            batch.draw(paw, rightX, y - (leftGrips ? 0f : pixel), width, height,
+                0, 0, paw.getWidth(), paw.getHeight(), true, false); // patte droite : en miroir
             if (flash.a > 0f) {
                 batch.setColor(flash.r, flash.g, flash.b, flash.a * alpha);
-                batch.draw(ratPawFlash, rightX, y - (leftGrips ? 0f : pixel), width, height,
-                    0, 0, ratPawFlash.getWidth(), ratPawFlash.getHeight(), true, false);
+                batch.draw(pawFlash, rightX, y - (leftGrips ? 0f : pixel), width, height,
+                    0, 0, pawFlash.getWidth(), pawFlash.getHeight(), true, false);
             }
             batch.setColor(Color.WHITE);
         }
@@ -273,9 +346,8 @@ public class FrontScene extends Actor implements Disposable {
 
     @Override
     public void dispose() {
-        for (Texture texture : new Texture[] {caleDecor, casinoDecor, glow, ratBody, ratHead, ratTail, ratEyelid, ratPaw,
-            ratBodyFlash, ratHeadFlash, ratTailFlash, ratPawFlash}) {
-            texture.dispose();
-        }
+        glow.dispose();
+        for (Texture texture : decors.values()) texture.dispose();
+        for (Parts big : parts.values()) big.dispose();
     }
 }
