@@ -858,12 +858,91 @@ final class Chapter456Art {
     }
 
     /**
-     * La Machine Originelle : une immense machine à sous d'or et de lumière.
-     * Fronton en arc semé d'ampoules et d'une étoile, cinq fenêtres de
-     * rouleaux alignant des 7, un levier à boule rouge, un plateau débordant
-     * de pièces, et des étoiles qui scintillent autour.
+     * La Machine Originelle, telle qu'on la voit dans sa cinématique d'entrée
+     * ({@code MachineCutscene}) : un corps d'or carré bordé de deux rangées
+     * d'ampoules, un dôme à quatre gradins avec sa fente à pièce et un diamant
+     * blanc au sommet, cinq rouleaux arrêtés sur cinq yeux rouges qui te
+     * fixent, la ligne de gain rouge, le plateau à piles de pièces, le levier
+     * baissé sur le flanc droit, et les créneaux de pierre du sommet de la
+     * Tour sous elle.
      */
     static int[][] machineOriginelle() {
+        PixelCanvas g = new PixelCanvas(W, H);
+        int gold = rgba("ffc93a"), goldLight = rgba("ffe58a"), goldDark = rgba("b8801f"), out = rgba("140a0a");
+        int glass = rgba("f4ecdc"), red = rgba("e0283a"), redDeep = rgba("6e0f1e"), white = rgba("ffffff");
+        int bulbOn = rgba("fff6c8"), tray = rgba("2a1a10"), stone = rgba("3b3550"), stoneDark = rgba("262238");
+        int steel = rgba("d8d8e0"), steelDark = rgba("8a8a9a"), knobLight = rgba("ff8a9a");
+
+        // Les créneaux du sommet de la Tour, sous la machine.
+        g.rect(1, 36, 32, 41, stoneDark);
+        for (int x = 1; x <= 32; x += 6) g.rect(x, 34, Math.min(32, x + 3), 35, stoneDark);
+        for (int x = 2; x <= 31; x += 6) g.rect(x, 34, Math.min(31, x + 1), 35, stone);
+        for (int row = 0; row < 3; row++) {
+            int y = 37 + row * 2;
+            for (int x = 2 + (row % 2) * 2; x <= 31; x += 4) g.rect(x, y, Math.min(31, x + 2), y, stone);
+        }
+        // Le levier, baissé, derrière le flanc droit : tige d'acier, boule rouge en bas.
+        g.rect(29, 20, 30, 23, goldDark);
+        g.line(30, 22, 31, 29, steel);
+        g.line(31, 22, 32, 29, steelDark);
+        g.rect(30, 29, 32, 31, red);
+        g.set(30, 29, knobLight);
+        g.rect(32, 30, 32, 31, redDeep);
+        // Dôme à gradins, du plus large au plus étroit, et sa fente à pièce.
+        int[][] steps = {{4, 25, 13}, {7, 22, 11}, {9, 20, 9}, {12, 17, 7}};
+        for (int i = 0; i < steps.length; i++) {
+            g.rect(steps[i][0], steps[i][2], steps[i][1], steps[i][2] + 1, i % 2 == 0 ? gold : goldLight);
+        }
+        g.rect(17, 11, 19, 11, out);
+        // Le diamant blanc au sommet, qui brille.
+        g.rect(14, 3, 15, 6, white);
+        g.rect(13, 4, 16, 5, white);
+        g.set(14, 4, glass);
+        // Le corps : reflet à gauche, ombre à droite et en bas.
+        g.rect(1, 15, 28, 32, gold);
+        g.rect(1, 16, 28, 16, goldLight);
+        g.rect(1, 15, 1, 32, goldLight);
+        g.rect(27, 15, 28, 32, goldDark);
+        g.rect(1, 31, 28, 31, goldDark);
+        // Deux rangées d'ampoules, une allumée sur deux.
+        for (int x = 1; x <= 28; x++) {
+            int bulb = x % 2 == 0 ? out : (x % 4 == 1 ? bulbOn : goldDark);
+            g.set(x, 15, bulb);
+            g.set(x, 32, bulb);
+        }
+        // Les cinq rouleaux, arrêtés sur cinq yeux ronds (iris rouge cerclé d'or) ;
+        // la ligne de gain rouge de chaque côté.
+        g.rect(1, 18, 28, 26, out);
+        g.rect(2, 19, 27, 25, goldDark);
+        for (int i = 0; i < 5; i++) {
+            int x0 = 3 + i * 5;
+            g.rect(x0, 19, x0 + 3, 25, glass);
+            g.rect(x0 + 1, 20, x0 + 2, 24, out);
+            g.rect(x0, 21, x0 + 3, 23, out);
+            g.rect(x0 + 1, 21, x0 + 2, 23, red);
+            g.set(x0 + 1, 22, redDeep);
+            g.set(x0 + 2, 21, white);
+        }
+        g.rect(1, 22, 1, 22, red);
+        g.rect(28, 22, 28, 22, red);
+        // Le plateau à pièces, ses piles d'or.
+        g.rect(7, 27, 22, 30, out);
+        g.rect(8, 28, 21, 29, tray);
+        for (int i = 0; i < 7; i++) {
+            int x = 8 + i * 2;
+            g.rect(x, i % 3 == 0 ? 28 : 29, x, 29, gold);
+        }
+        return g.outlined();
+    }
+
+    /**
+     * Ancien dessin de la Machine Originelle (avant d'être redessinée comme
+     * dans sa cinématique d'entrée), gardé : une immense machine à sous d'or
+     * et de lumière. Fronton en arc semé d'ampoules et d'une étoile, cinq
+     * fenêtres de rouleaux alignant des 7, un levier à boule rouge, un plateau
+     * débordant de pièces, et des étoiles qui scintillent autour.
+     */
+    static int[][] machineOriginelleAncienne() {
         PixelCanvas g = new PixelCanvas(W, H);
         int body = rgba("ffd54a"), bodyDark = rgba("c4891e"), bodyDeep = rgba("8a5a12"), light = rgba("fff6c8");
         int panel = rgba("1a0f0f"), reel = rgba("f4efe4"), reelShade = rgba("c8c0b4"), seven = rgba("d8202c");
