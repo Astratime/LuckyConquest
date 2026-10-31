@@ -311,7 +311,7 @@ public class GameScreen extends ScreenAdapter {
     private final DamageVignette      damageVignette = new DamageVignette();
     private final Confetti            confetti;
     private final CombatEndAnimation  combatEnd;
-    private final TableTextures       tableTextures = new TableTextures();
+    private final TableTextures       tableTextures;
     private final AudioSettings       audio         = new AudioSettings();
     private final GameSounds          sounds        = new GameSounds(audio);
     /** Musique du combat (une par lieu, voir {@link CombatMusic}), gardée basse pour ne pas couvrir les bruitages. */
@@ -445,6 +445,8 @@ public class GameScreen extends ScreenAdapter {
     public GameScreen(LuckyGame luckyGame, CombatRun run) {
         this.luckyGame = luckyGame;
         this.run       = run;
+        // La table a l'air du lieu en Exploration ; ailleurs, la table de casino.
+        tableTextures  = TableTextures.forPlace(run instanceof DungeonRun dungeonRun ? Place.of(dungeonRun.getDungeon()) : null);
         SharedAssets assets = luckyGame.getAssets();
         cardTextures  = assets.cardTextures();
         enemyTextures = assets.enemyTextures();
