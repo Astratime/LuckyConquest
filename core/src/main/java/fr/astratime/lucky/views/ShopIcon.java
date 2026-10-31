@@ -26,6 +26,9 @@ public class ShopIcon extends Group {
     private static final float HEIGHT      = 108f;
     private static final float HOVER_SCALE = 1.12f;
 
+    private final Image image;
+    private final Label name;
+
     /**
      * @param stall  image de l'étal
      * @param font   police de son nom
@@ -33,9 +36,9 @@ public class ShopIcon extends Group {
      * @param onOpen clic : ouvre la boutique
      */
     public ShopIcon(Texture stall, BitmapFont font, Sound hover, Runnable onOpen) {
-        Image image = new Image(new TextureRegionDrawable(new TextureRegion(stall)));
+        image = new Image(new TextureRegionDrawable(new TextureRegion(stall)));
         image.setSize(WIDTH, HEIGHT);
-        Label name = new Label(Lang.t("ÉCHOPPE"), new Label.LabelStyle(font, Color.WHITE));
+        name = new Label(Lang.t("ÉCHOPPE"), new Label.LabelStyle(font, Color.WHITE));
         name.pack();
         name.setPosition((WIDTH - name.getWidth()) / 2f, 0f);
         image.setPosition(0f, name.getHeight());
@@ -67,4 +70,15 @@ public class ShopIcon extends Group {
             }
         });
     }
+
+    /**
+     * Vue de face : l'étal est dessiné en volume sur la table ({@link TableProps}) ;
+     * l'icône ne garde que son nom et sa zone cliquable.
+     */
+    public void setFrontView(boolean frontView) {
+        image.getColor().a = frontView ? 0f : 1f;
+    }
+
+    /** @return la hauteur du nom, sous l'étal. */
+    public float getNameHeight() { return name.getHeight(); }
 }

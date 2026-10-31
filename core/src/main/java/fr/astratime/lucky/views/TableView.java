@@ -56,7 +56,7 @@ public class TableView {
 
     // Machine à sous et rangée de cartes
     private static final float REEL_BOTTOM_GAP = 24f;  // entre le rebord et la machine
-    private static final float REEL_FRAME_PAD  = 18f;  // carrosserie autour des rouleaux
+    static final float REEL_FRAME_PAD  = 18f;  // carrosserie autour des rouleaux
     /** Teinte du cadre de la machine en surchauffe. */
     private static final Color OVERHEAT_TINT   = new Color(1f, 0.55f, 0.45f, 1f);
     private static final float HAND_GAP        = 40f;  // entre la machine et la rangée de cartes

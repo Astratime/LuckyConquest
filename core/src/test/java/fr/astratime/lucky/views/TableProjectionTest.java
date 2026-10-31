@@ -49,4 +49,22 @@ class TableProjectionTest {
         p.setEnabled(false);
         assertEquals(new Vector2(900f, 500f), p.toScreen(900f, 500f), "vue classique : rien ne bouge");
     }
+
+    @Test
+    void pointsOnTheTableKeepTheirPlaceAndVolumesStandUpright() {
+        TableProjection p = projection();
+        Vector2 out = new Vector2();
+        for (float x = 360f; x < 1580f; x += 211f) {
+            for (float y = 110f; y < 1000f; y += 149f) {
+                Vector2 flat = p.project(new Vector2(x, y));
+                p.project(x, y, 0f, out);
+                assertEquals(flat.x, out.x, 0.05f);
+                assertEquals(flat.y, out.y, 0.05f);
+            }
+        }
+        Vector2 raised = p.project(965f, 300f, 50f, new Vector2());
+        Vector2 foot = p.project(new Vector2(965f, 300f));
+        assertEquals(foot.x, raised.x, 0.05f, "les volumes restent droits");
+        assertEquals(foot.y + 50f * p.scaleAt(965f, 300f), raised.y, 0.05f, "et montent à la taille de la table");
+    }
 }

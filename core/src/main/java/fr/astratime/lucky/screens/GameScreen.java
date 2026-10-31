@@ -154,6 +154,8 @@ import fr.astratime.lucky.views.ProjectedLayer;
 import fr.astratime.lucky.views.FrontScene;
 import fr.astratime.lucky.views.Billboard;
 import fr.astratime.lucky.views.RisingMachine;
+import fr.astratime.lucky.views.SolidPainter;
+import fr.astratime.lucky.views.TableProps;
 import fr.astratime.lucky.views.Tooltip;
 
 import java.util.ArrayList;
@@ -269,7 +271,6 @@ public class GameScreen extends ScreenAdapter {
     private static final float LAST_DRAW_DELAY       = 1.2f;
     /** Vue de face : inclinaison des éléments debout sur la table (hauteur / largeur ; 1 : bien droit). */
     private static final float CARD_TILT  = 0.92f;
-    private static final float PILE_TILT  = 0.8f;
     private static final float BADGE_TILT = 0.9f;
     /** Vue de face : couleur de la caisse des machines à sous du joueur et de l'ennemi. */
     private static final Color PLAYER_MACHINE = Color.valueOf("9c1c2cff");
@@ -377,7 +378,10 @@ public class GameScreen extends ScreenAdapter {
      * Vue de face : ce qui se tient debout sur la table, face au joueur, rangée par
      * rangée (du fond vers nous) ; en vue classique, ces groupes ne changent rien.
      */
-    private final Billboard enemyPilesStand, enemyReelsStand, enemyStand, shopStand, pilesStand, reelsStand, handStand;
+    private final Billboard enemyReelsStand, enemyStand, shopStand, reelsStand, handStand;
+    /** Vue de face : les volumes posés sur la table (decks, défausses, échoppe). */
+    private final SolidPainter  solids;
+    private final TableProps    props;
     /** Vue de face : les machines à sous qui sortent de la table au tirage. */
     private final RisingMachine playerMachine, enemyMachine;
     private final SidePanel  sidePanel;
@@ -463,16 +467,15 @@ public class GameScreen extends ScreenAdapter {
         Fireworks.Sounds fireworkSounds = new Fireworks.Sounds(sounds.fireworkLaunch, sounds.fireworkBurst);
         table      = new TableView(playArea, tableTextures, CARD_WIDTH, CARD_HEIGHT);
         tableLayer = new ProjectedLayer(projection, table::drawOpaqueMask);
-        enemyPilesStand = new Billboard(projection, PILE_TILT, () -> new Vector2(playArea.getCenterX(), table.getEnemyPilesY()));
         enemyReelsStand = new Billboard(projection, BADGE_TILT,
             () -> new Vector2(playArea.getCenterX(), table.getEnemyReelWindow().y));
         enemyStand      = new Billboard(projection, CARD_TILT, () -> new Vector2(playArea.getCenterX(), table.getEnemyCardRowY()));
-        pilesStand      = new Billboard(projection, PILE_TILT, () -> new Vector2(playArea.getCenterX(), table.getPilesY()));
         reelsStand      = new Billboard(projection, BADGE_TILT, () -> new Vector2(playArea.getCenterX(), table.getReelRowY()));
         handStand       = new Billboard(projection, CARD_TILT, () -> new Vector2(playArea.getCenterX(), table.getHandRowY()));
-        playerMachine   = new RisingMachine(projection, table::getPlayerReelWindow, table::getPlayerReelCount,
+        solids          = new SolidPainter(projection, hudTextures.pixel);
+        playerMachine   = new RisingMachine(solids, table::getPlayerReelWindow, table::getPlayerReelCount,
             hudTextures.pixel, PLAYER_MACHINE);
-        enemyMachine    = new RisingMachine(projection, table::getEnemyReelWindow, table::getEnemyReelCount,
+        enemyMachine    = new RisingMachine(solids, table::getEnemyReelWindow, table::getEnemyReelCount,
             hudTextures.pixel, ENEMY_MACHINE);
         enemyView  = new EnemyView(table, enemyTextures, pileFont, tooltip, effectPopupAnimator,
             sounds.cardDeal, sounds.cardFlip, sounds.reelSpin, sounds.reelStop,
@@ -549,6 +552,11 @@ public class GameScreen extends ScreenAdapter {
         pileOverlay.setOnInspect(this::showCardDetail);
         shopIcon = new ShopIcon(hudTextures.shop, shopFont, sounds.shopHover, this::openShop);
         shopStand = new Billboard(projection, 1f, () -> new Vector2(shopIcon.getX() + shopIcon.getWidth() / 2f, shopIcon.getY()));
+        props     = new TableProps(solids, shopIcon);
+        props.addPile(enemyView.getDeckPile());    // du fond vers le joueur
+        props.addPile(enemyView.getDiscardPile());
+        props.addPile(piles.deck());
+        props.addPile(piles.discard());
         enemyView.setMachine(() -> enemyMachine.raise(enemyView.getReelGroup()), enemyMachine::lower);
         frontScene = new FrontScene(projection, playArea, enemyTextures, enemyView, tooltip,
             () -> gameController.getGameState().getEnemy());
@@ -599,12 +607,13 @@ public class GameScreen extends ScreenAdapter {
         stage.addActor(frontScene);             // vue de face : décor et ennemi en grand, derrière la table
         tableLayer.addActor(table.getActor());  // le dessus de la table (en perspective en vue de face)
         tableLayer.addActor(slots.getActor());  // les rouleaux, couchés sur la table au repos
+        tableLayer.addActor(enemyView.getDeckPile());    // les piles, sur leur emplacement :
+        tableLayer.addActor(enemyView.getDiscardPile()); // en vue de face, des volumes (props)
+        piles.addTo(tableLayer);
         stage.addActor(tableLayer);
         stage.addActor(frontScene.getPaws());   // vue de face : les pattes de l'ennemi sur le rebord
+        stage.addActor(props);                  // vue de face : piles et échoppe en volume
         // Debout sur la table, du fond vers le joueur ; les machines sortent de la table au tirage.
-        enemyPilesStand.addActor(enemyView.getDeckPile());
-        enemyPilesStand.addActor(enemyView.getDiscardPile());
-        stage.addActor(enemyPilesStand);
         stage.addActor(enemyMachine);
         enemyReelsStand.addActor(enemyView.getDefenseBadge());
         stage.addActor(enemyReelsStand);
@@ -615,8 +624,6 @@ public class GameScreen extends ScreenAdapter {
         handStand.addActor(aspirationPanel);
         handStand.addActor(hand.getActor());
         stage.addActor(handStand);
-        piles.addTo(pilesStand);
-        stage.addActor(pilesStand);
         reelsStand.addActor(playerShield);
         spinControls.addTo(reelsStand);
         stage.addActor(reelsStand);
@@ -2135,7 +2142,8 @@ public class GameScreen extends ScreenAdapter {
         float columnCenter = discard.getX() + discard.getWidth() / 2f;
         float gapBottom    = discard.getY() + discard.getHeight();
         float gapTop       = table.getEnemyPilesY();
-        shopIcon.setPosition(columnCenter - shopIcon.getWidth() / 2f,
+        float shift = projection.isEnabled() ? TableProps.STALL_SHIFT : 0f; // vue de face : l'étal s'écarte du rebord
+        shopIcon.setPosition(columnCenter - shift - shopIcon.getWidth() / 2f,
             (gapBottom + gapTop) / 2f - shopIcon.getHeight() / 2f);
     }
 
@@ -2264,6 +2272,12 @@ public class GameScreen extends ScreenAdapter {
         if (front == projection.isEnabled()) return;
         projection.setEnabled(front);
         enemyView.setFrontView(front);
+        enemyView.getDeckPile().setFrontView(front);
+        enemyView.getDiscardPile().setFrontView(front);
+        piles.deck().setFrontView(front);
+        piles.discard().setFrontView(front);
+        shopIcon.setFrontView(front);
+        placeShopIcon();
         playerMachine.putAway();
         enemyMachine.putAway();
         // Vue de face : les rouleaux de l'ennemi se couchent sur la table comme ceux du joueur.
@@ -2296,6 +2310,7 @@ public class GameScreen extends ScreenAdapter {
         tableTextures.dispose();
         tableLayer.dispose();
         frontScene.dispose();
+        props.dispose();
         tooltip.dispose();
         enemyView.dispose();
         hud.dispose();

@@ -6,6 +6,9 @@ Produit, en pixel art à la taille 1 (le jeu les agrandit sans lissage) :
   assets/front/rat_cales/*.png        le Rat des cales en pièces détachées, animées par le jeu
                                       (corps, tête, paupière, queue, patte) et leurs silhouettes
                                       blanches (*_flash.png) pour le flash quand il est touché.
+  assets/front/props/*.png            les faces des volumes posés sur la table : tranches des
+                                      piles de cartes, et l'étal de l'échoppe (comptoir, dessus
+                                      garni, marchandises, auvent rayé et son lambrequin).
 
 Toutes les pièces du rat partagent le même cadre (CANVAS) : le jeu les superpose
 au même point, puis décale la tête (respiration), fait osciller la queue autour
@@ -210,6 +213,116 @@ def decor_cale():
     return Image.fromarray(a.astype(np.uint8)).convert('RGB')
 
 
+# ---------------------------------------------------------------------------- volumes sur la table
+
+WOOD, WOODD, WOODL = (150, 96, 52), (98, 60, 32), (182, 124, 70)
+RED, REDD, CREAM, CREAMD = (204, 44, 52), (150, 28, 40), (242, 230, 206), (206, 190, 164)
+GOODS = [(214, 52, 52), (246, 196, 60), (70, 170, 76), (236, 128, 44), (150, 70, 170)]
+
+
+def card_edges():
+    """Tranche d'une pile : une ligne claire par carte, une ombre entre deux."""
+    im = Image.new('RGBA', (4, 64))
+    for y in range(64):
+        c = (238, 230, 212) if y % 2 == 0 else (168, 158, 140)
+        for x in range(4):
+            im.putpixel((x, y), c + (255,))
+    return im
+
+
+def stall_front():
+    """Devant du comptoir : caisse en planches, montants aux coins."""
+    w, h = 64, 22
+    im = Image.new('RGBA', (w, h), WOOD + (255,))
+    d = ImageDraw.Draw(im)
+    for y in (7, 14):
+        d.line([(0, y), (w, y)], fill=WOODD)
+    for y in (1, 8, 15):
+        d.line([(4, y), (w - 5, y)], fill=WOODL)
+    for x0 in (0, w - 5):
+        d.rectangle([x0, 0, x0 + 4, h - 1], fill=WOODD)
+        d.line([(x0 + 1, 1), (x0 + 1, h - 2)], fill=WOOD)
+    for x in (10, 32, 53):
+        for y in (4, 11, 18):
+            d.point((x, y), fill=(60, 36, 20))
+    d.rectangle([0, 0, w - 1, h - 1], outline=OUTLINE)
+    return im
+
+
+def stall_top():
+    """Dessus du comptoir garni : planches et paniers de fruits vus d'en haut."""
+    w, h = 64, 20
+    im = Image.new('RGBA', (w, h), WOODL + (255,))
+    d = ImageDraw.Draw(im)
+    for y in (6, 13):
+        d.line([(0, y), (w, y)], fill=WOOD)
+    for i, c in enumerate(GOODS):
+        x0 = 4 + i * 12
+        d.rectangle([x0, 4, x0 + 9, 14], fill=WOODD)
+        for fx, fy in ((x0 + 2, 6), (x0 + 6, 6), (x0 + 4, 10), (x0 + 2, 11), (x0 + 6, 11)):
+            d.rectangle([fx, fy, fx + 2, fy + 2], fill=c)
+            d.point((fx, fy), fill=tuple(min(255, v + 60) for v in c))
+    d.rectangle([0, 0, w - 1, h - 1], outline=OUTLINE)
+    return im
+
+
+def stall_goods():
+    """Marchandises debout sur le comptoir : bocaux, bouteilles, pyramides de fruits."""
+    w, h = 64, 14
+    im = Image.new('RGBA', (w, h), (0, 0, 0, 0))
+    d = ImageDraw.Draw(im)
+    x = 3
+    for i, c in enumerate(GOODS * 2):
+        kind = i % 3
+        light = tuple(min(255, v + 70) for v in c)
+        if kind == 0:  # bocal
+            d.rectangle([x, 5, x + 5, 12], fill=c)
+            d.rectangle([x + 1, 3, x + 4, 4], fill=WOODD)
+            d.line([(x + 1, 6), (x + 1, 10)], fill=light)
+            x += 8
+        elif kind == 1:  # bouteille
+            d.rectangle([x, 6, x + 3, 12], fill=c)
+            d.rectangle([x + 1, 2, x + 2, 5], fill=c)
+            d.point((x + 1, 7), fill=light)
+            x += 6
+        else:  # pyramide de fruits
+            for fx, fy in ((x, 9), (x + 3, 9), (x + 1, 6)):
+                d.rectangle([fx, fy, fx + 2, fy + 2], fill=c)
+                d.point((fx, fy), fill=light)
+            x += 7
+        if x > w - 8:
+            break
+    return outline(im)
+
+
+def stall_awning():
+    """Toile de l'auvent, rayée rouge et crème (le bas de l'image est le bord avant)."""
+    w, h = 32, 24
+    im = Image.new('RGBA', (w, h))
+    for y in range(h):
+        for x in range(w):
+            red = (x // 4) % 2 == 0
+            c = RED if red else CREAM
+            if y > h - 4 or x % 4 == 3:
+                c = REDD if red else CREAMD
+            im.putpixel((x, y), c + (255,))
+    return im
+
+
+def stall_valance():
+    """Lambrequin, le bord festonné qui pend devant l'auvent."""
+    w, h = 32, 8
+    im = Image.new('RGBA', (w, h), (0, 0, 0, 0))
+    for x in range(w):
+        red = (x // 4) % 2 == 0
+        c = RED if red else CREAM
+        k = x % 4
+        bottom = h - 1 if k in (1, 2) else h - 3
+        for y in range(0, bottom + 1):
+            im.putpixel((x, y), (REDD if (red and y == bottom) else (CREAMD if y == bottom else c)) + (255,))
+    return outline(im)
+
+
 def main():
     rat_dir = os.path.join(ROOT, 'rat_cales')
     os.makedirs(rat_dir, exist_ok=True)
@@ -219,6 +332,12 @@ def main():
         img.save(os.path.join(rat_dir, name + '.png'))
         flash(img).save(os.path.join(rat_dir, name + '_flash.png'))
     rat_eyelid().save(os.path.join(rat_dir, 'eyelid.png'))
+    props_dir = os.path.join(ROOT, 'props')
+    os.makedirs(props_dir, exist_ok=True)
+    for name, img in {'card_edges': card_edges(), 'stall_front': stall_front(), 'stall_top': stall_top(),
+                      'stall_goods': stall_goods(), 'stall_awning': stall_awning(),
+                      'stall_valance': stall_valance()}.items():
+        img.save(os.path.join(props_dir, name + '.png'))
 
 
 if __name__ == '__main__':

@@ -38,6 +38,7 @@ public class TableProjection {
     /** Homographie table vers écran, et son inverse (matrices 3x3, par lignes). */
     private final float[]   forward = new float[9];
     private final float[]   inverse = new float[9];
+    private final Vector2   scratch = new Vector2();
 
     /** @return {@code true} en vue de face. */
     public boolean isEnabled() { return enabled; }
@@ -63,6 +64,21 @@ public class TableProjection {
         // Ramène d'abord la table au carré unité.
         multiply(forward, new float[] {1f / width, 0f, -x / width, 0f, 1f / height, -y / height, 0f, 0f, 1f}, forward);
         invert(forward, inverse);
+
+    }
+
+    /**
+     * Point à la hauteur {@code z} au-dessus du point {@code (x, y)} de la table
+     * (négatif : dessous) vers l'écran. Les volumes posés sur la table (piles,
+     * échoppe, machines à sous) restent droits, comme les cartes debout : on
+     * monte de {@code z}, à la taille de la table à cet endroit.
+     *
+     * @return {@code out}, modifié
+     */
+    public Vector2 project(float x, float y, float z, Vector2 out) {
+        float scale = scaleAt(x, y);
+        project(out.set(x, y));
+        return out.set(out.x, out.y + z * scale);
     }
 
     /** @return le rectangle de la table dans le Stage (ne pas modifier). */
@@ -105,8 +121,8 @@ public class TableProjection {
 
     /** @return l'agrandissement (horizontal) de la table au point {@code (x, y)} : 1 au bord du joueur, moins au loin. */
     public float scaleAt(float x, float y) {
-        Vector2 left = project(new Vector2(x - 5f, y)), right = project(new Vector2(x + 5f, y));
-        return (right.x - left.x) / 10f;
+        float left = apply(forward, scratch.set(x - 5f, y)).x;
+        return (apply(forward, scratch.set(x + 5f, y)).x - left) / 10f;
     }
 
     private static Vector2 apply(float[] m, Vector2 p) {

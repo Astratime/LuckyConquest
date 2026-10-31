@@ -7,7 +7,7 @@ import com.badlogic.gdx.scenes.scene2d.Group;
 import java.util.function.Supplier;
 
 /**
- * Vue de face : des éléments « debout » sur la table (cartes, piles, échoppe,
+ * Vue de face : des éléments « debout » sur la table (cartes, nom de l'échoppe,
  * Mise, bouclier…), tournés vers le joueur au lieu d'être couchés dans la
  * perspective. Le groupe est posé au point de la table {@link #anchor} (son
  * pied, en bas au milieu), à la taille de la table à cet endroit (plus petit
@@ -25,8 +25,6 @@ public class Billboard extends Group {
     protected final TableProjection projection;
     private final float             tilt;
     private final Supplier<Vector2> anchor;
-    /** Décalage vertical à l'écran (une machine qui sort de la table), en unités du Stage. */
-    protected float                 lift;
 
     /** @param anchor pied du groupe sur la table (coordonnées de la table à plat) */
     public Billboard(TableProjection projection, float tilt, Supplier<Vector2> anchor) {
@@ -59,7 +57,7 @@ public class Billboard extends Group {
         Vector2 screen = projection.project(foot.cpy());
         float   scale  = projection.scaleAt(foot.x, foot.y);
         setOrigin(foot.x, foot.y);
-        setPosition(screen.x - foot.x, screen.y - foot.y + lift);
+        setPosition(screen.x - foot.x, screen.y - foot.y);
         setScale(scale, scale * tilt);
     }
 

@@ -4,7 +4,10 @@ import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
+import com.badlogic.gdx.math.Rectangle;
+import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.Group;
+import com.badlogic.gdx.scenes.scene2d.Touchable;
 import com.badlogic.gdx.scenes.scene2d.ui.Image;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
@@ -35,7 +38,13 @@ public class CardPileView extends Group {
     /** Couleurs du libellé : nom en crème, nombre de cartes en doré (comme les textes du panneau latéral). */
     private static final String NAME_COLOR  = Palette.TEXT_BODY.toString();
     private static final String COUNT_COLOR = Palette.TEXT_TITLE.toString();
+    private final BitmapFont  font;
+    private final Texture     cardBack;
     private       int         count;
+    /** Vue de face : la pile est dessinée en volume par {@link PileSolid} ; ici, rien que la zone cliquable. */
+    private       boolean     frontView;
+    /** Vue de face : la zone cliquable monte au-dessus de la carte du dessous (le volume de la pile). */
+    private static final float FRONT_HIT_EXTRA = 40f;
 
     /**
      * @param name            nom affiché au-dessus de la pile (ex : "Deck")
@@ -46,6 +55,8 @@ public class CardPileView extends Group {
         this.name       = name;
         this.cardWidth  = cardWidth;
         this.cardHeight = cardHeight;
+        this.font       = font;
+        this.cardBack   = cardBackTexture;
 
         for (int i = 0; i < STACK_SIZE; i++) {
             Image card = new Image(new TextureRegionDrawable(new TextureRegion(cardBackTexture)));
@@ -69,12 +80,48 @@ public class CardPileView extends Group {
         for (int i = 0; i < STACK_SIZE; i++) {
             Image card = stack.get(i);
             card.setVisible(i < visible);
-            card.getColor().a = count == 0 ? EMPTY_ALPHA : 1f;
+            card.getColor().a = frontView ? 0f : (count == 0 ? EMPTY_ALPHA : 1f);
         }
-        label.setText("[#" + NAME_COLOR + "]" + name + " [#" + COUNT_COLOR + "]" + count); // police à balises de couleur
+        label.setText(getLabelText()); // police à balises de couleur
         label.pack();
         label.setPosition((getWidth() - label.getWidth()) / 2f, getHeight() + LABEL_MARGIN);
     }
+
+    /**
+     * Vue de face : les cartes et le nom ne sont plus dessinés ici (la pile est
+     * un volume posé sur la table, voir {@link PileSolid}) ; la zone cliquable reste.
+     */
+    public void setFrontView(boolean frontView) {
+        this.frontView = frontView;
+        for (Image card : stack) card.getColor().a = frontView ? 0f : (count == 0 ? EMPTY_ALPHA : 1f);
+        label.setVisible(!frontView);
+    }
+
+    @Override
+    public Actor hit(float x, float y, boolean touchable) {
+        if (frontView && touchable && getTouchable() == Touchable.enabled && isVisible()
+            && x >= 0f && x < getWidth() && y >= 0f && y < getHeight() + FRONT_HIT_EXTRA) {
+            return this;
+        }
+        return super.hit(x, y, touchable);
+    }
+
+    /** @return la place de la pile sur la table (une carte, au milieu de l'emplacement), coordonnées du Stage. */
+    public Rectangle getFootprint(Rectangle out) {
+        float shift = (STACK_SIZE - 1) * STACK_OFFSET / 2f;
+        return out.set(getX() + shift, getY() + shift, cardWidth, cardHeight);
+    }
+
+    /** @return le nom et le nombre de cartes, avec les balises de couleur de la police. */
+    public String getLabelText() {
+        return "[#" + NAME_COLOR + "]" + name + " [#" + COUNT_COLOR + "]" + count;
+    }
+
+    /** @return la police du nom. */
+    public BitmapFont getFont() { return font; }
+
+    /** @return le dos des cartes. */
+    public Texture getCardBack() { return cardBack; }
 
     /** @return le nombre de cartes actuellement affiché. */
     public int getCount() { return count; }

@@ -667,10 +667,10 @@ public class EnemyView implements Disposable {
     public Actor getDefenseBadge() { return defense; }
 
     /** @return sa pile de pioche (vue de face : posée debout sur la table, à sa place). */
-    public Actor getDeckPile() { return deckPile; }
+    public CardPileView getDeckPile() { return deckPile; }
 
     /** @return sa défausse. */
-    public Actor getDiscardPile() { return discardPile; }
+    public CardPileView getDiscardPile() { return discardPile; }
 
     /** @return ses rouleaux (vue de face : posés sur la table, ou dans sa machine pendant son lancer). */
     public Group getReelGroup() { return reelGroup; }
