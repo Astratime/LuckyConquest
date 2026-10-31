@@ -615,7 +615,6 @@ public class GameScreen extends ScreenAdapter {
         tableLayer.addActor(enemyView.getDiscardPile()); // en vue de face, des volumes (props)
         piles.addTo(tableLayer);
         stage.addActor(tableLayer);
-        stage.addActor(frontScene.getPaws());   // vue de face : les pattes de l'ennemi sur le rebord
         stage.addActor(props);                  // vue de face : piles et échoppe en volume
         // Debout sur la table, du fond vers le joueur ; les machines sortent de la table au tirage.
         stage.addActor(enemyMachine);

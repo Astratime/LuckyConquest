@@ -40,6 +40,8 @@ public class EnemyTextures implements Disposable {
     private final Map<EnemySymbol, Texture> symbols = new EnumMap<>(EnemySymbol.class);
     private final Map<EnemyKind, Texture>   portraits = new EnumMap<>(EnemyKind.class);
     private final Map<EnemyKind, Texture>   flashes   = new EnumMap<>(EnemyKind.class);
+    /** Portraits aux yeux fermés (vue de face : l'ennemi cligne des yeux), quand on trouve ses yeux. */
+    private final Map<EnemyKind, Texture>   blinks    = new EnumMap<>(EnemyKind.class);
     private final CardTextures              cards;
     /** Exploration : coffre au trésor (fermé, ouvert), carte de la prairie et entrée de chaque donjon. */
     public final Texture                    chestClosed;
@@ -60,6 +62,12 @@ public class EnemyTextures implements Disposable {
         flashes.put(EnemyKind.CROUPIER, croupierFlash);
         portraits.put(EnemyKind.ENTRAINEMENT, croupier); // le même croupier, en mode Entraînement
         flashes.put(EnemyKind.ENTRAINEMENT, croupierFlash);
+        int[][] croupierBlink = PortraitBlink.closeEyes(croupierGrid);
+        if (croupierBlink != null) {
+            Texture blink = texture(croupierBlink, false);
+            blinks.put(EnemyKind.CROUPIER, blink);
+            blinks.put(EnemyKind.ENTRAINEMENT, blink);
+        }
         addPortrait(EnemyKind.GARDIEN, EnemyPortraits.gardien());
         addPortrait(EnemyKind.SANGSUE, EnemyPortraits.sangsue());
         addPortrait(EnemyKind.BRETTEUR, EnemyPortraits.bretteur());
@@ -126,6 +134,8 @@ public class EnemyTextures implements Disposable {
     private void addPortrait(EnemyKind kind, int[][] grid) {
         portraits.put(kind, texture(grid, false));
         flashes.put(kind, texture(grid, true));
+        int[][] closed = PortraitBlink.closeEyes(grid);
+        if (closed != null) blinks.put(kind, texture(closed, false));
     }
 
     /** @return la texture du symbole {@code symbol} (16 x 16 pixels). */
@@ -133,6 +143,9 @@ public class EnemyTextures implements Disposable {
 
     /** @return le portrait de l'ennemi {@code kind}. */
     public Texture portrait(EnemyKind kind) { return portraits.get(kind); }
+
+    /** @return le portrait de {@code kind} aux yeux fermés, ou {@code null} si on n'a pas trouvé ses yeux. */
+    public Texture portraitBlink(EnemyKind kind) { return blinks.get(kind); }
 
     /** @return la silhouette blanche du portrait de l'ennemi {@code kind}. */
     public Texture portraitFlash(EnemyKind kind) { return flashes.get(kind); }
@@ -430,6 +443,7 @@ public class EnemyTextures implements Disposable {
     public void dispose() {
         portraits.values().forEach(Texture::dispose); // le croupier compris
         flashes.values().forEach(Texture::dispose);
+        new java.util.HashSet<>(blinks.values()).forEach(Texture::dispose); // le croupier une seule fois
         symbols.values().forEach(Texture::dispose);
         chapterArt.values().forEach(Texture::dispose);
         gates.values().forEach(Texture::dispose);

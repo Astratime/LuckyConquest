@@ -11,7 +11,6 @@ import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.InputListener;
-import com.badlogic.gdx.scenes.scene2d.Touchable;
 import com.badlogic.gdx.utils.Disposable;
 import fr.astratime.lucky.assets.EnemyTextures;
 import fr.astratime.lucky.entities.exploration.Dungeon;
@@ -23,20 +22,15 @@ import java.util.Map;
 import java.util.function.Supplier;
 
 /**
- * Vue de face du combat : le décor du lieu, et l'ennemi en grand, debout
+ * Vue de face du combat : le décor du donjon, et l'ennemi en grand, debout
  * derrière la table vue en perspective ({@link TableProjection}).
  *
- * <p>L'ennemi respire et recopie les gestes de son petit portrait de la vue
- * classique ({@link EnemyView}, caché en vue de face) : il tremble et flashe en
- * blanc quand il est touché, luit en vert quand il se soigne, hoche la tête,
- * se penche pour frapper et bascule, vaincu. Les ennemis qui ont un grand
- * dessin ({@link BigArt} : le Rat des cales, les soldats et les rois de la
- * Prairie) l'ont en pièces détachées (corps, tête, paupière, une pièce qui se
- * balance, mains), animées ici ; les autres montrent pour l'instant leur
- * portrait, agrandi.
- *
- * <p>Deux acteurs : la scène elle-même, sous la table, et les pattes de
- * l'ennemi ({@link #getPaws()}), posées sur le rebord, par-dessus la table.
+ * <p>L'ennemi est son portrait de la vue classique, agrandi, et animé ici : il
+ * respire (la tête un peu plus que le corps), se balance doucement, tourne la
+ * tête de temps en temps et cligne des yeux ({@link EnemyTextures#portraitBlink}).
+ * Il recopie aussi les gestes de son petit portrait ({@link EnemyView}, caché en
+ * vue de face) : il tremble et flashe en blanc quand il est touché, luit en vert
+ * quand il se soigne, hoche la tête, se penche pour frapper et bascule, vaincu.
  */
 public class FrontScene extends Actor implements Disposable {
 
@@ -116,85 +110,22 @@ public class FrontScene extends Actor implements Disposable {
         }
     }
 
-    /**
-     * Grand dessin d'un ennemi, en pièces détachées dans {@code folder} : body,
-     * head, eyelid, swing (queue, plumet, sceptre...) et paw, chacune avec sa
-     * silhouette blanche *_flash. Toutes partagent le même cadre, sauf la main.
-     *
-     * @param pivotX    pied de la pièce qui se balance (pixels du dessin, origine en haut à gauche)
-     * @param swing     son balancement, en degrés, et sa vitesse
-     * @param pawLeft   bord extérieur des mains sur le rebord, en pixels du dessin
-     */
-    private record BigArt(String folder, float pivotX, float pivotY, float swing, float swingSpeed,
-                          float pawLeft, float pawRight) {
-        static BigArt soldier(String suit) { return new BigArt("front/prairie/soldat_" + suit, 65f, 12f, 6f, 1.9f, 6.5f, 123.5f); }
-        static BigArt king(String suit)    { return new BigArt("front/prairie/roi_" + suit, 114f, 108f, 2.5f, 1.3f, 6.5f, 123.5f); }
-        static BigArt enemy(String name, float pivotX, float pivotY, float swing, float speed) {
-            return new BigArt("front/enemies/" + name, pivotX, pivotY, swing, speed, 6.5f, 123.5f);
-        }
-        /** Un objet tenu debout dans la main droite, qui se balance un peu autour d'elle. */
-        static BigArt held(String name) { return enemy(name, 114f, 108f, 4f, 1.5f); }
-    }
-
-    private static final Map<EnemyKind, BigArt> BIG_ART = new EnumMap<>(EnemyKind.class);
-
-    static {
-        BIG_ART.put(EnemyKind.RAT_CALES,      new BigArt("front/rat_cales", 96f, 96f, 9f, 2.3f, 6.5f, 123.5f));
-        BIG_ART.put(EnemyKind.SOLDAT_PIQUE,   BigArt.soldier("pique"));
-        BIG_ART.put(EnemyKind.SOLDAT_TREFLE,  BigArt.soldier("trefle"));
-        BIG_ART.put(EnemyKind.SOLDAT_COEUR,   BigArt.soldier("coeur"));
-        BIG_ART.put(EnemyKind.SOLDAT_CARREAU, BigArt.soldier("carreau"));
-        BIG_ART.put(EnemyKind.ROI_PIQUE,      BigArt.king("pique"));
-        BIG_ART.put(EnemyKind.ROI_TREFLE,     BigArt.king("trefle"));
-        BIG_ART.put(EnemyKind.ROI_COEUR,      BigArt.king("coeur"));
-        BIG_ART.put(EnemyKind.ROI_CARREAU,    BigArt.king("carreau"));
-        // Ennemis des lieux (tools/front/generate_big_enemies.py) : objet tenu, plume, bandelette, queue, levier.
-        BIG_ART.put(EnemyKind.CLOWN,          BigArt.held("clown"));
-        BIG_ART.put(EnemyKind.SQUELETTE,      BigArt.enemy("squelette", 73f, 18f, 8f, 2f));
-        BIG_ART.put(EnemyKind.FORAIN,         BigArt.held("forain"));
-        BIG_ART.put(EnemyKind.BONIMENTEUR,    BigArt.held("bonimenteur"));
-        BIG_ART.put(EnemyKind.BUVEUR,         BigArt.enemy("buveur", 114f, 108f, 7f, 1.1f));
-        BIG_ART.put(EnemyKind.PIRATE,         BigArt.held("pirate"));
-        BIG_ART.put(EnemyKind.CHERCHEUR_OR,   BigArt.held("chercheur_or"));
-        BIG_ART.put(EnemyKind.FORGERON,       BigArt.held("forgeron"));
-        BIG_ART.put(EnemyKind.BARMAN_NOYE,    BigArt.enemy("barman_noye", 114f, 108f, 5f, 0.9f));
-        BIG_ART.put(EnemyKind.BANDIT_MANCHOT, BigArt.enemy("bandit_manchot", 108f, 44f, 6f, 1.6f));
-        BIG_ART.put(EnemyKind.MOMIE,          BigArt.enemy("momie", 81f, 52f, 10f, 1.4f));
-        BIG_ART.put(EnemyKind.SALAMANDRE,     BigArt.enemy("salamandre", 96f, 100f, 7f, 2f));
-    }
-
-    /** Les textures d'un grand dessin, chargées au premier combat contre cet ennemi. */
-    private static final class Parts {
-        final BigArt  art;
-        final Texture body, head, swing, eyelid, paw, bodyFlash, headFlash, swingFlash, pawFlash;
-
-        Parts(BigArt art) {
-            this.art   = art;
-            body       = load(art.folder() + "/body.png");
-            head       = load(art.folder() + "/head.png");
-            swing      = load(art.folder() + "/swing.png");
-            eyelid     = load(art.folder() + "/eyelid.png");
-            paw        = load(art.folder() + "/paw.png");
-            bodyFlash  = load(art.folder() + "/body_flash.png");
-            headFlash  = load(art.folder() + "/head_flash.png");
-            swingFlash = load(art.folder() + "/swing_flash.png");
-            pawFlash   = load(art.folder() + "/paw_flash.png");
-        }
-
-        void dispose() {
-            for (Texture texture : new Texture[] {body, head, swing, eyelid, paw, bodyFlash, headFlash, swingFlash, pawFlash}) {
-                texture.dispose();
-            }
-        }
-    }
-
     /** Place laissée en haut de l'écran (barre de vie de l'ennemi), pour régler la taille de l'ennemi. */
     private static final float TOP_ROOM        = 40f;
     /** Part de la hauteur de l'ennemi cachée derrière le rebord de la table. */
     private static final float HIDDEN_PART     = 0.06f;
-    /** Respiration : amplitude (en pixels du dessin) et période, en secondes. */
-    private static final float BREATH          = 1f;
-    private static final float BREATH_PERIOD   = 2.4f;
+    /** Respiration : amplitude (en pixels du portrait) et période, en secondes. */
+    private static final float BREATH          = 0.6f;
+    private static final float BREATH_PERIOD   = 2.6f;
+    /** La tête (le haut du portrait) bouge plus que le corps ; elle déborde d'un peu sur le corps. */
+    private static final float HEAD_PART       = 0.5f;
+    private static final int   HEAD_OVERLAP    = 2;
+    /** Balancement de tout le corps, en degrés, et sa période. */
+    private static final float SWAY            = 1.2f;
+    private static final float SWAY_PERIOD     = 5.3f;
+    /** La tête se tourne d'un pixel : toutes les {@code LOOK_EVERY} secondes, pendant {@code LOOK_TIME}. */
+    private static final float LOOK_EVERY      = 4.7f;
+    private static final float LOOK_TIME       = 1.1f;
     /** Clignement des yeux : toutes les {@code BLINK_EVERY} secondes, pendant {@code BLINK_TIME}. */
     private static final float BLINK_EVERY     = 3.1f;
     private static final float BLINK_TIME      = 0.14f;
@@ -217,9 +148,7 @@ public class FrontScene extends Actor implements Disposable {
 
     private final Texture glow = glowTexture();
     private final Map<Decor, Texture>     decors = new EnumMap<>(Decor.class);
-    private final Map<EnemyKind, Parts>   parts  = new EnumMap<>(EnemyKind.class);
 
-    private final Paws paws = new Paws();
     private Decor decor = Decor.CASINO;
     private float time;
 
@@ -238,7 +167,6 @@ public class FrontScene extends Actor implements Disposable {
         this.enemyTextures = enemyTextures;
         this.enemyView     = enemyView;
         this.enemy         = enemy;
-        paws.setTouchable(Touchable.disabled);
         addListener(new InputListener() {
             @Override
             public void enter(InputEvent event, float x, float y, int pointer, Actor fromActor) {
@@ -253,9 +181,6 @@ public class FrontScene extends Actor implements Disposable {
         });
     }
 
-    /** @return les pattes de l'ennemi, à ajouter au Stage juste après la table. */
-    public Actor getPaws() { return paws; }
-
     /** Choisit le décor du lieu du combat. */
     public void setDecor(Decor decor) { this.decor = decor; }
 
@@ -265,15 +190,7 @@ public class FrontScene extends Actor implements Disposable {
         time += delta;
         boolean shown = projection.isEnabled();
         setVisible(shown);
-        paws.setVisible(shown && parts() != null);
         if (shown) place();
-    }
-
-    /** @return le grand dessin de l'ennemi du combat, ou {@code null} s'il n'en a pas (son portrait, agrandi). */
-    private Parts parts() {
-        EnemyKind kind = enemy.get().getKind();
-        BigArt art = BIG_ART.get(kind);
-        return art == null ? null : parts.computeIfAbsent(kind, k -> new Parts(art));
     }
 
     /** Taille et place de l'ennemi : debout derrière le bord de la table, la tête sous la barre de vie. */
@@ -289,10 +206,9 @@ public class FrontScene extends Actor implements Disposable {
         setBounds(enemyX, enemyY, width, height); // survol : son infobulle
     }
 
-    /** @return l'image qui donne la taille de l'ennemi : le corps de son grand dessin, ou le portrait. */
+    /** @return le portrait de l'ennemi, qui donne sa taille. */
     private Texture shownTexture() {
-        Parts big = parts();
-        return big != null ? big.body : enemyTextures.portrait(enemy.get().getKind());
+        return enemyTextures.portrait(enemy.get().getKind());
     }
 
     @Override
@@ -308,36 +224,49 @@ public class FrontScene extends Actor implements Disposable {
         float x = enemyX + dx, y = enemyY + dy;
         float originX = getWidth() / 2f; // vaincu, il bascule en arrière autour de ses pieds
 
-        Parts big = parts();
-        if (big != null) {
-            BigArt art = big.art;
-            float swing = MathUtils.sin(time * art.swingSpeed()) * art.swing();
-            float pivotX = art.pivotX() * pixel, pivotY = (big.swing.getHeight() - art.pivotY()) * pixel;
-            drawPart(batch, big.swing, big.swingFlash, x, y, pivotX, pivotY, swing + rotation, alpha, flash);
-            drawPart(batch, big.body, big.bodyFlash, x, y + breath * 0.5f, originX, 0f, rotation, alpha, flash);
-            drawPart(batch, big.head, big.headFlash, x, y + breath, originX, 0f, rotation, alpha, flash);
-            if (time % BLINK_EVERY < BLINK_TIME) {
-                drawPart(batch, big.eyelid, null, x, y + breath, originX, 0f, rotation, alpha, flash);
-            }
-        } else {
-            EnemyKind kind = enemy.get().getKind();
-            drawPart(batch, enemyTextures.portrait(kind), enemyTextures.portraitFlash(kind), x, y + breath, originX, 0f,
-                rotation, alpha, flash);
-        }
+        EnemyKind kind = enemy.get().getKind();
+        Texture portraitTexture = enemyTextures.portrait(kind), flashTexture = enemyTextures.portraitFlash(kind);
+        Texture blink = enemyTextures.portraitBlink(kind);
+        boolean blinking = blink != null && time % BLINK_EVERY < BLINK_TIME;
+        rotation += MathUtils.sin(time * MathUtils.PI2 / SWAY_PERIOD) * SWAY;
+        // Le corps, puis la tête par-dessus, qui respire plus fort et se tourne de temps en temps.
+        int split = Math.round(portraitTexture.getHeight() * HEAD_PART);
+        float look = lookOffset() * pixel;
+        drawSlice(batch, portraitTexture, flashTexture, split, portraitTexture.getHeight(), x, y + breath * 0.5f,
+            originX, rotation, alpha, flash);
+        drawSlice(batch, blinking ? blink : portraitTexture, flashTexture, 0, split + HEAD_OVERLAP, x + look, y + breath,
+            originX, rotation, alpha, flash);
         batch.setColor(Color.WHITE);
     }
 
-    /** Une pièce de l'ennemi en {@code (x, y)}, puis sa silhouette par-dessus quand elle flashe. */
-    private void drawPart(Batch batch, Texture texture, Texture silhouette, float x, float y, float originX, float originY,
-                          float rotation, float alpha, Color flash) {
-        float width = texture.getWidth() * pixel, height = texture.getHeight() * pixel;
+    /** @return le décalage de la tête qui se tourne (en pixels du portrait) : vers la gauche, puis la droite. */
+    private float lookOffset() {
+        float t = time % (LOOK_EVERY * 2f);
+        float side = t < LOOK_EVERY ? -1f : 1f;
+        t %= LOOK_EVERY;
+        if (t > LOOK_TIME) return 0f;
+        return side * MathUtils.sin(t / LOOK_TIME * MathUtils.PI);
+    }
+
+    /**
+     * Les rangées {@code [top, bottom)} du portrait (comptées depuis le haut) à
+     * leur place quand le portrait a son coin bas gauche en {@code (x, y)}, puis
+     * la même tranche de sa silhouette quand il flashe. Toutes les tranches
+     * tournent autour du même point (les pieds).
+     */
+    private void drawSlice(Batch batch, Texture texture, Texture silhouette, int top, int bottom, float x, float y,
+                           float originX, float rotation, float alpha, Color flash) {
+        int rows = Math.min(bottom, texture.getHeight()) - top;
+        float width = texture.getWidth() * pixel, height = rows * pixel;
+        float sliceY = y + (texture.getHeight() - top - rows) * pixel;
+        float originY = y - sliceY; // les pieds du portrait
         batch.setColor(1f, 1f, 1f, alpha);
-        batch.draw(texture, x, y, originX, originY, width, height, 1f, 1f, rotation,
-            0, 0, texture.getWidth(), texture.getHeight(), false, false);
+        batch.draw(texture, x, sliceY, originX, originY, width, height, 1f, 1f, rotation,
+            0, top, texture.getWidth(), rows, false, false);
         if (silhouette != null && flash.a > 0f) {
             batch.setColor(flash.r, flash.g, flash.b, flash.a * alpha);
-            batch.draw(silhouette, x, y, originX, originY, width, height, 1f, 1f, rotation,
-                0, 0, silhouette.getWidth(), silhouette.getHeight(), false, false);
+            batch.draw(silhouette, x, sliceY, originX, originY, width, height, 1f, 1f, rotation,
+                0, top, silhouette.getWidth(), rows, false, false);
         }
     }
 
@@ -369,35 +298,6 @@ public class FrontScene extends Actor implements Disposable {
         batch.setColor(Color.WHITE);
     }
 
-    /** Les pattes (ou les mains) de l'ennemi, agrippées au rebord de la table, qui serrent et relâchent tour à tour. */
-    private class Paws extends Actor {
-        @Override
-        public void draw(Batch batch, float parentAlpha) {
-            Actor character = enemyView.getCharacter();
-            Actor portrait  = enemyView.getPortrait();
-            Color flash     = enemyView.getFlashColor();
-            float alpha = parentAlpha * character.getColor().a;
-            Parts big = parts();
-            if (alpha <= 0f || big == null) return;
-            Texture paw = big.paw, pawFlash = big.pawFlash;
-            float width = paw.getWidth() * pixel, height = paw.getHeight() * pixel;
-            float y = projection.getTopY() - height * 0.6f + portrait.getY() * GESTURE_SCALE;
-            float x = enemyX + portrait.getX() * GESTURE_SCALE;
-            boolean leftGrips = time % 0.9f < 0.45f;
-            float leftX = x + big.art.pawLeft() * pixel, rightX = x + big.art.pawRight() * pixel - width;
-            drawPart(batch, paw, pawFlash, leftX, y - (leftGrips ? pixel : 0f), 0f, 0f, 0f, alpha, flash);
-            batch.setColor(1f, 1f, 1f, alpha);
-            batch.draw(paw, rightX, y - (leftGrips ? 0f : pixel), width, height,
-                0, 0, paw.getWidth(), paw.getHeight(), true, false); // patte droite : en miroir
-            if (flash.a > 0f) {
-                batch.setColor(flash.r, flash.g, flash.b, flash.a * alpha);
-                batch.draw(pawFlash, rightX, y - (leftGrips ? 0f : pixel), width, height,
-                    0, 0, pawFlash.getWidth(), pawFlash.getHeight(), true, false);
-            }
-            batch.setColor(Color.WHITE);
-        }
-    }
-
     private static Texture load(String path) {
         Texture texture = new Texture(Gdx.files.internal(path));
         texture.setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest);
@@ -426,6 +326,5 @@ public class FrontScene extends Actor implements Disposable {
     public void dispose() {
         glow.dispose();
         for (Texture texture : decors.values()) texture.dispose();
-        for (Parts big : parts.values()) big.dispose();
     }
 }
