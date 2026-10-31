@@ -4,7 +4,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-/** La Machine Originelle tire son levier et cligne des yeux une fois toutes les 10 secondes. */
+/** La Machine Originelle tire son levier et ses yeux clignotent une fois toutes les 10 secondes. */
 class MachineAnimationTest {
 
     @Test
@@ -19,12 +19,13 @@ class MachineAnimationTest {
     }
 
     @Test
-    void eyesBlinkOncePerCycle() {
-        assertEquals(Chapter456Art.LIDS_OPEN, EnemyTextures.machineLids(8.9f));
-        assertEquals(Chapter456Art.LIDS_HALF, EnemyTextures.machineLids(9.03f));
-        assertEquals(Chapter456Art.LIDS_CLOSED, EnemyTextures.machineLids(9.15f));
-        assertEquals(Chapter456Art.LIDS_HALF, EnemyTextures.machineLids(9.28f));
-        assertEquals(Chapter456Art.LIDS_OPEN, EnemyTextures.machineLids(9.5f));
-        assertEquals(Chapter456Art.LIDS_CLOSED, EnemyTextures.machineLids(19.15f));
+    void eyesFlashTwiceOncePerCycle() {
+        assertEquals(Chapter456Art.EYES_NORMAL, EnemyTextures.machineEyes(8.9f));
+        assertEquals(Chapter456Art.EYES_LIT, EnemyTextures.machineEyes(9.05f));
+        assertEquals(Chapter456Art.EYES_BLAZE, EnemyTextures.machineEyes(9.2f));
+        assertEquals(Chapter456Art.EYES_NORMAL, EnemyTextures.machineEyes(9.45f));
+        assertEquals(Chapter456Art.EYES_BLAZE, EnemyTextures.machineEyes(9.7f));
+        assertEquals(Chapter456Art.EYES_NORMAL, EnemyTextures.machineEyes(10f));
+        assertEquals(Chapter456Art.EYES_BLAZE, EnemyTextures.machineEyes(19.2f));
     }
 }

@@ -866,20 +866,20 @@ final class Chapter456Art {
      * sur le flanc droit.
      */
     static int[][] machineOriginelle() {
-        return machineOriginelle(LEVER_UP, LIDS_OPEN);
+        return machineOriginelle(LEVER_UP, EYES_NORMAL);
     }
 
     /** Positions du levier de la Machine Originelle : levé (au repos), à mi-course, baissé. */
     static final int LEVER_UP = 0, LEVER_HALF = 1, LEVER_DOWN = 2;
-    /** Paupières sur ses cinq yeux : ouvertes, mi-closes, fermées. */
-    static final int LIDS_OPEN = 0, LIDS_HALF = 1, LIDS_CLOSED = 2;
+    /** Lumière de ses cinq yeux : normale, allumée, éclatante (ils clignotent). */
+    static final int EYES_NORMAL = 0, EYES_LIT = 1, EYES_BLAZE = 2;
 
     /**
      * Une image de la Machine Originelle animée en combat : son levier en
-     * position {@code lever} ({@link #LEVER_UP}...) et ses paupières en position
-     * {@code lids} ({@link #LIDS_OPEN}...).
+     * position {@code lever} ({@link #LEVER_UP}...) et ses yeux plus ou moins
+     * allumés, {@code eyes} ({@link #EYES_NORMAL}...).
      */
-    static int[][] machineOriginelle(int lever, int lids) {
+    static int[][] machineOriginelle(int lever, int eyes) {
         PixelCanvas g = new PixelCanvas(W, H);
         int gold = rgba("ffc93a"), goldLight = rgba("ffe58a"), goldDark = rgba("b8801f"), out = rgba("140a0a");
         int glass = rgba("f4ecdc"), red = rgba("e0283a"), redDeep = rgba("6e0f1e"), white = rgba("ffffff");
@@ -924,25 +924,25 @@ final class Chapter456Art {
         }
         // Les cinq rouleaux, arrêtés sur cinq yeux rouges cerclés de noir ;
         // la ligne de gain rouge de chaque côté.
+        // Quand ils clignotent, l'iris s'allume, sa lueur rougit la vitre du rouleau.
+        int iris  = eyes == EYES_BLAZE ? rgba("ffd27a") : eyes == EYES_LIT ? rgba("ff5a4a") : red;
+        int pupil = eyes == EYES_BLAZE ? rgba("fff6c8") : eyes == EYES_LIT ? rgba("ffb08a") : redDeep;
+        int pane  = eyes == EYES_BLAZE ? rgba("ff9a8a") : eyes == EYES_LIT ? rgba("ffd0c4") : glass;
+        int ring  = eyes == EYES_BLAZE ? rgba("8a1020") : out;
+        int line  = eyes == EYES_NORMAL ? red : rgba("ff8a6a");
         g.rect(1, 19, 28, 27, out);
         g.rect(2, 20, 27, 26, goldDark);
         for (int i = 0; i < 5; i++) {
             int x0 = 3 + i * 5;
-            g.rect(x0, 20, x0 + 3, 26, glass);
-            g.rect(x0 + 1, 21, x0 + 2, 25, out);
-            g.rect(x0, 22, x0 + 3, 24, out);
-            g.rect(x0 + 1, 22, x0 + 2, 24, red);
-            g.set(x0 + 1, 23, redDeep);
+            g.rect(x0, 20, x0 + 3, 26, pane);
+            g.rect(x0 + 1, 21, x0 + 2, 25, ring);
+            g.rect(x0, 22, x0 + 3, 24, ring);
+            g.rect(x0 + 1, 22, x0 + 2, 24, iris);
+            g.set(x0 + 1, 23, pupil);
             g.set(x0 + 2, 22, white);
-            if (lids != LIDS_OPEN) {                       // la paupière d'or qui descend
-                int edge = lids == LIDS_HALF ? 23 : 25;
-                g.rect(x0, 20, x0 + 3, edge - 1, gold);
-                g.rect(x0, 20, x0 + 3, 20, goldLight);
-                g.rect(x0, edge, x0 + 3, edge, out);
-            }
         }
-        g.set(1, 23, red);
-        g.set(28, 23, red);
+        g.set(1, 23, line);
+        g.set(28, 23, line);
         // Le plateau à pièces, ses piles d'or.
         g.rect(7, 31, 22, 36, out);
         g.rect(8, 32, 21, 35, tray);

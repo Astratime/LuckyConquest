@@ -40,7 +40,7 @@ public class EnemyTextures implements Disposable {
     private final Map<EnemySymbol, Texture> symbols = new EnumMap<>(EnemySymbol.class);
     private final Map<EnemyKind, Texture>   portraits = new EnumMap<>(EnemyKind.class);
     private final Map<EnemyKind, Texture>   flashes   = new EnumMap<>(EnemyKind.class);
-    /** Images de la Machine Originelle animée, par position du levier puis des paupières (voir {@link #portrait(EnemyKind, float)}). */
+    /** Images de la Machine Originelle animée, par position du levier puis lumière des yeux (voir {@link #portrait(EnemyKind, float)}). */
     private final Texture[][] machineFrames = new Texture[3][3];
     private final Texture[][] machineFlashes = new Texture[3][3];
     private final CardTextures              cards;
@@ -124,14 +124,14 @@ public class EnemyTextures implements Disposable {
         addPortrait(EnemyKind.BANQUEROUTE, Chapter456Art.banqueroute());
         addPortrait(EnemyKind.TEMPS_MORT, Chapter456Art.tempsMort());
         for (int lever = 0; lever < 3; lever++) {
-            for (int lids = 0; lids < 3; lids++) {
-                int[][] grid = Chapter456Art.machineOriginelle(lever, lids);
-                machineFrames[lever][lids]  = texture(grid, false);
-                machineFlashes[lever][lids] = texture(grid, true);
+            for (int eyes = 0; eyes < 3; eyes++) {
+                int[][] grid = Chapter456Art.machineOriginelle(lever, eyes);
+                machineFrames[lever][eyes]  = texture(grid, false);
+                machineFlashes[lever][eyes] = texture(grid, true);
             }
         }
-        portraits.put(EnemyKind.MACHINE_ORIGINELLE, machineFrames[Chapter456Art.LEVER_UP][Chapter456Art.LIDS_OPEN]);
-        flashes.put(EnemyKind.MACHINE_ORIGINELLE, machineFlashes[Chapter456Art.LEVER_UP][Chapter456Art.LIDS_OPEN]);
+        portraits.put(EnemyKind.MACHINE_ORIGINELLE, machineFrames[Chapter456Art.LEVER_UP][Chapter456Art.EYES_NORMAL]);
+        flashes.put(EnemyKind.MACHINE_ORIGINELLE, machineFlashes[Chapter456Art.LEVER_UP][Chapter456Art.EYES_NORMAL]);
     }
 
     private void addPortrait(EnemyKind kind, int[][] grid) {
@@ -148,25 +148,25 @@ public class EnemyTextures implements Disposable {
     /** @return la silhouette blanche du portrait de l'ennemi {@code kind}. */
     public Texture portraitFlash(EnemyKind kind) { return flashes.get(kind); }
 
-    /** Durée d'un cycle de la Machine Originelle en combat : elle tire son levier une fois, cligne des yeux une fois. */
+    /** Durée d'un cycle de la Machine Originelle en combat : elle tire son levier une fois, ses yeux clignotent une fois. */
     public static final float MACHINE_CYCLE = 10f;
-    /** Moments du cycle où elle tire son levier puis cligne des yeux (le premier levier 4 s après l'arrivée). */
+    /** Moments du cycle où elle tire son levier puis où ses yeux clignotent (le premier levier 4 s après l'arrivée). */
     private static final float LEVER_AT = 4f, BLINK_AT = 9f;
 
     /**
      * @param time secondes depuis l'arrivée de l'ennemi
      * @return l'image du portrait de {@code kind} à cet instant : la Machine Originelle tire son
-     *         levier et cligne des yeux toutes les {@link #MACHINE_CYCLE} secondes, les autres ne bougent pas
+     *         levier et ses yeux clignotent toutes les {@link #MACHINE_CYCLE} secondes, les autres ne bougent pas
      */
     public Texture portrait(EnemyKind kind, float time) {
         if (kind != EnemyKind.MACHINE_ORIGINELLE) return portrait(kind);
-        return machineFrames[machineLever(time)][machineLids(time)];
+        return machineFrames[machineLever(time)][machineEyes(time)];
     }
 
     /** @return la silhouette blanche de {@link #portrait(EnemyKind, float)}. */
     public Texture portraitFlash(EnemyKind kind, float time) {
         if (kind != EnemyKind.MACHINE_ORIGINELLE) return portraitFlash(kind);
-        return machineFlashes[machineLever(time)][machineLids(time)];
+        return machineFlashes[machineLever(time)][machineEyes(time)];
     }
 
     /** @return la position du levier : il descend d'un coup, reste baissé un instant, puis remonte. */
@@ -176,11 +176,18 @@ public class EnemyTextures implements Disposable {
         return t < 0.55f ? Chapter456Art.LEVER_DOWN : Chapter456Art.LEVER_UP;
     }
 
-    /** @return la position des paupières : elles se ferment et se rouvrent, en un tiers de seconde. */
-    static int machineLids(float time) {
+    /** Clignotement des yeux : deux éclats de lumière, en une seconde (début de chaque palier, en secondes). */
+    private static final float[] FLASH_STEPS = {0f, 0.1f, 0.28f, 0.4f, 0.55f, 0.65f, 0.83f, 0.95f};
+    private static final int[]   FLASH_EYES  = {Chapter456Art.EYES_LIT, Chapter456Art.EYES_BLAZE, Chapter456Art.EYES_LIT,
+        Chapter456Art.EYES_NORMAL, Chapter456Art.EYES_LIT, Chapter456Art.EYES_BLAZE, Chapter456Art.EYES_LIT,
+        Chapter456Art.EYES_NORMAL};
+
+    /** @return la lumière des yeux : ils s'allument d'un coup, deux fois, puis reviennent à la normale. */
+    static int machineEyes(float time) {
         float t = ((time - BLINK_AT) % MACHINE_CYCLE + MACHINE_CYCLE) % MACHINE_CYCLE;
-        if (t < 0.07f || (t >= 0.24f && t < 0.32f)) return Chapter456Art.LIDS_HALF;
-        return t < 0.24f ? Chapter456Art.LIDS_CLOSED : Chapter456Art.LIDS_OPEN;
+        int eyes = Chapter456Art.EYES_NORMAL;
+        for (int i = 0; i < FLASH_STEPS.length && t >= FLASH_STEPS[i]; i++) eyes = FLASH_EYES[i];
+        return eyes;
     }
 
     /** @return l'entrée du donjon {@code dungeon}, sur la carte de son lieu. */
@@ -477,10 +484,10 @@ public class EnemyTextures implements Disposable {
         portraits.values().forEach(Texture::dispose); // le croupier compris
         flashes.values().forEach(Texture::dispose);
         for (int lever = 0; lever < 3; lever++) {      // la Machine au repos est dans les portraits
-            for (int lids = 0; lids < 3; lids++) {
-                if (lever == Chapter456Art.LEVER_UP && lids == Chapter456Art.LIDS_OPEN) continue;
-                machineFrames[lever][lids].dispose();
-                machineFlashes[lever][lids].dispose();
+            for (int eyes = 0; eyes < 3; eyes++) {
+                if (lever == Chapter456Art.LEVER_UP && eyes == Chapter456Art.EYES_NORMAL) continue;
+                machineFrames[lever][eyes].dispose();
+                machineFlashes[lever][eyes].dispose();
             }
         }
         symbols.values().forEach(Texture::dispose);
