@@ -210,6 +210,16 @@ public class Player {
         gains = amount >= 0 ? BigNumber.add(gains, amount)
                             : Math.max(Math.min(0, gains), gains + amount);
         if (gains < before) lastingEffects.spendFakeGains(before - gains);
+        capPotWinnings();
+    }
+
+    /**
+     * Les gains rapportés par la cagnotte ne peuvent pas dépasser les gains restants :
+     * une fois volés ou dépensés, ils ne bloquent plus la Mise (sinon, après une
+     * Faillite, les nouveaux gains restaient « impossibles à miser » jusqu'à la fin de la descente).
+     */
+    private void capPotWinnings() {
+        potWinnings = Math.min(potWinnings, Math.max(0, gains));
     }
 
     /**
@@ -222,6 +232,7 @@ public class Player {
         double taxed = BigNumber.percent(Math.max(0, gains), percent) + flat;
         lastingEffects.spendFakeGains(Math.max(0, Math.min(gains, taxed)));
         gains -= taxed;
+        capPotWinnings();
         return taxed;
     }
 
@@ -232,6 +243,7 @@ public class Player {
     public void paySpin(double cost) {
         lastingEffects.spendFakeGains(Math.max(0, Math.min(gains, cost)));
         gains -= cost;
+        capPotWinnings();
     }
 
     /**
@@ -244,6 +256,7 @@ public class Player {
         double amount = BigNumber.round(Math.max(0, gains) * percent);
         lastingEffects.spendFakeGains(amount);
         gains -= amount;
+        capPotWinnings();
         return amount;
     }
 
