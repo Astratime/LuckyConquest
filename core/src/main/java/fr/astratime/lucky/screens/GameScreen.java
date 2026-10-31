@@ -526,11 +526,12 @@ public class GameScreen extends ScreenAdapter {
         shopOverlay      = new ShopOverlay(stage, hudTextures, tooltip, CARD_WIDTH, CARD_HEIGHT);
         cardDetail       = new CardDetailOverlay(stage, hudTextures, tooltip, CARD_WIDTH, CARD_HEIGHT);
         pauseOverlay     = new PauseOverlay(luckyGame, luckyGame.getBatch(), hudTextures, sounds.buttonClick, sounds.menuHover,
-            settings,
+            settings, modeMenuLabel(),
             new PauseOverlay.Listener() {
                 @Override public void onResume()         { Gdx.input.setInputProcessor(gameInput); if (cutscene != null) cutscene.resumeSound(); }
                 @Override public void onRestart()        { Gdx.input.setInputProcessor(gameInput); GameScreen.this.onRestart(); }
                 @Override public void onMainMenu()       { onBackToMenu(); }
+                @Override public void onModeMenu()       { onBackToChapters(); }
                 @Override public void onEffectsChanged() { GameScreen.this.onEffectsChanged(); }
             });
         pickOverlay      = new EnemyPickOverlay(stage, hudTextures, enemyTextures, sounds.cardFlip, sounds.cardHover,
@@ -1682,6 +1683,17 @@ public class GameScreen extends ScreenAdapter {
             }
             dispose();
         });
+    }
+
+    /**
+     * @return le bouton du menu pause qui ramène à l'écran du mode joué : « Exploration »
+     *         dans un donjon, « Tour des épreuves » dans un chapitre de la Tour ; {@code null}
+     *         ailleurs (Entraînement, tutoriel), où seul le menu principal est proposé.
+     */
+    private String modeMenuLabel() {
+        if (run instanceof DungeonRun) return Lang.t("Exploration");
+        if (run instanceof TowerRun)   return Lang.t("Tour des épreuves");
+        return null;
     }
 
     /** @return {@code true} dans un donjon de l'Exploration. */

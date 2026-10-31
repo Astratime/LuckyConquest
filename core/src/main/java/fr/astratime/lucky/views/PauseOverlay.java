@@ -26,7 +26,9 @@ import java.util.List;
  * Menu pause, ouvert par Échap ou le bouton pause pendant un combat : un voile
  * assombrit le jeu (figé tant que le menu est ouvert) et un panneau propose de
  * reprendre la partie, de régler les options (les mêmes que celles du menu
- * principal), de recommencer le combat ou de revenir au menu principal. On ne
+ * principal), de recommencer le combat, de revenir à l'écran du mode joué
+ * (Exploration ou Tour des épreuves, seulement dans ce mode) ou de revenir au
+ * menu principal. On ne
  * quitte pas le jeu depuis un combat : seulement depuis le menu principal.
  *
  * Il a son propre Stage, dessiné par-dessus celui du jeu : tant qu'il est
@@ -47,6 +49,8 @@ public class PauseOverlay implements Disposable {
         void onRestart();
         /** Le joueur revient au menu principal (le menu est déjà fermé). */
         void onMainMenu();
+        /** Le joueur revient à l'écran du mode joué : Exploration ou Tour des épreuves (le menu est déjà fermé). */
+        void onModeMenu();
         /** Les effets visuels viennent de passer de normaux à réduits, ou l'inverse. */
         void onEffectsChanged();
     }
@@ -55,6 +59,8 @@ public class PauseOverlay implements Disposable {
     private final Image       veil;
     private final OptionsMenu menu;
     private final Listener    listener;
+    /** Texte du bouton de retour à l'écran du mode joué (déjà traduit), ou {@code null} s'il n'y en a pas. */
+    private final String      modeMenuLabel;
     /** Onglets des options : Visuel, Audio, Accessibilité. */
     private final List<List<OptionsMenu.Entry>> optionTabs;
     private final InputProcessor input;
@@ -65,11 +71,14 @@ public class PauseOverlay implements Disposable {
      * @param clickSound bruitage des options (celui des boutons du jeu)
      * @param hoverSound bruitage du survol des options
      * @param settings   réglages visuels de l'écran de jeu (ceux que lit sa secousse)
+     * @param modeMenuLabel texte du bouton de retour à l'écran du mode joué (« Exploration »,
+     *                   « Tour des épreuves »), ou {@code null} : pas de bouton (Entraînement, tutoriel)
      */
     public PauseOverlay(LuckyGame game, Batch batch, HudTextures hud, Sound clickSound, Sound hoverSound,
-                        VisualSettings settings,
+                        VisualSettings settings, String modeMenuLabel,
                         Listener listener) {
         this.listener = listener;
+        this.modeMenuLabel = modeMenuLabel;
         stage = new Stage(new MinimumScreenViewport(MIN_WIDTH, MIN_HEIGHT), batch);
         veil  = new Image(new TextureRegionDrawable(new TextureRegion(hud.pixel)));
         veil.setColor(Palette.VEIL);
@@ -112,20 +121,27 @@ public class PauseOverlay implements Disposable {
     /** @return le processeur d'entrée du menu, à installer tant qu'il est ouvert. */
     public InputProcessor getInput() { return input; }
 
-    /** Page pause : Reprendre, Options, Recommencer, Menu principal. */
+    /** Page pause : Reprendre, Options, Recommencer, retour au mode joué (s'il y en a un), Menu principal. */
     private void showPausePage() {
         optionsPage = false;
-        menu.setEntries(Lang.t("PAUSE"), List.of(
-            OptionsMenu.Entry.button(Lang.t("Reprendre"), this::resume),
-            OptionsMenu.Entry.button(Lang.t("Options"), this::showOptionsPage),
-            OptionsMenu.Entry.button(Lang.t("Recommencer"), () -> {
+        List<OptionsMenu.Entry> entries = new ArrayList<>();
+        entries.add(OptionsMenu.Entry.button(Lang.t("Reprendre"), this::resume));
+        entries.add(OptionsMenu.Entry.button(Lang.t("Options"), this::showOptionsPage));
+        entries.add(OptionsMenu.Entry.button(Lang.t("Recommencer"), () -> {
+            shown = false;
+            listener.onRestart();
+        }));
+        if (modeMenuLabel != null) {
+            entries.add(OptionsMenu.Entry.button(modeMenuLabel, () -> {
                 shown = false;
-                listener.onRestart();
-            }),
-            OptionsMenu.Entry.button(Lang.t("Menu principal"), () -> {
-                shown = false;
-                listener.onMainMenu();
-            })));
+                listener.onModeMenu();
+            }));
+        }
+        entries.add(OptionsMenu.Entry.button(Lang.t("Menu principal"), () -> {
+            shown = false;
+            listener.onMainMenu();
+        }));
+        menu.setEntries(Lang.t("PAUSE"), entries);
     }
 
     /** Page des options, sur son premier onglet. */
