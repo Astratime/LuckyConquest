@@ -13,16 +13,17 @@ import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.InputListener;
 import com.badlogic.gdx.utils.Disposable;
 import fr.astratime.lucky.assets.EnemyTextures;
-import fr.astratime.lucky.entities.Card;
+import fr.astratime.lucky.entities.exploration.Dungeon;
 import fr.astratime.lucky.entities.Enemy;
 import fr.astratime.lucky.entities.enemy.EnemyKind;
+import fr.astratime.lucky.entities.tower.Chapter;
 
 import java.util.EnumMap;
 import java.util.Map;
 import java.util.function.Supplier;
 
 /**
- * Vue de face du combat : le décor du lieu, et l'ennemi en grand, debout
+ * Vue de face du combat : le décor du donjon, et l'ennemi en grand, debout
  * derrière la table vue en perspective ({@link TableProjection}).
  *
  * <p>L'ennemi est son portrait de la vue classique, agrandi, qui bouge comme en
@@ -32,26 +33,98 @@ import java.util.function.Supplier;
  */
 public class FrontScene extends Actor implements Disposable {
 
-    /** Décor derrière l'ennemi. */
+    /**
+     * Décor derrière l'ennemi : un par donjon de l'Exploration (la Prairie en a
+     * un par couleur), un par chapitre de la Tour, un pour l'Entraînement, le
+     * casino ailleurs. Ses lumières (torches, lanternes,
+     * lave, projecteurs) vacillent : leur centre en pixels du décor (origine en
+     * haut à gauche), leur couleur et leur rayon. Dessins :
+     * tools/front/generate_front_art.py et generate_decors.py.
+     */
     public enum Decor {
-        CALE("front/decor_cale.png"),
-        PRAIRIE_PIQUE("front/decor_prairie_pique.png"),
-        PRAIRIE_TREFLE("front/decor_prairie_trefle.png"),
-        PRAIRIE_COEUR("front/decor_prairie_coeur.png"),
-        PRAIRIE_CARREAU("front/decor_prairie_carreau.png"),
-        CASINO("menu/casino_interior.png");
+        PRAIRIE_PIQUE("prairie_pique"),
+        PRAIRIE_TREFLE("prairie_trefle"),
+        PRAIRIE_COEUR("prairie_coeur"),
+        PRAIRIE_CARREAU("prairie_carreau"),
+        CHAPITEAU("chapiteau", WARM, 30f, 60, 22, 300, 22),
+        TRAIN_FANTOME("train_fantome", GHOST, 14f, 24, 140, 336, 132, 60, 120),
+        GRANDE_ROUE("grande_roue", WARM, 24f, 78, 82, 78, 16, 12, 82, 144, 82),
+        STANDS("stands", WARM, 30f, 60, 60, 300, 60),
+        CALE("cale", WARM, 37f, 128, 30, 236, 30),
+        TAVERNE("taverne", WARM, 34f, 140, 30, 226, 30, 316, 150),
+        PHARE("phare", WARM, 40f, 70, 39),
+        GALION("galion", WARM, 34f, 120, 40, 240, 40),
+        FILON("filon", WARM, 34f, 55, 34, 305, 34),
+        PUITS("puits", WARM, 34f, 66, 40, 290, 40),
+        FORGE("forge", LAVA, 40f, 65, 140, 40, 100, 90, 100),
+        GOUFFRE("gouffre", GOLDEN, 24f, 36, 120, 78, 140, 300, 118, 330, 140),
+        BAR("bar", WATER, 40f, 60, 20, 300, 20),
+        MACHINES("machines", WATER, 22f, 22, 80, 74, 80, 126, 80, 262, 80),
+        COFFRES("coffres", GOLDEN, 26f, 272, 126, 322, 126),
+        VIP("vip", WARM, 40f, 180, 30),
+        CARAVANE("caravane"),
+        TOMBEAU("tombeau", WARM, 34f, 122, 46, 242, 46),
+        OASIS("oasis"),
+        VOLCAN("volcan", LAVA, 40f, 70, 30, 80, 110, 60, 172, 300, 184),
+        GENESE("genese", WARM, 30f, 150, 60, 50, 70, 310, 70),
+        TABLES_SACREES("tables_sacrees", WARM, 30f, 43, 40, 303, 40),
+        DERNIER_TIRAGE("dernier_tirage", WATER, 30f, 320, 50, 60, 96, 290, 98),
+        MONDE_SANS_MAITRE("monde_sans_maitre", LAVA, 34f, 50, 128, 310, 128),
+        LA_MAISON("la_maison", GOLDEN, 30f, 80, 16, 280, 16, 180, 60),
+        LE_JACKPOT("le_jackpot", GOLDEN, 30f, 180, 40, 40, 50, 320, 60),
+        ENTRAINEMENT("entrainement", WARM, 40f, 180, 32),
+        CASINO("menu/casino_interior.png", true);
 
-        final String path;
+        final String  path;
+        final boolean dimmed;
+        final Color   glowColor;
+        final float   glowRadius;
+        final float[] glows;
 
-        Decor(String path) { this.path = path; }
+        Decor(String name) { this(name, WARM, 0f); }
 
-        /** @return le décor de la Prairie pour un donjon de la couleur {@code suit}. */
-        public static Decor prairie(Card.Suit suit) {
-            return switch (suit) {
-                case PIQUE   -> PRAIRIE_PIQUE;
-                case TREFLE  -> PRAIRIE_TREFLE;
-                case COEUR   -> PRAIRIE_COEUR;
-                case CARREAU -> PRAIRIE_CARREAU;
+        Decor(String name, Color glowColor, float glowRadius, float... glows) {
+            this.path       = "front/decor_" + name + ".png";
+            this.dimmed     = false;
+            this.glowColor  = glowColor;
+            this.glowRadius = glowRadius;
+            this.glows      = glows;
+        }
+
+        /** Le décor du casino (portrait des autres combats) : assombri pour que l'ennemi ressorte. */
+        Decor(String path, boolean dimmed) {
+            this.path       = path;
+            this.dimmed     = dimmed;
+            this.glowColor  = WARM;
+            this.glowRadius = 0f;
+            this.glows      = new float[0];
+        }
+
+        /** @return le décor d'un donjon de l'Exploration (celui de sa couleur dans la Prairie). */
+        public static Decor of(Dungeon dungeon) {
+            if (dungeon.getSuit() != null) {
+                return switch (dungeon.getSuit()) {
+                    case PIQUE   -> PRAIRIE_PIQUE;
+                    case TREFLE  -> PRAIRIE_TREFLE;
+                    case COEUR   -> PRAIRIE_COEUR;
+                    case CARREAU -> PRAIRIE_CARREAU;
+                };
+            }
+            for (Decor decor : values()) {
+                if (decor.name().equals(dungeon.name())) return decor;
+            }
+            return CASINO;
+        }
+
+        /** @return le décor d'un chapitre de la Tour des épreuves. */
+        public static Decor of(Chapter chapter) {
+            return switch (chapter) {
+                case GENESE            -> GENESE;
+                case TABLES_SACREES    -> TABLES_SACREES;
+                case DERNIER_TIRAGE    -> DERNIER_TIRAGE;
+                case MONDE_SANS_MAITRE -> MONDE_SANS_MAITRE;
+                case LA_MAISON         -> LA_MAISON;
+                case LE_JACKPOT        -> LE_JACKPOT;
             };
         }
     }
@@ -62,10 +135,14 @@ public class FrontScene extends Actor implements Disposable {
     private static final float HIDDEN_PART     = 0.06f;
     /** Les gestes du petit portrait sont amplifiés d'autant sur le grand. */
     private static final float GESTURE_SCALE   = 2f;
-    /** Lanternes de la Cale : centre de leur flamme, en pixels du décor (origine en haut à gauche). */
-    private static final float[][] CALE_LANTERNS = {{128f, 30f}, {236f, 30f}};
     /** Décor du casino (portrait des autres lieux) : assombri pour que l'ennemi ressorte. */
     private static final Color CASINO_TINT     = new Color(0.55f, 0.5f, 0.55f, 1f);
+    /** Couleur des lumières des décors : flamme, lueur verte du train fantôme, eau, lave, or. */
+    private static final Color WARM   = new Color(1f, 0.75f, 0.4f, 1f);
+    private static final Color GHOST  = new Color(0.45f, 1f, 0.55f, 1f);
+    private static final Color WATER  = new Color(0.55f, 0.9f, 1f, 1f);
+    private static final Color LAVA   = new Color(1f, 0.45f, 0.15f, 1f);
+    private static final Color GOLDEN = new Color(1f, 0.85f, 0.3f, 1f);
 
     private final TableProjection projection;
     private final PlayArea        playArea;
@@ -174,17 +251,18 @@ public class FrontScene extends Actor implements Disposable {
         float scale  = Math.max(areaWidth / texture.getWidth(), worldHeight / texture.getHeight());
         float width  = texture.getWidth() * scale, height = texture.getHeight() * scale;
         float left   = playArea.getCenterX() - width / 2f, bottom = worldHeight - height;
-        Color tint = decor == Decor.CASINO ? CASINO_TINT : Color.WHITE;
+        Color tint = decor.dimmed ? CASINO_TINT : Color.WHITE;
         batch.setColor(tint.r, tint.g, tint.b, parentAlpha);
         batch.draw(texture, left, bottom, width, height);
-        if (decor == Decor.CALE) {
+        if (decor.glows.length > 0) {
             int src = batch.getBlendSrcFunc(), dst = batch.getBlendDstFunc();
             batch.setBlendFunction(GL20.GL_SRC_ALPHA, GL20.GL_ONE);
-            for (int i = 0; i < CALE_LANTERNS.length; i++) {
+            Color c = decor.glowColor;
+            for (int i = 0; i < decor.glows.length / 2; i++) {
                 float flicker = 0.8f + 0.12f * MathUtils.sin(time * 9f + i * 2.1f) + 0.08f * MathUtils.sin(time * 23f + i);
-                float size = 150f * scale / 4f * (0.95f + 0.05f * flicker);
-                float cx = left + CALE_LANTERNS[i][0] * scale, cy = bottom + height - CALE_LANTERNS[i][1] * scale;
-                batch.setColor(1f, 0.75f, 0.4f, 0.55f * flicker * parentAlpha);
+                float size = decor.glowRadius * scale * (0.95f + 0.05f * flicker);
+                float cx = left + decor.glows[i * 2] * scale, cy = bottom + height - decor.glows[i * 2 + 1] * scale;
+                batch.setColor(c.r, c.g, c.b, 0.55f * flicker * parentAlpha);
                 batch.draw(glow, cx - size, cy - size, size * 2f, size * 2f);
             }
             batch.setBlendFunction(src, dst);

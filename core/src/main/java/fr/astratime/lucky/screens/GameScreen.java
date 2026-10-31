@@ -311,7 +311,7 @@ public class GameScreen extends ScreenAdapter {
     private final DamageVignette      damageVignette = new DamageVignette();
     private final Confetti            confetti;
     private final CombatEndAnimation  combatEnd;
-    private final TableTextures       tableTextures = new TableTextures();
+    private final TableTextures       tableTextures;
     private final AudioSettings       audio         = new AudioSettings();
     private final GameSounds          sounds        = new GameSounds(audio);
     /** Musique du combat (une par lieu, voir {@link CombatMusic}), gardée basse pour ne pas couvrir les bruitages. */
@@ -445,6 +445,8 @@ public class GameScreen extends ScreenAdapter {
     public GameScreen(LuckyGame luckyGame, CombatRun run) {
         this.luckyGame = luckyGame;
         this.run       = run;
+        // La table a l'air du lieu en Exploration ; ailleurs, la table de casino.
+        tableTextures  = TableTextures.forPlace(run instanceof DungeonRun dungeonRun ? Place.of(dungeonRun.getDungeon()) : null);
         SharedAssets assets = luckyGame.getAssets();
         cardTextures  = assets.cardTextures();
         enemyTextures = assets.enemyTextures();
@@ -2307,12 +2309,11 @@ public class GameScreen extends ScreenAdapter {
     }
 
     /** Libère toutes les ressources natives (Stage, polices, textures, sons) possédées par cet écran. */
-    /** @return le décor de la vue de face : la Cale, la Prairie (à la couleur du donjon), sinon le casino. */
+    /** @return le décor de la vue de face : celui du donjon en Exploration, sinon le casino. */
     private FrontScene.Decor frontDecor() {
-        if (!(run instanceof DungeonRun dungeonRun)) return FrontScene.Decor.CASINO;
-        Dungeon dungeon = dungeonRun.getDungeon();
-        if (dungeon == Dungeon.CALE) return FrontScene.Decor.CALE;
-        return dungeon.getSuit() != null ? FrontScene.Decor.prairie(dungeon.getSuit()) : FrontScene.Decor.CASINO;
+        if (run instanceof DungeonRun dungeonRun) return FrontScene.Decor.of(dungeonRun.getDungeon());
+        if (run instanceof TowerRun towerRun)     return FrontScene.Decor.of(towerRun.getChapter());
+        return run == null ? FrontScene.Decor.ENTRAINEMENT : FrontScene.Decor.CASINO;
     }
 
     @Override
