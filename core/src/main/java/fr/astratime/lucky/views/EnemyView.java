@@ -82,7 +82,7 @@ public class EnemyView implements Disposable {
     private static final float SYMBOL_SIZE    = 80f;    // 16 pixels x5, comme les symboles du joueur
     private static final float BOB            = 4f;     // respiration du croupier
     /** Vue de face : sa machine sort de la table un peu avant que ses rouleaux tournent. */
-    private static final float MACHINE_RISE   = 0.35f;
+    private static final float MACHINE_RISE   = 0.45f;
     private static final float DEFENSE_GAP    = 40f;    // entre les rouleaux et la défense (au-delà du cadre)
     private static final float OPENING_TIME   = 0.9f;   // ses Épines piquent, avant sa pioche
 

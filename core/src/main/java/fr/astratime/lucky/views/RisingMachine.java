@@ -32,7 +32,7 @@ import java.util.function.Supplier;
 public class RisingMachine extends Billboard implements Disposable {
 
     /** Durée de la montée et de la descente, en secondes. */
-    private static final float MOVE_TIME = 0.32f;
+    private static final float MOVE_TIME = 0.45f;
     /**
      * Caisse autour de la vitre des rouleaux : marges (table à plat). Sur les
      * côtés, celle du cadre des rouleaux : la machine a la largeur de son
@@ -45,8 +45,11 @@ public class RisingMachine extends Billboard implements Disposable {
     private static final float PIXEL = 3f;
     /** Sommet arrondi au-dessus de la caisse, et écart entre deux ampoules du fronton (en pixels des dessins). */
     private static final float CREST_HEIGHT = 14f * PIXEL, BULB_STEP = 7f;
-    /** Profondeur de la caisse (unités de la table), et épaisseur de ses contours noirs à l'écran. */
-    private static final float DEPTH = 72f, OUTLINE_WIDTH = 3f;
+    /** Épaisseur des contours noirs de la caisse à l'écran. */
+    private static final float OUTLINE_WIDTH = 3f;
+    /** La trappe ouverte dans la table : son fond, plus sombre au loin (bord en unités de la table). */
+    private static final Color HOLE = Color.valueOf("2a161cff"), HOLE_DEEP = Color.valueOf("0e0608ff");
+    private static final float HOLE_RIM = 6f;
 
     private final Supplier<Rectangle> window;
     private final IntSupplier         reelCount;
@@ -187,11 +190,18 @@ public class RisingMachine extends Billboard implements Disposable {
     public void draw(Batch batch, float parentAlpha) {
         if (content == null || !projection.isEnabled()) return;
         place();
-        // Le dessus et les flancs : la caisse a de la profondeur, derrière sa face (rien sous la table).
         Rectangle glass = window.get();
-        float x0 = glass.x - FRAME, x1 = glass.x + glass.width + FRAME, y0 = glass.y - FRAME;
+        float x0 = glass.x - FRAME, x1 = glass.x + glass.width + FRAME;
+        float y0 = glass.y - FRAME, y1 = glass.y + glass.height + FRAME;
         painter.setOutline(OUTLINE_WIDTH);
-        painter.box(batch, x0, y0, bottomZ, x1, y0 + DEPTH, bottomZ + BOTTOM + glass.height + TOP,
+        // L'emplacement des rouleaux s'est ouvert : une trappe sombre, d'où monte la machine.
+        painter.face(batch, painter.pixel(), HOLE, 1f, parentAlpha, x0, y0, 0f, x1, y0, 0f, x1, y1, 0f, x0, y1, 0f);
+        painter.setOutline(0f);
+        painter.face(batch, painter.pixel(), HOLE_DEEP, 1f, parentAlpha, x0 + HOLE_RIM, y0 + HOLE_RIM, 0f,
+            x1 - HOLE_RIM, y0 + HOLE_RIM, 0f, x1 - HOLE_RIM, y1 - HOLE_RIM * 3f, 0f, x0 + HOLE_RIM, y1 - HOLE_RIM * 3f, 0f);
+        // Le dessus et les flancs : la caisse remplit la trappe (rien sous la table).
+        painter.setOutline(OUTLINE_WIDTH);
+        painter.box(batch, x0, y0, bottomZ, x1, y1, bottomZ + BOTTOM + glass.height + TOP,
             topRegion, topRegion, sideRegion, Color.WHITE, Color.WHITE, parentAlpha, false);
         painter.setOutline(0f);
         batch.setColor(Color.WHITE);
