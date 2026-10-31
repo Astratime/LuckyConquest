@@ -129,18 +129,39 @@ public class FrontScene extends Actor implements Disposable {
                           float pawLeft, float pawRight) {
         static BigArt soldier(String suit) { return new BigArt("front/prairie/soldat_" + suit, 65f, 12f, 6f, 1.9f, 6.5f, 123.5f); }
         static BigArt king(String suit)    { return new BigArt("front/prairie/roi_" + suit, 114f, 108f, 2.5f, 1.3f, 6.5f, 123.5f); }
+        static BigArt enemy(String name, float pivotX, float pivotY, float swing, float speed) {
+            return new BigArt("front/enemies/" + name, pivotX, pivotY, swing, speed, 6.5f, 123.5f);
+        }
+        /** Un objet tenu debout dans la main droite, qui se balance un peu autour d'elle. */
+        static BigArt held(String name) { return enemy(name, 114f, 108f, 4f, 1.5f); }
     }
 
-    private static final Map<EnemyKind, BigArt> BIG_ART = new EnumMap<>(Map.of(
-        EnemyKind.RAT_CALES,      new BigArt("front/rat_cales", 96f, 96f, 9f, 2.3f, 6.5f, 123.5f),
-        EnemyKind.SOLDAT_PIQUE,   BigArt.soldier("pique"),
-        EnemyKind.SOLDAT_TREFLE,  BigArt.soldier("trefle"),
-        EnemyKind.SOLDAT_COEUR,   BigArt.soldier("coeur"),
-        EnemyKind.SOLDAT_CARREAU, BigArt.soldier("carreau"),
-        EnemyKind.ROI_PIQUE,      BigArt.king("pique"),
-        EnemyKind.ROI_TREFLE,     BigArt.king("trefle"),
-        EnemyKind.ROI_COEUR,      BigArt.king("coeur"),
-        EnemyKind.ROI_CARREAU,    BigArt.king("carreau")));
+    private static final Map<EnemyKind, BigArt> BIG_ART = new EnumMap<>(EnemyKind.class);
+
+    static {
+        BIG_ART.put(EnemyKind.RAT_CALES,      new BigArt("front/rat_cales", 96f, 96f, 9f, 2.3f, 6.5f, 123.5f));
+        BIG_ART.put(EnemyKind.SOLDAT_PIQUE,   BigArt.soldier("pique"));
+        BIG_ART.put(EnemyKind.SOLDAT_TREFLE,  BigArt.soldier("trefle"));
+        BIG_ART.put(EnemyKind.SOLDAT_COEUR,   BigArt.soldier("coeur"));
+        BIG_ART.put(EnemyKind.SOLDAT_CARREAU, BigArt.soldier("carreau"));
+        BIG_ART.put(EnemyKind.ROI_PIQUE,      BigArt.king("pique"));
+        BIG_ART.put(EnemyKind.ROI_TREFLE,     BigArt.king("trefle"));
+        BIG_ART.put(EnemyKind.ROI_COEUR,      BigArt.king("coeur"));
+        BIG_ART.put(EnemyKind.ROI_CARREAU,    BigArt.king("carreau"));
+        // Ennemis des lieux (tools/front/generate_big_enemies.py) : objet tenu, plume, bandelette, queue, levier.
+        BIG_ART.put(EnemyKind.CLOWN,          BigArt.held("clown"));
+        BIG_ART.put(EnemyKind.SQUELETTE,      BigArt.enemy("squelette", 73f, 18f, 8f, 2f));
+        BIG_ART.put(EnemyKind.FORAIN,         BigArt.held("forain"));
+        BIG_ART.put(EnemyKind.BONIMENTEUR,    BigArt.held("bonimenteur"));
+        BIG_ART.put(EnemyKind.BUVEUR,         BigArt.enemy("buveur", 114f, 108f, 7f, 1.1f));
+        BIG_ART.put(EnemyKind.PIRATE,         BigArt.held("pirate"));
+        BIG_ART.put(EnemyKind.CHERCHEUR_OR,   BigArt.held("chercheur_or"));
+        BIG_ART.put(EnemyKind.FORGERON,       BigArt.held("forgeron"));
+        BIG_ART.put(EnemyKind.BARMAN_NOYE,    BigArt.enemy("barman_noye", 114f, 108f, 5f, 0.9f));
+        BIG_ART.put(EnemyKind.BANDIT_MANCHOT, BigArt.enemy("bandit_manchot", 108f, 44f, 6f, 1.6f));
+        BIG_ART.put(EnemyKind.MOMIE,          BigArt.enemy("momie", 81f, 52f, 10f, 1.4f));
+        BIG_ART.put(EnemyKind.SALAMANDRE,     BigArt.enemy("salamandre", 96f, 100f, 7f, 2f));
+    }
 
     /** Les textures d'un grand dessin, chargées au premier combat contre cet ennemi. */
     private static final class Parts {
