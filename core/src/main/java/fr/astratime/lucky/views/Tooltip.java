@@ -1,5 +1,6 @@
 package fr.astratime.lucky.views;
 
+import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
@@ -60,6 +61,12 @@ public class Tooltip implements Disposable {
         table.setVisible(false);
     }
 
+    /** Vue de face : les points de la table passent à leur place à l'écran (voir {@link TableProjection}). */
+    private TableProjection tableProjection = new TableProjection();
+
+    /** Vue de face : les points reçus sur la table sont reportés à leur place à l'écran. */
+    public void setTableProjection(TableProjection projection) { this.tableProjection = projection; }
+
     /** @return l'acteur de l'infobulle, à ajouter au Stage en dernier pour rester toujours au-dessus. */
     public Table getActor() { return table; }
 
@@ -76,6 +83,9 @@ public class Tooltip implements Disposable {
      * @param heading titre (ex : le nom de la carte), ou {@code null} pour n'afficher que le texte
      */
     public void show(String heading, String text, float x, float y) {
+        Vector2 at = tableProjection.toScreen(x, y);
+        x = at.x;
+        y = at.y;
         table.clearChildren();
         boolean large = settings.isLargeTooltips();
         title.setStyle(large ? largeTitleStyle : titleStyle);

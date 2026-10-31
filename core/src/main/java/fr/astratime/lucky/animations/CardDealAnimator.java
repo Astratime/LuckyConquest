@@ -5,7 +5,7 @@ import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.Interpolation;
 import com.badlogic.gdx.math.Vector2;
-import com.badlogic.gdx.scenes.scene2d.Stage;
+import com.badlogic.gdx.scenes.scene2d.Group;
 import com.badlogic.gdx.scenes.scene2d.actions.Actions;
 import com.badlogic.gdx.scenes.scene2d.ui.Image;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
@@ -30,7 +30,7 @@ public class CardDealAnimator {
     private static final float FLIP_PAUSE_DELAY   = 0.05f;
     private static final float FLIP_HALF_DURATION = 0.12f;
 
-    private final Stage   stage;
+    private final Group   stage;
     private final Texture cardBackTexture;
     private final float   cardWidth;
     private final float   cardHeight;
@@ -40,7 +40,7 @@ public class CardDealAnimator {
     /** Cartes dos visible actuellement en vol (associées à leur carte cible), à nettoyer en cas d'annulation. */
     private final Map<Image, Image> flyingCards = new LinkedHashMap<>();
 
-    public CardDealAnimator(Stage stage, Texture cardBackTexture, float cardWidth, float cardHeight,
+    public CardDealAnimator(Group stage, Texture cardBackTexture, float cardWidth, float cardHeight,
                              Sound dealSound, Sound flipSound) {
         this.stage           = stage;
         this.cardBackTexture = cardBackTexture;

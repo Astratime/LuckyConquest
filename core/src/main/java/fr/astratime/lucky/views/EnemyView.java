@@ -7,6 +7,7 @@ import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.Interpolation;
 import com.badlogic.gdx.math.MathUtils;
+import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.Group;
@@ -80,6 +81,8 @@ public class EnemyView implements Disposable {
     private static final float RESULT_SPREAD  = 250f;
     private static final float SYMBOL_SIZE    = 80f;    // 16 pixels x5, comme les symboles du joueur
     private static final float BOB            = 4f;     // respiration du croupier
+    /** Vue de face : sa machine sort de la table un peu avant que ses rouleaux tournent. */
+    private static final float MACHINE_RISE   = 0.45f;
     private static final float DEFENSE_GAP    = 40f;    // entre les rouleaux et la défense (au-delà du cadre)
     private static final float OPENING_TIME   = 0.9f;   // ses Épines piquent, avant sa pioche
 
@@ -96,12 +99,18 @@ public class EnemyView implements Disposable {
 
     private final Group         group     = new Group();
     private final Group         character = new Group();
+    /** Hauteur du croupier à sa place, sans son mouvement de repos. */
+    private float               restY;
     private final Image         croupier;
     private final Image         flash;
     private final ShieldBadge   defense;
     private final CardPileView  deckPile;
     private final CardPileView  discardPile;
     private final List<Image>   reels     = new ArrayList<>();
+    /** Ses rouleaux, ensemble : en vue de face, ils sont couchés sur la table et montent dans sa machine au lancer. */
+    private final Group         reelGroup = new Group();
+    /** Vue de face : sa machine sort de la table pour son lancer, puis y redescend. */
+    private Runnable            machineUp = () -> { }, machineDown = () -> { };
     private final EnemySymbol[] shownSymbols = {EnemySymbol.SWORD, EnemySymbol.SHIELD, EnemySymbol.POTION,
         EnemySymbol.SWORD, EnemySymbol.SHIELD, EnemySymbol.POTION};
     /** Rouleaux affichés (3, sauf la Machine Originelle : 5 puis 6). */
@@ -115,6 +124,11 @@ public class EnemyView implements Disposable {
     private int shownDiscard;
     /** Boucle du bruit de ses rouleaux pendant son lancer (-1 : aucune). */
     private long spinSoundId = -1;
+    /**
+     * Vue de face : l'ennemi est dessiné en grand derrière la table ({@link FrontScene}),
+     * qui recopie les gestes du petit portrait, caché au bord de la table.
+     */
+    private boolean frontView;
 
     /**
      * @param reelSpinSound boucle jouée tant que ses rouleaux tournent
@@ -169,7 +183,8 @@ public class EnemyView implements Disposable {
 
         group.addActor(deckPile);
         group.addActor(discardPile);
-        reels.forEach(group::addActor);
+        reels.forEach(reelGroup::addActor);
+        group.addActor(reelGroup);
         group.addActor(defense);
         group.addActor(character);
         reset();
@@ -182,7 +197,7 @@ public class EnemyView implements Disposable {
      * @return l'infobulle de l'ennemi : sa présentation, sa défense, ses
      *         rouleaux, ses cartes, sa Rage et ses Épines en cours
      */
-    private String describeEnemy() {
+    public String describeEnemy() {
         Enemy current = enemy.get();
         EnemyKind kind = current.getKind();
         StringBuilder text = new StringBuilder(kind.getDescription());
@@ -333,6 +348,15 @@ public class EnemyView implements Disposable {
         character.setSize(croupier.getWidth(), croupier.getHeight());
         character.setOrigin(croupier.getWidth() / 2f, 0f);
         character.setPosition(table.getEnemyCharacterCenterX() - character.getWidth() / 2f, table.getEnemyCharacterY());
+        if (frontView) {
+            // Caché au bord de l'ennemi, au milieu : les symboles qui frappent et ses textes visent
+            // ce point, qui tombe sur le grand ennemi, juste derrière le rebord.
+            Rectangle bounds = table.getBounds();
+            character.setPosition(bounds.x + bounds.width / 2f - character.getWidth() / 2f,
+                table.getFeltTop() - character.getHeight());
+        }
+        character.setVisible(!frontView);
+        restY = character.getY();
         idle();
         deckPile.setPosition(table.getEnemyDeckX(), table.getEnemyPilesY());
         discardPile.setPosition(table.getEnemyDiscardX(), table.getEnemyPilesY());
@@ -432,6 +456,7 @@ public class EnemyView implements Disposable {
         // Lancer : les rouleaux défilent puis s'arrêtent l'un après l'autre ; chaque symbole agit à son arrêt.
         float spinStart = time + 0.2f;
         EnemySymbol[] symbols = turn.symbols();
+        group.addAction(Actions.delay(Math.max(0f, spinStart - MACHINE_RISE), Actions.run(machineUp)));
         group.addAction(Actions.delay(spinStart, Actions.run(() -> spinSoundId = reelSpinSound.loop())));
         for (int i = 0; i < symbols.length; i++) {
             int reel = i;
@@ -448,6 +473,7 @@ public class EnemyView implements Disposable {
             })));
         }
         float afterStops = spinStart + FIRST_STOP + (symbols.length - 1) * STOP_STEP + AFTER_STOPS;
+        group.addAction(Actions.delay(afterStops, Actions.run(machineDown)));
 
         // Suites de ses attaques (renvoi de dégâts), au-dessus du croupier.
         float discardAt = afterStops;
@@ -642,6 +668,45 @@ public class EnemyView implements Disposable {
 
     /** @return le badge de sa défense (le tutoriel le montre). */
     public Actor getDefenseBadge() { return defense; }
+
+    /** @return sa pile de pioche (vue de face : posée debout sur la table, à sa place). */
+    public CardPileView getDeckPile() { return deckPile; }
+
+    /** @return sa défausse. */
+    public CardPileView getDiscardPile() { return discardPile; }
+
+    /** @return ses rouleaux (vue de face : posés sur la table, ou dans sa machine pendant son lancer). */
+    public Group getReelGroup() { return reelGroup; }
+
+    /** Vue classique : ses rouleaux reviennent de son côté de la table. */
+    public void takeBackReels() {
+        group.addActorAt(0, reelGroup); // sous ses cartes et son portrait, comme avant
+    }
+
+    /** Vue de face : sa machine sort de la table ({@code up}) juste avant son lancer et redescend après. */
+    public void setMachine(Runnable up, Runnable down) {
+        machineUp   = up;
+        machineDown = down;
+    }
+
+    /** Passe en vue de face ({@code true}) ou classique : le petit portrait se cache ou revient. */
+    public void setFrontView(boolean front) {
+        if (front == frontView) return;
+        frontView = front;
+        layout();
+    }
+
+    /** @return le petit portrait et sa silhouette (rotation et transparence : il tombe, vaincu). */
+    public Actor getCharacter() { return character; }
+
+    /** @return de combien le croupier est monté au-dessus de sa place, dans son mouvement de repos (pixels). */
+    public float getIdleLift() { return character.getY() - restY; }
+
+    /** @return l'image du portrait, décalée quand il tremble (touché), hoche la tête ou se penche pour frapper. */
+    public Actor getPortrait() { return croupier; }
+
+    /** @return la couleur de sa silhouette qui flashe (blanche quand il est touché, verte quand il se soigne). */
+    public Color getFlashColor() { return flash.getColor(); }
 
     /** @return le centre (Stage) du portrait de l'ennemi, cible des animations d'attaque des symboles. */
     public Vector2 getCroupierCenter() {

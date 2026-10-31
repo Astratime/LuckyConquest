@@ -67,6 +67,9 @@ public class IconButton extends ImageButton {
     /** Garde l'image enfoncée pendant {@code seconds} (le levier tiré au lancer), même désactivé. */
     public void hold(float seconds) { held = seconds; }
 
+    /** Image en miroir, voir {@link #setFlipped}. */
+    private boolean flipped;
+
     @Override
     protected Drawable getImageDrawable() {
         if (held > 0f && getStyle().imageDown != null) return getStyle().imageDown;
@@ -84,7 +87,14 @@ public class IconButton extends ImageButton {
         } else if (pulses && !isDisabled() && isVisible()) {
             target = 1f + (PULSE_SCALE - 1f) * (0.5f + 0.5f * MathUtils.sin(time * PULSE_SPEED));
         }
-        float scale = getScaleX() + (target - getScaleX()) * Math.min(1f, EASE * delta);
-        setScale(scale);
+        float current = Math.abs(getScaleY());
+        float scale = current + (target - current) * Math.min(1f, EASE * delta);
+        setScale(flipped ? -scale : scale, scale);
+    }
+
+    /** Retourne l'image en miroir, de gauche à droite (le levier couché de la vue de face, bras vers le haut). */
+    public void setFlipped(boolean flipped) {
+        this.flipped = flipped;
+        setScaleX(flipped ? -Math.abs(getScaleX()) : Math.abs(getScaleX()));
     }
 }

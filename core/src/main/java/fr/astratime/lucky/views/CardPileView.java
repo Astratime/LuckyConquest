@@ -35,7 +35,10 @@ public class CardPileView extends Group {
     /** Couleurs du libellé : nom en crème, nombre de cartes en doré (comme les textes du panneau latéral). */
     private static final String NAME_COLOR  = Palette.TEXT_BODY.toString();
     private static final String COUNT_COLOR = Palette.TEXT_TITLE.toString();
+    private final BitmapFont  font;
     private       int         count;
+    /** Les cartes du dessous dépassent à droite (voir {@link #setStackTowardRight}). */
+    private       boolean     towardRight;
 
     /**
      * @param name            nom affiché au-dessus de la pile (ex : "Deck")
@@ -46,6 +49,7 @@ public class CardPileView extends Group {
         this.name       = name;
         this.cardWidth  = cardWidth;
         this.cardHeight = cardHeight;
+        this.font       = font;
 
         for (int i = 0; i < STACK_SIZE; i++) {
             Image card = new Image(new TextureRegionDrawable(new TextureRegion(cardBackTexture)));
@@ -71,16 +75,52 @@ public class CardPileView extends Group {
             card.setVisible(i < visible);
             card.getColor().a = count == 0 ? EMPTY_ALPHA : 1f;
         }
-        label.setText("[#" + NAME_COLOR + "]" + name + " [#" + COUNT_COLOR + "]" + count); // police à balises de couleur
+        label.setText(getLabelText()); // police à balises de couleur
         label.pack();
         label.setPosition((getWidth() - label.getWidth()) / 2f, getHeight() + LABEL_MARGIN);
     }
+
+    /**
+     * Vue de face : la pile reste couchée sur la table, mais son nom est écrit
+     * debout, plus grand, par {@link TableProps} (couché, il serait illisible).
+     */
+    public void setFrontView(boolean frontView) {
+        label.setVisible(!frontView);
+    }
+
+    /**
+     * Sens de l'empilement : les cartes du dessous dépassent en bas à gauche
+     * (par défaut) ou, avec {@code towardRight}, en bas à droite. En vue de face,
+     * les piles de gauche de la table empilent vers la droite (vers le milieu).
+     */
+    public void setStackTowardRight(boolean towardRight) {
+        this.towardRight = towardRight;
+        for (int i = 0; i < STACK_SIZE; i++) stack.get(i).setPosition(stackX(i), i * STACK_OFFSET);
+    }
+
+    private float stackX(int index) {
+        return (towardRight ? STACK_SIZE - 1 - index : index) * STACK_OFFSET;
+    }
+
+    /** @return le milieu du bas du nom (coordonnées du Stage, à plat). */
+    public float getLabelCenterX() { return getX() + getWidth() / 2f; }
+
+    /** @return l'ordonnée (Stage, à plat) du bas du nom. */
+    public float getLabelBottomY() { return getY() + label.getY(); }
+
+    /** @return le nom et le nombre de cartes, avec les balises de couleur de la police. */
+    public String getLabelText() {
+        return "[#" + NAME_COLOR + "]" + name + " [#" + COUNT_COLOR + "]" + count;
+    }
+
+    /** @return la police du nom. */
+    public BitmapFont getFont() { return font; }
 
     /** @return le nombre de cartes actuellement affiché. */
     public int getCount() { return count; }
 
     /** @return l'abscisse (Stage) de la carte du dessus : départ/arrivée des cartes animées. */
-    public float getTopX() { return getX() + topIndex() * STACK_OFFSET; }
+    public float getTopX() { return getX() + stackX(topIndex()); }
     /** @return l'ordonnée (Stage) de la carte du dessus : départ/arrivée des cartes animées. */
     public float getTopY() { return getY() + topIndex() * STACK_OFFSET; }
 

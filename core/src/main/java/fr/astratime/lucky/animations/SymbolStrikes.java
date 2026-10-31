@@ -1,5 +1,6 @@
 package fr.astratime.lucky.animations;
 
+import fr.astratime.lucky.views.TableProjection;
 import fr.astratime.lucky.assets.Palette;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Color;
@@ -188,6 +189,12 @@ public class SymbolStrikes extends Actor implements Disposable {
         setTouchable(Touchable.disabled);
     }
 
+    /** Vue de face : les points de la table passent à leur place à l'écran (voir {@link TableProjection}). */
+    private TableProjection tableProjection = new TableProjection();
+
+    /** Vue de face : les points reçus sur la table sont reportés à leur place à l'écran. */
+    public void setTableProjection(TableProjection projection) { this.tableProjection = projection; }
+
     /**
      * Lance l'animation de {@code symbol}, qui part de {@code from} (centre de
      * son rouleau) et touche {@code to} (sa cible) {@link #IMPACT_TIME}
@@ -202,6 +209,11 @@ public class SymbolStrikes extends Actor implements Disposable {
      * plus : l'Étoile vise aussi le bouclier du joueur puis la pièce des gains.
      */
     public void play(Symbol symbol, Vector2 from, Vector2 to, float delay, Vector2... extra) {
+        from = tableProjection.toScreen(from.cpy());
+        to   = tableProjection.toScreen(to.cpy());
+        Vector2[] targets = new Vector2[extra.length];
+        for (int i = 0; i < extra.length; i++) targets[i] = tableProjection.toScreen(extra[i].cpy());
+        extra = targets;
         Strike strike = new Strike(symbol, from, to, delay, extra);
         prepare(strike);
         strikes.add(strike);

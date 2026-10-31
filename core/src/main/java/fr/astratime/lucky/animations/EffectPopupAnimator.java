@@ -1,5 +1,7 @@
 package fr.astratime.lucky.animations;
 
+import com.badlogic.gdx.math.Vector2;
+import fr.astratime.lucky.views.TableProjection;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Texture;
@@ -89,6 +91,12 @@ public class EffectPopupAnimator implements Disposable {
         labelStyle = new Label.LabelStyle(font, Color.WHITE);
     }
 
+    /** Vue de face : les points de la table passent à leur place à l'écran (voir {@link TableProjection}). */
+    private TableProjection tableProjection = new TableProjection();
+
+    /** Vue de face : les points reçus sur la table sont reportés à leur place à l'écran. */
+    public void setTableProjection(TableProjection projection) { this.tableProjection = projection; }
+
     /**
      * Affiche {@code popups} empilés (le premier en haut), centrés sur
      * {@code (centerX, centerY)} (coordonnées du Stage), sans sortir de l'écran.
@@ -111,6 +119,9 @@ public class EffectPopupAnimator implements Disposable {
      * Rien n'est appelé pour les textes retirés avant d'apparaître ({@link #cancel()}).
      */
     public void play(List<EffectPopup> popups, float centerX, float centerY, float startDelay, IntConsumer onShown) {
+        Vector2 at = tableProjection.toScreen(centerX, centerY);
+        centerX = at.x;
+        centerY = at.y;
         float worldWidth = layer.getStage().getViewport().getWorldWidth();
         float y = centerY;
 
