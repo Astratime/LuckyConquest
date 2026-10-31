@@ -126,6 +126,7 @@ public class SpinControls {
         float centerY = table.getReelRowY() + SlotView.CELL_HEIGHT / 2f;
         lever.setOrigin(lever.getWidth() / 2f, lever.getHeight() / 2f);
         lever.setRotation(frontView ? LEVER_FRONT_ROTATION : 0f);
+        lever.setFlipped(frontView); // couché, son pied à plat en bas et son bras qui monte vers la boule
         lever.setPosition(centerX - lever.getWidth() / 2f, centerY - lever.getHeight() / 2f);
     }
 
