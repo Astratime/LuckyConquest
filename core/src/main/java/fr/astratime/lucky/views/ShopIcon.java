@@ -77,7 +77,14 @@ public class ShopIcon extends Group {
      */
     public void setFrontView(boolean frontView) {
         image.getColor().a = frontView ? 0f : 1f;
+        name.getColor().a  = frontView ? 0f : 1f; // écrit sur le comptoir de l'étal
     }
+
+    /** @return le nom de l'échoppe, tel qu'il s'affiche. */
+    public CharSequence getTitle() { return name.getText(); }
+
+    /** @return la police du nom. */
+    public BitmapFont getNameFont() { return name.getStyle().font; }
 
     /** @return la hauteur du nom, sous l'étal. */
     public float getNameHeight() { return name.getHeight(); }

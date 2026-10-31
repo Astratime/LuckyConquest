@@ -2284,6 +2284,7 @@ public class GameScreen extends ScreenAdapter {
         piles.deck().setFrontView(front);
         piles.discard().setFrontView(front);
         shopIcon.setFrontView(front);
+        spinControls.setFrontView(front);
         placeShopIcon();
         playerMachine.putAway();
         enemyMachine.putAway();

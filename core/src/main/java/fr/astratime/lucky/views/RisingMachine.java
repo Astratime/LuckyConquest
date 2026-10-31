@@ -28,8 +28,14 @@ public class RisingMachine extends Billboard {
 
     /** Durée de la montée et de la descente, en secondes. */
     private static final float MOVE_TIME = 0.32f;
-    /** Caisse autour de la vitre des rouleaux : marges (table à plat). */
-    private static final float SIDE = 26f, BOTTOM = 44f, TOP = 74f;
+    /**
+     * Caisse autour de la vitre des rouleaux : marges (table à plat). Sur les
+     * côtés, celle du cadre des rouleaux : la machine a la largeur de son
+     * emplacement et sort de son bord avant ({@link #FRAME}).
+     */
+    private static final float SIDE = TableView.REEL_FRAME_PAD, BOTTOM = 44f, TOP = 74f;
+    /** Le bord avant du cadre des rouleaux, sous la vitre : la fente d'où sort la machine. */
+    private static final float FRAME = TableView.REEL_FRAME_PAD;
     private static final float TRIM = 8f, LINE = 4f, BULB = 10f, BULB_GAP = 22f;
 
     private static final Color OUTLINE = Color.valueOf("22141aff");
@@ -123,6 +129,12 @@ public class RisingMachine extends Billboard {
         lift = 0f;
         super.place();
         if (!projection.isEnabled()) return;
+        // Le bas de la caisse est posé sur le bord avant du cadre des rouleaux.
+        Vector2 slit = slit();
+        Vector2 foot = getAnchor();
+        Rectangle glass = window.get();
+        setScale(projection.scaleAt(glass.x + glass.width / 2f, glass.y - FRAME)); // largeur du cadre à cet endroit
+        setPosition(slit.x - foot.x, slit.y - foot.y);
         // Hauteur de la machine à l'écran : sous la table, elle est descendue d'autant.
         float height = (window.get().height + BOTTOM + TOP) * getScaleY();
         lift = -(1f - Interpolation.pow2Out.apply(rise)) * height;
@@ -134,7 +146,7 @@ public class RisingMachine extends Billboard {
         if (content == null || !projection.isEnabled()) return;
         place();
         // Seul ce qui est sorti de la table se voit : on coupe sous la fente.
-        Vector2 slit = projection.project(getAnchor());
+        Vector2 slit = slit();
         area.set(-1e5f, slit.y, 2e5f, 1e5f);
         batch.flush();
         ScissorStack.calculateScissors(getStage().getCamera(), batch.getTransformMatrix(), area, scissor);
@@ -142,6 +154,12 @@ public class RisingMachine extends Billboard {
         super.draw(batch, parentAlpha);
         batch.flush();
         ScissorStack.popScissors();
+    }
+
+    /** @return la fente à l'écran : le milieu du bord avant du cadre des rouleaux. */
+    private Vector2 slit() {
+        Rectangle glass = window.get();
+        return projection.project(new Vector2(glass.x + glass.width / 2f, glass.y - FRAME));
     }
 
     /** La caisse, sous les symboles (dans le repère de la table à plat, comme eux). */

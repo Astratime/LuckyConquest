@@ -7,7 +7,8 @@ Produit, en pixel art à la taille 1 (le jeu les agrandit sans lissage) :
                                       (corps, tête, paupière, queue, patte) et leurs silhouettes
                                       blanches (*_flash.png) pour le flash quand il est touché.
   assets/front/props/*.png            les faces de l'étal de l'échoppe en relief (comptoir, dessus
-                                      garni, marchandises, auvent rayé et son lambrequin).
+                                      garni, marchandises, auvent rayé et son lambrequin), et la
+                                      pancarte des decks et défausses.
 
 Toutes les pièces du rat partagent le même cadre (CANVAS) : le jeu les superpose
 au même point, puis décale la tête (respiration), fait osciller la queue autour
@@ -314,6 +315,19 @@ def stall_valance():
     return outline(im, 2)
 
 
+def sign_board():
+    """Pancarte des piles : planche de bois sombre clouée, étirée par le jeu (bords de 3 pixels fixes)."""
+    w, h = 12, 10
+    im = Image.new('RGBA', (w, h), (92, 56, 30, 255))
+    d = ImageDraw.Draw(im)
+    d.line([(1, 1), (w - 2, 1)], fill=(132, 86, 48))
+    d.line([(1, h // 2), (w - 2, h // 2)], fill=(68, 40, 22))
+    for x, y in ((2, 2), (w - 3, 2), (2, h - 3), (w - 3, h - 3)):
+        d.point((x, y), fill=(214, 190, 128))
+    d.rectangle([0, 0, w - 1, h - 1], outline=OUTLINE)
+    return im
+
+
 def main():
     rat_dir = os.path.join(ROOT, 'rat_cales')
     os.makedirs(rat_dir, exist_ok=True)
@@ -327,7 +341,7 @@ def main():
     os.makedirs(props_dir, exist_ok=True)
     for name, img in {'stall_front': stall_front(), 'stall_top': stall_top(),
                       'stall_goods': stall_goods(), 'stall_awning': stall_awning(),
-                      'stall_valance': stall_valance()}.items():
+                      'stall_valance': stall_valance(), 'sign_board': sign_board()}.items():
         img.save(os.path.join(props_dir, name + '.png'))
 
 

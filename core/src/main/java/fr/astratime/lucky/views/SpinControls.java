@@ -39,6 +39,9 @@ public class SpinControls {
     private final Tooltip     tooltip;
     /** Levier de la machine du joueur : lance le tirage. */
     private final IconButton  lever;
+    /** Vue de face : le levier est couché (rotation en degrés, boule vers la gauche). */
+    private static final float LEVER_FRONT_ROTATION = 90f;
+    private boolean           frontView;
     /** Mise du prochain tirage (aucune, 5 %, 10 %, 15 % des gains). */
     private final IconButton  stakeButton;
     /** Palier de la Mise, sous son bouton (« Mise », « Mise 10 % »). */
@@ -116,10 +119,23 @@ public class SpinControls {
             stakeButton.getY() + stakeButton.getHeight() * 1.5f);
     }
 
-    /** Place le levier à gauche des rouleaux du joueur. */
+    /** Place le levier à gauche des rouleaux du joueur (couché à l'horizontale en vue de face). */
     public void placeLever() {
-        lever.setPosition(table.getPlayerReelRowX() - LEVER_GAP - lever.getWidth(),
-            table.getReelRowY() + (SlotView.CELL_HEIGHT - lever.getHeight()) / 2f);
+        float extent = frontView ? lever.getHeight() : lever.getWidth(); // largeur occupée sur la table
+        float centerX = table.getPlayerReelRowX() - LEVER_GAP - extent / 2f;
+        float centerY = table.getReelRowY() + SlotView.CELL_HEIGHT / 2f;
+        lever.setOrigin(lever.getWidth() / 2f, lever.getHeight() / 2f);
+        lever.setRotation(frontView ? LEVER_FRONT_ROTATION : 0f);
+        lever.setPosition(centerX - lever.getWidth() / 2f, centerY - lever.getHeight() / 2f);
+    }
+
+    /**
+     * Vue de face : le levier se couche à l'horizontale, la boule vers l'extérieur
+     * et son pied contre les rouleaux.
+     */
+    public void setFrontView(boolean frontView) {
+        this.frontView = frontView;
+        placeLever();
     }
 
     /**
