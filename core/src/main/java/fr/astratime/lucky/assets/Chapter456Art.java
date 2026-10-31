@@ -858,12 +858,109 @@ final class Chapter456Art {
     }
 
     /**
-     * La Machine Originelle : une immense machine à sous d'or et de lumière.
-     * Fronton en arc semé d'ampoules et d'une étoile, cinq fenêtres de
-     * rouleaux alignant des 7, un levier à boule rouge, un plateau débordant
-     * de pièces, et des étoiles qui scintillent autour.
+     * La Machine Originelle, telle qu'on la voit dans sa cinématique d'entrée
+     * ({@code MachineCutscene}) : un corps d'or carré bordé de deux rangées
+     * d'ampoules, un dôme à quatre gradins avec sa fente à pièce et un diamant
+     * blanc au sommet, cinq rouleaux arrêtés sur cinq yeux rouges qui te
+     * fixent, la ligne de gain rouge, le plateau à piles de pièces, le levier
+     * sur le flanc droit.
      */
     static int[][] machineOriginelle() {
+        return machineOriginelle(LEVER_UP, EYES_NORMAL);
+    }
+
+    /** Positions du levier de la Machine Originelle : levé (au repos), à mi-course, baissé. */
+    static final int LEVER_UP = 0, LEVER_HALF = 1, LEVER_DOWN = 2;
+    /** Lumière de ses cinq yeux : normale, allumée, éclatante (ils clignotent). */
+    static final int EYES_NORMAL = 0, EYES_LIT = 1, EYES_BLAZE = 2;
+
+    /**
+     * Une image de la Machine Originelle animée en combat : son levier en
+     * position {@code lever} ({@link #LEVER_UP}...) et ses yeux plus ou moins
+     * allumés, {@code eyes} ({@link #EYES_NORMAL}...).
+     */
+    static int[][] machineOriginelle(int lever, int eyes) {
+        PixelCanvas g = new PixelCanvas(W, H);
+        int gold = rgba("ffc93a"), goldLight = rgba("ffe58a"), goldDark = rgba("b8801f"), out = rgba("140a0a");
+        int glass = rgba("f4ecdc"), red = rgba("e0283a"), redDeep = rgba("6e0f1e"), white = rgba("ffffff");
+        int bulbOn = rgba("fff6c8"), tray = rgba("2a1a10");
+        int steel = rgba("d8d8e0"), steelDark = rgba("8a8a9a"), knobLight = rgba("ff8a9a");
+
+        // Le levier, derrière le flanc droit : tige d'acier, boule rouge au bout.
+        g.rect(29, 24, 30, 28, goldDark);
+        int knobY = lever == LEVER_UP ? 14 : lever == LEVER_HALF ? 23 : 35;
+        if (lever == LEVER_HALF) {
+            g.rect(31, 25, 32, 26, steel);
+            g.rect(31, 27, 32, 27, steelDark);
+        } else {
+            int tipY = lever == LEVER_UP ? knobY + 2 : knobY;
+            g.line(30, 26, 31, tipY, steel);
+            g.line(31, 26, 32, tipY, steelDark);
+        }
+        g.rect(30, knobY, 32, knobY + 2, red);
+        g.set(30, knobY, knobLight);
+        g.rect(32, knobY + 1, 32, knobY + 2, redDeep);
+        // Dôme à gradins, du plus large au plus étroit, et sa fente à pièce.
+        int[][] steps = {{4, 25, 13}, {7, 22, 11}, {9, 20, 9}, {12, 17, 7}};
+        for (int i = 0; i < steps.length; i++) {
+            g.rect(steps[i][0], steps[i][2], steps[i][1], steps[i][2] + 1, i % 2 == 0 ? gold : goldLight);
+        }
+        g.rect(17, 11, 19, 11, out);
+        // Le diamant blanc au sommet, qui brille.
+        g.rect(14, 3, 15, 6, white);
+        g.rect(13, 4, 16, 5, white);
+        g.set(14, 4, glass);
+        // Le corps : reflet à gauche, ombre à droite et en bas.
+        g.rect(1, 15, 28, 40, gold);
+        g.rect(1, 16, 28, 16, goldLight);
+        g.rect(1, 15, 1, 40, goldLight);
+        g.rect(27, 15, 28, 40, goldDark);
+        g.rect(1, 39, 28, 39, goldDark);
+        // Deux rangées d'ampoules, une allumée sur deux.
+        for (int x = 1; x <= 28; x++) {
+            int bulb = x % 2 == 0 ? out : (x % 4 == 1 ? bulbOn : goldDark);
+            g.set(x, 15, bulb);
+            g.set(x, 40, bulb);
+        }
+        // Les cinq rouleaux, arrêtés sur cinq yeux rouges cerclés de noir ;
+        // la ligne de gain rouge de chaque côté.
+        // Quand ils clignotent, l'iris s'allume, sa lueur rougit la vitre du rouleau.
+        int iris  = eyes == EYES_BLAZE ? rgba("ffd27a") : eyes == EYES_LIT ? rgba("ff5a4a") : red;
+        int pupil = eyes == EYES_BLAZE ? rgba("fff6c8") : eyes == EYES_LIT ? rgba("ffb08a") : redDeep;
+        int pane  = eyes == EYES_BLAZE ? rgba("ff9a8a") : eyes == EYES_LIT ? rgba("ffd0c4") : glass;
+        int ring  = eyes == EYES_BLAZE ? rgba("8a1020") : out;
+        int line  = eyes == EYES_NORMAL ? red : rgba("ff8a6a");
+        g.rect(1, 19, 28, 27, out);
+        g.rect(2, 20, 27, 26, goldDark);
+        for (int i = 0; i < 5; i++) {
+            int x0 = 3 + i * 5;
+            g.rect(x0, 20, x0 + 3, 26, pane);
+            g.rect(x0 + 1, 21, x0 + 2, 25, ring);
+            g.rect(x0, 22, x0 + 3, 24, ring);
+            g.rect(x0 + 1, 22, x0 + 2, 24, iris);
+            g.set(x0 + 1, 23, pupil);
+            g.set(x0 + 2, 22, white);
+        }
+        g.set(1, 23, line);
+        g.set(28, 23, line);
+        // Le plateau à pièces, ses piles d'or.
+        g.rect(7, 31, 22, 36, out);
+        g.rect(8, 32, 21, 35, tray);
+        for (int i = 0; i < 7; i++) {
+            int x = 8 + i * 2;
+            g.rect(x, 35 - (i * 2 % 3), x, 35, gold);
+        }
+        return g.outlined();
+    }
+
+    /**
+     * Ancien dessin de la Machine Originelle (avant d'être redessinée comme
+     * dans sa cinématique d'entrée), gardé : une immense machine à sous d'or
+     * et de lumière. Fronton en arc semé d'ampoules et d'une étoile, cinq
+     * fenêtres de rouleaux alignant des 7, un levier à boule rouge, un plateau
+     * débordant de pièces, et des étoiles qui scintillent autour.
+     */
+    static int[][] machineOriginelleAncienne() {
         PixelCanvas g = new PixelCanvas(W, H);
         int body = rgba("ffd54a"), bodyDark = rgba("c4891e"), bodyDeep = rgba("8a5a12"), light = rgba("fff6c8");
         int panel = rgba("1a0f0f"), reel = rgba("f4efe4"), reelShade = rgba("c8c0b4"), seven = rgba("d8202c");

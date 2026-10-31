@@ -103,6 +103,8 @@ public class EnemyView implements Disposable {
     private float               restY;
     private final Image         croupier;
     private final Image         flash;
+    /** Secondes depuis l'arrivée de l'ennemi affiché (mouvements de son portrait). */
+    private float               animationTime;
     private final ShieldBadge   defense;
     private final CardPileView  deckPile;
     private final CardPileView  discardPile;
@@ -149,7 +151,13 @@ public class EnemyView implements Disposable {
         this.reelStopSound = reelStopSound;
         this.enemy         = enemy;
 
-        croupier = new Image(new TextureRegionDrawable(new TextureRegion(textures.croupier)));
+        croupier = new Image(new TextureRegionDrawable(new TextureRegion(textures.croupier))) {
+            @Override
+            public void act(float delta) {
+                super.act(delta);
+                animate(delta);
+            }
+        };
         croupier.setSize(textures.croupier.getWidth() * EnemyTextures.CROUPIER_SCALE,
             textures.croupier.getHeight() * EnemyTextures.CROUPIER_SCALE);
         flash = new Image(new TextureRegionDrawable(new TextureRegion(textures.croupierFlash)));
@@ -293,11 +301,29 @@ public class EnemyView implements Disposable {
         text.append('\n').append(line);
     }
 
+    /**
+     * Fait vivre le portrait (la Machine Originelle tire son levier et cligne des yeux,
+     * voir {@link EnemyTextures#portrait(EnemyKind, float)}) : change d'image quand il le faut.
+     */
+    private void animate(float delta) {
+        animationTime += delta;
+        Texture frame = textures.portrait(shownKind, animationTime);
+        TextureRegionDrawable drawable = (TextureRegionDrawable) croupier.getDrawable();
+        if (drawable.getRegion().getTexture() == frame) return;
+        drawable.setRegion(new TextureRegion(frame));
+        ((TextureRegionDrawable) flash.getDrawable()).setRegion(
+            new TextureRegion(textures.portraitFlash(shownKind, animationTime)));
+    }
+
+    /** @return les secondes depuis l'arrivée de l'ennemi, qui règlent les mouvements de son portrait. */
+    public float getAnimationTime() { return animationTime; }
+
     /** Montre le portrait de l'ennemi du combat en cours, et ses symboles au repos sur les rouleaux. */
     private void showKind() {
         Enemy current = enemy.get();
         EnemyKind kind = current.getKind();
         if (kind == shownKind && current.getPhase() == shownPhase) return;
+        if (kind != shownKind) animationTime = 0f;
         shownKind  = kind;
         shownPhase = current.getPhase();
         ((TextureRegionDrawable) croupier.getDrawable()).setRegion(new TextureRegion(textures.portrait(kind)));
@@ -343,6 +369,8 @@ public class EnemyView implements Disposable {
         float room  = table.getFeltTop() - table.getEnemyCharacterY();
         Texture portrait = textures.portrait(shownKind);
         int   scale = Math.clamp((int) (room / portrait.getHeight()), 2, EnemyTextures.CROUPIER_SCALE);
+        // La Machine Originelle, immense, est un cran plus grande : elle déborde sur le rebord de la table.
+        if (shownKind == EnemyKind.MACHINE_ORIGINELLE) scale++;
         croupier.setSize(portrait.getWidth() * scale, portrait.getHeight() * scale);
         flash.setSize(croupier.getWidth(), croupier.getHeight());
         character.setSize(croupier.getWidth(), croupier.getHeight());
