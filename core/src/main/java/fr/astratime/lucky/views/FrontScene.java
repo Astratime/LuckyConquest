@@ -17,9 +17,7 @@ import fr.astratime.lucky.entities.exploration.Dungeon;
 import fr.astratime.lucky.entities.Enemy;
 import fr.astratime.lucky.entities.enemy.EnemyKind;
 
-import java.util.ArrayList;
 import java.util.EnumMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Supplier;
@@ -122,9 +120,9 @@ public class FrontScene extends Actor implements Disposable {
     /** Respiration : amplitude (en pixels du portrait) et période, en secondes. */
     private static final float BREATH          = 0.6f;
     private static final float BREATH_PERIOD   = 2.6f;
-    /** La tête (le haut du portrait) bouge plus que le corps ; elle déborde d'un peu sur le corps. */
+    /** La tête (le haut du portrait) bouge plus que le corps ; le cou, autour de {@code HEAD_PART}, se plie sur {@code NECK} rangées. */
     private static final float HEAD_PART       = 0.5f;
-    private static final int   HEAD_OVERLAP    = 2;
+    private static final float NECK            = 10f;
     /** Balancement de tout le corps, en degrés, et sa période. */
     private static final float SWAY            = 1.2f;
     private static final float SWAY_PERIOD     = 5.3f;
@@ -156,7 +154,9 @@ public class FrontScene extends Actor implements Disposable {
     private final Map<Decor, Texture>     decors = new EnumMap<>(Decor.class);
     private final Map<EnemyKind, Optional<EnemyIdle>> idles = new EnumMap<>(EnemyKind.class);
     private final EnemyIdle.Pose pose = new EnemyIdle.Pose();
-    private final Rows rows = new Rows();
+    private boolean[] skipped = new boolean[0];
+    // Mouvement de la tête de l'image en cours : centre du cou (rangée), décalage à l'écran.
+    private float headCenter, headDx, headDy;
     private final PortraitFx fx = new PortraitFx();
 
     private Decor decor = Decor.CASINO;
@@ -251,38 +251,67 @@ public class FrontScene extends Actor implements Disposable {
         y -= pose.dy * pixel;
 
         int height = portraitTexture.getHeight();
-        int split = Math.round(height * HEAD_PART);
         float bodyY = y + breath * 0.5f;
-        float headX = x + (lookOffset() + pose.headDx) * pixel, headY = y + breath - pose.headDy * pixel;
         float feetX = x + originX;
         fx.set(x, bodyY, feetX, bodyY, rotation, alpha, height);
         if (idle != null) idle.drawBack(fx, time);
 
-        // Le corps, puis la tête par-dessus, qui respire plus fort et se tourne de temps en temps ; les bandes à part.
-        rows.clear();
-        rows.add(0, height);
-        for (EnemyIdle.Pose.Band band : pose.bands) rows.remove(band.top, band.bottom);
-        Texture head = blinking ? blink : portraitTexture;
-        for (int i = 0; i < rows.size(); i += 2) {
-            int top = Math.max(rows.get(i), split), bottom = rows.get(i + 1);
-            if (top < bottom) drawRows(batch, portraitTexture, flashTexture, top, bottom, x, bodyY, feetX, bodyY, rotation, alpha, flash);
+        // Chaque rangée suit la tête autant qu'elle en est proche : la tête bouge (respire plus fort, se tourne),
+        // le corps non, et le cou se plie entre les deux, sans que la tête se détache.
+        headCenter = height * HEAD_PART;
+        headDx = (lookOffset() + pose.headDx) * pixel;
+        headDy = breath * 0.5f - pose.headDy * pixel;
+        Texture shown = blinking ? blink : portraitTexture;
+        if (skipped.length < height) skipped = new boolean[height];
+        java.util.Arrays.fill(skipped, false);
+        for (EnemyIdle.Pose.Band band : pose.bands) {
+            for (int r = Math.max(0, band.top); r < Math.min(height, band.bottom); r++) skipped[r] = true;
         }
-        for (int i = 0; i < rows.size(); i += 2) {
-            int top = rows.get(i), bottom = Math.min(rows.get(i + 1), split + HEAD_OVERLAP);
-            if (top < bottom) drawRows(batch, head, flashTexture, top, bottom, headX, headY, feetX, headY, rotation, alpha, flash);
+        for (int r = height - 1; r >= 0; r--) {
+            if (skipped[r]) continue;
+            float top = rowEdge(r, bodyY, height), bottom = rowEdge(r + 1, bodyY, height);
+            if (top <= bottom) continue;
+            float rx = x + headWeight(r + 0.5f) * headDx;
+            drawRow(batch, shown, flashTexture, r, rx, bottom, top - bottom, feetX, bodyY, rotation, alpha, flash);
         }
         for (EnemyIdle.Pose.Band band : pose.bands) {
-            boolean inHead = band.top < split;
-            float bx = (inHead ? headX : x) + band.dx * pixel, by = (inHead ? headY : bodyY) - band.dy * pixel;
+            float w = headWeight(band.top);
+            float bx = x + w * headDx + band.dx * pixel, by = bodyY + w * headDy - band.dy * pixel;
             // Le pivot de la bande suit la rotation de tout le corps autour des pieds, puis la bande tourne sur lui.
             float px = bx + band.pivotX * pixel, py = by + (height - band.pivotY) * pixel;
             float cos = MathUtils.cosDeg(rotation), sin = MathUtils.sinDeg(rotation);
             float rx = feetX + (px - feetX) * cos - (py - bodyY) * sin, ry = bodyY + (px - feetX) * sin + (py - bodyY) * cos;
-            drawRows(batch, inHead ? head : portraitTexture, flashTexture, band.top, band.bottom, bx + rx - px, by + ry - py,
+            drawRows(batch, shown, flashTexture, band.top, band.bottom, bx + rx - px, by + ry - py,
                 rx, ry, rotation + band.rotation, alpha, flash);
         }
         if (idle != null) idle.drawFront(fx, time);
         batch.setColor(Color.WHITE);
+    }
+
+    /** @return combien la rangée {@code row} suit la tête : 1 dans la tête, 0 dans le corps, entre les deux au cou. */
+    private float headWeight(float row) {
+        float u = (headCenter + NECK / 2f - row) / NECK;
+        u = MathUtils.clamp(u, 0f, 1f);
+        return u * u * (3f - 2f * u);
+    }
+
+    /** @return la hauteur à l'écran du haut de la rangée {@code row} (le bas de la précédente) : elles se touchent toujours. */
+    private float rowEdge(int row, float bodyY, int height) {
+        return bodyY + (height - row) * pixel + headWeight(row) * headDy;
+    }
+
+    /** Une rangée du portrait, posée de {@code bottom} à {@code bottom + rowHeight}, tournée autour des pieds. */
+    private void drawRow(Batch batch, Texture texture, Texture silhouette, int row, float x, float bottom, float rowHeight,
+                         float pivotX, float pivotY, float rotation, float alpha, Color flash) {
+        float width = texture.getWidth() * pixel;
+        batch.setColor(1f, 1f, 1f, alpha);
+        batch.draw(texture, x, bottom, pivotX - x, pivotY - bottom, width, rowHeight, 1f, 1f, rotation,
+            0, row, texture.getWidth(), 1, false, false);
+        if (silhouette != null && flash.a > 0f) {
+            batch.setColor(flash.r, flash.g, flash.b, flash.a * alpha);
+            batch.draw(silhouette, x, bottom, pivotX - x, pivotY - bottom, width, rowHeight, 1f, 1f, rotation,
+                0, row, silhouette.getWidth(), 1, false, false);
+        }
     }
 
     /** @return le décalage de la tête qui se tourne (en pixels du portrait) : vers la gauche, puis la droite. */
@@ -315,33 +344,6 @@ public class FrontScene extends Actor implements Disposable {
             batch.draw(silhouette, x, sliceY, originX, originY, width, height, 1f, 1f, rotation,
                 0, top, silhouette.getWidth(), rows, false, false);
         }
-    }
-
-    /** Les rangées encore dessinées d'un bloc : des paires {@code [top, bottom)}, d'où on retire celles des bandes. */
-    private static final class Rows {
-        private final List<Integer> bounds = new ArrayList<>();
-
-        void clear() { bounds.clear(); }
-
-        void add(int top, int bottom) {
-            bounds.add(top);
-            bounds.add(bottom);
-        }
-
-        void remove(int top, int bottom) {
-            List<Integer> kept = new ArrayList<>();
-            for (int i = 0; i < bounds.size(); i += 2) {
-                int a = bounds.get(i), b = bounds.get(i + 1);
-                if (top > a) { kept.add(a); kept.add(Math.min(b, top)); }
-                if (bottom < b) { kept.add(Math.max(a, bottom)); kept.add(b); }
-            }
-            bounds.clear();
-            for (int i = 0; i < kept.size(); i += 2) if (kept.get(i) < kept.get(i + 1)) add(kept.get(i), kept.get(i + 1));
-        }
-
-        int size() { return bounds.size(); }
-
-        int get(int i) { return bounds.get(i); }
     }
 
     /**
