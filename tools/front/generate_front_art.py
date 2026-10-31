@@ -4,6 +4,7 @@ Dessins de la vue de face du combat (Options > Visuel > « Vue de la table : de 
 Produit, en pixel art à la taille 1 (le jeu les agrandit sans lissage) :
   assets/front/decor_cale.png         le décor de la Cale (Port des Contrebandiers)
   assets/front/rat_cales/*.png        le Rat des cales en pièces détachées, animées par le jeu
+                                      (contour épais de 2 pixels, comme le reste du jeu)
                                       (corps, tête, paupière, queue, patte) et leurs silhouettes
                                       blanches (*_flash.png) pour le flash quand il est touché.
   assets/front/props/*.png            les faces de l'étal de l'échoppe en relief (comptoir, dessus
@@ -50,6 +51,11 @@ def outline(img, width=1):
     out = Image.fromarray(o)
     out.alpha_composite(img)
     return out
+
+
+def thick(img):
+    """Le style des ennemis en grand (choix d'Astra, 2026-10-31) : contour épais de 2 pixels, comme le reste du jeu."""
+    return outline(img)
 
 
 def flash(img):
@@ -444,6 +450,7 @@ def main():
     decor_cale().save(os.path.join(ROOT, 'decor_cale.png'))
     parts = {'body': rat_body(), 'head': rat_head(), 'tail': rat_tail(), 'paw': rat_paw()}
     for name, img in parts.items():
+        img = thick(img)
         img.save(os.path.join(rat_dir, name + '.png'))
         flash(img).save(os.path.join(rat_dir, name + '_flash.png'))
     rat_eyelid().save(os.path.join(rat_dir, 'eyelid.png'))
