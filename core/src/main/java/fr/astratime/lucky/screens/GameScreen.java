@@ -2311,7 +2311,9 @@ public class GameScreen extends ScreenAdapter {
     /** Libère toutes les ressources natives (Stage, polices, textures, sons) possédées par cet écran. */
     /** @return le décor de la vue de face : celui du donjon en Exploration, sinon le casino. */
     private FrontScene.Decor frontDecor() {
-        return run instanceof DungeonRun dungeonRun ? FrontScene.Decor.of(dungeonRun.getDungeon()) : FrontScene.Decor.CASINO;
+        if (run instanceof DungeonRun dungeonRun) return FrontScene.Decor.of(dungeonRun.getDungeon());
+        if (run instanceof TowerRun towerRun)     return FrontScene.Decor.of(towerRun.getChapter());
+        return run == null ? FrontScene.Decor.ENTRAINEMENT : FrontScene.Decor.CASINO;
     }
 
     @Override

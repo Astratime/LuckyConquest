@@ -16,6 +16,7 @@ import fr.astratime.lucky.assets.EnemyTextures;
 import fr.astratime.lucky.entities.exploration.Dungeon;
 import fr.astratime.lucky.entities.Enemy;
 import fr.astratime.lucky.entities.enemy.EnemyKind;
+import fr.astratime.lucky.entities.tower.Chapter;
 
 import java.util.EnumMap;
 import java.util.Map;
@@ -34,7 +35,8 @@ public class FrontScene extends Actor implements Disposable {
 
     /**
      * Décor derrière l'ennemi : un par donjon de l'Exploration (la Prairie en a
-     * un par couleur), le casino ailleurs. Ses lumières (torches, lanternes,
+     * un par couleur), un par chapitre de la Tour, un pour l'Entraînement, le
+     * casino ailleurs. Ses lumières (torches, lanternes,
      * lave, projecteurs) vacillent : leur centre en pixels du décor (origine en
      * haut à gauche), leur couleur et leur rayon. Dessins :
      * tools/front/generate_front_art.py et generate_decors.py.
@@ -64,6 +66,13 @@ public class FrontScene extends Actor implements Disposable {
         TOMBEAU("tombeau", WARM, 34f, 122, 46, 242, 46),
         OASIS("oasis"),
         VOLCAN("volcan", LAVA, 40f, 70, 30, 80, 110, 60, 172, 300, 184),
+        GENESE("genese", WARM, 30f, 150, 60, 50, 70, 310, 70),
+        TABLES_SACREES("tables_sacrees", WARM, 30f, 43, 40, 303, 40),
+        DERNIER_TIRAGE("dernier_tirage", WATER, 30f, 320, 50, 60, 96, 290, 98),
+        MONDE_SANS_MAITRE("monde_sans_maitre", LAVA, 34f, 50, 128, 310, 128),
+        LA_MAISON("la_maison", GOLDEN, 30f, 80, 16, 280, 16, 180, 60),
+        LE_JACKPOT("le_jackpot", GOLDEN, 30f, 180, 40, 40, 50, 320, 60),
+        ENTRAINEMENT("entrainement", WARM, 40f, 180, 32),
         CASINO("menu/casino_interior.png", true);
 
         final String  path;
@@ -105,6 +114,18 @@ public class FrontScene extends Actor implements Disposable {
                 if (decor.name().equals(dungeon.name())) return decor;
             }
             return CASINO;
+        }
+
+        /** @return le décor d'un chapitre de la Tour des épreuves. */
+        public static Decor of(Chapter chapter) {
+            return switch (chapter) {
+                case GENESE            -> GENESE;
+                case TABLES_SACREES    -> TABLES_SACREES;
+                case DERNIER_TIRAGE    -> DERNIER_TIRAGE;
+                case MONDE_SANS_MAITRE -> MONDE_SANS_MAITRE;
+                case LA_MAISON         -> LA_MAISON;
+                case LE_JACKPOT        -> LE_JACKPOT;
+            };
         }
     }
 

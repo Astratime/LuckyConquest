@@ -1,5 +1,6 @@
 """
-Décors de la vue de face : un par donjon de l'Exploration (la Prairie et la Cale
+Décors de la vue de face : un par donjon de l'Exploration, chapitre de la Tour
+et pour l'Entraînement (la Prairie et la Cale
 sont dans generate_front_art.py).
 
 Chaque décor fait 360 x 220 pixels, agrandi sans lissage par le jeu. L'ennemi se
@@ -850,12 +851,213 @@ def volcan():
     return vignette(im, 0.45, 0.4)
 
 
+# ---------------------------------------------------------------------------- la Tour des épreuves et l'Entraînement
+
+def comet(f, x, y, length, color=(255, 220, 110)):
+    """Comète qui file vers le bas à gauche : tête claire, traîne qui s'affine."""
+    for k in range(length):
+        r = max(1, 6 - k // 6)
+        c = tuple(int(a * (1 - k / length) + b * k / length) for a, b in zip(color, (60, 40, 80)))
+        f.ellipse([x + k * 2 - r, y - k - r, x + k * 2 + r, y - k + r], fill=c)
+    f.ellipse([x - 6, y - 6, x + 6, y + 6], fill=(255, 250, 220))
+
+
+def columns(f, xs, top, bottom, color, light, width=18):
+    for x in xs:
+        f.rectangle([x, top + 8, x + width, bottom], fill=color)
+        f.rectangle([x + 3, top + 8, x + 5, bottom], fill=light)
+        f.rectangle([x - 4, top, x + width + 4, top + 8], fill=light)
+        f.rectangle([x - 4, bottom - 6, x + width + 4, bottom], fill=light)
+
+
+def genese():
+    """La genèse : un temple de pierre ouvert sur la nuit, la comète qui frappe le monde."""
+    rng = np.random.default_rng(51)
+    im, d = base((0, 0, 0))
+    gradient(d, (12, 10, 40), (60, 40, 90), 0, 160)
+    stars(d, rng, 140, 150)
+    fg, f = layer()
+    comet(f, 150, 60, 40)
+    f.polygon([(0, 150), (60, 120), (120, 140), (200, 118), (280, 136), (360, 116), (360, 150)], fill=(30, 24, 50))
+    columns(f, (14, 70, 272, 328), 20, 160, (150, 140, 130), (190, 180, 168))
+    f.rectangle([0, 6, 110, 20], fill=(170, 160, 150))
+    f.rectangle([250, 6, W, 20], fill=(170, 160, 150))
+    for x in (40, 300):
+        torch(fg, x + 10, 70)
+    im = finish(im, fg)
+    d = ImageDraw.Draw(im)
+    d.rectangle([0, 160, W, H], fill=(70, 62, 60))
+    GLOWS['genese'] = ((150, 60), (50, 70), (310, 70))
+    return vignette(im, 0.4, 0.45)
+
+
+def tables_sacrees():
+    """Les Tables Sacrées : salle du trône des croupiers, colonnes d'or, tapis rouge, bannières des couleurs."""
+    im, d = base((0, 0, 0))
+    gradient(d, (50, 20, 30), (90, 40, 40), 0, 160)
+    fg, f = layer()
+    columns(f, (10, 76, 266, 332), 10, 160, (180, 140, 50), (240, 200, 90), 16)
+    suits = ((30, 30, 40), (40, 120, 60), (200, 40, 50), (220, 120, 40))
+    for i, x in enumerate((112, 148, 196, 232)):  # bannières
+        f.rectangle([x, 10, x + 18, 70], fill=suits[i])
+        f.polygon([(x, 70), (x + 18, 70), (x + 9, 80)], fill=suits[i])
+        f.rectangle([x + 6, 30, x + 12, 40], fill=(240, 220, 160))
+    f.polygon([(150, 160), (210, 160), (230, 220), (130, 220)], fill=(160, 30, 40))  # tapis
+    for x in (40, 300):
+        lantern(fg, x + 3, 40, (255, 220, 120), (120, 90, 30))
+    im = finish(im, fg)
+    d = ImageDraw.Draw(im)
+    d.rectangle([0, 160, W, H], fill=(60, 40, 36))
+    GLOWS['tables_sacrees'] = ((43, 40), (303, 40))
+    return vignette(im, 0.45, 0.4)
+
+
+def dernier_tirage():
+    """Le Dernier Tirage : au fond du cratère, le coeur de la comète bat encore, bleu et blanc."""
+    rng = np.random.default_rng(53)
+    im, d = base((0, 0, 0))
+    gradient(d, (10, 12, 30), (30, 30, 60), 0, 160)
+    stars(d, rng, 60, 60)
+    fg, f = layer()
+    f.polygon([(0, 60), (80, 90), (140, 120), (220, 120), (280, 90), (360, 60), (360, 170), (0, 170)], fill=(46, 40, 56))
+    f.polygon([(0, 100), (90, 120), (270, 120), (360, 100), (360, 170), (0, 170)], fill=(36, 30, 46))
+    rocks(f, rng, 0, 120, W, 165, [(54, 46, 66), (40, 34, 52), (66, 58, 80)], 40, 14)
+    for x, y, h in ((60, 110, 30), (90, 120, 22), (290, 112, 28), (262, 122, 20), (320, 118, 24)):  # cristaux
+        f.polygon([(x - 5, y), (x, y - h), (x + 5, y)], fill=(120, 190, 255))
+        f.line([(x - 1, y - 2), (x, y - h + 4)], fill=(220, 240, 255))
+    f.ellipse([300, 30, 340, 70], fill=(150, 210, 255))  # éclat au loin
+    f.ellipse([310, 40, 330, 60], fill=(240, 250, 255))
+    im = finish(im, fg)
+    d = ImageDraw.Draw(im)
+    d.rectangle([0, 165, W, H], fill=(30, 26, 40))
+    GLOWS['dernier_tirage'] = ((320, 50), (60, 96), (290, 98))
+    return vignette(im, 0.45, 0.4)
+
+
+def monde_sans_maitre():
+    """Le Monde sans Maître : la ville brûle au crépuscule, les tables de jeu renversées en flammes."""
+    rng = np.random.default_rng(54)
+    im, d = base((0, 0, 0))
+    gradient(d, (60, 20, 30), (200, 90, 40), 0, 150)
+    fg, f = layer()
+    x = 0
+    while x < W:  # ville en ruine
+        w, h = int(rng.integers(18, 40)), int(rng.integers(40, 100))
+        f.rectangle([x, 150 - h, x + w, 150], fill=(40, 26, 30))
+        for wy in range(150 - h + 8, 146, 12):
+            if rng.random() < 0.4:
+                f.rectangle([x + 4, wy, x + 8, wy + 4], fill=(255, 160, 60))
+        x += w + int(rng.integers(0, 8))
+    for k in range(6):  # fumée
+        r = 14 + k * 4
+        f.ellipse([60 + k * 8 - r, 50 - k * 10 - r / 2, 60 + k * 8 + r, 50 - k * 10 + r / 2], fill=(70, 50, 54))
+    for x0 in (30, 290):  # tables renversées qui brûlent
+        f.polygon([(x0, 160), (x0 + 40, 130), (x0 + 46, 136), (x0 + 8, 166)], fill=(30, 100, 50))
+        f.polygon([(x0 + 10, 140), (x0 + 20, 112), (x0 + 30, 140)], fill=(240, 120, 30))
+        f.polygon([(x0 + 15, 140), (x0 + 20, 124), (x0 + 25, 140)], fill=(255, 220, 90))
+    im = finish(im, fg)
+    d = ImageDraw.Draw(im)
+    d.rectangle([0, 160, W, H], fill=(50, 34, 30))
+    for _ in range(30):  # braises
+        x, y = int(rng.integers(0, W)), int(rng.integers(20, 160))
+        d.rectangle([x, y, x + 1, y + 1], fill=(255, 170, 70))
+    GLOWS['monde_sans_maitre'] = ((50, 128), (310, 128))
+    return vignette(im, 0.45, 0.4)
+
+
+def la_maison():
+    """La Maison : le bureau de la Maison, boiseries vertes, coffre-fort géant, lustres et rideaux."""
+    im, d = base((0, 0, 0))
+    gradient(d, (20, 50, 36), (14, 34, 26), 0, 160)
+    fg, f = layer()
+    for x in range(0, W, 30):  # boiseries
+        f.rectangle([x + 3, 90, x + 27, 156], fill=(70, 44, 26))
+        f.rectangle([x + 7, 96, x + 23, 150], fill=(90, 58, 34))
+    f.ellipse([140, 20, 220, 100], fill=(150, 150, 160))  # porte du coffre
+    f.ellipse([148, 28, 212, 92], fill=(110, 110, 124))
+    for k in range(8):
+        a = k * math.pi / 4
+        f.line([(180, 60), (180 + 26 * math.cos(a), 60 + 26 * math.sin(a))], fill=(200, 200, 210), width=2)
+    f.ellipse([172, 52, 188, 68], fill=(230, 190, 60))
+    for x0, s in ((0, 1), (W, -1)):  # rideaux
+        for k in range(4):
+            xx = x0 + s * k * 10
+            f.rectangle([min(xx, xx + s * 10), 0, max(xx, xx + s * 10), 160], fill=(120, 20, 30) if k % 2 else (150, 30, 40))
+    for x in (80, 280):  # lustres
+        f.line([(x, 0), (x, 14)], fill=(200, 160, 40))
+        f.polygon([(x - 16, 14), (x + 16, 14), (x + 8, 26), (x - 8, 26)], fill=(220, 180, 60))
+        for xx in range(x - 14, x + 16, 7):
+            f.rectangle([xx, 8, xx + 2, 14], fill=(255, 240, 180))
+    im = finish(im, fg)
+    d = ImageDraw.Draw(im)
+    d.rectangle([0, 160, W, H], fill=(50, 24, 24))
+    GLOWS['la_maison'] = ((80, 16), (280, 16), (180, 60))
+    return vignette(im, 0.45, 0.4)
+
+
+def le_jackpot():
+    """Le Jackpot : le sommet de la Tour, au-dessus des nuages, engrenages d'or et pluie de pièces."""
+    rng = np.random.default_rng(56)
+    im, d = base((0, 0, 0))
+    gradient(d, (30, 20, 60), (240, 150, 80), 0, 150)
+    stars(d, rng, 50, 50)
+    fg, f = layer()
+    for k in range(9):  # nuages
+        x, y, r = 20 + k * 42, 140 + (k % 2) * 6, 26
+        f.ellipse([x - r, y - r / 2, x + r, y + r / 2], fill=(240, 220, 230))
+    for x, y, r in ((40, 50, 30), (320, 60, 26), (300, 20, 16)):  # engrenages
+        for k in range(10):
+            a = k * math.pi / 5
+            f.rectangle([x + (r + 2) * math.cos(a) - 3, y + (r + 2) * math.sin(a) - 3,
+                         x + (r + 2) * math.cos(a) + 3, y + (r + 2) * math.sin(a) + 3], fill=(200, 150, 40))
+        f.ellipse([x - r, y - r, x + r, y + r], fill=(220, 170, 50))
+        f.ellipse([x - r / 3, y - r / 3, x + r / 3, y + r / 3], fill=(120, 80, 30))
+    for _ in range(26):  # pièces qui tombent
+        x, y = int(rng.integers(90, 270)), int(rng.integers(0, 120))
+        f.ellipse([x - 3, y - 3, x + 3, y + 3], fill=(250, 210, 60))
+        f.point([(x - 1, y - 1)], fill=(255, 250, 200))
+    im = finish(im, fg)
+    d = ImageDraw.Draw(im)
+    d.rectangle([0, 160, W, H], fill=(120, 80, 40))
+    GLOWS['le_jackpot'] = ((180, 40), (40, 50), (320, 60))
+    return vignette(im, 0.4, 0.45)
+
+
+def entrainement():
+    """L'Entraînement : l'arrière-salle du casino, murs de briques, caisses de jetons, une lampe au plafond."""
+    im, d = base((0, 0, 0))
+    bricks(d, 0, 0, W, 160, [(110, 50, 40), (96, 44, 36), (120, 58, 46)], (60, 40, 36))
+    fg, f = layer()
+    f.line([(180, 0), (180, 18)], fill=(40, 40, 44))  # lampe
+    f.polygon([(164, 30), (196, 30), (188, 18), (172, 18)], fill=(40, 80, 50))
+    f.rectangle([176, 30, 184, 34], fill=(255, 240, 180))
+    for x, y, w, h in ((10, 110, 50, 50), (20, 70, 36, 40), (300, 100, 50, 60), (70, 130, 40, 30)):  # caisses
+        f.rectangle([x, y, x + w, y + h], fill=(150, 100, 56))
+        f.line([(x, y), (x + w, y + h)], fill=(110, 70, 36), width=2)
+        f.line([(x, y + h), (x + w, y)], fill=(110, 70, 36), width=2)
+    for x, y in ((300, 90), (312, 86), (324, 92)):  # piles de jetons
+        for k in range(4):
+            f.rectangle([x, y - k * 3, x + 10, y - k * 3 + 2], fill=((200, 40, 50), (40, 80, 200), (240, 240, 230))[k % 3])
+    f.rectangle([250, 40, 330, 80], fill=(30, 50, 36))  # tableau noir
+    f.rectangle([254, 44, 326, 76], fill=(40, 70, 50))
+    for k in range(3):
+        f.line([(260, 52 + k * 8), (300 - k * 6, 52 + k * 8)], fill=(220, 230, 220))
+    im = finish(im, fg)
+    d = ImageDraw.Draw(im)
+    d.rectangle([0, 160, W, H], fill=(50, 40, 36))
+    GLOWS['entrainement'] = ((180, 32),)
+    return vignette(im, 0.5, 0.35)
+
+
 DECORS = {
     'chapiteau': chapiteau, 'train_fantome': train_fantome, 'grande_roue': grande_roue, 'stands': stands,
     'taverne': taverne, 'phare': phare, 'galion': galion,
     'filon': filon, 'puits': puits, 'forge': forge, 'gouffre': gouffre,
     'bar': bar, 'machines': machines, 'coffres': coffres, 'vip': vip,
     'caravane': caravane, 'tombeau': tombeau, 'oasis': oasis, 'volcan': volcan,
+    'genese': genese, 'tables_sacrees': tables_sacrees, 'dernier_tirage': dernier_tirage,
+    'monde_sans_maitre': monde_sans_maitre, 'la_maison': la_maison, 'le_jackpot': le_jackpot,
+    'entrainement': entrainement,
 }
 
 
