@@ -11,7 +11,9 @@ import com.badlogic.gdx.Preferences;
  * enseignes renforcées donnent un jeu à quatre couleurs
  * ({@link fr.astratime.lucky.assets.SuitColors}) et le grand texte grossit les
  * infobulles. Les cartes spéciales s'affichent en version blanche (comme les
- * cartes classiques) ou en couleurs (une couleur par donjon).
+ * cartes classiques) ou en couleurs (une couleur par donjon). La table du
+ * combat se voit de dessus (vue classique) ou de face, l'ennemi en grand
+ * derrière elle.
  */
 public class VisualSettings {
 
@@ -21,6 +23,7 @@ public class VisualSettings {
     private static final String STRONG_SUITS    = "strongSuitColors";
     private static final String LARGE_TOOLTIPS  = "largeTooltips";
     private static final String COLORED_CARDS   = "coloredCards";
+    private static final String FRONT_VIEW      = "frontView";
 
     private final Preferences preferences = Gdx.app.getPreferences(PREFERENCES);
 
@@ -76,6 +79,17 @@ public class VisualSettings {
     /** Affiche les cartes spéciales en couleurs ou en blanc, et mémorise le choix. */
     public void setColoredCards(boolean colored) {
         preferences.putBoolean(COLORED_CARDS, colored);
+        preferences.flush();
+    }
+
+    /** @return true si la table du combat est vue de face, l'ennemi en grand derrière (vue classique par défaut). */
+    public boolean isFrontView() {
+        return preferences.getBoolean(FRONT_VIEW, false);
+    }
+
+    /** Choisit la vue de face ou la vue classique de la table, et mémorise le choix. */
+    public void setFrontView(boolean front) {
+        preferences.putBoolean(FRONT_VIEW, front);
         preferences.flush();
     }
 }

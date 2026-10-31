@@ -5,7 +5,7 @@ import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.Interpolation;
 import com.badlogic.gdx.math.Vector2;
-import com.badlogic.gdx.scenes.scene2d.Stage;
+import com.badlogic.gdx.scenes.scene2d.Group;
 import com.badlogic.gdx.scenes.scene2d.Touchable;
 import com.badlogic.gdx.scenes.scene2d.actions.Actions;
 import com.badlogic.gdx.scenes.scene2d.ui.Image;
@@ -31,7 +31,7 @@ public class CardDiscardAnimator {
     private static final float FLIP_PAUSE_DELAY   = 0.1f;
     private static final float MOVE_DURATION      = 0.35f;
 
-    private final Stage   stage;
+    private final Group   stage;
     private final Texture cardBackTexture;
     private final float   cardWidth;
     private final float   cardHeight;
@@ -41,7 +41,7 @@ public class CardDiscardAnimator {
     /** Cartes actuellement en vol vers la défausse, à nettoyer en cas d'annulation. */
     private final List<Image> flyingCards = new ArrayList<>();
 
-    public CardDiscardAnimator(Stage stage, Texture cardBackTexture, float cardWidth, float cardHeight,
+    public CardDiscardAnimator(Group stage, Texture cardBackTexture, float cardWidth, float cardHeight,
                                Sound dealSound, Sound flipSound) {
         this.stage           = stage;
         this.cardBackTexture = cardBackTexture;

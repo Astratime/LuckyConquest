@@ -6,6 +6,7 @@ import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.InputListener;
+import com.badlogic.gdx.scenes.scene2d.Group;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import fr.astratime.lucky.entities.Player;
 import fr.astratime.lucky.i18n.Lang;
@@ -40,8 +41,8 @@ public class PilesView {
             cardHeight, onDiscardClicked);
     }
 
-    /** Ajoute les deux piles au Stage. */
-    public void addTo(Stage target) {
+    /** Ajoute les deux piles au Stage (ou au calque de la table). */
+    public void addTo(Group target) {
         target.addActor(deckPile);
         target.addActor(discardPile);
     }
