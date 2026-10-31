@@ -2310,12 +2310,9 @@ public class GameScreen extends ScreenAdapter {
     }
 
     /** Libère toutes les ressources natives (Stage, polices, textures, sons) possédées par cet écran. */
-    /** @return le décor de la vue de face : la Cale, la Prairie (à la couleur du donjon), sinon le casino. */
+    /** @return le décor de la vue de face : celui du donjon en Exploration, sinon le casino. */
     private FrontScene.Decor frontDecor() {
-        if (!(run instanceof DungeonRun dungeonRun)) return FrontScene.Decor.CASINO;
-        Dungeon dungeon = dungeonRun.getDungeon();
-        if (dungeon == Dungeon.CALE) return FrontScene.Decor.CALE;
-        return dungeon.getSuit() != null ? FrontScene.Decor.prairie(dungeon.getSuit()) : FrontScene.Decor.CASINO;
+        return run instanceof DungeonRun dungeonRun ? FrontScene.Decor.of(dungeonRun.getDungeon()) : FrontScene.Decor.CASINO;
     }
 
     @Override
