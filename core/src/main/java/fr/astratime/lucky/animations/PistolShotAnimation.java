@@ -1,5 +1,6 @@
 package fr.astratime.lucky.animations;
 
+import fr.astratime.lucky.views.TableProjection;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Batch;
@@ -57,11 +58,19 @@ public class PistolShotAnimation extends Actor {
         setTouchable(Touchable.disabled);
     }
 
+    /** Vue de face : les points de la table passent à leur place à l'écran (voir {@link TableProjection}). */
+    private TableProjection tableProjection = new TableProjection();
+
+    /** Vue de face : les points reçus sur la table sont reportés à leur place à l'écran. */
+    public void setTableProjection(TableProjection projection) { this.tableProjection = projection; }
+
     /**
      * Joue le tir : le pistolet apparaît en {@code from} (coordonnées du Stage)
      * et tire sur {@code target} au bout de {@link #AIM_TIME} secondes.
      */
     public void play(Vector2 from, Vector2 target) {
+        from   = tableProjection.toScreen(from.cpy());
+        target = tableProjection.toScreen(target.cpy());
         startX  = from.x + SIDE;
         startY  = from.y + RISE;
         targetX = target.x;

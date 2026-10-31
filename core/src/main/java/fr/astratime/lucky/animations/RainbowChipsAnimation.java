@@ -1,5 +1,6 @@
 package fr.astratime.lucky.animations;
 
+import fr.astratime.lucky.views.TableProjection;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
@@ -74,6 +75,12 @@ public class RainbowChipsAnimation extends Actor implements Disposable {
         setTouchable(Touchable.disabled);
     }
 
+    /** Vue de face : les points de la table passent à leur place à l'écran (voir {@link TableProjection}). */
+    private TableProjection tableProjection = new TableProjection();
+
+    /** Vue de face : les points reçus sur la table sont reportés à leur place à l'écran. */
+    public void setTableProjection(TableProjection projection) { this.tableProjection = projection; }
+
     /**
      * Lance les jetons : le jeton numéro {@code i} passe sur {@code targets.get(i)}
      * (coordonnées du Stage) au milieu de sa course ; d'autres jetons traversent
@@ -83,6 +90,7 @@ public class RainbowChipsAnimation extends Actor implements Disposable {
      * @param onDone    appelé quand tous les jetons sont sortis de l'écran
      */
     public void play(List<Vector2> targets, IntConsumer onReached, Runnable onDone) {
+        targets = targets.stream().map(target -> tableProjection.toScreen(target.cpy())).toList();
         float width  = getStage().getViewport().getWorldWidth();
         float height = getStage().getViewport().getWorldHeight();
         setBounds(0f, 0f, width, height);

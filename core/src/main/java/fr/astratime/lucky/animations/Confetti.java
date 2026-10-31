@@ -1,5 +1,7 @@
 package fr.astratime.lucky.animations;
 
+import com.badlogic.gdx.math.Vector2;
+import fr.astratime.lucky.views.TableProjection;
 import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.g2d.Batch;
@@ -58,8 +60,17 @@ public class Confetti extends Actor {
         setTouchable(Touchable.disabled);
     }
 
+    /** Vue de face : les points de la table passent à leur place à l'écran (voir {@link TableProjection}). */
+    private TableProjection tableProjection = new TableProjection();
+
+    /** Vue de face : les points reçus sur la table sont reportés à leur place à l'écran. */
+    public void setTableProjection(TableProjection projection) { this.tableProjection = projection; }
+
     /** Fait jaillir {@code count} confettis de {@code (x, y)}, vers le haut en éventail. */
     public void burst(float x, float y, int count) {
+        Vector2 at = tableProjection.toScreen(x, y);
+        x = at.x;
+        y = at.y;
         if (lastPopAt < 0f || time - lastPopAt >= POP_GAP) {
             popSound.play(1f, MathUtils.random(0.92f, 1.08f), 0f);
             lastPopAt = time;

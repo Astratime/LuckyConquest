@@ -1,7 +1,9 @@
 package fr.astratime.lucky.views;
 
 import com.badlogic.gdx.graphics.Color;
+import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
+import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.scenes.scene2d.Group;
 import com.badlogic.gdx.scenes.scene2d.Touchable;
 import com.badlogic.gdx.scenes.scene2d.actions.Actions;
@@ -294,6 +296,33 @@ public class TableView {
 
     /** @return l'ordonnée (Stage) du haut du feutre, sous le rebord. */
     public float getFeltTop() { return felt.getY() + felt.getHeight(); }
+
+    /** @return les cases des rouleaux du joueur, ensemble (vitre de sa machine en vue de face). */
+    public Rectangle getPlayerReelWindow() {
+        return new Rectangle(getPlayerReelRowX(), getReelRowY(), playerReels * SlotView.CELL_WIDTH, SlotView.CELL_HEIGHT);
+    }
+
+    /** @return les cases des rouleaux de l'ennemi, ensemble. */
+    public Rectangle getEnemyReelWindow() {
+        return new Rectangle(getReelRowX(), getEnemyReelRowY(), reelRowWidth(), SlotView.CELL_HEIGHT);
+    }
+
+    /** @return le nombre de rouleaux affichés de l'ennemi. */
+    public int getEnemyReelCount() { return enemyReels; }
+
+    /** @return le rectangle de la table (rebord compris), dans le Stage. */
+    public Rectangle getBounds() {
+        return new Rectangle(rail.getX(), rail.getY(), rail.getWidth(), rail.getHeight());
+    }
+
+    /**
+     * Redessine le rebord et le feutre (vue de face, voir {@link ProjectedLayer}) :
+     * le calque s'en sert pour rendre opaque tout le dessus de la table.
+     */
+    public void drawOpaqueMask(Batch batch) {
+        rail.draw(batch, 1f);
+        felt.draw(batch, 1f);
+    }
 
     /** Mode fête des ampoules du rebord (jackpot, victoire) : elles clignotent toutes, ou reprennent le chenillard. */
     public void setLightsParty(boolean party) {

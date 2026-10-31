@@ -8,6 +8,7 @@ import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.InputListener;
+import com.badlogic.gdx.scenes.scene2d.Group;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.Touchable;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
@@ -72,7 +73,7 @@ public class SpinControls {
     }
 
     /** Ajoute le levier, la Mise, son palier et ses jetons au Stage. */
-    public void addTo(Stage stage) {
+    public void addTo(Group stage) {
         stage.addActor(lever);
         stage.addActor(stakeButton);
         stage.addActor(stakeLabel);

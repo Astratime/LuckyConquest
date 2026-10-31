@@ -319,7 +319,8 @@ public class OptionsMenu implements Disposable {
 
     /**
      * @return l'onglet « Visuel », commun au menu principal et au menu pause : affichage,
-     *         vitesse des animations, cartes spéciales blanches ou colorées
+     *         vitesse des animations, cartes spéciales blanches ou colorées, vue de la table
+     *         (classique ou de face)
      */
     public static List<Entry> visualEntries(LuckyGame game, VisualSettings visual, DisplaySettings display) {
         Runnable toggleScreenMode = () -> {
@@ -328,13 +329,16 @@ public class OptionsMenu implements Disposable {
             game.applyScreenMode(mode);
         };
         Runnable toggleColors = () -> visual.setColoredCards(!visual.isColoredCards());
+        Runnable toggleView   = () -> visual.setFrontView(!visual.isFrontView());
         return List.of(
             new Entry(() -> Lang.f("Affichage : {0}", display.getScreenMode().getLabel()), toggleScreenMode,
                 direction -> toggleScreenMode.run()),
             new Entry(() -> visual.getAnimationSpeed().label(), () -> visual.stepAnimationSpeed(1),
                 visual::stepAnimationSpeed),
             new Entry(() -> visual.isColoredCards() ? Lang.t("Cartes colorées : oui") : Lang.t("Cartes colorées : non"),
-                toggleColors, direction -> toggleColors.run()));
+                toggleColors, direction -> toggleColors.run()),
+            new Entry(() -> visual.isFrontView() ? Lang.t("Vue de la table : de face") : Lang.t("Vue de la table : classique"),
+                toggleView, direction -> toggleView.run()));
     }
 
     /** @return l'onglet « Audio » : volume de la musique, volume des sons. */

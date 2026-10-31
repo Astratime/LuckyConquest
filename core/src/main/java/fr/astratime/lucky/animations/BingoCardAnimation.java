@@ -1,5 +1,7 @@
 package fr.astratime.lucky.animations;
 
+import com.badlogic.gdx.math.Vector2;
+import fr.astratime.lucky.views.TableProjection;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.Pixmap;
@@ -73,6 +75,12 @@ public class BingoCardAnimation extends Group implements Disposable {
         setTouchable(Touchable.disabled);
     }
 
+    /** Vue de face : les points de la table passent à leur place à l'écran (voir {@link TableProjection}). */
+    private TableProjection tableProjection = new TableProjection();
+
+    /** Vue de face : les points reçus sur la table sont reportés à leur place à l'écran. */
+    public void setTableProjection(TableProjection projection) { this.tableProjection = projection; }
+
     /**
      * Joue l'animation sur {@code card}, déjà sortie de la main (coordonnées du Stage).
      *
@@ -81,6 +89,12 @@ public class BingoCardAnimation extends Group implements Disposable {
      * @param onDone  appelé quand la carte s'est posée sur la défausse
      */
     public void play(Actor card, float centerX, float centerY, float discardX, float discardY, Runnable onDone) {
+        // Vue de face : la carte quitte la table en perspective pour l'écran, à la même place.
+        Vector2 cardCenter = tableProjection.toScreen(card.getX() + card.getWidth() / 2f, card.getY() + card.getHeight() / 2f);
+        card.setPosition(cardCenter.x - card.getWidth() / 2f, cardCenter.y - card.getHeight() / 2f);
+        Vector2 discard = tableProjection.toScreen(discardX + card.getWidth() / 2f, discardY + card.getHeight() / 2f);
+        discardX = discard.x - card.getWidth() / 2f;
+        discardY = discard.y - card.getHeight() / 2f;
         this.card    = card;
         this.centerX = centerX;
         this.centerY = centerY;

@@ -483,7 +483,7 @@ public class HandView {
         cardImage.clearActions();
         cardImage.setTouchable(Touchable.disabled);
         cardImage.setRotation(0f);
-        group.getStage().addActor(cardImage);
+        group.getParent().addActor(cardImage); // le calque de la table (ou le Stage)
         cardImage.setPosition(pos.x, pos.y);
     }
 
