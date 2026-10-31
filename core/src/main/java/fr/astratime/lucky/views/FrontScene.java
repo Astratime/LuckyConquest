@@ -229,7 +229,8 @@ public class FrontScene extends Actor implements Disposable {
         float originX = getWidth() / 2f; // vaincu, il bascule en arrière autour de ses pieds
 
         EnemyKind kind = enemy.get().getKind();
-        Texture texture = enemyTextures.portrait(kind), silhouette = enemyTextures.portraitFlash(kind);
+        float time = enemyView.getAnimationTime();
+        Texture texture = enemyTextures.portrait(kind, time), silhouette = enemyTextures.portraitFlash(kind, time);
         float width = texture.getWidth() * pixel, height = texture.getHeight() * pixel;
         batch.setColor(1f, 1f, 1f, alpha);
         batch.draw(texture, x, y, originX, 0f, width, height, 1f, 1f, rotation,

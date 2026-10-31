@@ -863,22 +863,43 @@ final class Chapter456Art {
      * d'ampoules, un dôme à quatre gradins avec sa fente à pièce et un diamant
      * blanc au sommet, cinq rouleaux arrêtés sur cinq yeux rouges qui te
      * fixent, la ligne de gain rouge, le plateau à piles de pièces, le levier
-     * baissé sur le flanc droit.
+     * sur le flanc droit.
      */
     static int[][] machineOriginelle() {
+        return machineOriginelle(LEVER_UP, LIDS_OPEN);
+    }
+
+    /** Positions du levier de la Machine Originelle : levé (au repos), à mi-course, baissé. */
+    static final int LEVER_UP = 0, LEVER_HALF = 1, LEVER_DOWN = 2;
+    /** Paupières sur ses cinq yeux : ouvertes, mi-closes, fermées. */
+    static final int LIDS_OPEN = 0, LIDS_HALF = 1, LIDS_CLOSED = 2;
+
+    /**
+     * Une image de la Machine Originelle animée en combat : son levier en
+     * position {@code lever} ({@link #LEVER_UP}...) et ses paupières en position
+     * {@code lids} ({@link #LIDS_OPEN}...).
+     */
+    static int[][] machineOriginelle(int lever, int lids) {
         PixelCanvas g = new PixelCanvas(W, H);
         int gold = rgba("ffc93a"), goldLight = rgba("ffe58a"), goldDark = rgba("b8801f"), out = rgba("140a0a");
         int glass = rgba("f4ecdc"), red = rgba("e0283a"), redDeep = rgba("6e0f1e"), white = rgba("ffffff");
         int bulbOn = rgba("fff6c8"), tray = rgba("2a1a10");
         int steel = rgba("d8d8e0"), steelDark = rgba("8a8a9a"), knobLight = rgba("ff8a9a");
 
-        // Le levier, baissé, derrière le flanc droit : tige d'acier, boule rouge en bas.
+        // Le levier, derrière le flanc droit : tige d'acier, boule rouge au bout.
         g.rect(29, 24, 30, 28, goldDark);
-        g.line(30, 26, 31, 35, steel);
-        g.line(31, 26, 32, 35, steelDark);
-        g.rect(30, 35, 32, 37, red);
-        g.set(30, 35, knobLight);
-        g.rect(32, 36, 32, 37, redDeep);
+        int knobY = lever == LEVER_UP ? 14 : lever == LEVER_HALF ? 23 : 35;
+        if (lever == LEVER_HALF) {
+            g.rect(31, 25, 32, 26, steel);
+            g.rect(31, 27, 32, 27, steelDark);
+        } else {
+            int tipY = lever == LEVER_UP ? knobY + 2 : knobY;
+            g.line(30, 26, 31, tipY, steel);
+            g.line(31, 26, 32, tipY, steelDark);
+        }
+        g.rect(30, knobY, 32, knobY + 2, red);
+        g.set(30, knobY, knobLight);
+        g.rect(32, knobY + 1, 32, knobY + 2, redDeep);
         // Dôme à gradins, du plus large au plus étroit, et sa fente à pièce.
         int[][] steps = {{4, 25, 13}, {7, 22, 11}, {9, 20, 9}, {12, 17, 7}};
         for (int i = 0; i < steps.length; i++) {
@@ -913,6 +934,12 @@ final class Chapter456Art {
             g.rect(x0 + 1, 22, x0 + 2, 24, red);
             g.set(x0 + 1, 23, redDeep);
             g.set(x0 + 2, 22, white);
+            if (lids != LIDS_OPEN) {                       // la paupière d'or qui descend
+                int edge = lids == LIDS_HALF ? 23 : 25;
+                g.rect(x0, 20, x0 + 3, edge - 1, gold);
+                g.rect(x0, 20, x0 + 3, 20, goldLight);
+                g.rect(x0, edge, x0 + 3, edge, out);
+            }
         }
         g.set(1, 23, red);
         g.set(28, 23, red);
