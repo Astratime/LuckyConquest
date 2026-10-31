@@ -10,7 +10,8 @@ Produit, en pixel art à la taille 1 (le jeu les agrandit sans lissage) :
                                       garni, marchandises, auvent rayé et son lambrequin), et la
                                       pancarte des decks et défausses.
   assets/front/machine/*.png          la machine à sous qui sort de la table (joueur et ennemi) :
-                                      caisse et fronton étirables, ampoules, bac, sommet arrondi.
+                                      caisse et fronton étirables, ampoules, bac, sommet arrondi,
+                                      dessus et flancs (la machine est en volume).
 
 Toutes les pièces du rat partagent le même cadre (CANVAS) : le jeu les superpose
 au même point, puis décale la tête (respiration), fait osciller la queue autour
@@ -355,6 +356,34 @@ def machine_body(color):
     return im
 
 
+def machine_top(color):
+    """Dessus de la caisse (le haut de l'image est le fond) : rebord doré, grilles d'aération, rivets."""
+    w, h = 40, 16
+    im = Image.new('RGBA', (w, h), shade(color, 1.15) + (255,))
+    d = ImageDraw.Draw(im)
+    d.rectangle([1, 1, w - 2, h - 2], outline=GOLD)
+    d.line([(2, h - 3), (w - 3, h - 3)], fill=GOLDD)
+    for x in range(8, w - 8, 3):
+        d.line([(x, 5), (x, h - 6)], fill=shade(color, 0.6))
+    for x, y in ((3, 3), (w - 4, 3), (3, h - 4), (w - 4, h - 4)):
+        d.point((x, y), fill=GOLDL)
+    return im
+
+
+def machine_side(color):
+    """Flanc de la caisse (le haut de l'image est le haut) : bande dorée en haut, rivets."""
+    w, h = 16, 40
+    im = Image.new('RGBA', (w, h), shade(color, 0.85) + (255,))
+    d = ImageDraw.Draw(im)
+    d.rectangle([0, 0, w - 1, 3], fill=GOLD)
+    d.line([(0, 3), (w - 1, 3)], fill=GOLDD)
+    d.line([(0, h - 2), (w - 1, h - 2)], fill=shade(color, 0.55))
+    for y in (8, h - 6):
+        d.point((3, y), fill=GOLDL)
+        d.point((w - 4, y), fill=GOLDL)
+    return im
+
+
 def machine_marquee():
     """Fronton : panneau sombre cerclé d'or où clignotent les ampoules (bords de 4 pixels fixes)."""
     w = h = 12
@@ -430,6 +459,8 @@ def main():
     for who, color in MACHINE_COLORS.items():
         parts['body_' + who] = machine_body(color)
         parts['crest_' + who] = machine_crest(color)
+        parts['top_' + who] = machine_top(color)
+        parts['side_' + who] = machine_side(color)
     for name, img in parts.items():
         img.save(os.path.join(machine_dir, name + '.png'))
 

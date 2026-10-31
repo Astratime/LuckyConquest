@@ -5,6 +5,7 @@ import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.graphics.g2d.NinePatch;
+import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.Interpolation;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Rectangle;
@@ -44,6 +45,8 @@ public class RisingMachine extends Billboard implements Disposable {
     private static final float PIXEL = 3f;
     /** Sommet arrondi au-dessus de la caisse, et écart entre deux ampoules du fronton (en pixels des dessins). */
     private static final float CREST_HEIGHT = 14f * PIXEL, BULB_STEP = 7f;
+    /** Profondeur de la caisse (unités de la table), et épaisseur de ses contours noirs à l'écran. */
+    private static final float DEPTH = 72f, OUTLINE_WIDTH = 3f;
 
     private final Supplier<Rectangle> window;
     private final IntSupplier         reelCount;
@@ -51,7 +54,12 @@ public class RisingMachine extends Billboard implements Disposable {
     private final Rectangle           area    = new Rectangle();
     /** Le cadre et les cases des rouleaux, les mêmes que sur la table : la machine a leur forme. */
     private final NinePatchDrawable   reelFrame, reelCell;
-    private final Texture bodyTexture, crestTexture, marqueeTexture, bulbOn, bulbOff, trayTexture;
+    private final Texture bodyTexture, crestTexture, marqueeTexture, bulbOn, bulbOff, trayTexture, topTexture, sideTexture;
+    private final TextureRegion topRegion, sideRegion;
+    /** Dessine le dessus et les flancs de la caisse, en volume sur la table. */
+    private final SolidPainter    painter;
+    /** Hauteur (au-dessus du feutre) du bas de la caisse : négative tant qu'elle n'est pas toute sortie. */
+    private float                 bottomZ;
     private final NinePatch body, marquee;
 
     /** Les symboles emportés, et le groupe où ils retournent au repos. */
@@ -70,12 +78,13 @@ public class RisingMachine extends Billboard implements Disposable {
      * @param reelCell  case d'un rouleau de la table (non possédée)
      * @param enemy     {@code true} : la machine de l'ennemi (violette), sinon celle du joueur (rouge)
      */
-    public RisingMachine(TableProjection projection, Supplier<Rectangle> window, IntSupplier reelCount,
+    public RisingMachine(SolidPainter painter, Supplier<Rectangle> window, IntSupplier reelCount,
                          NinePatchDrawable reelFrame, NinePatchDrawable reelCell, boolean enemy) {
-        super(projection, 1f, () -> {
+        super(painter.getProjection(), 1f, () -> {
             Rectangle glass = window.get();
             return new Vector2(glass.x + glass.width / 2f, glass.y - BOTTOM);
         });
+        this.painter   = painter;
         this.window    = window;
         this.reelCount = reelCount;
         this.reelFrame = reelFrame;
@@ -87,6 +96,10 @@ public class RisingMachine extends Billboard implements Disposable {
         bulbOn         = load("front/machine/bulb_on.png");
         bulbOff        = load("front/machine/bulb_off.png");
         trayTexture    = load("front/machine/tray.png");
+        topTexture     = load("front/machine/top_" + who + ".png");
+        sideTexture    = load("front/machine/side_" + who + ".png");
+        topRegion      = new TextureRegion(topTexture);
+        sideRegion     = new TextureRegion(sideTexture);
         body    = new NinePatch(bodyTexture, 5, 5, 5, 5);
         marquee = new NinePatch(marqueeTexture, 4, 4, 4, 4);
     }
@@ -105,6 +118,8 @@ public class RisingMachine extends Billboard implements Disposable {
         bulbOn.dispose();
         bulbOff.dispose();
         trayTexture.dispose();
+        topTexture.dispose();
+        sideTexture.dispose();
     }
 
     /** @return {@code true} tant que la machine est hors de la table (même en train de redescendre). */
@@ -165,13 +180,22 @@ public class RisingMachine extends Billboard implements Disposable {
         float height = (window.get().height + BOTTOM + TOP + CREST_HEIGHT) * getScaleY();
         lift = -(1f - Interpolation.pow2Out.apply(rise)) * height;
         setY(getY() + lift);
+        bottomZ = lift / getScaleY();
     }
 
     @Override
     public void draw(Batch batch, float parentAlpha) {
         if (content == null || !projection.isEnabled()) return;
         place();
-        // Seul ce qui est sorti de la table se voit : on coupe sous la fente.
+        // Le dessus et les flancs : la caisse a de la profondeur, derrière sa face (rien sous la table).
+        Rectangle glass = window.get();
+        float x0 = glass.x - FRAME, x1 = glass.x + glass.width + FRAME, y0 = glass.y - FRAME;
+        painter.setOutline(OUTLINE_WIDTH);
+        painter.box(batch, x0, y0, bottomZ, x1, y0 + DEPTH, bottomZ + BOTTOM + glass.height + TOP,
+            topRegion, topRegion, sideRegion, Color.WHITE, Color.WHITE, parentAlpha, false);
+        painter.setOutline(0f);
+        batch.setColor(Color.WHITE);
+        // Seul ce qui est sorti de la table se voit : on coupe la face avant sous la fente.
         Vector2 slit = slit();
         area.set(-1e5f, slit.y, 2e5f, 1e5f);
         batch.flush();

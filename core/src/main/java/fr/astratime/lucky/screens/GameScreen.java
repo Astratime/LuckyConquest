@@ -476,9 +476,9 @@ public class GameScreen extends ScreenAdapter {
         reelsStand      = new Billboard(projection, BADGE_TILT, () -> new Vector2(playArea.getCenterX(), table.getReelRowY()));
         handStand       = new Billboard(projection, CARD_TILT, () -> new Vector2(playArea.getCenterX(), table.getHandRowY()));
         solids          = new SolidPainter(projection, hudTextures.pixel);
-        playerMachine   = new RisingMachine(projection, table::getPlayerReelWindow, table::getPlayerReelCount,
+        playerMachine   = new RisingMachine(solids, table::getPlayerReelWindow, table::getPlayerReelCount,
             tableTextures.reelFrameDrawable(), tableTextures.reelCellDrawable(), false);
-        enemyMachine    = new RisingMachine(projection, table::getEnemyReelWindow, table::getEnemyReelCount,
+        enemyMachine    = new RisingMachine(solids, table::getEnemyReelWindow, table::getEnemyReelCount,
             tableTextures.reelFrameDrawable(), tableTextures.reelCellDrawable(), true);
         enemyView  = new EnemyView(table, enemyTextures, pileFont, tooltip, effectPopupAnimator,
             sounds.cardDeal, sounds.cardFlip, sounds.reelSpin, sounds.reelStop,
