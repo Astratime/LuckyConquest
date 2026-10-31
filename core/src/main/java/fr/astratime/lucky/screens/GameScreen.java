@@ -274,9 +274,6 @@ public class GameScreen extends ScreenAdapter {
     private static final float BADGE_TILT = 0.9f;
     /** Vue de face : les symboles des rouleaux, au repos, un peu redressés vers le joueur. */
     private static final float REEL_TILT  = 0.8f;
-    /** Vue de face : couleur de la caisse des machines à sous du joueur et de l'ennemi. */
-    private static final Color PLAYER_MACHINE = Color.valueOf("9c1c2cff");
-    private static final Color ENEMY_MACHINE  = Color.valueOf("4a2a6aff");
     /** Combinaison formée : hauteur de son texte au-dessus de la main (en hauteurs de carte). */
     private static final float COMBO_TEXT_HEIGHT     = 2f;
 
@@ -480,9 +477,9 @@ public class GameScreen extends ScreenAdapter {
         handStand       = new Billboard(projection, CARD_TILT, () -> new Vector2(playArea.getCenterX(), table.getHandRowY()));
         solids          = new SolidPainter(projection, hudTextures.pixel);
         playerMachine   = new RisingMachine(projection, table::getPlayerReelWindow, table::getPlayerReelCount,
-            hudTextures.pixel, PLAYER_MACHINE);
+            tableTextures.reelFrameDrawable(), tableTextures.reelCellDrawable(), false);
         enemyMachine    = new RisingMachine(projection, table::getEnemyReelWindow, table::getEnemyReelCount,
-            hudTextures.pixel, ENEMY_MACHINE);
+            tableTextures.reelFrameDrawable(), tableTextures.reelCellDrawable(), true);
         enemyView  = new EnemyView(table, enemyTextures, pileFont, tooltip, effectPopupAnimator,
             sounds.cardDeal, sounds.cardFlip, sounds.reelSpin, sounds.reelStop,
             () -> gameController.getGameState().getEnemy(), hudTextures.pixel);
@@ -2283,6 +2280,9 @@ public class GameScreen extends ScreenAdapter {
         enemyView.getDiscardPile().setFrontView(front);
         piles.deck().setFrontView(front);
         piles.discard().setFrontView(front);
+        // Vue de face : les piles de gauche de la table empilent leurs cartes vers le milieu.
+        piles.deck().setStackTowardRight(front);
+        enemyView.getDiscardPile().setStackTowardRight(front);
         shopIcon.setFrontView(front);
         spinControls.setFrontView(front);
         placeShopIcon();
@@ -2321,6 +2321,8 @@ public class GameScreen extends ScreenAdapter {
         tableLayer.dispose();
         frontScene.dispose();
         props.dispose();
+        playerMachine.dispose();
+        enemyMachine.dispose();
         tooltip.dispose();
         enemyView.dispose();
         hud.dispose();

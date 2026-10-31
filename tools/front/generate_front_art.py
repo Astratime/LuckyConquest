@@ -9,6 +9,8 @@ Produit, en pixel art à la taille 1 (le jeu les agrandit sans lissage) :
   assets/front/props/*.png            les faces de l'étal de l'échoppe en relief (comptoir, dessus
                                       garni, marchandises, auvent rayé et son lambrequin), et la
                                       pancarte des decks et défausses.
+  assets/front/machine/*.png          la machine à sous qui sort de la table (joueur et ennemi) :
+                                      caisse et fronton étirables, ampoules, bac, sommet arrondi.
 
 Toutes les pièces du rat partagent le même cadre (CANVAS) : le jeu les superpose
 au même point, puis décale la tête (respiration), fait osciller la queue autour
@@ -328,6 +330,85 @@ def sign_board():
     return im
 
 
+# ---------------------------------------------------------------------------- machines à sous
+
+GOLD, GOLDD, GOLDL = (230, 180, 34), (168, 116, 26), (255, 226, 120)
+MACHINE_COLORS = {'player': (156, 28, 44), 'enemy': (74, 42, 106)}
+
+
+def shade(c, k):
+    return tuple(max(0, min(255, int(v * k))) for v in c)
+
+
+def machine_body(color):
+    """Caisse de la machine (étirée par le jeu, bords de 5 pixels fixes) : reflet à gauche, ombre à droite, rivets."""
+    w = h = 16
+    im = Image.new('RGBA', (w, h), color + (255,))
+    d = ImageDraw.Draw(im)
+    d.rectangle([1, 1, 2, h - 2], fill=shade(color, 1.35))
+    d.rectangle([w - 3, 1, w - 2, h - 2], fill=shade(color, 0.7))
+    d.line([(1, h - 2), (w - 2, h - 2)], fill=shade(color, 0.6))
+    d.line([(3, 1), (w - 4, 1)], fill=shade(color, 1.2))
+    for x, y in ((3, 3), (w - 5, 3), (3, h - 5), (w - 5, h - 5)):
+        d.point((x, y), fill=GOLDL)
+    d.rectangle([0, 0, w - 1, h - 1], outline=OUTLINE)
+    return im
+
+
+def machine_marquee():
+    """Fronton : panneau sombre cerclé d'or où clignotent les ampoules (bords de 4 pixels fixes)."""
+    w = h = 12
+    im = Image.new('RGBA', (w, h), (34, 20, 26, 255))
+    d = ImageDraw.Draw(im)
+    d.rectangle([0, 0, w - 1, h - 1], fill=GOLD)
+    d.line([(1, h - 2), (w - 2, h - 2)], fill=GOLDD)
+    d.line([(w - 2, 1), (w - 2, h - 2)], fill=GOLDD)
+    d.line([(1, 1), (w - 2, 1)], fill=GOLDL)
+    d.rectangle([3, 3, w - 4, h - 4], fill=(48, 22, 30))
+    d.rectangle([0, 0, w - 1, h - 1], outline=OUTLINE)
+    d.rectangle([2, 2, w - 3, h - 3], outline=OUTLINE)
+    return im
+
+
+def bulb(on):
+    im = Image.new('RGBA', (4, 4), (0, 0, 0, 0))
+    c, l = ((255, 242, 168), (255, 255, 236)) if on else ((201, 134, 42), (226, 170, 80))
+    for x, y in ((1, 0), (2, 0), (0, 1), (3, 1), (0, 2), (3, 2), (1, 3), (2, 3)):
+        im.putpixel((x, y), OUTLINE)
+    for x, y in ((1, 1), (2, 1), (1, 2), (2, 2)):
+        im.putpixel((x, y), c + (255,))
+    im.putpixel((1, 1), l + (255,))
+    return im
+
+
+def machine_crest(color):
+    """Fronton arrondi au sommet de la caisse, une étoile dorée au milieu."""
+    w, h = 40, 14
+    im = Image.new('RGBA', (w, h), (0, 0, 0, 0))
+    d = ImageDraw.Draw(im)
+    d.ellipse([0, 0, w - 1, 2 * h], fill=GOLD)
+    d.ellipse([2, 2, w - 3, 2 * h - 2], fill=color)
+    d.ellipse([4, 4, w - 5, 2 * h - 4], fill=shade(color, 0.75))
+    cx, cy = w // 2, 8
+    star = [(cx, cy - 5), (cx + 1, cy - 2), (cx + 4, cy - 2), (cx + 2, cy), (cx + 3, cy + 3), (cx, cy + 1),
+            (cx - 3, cy + 3), (cx - 2, cy), (cx - 4, cy - 2), (cx - 1, cy - 2)]
+    d.polygon(star, fill=GOLDL, outline=GOLD)
+    return outline(im)
+
+
+def machine_tray():
+    """Bac à pièces, en bas de la caisse."""
+    w, h = 30, 7
+    im = Image.new('RGBA', (w, h), GOLD + (255,))
+    d = ImageDraw.Draw(im)
+    d.line([(0, 0), (w - 1, 0)], fill=GOLDL)
+    d.line([(0, h - 1), (w - 1, h - 1)], fill=GOLDD)
+    d.rectangle([3, 2, w - 4, h - 3], fill=(20, 10, 14))
+    d.line([(4, 3), (w - 5, 3)], fill=(60, 36, 30))
+    d.rectangle([0, 0, w - 1, h - 1], outline=OUTLINE)
+    return im
+
+
 def main():
     rat_dir = os.path.join(ROOT, 'rat_cales')
     os.makedirs(rat_dir, exist_ok=True)
@@ -343,6 +424,14 @@ def main():
                       'stall_goods': stall_goods(), 'stall_awning': stall_awning(),
                       'stall_valance': stall_valance(), 'sign_board': sign_board()}.items():
         img.save(os.path.join(props_dir, name + '.png'))
+    machine_dir = os.path.join(ROOT, 'machine')
+    os.makedirs(machine_dir, exist_ok=True)
+    parts = {'marquee': machine_marquee(), 'bulb_on': bulb(True), 'bulb_off': bulb(False), 'tray': machine_tray()}
+    for who, color in MACHINE_COLORS.items():
+        parts['body_' + who] = machine_body(color)
+        parts['crest_' + who] = machine_crest(color)
+    for name, img in parts.items():
+        img.save(os.path.join(machine_dir, name + '.png'))
 
 
 if __name__ == '__main__':

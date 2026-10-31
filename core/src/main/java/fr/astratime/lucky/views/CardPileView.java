@@ -37,6 +37,8 @@ public class CardPileView extends Group {
     private static final String COUNT_COLOR = Palette.TEXT_TITLE.toString();
     private final BitmapFont  font;
     private       int         count;
+    /** Les cartes du dessous dépassent à droite (voir {@link #setStackTowardRight}). */
+    private       boolean     towardRight;
 
     /**
      * @param name            nom affiché au-dessus de la pile (ex : "Deck")
@@ -86,6 +88,20 @@ public class CardPileView extends Group {
         label.setVisible(!frontView);
     }
 
+    /**
+     * Sens de l'empilement : les cartes du dessous dépassent en bas à gauche
+     * (par défaut) ou, avec {@code towardRight}, en bas à droite. En vue de face,
+     * les piles de gauche de la table empilent vers la droite (vers le milieu).
+     */
+    public void setStackTowardRight(boolean towardRight) {
+        this.towardRight = towardRight;
+        for (int i = 0; i < STACK_SIZE; i++) stack.get(i).setPosition(stackX(i), i * STACK_OFFSET);
+    }
+
+    private float stackX(int index) {
+        return (towardRight ? STACK_SIZE - 1 - index : index) * STACK_OFFSET;
+    }
+
     /** @return le milieu du bas du nom (coordonnées du Stage, à plat). */
     public float getLabelCenterX() { return getX() + getWidth() / 2f; }
 
@@ -104,7 +120,7 @@ public class CardPileView extends Group {
     public int getCount() { return count; }
 
     /** @return l'abscisse (Stage) de la carte du dessus : départ/arrivée des cartes animées. */
-    public float getTopX() { return getX() + topIndex() * STACK_OFFSET; }
+    public float getTopX() { return getX() + stackX(topIndex()); }
     /** @return l'ordonnée (Stage) de la carte du dessus : départ/arrivée des cartes animées. */
     public float getTopY() { return getY() + topIndex() * STACK_OFFSET; }
 

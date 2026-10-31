@@ -1,15 +1,19 @@
 package fr.astratime.lucky.views;
 
+import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Batch;
+import com.badlogic.gdx.graphics.g2d.NinePatch;
 import com.badlogic.gdx.math.Interpolation;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.Group;
+import com.badlogic.gdx.scenes.scene2d.utils.NinePatchDrawable;
 import com.badlogic.gdx.scenes.scene2d.utils.ScissorStack;
+import com.badlogic.gdx.utils.Disposable;
 
 import java.util.function.IntSupplier;
 import java.util.function.Supplier;
@@ -24,7 +28,7 @@ import java.util.function.Supplier;
  *
  * <p>En vue classique, elle ne fait rien : les rouleaux restent sur la table.
  */
-public class RisingMachine extends Billboard {
+public class RisingMachine extends Billboard implements Disposable {
 
     /** Durée de la montée et de la descente, en secondes. */
     private static final float MOVE_TIME = 0.32f;
@@ -33,25 +37,22 @@ public class RisingMachine extends Billboard {
      * côtés, celle du cadre des rouleaux : la machine a la largeur de son
      * emplacement et sort de son bord avant ({@link #FRAME}).
      */
-    private static final float SIDE = TableView.REEL_FRAME_PAD, BOTTOM = 44f, TOP = 74f;
+    private static final float SIDE = TableView.REEL_FRAME_PAD, BOTTOM = 45f, TOP = 72f;
     /** Le bord avant du cadre des rouleaux, sous la vitre : la fente d'où sort la machine. */
     private static final float FRAME = TableView.REEL_FRAME_PAD;
-    private static final float TRIM = 8f, LINE = 4f, BULB = 10f, BULB_GAP = 22f;
-
-    private static final Color OUTLINE = Color.valueOf("22141aff");
-    private static final Color TRIM_COLOR = Color.valueOf("e6b422ff");
-    private static final Color TRIM_SHADE = Color.valueOf("a8741aff");
-    private static final Color GLASS   = Color.valueOf("f3ead2ff");
-    private static final Color SLOT    = Color.valueOf("140a0eff");
-    private static final Color BULB_ON = Color.valueOf("fff2a8ff");
-    private static final Color BULB_OFF = Color.valueOf("c9862aff");
+    /** Un pixel des dessins de la machine, en unités de la table (comme le cadre des rouleaux). */
+    private static final float PIXEL = 3f;
+    /** Sommet arrondi au-dessus de la caisse, et écart entre deux ampoules du fronton (en pixels des dessins). */
+    private static final float CREST_HEIGHT = 14f * PIXEL, BULB_STEP = 7f;
 
     private final Supplier<Rectangle> window;
     private final IntSupplier         reelCount;
-    private final Texture             pixel;
-    private final Color               body, bodyLight, bodyDark;
     private final Rectangle           scissor = new Rectangle();
     private final Rectangle           area    = new Rectangle();
+    /** Le cadre et les cases des rouleaux, les mêmes que sur la table : la machine a leur forme. */
+    private final NinePatchDrawable   reelFrame, reelCell;
+    private final Texture bodyTexture, crestTexture, marqueeTexture, bulbOn, bulbOff, trayTexture;
+    private final NinePatch body, marquee;
 
     /** Les symboles emportés, et le groupe où ils retournent au repos. */
     private Actor   content;
@@ -64,21 +65,46 @@ public class RisingMachine extends Billboard {
 
     /**
      * @param window    vitre des rouleaux sur la table à plat (le rectangle de leurs cases)
-     * @param reelCount nombre de rouleaux (séparations de la vitre)
-     * @param body      couleur de la caisse
+     * @param reelCount nombre de rouleaux (une case chacun)
+     * @param reelFrame cadre des rouleaux de la table (non possédé)
+     * @param reelCell  case d'un rouleau de la table (non possédée)
+     * @param enemy     {@code true} : la machine de l'ennemi (violette), sinon celle du joueur (rouge)
      */
-    public RisingMachine(TableProjection projection, Supplier<Rectangle> window, IntSupplier reelCount, Texture pixel,
-                         Color body) {
+    public RisingMachine(TableProjection projection, Supplier<Rectangle> window, IntSupplier reelCount,
+                         NinePatchDrawable reelFrame, NinePatchDrawable reelCell, boolean enemy) {
         super(projection, 1f, () -> {
             Rectangle glass = window.get();
             return new Vector2(glass.x + glass.width / 2f, glass.y - BOTTOM);
         });
         this.window    = window;
         this.reelCount = reelCount;
-        this.pixel     = pixel;
-        this.body      = body;
-        this.bodyLight = body.cpy().lerp(Color.WHITE, 0.25f);
-        this.bodyDark  = body.cpy().lerp(Color.BLACK, 0.35f);
+        this.reelFrame = reelFrame;
+        this.reelCell  = reelCell;
+        String who = enemy ? "enemy" : "player";
+        bodyTexture    = load("front/machine/body_" + who + ".png");
+        crestTexture   = load("front/machine/crest_" + who + ".png");
+        marqueeTexture = load("front/machine/marquee.png");
+        bulbOn         = load("front/machine/bulb_on.png");
+        bulbOff        = load("front/machine/bulb_off.png");
+        trayTexture    = load("front/machine/tray.png");
+        body    = new NinePatch(bodyTexture, 5, 5, 5, 5);
+        marquee = new NinePatch(marqueeTexture, 4, 4, 4, 4);
+    }
+
+    private static Texture load(String path) {
+        Texture texture = new Texture(Gdx.files.internal(path));
+        texture.setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest);
+        return texture;
+    }
+
+    @Override
+    public void dispose() {
+        bodyTexture.dispose();
+        crestTexture.dispose();
+        marqueeTexture.dispose();
+        bulbOn.dispose();
+        bulbOff.dispose();
+        trayTexture.dispose();
     }
 
     /** @return {@code true} tant que la machine est hors de la table (même en train de redescendre). */
@@ -136,7 +162,7 @@ public class RisingMachine extends Billboard {
         setScale(projection.scaleAt(glass.x + glass.width / 2f, glass.y - FRAME)); // largeur du cadre à cet endroit
         setPosition(slit.x - foot.x, slit.y - foot.y);
         // Hauteur de la machine à l'écran : sous la table, elle est descendue d'autant.
-        float height = (window.get().height + BOTTOM + TOP) * getScaleY();
+        float height = (window.get().height + BOTTOM + TOP + CREST_HEIGHT) * getScaleY();
         lift = -(1f - Interpolation.pow2Out.apply(rise)) * height;
         setY(getY() + lift);
     }
@@ -162,46 +188,51 @@ public class RisingMachine extends Billboard {
         return projection.project(new Vector2(glass.x + glass.width / 2f, glass.y - FRAME));
     }
 
-    /** La caisse, sous les symboles (dans le repère de la table à plat, comme eux). */
+    /**
+     * La machine, sous les symboles (dans le repère de la table à plat, comme
+     * eux) : la caisse, le cadre et les cases des rouleaux tels qu'on les voit
+     * sur la table (3 ou 4 rouleaux), le fronton d'ampoules, le sommet arrondi
+     * et le bac à pièces.
+     */
     @Override
     protected void drawChildren(Batch batch, float parentAlpha) {
         Rectangle glass = window.get();
         float x0 = glass.x - SIDE, y0 = glass.y - BOTTOM;
-        float w = glass.width + SIDE * 2, h = glass.height + BOTTOM + TOP;
-        rect(batch, OUTLINE, x0 - LINE, y0, w + LINE * 2, h + LINE, parentAlpha);
-        rect(batch, bodyDark, x0, y0, w, h, parentAlpha);
-        rect(batch, body, x0 + LINE, y0, w - LINE * 3, h - LINE, parentAlpha);
-        rect(batch, bodyLight, x0 + LINE, y0, LINE * 2, h - LINE * 2, parentAlpha); // reflet à gauche
-        // Fronton d'ampoules, qui clignotent en chenillard.
-        float frontY = glass.y + glass.height + TRIM + LINE * 2;
-        float frontH = y0 + h - LINE * 3 - frontY;
-        rect(batch, OUTLINE, x0 + LINE * 3, frontY, w - LINE * 6, frontH, parentAlpha);
-        int bulbs = Math.max(2, (int) ((w - LINE * 10) / BULB_GAP));
-        float step = (w - LINE * 10) / bulbs;
-        for (int i = 0; i < bulbs; i++) {
-            boolean on = ((int) (time * 6f) + i) % 3 == 0;
-            float bx = x0 + LINE * 5 + step * (i + 0.5f) - BULB / 2f;
-            rect(batch, on ? BULB_ON : BULB_OFF, bx, frontY + frontH * 0.62f - BULB / 2f, BULB, BULB, parentAlpha);
-            rect(batch, on ? BULB_OFF : BULB_ON, bx, frontY + frontH * 0.28f - BULB / 2f, BULB, BULB, parentAlpha);
+        float w = glass.width + SIDE * 2, top = glass.y + glass.height + TOP;
+        batch.setColor(1f, 1f, 1f, parentAlpha);
+        // Sommet arrondi, posé sur la caisse.
+        float crestWidth = crestTexture.getWidth() * PIXEL;
+        batch.draw(crestTexture, x0 + (w - crestWidth) / 2f, top - PIXEL, crestWidth, CREST_HEIGHT);
+        nine(batch, body, x0, y0, w, top - y0);
+        // Fronton : panneau doré et ses ampoules en chenillard.
+        float frameTop = glass.y + glass.height + FRAME;
+        float mx = x0 + PIXEL * 3, my = frameTop + PIXEL * 2, mw = w - PIXEL * 6, mh = top - PIXEL * 3 - my;
+        nine(batch, marquee, mx, my, mw, mh);
+        int bulbs = Math.max(2, (int) ((mw / PIXEL - 8f) / BULB_STEP));
+        float step = (mw - PIXEL * 8f) / bulbs;
+        for (int row = 0; row < 2; row++) {
+            float by = my + mh * (row == 0 ? 0.62f : 0.28f) - PIXEL * 2f;
+            for (int i = 0; i < bulbs; i++) {
+                boolean on = ((int) (time * 6f) + i + row) % 3 == 0;
+                float bx = mx + PIXEL * 4f + step * (i + 0.5f) - PIXEL * 2f;
+                batch.draw(on ? bulbOn : bulbOff, bx, by, PIXEL * 4f, PIXEL * 4f);
+            }
         }
-        // Vitre des rouleaux : cadre doré, fond crème, une séparation entre deux rouleaux.
-        rect(batch, OUTLINE, glass.x - TRIM - LINE, glass.y - TRIM - LINE, glass.width + (TRIM + LINE) * 2,
-            glass.height + (TRIM + LINE) * 2, parentAlpha);
-        rect(batch, TRIM_SHADE, glass.x - TRIM, glass.y - TRIM, glass.width + TRIM * 2, glass.height + TRIM * 2, parentAlpha);
-        rect(batch, TRIM_COLOR, glass.x - TRIM, glass.y, glass.width + TRIM * 2, glass.height + TRIM, parentAlpha);
-        rect(batch, GLASS, glass.x, glass.y, glass.width, glass.height, parentAlpha);
+        // Le cadre et les cases des rouleaux, comme sur la table.
+        reelFrame.draw(batch, glass.x - FRAME, glass.y - FRAME, glass.width + FRAME * 2, glass.height + FRAME * 2);
         int reels = Math.max(1, reelCount.getAsInt());
-        for (int i = 1; i < reels; i++) {
-            rect(batch, OUTLINE, glass.x + glass.width * i / reels - LINE / 2f, glass.y, LINE, glass.height, parentAlpha);
-        }
-        // Fente à pièces, en bas.
-        rect(batch, SLOT, glass.x + glass.width / 2f - 30f, y0 + BOTTOM * 0.3f, 60f, LINE * 2, parentAlpha);
+        float cell = glass.width / reels;
+        for (int i = 0; i < reels; i++) reelCell.draw(batch, glass.x + i * cell, glass.y, cell, glass.height);
+        // Bac à pièces, en bas.
+        float trayWidth = trayTexture.getWidth() * PIXEL, trayHeight = trayTexture.getHeight() * PIXEL;
+        batch.draw(trayTexture, x0 + (w - trayWidth) / 2f, y0 + (glass.y - FRAME - y0 - trayHeight) / 2f,
+            trayWidth, trayHeight);
         batch.setColor(Color.WHITE);
         super.drawChildren(batch, parentAlpha);
     }
 
-    private void rect(Batch batch, Color color, float x, float y, float width, float height, float alpha) {
-        batch.setColor(color.r, color.g, color.b, color.a * alpha);
-        batch.draw(pixel, x, y, width, height);
+    /** Pièce étirable, ses pixels à la taille de ceux de la table. */
+    private static void nine(Batch batch, NinePatch patch, float x, float y, float width, float height) {
+        patch.draw(batch, x, y, 0f, 0f, width / PIXEL, height / PIXEL, PIXEL, PIXEL, 0f);
     }
 }
