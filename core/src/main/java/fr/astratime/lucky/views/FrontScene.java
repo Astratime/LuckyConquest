@@ -25,12 +25,10 @@ import java.util.function.Supplier;
  * Vue de face du combat : le décor du lieu, et l'ennemi en grand, debout
  * derrière la table vue en perspective ({@link TableProjection}).
  *
- * <p>L'ennemi est son portrait de la vue classique, agrandi, et animé ici : il
- * respire (la tête un peu plus que le corps), se balance doucement, tourne la
- * tête de temps en temps et cligne des yeux ({@link EnemyTextures#portraitBlink}).
- * Il recopie aussi les gestes de son petit portrait ({@link EnemyView}, caché en
- * vue de face) : il tremble et flashe en blanc quand il est touché, luit en vert
- * quand il se soigne, hoche la tête, se penche pour frapper et bascule, vaincu.
+ * <p>L'ennemi est son portrait de la vue classique, agrandi, qui bouge comme en
+ * vue classique : il recopie le mouvement et les gestes de son petit portrait
+ * ({@link EnemyView}, caché en vue de face) : il monte et descend doucement,
+ * tremble et flashe en blanc quand il est touché, luit en vert quand il se soigne, hoche la tête, se penche pour frapper et bascule, vaincu.
  */
 public class FrontScene extends Actor implements Disposable {
 
@@ -62,21 +60,6 @@ public class FrontScene extends Actor implements Disposable {
     private static final float TOP_ROOM        = 40f;
     /** Part de la hauteur de l'ennemi cachée derrière le rebord de la table. */
     private static final float HIDDEN_PART     = 0.06f;
-    /** Respiration : amplitude (en pixels du portrait) et période, en secondes. */
-    private static final float BREATH          = 0.6f;
-    private static final float BREATH_PERIOD   = 2.6f;
-    /** La tête (le haut du portrait) bouge plus que le corps ; le cou, autour de {@code HEAD_PART}, se plie sur {@code NECK} rangées. */
-    private static final float HEAD_PART       = 0.5f;
-    private static final float NECK            = 10f;
-    /** Balancement de tout le corps, en degrés, et sa période. */
-    private static final float SWAY            = 1.2f;
-    private static final float SWAY_PERIOD     = 5.3f;
-    /** La tête se tourne d'un pixel : toutes les {@code LOOK_EVERY} secondes, pendant {@code LOOK_TIME}. */
-    private static final float LOOK_EVERY      = 4.7f;
-    private static final float LOOK_TIME       = 1.1f;
-    /** Clignement des yeux : toutes les {@code BLINK_EVERY} secondes, pendant {@code BLINK_TIME}. */
-    private static final float BLINK_EVERY     = 3.1f;
-    private static final float BLINK_TIME      = 0.14f;
     /** Les gestes du petit portrait sont amplifiés d'autant sur le grand. */
     private static final float GESTURE_SCALE   = 2f;
     /** Lanternes de la Cale : centre de leur flamme, en pixels du décor (origine en haut à gauche). */
@@ -92,8 +75,6 @@ public class FrontScene extends Actor implements Disposable {
 
     private final Texture glow = glowTexture();
     private final Map<Decor, Texture>     decors = new EnumMap<>(Decor.class);
-    // Mouvement de la tête de l'image en cours : centre du cou (rangée), décalage à l'écran.
-    private float headCenter, headDx, headDy;
 
     private Decor decor = Decor.CASINO;
     private float time;
@@ -165,69 +146,23 @@ public class FrontScene extends Actor implements Disposable {
         Color flash     = enemyView.getFlashColor();
         float alpha     = parentAlpha * character.getColor().a;
         float rotation  = character.getRotation();
-        float breath    = MathUtils.sin(time * MathUtils.PI2 / BREATH_PERIOD) * BREATH * pixel;
-        float dx = portrait.getX() * GESTURE_SCALE, dy = portrait.getY() * GESTURE_SCALE;
-        float x = enemyX + dx, y = enemyY + dy;
+        // Le même mouvement qu'en vue classique : il monte et descend doucement, à l'échelle du grand portrait.
+        float lift = enemyView.getIdleLift() / character.getHeight() * getHeight();
+        float x = enemyX + portrait.getX() * GESTURE_SCALE, y = enemyY + portrait.getY() * GESTURE_SCALE + lift;
         float originX = getWidth() / 2f; // vaincu, il bascule en arrière autour de ses pieds
 
         EnemyKind kind = enemy.get().getKind();
-        Texture portraitTexture = enemyTextures.portrait(kind), flashTexture = enemyTextures.portraitFlash(kind);
-        Texture blink = enemyTextures.portraitBlink(kind);
-        boolean blinking = blink != null && time % BLINK_EVERY < BLINK_TIME;
-        rotation += MathUtils.sin(time * MathUtils.PI2 / SWAY_PERIOD) * SWAY;
-
-        int height = portraitTexture.getHeight();
-        float bodyY = y + breath * 0.5f;
-        float feetX = x + originX;
-
-        // Chaque rangée suit la tête autant qu'elle en est proche : la tête bouge (respire plus fort, se tourne),
-        // le corps non, et le cou se plie entre les deux, sans que la tête se détache.
-        headCenter = height * HEAD_PART;
-        headDx = lookOffset() * pixel;
-        headDy = breath * 0.5f;
-        Texture shown = blinking ? blink : portraitTexture;
-        for (int r = height - 1; r >= 0; r--) {
-            float top = rowEdge(r, bodyY, height), bottom = rowEdge(r + 1, bodyY, height);
-            if (top <= bottom) continue;
-            float rx = x + headWeight(r + 0.5f) * headDx;
-            drawRow(batch, shown, flashTexture, r, rx, bottom, top - bottom, feetX, bodyY, rotation, alpha, flash);
-        }
-        batch.setColor(Color.WHITE);
-    }
-
-    /** @return combien la rangée {@code row} suit la tête : 1 dans la tête, 0 dans le corps, entre les deux au cou. */
-    private float headWeight(float row) {
-        float u = (headCenter + NECK / 2f - row) / NECK;
-        u = MathUtils.clamp(u, 0f, 1f);
-        return u * u * (3f - 2f * u);
-    }
-
-    /** @return la hauteur à l'écran du haut de la rangée {@code row} (le bas de la précédente) : elles se touchent toujours. */
-    private float rowEdge(int row, float bodyY, int height) {
-        return bodyY + (height - row) * pixel + headWeight(row) * headDy;
-    }
-
-    /** Une rangée du portrait, posée de {@code bottom} à {@code bottom + rowHeight}, tournée autour des pieds. */
-    private void drawRow(Batch batch, Texture texture, Texture silhouette, int row, float x, float bottom, float rowHeight,
-                         float pivotX, float pivotY, float rotation, float alpha, Color flash) {
-        float width = texture.getWidth() * pixel;
+        Texture texture = enemyTextures.portrait(kind), silhouette = enemyTextures.portraitFlash(kind);
+        float width = texture.getWidth() * pixel, height = texture.getHeight() * pixel;
         batch.setColor(1f, 1f, 1f, alpha);
-        batch.draw(texture, x, bottom, pivotX - x, pivotY - bottom, width, rowHeight, 1f, 1f, rotation,
-            0, row, texture.getWidth(), 1, false, false);
+        batch.draw(texture, x, y, originX, 0f, width, height, 1f, 1f, rotation,
+            0, 0, texture.getWidth(), texture.getHeight(), false, false);
         if (silhouette != null && flash.a > 0f) {
             batch.setColor(flash.r, flash.g, flash.b, flash.a * alpha);
-            batch.draw(silhouette, x, bottom, pivotX - x, pivotY - bottom, width, rowHeight, 1f, 1f, rotation,
-                0, row, silhouette.getWidth(), 1, false, false);
+            batch.draw(silhouette, x, y, originX, 0f, width, height, 1f, 1f, rotation,
+                0, 0, silhouette.getWidth(), silhouette.getHeight(), false, false);
         }
-    }
-
-    /** @return le décalage de la tête qui se tourne (en pixels du portrait) : vers la gauche, puis la droite. */
-    private float lookOffset() {
-        float t = time % (LOOK_EVERY * 2f);
-        float side = t < LOOK_EVERY ? -1f : 1f;
-        t %= LOOK_EVERY;
-        if (t > LOOK_TIME) return 0f;
-        return side * MathUtils.sin(t / LOOK_TIME * MathUtils.PI);
+        batch.setColor(Color.WHITE);
     }
 
     /** Le décor couvre la zone de jeu, sans lissage, centré sur la table ; les lanternes de la Cale vacillent. */

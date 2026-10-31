@@ -99,6 +99,8 @@ public class EnemyView implements Disposable {
 
     private final Group         group     = new Group();
     private final Group         character = new Group();
+    /** Hauteur du croupier à sa place, sans son mouvement de repos. */
+    private float               restY;
     private final Image         croupier;
     private final Image         flash;
     private final ShieldBadge   defense;
@@ -354,6 +356,7 @@ public class EnemyView implements Disposable {
                 table.getFeltTop() - character.getHeight());
         }
         character.setVisible(!frontView);
+        restY = character.getY();
         idle();
         deckPile.setPosition(table.getEnemyDeckX(), table.getEnemyPilesY());
         discardPile.setPosition(table.getEnemyDiscardX(), table.getEnemyPilesY());
@@ -695,6 +698,9 @@ public class EnemyView implements Disposable {
 
     /** @return le petit portrait et sa silhouette (rotation et transparence : il tombe, vaincu). */
     public Actor getCharacter() { return character; }
+
+    /** @return de combien le croupier est monté au-dessus de sa place, dans son mouvement de repos (pixels). */
+    public float getIdleLift() { return character.getY() - restY; }
 
     /** @return l'image du portrait, décalée quand il tremble (touché), hoche la tête ou se penche pour frapper. */
     public Actor getPortrait() { return croupier; }
