@@ -19,7 +19,6 @@ import fr.astratime.lucky.entities.enemy.EnemyKind;
 
 import java.util.EnumMap;
 import java.util.Map;
-import java.util.Optional;
 import java.util.function.Supplier;
 
 /**
@@ -32,8 +31,6 @@ import java.util.function.Supplier;
  * Il recopie aussi les gestes de son petit portrait ({@link EnemyView}, caché en
  * vue de face) : il tremble et flashe en blanc quand il est touché, luit en vert
  * quand il se soigne, hoche la tête, se penche pour frapper et bascule, vaincu.
- * Chaque ennemi a en plus son animation à lui ({@link EnemyIdle}) : le clown
- * jongle, la roue tourne, le rat renifle...
  */
 public class FrontScene extends Actor implements Disposable {
 
@@ -150,14 +147,9 @@ public class FrontScene extends Actor implements Disposable {
     private final Supplier<Enemy> enemy;
 
     private final Texture glow = glowTexture();
-    private final Texture white = whiteTexture();
     private final Map<Decor, Texture>     decors = new EnumMap<>(Decor.class);
-    private final Map<EnemyKind, Optional<EnemyIdle>> idles = new EnumMap<>(EnemyKind.class);
-    private final EnemyIdle.Pose pose = new EnemyIdle.Pose();
-    private boolean[] skipped = new boolean[0];
     // Mouvement de la tête de l'image en cours : centre du cou (rangée), décalage à l'écran.
     private float headCenter, headDx, headDy;
-    private final PortraitFx fx = new PortraitFx();
 
     private Decor decor = Decor.CASINO;
     private float time;
@@ -224,7 +216,6 @@ public class FrontScene extends Actor implements Disposable {
     @Override
     public void draw(Batch batch, float parentAlpha) {
         drawDecor(batch, parentAlpha);
-        fx.batch = batch;
         Actor character = enemyView.getCharacter();
         Actor portrait  = enemyView.getPortrait();
         Color flash     = enemyView.getFlashColor();
@@ -241,50 +232,22 @@ public class FrontScene extends Actor implements Disposable {
         boolean blinking = blink != null && time % BLINK_EVERY < BLINK_TIME;
         rotation += MathUtils.sin(time * MathUtils.PI2 / SWAY_PERIOD) * SWAY;
 
-        // L'animation propre à l'ennemi : elle déplace tout le portrait, sa tête ou des bandes de rangées.
-        EnemyIdle idle = idles.computeIfAbsent(kind, k -> Optional.ofNullable(EnemyIdle.of(k))).orElse(null);
-        pose.reset();
-        if (idle != null) idle.pose(time, pose);
-        alpha *= pose.alpha;
-        rotation += pose.rotation;
-        x += pose.dx * pixel;
-        y -= pose.dy * pixel;
-
         int height = portraitTexture.getHeight();
         float bodyY = y + breath * 0.5f;
         float feetX = x + originX;
-        fx.set(x, bodyY, feetX, bodyY, rotation, alpha, height);
-        if (idle != null) idle.drawBack(fx, time);
 
         // Chaque rangée suit la tête autant qu'elle en est proche : la tête bouge (respire plus fort, se tourne),
         // le corps non, et le cou se plie entre les deux, sans que la tête se détache.
         headCenter = height * HEAD_PART;
-        headDx = (lookOffset() + pose.headDx) * pixel;
-        headDy = breath * 0.5f - pose.headDy * pixel;
+        headDx = lookOffset() * pixel;
+        headDy = breath * 0.5f;
         Texture shown = blinking ? blink : portraitTexture;
-        if (skipped.length < height) skipped = new boolean[height];
-        java.util.Arrays.fill(skipped, false);
-        for (EnemyIdle.Pose.Band band : pose.bands) {
-            for (int r = Math.max(0, band.top); r < Math.min(height, band.bottom); r++) skipped[r] = true;
-        }
         for (int r = height - 1; r >= 0; r--) {
-            if (skipped[r]) continue;
             float top = rowEdge(r, bodyY, height), bottom = rowEdge(r + 1, bodyY, height);
             if (top <= bottom) continue;
             float rx = x + headWeight(r + 0.5f) * headDx;
             drawRow(batch, shown, flashTexture, r, rx, bottom, top - bottom, feetX, bodyY, rotation, alpha, flash);
         }
-        for (EnemyIdle.Pose.Band band : pose.bands) {
-            float w = headWeight(band.top);
-            float bx = x + w * headDx + band.dx * pixel, by = bodyY + w * headDy - band.dy * pixel;
-            // Le pivot de la bande suit la rotation de tout le corps autour des pieds, puis la bande tourne sur lui.
-            float px = bx + band.pivotX * pixel, py = by + (height - band.pivotY) * pixel;
-            float cos = MathUtils.cosDeg(rotation), sin = MathUtils.sinDeg(rotation);
-            float rx = feetX + (px - feetX) * cos - (py - bodyY) * sin, ry = bodyY + (px - feetX) * sin + (py - bodyY) * cos;
-            drawRows(batch, shown, flashTexture, band.top, band.bottom, bx + rx - px, by + ry - py,
-                rx, ry, rotation + band.rotation, alpha, flash);
-        }
-        if (idle != null) idle.drawFront(fx, time);
         batch.setColor(Color.WHITE);
     }
 
@@ -323,79 +286,6 @@ public class FrontScene extends Actor implements Disposable {
         return side * MathUtils.sin(t / LOOK_TIME * MathUtils.PI);
     }
 
-    /**
-     * Les rangées {@code [top, bottom)} du portrait (comptées depuis le haut) à
-     * leur place quand le portrait a son coin bas gauche en {@code (x, y)},
-     * tournées autour du point {@code (pivotX, pivotY)} de l'écran, puis la même
-     * tranche de sa silhouette quand il flashe.
-     */
-    private void drawRows(Batch batch, Texture texture, Texture silhouette, int top, int bottom, float x, float y,
-                          float pivotX, float pivotY, float rotation, float alpha, Color flash) {
-        int rows = Math.min(bottom, texture.getHeight()) - top;
-        if (rows <= 0) return;
-        float width = texture.getWidth() * pixel, height = rows * pixel;
-        float sliceY = y + (texture.getHeight() - top - rows) * pixel;
-        float originX = pivotX - x, originY = pivotY - sliceY;
-        batch.setColor(1f, 1f, 1f, alpha);
-        batch.draw(texture, x, sliceY, originX, originY, width, height, 1f, 1f, rotation,
-            0, top, texture.getWidth(), rows, false, false);
-        if (silhouette != null && flash.a > 0f) {
-            batch.setColor(flash.r, flash.g, flash.b, flash.a * alpha);
-            batch.draw(silhouette, x, sliceY, originX, originY, width, height, 1f, 1f, rotation,
-                0, top, silhouette.getWidth(), rows, false, false);
-        }
-    }
-
-    /**
-     * Les dessins des animations : en pixels du portrait (origine en haut à
-     * gauche), placés comme le corps de l'ennemi et tournés avec lui.
-     */
-    private final class PortraitFx implements EnemyIdle.Fx {
-        private Batch batch;
-        private float x, y, feetX, feetY, cos, sin, alpha;
-        private int height;
-
-        void set(float x, float y, float feetX, float feetY, float rotation, float alpha, int height) {
-            this.x = x;
-            this.y = y;
-            this.feetX = feetX;
-            this.feetY = feetY;
-            this.cos = MathUtils.cosDeg(rotation);
-            this.sin = MathUtils.sinDeg(rotation);
-            this.alpha = alpha;
-            this.height = height;
-        }
-
-        /** Le point (px, py) du portrait à l'écran : {@code out[0], out[1]}. */
-        private void toScreen(float px, float py, float[] out) {
-            float sx = x + px * pixel, sy = y + (height - py) * pixel;
-            out[0] = feetX + (sx - feetX) * cos - (sy - feetY) * sin;
-            out[1] = feetY + (sx - feetX) * sin + (sy - feetY) * cos;
-        }
-
-        private final float[] point = new float[2];
-
-        @Override
-        public void rect(float px, float py, float width, float h, Color color, float a) {
-            if (a <= 0f) return;
-            toScreen(px, py, point);
-            batch.setColor(color.r, color.g, color.b, color.a * Math.min(1f, a) * alpha);
-            batch.draw(white, Math.round(point[0]), Math.round(point[1] - h * pixel), width * pixel, h * pixel);
-        }
-
-        @Override
-        public void glow(float px, float py, float radius, Color color, float a) {
-            if (a <= 0f) return;
-            toScreen(px, py, point);
-            int src = batch.getBlendSrcFunc(), dst = batch.getBlendDstFunc();
-            batch.setBlendFunction(GL20.GL_SRC_ALPHA, GL20.GL_ONE);
-            float size = radius * pixel;
-            batch.setColor(color.r, color.g, color.b, Math.min(1f, a) * alpha);
-            batch.draw(glow, point[0] - size, point[1] - size, size * 2f, size * 2f);
-            batch.setBlendFunction(src, dst);
-        }
-    }
-
     /** Le décor couvre la zone de jeu, sans lissage, centré sur la table ; les lanternes de la Cale vacillent. */
     private void drawDecor(Batch batch, float parentAlpha) {
         Texture texture = decors.computeIfAbsent(decor, d -> load(d.path));
@@ -430,16 +320,6 @@ public class FrontScene extends Actor implements Disposable {
         return texture;
     }
 
-    /** Un pixel blanc, teinté pour dessiner les objets des animations. */
-    private static Texture whiteTexture() {
-        Pixmap pixmap = new Pixmap(1, 1, Pixmap.Format.RGBA8888);
-        pixmap.setColor(Color.WHITE);
-        pixmap.fill();
-        Texture texture = new Texture(pixmap);
-        pixmap.dispose();
-        return texture;
-    }
-
     /** Halo rond et doux, blanc au centre, pour la lumière des lanternes. */
     private static Texture glowTexture() {
         int size = 64;
@@ -461,7 +341,6 @@ public class FrontScene extends Actor implements Disposable {
     @Override
     public void dispose() {
         glow.dispose();
-        white.dispose();
         for (Texture texture : decors.values()) texture.dispose();
     }
 }
