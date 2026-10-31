@@ -6,8 +6,7 @@ Produit, en pixel art à la taille 1 (le jeu les agrandit sans lissage) :
   assets/front/rat_cales/*.png        le Rat des cales en pièces détachées, animées par le jeu
                                       (corps, tête, paupière, queue, patte) et leurs silhouettes
                                       blanches (*_flash.png) pour le flash quand il est touché.
-  assets/front/props/*.png            les faces des volumes posés sur la table : tranches des
-                                      piles de cartes, et l'étal de l'échoppe (comptoir, dessus
+  assets/front/props/*.png            les faces de l'étal de l'échoppe en relief (comptoir, dessus
                                       garni, marchandises, auvent rayé et son lambrequin).
 
 Toutes les pièces du rat partagent le même cadre (CANVAS) : le jeu les superpose
@@ -31,15 +30,17 @@ GR, GRD, GRL, GRLL = (122, 122, 136), (92, 92, 106), (156, 156, 170), (190, 190,
 PINK, PINKD = (232, 150, 166), (190, 104, 124)
 
 
-def outline(img):
-    """Contour sombre d'un pixel autour de la forme."""
+def outline(img, width=1):
+    """Contour sombre de {width} pixels autour de la forme."""
     a = np.array(img)
     alpha = a[:, :, 3] > 0
     grown = alpha.copy()
-    grown[1:, :] |= alpha[:-1, :]
-    grown[:-1, :] |= alpha[1:, :]
-    grown[:, 1:] |= alpha[:, :-1]
-    grown[:, :-1] |= alpha[:, 1:]
+    for _ in range(width):
+        prev = grown.copy()
+        grown[1:, :] |= prev[:-1, :]
+        grown[:-1, :] |= prev[1:, :]
+        grown[:, 1:] |= prev[:, :-1]
+        grown[:, :-1] |= prev[:, 1:]
     o = np.zeros_like(a)
     o[grown] = OUTLINE
     out = Image.fromarray(o)
@@ -220,16 +221,6 @@ RED, REDD, CREAM, CREAMD = (204, 44, 52), (150, 28, 40), (242, 230, 206), (206, 
 GOODS = [(214, 52, 52), (246, 196, 60), (70, 170, 76), (236, 128, 44), (150, 70, 170)]
 
 
-def card_edges():
-    """Tranche d'une pile : une ligne claire par carte, une ombre entre deux."""
-    im = Image.new('RGBA', (4, 64))
-    for y in range(64):
-        c = (238, 230, 212) if y % 2 == 0 else (168, 158, 140)
-        for x in range(4):
-            im.putpixel((x, y), c + (255,))
-    return im
-
-
 def stall_front():
     """Devant du comptoir : caisse en planches, montants aux coins."""
     w, h = 64, 22
@@ -292,7 +283,7 @@ def stall_goods():
             x += 7
         if x > w - 8:
             break
-    return outline(im)
+    return outline(im, 2)
 
 
 def stall_awning():
@@ -311,16 +302,16 @@ def stall_awning():
 
 def stall_valance():
     """Lambrequin, le bord festonné qui pend devant l'auvent."""
-    w, h = 32, 8
+    w, h = 32, 10
     im = Image.new('RGBA', (w, h), (0, 0, 0, 0))
     for x in range(w):
         red = (x // 4) % 2 == 0
         c = RED if red else CREAM
         k = x % 4
-        bottom = h - 1 if k in (1, 2) else h - 3
+        bottom = h - 3 if k in (1, 2) else h - 5  # de la place en bas pour le contour
         for y in range(0, bottom + 1):
             im.putpixel((x, y), (REDD if (red and y == bottom) else (CREAMD if y == bottom else c)) + (255,))
-    return outline(im)
+    return outline(im, 2)
 
 
 def main():
@@ -334,7 +325,7 @@ def main():
     rat_eyelid().save(os.path.join(rat_dir, 'eyelid.png'))
     props_dir = os.path.join(ROOT, 'props')
     os.makedirs(props_dir, exist_ok=True)
-    for name, img in {'card_edges': card_edges(), 'stall_front': stall_front(), 'stall_top': stall_top(),
+    for name, img in {'stall_front': stall_front(), 'stall_top': stall_top(),
                       'stall_goods': stall_goods(), 'stall_awning': stall_awning(),
                       'stall_valance': stall_valance()}.items():
         img.save(os.path.join(props_dir, name + '.png'))

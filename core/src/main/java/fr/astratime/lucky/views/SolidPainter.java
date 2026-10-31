@@ -30,6 +30,13 @@ public class SolidPainter {
     private final float[]         grid     = new float[(GRID + 1) * (GRID + 1) * 2];
     private final Vector2         point    = new Vector2();
     private final Color           tint     = new Color();
+    private final float[]         corners  = new float[8];
+    /** Contour noir des faces, en pixels de l'écran (0 : aucun), comme les contours du pixel art du jeu. */
+    private float                 outline;
+    private static final Color    OUTLINE_COLOR = Color.valueOf("22141aff");
+
+    /** Contour noir autour de chaque face dessinée ensuite, épais de {@code width} pixels (0 : aucun). */
+    public void setOutline(float width) { outline = width; }
 
     public SolidPainter(TableProjection projection, Texture pixel) {
         this.projection = projection;
@@ -106,6 +113,41 @@ public class SolidPainter {
                 batch.draw(region.getTexture(), vertices, 0, vertices.length);
             }
         }
+        if (outline > 0f) outlineFace(batch, alpha);
+    }
+
+    /** Les quatre bords de la face qu'on vient de dessiner, en traits noirs épais. */
+    private void outlineFace(Batch batch, float alpha) {
+        int last = GRID * (GRID + 1);
+        int[] at = {0, GRID, last + GRID, last}; // coins de la grille : a, b, c, d
+        for (int i = 0; i < 4; i++) {
+            corners[i * 2]     = grid[at[i] * 2];
+            corners[i * 2 + 1] = grid[at[i] * 2 + 1];
+        }
+        float packed = tint.set(OUTLINE_COLOR.r, OUTLINE_COLOR.g, OUTLINE_COLOR.b, alpha).toFloatBits();
+        for (int i = 0; i < 4; i++) {
+            int j = (i + 1) % 4;
+            line(batch, corners[i * 2], corners[i * 2 + 1], corners[j * 2], corners[j * 2 + 1], packed);
+        }
+    }
+
+    /** Trait épais de {@link #outline} pixels, prolongé d'un demi-trait à chaque bout pour fermer les coins. */
+    private void line(Batch batch, float x0, float y0, float x1, float y1, float color) {
+        float dx = x1 - x0, dy = y1 - y0, length = (float) Math.sqrt(dx * dx + dy * dy);
+        if (length < 0.01f) return;
+        float h = outline / 2f, ux = dx / length * h, uy = dy / length * h; // le long du trait
+        float nx = -uy, ny = ux;                                            // en travers
+        float u = (pixel.getU() + pixel.getU2()) / 2f, v = (pixel.getV() + pixel.getV2()) / 2f;
+        float[] q = {x0 - ux + nx, y0 - uy + ny, x1 + ux + nx, y1 + uy + ny, x1 + ux - nx, y1 + uy - ny,
+            x0 - ux - nx, y0 - uy - ny};
+        for (int k = 0; k < 4; k++) {
+            vertices[k * 5]     = q[k * 2];
+            vertices[k * 5 + 1] = q[k * 2 + 1];
+            vertices[k * 5 + 2] = color;
+            vertices[k * 5 + 3] = u;
+            vertices[k * 5 + 4] = v;
+        }
+        batch.draw(pixel.getTexture(), vertices, 0, vertices.length);
     }
 
     private void vertex(int at, int i, int j, float color, float u, float v) {

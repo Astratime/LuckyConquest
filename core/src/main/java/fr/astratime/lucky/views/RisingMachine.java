@@ -17,11 +17,10 @@ import java.util.function.Supplier;
 /**
  * Vue de face : la machine à sous qui sort de la table quand on tire le levier.
  * Au repos, les rouleaux sont trois cases couchées sur la table. Au tirage,
- * une machine en volume (caisse, fronton d'ampoules, vitre des rouleaux) monte
- * de leur emplacement, exactement par le cadre des rouleaux sur la table,
- * emporte les symboles et les fait tourner debout, face au joueur ; le tirage
- * fini, elle redescend sous la table et rend les symboles à leurs cases. Le
- * joueur et l'ennemi ont chacun la leur.
+ * une machine (caisse, fronton d'ampoules, vitre des rouleaux) monte de la
+ * table à leur emplacement, emporte les symboles et les fait tourner debout,
+ * face au joueur ; le tirage fini, elle redescend sous la table et rend les
+ * symboles à leurs cases. Le joueur et l'ennemi ont chacun la leur.
  *
  * <p>En vue classique, elle ne fait rien : les rouleaux restent sur la table.
  */
@@ -29,15 +28,9 @@ public class RisingMachine extends Billboard {
 
     /** Durée de la montée et de la descente, en secondes. */
     private static final float MOVE_TIME = 0.32f;
-    /**
-     * Caisse autour de la vitre des rouleaux : marges sur les côtés (celles du
-     * cadre des rouleaux sur la table : la machine sort de ce cadre), sous la
-     * vitre et au-dessus (fronton). Sa profondeur est celle du cadre.
-     */
-    private static final float SIDE = TableView.REEL_FRAME_PAD, BOTTOM = 44f, TOP = 74f;
+    /** Caisse autour de la vitre des rouleaux : marges (table à plat). */
+    private static final float SIDE = 26f, BOTTOM = 44f, TOP = 74f;
     private static final float TRIM = 8f, LINE = 4f, BULB = 10f, BULB_GAP = 22f;
-    /** Le dessus : rebord doré, puis le gyrophare (socle et lampe), en unités de la table. */
-    private static final float RIM = 8f, TOPPER = 30f, TOPPER_HEIGHT = 16f, LAMP = 13f;
 
     private static final Color OUTLINE = Color.valueOf("22141aff");
     private static final Color TRIM_COLOR = Color.valueOf("e6b422ff");
@@ -47,16 +40,12 @@ public class RisingMachine extends Billboard {
     private static final Color BULB_ON = Color.valueOf("fff2a8ff");
     private static final Color BULB_OFF = Color.valueOf("c9862aff");
 
-    private final SolidPainter        painter;
     private final Supplier<Rectangle> window;
     private final IntSupplier         reelCount;
     private final Texture             pixel;
     private final Color               body, bodyLight, bodyDark;
     private final Rectangle           scissor = new Rectangle();
     private final Rectangle           area    = new Rectangle();
-    private final Vector2             point   = new Vector2();
-    /** Hauteur du bas de la caisse par rapport au feutre (négative tant qu'elle n'est pas toute sortie). */
-    private float                     bottom;
 
     /** Les symboles emportés, et le groupe où ils retournent au repos. */
     private Actor   content;
@@ -72,13 +61,12 @@ public class RisingMachine extends Billboard {
      * @param reelCount nombre de rouleaux (séparations de la vitre)
      * @param body      couleur de la caisse
      */
-    public RisingMachine(SolidPainter painter, Supplier<Rectangle> window, IntSupplier reelCount, Texture pixel,
+    public RisingMachine(TableProjection projection, Supplier<Rectangle> window, IntSupplier reelCount, Texture pixel,
                          Color body) {
-        super(painter.getProjection(), 1f, () -> {
+        super(projection, 1f, () -> {
             Rectangle glass = window.get();
-            return new Vector2(glass.x + glass.width / 2f, glass.y - SIDE);
+            return new Vector2(glass.x + glass.width / 2f, glass.y - BOTTOM);
         });
-        this.painter   = painter;
         this.window    = window;
         this.reelCount = reelCount;
         this.pixel     = pixel;
@@ -130,56 +118,24 @@ public class RisingMachine extends Billboard {
         super.act(delta);
     }
 
-    /**
-     * Pose la face avant : le dessin de la caisse (coordonnées de la table à
-     * plat, la vitre sur les cases des rouleaux) est redressé contre le bord
-     * avant du cadre, à la hauteur où la machine est sortie.
-     */
     @Override
     protected void place() {
-        if (!projection.isEnabled()) {
-            super.place();
-            return;
-        }
-        Rectangle glass = window.get();
-        float x0 = glass.x - SIDE, y0 = glass.y - SIDE, cabinet = glass.y - BOTTOM;
-        bottom = -(1f - Interpolation.pow2Out.apply(rise)) * height(glass);
-        float scale = projection.scaleAt(x0, y0);
-        projection.project(x0, y0, bottom, point);
-        setOrigin(x0, cabinet);
-        setScale(scale);
-        setPosition(point.x - x0, point.y - cabinet);
+        lift = 0f;
+        super.place();
+        if (!projection.isEnabled()) return;
+        // Hauteur de la machine à l'écran : sous la table, elle est descendue d'autant.
+        float height = (window.get().height + BOTTOM + TOP) * getScaleY();
+        lift = -(1f - Interpolation.pow2Out.apply(rise)) * height;
+        setY(getY() + lift);
     }
-
-    private static float height(Rectangle glass) { return BOTTOM + glass.height + TOP; }
 
     @Override
     public void draw(Batch batch, float parentAlpha) {
         if (content == null || !projection.isEnabled()) return;
         place();
-        Rectangle glass = window.get();
-        float x0 = glass.x - SIDE, x1 = glass.x + glass.width + SIDE;
-        float y0 = glass.y - SIDE, y1 = glass.y + glass.height + SIDE;
-        // Le dessus et le côté de la caisse (ce qui est sorti de la table) ; l'avant vient ensuite.
-        float top = bottom + height(glass);
-        painter.box(batch, x0, y0, bottom, x1, y1, top, painter.pixel(), painter.pixel(),
-            painter.pixel(), TRIM_SHADE, body, parentAlpha, false);
-        if (top > 0f) {
-            // Dessus : un rebord doré autour d'un capot sombre.
-            painter.face(batch, painter.pixel(), bodyDark, 1f, parentAlpha, x0 + RIM, y0 + RIM, top, x1 - RIM, y0 + RIM, top,
-                x1 - RIM, y1 - RIM, top, x0 + RIM, y1 - RIM, top);
-        }
-        // Le gyrophare sur le capot, au fond : il sort de la table le premier.
-        float cx = (x0 + x1) / 2f;
-        painter.box(batch, cx - TOPPER, y1 - RIM - TOPPER, top, cx + TOPPER, y1 - RIM, top + TOPPER_HEIGHT,
-            TRIM_COLOR, parentAlpha);
-        boolean lit = ((int) (time * 4f)) % 2 == 0;
-        painter.box(batch, cx - LAMP, y1 - RIM - TOPPER / 2f - LAMP, top + TOPPER_HEIGHT, cx + LAMP,
-            y1 - RIM - TOPPER / 2f + LAMP, top + TOPPER_HEIGHT + LAMP * 2f, lit ? BULB_ON : BULB_OFF, parentAlpha);
-        batch.setColor(Color.WHITE);
-        // Seul ce qui est sorti de la table se voit : on coupe l'avant sous le bord du cadre.
-        projection.project(x0, y0, 0f, point);
-        area.set(-1e5f, point.y, 2e5f, 1e5f);
+        // Seul ce qui est sorti de la table se voit : on coupe sous la fente.
+        Vector2 slit = projection.project(getAnchor());
+        area.set(-1e5f, slit.y, 2e5f, 1e5f);
         batch.flush();
         ScissorStack.calculateScissors(getStage().getCamera(), batch.getTransformMatrix(), area, scissor);
         if (!ScissorStack.pushScissors(scissor)) return;
@@ -194,10 +150,10 @@ public class RisingMachine extends Billboard {
         Rectangle glass = window.get();
         float x0 = glass.x - SIDE, y0 = glass.y - BOTTOM;
         float w = glass.width + SIDE * 2, h = glass.height + BOTTOM + TOP;
-        rect(batch, OUTLINE, x0, y0, w, h, parentAlpha);
-        rect(batch, bodyDark, x0 + LINE, y0, w - LINE * 2, h - LINE, parentAlpha);
-        rect(batch, body, x0 + LINE, y0, w - LINE * 3, h - LINE * 2, parentAlpha);
-        rect(batch, bodyLight, x0 + LINE, y0, LINE * 2, h - LINE * 3, parentAlpha); // reflet à gauche
+        rect(batch, OUTLINE, x0 - LINE, y0, w + LINE * 2, h + LINE, parentAlpha);
+        rect(batch, bodyDark, x0, y0, w, h, parentAlpha);
+        rect(batch, body, x0 + LINE, y0, w - LINE * 3, h - LINE, parentAlpha);
+        rect(batch, bodyLight, x0 + LINE, y0, LINE * 2, h - LINE * 2, parentAlpha); // reflet à gauche
         // Fronton d'ampoules, qui clignotent en chenillard.
         float frontY = glass.y + glass.height + TRIM + LINE * 2;
         float frontH = y0 + h - LINE * 3 - frontY;

@@ -272,6 +272,8 @@ public class GameScreen extends ScreenAdapter {
     /** Vue de face : inclinaison des éléments debout sur la table (hauteur / largeur ; 1 : bien droit). */
     private static final float CARD_TILT  = 0.92f;
     private static final float BADGE_TILT = 0.9f;
+    /** Vue de face : les symboles des rouleaux, au repos, un peu redressés vers le joueur. */
+    private static final float REEL_TILT  = 0.8f;
     /** Vue de face : couleur de la caisse des machines à sous du joueur et de l'ennemi. */
     private static final Color PLAYER_MACHINE = Color.valueOf("9c1c2cff");
     private static final Color ENEMY_MACHINE  = Color.valueOf("4a2a6aff");
@@ -378,7 +380,7 @@ public class GameScreen extends ScreenAdapter {
      * Vue de face : ce qui se tient debout sur la table, face au joueur, rangée par
      * rangée (du fond vers nous) ; en vue classique, ces groupes ne changent rien.
      */
-    private final Billboard enemyReelsStand, enemyStand, shopStand, reelsStand, handStand;
+    private final Billboard enemyReelsStand, enemyStand, shopStand, slotsStand, reelsStand, handStand;
     /** Vue de face : les volumes posés sur la table (decks, défausses, échoppe). */
     private final SolidPainter  solids;
     private final TableProps    props;
@@ -470,12 +472,16 @@ public class GameScreen extends ScreenAdapter {
         enemyReelsStand = new Billboard(projection, BADGE_TILT,
             () -> new Vector2(playArea.getCenterX(), table.getEnemyReelWindow().y));
         enemyStand      = new Billboard(projection, CARD_TILT, () -> new Vector2(playArea.getCenterX(), table.getEnemyCardRowY()));
+        slotsStand      = new Billboard(projection, REEL_TILT, () -> {
+            Rectangle window = table.getPlayerReelWindow();
+            return new Vector2(window.x + window.width / 2f, window.y);
+        });
         reelsStand      = new Billboard(projection, BADGE_TILT, () -> new Vector2(playArea.getCenterX(), table.getReelRowY()));
         handStand       = new Billboard(projection, CARD_TILT, () -> new Vector2(playArea.getCenterX(), table.getHandRowY()));
         solids          = new SolidPainter(projection, hudTextures.pixel);
-        playerMachine   = new RisingMachine(solids, table::getPlayerReelWindow, table::getPlayerReelCount,
+        playerMachine   = new RisingMachine(projection, table::getPlayerReelWindow, table::getPlayerReelCount,
             hudTextures.pixel, PLAYER_MACHINE);
-        enemyMachine    = new RisingMachine(solids, table::getEnemyReelWindow, table::getEnemyReelCount,
+        enemyMachine    = new RisingMachine(projection, table::getEnemyReelWindow, table::getEnemyReelCount,
             hudTextures.pixel, ENEMY_MACHINE);
         enemyView  = new EnemyView(table, enemyTextures, pileFont, tooltip, effectPopupAnimator,
             sounds.cardDeal, sounds.cardFlip, sounds.reelSpin, sounds.reelStop,
@@ -624,6 +630,7 @@ public class GameScreen extends ScreenAdapter {
         handStand.addActor(aspirationPanel);
         handStand.addActor(hand.getActor());
         stage.addActor(handStand);
+        stage.addActor(slotsStand);             // vue de face : les symboles des rouleaux, redressés
         reelsStand.addActor(playerShield);
         spinControls.addTo(reelsStand);
         stage.addActor(reelsStand);
@@ -2280,11 +2287,13 @@ public class GameScreen extends ScreenAdapter {
         placeShopIcon();
         playerMachine.putAway();
         enemyMachine.putAway();
-        // Vue de face : les rouleaux de l'ennemi se couchent sur la table comme ceux du joueur.
+        // Vue de face : les symboles des rouleaux se redressent vers le joueur.
         if (front) {
-            tableLayer.addActor(enemyView.getReelGroup());
+            enemyReelsStand.addActorAt(0, enemyView.getReelGroup());
+            slotsStand.addActor(slots.getActor());
         } else {
             enemyView.takeBackReels();
+            tableLayer.addActorAt(1, slots.getActor()); // couchés sur la table, juste au-dessus du feutre
         }
         tooltip.hide();
     }
