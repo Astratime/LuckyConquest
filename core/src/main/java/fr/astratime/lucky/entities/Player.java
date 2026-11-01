@@ -205,6 +205,9 @@ public class Player {
      */
     public double getStakeableGains() { return Math.max(0, gains - potWinnings); }
 
+    /** @return les gains rapportés par la cagnotte qui restent : ils ne se misent pas (mais se dépensent en premier). */
+    public double getPotWinnings() { return potWinnings; }
+
     public void addGains(double amount) {
         double before = gains;
         gains = amount >= 0 ? BigNumber.add(gains, amount)

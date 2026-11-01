@@ -90,6 +90,9 @@ public class SidePanel implements Disposable {
     private final Label potLabel;
     /** Nom et description de la cagnotte, pour son infobulle. */
     private       String potName = "", potDescription = "";
+    /** Gains qu'on peut miser, sous la cagnotte : montrés seulement quand une partie des gains vient de la cagnotte. */
+    private final Label stakeableLabel;
+    private       String stakeableName = "", stakeableDescription = "";
     private final float gainsMaxWidth;
     private       double shownGains;
     private       double targetGains;
@@ -150,6 +153,11 @@ public class SidePanel implements Disposable {
         potRow.setVisible(false);
         addPotHelp();
         gainsBox.add(potRow).colspan(2).left().padTop(POT_GAP);
+        gainsBox.row();
+        stakeableLabel = new Label("", new Label.LabelStyle(captionFont, Color.WHITE));
+        stakeableLabel.setVisible(false);
+        addHelp(stakeableLabel, () -> stakeableName, () -> stakeableDescription);
+        gainsBox.add(stakeableLabel).colspan(2).left().padTop(POT_GAP);
         root.add(gainsBox).width(insetWidth).padTop(SECTION_GAP);
         root.row();
 
@@ -327,14 +335,35 @@ public class SidePanel implements Disposable {
         potRow.setVisible(true);
     }
 
+    /**
+     * Montre, sous la cagnotte, les gains qu'on peut miser quand une partie des gains vient
+     * de la cagnotte (ceux-là ne se misent pas) ; rien sinon.
+     *
+     * @param text        le texte de la ligne (« Misables : 1 200 »), {@code null} pour la cacher
+     * @param name        son nom, pour l'infobulle
+     * @param description ce qu'elle veut dire, pour l'infobulle
+     */
+    public void setStakeable(String text, String name, String description) {
+        stakeableLabel.setVisible(text != null);
+        if (text == null) return;
+        stakeableLabel.setText(text);
+        stakeableName = name;
+        stakeableDescription = description;
+    }
+
     /** Survoler la cagnotte affiche son infobulle, à droite du panneau. */
     private void addPotHelp() {
-        potRow.addListener(new InputListener() {
+        addHelp(potRow, () -> potName, () -> potDescription);
+    }
+
+    /** Survoler {@code actor} affiche l'infobulle {@code name} / {@code description}, à droite du panneau. */
+    private void addHelp(Actor actor, java.util.function.Supplier<String> name, java.util.function.Supplier<String> description) {
+        actor.addListener(new InputListener() {
             @Override
             public void enter(InputEvent event, float x, float y, int pointer, Actor fromActor) {
                 if (pointer != -1 || tooltip == null) return;
-                Vector2 bottom = potRow.localToStageCoordinates(new Vector2(0f, 0f));
-                tooltip.show(potName, potDescription, WIDTH + TOOLTIP_GAP, bottom.y);
+                Vector2 bottom = actor.localToStageCoordinates(new Vector2(0f, 0f));
+                tooltip.show(name.get(), description.get(), WIDTH + TOOLTIP_GAP, bottom.y);
             }
 
             @Override

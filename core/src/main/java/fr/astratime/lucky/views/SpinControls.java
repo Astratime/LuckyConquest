@@ -68,7 +68,8 @@ public class SpinControls {
         stakeButton = new IconButton(hud.stake, hud.stakeOver, hud.stakeDown, hud.stakeDisabled, false, stakeSound, onStake);
         addTooltip(stakeButton, Lang.t("Mise"), Lang.t("Choisis ta Mise avant de lancer : 5, 10 ou 15 % de tes gains, "
             + "en plus du tirage. Attaque et défense x1,1, x1,2 ou x1,3. Ce que tu mises va dans la cagnotte : "
-            + "au prochain Jeu bonus, chaque alignement la rapporte. Touche M."));
+            + "au prochain Jeu bonus, chaque alignement la rapporte. Les gains rapportés par la cagnotte ne se misent pas "
+            + "(voir « Misables » sous les gains). Touche M."));
         stakeLabel = new Label(stakeText(SpinEconomy.Stake.NONE), new Label.LabelStyle(labelFont, Color.WHITE));
         stakeLabel.setTouchable(Touchable.disabled);
         chips = new StakeChips(hud.chipStake);

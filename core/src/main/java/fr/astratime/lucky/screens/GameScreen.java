@@ -1054,7 +1054,9 @@ public class GameScreen extends ScreenAdapter {
         SpinEconomy.Stake stake = gameController.nextStake();
         if (stake == SpinEconomy.Stake.NONE && before == SpinEconomy.Stake.NONE) { // pas de gains : rien à miser
             Vector2 above = spinControls.aboveStake();
-            effectPopupAnimator.play(List.of(new EffectPopup(Lang.t("PAS DE GAINS À MISER"), EffectPopup.Style.DAMAGE,
+            String why = player().getPotWinnings() > 0 ? Lang.t("GAINS DE LA CAGNOTTE : ILS NE SE MISENT PAS")
+                                                       : Lang.t("PAS DE GAINS À MISER");
+            effectPopupAnimator.play(List.of(new EffectPopup(why, EffectPopup.Style.DAMAGE,
                 PopupScale.SECONDARY_INTENSITY)), above.x, above.y);
             return;
         }
@@ -2111,6 +2113,12 @@ public class GameScreen extends ScreenAdapter {
             Lang.f("Tes Mises s'y accumulent. Au prochain Jeu bonus, chaque alignement rapporte sa valeur "
                 + "plus toute la cagnotte, puis elle repart de 0. Ce qu'elle rapporte ne se mise pas avant la fin "
                 + "de la descente. Ici, un Bingo ouvre le Jeu bonus {0} fois sur 10.", inTen));
+        // Gains misables : montrés dès qu'une partie des gains vient de la cagnotte (ceux-là ne se misent pas).
+        boolean locked = player().getPotWinnings() > 0;
+        sidePanel.setStakeable(locked ? Lang.f("Misables : {0}", SidePanel.formatGains(player().getStakeableGains())) : null,
+            Lang.t("Gains misables"),
+            Lang.t("La Mise ne prend que ces gains-là : ceux rapportés par la cagnotte ne se misent pas avant la fin "
+                + "de la descente. Tirages et achats se paient d'abord avec les gains de la cagnotte."));
     }
 
     /** Place le bouclier du joueur à droite de ses rouleaux, et son levier à leur gauche. */
