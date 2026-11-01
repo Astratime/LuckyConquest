@@ -237,12 +237,27 @@ public class Player {
     }
 
     /**
-     * Paie le coût d'un tirage : les gains peuvent passer sous zéro (la dette,
-     * voir {@link SpinEconomy.Debt}) ; la Fausse monnaie part la première.
+     * Paie le coût d'un tirage (ou un achat) : les gains peuvent passer sous zéro (la dette,
+     * voir {@link SpinEconomy.Debt}) ; la Fausse monnaie part la première. Ce qui est dépensé
+     * part d'abord des gains rapportés par la cagnotte : dépenser ne retire donc rien aux
+     * gains qu'on peut miser tant qu'il reste des gains de la cagnotte (sinon, après un gros
+     * Jeu bonus, quelques tirages suffisaient à bloquer la Mise malgré des gains énormes).
      */
     public void paySpin(double cost) {
-        lastingEffects.spendFakeGains(Math.max(0, Math.min(gains, cost)));
+        double spent = Math.max(0, Math.min(gains, cost));
+        lastingEffects.spendFakeGains(spent);
+        potWinnings = Math.max(0, potWinnings - spent);
         gains -= cost;
+        capPotWinnings();
+    }
+
+    /**
+     * Paie la Mise {@code amount}, prise sur les gains qu'on peut miser (voir
+     * {@link #getStakeableGains}) : les gains rapportés par la cagnotte restent intacts.
+     */
+    public void payStake(double amount) {
+        lastingEffects.spendFakeGains(Math.max(0, Math.min(gains, amount)));
+        gains -= amount;
         capPotWinnings();
     }
 
