@@ -212,4 +212,27 @@ class ArchetypeCardsTest {
             assertFalse(card.getEffects().isEmpty(), id);
         }
     }
+
+    /** Astra : seuls les Carreaux rendent les symboles de bouclier plus fréquents, pas les archétypes. */
+    @Test
+    void archetypeDefenseGivesShieldButNotMoreFrequentDefenseSymbols() {
+        Player player = new Player("Joueur", 1_000_000, List.of());
+        Enemy enemy = new Enemy(EnemyKind.ENTRAINEMENT, List.of());
+        for (Card card : archetypeCards()) {
+            fr.astratime.lucky.entities.context.SpinContext spin = new fr.astratime.lucky.entities.context.SpinContext();
+            fr.astratime.lucky.entities.context.TurnContext turn =
+                new fr.astratime.lucky.entities.context.TurnContext(spin, new CombatContext(player, enemy));
+            card.getEffects().stream()
+                .filter(fr.astratime.lucky.entities.effects.ArchetypeStatsEffect.class::isInstance)
+                .forEach(effect -> effect.apply(turn));
+            for (fr.astratime.lucky.entities.Symbol symbol : fr.astratime.lucky.entities.SymbolRegistry.getDefenseSymbols()) {
+                assertEquals(0, spin.getWeightBoost(symbol), card.getId() + " " + symbol);
+            }
+        }
+        fr.astratime.lucky.entities.context.SpinContext spin = new fr.astratime.lucky.entities.context.SpinContext();
+        fr.astratime.lucky.entities.context.TurnContext turn =
+            new fr.astratime.lucky.entities.context.TurnContext(spin, new CombatContext(player, enemy));
+        new fr.astratime.lucky.entities.effects.ArchetypeStatsEffect(0, 24, 0f).apply(turn);
+        assertEquals(24, turn.getCombatContext().getDefenseBonus(), "le bouclier en plus reste");
+    }
 }
