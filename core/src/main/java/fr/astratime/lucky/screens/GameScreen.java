@@ -1054,7 +1054,7 @@ public class GameScreen extends ScreenAdapter {
         SpinEconomy.Stake stake = gameController.nextStake();
         if (stake == SpinEconomy.Stake.NONE && before == SpinEconomy.Stake.NONE) { // pas de gains : rien à miser
             Vector2 above = spinControls.aboveStake();
-            String why = player().getPotWinnings() > 0 ? Lang.t("GAINS DE LA CAGNOTTE : ILS NE SE MISENT PAS")
+            String why = player().getPotWinnings() > 0 ? Lang.t("RIEN DE MISABLE")
                                                        : Lang.t("PAS DE GAINS À MISER");
             effectPopupAnimator.play(List.of(new EffectPopup(why, EffectPopup.Style.DAMAGE,
                 PopupScale.SECONDARY_INTENSITY)), above.x, above.y);
