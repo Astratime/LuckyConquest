@@ -14,7 +14,8 @@ import fr.astratime.lucky.assets.Palette;
 import static fr.astratime.lucky.assets.Palette.hex;
 
 /**
- * Bingo du Sept : un gros dé roule sur la table depuis la gauche en
+ * Ancien Bingo du Sept (remplacé par {@link CannonScene}, gardé pour les faces
+ * du dé, reprises par {@link TripleDiceScene}) : un gros dé roule sur la table depuis la gauche en
  * rebondissant et en tournoyant, ses faces défilant à chaque rebond, puis
  * s'arrête au centre sur une face « 7 » qui s'embrase (les flammes sont
  * lancées par {@link JackpotCelebration}).

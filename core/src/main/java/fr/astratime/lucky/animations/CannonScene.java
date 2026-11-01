@@ -12,7 +12,7 @@ import fr.astratime.lucky.assets.Palette;
 import static fr.astratime.lucky.assets.Palette.hex;
 
 /**
- * Bingo du Sept (proposition « canon ») : un canon de pirate roule jusqu'au
+ * Bingo du Sept : un canon de pirate roule jusqu'au
  * bas de la table, lève son fût, sa mèche grésille, puis il tire un « 7 »
  * géant en feu qui monte en tournoyant et éclate au-dessus de la table (les
  * étincelles de la mèche, la fumée et l'explosion sont lancées par

@@ -35,15 +35,16 @@ import java.util.function.Supplier;
 /**
  * Célébration du jackpot (Bingo), par-dessus tout l'écran de jeu, sous des
  * projecteurs disco multicolores ({@link DiscoSpotlights}). Elle change selon
- * le symbole aligné. Le Triple Sept garde la célébration d'origine :
- * flash blanc, bannière « BINGO!!! » qui traverse l'écran, pluie de pièces
- * d'or (dont une partie file vers le compteur des gains) et feux d'artifice.
- * Chaque autre symbole joue une scène avec un décor en pixel art — un objet,
+ * le symbole aligné. Le Joker (qui ne s'aligne jamais seul) garde la
+ * célébration d'origine : flash blanc, bannière « BINGO!!! » qui traverse
+ * l'écran, pluie de pièces d'or (dont une partie file vers le compteur des
+ * gains) et feux d'artifice. Chaque symbole joue une scène avec un décor en pixel art — un objet,
  * un geste, un impact — puis « BINGO! » s'écrit en géant ({@link GiantWord})
  * aux couleurs du symbole (voir {@link BingoStyle}) :
  *
  * <ul>
- *   <li>Sept : un dé roule et se pose sur un « 7 » qui s'embrase ({@link FlamingDieScene}) ;</li>
+ *   <li>Sept : un canon tire un « 7 » en feu qui éclate au-dessus de la table ({@link CannonScene}) ;</li>
+ *   <li>Triple Sept : trois « 7 » spiralent, fusionnent, et un soleil d'or naît autour du 777 ({@link SupernovaScene}) ;</li>
  *   <li>Double Bar : les mâchoires d'une presse hydraulique se percutent ({@link HydraulicPressScene}) ;</li>
  *   <li>Bar : un marteau de forge frappe trois fois une barre rougeoyante qui éclate ({@link ForgeScene}) ;</li>
  *   <li>Cerise : un cerisier pousse, fleurit, puis lâche ses cerises ({@link CherryTreeScene}) ;</li>
@@ -146,7 +147,6 @@ public class JackpotCelebration extends Group implements Disposable {
     private final BullseyeAnimation bullseye  = new BullseyeAnimation();
     private final ChurchBellAnimation churchBell = new ChurchBellAnimation();
     private final GiantWord         giantWord = new GiantWord();
-    private final FlamingDieScene     flamingDie     = new FlamingDieScene();
     private final HydraulicPressScene hydraulicPress = new HydraulicPressScene();
     private final ForgeScene          forge          = new ForgeScene();
     private final CherryTreeScene     cherryTree     = new CherryTreeScene(iconOf(Symbol.CHERRY));
@@ -164,19 +164,11 @@ public class JackpotCelebration extends Group implements Disposable {
     private final CoronationScene     coronation     = new CoronationScene();
     private final MineScene           mine           = new MineScene();
     private final CannonScene         cannon         = new CannonScene(iconOf(Symbol.SEVEN));
-    private final FortuneWheelScene   fortuneWheel   = new FortuneWheelScene(iconOf(Symbol.SEVEN),
-        iconOf(Symbol.CHERRY), iconOf(Symbol.BELL), iconOf(Symbol.BAR), iconOf(Symbol.DIAMOND),
-        iconOf(Symbol.GRAPE), iconOf(Symbol.WATERMELON), iconOf(Symbol.GOLD_BAR));
-    private final SlotMachineScene    slotMachine    = new SlotMachineScene(iconOf(Symbol.TRIPLE_SEVEN),
-        iconOf(Symbol.CHERRY), iconOf(Symbol.BELL), iconOf(Symbol.SEVEN), iconOf(Symbol.BAR),
-        iconOf(Symbol.DIAMOND), iconOf(Symbol.WATERMELON));
     private final SupernovaScene      supernova      = new SupernovaScene(iconOf(Symbol.SEVEN),
         iconOf(Symbol.TRIPLE_SEVEN));
-    private final List<BingoScene>    scenes = List.of(flamingDie, hydraulicPress, forge, cherryTree, winePress,
+    private final List<BingoScene>    scenes = List.of(hydraulicPress, forge, cherryTree, winePress,
         gemCut, safe, katana, horseshoe, shieldWall, swords, heartbeat, tripleDice, shootingStar, bomb, coronation,
-        mine, cannon, fortuneWheel, slotMachine, supernova);
-    /** Propositions à l'essai pour le Sept et le Triple Sept : 0 = célébration actuelle, 1 et 2 = nouvelles. */
-    private int sevenProposal, tripleSevenProposal;
+        mine, cannon, supernova);
     private final Group        bannerLayer = new Group();
     /** La mise en scène au premier plan (objets, bannière, mot géant, flash) : elle s'efface quand on passe. */
     private final Group        foreground  = new Group();
@@ -403,13 +395,7 @@ public class JackpotCelebration extends Group implements Disposable {
     /** Programme les effets du Bingo de {@code symbol}, dont l'image est {@code icon}. */
     private void schedule(Symbol symbol, TextureRegion icon) {
         switch (symbol) {
-            case SEVEN         -> {
-                switch (sevenProposal) {
-                    case 1  -> scheduleCannon(icon);
-                    case 2  -> scheduleFortuneWheel(icon);
-                    default -> scheduleFlamingDie(icon);
-                }
-            }
+            case SEVEN         -> scheduleCannon(icon);
             case DOUBLE_BAR    -> scheduleHydraulicPress(icon);
             case BAR           -> scheduleForge(icon);
             case CHERRY        -> scheduleCherryTree(icon);
@@ -428,24 +414,12 @@ public class JackpotCelebration extends Group implements Disposable {
             case BOMB          -> scheduleBomb(icon);
             case CROWN         -> scheduleCoronation(icon);
             case NUGGET        -> scheduleMine(icon);
-            case TRIPLE_SEVEN  -> {
-                switch (tripleSevenProposal) {
-                    case 1  -> scheduleSlotMachine(icon);
-                    case 2  -> scheduleSupernova(icon);
-                    default -> scheduleCasino();
-                }
-            }
+            case TRIPLE_SEVEN  -> scheduleSupernova(icon);
             case JOKER         -> scheduleCasino();
         }
     }
 
-    /** Choisit les propositions de célébration du Sept et du Triple Sept (0 = celles du jeu). */
-    public void setProposals(int seven, int tripleSeven) {
-        sevenProposal       = seven;
-        tripleSevenProposal = tripleSeven;
-    }
-
-    /** Sept, proposition « canon » : la mèche grésille, le canon tire un 7 en feu qui éclate au-dessus de la table. */
+    /** Sept : la mèche grésille, le canon tire un 7 en feu qui éclate au-dessus de la table. */
     private void scheduleCannon(TextureRegion icon) {
         float centerX = playArea.getCenterX();
         float baseY = getHeight() * 0.2f;
@@ -506,77 +480,7 @@ public class JackpotCelebration extends Group implements Disposable {
         coinRain(burst, burst + 1f, 18, 1);
     }
 
-    /** Sept, proposition « roue de la fortune » : la roue tourne, claque, s'arrête sur le 7 qui bondit hors de sa case. */
-    private void scheduleFortuneWheel(TextureRegion icon) {
-        float centerX = playArea.getCenterX(), centerY = getHeight() * 0.4f;
-        playScene(fortuneWheel, centerX, centerY, FortuneWheelScene.POP_TIME + 0.12f, 0.86f);
-        Color[] fire = style.fireworks();
-        float stop = FortuneWheelScene.STOP_TIME, pop = FortuneWheelScene.POP_TIME;
-        float radius = fortuneWheel.radius();
-        // Les ampoules de la jante crépitent pendant que la roue tourne.
-        emit(0.3f, stop, 50, i -> {
-            float angle = MathUtils.random(360f);
-            glitter.twinkle(centerX + MathUtils.cosDeg(angle) * radius, centerY + MathUtils.sinDeg(angle) * radius,
-                MathUtils.random(10f, 18f), 0.3f, i % 2 == 0 ? Palette.GOLD : Color.WHITE);
-        });
-        at(stop, () -> {
-            screenShake.shake(0.25f, 8f);
-            impactFlash(1f, 0.9f, 0.5f, 0.35f);
-            shockwaves.ring(centerX, fortuneWheel.topY(), 200f, 0.5f, 1f, Palette.GOLD);
-        });
-        at(pop, () -> {
-            screenShake.shake(0.4f, 14f);
-            impactFlash(1f, 0.55f, 0.2f, 0.45f);
-            shockwaves.ring(centerX, centerY, radius * 1.8f, 0.7f, 1f, fire[1]);
-            shockwaves.ring(centerX, centerY, radius * 1.3f, 0.6f, 1f, Color.WHITE);
-        });
-        // Des 7 jaillissent de la roue tout autour, et des flammes montent du 7 géant.
-        emit(pop, pop, 16, i -> symbols.jet(icon, centerX, centerY + radius * 0.5f,
-            i * 22.5f + MathUtils.random(-6f, 6f), MathUtils.random(600f, 1000f), MathUtils.random(50f, 75f), 1100f));
-        emit(pop + 0.1f, 2.6f, 200, i -> glitter.ember(centerX + MathUtils.random(-110f, 110f),
-            centerY + radius + 60f + MathUtils.random(0f, 140f), MathUtils.random(-30f, 30f), MathUtils.random(200f, 420f),
-            0f, MathUtils.random(8f, 14f), MathUtils.random(0.4f, 0.8f), fire[i % 3]));
-        for (float time : new float[] {1.75f, 2.0f, 2.3f}) at(time, () -> rocket(false));
-        coinRain(pop, pop + 1f, 24, 1);
-    }
-
-    /** Triple Sept, proposition « machine à sous géante » : levier, trois rouleaux qui s'arrêtent sur 777, le bac déborde. */
-    private void scheduleSlotMachine(TextureRegion icon) {
-        float centerX = playArea.getCenterX(), baseY = getHeight() * 0.12f;
-        float jackpot = SlotMachineScene.STOPS[2];
-        playScene(slotMachine, centerX, baseY, jackpot + 0.12f, 0.88f);
-        at(SlotMachineScene.PULL_TIME - 0.05f, () -> {
-            screenShake.shake(0.3f, 12f);
-            shockwaves.ring(centerX, baseY, 380f, 0.5f, 0.25f, Palette.STEEL_LIGHT);
-        });
-        for (int r = 0; r < 3; r++) {
-            int reel = r;
-            float stop = SlotMachineScene.STOPS[r];
-            at(stop, () -> {
-                screenShake.shake(0.12f, 5f + reel * 3f);
-                for (int k = 0; k < 10; k++) {
-                    glitter.twinkle(slotMachine.windowX(reel) + MathUtils.random(-50f, 50f),
-                        slotMachine.windowY() + MathUtils.random(-65f, 65f), MathUtils.random(12f, 22f), 0.4f, Palette.GOLD);
-                }
-            });
-        }
-        at(jackpot, () -> {
-            screenShake.shake(0.6f, 18f);
-            impactFlash(1f, 1f, 0.8f, 0.6f);
-            shockwaves.ring(centerX, slotMachine.windowY(), 600f, 0.7f, 1f, Palette.GOLD);
-            shockwaves.ring(centerX, slotMachine.windowY(), 400f, 0.6f, 1f, Color.WHITE);
-        });
-        // Le bac déborde : un geyser de 777 et d'étincelles d'or.
-        emit(jackpot, jackpot + 0.8f, 22, i -> symbols.jet(icon, slotMachine.trayX() + MathUtils.random(-60f, 60f),
-            slotMachine.trayY(), MathUtils.random(60f, 120f), MathUtils.random(900f, 1300f), MathUtils.random(60f, 90f), 1400f));
-        emit(jackpot, jackpot + 1f, 160, i -> glitter.ember(slotMachine.trayX() + MathUtils.random(-80f, 80f),
-            slotMachine.trayY(), MathUtils.random(-260f, 260f), MathUtils.random(500f, 1100f), 1100f,
-            MathUtils.random(6f, 11f), MathUtils.random(0.7f, 1.2f), i % 3 == 0 ? Color.WHITE : Palette.GOLD));
-        coinRain(jackpot, jackpot + 1.1f, COIN_COUNT, COLLECT_EVERY);
-        for (float time : new float[] {1.7f, 1.85f, 2.0f, 2.15f, 2.3f, 2.5f}) at(time, () -> rocket(false));
-    }
-
-    /** Triple Sept, proposition « supernova » : trois 7 spiralent, fusionnent, et un soleil d'or naît autour du 777. */
+    /** Triple Sept : trois 7 spiralent, fusionnent, et un soleil d'or naît autour du 777. */
     private void scheduleSupernova(TextureRegion icon) {
         float centerX = playArea.getCenterX(), centerY = getHeight() * 0.45f;
         float merge = SupernovaScene.MERGE_TIME;
@@ -615,7 +519,7 @@ public class JackpotCelebration extends Group implements Disposable {
         for (float time : new float[] {1.6f, 1.8f, 2.0f, 2.2f, 2.4f}) at(time, () -> rocket(false));
     }
 
-    /** Triple Sept, la célébration d'origine : pluie de pièces et feux d'artifice multicolores. */
+    /** Joker (qui ne s'aligne jamais seul), la célébration d'origine : pluie de pièces et feux d'artifice multicolores. */
     private void scheduleCasino() {
         at(0f, () -> screenShake.shake(SHAKE_TIME, SHAKE));
         coinRain(0f, COIN_SPAWN_TIME, COIN_COUNT, COLLECT_EVERY);
@@ -626,40 +530,6 @@ public class JackpotCelebration extends Group implements Disposable {
     }
 
     // --- Scènes à décor : un objet en pixel art, un geste, un impact, puis « BINGO! » en géant ---
-
-    /** Sept : un dé roule, se pose sur un « 7 » qui s'embrase ; des 7 en feu jaillissent, le mot fume en partant. */
-    private void scheduleFlamingDie(TextureRegion icon) {
-        float centerX = playArea.getCenterX();
-        playScene(flamingDie, centerX, getHeight() * 0.36f, FlamingDieScene.LAND_TIME + 0.12f, 0.8f);
-        float land = FlamingDieScene.LAND_TIME;
-        Color[] fire = style.fireworks();
-        float half = flamingDie.halfSize();
-        at(land, () -> {
-            screenShake.shake(0.4f, 14f);
-            impactFlash(1f, 0.55f, 0.2f, 0.4f);
-            shockwaves.ring(centerX, getHeight() * 0.36f - half, 260f, 0.6f, 0.3f, fire[1]);
-        });
-        // Le « 7 » s'embrase d'un coup, puis les flammes lèchent le dessus et les flancs du dé.
-        emit(land, land + 0.1f, 60, i -> glitter.ember(centerX + MathUtils.random(-half, half),
-            flamingDie.topY() - MathUtils.random(0f, half * 1.5f), MathUtils.random(-80f, 80f),
-            MathUtils.random(350f, 700f), 0f, MathUtils.random(10f, 18f), MathUtils.random(0.5f, 0.9f), fire[i % 3]));
-        emit(land, 2.6f, 420, i -> glitter.ember(centerX + MathUtils.random(-half * 1.1f, half * 1.1f),
-            flamingDie.topY() - MathUtils.random(0f, half * 1.6f), MathUtils.random(-30f, 30f), MathUtils.random(250f, 520f),
-            0f, MathUtils.random(8f, 16f), MathUtils.random(0.5f, 1.1f), fire[i % 3]));
-        emit(land, land, 10, i -> sevenJet(icon, centerX, flamingDie.topY()));
-        emit(land + 0.1f, land + 1.3f, 14, i -> sevenJet(icon, centerX, flamingDie.topY()));
-        // Le mot fume en s'effaçant.
-        emit(2.05f, 2.6f, 60, i -> glitter.ember(centerX + MathUtils.random(-330f, 330f),
-            getHeight() * 0.8f + MathUtils.random(-70f, 50f), MathUtils.random(-15f, 15f), MathUtils.random(60f, 130f),
-            0f, MathUtils.random(10f, 18f), MathUtils.random(0.7f, 1.1f), SMOKE));
-        for (float time : new float[] {1.6f, 2.0f, 2.3f}) at(time, () -> rocket(false));
-        coinRain(land, land + 1f, 18, 1);
-    }
-
-    private void sevenJet(TextureRegion icon, float x, float y) {
-        symbols.jet(icon, x + MathUtils.random(-40f, 40f), y, MathUtils.random(60f, 120f),
-            MathUtils.random(900f, 1300f), MathUtils.random(60f, 85f), 1500f);
-    }
 
     /** Double Bar : la presse hydraulique ; au choc, étincelles et Double Bar jaillissent sur les côtés. */
     private void scheduleHydraulicPress(TextureRegion icon) {

@@ -10,7 +10,7 @@ import com.badlogic.gdx.scenes.scene2d.ui.Image;
 import static fr.astratime.lucky.assets.Palette.hex;
 
 /**
- * Bingo du Triple Sept (proposition « supernova ») : trois « 7 » arrivent des
+ * Bingo du Triple Sept : trois « 7 » arrivent des
  * bords de l'écran et tournent autour du centre de la table de plus en plus
  * vite et de plus en plus près, puis fusionnent dans un éclair blanc ; un
  * soleil doré naît, ses rayons tournent lentement et le Triple Sept géant
