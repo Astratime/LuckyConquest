@@ -1062,6 +1062,15 @@ public enum EnemyKind {
      */
     public int getHealScale() { return healScale; }
 
+    /**
+     * Soin le plus fort d'un ennemi, en % de ses PV max, à chaque soin (Potion, Croc, Morsure,
+     * Coffre-fort, Battement, Sarcophage...), dans tous les modes (Astra, 2026-11-01).
+     */
+    public static final int MAX_HEAL_PERCENT = 5;
+
+    /** @return {@code percent} ramené à {@link #MAX_HEAL_PERCENT} au plus (le soin qu'il rend vraiment). */
+    public static float cappedHeal(float percent) { return Math.min(percent, MAX_HEAL_PERCENT); }
+
     /** @return les points de vie que rend une Potion renforcée de {@code bonusPercent} (Cœurs), en % de ses PV max. */
     public float potionPercent(int bonusPercent, boolean hard) {
         if (this == CHEF) return CHEF_POTION_PERCENT * (EnemySymbol.POTION_PERCENT + bonusPercent) / (float) EnemySymbol.POTION_PERCENT;
@@ -1079,8 +1088,8 @@ public enum EnemyKind {
     /** @return {@code true} s'il joue ses cartes au hasard (la Roulette Vivante). */
     public boolean playsAtRandom() { return has(EnemyTrait.RANDOM_PLAYS); }
 
-    /** Croupier en chef (nerf d'Astra) : sa Potion soigne 10 % de ses PV max (plus les Cœurs, en proportion). */
-    public static final int CHEF_POTION_PERCENT = 10;
+    /** Croupier en chef (nerf d'Astra) : sa Potion soigne 5 % de ses PV max (soins plafonnés à 5 %, 2026-11-01). */
+    public static final int CHEF_POTION_PERCENT = 5;
     /** Croupier en chef : chance de base, à chaque tour, que son Rien ne va plus sorte (sur un seul rouleau). */
     public static final int CHEF_NOTHING_GOES_PERCENT = 5;
     /** Croupier en chef : chance de Rien ne va plus en plus pour chaque carte Annonce jouée ce tour. */
