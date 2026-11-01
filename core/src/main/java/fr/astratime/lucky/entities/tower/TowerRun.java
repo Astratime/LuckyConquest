@@ -30,6 +30,9 @@ public class TowerRun implements CombatRun {
     private final boolean hard;
     private int           stage;
     private EnemyKind     enemy;
+    /** Combat où l'ascension commence et recommence après une défaite (0, sauf choix du mode ADMIN). */
+    private final int       startStage;
+    private final EnemyKind startEnemy;
     private List<EnemyKind> choices = List.of();
     /** Cagnotte du Jeu bonus de cette ascension : partagée par ses combats, effacée à la fin du chapitre. */
     private final BonusPot pot = new BonusPot();
@@ -49,10 +52,43 @@ public class TowerRun implements CombatRun {
     }
 
     private TowerRun(Chapter chapter, Random random, boolean hard) {
-        this.chapter = chapter;
-        this.random  = random;
-        this.hard    = hard;
-        this.enemy   = chapter.getFirstEnemy();
+        this(chapter, random, hard, 0, chapter.getFirstEnemy());
+    }
+
+    private TowerRun(Chapter chapter, Random random, boolean hard, int startStage, EnemyKind startEnemy) {
+        this.chapter    = chapter;
+        this.random     = random;
+        this.hard       = hard;
+        this.startStage = startStage;
+        this.startEnemy = startEnemy;
+        this.stage      = startStage;
+        this.enemy      = startEnemy;
+    }
+
+    /**
+     * Mode ADMIN : une ascension qui commence directement au combat {@code fight} de
+     * {@link #fights(Chapter)} (premier ennemi, un des trois challengers ou le boss).
+     * Une défaite fait recommencer à ce combat.
+     */
+    public static TowerRun startingAt(Chapter chapter, boolean hard, int fight) {
+        List<EnemyKind> fights = fights(chapter);
+        EnemyKind kind = fights.get(fight);
+        int stage = fight == 0 ? 0 : fight == fights.size() - 1 ? STAGES - 1 : 1;
+        return new TowerRun(chapter, new Random(), hard, stage, kind);
+    }
+
+    /** @return tous les combats du chapitre, dans l'ordre : premier ennemi, les trois challengers, le boss. */
+    public static List<EnemyKind> fights(Chapter chapter) {
+        List<EnemyKind> fights = new ArrayList<>();
+        fights.add(chapter.getFirstEnemy());
+        fights.addAll(chapter.getChallengers());
+        fights.add(chapter.getBoss());
+        return List.copyOf(fights);
+    }
+
+    /** @return le numéro du combat (de 1 à {@link #STAGES}) de l'entrée {@code fight} de {@link #fights(Chapter)}. */
+    public static int stageNumber(Chapter chapter, int fight) {
+        return fight == 0 ? 1 : fight == fights(chapter).size() - 1 ? STAGES : 2;
     }
 
     /** @return le chapitre en cours. */
@@ -99,12 +135,12 @@ public class TowerRun implements CombatRun {
         return enemy;
     }
 
-    /** Défaite : le chapitre recommence au premier combat, sa cagnotte effacée. */
+    /** Défaite : le chapitre recommence au premier combat (ou au combat choisi en ADMIN), sa cagnotte effacée. */
     @Override
     public void restart() {
         pot.take();
-        stage   = 0;
-        enemy   = chapter.getFirstEnemy();
+        stage   = startStage;
+        enemy   = startEnemy;
         choices = List.of();
     }
 }

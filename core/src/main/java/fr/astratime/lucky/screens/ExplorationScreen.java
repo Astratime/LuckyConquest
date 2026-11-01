@@ -122,6 +122,8 @@ public class ExplorationScreen extends CasinoMenuScreen {
     private final TextButton       backButton;
     /** Choix rapide du deck joué parmi les emplacements enregistrés à la Table du croupier. */
     private final TextButton       deckButton;
+    /** Mode ADMIN : choix du combat où la descente commence (le soldat ou le roi). */
+    private final TextButton       fightButton;
     /** Rejoue la présentation du Croupier. */
     private final TextButton       tutorialButton;
     private final TextButton       rewardsButton;
@@ -131,6 +133,8 @@ public class ExplorationScreen extends CasinoMenuScreen {
     /** Profil du joueur : les donjons vidés ouvrent les lieux suivants. */
     private final PlayerProfile profile;
     private int     selected = -1;   // donjon choisi sur la carte, -1 : aucun
+    /** Mode ADMIN : combat choisi dans le donjon (0 : le soldat, 1 : le roi). */
+    private int     fight;
     private float   mapScale = 4f;
 
     public ExplorationScreen(LuckyGame luckyGame) {
@@ -208,6 +212,8 @@ public class ExplorationScreen extends CasinoMenuScreen {
         deckButton  = buttons.create(deckText(), clickSound, this::nextDeck);
         // Un seul deck enregistré (ou le mode ADMIN, qui a le sien) : rien à choisir.
         deckButton.setVisible(!profile.isAdmin() && profile.nextUsedDeckSlot(profile.getDeckSlot()) != profile.getDeckSlot());
+        fightButton = buttons.create("", clickSound, this::nextFight);
+        fightButton.setVisible(profile.isAdmin());
         stage.addActor(listPanel);
         stage.addActor(detailPanel);
         rows.forEach(stage::addActor);
@@ -224,6 +230,7 @@ public class ExplorationScreen extends CasinoMenuScreen {
         stage.addActor(ruleText);
         stage.addActor(enterButton);
         stage.addActor(deckButton);
+        stage.addActor(fightButton);
         stage.addActor(backButton);
         stage.addActor(tutorialButton);
         stage.addActor(rewardsButton);
@@ -342,6 +349,7 @@ public class ExplorationScreen extends CasinoMenuScreen {
             gateLabels.get(i).setColor(i == index ? Palette.GOLD : Color.WHITE);
         }
         dungeonName.setText(dungeon.getName());
+        buttons.setText(fightButton, fightText(dungeon));
         StringBuilder text = new StringBuilder();
         if (!profile.isOpen(place)) {
             // Fermé : la description attendra, place à ce qu'il faut faire pour l'ouvrir.
@@ -432,7 +440,22 @@ public class ExplorationScreen extends CasinoMenuScreen {
     private void launch() {
         if (leaving || selected < 0 || !profile.isOpen(place)) return;
         Dungeon dungeon = place.getDungeons().get(selected);
-        goTo(() -> new GameScreen(luckyGame, new DungeonRun(dungeon)));
+        int start = profile.isAdmin() ? fight : 0;
+        goTo(() -> new GameScreen(luckyGame, new DungeonRun(dungeon, start)));
+    }
+
+    /** Mode ADMIN : passe du soldat au roi du donjon choisi, et inversement. */
+    private void nextFight() {
+        if (selected < 0) return;
+        fight = (fight + 1) % DungeonRun.STAGES;
+        buttons.setText(fightButton, fightText(place.getDungeons().get(selected)));
+        layout();
+    }
+
+    /** @return le texte du bouton du combat choisi en mode ADMIN (ex : « Combat 2 : Roi de Pique »). */
+    private String fightText(Dungeon dungeon) {
+        String name = (fight == 0 ? dungeon.getSoldier() : dungeon.getKing()).getDisplayName();
+        return Lang.f("Combat {0} : {1}", fight + 1, name);
     }
 
     /** Ouvre le détail des récompenses du donjon choisi. */
@@ -558,7 +581,9 @@ public class ExplorationScreen extends CasinoMenuScreen {
         deckButton.setPosition(enterButton.getX() - 24f - deckButton.getWidth(), enterButton.getY());
         backButton.setPosition(MARGIN, (BOTTOM_SPACE - backButton.getHeight()) / 2f);
         tutorialButton.setPosition(backButton.getX() + backButton.getWidth() + 20f, backButton.getY());
-        float rewardsRight = deckButton.isVisible() ? deckButton.getX() : enterButton.getX();
+        fightButton.setPosition(enterButton.getX() - 24f - fightButton.getWidth(), enterButton.getY());
+        float rewardsRight = deckButton.isVisible() ? deckButton.getX()
+            : fightButton.isVisible() ? fightButton.getX() : enterButton.getX();
         rewardsButton.setPosition(rewardsRight - 24f - rewardsButton.getWidth(), enterButton.getY());
         if (rewards.isShown()) rewards.layout();
         bobSelectedGate(); // les entrées viennent d'être replacées
@@ -566,7 +591,7 @@ public class ExplorationScreen extends CasinoMenuScreen {
 
     /**
      * Gauche/droite pour choisir un donjon, Entrée ou Espace pour y entrer, R pour
-     * ses récompenses, Échap pour revenir au menu principal.
+     * ses récompenses, F (mode ADMIN) pour choisir le combat, Échap pour revenir au menu principal.
      */
     @Override
     protected boolean onKey(int keycode) {
@@ -593,6 +618,11 @@ public class ExplorationScreen extends CasinoMenuScreen {
             case Input.Keys.R -> {
                 clickSound.play();
                 showRewards();
+            }
+            case Input.Keys.F -> {
+                if (!fightButton.isVisible()) return false;
+                clickSound.play();
+                nextFight();
             }
             default -> { return false; }
         }
