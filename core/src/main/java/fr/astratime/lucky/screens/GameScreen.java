@@ -2228,6 +2228,7 @@ public class GameScreen extends ScreenAdapter {
         };
         gameInput = new InputMultiplexer(stage, keyboardInput);
         Gdx.input.setInputProcessor(pauseOverlay.isShown() ? pauseOverlay.getInput() : gameInput);
+        luckyGame.getAssets().menuMusic.stop(); // le combat a sa propre musique
         switchMusic();
         if (tutorial == null) luckyGame.getProfile().meet(gameController.getGameState().getEnemy().getKind());
         music.play();
