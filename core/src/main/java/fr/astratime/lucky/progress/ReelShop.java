@@ -17,22 +17,23 @@ public final class ReelShop {
     private static final Map<Symbol, Long> PRICES = new LinkedHashMap<>();
 
     static {
-        PRICES.put(Symbol.HORSESHOE,     3_000_000L);
-        PRICES.put(Symbol.ECU,           3_000_000L);
-        PRICES.put(Symbol.PIGGY_BANK,    4_000_000L);
-        PRICES.put(Symbol.SWORD,         6_000_000L);
-        PRICES.put(Symbol.HEART,         6_000_000L);
-        PRICES.put(Symbol.SPIKED_SHIELD, 7_000_000L);
-        PRICES.put(Symbol.FANGS,         7_000_000L);
-        PRICES.put(Symbol.DIE,           8_000_000L);
-        PRICES.put(Symbol.MOON,          9_000_000L);
-        PRICES.put(Symbol.STAR,          10_000_000L);
-        PRICES.put(Symbol.SCYTHE,        11_000_000L);
-        PRICES.put(Symbol.BOMB,          12_000_000L);
-        PRICES.put(Symbol.CROWN,         20_000_000L);
+        // Prix par lieu (2026-11-01) : Foire, Port, Mines, Casino
+        PRICES.put(Symbol.HORSESHOE,     5_000_000L);
+        PRICES.put(Symbol.ECU,           5_000_000L);
+        PRICES.put(Symbol.PIGGY_BANK,    6_000_000L);
+        PRICES.put(Symbol.SWORD,         30_000_000L);
+        PRICES.put(Symbol.HEART,         30_000_000L);
+        PRICES.put(Symbol.SPIKED_SHIELD, 35_000_000L);
+        PRICES.put(Symbol.FANGS,         35_000_000L);
+        PRICES.put(Symbol.DIE,           40_000_000L);
+        PRICES.put(Symbol.MOON,          45_000_000L);
+        PRICES.put(Symbol.STAR,          300_000_000L);
+        PRICES.put(Symbol.SCYTHE,        350_000_000L);
+        PRICES.put(Symbol.BOMB,          450_000_000L);
+        PRICES.put(Symbol.CROWN,         2_000_000_000L);
         // Roi démon et Apôtre de la Chance (rouleaux d'Astra) : les plus chers
-        PRICES.put(Symbol.DEMON_KING,    40_000_000L);
-        PRICES.put(Symbol.LUCK_APOSTLE,  40_000_000L);
+        PRICES.put(Symbol.DEMON_KING,    4_000_000_000L);
+        PRICES.put(Symbol.LUCK_APOSTLE,  4_000_000_000L);
     }
 
     /** @return les rouleaux en vente et leur prix, dans l'ordre d'affichage. */
