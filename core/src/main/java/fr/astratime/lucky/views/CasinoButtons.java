@@ -71,6 +71,12 @@ public class CasinoButtons implements Disposable {
         return button;
     }
 
+    /** Change le texte de {@code button} et adapte sa largeur au nouveau texte. */
+    public void setText(TextButton button, String text) {
+        button.setText(text);
+        button.setWidth(widthFor(text));
+    }
+
     /** Largeur d'un bouton adaptée à son texte (avec une marge), jamais plus petite que MIN_WIDTH. */
     private float widthFor(String text) {
         GlyphLayout layout = new GlyphLayout(font, text);

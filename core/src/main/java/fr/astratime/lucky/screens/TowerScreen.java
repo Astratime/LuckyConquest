@@ -78,6 +78,8 @@ public class TowerScreen extends CasinoMenuScreen {
     private final Label             description;
     private final TextButton        startButton;
     private final TextButton        modeButton;
+    /** Mode ADMIN : choix du combat où l'ascension commence (premier ennemi, un challenger ou le boss). */
+    private final TextButton        fightButton;
     private final TextButton        backButton;
     /** Rejoue la présentation du Croupier. */
     private final TextButton        tutorialButton;
@@ -85,6 +87,8 @@ public class TowerScreen extends CasinoMenuScreen {
     private int     selected = -1;
     /** Mode difficile choisi (ouvert une fois la Machine Originelle battue). */
     private boolean hard;
+    /** Mode ADMIN : combat choisi, index dans {@link TowerRun#fights(Chapter)} (0 : le premier ennemi). */
+    private int     fight;
 
     public TowerScreen(LuckyGame luckyGame) {
         this(luckyGame, Chapter.values()[0], false);
@@ -142,6 +146,8 @@ public class TowerScreen extends CasinoMenuScreen {
         modeButton   = buttons.create(Lang.t("Mode difficile"), clickSound, this::toggleMode);
         modeButton.setText(hard ? Lang.t("Mode difficile") : Lang.t("Mode normal"));
         modeButton.setVisible(luckyGame.getProfile().isTowerHardOpen());
+        fightButton  = buttons.create("", clickSound, this::nextFight);
+        fightButton.setVisible(luckyGame.getProfile().isAdmin());
 
         stage.addActor(listPanel);
         stage.addActor(detailPanel);
@@ -154,6 +160,7 @@ public class TowerScreen extends CasinoMenuScreen {
         stage.addActor(description);
         stage.addActor(startButton);
         stage.addActor(modeButton);
+        stage.addActor(fightButton);
         stage.addActor(backButton);
         stage.addActor(tutorialButton);
         reveal();
@@ -203,6 +210,7 @@ public class TowerScreen extends CasinoMenuScreen {
         ((TextureRegionDrawable) art.getDrawable()).setRegion(new TextureRegion(enemyTextures.chapterArt(chapter)));
         art.setVisible(open);
         lockMark.setVisible(!open);
+        buttons.setText(fightButton, fightText(chapter));
         startButton.setDisabled(!open);
         startButton.setText(open ? Lang.t("Commencer") : Lang.t("Verrouillé"));
         // Le panneau de droite apparaît en fondu à chaque changement.
@@ -219,7 +227,23 @@ public class TowerScreen extends CasinoMenuScreen {
         if (leaving) return;
         Chapter chapter = Chapter.values()[selected];
         if (!isOpen(chapter)) return;
-        goTo(() -> new GameScreen(luckyGame, new TowerRun(chapter, hard)));
+        boolean admin = luckyGame.getProfile().isAdmin() && fight > 0;
+        int chosen = fight;
+        goTo(() -> new GameScreen(luckyGame,
+            admin ? TowerRun.startingAt(chapter, hard, chosen) : new TowerRun(chapter, hard)));
+    }
+
+    /** Mode ADMIN : passe au combat suivant du chapitre (après le boss, revient au premier). */
+    private void nextFight() {
+        fight = (fight + 1) % TowerRun.fights(Chapter.values()[selected]).size();
+        buttons.setText(fightButton, fightText(Chapter.values()[selected]));
+        layout();
+    }
+
+    /** @return le texte du bouton du combat choisi en mode ADMIN (ex : « Combat 2 : Tricheur »). */
+    private String fightText(Chapter chapter) {
+        EnemyKind kind = TowerRun.fights(chapter).get(fight);
+        return Lang.f("Combat {0} : {1}", TowerRun.stageNumber(chapter, fight), kind.getDisplayName());
     }
 
     /** @return {@code true} si {@code chapter} peut être joué dans le mode choisi (le précédent est terminé). */
@@ -286,11 +310,16 @@ public class TowerScreen extends CasinoMenuScreen {
 
         startButton.setPosition(detailX + detailWidth - startButton.getWidth(), (BOTTOM_SPACE - startButton.getHeight()) / 2f);
         modeButton.setPosition(startButton.getX() - modeButton.getWidth() - 20f, startButton.getY());
+        float fightRight = modeButton.isVisible() ? modeButton.getX() : startButton.getX();
+        fightButton.setPosition(fightRight - fightButton.getWidth() - 20f, startButton.getY());
         backButton.setPosition(MARGIN, (BOTTOM_SPACE - backButton.getHeight()) / 2f);
         tutorialButton.setPosition(backButton.getX() + backButton.getWidth() + 20f, backButton.getY());
     }
 
-    /** Haut/bas pour choisir un chapitre, Entrée ou Espace pour le lancer, Échap pour revenir au menu principal. */
+    /**
+     * Haut/bas pour choisir un chapitre, Entrée ou Espace pour le lancer, F (mode
+     * ADMIN) pour choisir le combat, Échap pour revenir au menu principal.
+     */
     @Override
     protected boolean onKey(int keycode) {
         switch (keycode) {
@@ -301,6 +330,11 @@ public class TowerScreen extends CasinoMenuScreen {
                     clickSound.play();
                     launch();
                 }
+            }
+            case Input.Keys.F -> {
+                if (!fightButton.isVisible()) return false;
+                clickSound.play();
+                nextFight();
             }
             case Input.Keys.ESCAPE -> {
                 clickSound.play();

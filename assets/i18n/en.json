@@ -2222,5 +2222,6 @@
   "Enregistre pour jouer avec ce rang.": "Save to play with this rank.",
   "L'onglet Rang te laisse choisir avec quel rang tu joues, parmi ceux que tu as achetés.": "The Rank tab lets you choose which rank you play with, among the ones you bought.",
   "Enregistre pour garder ton deck, ta machine et ton rang. Retour les laisse comme avant.": "Save to keep your deck, your machine and your rank. Back leaves them as they were.",
-  "Ton rang : {0}. Tu joues avec : {1} (Table du croupier).": "Your rank: {0}. You play with: {1} (Dealer's Table)."
+  "Ton rang : {0}. Tu joues avec : {1} (Table du croupier).": "Your rank: {0}. You play with: {1} (Dealer's Table).",
+  "Combat {0} : {1}": "Fight {0}: {1}"
 }
