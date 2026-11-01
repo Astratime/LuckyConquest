@@ -239,6 +239,20 @@ class SpinEconomyTest {
     }
 
     @Test
+    void stolenPotWinningsNoLongerBlockTheStake() {
+        GameController controller = fight(EnemyKind.BANQUEROUTE);
+        Player player = player(controller);
+        player.addGains(500_000);
+        player.addPotWinnings(player.getGains()); // tout vient de la cagnotte : rien à miser
+        assertEquals(0, player.getStakeableGains(), 1e-6);
+        player.addGains(-player.getGains()); // Faillite : il prend tout
+        player.addGains(200_000); // nouveaux gains gagnés au combat
+        assertEquals(200_000, player.getStakeableGains(), 1e-6, "les gains volés ne bloquent plus la Mise");
+        assertEquals(200_000, player.nextCombat().getStakeableGains(), 1e-6, "ni au combat suivant (Machine Originelle)");
+        assertNotEquals(SpinEconomy.Stake.NONE, controller.nextStake(), "la Mise 5 % se choisit");
+    }
+
+    @Test
     void theBonusGamePaysThePotOnEveryLineThenEmptiesIt() {
         GameController controller = fight(EnemyKind.CROUPIER);
         controller.setBonusGameChance(1f); // le Jeu bonus s'ouvre à coup sûr après le Bingo
