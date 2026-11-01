@@ -9,7 +9,7 @@ import static fr.astratime.lucky.assets.Palette.hex;
 /**
  * Couleurs de la célébration d'un Bingo selon le symbole aligné : bannière
  * (corps, galons, lettres, bande de travers), éclairs, flash de l'écran et
- * gerbes des feux d'artifice. Le Triple Sept garde la bannière rouge et or
+ * gerbes des feux d'artifice. Le Joker garde la bannière rouge et or
  * d'origine ({@link #body} nul).
  *
  * @param body      corps de la bannière ; {@code null} pour la bande rouge et or d'origine
@@ -58,7 +58,7 @@ public record BingoStyle(Color body, Color trim, Color letterA, Color letterB, C
             case STAR -> new BingoStyle(hex("1a2a6a"), Palette.GOLD, Palette.GOLD, Color.WHITE, back("060a1f"),
                 hex("8fd3ff"), Color.WHITE, hex("fff0b0"), palette(hex("ff3040"), hex("3a7bff"), Palette.GOLD));
             case BOMB      -> of(Symbol.TRIPLE_CHERRY);
-            // Triple Sept (et Joker, qui ne s'aligne jamais seul) : la célébration d'origine.
+            // Triple Sept : or et blanc ; le Joker (qui ne s'aligne jamais seul) garde la bannière d'origine.
             case TRIPLE_SEVEN, JOKER -> new BingoStyle(null, null, Palette.GOLD, Color.WHITE, Palette.BANNER_SHADOW,
                 hex("ffcc26"), hex("ffffd9"), Color.WHITE, null);
         };
