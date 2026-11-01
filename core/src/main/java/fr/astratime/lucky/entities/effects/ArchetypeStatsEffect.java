@@ -1,7 +1,5 @@
 package fr.astratime.lucky.entities.effects;
 
-import fr.astratime.lucky.entities.Symbol;
-import fr.astratime.lucky.entities.SymbolRegistry;
 import fr.astratime.lucky.entities.context.TurnContext;
 import fr.astratime.lucky.i18n.Lang;
 import fr.astratime.lucky.popups.EffectPopup;
@@ -18,7 +16,8 @@ import java.util.List;
  * cards/definitions/archetypes.json) ; une valeur à 0 ne fait rien.
  * <ul>
  *   <li>Attaque : bonus plat sur chaque symbole d'attaque, comme un Pique ;</li>
- *   <li>Défense : bouclier en plus et symboles de défense plus fréquents, comme un Carreau (sans renvoi) ;</li>
+ *   <li>Défense : bouclier en plus sur chaque symbole de défense (sans renvoi). Les symboles de
+ *       défense ne deviennent pas plus fréquents : c'est réservé aux Carreaux ;</li>
  *   <li>Gains : ajouté au multiplicateur de gains, comme un Trèfle.</li>
  * </ul>
  */
@@ -30,7 +29,7 @@ public class ArchetypeStatsEffect extends Effect {
 
     /**
      * @param attackBonus       bonus d'attaque plat sur chaque symbole d'attaque ce tour
-     * @param defenseBonus      bouclier en plus, et poids ajouté à chaque symbole de défense ce tour
+     * @param defenseBonus      bouclier en plus sur chaque symbole de défense ce tour
      * @param gainMultiplierAdd valeur ajoutée au multiplicateur de gains ce tour
      */
     public ArchetypeStatsEffect(int attackBonus, int defenseBonus, float gainMultiplierAdd) {
@@ -46,12 +45,8 @@ public class ArchetypeStatsEffect extends Effect {
     @Override
     public void apply(TurnContext context) {
         if (attackBonus > 0) context.getCombatContext().addAttackBonus(attackBonus, "Cartes");
-        if (defenseBonus > 0) {
-            context.getCombatContext().addDefenseBonus(defenseBonus, "Cartes");
-            for (Symbol symbol : SymbolRegistry.getDefenseSymbols()) {
-                context.getSpinContext().addWeightBoost(symbol, defenseBonus);
-            }
-        }
+        // Pas de symboles de défense plus fréquents : seuls les Carreaux le font (Astra).
+        if (defenseBonus > 0) context.getCombatContext().addDefenseBonus(defenseBonus, "Cartes");
         if (gainMultiplierAdd > 0) context.getCombatContext().addGainMultiplier(gainMultiplierAdd);
     }
 
@@ -59,7 +54,7 @@ public class ArchetypeStatsEffect extends Effect {
     public String getDescription() {
         List<String> parts = new ArrayList<>();
         if (attackBonus > 0) parts.add(Lang.f("Attaque +{0} sur chaque symbole d'attaque", attackBonus));
-        if (defenseBonus > 0) parts.add(Lang.f("Symboles de défense : bouclier +{0} et plus fréquents", defenseBonus));
+        if (defenseBonus > 0) parts.add(Lang.f("Symboles de défense : bouclier +{0}", defenseBonus));
         if (gainMultiplierAdd > 0) parts.add(Lang.f("Multiplicateur de gains +{0}", format(gainMultiplierAdd)));
         return String.join(". ", parts);
     }
