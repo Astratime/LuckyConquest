@@ -163,9 +163,20 @@ public class JackpotCelebration extends Group implements Disposable {
     private final BombScene           bomb           = new BombScene();
     private final CoronationScene     coronation     = new CoronationScene();
     private final MineScene           mine           = new MineScene();
+    private final CannonScene         cannon         = new CannonScene(iconOf(Symbol.SEVEN));
+    private final FortuneWheelScene   fortuneWheel   = new FortuneWheelScene(iconOf(Symbol.SEVEN),
+        iconOf(Symbol.CHERRY), iconOf(Symbol.BELL), iconOf(Symbol.BAR), iconOf(Symbol.DIAMOND),
+        iconOf(Symbol.GRAPE), iconOf(Symbol.WATERMELON), iconOf(Symbol.GOLD_BAR));
+    private final SlotMachineScene    slotMachine    = new SlotMachineScene(iconOf(Symbol.TRIPLE_SEVEN),
+        iconOf(Symbol.CHERRY), iconOf(Symbol.BELL), iconOf(Symbol.SEVEN), iconOf(Symbol.BAR),
+        iconOf(Symbol.DIAMOND), iconOf(Symbol.WATERMELON));
+    private final SupernovaScene      supernova      = new SupernovaScene(iconOf(Symbol.SEVEN),
+        iconOf(Symbol.TRIPLE_SEVEN));
     private final List<BingoScene>    scenes = List.of(flamingDie, hydraulicPress, forge, cherryTree, winePress,
         gemCut, safe, katana, horseshoe, shieldWall, swords, heartbeat, tripleDice, shootingStar, bomb, coronation,
-        mine);
+        mine, cannon, fortuneWheel, slotMachine, supernova);
+    /** Propositions à l'essai pour le Sept et le Triple Sept : 0 = célébration actuelle, 1 et 2 = nouvelles. */
+    private int sevenProposal, tripleSevenProposal;
     private final Group        bannerLayer = new Group();
     /** La mise en scène au premier plan (objets, bannière, mot géant, flash) : elle s'efface quand on passe. */
     private final Group        foreground  = new Group();
@@ -392,7 +403,13 @@ public class JackpotCelebration extends Group implements Disposable {
     /** Programme les effets du Bingo de {@code symbol}, dont l'image est {@code icon}. */
     private void schedule(Symbol symbol, TextureRegion icon) {
         switch (symbol) {
-            case SEVEN         -> scheduleFlamingDie(icon);
+            case SEVEN         -> {
+                switch (sevenProposal) {
+                    case 1  -> scheduleCannon(icon);
+                    case 2  -> scheduleFortuneWheel(icon);
+                    default -> scheduleFlamingDie(icon);
+                }
+            }
             case DOUBLE_BAR    -> scheduleHydraulicPress(icon);
             case BAR           -> scheduleForge(icon);
             case CHERRY        -> scheduleCherryTree(icon);
@@ -411,8 +428,191 @@ public class JackpotCelebration extends Group implements Disposable {
             case BOMB          -> scheduleBomb(icon);
             case CROWN         -> scheduleCoronation(icon);
             case NUGGET        -> scheduleMine(icon);
-            case TRIPLE_SEVEN, JOKER -> scheduleCasino();
+            case TRIPLE_SEVEN  -> {
+                switch (tripleSevenProposal) {
+                    case 1  -> scheduleSlotMachine(icon);
+                    case 2  -> scheduleSupernova(icon);
+                    default -> scheduleCasino();
+                }
+            }
+            case JOKER         -> scheduleCasino();
         }
+    }
+
+    /** Choisit les propositions de célébration du Sept et du Triple Sept (0 = celles du jeu). */
+    public void setProposals(int seven, int tripleSeven) {
+        sevenProposal       = seven;
+        tripleSevenProposal = tripleSeven;
+    }
+
+    /** Sept, proposition « canon » : la mèche grésille, le canon tire un 7 en feu qui éclate au-dessus de la table. */
+    private void scheduleCannon(TextureRegion icon) {
+        float centerX = playArea.getCenterX();
+        float baseY = getHeight() * 0.2f;
+        float burstX = centerX + 120f, burstY = getHeight() * 0.58f;
+        cannon.aimAt(burstX, burstY);
+        playScene(cannon, centerX - 260f, baseY, CannonScene.BURST_TIME + 0.12f, 0.84f);
+        Color[] fire = style.fireworks();
+        float fuse = CannonScene.FUSE_TIME, shot = CannonScene.FIRE_TIME, burst = CannonScene.BURST_TIME;
+        // La mèche grésille.
+        emit(fuse, shot, 70, i -> {
+            Vector2 at = cannon.fusePosition();
+            glitter.ember(at.x, at.y, MathUtils.random(-160f, 160f), MathUtils.random(60f, 260f), 900f,
+                MathUtils.random(4f, 7f), MathUtils.random(0.2f, 0.4f), i % 2 == 0 ? Palette.GOLD : Color.WHITE);
+        });
+        // Le coup part : flash, fumée et flammes à la bouche.
+        at(shot, () -> {
+            screenShake.shake(0.35f, 16f);
+            impactFlash(1f, 0.7f, 0.3f, 0.45f);
+            Vector2 muzzle = cannon.muzzlePosition();
+            shockwaves.ring(muzzle.x, muzzle.y, 180f, 0.4f, 1f, fire[1]);
+        });
+        emit(shot, shot + 0.1f, 40, i -> {
+            Vector2 muzzle = cannon.muzzlePosition();
+            float angle = 62f + MathUtils.random(-35f, 35f);
+            float speed = MathUtils.random(200f, 650f);
+            glitter.ember(muzzle.x, muzzle.y, MathUtils.cosDeg(angle) * speed, MathUtils.sinDeg(angle) * speed, 200f,
+                MathUtils.random(10f, 18f), MathUtils.random(0.3f, 0.6f), fire[i % 3]);
+        });
+        emit(shot, shot + 0.9f, 40, i -> {
+            Vector2 muzzle = cannon.muzzlePosition();
+            glitter.ember(muzzle.x + MathUtils.random(-20f, 20f), muzzle.y + MathUtils.random(-10f, 10f),
+                MathUtils.random(-40f, 40f), MathUtils.random(40f, 120f), 0f, MathUtils.random(14f, 24f),
+                MathUtils.random(0.7f, 1.2f), SMOKE);
+        });
+        // Traînée de feu derrière le 7 en vol.
+        emit(shot, burst, 60, i -> {
+            Vector2 at = cannon.shotPosition();
+            glitter.ember(at.x + MathUtils.random(-25f, 25f), at.y + MathUtils.random(-25f, 25f),
+                MathUtils.random(-40f, 40f), MathUtils.random(-80f, 0f), 0f, MathUtils.random(10f, 18f),
+                MathUtils.random(0.3f, 0.6f), fire[i % 3]);
+        });
+        // Il éclate en gerbe de 7 et en feu d'artifice.
+        at(burst, () -> {
+            screenShake.shake(0.45f, 14f);
+            impactFlash(1f, 0.55f, 0.2f, 0.5f);
+            shockwaves.ring(burstX, burstY, 420f, 0.6f, 1f, fire[1]);
+            shockwaves.ring(burstX, burstY, 260f, 0.5f, 1f, Color.WHITE);
+            for (int k = 0; k < 3; k++) fireworks.burst(burstX, burstY, fire[k]);
+        });
+        emit(burst, burst, 18, i -> symbols.jet(icon, burstX, burstY, i * 20f + MathUtils.random(-6f, 6f),
+            MathUtils.random(500f, 900f), MathUtils.random(55f, 80f), 900f));
+        emit(burst, burst, 90, i -> {
+            float angle = MathUtils.random(360f), speed = MathUtils.random(250f, 800f);
+            glitter.ember(burstX, burstY, MathUtils.cosDeg(angle) * speed, MathUtils.sinDeg(angle) * speed, 600f,
+                MathUtils.random(7f, 12f), MathUtils.random(0.8f, 1.3f), fire[i % fire.length]);
+        });
+        for (float time : new float[] {1.9f, 2.2f}) at(time, () -> rocket(false));
+        coinRain(burst, burst + 1f, 18, 1);
+    }
+
+    /** Sept, proposition « roue de la fortune » : la roue tourne, claque, s'arrête sur le 7 qui bondit hors de sa case. */
+    private void scheduleFortuneWheel(TextureRegion icon) {
+        float centerX = playArea.getCenterX(), centerY = getHeight() * 0.4f;
+        playScene(fortuneWheel, centerX, centerY, FortuneWheelScene.POP_TIME + 0.12f, 0.86f);
+        Color[] fire = style.fireworks();
+        float stop = FortuneWheelScene.STOP_TIME, pop = FortuneWheelScene.POP_TIME;
+        float radius = fortuneWheel.radius();
+        // Les ampoules de la jante crépitent pendant que la roue tourne.
+        emit(0.3f, stop, 50, i -> {
+            float angle = MathUtils.random(360f);
+            glitter.twinkle(centerX + MathUtils.cosDeg(angle) * radius, centerY + MathUtils.sinDeg(angle) * radius,
+                MathUtils.random(10f, 18f), 0.3f, i % 2 == 0 ? Palette.GOLD : Color.WHITE);
+        });
+        at(stop, () -> {
+            screenShake.shake(0.25f, 8f);
+            impactFlash(1f, 0.9f, 0.5f, 0.35f);
+            shockwaves.ring(centerX, fortuneWheel.topY(), 200f, 0.5f, 1f, Palette.GOLD);
+        });
+        at(pop, () -> {
+            screenShake.shake(0.4f, 14f);
+            impactFlash(1f, 0.55f, 0.2f, 0.45f);
+            shockwaves.ring(centerX, centerY, radius * 1.8f, 0.7f, 1f, fire[1]);
+            shockwaves.ring(centerX, centerY, radius * 1.3f, 0.6f, 1f, Color.WHITE);
+        });
+        // Des 7 jaillissent de la roue tout autour, et des flammes montent du 7 géant.
+        emit(pop, pop, 16, i -> symbols.jet(icon, centerX, centerY + radius * 0.5f,
+            i * 22.5f + MathUtils.random(-6f, 6f), MathUtils.random(600f, 1000f), MathUtils.random(50f, 75f), 1100f));
+        emit(pop + 0.1f, 2.6f, 200, i -> glitter.ember(centerX + MathUtils.random(-110f, 110f),
+            centerY + radius + 60f + MathUtils.random(0f, 140f), MathUtils.random(-30f, 30f), MathUtils.random(200f, 420f),
+            0f, MathUtils.random(8f, 14f), MathUtils.random(0.4f, 0.8f), fire[i % 3]));
+        for (float time : new float[] {1.75f, 2.0f, 2.3f}) at(time, () -> rocket(false));
+        coinRain(pop, pop + 1f, 24, 1);
+    }
+
+    /** Triple Sept, proposition « machine à sous géante » : levier, trois rouleaux qui s'arrêtent sur 777, le bac déborde. */
+    private void scheduleSlotMachine(TextureRegion icon) {
+        float centerX = playArea.getCenterX(), baseY = getHeight() * 0.12f;
+        float jackpot = SlotMachineScene.STOPS[2];
+        playScene(slotMachine, centerX, baseY, jackpot + 0.12f, 0.88f);
+        at(SlotMachineScene.PULL_TIME - 0.05f, () -> {
+            screenShake.shake(0.3f, 12f);
+            shockwaves.ring(centerX, baseY, 380f, 0.5f, 0.25f, Palette.STEEL_LIGHT);
+        });
+        for (int r = 0; r < 3; r++) {
+            int reel = r;
+            float stop = SlotMachineScene.STOPS[r];
+            at(stop, () -> {
+                screenShake.shake(0.12f, 5f + reel * 3f);
+                for (int k = 0; k < 10; k++) {
+                    glitter.twinkle(slotMachine.windowX(reel) + MathUtils.random(-50f, 50f),
+                        slotMachine.windowY() + MathUtils.random(-65f, 65f), MathUtils.random(12f, 22f), 0.4f, Palette.GOLD);
+                }
+            });
+        }
+        at(jackpot, () -> {
+            screenShake.shake(0.6f, 18f);
+            impactFlash(1f, 1f, 0.8f, 0.6f);
+            shockwaves.ring(centerX, slotMachine.windowY(), 600f, 0.7f, 1f, Palette.GOLD);
+            shockwaves.ring(centerX, slotMachine.windowY(), 400f, 0.6f, 1f, Color.WHITE);
+        });
+        // Le bac déborde : un geyser de 777 et d'étincelles d'or.
+        emit(jackpot, jackpot + 0.8f, 22, i -> symbols.jet(icon, slotMachine.trayX() + MathUtils.random(-60f, 60f),
+            slotMachine.trayY(), MathUtils.random(60f, 120f), MathUtils.random(900f, 1300f), MathUtils.random(60f, 90f), 1400f));
+        emit(jackpot, jackpot + 1f, 160, i -> glitter.ember(slotMachine.trayX() + MathUtils.random(-80f, 80f),
+            slotMachine.trayY(), MathUtils.random(-260f, 260f), MathUtils.random(500f, 1100f), 1100f,
+            MathUtils.random(6f, 11f), MathUtils.random(0.7f, 1.2f), i % 3 == 0 ? Color.WHITE : Palette.GOLD));
+        coinRain(jackpot, jackpot + 1.1f, COIN_COUNT, COLLECT_EVERY);
+        for (float time : new float[] {1.7f, 1.85f, 2.0f, 2.15f, 2.3f, 2.5f}) at(time, () -> rocket(false));
+    }
+
+    /** Triple Sept, proposition « supernova » : trois 7 spiralent, fusionnent, et un soleil d'or naît autour du 777. */
+    private void scheduleSupernova(TextureRegion icon) {
+        float centerX = playArea.getCenterX(), centerY = getHeight() * 0.45f;
+        float merge = SupernovaScene.MERGE_TIME;
+        playScene(supernova, centerX, centerY, merge + 0.15f, 0.86f);
+        Color[] trails = {Palette.RED, Palette.GOLD, Palette.SKY};
+        // Traînées de lumière derrière les trois 7.
+        for (int k = 0; k < 3; k++) {
+            int seven = k;
+            emit(0f, merge, 90, i -> {
+                Vector2 at = supernova.sevenPosition(seven);
+                glitter.ember(at.x + MathUtils.random(-20f, 20f), at.y + MathUtils.random(-20f, 20f), 0f, 0f, 0f,
+                    MathUtils.random(8f, 14f), MathUtils.random(0.35f, 0.6f), trails[seven]);
+            });
+        }
+        // La fusion : éclair blanc, ondes de choc en cascade, éclats tout autour.
+        at(merge, () -> {
+            screenShake.shake(0.7f, 22f);
+            impactFlash(1f, 1f, 1f, 0.85f);
+        });
+        Color[] waves = {Color.WHITE, Palette.GOLD, Palette.ORANGE, Palette.RUBY};
+        for (int k = 0; k < waves.length; k++) {
+            Color color = waves[k];
+            float radius = 500f + k * 180f;
+            at(merge + k * 0.08f, () -> shockwaves.ring(centerX, centerY, radius, 0.8f, 1f, color));
+        }
+        emit(merge, merge, 120, i -> {
+            float angle = MathUtils.random(360f), speed = MathUtils.random(300f, 1100f);
+            glitter.ember(centerX, centerY, MathUtils.cosDeg(angle) * speed, MathUtils.sinDeg(angle) * speed, 300f,
+                MathUtils.random(7f, 13f), MathUtils.random(0.8f, 1.4f), Palette.FESTIVE[i % Palette.FESTIVE.length]);
+        });
+        emit(merge, merge, 14, i -> symbols.jet(icon, centerX, centerY, i * (360f / 14) + MathUtils.random(-6f, 6f),
+            MathUtils.random(700f, 1100f), MathUtils.random(60f, 85f), 800f));
+        emit(merge + 0.2f, 2.6f, 50, i -> glitter.twinkle(tableX(0f), getHeight() * MathUtils.random(0.1f, 0.95f),
+            MathUtils.random(12f, 24f), 0.5f, Palette.GOLD));
+        coinRain(merge, merge + 1.2f, COIN_COUNT, COLLECT_EVERY);
+        for (float time : new float[] {1.6f, 1.8f, 2.0f, 2.2f, 2.4f}) at(time, () -> rocket(false));
     }
 
     /** Triple Sept, la célébration d'origine : pluie de pièces et feux d'artifice multicolores. */
