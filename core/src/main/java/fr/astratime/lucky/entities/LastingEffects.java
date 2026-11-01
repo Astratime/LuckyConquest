@@ -103,6 +103,8 @@ public class LastingEffects {
     private int temperPercent = 0;
     /** Cocktail des abysses : cartes jouables en plus, ce tour seulement. */
     private int bonusPlays = 0;
+    /** Rouleaux qui ont une mémoire : Tirelire, Ancre, Roi démon, Apôtre de la Chance. */
+    private final ReelGauges reelGauges = new ReelGauges();
 
     // ----- Archétypes de deck -----
     /** Symboles arrêtés sur les rouleaux au dernier tirage, Jokers compris ({@code null} : aucun tirage encore). */
@@ -529,6 +531,9 @@ public class LastingEffects {
     /** @return les cartes jouables en plus ce tour (Cocktail des abysses). */
     public int getBonusPlays() { return bonusPlays; }
 
+    /** @return ce que retiennent la Tirelire, l'Ancre, le Roi démon et l'Apôtre de la Chance. */
+    public ReelGauges getReelGauges() { return reelGauges; }
+
     /** Retient les symboles arrêtés sur les rouleaux à ce tirage (Rouleau retenu, Mémoire de la machine). */
     public void setLastDrawn(Symbol[] drawn) { lastDrawn = drawn == null ? null : drawn.clone(); }
     /** @return les symboles du dernier tirage, Jokers compris, ou {@code null} s'il n'y en a pas encore eu. */
@@ -722,6 +727,7 @@ public class LastingEffects {
         if (anchorTurns > 0) anchorTurns--;
         temperPercent += temperCards; // la Trempe durcit l'épée à chaque tour
         bonusPlays = 0;
+        reelGauges.endTurn();
         if (hatTurns > 0 && --hatTurns == 0) hatPercent = 0;
         if (hoardTurns > 0 && --hoardTurns == 0) hoardPercent = 0;
     }
@@ -737,6 +743,6 @@ public class LastingEffects {
             && voidReels.isEmpty() && shortCircuits == 0 && houseEdges == 0 && rockfalls == 0 && aspirations.isEmpty()
             && nextDraws == 0 && hatTurns == 0 && jokerBox == 0 && hoardTurns == 0 && annuityTurns == 0 && martingale == 0
             && juggles == 0 && scares == 0 && tunnels == 0 && turnstiles == 0 && riggedPrizes == 0 && riggedGame == 0
-            && tolls == 0 && bills == 0 && venoms.isEmpty();
+            && tolls == 0 && bills == 0 && venoms.isEmpty() && reelGauges.isEmpty();
     }
 }

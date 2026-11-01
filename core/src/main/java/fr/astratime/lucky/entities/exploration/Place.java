@@ -150,10 +150,20 @@ public enum Place {
     }
 
     /**
-     * @return le rouleau gagné en vidant les quatre donjons du lieu (le Rouleau
-     *         de la Mine pour les Mines d'Or), ou {@code null}
+     * @return le rouleau gagné en vidant les quatre donjons du lieu (la Pépite pour
+     *         les Mines d'Or, le Ticket, l'Ancre, le Jeton d'or et la Flamme pour la
+     *         Foire, le Port, le Casino et le Désert), ou {@code null} (la prairie)
      */
-    public Symbol getReelReward() { return this == MINES ? Symbol.NUGGET : null; }
+    public Symbol getReelReward() {
+        return switch (this) {
+            case PRAIRIE -> null;
+            case FOIRE   -> Symbol.TICKET;
+            case PORT    -> Symbol.ANCHOR;
+            case MINES   -> Symbol.NUGGET;
+            case CASINO  -> Symbol.GOLD_CHIP;
+            case DESERT  -> Symbol.FLAME;
+        };
+    }
 
     /** @return la règle du lieu, qui joue dans tous ses combats. */
     public PlaceRule getRule() { return rule; }

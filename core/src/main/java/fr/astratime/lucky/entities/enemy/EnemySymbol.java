@@ -127,7 +127,9 @@ public enum EnemySymbol {
     /** Le bouclier du joueur fond de moitié. */
     BURN("BRÛLURE"),
     /** Un souffle qui passe le bouclier et brûle une carte de la main. */
-    FIRE_BREATH("SOUFFLE DE FEU");
+    FIRE_BREATH("SOUFFLE DE FEU"),
+    /** Lumière du bingo (rouleau du joueur) : ce rouleau de l'ennemi s'illumine, ne fait rien, et il perd des PV. */
+    BINGO_LIGHT("LUMIÈRE DU BINGO");
 
     /** Dégâts de base d'une Épée. */
     public static final int SWORD_DAMAGE   = 20;
@@ -378,6 +380,8 @@ public enum EnemySymbol {
             case BURN -> Lang.f("Brûlure : ton bouclier fond de {0} %", BURN_PERCENT);
             case FIRE_BREATH -> Lang.f("Souffle de feu : attaque de {0}, à travers ton bouclier. Il brûle une carte de ta main au "
                 + "prochain tour", kind.hurt(kind.swordDamage(), hard));
+            case BINGO_LIGHT -> Lang.f("Lumière du bingo : ce rouleau ne fait rien. Il perd {0} % de ses PV max",
+                fr.astratime.lucky.entities.EnemyMaluses.LIGHT_HP_PERCENT);
         };
     }
 

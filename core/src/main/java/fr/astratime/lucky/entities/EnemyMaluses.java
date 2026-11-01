@@ -34,6 +34,23 @@ public class EnemyMaluses {
     private int     markedTurns;
     private int     redHerrings;
     private int     sleights;
+    /** Flamme (rouleau du Désert) : ses tours où il brûle encore (ne se cumule pas, se relance). */
+    private int     burnTurns;
+    /** Descente aux enfers : à son prochain tour, ses attaques -50 % et 2 cartes au plus. */
+    private boolean hellBound;
+    /** Lumière du bingo : à son prochain tirage, chaque rouleau a une chance sur deux de devenir Lumière. */
+    private boolean bingoLight;
+
+    /** Flamme : part de ses PV max qu'il perd à chaque brûlure. */
+    public static final int BURN_PERCENT = 2;
+    /** Flamme : tours de brûlure (le compte repart à ce nombre à chaque Flamme). */
+    public static final int BURN_TURNS = 2;
+    /** Descente aux enfers : baisse de ses attaques à son prochain tour, en %. */
+    public static final int HELL_DAMAGE_PERCENT = 50;
+    /** Descente aux enfers : cartes qu'il peut jouer au plus à son prochain tour. */
+    public static final int HELL_MAX_CARDS = 2;
+    /** Lumière du bingo : part de ses PV max qu'il perd par rouleau changé en Lumière. */
+    public static final int LIGHT_HP_PERCENT = 10;
 
     /** @param boss {@code true} pour un boss ou un roi : il ne subit qu'une part des malus du Bluffeur */
     EnemyMaluses(boolean boss) {
@@ -199,6 +216,45 @@ public class EnemyMaluses {
         if (sleights <= 0) return false;
         sleights--;
         return true;
+    }
+
+    /** Flamme : il brûle à ses {@link #BURN_TURNS} prochains tours (le compte repart, il ne se cumule pas). */
+    public void burn() { burnTurns = BURN_TURNS; }
+
+    /** @return ses tours de brûlure restants. */
+    public int getBurnTurns() { return burnTurns; }
+
+    /** Début de son tour : la brûlure le ronge. @return {@code true} s'il brûle ce tour */
+    public boolean takeBurn() {
+        if (burnTurns <= 0) return false;
+        burnTurns--;
+        return true;
+    }
+
+    /** Descente aux enfers : à son prochain tour, ses attaques -50 % et 2 cartes au plus. */
+    public void bindToHell() { hellBound = true; }
+
+    /** @return {@code true} si la Descente aux enfers l'attend à son prochain tour. */
+    public boolean isHellBound() { return hellBound; }
+
+    /** Son tour : la Descente aux enfers vaut pour celui-ci. @return {@code true} si elle le frappe */
+    public boolean takeHellBound() {
+        boolean bound = hellBound;
+        hellBound = false;
+        return bound;
+    }
+
+    /** Lumière du bingo : à son prochain tirage, ses rouleaux peuvent devenir Lumière. */
+    public void lightUp() { bingoLight = true; }
+
+    /** @return {@code true} si la Lumière du bingo attend son prochain tirage. */
+    public boolean isLitUp() { return bingoLight; }
+
+    /** Son tirage : la Lumière du bingo vaut pour celui-ci. @return {@code true} si elle le touche */
+    public boolean takeBingoLight() {
+        boolean lit = bingoLight;
+        bingoLight = false;
+        return lit;
     }
 
     /**

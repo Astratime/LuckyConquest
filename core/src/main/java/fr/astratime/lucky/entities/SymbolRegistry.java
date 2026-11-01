@@ -1,6 +1,17 @@
 package fr.astratime.lucky.entities;
 
 import fr.astratime.lucky.entities.actions.Action;
+import fr.astratime.lucky.entities.actions.AnchorAction;
+import fr.astratime.lucky.entities.actions.BlessingAction;
+import fr.astratime.lucky.entities.actions.DrainAttackAction;
+import fr.astratime.lucky.entities.actions.FlameAction;
+import fr.astratime.lucky.entities.actions.GaugeReelAction;
+import fr.astratime.lucky.entities.actions.GoldChipAction;
+import fr.astratime.lucky.entities.actions.MoonAction;
+import fr.astratime.lucky.entities.actions.PiggyBankAction;
+import fr.astratime.lucky.entities.actions.RandomGainAction;
+import fr.astratime.lucky.entities.actions.ScytheAction;
+import fr.astratime.lucky.entities.actions.ShieldStrikeAction;
 import fr.astratime.lucky.entities.actions.AttackAction;
 import fr.astratime.lucky.entities.actions.BombAction;
 import fr.astratime.lucky.entities.actions.DefenseAction;
@@ -59,6 +70,33 @@ public class SymbolRegistry {
 
         // Rouleau de la Mine (Exploration, Mines d'Or)
         ACTIONS.put(Symbol.NUGGET,    new MixedAction(new AttackAction(40), new GainAction(60)));
+
+        // Nouveaux rouleaux de la boutique (choix d'Astra, 2026-11-01)
+        ACTIONS.put(Symbol.FANGS,         new DrainAttackAction(50, 30));
+        ACTIONS.put(Symbol.PIGGY_BANK,    new PiggyBankAction());
+        ACTIONS.put(Symbol.SPIKED_SHIELD, new MixedAction(new DefenseAction(25), new ShieldStrikeAction()));
+        ACTIONS.put(Symbol.SCYTHE,        new ScytheAction(60));
+        ACTIONS.put(Symbol.MOON,          new MoonAction(40));
+        ACTIONS.put(Symbol.DEMON_KING,    new GaugeReelAction(100, "Démonisation", "DESCENTE AUX ENFERS"));
+        ACTIONS.put(Symbol.LUCK_APOSTLE,  new GaugeReelAction(100, "Ange chanceux", "LUMIÈRE DU BINGO"));
+
+        // Rouleaux des lieux : Fête foraine, Port, Casino, Désert
+        ACTIONS.put(Symbol.TICKET,    new RandomGainAction(0, 150));
+        ACTIONS.put(Symbol.ANCHOR,    new AnchorAction(35));
+        ACTIONS.put(Symbol.GOLD_CHIP, new GoldChipAction(50));
+        ACTIONS.put(Symbol.FLAME,     new FlameAction(80));
+
+        // Bingos imposés par une jauge pleine (Roi démon, Apôtre de la Chance)
+        ACTIONS.put(Symbol.DESCENT,     new BlessingAction(true));
+        ACTIONS.put(Symbol.BINGO_LIGHT, new BlessingAction(false));
+    }
+
+    /** @return {@code true} pour un symbole qui rapporte des gains (seul, ou avec autre chose : Étoile, Pépite). */
+    public static boolean isGainSymbol(Symbol symbol) {
+        if (symbol == null) return false;
+        return getAction(symbol).map(action -> action instanceof GainAction
+            || action instanceof MixedAction mixed
+            && mixed.getActions().stream().anyMatch(part -> part instanceof GainAction)).orElse(false);
     }
 
     /**

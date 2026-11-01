@@ -611,6 +611,7 @@ public class EnemyView implements Disposable {
             case INTEREST, HOURGLASS -> pulse(hex("ffd54aff"));
             case MIRROR       -> pulse(hex("b8e0ffff"));
             case ZERO         -> pulse(hex("2ec060ff"));
+            case BINGO_LIGHT  -> pulse(hex("fff0a0ff"));
             default           -> { }
         }
 

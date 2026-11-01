@@ -33,6 +33,25 @@ public enum Symbol {
     CROWN         ("20-crown"),
     /** Rouleau de la Mine : gagné en vidant les quatre donjons des Mines d'Or (voir Place#getReelReward). */
     NUGGET        ("21-nugget"),
+    // Nouveaux rouleaux de la boutique (2026-11-01)
+    FANGS         ("22-fangs"),
+    PIGGY_BANK    ("23-piggy_bank"),
+    SPIKED_SHIELD ("24-spiked_shield"),
+    SCYTHE        ("25-scythe"),
+    MOON          ("26-moon"),
+    /** Roi démon : sa Démonisation, pleine, impose un Bingo de Descente aux enfers. */
+    DEMON_KING    ("27-demon_king"),
+    /** Apôtre de la Chance : son Ange chanceux, plein, impose un Bingo de Lumière du bingo. */
+    LUCK_APOSTLE  ("28-luck_apostle"),
+    // Rouleaux gagnés en vidant un lieu (voir Place#getReelReward)
+    TICKET        ("29-ticket"),
+    ANCHOR        ("30-anchor"),
+    GOLD_CHIP     ("31-gold_chip"),
+    FLAME         ("32-flame"),
+    /** N'existe qu'au Bingo imposé par le Roi démon : jamais dans une machine. */
+    DESCENT       ("33-descent"),
+    /** N'existe qu'au Bingo imposé par l'Apôtre de la Chance : jamais dans une machine. */
+    BINGO_LIGHT   ("34-bingo_light"),
     /** Joker : compte comme n'importe quel symbole (voir SlotMachine#resolveJokers). */
     JOKER         ("12-joker");
 
@@ -55,6 +74,9 @@ public enum Symbol {
 
     /** @return {@code true} pour un des 11 rouleaux classiques (les autres s'achètent à la boutique). */
     public boolean isClassic() { return CLASSIC.contains(this); }
+
+    /** @return {@code true} pour Descente aux enfers et Lumière du bingo, qui ne sortent qu'au Bingo d'une jauge pleine. */
+    public boolean isSummoned() { return this == DESCENT || this == BINGO_LIGHT; }
 
     /**
      * Rareté d'un symbole, comme sur la table de gains d'une vraie machine : ce
@@ -111,6 +133,19 @@ public enum Symbol {
             case BOMB          -> Lang.t("BOMBE");
             case CROWN         -> Lang.t("COURONNE");
             case NUGGET        -> Lang.t("PÉPITE");
+            case FANGS         -> Lang.t("CROCS");
+            case PIGGY_BANK    -> Lang.t("TIRELIRE");
+            case SPIKED_SHIELD -> Lang.t("BOUCLIER CLOUTÉ");
+            case SCYTHE        -> Lang.t("FAUX");
+            case MOON          -> Lang.t("LUNE");
+            case DEMON_KING    -> Lang.t("ROI DÉMON");
+            case LUCK_APOSTLE  -> Lang.t("APÔTRE DE LA CHANCE");
+            case TICKET        -> Lang.t("TICKET");
+            case ANCHOR        -> Lang.t("ANCRE");
+            case GOLD_CHIP     -> Lang.t("JETON D'OR");
+            case FLAME         -> Lang.t("FLAMME");
+            case DESCENT       -> Lang.t("DESCENTE AUX ENFERS");
+            case BINGO_LIGHT   -> Lang.t("LUMIÈRE DU BINGO");
             case JOKER         -> Lang.t("JOKER");
         };
     }

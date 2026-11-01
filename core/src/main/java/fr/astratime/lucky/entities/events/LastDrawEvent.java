@@ -37,11 +37,13 @@ public class LastDrawEvent extends Event {
      * son simple (Triple cerise sur Cerise, Triple sept sur Sept).
      */
     private static final List<Symbol> LADDER = List.of(
-        Symbol.CHERRY, Symbol.GRAPE, Symbol.WATERMELON, Symbol.HORSESHOE, Symbol.BELL, Symbol.HEART, Symbol.DIE,
-        Symbol.BAR, Symbol.ECU, Symbol.SWORD, Symbol.DOUBLE_BAR, Symbol.BOMB, Symbol.TRIPLE_CHERRY, Symbol.STAR,
-        Symbol.DIAMOND, Symbol.NUGGET, Symbol.GOLD_BAR, Symbol.CROWN, Symbol.SEVEN, Symbol.TRIPLE_SEVEN, Symbol.JOKER);
+        Symbol.CHERRY, Symbol.GRAPE, Symbol.WATERMELON, Symbol.TICKET, Symbol.PIGGY_BANK, Symbol.HORSESHOE, Symbol.BELL,
+        Symbol.HEART, Symbol.DIE, Symbol.BAR, Symbol.ECU, Symbol.ANCHOR, Symbol.SPIKED_SHIELD, Symbol.SWORD,
+        Symbol.FANGS, Symbol.DOUBLE_BAR, Symbol.MOON, Symbol.BOMB, Symbol.SCYTHE, Symbol.FLAME, Symbol.TRIPLE_CHERRY,
+        Symbol.STAR, Symbol.DIAMOND, Symbol.NUGGET, Symbol.GOLD_CHIP, Symbol.GOLD_BAR, Symbol.CROWN, Symbol.SEVEN,
+        Symbol.TRIPLE_SEVEN, Symbol.DEMON_KING, Symbol.LUCK_APOSTLE, Symbol.DESCENT, Symbol.BINGO_LIGHT, Symbol.JOKER);
 
-    /** @return le rang d'un symbole au Dernier tirage (1 : Cerise, ..., 21 : Joker), voir {@link #LADDER}. */
+    /** @return le rang d'un symbole au Dernier tirage (1 : Cerise, ..., le Joker tout en haut), voir {@link #LADDER}. */
     public static int score(Symbol symbol) {
         return LADDER.indexOf(symbol) + 1;
     }

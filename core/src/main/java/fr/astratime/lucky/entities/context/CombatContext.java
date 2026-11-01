@@ -93,6 +93,13 @@ public class CombatContext {
     private boolean defenseSymbolDrawn   = false; // un symbole de défense est sorti ce tour (active reflectHpPercent)
     private int     guaranteedReflectPercent      = 0; // As de Carreau : renvoi garanti, sans symbole de défense
     private int     guaranteedReflectLowHpPercent = 0; // As de Carreau : renvoi garanti si le joueur est sous LOW_HP_RATIO
+    private float   blessedReflectHpPercent = 0f; // Descente aux enfers : renvoi en % des PV max ennemis, sans plafond
+
+    // ----- Nouveaux rouleaux (2026-11-01) -----
+    private Symbol[] drawnSymbols = new Symbol[0]; // symboles du tirage, Jokers remplacés (le Jeton d'or les regarde)
+    private Blessing blessing;           // l'effet tiré du Bingo imposé (Descente aux enfers, Lumière du bingo)
+    private boolean blessingShown;                 // son texte n'apparaît qu'une fois
+    private long    lightStrike;                   // Lumière du bingo : les dégâts absorbés au tour d'avant, rendus en un coup
 
     /**
      * @param player joueur du combat en cours
@@ -313,8 +320,39 @@ public class CombatContext {
      * au moins un symbole de défense est sorti ce tour, plafonné à {@link #MAX_REFLECT_HP_PERCENT}.
      */
     public float getReflectHpPercent() {
-        return defenseSymbolDrawn ? Math.min(MAX_REFLECT_HP_PERCENT, reflectHpPercent) : 0f;
+        return (defenseSymbolDrawn ? Math.min(MAX_REFLECT_HP_PERCENT, reflectHpPercent) : 0f) + blessedReflectHpPercent;
     }
+
+    /** L'effet tiré au hasard du Bingo imposé : le même pour ses trois symboles. */
+    public enum Blessing { FIRST, SECOND, THIRD }
+
+    /** Retient les symboles du tirage (Jokers remplacés), avant que les symboles agissent. */
+    public void setDrawnSymbols(Symbol[] symbols) { drawnSymbols = symbols == null ? new Symbol[0] : symbols.clone(); }
+
+    /** @return les symboles du tirage, Jokers remplacés. */
+    public Symbol[] getDrawnSymbols() { return drawnSymbols.clone(); }
+
+    /** Le Bingo imposé de ce tour donne l'effet {@code blessing}. */
+    public void setBlessing(Blessing blessing) { this.blessing = blessing; }
+
+    /** @return l'effet du Bingo imposé de ce tour, ou {@code null}. */
+    public Blessing getBlessing() { return blessing; }
+
+    /** @return {@code true} la première fois seulement : le texte de l'effet n'apparaît qu'une fois. */
+    public boolean takeBlessingShown() {
+        boolean first = !blessingShown;
+        blessingShown = true;
+        return first;
+    }
+
+    /** Descente aux enfers : s'il attaque, l'ennemi reçoit {@code percent} % de ses PV max (sans plafond, ne s'additionne pas). */
+    public void setBlessedReflectHp(float percent) { blessedReflectHpPercent = Math.max(blessedReflectHpPercent, percent); }
+
+    /** Lumière du bingo : les dégâts absorbés au tour d'avant frappent l'ennemi en un coup ce tour. */
+    public void setLightStrike(long damage) { lightStrike = Math.max(0, damage); }
+
+    /** @return les dégâts absorbés par la Lumière du bingo à rendre ce tour (0 : aucun). */
+    public long getLightStrike() { return lightStrike; }
 
     /** Ce que change une étape du calcul : l'attaque, le bouclier, les gains, ou les trois (valeur des symboles). */
     public enum Target { ATTACK, DEFENSE, GAINS, SYMBOLS }

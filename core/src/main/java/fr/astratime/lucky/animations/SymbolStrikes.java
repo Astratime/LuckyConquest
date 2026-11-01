@@ -291,6 +291,12 @@ public class SymbolStrikes extends Actor implements Disposable {
                     f.onArrival = onCoinArrived;
                 }
             }
+            case PIGGY_BANK -> { // la tirelire secouée au-dessus du rouleau crache ses pièces
+                for (int i = 0; i < 5; i++) coinFlyer(s, s.fromX + MathUtils.random(-15f, 15f), s.fromY + ABOVE_REEL, 0.3f + i * 0.05f);
+            }
+            case TICKET -> { // le ticket gagnant s'envole et se change en pièces
+                for (int i = 0; i < 4; i++) coinFlyer(s, s.fromX, s.fromY + ABOVE_REEL + 20f, 0.32f + i * 0.05f);
+            }
             case HORSESHOE -> {
                 for (int i = 0; i < 3; i++) {
                     coinFlyer(s, s.toX + MathUtils.random(-50f, 50f), s.toY + 120f, IMPACT_TIME + 0.02f + i * 0.06f)
@@ -380,8 +386,156 @@ public class SymbolStrikes extends Actor implements Disposable {
             case BOMB -> updateBomb(s, before, now, delta);
             case NUGGET -> updateNugget(s, before, now, delta);
             case CROWN -> updateCrown(s, before, now, delta);
+            case DEMON_KING, LUCK_APOSTLE -> updateStar(s, before, now, delta);
+            case FANGS, SPIKED_SHIELD, SCYTHE, MOON, PIGGY_BANK, TICKET, ANCHOR, GOLD_CHIP, FLAME, DESCENT, BINGO_LIGHT ->
+                updateNewReel(s, before, now, delta);
             default -> { }
         }
+    }
+
+    /** Nouveaux rouleaux (2026-11-01) : traînées en vol et impact sur leur cible. */
+    private void updateNewReel(Strike s, float before, float now, float delta) {
+        boolean flying = now < IMPACT_TIME;
+        boolean impact = crossed(before, now, IMPACT_TIME);
+        switch (s.symbol) {
+            case FANGS -> { // les crocs mordent : éclats de sang, puis la vie remonte vers le rouleau
+                if (impact) {
+                    flashAt(s.toX, s.toY, Color.WHITE, 150f);
+                    burst(s.toX, s.toY, 22, JUICE, 420f, 0.6f, 14f, false);
+                    ringAt(s.toX, s.toY, JUICE, 0.9f);
+                    shake.shake(0.16f, 6f);
+                    for (int i = 0; i < 10; i++) {
+                        Particle p = particle(s.toX, s.toY, LOVE, 0f, 0.6f, 9f, true);
+                        p.vx = (s.fromX - s.toX) / 0.6f + MathUtils.random(-60f, 60f);
+                        p.vy = (s.fromY - s.toY) / 0.6f + MathUtils.random(-60f, 60f);
+                    }
+                }
+            }
+            case SPIKED_SHIELD -> { // le bouclier se pose, puis part en scie sur l'ennemi
+                Vector2 shield = s.extra.length > 0 ? s.extra[0] : new Vector2(s.fromX, s.fromY);
+                if (crossed(before, now, 0.12f)) {
+                    ringAt(shield.x, shield.y, AZURE, 0.8f);
+                    flashAt(shield.x, shield.y, AZURE, 120f);
+                }
+                if (flying && MathUtils.random() < delta * 40f) {
+                    Vector2 at = arc(s.fromX, s.fromY, s.toX, s.toY, now / IMPACT_TIME, 60f);
+                    particle(at.x, at.y, STEEL, 120f, 0.25f, 6f, true);
+                }
+                if (impact) {
+                    flashAt(s.toX, s.toY, STEEL, 160f);
+                    burst(s.toX, s.toY, 20, STEEL, 460f, 0.5f, 8f, false);
+                    burst(s.toX, s.toY, 10, FLAME, 300f, 0.3f, 6f, true);
+                    ringAt(s.toX, s.toY, Color.WHITE, 0.9f);
+                    shake.shake(0.15f, 6f);
+                }
+            }
+            case SCYTHE -> {
+                if (impact) {
+                    flashAt(s.toX, s.toY, VIOLET, 180f);
+                    burst(s.toX, s.toY, 18, VIOLET, 380f, 0.5f, 9f, true);
+                    burst(s.toX, s.toY, 10, Color.WHITE, 300f, 0.35f, 6f, true);
+                    shake.shake(0.2f, 8f);
+                }
+            }
+            case MOON -> { // la lune monte, puis son rayon d'argent frappe
+                if (now > 0.15f && flying && MathUtils.random() < delta * 30f) {
+                    particle(s.fromX + MathUtils.random(-50f, 50f), s.fromY + ABOVE_REEL + MathUtils.random(-30f, 30f),
+                        BOLT, 10f, 0.4f, 6f, true).gravity = -40f;
+                }
+                if (impact) {
+                    flashAt(s.toX, s.toY, BOLT, 200f);
+                    burst(s.toX, s.toY, 20, BOLT, 360f, 0.5f, 9f, true);
+                    ringAt(s.toX, s.toY, Color.WHITE, 1.1f);
+                    shake.shake(0.15f, 5f);
+                }
+            }
+            case PIGGY_BANK -> {
+                if (crossed(before, now, 0.3f)) {
+                    burst(s.fromX, s.fromY + ABOVE_REEL, 14, GOLD, 300f, 0.5f, 8f, true);
+                    ringAt(s.fromX, s.fromY + ABOVE_REEL, LOVE, 0.8f);
+                }
+            }
+            case TICKET -> {
+                if (crossed(before, now, 0.3f)) {
+                    float y = s.fromY + ABOVE_REEL + 20f;
+                    flashAt(s.fromX, y, FLAME, 140f);
+                    for (Color c : new Color[] {FIRE, GOLD, AZURE, LUCK, LOVE}) burst(s.fromX, y, 5, c, 320f, 0.7f, 9f, false);
+                }
+            }
+            case ANCHOR -> { // l'ancre tombe lourdement sur le bouclier : gerbe d'eau
+                if (impact) {
+                    flashAt(s.toX, s.toY, AZURE, 170f);
+                    burst(s.toX, s.toY, 26, AZURE, 420f, 0.7f, 12f, false);
+                    burst(s.toX, s.toY, 10, Color.WHITE, 300f, 0.5f, 8f, false);
+                    ringAt(s.toX, s.toY, AZURE, 1.2f);
+                    ringAt(s.toX, s.toY, Color.WHITE, 0.7f);
+                    shake.shake(0.22f, 8f);
+                }
+            }
+            case GOLD_CHIP -> {
+                if (flying && MathUtils.random() < delta * 30f) {
+                    Vector2 at = arc(s.fromX, s.fromY, s.toX, s.toY, now / IMPACT_TIME, 180f);
+                    particle(at.x, at.y, GOLD, 30f, 0.35f, 6f, true);
+                }
+                if (impact) {
+                    flashAt(s.toX, s.toY, GOLD, 150f);
+                    burst(s.toX, s.toY, 18, GOLD, 320f, 0.5f, 8f, true);
+                    ringAt(s.toX, s.toY, GOLD, 0.9f);
+                    onCoinArrived.run();
+                }
+            }
+            case FLAME -> { // boule de feu, puis l'ennemi brûle
+                if (flying) cometTrail(arc(s.fromX, s.fromY, s.toX, s.toY, now / IMPACT_TIME, 120f), delta);
+                if (impact) {
+                    flashAt(s.toX, s.toY, FIRE, 220f);
+                    burst(s.toX, s.toY, 30, FIRE, 520f, 0.6f, 16f, true);
+                    burst(s.toX, s.toY, 16, FLAME, 360f, 0.5f, 10f, true);
+                    ringAt(s.toX, s.toY, FIRE, 1.2f);
+                    shake.shake(0.2f, 7f);
+                }
+                if (now > IMPACT_TIME && now < IMPACT_TIME + 0.6f && MathUtils.random() < delta * 40f) {
+                    Particle p = particle(s.toX + MathUtils.random(-60f, 60f), s.toY - 40f, MathUtils.randomBoolean() ? FIRE
+                        : FLAME, 20f, 0.5f, MathUtils.random(10f, 18f), true);
+                    p.gravity = -260f;
+                }
+            }
+            case DESCENT -> { // un pilier de flammes engloutit l'ennemi
+                if (impact) {
+                    if (!settings.isReducedEffects()) flash = 0.3f;
+                    flashAt(s.toX, s.toY, JUICE, 300f);
+                    ringAt(s.toX, s.toY, JUICE, 1.8f);
+                    ringAt(s.toX, s.toY, FIRE, 1.2f);
+                    shake.shake(0.4f, 14f);
+                }
+                if (now > IMPACT_TIME - 0.1f && now < IMPACT_TIME + 0.7f) {
+                    int count = Math.max(1, Math.round(delta * 160f));
+                    for (int i = 0; i < count; i++) {
+                        Particle p = particle(s.toX + MathUtils.random(-80f, 80f), s.toY - 120f,
+                            MathUtils.randomBoolean() ? FIRE : JUICE, 30f, MathUtils.random(0.4f, 0.8f),
+                            MathUtils.random(12f, 22f), true);
+                        p.gravity = -700f;
+                    }
+                }
+            }
+            case BINGO_LIGHT -> { // un rayon de lumière blanche et or
+                if (impact) {
+                    if (!settings.isReducedEffects()) flash = 0.35f;
+                    flashAt(s.toX, s.toY, Color.WHITE, 300f);
+                    burst(s.toX, s.toY, 30, GOLD, 520f, 0.6f, 10f, true);
+                    burst(s.toX, s.toY, 20, Color.WHITE, 400f, 0.5f, 8f, true);
+                    ringAt(s.toX, s.toY, GOLD, 1.6f);
+                    ringAt(s.toX, s.toY, Color.WHITE, 1.0f);
+                    shake.shake(0.3f, 9f);
+                }
+            }
+            default -> { }
+        }
+    }
+
+    /** Un point sur une trajectoire en cloche de {@code from} à {@code to}, à l'instant {@code u} (0 à 1). */
+    private static Vector2 arc(float fromX, float fromY, float toX, float toY, float u, float height) {
+        u = MathUtils.clamp(u, 0f, 1f);
+        return new Vector2(MathUtils.lerp(fromX, toX, u), MathUtils.lerp(fromY, toY, u) + height * 4f * u * (1f - u));
     }
 
     private void updateTripleCherry(Strike s, float before, float now, float delta) {
@@ -890,8 +1044,131 @@ public class SymbolStrikes extends Actor implements Disposable {
             case STAR -> drawStar(batch, s, t, alpha);
             case BOMB -> drawBomb(batch, s, t, alpha);
             case CROWN -> drawCrown(batch, s, t, alpha);
+            case DEMON_KING, LUCK_APOSTLE -> drawStar(batch, s, t, alpha);
+            case FANGS, SPIKED_SHIELD, SCYTHE, MOON, PIGGY_BANK, TICKET, ANCHOR, GOLD_CHIP, FLAME, DESCENT, BINGO_LIGHT ->
+                drawNewReel(batch, s, t, alpha);
             default -> { }
         }
+    }
+
+    /** Nouveaux rouleaux (2026-11-01) : le symbole lui-même, en vol ou au-dessus de son rouleau. */
+    private void drawNewReel(Batch batch, Strike s, float t, float alpha) {
+        float u = t / IMPACT_TIME;
+        switch (s.symbol) {
+            case FANGS -> { // il bondit sur l'ennemi en grossissant, mâchoire en avant
+                if (t < IMPACT_TIME + 0.1f) {
+                    Vector2 at = arc(s.fromX, s.fromY, s.toX, s.toY, Interpolation.pow2In.apply(Math.min(1f, u)), 80f);
+                    glow(batch, at.x, at.y, 120f, JUICE, alpha * 0.6f);
+                    symbol(batch, s.art, at.x, at.y, 0.6f + 0.5f * Math.min(1f, u), 0f, alpha * fadeAfter(t));
+                }
+            }
+            case SPIKED_SHIELD -> { // il tourne comme une scie
+                if (t < IMPACT_TIME) {
+                    Vector2 at = arc(s.fromX, s.fromY, s.toX, s.toY, Interpolation.pow2In.apply(u), 60f);
+                    symbol(batch, s.art, at.x, at.y, 0.75f, -900f * t, alpha);
+                }
+            }
+            case SCYTHE -> { // la faux décrit un grand arc et fauche l'ennemi
+                if (t < IMPACT_TIME + 0.2f) {
+                    float swing = MathUtils.clamp(u, 0f, 1f);
+                    float angle = MathUtils.lerp(140f, -60f, Interpolation.pow3In.apply(swing));
+                    float radius = 120f;
+                    float x = MathUtils.lerp(s.fromX, s.toX + MathUtils.cosDeg(angle) * radius, Math.min(1f, u * 2.5f));
+                    float y = MathUtils.lerp(s.fromY, s.toY + MathUtils.sinDeg(angle) * radius, Math.min(1f, u * 2.5f));
+                    symbol(batch, s.art, x, y, 0.9f, angle - 90f, alpha * fadeAfter(t));
+                }
+                if (t >= IMPACT_TIME - 0.1f && t < IMPACT_TIME + 0.35f) { // l'entaille en croissant
+                    float since = MathUtils.clamp((t - IMPACT_TIME + 0.1f) / 0.45f, 0f, 1f);
+                    batch.setBlendFunction(GL20.GL_SRC_ALPHA, GL20.GL_ONE);
+                    for (int k = 0; k < 8; k++) {
+                        float a0 = 150f - k * 22f, a1 = a0 - 22f;
+                        segment(batch, s.toX + MathUtils.cosDeg(a0) * 110f, s.toY + MathUtils.sinDeg(a0) * 70f,
+                            s.toX + MathUtils.cosDeg(a1) * 110f, s.toY + MathUtils.sinDeg(a1) * 70f, 12f, Color.WHITE,
+                            alpha * (1f - since));
+                    }
+                    batch.setBlendFunction(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
+                }
+            }
+            case MOON -> { // elle monte au-dessus du rouleau, puis son rayon part
+                float rise = Interpolation.pow2Out.apply(Math.min(1f, t / 0.25f));
+                float y = s.fromY + ABOVE_REEL * rise;
+                if (t < IMPACT_TIME + 0.2f) {
+                    glow(batch, s.fromX, y, 150f, BOLT, alpha * 0.6f);
+                    symbol(batch, s.art, s.fromX, y, 0.9f, 0f, alpha * fadeAfter(t));
+                }
+                if (t > 0.3f && t < IMPACT_TIME + 0.2f) {
+                    float a = alpha * (t < IMPACT_TIME ? (t - 0.3f) / (IMPACT_TIME - 0.3f) : fadeAfter(t));
+                    batch.setBlendFunction(GL20.GL_SRC_ALPHA, GL20.GL_ONE);
+                    segment(batch, s.fromX, y, s.toX, s.toY, 26f, BOLT, a * 0.5f);
+                    segment(batch, s.fromX, y, s.toX, s.toY, 8f, Color.WHITE, a);
+                    batch.setBlendFunction(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
+                }
+            }
+            case PIGGY_BANK -> { // secouée au-dessus du rouleau
+                if (t < 0.7f) {
+                    float appear = Interpolation.swingOut.apply(Math.min(1f, t / 0.15f));
+                    float shakeAngle = t > 0.15f ? 14f * MathUtils.sin(t * 60f) : 0f;
+                    symbol(batch, s.art, s.fromX, s.fromY + ABOVE_REEL, 1.0f * appear, shakeAngle,
+                        alpha * (t > 0.55f ? 1f - (t - 0.55f) / 0.15f : 1f));
+                }
+            }
+            case TICKET -> { // il flotte en se dandinant, puis éclate en confettis
+                if (t < 0.3f) {
+                    float y = s.fromY + (ABOVE_REEL + 20f) * Interpolation.pow2Out.apply(t / 0.3f);
+                    symbol(batch, s.art, s.fromX, y, 0.85f, 18f * MathUtils.sin(t * 30f), alpha);
+                }
+            }
+            case ANCHOR -> { // elle tombe de haut sur le bouclier
+                if (t < IMPACT_TIME + 0.1f) {
+                    float fall = Interpolation.pow3In.apply(Math.min(1f, u));
+                    float y = MathUtils.lerp(s.toY + 380f, s.toY, fall);
+                    float x = MathUtils.lerp(s.fromX, s.toX, Math.min(1f, u * 2f));
+                    symbol(batch, s.art, x, y, 0.9f, 8f * MathUtils.sin(t * 20f) * (1f - fall), alpha * fadeAfter(t));
+                }
+            }
+            case GOLD_CHIP -> { // le jeton vole en tournant sur lui-même
+                if (t < IMPACT_TIME) {
+                    Vector2 at = arc(s.fromX, s.fromY, s.toX, s.toY, u, 180f);
+                    symbolScaled(batch, s.art, at.x, at.y, 0.7f * MathUtils.cos(t * 30f), 0.7f, 0f, alpha);
+                }
+            }
+            case FLAME -> {
+                if (t < IMPACT_TIME) {
+                    Vector2 at = arc(s.fromX, s.fromY, s.toX, s.toY, Interpolation.pow2In.apply(u), 120f);
+                    glow(batch, at.x, at.y, 140f, FIRE, alpha * 0.8f);
+                    symbol(batch, s.art, at.x, at.y, 0.75f, 10f * MathUtils.sin(t * 25f), alpha);
+                }
+            }
+            case DESCENT -> { // le symbole tombe sur l'ennemi depuis le haut, en grandissant
+                if (t < IMPACT_TIME) {
+                    float fall = Interpolation.pow2In.apply(u);
+                    glow(batch, s.toX, MathUtils.lerp(s.toY + 300f, s.toY, fall), 180f, JUICE, alpha * 0.7f);
+                    symbol(batch, s.art, MathUtils.lerp(s.fromX, s.toX, Math.min(1f, u * 2f)),
+                        MathUtils.lerp(s.toY + 300f, s.toY, fall), 0.8f + 0.6f * fall, 0f, alpha);
+                }
+            }
+            case BINGO_LIGHT -> { // le soleil monte et rayonne, puis lance sa lumière
+                float rise = Interpolation.pow2Out.apply(Math.min(1f, t / 0.25f));
+                float y = s.fromY + ABOVE_REEL * rise;
+                if (t < IMPACT_TIME + 0.2f) {
+                    glow(batch, s.fromX, y, 220f, GOLD, alpha * 0.7f);
+                    symbol(batch, s.art, s.fromX, y, 1.0f, 90f * t, alpha * fadeAfter(t));
+                }
+                if (t > 0.3f && t < IMPACT_TIME + 0.25f) {
+                    float a = alpha * (t < IMPACT_TIME ? (t - 0.3f) / (IMPACT_TIME - 0.3f) : 1f - (t - IMPACT_TIME) / 0.25f);
+                    batch.setBlendFunction(GL20.GL_SRC_ALPHA, GL20.GL_ONE);
+                    segment(batch, s.fromX, y, s.toX, s.toY, 44f, GOLD, a * 0.45f);
+                    segment(batch, s.fromX, y, s.toX, s.toY, 14f, Color.WHITE, a);
+                    batch.setBlendFunction(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
+                }
+            }
+            default -> { }
+        }
+    }
+
+    /** Opacité d'un symbole qui s'efface juste après l'impact. */
+    private static float fadeAfter(float t) {
+        return t > IMPACT_TIME ? Math.max(0f, 1f - (t - IMPACT_TIME) / 0.2f) : 1f;
     }
 
     private void drawSeven(Batch batch, Strike s, float t, float alpha) {

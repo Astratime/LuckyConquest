@@ -11,7 +11,7 @@ import java.util.stream.Collectors;
  * Étoile : plusieurs actions d'un coup (attaque, bouclier, gains), chacune
  * avec ses bonus (cartes du tour et rang du joueur).
  */
-public final class MixedAction extends Action {
+public non-sealed class MixedAction extends Action {
 
     private final List<Action> actions;
 

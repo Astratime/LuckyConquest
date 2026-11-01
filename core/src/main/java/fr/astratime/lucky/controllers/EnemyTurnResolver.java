@@ -4,6 +4,7 @@ import fr.astratime.lucky.entities.BigNumber;
 import fr.astratime.lucky.entities.effects.MutinyEffect;
 import fr.astratime.lucky.entities.Card;
 import fr.astratime.lucky.entities.Enemy;
+import fr.astratime.lucky.entities.EnemyMaluses;
 import fr.astratime.lucky.entities.LastingEffects;
 import fr.astratime.lucky.entities.Player;
 import fr.astratime.lucky.entities.SlotMachine;
@@ -188,6 +189,8 @@ public class EnemyTurnResolver {
         final List<EnemySignature>         now     = new ArrayList<>();
         final List<EnemyCards.ShadowRole>  shadows = new ArrayList<>();
         boolean forbidReel;
+        /** Descente aux enfers du joueur : ce tour, 2 cartes au plus et attaques -50 %. */
+        boolean hellBound;
         int     swordBonus, healBonus, shieldBonus;
         final Map<EnemySymbol, Integer> luck = new EnumMap<>(EnemySymbol.class);
 
@@ -283,6 +286,14 @@ public class EnemyTurnResolver {
             List<Card> regular = drawn.stream().filter(card -> EnemySignature.of(card) == null).toList();
             played = new ArrayList<>(ownCards(drawn, enemy));
             played.addAll(kind.playsAtRandom() ? chooseAtRandom(regular, plays) : choose(regular, enemy.getHpRatio(), kind, plays));
+            hellBound = enemy.getMaluses().takeHellBound(); // Descente aux enfers : 2 cartes au plus, attaques -50 %
+            if (hellBound && played.size() > EnemyMaluses.HELL_MAX_CARDS) {
+                played = new ArrayList<>(played.subList(0, EnemyMaluses.HELL_MAX_CARDS));
+            }
+            if (hellBound) {
+                openingEvents.add(new StatusEvent(Lang.f("DESCENTE AUX ENFERS : {0} CARTES, ATTAQUES -{1} %",
+                    EnemyMaluses.HELL_MAX_CARDS, EnemyMaluses.HELL_DAMAGE_PERCENT), EffectPopup.Style.DEFENSE));
+            }
 
         }
 
@@ -360,6 +371,9 @@ public class EnemyTurnResolver {
                 }
             }
             symbols = machine.spin(enemy.getSpinWeights(), luck, reelCount);
+            if (enemy.getMaluses().takeBingoLight()) { // Lumière du bingo : un rouleau sur deux s'illumine
+                for (int i = 0; i < symbols.length; i++) if (random.nextBoolean()) symbols[i] = EnemySymbol.BINGO_LIGHT;
+            }
             // Croupier en chef : son Rien ne va plus sort au plus une fois par tour, 5 % de chance
             // + 2 % par carte Annonce jouée ce tour (ses Trèfles ne le rendent pas plus probable)
             if (kind.rollsNothingGoesApart() && symbols.length > 0 && random.nextInt(100) < EnemyKind.CHEF_NOTHING_GOES_PERCENT
@@ -380,6 +394,7 @@ public class EnemyTurnResolver {
                 turn.malusPercent = 100 - intimidated;
                 openingEvents.add(new StatusEvent(Lang.f("INTIMIDÉ : SES ATTAQUES -{0} %", intimidated), EffectPopup.Style.DEFENSE));
             }
+            if (hellBound) turn.malusPercent = turn.malusPercent * (100 - EnemyMaluses.HELL_DAMAGE_PERCENT) / 100;
             roulettes = new EnemyRouletteEvent[symbols.length];
             for (int i = 0; i < symbols.length; i++) {
                 if (symbols[i] != EnemySymbol.ZERO) continue;
@@ -759,6 +774,11 @@ public class EnemyTurnResolver {
                     int melted = player.meltShield(percent);
                     events.add(melted > 0 ? new StatusEvent(Lang.f("BRÛLURE : -{0} BOUCLIER", Lang.big(melted)), EffectPopup.Style.DAMAGE)
                         : turn.strike(EnemySymbol.FANG_DAMAGE)); // pas de bouclier à faire fondre : il brûle
+                }
+                case BINGO_LIGHT -> { // Lumière du bingo du joueur : le rouleau ne fait rien, il perd des PV
+                    int lost = enemy.takeDamage(Math.max(1L, (long) enemy.getMaxHp() * EnemyMaluses.LIGHT_HP_PERCENT / 100));
+                    events.add(new EnemyHpLostEvent(Lang.f("LUMIÈRE DU BINGO : IL PERD {0} PV", Lang.big(lost)),
+                        EffectPopup.Style.SPECIAL, lost));
                 }
                 case FIRE_BREATH -> {
                     events.add(new StatusEvent(Lang.t("SOUFFLE DE FEU !"), EffectPopup.Style.ATTACK));

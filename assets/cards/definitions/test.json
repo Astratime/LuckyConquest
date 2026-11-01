@@ -260,6 +260,175 @@
     ]
   },
   {
+    "id": "bingo_fangs",
+    "name": "Bingo Crocs",
+    "assetPath": "cards/test/bingo_fangs.png",
+    "consumable": true,
+    "effects": [
+      {
+        "type": "BINGO",
+        "power": 1,
+        "symbol": "FANGS"
+      }
+    ]
+  },
+  {
+    "id": "bingo_piggy_bank",
+    "name": "Bingo Tirelire",
+    "assetPath": "cards/test/bingo_piggy_bank.png",
+    "consumable": true,
+    "effects": [
+      {
+        "type": "BINGO",
+        "power": 1,
+        "symbol": "PIGGY_BANK"
+      }
+    ]
+  },
+  {
+    "id": "bingo_spiked_shield",
+    "name": "Bingo Bouclier clouté",
+    "assetPath": "cards/test/bingo_spiked_shield.png",
+    "consumable": true,
+    "effects": [
+      {
+        "type": "BINGO",
+        "power": 1,
+        "symbol": "SPIKED_SHIELD"
+      }
+    ]
+  },
+  {
+    "id": "bingo_scythe",
+    "name": "Bingo Faux",
+    "assetPath": "cards/test/bingo_scythe.png",
+    "consumable": true,
+    "effects": [
+      {
+        "type": "BINGO",
+        "power": 1,
+        "symbol": "SCYTHE"
+      }
+    ]
+  },
+  {
+    "id": "bingo_moon",
+    "name": "Bingo Lune",
+    "assetPath": "cards/test/bingo_moon.png",
+    "consumable": true,
+    "effects": [
+      {
+        "type": "BINGO",
+        "power": 1,
+        "symbol": "MOON"
+      }
+    ]
+  },
+  {
+    "id": "bingo_demon_king",
+    "name": "Bingo Roi démon",
+    "assetPath": "cards/test/bingo_demon_king.png",
+    "consumable": true,
+    "effects": [
+      {
+        "type": "BINGO",
+        "power": 1,
+        "symbol": "DEMON_KING"
+      }
+    ]
+  },
+  {
+    "id": "bingo_luck_apostle",
+    "name": "Bingo Apôtre de la Chance",
+    "assetPath": "cards/test/bingo_luck_apostle.png",
+    "consumable": true,
+    "effects": [
+      {
+        "type": "BINGO",
+        "power": 1,
+        "symbol": "LUCK_APOSTLE"
+      }
+    ]
+  },
+  {
+    "id": "bingo_ticket",
+    "name": "Bingo Ticket",
+    "assetPath": "cards/test/bingo_ticket.png",
+    "consumable": true,
+    "effects": [
+      {
+        "type": "BINGO",
+        "power": 1,
+        "symbol": "TICKET"
+      }
+    ]
+  },
+  {
+    "id": "bingo_anchor",
+    "name": "Bingo Ancre",
+    "assetPath": "cards/test/bingo_anchor.png",
+    "consumable": true,
+    "effects": [
+      {
+        "type": "BINGO",
+        "power": 1,
+        "symbol": "ANCHOR"
+      }
+    ]
+  },
+  {
+    "id": "bingo_gold_chip",
+    "name": "Bingo Jeton d'or",
+    "assetPath": "cards/test/bingo_gold_chip.png",
+    "consumable": true,
+    "effects": [
+      {
+        "type": "BINGO",
+        "power": 1,
+        "symbol": "GOLD_CHIP"
+      }
+    ]
+  },
+  {
+    "id": "bingo_flame",
+    "name": "Bingo Flamme",
+    "assetPath": "cards/test/bingo_flame.png",
+    "consumable": true,
+    "effects": [
+      {
+        "type": "BINGO",
+        "power": 1,
+        "symbol": "FLAME"
+      }
+    ]
+  },
+  {
+    "id": "bingo_descent",
+    "name": "Bingo Descente aux enfers",
+    "assetPath": "cards/test/bingo_descent.png",
+    "consumable": true,
+    "effects": [
+      {
+        "type": "BINGO",
+        "power": 1,
+        "symbol": "DESCENT"
+      }
+    ]
+  },
+  {
+    "id": "bingo_bingo_light",
+    "name": "Bingo Lumière du bingo",
+    "assetPath": "cards/test/bingo_bingo_light.png",
+    "consumable": true,
+    "effects": [
+      {
+        "type": "BINGO",
+        "power": 1,
+        "symbol": "BINGO_LIGHT"
+      }
+    ]
+  },
+  {
     "id": "jeu_bonus",
     "name": "Jeu bonus",
     "assetPath": "cards/test/jeu_bonus.png",

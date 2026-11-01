@@ -415,6 +415,18 @@ public class JackpotCelebration extends Group implements Disposable {
             case CROWN         -> scheduleCoronation(icon);
             case NUGGET        -> scheduleMine(icon);
             case TRIPLE_SEVEN  -> scheduleSupernova(icon);
+            // Nouveaux rouleaux (2026-11-01) : la mise en scène d'un rouleau du même genre
+            case FANGS         -> scheduleHeartbeat(icon);
+            case PIGGY_BANK    -> scheduleSafe(icon);
+            case SPIKED_SHIELD, ANCHOR -> scheduleShieldWall(icon);
+            case SCYTHE        -> scheduleSwords(icon);
+            case MOON          -> scheduleShootingStar(icon);
+            case DEMON_KING, LUCK_APOSTLE -> scheduleCoronation(icon);
+            case TICKET        -> scheduleHorseshoe(icon);
+            case GOLD_CHIP     -> scheduleMine(icon);
+            case FLAME         -> scheduleBomb(icon);
+            case DESCENT       -> scheduleHellfire(icon);
+            case BINGO_LIGHT   -> scheduleHalo(icon);
             case JOKER         -> scheduleCasino();
         }
     }
@@ -517,6 +529,56 @@ public class JackpotCelebration extends Group implements Disposable {
             MathUtils.random(12f, 24f), 0.5f, Palette.GOLD));
         coinRain(merge, merge + 1.2f, COIN_COUNT, COLLECT_EVERY);
         for (float time : new float[] {1.6f, 1.8f, 2.0f, 2.2f, 2.4f}) at(time, () -> rocket(false));
+    }
+
+    /** Descente aux enfers : l'écran rougit, les flammes montent du sol, des ondes rouge sang, et le symbole jaillit. */
+    private void scheduleHellfire(TextureRegion icon) {
+        float centerX = playArea.getCenterX(), centerY = getHeight() * 0.45f;
+        Color ember = Color.valueOf("ff5a1fff"), blood = Color.valueOf("b0101eff"), ash = Color.valueOf("3a0a10ff");
+        at(0f, () -> impactFlash(0.7f, 0.05f, 0.05f, 0.7f));
+        emit(0f, 1.6f, 260, i -> glitter.ember(tableX(0f), -20f, MathUtils.random(-60f, 60f), MathUtils.random(500f, 1200f),
+            -200f, MathUtils.random(8f, 18f), MathUtils.random(0.8f, 1.5f), i % 3 == 0 ? Palette.GOLD : i % 3 == 1 ? ember : blood));
+        at(0.8f, () -> {
+            screenShake.shake(0.7f, 20f);
+            impactFlash(1f, 0.25f, 0.1f, 0.8f);
+        });
+        Color[] waves = {ember, blood, ash, blood};
+        for (int k = 0; k < waves.length; k++) {
+            Color color = waves[k];
+            float radius = 420f + k * 200f;
+            at(0.8f + k * 0.1f, () -> shockwaves.ring(centerX, centerY, radius, 0.8f, 1f, color));
+        }
+        emit(0.8f, 0.8f, 16, i -> symbols.jet(icon, centerX, centerY, i * (360f / 16) + MathUtils.random(-6f, 6f),
+            MathUtils.random(700f, 1100f), MathUtils.random(60f, 85f), 800f));
+        coinRain(0.9f, 2.1f, COIN_COUNT, COLLECT_EVERY);
+        for (float time : new float[] {1.6f, 1.9f, 2.2f}) at(time, () -> rocket(false));
+    }
+
+    /** Lumière du bingo : un halo blanc grandit, des anneaux d'or s'ouvrent, une pluie d'étoiles et de symboles tombe. */
+    private void scheduleHalo(TextureRegion icon) {
+        float centerX = playArea.getCenterX(), centerY = getHeight() * 0.5f;
+        Color pale = Color.valueOf("fff6c8ff");
+        emit(0f, 0.8f, 120, i -> {
+            float angle = MathUtils.random(360f), radius = MathUtils.random(260f, 520f);
+            glitter.ember(centerX + MathUtils.cosDeg(angle) * radius, centerY + MathUtils.sinDeg(angle) * radius,
+                -MathUtils.cosDeg(angle) * radius * 1.2f, -MathUtils.sinDeg(angle) * radius * 1.2f, 0f,
+                MathUtils.random(6f, 12f), MathUtils.random(0.5f, 0.8f), i % 2 == 0 ? Color.WHITE : Palette.GOLD);
+        });
+        at(0.8f, () -> {
+            screenShake.shake(0.4f, 10f);
+            impactFlash(1f, 1f, 0.9f, 0.9f);
+        });
+        for (int k = 0; k < 4; k++) {
+            Color color = k % 2 == 0 ? Color.WHITE : Palette.GOLD;
+            float radius = 400f + k * 220f;
+            at(0.8f + k * 0.12f, () -> shockwaves.ring(centerX, centerY, radius, 0.9f, 1f, color));
+        }
+        emit(0.8f, 2.4f, 70, i -> glitter.twinkle(tableX(0f), getHeight() * MathUtils.random(0.1f, 0.98f),
+            MathUtils.random(14f, 28f), 0.6f, i % 2 == 0 ? pale : Palette.GOLD));
+        emit(0.9f, 2.0f, 30, i -> symbols.rain(icon, tableX(40f), getHeight() + 60f, floorY(), MathUtils.random(50f, 70f),
+            MathUtils.random(150f, 400f), 1000f, false));
+        coinRain(0.9f, 2.1f, COIN_COUNT, COLLECT_EVERY);
+        for (float time : new float[] {1.6f, 1.8f, 2.0f, 2.2f}) at(time, () -> rocket(false));
     }
 
     /** Joker (qui ne s'aligne jamais seul), la célébration d'origine : pluie de pièces et feux d'artifice multicolores. */
