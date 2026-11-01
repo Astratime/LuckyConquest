@@ -40,11 +40,17 @@ public class BackgroundMusic implements Disposable {
         applied = -1f;
     }
 
-    /** Lance (ou reprend) la musique. */
+    /** Lance la musique, ou la laisse continuer si elle joue déjà. */
     public void play() {
         update();
         music.play();
         playing = true;
+    }
+
+    /** Arrête la musique ; {@link #play()} la relancera du début. */
+    public void stop() {
+        music.stop();
+        playing = false;
     }
 
     /**
@@ -63,6 +69,8 @@ public class BackgroundMusic implements Disposable {
 
     /** Applique le réglage « Musique » s'il a changé ; à appeler à chaque image. */
     public void update() {
+        // Coupée sans qu'on l'ait arrêtée (flux interrompu, périphérique audio changé) : on la relance.
+        if (playing && !music.isPlaying()) music.play();
         float volume = level * audio.getMusicVolume() * (ducked ? DUCKED : 1f);
         if (volume == applied) return;
         applied = volume;

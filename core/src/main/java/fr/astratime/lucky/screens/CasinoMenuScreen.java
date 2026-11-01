@@ -49,8 +49,6 @@ abstract class CasinoMenuScreen extends ScreenAdapter {
     /** Opacité du voile noir posé sur le décor. */
     static final float VEIL_ALPHA = 0.6f;
 
-    private static final String MUSIC       = "music/main_menu.ogg";
-    private static final float  MUSIC_LEVEL = 0.3f;
 
     protected final LuckyGame       luckyGame;
     protected final SharedAssets    assets;
@@ -83,7 +81,7 @@ abstract class CasinoMenuScreen extends ScreenAdapter {
         this.clickSound = assets.clickSound;
         this.hoverSound = assets.hoverSound;
         this.stage      = new Stage(new MinimumScreenViewport(MIN_WIDTH, MIN_HEIGHT), luckyGame.getBatch());
-        this.music      = new BackgroundMusic(MUSIC, assets.audio, MUSIC_LEVEL);
+        this.music      = assets.menuMusic; // partagée : elle continue d'un menu à l'autre
 
         TextureRegionDrawable pixel = new TextureRegionDrawable(new TextureRegion(hud.pixel));
         veil = new Image(pixel);
@@ -204,7 +202,7 @@ abstract class CasinoMenuScreen extends ScreenAdapter {
     public void dispose() {
         stage.dispose();
         decor.dispose();
-        music.dispose();
+        music.setDucked(false); // partagée : rendue à plein volume pour l'écran suivant
         Fonts.release(titleFont);
     }
 }

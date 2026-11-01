@@ -3,6 +3,7 @@ package fr.astratime.lucky.screens;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.utils.Disposable;
+import fr.astratime.lucky.assets.BackgroundMusic;
 import fr.astratime.lucky.assets.CardTextures;
 import fr.astratime.lucky.assets.EnemyTextures;
 import fr.astratime.lucky.assets.HudTextures;
@@ -25,6 +26,8 @@ public final class SharedAssets implements Disposable {
     private static final String CLICK_SOUND = "sounds/button-click.ogg";
     /** Survol d'une option (synthétisé, voir tools/sounds/generate_sounds.py). */
     private static final String HOVER_SOUND = "sounds/ui/menu_hover.ogg";
+    private static final String MENU_MUSIC       = "music/main_menu.ogg";
+    private static final float  MENU_MUSIC_LEVEL = 0.3f;
 
     /** Réglages du son, lus à chaque bruit (un changement dans les options s'applique tout de suite). */
     public final AudioSettings audio = new AudioSettings();
@@ -35,6 +38,12 @@ public final class SharedAssets implements Disposable {
     /** Survol d'une option de menu. */
     public final Sound         hoverSound = load(HOVER_SOUND);
 
+    /**
+     * Musique des écrans de menu (menu principal, Exploration, Tour, Table du croupier,
+     * Boutique, Cinématique) : une seule pour tous, elle continue d'un menu à l'autre
+     * au lieu de repartir du début ; seul le combat l'arrête.
+     */
+    public final BackgroundMusic menuMusic = new BackgroundMusic(MENU_MUSIC, audio, MENU_MUSIC_LEVEL);
     /** Chargées à la première demande : le menu principal n'en a pas besoin au lancement. */
     private CardTextures  cardTextures;
     private EnemyTextures enemyTextures;
@@ -63,5 +72,6 @@ public final class SharedAssets implements Disposable {
         hud.dispose();
         clickSound.dispose();
         hoverSound.dispose();
+        menuMusic.dispose();
     }
 }

@@ -76,8 +76,6 @@ public class MenuScreen extends ScreenAdapter {
     private static final String ACHIEVEMENT_SOUND = "sounds/ui/achievement.ogg";
     private static final String TITLE       = "LUCKY CONQUEST";
     /** Musique du menu (fournie par Astra) et son volume au réglage maximal : pas de bruitage à couvrir ici. */
-    private static final String MUSIC       = "music/main_menu.ogg";
-    private static final float  MUSIC_LEVEL = 0.3f;
 
     /** Taille minimale du menu : dans une fenêtre plus petite, il est réduit (voir {@link MinimumScreenViewport}). */
     private static final float MIN_WIDTH      = 1280f;
@@ -149,7 +147,7 @@ public class MenuScreen extends ScreenAdapter {
 
         clickSound  = assets.clickSound;
         hoverSound  = assets.hoverSound;
-        music       = new BackgroundMusic(MUSIC, audio, MUSIC_LEVEL);
+        music       = assets.menuMusic; // partagée : elle continue d'un menu à l'autre
         Color shadow = Palette.TEXT_SHADE;
         titleFont   = Fonts.jersey(128, Palette.GOLD, 7f, shadow, TITLE);
         shineFont   = Fonts.jersey(128, Color.WHITE, 7f, shadow, TITLE);
@@ -654,6 +652,6 @@ public class MenuScreen extends ScreenAdapter {
         Fonts.release(titleFont);
         Fonts.release(shineFont);
         menu.dispose();
-        music.dispose();
+        // La musique appartient aux ressources partagées : elle continue sur l'écran suivant.
     }
 }
