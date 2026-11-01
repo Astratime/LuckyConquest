@@ -188,7 +188,7 @@ public final class EnemyCards {
             case GAINS  -> Lang.f("Ta carte, retournée contre toi : elle prend {0} % de tes gains", kind.interestPercent(hard));
             case BINGO  -> Lang.f("Ta carte, retournée contre toi : son Épée devient {0} % plus probable", SHADOW_BINGO_LUCK);
             case HEAL   -> Lang.f("Ta carte, retournée contre toi : elle se soigne de {0} % de ses PV max",
-                Math.round(kind.potionPercent(healBonus(ten), hard)));
+                Math.round(EnemyKind.cappedHeal(kind.potionPercent(healBonus(ten), hard))));
             case SHIELD -> Lang.f("Ta carte, retournée contre toi : défense +{0}",
                 kind.empowered(kind.shieldDefense() + kind.shieldBonus(ten), hard));
         };

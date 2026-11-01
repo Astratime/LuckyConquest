@@ -580,7 +580,7 @@
   "Bouclier : défense +{0} pendant le tour suivant": "Shield: defense +{0} during the next turn",
   "Potion : soigne {0} % des PV max": "Potion: heals {0}% of max HP",
   "Épines : renvoie {0} % de tes dégâts. Au début de son tour": "Thorns: reflects {0}% of your damage. At the start of its turn",
-  "Croc : mord de {0}. Chaque PV volé lui rend {1} % de ses PV max": "Fang: bites for {0}. Each HP stolen gives it back {1}% of its max HP",
+  "Croc : mord de {0}. Chaque PV volé lui rend {1} % de ses PV max, {2} % au plus": "Fang: bites for {0}. Each HP stolen gives it back {1}% of its max HP, {2}% at most",
   "Rage : attaque +{0}. Jusqu'à la fin du combat": "Rage: attack +{0}. Until the end of the fight",
   "Dé pipé : tes jauges (Coffre, Sang, Lames) perdent {0} %": "Loaded die: your gauges (Vault, Blood, Blades) lose {0}%",
   "Intérêts : il prend {0} % de tes gains. Attaque +1 par {1} volés, au prochain coup. Sans gains, il mord": "Interest: takes {0}% of your gains. Attack +1 per {1} stolen, on the next hit. Without gains, it bites",

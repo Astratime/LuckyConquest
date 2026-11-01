@@ -64,7 +64,7 @@ class EnemyTurnResolverTest {
                     case SWORD  -> { swords++;  assertEquals(20 + 10, ((PlayerDamagedEvent) event).damage); }
                     case SHIELD -> { shields++; assertEquals(100 + 600, ((EnemyShieldedEvent) event).defense); }
                     case POTION -> {
-                        int healed = Math.min(5_000, 10_000 - hp); // 30 % + 20 % des PV max, plafonné
+                        int healed = Math.min(500, 10_000 - hp); // 30 % + 20 % des PV max, ramenés à 5 % (EnemyKind.MAX_HEAL_PERCENT)
                         assertEquals(healed, ((EnemyHealedEvent) event).amount);
                         hp += healed;
                     }

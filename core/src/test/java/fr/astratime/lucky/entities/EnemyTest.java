@@ -30,4 +30,13 @@ class EnemyTest {
         assertEquals(0, enemy.getHp());
         assertTrue(enemy.isDefeated());
     }
+
+    @Test
+    void aHealGivesBackAtMostFivePercentOfMaxHp() {
+        Enemy big = new Enemy("Ennemi", 10_000);
+        big.takeDamage(5_000);
+
+        assertEquals(500, big.heal(3_000), "soin de 30 % ramené à 5 %");
+        assertEquals(200, big.heal(200), "un soin sous 5 % ne change pas");
+    }
 }

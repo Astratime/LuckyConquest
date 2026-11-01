@@ -226,7 +226,7 @@ public enum EnemySymbol {
     /** Tours que tient la peau d'or d'un Placage ou d'un Battement. */
     public static final int PLATING_TURNS = 1;
     /** Battement : soin, en % de ses PV max. */
-    public static final int HEARTBEAT_PERCENT = 10;
+    public static final int HEARTBEAT_PERCENT = 5; // 10 avant le plafond de 5 % (Astra, 2026-11-01)
     /** Pièce avalée : part des gains prise, en %, et pièces qu'il lui faut pour un Jackpot. */
     public static final int COIN_PERCENT = 10, COINS_FOR_JACKPOT = 3; // 5, +5 points (Astra, 2026-10-27)
     /** Jackpot originel : trois symboles pareils sur les rouleaux de la Machine, et ce symbole agit autant de fois. */
@@ -253,7 +253,7 @@ public enum EnemySymbol {
     /** Brûlure : part du bouclier du joueur qui fond, en %. */
     public static final int BURN_PERCENT = 50;
     /** Sarcophage du Pharaon : soin en % de ses PV max quand il s'y enferme. */
-    public static final int SARCOPHAGUS_HEAL_PERCENT = 10;
+    public static final int SARCOPHAGUS_HEAL_PERCENT = 5; // 10 avant le plafond de 5 % (Astra, 2026-11-01)
 
     private final String displayName;
 
@@ -280,10 +280,10 @@ public enum EnemySymbol {
             case SWORD  -> Lang.f("Épée : attaque de {0}", kind.hurt(kind.swordDamage(), hard));
             case SHIELD -> Lang.f("Bouclier : défense +{0} pendant le tour suivant",
                 kind.empowered(kind.shieldDefense(), hard));
-            case POTION -> Lang.f("Potion : soigne {0} % des PV max", percent(kind.potionPercent(0, hard)));
+            case POTION -> Lang.f("Potion : soigne {0} % des PV max", percent(EnemyKind.cappedHeal(kind.potionPercent(0, hard))));
             case THORNS -> Lang.f("Épines : renvoie {0} % de tes dégâts. Au début de son tour", kind.thornsPercent(hard));
-            case FANG   -> Lang.f("Croc : mord de {0}. Chaque PV volé lui rend {1} % de ses PV max",
-                kind.hurt(FANG_DAMAGE, hard), percent(kind.drainPercent(hard)));
+            case FANG   -> Lang.f("Croc : mord de {0}. Chaque PV volé lui rend {1} % de ses PV max, {2} % au plus",
+                kind.hurt(FANG_DAMAGE, hard), percent(kind.drainPercent(hard)), EnemyKind.MAX_HEAL_PERCENT);
             case RAGE   -> Lang.f("Rage : attaque +{0}. Jusqu'à la fin du combat", kind.hurt(RAGE_ATTACK, hard));
             case LOADED_DIE -> Lang.f("Dé pipé : tes jauges (Coffre, Sang, Lames) perdent {0} %", kind.diePercent(hard));
             case INTEREST -> Lang.f("Intérêts : il prend {0} % de tes gains. Attaque +1 par {1} volés, au prochain coup. Sans gains, "

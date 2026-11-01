@@ -400,11 +400,13 @@ public class Enemy {
     public int getAnvil() { return anvil; }
 
     /**
-     * Rend {@code amount} points de vie, sans dépasser le maximum.
+     * Rend {@code amount} points de vie, sans dépasser le maximum. Chaque soin
+     * rend au plus {@link EnemyKind#MAX_HEAL_PERCENT} % de ses PV max (Astra, 2026-11-01).
      *
      * @return les points de vie réellement rendus
      */
     public int heal(int amount) {
+        amount = (int) Math.min(amount, (long) maxHp * EnemyKind.MAX_HEAL_PERCENT / 100);
         amount = (int) ((long) amount * healPercent() / 100); // un roi en phase 2 se soigne moins
         int healed = Math.min(maxHp, hp + amount) - hp;
         hp += healed;
