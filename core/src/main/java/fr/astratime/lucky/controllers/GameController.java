@@ -564,7 +564,7 @@ public class GameController {
         Player player = gameState.getPlayer();
         double price = priceOf(offer);
         if (unavailableReason(offer) != null || player.getGains() < price) return null;
-        player.addGains(-price);
+        player.paySpin(price); // un achat dépense d'abord les gains de la cagnotte, comme un tirage
         bought.merge(offer.card().getId(), 1, Integer::sum);
         Card card = cardFactory.apply(offer.card().getId());
         Enemy enemy = gameState.getEnemy();
@@ -864,7 +864,7 @@ public class GameController {
         double staked = getStakeAmount();
         SpinEconomy.Stake placed = staked > 0 ? stake : SpinEconomy.Stake.NONE;
         if (staked > 0) {
-            player.paySpin(staked);
+            player.payStake(staked);
             turnEngine.getPot().add(staked);
         }
         double cost = getSpinPrice();

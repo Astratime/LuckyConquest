@@ -253,6 +253,22 @@ class SpinEconomyTest {
     }
 
     @Test
+    void spinsSpendPotWinningsFirstSoTheStakeStaysAvailable() {
+        GameController controller = fight(EnemyKind.CROUPIER);
+        Player player = player(controller);
+        player.addGains(1_000 - player.getGains()); // 1 000 gains à soi
+        player.addGains(1_000_000);
+        player.addPotWinnings(1_000_000); // un gros Jeu bonus : 1 M rapporté par la cagnotte
+        for (int i = 0; i < 20; i++) player.paySpin(100); // 20 tirages
+        assertEquals(1_000, player.getStakeableGains(), 1e-6, "les tirages se paient avec les gains de la cagnotte");
+        assertNotEquals(Stake.NONE, controller.nextStake(), "la Mise reste possible après le Jeu bonus");
+        player.payStake(500);
+        assertEquals(500, player.getStakeableGains(), 1e-6, "la Mise, elle, se prend sur les gains à soi");
+        player.paySpin(2_000_000); // tout dépensé, dette comprise
+        assertEquals(0, player.getStakeableGains(), 1e-6);
+    }
+
+    @Test
     void theBonusGamePaysThePotOnEveryLineThenEmptiesIt() {
         GameController controller = fight(EnemyKind.CROUPIER);
         controller.setBonusGameChance(1f); // le Jeu bonus s'ouvre à coup sûr après le Bingo
