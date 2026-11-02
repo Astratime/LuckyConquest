@@ -76,7 +76,8 @@ import java.util.function.Supplier;
  *   <li>Jeton d'or : une tour de jetons s'empile puis s'écroule ({@link ChipTowerScene}) ;</li>
  *   <li>Flamme : un brasero s'allume, puis une colonne de feu jaillit ({@link FirePillarScene}) ;</li>
  *   <li>Descente aux enfers : une porte de l'enfer géante s'ouvre, des diablotins et de grosses boules de feu en sortent, qui explosent avec « BINGO! » ({@link HellGateScene}) ;</li>
- *   <li>Lumière du bingo : une boule de bingo dorée descend, se fissure et éclate en rayons ({@link LightOrbScene}).</li>
+ *   <li>Lumière du bingo : une boule de bingo dorée descend, se fissure et éclate en rayons, entre Zeus qui lance
+ *       des éclairs et une Vierge Marie qui lève les bras dans une nuée d'anges ({@link LightOrbScene}).</li>
  * </ul>
  *
  * Pendant {@link #DURATION}, le calque intercepte les clics : le joueur ne peut
@@ -631,7 +632,10 @@ public class JackpotCelebration extends Group implements Disposable {
         for (float time : new float[] {1.9f, 2.2f}) at(time, () -> rocket(false));
     }
 
-    /** Lumière du bingo : une boule de bingo dorée descend du ciel, se fissure de lumière et éclate en rayons. */
+    /**
+     * Lumière du bingo : une boule de bingo dorée descend du ciel, se fissure de lumière et éclate en rayons,
+     * entre un dieu façon Zeus qui lance des éclairs et une femme voilée façon Vierge Marie entourée d'anges.
+     */
     private void scheduleHalo(TextureRegion icon) {
         float centerX = playArea.getCenterX(), centerY = getHeight() * 0.45f;
         float crack = LightOrbScene.CRACK_TIME, open = LightOrbScene.OPEN_TIME;
@@ -660,6 +664,28 @@ public class JackpotCelebration extends Group implements Disposable {
         }
         emit(open, 2.5f, 70, i -> frontGlitter.twinkle(tableX(0f), getHeight() * MathUtils.random(0.1f, 0.98f),
             MathUtils.random(14f, 28f), 0.6f, i % 2 == 0 ? pale : Palette.GOLD));
+        // Les éclairs du dieu : un éclat bleuté et des étincelles là où ils frappent.
+        Color thunder = Color.valueOf("bfe0ffff");
+        for (float boltAt : LightOrbScene.BOLTS) {
+            at(boltAt + 0.03f, () -> {
+                screenShake.shake(0.15f, 8f);
+                impactFlash(0.75f, 0.85f, 1f, 0.3f);
+                Vector2 end = lightOrb.boltEnd();
+                shockwaves.ring(end.x, end.y, 200f, 0.35f, 1f, thunder);
+            });
+            emit(boltAt + 0.03f, boltAt + 0.03f, 18, i -> {
+                Vector2 end = lightOrb.boltEnd();
+                float angle = MathUtils.random(360f), speed = MathUtils.random(150f, 500f);
+                frontGlitter.ember(end.x, end.y, MathUtils.cosDeg(angle) * speed, MathUtils.sinDeg(angle) * speed, 600f,
+                    MathUtils.random(5f, 9f), MathUtils.random(0.3f, 0.6f), i % 2 == 0 ? Color.WHITE : thunder);
+            });
+        }
+        // La lumière qui descend sur la femme voilée quand elle lève les bras.
+        emit(crack, 2.5f, 60, i -> {
+            Vector2 mary = lightOrb.maryCenter();
+            frontGlitter.twinkle(mary.x + MathUtils.random(-330f, 330f), mary.y + MathUtils.random(-120f, 380f),
+                MathUtils.random(10f, 20f), 0.5f, i % 2 == 0 ? Color.WHITE : Palette.GOLD);
+        });
         emit(open, open + 1f, 28, i -> symbols.rain(icon, tableX(40f), getHeight() + 60f, floorY(), MathUtils.random(50f, 70f),
             MathUtils.random(150f, 400f), 1000f, false));
         coinRain(open, open + 1f, COIN_COUNT, COLLECT_EVERY);
