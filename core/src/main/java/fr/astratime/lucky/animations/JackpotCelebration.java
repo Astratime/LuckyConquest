@@ -75,7 +75,7 @@ import java.util.function.Supplier;
  *   <li>Ancre : elle tombe au bout de sa chaîne et plonge dans la mer ({@link AnchorDropScene}) ;</li>
  *   <li>Jeton d'or : une tour de jetons s'empile puis s'écroule ({@link ChipTowerScene}) ;</li>
  *   <li>Flamme : un brasero s'allume, puis une colonne de feu jaillit ({@link FirePillarScene}) ;</li>
- *   <li>Descente aux enfers : une porte de l'enfer géante s'ouvre, des diablotins en sortent en masse, elle avale le symbole et le recrache ({@link HellGateScene}) ;</li>
+ *   <li>Descente aux enfers : une porte de l'enfer géante s'ouvre, des diablotins et de grosses boules de feu en sortent, qui explosent avec « BINGO! » ({@link HellGateScene}) ;</li>
  *   <li>Lumière du bingo : une boule de bingo dorée descend, se fissure et éclate en rayons ({@link LightOrbScene}).</li>
  * </ul>
  *
@@ -191,7 +191,7 @@ public class JackpotCelebration extends Group implements Disposable {
     private final AnchorDropScene     anchorDrop     = new AnchorDropScene(iconOf(Symbol.ANCHOR));
     private final ChipTowerScene      chipTower      = new ChipTowerScene(iconOf(Symbol.GOLD_CHIP));
     private final FirePillarScene     firePillar     = new FirePillarScene(iconOf(Symbol.FLAME));
-    private final HellGateScene       hellGate       = new HellGateScene(iconOf(Symbol.DESCENT));
+    private final HellGateScene       hellGate       = new HellGateScene();
     private final LightOrbScene       lightOrb       = new LightOrbScene(iconOf(Symbol.BINGO_LIGHT));
     private final List<BingoScene>    scenes = List.of(hydraulicPress, forge, cherryTree, winePress,
         gemCut, safe, katana, horseshoe, shieldWall, swords, heartbeat, tripleDice, shootingStar, bomb, coronation,
@@ -560,11 +560,12 @@ public class JackpotCelebration extends Group implements Disposable {
         for (float time : new float[] {1.6f, 1.8f, 2.0f, 2.2f, 2.4f}) at(time, () -> rocket(false));
     }
 
-    /** Descente aux enfers : une porte de l'enfer surgit, s'ouvre sur un brasier, avale le symbole et le recrache. */
+    /** Descente aux enfers : une porte de l'enfer géante, des diablotins et des boules de feu qui explosent avec « BINGO! ». */
     private void scheduleHellfire(TextureRegion icon) {
         float centerX = playArea.getCenterX(), baseY = getHeight() * 0.04f;
         float open = HellGateScene.OPEN_TIME, erupt = HellGateScene.ERUPT_TIME;
-        playScene(hellGate, centerX, baseY, erupt + 0.12f, 0.86f);
+        float boom = HellGateScene.BOOM_TIME;
+        playScene(hellGate, centerX, baseY, boom, 0.86f);
         Color ember = Color.valueOf("ff5a1fff"), blood = Color.valueOf("b0101eff"), ash = Color.valueOf("2a0a10ff");
         at(0f, () -> {
             screenShake.shake(0.35f, 10f);
@@ -577,7 +578,34 @@ public class JackpotCelebration extends Group implements Disposable {
                 MathUtils.random(200f, 600f), -100f, MathUtils.random(6f, 12f), MathUtils.random(0.4f, 0.8f),
                 i % 3 == 0 ? Palette.GOLD : i % 3 == 1 ? ember : blood);
         });
-        at(HellGateScene.FALL_TIME, () -> impactFlash(0.5f, 0f, 0f, 0.35f));
+        // Les boules de feu laissent une traînée, puis explosent toutes quand « BINGO! » apparaît.
+        for (int k = 0; k < HellGateScene.fireballCount(); k++) {
+            int ball = k;
+            emit(HellGateScene.FIREBALLS_TIME + k * 0.09f, boom, 30, i -> {
+                Vector2 at = hellGate.fireball(ball);
+                frontGlitter.ember(at.x + MathUtils.random(-25f, 25f), at.y - 30f, MathUtils.random(-40f, 40f),
+                    MathUtils.random(-120f, 0f), 0f, MathUtils.random(8f, 14f), MathUtils.random(0.25f, 0.45f),
+                    i % 2 == 0 ? ember : Palette.GOLD);
+            });
+            at(boom, () -> {
+                Vector2 at = hellGate.fireball(ball);
+                shockwaves.ring(at.x, at.y, 300f, 0.5f, 1f, ember);
+                shockwaves.ring(at.x, at.y, 180f, 0.4f, 1f, Palette.GOLD);
+                fireworks.burst(at.x, at.y, ember);
+                fireworks.burst(at.x, at.y, Palette.GOLD);
+            });
+            emit(boom, boom, 40, i -> {
+                Vector2 at = hellGate.fireball(ball);
+                float angle = MathUtils.random(360f), speed = MathUtils.random(250f, 750f);
+                glitter.ember(at.x, at.y, MathUtils.cosDeg(angle) * speed, MathUtils.sinDeg(angle) * speed, 700f,
+                    MathUtils.random(9f, 16f), MathUtils.random(0.6f, 1.1f),
+                    i % 3 == 0 ? Palette.GOLD : i % 3 == 1 ? ember : blood);
+            });
+        }
+        at(boom, () -> {
+            screenShake.shake(0.6f, 24f);
+            impactFlash(1f, 0.45f, 0.1f, 0.7f);
+        });
         at(erupt, () -> {
             screenShake.shake(0.7f, 22f);
             impactFlash(1f, 0.2f, 0.05f, 0.75f);

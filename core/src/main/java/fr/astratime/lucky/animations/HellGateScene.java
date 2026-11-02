@@ -13,9 +13,10 @@ import static fr.astratime.lucky.assets.Palette.hex;
 /**
  * Bingo de la Descente aux enfers : une porte de pierre gravée de runes surgit
  * de la table en tremblant, ses deux battants s'écartent sur un brasier rouge
- * ({@link #OPEN_TIME}), le symbole tombe du haut de l'écran en tournoyant et
- * s'engouffre dans la porte, puis l'enfer recrache tout dans une éruption
- * à {@link #ERUPT_TIME} et le symbole se dresse, géant, devant la porte (les
+ * ({@link #OPEN_TIME}), de grosses boules de feu en jaillissent et montent
+ * au-dessus de la table, puis l'enfer entre en éruption à {@link #ERUPT_TIME}
+ * et les boules de feu explosent toutes à {@link #BOOM_TIME}, quand « BINGO! »
+ * apparaît (les
  * flammes, les ondes et les cendres sont lancées par {@link JackpotCelebration},
  * qui suit {@link #gate}). Dès l'ouverture, une nuée de diablotins s'échappe de
  * la porte en battant des ailes et envahit tout l'écran (Astra, 2026-11-02).
@@ -24,48 +25,64 @@ public class HellGateScene extends BingoScene {
 
     /** Les battants commencent à s'ouvrir. */
     public static final float OPEN_TIME  = 0.35f;
-    /** Le symbole commence sa chute. */
-    public static final float FALL_TIME  = 0.8f;
+    /** Les boules de feu commencent à sortir. */
+    public static final float FIREBALLS_TIME = 0.6f;
     /** L'enfer entre en éruption. */
     public static final float ERUPT_TIME = 1.35f;
+    /** Les boules de feu explosent, quand « BINGO! » apparaît. */
+    public static final float BOOM_TIME  = 1.47f;
 
     private static final int DOOR_W = 18, DOOR_H = 40;
     private static final float DOOR_SCALE = 13f;
-    private static final float ICON_SIZE = 280f;
+    private static final int   FIREBALLS = 7;
+    private static final float FIREBALL_SCALE = 8f;
 
     /** Diablotins : nombre, taille, et fenêtre pendant laquelle ils sortent. */
     private static final int   IMPS = 70;
     private static final float IMP_SCALE = 6f;
     private static final float IMPS_FROM = 0.5f, IMPS_UNTIL = 2.3f;
 
-    private final Image glow, hole, left, right, icon;
+    private final Image glow, hole, left, right;
+    private final Image[] fireballs = new Image[FIREBALLS];
+    private final Vector2[] fireballAt = new Vector2[FIREBALLS], fireballTarget = new Vector2[FIREBALLS];
+    private final float[] fireballLaunch = new float[FIREBALLS];
     private final Image[] imps = new Image[IMPS];
     private final float[] impAt = new float[IMPS], impAngle = new float[IMPS], impSpeed = new float[IMPS],
         impWobble = new float[IMPS];
     private final Vector2 gate = new Vector2();
 
-    /** @param descent image du symbole Descente aux enfers */
-    public HellGateScene(TextureRegion descent) {
+    public HellGateScene() {
         glow = image(texture(halo(56, hex("ff2a10"))));
         glow.setOrigin(glow.getWidth() / 2f, glow.getHeight() / 2f);
         addActor(glow);
         hole = image(new TextureRegion(texture(hole())), DOOR_SCALE);
         hole.setOrigin(hole.getWidth() / 2f, 0f);
         addActor(hole);
-        icon = image(descent, ICON_SIZE / descent.getRegionWidth());
-        icon.setOrigin(icon.getWidth() / 2f, icon.getHeight() / 2f);
-        addActor(icon);
         TextureRegion imp = new TextureRegion(texture(imp()));
         for (int i = 0; i < IMPS; i++) {
             imps[i] = image(imp, IMP_SCALE);
             imps[i].setOrigin(imps[i].getWidth() / 2f, imps[i].getHeight() / 2f);
             addActor(imps[i]);
         }
+        TextureRegion fireball = new TextureRegion(texture(fireball()));
+        for (int i = 0; i < FIREBALLS; i++) {
+            fireballs[i] = image(fireball, FIREBALL_SCALE);
+            fireballs[i].setOrigin(fireballs[i].getWidth() / 2f, fireballs[i].getHeight() * 0.35f);
+            fireballAt[i] = new Vector2();
+            fireballTarget[i] = new Vector2();
+        }
         left = image(new TextureRegion(texture(door(false))), DOOR_SCALE);
         right = image(new TextureRegion(texture(door(true))), DOOR_SCALE);
         addActor(left);
         addActor(right);
+        for (Image ball : fireballs) addActor(ball);
     }
+
+    /** @return le nombre de boules de feu. */
+    public static int fireballCount() { return FIREBALLS; }
+
+    /** @return la position (Stage) de la boule de feu {@code index} (son point d'explosion à {@link #BOOM_TIME}). */
+    public Vector2 fireball(int index) { return fireballAt[index]; }
 
     /** @return le centre (Stage) de l'ouverture de la porte. */
     public Vector2 gate() { return gate; }
@@ -73,8 +90,16 @@ public class HellGateScene extends BingoScene {
     @Override
     protected void start(float x, float y) {
         gate.set(x, y + DOOR_H * DOOR_SCALE / 2f);
-        icon.setVisible(false);
-        icon.setColor(Color.WHITE);
+        float width = getStage() != null ? getStage().getWidth() : 1920f;
+        float height = getStage() != null ? getStage().getHeight() : 1080f;
+        for (int i = 0; i < FIREBALLS; i++) {
+            fireballLaunch[i] = FIREBALLS_TIME + i * 0.09f;
+            float spread = (i + 0.5f) / FIREBALLS;                          // de gauche à droite
+            fireballTarget[i].set(x + (spread - 0.5f) * width * 0.75f + MathUtils.random(-40f, 40f),
+                height * MathUtils.random(0.45f, 0.72f));
+            fireballAt[i].set(gate.x, gate.y);
+            fireballs[i].setVisible(false);
+        }
         left.setColor(Color.WHITE);
         right.setColor(Color.WHITE);
         // Chaque diablotin a son instant de sortie, sa direction, sa vitesse et son battement d'ailes.
@@ -111,25 +136,37 @@ public class HellGateScene extends BingoScene {
 
         updateImps();
 
-        // Le symbole tombe et s'engouffre, puis l'éruption le recrache, géant.
-        if (time < FALL_TIME) return;
-        icon.setVisible(true);
-        if (time < ERUPT_TIME) {
-            float fall = Interpolation.pow2In.apply((time - FALL_TIME) / (ERUPT_TIME - FALL_TIME));
-            float top = getStage() != null ? getStage().getHeight() : 1080f;
-            icon.setScale(1f - 0.85f * fall);
-            icon.setRotation(fall * 900f);
-            placeOrigin(icon, gate.x, MathUtils.lerp(top + ICON_SIZE, gate.y, fall));
-        } else {
-            float since = time - ERUPT_TIME;
-            float pop = Interpolation.swingOut.apply(Math.min(1f, since / 0.35f));
-            icon.setScale(0.15f + 1.15f * pop * (1f + 0.05f * MathUtils.sin(since * 9f)));
-            icon.setRotation(MathUtils.sin(since * 7f) * 4f);
-            icon.setColor(1f, 0.75f + 0.25f * pop, 0.75f + 0.25f * pop, 1f);
-            placeOrigin(icon, gate.x, gate.y + 60f * pop);
-            float fade = Math.max(0f, 1f - since / 0.5f);
+        updateFireballs();
+        if (time >= ERUPT_TIME) {
+            float fade = Math.max(0f, 1f - (time - ERUPT_TIME) / 0.5f);
             left.getColor().a = fade;
             right.getColor().a = fade;
+        }
+    }
+
+    /** Les boules de feu jaillissent de la porte, montent en grossissant, tremblent puis explosent toutes ensemble. */
+    private void updateFireballs() {
+        for (int i = 0; i < FIREBALLS; i++) {
+            Image ball = fireballs[i];
+            float since = time - fireballLaunch[i];
+            if (since < 0f || time >= BOOM_TIME) {
+                ball.setVisible(false);
+                continue;
+            }
+            ball.setVisible(true);
+            float travel = Interpolation.pow2Out.apply(Math.min(1f, since / (BOOM_TIME - fireballLaunch[i] - 0.15f)));
+            Vector2 target = fireballTarget[i];
+            float shake = travel >= 1f ? 6f : 0f;
+            fireballAt[i].set(MathUtils.lerp(gate.x, target.x, travel) + MathUtils.random(-shake, shake),
+                MathUtils.lerp(gate.y - 80f, target.y, travel) + 140f * 4f * travel * (1f - travel)
+                    + MathUtils.random(-shake, shake));
+            float flicker = 1f + 0.1f * MathUtils.sin(time * 35f + i);
+            ball.setScale((0.4f + 0.6f * travel) * flicker * (travel >= 1f ? 1.15f : 1f));
+            // La flamme traîne derrière : la boule est orientée selon sa course.
+            float dx = target.x - gate.x, dy = target.y - gate.y;
+            ball.setRotation(travel >= 1f ? MathUtils.sin(time * 20f) * 8f
+                : MathUtils.atan2(dy, dx) * MathUtils.radiansToDegrees - 90f);
+            placeOrigin(ball, fireballAt[i].x, fireballAt[i].y);
         }
     }
 
@@ -154,6 +191,24 @@ public class HellGateScene extends BingoScene {
             imp.setRotation(MathUtils.sin(since * 7f + impWobble[i]) * 15f);
             placeOrigin(imp, x, y);
         }
+    }
+
+    /** @return une grosse boule de feu : cœur jaune, flammes orange et rouges qui s'effilent vers le bas. */
+    private static Pixmap fireball() {
+        Pixmap pixmap = pixmap(20, 28);
+        Color core = hex("fff6c0"), yellow = hex("ffd040"), orange = hex("ff7a1a"), red = hex("c81818");
+        for (int y = 0; y < 28; y++) {
+            for (int x = 0; x < 20; x++) {
+                float dx = x + 0.5f - 10f, dy = y + 0.5f - 10f;          // boule en haut, traîne vers le bas
+                float d = (float) Math.sqrt(dx * dx + dy * dy);
+                float tail = y > 10 ? (9f - (y - 10) * 0.5f) * (1f - Math.abs(MathUtils.sin(y * 0.9f)) * 0.3f) : 9.5f;
+                float edge = y > 10 ? Math.abs(dx) / Math.max(0.5f, tail) : d / 9.5f;
+                if (edge > 1f) continue;
+                pixmap.setColor(edge < 0.35f && y < 14 ? core : edge < 0.6f ? yellow : edge < 0.85f ? orange : red);
+                pixmap.drawPixel(x, y);
+            }
+        }
+        return pixmap;
     }
 
     /** @return un diablotin : corps rouge, cornes, ailes de chauve-souris, yeux jaunes, queue fourchue. */
