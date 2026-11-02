@@ -75,7 +75,7 @@ import java.util.function.Supplier;
  *   <li>Ancre : elle tombe au bout de sa chaîne et plonge dans la mer ({@link AnchorDropScene}) ;</li>
  *   <li>Jeton d'or : une tour de jetons s'empile puis s'écroule ({@link ChipTowerScene}) ;</li>
  *   <li>Flamme : un brasero s'allume, puis une colonne de feu jaillit ({@link FirePillarScene}) ;</li>
- *   <li>Descente aux enfers : une porte de l'enfer s'ouvre, avale le symbole et le recrache ({@link HellGateScene}) ;</li>
+ *   <li>Descente aux enfers : une porte de l'enfer géante s'ouvre, des diablotins en sortent en masse, elle avale le symbole et le recrache ({@link HellGateScene}) ;</li>
  *   <li>Lumière du bingo : une boule de bingo dorée descend, se fissure et éclate en rayons ({@link LightOrbScene}).</li>
  * </ul>
  *
@@ -562,7 +562,7 @@ public class JackpotCelebration extends Group implements Disposable {
 
     /** Descente aux enfers : une porte de l'enfer surgit, s'ouvre sur un brasier, avale le symbole et le recrache. */
     private void scheduleHellfire(TextureRegion icon) {
-        float centerX = playArea.getCenterX(), baseY = getHeight() * 0.14f;
+        float centerX = playArea.getCenterX(), baseY = getHeight() * 0.04f;
         float open = HellGateScene.OPEN_TIME, erupt = HellGateScene.ERUPT_TIME;
         playScene(hellGate, centerX, baseY, erupt + 0.12f, 0.86f);
         Color ember = Color.valueOf("ff5a1fff"), blood = Color.valueOf("b0101eff"), ash = Color.valueOf("2a0a10ff");
@@ -573,7 +573,7 @@ public class JackpotCelebration extends Group implements Disposable {
         // Le brasier crache des braises par la porte ouverte.
         emit(open, 2.3f, 160, i -> {
             Vector2 gate = hellGate.gate();
-            frontGlitter.ember(gate.x + MathUtils.random(-110f, 110f), gate.y - 120f, MathUtils.random(-90f, 90f),
+            frontGlitter.ember(gate.x + MathUtils.random(-180f, 180f), gate.y - 200f, MathUtils.random(-90f, 90f),
                 MathUtils.random(200f, 600f), -100f, MathUtils.random(6f, 12f), MathUtils.random(0.4f, 0.8f),
                 i % 3 == 0 ? Palette.GOLD : i % 3 == 1 ? ember : blood);
         });

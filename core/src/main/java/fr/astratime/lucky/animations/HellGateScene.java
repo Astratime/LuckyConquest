@@ -17,7 +17,8 @@ import static fr.astratime.lucky.assets.Palette.hex;
  * s'engouffre dans la porte, puis l'enfer recrache tout dans une éruption
  * à {@link #ERUPT_TIME} et le symbole se dresse, géant, devant la porte (les
  * flammes, les ondes et les cendres sont lancées par {@link JackpotCelebration},
- * qui suit {@link #gate}).
+ * qui suit {@link #gate}). Dès l'ouverture, une nuée de diablotins s'échappe de
+ * la porte en battant des ailes et envahit tout l'écran (Astra, 2026-11-02).
  */
 public class HellGateScene extends BingoScene {
 
@@ -29,10 +30,18 @@ public class HellGateScene extends BingoScene {
     public static final float ERUPT_TIME = 1.35f;
 
     private static final int DOOR_W = 18, DOOR_H = 40;
-    private static final float DOOR_SCALE = 8f;
+    private static final float DOOR_SCALE = 13f;
     private static final float ICON_SIZE = 280f;
 
+    /** Diablotins : nombre, taille, et fenêtre pendant laquelle ils sortent. */
+    private static final int   IMPS = 70;
+    private static final float IMP_SCALE = 6f;
+    private static final float IMPS_FROM = 0.5f, IMPS_UNTIL = 2.3f;
+
     private final Image glow, hole, left, right, icon;
+    private final Image[] imps = new Image[IMPS];
+    private final float[] impAt = new float[IMPS], impAngle = new float[IMPS], impSpeed = new float[IMPS],
+        impWobble = new float[IMPS];
     private final Vector2 gate = new Vector2();
 
     /** @param descent image du symbole Descente aux enfers */
@@ -46,6 +55,12 @@ public class HellGateScene extends BingoScene {
         icon = image(descent, ICON_SIZE / descent.getRegionWidth());
         icon.setOrigin(icon.getWidth() / 2f, icon.getHeight() / 2f);
         addActor(icon);
+        TextureRegion imp = new TextureRegion(texture(imp()));
+        for (int i = 0; i < IMPS; i++) {
+            imps[i] = image(imp, IMP_SCALE);
+            imps[i].setOrigin(imps[i].getWidth() / 2f, imps[i].getHeight() / 2f);
+            addActor(imps[i]);
+        }
         left = image(new TextureRegion(texture(door(false))), DOOR_SCALE);
         right = image(new TextureRegion(texture(door(true))), DOOR_SCALE);
         addActor(left);
@@ -62,6 +77,14 @@ public class HellGateScene extends BingoScene {
         icon.setColor(Color.WHITE);
         left.setColor(Color.WHITE);
         right.setColor(Color.WHITE);
+        // Chaque diablotin a son instant de sortie, sa direction, sa vitesse et son battement d'ailes.
+        for (int i = 0; i < IMPS; i++) {
+            impAt[i] = IMPS_FROM + (IMPS_UNTIL - IMPS_FROM) * i / IMPS + MathUtils.random(0f, 0.04f);
+            impAngle[i] = MathUtils.random(-170f, -10f) + 180f;              // vers le haut et les côtés
+            impSpeed[i] = MathUtils.random(380f, 900f);
+            impWobble[i] = MathUtils.random(0f, MathUtils.PI2);
+            imps[i].setVisible(false);
+        }
         update(0f);
     }
 
@@ -86,6 +109,8 @@ public class HellGateScene extends BingoScene {
         glow.getColor().a = 0.3f + 0.5f * open;
         placeOrigin(glow, gate.x, gate.y);
 
+        updateImps();
+
         // Le symbole tombe et s'engouffre, puis l'éruption le recrache, géant.
         if (time < FALL_TIME) return;
         icon.setVisible(true);
@@ -106,6 +131,53 @@ public class HellGateScene extends BingoScene {
             left.getColor().a = fade;
             right.getColor().a = fade;
         }
+    }
+
+    /** Les diablotins jaillissent de la porte, volent en zigzag en battant des ailes et sortent de l'écran. */
+    private void updateImps() {
+        for (int i = 0; i < IMPS; i++) {
+            Image imp = imps[i];
+            float since = time - impAt[i];
+            if (since < 0f || since > 2.2f) {
+                imp.setVisible(false);
+                continue;
+            }
+            imp.setVisible(true);
+            float angle = impAngle[i], speed = impSpeed[i];
+            float wobble = MathUtils.sin(since * 9f + impWobble[i]) * 40f;
+            float x = gate.x + MathUtils.random(-2f, 2f) + MathUtils.cosDeg(angle) * speed * since + wobble;
+            float y = gate.y - 60f + MathUtils.sinDeg(angle) * speed * since + 40f * since * since;
+            float flap = 0.7f + 0.3f * Math.abs(MathUtils.sin(since * 22f + impWobble[i]));
+            float grow = Math.min(1f, since / 0.2f);
+            boolean faceLeft = MathUtils.cosDeg(angle) < 0f;
+            imp.setScale((faceLeft ? -1f : 1f) * grow, flap * grow);
+            imp.setRotation(MathUtils.sin(since * 7f + impWobble[i]) * 15f);
+            placeOrigin(imp, x, y);
+        }
+    }
+
+    /** @return un diablotin : corps rouge, cornes, ailes de chauve-souris, yeux jaunes, queue fourchue. */
+    private static Pixmap imp() {
+        Pixmap pixmap = pixmap(17, 14);
+        Color red = hex("d8202a"), dark = hex("8a1018"), wing = hex("4a0a14"), eye = hex("ffe040"), horn = hex("f4e6c8");
+        String[] rows = {
+            "......h...h......",
+            "......hrrrh......",
+            "w....rrrrrrr....w",
+            "ww...reyrrey...ww",
+            "www..rrrrrrr..www",
+            "wwww..rrkkrr.wwww",
+            ".wwwwrrrrrrrwwww.",
+            "..wwrrrrrrrrrww..",
+            "...w.rrrrrrr.w...",
+            "......rrrrr......",
+            "......rr.rr....d.",
+            ".....rr...rr..dd.",
+            ".....d.....d.d...",
+            "..........ddd....",
+        };
+        drawGrid(pixmap, rows, 0, 0, "rwehkd", red, wing, eye, horn, dark, dark);
+        return pixmap;
     }
 
     /** @return un battant de pierre noire : blocs, rune rouge, ferrures, bord arrondi vers l'extérieur. */
