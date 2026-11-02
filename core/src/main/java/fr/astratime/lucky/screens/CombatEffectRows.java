@@ -9,6 +9,7 @@ import fr.astratime.lucky.entities.EnemyMaluses;
 import fr.astratime.lucky.entities.GameState;
 import fr.astratime.lucky.entities.LastingEffects;
 import fr.astratime.lucky.entities.Player;
+import fr.astratime.lucky.entities.ReelGauges;
 import fr.astratime.lucky.entities.SpinEconomy;
 import fr.astratime.lucky.entities.Symbol;
 import fr.astratime.lucky.entities.effects.CorruptionEffect;
@@ -135,8 +136,76 @@ final class CombatEffectRows {
             rows.add(new SidePanel.EffectRow(new TextureRegion(hud.iconDouble), null, Lang.t("Carte suivante x2"),
                 Lang.t("Double ou rien"), Lang.t("La prochaine carte jouée ce tour compte deux fois.")));
         }
+        addReelRows(rows, lasting);
         addPlaceRows(rows, lasting);
         return rows;
+    }
+
+    /**
+     * Les nouveaux rouleaux qui ont une mémoire (2026-11-01) : jauges du Roi démon et
+     * de l'Apôtre de la Chance, invincibilité, Bingo imposé, Tirelire, Ancre,
+     * Lumière du bingo ; et chez l'ennemi : brûlure de la Flamme, Descente aux enfers, Lumière.
+     */
+    private void addReelRows(List<SidePanel.EffectRow> rows, LastingEffects lasting) {
+        ReelGauges gauges = lasting.getReelGauges();
+        List<Symbol> reels = player.getSlotMachine().getReels();
+        if (gauges.getDemonization() > 0 || reels.contains(Symbol.DEMON_KING)) {
+            rows.add(new SidePanel.EffectRow(symbols.apply(Symbol.DEMON_KING), null,
+                Lang.f("Démonisation {0}/{1}", gauges.getDemonization(), ReelGauges.GAUGE_MAX), Lang.t("Démonisation"),
+                Lang.f("+1 à chaque Roi démon tiré. À {0} : invincible jusqu'à la fin du tour suivant, dont le tirage "
+                    + "est un Bingo de Descente aux enfers.", ReelGauges.GAUGE_MAX)));
+        }
+        if (gauges.getLuckyAngel() > 0 || reels.contains(Symbol.LUCK_APOSTLE)) {
+            rows.add(new SidePanel.EffectRow(symbols.apply(Symbol.LUCK_APOSTLE), null,
+                Lang.f("Ange chanceux {0}/{1}", gauges.getLuckyAngel(), ReelGauges.GAUGE_MAX), Lang.t("Ange chanceux"),
+                Lang.f("+1 à chaque Apôtre de la Chance tiré. À {0} : invincible jusqu'à la fin du tour suivant, dont "
+                    + "le tirage est un Bingo de Lumière du bingo.", ReelGauges.GAUGE_MAX)));
+        }
+        if (gauges.getForced() != null) {
+            rows.add(new SidePanel.EffectRow(symbols.apply(gauges.getForced()), null, Lang.t("Bingo imposé"),
+                gauges.getForced().getDisplayName(), Lang.f("Ton prochain tirage est un Bingo de {0}. Rien ne peut "
+                    + "l'empêcher, ni les mauvais sorts de l'ennemi, ni la carte Bingo.", gauges.getForced().getDisplayName())));
+        }
+        if (gauges.isInvincible()) {
+            rows.add(new SidePanel.EffectRow(symbols.apply(Symbol.ECU), null,
+                Lang.f("Invincible, {0}", turns(gauges.getInvincibleTurns())), Lang.t("Invincible"),
+                Lang.f("Les coups de l'ennemi ne t'enlèvent aucun PV. Encore {0}.", turns(gauges.getInvincibleTurns()))));
+        }
+        if (gauges.getPiggyDraws() > 0) {
+            rows.add(new SidePanel.EffectRow(symbols.apply(Symbol.PIGGY_BANK), null,
+                Lang.f("Tirelire {0}", gauges.getPiggyNext()), Lang.t("Tirelire"),
+                Lang.f("Sortie {0} fois ce combat. À la prochaine : {1} gains de base.", gauges.getPiggyDraws(),
+                    gauges.getPiggyNext())));
+        }
+        if (gauges.getAnchorKept() > 0) {
+            rows.add(new SidePanel.EffectRow(symbols.apply(Symbol.ANCHOR), null,
+                Lang.f("Ancre {0}", Lang.big(gauges.getAnchorKept())), Lang.t("Ancre"),
+                Lang.f("{0} de bouclier gardé : il revient au début de ton prochain tour.", Lang.big(gauges.getAnchorKept()))));
+        }
+        if (player.getLightAbsorbed() > 0) {
+            rows.add(new SidePanel.EffectRow(symbols.apply(Symbol.BINGO_LIGHT), null,
+                Lang.f("Coups rendus {0}", Lang.big(player.getLightAbsorbed())), Lang.t("Lumière du bingo"),
+                Lang.f("Ses coups absorbés t'ont soigné. Au prochain tirage, ils le frappent : {0} de dégâts.",
+                    Lang.big(player.getLightAbsorbed()))));
+        }
+        Enemy target = controller.getGameState().getEnemy();
+        EnemyMaluses maluses = target.getMaluses();
+        if (maluses.getBurnTurns() > 0) {
+            rows.add(new SidePanel.EffectRow(symbols.apply(Symbol.FLAME), null,
+                Lang.f("Brûlure ({0})", maluses.getBurnTurns()), Lang.t("Flamme"),
+                Lang.f("Au début de ses tours, l'ennemi perd {0} % de ses PV max. Encore {1}.", EnemyMaluses.BURN_PERCENT,
+                    turns(maluses.getBurnTurns()))));
+        }
+        if (maluses.isHellBound()) {
+            rows.add(new SidePanel.EffectRow(symbols.apply(Symbol.DESCENT), null, Lang.t("Enfers"),
+                Lang.t("Descente aux enfers"), Lang.f("L'ennemi est affaibli : à son prochain tour, ses attaques baissent de {0} % et il "
+                    + "joue {1} cartes au plus.", EnemyMaluses.HELL_DAMAGE_PERCENT, EnemyMaluses.HELL_MAX_CARDS)));
+        }
+        if (maluses.isLitUp()) {
+            rows.add(new SidePanel.EffectRow(symbols.apply(Symbol.BINGO_LIGHT), null, Lang.t("Illuminé"),
+                Lang.t("Lumière du bingo"), Lang.f("L'ennemi est illuminé : à son prochain tirage, chacun de ses rouleaux a une chance sur deux "
+                    + "de devenir Lumière. Ce rouleau ne fait rien et l'ennemi perd {0} % de ses PV max.", EnemyMaluses.LIGHT_HP_PERCENT)));
+        }
     }
 
     /** @return {@code count} suivi de « tour » ou « tours ». */

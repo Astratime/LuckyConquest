@@ -99,18 +99,24 @@ public class TurnEngine {
         );
         applyDebt(turnContext, gameState);
         applyStake(turnContext, stake);
+        Player      player  = gameState.getPlayer();
+        ReelGauges  gauges  = player.getLastingEffects().getReelGauges();
+        returnAnchoredShield(player, turnContext);
+        turnContext.getCombatContext().setLightStrike(player.takeLightAbsorbed()); // Lumière du bingo du tour d'avant
 
         // Phase 2 : spin avec SpinContext, puis les Jokers prennent leur valeur
-        Player      player  = gameState.getPlayer();
         Spin draw = new Spin(player, turnContext);
         draw.spinWithCards();
         draw.applyCurses();
+        // Roi démon, Apôtre de la Chance : leur Bingo imposé passe avant tout (cartes, mauvais sorts de l'ennemi).
+        Symbol summoned = gauges.takeForced();
+        if (summoned != null) draw.summon(summoned);
         Symbol[] drawn    = draw.drawn;
         Symbol[] symbols  = draw.symbols;
         Symbol[] rerolled = draw.rerolled;
         player.getLastingEffects().setLastDrawn(drawn); // Rouleau retenu, Mémoire de la machine
 
-        riggedGames(turnContext, player.getLastingEffects(), symbols);
+        if (summoned == null) riggedGames(turnContext, player.getLastingEffects(), symbols);
 
         // Prédiction de la Cartomancienne : son symbole est-il sorti ?
         gameState.getEnemy().checkPrediction(symbols);
@@ -135,7 +141,7 @@ public class TurnEngine {
         // Tour de l'ennemi, s'il a survécu : le bouclier du joueur (ses symboles de
         // défense) absorbe ses attaques, et le renvoi dépend des cartes jouées ce tour.
         Enemy enemy = gameState.getEnemy();
-        List<Event> afterCombat = new ArrayList<>();
+        List<Event> afterCombat = new ArrayList<>(fillGauges(gauges, symbols, player));
         EnemyTurnResult enemyTurn = enemyPhase(player, enemy, result, turnContext, afterCombat);
 
         List<Event> firedamp = endOfTurnHazards(gameState, player, enemy);
@@ -225,6 +231,24 @@ public class TurnEngine {
 
         }
 
+        /**
+         * Bingo imposé par une jauge pleine (Descente aux enfers, Lumière du bingo) : tous
+         * les rouleaux le montrent, rien ne l'empêche (ni carte, ni mauvais sort de
+         * l'ennemi), et ses gains ne deviennent pas des pierres. Chaque rouleau tire un de ses trois effets.
+         */
+        void summon(Symbol symbol) {
+            drawn   = new Symbol[drawn.length];
+            java.util.Arrays.fill(drawn, symbol);
+            symbols = drawn.clone();
+            CombatContext combat = turnContext.getCombatContext();
+            combat.restoreGains();
+            CombatContext.Blessing[] blessings = CombatContext.Blessing.values();
+            CombatContext.Blessing[] drawnBlessings = new CombatContext.Blessing[drawn.length];
+            for (int i = 0; i < drawnBlessings.length; i++) drawnBlessings[i] = blessings[random.nextInt(blessings.length)];
+            combat.setBlessings(drawnBlessings);
+            turnContext.addEvent(new StatusEvent(Lang.f("{0} !", symbol.getDisplayName()), EffectPopup.Style.SPECIAL));
+        }
+
         /** Ivresse, Court-circuit, Tunnel, Tourniquet, puis la Nouvelle règle du Directeur des Jeux. */
         void applyCurses() {
             SpinContext spin = turnContext.getSpinContext();
@@ -294,6 +318,15 @@ public class TurnEngine {
         String notice = enemy.takeNotice(); // un coup annulé ou une résistance passés inaperçus
         if (notice != null) afterCombat.add(new StatusEvent(notice, EffectPopup.Style.SPECIAL));
         if (enemy.isLastDrawPending() && !player.isDefeated()) afterCombat.addAll(lastDraw(player, enemy));
+
+        // Flamme : au début de son tour, il brûle
+        if (!enemy.isDefeated() && !player.isDefeated() && enemy.getMaluses().takeBurn()) {
+            long raw = Math.max(1L, (long) enemy.getMaxHp() * EnemyMaluses.BURN_PERCENT / 100);
+            long damage = enemy.skinned(raw);
+            enemy.takeDamage(raw);
+            afterCombat.add(new fr.astratime.lucky.entities.events.CardStrikeEvent(Lang.t("FLAMME : IL BRÛLE"), damage, raw,
+                enemy.getDefense()));
+        }
 
         // Créances (Rentier) : au début de son tour, elles lui coûtent des PV et rapportent des gains au joueur
         if (!enemy.isDefeated() && !player.isDefeated()) afterCombat.addAll(chargeClaims(enemy, player, turnContext.getCombatContext()));
@@ -390,6 +423,48 @@ public class TurnEngine {
         player.addGains(bonus.getTotal());
         player.addPotWinnings(bonus.getPot() * bonus.getLines().size()); // ce que la cagnotte a rapporté ne se remise pas
         return bonus;
+    }
+
+    /** Ancre : le bouclier qu'elle a gardé au tour d'avant revient. */
+    private static void returnAnchoredShield(Player player, TurnContext turnContext) {
+        int kept = player.getLastingEffects().getReelGauges().takeAnchorKept();
+        if (kept <= 0) return;
+        player.addShield(kept);
+        turnContext.addEvent(new StatusEvent(Lang.f("ANCRE : BOUCLIER {0} GARDÉ", Lang.big(kept)), EffectPopup.Style.DEFENSE));
+    }
+
+    /**
+     * Roi démon et Apôtre de la Chance : chaque sortie remplit leur jauge. Pleine,
+     * elle s'active : invincible jusqu'à la fin du tour suivant, dont le tirage sera
+     * son Bingo imposé.
+     *
+     * @return les textes des jauges remplies, et de celle qui s'active
+     */
+    private List<Event> fillGauges(ReelGauges gauges, Symbol[] symbols, Player player) {
+        List<Event> events = new ArrayList<>();
+        int demons = 0, angels = 0;
+        for (Symbol symbol : symbols) {
+            if (symbol == Symbol.DEMON_KING) demons++;
+            if (symbol == Symbol.LUCK_APOSTLE) angels++;
+        }
+        if (demons + angels == 0 && gauges.getForced() != null) return events;
+        Symbol activated = player.isDefeated() ? null : gauges.fill(demons, angels, random);
+        if (demons > 0 && activated != Symbol.DESCENT) {
+            events.add(new StatusEvent(Lang.f("DÉMONISATION {0}/{1}", gauges.getDemonization(), ReelGauges.GAUGE_MAX),
+                EffectPopup.Style.SPECIAL));
+        }
+        if (angels > 0 && activated != Symbol.BINGO_LIGHT) {
+            events.add(new StatusEvent(Lang.f("ANGE CHANCEUX {0}/{1}", gauges.getLuckyAngel(), ReelGauges.GAUGE_MAX),
+                EffectPopup.Style.SPECIAL));
+        }
+        if (activated == Symbol.DESCENT) {
+            events.add(new StatusEvent(Lang.t("DÉMONISATION ! INVINCIBLE, DESCENTE AUX ENFERS AU PROCHAIN TIRAGE"),
+                EffectPopup.Style.SPECIAL));
+        } else if (activated == Symbol.BINGO_LIGHT) {
+            events.add(new StatusEvent(Lang.t("ANGE CHANCEUX ! INVINCIBLE, LUMIÈRE DU BINGO AU PROCHAIN TIRAGE"),
+                EffectPopup.Style.SPECIAL));
+        }
+        return events;
     }
 
     /**
@@ -653,7 +728,8 @@ public class TurnEngine {
      */
     static List<Event> storeLeftoverShield(Player player) {
         List<Event> events = new ArrayList<>();
-        int leftoverShield = player.getShield();
+        int kept = player.getLastingEffects().getReelGauges().keepAnchored(player.getShield()); // Ancre : gardé un tour
+        int leftoverShield = player.getShield() - kept;
         if (leftoverShield > 0) {
             player.getLastingEffects().addVault(leftoverShield);
             events.add(new GaugeFilledEvent(GaugeFilledEvent.Gauge.COFFRE, leftoverShield));

@@ -25,7 +25,7 @@ import java.util.List;
  *  - gainsFromDamage  : si vrai (As de Pique), convertit les dégâts en gains
  * Le bonus d'attaque du rang du joueur s'ajoute aux dégâts de base.
  */
-public sealed class AttackAction extends Action permits BombAction, RandomAttackAction {
+public non-sealed class AttackAction extends Action {
 
     private final int     baseDamage;
     /** Ce rouleau ignore toujours la défense ennemie (Épée). */
@@ -46,6 +46,22 @@ public sealed class AttackAction extends Action permits BombAction, RandomAttack
     /** @return les dégâts de base de ce coup, avant bonus (le Dé les tire au hasard). */
     protected int rollBaseDamage() { return baseDamage; }
 
+    /** @return les dégâts de base de ce coup selon le combat (le Bouclier clouté : la moitié du bouclier). */
+    protected int rollBaseDamage(CombatContext context) { return rollBaseDamage(); }
+
+    /** @return le multiplicateur propre à ce rouleau, après tous les autres (la Faux, la Lune), 1 par défaut. */
+    protected double hitFactor(CombatContext context) { return 1.0; }
+
+    /**
+     * Après le coup : ce que fait ce rouleau en plus (les Crocs soignent, la Flamme brûle).
+     *
+     * @param damage les dégâts portés aux PV de l'ennemi (jamais plus que ses PV max)
+     */
+    protected void afterHit(CombatContext context, long damage, List<Event> events) { }
+
+    /** @return les dégâts de base affichés (description). */
+    protected int getBaseDamage() { return baseDamage; }
+
     /**
      * Calcule les dégâts (base + bonus, moins ce qu'absorbe la défense
      * ennemie sauf si ignorée), les applique à l'ennemi, puis résout le drain de vie et la
@@ -56,12 +72,12 @@ public sealed class AttackAction extends Action permits BombAction, RandomAttack
         List<Event> events = new ArrayList<>();
         Enemy enemy = context.getEnemy();
 
-        int symbol = rollBaseDamage();
+        int symbol = rollBaseDamage(context);
         int rank   = context.getPlayer().getRankBonus().attack() * context.getRankFactor();
         int base   = symbol + rank;
         // En long et en double : un gros combo dépasse le milliard de dégâts.
         long unscaled = base + context.getAttackBonus(); // avant les multiplicateurs : ce que vise le pistolet
-        long rawDamage = Math.round((double) unscaled * context.getAttackFactor() * context.getSymbolPower());
+        long rawDamage = Math.round((double) unscaled * context.getAttackFactor() * context.getSymbolPower() * hitFactor(context));
         long hit        = enemy.capHit(rawDamage); // ce qui touche vraiment sa défense et ses PV
         int pierce      = piercing ? 100 : context.getPiercePercent(); // Pique : une part du coup traverse la défense
         int blocked     = enemy.absorb(hit, pierce); // la défense s'use à chaque coup
@@ -86,6 +102,8 @@ public sealed class AttackAction extends Action permits BombAction, RandomAttack
                 events.add(new GaugeFilledEvent(GaugeFilledEvent.Gauge.SANG, drained - healed));
             }
         }
+
+        afterHit(context, damage, events);
 
         if (context.isGainsFromDamage() && damage > 0) {
             double earned = damage;

@@ -15,6 +15,11 @@ BINGO_SYMBOLS = {
     'gold_bar': '10-gold_bar', 'watermelon': '11-watermelon', 'horseshoe': '13-horseshoe', 'ecu': '14-ecu',
     'sword': '15-sword', 'heart': '16-heart', 'die': '17-die', 'star': '18-star', 'bomb': '19-bomb',
     'crown': '20-crown', 'nugget': '21-nugget',
+    # Nouveaux rouleaux (2026-11-01)
+    'fangs': '22-fangs', 'piggy_bank': '23-piggy_bank', 'spiked_shield': '24-spiked_shield', 'scythe': '25-scythe',
+    'moon': '26-moon', 'demon_king': '27-demon_king', 'luck_apostle': '28-luck_apostle', 'ticket': '29-ticket',
+    'anchor': '30-anchor', 'gold_chip': '31-gold_chip', 'flame': '32-flame', 'descent': '33-descent',
+    'bingo_light': '34-bingo_light',
 }
 
 

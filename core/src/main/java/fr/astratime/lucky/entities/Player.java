@@ -69,6 +69,10 @@ public class Player {
     }
 
     /** Soif : diviseur des soins, et si le joueur s'est soigné ce tour. */
+    /** Lumière du bingo : ce tour, le bouclier absorbe en soignant, et ce qu'il absorbe sera rendu à l'ennemi. */
+    private boolean lightAbsorbing;
+    /** Lumière du bingo : les dégâts absorbés, rendus en un coup au tour suivant. */
+    private long lightAbsorbed;
     private int healDivisor = 1;
     private boolean healedThisTurn;
 
@@ -120,12 +124,19 @@ public class Player {
      * bouclier peuvent absorber le coup (le Videur : 50 % ; le Forage : 0 %).
      */
     public int takeDamage(int damage, int shieldPercent) {
-        if (damage > 0 && helmets > 0) { // Casque : le coup rebondit
+        boolean invincible = damage > 0 && lastingEffects.getReelGauges().isInvincible(); // Roi démon, Apôtre de la Chance
+        if (invincible && !lightAbsorbing) return 0;
+        if (damage > 0 && helmets > 0 && !invincible) { // Casque : le coup rebondit
             helmets--;
             return 0;
         }
         int absorbed  = Math.min((int) ((long) shield * Math.max(0, Math.min(100, shieldPercent)) / 100), damage);
         shield -= absorbed;
+        if (lightAbsorbing && absorbed > 0) { // Lumière du bingo : le coup absorbé soigne, et sera rendu
+            lightAbsorbed += absorbed;
+            heal(absorbed);
+        }
+        if (invincible) return 0; // invincible : seule la Lumière du bingo prend le coup dans le bouclier
         int remaining = damage - absorbed;
         int actualLoss = Math.min(hp, remaining);
         if (damageCap >= 0) actualLoss = Math.min(actualLoss, Math.max(0, damageCap - damageTakenThisTurn)); // Assurance
@@ -413,12 +424,29 @@ public class Player {
         return lost;
     }
 
+    /** Lumière du bingo : jusqu'à la fin du tour, le bouclier absorbe les coups en soignant d'autant. */
+    public void absorbWithLight() { lightAbsorbing = true; }
+
+    /** @return {@code true} si la Lumière du bingo absorbe les coups ce tour. */
+    public boolean isLightAbsorbing() { return lightAbsorbing; }
+
+    /** @return les dégâts absorbés par la Lumière du bingo, à rendre au prochain tour, et les oublie. */
+    public long takeLightAbsorbed() {
+        long absorbed = lightAbsorbed;
+        lightAbsorbed = 0;
+        return absorbed;
+    }
+
+    /** @return les dégâts absorbés par la Lumière du bingo, à rendre au prochain tour. */
+    public long getLightAbsorbed() { return lightAbsorbed; }
+
     /** Ajoute {@code amount} au bouclier accumulé ce tour. */
     public void addShield(int amount) { shield += amount; }
 
     /** Réinitialise le bouclier en fin de tour. */
     public void resetTurnDefenses() {
         shield = 0;
+        lightAbsorbing = false;
         damageCap = -1;
         damageTakenThisTurn = 0;
     }

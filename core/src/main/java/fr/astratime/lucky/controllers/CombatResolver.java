@@ -99,6 +99,7 @@ public class CombatResolver {
         priorEvents.addAll(archetypesOnDraw(combatContext, symbols, drawnSymbols)); // Joker sauvage, Couronne du Fou...
         List<Event> events = new ArrayList<>(priorEvents);
         double gainsBefore = combatContext.getPlayer().getGains(); // pour le Cœur d'or
+        combatContext.setDrawnSymbols(symbols); // le Jeton d'or regarde les autres symboles du tirage
 
         // Chaque action résout elle-même sa logique et retourne ses événements ;
         // on les rattache aussi au symbole qui les a produits pour le journal détaillé.
@@ -115,6 +116,7 @@ public class CombatResolver {
         execution(combatContext).ifPresent(pistolEvents::add);
         pistolEvents.addAll(forgedBlades(combatContext, symbolOutcomes, pistolEvents));
         dynamite(combatContext).ifPresent(pistolEvents::add);
+        lightStrike(combatContext).ifPresent(pistolEvents::add);
         List<Event> collected = debtCollection(combatContext); // Recouvrement : le coup, puis ses gains
         collected.stream().filter(e -> !(e instanceof GainsEarnedEvent)).forEach(pistolEvents::add);
         events.addAll(pistolEvents);
@@ -263,18 +265,26 @@ public class CombatResolver {
     }
 
     /** @return {@code true} pour un symbole qui rapporte des gains (seul, ou avec autre chose : Étoile, Pépite). */
-    static boolean isGainSymbol(Symbol symbol) {
-        if (symbol == null) return false;
-        return SymbolRegistry.getAction(symbol).map(action -> action instanceof GainAction
-            || action instanceof MixedAction mixed
-            && mixed.getActions().stream().anyMatch(part -> part instanceof GainAction)).orElse(false);
-    }
+    static boolean isGainSymbol(Symbol symbol) { return SymbolRegistry.isGainSymbol(symbol); }
 
     /** @return {@code true} pour un symbole d'attaque (frappe seule, Dé, Bombe). */
     static boolean isAttackSymbol(Symbol symbol) {
         if (symbol == null) return false;
         return SymbolRegistry.getAction(symbol).map(action -> action instanceof AttackAction
             || action instanceof RandomAttackAction || action instanceof BombAction).orElse(false);
+    }
+
+    /**
+     * Lumière du bingo : les coups de l'ennemi absorbés au tour d'avant lui sont
+     * rendus en un seul coup (sa défense n'y fait rien, sa Garde si).
+     */
+    private Optional<Event> lightStrike(CombatContext context) {
+        Enemy enemy = context.getEnemy();
+        long raw = context.getLightStrike();
+        if (raw <= 0 || enemy.isDefeated()) return Optional.empty();
+        long damage = enemy.skinned(raw);
+        enemy.takeDamage(raw);
+        return Optional.of(new CardStrikeEvent(Lang.t("LUMIÈRE DU BINGO : COUPS RENDUS"), damage, raw, enemy.getDefense()));
     }
 
     /**

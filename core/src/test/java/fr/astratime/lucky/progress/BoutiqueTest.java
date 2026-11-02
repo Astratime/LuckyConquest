@@ -151,7 +151,7 @@ class BoutiqueTest {
 
     @Test
     void everyReelOnSaleIsANewSymbolWithItsOwnDescription() {
-        assertEquals(8, ReelShop.getPrices().size());
+        assertEquals(15, ReelShop.getPrices().size()); // 8 de 2026-10, 7 de 2026-11-01
         for (Symbol symbol : ReelShop.getPrices().keySet()) {
             assertFalse(symbol.isClassic(), symbol.name());
             assertFalse(ReelShop.describe(symbol).isBlank(), symbol.name());

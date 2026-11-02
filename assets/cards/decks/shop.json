@@ -22,5 +22,18 @@
   { "id": "bingo_star", "price": 0 },
   { "id": "bingo_bomb", "price": 0 },
   { "id": "bingo_crown", "price": 0 },
-  { "id": "bingo_nugget", "price": 0 }
+  { "id": "bingo_nugget", "price": 0 },
+  { "id": "bingo_fangs", "price": 0 },
+  { "id": "bingo_piggy_bank", "price": 0 },
+  { "id": "bingo_spiked_shield", "price": 0 },
+  { "id": "bingo_scythe", "price": 0 },
+  { "id": "bingo_moon", "price": 0 },
+  { "id": "bingo_demon_king", "price": 0 },
+  { "id": "bingo_luck_apostle", "price": 0 },
+  { "id": "bingo_ticket", "price": 0 },
+  { "id": "bingo_anchor", "price": 0 },
+  { "id": "bingo_gold_chip", "price": 0 },
+  { "id": "bingo_flame", "price": 0 },
+  { "id": "bingo_descent", "price": 0 },
+  { "id": "bingo_bingo_light", "price": 0 }
 ]

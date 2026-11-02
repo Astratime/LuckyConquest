@@ -58,6 +58,19 @@ public record BingoStyle(Color body, Color trim, Color letterA, Color letterB, C
             case STAR -> new BingoStyle(hex("1a2a6a"), Palette.GOLD, Palette.GOLD, Color.WHITE, back("060a1f"),
                 hex("8fd3ff"), Color.WHITE, hex("fff0b0"), palette(hex("ff3040"), hex("3a7bff"), Palette.GOLD));
             case BOMB      -> of(Symbol.TRIPLE_CHERRY);
+            // Nouveaux rouleaux (2026-11-01)
+            case FANGS, FLAME -> of(Symbol.TRIPLE_CHERRY);
+            case PIGGY_BANK, GOLD_CHIP, TICKET -> of(Symbol.GOLD_BAR);
+            case SPIKED_SHIELD, ANCHOR -> of(Symbol.DIAMOND);
+            case SCYTHE    -> of(Symbol.BAR);
+            case MOON, LUCK_APOSTLE -> of(Symbol.STAR);
+            // Roi démon et Descente aux enfers : rouge sang et noir, lettres de braise.
+            case DEMON_KING, DESCENT -> new BingoStyle(hex("5a0610"), hex("ff5a1f"), hex("ffb347"), hex("ff3b1f"),
+                back("120204"), hex("ff3b1f"), hex("ffe0a0"), hex("b0101e"), palette(hex("ff3b1f"), hex("b0101e"),
+                Palette.ORANGE, Palette.GOLD));
+            // Lumière du bingo : blanc et or, la lumière même.
+            case BINGO_LIGHT -> new BingoStyle(hex("fff6c8"), Palette.GOLD, hex("c48a1a"), hex("8a5a00"), back("fffbe8"),
+                Color.WHITE, hex("fff6c8"), Color.WHITE, palette(Color.WHITE, Palette.GOLD, hex("fff0a0")));
             // Triple Sept : or et blanc ; le Joker (qui ne s'aligne jamais seul) garde la bannière d'origine.
             case TRIPLE_SEVEN, JOKER -> new BingoStyle(null, null, Palette.GOLD, Color.WHITE, Palette.BANNER_SHADOW,
                 hex("ffcc26"), hex("ffffd9"), Color.WHITE, null);

@@ -378,6 +378,7 @@ public class EnemyTextures implements Disposable {
             case MIRAGE         -> FairDesertArt.mirage();
             case BURN           -> FairDesertArt.burn();
             case FIRE_BREATH    -> FairDesertArt.fireBreath();
+            case BINGO_LIGHT    -> bingoLightGrid();
         };
     }
 
@@ -395,6 +396,23 @@ public class EnemyTextures implements Disposable {
         g[12][3] = grip;
         g[13][2] = grip;
         g[14][1] = gold;
+        return outlined(g);
+    }
+
+    /** Lumière du bingo : un soleil blanc et or, rayons en croix et en diagonale. */
+    private static int[][] bingoLightGrid() {
+        int[][] g = new int[16][16];
+        int white = c("fffbe8"), pale = c("fff0a0"), gold = c("ffd54a"), deep = c("e09a1e");
+        for (int y = 0; y < 16; y++) {
+            for (int x = 0; x < 16; x++) {
+                double dx = x - 7.5, dy = y - 7.5, r = Math.hypot(dx, dy);
+                boolean ray = (Math.abs(dx) < 1 || Math.abs(dy) < 1 || Math.abs(Math.abs(dx) - Math.abs(dy)) < 1) && r < 7.6;
+                if (r < 2.6) g[y][x] = white;
+                else if (r < 4.2) g[y][x] = pale;
+                else if (r < 4.9) g[y][x] = gold;
+                else if (ray) g[y][x] = r < 6.2 ? gold : deep;
+            }
+        }
         return outlined(g);
     }
 

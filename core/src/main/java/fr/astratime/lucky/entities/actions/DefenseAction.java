@@ -19,7 +19,7 @@ import java.util.List;
  * de dégâts des cartes Carreau (calculé lors de la riposte par CombatResolver).
  * Le bonus de défense du rang du joueur s'ajoute au bouclier de base.
  */
-public final class DefenseAction extends Action {
+public non-sealed class DefenseAction extends Action {
 
     private final int baseShield;
 
@@ -37,6 +37,7 @@ public final class DefenseAction extends Action {
         int shield = Math.round((base + context.getDefenseBonus()) * context.getSymbolPower()
             * context.getDefenseFactor());
         player.addShield(shield);
+        afterShield(context, shield);
         events.add(new ShieldGainedEvent(shield).withBreakdown(new BoostBreakdown(BoostBreakdown.Kind.SHIELD,
             baseShield, rank, context.getSteps(CombatContext.Target.DEFENSE), shield)));
 
@@ -44,6 +45,9 @@ public final class DefenseAction extends Action {
 
         return events;
     }
+
+    /** Après le bouclier : ce que fait ce rouleau en plus (l'Ancre le garde un tour de plus). */
+    protected void afterShield(CombatContext context, int shield) { }
 
     @Override
     public String getDescription() { return Lang.f("{0} bouclier de base", baseShield); }

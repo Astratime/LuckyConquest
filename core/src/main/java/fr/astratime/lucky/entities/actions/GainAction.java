@@ -18,7 +18,7 @@ import java.util.List;
  * le facteur de gains du tirage (combos, Porte-bonheur) et la puissance des
  * symboles (Bingo). Le bonus de gains du rang du joueur s'ajoute aux gains de base.
  */
-public final class GainAction extends Action {
+public non-sealed class GainAction extends Action {
 
     private final int baseGain;
 
@@ -35,10 +35,11 @@ public final class GainAction extends Action {
             return List.of(new StatusEvent(Lang.t("PIERRE : GAINS 0"), EffectPopup.Style.DAMAGE));
         }
         int rank = context.getPlayer().getRankBonus().gains() * context.getRankFactor();
-        int base = baseGain + rank;
+        int symbol = rollBaseGain(context);
+        int base = symbol + rank;
         float scale = SpinEconomy.gainScale(context.getSpinCost());
         double gain = BigNumber.round((double) base * context.getGainMultiplier() * context.getGainFactor()
-            * context.getSymbolPower() * scale);
+            * context.getSymbolPower() * scale * gainFactor(context));
         context.getPlayer().addGains(gain);
         // Le détail : les cartes Trèfle (multiplicateur additionné) et le coût du tirage s'ajoutent aux étapes du tour.
         List<CombatContext.PowerStep> steps = new ArrayList<>();
@@ -48,8 +49,17 @@ public final class GainAction extends Action {
         steps.addAll(context.getSteps(CombatContext.Target.GAINS));
         if (scale != 1f) steps.add(new CombatContext.PowerStep(CombatContext.Target.GAINS, "Coût du tirage", 0, scale));
         return List.of(new GainsEarnedEvent(gain).withBreakdown(
-            new BoostBreakdown(BoostBreakdown.Kind.GAINS, baseGain, rank, steps, gain)));
+            new BoostBreakdown(BoostBreakdown.Kind.GAINS, symbol, rank, steps, gain)));
     }
+
+    /** @return les gains de base de cette sortie (la Tirelire grossit, le Ticket les tire au hasard). */
+    protected int rollBaseGain(CombatContext context) { return baseGain; }
+
+    /** @return le multiplicateur propre à ce rouleau (le Jeton d'or), 1 par défaut. */
+    protected double gainFactor(CombatContext context) { return 1.0; }
+
+    /** @return les gains de base affichés (description). */
+    protected int getBaseGain() { return baseGain; }
 
     @Override
     public String getDescription() { return Lang.f("{0} gains de base", baseGain); }
