@@ -214,6 +214,16 @@ class ReelsOfNovemberTest {
     }
 
     @Test
+    void aBingoWithoutTheGaugeStillDrawsOneEffectPerReelAtRandom() {
+        // Bingo d'une carte (ou rouleau sorti sans jauge) : rien n'est tiré d'avance, chaque rouleau tire au hasard.
+        java.util.Set<CombatContext.Blessing> seen = java.util.EnumSet.noneOf(CombatContext.Blessing.class);
+        for (int i = 0; i < 200 && seen.size() < 3; i++) {
+            seen.add(new CombatContext(player(), target(100_000)).nextBlessing());
+        }
+        assertEquals(3, seen.size(), "les trois effets sortent");
+    }
+
+    @Test
     void theBingoLightAbsorbsHealsAndLightsTheEnemyReels() {
         Player player = player();
         player.takeDamage(50);

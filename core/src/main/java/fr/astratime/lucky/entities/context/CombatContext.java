@@ -341,9 +341,15 @@ public class CombatContext {
     /** @return les effets tirés pour les rouleaux du Bingo imposé (vide sans Bingo imposé). */
     public Blessing[] getBlessings() { return blessings.clone(); }
 
-    /** @return l'effet du prochain rouleau du Bingo imposé à agir ({@code FIRST} s'il n'a pas été tiré). */
+    /**
+     * @return l'effet du prochain rouleau Descente aux enfers ou Lumière du bingo à agir : celui
+     *         tiré par le Bingo imposé, sinon (Bingo d'une carte, rouleau sorti sans jauge) un
+     *         des trois au hasard, une chance sur trois chacun
+     */
     public Blessing nextBlessing() {
-        return blessingIndex < blessings.length ? blessings[blessingIndex++] : Blessing.FIRST;
+        if (blessingIndex < blessings.length) return blessings[blessingIndex++];
+        Blessing[] all = Blessing.values();
+        return all[java.util.concurrent.ThreadLocalRandom.current().nextInt(all.length)];
     }
 
     /** Descente aux enfers : s'il attaque, l'ennemi reçoit {@code percent} % de ses PV max en plus (sans plafond, s'additionne par rouleau). */

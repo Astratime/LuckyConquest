@@ -75,7 +75,8 @@ import java.util.function.Supplier;
  *   <li>Ancre : elle tombe au bout de sa chaîne et plonge dans la mer ({@link AnchorDropScene}) ;</li>
  *   <li>Jeton d'or : une tour de jetons s'empile puis s'écroule ({@link ChipTowerScene}) ;</li>
  *   <li>Flamme : un brasero s'allume, puis une colonne de feu jaillit ({@link FirePillarScene}) ;</li>
- *   <li>Descente aux enfers et Lumière du bingo : flammes montantes ou halo blanc, sans décor.</li>
+ *   <li>Descente aux enfers : une porte de l'enfer s'ouvre, avale le symbole et le recrache ({@link HellGateScene}) ;</li>
+ *   <li>Lumière du bingo : une boule de bingo dorée descend, se fissure et éclate en rayons ({@link LightOrbScene}).</li>
  * </ul>
  *
  * Pendant {@link #DURATION}, le calque intercepte les clics : le joueur ne peut
@@ -190,10 +191,12 @@ public class JackpotCelebration extends Group implements Disposable {
     private final AnchorDropScene     anchorDrop     = new AnchorDropScene(iconOf(Symbol.ANCHOR));
     private final ChipTowerScene      chipTower      = new ChipTowerScene(iconOf(Symbol.GOLD_CHIP));
     private final FirePillarScene     firePillar     = new FirePillarScene(iconOf(Symbol.FLAME));
+    private final HellGateScene       hellGate       = new HellGateScene(iconOf(Symbol.DESCENT));
+    private final LightOrbScene       lightOrb       = new LightOrbScene(iconOf(Symbol.BINGO_LIGHT));
     private final List<BingoScene>    scenes = List.of(hydraulicPress, forge, cherryTree, winePress,
         gemCut, safe, katana, horseshoe, shieldWall, swords, heartbeat, tripleDice, shootingStar, bomb, coronation,
         mine, cannon, supernova, bite, piggyBank, spikedShield, scythe, moonrise, demonGate, heaven, scratchTicket,
-        anchorDrop, chipTower, firePillar);
+        anchorDrop, chipTower, firePillar, hellGate, lightOrb);
     private final Group        bannerLayer = new Group();
     /** La mise en scène au premier plan (objets, bannière, mot géant, flash) : elle s'efface quand on passe. */
     private final Group        foreground  = new Group();
@@ -557,54 +560,82 @@ public class JackpotCelebration extends Group implements Disposable {
         for (float time : new float[] {1.6f, 1.8f, 2.0f, 2.2f, 2.4f}) at(time, () -> rocket(false));
     }
 
-    /** Descente aux enfers : l'écran rougit, les flammes montent du sol, des ondes rouge sang, et le symbole jaillit. */
+    /** Descente aux enfers : une porte de l'enfer surgit, s'ouvre sur un brasier, avale le symbole et le recrache. */
     private void scheduleHellfire(TextureRegion icon) {
-        float centerX = playArea.getCenterX(), centerY = getHeight() * 0.45f;
-        Color ember = Color.valueOf("ff5a1fff"), blood = Color.valueOf("b0101eff"), ash = Color.valueOf("3a0a10ff");
-        at(0f, () -> impactFlash(0.7f, 0.05f, 0.05f, 0.7f));
-        emit(0f, 1.6f, 260, i -> glitter.ember(tableX(0f), -20f, MathUtils.random(-60f, 60f), MathUtils.random(500f, 1200f),
-            -200f, MathUtils.random(8f, 18f), MathUtils.random(0.8f, 1.5f), i % 3 == 0 ? Palette.GOLD : i % 3 == 1 ? ember : blood));
-        at(0.8f, () -> {
-            screenShake.shake(0.7f, 20f);
-            impactFlash(1f, 0.25f, 0.1f, 0.8f);
+        float centerX = playArea.getCenterX(), baseY = getHeight() * 0.14f;
+        float open = HellGateScene.OPEN_TIME, erupt = HellGateScene.ERUPT_TIME;
+        playScene(hellGate, centerX, baseY, erupt + 0.12f, 0.86f);
+        Color ember = Color.valueOf("ff5a1fff"), blood = Color.valueOf("b0101eff"), ash = Color.valueOf("2a0a10ff");
+        at(0f, () -> {
+            screenShake.shake(0.35f, 10f);
+            shockwaves.ring(centerX, baseY, 380f, 0.5f, 0.3f, ember);
         });
-        Color[] waves = {ember, blood, ash, blood};
-        for (int k = 0; k < waves.length; k++) {
-            Color color = waves[k];
-            float radius = 420f + k * 200f;
-            at(0.8f + k * 0.1f, () -> shockwaves.ring(centerX, centerY, radius, 0.8f, 1f, color));
-        }
-        emit(0.8f, 0.8f, 16, i -> symbols.jet(icon, centerX, centerY, i * (360f / 16) + MathUtils.random(-6f, 6f),
-            MathUtils.random(700f, 1100f), MathUtils.random(60f, 85f), 800f));
-        coinRain(0.9f, 2.1f, COIN_COUNT, COLLECT_EVERY);
-        for (float time : new float[] {1.6f, 1.9f, 2.2f}) at(time, () -> rocket(false));
+        // Le brasier crache des braises par la porte ouverte.
+        emit(open, 2.3f, 160, i -> {
+            Vector2 gate = hellGate.gate();
+            frontGlitter.ember(gate.x + MathUtils.random(-110f, 110f), gate.y - 120f, MathUtils.random(-90f, 90f),
+                MathUtils.random(200f, 600f), -100f, MathUtils.random(6f, 12f), MathUtils.random(0.4f, 0.8f),
+                i % 3 == 0 ? Palette.GOLD : i % 3 == 1 ? ember : blood);
+        });
+        at(HellGateScene.FALL_TIME, () -> impactFlash(0.5f, 0f, 0f, 0.35f));
+        at(erupt, () -> {
+            screenShake.shake(0.7f, 22f);
+            impactFlash(1f, 0.2f, 0.05f, 0.75f);
+            Vector2 gate = hellGate.gate();
+            Color[] waves = {ember, blood, ash, blood};
+            for (int k = 0; k < waves.length; k++) shockwaves.ring(gate.x, gate.y, 420f + k * 200f, 0.6f + k * 0.1f, 1f, waves[k]);
+        });
+        emit(erupt, erupt + 0.4f, 200, i -> {
+            Vector2 gate = hellGate.gate();
+            float angle = 90f + MathUtils.random(-50f, 50f), speed = MathUtils.random(500f, 1300f);
+            glitter.ember(gate.x + MathUtils.random(-80f, 80f), gate.y, MathUtils.cosDeg(angle) * speed,
+                MathUtils.sinDeg(angle) * speed, 900f, MathUtils.random(8f, 16f), MathUtils.random(0.6f, 1.1f),
+                i % 3 == 0 ? Palette.GOLD : i % 3 == 1 ? ember : blood);
+        });
+        emit(erupt, erupt, 16, i -> {
+            Vector2 gate = hellGate.gate();
+            symbols.jet(icon, gate.x, gate.y, 30f + i * 8f + MathUtils.random(-4f, 4f), MathUtils.random(700f, 1100f),
+                MathUtils.random(55f, 80f), 900f);
+        });
+        emit(erupt, 2.5f, 50, i -> glitter.ember(tableX(0f), getHeight() + 20f, MathUtils.random(-30f, 30f),
+            -MathUtils.random(80f, 220f), 0f, MathUtils.random(8f, 14f), 1.6f, ash));
+        coinRain(erupt, erupt + 1f, COIN_COUNT, COLLECT_EVERY);
+        for (float time : new float[] {1.9f, 2.2f}) at(time, () -> rocket(false));
     }
 
-    /** Lumière du bingo : un halo blanc grandit, des anneaux d'or s'ouvrent, une pluie d'étoiles et de symboles tombe. */
+    /** Lumière du bingo : une boule de bingo dorée descend du ciel, se fissure de lumière et éclate en rayons. */
     private void scheduleHalo(TextureRegion icon) {
-        float centerX = playArea.getCenterX(), centerY = getHeight() * 0.5f;
+        float centerX = playArea.getCenterX(), centerY = getHeight() * 0.45f;
+        float crack = LightOrbScene.CRACK_TIME, open = LightOrbScene.OPEN_TIME;
+        playScene(lightOrb, centerX, centerY, open + 0.12f, 0.86f);
         Color pale = Color.valueOf("fff6c8ff");
-        emit(0f, 0.8f, 120, i -> {
-            float angle = MathUtils.random(360f), radius = MathUtils.random(260f, 520f);
-            glitter.ember(centerX + MathUtils.cosDeg(angle) * radius, centerY + MathUtils.sinDeg(angle) * radius,
-                -MathUtils.cosDeg(angle) * radius * 1.2f, -MathUtils.sinDeg(angle) * radius * 1.2f, 0f,
-                MathUtils.random(6f, 12f), MathUtils.random(0.5f, 0.8f), i % 2 == 0 ? Color.WHITE : Palette.GOLD);
+        // Traînée d'étincelles derrière la boule qui descend.
+        emit(0f, crack, 80, i -> {
+            Vector2 at = lightOrb.center();
+            frontGlitter.ember(at.x + MathUtils.random(-120f, 120f), at.y + 140f, MathUtils.random(-40f, 40f),
+                MathUtils.random(40f, 160f), 0f, MathUtils.random(6f, 11f), MathUtils.random(0.3f, 0.6f),
+                i % 2 == 0 ? Color.WHITE : Palette.GOLD);
         });
-        at(0.8f, () -> {
-            screenShake.shake(0.4f, 10f);
+        at(crack, () -> {
+            screenShake.shake(0.3f, 8f);
+            Vector2 at = lightOrb.center();
+            shockwaves.ring(at.x, at.y, 260f, 0.35f, 1f, Color.WHITE);
+        });
+        at(open, () -> {
+            screenShake.shake(0.5f, 14f);
             impactFlash(1f, 1f, 0.9f, 0.9f);
         });
         for (int k = 0; k < 4; k++) {
             Color color = k % 2 == 0 ? Color.WHITE : Palette.GOLD;
             float radius = 400f + k * 220f;
-            at(0.8f + k * 0.12f, () -> shockwaves.ring(centerX, centerY, radius, 0.9f, 1f, color));
+            at(open + k * 0.1f, () -> shockwaves.ring(centerX, centerY, radius, 0.9f, 1f, color));
         }
-        emit(0.8f, 2.4f, 70, i -> glitter.twinkle(tableX(0f), getHeight() * MathUtils.random(0.1f, 0.98f),
+        emit(open, 2.5f, 70, i -> frontGlitter.twinkle(tableX(0f), getHeight() * MathUtils.random(0.1f, 0.98f),
             MathUtils.random(14f, 28f), 0.6f, i % 2 == 0 ? pale : Palette.GOLD));
-        emit(0.9f, 2.0f, 30, i -> symbols.rain(icon, tableX(40f), getHeight() + 60f, floorY(), MathUtils.random(50f, 70f),
+        emit(open, open + 1f, 28, i -> symbols.rain(icon, tableX(40f), getHeight() + 60f, floorY(), MathUtils.random(50f, 70f),
             MathUtils.random(150f, 400f), 1000f, false));
-        coinRain(0.9f, 2.1f, COIN_COUNT, COLLECT_EVERY);
-        for (float time : new float[] {1.6f, 1.8f, 2.0f, 2.2f}) at(time, () -> rocket(false));
+        coinRain(open, open + 1f, COIN_COUNT, COLLECT_EVERY);
+        for (float time : new float[] {1.9f, 2.1f, 2.3f}) at(time, () -> rocket(false));
     }
 
     // --- Nouveaux rouleaux (2026-11-01) ---
