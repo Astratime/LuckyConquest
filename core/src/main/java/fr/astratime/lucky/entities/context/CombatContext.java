@@ -97,8 +97,8 @@ public class CombatContext {
 
     // ----- Nouveaux rouleaux (2026-11-01) -----
     private Symbol[] drawnSymbols = new Symbol[0]; // symboles du tirage, Jokers remplacés (le Jeton d'or les regarde)
-    private Blessing blessing;           // l'effet tiré du Bingo imposé (Descente aux enfers, Lumière du bingo)
-    private boolean blessingShown;                 // son texte n'apparaît qu'une fois
+    private Blessing[] blessings = new Blessing[0]; // l'effet tiré pour chaque rouleau du Bingo imposé
+    private int     blessingIndex;                 // le prochain rouleau du Bingo imposé à agir
     private long    lightStrike;                   // Lumière du bingo : les dégâts absorbés au tour d'avant, rendus en un coup
 
     /**
@@ -323,7 +323,7 @@ public class CombatContext {
         return (defenseSymbolDrawn ? Math.min(MAX_REFLECT_HP_PERCENT, reflectHpPercent) : 0f) + blessedReflectHpPercent;
     }
 
-    /** L'effet tiré au hasard du Bingo imposé : le même pour ses trois symboles. */
+    /** L'effet tiré au hasard pour un rouleau du Bingo imposé (Astra 2026-11-02 : un tirage par rouleau). */
     public enum Blessing { FIRST, SECOND, THIRD }
 
     /** Retient les symboles du tirage (Jokers remplacés), avant que les symboles agissent. */
@@ -332,21 +332,22 @@ public class CombatContext {
     /** @return les symboles du tirage, Jokers remplacés. */
     public Symbol[] getDrawnSymbols() { return drawnSymbols.clone(); }
 
-    /** Le Bingo imposé de ce tour donne l'effet {@code blessing}. */
-    public void setBlessing(Blessing blessing) { this.blessing = blessing; }
-
-    /** @return l'effet du Bingo imposé de ce tour, ou {@code null}. */
-    public Blessing getBlessing() { return blessing; }
-
-    /** @return {@code true} la première fois seulement : le texte de l'effet n'apparaît qu'une fois. */
-    public boolean takeBlessingShown() {
-        boolean first = !blessingShown;
-        blessingShown = true;
-        return first;
+    /** Le Bingo imposé de ce tour : {@code blessings[i]} est l'effet tiré pour le rouleau {@code i}. */
+    public void setBlessings(Blessing... blessings) {
+        this.blessings = blessings.clone();
+        blessingIndex  = 0;
     }
 
-    /** Descente aux enfers : s'il attaque, l'ennemi reçoit {@code percent} % de ses PV max (sans plafond, ne s'additionne pas). */
-    public void setBlessedReflectHp(float percent) { blessedReflectHpPercent = Math.max(blessedReflectHpPercent, percent); }
+    /** @return les effets tirés pour les rouleaux du Bingo imposé (vide sans Bingo imposé). */
+    public Blessing[] getBlessings() { return blessings.clone(); }
+
+    /** @return l'effet du prochain rouleau du Bingo imposé à agir ({@code FIRST} s'il n'a pas été tiré). */
+    public Blessing nextBlessing() {
+        return blessingIndex < blessings.length ? blessings[blessingIndex++] : Blessing.FIRST;
+    }
+
+    /** Descente aux enfers : s'il attaque, l'ennemi reçoit {@code percent} % de ses PV max en plus (sans plafond, s'additionne par rouleau). */
+    public void addBlessedReflectHp(float percent) { blessedReflectHpPercent += percent; }
 
     /** Lumière du bingo : les dégâts absorbés au tour d'avant frappent l'ennemi en un coup ce tour. */
     public void setLightStrike(long damage) { lightStrike = Math.max(0, damage); }

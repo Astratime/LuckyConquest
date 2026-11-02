@@ -12,10 +12,10 @@ import java.util.List;
 
 /**
  * Descente aux enfers (Roi démon) et Lumière du bingo (Apôtre de la Chance) :
- * un des trois effets, tiré au hasard une fois pour tout le Bingo imposé
- * (voir {@link CombatContext#getBlessing()}). Les valeurs sont celles d'un
- * symbole : le Bingo les donne trois fois, comme pour tous les rouleaux ; ce
- * qui n'est pas une valeur (renvoi, malus, absorption, cartes) ne s'additionne pas.
+ * chaque rouleau du Bingo imposé tire au hasard un des trois effets et
+ * l'applique (Astra 2026-11-02, voir {@link CombatContext#nextBlessing()}).
+ * Les valeurs et le renvoi s'additionnent ; le malus de l'ennemi, l'absorption
+ * et les 8 cartes ne s'additionnent pas s'ils sortent deux fois.
  */
 public final class BlessingAction extends MixedAction {
 
@@ -46,15 +46,14 @@ public final class BlessingAction extends MixedAction {
 
     @Override
     public List<Event> resolve(CombatContext context) {
-        CombatContext.Blessing blessing = context.getBlessing();
-        if (blessing == null) blessing = CombatContext.Blessing.FIRST; // sorti sans jauge (test) : le premier effet
+        CombatContext.Blessing blessing = context.nextBlessing();
         List<Event> events = new ArrayList<>();
-        if (context.takeBlessingShown()) events.add(new StatusEvent(title(blessing), EffectPopup.Style.SPECIAL));
+        events.add(new StatusEvent(title(blessing), EffectPopup.Style.SPECIAL));
         switch (blessing) {
             case FIRST -> events.addAll(first.resolve(context));
             case SECOND -> {
                 events.addAll(second.resolve(context));
-                if (hell) context.setBlessedReflectHp(HELL_REFLECT_PERCENT);
+                if (hell) context.addBlessedReflectHp(HELL_REFLECT_PERCENT);
                 else context.getPlayer().absorbWithLight();
             }
             case THIRD -> {
@@ -70,7 +69,7 @@ public final class BlessingAction extends MixedAction {
         return events;
     }
 
-    /** @return le texte de l'effet tiré, affiché une fois au Bingo. */
+    /** @return le texte de l'effet tiré, affiché pour chaque rouleau. */
     public String title(CombatContext.Blessing blessing) {
         if (hell) {
             return switch (blessing) {
@@ -90,12 +89,12 @@ public final class BlessingAction extends MixedAction {
     @Override
     public String getDescription() {
         if (hell) {
-            return Lang.f("Un effet au hasard : {0} d'attaque et vampirisme ({1} % des dégâts). Ou bouclier {2}, "
+            return Lang.f("Chaque rouleau, un effet au hasard : {0} d'attaque et vampirisme ({1} % des dégâts). Ou bouclier {2}, "
                     + "et {3} % de ses PV max renvoyés s'il attaque. Ou {4} gains, et à son tour l'ennemi frappe -{5} % "
                     + "et joue {6} cartes au plus", HELL_ATTACK, HELL_DRAIN_PERCENT, HELL_SHIELD, HELL_REFLECT_PERCENT,
                 HELL_GAINS, EnemyMaluses.HELL_DAMAGE_PERCENT, EnemyMaluses.HELL_MAX_CARDS);
         }
-        return Lang.f("Un effet au hasard : {0} d'attaque et de bouclier. Ou bouclier {1} : ses coups absorbés te "
+        return Lang.f("Chaque rouleau, un effet au hasard : {0} d'attaque et de bouclier. Ou bouclier {1} : ses coups absorbés te "
                 + "soignent et le frappent au tour suivant. Ou {2} gains, {3} cartes au tour suivant, et chacun de ses "
                 + "rouleaux a une chance sur deux de devenir Lumière (il perd {4} % de ses PV max)", LIGHT_ATTACK,
             LIGHT_SHIELD, LIGHT_GAINS, LIGHT_PLAYS, EnemyMaluses.LIGHT_HP_PERCENT);

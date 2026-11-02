@@ -147,6 +147,7 @@ public class ShopOverlay implements Disposable {
             Table cell = new Table();
             cell.setBackground(hud.insetDrawable());
             cell.pad(CELL_PAD);
+            cell.top(); // les blocs d'une rangée ont la même hauteur, contenu en haut
 
             Image image = new Image(new TextureRegionDrawable(new TextureRegion(textureOf.apply(card))));
             image.addListener(new InputListener() {
@@ -173,7 +174,10 @@ public class ShopOverlay implements Disposable {
             if (unavailable.apply(offer) != null) image.setColor(UNAVAILABLE_TINT);
             cell.add(image).size(cardWidth, cardHeight);
             cell.row();
-            cell.add(new Label(card.getName(), new Label.LabelStyle(nameFont, Palette.TEXT_TITLE))).padTop(GAP / 2f);
+            Label name = new Label(card.getName(), new Label.LabelStyle(nameFont, Palette.TEXT_TITLE));
+            name.setWrap(true); // un nom trop long passe à la ligne au lieu de sortir de son bloc
+            name.setAlignment(Align.center);
+            cell.add(name).width(CELL_WIDTH - GAP).padTop(GAP / 2f);
             cell.row();
 
             Table price = new Table();
@@ -210,7 +214,7 @@ public class ShopOverlay implements Disposable {
             })).padTop(GAP / 2f);
             cell.row();
             cell.add(status);
-            grid.add(cell).width(CELL_WIDTH).pad(GAP / 2f);
+            grid.add(cell).width(CELL_WIDTH).pad(GAP / 2f).fillY();
             if ((i + 1) % columns == 0) grid.row();
         }
         scrollCell = panel.add(scroll).colspan(columns);

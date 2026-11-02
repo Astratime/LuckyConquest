@@ -234,7 +234,7 @@ public class TurnEngine {
         /**
          * Bingo imposé par une jauge pleine (Descente aux enfers, Lumière du bingo) : tous
          * les rouleaux le montrent, rien ne l'empêche (ni carte, ni mauvais sort de
-         * l'ennemi), et ses gains ne deviennent pas des pierres. Un de ses trois effets est tiré.
+         * l'ennemi), et ses gains ne deviennent pas des pierres. Chaque rouleau tire un de ses trois effets.
          */
         void summon(Symbol symbol) {
             drawn   = new Symbol[drawn.length];
@@ -243,7 +243,9 @@ public class TurnEngine {
             CombatContext combat = turnContext.getCombatContext();
             combat.restoreGains();
             CombatContext.Blessing[] blessings = CombatContext.Blessing.values();
-            combat.setBlessing(blessings[random.nextInt(blessings.length)]);
+            CombatContext.Blessing[] drawnBlessings = new CombatContext.Blessing[drawn.length];
+            for (int i = 0; i < drawnBlessings.length; i++) drawnBlessings[i] = blessings[random.nextInt(blessings.length)];
+            combat.setBlessings(drawnBlessings);
             turnContext.addEvent(new StatusEvent(Lang.f("{0} !", symbol.getDisplayName()), EffectPopup.Style.SPECIAL));
         }
 

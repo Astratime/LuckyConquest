@@ -171,32 +171,46 @@ class ReelsOfNovemberTest {
     }
 
     @Test
-    void theDescentEffectsAreChosenOnceForTheWholeBingo() {
+    void theDescentEffectsApplyForEachReel() {
         // Vampirisme : 1000 par symbole, la moitié rendue en soin
         Player player = player();
         player.takeDamage(90);
         Enemy enemy = target(100_000);
         CombatContext context = new CombatContext(player, enemy);
-        context.setBlessing(CombatContext.Blessing.FIRST);
+        context.setBlessings(CombatContext.Blessing.FIRST, CombatContext.Blessing.FIRST, CombatContext.Blessing.FIRST);
         Symbol[] symbols = {Symbol.DESCENT, Symbol.DESCENT, Symbol.DESCENT};
         new CombatResolver().resolve(context, new ActionResolver().resolve(symbols), symbols, List.of());
         assertEquals(100_000 - (3 * BlessingAction.HELL_ATTACK - DEF), enemy.getHp());
         assertEquals(Player.BASE_HP, player.getHp());
 
-        // Bouclier et renvoi de 30 % (une seule fois)
+        // Bouclier et renvoi de 30 % par rouleau
         Player shielded = player();
         CombatContext second = new CombatContext(shielded, target(100_000));
-        second.setBlessing(CombatContext.Blessing.SECOND);
+        second.setBlessings(CombatContext.Blessing.SECOND, CombatContext.Blessing.SECOND, CombatContext.Blessing.SECOND);
         new CombatResolver().resolve(second, new ActionResolver().resolve(symbols), symbols, List.of());
         assertEquals(3 * BlessingAction.HELL_SHIELD, shielded.getShield());
-        assertEquals(BlessingAction.HELL_REFLECT_PERCENT, second.getReflectHpPercent(), 0.001f);
+        assertEquals(3 * BlessingAction.HELL_REFLECT_PERCENT, second.getReflectHpPercent(), 0.001f, "30 % par rouleau");
 
         // Gains, et l'ennemi enchaîné pour son prochain tour
         Enemy bound = target(100_000);
         CombatContext third = new CombatContext(player(), bound);
-        third.setBlessing(CombatContext.Blessing.THIRD);
+        third.setBlessings(CombatContext.Blessing.THIRD, CombatContext.Blessing.THIRD, CombatContext.Blessing.THIRD);
         new CombatResolver().resolve(third, new ActionResolver().resolve(symbols), symbols, List.of());
         assertTrue(bound.getMaluses().isHellBound());
+    }
+
+    @Test
+    void eachReelOfTheForcedBingoDrawsItsOwnEffect() {
+        Player player = player();
+        Enemy enemy = target(100_000);
+        CombatContext context = new CombatContext(player, enemy);
+        context.setBlessings(CombatContext.Blessing.FIRST, CombatContext.Blessing.SECOND, CombatContext.Blessing.THIRD);
+        Symbol[] symbols = {Symbol.DESCENT, Symbol.DESCENT, Symbol.DESCENT};
+        new CombatResolver().resolve(context, new ActionResolver().resolve(symbols), symbols, List.of());
+        assertEquals(100_000 - (BlessingAction.HELL_ATTACK - DEF), enemy.getHp(), "un seul rouleau d'attaque");
+        assertEquals(BlessingAction.HELL_SHIELD, player.getShield());
+        assertEquals(BlessingAction.HELL_REFLECT_PERCENT, context.getReflectHpPercent(), 0.001f);
+        assertTrue(enemy.getMaluses().isHellBound());
     }
 
     @Test
@@ -206,7 +220,7 @@ class ReelsOfNovemberTest {
         Enemy enemy = target(100_000);
         Symbol[] symbols = {Symbol.BINGO_LIGHT, Symbol.BINGO_LIGHT, Symbol.BINGO_LIGHT};
         CombatContext second = new CombatContext(player, enemy);
-        second.setBlessing(CombatContext.Blessing.SECOND);
+        second.setBlessings(CombatContext.Blessing.SECOND, CombatContext.Blessing.SECOND, CombatContext.Blessing.SECOND);
         new CombatResolver().resolve(second, new ActionResolver().resolve(symbols), symbols, List.of());
         assertTrue(player.isLightAbsorbing());
         assertEquals(0, player.takeDamage(40), "le bouclier prend le coup");
@@ -216,7 +230,7 @@ class ReelsOfNovemberTest {
         Player lucky = player();
         Enemy lit = target(100_000);
         CombatContext third = new CombatContext(lucky, lit);
-        third.setBlessing(CombatContext.Blessing.THIRD);
+        third.setBlessings(CombatContext.Blessing.THIRD, CombatContext.Blessing.THIRD, CombatContext.Blessing.THIRD);
         new CombatResolver().resolve(third, new ActionResolver().resolve(symbols), symbols, List.of());
         assertTrue(lit.getMaluses().isLitUp());
         assertEquals(BlessingAction.LIGHT_PLAYS, lucky.getLastingEffects().getExtraPlays());
