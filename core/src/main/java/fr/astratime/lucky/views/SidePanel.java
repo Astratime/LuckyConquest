@@ -94,6 +94,10 @@ public class SidePanel implements Disposable {
     private final Label stakeableLabel;
     private       String stakeableName = "", stakeableDescription = "";
     private final float gainsMaxWidth;
+    /** Largeur laissée au montant de la cagnotte, à droite de ses trois pierres. */
+    private final float potMaxWidth;
+    /** Largeur de l'intérieur du bloc Gains, pour la ligne « Misables ». */
+    private final float gainsInnerWidth;
     private       double shownGains;
     private       double targetGains;
     private final Table effectsBox  = new Table();
@@ -136,7 +140,8 @@ public class SidePanel implements Disposable {
         gainsLabel = new Label("0", new Label.LabelStyle(gainsFont, Color.WHITE));
 
         float insetWidth = WIDTH - MARGIN * 2 - PADDING * 2;
-        gainsMaxWidth = insetWidth - INSET_PADDING * 2 - COIN_SIZE - COIN_GAP;
+        gainsInnerWidth = insetWidth - INSET_PADDING * 2;
+        gainsMaxWidth = gainsInnerWidth - COIN_SIZE - COIN_GAP;
 
         gainsBox.setBackground(hud.insetDrawable());
         gainsBox.pad(INSET_PADDING);
@@ -147,8 +152,10 @@ public class SidePanel implements Disposable {
         gainsBox.row();
         potLabel = new Label("0", new Label.LabelStyle(captionFont, Color.WHITE));
         Texture gems = hud.iconPot;
+        float gemsWidth = POT_ICON_HEIGHT * gems.getWidth() / gems.getHeight();
+        potMaxWidth = gainsInnerWidth - gemsWidth - POT_GAP;
         potRow.add(new Image(new TextureRegionDrawable(new TextureRegion(gems))))
-            .size(POT_ICON_HEIGHT * gems.getWidth() / gems.getHeight(), POT_ICON_HEIGHT).padRight(POT_GAP);
+            .size(gemsWidth, POT_ICON_HEIGHT).padRight(POT_GAP);
         potRow.add(potLabel).left();
         potRow.setVisible(false);
         addPotHelp();
@@ -330,6 +337,7 @@ public class SidePanel implements Disposable {
      */
     public void setPot(double amount, String name, String description) {
         potLabel.setText(formatGains(amount));
+        fitWidth(potLabel, potMaxWidth);
         potName = name;
         potDescription = description;
         potRow.setVisible(true);
@@ -347,6 +355,7 @@ public class SidePanel implements Disposable {
         stakeableLabel.setVisible(text != null);
         if (text == null) return;
         stakeableLabel.setText(text);
+        fitWidth(stakeableLabel, gainsInnerWidth);
         stakeableName = name;
         stakeableDescription = description;
     }
@@ -447,9 +456,17 @@ public class SidePanel implements Disposable {
     private void showGains(double gains) {
         shownGains = gains;
         gainsLabel.setText(formatGains(gains));
-        gainsLabel.setFontScale(1f);
-        float width = gainsLabel.getPrefWidth();
-        if (width > gainsMaxWidth) gainsLabel.setFontScale(gainsMaxWidth / width);
+        fitWidth(gainsLabel, gainsMaxWidth);
+    }
+
+    /**
+     * Réduit le texte de {@code label} s'il dépasse {@code maxWidth}, pour qu'il ne sorte
+     * jamais du bloc Gains (ex : « 123 456 789 012 », « 1,25e12 ») ; taille normale sinon.
+     */
+    static void fitWidth(Label label, float maxWidth) {
+        label.setFontScale(1f);
+        float width = label.getPrefWidth();
+        if (width > maxWidth) label.setFontScale(maxWidth / width);
     }
 
     /**
