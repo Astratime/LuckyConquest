@@ -291,7 +291,7 @@ public class EnemyTurnResolver {
                 played = new ArrayList<>(played.subList(0, EnemyMaluses.HELL_MAX_CARDS));
             }
             if (hellBound) {
-                openingEvents.add(new StatusEvent(Lang.f("DESCENTE AUX ENFERS : {0} CARTES, ATTAQUES -{1} %",
+                openingEvents.add(new StatusEvent(Lang.f("ENFERS : L'ENNEMI NE JOUE QUE {0} CARTES, ATTAQUES -{1} %",
                     EnemyMaluses.HELL_MAX_CARDS, EnemyMaluses.HELL_DAMAGE_PERCENT), EffectPopup.Style.DEFENSE));
             }
 

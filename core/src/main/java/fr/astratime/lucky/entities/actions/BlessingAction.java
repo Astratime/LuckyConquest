@@ -75,7 +75,7 @@ public final class BlessingAction extends MixedAction {
             return switch (blessing) {
                 case FIRST  -> Lang.f("DESCENTE AUX ENFERS : {0} ET VAMPIRISME", HELL_ATTACK);
                 case SECOND -> Lang.f("DESCENTE AUX ENFERS : BOUCLIER {0}, RENVOI {1} %", HELL_SHIELD, HELL_REFLECT_PERCENT);
-                case THIRD  -> Lang.f("DESCENTE AUX ENFERS : ENNEMI -{0} %, {1} CARTES", EnemyMaluses.HELL_DAMAGE_PERCENT,
+                case THIRD  -> Lang.f("DESCENTE AUX ENFERS : L'ENNEMI FRAPPE -{0} % ET JOUE {1} CARTES AU PLUS", EnemyMaluses.HELL_DAMAGE_PERCENT,
                     EnemyMaluses.HELL_MAX_CARDS);
             };
         }
@@ -90,8 +90,8 @@ public final class BlessingAction extends MixedAction {
     public String getDescription() {
         if (hell) {
             return Lang.f("Chaque rouleau, un effet au hasard : {0} d'attaque et vampirisme ({1} % des dégâts). Ou bouclier {2}, "
-                    + "et {3} % de ses PV max renvoyés s'il attaque. Ou {4} gains, et à son tour l'ennemi frappe -{5} % "
-                    + "et joue {6} cartes au plus", HELL_ATTACK, HELL_DRAIN_PERCENT, HELL_SHIELD, HELL_REFLECT_PERCENT,
+                    + "et {3} % de ses PV max renvoyés s'il attaque. Ou {4} gains, et l'ennemi est affaibli à son prochain tour : "
+                    + "ses attaques font -{5} % et il joue {6} cartes au plus", HELL_ATTACK, HELL_DRAIN_PERCENT, HELL_SHIELD, HELL_REFLECT_PERCENT,
                 HELL_GAINS, EnemyMaluses.HELL_DAMAGE_PERCENT, EnemyMaluses.HELL_MAX_CARDS);
         }
         return Lang.f("Chaque rouleau, un effet au hasard : {0} d'attaque et de bouclier. Ou bouclier {1} : ses coups absorbés te "

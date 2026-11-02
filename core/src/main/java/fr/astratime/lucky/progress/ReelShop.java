@@ -70,7 +70,9 @@ public final class ReelShop {
             case SCYTHE        -> Lang.t("Attaque 60. Dégâts x2 si l'ennemi a moins de 30 % de ses PV.");
             case MOON          -> Lang.t("Attaque 40, +1 % par % de PV perdus (jusqu'à x2).");
             case DEMON_KING    -> Lang.t("Attaque 100. Bouclier 100. Gains 100. Démonisation +1. À 6 : invincible jusqu'à "
-                + "la fin du tour suivant, dont le tirage est un Bingo de Descente aux enfers.");
+                + "la fin du tour suivant, dont le tirage est un Bingo de Descente aux enfers : chaque rouleau donne un "
+                + "effet au hasard (1000 d'attaque et vampirisme ; bouclier 3000 et renvoi ; ou 200 gains et l'ennemi "
+                + "affaibli : attaques -50 % et 2 cartes au plus à son prochain tour).");
             case LUCK_APOSTLE  -> Lang.t("Attaque 100. Bouclier 100. Gains 100. Ange chanceux +1. À 6 : invincible "
                 + "jusqu'à la fin du tour suivant, dont le tirage est un Bingo de Lumière du bingo.");
             case TICKET        -> Lang.t("Gains de 0 à 150, au hasard. Gagné en vidant la Fête foraine.");

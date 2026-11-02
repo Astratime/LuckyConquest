@@ -198,8 +198,8 @@ final class CombatEffectRows {
         }
         if (maluses.isHellBound()) {
             rows.add(new SidePanel.EffectRow(symbols.apply(Symbol.DESCENT), null, Lang.t("Enfers"),
-                Lang.t("Descente aux enfers"), Lang.f("À son prochain tour, ses attaques baissent de {0} % et il joue {1} "
-                    + "cartes au plus.", EnemyMaluses.HELL_DAMAGE_PERCENT, EnemyMaluses.HELL_MAX_CARDS)));
+                Lang.t("Descente aux enfers"), Lang.f("L'ennemi est affaibli : à son prochain tour, ses attaques baissent de {0} % et il "
+                    + "joue {1} cartes au plus.", EnemyMaluses.HELL_DAMAGE_PERCENT, EnemyMaluses.HELL_MAX_CARDS)));
         }
         if (maluses.isLitUp()) {
             rows.add(new SidePanel.EffectRow(symbols.apply(Symbol.BINGO_LIGHT), null, Lang.t("Illuminé"),
