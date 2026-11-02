@@ -203,8 +203,8 @@ final class CombatEffectRows {
         }
         if (maluses.isLitUp()) {
             rows.add(new SidePanel.EffectRow(symbols.apply(Symbol.BINGO_LIGHT), null, Lang.t("Illuminé"),
-                Lang.t("Lumière du bingo"), Lang.f("À son prochain tirage, chacun de ses rouleaux a une chance sur deux de "
-                    + "devenir Lumière : il ne fait rien et l'ennemi perd {0} % de ses PV max.", EnemyMaluses.LIGHT_HP_PERCENT)));
+                Lang.t("Lumière du bingo"), Lang.f("L'ennemi est illuminé : à son prochain tirage, chacun de ses rouleaux a une chance sur deux "
+                    + "de devenir Lumière. Ce rouleau ne fait rien et l'ennemi perd {0} % de ses PV max.", EnemyMaluses.LIGHT_HP_PERCENT)));
         }
     }
 

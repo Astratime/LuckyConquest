@@ -82,7 +82,7 @@ public final class BlessingAction extends MixedAction {
         return switch (blessing) {
             case FIRST  -> Lang.f("LUMIÈRE DU BINGO : ATTAQUE ET BOUCLIER {0}", LIGHT_ATTACK);
             case SECOND -> Lang.t("LUMIÈRE DU BINGO : LES COUPS TE SOIGNENT");
-            case THIRD  -> Lang.f("LUMIÈRE DU BINGO : {0} CARTES, SES ROULEAUX S'ILLUMINENT", LIGHT_PLAYS);
+            case THIRD  -> Lang.f("LUMIÈRE DU BINGO : {0} CARTES, L'ENNEMI EST ILLUMINÉ", LIGHT_PLAYS);
         };
     }
 
@@ -95,8 +95,9 @@ public final class BlessingAction extends MixedAction {
                 HELL_GAINS, EnemyMaluses.HELL_DAMAGE_PERCENT, EnemyMaluses.HELL_MAX_CARDS);
         }
         return Lang.f("Chaque rouleau, un effet au hasard : {0} d'attaque et de bouclier. Ou bouclier {1} : ses coups absorbés te "
-                + "soignent et le frappent au tour suivant. Ou {2} gains, {3} cartes au tour suivant, et chacun de ses "
-                + "rouleaux a une chance sur deux de devenir Lumière (il perd {4} % de ses PV max)", LIGHT_ATTACK,
+                + "soignent et le frappent au tour suivant. Ou {2} gains, {3} cartes au tour suivant, et l'ennemi est "
+                + "illuminé : à son prochain tirage, chacun de ses rouleaux a une chance sur deux de devenir Lumière (l'ennemi perd {4} % "
+                + "de ses PV max)", LIGHT_ATTACK,
             LIGHT_SHIELD, LIGHT_GAINS, LIGHT_PLAYS, EnemyMaluses.LIGHT_HP_PERCENT);
     }
 }

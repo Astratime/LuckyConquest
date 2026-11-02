@@ -84,7 +84,7 @@ public final class ReelShop {
             case DESCENT       -> Lang.t("Bingo du Roi démon. Au hasard : attaque 1000 et vampirisme. Ou bouclier 3000 "
                 + "et 30 % de ses PV max renvoyés. Ou gains 200, et l'ennemi frappe -50 % et joue 2 cartes.");
             case BINGO_LIGHT   -> Lang.t("Bingo de l'Apôtre de la Chance. Au hasard : attaque et bouclier 800. Ou bouclier "
-                + "3000 qui te soigne et rend ses coups. Ou gains 400, 8 cartes, et ses rouleaux s'illuminent.");
+                + "3000 qui te soigne et rend ses coups. Ou gains 400, 8 cartes, et l'ennemi est illuminé : ses rouleaux peuvent devenir Lumière et lui coûter des PV.");
             case JOKER         -> Lang.t("Compte comme n'importe quel symbole.");
         };
     }
