@@ -18,8 +18,7 @@ import java.util.Random;
 /**
  * As de Coeur, « Frénésie » : boost de probabilité sur un symbole d'attaque
  * choisi au hasard ; l'attaque du tour est multipliée d'autant plus que le
- * joueur est blessé, et le Sang est encaissé en attaque ({@link #MAX_BLOOD_ATTACK} au plus,
- * Astra 2026-11-04 : le reste du Sang reste dans la jauge pour plus tard).
+ * joueur est blessé, et tout le Sang est encaissé en attaque.
  */
 public class AceOfHeartsEffect extends Effect {
 
@@ -27,8 +26,6 @@ public class AceOfHeartsEffect extends Effect {
     private static final int    BOOST_AMOUNT = 200;
     /** Multiplicateur ajouté par proportion de vie manquante (x3 à 0 PV). */
     static final float          FRENZY_PER_MISSING_HP = 2f;
-    /** Attaque au plus tirée du Sang (Astra : 10 000 ; x1,5 pour la version « + »). */
-    static final int            MAX_BLOOD_ATTACK = 10_000;
     private static final Random RANDOM       = new Random();
 
     /** Puissance de la carte : 1, ou {@link fr.astratime.lucky.entities.Card#UPGRADE_FACTOR} pour sa version « + ». */
@@ -52,7 +49,7 @@ public class AceOfHeartsEffect extends Effect {
         CombatContext combat = context.getCombatContext();
         Player player = combat.getPlayer();
         float factor = 1f + FRENZY_PER_MISSING_HP * power * (1f - player.getHpRatio());
-        int   blood  = player.getLastingEffects().consumeBlood(maxBloodAttack());
+        int   blood  = player.getLastingEffects().consumeBlood();
         combat.multiplyAttack(factor, "As de Coeur");
         combat.addAttackBonus(blood, "Sang");
         String times = String.valueOf(Math.round(factor * 10f) / 10f);
@@ -61,14 +58,11 @@ public class AceOfHeartsEffect extends Effect {
             new EffectPopup(Lang.f("SANG : ATTAQUE +{0}", blood), EffectPopup.Style.DRAIN, PopupScale.SECONDARY_INTENSITY))));
     }
 
-    /** @return l'attaque au plus tirée du Sang par cette carte */
-    int maxBloodAttack() { return Math.round(MAX_BLOOD_ATTACK * power); }
-
     @Override
     public String getDescription() {
         return Lang.f("Frénésie : un symbole d'attaque devient plus fréquent. Attaque multipliée jusqu'à x{0} selon la "
-            + "vie perdue. Le Sang s'ajoute à l'attaque, +{1} au plus (le reste du Sang est gardé)",
-            Math.round(1 + FRENZY_PER_MISSING_HP * power), Lang.big(maxBloodAttack()));
+            + "vie perdue. Tout le Sang s'ajoute à l'attaque",
+            Math.round(1 + FRENZY_PER_MISSING_HP * power));
     }
 
     @Override
