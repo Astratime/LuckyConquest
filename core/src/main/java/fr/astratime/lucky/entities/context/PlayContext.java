@@ -89,6 +89,9 @@ public class PlayContext {
      */
     public double consumeGainsPercent(float percent) { return player.consumeGainsPercent(percent); }
 
+    /** Consomme immédiatement {@code amount} gains. @return le montant consommé */
+    public double consumeGains(double amount) { return player.consumeGains(amount); }
+
     /**
      * Soigne immédiatement le joueur de {@code percent} % de ses PV max ; ce qui
      * dépasse ses PV max remplit le Sang.

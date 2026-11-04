@@ -76,7 +76,7 @@ class SuitGaugesTest {
         assertEquals(4 * PreparationResolver.BLADE_ATTACK, combat.getAttackBonus(), "les Lames tranchent une dernière fois");
         assertEquals(80, combat.getPiercePercent(), "l'As de Pique perce 80 % de la défense");
         assertFalse(combat.isIgnoreDefense());
-        assertEquals(900, player.getGains());
+        assertEquals(1000, player.getGains(), "pas de Lame achetée : aucun gain consommé pour rien");
         assertEquals(100, new AceOfSpadesEffect(1.5f).piercePercent(), "sa version « + » perce tout");
     }
 
