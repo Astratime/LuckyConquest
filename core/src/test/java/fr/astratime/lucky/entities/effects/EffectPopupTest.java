@@ -92,9 +92,9 @@ class EffectPopupTest {
 
         PlayContext context = play(new AceOfClubsEffect(), player);
 
-        // 90 000 gains suffisent à atteindre +3 000 d'attaque : le reste n'est pas pris.
-        assertEquals(10_000_000 - 90_000, player.getGains());
-        assertEquals(List.of("-90 000 GAINS", "ATTAQUE +3115", "BOOST SYMBOLE +450"), texts(context));
+        // 1 000 000 de gains suffisent à atteindre +10 000 d'attaque : le reste n'est pas pris.
+        assertEquals(9_000_000, player.getGains());
+        assertEquals(List.of("-1 M GAINS", "ATTAQUE +10115", "BOOST SYMBOLE +1150"), texts(context));
     }
 
     @Test
@@ -102,13 +102,24 @@ class EffectPopupTest {
         Player player = new Player("Joueur", 100, List.of());
         player.addGains(10_000_000);
         play(new AceOfSpadesEffect(), player);
-        assertEquals(5, player.getLastingEffects().getBlades(), "5 Lames au plus");
-        assertEquals(10_000_000 - 1_250, player.getGains(), "5 x 250 gains, pas 1 000 000");
+        assertEquals(50, player.getLastingEffects().getBlades(), "50 Lames au plus");
+        assertEquals(10_000_000 - 50 * 250, player.getGains(), "50 x 250 gains, pas 1 000 000");
 
         Player small = new Player("Joueur", 100, List.of());
         small.addGains(7_400); // 10 % = 740 : 2 Lames pour 500, les 240 restants n'achètent rien
         play(new AceOfSpadesEffect(), small);
         assertEquals(2, small.getLastingEffects().getBlades());
         assertEquals(7_400 - 500, small.getGains());
+    }
+
+    @Test
+    void theBladePriceFollowsTheSpinCost() {
+        Player player = new Player("Joueur", 100, List.of());
+        player.addGains(100_000_000);
+        PlayContext context = new PlayContext(player, 140_000); // Désert
+        new AceOfSpadesEffect().onPlay(context);
+        // 10 % = 10 M ; une Lame coûte 2,5 tirages = 350 000 : 28 Lames pour 9,8 M
+        assertEquals(28, player.getLastingEffects().getBlades());
+        assertEquals(100_000_000 - 28 * 350_000, player.getGains());
     }
 }

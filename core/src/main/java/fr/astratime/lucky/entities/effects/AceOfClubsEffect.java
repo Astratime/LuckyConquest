@@ -32,11 +32,11 @@ public class AceOfClubsEffect extends Effect {
     private static final int   ATTACK_BOOST_AMOUNT = 115;
     /** Attaque ajoutée par racine carrée des gains consommés (1 000 gains : +316). */
     static final float          ATTACK_PER_SQRT_GAIN  = 10f;
-    /** Boost de poids au plus obtenu avec les gains consommés (un Bingo d'attaque ne doit pas être assuré). */
-    static final int            MAX_WEIGHT_FROM_GAINS = 300;
-    /** Attaque au plus obtenue avec les gains consommés (90 000 gains consommés l'atteignent). */
-    static final int            MAX_ATTACK_FROM_GAINS = 3_000;
-    /** Gains au plus consommés (90 000) : au-delà, ils n'ajouteraient ni attaque ni boost. */
+    /** Boost de poids au plus obtenu avec les gains consommés (Astra : 1 000). */
+    static final int            MAX_WEIGHT_FROM_GAINS = 1_000;
+    /** Attaque au plus obtenue avec les gains consommés (1 000 000 gains consommés l'atteignent, Astra). */
+    static final int            MAX_ATTACK_FROM_GAINS = 10_000;
+    /** Gains au plus consommés (1 000 000) : au-delà, ils n'ajouteraient ni attaque ni boost. */
     static final double         MAX_CONSUMED = Math.pow(MAX_ATTACK_FROM_GAINS / ATTACK_PER_SQRT_GAIN, 2);
     private static final Random RANDOM             = new Random();
 

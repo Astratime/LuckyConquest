@@ -74,28 +74,28 @@ class ComboDamageTest {
         "10000, MAGNAT, 3000, 663, 500, 2, 646740, 646740, 2586930",
         "10000, ROI_DU_CASINO, 3000, 663, 500, 2, 1132740, 1132740, 4530930",
         "10000, LEGENDE, 3000, 663, 500, 2, 1402740, 1402740, 5610930",
-        "100000, AUCUN, 30000, 1847, 1250, 5, 641655, 641655, 2566590",
-        "100000, AVARE, 30000, 1847, 1250, 5, 673155, 673155, 2692590",
-        "100000, PARIEUR, 30000, 1847, 1250, 5, 704655, 704655, 2818590",
-        "100000, FLAMBEUR, 30000, 1847, 1250, 5, 751905, 751905, 3007590",
-        "100000, HABITUE, 30000, 1847, 1250, 5, 799155, 799155, 3196590",
-        "100000, REQUIN, 30000, 1847, 1250, 5, 1019655, 1019655, 4078590",
-        "100000, GROS_BONNET, 30000, 1847, 1250, 5, 1066905, 1066905, 4267590",
-        "100000, BARON, 30000, 1847, 1250, 5, 1334655, 1334655, 5338590",
-        "100000, MAGNAT, 30000, 1847, 1250, 5, 1523655, 1523655, 6094590",
-        "100000, ROI_DU_CASINO, 30000, 1847, 1250, 5, 2374155, 2374155, 9496590",
-        "100000, LEGENDE, 30000, 1847, 1250, 5, 2846655, 2846655, 11386590",
-        "1000000, AUCUN, 90000, 3115, 1250, 5, 1041075, 1041075, 4164270",
-        "1000000, AVARE, 90000, 3115, 1250, 5, 1072575, 1072575, 4290270",
-        "1000000, PARIEUR, 90000, 3115, 1250, 5, 1104075, 1104075, 4416270",
-        "1000000, FLAMBEUR, 90000, 3115, 1250, 5, 1151325, 1151325, 4605270",
-        "1000000, HABITUE, 90000, 3115, 1250, 5, 1198575, 1198575, 4794270",
-        "1000000, REQUIN, 90000, 3115, 1250, 5, 1419075, 1419075, 5676270",
-        "1000000, GROS_BONNET, 90000, 3115, 1250, 5, 1466325, 1466325, 5865270",
-        "1000000, BARON, 90000, 3115, 1250, 5, 1734075, 1734075, 6936270",
-        "1000000, MAGNAT, 90000, 3115, 1250, 5, 1923075, 1923075, 7692270",
-        "1000000, ROI_DU_CASINO, 90000, 3115, 1250, 5, 2773575, 2773575, 11094270",
-        "1000000, LEGENDE, 90000, 3115, 1250, 5, 3246075, 3246075, 12984270",
+        "100000, AUCUN, 30000, 1847, 7000, 28, 3370950, 3370950, 13483770",
+        "100000, AVARE, 30000, 1847, 7000, 28, 3505950, 3505950, 14023770",
+        "100000, PARIEUR, 30000, 1847, 7000, 28, 3640950, 3640950, 14563770",
+        "100000, FLAMBEUR, 30000, 1847, 7000, 28, 3843450, 3843450, 15373770",
+        "100000, HABITUE, 30000, 1847, 7000, 28, 4045950, 4045950, 16183770",
+        "100000, REQUIN, 30000, 1847, 7000, 28, 4990950, 4990950, 19963770",
+        "100000, GROS_BONNET, 30000, 1847, 7000, 28, 5193450, 5193450, 20773770",
+        "100000, BARON, 30000, 1847, 7000, 28, 6340950, 6340950, 25363770",
+        "100000, MAGNAT, 30000, 1847, 7000, 28, 7150950, 7150950, 28603770",
+        "100000, ROI_DU_CASINO, 30000, 1847, 7000, 28, 10795950, 10795950, 43183770",
+        "100000, LEGENDE, 30000, 1847, 7000, 28, 12820950, 12820950, 51283770",
+        "1000000, AUCUN, 300000, 5592, 12500, 50, 15635880, 15635880, 62543490",
+        "1000000, AVARE, 300000, 5592, 12500, 50, 15869880, 15869880, 63479490",
+        "1000000, PARIEUR, 300000, 5592, 12500, 50, 16103880, 16103880, 64415490",
+        "1000000, FLAMBEUR, 300000, 5592, 12500, 50, 16454880, 16454880, 65819490",
+        "1000000, HABITUE, 300000, 5592, 12500, 50, 16805880, 16805880, 67223490",
+        "1000000, REQUIN, 300000, 5592, 12500, 50, 18443880, 18443880, 73775490",
+        "1000000, GROS_BONNET, 300000, 5592, 12500, 50, 18794880, 18794880, 75179490",
+        "1000000, BARON, 300000, 5592, 12500, 50, 20783880, 20783880, 83135490",
+        "1000000, MAGNAT, 300000, 5592, 12500, 50, 22187880, 22187880, 88751490",
+        "1000000, ROI_DU_CASINO, 300000, 5592, 12500, 50, 28505880, 28505880, 114023490",
+        "1000000, LEGENDE, 300000, 5592, 12500, 50, 32015880, 32015880, 128063490",
     })
     void asTrefleAsPiqueRouletteCorruptionEtBingoTripleSept(int gains, String rank, int clubsConsumed,
                                                            int clubsAttack, int spadesConsumed, int blades,
@@ -117,10 +117,10 @@ class ComboDamageTest {
         controller.drawCards();
 
         play(controller, "1_trefle");
-        assertEquals(gains - clubsConsumed, player.getGains(), "As de Trèfle : -30 % des gains, 90 000 au plus");
+        assertEquals(gains - clubsConsumed, player.getGains(), "As de Trèfle : -30 % des gains, 1 000 000 au plus");
         play(controller, "1_pique");
         assertEquals(gains - clubsConsumed - spadesConsumed, player.getGains(), "As de Pique : -10 % des gains, seulement ce qui achète des Lames");
-        assertEquals(blades, player.getLastingEffects().getBlades(), "une Lame par 250 gains consommés, 5 au plus");
+        assertEquals(blades, player.getLastingEffects().getBlades(), "une Lame par 2,5 tirages (250 gains), 50 au plus");
         play(controller, "russian_roulette");
         RouletteChoice roulette = (RouletteChoice) controller.getPendingChoice();
         assertFalse(controller.pickRouletteCard(roulette.cursed().indexOf(false)).cursed(), "Roulette gagnante");
@@ -131,8 +131,8 @@ class ComboDamageTest {
         assertArrayEquals(new Symbol[] {Symbol.TRIPLE_SEVEN, Symbol.TRIPLE_SEVEN, Symbol.TRIPLE_SEVEN},
             turn.getSymbols());
 
-        assertEquals(clubsAttack, 115 + Math.min(3_000, Math.round(10f * (float) Math.sqrt(clubsConsumed))),
-            "attaque de l'As de Trèfle : la racine des gains consommés, +3 000 au plus");
+        assertEquals(clubsAttack, 115 + Math.min(10_000, Math.round(10f * (float) Math.sqrt(clubsConsumed))),
+            "attaque de l'As de Trèfle : la racine des gains consommés, +10 000 au plus");
         long base = 90 + rankBonus.attack() + blades * PreparationResolver.BLADE_ATTACK + clubsAttack;
         assertEquals(perSymbol, Math.round(base * (1 + 0.5 * blades) * 2 * 4.5 * 10));
 
