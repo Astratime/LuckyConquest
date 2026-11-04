@@ -321,7 +321,8 @@ public class CardLoader {
         add(effects, "ACE_OF_CLUBS", (json, v) -> new AceOfClubsEffect(v.power()));
 
         // --- Carreau ---
-        add(effects, "DIAMOND_REFLECT", (json, v) -> new DiamondReflectEffect(v.f("hpPercent"), v.i("defenseBoost", 0)));
+        add(effects, "DIAMOND_REFLECT", (json, v) -> new DiamondReflectEffect(v.f("hpPercent"), v.i("defenseBoost", 0),
+            v.i("vaultBonus", 0)));
         add(effects, "ACE_OF_DIAMONDS", (json, v) -> new AceOfDiamondsEffect(v.power()));
 
         // --- Pique ---
@@ -386,7 +387,7 @@ public class CardLoader {
         add(effects, "TRANSFUSION", (json, v) -> new TransfusionEffect(v.i("percent")));
         add(effects, "BLOOD_PACT", (json, v) -> new BloodPactEffect(json.getInt("hpPercent"), v.f("attackFactor")));
         add(effects, "RAMPART", (json, v) -> new RampartEffect(v.i("shield"), v.i("defenseBoost")));
-        add(effects, "GUARANTEED_REFLECT", (json, v) -> new GuaranteedReflectEffect(v.i("percent")));
+        add(effects, "MIRROR_VAULT", (json, v) -> new MirrorVaultEffect(v.i("shield"), v.i("vaultBonus")));
         add(effects, "ROUGH_DIAMOND", (json, v) -> new RoughDiamondEffect(v.i("counter")));
     }
 

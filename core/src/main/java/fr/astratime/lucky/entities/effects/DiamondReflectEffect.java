@@ -24,19 +24,25 @@ public class DiamondReflectEffect extends Effect {
 
     private final float hpPercent;
     private final int   defenseBoost;
+    private final int   vaultBonus;
+
+    public DiamondReflectEffect(float hpPercent, int defenseBoost) { this(hpPercent, defenseBoost, 0); }
 
     /**
      * @param hpPercent    part (%) des PV max de l'ennemi renvoyée s'il attaque (additionnée aux autres cartes Carreau)
      * @param defenseBoost boost de poids appliqué à chaque symbole de défense pour ce tour
+     * @param vaultBonus   % ajouté au multiplicateur du bouclier restant versé au Coffre en fin de tour (additionné)
      */
-    public DiamondReflectEffect(float hpPercent, int defenseBoost) {
+    public DiamondReflectEffect(float hpPercent, int defenseBoost, int vaultBonus) {
         this.hpPercent    = hpPercent;
         this.defenseBoost = defenseBoost;
+        this.vaultBonus   = vaultBonus;
     }
 
     @Override
     public void apply(TurnContext context) {
         context.getCombatContext().addReflectHpPercent(hpPercent);
+        context.getCombatContext().addVaultBonus(vaultBonus);
         context.getCombatContext().addDefenseBonus(defenseBoost, "Cartes"); // bouclier en plus : il remplit le Coffre
         if (defenseBoost > 0) {
             for (Symbol symbol : SymbolRegistry.getDefenseSymbols()) {
@@ -50,16 +56,20 @@ public class DiamondReflectEffect extends Effect {
         return Lang.f("Si un symbole de défense sort et que l'ennemi attaque, il perd {0}% de ses PV max "
             + "(+20% du Coffre ; {1}% au plus avec tous les Carreaux){2}",
             formatPercent(hpPercent), formatPercent(CombatContext.MAX_REFLECT_HP_PERCENT),
-            (defenseBoost > 0 ? Lang.f(". Symboles de défense : bouclier +{0} et plus fréquents", defenseBoost) : ""));
+            (defenseBoost > 0 ? Lang.f(". Symboles de défense : bouclier +{0} et plus fréquents", defenseBoost) : ""))
+            + (vaultBonus > 0 ? Lang.f(". Bouclier restant en fin de tour : Coffre x{0} de plus", formatPercent(vaultBonus / 100f)) : "");
     }
 
     @Override
     public List<EffectPopup> getPopups() {
         EffectPopup reflect = EffectPopup.scaled(Lang.f("RENVOI {0}% DES PV", formatPercent(hpPercent)),
             EffectPopup.Style.REFLECT, Math.round(hpPercent * 100), PopupScale.CARD_REFLECT_PERCENT);
-        if (defenseBoost <= 0) return List.of(reflect);
-        return List.of(reflect, EffectPopup.scaled(Lang.f("BOOST DÉFENSE +{0}", defenseBoost), EffectPopup.Style.DEFENSE,
+        List<EffectPopup> popups = new java.util.ArrayList<>(List.of(reflect));
+        if (defenseBoost > 0) popups.add(EffectPopup.scaled(Lang.f("BOOST DÉFENSE +{0}", defenseBoost), EffectPopup.Style.DEFENSE,
             defenseBoost, PopupScale.CARD_DEFENSE_BOOST));
+        if (vaultBonus > 0) popups.add(new EffectPopup(Lang.f("COFFRE x{0} DE PLUS", formatPercent(vaultBonus / 100f)),
+            EffectPopup.Style.DEFENSE, PopupScale.SECONDARY_INTENSITY));
+        return popups;
     }
 
     /** @return {@code percent} sans décimale inutile, avec la virgule en français (ex : "3,75", "1"). */

@@ -228,18 +228,23 @@ public class LastingEffects {
 
     private static int capBlood(long value) { return (int) Math.max(0, Math.min(MAX_BLOOD, value)); }
 
-    /** Ajoute {@code amount} au Coffre. */
-    public void addVault(int amount) { vault += amount; }
+    /** Coffre maximum (Astra 2026-11-04) : plein, il donne +15 000 d'attaque à l'As de Carreau. */
+    public static final int MAX_VAULT = 150_000;
+
+    /** Ajoute {@code amount} au Coffre, sans dépasser {@link #MAX_VAULT}. */
+    public void addVault(int amount) { vault = capVault((long) vault + amount); }
     /** @return le contenu du Coffre. */
     public int getVault() { return vault; }
     /** Vide le Coffre. @return son contenu avant d'être vidé */
     public int consumeVault() { int n = vault; vault = 0; return n; }
 
+    private static int capVault(long value) { return (int) Math.max(0, Math.min(MAX_VAULT, value)); }
+
     /** Multiplie les trois jauges (Lames, Sang, Coffre) par {@code factor} (ex : Pot de Lutin). */
     public void multiplyGauges(int factor) {
         blades *= factor;
         blood   = capBlood((long) blood * factor);
-        vault  *= factor;
+        vault   = capVault((long) vault * factor);
     }
 
     /**

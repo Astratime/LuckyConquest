@@ -21,7 +21,8 @@
       {
         "type": "DIAMOND_REFLECT",
         "hpPercent": 2,
-        "defenseBoost": 6
+        "defenseBoost": 6,
+        "vaultBonus": 50
       }
     ]
   },
@@ -35,7 +36,8 @@
       {
         "type": "DIAMOND_REFLECT",
         "hpPercent": 2.5,
-        "defenseBoost": 9
+        "defenseBoost": 9,
+        "vaultBonus": 50
       }
     ]
   },
@@ -49,7 +51,8 @@
       {
         "type": "DIAMOND_REFLECT",
         "hpPercent": 3,
-        "defenseBoost": 12
+        "defenseBoost": 12,
+        "vaultBonus": 50
       }
     ]
   },
@@ -63,7 +66,8 @@
       {
         "type": "DIAMOND_REFLECT",
         "hpPercent": 3.5,
-        "defenseBoost": 15
+        "defenseBoost": 15,
+        "vaultBonus": 50
       }
     ]
   },
@@ -77,7 +81,8 @@
       {
         "type": "DIAMOND_REFLECT",
         "hpPercent": 4,
-        "defenseBoost": 18
+        "defenseBoost": 18,
+        "vaultBonus": 100
       }
     ]
   },
@@ -91,7 +96,8 @@
       {
         "type": "DIAMOND_REFLECT",
         "hpPercent": 4.5,
-        "defenseBoost": 21
+        "defenseBoost": 21,
+        "vaultBonus": 100
       }
     ]
   },
@@ -105,7 +111,8 @@
       {
         "type": "DIAMOND_REFLECT",
         "hpPercent": 5,
-        "defenseBoost": 24
+        "defenseBoost": 24,
+        "vaultBonus": 100
       }
     ]
   },
@@ -119,7 +126,8 @@
       {
         "type": "DIAMOND_REFLECT",
         "hpPercent": 5.5,
-        "defenseBoost": 27
+        "defenseBoost": 27,
+        "vaultBonus": 100
       }
     ]
   },
@@ -133,7 +141,8 @@
       {
         "type": "DIAMOND_REFLECT",
         "hpPercent": 6,
-        "defenseBoost": 30
+        "defenseBoost": 30,
+        "vaultBonus": 100
       }
     ]
   },
@@ -147,7 +156,8 @@
       {
         "type": "DIAMOND_REFLECT",
         "hpPercent": 6.5,
-        "defenseBoost": 33
+        "defenseBoost": 33,
+        "vaultBonus": 150
       }
     ]
   },
@@ -161,7 +171,8 @@
       {
         "type": "DIAMOND_REFLECT",
         "hpPercent": 7,
-        "defenseBoost": 36
+        "defenseBoost": 36,
+        "vaultBonus": 150
       }
     ]
   },
@@ -175,7 +186,8 @@
       {
         "type": "DIAMOND_REFLECT",
         "hpPercent": 7.5,
-        "defenseBoost": 39
+        "defenseBoost": 39,
+        "vaultBonus": 150
       }
     ]
   }

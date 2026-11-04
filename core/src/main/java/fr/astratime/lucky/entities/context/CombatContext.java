@@ -19,7 +19,7 @@ import java.util.List;
  */
 public class CombatContext {
 
-    /** Seuil de vie (en proportion) sous lequel le renvoi garanti de l'As de Carreau est renforcé. */
+    /** Seuil de vie (en proportion) sous lequel un renvoi garanti est renforcé (plus aucune carte ne l'utilise depuis 2026-11-04). */
     public static final float LOW_HP_RATIO = 0.2f;
     /** Renvoi des cartes Carreau au plus, en % des PV max de l'ennemi, par tour ennemi. */
     public static final float MAX_REFLECT_HP_PERCENT = 20f;
@@ -41,7 +41,8 @@ public class CombatContext {
     private float attackFactor   = 1f;  // facteur appliqué aux dégâts de chaque symbole (combos)
     private int   symbolPower    = 1;   // facteur de la valeur de chaque symbole : dégâts, bouclier, gains (Bingo)
     private float defenseFactor  = 1f;  // facteur du bouclier de chaque symbole (Corruption)
-    private int   counterAttack  = 0;   // As de Carreau : multiplicateur du Coffre infligé en contre-attaque (0 : aucune)
+    private int   vaultBonusPercent = 0; // Carreau : % ajouté au multiplicateur du Coffre rempli en fin de tour
+    private int   counterAttack  = 0;   // Diamant brut : multiplicateur du Coffre infligé en contre-attaque (0 : aucune)
     private int   executionPercent = 0; // Guillotine : % des PV restants de l'ennemi infligés d'un coup (0 : aucun)
 
     /** Ce qui a changé l'attaque, le bouclier et les gains des symboles ce tour, dans l'ordre (voir {@link #getSteps}). */
@@ -91,8 +92,8 @@ public class CombatContext {
 
     private float   reflectHpPercent     = 0f;    // Carreau : renvoi en % des PV max ennemis, additionné, actif si un symbole de défense sort
     private boolean defenseSymbolDrawn   = false; // un symbole de défense est sorti ce tour (active reflectHpPercent)
-    private int     guaranteedReflectPercent      = 0; // As de Carreau : renvoi garanti, sans symbole de défense
-    private int     guaranteedReflectLowHpPercent = 0; // As de Carreau : renvoi garanti si le joueur est sous LOW_HP_RATIO
+    private int     guaranteedReflectPercent      = 0; // renvoi garanti, sans symbole de défense (plus de carte depuis 2026-11-04)
+    private int     guaranteedReflectLowHpPercent = 0; // renvoi garanti si le joueur est sous LOW_HP_RATIO
     private float   blessedReflectHpPercent = 0f; // Descente aux enfers : renvoi en % des PV max ennemis, sans plafond
 
     // ----- Nouveaux rouleaux (2026-11-01) -----
@@ -309,7 +310,7 @@ public class CombatContext {
 
     /**
      * Pourcentage de l'attaque ennemie renvoyé lors de la riposte : le renvoi
-     * garanti (As de Carreau, Miroir taillé), selon la vie actuelle du joueur.
+     * garanti, selon la vie actuelle du joueur (aucune carte ne le donne depuis 2026-11-04).
      */
     public int getTotalReflectPercent() {
         return player.getHpRatio() < LOW_HP_RATIO ? guaranteedReflectLowHpPercent : guaranteedReflectPercent;
@@ -425,8 +426,12 @@ public class CombatContext {
         defenseFactor *= factor;
         if (factor != 1f) steps.add(new PowerStep(Target.DEFENSE, shown(label), 0, factor));
     }
-    /** Contre-attaque (As de Carreau) : le Coffre, multiplié par {@code factor}, est infligé à l'ennemi. */
+    /** Contre-attaque (Diamant brut) : le Coffre, multiplié par {@code factor}, est infligé à l'ennemi. */
     public void addCounterAttack(int factor)      { counterAttack += factor; }
+    /** Cartes Carreau : ajoute {@code percent} % au multiplicateur du bouclier qui remplit le Coffre en fin de tour. */
+    public void addVaultBonus(int percent)        { vaultBonusPercent += percent; }
+    /** @return le multiplicateur du bouclier restant versé au Coffre ce tour (1 sans carte Carreau) */
+    public float getVaultMultiplier()             { return 1f + vaultBonusPercent / 100f; }
     /** Guillotine : ajoute {@code percent} % des PV restants de l'ennemi, infligés d'un coup après le tirage. */
     public void addExecution(int percent)         { executionPercent += percent; }
     /** Multiplie la valeur de chaque symbole (dégâts, bouclier, gains) par {@code factor}. */
@@ -456,7 +461,7 @@ public class CombatContext {
     public void markDefenseSymbolDrawn()            { defenseSymbolDrawn = true; }
 
     /**
-     * Ajoute un renvoi garanti, actif même sans symbole de défense (As de Carreau).
+     * Ajoute un renvoi garanti, actif même sans symbole de défense.
      *
      * @param percent      renvoi appliqué normalement
      * @param lowHpPercent renvoi appliqué si le joueur est sous {@link #LOW_HP_RATIO} de sa vie

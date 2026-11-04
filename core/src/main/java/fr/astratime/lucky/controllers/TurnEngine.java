@@ -146,7 +146,7 @@ public class TurnEngine {
 
         List<Event> firedamp = endOfTurnHazards(gameState, player, enemy);
 
-        List<Event> endEvents = storeLeftoverShield(player);
+        List<Event> endEvents = storeLeftoverShield(player, turnContext.getCombatContext().getVaultMultiplier());
         endEvents.addAll(0, firedamp);
         endEvents.addAll(0, afterCombat);
         // Coffres-forts : ceux arrivés à terme s'ouvrent ; tous, si l'ennemi est vaincu
@@ -726,10 +726,15 @@ public class TurnEngine {
      *
      * @return l'événement du Coffre rempli, s'il restait du bouclier
      */
-    static List<Event> storeLeftoverShield(Player player) {
+    static List<Event> storeLeftoverShield(Player player) { return storeLeftoverShield(player, 1f); }
+
+    /**
+     * @param multiplier multiplicateur des cartes Carreau jouées ce tour (x1 sans elles) appliqué au bouclier restant
+     */
+    static List<Event> storeLeftoverShield(Player player, float multiplier) {
         List<Event> events = new ArrayList<>();
         int kept = player.getLastingEffects().getReelGauges().keepAnchored(player.getShield()); // Ancre : gardé un tour
-        int leftoverShield = player.getShield() - kept;
+        int leftoverShield = (int) Math.min(LastingEffects.MAX_VAULT, (long) Math.floor((player.getShield() - kept) * (double) multiplier));
         if (leftoverShield > 0) {
             player.getLastingEffects().addVault(leftoverShield);
             events.add(new GaugeFilledEvent(GaugeFilledEvent.Gauge.COFFRE, leftoverShield));

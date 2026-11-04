@@ -63,7 +63,7 @@
     "id": "miroir_taille",
     "name": "Miroir taillé",
     "assetPath": "cards/special/miroir_taille.png",
-    "effects": [ { "type": "GUARANTEED_REFLECT", "percent": 200 } ]
+    "effects": [ { "type": "MIRROR_VAULT", "shield": 40, "vaultBonus": 200 } ]
   },
   {
     "id": "diamant_brut",

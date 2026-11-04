@@ -6,7 +6,6 @@ import fr.astratime.lucky.entities.LastingEffects;
 import fr.astratime.lucky.entities.Player;
 import fr.astratime.lucky.entities.Symbol;
 import fr.astratime.lucky.entities.SymbolRegistry;
-import fr.astratime.lucky.entities.TurnResult;
 import fr.astratime.lucky.entities.context.CombatContext;
 import fr.astratime.lucky.entities.context.PlayContext;
 import fr.astratime.lucky.entities.context.TurnContext;
@@ -18,7 +17,6 @@ import fr.astratime.lucky.entities.effects.Effect;
 import fr.astratime.lucky.entities.effects.GainsMultiplierEffect;
 import fr.astratime.lucky.entities.effects.SpadeIgnoreDefenseEffect;
 import fr.astratime.lucky.entities.events.CorruptionEvent;
-import fr.astratime.lucky.entities.events.CounterAttackEvent;
 import fr.astratime.lucky.entities.events.GaugeFilledEvent;
 
 import org.junit.jupiter.api.Test;
@@ -114,14 +112,22 @@ class SuitGaugesTest {
         assertEquals(20 - 10, lasting.getVault(), "bouclier 20, attaque 10 : il reste 10 pour le Coffre");
         assertEquals(0, player.getShield(), "le bouclier ne dure qu'un tour");
 
-        lasting.addVault(90);
+        lasting.addVault(990);
         TurnContext turn = prepare(new AceOfDiamondsEffect());
-        TurnResult result = new CombatResolver().resolve(turn.getCombatContext(), List.of(),
-            new Symbol[] { null, null, null }, List.of());
+        assertEquals(1000 / 10, turn.getCombatContext().getAttackBonus(), "As de Carreau : +1 d'attaque pour 10 de Coffre");
+        assertEquals(0, lasting.getVault(), "le Coffre est vidé");
+    }
 
-        CounterAttackEvent counter = (CounterAttackEvent) result.getPistolEvents().stream()
-            .filter(e -> e instanceof CounterAttackEvent).findFirst().orElseThrow();
-        assertEquals(100 * 3, counter.damage);
+    @Test
+    void diamondsMultiplyTheLeftoverShieldThatFillsTheVault() {
+        player.addShield(100);
+        TurnEngine.storeLeftoverShield(player, 3.5f); // ex : 2 de Carreau (+0,5) et Roi de Carreau (+1,5), base x1
+        assertEquals(350, lasting.getVault());
+
+        lasting.addVault(LastingEffects.MAX_VAULT);
+        assertEquals(150_000, lasting.getVault(), "Coffre plafonné à 150 000 (Astra)");
+        assertEquals(15_000, prepare(new AceOfDiamondsEffect()).getCombatContext().getAttackBonus(),
+            "Coffre plein : +15 000 d'attaque");
     }
 
     @Test

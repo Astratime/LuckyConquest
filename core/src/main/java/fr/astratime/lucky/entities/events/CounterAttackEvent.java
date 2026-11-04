@@ -6,7 +6,7 @@ import fr.astratime.lucky.popups.PopupScale;
 
 import java.util.List;
 
-/** Contre-attaque de l'As de Carreau : le Coffre vidé d'un coup sur l'ennemi, sans tenir compte de sa défense. */
+/** Contre-attaque du Diamant brut : le Coffre vidé d'un coup sur l'ennemi, sans tenir compte de sa défense. */
 public class CounterAttackEvent extends EnemyDamagedEvent {
 
     /**
