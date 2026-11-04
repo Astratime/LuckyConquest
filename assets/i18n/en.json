@@ -152,7 +152,7 @@
   "-{0} GAINS": "-{0} GAINS",
   "ATTAQUE +{0}": "ATTACK +{0}",
   "BOOST SYMBOLE +{0}": "SYMBOL BOOST +{0}",
-  "Consomme 30% des gains, {2} au plus. Un symbole d'attaque devient bien plus fréquent et gagne +{0} d'attaque, plus selon les gains consommés (jusqu'à +{1})": "Uses up 30% of gains, {2} at most. An attack symbol becomes much more frequent and gets +{0} attack, more with the gains used up (up to +{1})",
+  "Consomme 30% des gains, {2} au plus (en tirages de force du lieu, comme Fortune du Roi). Un symbole d'attaque devient bien plus fréquent et gagne +{0} d'attaque, plus selon les gains consommés (jusqu'à +{1})": "Uses up 30% of gains, {2} at most (counted in the place's power spins, like King's Fortune). An attack symbol becomes much more frequent and gets +{0} attack, more with the gains used up (up to +{1})",
   "Contre-attaque : vide le Coffre sur l'ennemi x{0} (x{1} sous {2}% de vie), en ignorant sa défense. Renvoie {3}% des attaques ennemies ({4}% sous {5}% de vie)": "Counterattack: empties the Vault onto the enemy x{0} (x{1} under {2}% health), ignoring its defense. Reflects {3}% of enemy attacks ({4}% under {5}% health)",
   "CONTRE-ATTAQUE": "COUNTERATTACK",
   "RENVOI {0}-{1}%": "REFLECT {0}-{1}%",

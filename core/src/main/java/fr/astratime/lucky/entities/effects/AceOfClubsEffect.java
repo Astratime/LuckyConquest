@@ -1,6 +1,7 @@
 package fr.astratime.lucky.entities.effects;
 
 import fr.astratime.lucky.entities.BigNumber;
+import fr.astratime.lucky.entities.SpinEconomy;
 import fr.astratime.lucky.entities.Symbol;
 import fr.astratime.lucky.entities.SymbolRegistry;
 import fr.astratime.lucky.entities.context.PlayContext;
@@ -56,12 +57,17 @@ public class AceOfClubsEffect extends Effect {
     @Override
     public void onPlay(PlayContext context) {
         // 30 % des gains, mais jamais plus que ce qui sert encore : rien n'est payé pour rien.
+        // Comme Fortune du roi, les gains se comptent au coût de tirage de force du lieu (3 000 au Désert, pas
+        // 140 000) : sinon la force grimperait avec l'économie étirée (Astra, 2026-11-04).
+        int    spinCost = context.getSpinCost();
+        double toPower  = (double) SpinEconomy.powerSpinCost(spinCost) / spinCost;
         double share    = BigNumber.round(Math.max(0, context.getPlayer().getGains()) * CONSUME_PERCENT);
-        double consumed = context.consumeGains(Math.min(MAX_CONSUMED, share));
+        double consumed = context.consumeGains(Math.min(BigNumber.round(MAX_CONSUMED / toPower), share));
+        double counted  = consumed * toPower;
         // Rendement décroissant : l'attaque suit la racine des gains consommés ; l'attaque et le boost sont plafonnés.
-        int weightBoost = Math.round((WEIGHT_BOOST_AMOUNT + (float) Math.min(consumed, MAX_WEIGHT_FROM_GAINS)) * power);
+        int weightBoost = Math.round((WEIGHT_BOOST_AMOUNT + (float) Math.min(counted, MAX_WEIGHT_FROM_GAINS)) * power);
         int attackBoost = Math.round((ATTACK_BOOST_AMOUNT
-            + Math.min(MAX_ATTACK_FROM_GAINS, ATTACK_PER_SQRT_GAIN * (float) Math.sqrt(consumed))) * power);
+            + Math.min(MAX_ATTACK_FROM_GAINS, ATTACK_PER_SQRT_GAIN * (float) Math.sqrt(counted))) * power);
 
         context.addPopups(List.of(
             EffectPopup.scaled(Lang.f("-{0} GAINS", Lang.big(consumed)), EffectPopup.Style.GAINS, consumed, PopupScale.ACE_OF_CLUBS_CONSUMED),
@@ -83,7 +89,7 @@ public class AceOfClubsEffect extends Effect {
 
     @Override
     public String getDescription() {
-        return Lang.f("Consomme 30% des gains, {2} au plus. Un symbole d'attaque devient bien plus fréquent et gagne +{0} "
+        return Lang.f("Consomme 30% des gains, {2} au plus (en tirages de force du lieu, comme Fortune du Roi). Un symbole d'attaque devient bien plus fréquent et gagne +{0} "
             + "d'attaque, plus selon les gains consommés (jusqu'à +{1})",
             Math.round(ATTACK_BOOST_AMOUNT * power), Math.round((ATTACK_BOOST_AMOUNT + MAX_ATTACK_FROM_GAINS) * power),
             Lang.big(MAX_CONSUMED));

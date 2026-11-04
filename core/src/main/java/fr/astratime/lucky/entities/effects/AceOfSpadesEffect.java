@@ -24,8 +24,8 @@ public class AceOfSpadesEffect extends Effect {
     static final float CONSUME_PERCENT = 0.1f;
     /** Prix d'une Lame, en tirages du lieu (250 gains là où un tirage coûte 100). */
     static final float SPINS_PER_BLADE = 2.5f;
-    /** Lames au plus obtenues avec les gains (Astra : 50). */
-    static final int   MAX_BOUGHT_BLADES = 50;
+    /** Lames au plus obtenues avec les gains (50 rendait le combo avec l'As de Trèfle démesuré : 10, x6). */
+    static final int   MAX_BOUGHT_BLADES = 10;
     /** Multiplicateur d'attaque ajouté par Lame encaissée. */
     static final float FACTOR_PER_BLADE = 0.5f;
     /** Part (%) de chaque coup qui traverse la défense ennemie (Astra : 80, au lieu de toute la défense). */
