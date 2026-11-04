@@ -1,62 +1,69 @@
 package fr.astratime.lucky.entities.effects;
 
+import fr.astratime.lucky.entities.LastingEffects;
+import fr.astratime.lucky.entities.Symbol;
+import fr.astratime.lucky.entities.SymbolRegistry;
 import fr.astratime.lucky.entities.context.CombatContext;
 import fr.astratime.lucky.entities.context.TurnContext;
+import fr.astratime.lucky.entities.events.CardBonusEvent;
+import fr.astratime.lucky.entities.events.SymbolBoostedEvent;
 import fr.astratime.lucky.i18n.Lang;
 import fr.astratime.lucky.popups.EffectPopup;
 import fr.astratime.lucky.popups.EffectSound;
 import fr.astratime.lucky.popups.PopupScale;
 
 import java.util.List;
+import java.util.Random;
 
 /**
- * As de Carreau : renvoi garanti des dégâts ennemis, sans avoir besoin de tirer
- * un symbole de défense. Renforcé si le joueur est sous {@link CombatContext#LOW_HP_RATIO}
- * de sa vie au moment de la riposte. S'additionne au renvoi des autres cartes Carreau.
+ * As de Carreau, carte offensive (Astra 2026-11-04) : un symbole d'attaque de la
+ * machine devient plus fréquent et tout le Coffre est vidé en bonus d'attaque, à
+ * la manière du Sang de l'As de Coeur. Coffre plein ({@link LastingEffects#MAX_VAULT}) :
+ * +15 000 d'attaque. L'ancien renvoi de 500 % et la contre-attaque sont supprimés.
  */
 public class AceOfDiamondsEffect extends Effect {
 
-    /** Renvoi garanti, en pourcentage de l'attaque ennemie. */
-    private static final int REFLECT_PERCENT        = 500;
-    /** Renvoi garanti si le joueur est sous LOW_HP_RATIO de sa vie. */
-    private static final int REFLECT_PERCENT_LOW_HP = 1000;
-
-    /** Multiplicateur du Coffre infligé en contre-attaque ({@link #COUNTER_LOW_HP} si vie basse). */
-    static final int COUNTER        = 3;
-    static final int COUNTER_LOW_HP = 5;
+    /** Coffre à vider pour 1 point d'attaque (150 000 de Coffre : +15 000). */
+    static final int            VAULT_PER_ATTACK = 10;
+    /** Boost de poids appliqué au symbole d'attaque choisi au hasard. */
+    private static final int    BOOST_AMOUNT     = 200;
+    private static final Random RANDOM           = new Random();
 
     /** Puissance de la carte : 1, ou {@link fr.astratime.lucky.entities.Card#UPGRADE_FACTOR} pour sa version « + ». */
     private final float power;
 
     public AceOfDiamondsEffect() { this(1f); }
 
-    /** @param power puissance : ses valeurs sont multipliées par autant (version « + » de la carte) */
+    /** @param power puissance : le boost de symbole est multiplié par autant (version « + » de la carte) */
     public AceOfDiamondsEffect(float power) { this.power = power; }
-
-    private int scaled(int value) { return Math.round(value * power); }
 
     @Override
     public void apply(TurnContext context) {
         CombatContext combat = context.getCombatContext();
-        combat.addGuaranteedReflect(scaled(REFLECT_PERCENT), scaled(REFLECT_PERCENT_LOW_HP));
-        combat.addCounterAttack(scaled(combat.getPlayer().getHpRatio() < CombatContext.LOW_HP_RATIO ? COUNTER_LOW_HP : COUNTER));
+        List<Symbol> attackSymbols = SymbolRegistry.getAttackSymbols(combat.getPlayer()); // ceux de sa machine
+        if (!attackSymbols.isEmpty()) {
+            Symbol target = attackSymbols.get(RANDOM.nextInt(attackSymbols.size()));
+            int boost = Math.round(BOOST_AMOUNT * power);
+            context.getSpinContext().addWeightBoost(target, boost);
+            context.addEvent(new SymbolBoostedEvent(target, boost));
+        }
+
+        int vault  = combat.getPlayer().getLastingEffects().consumeVault();
+        int attack = vault / VAULT_PER_ATTACK;
+        combat.addAttackBonus(attack, "Coffre");
+        context.addEvent(new CardBonusEvent(Lang.f("Coffre : attaque +{0}", attack), List.of(
+            new EffectPopup(Lang.f("COFFRE : ATTAQUE +{0}", attack), EffectPopup.Style.ATTACK, PopupScale.MAX_INTENSITY))));
     }
 
     @Override
     public String getDescription() {
-        int lowHp = Math.round(CombatContext.LOW_HP_RATIO * 100);
-        return Lang.f("Contre-attaque : vide le Coffre sur l'ennemi x{0} (x{1} sous {2}% de vie), en ignorant sa "
-            + "défense. Renvoie {3}% des attaques ennemies ({4}% sous {5}% de vie)",
-            scaled(COUNTER), scaled(COUNTER_LOW_HP), lowHp, scaled(REFLECT_PERCENT), scaled(REFLECT_PERCENT_LOW_HP), lowHp);
+        return Lang.f("Un symbole d'attaque devient plus fréquent (+{2}). Vide le Coffre : +1 d'attaque pour {0} de Coffre "
+            + "(+{1} au plus, Coffre plein)", VAULT_PER_ATTACK, Lang.big(LastingEffects.MAX_VAULT / VAULT_PER_ATTACK), Math.round(BOOST_AMOUNT * power));
     }
 
     @Override
     public List<EffectPopup> getPopups() {
-        return List.of(
-            new EffectPopup(Lang.t("CONTRE-ATTAQUE"), EffectPopup.Style.DEFENSE, PopupScale.MAX_INTENSITY),
-            new EffectPopup(Lang.f("RENVOI {0}-{1}%", scaled(REFLECT_PERCENT), scaled(REFLECT_PERCENT_LOW_HP)),
-                EffectPopup.Style.REFLECT, PopupScale.SECONDARY_INTENSITY)
-        );
+        return List.of(new EffectPopup(Lang.t("COFFRE OUVERT !"), EffectPopup.Style.ATTACK, PopupScale.MAX_INTENSITY));
     }
 
     @Override

@@ -58,9 +58,18 @@ class DiamondEffectsTest {
     }
 
     @Test
-    void aceOfDiamondsReflectsWithoutDefenseSymbol() {
+    void aceOfDiamondsNoLongerReflects() {
         new AceOfDiamondsEffect().apply(context);
 
-        assertEquals(500, context.getCombatContext().getTotalReflectPercent());
+        assertEquals(0, context.getCombatContext().getTotalReflectPercent(), "renvoi de 500 % supprimé (Astra)");
+        assertEquals(0, context.getCombatContext().getCounterAttack(), "plus de contre-attaque non plus");
+    }
+
+    @Test
+    void diamondCardsAddUpTheVaultMultiplier() {
+        new DiamondReflectEffect(2f, 6, 50).apply(context);
+        new DiamondReflectEffect(7.5f, 39, 150).apply(context);
+
+        assertEquals(3f, context.getCombatContext().getVaultMultiplier(), 1e-6, "x1 + 0,5 + 1,5");
     }
 }

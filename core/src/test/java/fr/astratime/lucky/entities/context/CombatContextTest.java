@@ -33,15 +33,15 @@ class CombatContextTest {
 
     @Test
     void diamondReflectsAddUpToTheirCap() {
-        context.addReflectHpPercent(7f);   // Dame de Carreau
-        context.addReflectHpPercent(7.5f); // Roi de Carreau
+        context.addReflectHpPercent(3.5f);   // Dame de Carreau
+        context.addReflectHpPercent(3.75f);  // Roi de Carreau
         context.markDefenseSymbolDrawn();
-        assertEquals(14.5f, context.getReflectHpPercent(), 1e-6);
+        assertEquals(7.25f, context.getReflectHpPercent(), 1e-6);
 
-        context.addReflectHpPercent(6.5f);
-        context.addReflectHpPercent(6f);
-        assertEquals(20f, CombatContext.MAX_REFLECT_HP_PERCENT, 1e-6);
-        assertEquals(CombatContext.MAX_REFLECT_HP_PERCENT, context.getReflectHpPercent(), 1e-6, "20 % au plus");
+        context.addReflectHpPercent(3.25f);
+        context.addReflectHpPercent(3f);
+        assertEquals(10f, CombatContext.MAX_REFLECT_HP_PERCENT, 1e-6);
+        assertEquals(CombatContext.MAX_REFLECT_HP_PERCENT, context.getReflectHpPercent(), 1e-6, "10 % au plus (Astra : divisé par 2)");
     }
 
     @Test

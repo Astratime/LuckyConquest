@@ -206,8 +206,11 @@ class DungeonCardsTest {
     }
 
     @Test
-    void cutMirrorReflectsWithoutADefenseSymbol() {
-        assertEquals(200, play("miroir_taille").getCombatContext().getTotalReflectPercent());
+    void cutMirrorGivesAShieldAndMultipliesTheVault() {
+        TurnContext turn = play("miroir_taille");
+        assertEquals(40, player.getShield());
+        assertEquals(0, turn.getCombatContext().getTotalReflectPercent(), "plus de renvoi de 200 % (Astra)");
+        assertEquals(3f, turn.getCombatContext().getVaultMultiplier(), 1e-6, "Coffre x1 + x2");
     }
 
     @Test

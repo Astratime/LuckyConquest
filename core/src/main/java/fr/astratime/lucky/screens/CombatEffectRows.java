@@ -117,8 +117,9 @@ final class CombatEffectRows {
         if (lasting.getVault() > 0) {
             rows.add(new SidePanel.EffectRow(new TextureRegion(hud.iconVault), null,
                 Lang.f("Coffre {0}", lasting.getVault()), Lang.t("Coffre"),
-                Lang.t("Jauge de Carreau. Ton bouclier inutilisé s'y garde. Tes Carreaux joués en Couleur ou en Suite "
-                    + "la remplissent. L'As de Carreau le vide sur l'ennemi.")));
+                Lang.f("Jauge de Carreau, jusqu'à {0}. Ton bouclier inutilisé s'y garde, multiplié par les Carreaux "
+                    + "joués ce tour. Tes Carreaux joués en Couleur ou en Suite la remplissent. L'As de Carreau le vide "
+                    + "en attaque (+1 pour 10).", Lang.big(LastingEffects.MAX_VAULT))));
         }
         for (double[] safe : lasting.getSafes()) {
             int turnsLeft = (int) safe[1];

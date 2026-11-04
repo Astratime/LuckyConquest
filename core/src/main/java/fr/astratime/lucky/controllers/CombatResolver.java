@@ -110,7 +110,7 @@ public class CombatResolver {
             symbolOutcomes.add(new SymbolOutcome(symbolAction.getSymbol(), symbolAction.getSlotIndex(), actionEvents));
         }
 
-        // Tirs de pistolet (Roulette russe), puis contre-attaque du Coffre (As de Carreau)
+        // Tirs de pistolet (Roulette russe), puis contre-attaque du Coffre (Diamant brut)
         List<Event> pistolEvents = firePistol(combatContext, symbolOutcomes);
         counterAttack(combatContext).ifPresent(pistolEvents::add);
         execution(combatContext).ifPresent(pistolEvents::add);
@@ -463,7 +463,7 @@ public class CombatResolver {
     }
 
     /**
-     * Contre-attaque (As de Carreau) : le Coffre est vidé d'un coup sur
+     * Contre-attaque (Diamant brut) : le Coffre est vidé d'un coup sur
      * l'ennemi, multiplié, sans tenir compte de sa défense. Rien si l'ennemi est
      * déjà vaincu ou si le Coffre est vide (il reste alors plein).
      */
