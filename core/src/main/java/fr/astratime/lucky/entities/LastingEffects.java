@@ -225,6 +225,8 @@ public class LastingEffects {
     public int getBlood() { return blood; }
     /** Vide le Sang. @return la réserve avant d'être vidée */
     public int consumeBlood() { int n = blood; blood = 0; return n; }
+    /** Retire au plus {@code max} de Sang ; le reste attend dans la jauge. @return le Sang retiré */
+    public int consumeBlood(int max) { int n = Math.min(blood, Math.max(0, max)); blood -= n; return n; }
 
     private static int capBlood(long value) { return (int) Math.max(0, Math.min(MAX_BLOOD, value)); }
 

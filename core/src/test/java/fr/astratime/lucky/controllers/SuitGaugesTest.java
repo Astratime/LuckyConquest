@@ -97,6 +97,17 @@ class SuitGaugesTest {
     }
 
     @Test
+    void theAceOfHeartsTakesAtMostTenThousandBloodAndKeepsTheRest() {
+        lasting.addBlood(LastingEffects.MAX_BLOOD);
+        CombatContext frenzy = prepare(new AceOfHeartsEffect()).getCombatContext();
+        assertEquals(10_000, frenzy.getAttackBonus(), "bonus d'attaque du Sang plafonné à 10 000 (Astra)");
+        assertEquals(LastingEffects.MAX_BLOOD - 10_000, lasting.getBlood(), "le Sang en trop reste dans la jauge");
+
+        CombatContext plus = prepare(new AceOfHeartsEffect(1.5f)).getCombatContext();
+        assertEquals(15_000, plus.getAttackBonus(), "version « + » : 15 000");
+    }
+
+    @Test
     void leftoverShieldFillsTheVaultThatTheAceOfDiamondsUnleashes() {
         CombatContext combat = new CombatContext(player, enemy);
         Symbol[] symbols = { Symbol.DIAMOND, null, null };

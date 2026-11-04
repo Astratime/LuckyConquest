@@ -159,7 +159,7 @@
   "Frenesie : attaque x{0}, sang +{1}": "Frenzy: attack x{0}, blood +{1}",
   "FRÉNÉSIE : ATTAQUE x{0}": "FRENZY: ATTACK x{0}",
   "SANG : ATTAQUE +{0}": "BLOOD: ATTACK +{0}",
-  "Frénésie : un symbole d'attaque devient plus fréquent. Attaque multipliée jusqu'à x{0} selon la vie perdue. Tout le Sang s'ajoute à l'attaque": "Frenzy: an attack symbol becomes more frequent. Attack multiplied up to x{0} based on health lost. All the Blood is added to the attack",
+  "Frénésie : un symbole d'attaque devient plus fréquent. Attaque multipliée jusqu'à x{0} selon la vie perdue. Le Sang s'ajoute à l'attaque, +{1} au plus (le reste du Sang est gardé)": "Frenzy: an attack symbol becomes more frequent. Attack multiplied up to x{0} based on health lost. The Blood is added to the attack, up to +{1} (the rest of the Blood is kept)",
   "FRÉNÉSIE !": "FRENZY!",
   "EXÉCUTION": "EXECUTION",
   "-{0} GAINS : LAMES +{1}": "-{0} GAINS: BLADES +{1}",
