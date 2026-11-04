@@ -79,9 +79,36 @@ class EffectPopupTest {
 
         // 30% de 1000 = 300 consommés -> attaque 115 + 10 x racine(300) = 288, boost 150 + 300 = 450
         assertEquals(700, player.getGains(), "le coût est payé à la pose de la carte");
-        assertEquals(List.of("-30% GAINS", "ATTAQUE +288", "BOOST SYMBOLE +450"), texts(context));
+        assertEquals(List.of("-300 GAINS", "ATTAQUE +288", "BOOST SYMBOLE +450"), texts(context));
         assertTrue(context.getEffectsForSpin().stream().anyMatch(e -> e instanceof AttackEffect));
         assertFalse(context.getEffectsForSpin().stream().anyMatch(e -> e instanceof AceOfClubsEffect),
             "l'As lui-même n'est pas réappliqué au spin : il consommerait les gains une seconde fois");
+    }
+
+    @Test
+    void aceOfClubsNeverConsumesMoreThanWhatStillAddsAttack() {
+        Player player = new Player("Joueur", 100, List.of());
+        player.addGains(10_000_000);
+
+        PlayContext context = play(new AceOfClubsEffect(), player);
+
+        // 90 000 gains suffisent à atteindre +3 000 d'attaque : le reste n'est pas pris.
+        assertEquals(10_000_000 - 90_000, player.getGains());
+        assertEquals(List.of("-90 000 GAINS", "ATTAQUE +3115", "BOOST SYMBOLE +450"), texts(context));
+    }
+
+    @Test
+    void aceOfSpadesOnlyConsumesTheGainsThatBuyBlades() {
+        Player player = new Player("Joueur", 100, List.of());
+        player.addGains(10_000_000);
+        play(new AceOfSpadesEffect(), player);
+        assertEquals(5, player.getLastingEffects().getBlades(), "5 Lames au plus");
+        assertEquals(10_000_000 - 1_250, player.getGains(), "5 x 250 gains, pas 1 000 000");
+
+        Player small = new Player("Joueur", 100, List.of());
+        small.addGains(7_400); // 10 % = 740 : 2 Lames pour 500, les 240 restants n'achètent rien
+        play(new AceOfSpadesEffect(), small);
+        assertEquals(2, small.getLastingEffects().getBlades());
+        assertEquals(7_400 - 500, small.getGains());
     }
 }

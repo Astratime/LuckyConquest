@@ -1,5 +1,6 @@
 package fr.astratime.lucky.entities.effects;
 
+import fr.astratime.lucky.entities.BigNumber;
 import fr.astratime.lucky.entities.LastingEffects;
 import fr.astratime.lucky.entities.context.PlayContext;
 import fr.astratime.lucky.entities.context.TurnContext;
@@ -13,7 +14,7 @@ import java.util.List;
 
 /**
  * As de Pique, « Exécution » : à la pose, il consomme une part des gains pour
- * aiguiser de nouvelles Lames ; au lancer, il encaisse toutes les Lames :
+ * aiguiser de nouvelles Lames (seulement ce qui achète des Lames, {@link #MAX_CONSUMED} au plus) ; au lancer, il encaisse toutes les Lames :
  * l'attaque du tour est multipliée selon leur nombre, et {@link #PIERCE_PERCENT} %
  * de chaque coup traverse la défense ennemie (tout, pour sa version « + »). Les Lames comptent encore pour ce tirage, puis sont vidées.
  */
@@ -25,6 +26,8 @@ public class AceOfSpadesEffect extends Effect {
     static final int   GAINS_PER_BLADE = 250;
     /** Lames au plus obtenues avec les gains. */
     static final int   MAX_BOUGHT_BLADES = 5;
+    /** Gains au plus consommés : au-delà, ils n'achèteraient aucune Lame de plus. */
+    static final int   MAX_CONSUMED = MAX_BOUGHT_BLADES * GAINS_PER_BLADE;
     /** Multiplicateur d'attaque ajouté par Lame encaissée. */
     static final float FACTOR_PER_BLADE = 0.5f;
     /** Part (%) de chaque coup qui traverse la défense ennemie (Astra : 80, au lieu de toute la défense). */
@@ -40,13 +43,15 @@ public class AceOfSpadesEffect extends Effect {
 
     @Override
     public void onPlay(PlayContext context) {
-        double consumed = context.consumeGainsPercent(CONSUME_PERCENT);
-        int blades   = (int) Math.min(MAX_BOUGHT_BLADES, consumed / GAINS_PER_BLADE);
+        // 10 % des gains au plus, mais seulement ce qui achète des Lames : rien n'est payé pour rien.
+        double share  = BigNumber.round(Math.max(0, context.getPlayer().getGains()) * CONSUME_PERCENT);
+        int    blades = (int) Math.min(MAX_BOUGHT_BLADES, Math.floor(share / GAINS_PER_BLADE));
+        double consumed = context.consumeGains((double) blades * GAINS_PER_BLADE);
         context.getLastingEffects().addBlades(blades);
         context.queueForSpin(this);
         context.addPopups(List.of(
             new EffectPopup(Lang.t("EXÉCUTION"), EffectPopup.Style.ATTACK, PopupScale.MAX_INTENSITY),
-            new EffectPopup(Lang.f("-10% GAINS : LAMES +{0}", blades), EffectPopup.Style.GAINS, PopupScale.SECONDARY_INTENSITY)));
+            new EffectPopup(Lang.f("-{0} GAINS : LAMES +{1}", Lang.big(consumed), blades), EffectPopup.Style.GAINS, PopupScale.SECONDARY_INTENSITY)));
     }
 
     /** Encaisse les Lames : attaque multipliée pour ce tour, défense ennemie percée de {@link #piercePercent()} %. */
@@ -68,9 +73,10 @@ public class AceOfSpadesEffect extends Effect {
 
     @Override
     public String getDescription() {
-        return Lang.f("Exécution : consomme 10% des gains. +1 Lame tous les {0} gains consommés. Attaque multipliée "
-            + "par (1 + {1} x Lame). Les symboles d'attaque percent {2} % de la défense",
-            GAINS_PER_BLADE, Lang.decimal(String.valueOf(FACTOR_PER_BLADE * power)), piercePercent());
+        return Lang.f("Exécution : consomme 10% des gains, {3} au plus. +1 Lame tous les {0} gains consommés, "
+            + "{4} Lames au plus. Attaque multipliée par (1 + {1} x Lame). Les symboles d'attaque percent {2} % de la défense",
+            GAINS_PER_BLADE, Lang.decimal(String.valueOf(FACTOR_PER_BLADE * power)), piercePercent(),
+            Lang.big(MAX_CONSUMED), MAX_BOUGHT_BLADES);
     }
 
     /** Textes fixes : aucun, ils dépendent des gains consommés (voir {@link #onPlay}). */

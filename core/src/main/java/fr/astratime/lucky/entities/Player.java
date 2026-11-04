@@ -282,7 +282,16 @@ public class Player {
      * @return le montant effectivement consommé
      */
     public double consumeGainsPercent(float percent) {
-        double amount = BigNumber.round(Math.max(0, gains) * percent);
+        return consumeGains(BigNumber.round(Math.max(0, gains) * percent));
+    }
+
+    /**
+     * Consomme {@code amount} gains (ex : l'As de Pique ne prend que ce qui lui sert).
+     *
+     * @return le montant consommé
+     */
+    public double consumeGains(double amount) {
+        amount = Math.max(0, amount);
         lastingEffects.spendFakeGains(amount);
         gains -= amount;
         capPotWinnings();
