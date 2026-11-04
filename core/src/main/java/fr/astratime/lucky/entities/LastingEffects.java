@@ -216,8 +216,8 @@ public class LastingEffects {
     /** Vide les Lames. @return leur nombre avant d'être vidées */
     public int consumeBlades() { int n = blades; blades = 0; return n; }
 
-    /** Sang maximum qu'on peut accumuler (la mécanique est déjà très forte). */
-    public static final int MAX_BLOOD = 100_000;
+    /** Sang maximum qu'on peut accumuler : c'est aussi le plus gros bonus d'attaque de l'As de Coeur (Astra 2026-11-04 : 10 000). */
+    public static final int MAX_BLOOD = 10_000;
 
     /** Ajoute {@code amount} au Sang, sans dépasser {@link #MAX_BLOOD}. */
     public void addBlood(int amount) { blood = capBlood((long) blood + amount); }

@@ -1,5 +1,6 @@
 package fr.astratime.lucky.entities.effects;
 
+import fr.astratime.lucky.entities.LastingEffects;
 import fr.astratime.lucky.entities.Player;
 import fr.astratime.lucky.entities.Symbol;
 import fr.astratime.lucky.entities.SymbolRegistry;
@@ -60,9 +61,17 @@ public class AceOfHeartsEffect extends Effect {
 
     @Override
     public String getDescription() {
-        return Lang.f("Frénésie : un symbole d'attaque devient plus fréquent. Attaque multipliée jusqu'à x{0} selon la "
-            + "vie perdue. Tout le Sang s'ajoute à l'attaque",
-            Math.round(1 + FRENZY_PER_MISSING_HP * power));
+        return Lang.f("Frénésie : un symbole d'attaque devient plus fréquent. Berserk : plus tu as perdu de vie, plus "
+            + "ton attaque est multipliée (x1 à pleine vie, x{0} à mi-vie, x{1} à 10 % de vie). Tout le Sang s'ajoute "
+            + "à l'attaque ({2} au plus), avant ce multiplicateur",
+            frenzyText(0.5f), frenzyText(0.9f), Lang.big(LastingEffects.MAX_BLOOD));
+    }
+
+    /** @return le multiplicateur de Frénésie avec {@code missing} de vie perdue, arrondi au dixième (ex : "2,8") */
+    private String frenzyText(float missing) {
+        float times = Math.round((1 + FRENZY_PER_MISSING_HP * power * missing) * 10f) / 10f;
+        String text = times == (int) times ? String.valueOf((int) times) : String.valueOf(times);
+        return Lang.isEnglish() ? text : text.replace('.', ',');
     }
 
     @Override

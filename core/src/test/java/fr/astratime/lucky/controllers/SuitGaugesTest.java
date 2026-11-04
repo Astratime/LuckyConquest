@@ -97,6 +97,14 @@ class SuitGaugesTest {
     }
 
     @Test
+    void theAceOfHeartsBonusIsLimitedByTheBloodGaugeMaximum() {
+        lasting.addBlood(1_000_000);
+        assertEquals(10_000, lasting.getBlood(), "jauge de Sang plafonnée à 10 000 (Astra)");
+        CombatContext frenzy = prepare(new AceOfHeartsEffect()).getCombatContext();
+        assertEquals(10_000, frenzy.getAttackBonus(), "l'As de Coeur ajoute donc +10 000 au plus");
+    }
+
+    @Test
     void leftoverShieldFillsTheVaultThatTheAceOfDiamondsUnleashes() {
         CombatContext combat = new CombatContext(player, enemy);
         Symbol[] symbols = { Symbol.DIAMOND, null, null };
