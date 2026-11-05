@@ -431,8 +431,9 @@ final class CombatEffectRows {
         if (target.getMaluses().getPharaohSealTurns() > 0) rows.add(new SidePanel.EffectRow(icon, null, Lang.f("Sceau ({0})", target.getMaluses().getPharaohSealTurns()),
             Lang.t("Sceau du Pharaon"), Lang.f("Ses Créances comptent double. Encore {0}.", turns(target.getMaluses().getPharaohSealTurns()))));
         if (target.getMaluses().getClaims() > 0) rows.add(new SidePanel.EffectRow(icon, null, Lang.f("Créances x{0}", target.getMaluses().getClaims()),
-            Lang.t("Créances"), Lang.f("À chacun de ses tours, l'ennemi perd {0} % de ses PV max et tu gagnes {1}.",
-                percentText(target.getMaluses().getClaims() * EnemyMaluses.CLAIM_HP_PER_MILLE / 10f),
+            Lang.t("Créances"), Lang.f("À chacun de ses tours, l'ennemi perd {0} PV, sans tenir compte de sa défense, et tu gagnes {1}.",
+                Lang.big(fr.astratime.lucky.controllers.TurnEngine.claimsDamage(target.getMaluses().getClaims(),
+                    EnemyMaluses.CLAIM_DAMAGE_PERCENT, target.getKind().getSpinCost())),
                 SidePanel.formatGains((double) target.getMaluses().getClaims() * EnemyMaluses.CLAIM_SPINS * target.getKind().getSpinCost()))));
         if (target.getMaluses().getCompoundTurns() > 0) rows.add(new SidePanel.EffectRow(icon, null,
             Lang.f("Intérêts ({0})", target.getMaluses().getCompoundTurns()), Lang.t("Intérêts composés"),
@@ -465,11 +466,5 @@ final class CombatEffectRows {
                 lasting.getMartingalePair())));
         if (lasting.getNextDraws() > 0) rows.add(new SidePanel.EffectRow(icon, null, Lang.f("Pioche +{0}", lasting.getNextDraws()),
             Lang.t("Rire du Joker"), Lang.f("Tu pioches {0} cartes de plus au prochain tour.", lasting.getNextDraws())));
-    }
-
-    /** @return {@code percent} sans décimale inutile, avec la virgule en français (ex : "2,5"). */
-    private static String percentText(float percent) {
-        String text = percent == (int) percent ? String.valueOf((int) percent) : String.valueOf(percent);
-        return !Lang.isEnglish() ? text.replace('.', ',') : text;
     }
 }

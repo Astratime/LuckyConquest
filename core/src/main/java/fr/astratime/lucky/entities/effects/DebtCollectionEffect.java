@@ -16,25 +16,25 @@ import java.math.BigDecimal;
  */
 public class DebtCollectionEffect extends Effect {
 
-    private final float hpPercent;
+    private final float damagePercent;
     private final int   spins;
 
     /**
-     * @param hpPercent PV max de l'ennemi retirés par Créance, en %
+     * @param damagePercent dégâts par Créance, en % du prix du tirage
      * @param spins     gains par Créance, en coûts de tirage
      */
-    public DebtCollectionEffect(float hpPercent, int spins) {
-        this.hpPercent = hpPercent;
+    public DebtCollectionEffect(float damagePercent, int spins) {
+        this.damagePercent = damagePercent;
         this.spins     = spins;
     }
 
     @Override
-    public void apply(TurnContext context) { context.getCombatContext().addDebtCollection(hpPercent, spins); }
+    public void apply(TurnContext context) { context.getCombatContext().addDebtCollection(damagePercent, spins); }
 
     @Override
     public String getDescription() {
-        return Lang.f("Encaisse toutes les Créances : {0} % des PV max de l'ennemi et {1} tirages de gains par Créance. "
-            + "Elles retombent à 0.", formatPercent(hpPercent), spins);
+        return Lang.f("Encaisse toutes les Créances : par Créance, {0} % du prix du tirage en dégâts (sans tenir compte de sa défense) "
+            + "et {1} tirages de gains. Elles retombent à 0.", formatPercent(damagePercent), spins);
     }
 
     @Override

@@ -116,8 +116,11 @@ public class EnemyMaluses {
 
     /** Créances qu'il peut porter au plus. */
     public static final int MAX_CLAIMS = 20;
-    /** Ce que chaque Créance lui retire à son tour, en pour mille de ses PV max (0,5 %). */
-    public static final int CLAIM_HP_PER_MILLE = 5;
+    /**
+     * Ce que chaque Créance lui inflige à son tour, en % du prix du tirage du combat : une dose
+     * fixe, qui ne dépend plus de ses PV max (Astra 2026-11-05).
+     */
+    public static final int CLAIM_DAMAGE_PERCENT = 20;
     /** Ce que chaque Créance rapporte au joueur à chaque tour de l'ennemi, en coûts de tirage. */
     public static final int CLAIM_SPINS = 1;
     /** Un boss ou un roi ne subit que cette part des malus du Bluffeur, en %. */
