@@ -450,7 +450,7 @@ public class CardLoader {
         add(effects, "CLAIMS", (json, v) -> new ClaimsEffect(v.i("count")));
         add(effects, "VARIABLE_RATE", (json, v) -> new VariableRateEffect(v.i("perSymbol")));
         add(effects, "COMPOUND_INTEREST", (json, v) -> new CompoundInterestEffect(json.getInt("turns"), v.i("percent")));
-        add(effects, "DEBT_COLLECTION", (json, v) -> new DebtCollectionEffect(v.f("hpPercent"), v.i("spins")));
+        add(effects, "DEBT_COLLECTION", (json, v) -> new DebtCollectionEffect(v.f("damagePercent"), v.i("spins")));
         add(effects, "ANNUITY", (json, v) -> new AnnuityEffect(json.getInt("turns"), json.getInt("claims"), v.i("spins")));
         add(effects, "INTIMIDATION", (json, v) -> new IntimidationEffect(v.i("percent")));
         add(effects, "MARKED_CARDS", (json, v) -> new MarkedCardsEffect(v.i("turns")));

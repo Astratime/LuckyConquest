@@ -289,21 +289,21 @@ public class CombatResolver {
 
     /**
      * Recouvrement : toutes les Créances de l'ennemi sont encaissées d'un coup,
-     * une part de ses PV max par Créance (sa défense n'y fait rien, sa Garde si),
-     * et des gains par Créance.
+     * par Créance, une part du prix du tirage en dégâts (sa défense n'y fait rien,
+     * sa Garde si ; jamais ses PV max) et des gains.
      *
      * @return le coup et les gains, ou un texte s'il n'y avait rien à encaisser
      */
     private List<Event> debtCollection(CombatContext context) {
         List<Event> events = new ArrayList<>();
         Enemy enemy = context.getEnemy();
-        if (context.getCollectionHpPercent() <= 0f || enemy.isDefeated()) return events;
+        if (context.getCollectionDamagePercent() <= 0f || enemy.isDefeated()) return events;
         int claims = enemy.getMaluses().takeClaims();
         if (claims == 0) {
             events.add(new StatusEvent(Lang.t("RECOUVREMENT : AUCUNE CRÉANCE"), EffectPopup.Style.DRAIN));
             return events;
         }
-        long raw = Math.max(1L, Math.round((double) enemy.getMaxHp() * claims * context.getCollectionHpPercent() / 100.0));
+        long raw = TurnEngine.claimsDamage(claims, context.getCollectionDamagePercent(), context.getSpinCost());
         long damage = enemy.skinned(raw);
         enemy.takeDamage(raw);
         events.add(new CardStrikeEvent(Lang.f("RECOUVREMENT : {0} CRÉANCES", claims), damage, raw, enemy.getDefense()));

@@ -497,19 +497,27 @@ public class TurnEngine {
     }
 
     /**
-     * Créances de l'ennemi (Rentier), au début de son tour : chacune lui retire
-     * {@link Enemy#CLAIM_HP_PER_MILLE} pour mille de ses PV max (sa défense n'y
-     * fait rien, sa Garde si) et rapporte {@link Enemy#CLAIM_SPINS} coût de tirage
-     * de gains au joueur. Elles restent jusqu'à la fin du combat.
+     * Créances de l'ennemi (Rentier), au début de son tour : chacune lui inflige
+     * {@link EnemyMaluses#CLAIM_DAMAGE_PERCENT} % du prix du tirage en dégâts
+     * (sa défense n'y fait rien, sa Garde si) et rapporte {@link EnemyMaluses#CLAIM_SPINS}
+     * coût de tirage de gains au joueur. Elles restent jusqu'à la fin du combat.
      *
      * @return le coup des Créances et leurs gains (rien sans Créance)
      */
+    /**
+     * @return les dégâts de {@code claims} Créances qui font chacune {@code percent} % du prix du tirage
+     *         {@code spinCost} (jamais ses PV max)
+     */
+    public static long claimsDamage(int claims, float percent, int spinCost) {
+        return Math.max(0L, Math.round((double) claims * percent * spinCost / 100.0));
+    }
+
     static List<Event> chargeClaims(Enemy enemy, Player player, CombatContext combat) {
         List<Event> events = new ArrayList<>();
         int claims = enemy.getMaluses().getClaims();
         if (claims <= 0) return events;
         if (enemy.getMaluses().takePharaohSeal()) claims *= 2; // Sceau du Pharaon
-        long raw = Math.max(1L, (long) enemy.getMaxHp() * claims * EnemyMaluses.CLAIM_HP_PER_MILLE / 1000);
+        long raw = claimsDamage(claims, EnemyMaluses.CLAIM_DAMAGE_PERCENT, combat.getSpinCost());
         long damage = enemy.skinned(raw);
         enemy.takeDamage(raw);
         events.add(new fr.astratime.lucky.entities.events.CardStrikeEvent(Lang.f("CRÉANCES x{0}", claims), damage, raw,

@@ -76,7 +76,7 @@ public class CombatContext {
     private int   jigSpinsPerBlade = 0; // Gigue du Lutin : coûts de tirage gagnés pour une Lame (0 : aucune Gigue)
     private int   jigMaxBlades  = 0;  // Gigue du Lutin : Lames au plus
     private int   variableRate  = 0;  // Taux variable : Créances par symbole de gains sorti
-    private float collectionHpPercent = 0f; // Recouvrement : % des PV max de l'ennemi par Créance encaissée
+    private float collectionDamagePercent = 0f; // Recouvrement : dégâts par Créance encaissée, en % du prix du tirage
     private int   collectionSpins = 0; // Recouvrement : gains (en coûts de tirage) par Créance encaissée
     private int   bluffPercent  = 0;  // Coup de bluff : attaque en plus par malus de l'ennemi, en %
     private int   bluffMax      = 0;  // Coup de bluff : attaque en plus au plus, en %
@@ -177,13 +177,16 @@ public class CombatContext {
     /** @return les Créances par symbole de gains sorti ce tour. */
     public int getVariableRate() { return variableRate; }
 
-    /** Recouvrement : les Créances sont encaissées ({@code hpPercent} % des PV max et {@code spins} coûts de tirage chacune). */
-    public void addDebtCollection(float hpPercent, int spins) {
-        collectionHpPercent += hpPercent;
+    /**
+     * Recouvrement : les Créances sont encaissées, chacune {@code damagePercent} % du prix du tirage en dégâts
+     * et {@code spins} coûts de tirage de gains.
+     */
+    public void addDebtCollection(float damagePercent, int spins) {
+        collectionDamagePercent += damagePercent;
         collectionSpins     += spins;
     }
-    /** @return les PV max de l'ennemi retirés par Créance encaissée, en % (0 : aucun Recouvrement). */
-    public float getCollectionHpPercent() { return collectionHpPercent; }
+    /** @return les dégâts par Créance encaissée, en % du prix du tirage (0 : aucun Recouvrement). */
+    public float getCollectionDamagePercent() { return collectionDamagePercent; }
     /** @return les gains par Créance encaissée, en coûts de tirage. */
     public int getCollectionSpins() { return collectionSpins; }
 

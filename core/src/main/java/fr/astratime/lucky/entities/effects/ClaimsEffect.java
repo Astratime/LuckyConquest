@@ -29,7 +29,7 @@ public class ClaimsEffect extends Effect {
     }
 
     @Override
-    public String getDescription() { return Lang.f("+{0} Créances sur l'ennemi. À chacun de ses tours, chaque Créance lui retire 0,5 % de ses PV max et te rapporte un tirage de gains (20 au plus).", count); }
+    public String getDescription() { return Lang.f("+{0} Créances sur l'ennemi (20 au plus). À chacun de ses tours, chaque Créance lui inflige {1} % du prix du tirage en dégâts, sans tenir compte de sa défense, et te rapporte un tirage de gains.", count, fr.astratime.lucky.entities.EnemyMaluses.CLAIM_DAMAGE_PERCENT); }
 
     @Override
     public List<EffectPopup> getPopups() {
