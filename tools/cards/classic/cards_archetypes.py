@@ -1,7 +1,7 @@
 """Cartes des 5 archétypes de deck (Joker, Lutin, Rentier, Bluffeur, Relanceur), au style des cartes classiques
 (voir base.py et README.md). Aucun texte. Seule exception à « aucun chiffre » : le rang de la carte (pour les
 combinaisons, demandes d'Astra du 2026-10-25), en index dans le coin haut gauche comme sur les cartes classiques
-(A, K, Q, J, 10, 9 : les mêmes lettres que les cartes classiques), suivi de l'emblème de l'archétype.
+(A, K, Q, J, 10, 9 : les lettres copiées des cartes classiques, voir rank_rows), suivi de l'emblème de l'archétype.
 L'index ne doit cacher aucune partie du dessin : le dessin est placé sous l'index et, s'il ne tient pas, resserré
 en retirant les lignes et colonnes qui changent le moins le dessin (voir fit_art)."""
 import os
@@ -670,18 +670,12 @@ RANKS = {
     'rouleau_retenu': 9,
 }
 
-# Index de rang, 3 cases de large sur 5 de haut (le « 1 » du 10 en fait 1), posé à l'échelle des index des
-# cartes classiques (chaque case en fait 2x2).
-GLYPHS = {
-    '1': ['k', 'k', 'k', 'k', 'k'],
-    '0': ['kkk', 'k.k', 'k.k', 'k.k', 'kkk'],
-    '9': ['kkk', 'k.k', 'kkk', '..k', 'kkk'],
-    'A': ['.k.', 'k.k', 'kkk', 'k.k', 'k.k'],
-    'J': ['..k', '..k', '..k', 'k.k', 'kkk'],
-    'Q': ['kkk', 'k.k', 'k.k', 'kk.', '.kk'],
-    'K': ['k.k', 'k.k', 'kk.', 'k.k', 'k.k'],
-}
-RANK_TEXT = {1: 'A', 11: 'J', 12: 'Q', 13: 'K'}
+# Index de rang : repris tel quel des cartes classiques (assets/cards/light/<rang>-P.png, 190x270 = grille 38x54
+# x5), pixel pour pixel et dans le même noir, pour que A, K, Q, J, 10 et 9 soient exactement les mêmes lettres.
+RANK_INK = (0, 0, 0, 255)           # noir des index des cartes classiques (pas base.INK)
+CLASSIC_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', '..', 'assets', 'cards', 'light')
+CLASSIC_SCALE = 5
+CLASSIC_ZONE = (4, 4, 18, 18)       # coin haut gauche de la carte classique (x0, y0, x1, y1 en cases)
 INDEX_X, INDEX_Y = X0 + 2, Y0 + 2   # coin haut gauche de l'index
 INDEX_H = 10                        # hauteur de l'index (5 cases x 2)
 INDEX_GAP = 2                       # entre l'index et l'emblème, et autour de la zone réservée
@@ -690,13 +684,16 @@ _current = {}                       # rang de la carte en cours de rendu (voir r
 
 
 def rank_rows(rank):
-    """@return les lignes du sprite de l'index du rang, à l'échelle 2."""
-    text = RANK_TEXT.get(rank, str(rank))
-    rows = ['', '', '', '', '']
-    for n, ch in enumerate(text):
-        for j in range(5):
-            rows[j] += ('.' if n else '') + GLYPHS[ch][j]
-    return [''.join(c * 2 for c in row) for row in rows for _ in range(2)]
+    """@return les lignes du sprite de l'index du rang, copiées de l'index de la carte classique du même rang."""
+    from PIL import Image
+    im = Image.open(os.path.join(CLASSIC_DIR, '%d-P.png' % rank)).convert('RGBA')
+    x0, y0, x1, y1 = CLASSIC_ZONE
+    grid = [[im.getpixel((x * CLASSIC_SCALE + CLASSIC_SCALE // 2, y * CLASSIC_SCALE + CLASSIC_SCALE // 2)) == RANK_INK
+             for x in range(x0, x1)] for y in range(y0, y1)]
+    ys = [j for j, row in enumerate(grid) if any(row)]
+    xs = [i for row in grid for i, v in enumerate(row) if v]
+    return [''.join('k' if grid[j][i] else '.' for i in range(min(xs), max(xs) + 1))
+            for j in range(min(ys), max(ys) + 1)]
 
 
 def _line_cost(a, i, axis):
@@ -770,7 +767,7 @@ def finish(pal, L, idx, ipal, dx=0, dy=0):
     im = card(*pal)
     clip(im, fit_art(L, zw, zh))
     d = ImageDraw.Draw(im)
-    sprite(d, INDEX_X, INDEX_Y, rows, {'k': INK})
+    sprite(d, INDEX_X, INDEX_Y, rows, {'k': RANK_INK})
     sprite(d, emblem_x, INDEX_Y + (INDEX_H - len(idx)) // 2, idx, ipal)
     return im
 
