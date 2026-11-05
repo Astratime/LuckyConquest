@@ -17,22 +17,22 @@ public final class ReelShop {
     private static final Map<Symbol, Long> PRICES = new LinkedHashMap<>();
 
     static {
-        PRICES.put(Symbol.HORSESHOE,     3_000_000L);
-        PRICES.put(Symbol.ECU,           3_000_000L);
-        PRICES.put(Symbol.PIGGY_BANK,    4_000_000L);
-        PRICES.put(Symbol.SWORD,         6_000_000L);
-        PRICES.put(Symbol.HEART,         6_000_000L);
-        PRICES.put(Symbol.SPIKED_SHIELD, 7_000_000L);
-        PRICES.put(Symbol.FANGS,         7_000_000L);
-        PRICES.put(Symbol.DIE,           8_000_000L);
-        PRICES.put(Symbol.MOON,          9_000_000L);
-        PRICES.put(Symbol.STAR,          10_000_000L);
-        PRICES.put(Symbol.SCYTHE,        11_000_000L);
-        PRICES.put(Symbol.BOMB,          12_000_000L);
-        PRICES.put(Symbol.CROWN,         20_000_000L);
-        // Roi démon et Apôtre de la Chance (rouleaux d'Astra) : les plus chers
-        PRICES.put(Symbol.DEMON_KING,    40_000_000L);
-        PRICES.put(Symbol.LUCK_APOSTLE,  40_000_000L);
+        // Prix selon la note de force (Astra, 2026-11-05) , x2 : 4 = 6 M … 10 = 2,4 Md
+        PRICES.put(Symbol.HORSESHOE,     6_000_000L);
+        PRICES.put(Symbol.ECU,           6_000_000L);
+        PRICES.put(Symbol.PIGGY_BANK,    6_000_000L);
+        PRICES.put(Symbol.HEART,         16_000_000L);
+        PRICES.put(Symbol.SPIKED_SHIELD, 16_000_000L);
+        PRICES.put(Symbol.FANGS,         50_000_000L);
+        PRICES.put(Symbol.DIE,           50_000_000L);
+        PRICES.put(Symbol.MOON,          50_000_000L);
+        PRICES.put(Symbol.STAR,          50_000_000L);
+        PRICES.put(Symbol.SCYTHE,        50_000_000L);
+        PRICES.put(Symbol.SWORD,         150_000_000L);
+        PRICES.put(Symbol.CROWN,         150_000_000L);
+        PRICES.put(Symbol.BOMB,          400_000_000L);
+        PRICES.put(Symbol.DEMON_KING,    2_400_000_000L);
+        PRICES.put(Symbol.LUCK_APOSTLE,  2_400_000_000L);
     }
 
     /** @return les rouleaux en vente et leur prix, dans l'ordre d'affichage. */
