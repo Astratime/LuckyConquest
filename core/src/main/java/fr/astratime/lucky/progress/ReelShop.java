@@ -17,22 +17,22 @@ public final class ReelShop {
     private static final Map<Symbol, Long> PRICES = new LinkedHashMap<>();
 
     static {
-        // Prix selon la note de force (Astra, 2026-11-05) : 4 = 3 M … 10 = 1,2 Md
-        PRICES.put(Symbol.HORSESHOE,     3_000_000L);
-        PRICES.put(Symbol.ECU,           3_000_000L);
-        PRICES.put(Symbol.PIGGY_BANK,    3_000_000L);
-        PRICES.put(Symbol.HEART,         8_000_000L);
-        PRICES.put(Symbol.SPIKED_SHIELD, 8_000_000L);
-        PRICES.put(Symbol.FANGS,         25_000_000L);
-        PRICES.put(Symbol.DIE,           25_000_000L);
-        PRICES.put(Symbol.MOON,          25_000_000L);
-        PRICES.put(Symbol.STAR,          25_000_000L);
-        PRICES.put(Symbol.SCYTHE,        25_000_000L);
-        PRICES.put(Symbol.SWORD,         75_000_000L);
-        PRICES.put(Symbol.CROWN,         75_000_000L);
-        PRICES.put(Symbol.BOMB,          200_000_000L);
-        PRICES.put(Symbol.DEMON_KING,    1_200_000_000L);
-        PRICES.put(Symbol.LUCK_APOSTLE,  1_200_000_000L);
+        // Prix selon la note de force (Astra, 2026-11-05) , x2 : 4 = 6 M … 10 = 2,4 Md
+        PRICES.put(Symbol.HORSESHOE,     6_000_000L);
+        PRICES.put(Symbol.ECU,           6_000_000L);
+        PRICES.put(Symbol.PIGGY_BANK,    6_000_000L);
+        PRICES.put(Symbol.HEART,         16_000_000L);
+        PRICES.put(Symbol.SPIKED_SHIELD, 16_000_000L);
+        PRICES.put(Symbol.FANGS,         50_000_000L);
+        PRICES.put(Symbol.DIE,           50_000_000L);
+        PRICES.put(Symbol.MOON,          50_000_000L);
+        PRICES.put(Symbol.STAR,          50_000_000L);
+        PRICES.put(Symbol.SCYTHE,        50_000_000L);
+        PRICES.put(Symbol.SWORD,         150_000_000L);
+        PRICES.put(Symbol.CROWN,         150_000_000L);
+        PRICES.put(Symbol.BOMB,          400_000_000L);
+        PRICES.put(Symbol.DEMON_KING,    2_400_000_000L);
+        PRICES.put(Symbol.LUCK_APOSTLE,  2_400_000_000L);
     }
 
     /** @return les rouleaux en vente et leur prix, dans l'ordre d'affichage. */
