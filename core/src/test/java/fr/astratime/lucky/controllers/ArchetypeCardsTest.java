@@ -85,11 +85,23 @@ class ArchetypeCardsTest {
         long hp = enemy.getHp();
         double gains = player.getGains();
         TurnEngine.chargeClaims(enemy, player, combat);
-        assertTrue(enemy.getHp() < hp, "les Créances blessent l'ennemi");
+        assertEquals(Math.max(0L, hp - (long) EnemyMaluses.MAX_CLAIMS * EnemyMaluses.CLAIM_DAMAGE_PERCENT
+            * combat.getSpinCost() / 100), enemy.getHp(), "chaque Créance : une part du prix du tirage, rien sur ses PV max");
         assertEquals(gains + EnemyMaluses.MAX_CLAIMS * EnemyMaluses.CLAIM_SPINS * combat.getSpinCost(), player.getGains(), 1e-6);
         assertEquals(EnemyMaluses.MAX_CLAIMS, enemy.getMaluses().getClaims(), "elles restent après avoir payé");
         assertEquals(EnemyMaluses.MAX_CLAIMS, enemy.getMaluses().takeClaims());
         assertEquals(0, enemy.getMaluses().getClaims(), "Recouvrement : tout est encaissé");
+    }
+
+    @Test
+    void claimsHitTheSameWhateverTheEnemyMaxHp() {
+        assertEquals(60L, TurnEngine.claimsDamage(3, 20, 100), "3 Créances x 20 % d'un tirage à 100");
+        assertEquals(84_000L, TurnEngine.claimsDamage(3, 20, 140_000), "Désert : le prix du tirage du lieu");
+        Enemy small = new Enemy(EnemyKind.ENTRAINEMENT, List.of());
+        small.getMaluses().addClaims(1);
+        long before = small.getHp();
+        TurnEngine.chargeClaims(small, new Player("Joueur", 1_000_000, List.of()), new CombatContext(new Player("Joueur", 1_000_000, List.of()), small));
+        assertEquals(before - TurnEngine.claimsDamage(1, EnemyMaluses.CLAIM_DAMAGE_PERCENT, 100), small.getHp());
     }
 
     @Test
