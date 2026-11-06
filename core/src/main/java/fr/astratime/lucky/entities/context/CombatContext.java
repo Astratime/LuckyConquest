@@ -42,6 +42,7 @@ public class CombatContext {
     private int   symbolPower    = 1;   // facteur de la valeur de chaque symbole : dégâts, bouclier, gains (Bingo)
     private float defenseFactor  = 1f;  // facteur du bouclier de chaque symbole (Corruption)
     private int   vaultBonusPercent = 0; // Carreau : % ajouté au multiplicateur du Coffre rempli en fin de tour
+    private long  vaultBurst     = 0;   // As de Carreau : Coffre vidé, infligé d'un coup si aucun symbole d'attaque ne sort
     private int   counterAttack  = 0;   // Diamant brut : multiplicateur du Coffre infligé en contre-attaque (0 : aucune)
     private int   executionPercent = 0; // Guillotine : % des PV restants de l'ennemi infligés d'un coup (0 : aucun)
 
@@ -429,6 +430,10 @@ public class CombatContext {
         defenseFactor *= factor;
         if (factor != 1f) steps.add(new PowerStep(Target.DEFENSE, shown(label), 0, factor));
     }
+    /** As de Carreau : {@code amount} de Coffre vidé, qui explose sur l'ennemi si aucun symbole d'attaque ne sort ce tour. */
+    public void addVaultBurst(long amount)        { vaultBurst += amount; }
+    /** @return le Coffre vidé par l'As de Carreau ce tour (0 sans lui) */
+    public long getVaultBurst()                   { return vaultBurst; }
     /** Contre-attaque (Diamant brut) : le Coffre, multiplié par {@code factor}, est infligé à l'ennemi. */
     public void addCounterAttack(int factor)      { counterAttack += factor; }
     /** Cartes Carreau : ajoute {@code percent} % au multiplicateur du bouclier qui remplit le Coffre en fin de tour. */

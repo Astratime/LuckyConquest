@@ -144,6 +144,21 @@ public class SymbolRegistry {
         return result;
     }
 
+    /**
+     * @return les symboles de défense de la machine de {@code player} qui peuvent
+     *         sortir (ni retirés par le Recyclage) : l'As de Carreau en booste un sans symbole d'attaque
+     */
+    public static List<Symbol> getDefenseSymbols(Player player) {
+        List<Symbol> result = new ArrayList<>();
+        for (Symbol symbol : getDefenseSymbols()) {
+            if (player.getSlotMachine().getReels().contains(symbol)
+                    && !player.getLastingEffects().getRemovedSymbols().containsKey(symbol)) {
+                result.add(symbol);
+            }
+        }
+        return result;
+    }
+
     /** Symboles dont l'action rapporte des gains — boostés par le Trèfle à quatre feuilles. */
     public static List<Symbol> getGainSymbols() {
         List<Symbol> result = new ArrayList<>();

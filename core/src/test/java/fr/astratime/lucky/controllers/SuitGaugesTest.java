@@ -119,6 +119,27 @@ class SuitGaugesTest {
     }
 
     @Test
+    void aceOfDiamondsVaultExplodesWhenNoAttackSymbolIsDrawn() {
+        lasting.addVault(100_000);
+        CombatContext combat = prepare(new AceOfDiamondsEffect()).getCombatContext();
+        int hpBefore = enemy.getHp();
+        Symbol[] symbols = { Symbol.DIAMOND, Symbol.DIAMOND, null };
+        new CombatResolver().resolve(combat, List.of(action(Symbol.DIAMOND, 0), action(Symbol.DIAMOND, 1)), symbols, List.of());
+        assertEquals(100_000, hpBefore - enemy.getHp(), "sans symbole d'attaque, le Coffre explose, défense ignorée");
+    }
+
+    @Test
+    void aceOfDiamondsVaultDoesNotExplodeWhenAnAttackSymbolIsDrawn() {
+        lasting.addVault(100_000);
+        CombatContext combat = prepare(new AceOfDiamondsEffect()).getCombatContext();
+        int hpBefore = enemy.getHp();
+        Symbol[] symbols = { Symbol.CHERRY, Symbol.DIAMOND, null };
+        new CombatResolver().resolve(combat, List.of(action(Symbol.CHERRY, 0), action(Symbol.DIAMOND, 1)), symbols, List.of());
+        assertTrue(hpBefore - enemy.getHp() < 100_000, "avec une attaque, le Coffre ne sert que de bonus d'attaque");
+        assertTrue(hpBefore - enemy.getHp() > 0);
+    }
+
+    @Test
     void diamondsMultiplyTheLeftoverShieldThatFillsTheVault() {
         player.addShield(100);
         TurnEngine.storeLeftoverShield(player, 3.5f); // ex : 2 de Carreau (+0,5) et Roi de Carreau (+1,5), base x1
