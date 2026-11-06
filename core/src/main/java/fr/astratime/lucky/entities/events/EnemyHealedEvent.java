@@ -9,9 +9,9 @@ import java.util.List;
 /** Événement émis quand l'ennemi se soigne (Potion de sa machine). */
 public class EnemyHealedEvent extends Event {
     /** Points de vie réellement rendus à l'ennemi (plafonnés à ses PV max). */
-    public final int amount;
+    public final long amount;
 
-    public EnemyHealedEvent(int amount) { this.amount = amount; }
+    public EnemyHealedEvent(long amount) { this.amount = amount; }
 
     @Override
     public String describe() { return "Ennemi soigne de " + amount + " PV"; }

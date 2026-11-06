@@ -41,7 +41,7 @@ public class TowerRun implements CombatRun {
         this(chapter, false);
     }
 
-    /** @param hard mode difficile : ennemis plus forts (voir {@link EnemyKind#HARD_POWER_FACTOR}) */
+    /** @param hard mode difficile : ennemis plus forts (voir {@link EnemyKind#getPower(boolean)}) */
     public TowerRun(Chapter chapter, boolean hard) {
         this(chapter, new Random(), hard);
     }

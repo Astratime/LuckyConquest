@@ -754,9 +754,18 @@ public enum EnemyKind {
 
     /**
      * Mode difficile de la Tour (« Nouveau tirage + », ouvert après la Machine
-     * Originelle) : PV et force des ennemis de la Tour multipliés d'autant.
+     * Originelle), choix d'Astra (2026-11-06) : PV du boss de chaque chapitre, du 1er au 6e.
+     * Les autres ennemis du chapitre gardent leur rapport de PV avec leur boss.
      */
-    public static final int HARD_HP_FACTOR = 2, HARD_POWER_FACTOR = 2;
+    static final long[] HARD_BOSS_HP = {
+        20_000_000L, 50_000_000L, 200_000_000L, 800_000_000L, 2_000_000_000L, 10_000_000_000L };
+
+    /**
+     * Force des ennemis de la Tour en mode difficile, en %, du chapitre 1 au 6 (choix d'Astra, 2026-11-06) :
+     * le chapitre 2 frappe deux fois plus fort que le chapitre 6 du mode normal, puis x2 à chaque chapitre.
+     * Le chapitre 1 a la force du chapitre 6 du mode normal (x6), pour que la chaîne x2 parte de là.
+     */
+    static final int[] HARD_POWER = { 600, 1_200, 2_400, 4_800, 9_600, 19_200 };
 
     /** Tours du combat contre le Temps Mort : au tour suivant, le joueur a perdu. */
     public static final int TIME_LIMIT = 10;
@@ -821,14 +830,22 @@ public enum EnemyKind {
     /**
      * @return ses points de vie maximum : ceux de la Tour des épreuves sont
      *         multipliés par {@link #TOWER_HP_FACTOR}, car le rang du joueur le
-     *         rend bien plus fort (et encore par {@link #HARD_HP_FACTOR} en mode difficile)
+     *         rend bien plus fort ; en mode difficile, ceux de {@link #HARD_BOSS_HP} pour le boss
+     *         du chapitre, et autant en proportion pour les autres ennemis du chapitre
      */
-    public int getMaxHp(boolean hard) {
+    public long getMaxHp(boolean hard) {
         Place place = Place.of(this);
-        if (place != null) return (int) ((long) maxHp * place.getHpPercent() / 100);
-        if (!isTower()) return maxHp;
-        return maxHp * TOWER_HP_FACTOR * (hard ? HARD_HP_FACTOR : 1);
+        if (place != null) return (long) maxHp * place.getHpPercent() / 100;
+        Chapter chapter = Chapter.of(this);
+        if (chapter == null) return maxHp;
+        if (!hard) return (long) maxHp * TOWER_HP_FACTOR;
+        long bossHp = HARD_BOSS_HP[chapter.getNumber() - 1];
+        int  bossBase = chapter.getBoss().maxHp;
+        return this == chapter.getBoss() ? bossHp : Math.round((double) bossHp * maxHp / bossBase);
     }
+
+    /** @return les PV du boss du chapitre {@code number} de la Tour en mode difficile. */
+    public static long hardBossHp(int number) { return HARD_BOSS_HP[number - 1]; }
 
     /** @return {@code true} pour un ennemi de la Tour des épreuves (voir {@link fr.astratime.lucky.entities.tower.Chapter}). */
     public boolean isTower() {
@@ -846,11 +863,15 @@ public enum EnemyKind {
     /**
      * @return sa force, en % : le multiplicateur de ses attaques, de ses défenses
      *         et de tous ses effets (100 au chapitre 1, puis plus à chaque chapitre ;
-     *         multipliée par {@link #HARD_POWER_FACTOR} dans la Tour en mode difficile)
+     *         celle de {@link #HARD_POWER} dans la Tour en mode difficile)
      */
     public int getPower(boolean hard) {
-        return isTower() && hard ? chapterPower() * HARD_POWER_FACTOR : chapterPower();
+        Chapter chapter = Chapter.of(this);
+        return chapter != null && hard ? hardPower(chapter.getNumber()) : chapterPower();
     }
+
+    /** @return la force des ennemis du chapitre {@code number} de la Tour en mode difficile, en %. */
+    public static int hardPower(int number) { return HARD_POWER[number - 1]; }
 
     /**
      * @return le coût d'un tirage contre lui, en gains : celui de son lieu en
@@ -942,7 +963,7 @@ public enum EnemyKind {
     /**
      * Dégâts des ennemis de la Tour à partir du chapitre 3, en % (choix d'Astra, 2026-10-11 :
      * l'Épée du chapitre 3 frappe à 100, soit 20 x3 x1,67). Les chapitres 4 à 6 gardent le même
-     * écart avec le chapitre 3 : Épée à 134, 167 et 200 (le double en mode difficile).
+     * écart avec le chapitre 3 : Épée à 134, 167 et 200. En mode difficile, toute la Tour frappe à cette part.
      */
     static final int TOWER_LATE_DAMAGE = 167;
 
@@ -971,7 +992,8 @@ public enum EnemyKind {
     /** @return l'attaque {@code value} renforcée par sa {@linkplain #getPower(boolean) force}, puis à la {@linkplain #damagePercent() part qui porte}. */
     public int hurt(int value, boolean hard) {
         int empowered = empowered(value, hard);
-        int percent = damagePercent();
+        // Mode difficile : toute la Tour frappe comme ses derniers chapitres, pour que sa force compte en entier.
+        int percent = hard && isTower() ? TOWER_LATE_DAMAGE : damagePercent();
         return percent == 100 ? empowered : (int) Math.round((double) empowered * percent / 100);
     }
 
@@ -995,10 +1017,10 @@ public enum EnemyKind {
     public int fakePercent(boolean hard) { return Math.min(100, empowered(EnemySymbol.FAKE_PERCENT, hard)); }
 
     /** @return la part des gains du joueur prise par chaque Intérêts, en %. */
-    public int interestPercent(boolean hard) { return empowered(EnemySymbol.INTEREST_PERCENT, hard) + EnemySymbol.THEFT_BONUS_PERCENT; }
+    public int interestPercent(boolean hard) { return Math.min(100, empowered(EnemySymbol.INTEREST_PERCENT, hard) + EnemySymbol.THEFT_BONUS_PERCENT); }
 
     /** @return la part des gains que prend sa Morsure bancaire, en % (sa puissance, plus le vol relevé). */
-    public int bankBitePercent(boolean hard) { return empowered(EnemySymbol.BANK_BITE_PERCENT, hard) + EnemySymbol.THEFT_BONUS_PERCENT; }
+    public int bankBitePercent(boolean hard) { return Math.min(100, empowered(EnemySymbol.BANK_BITE_PERCENT, hard) + EnemySymbol.THEFT_BONUS_PERCENT); }
 
     /** @return {@code true} s'il a la capacité {@code trait} (voir {@link EnemyTrait}). */
     public boolean has(EnemyTrait trait) { return trait.of(this); }

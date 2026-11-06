@@ -447,7 +447,7 @@ public class CombatResolver {
     private Optional<Event> dynamite(CombatContext context) {
         Enemy enemy = context.getEnemy();
         if (context.getDynamitePercent() <= 0 || enemy.isDefeated()) return Optional.empty();
-        int hit = Math.max(1, Math.round(enemy.getMaxHp() * context.getDynamitePercent() / 100f));
+        long hit = Math.max(1L, Math.round(enemy.getMaxHp() * (double) context.getDynamitePercent() / 100));
         enemy.takeTrueDamage(hit);
         return Optional.of(new CardStrikeEvent(Lang.t("DYNAMITE !"), hit, hit, enemy.getDefense()));
     }
@@ -486,7 +486,7 @@ public class CombatResolver {
         Enemy enemy = context.getEnemy();
         if (context.getExecutionPercent() <= 0 || enemy.isDefeated()) return Optional.empty();
         int percent = Math.min(EXECUTION_MAX_PERCENT, context.getExecutionPercent());
-        int hit     = Math.max(1, Math.round(enemy.getHp() * percent / 100f));
+        long hit    = Math.max(1L, Math.round(enemy.getHp() * (double) percent / 100));
         long damage = enemy.skinned(hit);
         enemy.takeDamage(hit);
         return Optional.of(new ExecutionEvent(damage, percent, enemy.getDefense()));

@@ -231,7 +231,7 @@ public class EnemyTurnResolver {
                     enemy.seal();
                     openingEvents.add(new StatusEvent(Lang.t("SARCOPHAGE : IL S'ENFERME UN TOUR"), EffectPopup.Style.DEFENSE));
                     openingEvents.add(new EnemyHealedEvent(enemy.heal(
-                        (int) Math.min(Integer.MAX_VALUE, (long) enemy.getMaxHp() * EnemySymbol.SARCOPHAGUS_HEAL_PERCENT / 100))));
+                        enemy.getMaxHp() * EnemySymbol.SARCOPHAGUS_HEAL_PERCENT / 100)));
                 }
             }
             actFactor = enemy.takeActFactor(player.getPlayedCards()); // Numéro raté : ses attaques du tour frappent plus fort
@@ -666,7 +666,7 @@ public class EnemyTurnResolver {
                     if (steal(stolen, events)) {
                         long heal = Math.min((long) BigNumber.toInt(stolen) * healFactor / 100,
                             (long) enemy.getMaxHp() * EnemySymbol.BANK_BITE_HEAL_MAX / 100);
-                        events.add(new EnemyHealedEvent(enemy.heal((int) heal)));
+                        events.add(new EnemyHealedEvent(enemy.heal(heal)));
                     } else {
                         events.add(turn.strike(EnemySymbol.FANG_DAMAGE)); // rien à dévorer : il mord
                     }
@@ -776,7 +776,7 @@ public class EnemyTurnResolver {
                         : turn.strike(EnemySymbol.FANG_DAMAGE)); // pas de bouclier à faire fondre : il brûle
                 }
                 case BINGO_LIGHT -> { // Lumière du bingo du joueur : le rouleau ne fait rien, il perd des PV
-                    int lost = enemy.takeDamage(Math.max(1L, (long) enemy.getMaxHp() * EnemyMaluses.LIGHT_HP_PERCENT / 100));
+                    long lost = enemy.takeDamage(Math.max(1L, enemy.getMaxHp() * EnemyMaluses.LIGHT_HP_PERCENT / 100));
                     events.add(new EnemyHpLostEvent(Lang.f("LUMIÈRE DU BINGO : IL PERD {0} PV", Lang.big(lost)),
                         EffectPopup.Style.SPECIAL, lost));
                 }
@@ -829,14 +829,14 @@ public class EnemyTurnResolver {
             // Saisie : le seuil baisse de 10 points par carte, jamais sous 10 %
             int percent = Math.max(EnemySignature.SAISIE_FLOOR, EnemySymbol.BANKRUPTCY_FORTUNE_PERCENT
                 - EnemySignature.SAISIE_POINTS * boosts.getOrDefault(EnemySignature.SAISIE, 0));
-            int fortune = Math.round(enemy.getHp() * percent / 100f);
+            long fortune = Math.round(enemy.getHp() * (double) percent / 100);
             if (player.getGains() > fortune) {
                 double lost = player.getGains();
                 player.addGains(-lost);
                 events.add(new StatusEvent(Lang.t("FAILLITE : IL TE PREND TOUT"), EffectPopup.Style.DAMAGE));
                 events.add(new GainsStolenEvent(lost, 0));
             } else {
-                int lost = enemy.takeDamage(Math.round(enemy.getHp() * EnemySymbol.BANKRUPTCY_HP_PERCENT / 100f));
+                long lost = enemy.takeDamage(Math.round(enemy.getHp() * (double) EnemySymbol.BANKRUPTCY_HP_PERCENT / 100));
                 events.add(new EnemyHpLostEvent(Lang.f("FAILLITE : IL PERD {0} PV", Lang.big(lost)), EffectPopup.Style.SPECIAL, lost));
             }
         }
@@ -945,7 +945,7 @@ public class EnemyTurnResolver {
             playShadows(shadows, turn, afterEvents);
             if (turn.totalAttack > 0 && reflection.shieldReflect() > 0) {
                 // Bingo de bouclier : il frappe dans le bouclier, qui lui est renvoyé entier.
-                afterEvents.add(new DamageReflectedEvent((int) enemy.skinned(reflection.shieldReflect())));
+                afterEvents.add(new DamageReflectedEvent(enemy.skinned(reflection.shieldReflect())));
                 enemy.takeDamage(reflection.shieldReflect());
             }
             // Le Coffre arme le renvoi : une part de son contenu s'ajoute aux dégâts renvoyés.
@@ -954,15 +954,15 @@ public class EnemyTurnResolver {
                 float reflectBase = turn.totalAttack + vaultReflect;
                 int reflected = Math.round(reflectBase * (reflection.percent() / 100f));
                 if (reflected > 0) {
-                    afterEvents.add(new DamageReflectedEvent((int) enemy.skinned(reflected)));
+                    afterEvents.add(new DamageReflectedEvent(enemy.skinned(reflected)));
                     enemy.takeDamage(reflected);
                 }
             }
             if (turn.totalAttack > 0 && reflection.hpPercent() > 0 && !enemy.isDefeated()) {
                 // Cartes Carreau : une part de ses PV max, quel que soit le lieu.
-                int reflected = Math.round(enemy.getMaxHp() * (reflection.hpPercent() / 100f) + vaultReflect);
+                long reflected = Math.round(enemy.getMaxHp() * (reflection.hpPercent() / 100d) + vaultReflect);
                 if (reflected > 0) {
-                    afterEvents.add(new DamageReflectedEvent((int) enemy.skinned(reflected)));
+                    afterEvents.add(new DamageReflectedEvent(enemy.skinned(reflected)));
                     enemy.takeDamage(reflected);
                 }
             }
@@ -1032,7 +1032,7 @@ public class EnemyTurnResolver {
             events.add(turn.strike(EnemySymbol.SWORD_DAMAGE + theirRank));
         } else if (myRank > theirRank) {
             Enemy enemy = turn.enemy;
-            int lost = enemy.takeDamage(Math.round(enemy.getMaxHp() * myRank * EnemySymbol.DUEL_PER_MILLE_PER_RANK / 1000f));
+            long lost = enemy.takeDamage(Math.round(enemy.getMaxHp() * (double) myRank * EnemySymbol.DUEL_PER_MILLE_PER_RANK / 1000));
             events.add(new EnemyHpLostEvent(Lang.f("DUEL GAGNÉ : -{0} PV", Lang.big(lost)), EffectPopup.Style.ATTACK, lost));
         }
     }
@@ -1059,7 +1059,7 @@ public class EnemyTurnResolver {
         PlayerDamagedEvent hit = turn.strike(EnemySymbol.FANG_DAMAGE);
         events.add(hit);
         Enemy enemy = turn.enemy;
-        int drained = Math.round(enemy.getMaxHp() * hit.damage * enemy.getKind().drainPercent(enemy.isHard()) / 100f * healPercent / 100f);
+        long drained = Math.round(enemy.getMaxHp() * (double) hit.damage * enemy.getKind().drainPercent(enemy.isHard()) / 100 * healPercent / 100);
         if (drained > 0) events.add(new EnemyDrainEvent(enemy.heal(drained)));
     }
 
@@ -1070,7 +1070,7 @@ public class EnemyTurnResolver {
 
     /** Il se soigne de {@code percent} % de ses PV max. */
     private static EnemyHealedEvent heal(Enemy enemy, float percent) {
-        return new EnemyHealedEvent(enemy.heal(Math.round(enemy.getMaxHp() * percent / 100f)));
+        return new EnemyHealedEvent(enemy.heal(Math.round(enemy.getMaxHp() * (double) percent / 100)));
     }
 
     /**

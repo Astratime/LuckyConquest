@@ -144,9 +144,9 @@ class TowerChapters456Test {
         EnemyTurnResult turn = turnWith(EnemySymbol.BANKRUPTCY, () -> foe[0] = new Enemy(EnemyKind.BANQUEROUTE),
             () -> new Player("Joueur", 1_000_000, List.of()));
         assertTrue(foe[0].getHp() < foe[0].getMaxHp(), "plus pauvre que lui : c'est lui qui perd");
-        int shown = turn.outcomes().stream().flatMap(List::stream)
+        long shown = turn.outcomes().stream().flatMap(List::stream)
             .filter(e -> e instanceof fr.astratime.lucky.entities.events.EnemyHpLostEvent)
-            .mapToInt(e -> ((fr.astratime.lucky.entities.events.EnemyHpLostEvent) e).lost).sum();
+            .mapToLong(e -> ((fr.astratime.lucky.entities.events.EnemyHpLostEvent) e).lost).sum();
         assertEquals(foe[0].getMaxHp() - foe[0].getHp(), shown, "sa barre de vie descend d'autant");
     }
 
@@ -180,7 +180,7 @@ class TowerChapters456Test {
     @Test
     void aBossLosesAtMostHalfItsHpPerTurnAndItsGuardSendsItToPhaseTwo() {
         Enemy machine = new Enemy(EnemyKind.MACHINE_ORIGINELLE);
-        int max = machine.getMaxHp();
+        long max = machine.getMaxHp();
         assertEquals(max / 2, machine.takeDamage(max), "la Garde arrête le coup à la moitié de ses PV max");
         assertEquals(0, machine.takeDamage(1_000), "plus rien ne passe ce tour-ci");
         assertNotNull(machine.takeNotice());
@@ -191,7 +191,7 @@ class TowerChapters456Test {
         Enemy soldier = new Enemy(EnemyKind.SOLDAT_COEUR);
         assertEquals(soldier.getMaxHp(), soldier.takeDamage(soldier.getMaxHp()), "un soldat n'a pas de Garde");
         Enemy prairieKing = new Enemy(EnemyKind.ROI_COEUR);
-        int kingMax = prairieKing.getMaxHp();
+        long kingMax = prairieKing.getMaxHp();
         assertEquals(kingMax - (int) Math.ceil(kingMax / 2.0), prairieKing.takeDamage(kingMax),
             "ni un roi de la prairie : seul son seuil de phase l'arrête");
     }

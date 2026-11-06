@@ -41,8 +41,8 @@ public class CombatHud implements Disposable {
     private final HealthBarView playerHealthBar;
 
     // PV du tirage en cours pas encore montrés (voir holdBack).
-    private int heldEnemyLoss;
-    private int heldEnemyHeal;
+    private long heldEnemyLoss;
+    private long heldEnemyHeal;
     private int heldPlayerDamage;
     private int heldPlayerHeal;
 
@@ -65,7 +65,7 @@ public class CombatHud implements Disposable {
     /** Met à jour les deux barres de vie à partir de l'état de la partie, sans les PV encore retenus. */
     public void refresh() {
         GameState state = gameState.get();
-        int enemyMax  = state.getEnemy().getMaxHp();
+        long enemyMax = state.getEnemy().getMaxHp();
         enemyHealthBar.setTitle(state.getEnemy().getKind().getBarName());
         int playerMax = state.getPlayer().getMaxHp();
         enemyHealthBar.refresh(Math.clamp(state.getEnemy().getHp() + heldEnemyLoss - heldEnemyHeal, 0, enemyMax),
@@ -84,7 +84,7 @@ public class CombatHud implements Disposable {
      * @param playerDamage dégâts réellement subis par le joueur
      * @param playerHeal   PV réellement rendus au joueur
      */
-    public void holdBack(int enemyLoss, int enemyHeal, int playerDamage, int playerHeal) {
+    public void holdBack(long enemyLoss, long enemyHeal, int playerDamage, int playerHeal) {
         heldEnemyLoss    += enemyLoss;
         heldEnemyHeal    += enemyHeal;
         heldPlayerDamage += playerDamage;
@@ -93,19 +93,20 @@ public class CombatHud implements Disposable {
 
     /** Oublie les PV retenus (nouveau combat : leurs textes ne s'afficheront jamais). */
     public void clearHeldBack() {
-        heldEnemyLoss = heldEnemyHeal = heldPlayerDamage = heldPlayerHeal = 0;
+        heldEnemyLoss = heldEnemyHeal = 0;
+        heldPlayerDamage = heldPlayerHeal = 0;
         refresh();
     }
 
     /** Montre un coup porté à l'ennemi : sa barre descend, tremble et flashe. */
     public void revealEnemyHit(long damage) {
-        heldEnemyLoss -= (int) Math.min(damage, heldEnemyLoss); // un coup fatal peut dépasser les PV restants
+        heldEnemyLoss -= Math.min(damage, heldEnemyLoss); // un coup fatal peut dépasser les PV restants
         refresh();
         enemyHealthBar.hit(HIT_FLASH, HIT_SHAKE);
     }
 
     /** Montre un soin de l'ennemi : sa barre remonte sous un flash vert. */
-    public void revealEnemyHeal(int amount) {
+    public void revealEnemyHeal(long amount) {
         heldEnemyHeal = Math.max(0, heldEnemyHeal - amount);
         refresh();
         enemyHealthBar.hit(HEAL_FLASH, 0f);

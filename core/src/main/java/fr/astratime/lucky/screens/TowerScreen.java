@@ -204,8 +204,9 @@ public class TowerScreen extends CasinoMenuScreen {
                     : "Termine le {0} pour ouvrir ce chapitre.",
                 chapter.getPrevious().getLabel().toLowerCase())
             : hard
-            ? Lang.f("{0}\n\nMode difficile : ennemis PV x{1}, force x{2}.",
-                chapter.getDescription(), EnemyKind.HARD_HP_FACTOR, EnemyKind.HARD_POWER_FACTOR)
+            ? Lang.f("{0}\n\nMode difficile : boss à {1} PV, ennemis force x{2}.",
+                chapter.getDescription(), Lang.big(EnemyKind.hardBossHp(chapter.getNumber())),
+                EnemyKind.hardPower(chapter.getNumber()) / 100)
             : chapter.getDescription());
         ((TextureRegionDrawable) art.getDrawable()).setRegion(new TextureRegion(enemyTextures.chapterArt(chapter)));
         art.setVisible(open);

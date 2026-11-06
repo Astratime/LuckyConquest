@@ -209,7 +209,7 @@ class TowerChaptersTest {
         assertEquals(EnemySymbol.FANG_DRAIN, EnemyKind.SANGSUE.drainPercent(false), 0.001f);
         assertTrue(EnemyKind.REINE.potionPercent(0, false) < EnemySymbol.POTION_PERCENT);
 
-        int life = EnemyKind.REINE.getMaxHp(false);
+        long life = EnemyKind.REINE.getMaxHp(false);
         EnemyTurnResult turn = turnWith(EnemySymbol.POTION, () -> {
             Enemy q = plain(EnemyKind.REINE);
             q.takeDamage(life * 9 / 10);

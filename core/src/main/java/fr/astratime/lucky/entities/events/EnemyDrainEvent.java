@@ -10,7 +10,7 @@ import java.util.List;
 public class EnemyDrainEvent extends EnemyHealedEvent {
 
     /** @param amount points de vie réellement rendus à l'ennemi */
-    public EnemyDrainEvent(int amount) { super(amount); }
+    public EnemyDrainEvent(long amount) { super(amount); }
 
     @Override
     public String describe() { return "Ennemi draine " + amount + " PV"; }

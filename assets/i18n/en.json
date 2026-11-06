@@ -1057,7 +1057,7 @@
   "{0} · DIFFICILE": "{0} · HARD",
   "Termine le {0} en mode difficile pour ouvrir ce chapitre.": "Clear {0} in hard mode to open this chapter.",
   "Termine le {0} pour ouvrir ce chapitre.": "Clear {0} to open this chapter.",
-  "{0}\n\nMode difficile : ennemis PV x{1}, force x{2}.": "{0}\n\nHard mode: enemy HP x{1}, strength x{2}.",
+  "{0}\n\nMode difficile : boss à {1} PV, ennemis force x{2}.": "{0}\n\nHard mode: boss with {1} HP, enemy strength x{2}.",
   "Verrouillé": "Locked",
   "Moi aussi, je joue des cartes et je tire mon levier. Épée : je frappe. Bouclier : je me protège. Potion : je me soigne.": "I play cards and pull my lever too. Sword: I hit. Shield: I protect myself. Potion: I heal.",
   "Bien joué. Tu connais la table, maintenant.": "Well played. You know the table now.",

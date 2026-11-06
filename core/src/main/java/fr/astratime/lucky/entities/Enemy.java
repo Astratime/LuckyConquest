@@ -31,13 +31,13 @@ public class Enemy {
     public static final int BASE_DEFENSE   = 30;
 
     private final EnemyKind   kind;
-    /** Mode difficile de la Tour : ses PV et sa force sont multipliés (voir {@link EnemyKind#HARD_POWER_FACTOR}). */
+    /** Mode difficile de la Tour : ses PV et sa force sont multipliés (voir {@link EnemyKind#getPower(boolean)}). */
     private final boolean     hard;
     /** Malus posés par les cartes du joueur (voir {@link EnemyMaluses}). */
     private final EnemyMaluses maluses;
     private final String      name;
-    private final int         maxHp;
-    private       int         hp;
+    private final long        maxHp;
+    private       long        hp;
     private final DiscardPile discardPile = new DiscardPile();
     private final Deck        deck;
     /**
@@ -50,7 +50,7 @@ public class Enemy {
     /** Part des dégâts du joueur renvoyée par ses Épines (en %), jusqu'à son tour suivant. */
     private       int         thornsPercent;
     /** Dégâts encaissés depuis le début de son dernier tour (pour ses Épines). */
-    private       int         damageTaken;
+    private       long        damageTaken;
     /** Attaque ajoutée à son prochain coup par les gains volés (Intérêts). */
     private       int         interest;
     /** Compte à rebours de son Sablier, de 0 à {@link EnemySymbol#HOURGLASS_MAX}. */
@@ -111,12 +111,12 @@ public class Enemy {
      * @param name  nom affiché de l'ennemi
      * @param maxHp points de vie maximum (l'ennemi démarre à pleine vie)
      */
-    public Enemy(String name, int maxHp) {
+    public Enemy(String name, long maxHp) {
         this(name, maxHp, EnemyCards.starterDeck());
     }
 
     /** @param cards cartes composant le deck de l'ennemi (mélangées) */
-    public Enemy(String name, int maxHp, List<Card> cards) {
+    public Enemy(String name, long maxHp, List<Card> cards) {
         this(EnemyKind.CROUPIER, name, maxHp, cards, false);
     }
 
@@ -140,7 +140,7 @@ public class Enemy {
         this(kind, kind.getDisplayName(), kind.getMaxHp(hard), cards, hard);
     }
 
-    private Enemy(EnemyKind kind, String name, int maxHp, List<Card> cards, boolean hard) {
+    private Enemy(EnemyKind kind, String name, long maxHp, List<Card> cards, boolean hard) {
         this.kind    = kind;
         this.hard    = hard;
         this.maluses = new EnemyMaluses(kind.isBoss());
@@ -158,8 +158,8 @@ public class Enemy {
      *
      * @return les points de vie réellement retirés
      */
-    public int takeDamage(long damage) {
-        int lost = (int) Math.min(hp, Math.max(0, guard(skinned(damage))));
+    public long takeDamage(long damage) {
+        long lost = Math.min(hp, Math.max(0, guard(skinned(damage))));
         hp -= lost;
         damageTaken += lost;
         if (lost <= 0) return 0;
@@ -169,7 +169,7 @@ public class Enemy {
             stake = 1;
             allIn = false;
         }
-        if (hourglass > 0 && lost * 1000L >= (long) maxHp * EnemySymbol.HOURGLASS_HIT_PER_MILLE) hourglass--;
+        if (hourglass > 0 && lost * 1000L >= maxHp * EnemySymbol.HOURGLASS_HIT_PER_MILLE) hourglass--;
         return lost;
     }
 
@@ -182,7 +182,7 @@ public class Enemy {
      * et le Dernier tirage décidera (les coups suivants du même tour ne la touchent plus). Ce qui arrive est à lire dans {@link #takeNotice()}.
      */
     private long guard(long damage) {
-        if (kind.houseWins() && !houseUsed && damage * 100 >= (long) maxHp * EnemyKind.HOUSE_CANCEL_PERCENT) {
+        if (kind.houseWins() && !houseUsed && damage * 100 >= maxHp * EnemyKind.HOUSE_CANCEL_PERCENT) {
             houseUsed = true;
             notice = Lang.t("LA MAISON GAGNE TOUJOURS : COUP ANNULÉ");
             return 0;
@@ -389,7 +389,7 @@ public class Enemy {
      *
      * @return les points de vie réellement retirés
      */
-    public int takeTrueDamage(long damage) {
+    public long takeTrueDamage(long damage) {
         return takeDamage(hasGoldSkin() ? damage * 2 : damage);
     }
 
@@ -405,10 +405,10 @@ public class Enemy {
      *
      * @return les points de vie réellement rendus
      */
-    public int heal(int amount) {
-        amount = (int) Math.min(amount, (long) maxHp * EnemyKind.MAX_HEAL_PERCENT / 100);
-        amount = (int) ((long) amount * healPercent() / 100); // un roi en phase 2 se soigne moins
-        int healed = Math.min(maxHp, hp + amount) - hp;
+    public long heal(long amount) {
+        amount = Math.min(amount, maxHp * EnemyKind.MAX_HEAL_PERCENT / 100);
+        amount = amount * healPercent() / 100; // un roi en phase 2 se soigne moins
+        long healed = Math.min(maxHp, hp + amount) - hp;
         hp += healed;
         return healed;
     }
@@ -448,7 +448,7 @@ public class Enemy {
      * @return les dégâts à renvoyer au joueur (part des dégâts encaissés depuis la fin de son dernier tour)
      */
     public int collectThorns() {
-        int thorns = Math.min(kind.thornsMax(hard), Math.round(damageTaken * thornsPercent / 100f));
+        int thorns = (int) Math.min(kind.thornsMax(hard), Math.round(damageTaken * (double) thornsPercent / 100));
         thornsPercent = 0;
         return thorns;
     }
@@ -662,11 +662,11 @@ public class Enemy {
     /** @return le nom affiché de l'ennemi. */
     public String getName()        { return name; }
     /** @return les points de vie actuels. */
-    public int    getHp()          { return hp; }
+    public long   getHp()          { return hp; }
     /** @return les points de vie maximum. */
-    public int    getMaxHp()       { return maxHp; }
+    public long   getMaxHp()       { return maxHp; }
     /** @return la proportion de vie restante, entre 0 et 1. */
-    public float  getHpRatio()     { return (float) hp / maxHp; }
+    public float  getHpRatio()     { return (float) ((double) hp / maxHp); }
     /** @return la défense restante de l'ennemi (base et Boucliers, moins ce que les attaques ont déjà usé). */
     public int    getDefense()     { return defense; }
     /** @return les cartes restantes dans le deck de l'ennemi. */
