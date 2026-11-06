@@ -360,6 +360,10 @@ public class CardLoader {
         add(effects, "SPIN_GAINS", (json, v) -> new SpinGainsEffect(v.i("spins"), json.getInt("gauges", 1)));
         add(effects, "GAINS_MULTIPLIER", (json, v) -> new GainsMultiplierEffect(v.i("percent"), json.getInt("gauges", 1)));
         add(effects, "CORRUPTION", (json, v) -> new CorruptionEffect(json.getInt("turns")));
+        add(effects, "GOLDEN_REEL", (json, v) -> new GoldenReelEffect(json.getInt("factor")));
+        add(effects, "DEALER_HAND", (json, v) -> new DealerHandEffect());
+        add(effects, "BOUNTY", (json, v) -> new BountyEffect(json.getInt("costPercent")));
+        add(effects, "LUCKY_STRIKE", (json, v) -> new LuckyStrikeEffect(json.getInt("factor")));
     }
 
     /** Cartes de la boutique. */

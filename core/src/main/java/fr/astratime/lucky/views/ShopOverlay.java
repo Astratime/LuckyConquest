@@ -26,9 +26,12 @@ import fr.astratime.lucky.assets.Fonts;
 import fr.astratime.lucky.assets.HudTextures;
 import fr.astratime.lucky.assets.Palette;
 import fr.astratime.lucky.controllers.GameController.ShopOffer;
+import fr.astratime.lucky.controllers.ReelStall;
 import fr.astratime.lucky.entities.Card;
+import fr.astratime.lucky.entities.Symbol;
 import fr.astratime.lucky.i18n.Lang;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
@@ -44,7 +47,8 @@ import java.util.function.Predicate;
  * et tenter de l'acheter explique pourquoi. Un clic à côté, le
  * bouton « Fermer » ou Échap (géré par l'appelant via {@link #hide()}) la referment.
  * Quand les cartes ne tiennent pas à l'écran, leur grille défile (molette ou
- * glisser).
+ * glisser). L'onglet « Rouleaux » vend des rouleaux et en retire de la machine,
+ * le temps du combat (voir {@link ReelStand}).
  */
 public class ShopOverlay implements Disposable {
 
@@ -61,6 +65,10 @@ public class ShopOverlay implements Disposable {
     private static final float CELL_PAD   = 14f;
     private static final int   COLUMNS    = 4;
     private static final float CLOSE_AFTER_PURCHASE = 0.7f;
+    private static final float SYMBOL_SIZE         = 96f;
+    private static final float MACHINE_SYMBOL_SIZE = 64f;
+    private static final int   MACHINE_COLUMNS     = 7;
+    private static final Color INACTIVE_TAB = new Color(0.6f, 0.6f, 0.6f, 1f);
 
     private final Stage       stage;
     private final HudTextures hud;
@@ -78,8 +86,18 @@ public class ShopOverlay implements Disposable {
     private final Table panel = new Table();
     /** Grille des cartes en vente, dans un panneau qui défile si elle dépasse de l'écran. */
     private final Table      grid   = new Table();
+    /** Contenu de l'onglet des rouleaux, dans le même panneau qui défile. */
+    private final Table      reelGrid = new Table();
     private final ScrollPane scroll = new ScrollPane(grid);
     private Cell<ScrollPane> scrollCell;
+    private final BitmapFont  tabFont     = Fonts.jersey(40, Color.WHITE, 2f, Palette.TEXT_SHADE);
+    private DoubleSupplier gains;
+    private BiFunction<String, Runnable, Actor> button;
+    private ReelStand reels;
+    private boolean reelsShown;
+    private Label wallet;
+    private Label hint;
+    private Label notice;
 
     /** @param cardWidth taille d'une carte de la main (agrandie ici) */
     public ShopOverlay(Stage stage, HudTextures hud, Tooltip tooltip, float cardWidth, float cardHeight) {
@@ -111,7 +129,30 @@ public class ShopOverlay implements Disposable {
     public boolean isShown() { return root.isVisible(); }
 
     /**
-     * Ouvre l'échoppe.
+     * Le côté rouleaux de l'échoppe : acheter un rouleau en vente ou retirer un
+     * rouleau de la machine, le temps du combat (voir GameController#buyReel).
+     */
+    public interface ReelStand {
+        /** @return les rouleaux en vente et le prix d'un achat */
+        List<ReelStall.ReelOffer> offers();
+        /** @return les rouleaux de la machine du joueur */
+        List<Symbol> machine();
+        /** @return le prix du prochain rouleau retiré */
+        double removePrice();
+        /** @return pourquoi {@code symbol} ne peut pas être acheté (hors manque de gains), ou {@code null} */
+        String buyProblem(Symbol symbol);
+        /** @return pourquoi {@code symbol} ne peut pas être retiré (hors manque de gains), ou {@code null} */
+        String removeProblem(Symbol symbol);
+        /** Tente l'achat. @return {@code true} s'il a eu lieu */
+        boolean buy(Symbol symbol);
+        /** Tente le retrait. @return {@code true} s'il a eu lieu */
+        boolean remove(Symbol symbol);
+        /** @return l'image du symbole */
+        TextureRegion region(Symbol symbol);
+    }
+
+    /**
+     * Ouvre l'échoppe, sur l'onglet des cartes.
      *
      * @param offers    cartes en vente
      * @param gains     gains actuels du joueur (relus après chaque achat)
@@ -120,24 +161,35 @@ public class ShopOverlay implements Disposable {
      * @param unavailable pourquoi une carte ne peut pas être achetée en ce moment, ou {@code null} si elle le peut
      * @param buy       tente l'achat : {@code true} s'il a eu lieu (gains suffisants)
      * @param inspect   affiche la fiche d'une carte (clic sur son image)
+     * @param reels     le côté rouleaux (onglet « Rouleaux »)
      */
     public void show(List<ShopOffer> offers, DoubleSupplier gains, Function<Card, Texture> textureOf,
                      BiFunction<String, Runnable, Actor> button, Function<ShopOffer, String> unavailable,
-                     Predicate<ShopOffer> buy, Consumer<ShopOffer> inspect) {
+                     Predicate<ShopOffer> buy, Consumer<ShopOffer> inspect, ReelStand reels) {
+        this.gains  = gains;
+        this.button = button;
+        this.reels  = reels;
         int columns = Math.min(COLUMNS, Math.max(1, offers.size()));
         panel.clearChildren();
-        panel.add(new Label(Lang.t("ÉCHOPPE"), new Label.LabelStyle(titleFont, Color.WHITE))).colspan(columns);
+        panel.add(new Label(Lang.t("ÉCHOPPE"), new Label.LabelStyle(titleFont, Color.WHITE)));
         panel.row();
-        Label wallet = new Label(walletText(gains.getAsDouble()), new Label.LabelStyle(textFont, Color.WHITE));
-        panel.add(wallet).colspan(columns);
+        wallet = new Label(walletText(gains.getAsDouble()), new Label.LabelStyle(textFont, Color.WHITE));
+        panel.add(wallet);
         panel.row();
-        panel.add(new Label(Lang.t("Survole une carte pour son effet, clique dessus pour sa fiche. Les cartes achetées "
-            + "disparaissent une fois jouées.") + " " + Lang.t("Le prix d'une carte double à chaque achat dans un combat."),
-            new Label.LabelStyle(hintFont, Color.WHITE))).colspan(columns);
+        Table tabs = new Table();
+        Label cardsTab = tab(Lang.t("Cartes"));
+        Label reelsTab = tab(Lang.t("Rouleaux"));
+        tabs.add(cardsTab).padRight(GAP * 3f);
+        tabs.add(reelsTab);
+        panel.add(tabs).padTop(GAP / 2f);
+        panel.row();
+        hint = new Label(" ", new Label.LabelStyle(hintFont, Color.WHITE));
+        hint.setAlignment(Align.center);
+        panel.add(hint);
         panel.row();
         // Avertissement (carte indisponible) : ligne réservée, vide tant qu'il n'y a rien à dire.
-        Label notice = new Label(" ", new Label.LabelStyle(textFont, Palette.TEXT_ALERT));
-        panel.add(notice).colspan(columns).padTop(GAP / 2f).padBottom(GAP);
+        notice = new Label(" ", new Label.LabelStyle(textFont, Color.WHITE)); // teinte posée à chaque message
+        panel.add(notice).padTop(GAP / 2f).padBottom(GAP);
         panel.row();
         grid.clearChildren();
 
@@ -194,10 +246,7 @@ public class ShopOverlay implements Disposable {
                 if (reason != null) {
                     status.setText(Lang.t("Indisponible"));
                     status.setColor(Palette.TEXT_ALERT);
-                    notice.clearActions();
-                    notice.setText(reason);
-                    notice.getColor().a = 1f;
-                    notice.addAction(Actions.sequence(Actions.delay(NOTICE_TIME), Actions.fadeOut(0.4f)));
+                    warn(reason);
                 } else if (buy.test(offer)) {
                     wallet.setText(walletText(gains.getAsDouble()));
                     status.setText(Lang.t("Acheté !"));
@@ -205,11 +254,7 @@ public class ShopOverlay implements Disposable {
                     root.setTouchable(Touchable.disabled);
                     root.addAction(Actions.delay(CLOSE_AFTER_PURCHASE, Actions.run(this::hide)));
                 } else {
-                    status.setText(Lang.t("Pas assez de gains"));
-                    status.setColor(Palette.TEXT_ALERT);
-                    priceLabel.clearActions();
-                    priceLabel.setColor(Palette.TEXT_ALERT);
-                    priceLabel.addAction(Actions.sequence(Actions.delay(0.4f), Actions.color(Color.WHITE, 0.4f)));
+                    tooExpensive(status, priceLabel);
                 }
             })).padTop(GAP / 2f);
             cell.row();
@@ -217,11 +262,20 @@ public class ShopOverlay implements Disposable {
             grid.add(cell).width(CELL_WIDTH).pad(GAP / 2f).fillY();
             if ((i + 1) % columns == 0) grid.row();
         }
-        scrollCell = panel.add(scroll).colspan(columns);
+        scrollCell = panel.add(scroll);
         panel.row();
-        panel.add(button.apply(Lang.t("Fermer"), this::hide)).colspan(columns).padTop(GAP);
+        panel.add(button.apply(Lang.t("Fermer"), this::hide)).padTop(GAP);
 
-        layout();
+        cardsTab.addListener(new ClickListener() {
+            @Override
+            public void clicked(InputEvent event, float x, float y) { selectTab(false, cardsTab, reelsTab); }
+        });
+        reelsTab.addListener(new ClickListener() {
+            @Override
+            public void clicked(InputEvent event, float x, float y) { selectTab(true, cardsTab, reelsTab); }
+        });
+        selectTab(false, cardsTab, reelsTab);
+
         root.clearActions();
         root.setVisible(true);
         root.setTouchable(Touchable.enabled);
@@ -229,8 +283,199 @@ public class ShopOverlay implements Disposable {
         root.addAction(Actions.fadeIn(FADE, Interpolation.pow2Out));
         root.toFront();
         tooltip.getActor().toFront();
-        scroll.setScrollY(0f);
         stage.setScrollFocus(scroll); // la molette fait défiler les cartes
+    }
+
+    /** @return un onglet de l'échoppe, cliquable */
+    private Label tab(String text) {
+        Label label = new Label(text, new Label.LabelStyle(tabFont, Color.WHITE));
+        label.setTouchable(Touchable.enabled);
+        return label;
+    }
+
+    /** Affiche l'onglet des cartes ou celui des rouleaux. */
+    private void selectTab(boolean showReels, Label cardsTab, Label reelsTab) {
+        reelsShown = showReels && reels != null;
+        cardsTab.setColor(reelsShown ? INACTIVE_TAB : Palette.TEXT_TITLE);
+        reelsTab.setColor(reelsShown ? Palette.TEXT_TITLE : INACTIVE_TAB);
+        reelsTab.setVisible(reels != null);
+        hint.setText(reelsShown
+            ? Lang.f("Achète ou retire des rouleaux pour ce combat seulement : ta machine garde de {0} à {1} rouleaux. "
+                + "Le prix double à chaque fois.", ReelStall.MIN_REELS, ReelStall.MAX_REELS)
+            : Lang.t("Survole une carte pour son effet, clique dessus pour sa fiche. Les cartes achetées "
+                + "disparaissent une fois jouées.") + " " + Lang.t("Le prix d'une carte double à chaque achat dans un combat."));
+        notice.clearActions();
+        notice.setText(" ");
+        if (reelsShown) buildReels();
+        scroll.setActor(reelsShown ? reelGrid : grid);
+        layout();
+        scroll.setScrollY(0f);
+    }
+
+    /** Remplit l'onglet des rouleaux : ceux en vente, puis ceux de la machine (à sélectionner pour les retirer). */
+    private void buildReels() {
+        reelGrid.clearChildren();
+        List<ReelStall.ReelOffer> offers = reels.offers();
+        reelGrid.add(new Label(Lang.t("Rouleaux en vente"), new Label.LabelStyle(nameFont, Palette.TEXT_TITLE)));
+        reelGrid.row();
+        Table sale = new Table();
+        if (offers.isEmpty()) {
+            sale.add(new Label(Lang.t("Plus aucun rouleau en vente dans ce combat"), new Label.LabelStyle(hintFont, Color.WHITE)));
+        }
+        for (ReelStall.ReelOffer offer : offers) {
+            Table cell = new Table();
+            cell.setBackground(hud.insetDrawable());
+            cell.pad(CELL_PAD);
+            cell.top();
+            cell.add(symbolImage(offer.symbol())).size(SYMBOL_SIZE);
+            cell.row();
+            Label name = new Label(offer.symbol().getDisplayName(), new Label.LabelStyle(nameFont, Palette.TEXT_TITLE));
+            name.setWrap(true);
+            name.setAlignment(Align.center);
+            cell.add(name).width(CELL_WIDTH - GAP).padTop(GAP / 2f);
+            cell.row();
+            Label priceLabel = priceRow(cell, offer.price());
+            Label status = new Label(" ", new Label.LabelStyle(hintFont, Color.WHITE));
+            cell.add(button.apply(Lang.t("Acheter"), () -> {
+                if (!root.isVisible() || !root.isTouchable()) return;
+                String reason = reels.buyProblem(offer.symbol());
+                if (reason != null) {
+                    status.setText(Lang.t("Indisponible"));
+                    status.setColor(Palette.TEXT_ALERT);
+                    warn(reason);
+                } else if (reels.buy(offer.symbol())) {
+                    afterReelChange(Lang.f("{0} rejoint ta machine pour ce combat", offer.symbol().getDisplayName()));
+                } else {
+                    tooExpensive(status, priceLabel);
+                }
+            })).padTop(GAP / 2f);
+            cell.row();
+            cell.add(status);
+            sale.add(cell).width(CELL_WIDTH).pad(GAP / 2f).fillY();
+        }
+        reelGrid.add(sale).padBottom(GAP);
+        reelGrid.row();
+
+        List<Symbol> machine = reels.machine();
+        reelGrid.add(new Label(Lang.f("Ta machine : {0} rouleaux (au moins {1})", machine.size(), ReelStall.MIN_REELS),
+            new Label.LabelStyle(nameFont, Palette.TEXT_TITLE)));
+        reelGrid.row();
+        Table owned = new Table();
+        List<Table> slots = new ArrayList<>();
+        Symbol[] chosen = {null};
+        Label choice = new Label(Lang.t("Choisis un rouleau"), new Label.LabelStyle(hintFont, Color.WHITE));
+        choice.setWrap(true);
+        choice.setAlignment(Align.center);
+        for (int i = 0; i < machine.size(); i++) {
+            Symbol symbol = machine.get(i);
+            Table slot = new Table();
+            slot.pad(6f);
+            slot.add(symbolImage(symbol)).size(MACHINE_SYMBOL_SIZE);
+            slot.setTouchable(Touchable.enabled);
+            slot.addListener(new ClickListener() {
+                @Override
+                public void clicked(InputEvent event, float x, float y) {
+                    chosen[0] = symbol;
+                    for (Table other : slots) other.setBackground((com.badlogic.gdx.scenes.scene2d.utils.Drawable) null);
+                    slot.setBackground(hud.insetDrawable());
+                    choice.setText(symbol.getDisplayName());
+                }
+            });
+            slots.add(slot);
+            owned.add(slot).pad(4f);
+            if ((i + 1) % MACHINE_COLUMNS == 0) owned.row();
+        }
+        // À droite des rouleaux : celui choisi, le prix du retrait et le bouton.
+        Table remove = new Table();
+        remove.setBackground(hud.insetDrawable());
+        remove.pad(CELL_PAD);
+        remove.add(choice).width(CELL_WIDTH - GAP * 2f);
+        remove.row();
+        Label priceLabel = priceRow(remove, reels.removePrice());
+        Label status = new Label(" ", new Label.LabelStyle(hintFont, Color.WHITE));
+        remove.add(button.apply(Lang.t("Retirer"), () -> {
+            if (!root.isVisible() || !root.isTouchable()) return;
+            if (chosen[0] == null) {
+                warn(Lang.t("Choisis d'abord un rouleau de ta machine"));
+                return;
+            }
+            String reason = reels.removeProblem(chosen[0]);
+            if (reason != null) {
+                warn(reason);
+            } else if (reels.remove(chosen[0])) {
+                afterReelChange(Lang.f("{0} quitte ta machine pour ce combat", chosen[0].getDisplayName()));
+            } else {
+                tooExpensive(status, priceLabel);
+            }
+        })).padTop(GAP / 2f);
+        remove.row();
+        remove.add(status);
+        Table machineRow = new Table();
+        machineRow.add(owned);
+        machineRow.add(remove).width(CELL_WIDTH).padLeft(GAP * 2f);
+        reelGrid.add(machineRow);
+    }
+
+    /** Un rouleau acheté ou retiré : les gains et l'onglet sont mis à jour, le message s'affiche. */
+    private void afterReelChange(String message) {
+        tooltip.hide();
+        buildReels();
+        wallet.setText(walletText(gains.getAsDouble()));
+        layout();
+        notice.clearActions();
+        notice.setColor(Palette.TEXT_TITLE);
+        notice.setText(message);
+        notice.getColor().a = 1f;
+        notice.addAction(Actions.sequence(Actions.delay(NOTICE_TIME), Actions.fadeOut(0.4f)));
+    }
+
+    /** Ajoute à {@code cell} la ligne du prix (pièce + montant). @return le montant, qui clignote s'il est trop cher */
+    private Label priceRow(Table cell, double amount) {
+        Table price = new Table();
+        price.add(new Image(new TextureRegionDrawable(new TextureRegion(hud.coin)))).size(COIN_SIZE).padRight(6f);
+        Label priceLabel = new Label(SidePanel.formatGains(amount), new Label.LabelStyle(priceFont, Color.WHITE));
+        price.add(priceLabel);
+        cell.add(price).padTop(GAP / 4f);
+        cell.row();
+        return priceLabel;
+    }
+
+    /** @return l'image d'un rouleau, avec son effet au survol */
+    private Image symbolImage(Symbol symbol) {
+        Image image = new Image(new TextureRegionDrawable(reels.region(symbol)));
+        image.addListener(new InputListener() {
+            @Override
+            public void enter(InputEvent event, float x, float y, int pointer, Actor fromActor) {
+                if (pointer != -1) return;
+                Vector2 pos = image.localToStageCoordinates(new Vector2(image.getWidth() + 8f, 0f));
+                tooltip.show(symbol.getDisplayName(), symbol.getDescription(), pos.x, pos.y);
+            }
+
+            @Override
+            public void exit(InputEvent event, float x, float y, int pointer, Actor toActor) {
+                if (pointer != -1) return;
+                tooltip.hide();
+            }
+        });
+        return image;
+    }
+
+    /** Affiche {@code reason} en rouge quelques secondes. */
+    private void warn(String reason) {
+        notice.clearActions();
+        notice.setColor(Palette.TEXT_ALERT);
+        notice.setText(reason);
+        notice.getColor().a = 1f;
+        notice.addAction(Actions.sequence(Actions.delay(NOTICE_TIME), Actions.fadeOut(0.4f)));
+    }
+
+    /** Pas assez de gains : le prix clignote en rouge. */
+    private static void tooExpensive(Label status, Label priceLabel) {
+        status.setText(Lang.t("Pas assez de gains"));
+        status.setColor(Palette.TEXT_ALERT);
+        priceLabel.clearActions();
+        priceLabel.setColor(Palette.TEXT_ALERT);
+        priceLabel.addAction(Actions.sequence(Actions.delay(0.4f), Actions.color(Color.WHITE, 0.4f)));
     }
 
     private static String walletText(double gains) {
@@ -253,12 +498,13 @@ public class ShopOverlay implements Disposable {
         veil.setSize(width, height);
         if (scrollCell != null) {
             // La grille prend toute sa hauteur si elle tient à l'écran, sinon elle défile.
-            grid.pack();
-            scrollCell.width(grid.getPrefWidth()).height(grid.getPrefHeight());
+            Table content = reelsShown ? reelGrid : grid;
+            content.pack();
+            scrollCell.width(content.getPrefWidth()).height(content.getPrefHeight());
             panel.invalidate(); // les tailles de cellule ne sont relues qu'après invalidation
             float overflow = panel.getPrefHeight() - (height - GAP * 2f);
             if (overflow > 0f) {
-                scrollCell.height(Math.max(CELL_WIDTH, grid.getPrefHeight() - overflow));
+                scrollCell.height(Math.max(CELL_WIDTH, content.getPrefHeight() - overflow));
                 panel.invalidate();
             }
         }
@@ -273,5 +519,6 @@ public class ShopOverlay implements Disposable {
         Fonts.release(priceFont);
         Fonts.release(hintFont);
         Fonts.release(nameFont);
+        Fonts.release(tabFont);
     }
 }

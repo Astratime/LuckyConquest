@@ -11,6 +11,7 @@ import fr.astratime.lucky.entities.events.Event;
 import fr.astratime.lucky.entities.events.GaugeFilledEvent;
 import fr.astratime.lucky.entities.events.LastDrawEvent;
 import fr.astratime.lucky.entities.events.PlayerDamagedEvent;
+import fr.astratime.lucky.entities.events.BountyEvent;
 import fr.astratime.lucky.entities.events.SafeOpenedEvent;
 import fr.astratime.lucky.entities.events.StatusEvent;
 import fr.astratime.lucky.entities.effects.Effect;
@@ -124,6 +125,7 @@ public class TurnEngine {
         // Symboles -> couples (symbole, action)
         List<SymbolAction> symbolActions = actionResolver.resolve(symbols);
 
+        double gainsBefore = player.getGains(); // Prime de chasse : les gains du tour
         // Combat : actions + CombatContext → TurnResult (mute déjà Player/Enemy)
         // Les événements de phase 1 (ex : symbole boosté par une carte) sont
         // fusionnés en tête du journal du tour.
@@ -137,6 +139,7 @@ public class TurnEngine {
 
         // Jeu bonus : après un Bingo, une fois sur dix, la grille s'ouvre ; ses gains sont crédités tout de suite.
         BonusGame bonus = bonusGame(result, turnContext.getSpinContext(), player, turnContext.getCombatContext());
+        BountyEvent bounty = bounty(turnContext.getCombatContext(), player, gameState.getEnemy(), gainsBefore);
 
         // Tour de l'ennemi, s'il a survécu : le bouclier du joueur (ses symboles de
         // défense) absorbe ses attaques, et le renvoi dépend des cartes jouées ce tour.
@@ -155,6 +158,7 @@ public class TurnEngine {
             player.addGains(safe);
             endEvents.add(new SafeOpenedEvent(safe));
         }
+        if (bounty != null) endEvents.add(0, bounty);
         result = result.withEnemyTurn(enemyTurn, endEvents);
         if (rerolled != null) result = result.withReroll(rerolled);
         if (bonus != null) result = result.withBonusGame(bonus);
@@ -409,6 +413,22 @@ public class TurnEngine {
      *         cagnotte, qui repart de 0 ; ses gains déjà crédités au joueur ;
      *         {@code null} sans Bingo ou si la grille ne s'ouvre pas
      */
+    /**
+     * Prime de chasse : si l'ennemi tombe pendant le tirage, les gains gagnés ce tour
+     * (tirage et Jeu bonus) reviennent une fois de plus par Prime jouée.
+     *
+     * @return la prime versée, ou {@code null} s'il n'y en a pas
+     */
+    private static BountyEvent bounty(CombatContext combat, Player player, Enemy enemy, double gainsBefore) {
+        int bounties = combat.getBounties();
+        if (bounties <= 0 || !enemy.isDefeated() || player.isDefeated()) return null;
+        double earned = player.getGains() - gainsBefore;
+        if (earned <= 0) return null;
+        double paid = BigNumber.round(earned * bounties);
+        player.addGains(paid);
+        return new BountyEvent(paid);
+    }
+
     private BonusGame bonusGame(TurnResult result, SpinContext spin, Player player, CombatContext combat) {
         if (!bonusGameEnabled || !result.isJackpot() || player.isDefeated()) return null;
         if (!spin.isBonusGameForced() && random.nextFloat() >= bonusGameChance) return null;

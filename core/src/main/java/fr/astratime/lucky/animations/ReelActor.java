@@ -29,7 +29,7 @@ public class ReelActor<S> extends Actor {
     private enum State { IDLE, SPINNING, LANDING }
 
     private final Function<S, TextureRegion> regionOf;
-    private final S[]                        pool;
+    private S[]                              pool;
 
     private State    state = State.IDLE;
     private S        shown;          // symbole à l'arrêt (null : fenêtre vide)
@@ -49,6 +49,9 @@ public class ReelActor<S> extends Actor {
         this.pool     = pool;
         this.regionOf = regionOf;
     }
+
+    /** @param pool nouveaux symboles qui défilent (la machine a changé à l'échoppe) */
+    public void setPool(S[] pool) { this.pool = pool; }
 
     /** @return le symbole affiché à l'arrêt, ou null (fenêtre vide ou rouleau en mouvement). */
     public S getSymbol() { return state == State.IDLE ? shown : null; }

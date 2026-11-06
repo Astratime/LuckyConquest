@@ -108,6 +108,9 @@ public class GameController {
     /** Double ou rien : la prochaine carte jouée ce tour compte deux fois. */
     private boolean doubleNext = false;
 
+    /** Main du croupier : cartes piochées à chaque carte jouée, jusqu'à la fin du tour. */
+    private int drawPerPlay = 0;
+
     /** Le tirage coûte des gains (voir {@link SpinEconomy}) : vrai dès le premier {@link #restart} (pas dans les tests qui n'en font pas). */
     private boolean spinCostActive = false;
 
@@ -132,6 +135,9 @@ public class GameController {
     private final Map<String, Integer> bought = new HashMap<>();
 
     private final Random random = new Random();
+
+    /** Rouleaux de l'échoppe : achetés ou retirés le temps du combat. */
+    private final ReelStall reelStall = new ReelStall(random);
 
     /** Cartes changées de suite par l'Arc-en-ciel ce tour, et la carte d'origine de chacune. */
     private final Map<Card, Card> originals = new IdentityHashMap<>();
@@ -180,6 +186,7 @@ public class GameController {
         this.cardFactory = cardFactory;
         this.starterDeck = starterDeck;
         this.gameState   = new GameState(playerFactory.apply(starterDeck.get()), new Enemy(EnemyKind.CROUPIER));
+        reelStall.open(gameState.getPlayer().getSlotMachine().getReels());
     }
 
     /**
@@ -200,6 +207,7 @@ public class GameController {
         player.addGains(SpinEconomy.startingGains(kind.getSpinCost())); // une fois par chapitre de la Tour
         treasureMaps = 0;
         bought.clear();
+        reelStall.open(player.getSlotMachine().getReels());
         clearTurn();
         stake = SpinEconomy.Stake.NONE; // nouveau combat depuis le début : pas de Mise
     }
@@ -214,6 +222,7 @@ public class GameController {
         this.gameState = new GameState(player, createEnemy(kind, player));
         gameState.setPlaceRule(placeRule);
         bought.clear();
+        reelStall.open(player.getSlotMachine().getReels());
         clearTurn();
     }
 
@@ -240,6 +249,7 @@ public class GameController {
         pendingChoice = null;
         handLocked    = false;
         doubleNext    = false;
+        drawPerPlay   = 0;
         bingoGiftPending = false;
         hiddenCards.clear();
         songs = 0;
@@ -509,6 +519,10 @@ public class GameController {
      *         sortir : il n'est pas en vente tant que le symbole n'est pas revenu.
      */
     public String unavailableReason(ShopOffer offer) {
+        Symbol missing = missingBingoSymbol(offer.card());
+        if (missing != null) {
+            return Lang.f("Indisponible : le symbole {0} n'est plus dans ta machine", missing.getDisplayName());
+        }
         Symbol recycled = recycledBingoSymbol(offer.card());
         if (recycled == null) return null;
         int turns = gameState.getPlayer().getLastingEffects().getRemovedSymbols().get(recycled);
@@ -532,6 +546,11 @@ public class GameController {
         if (cardsPlayedThisTurn >= getPlayLimit()) {
             return Lang.f("Limite atteinte : {0} cartes jouées ce tour", getPlayLimit());
         }
+        Symbol missing = missingBingoSymbol(card);
+        if (missing != null) {
+            return Lang.f("Le symbole {0} n'est plus dans ta machine : ce Bingo ne peut pas être joué",
+                missing.getDisplayName());
+        }
         Symbol recycled = recycledBingoSymbol(card);
         if (recycled == null) return null;
         int turns = gameState.getPlayer().getLastingEffects().getRemovedSymbols().get(recycled);
@@ -548,6 +567,40 @@ public class GameController {
         }
         return null;
     }
+
+    /** @return le symbole imposé par le Bingo de {@code card} s'il a été retiré de la machine à l'échoppe, sinon {@code null}. */
+    private Symbol missingBingoSymbol(Card card) {
+        List<Symbol> reels = gameState.getPlayer().getSlotMachine().getReels();
+        for (Effect effect : card.getEffects()) {
+            if (effect instanceof BingoEffect bingo && bingo.getSymbol() != null && !bingo.getSymbol().isSummoned()
+                && !reels.contains(bingo.getSymbol())) {
+                return bingo.getSymbol();
+            }
+        }
+        return null;
+    }
+
+    // -------------------------------------------------------------------------
+    // Rouleaux de l'échoppe
+    // -------------------------------------------------------------------------
+
+    /** @return les rouleaux en vente à l'échoppe dans ce combat, au prix du prochain achat. */
+    public List<ReelStall.ReelOffer> getReelOffers() { return reelStall.getOffers(getSpinCost()); }
+
+    /** @return le prix du prochain rouleau retiré à l'échoppe. */
+    public double getReelRemovePrice() { return reelStall.getRemovePrice(getSpinCost()); }
+
+    /** @return pourquoi {@code symbol} ne peut pas être acheté (hors manque de gains), ou {@code null}. */
+    public String reelBuyProblem(Symbol symbol) { return reelStall.buyProblem(gameState.getPlayer(), symbol); }
+
+    /** @return pourquoi {@code symbol} ne peut pas être retiré (hors manque de gains), ou {@code null}. */
+    public String reelRemoveProblem(Symbol symbol) { return reelStall.removeProblem(gameState.getPlayer(), symbol); }
+
+    /** Achète le rouleau {@code symbol} pour ce combat. @return {@code false} s'il est indisponible ou trop cher */
+    public boolean buyReel(Symbol symbol) { return reelStall.buy(gameState.getPlayer(), symbol, getSpinCost()); }
+
+    /** Retire le rouleau {@code symbol} pour ce combat. @return {@code false} si c'est impossible ou trop cher */
+    public boolean removeReel(Symbol symbol) { return reelStall.remove(gameState.getPlayer(), symbol, getSpinCost()); }
 
     private static String turnsText(int turns) {
         return Lang.n(turns, "{0} tour", "{0} tours", turns);
@@ -597,6 +650,12 @@ public class GameController {
                 PopupScale.SECONDARY_INTENSITY)));
         }
         boolean doubling = doubleNext;
+        int dealt = drawPerPlay; // Main du croupier jouée avant : cette carte fait piocher
+        if (dealt > 0) {
+            playContext.addCardsToDraw(dealt);
+            playContext.addPopups(List.of(EffectPopup.scaled(Lang.f("PIOCHE +{0}", dealt), EffectPopup.Style.DRAW, dealt,
+                PopupScale.CARD_EXTRA_DRAW)));
+        }
         playEffects(card, playContext, false);
         // Double ou rien : la carte compte deux fois, sauf si elle demande un choix (le doublement attend la suivante)
         if (doubling && playContext.getChoice() == null && !playContext.isDoubleRequested()) {
@@ -606,6 +665,7 @@ public class GameController {
             playEffects(card, playContext, true);
         }
         if (playContext.isDoubleRequested()) doubleNext = true;
+        drawPerPlay += playContext.getDrawPerPlay();
         treasureMaps += playContext.getTreasureMaps();
         playContext.getEffectsForSpin().forEach(effect -> effect.setSourceName(card.getName()));
         pendingEffects.addAll(playContext.getEffectsForSpin());
@@ -880,6 +940,7 @@ public class GameController {
         pendingChoice = null;
         handLocked    = false;
         doubleNext    = false;
+        drawPerPlay   = 0;
         gameState.getPlayer().restoreCards(originals); // l'effet de l'Arc-en-ciel ne dure que le tour
         originals.clear();
         hiddenCards.clear();

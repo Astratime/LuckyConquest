@@ -4,6 +4,7 @@ import fr.astratime.lucky.entities.context.SpinContext;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
@@ -35,7 +36,7 @@ public class SlotMachine {
     /** Poids de base attribué à chaque symbole avant application des boosts du tour. */
     private static final int BASE_WEIGHT  = 10;
     /** Poids de base du Joker, plus rare que les autres symboles. */
-    private static final int JOKER_WEIGHT = 4;
+    public static final int JOKER_WEIGHT = 4;
 
     private final Random       random;
     /** Symboles de la machine, sans le Joker. */
@@ -57,12 +58,20 @@ public class SlotMachine {
     }
 
     SlotMachine(List<Symbol> reels, Random random) {
-        this.reels  = List.copyOf(reels);
+        this.reels  = new ArrayList<>(reels);
         this.random = random;
     }
 
-    /** @return les symboles de la machine, sans le Joker. */
-    public List<Symbol> getReels() { return reels; }
+    /** @return les symboles de la machine, sans le Joker (lecture seule, suit les achats de l'échoppe). */
+    public List<Symbol> getReels() { return Collections.unmodifiableList(reels); }
+
+    /** Échoppe : ajoute le rouleau {@code symbol} à la machine (pour le combat en cours). */
+    public void addReel(Symbol symbol) {
+        if (symbol != Symbol.JOKER && !reels.contains(symbol)) reels.add(symbol);
+    }
+
+    /** Échoppe : retire le rouleau {@code symbol} de la machine (pour le combat en cours). @return {@code true} s'il y était */
+    public boolean removeReel(Symbol symbol) { return reels.remove(symbol); }
 
     /**
      * Tire un symbole par rouleau ({@link SpinContext#getReelCount()} : trois,

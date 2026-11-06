@@ -107,7 +107,9 @@ public class CombatResolver {
         // on les rattache aussi au symbole qui les a produits pour le journal détaillé.
         List<SymbolOutcome> symbolOutcomes = new ArrayList<>();
         for (SymbolAction symbolAction : symbolActions) {
+            combatContext.setActiveSlot(symbolAction.getSlotIndex()); // Rouleau doré : le facteur de son rouleau
             List<Event> actionEvents = symbolAction.getAction().resolve(combatContext);
+            combatContext.setActiveSlot(-1);
             events.addAll(actionEvents);
             symbolOutcomes.add(new SymbolOutcome(symbolAction.getSymbol(), symbolAction.getSlotIndex(), actionEvents));
         }

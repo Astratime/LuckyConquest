@@ -45,6 +45,9 @@ public class CombatContext {
     private long  vaultBurst     = 0;   // As de Carreau : Coffre vidé, infligé d'un coup si aucun symbole d'attaque ne sort
     private int   counterAttack  = 0;   // Diamant brut : multiplicateur du Coffre infligé en contre-attaque (0 : aucune)
     private int   executionPercent = 0; // Guillotine : % des PV restants de l'ennemi infligés d'un coup (0 : aucun)
+    private final int[] slotPower = {1, 1, 1, 1}; // Rouleau doré : facteur propre à chaque rouleau
+    private int   activeSlot     = -1;  // rouleau dont le symbole se résout en ce moment (-1 : aucun)
+    private int   bounties       = 0;   // Prime de chasse : fois où les gains du tour reviennent si l'ennemi tombe
 
     /** Ce qui a changé l'attaque, le bouclier et les gains des symboles ce tour, dans l'ordre (voir {@link #getSteps}). */
     private final List<PowerStep> steps = new ArrayList<>();
@@ -240,7 +243,21 @@ public class CombatContext {
     /** @return la part des PV restants de l'ennemi infligée d'un coup par la Guillotine, en % (0 : aucune). */
     public int   getExecutionPercent() { return executionPercent; }
     /** @return le facteur de la valeur de chaque symbole : dégâts, bouclier et gains (1 si aucun). */
-    public int   getSymbolPower()    { return symbolPower; }
+    public int   getSymbolPower()    {
+        return activeSlot >= 0 && activeSlot < slotPower.length ? symbolPower * slotPower[activeSlot] : symbolPower;
+    }
+    /** @return le facteur propre au rouleau {@code slot} (Rouleau doré), 1 si aucun. */
+    public int   getSlotPower(int slot) { return slot >= 0 && slot < slotPower.length ? slotPower[slot] : 1; }
+    /** Rouleau doré : multiplie la valeur du symbole du rouleau {@code slot} par {@code factor}. */
+    public void  multiplySlotPower(int slot, int factor) {
+        if (slot >= 0 && slot < slotPower.length) slotPower[slot] *= factor;
+    }
+    /** Le symbole du rouleau {@code slot} se résout ({@code -1} : plus aucun) : il prend le facteur de son rouleau. */
+    public void  setActiveSlot(int slot) { activeSlot = slot; }
+    /** Prime de chasse : si l'ennemi tombe ce tour, les gains du tour reviennent une fois de plus. */
+    public void  addBounty()         { bounties++; }
+    /** @return le nombre de Primes de chasse jouées ce tour. */
+    public int   getBounties()       { return bounties; }
     /** @return les symboles sur lesquels le joueur a parié ce tour (vue non modifiable). */
     public List<Symbol>  getBets()        { return Collections.unmodifiableList(bets); }
     /** @return la part (%) du meilleur coup rejouée par chaque tir de pistolet de ce tour (vue non modifiable). */
