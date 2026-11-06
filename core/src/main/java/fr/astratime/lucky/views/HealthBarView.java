@@ -115,8 +115,8 @@ public class HealthBarView extends Group {
      * de PV laisse la traînée à l'ancienne valeur avant de la faire rattraper le
      * remplissage ; un gain (soin, nouveau combat) la place directement.
      */
-    public void refresh(int hp, int maxHp) {
-        float width = trackWidth * Math.clamp((float) hp / maxHp, 0f, 1f);
+    public void refresh(long hp, long maxHp) {
+        float width = trackWidth * Math.clamp((float) ((double) hp / maxHp), 0f, 1f);
         fill.setWidth(width);
         trail.clearActions();
         if (width < trail.getWidth()) {
@@ -131,7 +131,7 @@ public class HealthBarView extends Group {
     }
 
     /** @return les PV, abrégés à partir d'un million (ex : « 5,5 M ») pour laisser la place au nom. */
-    static String hpText(int hp) {
+    static String hpText(long hp) {
         return Lang.big(hp);
     }
 

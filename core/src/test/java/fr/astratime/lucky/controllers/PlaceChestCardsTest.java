@@ -108,7 +108,7 @@ class PlaceChestCardsTest {
         assertTrue(golem.hasGoldSkin());
         CombatContext context = new CombatContext(new Player("Joueur", 100, List.of()), golem);
         context.addDynamite(3);
-        int before = golem.getHp();
+        long before = golem.getHp();
         new CombatResolver().resolve(context, List.of(), new Symbol[] {null, null, null}, List.of());
         assertEquals(Math.round(golem.getMaxHp() * 0.03f), before - golem.getHp());
     }

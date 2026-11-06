@@ -84,7 +84,7 @@ public non-sealed class AttackAction extends Action {
         long damage     = enemy.skinned(hit - blocked); // une peau d'or encaisse la moitié
         long shown      = enemy.skinned(rawDamage - blocked); // le vrai coup, affiché même s'il dépasse ses PV
 
-        int lost = enemy.takeDamage(hit - blocked);
+        long lost = enemy.takeDamage(hit - blocked);
         if (lost < damage && !enemy.isDefeated()) damage = shown = lost; // coup annulé (la Maison), Garde, ou fatal évité (Machine Originelle)
         damage = Math.min(damage, enemy.getMaxHp()); // drain de vie et gains : jamais plus que ses PV max, comme avant
         events.add(new EnemyDamagedEvent(shown, rawDamage, unscaled, blocked, enemy.getDefense(), pierce)

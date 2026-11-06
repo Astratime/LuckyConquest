@@ -1075,7 +1075,7 @@ public class GameScreen extends ScreenAdapter {
     /** Lance la machine (bouton, touche F, ou d'elle-même après une carte Bingo). */
     private void spin() {
         jackpotCelebration(); // prête avant que les rouleaux ne puissent aligner un Bingo
-        int enemyHpBefore = gameController.getGameState().getEnemy().getHp();
+        long enemyHpBefore = gameController.getGameState().getEnemy().getHp();
         double cost = gameController.getSpinPrice();
         double staked = gameController.getStakeAmount();
         TurnResult result = gameController.spin();
@@ -1089,7 +1089,8 @@ public class GameScreen extends ScreenAdapter {
             .mapToDouble(e -> ((GainsLostEvent) e).amount).sum();
         if (result.getBonusGame() != null) gainsNotYetShown += result.getBonusGame().getTotal(); // à la fin du Jeu bonus
         payForSpin(cost, staked); // seuls le coût et la Mise partent tout de suite
-        int enemyHeal = sumOf(result, EnemyHealedEvent.class, heal -> heal.amount);
+        long enemyHeal = result.getEvents().stream().filter(EnemyHealedEvent.class::isInstance)
+            .mapToLong(e -> ((EnemyHealedEvent) e).amount).sum();
         hud.holdBack(enemyHpBefore - gameController.getGameState().getEnemy().getHp() + enemyHeal, enemyHeal,
             sumOf(result, PlayerDamagedEvent.class, hit -> hit.damage),
             sumOf(result, PlayerHealedEvent.class, heal -> heal.amount));

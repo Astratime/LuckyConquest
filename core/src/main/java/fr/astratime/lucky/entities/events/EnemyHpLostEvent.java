@@ -8,9 +8,9 @@ import fr.astratime.lucky.popups.EffectPopup;
  */
 public class EnemyHpLostEvent extends StatusEvent {
     /** PV réellement perdus. */
-    public final int lost;
+    public final long lost;
 
-    public EnemyHpLostEvent(String text, EffectPopup.Style style, int lost) {
+    public EnemyHpLostEvent(String text, EffectPopup.Style style, long lost) {
         super(text, style);
         this.lost = lost;
     }
