@@ -24,6 +24,7 @@ import fr.astratime.lucky.assets.CardTextures;
 import fr.astratime.lucky.assets.HudTextures;
 import fr.astratime.lucky.assets.Palette;
 import fr.astratime.lucky.entities.Symbol;
+import fr.astratime.lucky.entities.effects.PistolEffect;
 import fr.astratime.lucky.i18n.Lang;
 
 import java.util.ArrayList;
@@ -202,9 +203,9 @@ public class CardChoiceOverlay implements Disposable {
      */
     public void showRoulette(List<Boolean> cursed, int percent, int cursedPercent, int penaltyPercent,
                              IntConsumer onPicked) {
-        open(Lang.t("ROULETTE RUSSE"), Lang.f("Retourne une carte. Pistolet : rejoue le coup le plus fort du tour.\n"
-            + "Joker maudit : le coup rejoué perd {0}% et -{1}% de gains.",
-            percent - cursedPercent, penaltyPercent));
+        open(Lang.t("ROULETTE RUSSE"), Lang.f("Retourne une carte. Pistolet : coup le plus fort du tour x{0}.\n"
+            + "Joker maudit : seulement x{1} et -{2}% de gains.",
+            percent / 100, cursedPercent / 100, penaltyPercent));
         Table row = new Table();
         Label result = new Label(" ", new Label.LabelStyle(resultFont, Color.WHITE));
         result.setAlignment(Align.center);
@@ -242,9 +243,9 @@ public class CardChoiceOverlay implements Disposable {
                     boolean lost = cursed.get(index);
                     flip(card, lost ? cursedFace : rouletteFace, 0f);
                     card.addAction(Actions.delay(FLIP_TIME * 2f, Actions.run(() -> {
-                        result.setText(lost ? Lang.f("JOKER MAUDIT !  -{0}% DE GAINS, COUP REJOUÉ À {1}%",
-                            penaltyPercent, cursedPercent)
-                            : Lang.t("PISTOLET CHARGÉ : MEILLEUR COUP REJOUÉ"));
+                        result.setText(lost ? Lang.f("JOKER MAUDIT !  -{0}% DE GAINS, {1}",
+                            penaltyPercent, PistolEffect.shotLabel(cursedPercent))
+                            : Lang.f("PISTOLET CHARGÉ : {0}", PistolEffect.shotLabel(percent)));
                         result.setColor(lost ? Palette.TEXT_ALERT : Palette.TEXT_TITLE);
                         result.setOrigin(Align.center);
                         result.setFontScale(1f);

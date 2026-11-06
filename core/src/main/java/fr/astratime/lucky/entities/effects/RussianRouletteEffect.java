@@ -15,8 +15,8 @@ import java.util.List;
 /**
  * Roulette russe : le joueur retourne une carte parmi trois, faces cachées.
  * Quelle que soit la carte, le pistolet rejoue après le tirage le coup le
- * plus fort du tour ({@link PistolEffect}). Une des trois est le Joker
- * maudit : le pistolet n'en rejoue qu'une partie, et le joueur perd une
+ * plus fort du tour, multiplié (x4, {@link PistolEffect}). Une des trois est
+ * le Joker maudit : le coup n'est multiplié que par 3, et le joueur perd une
  * partie de ses gains.
  */
 public class RussianRouletteEffect extends Effect {
@@ -55,9 +55,9 @@ public class RussianRouletteEffect extends Effect {
 
     @Override
     public String getDescription() {
-        return Lang.f("Choisissez une carte. Pistolet : rejoue le coup le plus fort du tour. "
-            + "Joker maudit : le coup rejoué perd {0}% et -{1}% de gains",
-            percent - cursedPercent, penaltyPercent);
+        return Lang.f("Choisissez une carte. Pistolet : coup le plus fort du tour x{0}. "
+            + "Joker maudit : seulement x{1} et -{2}% de gains",
+            percent / 100, cursedPercent / 100, penaltyPercent);
     }
 
     @Override
