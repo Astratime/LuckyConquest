@@ -20,6 +20,9 @@ import java.util.Random;
  * machine devient plus fréquent et tout le Coffre est vidé en bonus d'attaque, à
  * la manière du Sang de l'As de Coeur. Coffre plein ({@link LastingEffects#MAX_VAULT}) :
  * +15 000 d'attaque. L'ancien renvoi de 500 % et la contre-attaque sont supprimés.
+ * Deck 100 % défense (Astra 2026-11-06) : si aucun symbole d'attaque ne sort, le
+ * Coffre vidé explose sur l'ennemi (voir CombatResolver), et sans symbole d'attaque
+ * dans la machine, c'est un symbole de défense qui devient plus fréquent.
  */
 public class AceOfDiamondsEffect extends Effect {
 
@@ -40,9 +43,10 @@ public class AceOfDiamondsEffect extends Effect {
     @Override
     public void apply(TurnContext context) {
         CombatContext combat = context.getCombatContext();
-        List<Symbol> attackSymbols = SymbolRegistry.getAttackSymbols(combat.getPlayer()); // ceux de sa machine
-        if (!attackSymbols.isEmpty()) {
-            Symbol target = attackSymbols.get(RANDOM.nextInt(attackSymbols.size()));
+        List<Symbol> boostable = SymbolRegistry.getAttackSymbols(combat.getPlayer()); // ceux de sa machine
+        if (boostable.isEmpty()) boostable = SymbolRegistry.getDefenseSymbols(combat.getPlayer()); // machine sans attaque
+        if (!boostable.isEmpty()) {
+            Symbol target = boostable.get(RANDOM.nextInt(boostable.size()));
             int boost = Math.round(BOOST_AMOUNT * power);
             context.getSpinContext().addWeightBoost(target, boost);
             context.addEvent(new SymbolBoostedEvent(target, boost));
@@ -51,14 +55,18 @@ public class AceOfDiamondsEffect extends Effect {
         int vault  = combat.getPlayer().getLastingEffects().consumeVault();
         int attack = vault / VAULT_PER_ATTACK;
         combat.addAttackBonus(attack, "Coffre");
+        combat.addVaultBurst(vault); // sans symbole d'attaque au tirage, le Coffre explose
         context.addEvent(new CardBonusEvent(Lang.f("Coffre : attaque +{0}", attack), List.of(
             new EffectPopup(Lang.f("COFFRE : ATTAQUE +{0}", attack), EffectPopup.Style.ATTACK, PopupScale.MAX_INTENSITY))));
     }
 
     @Override
     public String getDescription() {
-        return Lang.f("Un symbole d'attaque devient plus fréquent (+{2}). Vide le Coffre : +1 d'attaque pour {0} de Coffre "
-            + "(+{1} au plus, Coffre plein)", VAULT_PER_ATTACK, Lang.big(LastingEffects.MAX_VAULT / VAULT_PER_ATTACK), Math.round(BOOST_AMOUNT * power));
+        return Lang.f("Un symbole d'attaque devient plus fréquent (+{2}), ou de défense si la machine n'en a pas. "
+            + "Vide le Coffre : +1 d'attaque pour {0} de Coffre (+{1} au plus, Coffre plein). "
+            + "Sans symbole d'attaque au tirage, le Coffre explose sur l'ennemi ({3} au plus)",
+            VAULT_PER_ATTACK, Lang.big(LastingEffects.MAX_VAULT / VAULT_PER_ATTACK), Math.round(BOOST_AMOUNT * power),
+            Lang.big(LastingEffects.MAX_VAULT));
     }
 
     @Override

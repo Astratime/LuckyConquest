@@ -12,6 +12,7 @@ import fr.astratime.lucky.entities.TurnResult;
 import fr.astratime.lucky.entities.LastingEffects;
 import fr.astratime.lucky.entities.Combo;
 import fr.astratime.lucky.entities.SymbolRegistry;
+import fr.astratime.lucky.entities.actions.Action;
 import fr.astratime.lucky.entities.actions.AttackAction;
 import fr.astratime.lucky.entities.actions.BombAction;
 import fr.astratime.lucky.entities.actions.GainAction;
@@ -29,6 +30,7 @@ import fr.astratime.lucky.popups.EffectPopup;
 import fr.astratime.lucky.entities.events.AllInWonEvent;
 import fr.astratime.lucky.entities.events.BetLostEvent;
 import fr.astratime.lucky.entities.events.CounterAttackEvent;
+import fr.astratime.lucky.entities.events.VaultBurstEvent;
 import fr.astratime.lucky.entities.events.ExecutionEvent;
 import fr.astratime.lucky.entities.events.BetWonEvent;
 import fr.astratime.lucky.entities.events.EnemyDamagedEvent;
@@ -113,6 +115,7 @@ public class CombatResolver {
         // Tirs de pistolet (Roulette russe), puis contre-attaque du Coffre (Diamant brut)
         List<Event> pistolEvents = firePistol(combatContext, symbolOutcomes);
         counterAttack(combatContext).ifPresent(pistolEvents::add);
+        vaultBurst(combatContext, symbolActions).ifPresent(pistolEvents::add);
         execution(combatContext).ifPresent(pistolEvents::add);
         pistolEvents.addAll(forgedBlades(combatContext, symbolOutcomes, pistolEvents));
         dynamite(combatContext).ifPresent(pistolEvents::add);
@@ -475,6 +478,27 @@ public class CombatResolver {
         long damage = enemy.skinned(raw);
         enemy.takeDamage(enemy.capHit(raw));
         return Optional.of(new CounterAttackEvent(damage, enemy.getDefense()));
+    }
+
+    /**
+     * As de Carreau (Astra 2026-11-06) : si aucun symbole d'attaque n'est sorti,
+     * le Coffre qu'il a vidé explose d'un coup sur l'ennemi, sans tenir compte de
+     * sa défense. Avec un symbole d'attaque, le Coffre est déjà passé en bonus d'attaque.
+     */
+    private Optional<Event> vaultBurst(CombatContext context, List<SymbolAction> symbolActions) {
+        Enemy enemy = context.getEnemy();
+        if (context.getVaultBurst() <= 0 || enemy.isDefeated()) return Optional.empty();
+        if (symbolActions.stream().anyMatch(a -> attacks(a.getAction()))) return Optional.empty();
+        long raw    = context.getVaultBurst(); // le vrai coup, sans plafond
+        long damage = enemy.skinned(raw);
+        enemy.takeDamage(enemy.capHit(raw));
+        return Optional.of(new VaultBurstEvent(damage, enemy.getDefense()));
+    }
+
+    /** @return vrai si {@code action} frappe avec le bonus d'attaque (une Étoile compte si elle attaque) */
+    private static boolean attacks(Action action) {
+        if (action instanceof AttackAction) return true;
+        return action instanceof MixedAction mixed && mixed.getActions().stream().anyMatch(CombatResolver::attacks);
     }
 
     /**
