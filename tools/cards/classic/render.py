@@ -16,7 +16,8 @@ sys.path.insert(0, HERE)
 from base import FACE, WHITE, SHADOW, hexc, up  # noqa: E402
 from palettes import FAMILIES, CARD_FAMILY  # noqa: E402
 
-MODULES = ['cards_jokers', 'cards_w1', 'cards_w2', 'cards_w3', 'cards_w4', 'cards_bingo', 'cards_archetypes']
+MODULES = ['cards_jokers', 'cards_w1', 'cards_w2', 'cards_w3', 'cards_w4', 'cards_bingo', 'cards_archetypes',
+           'cards_w5']
 
 
 def palette(card_id):

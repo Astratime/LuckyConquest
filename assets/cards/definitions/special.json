@@ -200,6 +200,53 @@
     ]
   },
   {
+    "id": "golden_reel",
+    "name": "Rouleau doré",
+    "assetPath": "cards/special/golden_reel.png",
+    "consumable": true,
+    "effects": [
+      {
+        "type": "GOLDEN_REEL",
+        "factor": 3
+      }
+    ]
+  },
+  {
+    "id": "dealer_hand",
+    "name": "Main du croupier",
+    "assetPath": "cards/special/dealer_hand.png",
+    "consumable": true,
+    "effects": [
+      {
+        "type": "DEALER_HAND"
+      }
+    ]
+  },
+  {
+    "id": "bounty",
+    "name": "Prime de chasse",
+    "assetPath": "cards/special/bounty.png",
+    "consumable": true,
+    "effects": [
+      {
+        "type": "BOUNTY",
+        "costPercent": 20
+      }
+    ]
+  },
+  {
+    "id": "lucky_strike",
+    "name": "Coup de chance",
+    "assetPath": "cards/special/lucky_strike.png",
+    "consumable": true,
+    "effects": [
+      {
+        "type": "LUCKY_STRIKE",
+        "factor": 3
+      }
+    ]
+  },
+  {
     "id": "gain_2000",
     "name": "Gains +2000",
     "assetPath": "cards/special/gain_2000.png",

@@ -29,6 +29,7 @@ import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.utils.Align;
 import com.badlogic.gdx.utils.ScreenUtils;
 import fr.astratime.lucky.controllers.PreparationResolver;
+import fr.astratime.lucky.controllers.ReelStall;
 import fr.astratime.lucky.entities.enemy.AspirationRule;
 import fr.astratime.lucky.views.AspirationPanel;
 import fr.astratime.lucky.LuckyGame;
@@ -892,11 +893,36 @@ public class GameScreen extends ScreenAdapter {
                 stage.addAction(Actions.delay(PURCHASE_DELAY, Actions.run(() -> placePurchase(purchase))));
                 return true;
             },
-            offer -> showCardDetail(offer.card()));
+            offer -> showCardDetail(offer.card()), reelStand());
         if (guide != null) { // l'échoppe passe devant tout : le Croupier reste visible au-dessus
             guide.toFront();
             tooltip.getActor().toFront();
         }
+    }
+
+    /** @return le côté rouleaux de l'échoppe : achats et retraits passent par le contrôleur, puis l'écran suit. */
+    private ShopOverlay.ReelStand reelStand() {
+        return new ShopOverlay.ReelStand() {
+            @Override public List<ReelStall.ReelOffer> offers() { return gameController.getReelOffers(); }
+            @Override public List<Symbol> machine() { return player().getSlotMachine().getReels(); }
+            @Override public double removePrice() { return gameController.getReelRemovePrice(); }
+            @Override public String buyProblem(Symbol symbol) { return gameController.reelBuyProblem(symbol); }
+            @Override public String removeProblem(Symbol symbol) { return gameController.reelRemoveProblem(symbol); }
+            @Override public boolean buy(Symbol symbol) { return reelChanged(gameController.buyReel(symbol)); }
+            @Override public boolean remove(Symbol symbol) { return reelChanged(gameController.removeReel(symbol)); }
+            @Override public TextureRegion region(Symbol symbol) { return slots.regionOf(symbol); }
+        };
+    }
+
+    /** Un rouleau acheté ou retiré à l'échoppe : la machine, les gains, la main et les effets suivent. @return {@code done} */
+    private boolean reelChanged(boolean done) {
+        if (!done) return false;
+        sounds.purchase.play();
+        slots.setMachine(player().getSlotMachine().getReels());
+        refreshGains();
+        hand.refreshBlocked(); // un Bingo d'un rouleau retiré ne se joue plus
+        refreshEffects();
+        return true;
     }
 
     /** Affiche la fiche de {@code card} (avec son prix si elle est vendue à l'échoppe), par-dessus tout le reste. */

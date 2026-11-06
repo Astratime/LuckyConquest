@@ -34,6 +34,7 @@ public class PlayContext {
     private boolean    autoSpin = false;
     private String     rainbowCardId;
     private boolean    doubleNext = false;
+    private int        drawPerPlay = 0;
     private int        treasureMaps = 0;
 
     /** @param player joueur qui joue la carte (ses gains peuvent être consommés immédiatement) */
@@ -138,6 +139,12 @@ public class PlayContext {
 
     /** @return {@code true} si la carte demande que la suivante compte deux fois. */
     public boolean isDoubleRequested() { return doubleNext; }
+
+    /** Main du croupier : jusqu'à la fin du tour, chaque carte jouée ensuite fera piocher une carte de plus. */
+    public void requestDrawPerPlay() { drawPerPlay++; }
+
+    /** @return les cartes à piocher en plus à chaque carte jouée ensuite ce tour (Main du croupier). */
+    public int getDrawPerPlay() { return drawPerPlay; }
 
     /**
      * Arc-en-ciel : les cartes de la main changent de couleur, puis la carte

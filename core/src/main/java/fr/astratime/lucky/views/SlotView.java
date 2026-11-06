@@ -204,6 +204,14 @@ public class SlotView implements Disposable {
     /** @return l'image du symbole (pour l'afficher ailleurs : panneau latéral, choix du pari). */
     public TextureRegion regionOf(Symbol symbol) { return regions.get(symbol); }
 
+    /** La machine a changé (rouleau acheté ou retiré à l'échoppe) : les rouleaux font défiler ses nouveaux symboles. */
+    public void setMachine(List<Symbol> machine) {
+        List<Symbol> strip = new ArrayList<>(machine);
+        strip.add(Symbol.JOKER);
+        Symbol[] pool = strip.toArray(new Symbol[0]);
+        for (ReelActor<Symbol> reel : reels) reel.setPool(pool);
+    }
+
     /** @return la table contenant la ligne de symboles, à ajouter au Stage. */
     public Table getActor() { return table; }
 

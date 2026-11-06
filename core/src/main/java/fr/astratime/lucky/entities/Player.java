@@ -23,6 +23,8 @@ public class Player {
     private final DiscardPile discardPile = new DiscardPile();
     private final Deck        deck;
     private final SlotMachine slotMachine;
+    /** Machine choisie à la Table du croupier : celle de chaque nouveau combat (l'échoppe ne la change que le temps d'un combat). */
+    private final List<Symbol> tableReels;
     /** Bonus de son rang (PV max compris), acheté à la boutique. */
     private final RankBonus   rankBonus;
     /** Effets de cartes qui durent plusieurs tours (Recyclage, Porte-bonheur). */
@@ -97,6 +99,7 @@ public class Player {
         this.hp          = this.maxHp;
         this.deck        = new Deck(cards, discardPile);
         this.slotMachine = new SlotMachine(reels);
+        this.tableReels  = List.copyOf(reels);
     }
 
     /**
@@ -414,7 +417,7 @@ public class Player {
         cards.addAll(playedCards);
         cards.addAll(confiscated); // confisquées le temps d'un combat seulement
         for (StolenCard theft : stolen) cards.add(theft.card); // volées : elles reviennent au plus tard au combat suivant
-        Player next = new Player(name, maxHp - rankBonus.hp(), cards, rankBonus, slotMachine.getReels());
+        Player next = new Player(name, maxHp - rankBonus.hp(), cards, rankBonus, tableReels);
         next.hp = hp; // les PV perdus ne reviennent pas d'un combat à l'autre
         next.gains = gains;
         next.potWinnings = potWinnings;
