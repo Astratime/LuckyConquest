@@ -22,26 +22,27 @@ class CombatContextTest {
 
     @Test
     void diamondReflectNeedsADefenseSymbol() {
-        context.addReflectHpPercent(3.5f);
+        context.addReflectAttackPercent(70f);
 
-        assertEquals(0f, context.getReflectHpPercent(), 1e-6, "sans symbole de défense, pas de renvoi");
+        assertEquals(0f, context.getReflectAttackPercent(), 1e-6, "sans symbole de défense, pas de renvoi");
 
         context.markDefenseSymbolDrawn();
-        assertEquals(3.5f, context.getReflectHpPercent(), 1e-6);
+        assertEquals(70f, context.getReflectAttackPercent(), 1e-6);
+        assertEquals(0f, context.getReflectHpPercent(), 1e-6, "plus rien sur ses PV max (Astra 2026-11-06)");
         assertEquals(0, context.getTotalReflectPercent(), "les Carreaux ne renvoient pas l'attaque ennemie");
     }
 
     @Test
     void diamondReflectsAddUpToTheirCap() {
-        context.addReflectHpPercent(3.5f);   // Dame de Carreau
-        context.addReflectHpPercent(3.75f);  // Roi de Carreau
+        context.addReflectAttackPercent(70f);  // Dame de Carreau
+        context.addReflectAttackPercent(75f);  // Roi de Carreau
         context.markDefenseSymbolDrawn();
-        assertEquals(7.25f, context.getReflectHpPercent(), 1e-6);
+        assertEquals(145f, context.getReflectAttackPercent(), 1e-6);
 
-        context.addReflectHpPercent(3.25f);
-        context.addReflectHpPercent(3f);
-        assertEquals(10f, CombatContext.MAX_REFLECT_HP_PERCENT, 1e-6);
-        assertEquals(CombatContext.MAX_REFLECT_HP_PERCENT, context.getReflectHpPercent(), 1e-6, "10 % au plus (Astra : divisé par 2)");
+        context.addReflectAttackPercent(65f);
+        context.addReflectAttackPercent(60f);
+        assertEquals(200f, CombatContext.MAX_REFLECT_ATTACK_PERCENT, 1e-6);
+        assertEquals(CombatContext.MAX_REFLECT_ATTACK_PERCENT, context.getReflectAttackPercent(), 1e-6, "200 % de ses coups au plus");
     }
 
     @Test
@@ -62,10 +63,10 @@ class CombatContextTest {
     @Test
     void guaranteedAndDiamondReflectsStaySeparate() {
         context.addGuaranteedReflect(500, 1000);
-        context.addReflectHpPercent(3.75f);
+        context.addReflectAttackPercent(75f);
         context.markDefenseSymbolDrawn();
 
         assertEquals(500, context.getTotalReflectPercent());
-        assertEquals(3.75f, context.getReflectHpPercent(), 1e-6);
+        assertEquals(75f, context.getReflectAttackPercent(), 1e-6);
     }
 }

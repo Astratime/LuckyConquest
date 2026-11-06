@@ -321,7 +321,7 @@ public class CardLoader {
         add(effects, "ACE_OF_CLUBS", (json, v) -> new AceOfClubsEffect(v.power()));
 
         // --- Carreau ---
-        add(effects, "DIAMOND_REFLECT", (json, v) -> new DiamondReflectEffect(v.f("hpPercent"), v.i("defenseBoost", 0),
+        add(effects, "DIAMOND_REFLECT", (json, v) -> new DiamondReflectEffect(v.f("attackPercent"), v.i("defenseBoost", 0),
             v.i("vaultBonus", 0)));
         add(effects, "ACE_OF_DIAMONDS", (json, v) -> new AceOfDiamondsEffect(v.power()));
 

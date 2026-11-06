@@ -350,9 +350,12 @@ public class TurnEngine {
             } else {
                 // Bingo de bouclier : s'il frappe, tout le bouclier lui est renvoyé.
                 int shieldReflect = result.isShieldBingo() ? player.getShield() : 0;
+                CombatContext combat = turnContext.getCombatContext();
                 EnemyTurnResolver.Reflection reflection = new EnemyTurnResolver.Reflection(
-                    turnContext.getCombatContext().getTotalReflectPercent(), CombatResolver.VAULT_REFLECT_SHARE,
-                    shieldReflect, turnContext.getCombatContext().getReflectHpPercent());
+                    combat.getTotalReflectPercent(), CombatResolver.VAULT_REFLECT_SHARE,
+                    shieldReflect, combat.getReflectAttackPercent(), combat.getReflectHpPercent(),
+                    (long) player.getRankBonus().attack() * combat.getRankFactor(),
+                    (double) combat.getAttackFactor() * combat.getSymbolPower());
                 enemyTurn = enemyTurnResolver.resolve(enemy, player, reflection, thorns);
             }
         }

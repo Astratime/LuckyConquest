@@ -21,8 +21,11 @@ public class CombatContext {
 
     /** Seuil de vie (en proportion) sous lequel un renvoi garanti est renforcé (plus aucune carte ne l'utilise depuis 2026-11-04). */
     public static final float LOW_HP_RATIO = 0.2f;
-    /** Renvoi des cartes Carreau au plus, en % des PV max de l'ennemi, par tour ennemi. */
-    public static final float MAX_REFLECT_HP_PERCENT = 10f; // Astra 2026-11-04 : renvoi divisé par 2 (20 -> 10)
+    /**
+     * Renvoi des cartes Carreau au plus, en % de l'attaque de l'ennemi, par tour ennemi.
+     * Astra 2026-11-06 : plus rien sur ses PV max (trop fort à haut niveau), le renvoi suit ses coups.
+     */
+    public static final float MAX_REFLECT_ATTACK_PERCENT = 200f;
     /** Nom d'une étape du détail d'un symbole dont l'origine n'est pas précisée. */
     private static final String OTHER_EFFECTS = "Autres effets";
 
@@ -94,8 +97,8 @@ public class CombatContext {
     private int     lifeDrainPercent = 0;   // Coeur : % des dégâts infligés rendus en soin
     private boolean gainsFromDamage  = false; // As de Pique : convertit les dégâts infligés en gains
 
-    private float   reflectHpPercent     = 0f;    // Carreau : renvoi en % des PV max ennemis, additionné, actif si un symbole de défense sort
-    private boolean defenseSymbolDrawn   = false; // un symbole de défense est sorti ce tour (active reflectHpPercent)
+    private float   reflectAttackPercent = 0f;    // Carreau : renvoi en % de l'attaque ennemie, additionné, actif si un symbole de défense sort
+    private boolean defenseSymbolDrawn   = false; // un symbole de défense est sorti ce tour (active reflectAttackPercent)
     private int     guaranteedReflectPercent      = 0; // renvoi garanti, sans symbole de défense (plus de carte depuis 2026-11-04)
     private int     guaranteedReflectLowHpPercent = 0; // renvoi garanti si le joueur est sous LOW_HP_RATIO
     private float   blessedReflectHpPercent = 0f; // Descente aux enfers : renvoi en % des PV max ennemis, sans plafond
@@ -324,8 +327,8 @@ public class CombatContext {
     /** @return {@code true} si les dégâts infligés sont convertis en gains ce tour. */
     public boolean isGainsFromDamage()  { return gainsFromDamage; }
 
-    /** @return le renvoi des cartes Carreau en % des PV max ennemis, additionné sur toutes les cartes jouées ce tour. */
-    public float   getReflectHpBonus()      { return reflectHpPercent; }
+    /** @return le renvoi des cartes Carreau en % de l'attaque ennemie, additionné sur toutes les cartes jouées ce tour. */
+    public float   getReflectAttackBonus()  { return reflectAttackPercent; }
     /** @return {@code true} si un symbole de défense est sorti ce tour. */
     public boolean isDefenseSymbolDrawn()   { return defenseSymbolDrawn; }
 
@@ -338,12 +341,15 @@ public class CombatContext {
     }
 
     /**
-     * Renvoi des cartes Carreau (2 à Roi), en % des PV max de l'ennemi : actif si
-     * au moins un symbole de défense est sorti ce tour, plafonné à {@link #MAX_REFLECT_HP_PERCENT}.
+     * Renvoi des cartes Carreau (2 à Roi), en % de l'attaque de l'ennemi à son tour : actif si
+     * au moins un symbole de défense est sorti ce tour, plafonné à {@link #MAX_REFLECT_ATTACK_PERCENT}.
      */
-    public float getReflectHpPercent() {
-        return (defenseSymbolDrawn ? Math.min(MAX_REFLECT_HP_PERCENT, reflectHpPercent) : 0f) + blessedReflectHpPercent;
+    public float getReflectAttackPercent() {
+        return defenseSymbolDrawn ? Math.min(MAX_REFLECT_ATTACK_PERCENT, reflectAttackPercent) : 0f;
     }
+
+    /** @return le renvoi en % des PV max de l'ennemi : seulement Descente aux enfers (plus aucune carte Carreau). */
+    public float getReflectHpPercent() { return blessedReflectHpPercent; }
 
     /** L'effet tiré au hasard pour un rouleau du Bingo imposé (Astra 2026-11-02 : un tirage par rouleau). */
     public enum Blessing { FIRST, SECOND, THIRD }
@@ -480,8 +486,8 @@ public class CombatContext {
     /** Active ou désactive la conversion des dégâts infligés en gains pour ce tour. */
     public void setGainsFromDamage(boolean value)   { gainsFromDamage = value; }
 
-    /** Ajoute {@code percent} % des PV max ennemis au renvoi des cartes Carreau (actif si un symbole de défense sort). */
-    public void addReflectHpPercent(float percent)  { reflectHpPercent += percent; }
+    /** Ajoute {@code percent} % de l'attaque ennemie au renvoi des cartes Carreau (actif si un symbole de défense sort). */
+    public void addReflectAttackPercent(float percent) { reflectAttackPercent += percent; }
     /** Signale qu'un symbole de défense est sorti ce tour : le renvoi des cartes Carreau s'active. */
     public void markDefenseSymbolDrawn()            { defenseSymbolDrawn = true; }
 
