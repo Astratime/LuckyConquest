@@ -122,7 +122,7 @@ class SuitGaugesTest {
     void aceOfDiamondsVaultExplodesWhenNoAttackSymbolIsDrawn() {
         lasting.addVault(100_000);
         CombatContext combat = prepare(new AceOfDiamondsEffect()).getCombatContext();
-        int hpBefore = enemy.getHp();
+        long hpBefore = enemy.getHp();
         Symbol[] symbols = { Symbol.DIAMOND, Symbol.DIAMOND, null };
         new CombatResolver().resolve(combat, List.of(action(Symbol.DIAMOND, 0), action(Symbol.DIAMOND, 1)), symbols, List.of());
         assertEquals(100_000, hpBefore - enemy.getHp(), "sans symbole d'attaque, le Coffre explose, défense ignorée");
@@ -132,7 +132,7 @@ class SuitGaugesTest {
     void aceOfDiamondsVaultDoesNotExplodeWhenAnAttackSymbolIsDrawn() {
         lasting.addVault(100_000);
         CombatContext combat = prepare(new AceOfDiamondsEffect()).getCombatContext();
-        int hpBefore = enemy.getHp();
+        long hpBefore = enemy.getHp();
         Symbol[] symbols = { Symbol.CHERRY, Symbol.DIAMOND, null };
         new CombatResolver().resolve(combat, List.of(action(Symbol.CHERRY, 0), action(Symbol.DIAMOND, 1)), symbols, List.of());
         assertTrue(hpBefore - enemy.getHp() < 100_000, "avec une attaque, le Coffre ne sert que de bonus d'attaque");

@@ -51,7 +51,8 @@ public class PistolShotEvent extends EnemyDamagedEvent {
     public List<EffectPopup> getPopups() {
         if (blank) return List.of(new EffectPopup(Lang.t("CLIC ! TIR À BLANC"), EffectPopup.Style.SPECIAL, PopupScale.MAX_INTENSITY));
         List<EffectPopup> popups = new ArrayList<>();
-        popups.add(new EffectPopup(percent >= 100 ? Lang.t("PAN !") : Lang.f("PAN ! {0}%", percent),
+        popups.add(new EffectPopup(percent == 100 ? Lang.t("PAN !")
+            : percent > 100 && percent % 100 == 0 ? Lang.f("PAN ! x{0}", percent / 100) : Lang.f("PAN ! {0}%", percent),
             EffectPopup.Style.ATTACK, PopupScale.MAX_INTENSITY));
         popups.addAll(super.getPopups());
         return popups;

@@ -187,7 +187,7 @@ public class CombatResolver {
                 shots.add(PistolShotEvent.blank(enemy.getDefense(), percent));
                 continue;
             }
-            long raw    = Math.round(bestRaw * percent / 100.0); // le vrai coup, sans plafond
+            long raw    = Math.round(bestRaw * (percent / 100.0)); // le vrai coup, sans plafond
             long hit    = enemy.capHit(raw);
             int pierce  = context.getPiercePercent();
             int blocked = enemy.absorb(hit, pierce);

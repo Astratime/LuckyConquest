@@ -40,7 +40,7 @@
     "effects": [
       {
         "type": "BINGO",
-        "power": 10
+        "power": 5
       }
     ]
   },
@@ -133,8 +133,8 @@
     "effects": [
       {
         "type": "RUSSIAN_ROULETTE",
-        "percent": 100,
-        "cursedPercent": 80,
+        "percent": 400,
+        "cursedPercent": 300,
         "penaltyPercent": 20
       }
     ]
