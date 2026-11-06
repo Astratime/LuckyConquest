@@ -20,7 +20,7 @@
     "effects": [
       {
         "type": "DIAMOND_REFLECT",
-        "hpPercent": 1,
+        "attackPercent": 40,
         "defenseBoost": 6,
         "vaultBonus": 50
       }
@@ -35,7 +35,7 @@
     "effects": [
       {
         "type": "DIAMOND_REFLECT",
-        "hpPercent": 1.25,
+        "attackPercent": 50,
         "defenseBoost": 9,
         "vaultBonus": 50
       }
@@ -50,7 +50,7 @@
     "effects": [
       {
         "type": "DIAMOND_REFLECT",
-        "hpPercent": 1.5,
+        "attackPercent": 60,
         "defenseBoost": 12,
         "vaultBonus": 50
       }
@@ -65,7 +65,7 @@
     "effects": [
       {
         "type": "DIAMOND_REFLECT",
-        "hpPercent": 1.75,
+        "attackPercent": 70,
         "defenseBoost": 15,
         "vaultBonus": 50
       }
@@ -80,7 +80,7 @@
     "effects": [
       {
         "type": "DIAMOND_REFLECT",
-        "hpPercent": 2,
+        "attackPercent": 80,
         "defenseBoost": 18,
         "vaultBonus": 100
       }
@@ -95,7 +95,7 @@
     "effects": [
       {
         "type": "DIAMOND_REFLECT",
-        "hpPercent": 2.25,
+        "attackPercent": 90,
         "defenseBoost": 21,
         "vaultBonus": 100
       }
@@ -110,7 +110,7 @@
     "effects": [
       {
         "type": "DIAMOND_REFLECT",
-        "hpPercent": 2.5,
+        "attackPercent": 100,
         "defenseBoost": 24,
         "vaultBonus": 100
       }
@@ -125,7 +125,7 @@
     "effects": [
       {
         "type": "DIAMOND_REFLECT",
-        "hpPercent": 2.75,
+        "attackPercent": 110,
         "defenseBoost": 27,
         "vaultBonus": 100
       }
@@ -140,7 +140,7 @@
     "effects": [
       {
         "type": "DIAMOND_REFLECT",
-        "hpPercent": 3,
+        "attackPercent": 120,
         "defenseBoost": 30,
         "vaultBonus": 100
       }
@@ -155,7 +155,7 @@
     "effects": [
       {
         "type": "DIAMOND_REFLECT",
-        "hpPercent": 3.25,
+        "attackPercent": 130,
         "defenseBoost": 33,
         "vaultBonus": 150
       }
@@ -170,7 +170,7 @@
     "effects": [
       {
         "type": "DIAMOND_REFLECT",
-        "hpPercent": 3.5,
+        "attackPercent": 140,
         "defenseBoost": 36,
         "vaultBonus": 150
       }
@@ -185,7 +185,7 @@
     "effects": [
       {
         "type": "DIAMOND_REFLECT",
-        "hpPercent": 3.75,
+        "attackPercent": 150,
         "defenseBoost": 39,
         "vaultBonus": 150
       }

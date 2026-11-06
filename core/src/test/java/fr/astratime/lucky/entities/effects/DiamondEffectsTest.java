@@ -22,23 +22,23 @@ class DiamondEffectsTest {
 
     @Test
     void diamondCardBoostsEveryDefenseSymbolAndAddsReflect() {
-        new DiamondReflectEffect(3.75f, 39).apply(context);
+        new DiamondReflectEffect(75f, 39).apply(context);
 
         List<Symbol> defenseSymbols = SymbolRegistry.getDefenseSymbols();
         assertFalse(defenseSymbols.isEmpty());
         for (Symbol symbol : defenseSymbols) {
             assertEquals(39, context.getSpinContext().getWeightBoost(symbol), symbol.name());
         }
-        assertEquals(3.75f, context.getCombatContext().getReflectHpBonus(), 1e-6);
+        assertEquals(75f, context.getCombatContext().getReflectAttackBonus(), 1e-6);
     }
 
     @Test
     void diamondCardsStack() {
-        new DiamondReflectEffect(3.5f, 33).apply(context);
-        new DiamondReflectEffect(3.75f, 39).apply(context);
+        new DiamondReflectEffect(70f, 33).apply(context);
+        new DiamondReflectEffect(75f, 39).apply(context);
 
         assertEquals(72, context.getSpinContext().getWeightBoost(SymbolRegistry.getDefenseSymbols().get(0)));
-        assertEquals(7.25f, context.getCombatContext().getReflectHpBonus(), 1e-6);
+        assertEquals(145f, context.getCombatContext().getReflectAttackBonus(), 1e-6);
     }
 
     @Test
@@ -52,9 +52,9 @@ class DiamondEffectsTest {
 
     @Test
     void diamondCardShowsReflectAndDefenseBoost() {
-        List<String> texts = new DiamondReflectEffect(3.75f, 39).getPopups().stream().map(EffectPopup::getText).toList();
+        List<String> texts = new DiamondReflectEffect(75f, 39).getPopups().stream().map(EffectPopup::getText).toList();
 
-        assertEquals(List.of("RENVOI 3,75% DES PV", "BOOST DÉFENSE +39"), texts);
+        assertEquals(List.of("RENVOI 75% DES COUPS", "BOOST DÉFENSE +39"), texts);
     }
 
     @Test

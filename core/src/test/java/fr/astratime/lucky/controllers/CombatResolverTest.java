@@ -30,14 +30,14 @@ class CombatResolverTest {
         Player player = new Player("Joueur", 100, List.of());
         Enemy  enemy  = new Enemy("Ennemi", 1000);
         CombatContext context = new CombatContext(player, enemy);
-        context.addReflectHpPercent(3.75f);
+        context.addReflectAttackPercent(75f);
         Symbol[] symbols = { Symbol.GRAPE, null, null };
         List<SymbolAction> actions = List.of(
             new SymbolAction(Symbol.GRAPE, 0, SymbolRegistry.getAction(Symbol.GRAPE).orElseThrow()));
 
         resolver.resolve(context, actions, symbols, List.of());
 
-        assertEquals(3.75f, context.getReflectHpPercent(), 1e-6, "le renvoi vaudra pour le tour de l'ennemi");
+        assertEquals(75f, context.getReflectAttackPercent(), 1e-6, "le renvoi vaudra pour le tour de l'ennemi");
     }
 
     @Test
@@ -45,11 +45,11 @@ class CombatResolverTest {
         Player player = new Player("Joueur", 100, List.of());
         Enemy  enemy  = new Enemy("Ennemi", 1000);
         CombatContext context = new CombatContext(player, enemy);
-        context.addReflectHpPercent(3.75f);
+        context.addReflectAttackPercent(75f);
 
         resolver.resolve(context, List.of(), noSymbols, List.of());
 
-        assertEquals(0f, context.getReflectHpPercent(), 1e-6);
+        assertEquals(0f, context.getReflectAttackPercent(), 1e-6);
     }
 
     @Test
