@@ -22,10 +22,10 @@ public class CombatContext {
     /** Seuil de vie (en proportion) sous lequel un renvoi garanti est renforcé (plus aucune carte ne l'utilise depuis 2026-11-04). */
     public static final float LOW_HP_RATIO = 0.2f;
     /**
-     * Renvoi des cartes Carreau au plus, en % de l'attaque de l'ennemi, par tour ennemi.
+     * Riposte des cartes Carreau au plus, en % de l'attaque de l'ennemi et du bonus d'attaque du rang, par tour ennemi.
      * Astra 2026-11-06 : plus rien sur ses PV max (trop fort à haut niveau), le renvoi suit ses coups.
      */
-    public static final float MAX_REFLECT_ATTACK_PERCENT = 200f;
+    public static final float MAX_REFLECT_ATTACK_PERCENT = 400f;
     /** Nom d'une étape du détail d'un symbole dont l'origine n'est pas précisée. */
     private static final String OTHER_EFFECTS = "Autres effets";
 

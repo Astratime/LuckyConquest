@@ -118,7 +118,7 @@ public class EnemyTurnResolver {
      * @param shieldReflect dégâts renvoyés s'il attaque ce tour (le bouclier d'un Bingo de bouclier), 0 sinon
      * @param attackPercent part (%) de son attaque du tour qui lui est renvoyée (cartes Carreau)
      * @param hpPercent     part (%) de ses PV max qui lui est renvoyée s'il attaque (Descente aux enfers)
-     * @param riposteBonus  ajouté au renvoi des cartes Carreau avant les multiplicateurs : le bonus d'attaque du rang
+     * @param riposteBonus  ajouté à ses coups pour la riposte des cartes Carreau : le bonus d'attaque du rang
      * @param riposteFactor multiplicateur du renvoi des cartes Carreau : ceux de l'attaque du joueur ce tour (combos, Bingo)
      */
     public record Reflection(int percent, float vaultShare, int shieldReflect, float attackPercent, float hpPercent,
@@ -968,9 +968,9 @@ public class EnemyTurnResolver {
                 }
             }
             if (turn.totalAttack > 0 && reflection.attackPercent() > 0 && !enemy.isDefeated()) {
-                // Cartes Carreau, une riposte (Astra 2026-11-06 : plus rien sur ses PV max) : une part de ses coups,
-                // la part du Coffre et le bonus d'attaque du rang, multipliés comme l'attaque du joueur ce tour.
-                double base = turn.totalAttack * (reflection.attackPercent() / 100d) + vaultReflect + reflection.riposteBonus();
+                // Cartes Carreau, une riposte (Astra 2026-11-06 : plus rien sur ses PV max) : une part de ses coups et
+                // du bonus d'attaque du rang, plus la part du Coffre, multipliées comme l'attaque du joueur ce tour.
+                double base = (turn.totalAttack + reflection.riposteBonus()) * (reflection.attackPercent() / 100d) + vaultReflect;
                 long reflected = enemy.capHit(Math.round(base * reflection.riposteFactor()));
                 if (reflected > 0) {
                     afterEvents.add(new DamageReflectedEvent(enemy.skinned(reflected)));

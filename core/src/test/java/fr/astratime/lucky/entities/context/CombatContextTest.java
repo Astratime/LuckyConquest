@@ -39,10 +39,10 @@ class CombatContextTest {
         context.markDefenseSymbolDrawn();
         assertEquals(145f, context.getReflectAttackPercent(), 1e-6);
 
-        context.addReflectAttackPercent(65f);
-        context.addReflectAttackPercent(60f);
-        assertEquals(200f, CombatContext.MAX_REFLECT_ATTACK_PERCENT, 1e-6);
-        assertEquals(CombatContext.MAX_REFLECT_ATTACK_PERCENT, context.getReflectAttackPercent(), 1e-6, "200 % de ses coups au plus");
+        context.addReflectAttackPercent(150f);
+        context.addReflectAttackPercent(150f);
+        assertEquals(400f, CombatContext.MAX_REFLECT_ATTACK_PERCENT, 1e-6);
+        assertEquals(CombatContext.MAX_REFLECT_ATTACK_PERCENT, context.getReflectAttackPercent(), 1e-6, "400 % au plus");
     }
 
     @Test

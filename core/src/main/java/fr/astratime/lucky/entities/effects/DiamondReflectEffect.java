@@ -14,8 +14,8 @@ import java.math.BigDecimal;
 
 /**
  * Carreau (non-As) : augmente la probabilité de tirer un symbole de défense et
- * riposte si l'ennemi attaque : une part de ses coups, plus 20 % du Coffre et le bonus
- * d'attaque du rang, le tout multiplié comme l'attaque du joueur ce tour (combos, Bingo).
+ * riposte si l'ennemi attaque : une part de ses coups et du bonus d'attaque du rang, plus
+ * 20 % du Coffre, le tout multiplié comme l'attaque du joueur ce tour (combos, Bingo).
  * Plus rien sur ses PV max (Astra 2026-11-06 : trop fort à haut niveau).
  * Le renvoi s'additionne sur toutes les cartes Carreau jouées ce tour (plafonné à
  * CombatContext#MAX_REFLECT_ATTACK_PERCENT), et s'active si au moins un symbole de
@@ -55,9 +55,8 @@ public class DiamondReflectEffect extends Effect {
 
     @Override
     public String getDescription() {
-        return Lang.f("Si un symbole de défense sort et que l'ennemi attaque, riposte : {0}% de ses coups "
-            + "+ 20% du Coffre + bonus d'attaque du rang, multipliés par tes combos ({1}% de ses coups au plus "
-            + "avec tous les Carreaux){2}",
+        return Lang.f("Si un symbole de défense sort et que l'ennemi attaque, riposte : {0}% de ses coups et du "
+            + "bonus d'attaque de ton rang, + 20% du Coffre, multipliés par tes combos ({1}% au plus avec tous les Carreaux){2}",
             formatPercent(attackPercent), formatPercent(CombatContext.MAX_REFLECT_ATTACK_PERCENT),
             (defenseBoost > 0 ? Lang.f(". Symboles de défense : bouclier +{0} et plus fréquents", defenseBoost) : ""))
             + (vaultBonus > 0 ? Lang.f(". Bouclier restant en fin de tour : Coffre x{0} de plus", formatPercent(vaultBonus / 100f)) : "");
@@ -66,7 +65,7 @@ public class DiamondReflectEffect extends Effect {
     @Override
     public List<EffectPopup> getPopups() {
         EffectPopup reflect = EffectPopup.scaled(Lang.f("RENVOI {0}% DES COUPS", formatPercent(attackPercent)),
-            EffectPopup.Style.REFLECT, Math.round(attackPercent * 5), PopupScale.CARD_REFLECT_PERCENT);
+            EffectPopup.Style.REFLECT, Math.round(attackPercent * 2.5f), PopupScale.CARD_REFLECT_PERCENT);
         List<EffectPopup> popups = new java.util.ArrayList<>(List.of(reflect));
         if (defenseBoost > 0) popups.add(EffectPopup.scaled(Lang.f("BOOST DÉFENSE +{0}", defenseBoost), EffectPopup.Style.DEFENSE,
             defenseBoost, PopupScale.CARD_DEFENSE_BOOST));

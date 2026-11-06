@@ -107,10 +107,10 @@ class EnemyTurnResolverTest {
             boolean swords = Arrays.stream(turn.symbols()).anyMatch(s -> s == EnemySymbol.SWORD);
             long hits = turn.outcomes().stream().flatMap(List::stream)
                 .filter(e -> e instanceof PlayerDamagedEvent).mapToLong(e -> ((PlayerDamagedEvent) e).blocked).sum();
-            long expected = Math.round((hits * 0.5 + 100) * 3.0);
+            long expected = Math.round((hits + 100) * 0.5 * 3.0);
             boolean reflected = turn.afterEvents().stream()
                 .anyMatch(e -> e instanceof DamageReflectedEvent r && r.damage == expected);
-            if (swords) assertTrue(reflected, "(50 % de ses coups + bonus du rang) x3, rien sur ses PV max : " + expected);
+            if (swords) assertTrue(reflected, "50 % de (ses coups + bonus du rang), x3, rien sur ses PV max : " + expected);
             attacked = swords;
         }
         assertTrue(attacked, "au moins un tirage avec une Épée");
