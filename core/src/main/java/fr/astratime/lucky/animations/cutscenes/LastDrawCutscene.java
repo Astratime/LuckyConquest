@@ -22,14 +22,14 @@ import static fr.astratime.lucky.assets.Palette.hex;
  * Le Dernier tirage de la Machine Originelle, achevée : au sommet de la Tour,
  * elle est seule, fissurée, elle crache des étincelles ; ses rouleaux tournent
  * dans le vide, au ralenti, puis s'arrêtent. Ta machine à un rouleau monte du
- * sol en face d'elle, son œil se pose sur toi. Elle parle (une bulle qui
+ * sol en face d'elle, ses yeux se posent sur toi. Elle parle (une bulle qui
  * s'écrit, un clic la fait avancer) : un dernier tirage décidera. Puis c'est
  * au joueur : il saisit son levier à la souris et le tire jusqu'en bas. Son
  * rouleau part, le levier de la Machine descend tout seul, les deux rouleaux
  * s'arrêtent (le sien se fait attendre). Le plus haut rang gagne (le Joker en
  * tête) ; à égalité, elle le relance et il retire. Gagné : sa vitre se fend,
- * son œil s'éteint, ta machine crache des pièces, fondu blanc (la victoire,
- * puis « Le Jackpot »). Perdu : ta machine grille, son œil flambe, fondu noir.
+ * ses yeux s'éteignent, ta machine crache des pièces, fondu blanc (la victoire,
+ * puis « Le Jackpot »). Perdu : ta machine grille, ses yeux flambent, fondu noir.
  * Le verdict reste {@link #VERDICT} secondes à l'écran.
  *
  * Les manches viennent de {@link LastDrawEvent} : la scène montre le tirage déjà
@@ -81,6 +81,9 @@ public class LastDrawCutscene extends Cutscene {
     private static final Color CHROME = hex("d8d8e0"), CHROME_DARK = hex("8a8a9a"), GLASS = hex("f4ecdc");
     private static final Color SKY_TOP = hex("05071a"), SKY_LOW = hex("2b1a4a"), STONE = hex("3b3550"), STONE_DARK = hex("262238");
     private static final Color HOT = hex("fff6c8"), EYE_RED = hex("ff2a3a"), BUBBLE = hex("1c0f24");
+    /** Sa machine, en « pixels » : la taille de celle de {@link MachineCutscene}. */
+    private static final float HER_W = 72f, HER_H = 44f;
+    private static final int   HER_REELS = 5;
 
     private final LastDrawEvent draw;
     private final BitmapFont font;
@@ -436,7 +439,7 @@ public class LastDrawCutscene extends Cutscene {
     }
 
     private Mine mine() {
-        Mine m = place(0.3f, 1f, 26f);
+        Mine m = place(0.2f, 1f, 26f);
         float rise = 1f - Interpolation.pow2Out.apply(progress(RISE_START, RISE_END));   // elle monte du sol
         if (rise > 0f) {
             float drop = rise * (m.h + 30f * m.u);
@@ -446,7 +449,27 @@ public class LastDrawCutscene extends Cutscene {
         }
         return m;
     }
-    private Mine hers() { return place(0.7f, 1.12f, 26f); }
+
+    /**
+     * Sa machine, la même que dans les autres cinématiques (voir {@link MachineCutscene#drawMachine}) :
+     * corps doré de 72 x 44 « pixels », cinq rouleaux, dôme à gradins, ampoules et plateau à pièces.
+     * Le rouleau du milieu est celui du duel ; les quatre autres la montrent qui te fixe.
+     */
+    private Mine hers() {
+        Mine m = new Mine();
+        float width = worldWidth(), height = worldHeight();
+        m.u = Math.min(height * 0.95f / 80f, width * 0.40f / HER_W);
+        m.cx = width * 0.71f;
+        m.base = height * 0.15f;
+        m.w = HER_W * m.u;
+        m.h = HER_H * m.u;
+        m.reelW = 11f * m.u;
+        m.reelH = 14f * m.u;
+        m.reelX = m.cx - m.reelW / 2f;
+        m.reelY = m.base + m.h * 0.45f;
+        m.tray = m.base + 4f * m.u;
+        return m;
+    }
 
     private Mine place(float at, float scale, float width) {
         Mine m = new Mine();
@@ -586,42 +609,108 @@ public class LastDrawCutscene extends Cutscene {
         }
     }
 
-    /** Sa machine : dorée, plus grande, son œil au-dessus du rouleau ; le levier à droite, qui descend tout seul. */
+    /**
+     * Sa machine, dessinée comme dans l'intro et les phases (voir {@link MachineCutscene#drawMachine}) :
+     * le levier à droite, qui descend tout seul ; corps doré fissuré, dôme à gradins et diamant ; deux
+     * rangées d'ampoules ; cinq rouleaux, le duel au milieu et ses yeux rouges sur les autres ; le plateau.
+     */
     private void drawHerMachine(Batch batch, Mine m) {
-        float u = m.u, left = m.cx - m.w / 2f, b = bright;
+        float u = m.u, left = m.cx - m.w / 2f, bottom = m.base, w = m.w, h = m.h, b = bright;
         float pull = herLever();
-        float[] knob = drawLever(batch, left + m.w + u, m.base + m.h * 0.55f, u, pull, 1, b);
-        if (pull > 0f) glow(batch, knob[0], knob[1], 14f * u, EYE_RED, 0.5f * pull * b);
-        rect(batch, OUT, left - u, m.base - u, m.w + 2f * u, m.h + 2f * u, b);
-        rect(batch, GOLD, left, m.base, m.w, m.h, b);
-        rect(batch, GOLD_LIGHT, left, m.base + m.h - 3f * u, m.w, 2f * u, b);
-        rect(batch, GOLD_LIGHT, left, m.base, 2f * u, m.h, b);
-        rect(batch, GOLD_DARK, left + m.w - 3f * u, m.base, 3f * u, m.h, b);
-        rect(batch, GOLD_DARK, left, m.base, m.w, 2f * u, b);
-        // Dôme à gradins, œil et diamant.
-        for (int step = 0; step < 3; step++) {
-            float sw = m.w - (step + 1) * 6f * u, sy = m.base + m.h + step * 4f * u;
+        // Levier (derrière le corps).
+        float angle = MathUtils.lerp(80f, -70f, pull), length = 24f * u;
+        float pivotX = left + w + 2f * u, pivotY = bottom + h * 0.55f;
+        rect(batch, OUT, pivotX - u, pivotY - 3f * u, 5f * u, 6f * u, b);
+        rect(batch, GOLD_DARK, pivotX, pivotY - 2f * u, 3f * u, 4f * u, b);
+        batch.setColor(OUT.r * b, OUT.g * b, OUT.b * b, 1f);
+        batch.draw(pixel, pivotX + u, pivotY - 1.5f * u, 0f, 1.5f * u, length, 3f * u, 1f, 1f, angle);
+        batch.setColor(CHROME.r * b, CHROME.g * b, CHROME.b * b, 1f);
+        batch.draw(pixel, pivotX + u, pivotY - 0.7f * u, 0f, 0.7f * u, length, 1.4f * u, 1f, 1f, angle);
+        float knobX = pivotX + u + MathUtils.cosDeg(angle) * length, knobY = pivotY + MathUtils.sinDeg(angle) * length;
+        if (pull > 0f) glow(batch, knobX, knobY, 18f * u, EYE_RED, 0.5f * pull * b);
+        rect(batch, OUT, knobX - 3.5f * u, knobY - 3.5f * u, 7f * u, 7f * u, b);
+        rect(batch, hex("e0283a"), knobX - 2.5f * u, knobY - 2.5f * u, 5f * u, 5f * u, b);
+        rect(batch, hex("ff8a9a"), knobX - 1.5f * u, knobY + 0.5f * u, 1.5f * u, 1.5f * u, b);
+
+        // Corps.
+        rect(batch, OUT, left - u, bottom - u, w + 2f * u, h + 2f * u, b);
+        rect(batch, GOLD, left, bottom, w, h, b);
+        rect(batch, GOLD_LIGHT, left, bottom + h - 3f * u, w, 2f * u, b);
+        rect(batch, GOLD_LIGHT, left, bottom, 2f * u, h, b);
+        rect(batch, GOLD_DARK, left + w - 3f * u, bottom, 3f * u, h, b);
+        rect(batch, GOLD_DARK, left, bottom, w, 2f * u, b);
+        // Dôme à gradins et diamant au sommet.
+        for (int step = 0; step < 4; step++) {
+            float sw = w - (step + 1) * 14f * u, sy = bottom + h + step * 4f * u;
             rect(batch, OUT, m.cx - sw / 2f - u, sy, sw + 2f * u, 5f * u, b);
             rect(batch, step % 2 == 0 ? GOLD : GOLD_LIGHT, m.cx - sw / 2f, sy, sw, 4f * u, b);
         }
-        float gemY = m.base + m.h + 15f * u;
-        glow(batch, m.cx, gemY, 22f * u, Color.WHITE, (0.4f + 0.3f * MathUtils.sin(time * 5f)) * b);
+        float gemY = bottom + h + 20f * u;
+        glow(batch, m.cx, gemY, 30f * u, Color.WHITE, (0.4f + 0.3f * MathUtils.sin(time * 5f)) * b);
         batch.setColor(b, b, b, 1f);
-        sprite(batch, gem, m.cx, gemY, 1.6f * u, 0f);
-        float eyeY = m.base + m.h + 5f * u;
-        float stare = (pull > 0f ? 0.6f : 0.25f) + (verdict && !draw.playerWins ? 0.6f : 0f)
-            + 0.8f * Math.max(0f, 1f - Math.abs(time - (RISE_END + 0.3f)) / 0.5f);   // son œil se pose sur toi
-        glow(batch, m.cx, eyeY, 16f * u, EYE_RED, stare * b);
-        batch.setColor(b, b, b, 1f);
-        sprite(batch, eye, m.cx, eyeY, 0.8f * u, 0f);
-        bulbs(batch, left + 2f * u, m.base + 11.5f * u, m.w - 4f * u, 8, u, b, 1);
+        sprite(batch, gem, m.cx, gemY, 2f * u, 0f);
+        // Ampoules sur le pourtour, en chenillard.
+        bulbs(batch, left, bottom + h - 1.5f * u, w, 18, u, b, 1);
+        bulbs(batch, left, bottom + 1.5f * u, w, 18, u, b, 0);
         drawBodyCracks(batch, m, b);
-        // Avant le duel, ses rouleaux tournent dans le vide, au ralenti, puis s'arrêtent.
+
+        // Les cinq rouleaux : le duel au milieu, ses yeux sur les autres.
+        float gap = 2f * u, panelW = HER_REELS * m.reelW + (HER_REELS + 1) * gap;
+        rect(batch, OUT, m.cx - panelW / 2f - u, m.reelY - gap - u, panelW + 2f * u, m.reelH + 2f * gap + 2f * u, b);
+        rect(batch, GOLD_DARK, m.cx - panelW / 2f, m.reelY - gap, panelW, m.reelH + 2f * gap, b);
+        // Son regard : il se pose sur toi quand ta machine arrive, s'allume quand elle tire, flambe si elle gagne,
+        // s'éteint si elle perd (les paupières tombent).
+        float stare = (pull > 0f ? 0.6f : 0.25f) + (verdict && !draw.playerWins ? 0.6f : 0f)
+            + 0.8f * Math.max(0f, 1f - Math.abs(time - (RISE_END + 0.3f)) / 0.5f);
+        float lid = verdict && draw.playerWins ? Interpolation.pow2In.apply(progress(end + 0.3f, end + 1.1f)) : 0f;
         float idle = roundsStarted == 0 ? 7f * (1f - Interpolation.pow2Out.apply(progress(0.3f, IDLE_STOP))) : 0f;
-        drawWindow(batch, m, herStrip, offset(herAt, herStrip.length, HER_DOWN, HER_STOP, Interpolation.pow5Out, 3f) - idle,
+        for (int i = 0; i < HER_REELS; i++) {
+            float x = m.cx - panelW / 2f + gap + i * (m.reelW + gap);
+            rect(batch, OUT, x, m.reelY, m.reelW, m.reelH, b);
+            if (i == HER_REELS / 2) continue;
+            rect(batch, GLASS, x + 0.5f * u, m.reelY + 0.5f * u, m.reelW - u, m.reelH - u, b);
+            glow(batch, x + m.reelW / 2f, m.reelY + m.reelH / 2f, m.reelW * 1.6f, EYE_RED, stare * b * (1f - lid));
+            batch.setColor(b, b, b, 1f);
+            float eyeW = m.reelW - 3f * u, eyeH = eyeW * eye.getRegionHeight() / eye.getRegionWidth();
+            batch.draw(eye, x + 1.5f * u, m.reelY + (m.reelH - eyeH) / 2f, eyeW, eyeH);
+            if (lid > 0f) {                                              // la paupière qui descend
+                float drop = lid * (m.reelH - u);
+                rect(batch, GOLD_DARK, x + 0.5f * u, m.reelY + m.reelH - 0.5f * u - drop, m.reelW - u, drop, b);
+                rect(batch, OUT, x + 0.5f * u, m.reelY + m.reelH - 0.5f * u - drop, m.reelW - u, 0.8f * u, b);
+            }
+        }
+        // Avant le duel, son rouleau tourne dans le vide, au ralenti, puis s'arrête.
+        drawHerReel(batch, m, offset(herAt, herStrip.length, HER_DOWN, HER_STOP, Interpolation.pow5Out, 3f) - idle,
             b, herLanded > 0 && herLanded == roundsStarted);
+        // Ligne de gain rouge.
+        rect(batch, hex("e0283a"), m.cx - panelW / 2f - 2f * u, m.reelY + m.reelH / 2f - 0.5f * u, u, u, b);
+        rect(batch, hex("e0283a"), m.cx + panelW / 2f + u, m.reelY + m.reelH / 2f - 0.5f * u, u, u, b);
         if (draw.playerWins && verdict) drawCrack(batch, m);
-        drawTray(batch, m, b);
+        // Plateau à pièces.
+        float trayW = 40f * u;
+        rect(batch, OUT, m.cx - trayW / 2f, m.tray, trayW, 7f * u, b);
+        rect(batch, hex("2a1a10"), m.cx - trayW / 2f + u, m.tray + u, trayW - 2f * u, 5f * u, b);
+        for (int i = 0; i < 9; i++) {
+            float x = m.cx - trayW / 2f + 3f * u + i * 4f * u;
+            rect(batch, GOLD, x, m.tray + u, 3f * u, 2f * u + (i % 3) * u, b);
+        }
+    }
+
+    /** Le rouleau du duel, au milieu de ses cinq : la bande qui défile ; posé, il brille. */
+    private void drawHerReel(Batch batch, Mine m, float offset, float b, boolean landed) {
+        float u = m.u;
+        rect(batch, GLASS, m.reelX + 0.5f * u, m.reelY + 0.5f * u, m.reelW - u, m.reelH - u, b);
+        batch.setColor(b, b, b, 1f);
+        float pad = u;
+        reel(batch, herStrip, m.reelX + pad, m.reelY + pad, m.reelW - 2f * pad, m.reelH - 2f * pad,
+            ((offset % herStrip.length) + herStrip.length) % herStrip.length);
+        for (int i = 0; i < 3; i++) {                                    // le rouleau est un cylindre
+            batch.setColor(0f, 0f, 0f, 0.22f * (1f - i / 3f));
+            batch.draw(pixel, m.reelX + 0.5f * u, m.reelY + m.reelH - 0.5f * u - (i + 1) * 0.8f * u, m.reelW - u, 0.8f * u);
+            batch.draw(pixel, m.reelX + 0.5f * u, m.reelY + 0.5f * u + i * 0.8f * u, m.reelW - u, 0.8f * u);
+        }
+        if (landed && !verdict) glow(batch, m.cx, m.reelY + m.reelH / 2f, m.reelW * 2.5f, GOLD,
+            0.25f + 0.15f * MathUtils.sin(time * 10f));
     }
 
     /**
@@ -747,9 +836,14 @@ public class LastDrawCutscene extends Cutscene {
                 int own = LastDrawEvent.score(draw.mine.get(round)), theirs = LastDrawEvent.score(draw.hers.get(round));
                 float k = Interpolation.pow2Out.apply(progress(roundStart(round) + HER_STOP + 0.3f,
                     roundStart(round) + HER_STOP + 0.6f));
-                font.getData().setScale(scale * MathUtils.lerp(5f, 3.4f, k));
-                caption(batch, font, own + (own > theirs ? "  >  " : own < theirs ? "  <  " : "  =  ") + theirs,
-                    width / 2f, mine.reelY + mine.reelH / 2f, k * (1f - gone));
+                String score = own + (own > theirs ? "  >  " : own < theirs ? "  <  " : "  =  ") + theirs;
+                // Entre les deux machines, assez petit pour tenir dans l'espace qui les sépare (écran étroit).
+                float from = mine.cx + mine.w / 2f, to = hers.cx - hers.w / 2f;
+                font.getData().setScale(scale * 3.4f);
+                bubbleLayout.setText(font, score);
+                float fit = Math.min(1f, (to - from - 4f * mine.u) / bubbleLayout.width);
+                font.getData().setScale(scale * MathUtils.lerp(5f, 3.4f, k) * fit);
+                caption(batch, font, score, (from + to) / 2f, mine.reelY + mine.reelH / 2f, k * (1f - gone));
             }
         }
         if (verdict) {
@@ -779,7 +873,7 @@ public class LastDrawCutscene extends Cutscene {
         }
     }
 
-    /** La bulle de la Machine, à gauche de son dôme, qui pointe vers son œil ; la réplique s'écrit lettre à lettre. */
+    /** La bulle de la Machine, à gauche de son dôme, qui pointe vers son dôme ; la réplique s'écrit lettre à lettre. */
     private void drawBubble(Batch batch, Mine hers) {
         if (lines == null) return;
         String text = lines[line];
@@ -788,11 +882,11 @@ public class LastDrawCutscene extends Cutscene {
         font.getData().setScale(scale * 1.9f);
         bubbleLayout.setText(font, text);
         float pad = 2.5f * u, w = bubbleLayout.width + 2f * pad, h = bubbleLayout.height + 2.4f * pad;
-        float eyeY = hers.base + hers.h + 5f * hers.u;
-        float right = hers.cx - 9f * hers.u - 4f * u, x = right - w, y = eyeY + 4f * u;
+        float domeY = hers.base + hers.h + 8f * hers.u;                  // le haut de son dôme à gradins
+        float right = hers.cx - (hers.w - 28f * hers.u) / 2f - 2f * u, x = right - w, y = domeY + 4f * u;
         float pop = Interpolation.swingOut.apply(progress(lineAt, lineAt + 0.18f));
         float alpha = Math.min(1f, pop * 1.5f);
-        // La queue de la bulle, en marches, vers son œil.
+        // La queue de la bulle, en marches, vers son dôme.
         for (int i = 0; i < 4; i++) {
             float sx = right - 3f * u + i * 1.6f * u, sy = y - (i + 1) * 1.4f * u;
             box(batch, GOLD, sx - 0.4f * u, sy - 0.4f * u, 2.8f * u, 2.2f * u, alpha);
