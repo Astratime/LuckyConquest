@@ -277,7 +277,7 @@ public enum EnemySymbol {
      *         {@code kind}, en mode difficile si {@code hard} (renforcé par sa force ; ses Potions et ses Crocs
      *         soignent selon sa force de soin)
      */
-    public String getDescription(EnemyKind kind, boolean hard) {
+    public String getDescription(EnemyKind kind, Difficulty hard) {
         return switch (this) {
             case SWORD  -> Lang.f("Épée : attaque de {0}", kind.hurt(kind.swordDamage(), hard));
             case SHIELD -> Lang.f("Bouclier : défense +{0} pendant le tour suivant",
@@ -393,6 +393,6 @@ public enum EnemySymbol {
 
     /** @return la description de l'effet de base du symbole (chez le croupier), pour son infobulle. */
     public String getDescription() {
-        return getDescription(EnemyKind.CROUPIER, false);
+        return getDescription(EnemyKind.CROUPIER, Difficulty.NORMAL);
     }
 }

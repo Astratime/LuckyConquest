@@ -29,6 +29,7 @@ import fr.astratime.lucky.entities.effects.ForceReelEffect;
 import fr.astratime.lucky.entities.effects.JokerValueEffect;
 import fr.astratime.lucky.entities.effects.OverheatEffect;
 import fr.astratime.lucky.entities.effects.PistolEffect;
+import fr.astratime.lucky.entities.enemy.Difficulty;
 import fr.astratime.lucky.entities.enemy.EnemyCards;
 import fr.astratime.lucky.entities.enemy.EnemyKind;
 import fr.astratime.lucky.entities.enemy.EnemySymbol;
@@ -65,8 +66,8 @@ public class GameController {
     /** Cartes que le joueur peut jouer par tour (plus sous l'effet de Dans la manche). */
     public static final int DEFAULT_PLAY_LIMIT = 4;
 
-    /** Ennemis en mode difficile (Tour des épreuves), voir {@link #setHardMode(boolean)}. */
-    private boolean hardMode;
+    /** Difficulté des ennemis (mode difficile de la Tour, étage du mode sans fin), voir {@link #setDifficulty(Difficulty)}. */
+    private Difficulty difficulty = Difficulty.NORMAL;
     private       GameState  gameState;
     private final TurnEngine turnEngine = new TurnEngine();
 
@@ -204,7 +205,7 @@ public class GameController {
         this.gameState = new GameState(player, createEnemy(kind, player));
         gameState.setPlaceRule(placeRule);
         spinCostActive = true;
-        player.addGains(SpinEconomy.startingGains(kind.getSpinCost())); // une fois par chapitre de la Tour
+        player.addGains(SpinEconomy.startingGains(gameState.getEnemy().getSpinCost())); // une fois par chapitre de la Tour
         treasureMaps = 0;
         bought.clear();
         reelStall.open(player.getSlotMachine().getReels());
@@ -232,8 +233,8 @@ public class GameController {
      *         qu'il laisse dehors
      */
     private Enemy createEnemy(EnemyKind kind, Player player) {
-        Enemy enemy = kind.copiesPlayerDeck() ? new Enemy(kind, EnemyCards.shadowDeck(player.getAllCards()), hardMode)
-            : new Enemy(kind, hardMode);
+        Enemy enemy = kind.copiesPlayerDeck() ? new Enemy(kind, EnemyCards.shadowDeck(player.getAllCards()), difficulty)
+            : new Enemy(kind, difficulty);
         if (kind.bansFamily()) {
             CardFamily[] families = CardFamily.values();
             enemy.banFamily(families[random.nextInt(families.length)]);
@@ -264,7 +265,7 @@ public class GameController {
 
     /** @return le coût d'un tirage dans ce combat, en gains (0 si le tirage est gratuit, hors combat réel). */
     public int getSpinCost() {
-        return spinCostActive ? gameState.getEnemy().getKind().getSpinCost() : 0;
+        return spinCostActive ? gameState.getEnemy().getSpinCost() : 0;
     }
 
     /** @return le prix du prochain tirage, sans la Mise (0 si le tirage est gratuit, hors combat réel). */
@@ -301,7 +302,10 @@ public class GameController {
     public void setPot(BonusPot pot) { turnEngine.setPot(pot); }
 
     /** Règle la difficulté des ennemis des combats qui suivent : le mode difficile de la Tour, ou non. */
-    public void setHardMode(boolean hard) { this.hardMode = hard; }
+    public void setHardMode(boolean hard) { setDifficulty(Difficulty.of(hard)); }
+
+    /** Règle la difficulté des ennemis des combats qui suivent (mode normal, difficile, étage du mode sans fin). */
+    public void setDifficulty(Difficulty difficulty) { this.difficulty = difficulty; }
 
     /** Change les chances qu'un Bingo ouvre le Jeu bonus (30 % dans la Tour). */
     public void setBonusGameChance(float chance) { turnEngine.setBonusGameChance(chance); }
@@ -311,7 +315,7 @@ public class GameController {
 
     /** @return la dette du joueur en ce moment (voir {@link SpinEconomy.Debt}). */
     public SpinEconomy.Debt getDebt() {
-        int cost = gameState.getEnemy().getKind().getSpinCost();
+        int cost = gameState.getEnemy().getSpinCost();
         return SpinEconomy.debt(gameState.getPlayer().getGains(), cost);
     }
 
@@ -643,7 +647,7 @@ public class GameController {
         }
 
         cardsPlayedThisTurn++;
-        PlayContext playContext = new PlayContext(player, gameState.getEnemy().getKind().getSpinCost());
+        PlayContext playContext = new PlayContext(player, gameState.getEnemy().getSpinCost());
         for (int i = 0; i < taxes; i++) { // Taxe du Comptable : chaque carte jouée la paie
             double taxed = player.payTax(EnemySymbol.TAX_PERCENT, EnemySymbol.TAX_FLAT);
             playContext.addPopups(List.of(new EffectPopup(Lang.f("TAXE -{0}", Lang.big(taxed)), EffectPopup.Style.DAMAGE,

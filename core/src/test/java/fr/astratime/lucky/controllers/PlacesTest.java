@@ -1,5 +1,6 @@
 package fr.astratime.lucky.controllers;
 
+import fr.astratime.lucky.entities.enemy.Difficulty;
 import fr.astratime.lucky.entities.Card;
 import fr.astratime.lucky.entities.Enemy;
 import fr.astratime.lucky.entities.Player;
@@ -40,9 +41,9 @@ class PlacesTest {
             for (Dungeon dungeon : places[p].getDungeons()) {
                 for (EnemyKind kind : List.of(dungeon.getSoldier(), dungeon.getKing())) {
                     assertEquals(stats[p][0], kind.swordDamage(), kind + " : épée");
-                    assertEquals(stats[p][1], kind.getBaseDefense(false), kind + " : défense de base");
+                    assertEquals(stats[p][1], kind.getBaseDefense(Difficulty.NORMAL), kind + " : défense de base");
                     assertEquals(stats[p][1], kind.shieldDefense(), kind + " : Bouclier à la même échelle");
-                    assertEquals(stats[p][2], kind.potionPercent(0, false), 1e-4, kind + " : soin");
+                    assertEquals(stats[p][2], kind.potionPercent(0, Difficulty.NORMAL), 1e-4, kind + " : soin");
                 }
             }
         }
@@ -56,7 +57,7 @@ class PlacesTest {
             "les Piques du Casino frappent 20 fois plus");
         assertEquals(EnemyCards.shieldBonus(tenOfDiamonds), EnemyKind.ROI_PIQUE.shieldBonus(tenOfDiamonds));
         assertEquals(EnemySymbol.SHIELD_DEFENSE, EnemyKind.CROUPIER.shieldDefense(), "la Tour ne change pas");
-        assertEquals(60f, EnemyKind.KRAKEN.potionPercent(EnemySymbol.POTION_PERCENT, false), 1e-4,
+        assertEquals(60f, EnemyKind.KRAKEN.potionPercent(EnemySymbol.POTION_PERCENT, Difficulty.NORMAL), 1e-4,
             "les Cœurs renforcent son soin en proportion");
     }
 
@@ -71,11 +72,11 @@ class PlacesTest {
         assertEquals(60, EnemyKind.KRAKEN.damagePercent(), "le Casino frappe moins (Désert de Braise après lui)");
         assertEquals(196, EnemyKind.DRAGON.damagePercent());
         // Astra 2026-10-25 : une Épée de la Foire frappe 5 de plus (28), celle du Port 12 de plus (52) ; Port x1,3 le 2026-10-30 (68)
-        assertEquals(28, EnemyKind.CLOWN.hurt(EnemyKind.CLOWN.swordDamage(), false));
-        assertEquals(68, EnemyKind.RAT_CALES.hurt(EnemyKind.RAT_CALES.swordDamage(), false));
-        assertTrue(EnemyKind.DRAGON.getBaseDefense(false) > EnemyKind.KRAKEN.getBaseDefense(false), "le Désert se défend mieux que le Casino");
-        assertEquals(Math.round(EnemySymbol.SWORD_DAMAGE * 0.48), EnemyKind.ROI_PIQUE.hurt(EnemySymbol.SWORD_DAMAGE, false));
-        assertEquals(Math.round(EnemySymbol.SWORD_DAMAGE * 2.1), EnemyKind.ROI_COEUR.hurt(EnemySymbol.SWORD_DAMAGE, false));
+        assertEquals(28, EnemyKind.CLOWN.hurt(EnemyKind.CLOWN.swordDamage(), Difficulty.NORMAL));
+        assertEquals(68, EnemyKind.RAT_CALES.hurt(EnemyKind.RAT_CALES.swordDamage(), Difficulty.NORMAL));
+        assertTrue(EnemyKind.DRAGON.getBaseDefense(Difficulty.NORMAL) > EnemyKind.KRAKEN.getBaseDefense(Difficulty.NORMAL), "le Désert se défend mieux que le Casino");
+        assertEquals(Math.round(EnemySymbol.SWORD_DAMAGE * 0.48), EnemyKind.ROI_PIQUE.hurt(EnemySymbol.SWORD_DAMAGE, Difficulty.NORMAL));
+        assertEquals(Math.round(EnemySymbol.SWORD_DAMAGE * 2.1), EnemyKind.ROI_COEUR.hurt(EnemySymbol.SWORD_DAMAGE, Difficulty.NORMAL));
 
         Player player = new Player("Joueur", Player.BASE_HP, List.of());
         Enemy king = new Enemy(EnemyKind.ROI_COEUR);

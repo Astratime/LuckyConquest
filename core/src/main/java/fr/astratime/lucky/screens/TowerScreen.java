@@ -25,6 +25,7 @@ import fr.astratime.lucky.assets.Fonts;
 import fr.astratime.lucky.assets.Palette;
 import fr.astratime.lucky.entities.enemy.EnemyKind;
 import fr.astratime.lucky.entities.tower.Chapter;
+import fr.astratime.lucky.entities.tower.EndlessRun;
 import fr.astratime.lucky.entities.tower.TowerRun;
 import fr.astratime.lucky.views.MenuOption;
 
@@ -39,8 +40,9 @@ import java.util.List;
  * récit. Un clic sur un chapitre ouvert (ou Entrée, ou « Commencer ») le lance :
  * trois combats à la suite (voir {@link TowerRun}, {@link GameScreen}). Un
  * chapitre s'ouvre quand le précédent est terminé, dans le même mode ; les
- * autres sont grisés. Échap ou « Retour » ramène au menu
- * principal.
+ * autres sont grisés. Sous les chapitres, une fois le mode difficile ouvert, le
+ * mode sans fin ({@link EndlessRun}) : ouvert après le chapitre 6 difficile. Échap
+ * ou « Retour » ramène au menu principal.
  */
 public class TowerScreen extends CasinoMenuScreen {
 
@@ -99,6 +101,18 @@ public class TowerScreen extends CasinoMenuScreen {
      * au retour d'un combat, le chapitre qui vient d'être joué.
      */
     public TowerScreen(LuckyGame luckyGame, Chapter chapter, boolean hardMode) {
+        this(luckyGame, chapter.ordinal(), hardMode);
+    }
+
+    /** @return l'écran des chapitres ouvert sur le mode sans fin (au retour d'un de ses combats). */
+    public static TowerScreen onEndless(LuckyGame luckyGame) {
+        return new TowerScreen(luckyGame, ENDLESS_ROW, true);
+    }
+
+    /** Ligne du mode sans fin dans la liste, sous les chapitres. */
+    private static final int ENDLESS_ROW = Chapter.values().length;
+
+    private TowerScreen(LuckyGame luckyGame, int startRow, boolean hardMode) {
         super(luckyGame, Lang.t("TOUR DES ÉPREUVES"), 96, VEIL_ALPHA);
         this.hard      = hardMode && luckyGame.getProfile().isTowerHardOpen();
         this.enemyTextures = assets.enemyTextures();
@@ -124,6 +138,25 @@ public class TowerScreen extends CasinoMenuScreen {
                 @Override
                 public void clicked(InputEvent event, float x, float y) {
                     select(index, false);
+                    launch();
+                }
+            });
+            rows.add(row);
+        }
+        // Le mode sans fin, sous les chapitres : la ligne n'apparaît qu'avec le mode difficile.
+        if (luckyGame.getProfile().isTowerHardOpen()) {
+            MenuOption row = new MenuOption(Lang.t("Sans fin"), rowStyle, hud.insetDrawable(),
+                new TextureRegion(chipTexture), ROW_WIDTH, ROW_HEIGHT);
+            row.addListener(new ClickListener() {
+                @Override
+                public void enter(InputEvent event, float x, float y, int pointer, Actor fromActor) {
+                    super.enter(event, x, y, pointer, fromActor);
+                    if (pointer == -1) select(ENDLESS_ROW, true);
+                }
+
+                @Override
+                public void clicked(InputEvent event, float x, float y) {
+                    select(ENDLESS_ROW, false);
                     launch();
                 }
             });
@@ -165,7 +198,7 @@ public class TowerScreen extends CasinoMenuScreen {
         stage.addActor(tutorialButton);
         reveal();
 
-        select(chapter.ordinal(), false);
+        select(Math.min(startRow, rows.size() - 1), false);
         layout();
         firstVisit = new FirstVisitGuide(stage, hud, clickSound, luckyGame.getProfile(), PlayerProfile.GUIDE_TOWER,
             Lang.t("La Tour des épreuves. Six chapitres, de plus en plus durs."),
@@ -192,7 +225,14 @@ public class TowerScreen extends CasinoMenuScreen {
         int index = selected;
         for (int i = 0; i < rows.size(); i++) {
             rows.get(i).setSelected(i == index);
-            rows.get(i).setColor(isOpen(Chapter.values()[i]) ? Color.WHITE : LOCKED_TEXT);
+            rows.get(i).setColor(isRowOpen(i) ? Color.WHITE : LOCKED_TEXT);
+        }
+        boolean endless = index == ENDLESS_ROW;
+        modeButton.setVisible(luckyGame.getProfile().isTowerHardOpen() && !endless); // le mode sans fin n'a qu'un mode
+        fightButton.setVisible(luckyGame.getProfile().isAdmin() && !endless);
+        if (endless) {
+            showEndless();
+            return;
         }
         Chapter chapter = Chapter.values()[index];
         boolean open = isOpen(chapter);
@@ -212,6 +252,30 @@ public class TowerScreen extends CasinoMenuScreen {
         art.setVisible(open);
         lockMark.setVisible(!open);
         buttons.setText(fightButton, fightText(chapter));
+        showStart(open);
+    }
+
+    /** Montre le mode sans fin : ses règles, la force de son premier étage et le record. */
+    private void showEndless() {
+        boolean open = luckyGame.getProfile().isEndlessOpen();
+        int best = luckyGame.getProfile().getEndlessBest();
+        chapterLabel.setText(best > 0 ? Lang.f("MODE SANS FIN · RECORD : ÉTAGE {0}", best) : Lang.t("MODE SANS FIN"));
+        chapterTitle.setText(Lang.t("L'Ascension sans fin"));
+        description.setText(!open
+            ? Lang.t("Termine le chapitre 6 en mode difficile pour ouvrir le mode sans fin.")
+            : Lang.f("Des étages sans fin, plus forts que le chapitre 6 difficile. Choisis ton adversaire parmi trois "
+                    + "cartes, un boss tous les {0} étages.\n\n"
+                    + "Étage 1 : force x{1}, {2} PV (boss {3}), puis +{4} % par étage. PV et gains gardés, aucune pièce.",
+                EndlessRun.BOSS_EVERY, EnemyKind.endlessPower(1) / 100, Lang.big(EnemyKind.endlessHp(1, false)),
+                Lang.big(EnemyKind.endlessHp(1, true)), EnemyKind.ENDLESS_STEP_PERCENT));
+        ((TextureRegionDrawable) art.getDrawable()).setRegion(new TextureRegion(enemyTextures.chapterArt(Chapter.LE_JACKPOT)));
+        art.setVisible(open);
+        lockMark.setVisible(!open);
+        showStart(open);
+    }
+
+    /** Bouton « Commencer » (ou « Verrouillé »), puis le panneau de droite en fondu. */
+    private void showStart(boolean open) {
         startButton.setDisabled(!open);
         startButton.setText(open ? Lang.t("Commencer") : Lang.t("Verrouillé"));
         // Le panneau de droite apparaît en fondu à chaque changement.
@@ -223,9 +287,18 @@ public class TowerScreen extends CasinoMenuScreen {
         layout();
     }
 
+    /** @return {@code true} si la ligne {@code index} peut être jouée (chapitre ouvert, ou mode sans fin ouvert). */
+    private boolean isRowOpen(int index) {
+        return index == ENDLESS_ROW ? luckyGame.getProfile().isEndlessOpen() : isOpen(Chapter.values()[index]);
+    }
+
     /** Lance le chapitre sélectionné, s'il est ouvert : fondu au noir puis premier combat. */
     private void launch() {
-        if (leaving) return;
+        if (leaving || !isRowOpen(selected)) return;
+        if (selected == ENDLESS_ROW) {
+            goTo(() -> new GameScreen(luckyGame, new EndlessRun()));
+            return;
+        }
         Chapter chapter = Chapter.values()[selected];
         if (!isOpen(chapter)) return;
         boolean admin = luckyGame.getProfile().isAdmin() && fight > 0;
@@ -293,7 +366,8 @@ public class TowerScreen extends CasinoMenuScreen {
         float artScale = ART_SCALE;
         float artTop   = chapterTitle.getY() - 16f;
         float maxArtHeight = artTop - panelBottom - PANEL_PAD - 200f;
-        Texture texture = enemyTextures.chapterArt(Chapter.values()[Math.max(0, selected)]);
+        Texture texture = enemyTextures.chapterArt(selected == ENDLESS_ROW ? Chapter.LE_JACKPOT
+            : Chapter.values()[Math.max(0, selected)]);
         while (artScale > 1f && (texture.getHeight() * artScale > maxArtHeight || texture.getWidth() * artScale > innerWidth)) {
             artScale -= 1f;
         }
@@ -327,7 +401,7 @@ public class TowerScreen extends CasinoMenuScreen {
             case Input.Keys.UP, Input.Keys.W -> select((selected + rows.size() - 1) % rows.size(), true);
             case Input.Keys.DOWN, Input.Keys.S -> select((selected + 1) % rows.size(), true);
             case Input.Keys.ENTER, Input.Keys.SPACE -> {
-                if (isOpen(Chapter.values()[selected])) {
+                if (isRowOpen(selected)) {
                     clickSound.play();
                     launch();
                 }

@@ -24,6 +24,7 @@ import fr.astratime.lucky.assets.Fonts;
 import fr.astratime.lucky.assets.Palette;
 import fr.astratime.lucky.entities.Card;
 import fr.astratime.lucky.entities.Enemy;
+import fr.astratime.lucky.entities.enemy.Difficulty;
 import fr.astratime.lucky.entities.enemy.EnemyCards;
 import fr.astratime.lucky.entities.enemy.EnemyKind;
 import fr.astratime.lucky.entities.enemy.EnemySignature;
@@ -180,7 +181,7 @@ public class EnemyView implements Disposable {
             Image image = new Image(new TextureRegionDrawable(new TextureRegion(textures.symbol(shownSymbols[i]))));
             image.setSize(SYMBOL_SIZE, SYMBOL_SIZE); // réduit dans layout() quand ils sont plus de trois
             hoverTooltip(image, () -> shownSymbols[reel].getDisplayName(),
-                () -> shownSymbols[reel].getDescription(shownKind, enemy.get().isHard()));
+                () -> shownSymbols[reel].getDescription(shownKind, enemy.get().getDifficulty()));
             reels.add(image);
         }
 
@@ -209,8 +210,8 @@ public class EnemyView implements Disposable {
         Enemy current = enemy.get();
         EnemyKind kind = current.getKind();
         StringBuilder text = new StringBuilder(kind.getDescription());
-        if (kind.getPower(current.isHard()) > 100) {
-            line(text, Lang.f("Force {0} : attaques, défense et effets", kind.powerText(current.isHard())));
+        if (kind.getPower(current.getDifficulty()) > 100) {
+            line(text, Lang.f("Force {0} : attaques, défense et effets", kind.powerText(current.getDifficulty())));
         }
         line(text, Lang.f("Défense : {0}", shownDefense()));
         line(text, Lang.f("Rouleaux : {0}", kind.describeReels(current.getPhase())));
@@ -537,15 +538,15 @@ public class EnemyView implements Disposable {
                 flipSound.play();
                 nod();
                 EnemyKind kind = enemy.get().getKind();
-                hoverTooltip(card, played::getName, () -> EnemyCards.describe(played, kind, enemy.get().isHard()));
-                popups.play(List.of(new EffectPopup(bonusText(played, kind, enemy.get().isHard()), styleOf(played), PopupScale.SECONDARY_INTENSITY * 0.7f)),
+                hoverTooltip(card, played::getName, () -> EnemyCards.describe(played, kind, enemy.get().getDifficulty()));
+                popups.play(List.of(new EffectPopup(bonusText(played, kind, enemy.get().getDifficulty()), styleOf(played), PopupScale.SECONDARY_INTENSITY * 0.7f)),
                     card.getX() + card.getWidth() / 2f, card.getY() - CARD_POPUP_GAP);
             }),
             Actions.scaleTo(1f, 1f, FLIP_TIME, Interpolation.pow2Out)));
     }
 
     /** @return le bonus d'une carte jouée, en quelques mots (ex : "ÉPÉE +10"), chez un ennemi {@code kind}. */
-    private static String bonusText(Card card, EnemyKind kind, boolean hard) {
+    private static String bonusText(Card card, EnemyKind kind, Difficulty hard) {
         EnemySignature signature = EnemySignature.of(card);
         if (signature != null) return signature.getBonusText();
         EnemyCards.ShadowRole role = EnemyCards.shadowRoleOf(card);

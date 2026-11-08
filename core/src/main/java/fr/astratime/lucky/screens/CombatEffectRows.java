@@ -62,7 +62,7 @@ final class CombatEffectRows {
         List<SidePanel.EffectRow> rows = new ArrayList<>();
         LastingEffects lasting = player.getLastingEffects();
         TextureRegion cross = new TextureRegion(hud.iconCross);
-        int cost = controller.getGameState().getEnemy().getKind().getSpinCost();
+        int cost = controller.getGameState().getEnemy().getSpinCost();
         if (debt != SpinEconomy.Debt.NONE) {
             String limit = SidePanel.formatGains(SpinEconomy.BAILIFF_SPINS * cost);
             rows.add(debt == SpinEconomy.Debt.BAILIFF
@@ -382,7 +382,7 @@ final class CombatEffectRows {
                 : Lang.f("{0} ou {1}", foe.getPrediction().getDisplayName(), foe.getSecondPrediction().getDisplayName());
             rows.add(new SidePanel.EffectRow(skull, null, Lang.f("Prédit : {0}", foretold.toLowerCase()),
                 Lang.t("Prédiction"), Lang.f("Symbole annoncé : {0}. {1}",
-                    foretold, sentence(EnemySymbol.PREDICTION.getDescription(kind, foe.isHard())))));
+                    foretold, sentence(EnemySymbol.PREDICTION.getDescription(kind, foe.getDifficulty())))));
         }
         if (foe.getStolenReels() > 0) {
             int stolen = foe.getStolenReels();
@@ -403,7 +403,7 @@ final class CombatEffectRows {
     /** @return la ligne d'un mauvais sort de l'ennemi, décrit comme sur ses rouleaux. */
     private static SidePanel.EffectRow curse(TextureRegion icon, String text, EnemySymbol symbol, Enemy foe) {
         String name = symbol.getDisplayName().charAt(0) + symbol.getDisplayName().substring(1).toLowerCase();
-        return new SidePanel.EffectRow(icon, null, text, name, sentence(symbol.getDescription(foe.getKind(), foe.isHard())));
+        return new SidePanel.EffectRow(icon, null, text, name, sentence(symbol.getDescription(foe.getKind(), foe.getDifficulty())));
     }
 
     /** @return la description d'un symbole ennemi (« Nom : texte ») sans son nom, terminée par un point. */
@@ -433,8 +433,8 @@ final class CombatEffectRows {
         if (target.getMaluses().getClaims() > 0) rows.add(new SidePanel.EffectRow(icon, null, Lang.f("Créances x{0}", target.getMaluses().getClaims()),
             Lang.t("Créances"), Lang.f("À chacun de ses tours, l'ennemi perd {0} PV, sans tenir compte de sa défense, et tu gagnes {1}.",
                 Lang.big(fr.astratime.lucky.controllers.TurnEngine.claimsDamage(target.getMaluses().getClaims(),
-                    EnemyMaluses.CLAIM_DAMAGE_PERCENT, target.getKind().getSpinCost())),
-                SidePanel.formatGains((double) target.getMaluses().getClaims() * EnemyMaluses.CLAIM_SPINS * target.getKind().getSpinCost()))));
+                    EnemyMaluses.CLAIM_DAMAGE_PERCENT, target.getSpinCost())),
+                SidePanel.formatGains((double) target.getMaluses().getClaims() * EnemyMaluses.CLAIM_SPINS * target.getSpinCost()))));
         if (target.getMaluses().getCompoundTurns() > 0) rows.add(new SidePanel.EffectRow(icon, null,
             Lang.f("Intérêts ({0})", target.getMaluses().getCompoundTurns()), Lang.t("Intérêts composés"),
             Lang.f("Les Créances de l'ennemi grossissent à chacun de tes tirages. Encore {0}.", turns(target.getMaluses().getCompoundTurns()))));

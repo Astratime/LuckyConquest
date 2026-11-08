@@ -162,10 +162,10 @@ public final class EnemyCards {
     public static int luckBonus(Card card)    { return scaled(card, LUCK_MIN, LUCK_MAX); }
 
     /** @return la description de l'effet de la carte, pour son infobulle. */
-    public static String describe(Card card) { return describe(card, EnemyKind.CROUPIER, false); }
+    public static String describe(Card card) { return describe(card, EnemyKind.CROUPIER, Difficulty.NORMAL); }
 
     /** @return la description de l'effet de la carte chez un ennemi {@code kind} (bonus renforcés par sa force). */
-    public static String describe(Card card, EnemyKind kind, boolean hard) {
+    public static String describe(Card card, EnemyKind kind, Difficulty hard) {
         EnemySignature signature = EnemySignature.of(card);
         if (signature != null) return signature.getDescription();
         ShadowRole role = shadowRoleOf(card);
@@ -180,7 +180,7 @@ public final class EnemyCards {
     }
 
     /** @return l'effet d'une carte spéciale du joueur copiée par son Ombre, de rôle {@code role}. */
-    private static String describe(ShadowRole role, EnemyKind kind, boolean hard) {
+    private static String describe(ShadowRole role, EnemyKind kind, Difficulty hard) {
         Card ten = card(Card.Suit.PIQUE, SHADOW_SPECIAL_RANK);
         return switch (role) {
             case ATTACK -> Lang.f("Ta carte, retournée contre toi : attaque de {0}",

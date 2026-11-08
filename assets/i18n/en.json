@@ -2359,5 +2359,17 @@
   "Rouleau doré": "Golden reel",
   "Main du croupier": "Dealer's hand",
   "Prime de chasse": "Bounty",
-  "Coup de chance": "Lucky strike"
+  "Coup de chance": "Lucky strike",
+  "Mode sans fin": "Endless mode",
+  "Sans fin": "Endless",
+  "MODE SANS FIN": "ENDLESS MODE",
+  "L'Ascension sans fin": "The Endless Climb",
+  "Termine le chapitre 6 en mode difficile pour ouvrir le mode sans fin.": "Clear chapter 6 in hard mode to unlock endless mode.",
+  "Des étages sans fin, plus forts que le chapitre 6 difficile. Choisis ton adversaire parmi trois cartes, un boss tous les {0} étages.\n\nÉtage 1 : force x{1}, {2} PV (boss {3}), puis +{4} % par étage. PV et gains gardés, aucune pièce.": "Endless floors, stronger than hard chapter 6. Pick your opponent among three cards, a boss every {0} floors.\n\nFloor 1: strength x{1}, {2} HP (boss {3}), then +{4} % per floor. HP and gains carry over, no coins.",
+  "MODE SANS FIN · RECORD : ÉTAGE {0}": "ENDLESS MODE · RECORD: FLOOR {0}",
+  "Étage suivant": "Next floor",
+  "Recommencer à l'étage 1": "Restart at floor 1",
+  "NOUVEAU RECORD : ÉTAGE {0} !": "NEW RECORD: FLOOR {0}!",
+  "RECORD : ÉTAGE {0}": "RECORD: FLOOR {0}",
+  "ÉTAGE {0}": "FLOOR {0}"
 }
