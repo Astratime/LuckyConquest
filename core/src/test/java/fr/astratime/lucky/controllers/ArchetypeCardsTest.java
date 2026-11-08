@@ -42,6 +42,11 @@ class ArchetypeCardsTest {
         return CardLoader.loadAll(READER).stream().filter(card -> card.getArchetype() != null).toList();
     }
 
+    /** @return {@code true} pour les archétypes du Valet à l'As (Cour royale, Revenant, Horloger), vendus en Boutique. */
+    private static boolean valetToAce(Archetype archetype) {
+        return archetype == Archetype.COUR || archetype == Archetype.REVENANT || archetype == Archetype.HORLOGER;
+    }
+
     private static Card card(String id) {
         return CardLoader.loadAll(READER).stream().filter(c -> c.getId().equals(id)).findFirst().orElseThrow();
     }
@@ -51,7 +56,8 @@ class ArchetypeCardsTest {
         Map<Archetype, Long> counts = archetypeCards().stream()
             .collect(Collectors.groupingBy(Card::getArchetype, Collectors.counting()));
         for (Archetype archetype : Archetype.values()) {
-            assertEquals(archetype == Archetype.BLUFFEUR ? 5L : 6L, counts.get(archetype), archetype.name());
+            long expected = archetype == Archetype.BLUFFEUR ? 5L : valetToAce(archetype) ? 4L : 6L;
+            assertEquals(expected, counts.get(archetype), archetype.name());
         }
     }
 
@@ -62,15 +68,17 @@ class ArchetypeCardsTest {
             dungeon.getLoot().forEach(entry -> loot.add(entry.cardId()));
         }
         for (Card card : archetypeCards()) {
-            assertEquals(card.getArchetype() != Archetype.BLUFFEUR, loot.contains(card.getId()), card.getId());
+            boolean sold = card.getArchetype() == Archetype.BLUFFEUR || valetToAce(card.getArchetype());
+            assertEquals(!sold, loot.contains(card.getId()), card.getId());
         }
     }
 
     @Test
-    void onlyTheBluffCardsAreSoldInTheShop() {
+    void onlyTheBluffAndValetToAceCardsAreSoldInTheShop() {
         Map<String, Long> shop = CardLoader.loadBoutique(READER);
         for (Card card : archetypeCards()) {
-            assertEquals(card.getArchetype() == Archetype.BLUFFEUR, shop.containsKey(card.getId()), card.getId());
+            boolean sold = card.getArchetype() == Archetype.BLUFFEUR || valetToAce(card.getArchetype());
+            assertEquals(sold, shop.containsKey(card.getId()), card.getId());
         }
     }
 

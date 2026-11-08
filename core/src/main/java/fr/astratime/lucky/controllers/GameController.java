@@ -678,6 +678,7 @@ public class GameController {
         DrawResult drawResult = playContext.getCardsToDraw() > 0
             ? player.draw(playContext.getCardsToDraw())
             : DrawResult.empty();
+        if (!playContext.getFetched().isEmpty()) drawResult = withFetched(player, drawResult, playContext.getFetched());
         pendingChoice = playContext.getChoice();
         if (playContext.isAutoSpin()) handLocked = true;
         CardPlayResult.Rainbow rainbow = playContext.getRainbowCardId() != null
@@ -685,6 +686,20 @@ public class GameController {
             : null;
         return new CardPlayResult(drawResult, playContext.getPopups(), pendingChoice, playContext.isAutoSpin(),
             rainbow);
+    }
+
+    /**
+     * Héraut, Fossoyeur : les cartes prises par la carte jouée rejoignent la main
+     * (la défausse si elle est pleine), en plus de celles piochées.
+     */
+    private static DrawResult withFetched(Player player, DrawResult drawn, List<Card> fetched) {
+        List<Card> added     = new ArrayList<>(drawn.getAddedToHand());
+        List<Card> discarded = new ArrayList<>(drawn.getDiscarded());
+        for (Card card : fetched) {
+            if (player.addToHandOrDiscard(card)) added.add(card);
+            else discarded.add(card);
+        }
+        return new DrawResult(added, discarded);
     }
 
     /**
@@ -948,6 +963,8 @@ public class GameController {
         gameState.getPlayer().restoreCards(originals); // l'effet de l'Arc-en-ciel ne dure que le tour
         originals.clear();
         hiddenCards.clear();
+        // Roi des ombres : il rejouera, au tour suivant, une carte jouée à ce tour.
+        player.getLastingEffects().getCourtAndClock().rememberPlayed(player.getPlayedCards());
         // Le Scorbut resté en main disparaît : il ne revient que par la règle du lieu.
         for (Card card : new ArrayList<>(gameState.getPlayer().getCurrentHand())) {
             if (PlaceRule.SCURVY_CARD.equals(card.getId())) gameState.getPlayer().removeFromHand(card);

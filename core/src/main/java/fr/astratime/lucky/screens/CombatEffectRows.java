@@ -466,5 +466,17 @@ final class CombatEffectRows {
                 lasting.getMartingalePair())));
         if (lasting.getNextDraws() > 0) rows.add(new SidePanel.EffectRow(icon, null, Lang.f("Pioche +{0}", lasting.getNextDraws()),
             Lang.t("Rire du Joker"), Lang.f("Tu pioches {0} cartes de plus au prochain tour.", lasting.getNextDraws())));
+        fr.astratime.lucky.entities.CourtAndClock clock = lasting.getCourtAndClock();
+        if (clock.getSprings() > 0) rows.add(new SidePanel.EffectRow(icon, null, Lang.f("Ressorts {0}", clock.getSprings()),
+            Lang.t("Ressorts"), Lang.f("À chaque tirage : attaque +{0} %. Les Douze coups les vident.", clock.getSpringAttack())));
+        if (clock.getMinuteTurns() > 0) rows.add(new SidePanel.EffectRow(icon, null, Lang.f("Aiguille ({0})", clock.getMinuteTurns()),
+            Lang.t("Grande aiguille"), Lang.f("Un Ressort de plus au début de chaque tour. Encore {0}.", turns(clock.getMinuteTurns()))));
+        if (clock.getNextCuckoo() > 0) rows.add(new SidePanel.EffectRow(icon, null, Lang.f("Coucou ({0})", clock.getNextCuckoo()),
+            Lang.t("Coucou"), Lang.n(clock.getNextCuckoo(), "Le coucou chante dans {0} tirage : son attaque sera multipliée.",
+                "Le coucou chante dans {0} tirages : son attaque sera multipliée.", clock.getNextCuckoo())));
+        if (clock.getSceptre() > 1f) rows.add(new SidePanel.EffectRow(icon, null,
+            Lang.f("Sceptre x{0}", fr.astratime.lucky.controllers.PreparationResolver.factor(clock.getSceptre())),
+            Lang.t("Sceptre du roi"), Lang.f("Au prochain tirage : attaque x{0}.",
+                fr.astratime.lucky.controllers.PreparationResolver.factor(clock.getSceptre()))));
     }
 }

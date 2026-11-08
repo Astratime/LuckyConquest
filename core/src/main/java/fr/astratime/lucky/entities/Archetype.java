@@ -17,7 +17,13 @@ public enum Archetype {
     /** Malus qui gênent l'ennemi. */
     BLUFFEUR("Bluffeur", "Des malus qui gênent l'ennemi, et des cartes qui en profitent."),
     /** Manipule les rouleaux du tirage. */
-    RELANCEUR("Relanceur", "Tu prépares et manipules les rouleaux du tirage.");
+    RELANCEUR("Relanceur", "Tu prépares et manipules les rouleaux du tirage."),
+    /** Du Valet à l'As : récompense les combinaisons de poker. */
+    COUR("Cour royale", "Les figures de la cour : elles récompensent les combinaisons de poker."),
+    /** Du Valet à l'As : joue avec la défausse. */
+    REVENANT("Revenant", "Tes cartes défaussées reviennent te servir."),
+    /** Du Valet à l'As : des effets à retardement. */
+    HORLOGER("Horloger", "Tu remontes des Ressorts et prépares tes coups pour plus tard.");
 
     private final String displayName;
     private final String description;

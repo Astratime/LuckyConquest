@@ -470,6 +470,19 @@ public class CardLoader {
         add(effects, "PHARAOH_SEAL", (json, v) -> new PharaohSealEffect(v.i("claims"), json.getInt("turns")));
         add(effects, "DRAGON_HOARD", (json, v) -> new DragonHoardEffect(json.getInt("turns"), v.i("spins"), v.i("step"), v.i("max")));
         add(effects, "MARTINGALE", (json, v) -> new MartingaleEffect(v.i("attackPercent"), v.i("pairPercent")));
+        // Archétypes du Valet à l'As : Cour royale, Revenant, Horloger
+        add(effects, "HERALD", (json, v) -> new HeraldEffect());
+        add(effects, "COURT_LADY", (json, v) -> new CourtLadyEffect(v.i("percent")));
+        add(effects, "KING_SCEPTRE", (json, v) -> new KingSceptreEffect(v.i("percent")));
+        add(effects, "ROYAL_FLUSH", (json, v) -> new RoyalFlushEffect(v.f("factor")));
+        add(effects, "GRAVEDIGGER", (json, v) -> new GravediggerEffect());
+        add(effects, "WHITE_LADY", (json, v) -> new WhiteLadyEffect(v.i("percent"), v.i("maxPercent")));
+        add(effects, "SHADOW_KING", (json, v) -> new ShadowKingEffect());
+        add(effects, "REQUIEM", (json, v) -> new RequiemEffect(json.getInt("cardsPerBlade"), v.i("maxBlades")));
+        add(effects, "WINDING_KEY", (json, v) -> new WindingKeyEffect(v.i("springs"), json.getInt("percent")));
+        add(effects, "CUCKOO", (json, v) -> new CuckooEffect(json.getInt("turns"), v.f("factor")));
+        add(effects, "MINUTE_HAND", (json, v) -> new MinuteHandEffect(v.i("turns"), json.getInt("springs"), json.getInt("percent")));
+        add(effects, "TWELVE_STROKES", (json, v) -> new TwelveStrokesEffect(v.i("percent")));
     }
 
     /** @return l'effet décrit par {@code json} ({@code v} : ses valeurs, améliorées pour une carte « + ») */
