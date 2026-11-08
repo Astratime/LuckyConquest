@@ -40,6 +40,9 @@ FAMILIES = {
     'arch_rentier':   ('#fdf6e4', '#e8d4a0', '#ae9a60'),   # parchemin
     'arch_bluffeur':  ('#eceef4', '#b4b8c8', '#767a90'),   # gris fumée
     'arch_relanceur': ('#e6f2fc', '#a4c8ec', '#6890b8'),   # bleu machine
+    'arch_cour':      ('#fdeef0', '#f0b4bc', '#b0606e'),   # velours royal
+    'arch_revenant':  ('#eef0f8', '#c4c8dc', '#7c809c'),   # brume
+    'arch_horloger':  ('#fbf0e0', '#e4c494', '#a47a44'),   # laiton
 }
 
 CARD_FAMILY = {
@@ -80,4 +83,9 @@ CARD_FAMILY = {
     'second_levier': 'arch_relanceur', 'martingale': 'arch_relanceur',
     'diable_en_boite': 'arch_joker', 'chamboule_tout': 'arch_relanceur', 'sceau_du_pharaon': 'arch_rentier',
     'magot_du_dragon': 'arch_lutin',
+    'heraut': 'arch_cour', 'dame_de_cour': 'arch_cour', 'sceptre_du_roi': 'arch_cour', 'quinte_royale': 'arch_cour',
+    'fossoyeur': 'arch_revenant', 'dame_blanche': 'arch_revenant', 'roi_des_ombres': 'arch_revenant',
+    'requiem': 'arch_revenant',
+    'cle_de_remontage': 'arch_horloger', 'coucou': 'arch_horloger', 'grande_aiguille': 'arch_horloger',
+    'douze_coups': 'arch_horloger',
 }

@@ -2,6 +2,7 @@ package fr.astratime.lucky.controllers;
 
 import fr.astratime.lucky.entities.Card;
 import fr.astratime.lucky.entities.Combo;
+import fr.astratime.lucky.entities.CourtAndClock;
 import fr.astratime.lucky.entities.context.CombatContext;
 import fr.astratime.lucky.entities.Enemy;
 import fr.astratime.lucky.entities.LastingEffects;
@@ -199,11 +200,38 @@ public class PreparationResolver {
             turn.addEvent(new StatusEvent(Lang.f("MAGOT DU DRAGON : ATTAQUE +{0} %", lasting.getHoardPercent()),
                 EffectPopup.Style.ATTACK));
         }
+        courtAndClock(lasting.getCourtAndClock(), combat, turn);
         if (lasting.getMartingale() > 0) {
             spin.addPairChance(lasting.getMartingalePair() / 100f);
             combat.multiplyAttack(1f + lasting.getMartingaleAttack() / 100f, "Martingale");
             turn.addEvent(new StatusEvent(Lang.f("MARTINGALE : ATTAQUE +{0} %, PAIRE +{1} %", lasting.getMartingaleAttack(),
                 lasting.getMartingalePair()), EffectPopup.Style.SPECIAL));
+        }
+    }
+
+    /**
+     * Archétypes du Valet à l'As, au début du tirage : la Grande aiguille pose un
+     * Ressort, les Ressorts donnent de l'attaque, les Coucous qui arrivent à leur
+     * heure chantent, et le Sceptre du roi rend sa part des combinaisons du tour d'avant.
+     */
+    private static void courtAndClock(CourtAndClock clock, CombatContext combat, TurnContext turn) {
+        int wound = clock.tickMinuteHand();
+        if (wound > 0) {
+            turn.addEvent(new StatusEvent(Lang.f("GRANDE AIGUILLE : RESSORTS +{0}", wound), EffectPopup.Style.ATTACK));
+        }
+        if (clock.getSprings() > 0) {
+            combat.multiplyAttack(1f + clock.getSpringAttack() / 100f, "Ressorts");
+            turn.addEvent(new StatusEvent(Lang.f("RESSORTS : ATTAQUE +{0} %", clock.getSpringAttack()), EffectPopup.Style.ATTACK));
+        }
+        float cuckoo = clock.tickCuckoos();
+        if (cuckoo != 1f) {
+            combat.multiplyAttack(cuckoo, "Coucou");
+            turn.addEvent(new StatusEvent(Lang.f("COUCOU ! ATTAQUE x{0}", factor(cuckoo)), EffectPopup.Style.ATTACK));
+        }
+        float sceptre = clock.takeSceptre();
+        if (sceptre != 1f) {
+            combat.multiplyAttack(sceptre, "Sceptre du roi");
+            turn.addEvent(new StatusEvent(Lang.f("SCEPTRE DU ROI : ATTAQUE x{0}", factor(sceptre)), EffectPopup.Style.ATTACK));
         }
     }
 
@@ -254,12 +282,44 @@ public class PreparationResolver {
         String names = combos.stream().map(Combo::getDisplayName).collect(Collectors.joining(" + "));
         combat.multiplyGains(total, names);
         combat.multiplyAttack(total, names);
+        courtCombos(turnContext, player, combos, total);
         for (Combo combo : combos) {
             if (combo.fillsGauges()){
                 fillGauges(player);
             }
             turnContext.addEvent(new ComboEvent(combo));
         }
+    }
+
+    /**
+     * Cour royale, une fois les combinaisons formées : la Dame de cour ajoute de
+     * l'attaque par combinaison, la Quinte royale multiplie l'attaque si Suite et
+     * Couleur sont formées ensemble, et le Sceptre du roi garde une part du
+     * multiplicateur pour l'attaque du tirage suivant (jamais pour les gains).
+     */
+    private static void courtCombos(TurnContext turnContext, Player player, List<Combo> combos, float total) {
+        CombatContext combat = turnContext.getCombatContext();
+        if (combat.getCourtLadyPercent() > 0) {
+            int percent = combat.getCourtLadyPercent() * combos.size();
+            combat.multiplyAttack(1f + percent / 100f, "Dame de cour");
+            turnContext.addEvent(new StatusEvent(Lang.f("DAME DE COUR : ATTAQUE +{0} %", percent), EffectPopup.Style.ATTACK));
+        }
+        if (combat.getRoyalFlushFactor() != 1f && combos.contains(Combo.SUITE) && combos.contains(Combo.COULEUR)) {
+            combat.multiplyAttack(combat.getRoyalFlushFactor(), "Quinte royale");
+            turnContext.addEvent(new StatusEvent(Lang.f("QUINTE ROYALE : ATTAQUE x{0}", factor(combat.getRoyalFlushFactor())),
+                EffectPopup.Style.ATTACK));
+        }
+        if (combat.getSceptrePercent() > 0) {
+            float kept = Math.max(1f, total * combat.getSceptrePercent() / 100f);
+            player.getLastingEffects().getCourtAndClock().setSceptre(kept);
+            turnContext.addEvent(new StatusEvent(Lang.f("SCEPTRE DU ROI : x{0} AU PROCHAIN TIRAGE", factor(kept)),
+                EffectPopup.Style.ATTACK));
+        }
+    }
+
+    /** @return le multiplicateur {@code value}, à deux décimales au plus (ex : « 4,75 »). */
+    public static String factor(float value) {
+        return Lang.decimal(Combo.formatFactor(Math.round(value * 100f) / 100f));
     }
 
     /** Chaque carte à suite jouée remplit la jauge de sa couleur. */

@@ -70,6 +70,10 @@ public class CombatContext {
     private int   forgedBlades  = 0;  // Lame forgée : coups d'épée en plus, à une part de la plus grosse attaque
     private int   dynamitePercent = 0; // Dynamite : % des PV max de l'ennemi infligés, sans peau ni défense
     private int   goldenHearts  = 0;  // Cœur d'or : les gains du tirage frappent aussi l'ennemi
+    // ----- Archétypes du Valet à l'As (Cour royale) -----
+    private int   courtLadyPercent = 0;  // Dame de cour : attaque en plus par combinaison formée, en %
+    private float royalFlushFactor = 1f; // Quinte royale : attaque multipliée si Suite et Couleur sont formées
+    private int   sceptrePercent   = 0;  // Sceptre du roi : part du multiplicateur des combinaisons gardée au tirage suivant, en %
     // ----- Archétypes de deck -----
     private int   wildJokerPercent = 0; // Joker sauvage : attaque en plus par Joker sorti, en %
     private int   jackStep      = 0;  // Diable en boîte : Joker en plus (tout le combat) par Joker sorti
@@ -282,6 +286,21 @@ public class CombatContext {
     public void turnGainsToStone() { stoneGains = true; }
     /** Tamis : les pierres de ce tour redeviennent de l'or. */
     public void restoreGains() { stoneGains = false; }
+
+    /** Dame de cour : {@code percent} % d'attaque par combinaison formée ce tour. */
+    public void addCourtLady(int percent) { courtLadyPercent += percent; }
+    /** @return l'attaque en plus par combinaison formée ce tour, en % (0 : aucune Dame de cour). */
+    public int getCourtLadyPercent() { return courtLadyPercent; }
+
+    /** Quinte royale : si Suite et Couleur sont formées ce tour, l'attaque est multipliée par {@code factor}. */
+    public void addRoyalFlush(float factor) { royalFlushFactor *= factor; }
+    /** @return le multiplicateur de la Quinte royale (1 : aucune). */
+    public float getRoyalFlushFactor() { return royalFlushFactor; }
+
+    /** Sceptre du roi : {@code percent} % du multiplicateur des combinaisons de ce tour restent pour l'attaque du suivant. */
+    public void addSceptre(int percent) { sceptrePercent = Math.max(sceptrePercent, percent); }
+    /** @return la part du multiplicateur des combinaisons gardée au tirage suivant, en % (0 : aucun Sceptre). */
+    public int getSceptrePercent() { return sceptrePercent; }
 
     /** Chope : chaque combinaison de ce tour compte {@code bonus} de plus au multiplicateur. */
     public void addComboBonus(float bonus) { comboBonus += bonus; }

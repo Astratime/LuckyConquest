@@ -1040,6 +1040,10 @@ public final class BalanceSimulator {
                 return player.getHpRatio() > 0.6f ? 3 : -1;
             case "marteau_du_cordonnier": case "chope": case "pierre_a_aiguiser":
                 return 3;
+            case "heraut": case "fossoyeur": // Valet à l'As : ils font venir des cartes
+                return 1;
+            case "douze_coups": // il attend d'avoir assez de Ressorts (ou le roi)
+                return king || player.getLastingEffects().getCourtAndClock().getSprings() >= 6 ? 6 : -1;
             case "bingo":
                 return 9;
             default:

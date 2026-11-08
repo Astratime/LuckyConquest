@@ -1,6 +1,7 @@
 package fr.astratime.lucky.entities.context;
 
 import fr.astratime.lucky.entities.BigNumber;
+import fr.astratime.lucky.entities.Card;
 import fr.astratime.lucky.entities.SpinEconomy;
 import fr.astratime.lucky.entities.LastingEffects;
 import fr.astratime.lucky.entities.Player;
@@ -36,6 +37,7 @@ public class PlayContext {
     private boolean    doubleNext = false;
     private int        drawPerPlay = 0;
     private int        treasureMaps = 0;
+    private final List<Card> fetched = new ArrayList<>();
 
     /** @param player joueur qui joue la carte (ses gains peuvent être consommés immédiatement) */
     public PlayContext(Player player) {
@@ -69,6 +71,15 @@ public class PlayContext {
 
     /** @return les Cartes au trésor jouées (cartes de plus dans le coffre du donjon). */
     public int getTreasureMaps() { return treasureMaps; }
+
+    /**
+     * Héraut, Fossoyeur : {@code card}, déjà retirée de la pioche ou de la défausse,
+     * rejoint la main (ou la défausse si la main est pleine), comme une carte piochée.
+     */
+    public void fetchCard(Card card) { fetched.add(card); }
+
+    /** @return les cartes prises par les effets de la carte jouée, à poser dans la main. */
+    public List<Card> getFetched() { return fetched; }
 
     /** Demande à piocher {@code count} cartes supplémentaires immédiatement. */
     public void addCardsToDraw(int count) { cardsToDraw += count; }
