@@ -37,6 +37,7 @@ import fr.astratime.lucky.progress.MachineDraft;
 import fr.astratime.lucky.progress.ReelShop;
 import fr.astratime.lucky.progress.PlayerProfile;
 import fr.astratime.lucky.progress.Rank;
+import fr.astratime.lucky.progress.TableSort;
 import fr.astratime.lucky.views.GuideOverlay;
 import fr.astratime.lucky.views.Tooltip;
 import fr.astratime.lucky.views.UpgradeOverlay;
@@ -69,6 +70,11 @@ import java.util.function.Supplier;
  * Dans l'onglet « Rouleaux », un clic place un rouleau dans la machine ou l'en
  * retire. Dans l'onglet « Rang », un clic choisit un rang acheté. « Enregistrer »
  * enregistre le deck et la machine, complets tous les deux, et le rang choisi.
+ *
+ * Le bouton « Tri » (en haut de la collection) change l'ordre des cartes ou
+ * des rouleaux (voir {@link TableSort}) ; par défaut, le deck et la machine du
+ * joueur s'affichent en premier. L'ordre se refait au changement de tri,
+ * d'onglet ou de deck, pas à chaque clic, pour qu'une carte ne saute pas sous la souris.
  *
  * Une carte possédée en {@link Card#UPGRADE_COST} exemplaires montre le bouton
  * « FUSIONNER » : ils deviennent un exemplaire de sa version « + » (voir
@@ -130,6 +136,8 @@ public class CroupierTableScreen extends CasinoMenuScreen {
     private final Table       grid = new Table();
     private final ScrollPane  scroll;
     private final List<Group> cells = new ArrayList<>();
+    /** Case de chaque carte de la collection, par id. */
+    private final Map<String, Group> cellsById = new LinkedHashMap<>();
     private final Map<String, Label> cellCounts = new LinkedHashMap<>();
     /** Bouton « FUSIONNER » de chaque carte de la collection, par id. */
     private final Map<String, Group> cellUpgrades = new LinkedHashMap<>();
@@ -139,6 +147,10 @@ public class CroupierTableScreen extends CasinoMenuScreen {
     private final Table       reelGrid = new Table();
     private final ScrollPane  reelScroll;
     private final List<Group> reelCells = new ArrayList<>();
+    /** Case de chaque rouleau possédé. */
+    private final Map<Symbol, Group> reelCellsBySymbol = new EnumMap<>(Symbol.class);
+    /** Rouleaux possédés, dans l'ordre affiché (celui de {@link #reelCells}). */
+    private final List<Symbol> reelOrder = new ArrayList<>();
     private final Map<Symbol, Label> reelStates = new EnumMap<>(Symbol.class);
     private final Table       machineList = new Table();
     private final TextButton  deckTab;
@@ -157,6 +169,10 @@ public class CroupierTableScreen extends CasinoMenuScreen {
     /** Rang choisi, enregistré par « Enregistrer » ({@code null} : sans rang). */
     private Rank              chosenRank;
     private final TextButton  classicButton;
+    /** Change l'ordre des cartes (onglet « Deck ») ou des rouleaux (onglet « Rouleaux »). */
+    private final TextButton  sortButton;
+    private TableSort.CardSort cardSort = TableSort.CardSort.DECK_FIRST;
+    private TableSort.ReelSort reelSort = TableSort.ReelSort.MACHINE_FIRST;
     private final Label       hint;
     private final TextButton  saveButton;
     private final TextButton  starterButton;
@@ -201,8 +217,9 @@ public class CroupierTableScreen extends CasinoMenuScreen {
 
         for (Symbol symbol : profile.getOwnedReels()) {
             reelTextures.put(symbol, new Texture(Gdx.files.internal(symbol.getAssetPath())));
-            reelCells.add(buildReelCell(symbol));
+            reelCellsBySymbol.put(symbol, buildReelCell(symbol));
         }
+        sortReels();
         reelScroll = new ScrollPane(reelGrid);
         reelScroll.setScrollingDisabled(true, false);
         reelScroll.setFadeScrollBars(false);
@@ -225,12 +242,21 @@ public class CroupierTableScreen extends CasinoMenuScreen {
         reelsTab = buttons.create(Lang.t("Rouleaux"), clickSound, () -> showTab(Tab.REELS));
         rankTab  = buttons.create(Lang.t("Rang"), clickSound, () -> showTab(Tab.RANK));
         saveButton    = buttons.createAction(Lang.t("Enregistrer"), clickSound, this::onSave);
-        starterButton = buttons.create(Lang.t("Deck de départ"), clickSound, () -> { draft.resetToStarter(); refresh(); });
-        classicButton = buttons.create(Lang.t("Rouleaux de départ"), clickSound, () -> { machineDraft.resetToClassic(); refresh(); });
+        starterButton = buttons.create(Lang.t("Deck de départ"), clickSound, () -> {
+            draft.resetToStarter();
+            sortCollection();
+            refresh();
+        });
+        classicButton = buttons.create(Lang.t("Rouleaux de départ"), clickSound, () -> {
+            machineDraft.resetToClassic();
+            sortReels();
+            refresh();
+        });
         clearButton   = buttons.create(Lang.t("Vider"), clickSound, () -> {
             if (tab == Tab.REELS) machineDraft.clear(); else draft.clear();
             refresh();
         });
+        sortButton    = buttons.create(sortText(), clickSound, this::nextSort);
         backButton    = buttons.create(Lang.t("Retour"), clickSound, this::onBack);
         editingSlot = profile.getDeckSlot();
         for (int i = 0; i < PlayerProfile.DECK_SLOTS; i++) {
@@ -257,6 +283,7 @@ public class CroupierTableScreen extends CasinoMenuScreen {
         stage.addActor(reelsTab);
         stage.addActor(rankTab);
         stage.addActor(classicButton);
+        stage.addActor(sortButton);
         stage.addActor(hint);
         stage.addActor(saveButton);
         stage.addActor(starterButton);
@@ -338,6 +365,7 @@ public class CroupierTableScreen extends CasinoMenuScreen {
         machineList.setVisible(reels);
         classicButton.setVisible(reels);
         clearButton.setVisible(!rank);
+        sortButton.setVisible(!rank);
         counter.setVisible(!rank);
         rankScroll.setVisible(rank);
         rankDetail.setVisible(rank);
@@ -352,7 +380,56 @@ public class CroupierTableScreen extends CasinoMenuScreen {
             case RANK  -> Lang.t("MON RANG");
         });
         stage.setScrollFocus(scrollOf(shown));
+        if (deck) sortCollection();
+        if (reels) sortReels();
+        buttons.setText(sortButton, sortText());
         refresh();
+    }
+
+    // -------------------------------------------------------------------------
+    // Tri
+    // -------------------------------------------------------------------------
+
+    /** @return le texte du bouton « Tri » pour l'onglet affiché. */
+    private String sortText() {
+        String label = tab == Tab.REELS ? reelSort.getLabel() : cardSort.getLabel();
+        return Lang.f("Tri : {0}", label);
+    }
+
+    /** Bouton « Tri » : passe au tri suivant de l'onglet affiché. */
+    private void nextSort() {
+        if (tab == Tab.REELS) {
+            reelSort = reelSort.next();
+            sortReels();
+        } else {
+            cardSort = cardSort.next();
+            sortCollection();
+        }
+        buttons.setText(sortButton, sortText());
+        refresh();
+    }
+
+    /** Range les cases de la collection dans l'ordre du tri choisi, et remonte la liste. */
+    private void sortCollection() {
+        List<Card> sorted = TableSort.sortCards(new ArrayList<>(cards.values()), draft.getCopies(), cardSort);
+        cards.clear();
+        cells.clear();
+        for (Card card : sorted) {
+            cards.put(card.getId(), card);
+            cells.add(cellsById.get(card.getId()));
+        }
+        grid.clearChildren(); // la grille se refait à la mise en page
+        if (scroll != null) scroll.setScrollY(0f);
+    }
+
+    /** Range les cases des rouleaux dans l'ordre du tri choisi, et remonte la liste. */
+    private void sortReels() {
+        reelOrder.clear();
+        reelOrder.addAll(TableSort.sortReels(profile.getOwnedReels(), machineDraft.getReels(), reelSort));
+        reelCells.clear();
+        for (Symbol symbol : reelOrder) reelCells.add(reelCellsBySymbol.get(symbol));
+        reelGrid.clearChildren();
+        if (reelScroll != null) reelScroll.setScrollY(0f);
     }
 
     /** @return la liste qui défile dans l'onglet {@code shown}. */
@@ -597,15 +674,16 @@ public class CroupierTableScreen extends CasinoMenuScreen {
         return cell;
     }
 
-    /** Crée une case par carte de la collection (dans son ordre). */
+    /** Crée une case par carte de la collection, rangées selon le tri choisi. */
     private void buildCollection() {
         cards.clear();
         cells.clear();
+        cellsById.clear();
         cellCounts.clear();
         cellUpgrades.clear();
         for (String id : profile.getCollection().keySet()) cards.put(id, factory.apply(id));
-        for (Card card : cards.values()) cells.add(buildCell(card));
-        grid.clearChildren(); // la grille se refait à la mise en page
+        for (Card card : cards.values()) cellsById.put(card.getId(), buildCell(card));
+        sortCollection();
     }
 
     /** Ouvre la fenêtre de fusion de la carte {@code card} en sa version « + ». */
@@ -736,7 +814,7 @@ public class CroupierTableScreen extends CasinoMenuScreen {
             entry.getValue().setColor(in ? Palette.GOLD : USED_UP); // en or : dans la machine
         }
         int index = 0;
-        for (Symbol symbol : profile.getOwnedReels()) {
+        for (Symbol symbol : reelOrder) {
             Group holder = (Group) reelCells.get(index++).getChildren().first();
             holder.getChildren().first().setColor(machineDraft.contains(symbol) ? Color.WHITE : USED_UP);
         }
@@ -777,6 +855,7 @@ public class CroupierTableScreen extends CasinoMenuScreen {
         if (slot == editingSlot) return;
         editingSlot = slot;
         if (profile.isDeckSlotUsed(slot)) draft.load(profile.getDeckInSlot(slot));
+        sortCollection();
         refresh();
     }
 
@@ -820,6 +899,8 @@ public class CroupierTableScreen extends CasinoMenuScreen {
 
         collectionHead.pack();
         collectionHead.setPosition(MARGIN + PANEL_PAD, panelTop - PANEL_PAD - collectionHead.getHeight());
+        sortButton.setPosition(MARGIN + collectionWidth - PANEL_PAD - sortButton.getWidth(),
+            collectionHead.getY() + (collectionHead.getHeight() - sortButton.getHeight()) / 2f);
         float gridTop = collectionHead.getY() - 12f;
         float gridWidth = collectionWidth - PANEL_PAD * 2;
         int newColumns = Math.max(1, (int) ((gridWidth + CELL_GAP) / (CARD_WIDTH + CELL_GAP)));
