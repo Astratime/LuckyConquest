@@ -44,8 +44,8 @@ public class Card {
     public static final String UPGRADE_SUFFIX = "+";
     /** Exemplaires d'une carte fusionnés en un exemplaire de sa version « + ». */
     public static final int    UPGRADE_COST   = 3;
-    /** Prix d'une fusion, en pièces (Astra, 2026-10-10). */
-    public static final long   UPGRADE_PRICE  = 10_000_000L;
+    /** Prix d'une fusion, en pièces (Astra, 2026-10-10 ; x100 le 2026-11-08). */
+    public static final long   UPGRADE_PRICE  = 1_000_000_000L;
     /** Les valeurs d'une carte « + » : celles de la carte x {@value}. */
     public static final float  UPGRADE_FACTOR = 1.5f;
 
