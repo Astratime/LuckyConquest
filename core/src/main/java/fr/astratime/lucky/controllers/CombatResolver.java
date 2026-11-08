@@ -457,14 +457,25 @@ public class CombatResolver {
         return Optional.of(new CardStrikeEvent(Lang.t("DYNAMITE !"), hit, hit, enemy.getDefense()));
     }
 
-    /** Cœur d'or : les gains gagnés ce tour frappent aussi l'ennemi (une fois par carte), sans tenir compte de sa défense. */
+    /**
+     * Cœur d'or : les gains gagnés ce tour frappent aussi l'ennemi (une fois par carte), sans tenir compte de sa
+     * défense. Comme Fortune du Roi et l'As de Trèfle, les gains se comptent au coût de tirage de force du lieu
+     * ({@link SpinEconomy#powerSpinCost}, 3 000 au Désert et non 140 000) : sinon le coup grimpait avec
+     * l'économie étirée (x47 au Désert) et tuait n'importe quel ennemi (Astra, 2026-11-08).
+     */
     private Optional<Event> goldenHeart(CombatContext context, double gainsEarned) {
         Enemy enemy = context.getEnemy();
         if (context.getGoldenHearts() <= 0 || gainsEarned <= 0 || enemy.isDefeated()) return Optional.empty();
-        long raw    = BigNumber.toLong(gainsEarned * context.getGoldenHearts()); // le vrai coup, sans plafond
+        long raw    = BigNumber.toLong(goldenHeartHit(gainsEarned, context.getSpinCost()) * context.getGoldenHearts());
         long damage = enemy.skinned(raw);
         enemy.takeDamage(enemy.capHit(raw));
         return Optional.of(new CardStrikeEvent(Lang.t("COEUR D'OR !"), damage, raw, enemy.getDefense()));
+    }
+
+    /** @return le coup d'un Cœur d'or pour {@code gainsEarned} gagnés là où un tirage coûte {@code spinCost} */
+    static double goldenHeartHit(double gainsEarned, int spinCost) {
+        int power = SpinEconomy.powerSpinCost(spinCost);
+        return gainsEarned * power / spinCost;
     }
 
     /**
