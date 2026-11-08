@@ -3,6 +3,7 @@ package fr.astratime.lucky.views;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
+import com.badlogic.gdx.graphics.g2d.GlyphLayout;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.Interpolation;
 import com.badlogic.gdx.scenes.scene2d.Actor;
@@ -18,6 +19,7 @@ import com.badlogic.gdx.scenes.scene2d.ui.Image;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.ui.ScrollPane;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
+import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 import com.badlogic.gdx.utils.Align;
@@ -68,7 +70,8 @@ public class ShopOverlay implements Disposable {
     private static final float SYMBOL_SIZE         = 96f;
     private static final float MACHINE_SYMBOL_SIZE = 64f;
     private static final int   MACHINE_COLUMNS     = 7;
-    private static final Color INACTIVE_TAB = new Color(0.6f, 0.6f, 0.6f, 1f);
+    /** Onglet non choisi : cadre et texte assombris, il reste cliquable. */
+    private static final Color INACTIVE_TAB = new Color(0.55f, 0.55f, 0.55f, 1f);
 
     private final Stage       stage;
     private final HudTextures hud;
@@ -90,7 +93,16 @@ public class ShopOverlay implements Disposable {
     private final Table      reelGrid = new Table();
     private final ScrollPane scroll = new ScrollPane(grid);
     private Cell<ScrollPane> scrollCell;
-    private final BitmapFont  tabFont     = Fonts.jersey(40, Color.WHITE, 2f, Palette.TEXT_SHADE);
+    private Cell<Label>      hintCell;
+    private Cell<Label>      noticeCell;
+    /**
+     * Taille du contenu, la même pour les deux onglets : la plus grande des deux,
+     * qui ne rétrécit pas tant que l'échoppe reste ouverte (la fenêtre ne saute pas).
+     */
+    private float contentWidth;
+    private float contentHeight;
+    private String cardsHint;
+    private String reelsHint;
     private DoubleSupplier gains;
     private BiFunction<String, Runnable, Actor> button;
     private ReelStand reels;
@@ -176,21 +188,36 @@ public class ShopOverlay implements Disposable {
         wallet = new Label(walletText(gains.getAsDouble()), new Label.LabelStyle(textFont, Color.WHITE));
         panel.add(wallet);
         panel.row();
+        // Onglets encadrés comme les boutons du jeu (« Pause »), de même largeur.
+        Actor[] tabButtons = new Actor[2];
+        tabButtons[0] = button.apply(Lang.t("Cartes"), () -> selectTab(false, tabButtons[0], tabButtons[1]));
+        tabButtons[1] = button.apply(Lang.t("Rouleaux"), () -> selectTab(true, tabButtons[0], tabButtons[1]));
+        Actor cardsTab = tabButtons[0];
+        Actor reelsTab = tabButtons[1];
+        float tabWidth = Math.max(cardsTab.getWidth(), reelsTab.getWidth()) + GAP * 2f;
         Table tabs = new Table();
-        Label cardsTab = tab(Lang.t("Cartes"));
-        Label reelsTab = tab(Lang.t("Rouleaux"));
-        tabs.add(cardsTab).padRight(GAP * 3f);
-        tabs.add(reelsTab);
-        panel.add(tabs).padTop(GAP / 2f);
+        tabs.add(cardsTab).size(tabWidth, cardsTab.getHeight()).padRight(GAP * 2f);
+        tabs.add(reelsTab).size(tabWidth, reelsTab.getHeight());
+        panel.add(tabs).padTop(GAP / 2f).padBottom(GAP / 2f);
         panel.row();
+        cardsHint = Lang.t("Survole une carte pour son effet, clique dessus pour sa fiche. Les cartes achetées "
+            + "disparaissent une fois jouées.") + " " + Lang.t("Le prix d'une carte double à chaque achat dans un combat.");
+        reelsHint = Lang.f("Achète ou retire des rouleaux pour ce combat seulement : ta machine garde de {0} à {1} rouleaux. "
+            + "Le prix double à chaque fois.", ReelStall.MIN_REELS, ReelStall.MAX_REELS);
         hint = new Label(" ", new Label.LabelStyle(hintFont, Color.WHITE));
         hint.setAlignment(Align.center);
-        panel.add(hint);
+        hint.setWrap(true); // le texte passe à la ligne : il ne change pas la largeur de la fenêtre
+        hintCell = panel.add(hint);
         panel.row();
         // Avertissement (carte indisponible) : ligne réservée, vide tant qu'il n'y a rien à dire.
         notice = new Label(" ", new Label.LabelStyle(textFont, Color.WHITE)); // teinte posée à chaque message
-        panel.add(notice).padTop(GAP / 2f).padBottom(GAP);
+        notice.setAlignment(Align.center);
+        noticeCell = panel.add(notice).padTop(GAP / 2f).padBottom(GAP);
         panel.row();
+        contentWidth  = 0f;
+        contentHeight = 0f;
+        grid.top();
+        reelGrid.top();
         grid.clearChildren();
 
         for (int i = 0; i < offers.size(); i++) {
@@ -266,14 +293,7 @@ public class ShopOverlay implements Disposable {
         panel.row();
         panel.add(button.apply(Lang.t("Fermer"), this::hide)).padTop(GAP);
 
-        cardsTab.addListener(new ClickListener() {
-            @Override
-            public void clicked(InputEvent event, float x, float y) { selectTab(false, cardsTab, reelsTab); }
-        });
-        reelsTab.addListener(new ClickListener() {
-            @Override
-            public void clicked(InputEvent event, float x, float y) { selectTab(true, cardsTab, reelsTab); }
-        });
+        if (reels != null) buildReels(); // mesuré dès l'ouverture : la fenêtre a sa taille finale tout de suite
         selectTab(false, cardsTab, reelsTab);
 
         root.clearActions();
@@ -286,24 +306,22 @@ public class ShopOverlay implements Disposable {
         stage.setScrollFocus(scroll); // la molette fait défiler les cartes
     }
 
-    /** @return un onglet de l'échoppe, cliquable */
-    private Label tab(String text) {
-        Label label = new Label(text, new Label.LabelStyle(tabFont, Color.WHITE));
-        label.setTouchable(Touchable.enabled);
-        return label;
+    /** Onglet choisi en pleine couleur, l'autre assombri. */
+    private static void markTab(Actor tab, boolean active) {
+        tab.setColor(active ? Color.WHITE : INACTIVE_TAB);
+        if (tab instanceof TextButton) {
+            ((TextButton) tab).getLabel().setColor(active ? Color.WHITE : INACTIVE_TAB);
+        }
     }
 
     /** Affiche l'onglet des cartes ou celui des rouleaux. */
-    private void selectTab(boolean showReels, Label cardsTab, Label reelsTab) {
+    private void selectTab(boolean showReels, Actor cardsTab, Actor reelsTab) {
+        if (!root.isTouchable() && root.isVisible()) return; // achat en cours, l'échoppe se ferme
         reelsShown = showReels && reels != null;
-        cardsTab.setColor(reelsShown ? INACTIVE_TAB : Palette.TEXT_TITLE);
-        reelsTab.setColor(reelsShown ? Palette.TEXT_TITLE : INACTIVE_TAB);
+        markTab(cardsTab, !reelsShown);
+        markTab(reelsTab, reelsShown);
         reelsTab.setVisible(reels != null);
-        hint.setText(reelsShown
-            ? Lang.f("Achète ou retire des rouleaux pour ce combat seulement : ta machine garde de {0} à {1} rouleaux. "
-                + "Le prix double à chaque fois.", ReelStall.MIN_REELS, ReelStall.MAX_REELS)
-            : Lang.t("Survole une carte pour son effet, clique dessus pour sa fiche. Les cartes achetées "
-                + "disparaissent une fois jouées.") + " " + Lang.t("Le prix d'une carte double à chaque achat dans un combat."));
+        hint.setText(reelsShown ? reelsHint : cardsHint);
         notice.clearActions();
         notice.setText(" ");
         if (reelsShown) buildReels();
@@ -497,19 +515,38 @@ public class ShopOverlay implements Disposable {
         root.setSize(width, height);
         veil.setSize(width, height);
         if (scrollCell != null) {
-            // La grille prend toute sa hauteur si elle tient à l'écran, sinon elle défile.
-            Table content = reelsShown ? reelGrid : grid;
-            content.pack();
-            scrollCell.width(content.getPrefWidth()).height(content.getPrefHeight());
+            // Même taille pour les deux onglets : la plus grande des deux grilles. La grille
+            // prend toute cette hauteur si elle tient à l'écran, sinon elle défile.
+            grid.pack();
+            contentWidth  = Math.max(contentWidth, grid.getPrefWidth());
+            contentHeight = Math.max(contentHeight, grid.getPrefHeight());
+            if (reels != null) {
+                reelGrid.pack();
+                contentWidth  = Math.max(contentWidth, reelGrid.getPrefWidth());
+                contentHeight = Math.max(contentHeight, reelGrid.getPrefHeight());
+            }
+            hintCell.width(contentWidth).height(hintHeight());
+            noticeCell.width(contentWidth);
+            scrollCell.width(contentWidth).height(contentHeight);
             panel.invalidate(); // les tailles de cellule ne sont relues qu'après invalidation
             float overflow = panel.getPrefHeight() - (height - GAP * 2f);
             if (overflow > 0f) {
-                scrollCell.height(Math.max(CELL_WIDTH, content.getPrefHeight() - overflow));
+                scrollCell.height(Math.max(CELL_WIDTH, contentHeight - overflow));
                 panel.invalidate();
             }
         }
         panel.pack();
         panel.setPosition((width - panel.getWidth()) / 2f, (height - panel.getHeight()) / 2f);
+    }
+
+    /** @return la hauteur de la plus longue des deux aides, à la largeur du contenu */
+    private float hintHeight() {
+        float max = 0f;
+        for (String text : new String[] {cardsHint, reelsHint}) {
+            GlyphLayout measure = new GlyphLayout(hintFont, text, Color.WHITE, contentWidth, Align.center, true);
+            max = Math.max(max, measure.height);
+        }
+        return max + hintFont.getDescent() * -2f;
     }
 
     @Override
@@ -519,6 +556,5 @@ public class ShopOverlay implements Disposable {
         Fonts.release(priceFont);
         Fonts.release(hintFont);
         Fonts.release(nameFont);
-        Fonts.release(tabFont);
     }
 }
