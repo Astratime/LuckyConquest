@@ -100,7 +100,8 @@ public class CombatResolver {
         priorEvents.addAll(cardsOnDraw(combatContext, symbols)); // Marteau de forge, Levier rouillé, Jackpot englouti
         priorEvents.addAll(archetypesOnDraw(combatContext, symbols, drawnSymbols)); // Joker sauvage, Couronne du Fou...
         List<Event> events = new ArrayList<>(priorEvents);
-        double gainsBefore = combatContext.getPlayer().getGains(); // pour le Cœur d'or
+        double gainsBefore = combatContext.getPlayer().getGains(); // pour les archétypes
+        goldenHeart(combatContext); // avant les symboles : son bonus d'attaque compte dans leurs coups
         combatContext.setDrawnSymbols(symbols); // le Jeton d'or regarde les autres symboles du tirage
 
         // Chaque action résout elle-même sa logique et retourne ses événements ;
@@ -150,7 +151,6 @@ public class CombatResolver {
         for (int i = 0; i < combatContext.getAllIn(); i++) {
             pairOrJackpotEvents.add(resolveAllIn(combatContext.getPlayer(), hasPair(symbols)));
         }
-        goldenHeart(combatContext, combatContext.getPlayer().getGains() - gainsBefore).ifPresent(pairOrJackpotEvents::add);
         collected.stream().filter(e -> e instanceof GainsEarnedEvent).forEach(pairOrJackpotEvents::add);
         List<Event> hits = new ArrayList<>(events);
         hits.addAll(pistolEvents);
@@ -458,24 +458,20 @@ public class CombatResolver {
     }
 
     /**
-     * Cœur d'or : les gains gagnés ce tour frappent aussi l'ennemi (une fois par carte), sans tenir compte de sa
-     * défense. Comme Fortune du Roi et l'As de Trèfle, les gains se comptent au coût de tirage de force du lieu
-     * ({@link SpinEconomy#powerSpinCost}, 3 000 au Désert et non 140 000) : sinon le coup grimpait avec
-     * l'économie étirée (x47 au Désert) et tuait n'importe quel ennemi (Astra, 2026-11-08).
+     * Cœur d'or (Astra, 2026-11-08) : les bonus de gains du tour deviennent aussi des bonus d'attaque. Chaque
+     * carte ajoute à l'attaque de chaque symbole d'attaque le bonus de gains du rang (Jeton de rang compris) plus
+     * les multiplicateurs de gains des cartes jouées ce tour (Trèfle : Roi +13...). Les gains n'en changent pas.
      */
-    private Optional<Event> goldenHeart(CombatContext context, double gainsEarned) {
-        Enemy enemy = context.getEnemy();
-        if (context.getGoldenHearts() <= 0 || gainsEarned <= 0 || enemy.isDefeated()) return Optional.empty();
-        long raw    = BigNumber.toLong(goldenHeartHit(gainsEarned, context.getSpinCost()) * context.getGoldenHearts());
-        long damage = enemy.skinned(raw);
-        enemy.takeDamage(enemy.capHit(raw));
-        return Optional.of(new CardStrikeEvent(Lang.t("COEUR D'OR !"), damage, raw, enemy.getDefense()));
+    static void goldenHeart(CombatContext context) {
+        if (context.getGoldenHearts() <= 0) return;
+        context.addAttackBonus(goldenHeartBonus(context), Lang.t("Coeur d'or"));
     }
 
-    /** @return le coup d'un Cœur d'or pour {@code gainsEarned} gagnés là où un tirage coûte {@code spinCost} */
-    static double goldenHeartHit(double gainsEarned, int spinCost) {
-        int power = SpinEconomy.powerSpinCost(spinCost);
-        return gainsEarned * power / spinCost;
+    /** @return le bonus d'attaque de tous les Cœurs d'or joués ce tour (0 sans eux). */
+    static int goldenHeartBonus(CombatContext context) {
+        int rank  = context.getPlayer().getRankBonus().gains() * context.getRankFactor();
+        int cards = Math.round(context.getGainMultiplier() - 1f); // le multiplicateur part de 1
+        return context.getGoldenHearts() * (rank + Math.max(0, cards));
     }
 
     /**

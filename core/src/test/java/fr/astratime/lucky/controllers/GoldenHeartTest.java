@@ -1,25 +1,46 @@
 package fr.astratime.lucky.controllers;
 
-import fr.astratime.lucky.entities.exploration.Place;
+import fr.astratime.lucky.entities.Enemy;
+import fr.astratime.lucky.entities.Player;
+import fr.astratime.lucky.entities.Symbol;
+import fr.astratime.lucky.entities.context.CombatContext;
+import fr.astratime.lucky.progress.Rank;
 import org.junit.jupiter.api.Test;
+
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-/** Cœur d'or : les gains du tour frappent l'ennemi, comptés au coût de tirage de force du lieu. */
+/** Cœur d'or : les bonus de gains du tour (rang + multiplicateurs des cartes) deviennent des bonus d'attaque. */
 class GoldenHeartTest {
 
-    @Test
-    void gainsAreCountedAtThePlacePowerSpinCost() {
-        // Désert : 140 000 de gains = 1 tirage, soit 3 000 de coup (et non 140 000)
-        assertEquals(Place.DESERT.getPowerSpinCost(),
-            CombatResolver.goldenHeartHit(Place.DESERT.getSpinCost(), Place.DESERT.getSpinCost()), 1e-6);
-        assertEquals(10.0 * Place.CASINO.getPowerSpinCost(),
-            CombatResolver.goldenHeartHit(10.0 * Place.CASINO.getSpinCost(), Place.CASINO.getSpinCost()), 1e-6);
+    private static CombatContext legend() {
+        Player player = new Player("Joueur", 100, List.of(), Rank.LEGENDE.getBonus(), Symbol.classicReels());
+        return new CombatContext(player, new Enemy("Ennemi", 1000));
     }
 
     @Test
-    void prairieAndTowerKeepTheirGains() {
-        assertEquals(5_000, CombatResolver.goldenHeartHit(5_000, Place.PRAIRIE.getSpinCost()), 1e-6);
-        assertEquals(5_000, CombatResolver.goldenHeartHit(5_000, 2_000), 1e-6); // Tour, chapitre 5
+    void legendWithAKingOfClubsGetsRankGainsPlusCardMultiplier() {
+        CombatContext context = legend();
+        context.addGainMultiplier(13); // Roi de Trèfle
+        context.addGoldenHeart();
+        CombatResolver.goldenHeart(context);
+        assertEquals(2_813, context.getAttackBonus()); // 2 800 + 13, l'exemple d'Astra
+    }
+
+    @Test
+    void eachGoldenHeartCountsAndRankAloneWithoutClubs() {
+        CombatContext context = legend();
+        context.addGoldenHeart();
+        context.addGoldenHeart();
+        assertEquals(5_600, CombatResolver.goldenHeartBonus(context));
+    }
+
+    @Test
+    void nothingWithoutTheCard() {
+        CombatContext context = legend();
+        context.addGainMultiplier(13);
+        CombatResolver.goldenHeart(context);
+        assertEquals(0, context.getAttackBonus());
     }
 }

@@ -10,8 +10,8 @@ import fr.astratime.lucky.popups.PopupScale;
 import java.util.List;
 
 /**
- * Cœur d'or (le Gouffre) : ce tour, les gains gagnés frappent aussi l'ennemi
- * (voir {@link fr.astratime.lucky.controllers.CombatResolver}), comptés au coût de tirage de force du lieu.
+ * Cœur d'or (le Gouffre) : ce tour, les bonus de gains (rang, multiplicateurs des
+ * cartes) deviennent aussi des bonus d'attaque (voir {@link fr.astratime.lucky.controllers.CombatResolver}).
  */
 public class GoldenHeartEffect extends Effect {
 
@@ -19,7 +19,7 @@ public class GoldenHeartEffect extends Effect {
     public void apply(TurnContext context) { context.getCombatContext().addGoldenHeart(); }
 
     @Override
-    public String getDescription() { return Lang.t("Ce tour, tes gains comptent aussi comme attaque (en tirages de force du lieu, comme Fortune du Roi)."); }
+    public String getDescription() { return Lang.t("Ce tour, chaque symbole d'attaque gagne en attaque le bonus de gains de ton rang plus les multiplicateurs de gains de tes cartes (Trèfle...)."); }
 
     @Override
     public List<EffectPopup> getPopups() {
