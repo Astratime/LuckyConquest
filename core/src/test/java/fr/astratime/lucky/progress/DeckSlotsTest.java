@@ -14,12 +14,11 @@ import static org.junit.jupiter.api.Assertions.*;
 /** Les trois decks enregistrés à la Table du croupier, et le choix du deck joué. */
 class DeckSlotsTest {
 
-    /** Le deck de départ avec "double" x2 à la place de deux cartes. */
+    /** Le deck de départ avec "double" à la place d'une carte. */
     private static Map<String, Integer> otherDeck() {
         Map<String, Integer> deck = new LinkedHashMap<>(starterDeck());
         deck.remove("carte_0");
-        deck.remove("carte_1");
-        deck.put("double", 2);
+        deck.put("double", 1);
         return deck;
     }
 

@@ -56,7 +56,7 @@ class PlayerProfileTest {
     }
 
     @Test
-    void aDeckMustHaveExactlyTwentyOwnedCardsAndAtMostThreeCopiesOfEach() {
+    void aDeckMustHaveExactlyTwentyOwnedCardsAndEachCardOnlyOnce() {
         PlayerProfile profile = profile(new MemoryStorage());
 
         Map<String, Integer> nineteen = new LinkedHashMap<>(starterDeck());
@@ -75,11 +75,32 @@ class PlayerProfileTest {
         tooMany.put("carte_1", 2);
         assertNotNull(profile.deckProblem(tooMany), "plus d'exemplaires que possédés");
 
+        Map<String, Integer> twoCopies = new LinkedHashMap<>(nineteen);
+        twoCopies.remove("carte_1");
+        twoCopies.put("double", 2);
+        assertNotNull(profile.deckProblem(twoCopies), "deux exemplaires de la même carte, même possédés");
+
         Map<String, Integer> withDouble = new LinkedHashMap<>(nineteen);
-        withDouble.remove("carte_1");
-        withDouble.put("double", 2);
+        withDouble.put("double", 1);
         assertNull(profile.deckProblem(withDouble));
         assertThrows(IllegalArgumentException.class, () -> profile.setDeck(nineteen));
+    }
+
+    @Test
+    void anOldSaveWithSeveralCopiesKeepsEachCardOnceAndIsCompleted() {
+        MemoryStorage storage = new MemoryStorage();
+        Map<String, Integer> old = new LinkedHashMap<>();
+        old.put("double", 2);
+        for (int i = 0; i < 18; i++) old.put("carte_" + i, 1);
+        storage.put(PlayerProfile.KEY_DECK, PlayerProfile.encode(old));
+
+        PlayerProfile profile = profile(storage);
+        Map<String, Integer> deck = profile.getDeck();
+        assertNull(profile.deckProblem(deck));
+        assertEquals(1, deck.get("double"), "la carte reste, une seule fois");
+        assertEquals(1, deck.get("carte_17"));
+        assertEquals(1, deck.get("carte_18"), "complété avec le deck de départ");
+        assertFalse(deck.containsKey("carte_19"));
     }
 
     @Test
@@ -100,8 +121,7 @@ class PlayerProfileTest {
         PlayerProfile profile = profile(storage);
         Map<String, Integer> deck = new LinkedHashMap<>(starterDeck());
         deck.remove("carte_0");
-        deck.remove("carte_1");
-        deck.put("double", 2);
+        deck.put("double", 1);
         profile.setDeck(deck);
         profile.addCoins(1234);
         profile.openChest("guillotine", Place.PRAIRIE);
@@ -313,8 +333,8 @@ class PlayerProfileTest {
 
         // Rien de ce qui se passe en mode ADMIN ne change la partie.
         Map<String, Integer> adminDeck = new LinkedHashMap<>();
-        adminDeck.put("boutique_1", 3);
-        for (int i = 0; i < 17; i++) adminDeck.put("carte_" + i, 1);
+        adminDeck.put("boutique_1", 1);
+        for (int i = 0; i < 19; i++) adminDeck.put("carte_" + i, 1);
         profile.setDeck(adminDeck);
         profile.addCoins(5_000);
         assertNull(profile.clearDungeon(Place.PRAIRIE.getDungeons().get(0).name()));

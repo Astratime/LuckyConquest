@@ -33,7 +33,7 @@ import java.util.stream.Collectors;
  *       (au départ, celles de assets/cards/decks/collection.json ; les coffres
  *       des donjons en ajoutent) ;</li>
  *   <li>son deck : exactement {@link #DECK_SIZE} cartes de sa collection, au
- *       plus {@link #MAX_COPIES} exemplaires de chacune (au départ, le deck de
+ *       plus {@link #DECK_MAX_COPIES} exemplaire de chacune (au départ, le deck de
  *       départ), joué dans tous les modes ;</li>
  *   <li>ses pièces : les gains acquis en combat, versés à la fin de chacun, et
  *       les pièces des coffres. Elles ne servent qu'à la boutique : on n'entre
@@ -58,8 +58,10 @@ public class PlayerProfile {
     public static final int DECK_SIZE   = 20;
     /** Emplacements de deck enregistrés à la Table du croupier. */
     public static final int DECK_SLOTS  = 3;
-    /** Exemplaires au plus d'une même carte, dans la collection comme dans le deck. */
+    /** Exemplaires au plus d'une même carte dans la collection (3 pour la fusion en carte « + »). */
     public static final int MAX_COPIES  = 3;
+    /** Exemplaires au plus d'une même carte dans le deck (Astra : un seul ; la carte « + » compte comme sa version normale). */
+    public static final int DECK_MAX_COPIES = 1;
     /** Part des gains gardée en pièces après une défaite dans un donjon, en %. */
     public static final int DEFEAT_KEEP_PERCENT = 20;
 
@@ -175,7 +177,9 @@ public class PlayerProfile {
         collection.putAll(savedCollection != null ? decode(savedCollection) : startingCollection);
         String savedDeck = storage.get(KEY_DECK);
         Map<String, Integer> loadedDeck = savedDeck != null ? decode(savedDeck) : starterDeck;
-        deck.putAll(deckProblem(loadedDeck) == null ? loadedDeck : starterDeck);
+        Map<String, Integer> repaired = repairedDeck(loadedDeck);
+        if (repaired == null) repaired = repairedDeck(starterDeck);
+        deck.putAll(repaired != null ? repaired : starterDeck);
         loadDeckSlots();
         String savedCoins = storage.get(KEY_COINS);
         coins = parseCoins(savedCoins);
@@ -372,7 +376,8 @@ public class PlayerProfile {
         String savedDeck = storage.get(KEY_ADMIN_DECK);
         Map<String, Integer> loadedDeck = savedDeck != null ? decode(savedDeck) : Map.of();
         adminDeck.clear();
-        adminDeck.putAll(deckProblem(loadedDeck) == null ? loadedDeck : deck);
+        Map<String, Integer> repaired = loadedDeck.isEmpty() ? null : repairedDeck(loadedDeck);
+        adminDeck.putAll(repaired != null ? repaired : deck);
         List<Symbol> savedMachine = decodeSymbols(storage.get(KEY_ADMIN_MACHINE));
         adminMachine.clear();
         adminMachine.addAll(machineProblem(savedMachine) == null ? savedMachine : machine);
@@ -658,20 +663,58 @@ public class PlayerProfile {
     /**
      * @return pourquoi {@code candidate} ne peut pas être le deck du joueur, ou
      *         {@code null} s'il est valide : exactement {@link #DECK_SIZE} cartes,
-     *         toutes possédées, au plus {@link #MAX_COPIES} exemplaires de chacune
+     *         toutes possédées, une seule fois chacune (pas la carte et sa version « + » ensemble)
      */
     public String deckProblem(Map<String, Integer> candidate) {
         int total = 0;
         for (Map.Entry<String, Integer> entry : candidate.entrySet()) {
             int copies = entry.getValue();
             if (copies < 0) return Lang.t("Nombre d'exemplaires négatif");
-            if (copies > MAX_COPIES) return Lang.f("Pas plus de {0} exemplaires d'une carte", MAX_COPIES);
+            if (copies > DECK_MAX_COPIES) return Lang.t("Une seule fois chaque carte dans le deck");
             if (copies > getOwnedCopies(entry.getKey())) return Lang.f("Carte pas assez possédée : {0}",
                 entry.getKey());
+            if (copies > 0 && Card.isUpgradedId(entry.getKey())
+                && candidate.getOrDefault(Card.baseId(entry.getKey()), 0) > 0) {
+                return Lang.t("Une carte et sa version + ne vont pas ensemble dans le deck");
+            }
             total += copies;
         }
         if (total != DECK_SIZE) return Lang.f("Le deck doit faire {0} cartes ({1} ici)", DECK_SIZE, total);
         return null;
+    }
+
+    /**
+     * @return {@code true} si la carte {@code id} ou son autre version (normale ou
+     *         « + ») est déjà dans {@code deck}
+     */
+    public static boolean inDeckAnyVersion(Map<String, Integer> deck, String id) {
+        String base = Card.baseId(id);
+        return deck.getOrDefault(base, 0) > 0 || deck.getOrDefault(Card.upgradedId(base), 0) > 0;
+    }
+
+    /**
+     * Deck enregistré qui n'est plus valide (ex : d'avant la règle « un seul
+     * exemplaire ») : chaque carte possédée qu'il contient y reste une fois, puis il
+     * est complété avec le deck de départ et la collection, dans leur ordre.
+     *
+     * @return {@code loaded} s'il est valide, le deck réparé, ou {@code null} si
+     *         la collection ne suffit pas à le remplir
+     */
+    private Map<String, Integer> repairedDeck(Map<String, Integer> loaded) {
+        if (deckProblem(loaded) == null) return loaded;
+        List<String> candidates = new ArrayList<>();
+        loaded.forEach((id, copies) -> { if (copies > 0) candidates.add(id); });
+        for (String id : starterDeck.keySet()) {
+            candidates.add(id);
+            candidates.add(Card.upgradedId(id)); // la carte fusionnée remplace celle du départ
+        }
+        candidates.addAll(collection.keySet());
+        Map<String, Integer> result = new LinkedHashMap<>();
+        for (String id : candidates) {
+            if (result.size() >= DECK_SIZE) break;
+            if (getOwnedCopies(id) > 0 && !inDeckAnyVersion(result, id)) result.put(id, 1);
+        }
+        return deckProblem(result) == null ? result : null;
     }
 
     /**
@@ -700,7 +743,8 @@ public class PlayerProfile {
         String[] parts = saved == null ? new String[0] : saved.split("\\|", -1);
         for (int i = 0; i < DECK_SLOTS; i++) {
             Map<String, Integer> slot = i < parts.length ? decode(parts[i]) : new LinkedHashMap<>();
-            deckSlots.add(deckProblem(slot) == null ? slot : new LinkedHashMap<>());
+            Map<String, Integer> repaired = slot.isEmpty() ? null : repairedDeck(slot);
+            deckSlots.add(repaired != null ? new LinkedHashMap<>(repaired) : new LinkedHashMap<>());
         }
         deckSlot = Math.max(0, Math.min(DECK_SLOTS - 1, (int) parseCoins(storage.get(KEY_DECK_SLOT))));
         deckSlots.set(deckSlot, new LinkedHashMap<>(deck)); // le deck joué est celui de son emplacement
@@ -834,21 +878,22 @@ public class PlayerProfile {
         Map<String, Integer> result = new LinkedHashMap<>(deck);
         int missing = 0;
         for (Map.Entry<String, Integer> entry : deck.entrySet()) {
-            int allowed = Math.min(MAX_COPIES, Math.max(0, owned.getOrDefault(entry.getKey(), 0)));
+            int allowed = Math.min(DECK_MAX_COPIES, Math.max(0, owned.getOrDefault(entry.getKey(), 0)));
             if (entry.getValue() > allowed) {
                 missing += entry.getValue() - allowed;
                 result.put(entry.getKey(), allowed);
             }
         }
         if (missing > 0) {
-            int room = Math.min(MAX_COPIES, owned.get(plus)) - result.getOrDefault(plus, 0);
+            int room = Math.min(DECK_MAX_COPIES, owned.get(plus)) - result.getOrDefault(plus, 0);
             int added = Math.min(missing, Math.max(0, room));
             if (added > 0) result.merge(plus, added, Integer::sum);
             missing -= added;
         }
         for (Map.Entry<String, Integer> entry : owned.entrySet()) {
             if (missing <= 0) break;
-            int room = Math.min(MAX_COPIES, entry.getValue()) - result.getOrDefault(entry.getKey(), 0);
+            if (result.getOrDefault(entry.getKey(), 0) <= 0 && inDeckAnyVersion(result, entry.getKey())) continue;
+            int room = Math.min(DECK_MAX_COPIES, entry.getValue()) - result.getOrDefault(entry.getKey(), 0);
             int added = Math.min(missing, Math.max(0, room));
             if (added > 0) result.merge(entry.getKey(), added, Integer::sum);
             missing -= added;

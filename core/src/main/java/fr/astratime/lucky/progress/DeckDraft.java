@@ -36,16 +36,19 @@ public class DeckDraft {
     /** @return {@code true} si le deck fait exactement {@link PlayerProfile#DECK_SIZE} cartes. */
     public boolean isComplete() { return size() == PlayerProfile.DECK_SIZE; }
 
-    /** @return les exemplaires de la carte {@code id} qu'on peut mettre dans le deck (possédés, et au plus 3). */
-    public int getMaxCopies(String id) { return Math.min(PlayerProfile.MAX_COPIES, profile.getOwnedCopies(id)); }
+    /** @return les exemplaires de la carte {@code id} qu'on peut mettre dans le deck (possédés, et au plus 1). */
+    public int getMaxCopies(String id) { return Math.min(PlayerProfile.DECK_MAX_COPIES, profile.getOwnedCopies(id)); }
 
     /** @return pourquoi la carte {@code id} ne peut pas être ajoutée, ou {@code null} si elle peut l'être. */
     public String addProblem(String id) {
         if (size() >= PlayerProfile.DECK_SIZE) return Lang.f("Le deck est plein ({0} cartes)",
             PlayerProfile.DECK_SIZE);
-        if (getCopies(id) >= PlayerProfile.MAX_COPIES) return Lang.f("Pas plus de {0} exemplaires",
-            PlayerProfile.MAX_COPIES);
+        if (getCopies(id) >= PlayerProfile.DECK_MAX_COPIES) return Lang.t("Une seule fois chaque carte dans le deck");
         if (getCopies(id) >= profile.getOwnedCopies(id)) return Lang.t("Tu n'en as pas d'autre exemplaire");
+        if (PlayerProfile.inDeckAnyVersion(copies, id)) {
+            return Card.isUpgradedId(id) ? Lang.t("Sa version normale est déjà dans le deck")
+                : Lang.t("Sa version + est déjà dans le deck");
+        }
         return null;
     }
 
