@@ -10,12 +10,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.ArrayList;
+import java.util.stream.Collectors;
 
 /**
  * Combinaisons de poker formées par les cartes à rang jouées pendant le tour :
  * les cartes à suite et les cartes d'archétype numérotées (les autres cartes
  * spéciales, sans rang, sont ignorées). Pour la Couleur, l'archétype d'une
- * carte d'archétype tient lieu de suite (3 cartes Lutin font une Couleur). Elles
+ * carte d'archétype tient lieu de suite (3 cartes Lutin font une Couleur) et
+ * des cartes d'une autre couleur jouées en plus ne l'annulent pas. Elles
  * sont vérifiées automatiquement au lancer de la machine : chaque combinaison
  * formée ({@link #formed}) apporte son multiplicateur, et ceux de toutes
  * les combinaisons formées s'additionnent avant de multiplier les gains et
@@ -43,9 +45,10 @@ public enum Combo {
      */
     BRELAN("BRELAN", 6f, "3 cartes du même rang"),
     /**
-     * Au moins trois cartes, toutes de la même suite (ou toutes du même archétype).
+     * Au moins trois cartes de la même suite (ou du même archétype) parmi les cartes jouées :
+     * les autres cartes jouées ne l'annulent pas.
      */
-    COULEUR("COULEUR", 5f, "3 cartes ou plus de la même suite ou du même archétype"),
+    COULEUR("COULEUR", 5f, "3 cartes de la même suite ou du même archétype parmi les cartes jouées"),
     /**
      * Trois rangs qui se suivent (l'As compte avant le 2 ou après le Roi).
      */
@@ -181,8 +184,9 @@ public enum Combo {
         return switch (this) {
             case PAIRE -> byRank.values().stream().anyMatch(count -> count >= 2);
             case SUITE -> hasStraight(byRank.keySet());
-            case COULEUR -> suited.size() >= MIN_CARDS
-                && suited.stream().map(Card::comboColor).distinct().count() == 1;
+            case COULEUR -> suited.stream()
+                .collect(Collectors.groupingBy(Card::comboColor, Collectors.counting()))
+                .values().stream().anyMatch(count -> count >= MIN_CARDS);
             case BRELAN -> byRank.values().stream().anyMatch(count -> count >= MIN_CARDS);
             case CARRE -> byRank.values().stream().anyMatch(count -> count >= SQUARE_CARDS);
         };

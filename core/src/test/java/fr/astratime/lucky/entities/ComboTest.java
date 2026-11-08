@@ -35,6 +35,25 @@ class ComboTest {
     }
 
     @Test
+    void cardsOfAnotherSuitDoNotCancelTheCouleur() {
+        assertTrue(Combo.COULEUR.matches(List.of(card(2, Card.Suit.COEUR), card(7, Card.Suit.PIQUE),
+            card(9, Card.Suit.COEUR), card(12, Card.Suit.COEUR))));
+        assertTrue(Combo.COULEUR.matches(List.of(archetype(2, Archetype.LUTIN), card(7, Card.Suit.COEUR),
+            archetype(5, Archetype.LUTIN), archetype(9, Archetype.LUTIN))));
+        assertFalse(Combo.COULEUR.matches(List.of(card(2, Card.Suit.COEUR), card(7, Card.Suit.PIQUE),
+            card(9, Card.Suit.COEUR), card(12, Card.Suit.PIQUE))), "2 + 2 ne font pas une Couleur");
+    }
+
+    @Test
+    void allFiveCombosCanBeFormedWithDifferentSuits() {
+        // Carré d'As en 4 suites + 2 et 3 de Coeur : 3 Coeurs (As, 2, 3) font la Couleur.
+        List<Card> all = List.of(card(1, Card.Suit.COEUR), card(1, Card.Suit.PIQUE), card(1, Card.Suit.CARREAU),
+            card(1, Card.Suit.TREFLE), card(2, Card.Suit.COEUR), card(3, Card.Suit.COEUR));
+        assertEquals(List.of(Combo.CARRE, Combo.BRELAN, Combo.COULEUR, Combo.SUITE, Combo.PAIRE), Combo.formed(all));
+        assertEquals(30.5f, Combo.totalFactor(Combo.formed(all)), 0.001f);
+    }
+
+    @Test
     void brelanNeedsThreeCardsOfTheSameRank() {
         List<Card> brelan = List.of(card(1, Card.Suit.COEUR), card(1, Card.Suit.PIQUE), card(1, Card.Suit.TREFLE));
         assertTrue(Combo.BRELAN.matches(brelan));
