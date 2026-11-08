@@ -40,6 +40,7 @@ import fr.astratime.lucky.popups.PopupScale;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
@@ -104,6 +105,9 @@ public class GameController {
 
     /** Cartes jouées ce tour (toutes comptent, consommables compris), limitées par {@link #getPlayLimit()}. */
     private int cardsPlayedThisTurn = 0;
+
+    /** Cartes déjà jouées ce tour (id de base, la carte « + » compte comme la normale) : un seul exemplaire par tour. */
+    private final Set<String> cardIdsPlayedThisTurn = new HashSet<>();
 
     /** Double ou rien : la prochaine carte jouée ce tour compte deux fois. */
     private boolean doubleNext = false;
@@ -246,6 +250,7 @@ public class GameController {
         pendingEffects.clear();
         betsThisTurn.clear();
         cardsPlayedThisTurn = 0;
+        cardIdsPlayedThisTurn.clear();
         pendingChoice = null;
         handLocked    = false;
         doubleNext    = false;
@@ -448,7 +453,8 @@ public class GameController {
         List<Card> hand = new ArrayList<>(gameState.getPlayer().getCurrentHand());
         for (int i = 0; i < songs && !hand.isEmpty(); i++) {
             Card card = hand.remove(random.nextInt(hand.size()));
-            if (unplayableReason(card) == null) chosen.add(card);
+            boolean twin = chosen.stream().anyMatch(c -> Card.baseId(c.getId()).equals(Card.baseId(card.getId())));
+            if (!twin && unplayableReason(card) == null) chosen.add(card);
         }
         songs = 0;
         return chosen;
@@ -546,6 +552,9 @@ public class GameController {
         if (cardsPlayedThisTurn >= getPlayLimit()) {
             return Lang.f("Limite atteinte : {0} cartes jouées ce tour", getPlayLimit());
         }
+        if (alreadyPlayedThisTurn(card)) {
+            return Lang.f("{0} a déjà été jouée ce tour : un seul exemplaire par tour", card.getName());
+        }
         Symbol missing = missingBingoSymbol(card);
         if (missing != null) {
             return Lang.f("Le symbole {0} n'est plus dans ta machine : ce Bingo ne peut pas être joué",
@@ -557,6 +566,11 @@ public class GameController {
         return Lang.f("Le symbole {0} est retiré des rouleaux par le Recyclage (encore {1}) : ce Bingo ne peut pas "
             + "être joué",
             recycled.getDisplayName(), turnsText(turns));
+    }
+
+    /** @return {@code true} si un exemplaire de {@code card} (normale ou « + ») a déjà été joué ce tour. */
+    public boolean alreadyPlayedThisTurn(Card card) {
+        return cardIdsPlayedThisTurn.contains(Card.baseId(card.getId()));
     }
 
     /** @return le symbole imposé par le Bingo de {@code card} s'il est retiré des rouleaux, sinon {@code null}. */
@@ -643,6 +657,7 @@ public class GameController {
         }
 
         cardsPlayedThisTurn++;
+        cardIdsPlayedThisTurn.add(Card.baseId(card.getId()));
         PlayContext playContext = new PlayContext(player, gameState.getEnemy().getKind().getSpinCost());
         for (int i = 0; i < taxes; i++) { // Taxe du Comptable : chaque carte jouée la paie
             double taxed = player.payTax(EnemySymbol.TAX_PERCENT, EnemySymbol.TAX_FLAT);
@@ -937,6 +952,7 @@ public class GameController {
         pendingEffects.clear();
         betsThisTurn.clear();
         cardsPlayedThisTurn = 0;
+        cardIdsPlayedThisTurn.clear();
         pendingChoice = null;
         handLocked    = false;
         doubleNext    = false;

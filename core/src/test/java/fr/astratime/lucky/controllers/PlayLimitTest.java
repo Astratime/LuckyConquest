@@ -60,4 +60,29 @@ class PlayLimitTest {
         assertEquals(GameController.DEFAULT_PLAY_LIMIT, controller.getPlayLimit(), "l'effet est terminé");
         assertEquals(0, controller.getGameState().getPlayer().getLastingEffects().getExtraPlaysTurns());
     }
+
+    @Test
+    void aSecondCopyOfTheSameCardIsRefusedUntilTheNextTurn() {
+        List<Card> deck = new ArrayList<>();
+        for (int i = 0; i < 3; i++) deck.add(filler(1));
+        deck.add(new Card("carte1+", "carte1+", "x.png", List.of(new ExtraDrawEffect(0)), null, 1));
+        deck.add(filler(2));
+        GameController controller = controllerWith(deck);
+        controller.drawCards();
+        List<Card> hand = new ArrayList<>(controller.getGameState().getPlayer().getCurrentHand());
+        Card first = hand.stream().filter(c -> c.getId().equals("carte1")).findFirst().orElseThrow();
+        Card twin = hand.stream().filter(c -> c != first && c.getId().startsWith("carte1")).findFirst().orElseThrow();
+        Card other = hand.stream().filter(c -> c.getId().equals("carte2")).findFirst().orElseThrow();
+
+        assertNull(controller.unplayableReason(first));
+        controller.playCard(first);
+        assertNotNull(controller.unplayableReason(twin), "deuxième exemplaire (ou sa version +) refusé");
+        controller.playCard(twin);
+        assertTrue(controller.getGameState().getPlayer().getCurrentHand().contains(twin), "la carte reste en main");
+        assertEquals(1, controller.getCardsPlayedThisTurn());
+        assertNull(controller.unplayableReason(other), "une autre carte reste jouable");
+
+        controller.spin();
+        assertNull(controller.unplayableReason(twin), "rejouable au tour suivant");
+    }
 }

@@ -165,7 +165,7 @@ class StallNovemberTest {
     @Test
     void afterTheDealersHandEachCardPlayedDrawsACard() {
         List<Card> deck = new ArrayList<>();
-        for (int i = 0; i < 20; i++) deck.add(card("hand", new DealerHandEffect()));
+        for (int i = 0; i < 20; i++) deck.add(card("hand" + i, new DealerHandEffect())); // ids distincts : un seul exemplaire par tour
         GameController controller = controllerWith(deck);
         controller.drawCards();
         Player player = player(controller);
