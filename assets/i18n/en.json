@@ -2376,5 +2376,12 @@
   "Recommencer à l'étage 1": "Restart at floor 1",
   "NOUVEAU RECORD : ÉTAGE {0} !": "NEW RECORD: FLOOR {0}!",
   "RECORD : ÉTAGE {0}": "RECORD: FLOOR {0}",
-  "ÉTAGE {0}": "FLOOR {0}"
+  "ÉTAGE {0}": "FLOOR {0}",
+  "Deck d'abord": "Deck first",
+  "Famille": "Suit",
+  "Valeur": "Value",
+  "Obtention": "Obtained",
+  "Machine d'abord": "Machine first",
+  "Rareté": "Rarity",
+  "Tri : {0}": "Sort: {0}"
 }
