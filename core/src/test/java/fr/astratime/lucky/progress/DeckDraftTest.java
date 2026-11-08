@@ -4,7 +4,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-/** Le deck en cours de construction : 20 cartes exactement, au plus 3 exemplaires, seulement des cartes possédées. */
+/** Le deck en cours de construction : 20 cartes exactement, chacune une seule fois, seulement des cartes possédées. */
 class DeckDraftTest {
 
     private static PlayerProfile profile() {
@@ -35,24 +35,21 @@ class DeckDraftTest {
 
         assertFalse(draft.add("carte_3"), "une seule carte_3 possédée");
         assertTrue(draft.add("double"));
-        assertTrue(draft.add("double"));
-        assertFalse(draft.add("double"), "deux exemplaires possédés");
+        assertFalse(draft.add("double"), "deux exemplaires possédés, mais un seul dans le deck");
         assertFalse(draft.add("inconnue"));
-        assertEquals(2, draft.getMaxCopies("double"));
+        assertEquals(1, draft.getMaxCopies("double"));
     }
 
     @Test
-    void atMostThreeCopiesOfACardEvenWhenMoreAreOwned() {
+    void onlyOneCopyOfACardEvenWhenMoreAreOwned() {
         PlayerProfile profile = profile();
         for (int i = 0; i < 5; i++) profile.openChest("rare", fr.astratime.lucky.entities.exploration.Place.PRAIRIE);
         DeckDraft draft = new DeckDraft(profile);
         for (int i = 0; i < 4; i++) draft.remove("carte_" + i);
 
         assertTrue(draft.add("rare"));
-        assertTrue(draft.add("rare"));
-        assertTrue(draft.add("rare"));
         assertFalse(draft.add("rare"));
-        assertEquals(PlayerProfile.MAX_COPIES, draft.getMaxCopies("rare"));
+        assertEquals(PlayerProfile.DECK_MAX_COPIES, draft.getMaxCopies("rare"));
     }
 
     @Test

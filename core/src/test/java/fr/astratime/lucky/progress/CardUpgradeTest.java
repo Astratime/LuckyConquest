@@ -20,11 +20,11 @@ class CardUpgradeTest {
         return collection;
     }
 
-    /** Deck : les 3 "triple" et 17 "carte_i". */
+    /** Deck : "triple" et 19 "carte_i". */
     private static Map<String, Integer> deck() {
         Map<String, Integer> deck = new LinkedHashMap<>();
-        deck.put("triple", 3);
-        for (int i = 0; i < 17; i++) deck.put("carte_" + i, 1);
+        deck.put("triple", 1);
+        for (int i = 0; i < 19; i++) deck.put("carte_" + i, 1);
         return deck;
     }
 
@@ -144,7 +144,22 @@ class CardUpgradeTest {
 
         assertEquals(0, draft.getCopies("triple"));
         assertEquals(1, draft.getCopies("triple+"));
-        assertEquals(PlayerProfile.DECK_SIZE - 2, draft.size(), "le joueur complète son deck");
+        assertEquals(PlayerProfile.DECK_SIZE, draft.size(), "la carte + prend la place de l'exemplaire du deck");
+    }
+
+    @Test
+    void aCardAndItsPlusVersionCannotBothBeInTheDeck() {
+        PlayerProfile profile = profile(new PlayerProfileTest.MemoryStorage());
+        profile.setCatalog(List.of("triple"));
+        profile.setAdmin(true); // toutes les cartes, normales et +
+        DeckDraft draft = new DeckDraft(profile);
+        draft.remove("carte_0");
+
+        assertNotNull(draft.addProblem("triple+"), "triple est déjà dans le deck");
+        assertFalse(draft.add("triple+"));
+        Map<String, Integer> both = new LinkedHashMap<>(draft.getCopies());
+        both.put("triple+", 1);
+        assertNotNull(profile.deckProblem(both));
     }
 
     @Test

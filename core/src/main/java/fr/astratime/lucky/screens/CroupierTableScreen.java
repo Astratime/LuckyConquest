@@ -61,8 +61,8 @@ import java.util.function.Supplier;
  * </ul>
  *
  * À gauche, sa collection : chaque carte, avec le nombre d'exemplaires déjà
- * dans le deck sur le nombre qu'il peut y mettre (ceux qu'il possède, au plus
- * {@link PlayerProfile#MAX_COPIES}). Clic gauche : un exemplaire de plus ; clic
+ * dans le deck sur le nombre qu'il peut y mettre ({@link PlayerProfile#DECK_MAX_COPIES} s'il la possède,
+ * et pas avec sa version « + »). Clic gauche : un exemplaire de plus ; clic
  * droit : un de moins. À droite, le deck : le compteur de cartes et la liste,
  * où un clic retire un exemplaire. « Enregistrer » n'est possible qu'avec
  * exactement {@link PlayerProfile#DECK_SIZE} cartes ; « Retour » abandonne les changements.
@@ -285,9 +285,9 @@ public class CroupierTableScreen extends CasinoMenuScreen {
             .onStart(() -> showTab(Tab.DECK)));
         steps.add(GuideOverlay.Step.say(Lang.t("À gauche, ta collection : toutes les cartes que tu possèdes."),
             () -> GuideOverlay.boundsOf(collectionPanel)));
-        steps.add(GuideOverlay.Step.say(Lang.f("À droite, ton deck. Il fait {0} cartes, {1} exemplaires au plus de chacune. Tu le joues dans "
+        steps.add(GuideOverlay.Step.say(Lang.f("À droite, ton deck. Il fait {0} cartes, chacune une seule fois. Tu le joues dans "
             + "tous les modes.",
-            PlayerProfile.DECK_SIZE, PlayerProfile.MAX_COPIES),
+            PlayerProfile.DECK_SIZE),
             () -> GuideOverlay.boundsOf(deckPanel)));
         steps.add(GuideOverlay.Step.action(Lang.t("Retire une carte : clique sur une ligne de ton deck."),
                 () -> GuideOverlay.boundsOf(deckPanel), () -> draft.size() < before[0])
@@ -669,9 +669,11 @@ public class CroupierTableScreen extends CasinoMenuScreen {
         }
         int index = 0;
         for (String id : cards.keySet()) {
-            // Les cartes dont tous les exemplaires sont dans le deck s'assombrissent.
+            // Les cartes déjà dans le deck (ou dont l'autre version, normale ou « + », y est) s'assombrissent.
             Group holder = (Group) cells.get(index++).getChildren().first();
-            holder.setColor(draft.getCopies(id) >= draft.getMaxCopies(id) ? USED_UP : Color.WHITE);
+            boolean usedUp = draft.getCopies(id) >= draft.getMaxCopies(id)
+                || PlayerProfile.inDeckAnyVersion(draft.getCopies(), id);
+            holder.setColor(usedUp ? USED_UP : Color.WHITE);
         }
 
         refreshMachine();
