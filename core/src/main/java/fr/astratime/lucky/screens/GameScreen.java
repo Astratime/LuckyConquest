@@ -90,7 +90,10 @@ import fr.astratime.lucky.entities.choices.CalibrationChoice;
 import fr.astratime.lucky.entities.choices.CardChoice;
 import fr.astratime.lucky.entities.choices.RouletteChoice;
 import fr.astratime.lucky.entities.SlotMachine;
+import fr.astratime.lucky.entities.enemy.Difficulty;
 import fr.astratime.lucky.entities.enemy.EnemyKind;
+import fr.astratime.lucky.entities.tower.EndlessRun;
+import fr.astratime.lucky.entities.tower.Chapter;
 import fr.astratime.lucky.entities.tower.TowerRun;
 import fr.astratime.lucky.entities.tutorial.TutorialRun;
 import fr.astratime.lucky.entities.RankBonus;
@@ -692,10 +695,13 @@ public class GameScreen extends ScreenAdapter {
         } else if (run instanceof TowerRun tower) {
             gameController.setPot(tower.getPot());
             gameController.setBonusGameChance(BonusGame.TOWER_TRIGGER_CHANCE);
+        } else if (run instanceof EndlessRun endless) { // comme dans la Tour
+            gameController.setPot(endless.getPot());
+            gameController.setBonusGameChance(BonusGame.TOWER_TRIGGER_CHANCE);
         } else if (run == null) {
             gameController.setPot(profile.getPot(PlayerProfile.POT_TRAINING));
         }
-        gameController.setHardMode(run != null && run.isHard()); // Tour : mode difficile
+        applyDifficulty(); // Tour : mode difficile ; mode sans fin : force de l'étage
         gameController.restart(firstEnemy()); // le premier ennemi du chapitre, ou le croupier d'entraînement
         if (run instanceof TutorialRun) {
             TutorialRun.arrange(player().getDeck().getCards());
@@ -1562,7 +1568,7 @@ public class GameScreen extends ScreenAdapter {
     /** @return la dette qui suit le compteur affiché : elle change quand les gains du tirage apparaissent. */
     private SpinEconomy.Debt shownDebt() {
         return SpinEconomy.debt(player().getGains() - gainsNotYetShown,
-            gameController.getGameState().getEnemy().getKind().getSpinCost());
+            gameController.getGameState().getEnemy().getSpinCost());
     }
 
     /** Le texte d'un gain (ou d'une perte) du tirage vient d'apparaître : le compteur du panneau le suit. */
@@ -1618,6 +1624,7 @@ public class GameScreen extends ScreenAdapter {
         if (cutscene != null) cutscene.cancel();
         music.setDucked(false);
         if (run != null) run.restart();
+        applyDifficulty();
         gameController.restart(firstEnemy());
         if (tutorial != null) {
             TutorialRun.arrange(player().getDeck().getCards());
@@ -1632,6 +1639,7 @@ public class GameScreen extends ScreenAdapter {
      * le joueur garde ses PV, ses gains et ses cartes, l'affichage repart de zéro.
      */
     private void startNextCombat(EnemyKind kind) {
+        applyDifficulty(); // mode sans fin : l'étage suivant est plus fort
         gameController.startCombat(kind);
         resetBoard();
     }
@@ -1707,6 +1715,8 @@ public class GameScreen extends ScreenAdapter {
                 luckyGame.setScreen(new ExplorationScreen(luckyGame, dungeonRun.getDungeon()));
             } else if (run instanceof TowerRun tower) {
                 luckyGame.setScreen(new TowerScreen(luckyGame, tower.getChapter(), tower.isHard()));
+            } else if (run instanceof EndlessRun) {
+                luckyGame.setScreen(TowerScreen.onEndless(luckyGame));
             } else {
                 luckyGame.setScreen(new TowerScreen(luckyGame));
             }
@@ -1721,7 +1731,7 @@ public class GameScreen extends ScreenAdapter {
      */
     private String modeMenuLabel() {
         if (run instanceof DungeonRun) return Lang.t("Exploration");
-        if (run instanceof TowerRun)   return Lang.t("Tour des épreuves");
+        if (run instanceof TowerRun || run instanceof EndlessRun) return Lang.t("Tour des épreuves");
         return null;
     }
 
@@ -1847,6 +1857,17 @@ public class GameScreen extends ScreenAdapter {
         } else if (run instanceof TutorialRun) {
             if (!victory) shown.add(restartButton);
             shown.add(menuButton);
+        } else if (run instanceof EndlessRun endless) {
+            // Mode sans fin : chaque étage gagné peut battre le record ; une défaite fait remonter depuis l'étage 1.
+            int floor = endless.getFloor();
+            boolean record = victory && luckyGame.getProfile().recordEndlessFloor(floor);
+            shown.add(victory ? buttons.createAction(Lang.t("Étage suivant"), sounds.buttonClick, this::onContinue)
+                : buttons.createAction(Lang.t("Recommencer à l'étage 1"), sounds.buttonClick, this::onRestart));
+            shown.add(buttons.create(backText(), sounds.buttonClick, this::onBackToChapters));
+            String text = record ? Lang.f("NOUVEAU RECORD : ÉTAGE {0} !", floor)
+                : Lang.f("RECORD : ÉTAGE {0}", Math.max(luckyGame.getProfile().getEndlessBest(), victory ? floor : 0));
+            Label recordLabel = new Label(text, new Label.LabelStyle(shopFont, Palette.GOLD));
+            endButtons.add(recordLabel).colspan(shown.size()).padBottom(14f).row();
         } else if (!victory) {
             shown.add(buttons.createAction(isDungeon() ? Lang.t("Réessayer le donjon") : Lang.t("Réessayer le chapitre"),
                 sounds.buttonClick, this::onRestart));
@@ -1916,6 +1937,12 @@ public class GameScreen extends ScreenAdapter {
             placeStageLabel();
             return;
         }
+        if (run instanceof EndlessRun endless) {
+            String floor = Lang.f("ÉTAGE {0}", endless.getFloor());
+            stageLabel.setText(run.getLabel().toUpperCase() + " · " + (run.isBossStage() ? floor + " · " + Lang.t("BOSS") : floor));
+            placeStageLabel();
+            return;
+        }
         String step = run.isBossStage() ? (isDungeon() ? Lang.t("ROI") : Lang.t("BOSS"))
             : Lang.f("COMBAT {0}/{1}", (run.getStage() + 1), run.getStageCount());
         stageLabel.setText(run.getLabel().toUpperCase() + " · " + step);
@@ -1940,6 +1967,11 @@ public class GameScreen extends ScreenAdapter {
             gameController.getGameState().getPlayer().getGains(),
             Place.of(((DungeonRun) run).getDungeon()),
             PlayerProfile.dungeonProgress(run.isBossStage(), gameController.getGameState().getEnemy().getHpRatio()));
+    }
+
+    /** Règle la difficulté du combat qui vient : celle de la Tour ou de l'étage du mode sans fin (normale sans épreuve). */
+    private void applyDifficulty() {
+        gameController.setDifficulty(run != null ? run.getDifficulty() : Difficulty.NORMAL);
     }
 
     /** @return l'ennemi du combat en cours de la Tour ou du donjon, ou le croupier d'entraînement. */
@@ -2361,6 +2393,7 @@ public class GameScreen extends ScreenAdapter {
     private FrontScene.Decor frontDecor() {
         if (run instanceof DungeonRun dungeonRun) return FrontScene.Decor.of(dungeonRun.getDungeon());
         if (run instanceof TowerRun towerRun)     return FrontScene.Decor.of(towerRun.getChapter());
+        if (run instanceof EndlessRun)            return FrontScene.Decor.of(Chapter.LE_JACKPOT); // le sommet de la Tour
         return run == null ? FrontScene.Decor.ENTRAINEMENT : FrontScene.Decor.CASINO;
     }
 

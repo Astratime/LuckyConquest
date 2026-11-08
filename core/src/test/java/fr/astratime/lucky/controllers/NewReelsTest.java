@@ -1,5 +1,6 @@
 package fr.astratime.lucky.controllers;
 
+import fr.astratime.lucky.entities.enemy.Difficulty;
 import fr.astratime.lucky.entities.Card;
 import fr.astratime.lucky.entities.Enemy;
 import fr.astratime.lucky.entities.Player;
@@ -246,9 +247,9 @@ class NewReelsTest {
     void theIngotGrowsWithItsDefenseUpToThreeTimes() {
         Enemy golem = new Enemy(EnemyKind.GOLEM_OR, List.of());
         assertEquals(100, EnemyTurnResolver.ingotPercent(golem));
-        golem.addShieldDefense(golem.getKind().getBaseDefense(false));
+        golem.addShieldDefense(golem.getKind().getBaseDefense(Difficulty.NORMAL));
         assertEquals(200, EnemyTurnResolver.ingotPercent(golem));
-        golem.addShieldDefense(golem.getKind().getBaseDefense(false) * 10);
+        golem.addShieldDefense(golem.getKind().getBaseDefense(Difficulty.NORMAL) * 10);
         assertEquals(300, EnemyTurnResolver.ingotPercent(golem));
     }
 

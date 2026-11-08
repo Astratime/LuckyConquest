@@ -1,5 +1,6 @@
 package fr.astratime.lucky.controllers;
 
+import fr.astratime.lucky.entities.enemy.Difficulty;
 import fr.astratime.lucky.entities.Card;
 import fr.astratime.lucky.entities.Enemy;
 import fr.astratime.lucky.entities.Player;
@@ -29,16 +30,16 @@ class EnemyPowerTest {
 
     @Test
     void enemiesGrowStrongerWithEachChapter() {
-        assertEquals(100, EnemyKind.CROUPIER.getPower(false));
-        assertEquals(100, EnemyKind.COMETE.getPower(false));
-        assertEquals(EnemyKind.CHAPTER_2_POWER, EnemyKind.REINE.getPower(false));
-        assertEquals(EnemyKind.CHAPTER_3_POWER, EnemyKind.ECLAT.getPower(false));
-        assertEquals(30, EnemyKind.CROUPIER.getBaseDefense(false), "le croupier ne change pas");
-        assertEquals(120 * EnemyKind.CHAPTER_3_POWER / 100, EnemyKind.ECLAT.getBaseDefense(false));
-        assertEquals(EnemySymbol.THORNS_PERCENT * EnemyKind.CHAPTER_3_POWER / 100, EnemyKind.GARDIENNE.thornsPercent(false));
+        assertEquals(100, EnemyKind.CROUPIER.getPower(Difficulty.NORMAL));
+        assertEquals(100, EnemyKind.COMETE.getPower(Difficulty.NORMAL));
+        assertEquals(EnemyKind.CHAPTER_2_POWER, EnemyKind.REINE.getPower(Difficulty.NORMAL));
+        assertEquals(EnemyKind.CHAPTER_3_POWER, EnemyKind.ECLAT.getPower(Difficulty.NORMAL));
+        assertEquals(30, EnemyKind.CROUPIER.getBaseDefense(Difficulty.NORMAL), "le croupier ne change pas");
+        assertEquals(120 * EnemyKind.CHAPTER_3_POWER / 100, EnemyKind.ECLAT.getBaseDefense(Difficulty.NORMAL));
+        assertEquals(EnemySymbol.THORNS_PERCENT * EnemyKind.CHAPTER_3_POWER / 100, EnemyKind.GARDIENNE.thornsPercent(Difficulty.NORMAL));
         assertTrue(EnemyKind.CHAPTER_2_POWER > 100 && EnemyKind.CHAPTER_3_POWER > EnemyKind.CHAPTER_2_POWER);
-        assertEquals("x1", EnemyKind.CROUPIER.powerText(false));
-        assertTrue(EnemyKind.ECLAT.diePercent(false) <= 100);
+        assertEquals("x1", EnemyKind.CROUPIER.powerText(Difficulty.NORMAL));
+        assertTrue(EnemyKind.ECLAT.diePercent(Difficulty.NORMAL) <= 100);
     }
 
     @Test
@@ -50,7 +51,7 @@ class EnemyPowerTest {
             for (var event : turn.events()) {
                 if (event instanceof PlayerDamagedEvent hit) {
                     int attack = hit.damage + hit.blocked;
-                    assertTrue(attack >= EnemyKind.TRICHEUR.empowered(EnemySymbol.SWORD_DAMAGE, false), "coup renforcé par sa force");
+                    assertTrue(attack >= EnemyKind.TRICHEUR.empowered(EnemySymbol.SWORD_DAMAGE, Difficulty.NORMAL), "coup renforcé par sa force");
                 }
             }
         }
@@ -200,19 +201,19 @@ class EnemyPowerTest {
 
     @Test
     void theTrainingCroupierIsGentle() {
-        assertEquals(1_000, EnemyKind.ENTRAINEMENT.getMaxHp(false));
-        assertEquals(10, EnemyKind.ENTRAINEMENT.empowered(EnemyKind.ENTRAINEMENT.swordDamage(), false));
+        assertEquals(1_000, EnemyKind.ENTRAINEMENT.getMaxHp(Difficulty.NORMAL));
+        assertEquals(10, EnemyKind.ENTRAINEMENT.empowered(EnemyKind.ENTRAINEMENT.swordDamage(), Difficulty.NORMAL));
         assertEquals(EnemySymbol.SWORD_DAMAGE, EnemyKind.CROUPIER.swordDamage(), "le croupier de la Tour ne change pas");
-        assertEquals(25_000, EnemyKind.CROUPIER.getMaxHp(false), "PV de la Tour x5");
+        assertEquals(25_000, EnemyKind.CROUPIER.getMaxHp(Difficulty.NORMAL), "PV de la Tour x5");
     }
 
     @Test
     void towerSwordsHitHarderFromChapterThree() {
         int sword = EnemySymbol.SWORD_DAMAGE;
-        assertEquals(sword * 2, EnemyKind.CHEF.hurt(sword, false), "chapitre 2 inchangé");
-        assertEquals(100, EnemyKind.HORLOGER.hurt(sword, false), "chapitre 3 : Épée à 100 (choix d'Astra)");
-        assertEquals(134, EnemyKind.PILLEUR.hurt(sword, false));
-        assertEquals(167, EnemyKind.PORTIER.hurt(sword, false));
-        assertEquals(200, EnemyKind.MACHINE_ORIGINELLE.hurt(sword, false));
+        assertEquals(sword * 2, EnemyKind.CHEF.hurt(sword, Difficulty.NORMAL), "chapitre 2 inchangé");
+        assertEquals(100, EnemyKind.HORLOGER.hurt(sword, Difficulty.NORMAL), "chapitre 3 : Épée à 100 (choix d'Astra)");
+        assertEquals(134, EnemyKind.PILLEUR.hurt(sword, Difficulty.NORMAL));
+        assertEquals(167, EnemyKind.PORTIER.hurt(sword, Difficulty.NORMAL));
+        assertEquals(200, EnemyKind.MACHINE_ORIGINELLE.hurt(sword, Difficulty.NORMAL));
     }
 }

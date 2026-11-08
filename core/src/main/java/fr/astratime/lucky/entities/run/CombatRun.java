@@ -1,5 +1,6 @@
 package fr.astratime.lucky.entities.run;
 
+import fr.astratime.lucky.entities.enemy.Difficulty;
 import fr.astratime.lucky.entities.enemy.EnemyKind;
 import fr.astratime.lucky.entities.exploration.PlaceRule;
 
@@ -57,6 +58,9 @@ public interface CombatRun {
 
     /** @return {@code true} si ses ennemis sont en mode difficile (seulement dans la Tour). */
     default boolean isHard() { return false; }
+
+    /** @return la difficulté de l'ennemi du combat en cours (mode normal, difficile, étage du mode sans fin). */
+    default Difficulty getDifficulty() { return Difficulty.of(isHard()); }
 
     /** @return la phrase de fin, affichée après le dernier combat gagné, ou {@code null}. */
     default String getEnding() { return null; }

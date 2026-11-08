@@ -79,6 +79,8 @@ public class PlayerProfile {
     static final String KEY_TOWER_HARD = "towerHard";
     static final String KEY_CHAPTERS      = "chapters";
     static final String KEY_HARD_CHAPTERS = "hardChapters";
+    /** Record du mode sans fin : le plus haut étage gagné. */
+    static final String KEY_ENDLESS_BEST  = "endlessBest";
     // Clés du mode ADMIN rangées sous forme codée (fr.astratime.lucky.security.Hidden).
     static final String KEY_ADMIN_DECK    = fr.astratime.lucky.security.Hidden.reveal(
         new int[]{0x5a, 0x24, 0x28, 0x23, 0x21, 0x10, 0x3c, 0x3d, 0x08});
@@ -134,6 +136,8 @@ public class PlayerProfile {
     /** Chapitres de la Tour terminés (leur boss battu), en mode normal puis en mode difficile, par nom. */
     private final Set<String> clearedChapters     = new LinkedHashSet<>();
     private final Set<String> clearedHardChapters = new LinkedHashSet<>();
+    /** Record du mode sans fin : le plus haut étage gagné (0 : aucun). */
+    private int               endlessBest;
     /** Mode ADMIN : tout le contenu du jeu est ouvert, sans toucher à la progression enregistrée. */
     private boolean admin;
     /** Toutes les cartes à collectionner, par id (voir {@link #setCatalog(Collection)}). */
@@ -200,6 +204,7 @@ public class PlayerProfile {
             for (Chapter chapter : Chapter.values()) clearedChapters.add(chapter.name());
         }
         readNames(storage.get(KEY_HARD_CHAPTERS), clearedHardChapters);
+        endlessBest = (int) Math.min(Integer.MAX_VALUE, parseCoins(storage.get(KEY_ENDLESS_BEST)));
         readNames(storage.get(KEY_GUIDES), seenGuides);
         readNames(storage.get(KEY_BINGOS), seenBingos);
         stats = PlayerStats.decode(storage.get(KEY_STATS));
@@ -1133,6 +1138,29 @@ public class PlayerProfile {
     // Enregistrement
     // -------------------------------------------------------------------------
 
+    // -------------------------------------------------------------------------
+    // Mode sans fin
+    // -------------------------------------------------------------------------
+
+    /** @return {@code true} si le mode sans fin est ouvert : le chapitre 6 terminé en mode difficile (ou ADMIN). */
+    public boolean isEndlessOpen() { return admin || isCleared(Chapter.LE_JACKPOT, true); }
+
+    /** @return le record du mode sans fin : le plus haut étage gagné (0 : aucun). */
+    public int getEndlessBest() { return endlessBest; }
+
+    /**
+     * L'étage {@code floor} du mode sans fin est gagné : il devient le record s'il le dépasse
+     * (jamais en mode ADMIN, dont les combats ne rapportent rien).
+     *
+     * @return {@code true} si c'est un nouveau record
+     */
+    public boolean recordEndlessFloor(int floor) {
+        if (admin || floor <= endlessBest) return false;
+        endlessBest = floor;
+        save();
+        return true;
+    }
+
     /**
      * Enregistre la collection, le deck, les pièces, le rang, les rouleaux, les donjons vidés,
      * les chapitres terminés, le mode difficile, les statistiques, les succès, les cagnottes et le bestiaire.
@@ -1153,6 +1181,7 @@ public class PlayerProfile {
         storage.put(KEY_PLACES, String.join(",", openedPlaces));
         storage.put(KEY_CHAPTERS, String.join(",", clearedChapters));
         storage.put(KEY_HARD_CHAPTERS, String.join(",", clearedHardChapters));
+        storage.put(KEY_ENDLESS_BEST, String.valueOf(endlessBest));
         storage.put(KEY_ADMIN_DECK, encode(adminDeck));
         storage.put(KEY_ADMIN_MACHINE, encodeSymbols(adminMachine));
         storage.put(KEY_STATS, stats.encode());

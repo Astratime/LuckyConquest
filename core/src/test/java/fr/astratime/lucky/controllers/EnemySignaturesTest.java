@@ -1,5 +1,6 @@
 package fr.astratime.lucky.controllers;
 
+import fr.astratime.lucky.entities.enemy.Difficulty;
 import fr.astratime.lucky.entities.Card;
 import fr.astratime.lucky.entities.Enemy;
 import fr.astratime.lucky.entities.Player;
@@ -145,7 +146,7 @@ class EnemySignaturesTest {
     void brambleThornsReturnMoreDamage() {
         EnemyTurnResult turn = turnWith(EnemySymbol.THORNS, () -> only(EnemyKind.GARDIEN, EnemySignature.RONCES, 3), EnemySignaturesTest::player);
         EnemyThornsEvent thorns = events(turn, EnemyThornsEvent.class).get(0);
-        assertEquals(EnemyKind.GARDIEN.thornsPercent(false) + EnemySignature.RONCES_PERCENT, thorns.percent, "une Ronce par tour");
+        assertEquals(EnemyKind.GARDIEN.thornsPercent(Difficulty.NORMAL) + EnemySignature.RONCES_PERCENT, thorns.percent, "une Ronce par tour");
     }
 
     @Test
@@ -164,7 +165,7 @@ class EnemySignaturesTest {
         // Fortune de la Banqueroute : 40 % de ses PV restants. Gains à 35 % : sans Saisie, elle perd des PV.
         Supplier<Player> rich = () -> {
             Player player = player();
-            player.addGains(EnemyKind.BANQUEROUTE.getMaxHp(false) * 0.35);
+            player.addGains(EnemyKind.BANQUEROUTE.getMaxHp(Difficulty.NORMAL) * 0.35);
             return player;
         };
         EnemyTurnResult plain = turnWith(EnemySymbol.BANKRUPTCY,

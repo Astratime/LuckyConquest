@@ -5,6 +5,7 @@ import fr.astratime.lucky.entities.enemy.EnemyKind;
 import fr.astratime.lucky.entities.exploration.DungeonRun;
 import fr.astratime.lucky.entities.exploration.Place;
 import fr.astratime.lucky.entities.run.CombatRun;
+import fr.astratime.lucky.entities.tower.EndlessRun;
 import fr.astratime.lucky.entities.tower.TowerRun;
 
 import java.util.Map;
@@ -58,7 +59,7 @@ public final class CombatMusic {
 
     /** @return la musique du combat en cours de {@code run} ({@code null} : Entraînement). */
     public static String of(CombatRun run) {
-        if (run instanceof TowerRun tower) return tower.isBossStage() ? BOSS : TOWER;
+        if (run instanceof TowerRun || run instanceof EndlessRun) return run.isBossStage() ? BOSS : TOWER;
         if (run instanceof DungeonRun dungeon) {
             return switch (Place.of(dungeon.getDungeon())) {
                 case PRAIRIE -> DEFAULT;
@@ -80,7 +81,7 @@ public final class CombatMusic {
     public static String of(CombatRun run, Enemy enemy) {
         EnemyKind kind = enemy == null ? null : enemy.getKind();
         String own = null;
-        if (run instanceof TowerRun) {
+        if (run instanceof TowerRun || run instanceof EndlessRun) {
             boolean phaseTwo = enemy.getPhase() >= 2;
             own = phaseTwo && kind == EnemyKind.MACHINE_ORIGINELLE ? MACHINE_PHASE_2
                 : phaseTwo && kind == EnemyKind.COMETE ? COMETE_PHASE_2 : TOWER_ENEMIES.get(kind);

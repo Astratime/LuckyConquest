@@ -511,7 +511,7 @@ public class EnemyTurnResolver {
                 case FANG   -> bite(turn, events,
                     healFactor * (100 + EnemySignature.SAIGNEE_PERCENT * boosts.getOrDefault(EnemySignature.SAIGNEE, 0)) / 100);
                 case THORNS -> {
-                    int thorns = kind.thornsPercent(enemy.isHard()) + EnemySignature.RONCES_PERCENT * boosts.getOrDefault(EnemySignature.RONCES, 0);
+                    int thorns = kind.thornsPercent(enemy.getDifficulty()) + EnemySignature.RONCES_PERCENT * boosts.getOrDefault(EnemySignature.RONCES, 0);
                     enemy.addThorns(thorns);
                     events.add(new EnemyThornsEvent(thorns, enemy.getThornsPercent()));
                 }
@@ -520,17 +520,17 @@ public class EnemyTurnResolver {
                 }
                 case SHIELD -> events.add(turn.shield(kind.shieldDefense() + shieldBonus));
                 case POTION -> {
-                    events.add(heal(enemy, kind.potionPercent(healBonus, enemy.isHard())));
+                    events.add(heal(enemy, kind.potionPercent(healBonus, enemy.getDifficulty())));
                     if (kind.potionShields()) events.add(turn.shield(kind.shieldDefense() + shieldBonus));
                 }
                 case LOADED_DIE -> {
-                    int percent = Math.min(100, kind.diePercent(enemy.isHard())
+                    int percent = Math.min(100, kind.diePercent(enemy.getDifficulty())
                         + EnemySignature.DE_CHARGE_PERCENT * boosts.getOrDefault(EnemySignature.DE_CHARGE, 0));
                     int drained = player.getLastingEffects().drainGauges(percent);
                     events.add(new GaugesDrainedEvent(percent, drained));
                 }
                 case INTEREST -> {
-                    double stolen = BigNumber.percent(player.getGains(), Math.min(100, kind.interestPercent(enemy.isHard())
+                    double stolen = BigNumber.percent(player.getGains(), Math.min(100, kind.interestPercent(enemy.getDifficulty())
                         + EnemySignature.TAUX_PERCENT * boosts.getOrDefault(EnemySignature.TAUX_USURAIRE, 0)));
                     if (stolen > 0) {
                         player.addGains(-stolen);
@@ -664,13 +664,13 @@ public class EnemyTurnResolver {
                 case ANVIL  -> {
                     boolean twice = enemy.takeCharge(EnemySignature.TREMPE);
                     enemy.addAnvil(EnemySymbol.ANVIL_ATTACK * (twice ? 2 : 1));
-                    events.add(new StatusEvent(Lang.f("ENCLUME : ATTAQUE +{0}", kind.hurt(enemy.getAnvil(), enemy.isHard())),
+                    events.add(new StatusEvent(Lang.f("ENCLUME : ATTAQUE +{0}", kind.hurt(enemy.getAnvil(), enemy.getDifficulty())),
                         EffectPopup.Style.ATTACK));
                 }
                 case SONG -> curse(events, EnemySignature.REFRAIN, times(curses::addSong),
                     Lang.t("CHANT : UNE CARTE JOUÉE D'OFFICE"), Lang.t("CHANT : DEUX CARTES JOUÉES D'OFFICE"));
                 case BANK_BITE -> {
-                    double stolen = BigNumber.percent(player.getGains(), Math.min(100, kind.bankBitePercent(enemy.isHard())
+                    double stolen = BigNumber.percent(player.getGains(), Math.min(100, kind.bankBitePercent(enemy.getDifficulty())
                         + EnemySignature.FRENESIE_PERCENT * boosts.getOrDefault(EnemySignature.FRENESIE, 0)));
                     if (steal(stolen, events)) {
                         long heal = Math.min((long) BigNumber.toInt(stolen) * healFactor / 100,
@@ -866,7 +866,7 @@ public class EnemyTurnResolver {
                 }
                 case 2 -> {
                     events.add(new StatusEvent(Lang.t("GRAND TOUR : UNE POTION"), EffectPopup.Style.DEFENSE));
-                    events.add(heal(enemy, kind.potionPercent(healBonus, enemy.isHard())));
+                    events.add(heal(enemy, kind.potionPercent(healBonus, enemy.getDifficulty())));
                 }
                 default -> events.add(new StatusEvent(Lang.t("GRAND TOUR : CASE VIDE"), EffectPopup.Style.SPECIAL));
             }
@@ -875,7 +875,7 @@ public class EnemyTurnResolver {
         /** Fausse monnaie : une part des gains du joueur devient fausse ; sans gains, il frappe. */
         private void fakeMoney(List<Event> events) {
             double real = Math.max(0, player.getGains() - curses.getFakeGains());
-            double faked = BigNumber.percent(real, Math.min(100, kind.fakePercent(enemy.isHard())
+            double faked = BigNumber.percent(real, Math.min(100, kind.fakePercent(enemy.getDifficulty())
                 + EnemySignature.PLANCHE_PERCENT * boosts.getOrDefault(EnemySignature.PLANCHE_A_BILLETS, 0)));
             if (faked > 0) {
                 curses.addFakeGains(faked);
@@ -1079,7 +1079,7 @@ public class EnemyTurnResolver {
         PlayerDamagedEvent hit = turn.strike(EnemySymbol.FANG_DAMAGE);
         events.add(hit);
         Enemy enemy = turn.enemy;
-        long drained = Math.round(enemy.getMaxHp() * (double) hit.damage * enemy.getKind().drainPercent(enemy.isHard()) / 100 * healPercent / 100);
+        long drained = Math.round(enemy.getMaxHp() * (double) hit.damage * enemy.getKind().drainPercent(enemy.getDifficulty()) / 100 * healPercent / 100);
         if (drained > 0) events.add(new EnemyDrainEvent(enemy.heal(drained)));
     }
 
@@ -1114,7 +1114,7 @@ public class EnemyTurnResolver {
         int divisor = full ? 1 : 2; // Miroir déformant : à pleine force
         switch (copied.getSuit()) {
             case PIQUE   -> events.add(turn.strike(turn.enemy.getKind().swordDamage() + turn.enemy.getKind().swordBonus(copied) / divisor));
-            case COEUR   -> events.add(heal(enemy, enemy.getKind().potionPercent(EnemyCards.healBonus(copied), enemy.isHard()) / divisor));
+            case COEUR   -> events.add(heal(enemy, enemy.getKind().potionPercent(EnemyCards.healBonus(copied), enemy.getDifficulty()) / divisor));
             case CARREAU, TREFLE -> events.add(turn.shield((turn.enemy.getKind().shieldDefense() + turn.enemy.getKind().shieldBonus(copied)) / divisor));
         }
     }
@@ -1149,7 +1149,7 @@ public class EnemyTurnResolver {
         }
         switch (stolen.getSuit()) {
             case PIQUE   -> events.add(turn.strike(turn.enemy.getKind().swordDamage() + turn.enemy.getKind().swordBonus(stolen)));
-            case COEUR   -> events.add(heal(enemy, enemy.getKind().potionPercent(EnemyCards.healBonus(stolen), enemy.isHard())));
+            case COEUR   -> events.add(heal(enemy, enemy.getKind().potionPercent(EnemyCards.healBonus(stolen), enemy.getDifficulty())));
             case CARREAU, TREFLE -> events.add(turn.shield(turn.enemy.getKind().shieldDefense() + turn.enemy.getKind().shieldBonus(stolen)));
         }
     }
@@ -1216,7 +1216,7 @@ public class EnemyTurnResolver {
         PlayerDamagedEvent strike(int base, int shieldPercent) {
             int attack = (int) Math.min(Integer.MAX_VALUE, (long) enemy.getKind().hurt(
                 (base + swordBonus + enemy.getRage() + enemy.getAnvil() + enemy.spendInterest())
-                    * enemy.getStake() * attackFactor, enemy.isHard()) * enemy.attackPercent() / 100 // un roi en phase 2 frappe plus fort
+                    * enemy.getStake() * attackFactor, enemy.getDifficulty()) * enemy.attackPercent() / 100 // un roi en phase 2 frappe plus fort
                 * (100 + boostPercent) / 100 // ses Engrenages
                 * malusPercent / 100); // l'Intimidation du joueur
             totalAttack += attack;
@@ -1238,7 +1238,7 @@ public class EnemyTurnResolver {
         /** Il se protège de {@code defense}, multipliée par la roulette du Zéro et sa force. */
         EnemyShieldedEvent shield(int defense) {
             int total = (int) Math.min(Integer.MAX_VALUE,
-                (long) enemy.getKind().empowered(defense * shieldFactor, enemy.isHard()) * (100 + boostPercent) / 100);
+                (long) enemy.getKind().empowered(defense * shieldFactor, enemy.getDifficulty()) * (100 + boostPercent) / 100);
             enemy.addShieldDefense(total);
             return new EnemyShieldedEvent(total);
         }
@@ -1300,7 +1300,7 @@ public class EnemyTurnResolver {
 
     /** Lingot : la force de son coup, en % d'une Épée, selon sa défense du moment (de x1 à x3). */
     static int ingotPercent(Enemy enemy) {
-        int base = Math.max(1, enemy.getKind().getBaseDefense(enemy.isHard()));
+        int base = Math.max(1, enemy.getKind().getBaseDefense(enemy.getDifficulty()));
         return (int) Math.max(100, Math.min(300, (long) enemy.getDefense() * 100 / base));
     }
 
@@ -1449,13 +1449,13 @@ public class EnemyTurnResolver {
             switch (role) {
                 case ATTACK -> events.add(turn.strike(kind.swordDamage() + kind.swordBonus(ten)));
                 case GAINS  -> {
-                    double stolen = BigNumber.percent(player.getGains(), kind.interestPercent(enemy.isHard()));
+                    double stolen = BigNumber.percent(player.getGains(), kind.interestPercent(enemy.getDifficulty()));
                     if (stolen > 0) {
                         player.addGains(-stolen);
                         events.add(new GainsStolenEvent(stolen, 0));
                     }
                 }
-                case HEAL   -> events.add(heal(enemy, kind.potionPercent(EnemyCards.healBonus(ten), enemy.isHard())));
+                case HEAL   -> events.add(heal(enemy, kind.potionPercent(EnemyCards.healBonus(ten), enemy.getDifficulty())));
                 case SHIELD -> events.add(turn.shield(kind.shieldDefense() + kind.shieldBonus(ten)));
                 case BINGO  -> { }
             }

@@ -116,7 +116,7 @@ public class CombatContext {
     public CombatContext(Player player, Enemy enemy) {
         this.player = player;
         this.enemy  = enemy;
-        this.spinCost = enemy != null ? enemy.getKind().getSpinCost() : SpinEconomy.BASE_SPIN_COST;
+        this.spinCost = enemy != null ? enemy.getSpinCost() : SpinEconomy.BASE_SPIN_COST;
         this.enemyDefenseAtStart = enemy != null ? enemy.getDefense() : 0;
     }
 

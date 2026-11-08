@@ -1,5 +1,6 @@
 package fr.astratime.lucky.entities.exploration;
 
+import fr.astratime.lucky.entities.enemy.Difficulty;
 import fr.astratime.lucky.entities.Card;
 import fr.astratime.lucky.entities.Enemy;
 import fr.astratime.lucky.entities.run.CombatRun;
@@ -44,8 +45,8 @@ class DungeonTest {
         for (Dungeon dungeon : Place.PRAIRIE.getDungeons()) {
             assertEquals(10_000, new Enemy(dungeon.getSoldier()).getMaxHp(), dungeon.name());
             assertEquals(20_000, new Enemy(dungeon.getKing()).getMaxHp(), dungeon.name());
-            assertEquals(100, dungeon.getSoldier().getPower(false), "force du chapitre 1");
-            assertEquals(100, dungeon.getKing().getPower(false));
+            assertEquals(100, dungeon.getSoldier().getPower(Difficulty.NORMAL), "force du chapitre 1");
+            assertEquals(100, dungeon.getKing().getPower(Difficulty.NORMAL));
             assertTrue(dungeon.getKing().isBoss());
             assertFalse(dungeon.getSoldier().isBoss());
             assertTrue(dungeon.getSoldier().getDisplayName().startsWith("Soldat de"));

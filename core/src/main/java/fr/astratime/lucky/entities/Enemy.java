@@ -1,6 +1,7 @@
 package fr.astratime.lucky.entities;
 
 import fr.astratime.lucky.entities.enemy.EnemyCards;
+import fr.astratime.lucky.entities.enemy.Difficulty;
 import fr.astratime.lucky.entities.enemy.EnemyKind;
 import fr.astratime.lucky.entities.enemy.EnemySignature;
 import fr.astratime.lucky.entities.enemy.EnemySymbol;
@@ -31,8 +32,8 @@ public class Enemy {
     public static final int BASE_DEFENSE   = 30;
 
     private final EnemyKind   kind;
-    /** Mode difficile de la Tour : ses PV et sa force sont multipliés (voir {@link EnemyKind#getPower(boolean)}). */
-    private final boolean     hard;
+    /** Mode difficile de la Tour ou étage du mode sans fin : ses PV et sa force sont multipliés (voir {@link EnemyKind#getPower(Difficulty)}). */
+    private final Difficulty  hard;
     /** Malus posés par les cartes du joueur (voir {@link EnemyMaluses}). */
     private final EnemyMaluses maluses;
     private final String      name;
@@ -117,7 +118,7 @@ public class Enemy {
 
     /** @param cards cartes composant le deck de l'ennemi (mélangées) */
     public Enemy(String name, long maxHp, List<Card> cards) {
-        this(EnemyKind.CROUPIER, name, maxHp, cards, false);
+        this(EnemyKind.CROUPIER, name, maxHp, cards, Difficulty.NORMAL);
     }
 
     /** Ennemi {@code kind} : son nom, ses PV, sa défense, ses rouleaux et son deck. */
@@ -127,6 +128,11 @@ public class Enemy {
 
     /** Comme {@link #Enemy(EnemyKind)}, en mode difficile si {@code hard} (Tour des épreuves). */
     public Enemy(EnemyKind kind, boolean hard) {
+        this(kind, Difficulty.of(hard));
+    }
+
+    /** Comme {@link #Enemy(EnemyKind)}, à la difficulté {@code hard} (mode difficile, étage du mode sans fin). */
+    public Enemy(EnemyKind kind, Difficulty hard) {
         this(kind, kind.getDisplayName(), kind.getMaxHp(hard), kind.createDeck(), hard);
     }
 
@@ -137,10 +143,15 @@ public class Enemy {
 
     /** Comme {@link #Enemy(EnemyKind, List)}, en mode difficile si {@code hard}. */
     public Enemy(EnemyKind kind, List<Card> cards, boolean hard) {
+        this(kind, cards, Difficulty.of(hard));
+    }
+
+    /** Comme {@link #Enemy(EnemyKind, List)}, à la difficulté {@code hard}. */
+    public Enemy(EnemyKind kind, List<Card> cards, Difficulty hard) {
         this(kind, kind.getDisplayName(), kind.getMaxHp(hard), cards, hard);
     }
 
-    private Enemy(EnemyKind kind, String name, long maxHp, List<Card> cards, boolean hard) {
+    private Enemy(EnemyKind kind, String name, long maxHp, List<Card> cards, Difficulty hard) {
         this.kind    = kind;
         this.hard    = hard;
         this.maluses = new EnemyMaluses(kind.isBoss());
@@ -634,8 +645,15 @@ public class Enemy {
 
     /** @return le type d'ennemi : ses rouleaux, sa façon de jouer, son portrait. */
     public EnemyKind getKind()     { return kind; }
-    /** @return {@code true} s'il est en mode difficile (Tour des épreuves). */
-    public boolean isHard()        { return hard; }
+    /** @return {@code true} s'il est en mode difficile (Tour des épreuves, mode sans fin). */
+    public boolean isHard()        { return hard.hard(); }
+    /** @return sa difficulté : mode normal, difficile ou étage du mode sans fin. */
+    public Difficulty getDifficulty() { return hard; }
+    /**
+     * @return le coût d'un tirage contre lui : celui de son type ({@link EnemyKind#getSpinCost()}),
+     *         celui du chapitre 6 dans le mode sans fin
+     */
+    public int getSpinCost() { return hard.isEndless() ? EnemyKind.ENDLESS_SPIN_COST : kind.getSpinCost(); }
     /** @return le bonus d'attaque de sa Rage. */
     public int    getRage()        { return rage; }
     /** @return l'attaque que ses Intérêts ajouteront à son prochain coup. */

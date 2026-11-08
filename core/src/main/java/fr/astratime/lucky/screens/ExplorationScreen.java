@@ -17,6 +17,7 @@ import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 import com.badlogic.gdx.utils.Align;
+import fr.astratime.lucky.entities.enemy.Difficulty;
 import fr.astratime.lucky.LuckyGame;
 import fr.astratime.lucky.assets.CardTextures;
 import fr.astratime.lucky.assets.EnemyTextures;
@@ -363,9 +364,9 @@ public class ExplorationScreen extends CasinoMenuScreen {
             if (profile.isCleared(dungeon)) text.append('\n').append(Lang.t("Déjà vidé."));
         }
         text.append("\n\n").append(Lang.f("Combat 1 : {0} ({1} PV)", dungeon.getSoldier().getDisplayName(),
-            PlayerProfile.formatCoins(dungeon.getSoldier().getMaxHp(false))));
+            PlayerProfile.formatCoins(dungeon.getSoldier().getMaxHp(Difficulty.NORMAL))));
         text.append('\n').append(Lang.f("Combat 2 : {0} ({1} PV)", dungeon.getKing().getDisplayName(),
-            PlayerProfile.formatCoins(dungeon.getKing().getMaxHp(false))));
+            PlayerProfile.formatCoins(dungeon.getKing().getMaxHp(Difficulty.NORMAL))));
         text.append("\n\n").append(Lang.f("Coffre : {0} pièces + 1 carte",
             PlayerProfile.formatCoins(place.getChestCoins())));
         for (Dungeon.Loot loot : dungeon.getLoot()) {
