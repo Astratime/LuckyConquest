@@ -19,7 +19,7 @@ public class GoldenHeartEffect extends Effect {
     public void apply(TurnContext context) { context.getCombatContext().addGoldenHeart(); }
 
     @Override
-    public String getDescription() { return Lang.t("Ce tour, chaque symbole d'attaque gagne en attaque le bonus de gains de ton rang plus les multiplicateurs de gains de tes cartes (Trèfle...)."); }
+    public String getDescription() { return Lang.t("Ce tour, chaque symbole d'attaque gagne en attaque le bonus de gains de ton rang plus 100 fois les multiplicateurs de gains de tes cartes (Trèfle...)."); }
 
     @Override
     public List<EffectPopup> getPopups() {

@@ -63,6 +63,8 @@ public class CombatResolver {
     private static final float BET_LOSS   = 0.5f;
     /** Tapis gagné : multiplicateur des gains du joueur. */
     static final int ALL_IN_FACTOR = 3;
+    /** Cœur d'or : chaque point de multiplicateur de gains des cartes vaut autant d'attaque (Astra, 2026-11-08). */
+    static final int GOLDEN_HEART_CARD_FACTOR = 100;
 
     /**
      * Résout un tour de combat complet à partir des actions déjà déterminées
@@ -460,7 +462,8 @@ public class CombatResolver {
     /**
      * Cœur d'or (Astra, 2026-11-08) : les bonus de gains du tour deviennent aussi des bonus d'attaque. Chaque
      * carte ajoute à l'attaque de chaque symbole d'attaque le bonus de gains du rang (Jeton de rang compris) plus
-     * les multiplicateurs de gains des cartes jouées ce tour (Trèfle : Roi +13...). Les gains n'en changent pas.
+     * les multiplicateurs de gains des cartes jouées ce tour, x{@link #GOLDEN_HEART_CARD_FACTOR} (Roi de Trèfle +13 :
+     * +1 300). Les gains n'en changent pas.
      */
     static void goldenHeart(CombatContext context) {
         if (context.getGoldenHearts() <= 0) return;
@@ -471,7 +474,7 @@ public class CombatResolver {
     static int goldenHeartBonus(CombatContext context) {
         int rank  = context.getPlayer().getRankBonus().gains() * context.getRankFactor();
         int cards = Math.round(context.getGainMultiplier() - 1f); // le multiplicateur part de 1
-        return context.getGoldenHearts() * (rank + Math.max(0, cards));
+        return context.getGoldenHearts() * (rank + Math.max(0, cards) * GOLDEN_HEART_CARD_FACTOR);
     }
 
     /**

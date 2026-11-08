@@ -25,7 +25,7 @@ class GoldenHeartTest {
         context.addGainMultiplier(13); // Roi de Trèfle
         context.addGoldenHeart();
         CombatResolver.goldenHeart(context);
-        assertEquals(2_813, context.getAttackBonus()); // 2 800 + 13, l'exemple d'Astra
+        assertEquals(4_100, context.getAttackBonus()); // 2 800 + 13 x 100
     }
 
     @Test
