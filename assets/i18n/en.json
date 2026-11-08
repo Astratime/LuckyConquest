@@ -106,7 +106,7 @@
   "4 cartes du même rang": "4 cards of the same rank",
   "3 cartes du même rang": "3 cards of the same rank",
   "COULEUR": "FLUSH",
-  "3 cartes ou plus de la même suite ou du même archétype": "3 or more cards of the same suit or the same archetype",
+  "3 cartes de la même suite ou du même archétype parmi les cartes jouées": "3 cards of the same suit or the same archetype among the cards played",
   "SUITE": "STRAIGHT",
   "3 rangs qui se suivent": "3 ranks in a row",
   "PAIRE": "PAIR",
