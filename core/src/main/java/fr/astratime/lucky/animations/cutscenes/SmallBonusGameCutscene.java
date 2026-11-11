@@ -1,29 +1,36 @@
 package fr.astratime.lucky.animations.cutscenes;
 
+import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.Input;
 import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.graphics.Color;
+import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.Interpolation;
 import com.badlogic.gdx.math.MathUtils;
+import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.utils.Array;
 import fr.astratime.lucky.assets.GameSounds;
 import fr.astratime.lucky.entities.BonusGame;
 import fr.astratime.lucky.i18n.Lang;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.function.IntConsumer;
 
 import static fr.astratime.lucky.assets.Palette.hex;
 
 /**
- * Les petits Jeux bonus (Roue, Coffres, Ticket à gratter), par-dessus le combat,
+ * Les petits Jeux bonus (Roue, Plinko, Course de chevaux), par-dessus le combat,
  * dans le décor du Jeu bonus : le casino s'assombrit, le titre éclate puis monte,
  * le jeu se joue au centre, puis le total. Fondu noir, retour au combat.
  *
  * Tout est déjà tiré ({@link BonusGame#playSmall}) : la scène ne fait que le montrer.
- * Un clic (ou une touche) passe au total, puis referme la scène.
+ * Seule la Course attend un choix : le joueur clique sur un couloir (ou tape 1 à 5),
+ * puis la course part. Ensuite, un clic (ou une touche) passe au total, puis referme la scène.
  */
 public class SmallBonusGameCutscene extends Cutscene {
 
@@ -33,19 +40,26 @@ public class SmallBonusGameCutscene extends Cutscene {
     private static final float START = 1.8f;
     /** Roue : elle tourne, puis s'arrête. */
     private static final float WHEEL_SPIN = 3.6f;
-    /** Coffres : un coffre s'ouvre tous les {@link #CHEST_STEP}, puis les autres se dévoilent. */
-    private static final float CHEST_STEP = 1.0f;
-    /** Ticket : une case se gratte tous les {@link #SCRATCH_STEP}. */
-    private static final float SCRATCH_STEP = 0.32f;
+    /** Plinko : la bille passe une rangée de clous tous les {@link #PLINKO_STEP}. */
+    private static final float PLINKO_STEP = 0.34f;
+    /** Course : les stalles s'ouvrent après le choix, puis la course dure {@link #RACE}. */
+    private static final float GATES = 0.9f, RACE = 5.5f;
     private static final float TOTAL_HOLD = 3.0f;
     private static final float COVER = 0.6f;
+    /** Tant que le joueur n'a pas choisi son cheval. */
+    private static final float WAITING = Float.MAX_VALUE / 4f;
 
     private static final Color GOLD = hex("ffc93a"), GOLD_LIGHT = hex("ffe58a"), GOLD_DARK = hex("b8801f");
     private static final Color RED = hex("c8203a"), RED_DARK = hex("6e0f1e"), INK = hex("1c0f24"), NIGHT = hex("07040c");
-    private static final Color CREAM = hex("fff6dc"), WOOD = hex("7a4a24"), WOOD_DARK = hex("4a2a12");
-    private static final Color SILVER = hex("b9c0c8"), SILVER_DARK = hex("7d858e"), GREEN = hex("2f8f4e");
+    private static final Color CREAM = hex("fff6dc");
+    private static final Color SILVER = hex("b9c0c8"), SILVER_DARK = hex("7d858e");
+    private static final Color TURF = hex("2f7a3e"), TURF_DARK = hex("25632f"), DIRT = hex("a87a4a");
     private static final Color BULB_OFF = hex("3a2a1a"), BEVEL = hex("ffffff");
     private static final Color[] CONFETTI = {GOLD, RED, hex("3ac1ff"), hex("5fd36a"), hex("ff7ad9"), CREAM};
+    /** Casaque de chaque jockey, du favori à l'outsider. */
+    private static final Color[] SILKS = {hex("e8333f"), hex("2f7fe8"), hex("f2c522"), hex("9b4fe0"), hex("f07a1d")};
+    /** Couleur des cases du Plinko, du bord (le gros lot) au centre. */
+    private static final Color[] SLOT_COLORS = {hex("d4202f"), hex("e8701d"), hex("e8b81d"), hex("3f9e4a"), hex("2f6fc8")};
 
     private final BonusGame game;
     private final BitmapFont font;
@@ -54,20 +68,38 @@ public class SmallBonusGameCutscene extends Cutscene {
     private final Sound[] owned;
     private final List<long[]> playing = new ArrayList<>();
     private final Array<Particle> sparks = new Array<>(false, 128);
-    /** Poussière d'or du fond, confettis, copeaux d'argent du ticket et pièces qui volent. */
+    /** Poussière d'or du fond, confettis, poussière de la piste et pièces qui volent. */
     private final Array<Particle> dust = new Array<>(false, 128), confetti = new Array<>(false, 256);
     private final Array<Particle> flakes = new Array<>(false, 128), coins = new Array<>(false, 64);
-    private final TextureRegion coin;
+    private final TextureRegion coin, ball;
+    /** Les chevaux, deux images de galop chacun (casaque de son couloir). */
+    private final TextureRegion[][] horses = new TextureRegion[BonusGame.HORSE_ODDS.size()][2];
+    /** Course : ce que fait le choix du joueur (l'écran de combat le fait payer) ; {@code null} : la course seule. */
+    private final IntConsumer chooser;
+    /** Plinko : le chemin de la bille (vers la droite ?), une rangée de clous après l'autre. */
+    private final boolean[] path = new boolean[BonusGame.PLINKO_ROWS];
+    /** Course : le temps d'arrivée de chaque cheval (le gagnant à {@link #RACE}), et son allure. */
+    private final float[] finish = new float[BonusGame.HORSE_ODDS.size()], phase = new float[BonusGame.HORSE_ODDS.size()];
+    private final Vector2 mouse = new Vector2();
+    /** Course : le choix fait, les stalles s'ouvrent ({@link #WAITING} avant). */
+    private float chosenAt, raceStart;
     /** Le résultat se montre ; puis le total. */
-    private final float reveal, totalAt;
+    private float reveal, totalAt;
     private float closeAt, lastTime, dustTimer;
-    /** Assombrit ce que dessine {@link #box} (les coffres restés fermés). */
-    private float shade = 1f;
     private long spinLoop = -1;
 
     public SmallBonusGameCutscene(CutsceneKit kit, BonusGame game) {
+        this(kit, game, null);
+    }
+
+    /**
+     * @param chooser Course de chevaux : appelé avec le cheval choisi (0 = le favori) ; il doit faire
+     *                payer la course ({@code GameController.chooseHorse}). Sans lui, la scène choisit seule.
+     */
+    public SmallBonusGameCutscene(CutsceneKit kit, BonusGame game, IntConsumer chooser) {
         super(kit.settings(), kit.shake(), null);
         this.game = game;
+        this.chooser = chooser;
         font = kit.font();
         sounds = kit.gameSounds();
         intro = kit.sound("bonus_game");
@@ -75,20 +107,45 @@ public class SmallBonusGameCutscene extends Cutscene {
         total = kit.sound("bonus_game_total");
         owned = new Sound[] {intro, music, total};
         coin = load("hud/coin.png");
-        reveal = switch (game.getKind()) {
-            case WHEEL -> START + WHEEL_SPIN;
-            case CHESTS -> START + 0.4f + CHEST_STEP * game.getPicked().size();
-            default -> START + 0.4f + SCRATCH_STEP * BonusGame.SCRATCH_CELLS;
-        };
-        totalAt = reveal + 1.0f;
+        Pixmap disc = new Pixmap(16, 16, Pixmap.Format.RGBA8888);
+        disc.setColor(Color.WHITE);
+        disc.fillCircle(8, 8, 7);
+        ball = region(disc, false);
+        for (int i = 0; i < horses.length; i++) {
+            Color[] colors = {hex("8a5a2e"), hex("3a2414"), SILKS[i], hex("f2d2b0"), hex("1a1010")};
+            horses[i][0] = art("bmjsh", colors,
+                "...........jj.......",
+                "..........jjjj......",
+                "...........js...mmb.",
+                "..m.....bbbbjbbmbbbb",
+                ".mmbbbbbbbbbbbbbbbbh",
+                "m..bbbbbbbbbbbbbb...",
+                "...bbbbbbbbbbbbb....",
+                "....bb.......bb.....",
+                "...b..b.....b..b....",
+                "..b....b...b....b...",
+                ".h......h.h......h..");
+            horses[i][1] = art("bmjsh", colors,
+                "...........jj.......",
+                "..........jjjj......",
+                "...........js...mmb.",
+                "..m.....bbbbjbbmbbbb",
+                ".mmbbbbbbbbbbbbbbbbh",
+                ".m.bbbbbbbbbbbbbb...",
+                "...bbbbbbbbbbbbb....",
+                "....bb......bb......",
+                ".....bb....bb.......",
+                "......b....b........",
+                "......h....h........");
+        }
     }
 
     /** @return le titre du jeu. */
     public static String title(BonusGame.Kind kind) {
         return switch (kind) {
             case WHEEL -> Lang.t("ROUE DE LA CAGNOTTE !");
-            case CHESTS -> Lang.t("COFFRES DE LA CAGNOTTE !");
-            case SCRATCH -> Lang.t("TICKET À GRATTER !");
+            case PLINKO -> Lang.t("PLINKO DE LA CAGNOTTE !");
+            case HORSES -> Lang.t("COURSE DE CHEVAUX !");
             default -> Lang.t("JEU BONUS !");
         };
     }
@@ -108,20 +165,85 @@ public class SmallBonusGameCutscene extends Cutscene {
     protected void reset() {
         stopSounds();
         clearParticles();
-        closeAt = totalAt + TOTAL_HOLD;
         lastTime = 0f;
+        switch (game.getKind()) {
+            case WHEEL -> schedule(START + WHEEL_SPIN);
+            case PLINKO -> {
+                // un chemin au hasard qui mène à la case tirée
+                List<Boolean> rights = new ArrayList<>();
+                for (int row = 0; row < path.length; row++) rights.add(row < game.getPicked().get(0));
+                Collections.shuffle(rights, random);
+                for (int row = 0; row < path.length; row++) path[row] = rights.get(row);
+                schedule(START + 0.5f + PLINKO_STEP * (path.length + 1));
+            }
+            default -> {
+                // le gagnant arrive à RACE, les autres juste après, dans le désordre
+                List<Integer> others = new ArrayList<>();
+                for (int i = 0; i < finish.length; i++) if (i != game.getPicked().get(0)) others.add(i);
+                Collections.shuffle(others, random);
+                finish[game.getPicked().get(0)] = RACE;
+                for (int k = 0; k < others.size(); k++) finish[others.get(k)] = RACE * (1.03f + 0.035f * k + random.nextFloat() * 0.02f);
+                for (int i = 0; i < phase.length; i++) phase[i] = random.nextFloat() * MathUtils.PI2;
+                chosenAt = raceStart = WAITING;
+                if (game.isPending()) schedule(WAITING);
+                else startRace(START);
+            }
+        }
         sound(intro, false);
+    }
+
+    /** Le résultat se montre à {@code at}, le total une seconde après. */
+    private void schedule(float at) {
+        reveal = at;
+        totalAt = at >= WAITING ? WAITING : at + (game.getKind() == BonusGame.Kind.HORSES ? 1.6f : 1.0f);
+        closeAt = totalAt >= WAITING ? WAITING : totalAt + TOTAL_HOLD;
+    }
+
+    private void startRace(float at) {
+        chosenAt = at;
+        raceStart = at + GATES;
+        schedule(raceStart + RACE);
+    }
+
+    /** @return {@code true} tant que la course attend le choix du joueur. */
+    private boolean waiting() { return game.getKind() == BonusGame.Kind.HORSES && chosenAt >= WAITING; }
+
+    /** Le joueur choisit son cheval : la course part. */
+    private void choose(int horse) {
+        if (!waiting() || time < START - 0.2f) return;
+        if (chooser != null) chooser.accept(horse);
+        else game.choose(horse);
+        if (game.isPending()) game.choose(horse); // le choix doit être fait
+        if (sounds != null) sounds.reelStop.play(0.7f);
+        float[] lane = laneCenter(horse);
+        burst(trackLeft(), lane[1], 14, GOLD_LIGHT);
+        startRace(Math.max(time, START));
+    }
+
+    @Override
+    public boolean key(int keycode) {
+        if (!waiting()) return false;
+        int horse = -1;
+        if (keycode >= Input.Keys.NUM_1 && keycode <= Input.Keys.NUM_5) horse = keycode - Input.Keys.NUM_1;
+        if (keycode >= Input.Keys.NUMPAD_1 && keycode <= Input.Keys.NUMPAD_5) horse = keycode - Input.Keys.NUMPAD_1;
+        if (horse >= 0) choose(horse);
+        return true; // en attendant le choix, les autres touches ne passent pas la course
     }
 
     @Override
     protected boolean pointerDown(float x, float y) {
+        if (waiting()) {
+            int lane = laneAt(x, y);
+            if (lane >= 0) choose(lane);
+            return true;
+        }
         skip();
         return true;
     }
 
     @Override
     public void skip() {
-        if (!isPlaying() || time >= closeAt) return;
+        if (!isPlaying() || time >= closeAt || waiting()) return;
         if (time < totalAt) {
             stop(intro);
             stopSpinLoop();
@@ -176,47 +298,59 @@ public class SmallBonusGameCutscene extends Cutscene {
                     rumble(0.3f, 5f);
                 }
             }
-            case CHESTS -> {
-                for (int i = 0; i < game.getPicked().size(); i++) {
-                    if (crossed(from, chestOpen(i))) {
-                        if (sounds != null) sounds.coinsGain.play(0.7f, 1f + i * 0.1f, 0f);
-                        float[] c = chestCenter(game.getPicked().get(i));
-                        burst(c[0], c[1], 18, GOLD_LIGHT);
-                        fountain(c[0], c[1] + unitSize() * 0.2f, 10);
-                        rumble(0.15f, 3f);
-                    }
-                }
-            }
-            default -> {
-                float cell = unitSize() * 1.15f;
-                for (int i = 0; i < BonusGame.SCRATCH_CELLS; i++) {
-                    float[] c = scratchCenter(i);
-                    if (rich && time > scratchAt(i) - SCRATCH_STEP && time < scratchAt(i)) {
-                        // les copeaux d'argent tombent du bord gratté
-                        float left = cell * (1f - scratchProgress(i));
-                        for (int n = 0; n < 2; n++) {
-                            Particle flake = particle(c[0] - cell / 2f + random.nextFloat() * cell,
-                                c[1] - cell / 2f + left, 200f + random.nextFloat() * 140f, 40f + random.nextFloat() * 80f,
-                                0.6f + random.nextFloat() * 0.4f, 3f + random.nextFloat() * 4f);
-                            flake.gravity = 500f;
-                            flake.spin = (random.nextFloat() - 0.5f) * 900f;
-                            flake.color.set(random.nextBoolean() ? SILVER : SILVER_DARK);
-                            flakes.add(flake);
+            case PLINKO -> {
+                for (int row = 0; row <= path.length; row++) {
+                    if (crossed(from, pegHit(row))) {
+                        float[] at = ballAt(row);
+                        if (row < path.length) {
+                            if (sounds != null) sounds.reelStop.play(0.18f, 1.3f + row * 0.06f, 0f);
+                            burst(at[0], at[1], 3, CREAM);
                         }
-                    }
-                    if (crossed(from, scratchAt(i))) {
-                        boolean win = game.getPicked().contains(i);
-                        if (sounds != null) sounds.coinsGain.play(win ? 0.7f : 0.25f, 1f + i * 0.04f, 0f);
-                        burst(c[0], c[1], win ? 10 : 4, win ? GOLD_LIGHT : SILVER);
                     }
                 }
                 if (crossed(from, reveal)) {
-                    for (int i : game.getPicked()) {
-                        float[] c = scratchCenter(i);
-                        burst(c[0], c[1], 14, GOLD_LIGHT);
-                        confettiBurst(c[0], c[1], 14);
+                    int slot = game.getPicked().get(0);
+                    float[] c = slotCenter(slot);
+                    if (sounds != null) sounds.coinsGain.play(0.8f);
+                    burst(c[0], c[1], 24, GOLD_LIGHT);
+                    double value = game.getValues().get(slot);
+                    if (value >= 7) confettiBurst(c[0], c[1], value >= 50 ? 60 : 30);
+                    if (value >= 14) fountain(c[0], c[1], value >= 50 ? 20 : 8);
+                    rumble(value >= 50 ? 0.5f : 0.2f, value >= 50 ? 8f : 3f);
+                }
+            }
+            default -> {
+                if (crossed(from, raceStart)) {
+                    if (sounds != null) {
+                        sounds.reelStop.play(0.9f, 0.7f, 0f);
+                        spinLoop = sounds.reelSpin.loop(0.4f, 0.6f, 0f);   // le roulement des sabots
                     }
-                    rumble(0.25f, 4f);
+                    rumble(0.25f, 3f);
+                }
+                if (rich && time > raceStart && time < reveal + 0.6f) {
+                    // les sabots soulèvent la poussière de la piste
+                    for (int i = 0; i < finish.length; i++) {
+                        if (random.nextFloat() > 0.35f) continue;
+                        float[] h = horseAt(i);
+                        Particle grain = particle(h[0] - unitSize() * 0.3f, h[1] - unitSize() * 0.2f, 120f + random.nextFloat() * 50f,
+                            30f + random.nextFloat() * 60f, 0.4f + random.nextFloat() * 0.3f, 3f + random.nextFloat() * 4f);
+                        grain.gravity = 160f;
+                        grain.spin = (random.nextFloat() - 0.5f) * 600f;
+                        grain.color.set(DIRT);
+                        flakes.add(grain);
+                    }
+                }
+                if (crossed(from, reveal)) {
+                    stopSpinLoop();
+                    boolean won = game.getChoice() == game.getPicked().get(0);
+                    float[] lane = laneCenter(game.getPicked().get(0));
+                    burst(finishX(), lane[1], 30, GOLD_LIGHT);
+                    if (sounds != null) sounds.coinsGain.play(won ? 0.9f : 0.4f);
+                    if (won) {
+                        confettiBurst(finishX(), lane[1], 60);
+                        fountain(finishX(), lane[1], 14);
+                        rumble(0.4f, 6f);
+                    }
                 }
             }
         }
@@ -313,12 +447,11 @@ public class SmallBonusGameCutscene extends Cutscene {
             drawBulbs(batch, appear);
             switch (game.getKind()) {
                 case WHEEL -> drawWheel(batch, appear);
-                case CHESTS -> drawChests(batch, appear);
-                default -> drawTicket(batch, appear);
+                case PLINKO -> drawPlinko(batch, appear);
+                default -> drawRace(batch, appear);
             }
             drawCaptions(batch, appear);
-            BonusRankBadge.draw(this, batch, font, game.getKind().rank, worldWidth() / 2f + unitSize() * 4.4f,
-                centerY() + unitSize() * 1.4f, START, appear);
+            BonusRankBadge.draw(this, batch, font, game.getKind().rank, worldWidth() - 120f, worldHeight() - 92f, START, appear);
         }
         drawBanner(batch);
         drawParticles(batch, sparks);
@@ -386,7 +519,7 @@ public class SmallBonusGameCutscene extends Cutscene {
     }
 
     private void box(Batch batch, float x, float y, float w, float h, Color color, float alpha) {
-        batch.setColor(color.r * shade, color.g * shade, color.b * shade, alpha);
+        batch.setColor(color.r, color.g, color.b, alpha);
         batch.draw(pixel, x, y, w, h);
     }
 
@@ -530,204 +663,271 @@ public class SmallBonusGameCutscene extends Cutscene {
         diamond(batch, cx, tip + s * 0.1f, s * 0.3f, CREAM, alpha);
     }
 
-    // --- Coffres --------------------------------------------------------------
+    // --- Plinko ---------------------------------------------------------------
 
-    private float chestOpen(int order) { return START + 0.4f + CHEST_STEP * (order + 1) - 0.5f; }
+    private float pegSpacing() { return unitSize() * 0.72f; }
+    private float rowHeight()  { return unitSize() * 0.46f; }
+    private float boardTop()   { return centerY() + unitSize() * 2.05f; }
+    private float pegY(int row) { return boardTop() - row * rowHeight(); }
+    private float slotTop()    { return pegY(BonusGame.PLINKO_ROWS) + rowHeight() * 0.55f; }
+    private float slotHeight() { return unitSize() * 0.75f; }
 
-    private float[] chestCenter(int index) {
-        float step = unitSize() * 1.7f;
-        int row = index / 3, col = index % 3;
-        return new float[] {worldWidth() / 2f + (col - 1) * step, centerY() - unitSize() * 0.3f + (1 - row) * step};
+    /** @return l'instant où la bille touche le clou de la rangée {@code row} ({@code PLINKO_ROWS} : elle tombe dans sa case). */
+    private float pegHit(int row) { return START + 0.5f + PLINKO_STEP * (row + 1); }
+
+    /** @return combien de fois la bille est partie à droite avant la rangée {@code row}. */
+    private int rights(int row) {
+        int count = 0;
+        for (int r = 0; r < row && r < path.length; r++) if (path[r]) count++;
+        return count;
     }
 
-    private void drawChests(Batch batch, float alpha) {
+    private float[] slotCenter(int slot) {
+        return new float[] {worldWidth() / 2f + (slot - BonusGame.PLINKO_ROWS / 2f) * pegSpacing(), slotTop() - slotHeight() / 2f};
+    }
+
+    /** @return où la bille touche la rangée {@code row} (sur le clou), ou se pose dans sa case. */
+    private float[] ballAt(int row) {
+        float r = ballRadius();
+        if (row >= path.length) {
+            float[] slot = slotCenter(rights(path.length));
+            return new float[] {slot[0], slotTop() - r - 3f};
+        }
+        float x = worldWidth() / 2f + (rights(row) - row / 2f) * pegSpacing();
+        return new float[] {x, pegY(row) + pegRadius() + r};
+    }
+
+    private float ballRadius() { return unitSize() * 0.13f; }
+    private float pegRadius()  { return unitSize() * 0.07f; }
+
+    /** @return la bille à l'instant {@code t}, ou {@code null} avant qu'elle ne tombe. */
+    private float[] ballPosition(float t) {
+        float drop = START + 0.5f;
+        if (t < drop) return null;
+        if (t < pegHit(0)) {
+            float[] first = ballAt(0);
+            float f = Interpolation.pow2In.apply((t - drop) / PLINKO_STEP);
+            return new float[] {first[0], MathUtils.lerp(boardTop() + unitSize() * 0.75f, first[1], f)};
+        }
+        if (t >= reveal) return ballAt(path.length);
+        int row = Math.min(path.length - 1, (int) ((t - pegHit(0)) / PLINKO_STEP));
+        float f = (t - pegHit(row)) / PLINKO_STEP;
+        float[] a = ballAt(row), b = ballAt(row + 1);
+        float hop = row + 1 < path.length ? unitSize() * 0.22f : unitSize() * 0.1f;
+        return new float[] {MathUtils.lerp(a[0], b[0], f), MathUtils.lerp(a[1], b[1], f * f) + hop * 4f * f * (1f - f)};
+    }
+
+    private void drawPlinko(Batch batch, float alpha) {
         List<Double> values = game.getValues();
-        float w = unitSize() * 1.3f, h = unitSize() * 1.0f;
-        for (int i = 0; i < values.size(); i++) {
-            float[] c = chestCenter(i);
-            int order = game.getPicked().indexOf(i);
-            boolean opened = order >= 0 && time >= chestOpen(order);
-            boolean shown = opened || time >= reveal;   // les autres se dévoilent à la fin, en sombre
-            float lift = opened ? Interpolation.swingOut.apply(progress(chestOpen(order), chestOpen(order) + 0.4f)) : 0f;
-            float a = alpha;
-            shade = order < 0 && time >= reveal ? 0.45f : 1f;
-            // le coffre choisi tremble juste avant de s'ouvrir, une lueur passe sous le couvercle
-            float before = order >= 0 && !opened ? progress(chestOpen(order) - 0.45f, chestOpen(order)) : 0f;
-            float x = c[0] + (before > 0f ? MathUtils.sin(time * 70f) * 4f * before : 0f);
-            float y = c[1] + (!opened && time < reveal ? MathUtils.sin(time * 2.2f + i) * 2f : 0f);
-            float bottom = y - h / 2f, bodyH = h * 0.62f;
-            if (opened) {
-                glow(batch, x, y + h * 0.2f, w * 2.6f, GOLD_LIGHT, (0.35f + 0.08f * MathUtils.sin(time * 5f + i)) * alpha);
-                drawBeams(batch, x, bottom + bodyH, w, alpha * Math.min(1f, (time - chestOpen(order)) * 3f), i);
+        int rows = BonusGame.PLINKO_ROWS, slots = values.size();
+        float sp = pegSpacing(), cx = worldWidth() / 2f;
+        float left = cx - sp * (slots / 2f + 0.35f), right = cx + sp * (slots / 2f + 0.35f);
+        float top = boardTop() + unitSize() * 0.45f, bottom = slotTop() - slotHeight() - unitSize() * 0.12f;
+        // le panneau : cadre doré, fond violet nuit
+        glow(batch, cx, (top + bottom) / 2f, (right - left) * 1.8f, GOLD, 0.15f * alpha);
+        box(batch, left - 8f, bottom - 8f, right - left + 16f, top - bottom + 16f, GOLD_DARK, alpha);
+        box(batch, left - 3f, bottom - 3f, right - left + 6f, top - bottom + 6f, GOLD, alpha);
+        box(batch, left, bottom, right - left, top - bottom, INK, alpha);
+        // ampoules en haut du panneau
+        int bulbs = 14;
+        for (int i = 0; i < bulbs; i++) {
+            float bx = left + (i + 0.5f) * (right - left) / bulbs, by = top - unitSize() * 0.14f;
+            boolean lit = (i + (int) (time * 9f)) % 3 != 0;
+            float size = unitSize() * 0.09f;
+            if (lit) glow(batch, bx, by, size * 4f, GOLD_LIGHT, 0.35f * alpha);
+            box(batch, bx - size / 2f, by - size / 2f, size, size, lit ? CREAM : GOLD_DARK, alpha);
+        }
+        // les clous, en triangle ; celui que la bille vient de toucher s'allume
+        float peg = pegRadius() * 2f;
+        for (int row = 0; row < rows; row++) {
+            int hit = rights(row) + 1;
+            float lit = time >= pegHit(row) ? Math.max(0f, 1f - (time - pegHit(row)) / 0.35f) : 0f;
+            for (int i = 0; i <= row + 2; i++) {
+                float px = cx + (i - (row + 2) / 2f) * sp, py = pegY(row);
+                boolean flash = i == hit && lit > 0f;
+                if (flash) glow(batch, px, py, peg * 6f, GOLD_LIGHT, 0.6f * lit * alpha);
+                Color color = flash ? CREAM : SILVER;
+                batch.setColor(color.r, color.g, color.b, alpha);
+                batch.draw(ball, px - peg / 2f, py - peg / 2f, peg, peg);
+                batch.setColor(1f, 1f, 1f, 0.5f * alpha);
+                batch.draw(ball, px - peg * 0.3f, py, peg * 0.25f, peg * 0.25f);   // petit reflet
             }
-            // ombre au sol
-            box(batch, x - w * 0.55f, bottom - h * 0.1f, w * 1.1f, h * 0.08f, NIGHT, 0.5f * a);
-            // caisse : planches, cerclage doré, coins de métal et rivets
-            box(batch, x - w / 2f, bottom, w, bodyH, WOOD, a);
-            box(batch, x - w / 2f, bottom + bodyH * 0.33f, w, 2f, WOOD_DARK, a);
-            box(batch, x - w / 2f, bottom + bodyH * 0.66f, w, 2f, WOOD_DARK, a);
-            box(batch, x - w / 2f, bottom + h * 0.25f, w, h * 0.08f, GOLD_DARK, a);
-            for (int side = -1; side <= 1; side += 2) {
-                float sx = x + side * (w / 2f - w * 0.06f);
-                box(batch, sx - w * 0.06f, bottom, w * 0.12f, bodyH, GOLD_DARK, a);
-                box(batch, sx - 2f, bottom + bodyH * 0.2f, 4f, 4f, GOLD_LIGHT, a);
-                box(batch, sx - 2f, bottom + bodyH * 0.75f, 4f, 4f, GOLD_LIGHT, a);
-            }
-            if (opened) {
-                // l'intérieur : un tas d'or qui brille
-                box(batch, x - w * 0.42f, bottom + bodyH - h * 0.06f, w * 0.84f, h * 0.12f, GOLD_DARK, alpha);
-                box(batch, x - w * 0.38f, bottom + bodyH, w * 0.76f, h * 0.1f, GOLD, alpha);
-                batch.setColor(1f, 1f, 1f, alpha);
-                for (int g = 0; g < 4; g++) {
-                    sprite(batch, coin, x - w * 0.3f + g * w * 0.2f, bottom + bodyH + h * 0.12f + (g % 2) * h * 0.06f,
-                        h * 0.2f / coin.getRegionHeight(), 0f);
+        }
+        // les cases du bas : le gros lot sur les bords
+        boolean landed = time >= reveal;
+        int slotWon = game.getPicked().get(0);
+        float beat = landed ? 1f + 0.08f * Math.abs(MathUtils.sin(time * 5f)) : 1f;
+        for (int k = 0; k < slots; k++) {
+            float[] c = slotCenter(k);
+            int distance = Math.abs(k - slots / 2);
+            Color color = SLOT_COLORS[Math.min(SLOT_COLORS.length - 1, slots / 2 - distance)];
+            boolean won = landed && k == slotWon;
+            float w = (sp - 6f) * (won ? beat : 1f), h = slotHeight();
+            if (won) glow(batch, c[0], c[1], w * 3f, GOLD_LIGHT, (0.45f + 0.15f * MathUtils.sin(time * 6f)) * alpha);
+            float a = alpha, dim = landed && !won ? 0.4f : 1f;
+            box(batch, c[0] - w / 2f - 2f, c[1] - h / 2f - 2f, w + 4f, h + 4f, won ? CREAM : GOLD_DARK, a);
+            box(batch, c[0] - w / 2f, c[1] - h / 2f, w, h, won ? GOLD : tmp.set(color).mul(dim, dim, dim, 1f), a);
+            box(batch, c[0] - w / 2f, c[1] + h / 2f - h * 0.12f, w, h * 0.12f, BEVEL, 0.25f * a * dim);
+            label(batch, times(values.get(k)), c[0], c[1] - h * 0.1f, won ? 1.0f : 0.85f, landed && !won ? 0.5f * a : a);
+            if (won) twinkle(batch, c[0] + w * 0.4f, c[1] + h * 0.4f, w * 0.5f * Math.abs(MathUtils.sin(time * 4f)), alpha);
+        }
+        // la bille, avec sa traînée
+        float[] at = ballPosition(time);
+        if (at != null) {
+            float r = ballRadius();
+            if (!settings.isReducedEffects() && !landed) {
+                for (int k = 4; k >= 1; k--) {
+                    float[] back = ballPosition(time - k * 0.035f);
+                    if (back == null) continue;
+                    glow(batch, back[0], back[1], r * (3.4f - k * 0.5f), GOLD_LIGHT, 0.12f * (5 - k) * alpha);
                 }
-                twinkle(batch, x + w * 0.2f, bottom + bodyH + h * 0.2f, h * 0.3f * Math.abs(MathUtils.sin(time * 4f + i)), alpha);
             }
-            // couvercle qui se soulève et bascule en arrière
-            float lidH = h * 0.38f * (1f - 0.45f * lift);
-            float ly = bottom + bodyH + lift * h * 0.5f;
-            if (before > 0f) box(batch, x - w / 2f, bottom + bodyH - 1f, w, 3f + before * 3f, GOLD_LIGHT, before * alpha);
-            box(batch, x - w / 2f - 2f, ly, w + 4f, lidH, WOOD_DARK, a);
-            box(batch, x - w / 2f + w * 0.08f, ly + lidH, w * 0.84f, h * 0.07f * (1f - lift), WOOD_DARK, a); // le dessus bombé
-            box(batch, x - w / 2f - 2f, ly, w + 4f, h * 0.05f, GOLD_DARK, a);
-            box(batch, x - w / 2f + w * 0.1f, ly, w * 0.08f, lidH, GOLD_DARK, a);
-            box(batch, x + w / 2f - w * 0.18f, ly, w * 0.08f, lidH, GOLD_DARK, a);
-            // serrure et son trou
-            if (!opened) {
-                box(batch, x - w * 0.09f, ly - h * 0.1f, w * 0.18f, h * 0.22f, GOLD, a);
-                box(batch, x - w * 0.025f, ly - h * 0.06f, w * 0.05f, h * 0.1f, INK, a);
-            }
-            if (!opened && time < reveal) {
-                // un reflet scintille de temps en temps sur les coffres fermés
-                float spark = Math.max(0f, MathUtils.sin(time * 1.7f + i * 2.3f) - 0.85f) / 0.15f;
-                twinkle(batch, x - w * 0.3f + (i % 3) * w * 0.2f, ly + lidH * 0.6f, h * 0.35f * spark, spark * alpha);
-            }
-            shade = 1f;
-            if (shown) {
-                label(batch, times(values.get(i)), x, ly + lidH + h * 0.28f, opened ? 1.3f : 1.0f, order < 0 ? 0.6f * a : a);
-            }
+            glow(batch, at[0], at[1], r * 5f, GOLD_LIGHT, 0.5f * alpha);
+            batch.setColor(INK.r, INK.g, INK.b, alpha);
+            batch.draw(ball, at[0] - r - 2f, at[1] - r - 2f, r * 2f + 4f, r * 2f + 4f);
+            batch.setColor(GOLD_LIGHT.r, GOLD_LIGHT.g, GOLD_LIGHT.b, alpha);
+            batch.draw(ball, at[0] - r, at[1] - r, r * 2f, r * 2f);
+            batch.setColor(1f, 1f, 1f, alpha);
+            batch.draw(ball, at[0] - r * 0.55f, at[1] + r * 0.05f, r * 0.6f, r * 0.6f);
         }
     }
 
-    /** Des rayons de lumière qui montent en éventail d'un coffre ouvert. */
-    private void drawBeams(Batch batch, float x, float y, float w, float alpha, int seed) {
-        if (settings.isReducedEffects() || alpha <= 0f) return;
-        additive(batch);
-        float length = unitSize() * 1.5f;
-        for (int b = 0; b < 5; b++) {
-            float degrees = 90f + (b - 2) * 14f + MathUtils.sin(time * 1.5f + b + seed) * 4f;
-            float thick = w * 0.4f;
-            batch.setColor(GOLD_LIGHT.r, GOLD_LIGHT.g, GOLD_LIGHT.b, (0.6f + 0.25f * MathUtils.sin(time * 4f + b)) * alpha);
-            batch.draw(trail, x - length, y - thick / 2f, length, thick / 2f, length, thick, 1f, 1f, degrees + 180f);
-        }
-        normal(batch);
+    // --- Course de chevaux -----------------------------------------------------
+
+    private float laneHeight() { return unitSize() * 0.74f; }
+    private float trackTop()   { return centerY() + unitSize() * 1.95f; }
+    private float trackLeft()  { return worldWidth() / 2f - unitSize() * 4.4f; }
+    private float finishX()    { return worldWidth() / 2f + unitSize() * 4.5f; }
+
+    private float[] laneCenter(int lane) {
+        return new float[] {(trackLeft() + finishX()) / 2f, trackTop() - (lane + 0.5f) * laneHeight()};
     }
 
-    // --- Ticket à gratter -----------------------------------------------------
-
-    private float scratchAt(int index) { return START + 0.4f + SCRATCH_STEP * (index + 1); }
-
-    private float scratchProgress(int index) {
-        return Interpolation.pow2Out.apply(progress(scratchAt(index) - SCRATCH_STEP, scratchAt(index)));
+    /** @return le couloir sous ({@code x}, {@code y}), ou -1. */
+    private int laneAt(float x, float y) {
+        if (x < trackLeft() - unitSize() * 2f || x > finishX() + unitSize() * 0.8f) return -1;
+        float from = trackTop() - y;
+        if (from < 0f) return -1;
+        int lane = (int) (from / laneHeight());
+        return lane < finish.length ? lane : -1;
     }
 
-    private float[] scratchCenter(int index) {
-        float step = unitSize() * 1.35f;
-        int row = index / 3, col = index % 3;
-        return new float[] {worldWidth() / 2f + (col - 1) * step, centerY() + (1 - row) * step};
+    /** @return où en est le cheval {@code i} : 0 dans sa stalle, 1 sur la ligne d'arrivée. */
+    private float horseProgress(int i) {
+        if (time <= raceStart) return 0f;
+        float u = (time - raceStart) / finish[i];
+        if (u <= 1f) return u + 0.045f * MathUtils.sin(MathUtils.PI2 * u * 1.3f + phase[i]) * MathUtils.sin(MathUtils.PI * u);
+        return 1f + 0.07f * (1f - (float) Math.exp(-(u - 1f) * 6f));
     }
 
-    private void drawTicket(Batch batch, float alpha) {
-        float step = unitSize() * 1.35f, cell = unitSize() * 1.15f;
-        float tw = step * 3f + unitSize() * 0.6f, th = step * 3f + unitSize() * 0.6f;
-        float tx = worldWidth() / 2f - tw / 2f, ty = centerY() - th / 2f;
-        glow(batch, worldWidth() / 2f, centerY(), tw * 2f, GOLD, 0.15f * alpha);
-        box(batch, tx - 6f + 8f, ty - 6f - 8f, tw + 12f, th + 12f, NIGHT, 0.6f * alpha);   // ombre
-        box(batch, tx - 6f, ty - 6f, tw + 12f, th + 12f, GOLD_DARK, alpha);
-        box(batch, tx - 2f, ty - 2f, tw + 4f, th + 4f, GOLD, alpha);
-        box(batch, tx, ty, tw, th, CREAM, alpha);
-        // motif de petits losanges pâles sur le fond
-        float motif = unitSize() * 0.3f;
-        for (float my = ty + motif; my < ty + th - motif * 0.5f; my += motif) {
-            for (float mx = tx + motif * ((int) ((my - ty) / motif) % 2 == 0 ? 1f : 0.5f); mx < tx + tw - motif * 0.4f; mx += motif) {
-                diamond(batch, mx, my, motif * 0.22f, GOLD, 0.3f * alpha);
+    /** @return la largeur d'un cheval à l'écran. */
+    private float horseWidth() { return horses[0][0].getRegionWidth() * horseScale(); }
+    private float horseScale() { return laneHeight() * 0.68f / horses[0][0].getRegionHeight(); }
+
+    /** @return le bout du nez du cheval {@code i} : juste après sa stalle au départ, sur la ligne à l'arrivée. */
+    private float[] horseAt(int i) {
+        float start = trackLeft() + unitSize() * 0.2f + horseWidth();
+        return new float[] {start + horseProgress(i) * (finishX() - start), laneCenter(i)[1]};
+    }
+
+    private void drawRace(Batch batch, float alpha) {
+        List<Double> odds = game.getValues();
+        int count = odds.size();
+        float lh = laneHeight(), top = trackTop(), bottom = top - lh * count;
+        float left = trackLeft() - unitSize() * 1.95f, right = finishX() + unitSize() * 0.75f;
+        int chosen = game.getChoice(), winner = game.getPicked().get(0);
+        boolean done = time >= reveal;
+        // la piste : bord de terre, cadre doré
+        box(batch, left - 8f, bottom - 8f, right - left + 16f, top - bottom + 16f, GOLD_DARK, alpha);
+        box(batch, left - 3f, bottom - 3f, right - left + 6f, top - bottom + 6f, GOLD, alpha);
+        box(batch, left, bottom, right - left, top - bottom, DIRT, alpha);
+        int hovered = waiting() && getStage() != null
+            ? laneAtMouse() : -1;
+        for (int i = 0; i < count; i++) {
+            float y = top - (i + 1) * lh;
+            box(batch, trackLeft(), y + 2f, right - trackLeft(), lh - 4f, i % 2 == 0 ? TURF : TURF_DARK, alpha);
+            // l'herbe défile un peu sous les chevaux pendant la course
+            float scroll = time > raceStart ? (time - raceStart) * unitSize() * 0.4f : 0f;
+            for (float gx = trackLeft() + ((unitSize() * 0.5f - scroll % (unitSize() * 0.5f))); gx < right - 4f; gx += unitSize() * 0.5f) {
+                box(batch, gx, y + lh * 0.25f, 3f, 3f, TURF_DARK, 0.6f * alpha);
+                box(batch, gx + unitSize() * 0.22f, y + lh * 0.65f, 3f, 3f, TURF, 0.6f * alpha);
+            }
+            // lices blanches entre les couloirs
+            for (float dx = trackLeft(); dx < right; dx += 14f) box(batch, dx, y, 8f, 2f, CREAM, 0.7f * alpha);
+            boolean highlight = i == hovered || i == chosen;
+            if (waiting()) {
+                float pulse = 0.08f + 0.06f * MathUtils.sin(time * 4f + i);
+                box(batch, left, y + 2f, right - left, lh - 4f, GOLD_LIGHT, (i == hovered ? 0.25f : pulse) * alpha);
+            } else if (i == chosen) {
+                box(batch, left, y + 2f, right - left, lh - 4f, GOLD_LIGHT, (0.12f + 0.05f * MathUtils.sin(time * 5f)) * alpha);
+            }
+            if (done && i == winner) box(batch, left, y + 2f, right - left, lh - 4f, CREAM, (0.18f + 0.08f * MathUtils.sin(time * 6f)) * alpha);
+            // la plaque du couloir : numéro, cote et chances (plus de losanges = gagne plus souvent)
+            float py = y + lh / 2f, plateX = left + unitSize() * 0.12f, plateW = unitSize() * 1.7f;
+            box(batch, plateX, y + 5f, plateW, lh - 10f, highlight ? GOLD : INK, alpha);
+            box(batch, plateX + 3f, y + 8f, lh - 16f, lh - 16f, SILKS[i], alpha);
+            label(batch, Integer.toString(i + 1), plateX + 3f + (lh - 16f) / 2f, py, 1.0f, alpha);
+            float textX = plateX + lh - 16f + 6f + (plateW - lh + 10f) / 2f;
+            label(batch, times(odds.get(i)), textX, py + lh * 0.14f, 0.95f, alpha);
+            int pips = count - i;
+            for (int p = 0; p < count; p++) {
+                diamond(batch, textX + (p - (count - 1) / 2f) * unitSize() * 0.16f, py - lh * 0.24f, unitSize() * 0.1f,
+                    p < pips ? (highlight ? INK : GOLD_LIGHT) : (highlight ? GOLD_DARK : BULB_OFF), alpha);
             }
         }
-        // pointillés dorés à l'intérieur du cadre
-        float dot = 4f, inset = unitSize() * 0.1f;
-        for (float dx = tx + inset; dx < tx + tw - inset; dx += dot * 3f) {
-            box(batch, dx, ty + inset, dot, dot, GOLD_DARK, alpha);
-            box(batch, dx, ty + th - inset - dot, dot, dot, GOLD_DARK, alpha);
+        // la ligne d'arrivée, en damier
+        float cell = lh / 4f;
+        for (int k = 0; k < count * 4; k++) {
+            for (int c = 0; c < 2; c++) {
+                box(batch, finishX() - cell + c * cell, bottom + k * cell, cell, cell, (k + c) % 2 == 0 ? CREAM : INK, alpha);
+            }
         }
-        for (float dy = ty + inset; dy < ty + th - inset; dy += dot * 3f) {
-            box(batch, tx + inset, dy, dot, dot, GOLD_DARK, alpha);
-            box(batch, tx + tw - inset - dot, dy, dot, dot, GOLD_DARK, alpha);
+        if (done) glow(batch, finishX(), laneCenter(winner)[1], lh * 3f, GOLD_LIGHT, 0.4f * alpha * Math.max(0f, 1f - (time - reveal) * 0.5f));
+        // les chevaux
+        for (int i = 0; i < count; i++) {
+            float[] h = horseAt(i);
+            boolean running = time > raceStart && horseProgress(i) < 1.06f;
+            int frame = running ? (int) (time * 11f + i) % 2 : 0;
+            float bob = running ? Math.abs(MathUtils.sin(time * 17f + i)) * 3f : MathUtils.sin(time * 2f + i) * 1.5f;
+            float scale = horseScale(), sw = horseWidth();
+            batch.setColor(0f, 0f, 0f, 0.3f * alpha);
+            batch.draw(pixel, h[0] - sw * 0.9f, h[1] - lh * 0.36f, sw * 0.8f, 4f);       // ombre
+            batch.setColor(1f, 1f, 1f, alpha);
+            sprite(batch, horses[i][frame], h[0] - sw * 0.5f, h[1] + bob, scale, 0f);
+            if (i == chosen) {
+                // une flèche dorée au-dessus du cheval du joueur
+                float my = h[1] + lh * 0.38f + Math.abs(MathUtils.sin(time * 6f)) * 4f;
+                glow(batch, h[0] - sw * 0.42f, my, unitSize() * 0.6f, GOLD_LIGHT, 0.4f * alpha);
+                diamond(batch, h[0] - sw * 0.42f, my, unitSize() * 0.2f, GOLD, alpha);
+                diamond(batch, h[0] - sw * 0.42f, my, unitSize() * 0.09f, CREAM, alpha);
+            }
         }
-        // encoches de ticket sur les côtés
-        for (int side = 0; side < 2; side++) {
-            float nx = side == 0 ? tx - 6f : tx + tw - 6f;
-            for (int n = 0; n < 5; n++) box(batch, nx, ty + th * (0.15f + n * 0.175f) - 5f, 12f, 10f, NIGHT, alpha);
-        }
-        // bandeau vert du haut, avec ses pièces
-        float band = unitSize() * 0.26f;
-        box(batch, tx, ty + th - band - unitSize() * 0.06f, tw, band, GREEN, alpha);
-        box(batch, tx, ty + th - band - unitSize() * 0.06f, tw, 2f, GOLD, alpha);
-        box(batch, tx, ty + th - unitSize() * 0.06f - 2f, tw, 2f, GOLD, alpha);
-        batch.setColor(1f, 1f, 1f, alpha);
-        for (int k = 0; k < 5; k++) {
-            float bob = MathUtils.sin(time * 3f + k) * 2f;
-            sprite(batch, coin, tx + tw * (0.1f + k * 0.2f), ty + th - band / 2f - unitSize() * 0.06f + bob,
-                band * 0.8f / coin.getRegionHeight(), 0f);
-        }
-        List<Double> values = game.getValues();
-        for (int i = 0; i < values.size(); i++) {
-            float[] c = scratchCenter(i);
-            float x = c[0] - cell / 2f, y = c[1] - cell / 2f;
-            boolean win = game.getPicked().contains(i) && time >= reveal;
-            float beat = win ? 1f + 0.06f * Math.abs(MathUtils.sin(time * 5f)) : 1f;
-            float bc = cell * beat, bx = c[0] - bc / 2f, by = c[1] - bc / 2f;
-            if (win) glow(batch, c[0], c[1], cell * 2.4f, GOLD_LIGHT, (0.3f + 0.12f * MathUtils.sin(time * 6f)) * alpha);
-            box(batch, bx - 3f, by - 3f, bc + 6f, bc + 6f, win ? CREAM : GOLD_DARK, alpha);
-            box(batch, bx, by, bc, bc, win ? GOLD : INK, alpha);
-            box(batch, bx, by + bc * 0.9f, bc, bc * 0.1f, win ? GOLD_LIGHT : BEVEL, 0.12f * alpha);
-            label(batch, times(values.get(i)), c[0], c[1], win ? 1.45f : 1.3f, alpha);
-            if (win) twinkle(batch, bx + bc * 0.85f, by + bc * 0.85f, bc * 0.45f * Math.abs(MathUtils.sin(time * 4f + i)), alpha);
-            // la couche argentée part de haut en bas quand la case se gratte, avec un bord déchiqueté
-            float k = scratchProgress(i);
-            if (k < 1f) {
-                float left = cell * (1f - k);
-                box(batch, x, y, cell, left, SILVER, alpha);
-                int teeth = 8;
-                for (int t = 0; t < teeth; t++) {
-                    float tooth = left > 4f ? ((i * 7 + t * 13) % 5) * cell * 0.012f : 0f;
-                    box(batch, x + t * cell / teeth, y + left, cell / teeth, tooth, SILVER, alpha);
-                }
-                for (int s = 0; s < 4; s++) {
-                    box(batch, x + cell * 0.1f + s * cell * 0.22f, y + left * 0.3f, cell * 0.06f, left * 0.4f,
-                        SILVER_DARK, alpha);
-                }
-                // un reflet glisse sur l'argent encore intact
-                float shine = ((time * 0.8f + i * 0.13f) % 1.6f) / 1.6f;
-                if (left > cell * 0.2f) box(batch, x + cell * shine * 0.9f, y, cell * 0.08f, left, CREAM, 0.35f * alpha);
-                // la pièce qui gratte, en zigzag sur le bord
-                if (k > 0f) {
-                    batch.setColor(1f, 1f, 1f, alpha);
-                    float sx = x + cell * (0.5f + 0.42f * MathUtils.sin(time * 34f));
-                    sprite(batch, coin, sx, y + left + cell * 0.08f, cell * 0.34f / coin.getRegionHeight(),
-                        MathUtils.sin(time * 34f) * 25f - 30f);
+        // les stalles : elles se lèvent quand la course part
+        float lift = Interpolation.pow2In.apply(progress(raceStart - 0.25f, raceStart + 0.15f));
+        if (lift < 1f) {
+            for (int i = 0; i < count; i++) {
+                float y = top - (i + 1) * lh, gx = trackLeft() + unitSize() * 0.05f;
+                float gy = y + 3f + lift * lh;
+                box(batch, gx, gy, unitSize() * 0.16f, lh - 6f, SILVER_DARK, (1f - lift) * alpha);
+                for (int b = 0; b < 3; b++) {
+                    box(batch, gx + 2f, gy + (b + 0.5f) * (lh - 6f) / 3f - 1f, unitSize() * 0.16f - 4f, 3f, SILVER, (1f - lift) * alpha);
                 }
             }
         }
-        // un grand reflet balaie tout le ticket de temps en temps
-        float sweep = ((time - START) % 2.8f) / 1.1f;
-        if (sweep < 1f && time > START && !settings.isReducedEffects()) {
-            additive(batch);
-            float bandW = tw * 0.12f, sx = tx + (tw - bandW) * sweep;
-            batch.setColor(CREAM.r, CREAM.g, CREAM.b, 0.16f * (1f - Math.abs(sweep * 2f - 1f)) * alpha);
-            batch.draw(pixel, sx, ty, bandW, th);
-            batch.draw(pixel, sx + bandW * 1.3f, ty, bandW * 0.3f, th);
-            normal(batch);
+        if (waiting() && time >= START) {
+            float pulse = 1f + 0.06f * MathUtils.sin(time * 5f);
+            glow(batch, worldWidth() / 2f, top + unitSize() * 0.42f, 360f, GOLD, 0.25f * alpha);
+            label(batch, Lang.t("CHOISIS TON CHEVAL !"), worldWidth() / 2f, top + unitSize() * 0.42f, 1.4f * pulse, alpha);
+        }
+    }
+
+    /** @return le couloir sous la souris, ou -1. */
+    private int laneAtMouse() {
+        try {
+            getStage().screenToStageCoordinates(mouse.set(Gdx.input.getX(), Gdx.input.getY()));
+            return laneAt(mouse.x, mouse.y);
+        } catch (RuntimeException noInput) {
+            return -1;
         }
     }
 
@@ -735,7 +935,15 @@ public class SmallBonusGameCutscene extends Cutscene {
 
     private void drawCaptions(Batch batch, float alpha) {
         float y = totalY();
-        if (time < totalAt) {
+        if (game.getKind() == BonusGame.Kind.HORSES && time >= reveal && time < totalAt) {
+            // le résultat de la course, avant le total
+            boolean won = game.getChoice() == game.getPicked().get(0);
+            float pop = Interpolation.swingOut.apply(progress(reveal, reveal + 0.35f));
+            String line = won ? Lang.f("TON CHEVAL GAGNE ! {0}", times(game.getValues().get(game.getChoice())))
+                : Lang.f("CHEVAL {0} GAGNANT : LOT DE CONSOLATION {1}", game.getPicked().get(0) + 1, times(BonusGame.HORSE_CONSOLATION));
+            if (won) glow(batch, worldWidth() / 2f, y, 420f, GOLD, 0.35f * pop);
+            label(batch, line, worldWidth() / 2f, y, Math.max(0.01f, (won ? 1.8f : 1.3f) * pop), 1f);
+        } else if (time < totalAt) {
             String line = game.getPot() > 0
                 ? Lang.f("MISE DE BASE : CAGNOTTE {0} + {1}", Lang.big(game.getPot()), Lang.big(game.getUnit() - game.getPot()))
                 : Lang.f("MISE DE BASE : {0}", Lang.big(game.getUnit()));

@@ -1,4 +1,4 @@
-"""Miniatures des petits Jeux bonus (Roue, Coffres, Ticket à gratter) pour l'écran Cinématique.
+"""Miniatures des petits Jeux bonus (Roue, Plinko, Course de chevaux) pour l'écran Cinématique.
 Même cadre de machine que cards/test/jeu_bonus.png (40 x 56, agrandi x12), teinté par jeu, et la fenêtre
 redessinée. Lancement : python3 tools/cards/classic/bonus_games.py (depuis la racine du dépôt)."""
 import colorsys
@@ -10,7 +10,7 @@ ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', '..'
 SCALE = 12
 INK, GOLD, GOLD_D, GOLD_L = (28, 15, 36, 255), (240, 200, 60, 255), (150, 95, 20, 255), (255, 229, 138, 255)
 RED, RED_D, CREAM, SILVER = (220, 40, 60, 255), (110, 15, 30, 255), (246, 238, 220, 255), (185, 192, 200, 255)
-WOOD, WOOD_D, GREEN = (122, 74, 36, 255), (74, 42, 18, 255), (60, 180, 90, 255)
+GREEN = (63, 158, 74, 255)
 PURPLES = {(70, 15, 85), (110, 30, 130), (85, 20, 100), (70, 10, 90)}
 
 
@@ -45,45 +45,56 @@ def wheel():
     return im
 
 
-def chests():
+def plinko():
     im, d = base(0.36)
-    for j in range(2):
-        for i in range(3):
-            x, y = 9 + i * 7, 18 + j * 9
-            opened = (i + j) % 2 == 0
-            d.rectangle([x, y + 3, x + 5, y + 6], fill=WOOD)
-            d.line([(x, y + 4), (x + 5, y + 4)], fill=GOLD_D)
-            if opened:
-                d.rectangle([x, y - 1, x + 5, y], fill=WOOD_D)
-                d.rectangle([x + 1, y + 2, x + 4, y + 2], fill=GOLD_L)
-                d.point((x + 2, y + 1), fill=GOLD)
-            else:
-                d.rectangle([x, y + 1, x + 5, y + 2], fill=WOOD_D)
-                d.point((x + 2, y + 3), fill=GOLD)
+    # les clous en triangle, la bille dorée, les cases du bas (bords rouges, centre bleu)
+    for row in range(5):
+        for i in range(row + 3):
+            x = 19 + (i - (row + 2) / 2) * 4
+            d.point((round(x), 18 + row * 3), fill=SILVER)
+    d.rectangle([20, 22, 21, 23], fill=GOLD_L)
+    d.point((21, 22), fill=CREAM)
+    colors = [RED, (232, 112, 29, 255), (232, 184, 29, 255), GREEN, (47, 111, 200, 255),
+              GREEN, (232, 184, 29, 255), (232, 112, 29, 255), RED]
+    for k, color in enumerate(colors):
+        x = 9 + k * 2 + (1 if k > 4 else 0)
+        d.rectangle([x, 32, x + 1, 36], fill=color)
+    d.line([(8, 31), (30, 31)], fill=GOLD_D)
     return im
 
 
-def ticket():
+HORSE = [
+    "......jj....",
+    ".....jjj..m.",
+    ".m..bbbjbmbb",
+    "mmbbbbbbbbbh",
+    "m.bbbbbbbb..",
+    "..bb....bb..",
+    ".b..b..b..b.",
+]
+
+
+def horses():
     im, d = base(0.6)
-    d.rectangle([10, 16, 28, 36], fill=GOLD_D)
-    d.rectangle([11, 17, 27, 35], fill=CREAM)
-    d.rectangle([11, 17, 27, 18], fill=GREEN)
-    for j in range(3):
-        for i in range(3):
-            x, y = 12 + i * 5, 20 + j * 5
-            if (i, j) in ((0, 0), (1, 1), (2, 2)):
-                d.rectangle([x, y, x + 3, y + 3], fill=GOLD)
-                d.point((x + 1, y + 1), fill=GOLD_L)
-            elif (i + j) % 3 == 0:
-                d.rectangle([x, y, x + 3, y + 3], fill=INK)
-                d.point((x + 2, y + 2), fill=RED)
-            else:
-                d.rectangle([x, y, x + 3, y + 3], fill=SILVER)
-                d.line([(x + 1, y + 1), (x + 1, y + 2)], fill=(125, 133, 142, 255))
+    turf, turf_d = (47, 122, 62, 255), (37, 99, 47, 255)
+    silks = [(232, 51, 63, 255), (47, 127, 232, 255), (242, 197, 34, 255)]
+    for lane in range(3):
+        y = 16 + lane * 7
+        d.rectangle([8, y, 30, y + 6], fill=turf if lane % 2 == 0 else turf_d)
+        d.line([(8, y + 6), (30, y + 6)], fill=CREAM)
+        ox = 10 + lane * 4
+        for ry, row in enumerate(HORSE):
+            for rx, c in enumerate(row):
+                color = {'b': (138, 90, 46, 255), 'm': (58, 36, 20, 255), 'j': silks[lane], 'h': (26, 16, 16, 255)}.get(c)
+                if color and y + ry - 1 <= y + 5:
+                    d.point((ox + rx, y + ry - 1), fill=color)
+    for k in range(11):
+        d.point((29, 16 + k * 2), fill=CREAM)
+        d.point((30, 17 + k * 2), fill=CREAM)
     return im
 
 
 if __name__ == '__main__':
-    for name, draw in (('jeu_bonus_roue', wheel), ('jeu_bonus_coffres', chests), ('jeu_bonus_ticket', ticket)):
+    for name, draw in (('jeu_bonus_roue', wheel), ('jeu_bonus_plinko', plinko), ('jeu_bonus_chevaux', horses)):
         draw().resize((40 * SCALE, 56 * SCALE), Image.NEAREST).save(os.path.join(ROOT, name + '.png'))
         print(name)

@@ -120,6 +120,12 @@ public abstract class Cutscene extends Actor implements Disposable {
         return true;
     }
 
+    /**
+     * Une touche pendant la scène.
+     * @return {@code true} si la scène s'en sert (sinon, la touche passe la scène)
+     */
+    public boolean key(int keycode) { return false; }
+
     /** Le bouton tenu, la souris glisse en ({@code x}, {@code y}) ; rien par défaut. */
     protected void pointerDragged(float x, float y) {}
 

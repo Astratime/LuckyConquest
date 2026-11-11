@@ -256,8 +256,8 @@ public class CinematicScreen extends CasinoMenuScreen {
         if (Bestiary.bonusGameSeen(profile)) {
             Texture art = cardTextures.get("cards/test/jeu_bonus.png");
             Texture wheelArt = cardTextures.get("cards/test/jeu_bonus_roue.png");
-            Texture chestsArt = cardTextures.get("cards/test/jeu_bonus_coffres.png");
-            Texture ticketArt = cardTextures.get("cards/test/jeu_bonus_ticket.png");
+            Texture plinkoArt = cardTextures.get("cards/test/jeu_bonus_plinko.png");
+            Texture horsesArt = cardTextures.get("cards/test/jeu_bonus_chevaux.png");
             addGroup(Lang.t("Jeu bonus"), Lang.t("Le Jeu bonus"), List.of(
                 new Entry(Lang.t("Grille de la cagnotte"),
                     Lang.t("Rang 4, le plus rare : la grille de 6 x 6 et ses tirages, sur ta machine. Chaque alignement paie "
@@ -268,13 +268,13 @@ public class CinematicScreen extends CasinoMenuScreen {
                     Lang.t("Rang 1 : un lancer de roue, la case où elle s'arrête multiplie la cagnotte."),
                     wheelArt, kit -> new SmallBonusGameCutscene(kit, BonusGame.playSmall(BonusGame.Kind.WHEEL, 0,
                         SpinEconomy.BASE_SPIN_COST, 0, new Random()))),
-                new Entry(Lang.t("Coffres de la cagnotte"),
-                    Lang.t("Rang 2 : trois coffres s'ouvrent sur neuf, chacun rapporte une part de la cagnotte."),
-                    chestsArt, kit -> new SmallBonusGameCutscene(kit, BonusGame.playSmall(BonusGame.Kind.CHESTS, 0,
+                new Entry(Lang.t("Plinko de la cagnotte"),
+                    Lang.t("Rang 2 : une bille rebondit sur les clous et tombe dans une case qui multiplie la cagnotte."),
+                    plinkoArt, kit -> new SmallBonusGameCutscene(kit, BonusGame.playSmall(BonusGame.Kind.PLINKO, 0,
                         SpinEconomy.BASE_SPIN_COST, 0, new Random()))),
-                new Entry(Lang.t("Ticket à gratter"),
-                    Lang.t("Rang 3 : neuf cases à gratter, la valeur trouvée trois fois multiplie la cagnotte."),
-                    ticketArt, kit -> new SmallBonusGameCutscene(kit, BonusGame.playSmall(BonusGame.Kind.SCRATCH, 0,
+                new Entry(Lang.t("Course de chevaux"),
+                    Lang.t("Rang 3 : choisis ton cheval. S'il gagne, sa cote multiplie la cagnotte ; sinon, un lot de consolation."),
+                    horsesArt, kit -> new SmallBonusGameCutscene(kit, BonusGame.playSmall(BonusGame.Kind.HORSES, 0,
                         SpinEconomy.BASE_SPIN_COST, 0, new Random())))));
         }
     }
@@ -586,7 +586,7 @@ public class CinematicScreen extends CasinoMenuScreen {
     @Override
     protected boolean onKey(int keycode) {
         if (isPlaying()) {
-            cutscene.skip();
+            if (!cutscene.key(keycode)) cutscene.skip();
             return true;
         }
         int count = groups.get(group).entries().size();

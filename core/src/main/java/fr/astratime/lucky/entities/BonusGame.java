@@ -24,7 +24,8 @@ import java.util.Random;
  * Tout est tiré d'avance (voir {@link #play}) : l'écran ne fait que le montrer.
  *
  * Trois autres Jeux bonus, plus modestes, sortent plus souvent (idée d'Astra, 2026-11-11) :
- * la Roue, les Coffres et le Ticket à gratter (voir {@link Kind}). Ils paient
+ * la Roue, le Plinko et la Course de chevaux (voir {@link Kind}). Le joueur n'y fait au plus
+ * qu'un choix (son cheval), qui change le risque mais pas la moyenne. Ils paient
  * des multiples d'une mise de base : la cagnotte + {@link #BASE_UNIT_SPINS} coûts de tirage.
  * Chaque Jeu bonus a un rang (Astra) : la grille est de rang 4 ; le rang 3 rapporte en moyenne
  * 80 % de la grille, le rang 2 50 %, le rang 1 20 %. La grille aligne en moyenne
@@ -39,10 +40,10 @@ public final class BonusGame {
         GRID(10, 4),
         /** La Roue de la cagnotte : un lancer, la case où elle s'arrête multiplie la mise de base. */
         WHEEL(30, 1),
-        /** Les Coffres : trois coffres ouverts sur neuf, chacun un multiple de la mise de base. */
-        CHESTS(30, 2),
-        /** Le Ticket à gratter : la valeur qu'on trouve trois fois multiplie la mise de base. */
-        SCRATCH(30, 3);
+        /** Le Plinko : une bille rebondit sur des clous et tombe dans une case qui multiplie la mise de base. */
+        PLINKO(30, 2),
+        /** La Course de chevaux : le joueur choisit un cheval ; s'il gagne, sa cote multiplie la mise de base. */
+        HORSES(30, 3);
 
         /** Poids de tirage (sur 100). */
         public final int weight;
@@ -71,15 +72,22 @@ public final class BonusGame {
     public static final double GRID_AVERAGE_LINES = 10.8;
     /** Les cases de la Roue, dans l'ordre (multiples de la mise de base) : 2,2 en moyenne, 20 % de la grille. */
     public static final List<Double> WHEEL_SEGMENTS = List.of(1.0, 2.0, 1.5, 3.0, 1.0, 4.0, 1.5, 2.0, 1.0, 5.0);
-    /** Ce que contiennent les neuf Coffres ; trois ouverts : 5,5 mises de base en moyenne, 50 % de la grille. */
-    public static final List<Double> CHEST_VALUES = List.of(0.5, 1.0, 1.0, 1.5, 2.0, 2.0, 2.5, 3.0, 3.0);
-    /** Coffres ouverts. */
-    public static final int CHESTS_OPENED = 3;
-    /** Valeurs du Ticket à gratter et leurs poids : la gagnante vaut 8,66 mises de base en moyenne, 80 % de la grille. */
-    public static final List<Double> SCRATCH_VALUES  = List.of(4.0, 6.0, 8.0, 12.0, 20.0);
-    public static final List<Integer> SCRATCH_WEIGHTS = List.of(25, 25, 20, 18, 12);
-    /** Cases du Ticket à gratter (3 x 3). */
-    public static final int SCRATCH_CELLS = 9;
+    /** Rangées de clous du Plinko : à chacune, la bille part à gauche ou à droite (une chance sur deux). */
+    public static final int PLINKO_ROWS = 8;
+    /**
+     * Les {@code PLINKO_ROWS + 1} cases du bas, de gauche à droite (multiples de la mise de base).
+     * La bille tombe le plus souvent au centre : 5,4 mises de base en moyenne, 50 % de la grille.
+     */
+    public static final List<Double> PLINKO_SLOTS = List.of(55.0, 14.0, 7.0, 4.0, 3.0, 4.0, 7.0, 14.0, 55.0);
+    /** Chances de gagner de chaque cheval (sur 100), du favori à l'outsider. */
+    public static final List<Integer> HORSE_CHANCES = List.of(40, 25, 17, 11, 7);
+    /**
+     * Cote de chaque cheval (multiple de la mise de base) s'il gagne. Quel que soit le cheval choisi,
+     * la course rapporte environ 8,6 mises de base en moyenne, 80 % de la grille.
+     */
+    public static final List<Double> HORSE_ODDS = List.of(18.5, 28.5, 41.0, 62.0, 97.0);
+    /** Lot de consolation quand le cheval choisi perd (en mises de base). */
+    public static final double HORSE_CONSOLATION = 2.0;
 
     /** Côté de la grille, en cases. */
     public static final int   SIZE           = 6;
@@ -114,16 +122,20 @@ public final class BonusGame {
     private final List<boolean[][]> frozen;
     /** Alignements de la grille finale, qui paient. */
     private final List<Line> lines;
-    private final double total;
+    private double total;
     /** Cagnotte ajoutée à chaque alignement (voir {@link #withPot}), 0 sans cagnotte. */
     private final double pot;
     private final Kind kind;
-    /** Petits Jeux bonus : les valeurs montrées (cases de la Roue, Coffres, cases du Ticket), en mises de base. */
+    /** Petits Jeux bonus : les valeurs montrées (cases de la Roue et du Plinko, cotes des chevaux), en mises de base. */
     private final List<Double> values;
-    /** Petits Jeux bonus : la case où s'arrête la Roue, les Coffres ouverts, les trois cases gagnantes du Ticket. */
+    /** Petits Jeux bonus : la case où s'arrête la Roue ou la bille du Plinko, le cheval gagnant. */
     private final List<Integer> picked;
     /** Petits Jeux bonus : la mise de base, et la part du total qui vient de la cagnotte. */
-    private final double unit, potPaid;
+    private final double unit;
+    private double potPaid;
+    /** Course de chevaux : le bonus des cartes et du rang, et le cheval choisi (-1 tant qu'il n'est pas choisi). */
+    private double extra;
+    private int choice = -1;
 
     private BonusGame(List<Symbol[][]> grids, List<boolean[][]> frozen, List<Line> lines) {
         this(grids, frozen, lines, 0);
@@ -159,7 +171,8 @@ public final class BonusGame {
     }
 
     /**
-     * Joue un petit Jeu bonus ({@link Kind#WHEEL}, {@link Kind#CHESTS} ou {@link Kind#SCRATCH}).
+     * Joue un petit Jeu bonus ({@link Kind#WHEEL}, {@link Kind#PLINKO} ou {@link Kind#HORSES}).
+     * La Course de chevaux attend le choix du joueur ({@link #choose}) : jusque-là, elle ne paie rien.
      *
      * @param pot       la cagnotte, qui repart de 0 après le jeu
      * @param spinCost  coût d'un tirage, là où se joue le combat
@@ -170,7 +183,6 @@ public final class BonusGame {
         List<Double> values = new ArrayList<>();
         List<Integer> picked = new ArrayList<>();
         double paid = 0; // en mises de base
-        int prizes = 1;
         switch (kind) {
             case WHEEL -> {
                 values.addAll(WHEEL_SEGMENTS);
@@ -178,56 +190,54 @@ public final class BonusGame {
                 picked.add(stop);
                 paid = values.get(stop);
             }
-            case CHESTS -> {
-                values.addAll(CHEST_VALUES);
-                java.util.Collections.shuffle(values, random);
-                List<Integer> order = new ArrayList<>();
-                for (int i = 0; i < values.size(); i++) order.add(i);
-                java.util.Collections.shuffle(order, random);
-                for (int i = 0; i < CHESTS_OPENED; i++) {
-                    picked.add(order.get(i));
-                    paid += values.get(order.get(i));
-                }
-                prizes = CHESTS_OPENED;
+            case PLINKO -> {
+                values.addAll(PLINKO_SLOTS);
+                int slot = 0;
+                for (int row = 0; row < PLINKO_ROWS; row++) if (random.nextBoolean()) slot++;
+                picked.add(slot);
+                paid = values.get(slot);
             }
-            case SCRATCH -> {
-                double win = weighted(random);
-                // Trois cases portent la valeur gagnante ; les six autres, d'autres valeurs, au plus deux fois chacune.
-                List<Double> others = new ArrayList<>();
-                for (double value : SCRATCH_VALUES) {
-                    if (value != win) { others.add(value); others.add(value); }
-                }
-                java.util.Collections.shuffle(others, random);
-                List<Double> cells = new ArrayList<>(List.of(win, win, win));
-                cells.addAll(others.subList(0, SCRATCH_CELLS - 3));
-                java.util.Collections.shuffle(cells, random);
-                values.addAll(cells);
-                for (int i = 0; i < cells.size(); i++) if (cells.get(i) == win) picked.add(i);
-                paid = win;
+            case HORSES -> {
+                values.addAll(HORSE_ODDS);
+                int roll = random.nextInt(100), winner = 0;
+                while (roll >= HORSE_CHANCES.get(winner)) roll -= HORSE_CHANCES.get(winner++);
+                picked.add(winner);
+                BonusGame race = new BonusGame(kind, values, picked, unit, 0, Math.max(0, pot), 0);
+                race.extra = Math.max(0, extra);
+                return race;
             }
             default -> throw new IllegalArgumentException("La grille se joue avec play : " + kind);
         }
-        double total = BigNumber.add(BigNumber.round(unit * paid), BigNumber.round(Math.max(0, extra) * prizes));
+        double total = BigNumber.add(BigNumber.round(unit * paid), BigNumber.round(Math.max(0, extra)));
         double potPaid = BigNumber.round(Math.max(0, pot) * paid);
         return new BonusGame(kind, values, picked, unit, total, Math.max(0, pot), potPaid);
     }
 
-    private static double weighted(Random random) {
-        int roll = random.nextInt(100);
-        for (int i = 0; i < SCRATCH_VALUES.size(); i++) {
-            if (roll < SCRATCH_WEIGHTS.get(i)) return SCRATCH_VALUES.get(i);
-            roll -= SCRATCH_WEIGHTS.get(i);
-        }
-        return SCRATCH_VALUES.get(0);
+    /**
+     * Course de chevaux : le joueur choisit son cheval. S'il gagne, sa cote multiplie la mise de base ;
+     * sinon, le lot de consolation. Le bonus des cartes et du rang s'ajoute dans les deux cas.
+     */
+    public void choose(int horse) {
+        if (kind != Kind.HORSES || choice >= 0) return;
+        choice = Math.max(0, Math.min(HORSE_ODDS.size() - 1, horse));
+        double paid = choice == picked.get(0) ? HORSE_ODDS.get(choice) : HORSE_CONSOLATION;
+        total = BigNumber.add(BigNumber.round(unit * paid), BigNumber.round(extra));
+        potPaid = BigNumber.round(pot * paid);
     }
+
+    /** @return {@code true} tant que le joueur n'a pas choisi son cheval (la course ne paie rien encore). */
+    public boolean isPending() { return kind == Kind.HORSES && choice < 0; }
+
+    /** @return Course de chevaux : le cheval choisi, -1 avant le choix. */
+    public int getChoice() { return choice; }
 
     /** @return le Jeu bonus joué. */
     public Kind getKind() { return kind; }
 
-    /** @return petits Jeux bonus : les valeurs montrées (cases de la Roue, Coffres, cases du Ticket), en mises de base. */
+    /** @return petits Jeux bonus : les valeurs montrées (cases de la Roue et du Plinko, cotes des chevaux), en mises de base. */
     public List<Double> getValues() { return values; }
 
-    /** @return petits Jeux bonus : la case où s'arrête la Roue, les Coffres ouverts, les cases gagnantes du Ticket. */
+    /** @return petits Jeux bonus : la case où s'arrête la Roue ou la bille du Plinko, le cheval gagnant. */
     public List<Integer> getPicked() { return picked; }
 
     /** @return petits Jeux bonus : la mise de base (cagnotte + {@link #BASE_UNIT_SPINS} coûts de tirage). */

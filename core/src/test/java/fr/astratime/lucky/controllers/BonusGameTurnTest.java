@@ -109,7 +109,7 @@ class BonusGameTurnTest {
         int games = 20_000;
         for (int i = 0; i < games; i++) seen.merge(BonusGame.Kind.pick(random), 1, Integer::sum);
         assertEquals(games * 0.10, seen.get(BonusGame.Kind.GRID), games * 0.01);
-        for (BonusGame.Kind kind : List.of(BonusGame.Kind.WHEEL, BonusGame.Kind.CHESTS, BonusGame.Kind.SCRATCH)) {
+        for (BonusGame.Kind kind : List.of(BonusGame.Kind.WHEEL, BonusGame.Kind.PLINKO, BonusGame.Kind.HORSES)) {
             assertEquals(games * 0.30, seen.get(kind), games * 0.015, kind.name());
         }
     }
@@ -129,12 +129,13 @@ class BonusGameTurnTest {
         java.util.Random random = new java.util.Random(5);
         double pot = 1_000_000;
         java.util.Map<BonusGame.Kind, Double> share = java.util.Map.of(
-            BonusGame.Kind.SCRATCH, 0.8, BonusGame.Kind.CHESTS, 0.5, BonusGame.Kind.WHEEL, 0.2);
+            BonusGame.Kind.HORSES, 0.8, BonusGame.Kind.PLINKO, 0.5, BonusGame.Kind.WHEEL, 0.2);
         for (BonusGame.Kind kind : share.keySet()) {
             double sum = 0, potSum = 0;
             int games = 8_000;
             for (int i = 0; i < games; i++) {
                 BonusGame game = BonusGame.playSmall(kind, pot, 100, 0, random);
+                if (game.isPending()) game.choose(i % BonusGame.HORSE_ODDS.size());
                 assertEquals(kind, game.getKind());
                 assertEquals(pot + BonusGame.BASE_UNIT_SPINS * 100, game.getUnit(), 1e-6);
                 assertTrue(game.getPotPaid() <= game.getTotal());
@@ -149,20 +150,75 @@ class BonusGameTurnTest {
     }
 
     @Test
-    void theScratchTicketShowsTheWinningValueThreeTimes() {
+    void thePlinkoBallFallsMostlyInTheMiddle() {
         java.util.Random random = new java.util.Random(11);
-        for (int i = 0; i < 200; i++) {
-            BonusGame game = BonusGame.playSmall(BonusGame.Kind.SCRATCH, 0, 100, 0, random);
-            assertEquals(BonusGame.SCRATCH_CELLS, game.getValues().size());
-            assertEquals(3, game.getPicked().size());
-            double win = game.getValues().get(game.getPicked().get(0));
-            assertEquals(3, game.getValues().stream().filter(v -> v == win).count(), "la gagnante trois fois");
-            for (double value : game.getValues()) {
-                assertTrue(game.getValues().stream().filter(v -> v == value).count() <= 3);
-            }
-            assertEquals(win * game.getUnit(), game.getTotal(), 1e-6);
-            assertEquals(0, game.getPotPaid(), 1e-6, "sans cagnotte");
+        int[] slots = new int[BonusGame.PLINKO_SLOTS.size()];
+        int games = 20_000;
+        for (int i = 0; i < games; i++) {
+            BonusGame game = BonusGame.playSmall(BonusGame.Kind.PLINKO, 0, 100, 0, random);
+            int slot = game.getPicked().get(0);
+            slots[slot]++;
+            assertEquals(BonusGame.PLINKO_SLOTS.get(slot) * game.getUnit(), game.getTotal(), 1e-6);
         }
+        assertEquals(games * 70 / 256.0, slots[4], games * 0.02, "le centre : 70 chances sur 256");
+        assertEquals(games / 256.0, slots[0], games * 0.004, "un bord : 1 chance sur 256");
+    }
+
+    @Test
+    void everyHorsePaysAboutTheSameOnAverage() {
+        java.util.Random random = new java.util.Random(13);
+        int horses = BonusGame.HORSE_ODDS.size();
+        for (int horse = 0; horse < horses; horse++) {
+            double sum = 0;
+            int games = 20_000;
+            for (int i = 0; i < games; i++) {
+                BonusGame race = BonusGame.playSmall(BonusGame.Kind.HORSES, 0, 100, 0, random);
+                race.choose(horse);
+                sum += race.getTotal() / race.getUnit();
+            }
+            assertEquals(0.8, sum / games / BonusGame.GRID_AVERAGE_LINES, 0.07, "cheval " + (horse + 1));
+        }
+    }
+
+    @Test
+    void theRaceWaitsForTheChoiceThenPaysOnce() {
+        BonusGame race = BonusGame.playSmall(BonusGame.Kind.HORSES, 10_000, 100, 0, new java.util.Random(2));
+        assertTrue(race.isPending());
+        assertEquals(0, race.getTotal(), 1e-6, "rien avant le choix");
+        int winner = race.getPicked().get(0);
+        race.choose(winner);
+        assertFalse(race.isPending());
+        assertEquals(BonusGame.HORSE_ODDS.get(winner) * race.getUnit(), race.getTotal(), 1e-6);
+        assertEquals(BonusGame.HORSE_ODDS.get(winner) * 10_000, race.getPotPaid(), 1e-6);
+        race.choose((winner + 1) % BonusGame.HORSE_ODDS.size());
+        assertEquals(winner, race.getChoice(), "on ne change pas de cheval");
+
+        BonusGame lost = BonusGame.playSmall(BonusGame.Kind.HORSES, 0, 100, 0, new java.util.Random(2));
+        lost.choose((lost.getPicked().get(0) + 1) % BonusGame.HORSE_ODDS.size());
+        assertEquals(BonusGame.HORSE_CONSOLATION * lost.getUnit(), lost.getTotal(), 1e-6, "lot de consolation");
+    }
+
+    @Test
+    void onScreenTheRacePaysWhenTheHorseIsChosen() {
+        GameController controller = new GameController(BonusGameTurnTest::plainCards);
+        controller.restart(EnemyKind.CROUPIER);
+        controller.setBonusGameChance(1f);
+        controller.setBonusGameKind(BonusGame.Kind.HORSES);
+        controller.setBonusChoiceDeferred(true);
+        controller.getPot().add(50_000);
+        controller.drawCards();
+        controller.rigSpin(Symbol.SEVEN, Symbol.SEVEN, Symbol.SEVEN);
+        Player player = controller.getGameState().getPlayer();
+        BonusGame race = controller.spin().getBonusGame();
+        assertNotNull(race);
+        assertTrue(race.isPending());
+        assertEquals(0, controller.getPot().getAmount(), "la cagnotte est déjà prise");
+        double before = player.getGains();
+        controller.chooseHorse(race, 0);
+        assertEquals(before + race.getTotal(), player.getGains(), 1e-6);
+        assertEquals(race.getPotPaid(), player.getPotWinnings(), 1e-6);
+        controller.chooseHorse(race, 1);
+        assertEquals(before + race.getTotal(), player.getGains(), 1e-6, "elle ne paie qu'une fois");
     }
 
     @Test
