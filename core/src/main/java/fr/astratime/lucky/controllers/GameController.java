@@ -863,16 +863,6 @@ public class GameController {
     /** Impose le Jeu bonus qui s'ouvre après un Bingo ({@code null} : tiré au hasard). */
     public void setBonusGameKind(BonusGame.Kind kind) { turnEngine.setBonusGameKind(kind); }
 
-    /** La Course de chevaux attend le choix du joueur à l'écran (voir {@link #chooseHorse}). */
-    public void setBonusChoiceDeferred(boolean deferred) { turnEngine.setBonusChoiceDeferred(deferred); }
-
-    /** Le joueur choisit son cheval : la course en attente paie (une seule fois). */
-    public void chooseHorse(BonusGame race, int horse) {
-        if (race == null || !race.isPending()) return;
-        race.choose(horse);
-        TurnEngine.pay(gameState.getPlayer(), race);
-    }
-
     /** Tutoriel : le prochain tirage affiche {@code symbols}, de gauche à droite (sans texte ni son). */
     public void rigSpin(Symbol... symbols) {
         for (int reel = 0; reel < symbols.length; reel++) pendingEffects.add(new ForceReelEffect(reel, symbols[reel]));

@@ -2459,14 +2459,11 @@
   "Rang 4, le plus rare : la grille de 6 x 6 et ses tirages, sur ta machine. Chaque alignement paie toute la cagnotte. Une nouvelle grille à chaque fois.": "Rank 4, the rarest: the 6 x 6 grid and its spins, on your machine. Every line pays the whole pot. A new grid every time.",
   "Rang 1 : un lancer de roue, la case où elle s'arrête multiplie la cagnotte.": "Rank 1: one spin of the wheel, the slot where it stops multiplies the pot.",
   "PLINKO DE LA CAGNOTTE !": "POT PLINKO!",
-  "COURSE DE CHEVAUX !": "HORSE RACE!",
-  "CHOISIS TON CHEVAL !": "PICK YOUR HORSE!",
-  "TON CHEVAL GAGNE ! {0}": "YOUR HORSE WINS! {0}",
-  "CHEVAL {0} GAGNANT : LOT DE CONSOLATION {1}": "HORSE {0} WINS: CONSOLATION PRIZE {1}",
   "Plinko de la cagnotte": "Pot Plinko",
-  "Course de chevaux": "Horse race",
   "Rang 2 : une bille rebondit sur les clous et tombe dans une case qui multiplie la cagnotte.": "Rank 2: a ball bounces off the pegs and drops into a slot that multiplies the pot.",
-  "Rang 3 : choisis ton cheval. S'il gagne, sa cote multiplie la cagnotte ; sinon, un lot de consolation.": "Rank 3: pick your horse. If it wins, its odds multiply the pot; otherwise, a consolation prize.",
-  "Tes Mises s'y accumulent. Au prochain Jeu bonus, elle se joue puis repart de 0 : la Roue, le Plinko ou la Course de chevaux la multiplient, et la grille, plus rare, la paie à chaque alignement. Ce qu'elle rapporte ne se mise pas avant la fin de la descente. Ici, un Bingo ouvre un Jeu bonus {0} fois sur 10.": "Your stakes pile up here. At the next bonus game it is played, then goes back to 0: the Wheel, the Plinko or the Horse race multiply it, and the rarer grid pays it on every line. What it pays cannot be staked before the end of the descent. Here, a Bingo opens a bonus game {0} times in 10.",
+  "LOTERIE DE LA CAGNOTTE !": "POT LOTTERY!",
+  "Loterie de la cagnotte": "Pot lottery",
+  "Rang 3 : trois boules sortent du boulier, la somme de leurs valeurs multiplie la cagnotte.": "Rank 3: three balls come out of the drum, the sum of their values multiplies the pot.",
+  "Tes Mises s'y accumulent. Au prochain Jeu bonus, elle se joue puis repart de 0 : la Roue, le Plinko ou la Loterie la multiplient, et la grille, plus rare, la paie à chaque alignement. Ce qu'elle rapporte ne se mise pas avant la fin de la descente. Ici, un Bingo ouvre un Jeu bonus {0} fois sur 10.": "Your stakes pile up here. At the next bonus game it is played, then goes back to 0: the Wheel, the Plinko or the Lottery multiply it, and the rarer grid pays it on every line. What it pays cannot be staked before the end of the descent. Here, a Bingo opens a bonus game {0} times in 10.",
   "RANG {0}": "RANK {0}"
 }

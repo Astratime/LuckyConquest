@@ -1,4 +1,5 @@
-"""Cartes « Bingo <symbole> » (offertes par la carte Bingo de l'échoppe) et carte du Jeu bonus.
+"""Cartes « Bingo <symbole> » (offertes par la carte Bingo de l'échoppe) et cartes des Jeux bonus
+(grille, Roue, Plinko, Loterie : miniatures de l'écran Cinématique).
 Le symbole vient du rouleau du jeu (assets/symbols), réduit à la grille de la carte."""
 import os
 import numpy as np
@@ -102,5 +103,57 @@ def jeu_bonus(pal):
     return frame(pal, art)
 
 
+def jeu_bonus_roue(pal):
+    def art(lay, d):
+        cx, cy, r = 18, 27, 10
+        d.ellipse([cx - r - 1, cy - r - 1, cx + r + 1, cy + r + 1], fill=INK)
+        for i in range(8):
+            d.pieslice([cx - r, cy - r, cx + r, cy + r], i * 45, i * 45 + 45, fill=R if i % 2 == 0 else hexc('#7a1424'))
+        for i in range(8):
+            a = np.radians(i * 45 + 22.5)
+            d.point((round(cx + np.cos(a) * (r - 2)), round(cy + np.sin(a) * (r - 2))), fill=YL)
+        d.rectangle([cx - 1, cy - 1, cx + 1, cy + 1], fill=Y)
+        d.polygon([(cx - 3, 15), (cx + 3, 15), (cx, 19)], fill=INK)
+        d.polygon([(cx - 2, 15), (cx + 2, 15), (cx, 18)], fill=YL)
+    return frame(pal, art)
+
+
+def jeu_bonus_plinko(pal):
+    def art(lay, d):
+        for row in range(5):
+            for i in range(row + 2):
+                x = 18 + round((i - (row + 1) / 2) * 4)
+                d.point((x, 18 + row * 3), fill=INK)
+        d.rectangle([19, 22, 21, 24], fill=INK)
+        d.point((20, 23), fill=Y)
+        cols = [R, hexc('#e8701d'), Y, hexc('#3fae4a'), hexc('#3a6fd8'), hexc('#3fae4a'), Y, hexc('#e8701d'), R]
+        d.line([(7, 32), (30, 32)], fill=INK)
+        for k, color in enumerate(cols):
+            x = 8 + k * 2 + k // 2
+            d.rectangle([x, 33, x + 1, 37], fill=color)
+    return frame(pal, art)
+
+
+def jeu_bonus_loterie(pal):
+    def art(lay, d):
+        cx, cy, r = 18, 24, 8
+        d.ellipse([cx - r, cy - r, cx + r, cy + r], fill=hexc('#cfe8f4'), outline=INK)
+        balls = [(15, 21, R), (20, 20, hexc('#3a6fd8')), (17, 26, hexc('#3fae4a')), (22, 25, Y), (13, 25, hexc('#9b4fe0'))]
+        for x, y, color in balls:
+            d.rectangle([x, y, x + 2, y + 2], fill=INK)
+            d.point((x + 1, y + 1), fill=color)
+        d.point((14, 19), fill=WHITE)
+        d.line([(cx, cy + r + 1), (cx, 34)], fill=YD)
+        for i, color in enumerate((hexc('#3a6fd8'), R, Y)):
+            x = 10 + i * 7
+            d.rectangle([x, 33, x + 4, 37], fill=INK)
+            d.rectangle([x + 1, 34, x + 3, 36], fill=color)
+            d.point((x + 2, 35), fill=WHITE)
+    return frame(pal, art)
+
+
 DESIGNS = {'bingo_' + k: bingo_card(v) for k, v in BINGO_SYMBOLS.items()}
 DESIGNS['jeu_bonus'] = jeu_bonus
+DESIGNS['jeu_bonus_roue'] = jeu_bonus_roue
+DESIGNS['jeu_bonus_plinko'] = jeu_bonus_plinko
+DESIGNS['jeu_bonus_loterie'] = jeu_bonus_loterie

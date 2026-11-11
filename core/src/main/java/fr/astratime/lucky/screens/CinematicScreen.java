@@ -257,7 +257,7 @@ public class CinematicScreen extends CasinoMenuScreen {
             Texture art = cardTextures.get("cards/test/jeu_bonus.png");
             Texture wheelArt = cardTextures.get("cards/test/jeu_bonus_roue.png");
             Texture plinkoArt = cardTextures.get("cards/test/jeu_bonus_plinko.png");
-            Texture horsesArt = cardTextures.get("cards/test/jeu_bonus_chevaux.png");
+            Texture lotteryArt = cardTextures.get("cards/test/jeu_bonus_loterie.png");
             addGroup(Lang.t("Jeu bonus"), Lang.t("Le Jeu bonus"), List.of(
                 new Entry(Lang.t("Grille de la cagnotte"),
                     Lang.t("Rang 4, le plus rare : la grille de 6 x 6 et ses tirages, sur ta machine. Chaque alignement paie "
@@ -272,9 +272,9 @@ public class CinematicScreen extends CasinoMenuScreen {
                     Lang.t("Rang 2 : une bille rebondit sur les clous et tombe dans une case qui multiplie la cagnotte."),
                     plinkoArt, kit -> new SmallBonusGameCutscene(kit, BonusGame.playSmall(BonusGame.Kind.PLINKO, 0,
                         SpinEconomy.BASE_SPIN_COST, 0, new Random()))),
-                new Entry(Lang.t("Course de chevaux"),
-                    Lang.t("Rang 3 : choisis ton cheval. S'il gagne, sa cote multiplie la cagnotte ; sinon, un lot de consolation."),
-                    horsesArt, kit -> new SmallBonusGameCutscene(kit, BonusGame.playSmall(BonusGame.Kind.HORSES, 0,
+                new Entry(Lang.t("Loterie de la cagnotte"),
+                    Lang.t("Rang 3 : trois boules sortent du boulier, la somme de leurs valeurs multiplie la cagnotte."),
+                    lotteryArt, kit -> new SmallBonusGameCutscene(kit, BonusGame.playSmall(BonusGame.Kind.LOTTERY, 0,
                         SpinEconomy.BASE_SPIN_COST, 0, new Random())))));
         }
     }
@@ -586,7 +586,7 @@ public class CinematicScreen extends CasinoMenuScreen {
     @Override
     protected boolean onKey(int keycode) {
         if (isPlaying()) {
-            if (!cutscene.key(keycode)) cutscene.skip();
+            cutscene.skip();
             return true;
         }
         int count = groups.get(group).entries().size();

@@ -24,8 +24,7 @@ import java.util.Random;
  * Tout est tiré d'avance (voir {@link #play}) : l'écran ne fait que le montrer.
  *
  * Trois autres Jeux bonus, plus modestes, sortent plus souvent (idée d'Astra, 2026-11-11) :
- * la Roue, le Plinko et la Course de chevaux (voir {@link Kind}). Le joueur n'y fait au plus
- * qu'un choix (son cheval), qui change le risque mais pas la moyenne. Ils paient
+ * la Roue, le Plinko et la Loterie (voir {@link Kind}). Pur hasard : le joueur n'y choisit rien. Ils paient
  * des multiples d'une mise de base : la cagnotte + {@link #BASE_UNIT_SPINS} coûts de tirage.
  * Chaque Jeu bonus a un rang (Astra) : la grille est de rang 4 ; le rang 3 rapporte en moyenne
  * 80 % de la grille, le rang 2 50 %, le rang 1 20 %. La grille aligne en moyenne
@@ -42,8 +41,8 @@ public final class BonusGame {
         WHEEL(30, 1),
         /** Le Plinko : une bille rebondit sur des clous et tombe dans une case qui multiplie la mise de base. */
         PLINKO(30, 2),
-        /** La Course de chevaux : le joueur choisit un cheval ; s'il gagne, sa cote multiplie la mise de base. */
-        HORSES(30, 3);
+        /** La Loterie : trois boules sortent du boulier, la somme de leurs valeurs multiplie la mise de base. */
+        LOTTERY(30, 3);
 
         /** Poids de tirage (sur 100). */
         public final int weight;
@@ -79,15 +78,14 @@ public final class BonusGame {
      * La bille tombe le plus souvent au centre : 5,4 mises de base en moyenne, 50 % de la grille.
      */
     public static final List<Double> PLINKO_SLOTS = List.of(55.0, 14.0, 7.0, 4.0, 3.0, 4.0, 7.0, 14.0, 55.0);
-    /** Chances de gagner de chaque cheval (sur 100), du favori à l'outsider. */
-    public static final List<Integer> HORSE_CHANCES = List.of(40, 25, 17, 11, 7);
+    /** Valeurs des boules de la Loterie (multiples de la mise de base) et leurs poids (sur 100). */
+    public static final List<Double> LOTTERY_VALUES = List.of(2.0, 2.5, 3.0, 3.5, 5.0, 10.0);
+    public static final List<Integer> LOTTERY_WEIGHTS = List.of(32, 26, 20, 12, 8, 2);
     /**
-     * Cote de chaque cheval (multiple de la mise de base) s'il gagne. Quel que soit le cheval choisi,
-     * la course rapporte environ 8,6 mises de base en moyenne, 80 % de la grille.
+     * Boules tirées : leur somme vaut 8,7 mises de base en moyenne (80 % de la grille), jamais moins de 6,
+     * plus que la moyenne du Plinko (rang 2).
      */
-    public static final List<Double> HORSE_ODDS = List.of(18.5, 28.5, 41.0, 62.0, 97.0);
-    /** Lot de consolation quand le cheval choisi perd (en mises de base). */
-    public static final double HORSE_CONSOLATION = 2.0;
+    public static final int LOTTERY_BALLS = 3;
 
     /** Côté de la grille, en cases. */
     public static final int   SIZE           = 6;
@@ -122,20 +120,16 @@ public final class BonusGame {
     private final List<boolean[][]> frozen;
     /** Alignements de la grille finale, qui paient. */
     private final List<Line> lines;
-    private double total;
+    private final double total;
     /** Cagnotte ajoutée à chaque alignement (voir {@link #withPot}), 0 sans cagnotte. */
     private final double pot;
     private final Kind kind;
-    /** Petits Jeux bonus : les valeurs montrées (cases de la Roue et du Plinko, cotes des chevaux), en mises de base. */
+    /** Petits Jeux bonus : les valeurs montrées (cases de la Roue et du Plinko, boules de la Loterie), en mises de base. */
     private final List<Double> values;
-    /** Petits Jeux bonus : la case où s'arrête la Roue ou la bille du Plinko, le cheval gagnant. */
+    /** Petits Jeux bonus : la case où s'arrête la Roue ou la bille du Plinko, les boules de la Loterie. */
     private final List<Integer> picked;
     /** Petits Jeux bonus : la mise de base, et la part du total qui vient de la cagnotte. */
-    private final double unit;
-    private double potPaid;
-    /** Course de chevaux : le bonus des cartes et du rang, et le cheval choisi (-1 tant qu'il n'est pas choisi). */
-    private double extra;
-    private int choice = -1;
+    private final double unit, potPaid;
 
     private BonusGame(List<Symbol[][]> grids, List<boolean[][]> frozen, List<Line> lines) {
         this(grids, frozen, lines, 0);
@@ -171,8 +165,7 @@ public final class BonusGame {
     }
 
     /**
-     * Joue un petit Jeu bonus ({@link Kind#WHEEL}, {@link Kind#PLINKO} ou {@link Kind#HORSES}).
-     * La Course de chevaux attend le choix du joueur ({@link #choose}) : jusque-là, elle ne paie rien.
+     * Joue un petit Jeu bonus ({@link Kind#WHEEL}, {@link Kind#PLINKO} ou {@link Kind#LOTTERY}).
      *
      * @param pot       la cagnotte, qui repart de 0 après le jeu
      * @param spinCost  coût d'un tirage, là où se joue le combat
@@ -197,14 +190,14 @@ public final class BonusGame {
                 picked.add(slot);
                 paid = values.get(slot);
             }
-            case HORSES -> {
-                values.addAll(HORSE_ODDS);
-                int roll = random.nextInt(100), winner = 0;
-                while (roll >= HORSE_CHANCES.get(winner)) roll -= HORSE_CHANCES.get(winner++);
-                picked.add(winner);
-                BonusGame race = new BonusGame(kind, values, picked, unit, 0, Math.max(0, pot), 0);
-                race.extra = Math.max(0, extra);
-                return race;
+            case LOTTERY -> {
+                for (int ball = 0; ball < LOTTERY_BALLS; ball++) {
+                    int roll = random.nextInt(100), index = 0;
+                    while (roll >= LOTTERY_WEIGHTS.get(index)) roll -= LOTTERY_WEIGHTS.get(index++);
+                    values.add(LOTTERY_VALUES.get(index));
+                    picked.add(ball);
+                    paid += LOTTERY_VALUES.get(index);
+                }
             }
             default -> throw new IllegalArgumentException("La grille se joue avec play : " + kind);
         }
@@ -213,31 +206,13 @@ public final class BonusGame {
         return new BonusGame(kind, values, picked, unit, total, Math.max(0, pot), potPaid);
     }
 
-    /**
-     * Course de chevaux : le joueur choisit son cheval. S'il gagne, sa cote multiplie la mise de base ;
-     * sinon, le lot de consolation. Le bonus des cartes et du rang s'ajoute dans les deux cas.
-     */
-    public void choose(int horse) {
-        if (kind != Kind.HORSES || choice >= 0) return;
-        choice = Math.max(0, Math.min(HORSE_ODDS.size() - 1, horse));
-        double paid = choice == picked.get(0) ? HORSE_ODDS.get(choice) : HORSE_CONSOLATION;
-        total = BigNumber.add(BigNumber.round(unit * paid), BigNumber.round(extra));
-        potPaid = BigNumber.round(pot * paid);
-    }
-
-    /** @return {@code true} tant que le joueur n'a pas choisi son cheval (la course ne paie rien encore). */
-    public boolean isPending() { return kind == Kind.HORSES && choice < 0; }
-
-    /** @return Course de chevaux : le cheval choisi, -1 avant le choix. */
-    public int getChoice() { return choice; }
-
     /** @return le Jeu bonus joué. */
     public Kind getKind() { return kind; }
 
-    /** @return petits Jeux bonus : les valeurs montrées (cases de la Roue et du Plinko, cotes des chevaux), en mises de base. */
+    /** @return petits Jeux bonus : les valeurs montrées (cases de la Roue et du Plinko, boules de la Loterie), en mises de base. */
     public List<Double> getValues() { return values; }
 
-    /** @return petits Jeux bonus : la case où s'arrête la Roue ou la bille du Plinko, le cheval gagnant. */
+    /** @return petits Jeux bonus : la case où s'arrête la Roue ou la bille du Plinko, les boules de la Loterie. */
     public List<Integer> getPicked() { return picked; }
 
     /** @return petits Jeux bonus : la mise de base (cagnotte + {@link #BASE_UNIT_SPINS} coûts de tirage). */

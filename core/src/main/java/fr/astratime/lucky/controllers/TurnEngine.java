@@ -51,7 +51,6 @@ public class TurnEngine {
     private float                     bonusGameChance     = BonusGame.TRIGGER_CHANCE;
     /** Jeu bonus imposé (tests, Cinématique), ou {@code null} : tiré au hasard ({@link BonusGame.Kind#pick}). */
     private BonusGame.Kind            bonusGameKind       = null;
-    private boolean                   bonusChoiceDeferred = false;
     /** Cagnotte du Jeu bonus, que remplit la Mise. */
     private BonusPot                  pot                 = new BonusPot();
 
@@ -63,12 +62,6 @@ public class TurnEngine {
 
     /** Impose le Jeu bonus qui s'ouvre ({@code null} : au hasard). */
     public void setBonusGameKind(BonusGame.Kind kind) { bonusGameKind = kind; }
-
-    /**
-     * Avec {@code true}, la Course de chevaux attend le choix du joueur (l'écran de combat) et ne paie
-     * qu'à {@link GameController#chooseHorse}. Sans écran (tests, simulateur), un cheval est pris au hasard.
-     */
-    public void setBonusChoiceDeferred(boolean deferred) { bonusChoiceDeferred = deferred; }
 
     /** @return les chances qu'un Bingo ouvre le Jeu bonus. */
     public float getBonusGameChance() { return bonusGameChance; }
@@ -459,15 +452,9 @@ public class TurnEngine {
                 .withPot(pot.take()) // la cagnotte n'est pas multipliée par le tour
             : BonusGame.playSmall(kind, pot.take(), spinCost, ((double) perSymbol * BonusGame.MIN_LINE + rank) * factor,
                 random);
-        if (bonus.isPending() && !bonusChoiceDeferred) bonus.choose(random.nextInt(BonusGame.HORSE_ODDS.size()));
-        if (!bonus.isPending()) pay(player, bonus);
-        return bonus;
-    }
-
-    /** Le Jeu bonus paie : ses gains, dont la part de la cagnotte, qui ne se remise pas. */
-    static void pay(Player player, BonusGame bonus) {
         player.addGains(bonus.getTotal());
-        player.addPotWinnings(bonus.getPotPaid());
+        player.addPotWinnings(bonus.getPotPaid()); // ce que la cagnotte a rapporté ne se remise pas
+        return bonus;
     }
 
     /** Ancre : le bouclier qu'elle a gardé au tour d'avant revient. */

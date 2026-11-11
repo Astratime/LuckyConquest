@@ -689,7 +689,6 @@ public class GameScreen extends ScreenAdapter {
     private void startRun(PlayerProfile profile) {
         if (run != null) gameController.setPlaceRule(run.getPlaceRule()); // Exploration : la règle du lieu
         gameController.setBonusGameEnabled(run == null || run.hasBonusGame()); // pas de Jeu bonus dans le tutoriel
-        gameController.setBonusChoiceDeferred(true); // la Course de chevaux attend le choix du joueur
         // Cagnotte du Jeu bonus : celle du lieu (partagée par ses donjons) ou de l'Entraînement, gardées ;
         // celle de l'ascension dans la Tour, où un Bingo ouvre plus souvent le Jeu bonus.
         if (run instanceof DungeonRun dungeonRun) {
@@ -1121,8 +1120,7 @@ public class GameScreen extends ScreenAdapter {
             .mapToDouble(e -> ((GainsEarnedEvent) e).amount).sum()
             - result.getEvents().stream().filter(e -> e instanceof GainsLostEvent)
             .mapToDouble(e -> ((GainsLostEvent) e).amount).sum();
-        // à la fin du Jeu bonus (la Course de chevaux ne paie qu'une fois le cheval choisi)
-        if (result.getBonusGame() != null) gainsNotYetShown += result.getBonusGame().getTotal();
+        if (result.getBonusGame() != null) gainsNotYetShown += result.getBonusGame().getTotal(); // à la fin du Jeu bonus
         payForSpin(cost, staked); // seuls le coût et la Mise partent tout de suite
         long enemyHeal = result.getEvents().stream().filter(EnemyHealedEvent.class::isInstance)
             .mapToLong(e -> ((EnemyHealedEvent) e).amount).sum();
@@ -1531,13 +1529,8 @@ public class GameScreen extends ScreenAdapter {
             then.run();
             return;
         }
-        if (bonus.getKind() != BonusGame.Kind.GRID) { // Roue, Plinko, Course de chevaux
-            playCutscene(new SmallBonusGameCutscene(cutsceneKit, bonus, horse -> {
-                gameController.chooseHorse(bonus, horse); // la course paie maintenant
-                gainsNotYetShown += bonus.getTotal();
-                long earned = BigNumber.toLong(Math.max(0, bonus.getTotal()));
-                luckyGame.getProfile().recordStats(stats -> stats.add(PlayerStats.Stat.GAINS, earned));
-            }), () -> {
+        if (bonus.getKind() != BonusGame.Kind.GRID) { // Roue, Plinko, Loterie
+            playCutscene(new SmallBonusGameCutscene(cutsceneKit, bonus), () -> {
                 onGainsShown(bonus.getTotal());
                 then.run();
             });
@@ -2185,7 +2178,7 @@ public class GameScreen extends ScreenAdapter {
         int inTen = Math.round(gameController.getBonusGameChance() * 10);
         sidePanel.setPot(gameController.getPot().getAmount(), Lang.t("Cagnotte"),
             Lang.f("Tes Mises s'y accumulent. Au prochain Jeu bonus, elle se joue puis repart de 0 : la Roue, "
-                + "le Plinko ou la Course de chevaux la multiplient, et la grille, plus rare, la paie à chaque "
+                + "le Plinko ou la Loterie la multiplient, et la grille, plus rare, la paie à chaque "
                 + "alignement. Ce qu'elle rapporte ne se mise pas avant la fin de la descente. Ici, un Bingo ouvre "
                 + "un Jeu bonus {0} fois sur 10.", inTen));
         // Gains misables : montrés dès qu'une partie des gains vient de la cagnotte (ceux-là ne se misent pas).
@@ -2281,7 +2274,7 @@ public class GameScreen extends ScreenAdapter {
                     return true;
                 }
                 if (cutscene != null && cutscene.isPlaying()) {
-                    if (!cutscene.key(keycode)) cutscene.skip(); // n'importe quelle autre touche passe la cinématique
+                    cutscene.skip(); // n'importe quelle autre touche passe la cinématique
                     return true;
                 }
                 if (jackpotCelebration != null && jackpotCelebration.skip()) return true; // une touche passe aussi un Bingo déjà vu
