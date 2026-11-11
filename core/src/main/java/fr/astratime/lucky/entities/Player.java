@@ -219,6 +219,28 @@ public class Player {
      */
     public double getStakeableGains() { return Math.max(0, gains - potWinnings); }
 
+    /**
+     * Ajoute {@code amount} gains calculés sur les gains actuels (Marteau du cordonnier, Pari,
+     * Tapis...) : la part qui vient des gains de la cagnotte reste non misable, sinon elle
+     * repartirait dans la cagnotte et la ferait grossir sans fin (Chope, Cocktail des abysses).
+     */
+    public void addGainsOnCurrent(double amount) {
+        double fromPot = potShare(amount, 0);
+        addGains(amount);
+        addPotWinnings(fromPot);
+    }
+
+    /**
+     * @param amount  gains ajoutés en proportion des gains actuels (plus {@code pending})
+     * @param pending gains déjà demandés mais pas encore crédités (cartes jouées), qui ne viennent pas de la cagnotte
+     * @return la part de {@code amount} qui vient des gains de la cagnotte
+     */
+    public double potShare(double amount, double pending) {
+        double base = gains + pending;
+        if (amount <= 0 || base <= 0 || potWinnings <= 0) return 0;
+        return amount * Math.min(1, potWinnings / base);
+    }
+
     /** @return les gains rapportés par la cagnotte qui restent : ils ne se misent pas (mais se dépensent en premier). */
     public double getPotWinnings() { return potWinnings; }
 

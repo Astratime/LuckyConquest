@@ -382,4 +382,42 @@ class SpinEconomyTest {
         controller.playCard(inHand);
         assertEquals(before + 5 * 3_000, player(controller).getGains(), "5 tirages de 3 000 au Port");
     }
+
+    /** Chope, Cocktail des abysses : le % ajouté sur les gains de la cagnotte ne se remise pas (sinon elle gonfle sans fin). */
+    @Test
+    void gainsPercentCardsDoNotMakePotWinningsStakeable() {
+        Card cocktail = new Card("cocktail", "cocktail", "x.png",
+            List.of(new fr.astratime.lucky.entities.effects.GainsPercentEffect(50)), null, 1, true);
+        GameController controller = new GameController(() -> {
+            List<Card> cards = plainCards();
+            cards.add(cocktail);
+            return cards;
+        });
+        controller.restart(EnemyKind.CROUPIER);
+        Player player = player(controller);
+        player.addGains(1_000 - player.getGains()); // 1 000 gains à soi
+        player.addGains(1_000_000);
+        player.addPotWinnings(1_000_000); // 1 M rapporté par la cagnotte
+        controller.drawCards();
+        Card inHand = player.getCurrentHand().stream().filter(c -> c.getId().equals("cocktail")).findFirst()
+            .orElseGet(() -> {
+                player.addToHandOrDeck(cocktail);
+                return cocktail;
+            });
+        controller.playCard(inHand);
+        assertEquals(1_501_500, player.getGains(), 1e-6, "gains +50 %");
+        assertEquals(1_500, player.getStakeableGains(), 1e-6, "seule la part sur les gains à soi se mise");
+    }
+
+    @Test
+    void gainsOnCurrentKeepThePotShareUnstakeable() {
+        GameController controller = fight(EnemyKind.CROUPIER);
+        Player player = player(controller);
+        player.addGains(1_000 - player.getGains());
+        player.addGains(3_000);
+        player.addPotWinnings(3_000); // 3/4 des gains viennent de la cagnotte
+        player.addGainsOnCurrent(4_000); // Pari, Tapis, Marteau du cordonnier : x2
+        assertEquals(8_000, player.getGains(), 1e-6);
+        assertEquals(2_000, player.getStakeableGains(), 1e-6);
+    }
 }

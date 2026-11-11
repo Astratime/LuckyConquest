@@ -381,7 +381,7 @@ public class CombatResolver {
         }
         if (context.getCobblerPercent() > 0 && enemy.isDefeated() && player.getGains() > 0) {
             double gains = BigNumber.percent(player.getGains(), context.getCobblerPercent());
-            player.addGains(gains);
+            player.addGainsOnCurrent(gains);
             events.add(new StatusEvent(Lang.f("MARTEAU DU CORDONNIER : GAINS DU COMBAT +{0} %", context.getCobblerPercent()),
                 EffectPopup.Style.GAINS));
             events.add(new GainsEarnedEvent(gains));
@@ -542,7 +542,7 @@ public class CombatResolver {
         }
         int multiplier = count + 1;
         double won = BigNumber.cap(player.getGains() * (multiplier - 1));
-        player.addGains(won);
+        player.addGainsOnCurrent(won);
         return new BetWonEvent(bet, multiplier, won);
     }
 
@@ -550,7 +550,7 @@ public class CombatResolver {
     private Event resolveAllIn(Player player, boolean pair) {
         if (!pair) return new AllInLostEvent(player.consumeGainsPercent(1f));
         double won = BigNumber.cap(player.getGains() * (ALL_IN_FACTOR - 1));
-        player.addGains(won);
+        player.addGainsOnCurrent(won);
         return new AllInWonEvent(won);
     }
 
