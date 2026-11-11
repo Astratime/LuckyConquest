@@ -1,5 +1,6 @@
 package fr.astratime.lucky.progress;
 
+import fr.astratime.lucky.entities.enemy.EnemyKind;
 import fr.astratime.lucky.entities.Symbol;
 import fr.astratime.lucky.entities.exploration.Dungeon;
 import fr.astratime.lucky.entities.exploration.Place;
@@ -429,6 +430,39 @@ class PlayerProfileTest {
 
         List<Achievement> unlocked = profile.checkAchievements();
         assertEquals(List.of(Achievement.FIRST_DUNGEON, Achievement.PRAIRIE, Achievement.COMET), unlocked);
+    }
+
+    @Test
+    void newAchievementsFollowTheirGoals() {
+        PlayerProfile profile = profile(new MemoryStorage());
+        profile.recordStats(stats -> {
+            stats.add(PlayerStats.Stat.WINS, 250);
+            stats.add(PlayerStats.Stat.SPINS, 999);
+            stats.add(PlayerStats.Stat.CLOSE_WINS, 1);
+            stats.record(PlayerStats.Stat.BEST_HIT, 10_000_000_000L);
+        });
+        List<Achievement> unlocked = profile.checkAchievements();
+        assertTrue(unlocked.containsAll(List.of(Achievement.CHAMPION, Achievement.CLOSE_CALL, Achievement.TEN_BILLION_HIT)));
+        assertFalse(unlocked.contains(Achievement.THOUSAND_SPINS), "999 tirages : pas encore");
+        assertFalse(unlocked.contains(Achievement.FLAWLESS));
+
+        profile.recordStats(stats -> stats.add(PlayerStats.Stat.SPINS, 1));
+        assertEquals(List.of(Achievement.THOUSAND_SPINS), profile.checkAchievements());
+
+        for (Chapter chapter : Chapter.values()) profile.clearChapter(chapter, true);
+        assertTrue(profile.checkAchievements().contains(Achievement.HARD_TOWER));
+
+        for (EnemyKind kind : Bestiary.enemies()) profile.defeat(kind);
+        assertTrue(profile.checkAchievements().containsAll(List.of(Achievement.HUNTER, Achievement.FULL_BESTIARY)));
+    }
+
+    @Test
+    void hiddenStatisticsAreSavedButNotShown() {
+        assertFalse(PlayerStats.Stat.CLOSE_WINS.isShown());
+        assertTrue(PlayerStats.Stat.SPINS.isShown());
+        PlayerStats stats = PlayerStats.decode("FLAWLESS_WINS:2,SPINS:7");
+        assertEquals(2, stats.get(PlayerStats.Stat.FLAWLESS_WINS));
+        assertEquals(7, stats.get(PlayerStats.Stat.SPINS));
     }
 
     @Test

@@ -24,8 +24,8 @@ import fr.astratime.lucky.progress.PlayerStats.Stat;
 /**
  * Fenêtre « Statistiques et succès » des Options : les statistiques de la
  * partie à gauche, les succès à droite (atteints en or avec leur pièce,
- * les autres en gris avec leur récompense). « Retour », Échap ou un clic
- * hors du cadre la ferment.
+ * les autres en gris avec leur récompense), sur plusieurs pages.
+ * « Retour », Échap ou un clic hors du cadre la ferment.
  */
 public class AchievementsOverlay implements Disposable {
 
@@ -36,6 +36,8 @@ public class AchievementsOverlay implements Disposable {
     private static final float ROW_HEIGHT   = 74f;
     private static final float ICON         = 40f;
     private static final float FADE         = 0.2f;
+    /** Succès par page : deux colonnes de 11. */
+    private static final int   PER_PAGE     = 22;
     private static final Color LOCKED       = new Color(0.55f, 0.52f, 0.5f, 1f);
     private static final Color LOCKED_COIN  = new Color(0.22f, 0.2f, 0.2f, 1f);
 
@@ -53,6 +55,10 @@ public class AchievementsOverlay implements Disposable {
     private final Label[] descriptions = new Label[Achievement.values().length];
     private final Label[] rewards      = new Label[Achievement.values().length];
     private final CasinoButton back;
+    private final CasinoButton previous;
+    private final CasinoButton next;
+    private final Label pageLabel;
+    private int page;
     private final TextureRegionDrawable coin;
     private final BitmapFont titleFont   = Fonts.jersey(64, Palette.GOLD, 4f, Palette.TEXT_SHADE);
     private final BitmapFont headFont    = Fonts.jersey(36, Palette.GOLD, 2f, Palette.TEXT_SHADE);
@@ -97,6 +103,12 @@ public class AchievementsOverlay implements Disposable {
         }
         back = buttons.create(Lang.t("Retour"), clickSound, this::hide);
         root.addActor(back);
+        previous = buttons.create(Lang.t("Précédent"), clickSound, () -> showPage(page - 1));
+        next     = buttons.create(Lang.t("Suivant"), clickSound, () -> showPage(page + 1));
+        pageLabel = label(statFont, Palette.CREAM);
+        root.addActor(previous);
+        root.addActor(next);
+        root.addActor(pageLabel);
         root.setVisible(false);
         root.addListener(new InputListener() {
             @Override
@@ -147,12 +159,21 @@ public class AchievementsOverlay implements Disposable {
             rewards[i].setText((done ? "" : "+") + PlayerProfile.formatCoins(achievement.getReward()));
             rewards[i].setColor(done ? Palette.GOLD : LOCKED);
         }
+        page = 0;
         layout();
         root.setVisible(true);
         root.toFront();
         root.getColor().a = 0f;
         root.clearActions();
         root.addAction(Actions.fadeIn(FADE));
+    }
+
+    private static int pageCount() { return (Achievement.values().length + PER_PAGE - 1) / PER_PAGE; }
+
+    /** Montre la page {@code index} des succès (bornée aux pages existantes). */
+    private void showPage(int index) {
+        page = Math.max(0, Math.min(pageCount() - 1, index));
+        layout();
     }
 
     /** Ferme la fenêtre. */
@@ -172,6 +193,8 @@ public class AchievementsOverlay implements Disposable {
             case GAINS       -> Lang.t("Gains totaux");
             case COINS       -> Lang.t("Pièces gagnées");
             case SQUARES     -> Lang.t("Carrés");
+            case SPINS       -> Lang.t("Tirages");
+            case CLOSE_WINS, FLAWLESS_WINS -> ""; // pas montrées
         };
     }
 
@@ -196,6 +219,10 @@ public class AchievementsOverlay implements Disposable {
         statsTitle.setPosition(sx, headY - statsTitle.getHeight());
         float y = headY - statsTitle.getHeight() - 30f;
         for (int i = 0; i < statNames.length; i++) {
+            boolean shown = Stat.values()[i].isShown();
+            statNames[i].setVisible(shown);
+            statValues[i].setVisible(shown);
+            if (!shown) continue;
             statNames[i].pack();
             statValues[i].pack();
             y -= ROW_HEIGHT;
@@ -205,17 +232,28 @@ public class AchievementsOverlay implements Disposable {
         float dividerX = sx + STATS_WIDTH + PAD / 2f;
         divider.setBounds(dividerX, py + PAD + 70f, 3f, headY - (py + PAD + 70f));
 
-        // Succès, à droite : deux colonnes.
+        // Succès, à droite : deux colonnes, une page à la fois ; les boutons de page en bas.
         float ax = dividerX + PAD / 2f + 10f;
         achievementsTitle.pack();
         achievementsTitle.setPosition(ax, headY - achievementsTitle.getHeight());
-        float columnWidth = (px + PANEL_WIDTH - PAD - ax - PAD) / 2f;
-        int perColumn = (names.length + 1) / 2;
+        float right = px + PANEL_WIDTH - PAD;
+        float columnWidth = (right - ax - PAD) / 2f;
+        int perColumn = PER_PAGE / 2;
+        boolean paged = pageCount() > 1;
+        float rowsBottom = paged ? py + PAD + CasinoButtons.HEIGHT + 12f : py + PAD / 2f;
         float rowsTop = headY - achievementsTitle.getHeight() - 16f;
-        float rowHeight = Math.min(ROW_HEIGHT, (rowsTop - py - PAD / 2f) / perColumn); // tous les succès tiennent dans le cadre
+        float rowHeight = Math.min(ROW_HEIGHT, (rowsTop - rowsBottom) / perColumn); // une page tient dans le cadre
+        int first = page * PER_PAGE;
         for (int i = 0; i < names.length; i++) {
-            float cx = ax + (i / perColumn) * (columnWidth + PAD);
-            float ry = rowsTop - (i % perColumn + 1) * rowHeight;
+            boolean onPage = i >= first && i < first + PER_PAGE;
+            icons[i].setVisible(onPage);
+            names[i].setVisible(onPage);
+            descriptions[i].setVisible(onPage);
+            rewards[i].setVisible(onPage);
+            if (!onPage) continue;
+            int slot = i - first;
+            float cx = ax + (slot / perColumn) * (columnWidth + PAD);
+            float ry = rowsTop - (slot % perColumn + 1) * rowHeight;
             icons[i].setBounds(cx, ry + (rowHeight - ICON) / 2f, ICON, ICON);
             names[i].pack();
             descriptions[i].pack();
@@ -227,6 +265,20 @@ public class AchievementsOverlay implements Disposable {
         }
 
         back.setPosition(sx + (STATS_WIDTH - back.getWidth()) / 2f, py + PAD);
+
+        previous.setVisible(paged);
+        next.setVisible(paged);
+        pageLabel.setVisible(paged);
+        if (paged) {
+            previous.setDisabled(page == 0);
+            next.setDisabled(page == pageCount() - 1);
+            pageLabel.setText(Lang.f("Page {0} / {1}", page + 1, pageCount()));
+            pageLabel.pack();
+            next.setPosition(right - next.getWidth(), py + PAD);
+            pageLabel.setPosition(next.getX() - 24f - pageLabel.getWidth(),
+                py + PAD + (CasinoButtons.HEIGHT - pageLabel.getHeight()) / 2f);
+            previous.setPosition(pageLabel.getX() - 24f - previous.getWidth(), py + PAD);
+        }
     }
 
     @Override

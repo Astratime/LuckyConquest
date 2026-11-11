@@ -12,6 +12,7 @@ import fr.astratime.lucky.entities.tower.Chapter;
 import fr.astratime.lucky.i18n.Lang;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
@@ -535,6 +536,16 @@ public class PlayerProfile {
             case MILLION_HIT     -> stats.get(PlayerStats.Stat.BEST_HIT) >= 1_000_000L;
             case BILLION_HIT     -> stats.get(PlayerStats.Stat.BEST_HIT) >= 1_000_000_000L;
             case HIGH_ROLLER     -> stats.get(PlayerStats.Stat.GAINS) >= 10_000_000L;
+            case CHAMPION        -> stats.get(PlayerStats.Stat.WINS) >= 250;
+            case CLOSE_CALL      -> stats.get(PlayerStats.Stat.CLOSE_WINS) >= 1;
+            case FLAWLESS        -> stats.get(PlayerStats.Stat.FLAWLESS_WINS) >= 1;
+            case THOUSAND_SPINS  -> stats.get(PlayerStats.Stat.SPINS) >= 1_000;
+            case BINGO_KING      -> stats.get(PlayerStats.Stat.BINGOS) >= 500;
+            case GREAT_COLLECTOR -> stats.bingoSymbolCount() >= 25;
+            case BONUS_REGULAR   -> stats.get(PlayerStats.Stat.BONUS_GAMES) >= 25;
+            case SQUARE_MASTER   -> stats.get(PlayerStats.Stat.SQUARES) >= 25;
+            case TEN_BILLION_HIT -> stats.get(PlayerStats.Stat.BEST_HIT) >= 10_000_000_000L;
+            case BILLIONAIRE     -> stats.get(PlayerStats.Stat.GAINS) >= 1_000_000_000L;
             case FIRST_DUNGEON   -> !clearedDungeons.isEmpty();
             case PRAIRIE         -> placeCleared(Place.PRAIRIE);
             case PORT            -> placeCleared(Place.PORT);
@@ -542,11 +553,22 @@ public class PlayerProfile {
             case CASINO          -> placeCleared(Place.CASINO);
             case FOIRE           -> placeCleared(Place.FOIRE);
             case DESERT          -> placeCleared(Place.DESERT);
+            case GREAT_EXPLORER  -> Arrays.stream(Place.values()).allMatch(this::placeCleared);
+            case FORTUNE         -> stats.get(PlayerStats.Stat.COINS) >= 1_000_000_000L;
             case COMET           -> clearedChapters.contains(Chapter.GENESE.name());
+            case HALFWAY         -> clearedChapters.contains(Chapter.DERNIER_TIRAGE.name());
             case ORIGIN          -> clearedChapters.contains(Chapter.LE_JACKPOT.name());
             case HARD_CHAPTER    -> !clearedHardChapters.isEmpty();
+            case HARD_TOWER      -> Arrays.stream(Chapter.values()).allMatch(c -> clearedHardChapters.contains(c.name()));
+            case ENDLESS_5       -> endlessBest >= 5;
+            case ENDLESS_10      -> endlessBest >= 10;
             case FIRST_RANK      -> ranks >= 1;
             case UPGRADED_CARD   -> collection.keySet().stream().anyMatch(Card::isUpgradedId);
+            case GOLDSMITH       -> collection.keySet().stream().filter(Card::isUpgradedId).count() >= 5;
+            case REEL_COLLECTOR  -> boughtReels.size() >= 10;
+            case LEGEND          -> ranks >= Rank.values().length;
+            case HUNTER          -> defeatedEnemies.size() >= 50;
+            case FULL_BESTIARY   -> defeatedEnemies.containsAll(Bestiary.enemies());
         };
     }
 

@@ -31,7 +31,22 @@ public final class PlayerStats {
         /** Pièces gagnées à la fin des combats de l'Exploration. */
         COINS,
         /** Carrés réussis. */
-        SQUARES
+        SQUARES,
+        /** Tirages lancés. */
+        SPINS,
+        /** Combats gagnés avec moins de 10 % des PV (pour un succès, pas montré). */
+        CLOSE_WINS(false),
+        /** Combats gagnés avec tous les PV (pour un succès, pas montré). */
+        FLAWLESS_WINS(false);
+
+        private final boolean shown;
+
+        Stat() { this(true); }
+
+        Stat(boolean shown) { this.shown = shown; }
+
+        /** @return {@code true} si la statistique est montrée dans les Options. */
+        public boolean isShown() { return shown; }
     }
 
     private final Map<Stat, Long> values  = new EnumMap<>(Stat.class);
