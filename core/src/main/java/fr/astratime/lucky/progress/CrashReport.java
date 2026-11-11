@@ -40,6 +40,7 @@ public final class CrashReport {
             StringWriter trace = new StringWriter();
             error.printStackTrace(new PrintWriter(trace));
             String report = "Lucky Conquest : rapport de plantage\n"
+                + "Version : " + fr.astratime.lucky.GameVersion.VERSION + '\n'
                 + "Date : " + LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")) + '\n'
                 + "Java : " + System.getProperty("java.version") + " (" + System.getProperty("java.vendor") + ")\n"
                 + "Système : " + System.getProperty("os.name") + ' ' + System.getProperty("os.version")

@@ -22,6 +22,7 @@ class CrashReportTest {
 
         String report = Files.readString(file);
         assertTrue(report.startsWith("Lucky Conquest : rapport de plantage"));
+        assertTrue(report.contains("Version : " + fr.astratime.lucky.GameVersion.VERSION + "\n"), "la version du jeu est en tête");
         assertTrue(report.contains("IllegalStateException: rouleau coincé"));
         assertTrue(report.contains("CrashReportTest"), "la pile d'appels est dans le rapport");
         assertTrue(CrashReport.takePending(file));
