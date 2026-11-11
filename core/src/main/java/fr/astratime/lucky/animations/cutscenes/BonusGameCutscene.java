@@ -388,7 +388,7 @@ public class BonusGameCutscene extends Cutscene {
         drawDoors(batch, gx, gy, gw, gh);
         drawCaptions(batch);
         BonusRankBadge.draw(this, batch, font, BonusGame.Kind.GRID.rank, (fx + fw + worldWidth()) / 2f + 3f,
-            fy + fh * 0.75f, DOORS, appear);
+            fy + fh * 0.75f, DOORS, appear, true);
     }
 
     private void frameBulb(Batch batch, float x, float y, int index, float alpha) {
