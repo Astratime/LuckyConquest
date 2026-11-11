@@ -2512,5 +2512,10 @@
   "Tirages": "Spins",
   "Précédent": "Previous",
   "Suivant": "Next",
-  "Page {0} / {1}": "Page {0} / {1}"
+  "Page {0} / {1}": "Page {0} / {1}",
+  "Combattre": "Fight",
+  "ENTRAÎNEMENT LIBRE": "FREE TRAINING",
+  "Choisis un ennemi déjà vaincu pour tester ton deck. Ce combat ne rapporte rien.": "Pick an enemy you have already beaten to test your deck. This fight earns nothing.",
+  "Bats-le d'abord dans son mode pour t'entraîner contre lui.": "Beat it in its own mode first to train against it.",
+  "Toujours disponible": "Always available"
 }

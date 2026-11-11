@@ -295,6 +295,11 @@ public class GameScreen extends ScreenAdapter {
     private final LuckyGame           luckyGame;
     /** Chapitre de la Tour des épreuves ou donjon de l'Exploration, ou {@code null} pour un combat seul (« Entraînement »). */
     private final CombatRun           run;
+    /**
+     * Adversaire d'un combat seul : le croupier d'entraînement, ou un ennemi déjà vaincu
+     * choisi pour l'entraînement libre (ignoré dans la Tour, l'Exploration et le tutoriel).
+     */
+    private final EnemyKind           trainingEnemy;
     private final Stage               stage;
     private final BitmapFont          font;
     /** Libellés du deck et de la défausse : police du jeu, à balises de couleur (nom crème, nombre doré). */
@@ -439,7 +444,15 @@ public class GameScreen extends ScreenAdapter {
      * @param luckyGame instance de jeu, qui fournit le SpriteBatch partagé
      */
     public GameScreen(LuckyGame luckyGame) {
-        this(luckyGame, null);
+        this(luckyGame, null, EnemyKind.ENTRAINEMENT);
+    }
+
+    /**
+     * Entraînement libre : un combat seul contre {@code enemy}, un ennemi déjà vaincu
+     * choisi dans le bestiaire. Comme l'Entraînement, il ne rapporte rien.
+     */
+    public GameScreen(LuckyGame luckyGame, EnemyKind enemy) {
+        this(luckyGame, null, enemy);
     }
 
     /**
@@ -448,10 +461,17 @@ public class GameScreen extends ScreenAdapter {
      * @param run chapitre ou donjon en cours ({@code null} : un combat seul, comme « Entraînement »)
      */
     public GameScreen(LuckyGame luckyGame, CombatRun run) {
-        this.luckyGame = luckyGame;
-        this.run       = run;
-        // La table a l'air du lieu en Exploration ; ailleurs, la table de casino.
-        tableTextures  = TableTextures.forPlace(run instanceof DungeonRun dungeonRun ? Place.of(dungeonRun.getDungeon()) : null);
+        this(luckyGame, run, EnemyKind.ENTRAINEMENT);
+    }
+
+    private GameScreen(LuckyGame luckyGame, CombatRun run, EnemyKind trainingEnemy) {
+        this.luckyGame     = luckyGame;
+        this.run           = run;
+        this.trainingEnemy = trainingEnemy == null ? EnemyKind.ENTRAINEMENT : trainingEnemy;
+        // La table a l'air du lieu en Exploration (et contre un ennemi de l'Exploration à l'entraînement) ;
+        // ailleurs, la table de casino.
+        tableTextures  = TableTextures.forPlace(run instanceof DungeonRun dungeonRun ? Place.of(dungeonRun.getDungeon())
+            : run == null ? Place.of(this.trainingEnemy) : null);
         SharedAssets assets = luckyGame.getAssets();
         cardTextures  = assets.cardTextures();
         enemyTextures = assets.enemyTextures();
@@ -688,6 +708,7 @@ public class GameScreen extends ScreenAdapter {
     /** Règle du lieu, Jeu bonus et sa cagnotte, difficulté, puis le premier combat. */
     private void startRun(PlayerProfile profile) {
         if (run != null) gameController.setPlaceRule(run.getPlaceRule()); // Exploration : la règle du lieu
+        else if (Place.of(trainingEnemy) != null) gameController.setPlaceRule(Place.of(trainingEnemy).getRule()); // entraînement libre
         gameController.setBonusGameEnabled(run == null || run.hasBonusGame()); // pas de Jeu bonus dans le tutoriel
         // Cagnotte du Jeu bonus : celle du lieu (partagée par ses donjons) ou de l'Entraînement, gardées ;
         // celle de l'ascension dans la Tour, où un Bingo ouvre plus souvent le Jeu bonus.
@@ -1655,6 +1676,12 @@ public class GameScreen extends ScreenAdapter {
 
     /** Passe à la musique du combat en cours, ou à celle du lieu si son fichier manque. */
     private void switchMusic() {
+        if (run == null) { // Entraînement : la musique de l'ennemi choisi, ou celle de son lieu
+            String place = CombatMusic.ofTrainingPlace(trainingEnemy);
+            music.switchTo(CombatMusic.ofTraining(gameController.getGameState().getEnemy()),
+                Gdx.files.internal(place).exists() ? place : CombatMusic.DEFAULT);
+            return;
+        }
         music.switchTo(CombatMusic.of(run, gameController.getGameState().getEnemy()),
             Gdx.files.internal(CombatMusic.of(run)).exists() ? CombatMusic.of(run) : CombatMusic.DEFAULT);
     }
@@ -1985,7 +2012,7 @@ public class GameScreen extends ScreenAdapter {
 
     /** @return l'ennemi du combat en cours de la Tour ou du donjon, ou le croupier d'entraînement. */
     private EnemyKind firstEnemy() {
-        return run != null ? run.getEnemy() : EnemyKind.ENTRAINEMENT;
+        return run != null ? run.getEnemy() : trainingEnemy;
     }
 
     /** @return pourquoi {@code card} ne se joue pas maintenant (règles du combat, ou le Croupier du tutoriel), ou {@code null}. */
@@ -2409,7 +2436,16 @@ public class GameScreen extends ScreenAdapter {
         if (run instanceof DungeonRun dungeonRun) return FrontScene.Decor.of(dungeonRun.getDungeon());
         if (run instanceof TowerRun towerRun)     return FrontScene.Decor.of(towerRun.getChapter());
         if (run instanceof EndlessRun)            return FrontScene.Decor.of(Chapter.LE_JACKPOT); // le sommet de la Tour
-        return run == null ? FrontScene.Decor.ENTRAINEMENT : FrontScene.Decor.CASINO;
+        if (run == null) { // Entraînement : le décor de l'ennemi choisi (son donjon, son chapitre)
+            for (Place place : Place.values()) {
+                for (Dungeon dungeon : place.getDungeons()) {
+                    if (dungeon.getSoldier() == trainingEnemy || dungeon.getKing() == trainingEnemy) return FrontScene.Decor.of(dungeon);
+                }
+            }
+            Chapter chapter = Chapter.of(trainingEnemy);
+            return chapter != null ? FrontScene.Decor.of(chapter) : FrontScene.Decor.ENTRAINEMENT;
+        }
+        return FrontScene.Decor.CASINO;
     }
 
     @Override

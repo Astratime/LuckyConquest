@@ -31,6 +31,7 @@ import fr.astratime.lucky.progress.PlayerProfile;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Consumer;
 
 /**
  * Fenêtre « Bestiaire et collection » des Options. À gauche, la Tour des
@@ -41,6 +42,10 @@ import java.util.List;
  * des ennemis, des cartes, des rouleaux et des cinématiques. « Revoir les
  * cinématiques » ouvre celles déjà vues ; « Retour », Échap ou un clic hors du
  * cadre ferment la fenêtre.
+ *
+ * <p>La même fenêtre sert à l'Entraînement libre ({@link #showTraining}) : on y
+ * choisit le croupier d'entraînement ou un ennemi déjà vaincu, puis « Combattre »
+ * (ou un double-clic sur son portrait) lance le combat.</p>
  */
 public class BestiaryOverlay implements Disposable {
 
@@ -87,6 +92,7 @@ public class BestiaryOverlay implements Disposable {
     private final Label description;
     private final CasinoButton cutscenes;
     private final CasinoButton back;
+    private final CasinoButton fight;
     private final TextureRegionDrawable coin;
     private final BitmapFont titleFont = Fonts.jersey(64, Palette.GOLD, 4f, Palette.TEXT_SHADE);
     private final BitmapFont headFont  = Fonts.jersey(36, Palette.GOLD, 2f, Palette.TEXT_SHADE);
@@ -96,6 +102,8 @@ public class BestiaryOverlay implements Disposable {
     private PlayerProfile profile;
     private Cell          selected;
     private Runnable      onClose;
+    /** Entraînement libre : le combat contre l'ennemi choisi ({@code null} dans le bestiaire des Options). */
+    private Consumer<EnemyKind> onFight;
 
     /**
      * @param textures       portraits des ennemis (à l'appelant de les libérer)
@@ -162,8 +170,10 @@ public class BestiaryOverlay implements Disposable {
 
         cutscenes = buttons.create(Lang.t("Revoir les cinématiques"), clickSound, onCutscenes);
         back = buttons.create(Lang.t("Retour"), clickSound, this::hide);
+        fight = buttons.create(Lang.t("Combattre"), clickSound, this::fightSelected);
         root.addActor(cutscenes);
         root.addActor(back);
+        root.addActor(fight);
         root.setVisible(false);
         root.addListener(new InputListener() {
             @Override
@@ -196,6 +206,7 @@ public class BestiaryOverlay implements Disposable {
                 @Override
                 public void clicked(InputEvent event, float x, float y) {
                     select(cell);
+                    if (getTapCount() >= 2 && onFight != null) fightSelected(); // double-clic : on y va
                 }
             });
             root.addActor(frame);
@@ -221,9 +232,47 @@ public class BestiaryOverlay implements Disposable {
 
     /** Ouvre la fenêtre avec le bestiaire et la collection de {@code profile} ; {@code onClose} à la fermeture. */
     public void show(PlayerProfile profile, Runnable onClose) {
+        open(profile, onClose, null);
+    }
+
+    /**
+     * Ouvre la fenêtre pour l'Entraînement libre : choisir le croupier d'entraînement
+     * ou un ennemi déjà vaincu de {@code profile}, puis {@code onFight} avec lui.
+     */
+    public void showTraining(PlayerProfile profile, Consumer<EnemyKind> onFight, Runnable onClose) {
+        open(profile, onClose, onFight);
+    }
+
+    /** @return {@code true} si l'ennemi choisi peut être combattu à l'Entraînement libre. */
+    public static boolean canTrainAgainst(PlayerProfile profile, EnemyKind kind) {
+        return kind == EnemyKind.ENTRAINEMENT || profile.hasDefeated(kind);
+    }
+
+    /** Entraînement libre : lance le combat contre l'ennemi choisi, s'il a déjà été vaincu. */
+    public void fightSelected() {
+        if (onFight == null || selected == null || !canTrainAgainst(profile, selected.kind())) return;
+        Consumer<EnemyKind> action = onFight;
+        EnemyKind kind = selected.kind();
+        hide();
+        action.accept(kind);
+    }
+
+    /** @return {@code true} si la fiche de {@code kind} est connue (à l'Entraînement libre, le croupier l'est toujours). */
+    private boolean known(EnemyKind kind) {
+        return profile.hasMet(kind) || (onFight != null && kind == EnemyKind.ENTRAINEMENT);
+    }
+
+    /** @return {@code true} si la fenêtre est ouverte pour l'Entraînement libre. */
+    public boolean isTraining() { return onFight != null; }
+
+    private void open(PlayerProfile profile, Runnable onClose, Consumer<EnemyKind> onFight) {
         this.profile = profile;
         this.onClose = onClose;
-        title.setText(Lang.t("BESTIAIRE ET COLLECTION"));
+        this.onFight = onFight;
+        boolean training = onFight != null;
+        cutscenes.setVisible(!training);
+        fight.setVisible(training);
+        title.setText(training ? Lang.t("ENTRAÎNEMENT LIBRE") : Lang.t("BESTIAIRE ET COLLECTION"));
         towerTitle.setText(Lang.t("Tour des épreuves"));
         explorationTitle.setText(Lang.t("Exploration"));
         towerRows.get(0).label().setText(Lang.t("Entraînement"));
@@ -232,7 +281,7 @@ public class BestiaryOverlay implements Disposable {
 
         int met = 0, defeated = 0;
         for (Cell cell : cells) {
-            boolean known = profile.hasMet(cell.kind());
+            boolean known = known(cell.kind());
             boolean beaten = profile.hasDefeated(cell.kind());
             if (known) met++;
             if (beaten) defeated++;
@@ -247,8 +296,12 @@ public class BestiaryOverlay implements Disposable {
             met, cells.size(), defeated, profile.getCollectedCardCount(), profile.getCatalogSize(),
             profile.getOwnedReels().size(), PlayerProfile.getReelCount(), seenCutscenes[0], seenCutscenes[1]));
         cutscenes.setDisabled(seenCutscenes[0] == 0);
+        if (training) {
+            summary.setText(Lang.t("Choisis un ennemi déjà vaincu pour tester ton deck. Ce combat ne rapporte rien."));
+        }
 
-        Cell first = cells.stream().filter(cell -> profile.hasMet(cell.kind())).findFirst().orElse(cells.get(0));
+        Cell first = training ? cells.get(0)
+            : cells.stream().filter(cell -> profile.hasMet(cell.kind())).findFirst().orElse(cells.get(0));
         selected = null;
         select(first);
         layout();
@@ -264,7 +317,7 @@ public class BestiaryOverlay implements Disposable {
         if (cell == selected || profile == null) return;
         selected = cell;
         EnemyKind kind = cell.kind();
-        boolean known = profile.hasMet(kind);
+        boolean known = known(kind);
         art.setDrawable(new TextureRegionDrawable(new TextureRegion(textures.portrait(kind))));
         art.setColor(known ? Color.WHITE : UNKNOWN);
         name.setText(known ? kind.getDisplayName() : "???");
@@ -282,6 +335,18 @@ public class BestiaryOverlay implements Disposable {
         }
         description.setText(known ? kind.getDescription() : Lang.t("Affronte-le pour découvrir sa fiche."));
         description.setColor(known ? Color.WHITE : LOCKED);
+        if (onFight != null) {
+            boolean open = canTrainAgainst(profile, kind);
+            fight.setDisabled(!open);
+            if (kind == EnemyKind.ENTRAINEMENT && !profile.hasDefeated(kind)) {
+                status.setText(Lang.t("Toujours disponible"));
+                status.setColor(Palette.GOLD);
+            }
+            if (!open) {
+                description.setText(Lang.t("Bats-le d'abord dans son mode pour t'entraîner contre lui."));
+                description.setColor(LOCKED);
+            }
+        }
         layout();
     }
 
@@ -352,6 +417,7 @@ public class BestiaryOverlay implements Disposable {
         // Les boutons, sous la Tour : ils ne cachent plus la fiche.
         back.setPosition(tx + towerWidth - back.getWidth(), py + PAD);
         cutscenes.setPosition(back.getX() - 24f - cutscenes.getWidth(), py + PAD);
+        fight.setPosition(back.getX() - 24f - fight.getWidth(), py + PAD);
     }
 
     /** Place les lignes {@code rows} à partir de ({@code x}, {@code top}) ; @return le bas de la dernière. */
