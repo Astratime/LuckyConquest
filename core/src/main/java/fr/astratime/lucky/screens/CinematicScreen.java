@@ -21,6 +21,7 @@ import com.badlogic.gdx.utils.Align;
 import fr.astratime.lucky.LuckyGame;
 import fr.astratime.lucky.animations.ScreenShake;
 import fr.astratime.lucky.animations.cutscenes.BonusGameCutscene;
+import fr.astratime.lucky.animations.cutscenes.SmallBonusGameCutscene;
 import fr.astratime.lucky.animations.cutscenes.BossTheme;
 import fr.astratime.lucky.animations.cutscenes.Cutscene;
 import fr.astratime.lucky.animations.cutscenes.CutsceneKit;
@@ -252,12 +253,27 @@ public class CinematicScreen extends CasinoMenuScreen {
         }
 
         List<Symbol> machine = profile.getMachine();
-        if (Bestiary.bonusGameSeen(profile)) addGroup(Lang.t("Jeu bonus"), Lang.t("Le Jeu bonus"), List.of(new Entry(Lang.t("Jeu bonus"),
-            Lang.t("Après un Bingo, une fois sur dix : la grille de 6 x 6 et ses trois tirages, sur ta machine. "
-                + "Une nouvelle grille à chaque fois."),
-            cardTextures.get("cards/test/jeu_bonus.png"),
-            kit -> new BonusGameCutscene(kit, BonusGame.play(machine, SpinEconomy.BASE_SPIN_COST, new Random()),
-                machine))));
+        if (Bestiary.bonusGameSeen(profile)) {
+            Texture art = cardTextures.get("cards/test/jeu_bonus.png");
+            addGroup(Lang.t("Jeu bonus"), Lang.t("Le Jeu bonus"), List.of(
+                new Entry(Lang.t("Grille de la cagnotte"),
+                    Lang.t("Le plus rare : la grille de 6 x 6 et ses tirages, sur ta machine. Chaque alignement paie "
+                        + "toute la cagnotte. Une nouvelle grille à chaque fois."),
+                    art, kit -> new BonusGameCutscene(kit, BonusGame.play(machine, SpinEconomy.BASE_SPIN_COST, new Random()),
+                        machine)),
+                new Entry(Lang.t("Roue de la cagnotte"),
+                    Lang.t("Un lancer de roue : la case où elle s'arrête multiplie la cagnotte."),
+                    art, kit -> new SmallBonusGameCutscene(kit, BonusGame.playSmall(BonusGame.Kind.WHEEL, 0,
+                        SpinEconomy.BASE_SPIN_COST, 0, new Random()))),
+                new Entry(Lang.t("Coffres de la cagnotte"),
+                    Lang.t("Trois coffres s'ouvrent sur neuf : chacun rapporte une part de la cagnotte."),
+                    art, kit -> new SmallBonusGameCutscene(kit, BonusGame.playSmall(BonusGame.Kind.CHESTS, 0,
+                        SpinEconomy.BASE_SPIN_COST, 0, new Random()))),
+                new Entry(Lang.t("Ticket à gratter"),
+                    Lang.t("Neuf cases à gratter : la valeur trouvée trois fois multiplie la cagnotte."),
+                    art, kit -> new SmallBonusGameCutscene(kit, BonusGame.playSmall(BonusGame.Kind.SCRATCH, 0,
+                        SpinEconomy.BASE_SPIN_COST, 0, new Random())))));
+        }
     }
 
     /**

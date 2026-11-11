@@ -78,7 +78,9 @@ class BonusGameTurnTest {
         GameController controller = new GameController(BonusGameTurnTest::plainCards, id -> null, Map.of(),
             cards -> new Player("Joueur", Player.BASE_HP, cards, rank, Symbol.classicReels()));
         controller.restart(EnemyKind.ENTRAINEMENT);
-        TurnResult result = new TurnEngine().playTurn(controller.getGameState(),
+        TurnEngine engine = new TurnEngine();
+        engine.setBonusGameKind(BonusGame.Kind.GRID);
+        TurnResult result = engine.playTurn(controller.getGameState(),
             List.of(new MultiplierEffect(9), new BingoEffect(1, Symbol.SWORD, true)));
 
         BonusGame bonus = result.getBonusGame();
@@ -98,5 +100,74 @@ class BonusGameTurnTest {
         TurnResult result = engine.playTurn(fight(), List.of(new BingoEffect(1, Symbol.SWORD, true)));
         assertTrue(result.isJackpot());
         assertNull(result.getBonusGame());
+    }
+
+    @Test
+    void theGridComesOutOneTimeInTenAndTheSmallGamesThreeTimesInTen() {
+        java.util.Random random = new java.util.Random(3);
+        java.util.Map<BonusGame.Kind, Integer> seen = new java.util.EnumMap<>(BonusGame.Kind.class);
+        int games = 20_000;
+        for (int i = 0; i < games; i++) seen.merge(BonusGame.Kind.pick(random), 1, Integer::sum);
+        assertEquals(games * 0.10, seen.get(BonusGame.Kind.GRID), games * 0.01);
+        for (BonusGame.Kind kind : List.of(BonusGame.Kind.WHEEL, BonusGame.Kind.CHESTS, BonusGame.Kind.SCRATCH)) {
+            assertEquals(games * 0.30, seen.get(kind), games * 0.015, kind.name());
+        }
+    }
+
+    @Test
+    void theSmallGamesPayLessThanTheGridButStayOnThePot() {
+        java.util.Random random = new java.util.Random(5);
+        double pot = 1_000_000;
+        for (BonusGame.Kind kind : List.of(BonusGame.Kind.WHEEL, BonusGame.Kind.CHESTS, BonusGame.Kind.SCRATCH)) {
+            double sum = 0, potSum = 0;
+            int games = 5_000;
+            for (int i = 0; i < games; i++) {
+                BonusGame game = BonusGame.playSmall(kind, pot, 100, 0, random);
+                assertEquals(kind, game.getKind());
+                assertEquals(pot + BonusGame.BASE_UNIT_SPINS * 100, game.getUnit(), 1e-6);
+                assertTrue(game.getPotPaid() <= game.getTotal());
+                sum += game.getTotal();
+                potSum += game.getPotPaid();
+            }
+            double average = sum / games / (pot + 2_000);
+            assertTrue(average > 1.2 && average < 2.2, kind + " : " + average + " fois la mise de base");
+            assertEquals(potSum / games, sum / games * pot / (pot + 2_000), sum / games * 0.01, "la part de la cagnotte");
+        }
+    }
+
+    @Test
+    void theScratchTicketShowsTheWinningValueThreeTimes() {
+        java.util.Random random = new java.util.Random(11);
+        for (int i = 0; i < 200; i++) {
+            BonusGame game = BonusGame.playSmall(BonusGame.Kind.SCRATCH, 0, 100, 0, random);
+            assertEquals(BonusGame.SCRATCH_CELLS, game.getValues().size());
+            assertEquals(3, game.getPicked().size());
+            double win = game.getValues().get(game.getPicked().get(0));
+            assertEquals(3, game.getValues().stream().filter(v -> v == win).count(), "la gagnante trois fois");
+            for (double value : game.getValues()) {
+                assertTrue(game.getValues().stream().filter(v -> v == value).count() <= 3);
+            }
+            assertEquals(win * game.getUnit(), game.getTotal(), 1e-6);
+            assertEquals(0, game.getPotPaid(), 1e-6, "sans cagnotte");
+        }
+    }
+
+    @Test
+    void theSmallGamesEmptyThePotAndItsPartIsNotStakeable() {
+        GameController controller = new GameController(BonusGameTurnTest::plainCards);
+        controller.restart(EnemyKind.CROUPIER);
+        controller.setBonusGameChance(1f);
+        controller.setBonusGameKind(BonusGame.Kind.WHEEL);
+        controller.getPot().add(50_000);
+        controller.drawCards();
+        controller.rigSpin(Symbol.SEVEN, Symbol.SEVEN, Symbol.SEVEN);
+        BonusGame bonus = controller.spin().getBonusGame();
+        assertNotNull(bonus);
+        assertEquals(BonusGame.Kind.WHEEL, bonus.getKind());
+        assertEquals(0, controller.getPot().getAmount(), "la cagnotte repart de 0");
+        double segment = BonusGame.WHEEL_SEGMENTS.get(bonus.getPicked().get(0));
+        assertEquals(50_000 * segment, bonus.getPotPaid(), 1e-6);
+        Player player = controller.getGameState().getPlayer();
+        assertEquals(Math.max(0, player.getGains() - bonus.getPotPaid()), player.getStakeableGains(), 1e-6);
     }
 }

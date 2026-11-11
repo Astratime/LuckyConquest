@@ -22,8 +22,54 @@ import java.util.Random;
  * ({@link #rarityFactor}) ; une ligne faite uniquement de Jokers compte comme rare.
  *
  * Tout est tiré d'avance (voir {@link #play}) : l'écran ne fait que le montrer.
+ *
+ * Trois autres Jeux bonus, plus modestes, sortent plus souvent (idée d'Astra, 2026-11-11) :
+ * la Roue, les Coffres et le Ticket à gratter (voir {@link Kind}). Ils paient
+ * des multiples d'une mise de base : la cagnotte + {@link #BASE_UNIT_SPINS} coûts de tirage.
+ * La grille reste le meilleur : chacun de ses alignements paie toute la cagnotte.
  */
 public final class BonusGame {
+
+    /** Les quatre Jeux bonus, et leurs chances de sortir quand un Jeu bonus se déclenche. */
+    public enum Kind {
+        /** La grille de 6 x 6 : le gros lot, chaque alignement paie toute la cagnotte. */
+        GRID(10),
+        /** La Roue de la cagnotte : un lancer, la case où elle s'arrête multiplie la mise de base. */
+        WHEEL(30),
+        /** Les Coffres : trois coffres ouverts sur neuf, chacun une part de la mise de base. */
+        CHESTS(30),
+        /** Le Ticket à gratter : la valeur qu'on trouve trois fois multiplie la mise de base. */
+        SCRATCH(30);
+
+        /** Poids de tirage (sur 100). */
+        public final int weight;
+
+        Kind(int weight) { this.weight = weight; }
+
+        /** @return un Jeu bonus tiré au hasard, selon les poids. */
+        public static Kind pick(Random random) {
+            int roll = random.nextInt(100);
+            for (Kind kind : values()) {
+                if (roll < kind.weight) return kind;
+                roll -= kind.weight;
+            }
+            return GRID;
+        }
+    }
+
+    /** Mise de base des petits Jeux bonus : la cagnotte + autant de coûts de tirage. */
+    public static final int BASE_UNIT_SPINS = 20;
+    /** Les cases de la Roue, dans l'ordre (multiples de la mise de base) : 1,4 en moyenne. */
+    public static final List<Double> WHEEL_SEGMENTS = List.of(0.5, 1.0, 1.5, 1.0, 3.0, 0.5, 2.0, 1.0, 1.5, 2.0);
+    /** Ce que contiennent les neuf Coffres (parts de la mise de base) ; trois ouverts : 1,83 en moyenne. */
+    public static final List<Double> CHEST_VALUES = List.of(0.25, 0.25, 0.5, 0.5, 0.5, 0.75, 0.75, 1.0, 1.0);
+    /** Coffres ouverts. */
+    public static final int CHESTS_OPENED = 3;
+    /** Valeurs du Ticket à gratter et leurs poids : la gagnante vaut 1,97 fois la mise de base en moyenne. */
+    public static final List<Double> SCRATCH_VALUES  = List.of(1.0, 1.5, 2.0, 3.0, 6.0);
+    public static final List<Integer> SCRATCH_WEIGHTS = List.of(35, 25, 20, 12, 8);
+    /** Cases du Ticket à gratter (3 x 3). */
+    public static final int SCRATCH_CELLS = 9;
 
     /** Côté de la grille, en cases. */
     public static final int   SIZE           = 6;
@@ -61,6 +107,13 @@ public final class BonusGame {
     private final double total;
     /** Cagnotte ajoutée à chaque alignement (voir {@link #withPot}), 0 sans cagnotte. */
     private final double pot;
+    private final Kind kind;
+    /** Petits Jeux bonus : les valeurs montrées (cases de la Roue, Coffres, cases du Ticket), en mises de base. */
+    private final List<Double> values;
+    /** Petits Jeux bonus : la case où s'arrête la Roue, les Coffres ouverts, les trois cases gagnantes du Ticket. */
+    private final List<Integer> picked;
+    /** Petits Jeux bonus : la mise de base, et la part du total qui vient de la cagnotte. */
+    private final double unit, potPaid;
 
     private BonusGame(List<Symbol[][]> grids, List<boolean[][]> frozen, List<Line> lines) {
         this(grids, frozen, lines, 0);
@@ -74,7 +127,104 @@ public final class BonusGame {
         double sum = 0;
         for (Line line : lines) sum = BigNumber.add(sum, line.gains());
         this.total = sum;
+        this.kind = Kind.GRID;
+        this.values = List.of();
+        this.picked = List.of();
+        this.unit = 0;
+        this.potPaid = BigNumber.cap(pot * lines.size());
     }
+
+    private BonusGame(Kind kind, List<Double> values, List<Integer> picked, double unit, double total, double pot,
+                      double potPaid) {
+        this.grids = List.of();
+        this.frozen = List.of();
+        this.lines = List.of();
+        this.kind = kind;
+        this.values = List.copyOf(values);
+        this.picked = List.copyOf(picked);
+        this.unit = unit;
+        this.total = total;
+        this.pot = pot;
+        this.potPaid = potPaid;
+    }
+
+    /**
+     * Joue un petit Jeu bonus ({@link Kind#WHEEL}, {@link Kind#CHESTS} ou {@link Kind#SCRATCH}).
+     *
+     * @param pot       la cagnotte, qui repart de 0 après le jeu
+     * @param spinCost  coût d'un tirage, là où se joue le combat
+     * @param extra     petit bonus des cartes et du rang, ajouté à chaque gain (déjà multiplié par le tour)
+     */
+    public static BonusGame playSmall(Kind kind, double pot, int spinCost, double extra, Random random) {
+        double unit = BigNumber.add(Math.max(0, pot), (double) BASE_UNIT_SPINS * spinCost);
+        List<Double> values = new ArrayList<>();
+        List<Integer> picked = new ArrayList<>();
+        double paid = 0; // en mises de base
+        int prizes = 1;
+        switch (kind) {
+            case WHEEL -> {
+                values.addAll(WHEEL_SEGMENTS);
+                int stop = random.nextInt(values.size());
+                picked.add(stop);
+                paid = values.get(stop);
+            }
+            case CHESTS -> {
+                values.addAll(CHEST_VALUES);
+                java.util.Collections.shuffle(values, random);
+                List<Integer> order = new ArrayList<>();
+                for (int i = 0; i < values.size(); i++) order.add(i);
+                java.util.Collections.shuffle(order, random);
+                for (int i = 0; i < CHESTS_OPENED; i++) {
+                    picked.add(order.get(i));
+                    paid += values.get(order.get(i));
+                }
+                prizes = CHESTS_OPENED;
+            }
+            case SCRATCH -> {
+                double win = weighted(random);
+                // Trois cases portent la valeur gagnante ; les six autres, d'autres valeurs, au plus deux fois chacune.
+                List<Double> others = new ArrayList<>();
+                for (double value : SCRATCH_VALUES) {
+                    if (value != win) { others.add(value); others.add(value); }
+                }
+                java.util.Collections.shuffle(others, random);
+                List<Double> cells = new ArrayList<>(List.of(win, win, win));
+                cells.addAll(others.subList(0, SCRATCH_CELLS - 3));
+                java.util.Collections.shuffle(cells, random);
+                values.addAll(cells);
+                for (int i = 0; i < cells.size(); i++) if (cells.get(i) == win) picked.add(i);
+                paid = win;
+            }
+            default -> throw new IllegalArgumentException("La grille se joue avec play : " + kind);
+        }
+        double total = BigNumber.add(BigNumber.round(unit * paid), BigNumber.round(Math.max(0, extra) * prizes));
+        double potPaid = BigNumber.round(Math.max(0, pot) * paid);
+        return new BonusGame(kind, values, picked, unit, total, Math.max(0, pot), potPaid);
+    }
+
+    private static double weighted(Random random) {
+        int roll = random.nextInt(100);
+        for (int i = 0; i < SCRATCH_VALUES.size(); i++) {
+            if (roll < SCRATCH_WEIGHTS.get(i)) return SCRATCH_VALUES.get(i);
+            roll -= SCRATCH_WEIGHTS.get(i);
+        }
+        return SCRATCH_VALUES.get(0);
+    }
+
+    /** @return le Jeu bonus joué. */
+    public Kind getKind() { return kind; }
+
+    /** @return petits Jeux bonus : les valeurs montrées (cases de la Roue, Coffres, cases du Ticket), en mises de base. */
+    public List<Double> getValues() { return values; }
+
+    /** @return petits Jeux bonus : la case où s'arrête la Roue, les Coffres ouverts, les cases gagnantes du Ticket. */
+    public List<Integer> getPicked() { return picked; }
+
+    /** @return petits Jeux bonus : la mise de base (cagnotte + {@link #BASE_UNIT_SPINS} coûts de tirage). */
+    public double getUnit() { return unit; }
+
+    /** @return la part des gains qui vient de la cagnotte (elle ne se remise pas). */
+    public double getPotPaid() { return potPaid; }
 
     /**
      * Joue un Jeu bonus entier.
@@ -138,7 +288,7 @@ public final class BonusGame {
         return new BonusGame(grids, frozen, paid, BigNumber.add(this.pot, pot));
     }
 
-    /** @return la cagnotte payée par chaque alignement (0 sans cagnotte). */
+    /** @return la cagnotte payée par chaque alignement (petits Jeux bonus : la cagnotte jouée), 0 sans cagnotte. */
     public double getPot() { return pot; }
 
     /** @return une case tirée au hasard : un Joker, une fois sur {@link #JOKER_ONE_IN}, sinon un des rouleaux. */

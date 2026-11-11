@@ -272,6 +272,7 @@ class SpinEconomyTest {
     void theBonusGamePaysThePotOnEveryLineThenEmptiesIt() {
         GameController controller = fight(EnemyKind.CROUPIER);
         controller.setBonusGameChance(1f); // le Jeu bonus s'ouvre à coup sûr après le Bingo
+        controller.setBonusGameKind(BonusGame.Kind.GRID);
         controller.getPot().add(10_000);
         controller.drawCards();
         controller.nextStake(); // Mise 5 %, versée à la cagnotte avant le tirage
