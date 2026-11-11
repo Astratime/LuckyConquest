@@ -219,7 +219,7 @@ public class SmallBonusGameCutscene extends Cutscene {
     private void drawBanner(Batch batch) {
         float pop = Interpolation.swingOut.apply(progress(0f, 0.45f));
         float rise = Interpolation.pow2.apply(progress(0.8f, SHOW + 0.3f));
-        float y = MathUtils.lerp(worldHeight() * 0.55f, centerY() + unitSize() * 3.3f, rise);
+        float y = MathUtils.lerp(worldHeight() * 0.55f, centerY() + unitSize() * (game.getKind() == BonusGame.Kind.WHEEL ? 3.9f : 3.3f), rise);
         float scale = MathUtils.lerp(3.4f, 2.0f, rise) * pop;
         if (scale <= 0.01f) return;
         glow(batch, worldWidth() / 2f, y, 420f * scale / 3f, GOLD, 0.35f * (1f - 0.5f * rise));
@@ -242,8 +242,8 @@ public class SmallBonusGameCutscene extends Cutscene {
     // --- Roue -----------------------------------------------------------------
 
     private float wheelX()      { return worldWidth() / 2f; }
-    private float wheelY()      { return centerY(); }
-    private float wheelRadius() { return unitSize() * 2.3f; }
+    private float wheelY()      { return centerY() - unitSize() * 0.15f; }
+    private float wheelRadius() { return unitSize() * 2.1f; }
 
     /** @return l'angle de la roue : elle tourne vite, ralentit et s'arrête la case gagnante en haut. */
     private float wheelAngle() {
@@ -283,7 +283,7 @@ public class SmallBonusGameCutscene extends Cutscene {
         // Moyeu et flèche en haut.
         float hub = unitSize() * 0.45f;
         box(batch, cx - hub / 2f, cy - hub / 2f, hub, hub, GOLD, alpha);
-        float tip = cy + r + unitSize() * 0.95f;
+        float tip = cy + r + unitSize() * 0.72f;
         batch.setColor(CREAM.r, CREAM.g, CREAM.b, alpha);
         float s = unitSize() * 0.32f;
         batch.draw(pixel, cx - s / 2f, tip - s / 2f, s / 2f, s / 2f, s, s, 1f, 1f, 45f);
@@ -296,7 +296,7 @@ public class SmallBonusGameCutscene extends Cutscene {
     private float[] chestCenter(int index) {
         float step = unitSize() * 1.7f;
         int row = index / 3, col = index % 3;
-        return new float[] {worldWidth() / 2f + (col - 1) * step, centerY() + (1 - row) * step};
+        return new float[] {worldWidth() / 2f + (col - 1) * step, centerY() - unitSize() * 0.3f + (1 - row) * step};
     }
 
     private void drawChests(Batch batch, float alpha) {
@@ -319,7 +319,7 @@ public class SmallBonusGameCutscene extends Cutscene {
             box(batch, c[0] - w * 0.08f, ly - h * 0.06f, w * 0.16f, h * 0.2f, GOLD, a);
             if (shown) {
                 if (opened) box(batch, c[0] - w * 0.4f, c[1] - h * 0.05f, w * 0.8f, h * 0.18f, GOLD_LIGHT, alpha);
-                label(batch, times(values.get(i)), c[0], c[1] + h * 0.72f + lift * h * 0.3f, opened ? 1.3f : 1.0f, a);
+                label(batch, times(values.get(i)), c[0], ly + h * 0.38f + h * 0.28f, opened ? 1.3f : 1.0f, a);
             }
         }
     }
