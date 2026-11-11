@@ -1220,6 +1220,7 @@ public class GameScreen extends ScreenAdapter {
             if (squared) stats.add(PlayerStats.Stat.SQUARES, 1);
             if (bingoSymbol != null) stats.addBingo(bingoSymbol);
             if (bonus != null) stats.add(PlayerStats.Stat.BONUS_GAMES, 1);
+            stats.add(PlayerStats.Stat.SPINS, 1);
         });
         announceAchievements();
     }
@@ -2047,9 +2048,14 @@ public class GameScreen extends ScreenAdapter {
         buildEndButtons(won);
         if (won && tutorial == null) {
             luckyGame.getProfile().defeat(gameController.getGameState().getEnemy().getKind());
+            Player player = gameController.getGameState().getPlayer();
+            boolean close    = player.getHp() > 0 && player.getHp() * 10L < player.getMaxHp();
+            boolean flawless = player.getHp() >= player.getMaxHp();
             luckyGame.getProfile().recordStats(stats -> {
                 stats.add(PlayerStats.Stat.WINS, 1);
                 stats.add(PlayerStats.Stat.COINS, reward);
+                if (close)    stats.add(PlayerStats.Stat.CLOSE_WINS, 1);
+                if (flawless) stats.add(PlayerStats.Stat.FLAWLESS_WINS, 1);
             });
         } else if (reward > 0) { // défaite dans un donjon : une part des gains est gardée
             luckyGame.getProfile().recordStats(stats -> stats.add(PlayerStats.Stat.COINS, reward));

@@ -18,6 +18,16 @@ public enum Achievement {
     MILLION_HIT("Coup d'un million", "Infliger 1 million de dégâts en un coup.", 100_000),
     BILLION_HIT("Coup d'un milliard", "Infliger 1 milliard de dégâts en un coup.", 1_000_000),
     HIGH_ROLLER("Gros joueur", "Gagner 10 millions de gains en combat, au total.", 250_000),
+    CHAMPION("Champion", "Gagner 250 combats.", 500_000),
+    CLOSE_CALL("Sur le fil", "Gagner un combat avec moins de 10 % de ses PV.", 50_000),
+    FLAWLESS("Intouchable", "Finir un combat gagné avec tous ses PV.", 100_000),
+    THOUSAND_SPINS("Mille tirages", "Lancer 1 000 tirages.", 100_000),
+    BINGO_KING("Roi du Bingo", "Réussir 500 Bingos.", 1_000_000),
+    GREAT_COLLECTOR("Grand collectionneur", "Réussir le Bingo de 25 symboles différents.", 1_000_000),
+    BONUS_REGULAR("Habitué du bonus", "Jouer 25 Jeux bonus.", 250_000),
+    SQUARE_MASTER("Maître des Carrés", "Réussir 25 Carrés.", 250_000),
+    TRILLION_HIT("Coup d'un billion", "Infliger mille milliards de dégâts en un coup.", 1_000_000),
+    BILLIONAIRE("Milliardaire", "Gagner 1 milliard de gains en combat, au total.", 1_000_000),
     // Exploration
     FIRST_DUNGEON("Premier donjon", "Vider un donjon.", 10_000),
     PRAIRIE("Maître de la prairie", "Vider les 4 donjons de la prairie.", 50_000),
@@ -26,13 +36,25 @@ public enum Achievement {
     MINES("Chercheur d'or", "Vider les 4 donjons des Mines d'Or.", 500_000),
     CASINO("Maître du Casino", "Vider les 4 donjons du Casino Englouti.", 1_000_000),
     DESERT("Tueur de dragon", "Vider les 4 donjons du Désert de Braise.", 1_000_000),
+    GREAT_EXPLORER("Grand explorateur", "Vider tous les donjons de l'Exploration.", 1_000_000),
+    FORTUNE("Fortune faite", "Gagner 1 milliard de pièces en Exploration, au total.", 1_000_000),
     // Tour des épreuves
     COMET("Comète abattue", "Finir le chapitre 1 de la Tour des épreuves.", 25_000),
+    HALFWAY("Mi-chemin", "Finir le chapitre 3 de la Tour des épreuves.", 100_000),
     ORIGIN("Fin de la Machine", "Finir le chapitre 6 de la Tour des épreuves.", 1_000_000),
     HARD_CHAPTER("Sans pitié", "Finir un chapitre de la Tour en mode difficile.", 500_000),
+    HARD_TOWER("Tour domptée", "Finir les 6 chapitres de la Tour en mode difficile.", 1_000_000),
+    ENDLESS_10("Toujours plus haut", "Gagner l'étage 10 du mode sans fin.", 500_000),
+    ENDLESS_25("Vertige", "Gagner l'étage 25 du mode sans fin.", 1_000_000),
     // Progression
     FIRST_RANK("Premier rang", "Acheter un rang à la boutique.", 50_000),
-    UPGRADED_CARD("Carte en or", "Fusionner une carte « + » à la Table du croupier.", 500_000);
+    UPGRADED_CARD("Carte en or", "Fusionner une carte « + » à la Table du croupier.", 500_000),
+    GOLDSMITH("Orfèvre", "Avoir 5 cartes « + » différentes.", 1_000_000),
+    REEL_COLLECTOR("Mécanicien", "Posséder 10 rouleaux achetés ou gagnés.", 500_000),
+    LEGEND("Légende vivante", "Acheter le rang Légende du Jackpot.", 1_000_000),
+    // Bestiaire
+    HUNTER("Chasseur", "Vaincre 50 ennemis différents.", 250_000),
+    FULL_BESTIARY("Bestiaire complet", "Vaincre tous les ennemis du bestiaire.", 1_000_000);
 
     private final String name;
     private final String description;
