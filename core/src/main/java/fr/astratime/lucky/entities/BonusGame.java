@@ -26,25 +26,33 @@ import java.util.Random;
  * Trois autres Jeux bonus, plus modestes, sortent plus souvent (idée d'Astra, 2026-11-11) :
  * la Roue, les Coffres et le Ticket à gratter (voir {@link Kind}). Ils paient
  * des multiples d'une mise de base : la cagnotte + {@link #BASE_UNIT_SPINS} coûts de tirage.
- * La grille reste le meilleur : chacun de ses alignements paie toute la cagnotte.
+ * Chaque Jeu bonus a un rang (Astra) : la grille est de rang 4 ; le rang 3 rapporte en moyenne
+ * 80 % de la grille, le rang 2 50 %, le rang 1 20 %. La grille aligne en moyenne
+ * {@link #GRID_AVERAGE_LINES} fois (machine classique) et chaque alignement paie la cagnotte et
+ * environ {@link #BASE_UNIT_SPINS} tirages : elle vaut donc environ 10,8 mises de base.
  */
 public final class BonusGame {
 
-    /** Les quatre Jeux bonus, et leurs chances de sortir quand un Jeu bonus se déclenche. */
+    /** Les quatre Jeux bonus, leur rang et leurs chances de sortir quand un Jeu bonus se déclenche. */
     public enum Kind {
         /** La grille de 6 x 6 : le gros lot, chaque alignement paie toute la cagnotte. */
-        GRID(10),
+        GRID(10, 4),
         /** La Roue de la cagnotte : un lancer, la case où elle s'arrête multiplie la mise de base. */
-        WHEEL(30),
-        /** Les Coffres : trois coffres ouverts sur neuf, chacun une part de la mise de base. */
-        CHESTS(30),
+        WHEEL(30, 1),
+        /** Les Coffres : trois coffres ouverts sur neuf, chacun un multiple de la mise de base. */
+        CHESTS(30, 2),
         /** Le Ticket à gratter : la valeur qu'on trouve trois fois multiplie la mise de base. */
-        SCRATCH(30);
+        SCRATCH(30, 3);
 
         /** Poids de tirage (sur 100). */
         public final int weight;
+        /** Rang du Jeu bonus, de 1 à 4 : plus il est haut, plus il rapporte. */
+        public final int rank;
 
-        Kind(int weight) { this.weight = weight; }
+        Kind(int weight, int rank) {
+            this.weight = weight;
+            this.rank = rank;
+        }
 
         /** @return un Jeu bonus tiré au hasard, selon les poids. */
         public static Kind pick(Random random) {
@@ -59,15 +67,17 @@ public final class BonusGame {
 
     /** Mise de base des petits Jeux bonus : la cagnotte + autant de coûts de tirage. */
     public static final int BASE_UNIT_SPINS = 20;
-    /** Les cases de la Roue, dans l'ordre (multiples de la mise de base) : 1,4 en moyenne. */
-    public static final List<Double> WHEEL_SEGMENTS = List.of(0.5, 1.0, 1.5, 1.0, 3.0, 0.5, 2.0, 1.0, 1.5, 2.0);
-    /** Ce que contiennent les neuf Coffres (parts de la mise de base) ; trois ouverts : 1,83 en moyenne. */
-    public static final List<Double> CHEST_VALUES = List.of(0.25, 0.25, 0.5, 0.5, 0.5, 0.75, 0.75, 1.0, 1.0);
+    /** Alignements moyens d'une grille sur la machine classique (mesuré, voir les tests). */
+    public static final double GRID_AVERAGE_LINES = 10.8;
+    /** Les cases de la Roue, dans l'ordre (multiples de la mise de base) : 2,2 en moyenne, 20 % de la grille. */
+    public static final List<Double> WHEEL_SEGMENTS = List.of(1.0, 2.0, 1.5, 3.0, 1.0, 4.0, 1.5, 2.0, 1.0, 5.0);
+    /** Ce que contiennent les neuf Coffres ; trois ouverts : 5,5 mises de base en moyenne, 50 % de la grille. */
+    public static final List<Double> CHEST_VALUES = List.of(0.5, 1.0, 1.0, 1.5, 2.0, 2.0, 2.5, 3.0, 3.0);
     /** Coffres ouverts. */
     public static final int CHESTS_OPENED = 3;
-    /** Valeurs du Ticket à gratter et leurs poids : la gagnante vaut 1,97 fois la mise de base en moyenne. */
-    public static final List<Double> SCRATCH_VALUES  = List.of(1.0, 1.5, 2.0, 3.0, 6.0);
-    public static final List<Integer> SCRATCH_WEIGHTS = List.of(35, 25, 20, 12, 8);
+    /** Valeurs du Ticket à gratter et leurs poids : la gagnante vaut 8,66 mises de base en moyenne, 80 % de la grille. */
+    public static final List<Double> SCRATCH_VALUES  = List.of(4.0, 6.0, 8.0, 12.0, 20.0);
+    public static final List<Integer> SCRATCH_WEIGHTS = List.of(25, 25, 20, 18, 12);
     /** Cases du Ticket à gratter (3 x 3). */
     public static final int SCRATCH_CELLS = 9;
 

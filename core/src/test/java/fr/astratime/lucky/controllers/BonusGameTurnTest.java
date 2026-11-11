@@ -115,12 +115,24 @@ class BonusGameTurnTest {
     }
 
     @Test
-    void theSmallGamesPayLessThanTheGridButStayOnThePot() {
+    void theGridAlignsAboutElevenTimes() {
+        java.util.Random random = new java.util.Random(9);
+        double lines = 0;
+        int games = 3_000;
+        for (int i = 0; i < games; i++) lines += BonusGame.play(Symbol.classicReels(), 100, random).getLines().size();
+        assertEquals(BonusGame.GRID_AVERAGE_LINES, lines / games, 0.6);
+    }
+
+    @Test
+    void eachRankPaysItsShareOfTheGrid() {
+        assertEquals(4, BonusGame.Kind.GRID.rank);
         java.util.Random random = new java.util.Random(5);
         double pot = 1_000_000;
-        for (BonusGame.Kind kind : List.of(BonusGame.Kind.WHEEL, BonusGame.Kind.CHESTS, BonusGame.Kind.SCRATCH)) {
+        java.util.Map<BonusGame.Kind, Double> share = java.util.Map.of(
+            BonusGame.Kind.SCRATCH, 0.8, BonusGame.Kind.CHESTS, 0.5, BonusGame.Kind.WHEEL, 0.2);
+        for (BonusGame.Kind kind : share.keySet()) {
             double sum = 0, potSum = 0;
-            int games = 5_000;
+            int games = 8_000;
             for (int i = 0; i < games; i++) {
                 BonusGame game = BonusGame.playSmall(kind, pot, 100, 0, random);
                 assertEquals(kind, game.getKind());
@@ -129,8 +141,9 @@ class BonusGameTurnTest {
                 sum += game.getTotal();
                 potSum += game.getPotPaid();
             }
-            double average = sum / games / (pot + 2_000);
-            assertTrue(average > 1.2 && average < 2.2, kind + " : " + average + " fois la mise de base");
+            double units = sum / games / (pot + 2_000);
+            assertEquals(share.get(kind), units / BonusGame.GRID_AVERAGE_LINES, 0.05,
+                kind + " (rang " + kind.rank + ") : " + units + " mises de base");
             assertEquals(potSum / games, sum / games * pot / (pot + 2_000), sum / games * 0.01, "la part de la cagnotte");
         }
     }

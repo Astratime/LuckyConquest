@@ -255,23 +255,26 @@ public class CinematicScreen extends CasinoMenuScreen {
         List<Symbol> machine = profile.getMachine();
         if (Bestiary.bonusGameSeen(profile)) {
             Texture art = cardTextures.get("cards/test/jeu_bonus.png");
+            Texture wheelArt = cardTextures.get("cards/test/jeu_bonus_roue.png");
+            Texture chestsArt = cardTextures.get("cards/test/jeu_bonus_coffres.png");
+            Texture ticketArt = cardTextures.get("cards/test/jeu_bonus_ticket.png");
             addGroup(Lang.t("Jeu bonus"), Lang.t("Le Jeu bonus"), List.of(
                 new Entry(Lang.t("Grille de la cagnotte"),
-                    Lang.t("Le plus rare : la grille de 6 x 6 et ses tirages, sur ta machine. Chaque alignement paie "
+                    Lang.t("Rang 4, le plus rare : la grille de 6 x 6 et ses tirages, sur ta machine. Chaque alignement paie "
                         + "toute la cagnotte. Une nouvelle grille à chaque fois."),
                     art, kit -> new BonusGameCutscene(kit, BonusGame.play(machine, SpinEconomy.BASE_SPIN_COST, new Random()),
                         machine)),
                 new Entry(Lang.t("Roue de la cagnotte"),
-                    Lang.t("Un lancer de roue : la case où elle s'arrête multiplie la cagnotte."),
-                    art, kit -> new SmallBonusGameCutscene(kit, BonusGame.playSmall(BonusGame.Kind.WHEEL, 0,
+                    Lang.t("Rang 1 : un lancer de roue, la case où elle s'arrête multiplie la cagnotte."),
+                    wheelArt, kit -> new SmallBonusGameCutscene(kit, BonusGame.playSmall(BonusGame.Kind.WHEEL, 0,
                         SpinEconomy.BASE_SPIN_COST, 0, new Random()))),
                 new Entry(Lang.t("Coffres de la cagnotte"),
-                    Lang.t("Trois coffres s'ouvrent sur neuf : chacun rapporte une part de la cagnotte."),
-                    art, kit -> new SmallBonusGameCutscene(kit, BonusGame.playSmall(BonusGame.Kind.CHESTS, 0,
+                    Lang.t("Rang 2 : trois coffres s'ouvrent sur neuf, chacun rapporte une part de la cagnotte."),
+                    chestsArt, kit -> new SmallBonusGameCutscene(kit, BonusGame.playSmall(BonusGame.Kind.CHESTS, 0,
                         SpinEconomy.BASE_SPIN_COST, 0, new Random()))),
                 new Entry(Lang.t("Ticket à gratter"),
-                    Lang.t("Neuf cases à gratter : la valeur trouvée trois fois multiplie la cagnotte."),
-                    art, kit -> new SmallBonusGameCutscene(kit, BonusGame.playSmall(BonusGame.Kind.SCRATCH, 0,
+                    Lang.t("Rang 3 : neuf cases à gratter, la valeur trouvée trois fois multiplie la cagnotte."),
+                    ticketArt, kit -> new SmallBonusGameCutscene(kit, BonusGame.playSmall(BonusGame.Kind.SCRATCH, 0,
                         SpinEconomy.BASE_SPIN_COST, 0, new Random())))));
         }
     }
