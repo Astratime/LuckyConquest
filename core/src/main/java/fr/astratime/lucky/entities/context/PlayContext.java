@@ -31,6 +31,8 @@ public class PlayContext {
     private final List<EffectPopup> popups         = new ArrayList<>();
     private int cardsToDraw = 0;
     private double gains    = 0;
+    /** Part de {@link #gains} calculée sur les gains de la cagnotte : elle restera non misable. */
+    private double potGains = 0;
     private CardChoice choice;
     private boolean    autoSpin = false;
     private String     rainbowCardId;
@@ -92,6 +94,9 @@ public class PlayContext {
 
     /** @return les gains à créditer immédiatement suite aux effets de la carte jouée. */
     public double getGains() { return gains; }
+
+    /** @return la part de {@link #getGains()} calculée sur les gains de la cagnotte (non misable). */
+    public double getPotGains() { return potGains; }
 
     /**
      * Consomme immédiatement un pourcentage des gains actuels du joueur.
@@ -174,6 +179,7 @@ public class PlayContext {
      */
     public double multiplyGains(int factor) {
         double added = BigNumber.cap((player.getGains() + gains) * (factor - 1));
+        potGains = BigNumber.add(potGains, player.potShare(added, gains));
         gains = BigNumber.add(gains, added);
         return added;
     }
@@ -186,6 +192,7 @@ public class PlayContext {
      */
     public double addGainsPercent(int percent) {
         double added = BigNumber.percent(player.getGains() + gains, percent);
+        potGains = BigNumber.add(potGains, player.potShare(added, gains));
         gains = BigNumber.add(gains, added);
         return added;
     }

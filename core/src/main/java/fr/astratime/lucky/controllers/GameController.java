@@ -675,7 +675,10 @@ public class GameController {
         playContext.getEffectsForSpin().forEach(effect -> effect.setSourceName(card.getName()));
         pendingEffects.addAll(playContext.getEffectsForSpin());
 
-        if (playContext.getGains() != 0) player.addGains(playContext.getGains());
+        if (playContext.getGains() != 0) {
+            player.addGains(playContext.getGains());
+            player.addPotWinnings(playContext.getPotGains()); // pris sur les gains de la cagnotte : pas remisable
+        }
         DrawResult drawResult = playContext.getCardsToDraw() > 0
             ? player.draw(playContext.getCardsToDraw())
             : DrawResult.empty();
