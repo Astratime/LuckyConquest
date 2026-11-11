@@ -1,0 +1,1054 @@
+package fr.astratime.lucky.animations.cutscenes;
+
+import com.badlogic.gdx.audio.Sound;
+import com.badlogic.gdx.graphics.Color;
+import com.badlogic.gdx.graphics.Pixmap;
+import com.badlogic.gdx.graphics.g2d.Batch;
+import com.badlogic.gdx.graphics.g2d.BitmapFont;
+import com.badlogic.gdx.graphics.g2d.TextureRegion;
+import com.badlogic.gdx.math.Interpolation;
+import com.badlogic.gdx.math.MathUtils;
+import com.badlogic.gdx.utils.Array;
+import fr.astratime.lucky.assets.GameSounds;
+import fr.astratime.lucky.entities.BonusGame;
+import fr.astratime.lucky.i18n.Lang;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+
+import static fr.astratime.lucky.assets.Palette.hex;
+
+/**
+ * Les petits Jeux bonus (Roue, Plinko, Coup de poing), par-dessus le combat,
+ * dans le décor du Jeu bonus : le casino s'assombrit, le titre éclate puis monte,
+ * le jeu se joue au centre, puis le total. Fondu noir, retour au combat.
+ *
+ * Tout est déjà tiré ({@link BonusGame#playSmall}) : la scène ne fait que le montrer.
+ * Un clic (ou une touche) passe au total, puis referme la scène.
+ */
+public class SmallBonusGameCutscene extends Cutscene {
+
+    /** Le titre éclate, puis le jeu apparaît. */
+    private static final float SHOW = 1.2f;
+    /** Le jeu commence. */
+    private static final float START = 1.8f;
+    /** Roue : elle tourne, puis s'arrête. */
+    private static final float WHEEL_SPIN = 3.6f;
+    /** Plinko : la bille passe une rangée de clous tous les {@link #PLINKO_STEP}. */
+    private static final float PLINKO_STEP = 0.34f;
+    private static final float TOTAL_HOLD = 3.0f;
+    private static final float COVER = 0.6f;
+
+    private static final Color GOLD = hex("ffc93a"), GOLD_LIGHT = hex("ffe58a"), GOLD_DARK = hex("b8801f");
+    private static final Color RED = hex("c8203a"), RED_DARK = hex("6e0f1e"), INK = hex("1c0f24"), NIGHT = hex("07040c");
+    private static final Color CREAM = hex("fff6dc");
+    private static final Color SILVER = hex("b9c0c8"), SILVER_DARK = hex("7d858e");
+    private static final Color BULB_OFF = hex("3a2a1a"), BEVEL = hex("ffffff");
+    private static final Color[] CONFETTI = {GOLD, RED, hex("3ac1ff"), hex("5fd36a"), hex("ff7ad9"), CREAM};
+    /** Couleur des cases du Plinko, du bord (le gros lot) au centre. */
+    private static final Color[] SLOT_COLORS = {hex("d4202f"), hex("e8701d"), hex("e8b81d"), hex("3f9e4a"), hex("2f6fc8")};
+
+    private final BonusGame game;
+    private final BitmapFont font;
+    private final GameSounds sounds;
+    private final Sound intro, music, total;
+    private final Sound[] owned;
+    private final List<long[]> playing = new ArrayList<>();
+    private final Array<Particle> sparks = new Array<>(false, 128);
+    /** Poussière d'or du fond, confettis, étincelles et pièces qui volent. */
+    private final Array<Particle> dust = new Array<>(false, 128), confetti = new Array<>(false, 256);
+    private final Array<Particle> flakes = new Array<>(false, 128), coins = new Array<>(false, 64);
+    private final TextureRegion coin, ball, wheelDisc, pointer;
+    /** Coup de poing : la cible, le gant de boxe et la cloche, en pixel art. */
+    private final TextureRegion target, gloveArt, bellArt;
+    /** Plinko : le chemin de la bille (vers la droite ?), une rangée de clous après l'autre. */
+    private final boolean[] path = new boolean[BonusGame.PLINKO_ROWS];
+    /** Le résultat se montre ; puis le total. */
+    private float reveal, totalAt;
+    private float closeAt, lastTime, dustTimer;
+    private long spinLoop = -1;
+
+    public SmallBonusGameCutscene(CutsceneKit kit, BonusGame game) {
+        super(kit.settings(), kit.shake(), null);
+        this.game = game;
+        font = kit.font();
+        sounds = kit.gameSounds();
+        intro = kit.sound("bonus_game");
+        music = kit.loop("bonus_game_music");
+        total = kit.sound("bonus_game_total");
+        owned = new Sound[] {intro, music, total};
+        coin = load("hud/coin.png");
+        Pixmap dot = new Pixmap(16, 16, Pixmap.Format.RGBA8888);
+        dot.setColor(Color.WHITE);
+        dot.fillCircle(8, 8, 7);
+        ball = region(dot, false);
+        target = targetArt();
+        gloveArt = art("krdwg", new Color[] {INK, RED, RED_DARK, CREAM, GOLD_DARK},
+            "..kkkkkkk...",
+            ".krrrrrrrk..",
+            "krwrrrrrrrk.",
+            "krwrrrrrrrrk",
+            "krrrrrrrrrrk",
+            "kdkrrrrrrrrk",
+            "kdrkrrrrrrdk",
+            "kdrrkrrrrrdk",
+            ".kdddrrrrdk.",
+            ".kddddddddk.",
+            "..kwwwwwwk..",
+            "..kwgwgwwk..",
+            "..kwwwwwwk..",
+            "...kkkkkk...");
+        bellArt = art("kgdl", new Color[] {INK, GOLD, GOLD_DARK, GOLD_LIGHT},
+            "....kk....",
+            "...kggk...",
+            "..kglggk..",
+            "..kglggk..",
+            "..kglggk..",
+            ".kgglgggk.",
+            ".kggggggk.",
+            "kggggggggk",
+            "kddddddddk",
+            ".kkkkkkkk.",
+            "....kk....",
+            "....kk....");
+        Pixmap disc = new Pixmap(64, 64, Pixmap.Format.RGBA8888);
+        disc.setColor(INK);
+        disc.fillCircle(32, 32, 31);
+        disc.setColor(GOLD_DARK);
+        disc.fillCircle(32, 32, 30);
+        disc.setColor(GOLD);
+        disc.fillCircle(32, 32, 28);
+        disc.setColor(GOLD_DARK);
+        disc.fillCircle(32, 32, 26);
+        disc.setColor(RED_DARK);
+        disc.fillCircle(32, 32, 25);
+        wheelDisc = region(disc, false);
+        pointer = art("kgrw", new Color[] {INK, GOLD, RED, CREAM},
+            ".kkkkkkk.",
+            "kgggggggk",
+            "kgrrrrrgk",
+            "kgrwrrrgk",
+            ".kgrrrgk.",
+            ".kgrrrgk.",
+            "..kgrgk..",
+            "..kgrgk..",
+            "...kgk...",
+            "....k....");
+    }
+
+    /** @return le titre du jeu. */
+    public static String title(BonusGame.Kind kind) {
+        return switch (kind) {
+            case WHEEL -> Lang.t("ROUE DE LA CAGNOTTE !");
+            case PLINKO -> Lang.t("PLINKO DE LA CAGNOTTE !");
+            case PUNCH -> Lang.t("COUP DE POING DE LA CAGNOTTE !");
+            default -> Lang.t("JEU BONUS !");
+        };
+    }
+
+    /** @return {@code value} écrit « x1,5 » (« x1.5 » en anglais), « x2 ». */
+    static String times(double value) {
+        String number = value == Math.rint(value) ? Long.toString(Math.round(value))
+            : Lang.decimal(String.valueOf(Math.round(value * 100) / 100.0));
+        return "x" + number;
+    }
+
+    @Override protected float coverStart() { return closeAt; }
+    @Override protected float coverFull()  { return closeAt + COVER; }
+    @Override protected Color coverColor() { return Color.BLACK; }
+
+    @Override
+    protected void reset() {
+        stopSounds();
+        clearParticles();
+        lastTime = 0f;
+        switch (game.getKind()) {
+            case WHEEL -> schedule(START + WHEEL_SPIN);
+            case PLINKO -> {
+                // un chemin au hasard qui mène à la case tirée
+                List<Boolean> rights = new ArrayList<>();
+                for (int row = 0; row < path.length; row++) rights.add(row < game.getPicked().get(0));
+                Collections.shuffle(rights, random);
+                for (int row = 0; row < path.length; row++) path[row] = rights.get(row);
+                schedule(START + 0.5f + PLINKO_STEP * (path.length + 1));
+            }
+            default -> schedule(climbEnd());
+        }
+        sound(intro, false);
+    }
+
+    /** Le résultat se montre à {@code at}, le total une seconde après. */
+    private void schedule(float at) {
+        reveal = at;
+        totalAt = at + (game.getKind() == BonusGame.Kind.PUNCH ? 1.6f : 1.0f);
+        closeAt = totalAt + TOTAL_HOLD;
+    }
+
+    @Override
+    protected boolean pointerDown(float x, float y) {
+        skip();
+        return true;
+    }
+
+    @Override
+    public void skip() {
+        if (!isPlaying() || time >= closeAt) return;
+        if (time < totalAt) {
+            stop(intro);
+            stopSpinLoop();
+            if (time < START) sound(music, true);
+            time = totalAt;
+            lastTime = totalAt - 0.001f;   // le total éclate quand même (pièces, confettis)
+            clearParticles();
+        } else {
+            closeAt = time;
+        }
+    }
+
+    @Override
+    public void act(float delta) {
+        super.act(delta);
+        if (!isPlaying() && !playing.isEmpty()) stopSounds();
+    }
+
+    // -------------------------------------------------------------------------
+    // Ce qui arrive au fil du temps
+    // -------------------------------------------------------------------------
+
+    @Override
+    protected void simulate(float delta) {
+        float from = lastTime;
+        lastTime = time;
+        boolean rich = !settings.isReducedEffects();
+        if (crossed(from, START)) {
+            sound(music, true);
+            if (game.getKind() == BonusGame.Kind.WHEEL && sounds != null) spinLoop = sounds.reelSpin.loop(0.5f);
+        }
+        // poussière d'or qui monte doucement derrière le jeu
+        if (rich && time >= SHOW) {
+            dustTimer -= delta;
+            while (dustTimer <= 0f) {
+                dustTimer += 0.07f;
+                Particle mote = particle(random.nextFloat() * worldWidth(), -10f, 80f + random.nextFloat() * 20f,
+                    25f + random.nextFloat() * 45f, 3f + random.nextFloat() * 3f, 5f + random.nextFloat() * 9f);
+                mote.color.set(random.nextBoolean() ? GOLD : GOLD_LIGHT);
+                mote.color.a = 0.55f;
+                dust.add(mote);
+            }
+        }
+        switch (game.getKind()) {
+            case WHEEL -> {
+                if (crossed(from, reveal)) {
+                    stopSpinLoop();
+                    if (sounds != null) sounds.reelStop.play(0.8f);
+                    float[] tile = wheelTile(game.getPicked().get(0));
+                    burst(tile[0], tile[1], 28, GOLD_LIGHT);
+                    confettiBurst(tile[0], tile[1], 40);
+                    rumble(0.3f, 5f);
+                }
+            }
+            case PLINKO -> {
+                for (int row = 0; row <= path.length; row++) {
+                    if (crossed(from, pegHit(row))) {
+                        float[] at = ballAt(row);
+                        if (row < path.length) {
+                            if (sounds != null) sounds.reelStop.play(0.18f, 1.3f + row * 0.06f, 0f);
+                            burst(at[0], at[1], 3, CREAM);
+                        }
+                    }
+                }
+                if (crossed(from, reveal)) {
+                    int slot = game.getPicked().get(0);
+                    float[] c = slotCenter(slot);
+                    if (sounds != null) sounds.coinsGain.play(0.8f);
+                    burst(c[0], c[1], 24, GOLD_LIGHT);
+                    double value = game.getValues().get(slot);
+                    if (value >= 7) confettiBurst(c[0], c[1], value >= 50 ? 60 : 30);
+                    if (value >= 14) fountain(c[0], c[1], value >= 50 ? 20 : 8);
+                    rumble(value >= 50 ? 0.5f : 0.2f, value >= 50 ? 8f : 3f);
+                }
+            }
+            default -> {
+                if (crossed(from, PUNCH_WINDUP) && sounds != null) sounds.reelSpin.play(0.25f, 1.6f, 0f);
+                if (crossed(from, PUNCH_HIT)) {
+                    if (sounds != null) sounds.reelStop.play(1f, 0.55f, 0f);
+                    burst(punchX(), targetY(), 26, CREAM);
+                    burst(punchX(), targetY(), 14, GOLD);
+                    rumble(0.35f, 9f);
+                }
+                int before = litSegments(shownScoreAt(from)), now = litSegments(shownScore());
+                for (int i = before; i < now; i++) {
+                    if (sounds != null) sounds.reelStop.play(0.3f, 0.9f + i * 0.06f, 0f);
+                    float sy = gaugeBottom() + (i + 0.5f) * (gaugeTop() - gaugeBottom()) / SEGMENTS;
+                    burst(punchX(), sy, 3, segmentColor(i));
+                }
+                if (crossed(from, reveal)) {
+                    int score = punchScore();
+                    if (sounds != null) sounds.coinsGain.play(0.8f);
+                    burst(punchX(), displayY(), 24, GOLD_LIGHT);
+                    confettiBurst(punchX(), displayY(), score >= 1500 ? 60 : score >= BonusGame.PUNCH_BELL ? 36 : 16);
+                    if (score >= BonusGame.PUNCH_BELL) {
+                        if (sounds != null) sounds.coinsGain.play(0.7f, 1.6f, 0f);
+                        fountain(punchX(), bellY(), score >= 1500 ? 20 : 10);
+                        rumble(0.4f, score >= 1500 ? 8f : 5f);
+                    }
+                }
+            }
+        }
+        if (crossed(from, totalAt)) {
+            sound(total, false);
+            burst(worldWidth() / 2f, totalY(), 40, GOLD);
+            coinShower(rich ? 36 : 10);
+            confettiBurst(worldWidth() * 0.12f, totalY(), 30);
+            confettiBurst(worldWidth() * 0.88f, totalY(), 30);
+        }
+        update(sparks, delta);
+        update(dust, delta);
+        update(coins, delta);
+        update(confetti, delta);
+        update(flakes, delta);
+        for (Particle piece : confetti) piece.vx += MathUtils.sin(piece.age * 7f + piece.spin) * 40f * delta; // ça virevolte
+    }
+
+    private void clearParticles() {
+        sparks.clear();
+        dust.clear();
+        confetti.clear();
+        flakes.clear();
+        coins.clear();
+    }
+
+    private boolean crossed(float from, float at) { return from < at && time >= at; }
+
+    private void burst(float x, float y, int count, Color color) {
+        if (settings.isReducedEffects()) count = Math.max(1, count / 3);
+        for (int i = 0; i < count; i++) {
+            Particle spark = particle(x, y, random.nextFloat() * 360f, 60f + random.nextFloat() * 160f,
+                0.5f + random.nextFloat() * 0.5f, 10f + random.nextFloat() * 14f);
+            spark.drag = 0.1f;
+            spark.color.set(color);
+            sparks.add(spark);
+        }
+    }
+
+    /** Des confettis de toutes les couleurs, lancés vers le haut, qui retombent en virevoltant. */
+    private void confettiBurst(float x, float y, int count) {
+        if (settings.isReducedEffects()) count = Math.max(1, count / 4);
+        for (int i = 0; i < count; i++) {
+            Particle piece = particle(x, y, 50f + random.nextFloat() * 80f, 220f + random.nextFloat() * 260f,
+                1.6f + random.nextFloat() * 1.0f, 5f + random.nextFloat() * 5f);
+            piece.gravity = 380f;
+            piece.drag = 0.4f;
+            piece.rotation = random.nextFloat() * 360f;
+            piece.spin = (random.nextFloat() - 0.5f) * 720f;
+            piece.color.set(CONFETTI[random.nextInt(CONFETTI.length)]);
+            confetti.add(piece);
+        }
+    }
+
+    /** Des pièces jaillissent de ({@code x}, {@code y}) et retombent en tournant. */
+    private void fountain(float x, float y, int count) {
+        if (settings.isReducedEffects()) count = Math.max(1, count / 3);
+        for (int i = 0; i < count; i++) {
+            Particle piece = particle(x, y, 65f + random.nextFloat() * 50f, 260f + random.nextFloat() * 200f,
+                1.1f + random.nextFloat() * 0.4f, 0.28f + random.nextFloat() * 0.12f);
+            piece.gravity = 900f;
+            piece.spin = 400f + random.nextFloat() * 500f;
+            coins.add(piece);
+        }
+    }
+
+    /** La pluie de pièces du total, du haut de l'écran. */
+    private void coinShower(int count) {
+        for (int i = 0; i < count; i++) {
+            Particle piece = particle(random.nextFloat() * worldWidth(), worldHeight() + 30f + random.nextFloat() * 260f,
+                270f, 80f + random.nextFloat() * 120f, 2.6f + random.nextFloat() * 0.8f, 0.3f + random.nextFloat() * 0.18f);
+            piece.gravity = 260f;
+            piece.spin = 300f + random.nextFloat() * 600f;
+            coins.add(piece);
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // Dessin
+    // -------------------------------------------------------------------------
+
+    private float unitSize() { return Math.min(worldHeight() * 0.11f, worldWidth() * 0.08f); }
+    private float centerY()  { return worldHeight() * 0.48f; }
+    private float totalY()   { return centerY() - unitSize() * 3.2f; }
+
+    @Override
+    protected void drawScene(Batch batch) {
+        float dark = 0.92f * Interpolation.pow2Out.apply(progress(0f, 0.8f));
+        fill(batch, NIGHT, dark);
+        float appear = Interpolation.pow2Out.apply(progress(SHOW, START));
+        if (appear > 0f) {
+            if (!pixelStyle()) drawRays(batch, appear);
+            drawBits(batch, dust);
+            drawBulbs(batch, appear);
+            switch (game.getKind()) {
+                case WHEEL -> drawWheel(batch, appear);
+                case PLINKO -> drawPlinko(batch, appear);
+                default -> drawPunch(batch, appear);
+            }
+            drawCaptions(batch, appear);
+            BonusRankBadge.draw(this, batch, font, game.getKind().rank, worldWidth() - 120f, worldHeight() - 92f, START, appear, !pixelStyle());
+        }
+        drawBanner(batch);
+        drawBits(batch, sparks);
+        drawPieces(batch, flakes);
+        drawPieces(batch, confetti);
+        drawCoins(batch);
+    }
+
+    /** Le titre : il éclate au centre, puis monte au-dessus du jeu. Un reflet passe dessus. */
+    private void drawBanner(Batch batch) {
+        float pop = Interpolation.swingOut.apply(progress(0f, 0.45f));
+        float rise = Interpolation.pow2.apply(progress(0.8f, SHOW + 0.3f));
+        float y = MathUtils.lerp(worldHeight() * 0.55f, centerY() + unitSize() * (game.getKind() == BonusGame.Kind.PLINKO ? 3.3f : 3.9f), rise);
+        float scale = MathUtils.lerp(3.4f, 2.0f, rise) * pop;
+        if (scale <= 0.01f) return;
+        if (!pixelStyle()) glow(batch, worldWidth() / 2f, y, 420f * scale / 3f, GOLD, 0.35f * (1f - 0.5f * rise));
+        font.getData().setScale(scale);
+        caption(batch, font, title(game.getKind()), worldWidth() / 2f, y, 1f);
+        font.getData().setScale(1f);
+        // un éclat de lumière balaie le titre toutes les trois secondes
+        float sweep = (time % 3f) / 0.6f;
+        if (sweep < 1f && time > 0.5f && !pixelStyle()) {
+            float half = 210f * scale / 2f;
+            glow(batch, worldWidth() / 2f - half + sweep * half * 2f, y, 60f * scale / 2f, CREAM, 0.5f * (1f - Math.abs(sweep * 2f - 1f)));
+        }
+    }
+
+    /** De grands rayons dorés qui tournent lentement derrière le jeu. */
+    private void drawRays(Batch batch, float alpha) {
+        if (settings.isReducedEffects()) return;
+        float cx = worldWidth() / 2f, cy = centerY(), length = worldWidth() * 0.62f, thick = unitSize() * 1.6f;
+        additive(batch);
+        int count = 14;
+        for (int i = 0; i < count; i++) {
+            float degrees = time * 9f + i * 360f / count;
+            Color color = i % 2 == 0 ? GOLD : RED;
+            batch.setColor(color.r, color.g, color.b, (i % 2 == 0 ? 0.3f : 0.18f) * alpha);
+            // la traînée est éclatante côté centre et s'efface vers l'extérieur
+            batch.draw(trail, cx - length, cy - thick / 2f, length, thick / 2f, length, thick, 1f, 1f, degrees + 180f);
+        }
+        normal(batch);
+    }
+
+    /** Une rangée d'ampoules en chenillard tout autour de l'écran. */
+    private void drawBulbs(Batch batch, float alpha) {
+        float w = worldWidth(), h = worldHeight(), step = 34f, size = 9f, inset = 14f;
+        boolean party = time >= reveal;
+        int index = 0;
+        for (float x = inset; x <= w - inset; x += step) {
+            bulb(batch, x, inset, size, index, party, alpha);
+            bulb(batch, w - x, h - inset, size, index++, party, alpha);
+        }
+        for (float y = inset + step; y <= h - inset - step; y += step) {
+            bulb(batch, w - inset, y, size, index, party, alpha);
+            bulb(batch, inset, h - y, size, index++, party, alpha);
+        }
+    }
+
+    private void bulb(Batch batch, float x, float y, float size, int index, boolean party, float alpha) {
+        boolean lit = party ? MathUtils.sin(time * 14f) > -0.2f : (index + (int) (time * 9f)) % 3 != 0;
+        if (pixelStyle()) {
+            pixelBulb(batch, x, y, size * 0.8f, lit, alpha);
+            return;
+        }
+        if (lit) glow(batch, x, y, size * 4f, GOLD, 0.35f * alpha);
+        Color color = lit ? GOLD_LIGHT : BULB_OFF;
+        batch.setColor(color.r, color.g, color.b, alpha);
+        batch.draw(pixel, x - size / 2f, y - size / 2f, size, size);
+    }
+
+    private void box(Batch batch, float x, float y, float w, float h, Color color, float alpha) {
+        batch.setColor(color.r, color.g, color.b, alpha);
+        batch.draw(pixel, x, y, w, h);
+    }
+
+    /** @return {@code true} pour la Roue et le Coup de poing : tout en pixel art, sans halo de lumière (demande d'Astra). */
+    private boolean pixelStyle() { return game.getKind() != BonusGame.Kind.PLINKO; }
+
+    /** Étincelles et poussière : des halos doux, ou de petits carrés en pixel art. */
+    private void drawBits(Batch batch, Array<Particle> bits) {
+        if (!pixelStyle()) {
+            drawParticles(batch, bits);
+            return;
+        }
+        for (Particle bit : bits) {
+            float alpha = bit.color.a * (1f - bit.life() * bit.life());
+            float size = Math.max(3f, Math.round(bit.size * 0.35f));
+            batch.setColor(bit.color.r, bit.color.g, bit.color.b, alpha);
+            batch.draw(pixel, Math.round(bit.x - size / 2f), Math.round(bit.y - size / 2f), size, size);
+        }
+    }
+
+    /** Un losange plein centré sur ({@code x}, {@code y}). */
+    private void diamond(Batch batch, float x, float y, float size, Color color, float alpha) {
+        batch.setColor(color.r, color.g, color.b, alpha);
+        batch.draw(pixel, x - size / 2f, y - size / 2f, size / 2f, size / 2f, size, size, 1f, 1f, 45f);
+    }
+
+    /** Une petite étoile scintillante (une croix de lumière). */
+    private void twinkle(Batch batch, float x, float y, float size, float alpha) {
+        if (alpha <= 0.01f) return;
+        additive(batch);
+        batch.setColor(CREAM.r, CREAM.g, CREAM.b, alpha);
+        batch.draw(pixel, x - size / 2f, y - 1f, size, 2f);
+        batch.draw(pixel, x - 1f, y - size / 2f, 2f, size);
+        normal(batch);
+        glow(batch, x, y, size * 1.4f, GOLD_LIGHT, alpha * 0.6f);
+    }
+
+    private void label(Batch batch, String text, float x, float y, float scale, float alpha) {
+        font.getData().setScale(scale);
+        caption(batch, font, text, x, y, alpha);
+        font.getData().setScale(1f);
+    }
+
+    /** Confettis et copeaux : de petits rectangles qui tournent. */
+    private void drawPieces(Batch batch, Array<Particle> pieces) {
+        for (Particle piece : pieces) {
+            float alpha = 1f - piece.life() * piece.life();
+            float flip = Math.abs(MathUtils.cosDeg(piece.rotation * 1.7f));   // il se retourne en tombant
+            batch.setColor(piece.color.r * (0.6f + 0.4f * flip), piece.color.g * (0.6f + 0.4f * flip),
+                piece.color.b * (0.6f + 0.4f * flip), alpha);
+            float w = piece.size, h = piece.size * (0.4f + 0.6f * flip);
+            batch.draw(pixel, piece.x - w / 2f, piece.y - h / 2f, w / 2f, h / 2f, w, h, 1f, 1f, piece.rotation);
+        }
+    }
+
+    /** Les pièces : elles tournent sur elles-mêmes (elles s'aplatissent puis reviennent). */
+    private void drawCoins(Batch batch) {
+        for (Particle piece : coins) {
+            float alpha = Math.min(1f, (1f - piece.life()) * 4f);
+            float squash = Math.abs(MathUtils.cosDeg(piece.rotation));
+            float w = coin.getRegionWidth() * piece.size, h = coin.getRegionHeight() * piece.size;
+            batch.setColor(1f, 1f, 1f, alpha);
+            batch.draw(coin, piece.x - w * Math.max(0.12f, squash) / 2f, piece.y - h / 2f, w * Math.max(0.12f, squash), h);
+        }
+    }
+
+    // --- Roue -----------------------------------------------------------------
+
+    private float wheelX()      { return worldWidth() / 2f; }
+    private float wheelY()      { return centerY() + unitSize() * 0.05f; }
+    private float wheelRadius() { return unitSize() * 1.9f; }
+
+    /** @return l'angle de la roue : elle tourne vite, ralentit et s'arrête la case gagnante en haut. */
+    private float wheelAngle() {
+        int count = game.getValues().size();
+        float slice = 360f / count;
+        float target = 90f - game.getPicked().get(0) * slice + 360f * 5f; // 5 tours, puis la case gagnante en haut
+        float k = Interpolation.pow3Out.apply(progress(START, reveal));
+        return target * k;
+    }
+
+    private float[] wheelTile(int index) {
+        float a = (wheelAngle() + index * 360f / game.getValues().size()) * MathUtils.degreesToRadians;
+        return new float[] {wheelX() + MathUtils.cos(a) * wheelRadius(), wheelY() + MathUtils.sin(a) * wheelRadius()};
+    }
+
+    private void drawWheel(Batch batch, float alpha) {
+        List<Double> values = game.getValues();
+        int count = values.size();
+        float slice = 360f / count, angle = wheelAngle(), r = wheelRadius(), cx = wheelX(), cy = wheelY();
+        boolean stopped = time >= reveal;
+        // Disque en pixel art : contour sombre, anneaux dorés, fond rouge sombre. Les cases tiennent
+        // dans le fond rouge (25 pixels sur 31), l'anneau doré reste visible autour.
+        float tileSize = unitSize() * 0.66f, reach = (tileSize * 1.3f) * 0.72f;
+        float disc = (r + reach) * 31f / 25f;
+        batch.setColor(1f, 1f, 1f, alpha);
+        batch.draw(wheelDisc, cx - disc, cy - disc, disc * 2f, disc * 2f);
+        // Ampoules sur l'anneau : elles courent pendant que la roue tourne, puis clignotent toutes.
+        int bulbs = 24;
+        float size = unitSize() * 0.13f;
+        for (int i = 0; i < bulbs; i++) {
+            float a = (i * 360f / bulbs - angle * 0.5f) * MathUtils.degreesToRadians;
+            float bx = cx + MathUtils.cos(a) * disc * 0.9f, by = cy + MathUtils.sin(a) * disc * 0.9f;
+            boolean lit = stopped ? MathUtils.sin(time * 12f + (i % 2) * MathUtils.PI) > 0f : (i + (int) (time * 12f)) % 4 < 2;
+            pixelBulb(batch, bx, by, size, lit, alpha);
+        }
+        int winner = game.getPicked().get(0);
+        boolean blink = MathUtils.sin(time * 10f) > 0f;
+        for (int i = 0; i < count; i++) {
+            float a = (angle + i * slice) * MathUtils.degreesToRadians;
+            float x = cx + MathUtils.cos(a) * r, y = cy + MathUtils.sin(a) * r;
+            boolean lit = stopped && i == winner;
+            float tile = tileSize * (lit ? 1f + 0.08f * Math.abs(MathUtils.sin(time * 5f)) : 1f);
+            Color back = lit ? GOLD : (i % 2 == 0 ? RED : RED_DARK);
+            // rayon vers le centre
+            batch.setColor(GOLD_DARK.r, GOLD_DARK.g, GOLD_DARK.b, alpha);
+            float mx = (cx + x) / 2f, my = (cy + y) / 2f;
+            batch.draw(pixel, mx - r / 2f, my - 3f, r / 2f, 3f, r, 6f, 1f, 1f, a * MathUtils.radiansToDegrees);
+            pixelTile(batch, x, y, tile, back, lit ? (blink ? CREAM : GOLD_LIGHT) : GOLD_DARK, alpha);
+            if (lit) sparkle(batch, x + tile * 0.45f, y + tile * 0.45f, tile * 0.18f, time * 4f, alpha);
+            label(batch, times(values.get(i)), x, y, 0.95f, alpha);
+        }
+        // Moyeu : un écrou doré qui tourne avec la roue.
+        float hub = unitSize() * 0.6f;
+        batch.setColor(INK.r, INK.g, INK.b, alpha);
+        batch.draw(pixel, cx - hub / 2f - 4f, cy - hub / 2f - 4f, hub / 2f + 4f, hub / 2f + 4f, hub + 8f, hub + 8f, 1f, 1f, angle);
+        batch.setColor(GOLD_DARK.r, GOLD_DARK.g, GOLD_DARK.b, alpha);
+        batch.draw(pixel, cx - hub / 2f, cy - hub / 2f, hub / 2f, hub / 2f, hub, hub, 1f, 1f, angle);
+        batch.setColor(GOLD.r, GOLD.g, GOLD.b, alpha);
+        batch.draw(pixel, cx - hub * 0.35f, cy - hub * 0.35f, hub * 0.35f, hub * 0.35f, hub * 0.7f, hub * 0.7f, 1f, 1f, angle + 45f);
+        box(batch, cx - 4f, cy - 4f, 8f, 8f, CREAM, alpha);
+        // Flèche en haut, en pixel art : elle cogne chaque case qui passe, puis se calme.
+        float spinning = time >= START && !stopped ? 1f - progress(START, reveal) : 0f;
+        float phase = ((angle + slice / 2f - 90f) % slice + slice) % slice / slice;
+        float kick = spinning > 0f ? (float) Math.pow(1f - phase, 5) * (8f + 22f * spinning) : 0f;
+        float w = unitSize() * 0.55f, h = unitSize() * 0.62f, tip = cy + disc - unitSize() * 0.05f;
+        batch.setColor(1f, 1f, 1f, alpha);
+        batch.draw(pointer, cx - w / 2f, tip - h * 0.25f, w / 2f, h, w, h, 1f, 1f, kick);
+    }
+
+    /** Une case en pixel art : contour sombre, bord, fond, liseré clair en haut et ombre en bas. */
+    private void pixelTile(Batch batch, float x, float y, float size, Color back, Color border, float alpha) {
+        float h = size / 2f, edge = Math.max(3f, size * 0.07f);
+        box(batch, x - h - edge * 2f, y - h - edge * 2f, size + edge * 4f, size + edge * 4f, INK, alpha);
+        box(batch, x - h - edge, y - h - edge, size + edge * 2f, size + edge * 2f, border, alpha);
+        box(batch, x - h, y - h, size, size, back, alpha);
+        box(batch, x - h, y + h - edge, size, edge, tmp.set(back).lerp(Color.WHITE, 0.35f), alpha);
+        box(batch, x - h, y - h, size, edge, tmp.set(back).lerp(Color.BLACK, 0.3f), alpha);
+    }
+
+    /** Une ampoule en pixel art : contour sombre, verre allumé ou éteint, point de reflet. */
+    private void pixelBulb(Batch batch, float x, float y, float size, boolean lit, float alpha) {
+        float h = size / 2f, edge = Math.max(2f, size * 0.2f);
+        box(batch, x - h - edge, y - h - edge, size + edge * 2f, size + edge * 2f, INK, alpha);
+        box(batch, x - h, y - h, size, size, lit ? GOLD_LIGHT : BULB_OFF, alpha);
+        if (lit) box(batch, x - h, y + h - edge, edge, edge, CREAM, alpha);
+    }
+
+    /** Une étincelle en pixel art : une croix qui grandit et rapetisse, sans halo. */
+    private void sparkle(Batch batch, float x, float y, float unit, float phase, float alpha) {
+        float k = Math.abs(MathUtils.sin(phase));
+        if (k < 0.15f) return;
+        float p = Math.max(2f, unit * 0.4f), arm = p * (1f + Math.round(k * 2f));
+        box(batch, x - p / 2f, y - arm - p / 2f, p, arm * 2f + p, CREAM, alpha);
+        box(batch, x - arm - p / 2f, y - p / 2f, arm * 2f + p, p, CREAM, alpha);
+        box(batch, x - p / 2f, y - p / 2f, p, p, GOLD_LIGHT, alpha);
+    }
+
+    // --- Plinko ---------------------------------------------------------------
+
+    private float pegSpacing() { return unitSize() * 0.72f; }
+    private float rowHeight()  { return unitSize() * 0.46f; }
+    private float boardTop()   { return centerY() + unitSize() * 2.05f; }
+    private float pegY(int row) { return boardTop() - row * rowHeight(); }
+    private float slotTop()    { return pegY(BonusGame.PLINKO_ROWS) + rowHeight() * 0.55f; }
+    private float slotHeight() { return unitSize() * 0.75f; }
+
+    /** @return l'instant où la bille touche le clou de la rangée {@code row} ({@code PLINKO_ROWS} : elle tombe dans sa case). */
+    private float pegHit(int row) { return START + 0.5f + PLINKO_STEP * (row + 1); }
+
+    /** @return combien de fois la bille est partie à droite avant la rangée {@code row}. */
+    private int rights(int row) {
+        int count = 0;
+        for (int r = 0; r < row && r < path.length; r++) if (path[r]) count++;
+        return count;
+    }
+
+    private float[] slotCenter(int slot) {
+        return new float[] {worldWidth() / 2f + (slot - BonusGame.PLINKO_ROWS / 2f) * pegSpacing(), slotTop() - slotHeight() / 2f};
+    }
+
+    /** @return où la bille touche la rangée {@code row} (sur le clou), ou se pose dans sa case. */
+    private float[] ballAt(int row) {
+        float r = ballRadius();
+        if (row >= path.length) {
+            float[] slot = slotCenter(rights(path.length));
+            return new float[] {slot[0], slotTop() - r - 3f};
+        }
+        float x = worldWidth() / 2f + (rights(row) - row / 2f) * pegSpacing();
+        return new float[] {x, pegY(row) + pegRadius() + r};
+    }
+
+    private float ballRadius() { return unitSize() * 0.13f; }
+    private float pegRadius()  { return unitSize() * 0.07f; }
+
+    /** @return la bille à l'instant {@code t}, ou {@code null} avant qu'elle ne tombe. */
+    private float[] ballPosition(float t) {
+        float drop = START + 0.5f;
+        if (t < drop) return null;
+        if (t < pegHit(0)) {
+            float[] first = ballAt(0);
+            float f = Interpolation.pow2In.apply((t - drop) / PLINKO_STEP);
+            return new float[] {first[0], MathUtils.lerp(boardTop() + unitSize() * 0.75f, first[1], f)};
+        }
+        if (t >= reveal) return ballAt(path.length);
+        int row = Math.min(path.length - 1, (int) ((t - pegHit(0)) / PLINKO_STEP));
+        float f = (t - pegHit(row)) / PLINKO_STEP;
+        float[] a = ballAt(row), b = ballAt(row + 1);
+        float hop = row + 1 < path.length ? unitSize() * 0.22f : unitSize() * 0.1f;
+        return new float[] {MathUtils.lerp(a[0], b[0], f), MathUtils.lerp(a[1], b[1], f * f) + hop * 4f * f * (1f - f)};
+    }
+
+    private void drawPlinko(Batch batch, float alpha) {
+        List<Double> values = game.getValues();
+        int rows = BonusGame.PLINKO_ROWS, slots = values.size();
+        float sp = pegSpacing(), cx = worldWidth() / 2f;
+        float left = cx - sp * (slots / 2f + 0.35f), right = cx + sp * (slots / 2f + 0.35f);
+        float top = boardTop() + unitSize() * 0.45f, bottom = slotTop() - slotHeight() - unitSize() * 0.12f;
+        // le panneau : cadre doré, fond violet nuit
+        glow(batch, cx, (top + bottom) / 2f, (right - left) * 1.8f, GOLD, 0.15f * alpha);
+        box(batch, left - 8f, bottom - 8f, right - left + 16f, top - bottom + 16f, GOLD_DARK, alpha);
+        box(batch, left - 3f, bottom - 3f, right - left + 6f, top - bottom + 6f, GOLD, alpha);
+        box(batch, left, bottom, right - left, top - bottom, INK, alpha);
+        // ampoules en haut du panneau
+        int bulbs = 14;
+        for (int i = 0; i < bulbs; i++) {
+            float bx = left + (i + 0.5f) * (right - left) / bulbs, by = top - unitSize() * 0.14f;
+            boolean lit = (i + (int) (time * 9f)) % 3 != 0;
+            float size = unitSize() * 0.09f;
+            if (lit) glow(batch, bx, by, size * 4f, GOLD_LIGHT, 0.35f * alpha);
+            box(batch, bx - size / 2f, by - size / 2f, size, size, lit ? CREAM : GOLD_DARK, alpha);
+        }
+        // les clous, en triangle ; celui que la bille vient de toucher s'allume
+        float peg = pegRadius() * 2f;
+        for (int row = 0; row < rows; row++) {
+            int hit = rights(row) + 1;
+            float lit = time >= pegHit(row) ? Math.max(0f, 1f - (time - pegHit(row)) / 0.35f) : 0f;
+            for (int i = 0; i <= row + 2; i++) {
+                float px = cx + (i - (row + 2) / 2f) * sp, py = pegY(row);
+                boolean flash = i == hit && lit > 0f;
+                if (flash) glow(batch, px, py, peg * 6f, GOLD_LIGHT, 0.6f * lit * alpha);
+                Color color = flash ? CREAM : SILVER;
+                batch.setColor(color.r, color.g, color.b, alpha);
+                batch.draw(ball, px - peg / 2f, py - peg / 2f, peg, peg);
+                batch.setColor(1f, 1f, 1f, 0.5f * alpha);
+                batch.draw(ball, px - peg * 0.3f, py, peg * 0.25f, peg * 0.25f);   // petit reflet
+            }
+        }
+        // les cases du bas : le gros lot sur les bords
+        boolean landed = time >= reveal;
+        int slotWon = game.getPicked().get(0);
+        float beat = landed ? 1f + 0.08f * Math.abs(MathUtils.sin(time * 5f)) : 1f;
+        for (int k = 0; k < slots; k++) {
+            float[] c = slotCenter(k);
+            int distance = Math.abs(k - slots / 2);
+            Color color = SLOT_COLORS[Math.min(SLOT_COLORS.length - 1, slots / 2 - distance)];
+            boolean won = landed && k == slotWon;
+            float w = (sp - 6f) * (won ? beat : 1f), h = slotHeight();
+            if (won) glow(batch, c[0], c[1], w * 3f, GOLD_LIGHT, (0.45f + 0.15f * MathUtils.sin(time * 6f)) * alpha);
+            float a = alpha, dim = landed && !won ? 0.4f : 1f;
+            box(batch, c[0] - w / 2f - 2f, c[1] - h / 2f - 2f, w + 4f, h + 4f, won ? CREAM : GOLD_DARK, a);
+            box(batch, c[0] - w / 2f, c[1] - h / 2f, w, h, won ? GOLD : tmp.set(color).mul(dim, dim, dim, 1f), a);
+            box(batch, c[0] - w / 2f, c[1] + h / 2f - h * 0.12f, w, h * 0.12f, BEVEL, 0.25f * a * dim);
+            label(batch, times(values.get(k)), c[0], c[1] - h * 0.1f, won ? 1.0f : 0.85f, landed && !won ? 0.5f * a : a);
+            if (won) twinkle(batch, c[0] + w * 0.4f, c[1] + h * 0.4f, w * 0.5f * Math.abs(MathUtils.sin(time * 4f)), alpha);
+        }
+        // la bille, avec sa traînée
+        float[] at = ballPosition(time);
+        if (at != null) {
+            float r = ballRadius();
+            if (!settings.isReducedEffects() && !landed) {
+                for (int k = 4; k >= 1; k--) {
+                    float[] back = ballPosition(time - k * 0.035f);
+                    if (back == null) continue;
+                    glow(batch, back[0], back[1], r * (3.4f - k * 0.5f), GOLD_LIGHT, 0.12f * (5 - k) * alpha);
+                }
+            }
+            glow(batch, at[0], at[1], r * 5f, GOLD_LIGHT, 0.5f * alpha);
+            batch.setColor(INK.r, INK.g, INK.b, alpha);
+            batch.draw(ball, at[0] - r - 2f, at[1] - r - 2f, r * 2f + 4f, r * 2f + 4f);
+            batch.setColor(GOLD_LIGHT.r, GOLD_LIGHT.g, GOLD_LIGHT.b, alpha);
+            batch.draw(ball, at[0] - r, at[1] - r, r * 2f, r * 2f);
+            batch.setColor(1f, 1f, 1f, alpha);
+            batch.draw(ball, at[0] - r * 0.55f, at[1] + r * 0.05f, r * 0.6f, r * 0.6f);
+        }
+    }
+
+    // --- Coup de poing ----------------------------------------------------------
+
+    /** Le gant arrive, prend son élan, puis frappe la cible à cet instant. */
+    private static final float PUNCH_IN = START + 0.6f, PUNCH_WINDUP = START + 1.35f, PUNCH_HIT = START + 1.55f;
+    /** Le score commence à grimper. */
+    private static final float CLIMB = PUNCH_HIT + 0.25f;
+    /** Segments de la jauge, du bas (vert) au haut (rouge). */
+    private static final int SEGMENTS = 14;
+    private static final Color GREEN = hex("3f9e4a"), YELLOW = hex("e8b81d"), ORANGE = hex("e8701d"), BLOOD = hex("d4202f");
+    private static final Color LED = hex("ff6a3d"), LED_OFF = hex("3a1414"), SLEEVE = hex("2f4f8f"), SLEEVE_DARK = hex("1f325c");
+    /** Chiffres du compteur, en 3 x 5 pixels. */
+    private static final String[] DIGITS = {
+        "111101101101111", "010110010010111", "111001111100111", "111001111001111", "101101111001001",
+        "111100111001111", "111100111101111", "111001010010010", "111101111101111", "111101111001111"};
+
+    private int punchScore() { return game.getPicked().get(0); }
+
+    /** @return la fin de la montée du score : plus il est haut, plus elle dure. */
+    private float climbEnd() { return CLIMB + 0.5f + 2.0f * punchScore() / BonusGame.PUNCH_MAX; }
+
+    /** @return le score affiché à l'instant : il grimpe de 0 jusqu'au score tiré, de 10 en 10. */
+    private int shownScore() { return shownScoreAt(time); }
+
+    private int shownScoreAt(float t) {
+        if (t < CLIMB) return 0;
+        float f = Interpolation.pow2Out.apply(Math.min(1f, (t - CLIMB) / (climbEnd() - CLIMB)));
+        return Math.round(punchScore() * f / 10f) * 10;
+    }
+
+    /** @return combien de segments de la jauge sont allumés pour {@code score}. */
+    private static int litSegments(int score) {
+        return Math.min(SEGMENTS, (int) Math.ceil(score * (double) SEGMENTS / BonusGame.PUNCH_MAX - 1e-6));
+    }
+
+    private static Color segmentColor(int i) {
+        return i < 4 ? GREEN : i < 8 ? YELLOW : i < 11 ? ORANGE : BLOOD;
+    }
+
+    private float punchX()   { return worldWidth() / 2f; }
+    private float targetY()  { return centerY() - unitSize() * 1.25f; }
+    private float targetR()  { return unitSize() * 0.58f; }
+    private float gaugeBottom() { return centerY() - unitSize() * 0.3f; }
+    private float gaugeTop()    { return centerY() + unitSize() * 1.2f; }
+    private float displayY() { return centerY() + unitSize() * 1.68f; }
+    private float bellY()    { return centerY() + unitSize() * 3.05f; }
+
+    /** @return la cible, pixel art : anneau doré, cercles rouges et crème. */
+    private TextureRegion targetArt() {
+        Pixmap map = new Pixmap(32, 32, Pixmap.Format.RGBA8888);
+        Color[] rings = {INK, GOLD_DARK, GOLD, INK, RED, CREAM, RED, CREAM};
+        int[] radius = {15, 14, 13, 11, 10, 7, 5, 2};
+        for (int i = 0; i < rings.length; i++) {
+            map.setColor(rings[i]);
+            map.fillCircle(16, 16, radius[i]);
+        }
+        map.setColor(Color.WHITE);
+        map.fillRectangle(9, 8, 3, 2);
+        return region(map, false);
+    }
+
+    /** @return le gant et sa position {x, y, taille, angle} à l'instant : il entre, prend son élan, frappe, recule. */
+    private float[] glove() {
+        float u = unitSize(), cx = punchX();
+        float hitX = cx + u * 0.15f, hitY = targetY() - u * 0.05f;
+        float restX = cx + u * 2.9f, restY = centerY() - u * 1.1f;
+        float backX = cx + u * 3.4f, backY = centerY() - u * 1.6f;
+        if (time < PUNCH_IN) {   // il arrive d'en bas à droite
+            float f = Interpolation.pow2Out.apply(progress(START, PUNCH_IN));
+            return new float[] {MathUtils.lerp(cx + u * 6f, restX, f), MathUtils.lerp(-u * 2f, restY, f), u * 1.7f, 25f};
+        }
+        if (time < PUNCH_WINDUP) {   // l'élan : il recule vers nous et tremble
+            float f = Interpolation.pow2Out.apply(progress(PUNCH_IN, PUNCH_WINDUP));
+            float shake = f > 0.5f ? MathUtils.sin(time * 70f) * u * 0.03f : 0f;
+            return new float[] {MathUtils.lerp(restX, backX, f) + shake, MathUtils.lerp(restY, backY, f), u * (1.7f + 0.35f * f), 25f + 8f * f};
+        }
+        if (time < PUNCH_HIT) {   // le coup : il file vers la cible en rapetissant (il s'éloigne de nous)
+            float f = Interpolation.pow3In.apply(progress(PUNCH_WINDUP, PUNCH_HIT));
+            return new float[] {MathUtils.lerp(backX, hitX, f), MathUtils.lerp(backY, hitY, f), u * MathUtils.lerp(2.05f, 1.15f, f), 33f - 18f * f};
+        }
+        // il reste un instant écrasé contre la cible, puis recule
+        float f = Interpolation.pow2Out.apply(progress(PUNCH_HIT + 0.12f, PUNCH_HIT + 0.6f));
+        return new float[] {MathUtils.lerp(hitX, restX, f), MathUtils.lerp(hitY, restY, f), u * MathUtils.lerp(1.15f, 1.7f, f), 15f + 10f * f};
+    }
+
+    /** Un chiffre du compteur, centré sur ({@code x}, {@code y}), en pixels de {@code p}. */
+    private void digit(Batch batch, int value, float x, float y, float p, boolean on, Color color, float alpha) {
+        String bits = DIGITS[value < 0 ? 8 : value];
+        float left = x - p * 1.5f, top = y + p * 2.5f;
+        for (int k = 0; k < 15; k++) {
+            boolean lit = on && value >= 0 && bits.charAt(k) == '1';
+            if (!lit && bits.charAt(k) != '1' && value >= 0) continue;
+            box(batch, left + (k % 3) * p, top - (k / 3 + 1) * p, p - 1f, p - 1f, lit ? color : LED_OFF, alpha);
+        }
+    }
+
+    private void drawPunch(Batch batch, float alpha) {
+        float u = unitSize(), cx = punchX(), p = Math.max(2f, Math.round(u * 0.075f));
+        boolean done = time >= reveal;
+        int score = shownScore(), lit = litSegments(score);
+        boolean bell = punchScore() >= BonusGame.PUNCH_BELL;
+        float colLeft = cx - u * 1.15f, colRight = cx + u * 1.15f, colBottom = centerY() - u * 2.05f, colTop = centerY() + u * 2.2f;
+        // le socle, puis la colonne : rouge, liserés dorés, ombre à droite, reflet à gauche
+        box(batch, cx - u * 1.75f - p, colBottom - u * 0.45f - p, u * 3.5f + p * 2f, u * 0.45f + p * 2f, INK, alpha);
+        box(batch, cx - u * 1.75f, colBottom - u * 0.45f, u * 3.5f, u * 0.45f, RED_DARK, alpha);
+        box(batch, cx - u * 1.75f, colBottom - p * 2f, u * 3.5f, p * 2f, GOLD, alpha);
+        box(batch, cx - u * 1.75f, colBottom - u * 0.45f, u * 3.5f, p, GOLD_DARK, alpha);
+        box(batch, colLeft - p, colBottom, colRight - colLeft + p * 2f, colTop - colBottom + p, INK, alpha);
+        box(batch, colLeft, colBottom, colRight - colLeft, colTop - colBottom, RED, alpha);
+        box(batch, colRight - p * 3f, colBottom, p * 3f, colTop - colBottom, RED_DARK, alpha);
+        box(batch, colLeft, colBottom, p * 2f, colTop - colBottom, GOLD, alpha);
+        box(batch, colLeft + p * 2f, colBottom, p, colTop - colBottom, tmp.set(RED).lerp(Color.WHITE, 0.3f), alpha);
+        box(batch, colRight - p * 2f, colBottom, p * 2f, colTop - colBottom, GOLD_DARK, alpha);
+        // le fronton : une barre dorée et ses ampoules
+        float crest = colTop + p;
+        box(batch, cx - u * 1.45f - p, crest - p, u * 2.9f + p * 2f, u * 0.38f + p * 2f, INK, alpha);
+        box(batch, cx - u * 1.45f, crest, u * 2.9f, u * 0.38f, GOLD_DARK, alpha);
+        box(batch, cx - u * 1.45f, crest + u * 0.38f - p, u * 2.9f, p, GOLD_LIGHT, alpha);
+        for (int i = 0; i < 9; i++) {
+            boolean on = done ? MathUtils.sin(time * 14f + (i % 2) * MathUtils.PI) > 0f : (i + (int) (time * 8f)) % 3 == 0;
+            pixelBulb(batch, cx + (i - 4) * u * 0.3f, crest + u * 0.19f, p * 1.4f, on, alpha);
+        }
+        // les ampoules sur les côtés : elles montent avec le score, puis clignotent toutes
+        int side = 8;
+        for (int i = 0; i < side; i++) {
+            float by = gaugeBottom() + i * (gaugeTop() - gaugeBottom()) / (side - 1);
+            boolean on = done ? MathUtils.sin(time * 12f + i) > 0f
+                : time >= CLIMB ? i <= lit * side / SEGMENTS : (i + (int) (time * 6f)) % 4 == 0;
+            pixelBulb(batch, colLeft + u * 0.38f, by, p * 1.3f, on, alpha);
+            pixelBulb(batch, colRight - u * 0.38f, by, p * 1.3f, on, alpha);
+        }
+        // la jauge, et ses repères (le score divisé par 100 multiplie la mise de base)
+        float gw = u * 0.8f, gb = gaugeBottom(), gt = gaugeTop(), seg = (gt - gb) / SEGMENTS;
+        box(batch, cx - gw / 2f - p * 2f, gb - p * 2f, gw + p * 4f, gt - gb + p * 4f, INK, alpha);
+        box(batch, cx - gw / 2f - p, gb - p, gw + p * 2f, gt - gb + p * 2f, GOLD_DARK, alpha);
+        box(batch, cx - gw / 2f, gb, gw, gt - gb, INK, alpha);
+        for (int i = 0; i < SEGMENTS; i++) {
+            Color color = segmentColor(i);
+            boolean on = i < lit;
+            float wave = done ? 0.75f + 0.25f * MathUtils.sin(time * 9f - i * 0.6f) : 1f;
+            if (on) tmp.set(color).mul(wave, wave, wave, 1f);
+            else tmp.set(color).mul(0.28f, 0.28f, 0.28f, 1f);
+            box(batch, cx - gw / 2f + p, gb + i * seg + 1f, gw - p * 2f, seg - 2f, tmp, alpha);
+            if (on) box(batch, cx - gw / 2f + p, gb + (i + 1) * seg - 1f - p, p * 2f, p, CREAM, 0.6f * alpha);
+        }
+        for (int mark = 500; mark <= BonusGame.PUNCH_MAX; mark += 500) {
+            float my = gb + (gt - gb) * mark / BonusGame.PUNCH_MAX;
+            box(batch, cx - gw / 2f - p * 3f, my - p / 2f - 1f, p * 2f, p, GOLD_LIGHT, alpha);
+            label(batch, times(mark / 100.0), colLeft - u * 0.45f, my, 0.8f, 0.85f * alpha);
+        }
+        // le compteur : quatre chiffres qui défilent, puis clignotent
+        float dy = displayY(), dp = Math.max(2f, Math.round(u * 0.085f)), dw = dp * 4f * 4f + dp * 3f;
+        box(batch, cx - dw / 2f - p * 3f, dy - dp * 3.5f - p * 2f, dw + p * 6f, dp * 7f + p * 4f, INK, alpha);
+        box(batch, cx - dw / 2f - p * 2f, dy - dp * 3.5f - p, dw + p * 4f, dp * 7f + p * 2f, GOLD, alpha);
+        box(batch, cx - dw / 2f - p, dy - dp * 3.5f, dw + p * 2f, dp * 7f, NIGHT, alpha);
+        boolean shine = !done || time - reveal > 1.2f || MathUtils.sin((time - reveal) * 26f) > -0.3f;
+        Color ledColor = done && bell && MathUtils.sin(time * 8f) > 0f ? GOLD_LIGHT : LED;
+        String text = Integer.toString(score);
+        for (int k = 0; k < 4; k++) {
+            int index = k - (4 - text.length());
+            int value = index >= 0 ? text.charAt(index) - '0' : -1;
+            digit(batch, value, cx - dw / 2f + dp * 2f + k * dp * 5f - dp * 0.5f + dp * 1.5f, dy, dp, shine, ledColor, alpha);
+        }
+        // la cloche : elle sonne et se balance si le score l'atteint
+        float ring = bell && done ? (float) Math.exp(-(time - reveal) * 1.6f) : 0f;
+        float swing = 18f * ring * MathUtils.sin((time - reveal) * 22f);
+        float bw = u * 0.85f, bh = u * 0.85f * 12f / 10f, by = bellY();
+        box(batch, cx - p, crest + u * 0.38f, p * 2f, by - bh / 2f - crest - u * 0.38f + p, INK, alpha);
+        batch.setColor(1f, 1f, 1f, alpha);
+        batch.draw(bellArt, cx - bw / 2f, by - bh / 2f, bw / 2f, bh, bw, bh, 1f, 1f, swing);
+        if (ring > 0.05f) {   // des ondes en pixels autour de la cloche
+            for (int w = 0; w < 3; w++) {
+                float f = ((time - reveal) * 1.8f + w / 3f) % 1f, d = bw * (0.6f + f * 0.9f);
+                float a = ring * (1f - f) * alpha;
+                for (int s = -1; s <= 1; s += 2) {
+                    box(batch, cx + s * d - p / 2f, by - p * 1.5f, p, p * 3f, GOLD_LIGHT, a);
+                    box(batch, cx + s * (d - p) - p / 2f, by + p * 1.5f, p, p, GOLD_LIGHT, a);
+                    box(batch, cx + s * (d - p) - p / 2f, by - p * 2.5f, p, p, GOLD_LIGHT, a);
+                }
+            }
+        }
+        // la cible dans son logement ; frappée, elle bascule en arrière puis revient en vibrant
+        float tr = targetR(), ty = targetY(), top = ty + tr;
+        box(batch, cx - u * 0.85f - p, ty - u * 0.75f - p, u * 1.7f + p * 2f, u * 1.5f + p * 2f, INK, alpha);
+        box(batch, cx - u * 0.85f, ty - u * 0.75f, u * 1.7f, u * 1.5f, RED_DARK, alpha);
+        box(batch, cx - u * 0.85f, ty + u * 0.75f - p, u * 1.7f, p, GOLD_DARK, alpha);
+        box(batch, cx - u * 0.6f, top - p, u * 1.2f, p * 2f, SILVER_DARK, alpha);   // la charnière
+        box(batch, cx - u * 0.6f, top, u * 1.2f, p, SILVER, alpha);
+        float since = time - PUNCH_HIT;
+        float tilt = since < 0f ? 0f : 0.78f * (float) Math.exp(-since * 4.5f) * Math.abs(MathUtils.cos(since * 9f));
+        float th = tr * 2f * (1f - tilt);
+        batch.setColor(1f, 1f, 1f, alpha);
+        batch.draw(target, cx - tr, top - th, tr * 2f, th);
+        // l'impact : une étoile en pixels
+        if (since >= 0f && since < 0.35f) {
+            float k = 1f - since / 0.35f;
+            sparkle(batch, cx - u * 0.1f, ty, u * 0.5f * k + p, MathUtils.PI / 2f, alpha);
+            sparkle(batch, cx - u * 0.75f, ty + u * 0.45f, u * 0.25f * k + p, MathUtils.PI / 2f, alpha * k);
+            sparkle(batch, cx + u * 0.65f, ty + u * 0.55f, u * 0.2f * k + p, MathUtils.PI / 2f, alpha * k);
+        }
+        // le gant, avec sa manche qui sort de l'écran en bas à droite
+        float[] g = glove();
+        float size = g[2], angle = g[3];
+        float sx = g[0] + MathUtils.sinDeg(angle) * size * 0.35f, sy = g[1] - MathUtils.cosDeg(angle) * size * 0.35f;
+        float sleeve = u * 6f, sw = size * 0.5f;
+        batch.setColor(INK.r, INK.g, INK.b, alpha);
+        batch.draw(pixel, sx - sw / 2f - p, sy - sleeve, sw / 2f + p, sleeve, sw + p * 2f, sleeve, 1f, 1f, angle);
+        batch.setColor(SLEEVE.r, SLEEVE.g, SLEEVE.b, alpha);
+        batch.draw(pixel, sx - sw / 2f, sy - sleeve, sw / 2f, sleeve, sw, sleeve, 1f, 1f, angle);
+        batch.setColor(SLEEVE_DARK.r, SLEEVE_DARK.g, SLEEVE_DARK.b, alpha);
+        batch.draw(pixel, sx + sw / 2f - p * 2f, sy - sleeve, -sw / 2f + p * 2f, sleeve, p * 2f, sleeve, 1f, 1f, angle);
+        batch.setColor(1f, 1f, 1f, alpha);
+        float gh = size * 14f / 12f;
+        batch.draw(gloveArt, g[0] - size / 2f, g[1] - gh / 2f, size / 2f, gh / 2f, size, gh, 1f, 1f, angle);
+        // le multiplicateur, à droite du compteur
+        if (done) {
+            float pop = Interpolation.swingOut.apply(progress(reveal, reveal + 0.35f));
+            label(batch, "= " + times(punchScore() / 100.0), colRight + u * 1.05f, dy, Math.max(0.01f, 1.6f * pop), alpha);
+        }
+    }
+
+    // --- Textes ----------------------------------------------------------------
+
+    private void drawCaptions(Batch batch, float alpha) {
+        float y = totalY();
+        if (time < totalAt) {
+            String line = game.getPot() > 0
+                ? Lang.f("MISE DE BASE : CAGNOTTE {0} + {1}", Lang.big(game.getPot()), Lang.big(game.getUnit() - game.getPot()))
+                : Lang.f("MISE DE BASE : {0}", Lang.big(game.getUnit()));
+            label(batch, line, worldWidth() / 2f, y, 1.1f, alpha);
+        } else {
+            float pop = Interpolation.swingOut.apply(progress(totalAt, totalAt + 0.4f));
+            if (!pixelStyle()) glow(batch, worldWidth() / 2f, y, 420f, GOLD, (0.3f + 0.1f * MathUtils.sin(time * 6f)) * pop);
+            label(batch, Lang.f("GAINS +{0}", Lang.big(game.getTotal())), worldWidth() / 2f, y, Math.max(0.01f, 2.4f * pop), 1f);
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // Sons de la scène
+    // -------------------------------------------------------------------------
+
+    private void sound(Sound sound, boolean loop) {
+        if (sound == null) return;
+        for (int i = 0; i < owned.length; i++) {
+            if (owned[i] == sound) playing.add(new long[] {i, loop ? sound.loop() : sound.play()});
+        }
+    }
+
+    private void stop(Sound sound) {
+        for (int i = playing.size() - 1; i >= 0; i--) {
+            long[] entry = playing.get(i);
+            if (owned[(int) entry[0]] == sound) {
+                if (sound != null) sound.stop(entry[1]);
+                playing.remove(i);
+            }
+        }
+    }
+
+    private void stopSpinLoop() {
+        if (spinLoop != -1 && sounds != null) sounds.reelSpin.stop(spinLoop);
+        spinLoop = -1;
+    }
+
+    private void stopSounds() {
+        for (long[] entry : playing) {
+            Sound sound = owned[(int) entry[0]];
+            if (sound != null) sound.stop(entry[1]);
+        }
+        playing.clear();
+        stopSpinLoop();
+    }
+
+    @Override
+    public void pauseSound() {
+        for (long[] entry : playing) owned[(int) entry[0]].pause(entry[1]);
+        if (spinLoop != -1 && sounds != null) sounds.reelSpin.pause(spinLoop);
+    }
+
+    @Override
+    public void resumeSound() {
+        for (long[] entry : playing) owned[(int) entry[0]].resume(entry[1]);
+        if (spinLoop != -1 && sounds != null) sounds.reelSpin.resume(spinLoop);
+    }
+
+    @Override
+    public void cancel() {
+        stopSounds();
+        super.cancel();
+    }
+}

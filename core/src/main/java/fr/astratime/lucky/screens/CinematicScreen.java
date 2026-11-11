@@ -21,6 +21,7 @@ import com.badlogic.gdx.utils.Align;
 import fr.astratime.lucky.LuckyGame;
 import fr.astratime.lucky.animations.ScreenShake;
 import fr.astratime.lucky.animations.cutscenes.BonusGameCutscene;
+import fr.astratime.lucky.animations.cutscenes.SmallBonusGameCutscene;
 import fr.astratime.lucky.animations.cutscenes.BossTheme;
 import fr.astratime.lucky.animations.cutscenes.Cutscene;
 import fr.astratime.lucky.animations.cutscenes.CutsceneKit;
@@ -252,12 +253,30 @@ public class CinematicScreen extends CasinoMenuScreen {
         }
 
         List<Symbol> machine = profile.getMachine();
-        if (Bestiary.bonusGameSeen(profile)) addGroup(Lang.t("Jeu bonus"), Lang.t("Le Jeu bonus"), List.of(new Entry(Lang.t("Jeu bonus"),
-            Lang.t("Après un Bingo, une fois sur dix : la grille de 6 x 6 et ses trois tirages, sur ta machine. "
-                + "Une nouvelle grille à chaque fois."),
-            cardTextures.get("cards/test/jeu_bonus.png"),
-            kit -> new BonusGameCutscene(kit, BonusGame.play(machine, SpinEconomy.BASE_SPIN_COST, new Random()),
-                machine))));
+        if (Bestiary.bonusGameSeen(profile)) {
+            Texture art = cardTextures.get("cards/test/jeu_bonus.png");
+            Texture wheelArt = cardTextures.get("cards/test/jeu_bonus_roue.png");
+            Texture plinkoArt = cardTextures.get("cards/test/jeu_bonus_plinko.png");
+            Texture punchArt = cardTextures.get("cards/test/jeu_bonus_poing.png");
+            addGroup(Lang.t("Jeu bonus"), Lang.t("Le Jeu bonus"), List.of(
+                new Entry(Lang.t("Grille de la cagnotte"),
+                    Lang.t("Rang 4, le plus rare : la grille de 6 x 6 et ses tirages, sur ta machine. Chaque alignement paie "
+                        + "toute la cagnotte. Une nouvelle grille à chaque fois."),
+                    art, kit -> new BonusGameCutscene(kit, BonusGame.play(machine, SpinEconomy.BASE_SPIN_COST, new Random()),
+                        machine)),
+                new Entry(Lang.t("Roue de la cagnotte"),
+                    Lang.t("Rang 1 : un lancer de roue, la case où elle s'arrête multiplie la cagnotte."),
+                    wheelArt, kit -> new SmallBonusGameCutscene(kit, BonusGame.playSmall(BonusGame.Kind.WHEEL, 0,
+                        SpinEconomy.BASE_SPIN_COST, 0, new Random()))),
+                new Entry(Lang.t("Plinko de la cagnotte"),
+                    Lang.t("Rang 2 : une bille rebondit sur les clous et tombe dans une case qui multiplie la cagnotte."),
+                    plinkoArt, kit -> new SmallBonusGameCutscene(kit, BonusGame.playSmall(BonusGame.Kind.PLINKO, 0,
+                        SpinEconomy.BASE_SPIN_COST, 0, new Random()))),
+                new Entry(Lang.t("Coup de poing de la cagnotte"),
+                    Lang.t("Rang 3 : un gant de boxe frappe la cible, le score de la machine multiplie la cagnotte."),
+                    punchArt, kit -> new SmallBonusGameCutscene(kit, BonusGame.playSmall(BonusGame.Kind.PUNCH, 0,
+                        SpinEconomy.BASE_SPIN_COST, 0, new Random())))));
+        }
     }
 
     /**

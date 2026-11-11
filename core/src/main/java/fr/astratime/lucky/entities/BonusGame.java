@@ -22,8 +22,72 @@ import java.util.Random;
  * ({@link #rarityFactor}) ; une ligne faite uniquement de Jokers compte comme rare.
  *
  * Tout est tiré d'avance (voir {@link #play}) : l'écran ne fait que le montrer.
+ *
+ * Trois autres Jeux bonus, plus modestes, sortent plus souvent (idée d'Astra, 2026-11-11) :
+ * la Roue, le Plinko et le Coup de poing (voir {@link Kind}). Pur hasard : le joueur n'y choisit rien. Ils paient
+ * des multiples d'une mise de base : la cagnotte + {@link #BASE_UNIT_SPINS} coûts de tirage.
+ * Chaque Jeu bonus a un rang (Astra) : la grille est de rang 4 ; le rang 3 rapporte en moyenne
+ * 80 % de la grille, le rang 2 50 %, le rang 1 20 %. La grille aligne en moyenne
+ * {@link #GRID_AVERAGE_LINES} fois (machine classique) et chaque alignement paie la cagnotte et
+ * environ {@link #BASE_UNIT_SPINS} tirages : elle vaut donc environ 10,8 mises de base.
  */
 public final class BonusGame {
+
+    /** Les quatre Jeux bonus, leur rang et leurs chances de sortir quand un Jeu bonus se déclenche. */
+    public enum Kind {
+        /** La grille de 6 x 6 : le gros lot, chaque alignement paie toute la cagnotte. */
+        GRID(10, 4),
+        /** La Roue de la cagnotte : un lancer, la case où elle s'arrête multiplie la mise de base. */
+        WHEEL(30, 1),
+        /** Le Plinko : une bille rebondit sur des clous et tombe dans une case qui multiplie la mise de base. */
+        PLINKO(30, 2),
+        /** Le Coup de poing : un gant frappe la cible, le score de la machine (divisé par 100) multiplie la mise de base. */
+        PUNCH(30, 3);
+
+        /** Poids de tirage (sur 100). */
+        public final int weight;
+        /** Rang du Jeu bonus, de 1 à 4 : plus il est haut, plus il rapporte. */
+        public final int rank;
+
+        Kind(int weight, int rank) {
+            this.weight = weight;
+            this.rank = rank;
+        }
+
+        /** @return un Jeu bonus tiré au hasard, selon les poids. */
+        public static Kind pick(Random random) {
+            int roll = random.nextInt(100);
+            for (Kind kind : values()) {
+                if (roll < kind.weight) return kind;
+                roll -= kind.weight;
+            }
+            return GRID;
+        }
+    }
+
+    /** Mise de base des petits Jeux bonus : la cagnotte + autant de coûts de tirage. */
+    public static final int BASE_UNIT_SPINS = 20;
+    /** Alignements moyens d'une grille sur la machine classique (mesuré, voir les tests). */
+    public static final double GRID_AVERAGE_LINES = 10.8;
+    /** Les cases de la Roue, dans l'ordre (multiples de la mise de base) : 2,2 en moyenne, 20 % de la grille. */
+    public static final List<Double> WHEEL_SEGMENTS = List.of(1.0, 2.0, 1.5, 3.0, 1.0, 4.0, 1.5, 2.0, 1.0, 5.0);
+    /** Rangées de clous du Plinko : à chacune, la bille part à gauche ou à droite (une chance sur deux). */
+    public static final int PLINKO_ROWS = 8;
+    /**
+     * Les {@code PLINKO_ROWS + 1} cases du bas, de gauche à droite (multiples de la mise de base).
+     * La bille tombe le plus souvent au centre : 5,4 mises de base en moyenne, 50 % de la grille.
+     */
+    public static final List<Double> PLINKO_SLOTS = List.of(55.0, 14.0, 7.0, 4.0, 3.0, 4.0, 7.0, 14.0, 55.0);
+    /**
+     * Coup de poing : le score tombe dans une tranche [{@code PUNCH_TIERS[i]}, {@code PUNCH_TIERS[i + 1]}[
+     * (de 10 en 10, au hasard dans la tranche), selon les poids {@link #PUNCH_WEIGHTS} (sur 100).
+     * Le score divisé par 100 multiplie la mise de base : 8,7 en moyenne (80 % de la grille),
+     * jamais moins de 6, plus que la moyenne du Plinko (rang 2), au mieux 19,9.
+     */
+    public static final List<Integer> PUNCH_TIERS = List.of(600, 700, 800, 900, 1000, 1200, 1500, 2000);
+    public static final List<Integer> PUNCH_WEIGHTS = List.of(26, 24, 18, 13, 9, 6, 4);
+    /** Le haut de la jauge du Coup de poing : la cloche sonne à partir de {@link #PUNCH_BELL}. */
+    public static final int PUNCH_MAX = 2000, PUNCH_BELL = 1000;
 
     /** Côté de la grille, en cases. */
     public static final int   SIZE           = 6;
@@ -61,6 +125,13 @@ public final class BonusGame {
     private final double total;
     /** Cagnotte ajoutée à chaque alignement (voir {@link #withPot}), 0 sans cagnotte. */
     private final double pot;
+    private final Kind kind;
+    /** Petits Jeux bonus : les valeurs montrées (cases de la Roue et du Plinko, multiplicateur du Coup de poing), en mises de base. */
+    private final List<Double> values;
+    /** Petits Jeux bonus : la case où s'arrête la Roue ou la bille du Plinko, le score du Coup de poing. */
+    private final List<Integer> picked;
+    /** Petits Jeux bonus : la mise de base, et la part du total qui vient de la cagnotte. */
+    private final double unit, potPaid;
 
     private BonusGame(List<Symbol[][]> grids, List<boolean[][]> frozen, List<Line> lines) {
         this(grids, frozen, lines, 0);
@@ -74,7 +145,83 @@ public final class BonusGame {
         double sum = 0;
         for (Line line : lines) sum = BigNumber.add(sum, line.gains());
         this.total = sum;
+        this.kind = Kind.GRID;
+        this.values = List.of();
+        this.picked = List.of();
+        this.unit = 0;
+        this.potPaid = BigNumber.cap(pot * lines.size());
     }
+
+    private BonusGame(Kind kind, List<Double> values, List<Integer> picked, double unit, double total, double pot,
+                      double potPaid) {
+        this.grids = List.of();
+        this.frozen = List.of();
+        this.lines = List.of();
+        this.kind = kind;
+        this.values = List.copyOf(values);
+        this.picked = List.copyOf(picked);
+        this.unit = unit;
+        this.total = total;
+        this.pot = pot;
+        this.potPaid = potPaid;
+    }
+
+    /**
+     * Joue un petit Jeu bonus ({@link Kind#WHEEL}, {@link Kind#PLINKO} ou {@link Kind#PUNCH}).
+     *
+     * @param pot       la cagnotte, qui repart de 0 après le jeu
+     * @param spinCost  coût d'un tirage, là où se joue le combat
+     * @param extra     petit bonus des cartes et du rang, ajouté à chaque gain (déjà multiplié par le tour)
+     */
+    public static BonusGame playSmall(Kind kind, double pot, int spinCost, double extra, Random random) {
+        double unit = BigNumber.add(Math.max(0, pot), (double) BASE_UNIT_SPINS * spinCost);
+        List<Double> values = new ArrayList<>();
+        List<Integer> picked = new ArrayList<>();
+        double paid = 0; // en mises de base
+        switch (kind) {
+            case WHEEL -> {
+                values.addAll(WHEEL_SEGMENTS);
+                int stop = random.nextInt(values.size());
+                picked.add(stop);
+                paid = values.get(stop);
+            }
+            case PLINKO -> {
+                values.addAll(PLINKO_SLOTS);
+                int slot = 0;
+                for (int row = 0; row < PLINKO_ROWS; row++) if (random.nextBoolean()) slot++;
+                picked.add(slot);
+                paid = values.get(slot);
+            }
+            case PUNCH -> {
+                int roll = random.nextInt(100), tier = 0;
+                while (roll >= PUNCH_WEIGHTS.get(tier)) roll -= PUNCH_WEIGHTS.get(tier++);
+                int low = PUNCH_TIERS.get(tier), steps = (PUNCH_TIERS.get(tier + 1) - low) / 10;
+                int score = low + random.nextInt(steps) * 10;
+                picked.add(score);
+                paid = score / 100.0;
+                values.add(paid);
+            }
+            default -> throw new IllegalArgumentException("La grille se joue avec play : " + kind);
+        }
+        double total = BigNumber.add(BigNumber.round(unit * paid), BigNumber.round(Math.max(0, extra)));
+        double potPaid = BigNumber.round(Math.max(0, pot) * paid);
+        return new BonusGame(kind, values, picked, unit, total, Math.max(0, pot), potPaid);
+    }
+
+    /** @return le Jeu bonus joué. */
+    public Kind getKind() { return kind; }
+
+    /** @return petits Jeux bonus : les valeurs montrées (cases de la Roue et du Plinko, multiplicateur du Coup de poing), en mises de base. */
+    public List<Double> getValues() { return values; }
+
+    /** @return petits Jeux bonus : la case où s'arrête la Roue ou la bille du Plinko, le score du Coup de poing. */
+    public List<Integer> getPicked() { return picked; }
+
+    /** @return petits Jeux bonus : la mise de base (cagnotte + {@link #BASE_UNIT_SPINS} coûts de tirage). */
+    public double getUnit() { return unit; }
+
+    /** @return la part des gains qui vient de la cagnotte (elle ne se remise pas). */
+    public double getPotPaid() { return potPaid; }
 
     /**
      * Joue un Jeu bonus entier.
@@ -138,7 +285,7 @@ public final class BonusGame {
         return new BonusGame(grids, frozen, paid, BigNumber.add(this.pot, pot));
     }
 
-    /** @return la cagnotte payée par chaque alignement (0 sans cagnotte). */
+    /** @return la cagnotte payée par chaque alignement (petits Jeux bonus : la cagnotte jouée), 0 sans cagnotte. */
     public double getPot() { return pot; }
 
     /** @return une case tirée au hasard : un Joker, une fois sur {@link #JOKER_ONE_IN}, sinon un des rouleaux. */

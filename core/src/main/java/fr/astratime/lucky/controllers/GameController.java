@@ -1,6 +1,7 @@
 package fr.astratime.lucky.controllers;
 
 import fr.astratime.lucky.entities.BigNumber;
+import fr.astratime.lucky.entities.BonusGame;
 import fr.astratime.lucky.entities.BonusPot;
 import fr.astratime.lucky.entities.Card;
 import fr.astratime.lucky.entities.CardFamily;
@@ -858,6 +859,9 @@ public class GameController {
 
     /** Ouvre ou ferme le Jeu bonus après les Bingos (fermé dans le tutoriel). */
     public void setBonusGameEnabled(boolean enabled) { turnEngine.setBonusGameEnabled(enabled); }
+
+    /** Impose le Jeu bonus qui s'ouvre après un Bingo ({@code null} : tiré au hasard). */
+    public void setBonusGameKind(BonusGame.Kind kind) { turnEngine.setBonusGameKind(kind); }
 
     /** Tutoriel : le prochain tirage affiche {@code symbols}, de gauche à droite (sans texte ni son). */
     public void rigSpin(Symbol... symbols) {

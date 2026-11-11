@@ -49,6 +49,8 @@ public class TurnEngine {
 
     /** Chances qu'un Bingo ouvre le Jeu bonus (plus haut dans la Tour, voir {@link BonusGame#TOWER_TRIGGER_CHANCE}). */
     private float                     bonusGameChance     = BonusGame.TRIGGER_CHANCE;
+    /** Jeu bonus imposé (tests, Cinématique), ou {@code null} : tiré au hasard ({@link BonusGame.Kind#pick}). */
+    private BonusGame.Kind            bonusGameKind       = null;
     /** Cagnotte du Jeu bonus, que remplit la Mise. */
     private BonusPot                  pot                 = new BonusPot();
 
@@ -57,6 +59,9 @@ public class TurnEngine {
 
     /** Change les chances qu'un Bingo ouvre le Jeu bonus. */
     public void setBonusGameChance(float chance) { bonusGameChance = chance; }
+
+    /** Impose le Jeu bonus qui s'ouvre ({@code null} : au hasard). */
+    public void setBonusGameKind(BonusGame.Kind kind) { bonusGameKind = kind; }
 
     /** @return les chances qu'un Bingo ouvre le Jeu bonus. */
     public float getBonusGameChance() { return bonusGameChance; }
@@ -440,11 +445,15 @@ public class TurnEngine {
         int perSymbol = Math.round(BonusGame.GAINS_PER_SYMBOL * scale);
         int rank = Math.round(player.getRankBonus().gains() * combat.getRankFactor() * scale);
         float factor = combat.getGainMultiplier() * combat.getGainFactor() * combat.getSymbolPower();
-        BonusGame bonus = BonusGame.play(player.getSlotMachine().getReels(), spinCost, random)
-            .boosted(perSymbol, rank, factor)
-            .withPot(pot.take()); // la cagnotte n'est pas multipliée par le tour
+        BonusGame.Kind kind = bonusGameKind != null ? bonusGameKind : BonusGame.Kind.pick(random);
+        BonusGame bonus = kind == BonusGame.Kind.GRID
+            ? BonusGame.play(player.getSlotMachine().getReels(), spinCost, random)
+                .boosted(perSymbol, rank, factor)
+                .withPot(pot.take()) // la cagnotte n'est pas multipliée par le tour
+            : BonusGame.playSmall(kind, pot.take(), spinCost, ((double) perSymbol * BonusGame.MIN_LINE + rank) * factor,
+                random);
         player.addGains(bonus.getTotal());
-        player.addPotWinnings(bonus.getPot() * bonus.getLines().size()); // ce que la cagnotte a rapporté ne se remise pas
+        player.addPotWinnings(bonus.getPotPaid()); // ce que la cagnotte a rapporté ne se remise pas
         return bonus;
     }
 

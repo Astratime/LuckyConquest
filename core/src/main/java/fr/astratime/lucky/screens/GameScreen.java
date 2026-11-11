@@ -38,6 +38,7 @@ import fr.astratime.lucky.animations.CardClickParticles;
 import fr.astratime.lucky.animations.CardDealAnimator;
 import fr.astratime.lucky.animations.CardDiscardAnimator;
 import fr.astratime.lucky.animations.cutscenes.BonusGameCutscene;
+import fr.astratime.lucky.animations.cutscenes.SmallBonusGameCutscene;
 import fr.astratime.lucky.animations.cutscenes.Cutscene;
 import fr.astratime.lucky.animations.cutscenes.CutsceneKit;
 import fr.astratime.lucky.animations.cutscenes.Cutscenes;
@@ -1528,6 +1529,13 @@ public class GameScreen extends ScreenAdapter {
             then.run();
             return;
         }
+        if (bonus.getKind() != BonusGame.Kind.GRID) { // Roue, Plinko, Coup de poing
+            playCutscene(new SmallBonusGameCutscene(cutsceneKit, bonus), () -> {
+                onGainsShown(bonus.getTotal());
+                then.run();
+            });
+            return;
+        }
         BonusGameCutscene scene = new BonusGameCutscene(cutsceneKit, bonus, player().getSlotMachine().getReels());
         PlayerProfile profile = luckyGame.getProfile();
         if (!profile.hasSeen(PlayerProfile.GUIDE_BONUS)) scene.pauseOnGrid(() -> explainBonusGame(scene));
@@ -1551,7 +1559,7 @@ public class GameScreen extends ScreenAdapter {
         }
         bonusGuide.toFront();
         bonusGuide.play(List.of(
-            GuideOverlay.Step.say(Lang.t("Le Jeu bonus ! Après un Bingo, il s'ouvre une fois sur dix.")),
+            GuideOverlay.Step.say(Lang.t("La grille de la cagnotte ! C'est le plus rare et le plus généreux des Jeux bonus.")),
             GuideOverlay.Step.say(Lang.t("La grille tourne trois fois. Les symboles alignés se figent en doré, "
                 + "les autres relancent.")),
             GuideOverlay.Step.say(Lang.t("Aligne au moins trois symboles identiques : en ligne, en colonne ou en "
@@ -2169,9 +2177,10 @@ public class GameScreen extends ScreenAdapter {
     private void refreshPot() {
         int inTen = Math.round(gameController.getBonusGameChance() * 10);
         sidePanel.setPot(gameController.getPot().getAmount(), Lang.t("Cagnotte"),
-            Lang.f("Tes Mises s'y accumulent. Au prochain Jeu bonus, chaque alignement rapporte sa valeur "
-                + "plus toute la cagnotte, puis elle repart de 0. Ce qu'elle rapporte ne se mise pas avant la fin "
-                + "de la descente. Ici, un Bingo ouvre le Jeu bonus {0} fois sur 10.", inTen));
+            Lang.f("Tes Mises s'y accumulent. Au prochain Jeu bonus, elle se joue puis repart de 0 : la Roue, "
+                + "le Plinko ou le Coup de poing la multiplient, et la grille, plus rare, la paie à chaque "
+                + "alignement. Ce qu'elle rapporte ne se mise pas avant la fin de la descente. Ici, un Bingo ouvre "
+                + "un Jeu bonus {0} fois sur 10.", inTen));
         // Gains misables : montrés dès qu'une partie des gains vient de la cagnotte (ceux-là ne se misent pas).
         boolean locked = player().getPotWinnings() > 0;
         sidePanel.setStakeable(locked ? Lang.f("Misables : {0}", SidePanel.formatGains(player().getStakeableGains())) : null,

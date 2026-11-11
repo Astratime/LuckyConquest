@@ -70,6 +70,9 @@ public class BonusGameCutscene extends Cutscene {
     private final Symbol[][] start = new Symbol[BonusGame.SIZE][BonusGame.SIZE];
     private final float[][] speed = new float[BonusGame.SIZE][BonusGame.SIZE];
     private final Array<Particle> sparks = new Array<>(false, 128);
+    /** La pluie de pièces du total. */
+    private final Array<Particle> coins = new Array<>(false, 64);
+    private final TextureRegion coin;
     private final List<long[]> playing = new ArrayList<>(); // {indice du son, id} des sons lancés par la scène
     private final Sound[] owned;
     /** Les alignements s'allument à partir de là, un tous les {@code lineStep} ; puis le total. */
@@ -98,6 +101,7 @@ public class BonusGameCutscene extends Cutscene {
         strip.add(Symbol.JOKER);
         stripArt = new TextureRegion[strip.size()];
         for (int i = 0; i < stripArt.length; i++) stripArt[i] = load(strip.get(i).getAssetPath());
+        coin = load("hud/coin.png");
         for (int row = 0; row < BonusGame.SIZE; row++) {
             for (int col = 0; col < BonusGame.SIZE; col++) {
                 start[row][col] = reels.get(random.nextInt(reels.size()));
@@ -129,6 +133,7 @@ public class BonusGameCutscene extends Cutscene {
     protected void reset() {
         stopSounds();
         sparks.clear();
+        coins.clear();
         closeAt = totalAt + TOTAL_HOLD;
         lastTime = 0f;
         holding = false;
@@ -165,6 +170,7 @@ public class BonusGameCutscene extends Cutscene {
         time = at;
         lastTime = at;
         sparks.clear();
+        coins.clear();
         if (at >= GRID) showGrid();
     }
 
@@ -209,8 +215,17 @@ public class BonusGameCutscene extends Cutscene {
         if (crossed(from, totalAt)) {
             sound(total, false);
             burst(worldWidth() / 2f, totalY(), 40, GOLD);
+            int count = settings.isReducedEffects() ? 10 : 40;
+            for (int i = 0; i < count; i++) {
+                Particle piece = particle(random.nextFloat() * worldWidth(), worldHeight() + 30f + random.nextFloat() * 260f,
+                    270f, 80f + random.nextFloat() * 120f, 2.6f + random.nextFloat() * 0.8f, 0.3f + random.nextFloat() * 0.18f);
+                piece.gravity = 260f;
+                piece.spin = 300f + random.nextFloat() * 600f;
+                coins.add(piece);
+            }
         }
         update(sparks, delta);
+        update(coins, delta);
     }
 
     /** @return {@code true} si l'instant {@code at} vient de passer (depuis {@code from}). */
@@ -296,6 +311,12 @@ public class BonusGameCutscene extends Cutscene {
         if (time >= DOORS - 0.3f) drawMachine(batch);
         drawBanner(batch);
         drawParticles(batch, sparks);
+        for (Particle piece : coins) {                       // les pièces tournent sur elles-mêmes en tombant
+            float squash = Math.max(0.12f, Math.abs(MathUtils.cosDeg(piece.rotation)));
+            float w = coin.getRegionWidth() * piece.size, h = coin.getRegionHeight() * piece.size;
+            batch.setColor(1f, 1f, 1f, Math.min(1f, (1f - piece.life()) * 4f));
+            batch.draw(coin, piece.x - w * squash / 2f, piece.y - h / 2f, w * squash, h);
+        }
     }
 
     /** « JEU BONUS ! » : il éclate au centre, puis monte au-dessus de la grille. */
@@ -366,6 +387,8 @@ public class BonusGameCutscene extends Cutscene {
         if (time >= payout) drawLines(batch);
         drawDoors(batch, gx, gy, gw, gh);
         drawCaptions(batch);
+        BonusRankBadge.draw(this, batch, font, BonusGame.Kind.GRID.rank, (fx + fw + worldWidth()) / 2f + 3f,
+            fy + fh * 0.75f, DOORS, appear, true);
     }
 
     private void frameBulb(Batch batch, float x, float y, int index, float alpha) {

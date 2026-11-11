@@ -78,7 +78,9 @@ class BonusGameTurnTest {
         GameController controller = new GameController(BonusGameTurnTest::plainCards, id -> null, Map.of(),
             cards -> new Player("Joueur", Player.BASE_HP, cards, rank, Symbol.classicReels()));
         controller.restart(EnemyKind.ENTRAINEMENT);
-        TurnResult result = new TurnEngine().playTurn(controller.getGameState(),
+        TurnEngine engine = new TurnEngine();
+        engine.setBonusGameKind(BonusGame.Kind.GRID);
+        TurnResult result = engine.playTurn(controller.getGameState(),
             List.of(new MultiplierEffect(9), new BingoEffect(1, Symbol.SWORD, true)));
 
         BonusGame bonus = result.getBonusGame();
@@ -98,5 +100,101 @@ class BonusGameTurnTest {
         TurnResult result = engine.playTurn(fight(), List.of(new BingoEffect(1, Symbol.SWORD, true)));
         assertTrue(result.isJackpot());
         assertNull(result.getBonusGame());
+    }
+
+    @Test
+    void theGridComesOutOneTimeInTenAndTheSmallGamesThreeTimesInTen() {
+        java.util.Random random = new java.util.Random(3);
+        java.util.Map<BonusGame.Kind, Integer> seen = new java.util.EnumMap<>(BonusGame.Kind.class);
+        int games = 20_000;
+        for (int i = 0; i < games; i++) seen.merge(BonusGame.Kind.pick(random), 1, Integer::sum);
+        assertEquals(games * 0.10, seen.get(BonusGame.Kind.GRID), games * 0.01);
+        for (BonusGame.Kind kind : List.of(BonusGame.Kind.WHEEL, BonusGame.Kind.PLINKO, BonusGame.Kind.PUNCH)) {
+            assertEquals(games * 0.30, seen.get(kind), games * 0.015, kind.name());
+        }
+    }
+
+    @Test
+    void theGridAlignsAboutElevenTimes() {
+        java.util.Random random = new java.util.Random(9);
+        double lines = 0;
+        int games = 3_000;
+        for (int i = 0; i < games; i++) lines += BonusGame.play(Symbol.classicReels(), 100, random).getLines().size();
+        assertEquals(BonusGame.GRID_AVERAGE_LINES, lines / games, 0.6);
+    }
+
+    @Test
+    void eachRankPaysItsShareOfTheGrid() {
+        assertEquals(4, BonusGame.Kind.GRID.rank);
+        java.util.Random random = new java.util.Random(5);
+        double pot = 1_000_000;
+        java.util.Map<BonusGame.Kind, Double> share = java.util.Map.of(
+            BonusGame.Kind.PUNCH, 0.8, BonusGame.Kind.PLINKO, 0.5, BonusGame.Kind.WHEEL, 0.2);
+        for (BonusGame.Kind kind : share.keySet()) {
+            double sum = 0, potSum = 0;
+            int games = 8_000;
+            for (int i = 0; i < games; i++) {
+                BonusGame game = BonusGame.playSmall(kind, pot, 100, 0, random);
+                assertEquals(kind, game.getKind());
+                assertEquals(pot + BonusGame.BASE_UNIT_SPINS * 100, game.getUnit(), 1e-6);
+                assertTrue(game.getPotPaid() <= game.getTotal());
+                sum += game.getTotal();
+                potSum += game.getPotPaid();
+            }
+            double units = sum / games / (pot + 2_000);
+            assertEquals(share.get(kind), units / BonusGame.GRID_AVERAGE_LINES, 0.05,
+                kind + " (rang " + kind.rank + ") : " + units + " mises de base");
+            assertEquals(potSum / games, sum / games * pot / (pot + 2_000), sum / games * 0.01, "la part de la cagnotte");
+        }
+    }
+
+    @Test
+    void thePlinkoBallFallsMostlyInTheMiddle() {
+        java.util.Random random = new java.util.Random(11);
+        int[] slots = new int[BonusGame.PLINKO_SLOTS.size()];
+        int games = 20_000;
+        for (int i = 0; i < games; i++) {
+            BonusGame game = BonusGame.playSmall(BonusGame.Kind.PLINKO, 0, 100, 0, random);
+            int slot = game.getPicked().get(0);
+            slots[slot]++;
+            assertEquals(BonusGame.PLINKO_SLOTS.get(slot) * game.getUnit(), game.getTotal(), 1e-6);
+        }
+        assertEquals(games * 70 / 256.0, slots[4], games * 0.02, "le centre : 70 chances sur 256");
+        assertEquals(games / 256.0, slots[0], games * 0.004, "un bord : 1 chance sur 256");
+    }
+
+    @Test
+    void thePunchScoreMultipliesAndNeverPaysLessThanThePlinkoAverage() {
+        java.util.Random random = new java.util.Random(13);
+        int bells = 0, games = 4_000;
+        for (int i = 0; i < games; i++) {
+            BonusGame punch = BonusGame.playSmall(BonusGame.Kind.PUNCH, 0, 100, 0, random);
+            int score = punch.getPicked().get(0);
+            assertEquals(0, score % 10);
+            assertTrue(score >= 600 && score < BonusGame.PUNCH_MAX, "score " + score);
+            assertEquals(score / 100.0 * punch.getUnit(), punch.getTotal(), 1e-6);
+            assertTrue(score / 100.0 >= 0.5 * BonusGame.GRID_AVERAGE_LINES, "au pire " + score + " : plus que la moyenne du rang 2");
+            if (score >= BonusGame.PUNCH_BELL) bells++;
+        }
+        assertEquals(games * 0.19, bells, games * 0.03, "la cloche sonne environ une fois sur cinq");
+    }
+
+    @Test
+    void theSmallGamesEmptyThePotAndItsPartIsNotStakeable() {
+        GameController controller = new GameController(BonusGameTurnTest::plainCards);
+        controller.restart(EnemyKind.CROUPIER);
+        controller.setBonusGameChance(1f);
+        controller.setBonusGameKind(BonusGame.Kind.WHEEL);
+        controller.getPot().add(50_000);
+        controller.drawCards();
+        controller.rigSpin(Symbol.SEVEN, Symbol.SEVEN, Symbol.SEVEN);
+        BonusGame bonus = controller.spin().getBonusGame();
+        assertNotNull(bonus);
+        assertEquals(BonusGame.Kind.WHEEL, bonus.getKind());
+        assertEquals(0, controller.getPot().getAmount(), "la cagnotte repart de 0");
+        double segment = BonusGame.WHEEL_SEGMENTS.get(bonus.getPicked().get(0));
+        assertEquals(50_000 * segment, bonus.getPotPaid(), 1e-6);
+        Player player = controller.getGameState().getPlayer();
+        assertEquals(Math.max(0, player.getGains() - bonus.getPotPaid()), player.getStakeableGains(), 1e-6);
     }
 }
