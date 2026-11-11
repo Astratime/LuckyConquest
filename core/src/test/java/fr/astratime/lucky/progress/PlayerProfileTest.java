@@ -439,10 +439,10 @@ class PlayerProfileTest {
             stats.add(PlayerStats.Stat.WINS, 250);
             stats.add(PlayerStats.Stat.SPINS, 999);
             stats.add(PlayerStats.Stat.CLOSE_WINS, 1);
-            stats.record(PlayerStats.Stat.BEST_HIT, 1_000_000_000_000L);
+            stats.record(PlayerStats.Stat.BEST_HIT, 10_000_000_000L);
         });
         List<Achievement> unlocked = profile.checkAchievements();
-        assertTrue(unlocked.containsAll(List.of(Achievement.CHAMPION, Achievement.CLOSE_CALL, Achievement.TRILLION_HIT)));
+        assertTrue(unlocked.containsAll(List.of(Achievement.CHAMPION, Achievement.CLOSE_CALL, Achievement.TEN_BILLION_HIT)));
         assertFalse(unlocked.contains(Achievement.THOUSAND_SPINS), "999 tirages : pas encore");
         assertFalse(unlocked.contains(Achievement.FLAWLESS));
 

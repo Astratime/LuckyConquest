@@ -26,7 +26,7 @@ public enum Achievement {
     GREAT_COLLECTOR("Grand collectionneur", "Réussir le Bingo de 25 symboles différents.", 1_000_000),
     BONUS_REGULAR("Habitué du bonus", "Jouer 25 Jeux bonus.", 250_000),
     SQUARE_MASTER("Maître des Carrés", "Réussir 25 Carrés.", 250_000),
-    TRILLION_HIT("Coup d'un billion", "Infliger mille milliards de dégâts en un coup.", 1_000_000),
+    TEN_BILLION_HIT("Coup de dix milliards", "Infliger 10 milliards de dégâts en un coup.", 1_000_000),
     BILLIONAIRE("Milliardaire", "Gagner 1 milliard de gains en combat, au total.", 1_000_000),
     // Exploration
     FIRST_DUNGEON("Premier donjon", "Vider un donjon.", 10_000),
@@ -44,8 +44,8 @@ public enum Achievement {
     ORIGIN("Fin de la Machine", "Finir le chapitre 6 de la Tour des épreuves.", 1_000_000),
     HARD_CHAPTER("Sans pitié", "Finir un chapitre de la Tour en mode difficile.", 500_000),
     HARD_TOWER("Tour domptée", "Finir les 6 chapitres de la Tour en mode difficile.", 1_000_000),
-    ENDLESS_10("Toujours plus haut", "Gagner l'étage 10 du mode sans fin.", 500_000),
-    ENDLESS_25("Vertige", "Gagner l'étage 25 du mode sans fin.", 1_000_000),
+    ENDLESS_5("Toujours plus haut", "Gagner l'étage 5 du mode sans fin.", 500_000),
+    ENDLESS_10("Vertige", "Gagner l'étage 10 du mode sans fin.", 1_000_000),
     // Progression
     FIRST_RANK("Premier rang", "Acheter un rang à la boutique.", 50_000),
     UPGRADED_CARD("Carte en or", "Fusionner une carte « + » à la Table du croupier.", 500_000),

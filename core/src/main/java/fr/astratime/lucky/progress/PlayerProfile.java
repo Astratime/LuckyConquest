@@ -544,7 +544,7 @@ public class PlayerProfile {
             case GREAT_COLLECTOR -> stats.bingoSymbolCount() >= 25;
             case BONUS_REGULAR   -> stats.get(PlayerStats.Stat.BONUS_GAMES) >= 25;
             case SQUARE_MASTER   -> stats.get(PlayerStats.Stat.SQUARES) >= 25;
-            case TRILLION_HIT    -> stats.get(PlayerStats.Stat.BEST_HIT) >= 1_000_000_000_000L;
+            case TEN_BILLION_HIT -> stats.get(PlayerStats.Stat.BEST_HIT) >= 10_000_000_000L;
             case BILLIONAIRE     -> stats.get(PlayerStats.Stat.GAINS) >= 1_000_000_000L;
             case FIRST_DUNGEON   -> !clearedDungeons.isEmpty();
             case PRAIRIE         -> placeCleared(Place.PRAIRIE);
@@ -560,8 +560,8 @@ public class PlayerProfile {
             case ORIGIN          -> clearedChapters.contains(Chapter.LE_JACKPOT.name());
             case HARD_CHAPTER    -> !clearedHardChapters.isEmpty();
             case HARD_TOWER      -> Arrays.stream(Chapter.values()).allMatch(c -> clearedHardChapters.contains(c.name()));
+            case ENDLESS_5       -> endlessBest >= 5;
             case ENDLESS_10      -> endlessBest >= 10;
-            case ENDLESS_25      -> endlessBest >= 25;
             case FIRST_RANK      -> ranks >= 1;
             case UPGRADED_CARD   -> collection.keySet().stream().anyMatch(Card::isUpgradedId);
             case GOLDSMITH       -> collection.keySet().stream().filter(Card::isUpgradedId).count() >= 5;
