@@ -2461,9 +2461,9 @@
   "PLINKO DE LA CAGNOTTE !": "POT PLINKO!",
   "Plinko de la cagnotte": "Pot Plinko",
   "Rang 2 : une bille rebondit sur les clous et tombe dans une case qui multiplie la cagnotte.": "Rank 2: a ball bounces off the pegs and drops into a slot that multiplies the pot.",
-  "LOTERIE DE LA CAGNOTTE !": "POT LOTTERY!",
-  "Loterie de la cagnotte": "Pot lottery",
-  "Rang 3 : trois boules sortent du boulier, la somme de leurs valeurs multiplie la cagnotte.": "Rank 3: three balls come out of the drum, the sum of their values multiplies the pot.",
-  "Tes Mises s'y accumulent. Au prochain Jeu bonus, elle se joue puis repart de 0 : la Roue, le Plinko ou la Loterie la multiplient, et la grille, plus rare, la paie à chaque alignement. Ce qu'elle rapporte ne se mise pas avant la fin de la descente. Ici, un Bingo ouvre un Jeu bonus {0} fois sur 10.": "Your stakes pile up here. At the next bonus game it is played, then goes back to 0: the Wheel, the Plinko or the Lottery multiply it, and the rarer grid pays it on every line. What it pays cannot be staked before the end of the descent. Here, a Bingo opens a bonus game {0} times in 10.",
+  "COUP DE POING DE LA CAGNOTTE !": "POT PUNCH!",
+  "Coup de poing de la cagnotte": "Pot punch",
+  "Rang 3 : un gant de boxe frappe la cible, le score de la machine multiplie la cagnotte.": "Rank 3: a boxing glove hits the target, the machine's score multiplies the pot.",
+  "Tes Mises s'y accumulent. Au prochain Jeu bonus, elle se joue puis repart de 0 : la Roue, le Plinko ou le Coup de poing la multiplient, et la grille, plus rare, la paie à chaque alignement. Ce qu'elle rapporte ne se mise pas avant la fin de la descente. Ici, un Bingo ouvre un Jeu bonus {0} fois sur 10.": "Your stakes pile up here. At the next bonus game it is played, then goes back to 0: the Wheel, the Plinko or the Punch multiply it, and the rarer grid pays it on every line. What it pays cannot be staked before the end of the descent. Here, a Bingo opens a bonus game {0} times in 10.",
   "RANG {0}": "RANK {0}"
 }

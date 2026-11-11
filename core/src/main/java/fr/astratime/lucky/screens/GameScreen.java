@@ -1529,7 +1529,7 @@ public class GameScreen extends ScreenAdapter {
             then.run();
             return;
         }
-        if (bonus.getKind() != BonusGame.Kind.GRID) { // Roue, Plinko, Loterie
+        if (bonus.getKind() != BonusGame.Kind.GRID) { // Roue, Plinko, Coup de poing
             playCutscene(new SmallBonusGameCutscene(cutsceneKit, bonus), () -> {
                 onGainsShown(bonus.getTotal());
                 then.run();
@@ -2178,7 +2178,7 @@ public class GameScreen extends ScreenAdapter {
         int inTen = Math.round(gameController.getBonusGameChance() * 10);
         sidePanel.setPot(gameController.getPot().getAmount(), Lang.t("Cagnotte"),
             Lang.f("Tes Mises s'y accumulent. Au prochain Jeu bonus, elle se joue puis repart de 0 : la Roue, "
-                + "le Plinko ou la Loterie la multiplient, et la grille, plus rare, la paie à chaque "
+                + "le Plinko ou le Coup de poing la multiplient, et la grille, plus rare, la paie à chaque "
                 + "alignement. Ce qu'elle rapporte ne se mise pas avant la fin de la descente. Ici, un Bingo ouvre "
                 + "un Jeu bonus {0} fois sur 10.", inTen));
         // Gains misables : montrés dès qu'une partie des gains vient de la cagnotte (ceux-là ne se misent pas).

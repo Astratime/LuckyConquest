@@ -20,7 +20,7 @@ import java.util.List;
 import static fr.astratime.lucky.assets.Palette.hex;
 
 /**
- * Les petits Jeux bonus (Roue, Plinko, Loterie), par-dessus le combat,
+ * Les petits Jeux bonus (Roue, Plinko, Coup de poing), par-dessus le combat,
  * dans le décor du Jeu bonus : le casino s'assombrit, le titre éclate puis monte,
  * le jeu se joue au centre, puis le total. Fondu noir, retour au combat.
  *
@@ -37,9 +37,6 @@ public class SmallBonusGameCutscene extends Cutscene {
     private static final float WHEEL_SPIN = 3.6f;
     /** Plinko : la bille passe une rangée de clous tous les {@link #PLINKO_STEP}. */
     private static final float PLINKO_STEP = 0.34f;
-    /** Loterie : une boule sort du boulier tous les {@link #LOTTERY_STEP}. */
-    private static final float LOTTERY_STEP = 1.1f;
-    private static final int LOTTERY_SLOTS = BonusGame.LOTTERY_BALLS;
     private static final float TOTAL_HOLD = 3.0f;
     private static final float COVER = 0.6f;
 
@@ -48,10 +45,7 @@ public class SmallBonusGameCutscene extends Cutscene {
     private static final Color CREAM = hex("fff6dc");
     private static final Color SILVER = hex("b9c0c8"), SILVER_DARK = hex("7d858e");
     private static final Color BULB_OFF = hex("3a2a1a"), BEVEL = hex("ffffff");
-    private static final Color GLASS = hex("6fa8c8"), GLASS_DARK = hex("3f6f94");
     private static final Color[] CONFETTI = {GOLD, RED, hex("3ac1ff"), hex("5fd36a"), hex("ff7ad9"), CREAM};
-    /** Couleur des boules de la Loterie, de la plus petite valeur à la plus grande (dorée). */
-    private static final Color[] BALL_COLORS = {hex("2f6fc8"), hex("3f9e4a"), hex("e8701d"), hex("9b4fe0"), hex("d4202f"), hex("ffc93a")};
     /** Couleur des cases du Plinko, du bord (le gros lot) au centre. */
     private static final Color[] SLOT_COLORS = {hex("d4202f"), hex("e8701d"), hex("e8b81d"), hex("3f9e4a"), hex("2f6fc8")};
 
@@ -65,13 +59,11 @@ public class SmallBonusGameCutscene extends Cutscene {
     /** Poussière d'or du fond, confettis, étincelles et pièces qui volent. */
     private final Array<Particle> dust = new Array<>(false, 128), confetti = new Array<>(false, 256);
     private final Array<Particle> flakes = new Array<>(false, 128), coins = new Array<>(false, 64);
-    private final TextureRegion coin, ball, globe, wheelDisc, pointer;
-    /** Loterie : petites boules du boulier et grosses boules tirées (avec leur pastille), par couleur. */
-    private final TextureRegion[] smallBalls = new TextureRegion[6], bigBalls = new TextureRegion[6];
+    private final TextureRegion coin, ball, wheelDisc, pointer;
+    /** Coup de poing : la cible, le gant de boxe et la cloche, en pixel art. */
+    private final TextureRegion target, gloveArt, bellArt;
     /** Plinko : le chemin de la bille (vers la droite ?), une rangée de clous après l'autre. */
     private final boolean[] path = new boolean[BonusGame.PLINKO_ROWS];
-    /** Loterie : les boules qui tourbillonnent dans le boulier (angle, vitesse, fréquence, phase). */
-    private final float[][] mixer = new float[16][4];
     /** Le résultat se montre ; puis le total. */
     private float reveal, totalAt;
     private float closeAt, lastTime, dustTimer;
@@ -91,11 +83,35 @@ public class SmallBonusGameCutscene extends Cutscene {
         dot.setColor(Color.WHITE);
         dot.fillCircle(8, 8, 7);
         ball = region(dot, false);
-        globe = globeArt();
-        for (int i = 0; i < BALL_COLORS.length; i++) {
-            smallBalls[i] = pixelBallArt(BALL_COLORS[i], 10, false);
-            bigBalls[i] = pixelBallArt(BALL_COLORS[i], 22, false);
-        }
+        target = targetArt();
+        gloveArt = art("krdwg", new Color[] {INK, RED, RED_DARK, CREAM, GOLD_DARK},
+            "..kkkkkkk...",
+            ".krrrrrrrk..",
+            "krwrrrrrrrk.",
+            "krwrrrrrrrrk",
+            "krrrrrrrrrrk",
+            "kdkrrrrrrrrk",
+            "kdrkrrrrrrdk",
+            "kdrrkrrrrrdk",
+            ".kdddrrrrdk.",
+            ".kddddddddk.",
+            "..kwwwwwwk..",
+            "..kwgwgwwk..",
+            "..kwwwwwwk..",
+            "...kkkkkk...");
+        bellArt = art("kgdl", new Color[] {INK, GOLD, GOLD_DARK, GOLD_LIGHT},
+            "....kk....",
+            "...kggk...",
+            "..kglggk..",
+            "..kglggk..",
+            "..kglggk..",
+            ".kgglgggk.",
+            ".kggggggk.",
+            "kggggggggk",
+            "kddddddddk",
+            ".kkkkkkkk.",
+            "....kk....",
+            "....kk....");
         Pixmap disc = new Pixmap(64, 64, Pixmap.Format.RGBA8888);
         disc.setColor(INK);
         disc.fillCircle(32, 32, 31);
@@ -126,7 +142,7 @@ public class SmallBonusGameCutscene extends Cutscene {
         return switch (kind) {
             case WHEEL -> Lang.t("ROUE DE LA CAGNOTTE !");
             case PLINKO -> Lang.t("PLINKO DE LA CAGNOTTE !");
-            case LOTTERY -> Lang.t("LOTERIE DE LA CAGNOTTE !");
+            case PUNCH -> Lang.t("COUP DE POING DE LA CAGNOTTE !");
             default -> Lang.t("JEU BONUS !");
         };
     }
@@ -157,15 +173,7 @@ public class SmallBonusGameCutscene extends Cutscene {
                 for (int row = 0; row < path.length; row++) path[row] = rights.get(row);
                 schedule(START + 0.5f + PLINKO_STEP * (path.length + 1));
             }
-            default -> {
-                for (float[] m : mixer) {
-                    m[0] = random.nextFloat() * MathUtils.PI2;
-                    m[1] = (random.nextBoolean() ? 1f : -1f) * (0.6f + random.nextFloat());
-                    m[2] = 1.5f + random.nextFloat() * 2.5f;
-                    m[3] = random.nextFloat() * MathUtils.PI2;
-                }
-                schedule(ballLand(LOTTERY_SLOTS - 1) + 0.3f);
-            }
+            default -> schedule(climbEnd());
         }
         sound(intro, false);
     }
@@ -173,7 +181,7 @@ public class SmallBonusGameCutscene extends Cutscene {
     /** Le résultat se montre à {@code at}, le total une seconde après. */
     private void schedule(float at) {
         reveal = at;
-        totalAt = at + (game.getKind() == BonusGame.Kind.LOTTERY ? 1.4f : 1.0f);
+        totalAt = at + (game.getKind() == BonusGame.Kind.PUNCH ? 1.6f : 1.0f);
         closeAt = totalAt + TOTAL_HOLD;
     }
 
@@ -262,23 +270,29 @@ public class SmallBonusGameCutscene extends Cutscene {
                 }
             }
             default -> {
-                for (int i = 0; i < LOTTERY_SLOTS; i++) {
-                    if (crossed(from, ballOut(i)) && sounds != null) sounds.reelStop.play(0.4f, 1.2f, 0f);
-                    if (crossed(from, ballLand(i))) {
-                        double value = game.getValues().get(i);
-                        float[] c = trayCenter(i);
-                        if (sounds != null) sounds.coinsGain.play(0.6f, 1f + i * 0.12f, 0f);
-                        burst(c[0], c[1], value >= 5 ? 24 : 12, ballColor(value));
-                        if (value >= 5) confettiBurst(c[0], c[1], value >= 10 ? 50 : 20);
-                        if (value >= 10) {
-                            fountain(c[0], c[1], 14);
-                            rumble(0.4f, 6f);
-                        }
-                    }
+                if (crossed(from, PUNCH_WINDUP) && sounds != null) sounds.reelSpin.play(0.25f, 1.6f, 0f);
+                if (crossed(from, PUNCH_HIT)) {
+                    if (sounds != null) sounds.reelStop.play(1f, 0.55f, 0f);
+                    burst(punchX(), targetY(), 26, CREAM);
+                    burst(punchX(), targetY(), 14, GOLD);
+                    rumble(0.35f, 9f);
+                }
+                int before = litSegments(shownScoreAt(from)), now = litSegments(shownScore());
+                for (int i = before; i < now; i++) {
+                    if (sounds != null) sounds.reelStop.play(0.3f, 0.9f + i * 0.06f, 0f);
+                    float sy = gaugeBottom() + (i + 0.5f) * (gaugeTop() - gaugeBottom()) / SEGMENTS;
+                    burst(punchX(), sy, 3, segmentColor(i));
                 }
                 if (crossed(from, reveal)) {
-                    float[] mid = trayCenter(1);
-                    burst(mid[0], mid[1] - unitSize() * 1.2f, 20, GOLD_LIGHT);
+                    int score = punchScore();
+                    if (sounds != null) sounds.coinsGain.play(0.8f);
+                    burst(punchX(), displayY(), 24, GOLD_LIGHT);
+                    confettiBurst(punchX(), displayY(), score >= 1500 ? 60 : score >= BonusGame.PUNCH_BELL ? 36 : 16);
+                    if (score >= BonusGame.PUNCH_BELL) {
+                        if (sounds != null) sounds.coinsGain.play(0.7f, 1.6f, 0f);
+                        fountain(punchX(), bellY(), score >= 1500 ? 20 : 10);
+                        rumble(0.4f, score >= 1500 ? 8f : 5f);
+                    }
                 }
             }
         }
@@ -376,7 +390,7 @@ public class SmallBonusGameCutscene extends Cutscene {
             switch (game.getKind()) {
                 case WHEEL -> drawWheel(batch, appear);
                 case PLINKO -> drawPlinko(batch, appear);
-                default -> drawLottery(batch, appear);
+                default -> drawPunch(batch, appear);
             }
             drawCaptions(batch, appear);
             BonusRankBadge.draw(this, batch, font, game.getKind().rank, worldWidth() - 120f, worldHeight() - 92f, START, appear, !pixelStyle());
@@ -392,7 +406,7 @@ public class SmallBonusGameCutscene extends Cutscene {
     private void drawBanner(Batch batch) {
         float pop = Interpolation.swingOut.apply(progress(0f, 0.45f));
         float rise = Interpolation.pow2.apply(progress(0.8f, SHOW + 0.3f));
-        float y = MathUtils.lerp(worldHeight() * 0.55f, centerY() + unitSize() * (game.getKind() == BonusGame.Kind.WHEEL ? 3.9f : 3.3f), rise);
+        float y = MathUtils.lerp(worldHeight() * 0.55f, centerY() + unitSize() * (game.getKind() == BonusGame.Kind.PLINKO ? 3.3f : 3.9f), rise);
         float scale = MathUtils.lerp(3.4f, 2.0f, rise) * pop;
         if (scale <= 0.01f) return;
         if (!pixelStyle()) glow(batch, worldWidth() / 2f, y, 420f * scale / 3f, GOLD, 0.35f * (1f - 0.5f * rise));
@@ -455,7 +469,7 @@ public class SmallBonusGameCutscene extends Cutscene {
         batch.draw(pixel, x, y, w, h);
     }
 
-    /** @return {@code true} pour la Roue et la Loterie : tout en pixel art, sans halo de lumière (demande d'Astra). */
+    /** @return {@code true} pour la Roue et le Coup de poing : tout en pixel art, sans halo de lumière (demande d'Astra). */
     private boolean pixelStyle() { return game.getKind() != BonusGame.Kind.PLINKO; }
 
     /** Étincelles et poussière : des halos doux, ou de petits carrés en pixel art. */
@@ -749,152 +763,225 @@ public class SmallBonusGameCutscene extends Cutscene {
         }
     }
 
-    // --- Loterie ---------------------------------------------------------------
+    // --- Coup de poing ----------------------------------------------------------
 
-    private float sphereX()      { return worldWidth() / 2f; }
-    private float sphereY()      { return centerY() + unitSize() * 1.45f; }
-    private float sphereRadius() { return unitSize() * 1.25f; }
-    private float lotteryBall()  { return unitSize() * 0.8f; }
+    /** Le gant arrive, prend son élan, puis frappe la cible à cet instant. */
+    private static final float PUNCH_IN = START + 0.6f, PUNCH_WINDUP = START + 1.35f, PUNCH_HIT = START + 1.55f;
+    /** Le score commence à grimper. */
+    private static final float CLIMB = PUNCH_HIT + 0.25f;
+    /** Segments de la jauge, du bas (vert) au haut (rouge). */
+    private static final int SEGMENTS = 14;
+    private static final Color GREEN = hex("3f9e4a"), YELLOW = hex("e8b81d"), ORANGE = hex("e8701d"), BLOOD = hex("d4202f");
+    private static final Color LED = hex("ff6a3d"), LED_OFF = hex("3a1414"), SLEEVE = hex("2f4f8f"), SLEEVE_DARK = hex("1f325c");
+    /** Chiffres du compteur, en 3 x 5 pixels. */
+    private static final String[] DIGITS = {
+        "111101101101111", "010110010010111", "111001111100111", "111001111001111", "101101111001001",
+        "111100111001111", "111100111101111", "111001010010010", "111101111101111", "111101111001111"};
 
-    /** @return l'instant où la boule {@code i} sort du boulier, et celui où elle tombe dans sa case. */
-    private float ballOut(int i)  { return START + 1.4f + i * LOTTERY_STEP; }
-    private float ballLand(int i) { return ballOut(i) + 0.75f; }
+    private int punchScore() { return game.getPicked().get(0); }
 
-    /** @return le bec du boulier, d'où tombent les boules. */
-    private float spoutY() { return sphereY() - sphereRadius() - unitSize() * 0.35f; }
+    /** @return la fin de la montée du score : plus il est haut, plus elle dure. */
+    private float climbEnd() { return CLIMB + 0.5f + 2.0f * punchScore() / BonusGame.PUNCH_MAX; }
 
-    /** @return la case de la boule {@code i}, sous le boulier. */
-    private float[] trayCenter(int i) {
-        return new float[] {worldWidth() / 2f + (i - 1) * unitSize() * 1.6f, centerY() - unitSize() * 1.05f};
+    /** @return le score affiché à l'instant : il grimpe de 0 jusqu'au score tiré, de 10 en 10. */
+    private int shownScore() { return shownScoreAt(time); }
+
+    private int shownScoreAt(float t) {
+        if (t < CLIMB) return 0;
+        float f = Interpolation.pow2Out.apply(Math.min(1f, (t - CLIMB) / (climbEnd() - CLIMB)));
+        return Math.round(punchScore() * f / 10f) * 10;
     }
 
-    /** @return la couleur d'une boule selon sa valeur (la plus rare est dorée). */
-    private static int ballIndex(double value) {
-        return Math.max(0, Math.min(BALL_COLORS.length - 1, BonusGame.LOTTERY_VALUES.indexOf(value)));
+    /** @return combien de segments de la jauge sont allumés pour {@code score}. */
+    private static int litSegments(int score) {
+        return Math.min(SEGMENTS, (int) Math.ceil(score * (double) SEGMENTS / BonusGame.PUNCH_MAX - 1e-6));
     }
 
-    private static Color ballColor(double value) { return BALL_COLORS[ballIndex(value)]; }
+    private static Color segmentColor(int i) {
+        return i < 4 ? GREEN : i < 8 ? YELLOW : i < 11 ? ORANGE : BLOOD;
+    }
 
-    /** @return une boule en pixel art de {@code size} pixels : contour, couleur, ombre, reflet, et une pastille claire pour sa valeur. */
-    private TextureRegion pixelBallArt(Color color, int size, boolean plate) {
-        Pixmap map = new Pixmap(size, size, Pixmap.Format.RGBA8888);
-        int c = size / 2, r = size / 2 - 1;
-        map.setColor(INK);
-        map.fillCircle(c, c, r);
-        map.setColor(tmp.set(color).lerp(Color.BLACK, 0.35f));
-        map.fillCircle(c, c, r - 1);
-        map.setColor(color);
-        map.fillCircle(c - 1, c - 1, r - 2);
-        if (plate) {
-            map.setColor(INK);
-            map.fillCircle(c, c, Math.max(2, r / 2 + 1));
-            map.setColor(CREAM);
-            map.fillCircle(c, c, Math.max(1, r / 2));
+    private float punchX()   { return worldWidth() / 2f; }
+    private float targetY()  { return centerY() - unitSize() * 1.25f; }
+    private float targetR()  { return unitSize() * 0.58f; }
+    private float gaugeBottom() { return centerY() - unitSize() * 0.3f; }
+    private float gaugeTop()    { return centerY() + unitSize() * 1.2f; }
+    private float displayY() { return centerY() + unitSize() * 1.68f; }
+    private float bellY()    { return centerY() + unitSize() * 3.05f; }
+
+    /** @return la cible, pixel art : anneau doré, cercles rouges et crème. */
+    private TextureRegion targetArt() {
+        Pixmap map = new Pixmap(32, 32, Pixmap.Format.RGBA8888);
+        Color[] rings = {INK, GOLD_DARK, GOLD, INK, RED, CREAM, RED, CREAM};
+        int[] radius = {15, 14, 13, 11, 10, 7, 5, 2};
+        for (int i = 0; i < rings.length; i++) {
+            map.setColor(rings[i]);
+            map.fillCircle(16, 16, radius[i]);
         }
         map.setColor(Color.WHITE);
-        int hx = c - r / 2 - 1, hy = c - r / 2 - 1, hs = Math.max(1, size / 10);
-        map.fillRectangle(hx, hy, hs + 1, hs);
+        map.fillRectangle(9, 8, 3, 2);
         return region(map, false);
     }
 
-    /** @return le boulier en pixel art : verre bleuté, ombre du bas, reflets, anneau doré. */
-    private TextureRegion globeArt() {
-        int size = 48, c = 24;
-        Pixmap map = new Pixmap(size, size, Pixmap.Format.RGBA8888);
-        map.setColor(INK);
-        map.fillCircle(c, c, 23);
-        map.setColor(GOLD_DARK);
-        map.fillCircle(c, c, 22);
-        map.setColor(GOLD);
-        map.fillCircle(c, c, 21);
-        map.setColor(GLASS_DARK);
-        map.fillCircle(c, c, 19);
-        map.setColor(GLASS);
-        map.fillCircle(c - 1, c - 2, 17);
-        return region(map, false);
+    /** @return le gant et sa position {x, y, taille, angle} à l'instant : il entre, prend son élan, frappe, recule. */
+    private float[] glove() {
+        float u = unitSize(), cx = punchX();
+        float hitX = cx + u * 0.15f, hitY = targetY() - u * 0.05f;
+        float restX = cx + u * 2.9f, restY = centerY() - u * 1.1f;
+        float backX = cx + u * 3.4f, backY = centerY() - u * 1.6f;
+        if (time < PUNCH_IN) {   // il arrive d'en bas à droite
+            float f = Interpolation.pow2Out.apply(progress(START, PUNCH_IN));
+            return new float[] {MathUtils.lerp(cx + u * 6f, restX, f), MathUtils.lerp(-u * 2f, restY, f), u * 1.7f, 25f};
+        }
+        if (time < PUNCH_WINDUP) {   // l'élan : il recule vers nous et tremble
+            float f = Interpolation.pow2Out.apply(progress(PUNCH_IN, PUNCH_WINDUP));
+            float shake = f > 0.5f ? MathUtils.sin(time * 70f) * u * 0.03f : 0f;
+            return new float[] {MathUtils.lerp(restX, backX, f) + shake, MathUtils.lerp(restY, backY, f), u * (1.7f + 0.35f * f), 25f + 8f * f};
+        }
+        if (time < PUNCH_HIT) {   // le coup : il file vers la cible en rapetissant (il s'éloigne de nous)
+            float f = Interpolation.pow3In.apply(progress(PUNCH_WINDUP, PUNCH_HIT));
+            return new float[] {MathUtils.lerp(backX, hitX, f), MathUtils.lerp(backY, hitY, f), u * MathUtils.lerp(2.05f, 1.15f, f), 33f - 18f * f};
+        }
+        // il reste un instant écrasé contre la cible, puis recule
+        float f = Interpolation.pow2Out.apply(progress(PUNCH_HIT + 0.12f, PUNCH_HIT + 0.6f));
+        return new float[] {MathUtils.lerp(hitX, restX, f), MathUtils.lerp(hitY, restY, f), u * MathUtils.lerp(1.15f, 1.7f, f), 15f + 10f * f};
     }
 
-    private void drawLottery(Batch batch, float alpha) {
-        List<Double> values = game.getValues();
-        float cx = sphereX(), cy = sphereY(), r = sphereRadius(), size = lotteryBall();
-        float px = r * 2f / 48f;                     // un pixel du boulier, à l'écran
-        // le support : deux pieds dorés, le bec en bas
-        box(batch, cx - r * 0.9f - px * 2f, cy - r - px * 2f, px * 6f, r * 0.55f, INK, alpha);
-        box(batch, cx + r * 0.9f - px * 4f, cy - r - px * 2f, px * 6f, r * 0.55f, INK, alpha);
-        box(batch, cx - r * 0.9f - px, cy - r - px, px * 4f, r * 0.55f - px * 2f, GOLD_DARK, alpha);
-        box(batch, cx + r * 0.9f - px * 3f, cy - r - px, px * 4f, r * 0.55f - px * 2f, GOLD_DARK, alpha);
-        box(batch, cx - px * 4f, spoutY() - px * 2f, px * 8f, cy - r - spoutY() + px * 6f, INK, alpha);
-        box(batch, cx - px * 3f, spoutY() - px, px * 6f, cy - r - spoutY() + px * 4f, GOLD, alpha);
-        // le boulier, et ses boules qui tourbillonnent
+    /** Un chiffre du compteur, centré sur ({@code x}, {@code y}), en pixels de {@code p}. */
+    private void digit(Batch batch, int value, float x, float y, float p, boolean on, Color color, float alpha) {
+        String bits = DIGITS[value < 0 ? 8 : value];
+        float left = x - p * 1.5f, top = y + p * 2.5f;
+        for (int k = 0; k < 15; k++) {
+            boolean lit = on && value >= 0 && bits.charAt(k) == '1';
+            if (!lit && bits.charAt(k) != '1' && value >= 0) continue;
+            box(batch, left + (k % 3) * p, top - (k / 3 + 1) * p, p - 1f, p - 1f, lit ? color : LED_OFF, alpha);
+        }
+    }
+
+    private void drawPunch(Batch batch, float alpha) {
+        float u = unitSize(), cx = punchX(), p = Math.max(2f, Math.round(u * 0.075f));
+        boolean done = time >= reveal;
+        int score = shownScore(), lit = litSegments(score);
+        boolean bell = punchScore() >= BonusGame.PUNCH_BELL;
+        float colLeft = cx - u * 1.15f, colRight = cx + u * 1.15f, colBottom = centerY() - u * 2.05f, colTop = centerY() + u * 2.2f;
+        // le socle, puis la colonne : rouge, liserés dorés, ombre à droite, reflet à gauche
+        box(batch, cx - u * 1.75f - p, colBottom - u * 0.45f - p, u * 3.5f + p * 2f, u * 0.45f + p * 2f, INK, alpha);
+        box(batch, cx - u * 1.75f, colBottom - u * 0.45f, u * 3.5f, u * 0.45f, RED_DARK, alpha);
+        box(batch, cx - u * 1.75f, colBottom - p * 2f, u * 3.5f, p * 2f, GOLD, alpha);
+        box(batch, cx - u * 1.75f, colBottom - u * 0.45f, u * 3.5f, p, GOLD_DARK, alpha);
+        box(batch, colLeft - p, colBottom, colRight - colLeft + p * 2f, colTop - colBottom + p, INK, alpha);
+        box(batch, colLeft, colBottom, colRight - colLeft, colTop - colBottom, RED, alpha);
+        box(batch, colRight - p * 3f, colBottom, p * 3f, colTop - colBottom, RED_DARK, alpha);
+        box(batch, colLeft, colBottom, p * 2f, colTop - colBottom, GOLD, alpha);
+        box(batch, colLeft + p * 2f, colBottom, p, colTop - colBottom, tmp.set(RED).lerp(Color.WHITE, 0.3f), alpha);
+        box(batch, colRight - p * 2f, colBottom, p * 2f, colTop - colBottom, GOLD_DARK, alpha);
+        // le fronton : une barre dorée et ses ampoules
+        float crest = colTop + p;
+        box(batch, cx - u * 1.45f - p, crest - p, u * 2.9f + p * 2f, u * 0.38f + p * 2f, INK, alpha);
+        box(batch, cx - u * 1.45f, crest, u * 2.9f, u * 0.38f, GOLD_DARK, alpha);
+        box(batch, cx - u * 1.45f, crest + u * 0.38f - p, u * 2.9f, p, GOLD_LIGHT, alpha);
+        for (int i = 0; i < 9; i++) {
+            boolean on = done ? MathUtils.sin(time * 14f + (i % 2) * MathUtils.PI) > 0f : (i + (int) (time * 8f)) % 3 == 0;
+            pixelBulb(batch, cx + (i - 4) * u * 0.3f, crest + u * 0.19f, p * 1.4f, on, alpha);
+        }
+        // les ampoules sur les côtés : elles montent avec le score, puis clignotent toutes
+        int side = 8;
+        for (int i = 0; i < side; i++) {
+            float by = gaugeBottom() + i * (gaugeTop() - gaugeBottom()) / (side - 1);
+            boolean on = done ? MathUtils.sin(time * 12f + i) > 0f
+                : time >= CLIMB ? i <= lit * side / SEGMENTS : (i + (int) (time * 6f)) % 4 == 0;
+            pixelBulb(batch, colLeft + u * 0.38f, by, p * 1.3f, on, alpha);
+            pixelBulb(batch, colRight - u * 0.38f, by, p * 1.3f, on, alpha);
+        }
+        // la jauge, et ses repères (le score divisé par 100 multiplie la mise de base)
+        float gw = u * 0.8f, gb = gaugeBottom(), gt = gaugeTop(), seg = (gt - gb) / SEGMENTS;
+        box(batch, cx - gw / 2f - p * 2f, gb - p * 2f, gw + p * 4f, gt - gb + p * 4f, INK, alpha);
+        box(batch, cx - gw / 2f - p, gb - p, gw + p * 2f, gt - gb + p * 2f, GOLD_DARK, alpha);
+        box(batch, cx - gw / 2f, gb, gw, gt - gb, INK, alpha);
+        for (int i = 0; i < SEGMENTS; i++) {
+            Color color = segmentColor(i);
+            boolean on = i < lit;
+            float wave = done ? 0.75f + 0.25f * MathUtils.sin(time * 9f - i * 0.6f) : 1f;
+            if (on) tmp.set(color).mul(wave, wave, wave, 1f);
+            else tmp.set(color).mul(0.28f, 0.28f, 0.28f, 1f);
+            box(batch, cx - gw / 2f + p, gb + i * seg + 1f, gw - p * 2f, seg - 2f, tmp, alpha);
+            if (on) box(batch, cx - gw / 2f + p, gb + (i + 1) * seg - 1f - p, p * 2f, p, CREAM, 0.6f * alpha);
+        }
+        for (int mark = 500; mark <= BonusGame.PUNCH_MAX; mark += 500) {
+            float my = gb + (gt - gb) * mark / BonusGame.PUNCH_MAX;
+            box(batch, cx - gw / 2f - p * 3f, my - p / 2f - 1f, p * 2f, p, GOLD_LIGHT, alpha);
+            label(batch, times(mark / 100.0), colLeft - u * 0.45f, my, 0.8f, 0.85f * alpha);
+        }
+        // le compteur : quatre chiffres qui défilent, puis clignotent
+        float dy = displayY(), dp = Math.max(2f, Math.round(u * 0.085f)), dw = dp * 4f * 4f + dp * 3f;
+        box(batch, cx - dw / 2f - p * 3f, dy - dp * 3.5f - p * 2f, dw + p * 6f, dp * 7f + p * 4f, INK, alpha);
+        box(batch, cx - dw / 2f - p * 2f, dy - dp * 3.5f - p, dw + p * 4f, dp * 7f + p * 2f, GOLD, alpha);
+        box(batch, cx - dw / 2f - p, dy - dp * 3.5f, dw + p * 2f, dp * 7f, NIGHT, alpha);
+        boolean shine = !done || time - reveal > 1.2f || MathUtils.sin((time - reveal) * 26f) > -0.3f;
+        Color ledColor = done && bell && MathUtils.sin(time * 8f) > 0f ? GOLD_LIGHT : LED;
+        String text = Integer.toString(score);
+        for (int k = 0; k < 4; k++) {
+            int index = k - (4 - text.length());
+            int value = index >= 0 ? text.charAt(index) - '0' : -1;
+            digit(batch, value, cx - dw / 2f + dp * 2f + k * dp * 5f - dp * 0.5f + dp * 1.5f, dy, dp, shine, ledColor, alpha);
+        }
+        // la cloche : elle sonne et se balance si le score l'atteint
+        float ring = bell && done ? (float) Math.exp(-(time - reveal) * 1.6f) : 0f;
+        float swing = 18f * ring * MathUtils.sin((time - reveal) * 22f);
+        float bw = u * 0.85f, bh = u * 0.85f * 12f / 10f, by = bellY();
+        box(batch, cx - p, crest + u * 0.38f, p * 2f, by - bh / 2f - crest - u * 0.38f + p, INK, alpha);
         batch.setColor(1f, 1f, 1f, alpha);
-        batch.draw(globe, cx - r, cy - r, r * 2f, r * 2f);
-        int drawn = 0;
-        for (int i = 0; i < LOTTERY_SLOTS; i++) if (time >= ballOut(i)) drawn++;
-        float mixing = time < reveal ? 1f : 0.25f, small = size * 0.4f;
-        for (int b = 0; b < mixer.length; b++) {
-            if (b < drawn) continue;   // les boules tirées ont quitté le boulier
-            float[] m = mixer[b];
-            float a = m[0] + time * m[1] * 2.6f * mixing;
-            float dist = (r * 0.78f - small / 2f) * (0.3f + 0.7f * Math.abs(MathUtils.sin(time * m[2] * mixing + m[3])));
-            float bx = cx + MathUtils.cos(a) * dist, by = cy + MathUtils.sin(a) * dist;
-            batch.setColor(1f, 1f, 1f, alpha);
-            batch.draw(smallBalls[b % smallBalls.length], snap(bx - small / 2f, px), snap(by - small / 2f, px), small, small);
-        }
-        // reflets du verre, par-dessus les boules
-        box(batch, cx - r * 0.55f, cy + r * 0.35f, px * 4f, px * 2f, CREAM, 0.8f * alpha);
-        box(batch, cx - r * 0.62f, cy + r * 0.2f, px * 2f, px * 2f, CREAM, 0.8f * alpha);
-        box(batch, cx + r * 0.45f, cy - r * 0.45f, px * 2f, px * 2f, CREAM, 0.5f * alpha);
-        // la manivelle, sur le côté
-        float crank = time * (time < reveal ? 4f : 0.5f);
-        float hx = cx + r + px * 3f, hy = cy;
-        box(batch, cx + r - px, hy - px * 2f, px * 5f, px * 4f, INK, alpha);
-        box(batch, cx + r, hy - px, px * 4f, px * 2f, GOLD_DARK, alpha);
-        float kx = hx + MathUtils.cos(crank) * px * 7f, ky = hy + MathUtils.sin(crank) * px * 7f;
-        box(batch, kx - px * 2f, ky - px * 2f, px * 4f, px * 4f, INK, alpha);
-        box(batch, kx - px, ky - px, px * 2f, px * 2f, RED, alpha);
-        // les cases : des coupes dorées sous le boulier
-        for (int i = 0; i < LOTTERY_SLOTS; i++) {
-            float[] c = trayCenter(i);
-            float w = size * 1.3f, h = size * 0.7f, bottom = c[1] - size / 2f - px * 3f;
-            box(batch, c[0] - w / 2f - px * 2f, bottom - px * 2f, w + px * 4f, h + px * 2f, INK, alpha);
-            box(batch, c[0] - w / 2f, bottom, w, h, GOLD_DARK, alpha);
-            box(batch, c[0] - w / 2f + px * 2f, bottom + px * 2f, w - px * 4f, h - px * 2f, INK, alpha);
-            box(batch, c[0] - w / 2f - px * 2f, bottom + h - px * 2f, w + px * 4f, px * 2f, GOLD, alpha);
-            box(batch, c[0] - px * 3f, bottom - px * 5f, px * 6f, px * 3f, GOLD_DARK, alpha);   // le pied
-            if (i < LOTTERY_SLOTS - 1) label(batch, "+", c[0] + unitSize() * 0.8f, c[1], 1.4f, 0.8f * alpha);
-        }
-        // les boules tirées : elles tombent du bec et rebondissent dans leur coupe
-        for (int i = 0; i < values.size(); i++) {
-            if (time < ballOut(i)) continue;
-            float[] c = trayCenter(i);
-            float f = progress(ballOut(i), ballLand(i));
-            float x = MathUtils.lerp(cx, c[0], Interpolation.pow2Out.apply(f));
-            float y = MathUtils.lerp(spoutY(), c[1], Interpolation.pow2In.apply(f));
-            if (f >= 1f) {   // petits rebonds dans la coupe
-                float since = time - ballLand(i);
-                y = c[1] + Math.abs(MathUtils.sin(since * 14f)) * unitSize() * 0.25f * (float) Math.exp(-since * 6f);
-            }
-            double value = values.get(i);
-            batch.setColor(1f, 1f, 1f, alpha);
-            batch.draw(bigBalls[ballIndex(value)], x - size / 2f, y - size / 2f, size, size);
-            if (f >= 1f) {   // sa valeur s'affiche sous la coupe
-                float pop = Interpolation.swingOut.apply(progress(ballLand(i), ballLand(i) + 0.3f));
-                label(batch, times(value), c[0], c[1] - unitSize() * 1.15f, Math.max(0.01f, 1.3f * pop), alpha);
-                if (value >= 5) sparkle(batch, x + size * 0.5f, y + size * 0.5f, size * 0.12f, time * 4f + i, alpha);
+        batch.draw(bellArt, cx - bw / 2f, by - bh / 2f, bw / 2f, bh, bw, bh, 1f, 1f, swing);
+        if (ring > 0.05f) {   // des ondes en pixels autour de la cloche
+            for (int w = 0; w < 3; w++) {
+                float f = ((time - reveal) * 1.8f + w / 3f) % 1f, d = bw * (0.6f + f * 0.9f);
+                float a = ring * (1f - f) * alpha;
+                for (int s = -1; s <= 1; s += 2) {
+                    box(batch, cx + s * d - p / 2f, by - p * 1.5f, p, p * 3f, GOLD_LIGHT, a);
+                    box(batch, cx + s * (d - p) - p / 2f, by + p * 1.5f, p, p, GOLD_LIGHT, a);
+                    box(batch, cx + s * (d - p) - p / 2f, by - p * 2.5f, p, p, GOLD_LIGHT, a);
+                }
             }
         }
-        // la somme, une fois les trois boules posées
-        if (time >= reveal) {
-            double sum = 0;
-            for (double value : values) sum += value;
+        // la cible dans son logement ; frappée, elle bascule en arrière puis revient en vibrant
+        float tr = targetR(), ty = targetY(), top = ty + tr;
+        box(batch, cx - u * 0.85f - p, ty - u * 0.75f - p, u * 1.7f + p * 2f, u * 1.5f + p * 2f, INK, alpha);
+        box(batch, cx - u * 0.85f, ty - u * 0.75f, u * 1.7f, u * 1.5f, RED_DARK, alpha);
+        box(batch, cx - u * 0.85f, ty + u * 0.75f - p, u * 1.7f, p, GOLD_DARK, alpha);
+        box(batch, cx - u * 0.6f, top - p, u * 1.2f, p * 2f, SILVER_DARK, alpha);   // la charnière
+        box(batch, cx - u * 0.6f, top, u * 1.2f, p, SILVER, alpha);
+        float since = time - PUNCH_HIT;
+        float tilt = since < 0f ? 0f : 0.78f * (float) Math.exp(-since * 4.5f) * Math.abs(MathUtils.cos(since * 9f));
+        float th = tr * 2f * (1f - tilt);
+        batch.setColor(1f, 1f, 1f, alpha);
+        batch.draw(target, cx - tr, top - th, tr * 2f, th);
+        // l'impact : une étoile en pixels
+        if (since >= 0f && since < 0.35f) {
+            float k = 1f - since / 0.35f;
+            sparkle(batch, cx - u * 0.1f, ty, u * 0.5f * k + p, MathUtils.PI / 2f, alpha);
+            sparkle(batch, cx - u * 0.75f, ty + u * 0.45f, u * 0.25f * k + p, MathUtils.PI / 2f, alpha * k);
+            sparkle(batch, cx + u * 0.65f, ty + u * 0.55f, u * 0.2f * k + p, MathUtils.PI / 2f, alpha * k);
+        }
+        // le gant, avec sa manche qui sort de l'écran en bas à droite
+        float[] g = glove();
+        float size = g[2], angle = g[3];
+        float sx = g[0] + MathUtils.sinDeg(angle) * size * 0.35f, sy = g[1] - MathUtils.cosDeg(angle) * size * 0.35f;
+        float sleeve = u * 6f, sw = size * 0.5f;
+        batch.setColor(INK.r, INK.g, INK.b, alpha);
+        batch.draw(pixel, sx - sw / 2f - p, sy - sleeve, sw / 2f + p, sleeve, sw + p * 2f, sleeve, 1f, 1f, angle);
+        batch.setColor(SLEEVE.r, SLEEVE.g, SLEEVE.b, alpha);
+        batch.draw(pixel, sx - sw / 2f, sy - sleeve, sw / 2f, sleeve, sw, sleeve, 1f, 1f, angle);
+        batch.setColor(SLEEVE_DARK.r, SLEEVE_DARK.g, SLEEVE_DARK.b, alpha);
+        batch.draw(pixel, sx + sw / 2f - p * 2f, sy - sleeve, -sw / 2f + p * 2f, sleeve, p * 2f, sleeve, 1f, 1f, angle);
+        batch.setColor(1f, 1f, 1f, alpha);
+        float gh = size * 14f / 12f;
+        batch.draw(gloveArt, g[0] - size / 2f, g[1] - gh / 2f, size / 2f, gh / 2f, size, gh, 1f, 1f, angle);
+        // le multiplicateur, à droite du compteur
+        if (done) {
             float pop = Interpolation.swingOut.apply(progress(reveal, reveal + 0.35f));
-            float[] last = trayCenter(LOTTERY_SLOTS - 1);   // à droite des coupes, comme une addition
-            label(batch, "= " + times(sum), last[0] + unitSize() * 1.6f, last[1], Math.max(0.01f, 1.6f * pop), alpha);
+            label(batch, "= " + times(punchScore() / 100.0), colRight + u * 1.05f, dy, Math.max(0.01f, 1.6f * pop), alpha);
         }
     }
-
-    /** Aligne {@code v} sur la grille des pixels du boulier. */
-    private static float snap(float v, float px) { return Math.round(v / px) * px; }
 
     // --- Textes ----------------------------------------------------------------
 

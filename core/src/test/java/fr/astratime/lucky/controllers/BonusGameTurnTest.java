@@ -109,7 +109,7 @@ class BonusGameTurnTest {
         int games = 20_000;
         for (int i = 0; i < games; i++) seen.merge(BonusGame.Kind.pick(random), 1, Integer::sum);
         assertEquals(games * 0.10, seen.get(BonusGame.Kind.GRID), games * 0.01);
-        for (BonusGame.Kind kind : List.of(BonusGame.Kind.WHEEL, BonusGame.Kind.PLINKO, BonusGame.Kind.LOTTERY)) {
+        for (BonusGame.Kind kind : List.of(BonusGame.Kind.WHEEL, BonusGame.Kind.PLINKO, BonusGame.Kind.PUNCH)) {
             assertEquals(games * 0.30, seen.get(kind), games * 0.015, kind.name());
         }
     }
@@ -129,7 +129,7 @@ class BonusGameTurnTest {
         java.util.Random random = new java.util.Random(5);
         double pot = 1_000_000;
         java.util.Map<BonusGame.Kind, Double> share = java.util.Map.of(
-            BonusGame.Kind.LOTTERY, 0.8, BonusGame.Kind.PLINKO, 0.5, BonusGame.Kind.WHEEL, 0.2);
+            BonusGame.Kind.PUNCH, 0.8, BonusGame.Kind.PLINKO, 0.5, BonusGame.Kind.WHEEL, 0.2);
         for (BonusGame.Kind kind : share.keySet()) {
             double sum = 0, potSum = 0;
             int games = 8_000;
@@ -164,15 +164,19 @@ class BonusGameTurnTest {
     }
 
     @Test
-    void theLotteryAddsThreeBallsAndNeverPaysLessThanThePlinkoAverage() {
+    void thePunchScoreMultipliesAndNeverPaysLessThanThePlinkoAverage() {
         java.util.Random random = new java.util.Random(13);
-        for (int i = 0; i < 2_000; i++) {
-            BonusGame lottery = BonusGame.playSmall(BonusGame.Kind.LOTTERY, 0, 100, 0, random);
-            assertEquals(BonusGame.LOTTERY_BALLS, lottery.getValues().size());
-            double sum = lottery.getValues().stream().mapToDouble(Double::doubleValue).sum();
-            assertEquals(sum * lottery.getUnit(), lottery.getTotal(), 1e-6);
-            assertTrue(sum >= 0.5 * BonusGame.GRID_AVERAGE_LINES, "au pire " + sum + " : plus que la moyenne du rang 2");
+        int bells = 0, games = 4_000;
+        for (int i = 0; i < games; i++) {
+            BonusGame punch = BonusGame.playSmall(BonusGame.Kind.PUNCH, 0, 100, 0, random);
+            int score = punch.getPicked().get(0);
+            assertEquals(0, score % 10);
+            assertTrue(score >= 600 && score < BonusGame.PUNCH_MAX, "score " + score);
+            assertEquals(score / 100.0 * punch.getUnit(), punch.getTotal(), 1e-6);
+            assertTrue(score / 100.0 >= 0.5 * BonusGame.GRID_AVERAGE_LINES, "au pire " + score + " : plus que la moyenne du rang 2");
+            if (score >= BonusGame.PUNCH_BELL) bells++;
         }
+        assertEquals(games * 0.19, bells, games * 0.03, "la cloche sonne environ une fois sur cinq");
     }
 
     @Test
