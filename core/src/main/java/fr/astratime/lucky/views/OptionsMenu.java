@@ -353,7 +353,7 @@ public class OptionsMenu implements Disposable {
     /**
      * @param onEffectsChanged appelé après la bascule des effets (ex : arrêter une secousse en cours)
      * @return les réglages d'accessibilité : effets réduits, enseignes renforcées (jeu à quatre
-     *         couleurs), grand texte des infobulles
+     *         couleurs), grand texte des infobulles, manette activée ou non
      */
     public static List<Entry> accessibilityEntries(VisualSettings visual, Runnable onEffectsChanged) {
         Runnable toggleEffects = () -> {
@@ -362,13 +362,16 @@ public class OptionsMenu implements Disposable {
         };
         Runnable toggleSuits    = () -> visual.setStrongSuitColors(!visual.isStrongSuitColors());
         Runnable toggleTooltips = () -> visual.setLargeTooltips(!visual.isLargeTooltips());
+        Runnable toggleGamepad  = () -> visual.setGamepadEnabled(!visual.isGamepadEnabled());
         return List.of(
             new Entry(() -> visual.isReducedEffects() ? Lang.t("Effets : réduits") : Lang.t("Effets : normaux"), toggleEffects,
                 direction -> toggleEffects.run()),
             new Entry(() -> visual.isStrongSuitColors() ? Lang.t("Enseignes : renforcées") : Lang.t("Enseignes : normales"),
                 toggleSuits, direction -> toggleSuits.run()),
             new Entry(() -> visual.isLargeTooltips() ? Lang.t("Infobulles : grand texte") : Lang.t("Infobulles : texte normal"),
-                toggleTooltips, direction -> toggleTooltips.run()));
+                toggleTooltips, direction -> toggleTooltips.run()),
+            new Entry(() -> visual.isGamepadEnabled() ? Lang.t("Manette : activée") : Lang.t("Manette : désactivée"),
+                toggleGamepad, direction -> toggleGamepad.run()));
     }
 
     /** Volume au clic : palier suivant, puis retour à 0 après le maximum. */

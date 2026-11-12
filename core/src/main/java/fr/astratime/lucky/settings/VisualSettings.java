@@ -22,6 +22,7 @@ public class VisualSettings {
     private static final String ANIMATION_SPEED = "animationSpeed";
     private static final String STRONG_SUITS    = "strongSuitColors";
     private static final String LARGE_TOOLTIPS  = "largeTooltips";
+    private static final String GAMEPAD         = "gamepad";
     private static final String COLORED_CARDS   = "coloredCards";
     private static final String FRONT_VIEW      = "frontView";
 
@@ -90,6 +91,17 @@ public class VisualSettings {
     /** Choisit la vue de face ou la vue classique de la table, et mémorise le choix. */
     public void setFrontView(boolean front) {
         preferences.putBoolean(FRONT_VIEW, front);
+        preferences.flush();
+    }
+
+    /** @return true si la manette pilote le jeu (activée par défaut). */
+    public boolean isGamepadEnabled() {
+        return preferences.getBoolean(GAMEPAD, true);
+    }
+
+    /** Active ou désactive la manette, et mémorise le choix. */
+    public void setGamepadEnabled(boolean enabled) {
+        preferences.putBoolean(GAMEPAD, enabled);
         preferences.flush();
     }
 }

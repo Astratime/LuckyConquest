@@ -62,6 +62,27 @@ versions d'avant), `lucky-conquest-save-2` et `lucky-conquest-save-3` (dans le d
 l'utilisateur), chacune avec une copie de secours `.bak`. Les fichiers sont signés : modifiés à
 la main, ils sont refusés. Les options (affichage, son, langue) sont communes aux trois parties.
 
+## Jouer à la manette
+
+Le jeu se joue au clavier et à la souris, ou à la manette (Xbox, PlayStation, Steam Deck,
+Switch Pro… branchée ou en Bluetooth). La manette pilote le pointeur : tout ce qui se fait
+à la souris se fait aussi à la manette.
+
+| Manette (Xbox / PlayStation) | Action |
+|---|---|
+| Croix ou stick gauche | Sauter au bouton suivant dans cette direction (cadre doré, infobulle) ; régler une option à gauche/droite |
+| Stick droit | Déplacer le pointeur librement |
+| A / Croix | Clic (valider, jouer une carte) ; tire le levier du duel |
+| X / Carré | Clic droit (fiche d'une carte) |
+| B / Rond | Retour, fermer une fenêtre |
+| Start / Options | Menu pause |
+| Y / Triangle | Combat : lancer la machine |
+| LB / L1 | Combat : changer la Mise ; ailleurs : onglet précédent |
+| RB / R1 | Combat : ouvrir l'échoppe ; ailleurs : onglet suivant |
+| Gâchettes LT / RT | Faire défiler (listes, bloc des effets) |
+
+La manette se désactive dans Options > Accessibilité.
+
 ## Pour les développeurs
 
 Le jeu est écrit en Java 21 avec [libGDX](https://libgdx.com/).

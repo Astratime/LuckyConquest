@@ -32,8 +32,9 @@ if (JavaVersion.current().isJava9Compatible()) {
 }
 
 dependencies {
-  // gdx-controllers, gdx-box2d et gdx-bullet retirés avec leur pendant côté
-  // core : aucune manette ni physique 2D/3D n'est utilisée par le jeu.
+  // gdx-box2d et gdx-bullet retirés avec leur pendant côté core (aucune physique).
+  // Manettes sur ordinateur (SDL via Jamepad : Windows, Mac, Linux, Steam Deck).
+  implementation "com.badlogicgames.gdx-controllers:gdx-controllers-desktop:$gdxControllersVersion"
   implementation "com.badlogicgames.gdx:gdx-backend-lwjgl3:$gdxVersion"
   implementation "com.badlogicgames.gdx:gdx-freetype-platform:$gdxVersion:natives-desktop"
   implementation "com.badlogicgames.gdx:gdx-platform:$gdxVersion:natives-desktop"

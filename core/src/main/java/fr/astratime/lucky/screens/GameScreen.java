@@ -2327,8 +2327,8 @@ public class GameScreen extends ScreenAdapter {
      * Installe le processeur d'entrée de l'écran : le Stage (clics, survols)
      * en priorité, puis les raccourcis clavier : Espace ou F lance la machine si
      * possible, M change la Mise, 1 à 9 jouent la carte à cette place de la main,
-     * B ouvre l'échoppe, J ouvre ou replie le journal du combat ; Échap ferme la fenêtre ouverte
-     * (carte, échoppe, pile, journal) ou, s'il
+     * B ouvre l'échoppe, J ouvre ou replie le journal du combat (à la manette : Y lance,
+     * LB la Mise, RB l'échoppe) ; Échap ferme la fenêtre ouverte (carte, échoppe, pile, journal) ou, s'il
      * n'y en a pas, ouvre le menu pause. La pioche est automatique au début de
      * chaque tour du joueur.
      */
@@ -2359,7 +2359,8 @@ public class GameScreen extends ScreenAdapter {
                     return true;
                 }
                 if (cutscene != null && cutscene.isPlaying()) {
-                    cutscene.skip(); // n'importe quelle autre touche passe la cinématique
+                    // la scène peut se servir de la touche (levier du duel) ; sinon toute autre touche la passe
+                    if (!cutscene.keyDown(keycode)) cutscene.skip();
                     return true;
                 }
                 if (jackpotCelebration != null && jackpotCelebration.skip()) return true; // une touche passe aussi un Bingo déjà vu
@@ -2372,19 +2373,20 @@ public class GameScreen extends ScreenAdapter {
                     || rainbowAnimation.isPlaying()) {
                     return true; // un choix ou une animation de carte est en cours
                 }
-                if ((keycode == Input.Keys.F || keycode == Input.Keys.SPACE) && !spinControls.isDisabled()) {
+                if ((keycode == Input.Keys.F || keycode == Input.Keys.SPACE || keycode == Input.Keys.BUTTON_Y)
+                    && !spinControls.isDisabled()) {
                     onSpin();
                     return true;
                 }
                 // M : la touche M d'un clavier AZERTY arrive comme le point-virgule (place QWERTY)
-                if (keycode == Input.Keys.M || keycode == Input.Keys.SEMICOLON) {
+                if (keycode == Input.Keys.M || keycode == Input.Keys.SEMICOLON || keycode == Input.Keys.BUTTON_L1) {
                     onStake();
                     return true;
                 }
                 if (guide != null && guide.isActive()) return false; // le Croupier guide : cartes et échoppe à la souris
                 int card = cardKey(keycode);
                 if (card >= 0 && !spinControls.isDisabled()) return hand.playAt(card);
-                if (keycode == Input.Keys.B) {
+                if (keycode == Input.Keys.B || keycode == Input.Keys.BUTTON_R1) {
                     openShop();
                     return true;
                 }

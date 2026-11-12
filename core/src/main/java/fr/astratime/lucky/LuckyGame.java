@@ -30,6 +30,9 @@ public class LuckyGame extends Game {
 
     private final ScreenModeSwitcher screenModeSwitcher;
 
+    /** Manette : pilote le pointeur sur tous les écrans (réglable dans Options > Accessibilité). */
+    private fr.astratime.lucky.input.GamepadInput gamepad;
+
     /** Les emplacements de sauvegarde. */
     private SaveSlots slots;
     /** Emplacement de la partie chargée ({@link #profile}). */
@@ -64,6 +67,8 @@ public class LuckyGame extends Game {
         // brouillés du build livré, transparent si les assets sont en clair (dev).
         fr.astratime.lucky.security.ObfuscatedFiles.install();
         batch = new SpriteBatch();
+        fr.astratime.lucky.settings.VisualSettings visual = new fr.astratime.lucky.settings.VisualSettings();
+        gamepad = new fr.astratime.lucky.input.GamepadInput(visual::isGamepadEnabled);
         assets = new SharedAssets();
         Lang.load();
         if (tampered > 0) {
@@ -164,10 +169,15 @@ public class LuckyGame extends Game {
         return notices.isEmpty() ? null : notices.remove(0);
     }
 
-    /** Délègue le rendu à l'écran actif (voir {@link Game#render()}). */
+    /**
+     * Lit la manette (qui agit sur l'écran actif comme la souris), délègue le rendu à
+     * l'écran actif (voir {@link Game#render()}), puis encadre l'élément choisi à la manette.
+     */
     @Override
     public void render() {
+        if (gamepad != null) gamepad.update(com.badlogic.gdx.Gdx.graphics.getDeltaTime());
         super.render();
+        if (gamepad != null) gamepad.draw();
     }
 
     /**
@@ -182,6 +192,7 @@ public class LuckyGame extends Game {
         if (current != null) current.dispose();
         assets.dispose();
         batch.dispose();
+        if (gamepad != null) gamepad.dispose();
     }
 
     /** Passe la fenêtre du jeu en mode {@code mode} (choisi dans les options). */
