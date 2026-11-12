@@ -77,7 +77,7 @@ public class HandView {
     /** Teinte des cartes quand la main est bloquée (Bingo), ou d'une carte qui ne peut pas être jouée. */
     private static final float LOCKED_TINT    = 0.45f;
     /** Image du dos des cartes, montrée à la place des cartes d'une main cachée (Aveuglement). */
-    private static final String BACK_PATH = "cards/light/BACK.png";
+    private String backPath = "cards/light/BACK.png";
 
     /** Infobulle de la carte : son nom et sa description, suivis de la raison si elle ne peut pas être jouée. */
     private void showTooltip(CardImage cardImage) {
@@ -126,6 +126,11 @@ public class HandView {
     private boolean                locked;
     /** Cartes à montrer face cachée quand elles arrivent dans la main (Aveuglement de l'ennemi). */
     private Set<Card>    toHide = Set.of();
+    /** @param path image du dos des cartes du joueur (cosmétique « Dos de cartes »), pour une main cachée. */
+    public void setBackPath(String path) {
+        backPath = path;
+    }
+
     /** Images de la main montrées face cachée. */
     private final Set<Image> hiddenImages = new HashSet<>();
     private final VisualSettings visualSettings = new VisualSettings();
@@ -213,7 +218,7 @@ public class HandView {
     /** Crée l'image de {@code card} et l'ajoute à la main (à la fin de la rangée). */
     private CardImage createImage(Card card) {
         boolean hidden = toHide.contains(card);
-        Texture face = hidden ? cardTextures.get(BACK_PATH) : cardTextures.get(card);
+        Texture face = hidden ? cardTextures.get(backPath) : cardTextures.get(card);
         CardImage cardImage = new CardImage(new TextureRegionDrawable(new TextureRegion(face)));
         cardImage.setFoil(!hidden && foil(card));
         if (hidden) hiddenImages.add(cardImage);

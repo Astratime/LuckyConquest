@@ -9,6 +9,7 @@ import com.badlogic.gdx.scenes.scene2d.utils.NinePatchDrawable;
 import com.badlogic.gdx.scenes.scene2d.utils.TiledDrawable;
 import com.badlogic.gdx.utils.Disposable;
 import fr.astratime.lucky.entities.exploration.Place;
+import fr.astratime.lucky.progress.Cosmetic;
 
 /**
  * Textures pixel art de la table de casino (assets/table) : rebord en cuir,
@@ -48,13 +49,22 @@ public class TableTextures implements Disposable {
      * @param folder dossier des textures : {@code table} pour la table d'origine,
      *               {@code table/<lieu>} pour la table d'un lieu ({@link #forPlace})
      */
-    public TableTextures(String folder) {
+    public TableTextures(String folder) { this(folder, null, null); }
+
+    /**
+     * @param folder        dossier des textures (voir {@link #TableTextures(String)})
+     * @param feltPath      feutre d'un cosmétique « Tapis », {@code null} pour celui de {@code folder}
+     * @param machineFolder dossier (avec la barre finale) de la carrosserie et des fenêtres d'un
+     *                      cosmétique « Machine », {@code null} pour celles de {@code folder}
+     */
+    public TableTextures(String folder, String feltPath, String machineFolder) {
+        String machine = machineFolder != null ? machineFolder : folder + "/";
         rail       = load(folder + "/table_rail.png");
-        felt       = load(folder + "/felt.png");
+        felt       = load(feltPath != null ? feltPath : folder + "/felt.png");
         cardSlot   = load(folder + "/card_slot.png");
         pileMat    = load(folder + "/pile_mat.png");
-        reelFrame  = load(folder + "/reel_frame.png");
-        reelCell   = load(folder + "/reel_cell.png");
+        reelFrame  = load(machine + "reel_frame.png");
+        reelCell   = load(machine + "reel_cell.png");
         feltLine   = load(folder + "/felt_line.png");
         feltEmblem = load(folder + "/felt_emblem.png");
         bulbs      = load(folder + "/bulbs.png");
@@ -67,8 +77,19 @@ public class TableTextures implements Disposable {
      *         air), ou la table de casino d'origine pour le Casino et hors Exploration
      */
     public static TableTextures forPlace(Place place) {
-        if (place == null || place == Place.CASINO) return new TableTextures();
-        return new TableTextures("table/" + place.name().toLowerCase(java.util.Locale.ROOT));
+        return forPlace(place, null, null);
+    }
+
+    /**
+     * @param felt    cosmétique « Tapis » choisi ({@code null} ou d'origine : le feutre du lieu)
+     * @param machine cosmétique « Machine » choisi ({@code null} ou d'origine : la machine du lieu)
+     * @return la table du lieu {@code place} (voir {@link #forPlace(Place)}), habillée des cosmétiques choisis
+     */
+    public static TableTextures forPlace(Place place, Cosmetic felt, Cosmetic machine) {
+        String folder = place == null || place == Place.CASINO ? "table"
+            : "table/" + place.name().toLowerCase(java.util.Locale.ROOT);
+        return new TableTextures(folder, felt == null ? null : felt.getFeltPath(),
+            machine == null ? null : machine.getMachineFolder());
     }
 
     /** @return le rebord de la table (centre transparent, le feutre est dessous). */
