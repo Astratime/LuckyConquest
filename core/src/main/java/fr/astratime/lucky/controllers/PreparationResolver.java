@@ -19,6 +19,7 @@ import fr.astratime.lucky.entities.events.ComboEvent;
 import fr.astratime.lucky.entities.events.CorruptionEvent;
 import fr.astratime.lucky.entities.events.GainsEarnedEvent;
 import fr.astratime.lucky.entities.events.StatusEvent;
+import fr.astratime.lucky.entities.exploration.Crossroads;
 import fr.astratime.lucky.entities.exploration.PlaceRule;
 import fr.astratime.lucky.i18n.Lang;
 import fr.astratime.lucky.popups.EffectPopup;
@@ -76,6 +77,10 @@ public class PreparationResolver {
 
         LastingEffects lasting = player.getLastingEffects();
         lasting.getRemovedSymbols().keySet().forEach(spinContext::removeSymbol);
+        if (lasting.getFavoredSymbol() != null) { // Machine abandonnée du carrefour : son symbole sort 2 fois plus
+            spinContext.addWeightBoost(lasting.getFavoredSymbol(),
+                SlotMachine.BASE_WEIGHT * (Crossroads.MACHINE_FACTOR - 1));
+        }
         spinContext.blockReel(lasting.takeForbiddenReel()); // Rouleau interdit de l'ennemi
         // Rouleaux volés par la Machine Originelle : d'abord celui de droite, puis celui de gauche.
         int stolen = enemy.getStolenReels();

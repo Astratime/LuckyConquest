@@ -67,6 +67,8 @@ public class LastingEffects {
     private int bubbleTurns = 0;
     /** Grignotage : cartes rongées dans la main, à la prochaine pioche. */
     private int nibbles = 0;
+    /** Machine abandonnée du carrefour : symbole qui sort 2 fois plus souvent pendant tout le combat ({@code null} : aucun). */
+    private Symbol favoredSymbol;
     /** Aveuglement : cartes de la prochaine main piochées face cachée (une par Aveuglement, ils se cumulent). */
     private int blindCards = 0;
     /** Chant : cartes de la prochaine main jouées d'office, au hasard. */
@@ -365,6 +367,12 @@ public class LastingEffects {
     public int getBubbleTurns() { return bubbleTurns; }
 
     /** Grignotage : une carte de plus sera rongée à la prochaine pioche. */
+    /** Machine abandonnée : {@code symbol} sort 2 fois plus souvent jusqu'à la fin du combat. */
+    public void setFavoredSymbol(Symbol symbol) { favoredSymbol = symbol; }
+
+    /** @return le symbole favorisé par la Machine abandonnée, ou {@code null}. */
+    public Symbol getFavoredSymbol() { return favoredSymbol; }
+
     public void addNibble() { nibbles++; }
     /** @return les cartes qui seront rongées à la prochaine pioche. */
     public int getNibbles() { return nibbles; }
@@ -746,7 +754,7 @@ public class LastingEffects {
     public boolean isEmpty() {
         return removedSymbols.isEmpty() && gainBonus == 0f && corruptionTurns == 0 && extraPlaysTurns == 0
             && blades == 0 && blood == 0 && vault == 0 && safes.isEmpty() && goldVeinTurns == 0 && bubbleTurns == 0
-            && nibbles == 0 && blindCards == 0 && songs == 0 && drunk == 0 && nuggetDraws == 0
+            && nibbles == 0 && favoredSymbol == null && blindCards == 0 && songs == 0 && drunk == 0 && nuggetDraws == 0
             && fakeGains == 0 && taxes == 0 && laterTaxes == 0 && houseRuleTurns == 0
             && traps == 0 && lanternDraws == 0 && earplugDraws == 0 && propTurns == 0 && lamps == 0
             && cageTurns == 0 && anchorTurns == 0 && temperPercent == 0 && bonusPlays == 0

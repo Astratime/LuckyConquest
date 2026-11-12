@@ -3,9 +3,11 @@ package fr.astratime.lucky.entities.exploration;
 import fr.astratime.lucky.entities.enemy.EnemyKind;
 import fr.astratime.lucky.entities.run.CombatRun;
 
+import java.util.Random;
+
 /**
  * Une descente dans un donjon de l'Exploration : le soldat de la couleur, puis
- * son roi. Une défaite fait recommencer le donjon au soldat ; après le roi, le
+ * son roi, avec entre les deux le carrefour (voir {@link Crossroads}). Une défaite fait recommencer le donjon au soldat ; après le roi, le
  * joueur ouvre le coffre au trésor (voir {@link Dungeon#rollLoot}).
  */
 public class DungeonRun implements CombatRun {
@@ -19,6 +21,8 @@ public class DungeonRun implements CombatRun {
     private final int     startStage;
     /** Cartes au trésor jouées pendant la descente (perdues si le donjon recommence). */
     private int           treasureMaps;
+    /** Le carrefour entre le soldat et le roi, et ce qu'il donne contre le roi. */
+    private final Crossroads crossroads = new Crossroads(new Random());
 
     public DungeonRun(Dungeon dungeon) {
         this(dungeon, 0);
@@ -58,6 +62,7 @@ public class DungeonRun implements CombatRun {
     public void restart() {
         stage = startStage;
         treasureMaps = 0;
+        crossroads.reset();
     }
 
     @Override
@@ -65,6 +70,9 @@ public class DungeonRun implements CombatRun {
 
     @Override
     public PlaceRule getPlaceRule() { return Place.of(dungeon).getRule(); }
+
+    /** @return le carrefour du donjon, entre le soldat et le roi. */
+    public Crossroads getCrossroads() { return crossroads; }
 
     /** Carte au trésor jouée : le coffre de ce donjon donnera une carte de plus. */
     public void addTreasureMap() { treasureMaps++; }

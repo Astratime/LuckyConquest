@@ -34,6 +34,7 @@ import fr.astratime.lucky.entities.enemy.Difficulty;
 import fr.astratime.lucky.entities.enemy.EnemyCards;
 import fr.astratime.lucky.entities.enemy.EnemyKind;
 import fr.astratime.lucky.entities.enemy.EnemySymbol;
+import fr.astratime.lucky.entities.exploration.Crossroads;
 import fr.astratime.lucky.entities.exploration.PlaceRule;
 import fr.astratime.lucky.i18n.Lang;
 import fr.astratime.lucky.loaders.CardLoader;
@@ -122,6 +123,9 @@ public class GameController {
     /** Paris placés ce tour, pour les afficher en attendant le tirage. */
     private final List<Symbol> betsThisTurn = new ArrayList<>();
 
+    /** Cartes du carrefour posées sur le deck : piochées en plus de la main habituelle, au premier tour contre le roi. */
+    private int boonDraws;
+
     /** Fournit un deck de départ neuf à chaque combat. */
     private final Supplier<List<Card>> starterDeck;
 
@@ -208,6 +212,7 @@ public class GameController {
         spinCostActive = true;
         player.addGains(SpinEconomy.startingGains(gameState.getEnemy().getSpinCost())); // une fois par chapitre de la Tour
         treasureMaps = 0;
+        boonDraws = 0;
         bought.clear();
         reelStall.open(player.getSlotMachine().getReels());
         clearTurn();
@@ -223,9 +228,28 @@ public class GameController {
         Player player = gameState.getPlayer().nextCombat();
         this.gameState = new GameState(player, createEnemy(kind, player));
         gameState.setPlaceRule(placeRule);
+        boonDraws = 0;
         bought.clear();
         reelStall.open(player.getSlotMachine().getReels());
         clearTurn();
+    }
+
+    /**
+     * Début du combat contre le roi d'un donjon : l'avantage gagné au carrefour
+     * (symbole favorisé, cartes ajoutées à la main, cartes jouables en plus au premier tour).
+     */
+    public void applyBoon(Crossroads.Boon boon) {
+        Player player = gameState.getPlayer();
+        LastingEffects lasting = player.getLastingEffects();
+        if (boon.favored() != null) lasting.setFavoredSymbol(boon.favored());
+        for (String id : boon.cards()) player.getDeck().putOnTop(cardFactory.apply(id)); // piochées en plus à la 1re main
+        boonDraws = boon.cards().size();
+        if (boon.extraPlays() > 0) lasting.addBonusPlays(boon.extraPlays());
+    }
+
+    /** @return les ids des cartes de l'échoppe (celles que le Tripot du carrefour peut offrir). */
+    public List<String> getStallCardIds() {
+        return shopOffers.stream().map(offer -> offer.card().getId()).toList();
     }
 
     /**
@@ -343,7 +367,9 @@ public class GameController {
         }
         int buried = lasting.takeRockfalls(); // Éboulement : des cartes de moins
         int laughs = lasting.takeNextDraws(); // Rire du Joker : des cartes de plus
-        DrawResult drawn = player.draw(Math.max(1, DEFAULT_DRAW_COUNT - buried + laughs));
+        int gifts = boonDraws; // cartes du carrefour, sur le dessus du deck
+        boonDraws = 0;
+        DrawResult drawn = player.draw(Math.max(1, DEFAULT_DRAW_COUNT - buried + laughs) + gifts);
         if (laughs > 0) {
             turnNotices.add(new EffectPopup(Lang.f("RIRE DU JOKER : {0} CARTES DE PLUS", laughs), EffectPopup.Style.DRAW,
                 PopupScale.SECONDARY_INTENSITY));

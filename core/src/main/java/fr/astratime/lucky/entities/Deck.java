@@ -56,6 +56,11 @@ public class Deck {
         cards.add(RANDOM.nextInt(cards.size() + 1), card);
     }
 
+    /** Pose {@code card} sur le dessus du deck : c'est la prochaine carte piochée. */
+    public void putOnTop(Card card) {
+        cards.add(card);
+    }
+
     /** @return les cartes restantes dans le deck. */
     public List<Card> getCards() { return cards; }
 }
