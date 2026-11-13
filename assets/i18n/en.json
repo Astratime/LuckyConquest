@@ -1016,12 +1016,14 @@
   "Tour des épreuves : six chapitres de combats, jusqu'au sommet. Elle ne rapporte pas de pièces.": "Tower of Trials: six chapters of fights, up to the top. It earns no coins.",
   "Exploration : des donjons, leurs rois et leurs coffres. Les seuls combats qui rapportent des pièces.": "Exploration: dungeons, their kings and their chests. The only fights that earn coins.",
   "Table du croupier : ton deck de 20 cartes et les 11 rouleaux de ta machine.": "Dealer's Table: your 20-card deck and the 11 reels of your machine.",
-  "Boutique : tes pièces y achètent des rangs, des cartes et des rouleaux.": "Shop: your coins buy ranks, cards and reels there.",
+  "Boutique : tes pièces y achètent des rangs, des cartes, des rouleaux et des cosmétiques.": "Shop: your coins buy ranks, cards, reels and cosmetics there.",
   "Options : le tutoriel s'y rejoue. Bonne chance à la table.": "Options: the tutorial can be replayed there. Good luck at the table.",
   "BOUTIQUE": "SHOP",
   "Acheter": "Buy",
   "La Boutique. Tes pièces s'y dépensent. Seuls les combats d'Exploration en rapportent.": "The Shop. Your coins are spent here. Only Exploration fights earn them.",
-  "Trois onglets : Rang, Cartes et Rouleau.": "Three tabs: Rank, Cards and Reel.",
+  "Quatre onglets : Rang, Cartes, Rouleau et Cosmétiques.": "Four tabs: Rank, Cards, Reel and Cosmetics.",
+  "Onglet Cosmétiques : le dos de tes cartes, ton tapis et ta machine. Ils ne changent rien aux combats.": "Cosmetics tab: your card backs, your table mat and your machine. They change nothing in combat.",
+  "Les cosmétiques habillent ton jeu sans rien changer aux combats. Certains se débloquent par les succès ou le bestiaire, les autres s'achètent.": "Cosmetics dress up your game without changing anything in combat. Some unlock through achievements or the bestiary, the others are bought.",
   "Onglet Rang. Un rang te rend plus fort dans tous les combats. Ils s'achètent dans l'ordre ; chacun remplace le précédent.": "Rank tab. A rank makes you stronger in every fight. They are bought in order; each one replaces the previous one.",
   "Ouvre l'onglet Cartes.": "Open the Cards tab.",
   "Clique sur une carte pour la choisir.": "Click a card to pick it.",
@@ -2756,5 +2758,7 @@
   "Carnet": "Notebook",
   "Fiche": "Profile",
   "Carnet du Croupier, page {0} / {1}\n« {2} »": "The Dealer's notebook, page {0} / {1}\n\"{2}\"",
-  "Carnet du Croupier, page {0} / {1}\nBats-le pour trouver sa page.": "The Dealer's notebook, page {0} / {1}\nBeat him to find his page."
+  "Carnet du Croupier, page {0} / {1}\nBats-le pour trouver sa page.": "The Dealer's notebook, page {0} / {1}\nBeat him to find his page.",
+  "Cinématique : les cinématiques que tu as déjà vues, à revoir quand tu veux.": "Cutscenes: the cutscenes you have already seen, to watch again whenever you like.",
+  "Aucune cinématique vue pour l'instant. Affronte un boss ou un roi : sa cinématique se revoit ensuite ici.": "No cutscene seen yet. Face a boss or a king: you can then watch its cutscene again here."
 }

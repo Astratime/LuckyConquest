@@ -300,7 +300,12 @@ public class EnemyTurnResolver {
             int plays = enemy.getPlaysPerTurn(); // le Kraken joue une carte par bras qui lui reste
             if (kind == EnemyKind.GRAND_CROUPIER && enemy.getPhase() >= 3) plays += EnemyKind.CROUPIER_OPEN_PLAYS;
             // Main trop pleine de cartes propres : il pioche juste assez pour jouer ses cartes habituelles.
+            // Comme pour le joueur, sa main ne dépasse jamais Enemy.HAND_SIZE : une carte propre qu'il
+            // ne jouera pas ce tour (en double, ou au-delà de ce qu'il peut jouer) part dans sa défausse
+            // pour laisser la place à la nouvelle carte. Il joue donc les mêmes cartes qu'avant. Seul le
+            // Kraken (8 bras + sa carte propre) peut encore en avoir 9 : toutes lui servent.
             for (int tries = 0; drawn.size() - signatures(drawn) < plays && tries < Enemy.HAND_SIZE; tries++) {
+                if (drawn.size() >= Enemy.HAND_SIZE) discardUselessOwnCard();
                 List<Card> more = enemy.draw(1);
                 if (more.isEmpty()) break;
                 drawn.addAll(more);
@@ -334,6 +339,23 @@ public class EnemyTurnResolver {
                     EnemyMaluses.HELL_MAX_CARDS, EnemyMaluses.HELL_DAMAGE_PERCENT), EffectPopup.Style.DEFENSE));
             }
 
+        }
+
+        /**
+         * Sa main est pleine : une carte propre qu'il ne jouera pas ce tour part dans sa défausse.
+         *
+         * @return {@code false} s'il n'en a aucune (toutes ses cartes servent)
+         */
+        private boolean discardUselessOwnCard() {
+            List<Card> kept = ownCards(drawn, enemy);
+            for (int i = drawn.size() - 1; i >= 0; i--) {
+                Card card = drawn.get(i);
+                if (EnemySignature.of(card) != null && kept.stream().noneMatch(own -> own == card)) {
+                    enemy.discard(List.of(drawn.remove(i)));
+                    return true;
+                }
+            }
+            return false;
         }
 
         /** Ce que valent les cartes jouées : cartes propres, Ombre, bonus de chaque couleur, chance. */

@@ -219,6 +219,18 @@ public class TableView {
     /** @return l'abscisse (Stage) de l'emplacement de carte {@code slot} de l'ennemi (0 à gauche). */
     public float getEnemyCardSlotX(int slot) { return getHandSlotX(slot); }
 
+    /**
+     * @return l'abscisse (Stage) de la carte {@code slot} d'une main de {@code count} cartes :
+     *         au-delà de {@link Enemy#HAND_SIZE} (le Kraken : 8 bras + sa carte propre), les
+     *         cartes se resserrent pour tenir entre le premier et le dernier emplacement
+     */
+    public float getEnemyCardSlotX(int slot, int count) {
+        if (count <= Enemy.HAND_SIZE) return getEnemyCardSlotX(slot);
+        float first = getEnemyCardSlotX(0);
+        float last  = getEnemyCardSlotX(Enemy.HAND_SIZE - 1);
+        return first + slot * (last - first) / (count - 1);
+    }
+
     /** @return l'ordonnée (Stage) du bas des rouleaux de l'ennemi, au-dessus de ses cartes. */
     public float getEnemyReelRowY() {
         return getEnemyCardRowY() + cardHeight + HAND_GAP + REEL_FRAME_PAD;

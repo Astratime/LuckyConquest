@@ -400,7 +400,7 @@ public class EnemyView implements Disposable {
         float centerY    = table.getEnemyReelRowY() + SlotView.CELL_HEIGHT / 2f;
         defense.setPosition(reelsRight + DEFENSE_GAP, centerY - defense.getHeight() / 2f);
         for (int i = 0; i < handCards.size(); i++) {
-            handCards.get(i).setPosition(table.getEnemyCardSlotX(i), table.getEnemyCardRowY());
+            handCards.get(i).setPosition(table.getEnemyCardSlotX(i, handCards.size()), table.getEnemyCardRowY());
         }
     }
 
@@ -484,7 +484,7 @@ public class EnemyView implements Disposable {
                 Actions.delay(i * DEAL_STAGGER),
                 Actions.visible(true),
                 Actions.run(cardSound::play),
-                Actions.moveTo(table.getEnemyCardSlotX(i), table.getEnemyCardRowY(), DEAL_TIME, Interpolation.pow2Out)));
+                Actions.moveTo(table.getEnemyCardSlotX(i, drawn.size()), table.getEnemyCardRowY(), DEAL_TIME, Interpolation.pow2Out)));
             group.addActorBefore(character, card);
             handCards.add(card);
         }
