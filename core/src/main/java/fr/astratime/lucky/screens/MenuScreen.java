@@ -17,8 +17,10 @@ import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.Touchable;
 import com.badlogic.gdx.scenes.scene2d.actions.Actions;
 import com.badlogic.gdx.scenes.scene2d.ui.Image;
+import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 import com.badlogic.gdx.utils.ScreenUtils;
+import fr.astratime.lucky.GameVersion;
 import fr.astratime.lucky.LuckyGame;
 import fr.astratime.lucky.assets.EnemyTextures;
 import fr.astratime.lucky.assets.Fonts;
@@ -91,6 +93,9 @@ public class MenuScreen extends ScreenAdapter {
     private static final float PARALLAX_EASE  = 4f;
     /** Le Croupier parle une fois les options apparues. */
     private static final float GUIDE_DELAY    = 0.9f;
+    /** Numéro de version, discret, en bas à droite de l'écran. */
+    private static final int   VERSION_SIZE   = 28;
+    private static final float VERSION_MARGIN = 14f;
 
     private final LuckyGame      luckyGame;
     /** Communs à tous les écrans (voir {@link SharedAssets}) : ne jamais les libérer ici. */
@@ -104,6 +109,7 @@ public class MenuScreen extends ScreenAdapter {
     private final DisplaySettings display = new DisplaySettings();
     private final BitmapFont     titleFont;
     private final BitmapFont     shineFont;
+    private final BitmapFont     versionFont;
     private final Sound          clickSound;
     private final Sound          hoverSound;
     private final BackgroundMusic music;
@@ -112,6 +118,10 @@ public class MenuScreen extends ScreenAdapter {
     private final ShiningTitle      title;
     private final OptionsMenu       menu;
     private final Image             fade;
+    /** « Version 1.0.0 » : aide Astra et les joueurs à savoir quel build tourne. */
+    private final Label             version;
+    /** Langue du texte de {@link #version} : il est réécrit quand elle change dans les options. */
+    private Lang.Language           versionLanguage;
     /** Le Croupier : il propose le tutoriel au premier lancement, puis présente le menu après le tutoriel. */
     private final Texture           croupier = EnemyTextures.newCroupierPortrait();
     private final GuideOverlay      guide;
@@ -159,6 +169,12 @@ public class MenuScreen extends ScreenAdapter {
 
         stage.addActor(decor);
         stage.addActor(title);
+        versionFont = Fonts.jersey(VERSION_SIZE, Palette.TEXT_BODY, 2f, shadow);
+        version     = new Label("", new Label.LabelStyle(versionFont, Color.WHITE));
+        version.setColor(1f, 1f, 1f, 0.75f);
+        version.setTouchable(Touchable.disabled);
+        refreshVersion();
+        stage.addActor(version);
         menu = new OptionsMenu(stage, hud, clickSound, hoverSound);
 
         if (home) showHomePage();
@@ -558,7 +574,23 @@ public class MenuScreen extends ScreenAdapter {
             Actions.moveBy(0f, TITLE_FLOAT, 1.4f, Interpolation.sine),
             Actions.moveBy(0f, -TITLE_FLOAT, 1.4f, Interpolation.sine))));
 
+        placeVersion();
         placeMenu();
+    }
+
+    /** Réécrit le numéro de version dans la langue en cours (une fois par changement de langue). */
+    private void refreshVersion() {
+        if (versionLanguage == Lang.get()) return;
+        versionLanguage = Lang.get();
+        version.setText(Lang.f("Version {0}", GameVersion.VERSION));
+        version.pack();
+        placeVersion();
+    }
+
+    /** Numéro de version dans le coin en bas à droite. */
+    private void placeVersion() {
+        float width = stage.getViewport().getWorldWidth();
+        version.setPosition(width - VERSION_MARGIN - version.getWidth(), VERSION_MARGIN);
     }
 
     /** Décale le décor selon la parallaxe courante (il déborde de PARALLAX de chaque côté). */
@@ -632,6 +664,7 @@ public class MenuScreen extends ScreenAdapter {
         ScreenUtils.clear(Color.BLACK);
         if (!settings.isReducedEffects()) updateParallax(delta);
         music.update(); // suit le réglage « Musique » des options
+        refreshVersion();
         stage.act(delta);
         stage.draw();
     }
@@ -651,6 +684,7 @@ public class MenuScreen extends ScreenAdapter {
         decor.dispose();
         Fonts.release(titleFont);
         Fonts.release(shineFont);
+        Fonts.release(versionFont);
         menu.dispose();
         // La musique appartient aux ressources partagées : elle continue sur l'écran suivant.
     }
