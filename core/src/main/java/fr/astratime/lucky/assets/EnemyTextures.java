@@ -63,6 +63,7 @@ public class EnemyTextures implements Disposable {
         flashes.put(EnemyKind.CROUPIER, croupierFlash);
         portraits.put(EnemyKind.ENTRAINEMENT, croupier); // le même croupier, en mode Entraînement
         flashes.put(EnemyKind.ENTRAINEMENT, croupierFlash);
+        addPortrait(EnemyKind.GRAND_CROUPIER, grandCroupierGrid(croupierGrid)); // le même, sans masque : le boss secret
         addPortrait(EnemyKind.GARDIEN, EnemyPortraits.gardien());
         addPortrait(EnemyKind.SANGSUE, EnemyPortraits.sangsue());
         addPortrait(EnemyKind.BRETTEUR, EnemyPortraits.bretteur());
@@ -491,6 +492,25 @@ public class EnemyTextures implements Disposable {
         Texture texture = new Texture(pixmap);
         pixmap.dispose();
         return texture;
+    }
+
+    /**
+     * @return le Croupier en boss secret : son portrait habituel, gilet pourpre et noir,
+     *         ruban et cravate d'or, yeux rouges
+     */
+    static int[][] grandCroupierGrid(int[][] croupier) {
+        java.util.Map<Integer, Integer> swap = java.util.Map.of(
+            c("2a1e38"), c("3a0a14"), c("46385a"), c("6a1424"),   // gilet
+            c("c0283a"), c("ffd54a"),                             // ruban du chapeau
+            c("d8202c"), c("ffd54a"), c("8a1018"), c("c4891e"),   // cravate (et cartes rouges)
+            c("ffd54a"), c("ff2a3a"), c("fff6c8"), c("ffd0d0"),   // yeux
+            c("2a2233"), c("140c18"), c("4a3f58"), c("2a1a2e"));  // chapeau
+        int[][] grid = new int[croupier.length][];
+        for (int y = 0; y < croupier.length; y++) {
+            grid[y] = new int[croupier[y].length];
+            for (int x = 0; x < croupier[y].length; x++) grid[y][x] = swap.getOrDefault(croupier[y][x], croupier[y][x]);
+        }
+        return grid;
     }
 
     private static int c(String hex) {

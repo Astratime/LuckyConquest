@@ -71,6 +71,10 @@ public class LastingEffects {
     private int nibbles = 0;
     /** Machine abandonnée du carrefour : symbole qui sort 2 fois plus souvent pendant tout le combat ({@code null} : aucun). */
     private Symbol favoredSymbol;
+    /** Table truquée du Croupier : rouleau imposé ({@code -1} : aucun), son symbole et les tirages restants. */
+    private int riggedReel = -1;
+    private Symbol riggedSymbol;
+    private int riggedTurns = 0;
     /** Aveuglement : cartes de la prochaine main piochées face cachée (une par Aveuglement, ils se cumulent). */
     private int blindCards = 0;
     /** Chant : cartes de la prochaine main jouées d'office, au hasard. */
@@ -395,6 +399,19 @@ public class LastingEffects {
 
     /** @return le symbole favorisé par la Machine abandonnée, ou {@code null}. */
     public Symbol getFavoredSymbol() { return favoredSymbol; }
+
+    /** Table truquée : le rouleau {@code reel} affiche {@code symbol} pendant les {@code turns} prochains tirages. */
+    public void rig(int reel, Symbol symbol, int turns) {
+        riggedReel = reel;
+        riggedSymbol = symbol;
+        riggedTurns = turns;
+    }
+    /** @return le rouleau truqué par le Croupier, ou {@code -1} si la table n'est pas truquée. */
+    public int getRiggedReel() { return riggedTurns > 0 ? riggedReel : -1; }
+    /** @return le symbole imposé au rouleau truqué ({@code null} : aucun). */
+    public Symbol getRiggedSymbol() { return riggedTurns > 0 ? riggedSymbol : null; }
+    /** @return les tirages restants sur la table truquée (0 : elle ne l'est pas). */
+    public int getRiggedTurns() { return riggedTurns; }
 
     public void addNibble() { nibbles++; }
     /** @return les cartes qui seront rongées à la prochaine pioche. */
@@ -763,6 +780,7 @@ public class LastingEffects {
         safes.forEach(safe -> safe[1]--);
         if (goldVeinTurns > 0) goldVeinTurns--;
         if (bubbleTurns > 0) bubbleTurns--;
+        if (riggedTurns > 0) riggedTurns--;
         if (propTurns > 0) propTurns--;
         if (cageTurns > 0) cageTurns--;
         if (anchorTurns > 0) anchorTurns--;
@@ -777,7 +795,7 @@ public class LastingEffects {
     public boolean isEmpty() {
         return removedSymbols.isEmpty() && gainBonus == 0f && corruptionTurns == 0 && extraPlaysTurns == 0
             && blades == 0 && blood == 0 && vault == 0 && luckyStar == 0 && safes.isEmpty() && goldVeinTurns == 0 && bubbleTurns == 0
-            && nibbles == 0 && favoredSymbol == null && blindCards == 0 && songs == 0 && drunk == 0 && nuggetDraws == 0
+            && nibbles == 0 && favoredSymbol == null && riggedTurns == 0 && blindCards == 0 && songs == 0 && drunk == 0 && nuggetDraws == 0
             && fakeGains == 0 && taxes == 0 && laterTaxes == 0 && houseRuleTurns == 0
             && traps == 0 && lanternDraws == 0 && earplugDraws == 0 && propTurns == 0 && lamps == 0
             && cageTurns == 0 && anchorTurns == 0 && temperPercent == 0 && bonusPlays == 0

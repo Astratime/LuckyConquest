@@ -252,6 +252,21 @@ public class CinematicScreen extends CasinoMenuScreen {
             addGroup(place.getShortName(), place.getName(), kings);
         }
 
+        EnemyKind croupier = EnemyKind.GRAND_CROUPIER; // le boss secret : rien n'apparaît avant de l'avoir affronté
+        if (Bestiary.bossCutsceneSeen(profile, croupier)) {
+            List<Entry> secret = new ArrayList<>();
+            secret.add(new Entry(Lang.t("Le Croupier entre en scène"),
+                Lang.t("Au sommet de la Tour, les machines s'allument derrière lui. Il distribue tes propres cartes."),
+                enemyTextures.portrait(croupier), kit -> Cutscenes.beforeBoss(kit, croupier)));
+            addMoments(secret, secret, profile, croupier);
+            if (Bestiary.deathSeen(profile, croupier)) {
+                secret.add(new Entry(Lang.t("La vraie fin"),
+                    Lang.t("Le Croupier te glisse le sabot et s'efface. Il ne reste que son chapeau, et le jour se lève sur la Tour."),
+                    enemyTextures.portrait(croupier), Cutscenes::trueEnding));
+            }
+            addGroup(Lang.t("Le Croupier"), Lang.t("Le boss secret"), secret);
+        }
+
         List<Symbol> machine = profile.getMachine();
         if (Bestiary.bonusGameSeen(profile)) {
             Texture art = cardTextures.get("cards/test/jeu_bonus.png");
@@ -304,6 +319,10 @@ public class CinematicScreen extends CasinoMenuScreen {
     /** @return l'explication de la cinématique de la phase {@code phase} du boss {@code boss}, à {@code percent} % de ses PV. */
     private static String phaseDescription(EnemyKind boss, int phase, int percent) {
         if (boss == EnemyKind.COMETE) return Lang.t("À la moitié de ses PV, elle s'embrase.");
+        if (boss == EnemyKind.GRAND_CROUPIER) {
+            return phase == 2 ? Lang.t("À la moitié de ses PV, il truque un de tes rouleaux.")
+                : Lang.t("À 10 % de ses PV, il retourne ses cartes : il joue à visage découvert.");
+        }
         if (boss == EnemyKind.MACHINE_ORIGINELLE) {
             return phase == 2 ? Lang.t("À la moitié de ses PV, elle t'arrache un rouleau.")
                 : Lang.t("À 10 % de ses PV, elle se fend et verrouille un rouleau pour de bon.");

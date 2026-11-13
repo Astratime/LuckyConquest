@@ -6,6 +6,7 @@ import fr.astratime.lucky.entities.exploration.DungeonRun;
 import fr.astratime.lucky.entities.exploration.Place;
 import fr.astratime.lucky.entities.run.CombatRun;
 import fr.astratime.lucky.entities.tower.Chapter;
+import fr.astratime.lucky.entities.tower.CroupierRun;
 import fr.astratime.lucky.entities.tower.EndlessRun;
 import fr.astratime.lucky.entities.tower.TowerRun;
 
@@ -61,6 +62,7 @@ public final class CombatMusic {
     /** @return la musique du combat en cours de {@code run} ({@code null} : Entraînement). */
     public static String of(CombatRun run) {
         if (run instanceof TowerRun || run instanceof EndlessRun) return run.isBossStage() ? BOSS : TOWER;
+        if (run instanceof CroupierRun) return BOSS;
         if (run instanceof DungeonRun dungeon) {
             return switch (Place.of(dungeon.getDungeon())) {
                 case PRAIRIE -> DEFAULT;
@@ -88,6 +90,8 @@ public final class CombatMusic {
                 : phaseTwo && kind == EnemyKind.COMETE ? COMETE_PHASE_2 : TOWER_ENEMIES.get(kind);
         } else if (run instanceof DungeonRun) {
             own = EXPLORATION_ENEMIES.get(kind);
+        } else if (run instanceof CroupierRun) { // le boss secret : la musique du Croupier, le vrai
+            own = TOWER_ENEMIES.get(EnemyKind.CROUPIER);
         }
         return own != null ? own : of(run);
     }

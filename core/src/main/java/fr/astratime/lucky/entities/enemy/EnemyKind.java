@@ -737,7 +737,32 @@ public enum EnemyKind {
         deck(new int[] {3, 6, 9, 12, 14}, new int[] {4, 8, 12},
             new int[] {5, 9, 13, 14}, new int[] {3, 7, 11}),
         List.of(Card.Suit.PIQUE, Card.Suit.CARREAU, Card.Suit.TREFLE, Card.Suit.COEUR),
+        List.of(Card.Suit.COEUR, Card.Suit.CARREAU, Card.Suit.PIQUE, Card.Suit.TREFLE)),
+
+    // ----- Boss secret : le Croupier, ouvert après le Désert de Braise et le chapitre 6 difficile -----
+
+    GRAND_CROUPIER("Le Croupier", "LE CROUPIER",
+        "Il t'a tout appris. Il tient toutes les machines. Il joue avec ton deck. Blessé, il truque ta table. "
+            + "Presque vaincu, il joue cartes sur table.",
+        2_000_000, 150, 2,
+        weights(EnemySymbol.SWORD, 2, EnemySymbol.SHIELD, 1, EnemySymbol.POTION, 1, EnemySymbol.RAGE, 1,
+            EnemySymbol.MIRROR, 1),
+        deck(new int[] {3, 6, 9, 12, 14}, new int[] {4, 8, 12},
+            new int[] {5, 9, 13, 14}, new int[] {3, 7, 11}),
+        List.of(Card.Suit.PIQUE, Card.Suit.CARREAU, Card.Suit.TREFLE, Card.Suit.COEUR),
         List.of(Card.Suit.COEUR, Card.Suit.CARREAU, Card.Suit.PIQUE, Card.Suit.TREFLE));
+
+    /**
+     * Le Croupier, boss secret (idée A1 du 2026-11-11, valeurs par défaut de Claude) : plus fort que le
+     * boss du mode sans fin à l'étage 5 (force x351, 18 Md PV) : force x360, 20 Md PV, tirage à 5 000.
+     */
+    public static final long CROUPIER_HP = 20_000_000_000L;
+    public static final int  CROUPIER_POWER = 36_000;
+    public static final int  CROUPIER_SPIN_COST = 5_000;
+    /** Phase 2 du Croupier : chaque table truquée tient ce nombre de tirages du joueur. */
+    public static final int  CROUPIER_RIG_TURNS = 2;
+    /** Phase 3 du Croupier : il voit ta main et joue cette carte de plus à chaque tour. */
+    public static final int  CROUPIER_OPEN_PLAYS = 1;
 
     /** Force des ennemis du chapitre 2, en % : leurs attaques, défenses et effets sont multipliés d'autant. */
     /** Force gagnée à chaque chapitre de la Tour, en % (chapitre n : n x 100 %). */
@@ -870,6 +895,7 @@ public enum EnemyKind {
      *         du chapitre, et autant en proportion pour les autres ennemis du chapitre
      */
     public long getMaxHp(Difficulty hard) {
+        if (this == GRAND_CROUPIER) return CROUPIER_HP;
         if (hard.isEndless()) return endlessHp(hard.floor(), isTowerBoss());
         Place place = Place.of(this);
         if (place != null) return (long) maxHp * place.getHpPercent() / 100;
@@ -903,6 +929,7 @@ public enum EnemyKind {
      *         celle de {@link #HARD_POWER} dans la Tour en mode difficile)
      */
     public int getPower(Difficulty hard) {
+        if (this == GRAND_CROUPIER) return CROUPIER_POWER;
         if (hard.isEndless()) return endlessPower(hard.floor());
         Chapter chapter = Chapter.of(this);
         return chapter != null && hard.hard() ? hardPower(chapter.getNumber()) : chapterPower();
@@ -918,6 +945,7 @@ public enum EnemyKind {
      *         100 à l'Entraînement
      */
     public int getSpinCost() {
+        if (this == GRAND_CROUPIER) return CROUPIER_SPIN_COST;
         Place place = Place.of(this);
         if (place != null) return place.getSpinCost();
         if (!isTower()) return SpinEconomy.BASE_SPIN_COST;
@@ -992,6 +1020,7 @@ public enum EnemyKind {
             case BARMAN_NOYE, SIRENE -> BAR_DAMAGE;
             case REQUIN, REQUIN_BANQUIER -> VAULTS_DAMAGE;
             case SCORPION, DJINN -> OASIS_DAMAGE;
+            case GRAND_CROUPIER -> TOWER_LATE_DAMAGE;
             default -> {
                 if (chapterPower() >= CHAPTER_3_POWER) yield TOWER_LATE_DAMAGE;
                 Place place = Place.of(this);
@@ -1087,7 +1116,7 @@ public enum EnemyKind {
     /** @return {@code true} pour le boss d'un chapitre ou le roi d'un donjon. */
     public boolean isBoss() {
         return switch (this) {
-            case COMETE, REINE, ECLAT, PRETENDANT, MAISON, MACHINE_ORIGINELLE, ROI_PIQUE, ROI_COEUR, ROI_CARREAU, ROI_TREFLE,
+            case COMETE, REINE, ECLAT, PRETENDANT, MAISON, MACHINE_ORIGINELLE, GRAND_CROUPIER, ROI_PIQUE, ROI_COEUR, ROI_CARREAU, ROI_TREFLE,
                  CAPITAINE_RAT, TAVERNIER, GARDIEN_PHARE, CAPITAINE_NOIR,
                  MONSIEUR_LOYAL, CONDUCTEUR, ROUE_FORTUNE, ROI_FORAIN, EMIR, PHARAON, DJINN, DRAGON,
                  BARON_OR, GRAND_FOREUR, MAITRE_FORGE, COEUR_MONTAGNE,
@@ -1198,7 +1227,7 @@ public enum EnemyKind {
         if (!isBoss()) return new float[0];
         return switch (this) {
             case PRETENDANT, MAISON -> new float[] {2f / 3f, 1f / 3f};
-            case MACHINE_ORIGINELLE -> new float[] {PHASE_TWO_RATIO, MACHINE_LAST_RATIO};
+            case MACHINE_ORIGINELLE, GRAND_CROUPIER -> new float[] {PHASE_TWO_RATIO, MACHINE_LAST_RATIO};
             default -> new float[] {PHASE_TWO_RATIO};
         };
     }
@@ -1251,7 +1280,7 @@ public enum EnemyKind {
         return switch (this) {
             case ECLAT, COMETE, REINE -> hpRatio < PHASE_TWO_RATIO ? 2 : 1;
             case PRETENDANT, MAISON -> hpRatio * 3f <= 1f ? 3 : hpRatio * 3f <= 2f ? 2 : 1;
-            case MACHINE_ORIGINELLE -> hpRatio < MACHINE_LAST_RATIO ? 3 : hpRatio < PHASE_TWO_RATIO ? 2 : 1;
+            case MACHINE_ORIGINELLE, GRAND_CROUPIER -> hpRatio < MACHINE_LAST_RATIO ? 3 : hpRatio < PHASE_TWO_RATIO ? 2 : 1;
             default -> kingPhaseSymbol() != null && hpRatio < PHASE_TWO_RATIO ? 2 : 1;
         };
     }
@@ -1262,6 +1291,7 @@ public enum EnemyKind {
             case PRETENDANT -> phase == 2 ? Lang.t("ÉCLAT PERDU : FINI LE ROULEAU INTERDIT") : Lang.t("ÉCLAT PERDU : FINIE LA MISE ROYALE");
             case MAISON -> phase == 2 ? Lang.t("LA FAÇADE TOMBE : PLUS DE DÉFENSE") : Lang.t("LE COFFRE TOMBE : PLUS DE SOINS");
             case MACHINE_ORIGINELLE -> Lang.t("ELLE TE VOLE UN ROULEAU !");
+            case GRAND_CROUPIER -> phase == 2 ? Lang.t("IL TRUQUE TA TABLE !") : Lang.t("CARTES SUR TABLE !");
             case COMETE -> Lang.t("LA COMÈTE S'EMBRASE !");
             case REINE -> Lang.t("MISE ROYALE : SES TRÈFLES COMPTENT DOUBLE !");
             case ECLAT -> Lang.t("L'ÉCLAT SE FEND : NOUVEAUX SYMBOLES !");

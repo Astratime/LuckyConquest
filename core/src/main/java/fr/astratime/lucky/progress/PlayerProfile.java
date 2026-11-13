@@ -1179,6 +1179,14 @@ public class PlayerProfile {
     /** @return {@code true} si le mode sans fin est ouvert : le chapitre 6 terminé en mode difficile (ou ADMIN). */
     public boolean isEndlessOpen() { return admin || isCleared(Chapter.LE_JACKPOT, true); }
 
+    /**
+     * @return {@code true} si le Croupier, boss secret, peut être affronté : le Désert de Braise
+     *         vidé ET le chapitre 6 terminé en mode difficile (ou ADMIN)
+     */
+    public boolean isCroupierOpen() {
+        return admin || (placeCleared(Place.DESERT) && isCleared(Chapter.LE_JACKPOT, true));
+    }
+
     /** @return le record du mode sans fin : le plus haut étage gagné (0 : aucun). */
     public int getEndlessBest() { return endlessBest; }
 

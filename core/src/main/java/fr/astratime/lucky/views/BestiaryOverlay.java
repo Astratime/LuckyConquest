@@ -27,6 +27,7 @@ import fr.astratime.lucky.entities.exploration.Place;
 import fr.astratime.lucky.entities.tower.Chapter;
 import fr.astratime.lucky.i18n.Lang;
 import fr.astratime.lucky.progress.Bestiary;
+import fr.astratime.lucky.progress.Notebook;
 import fr.astratime.lucky.progress.PlayerProfile;
 
 import java.util.ArrayList;
@@ -91,6 +92,10 @@ public class BestiaryOverlay implements Disposable {
     private final Label status;
     private final Label description;
     private final CasinoButton cutscenes;
+    /** « Carnet » : la fiche montre la page du carnet du Croupier au lieu de la description (et l'inverse). */
+    private final CasinoButton notebook;
+    /** {@code true} quand la fiche montre la page du carnet. */
+    private boolean reading;
     private final CasinoButton back;
     private final CasinoButton fight;
     private final TextureRegionDrawable coin;
@@ -170,6 +175,8 @@ public class BestiaryOverlay implements Disposable {
 
         cutscenes = buttons.create(Lang.t("Revoir les cinématiques"), clickSound, onCutscenes);
         back = buttons.create(Lang.t("Retour"), clickSound, this::hide);
+        notebook = buttons.create(Lang.t("Carnet"), clickSound, this::toggleNotebook);
+        root.addActor(notebook);
         fight = buttons.create(Lang.t("Combattre"), clickSound, this::fightSelected);
         root.addActor(cutscenes);
         root.addActor(back);
@@ -271,6 +278,8 @@ public class BestiaryOverlay implements Disposable {
         this.onFight = onFight;
         boolean training = onFight != null;
         cutscenes.setVisible(!training);
+        notebook.setVisible(!training);
+        reading = false;
         fight.setVisible(training);
         title.setText(training ? Lang.t("ENTRAÎNEMENT LIBRE") : Lang.t("BESTIAIRE ET COLLECTION"));
         towerTitle.setText(Lang.t("Tour des épreuves"));
@@ -294,7 +303,8 @@ public class BestiaryOverlay implements Disposable {
         summary.setText(Lang.f("Ennemis rencontrés : {0} / {1}     Vaincus : {2} / {1}     Cartes : {3} / {4}     "
                 + "Rouleaux : {5} / {6}     Cinématiques : {7} / {8}",
             met, cells.size(), defeated, profile.getCollectedCardCount(), profile.getCatalogSize(),
-            profile.getOwnedReels().size(), PlayerProfile.getReelCount(), seenCutscenes[0], seenCutscenes[1]));
+            profile.getOwnedReels().size(), PlayerProfile.getReelCount(), seenCutscenes[0], seenCutscenes[1])
+            + "     " + Lang.f("Carnet : {0} / {1}", Notebook.found(profile), Notebook.size()));
         cutscenes.setDisabled(seenCutscenes[0] == 0);
         if (training) {
             summary.setText(Lang.t("Choisis un ennemi déjà vaincu pour tester ton deck. Ce combat ne rapporte rien."));
@@ -335,6 +345,15 @@ public class BestiaryOverlay implements Disposable {
         }
         description.setText(known ? kind.getDescription() : Lang.t("Affronte-le pour découvrir sa fiche."));
         description.setColor(known ? Color.WHITE : LOCKED);
+        notebook.setDisabled(!Notebook.hasPage(kind));
+        notebook.setText(reading && Notebook.hasPage(kind) ? Lang.t("Fiche") : Lang.t("Carnet"));
+        if (reading && Notebook.hasPage(kind) && onFight == null) { // la page du carnet, à la place de la description
+            boolean found = profile.hasDefeated(kind);
+            description.setText(found
+                ? Lang.f("Carnet du Croupier, page {0} / {1}\n« {2} »", Notebook.number(kind), Notebook.size(), Notebook.text(kind))
+                : Lang.f("Carnet du Croupier, page {0} / {1}\nBats-le pour trouver sa page.", Notebook.number(kind), Notebook.size()));
+            description.setColor(found ? Palette.CREAM : LOCKED);
+        }
         if (onFight != null) {
             boolean open = canTrainAgainst(profile, kind);
             fight.setDisabled(!open);
@@ -348,6 +367,15 @@ public class BestiaryOverlay implements Disposable {
             }
         }
         layout();
+    }
+
+    /** « Carnet » / « Fiche » : la fiche bascule entre la description et la page du carnet du Croupier. */
+    private void toggleNotebook() {
+        if (selected == null || !Notebook.hasPage(selected.kind())) return;
+        reading = !reading;
+        Cell cell = selected;
+        selected = null;
+        select(cell);
     }
 
     /** Ferme la fenêtre. */
@@ -417,6 +445,7 @@ public class BestiaryOverlay implements Disposable {
         // Les boutons, sous la Tour : ils ne cachent plus la fiche.
         back.setPosition(tx + towerWidth - back.getWidth(), py + PAD);
         cutscenes.setPosition(back.getX() - 24f - cutscenes.getWidth(), py + PAD);
+        notebook.setPosition(cutscenes.getX() - 24f - notebook.getWidth(), py + PAD);
         fight.setPosition(back.getX() - 24f - fight.getWidth(), py + PAD);
     }
 

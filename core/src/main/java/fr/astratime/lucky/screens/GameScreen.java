@@ -95,6 +95,7 @@ import fr.astratime.lucky.entities.choices.RouletteChoice;
 import fr.astratime.lucky.entities.SlotMachine;
 import fr.astratime.lucky.entities.enemy.Difficulty;
 import fr.astratime.lucky.entities.enemy.EnemyKind;
+import fr.astratime.lucky.entities.tower.CroupierRun;
 import fr.astratime.lucky.entities.tower.EndlessRun;
 import fr.astratime.lucky.entities.tower.Chapter;
 import fr.astratime.lucky.entities.tower.TowerRun;
@@ -631,7 +632,11 @@ public class GameScreen extends ScreenAdapter {
         addActors();
         applyTableView(); // vue de face ou classique (Options), une fois tout posé
 
-        startPlayerTurn(); // le combat commence par le tour du joueur, main piochée d'office
+        if (run instanceof CroupierRun) { // le Croupier entre en scène avant le combat
+            playCutscene(Cutscenes.beforeBoss(cutsceneKit, EnemyKind.GRAND_CROUPIER), this::startPlayerTurn);
+        } else {
+            startPlayerTurn(); // le combat commence par le tour du joueur, main piochée d'office
+        }
     }
 
     /** Survol du bouclier du joueur : son infobulle. */
@@ -747,6 +752,9 @@ public class GameScreen extends ScreenAdapter {
         } else if (run instanceof EndlessRun endless) { // comme dans la Tour
             gameController.setPot(endless.getPot());
             gameController.setBonusGameChance(BonusGame.TOWER_TRIGGER_CHANCE);
+        } else if (run instanceof CroupierRun croupier) { // le Croupier : comme dans la Tour
+            gameController.setPot(croupier.getPot());
+            gameController.setBonusGameChance(BonusGame.TOWER_TRIGGER_CHANCE);
         } else if (run == null) {
             gameController.setPot(profile.getPot(PlayerProfile.POT_TRAINING));
         }
@@ -768,6 +776,8 @@ public class GameScreen extends ScreenAdapter {
      */
     private void startPlayerTurn() {
         playerMachine.lower();
+        List<Card> onTable = gameController.getGameState().getEnemy().getRevealedHand();
+        if (!onTable.isEmpty()) enemyView.showOnTable(onTable); // le Croupier joue cartes sur table
         setSpinDisabled(true);
         turnBanner.play(TurnBanner.Side.PLAYER, playArea.getCenterX(), turnBannerY(), playArea.getWidth());
         stage.addAction(Actions.delay(TurnBanner.DURATION, Actions.run(this::drawHand)));
@@ -1790,6 +1800,8 @@ public class GameScreen extends ScreenAdapter {
                 luckyGame.setScreen(new TowerScreen(luckyGame, tower.getChapter(), tower.isHard()));
             } else if (run instanceof EndlessRun) {
                 luckyGame.setScreen(TowerScreen.onEndless(luckyGame));
+            } else if (run instanceof CroupierRun) {
+                luckyGame.setScreen(TowerScreen.onCroupier(luckyGame));
             } else {
                 luckyGame.setScreen(new TowerScreen(luckyGame));
             }
@@ -1804,7 +1816,7 @@ public class GameScreen extends ScreenAdapter {
      */
     private String modeMenuLabel() {
         if (run instanceof DungeonRun) return Lang.t("Exploration");
-        if (run instanceof TowerRun || run instanceof EndlessRun) return Lang.t("Tour des épreuves");
+        if (run instanceof TowerRun || run instanceof EndlessRun || run instanceof CroupierRun) return Lang.t("Tour des épreuves");
         return null;
     }
 
@@ -2019,6 +2031,10 @@ public class GameScreen extends ScreenAdapter {
                 : Lang.f("RECORD : ÉTAGE {0}", Math.max(luckyGame.getProfile().getEndlessBest(), victory ? floor : 0));
             Label recordLabel = new Label(text, new Label.LabelStyle(shopFont, Palette.GOLD));
             endButtons.add(recordLabel).colspan(shown.size()).padBottom(14f).row();
+        } else if (run instanceof CroupierRun) { // le Croupier : un seul combat
+            shown.add(victory ? buttons.createAction(Lang.t("Retour à la Tour"), sounds.buttonClick, this::onBackToChapters)
+                : buttons.createAction(Lang.t("Réessayer"), sounds.buttonClick, this::onRestart));
+            if (!victory) shown.add(buttons.create(backText(), sounds.buttonClick, this::onBackToChapters));
         } else if (!victory) {
             shown.add(buttons.createAction(isDungeon() ? Lang.t("Réessayer le donjon") : Lang.t("Réessayer le chapitre"),
                 sounds.buttonClick, this::onRestart));
@@ -2229,7 +2245,8 @@ public class GameScreen extends ScreenAdapter {
         enemyView.defeat();
         // Fin de l'histoire (chapitres 3 et 6) : sa cinématique, puis la phrase de fin et les boutons.
         Cutscene ending = run instanceof TowerRun tower && run.isBossStage()
-            ? Cutscenes.ending(cutsceneKit, tower.getChapter()) : null;
+            ? Cutscenes.ending(cutsceneKit, tower.getChapter())
+            : run instanceof CroupierRun ? Cutscenes.trueEnding(cutsceneKit) : null; // le Croupier : la vraie fin
         Runnable afterVictory = ending == null ? showRestart : () -> playCutscene(ending, showRestart);
         if (tutorial != null) { // tutoriel réussi : le Croupier conclut, puis le menu
             luckyGame.getProfile().markSeen(PlayerProfile.GUIDE_TUTORIAL);
@@ -2583,7 +2600,7 @@ public class GameScreen extends ScreenAdapter {
     private FrontScene.Decor frontDecor() {
         if (run instanceof DungeonRun dungeonRun) return FrontScene.Decor.of(dungeonRun.getDungeon());
         if (run instanceof TowerRun towerRun)     return FrontScene.Decor.of(towerRun.getChapter());
-        if (run instanceof EndlessRun)            return FrontScene.Decor.of(Chapter.LE_JACKPOT); // le sommet de la Tour
+        if (run instanceof EndlessRun || run instanceof CroupierRun) return FrontScene.Decor.of(Chapter.LE_JACKPOT); // le sommet de la Tour
         if (run == null) { // Entraînement : le décor de l'ennemi choisi (son donjon, son chapitre)
             for (Place place : Place.values()) {
                 for (Dungeon dungeon : place.getDungeons()) {

@@ -404,6 +404,28 @@ public class EnemyView implements Disposable {
         }
     }
 
+    /**
+     * Cartes sur table (le Croupier, phase 3) : sa prochaine main, déjà piochée, posée face
+     * visible à la place de ses cartes ; chaque carte a son infobulle.
+     */
+    public void showOnTable(List<Card> cards) {
+        handCards.forEach(Actor::remove);
+        handCards.clear();
+        EnemyKind kind = enemy.get().getKind();
+        for (int i = 0; i < cards.size(); i++) {
+            Card shown = cards.get(i);
+            Image card = new Image(new TextureRegionDrawable(new TextureRegion(textures.card(shown))));
+            card.setSize(table.getCardWidth(), table.getCardHeight());
+            card.setOrigin(table.getCardWidth() / 2f, table.getCardHeight() / 2f);
+            card.setPosition(table.getEnemyCardSlotX(i), table.getEnemyCardRowY());
+            card.getColor().a = 0f;
+            card.addAction(Actions.delay(i * DEAL_STAGGER, Actions.fadeIn(0.25f)));
+            hoverTooltip(card, shown::getName, () -> EnemyCards.describe(shown, kind, enemy.get().getDifficulty()));
+            group.addActorBefore(character, card);
+            handCards.add(card);
+        }
+    }
+
     /** Respiration du croupier, au repos. */
     private void idle() {
         character.addAction(Actions.forever(Actions.sequence(

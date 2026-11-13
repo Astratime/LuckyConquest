@@ -176,6 +176,9 @@ public class PreparationResolver {
             effect.apply(turnContext);
         }
         combatContext.setSource(null);
+        if (lasting.getRiggedSymbol() != null) { // Table truquée du Croupier : après les cartes, rien ne la défait
+            spinContext.forceReel(lasting.getRiggedReel(), lasting.getRiggedSymbol());
+        }
         if (houseRule != LastingEffects.HouseRule.NO_COMBOS) applyCombos(turnContext, player);
 
         return turnContext;
