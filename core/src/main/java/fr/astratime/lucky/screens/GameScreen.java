@@ -69,6 +69,7 @@ import fr.astratime.lucky.entities.BigNumber;
 import fr.astratime.lucky.entities.BonusGame;
 import fr.astratime.lucky.entities.Card;
 import fr.astratime.lucky.entities.CardPlayResult;
+import fr.astratime.lucky.entities.CombatJournal;
 import fr.astratime.lucky.entities.CombatRecap;
 import fr.astratime.lucky.entities.Combo;
 import fr.astratime.lucky.entities.DrawResult;
@@ -131,6 +132,7 @@ import fr.astratime.lucky.popups.EffectPopup;
 import fr.astratime.lucky.popups.PopupScale;
 import fr.astratime.lucky.settings.AudioSettings;
 import fr.astratime.lucky.settings.VisualSettings;
+import fr.astratime.lucky.views.CombatJournalView;
 import fr.astratime.lucky.views.CardChoiceOverlay;
 import fr.astratime.lucky.views.ChestOverlay;
 import fr.astratime.lucky.views.CardDetailOverlay;
@@ -265,6 +267,8 @@ public class GameScreen extends ScreenAdapter {
     private static final float PURCHASE_DELAY   = 0.9f;
     /** Bouton pause : écart au cadre des gains, à gauche (il est centré en hauteur sur la barre de vie de l'ennemi). */
     private static final float PAUSE_BUTTON_MARGIN = 30f;
+    /** Entre le bouton Pause et le bouton Journal, et entre ce dernier et son panneau. */
+    private static final float JOURNAL_BUTTON_GAP = 12f;
     /** Étape du donjon ou de la Tour : marge en haut à gauche (passer le tutoriel) et en bas à droite (l'étape). */
     private static final float STAGE_LABEL_MARGIN = 30f;
     /** Coffre au trésor ouvert : gerbe de confettis. */
@@ -296,6 +300,11 @@ public class GameScreen extends ScreenAdapter {
     private final LuckyGame           luckyGame;
     /** Chapitre de la Tour des épreuves ou donjon de l'Exploration, ou {@code null} pour un combat seul (« Entraînement »). */
     private final CombatRun           run;
+    /**
+     * Adversaire d'un combat seul : le croupier d'entraînement, ou un ennemi déjà vaincu
+     * choisi pour l'entraînement libre (ignoré dans la Tour, l'Exploration et le tutoriel).
+     */
+    private final EnemyKind           trainingEnemy;
     private final Stage               stage;
     private final BitmapFont          font;
     /** Libellés du deck et de la défausse : police du jeu, à balises de couleur (nom crème, nombre doré). */
@@ -362,6 +371,9 @@ public class GameScreen extends ScreenAdapter {
     private final TutorialDirector    tutorial;
     /** Chiffres du combat en cours, montrés au-dessus des boutons de fin. */
     private final CombatRecap         recap = new CombatRecap();
+    /** Journal des derniers tours, dans un panneau repliable sous le bouton « Journal » (touche J). */
+    private final CombatJournal       journal = new CombatJournal();
+    private final CombatJournalView   journalView;
     /** Tutoriel : le dernier tirage était un Bingo. */
     private boolean                   lastSpinBingo;
     /** Le Croupier qui explique le Jeu bonus la première fois qu'il s'ouvre ({@code null} avant). */
@@ -412,6 +424,7 @@ public class GameScreen extends ScreenAdapter {
     private final TextButton menuButton;
     /** Bouton pause, en haut entre le cadre des gains et la barre de vie de l'ennemi : ouvre le même menu qu'Échap. */
     private final TextButton pauseButton;
+    private final TextButton journalButton;
     /** Boutons de fin de combat (Recommencer, Menu principal), centrés sous l'annonce de victoire ou de défaite. */
     private final Table      endButtons = new Table();
 
@@ -442,7 +455,15 @@ public class GameScreen extends ScreenAdapter {
      * @param luckyGame instance de jeu, qui fournit le SpriteBatch partagé
      */
     public GameScreen(LuckyGame luckyGame) {
-        this(luckyGame, null);
+        this(luckyGame, null, EnemyKind.ENTRAINEMENT);
+    }
+
+    /**
+     * Entraînement libre : un combat seul contre {@code enemy}, un ennemi déjà vaincu
+     * choisi dans le bestiaire. Comme l'Entraînement, il ne rapporte rien.
+     */
+    public GameScreen(LuckyGame luckyGame, EnemyKind enemy) {
+        this(luckyGame, null, enemy);
     }
 
     /**
@@ -451,12 +472,18 @@ public class GameScreen extends ScreenAdapter {
      * @param run chapitre ou donjon en cours ({@code null} : un combat seul, comme « Entraînement »)
      */
     public GameScreen(LuckyGame luckyGame, CombatRun run) {
-        this.luckyGame = luckyGame;
-        this.run       = run;
-        // La table a l'air du lieu en Exploration ; ailleurs, la table de casino.
-        // Les cosmétiques choisis (tapis, machine) habillent la table de chaque lieu.
+        this(luckyGame, run, EnemyKind.ENTRAINEMENT);
+    }
+
+    private GameScreen(LuckyGame luckyGame, CombatRun run, EnemyKind trainingEnemy) {
+        this.luckyGame     = luckyGame;
+        this.run           = run;
+        this.trainingEnemy = trainingEnemy == null ? EnemyKind.ENTRAINEMENT : trainingEnemy;
+        // La table a l'air du lieu en Exploration (et contre un ennemi de l'Exploration à l'entraînement) ;
+        // ailleurs, la table de casino. Les cosmétiques choisis (tapis, machine) habillent la table de chaque lieu.
         PlayerProfile profile = luckyGame.getProfile();
-        tableTextures  = TableTextures.forPlace(run instanceof DungeonRun dungeonRun ? Place.of(dungeonRun.getDungeon()) : null,
+        tableTextures  = TableTextures.forPlace(run instanceof DungeonRun dungeonRun ? Place.of(dungeonRun.getDungeon())
+            : run == null ? Place.of(this.trainingEnemy) : null,
             profile.getCosmetic(Cosmetic.Kind.FELT), profile.getCosmetic(Cosmetic.Kind.MACHINE));
         String backPath = profile.getCosmetic(Cosmetic.Kind.BACK).getBackPath();
         playerBackPath = backPath != null ? backPath : CARD_BACK_PATH;
@@ -512,6 +539,9 @@ public class GameScreen extends ScreenAdapter {
         restartButton = buttons.createAction(Lang.t("Recommencer"), sounds.buttonClick, this::onRestart);
         menuButton    = buttons.createAction(Lang.t("Menu principal"), sounds.buttonClick, this::onBackToMenu);
         pauseButton   = buttons.create(Lang.t("Pause"), sounds.buttonClick, this::showPauseMenu);
+        journalButton = buttons.create(Lang.t("Journal"), sounds.buttonClick, this::toggleJournal);
+        journalView   = new CombatJournalView(hudTextures);
+        journalView.setEntries(List.of());
         playsLabel    = new Label("", new Label.LabelStyle(playsFont, Color.WHITE));
         aspirationPanel = new AspirationPanel(hudTextures);
         endButtons.add(restartButton).size(restartButton.getWidth(), restartButton.getHeight());
@@ -650,6 +680,7 @@ public class GameScreen extends ScreenAdapter {
         stage.addActor(sidePanel.getActor());
         hud.addTo(stage);
         stage.addActor(pauseButton);
+        stage.addActor(journalButton);
         stage.addActor(playsLabel);
         stage.addActor(stageLabel);
         stage.addActor(pistolAnimation);
@@ -658,6 +689,7 @@ public class GameScreen extends ScreenAdapter {
         stage.addActor(turnBanner);   // annonce des tours : au-dessus du jeu, ne bloque pas les clics
         stage.addActor(combatEnd);
         stage.addActor(endButtons); // au-dessus de l'annonce de fin de combat
+        stage.addActor(journalView.getActor()); // journal du combat : par-dessus la table et la fin de combat
         stage.addActor(pickOverlay.getActor()); // Tour des épreuves : choix de l'adversaire, boss
         stage.addActor(chestOverlay.getActor()); // Exploration : coffre au trésor
         stage.addActor(confetti);
@@ -697,6 +729,7 @@ public class GameScreen extends ScreenAdapter {
     /** Règle du lieu, Jeu bonus et sa cagnotte, difficulté, puis le premier combat. */
     private void startRun(PlayerProfile profile) {
         if (run != null) gameController.setPlaceRule(run.getPlaceRule()); // Exploration : la règle du lieu
+        else if (Place.of(trainingEnemy) != null) gameController.setPlaceRule(Place.of(trainingEnemy).getRule()); // entraînement libre
         gameController.setBonusGameEnabled(run == null || run.hasBonusGame()); // pas de Jeu bonus dans le tutoriel
         // Cagnotte du Jeu bonus : celle du lieu (partagée par ses donjons) ou de l'Entraînement, gardées ;
         // celle de l'ascension dans la Tour, où un Bingo ouvre plus souvent le Jeu bonus.
@@ -789,6 +822,7 @@ public class GameScreen extends ScreenAdapter {
         List<Combo> combosBefore = gameController.getCurrentCombos();
         CardPlayResult playResult = gameController.playCard(card);
         recap.cardPlayed();
+        journal.cardPlayed(card);
         if (tutorial != null) tutorial.onCardPlayed(card);
         int maps = gameController.takeTreasureMaps(); // Carte au trésor : le coffre du donjon grossit
         if (run instanceof DungeonRun dungeonRun) for (int i = 0; i < maps; i++) dungeonRun.addTreasureMap();
@@ -1392,6 +1426,8 @@ public class GameScreen extends ScreenAdapter {
 
     /** Termine le tour de l'ennemi : fin du combat si un camp est vaincu, sinon au tour du joueur. */
     private void finishTurn() {
+        journal.record(currentResult, gameController.getGameState().getEnemy().getName());
+        refreshJournal();
         if (isCombatOver()) {
             endCombat();
         } else if (tutorial != null) {
@@ -1664,6 +1700,12 @@ public class GameScreen extends ScreenAdapter {
 
     /** Passe à la musique du combat en cours, ou à celle du lieu si son fichier manque. */
     private void switchMusic() {
+        if (run == null) { // Entraînement : la musique de l'ennemi choisi, ou celle de son lieu
+            String place = CombatMusic.ofTrainingPlace(trainingEnemy);
+            music.switchTo(CombatMusic.ofTraining(gameController.getGameState().getEnemy()),
+                Gdx.files.internal(place).exists() ? place : CombatMusic.DEFAULT);
+            return;
+        }
         music.switchTo(CombatMusic.of(run, gameController.getGameState().getEnemy()),
             Gdx.files.internal(CombatMusic.of(run)).exists() ? CombatMusic.of(run) : CombatMusic.DEFAULT);
     }
@@ -1673,6 +1715,8 @@ public class GameScreen extends ScreenAdapter {
         switchMusic(); // nouveau combat : sa musique (celle de l'ennemi s'il en a une)
         if (tutorial == null) luckyGame.getProfile().meet(gameController.getGameState().getEnemy().getKind());
         recap.reset();
+        journal.reset();
+        refreshJournal();
         stage.getRoot().clearActions(); // la suite du tour en cours (tour de l'ennemi, fin du tour) n'a plus lieu
         hand.reset();
         effectPopupAnimator.cancel(); // les gains en attente ne seront jamais affichés
@@ -1994,7 +2038,7 @@ public class GameScreen extends ScreenAdapter {
 
     /** @return l'ennemi du combat en cours de la Tour ou du donjon, ou le croupier d'entraînement. */
     private EnemyKind firstEnemy() {
-        return run != null ? run.getEnemy() : EnemyKind.ENTRAINEMENT;
+        return run != null ? run.getEnemy() : trainingEnemy;
     }
 
     /** @return pourquoi {@code card} ne se joue pas maintenant (règles du combat, ou le Croupier du tutoriel), ou {@code null}. */
@@ -2211,6 +2255,25 @@ public class GameScreen extends ScreenAdapter {
         spinControls.placeLever();
     }
 
+    /** Ouvre ou replie le journal du combat. */
+    private void toggleJournal() {
+        journalView.toggle();
+        if (tooltip != null) tooltip.hide();
+    }
+
+    /** Remet le journal du combat à jour (à la fin de chaque tour) et ajuste la hauteur de son panneau. */
+    private void refreshJournal() {
+        journalView.setEntries(journal.getEntries());
+        placeJournal();
+    }
+
+    /** Le panneau du journal s'ouvre sous les boutons Pause et Journal, et s'arrête au-dessus de la barre de vie du joueur. */
+    private void placeJournal() {
+        float top = pauseButton.getY() - JOURNAL_BUTTON_GAP;
+        float bottom = hud.getPlayerHealthBar().getY() + HealthBarView.HEIGHT + JOURNAL_BUTTON_GAP;
+        journalView.layout(pauseButton.getX(), top, top - bottom);
+    }
+
     /** Place (ou replace après un redimensionnement) les éléments qui dépendent de la taille de l'écran. */
     private void layout() {
         table.layout();
@@ -2223,6 +2286,8 @@ public class GameScreen extends ScreenAdapter {
         HealthBarView enemyBar = hud.getEnemyHealthBar();
         pauseButton.setPosition(playArea.getX() + PAUSE_BUTTON_MARGIN,
             enemyBar.getY() + (HealthBarView.HEIGHT - pauseButton.getHeight()) / 2f);
+        journalButton.setPosition(pauseButton.getX() + pauseButton.getWidth() + JOURNAL_BUTTON_GAP, pauseButton.getY());
+        placeJournal();
         spinControls.placeStake();
         playsLabel.pack();
         playsLabel.setPosition(playArea.getX() + BUTTON_MARGIN,
@@ -2262,7 +2327,8 @@ public class GameScreen extends ScreenAdapter {
      * Installe le processeur d'entrée de l'écran : le Stage (clics, survols)
      * en priorité, puis les raccourcis clavier : Espace ou F lance la machine si
      * possible, M change la Mise, 1 à 9 jouent la carte à cette place de la main,
-     * B ouvre l'échoppe ; Échap ferme la fenêtre ouverte (carte, échoppe, pile) ou, s'il
+     * B ouvre l'échoppe, J ouvre ou replie le journal du combat ; Échap ferme la fenêtre ouverte
+     * (carte, échoppe, pile, journal) ou, s'il
      * n'y en a pas, ouvre le menu pause. La pioche est automatique au début de
      * chaque tour du joueur.
      */
@@ -2284,6 +2350,10 @@ public class GameScreen extends ScreenAdapter {
                     pileOverlay.hide();
                     return true;
                 }
+                if (keycode == Input.Keys.ESCAPE && journalView.isShown()) {
+                    journalView.hide();
+                    return true;
+                }
                 if (keycode == Input.Keys.ESCAPE) {
                     openPauseMenu();
                     return true;
@@ -2293,6 +2363,10 @@ public class GameScreen extends ScreenAdapter {
                     return true;
                 }
                 if (jackpotCelebration != null && jackpotCelebration.skip()) return true; // une touche passe aussi un Bingo déjà vu
+                if (keycode == Input.Keys.J) { // le journal s'ouvre à tout moment, même pendant un choix
+                    toggleJournal();
+                    return true;
+                }
                 if (choiceOverlay.isShown() || shopOverlay.isShown() || pickOverlay.isShown() || chestOverlay.isShown()
                     || bingoAnimation.isPlaying()
                     || rainbowAnimation.isPlaying()) {
@@ -2418,7 +2492,16 @@ public class GameScreen extends ScreenAdapter {
         if (run instanceof DungeonRun dungeonRun) return FrontScene.Decor.of(dungeonRun.getDungeon());
         if (run instanceof TowerRun towerRun)     return FrontScene.Decor.of(towerRun.getChapter());
         if (run instanceof EndlessRun)            return FrontScene.Decor.of(Chapter.LE_JACKPOT); // le sommet de la Tour
-        return run == null ? FrontScene.Decor.ENTRAINEMENT : FrontScene.Decor.CASINO;
+        if (run == null) { // Entraînement : le décor de l'ennemi choisi (son donjon, son chapitre)
+            for (Place place : Place.values()) {
+                for (Dungeon dungeon : place.getDungeons()) {
+                    if (dungeon.getSoldier() == trainingEnemy || dungeon.getKing() == trainingEnemy) return FrontScene.Decor.of(dungeon);
+                }
+            }
+            Chapter chapter = Chapter.of(trainingEnemy);
+            return chapter != null ? FrontScene.Decor.of(chapter) : FrontScene.Decor.ENTRAINEMENT;
+        }
+        return FrontScene.Decor.CASINO;
     }
 
     @Override
@@ -2439,6 +2522,7 @@ public class GameScreen extends ScreenAdapter {
         enemyView.dispose();
         hud.dispose();
         sidePanel.dispose();
+        journalView.dispose();
         symbolStrikes.dispose();
         slots.dispose();
         sounds.dispose();

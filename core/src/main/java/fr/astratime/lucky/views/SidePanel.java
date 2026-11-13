@@ -299,7 +299,7 @@ public class SidePanel implements Disposable {
     }
 
     /** Barre de défilement fine, couleur or, sur un rail sombre. */
-    private static ScrollPane.ScrollPaneStyle scrollStyle(HudTextures hud) {
+    static ScrollPane.ScrollPaneStyle scrollStyle(HudTextures hud) {
         ScrollPane.ScrollPaneStyle style = new ScrollPane.ScrollPaneStyle();
         TextureRegionDrawable knob = new TextureRegionDrawable(new TextureRegion(hud.pixel));
         knob.setMinWidth(SCROLL_BAR);
@@ -312,7 +312,7 @@ public class SidePanel implements Disposable {
     }
 
     /** La molette fait défiler {@code scroll} tant que la souris est dessus. */
-    private static void addWheelFocus(ScrollPane scroll) {
+    static void addWheelFocus(ScrollPane scroll) {
         scroll.addListener(new InputListener() {
             @Override
             public void enter(InputEvent event, float x, float y, int pointer, Actor fromActor) {

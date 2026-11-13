@@ -64,3 +64,29 @@ tasks.register('enemyCards', JavaExec) {
   systemProperty 'lucky.assets', rootProject.file('assets').absolutePath
   systemProperty 'java.awt.headless', 'true'
 }
+
+// Numéro de version du jeu (projectVersion de gradle.properties), écrit dans une
+// classe générée : le menu l'affiche et le rapport de plantage le note en tête.
+def versionSourceDir = layout.buildDirectory.dir('generated/sources/version/java')
+def generateVersionSource = tasks.register('generateVersionSource') {
+  group = 'build'
+  description = 'Écrit fr.astratime.lucky.GameVersion avec le numéro de version du jeu.'
+  def gameVersion = projectVersion.toString()
+  inputs.property('gameVersion', gameVersion)
+  outputs.dir(versionSourceDir)
+  doLast {
+    def file = versionSourceDir.get().file('fr/astratime/lucky/GameVersion.java').asFile
+    file.parentFile.mkdirs()
+    file.setText("""package fr.astratime.lucky;
+
+/** Numéro de version du jeu : classe générée par Gradle depuis projectVersion (gradle.properties). */
+public final class GameVersion {
+    /** Version du jeu, par exemple {@code 1.0.0}. */
+    public static final String VERSION = "${gameVersion}";
+
+    private GameVersion() {}
+}
+""", 'UTF-8')
+  }
+}
+sourceSets.main.java.srcDir(generateVersionSource)

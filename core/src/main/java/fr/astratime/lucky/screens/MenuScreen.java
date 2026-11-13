@@ -17,8 +17,10 @@ import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.Touchable;
 import com.badlogic.gdx.scenes.scene2d.actions.Actions;
 import com.badlogic.gdx.scenes.scene2d.ui.Image;
+import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 import com.badlogic.gdx.utils.ScreenUtils;
+import fr.astratime.lucky.GameVersion;
 import fr.astratime.lucky.LuckyGame;
 import fr.astratime.lucky.assets.EnemyTextures;
 import fr.astratime.lucky.assets.Fonts;
@@ -28,6 +30,8 @@ import fr.astratime.lucky.assets.BackgroundMusic;
 import fr.astratime.lucky.assets.VolumeSound;
 import fr.astratime.lucky.i18n.Lang;
 import fr.astratime.lucky.progress.PlayerProfile;
+import fr.astratime.lucky.progress.Bestiary;
+import fr.astratime.lucky.entities.enemy.EnemyKind;
 import fr.astratime.lucky.progress.Rank;
 import fr.astratime.lucky.progress.SaveSlots;
 import fr.astratime.lucky.settings.AudioSettings;
@@ -39,6 +43,7 @@ import fr.astratime.lucky.views.AchievementsOverlay;
 import fr.astratime.lucky.views.BestiaryOverlay;
 import fr.astratime.lucky.views.CasinoButtons;
 import fr.astratime.lucky.views.GuideOverlay;
+import fr.astratime.lucky.views.LexiconOverlay;
 import fr.astratime.lucky.views.MenuDecor;
 import fr.astratime.lucky.views.MinimumScreenViewport;
 import fr.astratime.lucky.views.OptionsMenu;
@@ -91,6 +96,9 @@ public class MenuScreen extends ScreenAdapter {
     private static final float PARALLAX_EASE  = 4f;
     /** Le Croupier parle une fois les options apparues. */
     private static final float GUIDE_DELAY    = 0.9f;
+    /** Numéro de version, discret, en bas à droite de l'écran. */
+    private static final int   VERSION_SIZE   = 28;
+    private static final float VERSION_MARGIN = 14f;
 
     private final LuckyGame      luckyGame;
     /** Communs à tous les écrans (voir {@link SharedAssets}) : ne jamais les libérer ici. */
@@ -104,6 +112,7 @@ public class MenuScreen extends ScreenAdapter {
     private final DisplaySettings display = new DisplaySettings();
     private final BitmapFont     titleFont;
     private final BitmapFont     shineFont;
+    private final BitmapFont     versionFont;
     private final Sound          clickSound;
     private final Sound          hoverSound;
     private final BackgroundMusic music;
@@ -112,6 +121,10 @@ public class MenuScreen extends ScreenAdapter {
     private final ShiningTitle      title;
     private final OptionsMenu       menu;
     private final Image             fade;
+    /** « Version 1.0.0 » : aide Astra et les joueurs à savoir quel build tourne. */
+    private final Label             version;
+    /** Langue du texte de {@link #version} : il est réécrit quand elle change dans les options. */
+    private Lang.Language           versionLanguage;
     /** Le Croupier : il propose le tutoriel au premier lancement, puis présente le menu après le tutoriel. */
     private final Texture           croupier = EnemyTextures.newCroupierPortrait();
     private final GuideOverlay      guide;
@@ -120,6 +133,8 @@ public class MenuScreen extends ScreenAdapter {
     private final AchievementToast    toast;
     /** Bestiaire et collection (Options) ; ses portraits ne se chargent qu'à sa première ouverture. */
     private BestiaryOverlay           bestiary;
+    /** Lexique des règles (Options) ; créé à sa première ouverture. */
+    private LexiconOverlay            lexicon;
     private final Sound               achievementSound;
     private boolean                 leaving;
     /** L'accueil (ou le choix d'une partie) est affiché : aucune partie n'est encore choisie. */
@@ -159,6 +174,12 @@ public class MenuScreen extends ScreenAdapter {
 
         stage.addActor(decor);
         stage.addActor(title);
+        versionFont = Fonts.jersey(VERSION_SIZE, Palette.TEXT_BODY, 2f, shadow);
+        version     = new Label("", new Label.LabelStyle(versionFont, Color.WHITE));
+        version.setColor(1f, 1f, 1f, 0.75f);
+        version.setTouchable(Touchable.disabled);
+        refreshVersion();
+        stage.addActor(version);
         menu = new OptionsMenu(stage, hud, clickSound, hoverSound);
 
         if (home) showHomePage();
@@ -317,7 +338,7 @@ public class MenuScreen extends ScreenAdapter {
 
     /**
      * Page des options, en onglets : Visuel (affichage, animations, cartes colorées), Audio
-     * (musique, sons), Accessibilité, Jeu (langue, puis, une partie choisie, statistiques,
+     * (musique, sons), Accessibilité, Jeu (langue, lexique des règles, puis, une partie choisie, statistiques,
      * bestiaire, tutoriel, mode ADMIN) ; chaque onglet finit par Retour (vers l'accueil ou la page principale).
      *
      * @param tab      l'onglet affiché
@@ -340,7 +361,7 @@ public class MenuScreen extends ScreenAdapter {
     }
 
     /**
-     * @return l'onglet Jeu des options : langue, puis (une partie choisie) statistiques,
+     * @return l'onglet Jeu des options : langue, lexique des règles, puis (une partie choisie) statistiques,
      *         bestiaire, tutoriel, mode ADMIN
      */
     private List<OptionsMenu.Entry> gameEntries() {
@@ -353,6 +374,7 @@ public class MenuScreen extends ScreenAdapter {
         };
         entries.add(new OptionsMenu.Entry(() -> Lang.f("Langue : {0}", Lang.get().label), toggleLanguage,
             direction -> toggleLanguage.run()));
+        entries.add(OptionsMenu.Entry.button(Lang.t("Lexique des règles"), this::showLexicon));
         if (home) return entries; // à l'accueil, aucune partie n'est encore choisie
         entries.add(OptionsMenu.Entry.button(Lang.t("Statistiques et succès"), this::showAchievements));
         entries.add(OptionsMenu.Entry.button(Lang.t("Bestiaire et collection"), this::showBestiary));
@@ -373,17 +395,55 @@ public class MenuScreen extends ScreenAdapter {
         fade.toFront();
     }
 
+    /** Ouvre le lexique des règles ; le menu attend qu'il se ferme. */
+    private void showLexicon() {
+        if (lexicon == null) {
+            lexicon = new LexiconOverlay(hud, guideButtons, clickSound);
+            stage.addActor(lexicon.getActor());
+        }
+        menu.setActive(false);
+        lexicon.show(() -> { if (!leaving) menu.setActive(true); });
+        toast.toFront();
+        fade.toFront();
+    }
+
     /** Ouvre la fenêtre du bestiaire et de la collection ; le menu attend qu'elle se ferme. */
     private void showBestiary() {
+        createBestiary();
+        menu.setActive(false);
+        bestiary.show(luckyGame.getProfile(), () -> { if (!leaving) menu.setActive(true); });
+        toast.toFront();
+        fade.toFront();
+    }
+
+    private void createBestiary() {
         if (bestiary == null) {
             bestiary = new BestiaryOverlay(hud, luckyGame.getAssets().enemyTextures(), guideButtons, clickSound,
                 () -> goTo(() -> new CinematicScreen(luckyGame)));
             stage.addActor(bestiary.getActor());
         }
+    }
+
+    /**
+     * Entraînement libre : la fenêtre du bestiaire où l'on choisit le croupier d'entraînement
+     * ou un ennemi déjà vaincu ; le menu attend qu'elle se ferme.
+     */
+    private void showTraining() {
+        createBestiary();
         menu.setActive(false);
-        bestiary.show(luckyGame.getProfile(), () -> { if (!leaving) menu.setActive(true); });
+        bestiary.showTraining(luckyGame.getProfile(), kind -> goTo(() -> new GameScreen(luckyGame, kind)),
+            () -> { if (!leaving) menu.setActive(true); });
         toast.toFront();
         fade.toFront();
+    }
+
+    /** @return {@code true} si un ennemi a déjà été vaincu (hors croupier d'entraînement) : le choix s'ouvre. */
+    private boolean hasTrainingChoice() {
+        PlayerProfile profile = luckyGame.getProfile();
+        for (EnemyKind kind : Bestiary.enemies()) {
+            if (kind != EnemyKind.ENTRAINEMENT && profile.hasDefeated(kind)) return true;
+        }
+        return false;
     }
 
     private void showPage(String caption, List<OptionsMenu.Entry> entries) {
@@ -506,6 +566,10 @@ public class MenuScreen extends ScreenAdapter {
      * disposer pendant qu'il s'exécute).
      */
     private void onPlay() {
+        if (hasTrainingChoice()) { // Entraînement libre : choisir son adversaire parmi les ennemis vaincus
+            showTraining();
+            return;
+        }
         fadeOutThen(() -> {
             luckyGame.setScreen(new GameScreen(luckyGame));
             dispose();
@@ -559,7 +623,23 @@ public class MenuScreen extends ScreenAdapter {
             Actions.moveBy(0f, TITLE_FLOAT, 1.4f, Interpolation.sine),
             Actions.moveBy(0f, -TITLE_FLOAT, 1.4f, Interpolation.sine))));
 
+        placeVersion();
         placeMenu();
+    }
+
+    /** Réécrit le numéro de version dans la langue en cours (une fois par changement de langue). */
+    private void refreshVersion() {
+        if (versionLanguage == Lang.get()) return;
+        versionLanguage = Lang.get();
+        version.setText(Lang.f("Version {0}", GameVersion.VERSION));
+        version.pack();
+        placeVersion();
+    }
+
+    /** Numéro de version dans le coin en bas à droite. */
+    private void placeVersion() {
+        float width = stage.getViewport().getWorldWidth();
+        version.setPosition(width - VERSION_MARGIN - version.getWidth(), VERSION_MARGIN);
     }
 
     /** Décale le décor selon la parallaxe courante (il déborde de PARALLAX de chaque côté). */
@@ -600,10 +680,20 @@ public class MenuScreen extends ScreenAdapter {
                     }
                     return true;
                 }
+                if (lexicon != null && lexicon.isShown()) {
+                    if (keycode == Input.Keys.ESCAPE) {
+                        clickSound.play();
+                        lexicon.hide();
+                    }
+                    return true;
+                }
                 if (bestiary != null && bestiary.isShown()) {
                     if (keycode == Input.Keys.ESCAPE) {
                         clickSound.play();
                         bestiary.hide();
+                    } else if (bestiary.isTraining() && (keycode == Input.Keys.ENTER || keycode == Input.Keys.SPACE)) {
+                        clickSound.play();
+                        bestiary.fightSelected();
                     }
                     return true;
                 }
@@ -626,6 +716,7 @@ public class MenuScreen extends ScreenAdapter {
         layout();
         achievements.layout();
         if (bestiary != null) bestiary.layout();
+        if (lexicon != null) lexicon.layout();
     }
 
     @Override
@@ -633,6 +724,7 @@ public class MenuScreen extends ScreenAdapter {
         ScreenUtils.clear(Color.BLACK);
         if (!settings.isReducedEffects()) updateParallax(delta);
         music.update(); // suit le réglage « Musique » des options
+        refreshVersion();
         stage.act(delta);
         stage.draw();
     }
@@ -646,12 +738,14 @@ public class MenuScreen extends ScreenAdapter {
         if (bestiary != null) {
             bestiary.dispose();
         }
+        if (lexicon != null) lexicon.dispose();
         toast.dispose();
         achievementSound.dispose();
         croupier.dispose();
         decor.dispose();
         Fonts.release(titleFont);
         Fonts.release(shineFont);
+        Fonts.release(versionFont);
         menu.dispose();
         // La musique appartient aux ressources partagées : elle continue sur l'écran suivant.
     }
