@@ -30,6 +30,8 @@ import fr.astratime.lucky.assets.BackgroundMusic;
 import fr.astratime.lucky.assets.VolumeSound;
 import fr.astratime.lucky.i18n.Lang;
 import fr.astratime.lucky.progress.PlayerProfile;
+import fr.astratime.lucky.progress.Bestiary;
+import fr.astratime.lucky.entities.enemy.EnemyKind;
 import fr.astratime.lucky.progress.Rank;
 import fr.astratime.lucky.progress.SaveSlots;
 import fr.astratime.lucky.settings.AudioSettings;
@@ -390,15 +392,41 @@ public class MenuScreen extends ScreenAdapter {
 
     /** Ouvre la fenêtre du bestiaire et de la collection ; le menu attend qu'elle se ferme. */
     private void showBestiary() {
+        createBestiary();
+        menu.setActive(false);
+        bestiary.show(luckyGame.getProfile(), () -> { if (!leaving) menu.setActive(true); });
+        toast.toFront();
+        fade.toFront();
+    }
+
+    private void createBestiary() {
         if (bestiary == null) {
             bestiary = new BestiaryOverlay(hud, luckyGame.getAssets().enemyTextures(), guideButtons, clickSound,
                 () -> goTo(() -> new CinematicScreen(luckyGame)));
             stage.addActor(bestiary.getActor());
         }
+    }
+
+    /**
+     * Entraînement libre : la fenêtre du bestiaire où l'on choisit le croupier d'entraînement
+     * ou un ennemi déjà vaincu ; le menu attend qu'elle se ferme.
+     */
+    private void showTraining() {
+        createBestiary();
         menu.setActive(false);
-        bestiary.show(luckyGame.getProfile(), () -> { if (!leaving) menu.setActive(true); });
+        bestiary.showTraining(luckyGame.getProfile(), kind -> goTo(() -> new GameScreen(luckyGame, kind)),
+            () -> { if (!leaving) menu.setActive(true); });
         toast.toFront();
         fade.toFront();
+    }
+
+    /** @return {@code true} si un ennemi a déjà été vaincu (hors croupier d'entraînement) : le choix s'ouvre. */
+    private boolean hasTrainingChoice() {
+        PlayerProfile profile = luckyGame.getProfile();
+        for (EnemyKind kind : Bestiary.enemies()) {
+            if (kind != EnemyKind.ENTRAINEMENT && profile.hasDefeated(kind)) return true;
+        }
+        return false;
     }
 
     private void showPage(String caption, List<OptionsMenu.Entry> entries) {
@@ -521,6 +549,10 @@ public class MenuScreen extends ScreenAdapter {
      * disposer pendant qu'il s'exécute).
      */
     private void onPlay() {
+        if (hasTrainingChoice()) { // Entraînement libre : choisir son adversaire parmi les ennemis vaincus
+            showTraining();
+            return;
+        }
         fadeOutThen(() -> {
             luckyGame.setScreen(new GameScreen(luckyGame));
             dispose();
@@ -635,6 +667,9 @@ public class MenuScreen extends ScreenAdapter {
                     if (keycode == Input.Keys.ESCAPE) {
                         clickSound.play();
                         bestiary.hide();
+                    } else if (bestiary.isTraining() && (keycode == Input.Keys.ENTER || keycode == Input.Keys.SPACE)) {
+                        clickSound.play();
+                        bestiary.fightSelected();
                     }
                     return true;
                 }

@@ -5,6 +5,7 @@ import fr.astratime.lucky.entities.enemy.EnemyKind;
 import fr.astratime.lucky.entities.exploration.DungeonRun;
 import fr.astratime.lucky.entities.exploration.Place;
 import fr.astratime.lucky.entities.run.CombatRun;
+import fr.astratime.lucky.entities.tower.Chapter;
 import fr.astratime.lucky.entities.tower.EndlessRun;
 import fr.astratime.lucky.entities.tower.TowerRun;
 
@@ -89,5 +90,39 @@ public final class CombatMusic {
             own = EXPLORATION_ENEMIES.get(kind);
         }
         return own != null ? own : of(run);
+    }
+
+    /**
+     * @return la musique d'un combat d'entraînement contre {@code enemy} : la sienne
+     *         s'il en a une (comme dans son mode), sinon celle de son lieu ({@link #ofTrainingPlace})
+     */
+    public static String ofTraining(Enemy enemy) {
+        EnemyKind kind = enemy.getKind();
+        String own;
+        if (kind == EnemyKind.MACHINE_ORIGINELLE && enemy.getPhase() >= 2) own = MACHINE_PHASE_2;
+        else if (kind == EnemyKind.COMETE && enemy.getPhase() >= 2) own = COMETE_PHASE_2;
+        else own = TOWER_ENEMIES.getOrDefault(kind, EXPLORATION_ENEMIES.get(kind));
+        return own != null ? own : ofTrainingPlace(kind);
+    }
+
+    /**
+     * @return la musique du lieu de {@code kind} à l'entraînement : celle de son lieu de
+     *         l'Exploration, de la Tour (ou de ses boss), ou la musique de combat d'origine
+     */
+    public static String ofTrainingPlace(EnemyKind kind) {
+        Place place = Place.of(kind);
+        if (place != null) {
+            return switch (place) {
+                case PRAIRIE -> DEFAULT;
+                case PORT    -> PORT;
+                case MINES   -> MINES;
+                case CASINO  -> CASINO;
+                case FOIRE   -> FOIRE;
+                case DESERT  -> DESERT;
+            };
+        }
+        Chapter chapter = Chapter.of(kind);
+        if (chapter == null) return DEFAULT;
+        return chapter.getBoss() == kind ? BOSS : TOWER;
     }
 }
