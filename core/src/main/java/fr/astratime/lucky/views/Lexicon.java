@@ -169,6 +169,8 @@ public final class Lexicon {
                 + "une fois le roi battu.")),
             term(Lang.t("Tour des épreuves"), Lang.t("Des chapitres qui s'ouvrent l'un après l'autre. Ils ne "
                 + "rapportent pas de pièces. Quitter un chapitre le fait recommencer.")),
+            term(Lang.t("Entraînement libre"), Lang.t("Choisis un ennemi déjà vaincu pour tester ton deck. "
+                + "Ce combat ne rapporte rien.")),
             term(Lang.t("Mode difficile"), Lang.t("Une seconde Tour, bien plus dure, avec sa propre progression.")),
             term(Lang.t("Table du croupier"), Lang.t("Ton deck, ta machine, ton rang et la fusion des cartes."))));
     }
