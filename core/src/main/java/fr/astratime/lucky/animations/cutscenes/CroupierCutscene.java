@@ -75,9 +75,9 @@ public class CroupierCutscene extends Cutscene {
     /** @return la durée de la scène avant le fondu final. */
     private float length() {
         return switch (scene) {
-            case INTRO -> 7.2f;
-            case RIG, OPEN -> 4.4f;
-            case ENDING -> 9.0f;
+            case INTRO -> 10.6f;   // le son « house » dure 11,4 s
+            case RIG, OPEN -> 4.2f; // « boss_phase » : 4,8 s
+            case ENDING -> 8.4f;   // « exploration_ending » : 9 s
         };
     }
 
@@ -98,9 +98,9 @@ public class CroupierCutscene extends Cutscene {
         float w = worldWidth(), h = worldHeight();
         switch (scene) {
             case INTRO -> {
-                if (at(2.6f)) burst(w / 2f, h * 0.62f, RED, 50, 600f);         // il change de couleurs
-                if (at(2.6f)) rumble(0.4f, 8f);
-                for (int i = 0; i < CARDS.length; i++) if (at(4.3f + i * 0.25f)) rumble(0.08f, 2f);
+                if (at(3.8f)) burst(w / 2f, h * 0.62f, RED, 50, 600f);         // il change de couleurs
+                if (at(3.8f)) rumble(0.4f, 8f);
+                for (int i = 0; i < CARDS.length; i++) if (at(5.7f + i * 0.35f)) rumble(0.08f, 2f);
             }
             case RIG -> {
                 if (at(2.0f)) {                                                // la main arrête ton rouleau
@@ -152,28 +152,28 @@ public class CroupierCutscene extends Cutscene {
     /** Il bat les cartes, les machines s'allument derrière lui, il change de couleurs, il distribue. */
     private void drawIntro(Batch batch, float w, float h) {
         gradient(batch, hex("05030a"), hex("1a0610"));
-        float lit = progress(0.6f, 2.4f) * MACHINES;
+        float lit = progress(0.8f, 3.6f) * MACHINES;
         drawMachines(batch, w, h, lit, 1f);
-        float change = progress(2.4f, 2.9f);
+        float change = progress(3.6f, 4.2f);
         float x = w / 2f, y = h * 0.3f, scale = 12f;
         glow(batch, x, y + 42f * scale * 0.6f, 900f, RED, 0.35f * change);
         portrait(batch, croupier, x, y, scale, 0f, 1f - change);
         portrait(batch, grand, x, y, scale, 0f, change);
         drawTable(batch, w, h);
-        if (time < 2.4f) {                                                     // il bat les cartes
+        if (time < 3.6f) {                                                     // il bat les cartes
             float shuffle = MathUtils.sin(time * 14f) * 40f;
             batch.setColor(Color.WHITE);
             sprite(batch, back, x - 60f + shuffle, h * 0.26f, 6f, 0f);
             sprite(batch, back, x + 60f - shuffle, h * 0.26f, 6f, 0f);
         }
         for (int i = 0; i < CARDS.length; i++) {                               // il distribue tes cartes
-            float k = Interpolation.pow2Out.apply(progress(4.2f + i * 0.25f, 4.6f + i * 0.25f));
+            float k = Interpolation.pow2Out.apply(progress(5.6f + i * 0.35f, 6.0f + i * 0.35f));
             if (k <= 0f) continue;
             float cx = MathUtils.lerp(x, cardX(i, w), k), cy = MathUtils.lerp(h * 0.26f, h * 0.1f, k);
             batch.setColor(Color.WHITE);
-            sprite(batch, time > 5.6f ? cards[i] : back, cx, cy, 7f, (1f - k) * 30f);
+            sprite(batch, time > 7.6f ? cards[i] : back, cx, cy, 7f, (1f - k) * 30f);
         }
-        line(batch, Lang.t("« TU AS APPRIS TOUT CE QUE JE SAVAIS. JOUONS. »"), w / 2f, h * 0.92f, progress(5.8f, 6.2f));
+        line(batch, Lang.t("« TU AS APPRIS TOUT CE QUE JE SAVAIS. JOUONS. »"), w / 2f, h * 0.92f, progress(8.0f, 8.4f));
     }
 
     /** Tes trois rouleaux tournent ; sa main en arrête un, un cadenas d'or le fige. */
