@@ -2693,5 +2693,8 @@
   "Chaque carte du 2 au Roi, de n'importe quelle couleur, ajoute au multiplicateur de gains du tour : +1 du 2 au 5, +2 du 6 au 10, +3 pour Valet, Dame et Roi.": "Each card from 2 to King, of any suit, adds to the turn's gains multiplier: +1 from 2 to 5, +2 from 6 to 10, +3 for Jack, Queen and King.",
   "Étoile filante": "Shooting Star",
   "Étoile du berger": "Evening Star",
-  "Étoile d'or": "Golden Star"
+  "Étoile d'or": "Golden Star",
+  "Cosmétiques : l'allure de ta table et de tes cartes.": "Cosmetics: the look of your table and your cards.",
+  "Cinématique : les cinématiques que tu as déjà vues, à revoir quand tu veux.": "Cutscenes: the cutscenes you have already seen, to watch again whenever you like.",
+  "Aucune cinématique vue pour l'instant. Affronte un boss ou un roi : sa cinématique se revoit ensuite ici.": "No cutscene seen yet. Face a boss or a king: you can then watch its cutscene again here."
 }
