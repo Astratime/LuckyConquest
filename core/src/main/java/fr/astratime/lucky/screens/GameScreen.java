@@ -169,7 +169,6 @@ import fr.astratime.lucky.views.TableProps;
 import fr.astratime.lucky.views.Tooltip;
 
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.function.Function;
 import java.util.function.Consumer;
@@ -227,8 +226,6 @@ public class GameScreen extends ScreenAdapter {
     private static final float  CARD_WIDTH     = 95f;
     private static final float  CARD_HEIGHT    = 135f;
     private static final String CARD_BACK_PATH = "cards/light/BACK.png";
-    /** Carte de test de l'échoppe qui ouvre le Jeu bonus à coup sûr (mode ADMIN seulement). */
-    private static final String BONUS_GAME_CARD = "jeu_bonus";
 
     private static final float BUTTON_MARGIN = 20f;   // boutons en bas à gauche, sous la table
 
@@ -724,8 +721,10 @@ public class GameScreen extends ScreenAdapter {
                 CardLoader.cardFactory(), TutorialRun.shop(),
                 cards -> new Player(Lang.t("Joueur"), Player.BASE_HP, cards, RankBonus.NONE, Symbol.classicReels()));
         } else {
-            Map<String, Integer> shop = new LinkedHashMap<>(CardLoader.loadShop());
-            if (!profile.isAdmin()) shop.remove(BONUS_GAME_CARD); // carte de test du Jeu bonus : mode ADMIN seulement
+            // Échoppe : la carte de test du Jeu bonus en ADMIN seulement ; les Bingos d'un rouleau précis à
+            // l'Entraînement seulement (partout en ADMIN).
+            Map<String, Integer> shop = GameController.stallFor(CardLoader.loadShop(), CardLoader.cardFactory(),
+                profile.isAdmin(), run == null);
             return new GameController(() -> CardLoader.loadDeck(profile.getDeck()),
                 CardLoader.cardFactory(), shop,
                 cards -> new Player(Lang.t("Joueur"), Player.BASE_HP, cards, profile.getRankBonus(), profile.getMachine()));

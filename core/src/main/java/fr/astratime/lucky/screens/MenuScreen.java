@@ -68,8 +68,8 @@ import java.util.function.Supplier;
  * épreuves » (choix d'un chapitre, {@link TowerScreen}), « Options » et « Quitter ». Page des options : affichage (fenêtre agrandie ou plein
  * écran, appliqué tout de suite), effets visuels (normaux ou réduits,
  * réglage partagé avec l'écran de jeu), volume de la musique, volume des sons,
- * mode ADMIN (tout le contenu du jeu ouvert et le mode « Cinématique », {@link CinematicScreen} ;
- * désactivé à chaque lancement, voir {@link PlayerProfile#setAdmin(boolean)})
+ * mode ADMIN (tout le contenu du jeu ouvert et toutes les cinématiques du mode « Cinématique »,
+ * {@link CinematicScreen}, qui hors ADMIN ne montre que celles déjà vues ; désactivé à chaque lancement, voir {@link PlayerProfile#setAdmin(boolean)})
  * et « Retour ».
  *
  * Les options (panneau partagé avec le menu pause, voir {@link OptionsMenu}) se
@@ -306,7 +306,7 @@ public class MenuScreen extends ScreenAdapter {
 
     /**
      * Page principale : Entraînement, Tour des épreuves, Exploration, Table du croupier, Boutique (cosmétiques compris),
-     * Cinématique (en mode ADMIN seulement), Options, Retour (vers l'accueil), Quitter.
+     * Cinématique, Options, Retour (vers l'accueil), Quitter.
      */
     private void showMainPage() {
         List<OptionsMenu.Entry> entries = new ArrayList<>(List.of(
@@ -315,10 +315,8 @@ public class MenuScreen extends ScreenAdapter {
             OptionsMenu.Entry.button(Lang.t("Exploration"), () -> goTo(() -> new ExplorationScreen(luckyGame))),
             OptionsMenu.Entry.button(Lang.t("Table du croupier"), () -> goTo(() -> new CroupierTableScreen(luckyGame))),
             OptionsMenu.Entry.button(Lang.t("Boutique"), () -> goTo(() -> new ShopScreen(luckyGame)))));
-        // Mode Cinématique : seulement en mode ADMIN.
-        if (luckyGame.getProfile().isAdmin()) {
-            entries.add(OptionsMenu.Entry.button(Lang.t("Cinématique"), () -> goTo(() -> new CinematicScreen(luckyGame))));
-        }
+        // Mode Cinématique : ouvert à tous ; hors mode ADMIN, seulement les cinématiques déjà vues.
+        entries.add(OptionsMenu.Entry.button(Lang.t("Cinématique"), this::onCinematic));
         entries.add(OptionsMenu.Entry.button(Lang.t("Options"), this::showOptionsPage));
         entries.add(OptionsMenu.Entry.button(Lang.t("Retour"), this::showHomePage));
         entries.add(OptionsMenu.Entry.button(Lang.t("Quitter"), this::onQuit));
@@ -537,11 +535,11 @@ public class MenuScreen extends ScreenAdapter {
                 + "pièces."),
             Lang.t("Table du croupier : ton deck de 20 cartes et les 11 rouleaux de ta machine."),
             Lang.t("Boutique : tes pièces y achètent des rangs, des cartes, des rouleaux et des cosmétiques."),
+            Lang.t("Cinématique : les cinématiques que tu as déjà vues, à revoir quand tu veux."),
             Lang.t("Options : le tutoriel s'y rejoue. Bonne chance à la table.")};
         List<GuideOverlay.Step> steps = new ArrayList<>();
         for (int i = 0; i < lines.length; i++) {
-            // « Options » vient après « Cinématique » quand le mode ADMIN l'affiche.
-            int index = i == lines.length - 1 && profile.isAdmin() ? i + 1 : i;
+            int index = i; // une ligne par bouton, dans l'ordre de la page principale
             steps.add(GuideOverlay.Step.say(lines[i], () -> GuideOverlay.boundsOf(menu.getOption(index))));
         }
         guide.play(steps, () -> profile.markSeen(PlayerProfile.GUIDE_MENU));
@@ -550,6 +548,22 @@ public class MenuScreen extends ScreenAdapter {
     // -------------------------------------------------------------------------
     // Actions
     // -------------------------------------------------------------------------
+
+    /**
+     * Mode Cinématique : ouvert à tous. Hors mode ADMIN, il ne montre que les cinématiques déjà vues
+     * (voir {@link Bestiary}) ; s'il n'y en a encore aucune, le Croupier le dit au lieu d'ouvrir un écran vide.
+     */
+    private void onCinematic() {
+        PlayerProfile profile = luckyGame.getProfile();
+        if (profile.isAdmin() || Bestiary.cutscenes(profile)[0] > 0) {
+            goTo(() -> new CinematicScreen(luckyGame));
+            return;
+        }
+        GuideOverlay.Step step = GuideOverlay.Step.say(Lang.t("Aucune cinématique vue pour l'instant. Affronte un boss "
+            + "ou un roi : sa cinématique se revoit ensuite ici.")).buttons(
+            guideButtons.create(Lang.t("Compris"), clickSound, guide::stop));
+        guide.play(List.of(step), null);
+    }
 
     /** Fondu au noir puis le tutoriel : un combat commenté par le Croupier. */
     private void onTutorial() {
