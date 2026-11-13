@@ -44,6 +44,7 @@ import fr.astratime.lucky.popups.PopupScale;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.IdentityHashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -515,6 +516,33 @@ public class GameController {
 
     /** Identifiant de la carte « Bingo » de l'échoppe. */
     public static final String SHOP_BINGO = "bingo";
+
+    /** Carte de test de l'échoppe qui ouvre le Jeu bonus à coup sûr (mode ADMIN seulement). */
+    public static final String SHOP_BONUS_GAME = "jeu_bonus";
+
+    /**
+     * @param shop     toutes les cartes de l'échoppe, avec leur prix, dans l'ordre d'affichage
+     * @param admin    mode ADMIN : toutes les cartes, dans tous les combats
+     * @param training combat d'Entraînement (y compris l'entraînement libre)
+     * @return les cartes vendues dans ce combat : hors ADMIN, pas de carte de test du
+     *         Jeu bonus, et les Bingos d'un rouleau précis seulement à l'Entraînement
+     *         (le Bingo au hasard reste partout). Le Tripot du carrefour tire parmi
+     *         ces cartes-là.
+     */
+    public static Map<String, Integer> stallFor(Map<String, Integer> shop, Function<String, Card> cardFactory,
+                                                boolean admin, boolean training) {
+        Map<String, Integer> stall = new LinkedHashMap<>(shop);
+        if (admin) return stall;
+        stall.remove(SHOP_BONUS_GAME);
+        if (!training) stall.keySet().removeIf(id -> isReelBingo(cardFactory.apply(id)));
+        return stall;
+    }
+
+    /** @return {@code true} si {@code card} déclenche le Bingo d'un symbole précis (pas le Bingo au hasard). */
+    public static boolean isReelBingo(Card card) {
+        return card.getEffects().stream()
+            .anyMatch(effect -> effect instanceof BingoEffect bingo && bingo.getSymbol() != null);
+    }
 
     /**
      * Carte achetée.
