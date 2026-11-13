@@ -39,6 +39,9 @@ tasks.register('simulate', JavaExec) {
   systemProperty 'lucky.simulation.out', layout.buildDirectory.file('simulation/equilibrage.md').get().asFile.absolutePath
   if (project.hasProperty('quick')) args '--quick'
   if (project.hasProperty('tower')) args '--tower'
+  if (project.hasProperty('rankplace')) args '--rankplace'
+  ['potLog','onlyRank','onlyGear'].each { p -> if (project.hasProperty(p)) systemProperty "lucky.$p", project.property(p) }
+  if (project.hasProperty('rpRuns')) systemProperty 'lucky.rpRuns', project.property('rpRuns')
   if (project.hasProperty('stake')) systemProperty 'lucky.stake', project.property('stake')
   if (project.hasProperty('potPerRun')) systemProperty 'lucky.potPerRun', 'true'
 }

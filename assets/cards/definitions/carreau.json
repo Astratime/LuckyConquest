@@ -23,6 +23,10 @@
         "attackPercent": 40,
         "defenseBoost": 6,
         "vaultBonus": 50
+      },
+      {
+        "type": "CARD_GAINS",
+        "gainMultiplier": 1
       }
     ]
   },
@@ -38,6 +42,10 @@
         "attackPercent": 50,
         "defenseBoost": 9,
         "vaultBonus": 50
+      },
+      {
+        "type": "CARD_GAINS",
+        "gainMultiplier": 1
       }
     ]
   },
@@ -53,6 +61,10 @@
         "attackPercent": 60,
         "defenseBoost": 12,
         "vaultBonus": 50
+      },
+      {
+        "type": "CARD_GAINS",
+        "gainMultiplier": 1
       }
     ]
   },
@@ -68,6 +80,10 @@
         "attackPercent": 70,
         "defenseBoost": 15,
         "vaultBonus": 50
+      },
+      {
+        "type": "CARD_GAINS",
+        "gainMultiplier": 1
       }
     ]
   },
@@ -83,6 +99,10 @@
         "attackPercent": 80,
         "defenseBoost": 18,
         "vaultBonus": 100
+      },
+      {
+        "type": "CARD_GAINS",
+        "gainMultiplier": 2
       }
     ]
   },
@@ -98,6 +118,10 @@
         "attackPercent": 90,
         "defenseBoost": 21,
         "vaultBonus": 100
+      },
+      {
+        "type": "CARD_GAINS",
+        "gainMultiplier": 2
       }
     ]
   },
@@ -113,6 +137,10 @@
         "attackPercent": 100,
         "defenseBoost": 24,
         "vaultBonus": 100
+      },
+      {
+        "type": "CARD_GAINS",
+        "gainMultiplier": 2
       }
     ]
   },
@@ -128,6 +156,10 @@
         "attackPercent": 110,
         "defenseBoost": 27,
         "vaultBonus": 100
+      },
+      {
+        "type": "CARD_GAINS",
+        "gainMultiplier": 2
       }
     ]
   },
@@ -143,6 +175,10 @@
         "attackPercent": 120,
         "defenseBoost": 30,
         "vaultBonus": 100
+      },
+      {
+        "type": "CARD_GAINS",
+        "gainMultiplier": 2
       }
     ]
   },
@@ -158,6 +194,10 @@
         "attackPercent": 130,
         "defenseBoost": 33,
         "vaultBonus": 150
+      },
+      {
+        "type": "CARD_GAINS",
+        "gainMultiplier": 3
       }
     ]
   },
@@ -173,6 +213,10 @@
         "attackPercent": 140,
         "defenseBoost": 36,
         "vaultBonus": 150
+      },
+      {
+        "type": "CARD_GAINS",
+        "gainMultiplier": 3
       }
     ]
   },
@@ -188,6 +232,10 @@
         "attackPercent": 150,
         "defenseBoost": 39,
         "vaultBonus": 150
+      },
+      {
+        "type": "CARD_GAINS",
+        "gainMultiplier": 3
       }
     ]
   }

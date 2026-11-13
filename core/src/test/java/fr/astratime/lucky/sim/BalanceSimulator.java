@@ -124,9 +124,10 @@ public final class BalanceSimulator {
      * Dans la manche (6 cartes par tour), Rayon du phare et Masque du Joker (l'ennemi passe son tour), cartes à
      * plusieurs effets (Marteau du cordonnier, Chope, Cocktail des abysses, Pacte de sang).
      */
-    static final Map<String, Integer> SMART_DECK = deck("1_pique", 2, "13_pique", 2, "12_pique", 1, "1_coeur", 2,
-        "13_coeur", 2, "in_the_sleeve", 2, "rayon_du_phare", 2, "masque_du_joker", 1, "marteau_du_cordonnier", 2,
-        "chope", 1, "cocktail_des_abysses", 1, "pacte_de_sang", 1, "draw_3", 1);
+    static final Map<String, Integer> SMART_DECK = deck("1_pique", 1, "13_pique", 1, "12_pique", 1, "11_pique", 1,
+        "10_pique", 1, "1_coeur", 1, "13_coeur", 1, "12_coeur", 1, "in_the_sleeve", 1, "rayon_du_phare", 1,
+        "masque_du_joker", 1, "marteau_du_cordonnier", 1, "chope", 1, "cocktail_des_abysses", 1, "pacte_de_sang", 1,
+        "draw_3", 1, "draw_2", 1, "pierre_a_aiguiser", 1, "dague_de_l_ombre", 1, "guillotine", 1);
 
     /** Joueur malin, cartes normales puis toutes en « + » ; il achète Bingo à l'échoppe pour un gros tour. */
     static final Gear SMART = new Gear("Joueur malin", SMART_DECK, Symbol.classicReels(), true, false, true);
@@ -136,15 +137,17 @@ public final class BalanceSimulator {
     static final List<Symbol> RARE_REELS = List.of(Symbol.HORSESHOE, Symbol.ECU, Symbol.SWORD, Symbol.HEART,
         Symbol.DIE, Symbol.STAR, Symbol.BOMB, Symbol.CROWN, Symbol.NUGGET, Symbol.GOLD_BAR, Symbol.TRIPLE_CHERRY);
 
-    /** Decks de 20 cartes (3 exemplaires au plus, la version « + » compte à part), tous en version « + ». */
+    /** Cartes neutres communes aux decks de couleur : mêmes 8 cartes pour chacun. */
+    private static final String[] SUIT_CORE = {"in_the_sleeve", "rayon_du_phare", "masque_du_joker", "draw_3", "draw_2",
+        "chope", "cocktail_des_abysses", "marteau_du_cordonnier"};
+
+    /** Decks de 20 cartes à 1 exemplaire (un par couleur, voir {@link #suitDeck}), joués en version « + ». */
     private static final Map<String, Map<String, Integer>> STRONG_DECKS = new LinkedHashMap<>();
     static {
-        STRONG_DECKS.put("Piques", deck("1_pique", 3, "13_pique", 3, "12_pique", 3, "pierre_a_aiguiser", 3,
-            "dague_de_l_ombre", 2, "guillotine", 2, "bribe", 2, "draw_3", 2));
-        STRONG_DECKS.put("As et Rois", deck("1_pique", 2, "1_trefle", 2, "1_coeur", 2, "1_carreau", 2,
-            "13_pique", 2, "13_trefle", 2, "13_coeur", 2, "in_the_sleeve", 2, "draw_3", 2, "bribe", 2));
-        STRONG_DECKS.put("Gains", deck("1_trefle", 3, "13_trefle", 3, "trefle_a_quatre_feuilles", 3,
-            "fortune_du_roi", 3, "cocktail_des_abysses", 2, "chope", 2, "lucky_charm", 2, "draw_3", 2));
+        STRONG_DECKS.put("Piques", suitDeck("pique", "pierre_a_aiguiser", "dague_de_l_ombre", "guillotine"));
+        STRONG_DECKS.put("Coeurs", suitDeck("coeur", "transfusion", "baiser_vampire", "pacte_de_sang"));
+        STRONG_DECKS.put("Carreaux", suitDeck("carreau", "rempart", "miroir_taille", "diamant_brut"));
+        STRONG_DECKS.put("Trèfles", suitDeck("trefle", "etoile_filante", "8_trefle", "7_trefle"));
     }
 
     /** Cartes que le robot « au maximum » achète à l'échoppe, dans cet ordre. */
@@ -208,7 +211,8 @@ public final class BalanceSimulator {
         Path assets = Paths.get(System.getProperty("lucky.assets", "../assets")).toAbsolutePath().normalize();
         BalanceSimulator simulator = new BalanceSimulator(assets, quick ? Sizes.QUICK : Sizes.FULL);
         String report = List.of(args).contains("--tower") ? simulator.towerReport()
-            : List.of(args).contains("--tune") ? simulator.tuneReport() : simulator.report();
+            : List.of(args).contains("--tune") ? simulator.tuneReport()
+            : List.of(args).contains("--rankplace") ? simulator.rankPlaceReport() : simulator.report();
         System.out.println(report);
         Path out = Paths.get(System.getProperty("lucky.simulation.out", "build/simulation/equilibrage.md"));
         if (out.getParent() != null) Files.createDirectories(out.getParent());
@@ -954,6 +958,201 @@ public final class BalanceSimulator {
     }
 
     // -------------------------------------------------------------------------
+    // Gains par rang dans son lieu : ./gradlew :core:simulate -Prankplace -Pstake=15 (-PrpRuns=300)
+    // -------------------------------------------------------------------------
+
+    /** Lieu associé à chaque rang (règle d'Astra, PR #105). */
+    static Place placeOfRank(Rank rank) {
+        if (rank == null) return Place.PRAIRIE;
+        return switch (rank) {
+            case AVARE, PARIEUR -> Place.values()[1];
+            case FLAMBEUR, HABITUE -> Place.values()[2];
+            case REQUIN, GROS_BONNET -> Place.values()[3];
+            case BARON, MAGNAT -> Place.values()[4];
+            case ROI_DU_CASINO, LEGENDE -> Place.values()[5];
+        };
+    }
+
+    /** Totaux d'un donjon (somme sur les descentes). */
+    static final class RP {
+        int runs, wins, soldierWins, bonusGames, turns, soldierFights, kingFights;
+        double soldierGains, kingGains, coinsWin, coinsLoss, bonusGains, bonusGainsWin, finalGainsWin, potEnd;
+        final List<Double> runCoins = new ArrayList<>();
+        /**
+         * Ce qu'un joueur touche d'habitude par descente sur {@code span} descentes : la médiane, sur 2 000 tirages
+         * au sort, de la moyenne de {@code span} descentes. La moyenne simple est tirée par de rares Jeux bonus énormes.
+         */
+        double typical(int span) {
+            if (runCoins.isEmpty()) return 0;
+            Random random = new Random(7);
+            double[] means = new double[2_000];
+            for (int i = 0; i < means.length; i++) {
+                double sum = 0;
+                for (int j = 0; j < span; j++) sum += runCoins.get(random.nextInt(runCoins.size()));
+                means[i] = sum / span;
+            }
+            Arrays.sort(means);
+            return means[means.length / 2];
+        }
+        double median() {
+            List<Double> c = new ArrayList<>(runCoins); Collections.sort(c);
+            return c.isEmpty() ? 0 : c.get(c.size() / 2);
+        }
+        void add(RP o) {
+            runCoins.addAll(o.runCoins);
+            runs += o.runs; wins += o.wins; soldierWins += o.soldierWins; bonusGames += o.bonusGames; turns += o.turns;
+            soldierFights += o.soldierFights; kingFights += o.kingFights;
+            soldierGains += o.soldierGains; kingGains += o.kingGains; coinsWin += o.coinsWin; coinsLoss += o.coinsLoss;
+            bonusGains += o.bonusGains; bonusGainsWin += o.bonusGainsWin; finalGainsWin += o.finalGainsWin; potEnd += o.potEnd;
+        }
+    }
+
+    private boolean fightTracked(GameController game, Random random, Gear gear, int[] turns, boolean king, double[] bonus) {
+        for (int turn = 0; turn < sizes.maxTurns() && !isOver(game.getGameState()); turn++) {
+            TurnResult result = gear.smart() ? playSmartTurn(game, random, king) : playTurn(game, random, true, gear.buysAtStall());
+            if (result != null && result.getBonusGame() != null) {
+                bonus[0] += result.getBonusGame().getTotal(); bonus[1]++;
+                if (POT_LOG != null) synchronized (POT_LOG) { POT_LOG.add(new double[] {result.getBonusGame().getPot(),
+                    result.getBonusGame().getLines().size(), result.getBonusGame().getTotal(), game.getSpinCost()}); }
+            }
+            turns[0]++;
+        }
+        return game.getGameState().getEnemy().isDefeated();
+    }
+
+    /** Les 4 donjons du lieu à tour de rôle, avec une seule cagnotte pour le lieu (comme dans le jeu). */
+    Map<String, RP> rankPlace(Place place, Rank rank, Gear gear, boolean bonusOn, int runs, long seed) {
+        Random random = new Random(seed);
+        GameController game = controller(rank == null ? RankBonus.NONE : rank.getBonus(), gear);
+        game.setPlaceRule(place.getRule());
+        game.setBonusGameEnabled(bonusOn);
+        Map<String, RP> byDungeon = new LinkedHashMap<>();
+        for (Dungeon d : place.getDungeons()) byDungeon.put(d.getShortName(), new RP());
+        long chest = place.getChestCoins();
+        List<Dungeon> dungeons = place.getDungeons();
+        for (int run = 0; run < runs * dungeons.size(); run++) {
+            Dungeon dungeon = dungeons.get(run % dungeons.size());
+            RP rp = byDungeon.get(dungeon.getShortName());
+            int[] turns = {0};
+            double[] bonus = {0, 0};
+            game.restart(dungeon.getSoldier());
+            double g0 = game.getGameState().getPlayer().getGains();
+            rp.soldierFights++;
+            boolean won = fightTracked(game, random, gear, turns, false, bonus);
+            double g1 = game.getGameState().getPlayer().getGains();
+            double effort = 0.5 * (1 - Math.max(0, game.getGameState().getEnemy().getHpRatio()));
+            if (won) {
+                rp.soldierWins++;
+                rp.soldierGains += g1 - g0;
+                game.startCombat(dungeon.getKing());
+                double k0 = game.getGameState().getPlayer().getGains();
+                rp.kingFights++;
+                won = fightTracked(game, random, gear, turns, true, bonus);
+                double k1 = game.getGameState().getPlayer().getGains();
+                if (won) rp.kingGains += k1 - k0;
+                effort = 0.5 + 0.5 * (1 - Math.max(0, game.getGameState().getEnemy().getHpRatio()));
+            }
+            double gains = game.getGameState().getPlayer().getGains();
+            long reward = PlayerProfile.combatReward(won, true, gains, place, won ? 1 : effort);
+            rp.runs++;
+            rp.runCoins.add((double) reward + (won ? chest : 0));
+            rp.turns += turns[0];
+            rp.bonusGames += (int) bonus[1];
+            rp.bonusGains += bonus[0];
+            if (won) {
+                rp.wins++;
+                rp.coinsWin += reward + chest;
+                rp.bonusGainsWin += bonus[0];
+                rp.finalGainsWin += Math.max(0, gains);
+            } else {
+                rp.coinsLoss += reward;
+            }
+            rp.potEnd += game.getPot().getAmount();
+        }
+        return byDungeon;
+    }
+
+    /**
+     * Deck de 20 cartes à 1 exemplaire dominé par une couleur : son As et ses Roi à 9, ses 3 cartes spéciales,
+     * trois cartes d'appoint (As, Roi, Dame de Coeur pour tenir ; de Pique pour le deck Coeur) et {@link #SUIT_CORE}.
+     * Un deck d'une seule couleur ne gagne rien, quelle qu'elle soit : il lui manque le soin ou les dégâts.
+     */
+    private static Map<String, Integer> suitDeck(String suit, String... specials) {
+        Map<String, Integer> deck = new LinkedHashMap<>();
+        for (int rank : new int[] {1, 13, 12, 11, 10, 9}) deck.put(rank + "_" + suit, 1);
+        for (String id : specials) deck.put(id, 1);
+        String support = suit.equals("coeur") ? "pique" : "coeur";
+        for (int rank : new int[] {1, 13, 12}) deck.put(rank + "_" + support, 1);
+        for (String id : SUIT_CORE) deck.put(id, 1);
+        if (deck.size() != 20) throw new IllegalStateException(suit + " : " + deck.size() + " cartes");
+        return deck;
+    }
+
+    /**
+     * Les robots de référence pour les prix (2026-11-13) : le deck de départ, le joueur malin mixte, et un joueur
+     * malin par couleur. Les prix se règlent sur la médiane des quatre couleurs, pas sur la meilleure.
+     */
+    static final List<Gear> SUIT_GEARS = List.of(
+        Gear.STARTER,
+        SMART,
+        new Gear("Pique", STRONG_DECKS.get("Piques"), Symbol.classicReels(), true, false, true),
+        new Gear("Coeur", STRONG_DECKS.get("Coeurs"), Symbol.classicReels(), true, false, true),
+        new Gear("Carreau", STRONG_DECKS.get("Carreaux"), Symbol.classicReels(), true, false, true),
+        new Gear("Trefle", STRONG_DECKS.get("Trèfles"), Symbol.classicReels(), true, false, true));
+
+    static final List<double[]> POT_LOG = System.getProperty("lucky.potLog") != null ? new ArrayList<>() : null;
+
+    String rankPlaceReport() {
+        int runs = Integer.getInteger("lucky.rpRuns", 200);
+        List<Gear> gears = SUIT_GEARS;
+        List<Rank> ranks = allRanks();
+        Map<String, RP> results = new ConcurrentHashMap<>();
+        List<Runnable> jobs = new ArrayList<>();
+        for (Gear gear : gears) for (Rank rank : ranks) for (boolean on : new boolean[] {true}) {
+            if (System.getProperty("lucky.onlyRank") != null && !List.of(System.getProperty("lucky.onlyRank").split(",")).contains(title(rank))) continue;
+            if (System.getProperty("lucky.onlyGear") != null && !List.of(System.getProperty("lucky.onlyGear").split(",")).contains(gear.name())) continue;
+            if (POT_LOG != null && !on) continue;
+            Place place = placeOfRank(rank);
+            jobs.add(() -> rankPlace(place, rank, gear, on, runs, SEED).forEach((name, rp) ->
+                results.put(gear.name() + '|' + title(rank) + '|' + on + '|' + name, rp)));
+        }
+        jobs.parallelStream().forEach(Runnable::run);
+        if (POT_LOG != null) {
+            StringBuilder log = new StringBuilder("pot\tlines\ttotal\tspinCost\n");
+            for (double[] row : POT_LOG) log.append(String.format(Locale.ROOT, "%.0f\t%.0f\t%.0f\t%.0f%n", row[0], row[1], row[2], row[3]));
+            return log.toString();
+        }
+        StringBuilder out = new StringBuilder();
+        out.append("gear\trank\tplace\tdungeon\tbonusOn\truns\twins\tsoldierWins\tkingFights\tavgSoldierGains\tavgKingGains"
+            + "\tavgCoinsWin\tavgCoinsLoss\tavgCoinsRun\tbonusGamesPerRun\tavgBonusGainsPerRun\tbonusShareOfWinGains\tturnsPerRun\tnextPrice\tmedianCoinsRun\tavgPot\ttypical30\n");
+        for (Gear gear : gears) for (Rank rank : ranks) for (boolean on : new boolean[] {true}) {
+            if (!results.containsKey(gear.name() + '|' + title(rank) + '|' + on + '|' + placeOfRank(rank).getDungeons().get(0).getShortName())) continue;
+            Place place = placeOfRank(rank);
+            RP total = new RP();
+            List<String> names = new ArrayList<>();
+            for (Dungeon dungeon : place.getDungeons()) names.add(dungeon.getShortName());
+            names.add("TOUS");
+            for (String name : names) {
+                RP rp;
+                if (name.equals("TOUS")) rp = total;
+                else { rp = results.get(gear.name() + '|' + title(rank) + '|' + on + '|' + name); total.add(rp); }
+                Rank next = rank == null ? Rank.values()[0] : rank.ordinal() + 1 < Rank.values().length ? Rank.values()[rank.ordinal() + 1] : null;
+                out.append(String.format(Locale.ROOT, "%s\t%s\t%s\t%s\t%b\t%d\t%d\t%d\t%d\t%.0f\t%.0f\t%.0f\t%.0f\t%.0f\t%.3f\t%.0f\t%.3f\t%.1f\t%d\t%.0f\t%.0f\t%.0f%n",
+                    gear.name(), title(rank), place.getShortName(), name, on, rp.runs, rp.wins, rp.soldierWins, rp.kingFights,
+                    rp.soldierWins == 0 ? 0 : rp.soldierGains / rp.soldierWins,
+                    rp.wins == 0 ? 0 : rp.kingGains / rp.wins,
+                    rp.wins == 0 ? 0 : rp.coinsWin / rp.wins,
+                    rp.runs - rp.wins == 0 ? 0 : rp.coinsLoss / (rp.runs - rp.wins),
+                    (rp.coinsWin + rp.coinsLoss) / rp.runs,
+                    rp.bonusGames / (double) rp.runs, rp.bonusGains / rp.runs,
+                    rp.finalGainsWin == 0 ? 0 : rp.bonusGainsWin / rp.finalGainsWin,
+                    rp.turns / (double) rp.runs, next == null ? 0 : next.getPrice(), rp.median(), rp.potEnd / rp.runs, rp.typical(30)));
+            }
+        }
+        return out.toString();
+    }
+
+    // -------------------------------------------------------------------------
     // Le robot
     // -------------------------------------------------------------------------
 
@@ -1021,8 +1220,8 @@ public final class BalanceSimulator {
     /** Cartes d'attaque du joueur malin : elles comptent pour décider d'un gros tour. */
     private static boolean isAttackCard(Card card) {
         String id = Card.baseId(card.getId());
-        return id.endsWith("_pique") || id.equals("marteau_du_cordonnier") || id.equals("pacte_de_sang")
-            || id.equals("pierre_a_aiguiser") || id.equals("1_coeur");
+        return card.getSuit() != null || id.equals("marteau_du_cordonnier") || id.equals("pacte_de_sang")
+            || id.equals("pierre_a_aiguiser") || id.equals("etoile_filante");
     }
 
     /** @return l'ordre de jeu d'une carte pour le joueur malin (petit d'abord), ou -1 s'il la garde. */
@@ -1044,6 +1243,9 @@ public final class BalanceSimulator {
                 return 1;
             case "douze_coups": // il attend d'avoir assez de Ressorts (ou le roi)
                 return king || player.getLastingEffects().getCourtAndClock().getSprings() >= 6 ? 6 : -1;
+            case "1_trefle": case "etoile_filante": case "etoile_du_berger": case "etoile_d_or":
+                // il attend que la Bonne étoile garantisse le Bingo (la carte ajoute elle-même 10 points)
+                return player.getLastingEffects().getLuckyStar() >= 20 ? 6 : -1;
             case "bingo":
                 return 9;
             default:

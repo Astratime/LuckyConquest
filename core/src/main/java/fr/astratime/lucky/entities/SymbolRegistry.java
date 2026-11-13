@@ -170,6 +170,18 @@ public class SymbolRegistry {
         return result;
     }
 
+    /** @return les symboles de gains de la machine de {@code player} qui peuvent sortir (ni retirés par le Recyclage). */
+    public static List<Symbol> getGainSymbols(Player player) {
+        List<Symbol> result = new ArrayList<>();
+        for (Symbol symbol : getGainSymbols()) {
+            if (player.getSlotMachine().getReels().contains(symbol)
+                    && !player.getLastingEffects().getRemovedSymbols().containsKey(symbol)) {
+                result.add(symbol);
+            }
+        }
+        return result;
+    }
+
     /** Classe utilitaire statique : instanciation interdite. */
     private SymbolRegistry() {}
 }

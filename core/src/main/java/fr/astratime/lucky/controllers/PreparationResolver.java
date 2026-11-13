@@ -50,6 +50,7 @@ public class PreparationResolver {
     static final int COMBO_BLADES = 1;
     static final int COMBO_BLOOD  = 25;
     static final int COMBO_VAULT  = 40;
+    static final int COMBO_STAR   = 1;
 
     /**
      * Construit un TurnContext neuf pour {@code player}/{@code enemy}, puis applique
@@ -336,7 +337,7 @@ public class PreparationResolver {
                 case PIQUE   -> lasting.addBlades(COMBO_BLADES);
                 case COEUR   -> lasting.addBlood(COMBO_BLOOD);
                 case CARREAU -> lasting.addVault(COMBO_VAULT);
-                case TREFLE  -> { } // le Trèfle rapporte déjà des gains
+                case TREFLE  -> lasting.addLuckyStar(COMBO_STAR);
             }
         }
     }

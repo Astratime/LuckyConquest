@@ -19,9 +19,13 @@
     "rank": 2,
     "effects": [
       {
-        "type": "CLUB_GAIN_ATTACK",
-        "gainMultiplier": 2,
-        "attackBonus": 12
+        "type": "CLUB_LUCKY_STAR",
+        "attackBonus": 92,
+        "stars": 6
+      },
+      {
+        "type": "CARD_GAINS",
+        "gainMultiplier": 1
       }
     ]
   },
@@ -33,9 +37,13 @@
     "rank": 3,
     "effects": [
       {
-        "type": "CLUB_GAIN_ATTACK",
-        "gainMultiplier": 3,
-        "attackBonus": 13
+        "type": "CLUB_LUCKY_STAR",
+        "attackBonus": 93,
+        "stars": 6
+      },
+      {
+        "type": "CARD_GAINS",
+        "gainMultiplier": 1
       }
     ]
   },
@@ -47,9 +55,13 @@
     "rank": 4,
     "effects": [
       {
-        "type": "CLUB_GAIN_ATTACK",
-        "gainMultiplier": 4,
-        "attackBonus": 14
+        "type": "CLUB_LUCKY_STAR",
+        "attackBonus": 94,
+        "stars": 6
+      },
+      {
+        "type": "CARD_GAINS",
+        "gainMultiplier": 1
       }
     ]
   },
@@ -61,9 +73,13 @@
     "rank": 5,
     "effects": [
       {
-        "type": "CLUB_GAIN_ATTACK",
-        "gainMultiplier": 5,
-        "attackBonus": 15
+        "type": "CLUB_LUCKY_STAR",
+        "attackBonus": 95,
+        "stars": 6
+      },
+      {
+        "type": "CARD_GAINS",
+        "gainMultiplier": 1
       }
     ]
   },
@@ -75,9 +91,13 @@
     "rank": 6,
     "effects": [
       {
-        "type": "CLUB_GAIN_ATTACK",
-        "gainMultiplier": 6,
-        "attackBonus": 16
+        "type": "CLUB_LUCKY_STAR",
+        "attackBonus": 96,
+        "stars": 8
+      },
+      {
+        "type": "CARD_GAINS",
+        "gainMultiplier": 2
       }
     ]
   },
@@ -89,9 +109,13 @@
     "rank": 7,
     "effects": [
       {
-        "type": "CLUB_GAIN_ATTACK",
-        "gainMultiplier": 7,
-        "attackBonus": 17
+        "type": "CLUB_LUCKY_STAR",
+        "attackBonus": 97,
+        "stars": 8
+      },
+      {
+        "type": "CARD_GAINS",
+        "gainMultiplier": 2
       }
     ]
   },
@@ -103,9 +127,13 @@
     "rank": 8,
     "effects": [
       {
-        "type": "CLUB_GAIN_ATTACK",
-        "gainMultiplier": 8,
-        "attackBonus": 18
+        "type": "CLUB_LUCKY_STAR",
+        "attackBonus": 98,
+        "stars": 8
+      },
+      {
+        "type": "CARD_GAINS",
+        "gainMultiplier": 2
       }
     ]
   },
@@ -117,9 +145,13 @@
     "rank": 9,
     "effects": [
       {
-        "type": "CLUB_GAIN_ATTACK",
-        "gainMultiplier": 9,
-        "attackBonus": 19
+        "type": "CLUB_LUCKY_STAR",
+        "attackBonus": 99,
+        "stars": 8
+      },
+      {
+        "type": "CARD_GAINS",
+        "gainMultiplier": 2
       }
     ]
   },
@@ -131,9 +163,13 @@
     "rank": 10,
     "effects": [
       {
-        "type": "CLUB_GAIN_ATTACK",
-        "gainMultiplier": 10,
-        "attackBonus": 20
+        "type": "CLUB_LUCKY_STAR",
+        "attackBonus": 100,
+        "stars": 8
+      },
+      {
+        "type": "CARD_GAINS",
+        "gainMultiplier": 2
       }
     ]
   },
@@ -145,9 +181,13 @@
     "rank": 11,
     "effects": [
       {
-        "type": "CLUB_GAIN_ATTACK",
-        "gainMultiplier": 11,
-        "attackBonus": 21
+        "type": "CLUB_LUCKY_STAR",
+        "attackBonus": 101,
+        "stars": 10
+      },
+      {
+        "type": "CARD_GAINS",
+        "gainMultiplier": 3
       }
     ]
   },
@@ -159,9 +199,13 @@
     "rank": 12,
     "effects": [
       {
-        "type": "CLUB_GAIN_ATTACK",
-        "gainMultiplier": 12,
-        "attackBonus": 22
+        "type": "CLUB_LUCKY_STAR",
+        "attackBonus": 102,
+        "stars": 10
+      },
+      {
+        "type": "CARD_GAINS",
+        "gainMultiplier": 3
       }
     ]
   },
@@ -173,9 +217,13 @@
     "rank": 13,
     "effects": [
       {
-        "type": "CLUB_GAIN_ATTACK",
-        "gainMultiplier": 13,
-        "attackBonus": 23
+        "type": "CLUB_LUCKY_STAR",
+        "attackBonus": 103,
+        "stars": 10
+      },
+      {
+        "type": "CARD_GAINS",
+        "gainMultiplier": 3
       }
     ]
   }

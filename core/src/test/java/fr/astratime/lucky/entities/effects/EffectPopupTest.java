@@ -1,6 +1,10 @@
 package fr.astratime.lucky.entities.effects;
 
 import fr.astratime.lucky.entities.Player;
+import fr.astratime.lucky.entities.context.CombatContext;
+import fr.astratime.lucky.entities.context.TurnContext;
+import fr.astratime.lucky.entities.context.SpinContext;
+import fr.astratime.lucky.entities.SymbolRegistry;
 import fr.astratime.lucky.entities.Symbol;
 import fr.astratime.lucky.entities.context.PlayContext;
 import fr.astratime.lucky.popups.EffectPopup;
@@ -38,7 +42,7 @@ class EffectPopupTest {
     void everyEffectShowsAtLeastOnePopupWhenPlayed() {
         List<Effect> effects = List.of(
             new HeartDrainEffect(12), new AceOfHeartsEffect(),
-            new ClubGainAttackEffect(20, 10), new AceOfClubsEffect(),
+            new ClubLuckyStarEffect(10, 4), new CardGainsEffect(2), new AceOfClubsEffect(),
             new DiamondReflectEffect(3.5f, 33), new AceOfDiamondsEffect(),
             new SpadeIgnoreDefenseEffect(11, 1, 40), new AceOfSpadesEffect(), new CorruptionEffect(3),
             new AttackEffect(5), new DefenseEffect(5), new MultiplierEffect(1.5f),
@@ -51,12 +55,12 @@ class EffectPopupTest {
 
     @Test
     void cardWithSeveralBonusesShowsOneTextPerBonus() {
-        assertEquals(List.of("GAINS x+20", "ATTAQUE +10"), texts(play(new ClubGainAttackEffect(20, 10))));
+        assertEquals(List.of("BONNE ÉTOILE +4", "ATTAQUE +10"), texts(play(new ClubLuckyStarEffect(10, 4))));
     }
 
     @Test
     void ordinaryEffectsAreQueuedForTheSpin() {
-        ClubGainAttackEffect effect = new ClubGainAttackEffect(20, 10);
+        CardGainsEffect effect = new CardGainsEffect(2);
 
         assertEquals(List.of(effect), play(effect).getEffectsForSpin());
     }
@@ -71,30 +75,52 @@ class EffectPopupTest {
     }
 
     @Test
-    void aceOfClubsConsumesGainsWhenPlayedAndShowsTheComputedBonuses() {
+    void aceOfClubsEmptiesTheLuckyStarForAGuaranteedBingo() {
         Player player = new Player("Joueur", 100, List.of());
-        player.addGains(1000);
+        player.getLastingEffects().addLuckyStar(20); // + 10 de la carte = 30 : garanti
 
         PlayContext context = play(new AceOfClubsEffect(), player);
 
-        // 30% de 1000 = 300 consommés -> attaque 115 + 10 x racine(300) = 288, boost 150 + 300 = 450
-        assertEquals(700, player.getGains(), "le coût est payé à la pose de la carte");
-        assertEquals(List.of("-300 GAINS", "ATTAQUE +288", "BOOST SYMBOLE +450"), texts(context));
-        assertTrue(context.getEffectsForSpin().stream().anyMatch(e -> e instanceof AttackEffect));
-        assertFalse(context.getEffectsForSpin().stream().anyMatch(e -> e instanceof AceOfClubsEffect),
-            "l'As lui-même n'est pas réappliqué au spin : il consommerait les gains une seconde fois");
+        assertEquals(0, player.getLastingEffects().getLuckyStar(), "la jauge est vidée à la pose");
+        assertEquals(0, player.getGains(), "plus aucun gain consommé");
+        assertEquals(1, context.getEffectsForSpin().size(), "le Bingo est imposé au tirage");
+        SpinContext spin = new SpinContext();
+        context.getEffectsForSpin().forEach(e -> e.apply(new TurnContext(spin, new CombatContext(player, null))));
+        assertTrue(spin.isJackpotForced());
     }
 
     @Test
-    void aceOfClubsNeverConsumesMoreThanWhatStillAddsAttack() {
+    void aceOfClubsChanceFollowsTheLuckyStar() {
+        AceOfClubsEffect ace = new AceOfClubsEffect();
+        assertEquals(0.5f, ace.chance(15), 1e-6);
+        assertEquals(1f, ace.chance(45), 1e-6);
+        assertEquals(20, new AceOfClubsEffect(1.5f).getGuaranteed(), "version « + » : garanti dès 20");
+
         Player player = new Player("Joueur", 100, List.of());
-        player.addGains(10_000_000);
+        AceOfClubsEffect unlucky = new AceOfClubsEffect() {
+            @Override protected boolean roll(float chance) { return false; }
+        };
+        PlayContext context = play(unlucky, player);
+        assertEquals(List.of("BONNE ÉTOILE 33 % : PAS DE BINGO"), texts(context));
+        assertTrue(context.getEffectsForSpin().isEmpty());
+    }
 
-        PlayContext context = play(new AceOfClubsEffect(), player);
-
-        // 1 000 000 de gains suffisent à atteindre +10 000 d'attaque : le reste n'est pas pris.
-        assertEquals(9_000_000, player.getGains());
-        assertEquals(List.of("-1 M GAINS", "ATTAQUE +10115", "BOOST SYMBOLE +1150"), texts(context));
+    @Test
+    void theStarsAimAtTheirKindOfSymbol() {
+        for (AceOfClubsEffect.Kind kind : AceOfClubsEffect.Kind.values()) {
+            Player player = new Player("Joueur", 100, List.of());
+            player.getLastingEffects().addLuckyStar(100);
+            PlayContext context = play(new AceOfClubsEffect(kind, 1f), player);
+            SpinContext spin = new SpinContext();
+            context.getEffectsForSpin().forEach(e -> e.apply(new TurnContext(spin, new CombatContext(player, null))));
+            Symbol symbol = spin.getJackpotSymbol();
+            switch (kind) {
+                case ANY     -> assertEquals(null, symbol);
+                case ATTACK  -> assertTrue(SymbolRegistry.getAttackSymbols().contains(symbol));
+                case DEFENSE -> assertTrue(SymbolRegistry.getDefenseSymbols().contains(symbol));
+                case GAINS   -> assertTrue(SymbolRegistry.getGainSymbols().contains(symbol));
+            }
+        }
     }
 
     @Test
@@ -121,23 +147,5 @@ class EffectPopupTest {
         // 10 % = 10 M ; une Lame coûte 2,5 tirages = 350 000 : 10 Lames (le plafond) pour 3,5 M
         assertEquals(10, player.getLastingEffects().getBlades());
         assertEquals(100_000_000 - 10 * 350_000, player.getGains());
-    }
-
-    @Test
-    void aceOfClubsCountsGainsAtThePlacePowerSpinCostLikeFortune() {
-        Player player = new Player("Joueur", 100, List.of());
-        player.addGains(1_000_000_000);
-        PlayContext context = new PlayContext(player, 140_000); // Désert : tirage de force 3 000
-        new AceOfClubsEffect().onPlay(context);
-        // 1 M de gains « de force » = 1 M x 140 000 / 3 000 = 46,7 M de gains réels, pour +10 000
-        assertEquals(1_000_000_000 - 46_666_667, player.getGains());
-        assertTrue(texts(context).contains("ATTAQUE +10115"), texts(context).toString());
-
-        Player poor = new Player("Joueur", 100, List.of());
-        poor.addGains(3_000_000); // 30 % = 900 000 réels = 19 286 de force : +1 389 d'attaque
-        PlayContext small = new PlayContext(poor, 140_000);
-        new AceOfClubsEffect().onPlay(small);
-        assertEquals(2_100_000, poor.getGains());
-        assertTrue(texts(small).contains("ATTAQUE +1504"), texts(small).toString());
     }
 }

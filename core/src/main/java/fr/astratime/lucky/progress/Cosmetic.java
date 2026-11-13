@@ -17,20 +17,20 @@ public enum Cosmetic {
     BACK_CLASSIC(Kind.BACK, null, Unlock.DEFAULT, 0),
     BACK_NEON(Kind.BACK, "neon", Unlock.ACHIEVEMENTS, 10),
     BACK_ABYSS(Kind.BACK, "abysses", Unlock.BESTIARY, 25),
-    BACK_WOOD(Kind.BACK, "bois", Unlock.COINS, 10_000_000_000L),
-    BACK_GOLD(Kind.BACK, "or", Unlock.COINS, 400_000_000_000L),
+    BACK_WOOD(Kind.BACK, "bois", Unlock.COINS, 8_000_000_000L),
+    BACK_GOLD(Kind.BACK, "or", Unlock.COINS, 300_000_000_000L),
 
     FELT_CLASSIC(Kind.FELT, null, Unlock.DEFAULT, 0),
     FELT_NEON(Kind.FELT, "neon", Unlock.ACHIEVEMENTS, 20),
     FELT_ABYSS(Kind.FELT, "abysses", Unlock.BESTIARY, 50),
-    FELT_WOOD(Kind.FELT, "bois", Unlock.COINS, 20_000_000_000L),
-    FELT_GOLD(Kind.FELT, "or", Unlock.COINS, 600_000_000_000L),
+    FELT_WOOD(Kind.FELT, "bois", Unlock.COINS, 16_000_000_000L),
+    FELT_GOLD(Kind.FELT, "or", Unlock.COINS, 450_000_000_000L),
 
     MACHINE_CLASSIC(Kind.MACHINE, null, Unlock.DEFAULT, 0),
     MACHINE_NEON(Kind.MACHINE, "neon", Unlock.ACHIEVEMENTS, 30),
     MACHINE_ABYSS(Kind.MACHINE, "abysses", Unlock.BESTIARY, Unlock.ALL),
-    MACHINE_WOOD(Kind.MACHINE, "bois", Unlock.COINS, 40_000_000_000L),
-    MACHINE_GOLD(Kind.MACHINE, "or", Unlock.COINS, 900_000_000_000L);
+    MACHINE_WOOD(Kind.MACHINE, "bois", Unlock.COINS, 32_000_000_000L),
+    MACHINE_GOLD(Kind.MACHINE, "or", Unlock.COINS, 700_000_000_000L);
 
     /** Sorte de cosmétique : ce qu'il habille. */
     public enum Kind {
