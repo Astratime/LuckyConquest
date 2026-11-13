@@ -126,8 +126,12 @@ public final class Lexicon {
                 + "par tes Carreaux. L'As de Carreau le vide en attaque.", Lang.big(LastingEffects.MAX_VAULT))),
             term(Lang.t("Riposte"), Lang.t("Carreaux : si un symbole de défense sort et que l'ennemi attaque, "
                 + "tu lui renvoies une part de ses coups, plus 20 % du Coffre.")),
-            term(Lang.t("Trèfles"), Lang.t("Ils multiplient tes gains et renforcent tes symboles d'attaque. "
-                + "L'As de Trèfle change des gains en attaque.")),
+            term(Lang.t("Bonne étoile"), Lang.f("Jauge de Trèfle, jusqu'à {0}. Chaque point donne 1 % de chance de "
+                + "Paire en plus, et 1 % de chance qu'une Paire devienne un Bingo ({1} % au plus). Ce Bingo : attaque et "
+                + "bouclier x{2}, il traverse la défense, sans Jeu bonus. L'As de Trèfle la vide pour tenter un Bingo.",
+                LastingEffects.MAX_LUCKY_STAR, LastingEffects.MAX_STAR_CHANCE, LastingEffects.STAR_BINGO_POWER)),
+            term(Lang.t("Gains des cartes"), Lang.t("Chaque carte du 2 au Roi, de n'importe quelle couleur, ajoute au "
+                + "multiplicateur de gains du tour : +1 du 2 au 5, +2 du 6 au 10, +3 pour Valet, Dame et Roi.")),
             term(Lang.t("Corruption"), Lang.f("Carte de l'échoppe. Pendant quelques tours, attaque et bouclier des "
                 + "symboles x{0}. Chaque tour coûte {1} % des gains.", CorruptionEffect.FACTOR,
                 CorruptionEffect.GAINS_PERCENT))));

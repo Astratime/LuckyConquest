@@ -1,11 +1,9 @@
 package fr.astratime.lucky.entities;
 
-import fr.astratime.lucky.entities.effects.AceOfClubsEffect;
 import fr.astratime.lucky.entities.effects.AceOfSpadesEffect;
 import fr.astratime.lucky.entities.effects.AttackEffect;
 import fr.astratime.lucky.entities.effects.BetEffect;
 import fr.astratime.lucky.entities.effects.BladesAttackEffect;
-import fr.astratime.lucky.entities.effects.ClubGainAttackEffect;
 import fr.astratime.lucky.entities.effects.Effect;
 import fr.astratime.lucky.entities.effects.ExtraDrawEffect;
 import fr.astratime.lucky.entities.effects.FortuneEffect;
@@ -31,8 +29,11 @@ public enum CardFamily {
 
     /** Les cartes qui piochent (Pioche +2, Pioche du mineur...). */
     PIOCHE("Pioche", List.of(ExtraDrawEffect.class)),
-    /** Les cartes qui rapportent des gains : les Trèfles, Gains +500, Fortune... */
-    GAINS("Gains", List.of(ClubGainAttackEffect.class, AceOfClubsEffect.class, GainEffect.class,
+    /**
+     * Les cartes faites pour les gains : Gains +500, Fortune, Trèfle à quatre feuilles... Les cartes classiques
+     * n'en sont pas, même si chacune ajoute un peu au multiplicateur de gains.
+     */
+    GAINS("Gains", List.of(GainEffect.class,
         GainsMultiplierEffect.class, SpinGainsEffect.class, FortuneEffect.class, FourLeafCloverEffect.class, GoldVeinEffect.class,
         BetEffect.class)),
     /** Les cartes qui attaquent : les Piques, la Guillotine, le Trident, la Roulette russe... */

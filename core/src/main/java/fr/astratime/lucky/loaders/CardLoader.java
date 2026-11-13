@@ -314,11 +314,12 @@ public class CardLoader {
         add(effects, "ACE_OF_HEARTS", (json, v) -> new AceOfHeartsEffect(v.power()));
 
         // --- Trefle ---
-        add(effects, "CLUB_GAIN_ATTACK", (json, v) -> new ClubGainAttackEffect(
-            v.i("gainMultiplier"),
-            v.i("attackBonus")
-        ));
-        add(effects, "ACE_OF_CLUBS", (json, v) -> new AceOfClubsEffect(v.power()));
+        add(effects, "CLUB_LUCKY_STAR", (json, v) -> new ClubLuckyStarEffect(v.i("attackBonus"), v.i("stars")));
+        add(effects, "ACE_OF_CLUBS", (json, v) -> new AceOfClubsEffect(
+            AceOfClubsEffect.Kind.valueOf(json.getString("bingo", "ANY")), v.power()));
+
+        // --- Toutes les couleurs : gains des cartes classiques ---
+        add(effects, "CARD_GAINS", (json, v) -> new CardGainsEffect(json.getFloat("gainMultiplier")));
 
         // --- Carreau ---
         add(effects, "DIAMOND_REFLECT", (json, v) -> new DiamondReflectEffect(v.f("attackPercent"), v.i("defenseBoost", 0),

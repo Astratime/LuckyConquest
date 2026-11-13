@@ -47,6 +47,8 @@ public class LastingEffects {
     private int blood  = 0;
     /** Coffre (Carreau) : bouclier resté inutilisé à la fin des tours. */
     private int vault  = 0;
+    /** Bonne étoile : jauge de Trèfle, chance qu'une Paire devienne un Bingo. */
+    private int luckyStar = 0;
     /** Rouleau bloqué au prochain tirage par le Rouleau interdit de l'ennemi (-1 : aucun). */
     private int forbiddenReel = -1;
     /** Rien ne va plus : rouleaux bloqués sur un symbole vide au prochain tirage. */
@@ -244,11 +246,30 @@ public class LastingEffects {
 
     private static int capVault(long value) { return (int) Math.max(0, Math.min(MAX_VAULT, value)); }
 
+    /** Bonne étoile au plus (jauge de Trèfle). */
+    public static final int MAX_LUCKY_STAR = 100;
+    /** Un Bingo dû à la Bonne étoile (Paire changée en Bingo, As de Trèfle, Étoiles) : valeur des symboles multipliée. */
+    public static final int STAR_BINGO_POWER = 10;
+    /** Chance au plus (%) que la Bonne étoile change une Paire en Bingo. */
+    public static final int MAX_STAR_CHANCE = 50;
+
+    /** Ajoute {@code amount} à la Bonne étoile, sans dépasser {@link #MAX_LUCKY_STAR}. */
+    public void addLuckyStar(int amount) { luckyStar = capStar((long) luckyStar + amount); }
+    /** @return les points de Bonne étoile. */
+    public int getLuckyStar() { return luckyStar; }
+    /** @return la chance (%) qu'une Paire devienne un Bingo : 1 par point, {@link #MAX_STAR_CHANCE} au plus. */
+    public int getStarChance() { return Math.min(MAX_STAR_CHANCE, luckyStar); }
+    /** Vide la Bonne étoile. @return ses points avant d'être vidée */
+    public int consumeLuckyStar() { int n = luckyStar; luckyStar = 0; return n; }
+
+    private static int capStar(long value) { return (int) Math.max(0, Math.min(MAX_LUCKY_STAR, value)); }
+
     /** Multiplie les trois jauges (Lames, Sang, Coffre) par {@code factor} (ex : Pot de Lutin). */
     public void multiplyGauges(int factor) {
         blades *= factor;
         blood   = capBlood((long) blood * factor);
         vault   = capVault((long) vault * factor);
+        luckyStar = capStar((long) luckyStar * factor);
     }
 
     /**
@@ -260,10 +281,12 @@ public class LastingEffects {
         int lostBlades = (int) Math.ceil(blades * percent / 100.0);
         int lostBlood  = (int) Math.ceil(blood * percent / 100.0);
         int lostVault  = (int) Math.ceil(vault * percent / 100.0);
+        int lostStar   = (int) Math.ceil(luckyStar * percent / 100.0);
         blades -= lostBlades;
         blood  -= lostBlood;
         vault  -= lostVault;
-        return lostBlades + lostBlood + lostVault;
+        luckyStar -= lostStar;
+        return lostBlades + lostBlood + lostVault + lostStar;
     }
 
     /** Le Rouleau interdit de l'ennemi bloque le rouleau {@code reel} au prochain tirage. */
@@ -753,7 +776,7 @@ public class LastingEffects {
     /** @return {@code true} si aucun effet n'est actif et les jauges sont vides. */
     public boolean isEmpty() {
         return removedSymbols.isEmpty() && gainBonus == 0f && corruptionTurns == 0 && extraPlaysTurns == 0
-            && blades == 0 && blood == 0 && vault == 0 && safes.isEmpty() && goldVeinTurns == 0 && bubbleTurns == 0
+            && blades == 0 && blood == 0 && vault == 0 && luckyStar == 0 && safes.isEmpty() && goldVeinTurns == 0 && bubbleTurns == 0
             && nibbles == 0 && favoredSymbol == null && blindCards == 0 && songs == 0 && drunk == 0 && nuggetDraws == 0
             && fakeGains == 0 && taxes == 0 && laterTaxes == 0 && houseRuleTurns == 0
             && traps == 0 && lanternDraws == 0 && earplugDraws == 0 && propTurns == 0 && lamps == 0

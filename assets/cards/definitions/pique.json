@@ -23,6 +23,10 @@
         "attackBonus": 102,
         "blades": 6,
         "piercePercent": 10
+      },
+      {
+        "type": "CARD_GAINS",
+        "gainMultiplier": 1
       }
     ]
   },
@@ -38,6 +42,10 @@
         "attackBonus": 103,
         "blades": 6,
         "piercePercent": 10
+      },
+      {
+        "type": "CARD_GAINS",
+        "gainMultiplier": 1
       }
     ]
   },
@@ -53,6 +61,10 @@
         "attackBonus": 104,
         "blades": 6,
         "piercePercent": 10
+      },
+      {
+        "type": "CARD_GAINS",
+        "gainMultiplier": 1
       }
     ]
   },
@@ -68,6 +80,10 @@
         "attackBonus": 105,
         "blades": 6,
         "piercePercent": 10
+      },
+      {
+        "type": "CARD_GAINS",
+        "gainMultiplier": 1
       }
     ]
   },
@@ -83,6 +99,10 @@
         "attackBonus": 106,
         "blades": 5,
         "piercePercent": 20
+      },
+      {
+        "type": "CARD_GAINS",
+        "gainMultiplier": 2
       }
     ]
   },
@@ -98,6 +118,10 @@
         "attackBonus": 107,
         "blades": 5,
         "piercePercent": 20
+      },
+      {
+        "type": "CARD_GAINS",
+        "gainMultiplier": 2
       }
     ]
   },
@@ -113,6 +137,10 @@
         "attackBonus": 108,
         "blades": 5,
         "piercePercent": 20
+      },
+      {
+        "type": "CARD_GAINS",
+        "gainMultiplier": 2
       }
     ]
   },
@@ -128,6 +156,10 @@
         "attackBonus": 109,
         "blades": 5,
         "piercePercent": 20
+      },
+      {
+        "type": "CARD_GAINS",
+        "gainMultiplier": 2
       }
     ]
   },
@@ -143,6 +175,10 @@
         "attackBonus": 110,
         "blades": 5,
         "piercePercent": 20
+      },
+      {
+        "type": "CARD_GAINS",
+        "gainMultiplier": 2
       }
     ]
   },
@@ -158,6 +194,10 @@
         "attackBonus": 111,
         "blades": 4,
         "piercePercent": 40
+      },
+      {
+        "type": "CARD_GAINS",
+        "gainMultiplier": 3
       }
     ]
   },
@@ -173,6 +213,10 @@
         "attackBonus": 112,
         "blades": 4,
         "piercePercent": 50
+      },
+      {
+        "type": "CARD_GAINS",
+        "gainMultiplier": 3
       }
     ]
   },
@@ -188,6 +232,10 @@
         "attackBonus": 113,
         "blades": 4,
         "piercePercent": 60
+      },
+      {
+        "type": "CARD_GAINS",
+        "gainMultiplier": 3
       }
     ]
   }

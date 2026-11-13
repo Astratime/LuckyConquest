@@ -69,6 +69,7 @@ CARD_FAMILY = {
     'rigged_reel': 'rouleaux', 'ghost_reel': 'rouleaux', 'rainbow': 'rouleaux', 'overheat': 'rouleaux',
     'bingo': 'echoppe', 'russian_roulette': 'echoppe', 'corruption': 'echoppe', 'cursed_joker': 'echoppe',
     'golden_reel': 'echoppe', 'dealer_hand': 'echoppe', 'bounty': 'echoppe', 'lucky_strike': 'echoppe',
+    'etoile_filante': 'trefle', 'etoile_du_berger': 'trefle', 'etoile_d_or': 'trefle',
     'joker': 'j_souriant', 'masque_du_joker': 'j_masque', 'joker_de_cour': 'j_cour',
     'joker_malveillant': 'j_malveillant', 'marotte_du_joker': 'j_marotte',
     'joker_sauvage': 'arch_joker', 'rire_du_joker': 'arch_joker', 'couronne_du_fou': 'arch_joker',

@@ -196,6 +196,9 @@ public class TurnEngine {
 
         /** Tirage, puis les relances et les rouleaux bonus des cartes jouées. */
         void spinWithCards() {
+            // Bonne étoile : chaque point donne aussi 1 % de chance de Paire en plus
+            int starChance = player.getLastingEffects().getStarChance();
+            if (starChance > 0) turnContext.getSpinContext().addPairChance(starChance / 100f);
             drawn   = machine.spin(turnContext.getSpinContext());
             symbols = machine.resolveJokers(drawn, turnContext.getSpinContext());
             // Relance : sans paire, la machine relance (une fois par carte)
@@ -235,6 +238,23 @@ public class TurnEngine {
                     turnContext.addEvent(new StatusEvent(Lang.t("SECOND LEVIER : BINGO !"), EffectPopup.Style.SPECIAL));
                 } else if (SlotMachine.hasPair(symbols) && SlotMachine.jackpotSymbol(symbols) == null) {
                     turnContext.addEvent(new StatusEvent(Lang.t("SECOND LEVIER : PAS DE BINGO"), EffectPopup.Style.SPECIAL));
+                }
+            }
+
+            // Bonne étoile (jauge de Trèfle) : une paire sans Bingo, chaque point donne 1 % de chance que le rouleau
+            // qui manque rejoigne la paire
+            if (starChance > 0 && random.nextInt(100) < starChance) {
+                Symbol[] starred = luckyStar(machine, drawn, turnContext.getSpinContext());
+                if (starred != null) {
+                    if (rerolled == null) rerolled = drawn;
+                    drawn   = starred;
+                    symbols = machine.resolveJokers(starred, turnContext.getSpinContext());
+                    turnContext.getCombatContext().multiplyAttack(LastingEffects.STAR_BINGO_POWER, "Bonne étoile");
+                    turnContext.getCombatContext().multiplyDefense(LastingEffects.STAR_BINGO_POWER, "Bonne étoile");
+                    turnContext.getCombatContext().pierceDefense(100);
+                    turnContext.getSpinContext().markStarBingo();
+                    turnContext.addEvent(new StatusEvent(Lang.f("BONNE ÉTOILE : BINGO ! ATTAQUE ET BOUCLIER x{0}",
+                        LastingEffects.STAR_BINGO_POWER), EffectPopup.Style.SPECIAL));
                 }
             }
 
@@ -439,7 +459,7 @@ public class TurnEngine {
 
     private BonusGame bonusGame(TurnResult result, SpinContext spin, Player player, CombatContext combat) {
         if (!bonusGameEnabled || !result.isJackpot() || player.isDefeated()) return null;
-        if (!spin.isBonusGameForced() && random.nextFloat() >= bonusGameChance) return null;
+        if (!spin.isBonusGameForced() && (spin.isStarBingo() || random.nextFloat() >= bonusGameChance)) return null;
         int spinCost = combat.getSpinCost();
         float scale = SpinEconomy.gainScale(spinCost);
         int perSymbol = Math.round(BonusGame.GAINS_PER_SYMBOL * scale);
@@ -584,6 +604,31 @@ public class TurnEngine {
             if (SlotMachine.jackpotSymbol(machine.resolveJokers(again, spin)) != null) return again;
         }
         return null;
+    }
+
+    /**
+     * Bonne étoile : si le tirage fait une paire sans Bingo, le rouleau qui n'en
+     * fait pas partie (ni vide ni imposé) prend le symbole de la paire.
+     *
+     * @return les symboles du Bingo, ou {@code null} sans paire, avec déjà un Bingo, ou si aucun rouleau ne peut changer
+     */
+    private Symbol[] luckyStar(SlotMachine machine, Symbol[] drawn, SpinContext spin) {
+        Symbol[] resolved = machine.resolveJokers(drawn, spin);
+        if (!SlotMachine.hasPair(resolved) || SlotMachine.jackpotSymbol(resolved) != null) return null;
+        Map<Symbol, Integer> counts = new HashMap<>();
+        for (Symbol symbol : resolved) if (symbol != null) counts.merge(symbol, 1, Integer::sum);
+        Symbol group = counts.entrySet().stream().max(Map.Entry.comparingByValue()).map(Map.Entry::getKey).orElse(null);
+        if (group == null || counts.get(group) < 2) return null;
+        Symbol[] starred = drawn.clone();
+        boolean changed = false;
+        for (int i = 0; i < drawn.length; i++) {
+            if (drawn[i] != null && resolved[i] != group && !spin.getForcedReels().containsKey(i)) {
+                starred[i] = group;
+                changed = true;
+            }
+        }
+        if (!changed || SlotMachine.jackpotSymbol(machine.resolveJokers(starred, spin)) == null) return null;
+        return starred;
     }
 
     /**

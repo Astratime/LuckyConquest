@@ -51,8 +51,8 @@ class CardLoaderTest {
     void everyCardDefinitionLoads() {
         List<Card> cards = CardLoader.loadAll(READER);
 
-        assertEquals(52 + 33 + 12 + 37 + 41 + 33 + 1, cards.size(),
-            "4 suites de 13 cartes + 33 cartes spéciales (dont les 4 variantes du Joker) + 12 cartes des donjons + 37 cartes des lieux + 41 cartes des archétypes (dont 12 du Valet à l'As)"
+        assertEquals(52 + 36 + 12 + 37 + 41 + 33 + 1, cards.size(),
+            "4 suites de 13 cartes + 36 cartes spéciales (dont les 4 variantes du Joker et les 3 Étoiles) + 12 cartes des donjons + 37 cartes des lieux + 41 cartes des archétypes (dont 12 du Valet à l'As)"
                 + " + 33 cartes de test (Bingo par symbole) + la carte de test du Jeu bonus");
         assertEquals(cards.size(), cards.stream().map(Card::getId).distinct().count(), "les ids doivent être uniques");
     }
@@ -224,11 +224,12 @@ class CardLoaderTest {
     @Test
     void theBoutiqueSellsKnownCardsButNeitherChestNorCombatShopCards() {
         Map<String, Long> boutique = CardLoader.loadBoutique(READER);
-        // Prix selon la note de force (Astra, 2026-11-05), doublés puis x100 (Astra, 2026-11-08)
-        assertEquals(80_000_000L, boutique.get("gain_500"), "note 1");
-        assertEquals(1_600_000_000L, boutique.get("11_coeur"), "note 5");
-        assertEquals(240_000_000_000L, boutique.get("1_pique"), "note 10");
-        assertEquals(240_000_000_000L, boutique.get("in_the_sleeve"), "note 10");
+        // Prix selon la note de force (Astra, 2026-11-05), recalés au simulateur le 2026-11-13
+        assertEquals(20_000_000L, boutique.get("gain_500"), "note 1");
+        assertEquals(1_300_000_000L, boutique.get("11_coeur"), "note 5");
+        assertEquals(160_000_000_000L, boutique.get("1_pique"), "note 10");
+        assertEquals(160_000_000_000L, boutique.get("in_the_sleeve"), "note 10");
+        assertEquals(boutique.get("1_trefle"), boutique.get("etoile_filante"), "les Étoiles valent l'As de Trèfle");
         Set<String> shop = CardLoader.loadShop(READER).keySet();
         for (Map.Entry<String, Long> entry : boutique.entrySet()) {
             Card card = CardLoader.cardFactory(READER).apply(entry.getKey());
@@ -252,9 +253,10 @@ class CardLoaderTest {
         assertEquals(king.getSuit(), plus.getSuit());
         assertEquals(king.getRank(), plus.getRank());
         assertTrue(plus.getName().endsWith(" +"));
-        // Roi de Trèfle : gains +13 et attaque +23, puis +20 et +35.
-        assertTrue(plus.getDescription().contains("+20"), plus.getDescription());
-        assertTrue(plus.getDescription().contains("35"), plus.getDescription());
+        // Roi de Trèfle : Bonne étoile +10 et attaque +103, puis +15 et +155 ; ses gains (+3) ne changent pas.
+        assertTrue(plus.getDescription().contains("Bonne étoile +15"), plus.getDescription());
+        assertTrue(plus.getDescription().contains("+155"), plus.getDescription());
+        assertTrue(plus.getDescription().contains("gains +3"), plus.getDescription());
     }
 
     @Test

@@ -35,6 +35,8 @@ public class SpinContext {
     private boolean doubleSpin = false;
     /** Le Jeu bonus s'ouvre à coup sûr si le tirage fait un Bingo (carte de test « Jeu bonus »). */
     private boolean bonusGame = false;
+    /** Bingo dû à la Bonne étoile : il n'ouvre pas le Jeu bonus (le Trèfle ne doit pas redevenir la couleur des gains). */
+    private boolean starBingo = false;
     /** Symboles imposés à certains rouleaux (Rouleau truqué, Rouleau fantôme), par indice de rouleau. */
     private final Map<Integer, Symbol> forcedReels = new TreeMap<>();
     /** Relances accordées si le tirage n'a pas de paire (Relance). */
@@ -70,6 +72,12 @@ public class SpinContext {
 
     /** @return la chance (0 à 1) de transformer un tirage sans paire en paire. */
     public float getPairChance() { return pairChance; }
+
+    /** Ce tirage est un Bingo de la Bonne étoile : pas de Jeu bonus. */
+    public void markStarBingo() { starBingo = true; }
+
+    /** @return {@code true} si le Bingo de ce tirage vient de la Bonne étoile. */
+    public boolean isStarBingo() { return starBingo; }
 
     /** Garantit que les trois rouleaux affichent le même symbole. */
     public void forceJackpot() { forceJackpot = true; }

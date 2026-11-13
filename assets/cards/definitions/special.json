@@ -360,5 +360,38 @@
         "hpPercent": 10
       }
     ]
+  },
+  {
+    "id": "etoile_filante",
+    "name": "Étoile filante",
+    "assetPath": "cards/special/etoile_filante.png",
+    "effects": [
+      {
+        "type": "ACE_OF_CLUBS",
+        "bingo": "ATTACK"
+      }
+    ]
+  },
+  {
+    "id": "etoile_du_berger",
+    "name": "Étoile du berger",
+    "assetPath": "cards/special/etoile_du_berger.png",
+    "effects": [
+      {
+        "type": "ACE_OF_CLUBS",
+        "bingo": "DEFENSE"
+      }
+    ]
+  },
+  {
+    "id": "etoile_d_or",
+    "name": "Étoile d'or",
+    "assetPath": "cards/special/etoile_d_or.png",
+    "effects": [
+      {
+        "type": "ACE_OF_CLUBS",
+        "bingo": "GAINS"
+      }
+    ]
   }
 ]

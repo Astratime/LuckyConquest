@@ -17,22 +17,23 @@ public final class ReelShop {
     private static final Map<Symbol, Long> PRICES = new LinkedHashMap<>();
 
     static {
-        // Prix selon la note de force (Astra, 2026-11-05) , x2, puis x100 (Astra, 2026-11-08) : 4 = 600 M … 10 = 240 Md
-        PRICES.put(Symbol.HORSESHOE,     600_000_000L);
-        PRICES.put(Symbol.ECU,           600_000_000L);
-        PRICES.put(Symbol.PIGGY_BANK,    600_000_000L);
-        PRICES.put(Symbol.HEART,         1_600_000_000L);
-        PRICES.put(Symbol.SPIKED_SHIELD, 1_600_000_000L);
-        PRICES.put(Symbol.FANGS,         5_000_000_000L);
-        PRICES.put(Symbol.DIE,           5_000_000_000L);
-        PRICES.put(Symbol.MOON,          5_000_000_000L);
-        PRICES.put(Symbol.STAR,          5_000_000_000L);
-        PRICES.put(Symbol.SCYTHE,        5_000_000_000L);
-        PRICES.put(Symbol.SWORD,         15_000_000_000L);
-        PRICES.put(Symbol.CROWN,         15_000_000_000L);
-        PRICES.put(Symbol.BOMB,          40_000_000_000L);
-        PRICES.put(Symbol.DEMON_KING,    240_000_000_000L);
-        PRICES.put(Symbol.LUCK_APOSTLE,  240_000_000_000L);
+        // Prix selon la note de force (Astra, 2026-11-05), recalés au simulateur le 2026-11-13 : 20 descentes du rang
+        // de la note (4 = 200 M … 10 = 160 Md), voir analyses/trefle_bonne_etoile_2026-11-13/
+        PRICES.put(Symbol.HORSESHOE,     200_000_000L);
+        PRICES.put(Symbol.ECU,           200_000_000L);
+        PRICES.put(Symbol.PIGGY_BANK,    200_000_000L);
+        PRICES.put(Symbol.HEART,         1_300_000_000L);
+        PRICES.put(Symbol.SPIKED_SHIELD, 1_300_000_000L);
+        PRICES.put(Symbol.FANGS,         2_500_000_000L);
+        PRICES.put(Symbol.DIE,           2_500_000_000L);
+        PRICES.put(Symbol.MOON,          2_500_000_000L);
+        PRICES.put(Symbol.STAR,          2_500_000_000L);
+        PRICES.put(Symbol.SCYTHE,        2_500_000_000L);
+        PRICES.put(Symbol.SWORD,         7_000_000_000L);
+        PRICES.put(Symbol.CROWN,         7_000_000_000L);
+        PRICES.put(Symbol.BOMB,          33_000_000_000L);
+        PRICES.put(Symbol.DEMON_KING,    160_000_000_000L);
+        PRICES.put(Symbol.LUCK_APOSTLE,  160_000_000_000L);
     }
 
     /** @return les rouleaux en vente et leur prix, dans l'ordre d'affichage. */

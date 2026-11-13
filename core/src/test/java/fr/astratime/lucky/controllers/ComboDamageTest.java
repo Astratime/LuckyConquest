@@ -36,7 +36,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Référence des dégâts d'un gros combo, joué comme en vrai (vraies cartes des
- * JSON, GameController), sans rang puis avec chaque rang : As de Trèfle, As de
+ * JSON, GameController), sans rang puis avec chaque rang : As de Coeur, As de
  * Pique, Roulette russe gagnante, Corruption, puis la carte « Bingo » qui tire
  * un Bingo Triple Sept (x5). Le Bingo est joué en dernier : il lance la machine tout seul. Cinq
  * cartes, soit un coup de plus que la limite de 4 (comme avec Dans la manche).
@@ -55,57 +55,56 @@ class ComboDamageTest {
     });
 
     /**
-     * Chaque Triple Sept frappe de (90 + attaque du rang + 20 par Lame + bonus de
-     * l'As de Trèfle) x (1 + 0,5 par Lame) x 2 (Corruption) x 4,5 (Paire des deux As)
+     * Chaque Triple Sept frappe de (90 + attaque du rang + 20 par Lame)
+     * x (1 + 0,5 par Lame) x 2 (Corruption) x 4,5 (Paire des deux As)
      * x 5 (Bingo) ; le pistolet rejoue ensuite le coup le plus fort du tour, tel
      * qu'il a frappé, x4 (Roulette gagnante). AUCUN : pas de rang.
      */
-    @ParameterizedTest(name = "{0} gains, rang {1} : {8} dégâts")
+    @ParameterizedTest(name = "{0} gains, rang {1} : {6} dégâts")
     @CsvSource({
-        // gains, rang, As de Trèfle (consommé, attaque), As de Pique (consommé, Lames), par Triple Sept, pistolet, total
-        "10000, AUCUN, 3000, 663, 500, 2, 71370, 285480, 499560",
-        "10000, AVARE, 3000, 663, 500, 2, 80370, 321480, 562560",
-        "10000, PARIEUR, 3000, 663, 500, 2, 89370, 357480, 625560",
-        "10000, FLAMBEUR, 3000, 663, 500, 2, 102870, 411480, 720060",
-        "10000, HABITUE, 3000, 663, 500, 2, 116370, 465480, 814560",
-        "10000, REQUIN, 3000, 663, 500, 2, 179370, 717480, 1255560",
-        "10000, GROS_BONNET, 3000, 663, 500, 2, 192870, 771480, 1350060",
-        "10000, BARON, 3000, 663, 500, 2, 269370, 1077480, 1885560",
-        "10000, MAGNAT, 3000, 663, 500, 2, 323370, 1293480, 2263560",
-        "10000, ROI_DU_CASINO, 3000, 663, 500, 2, 566370, 2265480, 3964560",
-        "10000, LEGENDE, 3000, 663, 500, 2, 701370, 2805480, 4909560",
-        "100000, AUCUN, 30000, 1847, 2500, 10, 576990, 2307960, 4038900",
-        "100000, AVARE, 30000, 1847, 2500, 10, 603990, 2415960, 4227900",
-        "100000, PARIEUR, 30000, 1847, 2500, 10, 630990, 2523960, 4416900",
-        "100000, FLAMBEUR, 30000, 1847, 2500, 10, 671490, 2685960, 4700400",
-        "100000, HABITUE, 30000, 1847, 2500, 10, 711990, 2847960, 4983900",
-        "100000, REQUIN, 30000, 1847, 2500, 10, 900990, 3603960, 6306900",
-        "100000, GROS_BONNET, 30000, 1847, 2500, 10, 941490, 3765960, 6590400",
-        "100000, BARON, 30000, 1847, 2500, 10, 1170990, 4683960, 8196900",
-        "100000, MAGNAT, 30000, 1847, 2500, 10, 1332990, 5331960, 9330900",
-        "100000, ROI_DU_CASINO, 30000, 1847, 2500, 10, 2061990, 8247960, 14433900",
-        "100000, LEGENDE, 30000, 1847, 2500, 10, 2466990, 9867960, 17268900",
-        "1000000, AUCUN, 300000, 5592, 2500, 10, 1588140, 6352560, 11116950",
-        "1000000, AVARE, 300000, 5592, 2500, 10, 1615140, 6460560, 11305950",
-        "1000000, PARIEUR, 300000, 5592, 2500, 10, 1642140, 6568560, 11494950",
-        "1000000, FLAMBEUR, 300000, 5592, 2500, 10, 1682640, 6730560, 11778450",
-        "1000000, HABITUE, 300000, 5592, 2500, 10, 1723140, 6892560, 12061950",
-        "1000000, REQUIN, 300000, 5592, 2500, 10, 1912140, 7648560, 13384950",
-        "1000000, GROS_BONNET, 300000, 5592, 2500, 10, 1952640, 7810560, 13668450",
-        "1000000, BARON, 300000, 5592, 2500, 10, 2182140, 8728560, 15274950",
-        "1000000, MAGNAT, 300000, 5592, 2500, 10, 2344140, 9376560, 16408950",
-        "1000000, ROI_DU_CASINO, 300000, 5592, 2500, 10, 3073140, 12292560, 21511950",
-        "1000000, LEGENDE, 300000, 5592, 2500, 10, 3478140, 13912560, 24346950",
+        // gains, rang, As de Pique (consommé, Lames), par Triple Sept, pistolet, total
+        "10000, AUCUN, 1000, 4, 22950, 91800, 160620",
+        "10000, AVARE, 1000, 4, 36450, 145800, 255120",
+        "10000, PARIEUR, 1000, 4, 49950, 199800, 349620",
+        "10000, FLAMBEUR, 1000, 4, 70200, 280800, 491370",
+        "10000, HABITUE, 1000, 4, 90450, 361800, 633120",
+        "10000, REQUIN, 1000, 4, 184950, 739800, 1294620",
+        "10000, GROS_BONNET, 1000, 4, 205200, 820800, 1436370",
+        "10000, BARON, 1000, 4, 319950, 1279800, 2239620",
+        "10000, MAGNAT, 1000, 4, 400950, 1603800, 2806620",
+        "10000, ROI_DU_CASINO, 1000, 4, 765450, 3061800, 5358120",
+        "10000, LEGENDE, 1000, 4, 967950, 3871800, 6775620",
+        "100000, AUCUN, 2500, 10, 78300, 313200, 548070",
+        "100000, AVARE, 2500, 10, 105300, 421200, 737070",
+        "100000, PARIEUR, 2500, 10, 132300, 529200, 926070",
+        "100000, FLAMBEUR, 2500, 10, 172800, 691200, 1209570",
+        "100000, HABITUE, 2500, 10, 213300, 853200, 1493070",
+        "100000, REQUIN, 2500, 10, 402300, 1609200, 2816070",
+        "100000, GROS_BONNET, 2500, 10, 442800, 1771200, 3099570",
+        "100000, BARON, 2500, 10, 672300, 2689200, 4706070",
+        "100000, MAGNAT, 2500, 10, 834300, 3337200, 5840070",
+        "100000, ROI_DU_CASINO, 2500, 10, 1563300, 6253200, 10943070",
+        "100000, LEGENDE, 2500, 10, 1968300, 7873200, 13778070",
+        "1000000, AUCUN, 2500, 10, 78300, 313200, 548070",
+        "1000000, AVARE, 2500, 10, 105300, 421200, 737070",
+        "1000000, PARIEUR, 2500, 10, 132300, 529200, 926070",
+        "1000000, FLAMBEUR, 2500, 10, 172800, 691200, 1209570",
+        "1000000, HABITUE, 2500, 10, 213300, 853200, 1493070",
+        "1000000, REQUIN, 2500, 10, 402300, 1609200, 2816070",
+        "1000000, GROS_BONNET, 2500, 10, 442800, 1771200, 3099570",
+        "1000000, BARON, 2500, 10, 672300, 2689200, 4706070",
+        "1000000, MAGNAT, 2500, 10, 834300, 3337200, 5840070",
+        "1000000, ROI_DU_CASINO, 2500, 10, 1563300, 6253200, 10943070",
+        "1000000, LEGENDE, 2500, 10, 1968300, 7873200, 13778070",
     })
-    void asTrefleAsPiqueRouletteCorruptionEtBingoTripleSept(int gains, String rank, int clubsConsumed,
-                                                           int clubsAttack, int spadesConsumed, int blades,
-                                                           long perSymbol, long pistol, long total)
+    void asCoeurAsPiqueRouletteCorruptionEtBingoTripleSept(int gains, String rank, int spadesConsumed, int blades,
+                                                          long perSymbol, long pistol, long total)
             throws Exception {
         RankBonus rankBonus = "AUCUN".equals(rank) ? RankBonus.NONE : Rank.valueOf(rank).getBonus();
         // La carte « Bingo » tire son symbole au hasard : ici, on impose le Triple Sept.
         Card bingo = new Card("bingo", "Bingo", "cards/special/bingo.png",
             List.of(new BingoEffect(5, Symbol.TRIPLE_SEVEN)), null, 0, true);
-        List<Card> deck = List.of(CARDS.apply("1_trefle"), CARDS.apply("1_pique"),
+        List<Card> deck = List.of(CARDS.apply("1_coeur"), CARDS.apply("1_pique"),
             CARDS.apply("russian_roulette"), CARDS.apply("corruption"), bingo);
         GameController controller = new GameController(() -> new ArrayList<>(deck), CARDS, Map.of(),
             cards -> new Player("Joueur", Player.BASE_HP, cards, rankBonus, Symbol.classicReels()));
@@ -116,10 +115,10 @@ class ComboDamageTest {
         player.getLastingEffects().addBonusPlays(1);
         controller.drawCards();
 
-        play(controller, "1_trefle");
-        assertEquals(gains - clubsConsumed, player.getGains(), "As de Trèfle : -30 % des gains, 1 000 000 au plus");
+        play(controller, "1_coeur");
+        assertEquals(gains, player.getGains(), "As de Coeur : il ne coûte rien, et à PV pleins son Berserk vaut x1");
         play(controller, "1_pique");
-        assertEquals(gains - clubsConsumed - spadesConsumed, player.getGains(), "As de Pique : -10 % des gains, seulement ce qui achète des Lames");
+        assertEquals(gains - spadesConsumed, player.getGains(), "As de Pique : -10 % des gains, seulement ce qui achète des Lames");
         assertEquals(blades, player.getLastingEffects().getBlades(), "une Lame par 2,5 tirages (250 gains), 10 au plus");
         play(controller, "russian_roulette");
         RouletteChoice roulette = (RouletteChoice) controller.getPendingChoice();
@@ -131,9 +130,7 @@ class ComboDamageTest {
         assertArrayEquals(new Symbol[] {Symbol.TRIPLE_SEVEN, Symbol.TRIPLE_SEVEN, Symbol.TRIPLE_SEVEN},
             turn.getSymbols());
 
-        assertEquals(clubsAttack, 115 + Math.min(10_000, Math.round(10f * (float) Math.sqrt(clubsConsumed))),
-            "attaque de l'As de Trèfle : la racine des gains consommés, +10 000 au plus");
-        long base = 90 + rankBonus.attack() + blades * PreparationResolver.BLADE_ATTACK + clubsAttack;
+        long base = 90 + rankBonus.attack() + blades * PreparationResolver.BLADE_ATTACK;
         assertEquals(perSymbol, Math.round(base * (1 + 0.5 * blades) * 2 * 4.5 * 5));
 
         List<EnemyDamagedEvent> hits = symbolHits(turn);

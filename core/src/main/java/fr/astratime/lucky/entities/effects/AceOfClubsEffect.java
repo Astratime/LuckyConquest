@@ -1,7 +1,6 @@
 package fr.astratime.lucky.entities.effects;
 
-import fr.astratime.lucky.entities.BigNumber;
-import fr.astratime.lucky.entities.SpinEconomy;
+import fr.astratime.lucky.entities.LastingEffects;
 import fr.astratime.lucky.entities.Symbol;
 import fr.astratime.lucky.entities.SymbolRegistry;
 import fr.astratime.lucky.entities.context.PlayContext;
@@ -15,92 +14,145 @@ import java.util.List;
 import java.util.Random;
 
 /**
- * As de Trefle : consomme 30% des gains actuels du joueur ({@link #MAX_CONSUMED} au plus) pour offrir
- * un gros boost de probabilité ET d'attaque sur un symbole d'attaque au hasard.
- * Le coût est payé immédiatement, à la pose de la carte : les bonus sont
- * calculés à ce moment-là (plus les gains consommés sont grands, plus les
- * bonus le sont), affichés avec leurs valeurs réelles, puis appliqués au spin.
- * C'est un choix tactique fort, donc le retour doit être proportionnellement
- * plus grand que les cartes de Trefle classiques.
+ * As de Trèfle et ses trois cousins de la boutique (Étoile filante, Étoile du berger,
+ * Étoile d'or) : la carte ajoute {@link #OWN_STARS} à la Bonne étoile, puis la vide pour
+ * tenter un Bingo à ce tirage. À {@link #GUARANTEED} points ou plus (moins pour la
+ * version « + »), le Bingo est garanti ; en dessous, la chance est proportionnelle.
+ * L'As tire son symbole au hasard dans la machine ; chaque Étoile le choisit parmi les
+ * symboles d'attaque, de défense ou de gains de la machine (Astra, 2026-11-13).
+ * Le sort est jeté à la pose de la carte : le joueur sait tout de suite.
  */
 public class AceOfClubsEffect extends Effect {
 
-    /** Pourcentage des gains actuels du joueur consommé à la pose de la carte. */
-    private static final float CONSUME_PERCENT    = 0.3f;
-    /** Boost de poids de base appliqué au symbole d'attaque choisi au hasard. */
-    private static final int   WEIGHT_BOOST_AMOUNT = 150;
-    /** Bonus d'attaque plat de base accordé pour ce tour. */
-    private static final int   ATTACK_BOOST_AMOUNT = 115;
-    /** Attaque ajoutée par racine carrée des gains consommés (1 000 gains : +316). */
-    static final float          ATTACK_PER_SQRT_GAIN  = 10f;
-    /** Boost de poids au plus obtenu avec les gains consommés (Astra : 1 000). */
-    static final int            MAX_WEIGHT_FROM_GAINS = 1_000;
-    /** Attaque au plus obtenue avec les gains consommés (1 000 000 gains consommés l'atteignent, Astra). */
-    static final int            MAX_ATTACK_FROM_GAINS = 10_000;
-    /** Gains au plus consommés (1 000 000) : au-delà, ils n'ajouteraient ni attaque ni boost. */
-    static final double         MAX_CONSUMED = Math.pow(MAX_ATTACK_FROM_GAINS / ATTACK_PER_SQRT_GAIN, 2);
-    private static final Random RANDOM             = new Random();
+    /** Ce que vise le Bingo. */
+    public enum Kind {
+        /** N'importe quel symbole de la machine (As de Trèfle). */
+        ANY,
+        /** Un symbole d'attaque (Étoile filante). */
+        ATTACK,
+        /** Un symbole de défense (Étoile du berger). */
+        DEFENSE,
+        /** Un symbole de gains (Étoile d'or). */
+        GAINS
+    }
 
+    /** Points de Bonne étoile que la carte ajoute avant de la vider. */
+    public static final int OWN_STARS  = 10;
+    /** Points de Bonne étoile qui garantissent le Bingo (carte normale). */
+    public static final int GUARANTEED = 30;
+    private static final Random RANDOM = new Random();
+
+    private final Kind  kind;
     /** Puissance de la carte : 1, ou {@link fr.astratime.lucky.entities.Card#UPGRADE_FACTOR} pour sa version « + ». */
     private final float power;
 
-    public AceOfClubsEffect() { this(1f); }
+    public AceOfClubsEffect() { this(Kind.ANY, 1f); }
 
-    /** @param power puissance : ses valeurs sont multipliées par autant (version « + » de la carte) */
-    public AceOfClubsEffect(float power) { this.power = power; }
+    /** @param power puissance : le Bingo est garanti avec moins de points (version « + » de la carte) */
+    public AceOfClubsEffect(float power) { this(Kind.ANY, power); }
 
     /**
-     * Consomme 30% des gains du joueur, calcule les bonus qui en découlent
-     * (poids + attaque) sur un symbole d'attaque tiré au hasard, les met en
-     * attente pour le spin et affiche leurs valeurs.
+     * @param kind  ce que vise le Bingo
+     * @param power puissance : le Bingo est garanti avec moins de points (version « + » de la carte)
      */
-    @Override
-    public void onPlay(PlayContext context) {
-        // 30 % des gains, mais jamais plus que ce qui sert encore : rien n'est payé pour rien.
-        // Comme Fortune du roi, les gains se comptent au coût de tirage de force du lieu (3 000 au Désert, pas
-        // 140 000) : sinon la force grimperait avec l'économie étirée (Astra, 2026-11-04).
-        int    spinCost = context.getSpinCost();
-        double toPower  = (double) SpinEconomy.powerSpinCost(spinCost) / spinCost;
-        double share    = BigNumber.round(Math.max(0, context.getPlayer().getGains()) * CONSUME_PERCENT);
-        double consumed = context.consumeGains(Math.min(BigNumber.round(MAX_CONSUMED / toPower), share));
-        double counted  = consumed * toPower;
-        // Rendement décroissant : l'attaque suit la racine des gains consommés ; l'attaque et le boost sont plafonnés.
-        int weightBoost = Math.round((WEIGHT_BOOST_AMOUNT + (float) Math.min(counted, MAX_WEIGHT_FROM_GAINS)) * power);
-        int attackBoost = Math.round((ATTACK_BOOST_AMOUNT
-            + Math.min(MAX_ATTACK_FROM_GAINS, ATTACK_PER_SQRT_GAIN * (float) Math.sqrt(counted))) * power);
-
-        context.addPopups(List.of(
-            EffectPopup.scaled(Lang.f("-{0} GAINS", Lang.big(consumed)), EffectPopup.Style.GAINS, consumed, PopupScale.ACE_OF_CLUBS_CONSUMED),
-            EffectPopup.scaled(Lang.f("ATTAQUE +{0}", attackBoost), EffectPopup.Style.ATTACK, attackBoost, PopupScale.ACE_OF_CLUBS_ATTACK),
-            EffectPopup.scaled(Lang.f("BOOST SYMBOLE +{0}", weightBoost), EffectPopup.Style.SPECIAL, weightBoost, PopupScale.ACE_OF_CLUBS_BOOST)
-        ));
-
-        context.queueForSpin(new AttackEffect(attackBoost));
-        List<Symbol> attackSymbols = SymbolRegistry.getAttackSymbols(context.getPlayer()); // ceux de sa machine
-        if (!attackSymbols.isEmpty()) {
-            Symbol target = attackSymbols.get(RANDOM.nextInt(attackSymbols.size()));
-            context.queueForSpin(new BoostSymbolEffect(target, weightBoost));
-        }
+    public AceOfClubsEffect(Kind kind, float power) {
+        this.kind  = kind;
+        this.power = power;
     }
 
-    /** Aucun effet propre au spin : les bonus calculés à la pose y sont appliqués via les effets mis en attente. */
+    /** @return les points de Bonne étoile qui garantissent le Bingo de cette carte. */
+    public int getGuaranteed() { return Math.round(GUARANTEED / power); }
+
+    /** @return la chance (0 à 1) du Bingo avec {@code stars} points de Bonne étoile. */
+    public float chance(int stars) { return Math.min(1f, stars / (float) getGuaranteed()); }
+
+    /** Remplit puis vide la Bonne étoile, jette le sort et, s'il réussit, impose le Bingo au tirage. */
+    @Override
+    public void onPlay(PlayContext context) {
+        LastingEffects lasting = context.getLastingEffects();
+        lasting.addLuckyStar(OWN_STARS);
+        int stars = lasting.consumeLuckyStar();
+        float chance = chance(stars);
+        boolean bingo = roll(chance);
+        int percent = Math.round(chance * 100);
+        if (!bingo) {
+            context.addPopups(List.of(new EffectPopup(Lang.f("BONNE ÉTOILE {0} % : PAS DE BINGO", percent),
+                EffectPopup.Style.SPECIAL, PopupScale.SECONDARY_INTENSITY)));
+            return;
+        }
+        Symbol symbol = pick(context);
+        context.addPopups(List.of(new EffectPopup(symbol == null ? Lang.t("BONNE ÉTOILE : BINGO !")
+            : Lang.f("BONNE ÉTOILE : BINGO {0} !", symbol.getDisplayName()), EffectPopup.Style.SPECIAL,
+            PopupScale.MAX_INTENSITY)));
+        context.queueForSpin(new StarBingo(symbol));
+    }
+
+    /** @return {@code true} si le sort réussit (toujours à 100 %). Ouvert aux tests. */
+    protected boolean roll(float chance) { return chance >= 1f || RANDOM.nextFloat() < chance; }
+
+    /** @return le symbole du Bingo, ou {@code null} : tiré au hasard dans la machine (As, ou machine sans symbole du bon genre). */
+    private Symbol pick(PlayContext context) {
+        List<Symbol> pool = switch (kind) {
+            case ANY     -> List.of();
+            case ATTACK  -> SymbolRegistry.getAttackSymbols(context.getPlayer());
+            case DEFENSE -> SymbolRegistry.getDefenseSymbols(context.getPlayer());
+            case GAINS   -> SymbolRegistry.getGainSymbols(context.getPlayer());
+        };
+        return pool.isEmpty() ? null : pool.get(RANDOM.nextInt(pool.size()));
+    }
+
+    /** Aucun effet propre au tirage : le Bingo obtenu à la pose y est imposé par {@link StarBingo}. */
     @Override
     public void apply(TurnContext context) { }
 
     @Override
     public String getDescription() {
-        return Lang.f("Consomme 30% des gains, {2} au plus (en tirages de force du lieu, comme Fortune du Roi). Un symbole d'attaque devient bien plus fréquent et gagne +{0} "
-            + "d'attaque, plus selon les gains consommés (jusqu'à +{1})",
-            Math.round(ATTACK_BOOST_AMOUNT * power), Math.round((ATTACK_BOOST_AMOUNT + MAX_ATTACK_FROM_GAINS) * power),
-            Lang.big(MAX_CONSUMED));
+        String target = switch (kind) {
+            case ANY     -> Lang.t("d'un symbole de ta machine");
+            case ATTACK  -> Lang.t("d'un symbole d'attaque de ta machine");
+            case DEFENSE -> Lang.t("d'un symbole de défense de ta machine");
+            case GAINS   -> Lang.t("d'un symbole de gains de ta machine");
+        };
+        return Lang.f("Bonne étoile +{0}, puis la vide. À {1} points ou plus : Bingo garanti {2} à ce tirage. "
+            + "En dessous, la chance suit les points ({3} points : 50 %). Ce Bingo : attaque et bouclier x{4}, "
+            + "il traverse la défense, sans Jeu bonus", OWN_STARS, getGuaranteed(), target,
+            Math.round(getGuaranteed() / 2f), LastingEffects.STAR_BINGO_POWER);
     }
 
-    /** Textes fixes : aucun, toutes les valeurs dépendent des gains consommés (voir {@link #onPlay}). */
+    /** Textes fixes : aucun, tout dépend de la Bonne étoile (voir {@link #onPlay}). */
     @Override
-    public List<EffectPopup> getPopups() {
-        return List.of();
-    }
+    public List<EffectPopup> getPopups() { return List.of(); }
+
+    /** Le sort est jeté une fois : doublée, la carte viderait une jauge déjà vide. */
+    @Override
+    public boolean canBeDoubled() { return false; }
 
     @Override
     public EffectSound getSound() { return EffectSound.ACE_OF_CLUBS; }
+
+    /** Le Bingo de la Bonne étoile, imposé au tirage : attaque et bouclier multipliés, défense traversée, pas de Jeu bonus. */
+    private static final class StarBingo extends Effect {
+        private final Symbol symbol;
+
+        StarBingo(Symbol symbol) { this.symbol = symbol; }
+
+        @Override
+        public void apply(TurnContext context) {
+            if (symbol != null) context.getSpinContext().forceJackpot(symbol);
+            else context.getSpinContext().forceJackpot();
+            context.getCombatContext().multiplyAttack(LastingEffects.STAR_BINGO_POWER, "Bonne étoile");
+            context.getCombatContext().multiplyDefense(LastingEffects.STAR_BINGO_POWER, "Bonne étoile");
+            context.getCombatContext().pierceDefense(100);
+            context.getSpinContext().markStarBingo();
+        }
+
+        @Override
+        public String getDescription() { return ""; }
+
+        @Override
+        public List<EffectPopup> getPopups() { return List.of(); }
+
+        @Override
+        public EffectSound getSound() { return EffectSound.ACE_OF_CLUBS; }
+    }
 }

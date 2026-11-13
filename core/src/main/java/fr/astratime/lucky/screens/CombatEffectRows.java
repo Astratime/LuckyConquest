@@ -127,6 +127,15 @@ final class CombatEffectRows {
                     + "joués ce tour. Tes Carreaux joués en Couleur ou en Suite la remplissent. L'As de Carreau le vide "
                     + "en attaque (+1 pour 10).", Lang.big(LastingEffects.MAX_VAULT))));
         }
+        if (lasting.getLuckyStar() > 0) {
+            rows.add(new SidePanel.EffectRow(new TextureRegion(hud.iconStar), null,
+                Lang.f("Bonne étoile {0} ({1} %)", lasting.getLuckyStar(), lasting.getStarChance()), Lang.t("Bonne étoile"),
+                Lang.f("Jauge de Trèfle, jusqu'à {0}. Chaque point donne 1 % de chance de Paire en plus, et 1 % de "
+                    + "chance qu'une Paire devienne un Bingo ({1} % au plus). Ce Bingo : attaque et bouclier x{2}, il "
+                    + "traverse la défense, sans Jeu bonus. Tes Trèfles la remplissent. L'As de Trèfle la vide pour "
+                    + "tenter un Bingo.", LastingEffects.MAX_LUCKY_STAR, LastingEffects.MAX_STAR_CHANCE,
+                    LastingEffects.STAR_BINGO_POWER)));
+        }
         for (double[] safe : lasting.getSafes()) {
             int turnsLeft = (int) safe[1];
             rows.add(new SidePanel.EffectRow(new TextureRegion(hud.iconSafe), null,

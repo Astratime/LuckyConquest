@@ -26,15 +26,16 @@ class AceBoostTest {
     }
 
     @Test
-    void theAceOfClubsBoostsAnAttackSymbolOfTheMachine() {
+    void theShootingStarBingoIsAnAttackSymbolOfTheMachine() {
         for (int i = 0; i < 50; i++) {
-            PlayContext context = new PlayContext(playerWithOnlyBar());
-            new AceOfClubsEffect().onPlay(context);
+            Player player = playerWithOnlyBar();
+            player.getLastingEffects().addLuckyStar(100);
+            PlayContext context = new PlayContext(player);
+            new AceOfClubsEffect(AceOfClubsEffect.Kind.ATTACK, 1f).onPlay(context);
             SpinContext spin = new SpinContext();
             TurnContext turn = new TurnContext(spin, new CombatContext(context.getPlayer(), null));
             context.getEffectsForSpin().forEach(effect -> effect.apply(turn));
-            assertTrue(spin.getWeightBoost(Symbol.BAR) > 0, "le BAR, seul symbole d'attaque de la machine");
-            assertEquals(0, spin.getWeightBoost(Symbol.SEVEN), "le Sept n'est pas dans la machine");
+            assertEquals(Symbol.BAR, spin.getJackpotSymbol(), "le BAR, seul symbole d'attaque de la machine");
         }
     }
 
