@@ -64,6 +64,8 @@ public class PauseOverlay implements Disposable {
     /** Onglets des options : Visuel, Audio, Accessibilité. */
     private final List<List<OptionsMenu.Entry>> optionTabs;
     private final InputProcessor input;
+    /** Lexique des règles, ouvert depuis la page pause. */
+    private final LexiconOverlay lexicon;
     private boolean shown;
     private boolean optionsPage;
 
@@ -89,9 +91,19 @@ public class PauseOverlay implements Disposable {
             OptionsMenu.audioEntries(new AudioSettings()),
             OptionsMenu.accessibilityEntries(settings, listener::onEffectsChanged));
 
+        lexicon = new LexiconOverlay(hud, game.getAssets().buttons, clickSound);
+        stage.addActor(lexicon.getActor());
+
         InputAdapter keyboard = new InputAdapter() {
             @Override
             public boolean keyDown(int keycode) {
+                if (lexicon.isShown()) {
+                    if (keycode == Input.Keys.ESCAPE) {
+                        clickSound.play();
+                        lexicon.hide();
+                    }
+                    return true;
+                }
                 if (keycode == Input.Keys.ESCAPE) {
                     clickSound.play();
                     if (optionsPage) showPausePage();
@@ -113,6 +125,7 @@ public class PauseOverlay implements Disposable {
     /** Ferme le menu sans rien faire d'autre (ex : l'écran de jeu se ferme). */
     public void hide() {
         shown = false;
+        if (lexicon.isShown()) lexicon.hide();
     }
 
     /** @return {@code true} si le menu est ouvert (le jeu est alors figé). */
@@ -121,12 +134,13 @@ public class PauseOverlay implements Disposable {
     /** @return le processeur d'entrée du menu, à installer tant qu'il est ouvert. */
     public InputProcessor getInput() { return input; }
 
-    /** Page pause : Reprendre, Options, Recommencer, retour au mode joué (s'il y en a un), Menu principal. */
+    /** Page pause : Reprendre, Options, Lexique des règles, Recommencer, retour au mode joué (s'il y en a un), Menu principal. */
     private void showPausePage() {
         optionsPage = false;
         List<OptionsMenu.Entry> entries = new ArrayList<>();
         entries.add(OptionsMenu.Entry.button(Lang.t("Reprendre"), this::resume));
         entries.add(OptionsMenu.Entry.button(Lang.t("Options"), this::showOptionsPage));
+        entries.add(OptionsMenu.Entry.button(Lang.t("Lexique des règles"), this::showLexicon));
         entries.add(OptionsMenu.Entry.button(Lang.t("Recommencer"), () -> {
             shown = false;
             listener.onRestart();
@@ -142,6 +156,12 @@ public class PauseOverlay implements Disposable {
             listener.onMainMenu();
         }));
         menu.setEntries(Lang.t("PAUSE"), entries);
+    }
+
+    /** Ouvre le lexique des règles par-dessus la page pause ; le menu attend qu'il se ferme. */
+    private void showLexicon() {
+        menu.setActive(false);
+        lexicon.show(() -> menu.setActive(true));
     }
 
     /** Page des options, sur son premier onglet. */
@@ -173,6 +193,7 @@ public class PauseOverlay implements Disposable {
         float worldHeight = stage.getViewport().getWorldHeight();
         veil.setBounds(0f, 0f, worldWidth, worldHeight);
         menu.layout(worldWidth / 2f, worldHeight / 2f);
+        lexicon.layout();
     }
 
     /** Anime et dessine le menu par-dessus le jeu, s'il est ouvert. */
@@ -187,5 +208,6 @@ public class PauseOverlay implements Disposable {
     public void dispose() {
         stage.dispose();
         menu.dispose();
+        lexicon.dispose();
     }
 }
