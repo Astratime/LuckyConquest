@@ -133,6 +133,26 @@ class EnemySignaturesTest {
     }
 
     @Test
+    void aHandFullOfOwnCardsNeverGoesOverTheHandLimit() {
+        // Beaucoup de cartes propres : il pioche de quoi jouer ses cartes habituelles, mais sa main
+        // reste à Enemy.HAND_SIZE ; les cartes propres qu'il ne joue pas partent dans sa défausse.
+        for (EnemyKind kind : List.of(EnemyKind.MAISON, EnemyKind.GARDIEN_LEVIER)) {
+            for (int seed = 0; seed < 40; seed++) {
+                List<Card> cards = new ArrayList<>();
+                for (int i = 0; i < 12; i++) cards.add(kind.getSignatures().get(0).card());
+                for (int i = 0; i < 8; i++) cards.add(EnemyCards.card(Card.Suit.PIQUE, 2 + i));
+                Enemy enemy = new Enemy(kind, cards);
+                int plays = enemy.getPlaysPerTurn();
+                EnemyTurnResult turn = new EnemyTurnResolver(new Random(seed)).resolve(enemy, player());
+                assertTrue(turn.drawn().size() <= Enemy.HAND_SIZE, kind + " : " + turn.drawn().size() + " cartes en main");
+                long regular = turn.played().stream().filter(card -> EnemySignature.of(card) == null).count();
+                assertEquals(plays, regular, kind + " : il joue toujours ses cartes habituelles");
+                assertEquals(20, enemy.getDeckCards().size() + enemy.getDiscardCards().size(), "aucune carte perdue");
+            }
+        }
+    }
+
+    @Test
     void theCountdownShortensTheDeadTimeThreeTimesAtMost() {
         Enemy enemy = only(EnemyKind.TEMPS_MORT, EnemySignature.COMPTE_A_REBOURS, 12);
         assertEquals(EnemyKind.TIME_LIMIT, enemy.getTurnLimit());
