@@ -20,6 +20,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.EnumMap;
 import java.util.EnumSet;
 import java.util.LinkedHashSet;
 import java.util.Set;
@@ -96,6 +97,10 @@ public class PlayerProfile {
     static final String KEY_MET           = "met";
     static final String KEY_DEFEATED      = "defeated";
     static final String KEY_POTS          = "pots";
+    /** Cosmétiques achetés avec des pièces, par nom. */
+    static final String KEY_COSMETICS     = "cosmetics";
+    /** Cosmétiques choisis (un par sorte), par nom. */
+    static final String KEY_COSMETICS_ON  = "cosmeticsOn";
     /** Cagnotte de l'Entraînement (les lieux de l'Exploration ont la leur, par nom). */
     public static final String POT_TRAINING = "TRAINING";
 
@@ -165,6 +170,12 @@ public class PlayerProfile {
     private final Map<String, Double> pots      = new LinkedHashMap<>();
     /** Cagnottes du mode ADMIN : jamais enregistrées, ses combats ne rapportent rien. */
     private final Map<String, Double> adminPots = new LinkedHashMap<>();
+    /** Cosmétiques achetés avec des pièces. */
+    private final Set<Cosmetic> boughtCosmetics = EnumSet.noneOf(Cosmetic.class);
+    /** Cosmétique choisi pour chaque sorte (absent : celui d'origine). */
+    private final Map<Cosmetic.Kind, Cosmetic> chosenCosmetics = new EnumMap<>(Cosmetic.Kind.class);
+    /** Cosmétiques choisis en mode ADMIN (jamais enregistrés). */
+    private final Map<Cosmetic.Kind, Cosmetic> adminCosmetics = new EnumMap<>(Cosmetic.Kind.class);
 
     /**
      * Charge le profil enregistré dans {@code storage} ; au premier lancement
@@ -239,6 +250,7 @@ public class PlayerProfile {
         loadBestiary();
         loadAdminLoadout();
         pots.putAll(decodePots(storage.get(KEY_POTS)));
+        loadCosmetics();
     }
 
     /**
@@ -1183,6 +1195,90 @@ public class PlayerProfile {
         return true;
     }
 
+    // -------------------------------------------------------------------------
+    // Cosmétiques
+    // -------------------------------------------------------------------------
+
+    /** Lit les cosmétiques achetés et choisis (les noms inconnus sont ignorés). */
+    private void loadCosmetics() {
+        Set<String> names = new LinkedHashSet<>();
+        readNames(storage.get(KEY_COSMETICS), names);
+        for (Cosmetic cosmetic : Cosmetic.values()) {
+            if (names.contains(cosmetic.name()) && cosmetic.getUnlock() == Cosmetic.Unlock.COINS) boughtCosmetics.add(cosmetic);
+        }
+        names.clear();
+        readNames(storage.get(KEY_COSMETICS_ON), names);
+        for (Cosmetic cosmetic : Cosmetic.values()) {
+            if (names.contains(cosmetic.name()) && !cosmetic.isDefault()) chosenCosmetics.put(cosmetic.getKind(), cosmetic);
+        }
+    }
+
+    /** @return le nombre de succès atteints. */
+    public int getAchievementCount() { return achievements.size(); }
+
+    /** @return le nombre d'ennemis du bestiaire vaincus (hors ADMIN). */
+    public int getBestiaryDefeatedCount() {
+        int count = 0;
+        for (EnemyKind kind : Bestiary.enemies()) if (defeatedEnemies.contains(kind)) count++;
+        return count;
+    }
+
+    /**
+     * @return la progression vers l'objectif de {@code cosmetic} : {@code {fait, objectif}}
+     *         (succès ou ennemis vaincus), {@code null} pour un cosmétique d'origine ou à acheter
+     */
+    public int[] getCosmeticProgress(Cosmetic cosmetic) {
+        return switch (cosmetic.getUnlock()) {
+            case ACHIEVEMENTS -> new int[]{getAchievementCount(), (int) cosmetic.getGoal()};
+            case BESTIARY     -> new int[]{getBestiaryDefeatedCount(), cosmetic.getGoal() == Cosmetic.Unlock.ALL
+                ? Bestiary.enemies().size() : (int) cosmetic.getGoal()};
+            default           -> null;
+        };
+    }
+
+    /** @return {@code true} si le joueur peut choisir {@code cosmetic} (débloqué, acheté, d'origine, ou mode ADMIN). */
+    public boolean ownsCosmetic(Cosmetic cosmetic) {
+        if (admin || cosmetic.isDefault()) return true;
+        if (cosmetic.getUnlock() == Cosmetic.Unlock.COINS) return boughtCosmetics.contains(cosmetic);
+        int[] progress = getCosmeticProgress(cosmetic);
+        return progress[0] >= progress[1];
+    }
+
+    /**
+     * Achète {@code cosmetic} avec des pièces, et l'habille tout de suite. Le profil est enregistré.
+     *
+     * @return {@code false} s'il ne s'achète pas, s'il est déjà possédé, si les pièces manquent, ou en mode ADMIN
+     */
+    public boolean buyCosmetic(Cosmetic cosmetic) {
+        if (admin || cosmetic.getUnlock() != Cosmetic.Unlock.COINS || boughtCosmetics.contains(cosmetic)
+            || coins < cosmetic.getGoal()) return false;
+        coins -= cosmetic.getGoal();
+        boughtCosmetics.add(cosmetic);
+        chosenCosmetics.put(cosmetic.getKind(), cosmetic);
+        save();
+        return true;
+    }
+
+    /**
+     * Choisit {@code cosmetic} pour sa sorte. Le profil est enregistré (sauf en mode ADMIN, où le choix n'est pas gardé).
+     *
+     * @return {@code false} si le joueur ne le possède pas
+     */
+    public boolean chooseCosmetic(Cosmetic cosmetic) {
+        if (!ownsCosmetic(cosmetic)) return false;
+        Map<Cosmetic.Kind, Cosmetic> chosen = admin ? adminCosmetics : chosenCosmetics;
+        if (cosmetic.isDefault()) chosen.remove(cosmetic.getKind()); else chosen.put(cosmetic.getKind(), cosmetic);
+        if (!admin) save();
+        return true;
+    }
+
+    /** @return le cosmétique habillé pour la sorte {@code kind} (celui d'origine si le choix n'est plus possédé). */
+    public Cosmetic getCosmetic(Cosmetic.Kind kind) {
+        Cosmetic chosen = (admin ? adminCosmetics : chosenCosmetics).get(kind);
+        if (chosen == null && admin) chosen = chosenCosmetics.get(kind);
+        return chosen != null && ownsCosmetic(chosen) ? chosen : Cosmetic.defaultOf(kind);
+    }
+
     /**
      * Enregistre la collection, le deck, les pièces, le rang, les rouleaux, les donjons vidés,
      * les chapitres terminés, le mode difficile, les statistiques, les succès, les cagnottes et le bestiaire.
@@ -1209,6 +1305,8 @@ public class PlayerProfile {
         storage.put(KEY_STATS, stats.encode());
         storage.put(KEY_ACHIEVEMENTS, achievements.stream().map(Enum::name).collect(Collectors.joining(",")));
         storage.put(KEY_POTS, encodePots(pots));
+        storage.put(KEY_COSMETICS, boughtCosmetics.stream().map(Enum::name).collect(Collectors.joining(",")));
+        storage.put(KEY_COSMETICS_ON, chosenCosmetics.values().stream().map(Enum::name).collect(Collectors.joining(",")));
         saveBestiary();
     }
 

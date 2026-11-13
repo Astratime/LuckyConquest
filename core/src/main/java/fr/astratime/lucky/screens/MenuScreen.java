@@ -305,7 +305,7 @@ public class MenuScreen extends ScreenAdapter {
     // -------------------------------------------------------------------------
 
     /**
-     * Page principale : Entraînement, Tour des épreuves, Exploration, Table du croupier, Boutique,
+     * Page principale : Entraînement, Tour des épreuves, Exploration, Table du croupier, Boutique, Cosmétiques,
      * Cinématique (en mode ADMIN seulement), Options, Retour (vers l'accueil), Quitter.
      */
     private void showMainPage() {
@@ -314,7 +314,8 @@ public class MenuScreen extends ScreenAdapter {
             OptionsMenu.Entry.button(Lang.t("Tour des épreuves"), this::onTower),
             OptionsMenu.Entry.button(Lang.t("Exploration"), () -> goTo(() -> new ExplorationScreen(luckyGame))),
             OptionsMenu.Entry.button(Lang.t("Table du croupier"), () -> goTo(() -> new CroupierTableScreen(luckyGame))),
-            OptionsMenu.Entry.button(Lang.t("Boutique"), () -> goTo(() -> new ShopScreen(luckyGame)))));
+            OptionsMenu.Entry.button(Lang.t("Boutique"), () -> goTo(() -> new ShopScreen(luckyGame))),
+            OptionsMenu.Entry.button(Lang.t("Cosmétiques"), () -> goTo(() -> new CosmeticsScreen(luckyGame)))));
         // Mode Cinématique : seulement en mode ADMIN.
         if (luckyGame.getProfile().isAdmin()) {
             entries.add(OptionsMenu.Entry.button(Lang.t("Cinématique"), () -> goTo(() -> new CinematicScreen(luckyGame))));

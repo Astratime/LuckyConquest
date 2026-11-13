@@ -63,6 +63,7 @@ import fr.astratime.lucky.assets.GameSounds;
 import fr.astratime.lucky.assets.HudTextures;
 import fr.astratime.lucky.assets.Palette;
 import fr.astratime.lucky.assets.TableTextures;
+import fr.astratime.lucky.progress.Cosmetic;
 import fr.astratime.lucky.controllers.GameController;
 import fr.astratime.lucky.entities.BigNumber;
 import fr.astratime.lucky.entities.BonusGame;
@@ -312,6 +313,8 @@ public class GameScreen extends ScreenAdapter {
     private final BitmapFont          playsFont = Fonts.jersey(24, Color.WHITE, 2f, Palette.TEXT_SHADE);
     private final BitmapFont          shieldFont = Fonts.jersey(26, Color.WHITE, 2f, Palette.TEXT_SHADE);
     private final Texture             cardBackTexture;
+    /** Image du dos des cartes du joueur (cosmétique « Dos de cartes », ou celui d'origine). */
+    private final String              playerBackPath;
     /** Communs à tous les écrans (voir {@link SharedAssets}) : ne jamais les libérer ici. */
     private final CardTextures        cardTextures;
     private final EnemyTextures       enemyTextures;
@@ -477,9 +480,13 @@ public class GameScreen extends ScreenAdapter {
         this.run           = run;
         this.trainingEnemy = trainingEnemy == null ? EnemyKind.ENTRAINEMENT : trainingEnemy;
         // La table a l'air du lieu en Exploration (et contre un ennemi de l'Exploration à l'entraînement) ;
-        // ailleurs, la table de casino.
+        // ailleurs, la table de casino. Les cosmétiques choisis (tapis, machine) habillent la table de chaque lieu.
+        PlayerProfile profile = luckyGame.getProfile();
         tableTextures  = TableTextures.forPlace(run instanceof DungeonRun dungeonRun ? Place.of(dungeonRun.getDungeon())
-            : run == null ? Place.of(this.trainingEnemy) : null);
+            : run == null ? Place.of(this.trainingEnemy) : null,
+            profile.getCosmetic(Cosmetic.Kind.FELT), profile.getCosmetic(Cosmetic.Kind.MACHINE));
+        String backPath = profile.getCosmetic(Cosmetic.Kind.BACK).getBackPath();
+        playerBackPath = backPath != null ? backPath : CARD_BACK_PATH;
         SharedAssets assets = luckyGame.getAssets();
         cardTextures  = assets.cardTextures();
         enemyTextures = assets.enemyTextures();
@@ -491,7 +498,7 @@ public class GameScreen extends ScreenAdapter {
         this.stage = new Stage(new MinimumScreenViewport(MIN_WIDTH, MIN_HEIGHT), luckyGame.getBatch());
 
         font                = new BitmapFont();
-        cardBackTexture     = cardTextures.get(CARD_BACK_PATH);
+        cardBackTexture     = cardTextures.get(playerBackPath);
         effectPopupAnimator = new EffectPopupAnimator(popupLayer, effect -> sounds.effect(effect).play());
         tooltip             = new Tooltip(hudTextures);
         pileOverlay         = new PileContentOverlay(stage, font, tooltip, cardTextures::get, CARD_WIDTH, CARD_HEIGHT);
@@ -548,6 +555,7 @@ public class GameScreen extends ScreenAdapter {
             new CardDealAnimator(handStand, cardBackTexture, CARD_WIDTH, CARD_HEIGHT, sounds.cardDeal, sounds.cardFlip),
             new CardDiscardAnimator(handStand, cardBackTexture, CARD_WIDTH, CARD_HEIGHT, sounds.cardDeal, sounds.cardFlip),
             this::onCardPlayed);
+        hand.setBackPath(playerBackPath);
         slots = new SlotView(table, tooltip, effectPopupAnimator, sounds.reelSpin, sounds.reelStop, sounds.reelSuspense,
             gameController.getGameState().getPlayer().getSlotMachine().getReels());
         combatEnd = new CombatEndAnimation(playArea, screenShake, new TextureRegion(hudTextures.pixel),
