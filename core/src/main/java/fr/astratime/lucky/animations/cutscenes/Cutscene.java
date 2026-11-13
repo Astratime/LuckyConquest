@@ -38,7 +38,7 @@ import static fr.astratime.lucky.assets.Palette.hex;
  *
  * L'acteur couvre le Stage et bloque les clics tant qu'il est visible.
  */
-public abstract class Cutscene extends Actor implements Disposable {
+public abstract class Cutscene extends Actor implements Disposable, fr.astratime.lucky.input.GamepadInput.PrefersEnter {
 
     protected static final float MARGIN = 40f;        // le décor déborde, pour les secousses
     private static final float COVER_HOLD = 0.2f;
@@ -151,6 +151,16 @@ public abstract class Cutscene extends Actor implements Disposable {
 
     /** @return {@code true} si la scène joue sa propre musique (elle garde alors sa vitesse normale). */
     public boolean hasSoundtrack() { return sound != null; }
+
+    /**
+     * Une touche pendant la scène (clavier ou manette). Par défaut la scène ne s'en sert
+     * pas, et l'écran la passe.
+     *
+     * @return {@code true} si la scène a utilisé la touche (elle ne doit alors pas être passée)
+     */
+    public boolean keyDown(int keycode) {
+        return false;
+    }
 
     /** Passe la scène : l'écran se couvre tout de suite. */
     public void skip() {

@@ -1,5 +1,6 @@
 package fr.astratime.lucky.animations.cutscenes;
 
+import com.badlogic.gdx.Input;
 import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.g2d.Batch;
@@ -297,6 +298,28 @@ public class LastDrawCutscene extends Cutscene {
         dragging = false;                                      // lâché avant le fond : il remonte
         releasedPull = dragPull;
         releasedAt = time;
+    }
+
+    /**
+     * Clavier et manette : Entrée, Espace ou flèche du bas finissent la réplique (ou passent
+     * à la suivante), puis tirent ton levier jusqu'au fond quand la manche attend.
+     */
+    @Override
+    public boolean keyDown(int keycode) {
+        if (keycode != Input.Keys.ENTER && keycode != Input.Keys.SPACE && keycode != Input.Keys.DOWN) return false;
+        if (!isPlaying()) return false;
+        if (lines != null && !verdict) {
+            if (time - lineAt < typing()) lineAt = time - typing();
+            else nextLine();
+            return true;
+        }
+        if (!awaitingPull()) return true; // la manche tourne : on attend, sans passer le duel
+        dragging = false;
+        dragPull = 1f;
+        notch = NOTCHES;
+        sound(notchSound);
+        startRound();
+        return true;
     }
 
     /** @return {@code true} si ({@code x}, {@code y}) tombe sur ta machine ou son levier (on peut l'attraper là). */

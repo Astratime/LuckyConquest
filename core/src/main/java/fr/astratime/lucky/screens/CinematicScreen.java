@@ -586,7 +586,7 @@ public class CinematicScreen extends CasinoMenuScreen {
     @Override
     protected boolean onKey(int keycode) {
         if (isPlaying()) {
-            cutscene.skip();
+            if (!cutscene.keyDown(keycode)) cutscene.skip(); // le levier du duel se tire aussi au clavier
             return true;
         }
         int count = groups.get(group).entries().size();
