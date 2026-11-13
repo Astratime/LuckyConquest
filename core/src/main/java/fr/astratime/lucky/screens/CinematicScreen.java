@@ -23,6 +23,7 @@ import fr.astratime.lucky.animations.ScreenShake;
 import fr.astratime.lucky.animations.cutscenes.BonusGameCutscene;
 import fr.astratime.lucky.animations.cutscenes.SmallBonusGameCutscene;
 import fr.astratime.lucky.animations.cutscenes.BossTheme;
+import fr.astratime.lucky.animations.cutscenes.CroupierCutscene;
 import fr.astratime.lucky.animations.cutscenes.Cutscene;
 import fr.astratime.lucky.animations.cutscenes.CutsceneKit;
 import fr.astratime.lucky.animations.cutscenes.Cutscenes;
@@ -256,12 +257,12 @@ public class CinematicScreen extends CasinoMenuScreen {
         if (Bestiary.bossCutsceneSeen(profile, croupier)) {
             List<Entry> secret = new ArrayList<>();
             secret.add(new Entry(Lang.t("Le Croupier entre en scène"),
-                Lang.t("Au sommet de la Tour, les machines s'allument derrière lui. Il distribue tes propres cartes."),
-                enemyTextures.portrait(croupier), kit -> Cutscenes.beforeBoss(kit, croupier)));
+                Lang.t("Une porte cachée au sommet de la Tour mène à sa salle des machines. Il te distribue tes propres cartes."),
+                enemyTextures.portrait(croupier), kit -> withProfile(Cutscenes.beforeBoss(kit, croupier), profile)));
             addMoments(secret, secret, profile, croupier);
             if (Bestiary.deathSeen(profile, croupier)) {
                 secret.add(new Entry(Lang.t("La vraie fin"),
-                    Lang.t("Le Croupier te glisse le sabot et s'efface. Il ne reste que son chapeau, et le jour se lève sur la Tour."),
+                    Lang.t("Il perd sa dernière main, te laisse son chapeau et le sabot, puis s'efface dans l'aube. C'est toi qui distribues."),
                     enemyTextures.portrait(croupier), Cutscenes::trueEnding));
             }
             addGroup(Lang.t("Le Croupier"), Lang.t("Le boss secret"), secret);
@@ -295,6 +296,26 @@ public class CinematicScreen extends CasinoMenuScreen {
     }
 
     /**
+     * @return {@code cutscene} ; celles du Croupier rejouées depuis ce menu montrent des cartes tirées au hasard
+     *         du deck de {@code profile} et un de ses rouleaux truqué au hasard (au combat : les vraies)
+     */
+    private static Cutscene withProfile(Cutscene cutscene, PlayerProfile profile) {
+        if (!(cutscene instanceof CroupierCutscene croupier)) return cutscene;
+        Random random = new Random();
+        List<String> cards = new ArrayList<>();
+        for (fr.astratime.lucky.entities.Card card : fr.astratime.lucky.loaders.CardLoader.loadDeck(profile.getDeck())) {
+            cards.add(card.getAssetPath());
+        }
+        java.util.Collections.shuffle(cards, random);
+        croupier.withCards(cards, false);
+        List<Symbol> machine = profile.getMachine();
+        List<Symbol> riggable = new ArrayList<>();
+        for (Symbol symbol : machine) if (symbol != Symbol.JOKER) riggable.add(symbol);
+        croupier.withMachine(machine, random.nextInt(3), riggable.isEmpty() ? null : riggable.get(random.nextInt(riggable.size())));
+        return croupier;
+    }
+
+    /**
      * Ajoute à {@code entries} les cinématiques de phase du boss {@code boss} (vues dès
      * qu'il a été rencontré), et à {@code deaths} celle de sa mort (vue une fois qu'il a été battu).
      */
@@ -306,7 +327,7 @@ public class CinematicScreen extends CasinoMenuScreen {
                 int shown = phase;
                 entries.add(new Entry(Lang.f("{0} : phase {1}", boss.getDisplayName(), phase),
                     phaseDescription(boss, phase, Math.round(thresholds[phase - 2] * 100)),
-                    portrait, kit -> Cutscenes.phase(kit, boss, shown)));
+                    portrait, kit -> withProfile(Cutscenes.phase(kit, boss, shown), profile)));
             }
         }
         if (Cutscenes.hasDeath(boss) && Bestiary.deathSeen(profile, boss)) {

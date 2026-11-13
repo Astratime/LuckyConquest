@@ -39,6 +39,7 @@ import fr.astratime.lucky.animations.CardDealAnimator;
 import fr.astratime.lucky.animations.CardDiscardAnimator;
 import fr.astratime.lucky.animations.cutscenes.BonusGameCutscene;
 import fr.astratime.lucky.animations.cutscenes.SmallBonusGameCutscene;
+import fr.astratime.lucky.animations.cutscenes.CroupierCutscene;
 import fr.astratime.lucky.animations.cutscenes.Cutscene;
 import fr.astratime.lucky.animations.cutscenes.CutsceneKit;
 import fr.astratime.lucky.animations.cutscenes.Cutscenes;
@@ -68,6 +69,7 @@ import fr.astratime.lucky.controllers.GameController;
 import fr.astratime.lucky.entities.BigNumber;
 import fr.astratime.lucky.entities.BonusGame;
 import fr.astratime.lucky.entities.Card;
+import fr.astratime.lucky.entities.LastingEffects;
 import fr.astratime.lucky.entities.CardPlayResult;
 import fr.astratime.lucky.entities.CombatJournal;
 import fr.astratime.lucky.entities.CombatRecap;
@@ -633,7 +635,14 @@ public class GameScreen extends ScreenAdapter {
         applyTableView(); // vue de face ou classique (Options), une fois tout posé
 
         if (run instanceof CroupierRun) { // le Croupier entre en scène avant le combat
-            playCutscene(Cutscenes.beforeBoss(cutsceneKit, EnemyKind.GRAND_CROUPIER), this::startPlayerTurn);
+            Cutscene intro = Cutscenes.beforeBoss(cutsceneKit, EnemyKind.GRAND_CROUPIER);
+            if (intro instanceof CroupierCutscene croupierIntro) { // il distribue tes cinq prochaines cartes
+                List<Card> pile = player().getDeck().getCards();
+                List<String> next = new ArrayList<>();
+                for (int i = pile.size() - 1; i >= 0 && next.size() < 5; i--) next.add(pile.get(i).getAssetPath());
+                croupierIntro.withCards(next, false);
+            }
+            playCutscene(intro, this::startPlayerTurn);
         } else {
             startPlayerTurn(); // le combat commence par le tour du joueur, main piochée d'office
         }
@@ -1318,6 +1327,13 @@ public class GameScreen extends ScreenAdapter {
             .mapToInt(event -> ((EnemyPhaseEvent) event).phase).max().orElse(0);
         Cutscene transition = phase >= 2 && tutorial == null
             ? Cutscenes.phase(cutsceneKit, gameController.getGameState().getEnemy().getKind(), phase) : null;
+        if (transition instanceof CroupierCutscene croupierPhase) { // ce qu'il a vraiment truqué, ou sa vraie main
+            LastingEffects lasting = player().getLastingEffects();
+            croupierPhase.withMachine(player().getSlotMachine().getReels(), lasting.getRiggedReel(), lasting.getRiggedSymbol());
+            List<String> shown = new ArrayList<>();
+            for (Card card : gameController.getGameState().getEnemy().getRevealedHand()) shown.add(card.getAssetPath());
+            croupierPhase.withCards(shown, true);
+        }
         playCutscene(transition, play);
     }
 
