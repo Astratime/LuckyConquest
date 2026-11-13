@@ -119,6 +119,7 @@ import fr.astratime.lucky.entities.events.ReelForbiddenEvent;
 import fr.astratime.lucky.entities.events.PistolShotEvent;
 import fr.astratime.lucky.entities.events.PlayerHealedEvent;
 import fr.astratime.lucky.entities.events.ShieldGainedEvent;
+import fr.astratime.lucky.entities.exploration.Crossroads;
 import fr.astratime.lucky.entities.exploration.DungeonRun;
 import fr.astratime.lucky.entities.exploration.Dungeon;
 import fr.astratime.lucky.entities.exploration.Place;
@@ -140,6 +141,7 @@ import fr.astratime.lucky.views.CardImage;
 import fr.astratime.lucky.views.CardPileView;
 import fr.astratime.lucky.views.CasinoButtons;
 import fr.astratime.lucky.views.CombatHud;
+import fr.astratime.lucky.views.CrossroadsOverlay;
 import fr.astratime.lucky.views.EnemyPickOverlay;
 import fr.astratime.lucky.views.EnemyView;
 import fr.astratime.lucky.views.GuideOverlay;
@@ -362,6 +364,8 @@ public class GameScreen extends ScreenAdapter {
     private final ShopIcon            shopIcon;
     /** Transitions de la Tour des épreuves : choix de l'adversaire, apparition du boss. */
     private final EnemyPickOverlay    pickOverlay;
+    /** Exploration : le carrefour entre le soldat et le roi. */
+    private final CrossroadsOverlay   crossroadsOverlay;
     /** Exploration : le coffre au trésor, au bout d'un donjon. */
     private final ChestOverlay        chestOverlay;
     /** Étape de la Tour des épreuves (« CHAPITRE 1 · COMBAT 2/3 »), vide pour un combat seul. */
@@ -580,6 +584,7 @@ public class GameScreen extends ScreenAdapter {
             });
         pickOverlay      = new EnemyPickOverlay(stage, hudTextures, enemyTextures, sounds.cardFlip, sounds.cardHover,
             sounds.fireworkBurst);
+        crossroadsOverlay = new CrossroadsOverlay(stage, hudTextures, sounds.cardFlip, sounds.cardHover);
         chestOverlay     = new ChestOverlay(stage, hudTextures, enemyTextures, cardTextures, sounds.cardFlip,
             sounds.coinsGain, (x, y) -> confetti.burst(x, y, CHEST_CONFETTI));
         stageLabel       = new Label("", new Label.LabelStyle(shopFont, Color.WHITE));
@@ -691,6 +696,7 @@ public class GameScreen extends ScreenAdapter {
         stage.addActor(endButtons); // au-dessus de l'annonce de fin de combat
         stage.addActor(journalView.getActor()); // journal du combat : par-dessus la table et la fin de combat
         stage.addActor(pickOverlay.getActor()); // Tour des épreuves : choix de l'adversaire, boss
+        stage.addActor(crossroadsOverlay.getActor()); // Exploration : carrefour avant le roi
         stage.addActor(chestOverlay.getActor()); // Exploration : coffre au trésor
         stage.addActor(confetti);
         stage.addActor(damageVignette);
@@ -1695,6 +1701,10 @@ public class GameScreen extends ScreenAdapter {
     private void startNextCombat(EnemyKind kind) {
         applyDifficulty(); // mode sans fin : l'étage suivant est plus fort
         gameController.startCombat(kind);
+        // Le roi d'un donjon : l'avantage gagné au carrefour (perdu si le donjon recommence).
+        if (run instanceof DungeonRun dungeonRun && run.isBossStage()) {
+            gameController.applyBoon(dungeonRun.getCrossroads().getBoon());
+        }
         resetBoard();
     }
 
@@ -1747,6 +1757,7 @@ public class GameScreen extends ScreenAdapter {
         enemyView.reset();
         playerShield.setValue(0);
         pickOverlay.hide();
+        crossroadsOverlay.hide();
         chestOverlay.hide();
         refreshAll();
         refreshStageLabel();
@@ -1849,12 +1860,90 @@ public class GameScreen extends ScreenAdapter {
         switch (next) {
             case CHOOSE_ENEMY -> pickOverlay.showChoice(run.getChoices(), this::createButton,
                 index -> startNextCombat(run.choose(index)));
-            case BOSS -> introduceBoss();
+            case BOSS -> {
+                if (isDungeon()) enterCrossroads(); // Exploration : le carrefour, puis le roi
+                else introduceBoss();
+            }
             case CLEARED -> {
                 if (isDungeon()) openChest();
                 else onBackToChapters();
             }
         }
+    }
+
+    /**
+     * Exploration, soldat battu : deux portes, chacune vers une salle du carrefour
+     * (voir {@link Crossroads}). La salle choisie s'ouvre, puis vient le roi.
+     */
+    private void enterCrossroads() {
+        Crossroads crossroads = ((DungeonRun) run).getCrossroads();
+        crossroadsOverlay.showDoors(crossroads.openDoors(), this::enterRoom);
+    }
+
+    /** Le joueur ouvre la porte de {@code room} : ce qui s'y passe, et ses choix. */
+    private void enterRoom(Crossroads.Room room) {
+        Crossroads crossroads = ((DungeonRun) run).getCrossroads();
+        Player player = player();
+        switch (room) {
+            case MACHINE -> {
+                Symbol found = crossroads.searchMachine(player);
+                showRoom(room, found == null ? Lang.t("La machine est vide. Pas un symbole à en tirer.")
+                        : Lang.f("Le levier grince, les rouleaux s'arrêtent : {0} ! Ce symbole sortira 2 fois plus souvent contre le roi.",
+                            found.getDisplayName()),
+                    found == null ? null : slots.regionOf(found), leaveButton());
+            }
+            case DEN -> showRoom(room, Lang.f("Le tenancier lance une pièce en l'air. Tu mises {0} PV ?",
+                    Crossroads.denStake(player)), null,
+                buttons.createAction(Lang.t("Miser"), sounds.buttonClick, () -> {
+                    int stake = Crossroads.denStake(player);
+                    String won = crossroads.gamble(player, gameController.getStallCardIds());
+                    refreshAll();
+                    if (won == null) {
+                        showRoom(room, Lang.f("Perdu ! Tu laisses {0} PV sur la table.", stake), null, leaveButton());
+                    } else {
+                        Card card = CardLoader.cardFactory().apply(won);
+                        showRoom(room, Lang.f("Gagné ! {0} t'attend dans ta main contre le roi.", card.getName()),
+                            new TextureRegion(cardTextures.get(card)), leaveButton());
+                    }
+                }),
+                leaveButton());
+            case FOUNTAIN -> showRoom(room, Lang.t("Une eau claire coule dans une vasque de marbre."), null,
+                buttons.createAction(Lang.t("Boire"), sounds.buttonClick, () -> {
+                    int healed = crossroads.drink(player);
+                    refreshAll();
+                    showRoom(room, Lang.f("Tu bois. +{0} PV.", healed), null, leaveButton());
+                }),
+                buttons.createAction(Lang.t("Offrir tes PV"), sounds.buttonClick, () -> {
+                    int lost = crossroads.offer(player);
+                    refreshAll();
+                    showRoom(room, Lang.f("La fontaine boit {0} PV. Contre le roi, tu joueras 1 carte de plus au premier tour.",
+                        lost), null, leaveButton());
+                }),
+                leaveButton());
+            case CHEST -> {
+                int before = player.getHp();
+                Card card = CardLoader.cardFactory().apply(crossroads.openTrappedChest(player));
+                refreshAll();
+                showRoom(room, Lang.f("Clac ! Le piège te coûte {0} PV, mais tu trouves {1}. Elle sera dans ta main contre le roi.",
+                        before - player.getHp(), card.getName()),
+                    new TextureRegion(cardTextures.get(card)), leaveButton());
+            }
+            case EMPTY -> showRoom(room, Lang.t("Rien. De la poussière, et l'écho de tes pas."), null, leaveButton());
+        }
+    }
+
+    /** Affiche la salle {@code room} et ses boutons. */
+    private void showRoom(Crossroads.Room room, String text, TextureRegion image, TextButton... choices) {
+        crossroadsOverlay.showRoom(room, text, image);
+        crossroadsOverlay.setButtons(List.of(choices));
+    }
+
+    /** @return le bouton qui quitte le carrefour vers le roi. */
+    private TextButton leaveButton() {
+        return buttons.createAction(Lang.t("Vers le roi"), sounds.buttonClick, () -> {
+            crossroadsOverlay.hide();
+            introduceBoss();
+        });
     }
 
     /**
@@ -2415,6 +2504,7 @@ public class GameScreen extends ScreenAdapter {
         layout();
         choiceOverlay.layout();
         pickOverlay.layout();
+        crossroadsOverlay.layout();
         chestOverlay.layout();
         shopOverlay.layout();
         cardDetail.layout();
@@ -2533,6 +2623,7 @@ public class GameScreen extends ScreenAdapter {
         pileOverlay.dispose();
         choiceOverlay.dispose();
         pickOverlay.dispose();
+        crossroadsOverlay.dispose();
         chestOverlay.dispose();
         bingoAnimation.dispose();
         rainbowAnimation.dispose();

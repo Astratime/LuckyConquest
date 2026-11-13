@@ -80,6 +80,12 @@ final class CombatEffectRows {
                 Lang.f("{0} est retiré de tes rouleaux. Il revient dans {1}.",
                     removed.getKey().getDisplayName(), turns(turns))));
         }
+        if (lasting.getFavoredSymbol() != null) { // Machine abandonnée du carrefour (Exploration)
+            Symbol favored = lasting.getFavoredSymbol();
+            rows.add(new SidePanel.EffectRow(symbols.apply(favored), null, Lang.t("Sort 2 fois plus"),
+                Lang.t("Machine abandonnée"),
+                Lang.f("{0} sort 2 fois plus souvent. Jusqu'à la fin du combat.", favored.getDisplayName())));
+        }
         if (lasting.getGainBonus() > 0f) {
             int percent = Math.round(lasting.getGainBonus() * 100f);
             rows.add(new SidePanel.EffectRow(new TextureRegion(hud.iconClover), null,

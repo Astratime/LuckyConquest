@@ -34,7 +34,7 @@ public class SlotMachine {
     public static final int JACKPOT_COUNT = 3;
 
     /** Poids de base attribué à chaque symbole avant application des boosts du tour. */
-    private static final int BASE_WEIGHT  = 10;
+    public static final int BASE_WEIGHT  = 10;
     /** Poids de base du Joker, plus rare que les autres symboles. */
     public static final int JOKER_WEIGHT = 4;
 
