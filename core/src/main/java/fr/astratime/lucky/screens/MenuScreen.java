@@ -305,7 +305,7 @@ public class MenuScreen extends ScreenAdapter {
     // -------------------------------------------------------------------------
 
     /**
-     * Page principale : Entraînement, Tour des épreuves, Exploration, Table du croupier, Boutique, Cosmétiques,
+     * Page principale : Entraînement, Tour des épreuves, Exploration, Table du croupier, Boutique (cosmétiques compris),
      * Cinématique (en mode ADMIN seulement), Options, Retour (vers l'accueil), Quitter.
      */
     private void showMainPage() {
@@ -314,8 +314,7 @@ public class MenuScreen extends ScreenAdapter {
             OptionsMenu.Entry.button(Lang.t("Tour des épreuves"), this::onTower),
             OptionsMenu.Entry.button(Lang.t("Exploration"), () -> goTo(() -> new ExplorationScreen(luckyGame))),
             OptionsMenu.Entry.button(Lang.t("Table du croupier"), () -> goTo(() -> new CroupierTableScreen(luckyGame))),
-            OptionsMenu.Entry.button(Lang.t("Boutique"), () -> goTo(() -> new ShopScreen(luckyGame))),
-            OptionsMenu.Entry.button(Lang.t("Cosmétiques"), () -> goTo(() -> new CosmeticsScreen(luckyGame)))));
+            OptionsMenu.Entry.button(Lang.t("Boutique"), () -> goTo(() -> new ShopScreen(luckyGame)))));
         // Mode Cinématique : seulement en mode ADMIN.
         if (luckyGame.getProfile().isAdmin()) {
             entries.add(OptionsMenu.Entry.button(Lang.t("Cinématique"), () -> goTo(() -> new CinematicScreen(luckyGame))));
@@ -537,7 +536,7 @@ public class MenuScreen extends ScreenAdapter {
             Lang.t("Exploration : des donjons, leurs rois et leurs coffres. Les seuls combats qui rapportent des "
                 + "pièces."),
             Lang.t("Table du croupier : ton deck de 20 cartes et les 11 rouleaux de ta machine."),
-            Lang.t("Boutique : tes pièces y achètent des rangs, des cartes et des rouleaux."),
+            Lang.t("Boutique : tes pièces y achètent des rangs, des cartes, des rouleaux et des cosmétiques."),
             Lang.t("Options : le tutoriel s'y rejoue. Bonne chance à la table.")};
         List<GuideOverlay.Step> steps = new ArrayList<>();
         for (int i = 0; i < lines.length; i++) {
