@@ -764,7 +764,8 @@ public class GameScreen extends ScreenAdapter {
     private void startRun(PlayerProfile profile) {
         if (run != null) gameController.setPlaceRule(run.getPlaceRule()); // Exploration : la règle du lieu
         else if (Place.of(trainingEnemy) != null) gameController.setPlaceRule(Place.of(trainingEnemy).getRule()); // entraînement libre
-        gameController.setBonusGameEnabled(run == null || run.hasBonusGame()); // pas de Jeu bonus dans le tutoriel
+        gameController.setBonusGameEnabled(run == null || run.hasBonusGame());
+        gameController.setAdmin(profile.isAdmin()); // ADMIN : Bingos d'un rouleau absent de la machine permis // pas de Jeu bonus dans le tutoriel
         // Cagnotte du Jeu bonus : celle du lieu (partagée par ses donjons) ou de l'Entraînement, gardées ;
         // celle de l'ascension dans la Tour, où un Bingo ouvre plus souvent le Jeu bonus.
         if (run instanceof DungeonRun dungeonRun) {
