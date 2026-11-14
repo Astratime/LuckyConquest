@@ -279,6 +279,7 @@ public class GameScreen extends ScreenAdapter {
     private static final int   POT_CONFETTI          = 50;
     /** Temps laissé au texte de la riposte (et au coup sur la barre) avant de passer au tour du joueur. */
     private static final float RIPOSTE_TEXT_TIME     = 0.8f;
+    private static final float END_TEXTS_ABOVE       = 0.6f;  // annonces de fin de tour : au-dessus du filet, en cartes
     /** Le temps de lire « ELLE RÉSISTE ! DERNIER TIRAGE » avant le duel des leviers. */
     private static final float LAST_DRAW_DELAY       = 1.2f;
     /** Vue de face : inclinaison des éléments debout sur la table (hauteur / largeur ; 1 : bien droit). */
@@ -1365,12 +1366,16 @@ public class GameScreen extends ScreenAdapter {
         stage.addAction(Actions.delay(margin, Actions.run(this::finishTurn)));
     }
 
-    /** @return {@code true} si les événements {@code events} ont des textes, affichés à droite de la barre de vie du joueur. */
+    /**
+     * @return {@code true} si les événements {@code events} ont des textes, affichés au milieu de la table
+     *         (Garde, Coup de grisou, Venin… : bien lisibles, au-dessus du filet où passera « À TOI DE JOUER »)
+     */
     private boolean showEndTexts(List<Event> events) {
-        Vector2 anchor = hud.besidePlayerHealthBar(SlotView.POPUP_PLAYER_GAP);
         List<EffectPopup> texts = new ArrayList<>();
         events.forEach(event -> texts.addAll(event.getPopups()));
-        if (!texts.isEmpty()) effectPopupAnimator.play(texts, anchor.x, anchor.y);
+        if (!texts.isEmpty()) {
+            effectPopupAnimator.playCentered(texts, playArea.getCenterX(), turnBannerY() + CARD_HEIGHT * END_TEXTS_ABOVE);
+        }
         events.forEach(this::onEventShown);
         refreshEffects();
         return !texts.isEmpty();

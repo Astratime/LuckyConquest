@@ -87,7 +87,6 @@ public class SlotView implements Disposable {
     private static final float POPUP_PISTOL_TIME  = 1.0f;
     /** Temps entre le texte « JACKPOT ! » (début de sa célébration) et la fin des textes du tirage. */
     public static final float  RIPOSTE_AFTER_BONUS = POPUP_ENEMY_DELAY - POPUP_BONUS_DELAY;
-    public static final float  POPUP_PLAYER_GAP   = 110f;  // à droite de la barre de vie du joueur
     /** Animation de chaque symbole (voir SymbolStrikes) : son texte apparaît quand elle touche sa cible. */
     private static final float POPUP_STRIKE_LEAD  = SymbolStrikes.IMPACT_TIME;
 
