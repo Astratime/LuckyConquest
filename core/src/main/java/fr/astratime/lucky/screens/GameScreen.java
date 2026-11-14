@@ -52,6 +52,8 @@ import fr.astratime.lucky.animations.Fireworks;
 import fr.astratime.lucky.animations.JackpotCelebration;
 import fr.astratime.lucky.animations.TurnBanner;
 import fr.astratime.lucky.animations.PistolShotAnimation;
+import fr.astratime.lucky.animations.FullPotentialAnimation;
+import fr.astratime.lucky.entities.FullPotential;
 import fr.astratime.lucky.animations.SymbolStrikes;
 import fr.astratime.lucky.animations.RainbowChipsAnimation;
 import fr.astratime.lucky.animations.ScreenShake;
@@ -354,6 +356,8 @@ public class GameScreen extends ScreenAdapter {
     private final CardChoiceOverlay   choiceOverlay;
     private final BingoCardAnimation  bingoAnimation;
     private final PistolShotAnimation pistolAnimation;
+    /** As joué à plein potentiel : petite animation au milieu de l'écran. */
+    private final FullPotentialAnimation fullPotentialAnimation = new FullPotentialAnimation();
     private final SymbolStrikes       symbolStrikes;
     private final RainbowChipsAnimation rainbowAnimation;
     private final ShopOverlay         shopOverlay;
@@ -567,6 +571,7 @@ public class GameScreen extends ScreenAdapter {
         choiceOverlay   = new CardChoiceOverlay(stage, hudTextures, cardBackTexture, cardTextures, CARD_WIDTH, CARD_HEIGHT);
         bingoAnimation  = new BingoCardAnimation(settings, new TextureRegion(hudTextures.pixel));
         pistolAnimation = new PistolShotAnimation(hudTextures.pistol, new TextureRegion(hudTextures.pixel));
+        fullPotentialAnimation.setOnImpact(() -> { if (!settings.isReducedEffects()) screenShake.shake(0.3f, 8f); });
         symbolStrikes   = new SymbolStrikes(settings, screenShake, new TextureRegion(hudTextures.pixel), hudTextures.coin,
             sidePanel::bumpCoin);
         rainbowAnimation = new RainbowChipsAnimation(settings, new TextureRegion(hudTextures.pixel));
@@ -711,6 +716,14 @@ public class GameScreen extends ScreenAdapter {
         stage.addActor(chestOverlay.getActor()); // Exploration : coffre au trésor
         stage.addActor(confetti);
         stage.addActor(damageVignette);
+        stage.addActor(fullPotentialAnimation); // As à plein potentiel : par-dessus la table, ne bloque pas les clics
+        stage.addCaptureListener(new com.badlogic.gdx.scenes.scene2d.InputListener() {
+            @Override
+            public boolean touchDown(com.badlogic.gdx.scenes.scene2d.InputEvent event, float x, float y, int pointer, int button) {
+                if (fullPotentialAnimation.isPlaying()) fullPotentialAnimation.skip(); // un clic la fait disparaître
+                return false; // le clic sert quand même au jeu
+            }
+        });
         stage.addActor(jackpotLayer); // par-dessus le jeu et le panneau : bloque les clics pendant la fête
         stage.addActor(achievementToast);   // passe devant tout quand il s'affiche, sans bloquer les clics
         stage.addActor(bingoAnimation);         // carte Bingo : faisceaux et téléportation, bloque les clics
@@ -844,7 +857,12 @@ public class GameScreen extends ScreenAdapter {
         Gdx.app.log("GameScreen", "Carte jouee : " + card);
 
         List<Combo> combosBefore = gameController.getCurrentCombos();
+        LastingEffects lasting = gameController.getGameState().getPlayer().getLastingEffects();
+        FullPotential.Gauges gauges = FullPotential.Gauges.before(lasting);
         CardPlayResult playResult = gameController.playCard(card);
+        if (!playResult.getPopups().isEmpty()) { // carte vraiment jouée
+            FullPotential.of(card, gauges.withBladesAfter(lasting.getBlades())).ifPresent(this::playFullPotential);
+        }
         recap.cardPlayed();
         journal.cardPlayed(card);
         if (tutorial != null) tutorial.onCardPlayed(card);
@@ -871,6 +889,13 @@ public class GameScreen extends ScreenAdapter {
         }
         askChoice(playResult.getChoice(), cardCenter);
         if (playResult.getRainbow() != null) playRainbow(playResult.getRainbow());
+    }
+
+    /** Un As joué à plein potentiel : son animation au milieu de l'écran, vers l'ennemi ou la machine. */
+    private void playFullPotential(FullPotential kind) {
+        Vector2 center = new Vector2(stage.getWidth() / 2f, stage.getHeight() / 2f);
+        Vector2 target = kind == FullPotential.CLUBS ? slots.getReelCenter(1) : enemyView.getCroupierCenter();
+        fullPotentialAnimation.play(kind, center, target, settings.isReducedEffects());
     }
 
     /**
@@ -1759,6 +1784,7 @@ public class GameScreen extends ScreenAdapter {
         turnBanner.hide();
         bingoAnimation.cancel();
         pistolAnimation.cancel();
+        fullPotentialAnimation.skip();
         symbolStrikes.cancel();
         rainbowAnimation.cancel();
         shopOverlay.hide();
@@ -2658,6 +2684,7 @@ public class GameScreen extends ScreenAdapter {
         crossroadsOverlay.dispose();
         chestOverlay.dispose();
         bingoAnimation.dispose();
+        fullPotentialAnimation.dispose();
         rainbowAnimation.dispose();
         if (cutscene != null) cutscene.dispose();
         if (guide != null) guide.dispose();
