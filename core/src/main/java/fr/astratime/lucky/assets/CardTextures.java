@@ -57,6 +57,11 @@ public class CardTextures implements Disposable {
         return !art(card.getAssetPath()).equals(card.getAssetPath());
     }
 
+    /** @return l'image affichée en jeu pour la carte d'image {@code path} (sa version au style classique s'il y en a une). */
+    public static String displayPath(String path) {
+        return art(path);
+    }
+
     /** @return l'image à afficher pour {@code path}, en version blanche (voir {@link #art(String, boolean)}). */
     static String art(String path) {
         return art(path, false);

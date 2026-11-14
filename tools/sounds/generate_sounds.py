@@ -2435,6 +2435,218 @@ def cutscene_exploration_ending():
     return reverb(track.buf, wet=0.25, size=1.3)
 
 
+# --- Le Croupier, boss secret (CroupierCutscene) --------------------------------
+# Les instants ci-dessous reprennent les constantes de CroupierCutscene : si l'une change là-bas, la changer ici.
+
+def card_riffle(d=0.35, count=16):
+    """Paquet battu : une rafale de cartes qui s'entrecroisent, puis le paquet qui se referme."""
+    track = Track(d + 0.15)
+    for k in range(count):
+        track.add(card_flick(0.04), k * d / count + rand(0, 0.006), rand(0.4, 0.8))
+    track.add(card_slap(0.12), d, 0.6)
+    return track.buf
+
+
+def footstep(f=170, gain=1.0):
+    """Un pas sur un parquet ciré."""
+    return mix((modal(f, 0.12, WOOD_RATIOS, [0.04, 0.02, 0.01]), 0, gain), (click(0.01, 600, 2500), 0, 0.4 * gain))
+
+
+def snap():
+    """Claquement de doigts."""
+    return mix((bp(noise(0.03), 1800, 6000) * expdec(0.03, 0.006, attack=0.0003), 0, 1.0), (click(0.006, 3000, 9000), 0, 0.6))
+
+
+def ratchet(f):
+    """Un cran de clé ou de cliquet : clac métallique sec."""
+    return mix((metal_hit(f, 0.25), 0, 0.7), (click(0.008, 2000, 8000), 0, 1.0), (thump(260, 140, 0.06, 0.02), 0, 0.4))
+
+
+def chuckle(at, track, count=6, root='G3', gain=0.5):
+    """Son rire grave, « ha… ha… ha », qui descend."""
+    for k in range(count):
+        f = hz(root) * 2 ** (-(k % 3) / 12)
+        ha = bp(osc(vibrato(f, 0.16, rate=28, depth=0.05), 0.16, 'saw'), 300, 1800) * adsr(0.16, 0.01, 0.05, 0.5, 0.07)
+        track.add(ha, at + k * 0.19, gain)
+
+
+@sound('cutscene/croupier', -17)
+def cutscene_croupier():
+    """
+    Entrée du Croupier : nuit et vent au sommet de la Tour ; la porte se dessine en or (TRACE 0,3 à 1,2 s), s'ouvre
+    (DOOR_OPEN 1,3 s) ; tes pas (1,6 à 2,3 s). La salle des machines (HALL_CUT 2,6 s) : tes pas sur le parquet
+    (STEP_START 2,8 s, un toutes les 0,38 s), une contrebasse qui rôde ; il bat les cartes (RIFFLE 4,1 et 4,6 s) ;
+    la caméra recule (5,0 s), il claque des doigts (SNAP 5,5 s) ; les six machines s'allument (LIGHT_START 5,65 s,
+    une toutes les 0,15 s) ; il se révèle (CHANGE 6,6 s) : boum, cuivres, son ombre qui gronde jusqu'à 7,4 s.
+    Gros plan (DEAL_CUT 7,6 s) : cinq cartes posées (7,85 s, une toutes les 0,28 s), retournées (9,3 s, une toutes
+    les 0,1 s) ; ses deux répliques (9,75 et 10,3 s) ; fondu rouge à 10,9 s.
+    """
+    track = Track(12.0)
+    # Le sommet de la Tour.
+    track.add(ambience(2.8, 250, 1400, 0.3), 0.0, 1.0)
+    track.add(drone(['A1', 'E2', 'A2'], 2.8, 'sine', 0.4, 0.4), 0.0, 0.18)
+    trace = 0.9
+    track.add(osc(sweep(700, 2100, trace), trace, 'tri') * ramp(trace, 0.2, 1.0) * fade_out(trace, 0.1), 0.3, 0.07)
+    track.add(sparkle(trace, count=14, lo=3500, hi=8000), 0.3, 0.35)
+    creak = svf(osc(sweep(110, 160, 0.45), 0.45, 'saw'), 900, q=3.0, mode='bp') * ramp(0.45, 1.0, 0.3)
+    track.add(creak, 1.3, 0.35)
+    track.add(modal(hz('E6'), 1.2, GLASS_RATIOS, [0.5, 0.25, 0.1, 0.05]), 1.3, 0.25)
+    track.add(drone(['A3', 'C#4', 'E4'], 1.4, 'sine', 0.3, 0.5), 1.3, 0.12)        # la lumière chaude
+    for at in (1.6, 1.95, 2.3):
+        track.add(thump(150, 80, 0.12, 0.03), at, 0.5)
+    track.add(whoosh(0.4, 400, 2000), 2.35, 0.25)
+    # La salle des machines.
+    track.add(lp(noise(5.0), 380) * fade_out(5.0, 0.3) * ramp(5.0, 0.0, 1.0, 0.2), 2.6, 0.35)
+    bass = ['A2', 'C3', 'E3', 'D#3', 'D3']
+    for k in range(5):                                                          # tes pas, et la contrebasse
+        at = 2.8 + k * 0.38
+        track.add(footstep(), at, 0.7)
+        track.add(pluck(hz(bass[k]), 0.5, bright=1400), at, 0.45)
+    for at in (4.1, 4.6):                                                       # il bat les cartes
+        track.add(card_riffle(0.35), at, 0.8)
+    track.add(whoosh(0.45, 300, 1500), 5.0, 0.3)                               # la caméra recule
+    track.add(snap(), 5.5, 1.0)
+    track.add(reverb(snap(), wet=0.6, size=1.8, tail=0.8), 5.5, 0.4)
+    for k, note in enumerate(['A4', 'C5', 'E5', 'A5', 'C6', 'E6']):            # les machines s'allument
+        at = 5.65 + k * 0.15
+        track.add(chip(hz(note), 0.22, 'square', 0.25, s=0.4), at, 0.28)
+        track.add(thump(90, 50, 0.15, 0.05), at, 0.5)
+        track.add(hp(osc(120, 0.4, 'saw'), 600) * expdec(0.4, 0.15), at, 0.06)
+    track.add(drone(['A1', 'A2'], 1.0, 'saw', 0.05, 0.8) * 0.5, 5.65, 0.08)   # le courant qui monte
+    # Il se révèle.
+    track.add(mix((impact(0.8, 110, 35), 0, 1.3), (crack_hit(), 0, 0.9)), 6.6, 1.0)
+    track.add(brass_chord(['A2', 'C3', 'D#3', 'A3'], 1.6, 0.9), 6.62, 1.0)
+    shadow = 0.9
+    track.add(svf(noise(shadow), sweep(80, 500, shadow), q=1.0) * ramp(shadow, 0.3, 1.0) * fade_out(shadow, 0.2), 6.6, 0.6)
+    track.add(fire_burst(1.0), 6.62, 0.35)
+    # Gros plan sur le tapis : il distribue tes cartes.
+    track.add(drone(['A1', 'E2'], 3.5, 'tri', 0.2, 0.6), 7.6, 0.16)
+    track.add(heartbeat([7.7, 8.5, 9.3], f=50, gain=0.6), 0.0, 0.6)
+    for k in range(5):
+        land = 7.85 + k * 0.28
+        track.add(card_flick(0.08), land - 0.2, 0.5)
+        track.add(card_slap(0.16), land, 0.9)
+    for k in range(5):                                                          # il les retourne
+        at = 9.3 + k * 0.1
+        track.add(card_flick(0.05), at, 0.6)
+        track.add(modal(hz('A5') * 2 ** (k * 2 / 12), 0.35, GLASS_RATIOS, [0.15, 0.07, 0.03, 0.02]), at + 0.06, 0.2)
+    track.add(mix((brass_chord(['A2', 'E3'], 0.6, 0.7), 0, 1.0), (thump(70, 40, 0.4, 0.15), 0, 0.8)), 9.75, 0.8)
+    track.add(mix((brass_chord(['A2', 'C3', 'E3', 'A3'], 1.2, 0.9), 0, 1.0), (impact(0.6, 90, 35), 0, 1.0)), 10.3, 0.9)
+    chuckle(10.45, track, 4, 'E3', 0.3)
+    track.add(swell(0.9, 200, 2200), 10.6, 0.3)
+    return reverb(track.buf, wet=0.25, size=1.6, tail=1.0)
+
+
+@sound('cutscene/croupier_rig', -17)
+def cutscene_croupier_rig():
+    """
+    Phase 2 du Croupier (table truquée) : tes trois rouleaux tournent ; éclair rouge (RIG_FLASH 0,9 s). Sous la
+    table (UNDER_CUT 1,5 s) : engrenages, sa main (1,55 à 1,95 s), la clé entre (KEY_IN 2,0 s), trois crans (2,2,
+    2,45, 2,7 s). Retour sur ta machine (BACK_CUT 3,0 s) : ton rouleau s'arrête net (RIG_STOP 3,15 s), la chaîne
+    s'enroule (3,2 à 3,45 s), le cadenas claque (LOCK 3,5 s) ; les deux autres rouleaux s'arrêtent (3,75 et 3,9 s).
+    Fondu rouge à 4,2 s.
+    """
+    track = Track(5.6)
+    track.add(drone(['D1', 'A1', 'D2'], 4.8, 'tri', 0.2, 0.8), 0.0, 0.2)
+    track.add(rattle(1.5, 24, 24, 1800, 4500), 0.0, 0.4)                       # tes rouleaux tournent
+    track.add(hp(osc(110, 1.5, 'saw'), 800) * fade_out(1.5, 0.1), 0.0, 0.05)
+    zap = osc(sweep(1800, 160, 0.35), 0.35, 'saw') * expdec(0.35, 0.12)
+    track.add(mix((bp(zap, 200, 4000), 0, 1.0), (crack_hit(), 0, 0.8)), 0.9, 0.6)
+    track.add(brass_chord(['D2', 'G#2', 'D3'], 0.6, 0.5), 0.92, 0.6)
+    # Sous la table.
+    for k in range(6):                                                          # les engrenages, au ralenti
+        track.add(click(0.01, 800, 2500), 1.5 + k * 0.25, 0.35)
+    track.add(whoosh(0.4, 250, 1200), 1.55, 0.35)
+    track.add(mix((metal_hit(1800, 0.2), 0, 0.5), (click(0.006, 3000, 9000), 0, 1.0)), 2.0, 0.6)
+    for k, at in enumerate((2.2, 2.45, 2.7)):
+        track.add(ratchet(700 + 90 * k), at, 0.9)
+    track.add(svf(noise(1.4), sweep(200, 900, 1.4), q=1.2) * ramp(1.4, 0.0, 1.0), 1.6, 0.15)   # la tension monte
+    # Retour sur ta machine.
+    track.add(rattle(0.75, 26, 22, 1800, 4500), 3.0, 0.4)
+    track.add(mix((thump(240, 90, 0.25, 0.07), 0, 1.0), (click(0.012, 1500, 6000), 0, 0.8)), 3.15, 1.0)
+    track.add(rattle(0.25, 40, 40, 3000, 7000), 3.2, 0.5)                      # la chaîne
+    track.add(mix((metal_hit(520, 0.6), 0, 1.0), (impact(0.5, 120, 40), 0, 1.0), (click(0.01, 1500, 6000), 0, 0.8)),
+              3.5, 1.0)
+    track.add(sparkle(0.6, count=10), 3.5, 0.3)
+    track.add(brass_chord(['D2', 'F2', 'G#2', 'D3'], 1.2, 0.8), 3.55, 0.9)
+    for at in (3.75, 3.9):
+        track.add(mix((thump(220, 100, 0.15, 0.05), 0, 0.8), (click(0.01, 1500, 6000), 0, 0.5)), at, 0.6)
+    track.add(swell(0.6, 300, 2600), 4.2, 0.25)
+    return reverb(track.buf, wet=0.22, size=1.4, tail=0.8)
+
+
+@sound('cutscene/croupier_open', -17)
+def cutscene_croupier_open():
+    """
+    Phase 3 du Croupier (cartes sur table) : la lampe tombe (LAMP_DROP 0,45 s) et frappe le tapis de lumière
+    (LIGHT_HIT 0,85 s) ; il jette sa main (THROW 1,2 à 1,6 s) ; ses huit cartes retombent (LAND_START 1,8 s, une
+    toutes les 0,14 s) ; son chapeau glisse, son ombre monte (GLARE 3,0 à 3,6 s), il rit (3,25 s). Fondu à 4,2 s.
+    """
+    track = Track(5.6)
+    track.add(ambience(0.9, 200, 900, 0.25), 0.0, 1.0)
+    track.add(rattle(0.4, 18, 30, 2500, 6000), 0.45, 0.35)                     # la chaîne de la lampe
+    track.add(whoosh(0.4, 300, 1200), 0.45, 0.25)
+    track.add(mix((thump(90, 40, 0.6, 0.2), 0, 1.0), (crack_hit(), 0, 0.5)), 0.85, 0.9)
+    buzz = hp(osc(vibrato(100, 3.4, rate=8, depth=0.01), 3.4, 'saw'), 300) * fade_out(3.4, 0.4) * ramp(3.4, 1.0, 0.6)
+    track.add(buzz, 0.85, 0.05)                                                # l'ampoule qui grésille
+    track.add(drone(['D1', 'A1', 'D2'], 3.9, 'tri', 0.1, 0.8), 0.85, 0.2)
+    track.add(whoosh(0.45, 400, 3000), 1.2, 0.5)                               # il jette ses cartes
+    for k in range(10):
+        track.add(card_flick(0.05), 1.2 + k * 0.045, 0.4)
+    for k in range(8):
+        land = 1.8 + k * 0.14
+        track.add(card_slap(0.15), land, 0.8)
+        track.add(modal(hz('D5') * 2 ** (k * 2 / 12), 0.3, GLASS_RATIOS, [0.12, 0.06, 0.03, 0.02]), land, 0.12)
+    track.add(mix((impact(0.9, 100, 30), 0, 1.2), (crack_hit(), 0, 0.8)), 3.0, 1.0)
+    track.add(brass_chord(['D2', 'F2', 'G#2', 'D3'], 1.5, 0.9), 3.02, 1.0)
+    track.add(svf(noise(0.6), sweep(80, 600, 0.6), q=1.0) * ramp(0.6, 0.3, 1.0), 3.0, 0.5)   # son ombre monte
+    track.add(whoosh(0.3, 800, 2500), 3.0, 0.2)                                # le chapeau glisse
+    chuckle(3.25, track, 5, 'D3', 0.45)
+    track.add(swell(0.6, 300, 2600), 4.2, 0.25)
+    return reverb(track.buf, wet=0.25, size=1.5, tail=0.8)
+
+
+@sound('cutscene/croupier_ending', -17)
+def cutscene_croupier_ending():
+    """
+    La vraie fin : il pose sa main perdante (LAY_START 0,4 s, une carte toutes les 0,16 s) ; il ôte son chapeau
+    (HAT_OFF 1,25 s) et s'incline (1,6 à 2,7 s), le pose sur la table (HAT_ON_TABLE 3,2 s), le sabot glisse jusqu'à
+    toi (3,4 à 4,0 s) ; les machines s'éteignent (OFF_START 4,3 s, une toutes les 0,22 s), le toit s'ouvre sur l'aube
+    (4,8 à 6,0 s), il s'efface (5,3 à 6,2 s). Contrechamp au blanc (REVERSE_CUT 6,5 s) : toi, sa réplique
+    (7,1 s), fondu blanc à 8,4 s.
+    """
+    track = Track(9.6)
+    track.add(drone(['C3', 'G3'], 4.6, 'sine', 0.4, 0.8), 0.0, 0.18)
+    track.add(lp(noise(4.6), 400) * fade_out(4.6, 0.5), 0.0, 0.25)
+    for k in range(5):
+        land = 0.4 + k * 0.16
+        track.add(card_flick(0.06), land - 0.12, 0.4)
+        track.add(card_slap(0.14), land, 0.6)
+    track.add(whoosh(0.35, 600, 2000), 1.25, 0.25)                             # il ôte son chapeau
+    for k, note in enumerate(['G5', 'E5', 'C5', 'G4', 'E4', 'C4']):            # sa révérence, à la harpe
+        track.add(pluck(hz(note), 0.9, bright=5000), 1.6 + k * 0.09, 0.35)
+    track.add(mix((thump(160, 90, 0.12, 0.04), 0, 0.8), (lp(noise(0.08), 900) * expdec(0.08, 0.02), 0, 0.5)), 3.2, 0.8)
+    scrape = bp(noise(0.6), 300, 1800) * ramp(0.6, 1.0, 0.3)
+    track.add(scrape, 3.4, 0.35)                                               # le sabot glisse
+    track.add(footstep(220, 0.8), 4.0, 0.8)
+    for k, note in enumerate(['C6', 'A5', 'F5', 'D5', 'A4', 'F4']):            # les machines s'éteignent
+        at = 4.3 + k * 0.22
+        down = osc(sweep(hz(note), hz(note) * 0.5, 0.3), 0.3, 'square', 0.25) * expdec(0.3, 0.1)
+        track.add(down, at, 0.18)
+        track.add(thump(80, 40, 0.2, 0.06), at, 0.4)
+    track.add(lp(noise(1.2), 160) * ramp(1.2, 0.3, 1.0) * fade_out(1.2, 0.3), 4.8, 0.8)   # le toit s'ouvre
+    track.add(rattle(1.2, 8, 4, 500, 1400, wood=True), 4.8, 0.35)
+    track.add(drone(['C4', 'E4', 'G4', 'C5'], 4.6, 'sine', 1.0, 1.0), 4.8, 0.14)   # l'aube
+    track.add(sparkle(0.9, count=18, lo=3000, hi=9000), 5.3, 0.3)              # il s'efface
+    track.add(osc(sweep(800, 2600, 0.9), 0.9, 'sine') * ramp(0.9, 0.0, 1.0) * fade_out(0.9, 0.2), 5.3, 0.05)
+    track.add(swell(0.5, 600, 5000), 6.0, 0.35)                                # passage au blanc
+    track.add(brass_chord(['C3', 'G3', 'C4', 'E4', 'G4'], 2.2, 0.8), 7.1, 0.9)
+    track.add(modal(hz('C6'), 1.6, BAR_RATIOS, [0.6, 0.3, 0.15, 0.06], [1, 0.45, 0.25, 0.1]), 7.1, 0.35)
+    track.add(coin_shower(0.8, 8), 7.15, 0.25)
+    track.add(swell(0.8, 400, 4000), 8.2, 0.3)
+    return reverb(track.buf, wet=0.28, size=1.6, tail=1.0)
+
+
 def main(prefixes):
     done = 0
     for name, level, fmt, trim, loop, fn in SOUNDS:

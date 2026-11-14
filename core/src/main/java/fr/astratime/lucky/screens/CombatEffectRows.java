@@ -86,6 +86,22 @@ final class CombatEffectRows {
                 Lang.t("Machine abandonnée"),
                 Lang.f("{0} sort 2 fois plus souvent. Jusqu'à la fin du combat.", favored.getDisplayName())));
         }
+        if (lasting.getRiggedSymbol() != null) { // Table truquée du Croupier (phase 2)
+            Symbol rigged = lasting.getRiggedSymbol();
+            int turns = lasting.getRiggedTurns();
+            rows.add(new SidePanel.EffectRow(symbols.apply(rigged), cross,
+                Lang.f("Rouleau {0} truqué", lasting.getRiggedReel() + 1), Lang.t("Table truquée"),
+                Lang.f("Le Croupier a truqué ta table : ton rouleau {0} affiche toujours {1}. Encore {2}.",
+                    lasting.getRiggedReel() + 1, rigged.getDisplayName(), turns(turns))));
+        }
+        List<fr.astratime.lucky.entities.Card> onTable = controller.getGameState().getEnemy().getRevealedHand();
+        if (!onTable.isEmpty()) { // Cartes sur table du Croupier (phase 3)
+            String hand = String.join(", ", onTable.stream().map(fr.astratime.lucky.entities.Card::getName).toList());
+            rows.add(new SidePanel.EffectRow(new TextureRegion(hud.iconSleeve), null,
+                Lang.f("Sa main visible ({0})", onTable.size()), Lang.t("Cartes sur table"),
+                Lang.f("Le Croupier joue à visage découvert : sa prochaine main est posée sur la table. "
+                    + "À son tour, il jouera parmi : {0}. Il joue une carte de plus.", hand)));
+        }
         if (lasting.getGainBonus() > 0f) {
             int percent = Math.round(lasting.getGainBonus() * 100f);
             rows.add(new SidePanel.EffectRow(new TextureRegion(hud.iconClover), null,

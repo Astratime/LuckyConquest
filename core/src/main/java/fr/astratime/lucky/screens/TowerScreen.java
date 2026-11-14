@@ -25,6 +25,7 @@ import fr.astratime.lucky.assets.Fonts;
 import fr.astratime.lucky.assets.Palette;
 import fr.astratime.lucky.entities.enemy.EnemyKind;
 import fr.astratime.lucky.entities.tower.Chapter;
+import fr.astratime.lucky.entities.tower.CroupierRun;
 import fr.astratime.lucky.entities.tower.EndlessRun;
 import fr.astratime.lucky.entities.tower.TowerRun;
 import fr.astratime.lucky.views.MenuOption;
@@ -109,8 +110,15 @@ public class TowerScreen extends CasinoMenuScreen {
         return new TowerScreen(luckyGame, ENDLESS_ROW, true);
     }
 
+    /** @return l'écran des chapitres ouvert sur le Croupier (au retour de son combat). */
+    public static TowerScreen onCroupier(LuckyGame luckyGame) {
+        return new TowerScreen(luckyGame, CROUPIER_ROW, true);
+    }
+
     /** Ligne du mode sans fin dans la liste, sous les chapitres. */
     private static final int ENDLESS_ROW = Chapter.values().length;
+    /** Ligne du Croupier, boss secret, sous le mode sans fin : elle n'apparaît qu'une fois ouverte. */
+    private static final int CROUPIER_ROW = ENDLESS_ROW + 1;
 
     private TowerScreen(LuckyGame luckyGame, int startRow, boolean hardMode) {
         super(luckyGame, Lang.t("TOUR DES ÉPREUVES"), 96, VEIL_ALPHA);
@@ -157,6 +165,25 @@ public class TowerScreen extends CasinoMenuScreen {
                 @Override
                 public void clicked(InputEvent event, float x, float y) {
                     select(ENDLESS_ROW, false);
+                    launch();
+                }
+            });
+            rows.add(row);
+        }
+        // Le Croupier, boss secret : sa ligne n'apparaît qu'une fois le Désert vidé et le chapitre 6 difficile fini.
+        if (rows.size() == CROUPIER_ROW && luckyGame.getProfile().isCroupierOpen()) {
+            MenuOption row = new MenuOption(Lang.t("Le Croupier"), rowStyle, hud.insetDrawable(),
+                new TextureRegion(chipTexture), ROW_WIDTH, ROW_HEIGHT);
+            row.addListener(new ClickListener() {
+                @Override
+                public void enter(InputEvent event, float x, float y, int pointer, Actor fromActor) {
+                    super.enter(event, x, y, pointer, fromActor);
+                    if (pointer == -1) select(CROUPIER_ROW, true);
+                }
+
+                @Override
+                public void clicked(InputEvent event, float x, float y) {
+                    select(CROUPIER_ROW, false);
                     launch();
                 }
             });
@@ -227,11 +254,16 @@ public class TowerScreen extends CasinoMenuScreen {
             rows.get(i).setSelected(i == index);
             rows.get(i).setColor(isRowOpen(i) ? Color.WHITE : LOCKED_TEXT);
         }
-        boolean endless = index == ENDLESS_ROW;
-        modeButton.setVisible(luckyGame.getProfile().isTowerHardOpen() && !endless); // le mode sans fin n'a qu'un mode
-        fightButton.setVisible(luckyGame.getProfile().isAdmin() && !endless);
+        boolean endless = index == ENDLESS_ROW, croupier = index == CROUPIER_ROW;
+        // le mode sans fin et le Croupier n'ont qu'un mode
+        modeButton.setVisible(luckyGame.getProfile().isTowerHardOpen() && !endless && !croupier);
+        fightButton.setVisible(luckyGame.getProfile().isAdmin() && !endless && !croupier);
         if (endless) {
             showEndless();
+            return;
+        }
+        if (croupier) {
+            showCroupier();
             return;
         }
         Chapter chapter = Chapter.values()[index];
@@ -274,6 +306,27 @@ public class TowerScreen extends CasinoMenuScreen {
         showStart(open);
     }
 
+    /** Montre le Croupier, boss secret : son portrait et son défi. */
+    private void showCroupier() {
+        boolean beaten = luckyGame.getProfile().hasDefeated(EnemyKind.GRAND_CROUPIER) && !luckyGame.getProfile().isAdmin();
+        chapterLabel.setText(beaten ? Lang.t("BOSS SECRET · VAINCU") : Lang.t("BOSS SECRET"));
+        chapterTitle.setText(Lang.t("Le Croupier"));
+        description.setText(Lang.f("Il t'a tout appris. Il tient toutes les machines. Ce soir, il s'assoit en face de toi, "
+                + "avec ton propre deck.\n\nUn seul combat en trois phases : {0} PV, force x{1}. "
+                + "À 50 %, il truque ta table. À 10 %, il joue cartes sur table. Aucune pièce.",
+            Lang.big(EnemyKind.CROUPIER_HP), EnemyKind.CROUPIER_POWER / 100));
+        ((TextureRegionDrawable) art.getDrawable()).setRegion(new TextureRegion(artTexture()));
+        art.setVisible(true);
+        lockMark.setVisible(false);
+        showStart(true);
+    }
+
+    /** @return l'illustration de la ligne choisie : son chapitre, le sommet de la Tour, ou le Croupier. */
+    private Texture artTexture() {
+        if (selected == CROUPIER_ROW) return enemyTextures.portrait(EnemyKind.GRAND_CROUPIER);
+        return enemyTextures.chapterArt(selected == ENDLESS_ROW ? Chapter.LE_JACKPOT : Chapter.values()[Math.max(0, selected)]);
+    }
+
     /** Bouton « Commencer » (ou « Verrouillé »), puis le panneau de droite en fondu. */
     private void showStart(boolean open) {
         startButton.setDisabled(!open);
@@ -289,6 +342,7 @@ public class TowerScreen extends CasinoMenuScreen {
 
     /** @return {@code true} si la ligne {@code index} peut être jouée (chapitre ouvert, ou mode sans fin ouvert). */
     private boolean isRowOpen(int index) {
+        if (index == CROUPIER_ROW) return luckyGame.getProfile().isCroupierOpen();
         return index == ENDLESS_ROW ? luckyGame.getProfile().isEndlessOpen() : isOpen(Chapter.values()[index]);
     }
 
@@ -297,6 +351,10 @@ public class TowerScreen extends CasinoMenuScreen {
         if (leaving || !isRowOpen(selected)) return;
         if (selected == ENDLESS_ROW) {
             goTo(() -> new GameScreen(luckyGame, new EndlessRun()));
+            return;
+        }
+        if (selected == CROUPIER_ROW) {
+            goTo(() -> new GameScreen(luckyGame, new CroupierRun()));
             return;
         }
         Chapter chapter = Chapter.values()[selected];
@@ -346,9 +404,11 @@ public class TowerScreen extends CasinoMenuScreen {
         float panelHeight = panelTop - panelBottom;
         listPanel.setBounds(MARGIN, panelBottom, LIST_WIDTH, panelHeight);
         float rowX = MARGIN + (LIST_WIDTH - ROW_WIDTH) / 2f;
+        // Les lignes se resserrent un peu quand le Croupier s'ajoute, pour tenir dans le panneau.
+        float step = Math.max(ROW_HEIGHT + 4f, Math.min(ROW_HEIGHT + ROW_GAP, (panelHeight - 2f * PANEL_PAD) / rows.size()));
         for (int i = 0; i < rows.size(); i++) {
             MenuOption row = rows.get(i);
-            row.setPosition(rowX, panelTop - PANEL_PAD - ROW_HEIGHT - i * (ROW_HEIGHT + ROW_GAP));
+            row.setPosition(rowX, panelTop - PANEL_PAD - ROW_HEIGHT - i * step);
         }
 
         float detailX     = MARGIN + LIST_WIDTH + MARGIN / 2f;
@@ -366,8 +426,7 @@ public class TowerScreen extends CasinoMenuScreen {
         float artScale = ART_SCALE;
         float artTop   = chapterTitle.getY() - 16f;
         float maxArtHeight = artTop - panelBottom - PANEL_PAD - 200f;
-        Texture texture = enemyTextures.chapterArt(selected == ENDLESS_ROW ? Chapter.LE_JACKPOT
-            : Chapter.values()[Math.max(0, selected)]);
+        Texture texture = artTexture();
         while (artScale > 1f && (texture.getHeight() * artScale > maxArtHeight || texture.getWidth() * artScale > innerWidth)) {
             artScale -= 1f;
         }

@@ -21,6 +21,7 @@ public final class Cutscenes {
             case PRETENDANT -> new PretenderCutscene(kit);
             case MAISON -> new HouseCutscene(kit);
             case MACHINE_ORIGINELLE -> new MachineCutscene(kit);
+            case GRAND_CROUPIER -> new CroupierCutscene(kit, CroupierCutscene.Scene.INTRO);
             default -> KingEntrance.of(kit, boss);
         };
     }
@@ -34,6 +35,7 @@ public final class Cutscenes {
         return switch (boss) {
             case COMETE -> new CometPhaseCutscene(kit);
             case MACHINE_ORIGINELLE -> new MachinePhaseCutscene(kit, phase);
+            case GRAND_CROUPIER -> new CroupierCutscene(kit, phase >= 3 ? CroupierCutscene.Scene.OPEN : CroupierCutscene.Scene.RIG);
             default -> BossScenes.phase(kit, boss, phase);
         };
     }
@@ -49,7 +51,13 @@ public final class Cutscenes {
 
     /** @return {@code true} si le boss {@code boss} a une cinématique de mort (voir {@link #death}). */
     public static boolean hasDeath(EnemyKind boss) {
-        return boss.isBoss() && boss != EnemyKind.MACHINE_ORIGINELLE && boss != EnemyKind.ECLAT; // leurs fins existent déjà
+        return boss.isBoss() && boss != EnemyKind.MACHINE_ORIGINELLE && boss != EnemyKind.ECLAT // leurs fins existent déjà
+            && boss != EnemyKind.GRAND_CROUPIER; // le Croupier : la vraie fin (voir trueEnding)
+    }
+
+    /** @return la vraie fin du jeu, quand le Croupier, boss secret, est vaincu. */
+    public static Cutscene trueEnding(CutsceneKit kit) {
+        return new CroupierCutscene(kit, CroupierCutscene.Scene.ENDING);
     }
 
     /** @return la cinématique de fin du chapitre {@code chapter}, quand il clôt l'histoire ({@code null} sinon). */

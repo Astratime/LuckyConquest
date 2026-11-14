@@ -171,6 +171,9 @@ public class EnemyTurnResolver {
         turnPlay.actSymbols();
         List<Event> afterEvents = turnPlay.finish(reflection);
         enemy.discard(turnPlay.drawn);
+        if (enemy.getKind() == EnemyKind.GRAND_CROUPIER && enemy.getPhase() >= 3 && !enemy.isDefeated()) {
+            enemy.revealNextHand(); // cartes sur table : le joueur voit sa prochaine main
+        }
         enemy.resetDamageTaken(); // ses Épines ne comptent que les coups du prochain tour du joueur
         return new EnemyTurnResult(turnPlay.drawn, turnPlay.played, turnPlay.luck, turnPlay.symbols, turnPlay.outcomes,
             afterEvents, turnPlay.openingEvents);
@@ -236,6 +239,7 @@ public class EnemyTurnResolver {
             enemy.unseal(); // son Sarcophage s'ouvre
             if (enemy.enterPhaseTwo()) {
                 openingEvents.add(new EnemyPhaseEvent(enemy.getPhase(), kind.phaseText(enemy.getPhase())));
+                if (kind == EnemyKind.GRAND_CROUPIER && enemy.getPhase() == 3) player.getLastingEffects().rig(-1, null, 0);
                 if (kind.hasSarcophagus() && enemy.getPhase() == 2) { // le Pharaon s'enferme et se soigne
                     enemy.seal();
                     openingEvents.add(new StatusEvent(Lang.t("SARCOPHAGE : IL S'ENFERME UN TOUR"), EffectPopup.Style.DEFENSE));
@@ -263,12 +267,38 @@ public class EnemyTurnResolver {
             if (enemy.raiseStake()) openingEvents.add(new EnemyStakeEvent(enemy.getStake(), false));
             openingEvents.addAll(thornsEvents); // ses Épines ont piqué pour les coups du tour du joueur
             enemy.resetDefense(); // la défense de son tour précédent ne valait que pour le tour du joueur
+            rigTable();
+        }
+
+        /** @return le symbole que le Croupier impose : le plus rare des rouleaux du joueur (jamais le Joker). */
+        Symbol rigSymbol(List<Symbol> reels) {
+            Map<Symbol, Integer> counts = new EnumMap<>(Symbol.class);
+            for (Symbol symbol : reels) if (symbol != Symbol.JOKER) counts.merge(symbol, 1, Integer::sum);
+            if (counts.isEmpty()) return null;
+            int fewest = Collections.min(counts.values());
+            List<Symbol> rarest = counts.entrySet().stream().filter(e -> e.getValue() == fewest).map(Map.Entry::getKey).toList();
+            return rarest.get(random.nextInt(rarest.size()));
+        }
+
+        /** Table truquée (Croupier, phase 2) : un rouleau du joueur affichera le symbole qu'il choisit. */
+        void rigTable() {
+            if (kind != EnemyKind.GRAND_CROUPIER || enemy.getPhase() != 2) return;
+            LastingEffects lasting = player.getLastingEffects();
+            if (lasting.getRiggedTurns() > 0) return;
+            Symbol symbol = rigSymbol(player.getSlotMachine().getReels());
+            if (symbol == null) return;
+            int reel = random.nextInt(SlotMachine.SYMBOL_COUNT);
+            lasting.rig(reel, symbol, EnemyKind.CROUPIER_RIG_TURNS);
+            openingEvents.add(new StatusEvent(Lang.f("TABLE TRUQUÉE : ROULEAU {0} = {1}", reel + 1,
+                symbol.getDisplayName()), EffectPopup.Style.DAMAGE));
         }
 
         /** Il pioche, puis choisit ses cartes (ses cartes propres en plus de ses couleurs). */
         void drawCards() {
-            drawn = new ArrayList<>(enemy.draw(Enemy.HAND_SIZE));
+            drawn = new ArrayList<>(enemy.takeRevealedHand()); // cartes sur table : il joue la main que le joueur a vue
+            drawn.addAll(enemy.draw(Math.max(0, Enemy.HAND_SIZE - drawn.size())));
             int plays = enemy.getPlaysPerTurn(); // le Kraken joue une carte par bras qui lui reste
+            if (kind == EnemyKind.GRAND_CROUPIER && enemy.getPhase() >= 3) plays += EnemyKind.CROUPIER_OPEN_PLAYS;
             // Main trop pleine de cartes propres : il pioche juste assez pour jouer ses cartes habituelles.
             // Comme pour le joueur, sa main ne dépasse jamais Enemy.HAND_SIZE : une carte propre qu'il
             // ne jouera pas ce tour (en double, ou au-delà de ce qu'il peut jouer) part dans sa défausse

@@ -596,6 +596,25 @@ public class Enemy {
     /** Pioche {@code count} cartes (la défausse est remélangée si le deck s'épuise). */
     public List<Card> draw(int count) { return deck.draw(count); }
 
+    /** Cartes sur table du Croupier : sa prochaine main, déjà piochée et visible du joueur. */
+    private final List<Card> revealedHand = new ArrayList<>();
+
+    /** Cartes sur table : pioche dès maintenant sa prochaine main, que le joueur voit pendant son tour. */
+    public void revealNextHand() {
+        revealedHand.clear();
+        revealedHand.addAll(draw(HAND_SIZE));
+    }
+
+    /** @return sa prochaine main, déjà sur la table (vide si elle ne l'est pas). */
+    public List<Card> getRevealedHand() { return Collections.unmodifiableList(revealedHand); }
+
+    /** @return sa main sur la table, qu'il reprend pour jouer (vide si elle ne l'était pas). */
+    public List<Card> takeRevealedHand() {
+        List<Card> hand = new ArrayList<>(revealedHand);
+        revealedHand.clear();
+        return hand;
+    }
+
     /** Range son deck dans l'ordre {@code order} : il pioche par la fin (le tutoriel lui donne ses cartes faibles d'abord). */
     public void arrangeDeck(Comparator<Card> order) { deck.getCards().sort(order); }
 

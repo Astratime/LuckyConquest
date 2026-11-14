@@ -34,7 +34,7 @@ public enum EnemyTrait {
     /** Il interdit une famille de cartes tout le combat (le Portier). */
     BANS_FAMILY(EnemyKind.PORTIER),
     /** Il joue avec une copie du deck du joueur (l'Ombre du Joueur). */
-    COPIES_PLAYER_DECK(EnemyKind.OMBRE),
+    COPIES_PLAYER_DECK(EnemyKind.OMBRE, EnemyKind.GRAND_CROUPIER),
     /** Une fois par combat, il annule le plus gros coup du joueur (la Maison). */
     HOUSE_WINS(EnemyKind.MAISON),
     /** Achevé, il résiste et tente un dernier tirage (la Machine Originelle). */

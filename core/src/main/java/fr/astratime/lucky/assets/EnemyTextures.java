@@ -63,6 +63,7 @@ public class EnemyTextures implements Disposable {
         flashes.put(EnemyKind.CROUPIER, croupierFlash);
         portraits.put(EnemyKind.ENTRAINEMENT, croupier); // le même croupier, en mode Entraînement
         flashes.put(EnemyKind.ENTRAINEMENT, croupierFlash);
+        addPortrait(EnemyKind.GRAND_CROUPIER, grandCroupierGrid(croupierGrid)); // le même, sans masque : le boss secret
         addPortrait(EnemyKind.GARDIEN, EnemyPortraits.gardien());
         addPortrait(EnemyKind.SANGSUE, EnemyPortraits.sangsue());
         addPortrait(EnemyKind.BRETTEUR, EnemyPortraits.bretteur());
@@ -216,6 +217,20 @@ public class EnemyTextures implements Disposable {
      * contre le gilet.
      */
     static int[][] croupierGrid() {
+        return croupierGrid(true, true);
+    }
+
+    /**
+     * @return le Croupier du boss secret en deux morceaux, chacun sur la grille entière du portrait
+     *         (34 x 42) : {@code [0]} sans son haut-de-forme (tête nue, cornes), {@code [1]} le haut-de-forme seul.
+     *         Superposés, ils redonnent son portrait ; ses cinématiques lui font ôter son chapeau.
+     */
+    public static int[][][] grandCroupierParts() {
+        return new int[][][] {grandCroupierGrid(croupierGrid(true, false)), grandCroupierGrid(croupierGrid(false, true))};
+    }
+
+    /** @return le dessin du Croupier : son corps ({@code body}) et/ou son haut-de-forme ({@code hat}). */
+    private static int[][] croupierGrid(boolean body, boolean hatOn) {
         int w = 34, h = 42;
         int[][] g = new int[h][w];
         int hat = c("2a2233"), hatLight = c("4a3f58"), band = c("c0283a");
@@ -228,90 +243,105 @@ public class EnemyTextures implements Disposable {
         int tie = c("d8202c"), tieKnot = c("8a1018"), gold = c("ffd54a"), goldDark = c("c4891e");
         int card = c("f6f0e2"), red = c("d8202c");
 
-        // Buste : épaules arrondies, gilet sombre.
-        for (int y = 27; y < h; y++) {
-            for (int x = 3; x < w - 3; x++) {
-                boolean corner = y < 31 && (Math.hypot(x - 7, y - 31) > 4.2 && x < 7
-                    || Math.hypot(x - 26, y - 31) > 4.2 && x > 26);
-                if (!corner) g[y][x] = x < 7 || x > 26 ? vestLight : vest;
+        if (body) {
+            // Buste : épaules arrondies, gilet sombre.
+            for (int y = 27; y < h; y++) {
+                for (int x = 3; x < w - 3; x++) {
+                    boolean corner = y < 31 && (Math.hypot(x - 7, y - 31) > 4.2 && x < 7
+                        || Math.hypot(x - 26, y - 31) > 4.2 && x > 26);
+                    if (!corner) g[y][x] = x < 7 || x > 26 ? vestLight : vest;
+                }
             }
-        }
-        // Chemise en V, ombrée à droite.
-        for (int y = 25; y < 38; y++) {
-            float halfWidth = 5f - (y - 25) * 0.42f;
-            for (int x = 0; x < w; x++) {
-                if (Math.abs(x - 16.5f) <= halfWidth) g[y][x] = x > 17 ? shirtShade : shirt;
+            // Chemise en V, ombrée à droite.
+            for (int y = 25; y < 38; y++) {
+                float halfWidth = 5f - (y - 25) * 0.42f;
+                for (int x = 0; x < w; x++) {
+                    if (Math.abs(x - 16.5f) <= halfWidth) g[y][x] = x > 17 ? shirtShade : shirt;
+                }
             }
-        }
-        // Chaîne de montre et boutons dorés.
-        for (int x = 9; x <= 13; x++) g[33 + (x == 11 ? 1 : 0)][x] = x % 2 == 0 ? gold : goldDark;
-        g[39][16] = gold;
-        g[39][17] = goldDark;
-        // Nœud papillon.
-        for (int x = 13; x <= 20; x++) g[27][x] = tie;
-        for (int x : new int[] {13, 14, 19, 20}) { g[26][x] = tie; g[28][x] = tie; }
-        g[27][16] = tieKnot;
-        g[27][17] = tieKnot;
-        // Cou.
-        for (int y = 23; y < 26; y++) for (int x = 14; x < 20; x++) g[y][x] = skinShade;
-        // Tête ovale, ombrée à droite, et oreilles pointues.
-        for (int y = 10; y < 25; y++) {
-            for (int x = 0; x < w; x++) {
-                double dx = (x - 16.5) / 6.8, dy = (y - 17.0) / 7.2;
-                if (dx * dx + dy * dy <= 1) g[y][x] = x > 19 ? skinShade : skin;
+            // Chaîne de montre et boutons dorés.
+            for (int x = 9; x <= 13; x++) g[33 + (x == 11 ? 1 : 0)][x] = x % 2 == 0 ? gold : goldDark;
+            g[39][16] = gold;
+            g[39][17] = goldDark;
+            // Nœud papillon.
+            for (int x = 13; x <= 20; x++) g[27][x] = tie;
+            for (int x : new int[] {13, 14, 19, 20}) { g[26][x] = tie; g[28][x] = tie; }
+            g[27][16] = tieKnot;
+            g[27][17] = tieKnot;
+            // Cou.
+            for (int y = 23; y < 26; y++) for (int x = 14; x < 20; x++) g[y][x] = skinShade;
+            // Tête ovale, ombrée à droite, et oreilles pointues.
+            for (int y = 10; y < 25; y++) {
+                for (int x = 0; x < w; x++) {
+                    double dx = (x - 16.5) / 6.8, dy = (y - 17.0) / 7.2;
+                    if (dx * dx + dy * dy <= 1) g[y][x] = x > 19 ? skinShade : skin;
+                }
             }
-        }
-        for (int y = 14; y < 18; y++) {
-            g[y][9] = skin;
-            g[y][24] = skinShade;
-        }
-        g[13][8] = skin;
-        g[13][25] = skinShade;
-        // Sourcils froncés, yeux dorés.
-        for (int x = 11; x <= 14; x++) g[14 + (x > 12 ? 1 : 0)][x] = OUTLINE;
-        for (int x = 19; x <= 22; x++) g[14 + (x < 21 ? 1 : 0)][x] = OUTLINE;
-        for (int x = 12; x <= 14; x++) g[16][x] = eye;
-        for (int x = 19; x <= 21; x++) g[16][x] = eye;
-        g[16][13] = eyeCore;
-        g[16][20] = eyeCore;
-        // Nez.
-        g[18][16] = skinShade;
-        g[18][17] = skinShade;
-        // Sourire plein de dents, deux crocs.
-        for (int x = 12; x <= 21; x++) g[20][x] = mouth;
-        g[19][11] = mouth;
-        g[19][22] = mouth;
-        for (int x = 13; x <= 20; x++) g[21][x] = teeth;
-        g[21][12] = mouth;
-        g[21][21] = mouth;
-        for (int x = 13; x <= 20; x++) g[22][x] = mouth;
-        g[22][14] = teeth;
-        g[22][19] = teeth;
-        // Haut-de-forme : calotte, reflet, ruban rouge, bord.
-        for (int y = 1; y < 10; y++) for (int x = 10; x <= 23; x++) g[y][x] = hat;
-        for (int y = 2; y < 7; y++) g[y][12] = hatLight;
-        for (int x = 10; x <= 23; x++) { g[7][x] = band; g[8][x] = band; }
-        for (int x = 6; x <= 27; x++) { g[9][x] = hat; g[10][x] = hat; }
-        for (int x = 7; x <= 26; x++) g[9][x] = hatLight;
-        // Cornes, qui percent le haut-de-forme de chaque côté.
-        int[][] hornRows = {{8, 6, 8}, {7, 5, 7}, {6, 5, 6}, {5, 4, 5}, {4, 4, 4}, {3, 4, 4}};
-        for (int[] row : hornRows) {
-            for (int x = row[1]; x <= row[2]; x++) {
-                g[row[0]][x] = x == row[2] ? hornShade : horn;
-                g[row[0]][w - 1 - x] = x == row[2] ? hornShade : horn;
+            for (int y = 14; y < 18; y++) {
+                g[y][9] = skin;
+                g[y][24] = skinShade;
             }
+            g[13][8] = skin;
+            g[13][25] = skinShade;
+            // Sourcils froncés, yeux dorés.
+            for (int x = 11; x <= 14; x++) g[14 + (x > 12 ? 1 : 0)][x] = OUTLINE;
+            for (int x = 19; x <= 22; x++) g[14 + (x < 21 ? 1 : 0)][x] = OUTLINE;
+            for (int x = 12; x <= 14; x++) g[16][x] = eye;
+            for (int x = 19; x <= 21; x++) g[16][x] = eye;
+            g[16][13] = eyeCore;
+            g[16][20] = eyeCore;
+            // Nez.
+            g[18][16] = skinShade;
+            g[18][17] = skinShade;
+            // Sourire plein de dents, deux crocs.
+            for (int x = 12; x <= 21; x++) g[20][x] = mouth;
+            g[19][11] = mouth;
+            g[19][22] = mouth;
+            for (int x = 13; x <= 20; x++) g[21][x] = teeth;
+            g[21][12] = mouth;
+            g[21][21] = mouth;
+            for (int x = 13; x <= 20; x++) g[22][x] = mouth;
+            g[22][14] = teeth;
+            g[22][19] = teeth;
         }
-        // Éventail de cartes dans la main droite (à droite du gilet).
-        int[][] fan = {{23, 30}, {25, 29}, {27, 30}};
-        for (int[] pos : fan) {
-            for (int y = pos[1]; y < pos[1] + 6; y++) for (int x = pos[0]; x < pos[0] + 4; x++) g[y][x] = card;
+        if (hatOn) {
+            // Haut-de-forme : calotte, reflet, ruban rouge, bord.
+            for (int y = 1; y < 10; y++) for (int x = 10; x <= 23; x++) g[y][x] = hat;
+            for (int y = 2; y < 7; y++) g[y][12] = hatLight;
+            for (int x = 10; x <= 23; x++) { g[7][x] = band; g[8][x] = band; }
+            for (int x = 6; x <= 27; x++) { g[9][x] = hat; g[10][x] = hat; }
+            for (int x = 7; x <= 26; x++) g[9][x] = hatLight;
         }
-        for (int[] pos : fan) {
-            for (int y = pos[1]; y < pos[1] + 6; y++) g[y][pos[0]] = OUTLINE; // bord gauche de chaque carte
+        if (body) {
+            // Cornes, qui percent le haut-de-forme de chaque côté.
+            int[][] hornRows = {{8, 6, 8}, {7, 5, 7}, {6, 5, 6}, {5, 4, 5}, {4, 4, 4}, {3, 4, 4}};
+            for (int[] row : hornRows) {
+                for (int x = row[1]; x <= row[2]; x++) {
+                    g[row[0]][x] = x == row[2] ? hornShade : horn;
+                    g[row[0]][w - 1 - x] = x == row[2] ? hornShade : horn;
+                }
+            }
+            if (!hatOn) { // tête nue : la base des cornes, d'habitude sous le chapeau, rejoint le crâne
+                int[][] roots = {{9, 7, 9}, {10, 8, 11}, {11, 9, 12}, {12, 10, 12}};
+                for (int[] row : roots) {
+                    for (int x = row[1]; x <= row[2]; x++) {
+                        g[row[0]][x] = x == row[2] ? hornShade : horn;
+                        g[row[0]][w - 1 - x] = x == row[2] ? hornShade : horn;
+                    }
+                }
+            }
+            // Éventail de cartes dans la main droite (à droite du gilet).
+            int[][] fan = {{23, 30}, {25, 29}, {27, 30}};
+            for (int[] pos : fan) {
+                for (int y = pos[1]; y < pos[1] + 6; y++) for (int x = pos[0]; x < pos[0] + 4; x++) g[y][x] = card;
+            }
+            for (int[] pos : fan) {
+                for (int y = pos[1]; y < pos[1] + 6; y++) g[y][pos[0]] = OUTLINE; // bord gauche de chaque carte
+            }
+            g[31][26] = red;
+            g[32][28] = red;
+            g[32][29] = red;
         }
-        g[31][26] = red;
-        g[32][28] = red;
-        g[32][29] = red;
         return outlined(g);
     }
 
@@ -491,6 +521,25 @@ public class EnemyTextures implements Disposable {
         Texture texture = new Texture(pixmap);
         pixmap.dispose();
         return texture;
+    }
+
+    /**
+     * @return le Croupier en boss secret : son portrait habituel, gilet pourpre et noir,
+     *         ruban et cravate d'or, yeux rouges
+     */
+    static int[][] grandCroupierGrid(int[][] croupier) {
+        java.util.Map<Integer, Integer> swap = java.util.Map.of(
+            c("2a1e38"), c("3a0a14"), c("46385a"), c("6a1424"),   // gilet
+            c("c0283a"), c("ffd54a"),                             // ruban du chapeau
+            c("d8202c"), c("ffd54a"), c("8a1018"), c("c4891e"),   // cravate (et cartes rouges)
+            c("ffd54a"), c("ff2a3a"), c("fff6c8"), c("ffd0d0"),   // yeux
+            c("2a2233"), c("140c18"), c("4a3f58"), c("2a1a2e"));  // chapeau
+        int[][] grid = new int[croupier.length][];
+        for (int y = 0; y < croupier.length; y++) {
+            grid[y] = new int[croupier[y].length];
+            for (int x = 0; x < croupier[y].length; x++) grid[y][x] = swap.getOrDefault(croupier[y][x], croupier[y][x]);
+        }
+        return grid;
     }
 
     private static int c(String hex) {
