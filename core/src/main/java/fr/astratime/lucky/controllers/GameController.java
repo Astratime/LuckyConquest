@@ -746,6 +746,18 @@ public class GameController {
             rainbow);
     }
 
+    /** Fin du tour : la Graine du joueur (s'il en a une) pousse si elle n'a pas été jouée à ce tour. */
+    private static void growSeeds(Player player) {
+        for (Card card : player.getAllCards()) {
+            for (Effect effect : card.getEffects()) {
+                if (effect instanceof fr.astratime.lucky.entities.effects.SeedEffect seed) {
+                    seed.grow(player.getLastingEffects().getWearCards());
+                    return;
+                }
+            }
+        }
+    }
+
     /**
      * Héraut, Fossoyeur : les cartes prises par la carte jouée rejoignent la main
      * (la défausse si elle est pleine), en plus de celles piochées.
@@ -1026,6 +1038,8 @@ public class GameController {
         hiddenCards.clear();
         // Roi des ombres : il rejouera, au tour suivant, une carte jouée à ce tour.
         player.getLastingEffects().getCourtAndClock().rememberPlayed(player.getPlayedCards());
+        // Graine : si elle n'a pas été jouée à ce tour, elle pousse (où qu'elle soit : la main est vidée à chaque tour).
+        growSeeds(player);
         // Le Scorbut resté en main disparaît : il ne revient que par la règle du lieu.
         for (Card card : new ArrayList<>(gameState.getPlayer().getCurrentHand())) {
             if (PlaceRule.SCURVY_CARD.equals(card.getId())) gameState.getPlayer().removeFromHand(card);

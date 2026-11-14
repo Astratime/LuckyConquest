@@ -484,6 +484,10 @@ public class CardLoader {
         add(effects, "CUCKOO", (json, v) -> new CuckooEffect(json.getInt("turns"), v.f("factor")));
         add(effects, "MINUTE_HAND", (json, v) -> new MinuteHandEffect(v.i("turns"), json.getInt("springs"), json.getInt("percent")));
         add(effects, "TWELVE_STROKES", (json, v) -> new TwelveStrokesEffect(v.i("percent")));
+        // Cartes à usure : Bougie, Graine, Pile ou face
+        add(effects, "CANDLE", (json, v) -> new CandleEffect(v.i("percent"), json.getInt("wear")));
+        add(effects, "SEED", (json, v) -> new SeedEffect(v.i("percent"), v.i("growth"), v.i("max")));
+        add(effects, "COIN_FLIP", (json, v) -> new CoinFlipEffect(v.i("percent")));
     }
 
     /** @return l'effet décrit par {@code json} ({@code v} : ses valeurs, améliorées pour une carte « + ») */
