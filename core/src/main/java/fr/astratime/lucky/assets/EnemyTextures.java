@@ -40,6 +40,8 @@ public class EnemyTextures implements Disposable {
     private final Map<EnemySymbol, Texture> symbols = new EnumMap<>(EnemySymbol.class);
     private final Map<EnemyKind, Texture>   portraits = new EnumMap<>(EnemyKind.class);
     private final Map<EnemyKind, Texture>   flashes   = new EnumMap<>(EnemyKind.class);
+    /** Contour lumineux des ennemis dorés, autour de leur portrait (blanc, teinté d'or à l'affichage). */
+    private final Map<EnemyKind, Texture>   outlines  = new EnumMap<>(EnemyKind.class);
     /** Images de la Machine Originelle animée, par position du levier puis lumière des yeux (voir {@link #portrait(EnemyKind, float)}). */
     private final Texture[][] machineFrames = new Texture[3][3];
     private final Texture[][] machineFlashes = new Texture[3][3];
@@ -138,7 +140,44 @@ public class EnemyTextures implements Disposable {
     private void addPortrait(EnemyKind kind, int[][] grid) {
         portraits.put(kind, texture(grid, false));
         flashes.put(kind, texture(grid, true));
+        Texture old = outlines.put(kind, texture(outlineGrid(grid), false));
+        if (old != null) old.dispose();
     }
+
+    /** Épaisseur du contour d'un ennemi doré, en pixels du portrait, de chaque côté. */
+    public static final int GOLD_OUTLINE = 2;
+
+    /**
+     * @return le contour de {@code grid}, {@link #GOLD_OUTLINE} pixels plus grand de chaque côté : blanc
+     *         contre la silhouette, puis un second rang plus pâle, comme un halo
+     */
+    static int[][] outlineGrid(int[][] grid) {
+        int h = grid.length, w = grid[0].length;
+        int[][] out = new int[h + 2 * GOLD_OUTLINE][w + 2 * GOLD_OUTLINE];
+        int near = Color.rgba8888(1f, 1f, 1f, 1f), far = Color.rgba8888(1f, 1f, 1f, 0.4f);
+        for (int oy = 0; oy < out.length; oy++) {
+            for (int ox = 0; ox < out[0].length; ox++) {
+                int x = ox - GOLD_OUTLINE, y = oy - GOLD_OUTLINE;
+                if (opaque(grid, x, y)) continue;
+                int distance = Integer.MAX_VALUE;
+                for (int dy = -GOLD_OUTLINE; dy <= GOLD_OUTLINE; dy++) {
+                    for (int dx = -GOLD_OUTLINE; dx <= GOLD_OUTLINE; dx++) {
+                        if (opaque(grid, x + dx, y + dy)) distance = Math.min(distance, Math.max(Math.abs(dx), Math.abs(dy)));
+                    }
+                }
+                if (distance == 1) out[oy][ox] = near;
+                else if (distance == 2) out[oy][ox] = far;
+            }
+        }
+        return out;
+    }
+
+    private static boolean opaque(int[][] grid, int x, int y) {
+        return y >= 0 && y < grid.length && x >= 0 && x < grid[y].length && grid[y][x] != 0;
+    }
+
+    /** @return le contour lumineux du portrait de {@code kind}, s'il est doré ({@code null} s'il n'en a pas). */
+    public Texture goldenOutline(EnemyKind kind) { return outlines.get(kind); }
 
     /** @return la texture du symbole {@code symbol} (16 x 16 pixels). */
     public Texture symbol(EnemySymbol symbol) { return symbols.get(symbol); }
@@ -550,6 +589,7 @@ public class EnemyTextures implements Disposable {
     public void dispose() {
         portraits.values().forEach(Texture::dispose); // le croupier compris
         flashes.values().forEach(Texture::dispose);
+        outlines.values().forEach(Texture::dispose);
         for (int lever = 0; lever < 3; lever++) {      // la Machine au repos est dans les portraits
             for (int eyes = 0; eyes < 3; eyes++) {
                 if (lever == Chapter456Art.LEVER_UP && eyes == Chapter456Art.EYES_NORMAL) continue;

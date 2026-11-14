@@ -134,8 +134,10 @@ public class ExplorationScreen extends CasinoMenuScreen {
     /** Profil du joueur : les donjons vidés ouvrent les lieux suivants. */
     private final PlayerProfile profile;
     private int     selected = -1;   // donjon choisi sur la carte, -1 : aucun
-    /** Mode ADMIN : combat choisi dans le donjon (0 : le soldat, 1 : le roi). */
+    /** Mode ADMIN : combat choisi dans le donjon (0 : le soldat, 1 : le soldat doré, 2 : le roi). */
     private int     fight;
+    /** Choix du mode ADMIN : le soldat, le soldat doré, le roi. */
+    private static final int ADMIN_FIGHTS = 3, GOLDEN_FIGHT = 1;
     private float   mapScale = 4f;
 
     public ExplorationScreen(LuckyGame luckyGame) {
@@ -441,22 +443,24 @@ public class ExplorationScreen extends CasinoMenuScreen {
     private void launch() {
         if (leaving || selected < 0 || !profile.isOpen(place)) return;
         Dungeon dungeon = place.getDungeons().get(selected);
-        int start = profile.isAdmin() ? fight : 0;
-        goTo(() -> new GameScreen(luckyGame, new DungeonRun(dungeon, start)));
+        int start = profile.isAdmin() && fight == ADMIN_FIGHTS - 1 ? 1 : 0;
+        boolean golden = profile.isAdmin() && fight == GOLDEN_FIGHT;
+        goTo(() -> new GameScreen(luckyGame, new DungeonRun(dungeon, start, golden)));
     }
 
-    /** Mode ADMIN : passe du soldat au roi du donjon choisi, et inversement. */
+    /** Mode ADMIN : passe du soldat au soldat doré, au roi du donjon choisi, puis de nouveau au soldat. */
     private void nextFight() {
         if (selected < 0) return;
-        fight = (fight + 1) % DungeonRun.STAGES;
+        fight = (fight + 1) % ADMIN_FIGHTS;
         buttons.setText(fightButton, fightText(place.getDungeons().get(selected)));
         layout();
     }
 
     /** @return le texte du bouton du combat choisi en mode ADMIN (ex : « Combat 2 : Roi de Pique »). */
     private String fightText(Dungeon dungeon) {
+        if (fight == GOLDEN_FIGHT) return Lang.f("Combat 1 : {0} (version dorée)", dungeon.getSoldier().getDisplayName());
         String name = (fight == 0 ? dungeon.getSoldier() : dungeon.getKing()).getDisplayName();
-        return Lang.f("Combat {0} : {1}", fight + 1, name);
+        return Lang.f("Combat {0} : {1}", fight == 0 ? 1 : 2, name);
     }
 
     /** Ouvre le détail des récompenses du donjon choisi. */

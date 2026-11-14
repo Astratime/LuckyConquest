@@ -18,6 +18,7 @@ import fr.astratime.lucky.popups.EffectPopup;
 import fr.astratime.lucky.popups.EffectSound;
 
 import java.util.EnumMap;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
@@ -119,15 +120,27 @@ public class EffectPopupAnimator implements Disposable {
      * Rien n'est appelé pour les textes retirés avant d'apparaître ({@link #cancel()}).
      */
     public void play(List<EffectPopup> popups, float centerX, float centerY, float startDelay, IntConsumer onShown) {
+        play(popups, centerX, centerY, startDelay, onShown, false);
+    }
+
+    /**
+     * Comme {@link #play(List, float, float)}, mais c'est le bloc entier des
+     * textes (et non le premier) qui est centré sur {@code (centerX, centerY)} :
+     * pour les annonces affichées au milieu de l'écran (Garde, Coup de grisou…).
+     */
+    public void playCentered(List<EffectPopup> popups, float centerX, float centerY) {
+        play(popups, centerX, centerY, 0f, index -> {}, true);
+    }
+
+    private void play(List<EffectPopup> popups, float centerX, float centerY, float startDelay, IntConsumer onShown,
+                      boolean centerBlock) {
         Vector2 at = tableProjection.toScreen(centerX, centerY);
         centerX = at.x;
         centerY = at.y;
         float worldWidth = layer.getStage().getViewport().getWorldWidth();
-        float y = centerY;
 
-        for (int i = 0; i < popups.size(); i++) {
-            EffectPopup popup = popups.get(i);
-
+        List<Container<Label>> containers = new ArrayList<>();
+        for (EffectPopup popup : popups) {
             Label label = new Label(popup.getText(), labelStyle);
             label.setColor(COLORS.get(popup.getStyle()));
             label.setFontScale(fontSizeFor(popup) / (float) MAX_FONT_SIZE);
@@ -135,6 +148,18 @@ public class EffectPopupAnimator implements Disposable {
             Container<Label> container = new Container<>(label);
             container.setTransform(true); // nécessaire pour animer l'échelle
             container.pack();
+            containers.add(container);
+        }
+        float y = centerY;
+        if (centerBlock) { // le bloc descend d'une ligne par texte : on le remonte de la moitié de sa hauteur
+            float drop = 0f;
+            for (int i = 1; i < containers.size(); i++) drop += containers.get(i).getHeight() * LINE_SPACING;
+            y += drop / 2f;
+        }
+
+        for (int i = 0; i < popups.size(); i++) {
+            EffectPopup popup = popups.get(i);
+            Container<Label> container = containers.get(i);
             float width  = container.getWidth();
             float height = container.getHeight();
             container.setOrigin(width / 2f, height / 2f);
