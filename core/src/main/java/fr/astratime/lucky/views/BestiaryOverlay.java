@@ -343,7 +343,12 @@ public class BestiaryOverlay implements Disposable {
             status.setText(Lang.t("Pas encore rencontré"));
             status.setColor(LOCKED);
         }
-        description.setText(known ? kind.getDescription() : Lang.t("Affronte-le pour découvrir sa fiche."));
+        String text = known ? kind.getDescription() : Lang.t("Affronte-le pour découvrir sa fiche.");
+        if (known && Place.of(kind) != null && Place.of(kind).isKing(kind)) { // carte de roi : ses victoires
+            text += "\n" + Lang.f("Victoires : {0} / {1} pour sa carte à la boutique.",
+                Math.min(profile.getKingWins(kind), PlayerProfile.KING_CARD_WINS), PlayerProfile.KING_CARD_WINS);
+        }
+        description.setText(text);
         description.setColor(known ? Color.WHITE : LOCKED);
         notebook.setDisabled(!Notebook.hasPage(kind));
         notebook.setText(reading && Notebook.hasPage(kind) ? Lang.t("Fiche") : Lang.t("Carnet"));

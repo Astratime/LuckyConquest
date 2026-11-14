@@ -17,6 +17,11 @@ import java.util.List;
  */
 public class RefrainEffect extends Effect {
 
+    private final int times;
+
+    /** @param times fois où la carte précédente est rejouée */
+    public RefrainEffect(int times) { this.times = Math.max(1, times); }
+
     @Override
     public void onPlay(PlayContext context) {
         Card echo = echo(context.getPlayer().getPlayedCards());
@@ -27,8 +32,10 @@ public class RefrainEffect extends Effect {
         }
         context.addPopups(List.of(new EffectPopup(Lang.f("REFRAIN : {0}", echo.getName().toUpperCase()),
             EffectPopup.Style.SPECIAL, PopupScale.MAX_INTENSITY)));
-        for (Effect effect : echo.getEffects()) {
-            if (effect.canBeDoubled()) effect.onPlay(context);
+        for (int k = 0; k < times; k++) {
+            for (Effect effect : echo.getEffects()) {
+                if (effect.canBeDoubled()) effect.onPlay(context);
+            }
         }
     }
 
@@ -46,7 +53,10 @@ public class RefrainEffect extends Effect {
     public void apply(TurnContext context) { }
 
     @Override
-    public String getDescription() { return Lang.t("Rejoue la carte que tu as jouée juste avant celle-ci ce tour."); }
+    public String getDescription() {
+        return times <= 1 ? Lang.t("Rejoue la carte que tu as jouée juste avant celle-ci ce tour.")
+            : Lang.f("Rejoue {0} fois la carte que tu as jouée juste avant celle-ci ce tour.", times);
+    }
 
     @Override
     public List<EffectPopup> getPopups() { return List.of(); }

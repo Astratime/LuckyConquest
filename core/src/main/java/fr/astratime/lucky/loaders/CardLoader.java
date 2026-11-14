@@ -521,7 +521,7 @@ public class CardLoader {
         add(effects, "DRILL", (json, v) -> new DrillEffect(v.i("piercePercent"), v.i("attackPercent")));
         add(effects, "ANVIL", (json, v) -> new AnvilEffect(v.i("strikes")));
         add(effects, "VEIN", (json, v) -> new VeinEffect(v.i("percent")));
-        add(effects, "REFRAIN", (json, v) -> new RefrainEffect());
+        add(effects, "REFRAIN", (json, v) -> new RefrainEffect(v.i("times")));
         add(effects, "JACKPOT_RAGE", (json, v) -> new JackpotRageEffect(v.i("pairPercent"), json.getInt("factor")));
         add(effects, "FRENZY", (json, v) -> new FrenzyEffect(v.i("attackPercent")));
         add(effects, "INK", (json, v) -> new InkEffect(v.i("turns")));

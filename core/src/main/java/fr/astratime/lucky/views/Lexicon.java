@@ -171,6 +171,8 @@ public final class Lexicon {
             term(Lang.t("Descente"), Lang.t("Un donjon de l'Exploration joué du premier combat jusqu'au roi.")),
             term(Lang.t("Coffre de donjon"), Lang.t("Chaque donjon a un coffre : des pièces et une carte, "
                 + "une fois le roi battu.")),
+            term(Lang.t("Carte de roi"), Lang.f("Bats un roi d'Exploration {0} fois : sa carte se vend à la boutique, "
+                + "dans une version pour toi.", PlayerProfile.KING_CARD_WINS)),
             term(Lang.t("Tour des épreuves"), Lang.t("Des chapitres qui s'ouvrent l'un après l'autre. Ils ne "
                 + "rapportent pas de pièces. Quitter un chapitre le fait recommencer.")),
             term(Lang.t("Entraînement libre"), Lang.t("Choisis un ennemi déjà vaincu pour tester ton deck. "

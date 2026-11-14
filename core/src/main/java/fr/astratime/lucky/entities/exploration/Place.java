@@ -139,6 +139,12 @@ public enum Place {
     /** @return les pièces en plus d'un coffre dont la carte est déjà au maximum d'exemplaires : la moitié du coffre. */
     public long getDuplicateCoins() { return getChestCoins() / 2; }
 
+    /** @return {@code true} si {@code kind} est le roi d'un des donjons de ce lieu. */
+    public boolean isKing(EnemyKind kind) {
+        for (Dungeon dungeon : dungeons) if (dungeon.getKing() == kind) return true;
+        return false;
+    }
+
     /** @return le lieu où l'on combat {@code kind} (soldat ou roi d'un de ses donjons), ou {@code null}. */
     public static Place of(EnemyKind kind) {
         for (Place place : values()) {

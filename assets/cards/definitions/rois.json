@@ -6,7 +6,7 @@
     "effects": [
       {
         "type": "TAUNT",
-        "attackPercent": 30,
+        "attackPercent": 50,
         "enemyPercent": 15
       }
     ]
@@ -48,7 +48,7 @@
     "effects": [
       {
         "type": "THORNS",
-        "percent": 30
+        "percent": 50
       }
     ]
   },
@@ -107,7 +107,7 @@
     "effects": [
       {
         "type": "GNAW",
-        "cards": 2
+        "cards": 3
       }
     ]
   },
@@ -203,7 +203,8 @@
     "assetPath": "cards/special/roi_refrain.png",
     "effects": [
       {
-        "type": "REFRAIN"
+        "type": "REFRAIN",
+        "times": 1
       }
     ]
   },
