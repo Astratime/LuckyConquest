@@ -65,6 +65,17 @@ public final class SaveSlots {
         return values != null ? values : SecureProfileStorage.read(backup(slot));
     }
 
+    /** @return le niveau de Prestige de la partie de l'emplacement {@code slot} (0 : aucun, vide ou illisible). */
+    public int prestige(int slot) {
+        Map<String, String> values = peek(slot);
+        if (values == null) return 0;
+        try {
+            return Math.max(0, Integer.parseInt(values.getOrDefault(PlayerProfile.KEY_PRESTIGE, "0").trim()));
+        } catch (NumberFormatException e) {
+            return 0;
+        }
+    }
+
     /**
      * @return le rang de la partie de l'emplacement {@code slot} ({@code null} :
      *         aucun rang acheté, emplacement vide ou illisible)

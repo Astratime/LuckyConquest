@@ -35,6 +35,8 @@ public class Player {
     private final List<Card>  playedCards = new ArrayList<>();
     private       int         hp;
     private final int         maxHp;
+    /** PV max d'origine, avant le rang et le Prestige (pour le combat suivant). */
+    private final int         baseMaxHp;
 
     /** Monnaie gagnée en combat. Servira à acheter des bonus en combat. */
     private double gains = 0; // en double : les gains dépassent vite le milliard (voir BigNumber)
@@ -88,14 +90,15 @@ public class Player {
     }
 
     /**
-     * @param maxHp     points de vie maximum, avant le bonus du rang
+     * @param maxHp     points de vie maximum, avant le bonus du rang et du Prestige
      * @param rankBonus bonus du rang du joueur (PV max, valeur de base des rouleaux)
      * @param reels     symboles de sa machine à sous (le Joker s'y ajoute toujours)
      */
     public Player(String name, int maxHp, List<Card> cards, RankBonus rankBonus, List<Symbol> reels) {
         this.name        = name;
         this.rankBonus   = rankBonus;
-        this.maxHp       = maxHp + rankBonus.hp();
+        this.baseMaxHp   = maxHp;
+        this.maxHp       = rankBonus.withPrestigeBonus(maxHp + rankBonus.hp()); // le Prestige compte le rang
         this.hp          = this.maxHp;
         this.deck        = new Deck(cards, discardPile);
         this.slotMachine = new SlotMachine(reels);
@@ -439,7 +442,7 @@ public class Player {
         cards.addAll(playedCards);
         cards.addAll(confiscated); // confisquées le temps d'un combat seulement
         for (StolenCard theft : stolen) cards.add(theft.card); // volées : elles reviennent au plus tard au combat suivant
-        Player next = new Player(name, maxHp - rankBonus.hp(), cards, rankBonus, tableReels);
+        Player next = new Player(name, baseMaxHp, cards, rankBonus, tableReels);
         next.hp = hp; // les PV perdus ne reviennent pas d'un combat à l'autre
         next.gains = gains;
         next.potWinnings = potWinnings;

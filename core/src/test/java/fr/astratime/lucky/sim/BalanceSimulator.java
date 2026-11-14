@@ -1023,7 +1023,7 @@ public final class BalanceSimulator {
     /** Les 4 donjons du lieu à tour de rôle, avec une seule cagnotte pour le lieu (comme dans le jeu). */
     Map<String, RP> rankPlace(Place place, Rank rank, Gear gear, boolean bonusOn, int runs, long seed) {
         Random random = new Random(seed);
-        GameController game = controller(rank == null ? RankBonus.NONE : rank.getBonus(), gear);
+        GameController game = controller((rank == null ? RankBonus.NONE : rank.getBonus()).withPrestige(PRESTIGE), gear);
         game.setPlaceRule(place.getRule());
         game.setBonusGameEnabled(bonusOn);
         Map<String, RP> byDungeon = new LinkedHashMap<>();
@@ -1099,6 +1099,9 @@ public final class BalanceSimulator {
         new Gear("Coeur", STRONG_DECKS.get("Coeurs"), Symbol.classicReels(), true, false, true),
         new Gear("Carreau", STRONG_DECKS.get("Carreaux"), Symbol.classicReels(), true, false, true),
         new Gear("Trefle", STRONG_DECKS.get("Trèfles"), Symbol.classicReels(), true, false, true));
+
+    /** Niveau de Prestige du robot dans le rapport « rang dans son lieu » ({@code -Plevel=N} ; 0 par défaut). */
+    static final int PRESTIGE = Integer.getInteger("lucky.prestige", 0);
 
     static final List<double[]> POT_LOG = System.getProperty("lucky.potLog") != null ? new ArrayList<>() : null;
 

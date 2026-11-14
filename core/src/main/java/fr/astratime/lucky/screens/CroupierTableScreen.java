@@ -29,6 +29,7 @@ import fr.astratime.lucky.assets.Fonts;
 import fr.astratime.lucky.assets.Palette;
 import fr.astratime.lucky.assets.VolumeSound;
 import fr.astratime.lucky.entities.Card;
+import fr.astratime.lucky.entities.RankBonus;
 import fr.astratime.lucky.entities.Symbol;
 import fr.astratime.lucky.i18n.Lang;
 import fr.astratime.lucky.loaders.CardLoader;
@@ -524,7 +525,9 @@ public class CroupierTableScreen extends CasinoMenuScreen {
             entry.getValue().setColor(rank == chosenRank ? Color.WHITE : owned ? OWNED_RANK : OTHER_SLOT);
         }
         rankName.setText(rankTitle(chosenRank));
-        rankText.setText(rankBody(chosenRank));
+        String prestige = profile.getPrestige() == 0 ? "" : "\n\n" + Lang.f("Prestige {0} : PV, attaque, défense et gains des rouleaux +{1} % (rang compris).",
+            PlayerProfile.prestigeNumeral(profile.getPrestige()), profile.getPrestige() * RankBonus.PRESTIGE_PERCENT);
+        rankText.setText(rankBody(chosenRank) + prestige);
     }
 
     // -------------------------------------------------------------------------

@@ -261,7 +261,9 @@ public class MenuScreen extends ScreenAdapter {
         if (!slots.isUsed(slot)) return Lang.f("Partie {0} : vide", slot);
         if (slots.peek(slot) == null) return Lang.f("Partie {0} : abîmée", slot);
         Rank rank = slots.rank(slot);
-        return rank == null ? Lang.f("Partie {0} : sans rang", slot) : Lang.f("Partie {0} : {1}", slot, rank.getTitle());
+        String label = rank == null ? Lang.f("Partie {0} : sans rang", slot) : Lang.f("Partie {0} : {1}", slot, rank.getTitle());
+        int prestige = slots.prestige(slot);
+        return prestige == 0 ? label : label + ", " + Lang.f("Prestige {0}", PlayerProfile.prestigeNumeral(prestige));
     }
 
     /** L'emplacement {@code slot} a déjà une partie : le Croupier prévient avant de l'effacer. */

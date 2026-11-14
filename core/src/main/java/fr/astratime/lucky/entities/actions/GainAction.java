@@ -36,13 +36,15 @@ public non-sealed class GainAction extends Action {
         }
         int rank = context.getPlayer().getRankBonus().gains() * context.getRankFactor();
         int symbol = rollBaseGain(context);
-        int base = symbol + rank;
+        int prestige = context.getPlayer().getRankBonus().prestigeBonus(symbol + rank);
+        int base = symbol + rank + prestige;
         float scale = SpinEconomy.gainScale(context.getSpinCost());
         double gain = BigNumber.round((double) base * context.getGainMultiplier() * context.getGainFactor()
             * context.getSymbolPower() * scale * gainFactor(context));
         context.getPlayer().addGains(gain);
         // Le détail : les cartes Trèfle (multiplicateur additionné) et le coût du tirage s'ajoutent aux étapes du tour.
         List<CombatContext.PowerStep> steps = new ArrayList<>();
+        if (prestige != 0) steps.add(new CombatContext.PowerStep(CombatContext.Target.GAINS, CombatContext.PRESTIGE, prestige, 1f));
         if (context.getGainMultiplier() != 1f) {
             steps.add(new CombatContext.PowerStep(CombatContext.Target.GAINS, "Cartes", 0, context.getGainMultiplier()));
         }

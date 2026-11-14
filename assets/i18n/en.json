@@ -2760,5 +2760,18 @@
   "Carnet du Croupier, page {0} / {1}\n« {2} »": "The Dealer's notebook, page {0} / {1}\n\"{2}\"",
   "Carnet du Croupier, page {0} / {1}\nBats-le pour trouver sa page.": "The Dealer's notebook, page {0} / {1}\nBeat him to find his page.",
   "Cinématique : les cinématiques que tu as déjà vues, à revoir quand tu veux.": "Cutscenes: the cutscenes you have already seen, to watch again whenever you like.",
-  "Aucune cinématique vue pour l'instant. Affronte un boss ou un roi : sa cinématique se revoit ensuite ici.": "No cutscene seen yet. Face a boss or a king: you can then watch its cutscene again here."
+  "Aucune cinématique vue pour l'instant. Affronte un boss ou un roi : sa cinématique se revoit ensuite ici.": "No cutscene seen yet. Face a boss or a king: you can then watch its cutscene again here.",
+  "Prestige": "Prestige",
+  "Prestige {0}": "Prestige {0}",
+  "Gratuit": "Free",
+  "Confirmer": "Confirm",
+  "Prestige X : tu as tout atteint. Les tables se lèvent sur ton passage.": "Prestige X: you have reached it all. The tables rise as you walk by.",
+  "PV, attaque, défense et gains des rouleaux : +{0} % pour toujours (rang compris).": "HP, attack, defense and gains of the reels: +{0}% forever (rank included).",
+  "Rends tous tes rangs et rachète-les dans l'ordre, à leurs prix de Prestige.": "Give back all your ranks and buy them again in order, at their Prestige prices.",
+  "Tu repars sans rang. Tu gardes tes pièces, tes cartes, tes rouleaux, tes decks et ta progression.": "You start again with no rank. You keep your coins, cards, reels, decks and progress.",
+  "Tous tes rangs vont repartir à zéro. Clique sur « Confirmer » pour passer au Prestige.": "All your ranks will go back to zero. Click “Confirm” to reach Prestige.",
+  "Tu repars sans rang. Ton Prestige vaut dans tous les combats, pour toujours.": "You start again with no rank. Your Prestige counts in every fight, forever.",
+  "Prestige {0} : PV, attaque, défense et gains des rouleaux +{1} % (rang compris).": "Prestige {0}: HP, attack, defense and gains of the reels +{1}% (rank included).",
+  "JOUEUR  PRESTIGE {0}": "PLAYER  PRESTIGE {0}",
+  "Une fois tous les rangs achetés, la boutique te propose de les rendre. Chaque niveau donne +{0} % de PV max, d'attaque, de défense et de gains des symboles, rang compris, jusqu'au Prestige {1}. Tu gardes tout le reste.": "Once every rank is bought, the shop offers to give them back. Each level gives +{0}% max HP, attack, defense and gains of the symbols, rank included, up to Prestige {1}. You keep everything else."
 }
