@@ -14,6 +14,8 @@ public class DungeonRun implements CombatRun {
 
     /** Nombre de combats d'un donjon. */
     public static final int STAGES = 2;
+    /** Un soldat sur {@value} arrive doré (voir {@link fr.astratime.lucky.entities.Enemy#gild()}). */
+    public static final int GOLDEN_CHANCE = 20;
 
     private final Dungeon dungeon;
     private int           stage;
@@ -23,6 +25,8 @@ public class DungeonRun implements CombatRun {
     private int           treasureMaps;
     /** Le carrefour entre le soldat et le roi, et ce qu'il donne contre le roi. */
     private final Crossroads crossroads = new Crossroads(new Random());
+    /** Mode ADMIN : le soldat arrive toujours doré. */
+    private final boolean    goldenSoldier;
 
     public DungeonRun(Dungeon dungeon) {
         this(dungeon, 0);
@@ -33,6 +37,14 @@ public class DungeonRun implements CombatRun {
      *                   une défaite fait recommencer à ce combat
      */
     public DungeonRun(Dungeon dungeon, int startStage) {
+        this(dungeon, startStage, false);
+    }
+
+    /**
+     * @param goldenSoldier {@code true} : le soldat arrive toujours doré (choix du mode ADMIN)
+     */
+    public DungeonRun(Dungeon dungeon, int startStage, boolean goldenSoldier) {
+        this.goldenSoldier = goldenSoldier;
         if (startStage < 0 || startStage >= STAGES) throw new IllegalArgumentException("Combat " + startStage);
         this.dungeon    = dungeon;
         this.startStage = startStage;
@@ -70,6 +82,17 @@ public class DungeonRun implements CombatRun {
 
     @Override
     public PlaceRule getPlaceRule() { return Place.of(dungeon).getRule(); }
+
+    /**
+     * Début du combat en cours : le soldat arrive doré une fois sur {@value #GOLDEN_CHANCE}
+     * (toujours si le mode ADMIN l'a choisi) ; le roi, jamais.
+     *
+     * @return {@code true} si l'ennemi de ce combat est doré
+     */
+    public boolean rollGolden(Random random) {
+        if (stage != 0) return false;
+        return goldenSoldier || random.nextInt(GOLDEN_CHANCE) == 0;
+    }
 
     /** @return le carrefour du donjon, entre le soldat et le roi. */
     public Crossroads getCrossroads() { return crossroads; }

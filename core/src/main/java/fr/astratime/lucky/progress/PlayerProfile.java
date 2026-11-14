@@ -96,6 +96,7 @@ public class PlayerProfile {
     static final String KEY_DECK_SLOT     = "deckSlot";
     static final String KEY_MET           = "met";
     static final String KEY_DEFEATED      = "defeated";
+    static final String KEY_GOLDEN        = "golden";
     static final String KEY_POTS          = "pots";
     /** Cosmétiques achetés avec des pièces, par nom. */
     static final String KEY_COSMETICS     = "cosmetics";
@@ -166,6 +167,8 @@ public class PlayerProfile {
     /** Bestiaire : ennemis rencontrés, et parmi eux ceux qui ont été vaincus. */
     private final Set<EnemyKind> metEnemies      = EnumSet.noneOf(EnemyKind.class);
     private final Set<EnemyKind> defeatedEnemies = EnumSet.noneOf(EnemyKind.class);
+    /** Bestiaire : les soldats d'Exploration vaincus dans leur version dorée. */
+    private final Set<EnemyKind> goldenEnemies   = EnumSet.noneOf(EnemyKind.class);
     /** Cagnottes du Jeu bonus gardées d'une partie à l'autre : une par lieu de l'Exploration, et l'Entraînement. */
     private final Map<String, Double> pots      = new LinkedHashMap<>();
     /** Cagnottes du mode ADMIN : jamais enregistrées, ses combats ne rapportent rien. */
@@ -263,6 +266,7 @@ public class PlayerProfile {
         if (savedMet != null) {
             readEnemies(savedMet, metEnemies);
             readEnemies(storage.get(KEY_DEFEATED), defeatedEnemies);
+            readEnemies(storage.get(KEY_GOLDEN), goldenEnemies);
         } else {
             for (Place place : Place.values()) {
                 for (Dungeon dungeon : place.getDungeons()) {
@@ -310,10 +314,32 @@ public class PlayerProfile {
         saveBestiary();
     }
 
+    /** @return {@code true} si le joueur a déjà vaincu la version dorée de {@code kind} (toutes en mode ADMIN). */
+    public boolean hasDefeatedGolden(EnemyKind kind) { return admin || goldenEnemies.contains(kind); }
+
+    /**
+     * La version dorée de {@code kind} est vaincue : notée au bestiaire (avec l'ennemi lui-même),
+     * enregistrée tout de suite. Rien en mode ADMIN.
+     */
+    public void defeatGolden(EnemyKind kind) {
+        if (admin) return;
+        boolean changed = metEnemies.add(kind) | defeatedEnemies.add(kind);
+        if (!goldenEnemies.add(kind) && !changed) return;
+        saveBestiary();
+    }
+
+    /** @return le nombre de versions dorées du bestiaire vaincues (hors ADMIN). */
+    public int getGoldenDefeatedCount() {
+        int count = 0;
+        for (EnemyKind kind : Bestiary.goldenEnemies()) if (goldenEnemies.contains(kind)) count++;
+        return count;
+    }
+
     private void saveBestiary() {
         storage.put(KEY_MET, metEnemies.stream().map(Enum::name).collect(Collectors.joining(",")));
         storage.put(KEY_DEFEATED,
             defeatedEnemies.stream().map(Enum::name).collect(Collectors.joining(",")));
+        storage.put(KEY_GOLDEN, goldenEnemies.stream().map(Enum::name).collect(Collectors.joining(",")));
         storage.flush();
     }
 

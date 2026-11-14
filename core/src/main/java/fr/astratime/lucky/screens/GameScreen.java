@@ -647,6 +647,7 @@ public class GameScreen extends ScreenAdapter {
             }
             playCutscene(intro, this::startPlayerTurn);
         } else {
+            announceGolden();
             startPlayerTurn(); // le combat commence par le tour du joueur, main piochée d'office
         }
     }
@@ -782,6 +783,7 @@ public class GameScreen extends ScreenAdapter {
         }
         applyDifficulty(); // Tour : mode difficile ; mode sans fin : force de l'étage
         gameController.restart(firstEnemy()); // le premier ennemi du chapitre, ou le croupier d'entraînement
+        rollGolden();
         if (run instanceof TutorialRun) {
             TutorialRun.arrange(player().getDeck().getCards());
             TutorialRun.arrange(gameController.getGameState().getEnemy());
@@ -1741,6 +1743,7 @@ public class GameScreen extends ScreenAdapter {
         if (run != null) run.restart();
         applyDifficulty();
         gameController.restart(firstEnemy());
+        rollGolden();
         if (tutorial != null) {
             TutorialRun.arrange(player().getDeck().getCards());
             TutorialRun.arrange(gameController.getGameState().getEnemy());
@@ -1819,7 +1822,27 @@ public class GameScreen extends ScreenAdapter {
         refreshStageLabel();
         layout();
         endButtons.setVisible(false);
+        announceGolden();
         startPlayerTurn();
+    }
+
+    /** Tirage des ennemis dorés (un soldat d'Exploration sur {@value DungeonRun#GOLDEN_CHANCE}). */
+    private final Random goldenRandom = new Random();
+
+    /** Début d'un combat d'Exploration : son soldat arrive peut-être doré (PV x2, un rouleau de plus). */
+    private void rollGolden() {
+        if (tutorial != null || !(run instanceof DungeonRun dungeonRun)) return;
+        if (dungeonRun.rollGolden(goldenRandom)) gameController.getGameState().getEnemy().gild();
+    }
+
+    /** Un ennemi doré entre en scène : « ENNEMI DORÉ ! » au-dessus de lui, et des confettis. */
+    private void announceGolden() {
+        if (!gameController.getGameState().getEnemy().isGolden()) return;
+        Vector2 center = enemyView.getCroupierCenter();
+        effectPopupAnimator.play(List.of(new EffectPopup(Lang.t("ENNEMI DORÉ !"), EffectPopup.Style.SPECIAL,
+            PopupScale.MAX_INTENSITY)), center.x, center.y);
+        confetti.burst(center.x, center.y, JOKER_CONFETTI);
+        sounds.resultPair.play();
     }
 
     /**
@@ -2252,6 +2275,9 @@ public class GameScreen extends ScreenAdapter {
         buildEndButtons(won);
         if (won && tutorial == null) {
             luckyGame.getProfile().defeat(gameController.getGameState().getEnemy().getKind());
+            if (gameController.getGameState().getEnemy().isGolden()) { // sa version dorée, au bestiaire
+                luckyGame.getProfile().defeatGolden(gameController.getGameState().getEnemy().getKind());
+            }
             Player player = gameController.getGameState().getPlayer();
             boolean close    = player.getHp() > 0 && player.getHp() * 10L < player.getMaxHp();
             boolean flawless = player.getHp() >= player.getMaxHp();
