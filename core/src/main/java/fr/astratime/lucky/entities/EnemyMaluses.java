@@ -40,6 +40,20 @@ public class EnemyMaluses {
     private boolean hellBound;
     /** Lumière du bingo : à son prochain tirage, chaque rouleau a une chance sur deux de devenir Lumière. */
     private boolean bingoLight;
+    /** Cartes des rois : force de ses attaques à son prochain tour, en % (Provocation la monte, Carte biseautée la baisse). */
+    private int     nextAttackPercent = 100;
+    /** Dents de rat : cartes de sa prochaine main qui partent à la défausse. */
+    private int     gnawed;
+    /** Tournée du patron, Momification : une carte de moins à chacun de ses tours suivants, par entrée {cartes, tours}. */
+    private final java.util.List<int[]> fewerPlays = new java.util.ArrayList<>();
+    /** Feu du phare : ses tours au bout desquels sa prochaine main reste visible du joueur. */
+    private int     lighthouseTurns;
+    /** Grappin : ses meilleures cartes choisies qui lui sont volées à son prochain tour. */
+    private int     grapples;
+    /** Encre : ses prochains tours où il joue ses cartes au hasard. */
+    private int     inkTurns;
+    /** Braise : ses tours où il brûle encore, et les dégâts de chaque brûlure (chaque Braise brûle à part). */
+    private final java.util.List<long[]> embers = new java.util.ArrayList<>();
 
     /** Flamme : part de ses PV max qu'il perd à chaque brûlure. */
     public static final int BURN_PERCENT = 2;
@@ -260,10 +274,87 @@ public class EnemyMaluses {
         return lit;
     }
 
+    // --- Cartes des rois (C3) ---
+
+    /** Provocation (+), Carte biseautée (-) : ses attaques de son prochain tour changent de {@code percent} %. */
+    public void shiftNextAttack(int percent) { nextAttackPercent = Math.max(0, nextAttackPercent * (100 + percent) / 100); }
+    /** @return la force de ses attaques à son prochain tour, en % (100 : inchangée). */
+    public int getNextAttackPercent() { return nextAttackPercent; }
+    /** Son tour : le changement vaut pour celui-ci. @return la force de ses attaques, en % */
+    public int takeNextAttackPercent() {
+        int percent = nextAttackPercent;
+        nextAttackPercent = 100;
+        return percent;
+    }
+
+    /** Dents de rat : {@code cards} cartes de sa prochaine main partent à la défausse. */
+    public void gnaw(int cards) { gnawed += Math.max(0, cards); }
+    /** @return les cartes que perdra sa prochaine main. */
+    public int getGnawed() { return gnawed; }
+    /** Son tour : les Dents de rat valent pour celui-ci. @return les cartes perdues */
+    public int takeGnawed() { int n = gnawed; gnawed = 0; return n; }
+
+    /** Tournée du patron, Momification : {@code cards} cartes de moins à chacun de ses {@code turns} prochains tours. */
+    public void playFewer(int cards, int turns) { if (cards > 0 && turns > 0) fewerPlays.add(new int[] {cards, turns}); }
+    /** @return les cartes de moins à son prochain tour. */
+    public int getFewerPlays() { return fewerPlays.stream().mapToInt(entry -> entry[0]).sum(); }
+    /** @return le plus grand nombre de tours où il jouera encore moins de cartes. */
+    public int getFewerPlaysTurns() { return fewerPlays.stream().mapToInt(entry -> entry[1]).max().orElse(0); }
+    /** Son tour : les cartes de moins valent pour celui-ci. @return leur nombre */
+    public int takeFewerPlays() {
+        int n = getFewerPlays();
+        fewerPlays.forEach(entry -> entry[1]--);
+        fewerPlays.removeIf(entry -> entry[1] <= 0);
+        return n;
+    }
+
+    /** Feu du phare : pendant ses {@code turns} prochains tours, sa main suivante reste visible du joueur. */
+    public void light(int turns) { lighthouseTurns = Math.max(lighthouseTurns, turns); }
+    /** @return ses tours où le Feu du phare montre encore sa main. */
+    public int getLighthouseTurns() { return lighthouseTurns; }
+    /** Fin de son tour : le Feu du phare montre sa prochaine main. @return {@code true} s'il brillait encore */
+    public boolean takeLighthouse() {
+        if (lighthouseTurns <= 0) return false;
+        lighthouseTurns--;
+        return true;
+    }
+
+    /** Grappin : à son prochain tour, la meilleure carte qu'il a choisie lui est volée. */
+    public void grapple() { grapples++; }
+    /** @return les Grappins en attente. */
+    public int getGrapples() { return grapples; }
+    /** Son tour : les Grappins valent pour celui-ci. @return leur nombre */
+    public int takeGrapples() { int n = grapples; grapples = 0; return n; }
+
+    /** Encre : pendant ses {@code turns} prochains tours, il joue ses cartes au hasard. */
+    public void ink(int turns) { inkTurns = Math.max(inkTurns, turns); }
+    /** @return ses prochains tours où il joue à l'aveugle. */
+    public int getInkTurns() { return inkTurns; }
+    /** Son tour : l'Encre vaut pour celui-ci. @return {@code true} s'il était encré */
+    public boolean takeInk() {
+        if (inkTurns <= 0) return false;
+        inkTurns--;
+        return true;
+    }
+
+    /** Braise : il brûle de {@code damage} au début de chacun de ses {@code turns} prochains tours. */
+    public void ember(int turns, long damage) { if (turns > 0 && damage > 0) embers.add(new long[] {turns, damage}); }
+    /** @return ses tours où une Braise le brûle encore. */
+    public int getEmberTurns() { return (int) embers.stream().mapToLong(entry -> entry[0]).max().orElse(0); }
+    /** @return les dégâts de sa prochaine brûlure de Braise. */
+    public long getEmberDamage() { return embers.stream().mapToLong(entry -> entry[1]).sum(); }
+    /** Début de son tour : chaque Braise le brûle une fois. @return les dégâts, 0 s'il ne brûle pas */
+    public long takeEmbers() {
+        long damage = getEmberDamage();
+        embers.forEach(entry -> entry[0]--);
+        embers.removeIf(entry -> entry[0] <= 0);
+        return damage;
+    }
+
     /**
      * @return le nombre de malus différents qui le gênent en ce moment (Coup de bluff) :
      *         ébloui, Mutinerie, Pièce truquée, Harpon, Intimidation, Cartes marquées,
-     *         Fausse piste, Tour de passe-passe, Créances
+     *         Fausse piste, Tour de passe-passe, Créances, et les malus des cartes des rois
      */
     public int getActiveMaluses() {
         int count = 0;
@@ -276,6 +367,12 @@ public class EnemyMaluses {
         if (redHerrings > 0) count++;
         if (sleights > 0) count++;
         if (claims > 0) count++;
+        if (nextAttackPercent < 100) count++;
+        if (gnawed > 0) count++;
+        if (!fewerPlays.isEmpty()) count++;
+        if (grapples > 0) count++;
+        if (inkTurns > 0) count++;
+        if (!embers.isEmpty()) count++;
         return count;
     }
 }

@@ -2220,7 +2220,11 @@ public class GameScreen extends ScreenAdapter {
         luckyGame.getProfile().addCoins(reward);
         buildEndButtons(won);
         if (won && tutorial == null) {
-            luckyGame.getProfile().defeat(gameController.getGameState().getEnemy().getKind());
+            EnemyKind defeated = gameController.getGameState().getEnemy().getKind();
+            luckyGame.getProfile().defeat(defeated);
+            if (run instanceof DungeonRun dungeonRun && dungeonRun.getDungeon().getKing() == defeated) {
+                luckyGame.getProfile().winAgainstKing(defeated);
+            }
             Player player = gameController.getGameState().getPlayer();
             boolean close    = player.getHp() > 0 && player.getHp() * 10L < player.getMaxHp();
             boolean flawless = player.getHp() >= player.getMaxHp();
