@@ -210,6 +210,11 @@ public class FrontScene extends Actor implements Disposable {
         setBounds(enemyX, enemyY, width, height); // survol : son infobulle
     }
 
+    /** @return le point (Stage) d'où part la bulle de dialogue du grand ennemi, comme en vue classique. */
+    public Vector2 getMouth() {
+        return new Vector2(enemyX + getWidth() * EnemyView.MOUTH_X, enemyY + getHeight() * EnemyView.MOUTH_Y);
+    }
+
     /** @return le portrait de l'ennemi, qui donne sa taille. */
     private Texture shownTexture() {
         return enemyTextures.portrait(enemy.get().getKind());
