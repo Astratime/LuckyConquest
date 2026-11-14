@@ -102,6 +102,7 @@ public class EnemyTextures implements Disposable {
         for (EnemyKind kind : EnemyKind.values()) {
             int[][] grid = PlacesPortraits.of(kind);
             if (grid == null) grid = FairDesertPortraits.of(kind);
+            if (grid == null) grid = RivalArt.of(kind);
             if (grid != null) addPortrait(kind, grid);
         }
         chapterArt.put(Chapter.GENESE, texture(EnemyPortraits.genesis(), false));

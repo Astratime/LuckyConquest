@@ -6,7 +6,8 @@ import fr.astratime.lucky.entities.run.CombatRun;
 import java.util.Random;
 
 /**
- * Une descente dans un donjon de l'Exploration : le soldat de la couleur, puis
+ * Une descente dans un donjon de l'Exploration : le soldat de la couleur (ou parfois le
+ * Joueur Masqué à sa place, voir {@link Rival}), puis
  * son roi, avec entre les deux le carrefour (voir {@link Crossroads}). Une défaite fait recommencer le donjon au soldat ; après le roi, le
  * joueur ouvre le coffre au trésor (voir {@link Dungeon#rollLoot}).
  */
@@ -21,6 +22,8 @@ public class DungeonRun implements CombatRun {
     private final int     startStage;
     /** Cartes au trésor jouées pendant la descente (perdues si le donjon recommence). */
     private int           treasureMaps;
+    /** Le Joueur Masqué, qui prend la place du soldat dans cette descente (voir {@link Rival}), ou {@code null}. */
+    private final EnemyKind  rival;
     /** Le carrefour entre le soldat et le roi, et ce qu'il donne contre le roi. */
     private final Crossroads crossroads = new Crossroads(new Random());
 
@@ -33,17 +36,34 @@ public class DungeonRun implements CombatRun {
      *                   une défaite fait recommencer à ce combat
      */
     public DungeonRun(Dungeon dungeon, int startStage) {
+        this(dungeon, startStage, null);
+    }
+
+    /**
+     * @param startStage combat du début (0 : le premier, 1 : le roi)
+     * @param rival      le Joueur Masqué, qui prend la place du soldat (il revient si le donjon recommence),
+     *                   ou {@code null} pour le soldat habituel
+     */
+    public DungeonRun(Dungeon dungeon, int startStage, EnemyKind rival) {
+        if (rival != null && !rival.isRival()) throw new IllegalArgumentException("Pas le Joueur Masqué : " + rival);
         if (startStage < 0 || startStage >= STAGES) throw new IllegalArgumentException("Combat " + startStage);
         this.dungeon    = dungeon;
         this.startStage = startStage;
         this.stage      = startStage;
+        this.rival      = rival;
     }
 
     /** @return le donjon en cours. */
     public Dungeon getDungeon() { return dungeon; }
 
     @Override
-    public EnemyKind getEnemy() { return stage == 0 ? dungeon.getSoldier() : dungeon.getKing(); }
+    public EnemyKind getEnemy() {
+        if (stage > 0) return dungeon.getKing();
+        return rival != null ? rival : dungeon.getSoldier();
+    }
+
+    /** @return le Joueur Masqué de cette descente, à la place du soldat, ou {@code null}. */
+    public EnemyKind getRival() { return rival; }
 
     @Override
     public int getStage() { return stage; }

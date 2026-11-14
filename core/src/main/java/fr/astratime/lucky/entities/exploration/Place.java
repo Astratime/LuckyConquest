@@ -141,6 +141,7 @@ public enum Place {
 
     /** @return le lieu où l'on combat {@code kind} (soldat ou roi d'un de ses donjons), ou {@code null}. */
     public static Place of(EnemyKind kind) {
+        if (kind.isRival()) return Rival.placeOf(kind); // le Joueur Masqué : le lieu de sa rencontre
         for (Place place : values()) {
             for (Dungeon dungeon : place.dungeons) {
                 if (dungeon.getSoldier() == kind || dungeon.getKing() == kind) return place;
