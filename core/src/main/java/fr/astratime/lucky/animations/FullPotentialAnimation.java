@@ -45,7 +45,8 @@ public class FullPotentialAnimation extends Actor implements Disposable {
     private static final float FADE_TIME = 0.3f;
 
     private static final float SPRITE_SCALE = 8f;  // taille d'un pixel des grands motifs
-    private static final float SMALL_SCALE  = 5f;  // lames, gouttes, diamants, verrous
+    private static final float SMALL_SCALE  = 5f;  // gouttes, étoile filante
+    private static final float BIG_SMALL_SCALE = 7f; // lames, diamants, verrous
 
     private static final Color OUTLINE = Palette.OUTLINE;
 
@@ -224,7 +225,7 @@ public class FullPotentialAnimation extends Actor implements Disposable {
             float outward = fanAngle - 90f;
             float toward = MathUtils.atan2(targetY - fy, targetX - fx) * MathUtils.radiansToDegrees - 90f;
             float angle = dive > 0f ? toward : outward;
-            drawCentered(batch, blade, x, y, SMALL_SCALE * shown, angle);
+            drawCentered(batch, blade, x, y, BIG_SMALL_SCALE * shown, angle);
         }
         if (time >= strike) slashX(batch, time - strike, alpha);
     }
@@ -316,12 +317,12 @@ public class FullPotentialAnimation extends Actor implements Disposable {
                 float bx = x + MathUtils.cosDeg(a) * vw * 0.78f * appear, by = y + MathUtils.sinDeg(a) * vw * 0.78f * appear;
                 float since = time - pops[k];
                 if (since < 0f) {
-                    drawCentered(batch, bolt, bx, by, SMALL_SCALE * appear, a);
+                    drawCentered(batch, bolt, bx, by, BIG_SMALL_SCALE * appear, a);
                 } else if (since < 0.5f) { // il saute, tourne et retombe
                     float px = bx + MathUtils.cosDeg(a) * 260f * since;
                     float py = by + MathUtils.sinDeg(a) * 260f * since + 500f * since - 1400f * since * since;
                     batch.setColor(1f, 1f, 1f, alpha * (1f - since / 0.5f));
-                    drawCentered(batch, bolt, px, py, SMALL_SCALE, a + since * 900f);
+                    drawCentered(batch, bolt, px, py, BIG_SMALL_SCALE, a + since * 900f);
                     batch.setColor(1f, 1f, 1f, alpha);
                 }
             }
@@ -333,11 +334,11 @@ public class FullPotentialAnimation extends Actor implements Disposable {
         for (int i = 0; i < particles; i++) {
             float t = since - i * 0.008f;
             if (t < 0f) continue;
-            float v = 520f * speeds[i];
-            float a = 30f + (angles[i] % 120f);          // vers le haut, en gerbe
+            float v = 760f * speeds[i];
+            float a = 40f + (angles[i] % 100f);          // vers le haut, en gerbe
             float x = centerX + MathUtils.cosDeg(a) * v * t;
-            float y = centerY + MathUtils.sinDeg(a) * v * t - 900f * t * t;
-            drawCentered(batch, gem, x, y, SMALL_SCALE * (0.8f + 0.4f * speeds[i]), spins[i] * t);
+            float y = centerY + MathUtils.sinDeg(a) * v * t - 1100f * t * t;
+            drawCentered(batch, gem, x, y, BIG_SMALL_SCALE * (0.8f + 0.4f * speeds[i]), spins[i] * t);
         }
     }
 
@@ -448,11 +449,12 @@ public class FullPotentialAnimation extends Actor implements Disposable {
     };
 
     private static final String[] GEM = {
-        ".ooooo.",
-        "o#lll#o",
-        "oooooo.",
-        ".o#l#o.",
-        "..odo..",
+        "...o...",
+        "..olo..",
+        ".ol#do.",
+        "ol###do",
+        ".o##do.",
+        "..o#o..",
         "...o...",
     };
 
@@ -537,27 +539,36 @@ public class FullPotentialAnimation extends Actor implements Disposable {
         return pixmap;
     }
 
-    /** @return le trèfle d'or à quatre feuilles. */
+    /** @return le trèfle d'or à quatre feuilles en coeur, et sa tige. */
     private static Pixmap clover() {
-        int size = 30;
+        int size = 36;
         Pixmap pixmap = pixmap(size, size);
         float c = size / 2f;
         BingoScene.Shape shape = (x, y) -> {
             float px = x + 0.5f, py = y + 0.5f;
             for (int k = 0; k < 4; k++) {
                 float a = 45f + k * 90f;
-                float lx = c + MathUtils.cosDeg(a) * 7f, ly = c + MathUtils.sinDeg(a) * 7f;
-                if (Vector2.len(px - lx, py - ly) <= 6.6f) return true;
+                float dx = MathUtils.cosDeg(a), dy = MathUtils.sinDeg(a);
+                // Deux lobes côte à côte : une feuille en coeur, pointe vers le centre.
+                for (int side = -1; side <= 1; side += 2) {
+                    float lx = c + dx * 10f - dy * 3.4f * side, ly = c + dy * 10f + dx * 3.4f * side;
+                    if (Vector2.len(px - lx, py - ly) <= 4f) return true;
+                }
+                float tx = c + dx * 5.5f, ty = c + dy * 5.5f; // la pointe de la feuille
+                if (Vector2.len(px - tx, py - ty) <= 2.4f) return true;
             }
-            return Vector2.len(px - c, py - c) <= 4f;
+            if (Vector2.len(px - c, py - c) <= 3f) return true; // le coeur du trèfle
+            // La tige, vers le bas, légèrement courbée.
+            return py > c + 2f && py < size - 1f && Math.abs(px - (c + (py - c) * 0.35f)) <= 1.2f;
         };
         Color gold = hex("f2b632"), light = hex("ffe27a"), shine = hex("fffbe0"), dark = hex("b07a12");
         BingoScene.fillShape(pixmap, shape, (x, y) -> {
-            float dx = x - c, dy = y - c;
-            if (Math.abs(Math.abs(dx) - Math.abs(dy)) < 0.8f && Vector2.len(dx, dy) > 3f && Vector2.len(dx, dy) < 11f) return dark; // nervures
-            if ((x == 7 && y == 7) || (x == 8 && y == 7) || (x == 7 && y == 8)) return shine;
-            if (dx + dy > 8f) return dark;
-            if (dx + dy < -6f) return light;
+            float dx = x + 0.5f - c, dy = y + 0.5f - c;
+            float r = Vector2.len(dx, dy);
+            if (Math.abs(Math.abs(dx) - Math.abs(dy)) < 0.9f && r > 3.5f && r < 13f) return dark; // nervures
+            if ((x == 9 && y == 8) || (x == 10 && y == 8) || (x == 9 && y == 9)) return shine;
+            if (dx + dy > 9f) return dark;
+            if (dx + dy < -7f) return light;
             return gold;
         });
         return pixmap;
