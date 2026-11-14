@@ -109,7 +109,10 @@ public final class Lexicon {
                 number(Combo.CARRE.getFactor() + Combo.BRELAN.getFactor() + Combo.PAIRE.getFactor()))),
             term(Lang.t("Archétype"), Lang.t("Une famille de cartes spéciales. Pour la Couleur, elle compte comme une suite.")),
             term(Lang.t("Carte « + »"), Lang.t("La version améliorée d'une carte : valeurs +50 %. "
-                + "3 exemplaires se fusionnent à la Table du croupier."))));
+                + "3 exemplaires se fusionnent à la Table du croupier.")),
+            term(Lang.t("Carte à usure"), Lang.t("Une carte qui change pendant le combat. La Bougie fond un peu à chaque "
+                + "pose, la Graine pousse à chaque tour où tu ne la joues pas, la Pile ou face double son effet une fois "
+                + "sur deux et ne fait rien sinon. Tout repart à zéro au combat suivant."))));
     }
 
     private static Category suits() {
