@@ -232,6 +232,14 @@ public class FrontScene extends Actor implements Disposable {
         float time = enemyView.getAnimationTime();
         Texture texture = enemyTextures.portrait(kind, time), silhouette = enemyTextures.portraitFlash(kind, time);
         float width = texture.getWidth() * pixel, height = texture.getHeight() * pixel;
+        Texture outline = enemyView.isGoldenShown() ? enemyTextures.goldenOutline(kind) : null;
+        if (outline != null) { // l'ennemi doré : son contour lumineux, derrière lui
+            Color gold = enemyView.getAuraColor();
+            float border = EnemyTextures.GOLD_OUTLINE * pixel;
+            batch.setColor(gold.r, gold.g, gold.b, gold.a * alpha);
+            batch.draw(outline, x - border, y - border, originX + border, border, width + 2f * border, height + 2f * border,
+                1f, 1f, rotation, 0, 0, outline.getWidth(), outline.getHeight(), false, false);
+        }
         batch.setColor(1f, 1f, 1f, alpha);
         batch.draw(texture, x, y, originX, 0f, width, height, 1f, 1f, rotation,
             0, 0, texture.getWidth(), texture.getHeight(), false, false);
