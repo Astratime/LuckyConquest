@@ -321,6 +321,15 @@ public class EnemyTextures implements Disposable {
                     g[row[0]][w - 1 - x] = x == row[2] ? hornShade : horn;
                 }
             }
+            if (!hatOn) { // tête nue : la base des cornes, d'habitude sous le chapeau, rejoint le crâne
+                int[][] roots = {{9, 7, 9}, {10, 8, 11}, {11, 9, 12}, {12, 10, 12}};
+                for (int[] row : roots) {
+                    for (int x = row[1]; x <= row[2]; x++) {
+                        g[row[0]][x] = x == row[2] ? hornShade : horn;
+                        g[row[0]][w - 1 - x] = x == row[2] ? hornShade : horn;
+                    }
+                }
+            }
             // Éventail de cartes dans la main droite (à droite du gilet).
             int[][] fan = {{23, 30}, {25, 29}, {27, 30}};
             for (int[] pos : fan) {
