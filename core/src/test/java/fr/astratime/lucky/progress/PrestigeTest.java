@@ -31,7 +31,7 @@ class PrestigeTest {
     }
 
     @Test
-    void prestigeGivesBackTheRanksKeepsTheCoinsAndIsSaved() {
+    void prestigeGivesBackTheRanksEmptiesTheCoinsAndIsSaved() {
         PlayerProfileTest.MemoryStorage storage = new PlayerProfileTest.MemoryStorage();
         PlayerProfile profile = legend(storage);
         profile.addCoins(777);
@@ -43,7 +43,7 @@ class PrestigeTest {
         assertNull(profile.getRank());
         assertNull(profile.getActiveRank());
         assertEquals(Rank.AVARE, profile.getNextRank());
-        assertEquals(777L, profile.getCoins(), "Astra : les pièces sont gardées");
+        assertEquals(0L, profile.getCoins(), "Astra (2026-11-15) : les pièces repartent à 0");
         assertEquals(1, profile.getRankBonus().prestige(), "le Prestige compte même sans rang");
         assertEquals(1, PlayerProfileTest.profile(storage).getPrestige(), "le Prestige est enregistré");
     }
