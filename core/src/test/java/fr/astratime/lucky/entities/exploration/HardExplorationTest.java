@@ -62,7 +62,7 @@ class HardExplorationTest {
 
     @Test
     void coinsFollowTheDesertSpinCostTimesTwoPerPlace() {
-        assertEquals(100, HardExploration.COINS_PERCENT, "prime de pièces à confirmer par Astra");
+        assertEquals(100, HardExploration.COINS_PERCENT, "aucune prime (choix d'Astra)");
         for (Place place : Place.values()) {
             int cost = (int) (Place.DESERT.getSpinCost() * HardExploration.strength(place));
             assertEquals(cost, place.getSpinCost(true));

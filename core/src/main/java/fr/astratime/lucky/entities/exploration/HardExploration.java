@@ -22,7 +22,7 @@ public final class HardExploration {
 
     /**
      * Prime de pièces du mode difficile, en % du coût de tirage qui suit la difficulté (100 : les pièces grimpent
-     * comme la force des ennemis, rien de plus). Valeur proposée, à confirmer par Astra.
+     * comme la force des ennemis, rien de plus). Choix d'Astra (2026-11-15) : aucune prime.
      */
     public static final int COINS_PERCENT = 100;
 
