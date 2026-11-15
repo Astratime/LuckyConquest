@@ -52,6 +52,8 @@ import fr.astratime.lucky.animations.Fireworks;
 import fr.astratime.lucky.animations.JackpotCelebration;
 import fr.astratime.lucky.animations.TurnBanner;
 import fr.astratime.lucky.animations.PistolShotAnimation;
+import fr.astratime.lucky.animations.FullPotentialAnimation;
+import fr.astratime.lucky.entities.FullPotential;
 import fr.astratime.lucky.animations.SymbolStrikes;
 import fr.astratime.lucky.animations.RainbowChipsAnimation;
 import fr.astratime.lucky.animations.ScreenShake;
@@ -279,6 +281,7 @@ public class GameScreen extends ScreenAdapter {
     private static final int   POT_CONFETTI          = 50;
     /** Temps laissé au texte de la riposte (et au coup sur la barre) avant de passer au tour du joueur. */
     private static final float RIPOSTE_TEXT_TIME     = 0.8f;
+    private static final float END_TEXTS_ABOVE       = 0.6f;  // annonces de fin de tour : au-dessus du filet, en cartes
     /** Le temps de lire « ELLE RÉSISTE ! DERNIER TIRAGE » avant le duel des leviers. */
     private static final float LAST_DRAW_DELAY       = 1.2f;
     /** Vue de face : inclinaison des éléments debout sur la table (hauteur / largeur ; 1 : bien droit). */
@@ -354,6 +357,8 @@ public class GameScreen extends ScreenAdapter {
     private final CardChoiceOverlay   choiceOverlay;
     private final BingoCardAnimation  bingoAnimation;
     private final PistolShotAnimation pistolAnimation;
+    /** As joué à plein potentiel : petite animation au milieu de l'écran. */
+    private final FullPotentialAnimation fullPotentialAnimation = new FullPotentialAnimation();
     private final SymbolStrikes       symbolStrikes;
     private final RainbowChipsAnimation rainbowAnimation;
     private final ShopOverlay         shopOverlay;
@@ -567,6 +572,7 @@ public class GameScreen extends ScreenAdapter {
         choiceOverlay   = new CardChoiceOverlay(stage, hudTextures, cardBackTexture, cardTextures, CARD_WIDTH, CARD_HEIGHT);
         bingoAnimation  = new BingoCardAnimation(settings, new TextureRegion(hudTextures.pixel));
         pistolAnimation = new PistolShotAnimation(hudTextures.pistol, new TextureRegion(hudTextures.pixel));
+        fullPotentialAnimation.setOnImpact(() -> { if (!settings.isReducedEffects()) screenShake.shake(0.3f, 8f); });
         symbolStrikes   = new SymbolStrikes(settings, screenShake, new TextureRegion(hudTextures.pixel), hudTextures.coin,
             sidePanel::bumpCoin);
         rainbowAnimation = new RainbowChipsAnimation(settings, new TextureRegion(hudTextures.pixel));
@@ -644,6 +650,7 @@ public class GameScreen extends ScreenAdapter {
             // Le Joueur Masqué prend la place du soldat : sa scène d'abord (son masque tombe au Désert).
             playCutscene(Cutscenes.beforeBoss(cutsceneKit, dungeonRun.getRival()), this::startPlayerTurn);
         } else {
+            announceGolden();
             startPlayerTurn(); // le combat commence par le tour du joueur, main piochée d'office
         }
     }
@@ -714,6 +721,14 @@ public class GameScreen extends ScreenAdapter {
         stage.addActor(chestOverlay.getActor()); // Exploration : coffre au trésor
         stage.addActor(confetti);
         stage.addActor(damageVignette);
+        stage.addActor(fullPotentialAnimation); // As à plein potentiel : par-dessus la table, ne bloque pas les clics
+        stage.addCaptureListener(new com.badlogic.gdx.scenes.scene2d.InputListener() {
+            @Override
+            public boolean touchDown(com.badlogic.gdx.scenes.scene2d.InputEvent event, float x, float y, int pointer, int button) {
+                if (fullPotentialAnimation.isPlaying()) fullPotentialAnimation.skip(); // un clic la fait disparaître
+                return false; // le clic sert quand même au jeu
+            }
+        });
         stage.addActor(jackpotLayer); // par-dessus le jeu et le panneau : bloque les clics pendant la fête
         stage.addActor(achievementToast);   // passe devant tout quand il s'affiche, sans bloquer les clics
         stage.addActor(bingoAnimation);         // carte Bingo : faisceaux et téléportation, bloque les clics
@@ -752,7 +767,8 @@ public class GameScreen extends ScreenAdapter {
     private void startRun(PlayerProfile profile) {
         if (run != null) gameController.setPlaceRule(run.getPlaceRule()); // Exploration : la règle du lieu
         else if (Place.of(trainingEnemy) != null) gameController.setPlaceRule(Place.of(trainingEnemy).getRule()); // entraînement libre
-        gameController.setBonusGameEnabled(run == null || run.hasBonusGame()); // pas de Jeu bonus dans le tutoriel
+        gameController.setBonusGameEnabled(run == null || run.hasBonusGame());
+        gameController.setAdmin(profile.isAdmin()); // ADMIN : Bingos d'un rouleau absent de la machine permis // pas de Jeu bonus dans le tutoriel
         // Cagnotte du Jeu bonus : celle du lieu (partagée par ses donjons) ou de l'Entraînement, gardées ;
         // celle de l'ascension dans la Tour, où un Bingo ouvre plus souvent le Jeu bonus.
         if (run instanceof DungeonRun dungeonRun) {
@@ -771,6 +787,7 @@ public class GameScreen extends ScreenAdapter {
         }
         applyDifficulty(); // Tour : mode difficile ; mode sans fin : force de l'étage
         gameController.restart(firstEnemy()); // le premier ennemi du chapitre, ou le croupier d'entraînement
+        rollGolden();
         if (run instanceof TutorialRun) {
             TutorialRun.arrange(player().getDeck().getCards());
             TutorialRun.arrange(gameController.getGameState().getEnemy());
@@ -847,7 +864,12 @@ public class GameScreen extends ScreenAdapter {
         Gdx.app.log("GameScreen", "Carte jouee : " + card);
 
         List<Combo> combosBefore = gameController.getCurrentCombos();
+        LastingEffects lasting = gameController.getGameState().getPlayer().getLastingEffects();
+        FullPotential.Gauges gauges = FullPotential.Gauges.before(lasting);
         CardPlayResult playResult = gameController.playCard(card);
+        if (!playResult.getPopups().isEmpty()) { // carte vraiment jouée
+            FullPotential.of(card, gauges.withBladesAfter(lasting.getBlades())).ifPresent(this::playFullPotential);
+        }
         recap.cardPlayed();
         journal.cardPlayed(card);
         if (tutorial != null) tutorial.onCardPlayed(card);
@@ -874,6 +896,13 @@ public class GameScreen extends ScreenAdapter {
         }
         askChoice(playResult.getChoice(), cardCenter);
         if (playResult.getRainbow() != null) playRainbow(playResult.getRainbow());
+    }
+
+    /** Un As joué à plein potentiel : son animation au milieu de l'écran, vers l'ennemi ou la machine. */
+    private void playFullPotential(FullPotential kind) {
+        Vector2 center = new Vector2(stage.getWidth() / 2f, stage.getHeight() / 2f);
+        Vector2 target = kind == FullPotential.CLUBS ? slots.getReelCenter(1) : enemyView.getCroupierCenter();
+        fullPotentialAnimation.play(kind, center, target, settings.isReducedEffects());
     }
 
     /**
@@ -1368,12 +1397,16 @@ public class GameScreen extends ScreenAdapter {
         stage.addAction(Actions.delay(margin, Actions.run(this::finishTurn)));
     }
 
-    /** @return {@code true} si les événements {@code events} ont des textes, affichés à droite de la barre de vie du joueur. */
+    /**
+     * @return {@code true} si les événements {@code events} ont des textes, affichés au milieu de la table
+     *         (Garde, Coup de grisou, Venin… : bien lisibles, au-dessus du filet où passera « À TOI DE JOUER »)
+     */
     private boolean showEndTexts(List<Event> events) {
-        Vector2 anchor = hud.besidePlayerHealthBar(SlotView.POPUP_PLAYER_GAP);
         List<EffectPopup> texts = new ArrayList<>();
         events.forEach(event -> texts.addAll(event.getPopups()));
-        if (!texts.isEmpty()) effectPopupAnimator.play(texts, anchor.x, anchor.y);
+        if (!texts.isEmpty()) {
+            effectPopupAnimator.playCentered(texts, playArea.getCenterX(), turnBannerY() + CARD_HEIGHT * END_TEXTS_ABOVE);
+        }
         events.forEach(this::onEventShown);
         refreshEffects();
         return !texts.isEmpty();
@@ -1714,6 +1747,7 @@ public class GameScreen extends ScreenAdapter {
         if (run != null) run.restart();
         applyDifficulty();
         gameController.restart(firstEnemy());
+        rollGolden();
         if (tutorial != null) {
             TutorialRun.arrange(player().getDeck().getCards());
             TutorialRun.arrange(gameController.getGameState().getEnemy());
@@ -1762,6 +1796,7 @@ public class GameScreen extends ScreenAdapter {
         turnBanner.hide();
         bingoAnimation.cancel();
         pistolAnimation.cancel();
+        fullPotentialAnimation.skip();
         symbolStrikes.cancel();
         rainbowAnimation.cancel();
         shopOverlay.hide();
@@ -1791,7 +1826,27 @@ public class GameScreen extends ScreenAdapter {
         refreshStageLabel();
         layout();
         endButtons.setVisible(false);
+        announceGolden();
         startPlayerTurn();
+    }
+
+    /** Tirage des ennemis dorés (un soldat d'Exploration sur {@value DungeonRun#GOLDEN_CHANCE}). */
+    private final Random goldenRandom = new Random();
+
+    /** Début d'un combat d'Exploration : son soldat arrive peut-être doré (PV x2, un rouleau de plus). */
+    private void rollGolden() {
+        if (tutorial != null || !(run instanceof DungeonRun dungeonRun)) return;
+        if (dungeonRun.rollGolden(goldenRandom)) gameController.getGameState().getEnemy().gild();
+    }
+
+    /** Un ennemi doré entre en scène : « ENNEMI DORÉ ! » au-dessus de lui, et des confettis. */
+    private void announceGolden() {
+        if (!gameController.getGameState().getEnemy().isGolden()) return;
+        Vector2 center = enemyView.getCroupierCenter();
+        effectPopupAnimator.play(List.of(new EffectPopup(Lang.t("ENNEMI DORÉ !"), EffectPopup.Style.SPECIAL,
+            PopupScale.MAX_INTENSITY)), center.x, center.y);
+        confetti.burst(center.x, center.y, JOKER_CONFETTI);
+        sounds.resultPair.play();
     }
 
     /**
@@ -2224,6 +2279,9 @@ public class GameScreen extends ScreenAdapter {
         buildEndButtons(won);
         if (won && tutorial == null) {
             luckyGame.getProfile().defeat(gameController.getGameState().getEnemy().getKind());
+            if (gameController.getGameState().getEnemy().isGolden()) { // sa version dorée, au bestiaire
+                luckyGame.getProfile().defeatGolden(gameController.getGameState().getEnemy().getKind());
+            }
             Player player = gameController.getGameState().getPlayer();
             boolean close    = player.getHp() > 0 && player.getHp() * 10L < player.getMaxHp();
             boolean flawless = player.getHp() >= player.getMaxHp();
@@ -2661,6 +2719,7 @@ public class GameScreen extends ScreenAdapter {
         crossroadsOverlay.dispose();
         chestOverlay.dispose();
         bingoAnimation.dispose();
+        fullPotentialAnimation.dispose();
         rainbowAnimation.dispose();
         if (cutscene != null) cutscene.dispose();
         if (guide != null) guide.dispose();

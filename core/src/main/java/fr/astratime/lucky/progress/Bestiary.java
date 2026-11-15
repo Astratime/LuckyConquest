@@ -47,6 +47,19 @@ public final class Bestiary {
         return new ArrayList<>(enemies);
     }
 
+    /**
+     * @return les ennemis qui ont une version dorée au bestiaire : les soldats de l'Exploration,
+     *         lieu par lieu (voir {@link fr.astratime.lucky.entities.exploration.DungeonRun#rollGolden})
+     */
+    public static List<EnemyKind> goldenEnemies() {
+        List<EnemyKind> soldiers = new ArrayList<>();
+        for (Place place : Place.values()) for (Dungeon dungeon : place.getDungeons()) soldiers.add(dungeon.getSoldier());
+        return soldiers;
+    }
+
+    /** @return {@code true} si {@code kind} a une version dorée (un soldat de l'Exploration). */
+    public static boolean hasGoldenVersion(EnemyKind kind) { return goldenEnemies().contains(kind); }
+
     /** @return où l'on combat {@code kind} (ex : « La prairie : Donjon de Pique », « Tour des épreuves, chapitre 2 »). */
     public static String whereMet(EnemyKind kind) {
         if (kind == EnemyKind.ENTRAINEMENT) return Lang.t("Entraînement");

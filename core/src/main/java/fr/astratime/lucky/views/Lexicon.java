@@ -4,12 +4,14 @@ import fr.astratime.lucky.controllers.GameController;
 import fr.astratime.lucky.controllers.PreparationResolver;
 import fr.astratime.lucky.entities.BonusGame;
 import fr.astratime.lucky.entities.Combo;
+import fr.astratime.lucky.entities.Enemy;
 import fr.astratime.lucky.entities.EnemyMaluses;
 import fr.astratime.lucky.entities.LastingEffects;
 import fr.astratime.lucky.entities.SpinEconomy;
 import fr.astratime.lucky.entities.Symbol;
 import fr.astratime.lucky.entities.effects.CorruptionEffect;
 import fr.astratime.lucky.entities.enemy.EnemyKind;
+import fr.astratime.lucky.entities.exploration.DungeonRun;
 import fr.astratime.lucky.i18n.Lang;
 import fr.astratime.lucky.progress.PlayerProfile;
 
@@ -107,7 +109,10 @@ public final class Lexicon {
                 number(Combo.CARRE.getFactor() + Combo.BRELAN.getFactor() + Combo.PAIRE.getFactor()))),
             term(Lang.t("Archétype"), Lang.t("Une famille de cartes spéciales. Pour la Couleur, elle compte comme une suite.")),
             term(Lang.t("Carte « + »"), Lang.t("La version améliorée d'une carte : valeurs +50 %. "
-                + "3 exemplaires se fusionnent à la Table du croupier."))));
+                + "3 exemplaires se fusionnent à la Table du croupier.")),
+            term(Lang.t("Carte à usure"), Lang.t("Une carte qui change pendant le combat. La Bougie fond un peu à chaque "
+                + "pose, la Graine pousse à chaque tour où tu ne la joues pas, la Pile ou face double son effet une fois "
+                + "sur deux et ne fait rien sinon. Tout repart à zéro au combat suivant."))));
     }
 
     private static Category suits() {
@@ -146,6 +151,9 @@ public final class Lexicon {
             term(Lang.t("Phase 2 des rois"), Lang.f("Sous la moitié de ses PV, un roi prend le symbole d'un autre ennemi. "
                 + "Attaques +{0} %, soins -{1} %.", EnemyKind.KING_PHASE_ATTACK_PERCENT - 100,
                 100 - EnemyKind.KING_PHASE_HEAL_PERCENT)),
+            term(Lang.t("Ennemi doré"), Lang.f("En Exploration, un soldat sur {0} arrive doré, entouré d'or : PV x{1} et "
+                + "un rouleau de plus. Le vaincre ajoute sa version dorée au Bestiaire.", DungeonRun.GOLDEN_CHANCE,
+                Enemy.GOLDEN_HP_FACTOR)),
             term(Lang.t("Créances"), Lang.f("Sur l'ennemi, {0} au plus. À chacun de ses tours, chacune lui inflige "
                 + "{1} % du prix du tirage, sans tenir compte de sa défense, et te rapporte un tirage de gains.",
                 EnemyMaluses.MAX_CLAIMS, EnemyMaluses.CLAIM_DAMAGE_PERCENT)),
