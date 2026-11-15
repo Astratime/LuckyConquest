@@ -655,6 +655,9 @@ public class GameScreen extends ScreenAdapter {
                 croupierIntro.withCards(next, false);
             }
             playCutscene(intro, this::startPlayerTurn);
+        } else if (run instanceof DungeonRun dungeonRun && dungeonRun.getRival() != null) {
+            // Le Joueur Masqué prend la place du soldat : sa scène d'abord (son masque tombe au Désert).
+            playCutscene(Cutscenes.beforeBoss(cutsceneKit, dungeonRun.getRival()), this::startPlayerTurn);
         } else {
             announceGolden();
             startPlayerTurn(); // le combat commence par le tour du joueur, main piochée d'office
@@ -774,7 +777,8 @@ public class GameScreen extends ScreenAdapter {
     private void startRun(PlayerProfile profile) {
         if (run != null) gameController.setPlaceRule(run.getPlaceRule()); // Exploration : la règle du lieu
         else if (Place.of(trainingEnemy) != null) gameController.setPlaceRule(Place.of(trainingEnemy).getRule()); // entraînement libre
-        gameController.setBonusGameEnabled(run == null || run.hasBonusGame()); // pas de Jeu bonus dans le tutoriel
+        gameController.setBonusGameEnabled(run == null || run.hasBonusGame());
+        gameController.setAdmin(profile.isAdmin()); // ADMIN : Bingos d'un rouleau absent de la machine permis // pas de Jeu bonus dans le tutoriel
         // Cagnotte du Jeu bonus : celle du lieu (partagée par ses donjons) ou de l'Entraînement, gardées ;
         // celle de l'ascension dans la Tour, où un Bingo ouvre plus souvent le Jeu bonus.
         if (run instanceof DungeonRun dungeonRun) {
@@ -2300,9 +2304,13 @@ public class GameScreen extends ScreenAdapter {
         luckyGame.getProfile().addCoins(reward);
         buildEndButtons(won);
         if (won && tutorial == null) {
-            luckyGame.getProfile().defeat(gameController.getGameState().getEnemy().getKind());
+            EnemyKind defeated = gameController.getGameState().getEnemy().getKind();
+            luckyGame.getProfile().defeat(defeated);
             if (gameController.getGameState().getEnemy().isGolden()) { // sa version dorée, au bestiaire
-                luckyGame.getProfile().defeatGolden(gameController.getGameState().getEnemy().getKind());
+                luckyGame.getProfile().defeatGolden(defeated);
+            }
+            if (run instanceof DungeonRun dungeonRun && dungeonRun.getDungeon().getKing() == defeated) {
+                luckyGame.getProfile().winAgainstKing(defeated);
             }
             Player player = gameController.getGameState().getPlayer();
             boolean close    = player.getHp() > 0 && player.getHp() * 10L < player.getMaxHp();

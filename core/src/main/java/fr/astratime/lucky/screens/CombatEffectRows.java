@@ -505,6 +505,14 @@ final class CombatEffectRows {
         if (clock.getNextCuckoo() > 0) rows.add(new SidePanel.EffectRow(icon, null, Lang.f("Coucou ({0})", clock.getNextCuckoo()),
             Lang.t("Coucou"), Lang.n(clock.getNextCuckoo(), "Le coucou chante dans {0} tirage : son attaque sera multipliée.",
                 "Le coucou chante dans {0} tirages : son attaque sera multipliée.", clock.getNextCuckoo())));
+        fr.astratime.lucky.entities.WearCards wear = lasting.getWearCards();
+        if (wear.getCandlePlays() > 0) rows.add(new SidePanel.EffectRow(icon, null, Lang.f("Bougie +{0} %", wear.getNextCandle()),
+            Lang.t("Bougie"), Lang.f("Elle fond à chaque pose : à la prochaine, attaque +{0} %.", wear.getNextCandle())));
+        if (wear.getSeedTurns() > 0 && wear.getSeedBonus() > 0) rows.add(new SidePanel.EffectRow(icon, null,
+            Lang.f("Graine +{0} %", wear.getSeedBonus()), Lang.t("Graine"), wear.isSeedRipe()
+                ? Lang.f("Elle a fini de pousser : attaque +{0} % quand tu la joues.", wear.getSeedBonus())
+                : Lang.n(wear.getSeedTurns(), "Pas jouée depuis {0} tour : attaque +{1} % quand tu la joues.",
+                    "Pas jouée depuis {0} tours : attaque +{1} % quand tu la joues.", wear.getSeedTurns(), wear.getSeedBonus())));
         if (clock.getSceptre() > 1f) rows.add(new SidePanel.EffectRow(icon, null,
             Lang.f("Sceptre x{0}", fr.astratime.lucky.controllers.PreparationResolver.factor(clock.getSceptre())),
             Lang.t("Sceptre du roi"), Lang.f("Au prochain tirage : attaque x{0}.",

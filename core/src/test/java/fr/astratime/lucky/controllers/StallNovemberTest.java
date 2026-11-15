@@ -143,6 +143,26 @@ class StallNovemberTest {
         assertNotNull(controller.unplayableReason(bingo));
     }
 
+    @Test
+    void inAdminABingoOfAReelMissingFromTheMachineCanBeBoughtAndPlayed() {
+        GameController controller = new GameController(() -> new ArrayList<>(List.of(card("a"), card("b"))), id -> card(id, new BingoEffect(1, Symbol.CHERRY)), java.util.Map.of("bingo_cherry", 0));
+        controller.drawCards();
+        player(controller).addGains(1_000_000);
+        controller.removeReel(Symbol.CHERRY);
+        GameController.ShopOffer offer = controller.getShopOffers().get(0);
+        assertNotNull(controller.unavailableReason(offer), "hors ADMIN : pas de Bingo d'un rouleau absent");
+
+        controller.setAdmin(true);
+        assertNull(controller.unavailableReason(offer));
+        Card bingo = controller.buy(offer).card();
+        assertTrue(player(controller).getCurrentHand().contains(bingo));
+        assertNull(controller.unplayableReason(bingo));
+        assertFalse(controller.playCard(bingo).getPopups().isEmpty());
+        TurnResult turn = controller.spin();
+        for (Symbol symbol : turn.getSymbols()) assertEquals(Symbol.CHERRY, symbol, "le symbole s'invite le temps du tirage");
+        assertFalse(player(controller).getSlotMachine().getReels().contains(Symbol.CHERRY), "la machine ne change pas");
+    }
+
     // ----- Cartes -----
 
     @Test

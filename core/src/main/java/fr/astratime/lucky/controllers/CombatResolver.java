@@ -224,6 +224,13 @@ public class CombatResolver {
             events.add(new StatusEvent(Lang.f("LEVIER : PAIRE ! ATTAQUE +{0} %", RustyLeverEffect.ATTACK_PERCENT),
                 EffectPopup.Style.ATTACK));
         }
+        if (context.getJackpotRages() > 0 && hasPair(symbols)) { // Rage du jackpot : la Paire compte double
+            int factor = (int) Math.pow(context.getJackpotRageFactor(), context.getJackpotRages());
+            context.multiplyAttack(factor, "Rage du jackpot");
+            context.multiplyGains(factor, "Rage du jackpot");
+            events.add(new StatusEvent(Lang.f("RAGE DU JACKPOT : PAIRE ! ATTAQUE ET GAINS x{0}", factor),
+                EffectPopup.Style.ATTACK));
+        }
         if (context.getSunkenJackpots() > 0 && SlotMachine.jackpotSymbol(symbols) != null) {
             for (int i = 0; i < context.getSunkenJackpots(); i++) {
                 context.multiplyGains(SunkenJackpotEffect.GAINS_FACTOR, "Jackpot englouti");
@@ -429,16 +436,13 @@ public class CombatResolver {
      */
     private List<Event> forgedBlades(CombatContext context, List<SymbolOutcome> outcomes, List<Event> shots) {
         List<Event> strikes = new ArrayList<>();
+        long best = bestHit(outcomes, shots);
+        if (context.getEmberPercent() > 0 && best > 0) { // Braise : il brûlera de cette part du plus gros coup
+            long ember = Math.round(best * context.getEmberPercent() / 100.0);
+            context.getEnemy().getMaluses().ember(context.getEmberTurns(), ember);
+            strikes.add(new StatusEvent(Lang.f("BRAISE : IL BRÛLERA {0} TOURS", context.getEmberTurns()), EffectPopup.Style.ATTACK));
+        }
         if (context.getForgedBlades() <= 0) return strikes;
-        long best = 0;
-        for (SymbolOutcome outcome : outcomes) {
-            for (Event event : outcome.getEvents()) {
-                if (event instanceof EnemyDamagedEvent hit) best = Math.max(best, hit.rawDamage);
-            }
-        }
-        for (Event event : shots) {
-            if (event instanceof PistolShotEvent shot) best = Math.max(best, shot.rawDamage);
-        }
         Enemy enemy = context.getEnemy();
         long raw = Math.round(best * ForgedBladeEffect.PERCENT / 100.0); // le vrai coup, sans plafond
         long hit = enemy.capHit(raw);
@@ -448,6 +452,20 @@ public class CombatResolver {
             strikes.add(new CardStrikeEvent(Lang.t("LAME FORGÉE !"), damage, raw, enemy.getDefense()));
         }
         return strikes;
+    }
+
+    /** @return le plus gros coup du tour, sans plafond : celui d'un symbole ou d'un tir de pistolet. */
+    private static long bestHit(List<SymbolOutcome> outcomes, List<Event> shots) {
+        long best = 0;
+        for (SymbolOutcome outcome : outcomes) {
+            for (Event event : outcome.getEvents()) {
+                if (event instanceof EnemyDamagedEvent hit) best = Math.max(best, hit.rawDamage);
+            }
+        }
+        for (Event event : shots) {
+            if (event instanceof PistolShotEvent shot) best = Math.max(best, shot.rawDamage);
+        }
+        return best;
     }
 
     /** Dynamite : une part des PV max de l'ennemi, sans que sa peau d'or ni sa défense n'en arrêtent rien. */

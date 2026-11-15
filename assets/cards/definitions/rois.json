@@ -1,0 +1,301 @@
+[
+  {
+    "id": "roi_provocation",
+    "name": "Provocation",
+    "assetPath": "cards/special/roi_provocation.png",
+    "effects": [
+      {
+        "type": "TAUNT",
+        "attackPercent": 50,
+        "enemyPercent": 15
+      }
+    ]
+  },
+  {
+    "id": "roi_taux_usuraire",
+    "name": "Taux usuraire",
+    "assetPath": "cards/special/roi_taux_usuraire.png",
+    "effects": [
+      {
+        "type": "TURN_GAINS",
+        "percent": 25
+      },
+      {
+        "type": "LUCKY_CHARM",
+        "percent": 5
+      }
+    ]
+  },
+  {
+    "id": "roi_saignee",
+    "name": "Saignée",
+    "assetPath": "cards/special/roi_saignee.png",
+    "effects": [
+      {
+        "type": "HEART_DRAIN",
+        "percent": 15
+      },
+      {
+        "type": "TRANSFUSION",
+        "percent": 5
+      }
+    ]
+  },
+  {
+    "id": "roi_ronces",
+    "name": "Ronces",
+    "assetPath": "cards/special/roi_ronces.png",
+    "effects": [
+      {
+        "type": "THORNS",
+        "percent": 50
+      }
+    ]
+  },
+  {
+    "id": "roi_roulement_de_tambour",
+    "name": "Roulement de tambour",
+    "assetPath": "cards/special/roi_roulement_de_tambour.png",
+    "effects": [
+      {
+        "type": "DRUMROLL",
+        "factor": 2,
+        "missFactor": 0.5
+      }
+    ]
+  },
+  {
+    "id": "roi_tunnel_sans_fin",
+    "name": "Tunnel sans fin",
+    "assetPath": "cards/special/roi_tunnel_sans_fin.png",
+    "effects": [
+      {
+        "type": "RED_HERRING"
+      },
+      {
+        "type": "INTIMIDATION",
+        "percent": 20
+      }
+    ]
+  },
+  {
+    "id": "roi_roue_lestee",
+    "name": "Roue lestée",
+    "assetPath": "cards/special/roi_roue_lestee.png",
+    "effects": [
+      {
+        "type": "GUARANTEED_PAIR",
+        "percent": 100
+      }
+    ]
+  },
+  {
+    "id": "roi_carte_biseautee",
+    "name": "Carte biseautée",
+    "assetPath": "cards/special/roi_carte_biseautee.png",
+    "effects": [
+      {
+        "type": "CRIMP",
+        "percent": 50
+      }
+    ]
+  },
+  {
+    "id": "roi_dents_de_rat",
+    "name": "Dents de rat",
+    "assetPath": "cards/special/roi_dents_de_rat.png",
+    "effects": [
+      {
+        "type": "GNAW",
+        "cards": 3
+      }
+    ]
+  },
+  {
+    "id": "roi_tournee_du_patron",
+    "name": "Tournée du patron",
+    "assetPath": "cards/special/roi_tournee_du_patron.png",
+    "effects": [
+      {
+        "type": "FEWER_PLAYS",
+        "cards": 1,
+        "turns": 1,
+        "bonusPlays": 1,
+        "label": "Tournée du patron"
+      }
+    ]
+  },
+  {
+    "id": "roi_feu_du_phare",
+    "name": "Feu du phare",
+    "assetPath": "cards/special/roi_feu_du_phare.png",
+    "effects": [
+      {
+        "type": "LIGHTHOUSE",
+        "turns": 2
+      }
+    ]
+  },
+  {
+    "id": "roi_grappin",
+    "name": "Grappin",
+    "assetPath": "cards/special/roi_grappin.png",
+    "effects": [
+      {
+        "type": "GRAPPLE",
+        "attackPercent": 20
+      }
+    ]
+  },
+  {
+    "id": "roi_tamis_noir",
+    "name": "Tamis noir",
+    "assetPath": "cards/special/roi_tamis_noir.png",
+    "effects": [
+      {
+        "type": "BOOST_SYMBOL",
+        "symbol": "NUGGET",
+        "amount": 60
+      },
+      {
+        "type": "SIEVE",
+        "gainsPercent": 50
+      }
+    ]
+  },
+  {
+    "id": "roi_meche_de_diamant",
+    "name": "Mèche de diamant",
+    "assetPath": "cards/special/roi_meche_de_diamant.png",
+    "effects": [
+      {
+        "type": "DRILL",
+        "piercePercent": 50,
+        "attackPercent": 25
+      }
+    ]
+  },
+  {
+    "id": "roi_coup_d_enclume",
+    "name": "Coup d'enclume",
+    "assetPath": "cards/special/roi_coup_d_enclume.png",
+    "effects": [
+      {
+        "type": "ANVIL",
+        "strikes": 2
+      }
+    ]
+  },
+  {
+    "id": "roi_filon",
+    "name": "Filon",
+    "assetPath": "cards/special/roi_filon.png",
+    "effects": [
+      {
+        "type": "VEIN",
+        "percent": 10
+      }
+    ]
+  },
+  {
+    "id": "roi_refrain",
+    "name": "Refrain",
+    "assetPath": "cards/special/roi_refrain.png",
+    "effects": [
+      {
+        "type": "REFRAIN",
+        "times": 1
+      }
+    ]
+  },
+  {
+    "id": "roi_rage_du_jackpot",
+    "name": "Rage du jackpot",
+    "assetPath": "cards/special/roi_rage_du_jackpot.png",
+    "effects": [
+      {
+        "type": "JACKPOT_RAGE",
+        "pairPercent": 30,
+        "factor": 2
+      }
+    ]
+  },
+  {
+    "id": "roi_frenesie",
+    "name": "Frénésie",
+    "assetPath": "cards/special/roi_frenesie.png",
+    "effects": [
+      {
+        "type": "HEART_DRAIN",
+        "percent": 20
+      },
+      {
+        "type": "FRENZY",
+        "attackPercent": 30
+      }
+    ]
+  },
+  {
+    "id": "roi_encre",
+    "name": "Encre",
+    "assetPath": "cards/special/roi_encre.png",
+    "effects": [
+      {
+        "type": "INK",
+        "turns": 1
+      }
+    ]
+  },
+  {
+    "id": "roi_usure",
+    "name": "Usure",
+    "assetPath": "cards/special/roi_usure.png",
+    "effects": [
+      {
+        "type": "CLAIMS",
+        "count": 3
+      },
+      {
+        "type": "COMPOUND_INTEREST",
+        "turns": 3,
+        "percent": 20
+      }
+    ]
+  },
+  {
+    "id": "roi_momification",
+    "name": "Momification",
+    "assetPath": "cards/special/roi_momification.png",
+    "effects": [
+      {
+        "type": "FEWER_PLAYS",
+        "cards": 1,
+        "turns": 2,
+        "label": "Momification"
+      }
+    ]
+  },
+  {
+    "id": "roi_fata_morgana",
+    "name": "Fata Morgana",
+    "assetPath": "cards/special/roi_fata_morgana.png",
+    "effects": [
+      {
+        "type": "MIRAGE",
+        "factor": 2
+      }
+    ]
+  },
+  {
+    "id": "roi_braise",
+    "name": "Braise",
+    "assetPath": "cards/special/roi_braise.png",
+    "effects": [
+      {
+        "type": "EMBERS",
+        "turns": 3,
+        "percent": 50
+      }
+    ]
+  }
+]

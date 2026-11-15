@@ -6,6 +6,7 @@ import com.badlogic.gdx.utils.JsonValue;
 import fr.astratime.lucky.entities.Card;
 import fr.astratime.lucky.entities.Symbol;
 import fr.astratime.lucky.entities.effects.*;
+import fr.astratime.lucky.entities.enemy.EnemyKind;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -47,6 +48,7 @@ public class CardLoader {
         "cards/definitions/donjons.json",
         "cards/definitions/lieux.json",
         "cards/definitions/archetypes.json",
+        "cards/definitions/rois.json",
         "cards/definitions/test.json"
     };
 
@@ -186,6 +188,22 @@ public class CardLoader {
         return boutique;
     }
 
+    /** @return les cartes des rois de la Boutique, par id : le roi à vaincre {@code PlayerProfile.KING_CARD_WINS} fois pour l'acheter */
+    public static Map<String, EnemyKind> loadKingCards() {
+        return loadKingCards(GDX_READER);
+    }
+
+    /** Comme {@link #loadKingCards()}, en lisant les fichiers avec {@code reader} (ex : tests sans libGDX). */
+    public static Map<String, EnemyKind> loadKingCards(AssetReader reader) {
+        Map<String, EnemyKind> kings = new LinkedHashMap<>();
+        JsonValue root = new JsonReader().parse(reader.read(BOUTIQUE_FILE));
+        for (JsonValue entry = root.child; entry != null; entry = entry.next) {
+            String king = entry.getString("king", null);
+            if (king != null) kings.put(entry.getString("id"), EnemyKind.valueOf(king));
+        }
+        return kings;
+    }
+
     /**
      * @return une fabrique de cartes : pour un id, une nouvelle instance de la
      *         carte définie (ex : carte créée en cours de combat)
@@ -300,6 +318,7 @@ public class CardLoader {
         placeEffects(effects);
         placeChestEffects(effects);
         archetypeEffects(effects);
+        kingEffects(effects);
         return Collections.unmodifiableMap(effects);
     }
 
@@ -484,6 +503,34 @@ public class CardLoader {
         add(effects, "CUCKOO", (json, v) -> new CuckooEffect(json.getInt("turns"), v.f("factor")));
         add(effects, "MINUTE_HAND", (json, v) -> new MinuteHandEffect(v.i("turns"), json.getInt("springs"), json.getInt("percent")));
         add(effects, "TWELVE_STROKES", (json, v) -> new TwelveStrokesEffect(v.i("percent")));
+        // Cartes à usure : Bougie, Graine, Pile ou face
+        add(effects, "CANDLE", (json, v) -> new CandleEffect(v.i("percent"), json.getInt("wear")));
+        add(effects, "SEED", (json, v) -> new SeedEffect(v.i("percent"), v.i("growth"), v.i("max")));
+        add(effects, "COIN_FLIP", (json, v) -> new CoinFlipEffect(v.i("percent")));
+    }
+
+    /** Cartes des rois (C3) : la carte d'un roi d'Exploration, à la Boutique après {@code PlayerProfile.KING_CARD_WINS} victoires. */
+    private static void kingEffects(Map<String, EffectFactory> effects) {
+        add(effects, "TAUNT", (json, v) -> new TauntEffect(v.i("attackPercent"), json.getInt("enemyPercent")));
+        add(effects, "TURN_GAINS", (json, v) -> new TurnGainsEffect(v.i("percent")));
+        add(effects, "THORNS", (json, v) -> new ThornsEffect(v.i("percent")));
+        add(effects, "DRUMROLL", (json, v) -> new DrumrollEffect(v.i("factor"), json.getFloat("missFactor")));
+        add(effects, "GUARANTEED_PAIR", (json, v) -> new GuaranteedPairEffect(Math.min(100, v.i("percent"))));
+        add(effects, "CRIMP", (json, v) -> new CrimpEffect(v.i("percent")));
+        add(effects, "GNAW", (json, v) -> new GnawEffect(v.i("cards")));
+        add(effects, "FEWER_PLAYS", (json, v) -> new FewerPlaysEffect(v.i("cards"), json.getInt("turns"),
+            json.getInt("bonusPlays", 0), json.getString("label")));
+        add(effects, "LIGHTHOUSE", (json, v) -> new LighthouseEffect(v.i("turns")));
+        add(effects, "GRAPPLE", (json, v) -> new GrappleEffect(v.i("attackPercent")));
+        add(effects, "DRILL", (json, v) -> new DrillEffect(v.i("piercePercent"), v.i("attackPercent")));
+        add(effects, "ANVIL", (json, v) -> new AnvilEffect(v.i("strikes")));
+        add(effects, "VEIN", (json, v) -> new VeinEffect(v.i("percent")));
+        add(effects, "REFRAIN", (json, v) -> new RefrainEffect(v.i("times")));
+        add(effects, "JACKPOT_RAGE", (json, v) -> new JackpotRageEffect(v.i("pairPercent"), json.getInt("factor")));
+        add(effects, "FRENZY", (json, v) -> new FrenzyEffect(v.i("attackPercent")));
+        add(effects, "INK", (json, v) -> new InkEffect(v.i("turns")));
+        add(effects, "MIRAGE", (json, v) -> new MirageEffect(v.i("factor")));
+        add(effects, "EMBERS", (json, v) -> new EmbersEffect(json.getInt("turns"), v.i("percent")));
     }
 
     /** @return l'effet décrit par {@code json} ({@code v} : ses valeurs, améliorées pour une carte « + ») */

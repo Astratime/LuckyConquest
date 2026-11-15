@@ -109,7 +109,10 @@ public final class Lexicon {
                 number(Combo.CARRE.getFactor() + Combo.BRELAN.getFactor() + Combo.PAIRE.getFactor()))),
             term(Lang.t("Archétype"), Lang.t("Une famille de cartes spéciales. Pour la Couleur, elle compte comme une suite.")),
             term(Lang.t("Carte « + »"), Lang.t("La version améliorée d'une carte : valeurs +50 %. "
-                + "3 exemplaires se fusionnent à la Table du croupier."))));
+                + "3 exemplaires se fusionnent à la Table du croupier.")),
+            term(Lang.t("Carte à usure"), Lang.t("Une carte qui change pendant le combat. La Bougie fond un peu à chaque "
+                + "pose, la Graine pousse à chaque tour où tu ne la joues pas, la Pile ou face double son effet une fois "
+                + "sur deux et ne fait rien sinon. Tout repart à zéro au combat suivant."))));
     }
 
     private static Category suits() {
@@ -176,6 +179,8 @@ public final class Lexicon {
             term(Lang.t("Descente"), Lang.t("Un donjon de l'Exploration joué du premier combat jusqu'au roi.")),
             term(Lang.t("Coffre de donjon"), Lang.t("Chaque donjon a un coffre : des pièces et une carte, "
                 + "une fois le roi battu.")),
+            term(Lang.t("Carte de roi"), Lang.f("Bats un roi d'Exploration {0} fois : sa carte se vend à la boutique, "
+                + "dans une version pour toi.", PlayerProfile.KING_CARD_WINS)),
             term(Lang.t("Tour des épreuves"), Lang.t("Des chapitres qui s'ouvrent l'un après l'autre. Ils ne "
                 + "rapportent pas de pièces. Quitter un chapitre le fait recommencer.")),
             term(Lang.t("Entraînement libre"), Lang.t("Choisis un ennemi déjà vaincu pour tester ton deck. "

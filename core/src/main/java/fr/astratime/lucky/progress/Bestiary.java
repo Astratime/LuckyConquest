@@ -3,6 +3,7 @@ package fr.astratime.lucky.progress;
 import fr.astratime.lucky.entities.enemy.EnemyKind;
 import fr.astratime.lucky.entities.exploration.Dungeon;
 import fr.astratime.lucky.entities.exploration.Place;
+import fr.astratime.lucky.entities.exploration.Rival;
 import fr.astratime.lucky.entities.tower.Chapter;
 import fr.astratime.lucky.i18n.Lang;
 
@@ -130,6 +131,14 @@ public final class Bestiary {
             total++;
             if (endingSeen(profile, chapter)) seen++;
         }
+        for (Place place : Place.values()) {             // le Joueur Masqué : une scène par rencontre
+            EnemyKind rival = Rival.of(place);
+            if (rival == null) continue;
+            total++;
+            if (bossCutsceneSeen(profile, rival)) seen++;
+        }
+        total++;                                         // ses adieux, après le duel du Désert
+        if (deathSeen(profile, EnemyKind.RIVAL_DESERT)) seen++;
         total++;                                         // la fin de l'Exploration
         if (explorationEndingSeen(profile)) seen++;
         total++;

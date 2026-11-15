@@ -98,6 +98,8 @@ public class PlayerProfile {
     static final String KEY_DEFEATED      = "defeated";
     static final String KEY_GOLDEN        = "golden";
     static final String KEY_POTS          = "pots";
+    /** Victoires contre chaque roi d'Exploration : "ROI:nombre,ROI:nombre". */
+    static final String KEY_KING_WINS     = "kingWins";
     /** Cosmétiques achetés avec des pièces, par nom. */
     static final String KEY_COSMETICS     = "cosmetics";
     /** Cosmétiques choisis (un par sorte), par nom. */
@@ -167,6 +169,8 @@ public class PlayerProfile {
     /** Bestiaire : ennemis rencontrés, et parmi eux ceux qui ont été vaincus. */
     private final Set<EnemyKind> metEnemies      = EnumSet.noneOf(EnemyKind.class);
     private final Set<EnemyKind> defeatedEnemies = EnumSet.noneOf(EnemyKind.class);
+    /** Victoires en Exploration contre chaque roi : à {@link #KING_CARD_WINS}, sa carte se vend à la Boutique. */
+    private final Map<EnemyKind, Integer> kingWins = new EnumMap<>(EnemyKind.class);
     /** Bestiaire : les soldats d'Exploration vaincus dans leur version dorée. */
     private final Set<EnemyKind> goldenEnemies   = EnumSet.noneOf(EnemyKind.class);
     /** Cagnottes du Jeu bonus gardées d'une partie à l'autre : une par lieu de l'Exploration, et l'Entraînement. */
@@ -282,6 +286,34 @@ public class PlayerProfile {
             }
         }
         metEnemies.addAll(defeatedEnemies);
+        kingWins.putAll(decodeKingWins(storage.get(KEY_KING_WINS)));
+        // Les sauvegardes d'avant le compteur : un roi déjà vaincu compte pour une victoire.
+        for (Place place : Place.values()) {
+            for (Dungeon dungeon : place.getDungeons()) {
+                if (defeatedEnemies.contains(dungeon.getKing())) kingWins.putIfAbsent(dungeon.getKing(), 1);
+            }
+        }
+    }
+
+    /** @return {@code wins} écrit "ROI:nombre,ROI:nombre". */
+    static String encodeKingWins(Map<EnemyKind, Integer> wins) {
+        return wins.entrySet().stream().map(entry -> entry.getKey().name() + ":" + entry.getValue())
+            .collect(Collectors.joining(","));
+    }
+
+    /** @return les victoires lues dans {@code text} (voir {@link #encodeKingWins(Map)}) ; les entrées illisibles sont ignorées. */
+    static Map<EnemyKind, Integer> decodeKingWins(String text) {
+        Map<EnemyKind, Integer> wins = new EnumMap<>(EnemyKind.class);
+        if (text == null || text.isBlank()) return wins;
+        for (String entry : text.split(",")) {
+            int colon = entry.indexOf(':');
+            if (colon <= 0) continue;
+            try {
+                int count = Integer.parseInt(entry.substring(colon + 1).trim());
+                if (count > 0) wins.put(EnemyKind.valueOf(entry.substring(0, colon).trim()), count);
+            } catch (IllegalArgumentException ignored) { }
+        }
+        return wins;
     }
 
     private static void readEnemies(String text, Set<EnemyKind> enemies) {
@@ -314,6 +346,24 @@ public class PlayerProfile {
         saveBestiary();
     }
 
+    /** Victoires contre un roi pour que sa carte se vende à la Boutique (proposition C3, choix d'Astra). */
+    public static final int KING_CARD_WINS = 10;
+
+    /** @return les victoires en Exploration contre le roi {@code king} ({@link #KING_CARD_WINS} en mode ADMIN). */
+    public int getKingWins(EnemyKind king) {
+        return admin ? KING_CARD_WINS : kingWins.getOrDefault(king, 0);
+    }
+
+    /** @return {@code true} si la carte du roi {@code king} se vend à la Boutique. */
+    public boolean isKingCardOpen(EnemyKind king) { return getKingWins(king) >= KING_CARD_WINS; }
+
+    /** Le roi {@code king} est vaincu en Exploration : une victoire de plus, enregistrée tout de suite. Rien en mode ADMIN. */
+    public void winAgainstKing(EnemyKind king) {
+        if (admin) return;
+        kingWins.merge(king, 1, Integer::sum);
+        saveBestiary();
+    }
+
     /** @return {@code true} si le joueur a déjà vaincu la version dorée de {@code kind} (toutes en mode ADMIN). */
     public boolean hasDefeatedGolden(EnemyKind kind) { return admin || goldenEnemies.contains(kind); }
 
@@ -336,6 +386,7 @@ public class PlayerProfile {
     }
 
     private void saveBestiary() {
+        storage.put(KEY_KING_WINS, encodeKingWins(kingWins));
         storage.put(KEY_MET, metEnemies.stream().map(Enum::name).collect(Collectors.joining(",")));
         storage.put(KEY_DEFEATED,
             defeatedEnemies.stream().map(Enum::name).collect(Collectors.joining(",")));

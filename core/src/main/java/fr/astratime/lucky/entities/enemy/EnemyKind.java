@@ -608,6 +608,52 @@ public enum EnemyKind {
         List.of(Card.Suit.PIQUE, Card.Suit.CARREAU, Card.Suit.TREFLE, Card.Suit.COEUR),
         List.of(Card.Suit.COEUR, Card.Suit.CARREAU, Card.Suit.PIQUE, Card.Suit.TREFLE)),
 
+    // ----- Exploration : le Joueur Masqué, qui prend parfois la place du soldat (idée A2 du 2026-11-11) -----
+
+    RIVAL_FOIRE("Le Joueur Masqué", "JOUEUR MASQUÉ",
+        "Un joueur au masque doré. Lui aussi monte vers le Croupier. Il triche, et il aime ça.",
+        200_000, 40, 25,
+        weights(EnemySymbol.SWORD, 2, EnemySymbol.SHIELD, 1, EnemySymbol.POTION, 1, EnemySymbol.RIGGED_GAME, 1),
+        deck(new int[] {3, 6, 9, 12, 14}, new int[] {4, 8, 12},
+            new int[] {5, 9, 13}, new int[] {3, 7, 11}),
+        List.of(Card.Suit.PIQUE, Card.Suit.CARREAU, Card.Suit.TREFLE, Card.Suit.COEUR),
+        List.of(Card.Suit.COEUR, Card.Suit.CARREAU, Card.Suit.PIQUE, Card.Suit.TREFLE)),
+    RIVAL_PORT("Le Joueur Masqué", "JOUEUR MASQUÉ",
+        "Encore lui. Au port, il a appris à voler les cartes des autres.",
+        500_000, 120, 15,
+        weights(EnemySymbol.SWORD, 2, EnemySymbol.SHIELD, 1, EnemySymbol.POTION, 1, EnemySymbol.RIGGED_GAME, 1, EnemySymbol.BOARDING, 1),
+        deck(new int[] {3, 6, 9, 12, 13, 14}, new int[] {4, 8, 12},
+            new int[] {5, 9, 13}, new int[] {3, 7, 11}),
+        List.of(Card.Suit.PIQUE, Card.Suit.CARREAU, Card.Suit.TREFLE, Card.Suit.COEUR),
+        List.of(Card.Suit.COEUR, Card.Suit.CARREAU, Card.Suit.PIQUE, Card.Suit.TREFLE)),
+    RIVAL_MINES("Le Joueur Masqué", "JOUEUR MASQUÉ",
+        "Il est passé avant toi dans la mine. Ses coups percent ton bouclier.",
+        1_250_000, 150, 6,
+        weights(EnemySymbol.SWORD, 2, EnemySymbol.SHIELD, 1, EnemySymbol.POTION, 1, EnemySymbol.RIGGED_GAME, 1, EnemySymbol.BOARDING, 1,
+            EnemySymbol.DRILL, 1),
+        deck(new int[] {3, 6, 9, 12, 13, 14}, new int[] {4, 8, 12, 14},
+            new int[] {5, 9, 13}, new int[] {3, 7, 11}),
+        List.of(Card.Suit.PIQUE, Card.Suit.CARREAU, Card.Suit.TREFLE, Card.Suit.COEUR),
+        List.of(Card.Suit.COEUR, Card.Suit.CARREAU, Card.Suit.PIQUE, Card.Suit.TREFLE)),
+    RIVAL_CASINO("Le Joueur Masqué", "JOUEUR MASQUÉ",
+        "Sous l'eau, il a gagné contre les requins. Maintenant, il mord tes gains.",
+        3_000_000, 150, 3,
+        weights(EnemySymbol.SWORD, 2, EnemySymbol.SHIELD, 1, EnemySymbol.POTION, 1, EnemySymbol.RIGGED_GAME, 1, EnemySymbol.BOARDING, 1,
+            EnemySymbol.DRILL, 1, EnemySymbol.BANK_BITE, 1),
+        deck(new int[] {3, 6, 9, 12, 13, 14}, new int[] {4, 8, 12, 14},
+            new int[] {5, 9, 13, 14}, new int[] {3, 7, 11}),
+        List.of(Card.Suit.PIQUE, Card.Suit.CARREAU, Card.Suit.TREFLE, Card.Suit.COEUR),
+        List.of(Card.Suit.COEUR, Card.Suit.CARREAU, Card.Suit.PIQUE, Card.Suit.TREFLE)),
+    RIVAL_DESERT("Le Joueur Démasqué", "JOUEUR DÉMASQUÉ",
+        "Il a ôté son masque. Le Croupier vous a tout appris, à lui comme à toi. Il ne restera qu'un seul élève.",
+        6_000_000, 40, 25,
+        weights(EnemySymbol.SWORD, 2, EnemySymbol.SHIELD, 1, EnemySymbol.POTION, 1, EnemySymbol.RIGGED_GAME, 1, EnemySymbol.BOARDING, 1,
+            EnemySymbol.DRILL, 1, EnemySymbol.BANK_BITE, 1, EnemySymbol.BILL, 1),
+        deck(new int[] {3, 6, 9, 12, 13, 14}, new int[] {4, 8, 12, 14},
+            new int[] {5, 9, 13, 14}, new int[] {3, 7, 11, 14}),
+        List.of(Card.Suit.PIQUE, Card.Suit.CARREAU, Card.Suit.TREFLE, Card.Suit.COEUR),
+        List.of(Card.Suit.COEUR, Card.Suit.CARREAU, Card.Suit.PIQUE, Card.Suit.TREFLE)),
+
     // ----- Chapitre 4 : Le Monde sans Maître -----
     PILLEUR("Le Pilleur", "PILLEUR",
         "Il a pillé la boutique. Chaque carte que tu achètes, il en garde une copie : un As de plus dans son deck.",
@@ -1021,6 +1067,8 @@ public enum EnemyKind {
             case REQUIN, REQUIN_BANQUIER -> VAULTS_DAMAGE;
             case SCORPION, DJINN -> OASIS_DAMAGE;
             case GRAND_CROUPIER -> TOWER_LATE_DAMAGE;
+            case RIVAL_FOIRE, RIVAL_PORT, RIVAL_MINES, RIVAL_CASINO, RIVAL_DESERT ->
+                Place.of(this).getDamagePercent() * RIVAL_DAMAGE[Place.of(this).ordinal() - 1] / 100;
             default -> {
                 if (chapterPower() >= CHAPTER_3_POWER) yield TOWER_LATE_DAMAGE;
                 Place place = Place.of(this);
@@ -1054,6 +1102,13 @@ public enum EnemyKind {
      * x2,5 avec le Casino le 2026-10-30.
      */
     static final int BAR_DAMAGE = 85;
+
+    /**
+     * Le Joueur Masqué (simulateur, joueur malin, un combat à PV pleins, 2026-11-14) : sa part qui porte, en % de celle
+     * de son lieu, de la Foire au Désert, pour qu'il soit au moins aussi dur que la moyenne des rois du lieu
+     * (il n'a pas leur phase 2, qui frappe 25 % plus fort) ; le duel final du Désert, plus dur encore.
+     */
+    static final int[] RIVAL_DAMAGE = {185, 125, 130, 110, 150};
 
     /** Dégâts des ennemis des donjons de la prairie, en % (voir {@link #damagePercent()}). */
     static final int PIQUE_DAMAGE = 48, TREFLE_DAMAGE = 165, COEUR_DAMAGE = 210, CARREAU_DAMAGE = 165;
@@ -1113,6 +1168,14 @@ public enum EnemyKind {
     }
     /** Cartes propres jouées au plus à chaque tour par un ennemi du chapitre 6. */
     static final int CHAPTER_6_OWN_PLAYS = 3;
+    /** @return {@code true} pour le Joueur Masqué, à l'une de ses cinq rencontres (voir {@link fr.astratime.lucky.entities.exploration.Rival}). */
+    public boolean isRival() {
+        return switch (this) {
+            case RIVAL_FOIRE, RIVAL_PORT, RIVAL_MINES, RIVAL_CASINO, RIVAL_DESERT -> true;
+            default -> false;
+        };
+    }
+
     /** @return {@code true} pour le boss d'un chapitre ou le roi d'un donjon. */
     public boolean isBoss() {
         return switch (this) {
@@ -1496,6 +1559,14 @@ public enum EnemyKind {
             case DJINN -> List.of(EnemySignature.FATA_MORGANA, EnemySignature.MIROIR_DEFORMANT);
             case SALAMANDRE -> List.of(EnemySignature.COULEE_DE_LAVE);
             case DRAGON -> List.of(EnemySignature.BRAISE, EnemySignature.TREMPE);
+            // Le Joueur Masqué : à chaque rencontre, il garde une carte du lieu traversé.
+            case RIVAL_FOIRE -> List.of(EnemySignature.CARTE_BISEAUTEE);
+            case RIVAL_PORT -> List.of(EnemySignature.CARTE_BISEAUTEE, EnemySignature.GRAPPIN);
+            case RIVAL_MINES -> List.of(EnemySignature.CARTE_BISEAUTEE, EnemySignature.GRAPPIN, EnemySignature.MECHE_DE_DIAMANT);
+            case RIVAL_CASINO -> List.of(EnemySignature.CARTE_BISEAUTEE, EnemySignature.GRAPPIN, EnemySignature.MECHE_DE_DIAMANT,
+                EnemySignature.FRENESIE);
+            case RIVAL_DESERT -> List.of(EnemySignature.CARTE_BISEAUTEE, EnemySignature.GRAPPIN, EnemySignature.MECHE_DE_DIAMANT,
+                EnemySignature.FRENESIE, EnemySignature.USURE);
             default -> List.of();
         };
     }

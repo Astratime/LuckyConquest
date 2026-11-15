@@ -111,10 +111,14 @@ public class LastingEffects {
     private int temperPercent = 0;
     /** Cocktail des abysses : cartes jouables en plus, ce tour seulement. */
     private int bonusPlays = 0;
+    /** Filon (carte du Coeur de la montagne) : soin à la fin du prochain tour de l'ennemi, en % des PV max. */
+    private int pendingHealPercent = 0;
     /** Rouleaux qui ont une mémoire : Tirelire, Ancre, Roi démon, Apôtre de la Chance. */
     private final ReelGauges reelGauges = new ReelGauges();
     /** Archétypes du Valet à l'As : Sceptre du roi, cartes du tour d'avant, Ressorts et Coucous. */
     private final CourtAndClock courtAndClock = new CourtAndClock();
+    /** Cartes à usure (Bougie, Graine) : ce qu'elles retiennent pendant le combat. */
+    private final WearCards wearCards = new WearCards();
 
     // ----- Archétypes de deck -----
     /** Symboles arrêtés sur les rouleaux au dernier tirage, Jokers compris ({@code null} : aucun tirage encore). */
@@ -586,11 +590,21 @@ public class LastingEffects {
     /** @return les cartes jouables en plus ce tour (Cocktail des abysses). */
     public int getBonusPlays() { return bonusPlays; }
 
+    /** Filon : soigne {@code percent} % des PV max à la fin du prochain tour de l'ennemi. */
+    public void addPendingHeal(int percent) { pendingHealPercent += Math.max(0, percent); }
+    /** @return le soin du Filon en attente, en % des PV max. */
+    public int getPendingHeal() { return pendingHealPercent; }
+    /** Fin du tour de l'ennemi : le soin du Filon vaut pour celui-ci. @return son % des PV max */
+    public int takePendingHeal() { int n = pendingHealPercent; pendingHealPercent = 0; return n; }
+
     /** @return ce que retiennent la Tirelire, l'Ancre, le Roi démon et l'Apôtre de la Chance. */
     public ReelGauges getReelGauges() { return reelGauges; }
 
     /** @return ce que retiennent les archétypes Cour royale, Revenant et Horloger. */
     public CourtAndClock getCourtAndClock() { return courtAndClock; }
+
+    /** @return l'état des cartes à usure (Bougie, Graine) pendant ce combat */
+    public WearCards getWearCards() { return wearCards; }
 
     /** Retient les symboles arrêtés sur les rouleaux à ce tirage (Rouleau retenu, Mémoire de la machine). */
     public void setLastDrawn(Symbol[] drawn) { lastDrawn = drawn == null ? null : drawn.clone(); }
@@ -803,6 +817,6 @@ public class LastingEffects {
             && nextDraws == 0 && hatTurns == 0 && jokerBox == 0 && hoardTurns == 0 && annuityTurns == 0 && martingale == 0
             && juggles == 0 && scares == 0 && tunnels == 0 && turnstiles == 0 && riggedPrizes == 0 && riggedGame == 0
             && tolls == 0 && bills == 0 && venoms.isEmpty() && reelGauges.isEmpty()
-            && courtAndClock.isEmpty();
+            && courtAndClock.isEmpty() && wearCards.isEmpty();
     }
 }
