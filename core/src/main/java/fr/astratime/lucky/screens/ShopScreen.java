@@ -334,8 +334,8 @@ public class ShopScreen extends CasinoMenuScreen {
      */
     private Table prestigeRow() {
         int level = profile.getPrestige() + 1;
-        String bonus = Lang.f("PV, attaque, défense et gains des rouleaux : +{0} % pour toujours (rang compris).",
-            level * RankBonus.PRESTIGE_PERCENT);
+        String bonus = Lang.f("PV, attaque et défense {0}, gains +{1} %, pour toujours (rang compris).",
+            PlayerProfile.prestigeFactorText(level), level * RankBonus.PRESTIGE_PERCENT);
         Table row = new Table();
         row.setTouchable(Touchable.enabled);
         row.setBackground(hud.insetDrawable());

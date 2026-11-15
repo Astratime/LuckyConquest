@@ -525,8 +525,9 @@ public class CroupierTableScreen extends CasinoMenuScreen {
             entry.getValue().setColor(rank == chosenRank ? Color.WHITE : owned ? OWNED_RANK : OTHER_SLOT);
         }
         rankName.setText(rankTitle(chosenRank));
-        String prestige = profile.getPrestige() == 0 ? "" : "\n\n" + Lang.f("Prestige {0} : PV, attaque, défense et gains des rouleaux +{1} % (rang compris).",
-            PlayerProfile.prestigeNumeral(profile.getPrestige()), profile.getPrestige() * RankBonus.PRESTIGE_PERCENT);
+        String prestige = profile.getPrestige() == 0 ? "" : "\n\n" + Lang.f("Prestige {0} : PV, attaque et défense {1}, gains +{2} % (rang compris).",
+            PlayerProfile.prestigeNumeral(profile.getPrestige()), PlayerProfile.prestigeFactorText(profile.getPrestige()),
+            profile.getPrestige() * RankBonus.PRESTIGE_PERCENT);
         rankText.setText(rankBody(chosenRank) + prestige);
     }
 

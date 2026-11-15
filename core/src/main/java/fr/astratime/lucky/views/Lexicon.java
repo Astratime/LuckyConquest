@@ -170,8 +170,9 @@ public final class Lexicon {
             term(Lang.t("Rang"), Lang.t("Acheté à la boutique. Plus de PV max et des symboles plus forts. "
                 + "Tu choisis ton rang à la Table du croupier.")),
             term(Lang.t("Prestige"), Lang.f("Une fois tous les rangs achetés, la boutique te propose de les rendre. "
-                + "Chaque niveau donne +{0} % de PV max, d'attaque, de défense et de gains des symboles, rang compris, "
-                + "jusqu'au Prestige {1}. Tu gardes tout le reste.", RankBonus.PRESTIGE_PERCENT,
+                + "Chaque niveau multiplie par {0} tes PV max, l'attaque et la défense de tes symboles, et ajoute "
+                + "+{1} % à leurs gains, rang compris, jusqu'au Prestige {2}. Tu gardes tout le reste.",
+                Lang.decimal(String.valueOf(RankBonus.PRESTIGE_GUARD_FACTOR)), RankBonus.PRESTIGE_PERCENT,
                 PlayerProfile.prestigeNumeral(PlayerProfile.MAX_PRESTIGE))),
             term(Lang.t("Descente"), Lang.t("Un donjon de l'Exploration joué du premier combat jusqu'au roi.")),
             term(Lang.t("Coffre de donjon"), Lang.t("Chaque donjon a un coffre : des pièces et une carte, "

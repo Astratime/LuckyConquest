@@ -379,7 +379,8 @@ public class TurnEngine {
                 EnemyTurnResolver.Reflection reflection = new EnemyTurnResolver.Reflection(
                     combat.getTotalReflectPercent(), CombatResolver.VAULT_REFLECT_SHARE,
                     shieldReflect, combat.getReflectAttackPercent(), combat.getReflectHpPercent(),
-                    (long) player.getRankBonus().withPrestigeBonus(player.getRankBonus().attack() * combat.getRankFactor()),
+                    (long) player.getRankBonus().attack() * combat.getRankFactor()
+                        + player.getRankBonus().guardBonus(player.getRankBonus().attack() * combat.getRankFactor()),
                     (double) combat.getAttackFactor() * combat.getSymbolPower());
                 enemyTurn = enemyTurnResolver.resolve(enemy, player, reflection, thorns);
             }

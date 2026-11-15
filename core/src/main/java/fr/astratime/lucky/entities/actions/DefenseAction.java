@@ -33,7 +33,7 @@ public non-sealed class DefenseAction extends Action {
         Player player = context.getPlayer();
 
         int rank   = player.getRankBonus().defense() * context.getRankFactor();
-        int prestige = player.getRankBonus().prestigeBonus(baseShield + rank);
+        int prestige = player.getRankBonus().guardBonus(baseShield + rank);
         int base   = baseShield + rank + prestige;
         int shield = Math.round((base + context.getDefenseBonus()) * context.getSymbolPower()
             * context.getDefenseFactor());

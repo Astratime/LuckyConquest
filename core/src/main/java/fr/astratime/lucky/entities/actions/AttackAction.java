@@ -74,7 +74,7 @@ public non-sealed class AttackAction extends Action {
 
         int symbol = rollBaseDamage(context);
         int rank   = context.getPlayer().getRankBonus().attack() * context.getRankFactor();
-        int prestige = context.getPlayer().getRankBonus().prestigeBonus(symbol + rank);
+        int prestige = context.getPlayer().getRankBonus().guardBonus(symbol + rank);
         int base   = symbol + rank + prestige;
         // En long et en double : un gros combo dépasse le milliard de dégâts.
         long unscaled = base + context.getAttackBonus(); // avant les multiplicateurs : ce que vise le pistolet

@@ -69,12 +69,15 @@ class PrestigeTest {
     }
 
     @Test
-    void eachLevelAddsTenPercentToHpAndReelValuesRankIncluded() {
+    void eachLevelAddsTenPercentToAttackAndGainsAndMultipliesHpAndDefense() {
         RankBonus bonus = Rank.AVARE.getBonus().withPrestige(3);
         assertEquals(30, bonus.prestigeBonus(100));
         assertEquals(130, bonus.withPrestigeBonus(100));
         Player player = new Player("Joueur", Player.BASE_HP, List.of(), bonus, Symbol.classicReels());
-        assertEquals(Math.round((Player.BASE_HP + Rank.AVARE.getBonus().hp()) * 1.3), player.getMaxHp());
+        assertEquals(Math.round((Player.BASE_HP + Rank.AVARE.getBonus().hp()) * Math.pow(1.4, 3)), player.getMaxHp());
+        assertEquals(174, bonus.guardBonus(100), "x1,4 par niveau : 100 -> 274");
+        assertEquals(Math.round(7_100 * Math.pow(1.4, 10)), new Player("Joueur", Player.BASE_HP, List.of(),
+            Rank.LEGENDE.getBonus().withPrestige(10), Symbol.classicReels()).getMaxHp());
         assertEquals(player.getMaxHp(), player.nextCombat().getMaxHp(), "les PV max ne grossissent pas d'un combat à l'autre");
         assertEquals(0, RankBonus.NONE.prestigeBonus(1000));
     }

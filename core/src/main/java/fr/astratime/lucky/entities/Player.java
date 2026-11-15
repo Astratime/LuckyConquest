@@ -98,7 +98,7 @@ public class Player {
         this.name        = name;
         this.rankBonus   = rankBonus;
         this.baseMaxHp   = maxHp;
-        this.maxHp       = rankBonus.withPrestigeBonus(maxHp + rankBonus.hp()); // le Prestige compte le rang
+        this.maxHp       = maxHp + rankBonus.hp() + rankBonus.guardBonus(maxHp + rankBonus.hp()); // le Prestige compte le rang
         this.hp          = this.maxHp;
         this.deck        = new Deck(cards, discardPile);
         this.slotMachine = new SlotMachine(reels);

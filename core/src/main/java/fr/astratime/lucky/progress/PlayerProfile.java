@@ -1122,6 +1122,13 @@ public class PlayerProfile {
         return true;
     }
 
+    /** @return le multiplicateur des PV, de l'attaque et de la défense au Prestige {@code level}, écrit « x1,96 ». */
+    public static String prestigeFactorText(int level) {
+        String text = String.format(java.util.Locale.ROOT, "%.2f", RankBonus.NONE.withPrestige(level).guardFactor());
+        text = text.replaceAll("0+$", "").replaceAll("\\.$", "");
+        return "x" + Lang.decimal(text);
+    }
+
     /** @return le niveau de Prestige en chiffres romains (I, II… X), ou "" sans Prestige. */
     public static String prestigeNumeral(int level) {
         String[] numerals = {"", "I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X"};
