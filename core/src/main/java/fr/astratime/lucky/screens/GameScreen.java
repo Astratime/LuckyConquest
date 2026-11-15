@@ -2158,7 +2158,10 @@ public class GameScreen extends ScreenAdapter {
         if (earned > 0) {
             String coinsText = victory ? Lang.f("PIÈCES +{0}", PlayerProfile.formatCoins(earned))
                 : Lang.f("PIÈCES +{0} (PART DES GAINS GARDÉE)", PlayerProfile.formatCoins(earned));
+            int percent = luckyGame.getProfile().coinsPercent(Place.of(((DungeonRun) run).getDungeon()), run.isHard());
+            if (percent < 100) coinsText += "\n" + Lang.f("TON RANG EST AU-DESSUS DE CE LIEU : {0} % DES PIÈCES", percent);
             Label coinsLabel = new Label(coinsText, new Label.LabelStyle(shopFont, Palette.GOLD));
+            coinsLabel.setAlignment(Align.center);
             endButtons.add(coinsLabel).colspan(shown.size()).padBottom(14f).row();
         }
         String ending = run != null && victory && run.isBossStage() ? run.getEnding() : null;
@@ -2234,10 +2237,12 @@ public class GameScreen extends ScreenAdapter {
     /** @return les pièces gagnées à la fin de ce combat (voir {@link PlayerProfile#combatReward}). */
     private long combatReward(boolean victory) {
         if (!isDungeon()) return 0; // seule l'Exploration rapporte des pièces (ni Entraînement, ni Tour)
-        return PlayerProfile.combatReward(victory, run.isBossStage(),
-            gameController.getGameState().getPlayer().getGains(),
-            Place.of(((DungeonRun) run).getDungeon()), run.isHard(),
+        Place place = Place.of(((DungeonRun) run).getDungeon());
+        long reward = PlayerProfile.combatReward(victory, run.isBossStage(),
+            gameController.getGameState().getPlayer().getGains(), place, run.isHard(),
             PlayerProfile.dungeonProgress(run.isBossStage(), gameController.getGameState().getEnemy().getHpRatio()));
+        // Un lieu en dessous de celui du rang joué rapporte moins (Astra, 2026-11-15).
+        return PlayerProfile.share(reward, luckyGame.getProfile().coinsPercent(place, run.isHard()));
     }
 
     /** Règle la difficulté du combat qui vient : celle de la Tour ou de l'étage du mode sans fin (normale sans épreuve). */

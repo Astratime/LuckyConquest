@@ -3031,5 +3031,10 @@
   "Ouverte une fois le Désert vidé. La prairie y est aussi dure que le Désert, puis chaque lieu deux fois plus que le précédent. Plus de pièces, sa propre progression.": "Opens once the Desert is cleared. The meadow there is as hard as the Desert, then each place twice as hard as the one before. More coins, its own progression.",
   "Mode difficile : un tirage coûte {0}, tous les gains suivent.": "Hard mode: a spin costs {0}, all gains follow.",
   "Lieu fermé. Termine d'abord {0} en mode difficile.": "Place closed. Clear {0} in hard mode first.",
-  "Difficulté : le Désert x{0}.": "Difficulty: the Desert x{0}."
+  "Difficulté : le Désert x{0}.": "Difficulty: the Desert x{0}.",
+  "TON RANG EST AU-DESSUS DE CE LIEU : {0} % DES PIÈCES": "YOUR RANK IS ABOVE THIS PLACE: {0}% OF THE COINS",
+  "Ton rang est au-dessus de ce lieu : tu n'y gagnes que {0} % des pièces.": "Your rank is above this place: you only earn {0}% of the coins here.",
+  "Lieu en dessous de celui de ton rang : {0} % des pièces (un lieu en dessous), {1} % (deux ou plus).": "Place below your rank's place: {0}% of the coins (one place below), {1}% (two or more).",
+  "Lieu de ton rang": "Your rank's place",
+  "Chaque rang a son lieu d'Exploration : la Prairie sans rang, puis un lieu pour deux rangs (Avare et Parieur à la Foire … Roi du casino et Légende au Désert). Un lieu en dessous ne rapporte que {0} % des pièces, deux lieux ou plus en dessous {1} %.": "Each rank has its own Exploration place: the Meadow with no rank, then one place for every two ranks (Miser and Bettor at the Funfair … King of the Casino and Jackpot Legend in the Desert). One place below pays only {0}% of the coins, two or more places below {1}%."
 }

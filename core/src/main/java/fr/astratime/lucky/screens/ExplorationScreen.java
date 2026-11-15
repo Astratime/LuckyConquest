@@ -388,8 +388,12 @@ public class ExplorationScreen extends CasinoMenuScreen {
             Lang.big(dungeon.getSoldier().getMaxHp(Difficulty.of(hard)))));
         text.append('\n').append(Lang.f("Combat 2 : {0} ({1} PV)", dungeon.getKing().getDisplayName(),
             Lang.big(dungeon.getKing().getMaxHp(Difficulty.of(hard)))));
+        int percent = profile.coinsPercent(place, hard);
         text.append("\n\n").append(Lang.f("Coffre : {0} pièces + 1 carte",
-            PlayerProfile.formatCoins(place.getChestCoins(hard))));
+            PlayerProfile.formatCoins(PlayerProfile.share(place.getChestCoins(hard), percent))));
+        if (percent < 100) { // un lieu en dessous de celui du rang joué rapporte moins (Astra, 2026-11-15)
+            text.append('\n').append(Lang.f("Ton rang est au-dessus de ce lieu : tu n'y gagnes que {0} % des pièces.", percent));
+        }
         for (Dungeon.Loot loot : dungeon.getLoot()) {
             text.append('\n').append(Lang.f("{0} {1} %", cardNames.get(loot.cardId()), loot.percent()));
         }
