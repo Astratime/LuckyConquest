@@ -210,6 +210,11 @@ public class FrontScene extends Actor implements Disposable {
         setBounds(enemyX, enemyY, width, height); // survol : son infobulle
     }
 
+    /** @return le point (Stage) d'où part la bulle de dialogue du grand ennemi, comme en vue classique. */
+    public Vector2 getMouth() {
+        return new Vector2(enemyX + getWidth() * EnemyView.MOUTH_X, enemyY + getHeight() * EnemyView.MOUTH_Y);
+    }
+
     /** @return le portrait de l'ennemi, qui donne sa taille. */
     private Texture shownTexture() {
         return enemyTextures.portrait(enemy.get().getKind());
@@ -232,6 +237,14 @@ public class FrontScene extends Actor implements Disposable {
         float time = enemyView.getAnimationTime();
         Texture texture = enemyTextures.portrait(kind, time), silhouette = enemyTextures.portraitFlash(kind, time);
         float width = texture.getWidth() * pixel, height = texture.getHeight() * pixel;
+        Texture outline = enemyView.isGoldenShown() ? enemyTextures.goldenOutline(kind) : null;
+        if (outline != null) { // l'ennemi doré : son contour lumineux, derrière lui
+            Color gold = enemyView.getAuraColor();
+            float border = EnemyTextures.GOLD_OUTLINE * pixel;
+            batch.setColor(gold.r, gold.g, gold.b, gold.a * alpha);
+            batch.draw(outline, x - border, y - border, originX + border, border, width + 2f * border, height + 2f * border,
+                1f, 1f, rotation, 0, 0, outline.getWidth(), outline.getHeight(), false, false);
+        }
         batch.setColor(1f, 1f, 1f, alpha);
         batch.draw(texture, x, y, originX, 0f, width, height, 1f, 1f, rotation,
             0, 0, texture.getWidth(), texture.getHeight(), false, false);

@@ -40,6 +40,7 @@ import fr.astratime.lucky.entities.enemy.EnemyKind;
 import fr.astratime.lucky.entities.events.LastDrawEvent;
 import fr.astratime.lucky.entities.exploration.Dungeon;
 import fr.astratime.lucky.entities.exploration.Place;
+import fr.astratime.lucky.entities.exploration.Rival;
 import fr.astratime.lucky.entities.tower.Chapter;
 import fr.astratime.lucky.i18n.Lang;
 import fr.astratime.lucky.progress.Bestiary;
@@ -252,6 +253,24 @@ public class CinematicScreen extends CasinoMenuScreen {
             }
             addGroup(place.getShortName(), place.getName(), kings);
         }
+
+        List<Entry> rival = new ArrayList<>(); // le Joueur Masqué : une scène par rencontre, puis ses adieux
+        for (Place place : Place.values()) {
+            EnemyKind kind = Rival.of(place);
+            if (kind == null || !Bestiary.bossCutsceneSeen(profile, kind)) continue;
+            rival.add(new Entry(Rival.isFinal(kind) ? Lang.t("Le masque tombe") : Lang.f("Rencontre {0} : {1}",
+                    Rival.encounter(kind), place.getShortName()),
+                Rival.isFinal(kind)
+                    ? Lang.t("Le duel final, au Désert de Braise : il enlève son masque. Lui aussi est un élève du Croupier.")
+                    : Lang.f("{0} : il prend la place du soldat. Sa machine a appris un nouveau symbole.", place.getName()),
+                enemyTextures.portrait(kind), kit -> Cutscenes.beforeBoss(kit, kind)));
+        }
+        if (Bestiary.deathSeen(profile, EnemyKind.RIVAL_DESERT)) {
+            rival.add(new Entry(Lang.t("Le masque est à toi"),
+                Lang.t("Battu, il pose son masque sur le tapis, te le laisse et s'efface dans le sable."),
+                enemyTextures.portrait(EnemyKind.RIVAL_DESERT), Cutscenes::rivalFarewell));
+        }
+        if (!rival.isEmpty()) addGroup(Lang.t("Joueur Masqué"), Lang.t("Le Joueur Masqué"), rival);
 
         EnemyKind croupier = EnemyKind.GRAND_CROUPIER; // le boss secret : rien n'apparaît avant de l'avoir affronté
         if (Bestiary.bossCutsceneSeen(profile, croupier)) {

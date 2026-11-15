@@ -89,7 +89,8 @@ class BestiaryTest {
             for (var dungeon : place.getDungeons()) bosses += dungeon.getKing().phaseCount() + 1;
         }
         bosses -= 2; // la Machine Originelle et l'Éclat Originel n'ont pas de cinématique de mort : leurs fins existent déjà
-        assertEquals(bosses + 2 + Bestiary.ENDINGS.size() + 1 + 1, none[1]); // + la fin de l'Exploration
+        int rival = Place.values().length - 1 + 1; // le Joueur Masqué : une scène par lieu après la prairie, et ses adieux
+        assertEquals(bosses + 2 + Bestiary.ENDINGS.size() + 1 + 1 + rival, none[1]); // + la fin de l'Exploration
 
         profile.meet(Chapter.GENESE.getBoss());
         assertTrue(Bestiary.bossCutsceneSeen(profile, Chapter.GENESE.getBoss()));

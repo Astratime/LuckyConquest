@@ -161,15 +161,6 @@ public class CombatHud implements Disposable {
         playerHealthBar.setPosition(barX, HEALTH_BAR_BOTTOM_MARGIN);
     }
 
-    /**
-     * @param gap distance horizontale à droite de la barre de vie du joueur
-     * @return un point (Stage) à droite de la barre de vie du joueur, à mi-hauteur :
-     *         là où s'affichent les textes de la riposte ennemie
-     */
-    public Vector2 besidePlayerHealthBar(float gap) {
-        return new Vector2(playerHealthBar.getRight() + gap, playerHealthBar.getY() + HealthBarView.HEIGHT / 2f);
-    }
-
     @Override
     public void dispose() {
         Fonts.release(font);

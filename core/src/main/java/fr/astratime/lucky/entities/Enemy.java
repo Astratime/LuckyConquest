@@ -4,6 +4,7 @@ import fr.astratime.lucky.entities.enemy.EnemyCards;
 import fr.astratime.lucky.entities.enemy.Difficulty;
 import fr.astratime.lucky.entities.enemy.EnemyKind;
 import fr.astratime.lucky.entities.enemy.EnemySignature;
+import fr.astratime.lucky.entities.enemy.EnemySlotMachine;
 import fr.astratime.lucky.entities.enemy.EnemySymbol;
 import fr.astratime.lucky.entities.enemy.EnemyTrait;
 import fr.astratime.lucky.i18n.Lang;
@@ -37,7 +38,7 @@ public class Enemy {
     /** Malus posés par les cartes du joueur (voir {@link EnemyMaluses}). */
     private final EnemyMaluses maluses;
     private final String      name;
-    private final long        maxHp;
+    private       long        maxHp;
     private       long        hp;
     private final DiscardPile discardPile = new DiscardPile();
     private final Deck        deck;
@@ -103,6 +104,8 @@ public class Enemy {
     private       int         actFactor;
     /** Sarcophage (Pharaon maudit) : aucun coup ne passe jusqu'à son prochain tour. */
     private       boolean     sealed;
+    /** Ennemi doré (un soldat d'Exploration sur {@link fr.astratime.lucky.entities.exploration.DungeonRun#GOLDEN_CHANCE}). */
+    private       boolean     golden;
 
     // ----- Archétypes de deck : Rentier (Créances) et Bluffeur (malus) -----
 
@@ -308,10 +311,30 @@ public class Enemy {
     /** @return les As gardés en copie des achats du joueur. */
     public int getLoot() { return loot; }
 
-    /** @return le nombre de rouleaux de sa machine, dans sa phase. */
+    /** @return le nombre de rouleaux de sa machine, dans sa phase (un de plus s'il est doré). */
     public int getReelCount() {
-        return kind.has(EnemyTrait.REEL_THEFT) ? EnemyKind.MACHINE_REELS + getStolenReels() : kind.getReelCount(phase);
+        int reels = kind.has(EnemyTrait.REEL_THEFT) ? EnemyKind.MACHINE_REELS + getStolenReels() : kind.getReelCount(phase);
+        return golden ? Math.min(reels + GOLDEN_EXTRA_REELS, EnemySlotMachine.MAX_SYMBOL_COUNT) : reels;
     }
+
+    /** PV d'un ennemi doré, en fois ceux de l'ennemi normal. */
+    public static final int GOLDEN_HP_FACTOR = 2;
+    /** Rouleaux en plus sur la machine d'un ennemi doré. */
+    public static final int GOLDEN_EXTRA_REELS = 1;
+
+    /**
+     * L'ennemi devient doré, au début de son combat : PV x{@value #GOLDEN_HP_FACTOR} (il repart
+     * à pleine vie) et un rouleau de plus sur sa machine. Rien d'autre ne change : ni ses gains, ni ses pièces.
+     */
+    public void gild() {
+        if (golden) return;
+        golden = true;
+        maxHp  = maxHp > Long.MAX_VALUE / GOLDEN_HP_FACTOR ? Long.MAX_VALUE : maxHp * GOLDEN_HP_FACTOR;
+        hp     = maxHp;
+    }
+
+    /** @return {@code true} si c'est un ennemi doré. */
+    public boolean isGolden() { return golden; }
 
     /** @return les rouleaux qu'il a volés au joueur (la Machine Originelle blessée). */
     public int getStolenReels() {

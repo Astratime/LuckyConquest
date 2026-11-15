@@ -104,6 +104,10 @@ public class EnemyView implements Disposable {
     private float               restY;
     private final Image         croupier;
     private final Image         flash;
+    /** Contour lumineux d'un ennemi doré, autour de son portrait (caché sinon). */
+    private final Image         aura;
+    /** {@code true} si l'ennemi affiché est doré. */
+    private boolean             shownGolden;
     /** Secondes depuis l'arrivée de l'ennemi affiché (mouvements de son portrait). */
     private float               animationTime;
     private final ShieldBadge   defense;
@@ -165,6 +169,10 @@ public class EnemyView implements Disposable {
         flash.setSize(croupier.getWidth(), croupier.getHeight());
         flash.getColor().a = 0f;
         flash.setTouchable(Touchable.disabled);
+        aura = new Image(new TextureRegionDrawable(new TextureRegion(textures.croupierFlash)));
+        aura.setTouchable(Touchable.disabled);
+        aura.setVisible(false);
+        character.addActor(aura);
         character.addActor(croupier);
         character.addActor(flash);
         character.setSize(croupier.getWidth(), croupier.getHeight());
@@ -215,6 +223,10 @@ public class EnemyView implements Disposable {
         }
         line(text, Lang.f("Défense : {0}", shownDefense()));
         line(text, Lang.f("Rouleaux : {0}", kind.describeReels(current.getPhase())));
+        if (current.isGolden()) {
+            line(text, Lang.f("Ennemi doré : PV x{0} et un rouleau de plus ({1} au lieu de {2})", Enemy.GOLDEN_HP_FACTOR,
+                current.getReelCount(), current.getReelCount() - Enemy.GOLDEN_EXTRA_REELS));
+        }
         if (kind.hasPhaseTwo() && current.getPhase() < 2) {
             line(text, Lang.f("Sous la moitié de ses PV : {0}", kind.describeReels(2)));
         }
@@ -308,6 +320,7 @@ public class EnemyView implements Disposable {
      */
     private void animate(float delta) {
         animationTime += delta;
+        if (shownGolden) aura.setColor(goldenColor(animationTime));
         Texture frame = textures.portrait(shownKind, animationTime);
         TextureRegionDrawable drawable = (TextureRegionDrawable) croupier.getDrawable();
         if (drawable.getRegion().getTexture() == frame) return;
@@ -316,6 +329,25 @@ public class EnemyView implements Disposable {
             new TextureRegion(textures.portraitFlash(shownKind, animationTime)));
     }
 
+    /** Teintes du contour d'un ennemi doré : il passe de l'or au jaune pâle, et revient. */
+    private static final Color GOLD_DEEP = new Color(1f, 0.72f, 0.12f, 1f), GOLD_LIGHT = new Color(1f, 0.97f, 0.62f, 1f);
+    /** Durée d'un battement du contour doré, en secondes. */
+    private static final float GOLD_PULSE = 1.4f;
+
+    /** @return la couleur du contour doré à l'instant {@code time} (battement lent, toujours bien visible). */
+    public static Color goldenColor(float time) {
+        float wave = 0.5f + 0.5f * MathUtils.sin(time * MathUtils.PI2 / GOLD_PULSE);
+        Color color = new Color(GOLD_DEEP).lerp(GOLD_LIGHT, wave);
+        color.a = 0.7f + 0.3f * wave;
+        return color;
+    }
+
+    /** @return {@code true} si l'ennemi affiché est doré (son contour lumineux est montré). */
+    public boolean isGoldenShown() { return shownGolden; }
+
+    /** @return la couleur actuelle du contour doré. */
+    public Color getAuraColor() { return aura.getColor(); }
+
     /** @return les secondes depuis l'arrivée de l'ennemi, qui règlent les mouvements de son portrait. */
     public float getAnimationTime() { return animationTime; }
 
@@ -323,10 +355,14 @@ public class EnemyView implements Disposable {
     private void showKind() {
         Enemy current = enemy.get();
         EnemyKind kind = current.getKind();
-        if (kind == shownKind && current.getPhase() == shownPhase) return;
+        if (kind == shownKind && current.getPhase() == shownPhase && current.isGolden() == shownGolden) return;
         if (kind != shownKind) animationTime = 0f;
         shownKind  = kind;
         shownPhase = current.getPhase();
+        Texture outline = textures.goldenOutline(kind);
+        shownGolden = current.isGolden() && outline != null;
+        if (outline != null) ((TextureRegionDrawable) aura.getDrawable()).setRegion(new TextureRegion(outline));
+        aura.setVisible(shownGolden);
         ((TextureRegionDrawable) croupier.getDrawable()).setRegion(new TextureRegion(textures.portrait(kind)));
         ((TextureRegionDrawable) flash.getDrawable()).setRegion(new TextureRegion(textures.portraitFlash(kind)));
         List<EnemySymbol> symbols = current.getSymbols();
@@ -374,6 +410,8 @@ public class EnemyView implements Disposable {
         if (shownKind == EnemyKind.MACHINE_ORIGINELLE) scale++;
         croupier.setSize(portrait.getWidth() * scale, portrait.getHeight() * scale);
         flash.setSize(croupier.getWidth(), croupier.getHeight());
+        float border = EnemyTextures.GOLD_OUTLINE * scale;
+        aura.setBounds(-border, -border, croupier.getWidth() + 2f * border, croupier.getHeight() + 2f * border);
         character.setSize(croupier.getWidth(), croupier.getHeight());
         character.setOrigin(croupier.getWidth() / 2f, 0f);
         character.setPosition(table.getEnemyCharacterCenterX() - character.getWidth() / 2f, table.getEnemyCharacterY());
@@ -764,6 +802,18 @@ public class EnemyView implements Disposable {
     public Vector2 getCroupierCenter() {
         return croupier.localToStageCoordinates(new Vector2(croupier.getWidth() / 2f, croupier.getHeight() / 2f));
     }
+
+    /**
+     * @return le point (Stage) d'où part sa bulle de dialogue : le haut de son portrait, côté
+     *         droit (vue classique), sans son mouvement de repos
+     */
+    public Vector2 getMouth() {
+        return character.localToStageCoordinates(new Vector2(character.getWidth() * MOUTH_X,
+            character.getHeight() * MOUTH_Y - getIdleLift()));
+    }
+
+    /** Départ de sa bulle de dialogue, en fraction de son portrait (depuis le bas gauche). */
+    public static final float MOUTH_X = 0.82f, MOUTH_Y = 0.78f;
 
     // -------------------------------------------------------------------------
     // Réactions du croupier

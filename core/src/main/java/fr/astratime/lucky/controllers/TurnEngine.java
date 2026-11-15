@@ -357,6 +357,16 @@ public class TurnEngine {
                 enemy.getDefense()));
         }
 
+        // Braise (carte du Dragon) : au début de son tour, il brûle d'une part du plus gros coup du joueur, sans défense
+        if (!enemy.isDefeated() && !player.isDefeated() && enemy.getMaluses().getEmberDamage() > 0) {
+            long raw = enemy.getMaluses().takeEmbers();
+            long hit = enemy.capHit(raw);
+            long damage = enemy.skinned(raw);
+            enemy.takeDamage(hit);
+            afterCombat.add(new fr.astratime.lucky.entities.events.CardStrikeEvent(Lang.t("BRAISE : IL BRÛLE"), damage, raw,
+                enemy.getDefense()));
+        }
+
         // Créances (Rentier) : au début de son tour, elles lui coûtent des PV et rapportent des gains au joueur
         if (!enemy.isDefeated() && !player.isDefeated()) afterCombat.addAll(chargeClaims(enemy, player, turnContext.getCombatContext()));
 
@@ -401,6 +411,15 @@ public class TurnEngine {
             int lost = player.takeDamage(Math.round(player.getMaxHp() * PlaceRule.FIREDAMP_PERCENT / 100f));
             firedamp.add(new StatusEvent(Lang.t("COUP DE GRISOU !"), EffectPopup.Style.DAMAGE));
             firedamp.add(new PlayerDamagedEvent(lost, shieldBefore - player.getShield(), player.getShield()));
+        }
+
+        // Filon (carte du Coeur de la montagne) : le second soin, une fois le tour de l'ennemi passé
+        int vein = player.getLastingEffects().takePendingHeal();
+        if (vein > 0 && !player.isDefeated()) {
+            int amount = Math.round(player.getMaxHp() * vein / 100f);
+            int healed = player.heal(amount);
+            player.getLastingEffects().addBlood(amount - healed);
+            firedamp.add(new StatusEvent(Lang.f("FILON : SOIN DE {0} % DES PV", vein), EffectPopup.Style.DRAIN));
         }
 
         // Venin (Désert de Braise) : chaque Venin mord, à travers le bouclier

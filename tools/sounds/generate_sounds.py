@@ -2647,6 +2647,92 @@ def cutscene_croupier_ending():
     return reverb(track.buf, wet=0.28, size=1.6, tail=1.0)
 
 
+# --- Le Joueur Masqué (RivalCutscene) -------------------------------------------
+# Les instants ci-dessous reprennent les constantes de RivalCutscene : si l'une change là-bas, la changer ici.
+
+def lamp_on():
+    """Un projecteur qui s'allume : clac du levier, puis le bourdon de l'ampoule."""
+    return mix((click(0.01, 1500, 6000), 0, 1.0), (thump(120, 60, 0.25, 0.08), 0, 0.8), (metal_hit(900, 0.3), 0, 0.3))
+
+
+@sound('cutscene/rival', -17)
+def cutscene_rival():
+    """
+    Une rencontre du Joueur Masqué : le lieu dans le noir ; le projecteur s'allume (SPOT 0,5 s) ; ses pas
+    (WALK_START 0,7 à WALK_END 1,5 s) ; il soulève son chapeau (TIP 1,8 s) ; le symbole appris jaillit et
+    rejoint sa machine (SYMBOL 2,4 s) ; ses yeux brillent sous le masque (EYES 3,0 s) ; sa réplique (LINE 3,2 s),
+    une valse qui grince ; « Rencontre n sur 5 » (SUBTITLE 4,4 s). Fondu au noir à 5,6 s.
+    """
+    track = Track(6.6)
+    track.add(ambience(5.8, 200, 900, 0.3), 0.0, 0.8)
+    track.add(drone(['D2', 'A2'], 5.8, 'tri', 0.4, 0.8), 0.0, 0.15)
+    track.add(lamp_on(), 0.5, 0.9)
+    hum = hp(osc(vibrato(100, 5.0, rate=7, depth=0.01), 5.0, 'saw'), 400) * fade_out(5.0, 0.5)
+    track.add(hum, 0.55, 0.03)
+    for at in (0.75, 1.05, 1.35):                                               # ses pas
+        track.add(footstep(200, 0.9), at, 0.7)
+    track.add(whoosh(0.3, 500, 2200), 1.8, 0.35)                                 # le chapeau
+    track.add(chip(hz('A5'), 0.3, 'square', 0.25), 2.4, 0.3)                     # le symbole appris
+    track.add(sparkle(0.7, count=12), 2.4, 0.35)
+    track.add(mix((thump(160, 80, 0.15, 0.05), 0, 0.7), (click(0.01, 1500, 6000), 0, 0.5)), 2.9, 0.6)
+    for k, note in enumerate(['E6', 'B6']):                                     # ses yeux
+        track.add(modal(hz(note), 0.6, GLASS_RATIOS, [0.3, 0.15, 0.07, 0.03]), 3.0 + k * 0.08, 0.25)
+    waltz = ['D3', 'A3', 'F4', 'A2', 'A3', 'E4', 'D3', 'A3', 'F4']               # une valse de manège désaccordée
+    for k, note in enumerate(waltz):
+        at = 3.2 + k * 0.24
+        track.add(pluck(hz(note) * (1.0 + 0.012 * ((k % 3) - 1)), 0.45, bright=2400), at, 0.4 if k % 3 == 0 else 0.25)
+    track.add(brass_chord(['D3', 'F3', 'A3'], 1.2, 0.5), 4.4, 0.5)
+    track.add(swell(0.6, 200, 1800), 5.4, 0.25)
+    return reverb(track.buf, wet=0.25, size=1.4, tail=0.8)
+
+
+@sound('cutscene/rival_unmask', -17)
+def cutscene_rival_unmask():
+    """
+    Le duel final du Joueur Masqué, au Désert : vent et sable ; sa première réplique (UNMASK_LINE 0,9 s) ; sa main
+    sur le masque, qui tremble (GRAB 2,4 s) ; il l'arrache (MASK_OFF 3,0 s) : éclair, le masque vole puis tombe
+    dans le sable (vers 4,1 s) ; ses deux répliques (UNMASK_LINE_2 4,0 s, UNMASK_LINE_3 5,6 s). Fondu au noir à 7,2 s.
+    """
+    track = Track(8.6)
+    track.add(desert_wind(7.6), 0.0, 0.6)
+    track.add(drone(['C2', 'G2'], 3.0, 'sine', 0.5, 0.6), 0.0, 0.2)
+    track.add(chip(hz('C4'), 0.4, 'tri', 0.2), 0.9, 0.2)
+    shiver = svf(noise(0.6), sweep(300, 1600, 0.6), q=2.0, mode='bp') * ramp(0.6, 0.2, 1.0)
+    track.add(shiver, 2.4, 0.3)
+    track.add(heartbeat([2.4, 2.7], f=55, gain=0.7), 0.0, 0.6)
+    track.add(mix((impact(0.8, 120, 40), 0, 1.2), (crack_hit(), 0, 0.8), (metal_hit(1400, 0.6), 0, 0.4)), 3.0, 1.0)
+    track.add(brass_chord(['C3', 'D#3', 'G3', 'C4'], 1.8, 0.9), 3.02, 0.9)
+    track.add(whoosh(0.6, 800, 3000), 3.05, 0.4)                                # le masque vole
+    track.add(mix((thump(200, 90, 0.12, 0.04), 0, 0.6), (lp(noise(0.3), 1200) * expdec(0.3, 0.08), 0, 0.5)), 4.1, 0.6)
+    track.add(drone(['C3', 'G3', 'C4'], 3.4, 'sine', 0.4, 0.8), 4.0, 0.14)
+    track.add(mix((brass_chord(['C2', 'G2', 'C3', 'D#3'], 1.4, 0.9), 0, 1.0), (thump(70, 40, 0.4, 0.15), 0, 0.8)), 5.6, 0.8)
+    track.add(swell(0.7, 200, 2000), 7.0, 0.25)
+    return reverb(track.buf, wet=0.25, size=1.5, tail=0.9)
+
+
+@sound('cutscene/rival_farewell', -17)
+def cutscene_rival_farewell():
+    """
+    Les adieux du Joueur Masqué : il pose son masque sur le tapis (LAY 0,8 s) ; sa réplique (FAREWELL_LINE 1,6 s) ;
+    il s'efface en sable (VANISH_START 3,0 à VANISH_END 4,6 s) ; sa dernière réplique (FAREWELL_LINE_2 4,2 s).
+    Fondu au noir à 5,6 s.
+    """
+    track = Track(6.8)
+    track.add(desert_wind(6.0), 0.0, 0.35)
+    track.add(drone(['F3', 'C4', 'A4'], 5.8, 'sine', 0.6, 1.0), 0.0, 0.14)
+    track.add(whoosh(0.3, 400, 1500), 0.45, 0.25)
+    track.add(mix((card_slap(0.16), 0, 0.8), (metal_hit(1600, 0.5), 0, 0.35)), 0.8, 0.9)
+    track.add(sparkle(0.5, count=8), 0.8, 0.25)
+    for k, note in enumerate(['A4', 'C5', 'F5', 'E5', 'C5']):
+        track.add(pluck(hz(note), 0.9, bright=4000), 1.6 + k * 0.22, 0.3)
+    sand = bp(noise(1.6), 2500, 8000) * ramp(1.6, 0.0, 1.0) * fade_out(1.6, 0.6)
+    track.add(sand, 3.0, 0.3)                                                   # il s'efface en sable
+    track.add(sparkle(1.4, count=16, lo=3000, hi=8000), 3.0, 0.2)
+    track.add(brass_chord(['F2', 'C3', 'F3', 'A3'], 1.6, 0.8), 4.2, 0.7)
+    track.add(swell(0.6, 300, 2400), 5.4, 0.25)
+    return reverb(track.buf, wet=0.3, size=1.6, tail=1.0)
+
+
 def main(prefixes):
     done = 0
     for name, level, fmt, trim, loop, fn in SOUNDS:

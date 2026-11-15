@@ -138,6 +138,8 @@ public class GameController {
 
     /** Cartes proposées à l'échoppe. */
     private final List<ShopOffer> shopOffers; // prix de base, ceux de la Prairie
+    /** Mode ADMIN : Bingos d'un rouleau absent de la machine permis (voir {@link #setAdmin}). */
+    private boolean admin;
     /** Cartes achetées à l'échoppe dans ce combat, par id : chaque achat double le prix de la suivante. */
     private final Map<String, Integer> bought = new HashMap<>();
 
@@ -627,8 +629,16 @@ public class GameController {
         return null;
     }
 
-    /** @return le symbole imposé par le Bingo de {@code card} s'il a été retiré de la machine à l'échoppe, sinon {@code null}. */
+    /**
+     * @return le symbole imposé par le Bingo de {@code card} s'il n'est pas dans la
+     *         machine, sinon {@code null} ; toujours {@code null} en mode ADMIN (voir {@link #setAdmin})
+     */
     private Symbol missingBingoSymbol(Card card) {
+        return admin ? null : guestBingoSymbol(card);
+    }
+
+    /** @return le symbole imposé par le Bingo de {@code card} s'il n'est pas dans la machine, sinon {@code null}. */
+    private Symbol guestBingoSymbol(Card card) {
         List<Symbol> reels = gameState.getPlayer().getSlotMachine().getReels();
         for (Effect effect : card.getEffects()) {
             if (effect instanceof BingoEffect bingo && bingo.getSymbol() != null && !bingo.getSymbol().isSummoned()
@@ -715,6 +725,11 @@ public class GameController {
             playContext.addPopups(List.of(EffectPopup.scaled(Lang.f("PIOCHE +{0}", dealt), EffectPopup.Style.DRAW, dealt,
                 PopupScale.CARD_EXTRA_DRAW)));
         }
+        Symbol guest = admin ? guestBingoSymbol(card) : null;
+        if (guest != null) { // ADMIN : Bingo d'un rouleau absent de la machine, le symbole s'invite pour ce tirage
+            playContext.addPopups(List.of(new EffectPopup(Lang.f("{0} S'INVITE !", guest.getDisplayName().toUpperCase()),
+                EffectPopup.Style.SPECIAL, PopupScale.SECONDARY_INTENSITY)));
+        }
         playEffects(card, playContext, false);
         // Double ou rien : la carte compte deux fois, sauf si elle demande un choix (le doublement attend la suivante)
         if (doubling && playContext.getChoice() == null && !playContext.isDoubleRequested()) {
@@ -744,6 +759,18 @@ public class GameController {
             : null;
         return new CardPlayResult(drawResult, playContext.getPopups(), pendingChoice, playContext.isAutoSpin(),
             rainbow);
+    }
+
+    /** Fin du tour : la Graine du joueur (s'il en a une) pousse si elle n'a pas été jouée à ce tour. */
+    private static void growSeeds(Player player) {
+        for (Card card : player.getAllCards()) {
+            for (Effect effect : card.getEffects()) {
+                if (effect instanceof fr.astratime.lucky.entities.effects.SeedEffect seed) {
+                    seed.grow(player.getLastingEffects().getWearCards());
+                    return;
+                }
+            }
+        }
     }
 
     /**
@@ -917,6 +944,13 @@ public class GameController {
     /** Ouvre ou ferme le Jeu bonus après les Bingos (fermé dans le tutoriel). */
     public void setBonusGameEnabled(boolean enabled) { turnEngine.setBonusGameEnabled(enabled); }
 
+    /**
+     * Mode ADMIN : les Bingos d'un rouleau précis s'achètent et se jouent même si
+     * le rouleau n'est pas dans la machine ; le symbole s'invite alors sur les
+     * rouleaux le temps de ce seul tirage (la machine ne change pas).
+     */
+    public void setAdmin(boolean admin) { this.admin = admin; }
+
     /** Impose le Jeu bonus qui s'ouvre après un Bingo ({@code null} : tiré au hasard). */
     public void setBonusGameKind(BonusGame.Kind kind) { turnEngine.setBonusGameKind(kind); }
 
@@ -1026,6 +1060,8 @@ public class GameController {
         hiddenCards.clear();
         // Roi des ombres : il rejouera, au tour suivant, une carte jouée à ce tour.
         player.getLastingEffects().getCourtAndClock().rememberPlayed(player.getPlayedCards());
+        // Graine : si elle n'a pas été jouée à ce tour, elle pousse (où qu'elle soit : la main est vidée à chaque tour).
+        growSeeds(player);
         // Le Scorbut resté en main disparaît : il ne revient que par la règle du lieu.
         for (Card card : new ArrayList<>(gameState.getPlayer().getCurrentHand())) {
             if (PlaceRule.SCURVY_CARD.equals(card.getId())) gameState.getPlayer().removeFromHand(card);
