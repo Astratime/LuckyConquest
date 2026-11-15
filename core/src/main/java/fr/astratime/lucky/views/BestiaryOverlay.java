@@ -22,7 +22,9 @@ import fr.astratime.lucky.assets.Fonts;
 import fr.astratime.lucky.assets.HudTextures;
 import fr.astratime.lucky.assets.Palette;
 import fr.astratime.lucky.entities.enemy.EnemyKind;
+import fr.astratime.lucky.entities.Enemy;
 import fr.astratime.lucky.entities.exploration.Dungeon;
+import fr.astratime.lucky.entities.exploration.DungeonRun;
 import fr.astratime.lucky.entities.exploration.Place;
 import fr.astratime.lucky.entities.tower.Chapter;
 import fr.astratime.lucky.i18n.Lang;
@@ -67,7 +69,7 @@ public class BestiaryOverlay implements Disposable {
     private static final Color LOCKED       = new Color(0.55f, 0.52f, 0.5f, 1f);
 
     /** Une case : son ennemi et ses acteurs. */
-    private record Cell(EnemyKind kind, Image frame, Image portrait, Image mark) { }
+    private record Cell(EnemyKind kind, Image frame, Image portrait, Image mark, Image golden) { }
 
     /** Une ligne de la grille : son nom et ses cases. */
     private record Row(Label label, List<Cell> cells) { }
@@ -87,6 +89,8 @@ public class BestiaryOverlay implements Disposable {
     private final List<Cell> cells    = new ArrayList<>();
     private final Image artFrame;
     private final Image art;
+    /** Contour doré du portrait de la fiche, quand la version dorée du soldat est vaincue. */
+    private final Image artGolden;
     private final Label name;
     private final Label where;
     private final Label status;
@@ -160,6 +164,9 @@ public class BestiaryOverlay implements Disposable {
 
         artFrame = new Image(hud.insetDrawable());
         art = new Image();
+        artGolden = new Image();
+        artGolden.setColor(GOLDEN);
+        artGolden.setTouchable(Touchable.disabled);
         name = label(nameFont, Palette.GOLD);
         where = label(textFont, Palette.CREAM);
         status = label(textFont, Color.WHITE);
@@ -167,6 +174,7 @@ public class BestiaryOverlay implements Disposable {
         description.setWrap(true);
         description.setAlignment(Align.topLeft);
         root.addActor(artFrame);
+        root.addActor(artGolden);
         root.addActor(art);
         root.addActor(name);
         root.addActor(where);
@@ -202,7 +210,8 @@ public class BestiaryOverlay implements Disposable {
             portrait.setTouchable(Touchable.disabled);
             Image mark = new Image(coin);
             mark.setTouchable(Touchable.disabled);
-            Cell cell = new Cell(kind, frame, portrait, mark);
+            Image golden = goldenImage(kind);
+            Cell cell = new Cell(kind, frame, portrait, mark, golden);
             frame.addListener(new ClickListener() {
                 @Override
                 public void enter(InputEvent event, float x, float y, int pointer, Actor fromActor) {
@@ -217,6 +226,7 @@ public class BestiaryOverlay implements Disposable {
                 }
             });
             root.addActor(frame);
+            root.addActor(golden);
             root.addActor(portrait);
             root.addActor(mark);
             rowCells.add(cell);
@@ -224,6 +234,21 @@ public class BestiaryOverlay implements Disposable {
         }
         return new Row(label, rowCells);
     }
+
+    /** @return le contour doré du portrait de {@code kind} (caché tant que sa version dorée n'est pas vaincue). */
+    private Image goldenImage(EnemyKind kind) {
+        Texture outline = textures.goldenOutline(kind);
+        Image image = outline != null ? new Image(new TextureRegionDrawable(new TextureRegion(outline))) : new Image();
+        image.setColor(GOLDEN);
+        image.setTouchable(Touchable.disabled);
+        image.setVisible(false);
+        return image;
+    }
+
+    /** Couleur du contour d'une version dorée vaincue. */
+    private static final Color GOLDEN = new Color(1f, 0.82f, 0.25f, 1f);
+    /** Teinte de la case d'un soldat dont la version dorée est vaincue. */
+    private static final Color GOLDEN_FRAME = new Color(1f, 0.85f, 0.3f, 1f);
 
     private static Label label(BitmapFont font, Color color) {
         Label label = new Label("", new Label.LabelStyle(font, Color.WHITE));
@@ -298,13 +323,17 @@ public class BestiaryOverlay implements Disposable {
             cell.portrait().setDrawable(new TextureRegionDrawable(new TextureRegion(texture)));
             cell.portrait().setColor(known ? Color.WHITE : UNKNOWN);
             cell.mark().setVisible(beaten);
+            boolean golden = Bestiary.hasGoldenVersion(cell.kind()) && profile.hasDefeatedGolden(cell.kind());
+            cell.golden().setVisible(golden);
+            cell.frame().setColor(golden ? GOLDEN_FRAME : Color.WHITE); // sa case dorée
         }
         int[] seenCutscenes = Bestiary.cutscenes(profile);
         summary.setText(Lang.f("Ennemis rencontrés : {0} / {1}     Vaincus : {2} / {1}     Cartes : {3} / {4}     "
                 + "Rouleaux : {5} / {6}     Cinématiques : {7} / {8}",
             met, cells.size(), defeated, profile.getCollectedCardCount(), profile.getCatalogSize(),
             profile.getOwnedReels().size(), PlayerProfile.getReelCount(), seenCutscenes[0], seenCutscenes[1])
-            + "     " + Lang.f("Carnet : {0} / {1}", Notebook.found(profile), Notebook.size()));
+            + "     " + Lang.f("Carnet : {0} / {1}", Notebook.found(profile), Notebook.size())
+            + "     " + Lang.f("Dorés : {0} / {1}", golden(profile), Bestiary.goldenEnemies().size()));
         cutscenes.setDisabled(seenCutscenes[0] == 0);
         if (training) {
             summary.setText(Lang.t("Choisis un ennemi déjà vaincu pour tester ton deck. Ce combat ne rapporte rien."));
@@ -320,6 +349,11 @@ public class BestiaryOverlay implements Disposable {
         root.getColor().a = 0f;
         root.clearActions();
         root.addAction(Actions.fadeIn(FADE));
+    }
+
+    /** @return les versions dorées vaincues (toutes en mode ADMIN). */
+    private static int golden(PlayerProfile profile) {
+        return profile.isAdmin() ? Bestiary.goldenEnemies().size() : profile.getGoldenDefeatedCount();
     }
 
     /** Montre la fiche de l'ennemi de {@code cell}. */
@@ -350,6 +384,17 @@ public class BestiaryOverlay implements Disposable {
         }
         description.setText(text);
         description.setColor(known ? Color.WHITE : LOCKED);
+        boolean goldenBeaten = Bestiary.hasGoldenVersion(kind) && profile.hasDefeatedGolden(kind);
+        Texture outline = textures.goldenOutline(kind);
+        artGolden.setDrawable(goldenBeaten && outline != null ? new TextureRegionDrawable(new TextureRegion(outline)) : null);
+        artGolden.setVisible(goldenBeaten && outline != null);
+        artFrame.setColor(goldenBeaten ? GOLDEN_FRAME : Color.WHITE);
+        if (known && Bestiary.hasGoldenVersion(kind) && onFight == null) {
+            description.setText(description.getText() + "\n\n" + (goldenBeaten
+                ? Lang.t("Version dorée : vaincue !")
+                : Lang.f("Version dorée : pas encore vaincue. Un soldat sur {0} arrive doré : PV x{1} et un rouleau de plus.",
+                    DungeonRun.GOLDEN_CHANCE, Enemy.GOLDEN_HP_FACTOR)));
+        }
         notebook.setDisabled(!Notebook.hasPage(kind));
         notebook.setText(reading && Notebook.hasPage(kind) ? Lang.t("Fiche") : Lang.t("Carnet"));
         if (reading && Notebook.hasPage(kind) && onFight == null) { // la page du carnet, à la place de la description
@@ -434,6 +479,7 @@ public class BestiaryOverlay implements Disposable {
         float ficheTop = placesBottom - 20f;
         artFrame.setBounds(ex, ficheTop - ART, ART, ART);
         fit(art, ex + 10f, ficheTop - ART + 10f, ART - 20f);
+        around(artGolden, art);
         float textX = ex + ART + 30f;
         float textWidth = ex + placeWidth - textX;
         name.pack();
@@ -465,11 +511,21 @@ public class BestiaryOverlay implements Disposable {
             for (Cell cell : row.cells()) {
                 cell.frame().setBounds(cx, y, CELL, CELL);
                 fit(cell.portrait(), cx + (CELL - PORTRAIT) / 2f, y + (CELL - PORTRAIT) / 2f, PORTRAIT);
+                around(cell.golden(), cell.portrait());
                 cell.mark().setBounds(cx + CELL - MARK + 4f, y - 4f, MARK, MARK);
                 cx += CELL_STEP;
             }
         }
         return y;
+    }
+
+    /** Place le contour doré {@code outline} autour du portrait {@code portrait}, à la même échelle. */
+    private static void around(Image outline, Image portrait) {
+        if (outline.getDrawable() == null || portrait.getDrawable() == null) return;
+        float scale  = portrait.getWidth() / portrait.getDrawable().getMinWidth();
+        float border = EnemyTextures.GOLD_OUTLINE * scale;
+        outline.setBounds(portrait.getX() - border, portrait.getY() - border,
+            portrait.getWidth() + 2f * border, portrait.getHeight() + 2f * border);
     }
 
     /** Met {@code image} dans un carré de côté {@code size}, sans le déformer. */

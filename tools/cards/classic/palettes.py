@@ -53,6 +53,8 @@ FAMILIES = {
     'arch_cour':      ('#fdeef0', '#f0b4bc', '#b0606e'),   # velours royal
     'arch_revenant':  ('#eef0f8', '#c4c8dc', '#7c809c'),   # brume
     'arch_horloger':  ('#fbf0e0', '#e4c494', '#a47a44'),   # laiton
+    # --- cartes à usure (2026-11-14) ---
+    'usure':          ('#fff4ea', '#f0cca4', '#b48a60'),   # cire
 }
 
 CARD_FAMILY = {
@@ -97,6 +99,7 @@ CARD_FAMILY = {
     'heraut': 'arch_cour', 'dame_de_cour': 'arch_cour', 'sceptre_du_roi': 'arch_cour', 'quinte_royale': 'arch_cour',
     'fossoyeur': 'arch_revenant', 'dame_blanche': 'arch_revenant', 'roi_des_ombres': 'arch_revenant',
     'requiem': 'arch_revenant',
+    'bougie': 'usure', 'graine': 'usure', 'pile_ou_face': 'usure',
     'cle_de_remontage': 'arch_horloger', 'coucou': 'arch_horloger', 'grande_aiguille': 'arch_horloger',
     'douze_coups': 'arch_horloger',
     # cartes des rois (2026-11-14) : la couleur du donjon de leur roi

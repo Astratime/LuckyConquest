@@ -393,5 +393,23 @@
         "bingo": "GAINS"
       }
     ]
+  },
+  {
+    "id": "bougie",
+    "name": "Bougie",
+    "assetPath": "cards/special/bougie.png",
+    "effects": [ { "type": "CANDLE", "percent": 150, "wear": 20 } ]
+  },
+  {
+    "id": "graine",
+    "name": "Graine",
+    "assetPath": "cards/special/graine.png",
+    "effects": [ { "type": "SEED", "percent": 20, "growth": 25, "max": 300 } ]
+  },
+  {
+    "id": "pile_ou_face",
+    "name": "Pile ou face",
+    "assetPath": "cards/special/pile_ou_face.png",
+    "effects": [ { "type": "COIN_FLIP", "percent": 100 } ]
   }
 ]
