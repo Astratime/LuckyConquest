@@ -22,6 +22,7 @@ public final class Cutscenes {
             case MAISON -> new HouseCutscene(kit);
             case MACHINE_ORIGINELLE -> new MachineCutscene(kit);
             case GRAND_CROUPIER -> new CroupierCutscene(kit, CroupierCutscene.Scene.INTRO);
+            case RIVAL_FOIRE, RIVAL_PORT, RIVAL_MINES, RIVAL_CASINO, RIVAL_DESERT -> RivalCutscene.before(kit, boss);
             default -> KingEntrance.of(kit, boss);
         };
     }
@@ -46,6 +47,7 @@ public final class Cutscenes {
      *         des leviers puis « Le Jackpot » pour l'une, la fin du chapitre « Dernier tirage » pour l'autre)
      */
     public static Cutscene death(CutsceneKit kit, EnemyKind boss) {
+        if (boss == EnemyKind.RIVAL_DESERT) return rivalFarewell(kit); // le Joueur Masqué, battu au Désert
         return hasDeath(boss) ? BossScenes.death(kit, boss) : null;
     }
 
@@ -53,6 +55,11 @@ public final class Cutscenes {
     public static boolean hasDeath(EnemyKind boss) {
         return boss.isBoss() && boss != EnemyKind.MACHINE_ORIGINELLE && boss != EnemyKind.ECLAT // leurs fins existent déjà
             && boss != EnemyKind.GRAND_CROUPIER; // le Croupier : la vraie fin (voir trueEnding)
+    }
+
+    /** @return la scène du Joueur Masqué qui te laisse son masque, après sa défaite au Désert de Braise. */
+    public static Cutscene rivalFarewell(CutsceneKit kit) {
+        return new RivalCutscene(kit, EnemyKind.RIVAL_DESERT, RivalCutscene.Scene.FAREWELL);
     }
 
     /** @return la vraie fin du jeu, quand le Croupier, boss secret, est vaincu. */

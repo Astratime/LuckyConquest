@@ -646,6 +646,9 @@ public class GameScreen extends ScreenAdapter {
                 croupierIntro.withCards(next, false);
             }
             playCutscene(intro, this::startPlayerTurn);
+        } else if (run instanceof DungeonRun dungeonRun && dungeonRun.getRival() != null) {
+            // Le Joueur Masqué prend la place du soldat : sa scène d'abord (son masque tombe au Désert).
+            playCutscene(Cutscenes.beforeBoss(cutsceneKit, dungeonRun.getRival()), this::startPlayerTurn);
         } else {
             announceGolden();
             startPlayerTurn(); // le combat commence par le tour du joueur, main piochée d'office

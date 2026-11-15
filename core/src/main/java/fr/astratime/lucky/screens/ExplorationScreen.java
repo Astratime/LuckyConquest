@@ -28,6 +28,8 @@ import fr.astratime.lucky.assets.Textures;
 import fr.astratime.lucky.entities.Card;
 import fr.astratime.lucky.entities.exploration.Dungeon;
 import fr.astratime.lucky.entities.exploration.DungeonRun;
+import fr.astratime.lucky.entities.enemy.EnemyKind;
+import fr.astratime.lucky.entities.exploration.Rival;
 import fr.astratime.lucky.entities.exploration.Place;
 import fr.astratime.lucky.entities.exploration.PlaceRule;
 import fr.astratime.lucky.i18n.Lang;
@@ -39,6 +41,7 @@ import fr.astratime.lucky.views.MenuOption;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Random;
 import java.util.Map;
 import java.util.function.Function;
 
@@ -443,15 +446,25 @@ public class ExplorationScreen extends CasinoMenuScreen {
     private void launch() {
         if (leaving || selected < 0 || !profile.isOpen(place)) return;
         Dungeon dungeon = place.getDungeons().get(selected);
+        // Le Joueur Masqué prend parfois la place du soldat ; en mode ADMIN, seulement si on le choisit.
+        EnemyKind rival = profile.isAdmin() ? (fight == RIVAL_FIGHT ? Rival.of(place) : null)
+            : Rival.roll(place, profile::hasDefeated, new Random());
         int start = profile.isAdmin() && fight == ADMIN_FIGHTS - 1 ? 1 : 0;
         boolean golden = profile.isAdmin() && fight == GOLDEN_FIGHT;
-        goTo(() -> new GameScreen(luckyGame, new DungeonRun(dungeon, start, golden)));
+        goTo(() -> new GameScreen(luckyGame, rival != null ? new DungeonRun(dungeon, 0, rival)
+            : new DungeonRun(dungeon, start, golden)));
     }
 
-    /** Mode ADMIN : passe du soldat au soldat doré, au roi du donjon choisi, puis de nouveau au soldat. */
+    /** Choix du mode ADMIN pour affronter le Joueur Masqué du lieu à la place du soldat (après le roi). */
+    private static final int RIVAL_FIGHT = ADMIN_FIGHTS;
+
+    /**
+     * Mode ADMIN : passe du soldat au soldat doré, au roi du donjon choisi, au Joueur Masqué du lieu
+     * (s'il en a un), puis de nouveau au soldat.
+     */
     private void nextFight() {
         if (selected < 0) return;
-        fight = (fight + 1) % ADMIN_FIGHTS;
+        fight = (fight + 1) % (Rival.of(place) != null ? RIVAL_FIGHT + 1 : ADMIN_FIGHTS);
         buttons.setText(fightButton, fightText(place.getDungeons().get(selected)));
         layout();
     }
@@ -459,6 +472,7 @@ public class ExplorationScreen extends CasinoMenuScreen {
     /** @return le texte du bouton du combat choisi en mode ADMIN (ex : « Combat 2 : Roi de Pique »). */
     private String fightText(Dungeon dungeon) {
         if (fight == GOLDEN_FIGHT) return Lang.f("Combat 1 : {0} (version dorée)", dungeon.getSoldier().getDisplayName());
+        if (fight == RIVAL_FIGHT) return Lang.f("Combat {0} : {1}", 1, Rival.of(place).getDisplayName());
         String name = (fight == 0 ? dungeon.getSoldier() : dungeon.getKing()).getDisplayName();
         return Lang.f("Combat {0} : {1}", fight == 0 ? 1 : 2, name);
     }
