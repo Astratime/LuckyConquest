@@ -29,6 +29,7 @@ import fr.astratime.lucky.assets.Fonts;
 import fr.astratime.lucky.assets.Palette;
 import fr.astratime.lucky.assets.VolumeSound;
 import fr.astratime.lucky.entities.Card;
+import fr.astratime.lucky.entities.RankBonus;
 import fr.astratime.lucky.entities.Symbol;
 import fr.astratime.lucky.entities.enemy.EnemyKind;
 import fr.astratime.lucky.i18n.Lang;
@@ -134,6 +135,10 @@ public class ShopScreen extends CasinoMenuScreen {
     private Tab     tab = Tab.RANG;
     /** Article choisi, à acheter avec « Acheter » ({@code null} : aucun). */
     private Offer   selected;
+    /** L'offre du Prestige affichée dans l'onglet Rang, ou {@code null}. */
+    private Offer   prestigeOffer;
+    /** {@code true} après un premier clic sur « Prestige » : le second le confirme. */
+    private boolean prestigeArmed;
     /** Acteur de l'article choisi, mis en valeur. */
     private Actor   selectedActor;
     /** Cosmétique choisi dans l'onglet « Cosmétiques » ({@code null} : aucun) : « Acheter » ou « Choisir ». */
@@ -283,6 +288,9 @@ public class ShopScreen extends CasinoMenuScreen {
             : active == current ? Lang.f("Ton rang : {0}", current.getTitle())
             : Lang.f("Ton rang : {0}. Tu joues avec : {1} (Table du croupier).", current.getTitle(),
                 active == null ? Lang.t("Sans rang") : active.getTitle());
+        if (profile.getPrestige() > 0) {
+            headerText += "   " + Lang.f("Prestige {0}", PlayerProfile.prestigeNumeral(profile.getPrestige()));
+        }
         Label header = new Label(headerText,
             new Label.LabelStyle(headFont, Color.WHITE));
         content.add(header).left().colspan(3).padBottom(16f).row();
@@ -297,7 +305,7 @@ public class ShopScreen extends CasinoMenuScreen {
                 new Label.LabelStyle(bodyFont, Color.WHITE));
             text.setWrap(true);
             Label state = new Label(owned ? Lang.t("Acquis") : Lang.f("{0} pièces",
-                PlayerProfile.formatCoins(rank.getPrice())),
+                PlayerProfile.formatCoins(rank.getPrice(profile.getPrestige()))),
                 new Label.LabelStyle(bodyFont, Color.WHITE));
             state.setAlignment(Align.right);
             row.add(name).width(330f).left();
@@ -308,12 +316,50 @@ public class ShopScreen extends CasinoMenuScreen {
             content.add(row).growX().padBottom(10f).row();
             if (rank == next) {
                 Offer offer = new Offer(rank.getTitle(), rank.getDescription() + " " + rank.getBonusText(),
-                    rank.getPrice(), () -> null, profile::buyNextRank);
+                    rank.getPrice(profile.getPrestige()), () -> null, profile::buyNextRank);
                 row.addListener(selectOnClick(offer, row));
                 select(offer, row);
             }
         }
-        if (next == null) showDetail(Lang.t("Tous les rangs sont acquis."), Lang.t("Tu es une légende. Les tables murmurent ton nom."));
+        prestigeOffer = null;
+        prestigeArmed = false;
+        if (next == null && profile.canPrestige()) {
+            content.add(prestigeRow()).growX().padTop(10f).padBottom(10f).row();
+        } else if (next == null) {
+            showDetail(Lang.t("Tous les rangs sont acquis."), profile.getPrestige() >= PlayerProfile.MAX_PRESTIGE
+                ? Lang.t("Prestige X : tu as tout atteint. Les tables se lèvent sur ton passage.")
+                : Lang.t("Tu es une légende. Les tables murmurent ton nom."));
+        }
+    }
+
+    /**
+     * Ligne du Prestige, une fois tous les rangs achetés : le joueur rend ses rangs
+     * pour un bonus permanent. Elle est choisie d'office ; l'achat demande deux clics.
+     */
+    private Table prestigeRow() {
+        int level = profile.getPrestige() + 1;
+        String bonus = Lang.f("PV, attaque et défense {0}, gains +{1} %, pour toujours (rang compris).",
+            PlayerProfile.prestigeFactorText(level), level * RankBonus.PRESTIGE_PERCENT);
+        Table row = new Table();
+        row.setTouchable(Touchable.enabled);
+        row.setBackground(hud.insetDrawable());
+        row.pad(14f, 22f, 14f, 22f);
+        Label name = new Label(Lang.f("Prestige {0}", PlayerProfile.prestigeNumeral(level)),
+            new Label.LabelStyle(headFont, Palette.GOLD));
+        Label text = new Label(Lang.t("Rends tous tes rangs et rachète-les dans l'ordre, à leurs prix de Prestige.") + "\n" + bonus,
+            new Label.LabelStyle(bodyFont, Color.WHITE));
+        text.setWrap(true);
+        Label state = new Label(Lang.t("Gratuit"), new Label.LabelStyle(bodyFont, Color.WHITE));
+        state.setAlignment(Align.right);
+        row.add(name).width(330f).left();
+        row.add(text).growX().left().padRight(20f);
+        row.add(state).width(230f).right();
+        prestigeOffer = new Offer(Lang.f("Prestige {0}", PlayerProfile.prestigeNumeral(level)),
+            Lang.t("Tu repars sans rang. Tu gardes tes pièces, tes cartes, tes rouleaux, tes decks et ta progression.")
+                + " " + bonus, 0L, () -> null, profile::ascend);
+        row.addListener(selectOnClick(prestigeOffer, row));
+        select(prestigeOffer, row);
+        return row;
     }
 
     /** Onglet « Cartes » : chaque carte en vente, son prix et les exemplaires possédés. */
@@ -590,7 +636,8 @@ public class ShopScreen extends CasinoMenuScreen {
         if (selectedActor != null && selectedActor instanceof Label label) label.setColor(Palette.GOLD);
         selectedCosmetic = null;
         if (cosmeticFrame != null) cosmeticFrame.remove();
-        buttons.setText(buyButton, Lang.t("Acheter"));
+        prestigeArmed = false;
+        buttons.setText(buyButton, offer != null && offer == prestigeOffer ? Lang.t("Prestige") : Lang.t("Acheter"));
         selected      = offer;
         selectedActor = actor;
         if (actor instanceof Label label) label.setColor(Color.WHITE);
@@ -604,7 +651,8 @@ public class ShopScreen extends CasinoMenuScreen {
             buyButton.setDisabled(true);
             return;
         }
-        showDetail(Lang.f("{0}  -  {1} pièces", offer.name(), PlayerProfile.formatCoins(offer.price())), offer.text());
+        showDetail(offer.price() == 0 ? offer.name()
+            : Lang.f("{0}  -  {1} pièces", offer.name(), PlayerProfile.formatCoins(offer.price())), offer.text());
         buyButton.setDisabled(offer.blocked().get() != null);
     }
 
@@ -624,6 +672,14 @@ public class ShopScreen extends CasinoMenuScreen {
             return;
         }
         if (selected == null) return;
+        if (selected == prestigeOffer && !prestigeArmed) { // deux clics : on ne rend pas ses rangs par erreur
+            prestigeArmed = true;
+            buttons.setText(buyButton, Lang.t("Confirmer"));
+            showDetail(selected.name(), Lang.t("Tous tes rangs vont repartir à zéro. Clique sur « Confirmer » pour passer au Prestige."));
+            detailTitle.setColor(Palette.GOLD);
+            return;
+        }
+        boolean ascending = selected == prestigeOffer;
         String blocked = selected.blocked().get();
         if (blocked == null && profile.getCoins() < selected.price()) {
             blocked = Lang.f("Il te manque {0} pièces.",
@@ -641,7 +697,9 @@ public class ShopScreen extends CasinoMenuScreen {
         showTab(tab); // met à jour les états (possédé, rang suivant…)
         this.scroll.layout();
         this.scroll.setScrollY(scroll);
-        showDetail(Lang.f("{0} : acheté !", name), tab == Tab.RANG ? Lang.t("Ton nouveau rang vaut dans tous les combats.")
+        if (ascending) {
+            showDetail(Lang.f("{0} !", name), Lang.t("Tu repars sans rang. Ton Prestige vaut dans tous les combats, pour toujours."));
+        } else showDetail(Lang.f("{0} : acheté !", name), tab == Tab.RANG ? Lang.t("Ton nouveau rang vaut dans tous les combats.")
             : tab == Tab.CARTES ? Lang.t("La carte t'attend à la Table du croupier.")
             : Lang.t("Place-le dans ta machine, à la Table du croupier."));
         detailTitle.setColor(Palette.GOLD);

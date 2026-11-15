@@ -442,6 +442,21 @@ public class CombatContext {
         public boolean isFactor() { return bonus == 0; }
     }
 
+    /** Nom de l'étape du Prestige dans le détail d'un symbole. */
+    public static final String PRESTIGE = "Prestige";
+
+    /**
+     * @return {@link #getSteps(Target)}, précédé du bonus du Prestige {@code prestige}
+     *         (ajouté à la valeur de base du symbole, avant les cartes ; rien s'il vaut 0)
+     */
+    public List<PowerStep> withPrestige(Target target, int prestige) {
+        if (prestige == 0) return getSteps(target);
+        List<PowerStep> all = new ArrayList<>();
+        all.add(new PowerStep(target, PRESTIGE, prestige, 1f));
+        all.addAll(getSteps(target));
+        return all;
+    }
+
     /** @return ce qui a changé {@code target} ce tour (valeur des symboles comprise), dans l'ordre. */
     public List<PowerStep> getSteps(Target target) {
         return steps.stream().filter(step -> step.target() == target || step.target() == Target.SYMBOLS).toList();

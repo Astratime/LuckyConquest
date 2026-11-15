@@ -389,7 +389,8 @@ public class TurnEngine {
                 EnemyTurnResolver.Reflection reflection = new EnemyTurnResolver.Reflection(
                     combat.getTotalReflectPercent(), CombatResolver.VAULT_REFLECT_SHARE,
                     shieldReflect, combat.getReflectAttackPercent(), combat.getReflectHpPercent(),
-                    (long) player.getRankBonus().attack() * combat.getRankFactor(),
+                    (long) player.getRankBonus().attack() * combat.getRankFactor()
+                        + player.getRankBonus().guardBonus(player.getRankBonus().attack() * combat.getRankFactor()),
                     (double) combat.getAttackFactor() * combat.getSymbolPower());
                 enemyTurn = enemyTurnResolver.resolve(enemy, player, reflection, thorns);
             }
@@ -482,7 +483,7 @@ public class TurnEngine {
         int spinCost = combat.getSpinCost();
         float scale = SpinEconomy.gainScale(spinCost);
         int perSymbol = Math.round(BonusGame.GAINS_PER_SYMBOL * scale);
-        int rank = Math.round(player.getRankBonus().gains() * combat.getRankFactor() * scale);
+        int rank = Math.round(player.getRankBonus().withPrestigeBonus(player.getRankBonus().gains() * combat.getRankFactor()) * scale);
         float factor = combat.getGainMultiplier() * combat.getGainFactor() * combat.getSymbolPower();
         BonusGame.Kind kind = bonusGameKind != null ? bonusGameKind : BonusGame.Kind.pick(random);
         BonusGame bonus = kind == BonusGame.Kind.GRID

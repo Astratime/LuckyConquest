@@ -10,6 +10,7 @@ import fr.astratime.lucky.assets.HudTextures;
 import fr.astratime.lucky.assets.Palette;
 import fr.astratime.lucky.entities.GameState;
 import fr.astratime.lucky.i18n.Lang;
+import fr.astratime.lucky.progress.PlayerProfile;
 
 import java.util.function.Supplier;
 
@@ -67,6 +68,9 @@ public class CombatHud implements Disposable {
         GameState state = gameState.get();
         long enemyMax = state.getEnemy().getMaxHp();
         enemyHealthBar.setTitle(state.getEnemy().getKind().getBarName());
+        int prestige = state.getPlayer().getRankBonus().prestige();
+        playerHealthBar.setTitle(prestige == 0 ? Lang.t("JOUEUR")
+            : Lang.f("JOUEUR  PRESTIGE {0}", PlayerProfile.prestigeNumeral(prestige)));
         int playerMax = state.getPlayer().getMaxHp();
         enemyHealthBar.refresh(Math.clamp(state.getEnemy().getHp() + heldEnemyLoss - heldEnemyHeal, 0, enemyMax),
             enemyMax);

@@ -42,6 +42,7 @@ tasks.register('simulate', JavaExec) {
   if (project.hasProperty('rankplace')) args '--rankplace'
   ['potLog','onlyRank','onlyGear'].each { p -> if (project.hasProperty(p)) systemProperty "lucky.$p", project.property(p) }
   if (project.hasProperty('rpRuns')) systemProperty 'lucky.rpRuns', project.property('rpRuns')
+  if (project.hasProperty('level')) systemProperty 'lucky.prestige', project.property('level')
   if (project.hasProperty('stake')) systemProperty 'lucky.stake', project.property('stake')
   if (project.hasProperty('potPerRun')) systemProperty 'lucky.potPerRun', 'true'
 }

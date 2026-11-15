@@ -490,7 +490,7 @@ public class CombatResolver {
 
     /** @return le bonus d'attaque de tous les Cœurs d'or joués ce tour (0 sans eux). */
     static int goldenHeartBonus(CombatContext context) {
-        int rank  = context.getPlayer().getRankBonus().gains() * context.getRankFactor();
+        int rank  = context.getPlayer().getRankBonus().withPrestigeBonus(context.getPlayer().getRankBonus().gains() * context.getRankFactor());
         int cards = Math.round(context.getGainMultiplier() - 1f); // le multiplicateur part de 1
         return context.getGoldenHearts() * (rank + Math.max(0, cards) * GOLDEN_HEART_CARD_FACTOR);
     }

@@ -64,6 +64,8 @@ public class PlayerProfile {
     public static final int MAX_COPIES  = 3;
     /** Exemplaires au plus d'une même carte dans le deck (Astra : un seul ; la carte « + » compte comme sa version normale). */
     public static final int DECK_MAX_COPIES = 1;
+    /** Niveaux de Prestige au plus (+10 % par niveau : +100 % au dernier). */
+    public static final int MAX_PRESTIGE = 10;
     /** Part des gains gardée en pièces après une défaite dans un donjon, en %. */
     public static final int DEFEAT_KEEP_PERCENT = 20;
 
@@ -73,6 +75,7 @@ public class PlayerProfile {
     static final String KEY_RANK       = "rank";
     /** Rang choisi à la Table du croupier, en nombre de rangs (absent : le plus haut rang acheté). */
     static final String KEY_CHOSEN_RANK = "chosenRank";
+    static final String KEY_PRESTIGE    = "prestige";
     static final String KEY_REELS      = "reels";
     static final String KEY_MACHINE    = "machine";
     static final String KEY_DUNGEONS   = "dungeons";
@@ -131,6 +134,8 @@ public class PlayerProfile {
     private int  ranks;
     /** Rang joué, choisi parmi les rangs achetés (0 : sans rang ; {@code ranks} : le plus haut). */
     private int  chosenRanks;
+    /** Niveau de Prestige : combien de fois le joueur a rendu tous ses rangs (0 à {@link #MAX_PRESTIGE}). */
+    private int  prestige;
     /** Rang joué en mode ADMIN (jamais enregistré, tous les rangs au départ). */
     private int  adminChosenRanks = Rank.values().length;
     /** Rouleaux achetés à la boutique, dans l'ordre d'achat. */
@@ -207,6 +212,7 @@ public class PlayerProfile {
         String savedCoins = storage.get(KEY_COINS);
         coins = parseCoins(savedCoins);
         ranks = Math.max(0, Math.min(Rank.values().length, (int) parseCoins(storage.get(KEY_RANK))));
+        prestige = Math.max(0, Math.min(MAX_PRESTIGE, (int) parseCoins(storage.get(KEY_PRESTIGE))));
         String savedChosen = storage.get(KEY_CHOSEN_RANK);
         chosenRanks = savedChosen == null ? ranks : Math.max(0, Math.min(ranks, (int) parseCoins(savedChosen)));
         for (Symbol symbol : decodeSymbols(storage.get(KEY_REELS))) {
@@ -1119,7 +1125,7 @@ public class PlayerProfile {
      */
     public RankBonus getRankBonus() {
         Rank active = getActiveRank();
-        return active == null ? RankBonus.NONE : active.getBonus();
+        return (active == null ? RankBonus.NONE : active.getBonus()).withPrestige(prestige);
     }
 
     /** @return le rang joué en combat, choisi parmi ceux achetés, ou {@code null} pour jouer sans rang. */
@@ -1159,12 +1165,51 @@ public class PlayerProfile {
      */
     public boolean buyNextRank() {
         Rank next = getNextRank();
-        if (next == null || coins < next.getPrice()) return false;
-        coins -= next.getPrice();
+        if (next == null || coins < next.getPrice(prestige)) return false;
+        coins -= next.getPrice(prestige);
         ranks++;
         chosenRanks = ranks; // un rang acheté se joue tout de suite
         save();
         return true;
+    }
+
+    /** @return le niveau de Prestige du joueur (0 : aucun). */
+    public int getPrestige() { return prestige; }
+
+    /**
+     * @return {@code true} si le joueur peut passer au Prestige suivant : tous ses rangs
+     *         achetés, moins de {@link #MAX_PRESTIGE} niveaux, et pas en mode ADMIN
+     */
+    public boolean canPrestige() { return !admin && ranks >= Rank.values().length && prestige < MAX_PRESTIGE; }
+
+    /**
+     * Prestige : le joueur rend tous ses rangs (il repart sans rang et les rachète
+     * dans l'ordre, au même prix) et gagne un niveau de Prestige, pour toujours.
+     * Tout le reste est gardé : pièces, cartes, rouleaux, decks, progression.
+     * Le profil est enregistré.
+     *
+     * @return {@code false} si ce n'est pas encore possible (voir {@link #canPrestige()})
+     */
+    public boolean ascend() {
+        if (!canPrestige()) return false;
+        prestige++;
+        ranks = 0;
+        chosenRanks = 0;
+        save();
+        return true;
+    }
+
+    /** @return le multiplicateur des PV, de l'attaque et de la défense au Prestige {@code level}, écrit « x1,96 ». */
+    public static String prestigeFactorText(int level) {
+        String text = String.format(java.util.Locale.ROOT, "%.2f", RankBonus.NONE.withPrestige(level).guardFactor());
+        text = text.replaceAll("0+$", "").replaceAll("\\.$", "");
+        return "x" + Lang.decimal(text);
+    }
+
+    /** @return le niveau de Prestige en chiffres romains (I, II… X), ou "" sans Prestige. */
+    public static String prestigeNumeral(int level) {
+        String[] numerals = {"", "I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X"};
+        return numerals[Math.max(0, Math.min(numerals.length - 1, level))];
     }
 
     /**
@@ -1378,6 +1423,7 @@ public class PlayerProfile {
         storage.put(KEY_COINS, String.valueOf(coins));
         storage.put(KEY_RANK, String.valueOf(ranks));
         storage.put(KEY_CHOSEN_RANK, String.valueOf(chosenRanks));
+        storage.put(KEY_PRESTIGE, String.valueOf(prestige));
         storage.put(KEY_REELS, encodeSymbols(boughtReels));
         storage.put(KEY_MACHINE, encodeSymbols(machine));
         storage.put(KEY_DUNGEONS, String.join(",", clearedDungeons));
