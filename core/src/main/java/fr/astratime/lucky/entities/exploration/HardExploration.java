@@ -15,8 +15,9 @@ import java.util.List;
  * fois plus fort que le précédent (x2 au 2e lieu, x4 au 3e … x32 au Désert difficile). Les écarts entre les donjons
  * d'un même lieu sont gardés : un ennemi garde ses PV, sa défense et son attaque par rapport à ceux de son lieu.
  *
- * <p>Les pièces suivent : un tirage coûte celui du Désert x2 par lieu, fois {@link #COINS_PERCENT} %, et tous les
- * gains du combat, le coffre et la part gardée après une défaite se comptent à partir de ce coût.
+ * <p>Les pièces montent moins vite que la force (Astra, 2026-11-15 : x2 par lieu, c'était trop) : un tirage coûte
+ * celui du Désert, +{@link #SPIN_GROWTH_PERCENT} % à chaque lieu, fois {@link #COINS_PERCENT} %, et tous les gains
+ * du combat, le coffre et la part gardée après une défaite se comptent à partir de ce coût.
  */
 public final class HardExploration {
 
@@ -25,6 +26,9 @@ public final class HardExploration {
      * comme la force des ennemis, rien de plus). Choix d'Astra (2026-11-15) : aucune prime.
      */
     public static final int COINS_PERCENT = 100;
+
+    /** Hausse du coût du tirage d'un lieu difficile au suivant, en % (Astra, 2026-11-15 : moins que x2). */
+    public static final int SPIN_GROWTH_PERCENT = 50;
 
     private HardExploration() { }
 
@@ -45,10 +49,14 @@ public final class HardExploration {
     /** @return le multiplicateur de la défense des ennemis de {@code place} en mode difficile. */
     public static double defenseFactor(Place place) { return Factors.DEFENSE[place.ordinal()]; }
 
-    /** @return le coût d'un tirage dans le lieu {@code place} difficile : le Désert x2 par lieu, prime comprise. */
+    /**
+     * @return le coût d'un tirage dans le lieu {@code place} difficile : celui du Désert, +{@link #SPIN_GROWTH_PERCENT} %
+     *         par lieu, prime comprise
+     */
     public static int spinCost(Place place) {
+        double growth = Math.pow(1.0 + SPIN_GROWTH_PERCENT / 100.0, place.ordinal());
         return (int) Math.min(Integer.MAX_VALUE,
-            (long) Place.DESERT.getSpinCost() * strength(place) * COINS_PERCENT / 100);
+            Math.round(Place.DESERT.getSpinCost() * growth * COINS_PERCENT / 100.0));
     }
 
     /**
