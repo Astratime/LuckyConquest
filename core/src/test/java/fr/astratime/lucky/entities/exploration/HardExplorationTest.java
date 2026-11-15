@@ -61,10 +61,11 @@ class HardExplorationTest {
     }
 
     @Test
-    void coinsFollowTheDesertSpinCostTimesTwoPerPlace() {
+    void coinsFollowTheDesertSpinCostPlusFiftyPercentPerPlace() {
         assertEquals(100, HardExploration.COINS_PERCENT, "aucune prime (choix d'Astra)");
+        int[] expected = {140_000, 210_000, 315_000, 472_500, 708_750, 1_063_125};
         for (Place place : Place.values()) {
-            int cost = (int) (Place.DESERT.getSpinCost() * HardExploration.strength(place));
+            int cost = expected[place.ordinal()];
             assertEquals(cost, place.getSpinCost(true));
             assertEquals(cost, new Enemy(place.getDungeons().get(0).getKing(), true).getSpinCost());
             assertEquals(5_000L * cost, place.getChestCoins(true));
