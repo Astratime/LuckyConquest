@@ -139,6 +139,23 @@ public enum Place {
     /** @return les pièces en plus d'un coffre dont la carte est déjà au maximum d'exemplaires : la moitié du coffre. */
     public long getDuplicateCoins() { return getChestCoins() / 2; }
 
+    /** @return le coût d'un tirage dans ses combats, en mode difficile si {@code hard} (voir {@link HardExploration}). */
+    public int getSpinCost(boolean hard) { return hard ? HardExploration.spinCost(this) : spinCost; }
+
+    /**
+     * @return les pièces d'un coffre de ses donjons, en mode difficile si {@code hard} : le coffre du Désert
+     *         (5 000 coûts de tirage) au coût de tirage du lieu difficile
+     */
+    public long getChestCoins(boolean hard) {
+        return hard ? (long) DESERT.chestSpins * HardExploration.spinCost(this) : getChestCoins();
+    }
+
+    /** @return les pièces gardées au plus après une défaite, en mode difficile si {@code hard}. */
+    public long getDefeatCap(boolean hard) { return (long) DEFEAT_CAP_SPINS * getSpinCost(hard); }
+
+    /** @return les pièces en plus d'un coffre dont la carte est déjà au maximum, en mode difficile si {@code hard}. */
+    public long getDuplicateCoins(boolean hard) { return getChestCoins(hard) / 2; }
+
     /** @return {@code true} si {@code kind} est le roi d'un des donjons de ce lieu. */
     public boolean isKing(EnemyKind kind) {
         for (Dungeon dungeon : dungeons) if (dungeon.getKing() == kind) return true;

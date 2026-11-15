@@ -28,6 +28,7 @@ import fr.astratime.lucky.assets.Textures;
 import fr.astratime.lucky.entities.Card;
 import fr.astratime.lucky.entities.exploration.Dungeon;
 import fr.astratime.lucky.entities.exploration.DungeonRun;
+import fr.astratime.lucky.entities.exploration.HardExploration;
 import fr.astratime.lucky.entities.enemy.EnemyKind;
 import fr.astratime.lucky.entities.exploration.Rival;
 import fr.astratime.lucky.entities.exploration.Place;
@@ -131,7 +132,11 @@ public class ExplorationScreen extends CasinoMenuScreen {
     /** Rejoue la présentation du Croupier. */
     private final TextButton       tutorialButton;
     private final TextButton       rewardsButton;
+    /** Bascule entre le mode normal et l'Exploration difficile (ouverte une fois le Désert vidé). */
+    private final TextButton       modeButton;
     private final DungeonRewardsOverlay rewards;
+    /** Exploration difficile choisie (voir {@link HardExploration}). */
+    private boolean hard;
 
     private Place   place = Place.values()[0];
     /** Profil du joueur : les donjons vidés ouvrent les lieux suivants. */
@@ -152,9 +157,15 @@ public class ExplorationScreen extends CasinoMenuScreen {
      * au retour d'un combat, celui qui vient d'être joué ({@code null} : le premier lieu).
      */
     public ExplorationScreen(LuckyGame luckyGame, Dungeon played) {
+        this(luckyGame, played, false);
+    }
+
+    /** Comme {@link #ExplorationScreen(LuckyGame, Dungeon)}, en Exploration difficile si {@code hardMode} (si elle est ouverte). */
+    public ExplorationScreen(LuckyGame luckyGame, Dungeon played, boolean hardMode) {
         super(luckyGame, Lang.t("EXPLORATION"), 96, VEIL_ALPHA);
         if (played != null) place = Place.of(played);
         this.profile   = luckyGame.getProfile();
+        this.hard      = hardMode && profile.isExplorationHardOpen();
         Function<String, Card> factory = CardLoader.cardFactory();
         cardNames = new HashMap<>();
         for (Place p : Place.values()) {
@@ -175,23 +186,19 @@ public class ExplorationScreen extends CasinoMenuScreen {
             MenuOption row = new MenuOption(rowPlace.getShortName(), rowStyle, hud.insetDrawable(),
                 new TextureRegion(chipTexture), ROW_WIDTH, ROW_HEIGHT);
             row.setSelected(rowPlace == place);
-            if (!profile.isOpen(rowPlace)) row.getColor().a = LOCKED_ALPHA; // lieu fermé : à peine visible
             row.addListener(new ClickListener() {
                 @Override
                 public void clicked(InputEvent event, float x, float y) { selectPlace(rowPlace); }
             });
             rows.add(row);
-            int cleared = clearedCount(rowPlace);
-            int total = rowPlace.getDungeons().size();
-            Label count = new Label(cleared + "/" + total, new Label.LabelStyle(gateFont, Palette.CREAM));
+            Label count = new Label("", new Label.LabelStyle(gateFont, Palette.CREAM));
             count.setTouchable(Touchable.disabled);
-            count.setVisible(profile.isOpen(rowPlace) && cleared < total);
             rowCounts.add(count);
             Image rowBadge = pixelImage(badgeTexture);
             rowBadge.setTouchable(Touchable.disabled);
-            rowBadge.setVisible(cleared == total);
             rowBadges.add(rowBadge);
         }
+        refreshRows();
 
         placeLabel = new Label("", new Label.LabelStyle(placeFont, Color.WHITE));
         potIcon = new Image(new TextureRegionDrawable(new TextureRegion(hud.iconPot)));
@@ -220,6 +227,8 @@ public class ExplorationScreen extends CasinoMenuScreen {
         deckButton.setVisible(!profile.isAdmin() && profile.nextUsedDeckSlot(profile.getDeckSlot()) != profile.getDeckSlot());
         fightButton = buttons.create("", clickSound, this::nextFight);
         fightButton.setVisible(profile.isAdmin());
+        modeButton = buttons.create(modeText(), clickSound, this::toggleMode);
+        modeButton.setVisible(profile.isExplorationHardOpen());
         stage.addActor(listPanel);
         stage.addActor(detailPanel);
         rows.forEach(stage::addActor);
@@ -240,6 +249,7 @@ public class ExplorationScreen extends CasinoMenuScreen {
         stage.addActor(backButton);
         stage.addActor(tutorialButton);
         stage.addActor(rewardsButton);
+        stage.addActor(modeButton);
         stage.addActor(rewards.getActor());
         reveal();
 
@@ -262,11 +272,12 @@ public class ExplorationScreen extends CasinoMenuScreen {
     private void selectPlace(Place newPlace) {
         place = newPlace;
         for (int i = 0; i < rows.size(); i++) rows.get(i).setSelected(Place.values()[i] == place);
-        placeLabel.setText(place.getName().toUpperCase());
-        // La cagnotte du Jeu bonus de ce lieu, partagée par ses donjons, à récupérer au prochain Jeu bonus.
-        potText.setText(Lang.f("Cagnotte : {0}", Lang.big(profile.getPot(place).getAmount())));
-        potIcon.setVisible(profile.isOpen(place));
-        potText.setVisible(profile.isOpen(place));
+        placeLabel.setText(hard ? Lang.f("{0} · DIFFICILE", place.getName().toUpperCase()) : place.getName().toUpperCase());
+        // La cagnotte du Jeu bonus de ce lieu, partagée par ses donjons, à récupérer au prochain Jeu bonus
+        // (celle du mode difficile à part).
+        potText.setText(Lang.f("Cagnotte : {0}", Lang.big(profile.getPot(place, hard).getAmount())));
+        potIcon.setVisible(isOpen(place));
+        potText.setVisible(isOpen(place));
         PlaceRule rule = place.getRule();
         boolean hasRule = rule != PlaceRule.NONE;
         ruleName.setText(hasRule ? Lang.f("Règle du lieu : {0}", rule.getName()) : "");
@@ -274,7 +285,7 @@ public class ExplorationScreen extends CasinoMenuScreen {
         ruleName.setVisible(hasRule);
         ruleText.setVisible(hasRule);
         ((TextureRegionDrawable) map.getDrawable()).setRegion(new TextureRegion(enemyTextures.map(place)));
-        boolean open = profile.isOpen(place);
+        boolean open = isOpen(place);
         map.setColor(open ? Color.WHITE : LOCKED_TINT);
         gates.forEach(Actor::remove);
         gateLabels.forEach(Actor::remove);
@@ -294,13 +305,13 @@ public class ExplorationScreen extends CasinoMenuScreen {
                     super.enter(event, x, y, pointer, fromActor);
                     if (pointer != -1) return;
                     hoverSound.play();
-                    if (profile.isOpen(place)) gate.setColor(Palette.GOLD_PALE);
+                    if (isOpen(place)) gate.setColor(Palette.GOLD_PALE);
                 }
 
                 @Override
                 public void exit(InputEvent event, float x, float y, int pointer, Actor toActor) {
                     super.exit(event, x, y, pointer, toActor);
-                    if (pointer == -1) gate.setColor(profile.isOpen(place) ? Color.WHITE : LOCKED_TINT);
+                    if (pointer == -1) gate.setColor(isOpen(place) ? Color.WHITE : LOCKED_TINT);
                 }
 
                 @Override
@@ -332,7 +343,7 @@ public class ExplorationScreen extends CasinoMenuScreen {
             gateLabels.add(label);
             stage.addActor(gate);
             stage.addActor(label);
-            if (profile.isCleared(dungeon)) {
+            if (profile.isCleared(dungeon, hard)) {
                 Image badge = badgeFor(gate);
                 badges.add(badge);
                 stage.addActor(badge);
@@ -357,23 +368,28 @@ public class ExplorationScreen extends CasinoMenuScreen {
         dungeonName.setText(dungeon.getName());
         buttons.setText(fightButton, fightText(dungeon));
         StringBuilder text = new StringBuilder();
-        if (!profile.isOpen(place)) {
+        if (!isOpen(place)) {
             // Fermé : la description attendra, place à ce qu'il faut faire pour l'ouvrir.
             String previous = place.getPrevious().getName();
-            text.append(Lang.f("Lieu fermé. Termine d'abord {0}.",
-                Character.toLowerCase(previous.charAt(0)) + previous.substring(1)));
+            String previousName = Character.toLowerCase(previous.charAt(0)) + previous.substring(1);
+            text.append(hard ? Lang.f("Lieu fermé. Termine d'abord {0} en mode difficile.", previousName)
+                : Lang.f("Lieu fermé. Termine d'abord {0}.", previousName));
             text.append('\n').append(Lang.f("Donjons vaincus là-bas : {0}/{1}",
                 clearedCount(place.getPrevious()), place.getPrevious().getDungeons().size()));
         } else {
             text.append(dungeon.getDescription());
-            if (profile.isCleared(dungeon)) text.append('\n').append(Lang.t("Déjà vidé."));
+            if (profile.isCleared(dungeon, hard)) text.append('\n').append(Lang.t("Déjà vidé."));
+        }
+        if (hard) {
+            // La force du lieu difficile : celle du Désert en normal, x2 par lieu.
+            text.append('\n').append(Lang.f("Difficulté : le Désert x{0}.", HardExploration.strength(place)));
         }
         text.append("\n\n").append(Lang.f("Combat 1 : {0} ({1} PV)", dungeon.getSoldier().getDisplayName(),
-            PlayerProfile.formatCoins(dungeon.getSoldier().getMaxHp(Difficulty.NORMAL))));
+            Lang.big(dungeon.getSoldier().getMaxHp(Difficulty.of(hard)))));
         text.append('\n').append(Lang.f("Combat 2 : {0} ({1} PV)", dungeon.getKing().getDisplayName(),
-            PlayerProfile.formatCoins(dungeon.getKing().getMaxHp(Difficulty.NORMAL))));
+            Lang.big(dungeon.getKing().getMaxHp(Difficulty.of(hard)))));
         text.append("\n\n").append(Lang.f("Coffre : {0} pièces + 1 carte",
-            PlayerProfile.formatCoins(place.getChestCoins())));
+            PlayerProfile.formatCoins(place.getChestCoins(hard))));
         for (Dungeon.Loot loot : dungeon.getLoot()) {
             text.append('\n').append(Lang.f("{0} {1} %", cardNames.get(loot.cardId()), loot.percent()));
         }
@@ -387,9 +403,40 @@ public class ExplorationScreen extends CasinoMenuScreen {
         layout();
     }
 
-    /** @return le nombre de donjons de {@code p} dont le roi est battu. */
+    /** @return le nombre de donjons de {@code p} dont le roi est battu, dans le mode choisi. */
     private int clearedCount(Place p) {
-        return (int) p.getDungeons().stream().filter(profile::isCleared).count();
+        return (int) p.getDungeons().stream().filter(dungeon -> profile.isCleared(dungeon, hard)).count();
+    }
+
+    /** @return {@code true} si le lieu {@code p} peut être joué dans le mode choisi. */
+    private boolean isOpen(Place p) { return profile.isOpen(p, hard); }
+
+    /** Liste des lieux : un lieu fermé à peine visible, puis « 2/4 » ou la pastille d'un lieu vidé, dans le mode choisi. */
+    private void refreshRows() {
+        Place[] places = Place.values();
+        for (int i = 0; i < places.length; i++) {
+            Place rowPlace = places[i];
+            rows.get(i).getColor().a = isOpen(rowPlace) ? 1f : LOCKED_ALPHA;
+            int cleared = clearedCount(rowPlace);
+            int total = rowPlace.getDungeons().size();
+            rowCounts.get(i).setText(cleared + "/" + total);
+            rowCounts.get(i).setVisible(isOpen(rowPlace) && cleared < total);
+            rowBadges.get(i).setVisible(cleared == total);
+        }
+    }
+
+    /** @return le texte du bouton du mode : celui qui est choisi. */
+    private String modeText() { return hard ? Lang.t("Mode difficile") : Lang.t("Mode normal"); }
+
+    /** Bascule entre le mode normal et l'Exploration difficile : le même lieu, dans l'autre mode. */
+    private void toggleMode() {
+        if (!profile.isExplorationHardOpen()) return;
+        hard = !hard;
+        buttons.setText(modeButton, modeText());
+        refreshRows();
+        int keep = selected;
+        selectPlace(place);
+        if (keep >= 0) selectDungeon(keep, false);
     }
 
     /** @return une image pixel art affichée sans lissage. */
@@ -444,15 +491,15 @@ public class ExplorationScreen extends CasinoMenuScreen {
 
     /** Entre dans le donjon choisi : fondu au noir puis combat contre son soldat. */
     private void launch() {
-        if (leaving || selected < 0 || !profile.isOpen(place)) return;
+        if (leaving || selected < 0 || !isOpen(place)) return;
         Dungeon dungeon = place.getDungeons().get(selected);
         // Le Joueur Masqué prend parfois la place du soldat ; en mode ADMIN, seulement si on le choisit.
         EnemyKind rival = profile.isAdmin() ? (fight == RIVAL_FIGHT ? Rival.of(place) : null)
             : Rival.roll(place, profile::hasDefeated, new Random());
         int start = profile.isAdmin() && fight == ADMIN_FIGHTS - 1 ? 1 : 0;
         boolean golden = profile.isAdmin() && fight == GOLDEN_FIGHT;
-        goTo(() -> new GameScreen(luckyGame, rival != null ? new DungeonRun(dungeon, 0, rival)
-            : new DungeonRun(dungeon, start, golden)));
+        goTo(() -> new GameScreen(luckyGame, (rival != null ? new DungeonRun(dungeon, 0, rival)
+            : new DungeonRun(dungeon, start, golden)).hard(hard)));
     }
 
     /** Choix du mode ADMIN pour affronter le Joueur Masqué du lieu à la place du soldat (après le roi). */
@@ -480,7 +527,7 @@ public class ExplorationScreen extends CasinoMenuScreen {
     /** Ouvre le détail des récompenses du donjon choisi. */
     private void showRewards() {
         if (leaving || selected < 0) return;
-        rewards.show(place.getDungeons().get(selected), profile);
+        rewards.show(place.getDungeons().get(selected), profile, hard);
         fade.toFront();
     }
 
@@ -600,6 +647,7 @@ public class ExplorationScreen extends CasinoMenuScreen {
         deckButton.setPosition(enterButton.getX() - 24f - deckButton.getWidth(), enterButton.getY());
         backButton.setPosition(MARGIN, (BOTTOM_SPACE - backButton.getHeight()) / 2f);
         tutorialButton.setPosition(backButton.getX() + backButton.getWidth() + 20f, backButton.getY());
+        modeButton.setPosition(tutorialButton.getX() + tutorialButton.getWidth() + 20f, backButton.getY());
         fightButton.setPosition(enterButton.getX() - 24f - fightButton.getWidth(), enterButton.getY());
         float rewardsRight = deckButton.isVisible() ? deckButton.getX()
             : fightButton.isVisible() ? fightButton.getX() : enterButton.getX();
@@ -637,6 +685,11 @@ public class ExplorationScreen extends CasinoMenuScreen {
             case Input.Keys.R -> {
                 clickSound.play();
                 showRewards();
+            }
+            case Input.Keys.M -> {
+                if (!modeButton.isVisible()) return false;
+                clickSound.play();
+                toggleMode();
             }
             case Input.Keys.F -> {
                 if (!fightButton.isVisible()) return false;

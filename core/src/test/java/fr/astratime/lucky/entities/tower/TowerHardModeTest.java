@@ -57,7 +57,7 @@ class TowerHardModeTest {
     @Test
     void normalModeExplorationAndTrainingDoNotChange() {
         assertEquals(EnemyKind.MACHINE_ORIGINELLE.getMaxHp(Difficulty.NORMAL), 10_000_000L);
-        assertEquals(EnemyKind.ROI_PIQUE.getMaxHp(Difficulty.NORMAL), EnemyKind.ROI_PIQUE.getMaxHp(Difficulty.HARD), "l'Exploration ne change pas");
+        assertEquals(20_000L, EnemyKind.ROI_PIQUE.getMaxHp(Difficulty.NORMAL), "l'Exploration normale ne change pas");
         assertEquals(EnemyKind.ENTRAINEMENT.getPower(Difficulty.NORMAL), EnemyKind.ENTRAINEMENT.getPower(Difficulty.HARD), "l'Entraînement non plus");
         assertEquals(600, EnemyKind.MACHINE_ORIGINELLE.getPower(Difficulty.NORMAL));
 

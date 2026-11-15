@@ -621,7 +621,7 @@ public class EnemyView implements Disposable {
         return switch (card.getSuit()) {
             case PIQUE   -> Lang.f("ATTAQUE +{0}", kind.hurt(kind.swordBonus(card), hard));
             case COEUR   -> Lang.f("POTION +{0}%", EnemyCards.healBonus(card));
-            case CARREAU -> Lang.f("BOUCLIER +{0}", kind.empowered(kind.shieldBonus(card), hard));
+            case CARREAU -> Lang.f("BOUCLIER +{0}", kind.fortified(kind.shieldBonus(card), hard));
             case TREFLE  -> Lang.f("CHANCE +{0}%", EnemyCards.luckBonus(card));
         };
     }

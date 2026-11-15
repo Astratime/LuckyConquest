@@ -3025,5 +3025,10 @@
   "Tu repars sans rang. Ton Prestige vaut dans tous les combats, pour toujours.": "You start again with no rank. Your Prestige counts in every fight, forever.",
   "Prestige {0} : PV, attaque et défense {1}, gains +{2} % (rang compris).": "Prestige {0}: HP, attack and defense {1}, gains +{2}% (rank included).",
   "JOUEUR  PRESTIGE {0}": "PLAYER  PRESTIGE {0}",
-  "Une fois tous les rangs achetés, la boutique te propose de les rendre. Chaque niveau multiplie par {0} tes PV max, l'attaque et la défense de tes symboles, et ajoute +{1} % à leurs gains, rang compris, jusqu'au Prestige {2}. Tu gardes tout le reste.": "Once every rank is bought, the shop offers to give them back. Each level multiplies your max HP and your symbols' attack and defense by {0}, and adds +{1}% to their gains, rank included, up to Prestige {2}. You keep everything else."
+  "Une fois tous les rangs achetés, la boutique te propose de les rendre. Chaque niveau multiplie par {0} tes PV max, l'attaque et la défense de tes symboles, et ajoute +{1} % à leurs gains, rang compris, jusqu'au Prestige {2}. Tu gardes tout le reste.": "Once every rank is bought, the shop offers to give them back. Each level multiplies your max HP and your symbols' attack and defense by {0}, and adds +{1}% to their gains, rank included, up to Prestige {2}. You keep everything else.",
+  "Exploration difficile": "Hard Exploration",
+  "Ouverte une fois le Désert vidé. La prairie y est aussi dure que le Désert, puis chaque lieu deux fois plus que le précédent. Plus de pièces, sa propre progression.": "Opens once the Desert is cleared. The meadow there is as hard as the Desert, then each place twice as hard as the one before. More coins, its own progression.",
+  "Mode difficile : un tirage coûte {0}, tous les gains suivent.": "Hard mode: a spin costs {0}, all gains follow.",
+  "Lieu fermé. Termine d'abord {0} en mode difficile.": "Place closed. Clear {0} in hard mode first.",
+  "Difficulté : le Désert x{0}.": "Difficulty: the Desert x{0}."
 }

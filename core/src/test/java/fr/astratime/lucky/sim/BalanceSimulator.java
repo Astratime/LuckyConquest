@@ -14,6 +14,7 @@ import fr.astratime.lucky.entities.choices.BetChoice;
 import fr.astratime.lucky.entities.choices.CardChoice;
 import fr.astratime.lucky.entities.choices.RiggedReelChoice;
 import fr.astratime.lucky.entities.choices.RouletteChoice;
+import fr.astratime.lucky.entities.enemy.Difficulty;
 import fr.astratime.lucky.entities.enemy.EnemyKind;
 import fr.astratime.lucky.entities.events.Event;
 import fr.astratime.lucky.entities.events.GainsEarnedEvent;
@@ -212,6 +213,7 @@ public final class BalanceSimulator {
         BalanceSimulator simulator = new BalanceSimulator(assets, quick ? Sizes.QUICK : Sizes.FULL);
         String report = List.of(args).contains("--tower") ? simulator.towerReport()
             : List.of(args).contains("--tune") ? simulator.tuneReport()
+            : List.of(args).contains("--hardplace") ? simulator.hardPlaceReport()
             : List.of(args).contains("--rankplace") ? simulator.rankPlaceReport() : simulator.report();
         System.out.println(report);
         Path out = Paths.get(System.getProperty("lucky.simulation.out", "build/simulation/equilibrage.md"));
@@ -1022,13 +1024,19 @@ public final class BalanceSimulator {
 
     /** Les 4 donjons du lieu à tour de rôle, avec une seule cagnotte pour le lieu (comme dans le jeu). */
     Map<String, RP> rankPlace(Place place, Rank rank, Gear gear, boolean bonusOn, int runs, long seed) {
+        return rankPlace(place, false, rank, gear, bonusOn, runs, seed);
+    }
+
+    /** Comme {@link #rankPlace(Place, Rank, Gear, boolean, int, long)}, en Exploration difficile si {@code hard}. */
+    Map<String, RP> rankPlace(Place place, boolean hard, Rank rank, Gear gear, boolean bonusOn, int runs, long seed) {
         Random random = new Random(seed);
         GameController game = controller((rank == null ? RankBonus.NONE : rank.getBonus()).withPrestige(PRESTIGE), gear);
+        game.setDifficulty(Difficulty.of(hard));
         game.setPlaceRule(place.getRule());
         game.setBonusGameEnabled(bonusOn);
         Map<String, RP> byDungeon = new LinkedHashMap<>();
         for (Dungeon d : place.getDungeons()) byDungeon.put(d.getShortName(), new RP());
-        long chest = place.getChestCoins();
+        long chest = place.getChestCoins(hard);
         List<Dungeon> dungeons = place.getDungeons();
         for (int run = 0; run < runs * dungeons.size(); run++) {
             Dungeon dungeon = dungeons.get(run % dungeons.size());
@@ -1053,7 +1061,7 @@ public final class BalanceSimulator {
                 effort = 0.5 + 0.5 * (1 - Math.max(0, game.getGameState().getEnemy().getHpRatio()));
             }
             double gains = game.getGameState().getPlayer().getGains();
-            long reward = PlayerProfile.combatReward(won, true, gains, place, won ? 1 : effort);
+            long reward = PlayerProfile.combatReward(won, true, gains, place, hard, won ? 1 : effort);
             rp.runs++;
             rp.runCoins.add((double) reward + (won ? chest : 0));
             rp.turns += turns[0];
@@ -1104,6 +1112,51 @@ public final class BalanceSimulator {
     static final int PRESTIGE = Integer.getInteger("lucky.prestige", 0);
 
     static final List<double[]> POT_LOG = System.getProperty("lucky.potLog") != null ? new ArrayList<>() : null;
+
+    // -------------------------------------------------------------------------
+    // Exploration difficile : ./gradlew :core:simulate -Phardplace -Pstake=15 (-PrpRuns=100 -Plevel=N -PhardRank=Roi)
+    // -------------------------------------------------------------------------
+
+    /**
+     * Chaque lieu en mode normal (le Désert, la référence) puis en difficile, avec le rang {@code lucky.hardRank}
+     * (Légende par défaut) et le Prestige {@code -Plevel} : victoires, pièces par descente et par tour.
+     */
+    String hardPlaceReport() {
+        int runs = Integer.getInteger("lucky.rpRuns", 100);
+        String rankName = System.getProperty("lucky.hardRank", "Légende");
+        Rank rank = allRanks().stream().filter(r -> title(r).equals(rankName)).findFirst().orElse(Rank.LEGENDE);
+        List<Gear> gears = SUIT_GEARS.subList(1, SUIT_GEARS.size()); // les robots malins
+        List<Object[]> cases = new ArrayList<>();
+        cases.add(new Object[] {Place.DESERT, false});
+        for (Place place : Place.values()) cases.add(new Object[] {place, true});
+        Map<String, RP> results = new ConcurrentHashMap<>();
+        List<Runnable> jobs = new ArrayList<>();
+        for (Gear gear : gears) for (Object[] c : cases) {
+            if (System.getProperty("lucky.onlyGear") != null && !List.of(System.getProperty("lucky.onlyGear").split(",")).contains(gear.name())) continue;
+            Place place = (Place) c[0];
+            boolean hard = (boolean) c[1];
+            jobs.add(() -> {
+                RP total = new RP();
+                rankPlace(place, hard, rank, gear, true, runs, SEED).values().forEach(total::add);
+                results.put(gear.name() + '|' + place + '|' + hard, total);
+            });
+        }
+        jobs.parallelStream().forEach(Runnable::run);
+        StringBuilder out = new StringBuilder("gear\trank\tprestige\tplace\thard\tspinCost\truns\twinPercent\tavgCoinsRun"
+            + "\tmedianCoinsRun\ttypical30\tturnsPerRun\tcoinsPerTurn\n");
+        for (Gear gear : gears) for (Object[] c : cases) {
+            RP rp = results.get(gear.name() + '|' + c[0] + '|' + c[1]);
+            if (rp == null) continue;
+            Place place = (Place) c[0];
+            boolean hard = (boolean) c[1];
+            double coins = (rp.coinsWin + rp.coinsLoss) / rp.runs;
+            out.append(String.format(Locale.ROOT, "%s\t%s\t%d\t%s\t%b\t%d\t%d\t%.1f\t%.0f\t%.0f\t%.0f\t%.1f\t%.0f%n",
+                gear.name(), title(rank), PRESTIGE, place.getShortName(), hard, place.getSpinCost(hard), rp.runs,
+                100.0 * rp.wins / rp.runs, coins, rp.median(), rp.typical(30), rp.turns / (double) rp.runs,
+                coins / Math.max(1, rp.turns / (double) rp.runs)));
+        }
+        return out.toString();
+    }
 
     String rankPlaceReport() {
         int runs = Integer.getInteger("lucky.rpRuns", 200);
