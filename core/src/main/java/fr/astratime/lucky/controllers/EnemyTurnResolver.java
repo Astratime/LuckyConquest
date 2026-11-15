@@ -171,7 +171,8 @@ public class EnemyTurnResolver {
         turnPlay.actSymbols();
         List<Event> afterEvents = turnPlay.finish(reflection);
         enemy.discard(turnPlay.drawn);
-        if (enemy.getKind() == EnemyKind.GRAND_CROUPIER && enemy.getPhase() >= 3 && !enemy.isDefeated()) {
+        boolean lit = enemy.getMaluses().takeLighthouse(); // Feu du phare : sa prochaine main reste visible
+        if (!enemy.isDefeated() && (lit || enemy.getKind() == EnemyKind.GRAND_CROUPIER && enemy.getPhase() >= 3)) {
             enemy.revealNextHand(); // cartes sur table : le joueur voit sa prochaine main
         }
         enemy.resetDamageTaken(); // ses Épines ne comptent que les coups du prochain tour du joueur
@@ -310,6 +311,18 @@ public class EnemyTurnResolver {
                 if (more.isEmpty()) break;
                 drawn.addAll(more);
             }
+            int gnawed = enemy.getMaluses().takeGnawed(); // Dents de rat : des cartes de sa main partent à la défausse
+            for (int k = 0; k < gnawed && !drawn.isEmpty(); k++) enemy.discard(List.of(drawn.remove(random.nextInt(drawn.size()))));
+            if (gnawed > 0) {
+                openingEvents.add(new StatusEvent(Lang.n(gnawed, "DENTS DE RAT : {0} CARTE RONGÉE", "DENTS DE RAT : {0} CARTES RONGÉES",
+                    gnawed), EffectPopup.Style.DEFENSE));
+            }
+            int fewer = enemy.getMaluses().takeFewerPlays(); // Tournée du patron, Momification : des cartes de moins
+            if (fewer > 0) {
+                plays = Math.max(0, plays - fewer);
+                openingEvents.add(new StatusEvent(Lang.n(fewer, "LIGOTÉ : {0} CARTE DE MOINS", "LIGOTÉ : {0} CARTES DE MOINS",
+                    fewer), EffectPopup.Style.DEFENSE));
+            }
             int harpooned = enemy.getMaluses().takeHarpoons(); // Harpon : une carte de moins
             if (harpooned > 0) {
                 plays = Math.max(0, plays - harpooned);
@@ -329,7 +342,17 @@ public class EnemyTurnResolver {
             // chapitre 6) : elles ne prennent pas la place de ses couleurs, il n'est jamais moins fort qu'avant elles.
             List<Card> regular = drawn.stream().filter(card -> EnemySignature.of(card) == null).toList();
             played = new ArrayList<>(ownCards(drawn, enemy));
-            played.addAll(kind.playsAtRandom() ? chooseAtRandom(regular, plays) : choose(regular, enemy.getHpRatio(), kind, plays));
+            boolean inked = enemy.getMaluses().takeInk(); // Encre : il joue à l'aveugle, ses cartes au hasard
+            if (inked) openingEvents.add(new StatusEvent(Lang.t("ENCRE : IL JOUE À L'AVEUGLE"), EffectPopup.Style.DEFENSE));
+            List<Card> chosen = new ArrayList<>(kind.playsAtRandom() || inked ? chooseAtRandom(regular, plays)
+                : choose(regular, enemy.getHpRatio(), kind, plays));
+            int grapples = enemy.getMaluses().takeGrapples(); // Grappin : sa meilleure carte choisie lui est volée
+            for (int k = 0; k < grapples && !chosen.isEmpty(); k++) {
+                Card best = chosen.stream().max(java.util.Comparator.comparingInt(EnemyTurnResolver::grappleValue)).orElseThrow();
+                chosen.remove(best);
+                openingEvents.add(new StatusEvent(Lang.f("GRAPPIN : {0} VOLÉE", best.getName().toUpperCase()), EffectPopup.Style.ATTACK));
+            }
+            played.addAll(chosen);
             hellBound = enemy.getMaluses().takeHellBound(); // Descente aux enfers : 2 cartes au plus, attaques -50 %
             if (hellBound && played.size() > EnemyMaluses.HELL_MAX_CARDS) {
                 played = new ArrayList<>(played.subList(0, EnemyMaluses.HELL_MAX_CARDS));
@@ -456,6 +479,13 @@ public class EnemyTurnResolver {
                 openingEvents.add(new StatusEvent(Lang.f("INTIMIDÉ : SES ATTAQUES -{0} %", intimidated), EffectPopup.Style.DEFENSE));
             }
             if (hellBound) turn.malusPercent = turn.malusPercent * (100 - EnemyMaluses.HELL_DAMAGE_PERCENT) / 100;
+            int shifted = enemy.getMaluses().takeNextAttackPercent(); // Provocation, Carte biseautée
+            if (shifted != 100) {
+                turn.malusPercent = turn.malusPercent * shifted / 100;
+                openingEvents.add(new StatusEvent(shifted > 100 ? Lang.f("PROVOQUÉ : SES ATTAQUES +{0} %", shifted - 100)
+                    : Lang.f("CARTE BISEAUTÉE : SES ATTAQUES -{0} %", 100 - shifted),
+                    shifted > 100 ? EffectPopup.Style.DAMAGE : EffectPopup.Style.DEFENSE));
+            }
             roulettes = new EnemyRouletteEvent[symbols.length];
             for (int i = 0; i < symbols.length; i++) {
                 if (symbols[i] != EnemySymbol.ZERO) continue;
@@ -1294,6 +1324,11 @@ public class EnemyTurnResolver {
             enemy.addShieldDefense(total);
             return new EnemyShieldedEvent(total);
         }
+    }
+
+    /** Grappin : la valeur d'une carte choisie, pour voler la meilleure (son rang, l'As au-dessus du Roi). */
+    static int grappleValue(Card card) {
+        return card.getRank() == 1 ? 14 : card.getRank();
     }
 
     /**

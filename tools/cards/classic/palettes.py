@@ -22,6 +22,16 @@ FAMILIES = {
     'machines': ('#fde8f6', '#e8a8d4', '#ac6898'),   # magenta
     'coffres':  ('#e6f6fa', '#a0d4e0', '#6098a8'),   # eau
     'vip':      ('#f0e8fc', '#c8b0ec', '#8a70b4'),   # pourpre
+    # --- Fête foraine (cartes des rois, 2026-11-14) ---
+    'chapiteau':     ('#fdecec', '#f0a8a8', '#b46464'),   # toile rouge
+    'train_fantome': ('#eee8f4', '#bcaed0', '#7e7096'),   # brume violette
+    'grande_roue':   ('#fff4e2', '#f4cc90', '#bc9050'),   # néon orangé
+    'stands':        ('#e8f6ec', '#a4d8b4', '#64a078'),   # vert de foire
+    # --- Désert de Braise (cartes des rois, 2026-11-14) ---
+    'caravane':      ('#fdf4e4', '#e8cc98', '#ae8e58'),   # sable
+    'tombeau':       ('#f4f0e2', '#d0c4a0', '#948864'),   # calcaire
+    'oasis':         ('#e4f8f4', '#98d8cc', '#5a9e92'),   # eau de l'oasis
+    'volcan':        ('#ffe8e0', '#f0a08c', '#b05c48'),   # lave
     # --- autres cartes spéciales ---
     'gains':    ('#e8faf0', '#a8e0c0', '#68a884'),   # menthe : cartes de gains
     'main':     ('#ecf0ff', '#b4c0f0', '#7884bc'),   # lavande : pioche et main
@@ -92,4 +102,12 @@ CARD_FAMILY = {
     'bougie': 'usure', 'graine': 'usure', 'pile_ou_face': 'usure',
     'cle_de_remontage': 'arch_horloger', 'coucou': 'arch_horloger', 'grande_aiguille': 'arch_horloger',
     'douze_coups': 'arch_horloger',
+    # cartes des rois (2026-11-14) : la couleur du donjon de leur roi
+    'roi_provocation': 'pique', 'roi_taux_usuraire': 'trefle', 'roi_saignee': 'coeur', 'roi_ronces': 'carreau',
+    'roi_roulement_de_tambour': 'chapiteau', 'roi_tunnel_sans_fin': 'train_fantome', 'roi_roue_lestee': 'grande_roue',
+    'roi_carte_biseautee': 'stands',
+    'roi_dents_de_rat': 'cale', 'roi_tournee_du_patron': 'taverne', 'roi_feu_du_phare': 'phare', 'roi_grappin': 'galion',
+    'roi_tamis_noir': 'filon', 'roi_meche_de_diamant': 'puits', 'roi_coup_d_enclume': 'forge', 'roi_filon': 'gouffre',
+    'roi_refrain': 'bar', 'roi_rage_du_jackpot': 'machines', 'roi_frenesie': 'coffres', 'roi_encre': 'vip',
+    'roi_usure': 'caravane', 'roi_momification': 'tombeau', 'roi_fata_morgana': 'oasis', 'roi_braise': 'volcan',
 }

@@ -111,6 +111,8 @@ public class LastingEffects {
     private int temperPercent = 0;
     /** Cocktail des abysses : cartes jouables en plus, ce tour seulement. */
     private int bonusPlays = 0;
+    /** Filon (carte du Coeur de la montagne) : soin à la fin du prochain tour de l'ennemi, en % des PV max. */
+    private int pendingHealPercent = 0;
     /** Rouleaux qui ont une mémoire : Tirelire, Ancre, Roi démon, Apôtre de la Chance. */
     private final ReelGauges reelGauges = new ReelGauges();
     /** Archétypes du Valet à l'As : Sceptre du roi, cartes du tour d'avant, Ressorts et Coucous. */
@@ -587,6 +589,13 @@ public class LastingEffects {
     public void addBonusPlays(int plays) { bonusPlays += plays; }
     /** @return les cartes jouables en plus ce tour (Cocktail des abysses). */
     public int getBonusPlays() { return bonusPlays; }
+
+    /** Filon : soigne {@code percent} % des PV max à la fin du prochain tour de l'ennemi. */
+    public void addPendingHeal(int percent) { pendingHealPercent += Math.max(0, percent); }
+    /** @return le soin du Filon en attente, en % des PV max. */
+    public int getPendingHeal() { return pendingHealPercent; }
+    /** Fin du tour de l'ennemi : le soin du Filon vaut pour celui-ci. @return son % des PV max */
+    public int takePendingHeal() { int n = pendingHealPercent; pendingHealPercent = 0; return n; }
 
     /** @return ce que retiennent la Tirelire, l'Ancre, le Roi démon et l'Apôtre de la Chance. */
     public ReelGauges getReelGauges() { return reelGauges; }

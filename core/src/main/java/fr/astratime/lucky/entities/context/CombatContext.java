@@ -97,6 +97,10 @@ public class CombatContext {
     /** Défense de l'ennemi au début du tour, avant les cartes (Farce du Lutin). */
     private final int enemyDefenseAtStart;
 
+    private int     jackpotRages   = 0;     // Rage du jackpot : cartes jouées ce tour
+    private int     jackpotRageFactor = 1;
+    private int     emberTurns     = 0;     // Braise : tours de brûlure, et part du plus gros coup (%)
+    private int     emberPercent   = 0;
     private int     piercePercent  = 0;     // Pique : part (%) de chaque coup qui traverse la défense ennemie
     private int     lifeDrainPercent = 0;   // Coeur : % des dégâts infligés rendus en soin
     private boolean gainsFromDamage  = false; // As de Pique : convertit les dégâts infligés en gains
@@ -326,6 +330,24 @@ public class CombatContext {
     public void addForgedBlade() { forgedBlades++; }
     /** @return les Lames forgées jouées ce tour. */
     public int getForgedBlades() { return forgedBlades; }
+
+    /** Rage du jackpot : sur une Paire, attaque et gains multipliés par {@code factor} (une fois par carte). */
+    public void addJackpotRage(int factor) { jackpotRages++; jackpotRageFactor = Math.max(jackpotRageFactor, factor); }
+
+    /** @return les Rages du jackpot jouées ce tour. */
+    public int getJackpotRages() { return jackpotRages; }
+
+    /** @return le multiplicateur de chaque Rage du jackpot. */
+    public int getJackpotRageFactor() { return jackpotRageFactor; }
+
+    /** Braise : l'ennemi brûlera {@code turns} tours, chaque fois de {@code percent} % du plus gros coup du tour. */
+    public void addEmbers(int turns, int percent) { emberTurns = Math.max(emberTurns, turns); emberPercent += percent; }
+
+    /** @return les tours de brûlure de la Braise jouée ce tour (0 sans Braise). */
+    public int getEmberTurns() { return emberTurns; }
+
+    /** @return la part du plus gros coup du tour dont l'ennemi brûlera, en %. */
+    public int getEmberPercent() { return emberPercent; }
 
     /** Dynamite : {@code percent} % des PV max de l'ennemi de plus, infligés après le tirage. */
     public void addDynamite(int percent) { dynamitePercent += percent; }

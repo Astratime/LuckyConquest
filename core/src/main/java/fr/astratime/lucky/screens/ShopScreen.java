@@ -30,6 +30,7 @@ import fr.astratime.lucky.assets.Palette;
 import fr.astratime.lucky.assets.VolumeSound;
 import fr.astratime.lucky.entities.Card;
 import fr.astratime.lucky.entities.Symbol;
+import fr.astratime.lucky.entities.enemy.EnemyKind;
 import fr.astratime.lucky.i18n.Lang;
 import fr.astratime.lucky.loaders.CardLoader;
 import fr.astratime.lucky.progress.Cosmetic;
@@ -112,6 +113,8 @@ public class ShopScreen extends CasinoMenuScreen {
     /** Cartes en vente, une instance de chaque, et leur prix. */
     private final List<Card> cards = new ArrayList<>();
     private final Map<String, Long> cardPrices;
+    /** Cartes des rois : le roi à vaincre {@link PlayerProfile#KING_CARD_WINS} fois pour que sa carte se vende. */
+    private final Map<String, EnemyKind> kingCards;
 
     private final Image      coin;
     private final Label      coins;
@@ -163,6 +166,7 @@ public class ShopScreen extends CasinoMenuScreen {
             reelTextures.put(symbol, new Texture(Gdx.files.internal(symbol.getAssetPath())));
         }
         cardPrices = CardLoader.loadBoutique();
+        kingCards  = CardLoader.loadKingCards();
         Function<String, Card> factory = CardLoader.cardFactory();
         for (String id : cardPrices.keySet()) cards.add(factory.apply(id));
         TextureRegionDrawable pixel = new TextureRegionDrawable(new TextureRegion(hud.pixel));
@@ -317,6 +321,11 @@ public class ShopScreen extends CasinoMenuScreen {
         List<Group> cells = new ArrayList<>();
         for (Card card : cards) {
             long price = cardPrices.get(card.getId());
+            EnemyKind king = kingCards.get(card.getId());
+            if (king != null && !profile.isKingCardOpen(king)) {
+                cells.add(lockedKingCell(card, king, price));
+                continue;
+            }
             int owned = profile.getOwnedCopies(card.getId());
             Offer offer = new Offer(card.getName(), Lang.f("{0}\nPossédées : {1} / {2}.",
                 card.getDescription(), owned, PlayerProfile.MAX_COPIES), price,
@@ -330,6 +339,21 @@ public class ShopScreen extends CasinoMenuScreen {
                     PlayerProfile.formatCoins(price)))));
         }
         return cells;
+    }
+
+    /**
+     * Carte d'un roi pas encore assez vaincu : grisée, avec ses victoires ; sa fiche se lit, elle ne s'achète pas.
+     */
+    private Group lockedKingCell(Card card, EnemyKind king, long price) {
+        int wins = profile.getKingWins(king);
+        String goal = Lang.f("{0} : {1} / {2} victoires", king.getDisplayName(), wins, PlayerProfile.KING_CARD_WINS);
+        String why = Lang.f("Bats {0} {1} fois en Exploration pour acheter sa carte.", king.getDisplayName(),
+            PlayerProfile.KING_CARD_WINS);
+        Offer offer = new Offer(card.getName(), Lang.f("{0}\n{1}\n{2}", card.getDescription(), goal, why), price,
+            () -> why, () -> false);
+        return cell(new TextureRegion(cardTextures.get(card)), CARD_WIDTH, CARD_HEIGHT,
+            PlayerProfile.formatCoins(price), wins + " / " + PlayerProfile.KING_CARD_WINS, true, offer,
+            () -> detail.showForSale(card, cardTextures.get(card), goal));
     }
 
     /** Onglet « Rouleau » : chaque rouleau en vente, son effet et son prix. */
