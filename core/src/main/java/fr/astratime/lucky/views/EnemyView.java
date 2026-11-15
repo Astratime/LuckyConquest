@@ -803,6 +803,18 @@ public class EnemyView implements Disposable {
         return croupier.localToStageCoordinates(new Vector2(croupier.getWidth() / 2f, croupier.getHeight() / 2f));
     }
 
+    /**
+     * @return le point (Stage) d'où part sa bulle de dialogue : le haut de son portrait, côté
+     *         droit (vue classique), sans son mouvement de repos
+     */
+    public Vector2 getMouth() {
+        return character.localToStageCoordinates(new Vector2(character.getWidth() * MOUTH_X,
+            character.getHeight() * MOUTH_Y - getIdleLift()));
+    }
+
+    /** Départ de sa bulle de dialogue, en fraction de son portrait (depuis le bas gauche). */
+    public static final float MOUTH_X = 0.82f, MOUTH_Y = 0.78f;
+
     // -------------------------------------------------------------------------
     // Réactions du croupier
     // -------------------------------------------------------------------------
