@@ -1241,8 +1241,9 @@ public class PlayerProfile {
 
     /**
      * Prestige : le joueur rend tous ses rangs (il repart sans rang et les rachète
-     * dans l'ordre, au même prix) et gagne un niveau de Prestige, pour toujours.
-     * Tout le reste est gardé : pièces, cartes, rouleaux, decks, progression.
+     * dans l'ordre, à leurs prix de Prestige) et gagne un niveau de Prestige, pour toujours.
+     * Ses pièces repartent à 0 (Astra, 2026-11-15 : sinon il rachèterait ses rangs tout de suite).
+     * Tout le reste est gardé : cartes, rouleaux, decks, progression.
      * Le profil est enregistré.
      *
      * @return {@code false} si ce n'est pas encore possible (voir {@link #canPrestige()})
@@ -1251,6 +1252,7 @@ public class PlayerProfile {
         if (!canPrestige()) return false;
         prestige++;
         ranks = 0;
+        coins = 0;
         chosenRanks = 0;
         save();
         return true;

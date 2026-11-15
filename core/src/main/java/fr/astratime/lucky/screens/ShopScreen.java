@@ -25,6 +25,7 @@ import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 import com.badlogic.gdx.utils.Align;
 import fr.astratime.lucky.LuckyGame;
 import fr.astratime.lucky.assets.CardTextures;
+import fr.astratime.lucky.assets.EnemyTextures;
 import fr.astratime.lucky.assets.Fonts;
 import fr.astratime.lucky.assets.Palette;
 import fr.astratime.lucky.assets.VolumeSound;
@@ -139,6 +140,9 @@ public class ShopScreen extends CasinoMenuScreen {
     private Offer   prestigeOffer;
     /** {@code true} après un premier clic sur « Prestige » : le second le confirme. */
     private boolean prestigeArmed;
+    /** Le Croupier qui prévient avant le Prestige (pièces et rangs remis à 0). */
+    private final Texture      croupierPortrait = EnemyTextures.newCroupierPortrait();
+    private final GuideOverlay warningGuide;
     /** Acteur de l'article choisi, mis en valeur. */
     private Actor   selectedActor;
     /** Cosmétique choisi dans l'onglet « Cosmétiques » ({@code null} : aucun) : « Acheter » ou « Choisir ». */
@@ -210,6 +214,8 @@ public class ShopScreen extends CasinoMenuScreen {
 
         showTab(Tab.RANG);
         firstVisit = new FirstVisitGuide(stage, hud, clickSound, profile, PlayerProfile.GUIDE_SHOP, this::guideSteps);
+        warningGuide = new GuideOverlay(hud, croupierPortrait);
+        stage.addActor(warningGuide);
         fade.toFront();
     }
 
@@ -355,7 +361,7 @@ public class ShopScreen extends CasinoMenuScreen {
         row.add(text).growX().left().padRight(20f);
         row.add(state).width(230f).right();
         prestigeOffer = new Offer(Lang.f("Prestige {0}", PlayerProfile.prestigeNumeral(level)),
-            Lang.t("Tu repars sans rang. Tu gardes tes pièces, tes cartes, tes rouleaux, tes decks et ta progression.")
+            Lang.t("Tu repars sans rang et sans pièces. Tu gardes tes cartes, tes rouleaux, tes decks et ta progression.")
                 + " " + bonus, 0L, () -> null, profile::ascend);
         row.addListener(selectOnClick(prestigeOffer, row));
         select(prestigeOffer, row);
@@ -672,11 +678,8 @@ public class ShopScreen extends CasinoMenuScreen {
             return;
         }
         if (selected == null) return;
-        if (selected == prestigeOffer && !prestigeArmed) { // deux clics : on ne rend pas ses rangs par erreur
-            prestigeArmed = true;
-            buttons.setText(buyButton, Lang.t("Confirmer"));
-            showDetail(selected.name(), Lang.t("Tous tes rangs vont repartir à zéro. Clique sur « Confirmer » pour passer au Prestige."));
-            detailTitle.setColor(Palette.GOLD);
+        if (selected == prestigeOffer && !prestigeArmed) { // le Croupier prévient d'abord : rangs et pièces repartent à 0
+            confirmPrestige();
             return;
         }
         boolean ascending = selected == prestigeOffer;
@@ -698,13 +701,31 @@ public class ShopScreen extends CasinoMenuScreen {
         this.scroll.layout();
         this.scroll.setScrollY(scroll);
         if (ascending) {
-            showDetail(Lang.f("{0} !", name), Lang.t("Tu repars sans rang. Ton Prestige vaut dans tous les combats, pour toujours."));
+            showDetail(Lang.f("{0} !", name), Lang.t("Tu repars sans rang et sans pièces. Ton Prestige vaut dans tous les combats, pour toujours."));
         } else showDetail(Lang.f("{0} : acheté !", name), tab == Tab.RANG ? Lang.t("Ton nouveau rang vaut dans tous les combats.")
             : tab == Tab.CARTES ? Lang.t("La carte t'attend à la Table du croupier.")
             : Lang.t("Place-le dans ta machine, à la Table du croupier."));
         detailTitle.setColor(Palette.GOLD);
         coin.clearActions();
         coin.addAction(Actions.sequence(Actions.scaleTo(1.2f, 1.2f, 0.08f), Actions.scaleTo(1f, 1f, 0.15f)));
+    }
+
+    /**
+     * Avant le Prestige, le Croupier prévient (Astra, 2026-11-15) : les rangs et les pièces repartent à 0, sinon le
+     * joueur rachèterait tout de suite ses rangs avec ce qu'il a gardé.
+     */
+    private void confirmPrestige() {
+        GuideOverlay.Step warning = GuideOverlay.Step.say(Lang.f("Attention : passer au Prestige remet tes pièces à 0 "
+            + "(tu en as {0}) et te fait rendre tous tes rangs. Tu gardes tes cartes, tes rouleaux, tes decks et ta "
+            + "progression.", PlayerProfile.formatCoins(profile.getCoins()))).buttons(
+            buttons.create(Lang.t("Passer au Prestige"), clickSound, () -> {
+                warningGuide.stop();
+                prestigeArmed = true;
+                onBuy();
+            }),
+            buttons.create(Lang.t("Annuler"), clickSound, warningGuide::stop));
+        warningGuide.toFront();
+        warningGuide.play(List.of(warning), null);
     }
 
     private void refreshCoins() {
@@ -786,6 +807,7 @@ public class ShopScreen extends CasinoMenuScreen {
     public void dispose() {
         super.dispose();
         firstVisit.dispose();
+        croupierPortrait.dispose();
         reelTextures.values().forEach(Texture::dispose);
         purchaseSound.dispose();
         refuseSound.dispose();
