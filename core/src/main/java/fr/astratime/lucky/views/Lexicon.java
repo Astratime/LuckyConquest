@@ -192,6 +192,8 @@ public final class Lexicon {
             term(Lang.t("Entraînement libre"), Lang.t("Choisis un ennemi déjà vaincu pour tester ton deck. "
                 + "Ce combat ne rapporte rien.")),
             term(Lang.t("Mode difficile"), Lang.t("Une seconde Tour, bien plus dure, avec sa propre progression.")),
+            term(Lang.t("Exploration difficile"), Lang.t("Ouverte une fois le Désert vidé. La prairie y est aussi dure "
+                + "que le Désert, puis chaque lieu deux fois plus que le précédent. Plus de pièces, sa propre progression.")),
             term(Lang.t("Table du croupier"), Lang.t("Ton deck, ta machine, ton rang et la fusion des cartes."))));
     }
 }

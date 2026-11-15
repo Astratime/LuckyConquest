@@ -695,7 +695,7 @@ public class Enemy {
      * @return le coût d'un tirage contre lui : celui de son type ({@link EnemyKind#getSpinCost()}),
      *         celui du chapitre 6 dans le mode sans fin
      */
-    public int getSpinCost() { return hard.isEndless() ? EnemyKind.ENDLESS_SPIN_COST : kind.getSpinCost(); }
+    public int getSpinCost() { return hard.isEndless() ? EnemyKind.ENDLESS_SPIN_COST : kind.getSpinCost(hard); }
     /** @return le bonus d'attaque de sa Rage. */
     public int    getRage()        { return rage; }
     /** @return l'attaque que ses Intérêts ajouteront à son prochain coup. */

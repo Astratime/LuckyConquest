@@ -782,7 +782,7 @@ public class GameScreen extends ScreenAdapter {
         // Cagnotte du Jeu bonus : celle du lieu (partagée par ses donjons) ou de l'Entraînement, gardées ;
         // celle de l'ascension dans la Tour, où un Bingo ouvre plus souvent le Jeu bonus.
         if (run instanceof DungeonRun dungeonRun) {
-            gameController.setPot(profile.getPot(Place.of(dungeonRun.getDungeon())));
+            gameController.setPot(profile.getPot(Place.of(dungeonRun.getDungeon()), dungeonRun.isHard()));
         } else if (run instanceof TowerRun tower) {
             gameController.setPot(tower.getPot());
             gameController.setBonusGameChance(BonusGame.TOWER_TRIGGER_CHANCE);
@@ -1893,7 +1893,7 @@ public class GameScreen extends ScreenAdapter {
         Gdx.app.postRunnable(() -> {
             // Retour sur le lieu (et le donjon) ou le chapitre (et son mode) qui vient d'être joué.
             if (run instanceof DungeonRun dungeonRun) {
-                luckyGame.setScreen(new ExplorationScreen(luckyGame, dungeonRun.getDungeon()));
+                luckyGame.setScreen(new ExplorationScreen(luckyGame, dungeonRun.getDungeon(), dungeonRun.isHard()));
             } else if (run instanceof TowerRun tower) {
                 luckyGame.setScreen(new TowerScreen(luckyGame, tower.getChapter(), tower.isHard()));
             } else if (run instanceof EndlessRun) {
@@ -1929,6 +1929,12 @@ public class GameScreen extends ScreenAdapter {
         DungeonRun dungeonRun = (DungeonRun) run;
         // Ouvre peut-être le lieu suivant ; le dernier donjon des Mines donne le Rouleau de la Mine.
         PlayerProfile profile = luckyGame.getProfile();
+        if (dungeonRun.isHard()) { // Exploration difficile : sa progression à part, ni rouleau ni cinématique de fin
+            profile.clearHardDungeon(dungeonRun.getDungeon().name());
+            announceAchievements();
+            openChest(dungeonRun.getChestCards());
+            return;
+        }
         boolean desertBefore = profile.isPlaceCleared(Place.DESERT);
         Symbol earnedReel = profile.clearDungeon(dungeonRun.getDungeon().name());
         chestOverlay.setEarnedReel(earnedReel);
@@ -1948,12 +1954,12 @@ public class GameScreen extends ScreenAdapter {
         DungeonRun dungeonRun = (DungeonRun) run;
         String cardId = dungeonRun.getDungeon().rollLoot(new Random());
         PlayerProfile.ChestReward reward = luckyGame.getProfile().openChest(cardId,
-            Place.of(dungeonRun.getDungeon()));
+            Place.of(dungeonRun.getDungeon()), dungeonRun.isHard());
         chestOverlay.getActor().toFront();
         TextButton next = left > 1
             ? buttons.createAction(Lang.t("Coffre suivant"), sounds.buttonClick, () -> openChest(left - 1))
             : buttons.createAction(Lang.t("Exploration"), sounds.buttonClick, this::onBackToChapters);
-        chestOverlay.show(dungeonRun.getDungeon(), reward, CardLoader.cardFactory().apply(cardId), next);
+        chestOverlay.show(dungeonRun.getDungeon(), reward, CardLoader.cardFactory().apply(cardId), next, dungeonRun.isHard());
     }
 
     /**
@@ -2230,7 +2236,7 @@ public class GameScreen extends ScreenAdapter {
         if (!isDungeon()) return 0; // seule l'Exploration rapporte des pièces (ni Entraînement, ni Tour)
         return PlayerProfile.combatReward(victory, run.isBossStage(),
             gameController.getGameState().getPlayer().getGains(),
-            Place.of(((DungeonRun) run).getDungeon()),
+            Place.of(((DungeonRun) run).getDungeon()), run.isHard(),
             PlayerProfile.dungeonProgress(run.isBossStage(), gameController.getGameState().getEnemy().getHpRatio()));
     }
 

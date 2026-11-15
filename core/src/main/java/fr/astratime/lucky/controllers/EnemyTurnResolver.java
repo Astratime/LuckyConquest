@@ -1320,7 +1320,7 @@ public class EnemyTurnResolver {
         /** Il se protège de {@code defense}, multipliée par la roulette du Zéro et sa force. */
         EnemyShieldedEvent shield(int defense) {
             int total = (int) Math.min(Integer.MAX_VALUE,
-                (long) enemy.getKind().empowered(defense * shieldFactor, enemy.getDifficulty()) * (100 + boostPercent) / 100);
+                (long) enemy.getKind().fortified(defense * shieldFactor, enemy.getDifficulty()) * (100 + boostPercent) / 100);
             enemy.addShieldDefense(total);
             return new EnemyShieldedEvent(total);
         }

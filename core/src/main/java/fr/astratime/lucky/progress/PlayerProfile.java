@@ -84,6 +84,8 @@ public class PlayerProfile {
     static final String KEY_TOWER_HARD = "towerHard";
     static final String KEY_CHAPTERS      = "chapters";
     static final String KEY_HARD_CHAPTERS = "hardChapters";
+    /** Donjons vidés en Exploration difficile (voir {@link fr.astratime.lucky.entities.exploration.HardExploration}). */
+    static final String KEY_HARD_DUNGEONS = "hardDungeons";
     /** Record du mode sans fin : le plus haut étage gagné. */
     static final String KEY_ENDLESS_BEST  = "endlessBest";
     // Clés du mode ADMIN rangées sous forme codée (fr.astratime.lucky.security.Hidden).
@@ -145,6 +147,8 @@ public class PlayerProfile {
     private final List<Symbol> machine     = new ArrayList<>();
     /** Donjons de l'Exploration vidés (leur chef battu), par nom. */
     private final Set<String> clearedDungeons = new LinkedHashSet<>();
+    /** Donjons vidés en Exploration difficile : sa progression à part. */
+    private final Set<String> clearedHardDungeons = new LinkedHashSet<>();
     /** Lieux ouverts par l'ancien ordre (Prairie, Port, Mines, Casino), gardés ouverts. */
     private final Set<String> openedPlaces = new LinkedHashSet<>();
     /** Chapitres de la Tour terminés (leur boss battu), en mode normal puis en mode difficile, par nom. */
@@ -249,6 +253,7 @@ public class PlayerProfile {
                 }
             }
         }
+        readNames(storage.get(KEY_HARD_DUNGEONS), clearedHardDungeons);
         String savedPlaces = storage.get(KEY_PLACES);
         if (savedPlaces != null) {
             readNames(savedPlaces, openedPlaces);
@@ -521,6 +526,12 @@ public class PlayerProfile {
     /** @return la cagnotte du lieu {@code place}, partagée par ses donjons. */
     public BonusPot getPot(Place place) { return getPot(place.name()); }
 
+    /** @return la cagnotte du lieu {@code place}, celle de son mode difficile à part si {@code hard}. */
+    public BonusPot getPot(Place place, boolean hard) { return getPot(hard ? place.name() + HARD_POT_SUFFIX : place.name()); }
+
+    /** Suffixe de la clé de la cagnotte d'un lieu en Exploration difficile. */
+    static final String HARD_POT_SUFFIX = "_DIFFICILE";
+
     /** @return {@code pots} écrit "CLE:montant,CLE:montant". */
     static String encodePots(Map<String, Double> pots) {
         StringBuilder text = new StringBuilder();
@@ -696,6 +707,43 @@ public class PlayerProfile {
         }
         save();
         return earned;
+    }
+
+    /**
+     * Le roi du donjon {@code dungeon} est battu en Exploration difficile : le donjon y est vidé, pour toujours
+     * (aucun rouleau à gagner en difficile : ceux des lieux sont déjà à soi).
+     *
+     * @return {@code true} s'il vient d'être vidé pour la première fois
+     */
+    public boolean clearHardDungeon(String dungeon) {
+        if (admin || !clearedHardDungeons.add(dungeon)) return false;
+        save();
+        return true;
+    }
+
+    /** @return {@code true} si l'Exploration difficile est ouverte : le Désert de Braise vidé en mode normal. */
+    public boolean isExplorationHardOpen() { return admin || placeCleared(Place.DESERT); }
+
+    /** @return {@code true} si le donjon {@code dungeon} a été vidé dans le mode {@code hard}. */
+    public boolean isCleared(Dungeon dungeon, boolean hard) {
+        return hard ? clearedHardDungeons.contains(dungeon.name()) : isCleared(dungeon);
+    }
+
+    /** @return {@code true} si les quatre donjons de {@code place} ont été vidés dans le mode {@code hard}. */
+    public boolean isPlaceCleared(Place place, boolean hard) {
+        return place.getDungeons().stream().allMatch(dungeon -> isCleared(dungeon, hard));
+    }
+
+    /**
+     * @return {@code true} si le lieu {@code place} peut être joué dans le mode {@code hard} : en difficile, une fois
+     *         l'Exploration difficile ouverte, le premier lieu, puis chacun quand le précédent est vidé en difficile
+     */
+    public boolean isOpen(Place place, boolean hard) {
+        if (!hard) return isOpen(place);
+        if (admin) return true;
+        if (!isExplorationHardOpen()) return false;
+        Place previous = place.getPrevious();
+        return previous == null || isPlaceCleared(previous, true);
     }
 
     /** @return {@code true} si le mode difficile de la Tour est ouvert (la Machine Originelle a été battue). */
@@ -1050,8 +1098,14 @@ public class PlayerProfile {
      * @return les pièces à ajouter au profil
      */
     public static long combatReward(boolean victory, boolean lastFight, double gains, Place place, double progress) {
+        return combatReward(victory, lastFight, gains, place, false, progress);
+    }
+
+    /** Comme {@link #combatReward(boolean, boolean, double, Place, double)}, en Exploration difficile si {@code hard}. */
+    public static long combatReward(boolean victory, boolean lastFight, double gains, Place place, boolean hard,
+                                    double progress) {
         if (victory) return lastFight ? Math.max(0, BigNumber.toLong(gains)) : 0;
-        long kept = Math.min(Math.max(0, BigNumber.toLong(gains * DEFEAT_KEEP_PERCENT / 100.0)), place.getDefeatCap());
+        long kept = Math.min(Math.max(0, BigNumber.toLong(gains * DEFEAT_KEEP_PERCENT / 100.0)), place.getDefeatCap(hard));
         return Math.round(kept * Math.max(0, Math.min(1, progress)));
     }
 
@@ -1085,11 +1139,14 @@ public class PlayerProfile {
      * @param place lieu du donjon
      * @return ce que le joueur a reçu
      */
-    public ChestReward openChest(String cardId, Place place) {
+    public ChestReward openChest(String cardId, Place place) { return openChest(cardId, place, false); }
+
+    /** Comme {@link #openChest(String, Place)}, avec les pièces du coffre difficile si {@code hard}. */
+    public ChestReward openChest(String cardId, Place place, boolean hard) {
         if (admin) return new ChestReward(cardId, false, MAX_COPIES, 0); // le mode ADMIN ne rapporte rien
         int owned = getOwnedCopies(cardId);
         boolean newCopy = owned < MAX_COPIES;
-        long reward = place.getChestCoins() + (newCopy ? 0 : place.getDuplicateCoins());
+        long reward = place.getChestCoins(hard) + (newCopy ? 0 : place.getDuplicateCoins(hard));
         if (newCopy) collection.put(cardId, owned + 1);
         coins += reward;
         save();
@@ -1427,6 +1484,7 @@ public class PlayerProfile {
         storage.put(KEY_REELS, encodeSymbols(boughtReels));
         storage.put(KEY_MACHINE, encodeSymbols(machine));
         storage.put(KEY_DUNGEONS, String.join(",", clearedDungeons));
+        storage.put(KEY_HARD_DUNGEONS, String.join(",", clearedHardDungeons));
         storage.put(KEY_PLACES, String.join(",", openedPlaces));
         storage.put(KEY_CHAPTERS, String.join(",", clearedChapters));
         storage.put(KEY_HARD_CHAPTERS, String.join(",", clearedHardChapters));

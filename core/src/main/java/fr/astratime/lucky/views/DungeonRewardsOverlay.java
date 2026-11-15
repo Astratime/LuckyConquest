@@ -91,7 +91,10 @@ public class DungeonRewardsOverlay implements Disposable {
     public boolean isShown() { return root.isVisible(); }
 
     /** Affiche les récompenses de {@code dungeon}, avec ce que possède déjà le joueur de {@code profile}. */
-    public void show(Dungeon dungeon, PlayerProfile profile) {
+    public void show(Dungeon dungeon, PlayerProfile profile) { show(dungeon, profile, false); }
+
+    /** Comme {@link #show(Dungeon, PlayerProfile)}, avec les pièces du mode difficile si {@code hard}. */
+    public void show(Dungeon dungeon, PlayerProfile profile, boolean hard) {
         panel.clearChildren();
         Place place = Place.of(dungeon);
         float inner = WIDTH - PADDING * 2;
@@ -104,7 +107,7 @@ public class DungeonRewardsOverlay implements Disposable {
 
         panel.add(label(Lang.t("Pièces"), keyFont)).left();
         panel.row();
-        for (String line : coinLines(place, profile.isAdmin())) {
+        for (String line : coinLines(place, profile.isAdmin(), hard)) {
             panel.add(wrapped("- " + line, inner)).width(inner).left().padTop(LINE_GAP);
             panel.row();
         }
@@ -132,21 +135,27 @@ public class DungeonRewardsOverlay implements Disposable {
     }
 
     /** @return les lignes de la partie « Pièces » pour un donjon de {@code place}. */
-    static List<String> coinLines(Place place, boolean admin) {
-        int cost = place.getSpinCost();
+    static List<String> coinLines(Place place, boolean admin) { return coinLines(place, admin, false); }
+
+    /** @return les lignes de la partie « Pièces » pour un donjon de {@code place}, en mode difficile si {@code hard}. */
+    static List<String> coinLines(Place place, boolean admin, boolean hard) {
+        int cost = place.getSpinCost(hard);
+        long chest = place.getChestCoins(hard);
         List<String> lines = new ArrayList<>();
         if (admin) lines.add(Lang.t("Mode ADMIN : ses combats ne rapportent rien."));
+        if (hard) lines.add(Lang.f("Mode difficile : un tirage coûte {0}, tous les gains suivent.",
+            PlayerProfile.formatCoins(cost)));
         lines.add(Lang.t("Roi battu : tes gains du combat (cadre Gains) deviennent des pièces."));
-        lines.add(Lang.f("Coffre : {0} pièces ({1} tirages à {2}).", PlayerProfile.formatCoins(place.getChestCoins()),
-            PlayerProfile.formatCoins(place.getChestSpins()), PlayerProfile.formatCoins(cost)));
+        lines.add(Lang.f("Coffre : {0} pièces ({1} tirages à {2}).", PlayerProfile.formatCoins(chest),
+            PlayerProfile.formatCoins(chest / cost), PlayerProfile.formatCoins(cost)));
         lines.add(Lang.f("Carte du coffre déjà en {0} exemplaires : {1} pièces en plus.", PlayerProfile.MAX_COPIES,
-            PlayerProfile.formatCoins(place.getDuplicateCoins())));
+            PlayerProfile.formatCoins(place.getDuplicateCoins(hard))));
         lines.add(Lang.f("Défaite : tu gardes {0} % de tes gains, en pièces (au plus {1}), selon la part du "
                 + "donjon faite.",
-            PlayerProfile.DEFEAT_KEEP_PERCENT, PlayerProfile.formatCoins(place.getDefeatCap())));
+            PlayerProfile.DEFEAT_KEEP_PERCENT, PlayerProfile.formatCoins(place.getDefeatCap(hard))));
         lines.add(Lang.t("Carte au trésor jouée : un coffre de plus."));
         Symbol reel = place.getReelReward();
-        if (reel != null) {
+        if (reel != null && !hard) {
             lines.add(Lang.f("Les quatre donjons du lieu vidés : le rouleau {0}.", reel.getDisplayName()));
         }
         return lines;

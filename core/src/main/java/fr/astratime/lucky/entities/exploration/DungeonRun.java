@@ -2,6 +2,7 @@ package fr.astratime.lucky.entities.exploration;
 
 import fr.astratime.lucky.entities.enemy.EnemyKind;
 import fr.astratime.lucky.entities.run.CombatRun;
+import fr.astratime.lucky.i18n.Lang;
 
 import java.util.Random;
 
@@ -30,6 +31,8 @@ public class DungeonRun implements CombatRun {
     private final Crossroads crossroads = new Crossroads(new Random());
     /** Mode ADMIN : le soldat arrive toujours doré. */
     private final boolean    goldenSoldier;
+    /** Exploration difficile (voir {@link HardExploration}). */
+    private boolean          hard;
 
     public DungeonRun(Dungeon dungeon) {
         this(dungeon, 0);
@@ -69,6 +72,19 @@ public class DungeonRun implements CombatRun {
         this.rival      = rival;
     }
 
+    /**
+     * Passe la descente en mode difficile (voir {@link HardExploration}) ou en mode normal.
+     *
+     * @return cette descente
+     */
+    public DungeonRun hard(boolean hard) {
+        this.hard = hard;
+        return this;
+    }
+
+    @Override
+    public boolean isHard() { return hard; }
+
     /** @return le donjon en cours. */
     public Dungeon getDungeon() { return dungeon; }
 
@@ -102,7 +118,7 @@ public class DungeonRun implements CombatRun {
     }
 
     @Override
-    public String getLabel() { return dungeon.getName(); }
+    public String getLabel() { return hard ? Lang.f("{0} difficile", dungeon.getName()) : dungeon.getName(); }
 
     @Override
     public PlaceRule getPlaceRule() { return Place.of(dungeon).getRule(); }

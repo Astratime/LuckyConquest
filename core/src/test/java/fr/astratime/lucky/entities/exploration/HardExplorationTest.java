@@ -1,0 +1,87 @@
+package fr.astratime.lucky.entities.exploration;
+
+import fr.astratime.lucky.entities.Enemy;
+import fr.astratime.lucky.entities.SpinEconomy;
+import fr.astratime.lucky.entities.enemy.Difficulty;
+import fr.astratime.lucky.entities.enemy.EnemyKind;
+import fr.astratime.lucky.progress.PlayerProfile;
+import org.junit.jupiter.api.Test;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.function.ToDoubleFunction;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+class HardExplorationTest {
+
+    private static List<EnemyKind> enemies(Place place) {
+        List<EnemyKind> enemies = new ArrayList<>();
+        for (Dungeon dungeon : place.getDungeons()) {
+            enemies.add(dungeon.getSoldier());
+            enemies.add(dungeon.getKing());
+        }
+        return enemies;
+    }
+
+    private static double average(Place place, ToDoubleFunction<EnemyKind> stat) {
+        return enemies(place).stream().mapToDouble(stat).average().orElseThrow();
+    }
+
+    @Test
+    void theFirstHardPlaceIsAsHardAsTheDesertThenEachPlaceDoubles() {
+        for (Place place : Place.values()) {
+            long times = 1L << place.ordinal();
+            assertEquals(times, HardExploration.strength(place));
+            double hp = average(Place.DESERT, k -> k.getMaxHp(Difficulty.NORMAL)) * times;
+            double attack = average(Place.DESERT, k -> k.hurt(k.swordDamage(), Difficulty.NORMAL)) * times;
+            double defense = average(Place.DESERT, k -> k.getBaseDefense(Difficulty.NORMAL)) * times;
+            assertEquals(1, average(place, k -> k.getMaxHp(Difficulty.HARD)) / hp, 0.001, place + " : PV");
+            assertEquals(1, average(place, k -> k.hurt(k.swordDamage(), Difficulty.HARD)) / attack, 0.01, place + " : attaque");
+            assertEquals(1, average(place, k -> k.getBaseDefense(Difficulty.HARD)) / defense, 0.001, place + " : défense");
+        }
+    }
+
+    @Test
+    void theDungeonsOfAPlaceKeepTheirDifferences() {
+        // Le Pique de la prairie frappe toujours moins fort que le Coeur, et le roi a toujours deux fois les PV du soldat.
+        assertTrue(EnemyKind.ROI_PIQUE.hurt(EnemyKind.ROI_PIQUE.swordDamage(), Difficulty.HARD)
+            < EnemyKind.ROI_COEUR.hurt(EnemyKind.ROI_COEUR.swordDamage(), Difficulty.HARD));
+        assertEquals(2 * EnemyKind.SOLDAT_PIQUE.getMaxHp(Difficulty.HARD), EnemyKind.ROI_PIQUE.getMaxHp(Difficulty.HARD));
+    }
+
+    @Test
+    void normalModeIsUnchanged() {
+        assertEquals(20_000L, EnemyKind.ROI_PIQUE.getMaxHp(Difficulty.NORMAL));
+        assertEquals(100, EnemyKind.ROI_PIQUE.getSpinCost(Difficulty.NORMAL));
+        assertEquals(140_000, new Enemy(EnemyKind.DRAGON).getSpinCost());
+        assertEquals(EnemyKind.DRAGON.getBaseDefense(Difficulty.NORMAL), EnemyKind.DRAGON.fortified(60_000, Difficulty.NORMAL));
+        // La Tour difficile ne passe pas par l'Exploration difficile.
+        assertEquals(5_000, EnemyKind.MACHINE_ORIGINELLE.getSpinCost(Difficulty.HARD));
+    }
+
+    @Test
+    void coinsFollowTheDesertSpinCostTimesTwoPerPlace() {
+        assertEquals(100, HardExploration.COINS_PERCENT, "prime de pièces à confirmer par Astra");
+        for (Place place : Place.values()) {
+            int cost = (int) (Place.DESERT.getSpinCost() * HardExploration.strength(place));
+            assertEquals(cost, place.getSpinCost(true));
+            assertEquals(cost, new Enemy(place.getDungeons().get(0).getKing(), true).getSpinCost());
+            assertEquals(5_000L * cost, place.getChestCoins(true));
+            assertEquals(500L * cost, place.getDefeatCap(true));
+            // La force tirée des gains suit les ennemis (le Désert x2 par lieu).
+            assertEquals(3_000 * (int) HardExploration.strength(place), SpinEconomy.powerSpinCost(cost));
+        }
+        long kept = PlayerProfile.combatReward(false, true, 1e18, Place.PRAIRIE, true, 1);
+        assertEquals(Place.PRAIRIE.getDefeatCap(true), kept);
+    }
+
+    @Test
+    void aHardRunIsLabelled() {
+        DungeonRun run = new DungeonRun(Dungeon.PIQUE).hard(true);
+        assertTrue(run.isHard());
+        assertEquals(Difficulty.HARD, run.getDifficulty());
+        assertTrue(run.getLabel().endsWith("difficile"));
+        assertFalse(new DungeonRun(Dungeon.PIQUE).isHard());
+    }
+}

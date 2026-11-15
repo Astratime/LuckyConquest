@@ -148,6 +148,11 @@ public class ChestOverlay implements Disposable {
      * @param newButton bouton affiché une fois le coffre ouvert
      */
     public void show(Dungeon dungeon, PlayerProfile.ChestReward reward, Card found, TextButton newButton) {
+        show(dungeon, reward, found, newButton, false);
+    }
+
+    /** Comme {@link #show(Dungeon, PlayerProfile.ChestReward, Card, TextButton)}, pour un coffre difficile si {@code hard}. */
+    public void show(Dungeon dungeon, PlayerProfile.ChestReward reward, Card found, TextButton newButton, boolean hard) {
         hide();
         opened = false;
         subtitle.setText(dungeon.getSuit() != null
@@ -163,7 +168,7 @@ public class ChestOverlay implements Disposable {
         copiesText.setText(reward.newCopy()
             ? Lang.f("NOUVELLE CARTE ! {0}/{1} EXEMPLAIRES", reward.copies(), PlayerProfile.MAX_COPIES)
             : Lang.f("DÉJÀ {0} EXEMPLAIRES : {1} PIÈCES EN PLUS",
-                PlayerProfile.MAX_COPIES, PlayerProfile.formatCoins(Place.of(dungeon).getDuplicateCoins())));
+                PlayerProfile.MAX_COPIES, PlayerProfile.formatCoins(Place.of(dungeon).getDuplicateCoins(hard))));
         coinsText.setText(Lang.f("PIÈCES +{0}", PlayerProfile.formatCoins(reward.coins())));
         reelText.setText(earnedReel == null ? ""
             : Lang.f("NOUVEAU ROULEAU : {0} ! (TABLE DU CROUPIER)", earnedReel.getDisplayName()));

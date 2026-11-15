@@ -40,6 +40,8 @@ tasks.register('simulate', JavaExec) {
   if (project.hasProperty('quick')) args '--quick'
   if (project.hasProperty('tower')) args '--tower'
   if (project.hasProperty('rankplace')) args '--rankplace'
+  if (project.hasProperty('hardplace')) args '--hardplace'
+  if (project.hasProperty('hardRank')) systemProperty 'lucky.hardRank', project.property('hardRank')
   ['potLog','onlyRank','onlyGear'].each { p -> if (project.hasProperty(p)) systemProperty "lucky.$p", project.property(p) }
   if (project.hasProperty('rpRuns')) systemProperty 'lucky.rpRuns', project.property('rpRuns')
   if (project.hasProperty('level')) systemProperty 'lucky.prestige', project.property('level')

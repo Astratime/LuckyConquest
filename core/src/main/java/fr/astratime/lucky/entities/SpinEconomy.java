@@ -1,5 +1,6 @@
 package fr.astratime.lucky.entities;
 
+import fr.astratime.lucky.entities.exploration.HardExploration;
 import fr.astratime.lucky.entities.exploration.Place;
 import fr.astratime.lucky.i18n.Lang;
 
@@ -63,6 +64,10 @@ public final class SpinEconomy {
      */
     public static int powerSpinCost(int spinCost) {
         for (Place place : Place.values()) if (place.getSpinCost() == spinCost) return place.getPowerSpinCost();
+        // Exploration difficile : la force suit celle des ennemis (le Désert x2 par lieu), pas la prime de pièces.
+        for (Place place : Place.values()) {
+            if (HardExploration.spinCost(place) == spinCost) return HardExploration.powerSpinCost(place);
+        }
         return spinCost;
     }
 

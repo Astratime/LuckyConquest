@@ -4,6 +4,7 @@ import fr.astratime.lucky.entities.tower.Chapter;
 import fr.astratime.lucky.entities.Card;
 import fr.astratime.lucky.entities.Enemy;
 import fr.astratime.lucky.entities.SpinEconomy;
+import fr.astratime.lucky.entities.exploration.HardExploration;
 import fr.astratime.lucky.entities.exploration.Place;
 import fr.astratime.lucky.i18n.Lang;
 
@@ -944,7 +945,11 @@ public enum EnemyKind {
         if (this == GRAND_CROUPIER) return CROUPIER_HP;
         if (hard.isEndless()) return endlessHp(hard.floor(), isTowerBoss());
         Place place = Place.of(this);
-        if (place != null) return (long) maxHp * place.getHpPercent() / 100;
+        if (place != null) {
+            long hp = (long) maxHp * place.getHpPercent() / 100;
+            // Exploration difficile : PV du lieu ramenés à ceux du Désert, puis x2 par lieu.
+            return hard.hard() && !hard.isEndless() ? Math.round(hp * HardExploration.hpFactor(place)) : hp;
+        }
         Chapter chapter = Chapter.of(this);
         if (chapter == null) return maxHp;
         if (!hard.hard()) return (long) maxHp * TOWER_HP_FACTOR;
@@ -966,7 +971,17 @@ public enum EnemyKind {
      */
     public int getBaseDefense(Difficulty hard) {
         Place place = Place.of(this);
-        return empowered(place != null && place.getShieldDefense() > 0 ? place.getShieldDefense() : baseDefense, hard);
+        return fortified(place != null && place.getShieldDefense() > 0 ? place.getShieldDefense() : baseDefense, hard);
+    }
+
+    /**
+     * @return la défense {@code value} renforcée par sa {@linkplain #getPower(Difficulty) force} et, en Exploration
+     *         difficile, par la défense de son lieu difficile (voir {@link HardExploration#defenseFactor})
+     */
+    public int fortified(int value, Difficulty hard) {
+        int empowered = empowered(value, hard);
+        if (!HardExploration.applies(this, hard)) return empowered;
+        return (int) Math.min(Integer.MAX_VALUE, Math.round(empowered * HardExploration.defenseFactor(Place.of(this))));
     }
 
     /**
@@ -990,6 +1005,12 @@ public enum EnemyKind {
      *         et 2, 500 aux 3 et 4, 2 000 au 5, 5 000 au 6, mode difficile compris) ;
      *         100 à l'Entraînement
      */
+    public int getSpinCost(Difficulty hard) {
+        if (HardExploration.applies(this, hard)) return HardExploration.spinCost(Place.of(this));
+        return getSpinCost();
+    }
+
+    /** @return le coût d'un tirage contre lui en mode normal (voir {@link #getSpinCost(Difficulty)}). */
     public int getSpinCost() {
         if (this == GRAND_CROUPIER) return CROUPIER_SPIN_COST;
         Place place = Place.of(this);
@@ -1118,7 +1139,9 @@ public enum EnemyKind {
         int empowered = empowered(value, hard);
         // Mode difficile : toute la Tour frappe comme ses derniers chapitres, pour que sa force compte en entier.
         int percent = hard.hard() && isTower() ? TOWER_LATE_DAMAGE : damagePercent();
-        return percent == 100 ? empowered : (int) Math.min(Integer.MAX_VALUE, Math.round((double) empowered * percent / 100));
+        double factor = HardExploration.applies(this, hard) ? HardExploration.attackFactor(Place.of(this)) : 1;
+        if (percent == 100 && factor == 1) return empowered;
+        return (int) Math.min(Integer.MAX_VALUE, Math.round((double) empowered * percent / 100 * factor));
     }
 
     /** @return sa force en multiplicateur affichable (ex : "x1,5"). */
@@ -1132,7 +1155,11 @@ public enum EnemyKind {
     public int thornsPercent(Difficulty hard) { return empowered(EnemySymbol.THORNS_PERCENT, hard); }
 
     /** @return les dégâts maximum que ses Épines renvoient en un tour. */
-    public int thornsMax(Difficulty hard) { return empowered(EnemySymbol.THORNS_MAX, hard); }
+    public int thornsMax(Difficulty hard) {
+        int max = empowered(EnemySymbol.THORNS_MAX, hard);
+        if (!HardExploration.applies(this, hard)) return max;
+        return (int) Math.min(Integer.MAX_VALUE, Math.round(max * HardExploration.attackFactor(Place.of(this))));
+    }
 
     /** @return la part des jauges du joueur vidée par chaque Dé pipé, en %. */
     public int diePercent(Difficulty hard) { return Math.min(100, empowered(EnemySymbol.DIE_PERCENT, hard)); }

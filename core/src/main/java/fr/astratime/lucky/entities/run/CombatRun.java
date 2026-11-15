@@ -56,7 +56,7 @@ public interface CombatRun {
     /** @return {@code true} si un Bingo peut ouvrir le Jeu bonus (pas dans le tutoriel). */
     default boolean hasBonusGame() { return true; }
 
-    /** @return {@code true} si ses ennemis sont en mode difficile (seulement dans la Tour). */
+    /** @return {@code true} si ses ennemis sont en mode difficile (Tour des épreuves, Exploration difficile). */
     default boolean isHard() { return false; }
 
     /** @return la difficulté de l'ennemi du combat en cours (mode normal, difficile, étage du mode sans fin). */
