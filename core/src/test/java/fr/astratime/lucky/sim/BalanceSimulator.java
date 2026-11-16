@@ -1091,15 +1091,17 @@ public final class BalanceSimulator {
                 effort = 0.5 + 0.5 * (1 - Math.max(0, game.getGameState().getEnemy().getHpRatio()));
             }
             double gains = game.getGameState().getPlayer().getGains();
-            long reward = PlayerProfile.combatReward(won, true, gains, place, hard, won ? 1 : effort);
+            int share = PlayerProfile.coinsPercent(rank, place, hard); // lieu en dessous de celui du rang
+            long reward = PlayerProfile.share(PlayerProfile.combatReward(won, true, gains, place, hard, won ? 1 : effort), share);
+            long chestShare = PlayerProfile.share(chest, share);
             rp.runs++;
-            rp.runCoins.add((double) reward + (won ? chest : 0));
+            rp.runCoins.add((double) reward + (won ? chestShare : 0));
             rp.turns += turns[0];
             rp.bonusGames += (int) bonus[1];
             rp.bonusGains += bonus[0];
             if (won) {
                 rp.wins++;
-                rp.coinsWin += reward + chest;
+                rp.coinsWin += reward + chestShare;
                 rp.bonusGainsWin += bonus[0];
                 rp.finalGainsWin += Math.max(0, gains);
             } else {

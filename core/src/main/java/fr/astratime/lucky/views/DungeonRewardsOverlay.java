@@ -154,6 +154,10 @@ public class DungeonRewardsOverlay implements Disposable {
                 + "donjon faite.",
             PlayerProfile.DEFEAT_KEEP_PERCENT, PlayerProfile.formatCoins(place.getDefeatCap(hard))));
         lines.add(Lang.t("Carte au trésor jouée : un coffre de plus."));
+        if (!hard) {
+            lines.add(Lang.f("Lieu en dessous de celui de ton rang : {0} % des pièces (un lieu en dessous), {1} % (deux "
+                + "ou plus).", PlayerProfile.LOWER_PLACE_PERCENT, PlayerProfile.FAR_LOWER_PLACE_PERCENT));
+        }
         Symbol reel = place.getReelReward();
         if (reel != null && !hard) {
             lines.add(Lang.f("Les quatre donjons du lieu vidés : le rouleau {0}.", reel.getDisplayName()));

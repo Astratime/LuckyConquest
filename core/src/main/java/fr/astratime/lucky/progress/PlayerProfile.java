@@ -1109,6 +1109,40 @@ public class PlayerProfile {
         return Math.round(kept * Math.max(0, Math.min(1, progress)));
     }
 
+    /** Pièces dans le lieu juste en dessous de celui du rang joué, en % (Astra, 2026-11-15). */
+    public static final int LOWER_PLACE_PERCENT = 25;
+    /** Pièces deux lieux ou plus en dessous de celui du rang joué, en %. */
+    public static final int FAR_LOWER_PLACE_PERCENT = 5;
+
+    /**
+     * @return le lieu d'Exploration fait pour {@code rank} : la Prairie sans rang, puis un lieu pour chaque paire
+     *         de rangs (Avare et Parieur à la Foire … Roi du casino et Légende au Désert)
+     */
+    public static Place placeOf(Rank rank) {
+        return rank == null ? Place.PRAIRIE : Place.values()[Math.min(Place.values().length - 1, rank.ordinal() / 2 + 1)];
+    }
+
+    /**
+     * Part des pièces gagnée dans {@code place} avec le rang {@code rank} (Astra, 2026-11-15) : toutes dans le lieu du
+     * rang ou plus haut, {@link #LOWER_PLACE_PERCENT} % un lieu en dessous, {@link #FAR_LOWER_PLACE_PERCENT} % deux
+     * lieux ou plus en dessous. Le mode difficile est toujours au-dessus des rangs : tout y est gagné.
+     *
+     * @return la part, en % (100 : rien n'est retenu)
+     */
+    public static int coinsPercent(Rank rank, Place place, boolean hard) {
+        if (hard || place == null) return 100;
+        int gap = placeOf(rank).ordinal() - place.ordinal();
+        return gap <= 0 ? 100 : gap == 1 ? LOWER_PLACE_PERCENT : FAR_LOWER_PLACE_PERCENT;
+    }
+
+    /** @return la part des pièces gagnée dans {@code place} avec le rang joué (voir {@link #coinsPercent(Rank, Place, boolean)}). */
+    public int coinsPercent(Place place, boolean hard) { return coinsPercent(getActiveRank(), place, hard); }
+
+    /** @return {@code coins} réduites à {@code percent} % (arrondi). */
+    public static long share(long coins, int percent) {
+        return percent >= 100 ? coins : Math.round(coins * (percent / 100.0));
+    }
+
     /**
      * Part d'un donjon faite au moment d'une défaite : la moitié pour le soldat,
      * la moitié pour le roi, chacun au prorata des PV qu'il a perdus. Mourir au
@@ -1134,7 +1168,8 @@ public class PlayerProfile {
      * Ouvre un coffre de donjon qui contient la carte {@code cardId} : un
      * exemplaire de plus dans la collection (au plus {@link #MAX_COPIES}) et
      * {@link Place#getChestCoins} pièces ; si la carte est déjà au maximum,
-     * {@link Place#getDuplicateCoins} pièces en plus. Le profil est enregistré.
+     * {@link Place#getDuplicateCoins} pièces en plus. Dans un lieu en dessous du rang joué,
+     * les pièces sont réduites ({@link #coinsPercent(Place, boolean)}). Le profil est enregistré.
      *
      * @param place lieu du donjon
      * @return ce que le joueur a reçu
@@ -1146,7 +1181,8 @@ public class PlayerProfile {
         if (admin) return new ChestReward(cardId, false, MAX_COPIES, 0); // le mode ADMIN ne rapporte rien
         int owned = getOwnedCopies(cardId);
         boolean newCopy = owned < MAX_COPIES;
-        long reward = place.getChestCoins(hard) + (newCopy ? 0 : place.getDuplicateCoins(hard));
+        long reward = share(place.getChestCoins(hard) + (newCopy ? 0 : place.getDuplicateCoins(hard)),
+            coinsPercent(place, hard)); // un lieu en dessous du rang joué rapporte moins
         if (newCopy) collection.put(cardId, owned + 1);
         coins += reward;
         save();
