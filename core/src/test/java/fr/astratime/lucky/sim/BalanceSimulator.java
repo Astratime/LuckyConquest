@@ -3,12 +3,15 @@ package fr.astratime.lucky.sim;
 import fr.astratime.lucky.controllers.GameController;
 import fr.astratime.lucky.entities.BonusGame;
 import fr.astratime.lucky.entities.Card;
+import fr.astratime.lucky.entities.Combo;
+import fr.astratime.lucky.entities.Enemy;
 import fr.astratime.lucky.entities.GameState;
 import fr.astratime.lucky.entities.Player;
 import fr.astratime.lucky.entities.RankBonus;
 import fr.astratime.lucky.entities.SpinEconomy;
 import fr.astratime.lucky.entities.Symbol;
 import fr.astratime.lucky.entities.SymbolOutcome;
+import fr.astratime.lucky.entities.SymbolRegistry;
 import fr.astratime.lucky.entities.TurnResult;
 import fr.astratime.lucky.entities.choices.BetChoice;
 import fr.astratime.lucky.entities.choices.CardChoice;
@@ -19,6 +22,7 @@ import fr.astratime.lucky.entities.enemy.EnemyKind;
 import fr.astratime.lucky.entities.events.Event;
 import fr.astratime.lucky.entities.events.GainsEarnedEvent;
 import fr.astratime.lucky.entities.exploration.Dungeon;
+import fr.astratime.lucky.entities.exploration.DungeonRun;
 import fr.astratime.lucky.entities.exploration.Place;
 import fr.astratime.lucky.loaders.CardLoader;
 import fr.astratime.lucky.progress.PlayerProfile;
@@ -63,7 +67,7 @@ import java.util.function.BiFunction;
  *       gardée après une défaite) dans chaque donjon, à chaque rang.</li>
  * </ol>
  *
- * Le robot joue ses cartes au hasard, sans Mise (avec {@code -Pstake=5}, 10 ou 15, il mise
+ * Le robot joue ses cartes au hasard (le « joueur malin » cherche les combinaisons, voir {@link #playSmartTurn}), sans Mise (avec {@code -Pstake=5}, 10 ou 15, il mise
  * ce palier à chaque tirage ; sa cagnotte reste d'une descente à l'autre du même donjon,
  * et dans la Tour elle repart de 0 à chaque chapitre). Avec le deck de départ (ou aucune
  * carte, pour les gains de base), il n'achète rien à l'échoppe ; avec un équipement
@@ -78,6 +82,12 @@ public final class BalanceSimulator {
 
     /** Mise du robot à chaque tirage ({@code -Dlucky.stake=5}, 10 ou 15 ; aucune par défaut). */
     static final SpinEconomy.Stake STAKE = stakeOf(Integer.getInteger("lucky.stake", 0));
+
+    /**
+     * Ancien joueur malin ({@code -PoldBot}), pour comparer : cartes dans un ordre fixe sans chercher les
+     * combinaisons, choix au hasard, échoppe réduite à Bingo, Roulette russe et Corruption, pas d'ennemi doré.
+     */
+    static final boolean OLD_BOT = Boolean.getBoolean("lucky.oldBot");
 
     /** Essai ({@code -Dlucky.potPerRun=true}) : la cagnotte repart de 0 à chaque descente d'un donjon. */
     static final boolean POT_PER_RUN = Boolean.getBoolean("lucky.potPerRun");
@@ -110,10 +120,16 @@ public final class BalanceSimulator {
      * @param buysAtStall {@code true} s'il achète à l'échoppe pendant le combat
      * @param upgraded    {@code true} si ses cartes sont en version « + » quand elle existe
      * @param smart       {@code true} s'il joue en « joueur malin » ({@link #playSmartTurn}) au lieu du hasard
+     * @param plus        cartes jouées en « + » même si {@code upgraded} est {@code false} (profils par rang)
      */
     record Gear(String name, Map<String, Integer> deck, List<Symbol> reels, boolean buysAtStall, boolean upgraded,
-                boolean smart) {
+                boolean smart, java.util.Set<String> plus) {
         static final Gear STARTER = new Gear("Deck de départ", null, Symbol.classicReels(), false, false, false);
+
+        Gear(String name, Map<String, Integer> deck, List<Symbol> reels, boolean buysAtStall, boolean upgraded,
+             boolean smart) {
+            this(name, deck, reels, buysAtStall, upgraded, smart, java.util.Set.of());
+        }
 
         Gear(String name, Map<String, Integer> deck, List<Symbol> reels, boolean buysAtStall) {
             this(name, deck, reels, buysAtStall, true, false);
@@ -176,6 +192,8 @@ public final class BalanceSimulator {
     private final CardLoader.AssetReader reader;
     private final Function<String, Card> cards;
     private final Map<String, Integer> stall;
+    /** L'échoppe de l'Exploration, comme dans le jeu (pour le joueur malin). */
+    private final Map<String, Integer> explorationStall;
     /** Descentes déjà simulées, par donjon, rang et équipement (les sections 3, 4 et 5 en partagent). */
     private final Map<String, DungeonStats> dungeonCache = new ConcurrentHashMap<>();
     /** Les descentes elles-mêmes (deck de départ), pour comparer des règles de pièces (section 7). */
@@ -205,6 +223,7 @@ public final class BalanceSimulator {
         Map<String, Integer> shop = CardLoader.loadShop(reader);
         this.stall = new LinkedHashMap<>();
         for (String id : STALL_PICKS) stall.put(id, Objects.requireNonNull(shop.get(id), id));
+        this.explorationStall = GameController.stallFor(shop, cards, false, false);
     }
 
     public static void main(String[] args) throws IOException {
@@ -214,7 +233,10 @@ public final class BalanceSimulator {
         String report = List.of(args).contains("--tower") ? simulator.towerReport()
             : List.of(args).contains("--tune") ? simulator.tuneReport()
             : List.of(args).contains("--hardplace") ? simulator.hardPlaceReport()
-            : List.of(args).contains("--rankplace") ? simulator.rankPlaceReport() : simulator.report();
+            : List.of(args).contains("--rankplace") ? simulator.rankPlaceReport()
+            : List.of(args).contains("--profiles") ? simulator.profilesReport()
+            : System.getProperty("lucky.journal") != null ? simulator.journalReport(Paths.get(System.getProperty("lucky.journal")))
+            : simulator.report();
         System.out.println(report);
         Path out = Paths.get(System.getProperty("lucky.simulation.out", "build/simulation/equilibrage.md"));
         if (out.getParent() != null) Files.createDirectories(out.getParent());
@@ -421,6 +443,7 @@ public final class BalanceSimulator {
             int before = turns[0];
             if (POT_PER_RUN) game.getPot().take(); // essai : une cagnotte neuve à chaque descente
             game.restart(dungeon.getSoldier());
+            rollGolden(game, random);
             boolean won = fight(game, random, gear, turns, false);
             double effort = 0.5 * (1 - Math.max(0, game.getGameState().getEnemy().getHpRatio()));
             if (won) {
@@ -848,7 +871,7 @@ public final class BalanceSimulator {
     }
 
     /** @return {@code coins} en abrégé (« 52 k », « 1,3 M »). */
-    private static String abbreviated(double coins) {
+    static String abbreviated(double coins) {
         if (coins >= 1e9) return String.format(Locale.FRANCE, "%.1f G", coins / 1e9);
         if (coins >= 1e6) return String.format(Locale.FRANCE, "%.1f M", coins / 1e6);
         if (coins >= 1e4) return String.format(Locale.FRANCE, "%.0f k", coins / 1e3);
@@ -1029,8 +1052,14 @@ public final class BalanceSimulator {
 
     /** Comme {@link #rankPlace(Place, Rank, Gear, boolean, int, long)}, en Exploration difficile si {@code hard}. */
     Map<String, RP> rankPlace(Place place, boolean hard, Rank rank, Gear gear, boolean bonusOn, int runs, long seed) {
+        return rankPlace(place, hard, rank, PRESTIGE, gear, bonusOn, runs, seed);
+    }
+
+    /** Comme {@link #rankPlace(Place, boolean, Rank, Gear, boolean, int, long)}, au Prestige {@code prestige}. */
+    Map<String, RP> rankPlace(Place place, boolean hard, Rank rank, int prestige, Gear gear, boolean bonusOn, int runs,
+                              long seed) {
         Random random = new Random(seed);
-        GameController game = controller((rank == null ? RankBonus.NONE : rank.getBonus()).withPrestige(PRESTIGE), gear);
+        GameController game = controller((rank == null ? RankBonus.NONE : rank.getBonus()).withPrestige(prestige), gear);
         game.setDifficulty(Difficulty.of(hard));
         game.setPlaceRule(place.getRule());
         game.setBonusGameEnabled(bonusOn);
@@ -1044,6 +1073,7 @@ public final class BalanceSimulator {
             int[] turns = {0};
             double[] bonus = {0, 0};
             game.restart(dungeon.getSoldier());
+            rollGolden(game, random);
             double g0 = game.getGameState().getPlayer().getGains();
             rp.soldierFights++;
             boolean won = fightTracked(game, random, gear, turns, false, bonus);
@@ -1114,6 +1144,191 @@ public final class BalanceSimulator {
     static final int PRESTIGE = Integer.getInteger("lucky.prestige", 0);
 
     static final List<double[]> POT_LOG = System.getProperty("lucky.potLog") != null ? new ArrayList<>() : null;
+
+    // -------------------------------------------------------------------------
+    // Trois joueurs par rang : ./gradlew :core:simulate -Pprofiles -Pstake=15 (-PrpRuns=100 -PshopShare=1)
+    // -------------------------------------------------------------------------
+
+    /** Decks visés par les profils par rang (voir {@link RankProfiles}). */
+    static Map<String, Map<String, Integer>> profileTargets() {
+        Map<String, Map<String, Integer>> targets = new LinkedHashMap<>();
+        targets.put("Malin", SMART_DECK);
+        targets.put("Pique", STRONG_DECKS.get("Piques"));
+        targets.put("Coeur", STRONG_DECKS.get("Coeurs"));
+        targets.put("Trefle", STRONG_DECKS.get("Trèfles"));
+        targets.put("Carreau", STRONG_DECKS.get("Carreaux"));
+        return targets;
+    }
+
+    /**
+     * Pour chaque rang, dans son lieu, trois joueurs : <b>débutant</b> (deck de départ, cartes au hasard),
+     * <b>moyen</b> (ce qu'il possède vraiment à ce rang, {@link RankProfiles}, joué en joueur malin) et <b>expert</b>
+     * (le deck visé complet, tout en « + », la machine du moyen, joué en joueur malin). Le moyen et l'expert
+     * sont donnés pour chaque deck visé. Les profils sont écrits dans profils_par_rang.md, pour relecture.
+     */
+    String profilesReport() {
+        int runs = Integer.getInteger("lucky.rpRuns", 100);
+        Map<String, Long> boutique = CardLoader.loadBoutique(reader);
+        List<String> starter = new ArrayList<>();
+        for (Card card : CardLoader.loadStarterDeck(reader)) starter.add(Card.baseId(card.getId()));
+        RankProfiles profiles = new RankProfiles(boutique, starter, CardLoader.loadStartingCollection(reader), cards);
+        StringBuilder describe = new StringBuilder("# Profils par rang\n\n");
+        List<Object[]> cases = new ArrayList<>(); // rang, joueur, deck visé, gear
+        for (Rank rank : allRanks()) {
+            if (System.getProperty("lucky.onlyRank") != null && !List.of(System.getProperty("lucky.onlyRank").split(",")).contains(title(rank))) continue;
+            cases.add(new Object[] {rank, "débutant", "-", Gear.STARTER});
+            describe.append("## ").append(title(rank)).append(" (").append(placeOfRank(rank).getShortName()).append(")\n\n");
+            for (Map.Entry<String, Map<String, Integer>> target : profileTargets().entrySet()) {
+                RankProfiles.Profile profile = profiles.of(rank, target.getValue());
+                describe.append(profiles.describe(target.getKey(), profile));
+                cases.add(new Object[] {rank, "moyen", target.getKey(), new Gear("Moyen " + target.getKey(), profile.deck(),
+                    profile.reels(), true, false, true, profile.plus())});
+                // expert : le deck visé complet, tout en « + », la même machine que le moyen
+                cases.add(new Object[] {rank, "expert", target.getKey(), new Gear("Expert " + target.getKey(),
+                    target.getValue(), profile.reels(), true, true, true)});
+            }
+        }
+        Map<Integer, RP> results = new ConcurrentHashMap<>();
+        List<Runnable> jobs = new ArrayList<>();
+        for (int i = 0; i < cases.size(); i++) {
+            int index = i;
+            Object[] c = cases.get(i);
+            jobs.add(() -> {
+                RP total = new RP();
+                rankPlace(placeOfRank((Rank) c[0]), (Rank) c[0], (Gear) c[3], true, runs, SEED).values().forEach(total::add);
+                results.put(index, total);
+            });
+        }
+        jobs.parallelStream().forEach(Runnable::run);
+        StringBuilder out = new StringBuilder("rank\tplace\tplayer\ttarget\truns\twinPercent\tavgCoinsRun\tmedianCoinsRun\ttypical30\tturnsPerRun\tdescentsForNextRank\n");
+        for (int i = 0; i < cases.size(); i++) {
+            Object[] c = cases.get(i);
+            Rank rank = (Rank) c[0];
+            RP rp = results.get(i);
+            Rank next = rank == null ? Rank.values()[0] : rank.ordinal() + 1 < Rank.values().length ? Rank.values()[rank.ordinal() + 1] : null;
+            double typical = rp.typical(30);
+            out.append(String.format(Locale.ROOT, "%s\t%s\t%s\t%s\t%d\t%.1f\t%.0f\t%.0f\t%.0f\t%.1f\t%s%n", title(rank),
+                placeOfRank(rank).getShortName(), c[1], c[2], rp.runs, 100.0 * rp.wins / rp.runs,
+                (rp.coinsWin + rp.coinsLoss) / rp.runs, rp.median(), typical, rp.turns / (double) rp.runs,
+                next == null || typical <= 0 ? "-" : String.format(Locale.ROOT, "%.0f", next.getPrice() / typical)));
+        }
+        try {
+            Path profilesOut = Paths.get(System.getProperty("lucky.simulation.out", "build/simulation/equilibrage.md"))
+                .resolveSibling("profils_par_rang.md");
+            if (profilesOut.getParent() != null) Files.createDirectories(profilesOut.getParent());
+            Files.writeString(profilesOut, describe.toString(), StandardCharsets.UTF_8);
+            System.out.println("Profils écrits dans " + profilesOut.toAbsolutePath());
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+        return out.toString();
+    }
+
+    // -------------------------------------------------------------------------
+    // Journal des descentes : ./gradlew :core:simulate -Pjournal=<fichier> -Pstake=15 (-PrpRuns=100)
+    // -------------------------------------------------------------------------
+
+    /** Une descente du journal ({@link fr.astratime.lucky.progress.DescentLog}) : soldat, puis roi s'il l'a battu. */
+    record LoggedDescent(String group, Place place, Dungeon dungeon, boolean hard, Rank rank, int prestige,
+                         Map<String, Integer> deck, List<Symbol> machine, int stake, boolean won, double coins) {}
+
+    /** @return les descentes du journal {@code file}, dans l'ordre (un soldat battu sans roi joué ensuite ne compte pas). */
+    static List<LoggedDescent> readJournal(Path file) throws IOException {
+        List<LoggedDescent> descents = new ArrayList<>();
+        String[] pending = null;
+        for (String line : Files.readAllLines(file, StandardCharsets.UTF_8)) {
+            if (line.isBlank() || line.startsWith("date;")) continue;
+            String[] f = line.split(";", -1);
+            if (f.length < 15) continue;
+            boolean king = f[6].equals("roi");
+            boolean won = Boolean.parseBoolean(f[7]);
+            if (!king) {
+                pending = null;
+                if (won) pending = f; // le roi suit
+                else descents.add(descent(f, false, Double.parseDouble(f[10])));
+            } else if (pending != null && pending[2].equals(f[2])) {
+                descents.add(descent(f, won, Double.parseDouble(f[10])));
+                pending = null;
+            }
+        }
+        return descents;
+    }
+
+    private static LoggedDescent descent(String[] f, boolean won, double coins) {
+        Map<String, Integer> deck = new LinkedHashMap<>();
+        for (String card : f[13].split("\\|")) {
+            if (card.isEmpty()) continue;
+            int colon = card.lastIndexOf(':');
+            deck.put(card.substring(0, colon), Integer.parseInt(card.substring(colon + 1)));
+        }
+        List<Symbol> machine = new ArrayList<>();
+        for (String symbol : f[14].split("\\|")) if (!symbol.isEmpty()) machine.add(Symbol.valueOf(symbol));
+        Rank rank = f[4].isEmpty() ? null : Rank.valueOf(f[4]);
+        String group = String.join(";", f[1], f[3], f[4], f[5], f[12], f[13], f[14]);
+        return new LoggedDescent(group, Place.valueOf(f[1]), Dungeon.valueOf(f[2]), Boolean.parseBoolean(f[3]), rank,
+            Integer.parseInt(f[5]), deck, machine, Integer.parseInt(f[12]), won, coins);
+    }
+
+    /**
+     * Compare le vrai joueur du journal au joueur malin : pour chaque équipement du journal (lieu, difficulté, rang,
+     * Prestige, Mise, deck, machine) et chaque donjon joué, le joueur malin fait {@code -PrpRuns} descentes avec
+     * exactement ce deck et cette machine. Victoires et pièces par descente, réelles et simulées.
+     */
+    String journalReport(Path file) throws IOException {
+        int runs = Integer.getInteger("lucky.rpRuns", 100);
+        List<LoggedDescent> descents = readJournal(file);
+        Map<String, List<LoggedDescent>> byCase = new LinkedHashMap<>();
+        for (LoggedDescent d : descents) byCase.computeIfAbsent(d.group() + ';' + d.dungeon(), k -> new ArrayList<>()).add(d);
+        Map<String, RP> simulated = new ConcurrentHashMap<>();
+        Map<String, Gear> gears = new LinkedHashMap<>();
+        for (List<LoggedDescent> list : byCase.values()) {
+            LoggedDescent first = list.get(0);
+            gears.computeIfAbsent(first.group(), g -> new Gear("Journal " + gears.size(), first.deck(), first.machine(),
+                true, false, true));
+        }
+        List<Runnable> jobs = new ArrayList<>();
+        for (Map.Entry<String, Gear> g : gears.entrySet()) {
+            LoggedDescent first = descents.stream().filter(d -> d.group().equals(g.getKey())).findFirst().orElseThrow();
+            jobs.add(() -> rankPlace(first.place(), first.hard(), first.rank(), first.prestige(), g.getValue(), true, runs, SEED)
+                .forEach((name, rp) -> simulated.put(g.getKey() + ';' + name, rp)));
+        }
+        jobs.parallelStream().forEach(Runnable::run);
+        StringBuilder out = new StringBuilder(String.format(Locale.ROOT,
+            "# Journal des descentes comparé au joueur malin%n%n%d descentes lues dans %s ; Mise du robot %d %%, %d descentes simulées par donjon.%n%n",
+            descents.size(), file.getFileName(), STAKE.percent, runs));
+        out.append("| Équipement | Lieu | Rang | Donjon | Descentes réelles | Victoires réelles | Victoires simulées | Pièces réelles / descente | Pièces simulées / descente |\n");
+        out.append("| --- | --- | --- | --- | --- | --- | --- | --- | --- |\n");
+        int realTotal = 0, realWins = 0;
+        double simWinSum = 0;
+        for (Map.Entry<String, List<LoggedDescent>> c : byCase.entrySet()) {
+            List<LoggedDescent> list = c.getValue();
+            LoggedDescent first = list.get(0);
+            RP rp = simulated.get(first.group() + ';' + first.dungeon().getShortName());
+            int wins = (int) list.stream().filter(LoggedDescent::won).count();
+            double coins = list.stream().mapToDouble(LoggedDescent::coins).average().orElse(0);
+            double simWin = rp == null || rp.runs == 0 ? 0 : 100.0 * rp.wins / rp.runs;
+            double simCoins = rp == null || rp.runs == 0 ? 0 : (rp.coinsWin + rp.coinsLoss) / rp.runs;
+            realTotal += list.size();
+            realWins += wins;
+            simWinSum += simWin * list.size();
+            String gear = gears.get(first.group()).name() + (first.hard() ? " (difficile)" : "")
+                + (first.stake() != STAKE.percent ? " Mise réelle " + first.stake() + " %" : "");
+            out.append(String.format(Locale.ROOT, "| %s | %s | %s | %s | %d | %.0f %% | %.0f %% | %s | %s |%n", gear,
+                first.place().getShortName(), title(first.rank()), first.dungeon().getShortName(), list.size(),
+                100.0 * wins / list.size(), simWin, abbreviated(coins), abbreviated(simCoins)));
+        }
+        if (realTotal > 0) {
+            out.append(String.format(Locale.ROOT, "%nEn tout : %.0f %% de victoires réelles, %.0f %% simulées (même mélange de donjons). "
+                + "Avec %d descentes réelles, la marge d'erreur est d'environ ±%.0f points.%n",
+                100.0 * realWins / realTotal, simWinSum / realTotal, realTotal, 100 / Math.sqrt(realTotal)));
+        }
+        out.append("\n## Équipements\n\n");
+        for (Map.Entry<String, Gear> g : gears.entrySet()) {
+            out.append("- ").append(g.getValue().name()).append(" : ").append(String.join(", ", g.getValue().deck().keySet()))
+                .append(" ; machine ").append(g.getValue().reels()).append('\n');
+        }
+        return out.toString();
+    }
 
     // -------------------------------------------------------------------------
     // Exploration difficile : ./gradlew :core:simulate -Phardplace -Pstake=15 (-PrpRuns=100 -Plevel=N -PhardRank=Roi)
@@ -1215,16 +1430,22 @@ public final class BalanceSimulator {
     // -------------------------------------------------------------------------
 
     private GameController controller(RankBonus bonus, Gear gear) {
-        return new GameController(() -> gear.deck() == null ? CardLoader.loadStarterDeck(reader) : build(gear.deck(), gear.upgraded()),
-            cards, gear.buysAtStall() ? stall : Map.of(),
+        return new GameController(() -> gear.deck() == null ? CardLoader.loadStarterDeck(reader) : build(gear.deck(), gear.upgraded(), gear.plus()),
+            cards, !gear.buysAtStall() ? Map.of() : gear.smart() && !OLD_BOT ? explorationStall : stall,
             deck -> new Player("Robot", Player.BASE_HP, deck, bonus, gear.reels()));
     }
 
     /** @return les cartes de {@code deck}, chacune dans sa version « + » quand elle existe. */
     private List<Card> build(Map<String, Integer> deck, boolean upgraded) {
+        return build(deck, upgraded, java.util.Set.of());
+    }
+
+    /** Comme {@link #build(Map, boolean)} ; les cartes de {@code plus} sont aussi en « + ». */
+    private List<Card> build(Map<String, Integer> deck, boolean upgraded, java.util.Set<String> plus) {
         List<Card> built = new ArrayList<>();
         for (Map.Entry<String, Integer> entry : deck.entrySet()) {
-            String id = upgraded && cards.apply(entry.getKey()).isUpgradable() ? Card.upgradedId(entry.getKey()) : entry.getKey();
+            boolean up = upgraded || plus.contains(entry.getKey());
+            String id = up && cards.apply(entry.getKey()).isUpgradable() ? Card.upgradedId(entry.getKey()) : entry.getKey();
             for (int i = 0; i < entry.getValue(); i++) built.add(cards.apply(id));
         }
         return built;
@@ -1255,6 +1476,39 @@ public final class BalanceSimulator {
             resolveChoice(game, random);
         }
         return stakeAndSpin(game);
+    }
+
+    /** Le soldat est doré une fois sur {@link DungeonRun#GOLDEN_CHANCE}, comme dans le jeu (PV x2). */
+    private static void rollGolden(GameController game, Random random) {
+        if (!OLD_BOT && random.nextInt(DungeonRun.GOLDEN_CHANCE) == 0) game.getGameState().getEnemy().gild();
+    }
+
+    /**
+     * Le joueur malin répond au choix qu'une carte vient d'ouvrir : pari, rouleau truqué et Atelier du Joker sur un
+     * de ses symboles d'attaque, Calibrage sur un symbole qui n'attaque ni ne rapporte ; la roulette russe reste au
+     * hasard (ses cartes sont face cachée).
+     */
+    private static void resolveSmartChoice(GameController game, Random random) {
+        CardChoice choice = game.getPendingChoice();
+        if (OLD_BOT || choice == null || choice instanceof RouletteChoice) {
+            resolveChoice(game, random);
+            return;
+        }
+        Player player = game.getGameState().getPlayer();
+        List<Symbol> options = game.getBetOptions();
+        List<Symbol> attacks = new ArrayList<>(options);
+        attacks.retainAll(SymbolRegistry.getAttackSymbols(player));
+        List<Symbol> useless = new ArrayList<>(options);
+        useless.removeIf(symbol -> SymbolRegistry.getAttackSymbols().contains(symbol) || SymbolRegistry.isGainSymbol(symbol));
+        if (choice instanceof fr.astratime.lucky.entities.choices.CalibrationChoice) {
+            game.calibrate(pick(useless.isEmpty() ? options : useless, random));
+            return;
+        }
+        Symbol best = pick(attacks.isEmpty() ? options : attacks, random);
+        if (choice instanceof BetChoice) game.placeBet(best);
+        else if (choice instanceof RiggedReelChoice) game.rigReel(best);
+        else if (choice instanceof fr.astratime.lucky.entities.choices.JokerWorkshopChoice) game.shapeJoker(best);
+        else resolveChoice(game, random);
     }
 
     /** Le robot répond au hasard au choix qu'une carte vient d'ouvrir (pari, roulette, rouleau truqué...). */
@@ -1306,53 +1560,157 @@ public final class BalanceSimulator {
                 return player.getLastingEffects().getLuckyStar() >= 20 ? 6 : -1;
             case "bingo":
                 return 9;
+            case "golden_reel": case "corruption": case "russian_roulette": // achetées pour ce tour : toujours jouées
+                return OLD_BOT ? 5 : 8;
             default:
                 return id.startsWith("1_") ? 4 : 5;
         }
     }
 
     /**
+     * Parmi les cartes que le joueur malin veut bien jouer, celles qui forment la plus grosse combinaison
+     * (Couleur, Paire, Brelan, Suite, Carré s'additionnent) dans les {@code slots} cartes qu'il peut encore jouer ;
+     * à égalité, celles qu'il joue d'habitude en premier ({@link #smartOrder}). Le Bingo acheté reste à part.
+     *
+     * @return la main à jouer, dans l'ordre de {@link #smartOrder}
+     */
+    private static List<Card> bestComboHand(GameController game, List<Card> hand, boolean king, int slots,
+                                            boolean boughtBingo) {
+        Player player = game.getGameState().getPlayer();
+        List<Card> candidates = new ArrayList<>();
+        List<Card> bingos = new ArrayList<>();
+        for (Card card : hand) {
+            int order = smartOrder(game, card, king);
+            if (order < 0 || game.unplayableReason(card) != null) continue;
+            (order >= 8 && (order == 8 || boughtBingo) ? bingos : candidates).add(card);
+        }
+        int k = Math.min(slots - bingos.size(), candidates.size());
+        List<Card> chosen;
+        if (k <= 0) chosen = new ArrayList<>();
+        else if (candidates.size() <= k || candidates.size() > 16) chosen = new ArrayList<>(candidates);
+        else {
+            List<Card> played = player.getPlayedCards();
+            int n = candidates.size();
+            int bestMask = 0;
+            double bestScore = Double.NEGATIVE_INFINITY;
+            for (int mask = 0; mask < (1 << n); mask++) {
+                if (Integer.bitCount(mask) != k) continue;
+                List<Card> pickCards = new ArrayList<>(played);
+                double order = 0;
+                for (int i = 0; i < n; i++) {
+                    if ((mask & (1 << i)) == 0) continue;
+                    pickCards.add(candidates.get(i));
+                    order += smartOrder(game, candidates.get(i), king);
+                }
+                double score = Combo.totalFactor(Combo.formed(pickCards)) * 1000 - order;
+                if (score > bestScore) { bestScore = score; bestMask = mask; }
+            }
+            chosen = new ArrayList<>();
+            for (int i = 0; i < n; i++) if ((bestMask & (1 << i)) != 0) chosen.add(candidates.get(i));
+        }
+        chosen.addAll(bingos);
+        chosen.sort(Comparator.comparingInt(card -> smartOrder(game, card, king)));
+        return chosen;
+    }
+
+    /** @return les places à garder pour les cartes achetées à l'échoppe pour ce tour et pas encore jouées. */
+    private static int reserved(GameController game, Player player, boolean king, boolean boughtBingo) {
+        int count = 0;
+        for (Card card : player.getCurrentHand()) {
+            int order = smartOrder(game, card, king);
+            if (order == 8 || order == 9 && boughtBingo) count++;
+        }
+        return count;
+    }
+
+    /** Achète {@code id} à l'échoppe s'il en garde de quoi payer 3 tirages ; @return {@code true} si la carte est sur la table. */
+    private static boolean buy(GameController game, String id, double maxShareOfGains) {
+        Player player = game.getGameState().getPlayer();
+        for (GameController.ShopOffer offer : game.getShopOffers()) {
+            if (!offer.card().getId().equals(id) || game.unavailableReason(offer) != null) continue;
+            if (player.getGains() - offer.price() < 3L * game.getSpinCost()) return false;
+            if (offer.price() > maxShareOfGains * player.getGains()) return false;
+            GameController.Purchase purchase = game.buy(offer);
+            return purchase != null && purchase.addedToHand();
+        }
+        return false;
+    }
+
+    /**
      * Un tour du « joueur malin » : il joue d'abord Dans la manche et les pioches, garde Rayon du phare et Masque
-     * du Joker pour le roi (ou quand il a moins de la moitié de ses PV), puis les cartes à plusieurs effets, les As
-     * et les autres cartes. Quand il peut encore jouer au moins 3 cartes d'attaque, il achète Bingo à l'échoppe
-     * (en gardant de quoi payer 3 tirages) et le joue en dernier. Choix (pari...) au hasard.
+     * du Joker pour le roi (ou quand il a moins de la moitié de ses PV), puis choisit les cartes qui font la plus
+     * grosse combinaison ({@link #bestComboHand}). Quand il peut encore jouer au moins 3 cartes d'attaque, il fait
+     * un gros tour : Bingo de l'échoppe (joué en dernier), Rouleau doré, et contre un roi Corruption et Roulette
+     * russe. Il ne fait pas de gros tour quand l'ennemi a atteint son seuil de phase (Garde : il ne perd plus de PV
+     * avant son tour), et achète la Main du croupier quand il lui reste des cartes à jouer. Pari, rouleau truqué :
+     * sur un de ses symboles d'attaque ({@link #resolveSmartChoice}).
+     *
+     * <p>Avec {@code -PoldBot} : l'ancien joueur malin (ordre fixe, achète seulement Bingo, choix au hasard).
      */
     private static TurnResult playSmartTurn(GameController game, Random random, boolean king) {
         game.drawCards();
         Player player = game.getGameState().getPlayer();
+        Enemy enemy = game.getGameState().getEnemy();
         boolean boughtBingo = false;
         for (int pass = 0; pass < 2; pass++) {
             // pass 0 : préparation (Dans la manche, pioches) ; pass 1 : le reste
             List<Card> hand = new ArrayList<>(player.getCurrentHand());
             Collections.shuffle(hand, random);
             hand.sort(Comparator.comparingInt(card -> smartOrder(game, card, king)));
-            if (pass == 1 && !boughtBingo) {
+            if (pass == 1 && !boughtBingo && !(OLD_BOT ? false : enemy.isPhaseWallReached())) {
                 int slots = game.getPlayLimit() - game.getCardsPlayedThisTurn();
                 long attacks = hand.stream().filter(BalanceSimulator::isAttackCard)
                     .filter(card -> game.unplayableReason(card) == null).count();
                 if (slots >= 4 && attacks >= 3) {
-                    for (GameController.ShopOffer offer : game.getShopOffers()) {
-                        if (offer.card().getId().equals("bingo") && game.unavailableReason(offer) == null
-                            && player.getGains() - offer.price() >= 3L * game.getSpinCost()) {
-                            GameController.Purchase purchase = game.buy(offer);
-                            boughtBingo = purchase != null && purchase.addedToHand();
+                    if (OLD_BOT) {
+                        for (GameController.ShopOffer offer : game.getShopOffers()) {
+                            if (offer.card().getId().equals("bingo") && game.unavailableReason(offer) == null
+                                && player.getGains() - offer.price() >= 3L * game.getSpinCost()) {
+                                GameController.Purchase purchase = game.buy(offer);
+                                boughtBingo = purchase != null && purchase.addedToHand();
+                            }
                         }
+                    } else {
+                        // il garde au moins 3 places pour ses cartes d'attaque
+                        int extras = slots - 3;
+                        boughtBingo = extras > 0 && buy(game, "bingo", 0.5);
+                        if (boughtBingo) extras--;
+                        List<String> picks = king && enemy.getHpRatio() > 0.3f
+                            ? List.of("corruption", "russian_roulette", "golden_reel") : List.of("golden_reel");
+                        for (String id : picks) if (extras > 0 && buy(game, id, 0.2)) extras--;
                     }
-                    hand = new ArrayList<>(player.getCurrentHand());
-                    Collections.shuffle(hand, random);
-                    hand.sort(Comparator.comparingInt(card -> smartOrder(game, card, king)));
                 }
+                hand = new ArrayList<>(player.getCurrentHand());
+                Collections.shuffle(hand, random);
+                hand.sort(Comparator.comparingInt(card -> smartOrder(game, card, king)));
             }
-            for (Card card : hand) {
+            if (pass == 1 && !OLD_BOT) {
+                hand = bestComboHand(game, hand, king, game.getPlayLimit() - game.getCardsPlayedThisTurn(), boughtBingo);
+            }
+            for (int i = 0; i < hand.size(); i++) {
+                Card card = hand.get(i);
                 if (game.isPlayLimitReached() || game.isHandLocked()) break;
+                if (!player.getCurrentHand().contains(card)) continue;
                 int order = smartOrder(game, card, king);
                 if (order < 0 || (pass == 0 && order > 1)) continue;
                 if (order == 9 && !boughtBingo) continue;
-                // garde une place pour Bingo
+                // garde une place pour Bingo (et les cartes achetées pour ce tour)
                 if (boughtBingo && order != 9 && game.getPlayLimit() - game.getCardsPlayedThisTurn() <= 1) continue;
+                if (!OLD_BOT && order < 8 && game.getPlayLimit() - game.getCardsPlayedThisTurn() <= reserved(game, player, king, boughtBingo)) continue;
                 if (game.unplayableReason(card) != null) continue;
                 game.playCard(card);
-                resolveChoice(game, random);
+                resolveSmartChoice(game, random);
+            }
+            if (pass == 1 && !OLD_BOT && !game.isPlayLimitReached() && !game.isHandLocked()) {
+                // cartes piochées par la Main du croupier ou les pioches : il complète sa main
+                for (Card card : bestComboHand(game, new ArrayList<>(player.getCurrentHand()), king,
+                        game.getPlayLimit() - game.getCardsPlayedThisTurn(), false)) {
+                    if (game.isPlayLimitReached() || game.isHandLocked()) break;
+                    if (smartOrder(game, card, king) == 9 && !boughtBingo) continue;
+                    if (game.unplayableReason(card) != null) continue;
+                    game.playCard(card);
+                    resolveSmartChoice(game, random);
+                }
             }
         }
         return stakeAndSpin(game);

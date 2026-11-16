@@ -68,6 +68,7 @@ import fr.astratime.lucky.assets.HudTextures;
 import fr.astratime.lucky.assets.Palette;
 import fr.astratime.lucky.assets.TableTextures;
 import fr.astratime.lucky.progress.Cosmetic;
+import fr.astratime.lucky.progress.DescentLog;
 import fr.astratime.lucky.controllers.GameController;
 import fr.astratime.lucky.entities.BigNumber;
 import fr.astratime.lucky.entities.BonusGame;
@@ -2234,6 +2235,21 @@ public class GameScreen extends ScreenAdapter {
     // Fin de combat et sons
     // -------------------------------------------------------------------------
 
+    /** Combat de l'Exploration terminé : une ligne au journal des descentes (ni ADMIN, ni tutoriel). */
+    private void logDescent(boolean won, long reward) {
+        if (!isDungeon() || tutorial != null || luckyGame.getProfile().isAdmin()) return;
+        DungeonRun dungeonRun = (DungeonRun) run;
+        PlayerProfile profile = luckyGame.getProfile();
+        GameState state = gameController.getGameState();
+        List<String> machine = new ArrayList<>();
+        for (Symbol symbol : profile.getMachine()) machine.add(symbol.name());
+        DescentLog.append(DescentLog.DEFAULT_FILE, new DescentLog.Entry(
+            Place.of(dungeonRun.getDungeon()).name(), dungeonRun.getDungeon().name(), dungeonRun.isHard(),
+            profile.getRank() == null ? null : profile.getRank().name(), profile.getPrestige(), run.isBossStage(), won,
+            state.getTurnNumber(), state.getPlayer().getGains(), reward, state.getEnemy().isGolden(),
+            gameController.getStake().percent, profile.getDeck(), machine));
+    }
+
     /** @return les pièces gagnées à la fin de ce combat (voir {@link PlayerProfile#combatReward}). */
     private long combatReward(boolean victory) {
         if (!isDungeon()) return 0; // seule l'Exploration rapporte des pièces (ni Entraînement, ni Tour)
@@ -2313,6 +2329,7 @@ public class GameScreen extends ScreenAdapter {
         boolean won = gameController.getGameState().getEnemy().isDefeated();
         long reward = combatReward(won);
         luckyGame.getProfile().addCoins(reward);
+        logDescent(won, reward);
         buildEndButtons(won);
         if (won && tutorial == null) {
             EnemyKind defeated = gameController.getGameState().getEnemy().getKind();
