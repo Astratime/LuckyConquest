@@ -41,12 +41,16 @@ tasks.register('simulate', JavaExec) {
   if (project.hasProperty('tower')) args '--tower'
   if (project.hasProperty('rankplace')) args '--rankplace'
   if (project.hasProperty('hardplace')) args '--hardplace'
+  if (project.hasProperty('profiles')) args '--profiles'
+  if (project.hasProperty('journal')) systemProperty 'lucky.journal', project.property('journal')
+  if (project.hasProperty('shopShare')) systemProperty 'lucky.shopShare', project.property('shopShare')
   if (project.hasProperty('hardRank')) systemProperty 'lucky.hardRank', project.property('hardRank')
   ['potLog','onlyRank','onlyGear'].each { p -> if (project.hasProperty(p)) systemProperty "lucky.$p", project.property(p) }
   if (project.hasProperty('rpRuns')) systemProperty 'lucky.rpRuns', project.property('rpRuns')
   if (project.hasProperty('level')) systemProperty 'lucky.prestige', project.property('level')
   if (project.hasProperty('stake')) systemProperty 'lucky.stake', project.property('stake')
   if (project.hasProperty('potPerRun')) systemProperty 'lucky.potPerRun', 'true'
+  if (project.hasProperty('oldBot')) systemProperty 'lucky.oldBot', 'true'
 }
 
 // Dégâts des quatre suites : ./gradlew :core:simulateSuits (-Pquick pour un essai rapide).
