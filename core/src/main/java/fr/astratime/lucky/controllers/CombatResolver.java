@@ -1,6 +1,7 @@
 package fr.astratime.lucky.controllers;
 
 import fr.astratime.lucky.entities.BigNumber;
+import fr.astratime.lucky.entities.GainFormula;
 import fr.astratime.lucky.entities.context.CombatContext;
 import fr.astratime.lucky.entities.Enemy;
 import fr.astratime.lucky.entities.Player;
@@ -139,7 +140,7 @@ public class CombatResolver {
         } else if (hasPair(symbols)) {
             gains = SpinEconomy.pairGains(combatContext.getSpinCost());
         }
-        gains = BigNumber.round(gains * combatContext.getGainFactor());
+        gains = BigNumber.round(gains * GainFormula.player(combatContext)); // le même multiplicateur que les symboles
         if (gains > 0) {
             combatContext.getPlayer().addGains(gains);
             pairOrJackpotEvents.add(new GainsEarnedEvent(gains));
@@ -490,7 +491,8 @@ public class CombatResolver {
 
     /** @return le bonus d'attaque de tous les Cœurs d'or joués ce tour (0 sans eux). */
     static int goldenHeartBonus(CombatContext context) {
-        int rank  = context.getPlayer().getRankBonus().withPrestigeBonus(context.getPlayer().getRankBonus().gains() * context.getRankFactor());
+        // L'ancien bonus plat des rouleaux de gains du rang, gardé pour le Cœur d'or (RankBonus#heart).
+        int rank  = context.getPlayer().getRankBonus().withPrestigeBonus(context.getPlayer().getRankBonus().heart() * context.getRankFactor());
         int cards = Math.round(context.getGainMultiplier() - 1f); // le multiplicateur part de 1
         return context.getGoldenHearts() * (rank + Math.max(0, cards) * GOLDEN_HEART_CARD_FACTOR);
     }

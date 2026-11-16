@@ -16,6 +16,6 @@ public final class PiggyBankAction extends GainAction {
 
     @Override
     public String getDescription() {
-        return Lang.f("{0} gains de base, +{0} à chaque sortie du combat", ReelGauges.PIGGY_STEP);
+        return Lang.f("{0} gains de base, +{0} à chaque sortie du combat", fr.astratime.lucky.entities.SpinEconomy.symbolBaseText(ReelGauges.PIGGY_STEP));
     }
 }

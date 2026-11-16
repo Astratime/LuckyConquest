@@ -105,12 +105,12 @@ class SpinEconomyTest {
 
     @Test
     void pairsAndBingosPayInSpinCosts() {
-        assertEquals(1_500, SpinEconomy.pairGains(500));
-        assertEquals(10_000, SpinEconomy.jackpotGains(Symbol.CHERRY, 500), "fruit commun : 20");
-        assertEquals(15_000, SpinEconomy.jackpotGains(Symbol.SEVEN, 500), "symbole moyen : 30");
-        assertEquals(25_000, SpinEconomy.jackpotGains(Symbol.TRIPLE_SEVEN, 500), "symbole rare : 50");
-        assertEquals(25_000, SpinEconomy.jackpotGains(Symbol.NUGGET, 500), "rouleau de la Mine : 50");
-        assertEquals(25_000, SpinEconomy.jackpotGains(Symbol.CROWN, 500), "rouleau de la boutique : 50");
+        assertEquals(750, SpinEconomy.pairGains(500));
+        assertEquals(5_000, SpinEconomy.jackpotGains(Symbol.CHERRY, 500), "fruit commun : 10");
+        assertEquals(7_500, SpinEconomy.jackpotGains(Symbol.SEVEN, 500), "symbole moyen : 15");
+        assertEquals(12_500, SpinEconomy.jackpotGains(Symbol.TRIPLE_SEVEN, 500), "symbole rare : 25");
+        assertEquals(12_500, SpinEconomy.jackpotGains(Symbol.NUGGET, 500), "rouleau de la Mine : 25");
+        assertEquals(12_500, SpinEconomy.jackpotGains(Symbol.CROWN, 500), "rouleau de la boutique : 25");
     }
 
     @Test
@@ -119,7 +119,7 @@ class SpinEconomyTest {
         Player player = new Player("Joueur", Player.BASE_HP, plainCards());
         CombatContext context = new CombatContext(player, portSoldier);
         new GainAction(12).resolve(context);
-        assertEquals(360, player.getGains(), "Cloche au Port : 12 x 30");
+        assertEquals(180, player.getGains(), "Cloche au Port : 6 x 30");
     }
 
     @Test

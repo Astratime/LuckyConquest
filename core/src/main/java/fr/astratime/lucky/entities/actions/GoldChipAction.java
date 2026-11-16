@@ -22,6 +22,6 @@ public final class GoldChipAction extends GainAction {
 
     @Override
     public String getDescription() {
-        return Lang.f("{0} gains de base, x{1} si un autre symbole de gains sort avec lui", getBaseGain(), FACTOR);
+        return Lang.f("{0} gains de base, x{1} si un autre symbole de gains sort avec lui", fr.astratime.lucky.entities.SpinEconomy.symbolBaseText(getBaseGain()), FACTOR);
     }
 }

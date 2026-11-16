@@ -73,8 +73,8 @@ class BonusGameTurnTest {
     }
 
     @Test
-    void onlyTheBonusPartOfTheGridIsMultiplied() {
-        RankBonus rank = new RankBonus(0, 0, 0, 70);
+    void theWholeGridIsMultipliedByThePlayerButNotThePot() {
+        RankBonus rank = new RankBonus(0, 0, 0, 70); // +70 % de gains
         GameController controller = new GameController(BonusGameTurnTest::plainCards, id -> null, Map.of(),
             cards -> new Player("Joueur", Player.BASE_HP, cards, rank, Symbol.classicReels()));
         controller.restart(EnemyKind.ENTRAINEMENT);
@@ -84,13 +84,12 @@ class BonusGameTurnTest {
             List.of(new MultiplierEffect(9), new BingoEffect(1, Symbol.SWORD, true)));
 
         BonusGame bonus = result.getBonusGame();
-        long expected = 0;
+        double expected = 0;
         for (BonusGame.Line line : bonus.getLines()) {
-            // la base reste fixe ; 5 par symbole aligné et le rang par alignement, multipliés par les Trèfle (1 + 9 = x10)
-            expected += BonusGame.gains(line.symbol(), line.length(), 100)
-                + (BonusGame.GAINS_PER_SYMBOL * line.length() + 70L) * 10;
+            // la table x le joueur : rang x1,7, cartes 9 points = +90 % (x1,9)
+            expected += Math.rint(BonusGame.gains(line.symbol(), line.length(), 100) * 1.7 * 1.9);
         }
-        assertEquals(expected, bonus.getTotal());
+        assertEquals(expected, bonus.getTotal(), bonus.getLines().size());
     }
 
     @Test
@@ -134,17 +133,17 @@ class BonusGameTurnTest {
             double sum = 0, potSum = 0;
             int games = 8_000;
             for (int i = 0; i < games; i++) {
-                BonusGame game = BonusGame.playSmall(kind, pot, 100, 0, random);
+                BonusGame game = BonusGame.playSmall(kind, pot, 100, 1, random);
                 assertEquals(kind, game.getKind());
                 assertEquals(pot + BonusGame.BASE_UNIT_SPINS * 100, game.getUnit(), 1e-6);
                 assertTrue(game.getPotPaid() <= game.getTotal());
                 sum += game.getTotal();
                 potSum += game.getPotPaid();
             }
-            double units = sum / games / (pot + 2_000);
+            double units = sum / games / (pot + BonusGame.BASE_UNIT_SPINS * 100);
             assertEquals(share.get(kind), units / BonusGame.GRID_AVERAGE_LINES, 0.05,
                 kind + " (rang " + kind.rank + ") : " + units + " mises de base");
-            assertEquals(potSum / games, sum / games * pot / (pot + 2_000), sum / games * 0.01, "la part de la cagnotte");
+            assertEquals(potSum / games, sum / games * pot / (pot + BonusGame.BASE_UNIT_SPINS * 100), sum / games * 0.01, "la part de la cagnotte");
         }
     }
 
@@ -154,7 +153,7 @@ class BonusGameTurnTest {
         int[] slots = new int[BonusGame.PLINKO_SLOTS.size()];
         int games = 20_000;
         for (int i = 0; i < games; i++) {
-            BonusGame game = BonusGame.playSmall(BonusGame.Kind.PLINKO, 0, 100, 0, random);
+            BonusGame game = BonusGame.playSmall(BonusGame.Kind.PLINKO, 0, 100, 1, random);
             int slot = game.getPicked().get(0);
             slots[slot]++;
             assertEquals(BonusGame.PLINKO_SLOTS.get(slot) * game.getUnit(), game.getTotal(), 1e-6);
@@ -168,7 +167,7 @@ class BonusGameTurnTest {
         java.util.Random random = new java.util.Random(13);
         int bells = 0, games = 4_000;
         for (int i = 0; i < games; i++) {
-            BonusGame punch = BonusGame.playSmall(BonusGame.Kind.PUNCH, 0, 100, 0, random);
+            BonusGame punch = BonusGame.playSmall(BonusGame.Kind.PUNCH, 0, 100, 1, random);
             int score = punch.getPicked().get(0);
             assertEquals(0, score % 10);
             assertTrue(score >= 600 && score < BonusGame.PUNCH_MAX, "score " + score);
