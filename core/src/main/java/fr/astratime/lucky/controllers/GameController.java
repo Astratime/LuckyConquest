@@ -48,6 +48,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.Collections;
@@ -120,6 +121,11 @@ public class GameController {
 
     /** Mise choisie pour le prochain tirage. */
     private SpinEconomy.Stake stake = SpinEconomy.Stake.NONE;
+    /**
+     * Journal détaillé du combat (2026-11-16) : chaque décision du joueur et chaque tirage, une ligne de texte
+     * chacun (voir {@link fr.astratime.lucky.progress.CombatLog}). Ne fait rien par défaut (simulateur, ADMIN).
+     */
+    private Consumer<String> combatLog = line -> { };
 
     /** Paris placés ce tour, pour les afficher en attendant le tirage. */
     private final List<Symbol> betsThisTurn = new ArrayList<>();
@@ -360,6 +366,47 @@ public class GameController {
      *         deck et défausse sont épuisés ou si la main est pleine)
      */
     public DrawResult drawCards() {
+        DrawResult drawn = drawCardsUnlogged();
+        logTurnStart();
+        return drawn;
+    }
+
+    /** Branche le journal détaillé du combat ({@code null} : plus de journal). */
+    public void setCombatLog(Consumer<String> log) { combatLog = log == null ? line -> { } : log; }
+
+    /** Une ligne au journal détaillé ; n'empêche jamais la partie de continuer. */
+    private void log(String line) {
+        try {
+            combatLog.accept(line);
+        } catch (RuntimeException ignored) {
+            // le journal n'est qu'une aide à l'équilibrage
+        }
+    }
+
+    private static String ids(List<Card> cards) {
+        List<String> ids = new ArrayList<>();
+        for (Card card : cards) ids.add(card.getId());
+        return String.join(",", ids);
+    }
+
+    private static String symbols(Symbol[] symbols) {
+        List<String> names = new ArrayList<>();
+        for (Symbol symbol : symbols) names.add(symbol == null ? "-" : symbol.name());
+        return String.join(",", names);
+    }
+
+    /** Début du tour, après la pioche : l'état du combat et la main. */
+    private void logTurnStart() {
+        Player player = gameState.getPlayer();
+        Enemy enemy = gameState.getEnemy();
+        log(String.format(java.util.Locale.ROOT,
+            "TOUR %d pv=%d/%d bouclier=%d ennemi=%d/%d defense=%d phase=%d garde=%b gains=%.0f misables=%.0f cagnotte=%.0f mise=%d main=%s",
+            gameState.getTurnNumber(), player.getHp(), player.getMaxHp(), player.getShield(), enemy.getHp(),
+            enemy.getMaxHp(), enemy.getDefense(), enemy.getPhase(), enemy.isPhaseWallReached(), player.getGains(),
+            player.getStakeableGains(), getPot().getAmount(), stake.percent, ids(player.getCurrentHand())));
+    }
+
+    private DrawResult drawCardsUnlogged() {
         Player player = gameState.getPlayer();
         LastingEffects lasting = player.getLastingEffects();
         turnNotices.clear();
@@ -666,10 +713,18 @@ public class GameController {
     public String reelRemoveProblem(Symbol symbol) { return reelStall.removeProblem(gameState.getPlayer(), symbol); }
 
     /** Achète le rouleau {@code symbol} pour ce combat. @return {@code false} s'il est indisponible ou trop cher */
-    public boolean buyReel(Symbol symbol) { return reelStall.buy(gameState.getPlayer(), symbol, getSpinCost()); }
+    public boolean buyReel(Symbol symbol) {
+        boolean done = reelStall.buy(gameState.getPlayer(), symbol, getSpinCost());
+        if (done) log("ROULEAU_ACHETE " + symbol.name());
+        return done;
+    }
 
     /** Retire le rouleau {@code symbol} pour ce combat. @return {@code false} si c'est impossible ou trop cher */
-    public boolean removeReel(Symbol symbol) { return reelStall.remove(gameState.getPlayer(), symbol, getSpinCost()); }
+    public boolean removeReel(Symbol symbol) {
+        boolean done = reelStall.remove(gameState.getPlayer(), symbol, getSpinCost());
+        if (done) log("ROULEAU_RETIRE " + symbol.name());
+        return done;
+    }
 
     private static String turnsText(int turns) {
         return Lang.n(turns, "{0} tour", "{0} tours", turns);
@@ -688,6 +743,8 @@ public class GameController {
         if (unavailableReason(offer) != null || player.getGains() < price) return null;
         player.paySpin(price); // un achat dépense d'abord les gains de la cagnotte, comme un tirage
         bought.merge(offer.card().getId(), 1, Integer::sum);
+        log(String.format(java.util.Locale.ROOT, "ECHOPPE %s prix=%.0f gains=%.0f", offer.card().getId(), price,
+            player.getGains()));
         Card card = cardFactory.apply(offer.card().getId());
         Enemy enemy = gameState.getEnemy();
         if (enemy.getKind().copiesPurchases()) { // le Pilleur en garde une copie : un As sombre
@@ -712,6 +769,7 @@ public class GameController {
         }
 
         cardsPlayedThisTurn++;
+        log("JOUE " + card.getId());
         PlayContext playContext = new PlayContext(player, gameState.getEnemy().getSpinCost());
         for (int i = 0; i < taxes; i++) { // Taxe du Comptable : chaque carte jouée la paie
             double taxed = player.payTax(EnemySymbol.TAX_PERCENT, EnemySymbol.TAX_FLAT);
@@ -893,6 +951,7 @@ public class GameController {
     public List<EffectPopup> placeBet(Symbol symbol) {
         if (!(pendingChoice instanceof BetChoice)) throw new IllegalStateException("Aucun pari en attente");
         pendingChoice = null;
+        log("CHOIX pari " + symbol.name());
         BetOnSymbolEffect bet = new BetOnSymbolEffect(symbol);
         pendingEffects.add(bet);
         betsThisTurn.add(symbol);
@@ -908,6 +967,7 @@ public class GameController {
     public List<EffectPopup> rigReel(Symbol symbol) {
         if (!(pendingChoice instanceof RiggedReelChoice)) throw new IllegalStateException("Aucun rouleau truqué en attente");
         pendingChoice = null;
+        log("CHOIX rouleau_truque " + symbol.name());
         ForceReelEffect rigged = new ForceReelEffect(symbol);
         pendingEffects.add(rigged);
         return rigged.getPopups();
@@ -922,6 +982,7 @@ public class GameController {
     public List<EffectPopup> shapeJoker(Symbol symbol) {
         if (!(pendingChoice instanceof JokerWorkshopChoice)) throw new IllegalStateException("Aucun Atelier du Joker en attente");
         pendingChoice = null;
+        log("CHOIX atelier_du_joker " + symbol.name());
         JokerValueEffect value = new JokerValueEffect(symbol);
         pendingEffects.add(value);
         return value.getPopups();
@@ -936,6 +997,7 @@ public class GameController {
     public List<EffectPopup> calibrate(Symbol symbol) {
         if (!(pendingChoice instanceof CalibrationChoice calibration)) throw new IllegalStateException("Aucun Calibrage en attente");
         pendingChoice = null;
+        log("CHOIX calibrage " + symbol.name());
         gameState.getPlayer().getLastingEffects().removeSymbol(symbol, calibration.turns());
         return List.of(new EffectPopup(Lang.f("CALIBRAGE : {0} RETIRÉ", symbol.getDisplayName()), EffectPopup.Style.SPECIAL,
             PopupScale.SECONDARY_INTENSITY));
@@ -1000,6 +1062,7 @@ public class GameController {
         }
         pendingChoice = null;
         boolean cursed = roulette.cursed().get(index);
+        log("CHOIX roulette_russe carte=" + index + " maudit=" + cursed);
         PistolEffect pistol = new PistolEffect(cursed ? roulette.cursedPercent() : roulette.pistolPercent());
         pendingEffects.add(pistol);
         if (cursed) {
@@ -1043,7 +1106,12 @@ public class GameController {
         }
         double cost = getSpinPrice();
         if (cost > 0) player.paySpin(cost);
+        List<Combo> combos = Combo.formed(player.getPlayedCards());
+        long enemyHpBefore = gameState.getEnemy().getHp();
+        int playerHpBefore = player.getHp();
+        double gainsBefore = player.getGains();
         TurnResult result = turnEngine.playTurn(gameState, pendingEffects, placed);
+        logSpin(result, placed, staked, cost, combos, enemyHpBefore, playerHpBefore, gainsBefore);
         // La Mise reste posée pour les tirages suivants (choix d'Astra) : on la change quand on veut.
         // Bout de l'arc-en-ciel : ses Pots de Lutin rejoignent la pioche, à une place au hasard
         for (String id : player.getLastingEffects().takeDeckCards()) player.getDeck().insertRandomly(cardFactory.apply(id));
@@ -1068,6 +1136,25 @@ public class GameController {
         }
         gameState.getPlayer().discardHand();
         return result;
+    }
+
+    /** Le tirage et le tour de l'ennemi qui a suivi, au journal détaillé. */
+    private void logSpin(TurnResult result, SpinEconomy.Stake placed, double staked, double cost, List<Combo> combos,
+                         long enemyHpBefore, int playerHpBefore, double gainsBefore) {
+        Player player = gameState.getPlayer();
+        Enemy enemy = gameState.getEnemy();
+        List<String> comboNames = new ArrayList<>();
+        for (Combo combo : combos) comboNames.add(combo.name());
+        Symbol jackpot = SlotMachine.jackpotSymbol(result.getSymbols());
+        log(String.format(java.util.Locale.ROOT,
+            "TIRAGE mise=%d mise_payee=%.0f prix=%.0f combos=%s symboles=%s bingo=%s jeu_bonus=%s degats=%d gains_du_tour=%.0f",
+            placed.percent, staked, cost, String.join(",", comboNames), symbols(result.getSymbols()),
+            jackpot == null ? "-" : jackpot.name(),
+            result.getBonusGame() == null ? "-" : String.format(java.util.Locale.ROOT, "%.0f", result.getBonusGame().getTotal()),
+            Math.max(0, enemyHpBefore - enemy.getHp()), player.getGains() - gainsBefore));
+        log(String.format(java.util.Locale.ROOT, "ENNEMI pv_perdus=%d pv=%d/%d ennemi=%d/%d gains=%.0f",
+            Math.max(0, playerHpBefore - player.getHp()), player.getHp(), player.getMaxHp(), enemy.getHp(),
+            enemy.getMaxHp(), player.getGains()));
     }
 
     // -------------------------------------------------------------------------
