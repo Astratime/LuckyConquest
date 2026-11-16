@@ -3,12 +3,15 @@ package fr.astratime.lucky.sim;
 import fr.astratime.lucky.controllers.GameController;
 import fr.astratime.lucky.entities.BonusGame;
 import fr.astratime.lucky.entities.Card;
+import fr.astratime.lucky.entities.Combo;
+import fr.astratime.lucky.entities.Enemy;
 import fr.astratime.lucky.entities.GameState;
 import fr.astratime.lucky.entities.Player;
 import fr.astratime.lucky.entities.RankBonus;
 import fr.astratime.lucky.entities.SpinEconomy;
 import fr.astratime.lucky.entities.Symbol;
 import fr.astratime.lucky.entities.SymbolOutcome;
+import fr.astratime.lucky.entities.SymbolRegistry;
 import fr.astratime.lucky.entities.TurnResult;
 import fr.astratime.lucky.entities.choices.BetChoice;
 import fr.astratime.lucky.entities.choices.CardChoice;
@@ -19,6 +22,7 @@ import fr.astratime.lucky.entities.enemy.EnemyKind;
 import fr.astratime.lucky.entities.events.Event;
 import fr.astratime.lucky.entities.events.GainsEarnedEvent;
 import fr.astratime.lucky.entities.exploration.Dungeon;
+import fr.astratime.lucky.entities.exploration.DungeonRun;
 import fr.astratime.lucky.entities.exploration.Place;
 import fr.astratime.lucky.loaders.CardLoader;
 import fr.astratime.lucky.progress.PlayerProfile;
@@ -63,7 +67,7 @@ import java.util.function.BiFunction;
  *       gardée après une défaite) dans chaque donjon, à chaque rang.</li>
  * </ol>
  *
- * Le robot joue ses cartes au hasard, sans Mise (avec {@code -Pstake=5}, 10 ou 15, il mise
+ * Le robot joue ses cartes au hasard (le « joueur malin » cherche les combinaisons, voir {@link #playSmartTurn}), sans Mise (avec {@code -Pstake=5}, 10 ou 15, il mise
  * ce palier à chaque tirage ; sa cagnotte reste d'une descente à l'autre du même donjon,
  * et dans la Tour elle repart de 0 à chaque chapitre). Avec le deck de départ (ou aucune
  * carte, pour les gains de base), il n'achète rien à l'échoppe ; avec un équipement
@@ -78,6 +82,12 @@ public final class BalanceSimulator {
 
     /** Mise du robot à chaque tirage ({@code -Dlucky.stake=5}, 10 ou 15 ; aucune par défaut). */
     static final SpinEconomy.Stake STAKE = stakeOf(Integer.getInteger("lucky.stake", 0));
+
+    /**
+     * Ancien joueur malin ({@code -PoldBot}), pour comparer : cartes dans un ordre fixe sans chercher les
+     * combinaisons, choix au hasard, échoppe réduite à Bingo, Roulette russe et Corruption, pas d'ennemi doré.
+     */
+    static final boolean OLD_BOT = Boolean.getBoolean("lucky.oldBot");
 
     /** Essai ({@code -Dlucky.potPerRun=true}) : la cagnotte repart de 0 à chaque descente d'un donjon. */
     static final boolean POT_PER_RUN = Boolean.getBoolean("lucky.potPerRun");
@@ -176,6 +186,8 @@ public final class BalanceSimulator {
     private final CardLoader.AssetReader reader;
     private final Function<String, Card> cards;
     private final Map<String, Integer> stall;
+    /** L'échoppe de l'Exploration, comme dans le jeu (pour le joueur malin). */
+    private final Map<String, Integer> explorationStall;
     /** Descentes déjà simulées, par donjon, rang et équipement (les sections 3, 4 et 5 en partagent). */
     private final Map<String, DungeonStats> dungeonCache = new ConcurrentHashMap<>();
     /** Les descentes elles-mêmes (deck de départ), pour comparer des règles de pièces (section 7). */
@@ -205,6 +217,7 @@ public final class BalanceSimulator {
         Map<String, Integer> shop = CardLoader.loadShop(reader);
         this.stall = new LinkedHashMap<>();
         for (String id : STALL_PICKS) stall.put(id, Objects.requireNonNull(shop.get(id), id));
+        this.explorationStall = GameController.stallFor(shop, cards, false, false);
     }
 
     public static void main(String[] args) throws IOException {
@@ -421,6 +434,7 @@ public final class BalanceSimulator {
             int before = turns[0];
             if (POT_PER_RUN) game.getPot().take(); // essai : une cagnotte neuve à chaque descente
             game.restart(dungeon.getSoldier());
+            rollGolden(game, random);
             boolean won = fight(game, random, gear, turns, false);
             double effort = 0.5 * (1 - Math.max(0, game.getGameState().getEnemy().getHpRatio()));
             if (won) {
@@ -1044,6 +1058,7 @@ public final class BalanceSimulator {
             int[] turns = {0};
             double[] bonus = {0, 0};
             game.restart(dungeon.getSoldier());
+            rollGolden(game, random);
             double g0 = game.getGameState().getPlayer().getGains();
             rp.soldierFights++;
             boolean won = fightTracked(game, random, gear, turns, false, bonus);
@@ -1214,7 +1229,7 @@ public final class BalanceSimulator {
 
     private GameController controller(RankBonus bonus, Gear gear) {
         return new GameController(() -> gear.deck() == null ? CardLoader.loadStarterDeck(reader) : build(gear.deck(), gear.upgraded()),
-            cards, gear.buysAtStall() ? stall : Map.of(),
+            cards, !gear.buysAtStall() ? Map.of() : gear.smart() && !OLD_BOT ? explorationStall : stall,
             deck -> new Player("Robot", Player.BASE_HP, deck, bonus, gear.reels()));
     }
 
@@ -1253,6 +1268,39 @@ public final class BalanceSimulator {
             resolveChoice(game, random);
         }
         return stakeAndSpin(game);
+    }
+
+    /** Le soldat est doré une fois sur {@link DungeonRun#GOLDEN_CHANCE}, comme dans le jeu (PV x2). */
+    private static void rollGolden(GameController game, Random random) {
+        if (!OLD_BOT && random.nextInt(DungeonRun.GOLDEN_CHANCE) == 0) game.getGameState().getEnemy().gild();
+    }
+
+    /**
+     * Le joueur malin répond au choix qu'une carte vient d'ouvrir : pari, rouleau truqué et Atelier du Joker sur un
+     * de ses symboles d'attaque, Calibrage sur un symbole qui n'attaque ni ne rapporte ; la roulette russe reste au
+     * hasard (ses cartes sont face cachée).
+     */
+    private static void resolveSmartChoice(GameController game, Random random) {
+        CardChoice choice = game.getPendingChoice();
+        if (OLD_BOT || choice == null || choice instanceof RouletteChoice) {
+            resolveChoice(game, random);
+            return;
+        }
+        Player player = game.getGameState().getPlayer();
+        List<Symbol> options = game.getBetOptions();
+        List<Symbol> attacks = new ArrayList<>(options);
+        attacks.retainAll(SymbolRegistry.getAttackSymbols(player));
+        List<Symbol> useless = new ArrayList<>(options);
+        useless.removeIf(symbol -> SymbolRegistry.getAttackSymbols().contains(symbol) || SymbolRegistry.isGainSymbol(symbol));
+        if (choice instanceof fr.astratime.lucky.entities.choices.CalibrationChoice) {
+            game.calibrate(pick(useless.isEmpty() ? options : useless, random));
+            return;
+        }
+        Symbol best = pick(attacks.isEmpty() ? options : attacks, random);
+        if (choice instanceof BetChoice) game.placeBet(best);
+        else if (choice instanceof RiggedReelChoice) game.rigReel(best);
+        else if (choice instanceof fr.astratime.lucky.entities.choices.JokerWorkshopChoice) game.shapeJoker(best);
+        else resolveChoice(game, random);
     }
 
     /** Le robot répond au hasard au choix qu'une carte vient d'ouvrir (pari, roulette, rouleau truqué...). */
@@ -1304,53 +1352,157 @@ public final class BalanceSimulator {
                 return player.getLastingEffects().getLuckyStar() >= 20 ? 6 : -1;
             case "bingo":
                 return 9;
+            case "golden_reel": case "corruption": case "russian_roulette": // achetées pour ce tour : toujours jouées
+                return OLD_BOT ? 5 : 8;
             default:
                 return id.startsWith("1_") ? 4 : 5;
         }
     }
 
     /**
+     * Parmi les cartes que le joueur malin veut bien jouer, celles qui forment la plus grosse combinaison
+     * (Couleur, Paire, Brelan, Suite, Carré s'additionnent) dans les {@code slots} cartes qu'il peut encore jouer ;
+     * à égalité, celles qu'il joue d'habitude en premier ({@link #smartOrder}). Le Bingo acheté reste à part.
+     *
+     * @return la main à jouer, dans l'ordre de {@link #smartOrder}
+     */
+    private static List<Card> bestComboHand(GameController game, List<Card> hand, boolean king, int slots,
+                                            boolean boughtBingo) {
+        Player player = game.getGameState().getPlayer();
+        List<Card> candidates = new ArrayList<>();
+        List<Card> bingos = new ArrayList<>();
+        for (Card card : hand) {
+            int order = smartOrder(game, card, king);
+            if (order < 0 || game.unplayableReason(card) != null) continue;
+            (order >= 8 && (order == 8 || boughtBingo) ? bingos : candidates).add(card);
+        }
+        int k = Math.min(slots - bingos.size(), candidates.size());
+        List<Card> chosen;
+        if (k <= 0) chosen = new ArrayList<>();
+        else if (candidates.size() <= k || candidates.size() > 16) chosen = new ArrayList<>(candidates);
+        else {
+            List<Card> played = player.getPlayedCards();
+            int n = candidates.size();
+            int bestMask = 0;
+            double bestScore = Double.NEGATIVE_INFINITY;
+            for (int mask = 0; mask < (1 << n); mask++) {
+                if (Integer.bitCount(mask) != k) continue;
+                List<Card> pickCards = new ArrayList<>(played);
+                double order = 0;
+                for (int i = 0; i < n; i++) {
+                    if ((mask & (1 << i)) == 0) continue;
+                    pickCards.add(candidates.get(i));
+                    order += smartOrder(game, candidates.get(i), king);
+                }
+                double score = Combo.totalFactor(Combo.formed(pickCards)) * 1000 - order;
+                if (score > bestScore) { bestScore = score; bestMask = mask; }
+            }
+            chosen = new ArrayList<>();
+            for (int i = 0; i < n; i++) if ((bestMask & (1 << i)) != 0) chosen.add(candidates.get(i));
+        }
+        chosen.addAll(bingos);
+        chosen.sort(Comparator.comparingInt(card -> smartOrder(game, card, king)));
+        return chosen;
+    }
+
+    /** @return les places à garder pour les cartes achetées à l'échoppe pour ce tour et pas encore jouées. */
+    private static int reserved(GameController game, Player player, boolean king, boolean boughtBingo) {
+        int count = 0;
+        for (Card card : player.getCurrentHand()) {
+            int order = smartOrder(game, card, king);
+            if (order == 8 || order == 9 && boughtBingo) count++;
+        }
+        return count;
+    }
+
+    /** Achète {@code id} à l'échoppe s'il en garde de quoi payer 3 tirages ; @return {@code true} si la carte est sur la table. */
+    private static boolean buy(GameController game, String id, double maxShareOfGains) {
+        Player player = game.getGameState().getPlayer();
+        for (GameController.ShopOffer offer : game.getShopOffers()) {
+            if (!offer.card().getId().equals(id) || game.unavailableReason(offer) != null) continue;
+            if (player.getGains() - offer.price() < 3L * game.getSpinCost()) return false;
+            if (offer.price() > maxShareOfGains * player.getGains()) return false;
+            GameController.Purchase purchase = game.buy(offer);
+            return purchase != null && purchase.addedToHand();
+        }
+        return false;
+    }
+
+    /**
      * Un tour du « joueur malin » : il joue d'abord Dans la manche et les pioches, garde Rayon du phare et Masque
-     * du Joker pour le roi (ou quand il a moins de la moitié de ses PV), puis les cartes à plusieurs effets, les As
-     * et les autres cartes. Quand il peut encore jouer au moins 3 cartes d'attaque, il achète Bingo à l'échoppe
-     * (en gardant de quoi payer 3 tirages) et le joue en dernier. Choix (pari...) au hasard.
+     * du Joker pour le roi (ou quand il a moins de la moitié de ses PV), puis choisit les cartes qui font la plus
+     * grosse combinaison ({@link #bestComboHand}). Quand il peut encore jouer au moins 3 cartes d'attaque, il fait
+     * un gros tour : Bingo de l'échoppe (joué en dernier), Rouleau doré, et contre un roi Corruption et Roulette
+     * russe. Il ne fait pas de gros tour quand l'ennemi a atteint son seuil de phase (Garde : il ne perd plus de PV
+     * avant son tour), et achète la Main du croupier quand il lui reste des cartes à jouer. Pari, rouleau truqué :
+     * sur un de ses symboles d'attaque ({@link #resolveSmartChoice}).
+     *
+     * <p>Avec {@code -PoldBot} : l'ancien joueur malin (ordre fixe, achète seulement Bingo, choix au hasard).
      */
     private static TurnResult playSmartTurn(GameController game, Random random, boolean king) {
         game.drawCards();
         Player player = game.getGameState().getPlayer();
+        Enemy enemy = game.getGameState().getEnemy();
         boolean boughtBingo = false;
         for (int pass = 0; pass < 2; pass++) {
             // pass 0 : préparation (Dans la manche, pioches) ; pass 1 : le reste
             List<Card> hand = new ArrayList<>(player.getCurrentHand());
             Collections.shuffle(hand, random);
             hand.sort(Comparator.comparingInt(card -> smartOrder(game, card, king)));
-            if (pass == 1 && !boughtBingo) {
+            if (pass == 1 && !boughtBingo && !(OLD_BOT ? false : enemy.isPhaseWallReached())) {
                 int slots = game.getPlayLimit() - game.getCardsPlayedThisTurn();
                 long attacks = hand.stream().filter(BalanceSimulator::isAttackCard)
                     .filter(card -> game.unplayableReason(card) == null).count();
                 if (slots >= 4 && attacks >= 3) {
-                    for (GameController.ShopOffer offer : game.getShopOffers()) {
-                        if (offer.card().getId().equals("bingo") && game.unavailableReason(offer) == null
-                            && player.getGains() - offer.price() >= 3L * game.getSpinCost()) {
-                            GameController.Purchase purchase = game.buy(offer);
-                            boughtBingo = purchase != null && purchase.addedToHand();
+                    if (OLD_BOT) {
+                        for (GameController.ShopOffer offer : game.getShopOffers()) {
+                            if (offer.card().getId().equals("bingo") && game.unavailableReason(offer) == null
+                                && player.getGains() - offer.price() >= 3L * game.getSpinCost()) {
+                                GameController.Purchase purchase = game.buy(offer);
+                                boughtBingo = purchase != null && purchase.addedToHand();
+                            }
                         }
+                    } else {
+                        // il garde au moins 3 places pour ses cartes d'attaque
+                        int extras = slots - 3;
+                        boughtBingo = extras > 0 && buy(game, "bingo", 0.5);
+                        if (boughtBingo) extras--;
+                        List<String> picks = king && enemy.getHpRatio() > 0.3f
+                            ? List.of("corruption", "russian_roulette", "golden_reel") : List.of("golden_reel");
+                        for (String id : picks) if (extras > 0 && buy(game, id, 0.2)) extras--;
                     }
-                    hand = new ArrayList<>(player.getCurrentHand());
-                    Collections.shuffle(hand, random);
-                    hand.sort(Comparator.comparingInt(card -> smartOrder(game, card, king)));
                 }
+                hand = new ArrayList<>(player.getCurrentHand());
+                Collections.shuffle(hand, random);
+                hand.sort(Comparator.comparingInt(card -> smartOrder(game, card, king)));
             }
-            for (Card card : hand) {
+            if (pass == 1 && !OLD_BOT) {
+                hand = bestComboHand(game, hand, king, game.getPlayLimit() - game.getCardsPlayedThisTurn(), boughtBingo);
+            }
+            for (int i = 0; i < hand.size(); i++) {
+                Card card = hand.get(i);
                 if (game.isPlayLimitReached() || game.isHandLocked()) break;
+                if (!player.getCurrentHand().contains(card)) continue;
                 int order = smartOrder(game, card, king);
                 if (order < 0 || (pass == 0 && order > 1)) continue;
                 if (order == 9 && !boughtBingo) continue;
-                // garde une place pour Bingo
+                // garde une place pour Bingo (et les cartes achetées pour ce tour)
                 if (boughtBingo && order != 9 && game.getPlayLimit() - game.getCardsPlayedThisTurn() <= 1) continue;
+                if (!OLD_BOT && order < 8 && game.getPlayLimit() - game.getCardsPlayedThisTurn() <= reserved(game, player, king, boughtBingo)) continue;
                 if (game.unplayableReason(card) != null) continue;
                 game.playCard(card);
-                resolveChoice(game, random);
+                resolveSmartChoice(game, random);
+            }
+            if (pass == 1 && !OLD_BOT && !game.isPlayLimitReached() && !game.isHandLocked()) {
+                // cartes piochées par la Main du croupier ou les pioches : il complète sa main
+                for (Card card : bestComboHand(game, new ArrayList<>(player.getCurrentHand()), king,
+                        game.getPlayLimit() - game.getCardsPlayedThisTurn(), false)) {
+                    if (game.isPlayLimitReached() || game.isHandLocked()) break;
+                    if (smartOrder(game, card, king) == 9 && !boughtBingo) continue;
+                    if (game.unplayableReason(card) != null) continue;
+                    game.playCard(card);
+                    resolveSmartChoice(game, random);
+                }
             }
         }
         return stakeAndSpin(game);

@@ -47,6 +47,7 @@ tasks.register('simulate', JavaExec) {
   if (project.hasProperty('level')) systemProperty 'lucky.prestige', project.property('level')
   if (project.hasProperty('stake')) systemProperty 'lucky.stake', project.property('stake')
   if (project.hasProperty('potPerRun')) systemProperty 'lucky.potPerRun', 'true'
+  if (project.hasProperty('oldBot')) systemProperty 'lucky.oldBot', 'true'
 }
 
 // Dégâts des quatre suites : ./gradlew :core:simulateSuits (-Pquick pour un essai rapide).
