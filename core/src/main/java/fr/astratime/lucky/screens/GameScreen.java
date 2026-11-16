@@ -67,6 +67,7 @@ import fr.astratime.lucky.assets.GameSounds;
 import fr.astratime.lucky.assets.HudTextures;
 import fr.astratime.lucky.assets.Palette;
 import fr.astratime.lucky.assets.TableTextures;
+import fr.astratime.lucky.progress.CombatLog;
 import fr.astratime.lucky.progress.Cosmetic;
 import fr.astratime.lucky.progress.DescentLog;
 import fr.astratime.lucky.controllers.GameController;
@@ -511,6 +512,9 @@ public class GameScreen extends ScreenAdapter {
         buttons       = assets.buttons;
         hudTextures   = assets.hud;
         this.gameController = createController(luckyGame.getProfile(), run);
+        // Journal détaillé des combats : ni ADMIN, ni tutoriel
+        combatLogOn = !(run instanceof TutorialRun) && !luckyGame.getProfile().isAdmin();
+        if (combatLogOn) gameController.setCombatLog(line -> CombatLog.append(CombatLog.DEFAULT_FILE, line));
         startRun(luckyGame.getProfile());
         // Le SpriteBatch est partagé avec LuckyGame et ne doit PAS être disposé ici.
         this.stage = new Stage(new MinimumScreenViewport(MIN_WIDTH, MIN_HEIGHT), luckyGame.getBatch());
@@ -799,6 +803,7 @@ public class GameScreen extends ScreenAdapter {
         applyDifficulty(); // Tour : mode difficile ; mode sans fin : force de l'étage
         gameController.restart(firstEnemy()); // le premier ennemi du chapitre, ou le croupier d'entraînement
         rollGolden();
+        logCombatStart();
         if (run instanceof TutorialRun) {
             TutorialRun.arrange(player().getDeck().getCards());
             TutorialRun.arrange(gameController.getGameState().getEnemy());
@@ -1771,6 +1776,7 @@ public class GameScreen extends ScreenAdapter {
         applyDifficulty();
         gameController.restart(firstEnemy());
         rollGolden();
+        logCombatStart();
         if (tutorial != null) {
             TutorialRun.arrange(player().getDeck().getCards());
             TutorialRun.arrange(gameController.getGameState().getEnemy());
@@ -1790,6 +1796,7 @@ public class GameScreen extends ScreenAdapter {
         if (run instanceof DungeonRun dungeonRun && run.isBossStage()) {
             gameController.applyBoon(dungeonRun.getCrossroads().getBoon());
         }
+        logCombatStart();
         resetBoard();
     }
 
@@ -1858,6 +1865,8 @@ public class GameScreen extends ScreenAdapter {
 
     /** Tirage des ennemis dorés (un soldat d'Exploration sur {@value DungeonRun#GOLDEN_CHANCE}). */
     private final Random goldenRandom = new Random();
+    /** {@code true} si ce combat écrit le journal détaillé (ni ADMIN, ni tutoriel). */
+    private boolean combatLogOn;
 
     /** Début d'un combat d'Exploration : son soldat arrive peut-être doré (PV x2, un rouleau de plus). */
     private void rollGolden() {
@@ -2235,6 +2244,31 @@ public class GameScreen extends ScreenAdapter {
     // Fin de combat et sons
     // -------------------------------------------------------------------------
 
+    /** Début d'un combat, au journal détaillé : le mode, l'ennemi, le rang, le deck et la machine. */
+    private void logCombatStart() {
+        if (!combatLogOn) return;
+        PlayerProfile profile = luckyGame.getProfile();
+        GameState state = gameController.getGameState();
+        String mode;
+        if (run == null) mode = "entrainement";
+        else if (run instanceof DungeonRun dungeonRun) {
+            mode = "exploration lieu=" + Place.of(dungeonRun.getDungeon()).name() + " donjon=" + dungeonRun.getDungeon().name()
+                + " difficile=" + dungeonRun.isHard() + " etape=" + (run.isBossStage() ? "roi" : "soldat");
+        } else if (run instanceof TowerRun tower) {
+            mode = "tour chapitre=" + tower.getChapter() + " difficile=" + tower.isHard();
+        } else mode = run.getClass().getSimpleName();
+        List<String> deck = new ArrayList<>();
+        profile.getDeck().forEach((id, copies) -> deck.add(id + ':' + copies));
+        List<String> machine = new ArrayList<>();
+        for (Symbol symbol : profile.getMachine()) machine.add(symbol.name());
+        CombatLog.append(CombatLog.DEFAULT_FILE, String.format(java.util.Locale.ROOT,
+            "COMBAT date=%s mode=%s ennemi=%s dore=%b rang=%s prestige=%d pv=%d/%d gains=%.0f cout_tirage=%.0f deck=%s machine=%s",
+            java.time.LocalDateTime.now().withNano(0), mode, state.getEnemy().getKind().name(), state.getEnemy().isGolden(),
+            profile.getRank() == null ? "-" : profile.getRank().name(), profile.getPrestige(), state.getPlayer().getHp(),
+            state.getPlayer().getMaxHp(), state.getPlayer().getGains(), (double) gameController.getSpinCost(),
+            String.join(",", deck), String.join(",", machine)));
+    }
+
     /** Combat de l'Exploration terminé : une ligne au journal des descentes (ni ADMIN, ni tutoriel). */
     private void logDescent(boolean won, long reward) {
         if (!isDungeon() || tutorial != null || luckyGame.getProfile().isAdmin()) return;
@@ -2330,6 +2364,13 @@ public class GameScreen extends ScreenAdapter {
         long reward = combatReward(won);
         luckyGame.getProfile().addCoins(reward);
         logDescent(won, reward);
+        if (combatLogOn) {
+            CombatLog.append(CombatLog.DEFAULT_FILE, String.format(java.util.Locale.ROOT,
+                "FIN victoire=%b tours=%d pv=%d/%d gains=%.0f pieces=%d", won,
+                gameController.getGameState().getTurnNumber(), gameController.getGameState().getPlayer().getHp(),
+                gameController.getGameState().getPlayer().getMaxHp(), gameController.getGameState().getPlayer().getGains(),
+                reward));
+        }
         buildEndButtons(won);
         if (won && tutorial == null) {
             EnemyKind defeated = gameController.getGameState().getEnemy().getKind();
