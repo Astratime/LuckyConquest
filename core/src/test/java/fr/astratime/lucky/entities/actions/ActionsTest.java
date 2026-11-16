@@ -111,12 +111,12 @@ class ActionsTest {
     }
 
     @Test
-    void gainsAreMultipliedByTheGainMultiplier() {
-        context.addGainMultiplier(2f); // 1 + 2 = x3
+    void gainsAreRaisedByTheCardsPercent() {
+        context.addGainMultiplier(5f); // 5 points de cartes : +50 %
 
-        GainsEarnedEvent event = only(new GainAction(8).resolve(context), GainsEarnedEvent.class);
+        GainsEarnedEvent event = only(new GainAction(40).resolve(context), GainsEarnedEvent.class);
 
-        assertEquals(24, event.amount);
-        assertEquals(24, player.getGains());
+        assertEquals(30, event.amount, "40 x la table (0,5) x 1,5");
+        assertEquals(30, player.getGains());
     }
 }

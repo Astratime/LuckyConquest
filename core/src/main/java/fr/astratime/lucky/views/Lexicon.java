@@ -6,6 +6,7 @@ import fr.astratime.lucky.entities.RankBonus;
 import fr.astratime.lucky.entities.BonusGame;
 import fr.astratime.lucky.entities.Combo;
 import fr.astratime.lucky.entities.Enemy;
+import fr.astratime.lucky.entities.GainFormula;
 import fr.astratime.lucky.entities.EnemyMaluses;
 import fr.astratime.lucky.entities.LastingEffects;
 import fr.astratime.lucky.entities.SpinEconomy;
@@ -68,8 +69,13 @@ public final class Lexicon {
                 + "Beaucoup d'effets se comptent en tirages.")),
             term(Lang.t("Gains"), Lang.t("L'argent du combat. Il paie les tirages, la Mise et l'échoppe. "
                 + "En Exploration, il devient des pièces une fois le roi battu.")),
+            term(Lang.t("Gains de la machine"), Lang.f("Chaque source paie sa valeur en tirages : symbole de gains "
+                + "(Couronne {0}), Paire {1}, Bingo {2} à {3}, Jeu bonus bien plus. Puis tout est multiplié par ton rang, "
+                + "ton Prestige, tes cartes, les combinaisons et la carte Bingo. La cagnotte ne l'est jamais.",
+                Lang.decimal(String.valueOf(SpinEconomy.SYMBOL_TABLE)), Lang.decimal(String.valueOf(SpinEconomy.PAIR_SPINS)),
+                Symbol.Rarity.values()[0].jackpotSpins, Symbol.Rarity.values()[Symbol.Rarity.values().length - 1].jackpotSpins)),
             term(Lang.t("Paire de symboles"), Lang.f("Deux symboles pareils sur les rouleaux : {0} tirages de gains.",
-                SpinEconomy.PAIR_SPINS)),
+                Lang.decimal(String.valueOf(SpinEconomy.PAIR_SPINS)))),
             term(Lang.t("Bingo"), Lang.f("Trois symboles pareils : de {0} à {1} tirages de gains selon le symbole. "
                 + "Il peut ouvrir un Jeu bonus.", Symbol.Rarity.values()[0].jackpotSpins,
                 Symbol.Rarity.values()[Symbol.Rarity.values().length - 1].jackpotSpins)),
@@ -136,8 +142,9 @@ public final class Lexicon {
                 + "Paire en plus, et 1 % de chance qu'une Paire devienne un Bingo ({1} % au plus). Ce Bingo : attaque et "
                 + "bouclier x{2}, il traverse la défense, sans Jeu bonus. L'As de Trèfle la vide pour tenter un Bingo.",
                 LastingEffects.MAX_LUCKY_STAR, LastingEffects.MAX_STAR_CHANCE, LastingEffects.STAR_BINGO_POWER)),
-            term(Lang.t("Gains des cartes"), Lang.t("Chaque carte du 2 au Roi, de n'importe quelle couleur, ajoute au "
-                + "multiplicateur de gains du tour : +1 du 2 au 5, +2 du 6 au 10, +3 pour Valet, Dame et Roi.")),
+            term(Lang.t("Gains des cartes"), Lang.f("Chaque carte du 2 au Roi, de n'importe quelle couleur, ajoute "
+                + "ses % aux gains du tour : +{0} % du 2 au 5, +{1} % du 6 au 10, +{2} % pour Valet, Dame et Roi.",
+                GainFormula.cardPercentText(1), GainFormula.cardPercentText(2), GainFormula.cardPercentText(3))),
             term(Lang.t("Corruption"), Lang.f("Carte de l'échoppe. Pendant quelques tours, attaque et bouclier des "
                 + "symboles x{0}. Chaque tour coûte {1} % des gains.", CorruptionEffect.FACTOR,
                 CorruptionEffect.GAINS_PERCENT))));
@@ -175,11 +182,11 @@ public final class Lexicon {
                 + "rapporte. Elles ne servent jamais en combat.")),
             term(Lang.t("Défaite"), Lang.f("En Exploration, tu gardes {0} % de tes gains en pièces, selon la part du "
                 + "donjon faite.", PlayerProfile.DEFEAT_KEEP_PERCENT)),
-            term(Lang.t("Rang"), Lang.t("Acheté à la boutique. Plus de PV max et des symboles plus forts. "
-                + "Tu choisis ton rang à la Table du croupier.")),
+            term(Lang.t("Rang"), Lang.t("Acheté à la boutique. Plus de PV max, des symboles plus forts et un % de gains "
+                + "en plus sur toute la machine. Tu choisis ton rang à la Table du croupier.")),
             term(Lang.t("Prestige"), Lang.f("Une fois tous les rangs achetés, la boutique te propose de les rendre. "
                 + "Chaque niveau multiplie par {0} tes PV max, l'attaque et la défense de tes symboles, et ajoute "
-                + "+{1} % à leurs gains, rang compris, jusqu'au Prestige {2}. Tes pièces repartent à 0, tu gardes tout le reste.",
+                + "+{1} % de gains, jusqu'au Prestige {2}. Tes pièces repartent à 0, tu gardes tout le reste.",
                 Lang.decimal(String.valueOf(RankBonus.PRESTIGE_GUARD_FACTOR)), RankBonus.PRESTIGE_PERCENT,
                 PlayerProfile.prestigeNumeral(PlayerProfile.MAX_PRESTIGE))),
             term(Lang.t("Descente"), Lang.t("Un donjon de l'Exploration joué du premier combat jusqu'au roi.")),

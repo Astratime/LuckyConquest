@@ -302,15 +302,15 @@ public class CinematicScreen extends CasinoMenuScreen {
                 new Entry(Lang.t("Roue de la cagnotte"),
                     Lang.t("Rang 1 : un lancer de roue, la case où elle s'arrête multiplie la cagnotte."),
                     wheelArt, kit -> new SmallBonusGameCutscene(kit, BonusGame.playSmall(BonusGame.Kind.WHEEL, 0,
-                        SpinEconomy.BASE_SPIN_COST, 0, new Random()))),
+                        SpinEconomy.BASE_SPIN_COST, 1, new Random()))),
                 new Entry(Lang.t("Plinko de la cagnotte"),
                     Lang.t("Rang 2 : une bille rebondit sur les clous et tombe dans une case qui multiplie la cagnotte."),
                     plinkoArt, kit -> new SmallBonusGameCutscene(kit, BonusGame.playSmall(BonusGame.Kind.PLINKO, 0,
-                        SpinEconomy.BASE_SPIN_COST, 0, new Random()))),
+                        SpinEconomy.BASE_SPIN_COST, 1, new Random()))),
                 new Entry(Lang.t("Coup de poing de la cagnotte"),
                     Lang.t("Rang 3 : un gant de boxe frappe la cible, le score de la machine multiplie la cagnotte."),
                     punchArt, kit -> new SmallBonusGameCutscene(kit, BonusGame.playSmall(BonusGame.Kind.PUNCH, 0,
-                        SpinEconomy.BASE_SPIN_COST, 0, new Random())))));
+                        SpinEconomy.BASE_SPIN_COST, 1, new Random())))));
         }
     }
 

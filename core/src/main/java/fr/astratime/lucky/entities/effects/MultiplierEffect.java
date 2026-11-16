@@ -22,17 +22,12 @@ public class MultiplierEffect extends Effect {
     }
 
     @Override
-    public String getDescription() { return Lang.f("Gains x+{0}", amount); }
-
-    /** @return le montant sans décimale inutile (2.0 -> "2", 1.5 -> "1.5"). */
-    private String formatAmount() {
-        return amount == (int) amount ? String.valueOf((int) amount) : String.valueOf(amount);
-    }
+    public String getDescription() { return Lang.f("Gains +{0} %", fr.astratime.lucky.entities.GainFormula.cardPercentText(amount)); }
 
     @Override
     public List<EffectPopup> getPopups() {
         return List.of(
-            EffectPopup.scaled(Lang.f("GAINS x+{0}", formatAmount()), EffectPopup.Style.GAINS, amount, PopupScale.CARD_GAIN_MULTIPLIER)
+            EffectPopup.scaled(Lang.f("GAINS +{0} %", fr.astratime.lucky.entities.GainFormula.cardPercentText(amount)), EffectPopup.Style.GAINS, amount, PopupScale.CARD_GAIN_MULTIPLIER)
         );
     }
 

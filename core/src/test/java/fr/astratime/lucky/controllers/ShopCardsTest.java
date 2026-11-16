@@ -103,13 +103,13 @@ class ShopCardsTest {
 
     @Test
     void theRankTokenDoublesTheRankBonus() {
-        Player player = new Player("Joueur", Player.BASE_HP, List.of(), new RankBonus(0, 100, 50, 70),
+        Player player = new Player("Joueur", Player.BASE_HP, List.of(), new RankBonus(0, 100, 50, 100),
             Symbol.classicReels());
         CombatContext context = new CombatContext(player, new Enemy("Ennemi", 100_000));
         context.multiplyRankBonus(RankTokenEffect.FACTOR);
         resolve(context, Symbol.GRAPE, Symbol.BELL, null);
         assertEquals(8 + 100, player.getShield(), "Raisin : 8 + 2 x 50");
-        assertEquals(12 + 140, player.getGains(), "Cloche : 12 + 2 x 70");
+        assertEquals(6 * 3, player.getGains(), "Cloche : 6 x (1 + 2 x 100 %)");
     }
 
     @Test
@@ -119,7 +119,7 @@ class ShopCardsTest {
         CombatContext context = new CombatContext(player, new Enemy("Ennemi", 100_000));
         context.addAllIn();
         TurnResult turn = resolve(context, Symbol.BAR, Symbol.BAR, Symbol.SEVEN);
-        int beforeAllIn = 1000 + 300; // + bonus de paire
+        int beforeAllIn = 1000 + 150; // + bonus de paire
         assertEquals(beforeAllIn * 3, player.getGains());
         assertTrue(turn.getPairOrJackpotEvents().stream().anyMatch(e -> e instanceof AllInWonEvent));
     }

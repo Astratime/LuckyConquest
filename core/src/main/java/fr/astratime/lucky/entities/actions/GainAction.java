@@ -2,6 +2,7 @@ package fr.astratime.lucky.entities.actions;
 
 import fr.astratime.lucky.entities.BigNumber;
 import fr.astratime.lucky.entities.BoostBreakdown;
+import fr.astratime.lucky.entities.GainFormula;
 import fr.astratime.lucky.entities.SpinEconomy;
 import fr.astratime.lucky.entities.context.CombatContext;
 import fr.astratime.lucky.entities.events.Event;
@@ -14,9 +15,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Accorde des gains au joueur, multipliés par le gainMultiplier (cartes Trèfle),
- * le facteur de gains du tirage (combos, Porte-bonheur) et la puissance des
- * symboles (Bingo). Le bonus de gains du rang du joueur s'ajoute aux gains de base.
+ * Accorde des gains au joueur : la base du symbole x la table des symboles x C / 100
+ * ({@link SpinEconomy#symbolScale}), x le multiplicateur du joueur ({@link GainFormula} :
+ * rang, Prestige, cartes, combinaisons, carte Bingo).
  */
 public non-sealed class GainAction extends Action {
 
@@ -25,33 +26,31 @@ public non-sealed class GainAction extends Action {
     /** @param baseGain gain de base avant application du multiplicateur. */
     public GainAction(int baseGain) { this.baseGain = baseGain; }
 
-    /**
-     * Crédite au joueur {@code (baseGain + bonus du rang) * gainMultiplier * gainFactor * symbolPower},
-     * à l'échelle du coût du tirage (x1 pour 100, x50 pour 5 000), arrondi.
-     */
+    /** Crédite au joueur {@code baseGain x table x C / 100 x J} ({@link GainFormula#player}), arrondi. */
     @Override
     public List<Event> resolve(CombatContext context) {
         if (context.isStoneGains()) { // Pépite de l'ennemi : le symbole n'est qu'une pierre
             return List.of(new StatusEvent(Lang.t("PIERRE : GAINS 0"), EffectPopup.Style.DAMAGE));
         }
-        int rank = context.getPlayer().getRankBonus().gains() * context.getRankFactor();
         int symbol = rollBaseGain(context);
-        int prestige = context.getPlayer().getRankBonus().prestigeBonus(symbol + rank);
-        int base = symbol + rank + prestige;
+        double table = (double) symbol * SpinEconomy.SYMBOL_TABLE; // sa valeur dans la table, à 100 de coût de tirage
         float scale = SpinEconomy.gainScale(context.getSpinCost());
-        double gain = BigNumber.round((double) base * context.getGainMultiplier() * context.getGainFactor()
-            * context.getSymbolPower() * scale * gainFactor(context));
+        double gain = BigNumber.round(table * scale * GainFormula.player(context) * gainFactor(context));
         context.getPlayer().addGains(gain);
-        // Le détail : les cartes Trèfle (multiplicateur additionné) et le coût du tirage s'ajoutent aux étapes du tour.
+        // Le détail : la valeur du symbole dans la table, puis rang, Prestige, cartes et les étapes du tour.
         List<CombatContext.PowerStep> steps = new ArrayList<>();
-        if (prestige != 0) steps.add(new CombatContext.PowerStep(CombatContext.Target.GAINS, CombatContext.PRESTIGE, prestige, 1f));
-        if (context.getGainMultiplier() != 1f) {
-            steps.add(new CombatContext.PowerStep(CombatContext.Target.GAINS, "Cartes", 0, context.getGainMultiplier()));
+        double rank = GainFormula.rankFactor(context.getPlayer(), context.getRankFactor());
+        if (rank != 1.0) steps.add(new CombatContext.PowerStep(CombatContext.Target.GAINS, "Rang", 0, (float) rank));
+        double prestige = GainFormula.prestigeFactor(context.getPlayer());
+        if (prestige != 1.0) {
+            steps.add(new CombatContext.PowerStep(CombatContext.Target.GAINS, CombatContext.PRESTIGE, 0, (float) prestige));
         }
+        double cards = GainFormula.cardFactor(context);
+        if (cards != 1.0) steps.add(new CombatContext.PowerStep(CombatContext.Target.GAINS, "Cartes", 0, (float) cards));
         steps.addAll(context.getSteps(CombatContext.Target.GAINS));
         if (scale != 1f) steps.add(new CombatContext.PowerStep(CombatContext.Target.GAINS, "Coût du tirage", 0, scale));
         return List.of(new GainsEarnedEvent(gain).withBreakdown(
-            new BoostBreakdown(BoostBreakdown.Kind.GAINS, symbol, rank, steps, gain)));
+            new BoostBreakdown(BoostBreakdown.Kind.GAINS, table, 0, steps, gain)));
     }
 
     /** @return les gains de base de cette sortie (la Tirelire grossit, le Ticket les tire au hasard). */
@@ -64,5 +63,5 @@ public non-sealed class GainAction extends Action {
     protected int getBaseGain() { return baseGain; }
 
     @Override
-    public String getDescription() { return Lang.f("{0} gains de base", baseGain); }
+    public String getDescription() { return Lang.f("{0} gains de base", SpinEconomy.symbolBaseText(baseGain)); }
 }

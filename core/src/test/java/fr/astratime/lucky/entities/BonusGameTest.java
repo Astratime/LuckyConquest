@@ -34,45 +34,44 @@ class BonusGameTest {
     }
 
     @Test
-    void fourSevensInARowPayTwoThousandTwoHundredFiftyAtThePrairie() {
+    void fourSevensInARowPayOneThousandOneHundredTwentyFiveAtThePrairie() {
         Symbol[][] grid = emptyGrid();
         grid[0] = new Symbol[] {SEVEN, SEVEN, SEVEN, SEVEN, BAR, CHERRY};
         List<BonusGame.Line> lines = BonusGame.lines(grid, 100);
 
         BonusGame.Line line = lines.stream().filter(l -> l.symbol() == SEVEN && l.length() == 4).findFirst().orElseThrow();
-        assertEquals(2_250, line.gains()); // 15 C x 100 x 1,5
+        assertEquals(1_125, line.gains()); // 7,5 C x 100 x 1,5
     }
 
     @Test
-    void sixCrownsPaySeventyFiveThousand() {
-        assertEquals(75_000, BonusGame.gains(CROWN, 6, 100)); // 300 C x 100 x 2,5
-        assertEquals(500, BonusGame.gains(CHERRY, 3, 100));
-        assertEquals(6_000, BonusGame.gains(BELL, 5, 100));
+    void sixCrownsPayThirtySevenThousandFiveHundred() {
+        assertEquals(37_500, BonusGame.gains(CROWN, 6, 100)); // 150 C x 100 x 2,5
+        assertEquals(250, BonusGame.gains(CHERRY, 3, 100));
+        assertEquals(3_000, BonusGame.gains(BELL, 5, 100));
     }
 
     @Test
-    void aBonusGamePaysAboutTwoHundredSpinCostsOnAverage() {
+    void aBonusGamePaysAboutOneHundredSpinCostsOnAverage() {
         Random random = new Random(1);
         long total = 0;
         int games = 20_000;
         for (int i = 0; i < games; i++) total += BonusGame.play(Symbol.classicReels(), 100, random).getTotal();
-        // en coûts de tirage, machine classique : ~215 depuis les 5 tirages (Astra, 2026-10-29)
-        assertEquals(215.0, total / (double) games / 100, 10.0);
+        // en coûts de tirage, machine classique, avant le multiplicateur du joueur : ~108 (table divisée par 2, 2026-11-16)
+        assertEquals(108.0, total / (double) games / 100, 5.0);
     }
 
     @Test
-    void theTurnMultipliersOnlyBoostTheBonusPartOfEachLine() {
+    void thePlayerMultiplierMultipliesEachWholeLine() {
         BonusGame game = BonusGame.play(Symbol.classicReels(), 100, new Random(4));
-        BonusGame boosted = game.boosted(5, 70, 2f);
-        long expected = 0;
+        BonusGame scaled = game.scaled(2.5);
+        double expected = 0;
         for (int i = 0; i < game.getLines().size(); i++) {
-            BonusGame.Line line = game.getLines().get(i);
-            double gains = line.gains() + (5 * line.length() + 70) * 2;
-            assertEquals(gains, boosted.getLines().get(i).gains());
+            double gains = Math.rint(game.getLines().get(i).gains() * 2.5);
+            assertEquals(gains, scaled.getLines().get(i).gains());
             expected += gains;
         }
-        assertEquals(expected, boosted.getTotal());
-        assertEquals(game.getTotal(), game.boosted(0, 0, 1000f).getTotal());
+        assertEquals(expected, scaled.getTotal());
+        assertEquals(game.getTotal(), game.scaled(1).getTotal());
     }
 
     @Test
@@ -95,7 +94,7 @@ class BonusGameTest {
         BonusGame.Line line = BonusGame.lines(grid, 100).stream()
             .filter(l -> l.symbol() == JOKER).findFirst().orElseThrow();
         assertEquals(6, line.length());
-        assertEquals(75_000, line.gains());
+        assertEquals(37_500, line.gains());
     }
 
     @Test

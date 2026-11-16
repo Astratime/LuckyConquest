@@ -27,16 +27,14 @@ public class CardGainsEffect extends Effect {
     public void apply(TurnContext context) { context.getCombatContext().addGainMultiplier(gainMultiplierAdd); }
 
     @Override
-    public String getDescription() { return Lang.f("Multiplicateur de gains +{0}", format()); }
+    public String getDescription() { return Lang.f("Gains +{0} %", format()); }
 
-    private String format() {
-        return gainMultiplierAdd == Math.round(gainMultiplierAdd) ? String.valueOf(Math.round(gainMultiplierAdd))
-            : Lang.decimal(String.valueOf(gainMultiplierAdd));
-    }
+    /** @return le % de gains de la carte (1 point : 10 %, voir GainFormula). */
+    private String format() { return fr.astratime.lucky.entities.GainFormula.cardPercentText(gainMultiplierAdd); }
 
     @Override
     public List<EffectPopup> getPopups() {
-        return List.of(EffectPopup.scaled(Lang.f("GAINS x+{0}", format()), EffectPopup.Style.GAINS,
+        return List.of(EffectPopup.scaled(Lang.f("GAINS +{0} %", format()), EffectPopup.Style.GAINS,
             Math.round(gainMultiplierAdd), PopupScale.CARD_GAIN_MULTIPLIER));
     }
 

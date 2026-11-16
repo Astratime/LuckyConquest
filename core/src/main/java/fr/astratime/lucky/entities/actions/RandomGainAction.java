@@ -26,5 +26,6 @@ public final class RandomGainAction extends GainAction {
     protected int rollBaseGain(CombatContext context) { return min + random.nextInt(max - min + 1); }
 
     @Override
-    public String getDescription() { return Lang.f("De {0} à {1} gains de base, au hasard", min, max); }
+    public String getDescription() { return Lang.f("De {0} à {1} gains de base, au hasard", fr.astratime.lucky.entities.SpinEconomy.symbolBaseText(min),
+        fr.astratime.lucky.entities.SpinEconomy.symbolBaseText(max)); }
 }

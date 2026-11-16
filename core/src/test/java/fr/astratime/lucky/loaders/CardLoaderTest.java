@@ -253,10 +253,10 @@ class CardLoaderTest {
         assertEquals(king.getSuit(), plus.getSuit());
         assertEquals(king.getRank(), plus.getRank());
         assertTrue(plus.getName().endsWith(" +"));
-        // Roi de Trèfle : Bonne étoile +10 et attaque +103, puis +15 et +155 ; ses gains (+3) ne changent pas.
+        // Roi de Trèfle : Bonne étoile +10 et attaque +103, puis +15 et +155 ; ses gains (+30 %) ne changent pas.
         assertTrue(plus.getDescription().contains("Bonne étoile +15"), plus.getDescription());
         assertTrue(plus.getDescription().contains("+155"), plus.getDescription());
-        assertTrue(plus.getDescription().contains("gains +3"), plus.getDescription());
+        assertTrue(plus.getDescription().contains("Gains +30 %"), plus.getDescription());
     }
 
     @Test

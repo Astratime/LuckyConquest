@@ -50,10 +50,10 @@ class ReelsOfNovemberTest {
     void thePiggyBankGrowsEachTimeItComesUp() {
         Player player = player();
         resolve(player, target(100_000), Symbol.PIGGY_BANK, null, null);
-        assertEquals(10, player.getGains());
+        assertEquals(5, player.getGains(), "10 de base x la table des symboles (0,5)");
         resolve(player, target(100_000), Symbol.PIGGY_BANK, Symbol.PIGGY_BANK, null);
-        assertEquals(10 + 20 + 30 + SpinEconomy.pairGains(SpinEconomy.BASE_SPIN_COST), player.getGains(), 0.001,
-            "puis 20 et 30, et la paire");
+        assertEquals(5 + 10 + 15 + SpinEconomy.pairGains(SpinEconomy.BASE_SPIN_COST), player.getGains(), 0.001,
+            "puis 10 et 15, et la paire");
         assertEquals(40, player.getLastingEffects().getReelGauges().getPiggyNext());
         assertEquals(10, player.nextCombat().getLastingEffects().getReelGauges().getPiggyNext(), "repart au combat suivant");
     }
@@ -106,11 +106,11 @@ class ReelsOfNovemberTest {
     void theGoldChipDoublesWithAnotherGainSymbol() {
         Player alone = player();
         resolve(alone, target(100_000), Symbol.GOLD_CHIP, Symbol.BAR, null);
-        assertEquals(50, alone.getGains());
+        assertEquals(25, alone.getGains());
 
         Player paired = player();
         resolve(paired, target(100_000), Symbol.GOLD_CHIP, Symbol.BELL, null);
-        assertEquals(100 + 12, paired.getGains(), "x2, plus la Cloche");
+        assertEquals(50 + 6, paired.getGains(), "x2, plus la Cloche");
     }
 
     @Test

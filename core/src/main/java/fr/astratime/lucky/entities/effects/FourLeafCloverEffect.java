@@ -39,7 +39,7 @@ public class FourLeafCloverEffect extends Effect {
     @Override
     public String getDescription() {
         if (gainMultiplierAdd == 0) return Lang.t("Les symboles de gain sortent plus souvent"); // Rhum
-        return Lang.f("Multiplicateur de gains +{0}. Les symboles de gain sortent plus souvent", gainMultiplierAdd);
+        return Lang.f("Gains +{0} %. Les symboles de gain sortent plus souvent", fr.astratime.lucky.entities.GainFormula.cardPercentText(gainMultiplierAdd));
     }
 
     @Override
@@ -47,7 +47,7 @@ public class FourLeafCloverEffect extends Effect {
         EffectPopup luck = new EffectPopup(Lang.t("CHANCE DE GAINS"), EffectPopup.Style.GAINS, PopupScale.SECONDARY_INTENSITY);
         if (gainMultiplierAdd == 0) return List.of(luck);
         return List.of(
-            EffectPopup.scaled(Lang.f("GAINS x+{0}", gainMultiplierAdd), EffectPopup.Style.GAINS, gainMultiplierAdd, PopupScale.CARD_GAIN_MULTIPLIER),
+            EffectPopup.scaled(Lang.f("GAINS +{0} %", fr.astratime.lucky.entities.GainFormula.cardPercentText(gainMultiplierAdd)), EffectPopup.Style.GAINS, gainMultiplierAdd, PopupScale.CARD_GAIN_MULTIPLIER),
             luck);
     }
 

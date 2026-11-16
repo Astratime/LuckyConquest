@@ -455,10 +455,9 @@ public class TurnEngine {
 
     /**
      * @return le Jeu bonus qui suit le Bingo de {@code result} (une fois sur dix, trois
-     *         dans la Tour, à coup sûr avec la carte de test) : ses gains de base restent fixes,
-     *         seul un petit bonus (par symbole aligné, plus le rang par alignement)
-     *         reçoit les multiplicateurs du tour, et chaque alignement paie en plus toute la
-     *         cagnotte, qui repart de 0 ; ses gains déjà crédités au joueur ;
+     *         dans la Tour, à coup sûr avec la carte de test) : sa table x le multiplicateur du
+     *         joueur ({@link GainFormula}), et chaque alignement paie en plus toute la
+     *         cagnotte (jamais multipliée), qui repart de 0 ; ses gains déjà crédités au joueur ;
      *         {@code null} sans Bingo ou si la grille ne s'ouvre pas
      */
     /**
@@ -481,17 +480,13 @@ public class TurnEngine {
         if (!bonusGameEnabled || !result.isJackpot() || player.isDefeated()) return null;
         if (!spin.isBonusGameForced() && (spin.isStarBingo() || random.nextFloat() >= bonusGameChance)) return null;
         int spinCost = combat.getSpinCost();
-        float scale = SpinEconomy.gainScale(spinCost);
-        int perSymbol = Math.round(BonusGame.GAINS_PER_SYMBOL * scale);
-        int rank = Math.round(player.getRankBonus().withPrestigeBonus(player.getRankBonus().gains() * combat.getRankFactor()) * scale);
-        float factor = combat.getGainMultiplier() * combat.getGainFactor() * combat.getSymbolPower();
+        double factor = GainFormula.player(combat); // le même multiplicateur que les symboles, la Paire et le Bingo
         BonusGame.Kind kind = bonusGameKind != null ? bonusGameKind : BonusGame.Kind.pick(random);
         BonusGame bonus = kind == BonusGame.Kind.GRID
             ? BonusGame.play(player.getSlotMachine().getReels(), spinCost, random)
-                .boosted(perSymbol, rank, factor)
-                .withPot(pot.take()) // la cagnotte n'est pas multipliée par le tour
-            : BonusGame.playSmall(kind, pot.take(), spinCost, ((double) perSymbol * BonusGame.MIN_LINE + rank) * factor,
-                random);
+                .scaled(factor)
+                .withPot(pot.take()) // la cagnotte n'est jamais multipliée
+            : BonusGame.playSmall(kind, pot.take(), spinCost, factor, random);
         player.addGains(bonus.getTotal());
         player.addPotWinnings(bonus.getPotPaid()); // ce que la cagnotte a rapporté ne se remise pas
         return bonus;

@@ -205,9 +205,10 @@ final class CombatEffectRows {
         }
         if (gauges.getPiggyDraws() > 0) {
             rows.add(new SidePanel.EffectRow(symbols.apply(Symbol.PIGGY_BANK), null,
-                Lang.f("Tirelire {0}", gauges.getPiggyNext()), Lang.t("Tirelire"),
+                Lang.f("Tirelire {0}", fr.astratime.lucky.entities.SpinEconomy.symbolBaseText(gauges.getPiggyNext())),
+                Lang.t("Tirelire"),
                 Lang.f("Sortie {0} fois ce combat. À la prochaine : {1} gains de base.", gauges.getPiggyDraws(),
-                    gauges.getPiggyNext())));
+                    fr.astratime.lucky.entities.SpinEconomy.symbolBaseText(gauges.getPiggyNext()))));
         }
         if (gauges.getAnchorKept() > 0) {
             rows.add(new SidePanel.EffectRow(symbols.apply(Symbol.ANCHOR), null,

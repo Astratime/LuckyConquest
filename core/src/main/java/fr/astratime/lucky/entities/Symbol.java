@@ -84,13 +84,13 @@ public enum Symbol {
      */
     public enum Rarity {
         /** Cerise, BAR, Raisin, Cloche. */
-        COMMON(20),
+        COMMON(10),
         /** Sept, Double BAR, Pastèque, Diamant. */
-        MEDIUM(30),
+        MEDIUM(15),
         /** Triple Cerise, Triple Sept, Lingot, et tous les rouleaux de la boutique et de la Mine. */
-        RARE(50);
+        RARE(25);
 
-        /** Gains d'un Bingo de ce symbole, en coûts de tirage. */
+        /** Gains d'un Bingo de ce symbole, en coûts de tirage, avant le multiplicateur du joueur ({@link GainFormula}). */
         public final int jackpotSpins;
 
         Rarity(int jackpotSpins) { this.jackpotSpins = jackpotSpins; }

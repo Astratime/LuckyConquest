@@ -65,8 +65,11 @@ public final class BonusGame {
         }
     }
 
-    /** Mise de base des petits Jeux bonus : la cagnotte + autant de coûts de tirage. */
-    public static final int BASE_UNIT_SPINS = 20;
+    /**
+     * Mise de base des petits Jeux bonus : la cagnotte + autant de coûts de tirage (cette part-ci multipliée par
+     * le multiplicateur du joueur, {@link GainFormula} ; table divisée par 2 avec la formule d'Astra du 2026-11-16).
+     */
+    public static final int BASE_UNIT_SPINS = 10;
     /** Alignements moyens d'une grille sur la machine classique (mesuré, voir les tests). */
     public static final double GRID_AVERAGE_LINES = 10.8;
     /** Les cases de la Roue, dans l'ordre (multiples de la mise de base) : 2,2 en moyenne, 20 % de la grille. */
@@ -101,8 +104,6 @@ public final class BonusGame {
     public static final float TRIGGER_CHANCE = 0.20f;
     /** Chances qu'un Bingo ouvre le Jeu bonus dans la Tour des épreuves (choix d'Astra, 2026-10-27). */
     public static final float TOWER_TRIGGER_CHANCE = 0.30f;
-    /** Bonus par symbole aligné, à la Prairie, que multiplient les cartes du tour (voir {@link #boosted}). */
-    public static final int   GAINS_PER_SYMBOL = 5;
 
     /**
      * Un alignement de la grille finale.
@@ -169,12 +170,13 @@ public final class BonusGame {
     /**
      * Joue un petit Jeu bonus ({@link Kind#WHEEL}, {@link Kind#PLINKO} ou {@link Kind#PUNCH}).
      *
-     * @param pot       la cagnotte, qui repart de 0 après le jeu
+     * @param pot       la cagnotte, qui repart de 0 après le jeu (jamais multipliée)
      * @param spinCost  coût d'un tirage, là où se joue le combat
-     * @param extra     petit bonus des cartes et du rang, ajouté à chaque gain (déjà multiplié par le tour)
+     * @param factor    multiplicateur du joueur ({@link GainFormula#player}) de la part des {@link #BASE_UNIT_SPINS} C
      */
-    public static BonusGame playSmall(Kind kind, double pot, int spinCost, double extra, Random random) {
-        double unit = BigNumber.add(Math.max(0, pot), (double) BASE_UNIT_SPINS * spinCost);
+    public static BonusGame playSmall(Kind kind, double pot, int spinCost, double factor, Random random) {
+        double stake = BigNumber.round((double) BASE_UNIT_SPINS * spinCost * Math.max(0, factor)); // x le joueur
+        double unit = BigNumber.add(Math.max(0, pot), stake);
         List<Double> values = new ArrayList<>();
         List<Integer> picked = new ArrayList<>();
         double paid = 0; // en mises de base
@@ -203,8 +205,8 @@ public final class BonusGame {
             }
             default -> throw new IllegalArgumentException("La grille se joue avec play : " + kind);
         }
-        double total = BigNumber.add(BigNumber.round(unit * paid), BigNumber.round(Math.max(0, extra)));
         double potPaid = BigNumber.round(Math.max(0, pot) * paid);
+        double total = BigNumber.add(BigNumber.round(stake * paid), potPaid);
         return new BonusGame(kind, values, picked, unit, total, Math.max(0, pot), potPaid);
     }
 
@@ -217,7 +219,7 @@ public final class BonusGame {
     /** @return petits Jeux bonus : la case où s'arrête la Roue ou la bille du Plinko, le score du Coup de poing. */
     public List<Integer> getPicked() { return picked; }
 
-    /** @return petits Jeux bonus : la mise de base (cagnotte + {@link #BASE_UNIT_SPINS} coûts de tirage). */
+    /** @return petits Jeux bonus : la mise de base (cagnotte + {@link #BASE_UNIT_SPINS} coûts de tirage x le joueur). */
     public double getUnit() { return unit; }
 
     /** @return la part des gains qui vient de la cagnotte (elle ne se remise pas). */
@@ -253,25 +255,15 @@ public final class BonusGame {
     }
 
     /**
-     * Le petit bonus que les cartes et le rang ajoutent au Jeu bonus. Les gains de
-     * base de chaque alignement restent fixes (jamais multipliés) ; s'y ajoutent
-     * {@code perSymbol} par symbole aligné et le bonus de gains du rang une fois par
-     * alignement, et seule cette part reçoit les multiplicateurs de gains du tour
-     * (cartes Trèfle, combinaisons, Porte-bonheur, Mise, carte Bingo).
-     *
-     * @param perSymbol bonus par symbole aligné, déjà à l'échelle du coût du tirage
-     * @param rankPerLine bonus de gains du rang par alignement, déjà à l'échelle du coût du tirage
-     * @param factor    multiplicateurs de gains du tour
-     * @return ce Jeu bonus, ses gains ainsi comptés
+     * @return ce Jeu bonus où chaque alignement paie sa valeur de la table x {@code factor}, le multiplicateur du
+     *         joueur ({@link GainFormula#player} : rang, Prestige, cartes, combinaisons, carte Bingo)
      */
-    public BonusGame boosted(int perSymbol, int rankPerLine, float factor) {
-        List<Line> boosted = new ArrayList<>();
+    public BonusGame scaled(double factor) {
+        List<Line> scaled = new ArrayList<>();
         for (Line line : lines) {
-            double extra = ((double) perSymbol * line.length() + rankPerLine) * factor;
-            double gains = line.gains() + extra;
-            boosted.add(new Line(line.symbol(), line.cells(), BigNumber.round(gains)));
+            scaled.add(new Line(line.symbol(), line.cells(), BigNumber.round(line.gains() * Math.max(0, factor))));
         }
-        return new BonusGame(grids, frozen, boosted, pot);
+        return new BonusGame(grids, frozen, scaled, pot);
     }
 
     /**
@@ -328,21 +320,22 @@ public final class BonusGame {
         return found;
     }
 
-    /** @return les gains d'un alignement de {@code length} {@code symbol}. */
+    /** @return les gains d'un alignement de {@code length} {@code symbol}, avant le multiplicateur du joueur. */
     public static int gains(Symbol symbol, int length, int spinCost) {
-        return Math.round(baseSpins(length) * spinCost * rarityFactor(symbol));
+        return (int) Math.round(baseSpins(length) * spinCost * rarityFactor(symbol));
     }
 
     /**
-     * @return les gains de base d'un alignement de {@code length} cases, en coûts de tirage
-     *         (réglés pour qu'un Jeu bonus rapporte en moyenne 100 coûts de tirage sur la machine classique)
+     * @return les gains de base d'un alignement de {@code length} cases, en coûts de tirage (une grille rapporte
+     *         en moyenne 50 coûts de tirage sur la machine classique, avant le multiplicateur du joueur ; table
+     *         divisée par 2 avec la formule d'Astra du 2026-11-16)
      */
-    public static int baseSpins(int length) {
+    public static double baseSpins(int length) {
         return switch (length) {
-            case 3  -> 5;
-            case 4  -> 15;
-            case 5  -> 60;
-            default -> length >= 6 ? 300 : 0;
+            case 3  -> 2.5;
+            case 4  -> 7.5;
+            case 5  -> 30;
+            default -> length >= 6 ? 150 : 0;
         };
     }
 

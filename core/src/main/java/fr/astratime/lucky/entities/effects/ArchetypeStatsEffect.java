@@ -55,7 +55,7 @@ public class ArchetypeStatsEffect extends Effect {
         List<String> parts = new ArrayList<>();
         if (attackBonus > 0) parts.add(Lang.f("Attaque +{0} sur chaque symbole d'attaque", attackBonus));
         if (defenseBonus > 0) parts.add(Lang.f("Symboles de défense : bouclier +{0}", defenseBonus));
-        if (gainMultiplierAdd > 0) parts.add(Lang.f("Multiplicateur de gains +{0}", format(gainMultiplierAdd)));
+        if (gainMultiplierAdd > 0) parts.add(Lang.f("Gains +{0} %", fr.astratime.lucky.entities.GainFormula.cardPercentText(gainMultiplierAdd)));
         return String.join(". ", parts);
     }
 
@@ -66,16 +66,9 @@ public class ArchetypeStatsEffect extends Effect {
             EffectPopup.Style.ATTACK, attackBonus, PopupScale.CARD_ATTACK_BONUS));
         if (defenseBonus > 0) popups.add(EffectPopup.scaled(Lang.f("BOOST DÉFENSE +{0}", defenseBonus),
             EffectPopup.Style.DEFENSE, defenseBonus, PopupScale.CARD_DEFENSE_BOOST));
-        if (gainMultiplierAdd > 0) popups.add(EffectPopup.scaled(Lang.f("GAINS x+{0}", format(gainMultiplierAdd)),
+        if (gainMultiplierAdd > 0) popups.add(EffectPopup.scaled(Lang.f("GAINS +{0} %", fr.astratime.lucky.entities.GainFormula.cardPercentText(gainMultiplierAdd)),
             EffectPopup.Style.GAINS, Math.round(gainMultiplierAdd), PopupScale.CARD_GAIN_MULTIPLIER));
         return popups;
-    }
-
-    /** @return {@code value} sans décimale inutile, avec la virgule en français (ex : "6", "4,5"). */
-    private static String format(float value) {
-        if (value == (int) value) return String.valueOf((int) value);
-        String text = String.valueOf(value);
-        return Lang.isEnglish() ? text : text.replace('.', ',');
     }
 
     /** Le son du bonus le plus marqué : celui d'un Pique, d'un Carreau ou d'un Trèfle. */
