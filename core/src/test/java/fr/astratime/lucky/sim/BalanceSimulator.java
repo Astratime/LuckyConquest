@@ -120,10 +120,16 @@ public final class BalanceSimulator {
      * @param buysAtStall {@code true} s'il achète à l'échoppe pendant le combat
      * @param upgraded    {@code true} si ses cartes sont en version « + » quand elle existe
      * @param smart       {@code true} s'il joue en « joueur malin » ({@link #playSmartTurn}) au lieu du hasard
+     * @param plus        cartes jouées en « + » même si {@code upgraded} est {@code false} (profils par rang)
      */
     record Gear(String name, Map<String, Integer> deck, List<Symbol> reels, boolean buysAtStall, boolean upgraded,
-                boolean smart) {
+                boolean smart, java.util.Set<String> plus) {
         static final Gear STARTER = new Gear("Deck de départ", null, Symbol.classicReels(), false, false, false);
+
+        Gear(String name, Map<String, Integer> deck, List<Symbol> reels, boolean buysAtStall, boolean upgraded,
+             boolean smart) {
+            this(name, deck, reels, buysAtStall, upgraded, smart, java.util.Set.of());
+        }
 
         Gear(String name, Map<String, Integer> deck, List<Symbol> reels, boolean buysAtStall) {
             this(name, deck, reels, buysAtStall, true, false);
@@ -227,7 +233,10 @@ public final class BalanceSimulator {
         String report = List.of(args).contains("--tower") ? simulator.towerReport()
             : List.of(args).contains("--tune") ? simulator.tuneReport()
             : List.of(args).contains("--hardplace") ? simulator.hardPlaceReport()
-            : List.of(args).contains("--rankplace") ? simulator.rankPlaceReport() : simulator.report();
+            : List.of(args).contains("--rankplace") ? simulator.rankPlaceReport()
+            : List.of(args).contains("--profiles") ? simulator.profilesReport()
+            : System.getProperty("lucky.journal") != null ? simulator.journalReport(Paths.get(System.getProperty("lucky.journal")))
+            : simulator.report();
         System.out.println(report);
         Path out = Paths.get(System.getProperty("lucky.simulation.out", "build/simulation/equilibrage.md"));
         if (out.getParent() != null) Files.createDirectories(out.getParent());
@@ -862,7 +871,7 @@ public final class BalanceSimulator {
     }
 
     /** @return {@code coins} en abrégé (« 52 k », « 1,3 M »). */
-    private static String abbreviated(double coins) {
+    static String abbreviated(double coins) {
         if (coins >= 1e9) return String.format(Locale.FRANCE, "%.1f G", coins / 1e9);
         if (coins >= 1e6) return String.format(Locale.FRANCE, "%.1f M", coins / 1e6);
         if (coins >= 1e4) return String.format(Locale.FRANCE, "%.0f k", coins / 1e3);
@@ -1043,8 +1052,14 @@ public final class BalanceSimulator {
 
     /** Comme {@link #rankPlace(Place, Rank, Gear, boolean, int, long)}, en Exploration difficile si {@code hard}. */
     Map<String, RP> rankPlace(Place place, boolean hard, Rank rank, Gear gear, boolean bonusOn, int runs, long seed) {
+        return rankPlace(place, hard, rank, PRESTIGE, gear, bonusOn, runs, seed);
+    }
+
+    /** Comme {@link #rankPlace(Place, boolean, Rank, Gear, boolean, int, long)}, au Prestige {@code prestige}. */
+    Map<String, RP> rankPlace(Place place, boolean hard, Rank rank, int prestige, Gear gear, boolean bonusOn, int runs,
+                              long seed) {
         Random random = new Random(seed);
-        GameController game = controller((rank == null ? RankBonus.NONE : rank.getBonus()).withPrestige(PRESTIGE), gear);
+        GameController game = controller((rank == null ? RankBonus.NONE : rank.getBonus()).withPrestige(prestige), gear);
         game.setDifficulty(Difficulty.of(hard));
         game.setPlaceRule(place.getRule());
         game.setBonusGameEnabled(bonusOn);
@@ -1127,6 +1142,191 @@ public final class BalanceSimulator {
     static final int PRESTIGE = Integer.getInteger("lucky.prestige", 0);
 
     static final List<double[]> POT_LOG = System.getProperty("lucky.potLog") != null ? new ArrayList<>() : null;
+
+    // -------------------------------------------------------------------------
+    // Trois joueurs par rang : ./gradlew :core:simulate -Pprofiles -Pstake=15 (-PrpRuns=100 -PshopShare=1)
+    // -------------------------------------------------------------------------
+
+    /** Decks visés par les profils par rang (voir {@link RankProfiles}). */
+    static Map<String, Map<String, Integer>> profileTargets() {
+        Map<String, Map<String, Integer>> targets = new LinkedHashMap<>();
+        targets.put("Malin", SMART_DECK);
+        targets.put("Pique", STRONG_DECKS.get("Piques"));
+        targets.put("Coeur", STRONG_DECKS.get("Coeurs"));
+        targets.put("Trefle", STRONG_DECKS.get("Trèfles"));
+        targets.put("Carreau", STRONG_DECKS.get("Carreaux"));
+        return targets;
+    }
+
+    /**
+     * Pour chaque rang, dans son lieu, trois joueurs : <b>débutant</b> (deck de départ, cartes au hasard),
+     * <b>moyen</b> (ce qu'il possède vraiment à ce rang, {@link RankProfiles}, joué en joueur malin) et <b>expert</b>
+     * (le deck visé complet, tout en « + », la machine du moyen, joué en joueur malin). Le moyen et l'expert
+     * sont donnés pour chaque deck visé. Les profils sont écrits dans profils_par_rang.md, pour relecture.
+     */
+    String profilesReport() {
+        int runs = Integer.getInteger("lucky.rpRuns", 100);
+        Map<String, Long> boutique = CardLoader.loadBoutique(reader);
+        List<String> starter = new ArrayList<>();
+        for (Card card : CardLoader.loadStarterDeck(reader)) starter.add(Card.baseId(card.getId()));
+        RankProfiles profiles = new RankProfiles(boutique, starter, CardLoader.loadStartingCollection(reader), cards);
+        StringBuilder describe = new StringBuilder("# Profils par rang\n\n");
+        List<Object[]> cases = new ArrayList<>(); // rang, joueur, deck visé, gear
+        for (Rank rank : allRanks()) {
+            if (System.getProperty("lucky.onlyRank") != null && !List.of(System.getProperty("lucky.onlyRank").split(",")).contains(title(rank))) continue;
+            cases.add(new Object[] {rank, "débutant", "-", Gear.STARTER});
+            describe.append("## ").append(title(rank)).append(" (").append(placeOfRank(rank).getShortName()).append(")\n\n");
+            for (Map.Entry<String, Map<String, Integer>> target : profileTargets().entrySet()) {
+                RankProfiles.Profile profile = profiles.of(rank, target.getValue());
+                describe.append(profiles.describe(target.getKey(), profile));
+                cases.add(new Object[] {rank, "moyen", target.getKey(), new Gear("Moyen " + target.getKey(), profile.deck(),
+                    profile.reels(), true, false, true, profile.plus())});
+                // expert : le deck visé complet, tout en « + », la même machine que le moyen
+                cases.add(new Object[] {rank, "expert", target.getKey(), new Gear("Expert " + target.getKey(),
+                    target.getValue(), profile.reels(), true, true, true)});
+            }
+        }
+        Map<Integer, RP> results = new ConcurrentHashMap<>();
+        List<Runnable> jobs = new ArrayList<>();
+        for (int i = 0; i < cases.size(); i++) {
+            int index = i;
+            Object[] c = cases.get(i);
+            jobs.add(() -> {
+                RP total = new RP();
+                rankPlace(placeOfRank((Rank) c[0]), (Rank) c[0], (Gear) c[3], true, runs, SEED).values().forEach(total::add);
+                results.put(index, total);
+            });
+        }
+        jobs.parallelStream().forEach(Runnable::run);
+        StringBuilder out = new StringBuilder("rank\tplace\tplayer\ttarget\truns\twinPercent\tavgCoinsRun\tmedianCoinsRun\ttypical30\tturnsPerRun\tdescentsForNextRank\n");
+        for (int i = 0; i < cases.size(); i++) {
+            Object[] c = cases.get(i);
+            Rank rank = (Rank) c[0];
+            RP rp = results.get(i);
+            Rank next = rank == null ? Rank.values()[0] : rank.ordinal() + 1 < Rank.values().length ? Rank.values()[rank.ordinal() + 1] : null;
+            double typical = rp.typical(30);
+            out.append(String.format(Locale.ROOT, "%s\t%s\t%s\t%s\t%d\t%.1f\t%.0f\t%.0f\t%.0f\t%.1f\t%s%n", title(rank),
+                placeOfRank(rank).getShortName(), c[1], c[2], rp.runs, 100.0 * rp.wins / rp.runs,
+                (rp.coinsWin + rp.coinsLoss) / rp.runs, rp.median(), typical, rp.turns / (double) rp.runs,
+                next == null || typical <= 0 ? "-" : String.format(Locale.ROOT, "%.0f", next.getPrice() / typical)));
+        }
+        try {
+            Path profilesOut = Paths.get(System.getProperty("lucky.simulation.out", "build/simulation/equilibrage.md"))
+                .resolveSibling("profils_par_rang.md");
+            if (profilesOut.getParent() != null) Files.createDirectories(profilesOut.getParent());
+            Files.writeString(profilesOut, describe.toString(), StandardCharsets.UTF_8);
+            System.out.println("Profils écrits dans " + profilesOut.toAbsolutePath());
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+        return out.toString();
+    }
+
+    // -------------------------------------------------------------------------
+    // Journal des descentes : ./gradlew :core:simulate -Pjournal=<fichier> -Pstake=15 (-PrpRuns=100)
+    // -------------------------------------------------------------------------
+
+    /** Une descente du journal ({@link fr.astratime.lucky.progress.DescentLog}) : soldat, puis roi s'il l'a battu. */
+    record LoggedDescent(String group, Place place, Dungeon dungeon, boolean hard, Rank rank, int prestige,
+                         Map<String, Integer> deck, List<Symbol> machine, int stake, boolean won, double coins) {}
+
+    /** @return les descentes du journal {@code file}, dans l'ordre (un soldat battu sans roi joué ensuite ne compte pas). */
+    static List<LoggedDescent> readJournal(Path file) throws IOException {
+        List<LoggedDescent> descents = new ArrayList<>();
+        String[] pending = null;
+        for (String line : Files.readAllLines(file, StandardCharsets.UTF_8)) {
+            if (line.isBlank() || line.startsWith("date;")) continue;
+            String[] f = line.split(";", -1);
+            if (f.length < 15) continue;
+            boolean king = f[6].equals("roi");
+            boolean won = Boolean.parseBoolean(f[7]);
+            if (!king) {
+                pending = null;
+                if (won) pending = f; // le roi suit
+                else descents.add(descent(f, false, Double.parseDouble(f[10])));
+            } else if (pending != null && pending[2].equals(f[2])) {
+                descents.add(descent(f, won, Double.parseDouble(f[10])));
+                pending = null;
+            }
+        }
+        return descents;
+    }
+
+    private static LoggedDescent descent(String[] f, boolean won, double coins) {
+        Map<String, Integer> deck = new LinkedHashMap<>();
+        for (String card : f[13].split("\\|")) {
+            if (card.isEmpty()) continue;
+            int colon = card.lastIndexOf(':');
+            deck.put(card.substring(0, colon), Integer.parseInt(card.substring(colon + 1)));
+        }
+        List<Symbol> machine = new ArrayList<>();
+        for (String symbol : f[14].split("\\|")) if (!symbol.isEmpty()) machine.add(Symbol.valueOf(symbol));
+        Rank rank = f[4].isEmpty() ? null : Rank.valueOf(f[4]);
+        String group = String.join(";", f[1], f[3], f[4], f[5], f[12], f[13], f[14]);
+        return new LoggedDescent(group, Place.valueOf(f[1]), Dungeon.valueOf(f[2]), Boolean.parseBoolean(f[3]), rank,
+            Integer.parseInt(f[5]), deck, machine, Integer.parseInt(f[12]), won, coins);
+    }
+
+    /**
+     * Compare le vrai joueur du journal au joueur malin : pour chaque équipement du journal (lieu, difficulté, rang,
+     * Prestige, Mise, deck, machine) et chaque donjon joué, le joueur malin fait {@code -PrpRuns} descentes avec
+     * exactement ce deck et cette machine. Victoires et pièces par descente, réelles et simulées.
+     */
+    String journalReport(Path file) throws IOException {
+        int runs = Integer.getInteger("lucky.rpRuns", 100);
+        List<LoggedDescent> descents = readJournal(file);
+        Map<String, List<LoggedDescent>> byCase = new LinkedHashMap<>();
+        for (LoggedDescent d : descents) byCase.computeIfAbsent(d.group() + ';' + d.dungeon(), k -> new ArrayList<>()).add(d);
+        Map<String, RP> simulated = new ConcurrentHashMap<>();
+        Map<String, Gear> gears = new LinkedHashMap<>();
+        for (List<LoggedDescent> list : byCase.values()) {
+            LoggedDescent first = list.get(0);
+            gears.computeIfAbsent(first.group(), g -> new Gear("Journal " + gears.size(), first.deck(), first.machine(),
+                true, false, true));
+        }
+        List<Runnable> jobs = new ArrayList<>();
+        for (Map.Entry<String, Gear> g : gears.entrySet()) {
+            LoggedDescent first = descents.stream().filter(d -> d.group().equals(g.getKey())).findFirst().orElseThrow();
+            jobs.add(() -> rankPlace(first.place(), first.hard(), first.rank(), first.prestige(), g.getValue(), true, runs, SEED)
+                .forEach((name, rp) -> simulated.put(g.getKey() + ';' + name, rp)));
+        }
+        jobs.parallelStream().forEach(Runnable::run);
+        StringBuilder out = new StringBuilder(String.format(Locale.ROOT,
+            "# Journal des descentes comparé au joueur malin%n%n%d descentes lues dans %s ; Mise du robot %d %%, %d descentes simulées par donjon.%n%n",
+            descents.size(), file.getFileName(), STAKE.percent, runs));
+        out.append("| Équipement | Lieu | Rang | Donjon | Descentes réelles | Victoires réelles | Victoires simulées | Pièces réelles / descente | Pièces simulées / descente |\n");
+        out.append("| --- | --- | --- | --- | --- | --- | --- | --- | --- |\n");
+        int realTotal = 0, realWins = 0;
+        double simWinSum = 0;
+        for (Map.Entry<String, List<LoggedDescent>> c : byCase.entrySet()) {
+            List<LoggedDescent> list = c.getValue();
+            LoggedDescent first = list.get(0);
+            RP rp = simulated.get(first.group() + ';' + first.dungeon().getShortName());
+            int wins = (int) list.stream().filter(LoggedDescent::won).count();
+            double coins = list.stream().mapToDouble(LoggedDescent::coins).average().orElse(0);
+            double simWin = rp == null || rp.runs == 0 ? 0 : 100.0 * rp.wins / rp.runs;
+            double simCoins = rp == null || rp.runs == 0 ? 0 : (rp.coinsWin + rp.coinsLoss) / rp.runs;
+            realTotal += list.size();
+            realWins += wins;
+            simWinSum += simWin * list.size();
+            String gear = gears.get(first.group()).name() + (first.hard() ? " (difficile)" : "")
+                + (first.stake() != STAKE.percent ? " Mise réelle " + first.stake() + " %" : "");
+            out.append(String.format(Locale.ROOT, "| %s | %s | %s | %s | %d | %.0f %% | %.0f %% | %s | %s |%n", gear,
+                first.place().getShortName(), title(first.rank()), first.dungeon().getShortName(), list.size(),
+                100.0 * wins / list.size(), simWin, abbreviated(coins), abbreviated(simCoins)));
+        }
+        if (realTotal > 0) {
+            out.append(String.format(Locale.ROOT, "%nEn tout : %.0f %% de victoires réelles, %.0f %% simulées (même mélange de donjons). "
+                + "Avec %d descentes réelles, la marge d'erreur est d'environ ±%.0f points.%n",
+                100.0 * realWins / realTotal, simWinSum / realTotal, realTotal, 100 / Math.sqrt(realTotal)));
+        }
+        out.append("\n## Équipements\n\n");
+        for (Map.Entry<String, Gear> g : gears.entrySet()) {
+            out.append("- ").append(g.getValue().name()).append(" : ").append(String.join(", ", g.getValue().deck().keySet()))
+                .append(" ; machine ").append(g.getValue().reels()).append('\n');
+        }
+        return out.toString();
+    }
 
     // -------------------------------------------------------------------------
     // Exploration difficile : ./gradlew :core:simulate -Phardplace -Pstake=15 (-PrpRuns=100 -Plevel=N -PhardRank=Roi)
@@ -1228,16 +1428,22 @@ public final class BalanceSimulator {
     // -------------------------------------------------------------------------
 
     private GameController controller(RankBonus bonus, Gear gear) {
-        return new GameController(() -> gear.deck() == null ? CardLoader.loadStarterDeck(reader) : build(gear.deck(), gear.upgraded()),
+        return new GameController(() -> gear.deck() == null ? CardLoader.loadStarterDeck(reader) : build(gear.deck(), gear.upgraded(), gear.plus()),
             cards, !gear.buysAtStall() ? Map.of() : gear.smart() && !OLD_BOT ? explorationStall : stall,
             deck -> new Player("Robot", Player.BASE_HP, deck, bonus, gear.reels()));
     }
 
     /** @return les cartes de {@code deck}, chacune dans sa version « + » quand elle existe. */
     private List<Card> build(Map<String, Integer> deck, boolean upgraded) {
+        return build(deck, upgraded, java.util.Set.of());
+    }
+
+    /** Comme {@link #build(Map, boolean)} ; les cartes de {@code plus} sont aussi en « + ». */
+    private List<Card> build(Map<String, Integer> deck, boolean upgraded, java.util.Set<String> plus) {
         List<Card> built = new ArrayList<>();
         for (Map.Entry<String, Integer> entry : deck.entrySet()) {
-            String id = upgraded && cards.apply(entry.getKey()).isUpgradable() ? Card.upgradedId(entry.getKey()) : entry.getKey();
+            boolean up = upgraded || plus.contains(entry.getKey());
+            String id = up && cards.apply(entry.getKey()).isUpgradable() ? Card.upgradedId(entry.getKey()) : entry.getKey();
             for (int i = 0; i < entry.getValue(); i++) built.add(cards.apply(id));
         }
         return built;
