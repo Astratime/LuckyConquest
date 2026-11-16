@@ -184,6 +184,10 @@ public final class Lexicon {
                 + "donjon faite.", PlayerProfile.DEFEAT_KEEP_PERCENT)),
             term(Lang.t("Rang"), Lang.t("Acheté à la boutique. Plus de PV max, des symboles plus forts et un % de gains "
                 + "en plus sur toute la machine. Tu choisis ton rang à la Table du croupier.")),
+            term(Lang.t("Lieu de ton rang"), Lang.f("Chaque rang a son lieu d'Exploration : la Prairie sans rang, puis "
+                + "un lieu pour deux rangs (Avare et Parieur à la Foire … Roi du casino et Légende au Désert). Un lieu en "
+                + "dessous ne rapporte que {0} % des pièces, deux lieux ou plus en dessous {1} %.",
+                PlayerProfile.LOWER_PLACE_PERCENT, PlayerProfile.FAR_LOWER_PLACE_PERCENT)),
             term(Lang.t("Prestige"), Lang.f("Une fois tous les rangs achetés, la boutique te propose de les rendre. "
                 + "Chaque niveau multiplie par {0} tes PV max, l'attaque et la défense de tes symboles, et ajoute "
                 + "+{1} % de gains, jusqu'au Prestige {2}. Tes pièces repartent à 0, tu gardes tout le reste.",

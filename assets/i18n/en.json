@@ -3030,5 +3030,10 @@
   "Lieu fermé. Termine d'abord {0} en mode difficile.": "Place closed. Clear {0} in hard mode first.",
   "Difficulté : le Désert x{0}.": "Difficulty: the Desert x{0}.",
   "Gains de la machine": "Machine gains",
-  "Chaque source paie sa valeur en tirages : symbole de gains (Couronne {0}), Paire {1}, Bingo {2} à {3}, Jeu bonus bien plus. Puis tout est multiplié par ton rang, ton Prestige, tes cartes, les combinaisons et la carte Bingo. La cagnotte ne l'est jamais.": "Each source pays its value in spins: gains symbol (Crown {0}), Pair {1}, Bingo {2} to {3}, Bonus game much more. Then everything is multiplied by your rank, your Prestige, your cards, the combos and the Bingo card. The pot never is."
+  "Chaque source paie sa valeur en tirages : symbole de gains (Couronne {0}), Paire {1}, Bingo {2} à {3}, Jeu bonus bien plus. Puis tout est multiplié par ton rang, ton Prestige, tes cartes, les combinaisons et la carte Bingo. La cagnotte ne l'est jamais.": "Each source pays its value in spins: gains symbol (Crown {0}), Pair {1}, Bingo {2} to {3}, Bonus game much more. Then everything is multiplied by your rank, your Prestige, your cards, the combos and the Bingo card. The pot never is.",
+  "TON RANG EST AU-DESSUS DE CE LIEU : {0} % DES PIÈCES": "YOUR RANK IS ABOVE THIS PLACE: {0}% OF THE COINS",
+  "Ton rang est au-dessus de ce lieu : tu n'y gagnes que {0} % des pièces.": "Your rank is above this place: you only earn {0}% of the coins here.",
+  "Lieu en dessous de celui de ton rang : {0} % des pièces (un lieu en dessous), {1} % (deux ou plus).": "Place below your rank's place: {0}% of the coins (one place below), {1}% (two or more).",
+  "Lieu de ton rang": "Your rank's place",
+  "Chaque rang a son lieu d'Exploration : la Prairie sans rang, puis un lieu pour deux rangs (Avare et Parieur à la Foire … Roi du casino et Légende au Désert). Un lieu en dessous ne rapporte que {0} % des pièces, deux lieux ou plus en dessous {1} %.": "Each rank has its own Exploration place: the Meadow with no rank, then one place for every two ranks (Miser and Bettor at the Funfair … King of the Casino and Jackpot Legend in the Desert). One place below pays only {0}% of the coins, two or more places below {1}%."
 }
