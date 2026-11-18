@@ -802,8 +802,9 @@ public enum EnemyKind {
     /**
      * Le Croupier, boss secret (idée A1 du 2026-11-11, valeurs par défaut de Claude) : plus fort que le
      * boss du mode sans fin à l'étage 5 (force x351, 18 Md PV) : force x360, 20 Md PV, tirage à 5 000.
+     * Modèle de Puissance (2026-11-18) : PV x0,05 comme le mode sans fin, 1 Md.
      */
-    public static final long CROUPIER_HP = 20_000_000_000L;
+    public static final long CROUPIER_HP = 1_000_000_000L;
     public static final int  CROUPIER_POWER = 36_000;
     public static final int  CROUPIER_SPIN_COST = 5_000;
     /** Phase 2 du Croupier : chaque table truquée tient ce nombre de tirages du joueur. */
@@ -815,8 +816,14 @@ public enum EnemyKind {
     /** Force gagnée à chaque chapitre de la Tour, en % (chapitre n : n x 100 %). */
     public static final int CHAPTER_POWER_STEP = 100;
     public static final int CHAPTER_2_POWER = 2 * CHAPTER_POWER_STEP;
-    /** Multiplicateur des PV des ennemis de la Tour des épreuves (le joueur gagne des rangs à la boutique). */
+    /** Multiplicateur des PV des ennemis de la Tour des épreuves avant le modèle de Puissance (le joueur gagne des rangs). */
     public static final int TOWER_HP_FACTOR = 5;
+    /**
+     * PV des ennemis de la Tour des épreuves en mode normal, en % de ceux de leur fiche, chapitre par chapitre.
+     * Modèle de Puissance (Astra, 2026-11-18) : les bonus d'attaque s'additionnent, les PV redescendent ; réglés au
+     * simulateur pour garder les victoires du joueur moyen à chaque rang (avant : 500 % partout).
+     */
+    static final int[] TOWER_HP_PERCENT = { 125, 110, 40, 50, 65, 125 };
     /** Force des ennemis du chapitre 3, en %. */
     public static final int CHAPTER_3_POWER = 3 * CHAPTER_POWER_STEP;
     /** Force des ennemis des chapitres 4, 5 et 6, en % (choix d'Astra : le rang rendra le joueur plus fort). */
@@ -829,8 +836,8 @@ public enum EnemyKind {
      * Originelle), choix d'Astra (2026-11-06) : PV du boss de chaque chapitre, du 1er au 6e.
      * Les autres ennemis du chapitre gardent leur rapport de PV avec leur boss.
      */
-    static final long[] HARD_BOSS_HP = {
-        20_000_000L, 50_000_000L, 200_000_000L, 800_000_000L, 2_000_000_000L, 10_000_000_000L };
+    static final long[] HARD_BOSS_HP = { // modèle de Puissance (2026-11-18), avant : 20 M, 50 M, 200 M, 800 M, 2 Md, 10 Md
+        1_200_000L, 2_500_000L, 8_000_000L, 40_000_000L, 100_000_000L, 500_000_000L };
 
     /**
      * Force des ennemis de la Tour en mode difficile, en %, du chapitre 1 au 6 (choix d'Astra, 2026-11-06) :
@@ -847,8 +854,8 @@ public enum EnemyKind {
     public static final int ENDLESS_START_PERCENT = 125, ENDLESS_STEP_PERCENT = 10;
     /** Coût d'un tirage dans le mode sans fin : celui du chapitre 6. */
     public static final int ENDLESS_SPIN_COST = 5_000;
-    /** PV de base d'un ennemi et d'un boss du mode sans fin, avant l'étage (chapitre 6 difficile : boss 10 Md). */
-    static final long ENDLESS_ENEMY_HP = 5_000_000_000L, ENDLESS_BOSS_HP = 10_000_000_000L;
+    /** PV de base d'un ennemi et d'un boss du mode sans fin, avant l'étage (chapitre 6 difficile : boss 500 M). */
+    static final long ENDLESS_ENEMY_HP = 250_000_000L, ENDLESS_BOSS_HP = 500_000_000L; // x0,05 (Puissance, 2026-11-18)
     /** Force et PV plafonnés, pour que les calculs restent justes aux étages extrêmes. */
     static final int ENDLESS_MAX_POWER = 1_000_000_000;
     static final long ENDLESS_MAX_HP = Long.MAX_VALUE / 1_000;
@@ -952,7 +959,7 @@ public enum EnemyKind {
         }
         Chapter chapter = Chapter.of(this);
         if (chapter == null) return maxHp;
-        if (!hard.hard()) return (long) maxHp * TOWER_HP_FACTOR;
+        if (!hard.hard()) return (long) maxHp * TOWER_HP_PERCENT[chapter.getNumber() - 1] / 100;
         long bossHp = HARD_BOSS_HP[chapter.getNumber() - 1];
         int  bossBase = chapter.getBoss().maxHp;
         return this == chapter.getBoss() ? bossHp : Math.round((double) bossHp * maxHp / bossBase);

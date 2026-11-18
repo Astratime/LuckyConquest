@@ -43,8 +43,8 @@ class DungeonTest {
     @Test
     void eachPrairieDungeonHasASoldierThenItsKing() {
         for (Dungeon dungeon : Place.PRAIRIE.getDungeons()) {
-            assertEquals(10_000, new Enemy(dungeon.getSoldier()).getMaxHp(), dungeon.name());
-            assertEquals(20_000, new Enemy(dungeon.getKing()).getMaxHp(), dungeon.name());
+            assertEquals(5_500, new Enemy(dungeon.getSoldier()).getMaxHp(), dungeon.name()); // x55 % (Puissance)
+            assertEquals(11_000, new Enemy(dungeon.getKing()).getMaxHp(), dungeon.name());
             assertEquals(100, dungeon.getSoldier().getPower(Difficulty.NORMAL), "force du chapitre 1");
             assertEquals(100, dungeon.getKing().getPower(Difficulty.NORMAL));
             assertTrue(dungeon.getKing().isBoss());

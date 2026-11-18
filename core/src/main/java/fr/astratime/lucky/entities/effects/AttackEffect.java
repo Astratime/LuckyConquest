@@ -12,13 +12,26 @@ import java.util.List;
 public class AttackEffect extends Effect {
 
     private final int bonus;
+    /** Attaque tirée des gains (Fortune du Roi) : convertie en Puissance (Astra, 2026-11-18). */
+    private final boolean asPower;
 
     /** @param bonus bonus d'attaque plat accordé pour ce tour. */
-    public AttackEffect(int bonus) { this.bonus = bonus; }
+    public AttackEffect(int bonus) { this(bonus, false); }
+
+    /**
+     * @param bonus   bonus d'attaque accordé pour ce tour
+     * @param asPower {@code true} : il devient de la Puissance (+1 par coup de référence, voir
+     *                {@link fr.astratime.lucky.entities.context.CombatContext#addFlatAsPower})
+     */
+    public AttackEffect(int bonus, boolean asPower) {
+        this.bonus   = bonus;
+        this.asPower = asPower;
+    }
 
     @Override
     public void apply(TurnContext context) {
-        context.getCombatContext().addAttackBonus(bonus, "Cartes");
+        if (asPower) context.getCombatContext().addFlatAsPower(bonus, "Fortune");
+        else context.getCombatContext().addAttackBonus(bonus, "Cartes");
     }
 
     @Override

@@ -82,8 +82,8 @@ class EndlessRunTest {
         Difficulty firstBoss = Difficulty.endless(EndlessRun.BOSS_EVERY);
         for (EnemyKind boss : EndlessRun.BOSSES) assertTrue(boss.getMaxHp(firstBoss) > hardSixBossHp, boss.name());
         assertEquals(24_000, EnemyKind.endlessPower(1));
-        assertEquals(6_250_000_000L, EnemyKind.endlessHp(1, false));
-        assertEquals(12_500_000_000L, EnemyKind.endlessHp(1, true));
+        assertEquals(312_500_000L, EnemyKind.endlessHp(1, false)); // 250 M x 125 % (Puissance)
+        assertEquals(625_000_000L, EnemyKind.endlessHp(1, true));
     }
 
     @Test

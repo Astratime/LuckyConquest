@@ -22,6 +22,7 @@ import fr.astratime.lucky.entities.events.DamageReflectedEvent;
 import fr.astratime.lucky.entities.events.EnemyDrainEvent;
 import fr.astratime.lucky.entities.events.EnemyHourglassEvent;
 import fr.astratime.lucky.entities.events.EnemyMirrorEvent;
+import fr.astratime.lucky.entities.events.BreachEvent;
 import fr.astratime.lucky.entities.events.EnemyPhaseEvent;
 import fr.astratime.lucky.entities.events.EnemyRouletteEvent;
 import fr.astratime.lucky.entities.events.EnemyStakeEvent;
@@ -240,6 +241,8 @@ public class EnemyTurnResolver {
             enemy.unseal(); // son Sarcophage s'ouvre
             if (enemy.enterPhaseTwo()) {
                 openingEvents.add(new EnemyPhaseEvent(enemy.getPhase(), kind.phaseText(enemy.getPhase())));
+                long breach = enemy.releaseBreach(); // Brèche : le surplus arrêté par sa Garde le frappe
+                if (breach > 0) openingEvents.add(new BreachEvent(breach));
                 if (kind == EnemyKind.GRAND_CROUPIER && enemy.getPhase() == 3) player.getLastingEffects().rig(-1, null, 0);
                 if (kind.hasSarcophagus() && enemy.getPhase() == 2) { // le Pharaon s'enferme et se soigne
                     enemy.seal();

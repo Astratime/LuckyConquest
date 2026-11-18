@@ -89,8 +89,9 @@ class SuitGaugesTest {
 
         player.takeDamage(50);
         CombatContext frenzy = prepare(new AceOfHeartsEffect()).getCombatContext();
-        assertEquals(2f, frenzy.getAttackFactor(), 1e-6, "1 + 2 x 50 % de vie manquante");
-        assertEquals(30, frenzy.getAttackBonus());
+        // Puissance (2026-11-18) : Frénésie +1 (2 x 50 % de vie manquante), Sang +0,3 (30 Sang pour 100 PV max)
+        assertEquals(2.3f, frenzy.getAttackFactor(), 1e-6);
+        assertEquals(0, frenzy.getAttackBonus());
         assertEquals(0, lasting.getBlood());
     }
 
@@ -99,7 +100,8 @@ class SuitGaugesTest {
         lasting.addBlood(1_000_000);
         assertEquals(10_000, lasting.getBlood(), "jauge de Sang plafonnée à 10 000 (Astra)");
         CombatContext frenzy = prepare(new AceOfHeartsEffect()).getCombatContext();
-        assertEquals(10_000, frenzy.getAttackBonus(), "l'As de Coeur ajoute donc +10 000 au plus");
+        assertEquals(1f + CombatContext.GAUGE_POWER_CAP, frenzy.getAttackFactor(), 1e-6,
+            "Sang : Puissance +1 par PV max de Sang, plafonnée");
     }
 
     @Test
@@ -114,7 +116,8 @@ class SuitGaugesTest {
 
         lasting.addVault(990);
         TurnContext turn = prepare(new AceOfDiamondsEffect());
-        assertEquals(1000 / 10, turn.getCombatContext().getAttackBonus(), "As de Carreau : +1 d'attaque pour 10 de Coffre");
+        assertEquals(1f + 1000 / 10 / 50f, turn.getCombatContext().getAttackFactor(), 1e-6,
+            "As de Carreau : 1 000 de Coffre = 100 d'attaque, soit Puissance +2 (coup de référence 50)");
         assertEquals(0, lasting.getVault(), "le Coffre est vidé");
     }
 
@@ -147,8 +150,8 @@ class SuitGaugesTest {
 
         lasting.addVault(LastingEffects.MAX_VAULT);
         assertEquals(150_000, lasting.getVault(), "Coffre plafonné à 150 000 (Astra)");
-        assertEquals(15_000, prepare(new AceOfDiamondsEffect()).getCombatContext().getAttackBonus(),
-            "Coffre plein : +15 000 d'attaque");
+        assertEquals(1f + CombatContext.GAUGE_POWER_CAP, prepare(new AceOfDiamondsEffect()).getCombatContext().getAttackFactor(),
+            1e-6, "Coffre plein : Puissance plafonnée");
     }
 
     @Test

@@ -20,7 +20,7 @@ class TowerHardModeTest {
 
     @Test
     void hardModeGivesEachChapterBossAstrasHpAndDoublesThePowerEachChapter() {
-        long[] bossHp = {20_000_000L, 50_000_000L, 200_000_000L, 800_000_000L, 2_000_000_000L, 10_000_000_000L};
+        long[] bossHp = {1_200_000L, 2_500_000L, 8_000_000L, 40_000_000L, 100_000_000L, 500_000_000L}; // Puissance (2026-11-18)
         int[] power = {600, 1_200, 2_400, 4_800, 9_600, 19_200};
         for (Chapter chapter : Chapter.values()) {
             int i = chapter.getNumber() - 1;
@@ -42,8 +42,8 @@ class TowerHardModeTest {
                 assertEquals(Math.round(challenger.getMaxHp(Difficulty.NORMAL) * ratio), challenger.getMaxHp(Difficulty.HARD), challenger.name());
             }
         }
-        assertEquals(5_000_000L, EnemyKind.CROUPIER.getMaxHp(Difficulty.HARD), "chapitre 1 : le croupier a le quart du boss");
-        assertEquals(4_500_000_000L, EnemyKind.OMBRE.getMaxHp(Difficulty.HARD));
+        assertEquals(300_000L, EnemyKind.CROUPIER.getMaxHp(Difficulty.HARD), "chapitre 1 : le croupier a le quart du boss");
+        assertEquals(225_000_000L, EnemyKind.OMBRE.getMaxHp(Difficulty.HARD));
     }
 
     @Test
@@ -56,16 +56,16 @@ class TowerHardModeTest {
 
     @Test
     void normalModeExplorationAndTrainingDoNotChange() {
-        assertEquals(EnemyKind.MACHINE_ORIGINELLE.getMaxHp(Difficulty.NORMAL), 10_000_000L);
-        assertEquals(20_000L, EnemyKind.ROI_PIQUE.getMaxHp(Difficulty.NORMAL), "l'Exploration normale ne change pas");
+        assertEquals(2_500_000L, EnemyKind.MACHINE_ORIGINELLE.getMaxHp(Difficulty.NORMAL)); // 2 M x 125 % (Puissance)
+        assertEquals(11_000L, EnemyKind.ROI_PIQUE.getMaxHp(Difficulty.NORMAL), "l'Exploration normale ne change pas");
         assertEquals(EnemyKind.ENTRAINEMENT.getPower(Difficulty.NORMAL), EnemyKind.ENTRAINEMENT.getPower(Difficulty.HARD), "l'Entraînement non plus");
         assertEquals(600, EnemyKind.MACHINE_ORIGINELLE.getPower(Difficulty.NORMAL));
 
-        // Une Machine à 10 Md de PV encaisse et se soigne sans déborder.
+        // Une Machine à 500 M de PV encaisse et se soigne sans déborder.
         Enemy machine = new Enemy(EnemyKind.MACHINE_ORIGINELLE, true);
-        assertEquals(3_000_000_000L, machine.takeDamage(3_000_000_000L));
-        assertEquals(7_000_000_000L, machine.getHp());
-        assertTrue(machine.heal(1_000_000_000L) > 0);
+        assertEquals(150_000_000L, machine.takeDamage(150_000_000L));
+        assertEquals(350_000_000L, machine.getHp());
+        assertTrue(machine.heal(100_000_000L) > 0);
         assertFalse(new Enemy(EnemyKind.MACHINE_ORIGINELLE).isHard());
     }
 }

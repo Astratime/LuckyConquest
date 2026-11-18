@@ -58,6 +58,14 @@ class DungeonCardsTest {
         return turn;
     }
 
+    /**
+     * L'attaque des Fortunes devient de la Puissance (Astra, 2026-11-18) : +1 par coup de référence (50 sans rang),
+     * au plus {@code GAUGE_POWER_CAP}.
+     */
+    private static float fortunePower(int attack) {
+        return (float) (1 + Math.min(fr.astratime.lucky.entities.context.CombatContext.GAUGE_POWER_CAP, attack / 50.0));
+    }
+
     @Test
     void whetstoneAddsThreeBladesAndAttack() {
         TurnContext turn = play("pierre_a_aiguiser");
@@ -113,14 +121,14 @@ class DungeonCardsTest {
     void fullPurseGivesGainsThenAttackFromThem() {
         TurnContext turn = play("bourse_garnie");
         assertEquals(1500, player.getGains());
-        assertEquals(75, turn.getCombatContext().getAttackBonus(), "5 % de 1 500");
+        assertEquals(fortunePower(75), turn.getCombatContext().getAttackFactor(), 1e-4, "5 % de 1 500");
     }
 
     @Test
     void fullPurseAttackIsCappedAtThirtySpinCosts() {
         player.addGains(10_000_000);
         TurnContext turn = play("bourse_garnie");
-        assertEquals(3_000, turn.getCombatContext().getAttackBonus(), "30 x 100 au plus (au lieu de 500 000)");
+        assertEquals(fortunePower(3_000), turn.getCombatContext().getAttackFactor(), 1e-4, "30 x 100 au plus (au lieu de 500 000)");
     }
 
     @Test
@@ -128,7 +136,7 @@ class DungeonCardsTest {
         player.addGains(2000);
         TurnContext turn = play("fortune_du_roi");
         assertEquals(2140, player.getGains(), "+7 % de 2 000");
-        assertEquals(14, turn.getCombatContext().getAttackBonus(), "10 % des 140 gagnés");
+        assertEquals(fortunePower(14), turn.getCombatContext().getAttackFactor(), 1e-4, "10 % des 140 gagnés");
     }
 
     @Test
@@ -137,14 +145,14 @@ class DungeonCardsTest {
         player.addGains(2_800_000);
         TurnContext turn = play("fortune_du_roi", 140_000);
         assertEquals(2_996_000, player.getGains(), "+7 % de 2 800 000");
-        assertEquals(420, turn.getCombatContext().getAttackBonus(), "10 % des 196 000 gagnés, ramenés de 140 000 à 3 000");
+        assertEquals(fortunePower(420), turn.getCombatContext().getAttackFactor(), 1e-4, "10 % des 196 000 gagnés, ramenés de 140 000 à 3 000");
     }
 
     @Test
     void kingsFortuneAttackIsCappedAtSevenPowerSpinCosts() {
         player.addGains(1_000_000_000);
         TurnContext turn = play("fortune_du_roi", 140_000);
-        assertEquals(21_000, turn.getCombatContext().getAttackBonus(), "Désert : 7 x 3 000 au plus (Astra, 2026-10-30)");
+        assertEquals(fortunePower(21_000), turn.getCombatContext().getAttackFactor(), 1e-4, "Désert : 7 x 3 000 au plus (Astra, 2026-10-30)");
     }
 
     @Test
@@ -152,7 +160,7 @@ class DungeonCardsTest {
         player.addGains(2000);
         TurnContext turn = play(Card.upgradedId("fortune_du_roi"));
         assertEquals(2200, player.getGains(), "+10 % de 2 000");
-        assertEquals(30, turn.getCombatContext().getAttackBonus(), "15 % des 200 gagnés");
+        assertEquals(fortunePower(30), turn.getCombatContext().getAttackFactor(), 1e-4, "15 % des 200 gagnés");
     }
 
     @Test
@@ -160,14 +168,14 @@ class DungeonCardsTest {
         player.addGains(10_000_000);
         TurnContext turn = play("fortune_du_roi");
         assertEquals(10_700_000, player.getGains(), "les gains ne sont pas limités");
-        assertEquals(700, turn.getCombatContext().getAttackBonus(), "Prairie : 7 x 100 au plus (au lieu de 70 000)");
+        assertEquals(fortunePower(700), turn.getCombatContext().getAttackFactor(), 1e-4, "Prairie : 7 x 100 au plus (au lieu de 70 000)");
     }
 
     @Test
     void kingsFortuneCapFollowsThePlaceAndThePlusVersion() {
         player.addGains(100_000_000);
-        assertEquals(35_000, play("fortune_du_roi", 5_000).getCombatContext().getAttackBonus(), "Tour, chapitre 6 : 7 x 5 000");
-        assertEquals(1_500, play(Card.upgradedId("fortune_du_roi"), 150).getCombatContext().getAttackBonus(),
+        assertEquals(fortunePower(35_000), play("fortune_du_roi", 5_000).getCombatContext().getAttackFactor(), 1e-4, "Tour, chapitre 6 : 7 x 5 000");
+        assertEquals(fortunePower(1_500), play(Card.upgradedId("fortune_du_roi"), 150).getCombatContext().getAttackFactor(), 1e-4,
             "version + : 10 x le tirage");
     }
 

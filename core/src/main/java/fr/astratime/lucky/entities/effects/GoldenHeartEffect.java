@@ -19,7 +19,7 @@ public class GoldenHeartEffect extends Effect {
     public void apply(TurnContext context) { context.getCombatContext().addGoldenHeart(); }
 
     @Override
-    public String getDescription() { return Lang.t("Ce tour, chaque symbole d'attaque gagne en attaque le bonus Coeur d'or de ton rang (de 70 pour Avare à 2 800 pour Légende) plus 10 par % de gains de tes cartes."); }
+    public String getDescription() { return Lang.t("Ce tour, le bonus Coeur d'or de ton rang (de 70 pour Avare à 2 800 pour Légende) plus 10 par % de gains de tes cartes devient de la Puissance : +1 par coup de référence (+5 au plus)."); }
 
     @Override
     public List<EffectPopup> getPopups() {

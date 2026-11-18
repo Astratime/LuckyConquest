@@ -61,13 +61,13 @@ class KingPhasesTest {
         king.resetDamageTaken();
         king.takeDamage(2000);
         long before = king.getHp();
-        assertEquals(1000, king.heal(1000), "phase 1 : soin entier");
+        assertEquals(500, king.heal(500), "phase 1 : soin entier (au plus 5 % de ses PV max)");
         king.resetDamageTaken(); // un nouveau tour : sa Garde repart
         king.takeDamage(1000);
         assertTrue(king.enterPhaseTwo());
         assertEquals(EnemyKind.KING_PHASE_ATTACK_PERCENT, king.attackPercent());
-        assertEquals(1000 * EnemyKind.KING_PHASE_HEAL_PERCENT / 100, king.heal(1000), "phase 2 : soin réduit");
-        assertTrue(king.getHp() < before + 1000);
+        assertEquals(500 * EnemyKind.KING_PHASE_HEAL_PERCENT / 100, king.heal(500), "phase 2 : soin réduit");
+        assertTrue(king.getHp() < before + 500);
 
         Enemy soldier = new Enemy(EnemyKind.SOLDAT_COEUR);
         soldier.takeDamage(soldier.getMaxHp() - 10);

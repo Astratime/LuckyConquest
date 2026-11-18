@@ -79,6 +79,7 @@ public class Enemy {
     private       String      notice;
     /** Il a atteint le seuil de sa phase suivante : il y passe à son prochain tour. */
     private       boolean     phaseWallReached;
+    private       long        breach;            // Brèche : surplus arrêté par la Garde (voir releaseBreach)
     /** Famille de cartes interdite tout le combat (le Portier), ou {@code null}. */
     private       CardFamily  bannedFamily;
     /** As sombres gardés en copie des achats du joueur (le Pilleur). */
@@ -208,6 +209,8 @@ public class Enemy {
         if (lastDrawPending) return 0;                  // à 1 PV, elle attend le Dernier tirage : plus rien ne la touche
         long wall = phaseWall();
         if (wall > 0 && damage > 0 && hp - damage <= wall) { // Garde : au seuil de phase, invincible jusqu'à son tour
+            long stopped = damage - Math.max(0, hp - wall);
+            if (stopped > 0) breach = Math.min((long) Math.ceil(maxHp * BREACH_PERCENT / 100.0), breach + stopped);
             damage = Math.max(0, hp - wall);
             phaseWallReached = true;
             notice = kind == EnemyKind.MACHINE_ORIGINELLE ? Lang.f("ELLE RÉSISTE : PHASE {0} À SON TOUR", phase + 1)
@@ -235,6 +238,30 @@ public class Enemy {
 
     /** @return {@code true} s'il a atteint le seuil de sa phase : il passera à la suivante à son tour. */
     public boolean isPhaseWallReached() { return phaseWallReached; }
+
+    /** Brèche : part des PV max que le surplus arrêté par la Garde peut garder, en % (Astra, 2026-11-18). */
+    public static final int BREACH_PERCENT = 25;
+
+    /** @return le surplus arrêté par sa Garde, gardé pour la Brèche ({@link #BREACH_PERCENT} % de ses PV max au plus). */
+    public long getBreach() { return breach; }
+
+    /**
+     * Brèche : juste après son changement de phase, le surplus gardé le frappe (sa défense n'y fait rien). Elle ne
+     * peut ni le tuer ni lui faire passer le seuil de sa nouvelle phase ; ce qui dépasse est perdu.
+     *
+     * @return les PV qu'elle lui retire
+     */
+    public long releaseBreach() {
+        long amount = breach;
+        breach = 0;
+        if (amount <= 0 || isDefeated()) return 0;
+        long wall = phaseWall();
+        long room = Math.max(0, hp - Math.max(1, wall));
+        long lost = Math.min(amount, room);
+        hp -= lost;
+        damageTaken += lost;
+        return lost;
+    }
 
     /** @return ce qu'il vient de faire à un coup (coup annulé, résistance), une seule fois, ou {@code null}. */
     public String takeNotice() {

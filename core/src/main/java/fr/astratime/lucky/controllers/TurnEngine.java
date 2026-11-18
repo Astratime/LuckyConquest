@@ -391,7 +391,7 @@ public class TurnEngine {
                     shieldReflect, combat.getReflectAttackPercent(), combat.getReflectHpPercent(),
                     (long) player.getRankBonus().attack() * combat.getRankFactor()
                         + player.getRankBonus().guardBonus(player.getRankBonus().attack() * combat.getRankFactor()),
-                    (double) combat.getAttackFactor() * combat.getSymbolPower());
+                    combat.attackMultiplier(combat.getSymbolPower()));
                 enemyTurn = enemyTurnResolver.resolve(enemy, player, reflection, thorns);
             }
         }

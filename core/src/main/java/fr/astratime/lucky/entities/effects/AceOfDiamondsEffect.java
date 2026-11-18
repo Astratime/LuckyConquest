@@ -54,18 +54,18 @@ public class AceOfDiamondsEffect extends Effect {
 
         int vault  = combat.getPlayer().getLastingEffects().consumeVault();
         int attack = vault / VAULT_PER_ATTACK;
-        combat.addAttackBonus(attack, "Coffre");
+        String power = CombatContext.formatPower(combat.addFlatAsPower(attack, "Coffre")); // Astra, 2026-11-18
         combat.addVaultBurst(vault); // sans symbole d'attaque au tirage, le Coffre explose
-        context.addEvent(new CardBonusEvent(Lang.f("Coffre : attaque +{0}", attack), List.of(
-            new EffectPopup(Lang.f("COFFRE : ATTAQUE +{0}", attack), EffectPopup.Style.ATTACK, PopupScale.MAX_INTENSITY))));
+        context.addEvent(new CardBonusEvent(Lang.f("Coffre : puissance +{0}", power), List.of(
+            new EffectPopup(Lang.f("COFFRE : PUISSANCE +{0}", power), EffectPopup.Style.ATTACK, PopupScale.MAX_INTENSITY))));
     }
 
     @Override
     public String getDescription() {
         return Lang.f("Un symbole d'attaque devient plus fréquent (+{2}), ou de défense si la machine n'en a pas. "
-            + "Vide le Coffre : +1 d'attaque pour {0} de Coffre (+{1} au plus, Coffre plein). "
+            + "Vide le Coffre : Puissance +1 pour {0} fois ton coup de référence de Coffre (+{1} au plus). "
             + "Sans symbole d'attaque au tirage, le Coffre explose sur l'ennemi ({3} au plus)",
-            VAULT_PER_ATTACK, Lang.big(LastingEffects.MAX_VAULT / VAULT_PER_ATTACK), Math.round(BOOST_AMOUNT * power),
+            VAULT_PER_ATTACK, CombatContext.GAUGE_POWER_CAP, Math.round(BOOST_AMOUNT * power),
             Lang.big(LastingEffects.MAX_VAULT));
     }
 

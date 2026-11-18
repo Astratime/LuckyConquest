@@ -52,7 +52,7 @@ class HardExplorationTest {
 
     @Test
     void normalModeIsUnchanged() {
-        assertEquals(20_000L, EnemyKind.ROI_PIQUE.getMaxHp(Difficulty.NORMAL));
+        assertEquals(11_000L, EnemyKind.ROI_PIQUE.getMaxHp(Difficulty.NORMAL)); // 20 000 x 55 % (Puissance)
         assertEquals(100, EnemyKind.ROI_PIQUE.getSpinCost(Difficulty.NORMAL));
         assertEquals(140_000, new Enemy(EnemyKind.DRAGON).getSpinCost());
         assertEquals(EnemyKind.DRAGON.getBaseDefense(Difficulty.NORMAL), EnemyKind.DRAGON.fortified(60_000, Difficulty.NORMAL));
