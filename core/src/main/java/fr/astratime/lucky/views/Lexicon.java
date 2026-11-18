@@ -11,6 +11,7 @@ import fr.astratime.lucky.entities.EnemyMaluses;
 import fr.astratime.lucky.entities.LastingEffects;
 import fr.astratime.lucky.entities.SpinEconomy;
 import fr.astratime.lucky.entities.Symbol;
+import fr.astratime.lucky.entities.context.CombatContext;
 import fr.astratime.lucky.entities.effects.CorruptionEffect;
 import fr.astratime.lucky.entities.enemy.EnemyKind;
 import fr.astratime.lucky.entities.exploration.DungeonRun;
@@ -104,6 +105,12 @@ public final class Lexicon {
                 PlayerProfile.DECK_SIZE)),
             term(Lang.t("Combinaison"), Lang.t("Formée par les cartes à rang jouées ce tour. Les combinaisons "
                 + "s'additionnent et multiplient tout le tirage : attaque, bouclier et gains.")),
+            term(Lang.t("Puissance"), Lang.t("Multiplicateur de tes coups pour ce tour. Tous les bonus d'attaque xN "
+                + "s'additionnent : chacun ajoute N - 1 (combinaisons, Bingo, cartes, jauges). Seuls les malus la "
+                + "multiplient. Ex : x10, x5 et x2 donnent x15.")),
+            term(Lang.t("Coup de référence"), Lang.f("Un symbole d'attaque moyen ({0}) plus le bonus d'attaque de ton "
+                + "rang. Le Sang, le Coffre, les Fortunes et le Coeur d'or donnent +1 de Puissance par coup de référence "
+                + "(+{1} au plus chacun).", CombatContext.REFERENCE_SYMBOL, CombatContext.GAUGE_POWER_CAP)),
             term(comboName(Combo.PAIRE), Lang.f("2 cartes du même rang : x{0}.", number(Combo.PAIRE.getFactor()))),
             term(comboName(Combo.BRELAN), Lang.f("3 cartes du même rang : x{0}. Il compte aussi la Paire (x{1}).",
                 number(Combo.BRELAN.getFactor()), number(Combo.BRELAN.getFactor() + Combo.PAIRE.getFactor()))),
@@ -131,11 +138,12 @@ public final class Lexicon {
             term(Lang.t("Perçage"), Lang.t("Tes Piques font passer une part de chaque coup à travers la défense "
                 + "ennemie : de 10 % (petites Piques) à 80 % (As). La meilleure compte.")),
             term(Lang.t("Sang"), Lang.f("Jauge de Coeur, jusqu'à {0}. Le soin au-delà de tes PV max s'y garde. "
-                + "L'As de Coeur l'ajoute à ton attaque.", Lang.big(LastingEffects.MAX_BLOOD))),
+                + "L'As de Coeur la vide en Puissance : +1 par PV max de Sang (+{1} au plus).",
+                Lang.big(LastingEffects.MAX_BLOOD), CombatContext.GAUGE_POWER_CAP)),
             term(Lang.t("Drain de vie"), Lang.t("Tes Coeurs te soignent d'une part des dégâts infligés. Le surplus remplit le Sang.")),
             term(Lang.t("Berserk"), Lang.t("As de Coeur : plus tu as perdu de vie, plus ton attaque est multipliée.")),
             term(Lang.t("Coffre"), Lang.f("Jauge de Carreau, jusqu'à {0}. Ton bouclier inutilisé s'y garde, multiplié "
-                + "par tes Carreaux. L'As de Carreau le vide en attaque.", Lang.big(LastingEffects.MAX_VAULT))),
+                + "par tes Carreaux. L'As de Carreau le vide en Puissance.", Lang.big(LastingEffects.MAX_VAULT))),
             term(Lang.t("Riposte"), Lang.t("Carreaux : si un symbole de défense sort et que l'ennemi attaque, "
                 + "tu lui renvoies une part de ses coups, plus 20 % du Coffre.")),
             term(Lang.t("Bonne étoile"), Lang.f("Jauge de Trèfle, jusqu'à {0}. Chaque point donne 1 % de chance de "
@@ -154,8 +162,11 @@ public final class Lexicon {
         return new Category(Lang.t("Les ennemis"), List.of(
             term(Lang.t("Défense ennemie"), Lang.t("Elle absorbe tes coups et s'use à chaque coup. "
                 + "Elle se reforme à son tour.")),
-            term(Lang.t("Garde"), Lang.t("Ses PV s'arrêtent au seuil de sa phase. Le surplus est perdu et il est "
-                + "invincible jusqu'à son tour, où il change de phase.")),
+            term(Lang.t("Garde"), Lang.t("Ses PV s'arrêtent au seuil de sa phase. Il est invincible jusqu'à son tour, "
+                + "où il change de phase. Le surplus n'est pas perdu : voir Brèche.")),
+            term(Lang.t("Brèche"), Lang.f("Le surplus de dégâts arrêté par la Garde est gardé, jusqu'à {0} % de ses PV "
+                + "max. Il le frappe juste après son changement de phase, sans lui faire passer le seuil suivant.",
+                Enemy.BREACH_PERCENT)),
             term(Lang.t("Phase 2 des rois"), Lang.f("Sous la moitié de ses PV, un roi prend le symbole d'un autre ennemi. "
                 + "Attaques +{0} %, soins -{1} %.", EnemyKind.KING_PHASE_ATTACK_PERCENT - 100,
                 100 - EnemyKind.KING_PHASE_HEAL_PERCENT)),

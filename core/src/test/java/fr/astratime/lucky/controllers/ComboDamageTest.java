@@ -55,47 +55,46 @@ class ComboDamageTest {
     });
 
     /**
-     * Chaque Triple Sept frappe de (90 + attaque du rang + 20 par Lame)
-     * x (1 + 0,5 par Lame) x 2 (Corruption) x 4,5 (Paire des deux As)
-     * x 5 (Bingo) ; le pistolet rejoue ensuite le coup le plus fort du tour, tel
+     * Chaque Triple Sept frappe de (90 + attaque du rang + 20 par Lame) x la Puissance du tour (2026-11-18 : les
+     * bonus s'additionnent) : 1 + 0,5 par Lame + 1 (Corruption x2) + 3,5 (Paire des deux As x4,5) + 4 (Bingo x5) ; le pistolet rejoue ensuite le coup le plus fort du tour, tel
      * qu'il a frappé, x4 (Roulette gagnante). AUCUN : pas de rang.
      */
     @ParameterizedTest(name = "{0} gains, rang {1} : {6} dégâts")
     @CsvSource({
         // gains, rang, As de Pique (consommé, Lames), par Triple Sept, pistolet, total
-        "10000, AUCUN, 1000, 4, 22950, 91800, 160620",
-        "10000, AVARE, 1000, 4, 36450, 145800, 255120",
-        "10000, PARIEUR, 1000, 4, 49950, 199800, 349620",
-        "10000, FLAMBEUR, 1000, 4, 70200, 280800, 491370",
-        "10000, HABITUE, 1000, 4, 90450, 361800, 633120",
-        "10000, REQUIN, 1000, 4, 184950, 739800, 1294620",
-        "10000, GROS_BONNET, 1000, 4, 205200, 820800, 1436370",
-        "10000, BARON, 1000, 4, 319950, 1279800, 2239620",
-        "10000, MAGNAT, 1000, 4, 400950, 1603800, 2806620",
-        "10000, ROI_DU_CASINO, 1000, 4, 765450, 3061800, 5358120",
-        "10000, LEGENDE, 1000, 4, 967950, 3871800, 6775620",
-        "100000, AUCUN, 2500, 10, 78300, 313200, 548070",
-        "100000, AVARE, 2500, 10, 105300, 421200, 737070",
-        "100000, PARIEUR, 2500, 10, 132300, 529200, 926070",
-        "100000, FLAMBEUR, 2500, 10, 172800, 691200, 1209570",
-        "100000, HABITUE, 2500, 10, 213300, 853200, 1493070",
-        "100000, REQUIN, 2500, 10, 402300, 1609200, 2816070",
-        "100000, GROS_BONNET, 2500, 10, 442800, 1771200, 3099570",
-        "100000, BARON, 2500, 10, 672300, 2689200, 4706070",
-        "100000, MAGNAT, 2500, 10, 834300, 3337200, 5840070",
-        "100000, ROI_DU_CASINO, 2500, 10, 1563300, 6253200, 10943070",
-        "100000, LEGENDE, 2500, 10, 1968300, 7873200, 13778070",
-        "1000000, AUCUN, 2500, 10, 78300, 313200, 548070",
-        "1000000, AVARE, 2500, 10, 105300, 421200, 737070",
-        "1000000, PARIEUR, 2500, 10, 132300, 529200, 926070",
-        "1000000, FLAMBEUR, 2500, 10, 172800, 691200, 1209570",
-        "1000000, HABITUE, 2500, 10, 213300, 853200, 1493070",
-        "1000000, REQUIN, 2500, 10, 402300, 1609200, 2816070",
-        "1000000, GROS_BONNET, 2500, 10, 442800, 1771200, 3099570",
-        "1000000, BARON, 2500, 10, 672300, 2689200, 4706070",
-        "1000000, MAGNAT, 2500, 10, 834300, 3337200, 5840070",
-        "1000000, ROI_DU_CASINO, 2500, 10, 1563300, 6253200, 10943070",
-        "1000000, LEGENDE, 2500, 10, 1968300, 7873200, 13778070",
+        "10000, AUCUN, 1000, 4, 1955, 7820, 13655",
+        "10000, AVARE, 1000, 4, 3105, 12420, 21705",
+        "10000, PARIEUR, 1000, 4, 4255, 17020, 29755",
+        "10000, FLAMBEUR, 1000, 4, 5980, 23920, 41830",
+        "10000, HABITUE, 1000, 4, 7705, 30820, 53905",
+        "10000, REQUIN, 1000, 4, 15755, 63020, 110255",
+        "10000, GROS_BONNET, 1000, 4, 17480, 69920, 122330",
+        "10000, BARON, 1000, 4, 27255, 109020, 190755",
+        "10000, MAGNAT, 1000, 4, 34155, 136620, 239055",
+        "10000, ROI_DU_CASINO, 1000, 4, 65205, 260820, 456405",
+        "10000, LEGENDE, 1000, 4, 82455, 329820, 577155",
+        "100000, AUCUN, 2500, 10, 4205, 16820, 29405",
+        "100000, AVARE, 2500, 10, 5655, 22620, 39555",
+        "100000, PARIEUR, 2500, 10, 7105, 28420, 49705",
+        "100000, FLAMBEUR, 2500, 10, 9280, 37120, 64930",
+        "100000, HABITUE, 2500, 10, 11455, 45820, 80155",
+        "100000, REQUIN, 2500, 10, 21605, 86420, 151205",
+        "100000, GROS_BONNET, 2500, 10, 23780, 95120, 166430",
+        "100000, BARON, 2500, 10, 36105, 144420, 252705",
+        "100000, MAGNAT, 2500, 10, 44805, 179220, 313605",
+        "100000, ROI_DU_CASINO, 2500, 10, 83955, 335820, 587655",
+        "100000, LEGENDE, 2500, 10, 105705, 422820, 739905",
+        "1000000, AUCUN, 2500, 10, 4205, 16820, 29405",
+        "1000000, AVARE, 2500, 10, 5655, 22620, 39555",
+        "1000000, PARIEUR, 2500, 10, 7105, 28420, 49705",
+        "1000000, FLAMBEUR, 2500, 10, 9280, 37120, 64930",
+        "1000000, HABITUE, 2500, 10, 11455, 45820, 80155",
+        "1000000, REQUIN, 2500, 10, 21605, 86420, 151205",
+        "1000000, GROS_BONNET, 2500, 10, 23780, 95120, 166430",
+        "1000000, BARON, 2500, 10, 36105, 144420, 252705",
+        "1000000, MAGNAT, 2500, 10, 44805, 179220, 313605",
+        "1000000, ROI_DU_CASINO, 2500, 10, 83955, 335820, 587655",
+        "1000000, LEGENDE, 2500, 10, 105705, 422820, 739905",
     })
     void asCoeurAsPiqueRouletteCorruptionEtBingoTripleSept(int gains, String rank, int spadesConsumed, int blades,
                                                           long perSymbol, long pistol, long total)
@@ -131,7 +130,8 @@ class ComboDamageTest {
             turn.getSymbols());
 
         long base = 90 + rankBonus.attack() + blades * PreparationResolver.BLADE_ATTACK;
-        assertEquals(perSymbol, Math.round(base * (1 + 0.5 * blades) * 2 * 4.5 * 5));
+        // Puissance (2026-11-18) : les bonus s'additionnent : Lames +0,5 chacune, Corruption +1, Brelan +3,5, Bingo +4
+        assertEquals(perSymbol, Math.round(base * (1 + 0.5 * blades + 1 + 3.5 + 4)));
 
         List<EnemyDamagedEvent> hits = symbolHits(turn);
         assertEquals(3, hits.size());

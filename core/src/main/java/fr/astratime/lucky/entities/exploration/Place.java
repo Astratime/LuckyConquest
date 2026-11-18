@@ -110,17 +110,20 @@ public enum Place {
     }
 
     /**
-     * @return les PV de ses ennemis, en % de ceux de leur fiche : relevés comme le bonus d'attaque du rang le plus
-     *         fort prévu pour le lieu (Astra, 2026-10-30) : Mines (Gros bonnet 1 000 -> 1 350), Casino (Magnat
-     *         2 000 -> 2 800), Désert (Légende 4 000 -> 7 000,
-     *         puis doublés le 2026-10-30 : un joueur qui maîtrise ses combos battait le Volcan sans peine)
+     * @return les PV de ses ennemis, en % de ceux de leur fiche. Modèle de Puissance (Astra, 2026-11-18) : les
+     *         bonus d'attaque s'additionnent, les gros tours ne font plus des centaines de fois les PV, donc les PV
+     *         redescendent à environ 90 coups de base du meilleur rang du lieu pour un soldat (le double pour un roi),
+     *         réglés au simulateur pour garder les victoires du joueur moyen (avant : Mines 135, Casino 140, Désert
+     *         350, les autres 100)
      */
     public int getHpPercent() {
         return switch (this) {
-            case MINES  -> 135;
-            case CASINO -> 140;
-            case DESERT -> 350;
-            default     -> 100;
+            case PRAIRIE -> 55;
+            case FOIRE   -> 32;
+            case PORT    -> 18;
+            case MINES   -> 19;
+            case CASINO  -> 15;
+            case DESERT  -> 42;
         };
     }
 

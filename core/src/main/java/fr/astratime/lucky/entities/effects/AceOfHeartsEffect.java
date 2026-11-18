@@ -52,19 +52,22 @@ public class AceOfHeartsEffect extends Effect {
         float factor = 1f + FRENZY_PER_MISSING_HP * power * (1f - player.getHpRatio());
         int   blood  = player.getLastingEffects().consumeBlood();
         combat.multiplyAttack(factor, "As de Coeur");
-        combat.addAttackBonus(blood, "Sang");
+        // Sang (Astra, 2026-11-18) : Puissance +1 par PV max stockés, au plus +GAUGE_POWER_CAP
+        double bloodPower = Math.min(CombatContext.GAUGE_POWER_CAP, (double) blood / player.getMaxHp());
+        combat.addAttackPower(bloodPower, "Sang");
         String times = String.valueOf(Math.round(factor * 10f) / 10f);
-        context.addEvent(new CardBonusEvent(Lang.f("Frenesie : attaque x{0}, sang +{1}", times, blood), List.of(
+        String power = CombatContext.formatPower(bloodPower);
+        context.addEvent(new CardBonusEvent(Lang.f("Frenesie : attaque x{0}, sang : puissance +{1}", times, power), List.of(
             new EffectPopup(Lang.f("FRÉNÉSIE : ATTAQUE x{0}", times), EffectPopup.Style.DRAIN, PopupScale.MAX_INTENSITY),
-            new EffectPopup(Lang.f("SANG : ATTAQUE +{0}", blood), EffectPopup.Style.DRAIN, PopupScale.SECONDARY_INTENSITY))));
+            new EffectPopup(Lang.f("SANG : PUISSANCE +{0}", power), EffectPopup.Style.DRAIN, PopupScale.SECONDARY_INTENSITY))));
     }
 
     @Override
     public String getDescription() {
         return Lang.f("Frénésie : un symbole d'attaque devient plus fréquent. Berserk : plus tu as perdu de vie, plus "
-            + "ton attaque est multipliée (x1 à pleine vie, x{0} à mi-vie, x{1} à 10 % de vie). Tout le Sang s'ajoute "
-            + "à l'attaque ({2} au plus), avant ce multiplicateur",
-            frenzyText(0.5f), frenzyText(0.9f), Lang.big(LastingEffects.MAX_BLOOD));
+            + "ton attaque est multipliée (x1 à pleine vie, x{0} à mi-vie, x{1} à 10 % de vie). Tout le Sang est vidé : "
+            + "Puissance +1 par PV max de Sang (+{2} au plus)",
+            frenzyText(0.5f), frenzyText(0.9f), CombatContext.GAUGE_POWER_CAP);
     }
 
     /** @return le multiplicateur de Frénésie avec {@code missing} de vie perdue, arrondi au dixième (ex : "2,8") */

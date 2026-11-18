@@ -59,7 +59,7 @@ public class FortuneEffect extends Effect {
         if (gainPercent > 0) {
             double added = context.addGainsPercent(gainPercent);
             int attack = attackFrom(added, context.getSpinCost());
-            context.queueForSpin(new AttackEffect(attack));
+            context.queueForSpin(new AttackEffect(attack, true));
             context.addPopups(List.of(
                 EffectPopup.scaled(Lang.f("GAINS +{0}", Lang.big(added)), EffectPopup.Style.GAINS, added, PopupScale.SPIN_GAINS),
                 new EffectPopup(Lang.f("ATTAQUE +{0}", Lang.big(attack)), EffectPopup.Style.ATTACK, PopupScale.SECONDARY_INTENSITY)));
@@ -72,7 +72,7 @@ public class FortuneEffect extends Effect {
     public void apply(TurnContext context) {
         if (gainPercent > 0) return; // Fortune du Roi : son attaque est mise en attente à la pose
         CombatContext combat = context.getCombatContext();
-        combat.addAttackBonus(attackFrom(combat.getPlayer().getGains(), combat.getSpinCost()), "Fortune");
+        combat.addFlatAsPower(attackFrom(combat.getPlayer().getGains(), combat.getSpinCost()), "Fortune"); // Astra, 2026-11-18
     }
 
     @Override
@@ -80,7 +80,9 @@ public class FortuneEffect extends Effect {
         String cap = attackCapSpins > 0 ? Lang.f(" (au plus {0} fois le prix du tirage)", attackCapSpins) : "";
         return (gainPercent > 0
             ? Lang.f("Gains +{0} % de tes gains actuels. Attaque +{1} % des gains gagnés", gainPercent, attackPercent)
-            : Lang.f("Attaque +{0}% des gains", attackPercent)) + cap;
+            : Lang.f("Attaque +{0}% des gains", attackPercent)) + cap
+            + Lang.f(". Cette attaque devient de la Puissance : +1 par coup de référence (+{0} au plus)",
+                fr.astratime.lucky.entities.context.CombatContext.GAUGE_POWER_CAP);
     }
 
     @Override

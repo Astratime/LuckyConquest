@@ -28,6 +28,8 @@ public class AceOfSpadesEffect extends Effect {
     static final int   MAX_BOUGHT_BLADES = 10;
     /** Multiplicateur d'attaque ajouté par Lame encaissée. */
     static final float FACTOR_PER_BLADE = 0.5f;
+    /** Lames encaissées au plus par une Exécution (Astra, 2026-11-18) : les autres sont perdues. */
+    public static final int MAX_EXECUTION_BLADES = 20;
     /** Part (%) de chaque coup qui traverse la défense ennemie (Astra : 80, au lieu de toute la défense). */
     static final int   PIERCE_PERCENT = 80;
 
@@ -57,7 +59,7 @@ public class AceOfSpadesEffect extends Effect {
     @Override
     public void apply(TurnContext context) {
         LastingEffects lasting = context.getCombatContext().getPlayer().getLastingEffects();
-        int   blades = lasting.consumeBlades();
+        int   blades = Math.min(MAX_EXECUTION_BLADES, lasting.consumeBlades()); // Astra, 2026-11-18
         float factor = 1f + FACTOR_PER_BLADE * power * blades;
         context.getCombatContext().pierceDefense(piercePercent());
         context.getCombatContext().multiplyAttack(factor, "As de Pique");
@@ -76,9 +78,9 @@ public class AceOfSpadesEffect extends Effect {
     @Override
     public String getDescription() {
         return Lang.f("Exécution : consomme 10% des gains, seulement ce qui achète des Lames. +1 Lame pour {0} "
-            + "tirages, {3} Lames au plus. Attaque multipliée par (1 + {1} x Lame). Les symboles d'attaque percent {2} % de la défense",
+            + "tirages, {3} Lames achetées au plus. Puissance +{1} par Lame ({4} Lames au plus). Les symboles d'attaque percent {2} % de la défense",
             Lang.decimal(String.valueOf(SPINS_PER_BLADE)), Lang.decimal(String.valueOf(FACTOR_PER_BLADE * power)),
-            piercePercent(), MAX_BOUGHT_BLADES);
+            piercePercent(), MAX_BOUGHT_BLADES, MAX_EXECUTION_BLADES);
     }
 
     /** Textes fixes : aucun, ils dépendent des gains consommés (voir {@link #onPlay}). */

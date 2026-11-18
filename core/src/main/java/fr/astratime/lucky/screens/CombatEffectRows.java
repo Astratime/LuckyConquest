@@ -8,6 +8,7 @@ import fr.astratime.lucky.entities.Enemy;
 import fr.astratime.lucky.entities.EnemyMaluses;
 import fr.astratime.lucky.entities.GameState;
 import fr.astratime.lucky.entities.LastingEffects;
+import fr.astratime.lucky.entities.context.CombatContext;
 import fr.astratime.lucky.entities.Player;
 import fr.astratime.lucky.entities.ReelGauges;
 import fr.astratime.lucky.entities.SpinEconomy;
@@ -133,15 +134,16 @@ final class CombatEffectRows {
             rows.add(new SidePanel.EffectRow(new TextureRegion(hud.iconBlood), null,
                 Lang.f("Sang {0}", lasting.getBlood()), Lang.t("Sang"),
                 Lang.f("Jauge de Coeur. Le soin au-delà de tes PV max s'y garde, jusqu'à {0}. Tes Coeurs joués en "
-                    + "Couleur ou en Suite la remplissent. L'As de Coeur ajoute tout le Sang à ton attaque.",
-                    LastingEffects.MAX_BLOOD)));
+                    + "Couleur ou en Suite la remplissent. L'As de Coeur la vide en Puissance : +1 par PV max de Sang "
+                    + "(+{1} au plus).", LastingEffects.MAX_BLOOD, CombatContext.GAUGE_POWER_CAP)));
         }
         if (lasting.getVault() > 0) {
             rows.add(new SidePanel.EffectRow(new TextureRegion(hud.iconVault), null,
                 Lang.f("Coffre {0}", lasting.getVault()), Lang.t("Coffre"),
                 Lang.f("Jauge de Carreau, jusqu'à {0}. Ton bouclier inutilisé s'y garde, multiplié par les Carreaux "
                     + "joués ce tour. Tes Carreaux joués en Couleur ou en Suite la remplissent. L'As de Carreau le vide "
-                    + "en attaque (+1 pour 10).", Lang.big(LastingEffects.MAX_VAULT))));
+                    + "en Puissance (+1 pour 10 fois ton coup de référence, +{1} au plus).", Lang.big(LastingEffects.MAX_VAULT),
+                    CombatContext.GAUGE_POWER_CAP)));
         }
         if (lasting.getLuckyStar() > 0) {
             rows.add(new SidePanel.EffectRow(new TextureRegion(hud.iconStar), null,

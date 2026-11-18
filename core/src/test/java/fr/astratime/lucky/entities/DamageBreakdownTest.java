@@ -73,7 +73,8 @@ class DamageBreakdownTest {
         EnemyDamagedEvent hit = (EnemyDamagedEvent) new AttackAction(30).resolve(context).get(0);
         List<String> lines = hit.getBreakdown().lines(Symbol.SEVEN);
         assertTrue(lines.contains("Lame forgée : +40"), "deux copies d'une carte : une seule ligne, " + lines);
-        assertTrue(lines.contains("Bourse garnie : +500"), lines.toString());
+        // 5 % de 10 000 gains = 500 d'attaque, en Puissance (2026-11-18) : 500 / coup de référence (50), au plus +5
+        assertTrue(lines.contains("Bourse garnie : Puissance +5"), lines.toString());
         assertFalse(lines.stream().anyMatch(line -> line.startsWith("Fortune") || line.startsWith("Cartes")), lines.toString());
     }
 
@@ -90,14 +91,16 @@ class DamageBreakdownTest {
         DamageBreakdown breakdown = (DamageBreakdown) hit.getBreakdown();
         assertNotNull(breakdown);
         assertEquals(30, breakdown.base());
-        assertEquals((30 + 20) * 2.5 * 3, breakdown.raw());
+        // Puissance (2026-11-18) : 1 + 1,5 (Corruption x2,5) + 2 (symboles x3) = x4,5
+        assertEquals((30 + 20) * 4.5, breakdown.raw());
         assertEquals(hit.damage, breakdown.damage());
 
         List<String> lines = breakdown.lines(Symbol.SEVEN);
         assertEquals(Symbol.SEVEN.getDisplayName() + " : 30", lines.get(0));
         assertTrue(lines.contains("Cartes : +20"));
-        assertTrue(lines.contains("Corruption : x2,5"));
-        assertTrue(lines.contains("Mise : x3"));
+        assertTrue(lines.contains("Corruption : Puissance +1,5"), lines.toString());
+        assertTrue(lines.contains("Mise : Puissance +2"), lines.toString());
+        assertTrue(lines.contains("Puissance : x4,5"), lines.toString());
         assertEquals("= " + Lang.big(hit.damage) + " dégâts", lines.get(lines.size() - 1));
     }
 

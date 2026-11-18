@@ -214,20 +214,20 @@ public class CombatResolver {
         List<Event> events = new ArrayList<>();
         boolean bar = Arrays.stream(symbols).anyMatch(s -> s == Symbol.BAR || s == Symbol.DOUBLE_BAR);
         if (context.getHammers() > 0 && bar) {
-            float boost = (1f + ForgeHammerEffect.BAR_PERCENT / 100f) / (1f + ForgeHammerEffect.ATTACK_PERCENT / 100f);
-            context.multiplyAttack((float) Math.pow(boost, context.getHammers()), "Marteau de forge");
+            // Puissance : chaque Marteau passe de +25 % à +50 % (la différence s'ajoute)
+            float boost = (ForgeHammerEffect.BAR_PERCENT - ForgeHammerEffect.ATTACK_PERCENT) / 100f;
+            context.multiplyAttack(1f + boost * context.getHammers(), "Marteau de forge");
             events.add(new StatusEvent(Lang.f("MARTEAU SUR LE BAR : ATTAQUE +{0} %", ForgeHammerEffect.BAR_PERCENT),
                 EffectPopup.Style.ATTACK));
         }
         if (context.getLevers() > 0 && hasPair(symbols)) {
-            context.multiplyAttack((float) Math.pow(1f + RustyLeverEffect.ATTACK_PERCENT / 100f, context.getLevers()),
-                "Levier rouillé");
+            context.multiplyAttack(1f + RustyLeverEffect.ATTACK_PERCENT / 100f * context.getLevers(), "Levier rouillé");
             events.add(new StatusEvent(Lang.f("LEVIER : PAIRE ! ATTAQUE +{0} %", RustyLeverEffect.ATTACK_PERCENT),
                 EffectPopup.Style.ATTACK));
         }
         if (context.getJackpotRages() > 0 && hasPair(symbols)) { // Rage du jackpot : la Paire compte double
             int factor = (int) Math.pow(context.getJackpotRageFactor(), context.getJackpotRages());
-            context.multiplyAttack(factor, "Rage du jackpot");
+            context.multiplyAttack(1 + (context.getJackpotRageFactor() - 1) * context.getJackpotRages(), "Rage du jackpot");
             context.multiplyGains(factor, "Rage du jackpot");
             events.add(new StatusEvent(Lang.f("RAGE DU JACKPOT : PAIRE ! ATTAQUE ET GAINS x{0}", factor),
                 EffectPopup.Style.ATTACK));
@@ -486,7 +486,7 @@ public class CombatResolver {
      */
     static void goldenHeart(CombatContext context) {
         if (context.getGoldenHearts() <= 0) return;
-        context.addAttackBonus(goldenHeartBonus(context), Lang.t("Coeur d'or"));
+        context.addFlatAsPower(goldenHeartBonus(context), Lang.t("Coeur d'or")); // en Puissance (Astra, 2026-11-18)
     }
 
     /** @return le bonus d'attaque de tous les Cœurs d'or joués ce tour (0 sans eux). */

@@ -46,8 +46,9 @@ class TowerChapters456Test {
 
     @Test
     void theNewChaptersHaveAstrasHpAndPower() {
-        int[][] hp = {{1_600_000, 2_800_000, 5_500_000}, {2_000_000, 3_500_000, 7_000_000},
-            {2_500_000, 4_500_000, 10_000_000}};
+        // Puissance (2026-11-18) : fiche x50 %, x65 %, x125 % (avant x5)
+        int[][] hp = {{160_000, 280_000, 550_000}, {260_000, 455_000, 910_000},
+            {625_000, 1_125_000, 2_500_000}};
         Chapter[] chapters = {Chapter.MONDE_SANS_MAITRE, Chapter.LA_MAISON, Chapter.LE_JACKPOT};
         for (int i = 0; i < chapters.length; i++) {
             Chapter chapter = chapters[i];

@@ -25,7 +25,9 @@ class GoldenHeartTest {
         context.addGainMultiplier(13); // Roi de Trèfle
         context.addGoldenHeart();
         CombatResolver.goldenHeart(context);
-        assertEquals(4_100, context.getAttackBonus()); // 2 800 + 13 x 100
+        // 2 800 + 13 x 100 = 4 100, en Puissance (2026-11-18) : 4 100 / coup de référence (50 + 7 000)
+        assertEquals(0, context.getAttackBonus());
+        assertEquals(1 + 4_100 / 7_050.0, context.getAttackFactor(), 1e-4);
     }
 
     @Test
@@ -42,5 +44,6 @@ class GoldenHeartTest {
         context.addGainMultiplier(13);
         CombatResolver.goldenHeart(context);
         assertEquals(0, context.getAttackBonus());
+        assertEquals(1f, context.getAttackFactor(), 1e-6);
     }
 }

@@ -394,6 +394,6 @@ class GameControllerTest {
         assertTrue(next.getCurrentHand().isEmpty());
         assertEquals(0, controller.getCardsPlayedThisTurn());
         assertEquals("Sangsue du Tapis", controller.getGameState().getEnemy().getName());
-        assertEquals(50_000, controller.getGameState().getEnemy().getHp());
+        assertEquals(12_500, controller.getGameState().getEnemy().getHp()); // 10 000 x 125 % (Puissance)
     }
 }

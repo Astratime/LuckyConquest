@@ -1,5 +1,7 @@
 package fr.astratime.lucky.entities.context;
 
+import fr.astratime.lucky.i18n.Lang;
+
 import fr.astratime.lucky.entities.BigNumber;
 import fr.astratime.lucky.entities.Enemy;
 import fr.astratime.lucky.entities.Player;
@@ -41,7 +43,10 @@ public class CombatContext {
     private float gainMultiplier = 1f;  // multiplicateur des gains (cartes Trèfle)
 
     private float gainFactor     = 1f;  // facteur appliqué à tous les gains du tirage (combos, Porte-bonheur)
-    private float attackFactor   = 1f;  // facteur appliqué aux dégâts de chaque symbole (combos)
+    // Puissance du tour (Astra, 2026-11-18) : les bonus d'attaque xN s'additionnent (+N-1 chacun),
+    // comme les combinaisons ; seuls les malus (facteur sous 1) se multiplient.
+    private double attackPower   = 0;   // somme des bonus d'attaque (N-1 par bonus xN)
+    private double attackMalus   = 1;   // produit des malus d'attaque
     private int   symbolPower    = 1;   // facteur de la valeur de chaque symbole : dégâts, bouclier, gains (Bingo)
     private float defenseFactor  = 1f;  // facteur du bouclier de chaque symbole (Corruption)
     private int   vaultBonusPercent = 0; // Carreau : % ajouté au multiplicateur du Coffre rempli en fin de tour
@@ -245,8 +250,22 @@ public class CombatContext {
 
     /** @return le facteur appliqué à tous les gains du tirage (1 si aucun). */
     public float getGainFactor()     { return gainFactor; }
-    /** @return le facteur appliqué aux dégâts de chaque symbole (1 si aucun). */
-    public float getAttackFactor()   { return attackFactor; }
+    /**
+     * @return la Puissance du tour, sans la valeur des symboles (Bingo) : 1 + la somme des bonus d'attaque
+     *         (+N-1 pour chaque xN), fois les malus (1 si aucun)
+     */
+    public float getAttackFactor()   { return (float) ((1 + attackPower) * attackMalus); }
+
+    /**
+     * Multiplicateur d'un coup : la Puissance du tour, à laquelle s'ajoutent la valeur des symboles {@code power}
+     * (Bingo x5 : +4) et le facteur propre au rouleau {@code hitFactor} (Faux, Lune), fois les malus.
+     */
+    public double attackMultiplier(int power, double hitFactor) {
+        return (1 + attackPower + Math.max(0, power - 1) + Math.max(0, hitFactor - 1)) * attackMalus;
+    }
+
+    /** Comme {@link #attackMultiplier(int, double)}, sans facteur de rouleau. */
+    public double attackMultiplier(int power) { return attackMultiplier(power, 1.0); }
     /** @return le facteur du bouclier de chaque symbole (1 si aucun). */
     public float getDefenseFactor()  { return defenseFactor; }
     /** @return le multiplicateur du Coffre infligé en contre-attaque ce tour (0 si aucune). */
@@ -478,6 +497,48 @@ public class CombatContext {
         attackBonus = BigNumber.toLong(BigNumber.add(attackBonus, bonus));
         if (bonus != 0) steps.add(new PowerStep(Target.ATTACK, shown(label), bonus, 1f));
     }
+    /** Valeur moyenne d'un symbole d'attaque, sans rang : la base du coup de référence du joueur. */
+    public static final int REFERENCE_SYMBOL = 50;
+    /** Puissance que peut donner, au plus, chaque jauge ou bonus de gains convertis (Sang, Coffre, Fortune, Cœur d'or). */
+    public static final int GAUGE_POWER_CAP = 5;
+
+    /**
+     * @return le coup de référence du joueur : un symbole d'attaque moyen ({@link #REFERENCE_SYMBOL}) plus le bonus
+     *         d'attaque de son rang et de son Prestige. Les jauges se mesurent par rapport à lui (Astra, 2026-11-18).
+     */
+    public long referenceHit() {
+        int rank = player.getRankBonus().attack() * rankFactor;
+        return REFERENCE_SYMBOL + rank + player.getRankBonus().guardBonus(REFERENCE_SYMBOL + rank);
+    }
+
+    /** @return {@code power} avec une décimale au plus (« 1,5 », « 3 »), pour les textes de Puissance. */
+    public static String formatPower(double power) {
+        String text = String.format(java.util.Locale.ROOT, "%.1f", power);
+        if (text.endsWith(".0")) text = text.substring(0, text.length() - 2);
+        return Lang.decimal(text);
+    }
+
+    /**
+     * Ajoute {@code power} à la Puissance du tour (comme un bonus x(1 + power)), venu de {@code label}.
+     */
+    public void addAttackPower(double power, String label) {
+        if (power <= 0) return;
+        attackPower += power;
+        steps.add(new PowerStep(Target.ATTACK, shown(label), 0, (float) (1 + power)));
+    }
+
+    /**
+     * Convertit une attaque plate {@code bonus} (Sang, Coffre, Fortune, Cœur d'or) en Puissance : +1 par coup de
+     * référence ({@link #referenceHit()}), au plus {@link #GAUGE_POWER_CAP}.
+     *
+     * @return la Puissance ajoutée
+     */
+    public double addFlatAsPower(double bonus, String label) {
+        double power = Math.min(GAUGE_POWER_CAP, Math.max(0, bonus) / referenceHit());
+        addAttackPower(power, label);
+        return power;
+    }
+
     /** Ajoute {@code bonus} au bonus de bouclier du tour. */
     public void addDefenseBonus(int bonus)        { addDefenseBonus(bonus, OTHER_EFFECTS); }
     /** Ajoute {@code bonus} au bonus de bouclier du tour, venu de {@code label} (détail du symbole). */
@@ -499,7 +560,7 @@ public class CombatContext {
     public void multiplyAttack(float factor)      { multiplyAttack(factor, OTHER_EFFECTS); }
     /** Multiplie les dégâts de chaque symbole par {@code factor}, venu de {@code label} (détail du symbole). */
     public void multiplyAttack(float factor, String label) {
-        attackFactor *= factor;
+        if (factor >= 1f) attackPower += factor - 1; else attackMalus *= factor;
         if (factor != 1f) steps.add(new PowerStep(Target.ATTACK, shown(label), 0, factor));
     }
     /** Multiplie le bouclier de chaque symbole par {@code factor}. */

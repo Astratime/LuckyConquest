@@ -204,7 +204,7 @@ class EnemyPowerTest {
         assertEquals(1_000, EnemyKind.ENTRAINEMENT.getMaxHp(Difficulty.NORMAL));
         assertEquals(10, EnemyKind.ENTRAINEMENT.empowered(EnemyKind.ENTRAINEMENT.swordDamage(), Difficulty.NORMAL));
         assertEquals(EnemySymbol.SWORD_DAMAGE, EnemyKind.CROUPIER.swordDamage(), "le croupier de la Tour ne change pas");
-        assertEquals(25_000, EnemyKind.CROUPIER.getMaxHp(Difficulty.NORMAL), "PV de la Tour x5");
+        assertEquals(6_250, EnemyKind.CROUPIER.getMaxHp(Difficulty.NORMAL), "PV de la Tour : 125 % au chapitre 1 (Puissance)");
     }
 
     @Test

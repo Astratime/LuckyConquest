@@ -78,7 +78,8 @@ class ValetToAceCardsTest {
         Player player = playing(court);
         TurnContext full = resolve(player, effects(court));
         // Valet, Dame, Roi, As de la Cour : Suite + Couleur (x10). Dame : 2 combinaisons x 25 %, Quinte royale x2.
-        assertEquals(3f, full.getCombatContext().getAttackFactor() / base.getCombatContext().getAttackFactor(), 1e-4);
+        // Puissance (2026-11-18) : les bonus s'additionnent, +0,5 (Dame) +1 (Quinte royale).
+        assertEquals(1.5f, full.getCombatContext().getAttackFactor() - base.getCombatContext().getAttackFactor(), 1e-4);
         assertEquals(base.getCombatContext().getGainFactor(), full.getCombatContext().getGainFactor(), 1e-4,
             "les gains ne changent pas");
         CourtAndClock clock = player.getLastingEffects().getCourtAndClock();
@@ -96,7 +97,7 @@ class ValetToAceCardsTest {
         Card[] straightOnly = {flush, EnemyCards.card(Card.Suit.PIQUE, 13), EnemyCards.card(Card.Suit.COEUR, 12)};
         TurnContext base = resolve(playing(straightOnly), statsOnly(straightOnly));
         TurnContext played = resolve(playing(straightOnly), effects(straightOnly));
-        assertEquals(1f, played.getCombatContext().getAttackFactor() / base.getCombatContext().getAttackFactor(), 1e-4);
+        assertEquals(0f, played.getCombatContext().getAttackFactor() - base.getCombatContext().getAttackFactor(), 1e-4);
     }
 
     @Test
@@ -188,8 +189,8 @@ class ValetToAceCardsTest {
         player.getLastingEffects().getCourtAndClock().addSprings(4, 5);
         TurnContext turn = resolve(player, card("douze_coups").getEffects().stream()
             .filter(e -> !(e instanceof ArchetypeStatsEffect)).toList());
-        // Les 4 Ressorts donnent +20 % au début du tirage, puis les Douze coups les vident : +80 %.
-        assertEquals(1.2f * 1.8f, turn.getCombatContext().getAttackFactor(), 1e-4);
+        // Les 4 Ressorts donnent +20 % au début du tirage, puis les Douze coups les vident : +80 % (Puissance : ils s'additionnent).
+        assertEquals(1f + 0.2f + 0.8f, turn.getCombatContext().getAttackFactor(), 1e-4);
         assertEquals(0, player.getLastingEffects().getCourtAndClock().getSprings());
     }
 

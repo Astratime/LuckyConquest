@@ -78,7 +78,7 @@ public non-sealed class AttackAction extends Action {
         int base   = symbol + rank + prestige;
         // En long et en double : un gros combo dépasse le milliard de dégâts.
         long unscaled = base + context.getAttackBonus(); // avant les multiplicateurs : ce que vise le pistolet
-        long rawDamage = Math.round((double) unscaled * context.getAttackFactor() * context.getSymbolPower() * hitFactor(context));
+        long rawDamage = Math.round((double) unscaled * context.attackMultiplier(context.getSymbolPower(), hitFactor(context)));
         long hit        = enemy.capHit(rawDamage); // ce qui touche vraiment sa défense et ses PV
         int pierce      = piercing ? 100 : context.getPiercePercent(); // Pique : une part du coup traverse la défense
         int blocked     = enemy.absorb(hit, pierce); // la défense s'use à chaque coup

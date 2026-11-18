@@ -35,7 +35,7 @@ public record DamageBreakdown(int base, int rank, List<PowerStep> steps, long ra
         List<String> lines = new ArrayList<>();
         lines.add(Lang.f("{0} : {1}", symbol.getDisplayName(), Lang.big(base)));
         if (rank != 0) lines.add(Lang.f("{0} : +{1}", Lang.t("Rang"), Lang.big(rank)));
-        addSteps(lines, steps);
+        addPowerSteps(lines, steps);
         if (pierce >= 100) {
             lines.add(Lang.t("Défense ignorée"));
         } else if (pierce > 0) {
@@ -60,6 +60,29 @@ public record DamageBreakdown(int base, int rank, List<PowerStep> steps, long ra
         }
         bonuses.forEach((label, bonus) -> lines.add(Lang.f("{0} : +{1}", Lang.t(label), Lang.big(bonus))));
         factors.forEach((label, factor) -> lines.add(Lang.f("{0} : x{1}", Lang.t(label), factor(factor))));
+    }
+
+    /**
+     * Comme {@link #addSteps}, pour l'attaque (Astra, 2026-11-18) : les bonus xN s'additionnent dans la
+     * Puissance du tour (+N-1 chacun), puis la Puissance totale ; les malus (sous x1) la multiplient.
+     */
+    static void addPowerSteps(List<String> lines, List<PowerStep> steps) {
+        Map<String, Double> bonuses = new LinkedHashMap<>();
+        Map<String, Float>  powers  = new LinkedHashMap<>();
+        Map<String, Float>  maluses = new LinkedHashMap<>();
+        for (PowerStep step : steps) {
+            if (!step.isFactor()) bonuses.merge(step.label(), (double) step.bonus(), BigNumber::add);
+            else if (step.factor() >= 1f) powers.merge(step.label(), step.factor() - 1f, Float::sum);
+            else maluses.merge(step.label(), step.factor(), (a, b) -> a * b);
+        }
+        bonuses.forEach((label, bonus) -> lines.add(Lang.f("{0} : +{1}", Lang.t(label), Lang.big(bonus))));
+        float power = 1f;
+        for (Map.Entry<String, Float> entry : powers.entrySet()) {
+            lines.add(Lang.f("{0} : Puissance +{1}", Lang.t(entry.getKey()), factor(entry.getValue())));
+            power += entry.getValue();
+        }
+        if (!powers.isEmpty()) lines.add(Lang.f("Puissance : x{0}", factor(power)));
+        maluses.forEach((label, malus) -> lines.add(Lang.f("{0} : x{1}", Lang.t(label), factor(malus))));
     }
 
     /** @return {@code factor} avec deux décimales au plus, sans zéro inutile (x9,5 ; x0,75). */

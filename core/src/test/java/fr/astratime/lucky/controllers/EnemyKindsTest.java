@@ -33,10 +33,10 @@ class EnemyKindsTest {
 
     @Test
     void eachChapterHasTheRequestedLife() {
-        // Les PV demandés, x5 depuis l'arrivée des rangs (EnemyKind.TOWER_HP_FACTOR).
-        assertLives(Chapter.GENESE, 25_000, 50_000, 100_000);
-        assertLives(Chapter.TABLES_SACREES, 100_000, 200_000, 500_000);
-        assertLives(Chapter.DERNIER_TIRAGE, 600_000, 1_000_000, 2_000_000);
+        // Les PV demandés, en % de la fiche (EnemyKind.TOWER_HP_PERCENT, Puissance 2026-11-18 : 125, 110, 40 %).
+        assertLives(Chapter.GENESE, 6_250, 12_500, 25_000);
+        assertLives(Chapter.TABLES_SACREES, 22_000, 44_000, 110_000);
+        assertLives(Chapter.DERNIER_TIRAGE, 48_000, 80_000, 160_000);
     }
 
     private static void assertLives(Chapter chapter, int first, int challengers, int boss) {
