@@ -821,9 +821,11 @@ public enum EnemyKind {
     /**
      * PV des ennemis de la Tour des épreuves en mode normal, en % de ceux de leur fiche, chapitre par chapitre.
      * Modèle de Puissance (Astra, 2026-11-18) : les bonus d'attaque s'additionnent, les PV redescendent ; réglés au
-     * simulateur pour garder les victoires du joueur moyen à chaque rang (avant : 500 % partout).
+     * simulateur pour garder les victoires du joueur moyen à chaque rang (avant : 500 % partout). Chapitres par rang
+     * (Astra, 2026-11-18) : le 4 pour le Gros bonnet (x1,5), le 5 trop dur pour lui, gagnable par le Baron et le
+     * Magnat (x1,8), le 6 pour le Roi du casino et la Légende.
      */
-    static final int[] TOWER_HP_PERCENT = { 125, 110, 40, 50, 65, 125 };
+    static final int[] TOWER_HP_PERCENT = { 125, 110, 40, 75, 117, 125 };
     /** Force des ennemis du chapitre 3, en %. */
     public static final int CHAPTER_3_POWER = 3 * CHAPTER_POWER_STEP;
     /** Force des ennemis des chapitres 4, 5 et 6, en % (choix d'Astra : le rang rendra le joueur plus fort). */
