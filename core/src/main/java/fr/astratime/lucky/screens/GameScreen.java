@@ -111,6 +111,7 @@ import fr.astratime.lucky.entities.tutorial.TutorialRun;
 import fr.astratime.lucky.entities.RankBonus;
 import fr.astratime.lucky.entities.enemy.EnemySymbol;
 import fr.astratime.lucky.entities.enemy.EnemyTurnResult;
+import fr.astratime.lucky.entities.events.BreachEvent;
 import fr.astratime.lucky.entities.events.EnemyHpLostEvent;
 import fr.astratime.lucky.entities.events.EnemyPhaseEvent;
 import fr.astratime.lucky.entities.events.ComboEvent;
@@ -1542,6 +1543,7 @@ public class GameScreen extends ScreenAdapter {
             }
             case DamageReflectedEvent reflect when reflect.damage > 0 -> onEnemyHit(reflect.damage);
             case EnemyHpLostEvent self when self.lost > 0 -> onEnemyHit(self.lost); // Faillite, Duel gagné : sa barre descend aussi
+            case BreachEvent breach when breach.damage > 0 -> onEnemyHit(breach.damage); // Brèche : sa barre descend après sa phase
             case PlayerDamagedEvent hit -> {
                 if (hit.blocked > 0) onPlayerBlocked(hit);
                 if (hit.damage > 0) onPlayerHit(hit.damage);
