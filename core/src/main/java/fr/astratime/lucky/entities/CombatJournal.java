@@ -5,6 +5,7 @@ import fr.astratime.lucky.entities.events.ComboEvent;
 import fr.astratime.lucky.entities.events.DamageReflectedEvent;
 import fr.astratime.lucky.entities.events.EnemyDamagedEvent;
 import fr.astratime.lucky.entities.events.EnemyHealedEvent;
+import fr.astratime.lucky.entities.events.BreachEvent;
 import fr.astratime.lucky.entities.events.EnemyHpLostEvent;
 import fr.astratime.lucky.entities.events.EnemyPhaseEvent;
 import fr.astratime.lucky.entities.events.EnemyShieldedEvent;
@@ -145,6 +146,7 @@ public class CombatJournal {
                 dealtBlocked = add(dealtBlocked, Math.max(0L, hit.blocked));
             } else if (event instanceof DamageReflectedEvent reflected) dealt = add(dealt, Math.max(0L, reflected.damage));
             else if (event instanceof EnemyHpLostEvent lost) dealt = add(dealt, Math.max(0L, lost.lost));
+            else if (event instanceof BreachEvent breach) dealt = add(dealt, Math.max(0L, breach.damage));
             else if (event instanceof PlayerDamagedEvent hurt) {
                 taken = add(taken, Math.max(0, hurt.damage));
                 takenBlocked = add(takenBlocked, Math.max(0, hurt.blocked));
