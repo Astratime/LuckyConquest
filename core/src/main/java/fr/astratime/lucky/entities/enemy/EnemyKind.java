@@ -821,11 +821,9 @@ public enum EnemyKind {
     /**
      * PV des ennemis de la Tour des épreuves en mode normal, en % de ceux de leur fiche, chapitre par chapitre.
      * Modèle de Puissance (Astra, 2026-11-18) : les bonus d'attaque s'additionnent, les PV redescendent ; réglés au
-     * simulateur pour garder les victoires du joueur moyen à chaque rang (avant : 500 % partout). Chapitres par rang
-     * (Astra, 2026-11-18) : le 4 pour le Gros bonnet (x1,5), le 5 trop dur pour lui, gagnable par le Baron et le
-     * Magnat (x1,8), le 6 pour le Roi du casino et la Légende.
+     * simulateur pour garder les victoires du joueur moyen à chaque rang (avant : 500 % partout).
      */
-    static final int[] TOWER_HP_PERCENT = { 125, 110, 40, 75, 117, 125 };
+    static final int[] TOWER_HP_PERCENT = { 125, 110, 40, 50, 65, 125 };
     /** Force des ennemis du chapitre 3, en %. */
     public static final int CHAPTER_3_POWER = 3 * CHAPTER_POWER_STEP;
     /** Force des ennemis des chapitres 4, 5 et 6, en % (choix d'Astra : le rang rendra le joueur plus fort). */
@@ -1100,7 +1098,7 @@ public enum EnemyKind {
             case RIVAL_FOIRE, RIVAL_PORT, RIVAL_MINES, RIVAL_CASINO, RIVAL_DESERT ->
                 Place.of(this).getDamagePercent() * RIVAL_DAMAGE[Place.of(this).ordinal() - 1] / 100;
             default -> {
-                if (chapterPower() >= CHAPTER_3_POWER) yield TOWER_LATE_DAMAGE;
+                if (chapterPower() >= CHAPTER_3_POWER) yield TOWER_DAMAGE_PERCENT[Chapter.of(this).getNumber() - 1];
                 Place place = Place.of(this);
                 yield place != null && place.getDamagePercent() > 0 ? place.getDamagePercent() : 100;
             }
@@ -1113,6 +1111,13 @@ public enum EnemyKind {
      * écart avec le chapitre 3 : Épée à 134, 167 et 200. En mode difficile, toute la Tour frappe à cette part.
      */
     static final int TOWER_LATE_DAMAGE = 167;
+    /**
+     * Dégâts des ennemis de la Tour en mode normal, en %, chapitre par chapitre (à partir du chapitre 3). Chapitres par
+     * rang (Astra, 2026-11-18) : le 4 pour le Gros bonnet (x1,3), le 5 trop dur pour lui, gagnable par le Baron et le
+     * Magnat (x1,25), le 6 pour le Roi du casino et la Légende. Des coups plus forts plutôt que des PV en plus :
+     * le combat devient plus dangereux sans s'allonger.
+     */
+    static final int[] TOWER_DAMAGE_PERCENT = { 100, 100, TOWER_LATE_DAMAGE, 217, 209, TOWER_LATE_DAMAGE };
 
     /**
      * Dégâts des donjons réglés à part dans les autres lieux, en % (simulateur, 2026-10-24 ; relevés avec leur lieu
