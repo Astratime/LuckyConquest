@@ -212,8 +212,8 @@ class EnemyPowerTest {
         int sword = EnemySymbol.SWORD_DAMAGE;
         assertEquals(sword * 2, EnemyKind.CHEF.hurt(sword, Difficulty.NORMAL), "chapitre 2 inchangé");
         assertEquals(100, EnemyKind.HORLOGER.hurt(sword, Difficulty.NORMAL), "chapitre 3 : Épée à 100 (choix d'Astra)");
-        assertEquals(134, EnemyKind.PILLEUR.hurt(sword, Difficulty.NORMAL));
-        assertEquals(167, EnemyKind.PORTIER.hurt(sword, Difficulty.NORMAL));
+        assertEquals(174, EnemyKind.PILLEUR.hurt(sword, Difficulty.NORMAL));
+        assertEquals(300, EnemyKind.PORTIER.hurt(sword, Difficulty.NORMAL));
         assertEquals(200, EnemyKind.MACHINE_ORIGINELLE.hurt(sword, Difficulty.NORMAL));
     }
 }

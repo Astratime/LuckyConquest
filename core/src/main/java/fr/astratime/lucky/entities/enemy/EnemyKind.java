@@ -702,7 +702,7 @@ public enum EnemyKind {
     PORTIER("Le Portier", "PORTIER",
         "Il filtre l'entrée. Une famille de cartes reste dehors tout le combat.",
         400_000, 150, 4,
-        weights(EnemySymbol.SWORD, 2, EnemySymbol.SHIELD, 2, EnemySymbol.POTION, 1, EnemySymbol.CLOAKROOM, 1,
+        weights(EnemySymbol.SWORD, 4, EnemySymbol.SHIELD, 2, EnemySymbol.POTION, 1, EnemySymbol.CLOAKROOM, 1,
             EnemySymbol.BOUNCER, 1),
         deck(new int[] {3, 6, 9, 12, 14}, new int[] {4, 8, 12},
             new int[] {5, 9, 13, 14}, new int[] {3, 7, 11}),
@@ -711,7 +711,7 @@ public enum EnemyKind {
     COMPTABLE("Le Comptable", "COMPTABLE",
         "Il compte tout. Sa Taxe frappe chaque carte jouée. Même à sec.",
         700_000, 80, 4,
-        weights(EnemySymbol.TAX, 2, EnemySymbol.SWORD, 2, EnemySymbol.SHIELD, 1),
+        weights(EnemySymbol.TAX, 2, EnemySymbol.SWORD, 4, EnemySymbol.SHIELD, 1),
         deck(new int[] {3, 6, 9, 12, 14}, new int[] {4, 8, 12},
             new int[] {5, 9, 13, 14}, new int[] {3, 7, 11}),
         List.of(Card.Suit.PIQUE, Card.Suit.CARREAU, Card.Suit.TREFLE, Card.Suit.COEUR),
@@ -719,7 +719,7 @@ public enum EnemyKind {
     DIRECTEUR("Le Directeur des Jeux", "DIRECTEUR",
         "Il change les règles. Pour deux tours, le jeu n'est plus le même.",
         700_000, 80, 4,
-        weights(EnemySymbol.NEW_RULE, 1, EnemySymbol.SWORD, 2, EnemySymbol.SHIELD, 1, EnemySymbol.POTION, 1),
+        weights(EnemySymbol.NEW_RULE, 1, EnemySymbol.SWORD, 4, EnemySymbol.SHIELD, 1, EnemySymbol.POTION, 1),
         deck(new int[] {3, 6, 9, 12, 14}, new int[] {4, 8, 12},
             new int[] {5, 9, 13, 14}, new int[] {3, 7, 11}),
         List.of(Card.Suit.PIQUE, Card.Suit.CARREAU, Card.Suit.TREFLE, Card.Suit.COEUR),
@@ -727,7 +727,7 @@ public enum EnemyKind {
     SECURITE("La Sécurité", "SÉCURITÉ",
         "On t'a repéré. Elle fouille ton deck. Plus tu gagnes gros, plus elle confisque.",
         700_000, 120, 4,
-        weights(EnemySymbol.FRISK, 2, EnemySymbol.SWORD, 2, EnemySymbol.SHIELD, 1),
+        weights(EnemySymbol.FRISK, 2, EnemySymbol.SWORD, 4, EnemySymbol.SHIELD, 1),
         deck(new int[] {3, 6, 9, 12, 14}, new int[] {4, 8, 12},
             new int[] {5, 9, 13, 14}, new int[] {3, 7, 11}),
         List.of(Card.Suit.PIQUE, Card.Suit.CARREAU, Card.Suit.TREFLE, Card.Suit.COEUR),
@@ -735,7 +735,7 @@ public enum EnemyKind {
     MAISON("La Maison", "LA MAISON",
         "Pas un ennemi. Un lieu vivant. La Façade protège, le Coffre soigne, la Salle de jeu frappe. La Maison gagne toujours : une fois, elle annule ton plus gros coup.",
         1_400_000, 150, 3,
-        weights(EnemySymbol.SHIELD, 2, EnemySymbol.SWORD, 2, EnemySymbol.POTION, 1, EnemySymbol.LOAD_BEARING, 1,
+        weights(EnemySymbol.SHIELD, 2, EnemySymbol.SWORD, 4, EnemySymbol.POTION, 1, EnemySymbol.LOAD_BEARING, 1,
             EnemySymbol.SAFE, 1, EnemySymbol.HOUSE_EDGE, 1),
         deck(new int[] {3, 6, 9, 12, 14}, new int[] {4, 8, 12},
             new int[] {5, 9, 13, 14}, new int[] {3, 7, 11}),
@@ -1098,7 +1098,7 @@ public enum EnemyKind {
             case RIVAL_FOIRE, RIVAL_PORT, RIVAL_MINES, RIVAL_CASINO, RIVAL_DESERT ->
                 Place.of(this).getDamagePercent() * RIVAL_DAMAGE[Place.of(this).ordinal() - 1] / 100;
             default -> {
-                if (chapterPower() >= CHAPTER_3_POWER) yield TOWER_LATE_DAMAGE;
+                if (chapterPower() >= CHAPTER_3_POWER) yield TOWER_DAMAGE_PERCENT[Chapter.of(this).getNumber() - 1];
                 Place place = Place.of(this);
                 yield place != null && place.getDamagePercent() > 0 ? place.getDamagePercent() : 100;
             }
@@ -1111,6 +1111,13 @@ public enum EnemyKind {
      * écart avec le chapitre 3 : Épée à 134, 167 et 200. En mode difficile, toute la Tour frappe à cette part.
      */
     static final int TOWER_LATE_DAMAGE = 167;
+    /**
+     * Dégâts des ennemis de la Tour en mode normal, en %, chapitre par chapitre (à partir du chapitre 3). Chapitres par
+     * rang (Astra, 2026-11-18) : le 4 pour le Gros bonnet (x1,3), le 5 trop dur pour lui, gagnable par le Baron et le
+     * Magnat (Épée à 300, choix d'Astra le 2026-11-19), le 6 pour le Roi du casino et la Légende. Des coups plus forts plutôt que des PV en plus :
+     * le combat devient plus dangereux sans s'allonger.
+     */
+    static final int[] TOWER_DAMAGE_PERCENT = { 100, 100, TOWER_LATE_DAMAGE, 217, 300, TOWER_LATE_DAMAGE };
 
     /**
      * Dégâts des donjons réglés à part dans les autres lieux, en % (simulateur, 2026-10-24 ; relevés avec leur lieu
