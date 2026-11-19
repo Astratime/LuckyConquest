@@ -3062,5 +3062,8 @@
   "La Maison prend sa part": "The House takes its cut",
   "Tes soins sont divisés par 2 (drain de vie compris).": "Your heals are halved (life drain included).",
   "Maison : soins /{0}": "House: heals /{0}",
-  "Au chapitre 5 de la Tour, tes soins sont divisés par 2, drain de vie compris.": "In chapter 5 of the Tower, your heals are halved, life drain included."
+  "Au chapitre 5 de la Tour, tes soins sont divisés par 2, drain de vie compris.": "In chapter 5 of the Tower, your heals are halved, life drain included.",
+  "La Machine prend sa part": "The Machine takes its cut",
+  "Machine : soins /{0}": "Machine: heals /{0}",
+  "Au chapitre 6 de la Tour, tes soins sont divisés par 2, drain de vie compris.": "In chapter 6 of the Tower, your heals are halved, life drain included."
 }

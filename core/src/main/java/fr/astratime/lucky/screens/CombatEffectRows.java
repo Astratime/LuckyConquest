@@ -295,6 +295,8 @@ final class CombatEffectRows {
             case SOIF -> rows.add(new SidePanel.EffectRow(skull, null,
                 Lang.f("Soif : soins /{0}", PlaceRule.THIRST_HEAL_DIVISOR), rule.getName(),
                 rule.getDescription() + Lang.t(" Pense à te soigner à chaque tour.")));
+            case PART_DE_LA_MACHINE -> rows.add(new SidePanel.EffectRow(skull, null,
+                Lang.f("Machine : soins /{0}", PlaceRule.THIRST_HEAL_DIVISOR), rule.getName(), rule.getDescription()));
             case PART_DE_LA_MAISON -> rows.add(new SidePanel.EffectRow(skull, null,
                 Lang.f("Maison : soins /{0}", PlaceRule.THIRST_HEAL_DIVISOR), rule.getName(), rule.getDescription()));
             case NONE -> { }
