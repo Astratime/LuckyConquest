@@ -31,11 +31,7 @@ public enum PlaceRule {
         + "À 6, elle redescend à 0."),
     MANEGE("Manège", "Tous les 3 tours, le manège tourne : un de tes rouleaux, au hasard, est bloqué pour ce tirage."),
     SOIF("Soif", "Tes soins sont divisés par 2. À la fin de chaque tour où tu ne t'es pas soigné, tu perds 1 % de tes "
-        + "PV max. Ton bouclier ne protège pas."),
-    /** Tour des épreuves, chapitre 5 (Astra, 2026-11-19) : la Maison prend sa part de tes soins. */
-    PART_DE_LA_MAISON("La Maison prend sa part", "Tes soins sont divisés par 2 (drain de vie compris)."),
-    /** Tour des épreuves, chapitre 6 : la Machine prend sa part de tes soins, comme la Maison au chapitre 5. */
-    PART_DE_LA_MACHINE("La Machine prend sa part", "Tes soins sont divisés par 2 (drain de vie compris).");
+        + "PV max. Ton bouclier ne protège pas.");
 
     /** Id de la carte Scorbut. */
     public static final String SCURVY_CARD = "scorbut";
@@ -94,9 +90,6 @@ public enum PlaceRule {
 
     /** @return les tours avant le prochain tour de manège, celui-ci compris (1 : ce tour). */
     public static int turnsBeforeCarousel(int turn) { return CAROUSEL_PERIOD - (turn - 1) % CAROUSEL_PERIOD; }
-
-    /** @return le diviseur des soins du joueur sous cette règle : 2 sous la Soif et aux chapitres 5 et 6 de la Tour, sinon 1. */
-    public int healDivisor() { return this == SOIF || this == PART_DE_LA_MAISON || this == PART_DE_LA_MACHINE ? THIRST_HEAL_DIVISOR : 1; }
 
     /** @return {@code true} si la Soif joue (soins divisés, PV perdus sans soin). */
     public boolean isThirsty() { return this == SOIF; }

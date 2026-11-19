@@ -184,11 +184,7 @@ public final class Lexicon {
             term(Lang.t("Aspiration"), Lang.t("La Machine Originelle annonce des règles pour tes cartes. "
                 + "Chaque règle non respectée lui fait aspirer un de tes rouleaux.")),
             term(Lang.t("Règle du lieu"), Lang.t("Chaque lieu de l'Exploration a sa règle (Marée, Grisou, Soif...). "
-                + "Elle s'affiche dans tes effets.")),
-            term(Lang.t("La Maison prend sa part"), Lang.t("Au chapitre 5 de la Tour, tes soins sont divisés par 2, "
-                + "drain de vie compris.")),
-            term(Lang.t("La Machine prend sa part"), Lang.t("Au chapitre 6 de la Tour, tes soins sont divisés par 2, "
-                + "drain de vie compris."))));
+                + "Elle s'affiche dans tes effets."))));
     }
 
     private static Category progress() {
