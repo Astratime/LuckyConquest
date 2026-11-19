@@ -1114,10 +1114,10 @@ public enum EnemyKind {
     /**
      * Dégâts des ennemis de la Tour en mode normal, en %, chapitre par chapitre (à partir du chapitre 3). Chapitres par
      * rang (Astra, 2026-11-18) : le 4 pour le Gros bonnet (x1,3), le 5 trop dur pour lui, gagnable par le Baron et le
-     * Magnat (x1,25), le 6 pour le Roi du casino et la Légende. Des coups plus forts plutôt que des PV en plus :
+     * Magnat (Épée à 300, choix d'Astra le 2026-11-19), le 6 pour le Roi du casino et la Légende. Des coups plus forts plutôt que des PV en plus :
      * le combat devient plus dangereux sans s'allonger.
      */
-    static final int[] TOWER_DAMAGE_PERCENT = { 100, 100, TOWER_LATE_DAMAGE, 217, 209, TOWER_LATE_DAMAGE };
+    static final int[] TOWER_DAMAGE_PERCENT = { 100, 100, TOWER_LATE_DAMAGE, 217, 300, TOWER_LATE_DAMAGE };
 
     /**
      * Dégâts des donjons réglés à part dans les autres lieux, en % (simulateur, 2026-10-24 ; relevés avec leur lieu
