@@ -61,6 +61,12 @@ public enum Chapter {
         this.ending      = ending;
     }
 
+    /** @return la règle qui joue dans ses combats : au chapitre 5, la Maison prend sa part de tes soins. */
+    public fr.astratime.lucky.entities.exploration.PlaceRule getRule() {
+        return this == LA_MAISON ? fr.astratime.lucky.entities.exploration.PlaceRule.PART_DE_LA_MAISON
+            : fr.astratime.lucky.entities.exploration.PlaceRule.NONE;
+    }
+
     /**
      * @return le chapitre de la Tour où l'on affronte {@code kind} (premier ennemi,
      *         challenger ou boss), ou {@code null} s'il n'est pas de la Tour

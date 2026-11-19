@@ -92,7 +92,7 @@ public class TurnEngine {
     public TurnResult playTurn(GameState gameState, List<Effect> pendingEffects, SpinEconomy.Stake stake) {
 
         // Soif (Désert de Braise) : les soins du tour sont divisés
-        gameState.getPlayer().setHealDivisor(gameState.getActiveRule().isThirsty() ? PlaceRule.THIRST_HEAL_DIVISOR : 1);
+        gameState.getPlayer().setHealDivisor(gameState.getActiveRule().healDivisor());
         gameState.getPlayer().takeHealed();
 
         // Phase 1 : effets des cartes → TurnContext

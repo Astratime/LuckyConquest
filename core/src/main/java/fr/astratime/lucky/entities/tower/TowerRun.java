@@ -34,6 +34,9 @@ public class TowerRun implements CombatRun {
     private final int       startStage;
     private final EnemyKind startEnemy;
     private List<EnemyKind> choices = List.of();
+    @Override
+    public fr.astratime.lucky.entities.exploration.PlaceRule getPlaceRule() { return chapter.getRule(); }
+
     /** Cagnotte du Jeu bonus de cette ascension : partagée par ses combats, effacée à la fin du chapitre. */
     private final BonusPot pot = new BonusPot();
 
