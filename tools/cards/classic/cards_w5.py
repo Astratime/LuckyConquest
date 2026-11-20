@@ -189,6 +189,48 @@ def lucky_strike(pal):
     return finish(im, L, ['.g.g.', 'ggggg', '.ggg.', 'ggggg', '.g.g.'], {'g': GD})
 
 
+def scratch_ticket(pal):
+    """Un ticket à gratter : trois cases grattées (cerise, sept, cloche), une pièce qui gratte, des copeaux."""
+    im = card(*pal)
+    L = layer()
+    d = ImageDraw.Draw(L)
+    # le ticket, un peu penché
+    poly(d, [(6, 12), (30, 9), (33, 40), (9, 43)], PAPER)
+    L = outline(L)
+    d = ImageDraw.Draw(L)
+    # bande argentée à gratter, en partie grattée
+    poly(d, [(9, 22), (30, 20), (31, 30), (10, 32)], ST)
+    d.line([(10, 23), (29, 21)], fill=STL)
+    d.line([(10, 31), (30, 29)], fill=STD)
+    # trois cases découvertes
+    for (x, y, col, colD) in [(13, 26, R, RD), (20, 25, Y, YD), (27, 24, B, BD)]:
+        d.rectangle([x - 2, y - 3, x + 2, y + 2], fill=PAPER)
+        d.ellipse([x - 1, y - 2, x + 1, y], fill=col)
+        d.point((x, y + 1), fill=colD)
+    # bandeau du haut et petits motifs du ticket (sans texte)
+    d.line([(9, 14), (29, 12)], fill=R)
+    d.line([(9, 16), (29, 14)], fill=RD)
+    for x in (12, 18, 24):
+        d.point((x, 37 - x // 12), fill=PAPERD)
+    d.line([(11, 39), (31, 37)], fill=PAPERD)
+    # la pièce qui gratte, en bas à droite
+    Cn = layer()
+    cd = ImageDraw.Draw(Cn)
+    cd.ellipse([24, 38, 33, 47], fill=Y)
+    Cn = outline(Cn)
+    cd = ImageDraw.Draw(Cn)
+    cd.ellipse([26, 40, 31, 45], outline=YD)
+    cd.point([(26, 40), (27, 39)], fill=YL)
+    L.alpha_composite(Cn)
+    d = ImageDraw.Draw(L)
+    # copeaux argentés
+    d.point([(22, 34), (24, 36), (20, 37), (17, 34)], fill=STD)
+    sparkle(d, 8, 8)
+    sparkle(d, 33, 33)
+    return finish(im, L, ['.yyy.', 'y.y.y', 'yyyyy', 'y.y.y', '.yyy.'], {'y': YD})
+
+
 DESIGNS = {
     'golden_reel': golden_reel, 'dealer_hand': dealer_hand, 'bounty': bounty, 'lucky_strike': lucky_strike,
+    'scratch_ticket': scratch_ticket,
 }

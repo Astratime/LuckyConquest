@@ -51,8 +51,8 @@ class CardLoaderTest {
     void everyCardDefinitionLoads() {
         List<Card> cards = CardLoader.loadAll(READER);
 
-        assertEquals(52 + 39 + 12 + 37 + 41 + 24 + 33 + 1, cards.size(),
-            "4 suites de 13 cartes + 39 cartes spéciales (dont les 4 variantes du Joker, les 3 Étoiles et les 3 cartes à usure) + 12 cartes des donjons + 37 cartes des lieux + 41 cartes des archétypes (dont 12 du Valet à l'As)"
+        assertEquals(52 + 40 + 12 + 37 + 41 + 24 + 33 + 1, cards.size(),
+            "4 suites de 13 cartes + 40 cartes spéciales (dont les 4 variantes du Joker, les 3 Étoiles, les 3 cartes à usure et le Ticket à gratter) + 12 cartes des donjons + 37 cartes des lieux + 41 cartes des archétypes (dont 12 du Valet à l'As)"
                 + " + 24 cartes des rois + 33 cartes de test (Bingo par symbole) + la carte de test du Jeu bonus");
         assertEquals(cards.size(), cards.stream().map(Card::getId).distinct().count(), "les ids doivent être uniques");
     }
@@ -194,6 +194,7 @@ class CardLoaderTest {
         expected.put("dealer_hand", 1500);
         expected.put("bounty", 1000);
         expected.put("lucky_strike", 1500);
+        expected.put("scratch_ticket", 400); // Ticket à gratter (2026-11-20) : 4 C
         expected.put("jeu_bonus", 0); // carte de test du Jeu bonus (mode ADMIN seulement, voir GameScreen)
         for (Symbol symbol : Symbol.values()) {
             if (symbol != Symbol.JOKER) expected.put("bingo_" + symbol.name().toLowerCase(), 0); // cartes de test

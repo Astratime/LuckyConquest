@@ -247,6 +247,17 @@
     ]
   },
   {
+    "id": "scratch_ticket",
+    "name": "Ticket à gratter",
+    "assetPath": "cards/special/scratch_ticket.png",
+    "consumable": true,
+    "effects": [
+      {
+        "type": "SCRATCH_TICKET"
+      }
+    ]
+  },
+  {
     "id": "gain_2000",
     "name": "Gains +2000",
     "assetPath": "cards/special/gain_2000.png",

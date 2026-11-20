@@ -384,6 +384,7 @@ public class CardLoader {
         add(effects, "DEALER_HAND", (json, v) -> new DealerHandEffect());
         add(effects, "BOUNTY", (json, v) -> new BountyEffect(json.getInt("costPercent")));
         add(effects, "LUCKY_STRIKE", (json, v) -> new LuckyStrikeEffect(json.getInt("factor")));
+        add(effects, "SCRATCH_TICKET", (json, v) -> new ScratchTicketEffect());
     }
 
     /** Cartes de la boutique. */
