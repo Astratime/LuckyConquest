@@ -6,6 +6,7 @@
   { "id": "dealer_hand", "price": 1500 },
   { "id": "bounty", "price": 1000 },
   { "id": "lucky_strike", "price": 1500 },
+  { "id": "scratch_ticket", "price": 400 },
   { "id": "jeu_bonus", "price": 0 },
   { "id": "bingo_double_bar", "price": 0 },
   { "id": "bingo_cherry", "price": 0 },

@@ -3084,5 +3084,10 @@
   "Vaincre la version dorée de tous les soldats.": "Defeat the golden version of every soldier.",
   "Ennemis dorés : {0} / {1}": "Golden enemies: {0} / {1}",
   "Se débloque en vainquant tous les ennemis dorés ({0} / {1}).": "Unlocked by defeating every golden enemy ({0} / {1}).",
-  "Se débloque en vainquant {0} ennemis dorés ({1} / {0}).": "Unlocked by defeating {0} golden enemies ({1} / {0})."
+  "Se débloque en vainquant {0} ennemis dorés ({1} / {0}).": "Unlocked by defeating {0} golden enemies ({1} / {0}).",
+  "Ticket à gratter": "Scratch Ticket",
+  "TICKET GAGNANT : GAINS +{0}": "WINNING TICKET: GAINS +{0}",
+  "TICKET PERDANT": "LOSING TICKET",
+  "TICKET À GRATTER": "SCRATCH TICKET",
+  "Gratte tout de suite : 0, 4, 6 ou 10 fois le coût du tirage en gains (4 en moyenne), sans multiplicateur. Un pur pari": "Scratch it at once: 0, 4, 6 or 10 times the spin cost in gains (4 on average), with no multiplier. A pure gamble"
 }
