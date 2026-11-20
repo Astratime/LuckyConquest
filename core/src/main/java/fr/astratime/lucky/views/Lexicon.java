@@ -2,6 +2,7 @@ package fr.astratime.lucky.views;
 
 import fr.astratime.lucky.controllers.GameController;
 import fr.astratime.lucky.controllers.PreparationResolver;
+import fr.astratime.lucky.entities.LifeDrain;
 import fr.astratime.lucky.entities.RankBonus;
 import fr.astratime.lucky.entities.BonusGame;
 import fr.astratime.lucky.entities.Combo;
@@ -140,7 +141,10 @@ public final class Lexicon {
             term(Lang.t("Sang"), Lang.f("Jauge de Coeur, jusqu'à {0}. Le soin au-delà de tes PV max s'y garde. "
                 + "L'As de Coeur la vide en Puissance : +1 par PV max de Sang (+{1} au plus).",
                 Lang.big(LastingEffects.MAX_BLOOD), CombatContext.GAUGE_POWER_CAP)),
-            term(Lang.t("Drain de vie"), Lang.t("Tes Coeurs te soignent d'une part des dégâts infligés. Le surplus remplit le Sang.")),
+            term(Lang.t("Drain de vie"), Lang.f("Tes Coeurs te soignent selon la part des PV de l'ennemi que tu lui enlèves, "
+                + "rapportée à tes PV max : avec 10 % de drain, enlever 10 % de ses PV te soigne de {0} % de tes PV max. "
+                + "Au plus {1} % de tes PV max par tour. La moitié du surplus remplit le Sang.",
+                LifeDrain.per10(10), LifeDrain.TURN_CAP_PERCENT)),
             term(Lang.t("Berserk"), Lang.t("As de Coeur : plus tu as perdu de vie, plus ton attaque est multipliée.")),
             term(Lang.t("Coffre"), Lang.f("Jauge de Carreau, jusqu'à {0}. Ton bouclier inutilisé s'y garde, multiplié "
                 + "par tes Carreaux. L'As de Carreau le vide en Puissance.", Lang.big(LastingEffects.MAX_VAULT))),

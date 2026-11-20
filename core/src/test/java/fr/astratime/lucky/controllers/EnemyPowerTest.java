@@ -51,7 +51,7 @@ class EnemyPowerTest {
             for (var event : turn.events()) {
                 if (event instanceof PlayerDamagedEvent hit) {
                     int attack = hit.damage + hit.blocked;
-                    assertTrue(attack >= EnemyKind.TRICHEUR.empowered(EnemySymbol.SWORD_DAMAGE, Difficulty.NORMAL), "coup renforcé par sa force");
+                    assertTrue(attack >= EnemyKind.TRICHEUR.hurt(EnemySymbol.SWORD_DAMAGE, Difficulty.NORMAL), "coup renforcé par sa force");
                 }
             }
         }
@@ -210,10 +210,12 @@ class EnemyPowerTest {
     @Test
     void towerSwordsHitHarderFromChapterThree() {
         int sword = EnemySymbol.SWORD_DAMAGE;
-        assertEquals(sword * 2, EnemyKind.CHEF.hurt(sword, Difficulty.NORMAL), "chapitre 2 inchangé");
-        assertEquals(100, EnemyKind.HORLOGER.hurt(sword, Difficulty.NORMAL), "chapitre 3 : Épée à 100 (choix d'Astra)");
-        assertEquals(174, EnemyKind.PILLEUR.hurt(sword, Difficulty.NORMAL));
-        assertEquals(300, EnemyKind.PORTIER.hurt(sword, Difficulty.NORMAL));
-        assertEquals(200, EnemyKind.MACHINE_ORIGINELLE.hurt(sword, Difficulty.NORMAL));
+        // Épées choisies par Astra (chapitre 2 : 40, 3 : 100, 4 : 174, 5 : 300, 6 : 200), x la part gardée depuis le
+        // drain de vie relatif (2026-11-20 : 72, 70, 60, 58 et 52 %)
+        assertEquals(Math.round(sword * 2 * 0.72), EnemyKind.CHEF.hurt(sword, Difficulty.NORMAL), "chapitre 2");
+        assertEquals(70, EnemyKind.HORLOGER.hurt(sword, Difficulty.NORMAL), "chapitre 3");
+        assertEquals(104, EnemyKind.PILLEUR.hurt(sword, Difficulty.NORMAL));
+        assertEquals(174, EnemyKind.PORTIER.hurt(sword, Difficulty.NORMAL));
+        assertEquals(104, EnemyKind.MACHINE_ORIGINELLE.hurt(sword, Difficulty.NORMAL));
     }
 }

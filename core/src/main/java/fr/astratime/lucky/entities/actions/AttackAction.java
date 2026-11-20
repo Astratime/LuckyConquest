@@ -3,11 +3,10 @@ package fr.astratime.lucky.entities.actions;
 import fr.astratime.lucky.entities.context.CombatContext;
 import fr.astratime.lucky.entities.DamageBreakdown;
 import fr.astratime.lucky.entities.Enemy;
+import fr.astratime.lucky.entities.LifeDrain;
 import fr.astratime.lucky.entities.events.EnemyDamagedEvent;
 import fr.astratime.lucky.entities.events.Event;
 import fr.astratime.lucky.entities.events.GainsEarnedEvent;
-import fr.astratime.lucky.entities.events.GaugeFilledEvent;
-import fr.astratime.lucky.entities.events.PlayerHealedEvent;
 import fr.astratime.lucky.i18n.Lang;
 
 import java.util.ArrayList;
@@ -20,7 +19,7 @@ import java.util.List;
  *  - attackFactor / symbolPower : multiplicateurs des dégâts (combos, Bingo)
  *  - piercePercent  : part (%) du coup qui traverse la défense (Pique ; 100 : elle est ignorée) ;
  *                     la défense absorbe ce qu'elle peut du reste et s'use d'autant
- *  - lifeDrainPercent : si > 0 (Coeur), soigne le joueur d'un % des dégâts infligés ;
+ *  - lifeDrainPercent : si > 0 (Coeur), soigne le joueur (voir LifeDrain) ;
  *                     le soin au-delà des PV max remplit le Sang
  *  - gainsFromDamage  : si vrai (As de Pique), convertit les dégâts en gains
  * Le bonus d'attaque du rang du joueur s'ajoute aux dégâts de base.
@@ -92,16 +91,8 @@ public non-sealed class AttackAction extends Action {
             .withBreakdown(new DamageBreakdown(symbol, rank, context.withPrestige(CombatContext.Target.ATTACK, prestige), rawDamage, pierce,
                 blocked, shown)));
 
-        if (context.getLifeDrainPercent() > 0 && damage > 0) {
-            int drained = Math.round(damage * (context.getLifeDrainPercent() / 100f));
-            int healed  = context.getPlayer().heal(drained); // plafonné aux PV max
-            if (healed > 0) {
-                events.add(new PlayerHealedEvent(healed));
-            }
-            if (drained > healed) { // le soin en trop remplit le Sang (Coeur)
-                context.getPlayer().getLastingEffects().addBlood(drained - healed);
-                events.add(new GaugeFilledEvent(GaugeFilledEvent.Gauge.SANG, drained - healed));
-            }
+        if (context.getLifeDrainPercent() > 0 && damage > 0) { // Coeur : voir LifeDrain
+            LifeDrain.apply(context, damage, context.getLifeDrainPercent(), events);
         }
 
         afterHit(context, damage, events);

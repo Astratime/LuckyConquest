@@ -1,5 +1,6 @@
 package fr.astratime.lucky.entities.effects;
 
+import fr.astratime.lucky.entities.LifeDrain;
 import fr.astratime.lucky.entities.context.TurnContext;
 import fr.astratime.lucky.i18n.Lang;
 import fr.astratime.lucky.popups.EffectPopup;
@@ -16,7 +17,7 @@ public class HeartDrainEffect extends Effect {
 
     private final int percent;
 
-    /** @param percent pourcentage des dégâts infligés rendu en soin. */
+    /** @param percent drain de vie, en % (voir {@link LifeDrain}). */
     public HeartDrainEffect(int percent) { this.percent = percent; }
 
     @Override
@@ -26,7 +27,8 @@ public class HeartDrainEffect extends Effect {
 
     @Override
     public String getDescription() {
-        return Lang.f("Drain de vie : soigne de {0}% des dégâts infligés. Le surplus remplit le Sang", percent);
+        return Lang.f("Drain de vie {0} % : enlever 10 % des PV de l'ennemi te soigne de {1} % de tes PV max ({2} % au plus "
+            + "par tour). La moitié du surplus remplit le Sang", percent, LifeDrain.per10(percent), LifeDrain.TURN_CAP_PERCENT);
     }
 
     @Override

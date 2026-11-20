@@ -1,5 +1,6 @@
 package fr.astratime.lucky.controllers;
 
+import fr.astratime.lucky.entities.enemy.Difficulty;
 import fr.astratime.lucky.entities.Card;
 import fr.astratime.lucky.entities.Enemy;
 import fr.astratime.lucky.entities.Player;
@@ -135,7 +136,7 @@ class EnemyKindsTest {
                 bites++;
                 List<Event> events = turn.outcomes().get(i);
                 int stolen = ((PlayerDamagedEvent) events.get(0)).damage;
-                assertTrue(stolen >= EnemySymbol.FANG_DAMAGE);
+                assertTrue(stolen >= EnemyKind.SANGSUE.hurt(EnemySymbol.FANG_DAMAGE, Difficulty.NORMAL));
                 EnemyDrainEvent drain = (EnemyDrainEvent) events.get(1);
                 // ses Cœurs renforcent le soin du Croc : +20 % au plus par carte, 3 cartes par tour
                 assertTrue(drain.amount > 0 && drain.amount <= stolen * enemy.getMaxHp() / 100 * 160 / 100,
@@ -176,7 +177,7 @@ class EnemyKindsTest {
             EnemyTurnResult turn = new EnemyTurnResolver(new Random(seed)).resolve(bretteur, player);
             for (int i = 0; i < 3; i++) {
                 if (turn.symbols()[i] == EnemySymbol.SWORD) {
-                    assertEquals(EnemySymbol.SWORD_DAMAGE + 9, ((PlayerDamagedEvent) turn.outcomes().get(i).get(0)).damage);
+                    assertEquals(EnemyKind.CROUPIER.hurt(EnemySymbol.SWORD_DAMAGE + 9, Difficulty.NORMAL), ((PlayerDamagedEvent) turn.outcomes().get(i).get(0)).damage);
                 }
             }
         }

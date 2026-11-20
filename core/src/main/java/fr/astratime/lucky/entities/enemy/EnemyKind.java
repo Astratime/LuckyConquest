@@ -1149,13 +1149,37 @@ public enum EnemyKind {
     static final int PIQUE_DAMAGE = 48, TREFLE_DAMAGE = 165, COEUR_DAMAGE = 210, CARREAU_DAMAGE = 165;
 
     /** @return l'attaque {@code value} renforcée par sa {@linkplain #getPower(boolean) force}, puis à la {@linkplain #damagePercent() part qui porte}. */
+    /**
+     * Drain de vie relatif (2026-11-20, voir {@link fr.astratime.lucky.entities.LifeDrain}) : avant, le drain rendait
+     * plusieurs fois la vie du joueur à chaque tour, et les coups des ennemis avaient été réglés en comptant dessus
+     * (simulateur : sans Coeur, un deck Pique gagnait 2 % des descentes du Désert au Roi du casino). Le drain ne
+     * soigne plus qu'une part des PV max du joueur, donc les ennemis frappent moins fort : part de leurs coups gardée,
+     * en %, lieu par lieu (Exploration, de la prairie au Désert ; le mode difficile suit, il se règle sur le Désert)
+     * pour que le « joueur malin » du simulateur gagne aussi souvent qu'avant dans le lieu de son rang (±5 points).
+     */
+    static final int[] EXPLORATION_DAMAGE_SCALE = {90, 78, 76, 63, 72, 42};
+    /** Pareil pour la Tour des épreuves, chapitre par chapitre ; en difficile, toute la Tour prend la part du chapitre 6. */
+    static final int[] TOWER_DAMAGE_SCALE = {72, 72, 70, 60, 58, 52};
+
     public int hurt(int value, Difficulty hard) {
         int empowered = empowered(value, hard);
         // Mode difficile : toute la Tour frappe comme ses derniers chapitres, pour que sa force compte en entier.
         int percent = hard.hard() && isTower() ? TOWER_LATE_DAMAGE : damagePercent();
         double factor = HardExploration.applies(this, hard) ? HardExploration.attackFactor(Place.of(this)) : 1;
-        if (percent == 100 && factor == 1) return empowered;
-        return (int) Math.min(Integer.MAX_VALUE, Math.round((double) empowered * percent / 100 * factor));
+        double scaled = percent * drainScale(hard) / 100.0; // drain de vie relatif : les ennemis frappent moins fort
+        if (scaled == 100 && factor == 1) return empowered;
+        return (int) Math.min(Integer.MAX_VALUE, Math.round(empowered * scaled / 100 * factor));
+    }
+
+    /** @return la part de ses coups gardée depuis le drain de vie relatif, en % (voir {@link #EXPLORATION_DAMAGE_SCALE}). */
+    int drainScale(Difficulty hard) {
+        if (isTower()) {
+            if (hard.hard()) return TOWER_DAMAGE_SCALE[TOWER_DAMAGE_SCALE.length - 1]; // toute la Tour difficile frappe comme le chapitre 6
+            Chapter chapter = Chapter.of(this);
+            return chapter == null ? 100 : TOWER_DAMAGE_SCALE[chapter.getNumber() - 1];
+        }
+        Place place = Place.of(this);
+        return place == null ? 100 : EXPLORATION_DAMAGE_SCALE[place.ordinal()];
     }
 
     /** @return sa force en multiplicateur affichable (ex : "x1,5"). */

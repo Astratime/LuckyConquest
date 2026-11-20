@@ -89,7 +89,7 @@ public final class BlessingAction extends MixedAction {
     @Override
     public String getDescription() {
         if (hell) {
-            return Lang.f("Chaque rouleau, un effet au hasard : {0} d'attaque et vampirisme ({1} % des dégâts). Ou bouclier {2}, "
+            return Lang.f("Chaque rouleau, un effet au hasard : {0} d'attaque et vampirisme (drain de vie {1} %). Ou bouclier {2}, "
                     + "et {3} % de ses PV max renvoyés s'il attaque. Ou {4} gains, et l'ennemi est affaibli à son prochain tour : "
                     + "ses attaques font -{5} % et il joue {6} cartes au plus", HELL_ATTACK, HELL_DRAIN_PERCENT, HELL_SHIELD, HELL_REFLECT_PERCENT,
                 HELL_GAINS, EnemyMaluses.HELL_DAMAGE_PERCENT, EnemyMaluses.HELL_MAX_CARDS);

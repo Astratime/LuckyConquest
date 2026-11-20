@@ -80,17 +80,17 @@ class SuitGaugesTest {
 
     @Test
     void overhealFillsTheBloodThatTheAceOfHeartsTurnsIntoAttack() {
-        CombatContext combat = new CombatContext(player, enemy);
+        CombatContext combat = new CombatContext(player, new Enemy("Ennemi", 1_000)); // 60 dégâts = 6 % de ses PV
         combat.addLifeDrainPercent(50);
         List<?> events = SymbolRegistry.getAction(Symbol.TRIPLE_SEVEN).orElseThrow().resolve(combat); // 60 dégâts
 
-        assertEquals(30, lasting.getBlood(), "joueur à pleine vie : tout le soin part dans le Sang");
+        assertEquals(15, lasting.getBlood(), "joueur à pleine vie : le soin (50 % x 6 % x 100 PV x 10 = 30) remplit le Sang à moitié");
         assertTrue(events.stream().anyMatch(e -> e instanceof GaugeFilledEvent));
 
         player.takeDamage(50);
         CombatContext frenzy = prepare(new AceOfHeartsEffect()).getCombatContext();
-        // Puissance (2026-11-18) : Frénésie +1 (2 x 50 % de vie manquante), Sang +0,3 (30 Sang pour 100 PV max)
-        assertEquals(2.3f, frenzy.getAttackFactor(), 1e-6);
+        // Puissance (2026-11-18) : Frénésie +1 (2 x 50 % de vie manquante), Sang +0,15 (15 Sang pour 100 PV max)
+        assertEquals(2.15f, frenzy.getAttackFactor(), 1e-6);
         assertEquals(0, frenzy.getAttackBonus());
         assertEquals(0, lasting.getBlood());
     }

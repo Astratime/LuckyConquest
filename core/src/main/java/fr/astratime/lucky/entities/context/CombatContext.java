@@ -107,7 +107,8 @@ public class CombatContext {
     private int     emberTurns     = 0;     // Braise : tours de brûlure, et part du plus gros coup (%)
     private int     emberPercent   = 0;
     private int     piercePercent  = 0;     // Pique : part (%) de chaque coup qui traverse la défense ennemie
-    private int     lifeDrainPercent = 0;   // Coeur : % des dégâts infligés rendus en soin
+    private int     lifeDrainPercent = 0;   // Coeur : drain de vie du tour (voir LifeDrain)
+    private long    drainHealed = 0;        // ce que le drain a déjà rendu ce tour (plafond de LifeDrain)
     private boolean gainsFromDamage  = false; // As de Pique : convertit les dégâts infligés en gains
 
     private float   reflectAttackPercent = 0f;    // Carreau : renvoi en % de l'attaque ennemie, additionné, actif si un symbole de défense sort
@@ -600,6 +601,10 @@ public class CombatContext {
     public void pierceDefense(int percent)          { piercePercent = Math.max(piercePercent, Math.min(100, percent)); }
     /** Ajoute {@code percent} au pourcentage de drain de vie du tour. */
     public void addLifeDrainPercent(int percent)    { lifeDrainPercent += percent; }
+    /** @return ce que le drain de vie a déjà rendu ce tour (PV et Sang). */
+    public long getDrainHealed() { return drainHealed; }
+    /** Note {@code amount} rendus par le drain de vie ce tour. */
+    public void addDrainHealed(long amount) { drainHealed += amount; }
     /** Active ou désactive la conversion des dégâts infligés en gains pour ce tour. */
     public void setGainsFromDamage(boolean value)   { gainsFromDamage = value; }
 
