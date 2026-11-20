@@ -382,7 +382,8 @@ public class ExplorationScreen extends CasinoMenuScreen {
         }
         if (hard) {
             // La force du lieu difficile : celle du Désert en normal, x2 par lieu.
-            text.append('\n').append(Lang.f("Difficulté : le Désert x{0}.", HardExploration.strength(place)));
+            text.append('\n').append(Lang.f("Difficulté : le Désert x{0}.", Lang.decimal(String.format(java.util.Locale.ROOT, "%.3g", HardExploration.strength(place))
+                .replaceAll("\\.?0+$", ""))));
         }
         text.append("\n\n").append(Lang.f("Combat 1 : {0} ({1} PV)", dungeon.getSoldier().getDisplayName(),
             Lang.big(dungeon.getSoldier().getMaxHp(Difficulty.of(hard)))));

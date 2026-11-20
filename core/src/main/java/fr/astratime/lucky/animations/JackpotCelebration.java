@@ -192,12 +192,13 @@ public class JackpotCelebration extends Group implements Disposable {
     private final AnchorDropScene     anchorDrop     = new AnchorDropScene(iconOf(Symbol.ANCHOR));
     private final ChipTowerScene      chipTower      = new ChipTowerScene(iconOf(Symbol.GOLD_CHIP));
     private final FirePillarScene     firePillar     = new FirePillarScene(iconOf(Symbol.FLAME));
+    private final SteamEngineScene    steamEngine    = new SteamEngineScene(iconOf(Symbol.STEAM));
     private final HellGateScene       hellGate       = new HellGateScene();
     private final LightOrbScene       lightOrb       = new LightOrbScene(iconOf(Symbol.BINGO_LIGHT));
     private final List<BingoScene>    scenes = List.of(hydraulicPress, forge, cherryTree, winePress,
         gemCut, safe, katana, horseshoe, shieldWall, swords, heartbeat, tripleDice, shootingStar, bomb, coronation,
         mine, cannon, supernova, bite, piggyBank, spikedShield, scythe, moonrise, demonGate, heaven, scratchTicket,
-        anchorDrop, chipTower, firePillar, hellGate, lightOrb);
+        anchorDrop, chipTower, firePillar, steamEngine, hellGate, lightOrb);
     private final Group        bannerLayer = new Group();
     /** La mise en scène au premier plan (objets, bannière, mot géant, flash) : elle s'efface quand on passe. */
     private final Group        foreground  = new Group();
@@ -455,6 +456,7 @@ public class JackpotCelebration extends Group implements Disposable {
             case ANCHOR        -> scheduleAnchorDrop(icon);
             case GOLD_CHIP     -> scheduleChipTower(icon);
             case FLAME         -> scheduleFirePillar(icon);
+            case STEAM         -> scheduleSteamEngine(icon);
             case DESCENT       -> scheduleHellfire(icon);
             case BINGO_LIGHT   -> scheduleHalo(icon);
             case JOKER         -> scheduleCasino();
@@ -982,6 +984,39 @@ public class JackpotCelebration extends Group implements Disposable {
     }
 
     /** Flamme : un brasero, la Flamme grandit, puis une colonne de feu jaillit jusqu'en haut de l'écran. */
+    /** Vapeur : la locomotive entre, freine, et siffle une colonne de vapeur blanche. */
+    private void scheduleSteamEngine(TextureRegion icon) {
+        float centerX = playArea.getCenterX(), baseY = getHeight() * 0.12f;
+        float whistle = SteamEngineScene.WHISTLE_TIME;
+        playScene(steamEngine, centerX, baseY, whistle + 0.2f, 0.86f);
+        Color smoke = Color.valueOf("8a8a96ff"), mist = Color.valueOf("e8eef4ff");
+        emit(0f, SteamEngineScene.STOP_TIME, 40, i -> {
+            Vector2 top = steamEngine.chimney();
+            frontGlitter.ember(top.x + MathUtils.random(-20f, 20f), top.y, MathUtils.random(-260f, -120f),
+                MathUtils.random(120f, 260f), -40f, MathUtils.random(10f, 18f), MathUtils.random(0.5f, 0.8f), smoke);
+        });
+        at(SteamEngineScene.STOP_TIME, () -> screenShake.shake(0.3f, 10f));
+        at(whistle, () -> {
+            screenShake.shake(0.6f, 18f);
+            impactFlash(1f, 1f, 1f, 0.5f);
+            Vector2 top = steamEngine.chimney();
+            shockwaves.ring(top.x, top.y, 560f, 0.6f, 0.3f, mist);
+            shockwaves.ring(top.x, top.y, 380f, 0.5f, 0.3f, Palette.GOLD);
+        });
+        emit(whistle, whistle + 0.9f, 200, i -> {
+            Vector2 top = steamEngine.chimney();
+            frontGlitter.ember(top.x + MathUtils.random(-90f, 90f), top.y, MathUtils.random(-160f, 160f),
+                MathUtils.random(700f, 1300f), 0f, MathUtils.random(10f, 20f), MathUtils.random(0.5f, 0.9f),
+                i % 3 == 0 ? Color.WHITE : i % 3 == 1 ? mist : Palette.GOLD);
+        });
+        emit(whistle + 0.15f, whistle + 0.3f, 12, i -> {
+            Vector2 top = steamEngine.chimney();
+            symbols.jet(icon, top.x, getHeight() * 0.7f, 200f + i * 12f, MathUtils.random(500f, 800f),
+                MathUtils.random(50f, 70f), 900f);
+        });
+        coinRain(whistle + 0.2f, whistle + 1.1f, 18, 1);
+    }
+
     private void scheduleFirePillar(TextureRegion icon) {
         float centerX = playArea.getCenterX(), baseY = getHeight() * 0.1f;
         float erupt = FirePillarScene.ERUPT_TIME;

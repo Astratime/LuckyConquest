@@ -107,6 +107,8 @@ public class GameController {
     /** La carte « Bingo » a donné un Bingo de gains : une carte Bingo (symbole au hasard) est glissée dans le deck au prochain tour. */
     private boolean bingoGiftPending = false;
 
+    /** Berceuse : cartes jouées qui s'endorment encore ce tour (sans effet). */
+    private int sleepyCards;
     /** Cartes jouées ce tour (toutes comptent, consommables compris), limitées par {@link #getPlayLimit()}. */
     private int cardsPlayedThisTurn = 0;
 
@@ -410,11 +412,12 @@ public class GameController {
         Player player = gameState.getPlayer();
         LastingEffects lasting = player.getLastingEffects();
         turnNotices.clear();
-        // Abordage : les cartes volées depuis assez longtemps reviennent dans le deck, avant la pioche.
+        // Abordage, Vol à la tire : les cartes volées depuis assez longtemps reviennent dans le deck, avant la pioche.
         for (Card back : player.returnStolenCards()) {
-            turnNotices.add(new EffectPopup(Lang.f("ABORDAGE : {0} RENDUE", back.getName().toUpperCase()),
+            turnNotices.add(new EffectPopup(Lang.f("{0} REVIENT DANS TON DECK", back.getName().toUpperCase()),
                 EffectPopup.Style.DEFENSE, PopupScale.SECONDARY_INTENSITY));
         }
+        sleepyCards = lasting.takeLullabies(); // Berceuse : les premières cartes jouées ce tour s'endorment
         int buried = lasting.takeRockfalls(); // Éboulement : des cartes de moins
         int laughs = lasting.takeNextDraws(); // Rire du Joker : des cartes de plus
         int gifts = boonDraws; // cartes du carrefour, sur le dessus du deck
@@ -427,6 +430,11 @@ public class GameController {
         if (buried > 0) {
             turnNotices.add(new EffectPopup(Lang.n(buried, "ÉBOULEMENT : {0} CARTE DE MOINS",
                 "ÉBOULEMENT : {0} CARTES DE MOINS", buried), EffectPopup.Style.DAMAGE, PopupScale.SECONDARY_INTENSITY));
+        }
+        if (gameState.getActiveRule().isCrowded(gameState.getTurnNumber())) { // Wagon bondé (Rapide de Minuit)
+            turnNotices.add(new EffectPopup(Lang.n(PlaceRule.CROWDED_PLAYS, "WAGON BONDÉ : {0} CARTE JOUÉE DE MOINS",
+                "WAGON BONDÉ : {0} CARTES JOUÉES DE MOINS", PlaceRule.CROWDED_PLAYS), EffectPopup.Style.DAMAGE,
+                PopupScale.SECONDARY_INTENSITY));
         }
         List<Card> added     = new ArrayList<>(drawn.getAddedToHand());
         List<Card> discarded = new ArrayList<>(drawn.getDiscarded());
@@ -783,6 +791,12 @@ public class GameController {
             playContext.addPopups(List.of(EffectPopup.scaled(Lang.f("PIOCHE +{0}", dealt), EffectPopup.Style.DRAW, dealt,
                 PopupScale.CARD_EXTRA_DRAW)));
         }
+        if (sleepyCards > 0) { // Berceuse : la carte s'endort, elle ne fait rien (elle compte pour la limite et les combinaisons)
+            sleepyCards--;
+            playContext.addPopups(List.of(new EffectPopup(Lang.f("BERCEUSE : {0} S'ENDORT", card.getName().toUpperCase()),
+                EffectPopup.Style.DAMAGE, PopupScale.SECONDARY_INTENSITY)));
+            return new CardPlayResult(DrawResult.empty(), playContext.getPopups(), null, false, null);
+        }
         Symbol guest = admin ? guestBingoSymbol(card) : null;
         if (guest != null) { // ADMIN : Bingo d'un rouleau absent de la machine, le symbole s'invite pour ce tirage
             playContext.addPopups(List.of(new EffectPopup(Lang.f("{0} S'INVITE !", guest.getDisplayName().toUpperCase()),
@@ -930,7 +944,8 @@ public class GameController {
     /** @return les cartes que le joueur peut jouer ce tour (plus sous l'effet de Dans la manche). */
     public int getPlayLimit() {
         LastingEffects lasting = gameState.getPlayer().getLastingEffects();
-        return Math.max(DEFAULT_PLAY_LIMIT, lasting.getExtraPlays()) + lasting.getBonusPlays();
+        int crowded = gameState.getActiveRule().isCrowded(gameState.getTurnNumber()) ? PlaceRule.CROWDED_PLAYS : 0;
+        return Math.max(1, Math.max(DEFAULT_PLAY_LIMIT, lasting.getExtraPlays()) + lasting.getBonusPlays() - crowded);
     }
 
     /** @return les cartes jouées ce tour. */

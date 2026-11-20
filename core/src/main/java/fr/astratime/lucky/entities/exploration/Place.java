@@ -17,39 +17,46 @@ public enum Place {
     PRAIRIE("La prairie", "La prairie",
         "L'herbe est haute. Le vent est doux. Quatre donjons dorment sous les collines. "
             + "Chacun garde un coffre au trésor.",
-        PlaceRule.NONE, 0, 0, 0, 100, 100, 500, List.of(Dungeon.PIQUE, Dungeon.TREFLE, Dungeon.COEUR, Dungeon.CARREAU)),
+        PlaceRule.NONE, 1, 0, 0, 0, 100, 100, 500, List.of(Dungeon.PIQUE, Dungeon.TREFLE, Dungeon.COEUR, Dungeon.CARREAU)),
 
     FOIRE("La Fête foraine", "La Foire",
         "Une fête foraine s'est installée au bord de la prairie. La nuit, les manèges tournent seuls. "
             + "Les forains, eux, trichent toujours.",
-        PlaceRule.MANEGE, 30, 300, 15, 93, 700, 1_000,
+        PlaceRule.MANEGE, 2, 30, 300, 15, 93, 700, 1_000,
         List.of(Dungeon.CHAPITEAU, Dungeon.TRAIN_FANTOME, Dungeon.GRANDE_ROUE, Dungeon.STANDS)),
+
+    RAPIDE("Le Rapide de Minuit", "Le Rapide",
+        "Un train de nuit relie la Foire au Port. On y joue toute la nuit, wagon après wagon. "
+            + "Au bout du convoi, un fourgon blindé transporte l'or de la comète.",
+        PlaceRule.WAGON_BONDE, 3, 40, 550, 12, 112, 1_500, 1_250,
+        List.of(Dungeon.LOCOMOTIVE, Dungeon.WAGON_RESTAURANT, Dungeon.WAGON_LIT, Dungeon.FOURGON)),
 
     PORT("Le Port des Contrebandiers", "Le Port",
         "Les bateaux n'apportent plus d'épices. Ils apportent des cartes truquées. Sur les quais, tout s'achète. "
             + "Même la chance.",
-        PlaceRule.SCORBUT, 50, 1_000, 10, 135, 3_000, 1_500, List.of(Dungeon.CALE, Dungeon.TAVERNE, Dungeon.PHARE, Dungeon.GALION)),
+        PlaceRule.SCORBUT, 4, 50, 1_000, 10, 135, 3_000, 1_500, List.of(Dungeon.CALE, Dungeon.TAVERNE, Dungeon.PHARE, Dungeon.GALION)),
 
     MINES("Les Mines d'Or", "Les Mines",
         "Sous la montagne, l'or de la comète coule encore. Les mineurs creusent sans fin. Ils ont oublié la lumière. "
             + "Pas leur cupidité.",
-        PlaceRule.GRISOU, 150, 10_000, 20, 78, 12_000, 2_500, List.of(Dungeon.FILON, Dungeon.PUITS, Dungeon.FORGE, Dungeon.GOUFFRE)),
+        PlaceRule.GRISOU, 6, 150, 10_000, 20, 78, 12_000, 2_500, List.of(Dungeon.FILON, Dungeon.PUITS, Dungeon.FORGE, Dungeon.GOUFFRE)),
 
     CASINO("Le Casino Englouti", "Le Casino",
         "Le plus grand casino du monde a sombré une nuit de jackpot. Sous l'eau, les machines tournent toujours. "
             + "Les joueurs aussi.",
-        PlaceRule.MAREE, 400, 50_000, 30, 60, 45_000, 4_000, List.of(Dungeon.BAR, Dungeon.MACHINES, Dungeon.COFFRES, Dungeon.VIP)),
+        PlaceRule.MAREE, 8, 400, 50_000, 30, 60, 45_000, 4_000, List.of(Dungeon.BAR, Dungeon.MACHINES, Dungeon.COFFRES, Dungeon.VIP)),
 
     DESERT("Le Désert de Braise", "Le Désert",
         "Au-delà du Casino Englouti, la mer s'est retirée. Il ne reste qu'un désert brûlant. Au loin, un volcan fume. "
             + "On dit qu'un dragon y dort sur l'or de la comète.",
-        PlaceRule.SOIF, 250, 60_000, 25, 196, 140_000, 5_000,
+        PlaceRule.SOIF, 10, 250, 60_000, 25, 196, 140_000, 5_000,
         List.of(Dungeon.CARAVANE, Dungeon.TOMBEAU, Dungeon.OASIS, Dungeon.VOLCAN));
 
     private final String        name;
     private final String        shortName;
     private final String        description;
     private final PlaceRule     rule;
+    private final int           tier;
     private final int           swordDamage;
     private final int           shieldDefense;
     private final int           healPercent;
@@ -58,7 +65,13 @@ public enum Place {
     private final int           chestSpins;
     private final List<Dungeon> dungeons;
 
+    /** Nombre de lieux de l'Exploration une fois tous construits (Astra, 2026-11-20 : un rang par lieu). */
+    public static final int FINAL_TIERS = 10;
+
     /**
+     * @param tier          sa place dans l'Exploration à dix lieux (1 la prairie … 10 le Désert), même tant que
+     *                      les lieux d'entre deux ne sont pas encore construits : le rang du lieu, le mode
+     *                      difficile et les sceaux de Prestige se règlent sur elle
      * @param swordDamage   dégâts de base d'une Épée de ses ennemis (0 : ceux de base)
      * @param shieldDefense défense de base d'un Bouclier de ses ennemis (0 : celle de base)
      * @param healPercent   soin de base d'une Potion de ses ennemis, en % de leurs PV max (0 : celui de base)
@@ -67,13 +80,14 @@ public enum Place {
      *                      2026-10-29) pour qu'un rang gagne au moins deux fois plus dans son lieu que dans celui d'avant
      * @param chestSpins    pièces du coffre de ses donjons, en coûts de tirage 
      */
-    Place(String name, String shortName, String description, PlaceRule rule,
+    Place(String name, String shortName, String description, PlaceRule rule, int tier,
           int swordDamage, int shieldDefense, int healPercent, int damagePercent, int spinCost, int chestSpins,
           List<Dungeon> dungeons) {
         this.name          = name;
         this.shortName     = shortName;
         this.description   = description;
         this.rule          = rule;
+        this.tier          = tier;
         this.swordDamage   = swordDamage;
         this.shieldDefense = shieldDefense;
         this.healPercent   = healPercent;
@@ -102,6 +116,7 @@ public enum Place {
         return switch (this) {
             case PRAIRIE -> 100;
             case FOIRE   -> 250;
+            case RAPIDE  -> 350;
             case PORT    -> 500;
             case MINES   -> 1_000;
             case CASINO  -> 2_000;
@@ -120,6 +135,7 @@ public enum Place {
         return switch (this) {
             case PRAIRIE -> 55;
             case FOIRE   -> 32;
+            case RAPIDE  -> 24;
             case PORT    -> 18;
             case MINES   -> 19;
             case CASINO  -> 15;
@@ -185,11 +201,40 @@ public enum Place {
         return switch (this) {
             case PRAIRIE -> null;
             case FOIRE   -> Symbol.TICKET;
+            case RAPIDE  -> Symbol.STEAM;
             case PORT    -> Symbol.ANCHOR;
             case MINES   -> Symbol.NUGGET;
             case CASINO  -> Symbol.GOLD_CHIP;
             case DESERT  -> Symbol.FLAME;
         };
+    }
+
+    /**
+     * Drain de vie relatif (2026-11-20) : la part des coups de ses ennemis gardée, en % (voir
+     * {@link EnemyKind#hurt}), réglée au simulateur pour que le joueur moyen gagne aussi souvent qu'avant.
+     */
+    public int getDrainScale() {
+        return switch (this) {
+            case PRAIRIE -> 90;
+            case FOIRE   -> 78;
+            case RAPIDE  -> 77;
+            case PORT    -> 76;
+            case MINES   -> 63;
+            case CASINO  -> 72;
+            case DESERT  -> 42;
+        };
+    }
+
+    /** @return sa place dans l'Exploration à dix lieux, de 1 (la prairie) à {@value #FINAL_TIERS} (le Désert). */
+    public int getTier() { return tier; }
+
+    /**
+     * @return le premier lieu construit dont la place est {@code tier} ou au-dessus (le Désert au-delà) : tant qu'un
+     *         lieu prévu n'existe pas, c'est celui d'après qui le remplace
+     */
+    public static Place atTier(int tier) {
+        for (Place place : values()) if (place.tier >= tier) return place;
+        return DESERT;
     }
 
     /** @return la règle du lieu, qui joue dans tous ses combats. */

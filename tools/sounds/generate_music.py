@@ -336,6 +336,56 @@ def combat_foire():
     return looped_reverb(loop_of(track, d), wet=0.22, size=1.2, tail=0.7)
 
 
+@music('combat_rapide')
+def combat_rapide():
+    """
+    Le Rapide de Minuit : un swing de wagon-bar en La mineur, 150 battements par minute. Les balais
+    font le « tchouk-tchouk » du train sur les rails (croches, la 2e et la 4e accentuées), contrebasse
+    qui marche, accords de vibraphone, mélodie de clarinette (carré doux) ; le sifflet de la
+    locomotive passe toutes les huit mesures. 32 mesures.
+    """
+    beat = 60 / 150
+    bar = 4 * beat
+    bars = 32
+    d = bars * bar
+    track = Track(d + 4)
+    prog = ['Am', 'Am', 'Dm', 'Dm', 'E', 'E', 'Am', 'A', 'Dm', 'Dm', 'Am', 'Am', 'F', 'E', 'Am', 'E']
+    roots = {'Am': ('A', 'm'), 'Dm': ('D', 'm'), 'E': ('E', '7'), 'A': ('A', '7'), 'F': ('F', 'M')}
+    theme = [[0, None, 2, 4], [5, None, 4, None], [3, 5, 7, None], [5, None, None, None],
+             [4, 6, 8, 6], [7, None, 6, None], [4, 2, 0, None], [None, None, 4, None],
+             [3, None, 5, 7], [8, None, 7, None], [4, 5, 7, 9], [7, None, None, None],
+             [5, None, 7, 5], [4, None, 6, None], [2, 1, 0, None], [None, None, None, None]]
+    for i in range(bars):
+        t0 = i * bar
+        root, kind = roots[prog[i % 16]]
+        chord = chord_notes(root, kind, 4)
+        walk = [chord[0], chord[1], chord[2], transpose(chord[0], -1 if i % 2 else 2)]
+        for k in range(4):                                                            # la contrebasse qui marche
+            track.add(bass(transpose(walk[k], -24), beat * 0.85, bright=700), t0 + k * beat, 0.55)
+        for k in range(8):                                                            # tchouk-tchouk sur les rails
+            track.add(brush(0.16), t0 + k * beat / 2, 0.22 if k % 2 else 0.1)
+        track.add(kick(0.6), t0, 0.35)
+        track.add(kick(0.5), t0 + 2 * beat, 0.25)
+        for k in (1, 3):                                                              # accords de vibraphone
+            for f in chord[:3]:
+                track.add(vibes(f, beat * 1.2), t0 + k * beat + beat * 0.33, 0.05)
+        for k, deg in enumerate(theme[i % 16]):                                       # la clarinette
+            if deg is None:
+                continue
+            length = 1
+            while k + length < 4 and theme[i % 16][k + length] is None:
+                length += 1
+            swing = beat * 0.08 if k % 2 else 0.0
+            track.add(lead(scale_note('A', 'harmonic', deg, 4), length * beat * 0.9, duty=0.4, vib=0.008),
+                      t0 + k * beat + swing, 0.17)
+        if i % 8 == 7:                                                                # le sifflet de la locomotive
+            whistle = sum(osc(sweep(f * 0.97, f, 0.25), 1.6, 'sine') for f in (hz('A5'), hz('C#6'), hz('E6')))
+            whistle = whistle * expdec(1.6, 0.9) * (1 + 0.3 * bp(noise(1.6), 2000, 5000))
+            track.add(whistle, t0 + 2 * beat, 0.05)
+    track.add(lp(noise(d), 250), 0, 0.07)                                             # le roulement du train
+    return looped_reverb(loop_of(track, d), wet=0.2, size=1.1, tail=0.6)
+
+
 @music('combat_desert')
 def combat_desert():
     """

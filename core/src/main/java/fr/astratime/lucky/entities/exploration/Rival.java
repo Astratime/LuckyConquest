@@ -8,9 +8,9 @@ import java.util.function.Predicate;
 /**
  * Le Joueur Masqué (idée A2 du 2026-11-11, nom choisi par Astra) : un autre élève du Croupier,
  * qui prend parfois la place du soldat d'un donjon de l'Exploration (1 fois sur {@link #CHANCE}).
- * Cinq rencontres, une par lieu à partir de la Fête foraine : sa machine et son deck grandissent
+ * Une rencontre par lieu à partir de la Fête foraine (cinq, puis une de plus par nouveau lieu) : sa machine et son deck grandissent
  * à chaque fois, avec une petite scène avant chaque duel. Le duel final, au Désert de Braise,
- * n'arrive qu'une fois les quatre premiers gagnés : il y enlève son masque.
+ * n'arrive qu'une fois toutes les autres rencontres gagnées : il y enlève son masque.
  * <p>
  * Il remplace un combat qui rapporte déjà des pièces et paie comme le soldat qu'il remplace
  * (ses tirages coûtent le prix du lieu, rien de plus). Il est au moins aussi fort que le roi
@@ -29,6 +29,7 @@ public final class Rival {
         return switch (place) {
             case PRAIRIE -> null;
             case FOIRE   -> EnemyKind.RIVAL_FOIRE;
+            case RAPIDE  -> EnemyKind.RIVAL_RAPIDE;
             case PORT    -> EnemyKind.RIVAL_PORT;
             case MINES   -> EnemyKind.RIVAL_MINES;
             case CASINO  -> EnemyKind.RIVAL_CASINO;
@@ -40,6 +41,7 @@ public final class Rival {
     public static Place placeOf(EnemyKind kind) {
         return switch (kind) {
             case RIVAL_FOIRE  -> Place.FOIRE;
+            case RIVAL_RAPIDE -> Place.RAPIDE;
             case RIVAL_PORT   -> Place.PORT;
             case RIVAL_MINES  -> Place.MINES;
             case RIVAL_CASINO -> Place.CASINO;
@@ -66,7 +68,7 @@ public final class Rival {
         EnemyKind rival = of(place);
         if (rival == null || defeated.test(rival)) return null;
         if (isFinal(rival)) {
-            for (Place before = Place.CASINO; before != Place.PRAIRIE; before = before.getPrevious()) {
+            for (Place before = Place.DESERT.getPrevious(); before != Place.PRAIRIE; before = before.getPrevious()) {
                 if (!defeated.test(of(before))) return null;
             }
         }

@@ -59,6 +59,8 @@ public class LastingEffects {
     private int houseEdges;
     /** Éboulement : cartes de moins à la prochaine pioche. */
     private int rockfalls;
+    /** Berceuse (Rapide de Minuit) : cartes jouées qui s'endormiront au prochain tour. */
+    private int lullabies;
     /** Aspirations de la Machine Originelle : une règle par rouleau menacé au prochain tirage. */
     private final List<fr.astratime.lucky.entities.enemy.AspirationRule> aspirations = new ArrayList<>();
     /** Coffres-forts : gains mis de côté (déjà doublés) et tours restants avant leur ouverture. */
@@ -360,6 +362,13 @@ public class LastingEffects {
     public int getRockfalls() { return rockfalls; }
     /** Pioche : l'Éboulement vaut pour celle-ci. */
     public int takeRockfalls() { int n = rockfalls; rockfalls = 0; return n; }
+
+    /** Berceuse : les {@code cards} premières cartes jouées au prochain tour s'endorment. */
+    public void addLullaby(int cards) { lullabies += cards; }
+    /** @return les cartes qui s'endormiront au prochain tour. */
+    public int getLullabies() { return lullabies; }
+    /** Pioche : les Berceuses valent pour ce tour. */
+    public int takeLullabies() { int n = lullabies; lullabies = 0; return n; }
 
     /** Aspiration : la règle {@code rule} menace un rouleau au prochain tirage. */
     public void addAspiration(fr.astratime.lucky.entities.enemy.AspirationRule rule) { aspirations.add(rule); }
@@ -833,7 +842,7 @@ public class LastingEffects {
             && fakeGains == 0 && taxes == 0 && laterTaxes == 0 && houseRuleTurns == 0
             && traps == 0 && lanternDraws == 0 && earplugDraws == 0 && propTurns == 0 && lamps == 0
             && cageTurns == 0 && anchorTurns == 0 && temperPercent == 0 && bonusPlays == 0
-            && voidReels.isEmpty() && shortCircuits == 0 && houseEdges == 0 && rockfalls == 0 && aspirations.isEmpty()
+            && voidReels.isEmpty() && shortCircuits == 0 && houseEdges == 0 && rockfalls == 0 && lullabies == 0 && aspirations.isEmpty()
             && nextDraws == 0 && hatTurns == 0 && jokerBox == 0 && hoardTurns == 0 && annuityTurns == 0 && martingale == 0
             && juggles == 0 && scares == 0 && tunnels == 0 && turnstiles == 0 && riggedPrizes == 0 && riggedGame == 0
             && tolls == 0 && bills == 0 && venoms.isEmpty() && reelGauges.isEmpty()

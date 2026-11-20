@@ -581,7 +581,7 @@ public class EnemyTurnResolver {
         /** Le symbole {@code symbol} du rouleau {@code i} agit une fois. */
         private void act(EnemySymbol symbol, int i, List<Event> events) {
             boolean done = actTowerOpening(symbol, i, events) || actTowerLate(symbol, events)
-                || actPortMinesCasino(symbol, events) || actFairDesert(symbol, events);
+                || actPortMinesCasino(symbol, events) || actFairDesert(symbol, events) || actExpress(symbol, events);
             if (!done) throw new IllegalStateException("Symbole sans effet : " + symbol);
         }
 
@@ -881,6 +881,65 @@ public class EnemyTurnResolver {
                     curses.addRockfall(burnt);
                     events.add(new StatusEvent(Lang.n(burnt, "CARTE BRÛLÉE : 1 DE MOINS",
                         "CARTES BRÛLÉES : {0} DE MOINS", burnt), EffectPopup.Style.DAMAGE));
+                }
+                default -> {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        /**
+         * Exploration : le Rapide de Minuit (Pression, Vol à la tire, Banquet, Berceuse, Braquage).
+         *
+         * @return {@code false} si {@code symbol} n'est pas de cette famille
+         */
+        private boolean actExpress(EnemySymbol symbol, List<Event> events) {
+            switch (symbol) {
+                case PRESSURE -> {
+                    boolean exploded = enemy.tickPressure();
+                    events.add(new StatusEvent(Lang.f("PRESSION {0}/{1}", exploded ? EnemySymbol.PRESSURE_MAX : enemy.getPressure(),
+                        EnemySymbol.PRESSURE_MAX), exploded ? EffectPopup.Style.ATTACK : EffectPopup.Style.SPECIAL));
+                    if (exploded) {
+                        int factor = EnemySymbol.PRESSURE_FACTOR * (enemy.takeCharge(EnemySignature.PLEIN_REGIME) ? 2 : 1);
+                        events.add(new StatusEvent(Lang.t("LA CHAUDIÈRE EXPLOSE !"), EffectPopup.Style.ATTACK));
+                        events.add(turn.strike(kind.swordDamage() * factor));
+                    }
+                }
+                case PICKPOCKET -> {
+                    int count = enemy.takeCharge(EnemySignature.DOIGTS_AGILES) ? 2 : 1;
+                    List<String> taken = new ArrayList<>();
+                    for (int k = 0; k < count; k++) {
+                        List<Card> hand = player.getCurrentHand();
+                        if (hand.isEmpty()) break;
+                        Card card = hand.get(random.nextInt(hand.size()));
+                        if (player.steal(card, EnemySymbol.PICKPOCKET_TURNS)) taken.add(card.getName().toUpperCase());
+                    }
+                    events.add(taken.isEmpty() ? turn.strike(EnemySymbol.FANG_DAMAGE) // poches vides : il frappe
+                        : new StatusEvent(Lang.f("VOL À LA TIRE : {0}", String.join(", ", taken)), EffectPopup.Style.DAMAGE));
+                }
+                case BANQUET -> {
+                    events.add(heal(enemy, EnemySymbol.BANQUET_HEAL_PERCENT * healFactor / 100f));
+                    int shields = 1 + boosts.getOrDefault(EnemySignature.DESSERT, 0);
+                    for (int k = 0; k < shields; k++) events.add(turn.shield(kind.shieldDefense() + shieldBonus));
+                }
+                case LULLABY -> {
+                    int cards = enemy.takeCharge(EnemySignature.MARCHAND_DE_SABLE) ? 2 : 1;
+                    curses.addLullaby(cards);
+                    events.add(new StatusEvent(Lang.n(cards, "BERCEUSE : TA PREMIÈRE CARTE S'ENDORMIRA",
+                        "BERCEUSE : TES {0} PREMIÈRES CARTES S'ENDORMIRONT", cards), EffectPopup.Style.DAMAGE));
+                }
+                case HOLDUP -> {
+                    boolean forced = enemy.takeCharge(EnemySignature.HAUT_LES_MAINS);
+                    boolean scared = enemy.getDamageTaken() * 100 < enemy.getMaxHp() * EnemySymbol.HOLDUP_PERCENT;
+                    int taken = forced || scared ? player.meltShield(100) : 0;
+                    if (taken > 0) {
+                        events.add(new StatusEvent(Lang.f("BRAQUAGE : IL TE PREND {0} DE BOUCLIER", Lang.big(taken)),
+                            EffectPopup.Style.DAMAGE));
+                        events.add(turn.shield((int) Math.min(taken, (long) kind.shieldDefense() * EnemySymbol.HOLDUP_MAX_SHIELDS)));
+                    } else {
+                        events.add(turn.strike(kind.swordDamage())); // rien à prendre, ou il a eu peur : il tire
+                    }
                 }
                 default -> {
                     return false;
@@ -1514,6 +1573,15 @@ public class EnemyTurnResolver {
                     if (enemy.loseTurn()) {
                         events.add(new StatusEvent(Lang.f("COMPTE À REBOURS : PLUS QUE {0} TOURS", enemy.getTurnLimit()),
                             EffectPopup.Style.DAMAGE));
+                    }
+                }
+                case CHARBON -> {
+                    boolean exploded = enemy.tickPressure();
+                    events.add(new StatusEvent(Lang.f("CHARBON : PRESSION {0}/{1}", exploded ? EnemySymbol.PRESSURE_MAX
+                        : enemy.getPressure(), EnemySymbol.PRESSURE_MAX), EffectPopup.Style.SPECIAL));
+                    if (exploded) {
+                        events.add(new StatusEvent(Lang.t("LA CHAUDIÈRE EXPLOSE !"), EffectPopup.Style.ATTACK));
+                        events.add(turn.strike(enemy.getKind().swordDamage() * EnemySymbol.PRESSURE_FACTOR));
                     }
                 }
                 case ENCRE -> {

@@ -11,12 +11,13 @@ import java.util.List;
  * progression (chaque lieu difficile s'ouvre quand les quatre donjons du précédent sont vidés en difficile).
  *
  * <p>Le 1er lieu difficile (la prairie) a la difficulté du dernier lieu en mode normal (le Désert) : en moyenne
- * sur ses huit ennemis, les mêmes PV, la même défense et la même attaque. Chaque lieu difficile suivant est deux
- * fois plus fort que le précédent (x2 au 2e lieu, x4 au 3e … x32 au Désert difficile). Les écarts entre les donjons
+ * sur ses huit ennemis, les mêmes PV, la même défense et la même attaque. Avec les 10 lieux (Astra, 2026-11-20),
+ * chaque palier de lieu (voir {@link Place#getTier()}) est {@link #STRENGTH_STEP} fois plus fort que le précédent
+ * (racine de 2 : x1,41 au 2e, x2 au 3e … x22,6 au Désert difficile). Les écarts entre les donjons
  * d'un même lieu sont gardés : un ennemi garde ses PV, sa défense et son attaque par rapport à ceux de son lieu.
  *
  * <p>Les pièces montent moins vite que la force (Astra, 2026-11-15 : x2 par lieu, c'était trop) : un tirage coûte
- * celui du Désert, +{@link #SPIN_GROWTH_PERCENT} % à chaque lieu, fois {@link #COINS_PERCENT} %, et tous les gains
+ * celui du Désert, +{@link #SPIN_GROWTH_PERCENT} % à chaque palier de lieu, fois {@link #COINS_PERCENT} %, et tous les gains
  * du combat, le coffre et la part gardée après une défaite se comptent à partir de ce coût.
  */
 public final class HardExploration {
@@ -27,13 +28,19 @@ public final class HardExploration {
      */
     public static final int COINS_PERCENT = 100;
 
-    /** Hausse du coût du tirage d'un lieu difficile au suivant, en % (Astra, 2026-11-15 : moins que x2). */
-    public static final int SPIN_GROWTH_PERCENT = 50;
+    /**
+     * Hausse du coût du tirage d'un palier de lieu difficile au suivant, en % (Astra, 2026-11-20 : 10 lieux, +22,5 %
+     * par palier, soit à peu près les +50 % d'avant tous les deux paliers).
+     */
+    public static final double SPIN_GROWTH_PERCENT = 22.5;
+
+    /** Force d'un palier de lieu difficile par rapport au précédent : racine de 2 (deux paliers font x2). */
+    public static final double STRENGTH_STEP = Math.sqrt(2.0);
 
     private HardExploration() { }
 
-    /** @return la force du lieu {@code place} en mode difficile par rapport au Désert en normal : x1, x2, x4 … x32. */
-    public static long strength(Place place) { return 1L << place.ordinal(); }
+    /** @return la force du lieu {@code place} en mode difficile par rapport au Désert en normal : x1, x1,41, x2 … x22,6. */
+    public static double strength(Place place) { return Math.pow(STRENGTH_STEP, place.getTier() - 1); }
 
     /** @return {@code true} si {@code kind} combat en Exploration difficile à la difficulté {@code difficulty}. */
     public static boolean applies(EnemyKind kind, Difficulty difficulty) {
@@ -51,20 +58,20 @@ public final class HardExploration {
 
     /**
      * @return le coût d'un tirage dans le lieu {@code place} difficile : celui du Désert, +{@link #SPIN_GROWTH_PERCENT} %
-     *         par lieu, prime comprise
+     *         par palier de lieu, prime comprise (arrondi à la centaine)
      */
     public static int spinCost(Place place) {
-        double growth = Math.pow(1.0 + SPIN_GROWTH_PERCENT / 100.0, place.ordinal());
+        double growth = Math.pow(1.0 + SPIN_GROWTH_PERCENT / 100.0, place.getTier() - 1);
         return (int) Math.min(Integer.MAX_VALUE,
-            Math.round(Place.DESERT.getSpinCost() * growth * COINS_PERCENT / 100.0));
+            Math.round(Place.DESERT.getSpinCost() * growth * COINS_PERCENT / 100.0 / 100.0) * 100);
     }
 
     /**
      * @return le coût de tirage de force du lieu difficile (voir {@link Place#getPowerSpinCost()}) : celui du Désert
-     *         x2 par lieu, comme ses ennemis (la prime de pièces n'y compte pas)
+     *         fois la force du lieu, comme ses ennemis (la prime de pièces n'y compte pas)
      */
     public static int powerSpinCost(Place place) {
-        return (int) Math.min(Integer.MAX_VALUE, Place.DESERT.getPowerSpinCost() * strength(place));
+        return (int) Math.min(Integer.MAX_VALUE, Math.round(Place.DESERT.getPowerSpinCost() * strength(place)));
     }
 
     /** Les multiplicateurs, calculés une fois sur les fiches des ennemis en mode normal. */
@@ -77,7 +84,7 @@ public final class HardExploration {
             double desertHp = averageHp(Place.DESERT), desertAttack = averageAttack(Place.DESERT),
                 desertDefense = averageDefense(Place.DESERT);
             for (Place place : Place.values()) {
-                long strength = strength(place);
+                double strength = strength(place);
                 HP[place.ordinal()] = ratio(desertHp, averageHp(place)) * strength;
                 ATTACK[place.ordinal()] = ratio(desertAttack, averageAttack(place)) * strength;
                 DEFENSE[place.ordinal()] = ratio(desertDefense, averageDefense(place)) * strength;

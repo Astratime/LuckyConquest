@@ -12,6 +12,7 @@ import fr.astratime.lucky.entities.actions.PiggyBankAction;
 import fr.astratime.lucky.entities.actions.RandomGainAction;
 import fr.astratime.lucky.entities.actions.ScytheAction;
 import fr.astratime.lucky.entities.actions.ShieldStrikeAction;
+import fr.astratime.lucky.entities.actions.SteamAction;
 import fr.astratime.lucky.entities.actions.AttackAction;
 import fr.astratime.lucky.entities.actions.BombAction;
 import fr.astratime.lucky.entities.actions.DefenseAction;
@@ -80,11 +81,12 @@ public class SymbolRegistry {
         ACTIONS.put(Symbol.DEMON_KING,    new GaugeReelAction(100, "Démonisation", "DESCENTE AUX ENFERS"));
         ACTIONS.put(Symbol.LUCK_APOSTLE,  new GaugeReelAction(100, "Ange chanceux", "LUMIÈRE DU BINGO"));
 
-        // Rouleaux des lieux : Fête foraine, Port, Casino, Désert
+        // Rouleaux des lieux : Fête foraine, Port, Casino, Désert, Rapide de Minuit
         ACTIONS.put(Symbol.TICKET,    new RandomGainAction(0, 150));
         ACTIONS.put(Symbol.ANCHOR,    new AnchorAction(35));
         ACTIONS.put(Symbol.GOLD_CHIP, new GoldChipAction(50));
         ACTIONS.put(Symbol.FLAME,     new FlameAction(80));
+        ACTIONS.put(Symbol.STEAM,     new SteamAction(50));
 
         // Bingos imposés par une jauge pleine (Roi démon, Apôtre de la Chance)
         ACTIONS.put(Symbol.DESCENT,     new BlessingAction(true));

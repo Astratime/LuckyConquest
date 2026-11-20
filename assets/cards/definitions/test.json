@@ -403,6 +403,19 @@
     ]
   },
   {
+    "id": "bingo_steam",
+    "name": "Bingo Vapeur",
+    "assetPath": "cards/test/bingo_steam.png",
+    "consumable": true,
+    "effects": [
+      {
+        "type": "BINGO",
+        "power": 1,
+        "symbol": "STEAM"
+      }
+    ]
+  },
+  {
     "id": "bingo_descent",
     "name": "Bingo Descente aux enfers",
     "assetPath": "cards/test/bingo_descent.png",
