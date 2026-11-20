@@ -27,12 +27,9 @@ public final class HealAction extends Action {
         List<Event> events = new ArrayList<>();
         Player player = context.getPlayer();
         int amount = Math.round(player.getMaxHp() * percent / 100f * context.getSymbolPower());
-        int healed = player.heal(amount);
-        if (healed > 0) events.add(new PlayerHealedEvent(healed));
-        if (amount > healed) {
-            player.getLastingEffects().addBlood(amount - healed);
-            events.add(new GaugeFilledEvent(GaugeFilledEvent.Gauge.SANG, amount - healed));
-        }
+        Player.HealResult result = player.healOverflowToBlood(amount);
+        if (result.healed() > 0) events.add(new PlayerHealedEvent(result.healed()));
+        if (result.blood() > 0) events.add(new GaugeFilledEvent(GaugeFilledEvent.Gauge.SANG, result.blood()));
         return events;
     }
 
