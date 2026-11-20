@@ -1,6 +1,6 @@
 """
 Cosmétiques : dos de cartes, tapis de la table de combat et habillage de la
-machine à sous, dans quatre styles (néon, bois, or, abysses).
+machine à sous, dans cinq styles (néon, bois, or, abysses, trésor : les ennemis dorés vaincus).
 
 Chaque style produit, dans assets/cosmetics/<style>/ :
   - back.png       : dos des cartes du joueur, même forme et même cadre que
@@ -57,6 +57,14 @@ STYLES = {
         metal=[(120, 220, 210), (40, 140, 150), (16, 70, 90)], outline=(4, 14, 24),
         window=[(30, 60, 84), (16, 36, 54), (8, 22, 36)],
         cell=[(170, 206, 214), (222, 242, 244), (240, 252, 252)]),
+    'tresor': dict(
+        # velours pourpre et pièces d'or : le butin des ennemis dorés
+        ring=(255, 214, 84), inner=(255, 246, 190), shade=(90, 14, 30), body=(122, 18, 40),
+        a=(218, 165, 32), b=(255, 214, 84), c=(255, 252, 230),
+        felt=[(104, 16, 34), (88, 12, 28), (120, 24, 44)], felt_a=(218, 165, 32), felt_b=(255, 230, 140),
+        metal=[(150, 40, 60), (110, 20, 38), (66, 8, 22)], outline=(28, 4, 10),
+        window=[(96, 70, 24), (60, 42, 14), (36, 24, 8)],
+        cell=[(236, 214, 150), (255, 244, 206), (255, 252, 232)]),
 }
 
 BLACK = (0, 0, 0)
@@ -108,6 +116,16 @@ def back_pattern(style, s, x, y):
         wave = int(round(math.sin((x + y // 7 * 3) * 0.9) * 0.9))
         if (y + wave) % 7 == 0: return s['a']
         if (x, y) in ((2, 2), (10, 4), (3, 16), (9, 18), (11, 15), (1, 9)): return s['c']
+        return None
+    if style == 'tresor':
+        # une grosse pièce au centre, des pièces semées autour
+        if dx * dx + dy * dy <= 10:
+            if dx * dx + dy * dy >= 7: return s['a']
+            if dx == 0 and abs(dy) <= 1: return s['c']
+            return s['b']
+        for (px_, py_) in ((2, 2), (10, 3), (3, 17), (10, 18), (1, 10), (11, 10)):
+            ddx, ddy = x - px_, y - py_
+            if abs(ddx) + abs(ddy) <= 1: return s['b'] if (ddx, ddy) != (0, 0) else s['c']
         return None
     raise ValueError(style)
 
@@ -175,6 +193,12 @@ def felt_pixel(style, s, x, y, rng):
         wave = int(round(2 * math.sin(x * 2 * math.pi / 32 * 2 + y // 8)))
         if (y + wave) % 8 == 0: return s['felt_a']
         if (x, y) in ((5, 12), (21, 4), (26, 22), (12, 27)): return s['felt_b']
+        return color
+    if style == 'tresor':
+        # velours en losanges, une pièce d'or à chaque croisement
+        cx, cy = x % 16, y % 16
+        if abs(cx - 8) + abs(cy - 8) <= 1: return s['felt_b'] if (cx, cy) == (8, 8) else s['felt_a']
+        if (x + y) % 16 == 0 or (x - y) % 16 == 0: return s['felt'][1]
         return color
     raise ValueError(style)
 

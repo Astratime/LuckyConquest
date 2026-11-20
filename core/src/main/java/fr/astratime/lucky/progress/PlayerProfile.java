@@ -681,6 +681,8 @@ public class PlayerProfile {
             case LEGEND          -> ranks >= Rank.values().length;
             case HUNTER          -> defeatedEnemies.size() >= 50;
             case FULL_BESTIARY   -> defeatedEnemies.containsAll(Bestiary.enemies());
+            case GOLDEN_FIRST    -> getGoldenDefeatedCount() >= 1;
+            case GOLDEN_ALL      -> getGoldenDefeatedCount() >= Bestiary.goldenEnemies().size();
         };
     }
 
@@ -1490,6 +1492,8 @@ public class PlayerProfile {
             case ACHIEVEMENTS -> new int[]{getAchievementCount(), (int) cosmetic.getGoal()};
             case BESTIARY     -> new int[]{getBestiaryDefeatedCount(), cosmetic.getGoal() == Cosmetic.Unlock.ALL
                 ? Bestiary.enemies().size() : (int) cosmetic.getGoal()};
+            case GOLDEN       -> new int[]{getGoldenDefeatedCount(), cosmetic.getGoal() == Cosmetic.Unlock.ALL
+                ? Bestiary.goldenEnemies().size() : (int) cosmetic.getGoal()};
             default           -> null;
         };
     }

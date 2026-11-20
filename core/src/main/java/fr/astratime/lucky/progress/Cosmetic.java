@@ -8,7 +8,8 @@ import fr.astratime.lucky.i18n.Lang;
  *
  * Chaque sorte a un cosmétique d'origine, toujours possédé (le dos et la table
  * du jeu, la table de chaque lieu en Exploration). Les autres se débloquent
- * par les succès, par le bestiaire (ennemis vaincus) ou s'achètent avec des pièces.
+ * par les succès, par le bestiaire (ennemis vaincus), par les ennemis dorés vaincus (style Trésor, 2026-11-20)
+ * ou s'achètent avec des pièces.
  * Leurs images sont dans {@code assets/cosmetics/<style>/} (voir
  * {@code tools/cosmetics/generate_cosmetics.py}).
  */
@@ -19,18 +20,21 @@ public enum Cosmetic {
     BACK_ABYSS(Kind.BACK, "abysses", Unlock.BESTIARY, 25),
     BACK_WOOD(Kind.BACK, "bois", Unlock.COINS, 8_000_000_000L),
     BACK_GOLD(Kind.BACK, "or", Unlock.COINS, 300_000_000_000L),
+    BACK_TREASURE(Kind.BACK, "tresor", Unlock.GOLDEN, 8),
 
     FELT_CLASSIC(Kind.FELT, null, Unlock.DEFAULT, 0),
     FELT_NEON(Kind.FELT, "neon", Unlock.ACHIEVEMENTS, 20),
     FELT_ABYSS(Kind.FELT, "abysses", Unlock.BESTIARY, 50),
     FELT_WOOD(Kind.FELT, "bois", Unlock.COINS, 16_000_000_000L),
     FELT_GOLD(Kind.FELT, "or", Unlock.COINS, 450_000_000_000L),
+    FELT_TREASURE(Kind.FELT, "tresor", Unlock.GOLDEN, 16),
 
     MACHINE_CLASSIC(Kind.MACHINE, null, Unlock.DEFAULT, 0),
     MACHINE_NEON(Kind.MACHINE, "neon", Unlock.ACHIEVEMENTS, 30),
     MACHINE_ABYSS(Kind.MACHINE, "abysses", Unlock.BESTIARY, Unlock.ALL),
     MACHINE_WOOD(Kind.MACHINE, "bois", Unlock.COINS, 32_000_000_000L),
-    MACHINE_GOLD(Kind.MACHINE, "or", Unlock.COINS, 700_000_000_000L);
+    MACHINE_GOLD(Kind.MACHINE, "or", Unlock.COINS, 700_000_000_000L),
+    MACHINE_TREASURE(Kind.MACHINE, "tresor", Unlock.GOLDEN, Unlock.ALL);
 
     /** Sorte de cosmétique : ce qu'il habille. */
     public enum Kind {
@@ -54,6 +58,8 @@ public enum Cosmetic {
         ACHIEVEMENTS,
         /** Un nombre d'ennemis du bestiaire vaincus ({@link #ALL} : tous). */
         BESTIARY,
+        /** Un nombre de versions dorées vaincues ({@link #ALL} : toutes). */
+        GOLDEN,
         /** Acheté avec des pièces. */
         COINS;
 
@@ -98,6 +104,7 @@ public enum Cosmetic {
             case "abysses" -> "Abysses";
             case "bois"    -> "Bois";
             case "or"      -> "Or";
+            case "tresor"  -> "Trésor";
             default        -> style;
         });
     }
