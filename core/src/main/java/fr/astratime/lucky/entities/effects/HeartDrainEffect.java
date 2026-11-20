@@ -28,7 +28,7 @@ public class HeartDrainEffect extends Effect {
     @Override
     public String getDescription() {
         return Lang.f("Drain de vie {0} % : enlever 10 % des PV de l'ennemi te soigne de {1} % de tes PV max ({2} % au plus "
-            + "par tour). La moitié du surplus remplit le Sang", percent, LifeDrain.per10(percent), LifeDrain.TURN_CAP_PERCENT);
+            + "par tour). Le surplus remplit le Sang", percent, LifeDrain.per10(percent), LifeDrain.TURN_CAP_PERCENT);
     }
 
     @Override

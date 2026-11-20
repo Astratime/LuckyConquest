@@ -65,7 +65,7 @@ public final class ReelShop {
             case BOMB          -> Lang.t("Attaque 200. Tu perds 5 % de tes PV max.");
             case CROWN         -> Lang.t("Gains 50.");
             case NUGGET        -> Lang.t("Attaque 40. Gains 30. Gagné en vidant les Mines d'Or.");
-            case FANGS         -> Lang.t("Attaque 50. Drain de vie 30 % : enlever 10 % des PV de l'ennemi te soigne de 30 % de tes PV max. La moitié du surplus remplit le Sang.");
+            case FANGS         -> Lang.t("Attaque 50. Drain de vie 30 % : enlever 10 % des PV de l'ennemi te soigne de 30 % de tes PV max. Le surplus remplit le Sang.");
             case PIGGY_BANK    -> Lang.t("Gains 5, puis +5 à chaque sortie du combat (5, 10, 15...).");
             case SPIKED_SHIELD -> Lang.t("Bouclier 25. Attaque égale à la moitié de ton bouclier.");
             case SCYTHE        -> Lang.t("Attaque 60. Dégâts x2 si l'ennemi a moins de 30 % de ses PV.");

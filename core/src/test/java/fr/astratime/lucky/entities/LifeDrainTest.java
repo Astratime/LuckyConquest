@@ -24,19 +24,27 @@ class LifeDrainTest {
     }
 
     @Test
-    void oneTurnHealsHalfTheMaxHpAtMostAndHalfTheExcessFillsTheBlood() {
+    void aPlayersBloodIsCappedAtFiveTimesItsMaxHp() {
+        Player player = new Player("Joueur", 1_000, List.of());
+        assertEquals(5_000, player.getLastingEffects().getMaxBlood());
+        player.getLastingEffects().addBlood(1_000_000);
+        assertEquals(5_000, player.getLastingEffects().getBlood());
+    }
+
+    @Test
+    void oneTurnHealsHalfTheMaxHpAtMostAndTheExcessFillsTheBlood() {
         Player player = new Player("Joueur", 1_000, List.of());
         player.takeDamage(100);
         CombatContext context = new CombatContext(player, new Enemy("Ennemi", 100_000));
         List<Event> events = new ArrayList<>();
         LifeDrain.apply(context, 100_000, 50, events); // voudrait rendre 5 000
         assertEquals(1_000, player.getHp(), "les 100 PV manquants");
-        assertEquals(200, player.getLastingEffects().getBlood(), "plafond 500 : 400 en trop, la moitié en Sang");
+        assertEquals(400, player.getLastingEffects().getBlood(), "plafond 500 : 400 en trop, dans le Sang");
         LifeDrain.apply(context, 100_000, 50, events);
-        assertEquals(200, player.getLastingEffects().getBlood(), "plafond du tour atteint");
+        assertEquals(400, player.getLastingEffects().getBlood(), "plafond du tour atteint");
 
         CombatContext nextTurn = new CombatContext(player, new Enemy("Ennemi", 100_000));
         LifeDrain.apply(nextTurn, 10_000, 10, events);
-        assertEquals(250, player.getLastingEffects().getBlood(), "tour suivant : 100 de soin, 50 en Sang");
+        assertEquals(500, player.getLastingEffects().getBlood(), "tour suivant : 100 de soin, tout en Sang");
     }
 }
