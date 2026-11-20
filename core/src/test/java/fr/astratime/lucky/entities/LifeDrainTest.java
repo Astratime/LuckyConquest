@@ -47,4 +47,15 @@ class LifeDrainTest {
         LifeDrain.apply(nextTurn, 10_000, 10, events);
         assertEquals(500, player.getLastingEffects().getBlood(), "tour suivant : 100 de soin, tout en Sang");
     }
+    @Test
+    void underThirstTheDrainLosesItsHalvedPartInsteadOfFillingTheBlood() {
+        Player player = new Player("Joueur", 1_000, List.of());
+        player.takeDamage(100);
+        player.setHealDivisor(2);
+        CombatContext context = new CombatContext(player, new Enemy("Ennemi", 100_000));
+        List<Event> events = new ArrayList<>();
+        LifeDrain.apply(context, 10_000, 40, events); // voudrait rendre 400, la Soif en laisse 200
+        assertEquals(1_000, player.getHp(), "les 100 PV manquants");
+        assertEquals(100, player.getLastingEffects().getBlood(), "seul le vrai surplus (200 - 100) remplit le Sang");
+    }
 }

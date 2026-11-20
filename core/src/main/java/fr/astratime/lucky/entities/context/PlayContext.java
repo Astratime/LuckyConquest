@@ -117,9 +117,8 @@ public class PlayContext {
      */
     public int healPercent(int percent) {
         int amount = Math.round(player.getMaxHp() * percent / 100f);
-        int healed = player.heal(amount);
-        player.getLastingEffects().addBlood(amount - healed);
-        return amount;
+        Player.HealResult result = player.healOverflowToBlood(amount);
+        return result.healed() + result.blood();
     }
 
     /**

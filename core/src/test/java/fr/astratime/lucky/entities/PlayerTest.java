@@ -173,4 +173,38 @@ class PlayerTest {
 
         assertTrue(p.nextCombat().getAllCards().contains(card));
     }
+    @Test
+    void underThirstTheHalvedPartOfAHealIsLostNotTurnedIntoBlood() {
+        Player p = new Player("Joueur", 1_000, List.of());
+        p.takeDamage(500);
+        p.setHealDivisor(2);
+
+        Player.HealResult result = p.healOverflowToBlood(1_000); // 500 reçus sous la Soif
+
+        assertEquals(500, result.healed());
+        assertEquals(1_000, p.getHp());
+        assertEquals(0, result.blood(), "la moitié retirée par la Soif ne remplit pas le Sang");
+        assertEquals(0, p.getLastingEffects().getBlood());
+    }
+
+    @Test
+    void underThirstOnlyTheRealOverflowFillsTheBlood() {
+        Player p = new Player("Joueur", 1_000, List.of());
+        p.takeDamage(100);
+        p.setHealDivisor(2);
+
+        Player.HealResult result = p.healOverflowToBlood(1_000); // 500 reçus, 100 manquants
+
+        assertEquals(100, result.healed());
+        assertEquals(400, result.blood());
+    }
+
+    @Test
+    void aHugeHealNeverOverflowsIntoLostHp() {
+        Player p = new Player("Joueur", 1_000, List.of());
+        p.takeDamage(300);
+
+        assertEquals(300, p.heal(Integer.MAX_VALUE));
+        assertEquals(1_000, p.getHp());
+    }
 }

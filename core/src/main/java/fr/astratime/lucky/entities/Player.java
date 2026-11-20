@@ -164,11 +164,32 @@ public class Player {
      */
     public int heal(int amount) {
         if (amount > 0) healedThisTurn = true;
-        if (healDivisor > 1) amount /= healDivisor; // Soif (Désert de Braise)
-        int healed = Math.min(maxHp, hp + amount) - hp;
+        amount = afterThirst(amount); // Soif (Désert de Braise)
+        // en long : un soin énorme ne doit pas déborder et faire perdre des PV
+        int healed = (int) (Math.min((long) maxHp, (long) hp + Math.max(0, amount)) - hp);
         hp += healed;
         return healed;
     }
+
+    /** @return {@code amount} après la Soif (soins divisés), ce que le joueur reçoit vraiment. */
+    public int afterThirst(int amount) { return healDivisor > 1 ? amount / healDivisor : amount; }
+
+    /**
+     * Soigne de {@code amount} et met le vrai surplus (au-delà des PV max) dans le Sang. Sous la Soif, la part
+     * retirée par la division est perdue : elle ne remplit pas le Sang.
+     *
+     * @return les PV rendus et le Sang ajouté
+     */
+    public HealResult healOverflowToBlood(int amount) {
+        int received = afterThirst(amount);
+        int healed = heal(amount);
+        int before = lastingEffects.getBlood();
+        lastingEffects.addBlood(Math.max(0, received - healed));
+        return new HealResult(healed, lastingEffects.getBlood() - before);
+    }
+
+    /** Ce qu'un soin a rendu : PV et Sang (le Sang ajouté tient compte de son plafond). */
+    public record HealResult(int healed, int blood) { }
 
     /** Soif : les soins sont divisés par {@code divisor} (1 : soins entiers). */
     public void setHealDivisor(int divisor) { healDivisor = Math.max(1, divisor); }

@@ -11,6 +11,7 @@ import fr.astratime.lucky.entities.events.Event;
 import fr.astratime.lucky.entities.events.GaugeFilledEvent;
 import fr.astratime.lucky.entities.events.LastDrawEvent;
 import fr.astratime.lucky.entities.events.PlayerDamagedEvent;
+import fr.astratime.lucky.entities.events.PlayerHealedEvent;
 import fr.astratime.lucky.entities.events.BountyEvent;
 import fr.astratime.lucky.entities.events.SafeOpenedEvent;
 import fr.astratime.lucky.entities.events.StatusEvent;
@@ -417,9 +418,10 @@ public class TurnEngine {
         int vein = player.getLastingEffects().takePendingHeal();
         if (vein > 0 && !player.isDefeated()) {
             int amount = Math.round(player.getMaxHp() * vein / 100f);
-            int healed = player.heal(amount);
-            player.getLastingEffects().addBlood(amount - healed);
+            Player.HealResult result = player.healOverflowToBlood(amount);
             firedamp.add(new StatusEvent(Lang.f("FILON : SOIN DE {0} % DES PV", vein), EffectPopup.Style.DRAIN));
+            if (result.healed() > 0) firedamp.add(new PlayerHealedEvent(result.healed()));
+            if (result.blood() > 0) firedamp.add(new GaugeFilledEvent(GaugeFilledEvent.Gauge.SANG, result.blood()));
         }
 
         // Venin (Désert de Braise) : chaque Venin mord, à travers le bouclier

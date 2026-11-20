@@ -63,9 +63,10 @@ public final class LifeDrain {
         int drained = (int) Math.min(Integer.MAX_VALUE, Math.min(wanted, room));
         if (drained <= 0) return;
         context.addDrainHealed(drained);
+        int received = player.afterThirst(drained); // la Soif divise le soin : la part retirée est perdue
         int healed = player.heal(drained); // plafonné aux PV max
         if (healed > 0) events.add(new PlayerHealedEvent(healed));
-        int blood = (int) Math.round((drained - healed) * BLOOD_PERCENT / 100.0);
+        int blood = (int) Math.round(Math.max(0, received - healed) * BLOOD_PERCENT / 100.0);
         if (blood > 0) {
             player.getLastingEffects().addBlood(blood);
             events.add(new GaugeFilledEvent(GaugeFilledEvent.Gauge.SANG, blood));
