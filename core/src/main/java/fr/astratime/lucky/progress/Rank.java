@@ -73,6 +73,30 @@ public enum Rank {
     /** @return son prix, en pièces, sans Prestige. */
     public long getPrice() { return price; }
 
+    /**
+     * Plancher de Prestige (2026-11-20, idée d'Astra) : après un Prestige, les PV max, l'attaque et la défense ne
+     * descendent jamais sous {@value #PRESTIGE_FLOOR_PERCENT} % de ceux de la Légende. Le joueur reste assez fort pour
+     * l'Exploration difficile, qui ouvre le Prestige suivant, au lieu de tout reprendre en mode normal.
+     */
+    public static final int PRESTIGE_FLOOR_PERCENT = 50;
+
+    /**
+     * @param active   rang joué ({@code null} : sans rang)
+     * @param prestige niveau de Prestige
+     * @return les bonus en combat : ceux du rang, relevés au plancher de Prestige s'il y a un Prestige, puis le Prestige
+     */
+    public static RankBonus bonusAt(Rank active, int prestige) {
+        RankBonus own = active == null ? RankBonus.NONE : active.getBonus();
+        if (prestige > 0) {
+            RankBonus top = LEGENDE.getBonus();
+            own = new RankBonus(Math.max(own.hp(), floor(top.hp())), Math.max(own.attack(), floor(top.attack())),
+                Math.max(own.defense(), floor(top.defense())), own.gains(), own.heart());
+        }
+        return own.withPrestige(prestige);
+    }
+
+    private static int floor(int value) { return value * PRESTIGE_FLOOR_PERCENT / 100; }
+
     /** @return son prix, en pièces, au niveau de Prestige {@code prestige}. */
     public long getPrice(int prestige) {
         if (prestige <= 0) return price;

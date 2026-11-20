@@ -18,6 +18,7 @@ import fr.astratime.lucky.entities.enemy.EnemyKind;
 import fr.astratime.lucky.entities.exploration.DungeonRun;
 import fr.astratime.lucky.i18n.Lang;
 import fr.astratime.lucky.progress.PlayerProfile;
+import fr.astratime.lucky.progress.Rank;
 
 import java.util.List;
 import java.util.Locale;
@@ -208,6 +209,12 @@ public final class Lexicon {
                 + "+{1} % de gains, jusqu'au Prestige {2}. Tes pièces repartent à 0, tu gardes tout le reste.",
                 Lang.decimal(String.valueOf(RankBonus.PRESTIGE_GUARD_FACTOR)), RankBonus.PRESTIGE_PERCENT,
                 PlayerProfile.prestigeNumeral(PlayerProfile.MAX_PRESTIGE))),
+            term(Lang.t("Sceau de Prestige"), Lang.t("Chaque Prestige demande un lieu vidé en Exploration difficile : "
+                + "la prairie pour les Prestiges I et II, la Fête foraine pour III et IV, puis le Port, les Mines et le "
+                + "Casino.")),
+            term(Lang.t("Plancher de Prestige"), Lang.f("Après un Prestige, tes PV max, ton attaque et ta défense ne "
+                + "descendent jamais sous {0} % de ceux de la Légende du Jackpot (avant le bonus du Prestige).",
+                Rank.PRESTIGE_FLOOR_PERCENT)),
             term(Lang.t("Descente"), Lang.t("Un donjon de l'Exploration joué du premier combat jusqu'au roi.")),
             term(Lang.t("Coffre de donjon"), Lang.t("Chaque donjon a un coffre : des pièces et une carte, "
                 + "une fois le roi battu.")),

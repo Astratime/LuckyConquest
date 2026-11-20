@@ -331,6 +331,10 @@ public class ShopScreen extends CasinoMenuScreen {
         prestigeArmed = false;
         if (next == null && profile.canPrestige()) {
             content.add(prestigeRow()).growX().padTop(10f).padBottom(10f).row();
+        } else if (next == null && profile.missingPrestigeSeal() != null) {
+            showDetail(Lang.t("Tous les rangs sont acquis."), Lang.f("Prestige {0} : vide d'abord les 4 donjons de {1} "
+                + "en Exploration difficile.", PlayerProfile.prestigeNumeral(profile.getPrestige() + 1),
+                profile.missingPrestigeSeal().getName()));
         } else if (next == null) {
             showDetail(Lang.t("Tous les rangs sont acquis."), profile.getPrestige() >= PlayerProfile.MAX_PRESTIGE
                 ? Lang.t("Prestige X : tu as tout atteint. Les tables se lèvent sur ton passage.")

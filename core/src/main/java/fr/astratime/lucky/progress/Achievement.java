@@ -40,6 +40,13 @@ public enum Achievement {
     CASINO("Maître du Casino", "Vider les 4 donjons du Casino Englouti.", 1_000_000_000L),
     DESERT("Tueur de dragon", "Vider les 4 donjons du Désert de Braise.", 5_000_000_000L),
     GREAT_EXPLORER("Grand explorateur", "Vider tous les donjons de l'Exploration.", 5_000_000_000L),
+    // Exploration difficile (2026-11-20 : environ une descente médiane du lieu, joueur malin, au Prestige où il s'ouvre)
+    HARD_PRAIRIE("Prairie sans pitié", "Vider les 4 donjons de la prairie en mode difficile.", 50_000_000_000L),
+    HARD_FOIRE("Fête sans pitié", "Vider les 4 donjons de la Fête foraine en mode difficile.", 100_000_000_000L),
+    HARD_PORT("Port sans pitié", "Vider les 4 donjons du Port des Contrebandiers en mode difficile.", 200_000_000_000L),
+    HARD_MINES("Mines sans pitié", "Vider les 4 donjons des Mines d'Or en mode difficile.", 300_000_000_000L),
+    HARD_CASINO("Casino sans pitié", "Vider les 4 donjons du Casino Englouti en mode difficile.", 500_000_000_000L),
+    HARD_DESERT("Désert sans pitié", "Vider les 4 donjons du Désert de Braise en mode difficile.", 1_000_000_000_000L),
     FORTUNE("Fortune faite", "Gagner 1 milliard de pièces en Exploration, au total.", 300_000_000),
     // Tour des épreuves
     COMET("Comète abattue", "Finir le chapitre 1 de la Tour des épreuves.", 250_000),

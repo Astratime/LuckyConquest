@@ -3,6 +3,8 @@ package fr.astratime.lucky.progress;
 import fr.astratime.lucky.entities.Player;
 import fr.astratime.lucky.entities.RankBonus;
 import fr.astratime.lucky.entities.Symbol;
+import fr.astratime.lucky.entities.exploration.Dungeon;
+import fr.astratime.lucky.entities.exploration.Place;
 
 import org.junit.jupiter.api.Test;
 
@@ -22,6 +24,13 @@ class PrestigeTest {
         return profile;
     }
 
+    /** Vide en difficile le lieu que demande le prochain Prestige (sceau). */
+    private static void breakSeal(PlayerProfile profile) {
+        for (Dungeon dungeon : PlayerProfile.prestigeSeal(profile.getPrestige() + 1).getDungeons()) {
+            profile.clearHardDungeon(dungeon.name());
+        }
+    }
+
     @Test
     void prestigeNeedsEveryRank() {
         PlayerProfile profile = PlayerProfileTest.profile(new PlayerProfileTest.MemoryStorage());
@@ -35,6 +44,8 @@ class PrestigeTest {
         PlayerProfileTest.MemoryStorage storage = new PlayerProfileTest.MemoryStorage();
         PlayerProfile profile = legend(storage);
         profile.addCoins(777);
+        assertFalse(profile.canPrestige(), "sceau : la prairie difficile d'abord");
+        breakSeal(profile);
         assertTrue(profile.canPrestige());
 
         assertTrue(profile.ascend());
@@ -57,6 +68,7 @@ class PrestigeTest {
                 profile.addCoins(rank.getPrice(profile.getPrestige()));
                 assertTrue(profile.buyNextRank());
             }
+            breakSeal(profile);
             assertTrue(profile.ascend());
         }
         for (Rank rank : Rank.values()) {
@@ -66,6 +78,39 @@ class PrestigeTest {
         assertEquals(PlayerProfile.MAX_PRESTIGE, profile.getPrestige());
         assertFalse(profile.canPrestige());
         assertEquals("X", PlayerProfile.prestigeNumeral(profile.getPrestige()));
+    }
+
+    @Test
+    void eachPairOfPrestigesNeedsTheNextHardPlace() {
+        assertEquals(Place.PRAIRIE, PlayerProfile.prestigeSeal(1));
+        assertEquals(Place.PRAIRIE, PlayerProfile.prestigeSeal(2));
+        assertEquals(Place.FOIRE, PlayerProfile.prestigeSeal(3));
+        assertEquals(Place.PORT, PlayerProfile.prestigeSeal(6));
+        assertEquals(Place.CASINO, PlayerProfile.prestigeSeal(10));
+        assertNull(PlayerProfile.prestigeSeal(11));
+
+        PlayerProfile profile = legend(new PlayerProfileTest.MemoryStorage());
+        assertEquals(Place.PRAIRIE, profile.missingPrestigeSeal());
+        for (Dungeon dungeon : Place.PRAIRIE.getDungeons().subList(0, 3)) profile.clearHardDungeon(dungeon.name());
+        assertFalse(profile.canPrestige(), "les 4 donjons");
+        profile.clearHardDungeon(Place.PRAIRIE.getDungeons().get(3).name());
+        assertNull(profile.missingPrestigeSeal());
+        assertTrue(profile.ascend());
+        assertNull(profile.missingPrestigeSeal(), "le Prestige II demande aussi la prairie, déjà vidée");
+    }
+
+    @Test
+    void afterAPrestigeTheBonusesNeverFallUnderHalfTheLegend() {
+        RankBonus legend = Rank.LEGENDE.getBonus();
+        RankBonus none = Rank.bonusAt(null, 1);
+        assertEquals(legend.hp() / 2, none.hp());
+        assertEquals(legend.attack() / 2, none.attack());
+        assertEquals(legend.defense() / 2, none.defense());
+        assertEquals(0, none.gains(), "les gains ne suivent pas le plancher");
+        assertEquals(Rank.MAGNAT.getBonus().hp() < legend.hp() / 2 ? legend.hp() / 2 : Rank.MAGNAT.getBonus().hp(),
+            Rank.bonusAt(Rank.MAGNAT, 2).hp());
+        assertEquals(Rank.ROI_DU_CASINO.getBonus().hp(), Rank.bonusAt(Rank.ROI_DU_CASINO, 2).hp(), "un rang plus fort remplace le plancher");
+        assertEquals(RankBonus.NONE.hp(), Rank.bonusAt(null, 0).hp(), "aucun plancher sans Prestige");
     }
 
     @Test

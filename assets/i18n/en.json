@@ -3059,5 +3059,22 @@
   "Jauge de Carreau, jusqu'à {0}. Ton bouclier inutilisé s'y garde, multiplié par tes Carreaux. L'As de Carreau le vide en Puissance.": "Diamonds gauge, up to {0}. Your unused shield is kept there, multiplied by your Diamonds. The Ace of Diamonds empties it into Power.",
   "Jauge de Coeur. Le soin au-delà de tes PV max s'y garde, jusqu'à {0}. Tes Coeurs joués en Couleur ou en Suite la remplissent. L'As de Coeur la vide en Puissance : +1 par PV max de Sang (+{1} au plus).": "Hearts gauge. Healing beyond your max HP is kept there, up to {0}. Your Hearts played as a Flush or a Straight fill it. The Ace of Hearts empties it into Power: +1 per max HP of Blood (+{1} at most).",
   "Jauge de Carreau, jusqu'à {0}. Ton bouclier inutilisé s'y garde, multiplié par les Carreaux joués ce tour. Tes Carreaux joués en Couleur ou en Suite la remplissent. L'As de Carreau le vide en Puissance (+1 pour 10 fois ton coup de référence, +{1} au plus).": "Diamonds gauge, up to {0}. Your unused shield is stored there, multiplied by the Diamonds played this turn. Your Diamonds played as a Flush or a Straight fill it. The Ace of Diamonds empties it into Power (+1 per 10 times your reference hit, +{1} at most).",
-  "Jauge de Coeur. Le soin au-delà de tes PV max s'y garde, jusqu'à {0} ({2} fois tes PV max). Tes Coeurs joués en Couleur ou en Suite la remplissent. L'As de Coeur la vide en Puissance : +1 par PV max de Sang (+{1} au plus).": "Hearts gauge. Healing above your max HP is stored here, up to {0} ({2} times your max HP). Your Hearts played in a Flush or a Straight fill it. The Ace of Hearts empties it into Power: +1 per max HP of Blood (+{1} at most)."
+  "Jauge de Coeur. Le soin au-delà de tes PV max s'y garde, jusqu'à {0} ({2} fois tes PV max). Tes Coeurs joués en Couleur ou en Suite la remplissent. L'As de Coeur la vide en Puissance : +1 par PV max de Sang (+{1} au plus).": "Hearts gauge. Healing above your max HP is stored here, up to {0} ({2} times your max HP). Your Hearts played in a Flush or a Straight fill it. The Ace of Hearts empties it into Power: +1 per max HP of Blood (+{1} at most).",
+  "Prairie sans pitié": "Merciless meadow",
+  "Fête sans pitié": "Merciless fair",
+  "Port sans pitié": "Merciless port",
+  "Mines sans pitié": "Merciless mines",
+  "Casino sans pitié": "Merciless casino",
+  "Désert sans pitié": "Merciless desert",
+  "Vider les 4 donjons de la prairie en mode difficile.": "Clear the 4 dungeons of the meadow in hard mode.",
+  "Vider les 4 donjons de la Fête foraine en mode difficile.": "Clear the 4 dungeons of the Funfair in hard mode.",
+  "Vider les 4 donjons du Port des Contrebandiers en mode difficile.": "Clear the 4 dungeons of the Smugglers' Port in hard mode.",
+  "Vider les 4 donjons des Mines d'Or en mode difficile.": "Clear the 4 dungeons of the Gold Mines in hard mode.",
+  "Vider les 4 donjons du Casino Englouti en mode difficile.": "Clear the 4 dungeons of the Sunken Casino in hard mode.",
+  "Vider les 4 donjons du Désert de Braise en mode difficile.": "Clear the 4 dungeons of the Ember Desert in hard mode.",
+  "Prestige {0} : vide d'abord les 4 donjons de {1} en Exploration difficile.": "Prestige {0}: first clear the 4 dungeons of {1} in hard Exploration.",
+  "Sceau de Prestige": "Prestige seal",
+  "Chaque Prestige demande un lieu vidé en Exploration difficile : la prairie pour les Prestiges I et II, la Fête foraine pour III et IV, puis le Port, les Mines et le Casino.": "Each Prestige needs a place cleared in hard Exploration: the meadow for Prestiges I and II, the Funfair for III and IV, then the Port, the Mines and the Casino.",
+  "Plancher de Prestige": "Prestige floor",
+  "Après un Prestige, tes PV max, ton attaque et ta défense ne descendent jamais sous {0} % de ceux de la Légende du Jackpot (avant le bonus du Prestige).": "After a Prestige, your max HP, attack and defense never fall below {0}% of the Jackpot Legend's (before the Prestige bonus)."
 }

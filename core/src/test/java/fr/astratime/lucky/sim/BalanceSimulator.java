@@ -1059,7 +1059,7 @@ public final class BalanceSimulator {
     Map<String, RP> rankPlace(Place place, boolean hard, Rank rank, int prestige, Gear gear, boolean bonusOn, int runs,
                               long seed) {
         Random random = new Random(seed);
-        GameController game = controller((rank == null ? RankBonus.NONE : rank.getBonus()).withPrestige(prestige), gear);
+        GameController game = controller(Rank.bonusAt(rank, prestige), gear);
         game.setDifficulty(Difficulty.of(hard));
         game.setPlaceRule(place.getRule());
         game.setBonusGameEnabled(bonusOn);
