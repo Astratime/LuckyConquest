@@ -230,17 +230,37 @@ public class LastingEffects {
     /** Vide les Lames. @return leur nombre avant d'être vidées */
     public int consumeBlades() { int n = blades; blades = 0; return n; }
 
-    /** Sang maximum qu'on peut accumuler : c'est aussi le plus gros bonus d'attaque de l'As de Coeur (Astra 2026-11-04 : 10 000). */
+    /**
+     * Sang maximum d'une jauge qui n'appartient à aucun joueur (tests, aperçus). Celle d'un joueur se compte en PV max
+     * ({@link #BLOOD_CAP_MAX_HP}) : l'As de Coeur la vide en Puissance à +1 par PV max de Sang.
+     */
     public static final int MAX_BLOOD = 10_000;
+    /**
+     * Sang maximum d'un joueur, en nombre de PV max (2026-11-20, Astra : « difficilement +1 de Puissance ») : 5, le
+     * plafond de Puissance du Sang. Avant, 10 000 fixes ne valaient plus que +1,4 pour une Légende (7 100 PV) et
+     * +0,26 au Prestige V.
+     */
+    public static final int BLOOD_CAP_MAX_HP = 5;
 
-    /** Ajoute {@code amount} au Sang, sans dépasser {@link #MAX_BLOOD}. */
+    private int maxBlood = MAX_BLOOD;
+
+    /** Le Sang de ce joueur se garde jusqu'à {@link #BLOOD_CAP_MAX_HP} fois ses PV max {@code maxHp}. */
+    public void setMaxBloodFromHp(int maxHp) {
+        maxBlood = (int) Math.min(Integer.MAX_VALUE, (long) maxHp * BLOOD_CAP_MAX_HP);
+        blood = capBlood(blood);
+    }
+
+    /** @return le Sang maximum de cette jauge. */
+    public int getMaxBlood() { return maxBlood; }
+
+    /** Ajoute {@code amount} au Sang, sans dépasser {@link #getMaxBlood()}. */
     public void addBlood(int amount) { blood = capBlood((long) blood + amount); }
     /** @return la réserve de Sang. */
     public int getBlood() { return blood; }
     /** Vide le Sang. @return la réserve avant d'être vidée */
     public int consumeBlood() { int n = blood; blood = 0; return n; }
 
-    private static int capBlood(long value) { return (int) Math.max(0, Math.min(MAX_BLOOD, value)); }
+    private int capBlood(long value) { return (int) Math.max(0, Math.min(maxBlood, value)); }
 
     /** Coffre maximum (Astra 2026-11-04) : plein, il donne +15 000 d'attaque à l'As de Carreau. */
     public static final int MAX_VAULT = 150_000;

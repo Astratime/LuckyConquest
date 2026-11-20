@@ -31,7 +31,10 @@ public enum FullPotential {
     public record Gauges(int bloodBefore, int vaultBefore, int starsBefore, int bladesAfter) {
         /** @return les jauges de {@code lasting} avant la pose, les Lames n'étant pas encore achetées. */
         public static Gauges before(LastingEffects lasting) {
-            return new Gauges(lasting.getBlood(), lasting.getVault(), lasting.getLuckyStar(), lasting.getBlades());
+            // Sang : compté plein (MAX_BLOOD) dès que la jauge du joueur est pleine, quel que soit son maximum
+            int blood = lasting.getBlood() >= lasting.getMaxBlood() ? LastingEffects.MAX_BLOOD
+                : Math.min(lasting.getBlood(), LastingEffects.MAX_BLOOD - 1);
+            return new Gauges(blood, lasting.getVault(), lasting.getLuckyStar(), lasting.getBlades());
         }
 
         /** @return ces jauges, avec les Lames lues après la pose. */

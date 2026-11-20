@@ -17,7 +17,7 @@ import java.util.List;
  *
  * <p>Maintenant : soin = drain % x (part des PV max de l'ennemi enlevée) x PV max du joueur x {@link #FACTOR}.
  * Un tour du drain ne peut pas soigner plus de {@link #TURN_CAP_PERCENT} % des PV max (Sang compris), et le soin
- * au-delà des PV max ne remplit le Sang qu'à {@link #BLOOD_PERCENT} %.
+ * au-delà des PV max remplit le Sang ({@link #BLOOD_PERCENT} %, Astra 2026-11-20 : le plafond du tour freine déjà).
  */
 public final class LifeDrain {
 
@@ -28,8 +28,8 @@ public final class LifeDrain {
     public static final double FACTOR = 10.0;
     /** Ce que le drain peut rendre au plus en un tour, en % des PV max du joueur (Sang compris). */
     public static final int TURN_CAP_PERCENT = 50;
-    /** Part du soin en trop qui remplit le Sang, en %. */
-    public static final int BLOOD_PERCENT = 50;
+    /** Part du soin en trop qui remplit le Sang, en % (50 d'abord, 100 depuis le 2026-11-20 : le Sang ne servait plus). */
+    public static final int BLOOD_PERCENT = 100;
 
     private LifeDrain() { }
 
