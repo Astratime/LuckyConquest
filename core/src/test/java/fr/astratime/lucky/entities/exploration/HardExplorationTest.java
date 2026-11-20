@@ -37,7 +37,7 @@ class HardExplorationTest {
             double attack = average(Place.DESERT, k -> k.hurt(k.swordDamage(), Difficulty.NORMAL)) * times;
             double defense = average(Place.DESERT, k -> k.getBaseDefense(Difficulty.NORMAL)) * times;
             assertEquals(1, average(place, k -> k.getMaxHp(Difficulty.HARD)) / hp, 0.001, place + " : PV");
-            assertEquals(1, average(place, k -> k.hurt(k.swordDamage(), Difficulty.HARD)) / attack, 0.01, place + " : attaque");
+            assertEquals(1, average(place, k -> k.hurt(k.swordDamage(), Difficulty.HARD)) / attack, 0.015, place + " : attaque (arrondis des petits coups)");
             assertEquals(1, average(place, k -> k.getBaseDefense(Difficulty.HARD)) / defense, 0.001, place + " : défense");
         }
     }

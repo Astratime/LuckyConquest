@@ -1,10 +1,8 @@
 package fr.astratime.lucky.entities.actions;
 
-import fr.astratime.lucky.entities.Player;
+import fr.astratime.lucky.entities.LifeDrain;
 import fr.astratime.lucky.entities.context.CombatContext;
 import fr.astratime.lucky.entities.events.Event;
-import fr.astratime.lucky.entities.events.GaugeFilledEvent;
-import fr.astratime.lucky.entities.events.PlayerHealedEvent;
 import fr.astratime.lucky.i18n.Lang;
 
 import java.util.List;
@@ -20,7 +18,7 @@ public final class DrainAttackAction extends AttackAction {
 
     /**
      * @param baseDamage   dégâts de base
-     * @param drainPercent part des dégâts infligés rendue en soin, en %
+     * @param drainPercent drain de vie, en % (voir {@link LifeDrain})
      */
     public DrainAttackAction(int baseDamage, int drainPercent) {
         super(baseDamage);
@@ -29,19 +27,11 @@ public final class DrainAttackAction extends AttackAction {
 
     @Override
     protected void afterHit(CombatContext context, long damage, List<Event> events) {
-        if (damage <= 0) return;
-        Player player = context.getPlayer();
-        int drained = (int) Math.min(Integer.MAX_VALUE, Math.round(damage * (drainPercent / 100.0)));
-        int healed = player.heal(drained);
-        if (healed > 0) events.add(new PlayerHealedEvent(healed));
-        if (drained > healed) {
-            player.getLastingEffects().addBlood(drained - healed);
-            events.add(new GaugeFilledEvent(GaugeFilledEvent.Gauge.SANG, drained - healed));
-        }
+        if (damage > 0) LifeDrain.apply(context, damage, drainPercent, events);
     }
 
     @Override
     public String getDescription() {
-        return Lang.f("{0} dégâts de base, soigne {1} % des dégâts", getBaseDamage(), drainPercent);
+        return Lang.f("{0} dégâts de base, drain de vie {1} %", getBaseDamage(), drainPercent);
     }
 }

@@ -80,11 +80,11 @@ class SuitGaugesTest {
 
     @Test
     void overhealFillsTheBloodThatTheAceOfHeartsTurnsIntoAttack() {
-        CombatContext combat = new CombatContext(player, enemy);
+        CombatContext combat = new CombatContext(player, new Enemy("Ennemi", 1_000)); // 60 dégâts = 6 % de ses PV
         combat.addLifeDrainPercent(50);
         List<?> events = SymbolRegistry.getAction(Symbol.TRIPLE_SEVEN).orElseThrow().resolve(combat); // 60 dégâts
 
-        assertEquals(30, lasting.getBlood(), "joueur à pleine vie : tout le soin part dans le Sang");
+        assertEquals(30, lasting.getBlood(), "joueur à pleine vie : tout le soin (50 % x 6 % x 100 PV x 10 = 30) part dans le Sang");
         assertTrue(events.stream().anyMatch(e -> e instanceof GaugeFilledEvent));
 
         player.takeDamage(50);
@@ -98,7 +98,7 @@ class SuitGaugesTest {
     @Test
     void theAceOfHeartsBonusIsLimitedByTheBloodGaugeMaximum() {
         lasting.addBlood(1_000_000);
-        assertEquals(10_000, lasting.getBlood(), "jauge de Sang plafonnée à 10 000 (Astra)");
+        assertEquals(500, lasting.getBlood(), "jauge de Sang plafonnée à 5 fois les PV max (100 PV : 500)");
         CombatContext frenzy = prepare(new AceOfHeartsEffect()).getCombatContext();
         assertEquals(1f + CombatContext.GAUGE_POWER_CAP, frenzy.getAttackFactor(), 1e-6,
             "Sang : Puissance +1 par PV max de Sang, plafonnée");
@@ -187,17 +187,17 @@ class SuitGaugesTest {
 
     @Test
     void theBloodNeverExceedsItsCap() {
-        lasting.addBlood(LastingEffects.MAX_BLOOD - 10);
+        lasting.addBlood(lasting.getMaxBlood() - 10);
         lasting.addBlood(500);
-        assertEquals(LastingEffects.MAX_BLOOD, lasting.getBlood(), "le surplus de soin est perdu au-delà du plafond");
+        assertEquals(lasting.getMaxBlood(), lasting.getBlood(), "le surplus de soin est perdu au-delà du plafond");
 
         lasting.addBlood(Integer.MAX_VALUE);
-        assertEquals(LastingEffects.MAX_BLOOD, lasting.getBlood(), "pas de débordement");
+        assertEquals(lasting.getMaxBlood(), lasting.getBlood(), "pas de débordement");
 
         lasting.consumeBlood();
         lasting.addBlood(60_000);
         prepare(new GainsMultiplierEffect(50, 2));
-        assertEquals(LastingEffects.MAX_BLOOD, lasting.getBlood(), "le Pot de Lutin ne dépasse pas non plus le plafond");
+        assertEquals(lasting.getMaxBlood(), lasting.getBlood(), "le Pot de Lutin ne dépasse pas non plus le plafond");
     }
 
     // --- Échoppe -----------------------------------------------------------

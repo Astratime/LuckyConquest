@@ -1,5 +1,6 @@
 package fr.astratime.lucky.entities;
 
+import fr.astratime.lucky.entities.LifeDrain;
 import fr.astratime.lucky.controllers.ActionResolver;
 import fr.astratime.lucky.controllers.CombatResolver;
 import fr.astratime.lucky.controllers.TurnEngine;
@@ -40,9 +41,9 @@ class ReelsOfNovemberTest {
     void theFangsHealThirtyPercentOfTheirDamage() {
         Player player = player();
         player.takeDamage(50);
-        Enemy enemy = target(100_000);
+        Enemy enemy = target(1_000); // 10 fois les PV max du joueur : le drain relatif rend alors 30 % des dégâts
         resolve(player, enemy, Symbol.FANGS, null, null);
-        assertEquals(100_000 - (50 - DEF), enemy.getHp());
+        assertEquals(1_000 - (50 - DEF), enemy.getHp());
         assertEquals(50 + Math.round((50 - DEF) * 0.3f), player.getHp(), "30 % des dégâts");
     }
 
@@ -172,16 +173,16 @@ class ReelsOfNovemberTest {
 
     @Test
     void theDescentEffectsApplyForEachReel() {
-        // Vampirisme : 1000 par symbole, la moitié rendue en soin
+        // Vampirisme : 1000 par symbole, drain de vie 50 % (chaque coup enlève ~10 % de ses PV : 50 PV, plafond du tour 50 PV)
         Player player = player();
         player.takeDamage(90);
-        Enemy enemy = target(100_000);
+        Enemy enemy = target(10_000);
         CombatContext context = new CombatContext(player, enemy);
         context.setBlessings(CombatContext.Blessing.FIRST, CombatContext.Blessing.FIRST, CombatContext.Blessing.FIRST);
         Symbol[] symbols = {Symbol.DESCENT, Symbol.DESCENT, Symbol.DESCENT};
         new CombatResolver().resolve(context, new ActionResolver().resolve(symbols), symbols, List.of());
-        assertEquals(100_000 - (3 * BlessingAction.HELL_ATTACK - DEF), enemy.getHp());
-        assertEquals(Player.BASE_HP, player.getHp());
+        assertEquals(10_000 - (3 * BlessingAction.HELL_ATTACK - DEF), enemy.getHp());
+        assertEquals(10 + Player.BASE_HP * LifeDrain.TURN_CAP_PERCENT / 100, player.getHp(), "au plus 50 % des PV max par tour");
 
         // Bouclier et renvoi de 30 % par rouleau
         Player shielded = player();

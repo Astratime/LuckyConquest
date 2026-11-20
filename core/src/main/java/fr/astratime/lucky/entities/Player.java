@@ -100,6 +100,7 @@ public class Player {
         this.baseMaxHp   = maxHp;
         this.maxHp       = maxHp + rankBonus.hp() + rankBonus.guardBonus(maxHp + rankBonus.hp()); // le Prestige compte le rang
         this.hp          = this.maxHp;
+        this.lastingEffects.setMaxBloodFromHp(this.maxHp);
         this.deck        = new Deck(cards, discardPile);
         this.slotMachine = new SlotMachine(reels);
         this.tableReels  = List.copyOf(reels);

@@ -1,5 +1,7 @@
 package fr.astratime.lucky.controllers;
 
+import fr.astratime.lucky.entities.enemy.EnemyKind;
+import fr.astratime.lucky.entities.enemy.Difficulty;
 import fr.astratime.lucky.entities.Card;
 import fr.astratime.lucky.entities.Enemy;
 import fr.astratime.lucky.entities.Player;
@@ -61,7 +63,7 @@ class EnemyTurnResolverTest {
             for (int i = 0; i < 3; i++) {
                 Event event = turn.outcomes().get(i).get(0);
                 switch (turn.symbols()[i]) {
-                    case SWORD  -> { swords++;  assertEquals(20 + 10, ((PlayerDamagedEvent) event).damage); }
+                    case SWORD  -> { swords++;  assertEquals(EnemyKind.CROUPIER.hurt(20 + 10, Difficulty.NORMAL), ((PlayerDamagedEvent) event).damage); }
                     case SHIELD -> { shields++; assertEquals(100 + 600, ((EnemyShieldedEvent) event).defense); }
                     case POTION -> {
                         int healed = Math.min(500, 10_000 - hp); // 30 % + 20 % des PV max, ramenés à 5 % (EnemyKind.MAX_HEAL_PERCENT)
@@ -70,7 +72,7 @@ class EnemyTurnResolverTest {
                     }
                 }
             }
-            assertEquals(10_000 - swords * 30, player.getHp());
+            assertEquals(10_000 - swords * EnemyKind.CROUPIER.hurt(30, Difficulty.NORMAL), player.getHp());
             assertEquals(Enemy.BASE_DEFENSE + shields * 700, enemy.getDefense());
             assertEquals(hp, enemy.getHp());
         }
@@ -132,7 +134,7 @@ class EnemyTurnResolverTest {
             if (swords == 0) continue;
             attacked = swords;
             assertEquals(1000, player.getHp(), "le bouclier absorbe les Épées");
-            int reflected = Math.round(swords * (20 + 3 * 5) * 0.5f);
+            int reflected = Math.round(swords * EnemyKind.CROUPIER.hurt(20 + 3 * 5, Difficulty.NORMAL) * 0.5f);
             assertTrue(turn.afterEvents().stream().anyMatch(e -> e instanceof DamageReflectedEvent r && r.damage == reflected));
         }
         assertTrue(attacked > 0, "au moins un tirage avec une Épée");

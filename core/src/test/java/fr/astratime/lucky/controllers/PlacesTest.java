@@ -72,17 +72,18 @@ class PlacesTest {
         assertEquals(60, EnemyKind.KRAKEN.damagePercent(), "le Casino frappe moins (Désert de Braise après lui)");
         assertEquals(196, EnemyKind.DRAGON.damagePercent());
         // Astra 2026-10-25 : une Épée de la Foire frappe 5 de plus (28), celle du Port 12 de plus (52) ; Port x1,3 le 2026-10-30 (68)
-        assertEquals(28, EnemyKind.CLOWN.hurt(EnemyKind.CLOWN.swordDamage(), Difficulty.NORMAL));
-        assertEquals(68, EnemyKind.RAT_CALES.hurt(EnemyKind.RAT_CALES.swordDamage(), Difficulty.NORMAL));
+        // x la part gardée depuis le drain de vie relatif (2026-11-20 : Foire 78 %, Port 76 %)
+        assertEquals(22, EnemyKind.CLOWN.hurt(EnemyKind.CLOWN.swordDamage(), Difficulty.NORMAL));
+        assertEquals(51, EnemyKind.RAT_CALES.hurt(EnemyKind.RAT_CALES.swordDamage(), Difficulty.NORMAL));
         assertTrue(EnemyKind.DRAGON.getBaseDefense(Difficulty.NORMAL) > EnemyKind.KRAKEN.getBaseDefense(Difficulty.NORMAL), "le Désert se défend mieux que le Casino");
-        assertEquals(Math.round(EnemySymbol.SWORD_DAMAGE * 0.48), EnemyKind.ROI_PIQUE.hurt(EnemySymbol.SWORD_DAMAGE, Difficulty.NORMAL));
-        assertEquals(Math.round(EnemySymbol.SWORD_DAMAGE * 2.1), EnemyKind.ROI_COEUR.hurt(EnemySymbol.SWORD_DAMAGE, Difficulty.NORMAL));
+        assertEquals(Math.round(EnemySymbol.SWORD_DAMAGE * 0.48 * 0.9), EnemyKind.ROI_PIQUE.hurt(EnemySymbol.SWORD_DAMAGE, Difficulty.NORMAL));
+        assertEquals(Math.round(EnemySymbol.SWORD_DAMAGE * 2.1 * 0.9), EnemyKind.ROI_COEUR.hurt(EnemySymbol.SWORD_DAMAGE, Difficulty.NORMAL));
 
         Player player = new Player("Joueur", Player.BASE_HP, List.of());
         Enemy king = new Enemy(EnemyKind.ROI_COEUR);
         int before = player.getHp();
         new EnemyTurnResolver.Turn(king, player, 0).strike(EnemySymbol.SWORD_DAMAGE);
-        assertEquals(Math.round(EnemySymbol.SWORD_DAMAGE * 2.1), before - player.getHp(), "le coup porté suit le réglage");
+        assertEquals(Math.round(EnemySymbol.SWORD_DAMAGE * 2.1 * 0.9), before - player.getHp(), "le coup porté suit le réglage");
     }
 
     @Test
