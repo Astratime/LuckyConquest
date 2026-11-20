@@ -97,4 +97,26 @@ class CosmeticsTest {
         assertEquals(Cosmetic.MACHINE_CLASSIC, profile(storage).getCosmetic(Cosmetic.Kind.MACHINE));
         assertEquals(Cosmetic.BACK_GOLD.getGoal(), profile.getCoins());
     }
+
+    @Test
+    void theTreasureStyleUnlocksWithGoldenEnemiesAndGivesTwoAchievements() {
+        PlayerProfile profile = profile(new PlayerProfileTest.MemoryStorage());
+        List<EnemyKind> golden = List.copyOf(Bestiary.goldenEnemies());
+
+        for (int i = 0; i < Cosmetic.BACK_TREASURE.getGoal() - 1; i++) profile.defeatGolden(golden.get(i));
+        assertFalse(profile.ownsCosmetic(Cosmetic.BACK_TREASURE));
+        assertArrayEquals(new int[]{7, 8}, profile.getCosmeticProgress(Cosmetic.BACK_TREASURE));
+        assertTrue(profile.checkAchievements().contains(Achievement.GOLDEN_FIRST));
+
+        profile.defeatGolden(golden.get(7));
+        assertTrue(profile.ownsCosmetic(Cosmetic.BACK_TREASURE));
+        assertFalse(profile.ownsCosmetic(Cosmetic.FELT_TREASURE));
+        assertFalse(profile.ownsCosmetic(Cosmetic.MACHINE_TREASURE));
+        assertFalse(profile.buyCosmetic(Cosmetic.BACK_TREASURE), "le style Trésor ne s'achète pas");
+
+        golden.forEach(profile::defeatGolden);
+        assertTrue(profile.ownsCosmetic(Cosmetic.MACHINE_TREASURE));
+        assertTrue(profile.checkAchievements().contains(Achievement.GOLDEN_ALL));
+        assertEquals("cosmetics/tresor/back.png", Cosmetic.BACK_TREASURE.getBackPath());
+    }
 }

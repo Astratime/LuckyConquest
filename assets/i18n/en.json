@@ -3076,5 +3076,13 @@
   "Sceau de Prestige": "Prestige seal",
   "Chaque Prestige demande un lieu vidé en Exploration difficile : la prairie pour les Prestiges I et II, la Fête foraine pour III et IV, puis le Port, les Mines et le Casino.": "Each Prestige needs a place cleared in hard Exploration: the meadow for Prestiges I and II, the Funfair for III and IV, then the Port, the Mines and the Casino.",
   "Plancher de Prestige": "Prestige floor",
-  "Après un Prestige, tes PV max, ton attaque et ta défense ne descendent jamais sous {0} % de ceux de la Légende du Jackpot (avant le bonus du Prestige).": "After a Prestige, your max HP, attack and defense never fall below {0}% of the Jackpot Legend's (before the Prestige bonus)."
+  "Après un Prestige, tes PV max, ton attaque et ta défense ne descendent jamais sous {0} % de ceux de la Légende du Jackpot (avant le bonus du Prestige).": "After a Prestige, your max HP, attack and defense never fall below {0}% of the Jackpot Legend's (before the Prestige bonus).",
+  "Trésor": "Treasure",
+  "Éclat d'or": "Golden Gleam",
+  "Vaincre un ennemi doré.": "Defeat a golden enemy.",
+  "Chasseur d'or": "Gold Hunter",
+  "Vaincre la version dorée de tous les soldats.": "Defeat the golden version of every soldier.",
+  "Ennemis dorés : {0} / {1}": "Golden enemies: {0} / {1}",
+  "Se débloque en vainquant tous les ennemis dorés ({0} / {1}).": "Unlocked by defeating every golden enemy ({0} / {1}).",
+  "Se débloque en vainquant {0} ennemis dorés ({1} / {0}).": "Unlocked by defeating {0} golden enemies ({1} / {0})."
 }

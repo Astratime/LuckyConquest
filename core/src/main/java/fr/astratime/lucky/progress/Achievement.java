@@ -64,7 +64,10 @@ public enum Achievement {
     LEGEND("Légende vivante", "Acheter le rang Légende du Jackpot.", 10_000_000_000L),
     // Bestiaire
     HUNTER("Chasseur", "Vaincre 50 ennemis différents.", 200_000_000),
-    FULL_BESTIARY("Bestiaire complet", "Vaincre tous les ennemis du bestiaire.", 10_000_000_000L);
+    FULL_BESTIARY("Bestiaire complet", "Vaincre tous les ennemis du bestiaire.", 10_000_000_000L),
+    // Ennemis dorés (2026-11-20) : le premier se croise vers la Fête foraine, le dernier au Désert
+    GOLDEN_FIRST("Éclat d'or", "Vaincre un ennemi doré.", 1_000_000),
+    GOLDEN_ALL("Chasseur d'or", "Vaincre la version dorée de tous les soldats.", 5_000_000_000L);
 
     private final String name;
     private final String description;

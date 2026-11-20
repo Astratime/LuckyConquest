@@ -548,6 +548,7 @@ public class ShopScreen extends CasinoMenuScreen {
         return switch (cosmetic.getUnlock()) {
             case ACHIEVEMENTS -> Lang.f("Succès : {0} / {1}", progress[0], progress[1]);
             case BESTIARY     -> Lang.f("Bestiaire : {0} / {1}", progress[0], progress[1]);
+            case GOLDEN       -> Lang.f("Ennemis dorés : {0} / {1}", progress[0], progress[1]);
             case COINS        -> PlayerProfile.formatCoins(cosmetic.getGoal());
             case DEFAULT      -> "";
         };
@@ -561,6 +562,9 @@ public class ShopScreen extends CasinoMenuScreen {
             case BESTIARY     -> cosmetic.getGoal() == Cosmetic.Unlock.ALL
                 ? Lang.f("Se débloque en vainquant tous les ennemis du bestiaire ({0} / {1}).", progress[0], progress[1])
                 : Lang.f("Se débloque en vainquant {0} ennemis du bestiaire ({1} / {0}).", progress[1], progress[0]);
+            case GOLDEN       -> cosmetic.getGoal() == Cosmetic.Unlock.ALL
+                ? Lang.f("Se débloque en vainquant tous les ennemis dorés ({0} / {1}).", progress[0], progress[1])
+                : Lang.f("Se débloque en vainquant {0} ennemis dorés ({1} / {0}).", progress[1], progress[0]);
             case COINS        -> Lang.f("Prix : {0} pièces.", PlayerProfile.formatCoins(cosmetic.getGoal()));
             case DEFAULT      -> "";
         };
