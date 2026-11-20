@@ -140,9 +140,10 @@ public final class BalanceSimulator {
      * Deck du « joueur malin » (conseils d'Astra, 2026-10-30) : Coeurs pour se soigner, Piques pour les dégâts,
      * Dans la manche (6 cartes par tour), Rayon du phare et Masque du Joker (l'ennemi passe son tour), cartes à
      * plusieurs effets (Marteau du cordonnier, Chope, Cocktail des abysses, Pacte de sang).
+     * Seulement des cartes qu'on peut obtenir en jeu (2026-11-20 : le 10 de Pique, introuvable, devient le Héraut).
      */
     static final Map<String, Integer> SMART_DECK = deck("1_pique", 1, "13_pique", 1, "12_pique", 1, "11_pique", 1,
-        "10_pique", 1, "1_coeur", 1, "13_coeur", 1, "12_coeur", 1, "in_the_sleeve", 1, "rayon_du_phare", 1,
+        "heraut", 1, "1_coeur", 1, "13_coeur", 1, "12_coeur", 1, "in_the_sleeve", 1, "rayon_du_phare", 1,
         "masque_du_joker", 1, "marteau_du_cordonnier", 1, "chope", 1, "cocktail_des_abysses", 1, "pacte_de_sang", 1,
         "draw_3", 1, "draw_2", 1, "pierre_a_aiguiser", 1, "dague_de_l_ombre", 1, "guillotine", 1);
 
@@ -164,7 +165,7 @@ public final class BalanceSimulator {
         STRONG_DECKS.put("Piques", suitDeck("pique", "pierre_a_aiguiser", "dague_de_l_ombre", "guillotine"));
         STRONG_DECKS.put("Coeurs", suitDeck("coeur", "transfusion", "baiser_vampire", "pacte_de_sang"));
         STRONG_DECKS.put("Carreaux", suitDeck("carreau", "rempart", "miroir_taille", "diamant_brut"));
-        STRONG_DECKS.put("Trèfles", suitDeck("trefle", "etoile_filante", "8_trefle", "7_trefle"));
+        STRONG_DECKS.put("Trèfles", suitDeck("trefle", "etoile_filante", "etoile_du_berger", "etoile_d_or"));
     }
 
     /** Cartes que le robot « au maximum » achète à l'échoppe, dans cet ordre. */
