@@ -96,6 +96,7 @@ public class PlayerProfile {
     static final String KEY_GUIDES        = "guides";
     static final String KEY_BINGOS        = "bingos";
     static final String KEY_STATS         = "stats";
+    static final String KEY_HISTORY       = "history";
     static final String KEY_ACHIEVEMENTS  = "achievements";
     static final String KEY_DECK_SLOTS    = "deckSlots";
     static final String KEY_DECK_SLOT     = "deckSlot";
@@ -173,6 +174,7 @@ public class PlayerProfile {
     private final Set<String> seenBingos = new LinkedHashSet<>();
     /** Statistiques de la partie (le mode ADMIN et le tutoriel n'y comptent pas). */
     private final PlayerStats stats;
+    private final PlaceHistory history;
     /** Succès atteints, dans l'ordre (leur récompense est déjà versée). */
     private final Set<Achievement> achievements = EnumSet.noneOf(Achievement.class);
     /** Bestiaire : ennemis rencontrés, et parmi eux ceux qui ont été vaincus. */
@@ -237,6 +239,7 @@ public class PlayerProfile {
         readNames(storage.get(KEY_GUIDES), seenGuides);
         readNames(storage.get(KEY_BINGOS), seenBingos);
         stats = PlayerStats.decode(storage.get(KEY_STATS));
+        history = PlaceHistory.decode(storage.get(KEY_HISTORY));
         Set<String> achieved = new LinkedHashSet<>();
         readNames(storage.get(KEY_ACHIEVEMENTS), achieved);
         for (Achievement achievement : Achievement.values()) {
@@ -603,6 +606,20 @@ public class PlayerProfile {
         if (admin) return;
         change.accept(stats);
         storage.put(KEY_STATS, stats.encode());
+        storage.flush();
+    }
+
+    /** @return l'historique de l'Exploration, lieu par lieu. */
+    public PlaceHistory getHistory() { return history; }
+
+    /**
+     * Note un combat de l'Exploration terminé dans l'historique des lieux, puis l'enregistre ;
+     * rien en mode ADMIN.
+     */
+    public void recordFight(Place place, boolean hard, boolean king, boolean won, long coins) {
+        if (admin) return;
+        history.record(place, hard, king, won, coins);
+        storage.put(KEY_HISTORY, history.encode());
         storage.flush();
     }
 
@@ -1567,6 +1584,7 @@ public class PlayerProfile {
         storage.put(KEY_ADMIN_DECK, encode(adminDeck));
         storage.put(KEY_ADMIN_MACHINE, encodeSymbols(adminMachine));
         storage.put(KEY_STATS, stats.encode());
+        storage.put(KEY_HISTORY, history.encode());
         storage.put(KEY_ACHIEVEMENTS, achievements.stream().map(Enum::name).collect(Collectors.joining(",")));
         storage.put(KEY_POTS, encodePots(pots));
         storage.put(KEY_COSMETICS, boughtCosmetics.stream().map(Enum::name).collect(Collectors.joining(",")));

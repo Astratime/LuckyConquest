@@ -3089,5 +3089,15 @@
   "TICKET GAGNANT : GAINS +{0}": "WINNING TICKET: GAINS +{0}",
   "TICKET PERDANT": "LOSING TICKET",
   "TICKET À GRATTER": "SCRATCH TICKET",
-  "Gratte tout de suite : 0, 4, 6 ou 10 fois le coût du tirage en gains (4 en moyenne), sans multiplicateur. Un pur pari": "Scratch it at once: 0, 4, 6 or 10 times the spin cost in gains (4 on average), with no multiplier. A pure gamble"
+  "Gratte tout de suite : 0, 4, 6 ou 10 fois le coût du tirage en gains (4 en moyenne), sans multiplicateur. Un pur pari": "Scratch it at once: 0, 4, 6 or 10 times the spin cost in gains (4 on average), with no multiplier. A pure gamble",
+  "Historique": "History",
+  "Succès": "Achievements",
+  "Historique de l'Exploration": "Exploration history",
+  "Aucun combat de l'Exploration pour l'instant.": "No Exploration fight yet.",
+  "Lieu": "Place",
+  "Combats": "Fights",
+  "Victoires": "Wins",
+  "Rois battus": "Kings beaten",
+  "Pièces / combat": "Coins / fight",
+  "Meilleur combat": "Best fight"
 }
