@@ -3099,5 +3099,13 @@
   "Victoires": "Wins",
   "Rois battus": "Kings beaten",
   "Pièces / combat": "Coins / fight",
-  "Meilleur combat": "Best fight"
+  "Meilleur combat": "Best fight",
+  "Liste": "List",
+  "Familles": "Families",
+  "Cartes sans rang (pas de combinaison) : {0}": "Cards without rank (no combination): {0}",
+  "Combinaisons possibles": "Possible combinations",
+  "{0} (x{1}) : {2}": "{0} (x{1}): {2}",
+  "possible": "possible",
+  "impossible avec ce deck": "impossible with this deck",
+  "Jokers caméléons (rang et couleur au choix) : {0}": "Chameleon Jokers (any rank and colour): {0}"
 }
