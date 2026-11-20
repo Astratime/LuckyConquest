@@ -277,7 +277,7 @@ public class LastingEffects {
     /** Bonne étoile au plus (jauge de Trèfle). */
     public static final int MAX_LUCKY_STAR = 100;
     /** Un Bingo dû à la Bonne étoile (Paire changée en Bingo, As de Trèfle, Étoiles) : valeur des symboles multipliée. */
-    public static final int STAR_BINGO_POWER = 10;
+    public static final int STAR_BINGO_POWER = 20;
     /** Chance au plus (%) que la Bonne étoile change une Paire en Bingo. */
     public static final int MAX_STAR_CHANCE = 50;
 
