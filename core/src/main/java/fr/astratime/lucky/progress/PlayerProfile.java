@@ -660,6 +660,12 @@ public class PlayerProfile {
             case FOIRE           -> placeCleared(Place.FOIRE);
             case DESERT          -> placeCleared(Place.DESERT);
             case GREAT_EXPLORER  -> Arrays.stream(Place.values()).allMatch(this::placeCleared);
+            case HARD_PRAIRIE    -> isHardPlaceCleared(Place.PRAIRIE);
+            case HARD_FOIRE      -> isHardPlaceCleared(Place.FOIRE);
+            case HARD_PORT       -> isHardPlaceCleared(Place.PORT);
+            case HARD_MINES      -> isHardPlaceCleared(Place.MINES);
+            case HARD_CASINO     -> isHardPlaceCleared(Place.CASINO);
+            case HARD_DESERT     -> isHardPlaceCleared(Place.DESERT);
             case FORTUNE         -> stats.get(PlayerStats.Stat.COINS) >= 1_000_000_000L;
             case COMET           -> clearedChapters.contains(Chapter.GENESE.name());
             case HALFWAY         -> clearedChapters.contains(Chapter.DERNIER_TIRAGE.name());
@@ -1217,8 +1223,7 @@ public class PlayerProfile {
      *         celui choisi à la Table du croupier, pas forcément le plus haut acheté
      */
     public RankBonus getRankBonus() {
-        Rank active = getActiveRank();
-        return (active == null ? RankBonus.NONE : active.getBonus()).withPrestige(prestige);
+        return Rank.bonusAt(getActiveRank(), prestige); // plancher de Prestige compris
     }
 
     /** @return le rang joué en combat, choisi parmi ceux achetés, ou {@code null} pour jouer sans rang. */
@@ -1273,7 +1278,35 @@ public class PlayerProfile {
      * @return {@code true} si le joueur peut passer au Prestige suivant : tous ses rangs
      *         achetés, moins de {@link #MAX_PRESTIGE} niveaux, et pas en mode ADMIN
      */
-    public boolean canPrestige() { return !admin && ranks >= Rank.values().length && prestige < MAX_PRESTIGE; }
+    public boolean canPrestige() {
+        return !admin && ranks >= Rank.values().length && prestige < MAX_PRESTIGE && missingPrestigeSeal() == null;
+    }
+
+    /**
+     * Sceaux de Prestige (2026-11-20) : chaque niveau demande un lieu vidé en Exploration difficile, la prairie pour
+     * les Prestiges I et II, la Foire pour III et IV … le Casino pour IX et X. Sans eux, le mode normal suffisait pour
+     * tout racheter et le difficile ne servait à rien. Deux niveaux par lieu : un lieu difficile est deux fois plus
+     * fort que le précédent, et deux Prestiges (x1,4 chacun) font à peu près x2 (simulateur : chaque nouveau sceau
+     * se gagne 55 à 99 % du temps avec la Légende du Prestige d'avant).
+     *
+     * @param level niveau de Prestige visé (1 à {@link #MAX_PRESTIGE})
+     * @return le lieu à vider en difficile pour l'atteindre, ou {@code null} pour un niveau hors limites
+     */
+    public static Place prestigeSeal(int level) {
+        if (level < 1 || level > MAX_PRESTIGE) return null;
+        return Place.values()[Math.min(Place.values().length - 1, (level - 1) / 2)];
+    }
+
+    /** @return le lieu à vider en difficile avant le prochain Prestige, ou {@code null} s'il l'est déjà (ou s'il n'y en a plus). */
+    public Place missingPrestigeSeal() {
+        Place seal = prestigeSeal(prestige + 1);
+        return seal == null || isHardPlaceCleared(seal) ? null : seal;
+    }
+
+    /** @return {@code true} si les quatre donjons du lieu {@code place} sont vidés en Exploration difficile. */
+    public boolean isHardPlaceCleared(Place place) {
+        return place.getDungeons().stream().allMatch(dungeon -> clearedHardDungeons.contains(dungeon.name()));
+    }
 
     /**
      * Prestige : le joueur rend tous ses rangs (il repart sans rang et les rachète
