@@ -17,6 +17,8 @@ import fr.astratime.lucky.assets.HudTextures;
 import fr.astratime.lucky.assets.Palette;
 import fr.astratime.lucky.i18n.Lang;
 import fr.astratime.lucky.progress.Achievement;
+import fr.astratime.lucky.entities.exploration.Place;
+import fr.astratime.lucky.progress.PlaceHistory;
 import fr.astratime.lucky.progress.PlayerProfile;
 import fr.astratime.lucky.progress.PlayerStats;
 import fr.astratime.lucky.progress.PlayerStats.Stat;
@@ -24,7 +26,8 @@ import fr.astratime.lucky.progress.PlayerStats.Stat;
 /**
  * Fenêtre « Statistiques et succès » des Options : les statistiques de la
  * partie à gauche, les succès à droite (atteints en or avec leur pièce,
- * les autres en gris avec leur récompense), sur plusieurs pages.
+ * les autres en gris avec leur récompense), sur plusieurs pages. Le bouton « Historique » remplace les
+ * succès par l'historique de l'Exploration, lieu par lieu (2026-11-20).
  * « Retour », Échap ou un clic hors du cadre la ferment.
  */
 public class AchievementsOverlay implements Disposable {
@@ -59,6 +62,14 @@ public class AchievementsOverlay implements Disposable {
     private final CasinoButton next;
     private final Label pageLabel;
     private int page;
+    private final CasinoButton historyButton;
+    private final CasinoButton achievementsButton;
+    private final Group history = new Group();
+    private final Label historyTitle;
+    private final Label historyEmpty;
+    private boolean historyMode;
+    /** Colonnes de l'historique : lieu, combats, victoires, rois battus, pièces par combat, meilleur combat. */
+    private static final float[] HISTORY_COLUMNS = {0f, 0.38f, 0.50f, 0.64f, 0.82f, 1f};
     private final TextureRegionDrawable coin;
     private final BitmapFont titleFont   = Fonts.jersey(64, Palette.GOLD, 4f, Palette.TEXT_SHADE);
     private final BitmapFont headFont    = Fonts.jersey(36, Palette.GOLD, 2f, Palette.TEXT_SHADE);
@@ -109,6 +120,15 @@ public class AchievementsOverlay implements Disposable {
         root.addActor(previous);
         root.addActor(next);
         root.addActor(pageLabel);
+        historyButton = buttons.create(Lang.t("Historique"), clickSound, () -> showHistory(true));
+        achievementsButton = buttons.create(Lang.t("Succès"), clickSound, () -> showHistory(false));
+        root.addActor(historyButton);
+        root.addActor(achievementsButton);
+        historyTitle = label(headFont, Color.WHITE);
+        historyEmpty = label(statFont, Palette.CREAM);
+        root.addActor(historyTitle);
+        root.addActor(historyEmpty);
+        root.addActor(history);
         root.setVisible(false);
         root.addListener(new InputListener() {
             @Override
@@ -159,13 +179,53 @@ public class AchievementsOverlay implements Disposable {
             rewards[i].setText((done ? "" : "+") + PlayerProfile.formatCoins(achievement.getReward()));
             rewards[i].setColor(done ? Palette.GOLD : LOCKED);
         }
+        fillHistory(profile.getHistory());
         page = 0;
+        historyMode = false;
         layout();
         root.setVisible(true);
         root.toFront();
         root.getColor().a = 0f;
         root.clearActions();
         root.addAction(Actions.fadeIn(FADE));
+    }
+
+    /** Remplit le tableau de l'historique : en-tête, puis un lieu par ligne (le mode difficile s'il a été joué). */
+    private void fillHistory(PlaceHistory places) {
+        history.clearChildren();
+        historyTitle.setText(Lang.t("Historique de l'Exploration"));
+        historyEmpty.setText(Lang.t("Aucun combat de l'Exploration pour l'instant."));
+        addHistoryRow(Palette.GOLD, textFont, Lang.t("Lieu"), Lang.t("Combats"), Lang.t("Victoires"), Lang.t("Rois battus"),
+            Lang.t("Pièces / combat"), Lang.t("Meilleur combat"));
+        for (boolean hard : new boolean[]{false, true}) {
+            boolean titled = !hard;
+            for (Place place : Place.values()) {
+                PlaceHistory.Line line = places.get(place, hard);
+                if (line.fights() == 0) continue;
+                if (!titled) { // les lieux du mode difficile, sous leur propre titre
+                    addHistoryRow(Palette.GOLD, textFont, Lang.t("Mode difficile"), "", "", "", "", "");
+                    titled = true;
+                }
+                addHistoryRow(hard ? Palette.CREAM : Color.WHITE, statFont, place.getName(),
+                    Lang.grouped(line.fights()), line.winPercent() + " %",
+                    Lang.grouped(line.kingWins()) + " / " + Lang.grouped(line.kings()),
+                    PlayerProfile.formatCoins(line.coinsPerFight()), PlayerProfile.formatCoins(line.best()));
+            }
+        }
+    }
+
+    private void addHistoryRow(Color color, BitmapFont font, String... cells) {
+        for (String cell : cells) {
+            Label label = label(font, color);
+            label.setText(cell);
+            history.addActor(label);
+        }
+    }
+
+    /** Montre l'historique ({@code true}) ou les succès à la place. */
+    private void showHistory(boolean shown) {
+        historyMode = shown;
+        layout();
     }
 
     private static int pageCount() { return (Achievement.values().length + PER_PAGE - 1) / PER_PAGE; }
@@ -264,7 +324,47 @@ public class AchievementsOverlay implements Disposable {
             rewards[i].setPosition(cx + columnWidth - rewards[i].getWidth(), ry + rowHeight / 2f);
         }
 
-        back.setPosition(sx + (STATS_WIDTH - back.getWidth()) / 2f, py + PAD);
+        // « Retour » et le bouton qui passe des succès à l'historique, côte à côte sous les statistiques
+        CasinoButton toggle = historyMode ? achievementsButton : historyButton;
+        historyButton.setVisible(!historyMode);
+        achievementsButton.setVisible(historyMode);
+        back.setPosition(sx + (STATS_WIDTH / 2f - back.getWidth()) / 2f, py + PAD);
+        toggle.setPosition(sx + STATS_WIDTH / 2f + (STATS_WIDTH / 2f - toggle.getWidth()) / 2f, py + PAD);
+
+        achievementsTitle.setVisible(!historyMode);
+        historyTitle.setVisible(historyMode);
+        history.setVisible(historyMode);
+        int cells = HISTORY_COLUMNS.length;
+        int rows = history.getChildren().size / cells;
+        historyEmpty.setVisible(historyMode && rows <= 1);
+        if (historyMode) {
+            for (int i = 0; i < names.length; i++) {
+                icons[i].setVisible(false);
+                names[i].setVisible(false);
+                descriptions[i].setVisible(false);
+                rewards[i].setVisible(false);
+            }
+            historyTitle.pack();
+            historyTitle.setPosition(ax, headY - historyTitle.getHeight());
+            float tableTop = headY - historyTitle.getHeight() - 24f;
+            float tableWidth = right - ax;
+            float lineHeight = Math.min(ROW_HEIGHT * 0.7f, (tableTop - (py + PAD)) / Math.max(1, rows));
+            for (int r = 0; r < rows; r++) {
+                float ry = tableTop - (r + 1) * lineHeight;
+                for (int c = 0; c < cells; c++) {
+                    Label cell = (Label) history.getChildren().get(r * cells + c);
+                    cell.pack();
+                    float x = c == 0 ? ax : ax + tableWidth * HISTORY_COLUMNS[c] - cell.getWidth(); // chiffres à droite
+                    cell.setPosition(x, ry);
+                }
+            }
+            historyEmpty.pack();
+            historyEmpty.setPosition(ax, tableTop - 2.5f * lineHeight);
+            previous.setVisible(false);
+            next.setVisible(false);
+            pageLabel.setVisible(false);
+            return;
+        }
 
         previous.setVisible(paged);
         next.setVisible(paged);

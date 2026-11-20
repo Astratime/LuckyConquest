@@ -2277,6 +2277,7 @@ public class GameScreen extends ScreenAdapter {
         DungeonRun dungeonRun = (DungeonRun) run;
         PlayerProfile profile = luckyGame.getProfile();
         GameState state = gameController.getGameState();
+        profile.recordFight(Place.of(dungeonRun.getDungeon()), dungeonRun.isHard(), run.isBossStage(), won, reward);
         List<String> machine = new ArrayList<>();
         for (Symbol symbol : profile.getMachine()) machine.add(symbol.name());
         DescentLog.append(DescentLog.DEFAULT_FILE, new DescentLog.Entry(
