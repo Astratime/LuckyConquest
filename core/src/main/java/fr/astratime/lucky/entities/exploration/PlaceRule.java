@@ -19,7 +19,9 @@ import fr.astratime.lucky.i18n.Lang;
  *   <li>{@link #SOIF} : les soins du joueur sont divisés par {@link #THIRST_HEAL_DIVISOR} ; à la fin
  *       d'un tour sans soin, il perd {@link #THIRST_PERCENT} % de ses PV max (son bouclier ne protège pas) ;</li>
  *   <li>{@link #WAGON_BONDE} : tous les {@link #CROWDED_PERIOD} tours, le joueur joue {@link #CROWDED_PLAYS}
- *       carte de moins ce tour-là (le wagon est bondé).</li>
+ *       carte de moins ce tour-là (le wagon est bondé) ;</li>
+ *   <li>{@link #MINUIT} : l'horloge du manoir avance d'une heure à chaque tour ; tous les
+ *       {@link #MIDNIGHT_PERIOD} tours, minuit sonne et l'ennemi joue deux tours de suite.</li>
  * </ul>
  */
 public enum PlaceRule {
@@ -34,7 +36,9 @@ public enum PlaceRule {
     MANEGE("Manège", "Tous les 3 tours, le manège tourne : un de tes rouleaux, au hasard, est bloqué pour ce tirage."),
     SOIF("Soif", "Tes soins sont divisés par 2. À la fin de chaque tour où tu ne t'es pas soigné, tu perds 1 % de tes "
         + "PV max. Ton bouclier ne protège pas."),
-    WAGON_BONDE("Wagon bondé", "Tous les 3 tours, le wagon est bondé : tu joues 1 carte de moins ce tour-là.");
+    WAGON_BONDE("Wagon bondé", "Tous les 3 tours, le wagon est bondé : tu joues 1 carte de moins ce tour-là."),
+    MINUIT("Minuit", "L'horloge du manoir avance d'une heure à chaque tour. Au 6e tour, puis tous les 6 tours, "
+        + "minuit sonne : l'ennemi joue deux tours de suite.");
 
     /** Id de la carte Scorbut. */
     public static final String SCURVY_CARD = "scorbut";
@@ -64,6 +68,9 @@ public enum PlaceRule {
     public static final int CROWDED_PERIOD = 3;
     /** Wagon bondé : cartes jouées en moins ce tour-là. */
     public static final int CROWDED_PLAYS = 1;
+
+    /** Minuit : l'horloge sonne tous les tant de tours (au 6e, au 12e…), l'ennemi rejoue aussitôt. */
+    public static final int MIDNIGHT_PERIOD = 6;
 
     private final String name;
     private final String description;
@@ -104,6 +111,12 @@ public enum PlaceRule {
 
     /** @return les tours avant le prochain wagon bondé, celui-ci compris (1 : ce tour). */
     public static int turnsBeforeCrowd(int turn) { return CROWDED_PERIOD - (turn - 1) % CROWDED_PERIOD; }
+
+    /** @return {@code true} si minuit sonne au tour {@code turn} (à partir de 1) : l'ennemi y joue deux tours de suite. */
+    public boolean isMidnight(int turn) { return this == MINUIT && turn % MIDNIGHT_PERIOD == 0; }
+
+    /** @return l'heure de l'horloge du manoir au tour {@code turn} : 1 au premier tour … {@link #MIDNIGHT_PERIOD} à minuit. */
+    public static int clockHour(int turn) { return (turn - 1) % MIDNIGHT_PERIOD + 1; }
 
     /** @return {@code true} si la Soif joue (soins divisés, PV perdus sans soin). */
     public boolean isThirsty() { return this == SOIF; }

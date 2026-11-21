@@ -581,7 +581,8 @@ public class EnemyTurnResolver {
         /** Le symbole {@code symbol} du rouleau {@code i} agit une fois. */
         private void act(EnemySymbol symbol, int i, List<Event> events) {
             boolean done = actTowerOpening(symbol, i, events) || actTowerLate(symbol, events)
-                || actPortMinesCasino(symbol, events) || actFairDesert(symbol, events) || actExpress(symbol, events);
+                || actPortMinesCasino(symbol, events) || actFairDesert(symbol, events) || actExpress(symbol, events)
+                || actManor(symbol, events);
             if (!done) throw new IllegalStateException("Symbole sans effet : " + symbol);
         }
 
@@ -941,6 +942,45 @@ public class EnemyTurnResolver {
                         events.add(turn.strike(kind.swordDamage())); // rien à prendre, ou il a eu peur : il tire
                     }
                 }
+                default -> {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        /**
+         * Exploration : le Manoir hanté (Pacte de sang, Malédiction, Linceul, Fils).
+         *
+         * @return {@code false} si {@code symbol} n'est pas de cette famille
+         */
+        private boolean actManor(EnemySymbol symbol, List<Event> events) {
+            switch (symbol) {
+                case BLOOD_PACT -> {
+                    int percent = EnemySymbol.BLOOD_PACT_PERCENT * (enemy.takeCharge(EnemySignature.PACTE_SCELLE) ? 2 : 1);
+                    int taken = player.getLastingEffects().takeBlood(percent);
+                    if (taken > 0) {
+                        events.add(new StatusEvent(Lang.f("PACTE DE SANG : IL TE PREND {0} DE SANG", Lang.big(taken)),
+                            EffectPopup.Style.DAMAGE));
+                        int drinks = 1 + boosts.getOrDefault(EnemySignature.DOUZE_COUPS, 0);
+                        events.add(heal(enemy, EnemySymbol.BLOOD_PACT_HEAL_PERCENT * drinks * healFactor / 100f));
+                    } else {
+                        events.add(turn.strike(kind.swordDamage())); // pas de Sang à boire : il frappe
+                    }
+                }
+                case CURSE -> curse(events, EnemySignature.PAGE_ARRACHEE, curses::addMalediction,
+                    Lang.t("MALÉDICTION : TA MEILLEURE CARTE RETOURNERA SOUS TA PIOCHE"),
+                    Lang.t("MALÉDICTION : TES 2 MEILLEURES CARTES RETOURNERONT SOUS TA PIOCHE"));
+                case SHROUD -> {
+                    if (enemy.armShroud()) {
+                        events.add(new StatusEvent(Lang.f("LINCEUL : IL SE RELÈVERA À {0} % DE SES PV", EnemySymbol.SHROUD_RISE_PERCENT),
+                            EffectPopup.Style.SPECIAL));
+                    } else {
+                        events.add(turn.shield(kind.shieldDefense() + shieldBonus)); // déjà drapé, ou déjà relevé : il se protège
+                    }
+                }
+                case STRINGS -> curse(events, EnemySignature.FIL_DE_SOIE, curses::addStrings,
+                    Lang.t("FILS : IL CHOISIRA UNE CARTE QUE TU JOUERAS"), Lang.t("FILS : IL CHOISIRA 2 CARTES QUE TU JOUERAS"));
                 default -> {
                     return false;
                 }
@@ -1317,6 +1357,15 @@ public class EnemyTurnResolver {
             .orElse(null);
     }
 
+    /** @return la plus faible carte de {@code cards} (une carte classique basse d'abord), ou {@code null} (Fils). */
+    static Card worstCard(List<Card> cards) {
+        return cards.stream()
+            .filter(card -> !PlaceRule.SCURVY_CARD.equals(card.getId()))
+            .min(Comparator.comparingInt((Card card) -> card.getSuit() == null ? 1 : 0)
+                .thenComparingInt(card -> card.getRank() == 1 ? 14 : card.getRank()))
+            .orElse(null);
+    }
+
     /** @return la case où s'arrête la bille de la roulette du Zéro. */
     private EnemyRouletteEvent.Pocket spinRoulette() {
         int pocket = random.nextInt(37);
@@ -1583,6 +1632,20 @@ public class EnemyTurnResolver {
                         events.add(new StatusEvent(Lang.t("LA CHAUDIÈRE EXPLOSE !"), EffectPopup.Style.ATTACK));
                         events.add(turn.strike(enemy.getKind().swordDamage() * EnemySymbol.PRESSURE_FACTOR));
                     }
+                }
+                case SILENCE -> {
+                    curses.addMalediction(1);
+                    events.add(new StatusEvent(Lang.t("SILENCE : TA MEILLEURE CARTE RETOURNERA SOUS TA PIOCHE"), EffectPopup.Style.DAMAGE));
+                }
+                case TERRE_FRAICHE -> {
+                    if (enemy.armShroud()) {
+                        events.add(new StatusEvent(Lang.f("TERRE FRAÎCHE : IL SE RELÈVERA À {0} % DE SES PV", EnemySymbol.SHROUD_RISE_PERCENT),
+                            EffectPopup.Style.SPECIAL));
+                    }
+                }
+                case DERNIER_ACTE -> {
+                    curses.addStrings(1);
+                    events.add(new StatusEvent(Lang.t("DERNIER ACTE : IL CHOISIRA UNE CARTE QUE TU JOUERAS"), EffectPopup.Style.DAMAGE));
                 }
                 case ENCRE -> {
                     curses.blind(1);

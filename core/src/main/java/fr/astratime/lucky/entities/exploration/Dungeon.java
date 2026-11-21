@@ -125,6 +125,28 @@ public enum Dungeon {
         EnemyKind.GOLEM_OR, EnemyKind.COEUR_MONTAGNE,
         List.of(new Loot("dynamite", 40), new Loot("lampe_a_carbure", 40), new Loot("coeur_d_or", 20))),
 
+    // ----- Le Manoir hanté -----
+
+    SALON("Le Salon de jeu", "Salon",
+        "Les cartes se distribuent toutes seules. Les joueurs n'ont plus d'ombre. Ici, on mise son sang.",
+        EnemyKind.VALET_FANTOME, EnemyKind.COMTE_MINUIT,
+        List.of(new Loot("bougie_noire", 40), new Loot("mise_du_revenant", 40), new Loot("pacte_de_minuit", 20))),
+
+    BIBLIOTHEQUE("La Bibliothèque", "Bibliothèque",
+        "Des livres volent d'une étagère à l'autre. Celui qui emprunte une carte doit la rendre.",
+        EnemyKind.LIVRE_VIVANT, EnemyKind.BIBLIOTHECAIRE,
+        List.of(new Loot("grimoire", 40), new Loot("marque_page", 40), new Loot("livre_des_ombres", 20))),
+
+    CRYPTE("La Crypte", "Crypte",
+        "Sous le manoir, les tombes sont ouvertes. Ceux qui y dorment se relèvent toujours une fois.",
+        EnemyKind.GOULE, EnemyKind.FOSSOYEUR,
+        List.of(new Loot("os_de_la_chance", 40), new Loot("eau_benite", 40), new Loot("pierre_tombale", 20))),
+
+    GRENIER("Le Grenier", "Grenier",
+        "Sous les combles, les jouets du baron attendent. Quelqu'un tire leurs fils. Les tiens aussi.",
+        EnemyKind.POUPEE_HANTEE, EnemyKind.MARIONNETTISTE,
+        List.of(new Loot("boite_a_musique", 40), new Loot("malle_oubliee", 40), new Loot("miroir_hante", 20))),
+
     // ----- Le Casino Englouti -----
 
     BAR("Le Bar", "Bar",

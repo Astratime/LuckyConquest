@@ -50,6 +50,8 @@ public enum Symbol {
     FLAME         ("32-flame"),
     /** Vapeur : gagné en vidant le Rapide de Minuit ; frappe plus fort à chaque tirage d'affilée où elle sort. */
     STEAM         ("35-steam"),
+    /** Spectre : gagné en vidant le Manoir hanté ; son coup traverse une part de la défense de l'ennemi. */
+    SPECTRE       ("36-spectre"),
     /** N'existe qu'au Bingo imposé par le Roi démon : jamais dans une machine. */
     DESCENT       ("33-descent"),
     /** N'existe qu'au Bingo imposé par l'Apôtre de la Chance : jamais dans une machine. */
@@ -147,6 +149,7 @@ public enum Symbol {
             case GOLD_CHIP     -> Lang.t("JETON D'OR");
             case FLAME         -> Lang.t("FLAMME");
             case STEAM         -> Lang.t("VAPEUR");
+            case SPECTRE       -> Lang.t("SPECTRE");
             case DESCENT       -> Lang.t("DESCENTE AUX ENFERS");
             case BINGO_LIGHT   -> Lang.t("LUMIÈRE DU BINGO");
             case JOKER         -> Lang.t("JOKER");

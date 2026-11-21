@@ -64,6 +64,7 @@ public record BingoStyle(Color body, Color trim, Color letterA, Color letterB, C
             case SPIKED_SHIELD, ANCHOR -> of(Symbol.DIAMOND);
             case SCYTHE    -> of(Symbol.BAR);
             case STEAM     -> of(Symbol.SEVEN);
+            case SPECTRE   -> of(Symbol.STAR);
             case MOON, LUCK_APOSTLE -> of(Symbol.STAR);
             // Roi démon et Descente aux enfers : rouge sang et noir, lettres de braise.
             case DEMON_KING, DESCENT -> new BingoStyle(hex("5a0610"), hex("ff5a1f"), hex("ffb347"), hex("ff3b1f"),

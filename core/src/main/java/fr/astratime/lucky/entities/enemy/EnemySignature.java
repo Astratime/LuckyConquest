@@ -164,7 +164,25 @@ public enum EnemySignature {
     MARCHAND_DE_SABLE("Marchand de sable", EnemySymbol.LULLABY, Timing.NEXT,
         "Sa prochaine Berceuse endort 2 cartes", "BERCEUSE x2"),
     HAUT_LES_MAINS("Haut les mains", EnemySymbol.HOLDUP, Timing.NEXT,
-        "Son prochain Braquage te prend ton bouclier, même si tu l'as beaucoup blessé", "BRAQUAGE ASSURÉ");
+        "Son prochain Braquage te prend ton bouclier, même si tu l'as beaucoup blessé", "BRAQUAGE ASSURÉ"),
+
+    // Le Manoir hanté
+    PACTE_SCELLE("Pacte scellé", EnemySymbol.BLOOD_PACT, Timing.NEXT,
+        "Son prochain Pacte de sang prend deux fois plus de Sang", "PACTE x2"),
+    DOUZE_COUPS("Douze coups", EnemySymbol.BLOOD_PACT, Timing.TURN,
+        "Ses Pactes de sang de ce tour le soignent deux fois plus", "PACTE +SOIN"),
+    PAGE_ARRACHEE("Page arrachée", EnemySymbol.CURSE, Timing.NEXT,
+        "Sa prochaine Malédiction renvoie 2 cartes sous ta pioche", "MALÉDICTION x2"),
+    SILENCE("Silence", EnemySymbol.CURSE, Timing.NOW,
+        "Malédiction tout de suite : ta meilleure carte piochée retournera sous ta pioche", "MALÉDICTION"),
+    TERRE_FRAICHE("Terre fraîche", EnemySymbol.SHROUD, Timing.NOW,
+        "Il se drape tout de suite dans son Linceul", "LINCEUL"),
+    GLAS("Glas", EnemySymbol.SHROUD, Timing.NEXT,
+        "S'il se relève, il se relève avec deux fois plus de PV", "RELÈVE x2"),
+    FIL_DE_SOIE("Fil de soie", EnemySymbol.STRINGS, Timing.NEXT,
+        "Ses prochains Fils te font jouer 2 cartes", "FILS x2"),
+    DERNIER_ACTE("Dernier acte", EnemySymbol.STRINGS, Timing.NOW,
+        "Fils tout de suite : il choisira une de tes cartes, et tu la joueras", "FILS");
 
     /** Exemplaires de chaque carte propre dans le deck d'un ennemi (choix d'Astra). */
     public static final int COPIES = 4;

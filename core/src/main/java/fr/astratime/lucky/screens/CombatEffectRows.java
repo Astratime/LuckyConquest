@@ -302,6 +302,16 @@ final class CombatEffectRows {
                         : turns == 2 ? Lang.t(" Le wagon sera bondé au prochain tour.")
                         : Lang.f(" Le wagon sera bondé dans {0}.", turns(turns - 1)))));
             }
+            case MINUIT -> {
+                int hour = PlaceRule.clockHour(turn);
+                rows.add(new SidePanel.EffectRow(skull, null, hour == PlaceRule.MIDNIGHT_PERIOD
+                    ? Lang.t("Minuit : il rejoue !")
+                    : Lang.f("Horloge {0}/{1}", hour, PlaceRule.MIDNIGHT_PERIOD),
+                    rule.getName(), rule.getDescription()
+                    + (hour == PlaceRule.MIDNIGHT_PERIOD ? Lang.t(" C'est ce tour-ci : l'ennemi jouera deux tours de suite !")
+                        : hour == PlaceRule.MIDNIGHT_PERIOD - 1 ? Lang.t(" Minuit sonnera au prochain tour.")
+                        : Lang.f(" Minuit sonnera dans {0}.", turns(PlaceRule.MIDNIGHT_PERIOD - hour)))));
+            }
             case SOIF -> rows.add(new SidePanel.EffectRow(skull, null,
                 Lang.f("Soif : soins /{0}", PlaceRule.THIRST_HEAL_DIVISOR), rule.getName(),
                 rule.getDescription() + Lang.t(" Pense à te soigner à chaque tour.")));
@@ -398,6 +408,10 @@ final class CombatEffectRows {
             rows.add(curse(skull, Lang.f("Avantage x{0}", lasting.getHouseEdges()), EnemySymbol.HOUSE_EDGE, foe));
         }
         if (lasting.getLullabies() > 0) rows.add(curse(skull, Lang.f("Berceuse x{0}", lasting.getLullabies()), EnemySymbol.LULLABY, foe));
+        if (lasting.getMaledictions() > 0) {
+            rows.add(curse(skull, Lang.f("Malédiction x{0}", lasting.getMaledictions()), EnemySymbol.CURSE, foe));
+        }
+        if (lasting.getStrings() > 0) rows.add(curse(skull, Lang.f("Fils x{0}", lasting.getStrings()), EnemySymbol.STRINGS, foe));
         if (lasting.getRockfalls() > 0) {
             rows.add(curse(skull, Lang.f("Éboulement : -{0}", lasting.getRockfalls()), EnemySymbol.ROCKFALL, foe));
         }

@@ -672,6 +672,7 @@ public class PlayerProfile {
             case FIRST_DUNGEON   -> !clearedDungeons.isEmpty();
             case PRAIRIE         -> placeCleared(Place.PRAIRIE);
             case RAPIDE          -> placeCleared(Place.RAPIDE);
+            case MANOIR          -> placeCleared(Place.MANOIR);
             case PORT            -> placeCleared(Place.PORT);
             case MINES           -> placeCleared(Place.MINES);
             case CASINO          -> placeCleared(Place.CASINO);
@@ -681,6 +682,7 @@ public class PlayerProfile {
             case HARD_PRAIRIE    -> isHardPlaceCleared(Place.PRAIRIE);
             case HARD_FOIRE      -> isHardPlaceCleared(Place.FOIRE);
             case HARD_RAPIDE     -> isHardPlaceCleared(Place.RAPIDE);
+            case HARD_MANOIR     -> isHardPlaceCleared(Place.MANOIR);
             case HARD_PORT       -> isHardPlaceCleared(Place.PORT);
             case HARD_MINES      -> isHardPlaceCleared(Place.MINES);
             case HARD_CASINO     -> isHardPlaceCleared(Place.CASINO);

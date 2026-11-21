@@ -26,6 +26,8 @@ public class TurnResult {
     private final List<Event>         cardEvents;
     private final List<Event>         pistolEvents;
     private final EnemyTurnResult     enemyTurn;
+    /** Minuit (Manoir hanté) : le second tour de l'ennemi, joué juste après le premier ; {@code null} sinon. */
+    private final EnemyTurnResult     midnightTurn;
     /** Premier tirage, relancé faute de paire (Relance) ; {@code null} sans relance. */
     private final Symbol[]            rerolledDraw;
     /** Jeu bonus ouvert par le Bingo de ce tour (ses gains déjà crédités) ; {@code null} sans Jeu bonus. */
@@ -56,14 +58,15 @@ public class TurnResult {
                       List<SymbolOutcome> symbolOutcomes, List<Event> cardEvents, List<Event> pistolEvents,
                       List<Event> pairOrJackpotEvents, List<Event> enemyTurnEvents) {
         this(events, symbols, drawnSymbols, gainsFromPairOrJackpot, symbolOutcomes, cardEvents, pistolEvents,
-            pairOrJackpotEvents, enemyTurnEvents, null, null, null);
+            pairOrJackpotEvents, enemyTurnEvents, null, null, null, null);
     }
 
     private TurnResult(List<Event> events, Symbol[] symbols, Symbol[] drawnSymbols, double gainsFromPairOrJackpot,
                        List<SymbolOutcome> symbolOutcomes, List<Event> cardEvents, List<Event> pistolEvents,
                        List<Event> pairOrJackpotEvents, List<Event> enemyTurnEvents, EnemyTurnResult enemyTurn,
-                       Symbol[] rerolledDraw, BonusGame bonusGame) {
+                       EnemyTurnResult midnightTurn, Symbol[] rerolledDraw, BonusGame bonusGame) {
         this.enemyTurn = enemyTurn;
+        this.midnightTurn = midnightTurn;
         this.bonusGame = bonusGame;
         this.rerolledDraw = rerolledDraw == null ? null : rerolledDraw.clone();
         this.events  = List.copyOf(events);
@@ -105,14 +108,26 @@ public class TurnResult {
      * @return ce résultat, complété du tour de l'ennemi et de la fin du tour (journal compris)
      */
     public TurnResult withEnemyTurn(EnemyTurnResult enemyTurn, List<Event> endEvents) {
+        return withEnemyTurns(enemyTurn, null, endEvents);
+    }
+
+    /**
+     * Comme {@link #withEnemyTurn}, avec {@code midnightTurn}, le second tour que l'ennemi joue à minuit (Manoir
+     * hanté), ou {@code null}.
+     */
+    public TurnResult withEnemyTurns(EnemyTurnResult enemyTurn, EnemyTurnResult midnightTurn, List<Event> endEvents) {
         List<Event> all = new ArrayList<>(events);
         if (enemyTurn != null) all.addAll(enemyTurn.events());
+        if (midnightTurn != null) all.addAll(midnightTurn.events());
         all.addAll(endEvents);
         List<Event> end = new ArrayList<>(enemyTurnEvents);
         end.addAll(endEvents);
         return new TurnResult(all, symbols, drawnSymbols, gainsFromPairOrJackpot, symbolOutcomes, cardEvents,
-            pistolEvents, pairOrJackpotEvents, end, enemyTurn, rerolledDraw, bonusGame);
+            pistolEvents, pairOrJackpotEvents, end, enemyTurn, midnightTurn, rerolledDraw, bonusGame);
     }
+
+    /** @return le second tour de l'ennemi, joué à minuit (Manoir hanté), ou {@code null}. */
+    public EnemyTurnResult getMidnightTurn() { return midnightTurn; }
 
     /**
      * @param firstDraw premier tirage, relancé faute de paire (Relance)
@@ -120,7 +135,7 @@ public class TurnResult {
      */
     public TurnResult withReroll(Symbol[] firstDraw) {
         return new TurnResult(events, symbols, drawnSymbols, gainsFromPairOrJackpot, symbolOutcomes, cardEvents,
-            pistolEvents, pairOrJackpotEvents, enemyTurnEvents, enemyTurn, firstDraw, bonusGame);
+            pistolEvents, pairOrJackpotEvents, enemyTurnEvents, enemyTurn, midnightTurn, firstDraw, bonusGame);
     }
 
     /**
@@ -129,7 +144,7 @@ public class TurnResult {
      */
     public TurnResult withBonusGame(BonusGame bonus) {
         return new TurnResult(events, symbols, drawnSymbols, gainsFromPairOrJackpot, symbolOutcomes, cardEvents,
-            pistolEvents, pairOrJackpotEvents, enemyTurnEvents, enemyTurn, rerolledDraw, bonus);
+            pistolEvents, pairOrJackpotEvents, enemyTurnEvents, enemyTurn, midnightTurn, rerolledDraw, bonus);
     }
 
     /** @return le Jeu bonus ouvert par le Bingo de ce tour, ou {@code null} s'il ne s'est pas ouvert. */

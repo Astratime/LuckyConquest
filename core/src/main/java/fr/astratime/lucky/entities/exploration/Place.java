@@ -41,6 +41,12 @@ public enum Place {
             + "Pas leur cupidité.",
         PlaceRule.GRISOU, 6, 150, 10_000, 20, 78, 12_000, 2_500, List.of(Dungeon.FILON, Dungeon.PUITS, Dungeon.FORGE, Dungeon.GOUFFRE)),
 
+    MANOIR("Le Manoir hanté", "Le Manoir",
+        "Dans la vallée sous les Mines, le manoir d'un baron ruiné. Il a perdu sa fortune au jeu, puis son âme. "
+            + "Depuis, il cherche un adversaire à sa mesure.",
+        PlaceRule.MINUIT, 7, 250, 22_000, 25, 70, 23_000, 3_200,
+        List.of(Dungeon.SALON, Dungeon.BIBLIOTHEQUE, Dungeon.CRYPTE, Dungeon.GRENIER)),
+
     CASINO("Le Casino Englouti", "Le Casino",
         "Le plus grand casino du monde a sombré une nuit de jackpot. Sous l'eau, les machines tournent toujours. "
             + "Les joueurs aussi.",
@@ -119,6 +125,7 @@ public enum Place {
             case RAPIDE  -> 350;
             case PORT    -> 500;
             case MINES   -> 1_000;
+            case MANOIR  -> 1_400;
             case CASINO  -> 2_000;
             case DESERT  -> 3_000;
         };
@@ -138,6 +145,7 @@ public enum Place {
             case RAPIDE  -> 24;
             case PORT    -> 18;
             case MINES   -> 19;
+            case MANOIR  -> 17;
             case CASINO  -> 15;
             case DESERT  -> 42;
         };
@@ -204,6 +212,7 @@ public enum Place {
             case RAPIDE  -> Symbol.STEAM;
             case PORT    -> Symbol.ANCHOR;
             case MINES   -> Symbol.NUGGET;
+            case MANOIR  -> Symbol.SPECTRE;
             case CASINO  -> Symbol.GOLD_CHIP;
             case DESERT  -> Symbol.FLAME;
         };
@@ -220,6 +229,7 @@ public enum Place {
             case RAPIDE  -> 77;
             case PORT    -> 76;
             case MINES   -> 63;
+            case MANOIR  -> 68;
             case CASINO  -> 72;
             case DESERT  -> 42;
         };

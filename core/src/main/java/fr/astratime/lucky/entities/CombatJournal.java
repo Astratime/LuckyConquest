@@ -81,6 +81,8 @@ public class CombatJournal {
         EnemyTurnResult enemyTurn = result.getEnemyTurn();
         Set<Event> enemyEvents = identitySet();
         if (enemyTurn != null) enemyEvents.addAll(enemyTurn.events());
+        EnemyTurnResult midnight = result.getMidnightTurn(); // Minuit : son second tour compte avec le premier
+        if (midnight != null) enemyEvents.addAll(midnight.events());
         Set<Event> playerEvents = identitySet();
         for (Event event : result.getCardEvents()) if (!enemyEvents.contains(event)) playerEvents.add(event);
         for (Event event : result.getEvents()) if (!enemyEvents.contains(event)) playerEvents.add(event);
@@ -98,7 +100,11 @@ public class CombatJournal {
 
         List<String> enemyLines = new ArrayList<>();
         if (enemyTurn != null) {
-            List<String> cards = enemyTurn.played().stream().map(Card::getName).toList();
+            List<String> cards = new ArrayList<>(enemyTurn.played().stream().map(Card::getName).toList());
+            if (midnight != null) {
+                enemyLines.add(Lang.t("Minuit : il a joué deux tours"));
+                midnight.played().forEach(card -> cards.add(card.getName()));
+            }
             if (!cards.isEmpty()) enemyLines.add(Lang.f("Cartes : {0}", String.join(", ", cards)));
             Tally its = Tally.of(enemyEvents);
             its.describe(enemyLines, true);

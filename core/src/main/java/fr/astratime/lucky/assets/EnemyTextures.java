@@ -98,6 +98,7 @@ public class EnemyTextures implements Disposable {
         maps.put(Place.FOIRE, texture(FairDesertArt.foire(), false));
         maps.put(Place.DESERT, texture(FairDesertArt.desert(), false));
         maps.put(Place.RAPIDE, texture(ExpressArt.rapide(), false));
+        maps.put(Place.MANOIR, texture(ManorArt.manoir(), false));
         for (Dungeon dungeon : Dungeon.values()) {
             int[][] grid = dungeon.getSuit() != null ? ExplorationArt.gate(dungeon.getSuit()) : PlacesArt.gate(dungeon);
             gates.put(dungeon, texture(grid, false));
@@ -106,6 +107,7 @@ public class EnemyTextures implements Disposable {
             int[][] grid = PlacesPortraits.of(kind);
             if (grid == null) grid = FairDesertPortraits.of(kind);
             if (grid == null) grid = ExpressPortraits.of(kind);
+            if (grid == null) grid = ManorPortraits.of(kind);
             if (grid == null) grid = RivalArt.of(kind);
             if (grid != null) addPortrait(kind, grid);
         }
@@ -455,6 +457,10 @@ public class EnemyTextures implements Disposable {
             case BANQUET        -> ExpressArt.banquet();
             case LULLABY        -> ExpressArt.lullaby();
             case HOLDUP         -> ExpressArt.holdup();
+            case BLOOD_PACT     -> ManorArt.bloodPact();
+            case CURSE          -> ManorArt.curse();
+            case SHROUD         -> ManorArt.shroud();
+            case STRINGS        -> ManorArt.strings();
             case BINGO_LIGHT    -> bingoLightGrid();
         };
     }

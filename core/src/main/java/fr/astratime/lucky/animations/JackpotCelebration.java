@@ -193,12 +193,13 @@ public class JackpotCelebration extends Group implements Disposable {
     private final ChipTowerScene      chipTower      = new ChipTowerScene(iconOf(Symbol.GOLD_CHIP));
     private final FirePillarScene     firePillar     = new FirePillarScene(iconOf(Symbol.FLAME));
     private final SteamEngineScene    steamEngine    = new SteamEngineScene(iconOf(Symbol.STEAM));
+    private final GhostRiseScene      ghostRise      = new GhostRiseScene(iconOf(Symbol.SPECTRE));
     private final HellGateScene       hellGate       = new HellGateScene();
     private final LightOrbScene       lightOrb       = new LightOrbScene(iconOf(Symbol.BINGO_LIGHT));
     private final List<BingoScene>    scenes = List.of(hydraulicPress, forge, cherryTree, winePress,
         gemCut, safe, katana, horseshoe, shieldWall, swords, heartbeat, tripleDice, shootingStar, bomb, coronation,
         mine, cannon, supernova, bite, piggyBank, spikedShield, scythe, moonrise, demonGate, heaven, scratchTicket,
-        anchorDrop, chipTower, firePillar, steamEngine, hellGate, lightOrb);
+        anchorDrop, chipTower, firePillar, steamEngine, ghostRise, hellGate, lightOrb);
     private final Group        bannerLayer = new Group();
     /** La mise en scène au premier plan (objets, bannière, mot géant, flash) : elle s'efface quand on passe. */
     private final Group        foreground  = new Group();
@@ -457,6 +458,7 @@ public class JackpotCelebration extends Group implements Disposable {
             case GOLD_CHIP     -> scheduleChipTower(icon);
             case FLAME         -> scheduleFirePillar(icon);
             case STEAM         -> scheduleSteamEngine(icon);
+            case SPECTRE       -> scheduleGhostRise(icon);
             case DESCENT       -> scheduleHellfire(icon);
             case BINGO_LIGHT   -> scheduleHalo(icon);
             case JOKER         -> scheduleCasino();
@@ -984,6 +986,36 @@ public class JackpotCelebration extends Group implements Disposable {
     }
 
     /** Flamme : un brasero, la Flamme grandit, puis une colonne de feu jaillit jusqu'en haut de l'écran. */
+    /** Spectre : une tombe sort de la table et se fend ; le Spectre en jaillit, tourne autour, puis file vers le ciel. */
+    private void scheduleGhostRise(TextureRegion icon) {
+        float centerX = playArea.getCenterX(), baseY = getHeight() * 0.12f;
+        float rise = GhostRiseScene.RISE_TIME;
+        playScene(ghostRise, centerX, baseY, rise + 0.3f, 0.86f);
+        Color mist = Color.valueOf("c8f0e8ff"), violet = Color.valueOf("9b6adcff");
+        emit(0f, rise, 30, i -> frontGlitter.ember(centerX + MathUtils.random(-200f, 200f), baseY, MathUtils.random(-60f, 60f),
+            MathUtils.random(40f, 120f), 0f, MathUtils.random(14f, 22f), MathUtils.random(0.8f, 1.2f), mist));
+        at(GhostRiseScene.STONE_TIME, () -> screenShake.shake(0.4f, 8f));
+        at(rise, () -> {
+            screenShake.shake(0.5f, 14f);
+            impactFlash(0.8f, 1f, 0.95f, 0.45f);
+            Vector2 at = ghostRise.ghost();
+            shockwaves.ring(at.x, at.y, 520f, 0.6f, 0.3f, mist);
+            shockwaves.ring(at.x, at.y, 340f, 0.5f, 0.3f, violet);
+        });
+        emit(rise, rise + 1.4f, 160, i -> {
+            Vector2 at = ghostRise.ghost();
+            frontGlitter.ember(at.x + MathUtils.random(-40f, 40f), at.y + MathUtils.random(-40f, 40f), MathUtils.random(-120f, 120f),
+                MathUtils.random(-60f, 160f), -20f, MathUtils.random(8f, 16f), MathUtils.random(0.5f, 0.9f),
+                i % 3 == 0 ? Color.WHITE : i % 3 == 1 ? mist : violet);
+        });
+        emit(rise + 0.9f, rise + 1.1f, 12, i -> {
+            Vector2 at = ghostRise.ghost();
+            symbols.jet(icon, at.x, getHeight() * 0.7f, 200f + i * 12f, MathUtils.random(500f, 800f),
+                MathUtils.random(50f, 70f), 900f);
+        });
+        coinRain(rise + 0.5f, rise + 1.4f, 18, 1);
+    }
+
     /** Vapeur : la locomotive entre, freine, et siffle une colonne de vapeur blanche. */
     private void scheduleSteamEngine(TextureRegion icon) {
         float centerX = playArea.getCenterX(), baseY = getHeight() * 0.12f;

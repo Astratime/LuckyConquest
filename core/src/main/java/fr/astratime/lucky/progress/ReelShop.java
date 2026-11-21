@@ -82,6 +82,8 @@ public final class ReelShop {
                 + "Casino Englouti.");
             case FLAME         -> Lang.t("Attaque 80. Brûlure : l'ennemi perd 2 % de ses PV max à ses 2 prochains tours. "
                 + "Gagné en vidant le Désert de Braise.");
+            case SPECTRE       -> Lang.t("Attaque 60. La moitié de son coup traverse la défense de l'ennemi. "
+                + "Gagné en vidant le Manoir hanté.");
             case STEAM         -> Lang.t("Attaque 50, +25 % à chaque tirage d'affilée où elle sort (x2 au plus), "
                 + "retombe sans elle. Gagné en vidant le Rapide de Minuit.");
             case DESCENT       -> Lang.t("Bingo du Roi démon. Au hasard : attaque 1000 et vampirisme. Ou bouclier 3000 "

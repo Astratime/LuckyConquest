@@ -19,6 +19,7 @@ final class BossScenes {
         if (scene == null) scene = CasinoBossScenes.phase(kit, kind);
         if (scene == null) scene = FairBossScenes.phase(kit, kind);
         if (scene == null) scene = ExpressBossScenes.phase(kit, kind);
+        if (scene == null) scene = ManorBossScenes.phase(kit, kind);
         if (scene == null) scene = DesertBossScenes.phase(kit, kind);
         return scene;
     }
@@ -32,6 +33,7 @@ final class BossScenes {
         if (scene == null) scene = CasinoBossScenes.death(kit, kind);
         if (scene == null) scene = FairBossScenes.death(kit, kind);
         if (scene == null) scene = ExpressBossScenes.death(kit, kind);
+        if (scene == null) scene = ManorBossScenes.death(kit, kind);
         if (scene == null) scene = DesertBossScenes.death(kit, kind);
         return scene;
     }

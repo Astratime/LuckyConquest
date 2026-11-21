@@ -61,6 +61,10 @@ public class LastingEffects {
     private int rockfalls;
     /** Berceuse (Rapide de Minuit) : cartes jouées qui s'endormiront au prochain tour. */
     private int lullabies;
+    /** Malédiction (Manoir hanté) : meilleures cartes piochées qui retourneront sous la pioche au prochain tour. */
+    private int maledictions;
+    /** Fils (Manoir hanté) : plus faibles cartes de la main jouées d'office au prochain tour. */
+    private int strings;
     /** Aspirations de la Machine Originelle : une règle par rouleau menacé au prochain tirage. */
     private final List<fr.astratime.lucky.entities.enemy.AspirationRule> aspirations = new ArrayList<>();
     /** Coffres-forts : gains mis de côté (déjà doublés) et tours restants avant leur ouverture. */
@@ -262,6 +266,13 @@ public class LastingEffects {
     /** Vide le Sang. @return la réserve avant d'être vidée */
     public int consumeBlood() { int n = blood; blood = 0; return n; }
 
+    /** Pacte de sang : retire {@code percent} % du Sang (arrondi au-dessus). @return le Sang pris */
+    public int takeBlood(int percent) {
+        int taken = (int) Math.min(blood, (long) Math.ceil(blood * Math.min(100, percent) / 100.0));
+        blood -= taken;
+        return taken;
+    }
+
     private int capBlood(long value) { return (int) Math.max(0, Math.min(maxBlood, value)); }
 
     /** Coffre maximum (Astra 2026-11-04) : plein, il donne +15 000 d'attaque à l'As de Carreau. */
@@ -369,6 +380,20 @@ public class LastingEffects {
     public int getLullabies() { return lullabies; }
     /** Pioche : les Berceuses valent pour ce tour. */
     public int takeLullabies() { int n = lullabies; lullabies = 0; return n; }
+
+    /** Malédiction : {@code cards} des meilleures cartes piochées au prochain tour retourneront sous la pioche. */
+    public void addMalediction(int cards) { maledictions += cards; }
+    /** @return les cartes que la Malédiction renverra sous la pioche au prochain tour. */
+    public int getMaledictions() { return maledictions; }
+    /** Pioche : les Malédictions valent pour celle-ci. */
+    public int takeMaledictions() { int n = maledictions; maledictions = 0; return n; }
+
+    /** Fils : {@code cards} des plus faibles cartes de la main seront jouées d'office au prochain tour. */
+    public void addStrings(int cards) { strings += cards; }
+    /** @return les cartes que les Fils feront jouer d'office au prochain tour. */
+    public int getStrings() { return strings; }
+    /** Pioche : les Fils valent pour ce tour. */
+    public int takeStrings() { int n = strings; strings = 0; return n; }
 
     /** Aspiration : la règle {@code rule} menace un rouleau au prochain tirage. */
     public void addAspiration(fr.astratime.lucky.entities.enemy.AspirationRule rule) { aspirations.add(rule); }
@@ -842,7 +867,7 @@ public class LastingEffects {
             && fakeGains == 0 && taxes == 0 && laterTaxes == 0 && houseRuleTurns == 0
             && traps == 0 && lanternDraws == 0 && earplugDraws == 0 && propTurns == 0 && lamps == 0
             && cageTurns == 0 && anchorTurns == 0 && temperPercent == 0 && bonusPlays == 0
-            && voidReels.isEmpty() && shortCircuits == 0 && houseEdges == 0 && rockfalls == 0 && lullabies == 0 && aspirations.isEmpty()
+            && voidReels.isEmpty() && shortCircuits == 0 && houseEdges == 0 && rockfalls == 0 && lullabies == 0 && maledictions == 0 && strings == 0 && aspirations.isEmpty()
             && nextDraws == 0 && hatTurns == 0 && jokerBox == 0 && hoardTurns == 0 && annuityTurns == 0 && martingale == 0
             && juggles == 0 && scares == 0 && tunnels == 0 && turnstiles == 0 && riggedPrizes == 0 && riggedGame == 0
             && tolls == 0 && bills == 0 && venoms.isEmpty() && reelGauges.isEmpty()

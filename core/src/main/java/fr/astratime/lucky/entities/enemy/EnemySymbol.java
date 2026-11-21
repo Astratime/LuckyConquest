@@ -139,7 +139,15 @@ public enum EnemySymbol {
     /** La prochaine carte que tu joues s'endort : elle ne fait rien. */
     LULLABY("BERCEUSE"),
     /** Si tu l'as peu blessé depuis son dernier tour, il te prend ton bouclier ; sinon, il tire. */
-    HOLDUP("BRAQUAGE");
+    HOLDUP("BRAQUAGE"),
+    /** Manoir hanté : il prend une part de ta jauge de Sang et s'en soigne ; sans Sang, il frappe. */
+    BLOOD_PACT("PACTE DE SANG"),
+    /** Au prochain tour, ta meilleure carte piochée retourne sous ta pioche. */
+    CURSE("MALÉDICTION"),
+    /** Il se drape dans son linceul : la première fois qu'il tombe, il se relève avec une part de ses PV. */
+    SHROUD("LINCEUL"),
+    /** Au début de ton prochain tour, il choisit ta plus faible carte et tu la joues d'office. */
+    STRINGS("FILS");
 
     /** Dégâts de base d'une Épée. */
     public static final int SWORD_DAMAGE   = 20;
@@ -278,6 +286,11 @@ public enum EnemySymbol {
     /** Braquage : le bouclier volé ne lui donne pas plus que ce nombre de ses Boucliers. */
     public static final int HOLDUP_MAX_SHIELDS = 4;
 
+    /** Pacte de sang : part de ta jauge de Sang qu'il prend (en %), et son soin s'il en a pris (en % de ses PV max). */
+    public static final int BLOOD_PACT_PERCENT = 40, BLOOD_PACT_HEAL_PERCENT = 3;
+    /** Linceul : PV avec lesquels il se relève, en % de ses PV max. */
+    public static final int SHROUD_RISE_PERCENT = 20;
+
     private final String displayName;
 
     EnemySymbol(String displayName) {
@@ -411,6 +424,12 @@ public enum EnemySymbol {
             case HOLDUP -> Lang.f("Braquage : si tu lui as fait moins de {0} % de ses PV max depuis son dernier tour, il te prend "
                 + "ton bouclier. Sinon, attaque de {1}", HOLDUP_PERCENT,
                 kind.hurt(kind.swordDamage(), hard));
+            case BLOOD_PACT -> Lang.f("Pacte de sang : il prend {0} % de ta jauge de Sang et se soigne de {1} % de ses PV max. "
+                + "Sans Sang, attaque de {2}", BLOOD_PACT_PERCENT, BLOOD_PACT_HEAL_PERCENT, kind.hurt(kind.swordDamage(), hard));
+            case CURSE -> Lang.t("Malédiction : au prochain tour, ta meilleure carte piochée retourne sous ta pioche");
+            case SHROUD -> Lang.f("Linceul : la première fois qu'il tombe, il se relève avec {0} % de ses PV max (une fois par "
+                + "combat). Déjà drapé, il reforme sa défense", SHROUD_RISE_PERCENT);
+            case STRINGS -> Lang.t("Fils : au début de ton prochain tour, il choisit ta plus faible carte et tu la joues d'office");
         };
     }
 

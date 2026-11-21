@@ -542,6 +542,73 @@ public enum EnemyKind {
         List.of(Card.Suit.PIQUE, Card.Suit.CARREAU, Card.Suit.TREFLE, Card.Suit.COEUR),
         List.of(Card.Suit.COEUR, Card.Suit.CARREAU, Card.Suit.PIQUE, Card.Suit.TREFLE)),
 
+    // ----- Exploration : le Manoir hanté -----
+
+    VALET_FANTOME("Valet fantôme", "VALET FANTÔME",
+        "Il distribue les cartes depuis cent ans. Il ne demande qu'une goutte de ton sang. Puis une autre.",
+        800_000, 70, 7,
+        weights(EnemySymbol.SWORD, 2, EnemySymbol.BLOOD_PACT, 1, EnemySymbol.SHIELD, 1),
+        deck(new int[] {3, 6, 9, 12, 14}, new int[] {4, 8, 12},
+            new int[] {5, 9, 13}, new int[] {3, 7, 11}),
+        List.of(Card.Suit.PIQUE, Card.Suit.CARREAU, Card.Suit.TREFLE, Card.Suit.COEUR),
+        List.of(Card.Suit.COEUR, Card.Suit.CARREAU, Card.Suit.PIQUE, Card.Suit.TREFLE)),
+    COMTE_MINUIT("Le Comte de Minuit", "COMTE DE MINUIT",
+        "Le baron ruiné a vendu son âme pour une dernière partie. Il boit ton Sang. À minuit, il ne s'arrête plus.",
+        1_600_000, 110, 4,
+        weights(EnemySymbol.BLOOD_PACT, 2, EnemySymbol.SWORD, 2, EnemySymbol.SHIELD, 1, EnemySymbol.POTION, 1),
+        deck(new int[] {3, 6, 9, 12, 14}, new int[] {4, 8, 12},
+            new int[] {5, 9, 13}, new int[] {3, 7, 11}),
+        List.of(Card.Suit.PIQUE, Card.Suit.CARREAU, Card.Suit.TREFLE, Card.Suit.COEUR),
+        List.of(Card.Suit.COEUR, Card.Suit.CARREAU, Card.Suit.PIQUE, Card.Suit.TREFLE)),
+    LIVRE_VIVANT("Livre vivant", "LIVRE VIVANT",
+        "Ses pages claquent comme des dents. Il te reprend ta plus belle carte et la range sous ta pioche.",
+        800_000, 70, 7,
+        weights(EnemySymbol.SWORD, 2, EnemySymbol.CURSE, 1, EnemySymbol.POTION, 1),
+        deck(new int[] {3, 6, 9, 12, 14}, new int[] {4, 8, 12},
+            new int[] {5, 9, 13}, new int[] {3, 7, 11}),
+        List.of(Card.Suit.PIQUE, Card.Suit.CARREAU, Card.Suit.TREFLE, Card.Suit.COEUR),
+        List.of(Card.Suit.COEUR, Card.Suit.CARREAU, Card.Suit.PIQUE, Card.Suit.TREFLE)),
+    BIBLIOTHECAIRE("La Bibliothécaire spectrale", "BIBLIOTHÉCAIRE",
+        "Chut. Elle range chaque carte à sa place, sous ta pioche. Personne ne quitte sa bibliothèque avec un livre.",
+        1_600_000, 110, 4,
+        weights(EnemySymbol.CURSE, 2, EnemySymbol.SWORD, 2, EnemySymbol.SHIELD, 1),
+        deck(new int[] {3, 6, 9, 12, 14}, new int[] {4, 8, 12},
+            new int[] {5, 9, 13}, new int[] {3, 7, 11}),
+        List.of(Card.Suit.PIQUE, Card.Suit.CARREAU, Card.Suit.TREFLE, Card.Suit.COEUR),
+        List.of(Card.Suit.COEUR, Card.Suit.CARREAU, Card.Suit.PIQUE, Card.Suit.TREFLE)),
+    GOULE("Goule", "GOULE",
+        "Elle sort de sa tombe à chaque coup de pioche. Drapée dans son linceul, elle se relève une fois.",
+        800_000, 70, 7,
+        weights(EnemySymbol.SWORD, 2, EnemySymbol.SHROUD, 1, EnemySymbol.SHIELD, 1),
+        deck(new int[] {3, 6, 9, 12, 14}, new int[] {4, 8, 12},
+            new int[] {5, 9, 13}, new int[] {3, 7, 11}),
+        List.of(Card.Suit.PIQUE, Card.Suit.CARREAU, Card.Suit.TREFLE, Card.Suit.COEUR),
+        List.of(Card.Suit.COEUR, Card.Suit.CARREAU, Card.Suit.PIQUE, Card.Suit.TREFLE)),
+    FOSSOYEUR("Le Fossoyeur", "FOSSOYEUR",
+        "Il a creusé toutes les tombes du manoir. La sienne est vide. Abats-le deux fois.",
+        1_600_000, 110, 4,
+        weights(EnemySymbol.SHROUD, 2, EnemySymbol.SWORD, 2, EnemySymbol.SHIELD, 1, EnemySymbol.RAGE, 1),
+        deck(new int[] {3, 6, 9, 12, 14}, new int[] {4, 8, 12},
+            new int[] {5, 9, 13}, new int[] {3, 7, 11}),
+        List.of(Card.Suit.PIQUE, Card.Suit.CARREAU, Card.Suit.TREFLE, Card.Suit.COEUR),
+        List.of(Card.Suit.COEUR, Card.Suit.CARREAU, Card.Suit.PIQUE, Card.Suit.TREFLE)),
+    POUPEE_HANTEE("Poupée hantée", "POUPÉE HANTÉE",
+        "Sa tête tourne toute seule. Elle choisit une de tes cartes, et tu la joues.",
+        800_000, 70, 7,
+        weights(EnemySymbol.SWORD, 2, EnemySymbol.STRINGS, 1, EnemySymbol.POTION, 1),
+        deck(new int[] {3, 6, 9, 12, 14}, new int[] {4, 8, 12},
+            new int[] {5, 9, 13}, new int[] {3, 7, 11}),
+        List.of(Card.Suit.PIQUE, Card.Suit.CARREAU, Card.Suit.TREFLE, Card.Suit.COEUR),
+        List.of(Card.Suit.COEUR, Card.Suit.CARREAU, Card.Suit.PIQUE, Card.Suit.TREFLE)),
+    MARIONNETTISTE("Le Marionnettiste", "MARIONNETTISTE",
+        "Là-haut, sous les combles, il tire les fils de tous les jouets du baron. Ce soir, il tire aussi les tiens.",
+        1_600_000, 110, 4,
+        weights(EnemySymbol.STRINGS, 2, EnemySymbol.SWORD, 2, EnemySymbol.SHIELD, 1),
+        deck(new int[] {3, 6, 9, 12, 14}, new int[] {4, 8, 12},
+            new int[] {5, 9, 13}, new int[] {3, 7, 11}),
+        List.of(Card.Suit.PIQUE, Card.Suit.CARREAU, Card.Suit.TREFLE, Card.Suit.COEUR),
+        List.of(Card.Suit.COEUR, Card.Suit.CARREAU, Card.Suit.PIQUE, Card.Suit.TREFLE)),
+
     // ----- Exploration : le Casino Englouti -----
 
     BARMAN_NOYE("Barman noyé", "BARMAN NOYÉ",
@@ -711,11 +778,20 @@ public enum EnemyKind {
             new int[] {5, 9, 13}, new int[] {3, 7, 11}),
         List.of(Card.Suit.PIQUE, Card.Suit.CARREAU, Card.Suit.TREFLE, Card.Suit.COEUR),
         List.of(Card.Suit.COEUR, Card.Suit.CARREAU, Card.Suit.PIQUE, Card.Suit.TREFLE)),
+    RIVAL_MANOIR("Le Joueur Masqué", "JOUEUR MASQUÉ",
+        "Il a joué contre le Comte, au manoir. Il a appris à boire le Sang des autres.",
+        2_000_000, 150, 4,
+        weights(EnemySymbol.SWORD, 2, EnemySymbol.SHIELD, 1, EnemySymbol.POTION, 1, EnemySymbol.RIGGED_GAME, 1, EnemySymbol.HOLDUP, 1, EnemySymbol.BOARDING, 1,
+            EnemySymbol.DRILL, 1, EnemySymbol.BLOOD_PACT, 1),
+        deck(new int[] {3, 6, 9, 12, 13, 14}, new int[] {4, 8, 12, 14},
+            new int[] {5, 9, 13}, new int[] {3, 7, 11}),
+        List.of(Card.Suit.PIQUE, Card.Suit.CARREAU, Card.Suit.TREFLE, Card.Suit.COEUR),
+        List.of(Card.Suit.COEUR, Card.Suit.CARREAU, Card.Suit.PIQUE, Card.Suit.TREFLE)),
     RIVAL_CASINO("Le Joueur Masqué", "JOUEUR MASQUÉ",
         "Sous l'eau, il a gagné contre les requins. Maintenant, il mord tes gains.",
         3_000_000, 150, 3,
         weights(EnemySymbol.SWORD, 2, EnemySymbol.SHIELD, 1, EnemySymbol.POTION, 1, EnemySymbol.RIGGED_GAME, 1, EnemySymbol.HOLDUP, 1, EnemySymbol.BOARDING, 1,
-            EnemySymbol.DRILL, 1, EnemySymbol.BANK_BITE, 1),
+            EnemySymbol.DRILL, 1, EnemySymbol.BLOOD_PACT, 1, EnemySymbol.BANK_BITE, 1),
         deck(new int[] {3, 6, 9, 12, 13, 14}, new int[] {4, 8, 12, 14},
             new int[] {5, 9, 13, 14}, new int[] {3, 7, 11}),
         List.of(Card.Suit.PIQUE, Card.Suit.CARREAU, Card.Suit.TREFLE, Card.Suit.COEUR),
@@ -724,7 +800,7 @@ public enum EnemyKind {
         "Il a ôté son masque. Le Croupier vous a tout appris, à lui comme à toi. Il ne restera qu'un seul élève.",
         6_000_000, 40, 25,
         weights(EnemySymbol.SWORD, 2, EnemySymbol.SHIELD, 1, EnemySymbol.POTION, 1, EnemySymbol.RIGGED_GAME, 1, EnemySymbol.HOLDUP, 1, EnemySymbol.BOARDING, 1,
-            EnemySymbol.DRILL, 1, EnemySymbol.BANK_BITE, 1, EnemySymbol.BILL, 1),
+            EnemySymbol.DRILL, 1, EnemySymbol.BLOOD_PACT, 1, EnemySymbol.BANK_BITE, 1, EnemySymbol.BILL, 1),
         deck(new int[] {3, 6, 9, 12, 13, 14}, new int[] {4, 8, 12, 14},
             new int[] {5, 9, 13, 14}, new int[] {3, 7, 11, 14}),
         List.of(Card.Suit.PIQUE, Card.Suit.CARREAU, Card.Suit.TREFLE, Card.Suit.COEUR),
@@ -1170,7 +1246,7 @@ public enum EnemyKind {
             case REQUIN, REQUIN_BANQUIER -> VAULTS_DAMAGE;
             case SCORPION, DJINN -> OASIS_DAMAGE;
             case GRAND_CROUPIER -> TOWER_LATE_DAMAGE;
-            case RIVAL_FOIRE, RIVAL_RAPIDE, RIVAL_PORT, RIVAL_MINES, RIVAL_CASINO, RIVAL_DESERT ->
+            case RIVAL_FOIRE, RIVAL_RAPIDE, RIVAL_PORT, RIVAL_MINES, RIVAL_MANOIR, RIVAL_CASINO, RIVAL_DESERT ->
                 Place.of(this).getDamagePercent() * rivalDamage(Place.of(this)) / 100;
             default -> {
                 if (chapterPower() >= CHAPTER_3_POWER) yield TOWER_DAMAGE_PERCENT[Chapter.of(this).getNumber() - 1];
@@ -1224,6 +1300,7 @@ public enum EnemyKind {
             case RAPIDE -> 150;
             case PORT   -> 125;
             case MINES  -> 130;
+            case MANOIR -> 120;
             case CASINO -> 110;
             case DESERT -> 150;
             case PRAIRIE -> 100;
@@ -1321,7 +1398,7 @@ public enum EnemyKind {
     /** @return {@code true} pour le Joueur Masqué, à l'une de ses cinq rencontres (voir {@link fr.astratime.lucky.entities.exploration.Rival}). */
     public boolean isRival() {
         return switch (this) {
-            case RIVAL_FOIRE, RIVAL_RAPIDE, RIVAL_PORT, RIVAL_MINES, RIVAL_CASINO, RIVAL_DESERT -> true;
+            case RIVAL_FOIRE, RIVAL_RAPIDE, RIVAL_PORT, RIVAL_MINES, RIVAL_MANOIR, RIVAL_CASINO, RIVAL_DESERT -> true;
             default -> false;
         };
     }
@@ -1333,6 +1410,7 @@ public enum EnemyKind {
                  CAPITAINE_RAT, TAVERNIER, GARDIEN_PHARE, CAPITAINE_NOIR,
                  MONSIEUR_LOYAL, CONDUCTEUR, ROUE_FORTUNE, ROI_FORAIN, EMIR, PHARAON, DJINN, DRAGON,
                  LOCOMOTIVE, GRAND_CHEF, DAME_EN_NOIR, DESPERADO,
+                 COMTE_MINUIT, BIBLIOTHECAIRE, FOSSOYEUR, MARIONNETTISTE,
                  BARON_OR, GRAND_FOREUR, MAITRE_FORGE, COEUR_MONTAGNE,
                  SIRENE, JACKPOT_VIVANT, REQUIN_BANQUIER, KRAKEN -> true;
             default -> false;
@@ -1475,6 +1553,10 @@ public enum EnemyKind {
             case GRAND_CHEF -> EnemySymbol.FANG;
             case DAME_EN_NOIR -> EnemySymbol.VENOM;
             case DESPERADO -> EnemySymbol.BOARDING;
+            case COMTE_MINUIT -> EnemySymbol.FANG;
+            case BIBLIOTHECAIRE -> EnemySymbol.BLIND;
+            case FOSSOYEUR -> EnemySymbol.ROCKFALL;
+            case MARIONNETTISTE -> EnemySymbol.SONG;
             default -> null;
         };
     }
@@ -1541,6 +1623,10 @@ public enum EnemyKind {
             case GRAND_CHEF -> Lang.t("COUP DE FEU EN CUISINE : CROC !");
             case DAME_EN_NOIR -> Lang.t("LA VOILETTE SE LÈVE : VENIN !");
             case DESPERADO -> Lang.t("TOUT LE MONDE À TERRE : ABORDAGE !");
+            case COMTE_MINUIT -> Lang.t("LES DOUZE COUPS SONNENT : CROC !");
+            case BIBLIOTHECAIRE -> Lang.t("LES BOUGIES S'ÉTEIGNENT : AVEUGLEMENT !");
+            case FOSSOYEUR -> Lang.t("LA TERRE TREMBLE : ÉBOULEMENT !");
+            case MARIONNETTISTE -> Lang.t("LE RIDEAU SE LÈVE : CHANT !");
             default -> Lang.f("PHASE {0} !", phase);
         };
     }
@@ -1726,15 +1812,25 @@ public enum EnemyKind {
             case DAME_EN_NOIR -> List.of(EnemySignature.MARCHAND_DE_SABLE, EnemySignature.DARD);
             case CONVOYEUR -> List.of(EnemySignature.HAUT_LES_MAINS);
             case DESPERADO -> List.of(EnemySignature.HAUT_LES_MAINS, EnemySignature.TOUT_SUR_LE_ROUGE);
+            case VALET_FANTOME -> List.of(EnemySignature.PACTE_SCELLE);
+            case COMTE_MINUIT -> List.of(EnemySignature.PACTE_SCELLE, EnemySignature.DOUZE_COUPS);
+            case LIVRE_VIVANT -> List.of(EnemySignature.PAGE_ARRACHEE);
+            case BIBLIOTHECAIRE -> List.of(EnemySignature.PAGE_ARRACHEE, EnemySignature.SILENCE);
+            case GOULE -> List.of(EnemySignature.TERRE_FRAICHE);
+            case FOSSOYEUR -> List.of(EnemySignature.TERRE_FRAICHE, EnemySignature.GLAS);
+            case POUPEE_HANTEE -> List.of(EnemySignature.FIL_DE_SOIE);
+            case MARIONNETTISTE -> List.of(EnemySignature.FIL_DE_SOIE, EnemySignature.DERNIER_ACTE);
             // Le Joueur Masqué : à chaque rencontre, il garde une carte du lieu traversé.
             case RIVAL_FOIRE -> List.of(EnemySignature.CARTE_BISEAUTEE);
             case RIVAL_RAPIDE -> List.of(EnemySignature.CARTE_BISEAUTEE, EnemySignature.HAUT_LES_MAINS);
             case RIVAL_PORT -> List.of(EnemySignature.CARTE_BISEAUTEE, EnemySignature.HAUT_LES_MAINS, EnemySignature.GRAPPIN);
             case RIVAL_MINES -> List.of(EnemySignature.CARTE_BISEAUTEE, EnemySignature.HAUT_LES_MAINS, EnemySignature.GRAPPIN, EnemySignature.MECHE_DE_DIAMANT);
+            case RIVAL_MANOIR -> List.of(EnemySignature.CARTE_BISEAUTEE, EnemySignature.HAUT_LES_MAINS, EnemySignature.GRAPPIN, EnemySignature.MECHE_DE_DIAMANT,
+                EnemySignature.PACTE_SCELLE);
             case RIVAL_CASINO -> List.of(EnemySignature.CARTE_BISEAUTEE, EnemySignature.HAUT_LES_MAINS, EnemySignature.GRAPPIN, EnemySignature.MECHE_DE_DIAMANT,
-                EnemySignature.FRENESIE);
+                EnemySignature.PACTE_SCELLE, EnemySignature.FRENESIE);
             case RIVAL_DESERT -> List.of(EnemySignature.CARTE_BISEAUTEE, EnemySignature.HAUT_LES_MAINS, EnemySignature.GRAPPIN, EnemySignature.MECHE_DE_DIAMANT,
-                EnemySignature.FRENESIE, EnemySignature.USURE);
+                EnemySignature.PACTE_SCELLE, EnemySignature.FRENESIE, EnemySignature.USURE);
             default -> List.of();
         };
     }

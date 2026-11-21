@@ -40,6 +40,7 @@
   { "id": "bingo_gold_chip", "price": 0 },
   { "id": "bingo_flame", "price": 0 },
   { "id": "bingo_steam", "price": 0 },
+  { "id": "bingo_spectre", "price": 0 },
   { "id": "bingo_descent", "price": 0 },
   { "id": "bingo_bingo_light", "price": 0 }
 ]
