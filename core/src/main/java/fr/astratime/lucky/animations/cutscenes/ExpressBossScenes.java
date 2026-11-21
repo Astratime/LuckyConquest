@@ -40,7 +40,6 @@ final class ExpressBossScenes {
     static final String[] CLOCHE = {
         ".....oo.....", "....owwo....", "...owwwso...", "..owwwwwso..", ".owwwwwwwso.", ".owwwwwwwwso", "oooooooooooo"};
     static final String[] ROSE = {"..rr..", ".rRrr.", "rrRRrr", ".rrrr.", "..gg..", "...g..", "..gg.."};
-    static final String[] HAT = {"...oooooo...", "..obbbbbbo..", "..obbbbbbo..", "..oddddddo..", "oobbbbbbbboo", "oooooooooooo"};
     static final String[] PAN = {".oooooo.....", "oddddddo....", "oddddddooooo", "oddddddo....", ".oooooo....."};
 
     // -------------------------------------------------------------------------
@@ -131,12 +130,11 @@ final class ExpressBossScenes {
 
     /** « Coup de feu en cuisine » : les poêles s'enflamment autour de lui, ses couteaux tournoient, ses crocs sortent. */
     static final class ChefPhase extends BossScene {
-        private final TextureRegion pan, fang;
+        private final TextureRegion pan;
 
         ChefPhase(CutsceneKit kit) {
             super(kit, Moment.PHASE, EnemyKind.GRAND_CHEF, 2);
             pan = art("od", new Color[] {hex("1a1018"), hex("3a3a4e")}, PAN);
-            fang = symbol(EnemySymbol.FANG);
         }
 
         @Override
@@ -172,8 +170,6 @@ final class ExpressBossScenes {
                 line(batch, hex("dce4ee"), knives, x, y, x + MathUtils.cosDeg(angle + 90f) * 70f,
                     y + MathUtils.sinDeg(angle + 90f) * 70f, 10f);
             }
-            if (fang != null && time >= CLIMAX_PHASE) draw(batch, fang, bossX(), bossBottom() + bossHeight() + 60f,
-                iconScale(0.12f), 0f, WHITE, progress(CLIMAX_PHASE, CLIMAX_PHASE + 0.2f));
             flash(batch, FIRE, CLIMAX_PHASE, 0.3f, 0.35f);
         }
     }
@@ -341,18 +337,29 @@ final class ExpressBossScenes {
 
     /** Une balle perdue fait sauter son chapeau ; il tombe à genoux et son sac d'or crève : une pluie de pièces. */
     static final class OutlawDeath extends BossScene {
+        /** Le chapeau du portrait : ses lignes du haut (bords compris), et la tête dessous. */
+        private static final int HAT_ROWS = 12, SCALP_LEFT = 11, SCALP_RIGHT = 23;
+        private static final Color HAIR = hex("3a2a1e");
+        private static final float SHOT = 0.6f;
         private final TextureRegion hat;
+        private boolean hatOff;
 
         OutlawDeath(CutsceneKit kit) {
             super(kit, Moment.DEATH, EnemyKind.DESPERADO, 0);
-            hat = art("obd", new Color[] {hex("1a1018"), hex("4a3424"), hex("2e2016")}, HAT);
+            hat = new TextureRegion(boss, 0, 0, boss.getRegionWidth(), HAT_ROWS);
         }
 
         @Override
         protected void step(float delta) {
-            if (at(0.6f)) {
+            if (at(SHOT)) {
                 rumble(0.15f, 6f);
-                place(hat, bossX(), bossBottom() + bossHeight() * 0.95f, 200f, 900f, fit(120f, 6), 2.2f).gravity = 1300f;
+                // son propre chapeau s'envole : on le retire du portrait (le bas du portrait ne bouge pas)
+                place(hat, bossX(), portraitY(HAT_ROWS / 2f), 200f, 900f, bossScale(), 2.2f).gravity = 1300f;
+                if (!hatOff) {
+                    boss.setRegion(boss.getRegionX(), boss.getRegionY() + HAT_ROWS, boss.getRegionWidth(),
+                        boss.getRegionHeight() - HAT_ROWS);
+                    hatOff = true;
+                }
             }
             if (at(CLIMAX_DEATH)) {
                 rumble(0.6f, 12f);
@@ -371,7 +378,14 @@ final class ExpressBossScenes {
 
         @Override
         protected void front(Batch batch) {
-            flash(batch, FLASH, 0.6f, 0.1f, 0.3f);
+            if (hatOff) {                                               // le haut de sa tête, sans le chapeau
+                float scale = bossScale() * poseScale, full = boss.getRegionHeight();
+                float rows = Math.max(1, Math.round(full * (1f - MathUtils.clamp(poseSink, 0f, 1f))));
+                float x0 = bossX() + poseX - boss.getRegionWidth() * scale / 2f;
+                float y0 = bossBottom() + poseY - (full - rows) * scale;
+                cap(batch, x0, y0, scale, -1, SCALP_LEFT, SCALP_RIGHT, HAIR, 1f - poseShadow, poseAlpha);
+            }
+            flash(batch, FLASH, SHOT, 0.1f, 0.3f);
             flash(batch, GOLD, CLIMAX_DEATH, 0.3f, 0.35f);
         }
     }
