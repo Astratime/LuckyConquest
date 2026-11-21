@@ -97,13 +97,10 @@ public final class PalacePortraits {
 
     /**
      * Le Concierge : redingote noire, gilet bordeaux, les clés d'or croisées au revers, favoris gris
-     * couverts de givre, monocle ; derrière lui, le tableau des clés de l'hôtel.
+     * couverts de givre, monocle.
      */
     private static int[][] concierge() {
         PixelCanvas g = new PixelCanvas(W, H);
-        // Le tableau des clés, au fond.
-        g.rect(0, 0, 33, 12, rgba("5a3a22"));
-        for (int y = 2; y <= 10; y += 4) for (int x = 2; x <= 31; x += 4) g.set(x, y, GOLD);
         bust(g, COAL, rgba("12121a"), WHITE);
         g.triangle(14, 29, 20, 29, 17, 36, RED_DARK);           // le gilet
         g.line(6, 31, 10, 35, GOLD);                             // les clés croisées au revers
