@@ -245,6 +245,34 @@ class PlayerProfileTest {
     }
 
     @Test
+    void aSaveFromBeforeTheManorKeepsTheCasinoOpenAndOpensTheManor() {
+        MemoryStorage storage = new MemoryStorage();
+        PlayerProfile old = profile(storage);
+        for (Place place : List.of(Place.PRAIRIE, Place.FOIRE, Place.RAPIDE, Place.PORT, Place.MINES)) {
+            for (Dungeon dungeon : place.getDungeons()) old.clearDungeon(dungeon.name());
+        }
+        for (Place place : Place.values()) {                 // en difficile : jusqu'aux Mines aussi
+            if (place == Place.MANOIR || place == Place.CASINO) break;
+            for (Dungeon dungeon : place.getDungeons()) old.clearHardDungeon(dungeon.name());
+        }
+        storage.put(PlayerProfile.KEY_KNOWN_PLACES, null);   // sauvegarde d'avant le Manoir hanté
+
+        PlayerProfile profile = profile(storage);
+        assertTrue(profile.isOpen(Place.CASINO), "ouvert par les Mines dans l'ancien ordre : il le reste");
+        assertTrue(profile.isOpen(Place.MANOIR), "le nouveau lieu, avant un lieu ouvert, s'ouvre aussi");
+        assertFalse(profile.isOpen(Place.DESERT));
+        assertTrue(profile(storage).isOpen(Place.CASINO), "sauvegardé");
+
+        MemoryStorage fresh = new MemoryStorage();
+        PlayerProfile now = profile(fresh);
+        for (Place place : List.of(Place.PRAIRIE, Place.FOIRE, Place.RAPIDE, Place.PORT, Place.MINES)) {
+            for (Dungeon dungeon : place.getDungeons()) now.clearDungeon(dungeon.name());
+        }
+        assertTrue(now.isOpen(Place.MANOIR));
+        assertFalse(profile(fresh).isOpen(Place.CASINO), "une sauvegarde récente passe par le Manoir");
+    }
+
+    @Test
     void anOldSaveCountsAPrairieDungeonAsClearedWhenOneOfItsChestCardsIsOwned() {
         Map<String, Integer> owned = collection();
         owned.put("guillotine", 1);

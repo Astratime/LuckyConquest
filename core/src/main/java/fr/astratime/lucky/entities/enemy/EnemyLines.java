@@ -147,6 +147,23 @@ public final class EnemyLines {
             "Ton Bingo... un caillou de plus.",
             "La montagne t'écrase. Lentement.",
             "Je durcis. Rien ne me fendra.");
+        // ----- Le Manoir hanté -----
+        say(EnemyKind.COMTE_MINUIT, "Un Bingo ? Ton sang n'en sera que plus doux.",
+            "Joli coup. Il est presque minuit, pourtant.",
+            "Les douze coups ont sonné pour toi.",
+            "Minuit ! L'heure où je ne joue plus pour rire.");
+        say(EnemyKind.BIBLIOTHECAIRE, "Un Bingo ? Silence, je l'inscris au registre.",
+            "Tu tournes les pages trop vite.",
+            "Ton histoire s'arrête ici. Je range le livre.",
+            "On éteint les bougies. Lis donc dans le noir.");
+        say(EnemyKind.FOSSOYEUR, "Un Bingo ? Je l'enterrerai avec toi.",
+            "Creuse, creuse. Ta tombe est déjà prête.",
+            "Une pelletée de terre, et on n'en parle plus.",
+            "La terre tremble ! Les morts veulent jouer aussi.");
+        say(EnemyKind.MARIONNETTISTE, "Un Bingo ? C'est moi qui ai tiré le levier.",
+            "Bravo, mon pantin. Encore un tour de piste.",
+            "Le spectacle est fini. Je coupe les fils.",
+            "Le rideau se lève ! À toi de danser.");
         // ----- Le Casino Englouti -----
         say(EnemyKind.SIRENE, "Quelle chance... Viens plus près.",
             "Écoute mon chant, oublie tes gains.",

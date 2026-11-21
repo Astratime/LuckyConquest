@@ -791,7 +791,7 @@ public enum EnemyKind {
         "Sous l'eau, il a gagné contre les requins. Maintenant, il mord tes gains.",
         3_000_000, 150, 3,
         weights(EnemySymbol.SWORD, 2, EnemySymbol.SHIELD, 1, EnemySymbol.POTION, 1, EnemySymbol.RIGGED_GAME, 1, EnemySymbol.HOLDUP, 1, EnemySymbol.BOARDING, 1,
-            EnemySymbol.DRILL, 1, EnemySymbol.BLOOD_PACT, 1, EnemySymbol.BANK_BITE, 1),
+            EnemySymbol.DRILL, 1, EnemySymbol.BANK_BITE, 1),
         deck(new int[] {3, 6, 9, 12, 13, 14}, new int[] {4, 8, 12, 14},
             new int[] {5, 9, 13, 14}, new int[] {3, 7, 11}),
         List.of(Card.Suit.PIQUE, Card.Suit.CARREAU, Card.Suit.TREFLE, Card.Suit.COEUR),
@@ -800,7 +800,7 @@ public enum EnemyKind {
         "Il a ôté son masque. Le Croupier vous a tout appris, à lui comme à toi. Il ne restera qu'un seul élève.",
         6_000_000, 40, 25,
         weights(EnemySymbol.SWORD, 2, EnemySymbol.SHIELD, 1, EnemySymbol.POTION, 1, EnemySymbol.RIGGED_GAME, 1, EnemySymbol.HOLDUP, 1, EnemySymbol.BOARDING, 1,
-            EnemySymbol.DRILL, 1, EnemySymbol.BLOOD_PACT, 1, EnemySymbol.BANK_BITE, 1, EnemySymbol.BILL, 1),
+            EnemySymbol.DRILL, 1, EnemySymbol.BANK_BITE, 1, EnemySymbol.BILL, 1),
         deck(new int[] {3, 6, 9, 12, 13, 14}, new int[] {4, 8, 12, 14},
             new int[] {5, 9, 13, 14}, new int[] {3, 7, 11, 14}),
         List.of(Card.Suit.PIQUE, Card.Suit.CARREAU, Card.Suit.TREFLE, Card.Suit.COEUR),
@@ -1828,9 +1828,9 @@ public enum EnemyKind {
             case RIVAL_MANOIR -> List.of(EnemySignature.CARTE_BISEAUTEE, EnemySignature.HAUT_LES_MAINS, EnemySignature.GRAPPIN, EnemySignature.MECHE_DE_DIAMANT,
                 EnemySignature.PACTE_SCELLE);
             case RIVAL_CASINO -> List.of(EnemySignature.CARTE_BISEAUTEE, EnemySignature.HAUT_LES_MAINS, EnemySignature.GRAPPIN, EnemySignature.MECHE_DE_DIAMANT,
-                EnemySignature.PACTE_SCELLE, EnemySignature.FRENESIE);
+                EnemySignature.FRENESIE);
             case RIVAL_DESERT -> List.of(EnemySignature.CARTE_BISEAUTEE, EnemySignature.HAUT_LES_MAINS, EnemySignature.GRAPPIN, EnemySignature.MECHE_DE_DIAMANT,
-                EnemySignature.PACTE_SCELLE, EnemySignature.FRENESIE, EnemySignature.USURE);
+                EnemySignature.FRENESIE, EnemySignature.USURE);
             default -> List.of();
         };
     }
