@@ -1049,6 +1049,162 @@ def entrainement():
     return vignette(im, 0.5, 0.35)
 
 
+
+# ---------------------------------------------------------------------------- le Rapide de Minuit
+
+def rivets(d, x0, y0, x1, y1, step, color):
+    for x in range(x0, x1 + 1, step):
+        for y in (y0, y1):
+            d.rectangle([x, y, x + 1, y + 1], fill=color)
+
+
+def train_window(f, x0, y0, x1, y1, rng, frame=(120, 84, 50), moon=None):
+    """Fenêtre du wagon sur la nuit qui défile : ciel, étoiles, collines, poteaux penchés par la vitesse."""
+    win, w = layer()
+    w.rectangle([x0, y0, x1, y1], fill=(16, 18, 44))
+    for _ in range((x1 - x0) * (y1 - y0) // 120):
+        w.point([(int(rng.integers(x0, x1)), int(rng.integers(y0, y1 - 10)))], fill=(220, 226, 255))
+    if moon:
+        mx, my = moon
+        w.ellipse([mx - 7, my - 7, mx + 7, my + 7], fill=(246, 238, 200))
+        w.ellipse([mx - 3, my - 9, mx + 9, my + 5], fill=(16, 18, 44))
+    w.polygon([(x0, y1), (x0, y1 - 10), (x0 + (x1 - x0) // 3, y1 - 16), ((x0 + x1) // 2 + 10, y1 - 9),
+               (x1, y1 - 14), (x1, y1)], fill=(24, 34, 40))
+    for x in range(x0 + 8, x1 - 4, 22):  # poteaux télégraphiques, flous de vitesse
+        w.line([x, y1 - 2, x + 4, y1 - 24], fill=(40, 48, 56), width=2)
+    f.rectangle([x0 - 4, y0 - 4, x1 + 4, y1 + 4], outline=frame, width=4)
+    f.line([(x0 + x1) // 2, y0, (x0 + x1) // 2, y1], fill=frame, width=3)
+    return win
+
+
+def locomotive():
+    """La cabine de la locomotive : tôle rivetée, porte du foyer rougeoyante, manomètres, tas de charbon."""
+    rng = np.random.default_rng(91)
+    im, d = base((0, 0, 0))
+    gradient(d, (46, 44, 50), (28, 26, 30), 0, 170)
+    for x in range(0, W, 60):  # plaques de tôle
+        d.line([x, 0, x, 170], fill=(22, 20, 24), width=2)
+        rivets(d, x + 4, 6, x + 56, 160, 8, (88, 86, 92))
+    fg, f = layer()
+    im.alpha_composite(train_window(f, 20, 18, 92, 70, rng, frame=(70, 70, 78), moon=(76, 32)))
+    im.alpha_composite(train_window(f, 268, 18, 340, 70, rng, frame=(70, 70, 78)))
+    # la chaudière, au milieu, et sa porte de foyer
+    f.rectangle([118, 20, 242, 150], fill=(34, 32, 36))
+    f.rectangle([122, 24, 238, 146], fill=(52, 50, 56))
+    for gx in (140, 180, 220):  # manomètres
+        f.ellipse([gx - 12, 34, gx + 12, 58], fill=(196, 160, 86))
+        f.ellipse([gx - 9, 37, gx + 9, 55], fill=(238, 232, 214))
+        f.line([gx, 46, gx + 6, 40 + (gx % 3) * 4], fill=(180, 30, 30), width=2)
+    f.rectangle([118, 66, 242, 72], fill=(170, 134, 64))  # tuyau de laiton
+    f.rectangle([150, 92, 210, 140], fill=(60, 30, 20))
+    f.rectangle([156, 98, 204, 134], fill=(236, 110, 30))
+    f.rectangle([164, 106, 196, 128], fill=(255, 196, 70))
+    f.rectangle([172, 112, 188, 124], fill=(255, 240, 170))
+    for x in range(156, 205, 8):
+        f.line([x, 98, x, 134], fill=(60, 30, 20), width=2)
+    f.line([208, 96, 236, 70], fill=(40, 38, 42), width=4)  # levier du régulateur
+    f.ellipse([232, 64, 242, 74], fill=(190, 40, 40))
+    # le tas de charbon et la pelle
+    for k in range(70):
+        x, y = int(rng.integers(262, 360)), int(rng.integers(120, 168))
+        r = int(rng.integers(3, 8))
+        f.ellipse([x - r, y - r, x + r, y + r], fill=[(30, 30, 34), (46, 46, 52), (20, 20, 24)][k % 3])
+    f.line([292, 104, 318, 150], fill=(120, 84, 50), width=3)
+    f.polygon([(312, 146), (326, 142), (330, 158), (316, 162)], fill=(96, 96, 104))
+    lantern(fg, 60, 100)
+    im = finish(im, fg)
+    GLOWS['locomotive'] = ((180, 116), (60, 100))
+    return vignette(im, 0.5)
+
+
+def wagon_restaurant():
+    """Le wagon-restaurant : boiseries, fenêtres sur la nuit, tables nappées, petites lampes à abat-jour rouge."""
+    rng = np.random.default_rng(92)
+    im, d = base((0, 0, 0))
+    gradient(d, (96, 52, 34), (64, 34, 22), 0, 170)
+    for x in range(0, W, 30):  # lambris
+        d.line([x, 0, x, 170], fill=(70, 38, 24))
+    d.rectangle([0, 104, W, 110], fill=(150, 112, 60))
+    fg, f = layer()
+    f.rectangle([0, 0, W, 8], fill=(150, 112, 60))  # corniche
+    for x0 in (14, 132, 250):
+        im.alpha_composite(train_window(f, x0, 22, x0 + 96, 82, rng, frame=(150, 112, 60),
+                                        moon=(x0 + 70, 38) if x0 == 132 else None))
+    for cx in (40, 320):  # tables nappées et lampes
+        f.rectangle([cx - 34, 120, cx + 34, 150], fill=(238, 232, 218))
+        f.rectangle([cx - 34, 146, cx + 34, 152], fill=(206, 198, 182))
+        f.rectangle([cx - 3, 104, cx + 3, 120], fill=(196, 160, 86))
+        f.polygon([(cx - 10, 104), (cx + 10, 104), (cx + 6, 94), (cx - 6, 94)], fill=(196, 40, 44))
+        for gx in (cx - 22, cx + 16):  # verres et assiettes
+            f.ellipse([gx - 6, 124, gx + 6, 130], fill=(250, 250, 250))
+            f.rectangle([gx + 8, 114, gx + 11, 124], fill=(160, 40, 60))
+    lantern(fg, 180, 16, glass=(255, 200, 120), body=(150, 112, 60))
+    im = finish(im, fg)
+    GLOWS['wagon_restaurant'] = ((40, 98), (320, 98), (180, 16))
+    return vignette(im, 0.45)
+
+
+def wagon_lit():
+    """Le couloir du wagon-lit : rideaux tirés des couchettes, veilleuses bleues, lune à la fenêtre du fond."""
+    rng = np.random.default_rng(93)
+    im, d = base((0, 0, 0))
+    gradient(d, (30, 30, 62), (18, 18, 40), 0, 170)
+    fg, f = layer()
+    # la fenêtre du fond, au bout du couloir, en perspective
+    im.alpha_composite(train_window(f, 150, 26, 210, 86, rng, frame=(60, 52, 90), moon=(186, 44)))
+    f.polygon([(0, 0), (120, 14), (120, 150), (0, 170)], fill=(52, 36, 46))
+    f.polygon([(W, 0), (240, 14), (240, 150), (W, 170)], fill=(52, 36, 46))
+    for side in (0, 1):  # couchettes superposées et leurs rideaux
+        for k, (y0, y1) in enumerate(((18, 70), (82, 140))):
+            xs = (10, 104) if side == 0 else (256, 350)
+            f.rectangle([xs[0], y0, xs[1], y1], fill=(22, 16, 30))
+            for x in range(xs[0], xs[1], 8):
+                f.rectangle([x, y0, x + 5, y1], fill=[(120, 40, 60), (100, 30, 50)][(x // 8 + k) % 2])
+            f.rectangle([xs[0] - 2, y0 - 3, xs[1] + 2, y0], fill=(176, 140, 76))
+    for x, y in ((60, 76), (300, 76)):  # veilleuses
+        f.ellipse([x - 5, y - 4, x + 5, y + 4], fill=(150, 190, 255))
+        f.ellipse([x - 2, y - 2, x + 2, y + 2], fill=(232, 244, 255))
+    # tapis du couloir
+    f.polygon([(130, 170), (230, 170), (212, 120), (148, 120)], fill=(110, 30, 40))
+    im = finish(im, fg)
+    GLOWS['wagon_lit'] = ((60, 76), (300, 76), (186, 44))
+    return vignette(im, 0.55)
+
+
+def fourgon():
+    """Le fourgon blindé : parois d'acier rivetées, lingots empilés, coffres, sacs, lanterne qui pend."""
+    rng = np.random.default_rng(94)
+    im, d = base((0, 0, 0))
+    gradient(d, (58, 60, 66), (34, 36, 40), 0, 170)
+    for x in range(0, W, 45):
+        d.line([x, 0, x, 170], fill=(26, 28, 32), width=2)
+        rivets(d, x + 4, 8, x + 41, 158, 9, (96, 100, 108))
+    fg, f = layer()
+    f.rectangle([150, 30, 210, 150], fill=(70, 74, 80))  # porte coulissante
+    f.rectangle([156, 36, 204, 144], fill=(84, 88, 96))
+    f.rectangle([176, 84, 184, 100], fill=(200, 170, 90))
+    for y in (44, 136):
+        f.line([150, y, 210, y], fill=(40, 42, 46), width=3)
+    for x0, y0 in ((14, 110), (60, 110), (290, 110)):  # coffres
+        f.rectangle([x0, y0, x0 + 42, y0 + 44], fill=(56, 60, 70))
+        f.rectangle([x0 + 4, y0 + 4, x0 + 38, y0 + 40], fill=(80, 86, 98))
+        f.ellipse([x0 + 15, y0 + 15, x0 + 27, y0 + 27], fill=(196, 160, 86))
+        f.line([x0 + 21, y0 + 17, x0 + 21, y0 + 25], fill=(60, 50, 30))
+    for row in range(4):  # pyramide de lingots
+        for k in range(5 - row):
+            x = 232 + k * 14 + row * 7
+            y = 140 - row * 9
+            f.polygon([(x, y + 8), (x + 13, y + 8), (x + 11, y), (x + 2, y)], fill=(236, 186, 60))
+            f.line([x + 2, y + 1, x + 11, y + 1], fill=(255, 234, 140))
+    for x in (110, 128):  # sacs de pièces
+        f.ellipse([x - 10, 128, x + 10, 154], fill=(170, 140, 96))
+        f.rectangle([x - 3, 122, x + 3, 130], fill=(130, 100, 64))
+    f.line([180, 0, 180, 14], fill=(30, 30, 34))
+    lantern(fg, 180, 22)
+    im = finish(im, fg)
+    GLOWS['fourgon'] = ((180, 22), (262, 128))
+    return vignette(im, 0.5)
+
 DECORS = {
     'chapiteau': chapiteau, 'train_fantome': train_fantome, 'grande_roue': grande_roue, 'stands': stands,
     'taverne': taverne, 'phare': phare, 'galion': galion,
@@ -1057,6 +1213,7 @@ DECORS = {
     'caravane': caravane, 'tombeau': tombeau, 'oasis': oasis, 'volcan': volcan,
     'genese': genese, 'tables_sacrees': tables_sacrees, 'dernier_tirage': dernier_tirage,
     'monde_sans_maitre': monde_sans_maitre, 'la_maison': la_maison, 'le_jackpot': le_jackpot,
+    'locomotive': locomotive, 'wagon_restaurant': wagon_restaurant, 'wagon_lit': wagon_lit, 'fourgon': fourgon,
     'entrainement': entrainement,
 }
 

@@ -220,6 +220,9 @@ class PlayerProfileTest {
         assertTrue(profile.isOpen(Place.FOIRE), "la Fête foraine suit la prairie");
         assertFalse(profile.isOpen(Place.PORT));
         for (Dungeon dungeon : Place.FOIRE.getDungeons()) profile.clearDungeon(dungeon.name());
+        assertTrue(profile.isOpen(Place.RAPIDE), "le Rapide de Minuit suit la Fête foraine");
+        assertFalse(profile.isOpen(Place.PORT));
+        for (Dungeon dungeon : Place.RAPIDE.getDungeons()) profile.clearDungeon(dungeon.name());
         assertTrue(profile.isOpen(Place.PORT));
         assertTrue(profile(storage).isOpen(Place.PORT), "sauvegardé");
         assertFalse(profile.isOpen(Place.DESERT), "le Désert de Braise vient après le Casino");

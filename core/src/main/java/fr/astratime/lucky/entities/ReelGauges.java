@@ -55,6 +55,9 @@ public final class ReelGauges {
         return steam;
     }
 
+    /** Soupape : la Vapeur passe tout de suite à sa pression la plus haute. */
+    public void fillSteam() { steam = STEAM_MAX; }
+
     /** @return la pression de la Vapeur : les tirages d'affilée où elle est sortie (0 à {@link #STEAM_MAX}). */
     public int getSteam() { return steam; }
 

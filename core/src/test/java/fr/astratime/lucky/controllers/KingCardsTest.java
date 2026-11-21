@@ -36,11 +36,12 @@ class KingCardsTest {
         }
     };
 
-    /** Prix choisis par Astra (2026-11-14) : un prix par lieu. */
+    /** Prix choisis par Astra (2026-11-14) : un prix par lieu (Rapide de Minuit : 2026-11-20). */
     private static long placePrice(Place place) {
         return switch (place) {
             case PRAIRIE -> 75_000_000L;
             case FOIRE   -> 200_000_000L;
+            case RAPIDE  -> 500_000_000L;
             case PORT    -> 1_300_000_000L;
             case MINES   -> 2_500_000_000L;
             case CASINO  -> 7_000_000_000L;
@@ -56,7 +57,7 @@ class KingCardsTest {
         for (Place place : Place.values()) {
             for (Dungeon dungeon : place.getDungeons()) expected.add(dungeon.getKing());
         }
-        assertEquals(24, expected.size());
+        assertEquals(4 * Place.values().length, expected.size());
         assertEquals(expected, new HashSet<>(kings.values()), "un roi, une carte");
         assertEquals(kings.size(), new HashSet<>(kings.values()).size());
         for (Map.Entry<String, EnemyKind> entry : kings.entrySet()) {

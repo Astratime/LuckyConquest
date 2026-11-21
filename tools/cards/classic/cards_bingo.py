@@ -21,6 +21,8 @@ BINGO_SYMBOLS = {
     'moon': '26-moon', 'demon_king': '27-demon_king', 'luck_apostle': '28-luck_apostle', 'ticket': '29-ticket',
     'anchor': '30-anchor', 'gold_chip': '31-gold_chip', 'flame': '32-flame', 'descent': '33-descent',
     'bingo_light': '34-bingo_light',
+    # Le Rapide de Minuit (2026-11-21)
+    'steam': '35-steam',
 }
 
 

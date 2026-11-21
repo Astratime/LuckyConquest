@@ -10,12 +10,15 @@ import fr.astratime.lucky.entities.Enemy;
 import fr.astratime.lucky.entities.GainFormula;
 import fr.astratime.lucky.entities.EnemyMaluses;
 import fr.astratime.lucky.entities.LastingEffects;
+import fr.astratime.lucky.entities.ReelGauges;
 import fr.astratime.lucky.entities.SpinEconomy;
 import fr.astratime.lucky.entities.Symbol;
 import fr.astratime.lucky.entities.context.CombatContext;
 import fr.astratime.lucky.entities.effects.CorruptionEffect;
 import fr.astratime.lucky.entities.enemy.EnemyKind;
+import fr.astratime.lucky.entities.enemy.EnemySymbol;
 import fr.astratime.lucky.entities.exploration.DungeonRun;
+import fr.astratime.lucky.entities.exploration.PlaceRule;
 import fr.astratime.lucky.i18n.Lang;
 import fr.astratime.lucky.progress.PlayerProfile;
 import fr.astratime.lucky.progress.Rank;
@@ -96,7 +99,10 @@ public final class Lexicon {
             term(Lang.t("Huissier"), Lang.f("Tu dois plus de {0} tirages. Symboles -50 %, et l'ennemi joue une "
                 + "carte de plus. Une Paire ou un Bingo te renfloue.", SpinEconomy.BAILIFF_SPINS)),
             term(Lang.t("Échoppe"), Lang.t("La boutique du combat, payée en gains : des cartes (Bingo, Roulette "
-                + "russe, Corruption...) et des rouleaux. Le prix double à chaque achat."))));
+                + "russe, Corruption...) et des rouleaux. Le prix double à chaque achat.")),
+            term(Lang.t("Vapeur"), Lang.f("Rouleau du Rapide de Minuit. Chaque tirage d'affilée où la Vapeur sort monte "
+                + "sa pression : +{0} % à son coup par cran, {1} crans au plus. Un tirage sans elle la fait retomber.",
+                ReelGauges.STEAM_STEP_PERCENT, ReelGauges.STEAM_MAX))));
     }
 
     private static Category cards() {
@@ -189,7 +195,13 @@ public final class Lexicon {
             term(Lang.t("Aspiration"), Lang.t("La Machine Originelle annonce des règles pour tes cartes. "
                 + "Chaque règle non respectée lui fait aspirer un de tes rouleaux.")),
             term(Lang.t("Règle du lieu"), Lang.t("Chaque lieu de l'Exploration a sa règle (Marée, Grisou, Soif...). "
-                + "Elle s'affiche dans tes effets."))));
+                + "Elle s'affiche dans tes effets.")),
+            term(Lang.t("Wagon bondé"), Lang.f("Règle du Rapide de Minuit : tous les {0} tours, tu joues {1} carte de "
+                + "moins ce tour-là.", PlaceRule.CROWDED_PERIOD, PlaceRule.CROWDED_PLAYS)),
+            term(Lang.t("Pression"), Lang.f("Au Rapide de Minuit, la chaudière de l'ennemi monte d'un cran. Au bout de {0} crans, "
+                + "elle explose en un gros coup. Chaque coup qui lui enlève au moins {1} % de ses PV max la fait baisser.",
+                EnemySymbol.PRESSURE_MAX, Lang.decimal(String.valueOf(EnemySymbol.PRESSURE_HIT_PER_MILLE / 10.0)
+                    .replaceAll("\\.0$", ""))))));
     }
 
     private static Category progress() {
@@ -200,9 +212,9 @@ public final class Lexicon {
                 + "donjon faite.", PlayerProfile.DEFEAT_KEEP_PERCENT)),
             term(Lang.t("Rang"), Lang.t("Acheté à la boutique. Plus de PV max, des symboles plus forts et un % de gains "
                 + "en plus sur toute la machine. Tu choisis ton rang à la Table du croupier.")),
-            term(Lang.t("Lieu de ton rang"), Lang.f("Chaque rang a son lieu d'Exploration : la Prairie sans rang, puis "
-                + "un lieu pour deux rangs (Avare et Parieur à la Foire … Roi du casino et Légende au Désert). Un lieu en "
-                + "dessous ne rapporte que {0} % des pièces, deux lieux ou plus en dessous {1} %.",
+            term(Lang.t("Lieu de ton rang"), Lang.f("Chaque rang a son lieu d'Exploration : la Prairie sans rang, la Foire "
+                + "pour l'Avare et le Parieur, le Rapide de Minuit pour le Flambeur, le Port pour l'Habitué, puis un lieu "
+                + "pour deux rangs jusqu'au Désert (Roi du casino et Légende). Un lieu en dessous ne rapporte que {0} % des pièces, deux lieux ou plus en dessous {1} %.",
                 PlayerProfile.LOWER_PLACE_PERCENT, PlayerProfile.FAR_LOWER_PLACE_PERCENT)),
             term(Lang.t("Prestige"), Lang.f("Une fois tous les rangs achetés, la boutique te propose de les rendre. "
                 + "Chaque niveau multiplie par {0} tes PV max, l'attaque et la défense de tes symboles, et ajoute "
@@ -210,8 +222,8 @@ public final class Lexicon {
                 Lang.decimal(String.valueOf(RankBonus.PRESTIGE_GUARD_FACTOR)), RankBonus.PRESTIGE_PERCENT,
                 PlayerProfile.prestigeNumeral(PlayerProfile.MAX_PRESTIGE))),
             term(Lang.t("Sceau de Prestige"), Lang.t("Chaque Prestige demande un lieu vidé en Exploration difficile : "
-                + "la prairie pour les Prestiges I et II, la Fête foraine pour III et IV, puis le Port, les Mines et le "
-                + "Casino.")),
+                + "la prairie pour le Prestige I, la Fête foraine pour II, le Rapide de Minuit pour III, le Port pour IV, "
+                + "puis les Mines, le Casino et le Désert, deux Prestiges chacun.")),
             term(Lang.t("Plancher de Prestige"), Lang.f("Après un Prestige, tes PV max, ton attaque et ta défense ne "
                 + "descendent jamais sous {0} % de ceux de la Légende du Jackpot (avant le bonus du Prestige).",
                 Rank.PRESTIGE_FLOOR_PERCENT)),
@@ -226,7 +238,7 @@ public final class Lexicon {
                 + "Ce combat ne rapporte rien.")),
             term(Lang.t("Mode difficile"), Lang.t("Une seconde Tour, bien plus dure, avec sa propre progression.")),
             term(Lang.t("Exploration difficile"), Lang.t("Ouverte une fois le Désert vidé. La prairie y est aussi dure "
-                + "que le Désert, puis chaque lieu deux fois plus que le précédent. Plus de pièces, sa propre progression.")),
+                + "que le Désert, puis chaque lieu plus dur que le précédent. Plus de pièces, sa propre progression.")),
             term(Lang.t("Table du croupier"), Lang.t("Ton deck, ta machine, ton rang et la fusion des cartes."))));
     }
 }

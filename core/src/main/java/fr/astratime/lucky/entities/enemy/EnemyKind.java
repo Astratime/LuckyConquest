@@ -697,7 +697,7 @@ public enum EnemyKind {
     RIVAL_PORT("Le Joueur Masqué", "JOUEUR MASQUÉ",
         "Encore lui. Au port, il a appris à voler les cartes des autres.",
         500_000, 120, 15,
-        weights(EnemySymbol.SWORD, 2, EnemySymbol.SHIELD, 1, EnemySymbol.POTION, 1, EnemySymbol.RIGGED_GAME, 1, EnemySymbol.BOARDING, 1),
+        weights(EnemySymbol.SWORD, 2, EnemySymbol.SHIELD, 1, EnemySymbol.POTION, 1, EnemySymbol.RIGGED_GAME, 1, EnemySymbol.HOLDUP, 1, EnemySymbol.BOARDING, 1),
         deck(new int[] {3, 6, 9, 12, 13, 14}, new int[] {4, 8, 12},
             new int[] {5, 9, 13}, new int[] {3, 7, 11}),
         List.of(Card.Suit.PIQUE, Card.Suit.CARREAU, Card.Suit.TREFLE, Card.Suit.COEUR),
@@ -705,7 +705,7 @@ public enum EnemyKind {
     RIVAL_MINES("Le Joueur Masqué", "JOUEUR MASQUÉ",
         "Il est passé avant toi dans la mine. Ses coups percent ton bouclier.",
         1_250_000, 150, 6,
-        weights(EnemySymbol.SWORD, 2, EnemySymbol.SHIELD, 1, EnemySymbol.POTION, 1, EnemySymbol.RIGGED_GAME, 1, EnemySymbol.BOARDING, 1,
+        weights(EnemySymbol.SWORD, 2, EnemySymbol.SHIELD, 1, EnemySymbol.POTION, 1, EnemySymbol.RIGGED_GAME, 1, EnemySymbol.HOLDUP, 1, EnemySymbol.BOARDING, 1,
             EnemySymbol.DRILL, 1),
         deck(new int[] {3, 6, 9, 12, 13, 14}, new int[] {4, 8, 12, 14},
             new int[] {5, 9, 13}, new int[] {3, 7, 11}),
@@ -714,7 +714,7 @@ public enum EnemyKind {
     RIVAL_CASINO("Le Joueur Masqué", "JOUEUR MASQUÉ",
         "Sous l'eau, il a gagné contre les requins. Maintenant, il mord tes gains.",
         3_000_000, 150, 3,
-        weights(EnemySymbol.SWORD, 2, EnemySymbol.SHIELD, 1, EnemySymbol.POTION, 1, EnemySymbol.RIGGED_GAME, 1, EnemySymbol.BOARDING, 1,
+        weights(EnemySymbol.SWORD, 2, EnemySymbol.SHIELD, 1, EnemySymbol.POTION, 1, EnemySymbol.RIGGED_GAME, 1, EnemySymbol.HOLDUP, 1, EnemySymbol.BOARDING, 1,
             EnemySymbol.DRILL, 1, EnemySymbol.BANK_BITE, 1),
         deck(new int[] {3, 6, 9, 12, 13, 14}, new int[] {4, 8, 12, 14},
             new int[] {5, 9, 13, 14}, new int[] {3, 7, 11}),
@@ -723,7 +723,7 @@ public enum EnemyKind {
     RIVAL_DESERT("Le Joueur Démasqué", "JOUEUR DÉMASQUÉ",
         "Il a ôté son masque. Le Croupier vous a tout appris, à lui comme à toi. Il ne restera qu'un seul élève.",
         6_000_000, 40, 25,
-        weights(EnemySymbol.SWORD, 2, EnemySymbol.SHIELD, 1, EnemySymbol.POTION, 1, EnemySymbol.RIGGED_GAME, 1, EnemySymbol.BOARDING, 1,
+        weights(EnemySymbol.SWORD, 2, EnemySymbol.SHIELD, 1, EnemySymbol.POTION, 1, EnemySymbol.RIGGED_GAME, 1, EnemySymbol.HOLDUP, 1, EnemySymbol.BOARDING, 1,
             EnemySymbol.DRILL, 1, EnemySymbol.BANK_BITE, 1, EnemySymbol.BILL, 1),
         deck(new int[] {3, 6, 9, 12, 13, 14}, new int[] {4, 8, 12, 14},
             new int[] {5, 9, 13, 14}, new int[] {3, 7, 11, 14}),
@@ -1729,11 +1729,11 @@ public enum EnemyKind {
             // Le Joueur Masqué : à chaque rencontre, il garde une carte du lieu traversé.
             case RIVAL_FOIRE -> List.of(EnemySignature.CARTE_BISEAUTEE);
             case RIVAL_RAPIDE -> List.of(EnemySignature.CARTE_BISEAUTEE, EnemySignature.HAUT_LES_MAINS);
-            case RIVAL_PORT -> List.of(EnemySignature.CARTE_BISEAUTEE, EnemySignature.GRAPPIN);
-            case RIVAL_MINES -> List.of(EnemySignature.CARTE_BISEAUTEE, EnemySignature.GRAPPIN, EnemySignature.MECHE_DE_DIAMANT);
-            case RIVAL_CASINO -> List.of(EnemySignature.CARTE_BISEAUTEE, EnemySignature.GRAPPIN, EnemySignature.MECHE_DE_DIAMANT,
+            case RIVAL_PORT -> List.of(EnemySignature.CARTE_BISEAUTEE, EnemySignature.HAUT_LES_MAINS, EnemySignature.GRAPPIN);
+            case RIVAL_MINES -> List.of(EnemySignature.CARTE_BISEAUTEE, EnemySignature.HAUT_LES_MAINS, EnemySignature.GRAPPIN, EnemySignature.MECHE_DE_DIAMANT);
+            case RIVAL_CASINO -> List.of(EnemySignature.CARTE_BISEAUTEE, EnemySignature.HAUT_LES_MAINS, EnemySignature.GRAPPIN, EnemySignature.MECHE_DE_DIAMANT,
                 EnemySignature.FRENESIE);
-            case RIVAL_DESERT -> List.of(EnemySignature.CARTE_BISEAUTEE, EnemySignature.GRAPPIN, EnemySignature.MECHE_DE_DIAMANT,
+            case RIVAL_DESERT -> List.of(EnemySignature.CARTE_BISEAUTEE, EnemySignature.HAUT_LES_MAINS, EnemySignature.GRAPPIN, EnemySignature.MECHE_DE_DIAMANT,
                 EnemySignature.FRENESIE, EnemySignature.USURE);
             default -> List.of();
         };
