@@ -33,6 +33,7 @@ public final class Rival {
             case PORT    -> EnemyKind.RIVAL_PORT;
             case MINES   -> EnemyKind.RIVAL_MINES;
             case CASINO  -> EnemyKind.RIVAL_CASINO;
+            case TEMPLE  -> EnemyKind.RIVAL_TEMPLE;
             case DESERT  -> EnemyKind.RIVAL_DESERT;
         };
     }
@@ -45,6 +46,7 @@ public final class Rival {
             case RIVAL_PORT   -> Place.PORT;
             case RIVAL_MINES  -> Place.MINES;
             case RIVAL_CASINO -> Place.CASINO;
+            case RIVAL_TEMPLE -> Place.TEMPLE;
             case RIVAL_DESERT -> Place.DESERT;
             default           -> null;
         };

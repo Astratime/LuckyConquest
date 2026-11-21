@@ -201,6 +201,11 @@ public final class PlacesArt {
                 plate = colors[0];
                 plateDark = colors[1];
             }
+            case TEMPLE -> {
+                int[] colors = TempleArt.gateDecor(g);
+                plate = colors[0];
+                plateDark = colors[1];
+            }
             case FOIRE, DESERT -> {
                 int[] colors = FairDesertArt.gateDecor(g, place == Place.FOIRE);
                 plate = colors[0];
@@ -236,6 +241,8 @@ public final class PlacesArt {
         if (fairDesert != null) return fairDesert;
         String[] express = ExpressArt.emblem(dungeon);
         if (express != null) return express;
+        String[] temple = TempleArt.emblem(dungeon);
+        if (temple != null) return temple;
         return switch (dungeon) {
             case CALE -> new String[] {".XXXXX.", "X.....X", "XXXXXXX", "X.....X", "XXXXXXX", "X.....X", ".XXXXX."}; // tonneau
             case TAVERNE -> new String[] {"XXXXX..", "XXXXX..", "X...XXX", "X...X.X", "X...XXX", "X...X..", "XXXXX.."}; // chope

@@ -164,7 +164,25 @@ public enum EnemySignature {
     MARCHAND_DE_SABLE("Marchand de sable", EnemySymbol.LULLABY, Timing.NEXT,
         "Sa prochaine Berceuse endort 2 cartes", "BERCEUSE x2"),
     HAUT_LES_MAINS("Haut les mains", EnemySymbol.HOLDUP, Timing.NEXT,
-        "Son prochain Braquage te prend ton bouclier, même si tu l'as beaucoup blessé", "BRAQUAGE ASSURÉ");
+        "Son prochain Braquage te prend ton bouclier, même si tu l'as beaucoup blessé", "BRAQUAGE ASSURÉ"),
+
+    // Le Temple du Destin
+    CARILLON("Carillon", EnemySymbol.KNELL, Timing.NEXT,
+        "Son prochain Glas bloque 2 de tes rouleaux", "GLAS x2"),
+    TOCSIN("Tocsin", EnemySymbol.KNELL, Timing.TURN,
+        "Ses Glas de ce tour frappent aussi", "GLAS +ATTAQUE"),
+    QUENOUILLE("Quenouille", EnemySymbol.FATE_THREAD, Timing.TURN,
+        "Ses Fils du destin de ce tour le soignent aussi de {0} % de ses PV max", "FIL +SOIN"),
+    CISEAUX_DU_DESTIN("Ciseaux du destin", EnemySymbol.FATE_THREAD, Timing.NEXT,
+        "Son prochain Fil du destin coupe aussi tout ton bouclier", "FIL +BOUCLIER COUPÉ"),
+    COUP_DE_DES("Coup de dés", EnemySymbol.DOUBLE_SIX, Timing.NEXT,
+        "Son prochain Double six fait un double à coup sûr", "DOUBLE ASSURÉ"),
+    QUITTE_OU_DOUBLE("Quitte ou double", EnemySymbol.DOUBLE_SIX, Timing.TURN,
+        "Ses doubles de ce tour triplent ses attaques au lieu de les doubler", "DOUBLE x3"),
+    OFFRANDE("Offrande", EnemySymbol.KARMA, Timing.NOW,
+        "Son Karma garde tout de suite un Bingo de plus", "KARMA +1"),
+    JUGEMENT("Jugement", EnemySymbol.KARMA, Timing.NEXT,
+        "Son prochain Karma frappe deux fois plus fort", "KARMA x2");
 
     /** Exemplaires de chaque carte propre dans le deck d'un ennemi (choix d'Astra). */
     public static final int COPIES = 4;
@@ -193,6 +211,8 @@ public enum EnemySignature {
     public static final int FRENESIE_PERCENT = 5;
     /** Pas ce soir, Poids de l'or : force en plus des Videurs, des Lingots du tour, en %. */
     public static final int VIDEUR_PERCENT = 25, LINGOT_PERCENT = 25;
+    /** Quenouille : soin de chaque Fil du destin du tour, en % de ses PV max. */
+    public static final int QUENOUILLE_PERCENT = 4;
 
     /** Moment où agit une carte propre. */
     public enum Timing { TURN, NEXT, NOW }
@@ -239,6 +259,7 @@ public enum EnemySignature {
             case PAS_CE_SOIR       -> Lang.f(description, VIDEUR_PERCENT);
             case ANNONCE           -> Lang.f(description, EnemyKind.CHEF_NOTHING_GOES_CARD_PERCENT);
             case POIDS_DE_L_OR     -> Lang.f(description, LINGOT_PERCENT);
+            case QUENOUILLE        -> Lang.f(description, QUENOUILLE_PERCENT);
             default                -> Lang.t(description);
         };
     }

@@ -46,6 +46,12 @@ public enum Place {
             + "Les joueurs aussi.",
         PlaceRule.MAREE, 8, 400, 50_000, 30, 60, 45_000, 4_000, List.of(Dungeon.BAR, Dungeon.MACHINES, Dungeon.COFFRES, Dungeon.VIP)),
 
+    TEMPLE("Le Temple du Destin", "Le Temple",
+        "Là où la mer s'est retirée, un temple s'accroche aux falaises. Ses moines lisent l'avenir dans les dés. "
+            + "On dit qu'ils savent déjà qui gagnera.",
+        PlaceRule.PRESAGE, 9, 320, 55_000, 27, 140, 80_000, 4_500,
+        List.of(Dungeon.PARVIS, Dungeon.JARDIN_ORACLES, Dungeon.SALLE_DES_DES, Dungeon.SANCTUAIRE)),
+
     DESERT("Le Désert de Braise", "Le Désert",
         "Au-delà du Casino Englouti, la mer s'est retirée. Il ne reste qu'un désert brûlant. Au loin, un volcan fume. "
             + "On dit qu'un dragon y dort sur l'or de la comète.",
@@ -120,6 +126,7 @@ public enum Place {
             case PORT    -> 500;
             case MINES   -> 1_000;
             case CASINO  -> 2_000;
+            case TEMPLE  -> 2_500;
             case DESERT  -> 3_000;
         };
     }
@@ -139,6 +146,7 @@ public enum Place {
             case PORT    -> 18;
             case MINES   -> 19;
             case CASINO  -> 15;
+            case TEMPLE  -> 25;
             case DESERT  -> 42;
         };
     }
@@ -205,6 +213,7 @@ public enum Place {
             case PORT    -> Symbol.ANCHOR;
             case MINES   -> Symbol.NUGGET;
             case CASINO  -> Symbol.GOLD_CHIP;
+            case TEMPLE  -> Symbol.GONG;
             case DESERT  -> Symbol.FLAME;
         };
     }
@@ -221,6 +230,7 @@ public enum Place {
             case PORT    -> 76;
             case MINES   -> 63;
             case CASINO  -> 72;
+            case TEMPLE  -> 57;
             case DESERT  -> 42;
         };
     }

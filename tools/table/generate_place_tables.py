@@ -8,7 +8,7 @@ ornement dans chaque coin (les coins ne sont pas étirés). Le feutre est un mot
 répété de 32 x 32 pixels de jeu. Tout est dessiné sur la grille du jeu (1 pixel
 = 3 pixels de texture), sans lissage.
 
-Produit assets/table/<lieu>/*.png pour prairie, foire, rapide, port, mines et desert (le
+Produit assets/table/<lieu>/*.png pour prairie, foire, rapide, port, mines, temple et desert (le
 casino, la Tour et l'Entraînement gardent la table d'origine, assets/table/*.png). Lancer depuis la racine du dépôt :
     python3 tools/table/generate_place_tables.py
 """
@@ -60,6 +60,10 @@ THEMES = {
         rail=[(128, 132, 144), (98, 66, 40), (78, 52, 30), (54, 34, 20)], groove=(64, 42, 24),
         metal=IRON, felt=[(60, 58, 68), (50, 48, 58), (72, 70, 82)], ornament='plate', motif='ore',
         emblem='pickaxes'),
+    'temple': dict(  # temple au couchant : laque rouge, or, feutre de jade
+        rail=[(214, 70, 52), (176, 42, 36), (138, 28, 26), (92, 16, 18)], groove=(240, 196, 92),
+        metal=GOLDS, felt=[(30, 92, 78), (24, 78, 66), (40, 110, 92)], ornament='gem', motif='dice',
+        emblem='torii'),
     'desert': dict(
         rail=[(242, 212, 148), (214, 170, 100), (180, 136, 76), (138, 98, 52)], groove=(38, 160, 160),
         metal=GOLDS, felt=[(150, 64, 42), (128, 52, 34), (168, 78, 52)], ornament='gem', motif='diamonds',
@@ -159,6 +163,9 @@ def felt(t):
             block(d, x + 4, y + 2, light)
         elif motif == 'diamonds':
             sprite(d, [".a.", "a.a", ".a."], x, y, {'a': light})
+        elif motif == 'dice':  # un petit dé vu de face, ses deux points en diagonale
+            sprite(d, ["aaa", "a.a", "aaa"], x, y, {'a': light})
+            block(d, x + 1, y + 1, dark)
         elif motif == 'rails':  # un bout de voie : deux rails sur trois traverses
             sprite(d, ["aaaaa", ".b.b.", "aaaaa"], x, y, {'a': light, 'b': dark})
     return img
@@ -213,6 +220,21 @@ def emblem(t):
         sprite(d, ["...aaaaa...", "..abbbbba..", ".ab.aba.ba.", "ab.a.a.a.ba", "ab..aca..ba", "abaacccaaba",
                    "ab..aca..ba", "ab.a.a.a.ba", ".ab.aba.ba.", "..abbbbba..", "...aaaaa..."], 5, 1,
                {'a': m[0], 'b': m[2], 'c': (232, 64, 52)})
+    elif kind == 'torii':  # portail de temple rouge et or, un gong suspendu sous son linteau
+        red, dark = (214, 52, 44), (138, 28, 26)
+        for x in range(1, w - 1):
+            block(d, x, 1, dark)
+            block(d, x, 2, red)
+        block(d, 0, 0, dark)
+        block(d, w - 1, 0, dark)
+        for x in range(3, w - 3):
+            block(d, x, 4, red)
+        for y in range(3, h):
+            for x in (4, 5, w - 6, w - 5):
+                block(d, x, y, red if x in (4, w - 6) else dark)
+        sprite(d, ["..aaa..", ".abbba.", "abbcbba", "abcccba", "abbcbba", ".abbba.", "..aaa.."], 7, 6,
+               {'a': m[2], 'b': m[1], 'c': m[0]})
+        block(d, 10, 5, m[2])
     # ombre portée d'un pixel du jeu, comme l'emblème d'origine
     a = np.array(img)
     shadow = np.zeros_like(a)

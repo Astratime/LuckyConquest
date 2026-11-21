@@ -139,7 +139,15 @@ public enum EnemySymbol {
     /** La prochaine carte que tu joues s'endort : elle ne fait rien. */
     LULLABY("BERCEUSE"),
     /** Si tu l'as peu blessé depuis son dernier tour, il te prend ton bouclier ; sinon, il tire. */
-    HOLDUP("BRAQUAGE");
+    HOLDUP("BRAQUAGE"),
+    /** Temple du Destin : le glas sonne ; un de tes rouleaux est bloqué à ton prochain tirage. */
+    KNELL("GLAS"),
+    /** Un de tes rouleaux est lié au sien : à ton prochain tirage, il montre le symbole qu'il choisit (le plus rare de ta machine). */
+    FATE_THREAD("FIL DU DESTIN"),
+    /** Il lance deux dés et frappe ; un double double ses attaques de ce tour. */
+    DOUBLE_SIX("DOUBLE SIX"),
+    /** Il te renvoie tes Bingos : chaque Bingo de ce combat, depuis son dernier Karma, frappe en plus. */
+    KARMA("KARMA");
 
     /** Dégâts de base d'une Épée. */
     public static final int SWORD_DAMAGE   = 20;
@@ -278,6 +286,15 @@ public enum EnemySymbol {
     /** Braquage : le bouclier volé ne lui donne pas plus que ce nombre de ses Boucliers. */
     public static final int HOLDUP_MAX_SHIELDS = 4;
 
+    /** Glas : rouleaux du joueur bloqués à son prochain tirage. */
+    public static final int KNELL_REELS = 1;
+    /** Fil du destin : tours du joueur où son rouleau lié montre le symbole choisi (le prochain tirage). */
+    public static final int FATE_THREAD_TURNS = 2;
+    /** Double six : faces des dés, et multiplicateur de ses attaques du tour sur un double. */
+    public static final int DIE_FACES = 6, DOUBLE_FACTOR = 2;
+    /** Karma : Bingos du joueur gardés au plus, et coups d'Épée renvoyés par Bingo. */
+    public static final int KARMA_MAX = 5, KARMA_FACTOR = 2;
+
     private final String displayName;
 
     EnemySymbol(String displayName) {
@@ -411,6 +428,13 @@ public enum EnemySymbol {
             case HOLDUP -> Lang.f("Braquage : si tu lui as fait moins de {0} % de ses PV max depuis son dernier tour, il te prend "
                 + "ton bouclier. Sinon, attaque de {1}", HOLDUP_PERCENT,
                 kind.hurt(kind.swordDamage(), hard));
+            case KNELL -> Lang.t("Glas : un de tes rouleaux est bloqué à ton prochain tirage");
+            case FATE_THREAD -> Lang.t("Fil du destin : un de tes rouleaux est lié au sien. À ton prochain tirage, il montre le "
+                + "symbole le plus rare de ta machine");
+            case DOUBLE_SIX -> Lang.f("Double six : il lance deux dés et frappe ({0}). Sur un double, ses attaques du tour x{1}",
+                kind.hurt(kind.swordDamage(), hard), DOUBLE_FACTOR);
+            case KARMA -> Lang.f("Karma : il garde le compte de tes Bingos ({0} au plus) et te les renvoie : attaque de {1} par Bingo. "
+                + "Sans Bingo, il se protège", KARMA_MAX, kind.hurt(kind.swordDamage() * KARMA_FACTOR, hard));
         };
     }
 

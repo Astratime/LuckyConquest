@@ -63,8 +63,8 @@ class HardExplorationTest {
     @Test
     void coinsFollowTheDesertSpinCostPlusTwentyTwoAndAHalfPercentPerTier() {
         assertEquals(100, HardExploration.COINS_PERCENT, "aucune prime (choix d'Astra)");
-        // Paliers 1 (prairie), 2 (Foire), 3 (Rapide), 4 (Port), 6 (Mines), 8 (Casino), 10 (Désert), arrondis à la centaine.
-        int[] expected = {140_000, 171_500, 210_100, 257_400, 386_200, 579_500, 869_700};
+        // Paliers 1 (prairie), 2 (Foire), 3 (Rapide), 4 (Port), 6 (Mines), 8 (Casino), 9 (Temple), 10 (Désert), arrondis à la centaine.
+        int[] expected = {140_000, 171_500, 210_100, 257_400, 386_200, 579_500, 709_900, 869_700};
         for (Place place : Place.values()) {
             int cost = expected[place.ordinal()];
             assertEquals(cost, place.getSpinCost(true));

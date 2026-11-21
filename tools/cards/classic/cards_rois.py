@@ -661,4 +661,96 @@ def roi_haut_les_mains(pal):
     return finish(im, L)
 
 
+# --- Temple du Destin (10 lieux, 2026-11-21) -------------------------------------
+
+def roi_tocsin(pal):
+    """Le Tocsin du Maître des cloches : un grand gong de bronze frappé, des ondes de son tout autour."""
+    im = card(*pal)
+    L = layer()
+    def gong(d):
+        d.ellipse([8, 14, 30, 36], fill=O)
+    def gong_d(d):
+        d.ellipse([12, 18, 26, 32], fill=OD)
+        d.ellipse([13, 19, 25, 31], fill=O)
+        d.ellipse([16, 22, 22, 28], fill=Y)
+        d.point((11, 18), fill=OL)
+    part(L, gong, gong_d)
+    def frame(d):
+        d.rectangle([5, 7, 33, 10], fill=R)
+        d.rectangle([5, 10, 7, 47], fill=R)
+        d.rectangle([31, 10, 33, 47], fill=R)
+    part(L, frame, lambda d: d.line([(6, 8), (32, 8)], fill=RL))
+    D = ImageDraw.Draw(L)
+    for r in (13, 16):
+        D.arc([19 - r, 25 - r, 19 + r, 25 + r], 60, 120, fill=DK)
+    part(L, lambda d: d.line([(22, 46), (30, 38)], fill=WD, width=2))
+    part(L, lambda d: d.ellipse([18, 41, 24, 47], fill=R))
+    return finish(im, L)
+
+
+def roi_fil_du_destin(pal):
+    """Le Fil du destin de la Tisseuse : un fuseau d'or dont le fil lie deux cartes jumelles."""
+    im = card(*pal)
+    L = layer()
+    def spindle(d):
+        d.polygon([(19, 6), (23, 14), (19, 26), (15, 14)], fill=WD)
+    def spindle_d(d):
+        d.ellipse([15, 11, 23, 19], fill=Y)
+        for y in (13, 15, 17):
+            d.line([(16, y), (22, y)], fill=YD)
+    part(L, spindle, spindle_d)
+    def cards(d):
+        d.rectangle([6, 30, 15, 44], fill=WHITE)
+        d.rectangle([23, 30, 32, 44], fill=WHITE)
+    def cards_d(d):
+        d.rectangle([8, 32, 13, 42], fill=P)
+        d.rectangle([25, 32, 30, 42], fill=P)
+    part(L, cards, cards_d)
+    D = ImageDraw.Draw(L)
+    D.line([(19, 26), (19, 28), (11, 31)], fill=Y)
+    D.line([(19, 28), (27, 31)], fill=Y)
+    sparkle(D, 31, 10)
+    sparkle(D, 7, 14)
+    return finish(im, L)
+
+
+def roi_quitte_ou_double(pal):
+    """Quitte ou double du Seigneur des dés : deux dés rouges lancés, une épée qui frappe deux fois."""
+    im = card(*pal)
+    L = layer()
+    part(L, lambda d: d.line([(9, 44), (30, 8)], fill=STL, width=3))
+    def dice(d):
+        d.rectangle([6, 24, 18, 36], fill=R)
+        d.rectangle([20, 28, 32, 40], fill=R)
+    def dice_d(d):
+        for x, y in [(9, 27), (15, 27), (9, 30), (15, 30), (9, 33), (15, 33)]:
+            d.point((x, y), fill=WHITE)
+            d.point((x + 1, y), fill=WHITE)
+        for x, y in [(23, 31), (29, 31), (23, 34), (29, 34), (23, 37), (29, 37)]:
+            d.point((x, y), fill=WHITE)
+            d.point((x + 1, y), fill=WHITE)
+    part(L, dice, dice_d)
+    sparkle(ImageDraw.Draw(L), 31, 18)
+    return finish(im, L)
+
+
+def roi_jugement(pal):
+    """Le Jugement de l'Idole d'or : un visage d'or au troisième oeil ouvert, un bouclier derrière lui."""
+    im = card(*pal)
+    L = layer()
+    part(L, lambda d: d.polygon([(6, 12), (32, 12), (32, 34), (19, 46), (6, 34)], fill=B),
+         lambda d: d.polygon([(8, 14), (14, 14), (8, 20)], fill=BL))
+    def face(d):
+        d.ellipse([10, 10, 28, 40], fill=Y)
+    def face_d(d):
+        d.ellipse([16, 13, 22, 19], fill=WHITE)
+        d.ellipse([18, 15, 20, 17], fill=R)
+        d.line([(13, 24), (17, 24)], fill=DK)
+        d.line([(21, 24), (25, 24)], fill=DK)
+        d.line([(19, 26), (19, 31)], fill=YD)
+        d.line([(16, 34), (22, 34)], fill=YD)
+    part(L, face, face_d)
+    return finish(im, L)
+
+
 DESIGNS = {name: fn for name, fn in list(globals().items()) if name.startswith('roi_') and callable(fn)}

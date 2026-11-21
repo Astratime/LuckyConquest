@@ -147,6 +147,28 @@ public enum Dungeon {
         EnemyKind.PIEUVRE, EnemyKind.KRAKEN,
         List.of(new Loot("harpon", 40), new Loot("ancre", 40), new Loot("trident", 20))),
 
+    // ----- Le Temple du Destin -----
+
+    PARVIS("Le Parvis", "Parvis",
+        "Cent marches taillées dans la falaise. En haut, les cloches sonnent seules. Chaque coup annonce un malheur.",
+        EnemyKind.MOINE_HASARD, EnemyKind.MAITRE_CLOCHES,
+        List.of(new Loot("baton_d_encens", 40), new Loot("cloche_de_bronze", 40), new Loot("maillet_de_gong", 20))),
+
+    JARDIN_ORACLES("Le Jardin des oracles", "Jardin",
+        "Des fils d'or courent d'un arbre à l'autre. Chaque fil est une vie. Les oracles savent lesquels couper.",
+        EnemyKind.ORACLE_AVEUGLE, EnemyKind.TISSEUSE,
+        List.of(new Loot("feuille_de_the", 40), new Loot("boule_de_cristal", 40), new Loot("fil_d_or", 20))),
+
+    SALLE_DES_DES("La Salle des dés", "Salle des dés",
+        "Le sol est un plateau de jeu. Les dés y sont plus grands que des hommes. Ils roulent encore.",
+        EnemyKind.LANCEUR_DES, EnemyKind.SEIGNEUR_DES,
+        List.of(new Loot("de_d_ivoire", 40), new Loot("gobelet_a_des", 40), new Loot("double_six", 20))),
+
+    SANCTUAIRE("Le Sanctuaire", "Sanctuaire",
+        "Au coeur du temple, une idole d'or attend. Elle se souvient de chaque coup de chance. Et elle fait payer.",
+        EnemyKind.STATUE_ANIMEE, EnemyKind.IDOLE_OR,
+        List.of(new Loot("offrande_d_or", 40), new Loot("masque_sacre", 40), new Loot("oeil_de_l_idole", 20))),
+
     // ----- Le Désert de Braise -----
 
     CARAVANE("La Caravane", "Caravane",

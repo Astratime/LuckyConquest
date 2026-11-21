@@ -39,7 +39,7 @@ public class LastDrawEvent extends Event {
     private static final List<Symbol> LADDER = List.of(
         Symbol.CHERRY, Symbol.GRAPE, Symbol.WATERMELON, Symbol.TICKET, Symbol.PIGGY_BANK, Symbol.HORSESHOE, Symbol.BELL,
         Symbol.HEART, Symbol.DIE, Symbol.BAR, Symbol.ECU, Symbol.ANCHOR, Symbol.SPIKED_SHIELD, Symbol.SWORD,
-        Symbol.FANGS, Symbol.DOUBLE_BAR, Symbol.MOON, Symbol.BOMB, Symbol.SCYTHE, Symbol.STEAM, Symbol.FLAME, Symbol.TRIPLE_CHERRY,
+        Symbol.FANGS, Symbol.DOUBLE_BAR, Symbol.MOON, Symbol.BOMB, Symbol.SCYTHE, Symbol.STEAM, Symbol.GONG, Symbol.FLAME, Symbol.TRIPLE_CHERRY,
         Symbol.STAR, Symbol.DIAMOND, Symbol.NUGGET, Symbol.GOLD_CHIP, Symbol.GOLD_BAR, Symbol.CROWN, Symbol.SEVEN,
         Symbol.TRIPLE_SEVEN, Symbol.DEMON_KING, Symbol.LUCK_APOSTLE, Symbol.DESCENT, Symbol.BINGO_LIGHT, Symbol.JOKER);
 

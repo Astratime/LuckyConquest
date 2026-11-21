@@ -386,6 +386,54 @@ def combat_rapide():
     return looped_reverb(loop_of(track, d), wet=0.2, size=1.1, tail=0.6)
 
 
+@music('combat_temple')
+def combat_temple():
+    """
+    Le Temple du Destin : une marche de temple en Ré, gamme pentatonique mineure, 108 battements
+    par minute. Grands tambours (deux coups lourds, un roulement en fin de mesure), koto pincé qui
+    joue la mélodie, nappe de flûte grave, petites cloches sur les temps faibles ; un gong de bronze
+    ouvre chaque phrase de huit mesures. 32 mesures.
+    """
+    beat = 60 / 108
+    bar = 4 * beat
+    bars = 32
+    d = bars * bar
+    track = Track(d + 4)
+    penta = [0, 3, 5, 7, 10]                                    # pentatonique mineure
+    def note(deg, octave):
+        o, k = divmod(deg, 5)
+        return transpose(hz(f'D{octave}'), 12 * o + penta[k])
+    theme = [[0, None, 2, 3], [4, None, 3, None], [2, 3, 2, 0], [1, None, None, None],
+             [0, 1, 2, None], [4, 5, 4, None], [3, 2, 1, 2], [0, None, None, None],
+             [5, None, 4, 3], [4, None, 2, None], [3, 4, 3, 2], [1, None, None, None],
+             [2, None, 3, 4], [5, 7, 5, None], [4, 3, 1, 2], [0, None, None, None]]
+    drone_roots = ['D', 'D', 'A', 'D', 'C', 'D', 'A', 'D', 'F', 'C', 'D', 'A', 'C', 'D', 'A', 'D']
+    for i in range(bars):
+        t0 = i * bar
+        track.add(tom(55, 0.7), t0, 0.7)                        # les grands tambours
+        track.add(tom(55, 0.6), t0 + 2 * beat, 0.55)
+        for k in range(3):
+            track.add(tom(80, 0.25), t0 + 3 * beat + k * beat / 3, 0.25 + 0.08 * k)
+        root = drone_roots[i % 16]
+        track.add(stack(*(osc(hz(f'{root}3') * r, bar, 'sine') for r in (1.0, 1.5))) * expdec(bar, bar, attack=0.3), t0, 0.07)
+        for k in (1, 3):                                        # petites cloches
+            track.add(modal(hz('A6'), 0.8, GLASS_RATIOS, [0.5, 0.3, 0.2, 0.15]), t0 + k * beat + beat / 2, 0.04)
+        for k, deg in enumerate(theme[i % 16]):                 # le koto
+            if deg is None:
+                continue
+            length = 1
+            while k + length < 4 and theme[i % 16][k + length] is None:
+                length += 1
+            track.add(pluck(note(deg, 4), length * beat + 0.3, bright=4500), t0 + k * beat, 0.3)
+            if i % 2:                                           # l'écho une octave plus haut
+                track.add(pluck(note(deg, 5), 0.4, bright=6000), t0 + k * beat + beat / 2, 0.08)
+        if i % 8 == 0:                                          # le gong
+            gong = modal(hz('A1'), 4.0, [1.0, 1.47, 2.09, 2.56, 3.2, 4.1], [2.5, 2.0, 1.6, 1.2, 0.9, 0.7])
+            track.add(gong, t0, 0.22)
+            track.add(thump(80, 45, 0.5), t0, 0.13)
+    return looped_reverb(loop_of(track, d), wet=0.28, size=1.5, tail=0.8)
+
+
 @music('combat_desert')
 def combat_desert():
     """

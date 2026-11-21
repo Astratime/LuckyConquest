@@ -164,6 +164,23 @@ public final class EnemyLines {
             "Un Bingo ? Le fond de la mer s'en moque.",
             "Les abysses t'attendent.",
             "De l'encre ! Tu ne verras plus rien !");
+        // ----- Le Temple du Destin -----
+        say(EnemyKind.MAITRE_CLOCHES, "Un Bingo ? Les cloches l'avaient annoncé.",
+            "Sonne, sonne. Ça ne durera pas.",
+            "Écoute bien. C'est ton glas qui sonne.",
+            "Le grand bourdon ! Que tout le temple tremble !");
+        say(EnemyKind.TISSEUSE, "Un Bingo ? Ce fil-là, je l'avais tissé.",
+            "Tu tires sur ton fil. Attention, il casse.",
+            "Ton fil est court. Je n'ai plus qu'à couper.",
+            "Assez filé. Place aux ciseaux.");
+        say(EnemyKind.SEIGNEUR_DES, "Un Bingo ? Les dés t'aiment. Pour l'instant.",
+            "Joli coup. Relance, pour voir.",
+            "Double six. Comme toujours. Tu as perdu.",
+            "Les dés roulent ! Et ils roulent pour moi !");
+        say(EnemyKind.IDOLE_OR, "Un Bingo ? Je le garde. Je te le rendrai.",
+            "Chaque coup de chance se paie.",
+            "Ton karma est lourd. Il t'écrase.",
+            "Mon or s'éveille. Contemple ton reflet !");
         // ----- Le Désert de Braise -----
         say(EnemyKind.EMIR, "Tant d'or ! Signe ici, mon ami.",
             "Ta chance a un prix. C'est moi qui le fixe.",

@@ -33,6 +33,8 @@ public class EnemyMaluses {
     private int     intimidation;
     private int     markedTurns;
     private int     redHerrings;
+    /** Gong (rouleau du Temple du Destin) : rouleaux étourdis, qui ne tourneront pas à son prochain tirage. */
+    private int     stuns;
     private int     sleights;
     /** Flamme (rouleau du Désert) : ses tours où il brûle encore (ne se cumule pas, se relance). */
     private int     burnTurns;
@@ -224,6 +226,17 @@ public class EnemyMaluses {
         return true;
     }
 
+    /** Gong : un de ses rouleaux est étourdi, il ne tournera pas à son prochain tirage (un seul par tirage). */
+    public void stun() { stuns = 1; }
+    /** @return {@code true} si un de ses rouleaux est étourdi pour son prochain tirage. */
+    public boolean isStunned() { return stuns > 0; }
+    /** Son tirage : l'étourdissement vaut pour celui-ci. @return {@code true} s'il y en avait un */
+    public boolean takeStun() {
+        if (stuns <= 0) return false;
+        stuns = 0;
+        return true;
+    }
+
     /** Tour de passe-passe : son prochain effet spécial sera annulé. */
     public void addSleight() { sleights++; }
     /** @return les Tours de passe-passe en attente. */
@@ -365,6 +378,7 @@ public class EnemyMaluses {
         if (intimidation > 0) count++;
         if (markedTurns > 0) count++;
         if (redHerrings > 0) count++;
+        if (stuns > 0) count++;
         if (sleights > 0) count++;
         if (claims > 0) count++;
         if (nextAttackPercent < 100) count++;

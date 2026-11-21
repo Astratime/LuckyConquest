@@ -357,5 +357,64 @@
         "extraCards": 1
       }
     ]
+  },
+  {
+    "id": "roi_tocsin",
+    "name": "Tocsin",
+    "assetPath": "cards/special/roi_tocsin.png",
+    "effects": [
+      {
+        "type": "GONG_MALLET"
+      },
+      {
+        "type": "BOOST_SYMBOL",
+        "symbol": "GONG",
+        "amount": 60
+      }
+    ]
+  },
+  {
+    "id": "roi_fil_du_destin",
+    "name": "Fil du destin",
+    "assetPath": "cards/special/roi_fil_du_destin.png",
+    "effects": [
+      {
+        "type": "GUARANTEED_PAIR",
+        "percent": 100
+      },
+      {
+        "type": "GAINS_PERCENT",
+        "percent": 40
+      }
+    ]
+  },
+  {
+    "id": "roi_quitte_ou_double",
+    "name": "Quitte ou double",
+    "assetPath": "cards/special/roi_quitte_ou_double.png",
+    "effects": [
+      {
+        "type": "BEST_OF_TWO"
+      },
+      {
+        "type": "ATTACK",
+        "bonus": 120
+      }
+    ]
+  },
+  {
+    "id": "roi_jugement",
+    "name": "Jugement",
+    "assetPath": "cards/special/roi_jugement.png",
+    "effects": [
+      {
+        "type": "DEFENSE",
+        "bonus": 90
+      },
+      {
+        "type": "TRANSFUSION",
+        "percent": 10
+      }
+    ]
   }
 ]

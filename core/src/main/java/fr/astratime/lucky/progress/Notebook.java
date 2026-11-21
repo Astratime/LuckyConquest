@@ -87,6 +87,15 @@ public final class Notebook {
             + "C'est la seule dette que je n'ai jamais remboursée.");
         page(EnemyKind.KRAKEN, "J'ai englouti mon propre casino pour que personne ne le trouve. Le Kraken le garde. "
             + "Tu l'as trouvé quand même.");
+        // ----- Le Temple du Destin -----
+        page(EnemyKind.MAITRE_CLOCHES, "Le Maître des cloches sonne l'heure de chaque partie. C'est moi qui lui ai donné "
+            + "la corde. Il ne l'a jamais lâchée.");
+        page(EnemyKind.TISSEUSE, "La Tisseuse m'a montré mon fil, un jour. Il était long, très long. "
+            + "Je ne lui ai jamais demandé où il finissait.");
+        page(EnemyKind.SEIGNEUR_DES, "Le Seigneur des Dés n'a jamais perdu un lancer. Il dit que c'est la chance. "
+            + "Je sais que c'est moi qui ai taillé ses dés.");
+        page(EnemyKind.IDOLE_OR, "L'Idole d'Or est faite de l'or de la comète. Elle se souvient de chaque Bingo. "
+            + "Comme moi.");
         // ----- Le Désert de Braise -----
         page(EnemyKind.EMIR, "L'Émir compte ses grains de sable comme des jetons. Il en manque toujours un. "
             + "C'est moi qui l'ai pris : c'est mon porte-bonheur.");

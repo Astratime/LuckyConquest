@@ -194,6 +194,8 @@ public class EnemyTurnResolver {
         int     actFactor;
         /** Sa Prédiction est sortie au tirage du joueur. */
         boolean foreseen;
+        /** Présage manqué au tirage du joueur (Temple du Destin) : ses attaques de ce tour montent. */
+        boolean omenMissed;
 
         List<Card> drawn;
         List<Card> played;
@@ -262,6 +264,7 @@ public class EnemyTurnResolver {
                 openingEvents.add(new StatusEvent(Lang.f("CRÉANCES x{0}", bills), EffectPopup.Style.DAMAGE));
                 openingEvents.add(new PlayerDamagedEvent(lost, shieldBefore - player.getShield(), player.getShield()));
             }
+            omenMissed = enemy.takeOmenMissed(); // Présage (Temple du Destin) : le symbole annoncé n'est pas sorti
             foreseen = enemy.takePredictionHit(); // sa Prédiction est sortie au tirage du joueur
             if (foreseen) {
                 openingEvents.add(new StatusEvent(Lang.f("PRÉDICTION RÉALISÉE : ATTAQUES x{0}",
@@ -449,6 +452,10 @@ public class EnemyTurnResolver {
         void spinReels() {
             // Fausse piste (Bluffeur) : un de ses rouleaux ne tourne pas (une chance sur deux pour un boss ou un roi)
             int reelCount = enemy.getReelCount();
+            if (enemy.getMaluses().takeStun() && reelCount > 1) { // Gong (Temple du Destin) : un rouleau étourdi
+                reelCount--;
+                openingEvents.add(new StatusEvent(Lang.t("GONG : UN ROULEAU ÉTOURDI NE TOURNE PAS"), EffectPopup.Style.DEFENSE));
+            }
             if (enemy.getMaluses().takeRedHerring()) {
                 if (kind.isBoss() && random.nextBoolean()) {
                     openingEvents.add(new StatusEvent(Lang.t("FAUSSE PISTE : IL NE S'Y LAISSE PAS PRENDRE"), EffectPopup.Style.SPECIAL));
@@ -482,6 +489,7 @@ public class EnemyTurnResolver {
                 openingEvents.add(new StatusEvent(Lang.f("INTIMIDÉ : SES ATTAQUES -{0} %", intimidated), EffectPopup.Style.DEFENSE));
             }
             if (hellBound) turn.malusPercent = turn.malusPercent * (100 - EnemyMaluses.HELL_DAMAGE_PERCENT) / 100;
+            if (omenMissed) turn.malusPercent = turn.malusPercent * (100 + PlaceRule.OMEN_ENEMY_PERCENT) / 100; // Présage manqué
             int shifted = enemy.getMaluses().takeNextAttackPercent(); // Provocation, Carte biseautée
             if (shifted != 100) {
                 turn.malusPercent = turn.malusPercent * shifted / 100;
@@ -581,7 +589,8 @@ public class EnemyTurnResolver {
         /** Le symbole {@code symbol} du rouleau {@code i} agit une fois. */
         private void act(EnemySymbol symbol, int i, List<Event> events) {
             boolean done = actTowerOpening(symbol, i, events) || actTowerLate(symbol, events)
-                || actPortMinesCasino(symbol, events) || actFairDesert(symbol, events) || actExpress(symbol, events);
+                || actPortMinesCasino(symbol, events) || actFairDesert(symbol, events) || actExpress(symbol, events)
+                || actTemple(symbol, events);
             if (!done) throw new IllegalStateException("Symbole sans effet : " + symbol);
         }
 
@@ -939,6 +948,81 @@ public class EnemyTurnResolver {
                         events.add(turn.shield((int) Math.min(taken, (long) kind.shieldDefense() * EnemySymbol.HOLDUP_MAX_SHIELDS)));
                     } else {
                         events.add(turn.strike(kind.swordDamage())); // rien à prendre, ou il a eu peur : il tire
+                    }
+                }
+                default -> {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        /**
+         * Exploration : le Temple du Destin (Glas, Fil du destin, Double six, Karma).
+         *
+         * @return {@code false} si {@code symbol} n'est pas de cette famille
+         */
+        private boolean actTemple(EnemySymbol symbol, List<Event> events) {
+            switch (symbol) {
+                case KNELL -> {
+                    int reels = EnemySymbol.KNELL_REELS * (enemy.takeCharge(EnemySignature.CARILLON) ? 2 : 1);
+                    int blocked = 0;
+                    for (int k = 0; k < reels; k++) {
+                        List<Integer> free = new ArrayList<>();
+                        for (int reel = 0; reel < SlotMachine.SYMBOL_COUNT; reel++) {
+                            if (!curses.getForbiddenReels().contains(reel)) free.add(reel);
+                        }
+                        if (free.size() <= 1) break; // il laisse toujours un rouleau au joueur
+                        curses.voidReel(free.get(random.nextInt(free.size())));
+                        blocked++;
+                    }
+                    events.add(blocked == 0 ? turn.strike(kind.swordDamage())
+                        : new StatusEvent(Lang.n(blocked, "GLAS : UN DE TES ROULEAUX BLOQUÉ", "GLAS : {0} DE TES ROULEAUX BLOQUÉS",
+                            blocked), EffectPopup.Style.DAMAGE));
+                    for (int k = 0; k < boosts.getOrDefault(EnemySignature.TOCSIN, 0); k++) events.add(turn.strike(kind.swordDamage()));
+                }
+                case FATE_THREAD -> {
+                    Symbol chosen = curses.getRiggedTurns() > 0 ? null : rigSymbol(player.getSlotMachine().getReels());
+                    if (chosen == null) {
+                        events.add(turn.strike(kind.swordDamage())); // déjà lié : il frappe
+                    } else {
+                        int reel = random.nextInt(SlotMachine.SYMBOL_COUNT);
+                        curses.rig(reel, chosen, EnemySymbol.FATE_THREAD_TURNS);
+                        events.add(new StatusEvent(Lang.f("FIL DU DESTIN : ROULEAU {0} = {1}", reel + 1, chosen.getDisplayName()),
+                            EffectPopup.Style.DAMAGE));
+                    }
+                    if (enemy.takeCharge(EnemySignature.CISEAUX_DU_DESTIN)) {
+                        int cut = player.meltShield(100);
+                        if (cut > 0) events.add(new StatusEvent(Lang.f("CISEAUX : {0} DE BOUCLIER COUPÉ", Lang.big(cut)),
+                            EffectPopup.Style.DAMAGE));
+                    }
+                    for (int k = 0; k < boosts.getOrDefault(EnemySignature.QUENOUILLE, 0); k++) {
+                        events.add(heal(enemy, EnemySignature.QUENOUILLE_PERCENT * healFactor / 100f));
+                    }
+                }
+                case DOUBLE_SIX -> {
+                    int first = 1 + random.nextInt(EnemySymbol.DIE_FACES), second = 1 + random.nextInt(EnemySymbol.DIE_FACES);
+                    if (enemy.takeCharge(EnemySignature.COUP_DE_DES)) second = first;
+                    if (first == second) {
+                        int factor = boosts.containsKey(EnemySignature.QUITTE_OU_DOUBLE) ? EnemySymbol.DOUBLE_FACTOR + 1
+                            : EnemySymbol.DOUBLE_FACTOR;
+                        turn.attackFactor *= factor;
+                        events.add(new StatusEvent(Lang.f("DOUBLE {0} ! ATTAQUES x{1}", first, factor), EffectPopup.Style.ATTACK));
+                    } else {
+                        events.add(new StatusEvent(Lang.f("DÉS : {0} ET {1}", first, second), EffectPopup.Style.SPECIAL));
+                    }
+                    events.add(turn.strike(kind.swordDamage()));
+                }
+                case KARMA -> {
+                    int bingos = enemy.takeKarma();
+                    int factor = EnemySymbol.KARMA_FACTOR * (enemy.takeCharge(EnemySignature.JUGEMENT) ? 2 : 1);
+                    if (bingos == 0) {
+                        events.add(new StatusEvent(Lang.t("KARMA : RIEN À RENDRE"), EffectPopup.Style.SPECIAL));
+                        events.add(turn.shield(kind.shieldDefense() + shieldBonus)); // pas de Bingo : il se protège
+                    } else {
+                        events.add(new StatusEvent(Lang.n(bingos, "KARMA : TON BINGO TE REVIENT", "KARMA : TES {0} BINGOS TE REVIENNENT",
+                            bingos), EffectPopup.Style.ATTACK));
+                        events.add(turn.strike(kind.swordDamage() * factor * bingos));
                     }
                 }
                 default -> {
@@ -1574,6 +1658,11 @@ public class EnemyTurnResolver {
                         events.add(new StatusEvent(Lang.f("COMPTE À REBOURS : PLUS QUE {0} TOURS", enemy.getTurnLimit()),
                             EffectPopup.Style.DAMAGE));
                     }
+                }
+                case OFFRANDE -> {
+                    enemy.addKarma(1);
+                    events.add(new StatusEvent(Lang.f("OFFRANDE : KARMA {0}/{1}", enemy.getKarma(), EnemySymbol.KARMA_MAX),
+                        EffectPopup.Style.SPECIAL));
                 }
                 case CHARBON -> {
                     boolean exploded = enemy.tickPressure();

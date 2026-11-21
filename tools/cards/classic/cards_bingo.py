@@ -23,6 +23,8 @@ BINGO_SYMBOLS = {
     'bingo_light': '34-bingo_light',
     # Le Rapide de Minuit (2026-11-21)
     'steam': '35-steam',
+    # Le Temple du Destin (2026-11-21)
+    'gong': '38-gong',
 }
 
 

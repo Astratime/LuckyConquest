@@ -609,6 +609,73 @@ public enum EnemyKind {
         List.of(Card.Suit.PIQUE, Card.Suit.CARREAU, Card.Suit.TREFLE, Card.Suit.COEUR),
         List.of(Card.Suit.COEUR, Card.Suit.CARREAU, Card.Suit.PIQUE, Card.Suit.TREFLE)),
 
+    // ----- Exploration : le Temple du Destin -----
+
+    MOINE_HASARD("Moine du hasard", "MOINE DU HASARD",
+        "Il sonne les cloches du parvis. À chaque coup de glas, un de tes rouleaux se fige.",
+        1_500_000, 60, 15,
+        weights(EnemySymbol.SWORD, 2, EnemySymbol.KNELL, 1, EnemySymbol.SHIELD, 1),
+        deck(new int[] {3, 6, 9, 12, 14}, new int[] {4, 8, 12},
+            new int[] {5, 9, 13}, new int[] {3, 7, 11}),
+        List.of(Card.Suit.PIQUE, Card.Suit.CARREAU, Card.Suit.TREFLE, Card.Suit.COEUR),
+        List.of(Card.Suit.COEUR, Card.Suit.CARREAU, Card.Suit.PIQUE, Card.Suit.TREFLE)),
+    MAITRE_CLOCHES("Le Maître des cloches", "MAÎTRE DES CLOCHES",
+        "Il règne sur le grand bourdon du temple. Quand il sonne le glas, tes rouleaux se taisent.",
+        3_000_000, 100, 8,
+        weights(EnemySymbol.KNELL, 2, EnemySymbol.SWORD, 2, EnemySymbol.SHIELD, 1),
+        deck(new int[] {3, 6, 9, 12, 14}, new int[] {4, 8, 12},
+            new int[] {5, 9, 13}, new int[] {3, 7, 11}),
+        List.of(Card.Suit.PIQUE, Card.Suit.CARREAU, Card.Suit.TREFLE, Card.Suit.COEUR),
+        List.of(Card.Suit.COEUR, Card.Suit.CARREAU, Card.Suit.PIQUE, Card.Suit.TREFLE)),
+    ORACLE_AVEUGLE("Oracle aveugle", "ORACLE AVEUGLE",
+        "Ses yeux sont bandés. Il voit quand même ton avenir. Et il le noue à son fil.",
+        1_500_000, 60, 15,
+        weights(EnemySymbol.SWORD, 2, EnemySymbol.FATE_THREAD, 1, EnemySymbol.POTION, 1),
+        deck(new int[] {3, 6, 9, 12, 14}, new int[] {4, 8, 12},
+            new int[] {5, 9, 13}, new int[] {3, 7, 11}),
+        List.of(Card.Suit.PIQUE, Card.Suit.CARREAU, Card.Suit.TREFLE, Card.Suit.COEUR),
+        List.of(Card.Suit.COEUR, Card.Suit.CARREAU, Card.Suit.PIQUE, Card.Suit.TREFLE)),
+    TISSEUSE("La Tisseuse de destins", "TISSEUSE DE DESTINS",
+        "Elle file le destin de chaque joueur. Ton rouleau tourne, mais c'est elle qui choisit le symbole.",
+        3_000_000, 100, 8,
+        weights(EnemySymbol.FATE_THREAD, 2, EnemySymbol.SWORD, 2, EnemySymbol.SHIELD, 1, EnemySymbol.POTION, 1),
+        deck(new int[] {3, 6, 9, 12, 14}, new int[] {4, 8, 12},
+            new int[] {5, 9, 13}, new int[] {3, 7, 11}),
+        List.of(Card.Suit.PIQUE, Card.Suit.CARREAU, Card.Suit.TREFLE, Card.Suit.COEUR),
+        List.of(Card.Suit.COEUR, Card.Suit.CARREAU, Card.Suit.PIQUE, Card.Suit.TREFLE)),
+    LANCEUR_DES("Lanceur de dés", "LANCEUR DE DÉS",
+        "Il lance deux dés à chaque tour. Sur un double, il frappe deux fois plus fort.",
+        1_500_000, 60, 15,
+        weights(EnemySymbol.SWORD, 2, EnemySymbol.DOUBLE_SIX, 1, EnemySymbol.SHIELD, 1),
+        deck(new int[] {3, 6, 9, 12, 14}, new int[] {4, 8, 12},
+            new int[] {5, 9, 13}, new int[] {3, 7, 11}),
+        List.of(Card.Suit.PIQUE, Card.Suit.CARREAU, Card.Suit.TREFLE, Card.Suit.COEUR),
+        List.of(Card.Suit.COEUR, Card.Suit.CARREAU, Card.Suit.PIQUE, Card.Suit.TREFLE)),
+    SEIGNEUR_DES("Le Seigneur des Dés", "SEIGNEUR DES DÉS",
+        "Ses dés sont taillés dans l'or de la comète. Ils tombent toujours du bon côté. Le sien.",
+        3_000_000, 100, 8,
+        weights(EnemySymbol.DOUBLE_SIX, 2, EnemySymbol.SWORD, 2, EnemySymbol.SHIELD, 1, EnemySymbol.RAGE, 1),
+        deck(new int[] {3, 6, 9, 12, 14}, new int[] {4, 8, 12},
+            new int[] {5, 9, 13}, new int[] {3, 7, 11}),
+        List.of(Card.Suit.PIQUE, Card.Suit.CARREAU, Card.Suit.TREFLE, Card.Suit.COEUR),
+        List.of(Card.Suit.COEUR, Card.Suit.CARREAU, Card.Suit.PIQUE, Card.Suit.TREFLE)),
+    STATUE_ANIMEE("Statue animée", "STATUE ANIMÉE",
+        "La pierre s'est réveillée. Elle compte tes Bingos. Elle te les rendra.",
+        1_500_000, 60, 15,
+        weights(EnemySymbol.SWORD, 2, EnemySymbol.KARMA, 1, EnemySymbol.SHIELD, 2),
+        deck(new int[] {3, 6, 9, 12, 14}, new int[] {4, 8, 12},
+            new int[] {5, 9, 13}, new int[] {3, 7, 11}),
+        List.of(Card.Suit.PIQUE, Card.Suit.CARREAU, Card.Suit.TREFLE, Card.Suit.COEUR),
+        List.of(Card.Suit.COEUR, Card.Suit.CARREAU, Card.Suit.PIQUE, Card.Suit.TREFLE)),
+    IDOLE_OR("L'Idole d'Or", "IDOLE D'OR",
+        "Elle trône au coeur du sanctuaire. Chaque coup de chance a un prix : le Karma te le renvoie.",
+        3_000_000, 100, 8,
+        weights(EnemySymbol.KARMA, 2, EnemySymbol.SWORD, 2, EnemySymbol.SHIELD, 1),
+        deck(new int[] {3, 6, 9, 12, 14}, new int[] {4, 8, 12},
+            new int[] {5, 9, 13}, new int[] {3, 7, 11}),
+        List.of(Card.Suit.PIQUE, Card.Suit.CARREAU, Card.Suit.TREFLE, Card.Suit.COEUR),
+        List.of(Card.Suit.COEUR, Card.Suit.CARREAU, Card.Suit.PIQUE, Card.Suit.TREFLE)),
+
     // ----- Exploration : le Désert de Braise -----
 
     CARAVANIER("Caravanier", "CARAVANIER",
@@ -720,11 +787,20 @@ public enum EnemyKind {
             new int[] {5, 9, 13, 14}, new int[] {3, 7, 11}),
         List.of(Card.Suit.PIQUE, Card.Suit.CARREAU, Card.Suit.TREFLE, Card.Suit.COEUR),
         List.of(Card.Suit.COEUR, Card.Suit.CARREAU, Card.Suit.PIQUE, Card.Suit.TREFLE)),
+    RIVAL_TEMPLE("Le Joueur Masqué", "JOUEUR MASQUÉ",
+        "Au temple, les moines lui ont appris à faire parler les dés. Il ne lance plus : il choisit.",
+        4_000_000, 150, 3,
+        weights(EnemySymbol.SWORD, 2, EnemySymbol.SHIELD, 1, EnemySymbol.POTION, 1, EnemySymbol.RIGGED_GAME, 1, EnemySymbol.HOLDUP, 1, EnemySymbol.BOARDING, 1,
+            EnemySymbol.DRILL, 1, EnemySymbol.BANK_BITE, 1, EnemySymbol.DOUBLE_SIX, 1),
+        deck(new int[] {3, 6, 9, 12, 13, 14}, new int[] {4, 8, 12, 14},
+            new int[] {5, 9, 13, 14}, new int[] {3, 7, 11}),
+        List.of(Card.Suit.PIQUE, Card.Suit.CARREAU, Card.Suit.TREFLE, Card.Suit.COEUR),
+        List.of(Card.Suit.COEUR, Card.Suit.CARREAU, Card.Suit.PIQUE, Card.Suit.TREFLE)),
     RIVAL_DESERT("Le Joueur Démasqué", "JOUEUR DÉMASQUÉ",
         "Il a ôté son masque. Le Croupier vous a tout appris, à lui comme à toi. Il ne restera qu'un seul élève.",
         6_000_000, 40, 25,
         weights(EnemySymbol.SWORD, 2, EnemySymbol.SHIELD, 1, EnemySymbol.POTION, 1, EnemySymbol.RIGGED_GAME, 1, EnemySymbol.HOLDUP, 1, EnemySymbol.BOARDING, 1,
-            EnemySymbol.DRILL, 1, EnemySymbol.BANK_BITE, 1, EnemySymbol.BILL, 1),
+            EnemySymbol.DRILL, 1, EnemySymbol.BANK_BITE, 1, EnemySymbol.DOUBLE_SIX, 1, EnemySymbol.BILL, 1),
         deck(new int[] {3, 6, 9, 12, 13, 14}, new int[] {4, 8, 12, 14},
             new int[] {5, 9, 13, 14}, new int[] {3, 7, 11, 14}),
         List.of(Card.Suit.PIQUE, Card.Suit.CARREAU, Card.Suit.TREFLE, Card.Suit.COEUR),
@@ -1170,7 +1246,7 @@ public enum EnemyKind {
             case REQUIN, REQUIN_BANQUIER -> VAULTS_DAMAGE;
             case SCORPION, DJINN -> OASIS_DAMAGE;
             case GRAND_CROUPIER -> TOWER_LATE_DAMAGE;
-            case RIVAL_FOIRE, RIVAL_RAPIDE, RIVAL_PORT, RIVAL_MINES, RIVAL_CASINO, RIVAL_DESERT ->
+            case RIVAL_FOIRE, RIVAL_RAPIDE, RIVAL_PORT, RIVAL_MINES, RIVAL_CASINO, RIVAL_TEMPLE, RIVAL_DESERT ->
                 Place.of(this).getDamagePercent() * rivalDamage(Place.of(this)) / 100;
             default -> {
                 if (chapterPower() >= CHAPTER_3_POWER) yield TOWER_DAMAGE_PERCENT[Chapter.of(this).getNumber() - 1];
@@ -1225,6 +1301,7 @@ public enum EnemyKind {
             case PORT   -> 125;
             case MINES  -> 130;
             case CASINO -> 110;
+            case TEMPLE -> 130;
             case DESERT -> 150;
             case PRAIRIE -> 100;
         };
@@ -1321,7 +1398,7 @@ public enum EnemyKind {
     /** @return {@code true} pour le Joueur Masqué, à l'une de ses cinq rencontres (voir {@link fr.astratime.lucky.entities.exploration.Rival}). */
     public boolean isRival() {
         return switch (this) {
-            case RIVAL_FOIRE, RIVAL_RAPIDE, RIVAL_PORT, RIVAL_MINES, RIVAL_CASINO, RIVAL_DESERT -> true;
+            case RIVAL_FOIRE, RIVAL_RAPIDE, RIVAL_PORT, RIVAL_MINES, RIVAL_CASINO, RIVAL_TEMPLE, RIVAL_DESERT -> true;
             default -> false;
         };
     }
@@ -1333,6 +1410,7 @@ public enum EnemyKind {
                  CAPITAINE_RAT, TAVERNIER, GARDIEN_PHARE, CAPITAINE_NOIR,
                  MONSIEUR_LOYAL, CONDUCTEUR, ROUE_FORTUNE, ROI_FORAIN, EMIR, PHARAON, DJINN, DRAGON,
                  LOCOMOTIVE, GRAND_CHEF, DAME_EN_NOIR, DESPERADO,
+                 MAITRE_CLOCHES, TISSEUSE, SEIGNEUR_DES, IDOLE_OR,
                  BARON_OR, GRAND_FOREUR, MAITRE_FORGE, COEUR_MONTAGNE,
                  SIRENE, JACKPOT_VIVANT, REQUIN_BANQUIER, KRAKEN -> true;
             default -> false;
@@ -1475,6 +1553,10 @@ public enum EnemyKind {
             case GRAND_CHEF -> EnemySymbol.FANG;
             case DAME_EN_NOIR -> EnemySymbol.VENOM;
             case DESPERADO -> EnemySymbol.BOARDING;
+            case MAITRE_CLOCHES -> EnemySymbol.DRUNK;
+            case TISSEUSE -> EnemySymbol.PREDICTION;
+            case SEIGNEUR_DES -> EnemySymbol.LOADED_DIE;
+            case IDOLE_OR -> EnemySymbol.MIRROR;
             default -> null;
         };
     }
@@ -1541,6 +1623,10 @@ public enum EnemyKind {
             case GRAND_CHEF -> Lang.t("COUP DE FEU EN CUISINE : CROC !");
             case DAME_EN_NOIR -> Lang.t("LA VOILETTE SE LÈVE : VENIN !");
             case DESPERADO -> Lang.t("TOUT LE MONDE À TERRE : ABORDAGE !");
+            case MAITRE_CLOCHES -> Lang.t("LE BOURDON TE SAOULE : IVRESSE !");
+            case TISSEUSE -> Lang.t("ELLE LIT TON FIL : PRÉDICTION !");
+            case SEIGNEUR_DES -> Lang.t("LES DÉS SONT PIPÉS : DÉ PIPÉ !");
+            case IDOLE_OR -> Lang.t("SON OR TE RENVOIE TON IMAGE : REFLET !");
             default -> Lang.f("PHASE {0} !", phase);
         };
     }
@@ -1726,6 +1812,14 @@ public enum EnemyKind {
             case DAME_EN_NOIR -> List.of(EnemySignature.MARCHAND_DE_SABLE, EnemySignature.DARD);
             case CONVOYEUR -> List.of(EnemySignature.HAUT_LES_MAINS);
             case DESPERADO -> List.of(EnemySignature.HAUT_LES_MAINS, EnemySignature.TOUT_SUR_LE_ROUGE);
+            case MOINE_HASARD -> List.of(EnemySignature.CARILLON);
+            case MAITRE_CLOCHES -> List.of(EnemySignature.CARILLON, EnemySignature.TOCSIN);
+            case ORACLE_AVEUGLE -> List.of(EnemySignature.QUENOUILLE);
+            case TISSEUSE -> List.of(EnemySignature.QUENOUILLE, EnemySignature.CISEAUX_DU_DESTIN);
+            case LANCEUR_DES -> List.of(EnemySignature.COUP_DE_DES);
+            case SEIGNEUR_DES -> List.of(EnemySignature.COUP_DE_DES, EnemySignature.QUITTE_OU_DOUBLE);
+            case STATUE_ANIMEE -> List.of(EnemySignature.OFFRANDE);
+            case IDOLE_OR -> List.of(EnemySignature.OFFRANDE, EnemySignature.JUGEMENT);
             // Le Joueur Masqué : à chaque rencontre, il garde une carte du lieu traversé.
             case RIVAL_FOIRE -> List.of(EnemySignature.CARTE_BISEAUTEE);
             case RIVAL_RAPIDE -> List.of(EnemySignature.CARTE_BISEAUTEE, EnemySignature.HAUT_LES_MAINS);
@@ -1733,8 +1827,10 @@ public enum EnemyKind {
             case RIVAL_MINES -> List.of(EnemySignature.CARTE_BISEAUTEE, EnemySignature.HAUT_LES_MAINS, EnemySignature.GRAPPIN, EnemySignature.MECHE_DE_DIAMANT);
             case RIVAL_CASINO -> List.of(EnemySignature.CARTE_BISEAUTEE, EnemySignature.HAUT_LES_MAINS, EnemySignature.GRAPPIN, EnemySignature.MECHE_DE_DIAMANT,
                 EnemySignature.FRENESIE);
+            case RIVAL_TEMPLE -> List.of(EnemySignature.CARTE_BISEAUTEE, EnemySignature.HAUT_LES_MAINS, EnemySignature.GRAPPIN, EnemySignature.MECHE_DE_DIAMANT,
+                EnemySignature.FRENESIE, EnemySignature.COUP_DE_DES);
             case RIVAL_DESERT -> List.of(EnemySignature.CARTE_BISEAUTEE, EnemySignature.HAUT_LES_MAINS, EnemySignature.GRAPPIN, EnemySignature.MECHE_DE_DIAMANT,
-                EnemySignature.FRENESIE, EnemySignature.USURE);
+                EnemySignature.FRENESIE, EnemySignature.COUP_DE_DES, EnemySignature.USURE);
             default -> List.of();
         };
     }

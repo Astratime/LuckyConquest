@@ -102,7 +102,9 @@ public final class Lexicon {
                 + "russe, Corruption...) et des rouleaux. Le prix double à chaque achat.")),
             term(Lang.t("Vapeur"), Lang.f("Rouleau du Rapide de Minuit. Chaque tirage d'affilée où la Vapeur sort monte "
                 + "sa pression : +{0} % à son coup par cran, {1} crans au plus. Un tirage sans elle la fait retomber.",
-                ReelGauges.STEAM_STEP_PERCENT, ReelGauges.STEAM_MAX))));
+                ReelGauges.STEAM_STEP_PERCENT, ReelGauges.STEAM_MAX)),
+            term(Lang.t("Gong"), Lang.f("Rouleau du Temple du Destin. Une fois sur {0}, il étourdit un rouleau de l'ennemi : "
+                + "ce rouleau ne tourne pas à son prochain tirage.", 100 / ReelGauges.GONG_STUN_PERCENT))));
     }
 
     private static Category cards() {
@@ -201,7 +203,12 @@ public final class Lexicon {
             term(Lang.t("Pression"), Lang.f("Au Rapide de Minuit, la chaudière de l'ennemi monte d'un cran. Au bout de {0} crans, "
                 + "elle explose en un gros coup. Chaque coup qui lui enlève au moins {1} % de ses PV max la fait baisser.",
                 EnemySymbol.PRESSURE_MAX, Lang.decimal(String.valueOf(EnemySymbol.PRESSURE_HIT_PER_MILLE / 10.0)
-                    .replaceAll("\\.0$", ""))))));
+                    .replaceAll("\\.0$", "")))),
+            term(Lang.t("Présage"), Lang.f("Règle du Temple du Destin : chaque tour, le temple annonce un symbole de ta "
+                + "machine. S'il sort à ton tirage, Puissance +{0} ce tour. Sinon, l'ennemi frappe {1} % plus fort à son tour.",
+                PlaceRule.OMEN_POWER, PlaceRule.OMEN_ENEMY_PERCENT)),
+            term(Lang.t("Karma"), Lang.f("Au Temple du Destin, certains ennemis comptent tes Bingos ({0} au plus) et te les "
+                + "renvoient en coups. Sans Bingo à rendre, ils se protègent.", EnemySymbol.KARMA_MAX))));
     }
 
     private static Category progress() {
@@ -213,8 +220,9 @@ public final class Lexicon {
             term(Lang.t("Rang"), Lang.t("Acheté à la boutique. Plus de PV max, des symboles plus forts et un % de gains "
                 + "en plus sur toute la machine. Tu choisis ton rang à la Table du croupier.")),
             term(Lang.t("Lieu de ton rang"), Lang.f("Chaque rang a son lieu d'Exploration : la Prairie sans rang, la Foire "
-                + "pour l'Avare et le Parieur, le Rapide de Minuit pour le Flambeur, le Port pour l'Habitué, puis un lieu "
-                + "pour deux rangs jusqu'au Désert (Roi du casino et Légende). Un lieu en dessous ne rapporte que {0} % des pièces, deux lieux ou plus en dessous {1} %.",
+                + "pour l'Avare et le Parieur, le Rapide de Minuit pour le Flambeur, le Port pour l'Habitué, les Mines pour "
+                + "le Requin et le Gros bonnet, le Casino pour le Baron et le Magnat, le Temple du Destin pour le Roi du "
+                + "casino et le Désert pour la Légende. Un lieu en dessous ne rapporte que {0} % des pièces, deux lieux ou plus en dessous {1} %.",
                 PlayerProfile.LOWER_PLACE_PERCENT, PlayerProfile.FAR_LOWER_PLACE_PERCENT)),
             term(Lang.t("Prestige"), Lang.f("Une fois tous les rangs achetés, la boutique te propose de les rendre. "
                 + "Chaque niveau multiplie par {0} tes PV max, l'attaque et la défense de tes symboles, et ajoute "
@@ -223,7 +231,7 @@ public final class Lexicon {
                 PlayerProfile.prestigeNumeral(PlayerProfile.MAX_PRESTIGE))),
             term(Lang.t("Sceau de Prestige"), Lang.t("Chaque Prestige demande un lieu vidé en Exploration difficile : "
                 + "la prairie pour le Prestige I, la Fête foraine pour II, le Rapide de Minuit pour III, le Port pour IV, "
-                + "puis les Mines, le Casino et le Désert, deux Prestiges chacun.")),
+                + "les Mines pour V et VI, le Casino pour VII et VIII, le Temple du Destin pour IX et le Désert pour X.")),
             term(Lang.t("Plancher de Prestige"), Lang.f("Après un Prestige, tes PV max, ton attaque et ta défense ne "
                 + "descendent jamais sous {0} % de ceux de la Légende du Jackpot (avant le bonus du Prestige).",
                 Rank.PRESTIGE_FLOOR_PERCENT)),

@@ -59,6 +59,10 @@ public class Enemy {
     private       int         hourglass;
     /** Pression de sa chaudière (Rapide de Minuit), de 0 à {@link EnemySymbol#PRESSURE_MAX}. */
     private       int         pressure;
+    /** Karma (Temple du Destin) : Bingos du joueur gardés pour être renvoyés, de 0 à {@link EnemySymbol#KARMA_MAX}. */
+    private       int         karma;
+    /** Présage (Temple du Destin) : le symbole annoncé n'est pas sorti au dernier tirage, ses attaques de ce tour montent. */
+    private       boolean     omenMissed;
     /** Sa mise (Tapis) : ses attaques sont multipliées d'autant, jusqu'à ce qu'il soit touché. */
     private       int         stake = 1;
     /** Tapis posé à son dernier tour : sa mise doublera à son tour suivant, s'il n'est pas touché d'ici là. */
@@ -534,6 +538,24 @@ public class Enemy {
 
     /** @return la Pression de sa chaudière, de 0 à {@link EnemySymbol#PRESSURE_MAX} - 1. */
     public int getPressure() { return pressure; }
+
+    /** Karma : le joueur a fait un Bingo, il le garde ({@link EnemySymbol#KARMA_MAX} au plus). */
+    public void addKarma() { karma = Math.min(EnemySymbol.KARMA_MAX, karma + 1); }
+
+    /** Offrande : son Karma monte de {@code amount} ({@link EnemySymbol#KARMA_MAX} au plus). */
+    public void addKarma(int amount) { karma = Math.min(EnemySymbol.KARMA_MAX, karma + amount); }
+
+    /** @return les Bingos gardés par son Karma. */
+    public int getKarma() { return karma; }
+
+    /** Karma : il renvoie tout. @return les Bingos qu'il gardait */
+    public int takeKarma() { int n = karma; karma = 0; return n; }
+
+    /** Présage : le symbole annoncé n'est pas sorti au tirage du joueur ({@code true}), ou il est sorti. */
+    public void setOmenMissed(boolean missed) { omenMissed = missed; }
+
+    /** @return {@code true} (une seule fois) si le Présage a été manqué au dernier tirage : ses attaques montent. */
+    public boolean takeOmenMissed() { boolean missed = omenMissed; omenMissed = false; return missed; }
 
     /** Fin de son tour : ses Épines ne compteront que les coups encaissés à partir de maintenant. */
     public void resetDamageTaken() { damageTaken = 0; }

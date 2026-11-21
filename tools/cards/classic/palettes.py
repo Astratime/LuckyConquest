@@ -32,6 +32,11 @@ FAMILIES = {
     'wagon_restaurant': ('#fdf0e8', '#ecc4a8', '#b08468'),   # nappe et vernis
     'wagon_lit':        ('#eeeafc', '#c0b4ec', '#8274b4'),   # nuit violette
     'fourgon':          ('#eef4ee', '#b4ccb8', '#76927a'),   # acier vert
+    # --- Temple du Destin (2026-11-21) ---
+    'parvis':         ('#fdf0e4', '#f0c8a0', '#b88a5c'),   # pierre au couchant
+    'jardin_oracles': ('#eef6ea', '#bcdcb0', '#7ca070'),   # mousse et thé
+    'salle_des_des':  ('#fdeaea', '#eeb4b0', '#b0706c'),   # laque rouge
+    'sanctuaire':     ('#fdf6dc', '#f0dc94', '#b89c50'),   # or des idoles
     # --- Désert de Braise (cartes des rois, 2026-11-14) ---
     'caravane':      ('#fdf4e4', '#e8cc98', '#ae8e58'),   # sable
     'tombeau':       ('#f4f0e2', '#d0c4a0', '#948864'),   # calcaire
@@ -118,6 +123,12 @@ CARD_FAMILY = {
     'plat_du_jour': 'wagon_restaurant', 'service_a_la_place': 'wagon_restaurant', 'menu_gastronomique': 'wagon_restaurant',
     'billet_de_seconde': 'wagon_lit', 'couchette': 'wagon_lit', 'billet_de_premiere': 'wagon_lit',
     'coffre_blinde': 'fourgon', 'aiguillage': 'fourgon', 'soupape': 'fourgon',
+    'roi_tocsin': 'parvis', 'roi_fil_du_destin': 'jardin_oracles', 'roi_quitte_ou_double': 'salle_des_des',
+    'roi_jugement': 'sanctuaire',
+    'baton_d_encens': 'parvis', 'cloche_de_bronze': 'parvis', 'maillet_de_gong': 'parvis',
+    'feuille_de_the': 'jardin_oracles', 'boule_de_cristal': 'jardin_oracles', 'fil_d_or': 'jardin_oracles',
+    'de_d_ivoire': 'salle_des_des', 'gobelet_a_des': 'salle_des_des', 'double_six': 'salle_des_des',
+    'offrande_d_or': 'sanctuaire', 'masque_sacre': 'sanctuaire', 'oeil_de_l_idole': 'sanctuaire',
     'roi_dents_de_rat': 'cale', 'roi_tournee_du_patron': 'taverne', 'roi_feu_du_phare': 'phare', 'roi_grappin': 'galion',
     'roi_tamis_noir': 'filon', 'roi_meche_de_diamant': 'puits', 'roi_coup_d_enclume': 'forge', 'roi_filon': 'gouffre',
     'roi_refrain': 'bar', 'roi_rage_du_jackpot': 'machines', 'roi_frenesie': 'coffres', 'roi_encre': 'vip',
