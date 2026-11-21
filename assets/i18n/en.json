@@ -3244,5 +3244,13 @@
   "Rouleau du Rapide de Minuit. Chaque tirage d'affilée où la Vapeur sort monte sa pression : +{0} % à son coup par cran, {1} crans au plus. Un tirage sans elle la fait retomber.": "Midnight Express reel. Each spin in a row where Steam comes up raises its pressure: +{0}% to its hit per notch, {1} notches at most. A spin without it lets it drop.",
   "Règle du Rapide de Minuit : tous les {0} tours, tu joues {1} carte de moins ce tour-là.": "Midnight Express rule: every {0} turns, you play {1} card fewer that turn.",
   "Pression": "Pressure",
-  "Au Rapide de Minuit, la chaudière de l'ennemi monte d'un cran. Au bout de {0} crans, elle explose en un gros coup. Chaque coup qui lui enlève au moins {1} % de ses PV max la fait baisser.": "On the Midnight Express, the enemy's boiler rises one notch. After {0} notches, it bursts in a big hit. Each hit that takes at least {1}% of its max HP brings it down."
+  "Au Rapide de Minuit, la chaudière de l'ennemi monte d'un cran. Au bout de {0} crans, elle explose en un gros coup. Chaque coup qui lui enlève au moins {1} % de ses PV max la fait baisser.": "On the Midnight Express, the enemy's boiler rises one notch. After {0} notches, it bursts in a big hit. Each hit that takes at least {1}% of its max HP brings it down.",
+  "Liste": "List",
+  "Familles": "Families",
+  "Cartes sans rang (pas de combinaison) : {0}": "Cards without rank (no combination): {0}",
+  "Combinaisons possibles": "Possible combinations",
+  "{0} (x{1}) : {2}": "{0} (x{1}): {2}",
+  "possible": "possible",
+  "impossible avec ce deck": "impossible with this deck",
+  "Jokers caméléons (rang et couleur au choix) : {0}": "Chameleon Jokers (any rank and colour): {0}"
 }

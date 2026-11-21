@@ -29,6 +29,7 @@ import fr.astratime.lucky.assets.Fonts;
 import fr.astratime.lucky.assets.Palette;
 import fr.astratime.lucky.assets.VolumeSound;
 import fr.astratime.lucky.entities.Card;
+import fr.astratime.lucky.entities.Combo;
 import fr.astratime.lucky.entities.RankBonus;
 import fr.astratime.lucky.entities.Symbol;
 import fr.astratime.lucky.i18n.Lang;
@@ -93,6 +94,8 @@ public class CroupierTableScreen extends CasinoMenuScreen {
     private static final float PANEL_PAD    = 30f;
     private static final float SLOT_WIDTH   = 126f;
     private static final float DECK_WIDTH   = 470f;
+    /** Hauteur d'une ligne de la liste du deck (26 depuis le bouton « Fiche » : 20 lignes et le bouton tiennent). */
+    private static final float DECK_ROW     = 26f;
     private static final float CARD_WIDTH   = 110f;
     private static final float CARD_HEIGHT  = 154f;   // images 480 x 672
     private static final float REEL_WIDTH   = 144f;
@@ -143,6 +146,10 @@ public class CroupierTableScreen extends CasinoMenuScreen {
     /** Bouton « FUSIONNER » de chaque carte de la collection, par id. */
     private final Map<String, Group> cellUpgrades = new LinkedHashMap<>();
     private final Table       deckList = new Table();
+    /** Fiche du deck (2026-11-20) : familles, archétypes et combinaisons possibles, à la place de la liste. */
+    private final Table       deckSheet = new Table();
+    private final TextButton  sheetButton;
+    private boolean           sheetShown;
     /** Images des rouleaux possédés. */
     private final Map<Symbol, Texture> reelTextures = new EnumMap<>(Symbol.class);
     private final Table       reelGrid = new Table();
@@ -258,6 +265,7 @@ public class CroupierTableScreen extends CasinoMenuScreen {
             refresh();
         });
         sortButton    = buttons.create(sortText(), clickSound, this::nextSort);
+        sheetButton   = buttons.create(Lang.t("Fiche"), clickSound, this::toggleSheet);
         backButton    = buttons.create(Lang.t("Retour"), clickSound, this::onBack);
         editingSlot = profile.getDeckSlot();
         for (int i = 0; i < PlayerProfile.DECK_SLOTS; i++) {
@@ -276,6 +284,8 @@ public class CroupierTableScreen extends CasinoMenuScreen {
         stage.addActor(counter);
         stage.addActor(scroll);
         stage.addActor(deckList);
+        stage.addActor(deckSheet);
+        stage.addActor(sheetButton);
         stage.addActor(reelScroll);
         stage.addActor(machineList);
         stage.addActor(rankScroll);
@@ -359,7 +369,9 @@ public class CroupierTableScreen extends CasinoMenuScreen {
         reelsTab.setColor(reels ? Color.WHITE : USED_UP);
         rankTab.setColor(rank ? Color.WHITE : USED_UP);
         scroll.setVisible(deck);
-        deckList.setVisible(deck);
+        deckList.setVisible(deck && !sheetShown);
+        deckSheet.setVisible(deck && sheetShown);
+        sheetButton.setVisible(deck);
         starterButton.setVisible(deck);
         for (TextButton button : slotButtons) button.setVisible(deck && !profile.isAdmin()); // le mode ADMIN a un seul deck
         reelScroll.setVisible(reels);
@@ -806,9 +818,98 @@ public class CroupierTableScreen extends CasinoMenuScreen {
                 @Override
                 public void clicked(InputEvent event, float x, float y) { removeCard(id); }
             });
-            deckList.add(row).left().height(30f).row();
+            deckList.add(row).left().height(DECK_ROW).row();
         }
+        fillSheet();
         layout();
+    }
+
+    /** Passe de la liste du deck à sa fiche, et retour. */
+    private void toggleSheet() {
+        sheetShown = !sheetShown;
+        sheetButton.setText(sheetShown ? Lang.t("Liste") : Lang.t("Fiche"));
+        showTab(tab);
+        refresh();
+    }
+
+    /**
+     * Remplit la fiche du deck : cartes par famille (suite) et par archétype, cartes sans rang, puis les
+     * combinaisons de poker que le deck peut former (voir {@link Combo}).
+     */
+    private void fillSheet() {
+        deckSheet.clearChildren();
+        deckSheet.top().left();
+        Map<Card.Suit, Integer> suits = new java.util.EnumMap<>(Card.Suit.class);
+        Map<fr.astratime.lucky.entities.Archetype, Integer> archetypes = new java.util.EnumMap<>(fr.astratime.lucky.entities.Archetype.class);
+        Map<Integer, Integer> ranks = new java.util.TreeMap<>();
+        Map<Object, Integer> colors = new java.util.HashMap<>(); // suite, ou archétype d'une carte numérotée
+        int unranked = 0;
+        int wild = 0; // Joker caméléon : il prend le rang et la couleur qui manquent
+        for (Map.Entry<String, Card> entry : cards.entrySet()) {
+            int copies = draft.getCopies(entry.getKey());
+            if (copies <= 0) continue;
+            Card card = entry.getValue();
+            if (card.getSuit() != null) suits.merge(card.getSuit(), copies, Integer::sum);
+            if (card.getArchetype() != null) archetypes.merge(card.getArchetype(), copies, Integer::sum);
+            if (card.isWild()) wild += copies;
+            else if (card.hasRank()) {
+                ranks.merge(card.getRank(), copies, Integer::sum);
+                colors.merge(card.comboColor(), copies, Integer::sum);
+            } else unranked += copies;
+        }
+        Label.LabelStyle head = new Label.LabelStyle(rowFont, Palette.GOLD);
+        Label.LabelStyle line = new Label.LabelStyle(hintFont, Color.WHITE);
+        float width = DECK_WIDTH - PANEL_PAD * 2;
+
+        sheetRow(Lang.t("Familles"), head, width, 0f);
+        List<String> families = new ArrayList<>();
+        for (Card.Suit suit : Card.Suit.values()) families.add(suitName(suit) + " " + suits.getOrDefault(suit, 0));
+        sheetRow(String.join("   ", families), line, width, 4f);
+        if (!archetypes.isEmpty()) {
+            List<String> names = new ArrayList<>();
+            archetypes.forEach((archetype, n) -> names.add(archetype.getDisplayName() + " " + n));
+            sheetRow(String.join("   ", names), line, width, 4f);
+        }
+        if (wild > 0) sheetRow(Lang.f("Jokers caméléons (rang et couleur au choix) : {0}", wild), line, width, 4f);
+        sheetRow(Lang.f("Cartes sans rang (pas de combinaison) : {0}", unranked), line, width, 16f);
+
+        sheetRow(Lang.t("Combinaisons possibles"), head, width, 0f);
+        int bestSameRank = ranks.values().stream().mapToInt(Integer::intValue).max().orElse(0) + wild;
+        int bestFamily = colors.values().stream().mapToInt(Integer::intValue).max().orElse(0) + wild;
+        boolean straight = false;
+        for (int low = 1; low <= 12 && !straight; low++) { // l'As compte avant le 2 ou après le Roi
+            int missing = 0;
+            for (int r : new int[]{low, low + 1, low + 2 > 13 ? 1 : low + 2}) if (!ranks.containsKey(r)) missing++;
+            straight = missing <= wild;
+        }
+        comboRow(Combo.PAIRE, bestSameRank >= 2, line, width);
+        comboRow(Combo.BRELAN, bestSameRank >= 3, line, width);
+        comboRow(Combo.CARRE, bestSameRank >= 4, line, width);
+        comboRow(Combo.COULEUR, bestFamily >= 3, line, width);
+        comboRow(Combo.SUITE, straight, line, width);
+    }
+
+    private void sheetRow(String text, Label.LabelStyle style, float width, float padBottom) {
+        Label label = new Label(text, style);
+        label.setWrap(true);
+        deckSheet.add(label).left().width(width).padBottom(padBottom).row();
+    }
+
+    private void comboRow(Combo combo, boolean possible, Label.LabelStyle style, float width) {
+        Label label = new Label(Lang.f("{0} (x{1}) : {2}", combo.getDisplayName(), Lang.decimal(combo.getFactor() == (int) combo.getFactor() ? String.valueOf((int) combo.getFactor()) : String.valueOf(combo.getFactor())),
+            possible ? Lang.t("possible") : Lang.t("impossible avec ce deck")), style);
+        label.setColor(possible ? Palette.GOLD : USED_UP);
+        label.setWrap(true);
+        deckSheet.add(label).left().width(width).padBottom(2f).row();
+    }
+
+    private static String suitName(Card.Suit suit) {
+        return switch (suit) {
+            case PIQUE   -> Lang.t("Pique");
+            case COEUR   -> Lang.t("Coeur");
+            case CARREAU -> Lang.t("Carreau");
+            case TREFLE  -> Lang.t("Trèfle");
+        };
     }
 
     /** Met à jour les cases des rouleaux (dans la machine ou non) et la liste de la machine. */
@@ -941,12 +1042,16 @@ public class CroupierTableScreen extends CasinoMenuScreen {
             deckHead.getY() + (deckHead.getHeight() - counter.getHeight()) / 2f);
         deckList.pack();
         deckList.setPosition(deckX + PANEL_PAD, deckHead.getY() - 20f - deckList.getHeight());
+        deckSheet.pack();
+        deckSheet.setPosition(deckX + PANEL_PAD, deckHead.getY() - 20f - deckSheet.getHeight());
+        sheetButton.setPosition(deckX + DECK_WIDTH - PANEL_PAD - sheetButton.getWidth(), panelBottom + PANEL_PAD - 6f);
         machineList.pack();
         machineList.setPosition(deckX + PANEL_PAD, deckHead.getY() - 20f - machineList.getHeight());
         rankDetail.pack();
         rankDetail.setPosition(deckX + PANEL_PAD, deckHead.getY() - 20f - rankDetail.getHeight());
         hint.setWrap(true);
-        hint.setWidth(DECK_WIDTH - PANEL_PAD * 2);
+        // sur l'onglet Deck, le bouton « Fiche » prend la droite de la ligne d'aide
+        hint.setWidth(DECK_WIDTH - PANEL_PAD * 2 - (tab == Tab.DECK ? sheetButton.getWidth() + 12f : 0f));
         hint.setHeight(hint.getPrefHeight());
         hint.setPosition(deckX + PANEL_PAD, panelBottom + PANEL_PAD);
 
