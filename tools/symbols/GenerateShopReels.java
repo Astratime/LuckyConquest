@@ -5,7 +5,7 @@ import java.util.function.BiPredicate;
 
 /**
  * Dessine les rouleaux vendus à la boutique (assets/symbols/13 à 20, puis 22 à 28),
- * les rouleaux des lieux (21 la Pépite, 29 à 32, 35 la Vapeur) et ceux des Bingos imposés (33, 34), dans le
+ * les rouleaux des lieux (21 la Pépite, 29 à 32, 35 la Vapeur, 36 le Spectre) et ceux des Bingos imposés (33, 34), dans le
  * style des rouleaux classiques : 24 x 20 pixels de 6 px sur fond gris clair,
  * contour sombre, bord éclairé en haut à gauche et ombré en bas à droite.
  * Dessine aussi leur carte Bingo de test (assets/cards/test/), sur le modèle de
@@ -42,6 +42,7 @@ public class GenerateShopReels {
         reel("31-gold_chip", "bingo_gold_chip", goldChip());
         reel("32-flame", "bingo_flame", flame());
         reel("35-steam", "bingo_steam", steam());
+        reel("36-spectre", "bingo_spectre", spectre());
         reel("33-descent", "bingo_descent", descent());
         reel("34-bingo_light", "bingo_bingo_light", bingoLight());
         recolor("gain_500", "gain_2000", new int[] {0xff460a1a, 0xff681228, 0xff540e20},
@@ -397,6 +398,18 @@ public class GenerateShopReels {
         fill(g, COAL, (x, y) -> (y >= 11 && y < 13 && Math.abs(x - 11) <= 4)
             || (y >= 13 && y < 19.5 && Math.abs(x - 11) <= 2.6));
         fill(g, GOLD, (x, y) -> y >= 15 && y < 16.5 && Math.abs(x - 11) <= 2.6);
+        return g;
+    }
+
+    /** Spectre : un fantôme vert pâle, tête ronde et bas en vagues, deux yeux sombres et une bouche ronde. */
+    private static int[][] spectre() {
+        int[][] g = grid();
+        Shade ghost = new Shade(0xffd8f4ec, 0xffffffff, 0xff8ed0bc);
+        fill(g, ghost, (x, y) -> Math.hypot(x - 12, y - 8) <= 6.2
+            || (y >= 8 && y < 16 && Math.abs(x - 12) <= 6.2)
+            || (y >= 16 && y < 18.5 && Math.abs(x - 12) <= 6.2 && ((int) Math.floor((x - 5.8) / 2.1)) % 2 == 0));
+        fill(g, COAL, (x, y) -> (Math.abs(x - 9.5) <= 1 && y >= 6 && y < 9) || (Math.abs(x - 14.5) <= 1 && y >= 6 && y < 9)
+            || Math.hypot(x - 12, y - 12) <= 1.4);
         return g;
     }
 

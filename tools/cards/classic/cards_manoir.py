@@ -127,14 +127,15 @@ def pacte_de_minuit(pal):
     d.rectangle([7, 26, 27, 44], fill=CD)
     d.ellipse([5, 24, 11, 30], fill=CD)
     d.ellipse([23, 40, 29, 46], fill=CD)
+    ghost(d, 5, 6, 10, 12)
     L, d = again(L)
+    ghost_face(d, 5, 6, 10)
     d.line([(25, 13), (25, 8)], fill=CO)                     # les deux aiguilles sur minuit
     d.line([(25, 13), (26, 9)], fill=CO)
     for y in (30, 33, 36):
         d.line([(10, y), (23, y)], fill=WL)
     d.ellipse([19, 37, 25, 43], fill=R)
     d.point((21, 39), fill=RL)
-    ghost(d, 7, 8, 9, 11)
     return finish(im, L, CANDLES, CANDLES_P)
 
 

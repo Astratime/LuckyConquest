@@ -1205,6 +1205,162 @@ def fourgon():
     GLOWS['fourgon'] = ((180, 22), (262, 128))
     return vignette(im, 0.5)
 
+# ---------------------------------------------------------------------------- le Manoir hanté
+
+def candelabra(f, x, y, arms=3):
+    """Chandelier d'argent à `arms` bougies, flammes à la hauteur y."""
+    f.rectangle([x - 2, y + 8, x + 2, y + 34], fill=(150, 150, 164))
+    f.rectangle([x - 8, y + 32, x + 8, y + 36], fill=(150, 150, 164))
+    for k in range(arms):
+        cx = x + (k - (arms - 1) / 2) * 10
+        f.line([x, y + 18, cx, y + 12], fill=(150, 150, 164), width=2)
+        f.rectangle([cx - 2, y + 2, cx + 2, y + 12], fill=(238, 230, 210))
+        f.polygon([(cx - 2, y + 2), (cx + 2, y + 2), (cx, y - 5)], fill=(255, 200, 80))
+
+
+def gothic_window(f, x0, y0, x1, y1, rng, moon=None):
+    """Fenêtre en ogive sur la nuit : ciel bleu nuit, étoiles, lune, croisillons de plomb."""
+    win, w = layer()
+    mid = (x0 + x1) // 2
+    shape = [(x0, y1), (x0, y0 + 16), (mid, y0), (x1, y0 + 16), (x1, y1)]
+    w.polygon(shape, fill=(20, 24, 54))
+    for _ in range((x1 - x0) * (y1 - y0) // 140):
+        w.point([(int(rng.integers(x0 + 2, x1 - 2)), int(rng.integers(y0 + 14, y1 - 2)))], fill=(210, 220, 255))
+    if moon:
+        mx, my = moon
+        w.ellipse([mx - 7, my - 7, mx + 7, my + 7], fill=(236, 240, 220))
+    f.line(shape + [shape[0]], fill=(60, 50, 60), width=3)
+    f.line([mid, y0, mid, y1], fill=(60, 50, 60), width=2)
+    f.line([x0, (y0 + y1) // 2 + 6, x1, (y0 + y1) // 2 + 6], fill=(60, 50, 60), width=2)
+    return win
+
+
+def salon():
+    """Le salon de jeu : papier peint bordeaux, grande fenêtre en ogive, table de cartes, chandeliers, portrait."""
+    rng = np.random.default_rng(101)
+    im, d = base((0, 0, 0))
+    gradient(d, (84, 22, 36), (50, 12, 22), 0, 170)
+    for x in range(0, W, 24):  # motif du papier peint
+        for y in range(10, 160, 24):
+            d.point([(x + 12, y), (x + 11, y + 1), (x + 13, y + 1), (x + 12, y + 2)], fill=(120, 40, 56))
+    d.rectangle([0, 120, W, 126], fill=(110, 70, 40))
+    fg, f = layer()
+    im.alpha_composite(gothic_window(f, 150, 14, 210, 100, rng, moon=(192, 38)))
+    f.rectangle([40, 20, 96, 84], fill=(176, 140, 60))  # le portrait du comte
+    f.rectangle([45, 25, 91, 79], fill=(30, 22, 30))
+    f.ellipse([58, 34, 78, 56], fill=(200, 196, 210))
+    f.polygon([(52, 79), (68, 58), (84, 79)], fill=(16, 12, 20))
+    f.point([(64, 44), (72, 44)], fill=(220, 30, 40))
+    f.ellipse([96, 128, 264, 166], fill=(40, 100, 60))  # table de jeu
+    f.ellipse([100, 130, 260, 160], fill=(52, 128, 74))
+    for k, x in enumerate((140, 166, 192, 218)):
+        f.rectangle([x, 140, x + 12, 152], fill=(240, 236, 224))
+        f.rectangle([x + 2, 142, x + 10, 150], fill=[(180, 30, 40), (40, 40, 60)][k % 2])
+    candelabra(f, 30, 92)
+    candelabra(f, 330, 92)
+    im = finish(im, fg)
+    GLOWS['salon'] = ((30, 90), (330, 90), (192, 38))
+    return vignette(im, 0.55)
+
+
+def bibliotheque():
+    """La bibliothèque : étagères jusqu'au plafond, échelle, livres qui volent, bougies sur le pupitre."""
+    rng = np.random.default_rng(102)
+    im, d = base((0, 0, 0))
+    gradient(d, (42, 28, 52), (24, 16, 32), 0, 170)
+    fg, f = layer()
+    colors = [(120, 40, 50), (50, 60, 110), (60, 100, 60), (140, 100, 40), (90, 50, 110)]
+    for x0, x1 in ((0, 130), (230, W)):
+        f.rectangle([x0, 0, x1, 170], fill=(70, 44, 28))
+        for y in range(10, 160, 30):
+            f.rectangle([x0 + 4, y, x1 - 4, y + 24], fill=(30, 20, 14))
+            x = x0 + 6
+            while x < x1 - 10:
+                bw = int(rng.integers(4, 9))
+                bh = int(rng.integers(14, 23))
+                f.rectangle([x, y + 24 - bh, x + bw - 1, y + 23], fill=colors[int(rng.integers(0, len(colors)))])
+                x += bw + 1
+    f.line([120, 0, 150, 170], fill=(110, 76, 44), width=3)  # l'échelle
+    f.line([140, 0, 170, 170], fill=(110, 76, 44), width=3)
+    for y in range(10, 170, 18):
+        f.line([120 + y * 30 // 170, y, 140 + y * 30 // 170, y], fill=(110, 76, 44), width=2)
+    f.polygon([(160, 130), (220, 130), (212, 168), (168, 168)], fill=(90, 58, 34))  # pupitre
+    f.polygon([(166, 120), (190, 126), (214, 120), (214, 130), (166, 130)], fill=(236, 226, 200))
+    for bx, by, a in ((186, 40, 1), (214, 70, -1), (160, 84, 1)):  # livres qui volent
+        f.polygon([(bx - 10, by), (bx, by + 4 * a), (bx + 10, by), (bx, by - 6)], fill=colors[(bx // 10) % 5])
+        f.line([bx, by - 6, bx, by + 4 * a], fill=(236, 226, 200))
+    candelabra(f, 222, 96, 1)
+    im = finish(im, fg)
+    GLOWS['bibliotheque'] = ((222, 94), (190, 124))
+    return vignette(im, 0.6)
+
+
+def crypte():
+    """La crypte : voûtes de pierre, niches, cercueils ouverts, brume verte au sol, une torche."""
+    rng = np.random.default_rng(103)
+    im, d = base((0, 0, 0))
+    bricks(d, 0, 0, W, 170, [(60, 64, 70), (52, 56, 62), (68, 72, 78)], (34, 36, 40), 20, 10)
+    fg, f = layer()
+    for cx in (60, 180, 300):  # arches
+        f.rectangle([cx - 44, 0, cx - 36, 170], fill=(44, 46, 52))
+        f.rectangle([cx + 36, 0, cx + 44, 170], fill=(44, 46, 52))
+        f.arc([cx - 44, -20, cx + 44, 70], 180, 360, fill=(44, 46, 52), width=8)
+    for cx in (60, 300):  # niches et cercueils
+        f.rectangle([cx - 26, 60, cx + 26, 110], fill=(20, 20, 26))
+        f.polygon([(cx - 18, 70), (cx + 18, 70), (cx + 22, 82), (cx + 14, 106), (cx - 14, 106), (cx - 22, 82)],
+                  fill=(80, 50, 30))
+        f.line([cx, 76, cx, 98], fill=(200, 190, 160), width=2)
+        f.line([cx - 7, 84, cx + 7, 84], fill=(200, 190, 160), width=2)
+    f.rectangle([140, 120, 220, 150], fill=(110, 110, 120))  # tombeau central
+    f.rectangle([136, 114, 224, 122], fill=(130, 130, 140))
+    for _ in range(40):  # brume verte
+        x, y = int(rng.integers(0, W)), int(rng.integers(146, 172))
+        r = int(rng.integers(6, 16))
+        f.ellipse([x - r, y - r // 2, x + r, y + r // 2], fill=(70, 130, 100))
+    torch(fg, 180, 50)
+    im = finish(im, fg)
+    GLOWS['crypte'] = ((180, 46), (60, 86), (300, 86))
+    return vignette(im, 0.6)
+
+
+def grenier():
+    """Le grenier : charpente en pente, lucarne ronde, malles, cheval à bascule, poupées, toiles d'araignée."""
+    rng = np.random.default_rng(104)
+    im, d = base((0, 0, 0))
+    gradient(d, (74, 56, 40), (40, 30, 22), 0, 170)
+    planks(d, 130, 170, [(96, 68, 44), (86, 60, 38)], (54, 38, 24))
+    fg, f = layer()
+    f.polygon([(0, 0), (180, 0), (0, 90)], fill=(56, 40, 28))  # charpente
+    f.polygon([(W, 0), (180, 0), (W, 90)], fill=(56, 40, 28))
+    for x in range(20, 180, 40):
+        f.line([x, 0, x, 90 - x // 2], fill=(84, 60, 40), width=4)
+    f.ellipse([156, 20, 204, 68], fill=(20, 24, 54))  # lucarne
+    f.ellipse([176, 30, 190, 44], fill=(236, 240, 220))
+    f.ellipse([156, 20, 204, 68], outline=(84, 60, 40), width=4)
+    f.line([180, 20, 180, 68], fill=(84, 60, 40), width=2)
+    f.line([156, 44, 204, 44], fill=(84, 60, 40), width=2)
+    for x0 in (14, 280):  # malles
+        f.rectangle([x0, 122, x0 + 62, 158], fill=(110, 70, 40))
+        f.rectangle([x0, 116, x0 + 62, 126], fill=(90, 56, 30))
+        f.line([x0 + 10, 116, x0 + 10, 158], fill=(60, 60, 66), width=3)
+        f.line([x0 + 52, 116, x0 + 52, 158], fill=(60, 60, 66), width=3)
+    f.arc([120, 140, 190, 168], 0, 180, fill=(140, 40, 40), width=4)  # cheval à bascule
+    f.rectangle([138, 118, 172, 134], fill=(220, 210, 190))
+    f.rectangle([166, 104, 178, 122], fill=(220, 210, 190))
+    f.line([146, 134, 142, 150], fill=(220, 210, 190), width=3)
+    f.line([164, 134, 168, 150], fill=(220, 210, 190), width=3)
+    for x in (226, 250):  # poupées assises
+        f.ellipse([x - 7, 98, x + 7, 112], fill=(236, 210, 190))
+        f.polygon([(x - 10, 130), (x + 10, 130), (x, 110)], fill=(170, 60, 90))
+        f.point([(x - 3, 104), (x + 2, 104)], fill=(20, 20, 20))
+    for cx, cy in ((10, 10), (350, 10)):  # toiles d'araignée
+        for k in range(4):
+            f.arc([cx - 30 + k * 6, cy - 30 + k * 6, cx + 30 - k * 6, cy + 30 - k * 6], 0, 360, fill=(170, 170, 170))
+    lantern(fg, 110, 70)
+    im = finish(im, fg)
+    GLOWS['grenier'] = ((110, 70), (183, 37))
+    return vignette(im, 0.55)
+
 DECORS = {
     'chapiteau': chapiteau, 'train_fantome': train_fantome, 'grande_roue': grande_roue, 'stands': stands,
     'taverne': taverne, 'phare': phare, 'galion': galion,
@@ -1214,6 +1370,7 @@ DECORS = {
     'genese': genese, 'tables_sacrees': tables_sacrees, 'dernier_tirage': dernier_tirage,
     'monde_sans_maitre': monde_sans_maitre, 'la_maison': la_maison, 'le_jackpot': le_jackpot,
     'locomotive': locomotive, 'wagon_restaurant': wagon_restaurant, 'wagon_lit': wagon_lit, 'fourgon': fourgon,
+    'salon': salon, 'bibliotheque': bibliotheque, 'crypte': crypte, 'grenier': grenier,
     'entrainement': entrainement,
 }
 

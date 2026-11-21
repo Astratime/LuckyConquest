@@ -36,7 +36,7 @@ class KingCardsTest {
         }
     };
 
-    /** Prix choisis par Astra (2026-11-14) : un prix par lieu (Rapide de Minuit : 2026-11-20). */
+    /** Prix choisis par Astra (2026-11-14) : un prix par lieu (Rapide de Minuit : 2026-11-20, Manoir hanté : 2026-11-21). */
     private static long placePrice(Place place) {
         return switch (place) {
             case PRAIRIE -> 75_000_000L;
@@ -44,6 +44,7 @@ class KingCardsTest {
             case RAPIDE  -> 500_000_000L;
             case PORT    -> 1_300_000_000L;
             case MINES   -> 2_500_000_000L;
+            case MANOIR  -> 4_000_000_000L;
             case CASINO  -> 7_000_000_000L;
             case DESERT  -> 33_000_000_000L;
         };

@@ -2481,6 +2481,71 @@ def king_desperado():
     return king(prelude, reverb(entrance.buf, wet=0.2, size=1.2), gesture)
 
 
+# --- Manoir hanté (10 lieux, 2026-11-20) ---
+
+def creak(d=0.8, f=180):
+    """Une porte ou un couvercle qui grince : un frottement grave qui monte."""
+    return svf(noise(d), sweep(f, f * 2.2, d), q=8.0, mode='bp') * (0.5 + 0.5 * np.abs(np.sin(times(d) * 40))) \
+        * fade_out(d, 0.2)
+
+
+@sound('cutscene/king_comte_minuit', -17)
+def king_comte_minuit():
+    """Le Comte de Minuit : le salon, le couvercle du cercueil grince (0,5 s), la grande horloge sonne (3,4 s), les chauves-souris."""
+    prelude = [(ambience(2.0, 150, 700, 0.3), 0.0, 0.5), (bell_toll(hz('C3'), 2.0), 0.6, 0.15)]
+    entrance = Track(5.0)
+    entrance.add(creak(1.0, 140), 0.5, 0.6)
+    entrance.add(thump(120, 50, 0.3), 1.4, 0.6)
+    gesture = [(bell_toll(hz('D3'), 2.4), 3.4, 0.8), (bell_toll(hz('A2'), 2.0), 3.9, 0.5),
+               (wing_flap(), 3.5, 0.5), (brass_chord(['D3', 'F3', 'A3', 'C#4'], 1.4, 0.5), 3.5, 0.5)]
+    return king(prelude, reverb(entrance.buf, wet=0.3, size=1.6), gesture)
+
+
+@sound('cutscene/king_bibliothecaire', -17)
+def king_bibliothecaire():
+    """La Bibliothécaire : des pages qui volent, elle apparaît (0,3 s), « chut » (3,4 s), le livre s'ouvre (3,9 s)."""
+    prelude = [(ambience(2.0, 200, 900, 0.3), 0.0, 0.5), (rustle(1.2), 0.4, 0.3)]
+    entrance = Track(5.0)
+    entrance.add(whoosh(1.0, 200, 1200, q=0.8), 0.3, 0.4)
+    for k in range(5):
+        entrance.add(rustle(0.4), 0.6 + k * 0.3, 0.3)
+    shush = bp(noise(0.8), 3000, 7000) * expdec(0.8, 0.5, attack=0.08)
+    gesture = [(shush, 3.4, 0.7), (rustle(0.8), 3.9, 0.5),
+               (modal(hz('E5'), 2.0, GLASS_RATIOS, [1.0, 0.6, 0.4, 0.3]), 3.95, 0.3),
+               (brass_chord(['B2', 'D3', 'F3', 'A3'], 1.4, 0.4), 4.0, 0.4)]
+    return king(prelude, reverb(entrance.buf, wet=0.35, size=1.6), gesture)
+
+
+@sound('cutscene/king_fossoyeur', -17)
+def king_fossoyeur():
+    """Le Fossoyeur : le cimetière, la main sort de terre (0,3 s), il se hisse (0,9 à 1,5 s), il plante sa pelle (3,4 s)."""
+    prelude = [(desert_wind(2.0), 0.0, 0.3),
+               (bell_toll(hz('G2'), 2.0), 0.4, 0.15)]
+    entrance = Track(5.0)
+    entrance.add(lp(noise(0.5), 500) * expdec(0.5, 0.3), 0.3, 0.7)
+    entrance.add(lp(noise(0.9), 400) * expdec(0.9, 0.6), 0.9, 0.6)
+    entrance.add(thump(90, 40, 0.4), 1.5, 0.8)
+    gesture = [(metal_hit(hz('E4'), 0.6), 3.4, 0.6),
+               (lp(noise(0.4), 600) * expdec(0.4, 0.2), 3.42, 0.6),
+               (brass_chord(['G2', 'Bb2', 'D3', 'F3'], 1.4, 0.5), 3.5, 0.5)]
+    return king(prelude, reverb(entrance.buf, wet=0.3, size=1.4), gesture)
+
+
+@sound('cutscene/king_marionnettiste', -17)
+def king_marionnettiste():
+    """Le Marionnettiste : le rideau s'ouvre (0,2 s), il descend sur ses fils (0,8 s), il tire ses fils et les pièces tombent (3,4 s)."""
+    prelude = [(ambience(2.0, 250, 1100, 0.3), 0.0, 0.4)]
+    for k, n in enumerate(['E5', 'G5', 'B5', 'C6', 'B5', 'G5']):                       # la boîte à musique
+        prelude.append((modal(hz(n), 0.8, GLASS_RATIOS, [1.0, 0.5, 0.3, 0.2]), 0.2 + k * 0.28, 0.18))
+    entrance = Track(5.0)
+    entrance.add(whoosh(0.8, 300, 1500), 0.2, 0.5)
+    entrance.add(creak(1.2, 260), 0.8, 0.35)
+    entrance.add(thump(150, 60, 0.3), 1.6, 0.6)
+    gesture = [(whip_crack(), 3.4, 0.5), (whip_crack(), 3.6, 0.4), (coin_shower(1.2, 14), 3.6, 0.5),
+               (brass_chord(['E3', 'G3', 'B3', 'D4'], 1.4, 0.5), 3.5, 0.5)]
+    return king(prelude, reverb(entrance.buf, wet=0.25, size=1.3), gesture)
+
+
 @sound('cutscene/exploration_ending', -17, trim=False)
 def cutscene_exploration_ending():
     """Fin de l'Exploration : six lieux s'allument (0,6 s puis toutes les 0,55 s), la table (4,2 s), l'écaille d'or (5 s), le sourire (5,5 s)."""

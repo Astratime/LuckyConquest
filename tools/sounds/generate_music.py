@@ -386,6 +386,46 @@ def combat_rapide():
     return looped_reverb(loop_of(track, d), wet=0.2, size=1.1, tail=0.6)
 
 
+@music('combat_manoir')
+def combat_manoir():
+    """
+    Le Manoir hanté : une valse macabre en Ré mineur, 3/4 à 150 battements par minute. Une boîte à
+    musique (cloches de verre) joue la mélodie, l'orgue tient les accords, la contrebasse marque le
+    premier temps, le clavecin (pincé) les deux autres ; la grande horloge sonne toutes les huit
+    mesures. 32 mesures.
+    """
+    beat = 60 / 150
+    bar = 3 * beat
+    bars = 32
+    d = bars * bar
+    track = Track(d + 4)
+    prog = ['Dm', 'Dm', 'Gm', 'Dm', 'A', 'A', 'Dm', 'A', 'Dm', 'Bb', 'Gm', 'Dm', 'Gm', 'A', 'Dm', 'A']
+    roots = {'Dm': ('D', 'm'), 'Gm': ('G', 'm'), 'A': ('A', '7'), 'Bb': ('A#', 'M')}
+    theme = [[4, 3, 4], [7, None, None], [5, 4, 3], [2, None, None],
+             [1, 2, 4], [6, None, 4], [0, None, None], [None, None, 1],
+             [4, 3, 4], [8, None, 7], [5, 7, 5], [4, None, None],
+             [3, 4, 5], [6, 5, 4], [0, None, None], [None, None, None]]
+    for i in range(bars):
+        t0 = i * bar
+        root, kind = roots[prog[i % 16]]
+        chord = chord_notes(root, kind, 4)
+        track.add(bass(transpose(chord[0], -24), beat * 0.9, bright=600), t0, 0.5)    # la contrebasse
+        for k in (1, 2):                                                              # le clavecin
+            for f in chord[:3]:
+                track.add(pluck(f, beat * 0.8, bright=5000), t0 + k * beat, 0.05)
+        track.add(strings(chord[:3], bar * 0.98), t0, 0.04)                           # l'orgue
+        for k, deg in enumerate(theme[i % 16]):                                       # la boîte à musique
+            if deg is None:
+                continue
+            note = scale_note('D', 'harmonic', deg, 5)
+            track.add(modal(note, 1.4, GLASS_RATIOS, [1.0, 0.5, 0.3, 0.2]), t0 + k * beat, 0.16)
+        if i % 8 == 7:                                                                # la grande horloge
+            for k in range(3):
+                track.add(metal_hit(hz('D3'), 1.6), t0 + k * beat, 0.1)
+    track.add(lp(noise(d), 300), 0, 0.04)                                             # le vent dans les couloirs
+    return looped_reverb(loop_of(track, d), wet=0.3, size=1.5, tail=0.8)
+
+
 @music('combat_desert')
 def combat_desert():
     """
