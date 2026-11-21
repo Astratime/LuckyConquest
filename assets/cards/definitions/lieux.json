@@ -226,5 +226,77 @@
     "name": "Ancre",
     "assetPath": "cards/special/ancre.png",
     "effects": [ { "type": "ANCHOR", "turns": 3, "defensePercent": 30 } ]
+  },
+  {
+    "id": "pelle_a_charbon",
+    "name": "Pelle à charbon",
+    "assetPath": "cards/special/pelle_a_charbon.png",
+    "effects": [ { "type": "ATTACK", "bonus": 40 }, { "type": "EXTRA_DRAW", "extraCards": 1 } ]
+  },
+  {
+    "id": "sifflet_du_chef_de_gare",
+    "name": "Sifflet du chef de gare",
+    "assetPath": "cards/special/sifflet_du_chef_de_gare.png",
+    "effects": [ { "type": "REROLL" }, { "type": "EXTRA_DRAW", "extraCards": 1 } ]
+  },
+  {
+    "id": "chaudiere_ardente",
+    "name": "Chaudière ardente",
+    "assetPath": "cards/special/chaudiere_ardente.png",
+    "effects": [ { "type": "STEAM_VALVE" }, { "type": "ATTACK", "bonus": 80 } ]
+  },
+  {
+    "id": "plat_du_jour",
+    "name": "Plat du jour",
+    "assetPath": "cards/special/plat_du_jour.png",
+    "effects": [ { "type": "TRANSFUSION", "percent": 10 }, { "type": "GAINS_PERCENT", "percent": 15 } ]
+  },
+  {
+    "id": "service_a_la_place",
+    "name": "Service à la place",
+    "assetPath": "cards/special/service_a_la_place.png",
+    "effects": [ { "type": "EXTRA_DRAW", "extraCards": 2 }, { "type": "GAIN", "amount": 500 } ]
+  },
+  {
+    "id": "menu_gastronomique",
+    "name": "Menu gastronomique",
+    "assetPath": "cards/special/menu_gastronomique.png",
+    "effects": [ { "type": "BONUS_PLAYS", "plays": 2 }, { "type": "GAINS_PERCENT", "percent": 30 } ]
+  },
+  {
+    "id": "billet_de_seconde",
+    "name": "Billet de seconde",
+    "assetPath": "cards/special/billet_de_seconde.png",
+    "effects": [ { "type": "DEFENSE", "bonus": 30 }, { "type": "GAIN", "amount": 300 } ]
+  },
+  {
+    "id": "couchette",
+    "name": "Couchette",
+    "assetPath": "cards/special/couchette.png",
+    "effects": [ { "type": "TRANSFUSION", "percent": 20 } ]
+  },
+  {
+    "id": "billet_de_premiere",
+    "name": "Billet de première",
+    "assetPath": "cards/special/billet_de_premiere.png",
+    "effects": [ { "type": "BONUS_PLAYS", "plays": 2 }, { "type": "DEFENSE", "bonus": 50 } ]
+  },
+  {
+    "id": "coffre_blinde",
+    "name": "Coffre blindé",
+    "assetPath": "cards/special/coffre_blinde.png",
+    "effects": [ { "type": "DEFENSE", "bonus": 60 } ]
+  },
+  {
+    "id": "aiguillage",
+    "name": "Aiguillage",
+    "assetPath": "cards/special/aiguillage.png",
+    "effects": [ { "type": "REROLL" }, { "type": "ATTACK", "bonus": 30 } ]
+  },
+  {
+    "id": "soupape",
+    "name": "Soupape",
+    "assetPath": "cards/special/soupape.png",
+    "effects": [ { "type": "STEAM_VALVE" }, { "type": "BOOST_SYMBOL", "symbol": "STEAM", "amount": 40 } ]
   }
 ]

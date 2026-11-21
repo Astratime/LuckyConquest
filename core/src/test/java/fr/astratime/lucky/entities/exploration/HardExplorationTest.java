@@ -29,10 +29,10 @@ class HardExplorationTest {
     }
 
     @Test
-    void theFirstHardPlaceIsAsHardAsTheDesertThenEachPlaceDoubles() {
+    void theFirstHardPlaceIsAsHardAsTheDesertThenEachTierIsRootTwoStronger() {
         for (Place place : Place.values()) {
-            long times = 1L << place.ordinal();
-            assertEquals(times, HardExploration.strength(place));
+            double times = Math.pow(Math.sqrt(2.0), place.getTier() - 1);
+            assertEquals(times, HardExploration.strength(place), 1e-9);
             double hp = average(Place.DESERT, k -> k.getMaxHp(Difficulty.NORMAL)) * times;
             double attack = average(Place.DESERT, k -> k.hurt(k.swordDamage(), Difficulty.NORMAL)) * times;
             double defense = average(Place.DESERT, k -> k.getBaseDefense(Difficulty.NORMAL)) * times;
@@ -61,17 +61,18 @@ class HardExplorationTest {
     }
 
     @Test
-    void coinsFollowTheDesertSpinCostPlusFiftyPercentPerPlace() {
+    void coinsFollowTheDesertSpinCostPlusTwentyTwoAndAHalfPercentPerTier() {
         assertEquals(100, HardExploration.COINS_PERCENT, "aucune prime (choix d'Astra)");
-        int[] expected = {140_000, 210_000, 315_000, 472_500, 708_750, 1_063_125};
+        // Paliers 1 (prairie), 2 (Foire), 3 (Rapide), 4 (Port), 6 (Mines), 8 (Casino), 10 (Désert), arrondis à la centaine.
+        int[] expected = {140_000, 171_500, 210_100, 257_400, 386_200, 579_500, 869_700};
         for (Place place : Place.values()) {
             int cost = expected[place.ordinal()];
             assertEquals(cost, place.getSpinCost(true));
             assertEquals(cost, new Enemy(place.getDungeons().get(0).getKing(), true).getSpinCost());
             assertEquals(5_000L * cost, place.getChestCoins(true));
             assertEquals(500L * cost, place.getDefeatCap(true));
-            // La force tirée des gains suit les ennemis (le Désert x2 par lieu).
-            assertEquals(3_000 * (int) HardExploration.strength(place), SpinEconomy.powerSpinCost(cost));
+            // La force tirée des gains suit les ennemis (le Désert x1,41 par palier).
+            assertEquals(Math.round(3_000 * HardExploration.strength(place)), SpinEconomy.powerSpinCost(cost));
         }
         long kept = PlayerProfile.combatReward(false, true, 1e18, Place.PRAIRIE, true, 1);
         assertEquals(Place.PRAIRIE.getDefeatCap(true), kept);

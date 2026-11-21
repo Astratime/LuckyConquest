@@ -18,7 +18,13 @@ public final class ReelGauges {
     /** Invincible pendant ce tour (celui où la jauge se remplit) et le suivant. */
     static final int INVINCIBLE_TURNS = 2;
 
+    /** Vapeur : chaque tirage d'affilée où elle sort ajoute ce bonus à son coup (en %). */
+    public static final int STEAM_STEP_PERCENT = 25;
+    /** Vapeur : au plus ce nombre de crans (x2 au 4e tirage d'affilée). */
+    public static final int STEAM_MAX = 4;
+
     private int piggyDraws;
+    private int steam;
     private int anchoredThisTurn;
     private int anchorKept;
     private int demonization;
@@ -37,6 +43,26 @@ public final class ReelGauges {
 
     /** @return le nombre de sorties de la Tirelire depuis le début du combat. */
     public int getPiggyDraws() { return piggyDraws; }
+
+    // ----- Vapeur -----
+
+    /**
+     * Après un tirage : la pression monte d'un cran si la Vapeur est sortie, sinon elle retombe à zéro.
+     * @return la pression après ce tirage
+     */
+    public int steam(boolean drawn) {
+        steam = drawn ? Math.min(STEAM_MAX, steam + 1) : 0;
+        return steam;
+    }
+
+    /** Soupape : la Vapeur passe tout de suite à sa pression la plus haute. */
+    public void fillSteam() { steam = STEAM_MAX; }
+
+    /** @return la pression de la Vapeur : les tirages d'affilée où elle est sortie (0 à {@link #STEAM_MAX}). */
+    public int getSteam() { return steam; }
+
+    /** @return le multiplicateur du coup de Vapeur à ce tirage (x1, x1,25 … x2). */
+    public double steamFactor() { return 1.0 + STEAM_STEP_PERCENT * Math.min(STEAM_MAX, steam) / 100.0; }
 
     // ----- Ancre -----
 
@@ -125,7 +151,7 @@ public final class ReelGauges {
 
     /** @return {@code true} si aucun de ces rouleaux n'a rien retenu. */
     public boolean isEmpty() {
-        return piggyDraws == 0 && anchoredThisTurn == 0 && anchorKept == 0 && demonization == 0 && luckyAngel == 0
+        return piggyDraws == 0 && steam == 0 && anchoredThisTurn == 0 && anchorKept == 0 && demonization == 0 && luckyAngel == 0
             && forced == null && invincibleTurns == 0;
     }
 }

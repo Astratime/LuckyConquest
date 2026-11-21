@@ -2418,6 +2418,69 @@ def king_dragon():
     return king(prelude, reverb(entrance.buf, wet=0.3, size=1.6), gesture, d=9.0)
 
 
+def steam_whistle(d=1.4):
+    """Le sifflet d'une locomotive : trois notes qui glissent un peu, un souffle de vapeur dessous."""
+    tone = sum(osc(sweep(f * 0.96, f, 0.2), d, 'sine') for f in (hz('A5'), hz('C#6'), hz('E6')))
+    return tone * expdec(d, d * 0.6, attack=0.05) * 0.4 + hp(noise(d), 3000) * expdec(d, d * 0.4) * 0.3
+
+
+def gunshot():
+    """Un coup de revolver : le claquement sec et sa détonation sourde."""
+    return mix((crack(0.04, 0.003, 1200, 10000), 0, 1.3), (thump(180, 50, 0.25), 0, 0.9))
+
+
+@sound('cutscene/king_locomotive', -17)
+def king_locomotive():
+    """La Locomotive : le phare approche, elle entre (0 à 1 s), freine (1 s), siffle (3,4 s)."""
+    prelude = [(rattle(2.0, 4, 10, 300, 1500), 0.0, 0.5), (lp(noise(2.0), 220) * ramp(2.0, 0.2, 1.0), 0.0, 0.6)]
+    entrance = Track(5.0)
+    entrance.add(rattle(1.0, 12, 6, 300, 1500), 0.0, 0.6)
+    entrance.add(screech(0.9, 3000), 0.9, 0.4)
+    entrance.add(impact(0.5, 120, 40), 1.0, 0.8)
+    entrance.add(hiss(1.0), 1.2, 0.4)
+    gesture = [(steam_whistle(1.6), 3.4, 0.8), (hiss(1.4), 3.4, 0.5), (brass_chord(['A2', 'E3', 'A3', 'C#4'], 1.2, 0.5), 3.5, 0.5)]
+    return king(prelude, reverb(entrance.buf, wet=0.2, size=1.2), gesture)
+
+
+@sound('cutscene/king_grand_chef', -17)
+def king_grand_chef():
+    """Le Grand Chef : le wagon-restaurant, il surgit (0,5 s), il soulève sa cloche (3,4 s)."""
+    prelude = [(ambience(2.0, 300, 1400, 0.3), 0.0, 0.5), (rattle(2.0, 5, 5, 300, 1200), 0.0, 0.3)]
+    entrance = Track(5.0)
+    entrance.add(whoosh(0.4, 300, 2000), 0.3, 0.5)
+    entrance.add(thump(160, 60, 0.3), 0.5, 0.8)
+    entrance.add(fire_burst(0.8), 0.6, 0.3)
+    gesture = [(cash_register_bell(), 3.4, 0.6), (sparkle(1.0), 3.45, 0.5),
+               (brass_chord(['F3', 'A3', 'C4', 'F4'], 1.2, 0.6), 3.5, 0.6)]
+    return king(prelude, reverb(entrance.buf, wet=0.2, size=1.2), gesture)
+
+
+@sound('cutscene/king_dame_en_noir', -17)
+def king_dame_en_noir():
+    """La Dame en noir : le couloir du wagon-lit, elle sort du brouillard (0,3 s), les lampes s'éteignent (1,6 s), sa voilette (3,4 s)."""
+    prelude = [(rattle(2.0, 4, 4, 300, 1200), 0.0, 0.3), (ambience(2.0, 200, 900, 0.3), 0.0, 0.5)]
+    entrance = Track(5.0)
+    entrance.add(whoosh(1.2, 200, 900, q=0.8), 0.3, 0.4)
+    for k in range(4):
+        entrance.add(crack(0.03, 0.004, 800, 4000), 1.6 + k * 0.18, 0.4)
+    gesture = [(modal(hz('E6'), 2.0, GLASS_RATIOS, [1.0, 0.6, 0.4, 0.3]), 3.4, 0.4),
+               (brass_chord(['E3', 'G3', 'B3', 'D#4'], 1.6, 0.4), 3.4, 0.4)]
+    return king(prelude, reverb(entrance.buf, wet=0.3, size=1.5), gesture)
+
+
+@sound('cutscene/king_desperado', -17)
+def king_desperado():
+    """Le Desperado : le toit du fourgon qui file, il atterrit (0,6 s), deux coups de feu (3,4 et 3,75 s), les pièces."""
+    prelude = [(rattle(2.0, 10, 10, 300, 1500), 0.0, 0.5), (bp(noise(2.0), 400, 2000) * 0.3, 0.0, 0.4)]
+    entrance = Track(5.0)
+    entrance.add(rattle(5.0, 10, 10, 300, 1500), 0.0, 0.3)
+    entrance.add(whoosh(0.5, 200, 1500), 0.1, 0.4)
+    entrance.add(impact(0.5, 140, 45), 0.6, 0.9)
+    gesture = [(gunshot(), 3.4, 0.9), (gunshot(), 3.75, 0.9), (coin_shower(1.2, 14), 3.85, 0.5),
+               (brass_chord(['D3', 'A3', 'D4', 'F4'], 1.2, 0.5), 3.5, 0.5)]
+    return king(prelude, reverb(entrance.buf, wet=0.2, size=1.2), gesture)
+
+
 @sound('cutscene/exploration_ending', -17, trim=False)
 def cutscene_exploration_ending():
     """Fin de l'Exploration : six lieux s'allument (0,6 s puis toutes les 0,55 s), la table (4,2 s), l'écaille d'or (5 s), le sourire (5,5 s)."""

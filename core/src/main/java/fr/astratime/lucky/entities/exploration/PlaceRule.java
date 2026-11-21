@@ -17,7 +17,9 @@ import fr.astratime.lucky.i18n.Lang;
  *   <li>{@link #MANEGE} : tous les {@link #CAROUSEL_PERIOD} tours, un rouleau du joueur, au hasard, est
  *       bloqué pour ce tirage (il tourne sur le manège) ;</li>
  *   <li>{@link #SOIF} : les soins du joueur sont divisés par {@link #THIRST_HEAL_DIVISOR} ; à la fin
- *       d'un tour sans soin, il perd {@link #THIRST_PERCENT} % de ses PV max (son bouclier ne protège pas).</li>
+ *       d'un tour sans soin, il perd {@link #THIRST_PERCENT} % de ses PV max (son bouclier ne protège pas) ;</li>
+ *   <li>{@link #WAGON_BONDE} : tous les {@link #CROWDED_PERIOD} tours, le joueur joue {@link #CROWDED_PLAYS}
+ *       carte de moins ce tour-là (le wagon est bondé).</li>
  * </ul>
  */
 public enum PlaceRule {
@@ -31,7 +33,8 @@ public enum PlaceRule {
         + "À 6, elle redescend à 0."),
     MANEGE("Manège", "Tous les 3 tours, le manège tourne : un de tes rouleaux, au hasard, est bloqué pour ce tirage."),
     SOIF("Soif", "Tes soins sont divisés par 2. À la fin de chaque tour où tu ne t'es pas soigné, tu perds 1 % de tes "
-        + "PV max. Ton bouclier ne protège pas.");
+        + "PV max. Ton bouclier ne protège pas."),
+    WAGON_BONDE("Wagon bondé", "Tous les 3 tours, le wagon est bondé : tu joues 1 carte de moins ce tour-là.");
 
     /** Id de la carte Scorbut. */
     public static final String SCURVY_CARD = "scorbut";
@@ -56,6 +59,11 @@ public enum PlaceRule {
     public static final int THIRST_HEAL_DIVISOR = 2;
     /** Soif : PV perdus à la fin d'un tour sans soin, en % des PV max. */
     public static final int THIRST_PERCENT = 1;
+
+    /** Wagon bondé : tous les tant de tours (au 3e, au 6e…). */
+    public static final int CROWDED_PERIOD = 3;
+    /** Wagon bondé : cartes jouées en moins ce tour-là. */
+    public static final int CROWDED_PLAYS = 1;
 
     private final String name;
     private final String description;
@@ -90,6 +98,12 @@ public enum PlaceRule {
 
     /** @return les tours avant le prochain tour de manège, celui-ci compris (1 : ce tour). */
     public static int turnsBeforeCarousel(int turn) { return CAROUSEL_PERIOD - (turn - 1) % CAROUSEL_PERIOD; }
+
+    /** @return {@code true} si le wagon est bondé au tour {@code turn} (à partir de 1) : une carte jouée de moins. */
+    public boolean isCrowded(int turn) { return this == WAGON_BONDE && turn % CROWDED_PERIOD == 0; }
+
+    /** @return les tours avant le prochain wagon bondé, celui-ci compris (1 : ce tour). */
+    public static int turnsBeforeCrowd(int turn) { return CROWDED_PERIOD - (turn - 1) % CROWDED_PERIOD; }
 
     /** @return {@code true} si la Soif joue (soins divisés, PV perdus sans soin). */
     public boolean isThirsty() { return this == SOIF; }

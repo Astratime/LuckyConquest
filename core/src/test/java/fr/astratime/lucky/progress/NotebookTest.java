@@ -22,7 +22,7 @@ class NotebookTest {
         for (Chapter chapter : Chapter.values()) expected.add(chapter.getBoss());
         for (Place place : Place.values()) for (Dungeon dungeon : place.getDungeons()) expected.add(dungeon.getKing());
         assertEquals(expected, new LinkedHashSet<>(Notebook.owners()));
-        assertEquals(30, Notebook.size());
+        assertEquals(34, Notebook.size());
         assertEquals(1, Notebook.number(EnemyKind.COMETE));
         assertEquals(0, Notebook.number(EnemyKind.SOLDAT_PIQUE));
         assertFalse(Notebook.hasPage(EnemyKind.GRAND_CROUPIER));

@@ -57,6 +57,8 @@ public class Enemy {
     private       int         interest;
     /** Compte à rebours de son Sablier, de 0 à {@link EnemySymbol#HOURGLASS_MAX}. */
     private       int         hourglass;
+    /** Pression de sa chaudière (Rapide de Minuit), de 0 à {@link EnemySymbol#PRESSURE_MAX}. */
+    private       int         pressure;
     /** Sa mise (Tapis) : ses attaques sont multipliées d'autant, jusqu'à ce qu'il soit touché. */
     private       int         stake = 1;
     /** Tapis posé à son dernier tour : sa mise doublera à son tour suivant, s'il n'est pas touché d'ici là. */
@@ -185,6 +187,7 @@ public class Enemy {
             allIn = false;
         }
         if (hourglass > 0 && lost * 1000L >= maxHp * EnemySymbol.HOURGLASS_HIT_PER_MILLE) hourglass--;
+        if (pressure > 0 && lost * 1000L >= maxHp * EnemySymbol.PRESSURE_HIT_PER_MILLE) pressure--; // un gros coup fait baisser la Pression
         return lost;
     }
 
@@ -513,6 +516,24 @@ public class Enemy {
         thornsPercent = 0;
         return thorns;
     }
+
+    /** @return les dégâts encaissés depuis la fin de son dernier tour (le Braquage les regarde). */
+    public long getDamageTaken() { return damageTaken; }
+
+    /**
+     * Sa chaudière monte d'un cran (Pression, Rapide de Minuit).
+     *
+     * @return {@code true} si elle arrive à {@link EnemySymbol#PRESSURE_MAX} : elle explose et repart de zéro
+     */
+    public boolean tickPressure() {
+        pressure++;
+        if (pressure < EnemySymbol.PRESSURE_MAX) return false;
+        pressure = 0;
+        return true;
+    }
+
+    /** @return la Pression de sa chaudière, de 0 à {@link EnemySymbol#PRESSURE_MAX} - 1. */
+    public int getPressure() { return pressure; }
 
     /** Fin de son tour : ses Épines ne compteront que les coups encaissés à partir de maintenant. */
     public void resetDamageTaken() { damageTaken = 0; }

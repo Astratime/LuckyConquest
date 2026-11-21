@@ -51,6 +51,15 @@ public final class Notebook {
             + "C'est le seul jouet qui m'ait jamais surpris.");
         page(EnemyKind.ROI_FORAIN, "Le Roi des Forains vend du rêve à un sou. Il m'en doit des milliers. "
             + "Je ne réclame jamais : j'attends qu'on vienne payer.");
+        // ----- Le Rapide de Minuit -----
+        page(EnemyKind.LOCOMOTIVE, "J'ai construit le Rapide pour emmener les joueurs de la Foire jusqu'au Port. "
+            + "Un jour, la locomotive a refusé de s'arrêter. Elle roule pour elle, maintenant.");
+        page(EnemyKind.GRAND_CHEF, "Le Grand Chef nourrit les joueurs pour qu'ils ne quittent jamais la table. "
+            + "C'est moi qui lui ai appris la recette.");
+        page(EnemyKind.DAME_EN_NOIR, "Personne n'a vu la Dame en noir monter dans le train. Personne ne l'a vue "
+            + "descendre. Elle berce les joueurs qui veulent partir.");
+        page(EnemyKind.DESPERADO, "Le Desperado braque le fourgon chaque nuit. Le fourgon est vide chaque nuit. "
+            + "Il ne vole pas l'or : il vole l'envie de jouer.");
         // ----- Le Port des Contrebandiers -----
         page(EnemyKind.CAPITAINE_RAT, "Le Capitaine Rat a fui chaque naufrage. Il fuira aussi la dernière partie. "
             + "Tous fuient la dernière partie. Sauf toi, peut-être.");

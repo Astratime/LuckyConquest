@@ -58,6 +58,11 @@ public record BossTheme(Color skyTop, Color skyLow, Color ground, Color accent, 
             case CONDUCTEUR -> king(kind, "6ad86a", "LE TRAIN FANTÔME FINIT SA COURSE");
             case ROUE_FORTUNE -> king(kind, "ffd23a", "HUÉE, LA ROUE VOLE EN ÉCLATS");
             case ROI_FORAIN -> king(kind, "ff9a3a", "LE ROI DES FORAINS A PERDU LA MAIN");
+            // ----- Le Rapide de Minuit -----
+            case LOCOMOTIVE -> king(kind, "ff7a1e", "LA LOCOMOTIVE A DÉRAILLÉ");
+            case GRAND_CHEF -> king(kind, "fff2a0", "LE GRAND CHEF A RENDU SON TABLIER");
+            case DAME_EN_NOIR -> king(kind, "b8a0ff", "LA DAME EN NOIR S'EFFACE DANS LA NUIT");
+            case DESPERADO -> king(kind, "ffc93a", "LE DESPERADO DESCEND DU TRAIN");
             // ----- Le Désert de Braise -----
             case EMIR -> king(kind, "ffd23a", "L'ÉMIR RETOURNE AU SABLE");
             case PHARAON -> king(kind, "6aff6a", "LE PHARAON RETOURNE À LA POUSSIÈRE");
@@ -80,6 +85,7 @@ public record BossTheme(Color skyTop, Color skyLow, Color ground, Color accent, 
             case MINES -> { top = "120a04"; low = "3a2210"; ground = "140c06"; }      // la roche et l'or
             case CASINO -> { top = "02101a"; low = "0a3a4a"; ground = "031016"; }     // sous la mer
             case FOIRE -> { top = "0a0614"; low = "2a0a2a"; ground = "140a10"; }      // la nuit sous le chapiteau
+            case RAPIDE -> { top = "0a0c1e"; low = "1a2a4a"; ground = "2a0a14"; }     // le train dans la nuit
             case DESERT -> { top = "2a0a0a"; low = "c8501e"; ground = "8a5a2a"; }     // le sable brûlant
             default -> { top = "1c1a28"; low = "2e2a3e"; ground = "141220"; }         // le donjon de pierre
         }

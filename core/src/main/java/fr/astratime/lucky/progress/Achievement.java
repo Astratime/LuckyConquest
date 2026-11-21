@@ -35,6 +35,7 @@ public enum Achievement {
     FIRST_DUNGEON("Premier donjon", "Vider un donjon.", 100_000),
     PRAIRIE("Maître de la prairie", "Vider les 4 donjons de la prairie.", 250_000),
     FOIRE("Roi de la fête", "Vider les 4 donjons de la Fête foraine.", 3_000_000),
+    RAPIDE("Contrôleur de nuit", "Vider les 4 donjons du Rapide de Minuit.", 12_000_000),
     PORT("Loup de mer", "Vider les 4 donjons du Port des Contrebandiers.", 50_000_000),
     MINES("Chercheur d'or", "Vider les 4 donjons des Mines d'Or.", 300_000_000),
     CASINO("Maître du Casino", "Vider les 4 donjons du Casino Englouti.", 1_000_000_000L),
@@ -43,6 +44,7 @@ public enum Achievement {
     // Exploration difficile (2026-11-20 : environ une descente médiane du lieu, joueur malin, au Prestige où il s'ouvre)
     HARD_PRAIRIE("Prairie sans pitié", "Vider les 4 donjons de la prairie en mode difficile.", 50_000_000_000L),
     HARD_FOIRE("Fête sans pitié", "Vider les 4 donjons de la Fête foraine en mode difficile.", 100_000_000_000L),
+    HARD_RAPIDE("Rapide sans pitié", "Vider les 4 donjons du Rapide de Minuit en mode difficile.", 150_000_000_000L),
     HARD_PORT("Port sans pitié", "Vider les 4 donjons du Port des Contrebandiers en mode difficile.", 200_000_000_000L),
     HARD_MINES("Mines sans pitié", "Vider les 4 donjons des Mines d'Or en mode difficile.", 300_000_000_000L),
     HARD_CASINO("Casino sans pitié", "Vider les 4 donjons du Casino Englouti en mode difficile.", 500_000_000_000L),

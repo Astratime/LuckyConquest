@@ -129,7 +129,17 @@ public enum EnemySymbol {
     /** Un souffle qui passe le bouclier et brûle une carte de la main. */
     FIRE_BREATH("SOUFFLE DE FEU"),
     /** Lumière du bingo (rouleau du joueur) : ce rouleau de l'ennemi s'illumine, ne fait rien, et il perd des PV. */
-    BINGO_LIGHT("LUMIÈRE DU BINGO");
+    BINGO_LIGHT("LUMIÈRE DU BINGO"),
+    /** Rapide de Minuit : sa chaudière monte d'un cran ; au 3e, elle explose (gros coup). Tes gros coups la font baisser. */
+    PRESSURE("PRESSION"),
+    /** Une carte au hasard de ta main disparaît dans sa poche jusqu'à la fin de ton prochain tour. */
+    PICKPOCKET("VOL À LA TIRE"),
+    /** Il se soigne et reforme sa défense. */
+    BANQUET("BANQUET"),
+    /** La prochaine carte que tu joues s'endort : elle ne fait rien. */
+    LULLABY("BERCEUSE"),
+    /** Si tu l'as peu blessé depuis son dernier tour, il te prend ton bouclier ; sinon, il tire. */
+    HOLDUP("BRAQUAGE");
 
     /** Dégâts de base d'une Épée. */
     public static final int SWORD_DAMAGE   = 20;
@@ -257,6 +267,17 @@ public enum EnemySymbol {
     /** Sarcophage du Pharaon : soin en % de ses PV max quand il s'y enferme. */
     public static final int SARCOPHAGUS_HEAL_PERCENT = 5; // 10 avant le plafond de 5 % (Astra, 2026-11-01)
 
+    /** Pression : crans avant l'explosion, force de l'explosion (en coups d'Épée), et coup qui fait baisser la Pression (pour mille de ses PV max). */
+    public static final int PRESSURE_MAX = 3, PRESSURE_FACTOR = 3, PRESSURE_HIT_PER_MILLE = 15;
+    /** Vol à la tire : tours du joueur que manque la carte volée. */
+    public static final int PICKPOCKET_TURNS = 1;
+    /** Banquet : soin, en % de ses PV max. */
+    public static final int BANQUET_HEAL_PERCENT = 4;
+    /** Braquage : il te prend ton bouclier si tu lui as fait moins que cette part de ses PV max depuis son dernier tour (en %). */
+    public static final int HOLDUP_PERCENT = 3;
+    /** Braquage : le bouclier volé ne lui donne pas plus que ce nombre de ses Boucliers. */
+    public static final int HOLDUP_MAX_SHIELDS = 4;
+
     private final String displayName;
 
     EnemySymbol(String displayName) {
@@ -382,6 +403,14 @@ public enum EnemySymbol {
                 + "prochain tour", kind.hurt(kind.swordDamage(), hard));
             case BINGO_LIGHT -> Lang.f("Lumière du bingo : ce rouleau ne fait rien. Il perd {0} % de ses PV max",
                 fr.astratime.lucky.entities.EnemyMaluses.LIGHT_HP_PERCENT);
+            case PRESSURE -> Lang.f("Pression : +1. À {0}, sa chaudière explose ({1}). Tes gros coups la font baisser",
+                PRESSURE_MAX, kind.hurt(kind.swordDamage() * PRESSURE_FACTOR, hard));
+            case PICKPOCKET -> Lang.t("Vol à la tire : une carte au hasard de ta main disparaît jusqu'à la fin de ton prochain tour");
+            case BANQUET -> Lang.f("Banquet : il se soigne de {0} % de ses PV max et reforme sa défense", BANQUET_HEAL_PERCENT);
+            case LULLABY -> Lang.t("Berceuse : au prochain tour, la première carte que tu joues s'endort. Elle ne fait rien");
+            case HOLDUP -> Lang.f("Braquage : si tu lui as fait moins de {0} % de ses PV max depuis son dernier tour, il te prend "
+                + "ton bouclier. Sinon, attaque de {1}", HOLDUP_PERCENT,
+                kind.hurt(kind.swordDamage(), hard));
         };
     }
 

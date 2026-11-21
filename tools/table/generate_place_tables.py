@@ -8,7 +8,7 @@ ornement dans chaque coin (les coins ne sont pas étirés). Le feutre est un mot
 répété de 32 x 32 pixels de jeu. Tout est dessiné sur la grille du jeu (1 pixel
 = 3 pixels de texture), sans lissage.
 
-Produit assets/table/<lieu>/*.png pour prairie, foire, port, mines et desert (le
+Produit assets/table/<lieu>/*.png pour prairie, foire, rapide, port, mines et desert (le
 casino, la Tour et l'Entraînement gardent la table d'origine, assets/table/*.png). Lancer depuis la racine du dépôt :
     python3 tools/table/generate_place_tables.py
 """
@@ -48,6 +48,10 @@ THEMES = {
         rail=[(244, 232, 210), (204, 44, 52), (162, 30, 44), (110, 18, 30)], groove=(244, 232, 210),
         metal=GOLDS, felt=[(76, 44, 116), (64, 36, 100), (92, 58, 134)], ornament='star', motif='stars',
         emblem='star'),
+    'rapide': dict(  # wagon de luxe : acajou verni, laiton, velours bordeaux
+        rail=[(150, 78, 52), (108, 50, 34), (84, 36, 26), (54, 22, 16)], groove=(214, 176, 104),
+        metal=BRASS, felt=[(96, 26, 40), (80, 20, 32), (118, 40, 54)], ornament='rivet', motif='rails',
+        emblem='wheel'),
     'port': dict(
         rail=[(150, 104, 62), (112, 72, 40), (86, 54, 30), (60, 36, 20)], groove=(198, 166, 106),
         metal=BRASS, felt=[(28, 66, 106), (22, 54, 90), (38, 82, 126)], ornament='rivet', motif='waves',
@@ -155,6 +159,8 @@ def felt(t):
             block(d, x + 4, y + 2, light)
         elif motif == 'diamonds':
             sprite(d, [".a.", "a.a", ".a."], x, y, {'a': light})
+        elif motif == 'rails':  # un bout de voie : deux rails sur trois traverses
+            sprite(d, ["aaaaa", ".b.b.", "aaaaa"], x, y, {'a': light, 'b': dark})
     return img
 
 
@@ -201,6 +207,12 @@ def emblem(t):
         for x in range(0, 5):
             block(d, x, 7, m[1])
             block(d, w - 1 - x, 7, m[1])
+    elif kind == 'wheel':  # roue de locomotive (jante, rayons, moyeu) posée sur la voie
+        for x in range(0, w):
+            block(d, x, 12, m[1])
+        sprite(d, ["...aaaaa...", "..abbbbba..", ".ab.aba.ba.", "ab.a.a.a.ba", "ab..aca..ba", "abaacccaaba",
+                   "ab..aca..ba", "ab.a.a.a.ba", ".ab.aba.ba.", "..abbbbba..", "...aaaaa..."], 5, 1,
+               {'a': m[0], 'b': m[2], 'c': (232, 64, 52)})
     # ombre portée d'un pixel du jeu, comme l'emblème d'origine
     a = np.array(img)
     shadow = np.zeros_like(a)

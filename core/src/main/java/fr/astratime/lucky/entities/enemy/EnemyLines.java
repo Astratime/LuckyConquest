@@ -96,6 +96,23 @@ public final class EnemyLines {
             "Tu as gagné une peluche. Bravo.",
             "Perdu ! Rejoue, ce n'est qu'un sou.",
             "Tous mes lots sont truqués. Même celui-là !");
+        // ----- Le Rapide de Minuit -----
+        say(EnemyKind.LOCOMOTIVE, "Un Bingo ? Ça ne m'arrête pas, moi.",
+            "Tu gagnes du terrain. J'en avale des kilomètres.",
+            "Terminus pour toi. Le train ne s'arrête pas.",
+            "Pression au maximum ! Pleins gaz !");
+        say(EnemyKind.GRAND_CHEF, "Un Bingo ? Tu as goûté avant de servir.",
+            "Joli plat. Il manque un peu de sel.",
+            "Tu es cuit à point. On passe au dessert.",
+            "Coup de feu en cuisine ! Tout le monde à son poste !");
+        say(EnemyKind.DAME_EN_NOIR, "Un Bingo ? Rêve encore un peu.",
+            "Chut. Le wagon dort.",
+            "Ferme les yeux. Ce sera plus doux.",
+            "Assez de rêves. Regarde-moi, maintenant.");
+        say(EnemyKind.DESPERADO, "Un Bingo ? Merci, je le prends.",
+            "Tu remplis le coffre. Je le viderai.",
+            "Haut les mains ! C'est fini pour toi.",
+            "Tout le monde à terre ! C'est un braquage !");
         // ----- Le Port des Contrebandiers -----
         say(EnemyKind.CAPITAINE_RAT, "Un trésor ! Mes rats vont le ronger.",
             "Couic ! Garde ta chance, je garde ta main.",

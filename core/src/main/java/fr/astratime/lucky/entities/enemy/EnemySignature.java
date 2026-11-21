@@ -150,7 +150,21 @@ public enum EnemySignature {
     COULEE_DE_LAVE("Coulée de lave", EnemySymbol.BURN, Timing.TURN,
         "Ses Brûlures de ce tour font fondre tout ton bouclier", "BOUCLIER FONDU"),
     BRAISE("Braise", EnemySymbol.FIRE_BREATH, Timing.NEXT,
-        "Son prochain Souffle de feu brûle 2 cartes", "SOUFFLE x2");
+        "Son prochain Souffle de feu brûle 2 cartes", "SOUFFLE x2"),
+
+    // Le Rapide de Minuit
+    CHARBON("Charbon", EnemySymbol.PRESSURE, Timing.NOW,
+        "Sa Pression monte de 1 tout de suite", "PRESSION +1"),
+    PLEIN_REGIME("Plein régime", EnemySymbol.PRESSURE, Timing.NEXT,
+        "La prochaine explosion de sa chaudière frappe deux fois plus fort", "EXPLOSION x2"),
+    DOIGTS_AGILES("Doigts agiles", EnemySymbol.PICKPOCKET, Timing.NEXT,
+        "Son prochain Vol à la tire prend 2 cartes", "VOL x2"),
+    DESSERT("Dessert", EnemySymbol.BANQUET, Timing.TURN,
+        "Ses Banquets de ce tour reforment sa défense deux fois", "BANQUET +BOUCLIER"),
+    MARCHAND_DE_SABLE("Marchand de sable", EnemySymbol.LULLABY, Timing.NEXT,
+        "Sa prochaine Berceuse endort 2 cartes", "BERCEUSE x2"),
+    HAUT_LES_MAINS("Haut les mains", EnemySymbol.HOLDUP, Timing.NEXT,
+        "Son prochain Braquage te prend ton bouclier, même si tu l'as beaucoup blessé", "BRAQUAGE ASSURÉ");
 
     /** Exemplaires de chaque carte propre dans le deck d'un ennemi (choix d'Astra). */
     public static final int COPIES = 4;

@@ -671,6 +671,7 @@ public class PlayerProfile {
             case BILLIONAIRE     -> stats.get(PlayerStats.Stat.GAINS) >= 1_000_000_000L;
             case FIRST_DUNGEON   -> !clearedDungeons.isEmpty();
             case PRAIRIE         -> placeCleared(Place.PRAIRIE);
+            case RAPIDE          -> placeCleared(Place.RAPIDE);
             case PORT            -> placeCleared(Place.PORT);
             case MINES           -> placeCleared(Place.MINES);
             case CASINO          -> placeCleared(Place.CASINO);
@@ -679,6 +680,7 @@ public class PlayerProfile {
             case GREAT_EXPLORER  -> Arrays.stream(Place.values()).allMatch(this::placeCleared);
             case HARD_PRAIRIE    -> isHardPlaceCleared(Place.PRAIRIE);
             case HARD_FOIRE      -> isHardPlaceCleared(Place.FOIRE);
+            case HARD_RAPIDE     -> isHardPlaceCleared(Place.RAPIDE);
             case HARD_PORT       -> isHardPlaceCleared(Place.PORT);
             case HARD_MINES      -> isHardPlaceCleared(Place.MINES);
             case HARD_CASINO     -> isHardPlaceCleared(Place.CASINO);
@@ -1144,7 +1146,16 @@ public class PlayerProfile {
      *         de rangs (Avare et Parieur à la Foire … Roi du casino et Légende au Désert)
      */
     public static Place placeOf(Rank rank) {
-        return rank == null ? Place.PRAIRIE : Place.values()[Math.min(Place.values().length - 1, rank.ordinal() / 2 + 1)];
+        return Place.atTier(tierOf(rank));
+    }
+
+    /**
+     * @return le palier de lieu du rang {@code rank} (Astra, 2026-11-20 : 10 lieux) : 1 sans rang, 2 pour l'Avare et
+     *         le Parieur, puis un palier par rang (3 le Flambeur … 10 la Légende). Tant qu'un palier n'a pas encore son
+     *         lieu, le rang va au lieu suivant (voir {@link Place#atTier(int)}).
+     */
+    public static int tierOf(Rank rank) {
+        return rank == null ? 1 : Math.max(2, rank.ordinal() + 1);
     }
 
     /**
@@ -1302,18 +1313,18 @@ public class PlayerProfile {
     }
 
     /**
-     * Sceaux de Prestige (2026-11-20) : chaque niveau demande un lieu vidé en Exploration difficile, la prairie pour
-     * les Prestiges I et II, la Foire pour III et IV … le Casino pour IX et X. Sans eux, le mode normal suffisait pour
-     * tout racheter et le difficile ne servait à rien. Deux niveaux par lieu : un lieu difficile est deux fois plus
-     * fort que le précédent, et deux Prestiges (x1,4 chacun) font à peu près x2 (simulateur : chaque nouveau sceau
-     * se gagne 55 à 99 % du temps avec la Légende du Prestige d'avant).
+     * Sceaux de Prestige (2026-11-20) : chaque niveau demande un lieu vidé en Exploration difficile. Sans eux, le mode
+     * normal suffisait pour tout racheter et le difficile ne servait à rien. Avec les 10 lieux (Astra, 2026-11-20), un
+     * Prestige = un palier de lieu : la prairie pour I, la Foire pour II, le Rapide pour III … le Désert pour X ; un
+     * palier difficile est x1,41 plus fort que le précédent, comme un Prestige (x1,4). Tant qu'un palier n'a pas encore
+     * son lieu, c'est le lieu suivant (voir {@link Place#atTier(int)}).
      *
      * @param level niveau de Prestige visé (1 à {@link #MAX_PRESTIGE})
      * @return le lieu à vider en difficile pour l'atteindre, ou {@code null} pour un niveau hors limites
      */
     public static Place prestigeSeal(int level) {
         if (level < 1 || level > MAX_PRESTIGE) return null;
-        return Place.values()[Math.min(Place.values().length - 1, (level - 1) / 2)];
+        return Place.atTier(level);
     }
 
     /** @return le lieu à vider en difficile avant le prochain Prestige, ou {@code null} s'il l'est déjà (ou s'il n'y en a plus). */

@@ -59,6 +59,28 @@ public enum Dungeon {
         EnemyKind.BONIMENTEUR, EnemyKind.ROI_FORAIN,
         List.of(new Loot("calibrage", 40), new Loot("martingale", 40), new Loot("chamboule_tout", 20))),
 
+    // ----- Le Rapide de Minuit -----
+
+    LOCOMOTIVE("La Locomotive", "Locomotive",
+        "La chaudière rougit. Les pistons cognent. La machine respire comme une bête, et elle a faim de charbon.",
+        EnemyKind.CHAUFFEUR, EnemyKind.LOCOMOTIVE,
+        List.of(new Loot("pelle_a_charbon", 40), new Loot("sifflet_du_chef_de_gare", 40), new Loot("chaudiere_ardente", 20))),
+
+    WAGON_RESTAURANT("Le Wagon-restaurant", "Restaurant",
+        "Nappes blanches, couverts d'argent. Le service est parfait. Surveille quand même tes poches.",
+        EnemyKind.SERVEUR, EnemyKind.GRAND_CHEF,
+        List.of(new Loot("plat_du_jour", 40), new Loot("service_a_la_place", 40), new Loot("menu_gastronomique", 20))),
+
+    WAGON_LIT("Le Wagon-lit", "Wagon-lit",
+        "Les couchettes sont tirées. Tout le monde dort. Presque tout le monde.",
+        EnemyKind.SOMNAMBULE, EnemyKind.DAME_EN_NOIR,
+        List.of(new Loot("billet_de_seconde", 40), new Loot("couchette", 40), new Loot("billet_de_premiere", 20))),
+
+    FOURGON("Le Fourgon blindé", "Fourgon",
+        "Au bout du convoi, l'or de la comète voyage sous clé. Quelqu'un est déjà monté sur le toit.",
+        EnemyKind.CONVOYEUR, EnemyKind.DESPERADO,
+        List.of(new Loot("coffre_blinde", 40), new Loot("aiguillage", 40), new Loot("soupape", 20))),
+
     // ----- Le Port des Contrebandiers -----
 
     CALE("La Cale", "Cale",

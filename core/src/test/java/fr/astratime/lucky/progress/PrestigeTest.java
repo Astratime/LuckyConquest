@@ -81,12 +81,14 @@ class PrestigeTest {
     }
 
     @Test
-    void eachPairOfPrestigesNeedsTheNextHardPlace() {
+    void eachPrestigeNeedsTheHardPlaceOfItsTier() {
+        // Un Prestige = un palier de lieu (10 lieux, Astra 2026-11-20) ; un palier sans lieu prend le lieu suivant.
         assertEquals(Place.PRAIRIE, PlayerProfile.prestigeSeal(1));
-        assertEquals(Place.PRAIRIE, PlayerProfile.prestigeSeal(2));
-        assertEquals(Place.FOIRE, PlayerProfile.prestigeSeal(3));
-        assertEquals(Place.PORT, PlayerProfile.prestigeSeal(6));
-        assertEquals(Place.CASINO, PlayerProfile.prestigeSeal(10));
+        assertEquals(Place.FOIRE, PlayerProfile.prestigeSeal(2));
+        assertEquals(Place.RAPIDE, PlayerProfile.prestigeSeal(3));
+        assertEquals(Place.PORT, PlayerProfile.prestigeSeal(4));
+        assertEquals(Place.MINES, PlayerProfile.prestigeSeal(6));
+        assertEquals(Place.DESERT, PlayerProfile.prestigeSeal(10));
         assertNull(PlayerProfile.prestigeSeal(11));
 
         PlayerProfile profile = legend(new PlayerProfileTest.MemoryStorage());
@@ -96,7 +98,7 @@ class PrestigeTest {
         profile.clearHardDungeon(Place.PRAIRIE.getDungeons().get(3).name());
         assertNull(profile.missingPrestigeSeal());
         assertTrue(profile.ascend());
-        assertNull(profile.missingPrestigeSeal(), "le Prestige II demande aussi la prairie, déjà vidée");
+        assertEquals(Place.FOIRE, profile.missingPrestigeSeal(), "le Prestige II demande la Foire");
     }
 
     @Test

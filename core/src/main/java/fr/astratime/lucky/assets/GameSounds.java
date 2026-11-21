@@ -162,6 +162,7 @@ public class GameSounds implements Disposable {
             case BOMB                -> "triple_cherry";
             case TRIPLE_SEVEN, JOKER -> "casino";
             case FANGS, FLAME        -> "triple_cherry";
+            case STEAM               -> "seven";
             case PIGGY_BANK, GOLD_CHIP, DEMON_KING, LUCK_APOSTLE -> "gold_bar";
             case SPIKED_SHIELD, ANCHOR -> "diamond";
             case SCYTHE, MOON        -> "seven";

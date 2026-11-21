@@ -292,6 +292,16 @@ final class CombatEffectRows {
                         : turns == 2 ? Lang.t(" Le manège tournera au prochain tour.")
                         : Lang.f(" Le manège tournera dans {0}.", turns(turns - 1)))));
             }
+            case WAGON_BONDE -> {
+                int turns = PlaceRule.turnsBeforeCrowd(turn);
+                rows.add(new SidePanel.EffectRow(skull, null, turns == 1
+                    ? Lang.f("Wagon bondé : -{0} carte", PlaceRule.CROWDED_PLAYS)
+                    : Lang.f("Wagon bondé {0}/{1}", PlaceRule.CROWDED_PERIOD - turns + 1, PlaceRule.CROWDED_PERIOD),
+                    rule.getName(), rule.getDescription()
+                    + (turns == 1 ? Lang.t(" C'est ce tour-ci : tu joues une carte de moins !")
+                        : turns == 2 ? Lang.t(" Le wagon sera bondé au prochain tour.")
+                        : Lang.f(" Le wagon sera bondé dans {0}.", turns(turns - 1)))));
+            }
             case SOIF -> rows.add(new SidePanel.EffectRow(skull, null,
                 Lang.f("Soif : soins /{0}", PlaceRule.THIRST_HEAL_DIVISOR), rule.getName(),
                 rule.getDescription() + Lang.t(" Pense à te soigner à chaque tour.")));
@@ -387,6 +397,7 @@ final class CombatEffectRows {
         if (lasting.getHouseEdges() > 0) {
             rows.add(curse(skull, Lang.f("Avantage x{0}", lasting.getHouseEdges()), EnemySymbol.HOUSE_EDGE, foe));
         }
+        if (lasting.getLullabies() > 0) rows.add(curse(skull, Lang.f("Berceuse x{0}", lasting.getLullabies()), EnemySymbol.LULLABY, foe));
         if (lasting.getRockfalls() > 0) {
             rows.add(curse(skull, Lang.f("Éboulement : -{0}", lasting.getRockfalls()), EnemySymbol.ROCKFALL, foe));
         }

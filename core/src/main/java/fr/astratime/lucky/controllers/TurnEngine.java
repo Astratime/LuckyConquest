@@ -512,9 +512,16 @@ public class TurnEngine {
     private List<Event> fillGauges(ReelGauges gauges, Symbol[] symbols, Player player) {
         List<Event> events = new ArrayList<>();
         int demons = 0, angels = 0;
+        boolean steam = false;
         for (Symbol symbol : symbols) {
             if (symbol == Symbol.DEMON_KING) demons++;
             if (symbol == Symbol.LUCK_APOSTLE) angels++;
+            if (symbol == Symbol.STEAM) steam = true;
+        }
+        int pressure = gauges.getSteam();
+        if (gauges.steam(steam) > pressure) {
+            events.add(new StatusEvent(Lang.f("VAPEUR {0}/{1}", gauges.getSteam(), ReelGauges.STEAM_MAX),
+                EffectPopup.Style.SPECIAL));
         }
         if (demons + angels == 0 && gauges.getForced() != null) return events;
         Symbol activated = player.isDefeated() ? null : gauges.fill(demons, angels, random);

@@ -387,7 +387,7 @@ public class SymbolStrikes extends Actor implements Disposable {
             case NUGGET -> updateNugget(s, before, now, delta);
             case CROWN -> updateCrown(s, before, now, delta);
             case DEMON_KING, LUCK_APOSTLE -> updateStar(s, before, now, delta);
-            case FANGS, SPIKED_SHIELD, SCYTHE, MOON, PIGGY_BANK, TICKET, ANCHOR, GOLD_CHIP, FLAME, DESCENT, BINGO_LIGHT ->
+            case FANGS, SPIKED_SHIELD, SCYTHE, MOON, PIGGY_BANK, TICKET, ANCHOR, GOLD_CHIP, FLAME, STEAM, DESCENT, BINGO_LIGHT ->
                 updateNewReel(s, before, now, delta);
             default -> { }
         }
@@ -482,6 +482,22 @@ public class SymbolStrikes extends Actor implements Disposable {
                     burst(s.toX, s.toY, 18, GOLD, 320f, 0.5f, 8f, true);
                     ringAt(s.toX, s.toY, GOLD, 0.9f);
                     onCoinArrived.run();
+                }
+            }
+            case STEAM -> { // un jet de vapeur siffle vers l'ennemi, puis éclate en nuage blanc
+                if (flying && MathUtils.random() < delta * 60f) {
+                    float u = now / IMPACT_TIME;
+                    Particle p = particle(MathUtils.lerp(s.fromX, s.toX, u) + MathUtils.random(-14f, 14f),
+                        MathUtils.lerp(s.fromY, s.toY, u) + MathUtils.random(-14f, 14f), MathUtils.randomBoolean()
+                        ? Color.WHITE : STEEL, 30f, 0.45f, MathUtils.random(10f, 18f), false);
+                    p.gravity = -120f;
+                }
+                if (impact) {
+                    flashAt(s.toX, s.toY, Color.WHITE, 200f);
+                    burst(s.toX, s.toY, 28, STEEL, 440f, 0.7f, 14f, false);
+                    burst(s.toX, s.toY, 14, Color.WHITE, 300f, 0.6f, 12f, false);
+                    ringAt(s.toX, s.toY, STEEL, 1.1f);
+                    shake.shake(0.15f, 5f);
                 }
             }
             case FLAME -> { // boule de feu, puis l'ennemi brûle
@@ -1045,7 +1061,7 @@ public class SymbolStrikes extends Actor implements Disposable {
             case BOMB -> drawBomb(batch, s, t, alpha);
             case CROWN -> drawCrown(batch, s, t, alpha);
             case DEMON_KING, LUCK_APOSTLE -> drawStar(batch, s, t, alpha);
-            case FANGS, SPIKED_SHIELD, SCYTHE, MOON, PIGGY_BANK, TICKET, ANCHOR, GOLD_CHIP, FLAME, DESCENT, BINGO_LIGHT ->
+            case FANGS, SPIKED_SHIELD, SCYTHE, MOON, PIGGY_BANK, TICKET, ANCHOR, GOLD_CHIP, FLAME, STEAM, DESCENT, BINGO_LIGHT ->
                 drawNewReel(batch, s, t, alpha);
             default -> { }
         }

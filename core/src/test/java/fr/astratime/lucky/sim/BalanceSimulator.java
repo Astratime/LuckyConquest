@@ -987,16 +987,9 @@ public final class BalanceSimulator {
     // Gains par rang dans son lieu : ./gradlew :core:simulate -Prankplace -Pstake=15 (-PrpRuns=300)
     // -------------------------------------------------------------------------
 
-    /** Lieu associé à chaque rang (règle d'Astra, PR #105). */
+    /** Lieu associé à chaque rang : celui du jeu (dix paliers, 2026-11-20). */
     static Place placeOfRank(Rank rank) {
-        if (rank == null) return Place.PRAIRIE;
-        return switch (rank) {
-            case AVARE, PARIEUR -> Place.values()[1];
-            case FLAMBEUR, HABITUE -> Place.values()[2];
-            case REQUIN, GROS_BONNET -> Place.values()[3];
-            case BARON, MAGNAT -> Place.values()[4];
-            case ROI_DU_CASINO, LEGENDE -> Place.values()[5];
-        };
+        return fr.astratime.lucky.progress.PlayerProfile.placeOf(rank);
     }
 
     /** Totaux d'un donjon (somme sur les descentes). */

@@ -297,5 +297,65 @@
         "percent": 50
       }
     ]
+  },
+  {
+    "id": "roi_plein_regime",
+    "name": "Plein régime",
+    "assetPath": "cards/special/roi_plein_regime.png",
+    "effects": [
+      {
+        "type": "STEAM_VALVE"
+      },
+      {
+        "type": "BOOST_SYMBOL",
+        "symbol": "STEAM",
+        "amount": 60
+      }
+    ]
+  },
+  {
+    "id": "roi_banquet",
+    "name": "Banquet du chef",
+    "assetPath": "cards/special/roi_banquet.png",
+    "effects": [
+      {
+        "type": "TRANSFUSION",
+        "percent": 15
+      },
+      {
+        "type": "GAINS_PERCENT",
+        "percent": 40
+      }
+    ]
+  },
+  {
+    "id": "roi_marchand_de_sable",
+    "name": "Marchand de sable",
+    "assetPath": "cards/special/roi_marchand_de_sable.png",
+    "effects": [
+      {
+        "type": "DEFENSE",
+        "bonus": 80
+      },
+      {
+        "type": "TRANSFUSION",
+        "percent": 10
+      }
+    ]
+  },
+  {
+    "id": "roi_haut_les_mains",
+    "name": "Haut les mains",
+    "assetPath": "cards/special/roi_haut_les_mains.png",
+    "effects": [
+      {
+        "type": "GAINS_PERCENT",
+        "percent": 50
+      },
+      {
+        "type": "EXTRA_DRAW",
+        "extraCards": 1
+      }
+    ]
   }
 ]

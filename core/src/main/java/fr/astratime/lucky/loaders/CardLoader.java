@@ -483,6 +483,7 @@ public class CardLoader {
         add(effects, "SLEIGHT_OF_HAND", (json, v) -> new SleightOfHandEffect());
         add(effects, "BLUFF_CALL", (json, v) -> new BluffCallEffect(v.i("percent"), v.i("maxPercent")));
         add(effects, "HELD_REEL", (json, v) -> new HeldReelEffect());
+        add(effects, "STEAM_VALVE", (json, v) -> new SteamValveEffect());
         add(effects, "MACHINE_MEMORY", (json, v) -> new MachineMemoryEffect(v.i("amount")));
         add(effects, "CALIBRATION", (json, v) -> new CalibrationEffect(json.getInt("turns"), v.i("percent")));
         add(effects, "SECOND_LEVER", (json, v) -> new SecondLeverEffect(v.i("tries")));

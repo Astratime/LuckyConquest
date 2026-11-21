@@ -566,4 +566,99 @@ def roi_braise(pal):
     return finish(im, L)
 
 
+# --- Rapide de Minuit (10 lieux, 2026-11-20) ------------------------------------
+
+def roi_plein_regime(pal):
+    """La Locomotive à plein régime : l'avant d'une machine noire, sa lanterne, un panache de vapeur qui monte."""
+    im = card(*pal)
+    L = layer()
+    def engine(d):
+        d.ellipse([7, 22, 31, 46], fill=DK)
+        d.rectangle([14, 14, 22, 24], fill=DK)
+        d.rectangle([12, 12, 24, 14], fill=DK2)
+    def engine_d(d):
+        d.ellipse([10, 25, 28, 43], fill=DK2)
+        d.ellipse([16, 27, 22, 32], fill=YL)
+        d.rectangle([12, 37, 26, 41], fill=DK)
+        for x in range(13, 26, 2):
+            d.line([(x, 37), (x, 41)], fill=ST)
+        d.ellipse([9, 30, 13, 34], fill=R)
+        d.ellipse([25, 30, 29, 34], fill=R)
+    part(L, engine, engine_d)
+    def steam(d):
+        for x, y, r in [(18, 9, 3), (13, 7, 3), (24, 6, 3), (9, 10, 2), (29, 9, 2)]:
+            d.ellipse([x - r, y - r, x + r, y + r], fill=WHITE)
+    part(L, steam)
+    return finish(im, L)
+
+
+def roi_banquet(pal):
+    """Le Banquet du chef : une toque blanche au-dessus d'une soupière fumante, un coeur et des pièces."""
+    im = card(*pal)
+    L = layer()
+    def tureen(d):
+        d.ellipse([7, 28, 31, 46], fill=WHITE)
+        d.rectangle([5, 31, 8, 34], fill=WHITE)
+        d.rectangle([30, 31, 33, 34], fill=WHITE)
+    def tureen_d(d):
+        d.ellipse([9, 28, 29, 34], fill=O)
+        d.line([(9, 40), (29, 40)], fill=Y)
+    part(L, tureen, tureen_d)
+    def toque(d):
+        d.rectangle([12, 14, 26, 20], fill=WHITE)
+        d.ellipse([10, 6, 18, 15], fill=WHITE)
+        d.ellipse([16, 4, 24, 13], fill=WHITE)
+        d.ellipse([21, 6, 29, 15], fill=WHITE)
+    part(L, toque, lambda d: d.line([(12, 18), (26, 18)], fill=BEIGED))
+    def heart(d):
+        d.polygon([(19, 27), (15, 23), (15, 21), (17, 20), (19, 22), (21, 20), (23, 21), (23, 23)], fill=R)
+    part(L, heart)
+    coin(L, 7, 22)
+    coin(L, 31, 24)
+    return finish(im, L)
+
+
+def roi_marchand_de_sable(pal):
+    """Le Marchand de sable : un sablier de nuit violet, une lune et des étoiles, un bouclier qui veille."""
+    im = card(*pal)
+    L = layer()
+    def glass(d):
+        d.rectangle([10, 10, 28, 12], fill=WD)
+        d.rectangle([10, 42, 28, 44], fill=WD)
+        d.polygon([(12, 13), (26, 13), (20, 27), (26, 41), (12, 41), (18, 27)], fill=PL)
+    def glass_d(d):
+        d.polygon([(14, 14), (24, 14), (19, 22)], fill=Y)
+        d.polygon([(14, 41), (24, 41), (19, 35)], fill=Y)
+        d.line([(19, 23), (19, 35)], fill=YL)
+    part(L, glass, glass_d)
+    def moon(d):
+        d.ellipse([27, 15, 35, 23], fill=YL)
+    part(L, moon, lambda d: d.ellipse([30, 14, 37, 21], fill=pal[0]))
+    sparkle(ImageDraw.Draw(L), 6, 18)
+    sparkle(ImageDraw.Draw(L), 31, 36)
+    return finish(im, L)
+
+
+def roi_haut_les_mains(pal):
+    """Haut les mains : un revolver et un sac d'or éventré, les pièces qui roulent."""
+    im = card(*pal)
+    L = layer()
+    def bag(d):
+        d.ellipse([16, 26, 34, 46], fill=BEIGE)
+        d.polygon([(21, 27), (29, 27), (27, 22), (23, 22)], fill=BEIGE)
+    def bag_d(d):
+        d.line([(21, 27), (29, 27)], fill=WDD)
+        d.ellipse([22, 34, 28, 40], fill=Y)
+        d.point((24, 36), fill=YL)
+    part(L, bag, bag_d)
+    def gun(d):
+        d.rectangle([5, 14, 24, 18], fill=ST)
+        d.rectangle([10, 13, 16, 21], fill=STD)
+        d.polygon([(9, 19), (15, 19), (12, 30), (6, 30)], fill=WD)
+    part(L, gun, lambda d: (d.line([(6, 15), (23, 15)], fill=STL), d.point((13, 17), fill=DK)))
+    coin(L, 10, 41)
+    coin(L, 15, 45)
+    return finish(im, L)
+
+
 DESIGNS = {name: fn for name, fn in list(globals().items()) if name.startswith('roi_') and callable(fn)}

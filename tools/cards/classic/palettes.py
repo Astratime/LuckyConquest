@@ -27,6 +27,11 @@ FAMILIES = {
     'train_fantome': ('#eee8f4', '#bcaed0', '#7e7096'),   # brume violette
     'grande_roue':   ('#fff4e2', '#f4cc90', '#bc9050'),   # néon orangé
     'stands':        ('#e8f6ec', '#a4d8b4', '#64a078'),   # vert de foire
+    # --- Rapide de Minuit (2026-11-20) ---
+    'locomotive':       ('#eceef4', '#b4b8c8', '#767a90'),   # fumée
+    'wagon_restaurant': ('#fdf0e8', '#ecc4a8', '#b08468'),   # nappe et vernis
+    'wagon_lit':        ('#eeeafc', '#c0b4ec', '#8274b4'),   # nuit violette
+    'fourgon':          ('#eef4ee', '#b4ccb8', '#76927a'),   # acier vert
     # --- Désert de Braise (cartes des rois, 2026-11-14) ---
     'caravane':      ('#fdf4e4', '#e8cc98', '#ae8e58'),   # sable
     'tombeau':       ('#f4f0e2', '#d0c4a0', '#948864'),   # calcaire
@@ -107,6 +112,12 @@ CARD_FAMILY = {
     'roi_provocation': 'pique', 'roi_taux_usuraire': 'trefle', 'roi_saignee': 'coeur', 'roi_ronces': 'carreau',
     'roi_roulement_de_tambour': 'chapiteau', 'roi_tunnel_sans_fin': 'train_fantome', 'roi_roue_lestee': 'grande_roue',
     'roi_carte_biseautee': 'stands',
+    'roi_plein_regime': 'locomotive', 'roi_banquet': 'wagon_restaurant', 'roi_marchand_de_sable': 'wagon_lit',
+    'roi_haut_les_mains': 'fourgon',
+    'pelle_a_charbon': 'locomotive', 'sifflet_du_chef_de_gare': 'locomotive', 'chaudiere_ardente': 'locomotive',
+    'plat_du_jour': 'wagon_restaurant', 'service_a_la_place': 'wagon_restaurant', 'menu_gastronomique': 'wagon_restaurant',
+    'billet_de_seconde': 'wagon_lit', 'couchette': 'wagon_lit', 'billet_de_premiere': 'wagon_lit',
+    'coffre_blinde': 'fourgon', 'aiguillage': 'fourgon', 'soupape': 'fourgon',
     'roi_dents_de_rat': 'cale', 'roi_tournee_du_patron': 'taverne', 'roi_feu_du_phare': 'phare', 'roi_grappin': 'galion',
     'roi_tamis_noir': 'filon', 'roi_meche_de_diamant': 'puits', 'roi_coup_d_enclume': 'forge', 'roi_filon': 'gouffre',
     'roi_refrain': 'bar', 'roi_rage_du_jackpot': 'machines', 'roi_frenesie': 'coffres', 'roi_encre': 'vip',
