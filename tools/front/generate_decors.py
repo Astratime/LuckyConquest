@@ -1205,6 +1205,146 @@ def fourgon():
     GLOWS['fourgon'] = ((180, 22), (262, 128))
     return vignette(im, 0.5)
 
+
+# ---------------------------------------------------------------------------- le Palace des Neiges
+
+def snowfall(d, rng, count, y1=H, colors=((246, 250, 255), (210, 226, 246))):
+    for _ in range(count):
+        x, y = int(rng.integers(0, W)), int(rng.integers(0, y1))
+        d.rectangle([x, y, x + int(rng.integers(0, 2)), y + int(rng.integers(0, 2))],
+                    fill=colors[int(rng.integers(0, len(colors)))])
+
+
+def frosted_window(f, x0, y0, x1, y1, rng, frame=(196, 172, 120)):
+    """Haute fenêtre sur la nuit d'hiver : la neige qui tombe, du givre dans les coins."""
+    win, w = layer()
+    w.rectangle([x0, y0, x1, y1], fill=(30, 46, 84))
+    for _ in range((x1 - x0) * (y1 - y0) // 40):
+        w.point([(int(rng.integers(x0, x1)), int(rng.integers(y0, y1)))], fill=(230, 240, 255))
+    for cx, cy in ((x0, y0), (x1, y0), (x0, y1), (x1, y1)):  # le givre dans les coins
+        w.ellipse([cx - 10, cy - 10, cx + 10, cy + 10], fill=(200, 228, 250))
+    f.rectangle([x0 - 4, y0 - 4, x1 + 4, y1 + 4], outline=frame, width=4)
+    f.line([(x0 + x1) // 2, y0, (x0 + x1) // 2, y1], fill=frame, width=2)
+    f.line([x0, (y0 + y1) // 2, x1, (y0 + y1) // 2], fill=frame, width=2)
+    return win
+
+
+def chandelier(f, x, y, crystal=(200, 236, 255), metal=(196, 160, 86)):
+    """Lustre de cristal suspendu : centre de la lumière en (x, y)."""
+    f.line([x, 0, x, y - 10], fill=(60, 56, 52), width=2)
+    f.ellipse([x - 26, y - 6, x + 26, y + 6], fill=metal)
+    for k in range(-24, 25, 6):
+        f.line([x + k, y + 4, x + k, y + 14 - abs(k) // 4], fill=crystal, width=2)
+    f.ellipse([x - 8, y - 4, x + 8, y + 8], fill=(255, 244, 210))
+
+
+def hall():
+    """Le hall du Palace : boiseries, tableau des clés derrière le comptoir de réception, lustre givré, hautes fenêtres."""
+    rng = np.random.default_rng(101)
+    im, d = base((0, 0, 0))
+    gradient(d, (92, 60, 40), (60, 38, 26), 0, 170)
+    for x in range(0, W, 40):  # boiseries
+        d.rectangle([x + 4, 90, x + 36, 160], outline=(48, 30, 20), width=2)
+    fg, f = layer()
+    im.alpha_composite(frosted_window(f, 16, 20, 70, 84, rng))
+    im.alpha_composite(frosted_window(f, 290, 20, 344, 84, rng))
+    f.rectangle([112, 26, 248, 96], fill=(70, 44, 28))  # le tableau des clés
+    for row in range(3):
+        for col in range(9):
+            x, y = 122 + col * 14, 36 + row * 20
+            f.rectangle([x, y, x + 3, y + 10], fill=(230, 190, 80))
+            f.ellipse([x - 1, y - 3, x + 4, y + 1], fill=(230, 190, 80))
+    f.rectangle([0, 150, W, 176], fill=(232, 220, 200))  # le comptoir de marbre
+    f.rectangle([0, 150, W, 154], fill=(196, 160, 86))
+    f.ellipse([286, 140, 306, 152], fill=(230, 190, 80))  # la sonnette
+    chandelier(f, 180, 14)
+    im = finish(im, fg)
+    GLOWS['hall'] = ((180, 18), (43, 52), (317, 52))
+    return vignette(im, 0.45)
+
+
+def patinoire():
+    """La patinoire gelée sous la lune : sapins enneigés, glace bleue rayée par les lames, lampions de fête."""
+    rng = np.random.default_rng(102)
+    im, d = base((0, 0, 0))
+    gradient(d, (24, 34, 72), (58, 84, 130), 0, 120)
+    stars(d, rng, 60, 70)
+    d.ellipse([290, 16, 318, 44], fill=(246, 246, 232))
+    fg, f = layer()
+    for x in range(-10, W + 20, 34):  # les sapins
+        h = 46 + (x * 7) % 26
+        for k in range(4):
+            half = 18 - k * 4
+            top = 118 - h + k * (h // 4)
+            f.polygon([(x - half, top + h // 4 + 6), (x + half, top + h // 4 + 6), (x, top)], fill=(26, 62, 52))
+            f.line([x - half + 3, top + h // 4 + 4, x, top + 2], fill=(236, 244, 252))
+    f.rectangle([0, 118, W, 124], fill=(236, 244, 252))  # le bord de neige
+    d.rectangle([0, 124, W, H], fill=(150, 200, 236))  # la glace
+    for k in range(14):
+        y = int(rng.integers(130, 210))
+        x = int(rng.integers(0, W - 80))
+        d.arc([x, y - 8, x + int(rng.integers(40, 120)), y + 8], 180, 360, fill=(214, 238, 252))
+    bulbs_string(f, 0, 70, W, 70, 18, 14, [(255, 214, 120), (255, 120, 120), (140, 200, 255)])
+    snowfall(d, rng, 120, 120)
+    im = finish(im, fg)
+    GLOWS['patinoire'] = ((304, 30), (90, 82), (270, 82))
+    return vignette(im, 0.45)
+
+
+def telepherique():
+    """La gare du téléphérique : la montagne dans la tempête, le câble, la cabine rouge qui arrive, poulies et projecteur."""
+    rng = np.random.default_rng(103)
+    im, d = base((0, 0, 0))
+    gradient(d, (88, 112, 150), (150, 170, 200), 0, 150)
+    d.polygon([(40, 150), (200, 10), (360, 150)], fill=(118, 132, 160))
+    d.polygon([(150, 54), (200, 10), (250, 54), (226, 48), (210, 60), (190, 46), (172, 58)], fill=(240, 246, 252))
+    d.polygon([(-20, 150), (70, 60), (170, 150)], fill=(132, 146, 172))
+    d.polygon([(46, 84), (70, 60), (94, 84), (80, 80), (70, 88), (58, 80)], fill=(240, 246, 252))
+    fg, f = layer()
+    f.line([0, 40, W, 96], fill=(40, 40, 48), width=2)  # le câble
+    f.line([0, 48, W, 104], fill=(40, 40, 48), width=1)
+    cx, cy = 116, 58
+    f.line([cx, cy, cx, cy + 14], fill=(40, 40, 48), width=2)
+    f.rectangle([cx - 22, cy + 14, cx + 22, cy + 44], fill=(200, 40, 44))
+    f.rectangle([cx - 16, cy + 20, cx + 16, cy + 32], fill=(170, 214, 240))
+    f.rectangle([cx - 24, cy + 12, cx + 24, cy + 15], fill=(240, 246, 252))
+    f.rectangle([0, 130, W, 176], fill=(76, 70, 70))  # le quai de la gare
+    f.rectangle([0, 128, W, 132], fill=(240, 246, 252))
+    for px in (270, 320):  # les grandes poulies
+        f.ellipse([px - 20, 92, px + 20, 132], fill=(60, 60, 68))
+        f.ellipse([px - 12, 100, px + 12, 124], fill=(110, 110, 120))
+        f.ellipse([px - 3, 109, px + 3, 115], fill=(200, 170, 90))
+    lantern(fg, 30, 110, glass=(255, 240, 200), body=(60, 60, 68))
+    snowfall(d, rng, 220, 176)
+    im = finish(im, fg)
+    GLOWS['telepherique'] = ((30, 110), (116, 90))
+    return vignette(im, 0.4)
+
+
+def suite_royale():
+    """La salle de bal de la suite royale : colonnes de marbre, rideaux de velours, grand escalier, lustre de glace."""
+    rng = np.random.default_rng(104)
+    im, d = base((0, 0, 0))
+    gradient(d, (48, 56, 110), (30, 34, 74), 0, 170)
+    fg, f = layer()
+    im.alpha_composite(frosted_window(f, 150, 24, 210, 96, rng, frame=(200, 170, 110)))
+    for x in (40, 108, 252, 320):  # colonnes
+        f.rectangle([x - 10, 20, x + 10, 176], fill=(232, 224, 210))
+        f.rectangle([x + 4, 20, x + 10, 176], fill=(196, 186, 168))
+        f.rectangle([x - 14, 16, x + 14, 22], fill=(200, 170, 110))
+    for x0, x1 in ((0, 28), (332, W)):  # rideaux
+        for x in range(x0, x1, 6):
+            f.rectangle([x, 0, x + 4, 176], fill=[(110, 30, 60), (90, 22, 50)][(x // 6) % 2])
+    for k in range(6):  # le grand escalier
+        w = 140 - k * 16
+        f.rectangle([180 - w // 2, 160 - k * 10, 180 + w // 2, 170 - k * 10], fill=[(120, 30, 56), (96, 22, 44)][k % 2])
+    chandelier(f, 180, 14, crystal=(180, 230, 255))
+    for x in (74, 286):
+        lantern(fg, x, 60, glass=(200, 236, 255), body=(200, 170, 110))
+    im = finish(im, fg)
+    GLOWS['suite_royale'] = ((180, 18), (74, 60), (286, 60))
+    return vignette(im, 0.45)
+
 DECORS = {
     'chapiteau': chapiteau, 'train_fantome': train_fantome, 'grande_roue': grande_roue, 'stands': stands,
     'taverne': taverne, 'phare': phare, 'galion': galion,
@@ -1214,6 +1354,7 @@ DECORS = {
     'genese': genese, 'tables_sacrees': tables_sacrees, 'dernier_tirage': dernier_tirage,
     'monde_sans_maitre': monde_sans_maitre, 'la_maison': la_maison, 'le_jackpot': le_jackpot,
     'locomotive': locomotive, 'wagon_restaurant': wagon_restaurant, 'wagon_lit': wagon_lit, 'fourgon': fourgon,
+    'hall': hall, 'patinoire': patinoire, 'telepherique': telepherique, 'suite_royale': suite_royale,
     'entrainement': entrainement,
 }
 

@@ -196,6 +196,11 @@ public final class PlacesArt {
                 plate = rgba("a87a1e");
                 plateDark = rgba("6a4a10");
             }
+            case PALACE -> {
+                int[] colors = PalaceArt.gateDecor(g);
+                plate = colors[0];
+                plateDark = colors[1];
+            }
             case RAPIDE -> {
                 int[] colors = ExpressArt.gateDecor(g);
                 plate = colors[0];
@@ -236,6 +241,8 @@ public final class PlacesArt {
         if (fairDesert != null) return fairDesert;
         String[] express = ExpressArt.emblem(dungeon);
         if (express != null) return express;
+        String[] palace = PalaceArt.emblem(dungeon);
+        if (palace != null) return palace;
         return switch (dungeon) {
             case CALE -> new String[] {".XXXXX.", "X.....X", "XXXXXXX", "X.....X", "XXXXXXX", "X.....X", ".XXXXX."}; // tonneau
             case TAVERNE -> new String[] {"XXXXX..", "XXXXX..", "X...XXX", "X...X.X", "X...XXX", "X...X..", "XXXXX.."}; // chope

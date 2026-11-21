@@ -19,7 +19,9 @@ import fr.astratime.lucky.i18n.Lang;
  *   <li>{@link #SOIF} : les soins du joueur sont divisés par {@link #THIRST_HEAL_DIVISOR} ; à la fin
  *       d'un tour sans soin, il perd {@link #THIRST_PERCENT} % de ses PV max (son bouclier ne protège pas) ;</li>
  *   <li>{@link #WAGON_BONDE} : tous les {@link #CROWDED_PERIOD} tours, le joueur joue {@link #CROWDED_PLAYS}
- *       carte de moins ce tour-là (le wagon est bondé).</li>
+ *       carte de moins ce tour-là (le wagon est bondé) ;</li>
+ *   <li>{@link #VERGLAS} : tous les {@link #ICE_PERIOD} tours, les combinaisons ne donnent que
+ *       {@link #ICE_COMBO_PERCENT} % de leur Puissance (attaque ; les gains ne changent pas).</li>
  * </ul>
  */
 public enum PlaceRule {
@@ -34,7 +36,9 @@ public enum PlaceRule {
     MANEGE("Manège", "Tous les 3 tours, le manège tourne : un de tes rouleaux, au hasard, est bloqué pour ce tirage."),
     SOIF("Soif", "Tes soins sont divisés par 2. À la fin de chaque tour où tu ne t'es pas soigné, tu perds 1 % de tes "
         + "PV max. Ton bouclier ne protège pas."),
-    WAGON_BONDE("Wagon bondé", "Tous les 3 tours, le wagon est bondé : tu joues 1 carte de moins ce tour-là.");
+    WAGON_BONDE("Wagon bondé", "Tous les 3 tours, le wagon est bondé : tu joues 1 carte de moins ce tour-là."),
+    VERGLAS("Verglas", "Un tour sur deux, la table est verglacée : tes combinaisons ne donnent que la moitié de leur "
+        + "Puissance.");
 
     /** Id de la carte Scorbut. */
     public static final String SCURVY_CARD = "scorbut";
@@ -64,6 +68,11 @@ public enum PlaceRule {
     public static final int CROWDED_PERIOD = 3;
     /** Wagon bondé : cartes jouées en moins ce tour-là. */
     public static final int CROWDED_PLAYS = 1;
+
+    /** Verglas : tous les tant de tours (au 2e, au 4e…). */
+    public static final int ICE_PERIOD = 2;
+    /** Verglas : part de la Puissance des combinaisons gardée ce tour-là, en %. */
+    public static final int ICE_COMBO_PERCENT = 50;
 
     private final String name;
     private final String description;
@@ -104,6 +113,9 @@ public enum PlaceRule {
 
     /** @return les tours avant le prochain wagon bondé, celui-ci compris (1 : ce tour). */
     public static int turnsBeforeCrowd(int turn) { return CROWDED_PERIOD - (turn - 1) % CROWDED_PERIOD; }
+
+    /** @return {@code true} si la table est verglacée au tour {@code turn} (à partir de 1) : combinaisons à moitié. */
+    public boolean isIcy(int turn) { return this == VERGLAS && turn % ICE_PERIOD == 0; }
 
     /** @return {@code true} si la Soif joue (soins divisés, PV perdus sans soin). */
     public boolean isThirsty() { return this == SOIF; }

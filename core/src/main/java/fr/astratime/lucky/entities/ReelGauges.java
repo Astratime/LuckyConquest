@@ -25,6 +25,7 @@ public final class ReelGauges {
 
     private int piggyDraws;
     private int steam;
+    private int frost;
     private int anchoredThisTurn;
     private int anchorKept;
     private int demonization;
@@ -63,6 +64,24 @@ public final class ReelGauges {
 
     /** @return le multiplicateur du coup de Vapeur à ce tirage (x1, x1,25 … x2). */
     public double steamFactor() { return 1.0 + STEAM_STEP_PERCENT * Math.min(STEAM_MAX, steam) / 100.0; }
+
+    // ----- Flocon -----
+
+    /** Flocon : part de son bouclier qui gèle et revient au début du tour suivant, en %. */
+    public static final int FROST_PERCENT = 50;
+
+    /** Le Flocon donne {@code shield} de bouclier : {@link #FROST_PERCENT} % gèlent pour le tour suivant. */
+    public void freeze(int shield) { frost += Math.max(0, shield) * FROST_PERCENT / 100; }
+
+    /** Début du tour : le bouclier gelé par le Flocon revient (il ne fond pas). @return ce bouclier (0 sans Flocon) */
+    public int takeFrost() {
+        int kept = frost;
+        frost = 0;
+        return kept;
+    }
+
+    /** @return le bouclier gelé qui reviendra au début du prochain tour. */
+    public int getFrost() { return frost; }
 
     // ----- Ancre -----
 
@@ -151,7 +170,7 @@ public final class ReelGauges {
 
     /** @return {@code true} si aucun de ces rouleaux n'a rien retenu. */
     public boolean isEmpty() {
-        return piggyDraws == 0 && steam == 0 && anchoredThisTurn == 0 && anchorKept == 0 && demonization == 0 && luckyAngel == 0
+        return piggyDraws == 0 && steam == 0 && frost == 0 && anchoredThisTurn == 0 && anchorKept == 0 && demonization == 0 && luckyAngel == 0
             && forced == null && invincibleTurns == 0;
     }
 }

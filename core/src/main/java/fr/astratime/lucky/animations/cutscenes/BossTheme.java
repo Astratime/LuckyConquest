@@ -63,6 +63,11 @@ public record BossTheme(Color skyTop, Color skyLow, Color ground, Color accent, 
             case GRAND_CHEF -> king(kind, "fff2a0", "LE GRAND CHEF A RENDU SON TABLIER");
             case DAME_EN_NOIR -> king(kind, "b8a0ff", "LA DAME EN NOIR S'EFFACE DANS LA NUIT");
             case DESPERADO -> king(kind, "ffc93a", "LE DESPERADO DESCEND DU TRAIN");
+            // ----- Le Palace des Neiges -----
+            case CONCIERGE -> king(kind, "ffd54a", "LE CONCIERGE RACCROCHE SES CLÉS");
+            case IMPERATRICE_GIVRE -> king(kind, "bfe8ff", "L'IMPÉRATRICE DU GIVRE A FONDU");
+            case YETI -> king(kind, "f2f8ff", "LE YÉTI DORT SOUS LA NEIGE");
+            case PRINCE_NEIGES -> king(kind, "8ac8f0", "LE BAL DU PRINCE EST FINI");
             // ----- Le Désert de Braise -----
             case EMIR -> king(kind, "ffd23a", "L'ÉMIR RETOURNE AU SABLE");
             case PHARAON -> king(kind, "6aff6a", "LE PHARAON RETOURNE À LA POUSSIÈRE");
@@ -86,6 +91,7 @@ public record BossTheme(Color skyTop, Color skyLow, Color ground, Color accent, 
             case CASINO -> { top = "02101a"; low = "0a3a4a"; ground = "031016"; }     // sous la mer
             case FOIRE -> { top = "0a0614"; low = "2a0a2a"; ground = "140a10"; }      // la nuit sous le chapiteau
             case RAPIDE -> { top = "0a0c1e"; low = "1a2a4a"; ground = "2a0a14"; }     // le train dans la nuit
+            case PALACE -> { top = "0e1a34"; low = "5a7aa8"; ground = "c8d8ec"; }     // la neige sous le ciel d'hiver
             case DESERT -> { top = "2a0a0a"; low = "c8501e"; ground = "8a5a2a"; }     // le sable brûlant
             default -> { top = "1c1a28"; low = "2e2a3e"; ground = "141220"; }         // le donjon de pierre
         }

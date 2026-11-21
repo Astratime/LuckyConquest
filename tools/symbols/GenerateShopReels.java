@@ -5,7 +5,7 @@ import java.util.function.BiPredicate;
 
 /**
  * Dessine les rouleaux vendus à la boutique (assets/symbols/13 à 20, puis 22 à 28),
- * les rouleaux des lieux (21 la Pépite, 29 à 32, 35 la Vapeur) et ceux des Bingos imposés (33, 34), dans le
+ * les rouleaux des lieux (21 la Pépite, 29 à 32, 35 la Vapeur, 36 le Flocon) et ceux des Bingos imposés (33, 34), dans le
  * style des rouleaux classiques : 24 x 20 pixels de 6 px sur fond gris clair,
  * contour sombre, bord éclairé en haut à gauche et ombré en bas à droite.
  * Dessine aussi leur carte Bingo de test (assets/cards/test/), sur le modèle de
@@ -42,6 +42,7 @@ public class GenerateShopReels {
         reel("31-gold_chip", "bingo_gold_chip", goldChip());
         reel("32-flame", "bingo_flame", flame());
         reel("35-steam", "bingo_steam", steam());
+        reel("36-snowflake", "bingo_snowflake", snowflake());
         reel("33-descent", "bingo_descent", descent());
         reel("34-bingo_light", "bingo_bingo_light", bingoLight());
         recolor("gain_500", "gain_2000", new int[] {0xff460a1a, 0xff681228, 0xff540e20},
@@ -68,6 +69,7 @@ public class GenerateShopReels {
     private static final Shade GREEN  = new Shade(0xff3cb44a, 0xff8ee890, 0xff1e7a2a);
     private static final Shade WHITE  = new Shade(0xfffafaff, 0xffffffff, 0xffc8d0e0);
     private static final Shade ORANGE = new Shade(0xffff7a1a, 0xffffb060, 0xffc84a0a);
+    private static final Shade ICE    = new Shade(0xff6ab8f0, 0xffd8f2ff, 0xff2a6ab0);
     private static final Shade CRIMSON = new Shade(0xffd0202c, 0xffff6a5a, 0xff800a14);
 
     /** Grille de couleurs du rouleau ({@code 0} : vide). */
@@ -397,6 +399,31 @@ public class GenerateShopReels {
         fill(g, COAL, (x, y) -> (y >= 11 && y < 13 && Math.abs(x - 11) <= 4)
             || (y >= 13 && y < 19.5 && Math.abs(x - 11) <= 2.6));
         fill(g, GOLD, (x, y) -> y >= 15 && y < 16.5 && Math.abs(x - 11) <= 2.6);
+        return g;
+    }
+
+    /** Flocon : un cristal de glace bleu à six branches, chacune garnie de deux petites branches en V. */
+    private static int[][] snowflake() {
+        int[][] g = grid();
+        fill(g, ICE, (x, y) -> {
+            double dx = x - 11.5, dy = y - 9.5, r = Math.hypot(dx, dy);
+            if (r > 9.3) return false;
+            if (r <= 1.6) return true;
+            for (int arm = 0; arm < 6; arm++) {
+                double a = Math.toRadians(90 + arm * 60), ux = Math.cos(a), uy = Math.sin(a);
+                double along = dx * ux + dy * uy, across = Math.abs(-dx * uy + dy * ux);
+                if (along > 0 && across <= 0.75) return true;                                    // la branche
+                for (double at : new double[] {4.0, 6.6}) {                                       // les petites branches
+                    for (int side : new int[] {-1, 1}) {
+                        double b = a + side * Math.toRadians(55), bx = Math.cos(b), by = Math.sin(b);
+                        double px = dx - ux * at, py = dy - uy * at;
+                        double al = px * bx + py * by, ac = Math.abs(-px * by + py * bx);
+                        if (al > 0 && al <= (at < 5 ? 2.6 : 1.8) && ac <= 0.6) return true;
+                    }
+                }
+            }
+            return false;
+        });
         return g;
     }
 

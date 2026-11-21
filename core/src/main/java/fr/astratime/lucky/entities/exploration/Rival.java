@@ -31,6 +31,7 @@ public final class Rival {
             case FOIRE   -> EnemyKind.RIVAL_FOIRE;
             case RAPIDE  -> EnemyKind.RIVAL_RAPIDE;
             case PORT    -> EnemyKind.RIVAL_PORT;
+            case PALACE  -> EnemyKind.RIVAL_PALACE;
             case MINES   -> EnemyKind.RIVAL_MINES;
             case CASINO  -> EnemyKind.RIVAL_CASINO;
             case DESERT  -> EnemyKind.RIVAL_DESERT;
@@ -43,6 +44,7 @@ public final class Rival {
             case RIVAL_FOIRE  -> Place.FOIRE;
             case RIVAL_RAPIDE -> Place.RAPIDE;
             case RIVAL_PORT   -> Place.PORT;
+            case RIVAL_PALACE -> Place.PALACE;
             case RIVAL_MINES  -> Place.MINES;
             case RIVAL_CASINO -> Place.CASINO;
             case RIVAL_DESERT -> Place.DESERT;
