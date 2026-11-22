@@ -4105,6 +4105,146 @@ def death_dragon():
     return track.buf
 
 
+# ===========================================================================
+# Mines d'Or : phases et morts des rois (MinesBossScenes, 2026-11-22)
+# Les instants reprennent les constantes des scènes : si une scène change de rythme, mettre à jour ici.
+# ===========================================================================
+
+def rock_fall(d=1.2, count=14):
+    """Des cailloux et des rochers qui tombent du plafond et roulent."""
+    track = Track(d + 0.4)
+    for _ in range(count):
+        track.add(mix((thump(rand(90, 200), rand(40, 80), 0.12, 0.03), 0, 1.0),
+                      (click(0.02, 600, 3000), 0, 0.5)), rand(0.0, d), rand(0.2, 0.6))
+    return track.buf
+
+
+def drill_whine(d, lo=180, hi=900):
+    """Le moteur de la foreuse qui monte en régime."""
+    f = sweep(lo, hi, d)
+    return (0.6 * osc(f, d, 'saw') + 0.4 * bp(noise(d), 800, 4000)) * adsr(d, 0.1, 0.1, 0.8, 0.15)
+
+
+@sound('cutscene/phase2_baron_or', -17)
+def phase2_baron_or():
+    """Le Baron, phase 2 (BaronPhase) : il croque une pièce d'or (1,4 s), ses dents deviennent dorées, les veines
+    d'or courent dans la roche (1,9 à 3,1 s)."""
+    track = Track(5.8)
+    track.add(ambience(4.8, 80, 600, 0.25), 0.0, 1.0)
+    track.add(coin(2400, 0.5), 0.5, 0.4)
+    track.add(mix((click(0.015, 600, 2000), 0, 1.0), (thump(300, 150, 0.06, 0.02), 0, 0.6), (coin(2000, 0.4), 0.02, 0.5)), 1.4, 0.8)
+    track.add(sparkle(0.6), 1.45, 0.3)
+    track.add(fade(osc(sweep(400, 1600, 1.2), 1.2, 'sine') * 0.5, 0.0, 1.0), 1.9, 0.25)   # les veines qui courent
+    track.add(mix((boom(1.4, 60), 0, 1.0), (coin_shower(1.0, 12), 0.05, 0.5)), 2.2, 0.8)
+    track.add(brass_chord(['D3', 'F#3', 'A3', 'D4'], 1.6, 0.6), 2.25, 0.4)
+    return track.buf
+
+
+@sound('cutscene/death_baron_or', -17)
+def death_baron_or():
+    """Le Baron meurt (BaronDeath) : son or se ternit en pierre (0,4 à 2,2 s), il tremble (1,8 s), s'effrite (2,5 s) ;
+    son vrai haut-de-forme tombe, rebondit (2,85 s) et roule."""
+    track = Track(6.6)
+    track.add(ambience(5.6, 80, 600, 0.2), 0.0, 1.0)
+    for k in range(5):
+        track.add(crack(0.1, 0.02, 400, 5000), 0.5 + k * 0.35, 0.2 + 0.05 * k)
+    track.add(fade(lp(noise(0.7), 300), 0.2, 1.0), 1.8, 0.4)
+    track.add(mix((impact(0.6, 120, 50), 0, 1.0), (rock_fall(1.0, 18), 0, 0.7)), 2.5, 0.9)
+    track.add(thump(240, 120, 0.08, 0.03), 2.85, 0.5)
+    track.add(thump(240, 120, 0.06, 0.02), 3.15, 0.3)
+    track.add(fade(bp(noise(1.0), 300, 1500), 0.6, 0.0), 3.2, 0.25)                        # le chapeau qui roule
+    track.add(coin(1800, 0.6), 3.9, 0.3)
+    return track.buf
+
+
+@sound('cutscene/phase2_grand_foreur', -17)
+def phase2_grand_foreur():
+    """Le Grand Foreur, phase 2 (DrillPhase) : sa foreuse monte en régime et surchauffe au rouge (0,3 à 2,2 s), la
+    roche éclate en pics (2,2 s)."""
+    track = Track(5.8)
+    track.add(ambience(4.8, 60, 500, 0.25), 0.0, 1.0)
+    track.add(drill_whine(2.0, 160, 1100), 0.2, 0.5)
+    track.add(rattle(1.6, 18, 6, 1500, 4000), 0.5, 0.25)
+    track.add(fade(hiss(1.0), 0.0, 1.0), 1.2, 0.3)
+    track.add(mix((impact(0.8, 90, 35), 0, 1.0), (rock_fall(1.0, 16), 0, 0.7), (crack_hit(), 0, 0.6)), 2.2, 0.9)
+    for k in range(6):
+        track.add(crack(0.08, 0.02, 800, 6000), 2.25 + k * 0.05, 0.3)
+    track.add(brass_chord(['C3', 'D#3', 'G3', 'C4'], 1.6, 0.6), 2.25, 0.4)
+    return track.buf
+
+
+@sound('cutscene/death_grand_foreur', -17)
+def death_grand_foreur():
+    """Le Grand Foreur meurt (DrillDeath) : sa foreuse tousse (0,6 / 1,2 / 1,7 / 2,1 s), explose en vapeur (2,5 s), le
+    tunnel s'effondre sur lui (3,0 s), la lampe de son casque grésille et s'éteint (4,3 s)."""
+    track = Track(6.6)
+    track.add(ambience(5.6, 60, 500, 0.2), 0.0, 1.0)
+    for at in (0.6, 1.2, 1.7, 2.1):
+        track.add(mix((drill_whine(0.25, 300, 120), 0, 1.0), (thump(120, 60, 0.1, 0.03), 0.1, 0.6)), at, 0.45)
+    track.add(mix((boom(1.2, 70), 0, 1.0), (hiss(1.4), 0, 0.7), (metal_hit(900, 0.4), 0, 0.4)), 2.5, 0.9)
+    track.add(mix((lp(noise(1.6), 120) * adsr(1.6, 0.1, 0.2, 0.7, 0.4), 0, 1.0), (rock_fall(1.4, 26), 0, 0.9)), 3.0, 0.8)
+    for k in range(5):                                                                           # la lampe grésille
+        track.add(click(0.02, 2000, 7000), 3.9 + k * 0.08 + rand(0, 0.03), 0.3)
+    track.add(click(0.04, 400, 2000), 4.3, 0.5)
+    return track.buf
+
+
+@sound('cutscene/phase2_maitre_forge', -17)
+def phase2_maitre_forge():
+    """Le Maître de Forge, phase 2 (ForgePhase) : il plonge son arme dans le foyer (0,2 s), le feu s'embrase, il la
+    porte à l'enclume qui chauffe à blanc ; ses coups de marteau (0,5 / 1,0 / 1,4 / 1,75 / 2,0 / 2,2 s)."""
+    track = Track(5.8)
+    track.add(fade(fire_burst(4.0), 0.4, 1.0), 0.0, 0.4)
+    track.add(whoosh(0.4, 150, 900, q=0.8), 0.2, 0.5)
+    for at in (0.5, 1.0, 1.4, 1.75, 2.0):
+        track.add(mix((metal_hit(rand(1500, 1800), 0.5), 0, 1.0), (sparkle(0.3, count=6, lo=2000, hi=6000), 0, 0.3)), at, 0.45)
+    track.add(reverb(mix((metal_hit(1300, 1.2), 0, 1.0), (boom(1.0, 80), 0, 0.6)), wet=0.35, size=1.4, tail=0.8), 2.2, 0.9)
+    track.add(fire_burst(1.6), 2.25, 0.6)
+    track.add(brass_chord(['D2', 'A2', 'D3', 'F3'], 1.6, 0.6), 2.25, 0.4)
+    return track.buf
+
+
+@sound('cutscene/death_maitre_forge', -17)
+def death_maitre_forge():
+    """Le Maître de Forge meurt (ForgeDeath) : le feu du foyer tombe en braises (0,2 à 2,5 s), son marteau lui
+    échappe et tombe sur l'enclume (2,5 s, un dernier « ting »), il s'incline ; l'arme refroidit en grésillant."""
+    track = Track(6.6)
+    track.add(fade(fire_burst(2.6), 1.0, 0.0), 0.0, 0.4)
+    for k in range(8):
+        track.add(crack(0.04, 0.01, 2000, 7000), 0.4 + rand(0, 2.6), 0.15)                    # les braises qui craquent
+    track.add(whoosh(0.5, 300, 900), 1.9, 0.3)
+    track.add(reverb(metal_hit(2200, 1.6, 1.2), wet=0.4, size=1.6, tail=1.4), 2.5, 0.8)
+    track.add(fade(hiss(2.6), 0.5, 0.0), 2.7, 0.3)                                           # l'arme qui refroidit
+    return track.buf
+
+
+@sound('cutscene/phase2_coeur_montagne', -17)
+def phase2_coeur_montagne():
+    """Le Coeur de la Montagne, phase 2 (MountainPhase) : un coeur bat dans la roche, les plaques de cristal
+    poussent une à une (1,0 à 2,2 s), l'armure se referme (2,2 s)."""
+    track = Track(5.8)
+    track.add(ambience(4.8, 50, 400, 0.25), 0.0, 1.0)
+    track.add(heartbeat([0.3, 0.9, 1.4, 1.8, 2.15], f=48, gain=1.1), 0.0, 1.0)
+    for i in range(10):
+        track.add(modal(rand(1800, 3200), 0.4, GLASS_RATIOS, [0.3, 0.15, 0.08, 0.04]), 1.0 + i * 0.13, 0.3)
+    track.add(mix((impact(0.7, 80, 35), 0, 1.0), (modal(2600, 1.2, GLASS_RATIOS, [0.3, 0.15, 0.08, 0.04]), 0, 0.6)), 2.2, 0.9)
+    track.add(brass_chord(['B1', 'F#2', 'B2', 'D3'], 1.6, 0.6), 2.25, 0.4)
+    return track.buf
+
+
+@sound('cutscene/death_coeur_montagne', -17)
+def death_coeur_montagne():
+    """Le Coeur de la Montagne meurt (MountainDeath) : ses battements ralentissent (0,3 / 1,0 / 1,9 s), la montagne
+    se fend en deux (2,5 s), la grotte s'effondre, une veine d'or brille dans la faille (3,4 s)."""
+    track = Track(6.6)
+    track.add(ambience(5.6, 50, 400, 0.2), 0.0, 1.0)
+    track.add(heartbeat([0.3, 1.0, 1.9], f=44, gain=1.1), 0.0, 1.0)
+    track.add(mix((boom(2.0, 45), 0, 1.0), (crack_hit(), 0, 0.8), (stone_slide(1.0), 0, 0.6)), 2.5, 0.9)
+    track.add(rock_fall(1.8, 30), 2.6, 0.7)
+    track.add(mix((sparkle(1.0), 0, 1.0), (modal(hz('E6'), 1.2, GLASS_RATIOS, [0.3, 0.15, 0.08, 0.04]), 0.1, 0.5)), 3.4, 0.35)
+    return track.buf
+
+
 def main(prefixes):
     done = 0
     for name, level, fmt, trim, loop, fn in SOUNDS:
