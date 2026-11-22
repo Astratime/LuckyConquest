@@ -3624,6 +3624,155 @@ def death_desperado():
     return track.buf
 
 
+# ===========================================================================
+# Temple du Destin : phases et morts des rois (TempleBossScenes, 2026-11-22)
+# Les instants reprennent les constantes des scènes : si une scène change de rythme, mettre à jour ici.
+# ===========================================================================
+
+def golden_thread(d=0.6, f=1800):
+    """Un fil d'or qui se tend : une corde pincée, longue et claire."""
+    return mix((pluck(f, d), 0, 0.7), (modal(f * 2, d, GLASS_RATIOS, [0.5, 0.3, 0.2, 0.1]), 0, 0.3))
+
+
+def sand_pour(d):
+    """Du sable qui coule et s'écroule : un souffle grainé."""
+    grains = bp(noise(d), 1500, 6000) * (np.random.rand(n(d)) > 0.93)
+    return mix((lp(noise(d), 900) * 0.5, 0, 1.0), (grains, 0, 0.8))
+
+
+@sound('cutscene/phase2_maitre_cloches', -17)
+def phase2_maitre_cloches():
+    """Le Maître des cloches, phase 2 (BellPhase) : il tire la corde du grand bourdon, quatre coups (0,5 / 0,95 /
+    1,4 / 1,85 s) qui tanguent et se dédoublent, l'apogée (2,2 s)."""
+    track = Track(5.8)
+    track.add(ambience(4.8, 300, 1200, 0.25), 0.0, 1.0)
+    for k, at in enumerate((0.5, 0.95, 1.4, 1.85)):
+        track.add(rustle(0.15), at - 0.15, 0.25)
+        toll = bell_toll(hz('D3') * (1.0 - 0.02 * k), 2.4)
+        track.add(toll, at, 0.45)
+        track.add(toll, at + 0.07 + 0.03 * k, 0.2)                                              # l'écho dédoublé, l'ivresse
+    track.add(mix((temple_gong(3.0), 0, 1.0), (thump(70, 30, 1.0, 0.3), 0, 0.6)), 2.2, 0.7)
+    track.add(brass_chord(['D2', 'A2', 'D3', 'F3'], 1.6, 0.6), 2.25, 0.4)
+    return track.buf
+
+
+@sound('cutscene/death_maitre_cloches', -17)
+def death_maitre_cloches():
+    """Le Maître des cloches meurt (BellDeath) : un dernier coup (0,6 s) dont l'écho s'éteint ; il se fige en bronze,
+    le bourdon de sa tête se fend et tombe (2,9 s), roule et s'arrête, muet (3,9 s)."""
+    track = Track(6.6)
+    track.add(ambience(5.6, 300, 1200, 0.2), 0.0, 1.0)
+    track.add(rustle(0.2), 0.4, 0.25)
+    track.add(reverb(bell_toll(hz('D3'), 3.5), wet=0.5, size=2.0, tail=2.0), 0.6, 0.6)
+    for k in range(4):
+        track.add(metal_hit(600 - 60 * k, 0.4, 0.4), 1.1 + k * 0.5, 0.12 - 0.02 * k)            # il se fige, un peu plus à chaque écho
+    track.add(crack(0.15, 0.03, 400, 6000), 2.3, 0.3)
+    track.add(mix((metal_hit(320, 0.6, 0.6), 0, 1.0), (thump(140, 60, 0.2, 0.06), 0, 0.6)), 3.1, 0.5)
+    for k in range(5):
+        track.add(metal_hit(380 + 20 * k, 0.15, 0.4), 3.25 + k * 0.13 * (1 - k * 0.1), 0.25 - 0.04 * k)   # il roule
+    track.add(thump(120, 60, 0.2, 0.05), 3.9, 0.3)
+    return track.buf
+
+
+@sound('cutscene/phase2_tisseuse', -17)
+def phase2_tisseuse():
+    """La Tisseuse de destins, phase 2 (WeaverPhase) : des fils d'or jaillissent vers les bords de l'écran (de 0,6 s),
+    ses yeux-bobines s'allument, l'apogée (2,2 s)."""
+    track = Track(5.8)
+    track.add(ambience(4.8, 400, 1500, 0.2), 0.0, 1.0)
+    notes = ['A4', 'C5', 'E5', 'G5', 'A5', 'C6', 'E6', 'G6']
+    for k, note in enumerate(notes):
+        track.add(whoosh(0.25, 1500, 5000), 0.55 + k * 0.18, 0.15)
+        track.add(golden_thread(0.8, hz(note)), 0.6 + k * 0.18, 0.25)
+    track.add(modal(hz('E6'), 2.0, GLASS_RATIOS, [1.0, 0.6, 0.4, 0.3]), 1.5, 0.2)
+    track.add(mix((thump(70, 30, 1.0, 0.3), 0, 1.0), (golden_thread(1.5, hz('A3')), 0, 0.6)), 2.2, 0.7)
+    track.add(brass_chord(['A2', 'E3', 'A3', 'C4'], 1.6, 0.6), 2.25, 0.4)
+    return track.buf
+
+
+@sound('cutscene/death_tisseuse', -17)
+def death_tisseuse():
+    """La Tisseuse meurt (WeaverDeath) : les ciseaux du destin coupent ses cinq fils (0,5 s puis tous les 0,35 s),
+    puis elle se détricote, rang après rang, en brins d'or (2,2 à 4,2 s)."""
+    track = Track(6.6)
+    track.add(ambience(5.6, 400, 1500, 0.15), 0.0, 1.0)
+    for k in range(5):
+        at = 0.5 + k * 0.35
+        track.add(snip(), at, 0.6)
+        track.add(golden_thread(0.5, hz(['E5', 'C5', 'A4', 'E4', 'A3'][k])), at + 0.01, 0.35)  # le fil qui lâche, de plus en plus grave
+    track.add(whoosh(0.8, 300, 2000), 2.2, 0.3)
+    for k in range(18):
+        track.add(golden_thread(0.4, rand(1200, 3200)), 2.2 + k * 0.1 + rand(0.0, 0.05), 0.12)
+    for k, note in enumerate(['E5', 'C5', 'A4']):
+        track.add(music_box(note, 1.6), 3.9 + k * 0.4, 0.2)
+    return track.buf
+
+
+@sound('cutscene/phase2_seigneur_des', -17)
+def phase2_seigneur_des():
+    """Le Seigneur des Dés, phase 2 (DicePhase) : deux dés géants tombent du ciel, rebondissent (1,2 / 1,4 s) et
+    s'arrêtent sur six ; il grandit, rouge (2,2 s)."""
+    track = Track(5.8)
+    track.add(ambience(4.8, 200, 900, 0.2), 0.0, 1.0)
+    track.add(whoosh(0.7, 300, 2000), 0.5, 0.35)
+    for at in (1.2, 1.4):
+        track.add(mix((thump(90, 40, 0.4, 0.1), 0, 1.0), (wood_knock(300), 0, 0.6)), at, 0.7)
+        track.add(dice_roll(0.5, 5), at + 0.08, 0.4)
+    track.add(mix((thump(70, 30, 1.0, 0.3), 0, 1.0), (temple_gong(2.5), 0, 0.5)), 2.2, 0.7)
+    track.add(brass_chord(['C2', 'G2', 'C3', 'D#3'], 1.6, 0.6), 2.25, 0.5)
+    return track.buf
+
+
+@sound('cutscene/death_seigneur_des', -17)
+def death_seigneur_des():
+    """Le Seigneur des Dés meurt (DiceDeath) : il chancelle, ses deux dés d'or tombent de sa couronne (0,8 s) et
+    roulent seuls sur le damier pendant qu'il s'effondre dans ses robes (1,6 à 3,1 s)."""
+    track = Track(6.6)
+    track.add(ambience(5.6, 200, 900, 0.15), 0.0, 1.0)
+    groan = bp(noise(0.8), 200, 900) * adsr(0.8, 0.2, 0.2, 0.6, 0.4)
+    track.add(groan, 0.1, 0.4)
+    for k in range(2):
+        track.add(click(0.02, 1500, 5000), 0.8 + k * 0.12, 0.4)
+        for b in range(4):
+            track.add(mix((wood_knock(rand(500, 700)), 0, 0.8), (click(0.015, 1500, 5000), 0, 0.6)),
+                      0.8 + 0.5 + k * 0.12 + b * 0.55, 0.45 - 0.08 * b)
+        track.add(dice_roll(2.5, 10), 1.4 + k * 0.12, 0.2)
+    track.add(rustle(1.2), 1.6, 0.4)
+    track.add(thump(80, 35, 0.8, 0.25), 2.5, 0.6)
+    return track.buf
+
+
+@sound('cutscene/phase2_idole_or', -17)
+def phase2_idole_or():
+    """L'Idole d'Or, phase 2 (IdolPhase) : elle s'éveille (0,5 s), deux miroirs d'or se dressent, un éclat les balaie
+    et montre ta main à l'envers, son troisième oeil s'ouvre, l'apogée (2,2 s)."""
+    track = Track(5.8)
+    track.add(ambience(4.8, 300, 1200, 0.2), 0.0, 1.0)
+    track.add(mix((thump(90, 40, 0.6, 0.2), 0, 1.0), (metal_hit(500, 0.8, 0.5), 0, 0.5)), 0.5, 0.6)
+    track.add(svf(noise(0.6), sweep(200, 2000, 0.6), q=2.0) * ramp(0.6, 0.0, 1.0, 0.3), 0.4, 0.3)
+    track.add(mix((sparkle(1.2), 0, 1.0), (modal(hz('B5'), 1.6, GLASS_RATIOS, [1.0, 0.6, 0.4, 0.3]), 0, 0.6)), 1.1, 0.35)
+    track.add(modal(hz('F#6'), 1.4, GLASS_RATIOS, [1.0, 0.6, 0.4, 0.3]), 1.6, 0.25)
+    track.add(mix((thump(70, 30, 1.0, 0.3), 0, 1.0), (temple_gong(2.5), 0, 0.5)), 2.2, 0.7)
+    track.add(brass_chord(['B2', 'F#3', 'B3', 'D4'], 1.6, 0.6), 2.25, 0.5)
+    return track.buf
+
+
+@sound('cutscene/death_idole_or', -17)
+def death_idole_or():
+    """L'Idole d'Or meurt (IdolDeath) : son or se ternit et se fend (0,6 à 1,9 s), puis elle s'effrite grain à grain
+    du haut vers le bas (1,9 s) en un tas de sable (jusqu'à 4,2 s)."""
+    track = Track(6.6)
+    track.add(ambience(5.6, 300, 1200, 0.15), 0.0, 1.0)
+    for k in range(3):
+        track.add(crack(0.12, 0.02, 400, 6000), 0.6 + k * 0.3, 0.35 + 0.1 * k)
+    track.add(lp(noise(1.3), 300) * ramp(1.3, 0.0, 1.0, 1.0), 0.6, 0.2)
+    track.add(mix((thump(80, 35, 0.8, 0.3), 0, 1.0), (crack(0.2, 0.04, 300, 5000), 0, 0.6)), 1.9, 0.6)
+    track.add(sand_pour(2.4) * ramp(2.4, 1.0, 0.4, 1.0), 1.95, 0.5)
+    for k, note in enumerate(['B4', 'F#4', 'D4']):
+        track.add(music_box(note, 1.6), 4.2 + k * 0.4, 0.2)
+    return track.buf
+
+
 def main(prefixes):
     done = 0
     for name, level, fmt, trim, loop, fn in SOUNDS:
