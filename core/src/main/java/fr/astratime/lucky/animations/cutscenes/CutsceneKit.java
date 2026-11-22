@@ -35,4 +35,7 @@ public record CutsceneKit(VisualSettings settings, ScreenShake shake, GameSounds
 
     /** @return le portrait en pixel art de l'ennemi {@code kind}. */
     public TextureRegion portrait(EnemyKind kind) { return new TextureRegion(enemies.portrait(kind)); }
+
+    /** @return le portrait de l'Architecte sans son plan roulé (sa mort : son vrai plan s'envole). */
+    public TextureRegion architectWithoutPlan() { return new TextureRegion(enemies.architectWithoutPlan()); }
 }

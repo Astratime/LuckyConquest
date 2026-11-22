@@ -19,17 +19,36 @@ class TowerHardModeTest {
     }
 
     @Test
-    void hardModeGivesEachChapterBossAstrasHpAndDoublesThePowerEachChapter() {
-        long[] bossHp = {1_200_000L, 2_500_000L, 8_000_000L, 40_000_000L, 100_000_000L, 500_000_000L}; // Puissance (2026-11-18)
-        int[] power = {600, 1_200, 2_400, 4_800, 9_600, 19_200};
+    void hardModeGivesEachChapterBossItsHpAndAboutX147PowerEachChapter() {
+        // PV des boss : modèle de Puissance (2026-11-18). Force : x1,47 par chapitre sur 10 chapitres (plan validé
+        // le 2026-11-20), de la Comète x6 à la Machine x192, chapitre attaché à son nom et non à son numéro.
+        assertEquals(1_200_000L, EnemyKind.COMETE.getMaxHp(Difficulty.HARD));
+        assertEquals(2_500_000L, EnemyKind.REINE.getMaxHp(Difficulty.HARD));
+        assertEquals(8_000_000L, EnemyKind.ECLAT.getMaxHp(Difficulty.HARD));
+        assertEquals(40_000_000L, EnemyKind.PRETENDANT.getMaxHp(Difficulty.HARD));
+        assertEquals(100_000_000L, EnemyKind.MAISON.getMaxHp(Difficulty.HARD));
+        assertEquals(500_000_000L, EnemyKind.MACHINE_ORIGINELLE.getMaxHp(Difficulty.HARD));
+        assertEquals(600, EnemyKind.COMETE.getPower(Difficulty.HARD));
+        assertEquals(880, EnemyKind.CHEF.getPower(Difficulty.HARD));
+        assertEquals(1_900, EnemyKind.ECLAT.getPower(Difficulty.HARD));
+        assertEquals(4_080, EnemyKind.PRETENDANT.getPower(Difficulty.HARD));
+        assertEquals(8_800, EnemyKind.MAISON.getPower(Difficulty.HARD));
+        assertEquals(19_200, EnemyKind.MACHINE_ORIGINELLE.getPower(Difficulty.HARD));
+        Chapter previous = null;
         for (Chapter chapter : Chapter.values()) {
-            int i = chapter.getNumber() - 1;
-            assertEquals(bossHp[i], chapter.getBoss().getMaxHp(Difficulty.HARD), chapter.name());
-            assertEquals(bossHp[i], new Enemy(chapter.getBoss(), true).getMaxHp(), chapter.name());
-            assertEquals(power[i], chapter.getBoss().getPower(Difficulty.HARD), chapter.name());
-            assertEquals(power[i], chapter.getFirstEnemy().getPower(Difficulty.HARD), chapter.name());
+            Chapter.Stats stats = chapter.getStats();
+            assertEquals(stats.hardBossHp(), chapter.getBoss().getMaxHp(Difficulty.HARD), chapter.name());
+            assertEquals(stats.hardBossHp(), new Enemy(chapter.getBoss(), true).getMaxHp(), chapter.name());
+            assertEquals(stats.hardPower(), chapter.getBoss().getPower(Difficulty.HARD), chapter.name());
+            assertEquals(stats.hardPower(), chapter.getFirstEnemy().getPower(Difficulty.HARD), chapter.name());
+            if (previous != null) {
+                assertTrue(stats.hardPower() > previous.getStats().hardPower(), chapter.name());
+                assertTrue(stats.hardBossHp() > previous.getStats().hardBossHp(), chapter.name());
+            }
+            previous = chapter;
         }
-        assertEquals(2 * EnemyKind.CHAPTER_6_POWER, EnemyKind.CHEF.getPower(Difficulty.HARD), "chapitre 2 : deux fois le chapitre 6 normal");
+        assertEquals("8,8", Chapter.TABLES_SACREES.hardPowerText());
+        assertEquals("192", Chapter.LE_JACKPOT.hardPowerText());
     }
 
     @Test
@@ -48,9 +67,9 @@ class TowerHardModeTest {
 
     @Test
     void hardModeHitsWithTheLateTowerDamageEverywhere() {
-        // Chapitre 2 difficile : l'Épée frappe deux fois plus fort qu'au chapitre 6 normal.
-        int normalSix = EnemyKind.MACHINE_ORIGINELLE.hurt(EnemyKind.CHEF.swordDamage(), Difficulty.NORMAL);
-        assertEquals(2 * normalSix, EnemyKind.CHEF.hurt(EnemyKind.CHEF.swordDamage(), Difficulty.HARD), 2);
+        // Chapitre 2 difficile (force x8,8) : l'Épée frappe comme au dernier chapitre normal (x6), x8,8/6.
+        int normalLast = EnemyKind.MACHINE_ORIGINELLE.hurt(EnemyKind.CHEF.swordDamage(), Difficulty.NORMAL);
+        assertEquals(normalLast * 880 / 600.0, EnemyKind.CHEF.hurt(EnemyKind.CHEF.swordDamage(), Difficulty.HARD), 2);
         assertTrue(EnemyKind.TEMPS_MORT.interestPercent(Difficulty.HARD) <= 100, "jamais plus que tous les gains");
     }
 

@@ -313,7 +313,7 @@ public class MenuScreen extends ScreenAdapter {
     private void showMainPage() {
         List<OptionsMenu.Entry> entries = new ArrayList<>(List.of(
             OptionsMenu.Entry.button(Lang.t("Entraînement"), this::onPlay),
-            OptionsMenu.Entry.button(Lang.t("Tour des épreuves"), this::onTower),
+            OptionsMenu.Entry.button(Lang.t("Histoire"), this::onTower),
             OptionsMenu.Entry.button(Lang.t("Exploration"), () -> goTo(() -> new ExplorationScreen(luckyGame))),
             OptionsMenu.Entry.button(Lang.t("Table du croupier"), () -> goTo(() -> new CroupierTableScreen(luckyGame))),
             OptionsMenu.Entry.button(Lang.t("Boutique"), () -> goTo(() -> new ShopScreen(luckyGame)))));
@@ -532,7 +532,7 @@ public class MenuScreen extends ScreenAdapter {
         }));
         String[] lines = {
             Lang.t("Entraînement : un combat contre moi, pour t'exercer. Il ne rapporte rien."),
-            Lang.t("Tour des épreuves : six chapitres de combats, jusqu'au sommet. Elle ne rapporte pas de pièces."),
+            Lang.t("Histoire : dix chapitres de combats, jusqu'au bout du chemin. Elle ne rapporte pas de pièces."),
             Lang.t("Exploration : des donjons, leurs rois et leurs coffres. Les seuls combats qui rapportent des "
                 + "pièces."),
             Lang.t("Table du croupier : ton deck de 20 cartes et les 11 rouleaux de ta machine."),

@@ -461,11 +461,6 @@ final class PalaceBossScenes {
 
         private float melt() { return Interpolation.pow2In.apply(progress(0.6f, 3.6f)); }
 
-        /** L'ordonnée à l'écran de la ligne {@code py} du portrait, même quand elle s'enfonce dans la flaque. */
-        private float sunkY(float py) {
-            int rows = Math.max(1, Math.round(42 * (1f - MathUtils.clamp(poseSink, 0f, 1f))));
-            return bossBottom() + poseY + (rows - py) * bossScale() * (1f + poseStretch);
-        }
 
         @Override
         protected void step(float delta) {
@@ -508,7 +503,7 @@ final class PalaceBossScenes {
                 if (!loose) {                                                                 // elle glisse d'où elle était
                     loose = true;
                     crownStartX = pieceX(crown);
-                    crownStartY = sunkY(crown.top + crown.height / 2f);
+                    crownStartY = portraitY(crown.top + crown.height / 2f);
                 }
                 float fall = progress(LOOSE, LAND), k = Interpolation.bounceOut.apply(fall);
                 float x = MathUtils.lerp(crownStartX, landX, Interpolation.pow2Out.apply(fall));
@@ -793,10 +788,6 @@ final class PalaceBossScenes {
         private float heapGrow()        { return Interpolation.pow2Out.apply(progress(CRUMBLE, CRUMBLE + 1.2f)); }
         private float heapTop()         { return groundY() - 4f + 16f * heapScale() * heapGrow(); }
 
-        private float sunkY(float py) {
-            int rows = Math.max(1, Math.round(42 * (1f - MathUtils.clamp(poseSink, 0f, 1f))));
-            return bossBottom() + poseY + (rows - py) * bossScale() * (1f + poseStretch);
-        }
 
         @Override
         protected void step(float delta) {
@@ -872,7 +863,7 @@ final class PalaceBossScenes {
                 if (!loose) {
                     loose = true;
                     crownStartX = pieceX(crown);
-                    crownStartY = sunkY(crown.top + crown.height / 2f);
+                    crownStartY = portraitY(crown.top + crown.height / 2f);
                 }
                 float k = progress(CRUMBLE, CROWN_LAND), land = Interpolation.bounceOut.apply(k);
                 float x = MathUtils.lerp(crownStartX, bossX(), Interpolation.pow2Out.apply(k)) + MathUtils.sin(k * MathUtils.PI) * bossWidth() * 0.45f;

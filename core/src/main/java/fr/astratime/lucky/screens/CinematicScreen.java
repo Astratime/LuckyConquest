@@ -208,7 +208,7 @@ public class CinematicScreen extends CasinoMenuScreen {
                 enemyTextures.portrait(boss), kit -> Cutscenes.beforeBoss(kit, boss)));
             addMoments(bosses, deaths, profile, boss);
         }
-        addGroup(Lang.t("Tour : boss"), Lang.t("Les boss de la Tour"), bosses);
+        addGroup(Lang.t("Histoire : boss"), Lang.t("Les boss de l'Histoire"), bosses);
 
         List<Entry> endings = new ArrayList<>();
         Symbol[] reels = Symbol.classicReels().toArray(new Symbol[0]);
@@ -233,7 +233,7 @@ public class CinematicScreen extends CasinoMenuScreen {
                 enemyTextures.chapterArt(chapter), kit -> Cutscenes.ending(kit, chapter)));
         }
         endings.addAll(deaths);
-        addGroup(Lang.t("Tour : fins"), Lang.t("Le duel et les fins"), endings);
+        addGroup(Lang.t("Histoire : fins"), Lang.t("Le duel et les fins"), endings);
 
         for (Place place : Place.values()) {
             List<Entry> kings = new ArrayList<>();
@@ -276,7 +276,7 @@ public class CinematicScreen extends CasinoMenuScreen {
         if (Bestiary.bossCutsceneSeen(profile, croupier)) {
             List<Entry> secret = new ArrayList<>();
             secret.add(new Entry(Lang.t("Le Croupier entre en scène"),
-                Lang.t("Une porte cachée au sommet de la Tour mène à sa salle des machines. Il te distribue tes propres cartes."),
+                Lang.t("Une porte cachée au bout de l'Histoire mène à sa salle des machines. Il te distribue tes propres cartes."),
                 enemyTextures.portrait(croupier), kit -> withProfile(Cutscenes.beforeBoss(kit, croupier), profile)));
             addMoments(secret, secret, profile, croupier);
             if (Bestiary.deathSeen(profile, croupier)) {

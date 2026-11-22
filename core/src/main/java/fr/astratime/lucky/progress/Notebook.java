@@ -26,11 +26,19 @@ public final class Notebook {
             + "j'ai choisi la plus simple : le plus chanceux gagne.");
         page(EnemyKind.REINE, "La Reine a cru que ses tables lui appartenaient. Aucune table n'appartient à "
             + "celui qui s'y assoit. Elles appartiennent à celui qui distribue.");
+        page(EnemyKind.PROPHETE, "Le Prophète a vu ma comète tomber, un soir, et il a cru qu'elle reviendrait pour lui. "
+            + "Il a mis des foules sur la route. Une comète ne revient pour personne.");
         page(EnemyKind.ECLAT, "L'Éclat était un morceau de ma comète. Il voulait décider du prochain tirage. "
             + "Il n'a jamais compris que le tirage était déjà décidé.");
+        page(EnemyKind.COLLECTIONNEUR, "Quand l'Éclat s'est brisé, ses morceaux sont tombés partout. Un homme les a "
+            + "tous ramassés, un par un, et rangés dans sa vitrine. Il n'a jamais joué avec. Moi, je ne range rien.");
         page(EnemyKind.PRETENDANT, "Sans maître, ils se sont tous battus pour le trône. Je les ai regardés faire. "
             + "Un trône vide, c'est la meilleure des mises.");
+        page(EnemyKind.GENERAL, "Les Maisons ont voulu une armée. Je leur ai donné un général qui mise tout. "
+            + "Une guerre, c'est un jeu où l'on perd des deux côtés. Sauf la Maison.");
         page(EnemyKind.MAISON, "La Maison gagne toujours, disent-ils. Ils oublient de demander qui a bâti la Maison.");
+        page(EnemyKind.ARCHITECTE, "Il fallait quelqu'un pour monter la Tour. Je lui ai donné les plans. Il a cru les avoir "
+            + "dessinés. Chaque étage qu'il posait, je l'avais déjà mis sur la table.");
         page(EnemyKind.MACHINE_ORIGINELLE, "Ma toute première machine. Chaque fois qu'on tire son levier, le monde "
             + "recommence. Toi, tu l'as tiré. Et je me souviens de chaque tour.");
         // ----- La prairie -----
@@ -122,7 +130,7 @@ public final class Notebook {
         page(EnemyKind.DJINN, "Le Djinn exauce trois voeux. Je lui en ai demandé un seul : un adversaire à ma hauteur. "
             + "Il m'a montré ton visage.");
         page(EnemyKind.DRAGON, "Ignar dort sur la dernière braise de ma comète. Si tu lis ceci, il ne dort plus. "
-            + "Monte au sommet de la Tour une dernière fois, au plus dur. Je t'attendrai derrière ma table.");
+            + "Va au bout de l'histoire une dernière fois, au plus dur. Je t'attendrai derrière ma table.");
     }
 
     private static void page(EnemyKind kind, String text) { PAGES.put(kind, text); }
