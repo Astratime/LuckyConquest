@@ -3467,6 +3467,164 @@ def death_prince_neiges():
 
 
 # ===========================================================================
+# Rapide de Minuit : phases et morts des rois (ExpressBossScenes, 2026-11-22)
+# Les instants reprennent les constantes des scènes : si une scène change de rythme, mettre à jour ici.
+# ===========================================================================
+
+def moth_flutter():
+    """Le froissement léger d'un papillon de nuit."""
+    d = 0.12
+    return bp(noise(d), rand(1500, 2500), rand(4000, 6000)) * (0.5 + 0.5 * np.sin(np.linspace(0, rand(18, 26), n(d)))) * expdec(d, 0.05)
+
+
+@sound('cutscene/phase2_locomotive', -17)
+def phase2_locomotive():
+    """La Locomotive, phase 2 (EnginePhase) : la pression monte (les aiguilles s'affolent, la chaudière cogne de
+    0,6 à 1,85 s), des jets de vapeur, la soupape lâche à l'apogée (2,2 s)."""
+    track = Track(5.8)
+    track.add(ambience(4.8, 100, 600, 0.2), 0.0, 1.0)
+    track.add(rattle(2.2, 6, 14, 300, 1500), 0.0, 0.4)
+    track.add(lp(noise(2.0), 200) * ramp(2.0, 0.2, 1.0, 1.0), 0.2, 0.6)
+    for k in range(6):
+        track.add(mix((metal_hit(180 + 30 * k, 0.4, 0.5), 0, 0.6), (thump(90, 40, 0.2, 0.05), 0, 0.8)), 0.6 + k * 0.25, 0.4 + 0.06 * k)
+    for k in range(7):
+        track.add(hiss(0.5), 0.8 + rand(0.0, 1.3), rand(0.2, 0.4))
+    track.add(mix((hiss(2.0), 0, 1.0), (steam_whistle(1.8), 0, 0.8)), 2.2, 0.8)
+    track.add(thump(70, 30, 1.0, 0.3), 2.2, 0.8)
+    track.add(brass_chord(['E2', 'B2', 'E3', 'G3'], 1.6, 0.6), 2.25, 0.5)
+    return track.buf
+
+
+@sound('cutscene/death_locomotive', -17)
+def death_locomotive():
+    """La Locomotive meurt (EngineDeath) : elle fonce sur les rails, un rail se tord (1,2 s), le chasse-buffles
+    s'arrache (1,6 s) et glisse, elle bascule et s'écrase (2,5 s), elle siffle et s'éteint (3,6 s)."""
+    track = Track(6.6)
+    track.add(ambience(5.6, 100, 600, 0.2), 0.0, 1.0)
+    track.add(rattle(1.8, 10, 18, 300, 1500), 0.0, 0.6)
+    track.add(screech(1.0, 3200), 1.2, 0.45)
+    track.add(mix((metal_hit(300, 0.8, 0.8), 0, 1.0), (crack(0.05, 0.01, 600, 8000), 0, 0.7)), 1.6, 0.6)
+    track.add(screech(1.2, 2200), 1.7, 0.35)                                                # le chasse-buffles qui glisse
+    crash = mix((thump(60, 25, 1.6, 0.5), 0, 1.3), (crack(0.1, 0.02, 300, 7000), 0, 0.8),
+                (metal_hit(140, 1.2, 0.6), 0, 0.5), (lp(noise(1.5), 1200) * expdec(1.5, 0.5), 0, 0.8))
+    track.add(reverb(crash, wet=0.3, size=1.6, tail=1.2), 2.5, 1.0)
+    track.add(hiss(2.2), 2.7, 0.5)
+    whistle = osc(sweep(hz('A5'), hz('A4'), 1.4), 1.4, 'sine') * expdec(1.4, 0.8, attack=0.05)
+    track.add(whistle, 3.4, 0.15)
+    track.add(mix((metal_hit(900, 0.3, 0.4), 0, 1.0)), 3.6, 0.25)                         # la lanterne s'éteint
+    return track.buf
+
+
+@sound('cutscene/phase2_grand_chef', -17)
+def phase2_grand_chef():
+    """Le Grand Chef, phase 2 (ChefPhase) : trois poêles s'enflamment (0,5 / 0,9 / 1,3 s), les couteaux tournoient,
+    ses crocs (2,2 s)."""
+    track = Track(5.8)
+    track.add(ambience(4.8, 200, 900, 0.2), 0.0, 1.0)
+    for at in (0.5, 0.9, 1.3):
+        track.add(fire_burst(0.9), at, 0.5)
+        track.add(metal_hit(700, 0.4, 0.6), at - 0.05, 0.3)
+    for k in range(8):
+        track.add(blade_swish(), 1.2 + k * 0.12, 0.3)
+    track.add(mix((thump(80, 35, 1.0, 0.3), 0, 1.0), (blade_ring(2800, 0.8), 0, 0.5)), 2.2, 0.8)
+    track.add(brass_chord(['C3', 'E3', 'G#3', 'B3'], 1.6, 0.6), 2.25, 0.5)
+    return track.buf
+
+
+@sound('cutscene/death_grand_chef', -17)
+def death_grand_chef():
+    """Le Grand Chef meurt (ChefDeath) : il soupire, sa toque va sur la table (0,7 à 1,6 s), sa louche (1,3 à 2,2 s),
+    puis il s'en va d'un pas lourd (2,4 à 4,0 s)."""
+    track = Track(6.6)
+    track.add(ambience(5.6, 200, 900, 0.2), 0.0, 1.0)
+    sigh = bp(noise(0.8), 300, 1400) * adsr(0.8, 0.2, 0.2, 0.6, 0.4)
+    track.add(sigh, 0.1, 0.45)
+    track.add(rustle(0.4), 0.7, 0.3)
+    track.add(mix((thump(160, 80, 0.15, 0.04), 0, 0.6), (rustle(0.2), 0, 0.5)), 1.6, 0.4)
+    track.add(mix((metal_hit(1500, 0.6, 0.6), 0, 1.0), (glass_clink(2200), 0.02, 0.4)), 2.2, 0.45)
+    for k in range(6):
+        track.add(footstep(rand(140, 170), 1.0), 2.45 + k * 0.27, 0.6 - 0.07 * k)
+    track.add(mix((wood_knock(160), 0, 1.0), (thump(100, 50, 0.3, 0.08), 0, 0.6)), 4.1, 0.35)   # la porte du wagon
+    for k, note in enumerate(['G4', 'E4', 'C4']):
+        track.add(music_box(note, 1.4), 4.3 + k * 0.4, 0.25)
+    return track.buf
+
+
+@sound('cutscene/phase2_dame_en_noir', -17)
+def phase2_dame_en_noir():
+    """La Dame en noir, phase 2 (LadyPhase) : les lampes faiblissent, la voilette se lève (0,6 à 1,7 s), ses yeux
+    s'allument, la brume verte, l'apogée (2,2 s)."""
+    track = Track(5.8)
+    track.add(ambience(4.8, 200, 900, 0.2), 0.0, 1.0)
+    for k in range(5):
+        track.add(click(0.01, 1000, 5000), 0.2 + k * 0.18 + rand(0.0, 0.05), 0.25)            # les lampes qui grésillent
+    track.add(rustle(1.1), 0.6, 0.35)
+    track.add(modal(hz('F#5'), 2.0, GLASS_RATIOS, [1.0, 0.6, 0.4, 0.3]), 1.6, 0.3)
+    track.add(svf(noise(2.5), sweep(300, 900, 2.5), q=1.2) * ramp(2.5, 0.0, 1.0, 1.0), 1.0, 0.3)   # la brume
+    track.add(mix((thump(70, 30, 1.0, 0.3), 0, 1.0)), 2.2, 0.7)
+    track.add(brass_chord(['F#2', 'A2', 'C3', 'E3'], 1.6, 0.6), 2.25, 0.5)
+    return track.buf
+
+
+@sound('cutscene/death_dame_en_noir', -17)
+def death_dame_en_noir():
+    """La Dame en noir meurt (LadyDeath) : les lampes s'éteignent (0,3 / 0,75 / 1,2 s), la rose tombe (0,9 à 1,7 s),
+    elle se défait en papillons de nuit (2,5 s) qui s'envolent par la fenêtre (3,0 s)."""
+    track = Track(6.6)
+    track.add(ambience(5.6, 200, 900, 0.15), 0.0, 1.0)
+    for at in (0.3, 0.75, 1.2):
+        track.add(mix((click(0.01, 800, 4000), 0, 1.0), (metal_hit(1200, 0.2, 0.4), 0, 0.3)), at, 0.35)
+    track.add(mix((pluck(hz('D5'), 0.5), 0, 0.6), (rustle(0.2), 0, 0.5)), 1.7, 0.3)           # la rose sur le tapis
+    track.add(whoosh(0.8, 400, 2400), 2.4, 0.3)
+    for k in range(40):
+        track.add(moth_flutter(), 2.5 + rand(0.0, 2.0), rand(0.1, 0.25))
+    for k, note in enumerate(['D5', 'A4', 'F4', 'D4']):
+        track.add(music_box(note, 1.6), 2.6 + k * 0.45, 0.25)
+    return track.buf
+
+
+@sound('cutscene/phase2_desperado', -17)
+def phase2_desperado():
+    """Le Desperado, phase 2 (OutlawPhase) : trois coups de feu vers le toit (0,5 / 0,85 / 1,2 s), deux grappins se
+    plantent (1,35 / 1,51 s), ses complices descendent en se balançant et atterrissent (2,2 s)."""
+    track = Track(5.8)
+    track.add(ambience(4.8, 100, 700, 0.2), 0.0, 1.0)
+    track.add(rattle(4.5, 4, 10, 300, 1500), 0.0, 0.25)
+    for at in (0.5, 0.85, 1.2):
+        track.add(reverb(gunshot(), wet=0.25, size=1.0, tail=0.6), at, 0.8)
+        track.add(metal_hit(2400, 0.3, 0.6), at + 0.05, 0.2)                                    # la balle dans le toit
+    for at in (1.35, 1.51):
+        track.add(whoosh(0.3, 800, 3000), at - 0.25, 0.3)
+        track.add(mix((metal_hit(800, 0.5, 0.8), 0, 1.0), (crack(0.03, 0.005, 1000, 8000), 0, 0.5)), at, 0.5)
+    for k in range(2):
+        track.add(whoosh(0.6, 200, 1200), 1.6 + 0.05 * k, 0.35)
+    track.add(mix((thump(80, 35, 0.8, 0.25), 0, 1.0), (footstep(150), 0.04, 0.8), (footstep(170), 0.09, 0.8)), 2.2, 0.8)
+    track.add(brass_chord(['G2', 'D3', 'G3', 'A#3'], 1.6, 0.6), 2.25, 0.5)
+    return track.buf
+
+
+@sound('cutscene/death_desperado', -17)
+def death_desperado():
+    """Le Desperado meurt (OutlawDeath) : une balle fait sauter son chapeau (0,6 s), qui retombe (1,4 s) ; la porte du
+    fourgon glisse (1,0 à 1,6 s), le vent de la nuit et le train qui roule ; il recule et saute (2,5 s)."""
+    track = Track(6.6)
+    track.add(ambience(5.6, 100, 700, 0.2), 0.0, 1.0)
+    track.add(rattle(6.0, 4, 10, 300, 1500), 0.0, 0.3)
+    track.add(reverb(gunshot(), wet=0.25, size=1.0, tail=0.6), 0.6, 0.8)
+    track.add(mix((thump(140, 70, 0.12, 0.03), 0, 0.6), (rustle(0.15), 0, 0.5)), 1.4, 0.35)
+    door = svf(noise(0.6), sweep(300, 900, 0.6), q=2.0) * adsr(0.6, 0.05, 0.1, 0.8, 0.1)
+    track.add(mix((door, 0, 0.6), (metal_hit(220, 0.6, 0.5), 0.55, 0.5)), 1.0, 0.6)
+    wind = bp(noise(4.5), 300, 2500) * ramp(4.5, 0.0, 1.0, 0.5)
+    track.add(wind, 1.3, 0.35)
+    track.add(rattle(4.5, 14, 18, 400, 2000), 1.3, 0.4)                                     # le train, plus fort porte ouverte
+    for k in range(3):
+        track.add(footstep(160), 1.6 + k * 0.28, 0.4)
+    track.add(whoosh(0.9, 300, 1800), 2.5, 0.5)
+    track.add(steam_whistle(1.8), 3.4, 0.35)
+    return track.buf
+
+
+# ===========================================================================
 # Temple du Destin : phases et morts des rois (TempleBossScenes, 2026-11-22)
 # Les instants reprennent les constantes des scènes : si une scène change de rythme, mettre à jour ici.
 # ===========================================================================
