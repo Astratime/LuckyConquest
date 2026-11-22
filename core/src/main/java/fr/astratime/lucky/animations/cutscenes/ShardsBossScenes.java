@@ -7,6 +7,7 @@ import com.badlogic.gdx.math.Interpolation;
 import com.badlogic.gdx.math.MathUtils;
 import fr.astratime.lucky.assets.ShardsArt;
 import fr.astratime.lucky.entities.enemy.EnemyKind;
+import fr.astratime.lucky.entities.enemy.EnemySymbol;
 
 import static fr.astratime.lucky.assets.Palette.hex;
 
@@ -72,16 +73,24 @@ final class ShardsBossScenes {
     /**
      * « Nouvel éclat » : l'éclat encore éteint de sa poitrine (rose pour la Valse, vert pour le Scellé) s'arrache de
      * son serti, qui reste vide, fait le tour de la scène en tournoyant, et replonge dans son serti ; il s'allume,
-     * ses autres éclats répondent.
+     * ses autres éclats répondent. Le symbole que cet éclat lui donne sort de lui et se pose à côté de lui : la Valse
+     * en tournant sur elle-même comme une danseuse, le Scellé en tombant comme un tampon de cire.
      */
     static final class CollectorPhase extends CollectorScene {
         static final float LEAVE = 0.15f, OUT = 0.6f, DIVE = 1.7f;
         private final int index;
+        /** Le symbole que l'éclat lui donne : la Valse (phase 2) ou le Scellé (phase 3). */
+        private final TextureRegion gift;
 
         CollectorPhase(CutsceneKit kit, int phase) {
             super(kit, Moment.PHASE, phase);
             index = Math.min(colors.length - 1, Math.max(1, phase - 1));
+            gift = symbol(phase == 2 ? EnemySymbol.WALTZ : EnemySymbol.SEAL);
         }
+
+        /** @return la place du symbole gagné, à côté de lui. */
+        private float giftX() { return bossX() + bossWidth() * 0.5f + worldHeight() * 0.12f; }
+        private float giftY() { return bossY() + bossHeight() * 0.25f; }
 
         private float leave() { return Interpolation.pow2Out.apply(progress(LEAVE, OUT)); }
         private float dive()  { return Interpolation.pow3In.apply(progress(DIVE, CLIMAX_PHASE)); }
@@ -110,6 +119,10 @@ final class ShardsBossScenes {
                 sparks(chestX(index), chestY(index), 80, colors[index], 900f, 14f);
                 sparks(chestX(index), chestY(index), 30, WHITE, 600f, 10f);
             }
+            if (phase == 3 && at(CLIMAX_PHASE + 0.75f)) {                  // le tampon du Scellé
+                rumble(0.2f, 6f);
+                sparks(giftX(), giftY() - iconScale(0.16f) * 7f, 16, colors[index], 300f, 8f);
+            }
         }
 
         @Override
@@ -132,7 +145,26 @@ final class ShardsBossScenes {
                 draw(batch, chestGems[index], gemX(), gemY(), size, spin, Color.WHITE, 1f);
             }
             wave(batch, CLIMAX_PHASE, 0.8f, chestX(index), chestY(index), colors[index], worldWidth() * 1.3f);
+            drawGift(batch);
             flash(batch, colors[index], CLIMAX_PHASE, 0.3f, 0.45f);
+        }
+
+        /** Le symbole gagné sort de l'éclat serti et se pose à côté de lui, où il reste. */
+        private void drawGift(Batch batch) {
+            if (gift == null || time < CLIMAX_PHASE) return;
+            float out = Interpolation.pow2Out.apply(progress(CLIMAX_PHASE, CLIMAX_PHASE + 0.5f));
+            float x = MathUtils.lerp(chestX(index), giftX(), out), y = MathUtils.lerp(chestY(index), giftY(), out);
+            float size = iconScale(0.16f), rotation = 0f, scale = size * (0.3f + 0.7f * out);
+            if (phase == 2) {                                              // la Valse tourne, comme une danseuse
+                rotation = 14f * MathUtils.sin((time - CLIMAX_PHASE) * 5f);
+                x += MathUtils.sin((time - CLIMAX_PHASE) * 2.5f) * size * 2f * out;
+            } else {                                                       // le Scellé tombe comme un tampon
+                float stamp = progress(CLIMAX_PHASE + 0.5f, CLIMAX_PHASE + 0.75f);
+                scale *= 1f + 0.6f * (1f - stamp) * out;
+            }
+            glow(batch, x, y, size * 34f * pulse(4f, 0.7f), colors[index], 0.8f * out);
+            glow(batch, x, y, size * 14f, WHITE, 0.35f * out);
+            draw(batch, gift, x, y, scale, rotation, WHITE, Math.min(1f, out * 3f));
         }
     }
 
