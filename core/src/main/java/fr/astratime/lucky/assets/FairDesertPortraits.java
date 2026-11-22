@@ -27,6 +27,28 @@ public final class FairDesertPortraits {
      */
     public static int[][] pixels(EnemyKind kind) { return of(kind); }
 
+    /** Ce qu'une cinématique peut retirer d'un portrait (voir {@link #without}). */
+    public enum Prop { LOYAL_HAT, CAP, CROWN, KING_CARD }
+
+    /** Les accessoires retirés du portrait en cours de dessin (vide hors de {@link #without}). */
+    private static java.util.Set<Prop> gone = java.util.EnumSet.noneOf(Prop.class);
+
+    private static boolean has(Prop prop) { return !gone.contains(prop); }
+
+    /**
+     * @return le portrait de {@code kind} dessiné sans les accessoires {@code props} (ce qu'il y avait dessous
+     * réapparaît) : les cinématiques en tirent le vrai morceau qui quitte le boss, jamais une copie.
+     */
+    public static synchronized int[][] without(EnemyKind kind, Prop... props) {
+        gone = java.util.EnumSet.noneOf(Prop.class);
+        java.util.Collections.addAll(gone, props);
+        try {
+            return of(kind);
+        } finally {
+            gone = java.util.EnumSet.noneOf(Prop.class);
+        }
+    }
+
     /** @return le portrait de l'ennemi {@code kind}, ou {@code null} s'il n'est pas d'un de ces lieux. */
     static int[][] of(EnemyKind kind) {
         return switch (kind) {
@@ -117,7 +139,8 @@ public final class FairDesertPortraits {
         g.ellipse(22f, 21f, 3.5f, 1.5f, hair);
         g.set(8, 20, hair); g.set(26, 20, hair);
         g.line(12, 13, 15, 13, hair); g.line(19, 13, 22, 13, hair);
-        topHat(g, rgba("1a1418"), RED);
+        if (has(Prop.LOYAL_HAT)) topHat(g, rgba("1a1418"), RED);
+        else { g.ellipse(17f, 8.5f, 6.5f, 2f, hair); g.set(17, 6, hair); }   // sans son chapeau : ses cheveux plaqués
         // Le fouet qui claque.
         g.line(30, 41, 31, 26, rgba("6e4524"));
         g.line(31, 26, 25, 22, rgba("3a2a1e"));
@@ -162,9 +185,13 @@ public final class FairDesertPortraits {
         g.rect(20, 15, 21, 16, rgba("eaffea"));
         g.ellipse(17f, 22f, 2f, 1.5f, rgba("1a1a30"));
         // Casquette à visière, plaque d'or.
-        g.rect(9, 4, 25, 9, uniform);
-        g.rect(7, 9, 25, 10, uniformDark);
-        g.rect(15, 5, 19, 7, GOLD);
+        if (has(Prop.CAP)) {
+            g.rect(9, 4, 25, 9, uniform);
+            g.rect(7, 9, 25, 10, uniformDark);
+            g.rect(15, 5, 19, 7, GOLD);
+        } else {                                                              // sans sa casquette : quelques mèches de brume
+            g.line(13, 8, 15, 6, ghostShade); g.line(17, 8, 18, 5, ghostShade); g.line(21, 8, 20, 6, ghostShade);
+        }
         // Lanterne verte qui pend.
         g.line(29, 24, 29, 28, rgba("8a97a8"));
         g.rect(27, 28, 31, 34, rgba("4a4a5a"));
@@ -282,16 +309,22 @@ public final class FairDesertPortraits {
         face(g, SKIN, SKIN_SHADE);
         g.ellipse(17f, 24f, 6f, 3.5f, beard);
         g.line(14, 21, 20, 21, GOLD);
-        g.rect(9, 3, 25, 8, GOLD);
-        g.triangle(9, 3, 12, 3, 10, -1, GOLD);
-        g.triangle(15, 3, 19, 3, 17, -2, GOLD);
-        g.triangle(22, 3, 25, 3, 24, -1, GOLD);
-        g.rect(9, 7, 25, 8, GOLD_DARK);
-        g.set(13, 5, RED); g.set(17, 5, BLUE); g.set(21, 5, RED);
+        if (has(Prop.CROWN)) {
+            g.rect(9, 3, 25, 8, GOLD);
+            g.triangle(9, 3, 12, 3, 10, -1, GOLD);
+            g.triangle(15, 3, 19, 3, 17, -2, GOLD);
+            g.triangle(22, 3, 25, 3, 24, -1, GOLD);
+            g.rect(9, 7, 25, 8, GOLD_DARK);
+            g.set(13, 5, RED); g.set(17, 5, BLUE); g.set(21, 5, RED);
+        } else {                                                              // sans sa couronne : un crâne dégarni
+            g.ellipse(11f, 9f, 2f, 1.5f, beard); g.ellipse(23f, 9f, 2f, 1.5f, beard);
+        }
         // Une main qui tient une carte truquée.
         g.ellipse(29f, 30f, 2.5f, 2f, SKIN);
-        g.rect(27, 22, 32, 28, WHITE);
-        g.set(29, 24, RED); g.set(30, 26, RED);
+        if (has(Prop.KING_CARD)) {
+            g.rect(27, 22, 32, 28, WHITE);
+            g.set(29, 24, RED); g.set(30, 26, RED);
+        }
         return g.outlined();
     }
 

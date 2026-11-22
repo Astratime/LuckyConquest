@@ -128,7 +128,9 @@ final class FairBossScenes {
 
         LoyalDeath(CutsceneKit kit) {
             super(kit, Moment.DEATH, EnemyKind.MONSIEUR_LOYAL, 0);
-            hat = art("obr", new Color[] {hex("0a0608"), hex("1a1418"), RED}, TOP_HAT);
+            Piece real = lift(FairDesertPortraits.pixels(EnemyKind.MONSIEUR_LOYAL),            // son vrai haut-de-forme
+                FairDesertPortraits.without(EnemyKind.MONSIEUR_LOYAL, FairDesertPortraits.Prop.LOYAL_HAT));
+            hat = real != null ? real.region : art("obr", new Color[] {hex("0a0608"), hex("1a1418"), RED}, TOP_HAT);
             rabbit = art("owkp", new Color[] {hex("0a0608"), hex("f6f0e2"), hex("1a1018"), hex("e89aa8")}, RABBIT);
             joker = gameCard("cards/special_classic/blanc/joker.png");
         }
@@ -161,10 +163,10 @@ final class FairBossScenes {
         protected void front(Batch batch) {
             float coil = progress(0.5f, 1.4f);                                              // son fouet l'enroule
             if (coil > 0f && time < 3.3f) {
-                int turns = (int) (6 * coil);
-                for (int k = 0; k < turns; k++) {
-                    float y = bossBottom() + bossHeight() * (0.2f + k * 0.11f);
-                    line(batch, hex("3a2a1e"), 1f, bossX() - bossWidth() * 0.4f, y, bossX() + bossWidth() * 0.4f, y + 30f, 10f);
+                int turns = (int) (5 * coil);
+                for (int k = 0; k < turns; k++) {                                            // autour de sa veste, pas de son visage
+                    float y = portraitY(40f - k * 2.4f);
+                    line(batch, hex("6e4524"), 1f, portraitX(4f), y, portraitX(30f), y + bossScale() * 1.5f, bossScale() * 0.9f);
                 }
             }
             float drop = curtain();                                                          // le rideau
@@ -174,8 +176,9 @@ final class FairBossScenes {
                 for (int k = 0; k < 12; k++) rect(batch, hex("5a0614"), 0.8f, k * worldWidth() / 11f, bottom, 18f, worldHeight() - bottom + MARGIN);
                 rect(batch, GOLD, 1f, -MARGIN, bottom, worldWidth() + 2f * MARGIN, 16f);
             }
-            if (time >= 3.6f) {                                                              // le haut-de-forme, et le lapin
-                draw(batch, hat, bossX(), groundY() + 50f, fit(110f, 6), 0f, WHITE, 1f);
+            if (time >= 3.6f) {                                                              // son haut-de-forme, renversé, et le lapin
+                float hatScale = bossScale() * 1.1f;
+                draw(batch, hat, bossX(), groundY() + hat.getRegionHeight() * hatScale / 2f + 6f, hatScale, 180f, WHITE, 1f);
                 float pop = Interpolation.swingOut.apply(progress(4.0f, 4.4f));
                 if (pop > 0f) {
                     draw(batch, rabbit, bossX(), groundY() + 60f + 150f * pop, fit(170f, 11), 0f, WHITE, 1f);
@@ -189,90 +192,199 @@ final class FairBossScenes {
     // Conducteur fantôme
     // -------------------------------------------------------------------------
 
-    /** Le train entre dans le tunnel : noir, ses yeux et sa lanterne ; il ressort en looping, en flammes bleues, et poinçonne un ticket. */
-    static final class ConductorPhase extends BossScene {
-        private final TextureRegion ticket;
+    static final String[] CART = {
+        "oooooooooooooooooooooooooooo",
+        "oyyyyyyyyyyyyyyyyyyyyyyyyyyo",
+        "obbbbbbbbbbbbbbbbbbbbbbbbbbo",
+        "obbbbbbbbbbbwwwwbbbbbbbbbbbo",
+        "obbbbbbbbbbwkwwkwbbbbbbbbbbo",
+        "obbbbbbbbbbwwwwwwbbbbbbbbbbo",
+        "obbbbbbbbbbbwkkwbbbbbbbbbbbo",
+        "obbbbbbbbbbbbbbbbbbbbbbbbbbo",
+        "oyyyyyyyyyyyyyyyyyyyyyyyyyyo",
+        "oooooooooooooooooooooooooooo",
+        ".oddo..................oddo.",
+        ".oooo..................oooo."};
+    static final String[] GHOST = {
+        "..ooooo..", ".owwwwwo.", "owwwwwwwo", "owkkwkkwo", "owkkwkkwo", "owwwwwwwo", "owwwwwwwo", "owwwwwwwo", "owowowowo",
+        "o.o.o.o.o"};
+    static final String[] BUFFER = {
+        "oooooooooooo", "orrwwrrwwrro", "orrwwrrwwrro", "oooooooooooo", ".oko....oko.", ".oko....oko.", ".oko....oko.", ".ooo....ooo."};
+    /** Le point de fuite des rails du décor du train fantôme, au fond du tunnel (pixels du décor). */
+    static final float RAILS_X = 180f, RAILS_Y = 160f;
+    static final Color LANTERN = hex("6ad86a");
+
+    /** Le Conducteur dans son wagonnet du train fantôme, sur les rails du décor. */
+    abstract static class ConductorScene extends BossScene {
+        protected final TextureRegion cart;
+
+        ConductorScene(CutsceneKit kit, Moment moment, int phase) {
+            super(kit, moment, EnemyKind.CONDUCTEUR, phase);
+            cart = art("oybwkd", new Color[] {hex("0a0608"), hex("c4891e"), hex("3a1a4a"), hex("e8e0d0"), hex("1a1018"), hex("4a4a5a")}, CART);
+        }
+
+        /** Le place à {@code depth} (0 = devant, 1 = au fond du tunnel) : plus petit, plus haut, sur les rails. */
+        protected void ride(float depth) {
+            poseScale = MathUtils.lerp(1f, 0.22f, depth);
+            poseY = (decorY(RAILS_Y) - bossBottom()) * depth;
+            poseX = (decorX(RAILS_X) - bossX()) * depth;
+        }
+
+        protected float cartScale() { return bossScale() * poseScale; }
+        protected float wheelY()    { return bossBottom() + poseY; }
+        protected float wheelX(int side) { return bossX() + poseX + side * 11.5f * cartScale(); }
+
+        /** Le wagonnet, devant son buste. */
+        protected void drawCart(Batch batch, Color tint) {
+            float scale = cartScale(), w = 28f * scale, h = 12f * scale;
+            batch.setColor(tint);
+            batch.draw(cart, bossX() + poseX - w / 2f, bossBottom() + poseY - 2f * scale, w, h);
+        }
+
+        /** Sa lanterne verte, qui se balance au bout de sa main. */
+        protected void lantern(Batch batch, float alpha) {
+            if (alpha > 0f) glow(batch, portraitX(29f), portraitY(31f), 240f * poseScale, LANTERN, alpha * pulse(9f, 0.25f));
+        }
+    }
+
+    /**
+     * « Terminus : Frayeur ! » : son wagonnet sort du fond du tunnel et fonce sur les rails, freine dans les
+     * étincelles contre le heurtoir du terminus ; tout s'éteint, il ne reste que ses yeux et sa lanterne, et les
+     * fantômes du tunnel jaillissent sur toi ; il se rallume en flammes bleues et poinçonne ton ticket.
+     */
+    static final class ConductorPhase extends ConductorScene {
+        private static final float ARRIVE = 1.2f, DARK = 1.35f, PUNCH = 3.1f;
+        private final TextureRegion ticket, ghost, buffer;
 
         ConductorPhase(CutsceneKit kit) {
-            super(kit, Moment.PHASE, EnemyKind.CONDUCTEUR, 2);
+            super(kit, Moment.PHASE, 2);
             ticket = art("oyr", new Color[] {hex("4a3008"), hex("ffd23a"), hex("1a1018")}, TICKET);
+            ghost = art("owk", new Color[] {hex("3a4a6a"), hex("dce8f4"), hex("1a1018")}, GHOST);
+            buffer = art("orwk", new Color[] {hex("1a1018"), hex("d8202c"), hex("f6f0e2"), hex("6a6a7a")}, BUFFER);
         }
+
+        private float dark() { return progress(DARK, DARK + 0.15f) * (1f - progress(CLIMAX_PHASE - 0.1f, CLIMAX_PHASE)); }
 
         @Override
         protected void step(float delta) {
-            if (at(1.7f)) rumble(0.5f, 10f);
+            for (int k = 0; k < 8; k++) if (at(0.1f + k * 0.14f)) rumble(0.05f, 2f + k * 0.5f);   // le wagonnet qui cahote
+            if (time > ARRIVE - 0.25f && time < ARRIVE + 0.15f) {                               // il freine
+                sparks(wheelX(-1), wheelY(), 3, hex("ffb84a"), 500f, 8f);
+                sparks(wheelX(1), wheelY(), 3, hex("ffb84a"), 500f, 8f);
+            }
+            if (at(ARRIVE)) rumble(0.4f, 10f);
             if (at(CLIMAX_PHASE)) { rumble(0.5f, 12f); sparks(bossX(), bossY(), 50, BLUE_FIRE, 700f, 16f); }
-            if (at(3.1f)) sparks(bossX() + 320f, bossY(), 16, GOLD, 300f, 8f);
+            if (at(PUNCH)) sparks(bossX() + bossWidth() * 0.9f, bossY(), 16, GOLD, 300f, 8f);
         }
 
         @Override
         protected void back(Batch batch) {
-            float loop = progress(1.7f, CLIMAX_PHASE);
-            poseTilt = 360f * Interpolation.pow2.apply(loop);                                // le looping
-            poseTint = progress(1.9f, CLIMAX_PHASE) * pulse(12f, 0.6f);
+            ride(1f - Interpolation.pow2Out.apply(progress(0f, ARRIVE)));
+            poseY += 4f * Math.abs(MathUtils.sin(time * 22f)) * (1f - progress(ARRIVE - 0.2f, ARRIVE));
+            poseTilt = -6f * gesture(ARRIVE - 0.05f, ARRIVE + 0.35f);                         // le coup de frein
+            poseTint = progress(CLIMAX_PHASE - 0.1f, CLIMAX_PHASE) * pulse(12f, 0.6f);
             poseTintColor.set(BLUE_FIRE);
-            poseAlpha = 0.8f;
+            lantern(batch, 1f - dark());
         }
 
         @Override
         protected void front(Batch batch) {
-            float dark = progress(0.4f, 0.7f) * (1f - progress(1.6f, 1.8f));                 // le tunnel
-            if (dark > 0f) {
-                fill(batch, Color.BLACK, dark);
+            drawCart(batch, WHITE);
+            float bs = bossScale();                                                           // le heurtoir du terminus, au bout des rails
+            stretch(batch, buffer, bossX(), bossBottom() - 5f * bs, 40f * bs / 12f, 9f * bs / 8f, 0f, WHITE, 1f);
+            float dark = dark();
+            if (dark > 0f) {                                                                  // tout s'éteint
+                fill(batch, Color.BLACK, 0.92f * dark);
                 eyes(batch, dark, hex("eaffea"), new float[] {14f, 16f}, new float[] {21f, 16f});
-                glow(batch, portraitX(29f), portraitY(31f), 200f, hex("6ad86a"), dark);
+                glow(batch, portraitX(29f), portraitY(31f), 200f, LANTERN, dark);
+                for (int g = 0; g < 4; g++) {                                                 // les fantômes jaillissent du tunnel
+                    float k = progress(DARK + 0.1f + g * 0.15f, DARK + 0.85f + g * 0.15f);
+                    if (k <= 0f || k >= 1f) continue;
+                    float side = (g % 2 == 0 ? -1f : 1f) * (0.6f + 0.25f * g);
+                    float x = MathUtils.lerp(decorX(RAILS_X), bossX() + side * worldWidth() * 0.45f, k);
+                    float y = MathUtils.lerp(decorY(110f), worldHeight() * (0.35f + 0.12f * g), k);
+                    draw(batch, ghost, x, y, fit(40f + 520f * k * k, 10), 10f * MathUtils.sin(time * 9f + g), WHITE, 0.85f * (1f - k * k));
+                }
             }
             if (time >= CLIMAX_PHASE) glow(batch, bossX(), bossY(), bossHeight() * 1.6f, BLUE_FIRE, 0.4f * pulse(10f, 0.6f));
-            float punch = progress(2.8f, 3.1f);                                              // clac : le ticket poinçonné
+            float punch = progress(PUNCH - 0.3f, PUNCH);                                      // clac : le ticket poinçonné
             if (punch > 0f) {
-                draw(batch, ticket, bossX() + 320f, bossY(), fit(90f, 5), 8f, WHITE, punch);
-                if (time >= 3.1f) rect(batch, Color.BLACK, 1f, bossX() + 300f, bossY() - 10f, 22f, 22f);
+                float x = bossX() + bossWidth() * 0.9f;
+                draw(batch, ticket, x, bossY(), fit(90f, 5), 8f, WHITE, punch);
+                if (time >= PUNCH) rect(batch, Color.BLACK, 1f, x - 20f, bossY() - 10f, 22f, 22f);
             }
             flash(batch, BLUE_FIRE, CLIMAX_PHASE, 0.3f, 0.35f);
         }
     }
 
-    /** La lanterne s'éteint, le train freine dans les étincelles ; il se dissout dans la brume, sa casquette reste ; les wagons repartent, vides. */
-    static final class ConductorDeath extends BossScene {
-        private final TextureRegion cap;
+    /**
+     * « Le train fantôme finit sa course » : sa lanterne s'éteint, les freins lâchent, et son wagonnet repart à
+     * reculons au fond du tunnel ; le vent arrache sa vraie casquette, qui vole vers toi et retombe sur les rails ;
+     * le noir du tunnel l'avale, un dernier souffle de brume en sort.
+     */
+    static final class ConductorDeath extends ConductorScene {
+        private static final float ROLL = 0.9f, CAP_OFF = 1.5f, SWALLOW = 3.3f;
+        private final TextureRegion bare;
+        private final Piece cap;
+        private float capX, capY, capScale;
+        private boolean off;
 
         ConductorDeath(CutsceneKit kit) {
-            super(kit, Moment.DEATH, EnemyKind.CONDUCTEUR, 0);
-            cap = art("oby", new Color[] {hex("0a0608"), hex("2a2a4a"), hex("ffd54a")}, CAP);
+            super(kit, Moment.DEATH, 0);
+            int[][] rest = FairDesertPortraits.without(EnemyKind.CONDUCTEUR, FairDesertPortraits.Prop.CAP);
+            cap = lift(FairDesertPortraits.pixels(EnemyKind.CONDUCTEUR), rest);
+            bare = pixels(rest);
         }
+
+        @Override protected void restart() { off = false; }
+        @Override protected float decorLight() { return 0.62f - 0.2f * progress(SWALLOW - 0.4f, SWALLOW + 0.4f); }
+
+        private float roll() { return Interpolation.pow2In.apply(progress(ROLL, SWALLOW)); }
 
         @Override
         protected void step(float delta) {
-            if (time > 0.6f && time < 1.9f) {                                                // le train freine
-                sparks(bossX() - bossWidth() * 0.6f, groundY(), 3, hex("ffb84a"), 500f, 8f);
-                sparks(bossX() + bossWidth() * 0.6f, groundY(), 3, hex("ffb84a"), 500f, 8f);
+            if (at(ROLL)) rumble(0.3f, 6f);
+            if (time > ROLL && time < 2.4f) {                                               // les freins qui crissent en vain
+                sparks(wheelX(-1), wheelY(), 2, hex("ffb84a"), 400f * poseScale + 100f, 6f);
+                sparks(wheelX(1), wheelY(), 2, hex("ffb84a"), 400f * poseScale + 100f, 6f);
             }
-            if (at(0.6f)) rumble(1.2f, 6f);
-            if (time > CLIMAX_DEATH && time < 3.6f && random.nextFloat() < 0.6f) {           // la brume
-                Particle mist = particle(bossX() + (random.nextFloat() - 0.5f) * bossWidth(), bossY() + (random.nextFloat() - 0.5f)
-                    * bossHeight(), 90f, 60f, 1.4f, 120f);
-                mist.color.set(0.7f, 0.8f, 1f, 0.35f);
+            if (at(CAP_OFF + 1.1f)) rumble(0.1f, 3f);
+            if (time > SWALLOW && time < SWALLOW + 0.8f && random.nextFloat() < 0.5f) {       // le souffle de brume
+                Particle mist = particle(decorX(RAILS_X) + (random.nextFloat() - 0.5f) * 200f, decorY(RAILS_Y + 10f), 90f, 140f, 1.6f, 140f);
+                mist.color.set(0.7f, 0.8f, 1f, 0.3f);
                 glows.add(mist);
             }
         }
 
         @Override
         protected void back(Batch batch) {
-            float lantern = 1f - progress(0.2f, 0.5f);
-            glow(batch, portraitX(29f), portraitY(31f), 240f, hex("6ad86a"), lantern);
-            poseAlpha = 0.8f * (1f - progress(CLIMAX_DEATH, 3.5f));
-            showBoss = poseAlpha > 0f;
+            ride(roll());
+            poseTilt = 4f * MathUtils.sin(time * 18f) * progress(ROLL, ROLL + 0.3f) * (1f - roll());
+            lantern(batch, 1f - progress(0.2f, 0.5f));
+            if (time >= CAP_OFF && !off && cap != null) {                                    // le vent emporte sa vraie casquette
+                off = true;
+                capX = pieceX(cap); capY = pieceY(cap); capScale = cartScale();
+                wear(bare);
+            }
+            showBoss = time < SWALLOW + 0.3f;
         }
 
         @Override
         protected void front(Batch batch) {
-            if (time >= 3.0f) draw(batch, cap, bossX(), groundY() + 40f, fit(70f, 5), 0f, WHITE, progress(3.0f, 3.4f));
-            float leave = Interpolation.pow2In.apply(progress(3.6f, 5.0f));                  // les wagons repartent, vides
-            for (int w = 0; w < 3; w++) {
-                float x = -worldWidth() * 0.6f + w * 360f + leave * worldWidth() * 1.8f;
-                rect(batch, hex("2a1a3a"), 1f, x, groundY() - 10f, 320f, 160f);
-                rect(batch, hex("1a1a30"), 1f, x + 20f, groundY() + 150f, 280f, 20f);
+            if (showBoss) drawCart(batch, WHITE);
+            float swallow = progress(SWALLOW - 0.5f, SWALLOW + 0.3f);                       // le noir du tunnel l'avale
+            if (swallow > 0f) {
+                float s = decorScale();
+                rect(batch, hex("05030a"), swallow, decorX(78f), decorY(160f), 204f * s, 108f * s);
             }
+            if (cap == null) return;
+            if (!off) { attached(batch, cap, 1f); return; }
+            float k = progress(CAP_OFF, CAP_OFF + 1.1f), land = Interpolation.bounceOut.apply(k);
+            float x = MathUtils.lerp(capX, bossX() - bossWidth() * 0.35f, Interpolation.pow2Out.apply(k));
+            float rest = groundY() + 3f * bossScale();
+            float y = MathUtils.lerp(capY, rest, land) + worldHeight() * 0.25f * MathUtils.sin(Math.min(1f, k * 1.6f) * MathUtils.PI) * (1f - k);
+            float scale = MathUtils.lerp(capScale, bossScale() * 1.15f, Interpolation.pow2Out.apply(k));
+            draw(batch, cap.region, x, y, scale, 540f * Interpolation.pow2Out.apply(Math.min(1f, k * 1.3f)) - 8f * land, WHITE, 1f);
         }
     }
 
@@ -490,52 +602,115 @@ final class FairBossScenes {
     // Roi des forains
     // -------------------------------------------------------------------------
 
-    /** Il frappe encore : la cloche explose, les lampes rougissent ; les peluches ouvrent des yeux méchants ; sa couronne se hérisse. */
-    static final class FairKingPhase extends BossScene {
-        private final TextureRegion bear, bell;
+    static final String[] BALL = {".ooo.", "owwho", "owwwo", "owwwo", ".ooo."};
+    static final String[] CAN = {
+        "ooooooooooo", "ohhcccccsso", "ohcccccccso", "ohcccccccso", "odddddddddo", "ohcccccccso", "ohcccccccso", "ohcccccccso",
+        "ohhcccccsso", "ooooooooooo"};
+    /** Le chamboule-tout du décor des stands : chaque boîte (coin haut-gauche en pixels du décor, rouge ou non). */
+    static final float[][] CANS = {
+        {292f, 102f, 1f}, {304f, 102f, 0f},
+        {286f, 112f, 0f}, {297f, 112f, 1f}, {308f, 112f, 0f},
+        {280f, 122f, 1f}, {292f, 122f, 0f}, {303f, 122f, 1f}, {315f, 122f, 0f}};
+    /** Le centre de la pyramide de boîtes, et le fond du stand derrière elle (pixels du décor). */
+    static final float CANS_X = 303f, CANS_Y = 116f;
+    static final Color STALL = hex("2e1a1a");
 
-        private final TextureRegion card;
+    /** Le Roi des forains, son stand de chamboule-tout (celui du décor) et ses balles. */
+    abstract static class FairKingScene extends BossScene {
+        protected final TextureRegion ball, redCan, greyCan, card;
+
+        FairKingScene(CutsceneKit kit, Moment moment, int phase) {
+            super(kit, moment, EnemyKind.ROI_FORAIN, phase);
+            ball = art("owh", new Color[] {hex("3a2a1e"), hex("f6f0e2"), hex("ffffff")}, BALL);
+            redCan = art("ohcsd", new Color[] {hex("1a1018"), hex("f08070"), hex("c84634"), hex("8a2a20"), hex("ffd54a")}, CAN);
+            greyCan = art("ohcsd", new Color[] {hex("1a1018"), hex("e0e0e8"), hex("a8a8b0"), hex("6a6a74"), hex("d8202c")}, CAN);
+            card = gameCard(FAIR_KING_CARD);
+        }
+
+        protected float handX() { return portraitX(29f); }
+        protected float handY() { return portraitY(29f); }
+
+        /** Une balle lancée de sa main à {@code start}, qui arrive en ({@code tx}, {@code ty}) en {@code flight} secondes. */
+        protected void throwBall(Batch batch, float start, float flight, float tx, float ty, float arc) {
+            float k = progress(start, start + flight);
+            if (k <= 0f || k >= 1f) return;
+            float x = MathUtils.lerp(handX(), tx, k), y = MathUtils.lerp(handY(), ty, k) + arc * MathUtils.sin(k * MathUtils.PI);
+            draw(batch, ball, x, y, decorScale() * 2.6f, 720f * k, WHITE, 1f);
+        }
+
+        /** La boîte {@code i} du chamboule-tout, à sa place dans le décor (déplacée de dx, dy, tournée de rot). */
+        protected void drawCan(Batch batch, int i, float dx, float dy, float rot) {
+            float[] c = CANS[i];
+            float s = decorScale();
+            draw(batch, c[2] > 0f ? redCan : greyCan, decorX(c[0] + 5.5f) + dx, decorY(c[1] + 5f) + dy, s, rot,
+                litLikeDecor(WHITE, tmp), 1f);
+        }
+    }
+
+    /**
+     * « Tout est truqué : Lot truqué ! » : il lance deux balles sur le chamboule-tout de son stand ; elles
+     * rebondissent, pas une boîte ne bouge ; les boulons qui les tiennent rougissent, les lampes aussi, les
+     * peluches du lot ouvrent des yeux méchants, sa couronne se hérisse.
+     */
+    static final class FairKingPhase extends FairKingScene {
+        private static final float[] THROWS = {0.3f, 0.95f};
+        private static final float FLIGHT = 0.4f, BOLTS = 1.5f;
+        private final TextureRegion bear;
 
         FairKingPhase(CutsceneKit kit) {
-            super(kit, Moment.PHASE, EnemyKind.ROI_FORAIN, 2);
-            card = gameCard(FAIR_KING_CARD);
+            super(kit, Moment.PHASE, 2);
             bear = art("obkm", new Color[] {hex("3a2412"), hex("c8904a"), hex("e0283a"), hex("5a2a1a")}, BEAR);
-            bell = art("ogw", new Color[] {hex("4a3008"), GOLD, hex("fff0a0")}, BELL);
         }
 
         @Override
         protected void step(float delta) {
-            if (at(1.2f)) rumble(0.3f, 10f);
-            if (at(CLIMAX_PHASE)) {
-                rumble(0.6f, 14f);
-                spray(bell, worldWidth() * 0.85f, worldHeight() * 0.85f, 10, 0f, 360f, 900f, fit(40f, 8), 1600f, 1.4f);
-                sparks(worldWidth() * 0.85f, worldHeight() * 0.85f, 50, GOLD, 800f, 14f);
+            for (float t : THROWS) if (at(t + FLIGHT)) {                                     // clang : la balle rebondit
+                rumble(0.12f, 4f);
+                sparks(decorX(CANS_X), decorY(CANS_Y), 14, Color.WHITE, 400f, 7f);
             }
+            if (at(BOLTS)) sparks(decorX(CANS_X), decorY(CANS_Y), 24, RED, 300f, 8f);
+            if (at(CLIMAX_PHASE)) { rumble(0.6f, 14f); sparks(bossX(), bossY(), 40, RED, 700f, 14f); }
         }
 
         @Override
         protected void back(Batch batch) {
-            float red = progress(CLIMAX_PHASE, CLIMAX_PHASE + 0.3f);
+            float red = progress(BOLTS, CLIMAX_PHASE);
             for (int l = 0; l < 6; l++) {                                                    // les lampes, qui virent au rouge
                 tmp.set(hex("ffb84a")).lerp(RED, red);
-                glow(batch, worldWidth() * (0.1f + 0.16f * l), worldHeight() * 0.88f, 220f, tmp, 0.7f);
+                glow(batch, worldWidth() * (0.1f + 0.16f * l), worldHeight() * 0.88f, 220f, tmp, 0.5f);
+            }
+            float bolts = progress(BOLTS, BOLTS + 0.3f);                                      // les boulons qui tiennent les boîtes
+            for (int i = 0; i < CANS.length && bolts > 0f; i++) {
+                float x = decorX(CANS[i][0] + 5.5f), y = decorY(CANS[i][1] + 9f), s = decorScale();
+                glow(batch, x, y, 22f * s, RED, bolts * pulse(8f, 0.5f));
+                rect(batch, hex("dce4ee"), bolts, x - 2f * s, y - 1.5f * s, 4f * s, 3f * s);
             }
             float rise = Interpolation.swingOut.apply(progress(CLIMAX_PHASE + 0.2f, CLIMAX_PHASE + 0.8f));
-            for (int b = 0; b < 6; b++) {                                                    // les peluches, derrière lui
-                float x = bossX() + (b - 2.5f) * bossWidth() * 0.42f;
-                draw(batch, bear, x, groundY() + 80f + 60f * rise * (b % 2), fit(180f, 10), 0f, WHITE, 0.4f + 0.6f * rise);
+            for (int b = 0; b < 6; b++) {                                                    // les peluches du lot, derrière lui
+                float x = bossX() + (b - 2.5f) * bossWidth() * 0.42f, y = groundY() + 80f + 60f * rise * (b % 2);
+                draw(batch, bear, x, y, fit(180f, 10), 0f, WHITE, 0.4f + 0.6f * rise);
                 if (rise > 0f) {
-                    glow(batch, x - 30f, groundY() + 80f + 60f * rise * (b % 2) + 10f, 60f, RED, rise);
-                    glow(batch, x + 30f, groundY() + 80f + 60f * rise * (b % 2) + 10f, 60f, RED, rise);
+                    glow(batch, x - 30f, y + 10f, 60f, RED, rise);
+                    glow(batch, x + 30f, y + 10f, 60f, RED, rise);
                 }
             }
-            if (time < CLIMAX_PHASE) draw(batch, bell, worldWidth() * 0.85f, worldHeight() * 0.85f, fit(120f, 8), 0f, WHITE, 1f);
-            poseX = 40f * gesture(0.8f, 1.3f);
-            poseTilt = -10f * gesture(0.8f, 1.3f);
+            float pitch = 0f;
+            for (float t : THROWS) pitch = Math.max(pitch, gesture(t - 0.2f, t + 0.15f));
+            poseX = 30f * pitch;
+            poseTilt = -8f * pitch;
         }
 
         @Override
         protected void front(Batch batch) {
+            for (float t : THROWS) {
+                throwBall(batch, t, FLIGHT, decorX(CANS_X), decorY(CANS_Y), worldHeight() * 0.12f);
+                float back = progress(t + FLIGHT, t + FLIGHT + 0.5f);                          // elle rebondit, la pyramide ne bouge pas
+                if (back > 0f && back < 1f) {
+                    float x = decorX(CANS_X) - back * worldWidth() * 0.3f;
+                    float y = decorY(CANS_Y) + worldHeight() * 0.1f * MathUtils.sin(back * MathUtils.PI) - back * back * worldHeight() * 0.5f;
+                    draw(batch, ball, x, y, decorScale() * 2.6f, -500f * back, WHITE, 1f);
+                }
+            }
             float shine = progress(CLIMAX_PHASE, CLIMAX_PHASE + 0.3f);                       // sa carte truquée luit
             if (shine > 0f) glow(batch, portraitX(30f), portraitY(24f), 260f, RED, 0.6f * shine * pulse(8f, 0.5f));
             onPortrait(batch, card, CARD_LEFT, CARD_TOP, CARD_PIXELS, 1f);                  // un vrai 2 de Carreau
@@ -549,41 +724,101 @@ final class FairBossScenes {
         }
     }
 
-    /** Il frappe une dernière fois et rate ; le palet retombe sur sa couronne ; il s'effondre ; les peluches pleuvent ; un ticket doré flotte vers toi. */
-    static final class FairKingDeath extends BossScene {
-        private final TextureRegion bear, ticket, card;
+    /**
+     * « Le Roi des Forains a perdu la main » : sa dernière balle rate tout ; les boulons sautent et son
+     * chamboule-tout s'écroule tout seul ; ses manches se vident de toutes ses cartes cachées, sa vraie carte
+     * truquée lui glisse des doigts, sa vraie couronne tombe sur le comptoir ; il s'affaisse, et un ticket doré
+     * flotte vers toi.
+     */
+    static final class FairKingDeath extends FairKingScene {
+        private static final float MISS = 0.3f, TOPPLE = 1.1f, SLEEVES = 1.5f, DROP_CARD = 2.0f, DROP_CROWN = CLIMAX_DEATH;
+        private static final String[] HIDDEN = {
+            "cards/light/1-P.png", "cards/light/1-H.png", "cards/light/1-C.png", "cards/light/1-D.png", "cards/light/13-H.png",
+            "cards/light/12-P.png", "cards/light/13-C.png", "cards/light/1-H.png"};
+        private final TextureRegion ticket, noCard, bare;
+        private final TextureRegion[] hidden = new TextureRegion[HIDDEN.length];
+        private final Piece crown;
+        private final float[] canVx = new float[CANS.length], canSpin = new float[CANS.length];
+        private float cardX, cardY, crownX, crownY;
+        private boolean cardOff, crownOff;
 
         FairKingDeath(CutsceneKit kit) {
-            super(kit, Moment.DEATH, EnemyKind.ROI_FORAIN, 0);
-            card = gameCard(FAIR_KING_CARD);
-            bear = art("obkm", new Color[] {hex("3a2412"), hex("c8904a"), hex("1a1018"), hex("5a2a1a")}, BEAR);
+            super(kit, Moment.DEATH, 0);
             ticket = art("oyr", new Color[] {hex("8a5a10"), hex("ffd23a"), hex("fff2a0")}, TICKET);
+            for (int i = 0; i < HIDDEN.length; i++) hidden[i] = gameCard(HIDDEN[i]);
+            int[][] withoutCard = FairDesertPortraits.without(EnemyKind.ROI_FORAIN, FairDesertPortraits.Prop.KING_CARD);
+            int[][] none = FairDesertPortraits.without(EnemyKind.ROI_FORAIN, FairDesertPortraits.Prop.KING_CARD, FairDesertPortraits.Prop.CROWN);
+            crown = lift(withoutCard, none);
+            noCard = pixels(withoutCard);
+            bare = pixels(none);
+            Random seed = new Random(5);
+            for (int i = 0; i < CANS.length; i++) { canVx[i] = 80f + 260f * seed.nextFloat(); canSpin[i] = (seed.nextFloat() - 0.3f) * 500f; }
         }
+
+        @Override protected void restart() { cardOff = crownOff = false; }
 
         @Override
         protected void step(float delta) {
-            if (at(0.9f)) rumble(0.2f, 5f);
-            if (at(CLIMAX_DEATH)) { rumble(0.5f, 10f); sparks(portraitX(17f), portraitY(2f), 30, GOLD, 500f, 12f); }
-            if (at(3.0f)) spray(bear, worldWidth() / 2f, worldHeight() + 100f, 18, 250f, 290f, 400f, fit(120f, 10), 900f, 2.2f);
+            if (at(TOPPLE)) { rumble(0.3f, 6f); sparks(decorX(CANS_X), decorY(CANS_Y), 30, hex("dce4ee"), 400f, 6f); }
+            if (at(SLEEVES)) {                                                                // ses manches se vident
+                for (int i = 0; i < hidden.length; i++) {
+                    boolean left = i % 2 == 0;
+                    float x = portraitX(left ? 6f : 27f), y = portraitY(33f), dir = left ? -1f : 1f;
+                    Particle c = place(hidden[i], x, y, dir * (80f + 220f * random.nextFloat()), 250f + 300f * random.nextFloat(),
+                        fit(110f, 27), 2.6f);
+                    c.gravity = 900f;
+                    c.spin = dir * (100f + 300f * random.nextFloat());
+                }
+            }
+            if (at(DROP_CROWN + 0.55f)) { rumble(0.3f, 6f); sparks(crownRestX(), crownRestY(), 24, GOLD, 400f, 10f); }
         }
+
+        private float crownRestX() { return bossX() - bossWidth() * 0.75f; }
+        private float crownRestY() { return bossBottom() + 16f + (crown == null ? 0f : crown.height * bossScale() / 2f); }
 
         @Override
         protected void back(Batch batch) {
-            poseX = 60f * gesture(0.4f, 1.0f);                                              // il frappe à côté
-            poseTilt = -14f * gesture(0.4f, 1.0f) + 25f * progress(CLIMAX_DEATH, CLIMAX_DEATH + 0.5f);
-            poseSink = progress(CLIMAX_DEATH + 0.2f, 3.4f);                                  // il s'effondre derrière le comptoir
+            poseX = 50f * gesture(MISS - 0.2f, MISS + 0.2f);                               // il lance... à côté
+            poseTilt = -12f * gesture(MISS - 0.2f, MISS + 0.2f) + 10f * progress(DROP_CROWN, DROP_CROWN + 0.8f);
+            poseSink = 0.38f * Interpolation.pow2Out.apply(progress(DROP_CROWN + 0.2f, 3.4f)); // il s'affaisse derrière son comptoir
+            poseShadow = 0.35f * progress(DROP_CROWN, 3.4f);
+            if (time >= DROP_CARD && !cardOff) {                                               // sa vraie carte lui glisse des doigts
+                cardOff = true;
+                cardX = portraitX(CARD_LEFT + 19f * CARD_PIXELS / 2f); cardY = portraitY(CARD_TOP + 27f * CARD_PIXELS / 2f);
+                wear(noCard);
+            }
+            if (time >= DROP_CROWN && !crownOff && crown != null) {                            // puis sa vraie couronne
+                crownOff = true;
+                crownX = pieceX(crown); crownY = pieceY(crown);
+                wear(bare);
+            }
+            if (time >= TOPPLE) {                                                             // le chamboule-tout s'écroule tout seul
+                decorRect(batch, STALL, 279f, 101f, 48f, 31f);
+                for (int i = 0; i < CANS.length; i++) {
+                    float t = Math.max(0f, time - TOPPLE - 0.04f * (CANS.length - i));
+                    drawCan(batch, i, canVx[i] * t * (i % 2 == 0 ? 1f : -0.6f), 200f * t - 1100f * t * t, canSpin[i] * t);
+                }
+            }
         }
 
         @Override
         protected void front(Batch batch) {
-            onPortrait(batch, card, CARD_LEFT, CARD_TOP, CARD_PIXELS, 1f);                  // sa carte : un vrai 2 de Carreau
-            float fall = Interpolation.pow2In.apply(progress(1.6f, CLIMAX_DEATH));           // le palet retombe sur sa couronne
-            if (fall > 0f && time < CLIMAX_DEATH + 0.6f) {
-                float y = MathUtils.lerp(worldHeight() + 60f, portraitY(1f), fall);
-                rect(batch, hex("dce4ee"), 1f, portraitX(17f) - 40f, y, 80f, 40f);
+            throwBall(batch, MISS, 0.6f, worldWidth() + 100f, worldHeight() * 0.95f, worldHeight() * 0.1f);   // ratée
+            if (!cardOff) onPortrait(batch, card, CARD_LEFT, CARD_TOP, CARD_PIXELS, 1f);
+            rect(batch, hex("6a3a1a"), 1f, -MARGIN, -MARGIN, worldWidth() + 2f * MARGIN, bossBottom() + MARGIN + 14f); // le comptoir
+            rect(batch, GOLD, 1f, -MARGIN, bossBottom() + 4f, worldWidth() + 2f * MARGIN, 12f);
+            if (cardOff) {                                                                    // la carte truquée, sur le comptoir
+                float k = progress(DROP_CARD, DROP_CARD + 0.7f);
+                float x = MathUtils.lerp(cardX, bossX() + bossWidth() * 0.7f, k);
+                float y = MathUtils.lerp(cardY, bossBottom() + 26f + 13.5f * CARD_PIXELS * bossScale(), Interpolation.pow2In.apply(k)) + 30f * MathUtils.sin(k * MathUtils.PI);
+                draw(batch, card, x, y, bossScale() * CARD_PIXELS * MathUtils.lerp(1f, 1.3f, k), 360f * k + 80f * k, WHITE, 1f);
             }
-            rect(batch, hex("6a3a1a"), 1f, -MARGIN, -MARGIN, worldWidth() + 2f * MARGIN, bossBottom() + MARGIN + 40f); // le comptoir
-            rect(batch, GOLD, 1f, -MARGIN, bossBottom() + 30f, worldWidth() + 2f * MARGIN, 12f);
+            if (crownOff) {                                                                   // la couronne roule sur le comptoir
+                float k = progress(DROP_CROWN, DROP_CROWN + 0.55f), roll = progress(DROP_CROWN + 0.55f, DROP_CROWN + 1.2f);
+                float x = MathUtils.lerp(crownX, crownRestX(), Interpolation.pow2Out.apply(Math.min(1f, (k + roll) / 1.6f)));
+                float y = MathUtils.lerp(crownY, crownRestY(), Interpolation.bounceOut.apply(k));
+                draw(batch, crown.region, x, y, bossScale(), 35f * k - 35f * Interpolation.pow2Out.apply(roll) + 20f * roll, WHITE, 1f);
+            }
             float drift = progress(3.4f, 5.2f);                                              // le ticket doré
             if (drift > 0f) {
                 float x = worldWidth() / 2f + 120f * MathUtils.sin(drift * 6f), y = MathUtils.lerp(worldHeight() * 0.9f, worldHeight() * 0.4f, drift);

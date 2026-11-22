@@ -3773,6 +3773,190 @@ def death_idole_or():
     return track.buf
 
 
+# ===========================================================================
+# Fête foraine : phases et morts des rois (FairBossScenes, 2026-11-22)
+# Les instants reprennent les constantes des scènes : si une scène change de rythme, mettre à jour ici.
+# ===========================================================================
+
+def fade(buf, a, b):
+    """Le son buf, dont le volume passe de a à b."""
+    return buf * np.linspace(a, b, len(buf))
+
+
+def crowd_boo(d):
+    """La foule qui hue : des « hou » graves et tremblés, mêlés."""
+    track = Track(d)
+    for k in range(9):
+        f = rand(110, 210)
+        voice = bp(osc(vibrato(f, d, rand(4, 7), 0.03), d, 'saw'), 250, 900) * adsr(d, rand(0.1, 0.4), 0.2, 0.8, 0.5)
+        track.add(voice, rand(0.0, 0.2), 0.18)
+    return track.buf
+
+
+def splat():
+    """Une tomate qui s'écrase : « splotch » mou et mouillé."""
+    return mix((lp(noise(0.12), 1400) * expdec(0.12, 0.04), 0, 1.0), (thump(180, 90, 0.08, 0.02), 0, 0.6),
+               (bp(noise(0.2), 2000, 6000) * expdec(0.2, 0.06), 0.02, 0.3))
+
+
+def ghost_wail(d=0.9, f=520):
+    """Le « hououou » d'un fantôme de foire : une plainte qui glisse et tremble."""
+    return osc(vibrato(sweep(f, f * 1.6, d), d, 6.0, 0.03), d, 'sine') * adsr(d, 0.15, 0.2, 0.7, 0.35)
+
+
+def can_tumble(count=9, d=1.0):
+    """Des boîtes de conserve qui dégringolent et roulent."""
+    track = Track(d + 0.4)
+    for k in range(count):
+        at = rand(0.0, d * 0.7)
+        track.add(metal_hit(rand(500, 900), 0.25, 0.5), at, rand(0.3, 0.6))
+        track.add(metal_hit(rand(600, 1000), 0.2, 0.4), at + rand(0.1, 0.3), rand(0.15, 0.3))
+    return track.buf
+
+
+@sound('cutscene/phase2_monsieur_loyal', -17)
+def phase2_monsieur_loyal():
+    """Monsieur Loyal, phase 2 (LoyalPhase) : roulement de tambour (0,2 à 1,1 s), il arrache son habit (1,2 s),
+    ses massues s'enflamment (0,8 s), elles deviennent quatre As à l'apogée (2,2 s)."""
+    track = Track(5.8)
+    track.add(ambience(4.8, 300, 1400, 0.25), 0.0, 1.0)
+    for k in range(12):
+        track.add(mix((thump(rand(150, 190), 90, 0.06, 0.02), 0, 0.8), (bp(noise(0.05), 1500, 5000) * expdec(0.05, 0.015), 0, 0.5)),
+                  0.2 + k * 0.08, 0.35 + 0.04 * k)
+    track.add(mix((whoosh(0.3, 600, 3000), 0, 0.6), (rustle(0.25), 0, 0.6)), 1.15, 0.6)
+    track.add(sparkle(1.0), 1.2, 0.35)
+    track.add(fire_burst(1.4), 0.8, 0.35)
+    track.add(mix((thump(80, 35, 1.0, 0.3), 0, 1.0), (card_slap(0.18), 0, 0.8)), 2.2, 0.8)
+    track.add(brass_chord(['C3', 'G3', 'C4', 'E4', 'G4'], 1.6, 0.6), 2.25, 0.55)
+    track.add(calliope(['C5', 'E5', 'G5', 'C6'], 0.12), 2.4, 0.3)
+    return track.buf
+
+
+@sound('cutscene/death_monsieur_loyal', -17)
+def death_monsieur_loyal():
+    """Monsieur Loyal meurt (LoyalDeath) : le projecteur grésille, son fouet l'enroule (0,5 à 1,4 s), dernier salut,
+    le rideau tombe (2,1 à 2,5 s) puis se relève (3,3 à 3,9 s) : son chapeau, et le lapin en sort (4,0 s)."""
+    track = Track(6.6)
+    track.add(ambience(5.6, 300, 1400, 0.2), 0.0, 1.0)
+    for k in range(14):
+        track.add(click(0.01, 1500, 6000), 0.1 + k * 0.17 + rand(0.0, 0.05), 0.2)                 # le projecteur grésille
+    track.add(whip_crack(), 0.4, 0.6)
+    track.add(rustle(0.9), 0.5, 0.4)
+    track.add(mix((whoosh(0.45, 200, 1200), 0, 0.8), (thump(90, 40, 0.5, 0.15), 0.4, 1.0)), 2.05, 0.7)
+    track.add(rustle(0.6), 3.3, 0.35)
+    track.add(mix((osc(sweep(400, 1200, 0.12), 0.12, 'sine') * expdec(0.12, 0.05), 0, 0.8), (sparkle(0.8), 0.02, 0.5)), 4.0, 0.5)
+    track.add(calliope(['G4', 'E4', 'C4', 'G3'], 0.22), 4.3, 0.3)
+    return track.buf
+
+
+@sound('cutscene/phase2_conducteur', -17)
+def phase2_conducteur():
+    """Le Conducteur, phase 2 (ConductorPhase) : son wagonnet sort du tunnel (0 à 1,2 s), freine contre le heurtoir
+    (1,2 s), tout s'éteint (1,35 s) et les fantômes jaillissent, il flambe en bleu (2,2 s), poinçonne (3,1 s)."""
+    track = Track(5.8)
+    track.add(ambience(4.8, 100, 700, 0.2), 0.0, 1.0)
+    track.add(fade(rattle(1.2, 8, 14, 300, 1500, wood=True), 0.3, 1.0), 0.0, 0.6)
+    track.add(screech(0.4, 3000), 0.95, 0.4)
+    track.add(mix((impact(0.4, 150, 50), 0, 1.0), (metal_hit(400, 0.5, 0.6), 0, 0.5)), 1.2, 0.8)
+    track.add(click(0.02, 400, 2000), 1.35, 0.6)
+    for k in range(4):
+        track.add(ghost_wail(0.9, rand(420, 640)), 1.45 + k * 0.15, 0.25)
+        track.add(whoosh(0.5, 400, 2500), 1.45 + k * 0.15, 0.2)
+    track.add(mix((fire_burst(1.2), 0, 0.7), (thump(70, 30, 1.0, 0.3), 0, 0.8)), 2.2, 0.7)
+    track.add(brass_chord(['A2', 'E3', 'A3', 'C4'], 1.6, 0.6), 2.25, 0.45)
+    track.add(mix((click(0.01, 2000, 8000), 0, 1.0), (metal_hit(1800, 0.2, 0.5), 0, 0.5)), 3.1, 0.5)
+    return track.buf
+
+
+@sound('cutscene/death_conducteur', -17)
+def death_conducteur():
+    """Le Conducteur meurt (ConductorDeath) : sa lanterne s'éteint (0,2 à 0,5 s), les freins lâchent (0,9 s), le
+    wagonnet repart à reculons, sa casquette s'envole (1,5 s) et retombe (2,6 s), le tunnel l'avale (3,3 s)."""
+    track = Track(6.6)
+    track.add(ambience(5.6, 100, 700, 0.2), 0.0, 1.0)
+    track.add(mix((hiss(0.4), 0, 0.6), (click(0.01, 800, 3000), 0.3, 0.6)), 0.2, 0.4)          # la lanterne s'éteint
+    track.add(mix((metal_hit(300, 0.6, 0.6), 0, 1.0), (click(0.02, 1000, 5000), 0, 0.6)), 0.9, 0.6)
+    track.add(fade(screech(1.5, 2600), 1.0, 0.2), 0.9, 0.3)
+    track.add(fade(rattle(2.4, 6, 14, 300, 1500, wood=True), 1.0, 0.1), 1.0, 0.5)
+    track.add(whoosh(0.6, 500, 2500), 1.5, 0.35)
+    track.add(mix((thump(150, 80, 0.12, 0.03), 0, 0.6), (rustle(0.15), 0, 0.5)), 2.6, 0.35)
+    track.add(reverb(mix((impact(0.6, 90, 35), 0, 1.0), (ghost_wail(1.4, 380), 0.1, 0.5)), wet=0.5, size=2.0, tail=1.5), 3.3, 0.6)
+    track.add(hiss(1.2), 3.4, 0.25)
+    return track.buf
+
+
+@sound('cutscene/phase2_roue_fortune', -17)
+def phase2_roue_fortune():
+    """La Roue de la Fortune, phase 2 (WheelPhase) : sa roue tourne de plus en plus vite, ses nacelles se détachent
+    (1,0 à 1,8 s), toutes ses cases deviennent des épées et sa flèche une lame (2,2 s)."""
+    track = Track(5.8)
+    track.add(ambience(4.8, 400, 1600, 0.2), 0.0, 1.0)
+    t = 0.0
+    while t < 2.2:                                                                              # le cliquet qui s'emballe
+        track.add(ratchet(rand(1800, 2200)), t, 0.35)
+        t += max(0.03, 0.3 - 0.13 * t)
+    track.add(whoosh(1.0, 300, 2000), 1.0, 0.35)
+    track.add(mix((thump(80, 35, 1.0, 0.3), 0, 1.0), (blade_ring(2600, 0.9), 0, 0.6)), 2.2, 0.8)
+    track.add(brass_chord(['G2', 'D3', 'G3', 'A#3'], 1.6, 0.6), 2.25, 0.5)
+    return track.buf
+
+
+@sound('cutscene/death_roue_fortune', -17)
+def death_roue_fortune():
+    """La Roue de la Fortune meurt (WheelDeath) : la foule hue et la bombarde de tomates (lancées de 0,15 à 2,05 s,
+    elles s'écrasent 0,45 s plus tard) pendant qu'elle ralentit ; la dernière, énorme, la fait voler en éclats (2,5 s)."""
+    track = Track(6.6)
+    track.add(ambience(5.6, 400, 1600, 0.15), 0.0, 1.0)
+    track.add(crowd_boo(2.8), 0.0, 0.6)
+    for at in (0.15, 0.45, 0.7, 0.95, 1.15, 1.35, 1.5, 1.65, 1.8, 1.95, 2.05):
+        track.add(splat(), at + 0.45, rand(0.35, 0.55))
+    t = 0.0
+    while t < 2.5:                                                                              # elle ralentit
+        track.add(ratchet(rand(1800, 2200)), t, 0.2)
+        t += 0.05 + 0.12 * t
+    track.add(whoosh(0.5, 200, 1200), 2.0, 0.4)
+    track.add(mix((wood_break(), 0, 1.0), (impact(0.6, 120, 40), 0, 1.0), (splat(), 0, 1.0), (crack(0.15, 0.03, 500, 8000), 0, 0.6)), 2.5, 0.9)
+    track.add(can_tumble(10, 1.4), 2.6, 0.3)
+    track.add(crowd_boo(1.6), 2.7, 0.35)
+    return track.buf
+
+
+@sound('cutscene/phase2_roi_forain', -17)
+def phase2_roi_forain():
+    """Le Roi des Forains, phase 2 (FairKingPhase) : deux balles sur son chamboule-tout (impacts 0,7 / 1,35 s) qui
+    rebondissent sans rien faire tomber, les boulons rougissent (1,5 s), les peluches ouvrent l'oeil (2,2 s)."""
+    track = Track(5.8)
+    track.add(ambience(4.8, 300, 1200, 0.2), 0.0, 1.0)
+    for at in (0.7, 1.35):
+        track.add(whoosh(0.35, 500, 2500), at - 0.35, 0.3)
+        track.add(mix((metal_hit(700, 0.5, 0.7), 0, 1.0), (thump(200, 100, 0.08, 0.02), 0, 0.5)), at, 0.6)
+    for k in range(3):
+        track.add(ratchet(rand(900, 1200)), 1.5 + k * 0.12, 0.4)
+    track.add(mix((thump(80, 35, 1.0, 0.3), 0, 1.0)), 2.2, 0.8)
+    track.add(brass_chord(['C3', 'D#3', 'G3', 'A#3'], 1.6, 0.6), 2.25, 0.45)
+    track.add(calliope(['E5', 'D#5', 'D5', 'C#5'], 0.14), 2.5, 0.3)
+    return track.buf
+
+
+@sound('cutscene/death_roi_forain', -17)
+def death_roi_forain():
+    """Le Roi des Forains meurt (FairKingDeath) : sa balle rate (0,3 s), le chamboule-tout s'écroule tout seul (1,1 s),
+    ses manches se vident de cartes (1,5 s), sa carte truquée tombe (2,0 s), sa couronne roule (2,5 s), le ticket doré (3,4 s)."""
+    track = Track(6.6)
+    track.add(ambience(5.6, 300, 1200, 0.15), 0.0, 1.0)
+    track.add(whoosh(0.6, 400, 2000), 0.3, 0.35)
+    track.add(can_tumble(9, 1.0), 1.1, 0.55)
+    for k in range(8):
+        track.add(card_flick(0.06), 1.5 + k * 0.06, 0.35)
+    for k in range(6):
+        track.add(card_slap(0.14), 1.9 + k * 0.12 + rand(0.0, 0.05), 0.2)
+    track.add(card_slap(0.18), 2.7, 0.35)
+    track.add(mix((metal_hit(900, 0.4, 0.6), 0, 1.0), (metal_hit(1300, 0.3, 0.5), 0.15, 0.6), (metal_hit(1100, 0.3, 0.5), 0.35, 0.4)), 3.05, 0.5)
+    track.add(mix((sparkle(1.4), 0, 1.0)), 3.4, 0.35)
+    track.add(calliope(['C5', 'B4', 'A#4', 'A4'], 0.25), 3.6, 0.3)
+    return track.buf
+
+
 def main(prefixes):
     done = 0
     for name, level, fmt, trim, loop, fn in SOUNDS:
