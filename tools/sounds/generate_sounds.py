@@ -2997,7 +2997,7 @@ def cutscene_rival_farewell():
 # Les instants reprennent les constantes des scènes : si une scène change de rythme, mettre à jour ici.
 # ===========================================================================
 
-def squeak():
+def bat_squeak():
     """Petit cri aigu de chauve-souris."""
     d = 0.07
     return osc(sweep(rand(4200, 5200), rand(2600, 3400), d), d) * expdec(d, 0.03, attack=0.003)
@@ -3030,13 +3030,13 @@ def phase2_comte_minuit():
         at = first + k * gap
         track.add(bell_toll(hz('D3') if k < 11 else hz('A2'), 2.4), at, 0.32 + 0.02 * k)
         track.add(wing_flap(), at + 0.05, 0.25)
-        track.add(squeak(), at + rand(0.05, 0.15), 0.12)
+        track.add(bat_squeak(), at + rand(0.05, 0.15), 0.12)
     boom = mix((thump(80, 30, 1.4, 0.4), 0, 1.0), (crack(0.06, 0.01, 300, 8000), 0, 0.6))
     track.add(reverb(boom, wet=0.3, size=1.6, tail=1.2), last, 0.9)
     track.add(brass_chord(['D3', 'F3', 'G#3', 'C#4'], 1.6, 0.8), last + 0.1, 0.8)
     for k in range(10):
         track.add(wing_flap(), last + 0.05 + k * 0.08, 0.3)
-        track.add(squeak(), last + rand(0.05, 0.9), 0.15)
+        track.add(bat_squeak(), last + rand(0.05, 0.9), 0.15)
     return track.buf
 
 
@@ -3054,7 +3054,7 @@ def death_comte_minuit():
     for k in range(26):                                                    # la nuée qui se disperse
         track.add(wing_flap(), burst + rand(0.0, 1.2), rand(0.15, 0.3))
     for k in range(12):
-        track.add(squeak(), burst + rand(0.0, 1.4), rand(0.08, 0.16))
+        track.add(bat_squeak(), burst + rand(0.0, 1.4), rand(0.08, 0.16))
     for k in range(3):
         track.add(whoosh(0.4, 500, 1800), home + 0.15 * k, 0.25)
     track.add(creak(0.3, 120), shut - 0.3, 0.4)
