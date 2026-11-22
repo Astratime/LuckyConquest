@@ -274,6 +274,32 @@ class PlayerProfileTest {
     }
 
     @Test
+    void aSaveFromBeforeANewChapterKeepsWhatWasOpenAndOpensTheNewChapterBeforeIt() {
+        MemoryStorage storage = new MemoryStorage();
+        PlayerProfile old = profile(storage);
+        old.clearChapter(Chapter.GENESE, false);
+        old.clearChapter(Chapter.TABLES_SACREES, false);
+        old.save();
+        // La sauvegarde ne connaissait pas le Dernier Tirage : il compte ici comme un chapitre ajouté après elle.
+        storage.put(PlayerProfile.KEY_KNOWN_CHAPTERS, "GENESE,TABLES_SACREES,MONDE_SANS_MAITRE,LA_MAISON,LE_JACKPOT");
+
+        PlayerProfile profile = profile(storage);
+        assertTrue(profile.isOpen(Chapter.MONDE_SANS_MAITRE, false), "ouvert dans l'ancien ordre : il le reste");
+        assertTrue(profile.isOpen(Chapter.DERNIER_TIRAGE, false), "le nouveau chapitre, avant un chapitre ouvert, s'ouvre");
+        assertFalse(profile.isOpen(Chapter.LA_MAISON, false));
+        assertFalse(profile.isCleared(Chapter.DERNIER_TIRAGE, false), "ouvert, pas terminé");
+        profile.save();
+        assertTrue(profile(storage).isOpen(Chapter.MONDE_SANS_MAITRE, false), "sauvegardé");
+
+        MemoryStorage fresh = new MemoryStorage();
+        PlayerProfile now = profile(fresh);
+        now.clearChapter(Chapter.GENESE, false);
+        now.clearChapter(Chapter.TABLES_SACREES, false);
+        now.save();
+        assertFalse(profile(fresh).isOpen(Chapter.MONDE_SANS_MAITRE, false), "une sauvegarde récente suit l'ordre des chapitres");
+    }
+
+    @Test
     void anOldSaveCountsAPrairieDungeonAsClearedWhenOneOfItsChestCardsIsOwned() {
         Map<String, Integer> owned = collection();
         owned.put("guillotine", 1);

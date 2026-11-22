@@ -241,6 +241,7 @@ public class EnemyTurnResolver {
                 openingEvents.add(new StatusEvent(Lang.t("ELLE TE REND TON ROULEAU"), EffectPopup.Style.DEFENSE));
             }
             enemy.unseal(); // son Sarcophage s'ouvre
+            enemy.crumble(); // sa Pétrification retombe en poussière
             if (enemy.enterPhaseTwo()) {
                 openingEvents.add(new EnemyPhaseEvent(enemy.getPhase(), kind.phaseText(enemy.getPhase())));
                 long breach = enemy.releaseBreach(); // Brèche : le surplus arrêté par sa Garde le frappe
@@ -533,6 +534,20 @@ public class EnemyTurnResolver {
                 }
             }
             turn.boostPercent = EnemySymbol.GEAR_PERCENT * gears;
+            if (enemy.getFloor() > 0) { // Ascenseur : chaque étage renforce ses coups et ses Boucliers
+                turn.boostPercent += EnemySymbol.ELEVATOR_STEP_PERCENT * enemy.getFloor();
+                openingEvents.add(new StatusEvent(Lang.f("ÉTAGE {0} : SES COUPS +{1} %", enemy.getFloor(),
+                    EnemySymbol.ELEVATOR_STEP_PERCENT * enemy.getFloor()), EffectPopup.Style.ATTACK));
+            }
+            if (enemy.getStoreys() > 0) { // Plan : chaque étage de la Tour de l'Architecte lui donne un Bouclier
+                if (kind.has(EnemyTrait.KEYSTONE) && enemy.getPhase() >= 3) { // Clé de voûte : en phase 3, sa Tour frappe aussi
+                    turn.boostPercent += EnemySymbol.KEYSTONE_STEP_PERCENT * enemy.getStoreys();
+                }
+                openingEvents.add(new StatusEvent(Lang.f("SA TOUR : {0} ÉTAGES", enemy.getStoreys()), EffectPopup.Style.DEFENSE));
+                openingEvents.add(turn.shield(kind.shieldDefense() * enemy.getStoreys()));
+            }
+            goAllOut();
+            troopsFire();
 
         }
 
@@ -591,7 +606,11 @@ public class EnemyTurnResolver {
         private void act(EnemySymbol symbol, int i, List<Event> events) {
             boolean done = actTowerOpening(symbol, i, events) || actTowerLate(symbol, events)
                 || actPortMinesCasino(symbol, events) || actFairDesert(symbol, events) || actExpress(symbol, events)
-                || actPalace(symbol, events) || actTemple(symbol, events) || actManor(symbol, events);
+                || actPalace(symbol, events) || actTemple(symbol, events) || actManor(symbol, events)
+                || actAscension(symbol, events)
+                || actScatteredShards(symbol, events)
+                || actPilgrims(symbol, events)
+                || actWar(symbol, events);
             if (!done) throw new IllegalStateException("Symbole sans effet : " + symbol);
         }
 
@@ -1010,6 +1029,43 @@ public class EnemyTurnResolver {
             return true;
         }
 
+        /**
+         * Tour, les Éclats dispersés (Éclat, Héritage, Valse, Scellé).
+         *
+         * @return {@code false} si {@code symbol} n'est pas de cette famille
+         */
+        private boolean actScatteredShards(EnemySymbol symbol, List<Event> events) {
+            switch (symbol) {
+                case SHARD -> pickShard(turn, events);
+                case LEGACY -> {
+                    int percent = enemy.takeCharge(EnemySignature.TESTAMENT) ? 100 : EnemySymbol.LEGACY_PERCENT;
+                    int taken = player.meltShield(percent);
+                    if (taken > 0) {
+                        events.add(new StatusEvent(Lang.f("HÉRITAGE : IL TE PREND {0} DE BOUCLIER", Lang.big(taken)),
+                            EffectPopup.Style.DAMAGE));
+                    }
+                    events.add(turn.strike(kind.swordDamage()));
+                }
+                case WALTZ -> {
+                    int missing = player.getMaxHp() <= 0 ? 0
+                        : (int) (100L * (player.getMaxHp() - player.getHp()) / player.getMaxHp());
+                    int bonus = Math.min(EnemySymbol.WALTZ_MAX_PERCENT, Math.max(0, missing));
+                    if (bonus > 0) events.add(new StatusEvent(Lang.f("VALSE : +{0} %", bonus), EffectPopup.Style.ATTACK));
+                    events.add(turn.strike((int) Math.min(Integer.MAX_VALUE, (long) kind.swordDamage() * (100 + bonus) / 100)));
+                    for (int k = 0; k < boosts.getOrDefault(EnemySignature.DERNIERE_DANSE, 0); k++) {
+                        events.add(heal(enemy, EnemySignature.DANSE_PERCENT * healFactor / 100f));
+                    }
+                }
+                case SEAL -> curse(events, EnemySignature.PARAPHE, n -> curses.addSeals(n * EnemySymbol.SEAL_PLAYS),
+                    Lang.t("SCELLÉ : UNE CARTE DE MOINS À TON PROCHAIN TOUR"),
+                    Lang.t("SCELLÉ : DEUX CARTES DE MOINS À TON PROCHAIN TOUR"));
+                default -> {
+                    return false;
+                }
+            }
+            return true;
+        }
+
         /** Clé : la carte la plus forte d'abord (carte spéciale, puis As, Roi, Dame...). */
         private static int keyStrength(Card card) {
             if (!card.hasRank()) return 15;
@@ -1128,6 +1184,218 @@ public class EnemyTurnResolver {
                 }
             }
             return true;
+        }
+
+        /**
+         * La Tour, chapitre « L'Ascension » (Ascenseur, Écho, Vertige, Pétrification, Plan).
+         *
+         * @return {@code false} si {@code symbol} n'est pas de cette famille
+         */
+        private boolean actAscension(EnemySymbol symbol, List<Event> events) {
+            switch (symbol) {
+                case ELEVATOR -> {
+                    events.add(turn.strike(kind.swordDamage()));
+                    if (enemy.getFloor() < EnemySymbol.ELEVATOR_MAX) {
+                        enemy.climb(1);
+                        events.add(new StatusEvent(Lang.f("ASCENSEUR : ÉTAGE {0}/{1}", enemy.getFloor(), EnemySymbol.ELEVATOR_MAX),
+                            EffectPopup.Style.SPECIAL));
+                    }
+                }
+                case ECHO -> echo(turn, events, enemy.takeCharge(EnemySignature.RESONANCE));
+                case VERTIGO -> {
+                    int pending = curses.getVertigos();
+                    int added = Math.min(EnemySymbol.VERTIGO_MAX - pending, enemy.takeCharge(EnemySignature.LE_VIDE) ? 2 : 1);
+                    if (added <= 0) {
+                        events.add(turn.strike(kind.swordDamage())); // déjà pris de vertige : il frappe
+                    } else {
+                        curses.addVertigo(added);
+                        events.add(new StatusEvent(Lang.n(curses.getVertigos(), "VERTIGE : {0} CARTE JOUÉE DE MOINS",
+                            "VERTIGE : {0} CARTES JOUÉES DE MOINS", curses.getVertigos()), EffectPopup.Style.DAMAGE));
+                    }
+                }
+                case STONE -> {
+                    int percent = boosts.containsKey(EnemySignature.GRANIT) ? EnemySymbol.GRANITE_PERCENT : EnemySymbol.STONE_PERCENT;
+                    if (enemy.getStonePercent() >= percent) {
+                        events.add(turn.strike(kind.swordDamage())); // déjà de pierre : il frappe
+                    } else {
+                        enemy.petrify(percent);
+                        events.add(new StatusEvent(Lang.f("PÉTRIFICATION : TES COUPS -{0} %", percent), EffectPopup.Style.DEFENSE));
+                    }
+                }
+                case BLUEPRINT -> {
+                    int floors = enemy.takeCharge(EnemySignature.CLE_DE_VOUTE) ? 2 : 1;
+                    if (enemy.getStoreys() >= EnemySymbol.BLUEPRINT_MAX) {
+                        events.add(turn.strike(kind.swordDamage())); // sa Tour est finie : il frappe
+                    } else {
+                        enemy.build(floors);
+                        events.add(new StatusEvent(Lang.f("PLAN : SA TOUR A {0} ÉTAGES", enemy.getStoreys()), EffectPopup.Style.SPECIAL));
+                    }
+                }
+                default -> {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        /**
+         * Tour, chapitre 3 : Les Pèlerins de la Comète (Serment, Voyance, Relique, Pèlerinage).
+         *
+         * @return {@code false} si {@code symbol} n'est pas de cette famille
+         */
+        private boolean actPilgrims(EnemySymbol symbol, List<Event> events) {
+            switch (symbol) {
+                case IRON_VOW -> {
+                    if (enemy.addVow()) {
+                        events.add(new StatusEvent(Lang.f("SERMENT : SA DÉFENSE DE BASE +{0}",
+                            Lang.big(kind.fortified(EnemySymbol.VOW_DEFENSE, enemy.getDifficulty()))), EffectPopup.Style.DEFENSE));
+                    } else {
+                        events.add(turn.shield(kind.shieldDefense() + shieldBonus)); // déjà tous ses Serments : il se protège
+                    }
+                }
+                case SIGHT -> {
+                    boolean crystal = enemy.takeCharge(EnemySignature.BOULE_DE_CRISTAL);
+                    int held = player.getCurrentHand().size();
+                    List<String> locked = lockBest(EnemySymbol.SIGHT_LOCKS * (crystal ? 2 : 1), EnemySymbol.KEY_TURNS);
+                    if (!locked.isEmpty()) {
+                        events.add(new StatusEvent(Lang.f("VOYANCE : {0} FERMÉE", String.join(", ", locked)), EffectPopup.Style.DAMAGE));
+                    }
+                    long hit = (long) kind.swordDamage() * EnemySymbol.SIGHT_PERCENT_PER_CARD * Math.max(1, held) / 100 * (crystal ? 2 : 1);
+                    events.add(turn.strike((int) Math.min(Integer.MAX_VALUE, Math.max(1, hit))));
+                }
+                case RELIC -> {
+                    boolean altar = enemy.takeCharge(EnemySignature.AUTEL);
+                    List<Card.Suit> suits = heldSuits();
+                    List<String> blessed = new ArrayList<>();
+                    int left = EnemySymbol.RELIC_MAX_CARDS * (altar ? 2 : 1);
+                    for (int k = 0; k < Math.min(altar ? 2 : 1, suits.size()); k++) {
+                        Card.Suit suit = suits.get(k);
+                        for (Card card : new ArrayList<>(player.getCurrentHand())) {
+                            if (left <= 0) break;
+                            if (card.getSuit() == suit && player.steal(card, EnemySymbol.RELIC_TURNS)) left--;
+                        }
+                        blessed.add(suitPlural(suit));
+                    }
+                    events.add(blessed.isEmpty() ? turn.strike(kind.swordDamage()) // pas de carte de couleur en main : il frappe
+                        : new StatusEvent(Lang.f("RELIQUE : TES {0} SONT FERMÉS", String.join(", ", blessed)), EffectPopup.Style.DAMAGE));
+                }
+                case PILGRIMAGE -> {
+                    enemy.addPilgrim();
+                    int percent = 100 + EnemySymbol.PILGRIM_STEP_PERCENT * enemy.getPilgrims();
+                    events.add(new StatusEvent(Lang.n(enemy.getPilgrims(), "PÈLERINAGE : 1 PÈLERIN, +{1} %",
+                        "PÈLERINAGE : {0} PÈLERINS, +{1} %", enemy.getPilgrims(), percent - 100), EffectPopup.Style.ATTACK));
+                    events.add(turn.strike((int) Math.min(Integer.MAX_VALUE, (long) kind.swordDamage() * percent / 100)));
+                }
+                default -> {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        /** Ferme à clé les {@code count} plus fortes cartes de la main pour {@code turns} tours (Clé, Voyance). */
+        private List<String> lockBest(int count, int turns) {
+            List<String> locked = new ArrayList<>();
+            for (int k = 0; k < count; k++) {
+                Card best = null;
+                for (Card card : player.getCurrentHand()) if (best == null || keyStrength(card) > keyStrength(best)) best = card;
+                if (best == null) break;
+                if (player.steal(best, turns)) locked.add(best.getName().toUpperCase());
+            }
+            return locked;
+        }
+
+        /** @return le nom de la couleur {@code suit} au pluriel, en capitales (Relique : « TES PIQUES SONT FERMÉS »). */
+        private String suitPlural(Card.Suit suit) {
+            return switch (suit) {
+                case PIQUE   -> Lang.t("PIQUES");
+                case COEUR   -> Lang.t("COEURS");
+                case CARREAU -> Lang.t("CARREAUX");
+                case TREFLE  -> Lang.t("TRÈFLES");
+            };
+        }
+
+        /** @return les couleurs des cartes en main, de la plus tenue à la moins tenue (Relique). */
+        private List<Card.Suit> heldSuits() {
+            Map<Card.Suit, Integer> counts = new EnumMap<>(Card.Suit.class);
+            for (Card card : player.getCurrentHand()) if (card.getSuit() != null) counts.merge(card.getSuit(), 1, Integer::sum);
+            List<Card.Suit> suits = new ArrayList<>(counts.keySet());
+            suits.sort(Comparator.comparingInt((Card.Suit suit) -> -counts.get(suit)).thenComparingInt(Enum::ordinal));
+            return suits;
+        }
+
+        /**
+         * Guerre des Tables : Rassemblement, Canon à jetons, Espionnage, Contrat et Va-tout.
+         *
+         * @return {@code false} si {@code symbol} n'est pas de cette famille
+         */
+        private boolean actWar(EnemySymbol symbol, List<Event> events) {
+            switch (symbol) {
+                case RALLY -> {
+                    if (enemy.addTroop()) {
+                        events.add(new StatusEvent(Lang.f("RASSEMBLEMENT : {0}/{1} SOLDATS", enemy.getTroops(), EnemySymbol.RALLY_MAX),
+                            EffectPopup.Style.SPECIAL));
+                    } else {
+                        events.add(turn.strike(kind.swordDamage())); // son armée est au complet : il charge
+                    }
+                }
+                case CANNON -> {
+                    // Poudre noire : le boulet traverse tout le bouclier ; sinon la moitié seulement l'arrête
+                    int stops = boosts.getOrDefault(EnemySignature.POUDRE_NOIRE, 0) > 0 ? 0 : 100 - EnemySymbol.CANNON_PIERCE_PERCENT;
+                    if (steal(BigNumber.percent(player.getGains(), EnemySymbol.CANNON_PERCENT), events)) {
+                        events.add(new StatusEvent(Lang.t("CANON À JETONS : FEU !"), EffectPopup.Style.ATTACK));
+                        events.add(turn.strike(kind.swordDamage() * EnemySymbol.CANNON_FACTOR, stops));
+                    } else {
+                        events.add(turn.strike(kind.swordDamage(), stops)); // rien à charger : il tire à vide
+                    }
+                }
+                case SPY -> {
+                    int seen = Math.min(EnemySymbol.SPY_MAX, player.getPlayedCards().size())
+                        * (enemy.takeCharge(EnemySignature.MICROFILM) ? 2 : 1);
+                    if (seen > 0) {
+                        events.add(new StatusEvent(Lang.n(seen, "ESPIONNAGE : ELLE A VU TA CARTE", "ESPIONNAGE : ELLE A VU TES {0} CARTES",
+                            seen), EffectPopup.Style.SPECIAL));
+                        events.add(turn.shield(kind.shieldDefense() * seen + shieldBonus));
+                    } else {
+                        events.add(turn.strike(kind.swordDamage())); // rien à espionner : elle frappe
+                    }
+                }
+                case CONTRACT -> {
+                    boolean paid = enemy.getDamageTaken() * 100 < enemy.getMaxHp() * EnemySymbol.CONTRACT_PERCENT;
+                    int percent = 100 + EnemySignature.PRIME_PERCENT * boosts.getOrDefault(EnemySignature.PRIME_DE_RISQUE, 0);
+                    if (paid) events.add(new StatusEvent(Lang.t("CONTRAT : IL TOUCHE SA PRIME !"), EffectPopup.Style.ATTACK));
+                    events.add(turn.strike((int) Math.min(Integer.MAX_VALUE,
+                        (long) kind.swordDamage() * (paid ? EnemySymbol.CONTRACT_FACTOR : 1) * percent / 100)));
+                }
+                case ALL_OUT -> events.add(new StatusEvent(Lang.t("VA-TOUT !"), EffectPopup.Style.ATTACK));
+                default -> {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        /**
+         * Va-tout : s'il en tire au moins un, ses attaques de tout le tour doublent (triplent avec l'Ordre de charge),
+         * et sa défense tombera à 0 à la fin de son tour (voir {@link #finish}).
+         */
+        private void goAllOut() {
+            if (Arrays.stream(symbols).noneMatch(symbol -> symbol == EnemySymbol.ALL_OUT)) return;
+            int factor = enemy.takeCharge(EnemySignature.ORDRE_DE_CHARGE) ? EnemySignature.ORDRE_FACTOR : EnemySymbol.ALL_OUT_FACTOR;
+            turn.attackFactor *= factor;
+            enemy.goAllOut();
+            openingEvents.add(new StatusEvent(Lang.f("VA-TOUT : ATTAQUES x{0}", factor), EffectPopup.Style.ATTACK));
+        }
+
+        /** Rassemblement : ses soldats tirent, chacun d'une part d'Épée, au début de son tour. */
+        private void troopsFire() {
+            int troops = enemy.getTroops();
+            if (troops <= 0 || player.isDefeated()) return;
+            openingEvents.add(new StatusEvent(Lang.n(troops, "SON SOLDAT TIRE", "SES {0} SOLDATS TIRENT", troops),
+                EffectPopup.Style.ATTACK));
+            for (int k = 0; k < troops; k++) {
+                openingEvents.add(turn.strike(kind.swordDamage() * EnemySymbol.RALLY_SHOT_PERCENT / 100));
+            }
         }
 
         /** Prédiction : il annonce un symbole (deux avec le Tarot) pour le prochain tirage du joueur. */
@@ -1313,6 +1581,11 @@ public class EnemyTurnResolver {
                 }
             }
 
+            if (enemy.takeAllOut() && !enemy.isDefeated()) { // Va-tout : il a tout misé, plus de défense jusqu'à son tour
+                enemy.bribe();
+                afterEvents.add(new StatusEvent(Lang.t("VA-TOUT : SA DÉFENSE TOMBE À 0"), EffectPopup.Style.DEFENSE));
+            }
+
             if (forbidReel) {
                 int reel = random.nextInt(SlotMachine.SYMBOL_COUNT);
                 player.getLastingEffects().forbidReel(reel);
@@ -1443,6 +1716,37 @@ public class EnemyTurnResolver {
             case COEUR   -> events.add(heal(enemy, enemy.getKind().potionPercent(EnemyCards.healBonus(copied), enemy.getDifficulty()) / divisor));
             case CARREAU, TREFLE -> events.add(turn.shield((turn.enemy.getKind().shieldDefense() + turn.enemy.getKind().shieldBonus(copied)) / divisor));
         }
+    }
+
+    /**
+     * Écho : il rejoue contre le joueur toutes les cartes (d'une couleur) de son dernier tour, à moitié de leur force
+     * (à pleine force avec {@code full}, la Résonance), comme ses cartes sombres : Pique, il frappe ; Cœur, il se
+     * soigne ; Carreau et Trèfle, il se protège. Sans carte à rejouer, il frappe simplement.
+     */
+    private static void echo(Turn turn, List<Event> events, boolean full) {
+        List<Card> echoed = turn.player.getPlayedCards().stream().filter(card -> card.getSuit() != null).toList();
+        if (echoed.isEmpty()) {
+            events.add(new StatusEvent(Lang.t("ÉCHO : RIEN À RENDRE"), EffectPopup.Style.SPECIAL));
+            events.add(turn.strike(turn.enemy.getKind().swordDamage()));
+            return;
+        }
+        events.add(new StatusEvent(Lang.n(echoed.size(), "ÉCHO : TA CARTE TE REVIENT", "ÉCHO : TES {0} CARTES TE REVIENNENT",
+            echoed.size()), EffectPopup.Style.ATTACK));
+        Enemy enemy = turn.enemy;
+        EnemyKind kind = enemy.getKind();
+        int divisor = full ? 1 : 2;
+        int swords = 0, shields = 0;
+        float heals = 0f;
+        for (Card card : echoed) {
+            switch (card.getSuit()) {
+                case PIQUE -> swords += kind.swordBonus(card) / divisor;
+                case COEUR -> heals += kind.potionPercent(EnemyCards.healBonus(card), enemy.getDifficulty()) / divisor;
+                case CARREAU, TREFLE -> shields += kind.shieldBonus(card) / divisor;
+            }
+        }
+        if (swords > 0) events.add(turn.strike(kind.swordDamage() + swords));
+        if (heals > 0f) events.add(heal(enemy, Math.min(heals, EnemyKind.MAX_HEAL_PERCENT)));
+        if (shields > 0) events.add(turn.shield(kind.shieldDefense() + shields));
     }
 
     /**
@@ -1749,6 +2053,21 @@ public class EnemyTurnResolver {
         return best;
     }
 
+    /**
+     * Éclat : il ramasse un éclat ; au {@link EnemySymbol#SHARD_MAX}e, les éclats se rejoignent et frappent
+     * ({@link EnemySymbol#SHARD_FACTOR} Épées) à travers le bouclier du joueur, puis il recommence.
+     */
+    private static void pickShard(Turn turn, List<Event> events) {
+        Enemy enemy = turn.enemy;
+        boolean joined = enemy.addShard();
+        events.add(new StatusEvent(Lang.f("ÉCLAT : {0}/{1}", joined ? EnemySymbol.SHARD_MAX : enemy.getShards(),
+            EnemySymbol.SHARD_MAX), EffectPopup.Style.SPECIAL));
+        if (joined) {
+            events.add(new StatusEvent(Lang.t("LES ÉCLATS SE REJOIGNENT !"), EffectPopup.Style.ATTACK));
+            events.add(turn.strike(enemy.getKind().swordDamage() * EnemySymbol.SHARD_FACTOR, true));
+        }
+    }
+
     /** Ses cartes propres qui agissent tout de suite : Remontoir, Compte à rebours, Encre. */
     private static void playNow(List<EnemySignature> now, Turn turn, LastingEffects curses, List<Event> events) {
         Enemy enemy = turn.enemy;
@@ -1765,6 +2084,17 @@ public class EnemyTurnResolver {
                         events.add(new StatusEvent(Lang.f("COMPTE À REBOURS : PLUS QUE {0} TOURS", enemy.getTurnLimit()),
                             EffectPopup.Style.DAMAGE));
                     }
+                }
+                case SERMENT_SOLENNEL -> {
+                    if (enemy.addVow()) {
+                        events.add(new StatusEvent(Lang.t("SERMENT SOLENNEL : SA DÉFENSE DE BASE MONTE"), EffectPopup.Style.DEFENSE));
+                    }
+                }
+                case PROCESSION -> {
+                    enemy.addPilgrim();
+                    events.add(new StatusEvent(Lang.n(enemy.getPilgrims(), "PROCESSION : UN PÈLERIN LE SUIT",
+                        "PROCESSION : {0} PÈLERINS LE SUIVENT", enemy.getPilgrims()),
+                        EffectPopup.Style.SPECIAL));
                 }
                 case BOULE_DE_NEIGE -> {
                     enemy.addSnow();
@@ -1795,10 +2125,27 @@ public class EnemyTurnResolver {
                             EffectPopup.Style.SPECIAL));
                     }
                 }
+                case CLAIRON -> {
+                    if (enemy.addTroop()) {
+                        events.add(new StatusEvent(Lang.f("CLAIRON : {0}/{1} SOLDATS", enemy.getTroops(), EnemySymbol.RALLY_MAX),
+                            EffectPopup.Style.SPECIAL));
+                    }
+                }
                 case DERNIER_ACTE -> {
                     curses.addStrings(1);
                     events.add(new StatusEvent(Lang.t("DERNIER ACTE : IL CHOISIRA UNE CARTE QUE TU JOUERAS"), EffectPopup.Style.DAMAGE));
                 }
+                case BOUTON_D_APPEL -> {
+                    enemy.climb(1);
+                    events.add(new StatusEvent(Lang.f("BOUTON D'APPEL : ÉTAGE {0}/{1}", enemy.getFloor(), EnemySymbol.ELEVATOR_MAX),
+                        EffectPopup.Style.SPECIAL));
+                }
+                case FONDATIONS -> {
+                    enemy.build(1);
+                    events.add(new StatusEvent(Lang.f("FONDATIONS : SA TOUR A {0} ÉTAGES", enemy.getStoreys()),
+                        EffectPopup.Style.SPECIAL));
+                }
+                case POCHE_PLEINE -> pickShard(turn, events);
                 case ENCRE -> {
                     curses.blind(1);
                     events.add(new StatusEvent(Lang.t("ENCRE : UNE CARTE CACHÉE AU PROCHAIN TOUR"), EffectPopup.Style.DAMAGE));

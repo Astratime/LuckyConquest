@@ -84,9 +84,13 @@ public class FrontScene extends Actor implements Disposable {
         VOLCAN("volcan", LAVA, 40f, 70, 30, 80, 110, 60, 172, 300, 184),
         GENESE("genese", WARM, 30f, 150, 60, 50, 70, 310, 70),
         TABLES_SACREES("tables_sacrees", WARM, 30f, 43, 40, 303, 40),
+        PELERINS("pelerins", WARM, 30f, 264, 46, 270, 116, 80, 150),
         DERNIER_TIRAGE("dernier_tirage", WATER, 30f, 320, 50, 60, 96, 290, 98),
+        ECLATS_DISPERSES("eclats_disperses", WARM, 30f, 180, 88, 70, 112, 300, 112),
         MONDE_SANS_MAITRE("monde_sans_maitre", LAVA, 34f, 50, 128, 310, 128),
+        GUERRE_DES_TABLES("guerre_des_tables", LAVA, 30f, 60, 110, 300, 110, 180, 118),
         LA_MAISON("la_maison", GOLDEN, 30f, 80, 16, 280, 16, 180, 60),
+        L_ASCENSION("l_ascension", GOLDEN, 28f, 40, 60, 320, 60, 180, 22),
         LE_JACKPOT("le_jackpot", GOLDEN, 30f, 180, 40, 40, 50, 320, 60),
         ENTRAINEMENT("entrainement", WARM, 40f, 180, 32),
         CASINO("menu/casino_interior.png", true);
@@ -137,9 +141,13 @@ public class FrontScene extends Actor implements Disposable {
             return switch (chapter) {
                 case GENESE            -> GENESE;
                 case TABLES_SACREES    -> TABLES_SACREES;
+                case PELERINS          -> PELERINS;
                 case DERNIER_TIRAGE    -> DERNIER_TIRAGE;
+                case ECLATS_DISPERSES  -> ECLATS_DISPERSES;
                 case MONDE_SANS_MAITRE -> MONDE_SANS_MAITRE;
+                case GUERRE_DES_TABLES -> GUERRE_DES_TABLES;
                 case LA_MAISON         -> LA_MAISON;
+                case L_ASCENSION       -> L_ASCENSION;
                 case LE_JACKPOT        -> LE_JACKPOT;
             };
         }

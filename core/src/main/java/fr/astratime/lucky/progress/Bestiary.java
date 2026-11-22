@@ -72,7 +72,7 @@ public final class Bestiary {
         }
         for (Chapter chapter : Chapter.values()) {
             if (chapter.getFirstEnemy() == kind || chapter.getChallengers().contains(kind) || chapter.getBoss() == kind) {
-                return Lang.f("Tour des épreuves, {0}", chapter.getLabel().toLowerCase());
+                return Lang.f("Histoire, {0}", chapter.getLabel().toLowerCase());
             }
         }
         return "";

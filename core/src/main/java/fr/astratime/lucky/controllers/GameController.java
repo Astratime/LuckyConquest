@@ -94,6 +94,8 @@ public class GameController {
     private int songs = 0;
     /** Fils de l'ennemi : cartes de la main (les plus faibles) jouées d'office ce tour. */
     private int strings = 0;
+    /** Scellés (le Notaire du hasard) : cartes de moins à jouer ce tour. */
+    private int seals = 0;
     /** Taxes du Comptable ce tour : chaque carte jouée les paie toutes. */
     private int taxes = 0;
 
@@ -443,6 +445,11 @@ public class GameController {
                 "WAGON BONDÉ : {0} CARTES JOUÉES DE MOINS", PlaceRule.CROWDED_PLAYS), EffectPopup.Style.DAMAGE,
                 PopupScale.SECONDARY_INTENSITY));
         }
+        int dizzy = lasting.takeVertigos(); // Vertige (L'Ascension) : des cartes jouées en moins ce tour
+        if (dizzy > 0) {
+            turnNotices.add(new EffectPopup(Lang.n(dizzy, "VERTIGE : {0} CARTE JOUÉE DE MOINS", "VERTIGE : {0} CARTES JOUÉES DE MOINS",
+                dizzy), EffectPopup.Style.DAMAGE, PopupScale.SECONDARY_INTENSITY));
+        }
         gameState.announceOmen(random); // Présage (Temple du Destin) : le symbole annoncé pour ce tirage
         if (gameState.getOmen() != null) {
             turnNotices.add(new EffectPopup(Lang.f("PRÉSAGE : {0}", gameState.getOmen().getDisplayName().toUpperCase()),
@@ -538,6 +545,11 @@ public class GameController {
         if (songs > 0) {
             turnNotices.add(new EffectPopup(Lang.t("CHANT : CARTE JOUÉE D'OFFICE"), EffectPopup.Style.DAMAGE,
                 PopupScale.SECONDARY_INTENSITY));
+        }
+        seals = lasting.takeSeals(); // Scellé (les Éclats dispersés) : une carte de moins ce tour
+        if (seals > 0) {
+            turnNotices.add(new EffectPopup(Lang.n(seals, "SCELLÉ : UNE CARTE DE MOINS", "SCELLÉ : {0} CARTES DE MOINS", seals),
+                EffectPopup.Style.DAMAGE, PopupScale.SECONDARY_INTENSITY));
         }
         strings = lasting.takeStrings(); // Fils (Manoir hanté) : il choisit les plus faibles cartes, jouées d'office
         if (strings > 0) {
@@ -980,7 +992,8 @@ public class GameController {
     public int getPlayLimit() {
         LastingEffects lasting = gameState.getPlayer().getLastingEffects();
         int crowded = gameState.getActiveRule().isCrowded(gameState.getTurnNumber()) ? PlaceRule.CROWDED_PLAYS : 0;
-        return Math.max(1, Math.max(DEFAULT_PLAY_LIMIT, lasting.getExtraPlays()) + lasting.getBonusPlays() - crowded);
+        return Math.max(1, Math.max(DEFAULT_PLAY_LIMIT, lasting.getExtraPlays()) + lasting.getBonusPlays() - crowded - seals
+            - lasting.getDizzy()); // Scellé (les Éclats dispersés), Vertige (L'Ascension)
     }
 
     /** @return les cartes jouées ce tour. */

@@ -1933,7 +1933,7 @@ public class GameScreen extends ScreenAdapter {
      */
     private String modeMenuLabel() {
         if (run instanceof DungeonRun) return Lang.t("Exploration");
-        if (run instanceof TowerRun || run instanceof EndlessRun || run instanceof CroupierRun) return Lang.t("Tour des épreuves");
+        if (run instanceof TowerRun || run instanceof EndlessRun || run instanceof CroupierRun) return Lang.t("Histoire");
         return null;
     }
 
@@ -2155,7 +2155,7 @@ public class GameScreen extends ScreenAdapter {
             Label recordLabel = new Label(text, new Label.LabelStyle(shopFont, Palette.GOLD));
             endButtons.add(recordLabel).colspan(shown.size()).padBottom(14f).row();
         } else if (run instanceof CroupierRun) { // le Croupier : un seul combat
-            shown.add(victory ? buttons.createAction(Lang.t("Retour à la Tour"), sounds.buttonClick, this::onBackToChapters)
+            shown.add(victory ? buttons.createAction(Lang.t("Retour à l'Histoire"), sounds.buttonClick, this::onBackToChapters)
                 : buttons.createAction(Lang.t("Réessayer"), sounds.buttonClick, this::onRestart));
             if (!victory) shown.add(buttons.create(backText(), sounds.buttonClick, this::onBackToChapters));
         } else if (!victory) {
@@ -2187,7 +2187,7 @@ public class GameScreen extends ScreenAdapter {
         if (ending != null) {
             // Le dernier chapitre clôt l'histoire : sa phrase de fin, au-dessus du bouton. Il ouvre le mode difficile.
             if (run instanceof TowerRun && luckyGame.getProfile().openTowerHard()) {
-                ending += "\n" + Lang.t("La Tour recommence en mode difficile.");
+                ending += "\n" + Lang.t("L'Histoire recommence en mode difficile.");
             }
             Label endingLabel = new Label(ending, new Label.LabelStyle(shopFont, Palette.GOLD));
             endingLabel.setAlignment(Align.center);

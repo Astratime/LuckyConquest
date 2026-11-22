@@ -319,7 +319,7 @@ public class RivalCutscene extends Cutscene {
         sprite(batch, mask, w / 2f, my, scale * 1.2f, 0f);
         drawCaption(batch, Lang.t("BIEN JOUÉ. GARDE LE MASQUE."), w / 2f, h * 0.9f,
             progress(FAREWELL_LINE, FAREWELL_LINE + 0.3f) * (1f - progress(FAREWELL_LINE_2 - 0.3f, FAREWELL_LINE_2)), 2f);
-        drawCaption(batch, Lang.t("LE CROUPIER T'ATTEND, TOUT EN HAUT DE LA TOUR."), w / 2f, h * 0.9f,
+        drawCaption(batch, Lang.t("LE CROUPIER T'ATTEND, AU BOUT DU CHEMIN."), w / 2f, h * 0.9f,
             progress(FAREWELL_LINE_2, FAREWELL_LINE_2 + 0.3f), 1.8f);
     }
 
