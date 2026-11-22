@@ -11,6 +11,7 @@ import fr.astratime.lucky.entities.GainFormula;
 import fr.astratime.lucky.entities.EnemyMaluses;
 import fr.astratime.lucky.entities.LastingEffects;
 import fr.astratime.lucky.entities.ReelGauges;
+import fr.astratime.lucky.entities.actions.SpectreAction;
 import fr.astratime.lucky.entities.SpinEconomy;
 import fr.astratime.lucky.entities.Symbol;
 import fr.astratime.lucky.entities.context.CombatContext;
@@ -106,7 +107,9 @@ public final class Lexicon {
             term(Lang.t("Flocon"), Lang.f("Rouleau du Palace des Neiges. Un bouclier dont {0} % gèlent : au début de "
                 + "ton tour suivant, cette part dégèle et te revient.", ReelGauges.FROST_PERCENT)),
             term(Lang.t("Gong"), Lang.f("Rouleau du Temple du Destin. Une fois sur {0}, il étourdit un rouleau de l'ennemi : "
-                + "ce rouleau ne tourne pas à son prochain tirage.", 100 / ReelGauges.GONG_STUN_PERCENT))));
+                + "ce rouleau ne tourne pas à son prochain tirage.", 100 / ReelGauges.GONG_STUN_PERCENT)),
+            term(Lang.t("Spectre"), Lang.f("Rouleau du Manoir hanté. Une attaque qui passe à travers les murs : elle "
+                + "ignore toujours au moins {0} % de la défense de l'ennemi.", SpectreAction.PIERCE_PERCENT))));
     }
 
     private static Category cards() {
@@ -219,7 +222,18 @@ public final class Lexicon {
                 + "machine. S'il sort à ton tirage, Puissance +{0} ce tour. Sinon, l'ennemi frappe {1} % plus fort à son tour.",
                 PlaceRule.OMEN_POWER, PlaceRule.OMEN_ENEMY_PERCENT)),
             term(Lang.t("Karma"), Lang.f("Au Temple du Destin, certains ennemis comptent tes Bingos ({0} au plus) et te les "
-                + "renvoient en coups. Sans Bingo à rendre, ils se protègent.", EnemySymbol.KARMA_MAX))));
+                + "renvoient en coups. Sans Bingo à rendre, ils se protègent.", EnemySymbol.KARMA_MAX)),
+            term(Lang.t("Minuit"), Lang.f("Règle du Manoir hanté : l'horloge avance d'une heure à chaque tour. Tous les "
+                + "{0} tours, minuit sonne et l'ennemi joue deux tours de suite.", PlaceRule.MIDNIGHT_PERIOD)),
+            term(Lang.t("Pacte de sang"), Lang.f("Au Manoir hanté, l'ennemi te prend {0} % de ton Sang et se soigne de "
+                + "{1} % de ses PV max. Sans Sang à prendre, il frappe.", EnemySymbol.BLOOD_PACT_PERCENT,
+                EnemySymbol.BLOOD_PACT_HEAL_PERCENT)),
+            term(Lang.t("Malédiction"), Lang.t("Au Manoir hanté : à ta prochaine pioche, ta meilleure carte piochée "
+                + "retourne sous ta pioche.")),
+            term(Lang.t("Linceul"), Lang.f("Au Manoir hanté : la première fois qu'il tombe à 0 PV, l'ennemi se relève "
+                + "avec {0} % de ses PV max. Une seule fois par combat.", EnemySymbol.SHROUD_RISE_PERCENT)),
+            term(Lang.t("Fils"), Lang.t("Au Manoir hanté : au tour suivant, le marionnettiste joue pour toi ta plus "
+                + "faible carte jouable."))));
     }
 
     private static Category progress() {
@@ -232,9 +246,9 @@ public final class Lexicon {
                 + "en plus sur toute la machine. Tu choisis ton rang à la Table du croupier.")),
             term(Lang.t("Lieu de ton rang"), Lang.f("Chaque rang a son lieu d'Exploration : la Prairie sans rang, la Foire "
                 + "pour l'Avare et le Parieur, le Rapide de Minuit pour le Flambeur, le Port pour l'Habitué, le Palace des "
-                + "Neiges pour le Requin, les Mines pour le Gros bonnet, le Casino pour le Baron et le Magnat, le Temple du "
-                + "Destin pour le Roi du casino et le Désert pour la Légende. Un lieu en dessous ne rapporte que {0} % des "
-                + "pièces, deux lieux ou plus en dessous {1} %.",
+                + "Neiges pour le Requin, les Mines pour le Gros bonnet, le Manoir hanté pour le Baron, le Casino pour le "
+                + "Magnat, le Temple du Destin pour le Roi du casino et le Désert pour la Légende. Un lieu en dessous ne rapporte "
+                + "que {0} % des pièces, deux lieux ou plus en dessous {1} %.",
                 PlayerProfile.LOWER_PLACE_PERCENT, PlayerProfile.FAR_LOWER_PLACE_PERCENT)),
             term(Lang.t("Prestige"), Lang.f("Une fois tous les rangs achetés, la boutique te propose de les rendre. "
                 + "Chaque niveau multiplie par {0} tes PV max, l'attaque et la défense de tes symboles, et ajoute "
@@ -243,7 +257,7 @@ public final class Lexicon {
                 PlayerProfile.prestigeNumeral(PlayerProfile.MAX_PRESTIGE))),
             term(Lang.t("Sceau de Prestige"), Lang.t("Chaque Prestige demande un lieu vidé en Exploration difficile : "
                 + "la prairie pour le Prestige I, la Fête foraine pour II, le Rapide de Minuit pour III, le Port pour IV, "
-                + "le Palace des Neiges pour V, les Mines pour VI, le Casino pour VII et VIII, le Temple du Destin pour IX "
+                + "le Palace des Neiges pour V, les Mines pour VI, le Manoir hanté pour VII, le Casino pour VIII, le Temple du Destin pour IX "
                 + "et le Désert pour X.")),
             term(Lang.t("Plancher de Prestige"), Lang.f("Après un Prestige, tes PV max, ton attaque et ta défense ne "
                 + "descendent jamais sous {0} % de ceux de la Légende du Jackpot (avant le bonus du Prestige).",

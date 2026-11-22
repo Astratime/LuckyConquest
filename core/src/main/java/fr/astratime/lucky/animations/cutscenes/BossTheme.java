@@ -73,6 +73,11 @@ public record BossTheme(Color skyTop, Color skyLow, Color ground, Color accent, 
             case TISSEUSE -> king(kind, "ffd54a", "LE FIL DE LA TISSEUSE EST COUPÉ");
             case SEIGNEUR_DES -> king(kind, "f6f0e2", "LES DÉS DU SEIGNEUR ROULENT SANS LUI");
             case IDOLE_OR -> king(kind, "ffc93a", "L'IDOLE D'OR RETOURNE À LA POUSSIÈRE");
+            // ----- Le Manoir hanté -----
+            case COMTE_MINUIT -> king(kind, "ff3a4a", "LE COMTE RETOURNE À SON CERCUEIL");
+            case BIBLIOTHECAIRE -> king(kind, "b88aff", "LA BIBLIOTHÉCAIRE REFERME SON DERNIER LIVRE");
+            case FOSSOYEUR -> king(kind, "7dff8a", "LE FOSSOYEUR REJOINT SA TOMBE");
+            case MARIONNETTISTE -> king(kind, "ff5a3a", "LES FILS DU MARIONNETTISTE SONT COUPÉS");
             // ----- Le Désert de Braise -----
             case EMIR -> king(kind, "ffd23a", "L'ÉMIR RETOURNE AU SABLE");
             case PHARAON -> king(kind, "6aff6a", "LE PHARAON RETOURNE À LA POUSSIÈRE");
@@ -98,6 +103,7 @@ public record BossTheme(Color skyTop, Color skyLow, Color ground, Color accent, 
             case RAPIDE -> { top = "0a0c1e"; low = "1a2a4a"; ground = "2a0a14"; }     // le train dans la nuit
             case PALACE -> { top = "0e1a34"; low = "5a7aa8"; ground = "c8d8ec"; }     // la neige sous le ciel d'hiver
             case TEMPLE -> { top = "2a1430"; low = "c86a3a"; ground = "5a3a2a"; }     // le crépuscule sur les falaises
+            case MANOIR -> { top = "0e0818"; low = "2a1a3e"; ground = "141018"; }     // le manoir sous la lune
             case DESERT -> { top = "2a0a0a"; low = "c8501e"; ground = "8a5a2a"; }     // le sable brûlant
             default -> { top = "1c1a28"; low = "2e2a3e"; ground = "141220"; }         // le donjon de pierre
         }

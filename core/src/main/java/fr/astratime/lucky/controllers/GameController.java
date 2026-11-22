@@ -92,6 +92,8 @@ public class GameController {
 
     /** Cartes à jouer d'office au début de ce tour (Chant de l'ennemi). */
     private int songs = 0;
+    /** Fils de l'ennemi : cartes de la main (les plus faibles) jouées d'office ce tour. */
+    private int strings = 0;
     /** Taxes du Comptable ce tour : chaque carte jouée les paie toutes. */
     private int taxes = 0;
 
@@ -290,6 +292,7 @@ public class GameController {
         bingoGiftPending = false;
         hiddenCards.clear();
         songs = 0;
+        strings = 0;
         taxes = 0;
         turnNotices.clear();
         originals.clear();
@@ -457,6 +460,16 @@ public class GameController {
             turnNotices.add(new EffectPopup(Lang.f("GRIGNOTAGE : {0} RONGÉE", eaten.getName().toUpperCase()),
                 EffectPopup.Style.DAMAGE, PopupScale.SECONDARY_INTENSITY));
         }
+        // Malédiction (Manoir hanté) : les meilleures cartes piochées retournent sous la pioche.
+        int maledictions = lasting.takeMaledictions();
+        for (int i = 0; i < maledictions && !added.isEmpty(); i++) {
+            Card best = EnemyTurnResolver.bestCard(added);
+            if (best == null) break;
+            added.remove(best);
+            player.buryInDeck(best);
+            turnNotices.add(new EffectPopup(Lang.f("MALÉDICTION : {0} RETOURNE SOUS TA PIOCHE", best.getName().toUpperCase()),
+                EffectPopup.Style.DAMAGE, PopupScale.SECONDARY_INTENSITY));
+        }
         // Jonglage de l'ennemi : les meilleures cartes piochées repartent à la défausse, d'autres arrivent.
         int juggles = lasting.takeJuggles();
         if (juggles > 0) {
@@ -526,6 +539,11 @@ public class GameController {
             turnNotices.add(new EffectPopup(Lang.t("CHANT : CARTE JOUÉE D'OFFICE"), EffectPopup.Style.DAMAGE,
                 PopupScale.SECONDARY_INTENSITY));
         }
+        strings = lasting.takeStrings(); // Fils (Manoir hanté) : il choisit les plus faibles cartes, jouées d'office
+        if (strings > 0) {
+            turnNotices.add(new EffectPopup(Lang.t("FILS : IL CHOISIT TA CARTE"), EffectPopup.Style.DAMAGE,
+                PopupScale.SECONDARY_INTENSITY));
+        }
         return new DrawResult(added, discarded);
     }
 
@@ -549,6 +567,14 @@ public class GameController {
             if (unplayableReason(card) == null) chosen.add(card);
         }
         songs = 0;
+        // Fils : le Marionnettiste choisit, parmi les cartes jouables, la plus faible
+        for (int i = 0; i < strings; i++) {
+            Card weakest = EnemyTurnResolver.worstCard(hand.stream().filter(card -> unplayableReason(card) == null).toList());
+            if (weakest == null) break;
+            hand.remove(weakest);
+            chosen.add(weakest);
+        }
+        strings = 0;
         return chosen;
     }
 

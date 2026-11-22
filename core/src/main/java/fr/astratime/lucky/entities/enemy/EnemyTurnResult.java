@@ -30,6 +30,14 @@ public record EnemyTurnResult(List<Card> drawn, List<Card> played, Map<EnemySymb
         this(drawn, played, luck, symbols, outcomes, afterEvents, List.of());
     }
 
+    /** @return ce tour, ouvert d'abord par {@code first} (Minuit : « il rejoue »). */
+    public EnemyTurnResult withOpening(Event first) {
+        List<Event> opening = new java.util.ArrayList<>();
+        opening.add(first);
+        opening.addAll(openingEvents);
+        return new EnemyTurnResult(drawn, played, luck, symbols, outcomes, afterEvents, List.copyOf(opening));
+    }
+
     /** @return tous les événements du tour de l'ennemi, dans l'ordre. */
     public List<Event> events() {
         return Stream.of(openingEvents.stream(), outcomes.stream().flatMap(List::stream),

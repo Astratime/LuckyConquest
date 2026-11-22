@@ -89,6 +89,8 @@ class PrestigeTest {
         assertEquals(Place.PORT, PlayerProfile.prestigeSeal(4));
         assertEquals(Place.PALACE, PlayerProfile.prestigeSeal(5));
         assertEquals(Place.MINES, PlayerProfile.prestigeSeal(6));
+        assertEquals(Place.MANOIR, PlayerProfile.prestigeSeal(7));
+        assertEquals(Place.CASINO, PlayerProfile.prestigeSeal(8));
         assertEquals(Place.DESERT, PlayerProfile.prestigeSeal(10));
         assertNull(PlayerProfile.prestigeSeal(11));
 

@@ -42,6 +42,11 @@ FAMILIES = {
     'jardin_oracles': ('#eef6ea', '#bcdcb0', '#7ca070'),   # mousse et thé
     'salle_des_des':  ('#fdeaea', '#eeb4b0', '#b0706c'),   # laque rouge
     'sanctuaire':     ('#fdf6dc', '#f0dc94', '#b89c50'),   # or des idoles
+    # --- Manoir hanté (2026-11-20) ---
+    'salon':        ('#f6eaea', '#d8aab0', '#9a6a72'),   # velours bordeaux
+    'bibliotheque': ('#f0eaf8', '#c8b4e4', '#8a74a8'),   # reliure violette
+    'crypte':       ('#eaf4f0', '#b0d4c8', '#70948a'),   # pierre moussue
+    'grenier':      ('#f8f0e4', '#dcc4a0', '#a08864'),   # vieux bois
     # --- Désert de Braise (cartes des rois, 2026-11-14) ---
     'caravane':      ('#fdf4e4', '#e8cc98', '#ae8e58'),   # sable
     'tombeau':       ('#f4f0e2', '#d0c4a0', '#948864'),   # calcaire
@@ -140,6 +145,11 @@ CARD_FAMILY = {
     'feuille_de_the': 'jardin_oracles', 'boule_de_cristal': 'jardin_oracles', 'fil_d_or': 'jardin_oracles',
     'de_d_ivoire': 'salle_des_des', 'gobelet_a_des': 'salle_des_des', 'double_six': 'salle_des_des',
     'offrande_d_or': 'sanctuaire', 'masque_sacre': 'sanctuaire', 'oeil_de_l_idole': 'sanctuaire',
+    'roi_sang_du_comte': 'salon', 'roi_page_arrachee': 'bibliotheque', 'roi_glas': 'crypte', 'roi_fil_de_soie': 'grenier',
+    'bougie_noire': 'salon', 'mise_du_revenant': 'salon', 'pacte_de_minuit': 'salon',
+    'grimoire': 'bibliotheque', 'marque_page': 'bibliotheque', 'livre_des_ombres': 'bibliotheque',
+    'os_de_la_chance': 'crypte', 'eau_benite': 'crypte', 'pierre_tombale': 'crypte',
+    'boite_a_musique': 'grenier', 'malle_oubliee': 'grenier', 'miroir_hante': 'grenier',
     'roi_dents_de_rat': 'cale', 'roi_tournee_du_patron': 'taverne', 'roi_feu_du_phare': 'phare', 'roi_grappin': 'galion',
     'roi_tamis_noir': 'filon', 'roi_meche_de_diamant': 'puits', 'roi_coup_d_enclume': 'forge', 'roi_filon': 'gouffre',
     'roi_refrain': 'bar', 'roi_rage_du_jackpot': 'machines', 'roi_frenesie': 'coffres', 'roi_encre': 'vip',

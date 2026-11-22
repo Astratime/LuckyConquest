@@ -13,6 +13,7 @@ import fr.astratime.lucky.entities.actions.RandomGainAction;
 import fr.astratime.lucky.entities.actions.ScytheAction;
 import fr.astratime.lucky.entities.actions.ShieldStrikeAction;
 import fr.astratime.lucky.entities.actions.SnowflakeAction;
+import fr.astratime.lucky.entities.actions.SpectreAction;
 import fr.astratime.lucky.entities.actions.SteamAction;
 import fr.astratime.lucky.entities.actions.GongAction;
 import fr.astratime.lucky.entities.actions.AttackAction;
@@ -83,7 +84,7 @@ public class SymbolRegistry {
         ACTIONS.put(Symbol.DEMON_KING,    new GaugeReelAction(100, "Démonisation", "DESCENTE AUX ENFERS"));
         ACTIONS.put(Symbol.LUCK_APOSTLE,  new GaugeReelAction(100, "Ange chanceux", "LUMIÈRE DU BINGO"));
 
-        // Rouleaux des lieux : Fête foraine, Port, Casino, Désert, Rapide de Minuit
+        // Rouleaux des lieux : Fête foraine, Port, Casino, Désert, Rapide de Minuit, Manoir hanté
         ACTIONS.put(Symbol.TICKET,    new RandomGainAction(0, 150));
         ACTIONS.put(Symbol.ANCHOR,    new AnchorAction(35));
         ACTIONS.put(Symbol.GOLD_CHIP, new GoldChipAction(50));
@@ -91,6 +92,7 @@ public class SymbolRegistry {
         ACTIONS.put(Symbol.STEAM,     new SteamAction(50));
         ACTIONS.put(Symbol.SNOWFLAKE, new SnowflakeAction(40));
         ACTIONS.put(Symbol.GONG,      new GongAction(60));
+        ACTIONS.put(Symbol.SPECTRE,   new SpectreAction(60));
 
         // Bingos imposés par une jauge pleine (Roi démon, Apôtre de la Chance)
         ACTIONS.put(Symbol.DESCENT,     new BlessingAction(true));

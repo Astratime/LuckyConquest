@@ -87,6 +87,15 @@ public final class Notebook {
             + "Il m'a demandé un jour pour qui. Je lui ai répondu : pour le joueur qui viendra.");
         page(EnemyKind.COEUR_MONTAGNE, "La montagne a un coeur, et ce coeur bat au rythme des rouleaux. "
             + "Quand il s'arrête, j'entends enfin le silence. Je n'aime pas le silence.");
+        // ----- Le Manoir hanté -----
+        page(EnemyKind.COMTE_MINUIT, "Le Comte a parié sa vie à ma table, un soir, à minuit moins une. Il a perdu. "
+            + "Depuis, il rejoue chaque nuit et c'est le sang des autres qu'il mise.");
+        page(EnemyKind.BIBLIOTHECAIRE, "La Bibliothécaire tient le registre de toutes les parties du manoir. "
+            + "Chaque carte qu'on lui emprunte doit être rendue. Elle n'oublie jamais.");
+        page(EnemyKind.FOSSOYEUR, "Le Fossoyeur enterre les joueurs ruinés au fond du jardin. "
+            + "Il les remet sur pied une fois, pour une dernière partie. Jamais deux.");
+        page(EnemyKind.MARIONNETTISTE, "Le Marionnettiste fabriquait des jouets pour les enfants du manoir. "
+            + "Maintenant, il tire les fils des joueurs. Certains ne s'en rendent même pas compte.");
         // ----- Le Casino Englouti -----
         page(EnemyKind.SIRENE, "La Sirène chante pour attirer les joueurs au fond. Je lui ai appris la chanson. "
             + "Tu ne l'as pas écoutée : c'est rare.");

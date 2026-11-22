@@ -476,5 +476,66 @@
         "percent": 10
       }
     ]
+  },
+  {
+    "id": "roi_sang_du_comte",
+    "name": "Sang du Comte",
+    "assetPath": "cards/special/roi_sang_du_comte.png",
+    "effects": [
+      {
+        "type": "TRANSFUSION",
+        "percent": 15
+      },
+      {
+        "type": "BOOST_SYMBOL",
+        "symbol": "SPECTRE",
+        "amount": 60
+      }
+    ]
+  },
+  {
+    "id": "roi_page_arrachee",
+    "name": "Page arrachée",
+    "assetPath": "cards/special/roi_page_arrachee.png",
+    "effects": [
+      {
+        "type": "EXTRA_DRAW",
+        "extraCards": 2
+      },
+      {
+        "type": "ATTACK",
+        "bonus": 80
+      }
+    ]
+  },
+  {
+    "id": "roi_glas",
+    "name": "Glas",
+    "assetPath": "cards/special/roi_glas.png",
+    "effects": [
+      {
+        "type": "DEFENSE",
+        "bonus": 90
+      },
+      {
+        "type": "TRANSFUSION",
+        "percent": 10
+      }
+    ]
+  },
+  {
+    "id": "roi_fil_de_soie",
+    "name": "Fil de soie",
+    "assetPath": "cards/special/roi_fil_de_soie.png",
+    "effects": [
+      {
+        "type": "BONUS_PLAYS",
+        "plays": 2
+      },
+      {
+        "type": "GAINS_PERCENT",
+        "percent": 50
+      }
+    ]
   }
 ]

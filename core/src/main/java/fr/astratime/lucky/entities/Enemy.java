@@ -65,6 +65,8 @@ public class Enemy {
     private       int         karma;
     /** Présage (Temple du Destin) : le symbole annoncé n'est pas sorti au dernier tirage, ses attaques de ce tour montent. */
     private       boolean     omenMissed;
+    /** Linceul (Manoir hanté) : drapé, il se relèvera à sa première chute ; il ne se relève qu'une fois par combat. */
+    private       boolean     shroudArmed, shroudUsed;
     /** Sa mise (Tapis) : ses attaques sont multipliées d'autant, jusqu'à ce qu'il soit touché. */
     private       int         stake = 1;
     /** Tapis posé à son dernier tour : sa mise doublera à son tour suivant, s'il n'est pas touché d'ici là. */
@@ -195,6 +197,13 @@ public class Enemy {
         if (hourglass > 0 && lost * 1000L >= maxHp * EnemySymbol.HOURGLASS_HIT_PER_MILLE) hourglass--;
         if (pressure > 0 && lost * 1000L >= maxHp * EnemySymbol.PRESSURE_HIT_PER_MILLE) pressure--; // un gros coup fait baisser la Pression
         if (snow > 0 && lost * 100L >= maxHp * EnemySymbol.AVALANCHE_HIT_PERCENT) snow = 0; // un gros coup fait fondre l'Avalanche
+        if (hp <= 0 && shroudArmed) { // Linceul : il se relève, une fois par combat
+            shroudArmed = false;
+            shroudUsed = true;
+            int percent = EnemySymbol.SHROUD_RISE_PERCENT * (takeCharge(EnemySignature.GLAS) ? 2 : 1);
+            hp = Math.max(1, (long) Math.ceil(maxHp * percent / 100.0));
+            notice = Lang.f("LINCEUL : IL SE RELÈVE À {0} % DE SES PV !", percent);
+        }
         return lost;
     }
 
@@ -538,6 +547,20 @@ public class Enemy {
         pressure = 0;
         return true;
     }
+
+    /**
+     * Linceul (Manoir hanté) : il se drape, et se relèvera la première fois qu'il tombe.
+     *
+     * @return {@code false} s'il est déjà drapé ou s'est déjà relevé une fois
+     */
+    public boolean armShroud() {
+        if (shroudArmed || shroudUsed) return false;
+        shroudArmed = true;
+        return true;
+    }
+
+    /** @return {@code true} s'il est drapé dans son Linceul : il se relèvera à sa prochaine chute. */
+    public boolean isShrouded() { return shroudArmed; }
 
     /** @return la Pression de sa chaudière, de 0 à {@link EnemySymbol#PRESSURE_MAX} - 1. */
     public int getPressure() { return pressure; }

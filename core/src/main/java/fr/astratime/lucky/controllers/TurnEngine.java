@@ -155,6 +155,16 @@ public class TurnEngine {
         Enemy enemy = gameState.getEnemy();
         List<Event> afterCombat = new ArrayList<>(fillGauges(gauges, symbols, player));
         EnemyTurnResult enemyTurn = enemyPhase(player, enemy, result, turnContext, afterCombat);
+        // Minuit (Manoir hanté) : l'horloge sonne, l'ennemi rejoue aussitôt un tour entier.
+        EnemyTurnResult midnightTurn = null;
+        if (enemyTurn != null && gameState.getActiveRule().isMidnight(gameState.getTurnNumber())
+            && !enemy.isDefeated() && !player.isDefeated()) {
+            midnightTurn = enemyPhase(player, enemy, result, turnContext, afterCombat);
+            if (midnightTurn != null) {
+                midnightTurn = midnightTurn.withOpening(new StatusEvent(Lang.t("MINUIT SONNE : IL REJOUE !"),
+                    EffectPopup.Style.ATTACK));
+            }
+        }
 
         List<Event> firedamp = endOfTurnHazards(gameState, player, enemy);
 
@@ -168,7 +178,7 @@ public class TurnEngine {
             endEvents.add(new SafeOpenedEvent(safe));
         }
         if (bounty != null) endEvents.add(0, bounty);
-        result = result.withEnemyTurn(enemyTurn, endEvents);
+        result = result.withEnemyTurns(enemyTurn, midnightTurn, endEvents);
         if (rerolled != null) result = result.withReroll(rerolled);
         if (bonus != null) result = result.withBonusGame(bonus);
 

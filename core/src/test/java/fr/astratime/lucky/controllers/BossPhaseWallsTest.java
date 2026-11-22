@@ -32,7 +32,7 @@ class BossPhaseWallsTest {
     @Test
     void everyBossHasAtLeastOnePhaseThreshold() {
         List<EnemyKind> bosses = bosses();
-        assertEquals(42, bosses.size());
+        assertEquals(46, bosses.size());
         for (EnemyKind boss : bosses) {
             assertTrue(boss.isBoss(), boss.name());
             assertTrue(boss.phaseCount() >= 2, boss.name() + " a une phase 2");

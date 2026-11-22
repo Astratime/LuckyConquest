@@ -86,6 +86,7 @@ public class SymbolStrikes extends Actor implements Disposable {
     private static final Color CRYSTAL = Color.valueOf("7df9ffff");
     private static final Color GOLD   = Color.valueOf("ffd700ff");
     private static final Color STEEL  = Color.valueOf("cfe3f5ff");
+    private static final Color GHOST  = Color.valueOf("c8f0e8ff");
     private static final Color BOLT   = Color.valueOf("a8e6ffff");
     private static final Color MELON  = Color.valueOf("ff4d6aff");
     private static final Color RIND   = Color.valueOf("2e9e3eff");
@@ -388,7 +389,7 @@ public class SymbolStrikes extends Actor implements Disposable {
             case NUGGET -> updateNugget(s, before, now, delta);
             case CROWN -> updateCrown(s, before, now, delta);
             case DEMON_KING, LUCK_APOSTLE -> updateStar(s, before, now, delta);
-            case FANGS, SPIKED_SHIELD, SCYTHE, MOON, PIGGY_BANK, TICKET, ANCHOR, GOLD_CHIP, FLAME, STEAM, SNOWFLAKE, GONG, DESCENT, BINGO_LIGHT ->
+            case FANGS, SPIKED_SHIELD, SCYTHE, MOON, PIGGY_BANK, TICKET, ANCHOR, GOLD_CHIP, FLAME, STEAM, SNOWFLAKE, GONG, SPECTRE, DESCENT, BINGO_LIGHT ->
                 updateNewReel(s, before, now, delta);
             default -> { }
         }
@@ -513,6 +514,22 @@ public class SymbolStrikes extends Actor implements Disposable {
                     ringAt(s.toX, s.toY, Color.WHITE, 1.8f);
                     burst(s.toX, s.toY, 20, GOLD, 360f, 0.6f, 10f, false);
                     shake.shake(0.25f, 7f);
+                }
+            }
+            case SPECTRE -> { // un fantôme pâle file en ondulant vers l'ennemi, le traverse, et se dissipe derrière lui
+                if (flying && MathUtils.random() < delta * 50f) {
+                    float u = now / IMPACT_TIME;
+                    Particle p = particle(MathUtils.lerp(s.fromX, s.toX, u) + MathUtils.sin(now * 18f) * 22f,
+                        MathUtils.lerp(s.fromY, s.toY, u) + MathUtils.random(-10f, 10f), MathUtils.randomBoolean()
+                        ? GHOST : VIOLET, 20f, 0.5f, MathUtils.random(8f, 14f), false);
+                    p.gravity = -80f;
+                }
+                if (impact) {
+                    flashAt(s.toX, s.toY, GHOST, 180f);
+                    burst(s.toX + 40f, s.toY, 24, GHOST, 380f, 0.7f, 12f, false);
+                    burst(s.toX + 40f, s.toY, 12, VIOLET, 260f, 0.6f, 10f, false);
+                    ringAt(s.toX, s.toY, GHOST, 1.0f);
+                    shake.shake(0.12f, 4f);
                 }
             }
             case STEAM -> { // un jet de vapeur siffle vers l'ennemi, puis éclate en nuage blanc
@@ -1092,7 +1109,7 @@ public class SymbolStrikes extends Actor implements Disposable {
             case BOMB -> drawBomb(batch, s, t, alpha);
             case CROWN -> drawCrown(batch, s, t, alpha);
             case DEMON_KING, LUCK_APOSTLE -> drawStar(batch, s, t, alpha);
-            case FANGS, SPIKED_SHIELD, SCYTHE, MOON, PIGGY_BANK, TICKET, ANCHOR, GOLD_CHIP, FLAME, STEAM, SNOWFLAKE, GONG, DESCENT, BINGO_LIGHT ->
+            case FANGS, SPIKED_SHIELD, SCYTHE, MOON, PIGGY_BANK, TICKET, ANCHOR, GOLD_CHIP, FLAME, STEAM, SNOWFLAKE, GONG, SPECTRE, DESCENT, BINGO_LIGHT ->
                 drawNewReel(batch, s, t, alpha);
             default -> { }
         }

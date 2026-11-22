@@ -61,6 +61,11 @@ public class Deck {
         cards.add(card);
     }
 
+    /** Glisse {@code card} sous le deck : ce sera la dernière carte piochée avant le prochain mélange. */
+    public void putAtBottom(Card card) {
+        cards.add(0, card);
+    }
+
     /** @return les cartes restantes dans le deck. */
     public List<Card> getCards() { return cards; }
 }

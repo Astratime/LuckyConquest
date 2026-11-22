@@ -442,5 +442,183 @@
     "name": "Oeil de l'idole",
     "assetPath": "cards/special/oeil_de_l_idole.png",
     "effects": [ { "type": "GONG_MALLET" }, { "type": "ATTACK", "bonus": 100 } ]
+  },
+  {
+    "id": "bougie_noire",
+    "name": "Bougie noire",
+    "assetPath": "cards/special/bougie_noire.png",
+    "effects": [
+      {
+        "type": "ATTACK",
+        "bonus": 50
+      },
+      {
+        "type": "EXTRA_DRAW",
+        "extraCards": 1
+      }
+    ]
+  },
+  {
+    "id": "mise_du_revenant",
+    "name": "Mise du revenant",
+    "assetPath": "cards/special/mise_du_revenant.png",
+    "effects": [
+      {
+        "type": "GAINS_PERCENT",
+        "percent": 20
+      },
+      {
+        "type": "TRANSFUSION",
+        "percent": 10
+      }
+    ]
+  },
+  {
+    "id": "pacte_de_minuit",
+    "name": "Pacte de minuit",
+    "assetPath": "cards/special/pacte_de_minuit.png",
+    "effects": [
+      {
+        "type": "BOOST_SYMBOL",
+        "symbol": "SPECTRE",
+        "amount": 40
+      },
+      {
+        "type": "ATTACK",
+        "bonus": 100
+      }
+    ]
+  },
+  {
+    "id": "grimoire",
+    "name": "Grimoire",
+    "assetPath": "cards/special/grimoire.png",
+    "effects": [
+      {
+        "type": "REROLL"
+      },
+      {
+        "type": "ATTACK",
+        "bonus": 40
+      }
+    ]
+  },
+  {
+    "id": "marque_page",
+    "name": "Marque-page",
+    "assetPath": "cards/special/marque_page.png",
+    "effects": [
+      {
+        "type": "EXTRA_DRAW",
+        "extraCards": 2
+      },
+      {
+        "type": "GAIN",
+        "amount": 600
+      }
+    ]
+  },
+  {
+    "id": "livre_des_ombres",
+    "name": "Livre des ombres",
+    "assetPath": "cards/special/livre_des_ombres.png",
+    "effects": [
+      {
+        "type": "BONUS_PLAYS",
+        "plays": 2
+      },
+      {
+        "type": "BOOST_SYMBOL",
+        "symbol": "SPECTRE",
+        "amount": 40
+      }
+    ]
+  },
+  {
+    "id": "os_de_la_chance",
+    "name": "Os de la chance",
+    "assetPath": "cards/special/os_de_la_chance.png",
+    "effects": [
+      {
+        "type": "GAINS_PERCENT",
+        "percent": 20
+      },
+      {
+        "type": "DEFENSE",
+        "bonus": 30
+      }
+    ]
+  },
+  {
+    "id": "eau_benite",
+    "name": "Eau bénite",
+    "assetPath": "cards/special/eau_benite.png",
+    "effects": [
+      {
+        "type": "TRANSFUSION",
+        "percent": 25
+      }
+    ]
+  },
+  {
+    "id": "pierre_tombale",
+    "name": "Pierre tombale",
+    "assetPath": "cards/special/pierre_tombale.png",
+    "effects": [
+      {
+        "type": "DEFENSE",
+        "bonus": 70
+      },
+      {
+        "type": "BOOST_SYMBOL",
+        "symbol": "SPECTRE",
+        "amount": 40
+      }
+    ]
+  },
+  {
+    "id": "boite_a_musique",
+    "name": "Boîte à musique",
+    "assetPath": "cards/special/boite_a_musique.png",
+    "effects": [
+      {
+        "type": "DEFENSE",
+        "bonus": 40
+      },
+      {
+        "type": "GAIN",
+        "amount": 400
+      }
+    ]
+  },
+  {
+    "id": "malle_oubliee",
+    "name": "Malle oubliée",
+    "assetPath": "cards/special/malle_oubliee.png",
+    "effects": [
+      {
+        "type": "EXTRA_DRAW",
+        "extraCards": 1
+      },
+      {
+        "type": "GAINS_PERCENT",
+        "percent": 20
+      }
+    ]
+  },
+  {
+    "id": "miroir_hante",
+    "name": "Miroir hanté",
+    "assetPath": "cards/special/miroir_hante.png",
+    "effects": [
+      {
+        "type": "BONUS_PLAYS",
+        "plays": 2
+      },
+      {
+        "type": "GAINS_PERCENT",
+        "percent": 35
+      }
+    ]
   }
 ]

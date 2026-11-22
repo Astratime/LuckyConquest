@@ -24,7 +24,9 @@ import fr.astratime.lucky.i18n.Lang;
  *       {@link #ICE_COMBO_PERCENT} % de leur Puissance (attaque ; les gains ne changent pas) ;</li>
  *   <li>{@link #PRESAGE} : à chaque tour, le temple annonce un symbole de la machine du joueur ; s'il sort
  *       au tirage, Puissance +{@link #OMEN_POWER} ce tour, sinon l'ennemi frappe {@link #OMEN_ENEMY_PERCENT} %
- *       plus fort à son tour.</li>
+ *       plus fort à son tour ;</li>
+ *   <li>{@link #MINUIT} : l'horloge du manoir avance d'une heure à chaque tour ; tous les
+ *       {@link #MIDNIGHT_PERIOD} tours, minuit sonne et l'ennemi joue deux tours de suite.</li>
  * </ul>
  */
 public enum PlaceRule {
@@ -43,7 +45,9 @@ public enum PlaceRule {
     VERGLAS("Verglas", "Un tour sur deux, la table est verglacée : tes combinaisons ne donnent que la moitié de leur "
         + "Puissance."),
     PRESAGE("Présage", "Chaque tour, le temple annonce un symbole de ta machine. S'il sort à ton tirage, Puissance +1 "
-        + "ce tour. Sinon, l'ennemi frappe 30 % plus fort à son tour.");
+        + "ce tour. Sinon, l'ennemi frappe 30 % plus fort à son tour."),
+    MINUIT("Minuit", "L'horloge du manoir avance d'une heure à chaque tour. Au 6e tour, puis tous les 6 tours, "
+        + "minuit sonne : l'ennemi joue deux tours de suite.");
 
     /** Id de la carte Scorbut. */
     public static final String SCURVY_CARD = "scorbut";
@@ -83,6 +87,9 @@ public enum PlaceRule {
     public static final int OMEN_POWER = 1;
     /** Présage : force en plus des attaques de l'ennemi, à son tour, quand le symbole annoncé n'est pas sorti (en %). */
     public static final int OMEN_ENEMY_PERCENT = 30;
+
+    /** Minuit : l'horloge sonne tous les tant de tours (au 6e, au 12e…), l'ennemi rejoue aussitôt. */
+    public static final int MIDNIGHT_PERIOD = 6;
 
     private final String name;
     private final String description;
@@ -129,6 +136,12 @@ public enum PlaceRule {
 
     /** @return {@code true} si le Présage joue (un symbole annoncé à chaque tour). */
     public boolean hasOmen() { return this == PRESAGE; }
+
+    /** @return {@code true} si minuit sonne au tour {@code turn} (à partir de 1) : l'ennemi y joue deux tours de suite. */
+    public boolean isMidnight(int turn) { return this == MINUIT && turn % MIDNIGHT_PERIOD == 0; }
+
+    /** @return l'heure de l'horloge du manoir au tour {@code turn} : 1 au premier tour … {@link #MIDNIGHT_PERIOD} à minuit. */
+    public static int clockHour(int turn) { return (turn - 1) % MIDNIGHT_PERIOD + 1; }
 
     /** @return {@code true} si la Soif joue (soins divisés, PV perdus sans soin). */
     public boolean isThirsty() { return this == SOIF; }

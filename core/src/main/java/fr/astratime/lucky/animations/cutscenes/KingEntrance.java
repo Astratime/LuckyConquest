@@ -16,7 +16,7 @@ import java.util.Random;
  * part), puis le roi apparaît ; en place, il fait un geste et son nom
  * s'affiche ; fondu noir et sa présentation. Chaque lieu dessine ses quatre
  * rois ({@link PrairieKings}, {@link PortKings}, {@link MinesKings},
- * {@link CasinoKings}, {@link FairKings}, {@link DesertKings}, {@link ExpressKings}, {@link PalaceKings}, {@link TempleKings}) ; le son est cutscene/king_<i>roi</i>.
+ * {@link CasinoKings}, {@link FairKings}, {@link DesertKings}, {@link ExpressKings}, {@link PalaceKings}, {@link TempleKings}, {@link ManorKings}) ; le son est cutscene/king_<i>roi</i>.
  *
  * L'entrée a sa propre horloge : pendant {@link #step} et {@link #draw},
  * {@link #time} part de 0 à la fin du décor.
@@ -59,6 +59,7 @@ public abstract class KingEntrance extends Cutscene {
             case LOCOMOTIVE, GRAND_CHEF, DAME_EN_NOIR, DESPERADO -> new ExpressKings(kit, king);
             case CONCIERGE, IMPERATRICE_GIVRE, YETI, PRINCE_NEIGES -> new PalaceKings(kit, king);
             case MAITRE_CLOCHES, TISSEUSE, SEIGNEUR_DES, IDOLE_OR -> new TempleKings(kit, king);
+            case COMTE_MINUIT, BIBLIOTHECAIRE, FOSSOYEUR, MARIONNETTISTE -> new ManorKings(kit, king);
             default -> null;
         };
     }

@@ -26,7 +26,7 @@ class RivalTest {
             assertEquals(place, Place.of(rival), "ses stats sont celles du lieu de la rencontre");
             assertEquals(place.ordinal(), Rival.encounter(rival));
         }
-        assertEquals(8, Rival.encounter(EnemyKind.RIVAL_DESERT));
+        assertEquals(9, Rival.encounter(EnemyKind.RIVAL_DESERT));
         assertTrue(Rival.isFinal(EnemyKind.RIVAL_DESERT));
         assertFalse(EnemyKind.SOLDAT_PIQUE.isRival());
         assertNull(Rival.placeOf(EnemyKind.CLOWN));
@@ -53,7 +53,7 @@ class RivalTest {
 
         defeated.add(EnemyKind.RIVAL_FOIRE);
         assertNull(Rival.due(Place.FOIRE, defeated::contains));
-        defeated.addAll(Set.of(EnemyKind.RIVAL_RAPIDE, EnemyKind.RIVAL_PORT, EnemyKind.RIVAL_PALACE, EnemyKind.RIVAL_MINES));
+        defeated.addAll(Set.of(EnemyKind.RIVAL_RAPIDE, EnemyKind.RIVAL_PORT, EnemyKind.RIVAL_PALACE, EnemyKind.RIVAL_MINES, EnemyKind.RIVAL_MANOIR));
         assertNull(Rival.due(Place.DESERT, defeated::contains));
         defeated.add(EnemyKind.RIVAL_CASINO);
         assertNull(Rival.due(Place.DESERT, defeated::contains));
