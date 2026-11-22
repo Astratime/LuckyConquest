@@ -30,6 +30,7 @@ public final class Rival {
             case PRAIRIE -> null;
             case FOIRE   -> EnemyKind.RIVAL_FOIRE;
             case RAPIDE  -> EnemyKind.RIVAL_RAPIDE;
+            case MANOIR  -> EnemyKind.RIVAL_MANOIR;
             case PORT    -> EnemyKind.RIVAL_PORT;
             case PALACE  -> EnemyKind.RIVAL_PALACE;
             case MINES   -> EnemyKind.RIVAL_MINES;
@@ -44,6 +45,7 @@ public final class Rival {
         return switch (kind) {
             case RIVAL_FOIRE  -> Place.FOIRE;
             case RIVAL_RAPIDE -> Place.RAPIDE;
+            case RIVAL_MANOIR -> Place.MANOIR;
             case RIVAL_PORT   -> Place.PORT;
             case RIVAL_PALACE -> Place.PALACE;
             case RIVAL_MINES  -> Place.MINES;

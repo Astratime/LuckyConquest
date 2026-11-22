@@ -1365,10 +1365,17 @@ public class GameScreen extends ScreenAdapter {
             endTurn();
             return;
         }
+        // Minuit (Manoir hanté) : l'ennemi rejoue aussitôt un second tour.
+        EnemyTurnResult midnight = currentResult.getMidnightTurn();
+        playEnemyTurn(enemyTurn, midnight == null ? this::endTurn : () -> playEnemyTurn(midnight, this::endTurn));
+    }
+
+    /** Un tour de l'ennemi {@code enemyTurn} (sa cinématique de phase d'abord, s'il en change), puis {@code then}. */
+    private void playEnemyTurn(EnemyTurnResult enemyTurn, Runnable then) {
         Runnable play = () -> {
             announceEnemyTurn();
             stage.addAction(Actions.delay(TurnBanner.DURATION,
-                Actions.run(() -> enemyView.playTurn(enemyTurn, this::onEventShown, this::endTurn))));
+                Actions.run(() -> enemyView.playTurn(enemyTurn, this::onEventShown, then))));
         };
         // Un boss ou un roi change de phase : sa cinématique de transition joue d'abord.
         int phase = enemyTurn.openingEvents().stream().filter(event -> event instanceof EnemyPhaseEvent)

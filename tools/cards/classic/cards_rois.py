@@ -753,4 +753,91 @@ def roi_jugement(pal):
     return finish(im, L)
 
 
+# --- Manoir hanté (10 lieux, 2026-11-20) ----------------------------------------
+
+def roi_sang_du_comte(pal):
+    """Le Sang du Comte : une coupe d'or pleine de sang, un croc au-dessus et un petit fantôme qui en sort."""
+    im = card(*pal)
+    L = layer()
+    def cup(d):
+        poly(d, [(9, 20), (29, 20), (25, 32), (13, 32)], Y)
+        d.rectangle([17, 32, 21, 40], fill=Y)
+        d.rectangle([12, 40, 26, 43], fill=Y)
+    def cup_d(d):
+        d.ellipse([10, 18, 28, 23], fill=RD)
+        d.ellipse([12, 19, 26, 22], fill=R)
+        d.line([(14, 25), (16, 30)], fill=YL)
+        d.line([(12, 41), (26, 41)], fill=YD)
+    part(L, cup, cup_d)
+    def ghost(d):
+        d.ellipse([22, 6, 32, 16], fill=WHITE)
+        d.rectangle([22, 11, 32, 18], fill=WHITE)
+    part(L, ghost, lambda d: (d.point((25, 10), fill=DK), d.point((29, 10), fill=DK)))
+    def fang(d):
+        poly(d, [(8, 8), (14, 8), (11, 16)], WHITE)
+    part(L, fang)
+    sparkle(ImageDraw.Draw(L), 7, 30)
+    return finish(im, L)
+
+
+def roi_page_arrachee(pal):
+    """La Page arrachée : une page déchirée qui s'envole d'un livre violet, deux cartes et une épée."""
+    im = card(*pal)
+    L = layer()
+    def book(d):
+        d.rectangle([7, 32, 31, 45], fill=P)
+    part(L, book, lambda d: (d.rectangle([9, 34, 31, 37], fill=BEIGE), d.line([(9, 40), (29, 40)], fill=PD)))
+    def page(d):
+        poly(d, [(11, 10), (25, 7), (27, 25), (24, 23), (22, 27), (19, 24), (13, 27)], BEIGE)
+    part(L, page, lambda d: [d.line([(14, 12 + k * 4), (24, 10 + k * 4)], fill=BEIGED) for k in range(3)])
+    def sword(d):
+        d.rectangle([29, 8, 31, 26], fill=STL)
+        d.rectangle([26, 26, 34, 27], fill=Y)
+    part(L, sword)
+    return finish(im, L)
+
+
+def roi_glas(pal):
+    """Le Glas : une cloche de bronze qui sonne au-dessus d'une stèle, un bouclier de pierre et un coeur."""
+    im = card(*pal)
+    L = layer()
+    def bell(d):
+        d.rectangle([17, 7, 21, 9], fill=WDD)
+        poly(d, [(14, 10), (24, 10), (27, 26), (11, 26)], O)
+        d.rectangle([9, 26, 29, 28], fill=O)
+    part(L, bell, lambda d: (d.line([(15, 13), (13, 25)], fill=OL), d.ellipse([17, 28, 21, 32], fill=OD)))
+    def stone(d):
+        d.rectangle([11, 36, 27, 47], fill=ST)
+        d.ellipse([11, 32, 27, 42], fill=ST)
+    part(L, stone, lambda d: (d.line([(19, 36), (19, 44)], fill=STD), d.line([(16, 39), (22, 39)], fill=STD)))
+    def heart(d):
+        d.polygon([(32, 42), (29, 39), (29, 37), (30.5, 36), (32, 37.5), (33.5, 36), (35, 37), (35, 39)], fill=R)
+    part(L, heart)
+    for x in (6, 32):
+        sparkle(ImageDraw.Draw(L), x, 18)
+    return finish(im, L)
+
+
+def roi_fil_de_soie(pal):
+    """Le Fil de soie : la croix du marionnettiste, ses fils qui tiennent deux cartes et une bourse d'or."""
+    im = card(*pal)
+    L = layer()
+    def cross(d):
+        d.rectangle([9, 8, 29, 10], fill=WD)
+        d.rectangle([18, 5, 20, 16], fill=WD)
+    part(L, cross, lambda d: d.line([(9, 8), (29, 8)], fill=WDL))
+    def strings(d):
+        for x0, x1 in [(10, 10), (28, 28), (19, 19)]:
+            d.line([(x0, 11), (x1, 28)], fill=WHITE)
+    part(L, strings)
+    def cards(d):
+        d.rectangle([5, 28, 14, 40], fill=WHITE)
+        d.rectangle([24, 28, 33, 40], fill=WHITE)
+    part(L, cards, lambda d: (d.rectangle([6, 29, 13, 39], fill=R), d.rectangle([25, 29, 32, 39], fill=B)))
+    def bag(d):
+        d.ellipse([13, 30, 25, 45], fill=BEIGE)
+    part(L, bag, lambda d: d.ellipse([17, 36, 21, 40], fill=Y))
+    return finish(im, L)
+
+
 DESIGNS = {name: fn for name, fn in list(globals().items()) if name.startswith('roi_') and callable(fn)}

@@ -81,6 +81,13 @@ public class PlayerProfile {
     static final String KEY_DUNGEONS   = "dungeons";
     /** Lieux ouverts avant l'arrivée de la Fête foraine et du Désert : ils restent ouverts. */
     static final String KEY_PLACES     = "places";
+    /**
+     * Lieux que la sauvegarde connaissait déjà (10 lieux, 2026-11-21) : un lieu ajouté entre deux anciens ne doit
+     * fermer ni les lieux d'après déjà ouverts, ni leur mode difficile.
+     */
+    static final String KEY_KNOWN_PLACES = "knownPlaces";
+    /** Préfixe, dans les lieux ouverts, d'un lieu ouvert en Exploration difficile par une ancienne sauvegarde. */
+    static final String HARD_PLACE_PREFIX = "HARD:";
     static final String KEY_TOWER_HARD = "towerHard";
     static final String KEY_CHAPTERS      = "chapters";
     static final String KEY_HARD_CHAPTERS = "hardChapters";
@@ -265,6 +272,7 @@ public class PlayerProfile {
             Place[][] legacy = {{Place.PRAIRIE, Place.PORT}, {Place.PORT, Place.MINES}, {Place.MINES, Place.CASINO}};
             for (Place[] step : legacy) if (placeCleared(step[0])) openedPlaces.add(step[1].name());
         }
+        keepPlacesOpen(storage.get(KEY_KNOWN_PLACES));
         for (Place place : Place.values()) {
             for (Dungeon dungeon : place.getDungeons()) dungeon.getLoot().forEach(loot -> catalog.add(loot.cardId()));
         }
@@ -672,6 +680,7 @@ public class PlayerProfile {
             case FIRST_DUNGEON   -> !clearedDungeons.isEmpty();
             case PRAIRIE         -> placeCleared(Place.PRAIRIE);
             case RAPIDE          -> placeCleared(Place.RAPIDE);
+            case MANOIR          -> placeCleared(Place.MANOIR);
             case PORT            -> placeCleared(Place.PORT);
             case PALACE          -> placeCleared(Place.PALACE);
             case MINES           -> placeCleared(Place.MINES);
@@ -683,6 +692,7 @@ public class PlayerProfile {
             case HARD_PRAIRIE    -> isHardPlaceCleared(Place.PRAIRIE);
             case HARD_FOIRE      -> isHardPlaceCleared(Place.FOIRE);
             case HARD_RAPIDE     -> isHardPlaceCleared(Place.RAPIDE);
+            case HARD_MANOIR     -> isHardPlaceCleared(Place.MANOIR);
             case HARD_PORT       -> isHardPlaceCleared(Place.PORT);
             case HARD_PALACE     -> isHardPlaceCleared(Place.PALACE);
             case HARD_MINES      -> isHardPlaceCleared(Place.MINES);
@@ -765,6 +775,39 @@ public class PlayerProfile {
         return place.getDungeons().stream().allMatch(dungeon -> isCleared(dungeon, hard));
     }
 
+    /** Lieux ajoutés après les sauvegardes qui n'ont pas encore la liste des lieux connus. */
+    private static final Set<Place> PLACES_AFTER_UNKNOWN = EnumSet.of(Place.PALACE, Place.MANOIR, Place.TEMPLE);
+
+    /**
+     * Une sauvegarde faite avant l'ajout d'un lieu : ce qui était ouvert dans l'ancien ordre (sans les nouveaux
+     * lieux) le reste, en normal comme en difficile, et un nouveau lieu placé avant un lieu ouvert s'ouvre aussi.
+     *
+     * @param saved les lieux que la sauvegarde connaissait, séparés par des virgules ({@code null} : sauvegarde
+     *              d'avant le Palace des Neiges, le Manoir hanté et le Temple du Destin)
+     */
+    private void keepPlacesOpen(String saved) {
+        Set<String> known = new LinkedHashSet<>();
+        if (saved != null) readNames(saved, known);
+        else for (Place place : Place.values()) if (!PLACES_AFTER_UNKNOWN.contains(place)) known.add(place.name());
+        List<Place> old = new ArrayList<>();
+        for (Place place : Place.values()) if (known.contains(place.name())) old.add(place);
+        if (old.size() == Place.values().length) return;
+        for (boolean hard : new boolean[] {false, true}) {
+            int last = -1;                                  // le dernier lieu ouvert dans l'ancien ordre
+            for (int i = 1; i < old.size(); i++) {
+                if (isPlaceCleared(old.get(i - 1), hard)) {
+                    openedPlaces.add((hard ? HARD_PLACE_PREFIX : "") + old.get(i).name());
+                    last = old.get(i).ordinal();
+                }
+            }
+            for (Place place : Place.values()) {
+                if (place.ordinal() < last && !known.contains(place.name())) {
+                    openedPlaces.add((hard ? HARD_PLACE_PREFIX : "") + place.name());
+                }
+            }
+        }
+    }
+
     /**
      * @return {@code true} si le lieu {@code place} peut être joué dans le mode {@code hard} : en difficile, une fois
      *         l'Exploration difficile ouverte, le premier lieu, puis chacun quand le précédent est vidé en difficile
@@ -773,6 +816,7 @@ public class PlayerProfile {
         if (!hard) return isOpen(place);
         if (admin) return true;
         if (!isExplorationHardOpen()) return false;
+        if (openedPlaces.contains(HARD_PLACE_PREFIX + place.name())) return true;
         Place previous = place.getPrevious();
         return previous == null || isPlaceCleared(previous, true);
     }
@@ -1593,6 +1637,7 @@ public class PlayerProfile {
         storage.put(KEY_DUNGEONS, String.join(",", clearedDungeons));
         storage.put(KEY_HARD_DUNGEONS, String.join(",", clearedHardDungeons));
         storage.put(KEY_PLACES, String.join(",", openedPlaces));
+        storage.put(KEY_KNOWN_PLACES, Arrays.stream(Place.values()).map(Place::name).collect(Collectors.joining(",")));
         storage.put(KEY_CHAPTERS, String.join(",", clearedChapters));
         storage.put(KEY_HARD_CHAPTERS, String.join(",", clearedHardChapters));
         storage.put(KEY_ENDLESS_BEST, String.valueOf(endlessBest));

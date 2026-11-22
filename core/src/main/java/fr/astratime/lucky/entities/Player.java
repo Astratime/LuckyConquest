@@ -621,6 +621,13 @@ public class Player {
      */
     public boolean removeFromHand(Card card) { return currentHand.remove(card); }
 
+    /** Malédiction : {@code card}, retirée de la main, retourne sous le deck. @return {@code false} si elle n'y était pas */
+    public boolean buryInDeck(Card card) {
+        if (!currentHand.remove(card)) return false;
+        deck.putAtBottom(card);
+        return true;
+    }
+
     /** Envoie {@code card}, retirée de la main, dans la défausse (Grignotage, Scorbut qui la remplace). */
     public boolean discardFromHand(Card card) {
         if (!currentHand.remove(card)) return false;

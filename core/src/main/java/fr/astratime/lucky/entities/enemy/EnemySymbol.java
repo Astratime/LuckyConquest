@@ -155,7 +155,15 @@ public enum EnemySymbol {
     /** Il lance deux dés et frappe ; un double double ses attaques de ce tour. */
     DOUBLE_SIX("DOUBLE SIX"),
     /** Il te renvoie tes Bingos : chaque Bingo de ce combat, depuis son dernier Karma, frappe en plus. */
-    KARMA("KARMA");
+    KARMA("KARMA"),
+    /** Manoir hanté : il prend une part de ta jauge de Sang et s'en soigne ; sans Sang, il frappe. */
+    BLOOD_PACT("PACTE DE SANG"),
+    /** Au prochain tour, ta meilleure carte piochée retourne sous ta pioche. */
+    CURSE("MALÉDICTION"),
+    /** Il se drape dans son linceul : la première fois qu'il tombe, il se relève avec une part de ses PV. */
+    SHROUD("LINCEUL"),
+    /** Au début de ton prochain tour, il choisit ta plus faible carte et tu la joues d'office. */
+    STRINGS("FILS");
 
     /** Dégâts de base d'une Épée. */
     public static final int SWORD_DAMAGE   = 20;
@@ -313,6 +321,11 @@ public enum EnemySymbol {
     /** Karma : Bingos du joueur gardés au plus, et coups d'Épée renvoyés par Bingo. */
     public static final int KARMA_MAX = 5, KARMA_FACTOR = 2;
 
+    /** Pacte de sang : part de ta jauge de Sang qu'il prend (en %), et son soin s'il en a pris (en % de ses PV max). */
+    public static final int BLOOD_PACT_PERCENT = 40, BLOOD_PACT_HEAL_PERCENT = 3;
+    /** Linceul : PV avec lesquels il se relève, en % de ses PV max. */
+    public static final int SHROUD_RISE_PERCENT = 20;
+
     private final String displayName;
 
     EnemySymbol(String displayName) {
@@ -460,6 +473,12 @@ public enum EnemySymbol {
                 kind.hurt(kind.swordDamage(), hard), DOUBLE_FACTOR);
             case KARMA -> Lang.f("Karma : il garde le compte de tes Bingos ({0} au plus) et te les renvoie : attaque de {1} par Bingo. "
                 + "Sans Bingo, il se protège", KARMA_MAX, kind.hurt(kind.swordDamage() * KARMA_FACTOR, hard));
+            case BLOOD_PACT -> Lang.f("Pacte de sang : il prend {0} % de ta jauge de Sang et se soigne de {1} % de ses PV max. "
+                + "Sans Sang, attaque de {2}", BLOOD_PACT_PERCENT, BLOOD_PACT_HEAL_PERCENT, kind.hurt(kind.swordDamage(), hard));
+            case CURSE -> Lang.t("Malédiction : au prochain tour, ta meilleure carte piochée retourne sous ta pioche");
+            case SHROUD -> Lang.f("Linceul : la première fois qu'il tombe, il se relève avec {0} % de ses PV max (une fois par "
+                + "combat). Déjà drapé, il reforme sa défense", SHROUD_RISE_PERCENT);
+            case STRINGS -> Lang.t("Fils : au début de ton prochain tour, il choisit ta plus faible carte et tu la joues d'office");
         };
     }
 

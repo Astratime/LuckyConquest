@@ -8,7 +8,7 @@ ornement dans chaque coin (les coins ne sont pas étirés). Le feutre est un mot
 répété de 32 x 32 pixels de jeu. Tout est dessiné sur la grille du jeu (1 pixel
 = 3 pixels de texture), sans lissage.
 
-Produit assets/table/<lieu>/*.png pour prairie, foire, rapide, palace, port, mines, temple et desert (le
+Produit assets/table/<lieu>/*.png pour prairie, foire, rapide, palace, port, mines, temple, manoir et desert (le
 casino, la Tour et l'Entraînement gardent la table d'origine, assets/table/*.png). Lancer depuis la racine du dépôt :
     python3 tools/table/generate_place_tables.py
 """
@@ -60,6 +60,10 @@ THEMES = {
         rail=[(150, 104, 62), (112, 72, 40), (86, 54, 30), (60, 36, 20)], groove=(198, 166, 106),
         metal=BRASS, felt=[(28, 66, 106), (22, 54, 90), (38, 82, 126)], ornament='rivet', motif='waves',
         emblem='anchor'),
+    'manoir': dict(  # manoir hanté : ébène, argent terni, velours violet, chauves-souris
+        rail=[(70, 52, 70), (48, 34, 50), (36, 24, 38), (22, 14, 24)], groove=(176, 176, 190),
+        metal=IRON, felt=[(60, 30, 84), (50, 24, 72), (76, 42, 102)], ornament='plate', motif='bats',
+        emblem='moon'),
     'mines': dict(
         rail=[(128, 132, 144), (98, 66, 40), (78, 52, 30), (54, 34, 20)], groove=(64, 42, 24),
         metal=IRON, felt=[(60, 58, 68), (50, 48, 58), (72, 70, 82)], ornament='plate', motif='ore',
@@ -172,6 +176,8 @@ def felt(t):
         elif motif == 'dice':  # un petit dé vu de face, ses deux points en diagonale
             sprite(d, ["aaa", "a.a", "aaa"], x, y, {'a': light})
             block(d, x + 1, y + 1, dark)
+        elif motif == 'bats':  # une petite chauve-souris
+            sprite(d, ["a...a", "aa.aa", ".aaa.", "..a.."], x, y, {'a': light})
         elif motif == 'rails':  # un bout de voie : deux rails sur trois traverses
             sprite(d, ["aaaaa", ".b.b.", "aaaaa"], x, y, {'a': light, 'b': dark})
     return img
@@ -220,6 +226,12 @@ def emblem(t):
         for x in range(0, 5):
             block(d, x, 7, m[1])
             block(d, w - 1 - x, 7, m[1])
+    elif kind == 'moon':  # pleine lune d'argent, deux chauves-souris qui passent devant
+        sprite(d, ["...aaaaa...", "..abbbbba..", ".abbbbbcba.", "abbbbbbbcba", "abbcbbbbbba", "abbbbbbbbba",
+                   "abbbbbcbbba", "abbbbbbbbba", ".abbcbbbba.", "..abbbbba..", "...aaaaa..."], 5, 1,
+               {'a': m[2], 'b': m[0], 'c': m[1]})
+        sprite(d, ["d...d", "dd.dd", ".ddd."], 2, 3, {'d': (30, 16, 36)})
+        sprite(d, ["d...d", "dd.dd", ".ddd."], 15, 8, {'d': (30, 16, 36)})
     elif kind == 'wheel':  # roue de locomotive (jante, rayons, moyeu) posée sur la voie
         for x in range(0, w):
             block(d, x, 12, m[1])

@@ -58,6 +58,9 @@ public non-sealed class AttackAction extends Action {
      */
     protected void afterHit(CombatContext context, long damage, List<Event> events) { }
 
+    /** @return la part du coup qui traverse la défense, en % (le Spectre en traverse toujours une part). */
+    protected int piercePercent(CombatContext context) { return piercing ? 100 : context.getPiercePercent(); }
+
     /** @return les dégâts de base affichés (description). */
     protected int getBaseDamage() { return baseDamage; }
 
@@ -79,7 +82,7 @@ public non-sealed class AttackAction extends Action {
         long unscaled = base + context.getAttackBonus(); // avant les multiplicateurs : ce que vise le pistolet
         long rawDamage = Math.round((double) unscaled * context.attackMultiplier(context.getSymbolPower(), hitFactor(context)));
         long hit        = enemy.capHit(rawDamage); // ce qui touche vraiment sa défense et ses PV
-        int pierce      = piercing ? 100 : context.getPiercePercent(); // Pique : une part du coup traverse la défense
+        int pierce      = piercePercent(context); // Pique : une part du coup traverse la défense
         int blocked     = enemy.absorb(hit, pierce); // la défense s'use à chaque coup
         long damage     = enemy.skinned(hit - blocked); // une peau d'or encaisse la moitié
         long shown      = enemy.skinned(rawDamage - blocked); // le vrai coup, affiché même s'il dépasse ses PV

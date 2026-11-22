@@ -27,6 +27,8 @@ BINGO_SYMBOLS = {
     'snowflake': '36-snowflake',
     # Le Temple du Destin (2026-11-21)
     'gong': '38-gong',
+    # Le Manoir hanté (2026-11-21)
+    'spectre': '37-spectre',
 }
 
 

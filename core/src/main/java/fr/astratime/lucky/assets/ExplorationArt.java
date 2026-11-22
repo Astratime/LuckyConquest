@@ -311,6 +311,7 @@ public final class ExplorationArt {
             case RAPIDE  -> ExpressArt.RAPIDE_GATES;
             case PALACE  -> PalaceArt.PALACE_GATES;
             case TEMPLE  -> TempleArt.TEMPLE_GATES;
+            case MANOIR  -> ManorArt.MANOIR_GATES;
             case DESERT  -> FairDesertArt.DESERT_GATES;
         };
     }

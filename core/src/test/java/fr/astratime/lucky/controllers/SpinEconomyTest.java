@@ -65,7 +65,7 @@ class SpinEconomyTest {
         // Ordre d'ouverture : prairie, Fête foraine, Rapide de Minuit, Port, Mines, Casino, Temple du Destin, Désert de Braise ; coûts étirés
         // (Astra, 2026-10-29) pour qu'un lieu paie au moins deux fois le lieu d'avant
         Map<Place, Integer> costs = Map.of(Place.PRAIRIE, 100, Place.FOIRE, 700, Place.RAPIDE, 1_500, Place.PORT, 3_000,
-            Place.PALACE, 6_000, Place.MINES, 12_000, Place.CASINO, 45_000, Place.TEMPLE, 80_000, Place.DESERT, 140_000);
+            Place.PALACE, 6_000, Place.MINES, 12_000, Place.MANOIR, 23_000, Place.CASINO, 45_000, Place.TEMPLE, 80_000, Place.DESERT, 140_000);
         for (Place place : Place.values()) {
             for (var dungeon : place.getDungeons()) {
                 assertEquals((int) costs.get(place), dungeon.getSoldier().getSpinCost(), place + " soldat");
