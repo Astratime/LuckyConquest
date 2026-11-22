@@ -218,9 +218,16 @@ public abstract class BossScene extends Cutscene {
 
     /** La teinte du décor ({@link #decorLight} et le ciel du lieu) appliquée à {@code color}. */
     private void decorTint(Batch batch, Color color) {
+        batch.setColor(litLikeDecor(color, decorShade));
+    }
+
+    private final Color decorShade = new Color();
+
+    /** @return {@code out}, la couleur {@code color} éclairée comme le décor (pour un objet posé dans le décor). */
+    protected Color litLikeDecor(Color color, Color out) {
         float light = MathUtils.clamp(decorLight(), 0f, 1f);
         Color sky = theme.skyLow();
-        batch.setColor(color.r * light * (0.75f + 0.25f * sky.r), color.g * light * (0.75f + 0.25f * sky.g),
+        return out.set(color.r * light * (0.75f + 0.25f * sky.r), color.g * light * (0.75f + 0.25f * sky.g),
             color.b * light * (0.75f + 0.25f * sky.b), 1f);
     }
 
