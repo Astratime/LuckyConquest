@@ -3257,6 +3257,215 @@ def death_marionnettiste():
     return track.buf
 
 
+# ===========================================================================
+# Palace des Neiges : phases et morts des rois (PalaceBossScenes, 2026-11-22)
+# Les instants reprennent les constantes des scènes : si une scène change de rythme, mettre à jour ici.
+# ===========================================================================
+
+def desk_bell():
+    """La sonnette de réception : un « ding » clair qui tient."""
+    return mix((metal_hit(2637, 1.4, 0.7), 0, 1.0), (metal_hit(3951, 0.8, 0.5), 0, 0.3), (click(0.004, 3000, 9000), 0, 0.4))
+
+
+def glass_clink(f=None):
+    """Deux coupes de cristal qui se touchent."""
+    f = f or rand(2600, 3400)
+    return modal(f, 0.9, GLASS_RATIOS, [0.6, 0.35, 0.2, 0.12], [1, 0.5, 0.3, 0.15])
+
+
+def fizz(d=1.2):
+    """Le pétillement du champagne."""
+    x = sparkle(d, count=int(40 * d), lo=4000, hi=11000, tau=0.02)
+    return x * np.linspace(1.0, 0.0, len(x)) ** 1.5
+
+
+def key_jingle():
+    """Un trousseau de clés qui tinte."""
+    return mix(*((metal_hit(rand(3200, 5200), 0.25, 0.8), rand(0.0, 0.12), rand(0.3, 0.6)) for _ in range(6)))
+
+
+def ice_shatter():
+    """Une statue de glace qui vole en éclats."""
+    parts = [(crack(0.08, 0.012, 1500, 12000), 0, 1.0), (thump(120, 50, 0.5, 0.12), 0, 0.8)]
+    parts += [(ice_crack(0.25), rand(0.0, 0.5), rand(0.2, 0.5)) for _ in range(10)]
+    parts += [(glass_clink(rand(3000, 6000)), rand(0.05, 0.8), rand(0.1, 0.25)) for _ in range(8)]
+    return mix(*parts)
+
+
+def icy_wind(d):
+    """Un vent glacé qui hurle."""
+    return svf(noise(d), sweep(600, 2200, d), q=2.5, mode='bp') * adsr(d, 0.25, 0.2, 0.8, 0.6)
+
+
+def snore(d=0.95):
+    """La respiration lente d'un gros dormeur : on inspire, puis un grondement doux."""
+    inhale = bp(noise(d * 0.45), 300, 1200) * ramp(d * 0.45, 0.0, 1.0, 0.8)
+    rumble = lp(osc(sweep(55, 48, d * 0.55), d * 0.55, 'saw'), 300) * expdec(d * 0.55, d * 0.35, attack=0.05)
+    return mix((inhale, 0, 0.5), (rumble, d * 0.45, 0.8))
+
+
+def waltz(start, bars, track, gain=0.35, notes=('A4', 'C#5', 'E5', 'F#5', 'E5', 'C#5')):
+    """Une petite valse de boîte à musique, à trois temps (une mesure = 0,6 s)."""
+    for b in range(bars):
+        root = ['A2', 'D3', 'E3', 'A2'][b % 4]
+        track.add(music_box(root, 0.9), start + b * 0.6, gain * 0.6)
+        for beat in (1, 2):
+            chord = modal(transpose(hz(root), 19), 0.4, GLASS_RATIOS, [0.24, 0.12, 0.08, 0.04], [1, 0.4, 0.25, 0.1])
+            track.add(chord, start + b * 0.6 + beat * 0.2, gain * 0.35)
+        track.add(music_box(notes[b % len(notes)], 1.0), start + b * 0.6, gain)
+
+
+@sound('cutscene/phase2_concierge', -17)
+def phase2_concierge():
+    """Le Concierge, phase 2 (ConciergePhase) : trois coups de sonnette (0,5 / 0,95 / 1,4 s), un plateau arrive à chaque
+    coup, les coupes gèlent (2,2 s) et pétillent."""
+    track = Track(5.8)
+    track.add(ambience(4.8, 200, 900, 0.2), 0.0, 1.0)
+    for k, at in enumerate((0.5, 0.95, 1.4)):
+        track.add(desk_bell(), at, 0.55)
+        track.add(whoosh(0.45, 400, 2400), at + 0.02, 0.2)
+        track.add(glass_clink(), at + 0.5, 0.35)
+    track.add(mix((thump(80, 35, 1.0, 0.3), 0, 1.0), (ice_crack(0.4), 0, 0.6)), 2.2, 0.8)
+    for k in range(3):
+        track.add(ice_crack(0.3), 2.2 + rand(0.0, 0.2), 0.3)
+    track.add(fizz(1.6), 2.25, 0.5)
+    track.add(brass_chord(['C3', 'E3', 'G3', 'B3'], 1.6, 0.6), 2.25, 0.5)
+    return track.buf
+
+
+@sound('cutscene/death_concierge', -17)
+def death_concierge():
+    """Le Concierge meurt (ConciergeDeath) : ses clés quittent son revers (0,6 / 1,0 s) et se pendent au tableau
+    (1,3 / 1,7 s), il s'incline (1,9 s), le givre craque (2,3 à 2,9 s), il vole en éclats (3,1 s)."""
+    track = Track(6.6)
+    track.add(ambience(5.6, 200, 900, 0.2), 0.0, 1.0)
+    for leave in (0.6, 1.0):
+        track.add(key_jingle(), leave, 0.5)
+        track.add(whoosh(0.6, 500, 2000), leave + 0.05, 0.2)
+        track.add(mix((metal_hit(1800, 0.4, 0.6), 0, 1.0), (key_jingle(), 0.02, 0.5)), leave + 0.7, 0.5)
+    track.add(rustle(0.4), 1.9, 0.25)                                                       # la révérence
+    for k in range(4):
+        track.add(ice_crack(0.3), 2.3 + k * 0.2, 0.35 + 0.08 * k)
+    track.add(reverb(ice_shatter(), wet=0.3, size=1.4, tail=1.0), 3.1, 1.0)
+    track.add(desk_bell(), 3.8, 0.25)                                                      # un dernier « ding », pour la route
+    track.add(brass_chord(['A2', 'C3', 'E3', 'G3'], 1.4, 0.5), 3.2, 0.4)
+    return track.buf
+
+
+@sound('cutscene/phase2_imperatrice_givre', -17)
+def phase2_imperatrice_givre():
+    """L'Impératrice du Givre, phase 2 (EmpressPhase) : le lustre descend et s'allume (0,1 à 0,8 s), la valse des
+    danseurs fantômes, la pyramide de coupes (1,3 à 1,9 s) gèle d'un coup (2,2 s)."""
+    track = Track(5.8)
+    track.add(ambience(4.8, 300, 1500, 0.2), 0.0, 1.0)
+    track.add(whoosh(0.7, 200, 1200), 0.1, 0.3)
+    track.add(sparkle(0.6, count=16, lo=4000, hi=10000), 0.7, 0.4)
+    waltz(0.6, 7, track)
+    for k in range(6):
+        track.add(glass_clink(rand(2800, 3600)), 1.3 + k * 0.12, 0.3)
+    track.add(mix((thump(80, 35, 1.0, 0.3), 0, 1.0), (ice_crack(0.5), 0, 0.8)), 2.2, 0.8)
+    track.add(skate_glide(1.4), 2.3, 0.3)
+    track.add(brass_chord(['A2', 'C#3', 'E3', 'G#3'], 1.6, 0.6), 2.25, 0.5)
+    return track.buf
+
+
+@sound('cutscene/death_imperatrice_givre', -17)
+def death_imperatrice_givre():
+    """L'Impératrice du Givre meurt (EmpressDeath) : elle ruisselle et fond (0,6 à 3,6 s), sa couronne glisse (2,4 s)
+    et tombe dans la flaque (3,1 s), des ronds dans l'eau."""
+    track = Track(6.6)
+    track.add(ambience(5.6, 300, 1500, 0.2), 0.0, 1.0)
+    track.add(lp(noise(3.0), 900) * ramp(3.0, 0.1, 1.0, 1.0), 0.6, 0.25)                 # elle ruisselle
+    for k in range(18):
+        f = rand(900, 1800)
+        drip = osc(sweep(f, f * 1.8, 0.06), 0.06, 'sine') * expdec(0.06, 0.02)
+        track.add(drip, 0.7 + rand(0.0, 2.9), rand(0.15, 0.35))
+    track.add(whoosh(0.5, 800, 3000), 2.4, 0.15)
+    track.add(mix((modal(hz('E6'), 1.6, GLASS_RATIOS, [1.0, 0.6, 0.4, 0.3]), 0, 0.6), (splash(0.6), 0, 0.5)), 3.1, 0.6)
+    track.add(glass_clink(hz('B5')), 3.25, 0.3)
+    for k, note in enumerate(['E5', 'C#5', 'A4', 'E4']):
+        track.add(music_box(note, 1.4), 3.5 + k * 0.35, 0.3)
+    return track.buf
+
+
+@sound('cutscene/phase2_yeti', -17)
+def phase2_yeti():
+    """Le Yéti, phase 2 (YetiPhase) : il se frappe la poitrine (0,45 / 0,73 / 1,01 / 1,29 s), inspire, souffle la tempête
+    (1,75 s), le givre craque aux coins de l'écran, l'apogée (2,2 s)."""
+    track = Track(5.8)
+    track.add(ambience(4.8, 100, 600, 0.2), 0.0, 1.0)
+    for k in range(4):
+        track.add(mix((thump(90, 45, 0.3, 0.08), 0, 1.0), (lp(noise(0.12), 500) * expdec(0.12, 0.04), 0, 0.5)), 0.45 + k * 0.28, 0.8)
+    track.add(bp(noise(0.45), 400, 1800) * ramp(0.45, 0.0, 1.0, 0.7), 1.3, 0.35)            # il inspire
+    roar = lp(osc(vibrato(sweep(110, 80, 1.4), 1.4, rate=7, depth=0.04), 1.4, 'saw'), 900) * adsr(1.4, 0.08, 0.2, 0.7, 0.5)
+    track.add(roar, 1.75, 0.45)
+    track.add(icy_wind(2.4), 1.75, 0.7)
+    for k in range(10):
+        track.add(ice_crack(0.3), 1.95 + rand(0.0, 0.6), rand(0.2, 0.4))
+    track.add(mix((thump(70, 30, 1.2, 0.35), 0, 1.0), (crack(0.06, 0.01, 1000, 10000), 0, 0.5)), 2.2, 0.9)
+    track.add(brass_chord(['D2', 'A2', 'D3', 'F3'], 1.6, 0.6), 2.25, 0.5)
+    return track.buf
+
+
+@sound('cutscene/death_yeti', -17)
+def death_yeti():
+    """Le Yéti meurt (YetiDeath) : il bâille (0,2 s), se couche (1,0 s), la neige le recouvre (jusqu'à 2,8 s),
+    puis il ronfle doucement sous son tas (3,2 / 4,2 / 5,1 s)."""
+    track = Track(6.6)
+    track.add(ambience(5.6, 100, 600, 0.15), 0.0, 1.0)
+    yawn = lp(osc(sweep(140, 70, 0.9), 0.9, 'saw'), 700) * adsr(0.9, 0.15, 0.2, 0.7, 0.3)
+    track.add(yawn, 0.2, 0.45)
+    track.add(mix((thump(70, 35, 0.6, 0.2), 0, 1.0), (lp(noise(1.2), 600) * expdec(1.2, 0.5), 0, 0.6)), 1.6, 0.6)   # il se couche
+    track.add(lp(noise(1.8), 1500) * ramp(1.8, 1.0, 0.0, 1.0), 1.0, 0.25)                  # la neige qui tombe
+    lullaby = stack(*(osc(hz(note), 3.5, 'sine') for note in ('D4', 'F#4', 'A4')))
+    track.add(lullaby * ramp(3.5, 0.0, 1.0, 1.0) * ramp(3.5, 1.0, 0.0, 3.0), 2.4, 0.06)
+    for k in range(3):
+        track.add(snore(), 3.2 + k * 0.98 - 0.45, 0.7)
+    for k, note in enumerate(['A5', 'F#5', 'D5']):
+        track.add(music_box(note, 1.6), 2.8 + k * 0.5, 0.25)
+    return track.buf
+
+
+@sound('cutscene/phase2_prince_neiges', -17)
+def phase2_prince_neiges():
+    """Le Prince des Neiges, phase 2 (PrincePhase) : la valse du bal derrière les portes, les battants grincent et
+    claquent (1,5 s), la barre d'or verrouille (1,95 s), ses yeux s'allument (2,2 s)."""
+    track = Track(5.8)
+    track.add(ambience(4.8, 200, 1000, 0.2), 0.0, 1.0)
+    waltz(0.0, 3, track, gain=0.3)
+    track.add(creak(1.1, 140), 0.4, 0.5)
+    slam = mix((thump(80, 35, 0.9, 0.25), 0, 1.2), (wood_knock(150), 0, 0.8), (crack(0.05, 0.01, 400, 8000), 0, 0.5))
+    track.add(reverb(slam, wet=0.35, size=1.6, tail=1.2), 1.5, 1.0)
+    track.add(svf(noise(0.4), sweep(800, 2500, 0.4), q=3.0, mode='bp') * expdec(0.4, 0.2), 1.65, 0.3)   # la barre qui glisse
+    track.add(mix((metal_hit(520, 0.6, 0.6), 0, 1.0), (thump(120, 60, 0.3, 0.06), 0, 0.8)), 1.95, 0.7)
+    track.add(mix((thump(70, 30, 1.0, 0.3), 0, 1.0)), 2.2, 0.6)
+    track.add(modal(hz('B5'), 2.0, GLASS_RATIOS, [1.0, 0.6, 0.4, 0.3]), 2.2, 0.3)
+    track.add(brass_chord(['B2', 'D3', 'F3', 'A3'], 1.6, 0.6), 2.25, 0.5)
+    return track.buf
+
+
+@sound('cutscene/death_prince_neiges', -17)
+def death_prince_neiges():
+    """Le Prince des Neiges meurt (PrinceDeath) : sa coupe tombe (0,5 s) et se brise (1,05 s), les bougies du lustre
+    s'éteignent (1,4 / 1,7 / 2,0 / 2,3 s), il salue, il s'effondre en neige (2,7 s), sa couronne se pose (4,0 s)."""
+    track = Track(6.6)
+    track.add(ambience(5.6, 200, 1000, 0.15), 0.0, 1.0)
+    waltz(0.0, 2, track, gain=0.28)
+    track.add(whoosh(0.5, 900, 2500), 0.55, 0.15)
+    shatter = mix((crack(0.05, 0.008, 2000, 12000), 0, 1.0), *((glass_clink(rand(3000, 6500)), rand(0.0, 0.25), rand(0.2, 0.45)) for _ in range(6)))
+    track.add(shatter, 1.05, 0.8)
+    for k in range(4):
+        puff = bp(noise(0.22), 400, 2500) * expdec(0.22, 0.07, attack=0.02)
+        track.add(puff, 1.4 + k * 0.3, 0.55)
+    track.add(rustle(0.5), 1.8, 0.25)                                                       # la révérence
+    track.add(lp(noise(1.3), 1200) * ramp(1.3, 1.0, 0.0, 1.0), 2.7, 0.6)                   # il s'effondre en neige
+    track.add(thump(90, 40, 0.5, 0.15), 2.75, 0.5)
+    track.add(mix((metal_hit(1400, 0.6, 0.5), 0, 1.0)), 4.0, 0.35)
+    for k, note in enumerate(['E5', 'C#5', 'A4']):
+        track.add(music_box(note, 1.6), 4.1 + k * 0.4, 0.25)
+    return track.buf
+
+
 def main(prefixes):
     done = 0
     for name, level, fmt, trim, loop, fn in SOUNDS:

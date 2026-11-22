@@ -26,17 +26,35 @@ public final class PalacePortraits {
     /** @return les pixels du portrait de l'ennemi {@code kind}, ou {@code null} s'il n'est pas du Palace. */
     public static int[][] pixels(EnemyKind kind) { return of(kind); }
 
+    /** Les accessoires qu'une cinématique peut retirer d'un portrait (voir {@link #without}). */
+    public enum Prop { KEY_LEFT, KEY_RIGHT, CROWN, CUP }
+
+    /**
+     * @return le portrait de {@code kind} dessiné sans les accessoires {@code props} (ce qu'il y avait dessous
+     * réapparaît) : les cinématiques en tirent le vrai morceau qui quitte le boss, jamais une copie.
+     */
+    public static int[][] without(EnemyKind kind, Prop... props) {
+        java.util.Set<Prop> gone = java.util.EnumSet.noneOf(Prop.class);
+        java.util.Collections.addAll(gone, props);
+        return switch (kind) {
+            case CONCIERGE         -> concierge(!gone.contains(Prop.KEY_LEFT), !gone.contains(Prop.KEY_RIGHT));
+            case IMPERATRICE_GIVRE -> imperatrice(!gone.contains(Prop.CROWN));
+            case PRINCE_NEIGES     -> prince(!gone.contains(Prop.CROWN), !gone.contains(Prop.CUP));
+            default                -> of(kind);
+        };
+    }
+
     /** @return le portrait de l'ennemi {@code kind}, ou {@code null} s'il n'est pas du Palace des Neiges. */
     static int[][] of(EnemyKind kind) {
         return switch (kind) {
             case GROOM             -> groom();
-            case CONCIERGE         -> concierge();
+            case CONCIERGE         -> concierge(true, true);
             case PATINEUSE         -> patineuse();
-            case IMPERATRICE_GIVRE -> imperatrice();
+            case IMPERATRICE_GIVRE -> imperatrice(true);
             case LIFTIER           -> liftier();
             case YETI              -> yeti();
             case MAJORDOME         -> majordome();
-            case PRINCE_NEIGES     -> prince();
+            case PRINCE_NEIGES     -> prince(true, true);
             default                -> null;
         };
     }
@@ -99,12 +117,12 @@ public final class PalacePortraits {
      * Le Concierge : redingote noire, gilet bordeaux, les clés d'or croisées au revers, favoris gris
      * couverts de givre, monocle.
      */
-    private static int[][] concierge() {
+    private static int[][] concierge(boolean keyLeft, boolean keyRight) {
         PixelCanvas g = new PixelCanvas(W, H);
         bust(g, COAL, rgba("12121a"), WHITE);
         g.triangle(14, 29, 20, 29, 17, 36, RED_DARK);           // le gilet
-        g.line(6, 31, 10, 35, GOLD);                             // les clés croisées au revers
-        g.line(10, 31, 6, 35, GOLD);
+        if (keyLeft) g.line(6, 31, 10, 35, GOLD);                // les clés croisées au revers
+        if (keyRight) g.line(10, 31, 6, 35, GOLD);
         frost(g);
         face(g, FROZEN, FROZEN_SHADE);
         g.ellipse(10.5f, 19f, 2f, 4f, rgba("b8c0cc"));          // les favoris gris
@@ -148,7 +166,7 @@ public final class PalacePortraits {
      * L'Impératrice du Givre : robe de glace, haute couronne de stalactites, longs cheveux blancs, peau
      * bleutée, yeux qui luisent d'un bleu pâle, un sceptre de glace.
      */
-    private static int[][] imperatrice() {
+    private static int[][] imperatrice(boolean crown) {
         PixelCanvas g = new PixelCanvas(W, H);
         bust(g, ICE_DARK, ICE_DEEP, ICE);
         g.rect(4, 36, 29, 41, ICE_DEEP);
@@ -160,13 +178,14 @@ public final class PalacePortraits {
         g.rect(20, 15, 21, 16, rgba("7ad0ff"));
         g.line(15, 21, 19, 21, ICE_DEEP);
         g.ellipse(17f, 9f, 7.5f, 3f, WHITE);
-        // La couronne de stalactites.
-        g.rect(10, 6, 24, 8, ICE);
-        for (int x = 10; x <= 24; x += 2) {
-            int top = x == 17 || x == 16 ? 0 : (x % 4 == 0 ? 2 : 4);
-            g.line(x, top, x, 6, x % 4 == 0 ? WHITE : ICE);
+        if (crown) {                                              // la couronne de stalactites
+            g.rect(10, 6, 24, 8, ICE);
+            for (int x = 10; x <= 24; x += 2) {
+                int top = x == 17 || x == 16 ? 0 : (x % 4 == 0 ? 2 : 4);
+                g.line(x, top, x, 6, x % 4 == 0 ? WHITE : ICE);
+            }
+            g.set(17, 7, rgba("7ad0ff"));
         }
-        g.set(17, 7, rgba("7ad0ff"));
         // Le sceptre de glace, à droite.
         g.line(30, 8, 30, 40, ICE);
         g.ellipse(30f, 6f, 2f, 2.5f, WHITE);
@@ -252,7 +271,7 @@ public final class PalacePortraits {
      * Le Prince des Neiges : uniforme d'apparat blanc à épaulettes d'or, cape bleu nuit bordée d'hermine,
      * couronne fine, visage pâle et beau, une coupe de champagne levée.
      */
-    private static int[][] prince() {
+    private static int[][] prince(boolean crown, boolean cup) {
         PixelCanvas g = new PixelCanvas(W, H);
         g.rect(1, 27, 32, 41, rgba("1a2a5a"));                     // la cape
         bust(g, WHITE, WHITE_SHADE, 0);
@@ -269,14 +288,16 @@ public final class PalacePortraits {
         g.set(19, 20, rgba("8a5a80"));                              // le sourire en coin
         g.ellipse(17f, 9f, 8f, 3.5f, rgba("e8eef8"));               // les cheveux d'argent
         g.ellipse(10f, 13f, 2f, 3f, rgba("e8eef8"));
-        // La couronne fine.
-        g.rect(11, 5, 23, 6, GOLD);
-        for (int x = 11; x <= 23; x += 3) g.set(x, 4, GOLD);
-        g.set(17, 3, ICE); g.set(17, 4, ICE);
-        // La coupe levée, à droite.
-        g.triangle(26, 10, 32, 10, 29, 14, rgba("ffe08a"));
-        g.line(29, 14, 29, 17, ICE);
-        g.line(28, 17, 30, 17, ICE);
+        if (crown) {                                              // la couronne fine
+            g.rect(11, 5, 23, 6, GOLD);
+            for (int x = 11; x <= 23; x += 3) g.set(x, 4, GOLD);
+            g.set(17, 3, ICE); g.set(17, 4, ICE);
+        }
+        if (cup) {                                                // la coupe levée, à droite
+            g.triangle(26, 10, 32, 10, 29, 14, rgba("ffe08a"));
+            g.line(29, 14, 29, 17, ICE);
+            g.line(28, 17, 30, 17, ICE);
+        }
         g.line(29, 18, 28, 28, FROZEN);
         return g.outlined();
     }

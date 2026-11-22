@@ -68,6 +68,8 @@ public abstract class BossScene extends Cutscene {
     protected final Color poseTintColor = new Color();
     /** {@code false} : le boss n'est pas dessiné à cette image (il a disparu). */
     protected boolean showBoss;
+    /** Son portrait complet, remis à chaque début de scène (voir {@link #wear}). */
+    private final TextureRegion portrait;
 
     protected BossScene(CutsceneKit kit, Moment moment, EnemyKind kind, int phase) {
         super(kit.settings(), kit.shake(), kit.sound(track(kind, moment, phase)));
@@ -77,6 +79,7 @@ public abstract class BossScene extends Cutscene {
         this.phase  = phase;
         theme = BossTheme.of(kind);
         boss  = kit.portrait(kind);
+        portrait = new TextureRegion(boss);
         coin  = load("hud/coin.png");
         decor = loadDecor(kind);
         EnemySymbol symbol = moment == Moment.PHASE ? kind.kingPhaseSymbol() : null;
@@ -143,6 +146,7 @@ public abstract class BossScene extends Cutscene {
         glows.clear();
         sprites.clear();
         previous = 0f;
+        boss.setRegion(portrait);
         restart();
     }
 
@@ -206,14 +210,39 @@ public abstract class BossScene extends Cutscene {
      */
     private void drawDecor(Batch batch) {
         if (decor == null) return;
-        float width = worldWidth() + 2f * MARGIN, height = worldHeight() + 2f * MARGIN;
-        float scale = Math.max(width / decor.getRegionWidth(), height / decor.getRegionHeight());
-        float w = decor.getRegionWidth() * scale, h = decor.getRegionHeight() * scale;
-        float light = MathUtils.clamp(decorLight(), 0f, 1f);
-        Color sky = theme.skyLow();
-        batch.setColor(light * (0.75f + 0.25f * sky.r), light * (0.75f + 0.25f * sky.g), light * (0.75f + 0.25f * sky.b), 1f);
+        float scale = decorScale(), w = decor.getRegionWidth() * scale, h = decor.getRegionHeight() * scale;
+        decorTint(batch, Color.WHITE);
         batch.draw(decor, worldWidth() / 2f - w / 2f, worldHeight() + MARGIN - h, w, h);
         batch.setColor(Color.WHITE);
+    }
+
+    /** La teinte du décor ({@link #decorLight} et le ciel du lieu) appliquée à {@code color}. */
+    private void decorTint(Batch batch, Color color) {
+        float light = MathUtils.clamp(decorLight(), 0f, 1f);
+        Color sky = theme.skyLow();
+        batch.setColor(color.r * light * (0.75f + 0.25f * sky.r), color.g * light * (0.75f + 0.25f * sky.g),
+            color.b * light * (0.75f + 0.25f * sky.b), 1f);
+    }
+
+    /** @return la taille à l'écran d'un pixel du décor (il couvre tout l'écran, calé en haut). */
+    protected float decorScale() {
+        if (decor == null) return 1f;
+        return Math.max((worldWidth() + 2f * MARGIN) / decor.getRegionWidth(), (worldHeight() + 2f * MARGIN) / decor.getRegionHeight());
+    }
+
+    /** @return l'abscisse à l'écran du bord gauche de la colonne {@code px} du décor. */
+    protected float decorX(float px) {
+        return decor == null ? px : worldWidth() / 2f + (px - decor.getRegionWidth() / 2f) * decorScale();
+    }
+
+    /** @return l'ordonnée à l'écran du bord haut de la ligne {@code py} du décor (comptée depuis le haut). */
+    protected float decorY(float py) { return worldHeight() + MARGIN - py * decorScale(); }
+
+    /** Repeint les pixels ({@code px}, {@code py}) à ({@code px + w}, {@code py + h}) du décor en {@code color}, éclairés comme lui. */
+    protected void decorRect(Batch batch, Color color, float px, float py, float w, float h) {
+        if (decor == null) return;
+        decorTint(batch, color);
+        batch.draw(pixel, decorX(px), decorY(py + h), w * decorScale(), h * decorScale());
     }
 
     /** @return la lumière du décor à cette image (1 : comme en combat) ; une scène l'éteint, l'allume ou le fait clignoter. */
@@ -408,6 +437,53 @@ public abstract class BossScene extends Cutscene {
         batch.setColor(light, light, light, alpha * poseAlpha);
         batch.draw(region, rx, ry, footX - rx, footY - ry, w, h, 1f, 1f, poseTilt);
     }
+
+    /** Un vrai morceau du portrait (une clé, une couronne…) : ses pixels et sa place dans le portrait. */
+    protected static final class Piece {
+        public final TextureRegion region;
+        public final int left, top, width, height;
+
+        Piece(TextureRegion region, int left, int top, int width, int height) {
+            this.region = region;
+            this.left = left;
+            this.top = top;
+            this.width = width;
+            this.height = height;
+        }
+    }
+
+    /**
+     * @return le morceau qui distingue le portrait {@code full} du même portrait dessiné sans lui ({@code rest}) :
+     *         les pixels de {@code full} qui changent, à leur place exacte ({@code null} s'il n'y en a aucun)
+     */
+    protected Piece lift(int[][] full, int[][] rest) {
+        int left = Integer.MAX_VALUE, top = Integer.MAX_VALUE, right = -1, bottom = -1;
+        for (int y = 0; y < full.length; y++) {
+            for (int x = 0; x < full[y].length; x++) {
+                if (full[y][x] == rest[y][x] || full[y][x] == 0) continue;
+                left = Math.min(left, x); right = Math.max(right, x);
+                top = Math.min(top, y); bottom = Math.max(bottom, y);
+            }
+        }
+        if (right < 0) return null;
+        int[][] grid = new int[bottom - top + 1][right - left + 1];
+        for (int y = top; y <= bottom; y++) {
+            for (int x = left; x <= right; x++) if (full[y][x] != rest[y][x]) grid[y - top][x - left] = full[y][x];
+        }
+        return new Piece(pixels(grid), left, top, right - left + 1, bottom - top + 1);
+    }
+
+    /** Le boss porte désormais le portrait {@code grid} (le même, un morceau en moins) jusqu'à la fin de la scène. */
+    protected void wear(TextureRegion grid) { boss.setRegion(grid); }
+
+    /** Dessine le morceau {@code piece} encore à sa place sur le portrait. */
+    protected void attached(Batch batch, Piece piece, float alpha) {
+        if (piece != null) onPortrait(batch, piece.region, piece.left, piece.top, 1f, alpha);
+    }
+
+    /** @return le centre à l'écran du morceau {@code piece} quand il est à sa place (abscisse, puis ordonnée). */
+    protected float pieceX(Piece piece) { return portraitX(piece.left + piece.width / 2f); }
+    protected float pieceY(Piece piece) { return portraitY(piece.top + piece.height / 2f); }
 
     /** @return l'abscisse à l'écran du pixel {@code px} du portrait (avec son geste et son étirement). */
     protected float portraitX(float px) {
