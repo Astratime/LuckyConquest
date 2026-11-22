@@ -15,8 +15,9 @@ import static fr.astratime.lucky.assets.Palette.hex;
  * Avant le Général Va-Tout (La Guerre des Tables) : le champ de bataille de feutre à l'aube,
  * les canons tirent des jetons d'un camp à l'autre. Ses quatre soldats (le Sergent, le Canonnier,
  * l'Espionne, le Mercenaire) entrent au pas de chaque côté, au son du tambour, et se mettent en
- * ligne. Le Général se lève derrière eux, sous un éclat d'or ; il pousse deux grosses piles de
- * jetons au milieu de la table : il fait Va-tout. On s'approche de son regard d'or. Fondu noir.
+ * ligne. Le Général se lève derrière eux, sous un éclat d'or ; les deux piles de jetons qu'il tient
+ * quittent ses mains et glissent au milieu de la table : il fait Va-tout. On s'approche de son regard
+ * d'or. Fondu noir.
  */
 public class GeneralCutscene extends Cutscene {
 
@@ -41,14 +42,19 @@ public class GeneralCutscene extends Cutscene {
 
     /** Ses quatre soldats, dans l'ordre où ils se placent (de gauche à droite). */
     private static final EnemyKind[] TROOPS = {EnemyKind.SERGENT, EnemyKind.CANONNIER, EnemyKind.ESPIONNE, EnemyKind.MERCENAIRE};
-    /** Les yeux sur le portrait (34 x 42), depuis le milieu et depuis le bas. */
-    private static final float[] EYES_X = {-3.5f, 3.5f};
-    private static final float EYES_Y = 26.5f;
+    /** Le centre de ses pupilles d'or sur le portrait (34 x 42 ; pixels 13-14 et 20-21, lignes 15-16), depuis le milieu et depuis le bas. */
+    private static final float[] EYES_X = {-3f, 4f};
+    private static final float EYES_Y = 26f;
 
     private static final Color GOLD = hex("ffc93a"), FIRE = hex("ff8a1e"), SMOKE = hex("7a6e66");
     private static final Color[] CHIPS = {hex("d8283c"), hex("2a5ad8"), hex("1f9a4a"), hex("ffd54a")};
 
+    /** Ses piles de jetons sur son portrait : colonnes 0 à 4 et 29 à 33, lignes 32 à 41 (ce sont elles qu'il pousse). */
+    private static final int FULL_W = 34, FULL_H = 42, PILE_COLS = 5, PILE_TOP = 32, PILE_ROWS = 10;
+
     private final TextureRegion field, general, chip;
+    /** Son portrait sans ses piles : le milieu, le haut des côtés, l'habit juste au-dessus des piles ; et les piles. */
+    private final TextureRegion body, leftSide, rightSide, leftEdge, rightEdge, leftPile, rightPile;
     private final TextureRegion[] troops = new TextureRegion[TROOPS.length];
     private final Array<Particle> smoke = new Array<>(false, 256);
     private final Array<Particle> sparks = new Array<>(false, 256);
@@ -60,6 +66,13 @@ public class GeneralCutscene extends Cutscene {
         field = kit.chapterArt(Chapter.GUERRE_DES_TABLES);
         general = kit.portrait(EnemyKind.GENERAL);
         for (int i = 0; i < TROOPS.length; i++) troops[i] = kit.portrait(TROOPS[i]);
+        body = new TextureRegion(general, PILE_COLS, 0, FULL_W - 2 * PILE_COLS, FULL_H);
+        leftSide = new TextureRegion(general, 0, 0, PILE_COLS, PILE_TOP - 1);
+        rightSide = new TextureRegion(general, FULL_W - PILE_COLS, 0, PILE_COLS, PILE_TOP - 1);
+        leftEdge = new TextureRegion(general, 3, PILE_TOP - 1, 2, 1);
+        rightEdge = new TextureRegion(general, FULL_W - PILE_COLS, PILE_TOP - 1, 3, 1);
+        leftPile = new TextureRegion(general, 0, PILE_TOP, PILE_COLS, PILE_ROWS);
+        rightPile = new TextureRegion(general, FULL_W - PILE_COLS, PILE_TOP, PILE_COLS, PILE_ROWS);
         chip = art("orw", new Color[] {hex("1a0f0f"), Color.WHITE, hex("ffffff")},
             "..ooooo..",
             ".orrrrro.",
@@ -147,7 +160,16 @@ public class GeneralCutscene extends Cutscene {
             float scale = generalScale();
             float baseY = generalBaseY() - (1f - rise) * 42f * scale * 0.6f;
             glow(batch, width / 2f, baseY + 24f * scale, 34f * scale, GOLD, 0.35f * rise);
-            portrait(batch, general, width / 2f, baseY, scale, 0.85f * (1f - progress(RISE, RISE_END)), Math.min(1f, rise * 2f));
+            float shadow = 0.85f * (1f - progress(RISE, RISE_END)), alpha = Math.min(1f, rise * 2f);
+            if (time < PUSH) {
+                portrait(batch, general, width / 2f, baseY, scale, shadow, alpha);
+            } else {                                                          // ses piles ont quitté ses mains
+                portrait(batch, body, width / 2f, baseY, scale, shadow, alpha);
+                piece(batch, leftSide, 0, 0, baseY, scale);
+                piece(batch, rightSide, FULL_W - PILE_COLS, 0, baseY, scale);
+                piece(batch, leftEdge, 3, PILE_TOP - 1, baseY, scale);
+                piece(batch, rightEdge, FULL_W - PILE_COLS, PILE_TOP - 1, baseY, scale);
+            }
             if (time >= STARE) {                                              // son regard d'or
                 float stare = progress(STARE, STARE + 0.3f);
                 for (float eye : EYES_X) glow(batch, width / 2f + eye * scale, baseY + EYES_Y * scale, 5f * scale, GOLD, 0.9f * stare);
@@ -170,25 +192,33 @@ public class GeneralCutscene extends Cutscene {
             }
         }
 
-        // Va-tout : ses deux piles de jetons glissent au milieu de la table.
-        if (time >= PUSH - 0.3f && time < STARE + 0.4f) {
+        // Va-tout : les deux piles qu'il tenait glissent de ses mains au milieu de la table.
+        if (time >= PUSH && time < STARE + 0.4f) {
             float push = Interpolation.pow2In.apply(progress(PUSH, ALL_IN));
-            float appear = progress(PUSH - 0.3f, PUSH);
             float leave = progress(STARE - 0.2f, STARE + 0.4f);
-            float chipScale = height / 120f;
+            float scale = generalScale(), baseY = generalBaseY();
+            float handY = baseY + (FULL_H - PILE_TOP - PILE_ROWS) * scale;
+            float y = MathUtils.lerp(handY, pileY(), push);
             for (int side = -1; side <= 1; side += 2) {
-                float x = width / 2f + side * MathUtils.lerp(width * 0.32f, width * 0.05f, push);
-                for (int k = 0; k < 9; k++) {
-                    batch.setColor(CHIPS[(k + (side > 0 ? 2 : 0)) % CHIPS.length].r, CHIPS[(k + (side > 0 ? 2 : 0)) % CHIPS.length].g,
-                        CHIPS[(k + (side > 0 ? 2 : 0)) % CHIPS.length].b, appear * (1f - leave));
-                    sprite(batch, chip, x, pileY() + k * 4f * chipScale, chipScale * 1.6f, 0f);
-                }
+                float hand = width / 2f + side * (FULL_W - PILE_COLS) / 2f * scale;
+                float x = MathUtils.lerp(hand, width / 2f + side * PILE_COLS * 0.55f * scale, push);
+                batch.setColor(1f, 1f, 1f, 1f - leave);
+                float w = PILE_COLS * scale, h = PILE_ROWS * scale;
+                batch.draw(side < 0 ? leftPile : rightPile, x - w / 2f, y, w, h);
             }
-            if (time >= ALL_IN) glow(batch, width / 2f, pileY() + 20f * chipScale, 260f, GOLD, 0.6f * (1f - progress(ALL_IN, STARE)));
+            if (time >= ALL_IN) glow(batch, width / 2f, pileY() + PILE_ROWS / 2f * scale, 260f, GOLD, 0.6f * (1f - progress(ALL_IN, STARE)));
         }
         drawParticles(batch, sparks);
         flash(batch, GOLD, ALL_IN, 0.3f, 0.45f);
         fadeFromBlack(batch, 0.5f);
+    }
+
+    /** Un morceau de son portrait, son coin haut-gauche au pixel ({@code left}, {@code top}), en place sur lui. */
+    private void piece(Batch batch, TextureRegion region, float left, float top, float baseY, float scale) {
+        float shadow = 0.85f * (1f - progress(RISE, RISE_END)), light = 1f - shadow;
+        batch.setColor(light, light, light, 1f);
+        float w = region.getRegionWidth() * scale, h = region.getRegionHeight() * scale;
+        batch.draw(region, worldWidth() / 2f + (left - FULL_W / 2f) * scale, baseY + (FULL_H - top) * scale - h, w, h);
     }
 
     /** @return où tombe le jeton tiré {@code i} (fractions de l'écran, en quinconce). */
