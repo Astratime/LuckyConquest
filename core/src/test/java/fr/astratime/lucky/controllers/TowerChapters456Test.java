@@ -52,7 +52,7 @@ class TowerChapters456Test {
         Chapter[] chapters = {Chapter.MONDE_SANS_MAITRE, Chapter.LA_MAISON, Chapter.LE_JACKPOT};
         for (int i = 0; i < chapters.length; i++) {
             Chapter chapter = chapters[i];
-            if (i > 0) assertTrue(chapter.getNumber() > chapters[i - 1].getNumber()); // des chapitres s'insèrent entre eux
+            assertEquals(chapter.getPrevious().getNumber() + 1, chapter.getNumber()); // numéros suivis (Tour à 10 chapitres)
             int power = (4 + i) * 100;
             assertEquals(hp[i][0], chapter.getFirstEnemy().getMaxHp(Difficulty.NORMAL), chapter.name());
             assertEquals(hp[i][2], chapter.getBoss().getMaxHp(Difficulty.NORMAL), chapter.name());

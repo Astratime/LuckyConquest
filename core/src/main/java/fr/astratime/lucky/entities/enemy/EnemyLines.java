@@ -38,10 +38,19 @@ public final class EnemyLines {
             "Tu triches mieux que moi ? Impossible.",
             "À genoux devant la Reine. C'est l'usage.",
             "Assez joué. Mise royale : tout compte double !");
+        say(EnemyKind.PROPHETE, "Un Bingo ? La comète t'a souri. Elle me sourira aussi.",
+            "Mes pèlerins ont vu ta chance. Ils la veulent.",
+            "Agenouille-toi. La lumière arrive.",
+            "La comète reviendra ! Regardez le ciel !");
         say(EnemyKind.ECLAT, "Ce hasard-là m'appartient. Rends-le !",
             "Trois pareils... Le hasard t'aime bien.",
             "Le hasard a choisi. Ce n'est pas toi.",
             "Tu m'as fêlé. Changeons de jeu.");
+        say(EnemyKind.COLLECTIONNEUR, "Un Bingo ! Je l'étiquette et je le range.",
+            "Joli tirage. Il manquait à ma collection.",
+            "Te voilà presque prêt pour ma vitrine.",
+            "Une pièce rare ! L'éclat de la Valse, rien que pour toi.",
+            "Dernière pièce : le Scellé. Collection complète !");
         say(EnemyKind.PRETENDANT, "Cette chance sera bientôt la mienne.",
             "Tu brilles... Je prendrai ça aussi.",
             "Incline-toi devant ton nouveau maître.",

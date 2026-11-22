@@ -440,6 +440,7 @@ final class CombatEffectRows {
         if (lasting.getVertigos() > 0) {
             rows.add(curse(skull, Lang.f("Vertige : -{0}", lasting.getVertigos()), EnemySymbol.VERTIGO, foe));
         }
+        if (lasting.getSeals() > 0) rows.add(curse(skull, Lang.f("Scellé -{0}", lasting.getSeals()), EnemySymbol.SEAL, foe));
         if (lasting.getRockfalls() > 0) {
             rows.add(curse(skull, Lang.f("Éboulement : -{0}", lasting.getRockfalls()), EnemySymbol.ROCKFALL, foe));
         }

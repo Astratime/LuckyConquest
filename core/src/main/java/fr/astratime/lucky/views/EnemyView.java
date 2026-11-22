@@ -277,6 +277,13 @@ public class EnemyView implements Disposable {
             if (shards >= 3) powers += Lang.t(", Éclat : Rouleau interdit");
             line(text, Lang.f("Éclats : {0}/3 ({1})", shards, powers));
         }
+        if (kind == EnemyKind.COLLECTIONNEUR) {
+            String powers = Lang.t("Héritage");
+            if (current.getPhase() >= 2) powers += ", " + Lang.t("Valse");
+            if (current.getPhase() >= 3) powers += ", " + Lang.t("Scellé");
+            line(text, Lang.f("Éclats sortis de sa vitrine : {0}/3 ({1})", current.getPhase(), powers));
+        }
+        if (current.getShards() > 0) line(text, Lang.f("Éclats ramassés : {0}/{1}", current.getShards(), EnemySymbol.SHARD_MAX));
         if (kind == EnemyKind.MAISON) {
             String standing = (current.getPhase() <= 1 ? Lang.t("Façade") + ", " : "")
                 + (current.getPhase() <= 2 ? Lang.t("Coffre") + ", " : "") + Lang.t("Salle de jeu");

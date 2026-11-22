@@ -26,8 +26,12 @@ public final class Notebook {
             + "j'ai choisi la plus simple : le plus chanceux gagne.");
         page(EnemyKind.REINE, "La Reine a cru que ses tables lui appartenaient. Aucune table n'appartient à "
             + "celui qui s'y assoit. Elles appartiennent à celui qui distribue.");
+        page(EnemyKind.PROPHETE, "Le Prophète a vu ma comète tomber, un soir, et il a cru qu'elle reviendrait pour lui. "
+            + "Il a mis des foules sur la route. Une comète ne revient pour personne.");
         page(EnemyKind.ECLAT, "L'Éclat était un morceau de ma comète. Il voulait décider du prochain tirage. "
             + "Il n'a jamais compris que le tirage était déjà décidé.");
+        page(EnemyKind.COLLECTIONNEUR, "Quand l'Éclat s'est brisé, ses morceaux sont tombés partout. Un homme les a "
+            + "tous ramassés, un par un, et rangés dans sa vitrine. Il n'a jamais joué avec. Moi, je ne range rien.");
         page(EnemyKind.PRETENDANT, "Sans maître, ils se sont tous battus pour le trône. Je les ai regardés faire. "
             + "Un trône vide, c'est la meilleure des mises.");
         page(EnemyKind.MAISON, "La Maison gagne toujours, disent-ils. Ils oublient de demander qui a bâti la Maison.");
