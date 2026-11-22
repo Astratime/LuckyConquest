@@ -4245,6 +4245,232 @@ def death_coeur_montagne():
     return track.buf
 
 
+# ===========================================================================
+# Histoire, nouveaux chapitres : phases et morts des boss (PilgrimScenes, ShardsBossScenes, AscensionBossScenes,
+# WarBossScenes, 2026-11-22)
+# Les instants reprennent les constantes des scènes : si une scène change de rythme, mettre à jour ici.
+# ===========================================================================
+
+def lantern_out():
+    """Une lanterne qu'on souffle : un petit « pff » feutré."""
+    return lp(noise(0.18), 900) * expdec(0.18, 0.05, attack=0.01)
+
+
+def comet_fall(d):
+    """Une comète qui file : un souffle qui siffle en descendant, semé d'étincelles."""
+    return mix((whoosh(d, 2400, 300, q=1.1), 0, 0.8), (osc(sweep(1800, 500, d), d, 'sine') * adsr(d, 0.2, 0.1, 0.6, 0.2), 0, 0.25),
+               (sparkle(d, count=int(d * 12)), 0, 0.3))
+
+
+def paper_tear(d=0.35):
+    """Du papier qui se déchire : un crissement grainé."""
+    grains = bp(noise(d), 2000, 7000) * (np.random.rand(n(d)) > 0.6)
+    return grains * adsr(d, 0.02, 0.05, 0.8, 0.1)
+
+
+def echo(sound, delays, decay=0.55):
+    """Le son, puis ses échos qui reviennent de plus en plus faibles."""
+    parts = [(sound, 0.0, 1.0)]
+    parts += [(lp(sound, 3000 - 600 * i), at, decay ** (i + 1)) for i, at in enumerate(delays)]
+    return mix(*parts)
+
+
+def bugle(notes, step=0.22, last=0.6, gain=1.0):
+    """Un clairon : des notes de cuivre, la dernière tenue."""
+    track = Track()
+    for i, note in enumerate(notes):
+        d = last if i == len(notes) - 1 else step * 0.9
+        track.add(brass(hz(note), d, vib=0.01), i * step, gain)
+    return track.buf
+
+
+@sound('cutscene/phase2_prophete', -17)
+def phase2_prophete():
+    """Le Prophète, phase 2 (ProphetPhase) : son appel, un fil d'or qui monte vers la comète (0,35 s) ; elle flamboie,
+    quitte le ciel (1,1 s), plonge sur sa main (1,1 à 2,2 s) et éclate (2,2 s) ; les lanternes flambent."""
+    track = Track(5.8)
+    track.add(ambience(4.8, 150, 700, 0.25), 0.0, 1.0)
+    track.add(drone(['D2', 'A2'], 4.6), 0.0, 0.25)
+    track.add(golden_thread(1.0, 1480), 0.35, 0.5)
+    track.add(swell(0.6, 600, 3000), 0.55, 0.25)
+    track.add(mix((sparkle(0.4), 0, 0.6), (bell_toll(hz('A4'), 1.2), 0, 0.3)), 1.1, 0.5)
+    track.add(comet_fall(1.1), 1.1, 0.7)
+    track.add(mix((boom(1.6, 55), 0, 1.0), (bell_toll(hz('D3'), 2.6), 0, 0.6), (sparkle(1.2, count=24), 0.02, 0.4),
+                  (fire_burst(1.0), 0.0, 0.3)), 2.2, 0.9)
+    track.add(brass_chord(['D3', 'F#3', 'A3', 'D4'], 1.8, 0.6), 2.25, 0.45)
+    return track.buf
+
+
+@sound('cutscene/death_prophete', -17)
+def death_prophete():
+    """Le Prophète meurt (ProphetDeath) : les lanternes s'éteignent une à une (0,25 à 1,13 s), son auréole monte et
+    rejoint la comète (0,8 à 1,8 s) ; il s'élève (1,0 à 2,5 s) et s'y fond (2,5 s) ; la comète file au loin (2,7 à
+    4,4 s), les lanternes se rallument (3,0 à 3,8 s)."""
+    track = Track(6.6)
+    track.add(ambience(5.8, 150, 700, 0.2), 0.0, 1.0)
+    for k in range(9):
+        track.add(lantern_out(), 0.25 + k * 0.11, 0.35)
+    track.add(golden_thread(1.0, 1760), 0.8, 0.35)
+    track.add(mix((bell_toll(hz('A4'), 1.2), 0, 0.5), (sparkle(0.4), 0, 0.4)), 1.8, 0.4)
+    track.add(fade(osc(sweep(220, 880, 1.5), 1.5, 'sine') * 0.5 + osc(sweep(330, 1320, 1.5), 1.5, 'sine') * 0.3, 0.0, 1.0), 1.0, 0.35)
+    track.add(mix((bell_toll(hz('D3'), 3.0), 0, 0.8), (modal(hz('A5'), 2.4, GLASS_RATIOS, [1.0, 0.6, 0.4, 0.3]), 0.02, 0.4),
+                  (sparkle(1.4, count=30), 0, 0.5), (boom(1.4, 70), 0, 0.5)), 2.5, 0.9)
+    track.add(brass_chord(['D3', 'A3', 'D4', 'F#4'], 2.4, 0.5), 2.6, 0.4)
+    track.add(whoosh(1.8, 500, 2600, q=1.0), 2.7, 0.45)
+    for k in range(9):
+        track.add(music_box(['D5', 'F#5', 'A5', 'D6', 'A5', 'F#5', 'D5', 'A5', 'D6'][k], 0.9), 3.0 + k * 0.1, 0.18)
+    return track.buf
+
+
+def collector_gem(index, track):
+    """Le début commun des phases du Collectionneur : l'éclat s'arrache de son serti (0,15 s), tournoie autour de la
+    scène (0,6 à 1,7 s), replonge dans son serti (1,7 à 2,2 s) et s'allume (2,2 s)."""
+    track.add(ambience(4.8, 200, 900, 0.22), 0.0, 1.0)
+    track.add(mix((glass_clink(2600 + 400 * index), 0, 0.8), (click(0.01, 3000, 9000), 0, 0.6)), 0.15, 0.6)
+    for k in range(4):
+        track.add(whoosh(0.35, 400, 2200, q=1.4), 0.6 + k * 0.28, 0.25)
+    track.add(sparkle(1.1, count=16), 0.6, 0.25)
+    track.add(whoosh(0.5, 2600, 500, q=1.2), 1.7, 0.4)
+    track.add(mix((modal(hz('E5'), 1.6, GLASS_RATIOS, [0.8, 0.5, 0.3, 0.2]), 0, 1.0),
+                  (modal(hz('B5'), 1.4, GLASS_RATIOS, [0.6, 0.4, 0.3, 0.2]), 0.03, 0.6), (boom(1.2, 70), 0, 0.7)), 2.2, 0.8)
+
+
+@sound('cutscene/phase2_collectionneur', -17)
+def phase2_collectionneur():
+    """Le Collectionneur, phase 2 (CollectorPhase) : l'éclat rose fait son tour et revient (0,15 à 2,2 s) ; la Valse
+    sort de lui en tournant : trois mesures de valse de boîte à musique (2,3 s)."""
+    track = Track(5.8)
+    collector_gem(1, track)
+    waltz(2.3, 4, track, gain=0.4)
+    return track.buf
+
+
+@sound('cutscene/phase3_collectionneur', -17)
+def phase3_collectionneur():
+    """Le Collectionneur, phase 3 (CollectorPhase) : l'éclat vert fait son tour et revient (0,15 à 2,2 s) ; le Scellé
+    tombe comme un tampon de cire (2,95 s)."""
+    track = Track(5.8)
+    collector_gem(2, track)
+    track.add(whoosh(0.3, 300, 1200, q=1.0), 2.65, 0.3)
+    track.add(mix((thump(160, 60, 0.3, 0.06), 0, 1.0), (wood_knock(240), 0, 0.6), (click(0.02, 400, 2500), 0, 0.6)), 2.95, 0.9)
+    track.add(reverb(bell_toll(hz('E3'), 1.6), wet=0.3, size=1.2), 3.0, 0.3)
+    return track.buf
+
+
+@sound('cutscene/death_collectionneur', -17)
+def death_collectionneur():
+    """Le Collectionneur meurt (CollectorDeath) : la vitre derrière lui se fêle (0,8 à 2,5 s), éclate (2,5 s) ; ses
+    trois éclats s'envolent (2,7 s), il pâlit et s'efface."""
+    track = Track(6.6)
+    track.add(ambience(5.8, 200, 900, 0.2), 0.0, 1.0)
+    for k in range(9):
+        track.add(ice_crack(0.25), 0.8 + k * 0.19 + rand(0, 0.05), 0.25 + 0.04 * k)
+    track.add(mix((ice_shatter(), 0, 1.0), (boom(1.4, 60), 0, 0.6)), 2.5, 0.9)
+    for k in range(3):
+        track.add(modal(hz(['C6', 'E6', 'G6'][k]), 1.4, GLASS_RATIOS, [0.7, 0.4, 0.3, 0.2]), 2.7 + k * 0.08, 0.3)
+    track.add(sparkle(1.6, count=20), 2.7, 0.3)
+    return track.buf
+
+
+@sound('cutscene/phase2_architecte', -17)
+def phase2_architecte():
+    """L'Architecte, phase 2 (ArchitectScaffold) : les échafaudages montent le long de sa Tour, un étage à la fois
+    (posés à 0,52 / 0,79 / 1,06 / 1,33 / 1,6 s) ; sa voix revient en écho (2,2 s, puis ses échos 2,2 et 2,5 s)."""
+    track = Track(5.8)
+    track.add(ambience(4.8, 120, 700, 0.22), 0.0, 1.0)
+    for k in range(5):
+        at = 0.52 + k * 0.27
+        track.add(fade(lp(noise(0.25), 1200), 0.2, 1.0), at - 0.25, 0.25)                 # l'étage qui monte
+        track.add(mix((wood_knock(rand(170, 230)), 0, 1.0), (wood_knock(rand(260, 320)), 0.06, 0.6)), at, 0.6)
+    call = mix((modal(hz('G4'), 1.0, GLASS_RATIOS, [0.6, 0.4, 0.3, 0.2]), 0, 1.0), (bell_toll(hz('G3'), 1.2), 0, 0.5))
+    track.add(echo(call, [0.3, 0.6, 0.9]), 2.2, 0.7)
+    track.add(boom(1.2, 70), 2.2, 0.6)
+    track.add(brass_chord(['G2', 'D3', 'G3', 'B3'], 1.6, 0.5), 2.25, 0.35)
+    return track.buf
+
+
+@sound('cutscene/phase3_architecte', -17)
+def phase3_architecte():
+    """L'Architecte, phase 3 (ArchitectKeystone) : les pierres de l'arche se posent (0,3 à 0,96 s), la clé de voûte
+    d'or (1,15 s) ; sa Tour prend son élan en grinçant (1,25 à 1,75 s), s'abat (2,2 s) et vacille, Vertige."""
+    track = Track(5.8)
+    track.add(ambience(4.8, 120, 700, 0.22), 0.0, 1.0)
+    for at in (0.3, 0.4, 0.52, 0.62, 0.74, 0.84):
+        track.add(mix((thump(150, 70, 0.15, 0.04), 0, 1.0), (click(0.02, 500, 2500), 0, 0.4)), at, 0.45)
+    track.add(mix((metal_hit(2100, 1.0), 0, 0.6), (thump(200, 90, 0.2, 0.05), 0, 0.8), (sparkle(0.6), 0, 0.3)), 1.15, 0.6)
+    track.add(creak(0.55, 120), 1.25, 0.5)
+    track.add(whoosh(0.45, 120, 900, q=0.8), 1.75, 0.7)
+    track.add(mix((impact(0.9, 90, 30), 0, 1.0), (boom(1.8, 45), 0, 0.9), (rock_fall(0.9, 12), 0.05, 0.5)), 2.2, 0.95)
+    wobble = osc(440 * (1 + 0.06 * np.sin(np.linspace(0, 2 * np.pi * 5, n(1.6)))), 1.6, 'sine')
+    track.add(fade(wobble, 0.5, 0.0), 2.4, 0.25)
+    return track.buf
+
+
+@sound('cutscene/death_architecte', -17)
+def death_architecte():
+    """L'Architecte meurt (ArchitectDeath) : sa Tour tremble et se fend (0,35 à 1,35 s), son plan s'envole (0,8 s) ;
+    elle s'écroule pierre après pierre (1,35 à 2,5 s), fracas (2,5 s) ; le plan se déchire, la poussière retombe."""
+    track = Track(6.6)
+    track.add(ambience(5.8, 120, 700, 0.2), 0.0, 1.0)
+    track.add(fade(lp(noise(1.0), 160), 0.2, 1.0), 0.35, 0.6)                            # le grondement de la Tour
+    for k in range(6):
+        track.add(crack(0.08, 0.02, 400, 5000), 0.4 + k * 0.17 + rand(0, 0.04), 0.3 + 0.05 * k)
+    track.add(creak(0.8, 90), 0.6, 0.4)
+    track.add(whoosh(0.5, 300, 1200, q=1.0), 0.8, 0.25)
+    track.add(mix((stone_slide(1.0), 0, 0.8), (rock_fall(1.2, 22), 0.1, 0.9)), 1.35, 0.8)
+    track.add(mix((boom(2.2, 40), 0, 1.0), (crack_hit(), 0, 0.8), (rock_fall(1.4, 26), 0, 0.8), (impact(0.8, 80, 30), 0, 0.8)), 2.5, 0.95)
+    track.add(paper_tear(0.4), 2.55, 0.35)
+    track.add(fade(bp(noise(2.0), 300, 2500), 0.6, 0.0), 2.8, 0.3)                       # la poussière qui retombe
+    return track.buf
+
+
+@sound('cutscene/phase2_general', -17)
+def phase2_general():
+    """Le Général, phase 2 (GeneralLieutenants) : un coup de clairon (0,3 s), l'Espionne glisse depuis la gauche et le
+    Mercenaire depuis la droite (0,4 à 1,8 s) ; ils se postent à ses côtés, leurs symboles s'allument (2,2 s)."""
+    track = Track(5.8)
+    track.add(ambience(4.8, 100, 600, 0.22), 0.0, 1.0)
+    track.add(bugle(['G4', 'C5', 'E5', 'G5'], step=0.14, last=0.5), 0.0, 0.5)
+    track.add(footsteps(1.1, 7, 300, 1200), 0.4, 0.35)
+    track.add(footsteps(1.1, 5, 150, 700), 0.7, 0.45)
+    track.add(mix((card_flick(), 0, 0.6), (coin(1800, 0.4), 0.05, 0.4)), 1.55, 0.6)
+    track.add(mix((boom(1.2, 65), 0, 1.0), (chips_clatter(7, 0.4), 0, 0.5)), 2.2, 0.8)
+    track.add(brass_chord(['C3', 'E3', 'G3', 'C4'], 1.6, 0.6), 2.25, 0.45)
+    return track.buf
+
+
+@sound('cutscene/phase3_general', -17)
+def phase3_general():
+    """Le Général, phase 3 (GeneralAllOut) : il jette son bouclier (0,45 s), qui se brise au sol (1,15 s) ; ses piles
+    de jetons glissent au milieu (1,4 à 2,2 s) : Va-tout (2,2 s)."""
+    track = Track(5.8)
+    track.add(ambience(4.8, 100, 600, 0.22), 0.0, 1.0)
+    track.add(whoosh(0.7, 300, 1600, q=1.0), 0.45, 0.5)
+    track.add(mix((metal_hit(900, 0.8), 0, 0.8), (crack(0.06, 0.007, 600, 10000), 0, 1.0), (thump(180, 70, 0.2, 0.05), 0, 0.7)), 1.15, 0.8)
+    track.add(fade(bp(noise(0.8), 1500, 5000), 0.2, 1.0), 1.4, 0.3)                      # les piles qui glissent
+    track.add(chips_clatter(9, 0.5), 2.05, 0.6)
+    track.add(mix((boom(1.6, 50), 0, 1.0), (impact(0.6, 120, 40), 0, 0.7)), 2.2, 0.9)
+    track.add(brass_chord(['C3', 'D#3', 'G3', 'C4'], 1.8, 0.7), 2.25, 0.5)
+    return track.buf
+
+
+@sound('cutscene/death_general', -17)
+def death_general():
+    """Le Général meurt (GeneralDeath) : ses piles de jetons glissent et roulent (0,5 s), son bicorne s'envole (0,8 s) ;
+    il hisse le drapeau blanc (1,1 à 2,5 s), qui claque au vent (2,5 s) ; un clairon triste, il s'affaisse (3,0 s)."""
+    track = Track(6.6)
+    track.add(ambience(5.8, 100, 600, 0.2), 0.0, 1.0)
+    track.add(chips_clatter(14, 0.9), 0.5, 0.7)
+    track.add(wing_flap(), 0.8, 0.5)
+    for k in range(6):
+        track.add(ratchet(rand(1400, 1700)), 1.15 + k * 0.2, 0.18)                       # la hampe qui monte
+    track.add(mix((whip_crack(), 0, 0.7), (wing_flap(), 0.05, 0.8)), 2.4, 0.8)
+    for k in range(3):
+        track.add(wing_flap(), 2.9 + k * 0.45, 0.3)
+    track.add(bugle(['G4', 'E4', 'C4'], step=0.4, last=1.4, gain=0.8), 3.0, 0.4)
+    return track.buf
+
+
 def main(prefixes):
     done = 0
     for name, level, fmt, trim, loop, fn in SOUNDS:
