@@ -28,7 +28,7 @@ gros coup, les Bingos et les cartes jouées.
 
 ### Les modes
 - **Entraînement** : un combat contre le Croupier, pour s'exercer. Il ne rapporte rien.
-- **Histoire** : six chapitres de combats et leurs boss, avec leurs
+- **Histoire** : dix chapitres de combats et leurs boss, avec leurs
   cinématiques, puis un mode difficile. Elle ne rapporte pas de pièces.
 - **Exploration** : quatre lieux (la Prairie, le Port des Contrebandiers, les Mines d'Or, le Casino
   Englouti), chacun avec quatre donjons, leurs rois, leurs coffres et une règle propre au lieu.

@@ -532,7 +532,7 @@ public class MenuScreen extends ScreenAdapter {
         }));
         String[] lines = {
             Lang.t("Entraînement : un combat contre moi, pour t'exercer. Il ne rapporte rien."),
-            Lang.t("Histoire : six chapitres de combats, jusqu'au bout du chemin. Elle ne rapporte pas de pièces."),
+            Lang.t("Histoire : dix chapitres de combats, jusqu'au bout du chemin. Elle ne rapporte pas de pièces."),
             Lang.t("Exploration : des donjons, leurs rois et leurs coffres. Les seuls combats qui rapportent des "
                 + "pièces."),
             Lang.t("Table du croupier : ton deck de 20 cartes et les 11 rouleaux de ta machine."),
