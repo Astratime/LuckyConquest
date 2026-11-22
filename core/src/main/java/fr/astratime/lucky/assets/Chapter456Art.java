@@ -311,17 +311,22 @@ final class Chapter456Art {
         g.line(15, 22, 19, 22, MOUTH);
         g.set(20, 21, MOUTH);
         // Couronne posée de travers, trop grande pour lui.
-        g.line(10, 9, 24, 6, GOLD);
-        g.line(10, 8, 24, 5, GOLD);
-        g.line(10, 10, 24, 7, GOLD_DARK);
-        g.triangle(10, 8, 13, 8, 10, 3, GOLD);
-        g.triangle(15, 7, 19, 6, 16, 1, GOLD);
-        g.triangle(21, 6, 24, 5, 24, 0, GOLD_DARK);
-        g.set(17, 7, RED);
+        if (StoryPortraits.has(StoryPortraits.Prop.PRETENDER_CROWN)) {
+            g.line(10, 9, 24, 6, GOLD);
+            g.line(10, 8, 24, 5, GOLD);
+            g.line(10, 10, 24, 7, GOLD_DARK);
+            g.triangle(10, 8, 13, 8, 10, 3, GOLD);
+            g.triangle(15, 7, 19, 6, 16, 1, GOLD);
+            g.triangle(21, 6, 24, 5, 24, 0, GOLD_DARK);
+            g.set(17, 7, RED);
+        }
         // Trois éclats d'or : deux flottent de chaque côté, le troisième serti sur la poitrine.
         int[][] shards = {{4, 13}, {30, 15}, {17, 36}};
-        for (int[] s : shards) {
-            int x = s[0], y = s[1];
+        StoryPortraits.Prop[] kept = {StoryPortraits.Prop.PRETENDER_SHARD_LEFT, StoryPortraits.Prop.PRETENDER_SHARD_RIGHT,
+            StoryPortraits.Prop.PRETENDER_SHARD_CHEST};
+        for (int i = 0; i < shards.length; i++) {
+            if (!StoryPortraits.has(kept[i])) continue;
+            int x = shards[i][0], y = shards[i][1];
             g.set(x - 3, y, halo); g.set(x + 3, y, halo);
             g.set(x, y - 6, halo); g.set(x, y + 5, halo);
             g.triangle(x - 2, y, x + 2, y, x, y - 4, GOLD);
@@ -589,44 +594,61 @@ final class Chapter456Art {
         g.line(4, 24, 4, 30, STEEL);
         g.line(1, 30, 6, 30, GOLD);
         g.rect(3, 31, 4, 32, WOOD_DARK);
-        // Aile droite : le coffre, une porte ronde à molette.
+        // Aile droite : le coffre, une porte ronde à molette (sans elle : le trou noir du coffre vide).
         g.ellipse(29.5f, 28f, 3.5f, 3.5f, vaultDark);
-        g.ellipse(29.5f, 28f, 2.5f, 2.5f, vault);
-        g.line(28, 28, 31, 28, vaultDark);
-        g.line(29, 26, 30, 30, vaultDark);
-        g.set(29, 28, GOLD);
-        // Corps du manoir, ombré à droite.
-        g.rect(7, 13, 26, 38, wall);
-        g.rect(22, 13, 26, 38, wallDark);
-        g.line(7, 13, 7, 38, GOLD_LIGHT);
+        if (StoryPortraits.has(StoryPortraits.Prop.HOUSE_VAULT)) {
+            g.ellipse(29.5f, 28f, 2.5f, 2.5f, vault);
+            g.line(28, 28, 31, 28, vaultDark);
+            g.line(29, 26, 30, 30, vaultDark);
+            g.set(29, 28, GOLD);
+        } else {
+            g.ellipse(29.5f, 28f, 2.5f, 2.5f, slot);
+        }
+        // Corps du manoir, ombré à droite (sans sa façade : la salle de jeu, sombre, et son plancher).
+        boolean facade = StoryPortraits.has(StoryPortraits.Prop.HOUSE_FACADE);
+        if (facade) {
+            g.rect(7, 13, 26, 38, wall);
+            g.rect(22, 13, 26, 38, wallDark);
+            g.line(7, 13, 7, 38, GOLD_LIGHT);
+        } else {
+            g.rect(7, 13, 26, 38, rgba("3a1420"));
+            g.rect(7, 34, 26, 38, rgba("6a2a1a"));
+            g.line(7, 34, 26, 34, rgba("8a3a22"));
+            g.line(7, 13, 7, 38, wingDark);
+            g.line(26, 13, 26, 38, wingDark);
+        }
         // Fronton triangulaire et son blason (le bouclier).
         g.triangle(5, 13, 28, 13, 17, 2, wall);
         g.triangle(17, 2, 28, 13, 17, 13, wallDark);
         g.line(5, 13, 28, 13, roof);
-        g.rect(15, 5, 19, 9, shield);
-        g.triangle(15, 9, 19, 9, 17, 11, shield);
-        g.line(17, 5, 17, 10, GOLD);
-        g.line(15, 7, 19, 7, GOLD);
-        g.set(17, 0, GOLD); g.set(17, 1, GOLD);
-        // Deux fenêtres-cartes où roulent des yeux, sous des sourcils de corniche.
-        g.line(8, 15, 14, 17, roofDark);
-        g.line(25, 15, 19, 17, roofDark);
-        int[] eyes = {9, 19};
-        for (int x0 : eyes) {
-            g.rect(x0, 18, x0 + 5, 25, card);
-            g.rect(x0, 18, x0 + 5, 18, RED);
-            g.rect(x0, 25, x0 + 5, 25, RED);
-            g.ellipse(x0 + 2.5f, 21.5f, 2f, 2f, iris);
-            g.rect(x0 + 2, 21, x0 + 3, 22, slot);
-            g.set(x0 + 1, 20, rgba("ffffff"));
+        if (facade) {
+            g.rect(15, 5, 19, 9, shield);
+            g.triangle(15, 9, 19, 9, 17, 11, shield);
+            g.line(17, 5, 17, 10, GOLD);
+            g.line(15, 7, 19, 7, GOLD);
         }
-        // La porte : une fente de machine à sous dans un cadre doré.
-        g.rect(13, 28, 21, 38, GOLD_DARK);
-        g.ellipse(17f, 28f, 4f, 2f, GOLD_DARK);
-        g.rect(14, 28, 20, 38, GOLD);
-        g.rect(16, 29, 18, 37, slot);
-        g.set(16, 30, rgba("6a4a2a"));
-        g.rect(12, 38, 22, 39, wallDark);
+        g.set(17, 0, GOLD); g.set(17, 1, GOLD);
+        if (facade) {
+            // Deux fenêtres-cartes où roulent des yeux, sous des sourcils de corniche.
+            g.line(8, 15, 14, 17, roofDark);
+            g.line(25, 15, 19, 17, roofDark);
+            int[] eyes = {9, 19};
+            for (int x0 : eyes) {
+                g.rect(x0, 18, x0 + 5, 25, card);
+                g.rect(x0, 18, x0 + 5, 18, RED);
+                g.rect(x0, 25, x0 + 5, 25, RED);
+                g.ellipse(x0 + 2.5f, 21.5f, 2f, 2f, iris);
+                g.rect(x0 + 2, 21, x0 + 3, 22, slot);
+                g.set(x0 + 1, 20, rgba("ffffff"));
+            }
+            // La porte : une fente de machine à sous dans un cadre doré.
+            g.rect(13, 28, 21, 38, GOLD_DARK);
+            g.ellipse(17f, 28f, 4f, 2f, GOLD_DARK);
+            g.rect(14, 28, 20, 38, GOLD);
+            g.rect(16, 29, 18, 37, slot);
+            g.set(16, 30, rgba("6a4a2a"));
+            g.rect(12, 38, 22, 39, wallDark);
+        }
         // Nuages sous les fondations.
         g.ellipse(5f, 40f, 6f, 2.5f, cloud);
         g.ellipse(16f, 40.5f, 6f, 2f, cloud);
