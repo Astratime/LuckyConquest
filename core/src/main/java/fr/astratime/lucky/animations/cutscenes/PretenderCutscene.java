@@ -19,9 +19,8 @@ import static fr.astratime.lucky.assets.Palette.hex;
  * battent pour des éclats dorés. Une ombre traverse la foule : les flammes se
  * penchent sur son passage, les jetons au sol fondent. Elle ramasse trois
  * éclats, un, deux, trois, et les pose sur sa couronne, qui flotte au-dessus
- * d'elle : chacun s'allume de sa couleur (Comète, Reine, Éclat). Le Prétendant
- * est assis sur une pile de machines cassées, comme un trône ; la couronne se
- * pose sur sa tête. Il lève les yeux vers toi. Fondu noir.
+ * d'elle : chacun s'allume de sa couleur (Comète, Reine, Éclat). La couronne
+ * se pose sur la tête du Prétendant. Il lève les yeux vers toi. Fondu noir.
  *
  * <p>La couronne et les trois éclats sont les vrais morceaux de son portrait
  * ({@link StoryPortraits#without}) : on le montre tête nue, sans ses éclats, et
@@ -38,7 +37,7 @@ public class PretenderCutscene extends Cutscene {
     public static final float SHADOW_END   = 5.5f;
     /** Les trois éclats rejoignent l'ombre, un par un. */
     public static final float[] PICK       = {5.8f, 6.25f, 6.7f};
-    /** Le Prétendant apparaît, sur son trône de machines cassées. */
+    /** Le Prétendant apparaît. */
     public static final float REVEAL       = 7.2f;
     /** La couronne descend et se pose sur sa tête. */
     public static final float CROWN_DOWN   = 7.8f;
@@ -213,7 +212,6 @@ public class PretenderCutscene extends Cutscene {
                 progress(STARE, COVER_FULL)));
             float cx = width / 2f, shadow = 1f - 0.9f * light;
             glow(batch, cx, baseY + 30f * scale, 30f * scale, GOLD, 0.25f * light);
-            drawThrone(batch, cx, baseY, scale, 1f - 0.85f * light, appear);
             if (landed) {
                 // La couronne posée : il porte de nouveau son portrait entier, aux mêmes pixels.
                 portrait(batch, pretender, cx, baseY, scale, shadow, appear);
@@ -338,23 +336,6 @@ public class PretenderCutscene extends Cutscene {
         }
     }
 
-    /** Son trône : une pile de machines à sous cassées, sous lui et autour. */
-    private void drawThrone(Batch batch, float cx, float baseY, float scale, float shadow, float alpha) {
-        float light = 1f - shadow;
-        float[][] boxes = {{-14f, -8f, 14f, 12f, -8f}, {13f, -9f, 15f, 13f, 6f}, {-4f, -14f, 16f, 12f, 2f},
-            {-20f, 2f, 11f, 10f, -15f}, {19f, 1f, 11f, 10f, 12f}, {-10f, -24f, 18f, 12f, -3f}, {9f, -23f, 18f, 12f, 4f}};
-        for (float[] b : boxes) {
-            float w = b[2] * scale, h = b[3] * scale, x = cx + b[0] * scale - w / 2f, y = baseY + b[1] * scale;
-            float tint = 0.25f + 0.75f * light;
-            batch.setColor(0.08f, 0.04f, 0.05f, alpha);
-            batch.draw(pixel, x - scale, y - scale, w / 2f + scale, h / 2f + scale, w + 2f * scale, h + 2f * scale, 1f, 1f, b[4]);
-            batch.setColor(0.8f * tint, 0.62f * tint, 0.2f * tint, alpha);
-            batch.draw(pixel, x, y, w / 2f, h / 2f, w, h, 1f, 1f, b[4]);
-            batch.setColor(0.1f, 0.06f, 0.08f, alpha);                     // la vitre des rouleaux, brisée
-            batch.draw(pixel, x + w * 0.15f, y + h * 0.4f, w * 0.35f, h * 0.1f, w * 0.7f, h * 0.35f, 1f, 1f, b[4]);
-        }
-    }
-
     private void drawGem(Batch batch, float x, float y, Color color, float scale) {
         glow(batch, x, y, scale * 14f, color, 0.7f);
         batch.setColor(color);
@@ -367,7 +348,7 @@ public class PretenderCutscene extends Cutscene {
         return (1f - Interpolation.bounceOut.apply(progress(CROWN_DOWN, CROWN_LAND))) * 12f + bob;
     }
 
-    /** @return où l'éclat {@code i} rejoint sa place sur lui, assis sur son trône (avant qu'on s'approche). */
+    /** @return où l'éclat {@code i} rejoint sa place sur lui, (avant qu'on s'approche). */
     private float slotX(int i) { return pieceX(shards[i], worldWidth() / 2f, 10f); }
     private float slotY(int i) {
         return pieceY(shards[i], worldHeight() * 0.12f, 10f) + (RIDES_CROWN[i] ? hover() * 10f : 0f);
