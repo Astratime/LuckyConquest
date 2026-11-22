@@ -42,7 +42,7 @@ import java.util.List;
  * trois combats à la suite (voir {@link TowerRun}, {@link GameScreen}). Un
  * chapitre s'ouvre quand le précédent est terminé, dans le même mode ; les
  * autres sont grisés. Sous les chapitres, une fois le mode difficile ouvert, le
- * mode sans fin ({@link EndlessRun}) : ouvert après le chapitre 6 difficile. Échap
+ * mode sans fin ({@link EndlessRun}) : ouvert après le dernier chapitre difficile. Échap
  * ou « Retour » ramène au menu principal.
  */
 public class TowerScreen extends CasinoMenuScreen {
@@ -53,6 +53,9 @@ public class TowerScreen extends CasinoMenuScreen {
     private static final float LIST_WIDTH   = 420f;
     private static final float ROW_WIDTH    = 340f;
     private static final float ROW_HEIGHT   = 76f;
+    /** Hauteur des lignes quand la liste en a plus de {@link #ROOMY_ROWS} (10 chapitres, sans fin, Croupier). */
+    private static final float SMALL_ROW_HEIGHT = 50f;
+    private static final int   ROOMY_ROWS   = 8;
     private static final float ROW_GAP      = 18f;
     private static final float PANEL_PAD    = 40f;
     private static final float PANEL_TOP    = 210f;    // du haut de l'écran au haut des panneaux
@@ -64,7 +67,9 @@ public class TowerScreen extends CasinoMenuScreen {
     private final FirstVisitGuide firstVisit;
     private final EnemyTextures   enemyTextures;
     private final Texture         chipTexture = new Texture(Gdx.files.internal(CHIP_PATH));
-    private final BitmapFont      rowFont     = Fonts.jersey(50, Color.WHITE, 4f, Palette.TEXT_SHADE);
+    private final BitmapFont      rowFont;
+    /** Hauteur des lignes de la liste : plus basses quand il y en a beaucoup, pour tenir dans le panneau. */
+    private final float           rowHeight;
     private final BitmapFont      labelFont   = Fonts.jersey(36, Palette.CREAM, 3f, Palette.TEXT_SHADE);
     private final BitmapFont      chapterFont = Fonts.jersey(72, Palette.GOLD, 5f, Palette.TEXT_SHADE);
     private final BitmapFont      bodyFont    = Fonts.jersey(36, Color.WHITE, 2f, Palette.TEXT_SHADE);
@@ -130,12 +135,18 @@ public class TowerScreen extends CasinoMenuScreen {
         listPanel.setTouchable(Touchable.disabled);
         detailPanel.setTouchable(Touchable.disabled);
 
+        int rowCount = Chapter.values().length + (luckyGame.getProfile().isTowerHardOpen() ? 1 : 0)
+            + (luckyGame.getProfile().isTowerHardOpen() && luckyGame.getProfile().isCroupierOpen() ? 1 : 0);
+        boolean roomy = rowCount <= ROOMY_ROWS;
+        rowHeight = roomy ? ROW_HEIGHT : SMALL_ROW_HEIGHT;
+        rowFont   = roomy ? Fonts.jersey(50, Color.WHITE, 4f, Palette.TEXT_SHADE)
+                          : Fonts.jersey(38, Color.WHITE, 3f, Palette.TEXT_SHADE);
         Label.LabelStyle rowStyle = new Label.LabelStyle(rowFont, Color.WHITE);
         Chapter[] chapters = Chapter.values();
         for (int i = 0; i < chapters.length; i++) {
             int index = i;
             MenuOption row = new MenuOption(chapters[i].getLabel(), rowStyle, hud.insetDrawable(),
-                new TextureRegion(chipTexture), ROW_WIDTH, ROW_HEIGHT);
+                new TextureRegion(chipTexture), ROW_WIDTH, rowHeight);
             row.addListener(new ClickListener() {
                 @Override
                 public void enter(InputEvent event, float x, float y, int pointer, Actor fromActor) {
@@ -154,7 +165,7 @@ public class TowerScreen extends CasinoMenuScreen {
         // Le mode sans fin, sous les chapitres : la ligne n'apparaît qu'avec le mode difficile.
         if (luckyGame.getProfile().isTowerHardOpen()) {
             MenuOption row = new MenuOption(Lang.t("Sans fin"), rowStyle, hud.insetDrawable(),
-                new TextureRegion(chipTexture), ROW_WIDTH, ROW_HEIGHT);
+                new TextureRegion(chipTexture), ROW_WIDTH, rowHeight);
             row.addListener(new ClickListener() {
                 @Override
                 public void enter(InputEvent event, float x, float y, int pointer, Actor fromActor) {
@@ -173,7 +184,7 @@ public class TowerScreen extends CasinoMenuScreen {
         // Le Croupier, boss secret : sa ligne n'apparaît qu'une fois le Désert vidé et le chapitre 6 difficile fini.
         if (rows.size() == CROUPIER_ROW && luckyGame.getProfile().isCroupierOpen()) {
             MenuOption row = new MenuOption(Lang.t("Le Croupier"), rowStyle, hud.insetDrawable(),
-                new TextureRegion(chipTexture), ROW_WIDTH, ROW_HEIGHT);
+                new TextureRegion(chipTexture), ROW_WIDTH, rowHeight);
             row.addListener(new ClickListener() {
                 @Override
                 public void enter(InputEvent event, float x, float y, int pointer, Actor fromActor) {
@@ -278,7 +289,7 @@ public class TowerScreen extends CasinoMenuScreen {
             : hard
             ? Lang.f("{0}\n\nMode difficile : boss à {1} PV, ennemis force x{2}.",
                 chapter.getDescription(), Lang.big(EnemyKind.hardBossHp(chapter.getNumber())),
-                EnemyKind.hardPower(chapter.getNumber()) / 100)
+                chapter.hardPowerText())
             : chapter.getDescription());
         ((TextureRegionDrawable) art.getDrawable()).setRegion(new TextureRegion(enemyTextures.chapterArt(chapter)));
         art.setVisible(open);
@@ -294,13 +305,13 @@ public class TowerScreen extends CasinoMenuScreen {
         chapterLabel.setText(best > 0 ? Lang.f("MODE SANS FIN · RECORD : ÉTAGE {0}", best) : Lang.t("MODE SANS FIN"));
         chapterTitle.setText(Lang.t("L'Ascension sans fin"));
         description.setText(!open
-            ? Lang.t("Termine le chapitre 6 en mode difficile pour ouvrir le mode sans fin.")
-            : Lang.f("Des étages sans fin, plus forts que le chapitre 6 difficile. Choisis ton adversaire parmi trois "
+            ? Lang.f("Termine le chapitre {0} en mode difficile pour ouvrir le mode sans fin.", Chapter.last().getNumber())
+            : Lang.f("Des étages sans fin, plus forts que le dernier chapitre difficile. Choisis ton adversaire parmi trois "
                     + "cartes, un boss tous les {0} étages.\n\n"
                     + "Étage 1 : force x{1}, {2} PV (boss {3}), puis +{4} % par étage. PV et gains gardés, aucune pièce.",
                 EndlessRun.BOSS_EVERY, EnemyKind.endlessPower(1) / 100, Lang.big(EnemyKind.endlessHp(1, false)),
                 Lang.big(EnemyKind.endlessHp(1, true)), EnemyKind.ENDLESS_STEP_PERCENT));
-        ((TextureRegionDrawable) art.getDrawable()).setRegion(new TextureRegion(enemyTextures.chapterArt(Chapter.LE_JACKPOT)));
+        ((TextureRegionDrawable) art.getDrawable()).setRegion(new TextureRegion(enemyTextures.chapterArt(Chapter.last())));
         art.setVisible(open);
         lockMark.setVisible(!open);
         showStart(open);
@@ -324,7 +335,7 @@ public class TowerScreen extends CasinoMenuScreen {
     /** @return l'illustration de la ligne choisie : son chapitre, le sommet de la Tour, ou le Croupier. */
     private Texture artTexture() {
         if (selected == CROUPIER_ROW) return enemyTextures.portrait(EnemyKind.GRAND_CROUPIER);
-        return enemyTextures.chapterArt(selected == ENDLESS_ROW ? Chapter.LE_JACKPOT : Chapter.values()[Math.max(0, selected)]);
+        return enemyTextures.chapterArt(selected == ENDLESS_ROW ? Chapter.last() : Chapter.values()[Math.max(0, selected)]);
     }
 
     /** Bouton « Commencer » (ou « Verrouillé »), puis le panneau de droite en fondu. */
@@ -405,10 +416,10 @@ public class TowerScreen extends CasinoMenuScreen {
         listPanel.setBounds(MARGIN, panelBottom, LIST_WIDTH, panelHeight);
         float rowX = MARGIN + (LIST_WIDTH - ROW_WIDTH) / 2f;
         // Les lignes se resserrent un peu quand le Croupier s'ajoute, pour tenir dans le panneau.
-        float step = Math.max(ROW_HEIGHT + 4f, Math.min(ROW_HEIGHT + ROW_GAP, (panelHeight - 2f * PANEL_PAD) / rows.size()));
+        float step = Math.max(rowHeight + 4f, Math.min(rowHeight + ROW_GAP, (panelHeight - 2f * PANEL_PAD) / rows.size()));
         for (int i = 0; i < rows.size(); i++) {
             MenuOption row = rows.get(i);
-            row.setPosition(rowX, panelTop - PANEL_PAD - ROW_HEIGHT - i * step);
+            row.setPosition(rowX, panelTop - PANEL_PAD - rowHeight - i * step);
         }
 
         float detailX     = MARGIN + LIST_WIDTH + MARGIN / 2f;
