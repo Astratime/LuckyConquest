@@ -934,6 +934,73 @@ def dernier_tirage():
     return vignette(im, 0.45, 0.4)
 
 
+def eclats_disperses():
+    """Les Éclats dispersés : la plaine brûlée au pied du cratère, la nuit ; des éclats de toutes les couleurs
+    brillent dans l'herbe, des lanternes de ramasseurs au loin, et la vitrine ouverte du Collectionneur."""
+    rng = np.random.default_rng(57)
+    im, d = base((0, 0, 0))
+    gradient(d, (10, 10, 30), (68, 40, 78), 0, 150)
+    stars(d, rng, 70, 70)
+    fg, f = layer()
+    f.polygon([(0, 120), (110, 92), (150, 86), (210, 86), (250, 92), (360, 120), (360, 170), (0, 170)], fill=(28, 22, 40))
+    f.ellipse([150, 80, 210, 94], fill=(255, 176, 58))  # le cratère qui rougeoie encore
+    f.ellipse([166, 83, 194, 91], fill=(255, 246, 200))
+    for k in range(7):  # sa fumée lumineuse
+        r = 10 + k * 4
+        f.ellipse([180 + k * 3 - r, 70 - k * 9 - r / 2, 180 + k * 3 + r, 70 - k * 9 + r / 2], fill=(70, 50, 84))
+    f.polygon([(0, 140), (360, 140), (360, 170), (0, 170)], fill=(34, 28, 30))
+    colors = [(255, 213, 74), (224, 40, 58), (255, 246, 200), (90, 176, 255), (255, 106, 158), (94, 224, 138), (200, 160, 255)]
+    for k in range(18):  # les éclats dans l'herbe
+        x, y = int(rng.integers(10, 350)), int(rng.integers(122, 166))
+        c = colors[k % len(colors)]
+        f.polygon([(x - 3, y), (x, y - 6), (x + 3, y), (x, y + 3)], fill=c)
+        f.point([(x - 1, y - 2)], fill=(255, 255, 255))
+    for x in (70, 300):  # lanternes de ramasseurs
+        lantern(fg, x, 112)
+    for x0 in (14, 316):  # vitrines de verre ouvertes, une de chaque côté
+        f.rectangle([x0, 30, x0 + 30, 150], fill=(90, 66, 36))
+        f.rectangle([x0 + 3, 33, x0 + 27, 147], fill=(36, 50, 66))
+        for y in (62, 92, 122):
+            f.line([(x0 + 3, y), (x0 + 27, y)], fill=(138, 106, 58), width=2)
+            c = colors[(x0 + y) % len(colors)]
+            f.polygon([(x0 + 11, y - 2), (x0 + 15, y - 10), (x0 + 19, y - 2)], fill=c)
+    im = finish(im, fg)
+    d = ImageDraw.Draw(im)
+    d.rectangle([0, 165, W, H], fill=(30, 24, 30))
+    GLOWS['eclats_disperses'] = ((180, 88), (70, 112), (300, 112))
+
+
+def pelerins():
+    """Les Pèlerins de la Comète : la route de nuit vers le cratère, des lanternes de pèlerins, la comète au ciel."""
+    rng = np.random.default_rng(57)
+    im, d = base((0, 0, 0))
+    gradient(d, (12, 10, 32), (58, 36, 72), 0, 150)
+    stars(d, rng, 70, 80)
+    fg, f = layer()
+    f.line([(40, 20), (260, 46)], fill=(110, 96, 140), width=3)  # la queue de la comète
+    f.line([(120, 32), (262, 46)], fill=(255, 240, 200), width=1)
+    f.ellipse([258, 40, 270, 52], fill=(255, 214, 90))
+    f.ellipse([200, 96, 340, 136], fill=(110, 70, 26))  # la lueur du cratère à l'horizon
+    f.ellipse([240, 106, 300, 126], fill=(220, 160, 50))
+    f.polygon([(0, 112), (70, 100), (150, 110), (230, 116), (360, 104), (360, 170), (0, 170)], fill=(34, 26, 30))
+    f.polygon([(40, 170), (150, 130), (250, 118), (262, 118), (190, 140), (130, 170)], fill=(70, 56, 46))  # la route
+    for k in range(9):  # la file des pèlerins et leurs lanternes
+        u = k / 8
+        x = 70 + u * 180
+        y = 166 - u * 46
+        s = 14 - u * 10
+        f.rectangle([x - s * 0.3, y - s * 1.6, x + s * 0.3, y], fill=(200, 184, 144) if k % 3 else (90, 62, 42))
+        f.ellipse([x - s * 0.35, y - s * 2.1, x + s * 0.35, y - s * 1.5], fill=(240, 230, 204) if k % 3 else (58, 38, 24))
+        lantern(fg, int(x + s * 0.6), int(y - s * 1.1))
+    rocks(f, rng, 0, 140, 60, 168, [(54, 46, 50), (40, 34, 40)], 14, 10)
+    rocks(f, rng, 290, 130, 360, 168, [(54, 46, 50), (40, 34, 40)], 14, 10)
+    im = finish(im, fg)
+    d = ImageDraw.Draw(im)
+    d.rectangle([0, 166, W, H], fill=(36, 28, 30))
+    GLOWS['pelerins'] = ((264, 46), (270, 116), (80, 150))
+    return vignette(im, 0.45, 0.4)
+
+
 def monde_sans_maitre():
     """Le Monde sans Maître : la ville brûle au crépuscule, les tables de jeu renversées en flammes."""
     rng = np.random.default_rng(54)
@@ -1047,6 +1114,46 @@ def la_maison():
     d = ImageDraw.Draw(im)
     d.rectangle([0, 160, W, H], fill=(50, 24, 24))
     GLOWS['la_maison'] = ((80, 16), (280, 16), (180, 60))
+    return vignette(im, 0.45, 0.4)
+
+
+def l_ascension():
+    """L'Ascension : sur l'escalier qui s'enroule autour de la Tour, au-dessus des nuages ; la porte du dernier étage
+    brille tout en haut, deux lanternes éclairent la rampe."""
+    rng = np.random.default_rng(57)
+    im, d = base((0, 0, 0))
+    gradient(d, (14, 14, 44), (120, 70, 100), 0, 160)
+    stars(d, rng, 70, 70)
+    fg, f = layer()
+    for k in range(8):  # nuages en contrebas
+        x, y, r = 10 + k * 48, 128 + (k % 2) * 8, 30
+        f.ellipse([x - r, y - r / 2, x + r, y + r / 2], fill=(200, 180, 204))
+    f.rectangle([120, 0, 240, 160], fill=(84, 80, 104))  # le mur de la Tour, en face
+    f.rectangle([120, 0, 132, 160], fill=(110, 106, 132))
+    f.rectangle([226, 0, 240, 160], fill=(60, 56, 78))
+    for y in range(8, 160, 16):  # les pierres
+        for x in range(122 + (y // 16 % 2) * 12, 238, 24):
+            f.line([(x, y), (x, y + 15)], fill=(64, 60, 84))
+        f.line([(121, y), (239, y)], fill=(64, 60, 84))
+    f.rectangle([164, 6, 196, 46], fill=(255, 214, 120))  # la porte du dernier étage, ouverte sur la lumière
+    f.polygon([(164, 6), (196, 6), (180, -6)], fill=(255, 214, 120))
+    f.rectangle([162, 46, 198, 50], fill=(70, 50, 40))
+    for k in range(9):  # l'escalier qui monte vers elle, de jetons
+        x0, y0 = 20 + k * 18, 160 - k * 12
+        colors = ((200, 40, 60), (42, 90, 216), (31, 154, 74), (232, 176, 32))
+        f.rectangle([x0, y0 - 6, x0 + 24, y0], fill=colors[k % 4])
+        f.line([(x0 + 4, y0 - 4), (x0 + 20, y0 - 4)], fill=(240, 240, 240))
+    for k in range(9):  # et de l'autre côté
+        x0, y0 = 316 - k * 18, 160 - k * 12
+        colors = ((232, 176, 32), (200, 40, 60), (42, 90, 216), (31, 154, 74))
+        f.rectangle([x0, y0 - 6, x0 + 24, y0], fill=colors[k % 4])
+        f.line([(x0 + 4, y0 - 4), (x0 + 20, y0 - 4)], fill=(240, 240, 240))
+    for x in (40, 320):
+        lantern(fg, x, 60, (255, 214, 120), (60, 50, 70))
+    im = finish(im, fg)
+    d = ImageDraw.Draw(im)
+    d.rectangle([0, 160, W, H], fill=(70, 62, 84))
+    GLOWS['l_ascension'] = ((40, 60), (320, 60), (180, 22))
     return vignette(im, 0.45, 0.4)
 
 
@@ -1713,8 +1820,8 @@ DECORS = {
     'filon': filon, 'puits': puits, 'forge': forge, 'gouffre': gouffre,
     'bar': bar, 'machines': machines, 'coffres': coffres, 'vip': vip,
     'caravane': caravane, 'tombeau': tombeau, 'oasis': oasis, 'volcan': volcan,
-    'genese': genese, 'tables_sacrees': tables_sacrees, 'dernier_tirage': dernier_tirage,
-    'monde_sans_maitre': monde_sans_maitre, 'guerre_des_tables': guerre_des_tables, 'la_maison': la_maison, 'le_jackpot': le_jackpot,
+    'genese': genese, 'tables_sacrees': tables_sacrees, 'pelerins': pelerins, 'dernier_tirage': dernier_tirage, 'eclats_disperses': eclats_disperses,
+    'monde_sans_maitre': monde_sans_maitre, 'guerre_des_tables': guerre_des_tables, 'la_maison': la_maison, 'l_ascension': l_ascension, 'le_jackpot': le_jackpot,
     'locomotive': locomotive, 'wagon_restaurant': wagon_restaurant, 'wagon_lit': wagon_lit, 'fourgon': fourgon,
     'hall': hall, 'patinoire': patinoire, 'telepherique': telepherique, 'suite_royale': suite_royale,
     'parvis': parvis, 'jardin_oracles': jardin_oracles, 'salle_des_des': salle_des_des, 'sanctuaire': sanctuaire,

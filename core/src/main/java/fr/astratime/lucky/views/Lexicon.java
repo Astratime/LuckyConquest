@@ -245,7 +245,38 @@ public final class Lexicon {
                 + "depuis son dernier tour, l'ennemi touche sa prime et frappe {1} fois plus fort.",
                 EnemySymbol.CONTRACT_PERCENT, EnemySymbol.CONTRACT_FACTOR)),
             term(Lang.t("Va-tout"), Lang.f("Dans la Guerre des Tables : ses attaques du tour x{0}, mais sa défense tombe "
-                + "à 0 jusqu'à son tour suivant. Frappe-le juste après.", EnemySymbol.ALL_OUT_FACTOR))));
+                + "à 0 jusqu'à son tour suivant. Frappe-le juste après.", EnemySymbol.ALL_OUT_FACTOR)),
+            term(Lang.t("Ascenseur"), Lang.f("Dans l'Ascension, le Liftier monte d'un étage. Chaque étage : ses coups et "
+                + "ses Boucliers +{0} %. Un coup qui lui enlève au moins {1} % de ses PV max le renvoie en bas.",
+                EnemySymbol.ELEVATOR_STEP_PERCENT, EnemySymbol.ELEVATOR_HIT_PERCENT)),
+            term(Lang.t("Écho"), Lang.t("Dans l'Ascension, l'ennemi rejoue contre toi toutes les cartes de ton dernier "
+                + "tour, à moitié de leur force.")),
+            term(Lang.t("Vertige"), Lang.f("Dans l'Ascension, tu joues une carte de moins à ton prochain tour ({0} au "
+                + "plus).", EnemySymbol.VERTIGO_MAX)),
+            term(Lang.t("Pétrification"), Lang.f("Dans l'Ascension, l'ennemi se change en pierre : jusqu'à son prochain "
+                + "tour, tes coups ne lui font que {0} %.", 100 - EnemySymbol.STONE_PERCENT)),
+            term(Lang.t("Plan"), Lang.f("Dans l'Ascension, l'Architecte bâtit un étage de sa Tour ({0} au plus). Chaque "
+                + "étage lui donne un Bouclier à chacun de ses tours. Chacun de tes Bingos en fait tomber un.",
+                EnemySymbol.BLUEPRINT_MAX)),
+            term(Lang.t("Éclat"), Lang.f("Dans la Tour, aux Éclats dispersés : l'ennemi ramasse un éclat. Au {0}e, les "
+                + "éclats se rejoignent et frappent à travers ton bouclier.", EnemySymbol.SHARD_MAX)),
+            term(Lang.t("Héritage"), Lang.f("Aux Éclats dispersés : l'ennemi te prend {0} % de ton bouclier, puis il frappe.",
+                EnemySymbol.LEGACY_PERCENT)),
+            term(Lang.t("Valse"), Lang.f("Aux Éclats dispersés : l'ennemi frappe plus fort quand tu es blessé, +1 % par % "
+                + "de tes PV qui manque (+{0} % au plus).", EnemySymbol.WALTZ_MAX_PERCENT)),
+            term(Lang.t("Scellé"), Lang.f("Aux Éclats dispersés : à ton prochain tour, tu joues {0} carte de moins. Tu en "
+                + "joues toujours une au moins.", EnemySymbol.SEAL_PLAYS)),
+            term(Lang.t("Serment"), Lang.f("Dans la Tour, chapitre des Pèlerins : le Pèlerin de fer gagne de la défense de base "
+                + "pour tout le combat, {0} fois au plus. Frappe-le tôt.", EnemySymbol.VOW_MAX)),
+            term(Lang.t("Voyance"), Lang.t("Dans la Tour, chapitre des Pèlerins : la Diseuse ferme ta plus forte carte en main "
+                + "et frappe plus fort pour chaque carte que tu tiens.")),
+            term(Lang.t("Relique"), Lang.f("Dans la Tour, chapitre des Pèlerins : le Porteur bénit la couleur que tu as le "
+                + "plus en main. Jusqu'à {0} cartes de cette couleur sont fermées à ton prochain tour.",
+                EnemySymbol.RELIC_MAX_CARDS)),
+            term(Lang.t("Pèlerinage"), Lang.f("Dans la Tour, chapitre des Pèlerins : un pèlerin de plus suit le Prophète "
+                + "({0} au plus), et chacun rend son coup {1} % plus fort. Un coup qui lui enlève au moins {2} % de ses PV "
+                + "max en chasse la moitié.", EnemySymbol.PILGRIM_MAX, EnemySymbol.PILGRIM_STEP_PERCENT,
+                EnemySymbol.PILGRIM_HIT_PERCENT))));
     }
 
     private static Category progress() {

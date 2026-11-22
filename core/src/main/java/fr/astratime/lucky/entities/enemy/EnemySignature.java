@@ -214,6 +214,38 @@ public enum EnemySignature {
     DERNIER_ACTE("Dernier acte", EnemySymbol.STRINGS, Timing.NOW,
         "Fils tout de suite : il choisira une de tes cartes, et tu la joueras", "FILS"),
 
+    // La Tour, chapitre « L'Ascension »
+    BOUTON_D_APPEL("Bouton d'appel", EnemySymbol.ELEVATOR, Timing.NOW,
+        "Son Ascenseur monte d'un étage tout de suite", "ÉTAGE +1"),
+    RESONANCE("Résonance", EnemySymbol.ECHO, Timing.NEXT,
+        "Son prochain Écho rejoue tes cartes à pleine force", "ÉCHO x2"),
+    LE_VIDE("Le Vide", EnemySymbol.VERTIGO, Timing.NEXT,
+        "Son prochain Vertige te retire 1 carte de plus", "VERTIGE +1"),
+    GRANIT("Granit", EnemySymbol.STONE, Timing.TURN,
+        "Sa Pétrification de ce tour arrête {0} % de tes coups", "PIERRE {0} %"),
+    FONDATIONS("Fondations", EnemySymbol.BLUEPRINT, Timing.NOW,
+        "Sa Tour gagne un étage tout de suite", "ÉTAGE +1"),
+    CLE_DE_VOUTE("Clé de voûte", EnemySymbol.BLUEPRINT, Timing.NEXT,
+        "Son prochain Plan bâtit 2 étages", "PLAN x2"),
+    // Tour, les Éclats dispersés
+    POCHE_PLEINE("Poche pleine", EnemySymbol.SHARD, Timing.NOW,
+        "Il ramasse un éclat tout de suite", "ÉCLAT +1"),
+    TESTAMENT("Testament", EnemySymbol.LEGACY, Timing.NEXT,
+        "Son prochain Héritage te prend tout ton bouclier", "HÉRITAGE x2"),
+    DERNIERE_DANSE("Dernière danse", EnemySymbol.WALTZ, Timing.TURN,
+        "Chaque Valse de ce tour lui rend {0} % de ses PV max", "VALSE +SOIN"),
+    PARAPHE("Paraphe", EnemySymbol.SEAL, Timing.NEXT,
+        "Son prochain Scellé te retire 2 cartes", "SCELLÉ x2"),
+    // La Tour, chapitre 3 : Les Pèlerins de la Comète
+    SERMENT_SOLENNEL("Serment solennel", EnemySymbol.IRON_VOW, Timing.NOW,
+        "Il prête serment tout de suite : sa défense de base monte jusqu'à la fin du combat", "SERMENT +1"),
+    BOULE_DE_CRISTAL("Boule de cristal", EnemySymbol.SIGHT, Timing.NEXT,
+        "Sa prochaine Voyance ferme 2 cartes et frappe deux fois plus fort", "VOYANCE x2"),
+    AUTEL("Autel", EnemySymbol.RELIC, Timing.NEXT,
+        "Sa prochaine Relique bénit aussi ta deuxième couleur", "RELIQUE x2"),
+    PROCESSION("Procession", EnemySymbol.PILGRIMAGE, Timing.NOW,
+        "Un pèlerin le rejoint tout de suite", "PÈLERIN +1"),
+
     // La Guerre des Tables (chapitre de la Tour)
     CLAIRON("Clairon", EnemySymbol.RALLY, Timing.NOW,
         "Un soldat de plus le rejoint tout de suite", "SOLDAT +1"),
@@ -259,6 +291,8 @@ public enum EnemySignature {
     public static final int ORDRE_FACTOR = 3;
     /** Quenouille : soin de chaque Fil du destin du tour, en % de ses PV max. */
     public static final int QUENOUILLE_PERCENT = 4;
+    /** Dernière danse : soin de chaque Valse du tour, en % de ses PV max. */
+    public static final int DANSE_PERCENT = 3;
 
     /** Moment où agit une carte propre. */
     public enum Timing { TURN, NEXT, NOW }
@@ -306,6 +340,8 @@ public enum EnemySignature {
             case ANNONCE           -> Lang.f(description, EnemyKind.CHEF_NOTHING_GOES_CARD_PERCENT);
             case POIDS_DE_L_OR     -> Lang.f(description, LINGOT_PERCENT);
             case QUENOUILLE        -> Lang.f(description, QUENOUILLE_PERCENT);
+            case GRANIT            -> Lang.f(description, EnemySymbol.GRANITE_PERCENT);
+            case DERNIERE_DANSE    -> Lang.f(description, DANSE_PERCENT);
             case PRIME_DE_RISQUE   -> Lang.f(description, PRIME_PERCENT);
             default                -> Lang.t(description);
         };
@@ -326,6 +362,7 @@ public enum EnemySignature {
             case PAS_CE_SOIR       -> Lang.f(bonus, VIDEUR_PERCENT);
             case ANNONCE           -> Lang.f(bonus, EnemyKind.CHEF_NOTHING_GOES_CARD_PERCENT);
             case POIDS_DE_L_OR     -> Lang.f(bonus, LINGOT_PERCENT);
+            case GRANIT            -> Lang.f(bonus, EnemySymbol.GRANITE_PERCENT);
             case PRIME_DE_RISQUE   -> Lang.f(bonus, PRIME_PERCENT);
             default                -> Lang.t(bonus);
         };

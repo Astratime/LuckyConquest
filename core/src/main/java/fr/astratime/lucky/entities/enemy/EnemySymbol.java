@@ -164,6 +164,32 @@ public enum EnemySymbol {
     SHROUD("LINCEUL"),
     /** Au début de ton prochain tour, il choisit ta plus faible carte et tu la joues d'office. */
     STRINGS("FILS"),
+    /** L'Ascension : il monte d'un étage et frappe ; chaque étage renforce ses coups et ses Boucliers. Un gros coup le fait redescendre. */
+    ELEVATOR("ASCENSEUR"),
+    /** Il rejoue contre toi toutes les cartes de ton dernier tour, à moitié de leur force. */
+    ECHO("ÉCHO"),
+    /** Au prochain tour, tu joues une carte de moins. */
+    VERTIGO("VERTIGE"),
+    /** Il se change en pierre : jusqu'à son prochain tour, tes coups ne lui font que la moitié. */
+    STONE("PÉTRIFICATION"),
+    /** L'Architecte bâtit un étage de sa Tour : chaque étage lui donne un Bouclier à chacun de ses tours. Ton Bingo en fait tomber un. */
+    BLUEPRINT("PLAN"),
+    /** Tour, les Éclats dispersés : il ramasse un éclat ; au troisième, les éclats se rejoignent et frappent à travers ton bouclier. */
+    SHARD("ÉCLAT"),
+    /** Il réclame son héritage : il te prend une part de ton bouclier, puis frappe. */
+    LEGACY("HÉRITAGE"),
+    /** Il frappe d'autant plus fort qu'il te manque de PV. */
+    WALTZ("VALSE"),
+    /** À ton prochain tour, tu joues une carte de moins. */
+    SEAL("SCELLÉ"),
+    /** Tour, chapitre 3 (Les Pèlerins de la Comète) : sa défense de base grandit, jusqu'à la fin du combat. */
+    IRON_VOW("SERMENT"),
+    /** Elle lit ta main : ta plus forte carte est fermée au prochain tour, et elle frappe selon les cartes que tu tiens. */
+    SIGHT("VOYANCE"),
+    /** Il bénit une couleur : tes cartes de cette couleur en main sont fermées jusqu'à la fin de ton prochain tour. */
+    RELIC("RELIQUE"),
+    /** Un pèlerin de plus le suit, puis il frappe, plus fort par pèlerin ; un gros coup de ta part en chasse la moitié. */
+    PILGRIMAGE("PÈLERINAGE"),
     /** Guerre des Tables : il appelle un soldat ; ses soldats tirent à chacun de ses tours. Tes gros coups les mettent à terre. */
     RALLY("RASSEMBLEMENT"),
     /** Guerre des Tables : il charge une part de tes gains dans son canon et tire, à travers une part de ton bouclier. */
@@ -319,6 +345,20 @@ public enum EnemySymbol {
     /** Avalanche : chaque couche de neige ajoute ce % à ses coups ; au plus tant de couches ; un coup d'au moins
      * cette part de ses PV max (en %) la fait fondre. */
     public static final int AVALANCHE_STEP_PERCENT = 50, AVALANCHE_MAX = 4, AVALANCHE_HIT_PERCENT = 2;
+    /**
+     * Serment de fer (Pèlerin de fer, chapitre 3, valeurs par défaut de Claude) : défense de base ajoutée par
+     * chaque Serment, avant la force, et Serments au plus sur le combat.
+     */
+    public static final int VOW_DEFENSE = 40, VOW_MAX = 6;
+    /** Voyance (Diseuse d'éclats) : cartes fermées, et part de l'Épée de son coup par carte que tu tiens, en %. */
+    public static final int SIGHT_LOCKS = 1, SIGHT_PERCENT_PER_CARD = 25;
+    /** Relique (Porteur de reliques) : cartes de la couleur bénie fermées au plus, et tours. */
+    public static final int RELIC_MAX_CARDS = 3, RELIC_TURNS = 1;
+    /**
+     * Pèlerinage (Prophète du Cratère) : attaque en plus par pèlerin, en % de l'Épée, pèlerins au plus, et coup
+     * (en % de ses PV max) qui en chasse la moitié.
+     */
+    public static final int PILGRIM_STEP_PERCENT = 35, PILGRIM_MAX = 5, PILGRIM_HIT_PERCENT = 3;
     /** Champagne glacé : soin, en % de ses PV max. */
     public static final int CHAMPAGNE_HEAL_PERCENT = 3;
 
@@ -335,6 +375,24 @@ public enum EnemySymbol {
     public static final int BLOOD_PACT_PERCENT = 40, BLOOD_PACT_HEAL_PERCENT = 3;
     /** Linceul : PV avec lesquels il se relève, en % de ses PV max. */
     public static final int SHROUD_RISE_PERCENT = 20;
+
+    /** Ascenseur : force en plus par étage (ses coups et ses Boucliers), en % ; étages au plus ; un coup d'au moins
+     * cette part de ses PV max (en %) le renvoie au rez-de-chaussée. */
+    public static final int ELEVATOR_STEP_PERCENT = 25, ELEVATOR_MAX = 4, ELEVATOR_HIT_PERCENT = 2;
+    /** Pétrification : part de tes coups qu'arrête la pierre, en % (75 avec le Granit). */
+    public static final int STONE_PERCENT = 50, GRANITE_PERCENT = 75;
+    /** Vertige : cartes jouées en moins au prochain tour, au plus (le joueur joue toujours au moins une carte). */
+    public static final int VERTIGO_MAX = 2;
+    /** Plan : étages de la Tour de l'Architecte au plus ; en phase 3, chaque étage renforce aussi ses coups de ce %. */
+    public static final int BLUEPRINT_MAX = 5, KEYSTONE_STEP_PERCENT = 10;
+    /** Éclat : éclats ramassés avant qu'ils se rejoignent, et coups d'Épée de leur attaque (qui traverse le bouclier). */
+    public static final int SHARD_MAX = 3, SHARD_FACTOR = 3;
+    /** Héritage : part de ton bouclier qu'il te prend, en %. */
+    public static final int LEGACY_PERCENT = 50;
+    /** Valse : son attaque grandit de 1 % par % de PV qui te manque, jusqu'à ce % en plus. */
+    public static final int WALTZ_MAX_PERCENT = 100;
+    /** Scellé : cartes de moins que tu joues à ton prochain tour (tu en joues toujours une au moins). */
+    public static final int SEAL_PLAYS = 1;
 
     /** Rassemblement : soldats au plus, force du tir de chaque soldat (en % d'une Épée), et coup qui en met un à terre (en % de ses PV max). */
     public static final int RALLY_MAX = 3, RALLY_SHOT_PERCENT = 50, RALLY_HIT_PERCENT = 2;
@@ -500,6 +558,33 @@ public enum EnemySymbol {
             case SHROUD -> Lang.f("Linceul : la première fois qu'il tombe, il se relève avec {0} % de ses PV max (une fois par "
                 + "combat). Déjà drapé, il reforme sa défense", SHROUD_RISE_PERCENT);
             case STRINGS -> Lang.t("Fils : au début de ton prochain tour, il choisit ta plus faible carte et tu la joues d'office");
+            case ELEVATOR -> Lang.f("Ascenseur : attaque de {0}, puis il monte d'un étage. Chaque étage : ses coups et ses "
+                + "Boucliers +{1} % ({2} étages au plus). Un coup d'au moins {3} % de ses PV max le renvoie en bas",
+                kind.hurt(kind.swordDamage(), hard), ELEVATOR_STEP_PERCENT, ELEVATOR_MAX, ELEVATOR_HIT_PERCENT);
+            case ECHO -> Lang.t("Écho : il rejoue contre toi toutes les cartes de ton dernier tour, à moitié de leur force. "
+                + "Pique, il frappe. Coeur, il se soigne. Carreau et Trèfle, il se protège");
+            case VERTIGO -> Lang.f("Vertige : au prochain tour, tu joues 1 carte de moins ({0} au plus). Déjà pris de "
+                + "vertige, tu prends un coup", VERTIGO_MAX);
+            case STONE -> Lang.f("Pétrification : jusqu'à son prochain tour, tes coups ne lui font que {0} %. Déjà de "
+                + "pierre, il frappe", 100 - STONE_PERCENT);
+            case BLUEPRINT -> Lang.f("Plan : il bâtit un étage de sa Tour ({0} au plus). À chacun de ses tours, chaque "
+                + "étage lui donne un Bouclier. Chacun de tes Bingos fait tomber un étage", BLUEPRINT_MAX);
+            case SHARD -> Lang.f("Éclat : il ramasse un éclat. Au {0}e, les éclats se rejoignent : attaque de {1} qui traverse "
+                + "ton bouclier", SHARD_MAX, kind.hurt(kind.swordDamage() * SHARD_FACTOR, hard));
+            case LEGACY -> Lang.f("Héritage : il te prend {0} % de ton bouclier, puis attaque de {1}", LEGACY_PERCENT,
+                kind.hurt(kind.swordDamage(), hard));
+            case WALTZ -> Lang.f("Valse : attaque de {0}, +1 % par % de PV qui te manque (+{1} % au plus)",
+                kind.hurt(kind.swordDamage(), hard), WALTZ_MAX_PERCENT);
+            case SEAL -> Lang.f("Scellé : à ton prochain tour, tu joues {0} carte de moins (une au moins)", SEAL_PLAYS);
+            case IRON_VOW -> Lang.f("Serment : sa défense de base +{0}, jusqu'à la fin du combat ({1} Serments au plus). "
+                + "Déjà au plus, il se protège", kind.empowered(VOW_DEFENSE, hard), VOW_MAX);
+            case SIGHT -> Lang.f("Voyance : elle lit ta main. Ta plus forte carte est fermée jusqu'à la fin de ton prochain "
+                + "tour, et elle frappe de {0} par carte que tu tiens", kind.hurt(kind.swordDamage() * SIGHT_PERCENT_PER_CARD / 100, hard));
+            case RELIC -> Lang.f("Relique : il bénit la couleur que tu as le plus en main. Jusqu'à {0} cartes de cette couleur "
+                + "sont fermées jusqu'à la fin de ton prochain tour", RELIC_MAX_CARDS);
+            case PILGRIMAGE -> Lang.f("Pèlerinage : un pèlerin de plus le suit ({0} au plus), puis il frappe de {1}, +{2} % par "
+                + "pèlerin. Un coup d'au moins {3} % de ses PV max en chasse la moitié", PILGRIM_MAX,
+                kind.hurt(kind.swordDamage(), hard), PILGRIM_STEP_PERCENT, PILGRIM_HIT_PERCENT);
             case RALLY -> Lang.f("Rassemblement : il appelle un soldat ({0} au plus). À chacun de ses tours, chaque soldat tire "
                 + "({1}). Un coup d'au moins {2} % de ses PV max en met un à terre", RALLY_MAX,
                 kind.hurt(kind.swordDamage() * RALLY_SHOT_PERCENT / 100, hard), RALLY_HIT_PERCENT);

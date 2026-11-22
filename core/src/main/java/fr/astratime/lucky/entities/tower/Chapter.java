@@ -22,11 +22,21 @@ public enum Chapter {
             + "Ici, on ne se bat plus. On mise.",
         EnemyKind.CHEF, List.of(EnemyKind.TRICHEUR, EnemyKind.USURIER, EnemyKind.ROULETTE), EnemyKind.REINE,
         null, new Stats(200, 110, 100, 72, 100, 880, 2_500_000L, 1)),
+    PELERINS("Les Pèlerins de la Comète",
+        "Les Tables Sacrées sont tombées. Alors les foules se mirent en marche vers le cratère, pour toucher la lumière. "
+            + "Un prophète les mène. Il dit que la comète reviendra.",
+        EnemyKind.PASSEUR, List.of(EnemyKind.PELERIN_FER, EnemyKind.DISEUSE, EnemyKind.PORTEUR), EnemyKind.PROPHETE,
+        null, new Stats(250, 30, 120, 71, 300, 1_290, 4_500_000L, 1)),
     DERNIER_TIRAGE("Le Dernier Tirage",
         "La comète n'était pas tombée par hasard. Elle était le hasard. Au fond du cratère, quelque chose bat "
             + "encore. Celui qui le touche décidera du prochain tirage.",
         EnemyKind.GARDIENNE, List.of(EnemyKind.MIROIR, EnemyKind.HORLOGER, EnemyKind.FOU), EnemyKind.ECLAT,
         "La chance n'a plus de maître.", new Stats(300, 40, 167, 70, 500, 1_900, 8_000_000L, 1)),
+    ECLATS_DISPERSES("Les Éclats dispersés",
+        "L'Éclat Originel s'est brisé. Ses morceaux sont tombés partout. Chacun donne un pouvoir à qui le ramasse. "
+            + "Quelqu'un les ramasse tous.",
+        EnemyKind.RAMASSEUR, List.of(EnemyKind.HERITIER, EnemyKind.VEUVE, EnemyKind.NOTAIRE), EnemyKind.COLLECTIONNEUR,
+        null, new Stats(350, 45, 140, 65, 500, 2_780, 18_000_000L, 1)),
     MONDE_SANS_MAITRE("Le Monde sans Maître",
         "La chance n'avait plus de maître. Alors chacun voulut le devenir. Les tables brûlèrent. "
             + "Les joueurs se battirent pour les miettes de la comète.",
@@ -40,6 +50,11 @@ public enum Chapter {
         "Derrière chaque table, il y a une Maison. Derrière chaque Maison, une seule règle. La Maison gagne toujours.",
         EnemyKind.PORTIER, List.of(EnemyKind.COMPTABLE, EnemyKind.DIRECTEUR, EnemyKind.SECURITE), EnemyKind.MAISON,
         null, new Stats(500, 65, 300, 58, 2_000, 8_800, 100_000_000L, 1)),
+    L_ASCENSION("L'Ascension",
+        "La Maison est vaincue. Il reste à monter la Tour jusqu'à la Machine. Chaque étage a son gardien. "
+            + "Tout en haut, celui qui a tout bâti t'attend.",
+        EnemyKind.LIFTIER_TOUR, List.of(EnemyKind.ECHO, EnemyKind.VERTIGE, EnemyKind.GARGOUILLE), EnemyKind.ARCHITECTE,
+        null, new Stats(550, 110, 270, 55, 3_000, 12_900, 220_000_000L, 1)),
     LE_JACKPOT("Le Jackpot",
         "Au sommet de la Tour, une seule machine. Elle n'a jamais été jouée. On dit qu'elle donne tout. "
             + "On dit aussi qu'elle prend tout.",

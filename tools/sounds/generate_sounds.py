@@ -1288,6 +1288,38 @@ def cutscene_pretender():
     return reverb(track.buf, wet=0.2, size=1.3, tail=0.8)
 
 
+@sound('cutscene/collector', -17)
+def cutscene_collector():
+    """
+    Avant le Collectionneur (CollectorCutscene) : la plaine la nuit, vent et grillons, les éclats tintent (0 à 1,4 s),
+    se soulèvent (LIFT = 1,4 s) puis filent (FLY = 2,6 s) ; dans la vitrine, chacun se range d'un clic de verre
+    (SHELVE = 3,9 … 4,95 s) ; une boîte à musique, il s'allume derrière la vitre (REVEAL = 5,6 s), la porte grince
+    (DOOR = 6,3 s), trois éclats se sertissent (SET = 7,0 / 7,3 / 7,6 s), le bleu s'allume (LIGHT = 8,1 s), éclair
+    de sa loupe (GLINT = 8,6 s). Fondu blanc à 9,2 s.
+    """
+    track = Track(10.6)
+    track.add(ambience(5.0, 300, 1400, 0.12) * fade_out(5.0, 1.2), 0.0, 1.0)                 # le vent sur la plaine
+    for _ in range(14):                                                                     # les éclats qui tintent
+        track.add(modal(hz(['C7', 'E7', 'G7', 'B6'][int(rand(0, 4))]), 0.6, GLASS_RATIOS, [0.3, 0.15, 0.08, 0.04]),
+                  rand(0.1, 2.4), rand(0.05, 0.12))
+    track.add(sparkle(1.2, count=16), 1.4, 0.25)                                            # ils se soulèvent
+    track.add(whoosh(1.0, 300, 2600, q=0.9), 2.6, 0.5)                                      # ils filent
+    for k, at in enumerate((3.9, 4.15, 4.4, 4.6, 4.8, 4.95)):                               # clic, clic, clic
+        track.add(modal(hz(['E6', 'G6', 'B6', 'D7', 'E7', 'G7'][k]), 0.5, GLASS_RATIOS, [0.5, 0.25, 0.1, 0.05]), at, 0.4)
+        track.add(click(0.01, 2000, 7000), at, 0.3)
+    for k, note in enumerate(['E5', 'G5', 'B5', 'E6', 'D6', 'B5', 'G5', 'A5', 'B5']):        # sa boîte à musique
+        track.add(pluck(hz(note), 0.8, bright=5000), 5.2 + k * 0.3, 0.22)
+    track.add(drone(['E2', 'B2', 'E3'], 4.0, 'sine', fin=0.6, fout=0.8), 5.6, 0.18)
+    track.add(svf(noise(0.6), sweep(900, 400, 0.6), q=6.0, mode='bp') * fade_out(0.6, 0.3), 6.3, 0.2)   # la porte grince
+    for at, note in zip((7.0, 7.3, 7.6), ('B6', 'D7', 'F#7')):                              # trois éclats sertis
+        track.add(mix((metal_hit(1800, 0.4), 0, 0.4), (modal(hz(note), 0.8, GLASS_RATIOS, [0.5, 0.3, 0.15, 0.08]), 0, 0.6)), at, 0.5)
+    track.add(boom(1.4, 70), 8.1, 0.6)                                                      # le bleu s'allume
+    track.add(brass_chord(['E2', 'B2', 'E3', 'G3'], 1.6, 0.7), 8.1, 0.8)
+    track.add(sparkle(0.7, count=12, lo=4000, hi=9000), 8.6, 0.35)                          # l'éclair de sa loupe
+    track.add(swell(0.7, 300, 2600), 9.1, 0.25)
+    return reverb(track.buf, wet=0.25, size=1.5, tail=1.0)
+
+
 @sound('cutscene/general', -17)
 def cutscene_general():
     """
@@ -1350,6 +1382,34 @@ def cutscene_house():
         track.add(ha, 8.3 + k * 0.17, 0.5)
     track.add(mix((impact(0.6, 120, 40), 0, 1.2), (crack_hit(), 0, 0.8)), 9.9, 1.0)
     return reverb(track.buf, wet=0.28, size=1.7, tail=1.0)
+
+
+@sound('cutscene/architect', -17)
+def cutscene_architect():
+    """
+    Avant l'Architecte (ArchitectCutscene) : on monte le long de la Tour (0 à 1,6 s), vent et notes qui montent ;
+    le plan se déroule (1,6 s) ; huit étages se dessinent à la craie (2,3 s, un toutes les 0,28 s), la Machine au
+    sommet (4,64 s) ; l'Architecte sort de l'ombre (5,4 s), son compas trace un cercle (6,0 à 6,9 s) ; les traits
+    s'embrasent d'or (IGNITE = 8,4 s).
+    """
+    track = Track(11.0)
+    track.add(ambience(1.8, 400, 2400, 0.35), 0.0, 1.0)
+    for k, note in enumerate(('C4', 'E4', 'G4', 'C5')):                       # la montée
+        track.add(modal(hz(note), 0.6, GLASS_RATIOS, [0.3, 0.15, 0.08, 0.04]), 0.2 + k * 0.35, 0.3)
+    rustle = bp(noise(0.6), 800, 5000) * ramp(0.6, 0.2, 1.0) * fade_out(0.6, 0.25)
+    track.add(rustle, 1.6, 0.5)                                                 # le plan qui se déroule
+    for k in range(8):                                                          # la craie, étage par étage
+        scratch = bp(noise(0.22), 2500 + k * 200, 7000) * adsr(0.22, 0.01, 0.05, 0.6, 0.08)
+        track.add(scratch, 2.3 + k * 0.28, 0.35)
+        track.add(modal(hz('G4') * 2 ** (k / 12), 0.3, GLASS_RATIOS, [0.12, 0.06, 0.03, 0.02]), 2.3 + k * 0.28 + 0.2, 0.15)
+    track.add(brass_chord(['G2', 'D3', 'G3', 'B3'], 1.2, 0.5), 4.64, 0.6)     # la Machine, au sommet
+    track.add(drone(['G1', 'D2'], 2.6, 'saw', fin=0.6, fout=0.8) * 0.3, 5.4, 0.5)   # l'Architecte
+    circle = bp(osc(sweep(300, 900, 0.9), 0.9, 'saw'), 1500, 5000) * 0.3 * fade_out(0.9, 0.2)
+    track.add(circle, 6.0, 0.35)                                                # le compas
+    track.add(mix((impact(0.7, 120, 40), 0, 1.0), (metal_hit(700, 0.8), 0, 0.5)), 8.4, 0.9)   # tout s'embrase
+    track.add(brass_chord(['D3', 'G3', 'B3', 'D4'], 1.8, 0.8), 8.45, 0.9)
+    track.add(sparkle(1.2, count=18), 8.5, 0.35)
+    return reverb(track.buf, wet=0.3, size=1.6, tail=1.0)
 
 
 @sound('cutscene/machine', -17)
@@ -3032,6 +3092,23 @@ def main(prefixes):
         done += 1
     if done == 0:
         sys.exit(f'Aucun son ne correspond à {prefixes}')
+
+
+# --- Tour, chapitre 3 : Les Pèlerins de la Comète (Tour à 10 chapitres, 2026-11-22) ---
+
+@sound('cutscene/king_prophete', -17)
+def king_prophete():
+    """Le Prophète du Cratère : la route de nuit, il monte sur son rocher (0,4 s), les pèlerins s'agenouillent (2 s),
+    il lève son bâton et la comète passe (3,4 s)."""
+    prelude = [(ambience(2.0, 150, 700, 0.3), 0.0, 0.5), (drone(['D2', 'A2'], 2.0), 0.0, 0.3)]
+    entrance = Track(5.0)
+    entrance.add(whoosh(1.0, 120, 700, q=0.8), 0.4, 0.4)
+    entrance.add(thump(110, 45, 0.3), 2.0, 0.5)
+    entrance.add(rustle(0.8), 2.0, 0.3)
+    gesture = [(whoosh(1.6, 300, 2400, q=1.2), 3.0, 0.6), (bell_toll(hz('D3'), 2.4), 3.4, 0.5),
+               (modal(hz('A5'), 2.0, GLASS_RATIOS, [1.0, 0.6, 0.4, 0.3]), 3.45, 0.3),
+               (brass_chord(['D3', 'F#3', 'A3', 'D4'], 1.4, 0.5), 3.5, 0.5)]
+    return king(prelude, reverb(entrance.buf, wet=0.35, size=1.8), gesture)
 
 
 if __name__ == '__main__':
