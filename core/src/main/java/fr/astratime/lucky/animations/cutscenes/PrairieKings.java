@@ -5,6 +5,7 @@ import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.Interpolation;
 import com.badlogic.gdx.math.MathUtils;
+import fr.astratime.lucky.assets.ExplorationArt;
 import fr.astratime.lucky.entities.enemy.EnemyKind;
 import java.util.Random;
 
@@ -273,10 +274,10 @@ public class PrairieKings extends KingEntrance {
             glow(batch, cx(), kingY() + 200f, 900f * rise, tint, 0.45f);
             drawKing(batch, cx(), y, KING_SCALE, 1f - progress(SPADE_RISE + 0.4f, SPADE_RISE + 0.8f), rise);
             float raised = progress(SPADE_RISE + 0.6f, SPADE_RISE + 1f);       // l'épée levée qui brille
-            glow(batch, cx() + 12f * KING_SCALE, kingY() + 38f * KING_SCALE, 260f, Color.WHITE, 0.7f * raised
-                * pulse(10f, 0.6f));
+            float sx = kingPixelX(ExplorationArt.SWORD_X + 0.5f, cx(), KING_SCALE);  // sur la lame de son portrait
+            float sy = kingPixelY(ExplorationArt.SWORD_TIP + 7f, kingY(), KING_SCALE);
+            glow(batch, sx, sy, 260f, Color.WHITE, 0.7f * raised * pulse(10f, 0.6f));
             if (spin > 0f) {                                                   // l'épée tourne : un cercle de lumière
-                float sx = cx() + 12f * KING_SCALE, sy = kingY() + 38f * KING_SCALE + 14f * spin;
                 for (int j = 0; j < 14; j++) {
                     float angle = -(time - GESTURE) * 1100f + j * 14f;
                     glow(batch, sx + MathUtils.cosDeg(angle) * 190f, sy + MathUtils.sinDeg(angle) * 190f,

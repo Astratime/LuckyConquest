@@ -169,19 +169,34 @@ public final class ExplorationArt {
 
     /**
      * Roi d'une couleur : couronne d'or, longue barbe, manteau à la couleur de sa
-     * couleur avec un col d'hermine, plastron frappé de son symbole et sceptre.
+     * couleur avec un col d'hermine, plastron frappé de son symbole et sceptre ; le Roi de Pique, lui,
+     * tient une vraie épée, lame levée, garde d'or et pommeau en forme de pique.
      */
     public static int[][] king(Card.Suit suit) { return king(suit, new KingProp[0]); }
 
     /** Ce qu'une cinématique peut retirer du portrait d'un roi (voir {@link #king(Card.Suit, KingProp...)}). */
-    public enum KingProp { SCEPTER }
+    public enum KingProp {
+        /** Le sceptre d'or des rois de Trèfle, de Coeur et de Carreau (le Roi de Pique n'en a pas). */
+        SCEPTER,
+        /** L'épée du Roi de Pique : lame, garde, poignée et pommeau (sa main reste). Les autres rois n'en ont pas. */
+        SWORD
+    }
+
+    /** La colonne du milieu de la lame de l'épée du Roi de Pique, dans son portrait. */
+    public static final int SWORD_X = 29;
+    /** La ligne de la pointe de cette lame (comptée du haut). */
+    public static final int SWORD_TIP = 5;
+    /** La ligne du bas de la lame, juste au-dessus de la garde. */
+    public static final int SWORD_BLADE_END = 28;
 
     /**
      * @return le roi de {@code suit} dessiné sans les accessoires {@code without} (ce qu'il y avait dessous
      *         réapparaît) : les cinématiques en tirent le vrai morceau qui quitte le roi, jamais une copie.
      */
     public static int[][] king(Card.Suit suit, KingProp... without) {
-        boolean scepter = !java.util.Arrays.asList(without).contains(KingProp.SCEPTER);
+        boolean spade = suit == Card.Suit.PIQUE;
+        boolean scepter = !spade && !java.util.Arrays.asList(without).contains(KingProp.SCEPTER);
+        boolean sword = spade && !java.util.Arrays.asList(without).contains(KingProp.SWORD);
         PixelCanvas g = new PixelCanvas(W, H);
         int accent = accent(suit), accentDark = accentDark(suit), ink = ink(suit);
         int beard = rgba("e8e4dc"), beardShade = rgba("b8b2a8"), gem = suit == Card.Suit.TREFLE ? rgba("3ad86a")
@@ -232,7 +247,31 @@ public final class ExplorationArt {
             g.rect(29, 14, 30, 40, GOLD);
             g.rect(30, 14, 30, 40, GOLD_DARK);
         }
+        // Épée du Roi de Pique : lame d'acier levée, garde d'or, poignée de cuir, pommeau en pique.
+        int steelLight = rgba("f2f4fa"), steel = rgba("b8bfcc"), steelDark = rgba("6e7688"), leather = rgba("4a2a18");
+        if (sword) {
+            g.set(SWORD_X, SWORD_TIP, steelLight);
+            g.rect(SWORD_X - 1, SWORD_TIP + 1, SWORD_X - 1, SWORD_BLADE_END, steelLight);
+            g.rect(SWORD_X, SWORD_TIP + 1, SWORD_X, SWORD_BLADE_END, steel);
+            g.rect(SWORD_X + 1, SWORD_TIP + 1, SWORD_X + 1, SWORD_BLADE_END, steelDark);
+            g.rect(SWORD_X, SWORD_TIP + 4, SWORD_X, SWORD_BLADE_END - 2, steelDark);   // la gorge de la lame
+            g.rect(SWORD_X - 3, 29, SWORD_X + 3, 29, GOLD);                        // la garde, quillons rabattus
+            g.rect(SWORD_X - 3, 30, SWORD_X + 3, 30, GOLD_DARK);
+            g.set(SWORD_X - 3, 31, GOLD_DARK);
+            g.set(SWORD_X + 3, 31, GOLD_DARK);
+            g.set(SWORD_X, 29, gem);
+        }
         g.rect(27, 31, 31, 33, SKIN);
+        if (sword) {
+            g.rect(SWORD_X - 1, 34, SWORD_X + 1, 35, leather);                     // la poignée sous le poing
+            g.set(SWORD_X, 34, GOLD_DARK);
+            g.set(SWORD_X, 36, GOLD);                                               // le pommeau : une petite pique d'or
+            g.rect(SWORD_X - 1, 37, SWORD_X + 1, 37, GOLD);
+            g.rect(SWORD_X - 2, 38, SWORD_X + 2, 39, GOLD);
+            g.rect(SWORD_X + 1, 38, SWORD_X + 2, 39, GOLD_DARK);
+            g.set(SWORD_X, 40, GOLD_DARK);
+            g.rect(SWORD_X - 1, 41, SWORD_X + 1, 41, GOLD_DARK);
+        }
         if (scepter) {
             PixelCanvas orb = new PixelCanvas(7, 7);
             stamp(orb, suit, 0, 0, 1, accent);
