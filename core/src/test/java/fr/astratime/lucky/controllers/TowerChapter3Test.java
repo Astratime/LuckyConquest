@@ -65,6 +65,7 @@ class TowerChapter3Test {
         assertEquals(2, EnemyKind.PROPHETE.phaseCount());
         assertTrue(EnemyKind.PROPHETE.getSymbols(2).contains(EnemySymbol.GOLDEN_COMET), "blessé, il appelle la comète");
         assertTrue(EndlessRun.BOSSES.contains(EnemyKind.PROPHETE));
+        assertNotEquals(fr.astratime.lucky.i18n.Lang.f("PHASE {0} !", 2), EnemyKind.PROPHETE.phaseText(2), "sa propre annonce");
     }
 
     @Test
