@@ -1,6 +1,7 @@
 package fr.astratime.lucky.animations.cutscenes;
 
 import com.badlogic.gdx.graphics.Color;
+import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.Interpolation;
@@ -27,7 +28,7 @@ final class AscensionBossScenes {
     static final Color CHALK = hex("e8f2ff"), PLAN = hex("2a56c8"), STONE = hex("8a8a92"), STONE_DARK = hex("5a5a64");
     static final Color SPIRAL = hex("b88aff");
     /** Les yeux de l'Architecte, en pixels de son portrait : l'œil nu, puis celui du monocle. */
-    static final float[] EYE = {13.5f, 14.5f}, MONOCLE = {20.5f, 14.5f};
+    static final float[] EYE = {14f, 15f}, MONOCLE = {21f, 15f};  // centres des yeux 2 x 2 (colonnes 13-14 et 20-21, lignes 14-15)
 
     /** Un trait de plan au sol : les lignes bleues du plan de la Tour, tracées sous ses pieds. */
     private static void groundPlan(BossScene scene, Batch batch, float alpha) {
@@ -178,11 +179,23 @@ final class AscensionBossScenes {
     static final class ArchitectDeath extends BossScene {
         private final float[] blockX = new float[14];
 
-        ArchitectDeath(CutsceneKit kit) { super(kit, Moment.DEATH, EnemyKind.ARCHITECTE, 0); }
+        /** Son plan roulé, sous son bras droit, en pixels du portrait : son centre et sa taille (contour compris). */
+        private static final float PLAN_X = 9f, PLAN_Y = 36f, PLAN_W = 14f, PLAN_H = 6f;
+        /** Le moment où son plan quitte son bras. */
+        private static final float PLAN_OFF = 0.8f;
+        private static final Color PAPER = hex("8ab8ff"), PAPER_DARK = hex("4a7ad0"), PAPER_END = hex("d8e8ff");
+        private final Texture withPlan, withoutPlan;
+
+        ArchitectDeath(CutsceneKit kit) {
+            super(kit, Moment.DEATH, EnemyKind.ARCHITECTE, 0);
+            withPlan = boss.getTexture();
+            withoutPlan = kit.architectWithoutPlan().getTexture();
+        }
 
         @Override
         protected void restart() {
             for (int k = 0; k < blockX.length; k++) blockX[k] = (random.nextFloat() - 0.5f) * 1.6f;
+            boss.setTexture(withPlan);
         }
 
         private float landing(int k) { return 0.4f + k * 0.14f; }
@@ -190,6 +203,7 @@ final class AscensionBossScenes {
         @Override
         protected void step(float delta) {
             for (int k = 0; k < blockX.length; k++) if (at(landing(k))) rumble(0.08f, 4f);
+            if (time >= PLAN_OFF && boss.getTexture() != withoutPlan) boss.setTexture(withoutPlan); // son plan part
             if (at(CLIMAX_DEATH)) {
                 rumble(0.7f, 12f);
                 sparks(bossX(), bossBottom() + bossHeight() * 0.3f, 50, STONE, 500f, 12f);
@@ -217,15 +231,24 @@ final class AscensionBossScenes {
                 rect(batch, STONE_DARK, 1f, x - size / 2f, y, size, size * 0.7f);
                 rect(batch, STONE, 1f, x - size / 2f + 3f, y + 3f, size - 6f, size * 0.7f - 6f);
             }
-            // Son plan s'envole, se déroule, puis brûle d'or.
-            float fly = progress(0.8f, CLIMAX_DEATH);
-            if (fly > 0f && time < CLIMAX_DEATH + 0.5f) {
-                float x = MathUtils.lerp(bossX() - bossWidth() * 0.3f, bossX(), fly);
-                float y = MathUtils.lerp(bossBottom() + bossHeight() * 0.2f, worldHeight() * 0.78f, Interpolation.pow2Out.apply(fly));
-                float w = MathUtils.lerp(bossWidth() * 0.3f, bossWidth() * 1.6f, progress(1.6f, CLIMAX_DEATH));
-                float h = w * 0.55f, burn = progress(CLIMAX_DEATH, CLIMAX_DEATH + 0.5f);
-                rect(batch, PLAN, 1f - burn, x - w / 2f, y - h / 2f, w, h);
-                for (int k = 1; k < 4; k++) rect(batch, CHALK, (1f - burn) * 0.8f, x - w / 2f + w * k / 4f, y - h * 0.35f, 2f, h * 0.7f);
+            // Son vrai plan quitte son bras (il disparaît du portrait au même instant), s'envole, se déroule, puis brûle d'or.
+            float fly = progress(PLAN_OFF, CLIMAX_DEATH);
+            if (time >= PLAN_OFF && time < CLIMAX_DEATH + 0.5f) {
+                float px = bossScale() * poseScale;
+                float x = MathUtils.lerp(portraitX(PLAN_X), bossX(), fly);
+                float y = MathUtils.lerp(portraitY(PLAN_Y), worldHeight() * 0.78f, Interpolation.pow2Out.apply(fly));
+                float unroll = progress(1.6f, CLIMAX_DEATH);
+                float w = MathUtils.lerp(PLAN_W * px, bossWidth() * 1.6f, unroll);
+                float h = MathUtils.lerp(PLAN_H * px, w * 0.55f, unroll);
+                float burn = progress(CLIMAX_DEATH, CLIMAX_DEATH + 0.5f), a = 1f - burn;
+                if (unroll <= 0f) {                                              // encore roulé, comme sous son bras
+                    rect(batch, PAPER, a, x - w / 2f, y - h / 2f, w, h);
+                    rect(batch, PAPER_DARK, a, x - w / 2f, y - h / 2f, w, h / 3f);
+                    rect(batch, PAPER_END, a, x - w / 2f, y - h / 2f, px * 2f, h);
+                } else {                                                         // déroulé : le plan de sa Tour
+                    rect(batch, PLAN, a, x - w / 2f, y - h / 2f, w, h);
+                    for (int k = 1; k < 4; k++) rect(batch, CHALK, a * 0.8f * unroll, x - w / 2f + w * k / 4f, y - h * 0.35f, 2f, h * 0.7f);
+                }
                 if (time >= CLIMAX_DEATH) glow(batch, x, y, w * 1.6f, GOLD, 0.7f * (1f - burn));
             }
             flash(batch, GOLD, CLIMAX_DEATH, 0.3f, 0.35f);

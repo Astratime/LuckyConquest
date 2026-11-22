@@ -43,6 +43,8 @@ public class EnemyTextures implements Disposable {
     /** Contour lumineux des ennemis dorés, autour de leur portrait (blanc, teinté d'or à l'affichage). */
     private final Map<EnemyKind, Texture>   outlines  = new EnumMap<>(EnemyKind.class);
     /** Images de la Machine Originelle animée, par position du levier puis lumière des yeux (voir {@link #portrait(EnemyKind, float)}). */
+    /** L'Architecte sans son plan roulé, pour sa cinématique de mort (son plan s'envole de sous son bras). */
+    private Texture architectWithoutPlan;
     private final Texture[][] machineFrames = new Texture[3][3];
     private final Texture[][] machineFlashes = new Texture[3][3];
     private final CardTextures              cards;
@@ -195,6 +197,12 @@ public class EnemyTextures implements Disposable {
 
     /** @return le portrait de l'ennemi {@code kind}. */
     public Texture portrait(EnemyKind kind) { return portraits.get(kind); }
+
+    /** @return le portrait de l'Architecte sans son plan roulé sous le bras (créé à la première demande). */
+    public Texture architectWithoutPlan() {
+        if (architectWithoutPlan == null) architectWithoutPlan = texture(AscensionArt.architecteSansPlan(), false);
+        return architectWithoutPlan;
+    }
 
     /** @return la silhouette blanche du portrait de l'ennemi {@code kind}. */
     public Texture portraitFlash(EnemyKind kind) { return flashes.get(kind); }
@@ -621,6 +629,7 @@ public class EnemyTextures implements Disposable {
     @Override
     public void dispose() {
         portraits.values().forEach(Texture::dispose); // le croupier compris
+        if (architectWithoutPlan != null) architectWithoutPlan.dispose();
         flashes.values().forEach(Texture::dispose);
         outlines.values().forEach(Texture::dispose);
         for (int lever = 0; lever < 3; lever++) {      // la Machine au repos est dans les portraits

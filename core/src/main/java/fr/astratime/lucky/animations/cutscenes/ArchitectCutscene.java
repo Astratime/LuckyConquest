@@ -93,8 +93,8 @@ public class ArchitectCutscene extends Cutscene {
         drawPaper(batch);
         drawTower(batch);
         drawMachine(batch);
-        drawCompass(batch);
         drawArchitect(batch);
+        drawCompass(batch);
         drawParticles(batch, sparks);
         flash(batch, GOLD, IGNITE, 0.35f, 0.4f);
         float one = progress(LINE_ONE, LINE_ONE + 0.4f) * (1f - progress(IGNITE - 0.2f, IGNITE));
@@ -196,30 +196,37 @@ public class ArchitectCutscene extends Cutscene {
             line(batch, cx + MathUtils.cosDeg(a0) * radius, cy + MathUtils.sinDeg(a0) * radius,
                 cx + MathUtils.cosDeg(a1) * radius, cy + MathUtils.sinDeg(a1) * radius, 3f, ink);
         }
-        if (k < 1f) {                                                          // les deux branches du compas
+        if (k < 1f) {                     // c'est SON compas (celui de sa main) qui trace : un fil d'or relie sa pointe au trait
             float a = 90f + 360f * k;
             float tipX = cx + MathUtils.cosDeg(a) * radius, tipY = cy + MathUtils.sinDeg(a) * radius;
-            float hingeX = (cx + tipX) / 2f, hingeY = Math.max(cy, tipY) + radius * 0.9f;
-            line(batch, cx, cy, hingeX, hingeY, 5f, hex("c8d0e0"));
-            line(batch, tipX, tipY, hingeX, hingeY, 5f, hex("c8d0e0"));
-            glow(batch, hingeX, hingeY, 30f, GOLD, 0.6f);
+            float fromX = architectX(COMPASS_TIP[0]), fromY = architectY(COMPASS_TIP[1]);
+            line(batch, fromX, fromY, tipX, tipY, 2f, GOLD);
+            glow(batch, tipX, tipY, 24f, GOLD, 0.7f);
+            glow(batch, architectX(COMPASS_HINGE[0]), architectY(COMPASS_HINGE[1]), 6f * architectScale(), GOLD, 0.6f);
         }
     }
+
+    /** En pixels de son portrait : ses yeux 2 x 2 (l'œil nu, puis celui du monocle), la charnière et une pointe de son compas. */
+    private static final float[] EYE = {14f, 15f}, MONOCLE = {21f, 15f}, COMPASS_HINGE = {29.5f, 23.5f}, COMPASS_TIP = {26.5f, 14.5f};
+
+    private float architectScale() { return worldHeight() * 0.62f / architect.getRegionHeight(); }
+    private float architectX(float px) { return worldWidth() * 0.8f + (px - architect.getRegionWidth() / 2f) * architectScale(); }
+    private float architectY(float py) { return -worldHeight() * 0.02f + (architect.getRegionHeight() - py) * architectScale(); }
 
     /** L'Architecte, à droite du plan : il sort de l'ombre, puis ses yeux et son monocle s'allument. */
     private void drawArchitect(Batch batch) {
         float k = progress(ARCHITECT, ARCHITECT + 0.8f);
         if (k <= 0f) return;
-        float scale = worldHeight() * 0.62f / architect.getRegionHeight();
+        float scale = architectScale();
         float x = worldWidth() * 0.8f, y = -worldHeight() * 0.02f;
         float shadow = 1f - progress(ARCHITECT + 0.4f, ARCHITECT + 1.2f);
         glow(batch, x, y + architect.getRegionHeight() * scale * 0.6f, architect.getRegionWidth() * scale * 1.6f,
             ignited ? GOLD : CHALK, 0.25f * k);
         portrait(batch, architect, x, y, scale, shadow, k);
-        if (time >= COMPASS) {                                                 // la lueur du monocle (en pixels du portrait)
-            float mx = x - architect.getRegionWidth() * scale / 2f + 20.5f * scale;
-            float my = y + (architect.getRegionHeight() - 14.5f) * scale;
-            glow(batch, mx, my, 10f * scale, GOLD, 0.5f + 0.3f * MathUtils.sin(time * 8f));
+        if (time >= COMPASS) {                                                 // ses yeux s'allument, le monocle plus fort
+            float pulse = MathUtils.sin(time * 8f);
+            glow(batch, architectX(EYE[0]), architectY(EYE[1]), 6f * scale, GOLD, 0.4f + 0.2f * pulse);
+            glow(batch, architectX(MONOCLE[0]), architectY(MONOCLE[1]), 10f * scale, GOLD, 0.5f + 0.3f * pulse);
         }
     }
 

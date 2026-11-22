@@ -217,7 +217,15 @@ final class AscensionArt {
      * L'Architecte : un vieillard à longue barbe blanche, en robe bleu nuit brodée d'un compas d'or, monocle à l'œil ;
      * il tient un compas ouvert et un plan roulé, une équerre d'or sur l'épaule.
      */
-    static int[][] architecte() {
+    static int[][] architecte() { return architecte(true); }
+
+    /**
+     * L'Architecte sans son plan roulé (la robe à sa place) : pour sa mort, où c'est son vrai plan qui s'envole
+     * de sous son bras, pas une copie.
+     */
+    static int[][] architecteSansPlan() { return architecte(false); }
+
+    private static int[][] architecte(boolean withPlan) {
         PixelCanvas g = new PixelCanvas(W, H);
         int robe = rgba("1e2a5a"), robeDark = rgba("121a3a"), paper = rgba("8ab8ff"), paperDark = rgba("4a7ad0");
         // L'équerre d'or derrière son épaule gauche.
@@ -260,12 +268,14 @@ final class AscensionArt {
         // Les cheveux blancs sur les côtés, crâne dégarni.
         g.ellipse(10.5f, 14f, 2f, 3.5f, WHITE);
         g.ellipse(23.5f, 14f, 2f, 3.5f, WHITE_SHADE);
-        // Le plan roulé sous le bras droit.
-        g.rect(3, 33, 15, 38, paper);
-        g.rect(3, 37, 15, 38, paperDark);
-        g.ellipse(3f, 35.5f, 1.8f, 2.6f, rgba("d8e8ff"));
-        g.ellipse(3f, 35.5f, 0.8f, 1.2f, paperDark);
-        for (int x = 6; x <= 14; x += 3) g.line(x, 34, x, 36, WHITE);
+        // Le plan roulé sous le bras droit (colonnes 1 à 15, lignes 33 à 38 : voir ArchitectDeath).
+        if (withPlan) {
+            g.rect(3, 33, 15, 38, paper);
+            g.rect(3, 37, 15, 38, paperDark);
+            g.ellipse(3f, 35.5f, 1.8f, 2.6f, rgba("d8e8ff"));
+            g.ellipse(3f, 35.5f, 0.8f, 1.2f, paperDark);
+            for (int x = 6; x <= 14; x += 3) g.line(x, 34, x, 36, WHITE);
+        }
         // Le compas ouvert, tenu dans la main gauche.
         g.ellipse(29f, 26f, 2.3f, 2f, SKIN);
         g.line(29, 24, 26, 14, STONE_LIGHT);
