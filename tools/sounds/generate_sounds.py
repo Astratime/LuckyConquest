@@ -4245,6 +4245,171 @@ def death_coeur_montagne():
     return track.buf
 
 
+# ===========================================================================
+# Prairie : phases et morts des rois (PrairieBossScenes, 2026-11-22)
+# Les instants reprennent les constantes des scènes : si une scène change de rythme, mettre à jour ici.
+# ===========================================================================
+
+def meadow(d, gain=0.2):
+    """Le vent doux du pré, devant le château."""
+    return ambience(d, 300, 1400, gain)
+
+
+def slurp(d=0.5):
+    """Un liquide aspiré : un gargouillis qui monte."""
+    wobble = 0.6 + 0.4 * np.abs(np.sin(times(d) * 31))
+    return svf(noise(d), sweep(250, 1100, d), q=4.0, mode='bp') * wobble * adsr(d, 0.05, 0.1, 0.8, 0.15)
+
+
+def beep(d=0.14, f=1000):
+    """Le bip d'un moniteur cardiaque."""
+    return osc(f, d, 'sine') * adsr(d, 0.004, 0.02, 0.8, 0.03)
+
+
+@sound('cutscene/phase2_roi_pique', -17)
+def phase2_roi_pique():
+    """Le Roi de Pique, phase 2 (SpadePhase) : le cercle de lames se dresse dans l'herbe (0,15 à 1,0 s), boit le
+    sang qui monte du pré (0,75 à 1,6 s), s'envole en deux rangées de crocs (1,5 s) qui mordent (2,2 s)."""
+    track = Track(5.8)
+    track.add(meadow(4.8), 0.0, 1.0)
+    for i in range(10):
+        track.add(blade_ring(rand(2600, 3600), 0.5), 0.65 + i * 0.04, 0.12)
+    track.add(fade(slurp(0.9), 0.4, 1.0), 0.75, 0.5)
+    track.add(slurp(0.5), 1.2, 0.35)
+    for i in range(5):
+        track.add(blade_swish(0.25, 500, 3500), 1.5 + i * 0.06, 0.3)
+    track.add(fade(osc(sweep(300, 900, 0.3), 0.3, 'saw') * 0.3, 0.0, 1.0), 1.9, 0.2)
+    track.add(mix((metal_hit(1400, 0.9, 1.2), 0, 1.0), (metal_hit(1900, 0.7), 0.01, 0.8), (boom(1.4, 60), 0, 0.9),
+                  (crack_hit(), 0, 0.7)), 2.2, 0.9)
+    track.add(brass_chord(['E2', 'B2', 'E3', 'G3'], 1.6, 0.6), 2.25, 0.4)
+    for at in (2.9, 3.3, 3.8, 4.2):
+        track.add(drip(), at, 0.25)
+    return track.buf
+
+
+@sound('cutscene/death_roi_pique', -17)
+def death_roi_pique():
+    """Le Roi de Pique meurt (SpadeDeath) : un éclat court sur son épée (0,3 s), elle se fend (1,1 / 1,6 / 2,05 s),
+    casse net (2,5 s) ; la moitié vole et se plante dans l'herbe (3,6 s) ; les lames tombent l'une après l'autre."""
+    track = Track(6.6)
+    track.add(meadow(5.6), 0.0, 1.0)
+    track.add(blade_ring(3400, 0.8), 0.3, 0.3)
+    for k, at in enumerate((1.1, 1.6, 2.05)):
+        track.add(mix((crack(0.08, 0.015, 1500, 8000), 0, 1.0), (metal_hit(2600 + 300 * k, 0.3, 0.6), 0, 0.4)), at, 0.4 + 0.1 * k)
+    track.add(fade(svf(noise(0.9), sweep(1500, 4000, 0.9), q=6.0, mode='bp'), 0.0, 1.0), 1.6, 0.15)   # le métal qui gémit
+    track.add(mix((metal_hit(2200, 1.4, 1.4), 0, 1.0), (crack_hit(), 0, 1.0), (boom(1.2, 70), 0, 0.7),
+                  (sparkle(0.6, count=12, lo=3000, hi=8000), 0.02, 0.4)), 2.5, 0.9)
+    track.add(whoosh(0.9, 400, 1800, q=1.4), 2.6, 0.35)
+    track.add(mix((thump(160, 70, 0.15, 0.04), 0, 1.0), (metal_hit(1700, 0.4, 0.6), 0, 0.5)), 3.58, 0.6)
+    for k in range(9):
+        track.add(mix((metal_hit(rand(1100, 1600), 0.3, 0.7), 0, 1.0), (thump(140, 70, 0.08, 0.02), 0, 0.5)),
+                  3.12 + k * 0.11 + rand(0, 0.02), 0.25)
+    return track.buf
+
+
+@sound('cutscene/phase2_roi_trefle', -17)
+def phase2_roi_trefle():
+    """Le Roi de Trèfle, phase 2 (ClubPhase) : sa table ronde tourne de plus en plus vite (0,3 à 2,2 s), le pré
+    tangue (dès 0,9 s), tout chavire et les pièces volent (2,2 s), il voit double."""
+    track = Track(5.8)
+    track.add(meadow(4.8), 0.0, 1.0)
+    track.add(rattle(1.9, 4, 30, 400, 1500, wood=True), 0.3, 0.35)
+    track.add(fade(svf(noise(1.9), sweep(200, 1400, 1.9), q=2.0, mode='bp'), 0.1, 1.0), 0.3, 0.3)   # la table qui siffle en tournant
+    track.add(gulp(), 1.0, 0.4)
+    track.add(fade(osc(vibrato(hz('A3'), 2.4, 3, 0.04), 2.4, 'tri'), 0.0, 1.0), 0.9, 0.12)            # l'ivresse qui monte
+    track.add(mix((boom(1.2, 70), 0, 1.0), (coin_shower(1.0, 18), 0.02, 0.6), (glass_clink(2800), 0.05, 0.4)), 2.2, 0.85)
+    wobble = osc(vibrato(hz('D4'), 1.8, 2.5, 0.06), 1.8, 'tri') + osc(vibrato(hz('D#4'), 1.8, 2.1, 0.06), 1.8, 'tri')
+    track.add(wobble * adsr(1.8, 0.05, 0.2, 0.6, 0.6), 2.3, 0.15)
+    track.add(rattle(1.4, 14, 4, 400, 1500, wood=True), 2.3, 0.25)
+    return track.buf
+
+
+@sound('cutscene/death_roi_trefle', -17)
+def death_roi_trefle():
+    """Le Roi de Trèfle meurt (ClubDeath) : son trèfle perd ses feuilles (0,7 / 1,3 / 1,9 s), le vent emporte la
+    dernière (2,5 s), un nuage noir arrive (2,7 s) et pleut sur lui seul (dès 3,2 s)."""
+    track = Track(6.6)
+    track.add(meadow(5.6), 0.0, 1.0)
+    track.add(sparkle(1.4, count=10), 0.0, 0.2)
+    for k, at in enumerate((0.7, 1.3, 1.9)):
+        track.add(rustle(0.4), at, 0.3)
+        track.add(chip(hz(['E5', 'C5', 'A4'][k]), 0.3, 'tri', a=0.01, s=0.5, r=0.15), at, 0.25)
+    track.add(whoosh(1.4, 200, 1200, q=0.8), 2.4, 0.5)
+    track.add(chip(hz('F4'), 0.6, 'tri', a=0.01, s=0.5, r=0.3), 2.5, 0.3)
+    track.add(thunder(1.6), 2.75, 0.35)
+    track.add(rain_noise(2.6), 3.2, 0.35)
+    for k in range(8):
+        track.add(drip(), 3.3 + k * 0.3 + rand(0, 0.1), 0.2)
+    return track.buf
+
+
+@sound('cutscene/phase2_roi_coeur', -17)
+def phase2_roi_coeur():
+    """Le Roi de Coeur, phase 2 (HeartPhase) : son coeur bat de plus en plus vite (dès 0,2 s), le vitrail se fend
+    (0,9 à 2,2 s), il écrase sa coupe (2,2 s), une brume rouge monte."""
+    track = Track(5.8)
+    track.add(meadow(4.8), 0.0, 1.0)
+    beats, t = [], 0.2
+    while t < 4.2:
+        beats.append(t)
+        t += 0.7 + (0.18 - 0.7) * min(1.0, t / 2.2)
+    track.add(heartbeat(beats, f=55, gain=1.0), 0.0, 1.0)
+    for k in range(6):
+        track.add(crack(0.06, 0.012, 2000, 9000), 0.9 + k * 0.22, 0.25)
+    track.add(mix((metal_hit(900, 0.5, 0.6), 0, 1.0), (crack_hit(), 0, 0.8), (boom(1.4, 55), 0, 0.9),
+                  (modal(2400, 0.8, GLASS_RATIOS, [0.3, 0.15, 0.08, 0.04]), 0.01, 0.5)), 2.2, 0.9)
+    track.add(brass_chord(['C2', 'G2', 'C3', 'D#3'], 1.8, 0.6), 2.25, 0.45)
+    return track.buf
+
+
+@sound('cutscene/death_roi_coeur', -17)
+def death_roi_coeur():
+    """Le Roi de Coeur meurt (HeartDeath) : trois battements de plus en plus faibles (0,35 / 1,15 / 2,05 s), chacun
+    avec son bip, puis le tracé devient plat (2,5 s) : le long bip continu."""
+    track = Track(6.6)
+    track.add(meadow(5.6, 0.15), 0.0, 1.0)
+    for at, g in ((0.35, 1.0), (1.15, 0.7), (2.05, 0.4)):
+        track.add(heartbeat([at], f=52, gain=g), 0.0, 1.0)
+        track.add(beep(), at, 0.35)
+    track.add(beep(2.6) * fade_out(2.6, 1.2), 2.5, 0.35)
+    track.add(thump(90, 40, 0.5, 0.15), 2.5, 0.4)
+    return track.buf
+
+
+@sound('cutscene/phase2_roi_carreau', -17)
+def phase2_roi_carreau():
+    """Le Roi de Carreau, phase 2 (DiamondPhase) : ses piles de pièces se dédoublent (0,4 / 0,8 / 1,2 / 1,6 / 2,0 s),
+    les pages du livre d'or tournent de plus en plus vite, les tours d'or montent (2,2 s)."""
+    track = Track(5.8)
+    track.add(meadow(4.8), 0.0, 1.0)
+    for i in range(1, 6):
+        track.add(coin_shower(0.3, 2 * i), i * 0.4, 0.25 + 0.05 * i)
+    t = 0.3
+    while t < 2.2:
+        track.add(card_flick(0.06), t, 0.2)
+        t += 0.8 / (1.2 + 3 * t / 2.2)
+    track.add(mix((cash_register_bell(), 0, 0.8), (boom(1.2, 65), 0, 0.9), (coin_shower(1.4, 30), 0.03, 0.7)), 2.2, 0.85)
+    track.add(brass_chord(['F2', 'C3', 'F3', 'A3'], 1.6, 0.6), 2.25, 0.4)
+    return track.buf
+
+
+@sound('cutscene/death_roi_carreau', -17)
+def death_roi_carreau():
+    """Le Roi de Carreau meurt (DiamondDeath) : des pièces glissent déjà du tas (0,9 à 2,5 s) ; il lâche tout
+    (2,5 s) : le trésor roule loin de lui, le coffre bascule, son sceptre tombe dans l'herbe (2,95 s) ; une dernière
+    pièce tourne sur la tranche et tombe à plat (4,3 s)."""
+    track = Track(6.6)
+    track.add(meadow(5.6), 0.0, 1.0)
+    for k in range(6):
+        track.add(coin(rand(1800, 2600), 0.4), 0.9 + k * 0.27 + rand(0, 0.05), 0.2)
+    track.add(mix((coin_shower(1.6, 40), 0, 1.0), (thump(130, 60, 0.25, 0.06), 0, 0.8), (wood_knock(180), 0.3, 0.6)), 2.5, 0.8)
+    track.add(rattle(1.4, 30, 6, 2000, 4500), 2.7, 0.25)                                           # les pièces qui roulent
+    track.add(mix((metal_hit(1500, 0.6, 0.8), 0, 1.0), (thump(150, 80, 0.08, 0.02), 0, 0.5)), 2.95, 0.5)
+    track.add(rattle(1.0, 8, 40, 2500, 5000), 3.3, 0.2)                                            # la dernière pièce tourne
+    track.add(coin(2200, 0.6), 4.3, 0.45)
+    return track.buf
+
+
 def main(prefixes):
     done = 0
     for name, level, fmt, trim, loop, fn in SOUNDS:

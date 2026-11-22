@@ -171,7 +171,17 @@ public final class ExplorationArt {
      * Roi d'une couleur : couronne d'or, longue barbe, manteau à la couleur de sa
      * couleur avec un col d'hermine, plastron frappé de son symbole et sceptre.
      */
-    public static int[][] king(Card.Suit suit) {
+    public static int[][] king(Card.Suit suit) { return king(suit, new KingProp[0]); }
+
+    /** Ce qu'une cinématique peut retirer du portrait d'un roi (voir {@link #king(Card.Suit, KingProp...)}). */
+    public enum KingProp { SCEPTER }
+
+    /**
+     * @return le roi de {@code suit} dessiné sans les accessoires {@code without} (ce qu'il y avait dessous
+     *         réapparaît) : les cinématiques en tirent le vrai morceau qui quitte le roi, jamais une copie.
+     */
+    public static int[][] king(Card.Suit suit, KingProp... without) {
+        boolean scepter = !java.util.Arrays.asList(without).contains(KingProp.SCEPTER);
         PixelCanvas g = new PixelCanvas(W, H);
         int accent = accent(suit), accentDark = accentDark(suit), ink = ink(suit);
         int beard = rgba("e8e4dc"), beardShade = rgba("b8b2a8"), gem = suit == Card.Suit.TREFLE ? rgba("3ad86a")
@@ -218,13 +228,17 @@ public final class ExplorationArt {
         g.set(17, 7, rgba("ffffff"));
         g.set(21, 7, gem);
         // Sceptre d'or surmonté du symbole.
-        g.rect(29, 14, 30, 40, GOLD);
-        g.rect(30, 14, 30, 40, GOLD_DARK);
+        if (scepter) {
+            g.rect(29, 14, 30, 40, GOLD);
+            g.rect(30, 14, 30, 40, GOLD_DARK);
+        }
         g.rect(27, 31, 31, 33, SKIN);
-        PixelCanvas orb = new PixelCanvas(7, 7);
-        stamp(orb, suit, 0, 0, 1, accent);
-        for (int y = 0; y < 7; y++) for (int x = 0; x < 7; x++) if (orb.get(x, y) != 0) g.set(26 + x, 6 + y, GOLD);
-        g.set(29, 9, gem);
+        if (scepter) {
+            PixelCanvas orb = new PixelCanvas(7, 7);
+            stamp(orb, suit, 0, 0, 1, accent);
+            for (int y = 0; y < 7; y++) for (int x = 0; x < 7; x++) if (orb.get(x, y) != 0) g.set(26 + x, 6 + y, GOLD);
+            g.set(29, 9, gem);
+        }
         return g.outlined();
     }
 
