@@ -4245,6 +4245,248 @@ def death_coeur_montagne():
     return track.buf
 
 
+# ===========================================================================
+# Casino Englouti : phases et morts des rois (CasinoBossScenes, 2026-11-22)
+# Les instants reprennent les constantes des scènes : si une scène change de rythme, mettre à jour ici.
+# ===========================================================================
+
+def siren_voice(note, d, gain=1.0, bend=0.0):
+    """La voix de la Sirène : une note chantée, vibrée, un peu soufflée ; {bend} demi-tons de glissé sur la note."""
+    f0 = hz(note)
+    f = sweep(f0, f0 * 2 ** (bend / 12), d) if bend else np.full(n(d), f0)
+    voice = osc(vibrato(f, d, rate=5.5, depth=0.018, delay=0.08), d, 'sine') + 0.3 * osc(f * 2, d, 'sine') + 0.12 * osc(f * 3, d, 'tri')
+    breath = bp(noise(d), f0 * 1.5, f0 * 4) * 0.08
+    return (voice + breath) * adsr(d, 0.06, 0.1, 0.8, min(0.2, d * 0.4)) * gain
+
+
+def glass_hum(d, f=1400):
+    """Le verre qui résonne sous le chant : un sifflement pur qui tremble."""
+    return osc(vibrato(f, d, rate=11, depth=0.006), d, 'sine') * (0.6 + 0.4 * np.sin(times(d) * 2 * math.pi * 7)) * ramp(d, 0.0, 1.0, 1.5)
+
+
+def power_down(d=0.6, f=520):
+    """Une machine qui s'éteint : son bourdonnement glisse vers le grave et se tait."""
+    return osc(sweep(f, f * 0.25, d), d, 'square', duty=0.3) * 0.25 * expdec(d, d * 0.4) + bp(noise(d), 200, 900) * 0.2 * expdec(d, d * 0.2)
+
+
+def zap(d=0.35):
+    """Un court-circuit : des étincelles qui grésillent."""
+    track = Track(d)
+    for _ in range(14):
+        track.add(click(0.006, 2500, 9000), rand(0, d - 0.01), rand(0.4, 1.0))
+    track.add(bp(noise(d), 1200, 6000) * expdec(d, d * 0.3) * (0.5 + 0.5 * np.sign(np.sin(times(d) * 2 * math.pi * 55))), 0, 0.6)
+    return track.buf
+
+
+def jaws(start, end, track, gain=0.45):
+    """Les deux notes graves du requin, de plus en plus rapprochées, de {start} à {end}."""
+    t, gap = start, 0.5
+    while t < end:
+        for k, note in enumerate(('E2', 'F2')):
+            tone = svf(osc(hz(note), 0.22, 'saw'), 600, q=1.0) * adsr(0.22, 0.01, 0.05, 0.7, 0.08)
+            track.add(tone, t + k * gap / 2, gain)
+        t += gap
+        gap = max(0.14, gap * 0.8)
+
+
+def slither(d=0.35):
+    """Un bras de pieuvre qui glisse et se tord."""
+    return svf(noise(d), sweep(200, 700, d), q=2.0, mode='bp') * expdec(d, d * 0.45, attack=0.03)
+
+
+def suction_pop():
+    """Une ventouse qui lâche : « plop » mouillé."""
+    return mix((osc(sweep(300, 900, 0.07), 0.07, 'sine') * expdec(0.07, 0.025), 0, 1.0), (lp(noise(0.1), 1200) * expdec(0.1, 0.03), 0, 0.5))
+
+
+def sad_trombone(at, track, gain=0.5):
+    """« Wah wah wah waaah » : la faillite."""
+    for k, (note, d) in enumerate((('A#2', 0.38), ('A2', 0.38), ('G#2', 0.38), ('G2', 1.3))):
+        f = hz(note)
+        tone = brass(f, d) if k < 3 else svf(osc(vibrato(f, d, rate=6, depth=0.03, delay=0.3), d, 'saw'), 900, q=1.5) * adsr(d, 0.03, 0.1, 0.8, 0.4)
+        track.add(tone, at + k * 0.42, gain)
+
+
+@sound('cutscene/phase2_sirene', -17)
+def phase2_sirene():
+    """La Sirène, phase 2 (SirenPhase) : son chant s'enroule (0,2 s), les bouteilles du Bar résonnent de plus en plus
+    (0,3 à 2,2 s), l'image ondule (0,8 s) ; le contre-ut fêle les bouteilles (2,2 s), ses crocs brillent (2,45 s)."""
+    track = Track(5.8)
+    track.add(ambience(4.8, 150, 700, 0.25), 0.0, 1.0)
+    track.add(bubbles(4.0, 18), 0.0, 0.3)
+    for k, note in enumerate(['E5', 'G5', 'B5', 'A5', 'C6', 'B5', 'D6', 'E6']):
+        track.add(siren_voice(note, 0.32), 0.2 + k * 0.24, 0.32 + 0.04 * k)
+    track.add(glass_hum(1.9, 1480) * 0.25, 0.3, 1.0)
+    track.add(glass_hum(1.4, 1975) * 0.2, 0.8, 1.0)
+    track.add(siren_voice('E6', 1.2, bend=12), 2.0, 0.6)
+    for k in range(8):
+        track.add(crack(0.05, 0.01, 2000, 10000), 2.2 + k * 0.03 + rand(0, 0.02), 0.35)
+        track.add(glass_clink(rand(2800, 4200)), 2.2 + k * 0.04, 0.12)
+    track.add(boom(1.2, 70), 2.2, 0.6)
+    track.add(reverb(blade_ring(4200, 0.8), wet=0.4, size=1.2), 2.45, 0.35)                    # ses crocs
+    track.add(brass_chord(['E3', 'G3', 'B3', 'D#4'], 1.6, 0.5), 2.25, 0.35)
+    return reverb(track.buf, wet=0.3, size=1.6)
+
+
+@sound('cutscene/death_sirene', -17)
+def death_sirene():
+    """La Sirène meurt (SirenDeath) : son dernier chant monte (0,1 à 2,5 s), le verre vibre (1,4 s) ; sa note la plus
+    haute fait éclater toutes les bouteilles du Bar (2,5 à 2,8 s) ; sa voix casse (2,8 s), une dernière note tombe et
+    se brise au sol (3,5 s) ; elle se défait en écume (2,7 à 4,6 s)."""
+    track = Track(6.6)
+    track.add(ambience(5.6, 150, 700, 0.2), 0.0, 1.0)
+    for k, note in enumerate(['A4', 'C5', 'E5', 'D5', 'G5', 'F5', 'A5', 'C6']):
+        track.add(siren_voice(note, 0.3), 0.1 + k * 0.25, 0.3 + 0.04 * k)
+    track.add(glass_hum(1.1, 1760) * 0.3, 1.4, 1.0)
+    track.add(siren_voice('E6', 0.7, bend=3), 2.1, 0.7)
+    for k in range(16):                                                                           # toutes les bouteilles
+        track.add(crack(0.06, 0.012, 1500, 11000), 2.5 + k * 0.02 + rand(0, 0.02), 0.4)
+        track.add(glass_clink(rand(2400, 5200)), 2.5 + rand(0, 0.5), rand(0.1, 0.25))
+    track.add(ice_shatter(), 2.5, 0.6)
+    track.add(siren_voice('B5', 0.6, gain=0.8, bend=-14) * np.linspace(1, 0, n(0.6)), 2.8, 0.45)   # sa voix casse
+    track.add(glass_clink(1500), 3.5, 0.3)
+    track.add(crack(0.04, 0.01, 1500, 6000), 3.5, 0.3)
+    track.add(fizz(2.0), 2.7, 0.45)
+    track.add(bubbles(2.0, 30, 400, 1200), 2.7, 0.4)
+    return reverb(track.buf, wet=0.3, size=1.6, tail=1.2)
+
+
+@sound('cutscene/phase2_jackpot_vivant', -17)
+def phase2_jackpot_vivant():
+    """Le Jackpot Vivant, phase 2 (JackpotPhase) : son levier se tire seul trois fois (0,4 / 1,15 / 1,75 s), les
+    machines s'allument et leurs rouleaux s'affolent (0,55 s), tombent sur 7-7-7 (1,9 à 2,2 s) ; JACKPOT (2,2 s),
+    toutes les machines et lui crachent des pièces jusqu'à 3,8 s."""
+    track = Track(5.8)
+    for at in (0.4, 1.15, 1.75):
+        track.add(lever_pull(0.25), at, 0.6)
+    spin = np.tile(reel_spin(), 2)[:n(1.7)]
+    track.add(spin * np.linspace(0.5, 1.0, len(spin)), 0.55, 0.6)
+    for k in range(12):
+        track.add(chip(hz('C5') * 2 ** ((k * 5 % 12) / 12), 0.08, 'square', s=0.4), 0.6 + k * 0.12, 0.15)
+    for k in range(6):
+        track.add(reel_stop(), 1.9 + k * 0.05, 0.4)
+    track.add(bingo_jingle('C5', 'square', hold=0.7), 2.2, 0.6)
+    track.add(boom(1.0, 80), 2.2, 0.5)
+    for k in range(4):
+        track.add(cash_register_bell(), 2.25 + k * 0.18, 0.25)
+    track.add(coin_shower(1.6, 60, 1500, 3000), 2.25, 0.55)
+    track.add(brass_chord(['C3', 'E3', 'G3', 'C4'], 1.4, 0.6), 2.3, 0.4)
+    return reverb(track.buf, wet=0.2, size=1.2)
+
+
+@sound('cutscene/death_jackpot_vivant', -17)
+def death_jackpot_vivant():
+    """Le Jackpot Vivant meurt (JackpotDeath) : les rouleaux de ses flancs tournent et s'arrêtent (1,2 / 1,8 / 2,4 s)
+    sur trois symboles différents ; perdu, ses fenêtres grillent (2,5 s) ; les machines s'éteignent une à une (2,65
+    à 3,6 s) ; il se retourne et remonte, mort (2,9 s) ; sa dernière pièce tombe (2,8 s) et roule (3,0 à 4,6 s)."""
+    track = Track(6.6)
+    spin = np.tile(reel_spin(), 3)[:n(2.4)]
+    track.add(spin, 0.0, 0.5)
+    for at in (1.2, 1.8, 2.4):
+        track.add(reel_stop(), at, 0.8)
+    for k, note in enumerate(['E4', 'D#4', 'D4', 'C#4']):                                       # perdu
+        track.add(chip(hz(note), 0.22 if k < 3 else 0.6, 'square', s=0.5), 2.5 + k * 0.2, 0.35)
+    track.add(zap(0.4), 2.5, 0.7)
+    track.add(thump(120, 50, 0.4, 0.1), 2.5, 0.6)
+    for k in range(6):
+        track.add(power_down(0.5, rand(380, 620)), 2.65 + k * 0.17, 0.3)
+        track.add(click(0.01, 600, 3000), 2.65 + k * 0.17, 0.3)
+    for k, at in enumerate((2.8, 3.05, 3.2)):                                                   # la dernière pièce
+        track.add(coin(rand(1700, 2000), 0.35), at, 0.5 - 0.12 * k)
+    track.add(rattle(1.4, 20, 4, 2500, 5000), 3.1, 0.15)
+    track.add(bubbles(2.4, 20, 300, 800), 2.9, 0.35)
+    track.add(fade(lp(noise(2.0), 300), 0.0, 0.3), 3.0, 0.4)
+    return reverb(track.buf, wet=0.25, size=1.4)
+
+
+@sound('cutscene/phase2_requin_banquier', -17)
+def phase2_requin_banquier():
+    """Le Requin Banquier, phase 2 (SharkPhase) : l'eau rougit, les deux notes du requin accélèrent (0,2 à 2,2 s) ;
+    les requins du mur s'en détachent (0,55 s) et tournent autour de lui en déchiquetant les billets ; il claque
+    des mâchoires (2,2 s)."""
+    track = Track(5.8)
+    track.add(ambience(4.8, 100, 500, 0.3), 0.0, 1.0)
+    track.add(bubbles(3.0, 12), 0.0, 0.3)
+    jaws(0.2, 2.15, track, 0.5)
+    track.add(whoosh(0.6, 200, 1200, q=1.0), 0.55, 0.4)
+    for k in range(5):
+        track.add(whoosh(0.4, 300, 1500, q=1.2), 1.1 + k * 0.22, 0.25 + 0.05 * k)
+    for _ in range(12):                                                                          # les billets déchirés
+        track.add(bp(noise(0.08), 2000, 7000) * expdec(0.08, 0.02), rand(0.9, 3.6), rand(0.1, 0.25))
+    track.add(mix((impact(0.5, 160, 45), 0, 1.0), (crack_hit(), 0, 0.9), (click(0.03, 1500, 6000), 0.02, 0.8)), 2.2, 0.9)
+    track.add(boom(1.2, 60), 2.2, 0.4)
+    track.add(brass_chord(['E2', 'G2', 'A#2', 'E3'], 1.6, 0.6), 2.25, 0.45)
+    return reverb(track.buf, wet=0.25, size=1.4)
+
+
+@sound('cutscene/death_requin_banquier', -17)
+def death_requin_banquier():
+    """Le Requin Banquier meurt (SharkDeath) : la roue du coffre-fort tourne (0,3 à 1,7 s), la lourde porte grince et
+    s'ouvre (1,7 à 2,5 s) sur un coffre vide : un « bong » creux, des mites (2,5 s) ; son monocle saute et rebondit
+    (2,5 / 2,9 / 3,1 s), sa pile de pièces s'écroule (2,85 s) ; la faillite (3,0 s) ; il coule dans le noir."""
+    track = Track(6.6)
+    track.add(ambience(5.6, 100, 500, 0.2), 0.0, 1.0)
+    for k in range(9):
+        track.add(ratchet(rand(700, 900)), 0.3 + k * 0.16, 0.25)
+    track.add(creak(0.8, 110), 1.7, 0.5)
+    track.add(stone_slide(0.6), 1.8, 0.3)
+    track.add(reverb(mix((metal_hit(180, 1.2, 0.6), 0, 1.0), (thump(90, 45, 0.6, 0.2), 0, 0.8)), wet=0.5, size=2.0, tail=1.4), 2.5, 0.7)
+    for k in range(4):
+        track.add(moth_flutter(), 2.55 + k * 0.12, 0.3)
+    track.add(glass_clink(4200), 2.5, 0.2)
+    for at, g in ((2.9, 0.25), (3.1, 0.15), (3.22, 0.08)):
+        track.add(glass_clink(3600), at, g)
+    for k in range(5):
+        track.add(coin(rand(1500, 2100), 0.3), 2.85 + k * 0.09, 0.3)
+    sad_trombone(3.0, track, 0.4)
+    track.add(fade(lp(noise(2.4), 200), 0.0, 0.5), 3.4, 0.5)
+    return reverb(track.buf, wet=0.25, size=1.4)
+
+
+@sound('cutscene/phase2_kraken', -17)
+def phase2_kraken():
+    """Le Kraken, phase 2 (KrakenPhase) : le lustre tinte, il se gonfle (0,15 s) et crache son encre (0,3 à 1,5 s)
+    qui éteint le lustre ; ses yeux s'allument (1,2 s) ; ses bras surgissent de l'encre (1,4 à 2,2 s) ; 2,2 s."""
+    track = Track(5.8)
+    track.add(ambience(4.8, 80, 400, 0.25), 0.0, 1.0)
+    for k in range(8):
+        track.add(glass_clink(rand(3000, 4500)), 0.05 + k * 0.12, 0.12 * (1 - k / 8))
+    track.add(svf(noise(0.4), sweep(200, 700, 0.4), q=2.0, mode='bp') * ramp(0.4, 0.2, 1.0), 0.15, 0.4)
+    ink = lp(noise(1.4), 900) * adsr(1.4, 0.03, 0.2, 0.7, 0.6) + 0.5 * svf(noise(1.4), sweep(1200, 200, 1.4), q=1.5, mode='bp')
+    track.add(ink, 0.3, 0.8)
+    track.add(bubbles(1.2, 26, 200, 600), 0.3, 0.5)
+    horn = svf(stack(osc(hz('D1'), 1.4, 'saw'), osc(hz('A1'), 1.4, 'saw')), 400, q=0.9) * adsr(1.4, 0.3, 0.2, 0.8, 0.4)
+    track.add(horn, 1.2, 0.5)
+    for k in range(8):
+        track.add(slither(), 1.4 + k * 0.08, 0.35)
+    track.add(boom(1.6, 50), 2.2, 0.8)
+    track.add(brass_chord(['D2', 'F2', 'G#2', 'D3'], 1.6, 0.6), 2.25, 0.45)
+    return reverb(track.buf, wet=0.3, size=1.8, tail=1.2)
+
+
+@sound('cutscene/death_kraken', -17)
+def death_kraken():
+    """Le Kraken meurt (KrakenDeath) : ses huit bras lâchent les rideaux un à un (0,4 s, toutes les 0,25 s) ; le
+    plancher s'ouvre en tourbillon noir (2,2 s) et il s'y enfonce (2,5 à 4,4 s) en grondant ; sa couronne reste à
+    flotter et remonte seule vers le lustre (3,3 s)."""
+    track = Track(6.6)
+    track.add(ambience(5.6, 80, 400, 0.2), 0.0, 1.0)
+    for i in range(8):
+        at = 0.4 + i * 0.25
+        track.add(suction_pop(), at, 0.5)
+        track.add(slither(0.3), at + 0.05, 0.3)
+        track.add(rustle(0.3), at + 0.02, 0.15)                                                 # le rideau
+    vortex = svf(noise(3.0), sweep(120, 500, 3.0), q=3.0, mode='bp') * (0.6 + 0.4 * np.sin(times(3.0) * 2 * math.pi * 3)) * adsr(3.0, 0.4, 0.2, 0.8, 1.0)
+    track.add(vortex, 2.2, 0.7)
+    track.add(boom(2.0, 40), 2.5, 0.7)
+    groan = svf(osc(sweep(hz('A1'), hz('D1'), 1.8), 1.8, 'saw'), 500, q=1.0) * adsr(1.8, 0.1, 0.2, 0.8, 0.6)
+    track.add(groan, 2.6, 0.5)
+    track.add(bubbles(2.0, 30, 150, 500), 2.6, 0.5)
+    track.add(sparkle(1.4, count=12, lo=3000, hi=7000), 3.3, 0.35)
+    track.add(modal(hz('A5'), 1.6, GLASS_RATIOS, [0.4, 0.2, 0.1, 0.05]), 4.2, 0.25)
+    return reverb(track.buf, wet=0.3, size=1.8, tail=1.4)
+
+
 def main(prefixes):
     done = 0
     for name, level, fmt, trim, loop, fn in SOUNDS:
