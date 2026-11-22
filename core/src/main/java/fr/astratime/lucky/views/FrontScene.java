@@ -14,6 +14,7 @@ import com.badlogic.gdx.scenes.scene2d.InputListener;
 import com.badlogic.gdx.utils.Disposable;
 import fr.astratime.lucky.assets.EnemyTextures;
 import fr.astratime.lucky.entities.exploration.Dungeon;
+import fr.astratime.lucky.entities.exploration.Place;
 import fr.astratime.lucky.entities.Enemy;
 import fr.astratime.lucky.entities.enemy.EnemyKind;
 import fr.astratime.lucky.entities.tower.Chapter;
@@ -131,6 +132,26 @@ public class FrontScene extends Actor implements Disposable {
             }
             return CASINO;
         }
+
+        /**
+         * @return le décor où l'on combat {@code kind} : celui de son donjon (soldat ou roi), sinon celui de son
+         *         chapitre, sinon celui de l'Entraînement
+         */
+        public static Decor of(EnemyKind kind) {
+            for (Place place : Place.values()) {
+                for (Dungeon dungeon : place.getDungeons()) {
+                    if (dungeon.getSoldier() == kind || dungeon.getKing() == kind) return of(dungeon);
+                }
+            }
+            Chapter chapter = Chapter.of(kind);
+            return chapter != null ? of(chapter) : ENTRAINEMENT;
+        }
+
+        /** @return l'image du décor, dans les ressources du jeu. */
+        public String getPath() { return path; }
+
+        /** @return {@code true} si le décor doit être assombri (le casino, décor des autres combats). */
+        public boolean isDimmed() { return dimmed; }
 
         /** @return le décor d'un chapitre de la Tour des épreuves. */
         public static Decor of(Chapter chapter) {
