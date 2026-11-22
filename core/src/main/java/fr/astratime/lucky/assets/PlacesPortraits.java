@@ -11,7 +11,7 @@ import static fr.astratime.lucky.assets.PixelCanvas.rgba;
  * de couleurs RGBA8888 (0 = transparent), transformée en texture par
  * {@link EnemyTextures}.
  */
-final class PlacesPortraits {
+public final class PlacesPortraits {
 
     private static final int W = EnemyPortraits.WIDTH, H = EnemyPortraits.HEIGHT;
 
@@ -24,6 +24,31 @@ final class PlacesPortraits {
     private static final int RED = rgba("d8202c"), RED_DARK = rgba("8a1a1a");
 
     private PlacesPortraits() {}
+
+    /** @return les pixels du portrait de {@code kind} ({@code [y][x]}, RGBA8888), pour les cinématiques. */
+    public static int[][] pixels(EnemyKind kind) { return of(kind); }
+
+    /** Ce qu'une cinématique peut retirer d'un portrait (voir {@link #without}). */
+    public enum Prop { BARON_HAT }
+
+    /** Les accessoires retirés du portrait en cours de dessin (vide hors de {@link #without}). */
+    private static java.util.Set<Prop> gone = java.util.EnumSet.noneOf(Prop.class);
+
+    private static boolean has(Prop prop) { return !gone.contains(prop); }
+
+    /**
+     * @return le portrait de {@code kind} dessiné sans les accessoires {@code props} (ce qu'il y avait dessous
+     * réapparaît) : les cinématiques en tirent le vrai morceau qui quitte le boss, jamais une copie.
+     */
+    public static synchronized int[][] without(EnemyKind kind, Prop... props) {
+        gone = java.util.EnumSet.noneOf(Prop.class);
+        java.util.Collections.addAll(gone, props);
+        try {
+            return of(kind);
+        } finally {
+            gone = java.util.EnumSet.noneOf(Prop.class);
+        }
+    }
 
     /** @return le portrait de l'ennemi {@code kind}, ou {@code null} s'il n'est pas d'un de ces lieux. */
     static int[][] of(EnemyKind kind) {
@@ -363,11 +388,14 @@ final class PlacesPortraits {
         g.ellipse(20.5f, 15.5f, 2.5f, 2.5f, GOLD_DARK);
         g.rect(20, 15, 21, 16, rgba("c8e6f0"));
         for (int y = 18; y <= 23; y++) g.set(23 + (y % 2), y, GOLD);
-        // Haut-de-forme doré.
-        g.rect(11, 1, 23, 9, GOLD);
-        g.rect(19, 1, 23, 9, GOLD_DARK);
-        g.rect(11, 7, 23, 8, coat);
-        g.rect(8, 9, 26, 10, GOLD_DARK);
+        if (has(Prop.BARON_HAT)) {                                   // haut-de-forme doré
+            g.rect(11, 1, 23, 9, GOLD);
+            g.rect(19, 1, 23, 9, GOLD_DARK);
+            g.rect(11, 7, 23, 8, coat);
+            g.rect(8, 9, 26, 10, GOLD_DARK);
+        } else {                                                     // sans son chapeau : un crâne chauve, deux mèches
+            g.set(12, 9, whisker); g.set(22, 9, whisker);
+        }
         // Canne à pommeau d'or.
         g.rect(30, 26, 30, 41, rgba("1a1418"));
         g.ellipse(30f, 25f, 2f, 2f, GOLD);

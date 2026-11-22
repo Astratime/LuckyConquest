@@ -6,6 +6,7 @@ import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.Interpolation;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.utils.Array;
+import fr.astratime.lucky.assets.PlacesPortraits;
 import fr.astratime.lucky.entities.enemy.EnemyKind;
 import fr.astratime.lucky.entities.enemy.EnemySymbol;
 import java.util.Random;
@@ -56,16 +57,6 @@ final class MinesBossScenes {
         "...orrdo...", "....odo....", ".....o....."};
 
 
-    /** Les parois de la mine, à gauche et à droite. */
-    static void walls(BossScene scene, Batch batch) {
-        float w = scene.worldWidth(), h = scene.worldHeight();
-        for (int i = 0; i < 12; i++) {
-            float y = i * h / 11f, bulge = 40f * MathUtils.sin(i * 1.7f);
-            scene.rect(batch, ROCK, 1f, -60f, y - 60f, w * 0.12f + bulge + 60f, h / 11f + 120f);
-            scene.rect(batch, ROCK, 1f, w * 0.88f - bulge, y - 60f, w * 0.12f + bulge + 60f, h / 11f + 120f);
-        }
-    }
-
     /** Fait tomber des rochers et des cailloux du plafond. */
     static void cavein(BossScene scene, TextureRegion boulder, TextureRegion pebble, int count) {
         for (int i = 0; i < count; i++) {
@@ -112,7 +103,6 @@ final class MinesBossScenes {
 
         @Override
         protected void back(Batch batch) {
-            walls(this, batch);
             // les veines d'or qui courent dans la roche, des bords vers le centre
             float run = progress(CLIMAX_PHASE - 0.3f, CLIMAX_PHASE + 0.9f);
             additive(batch);
@@ -151,45 +141,58 @@ final class MinesBossScenes {
         }
     }
 
-    /** Son or se change en pierre ; la statue s'effrite ; son haut-de-forme roule au sol. */
+    /**
+     * « Le Baron perd son or » : son or se ternit en pierre grise, la statue tremble puis s'effrite en morceaux ;
+     * son vrai haut-de-forme doré (celui de son portrait) tombe et roule au sol, seul reste de son or.
+     */
     static final class BaronDeath extends BossScene {
-        private final TextureRegion hat;
+        private final TextureRegion bare;
+        private final Piece hat;
+        private float hatX, hatY;
+        private boolean off;
 
         BaronDeath(CutsceneKit kit) {
             super(kit, Moment.DEATH, EnemyKind.BARON_OR, 0);
-            hat = art("oy", new Color[] {hex("141018"), hex("ffc93a")}, TOP_HAT);
+            int[][] rest = PlacesPortraits.without(EnemyKind.BARON_OR, PlacesPortraits.Prop.BARON_HAT);
+            hat = lift(PlacesPortraits.pixels(EnemyKind.BARON_OR), rest);
+            bare = pixels(rest);
         }
+
+        @Override protected void restart() { off = false; }
 
         @Override
         protected void step(float delta) {
             if (at(CLIMAX_DEATH)) { rumble(0.7f, 12f); crumble(this, 6, hex("9a9aa0"), 300f); sparks(bossX(), bossY(), 40, STONE, 600f, 20f); }
+            if (at(CLIMAX_DEATH + 0.35f)) { rumble(0.15f, 4f); sparks(bossX(), groundY() + 20f, 14, GOLD, 300f, 8f); }
         }
 
         @Override
         protected void back(Batch batch) {
-            walls(this, batch);
             float stone = progress(0.4f, CLIMAX_DEATH - 0.3f);
             poseShadow = 0.75f * stone;                                 // il devient gris, de pierre
             poseTintColor.set(STONE);
             poseTint = 0.95f * stone;
             poseX = (random.nextFloat() - 0.5f) * 8f * progress(1.8f, CLIMAX_DEATH);
+            if (time >= CLIMAX_DEATH && !off && hat != null) {          // son vrai chapeau se détache (avant l'éclatement)
+                off = true;
+                hatX = pieceX(hat); hatY = pieceY(hat);
+                wear(bare);
+            }
             showBoss = time < CLIMAX_DEATH;
         }
 
         @Override
         protected void front(Batch batch) {
-            float x, y, rot;
-            if (time < CLIMAX_DEATH) {
-                x = bossX() + poseX;
-                y = bossBottom() + bossHeight() * 1.02f;
-                rot = 0f;
-            } else {                                                    // il tombe et roule
-                float k = progress(CLIMAX_DEATH, 4.6f);
-                x = bossX() + worldWidth() * 0.3f * Interpolation.pow2Out.apply(k);
-                y = MathUtils.lerp(bossBottom() + bossHeight(), groundY() + 30f, Interpolation.bounceOut.apply(Math.min(1f, k * 3f)));
-                rot = -720f * Interpolation.pow2Out.apply(k);
+            if (hat == null) return;
+            if (!off) {                                                 // encore sur sa tête : seul son or ne ternit pas
+                attached(batch, hat, 1f);
+            } else {                                                    // il tombe, rebondit et roule
+                float k = progress(CLIMAX_DEATH, 4.6f), drop = Interpolation.bounceOut.apply(Math.min(1f, k * 3f));
+                float x = hatX + worldWidth() * 0.3f * Interpolation.pow2Out.apply(k);
+                float y = MathUtils.lerp(hatY, groundY() + hat.height * bossScale() / 2f, drop);
+                draw(batch, hat.region, x, y, bossScale(), -720f * Interpolation.pow2Out.apply(k), WHITE, 1f);
+                glow(batch, x, y, 200f, GOLD, 0.3f * (1f - k));
             }
-            draw(batch, hat, x, y, fit(90f, 5), rot, time < CLIMAX_DEATH ? tmp.set(WHITE).lerp(STONE, 0.5f * progress(0.4f, 2f)) : WHITE, 1f);
             flash(batch, WHITE, CLIMAX_DEATH, 0.3f, 0.4f);
         }
     }
@@ -223,7 +226,6 @@ final class MinesBossScenes {
 
         @Override
         protected void back(Batch batch) {
-            walls(this, batch);
             poseX = (random.nextFloat() - 0.5f) * 10f * progress(0.5f, CLIMAX_PHASE);
         }
 
@@ -244,23 +246,29 @@ final class MinesBossScenes {
         }
     }
 
-    /** Sa foreuse tousse, se grippe et explose en vapeur ; le tunnel s'effondre ; la poussière retombe. */
+    /**
+     * « La foreuse se tait » : sa foreuse tousse, se grippe et explose en vapeur ; le tunnel s'effondre et les
+     * gravats l'ensevelissent jusqu'au casque ; la lampe de son casque grésille puis s'éteint.
+     */
     static final class DrillDeath extends BossScene {
-        private final TextureRegion drill, boulder, pebble;
-        private final Array<Particle> steam = new Array<>(false, 128);
         private static final float[] COUGHS = {0.6f, 1.2f, 1.7f, 2.1f};
+        private static final float BURY = CLIMAX_DEATH + 0.5f, LAMP_OFF = 4.3f;
+        private final TextureRegion drill, boulder, pebble, rubble;
+        private final Array<Particle> steam = new Array<>(false, 128);
 
         DrillDeath(CutsceneKit kit) {
             super(kit, Moment.DEATH, EnemyKind.GRAND_FOREUR, 0);
             drill = symbol(EnemySymbol.DRILL);
             boulder = art("odw", new Color[] {hex("1a0e06"), hex("5a4030"), hex("8a6a50")}, BOULDER);
             pebble = art("od", new Color[] {hex("1a0e06"), hex("5a4030")}, PEBBLE);
+            rubble = art("owsd", new Color[] {hex("1a0e06"), hex("8a6a50"), hex("6a5040"), hex("4a3424")}, PalaceBossScenes.snowHeap(44, 16));
         }
 
         @Override protected void restart() { steam.clear(); }
 
         private float drillX() { return bossX() + bossWidth() * 0.7f; }
         private float drillY() { return bossBottom() + bossHeight() * 0.35f; }
+        private float buried() { return Interpolation.pow2Out.apply(progress(BURY, 3.8f)); }
 
         private void puff(int count, float speed, float size) {
             for (int i = 0; i < count; i++) {
@@ -275,15 +283,14 @@ final class MinesBossScenes {
         protected void step(float delta) {
             for (float cough : COUGHS) if (at(cough)) { rumble(0.12f, 5f); puff(4, 120f, 120f); }
             if (at(CLIMAX_DEATH)) { rumble(0.6f, 12f); puff(40, 700f, 320f); sparks(drillX(), drillY(), 50, LAVA, 900f, 18f); }
-            if (at(CLIMAX_DEATH + 0.5f)) { rumble(1.2f, 14f); cavein(this, boulder, pebble, 50); }
+            if (at(BURY)) { rumble(1.4f, 14f); cavein(this, boulder, pebble, 60); }
             update(steam, delta);
         }
 
         @Override
         protected void back(Batch batch) {
-            walls(this, batch);
             poseShadow = 0.4f * progress(CLIMAX_DEATH, CLIMAX_DEATH + 1f);
-            poseY = -18f * progress(CLIMAX_DEATH + 0.5f, CLIMAX_DEATH + 1.2f);
+            poseSink = 0.72f * buried();                               // les gravats montent jusqu'à son casque
         }
 
         @Override
@@ -294,15 +301,26 @@ final class MinesBossScenes {
                 float angle = time * (400f - jam * 90f);
                 draw(batch, drill, drillX() + (random.nextFloat() - 0.5f) * 3f * jam, drillY(), iconScale(0.26f), angle % 30f, WHITE, 1f);
             }
+            float heap = buried();                                      // le tas de gravats
+            if (heap > 0f) {
+                float scale = bossWidth() * 1.7f / 44f;
+                stretch(batch, rubble, bossX(), bossBottom() - 8f + 16f * scale * heap / 2f, scale, scale * heap, 0f, WHITE, 1f);
+            }
+            boolean flicker = time > LAMP_OFF - 0.6f && MathUtils.sin(time * 70f) > 0.3f;
+            float lamp = time < LAMP_OFF ? (flicker ? 0.2f : 1f) : 0f;   // la lampe de son casque grésille et s'éteint
+            glow(batch, portraitX(17.5f), portraitY(6f), 180f, hex("fff2a0"), 0.8f * lamp);
             for (Particle p : steam) {                                  // la vapeur
                 float size = p.size * (1f + p.life());
                 batch.setColor(0.9f, 0.9f, 0.92f, 0.55f * (1f - p.life()));
                 batch.draw(soft, p.x - size / 2f, p.y - size / 2f, size, size);
             }
-            float dust = progress(CLIMAX_DEATH + 0.5f, CLIMAX_DEATH + 0.9f) * (1f - progress(3.6f, 5.0f));
-            fill(batch, hex("6a5a4a"), 0.55f * dust);                     // la poussière, qui retombe
+            float dust = progress(BURY, BURY + 0.4f) * (1f - progress(3.2f, 4.2f));
+            fill(batch, hex("6a5a4a"), 0.4f * dust);                      // la poussière, qui retombe
             flash(batch, WHITE, CLIMAX_DEATH, 0.3f, 0.5f);
         }
+
+        @Override
+        protected float decorLight() { return 0.62f - 0.25f * progress(LAMP_OFF, LAMP_OFF + 0.3f); }
     }
 
     // -------------------------------------------------------------------------
@@ -310,6 +328,9 @@ final class MinesBossScenes {
     // -------------------------------------------------------------------------
 
     /** Il plonge son arme dans la lave ; l'enclume chauffe à blanc ; ses coups de marteau rythment les étincelles. */
+    /** Le foyer de la forge du décor : le coeur de ses flammes (pixels du décor). */
+    static final float FURNACE_X = 65f, FURNACE_Y = 140f;
+
     static final class ForgePhase extends BossScene {
         private static final float[] STRIKES = {0.5f, 1.0f, 1.4f, 1.75f, 2.0f, CLIMAX_PHASE};
         private final TextureRegion anvil, sword;
@@ -336,8 +357,8 @@ final class MinesBossScenes {
 
         @Override
         protected void back(Batch batch) {
-            walls(this, batch);
-            glow(batch, worldWidth() * 0.25f, groundY(), 700f, LAVA, 0.45f);
+            float roar = progress(0.2f, CLIMAX_PHASE);                  // le foyer du décor s'embrase
+            glow(batch, decorX(FURNACE_X), decorY(FURNACE_Y), 500f + 500f * roar, LAVA, 0.5f + 0.3f * roar * pulse(9f, 0.6f));
             float swing = 0f;                                           // son bras frappe au rythme
             for (float strike : STRIKES) swing = Math.max(swing, gesture(strike - 0.2f, strike + 0.05f));
             poseTilt = -6f * swing;
@@ -346,13 +367,16 @@ final class MinesBossScenes {
 
         @Override
         protected void front(Batch batch) {
-            // la lave, et son arme plongée dedans puis ressortie rouge
-            float poolX = worldWidth() * 0.25f;
-            rect(batch, LAVA, 1f, poolX - 200f, groundY() - 20f, 400f, 40f);
-            glow(batch, poolX, groundY(), 500f, LAVA, 0.6f + 0.1f * MathUtils.sin(time * 6f));
+            // son arme plongée dans le feu du foyer du décor, puis ressortie rouge et posée sur l'enclume
             float dip = Interpolation.pow2Out.apply(progress(0.2f, 0.6f)) * (1f - Interpolation.pow2In.apply(progress(1.2f, 1.6f)));
-            float hot = progress(0.6f, 1.2f);
-            draw(batch, sword, poolX, groundY() + 120f - 110f * dip, fit(200f, 12), 180f, tmp.set(WHITE).lerp(LAVA, hot), 1f);
+            float carry = Interpolation.pow2.apply(progress(1.6f, 2.0f)), hot = progress(0.6f, 1.2f);
+            float fx = decorX(FURNACE_X), fy = decorY(FURNACE_Y);
+            float x = MathUtils.lerp(fx, anvilX(), carry), y = MathUtils.lerp(fy + 160f - 150f * dip, anvilY() + 50f, carry);
+            draw(batch, sword, x, y, fit(200f, 12), MathUtils.lerp(180f, 90f, carry), tmp.set(WHITE).lerp(LAVA, hot), 1f);
+            for (int k = 0; k < 4 && dip > 0.5f && time < 1.6f; k++) {                       // les flammes qui lèchent la lame
+                float t = (time * 3f + k * 0.25f) % 1f;
+                glow(batch, fx + (k - 1.5f) * 30f, fy + 60f * t, 120f * (1f - t), HOT, 0.6f * (1f - t));
+            }
             float white = progress(0.5f, CLIMAX_PHASE);                  // l'enclume chauffe à blanc
             draw(batch, anvil, anvilX(), anvilY(), fit(140f, 9), 0f, WHITE, 1f);
             additive(batch);
@@ -380,7 +404,7 @@ final class MinesBossScenes {
         @Override
         protected void step(float delta) {
             if (time < 3.5f && random.nextFloat() < 0.4f) {             // les braises qui montent
-                Particle ember = particle(worldWidth() * 0.25f + (random.nextFloat() - 0.5f) * 300f, groundY(), 90f + (random.nextFloat() - 0.5f) * 40f,
+                Particle ember = particle(decorX(FURNACE_X) + (random.nextFloat() - 0.5f) * 120f, decorY(165f), 90f + (random.nextFloat() - 0.5f) * 40f,
                     80f + 80f * random.nextFloat(), 1.8f, 10f);
                 ember.color.set(LAVA);
                 glows.add(ember);
@@ -390,9 +414,8 @@ final class MinesBossScenes {
 
         @Override
         protected void back(Batch batch) {
-            walls(this, batch);
             float fire = 1f - progress(0.2f, CLIMAX_DEATH);
-            glow(batch, worldWidth() * 0.25f, groundY(), 700f * (0.4f + 0.6f * fire), LAVA, 0.45f * fire + 0.1f);
+            glow(batch, decorX(FURNACE_X), decorY(FURNACE_Y), 700f * (0.4f + 0.6f * fire), LAVA, 0.45f * fire + 0.1f);
             poseShadow = 0.6f * (1f - fire);
             float bow = progress(CLIMAX_DEATH + 0.2f, CLIMAX_DEATH + 1f);
             poseTilt = 5f * bow;
@@ -401,9 +424,9 @@ final class MinesBossScenes {
 
         @Override
         protected void front(Batch batch) {
-            float fire = 1f - progress(0.2f, CLIMAX_DEATH);
-            float poolX = worldWidth() * 0.25f;
-            rect(batch, tmp.set(hex("3a1a0a")).lerp(LAVA, fire), 1f, poolX - 200f, groundY() - 20f, 400f, 40f);
+            float fire = 1f - progress(0.2f, CLIMAX_DEATH);             // les flammes du foyer tombent en braises
+            float s = decorScale();
+            rect(batch, hex("140806"), 0.85f * (1f - fire), decorX(34f), decorY(171f), 64f * s, 70f * s);
             float cool = progress(1.0f, 4.2f);                          // l'arme posée, du rouge au gris
             draw(batch, sword, anvilX(), anvilY() + 30f, fit(170f, 12), 90f, tmp.set(LAVA).lerp(STONE, cool), 1f);
             draw(batch, anvil, anvilX(), anvilY(), fit(140f, 9), 0f, WHITE, 1f);
@@ -455,7 +478,6 @@ final class MinesBossScenes {
 
         @Override
         protected void back(Batch batch) {
-            walls(this, batch);
             fill(batch, RED, 0.1f * beat);
             poseScale = 1f + 0.02f * beat;
             poseTintColor.set(CRYSTAL_COLOR);
@@ -509,10 +531,21 @@ final class MinesBossScenes {
 
         @Override
         protected void back(Batch batch) {
-            walls(this, batch);
             float open = split(), w = worldWidth() * 0.5f;
-            if (open > 0f) {                                            // la montagne s'ouvre : la veine d'or dans la faille
+            if (open > 0f) {                                            // la montagne s'ouvre : le décor se fend en deux
                 float gap = 40f + 160f * open;
+                TextureRegion image = decorImage();
+                if (image != null) {
+                    float s = decorScale(), dw = image.getRegionWidth() * s, dh = image.getRegionHeight() * s;
+                    float dx = w - dw / 2f, dy = worldHeight() + MARGIN - dh;
+                    int half = image.getRegionWidth() / 2;
+                    rect(batch, Color.BLACK, 1f, -MARGIN, -MARGIN, worldWidth() + 2f * MARGIN, worldHeight() + 2f * MARGIN);
+                    batch.setColor(litLikeDecor(WHITE, tmp));
+                    batch.draw(new TextureRegion(image, 0, 0, half, image.getRegionHeight()), dx - gap / 2f, dy - 20f * open,
+                        dw / 2f, 0f, half * s, dh, 1f, 1f, 2f * open);
+                    batch.draw(new TextureRegion(image, half, 0, image.getRegionWidth() - half, image.getRegionHeight()), w + gap / 2f,
+                        dy - 30f * open, 0f, 0f, (image.getRegionWidth() - half) * s, dh, 1f, 1f, -2f * open);
+                }
                 rect(batch, Color.BLACK, 1f, w - gap / 2f, -60f, gap, worldHeight() + 120f);
                 float vein = progress(3.4f, 4.2f);
                 additive(batch);

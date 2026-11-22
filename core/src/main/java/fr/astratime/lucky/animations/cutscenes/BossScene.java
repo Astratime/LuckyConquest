@@ -231,6 +231,9 @@ public abstract class BossScene extends Cutscene {
             color.b * light * (0.75f + 0.25f * sky.b), 1f);
     }
 
+    /** @return l'image du décor du lieu ({@code null} s'il manque), pour une scène qui le déchire ou le déplace. */
+    protected TextureRegion decorImage() { return decor; }
+
     /** @return la taille à l'écran d'un pixel du décor (il couvre tout l'écran, calé en haut). */
     protected float decorScale() {
         if (decor == null) return 1f;
