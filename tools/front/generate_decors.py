@@ -995,6 +995,46 @@ def la_maison():
     return vignette(im, 0.45, 0.4)
 
 
+def l_ascension():
+    """L'Ascension : sur l'escalier qui s'enroule autour de la Tour, au-dessus des nuages ; la porte du dernier étage
+    brille tout en haut, deux lanternes éclairent la rampe."""
+    rng = np.random.default_rng(57)
+    im, d = base((0, 0, 0))
+    gradient(d, (14, 14, 44), (120, 70, 100), 0, 160)
+    stars(d, rng, 70, 70)
+    fg, f = layer()
+    for k in range(8):  # nuages en contrebas
+        x, y, r = 10 + k * 48, 128 + (k % 2) * 8, 30
+        f.ellipse([x - r, y - r / 2, x + r, y + r / 2], fill=(200, 180, 204))
+    f.rectangle([120, 0, 240, 160], fill=(84, 80, 104))  # le mur de la Tour, en face
+    f.rectangle([120, 0, 132, 160], fill=(110, 106, 132))
+    f.rectangle([226, 0, 240, 160], fill=(60, 56, 78))
+    for y in range(8, 160, 16):  # les pierres
+        for x in range(122 + (y // 16 % 2) * 12, 238, 24):
+            f.line([(x, y), (x, y + 15)], fill=(64, 60, 84))
+        f.line([(121, y), (239, y)], fill=(64, 60, 84))
+    f.rectangle([164, 6, 196, 46], fill=(255, 214, 120))  # la porte du dernier étage, ouverte sur la lumière
+    f.polygon([(164, 6), (196, 6), (180, -6)], fill=(255, 214, 120))
+    f.rectangle([162, 46, 198, 50], fill=(70, 50, 40))
+    for k in range(9):  # l'escalier qui monte vers elle, de jetons
+        x0, y0 = 20 + k * 18, 160 - k * 12
+        colors = ((200, 40, 60), (42, 90, 216), (31, 154, 74), (232, 176, 32))
+        f.rectangle([x0, y0 - 6, x0 + 24, y0], fill=colors[k % 4])
+        f.line([(x0 + 4, y0 - 4), (x0 + 20, y0 - 4)], fill=(240, 240, 240))
+    for k in range(9):  # et de l'autre côté
+        x0, y0 = 316 - k * 18, 160 - k * 12
+        colors = ((232, 176, 32), (200, 40, 60), (42, 90, 216), (31, 154, 74))
+        f.rectangle([x0, y0 - 6, x0 + 24, y0], fill=colors[k % 4])
+        f.line([(x0 + 4, y0 - 4), (x0 + 20, y0 - 4)], fill=(240, 240, 240))
+    for x in (40, 320):
+        lantern(fg, x, 60, (255, 214, 120), (60, 50, 70))
+    im = finish(im, fg)
+    d = ImageDraw.Draw(im)
+    d.rectangle([0, 160, W, H], fill=(70, 62, 84))
+    GLOWS['l_ascension'] = ((40, 60), (320, 60), (180, 22))
+    return vignette(im, 0.45, 0.4)
+
+
 def le_jackpot():
     """Le Jackpot : le sommet de la Tour, au-dessus des nuages, engrenages d'or et pluie de pièces."""
     rng = np.random.default_rng(56)
@@ -1659,7 +1699,7 @@ DECORS = {
     'bar': bar, 'machines': machines, 'coffres': coffres, 'vip': vip,
     'caravane': caravane, 'tombeau': tombeau, 'oasis': oasis, 'volcan': volcan,
     'genese': genese, 'tables_sacrees': tables_sacrees, 'dernier_tirage': dernier_tirage,
-    'monde_sans_maitre': monde_sans_maitre, 'la_maison': la_maison, 'le_jackpot': le_jackpot,
+    'monde_sans_maitre': monde_sans_maitre, 'la_maison': la_maison, 'l_ascension': l_ascension, 'le_jackpot': le_jackpot,
     'locomotive': locomotive, 'wagon_restaurant': wagon_restaurant, 'wagon_lit': wagon_lit, 'fourgon': fourgon,
     'hall': hall, 'patinoire': patinoire, 'telepherique': telepherique, 'suite_royale': suite_royale,
     'parvis': parvis, 'jardin_oracles': jardin_oracles, 'salle_des_des': salle_des_des, 'sanctuaire': sanctuaire,

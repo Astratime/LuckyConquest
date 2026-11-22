@@ -31,6 +31,8 @@ public final class Notebook {
         page(EnemyKind.PRETENDANT, "Sans maître, ils se sont tous battus pour le trône. Je les ai regardés faire. "
             + "Un trône vide, c'est la meilleure des mises.");
         page(EnemyKind.MAISON, "La Maison gagne toujours, disent-ils. Ils oublient de demander qui a bâti la Maison.");
+        page(EnemyKind.ARCHITECTE, "Il fallait quelqu'un pour monter la Tour. Je lui ai donné les plans. Il a cru les avoir "
+            + "dessinés. Chaque étage qu'il posait, je l'avais déjà mis sur la table.");
         page(EnemyKind.MACHINE_ORIGINELLE, "Ma toute première machine. Chaque fois qu'on tire son levier, le monde "
             + "recommence. Toi, tu l'as tiré. Et je me souviens de chaque tour.");
         // ----- La prairie -----

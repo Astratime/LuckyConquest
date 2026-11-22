@@ -31,6 +31,7 @@ public record BossTheme(Color skyTop, Color skyLow, Color ground, Color accent, 
             case ECLAT -> tower("080614", "2a1650", "0a0814", "7ae8ff", "L'ÉCLAT VOLE EN MILLE MORCEAUX");
             case PRETENDANT -> tower("06080f", "1c2440", "080a12", "c8d4ff", "LE PRÉTENDANT N'AURA JAMAIS LE TRÔNE");
             case MAISON -> tower("120606", "4a0e0e", "140606", "ffb02a", "LA MAISON A PERDU !");
+            case ARCHITECTE -> tower("0a0c24", "2a3a7a", "141626", "ffc93a", "LA TOUR DE L'ARCHITECTE S'EFFONDRE");
             case GRAND_CROUPIER -> tower("05030a", "3a0a14", "0a0406", "ff2a3a", "LE CROUPIER POSE SES CARTES");
             case MACHINE_ORIGINELLE -> tower("050505", "2a1a08", "0a0804", "ff4a1a", "LA MACHINE ORIGINELLE S'ARRÊTE");
             // ----- La prairie -----

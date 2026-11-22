@@ -112,6 +112,7 @@ public class EnemyTextures implements Disposable {
             if (grid == null) grid = PalacePortraits.of(kind);
             if (grid == null) grid = TemplePortraits.of(kind);
             if (grid == null) grid = ManorPortraits.of(kind);
+            if (grid == null) grid = AscensionArt.of(kind);
             if (grid == null) grid = RivalArt.of(kind);
             if (grid != null) addPortrait(kind, grid);
         }
@@ -120,6 +121,7 @@ public class EnemyTextures implements Disposable {
         chapterArt.put(Chapter.DERNIER_TIRAGE, texture(Chapter3Art.crater(), false));
         chapterArt.put(Chapter.MONDE_SANS_MAITRE, texture(Chapter456Art.worldWithoutMaster(), false));
         chapterArt.put(Chapter.LA_MAISON, texture(Chapter456Art.house(), false));
+        chapterArt.put(Chapter.L_ASCENSION, texture(AscensionArt.ascension(), false));
         chapterArt.put(Chapter.LE_JACKPOT, texture(Chapter456Art.jackpot(), false));
         addPortrait(EnemyKind.PILLEUR, Chapter456Art.pilleur());
         addPortrait(EnemyKind.FAUSSAIRE, Chapter456Art.faussaire());
@@ -469,6 +471,11 @@ public class EnemyTextures implements Disposable {
             case FATE_THREAD    -> TempleArt.fateThread();
             case DOUBLE_SIX     -> TempleArt.doubleSix();
             case KARMA          -> TempleArt.karma();
+            case ELEVATOR       -> AscensionArt.elevator();
+            case ECHO           -> AscensionArt.echoSymbol();
+            case VERTIGO        -> AscensionArt.vertigo();
+            case STONE          -> AscensionArt.stone();
+            case BLUEPRINT      -> AscensionArt.blueprint();
             case BLOOD_PACT     -> ManorArt.bloodPact();
             case CURSE          -> ManorArt.curse();
             case SHROUD         -> ManorArt.shroud();

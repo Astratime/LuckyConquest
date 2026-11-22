@@ -212,7 +212,21 @@ public enum EnemySignature {
     FIL_DE_SOIE("Fil de soie", EnemySymbol.STRINGS, Timing.NEXT,
         "Ses prochains Fils te font jouer 2 cartes", "FILS x2"),
     DERNIER_ACTE("Dernier acte", EnemySymbol.STRINGS, Timing.NOW,
-        "Fils tout de suite : il choisira une de tes cartes, et tu la joueras", "FILS");
+        "Fils tout de suite : il choisira une de tes cartes, et tu la joueras", "FILS"),
+
+    // La Tour, chapitre « L'Ascension »
+    BOUTON_D_APPEL("Bouton d'appel", EnemySymbol.ELEVATOR, Timing.NOW,
+        "Son Ascenseur monte d'un étage tout de suite", "ÉTAGE +1"),
+    RESONANCE("Résonance", EnemySymbol.ECHO, Timing.NEXT,
+        "Son prochain Écho rejoue tes cartes à pleine force", "ÉCHO x2"),
+    LE_VIDE("Le Vide", EnemySymbol.VERTIGO, Timing.NEXT,
+        "Son prochain Vertige te retire 1 carte de plus", "VERTIGE +1"),
+    GRANIT("Granit", EnemySymbol.STONE, Timing.TURN,
+        "Sa Pétrification de ce tour arrête {0} % de tes coups", "PIERRE {0} %"),
+    FONDATIONS("Fondations", EnemySymbol.BLUEPRINT, Timing.NOW,
+        "Sa Tour gagne un étage tout de suite", "ÉTAGE +1"),
+    CLE_DE_VOUTE("Clé de voûte", EnemySymbol.BLUEPRINT, Timing.NEXT,
+        "Son prochain Plan bâtit 2 étages", "PLAN x2");
 
     /** Exemplaires de chaque carte propre dans le deck d'un ennemi (choix d'Astra). */
     public static final int COPIES = 4;
@@ -290,6 +304,7 @@ public enum EnemySignature {
             case ANNONCE           -> Lang.f(description, EnemyKind.CHEF_NOTHING_GOES_CARD_PERCENT);
             case POIDS_DE_L_OR     -> Lang.f(description, LINGOT_PERCENT);
             case QUENOUILLE        -> Lang.f(description, QUENOUILLE_PERCENT);
+            case GRANIT            -> Lang.f(description, EnemySymbol.GRANITE_PERCENT);
             default                -> Lang.t(description);
         };
     }
@@ -309,6 +324,7 @@ public enum EnemySignature {
             case PAS_CE_SOIR       -> Lang.f(bonus, VIDEUR_PERCENT);
             case ANNONCE           -> Lang.f(bonus, EnemyKind.CHEF_NOTHING_GOES_CARD_PERCENT);
             case POIDS_DE_L_OR     -> Lang.f(bonus, LINGOT_PERCENT);
+            case GRANIT            -> Lang.f(bonus, EnemySymbol.GRANITE_PERCENT);
             default                -> Lang.t(bonus);
         };
     }

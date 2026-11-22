@@ -241,6 +241,7 @@ public class EnemyTurnResolver {
                 openingEvents.add(new StatusEvent(Lang.t("ELLE TE REND TON ROULEAU"), EffectPopup.Style.DEFENSE));
             }
             enemy.unseal(); // son Sarcophage s'ouvre
+            enemy.crumble(); // sa Pétrification retombe en poussière
             if (enemy.enterPhaseTwo()) {
                 openingEvents.add(new EnemyPhaseEvent(enemy.getPhase(), kind.phaseText(enemy.getPhase())));
                 long breach = enemy.releaseBreach(); // Brèche : le surplus arrêté par sa Garde le frappe
@@ -533,6 +534,18 @@ public class EnemyTurnResolver {
                 }
             }
             turn.boostPercent = EnemySymbol.GEAR_PERCENT * gears;
+            if (enemy.getFloor() > 0) { // Ascenseur : chaque étage renforce ses coups et ses Boucliers
+                turn.boostPercent += EnemySymbol.ELEVATOR_STEP_PERCENT * enemy.getFloor();
+                openingEvents.add(new StatusEvent(Lang.f("ÉTAGE {0} : SES COUPS +{1} %", enemy.getFloor(),
+                    EnemySymbol.ELEVATOR_STEP_PERCENT * enemy.getFloor()), EffectPopup.Style.ATTACK));
+            }
+            if (enemy.getStoreys() > 0) { // Plan : chaque étage de la Tour de l'Architecte lui donne un Bouclier
+                if (kind.has(EnemyTrait.KEYSTONE) && enemy.getPhase() >= 3) { // Clé de voûte : en phase 3, sa Tour frappe aussi
+                    turn.boostPercent += EnemySymbol.KEYSTONE_STEP_PERCENT * enemy.getStoreys();
+                }
+                openingEvents.add(new StatusEvent(Lang.f("SA TOUR : {0} ÉTAGES", enemy.getStoreys()), EffectPopup.Style.DEFENSE));
+                openingEvents.add(turn.shield(kind.shieldDefense() * enemy.getStoreys()));
+            }
 
         }
 
@@ -591,7 +604,8 @@ public class EnemyTurnResolver {
         private void act(EnemySymbol symbol, int i, List<Event> events) {
             boolean done = actTowerOpening(symbol, i, events) || actTowerLate(symbol, events)
                 || actPortMinesCasino(symbol, events) || actFairDesert(symbol, events) || actExpress(symbol, events)
-                || actPalace(symbol, events) || actTemple(symbol, events) || actManor(symbol, events);
+                || actPalace(symbol, events) || actTemple(symbol, events) || actManor(symbol, events)
+                || actAscension(symbol, events);
             if (!done) throw new IllegalStateException("Symbole sans effet : " + symbol);
         }
 
@@ -1130,6 +1144,58 @@ public class EnemyTurnResolver {
             return true;
         }
 
+        /**
+         * La Tour, chapitre « L'Ascension » (Ascenseur, Écho, Vertige, Pétrification, Plan).
+         *
+         * @return {@code false} si {@code symbol} n'est pas de cette famille
+         */
+        private boolean actAscension(EnemySymbol symbol, List<Event> events) {
+            switch (symbol) {
+                case ELEVATOR -> {
+                    events.add(turn.strike(kind.swordDamage()));
+                    if (enemy.getFloor() < EnemySymbol.ELEVATOR_MAX) {
+                        enemy.climb(1);
+                        events.add(new StatusEvent(Lang.f("ASCENSEUR : ÉTAGE {0}/{1}", enemy.getFloor(), EnemySymbol.ELEVATOR_MAX),
+                            EffectPopup.Style.SPECIAL));
+                    }
+                }
+                case ECHO -> echo(turn, events, enemy.takeCharge(EnemySignature.RESONANCE));
+                case VERTIGO -> {
+                    int pending = curses.getVertigos();
+                    int added = Math.min(EnemySymbol.VERTIGO_MAX - pending, enemy.takeCharge(EnemySignature.LE_VIDE) ? 2 : 1);
+                    if (added <= 0) {
+                        events.add(turn.strike(kind.swordDamage())); // déjà pris de vertige : il frappe
+                    } else {
+                        curses.addVertigo(added);
+                        events.add(new StatusEvent(Lang.n(curses.getVertigos(), "VERTIGE : {0} CARTE JOUÉE DE MOINS",
+                            "VERTIGE : {0} CARTES JOUÉES DE MOINS", curses.getVertigos()), EffectPopup.Style.DAMAGE));
+                    }
+                }
+                case STONE -> {
+                    int percent = boosts.containsKey(EnemySignature.GRANIT) ? EnemySymbol.GRANITE_PERCENT : EnemySymbol.STONE_PERCENT;
+                    if (enemy.getStonePercent() >= percent) {
+                        events.add(turn.strike(kind.swordDamage())); // déjà de pierre : il frappe
+                    } else {
+                        enemy.petrify(percent);
+                        events.add(new StatusEvent(Lang.f("PÉTRIFICATION : TES COUPS -{0} %", percent), EffectPopup.Style.DEFENSE));
+                    }
+                }
+                case BLUEPRINT -> {
+                    int floors = enemy.takeCharge(EnemySignature.CLE_DE_VOUTE) ? 2 : 1;
+                    if (enemy.getStoreys() >= EnemySymbol.BLUEPRINT_MAX) {
+                        events.add(turn.strike(kind.swordDamage())); // sa Tour est finie : il frappe
+                    } else {
+                        enemy.build(floors);
+                        events.add(new StatusEvent(Lang.f("PLAN : SA TOUR A {0} ÉTAGES", enemy.getStoreys()), EffectPopup.Style.SPECIAL));
+                    }
+                }
+                default -> {
+                    return false;
+                }
+            }
+            return true;
+        }
+
         /** Prédiction : il annonce un symbole (deux avec le Tarot) pour le prochain tirage du joueur. */
         private void predict(List<Event> events) {
             List<Symbol> reels = player.getSlotMachine().getReels();
@@ -1443,6 +1509,37 @@ public class EnemyTurnResolver {
             case COEUR   -> events.add(heal(enemy, enemy.getKind().potionPercent(EnemyCards.healBonus(copied), enemy.getDifficulty()) / divisor));
             case CARREAU, TREFLE -> events.add(turn.shield((turn.enemy.getKind().shieldDefense() + turn.enemy.getKind().shieldBonus(copied)) / divisor));
         }
+    }
+
+    /**
+     * Écho : il rejoue contre le joueur toutes les cartes (d'une couleur) de son dernier tour, à moitié de leur force
+     * (à pleine force avec {@code full}, la Résonance), comme ses cartes sombres : Pique, il frappe ; Cœur, il se
+     * soigne ; Carreau et Trèfle, il se protège. Sans carte à rejouer, il frappe simplement.
+     */
+    private static void echo(Turn turn, List<Event> events, boolean full) {
+        List<Card> echoed = turn.player.getPlayedCards().stream().filter(card -> card.getSuit() != null).toList();
+        if (echoed.isEmpty()) {
+            events.add(new StatusEvent(Lang.t("ÉCHO : RIEN À RENDRE"), EffectPopup.Style.SPECIAL));
+            events.add(turn.strike(turn.enemy.getKind().swordDamage()));
+            return;
+        }
+        events.add(new StatusEvent(Lang.n(echoed.size(), "ÉCHO : TA CARTE TE REVIENT", "ÉCHO : TES {0} CARTES TE REVIENNENT",
+            echoed.size()), EffectPopup.Style.ATTACK));
+        Enemy enemy = turn.enemy;
+        EnemyKind kind = enemy.getKind();
+        int divisor = full ? 1 : 2;
+        int swords = 0, shields = 0;
+        float heals = 0f;
+        for (Card card : echoed) {
+            switch (card.getSuit()) {
+                case PIQUE -> swords += kind.swordBonus(card) / divisor;
+                case COEUR -> heals += kind.potionPercent(EnemyCards.healBonus(card), enemy.getDifficulty()) / divisor;
+                case CARREAU, TREFLE -> shields += kind.shieldBonus(card) / divisor;
+            }
+        }
+        if (swords > 0) events.add(turn.strike(kind.swordDamage() + swords));
+        if (heals > 0f) events.add(heal(enemy, Math.min(heals, EnemyKind.MAX_HEAL_PERCENT)));
+        if (shields > 0) events.add(turn.shield(kind.shieldDefense() + shields));
     }
 
     /**
@@ -1798,6 +1895,16 @@ public class EnemyTurnResolver {
                 case DERNIER_ACTE -> {
                     curses.addStrings(1);
                     events.add(new StatusEvent(Lang.t("DERNIER ACTE : IL CHOISIRA UNE CARTE QUE TU JOUERAS"), EffectPopup.Style.DAMAGE));
+                }
+                case BOUTON_D_APPEL -> {
+                    enemy.climb(1);
+                    events.add(new StatusEvent(Lang.f("BOUTON D'APPEL : ÉTAGE {0}/{1}", enemy.getFloor(), EnemySymbol.ELEVATOR_MAX),
+                        EffectPopup.Style.SPECIAL));
+                }
+                case FONDATIONS -> {
+                    enemy.build(1);
+                    events.add(new StatusEvent(Lang.f("FONDATIONS : SA TOUR A {0} ÉTAGES", enemy.getStoreys()),
+                        EffectPopup.Style.SPECIAL));
                 }
                 case ENCRE -> {
                     curses.blind(1);

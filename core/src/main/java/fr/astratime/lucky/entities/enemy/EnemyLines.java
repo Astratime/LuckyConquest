@@ -52,6 +52,11 @@ public final class EnemyLines {
             "La Maison gagne toujours. Toujours.",
             "Ma Façade tombe ? Il me reste des murs.",
             "Mon Coffre ! La Maison gagnera quand même !");
+        say(EnemyKind.ARCHITECTE, "Un Bingo ? Ma Tour perd un étage. Je le reconstruirai.",
+            "Tu casses. Je bâtis. On verra qui se lasse.",
+            "Encore un étage, et tu tombes.",
+            "Mes échafaudages t'entendent. Ils te répondent.",
+            "La clé de voûte est posée. Tout le poids est pour toi.");
         say(EnemyKind.MACHINE_ORIGINELLE, "BINGO DÉTECTÉ. CALCUL DE LA VENGEANCE.",
             "ERREUR : CE TIRAGE N'ÉTAIT PAS PRÉVU.",
             "FIN DE PARTIE IMMINENTE. INSÉREZ UNE PIÈCE.",

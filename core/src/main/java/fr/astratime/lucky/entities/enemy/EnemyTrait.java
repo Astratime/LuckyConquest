@@ -49,7 +49,9 @@ public enum EnemyTrait {
     /** Il porte les éclats des boss d'avant et perd leurs pouvoirs un à un, phase après phase (le Prétendant). */
     SHARDS(EnemyKind.PRETENDANT),
     /** Il tombe en parties : sans sa Façade (phase 2), plus de défense de base (la Maison). */
-    FALLING_FACADE(EnemyKind.MAISON);
+    FALLING_FACADE(EnemyKind.MAISON),
+    /** Clé de voûte : en phase 3, chaque étage de sa Tour renforce aussi ses coups (l'Architecte). */
+    KEYSTONE(EnemyKind.ARCHITECTE);
 
     private final Set<EnemyKind> kinds;
 

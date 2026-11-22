@@ -443,6 +443,11 @@ public class GameController {
                 "WAGON BONDÉ : {0} CARTES JOUÉES DE MOINS", PlaceRule.CROWDED_PLAYS), EffectPopup.Style.DAMAGE,
                 PopupScale.SECONDARY_INTENSITY));
         }
+        int dizzy = lasting.takeVertigos(); // Vertige (L'Ascension) : des cartes jouées en moins ce tour
+        if (dizzy > 0) {
+            turnNotices.add(new EffectPopup(Lang.n(dizzy, "VERTIGE : {0} CARTE JOUÉE DE MOINS", "VERTIGE : {0} CARTES JOUÉES DE MOINS",
+                dizzy), EffectPopup.Style.DAMAGE, PopupScale.SECONDARY_INTENSITY));
+        }
         gameState.announceOmen(random); // Présage (Temple du Destin) : le symbole annoncé pour ce tirage
         if (gameState.getOmen() != null) {
             turnNotices.add(new EffectPopup(Lang.f("PRÉSAGE : {0}", gameState.getOmen().getDisplayName().toUpperCase()),
@@ -980,7 +985,8 @@ public class GameController {
     public int getPlayLimit() {
         LastingEffects lasting = gameState.getPlayer().getLastingEffects();
         int crowded = gameState.getActiveRule().isCrowded(gameState.getTurnNumber()) ? PlaceRule.CROWDED_PLAYS : 0;
-        return Math.max(1, Math.max(DEFAULT_PLAY_LIMIT, lasting.getExtraPlays()) + lasting.getBonusPlays() - crowded);
+        return Math.max(1, Math.max(DEFAULT_PLAY_LIMIT, lasting.getExtraPlays()) + lasting.getBonusPlays() - crowded
+            - lasting.getDizzy()); // Vertige (L'Ascension)
     }
 
     /** @return les cartes jouées ce tour. */

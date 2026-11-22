@@ -36,6 +36,8 @@ import java.util.Map;
  *       (Prédiction) ou {@link #DUELLISTE} (Duel), et le {@link #PRETENDANT} et ses trois éclats ;</li>
  *   <li>chapitre 5 : le {@link #PORTIER}, puis {@link #COMPTABLE} (Taxe), {@link #DIRECTEUR} (Nouvelle
  *       règle) ou {@link #SECURITE} (Fouille), et la {@link #MAISON} en trois parties ;</li>
+ *   <li>L'Ascension : le {@link #LIFTIER_TOUR} (Ascenseur), puis l'{@link #ECHO} (ton dernier tour), le {@link #VERTIGE}
+ *       (une carte de moins) ou la {@link #GARGOUILLE} (Pétrification), et l'{@link #ARCHITECTE} et ses Plans, en trois phases ;</li>
  *   <li>chapitre 6 : le {@link #GARDIEN_LEVIER}, puis l'{@link #OMBRE} (ton deck), la {@link #BANQUEROUTE}
  *       (Faillite) ou le {@link #TEMPS_MORT} (10 tours), et la {@link #MACHINE_ORIGINELLE} ;</li>
  *   <li>Exploration : dans chaque donjon, un premier ennemi puis son chef (le roi de la
@@ -1045,6 +1047,50 @@ public enum EnemyKind {
         List.of(Card.Suit.PIQUE, Card.Suit.CARREAU, Card.Suit.TREFLE, Card.Suit.COEUR),
         List.of(Card.Suit.COEUR, Card.Suit.CARREAU, Card.Suit.PIQUE, Card.Suit.TREFLE)),
 
+    // ----- L'Ascension (avant-dernier chapitre) -----
+
+    LIFTIER_TOUR("Le Liftier de la Tour", "LIFTIER",
+        "Il tient l'ascenseur de la Tour. Chaque étage le rend plus fort. Frappe fort pour le renvoyer en bas.",
+        450_000, 120, 4,
+        weights(EnemySymbol.SWORD, 3, EnemySymbol.SHIELD, 2, EnemySymbol.POTION, 1, EnemySymbol.ELEVATOR, 2),
+        deck(new int[] {3, 6, 9, 12, 14}, new int[] {4, 8, 12},
+            new int[] {5, 9, 13, 14}, new int[] {3, 7, 11}),
+        List.of(Card.Suit.PIQUE, Card.Suit.CARREAU, Card.Suit.TREFLE, Card.Suit.COEUR),
+        List.of(Card.Suit.COEUR, Card.Suit.CARREAU, Card.Suit.PIQUE, Card.Suit.TREFLE)),
+    ECHO("L'Écho", "ÉCHO",
+        "Il n'a pas de voix. Il a la tienne. Il te rejoue ton dernier tour.",
+        800_000, 80, 4,
+        weights(EnemySymbol.ECHO, 2, EnemySymbol.SWORD, 3, EnemySymbol.SHIELD, 1, EnemySymbol.POTION, 1),
+        deck(new int[] {3, 6, 9, 12, 14}, new int[] {4, 8, 12},
+            new int[] {5, 9, 13, 14}, new int[] {3, 7, 11}),
+        List.of(Card.Suit.PIQUE, Card.Suit.CARREAU, Card.Suit.TREFLE, Card.Suit.COEUR),
+        List.of(Card.Suit.COEUR, Card.Suit.CARREAU, Card.Suit.PIQUE, Card.Suit.TREFLE)),
+    VERTIGE("Le Vertige", "VERTIGE",
+        "Il vit au bord du vide. Ne regarde pas en bas. Tes mains tremblent : tu joues moins de cartes.",
+        750_000, 100, 4,
+        weights(EnemySymbol.VERTIGO, 2, EnemySymbol.SWORD, 3, EnemySymbol.SHIELD, 1, EnemySymbol.POTION, 1),
+        deck(new int[] {3, 6, 9, 12, 14}, new int[] {4, 8, 12},
+            new int[] {5, 9, 13, 14}, new int[] {3, 7, 11}),
+        List.of(Card.Suit.PIQUE, Card.Suit.CARREAU, Card.Suit.TREFLE, Card.Suit.COEUR),
+        List.of(Card.Suit.COEUR, Card.Suit.CARREAU, Card.Suit.PIQUE, Card.Suit.TREFLE)),
+    GARGOUILLE("La Gargouille", "GARGOUILLE",
+        "Elle garde la corniche. Changée en pierre, elle encaisse la moitié de tes coups.",
+        800_000, 150, 4,
+        weights(EnemySymbol.STONE, 2, EnemySymbol.SWORD, 3, EnemySymbol.SHIELD, 1),
+        deck(new int[] {3, 6, 9, 12, 14}, new int[] {4, 8, 12},
+            new int[] {5, 9, 13, 14}, new int[] {3, 7, 11}),
+        List.of(Card.Suit.PIQUE, Card.Suit.CARREAU, Card.Suit.TREFLE, Card.Suit.COEUR),
+        List.of(Card.Suit.COEUR, Card.Suit.CARREAU, Card.Suit.PIQUE, Card.Suit.TREFLE)),
+    ARCHITECTE("L'Architecte", "L'ARCHITECTE",
+        "Il a bâti la Tour et la Machine. Chaque Plan ajoute un étage à sa Tour, et chaque étage le protège. "
+            + "Tes Bingos les font tomber.",
+        1_700_000, 150, 3,
+        weights(EnemySymbol.SWORD, 3, EnemySymbol.SHIELD, 1, EnemySymbol.POTION, 1, EnemySymbol.BLUEPRINT, 2),
+        deck(new int[] {3, 6, 9, 12, 14}, new int[] {4, 8, 12},
+            new int[] {5, 9, 13, 14}, new int[] {3, 7, 11}),
+        List.of(Card.Suit.PIQUE, Card.Suit.CARREAU, Card.Suit.TREFLE, Card.Suit.COEUR),
+        List.of(Card.Suit.COEUR, Card.Suit.CARREAU, Card.Suit.PIQUE, Card.Suit.TREFLE)),
+
     // ----- Chapitre 6 : Le Jackpot -----
 
     GARDIEN_LEVIER("Le Gardien du Levier", "GARDIEN DU LEVIER",
@@ -1211,6 +1257,16 @@ public enum EnemyKind {
         EnemySymbol.SWORD, 2, EnemySymbol.POTION, 1, EnemySymbol.SAFE, 1, EnemySymbol.HOUSE_EDGE, 1));
     private static final Map<EnemySymbol, Integer> HOUSE_PHASE_THREE = Collections.unmodifiableMap(weights(
         EnemySymbol.SWORD, 2, EnemySymbol.HOUSE_EDGE, 1));
+
+    /**
+     * Symboles de l'Architecte : ses échafaudages montent (phase 2, l'Écho de l'Ascension), puis la clé de voûte
+     * (phase 3, le Vertige) ; il garde ses Plans.
+     */
+    private static final Map<EnemySymbol, Integer> ARCHITECT_PHASE_TWO = Collections.unmodifiableMap(weights(
+        EnemySymbol.SWORD, 3, EnemySymbol.SHIELD, 1, EnemySymbol.POTION, 1, EnemySymbol.BLUEPRINT, 2, EnemySymbol.ECHO, 1));
+    private static final Map<EnemySymbol, Integer> ARCHITECT_PHASE_THREE = Collections.unmodifiableMap(weights(
+        EnemySymbol.SWORD, 3, EnemySymbol.SHIELD, 1, EnemySymbol.POTION, 1, EnemySymbol.BLUEPRINT, 2, EnemySymbol.ECHO, 1,
+        EnemySymbol.VERTIGO, 1));
 
     private final String                     displayName;
     private final String                     barName;
@@ -1554,7 +1610,7 @@ public enum EnemyKind {
     /** @return {@code true} pour le boss d'un chapitre ou le roi d'un donjon. */
     public boolean isBoss() {
         return switch (this) {
-            case COMETE, REINE, ECLAT, PRETENDANT, MAISON, MACHINE_ORIGINELLE, GRAND_CROUPIER, ROI_PIQUE, ROI_COEUR, ROI_CARREAU, ROI_TREFLE,
+            case COMETE, REINE, ECLAT, PRETENDANT, MAISON, ARCHITECTE, MACHINE_ORIGINELLE, GRAND_CROUPIER, ROI_PIQUE, ROI_COEUR, ROI_CARREAU, ROI_TREFLE,
                  CAPITAINE_RAT, TAVERNIER, GARDIEN_PHARE, CAPITAINE_NOIR,
                  MONSIEUR_LOYAL, CONDUCTEUR, ROUE_FORTUNE, ROI_FORAIN, EMIR, PHARAON, DJINN, DRAGON,
                  LOCOMOTIVE, GRAND_CHEF, DAME_EN_NOIR, DESPERADO,
@@ -1668,7 +1724,7 @@ public enum EnemyKind {
     public float[] phaseThresholds() {
         if (!isBoss()) return new float[0];
         return switch (this) {
-            case PRETENDANT, MAISON -> new float[] {2f / 3f, 1f / 3f};
+            case PRETENDANT, MAISON, ARCHITECTE -> new float[] {2f / 3f, 1f / 3f};
             case MACHINE_ORIGINELLE, GRAND_CROUPIER -> new float[] {PHASE_TWO_RATIO, MACHINE_LAST_RATIO};
             default -> new float[] {PHASE_TWO_RATIO};
         };
@@ -1737,7 +1793,7 @@ public enum EnemyKind {
     public int phaseFor(float hpRatio) {
         return switch (this) {
             case ECLAT, COMETE, REINE -> hpRatio < PHASE_TWO_RATIO ? 2 : 1;
-            case PRETENDANT, MAISON -> hpRatio * 3f <= 1f ? 3 : hpRatio * 3f <= 2f ? 2 : 1;
+            case PRETENDANT, MAISON, ARCHITECTE -> hpRatio * 3f <= 1f ? 3 : hpRatio * 3f <= 2f ? 2 : 1;
             case MACHINE_ORIGINELLE, GRAND_CROUPIER -> hpRatio < MACHINE_LAST_RATIO ? 3 : hpRatio < PHASE_TWO_RATIO ? 2 : 1;
             default -> kingPhaseSymbol() != null && hpRatio < PHASE_TWO_RATIO ? 2 : 1;
         };
@@ -1748,6 +1804,8 @@ public enum EnemyKind {
         return switch (this) {
             case PRETENDANT -> phase == 2 ? Lang.t("ÉCLAT PERDU : FINI LE ROULEAU INTERDIT") : Lang.t("ÉCLAT PERDU : FINIE LA MISE ROYALE");
             case MAISON -> phase == 2 ? Lang.t("LA FAÇADE TOMBE : PLUS DE DÉFENSE") : Lang.t("LE COFFRE TOMBE : PLUS DE SOINS");
+            case ARCHITECTE -> phase == 2 ? Lang.t("LES ÉCHAFAUDAGES MONTENT : ÉCHO !")
+                : Lang.t("LA CLÉ DE VOÛTE : SA TOUR FRAPPE, VERTIGE !");
             case MACHINE_ORIGINELLE -> Lang.t("ELLE TE VOLE UN ROULEAU !");
             case GRAND_CROUPIER -> phase == 2 ? Lang.t("IL TRUQUE TA TABLE !") : Lang.t("CARTES SUR TABLE !");
             case COMETE -> Lang.t("LA COMÈTE S'EMBRASE !");
@@ -1838,6 +1896,8 @@ public enum EnemyKind {
             king.merge(kingPhaseSymbol(), KING_PHASE_WEIGHT, Integer::sum);
             return Collections.unmodifiableMap(king);
         }
+        if (this == ARCHITECTE && phase >= 3) return ARCHITECT_PHASE_THREE;
+        if (this == ARCHITECTE && phase == 2) return ARCHITECT_PHASE_TWO;
         if (this == MAISON && phase >= 3) return HOUSE_PHASE_THREE;
         if (this == MAISON && phase == 2) return HOUSE_PHASE_TWO;
         return weights;
@@ -1932,6 +1992,11 @@ public enum EnemyKind {
             case CHEF -> List.of(EnemySignature.ANNONCE, EnemySignature.COUP_DE_RATEAU);
             case PORTIER -> List.of(EnemySignature.TENUE_EXIGEE, EnemySignature.PAS_CE_SOIR);
             case MAISON -> List.of(EnemySignature.MACONNERIE, EnemySignature.DOUBLE_SERRURE, EnemySignature.BANQUE_GAGNE);
+            case LIFTIER_TOUR -> List.of(EnemySignature.BOUTON_D_APPEL);
+            case ECHO -> List.of(EnemySignature.RESONANCE);
+            case VERTIGE -> List.of(EnemySignature.LE_VIDE);
+            case GARGOUILLE -> List.of(EnemySignature.GRANIT);
+            case ARCHITECTE -> List.of(EnemySignature.FONDATIONS, EnemySignature.CLE_DE_VOUTE);
             case MACHINE_ORIGINELLE -> List.of(EnemySignature.HUILE_NOIRE, EnemySignature.PLUIE_D_ETOILES,
                 EnemySignature.SURTENSION, EnemySignature.GRANDE_ASPIRATION);
             case GOLEM_OR -> List.of(EnemySignature.OR_MASSIF, EnemySignature.POIDS_DE_L_OR);
