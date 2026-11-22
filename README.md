@@ -16,7 +16,7 @@ available in French and English (Options > Language).*
    Suite, Couleur, Carré) qui multiplient l'attaque et les gains du tirage.
 2. **Le tirage** : il coûte des gains (le prix dépend du lieu). On peut aussi **miser** 5, 10 ou 15 %
    de ses gains : l'attaque et la défense du tour x1,1, x1,2 ou x1,3, et la mise part dans la
-   **cagnotte** (une par lieu de l'Exploration, une pour l'Entraînement, une par chapitre de la Tour).
+   **cagnotte** (une par lieu de l'Exploration, une pour l'Entraînement, une par chapitre de l'Histoire).
    Au prochain Jeu bonus, chaque alignement rapporte sa valeur plus toute la cagnotte.
 3. **Le résultat** : chaque symbole agit (épée, bouclier, cœur, pièces…). Deux symboles identiques
    font une Paire, trois font un **Bingo**, avec sa propre mise en scène, et parfois un **Jeu bonus**
@@ -28,7 +28,7 @@ gros coup, les Bingos et les cartes jouées.
 
 ### Les modes
 - **Entraînement** : un combat contre le Croupier, pour s'exercer. Il ne rapporte rien.
-- **Tour des épreuves** : six chapitres de combats et leurs boss, avec une histoire et ses
+- **Histoire** : dix chapitres de combats et leurs boss, avec leurs
   cinématiques, puis un mode difficile. Elle ne rapporte pas de pièces.
 - **Exploration** : quatre lieux (la Prairie, le Port des Contrebandiers, les Mines d'Or, le Casino
   Englouti), chacun avec quatre donjons, leurs rois, leurs coffres et une règle propre au lieu.

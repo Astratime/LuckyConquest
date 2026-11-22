@@ -7,6 +7,7 @@ import fr.astratime.lucky.entities.run.CombatRun;
 import fr.astratime.lucky.i18n.Lang;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Random;
@@ -37,10 +38,10 @@ public class EndlessRun implements CombatRun {
      * Boss du mode sans fin, dans l'ordre. La Machine Originelle n'y est pas :
      * son dernier tirage et son duel du levier finissent l'histoire.
      */
-    public static final List<EnemyKind> BOSSES = List.of(Chapter.GENESE.getBoss(), Chapter.TABLES_SACREES.getBoss(),
-        Chapter.DERNIER_TIRAGE.getBoss(), Chapter.MONDE_SANS_MAITRE.getBoss(), Chapter.LA_MAISON.getBoss());
+    public static final List<EnemyKind> BOSSES = Arrays.stream(Chapter.values()).filter(c -> c != Chapter.last())
+        .map(Chapter::getBoss).toList();
 
-    /** Ennemis des étages sans boss : les premiers ennemis et les challengers des six chapitres. */
+    /** Ennemis des étages sans boss : les premiers ennemis et les challengers de tous les chapitres. */
     public static final List<EnemyKind> ENEMIES;
     static {
         List<EnemyKind> enemies = new ArrayList<>();

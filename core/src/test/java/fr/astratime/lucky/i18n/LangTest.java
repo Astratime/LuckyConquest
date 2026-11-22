@@ -195,7 +195,7 @@ class LangTest {
         }
         for (fr.astratime.lucky.progress.Achievement achievement : fr.astratime.lucky.progress.Achievement.values()) {
             texts.add(achievement::getName);
-            texts.add(achievement::getDescription);
+            texts.add(achievement::getDescriptionKey); // les numéros de chapitre s'y ajoutent après traduction
         }
         for (Supplier<String> text : texts) {
             String french = text.get();

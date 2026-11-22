@@ -307,7 +307,7 @@ public class BestiaryOverlay implements Disposable {
         reading = false;
         fight.setVisible(training);
         title.setText(training ? Lang.t("ENTRAÎNEMENT LIBRE") : Lang.t("BESTIAIRE ET COLLECTION"));
-        towerTitle.setText(Lang.t("Tour des épreuves"));
+        towerTitle.setText(Lang.t("Histoire"));
         explorationTitle.setText(Lang.t("Exploration"));
         towerRows.get(0).label().setText(Lang.t("Entraînement"));
         for (Chapter chapter : Chapter.values()) towerRows.get(chapter.ordinal() + 1).label().setText(chapter.getLabel());
