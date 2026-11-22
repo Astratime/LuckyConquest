@@ -214,6 +214,15 @@ public enum EnemySignature {
     DERNIER_ACTE("Dernier acte", EnemySymbol.STRINGS, Timing.NOW,
         "Fils tout de suite : il choisira une de tes cartes, et tu la joueras", "FILS"),
 
+    // Tour, les Éclats dispersés
+    POCHE_PLEINE("Poche pleine", EnemySymbol.SHARD, Timing.NOW,
+        "Il ramasse un éclat tout de suite", "ÉCLAT +1"),
+    TESTAMENT("Testament", EnemySymbol.LEGACY, Timing.NEXT,
+        "Son prochain Héritage te prend tout ton bouclier", "HÉRITAGE x2"),
+    DERNIERE_DANSE("Dernière danse", EnemySymbol.WALTZ, Timing.TURN,
+        "Chaque Valse de ce tour lui rend {0} % de ses PV max", "VALSE +SOIN"),
+    PARAPHE("Paraphe", EnemySymbol.SEAL, Timing.NEXT,
+        "Son prochain Scellé te retire 2 cartes", "SCELLÉ x2"),
     // La Tour, chapitre 3 : Les Pèlerins de la Comète
     SERMENT_SOLENNEL("Serment solennel", EnemySymbol.IRON_VOW, Timing.NOW,
         "Il prête serment tout de suite : sa défense de base monte jusqu'à la fin du combat", "SERMENT +1"),
@@ -253,6 +262,8 @@ public enum EnemySignature {
     public static final int VIDEUR_PERCENT = 25, LINGOT_PERCENT = 25;
     /** Quenouille : soin de chaque Fil du destin du tour, en % de ses PV max. */
     public static final int QUENOUILLE_PERCENT = 4;
+    /** Dernière danse : soin de chaque Valse du tour, en % de ses PV max. */
+    public static final int DANSE_PERCENT = 3;
 
     /** Moment où agit une carte propre. */
     public enum Timing { TURN, NEXT, NOW }
@@ -300,6 +311,7 @@ public enum EnemySignature {
             case ANNONCE           -> Lang.f(description, EnemyKind.CHEF_NOTHING_GOES_CARD_PERCENT);
             case POIDS_DE_L_OR     -> Lang.f(description, LINGOT_PERCENT);
             case QUENOUILLE        -> Lang.f(description, QUENOUILLE_PERCENT);
+            case DERNIERE_DANSE    -> Lang.f(description, DANSE_PERCENT);
             default                -> Lang.t(description);
         };
     }

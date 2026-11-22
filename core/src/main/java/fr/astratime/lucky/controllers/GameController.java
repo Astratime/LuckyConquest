@@ -94,6 +94,8 @@ public class GameController {
     private int songs = 0;
     /** Fils de l'ennemi : cartes de la main (les plus faibles) jouées d'office ce tour. */
     private int strings = 0;
+    /** Scellés (le Notaire du hasard) : cartes de moins à jouer ce tour. */
+    private int seals = 0;
     /** Taxes du Comptable ce tour : chaque carte jouée les paie toutes. */
     private int taxes = 0;
 
@@ -539,6 +541,11 @@ public class GameController {
             turnNotices.add(new EffectPopup(Lang.t("CHANT : CARTE JOUÉE D'OFFICE"), EffectPopup.Style.DAMAGE,
                 PopupScale.SECONDARY_INTENSITY));
         }
+        seals = lasting.takeSeals(); // Scellé (les Éclats dispersés) : une carte de moins ce tour
+        if (seals > 0) {
+            turnNotices.add(new EffectPopup(Lang.n(seals, "SCELLÉ : UNE CARTE DE MOINS", "SCELLÉ : {0} CARTES DE MOINS", seals),
+                EffectPopup.Style.DAMAGE, PopupScale.SECONDARY_INTENSITY));
+        }
         strings = lasting.takeStrings(); // Fils (Manoir hanté) : il choisit les plus faibles cartes, jouées d'office
         if (strings > 0) {
             turnNotices.add(new EffectPopup(Lang.t("FILS : IL CHOISIT TA CARTE"), EffectPopup.Style.DAMAGE,
@@ -980,7 +987,7 @@ public class GameController {
     public int getPlayLimit() {
         LastingEffects lasting = gameState.getPlayer().getLastingEffects();
         int crowded = gameState.getActiveRule().isCrowded(gameState.getTurnNumber()) ? PlaceRule.CROWDED_PLAYS : 0;
-        return Math.max(1, Math.max(DEFAULT_PLAY_LIMIT, lasting.getExtraPlays()) + lasting.getBonusPlays() - crowded);
+        return Math.max(1, Math.max(DEFAULT_PLAY_LIMIT, lasting.getExtraPlays()) + lasting.getBonusPlays() - crowded - seals);
     }
 
     /** @return les cartes jouées ce tour. */

@@ -18,6 +18,7 @@ public final class Cutscenes {
             case COMETE -> new CometCutscene(kit.settings(), kit.shake(), kit.sound("comet"));
             case REINE -> new QueenCutscene(kit);
             case ECLAT -> new ShardCutscene(kit);
+            case COLLECTIONNEUR -> new CollectorCutscene(kit);
             case PRETENDANT -> new PretenderCutscene(kit);
             case MAISON -> new HouseCutscene(kit);
             case MACHINE_ORIGINELLE -> new MachineCutscene(kit);

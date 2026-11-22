@@ -164,6 +164,14 @@ public enum EnemySymbol {
     SHROUD("LINCEUL"),
     /** Au début de ton prochain tour, il choisit ta plus faible carte et tu la joues d'office. */
     STRINGS("FILS"),
+    /** Tour, les Éclats dispersés : il ramasse un éclat ; au troisième, les éclats se rejoignent et frappent à travers ton bouclier. */
+    SHARD("ÉCLAT"),
+    /** Il réclame son héritage : il te prend une part de ton bouclier, puis frappe. */
+    LEGACY("HÉRITAGE"),
+    /** Il frappe d'autant plus fort qu'il te manque de PV. */
+    WALTZ("VALSE"),
+    /** À ton prochain tour, tu joues une carte de moins. */
+    SEAL("SCELLÉ"),
     /** Tour, chapitre 3 (Les Pèlerins de la Comète) : sa défense de base grandit, jusqu'à la fin du combat. */
     IRON_VOW("SERMENT"),
     /** Elle lit ta main : ta plus forte carte est fermée au prochain tour, et elle frappe selon les cartes que tu tiens. */
@@ -348,6 +356,15 @@ public enum EnemySymbol {
     /** Linceul : PV avec lesquels il se relève, en % de ses PV max. */
     public static final int SHROUD_RISE_PERCENT = 20;
 
+    /** Éclat : éclats ramassés avant qu'ils se rejoignent, et coups d'Épée de leur attaque (qui traverse le bouclier). */
+    public static final int SHARD_MAX = 3, SHARD_FACTOR = 3;
+    /** Héritage : part de ton bouclier qu'il te prend, en %. */
+    public static final int LEGACY_PERCENT = 50;
+    /** Valse : son attaque grandit de 1 % par % de PV qui te manque, jusqu'à ce % en plus. */
+    public static final int WALTZ_MAX_PERCENT = 100;
+    /** Scellé : cartes de moins que tu joues à ton prochain tour (tu en joues toujours une au moins). */
+    public static final int SEAL_PLAYS = 1;
+
     private final String displayName;
 
     EnemySymbol(String displayName) {
@@ -501,6 +518,13 @@ public enum EnemySymbol {
             case SHROUD -> Lang.f("Linceul : la première fois qu'il tombe, il se relève avec {0} % de ses PV max (une fois par "
                 + "combat). Déjà drapé, il reforme sa défense", SHROUD_RISE_PERCENT);
             case STRINGS -> Lang.t("Fils : au début de ton prochain tour, il choisit ta plus faible carte et tu la joues d'office");
+            case SHARD -> Lang.f("Éclat : il ramasse un éclat. Au {0}e, les éclats se rejoignent : attaque de {1} qui traverse "
+                + "ton bouclier", SHARD_MAX, kind.hurt(kind.swordDamage() * SHARD_FACTOR, hard));
+            case LEGACY -> Lang.f("Héritage : il te prend {0} % de ton bouclier, puis attaque de {1}", LEGACY_PERCENT,
+                kind.hurt(kind.swordDamage(), hard));
+            case WALTZ -> Lang.f("Valse : attaque de {0}, +1 % par % de PV qui te manque (+{1} % au plus)",
+                kind.hurt(kind.swordDamage(), hard), WALTZ_MAX_PERCENT);
+            case SEAL -> Lang.f("Scellé : à ton prochain tour, tu joues {0} carte de moins (une au moins)", SEAL_PLAYS);
             case IRON_VOW -> Lang.f("Serment : sa défense de base +{0}, jusqu'à la fin du combat ({1} Serments au plus). "
                 + "Déjà au plus, il se protège", kind.empowered(VOW_DEFENSE, hard), VOW_MAX);
             case SIGHT -> Lang.f("Voyance : elle lit ta main. Ta plus forte carte est fermée jusqu'à la fin de ton prochain "

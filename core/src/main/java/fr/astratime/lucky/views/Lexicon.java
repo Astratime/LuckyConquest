@@ -234,6 +234,14 @@ public final class Lexicon {
                 + "avec {0} % de ses PV max. Une seule fois par combat.", EnemySymbol.SHROUD_RISE_PERCENT)),
             term(Lang.t("Fils"), Lang.t("Au Manoir hanté : au tour suivant, le marionnettiste joue pour toi ta plus "
                 + "faible carte jouable.")),
+            term(Lang.t("Éclat"), Lang.f("Dans l'Histoire, aux Éclats dispersés : l'ennemi ramasse un éclat. Au {0}e, les "
+                + "éclats se rejoignent et frappent à travers ton bouclier.", EnemySymbol.SHARD_MAX)),
+            term(Lang.t("Héritage"), Lang.f("Aux Éclats dispersés : l'ennemi te prend {0} % de ton bouclier, puis il frappe.",
+                EnemySymbol.LEGACY_PERCENT)),
+            term(Lang.t("Valse"), Lang.f("Aux Éclats dispersés : l'ennemi frappe plus fort quand tu es blessé, +1 % par % "
+                + "de tes PV qui manque (+{0} % au plus).", EnemySymbol.WALTZ_MAX_PERCENT)),
+            term(Lang.t("Scellé"), Lang.f("Aux Éclats dispersés : à ton prochain tour, tu joues {0} carte de moins. Tu en "
+                + "joues toujours une au moins.", EnemySymbol.SEAL_PLAYS)),
             term(Lang.t("Serment"), Lang.f("Dans l'Histoire, chapitre des Pèlerins : le Pèlerin de fer gagne de la défense de base "
                 + "pour tout le combat, {0} fois au plus. Frappe-le tôt.", EnemySymbol.VOW_MAX)),
             term(Lang.t("Voyance"), Lang.t("Dans l'Histoire, chapitre des Pèlerins : la Diseuse ferme ta plus forte carte en main "
