@@ -1,6 +1,8 @@
 package fr.astratime.lucky.animations.cutscenes;
 
 import com.badlogic.gdx.graphics.Color;
+import com.badlogic.gdx.graphics.g2d.TextureRegion;
+import fr.astratime.lucky.assets.EnemyTextures;
 import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.math.Interpolation;
 import com.badlogic.gdx.math.MathUtils;
@@ -64,7 +66,7 @@ final class PilgrimScenes {
             if (at(COMET_PASS)) {
                 rumble(0.5f, 10f);
                 sparks(cx(), kingY() + 46f * KING_SCALE, 50, COMET, 600f, 12f);
-                sparks(kingPixelX(2f, cx(), KING_SCALE), kingPixelY(3f, kingY(), KING_SCALE), 30, CYAN, 500f, 10f);
+                sparks(kingPixelX(2.5f, cx(), KING_SCALE), kingPixelY(5f, kingY(), KING_SCALE), 30, CYAN, 500f, 10f);
             }
         }
 
@@ -82,11 +84,11 @@ final class PilgrimScenes {
             // Son auréole et ses yeux s'allument quand la comète passe.
             float light = progress(COMET_PASS, COMET_PASS + 0.4f) * pulse(4f, 0.7f);
             if (light > 0f) {
-                glow(batch, kingPixelX(17f, cx(), KING_SCALE), kingPixelY(5f, kingY(), KING_SCALE), 260f, COMET, 0.6f * light);
-                for (float px : new float[] {13.5f, 20.5f}) {
-                    glow(batch, kingPixelX(px, cx(), KING_SCALE), kingPixelY(15.5f, kingY(), KING_SCALE), 90f, COMET, light);
+                glow(batch, kingPixelX(17.5f, cx(), KING_SCALE), kingPixelY(5.5f, kingY(), KING_SCALE), 260f, COMET, 0.6f * light);
+                for (float px : new float[] {14f, 21f}) {
+                    glow(batch, kingPixelX(px, cx(), KING_SCALE), kingPixelY(16f, kingY(), KING_SCALE), 90f, COMET, light);
                 }
-                glow(batch, kingPixelX(2f, cx(), KING_SCALE), kingPixelY(4f, kingY(), KING_SCALE), 160f, CYAN, light);
+                glow(batch, kingPixelX(2.5f, cx(), KING_SCALE), kingPixelY(5f, kingY(), KING_SCALE), 160f, CYAN, light);
             }
             flash(batch, COMET, COMET_PASS, 0.25f, 0.35f);
         }
@@ -173,20 +175,39 @@ final class PilgrimScenes {
 
         @Override
         protected void front(Batch batch) {
-            if (time >= CLIMAX_PHASE) eyes(batch, pulse(6f, 0.6f), COMET, new float[] {13.5f, 15.5f}, new float[] {20.5f, 15.5f});
+            if (time >= CLIMAX_PHASE) eyes(batch, pulse(6f, 0.6f), COMET, new float[] {14f, 16f}, new float[] {21f, 16f});
             flash(batch, COMET, CLIMAX_PHASE, 0.3f, 0.5f);
         }
     }
 
-    /** Les lanternes s'éteignent, son auréole file au ciel en étoile filante, il tombe en poussière d'or. */
+    /**
+     * Les lanternes s'éteignent, son auréole (la vraie, ôtée du portrait) file au ciel en étoile filante, il tombe en
+     * poussière d'or.
+     */
     static final class ProphetDeath extends BossScene {
-        ProphetDeath(CutsceneKit kit) { super(kit, Moment.DEATH, EnemyKind.PROPHETE, 0); }
+        /** Quand l'auréole quitte sa tête, et le centre de sa comète sur le portrait (pixels comptés du haut). */
+        private static final float HALO_UP = 0.8f, HALO_X = 26.5f, HALO_Y = 5.5f;
+        private final TextureRegion halo, withoutHalo;
+        private boolean haloOff;
+        private float haloLeft, haloBottom;
+
+        ProphetDeath(CutsceneKit kit) {
+            super(kit, Moment.DEATH, EnemyKind.PROPHETE, 0);
+            halo = region(EnemyTextures.newProphetPart(true), false);
+            withoutHalo = region(EnemyTextures.newProphetPart(false), false);
+        }
 
         private float out(int k) { return 0.2f + k * 0.18f; }
 
         @Override
         protected void step(float delta) {
             for (int k = 0; k < 8; k++) if (at(out(k))) sparks(lanternX(k), lanternY(k), 6, LANTERN, 120f, 6f);
+            if (at(HALO_UP) && !haloOff) {
+                // son auréole se détache : on la retire du portrait (sa place est prise à la prochaine image)
+                boss.setRegion(withoutHalo);
+                haloLeft = Float.NaN;
+                haloOff = true;
+            }
             if (time > 1.6f && time < 3.6f && random.nextFloat() < delta * 40f) {
                 sparks(bossX() + (random.nextFloat() - 0.5f) * bossWidth(), bossBottom() + bossHeight() * random.nextFloat(), 3,
                     COMET, 200f, 8f);
@@ -205,13 +226,6 @@ final class PilgrimScenes {
             for (int k = 0; k < 8; k++) {
                 if (time < out(k)) glow(batch, lanternX(k), lanternY(k), 110f * pulse(10f + k, 0.8f), LANTERN, 0.7f);
             }
-            // L'auréole qui remonte et file en étoile filante.
-            float up = Interpolation.pow2In.apply(progress(0.8f, 2.6f));
-            float hx = bossX() + up * worldWidth() * 0.4f, hy = bossY() + bossHeight() * 0.45f + up * worldHeight() * 0.6f;
-            if (time < 2.8f) {
-                if (up > 0.05f) line(batch, TAIL, 0.6f * up, hx, hy, hx - 300f * up, hy - 160f * up, 6f);
-                glow(batch, hx, hy, 120f, COMET, 0.9f);
-            }
             poseSink = 0.35f * progress(1.4f, 2.2f);
             poseTint = 0.7f * progress(1.6f, 3.0f);
             poseTintColor.set(COMET);
@@ -220,6 +234,27 @@ final class PilgrimScenes {
         }
 
         @Override
-        protected void front(Batch batch) { flash(batch, COMET, CLIMAX_DEATH, 0.3f, 0.35f); }
+        protected void front(Batch batch) {
+            float scale = bossScale() * poseScale;
+            if (!haloOff) {
+                // l'auréole encore sur sa tête luit doucement
+                glow(batch, portraitX(HALO_X), portraitY(HALO_Y), 60f * pulse(5f, 0.7f), COMET, 0.6f);
+            } else if (time < 2.8f) {
+                if (Float.isNaN(haloLeft)) {                            // elle part d'exactement où elle était
+                    haloLeft = bossX() + poseX - boss.getRegionWidth() * scale / 2f;
+                    haloBottom = bossBottom() + poseY;
+                }
+                float up = Interpolation.pow2In.apply(progress(HALO_UP, 2.6f));
+                float dx = up * worldWidth() * 0.4f, dy = up * worldHeight() * 0.6f;
+                float hx = haloLeft + HALO_X * scale + dx;
+                float hy = haloBottom + (boss.getRegionHeight() - HALO_Y) * scale + dy;
+                if (up > 0.05f) line(batch, TAIL, 0.6f * up, hx, hy, hx - 300f * up, hy - 160f * up, 6f);
+                batch.setColor(1f, 1f, 1f, 1f - progress(2.3f, 2.8f));
+                batch.draw(halo, haloLeft + dx, haloBottom + dy, halo.getRegionWidth() * scale, halo.getRegionHeight() * scale);
+                batch.setColor(Color.WHITE);
+                glow(batch, hx, hy, 120f * (0.4f + 0.6f * up), COMET, 0.9f);
+            }
+            flash(batch, COMET, CLIMAX_DEATH, 0.3f, 0.35f);
+        }
     }
 }

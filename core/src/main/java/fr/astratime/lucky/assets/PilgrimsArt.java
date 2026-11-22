@@ -24,6 +24,9 @@ public final class PilgrimsArt {
     private static final int WOOD = rgba("7a5232"), WOOD_DARK = rgba("4a3020"), RED = rgba("c8202c");
     private static final int ROBE = rgba("f0e6cc"), ROBE_SHADE = rgba("c8b890"), NIGHT = rgba("140e24");
 
+    /** Le Prophète entier, son auréole seule (elle s'envole à sa mort), ou lui sans elle. */
+    static final int PROPHET_FULL = 0, PROPHET_HALO = 1, PROPHET_WITHOUT_HALO = 2;
+
     private PilgrimsArt() {}
 
     /** @return le portrait de l'ennemi {@code kind}, ou {@code null} s'il n'est pas du chapitre 3. */
@@ -33,7 +36,7 @@ public final class PilgrimsArt {
             case PELERIN_FER -> pelerinFer();
             case DISEUSE     -> diseuse();
             case PORTEUR     -> porteur();
-            case PROPHETE    -> prophete();
+            case PROPHETE    -> prophete(PROPHET_FULL);
             default          -> null;
         };
     }
@@ -195,13 +198,16 @@ public final class PilgrimsArt {
      * Le Prophète du Cratère : une longue robe blanche et or, une barbe blanche, des yeux dorés qui brûlent, une comète
      * qui tourne au-dessus de sa tête comme une auréole, et son bâton surmonté d'un éclat.
      */
-    private static int[][] prophete() {
+    static int[][] prophete(int part) {
         PixelCanvas g = new PixelCanvas(W, H);
-        // L'auréole : une comète qui fait le tour de sa tête.
-        g.ellipse(17f, 5f, 9f, 2.5f, GOLD_DARK);
-        g.ellipse(17f, 5f, 7.5f, 1.4f, 0);
-        g.ellipse(26f, 5f, 2.2f, 2.2f, GOLD);
-        g.set(26, 4, GOLD_LIGHT);
+        if (part != PROPHET_WITHOUT_HALO) {
+            // L'auréole : une comète qui fait le tour de sa tête.
+            g.ellipse(17f, 5f, 9f, 2.5f, GOLD_DARK);
+            g.ellipse(17f, 5f, 7.5f, 1.4f, 0);
+            g.ellipse(26f, 5f, 2.2f, 2.2f, GOLD);
+            g.set(26, 4, GOLD_LIGHT);
+            if (part == PROPHET_HALO) return g.outlined();
+        }
         // Le bâton et son éclat.
         g.rect(1, 8, 2, 41, WOOD);
         g.triangle(0, 8, 4, 8, 2, 1, CYAN);

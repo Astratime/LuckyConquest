@@ -579,8 +579,15 @@ public class EnemyTextures implements Disposable {
         return texture(croupierGrid(), false);
     }
 
-    /** @return la texture de la grille ({@code flash} : silhouette toute blanche). */
-    private static Texture texture(int[][] g, boolean flash) {
+    /**
+     * @return le Prophète du Cratère en deux morceaux, pour sa mort : son auréole seule ({@code halo}) ou lui sans
+     *         elle, à la même taille que son portrait ; à libérer par l'appelant
+     */
+    public static Pixmap newProphetPart(boolean halo) {
+        return pixmap(PilgrimsArt.prophete(halo ? PilgrimsArt.PROPHET_HALO : PilgrimsArt.PROPHET_WITHOUT_HALO), false);
+    }
+
+    private static Pixmap pixmap(int[][] g, boolean flash) {
         Pixmap pixmap = new Pixmap(g[0].length, g.length, Pixmap.Format.RGBA8888);
         pixmap.setBlending(Pixmap.Blending.None);
         for (int y = 0; y < g.length; y++) {
@@ -589,6 +596,12 @@ public class EnemyTextures implements Disposable {
                 pixmap.drawPixel(x, y, color == 0 ? 0 : flash ? 0xffffffff : color);
             }
         }
+        return pixmap;
+    }
+
+    /** @return la texture de la grille ({@code flash} : silhouette toute blanche). */
+    private static Texture texture(int[][] g, boolean flash) {
+        Pixmap pixmap = pixmap(g, flash);
         Texture texture = new Texture(pixmap);
         pixmap.dispose();
         return texture;
