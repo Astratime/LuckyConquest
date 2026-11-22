@@ -42,7 +42,9 @@ public enum Rank {
         new RankBonus(1_350, 1_350, 135, 180, 750), 2_000_000_000L,
         new long[] {5_100_000_000L, 5_500_000_000L, 6_100_000_000L, 6_700_000_000L, 7_300_000_000L, 8_100_000_000L, 8_900_000_000L, 9_700_000_000L, 11_000_000_000L, 12_000_000_000L}),
     BARON("Baron du tapis vert", "Il règne sur la salle.",
-        new RankBonus(2_200, 2_200, 220, 300, 1_000), 21_000_000_000L,
+        // 2026-11-22 : 2 200 -> 2 350 (défense 220 -> 235). Au Manoir hanté, le Baron moyen gagnait 49-80 % (médiane 57) ;
+        // il gagne maintenant 59-82 % (médiane 70), comme le Roi au Temple (63-70 %). Ennemis et pièces inchangés.
+        new RankBonus(2_350, 2_350, 235, 300, 1_000), 21_000_000_000L,
         new long[] {38_000_000_000L, 41_000_000_000L, 45_000_000_000L, 50_000_000_000L, 55_000_000_000L, 61_000_000_000L, 67_000_000_000L, 73_000_000_000L, 81_000_000_000L, 89_000_000_000L}),
     MAGNAT("Magnat", "Il possède la moitié du casino.",
         // Manoir hanté (2026-11-21) : le Baron y gagne ~1,1 Md par descente (joueur moyen, médiane des 5 profils) ;
