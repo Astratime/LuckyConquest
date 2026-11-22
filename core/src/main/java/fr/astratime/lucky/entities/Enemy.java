@@ -70,6 +70,12 @@ public class Enemy {
     private       int         shards;            // Éclat (les Éclats dispersés) : éclats ramassés
     /** Présage (Temple du Destin) : le symbole annoncé n'est pas sorti au dernier tirage, ses attaques de ce tour montent. */
     private       boolean     omenMissed;
+    /** Ascenseur (le Liftier) : son étage, de 0 (rez-de-chaussée) à {@link EnemySymbol#ELEVATOR_MAX}. */
+    private       int         floor;
+    /** Plan (l'Architecte) : les étages de sa Tour, de 0 à {@link EnemySymbol#BLUEPRINT_MAX}. */
+    private       int         storeys;
+    /** Pétrification (la Gargouille) : part des coups qu'arrête sa pierre jusqu'à son prochain tour, en % (0 : pas de pierre). */
+    private       int         stonePercent;
     /** Linceul (Manoir hanté) : drapé, il se relèvera à sa première chute ; il ne se relève qu'une fois par combat. */
     private       boolean     shroudArmed, shroudUsed;
     /** Sa mise (Tapis) : ses attaques sont multipliées d'autant, jusqu'à ce qu'il soit touché. */
@@ -202,6 +208,10 @@ public class Enemy {
         if (hourglass > 0 && lost * 1000L >= maxHp * EnemySymbol.HOURGLASS_HIT_PER_MILLE) hourglass--;
         if (pressure > 0 && lost * 1000L >= maxHp * EnemySymbol.PRESSURE_HIT_PER_MILLE) pressure--; // un gros coup fait baisser la Pression
         if (snow > 0 && lost * 100L >= maxHp * EnemySymbol.AVALANCHE_HIT_PERCENT) snow = 0; // un gros coup fait fondre l'Avalanche
+        if (floor > 0 && lost * 100L >= maxHp * EnemySymbol.ELEVATOR_HIT_PERCENT) { // un gros coup renvoie l'Ascenseur en bas
+            floor = 0;
+            if (notice == null) notice = Lang.t("ASCENSEUR : RETOUR AU REZ-DE-CHAUSSÉE");
+        }
         if (pilgrims > 0 && lost * 100L >= maxHp * EnemySymbol.PILGRIM_HIT_PERCENT) pilgrims /= 2; // un gros coup chasse la moitié des pèlerins
         if (hp <= 0 && shroudArmed) { // Linceul : il se relève, une fois par combat
             shroudArmed = false;
@@ -445,7 +455,8 @@ public class Enemy {
     public long capHit(long damage) { return Math.min(damage, 2L * maxHp + defense); }
 
     public long skinned(long damage) {
-        return hasGoldSkin() ? damage / 2 : damage;
+        long through = hasGoldSkin() ? damage / 2 : damage;
+        return stonePercent > 0 ? through * (100 - stonePercent) / 100 : through; // Pétrification : la pierre arrête une part du coup
     }
 
     /** @return {@code true} si sa peau d'or encaisse la moitié des coups en ce moment. */
@@ -573,6 +584,38 @@ public class Enemy {
 
     /** @return les couches de neige de son Avalanche (chacune ajoute {@link EnemySymbol#AVALANCHE_STEP_PERCENT} % à ses coups). */
     public int getSnow() { return snow; }
+
+    /** @return l'étage de son Ascenseur (le Liftier) : chacun ajoute {@link EnemySymbol#ELEVATOR_STEP_PERCENT} % à ses coups et à ses Boucliers. */
+    public int getFloor() { return floor; }
+
+    /** Son Ascenseur monte de {@code floors} étages, au plus {@link EnemySymbol#ELEVATOR_MAX}. */
+    public void climb(int floors) { floor = Math.min(EnemySymbol.ELEVATOR_MAX, floor + floors); }
+
+    /** @return les étages de la Tour de l'Architecte (Plan) : chacun lui donne un Bouclier à chacun de ses tours. */
+    public int getStoreys() { return storeys; }
+
+    /** L'Architecte bâtit {@code count} étages, au plus {@link EnemySymbol#BLUEPRINT_MAX}. */
+    public void build(int count) { storeys = Math.min(EnemySymbol.BLUEPRINT_MAX, storeys + count); }
+
+    /**
+     * Un Bingo du joueur fait tomber un étage de la Tour de l'Architecte.
+     *
+     * @return {@code true} si un étage est tombé
+     */
+    public boolean knockStorey() {
+        if (storeys <= 0) return false;
+        storeys--;
+        return true;
+    }
+
+    /** Pétrification : sa pierre arrête {@code percent} % des coups jusqu'à son prochain tour. */
+    public void petrify(int percent) { stonePercent = Math.max(stonePercent, percent); }
+
+    /** @return la part des coups qu'arrête sa pierre, en % (0 s'il n'est pas de pierre). */
+    public int getStonePercent() { return stonePercent; }
+
+    /** Début de son tour : sa pierre retombe en poussière. */
+    public void crumble() { stonePercent = 0; }
 
     /** Son Avalanche gagne une couche de neige, au plus {@link EnemySymbol#AVALANCHE_MAX}. */
     public void addSnow() { snow = Math.min(EnemySymbol.AVALANCHE_MAX, snow + 1); }

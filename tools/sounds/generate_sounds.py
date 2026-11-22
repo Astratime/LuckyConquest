@@ -1357,6 +1357,34 @@ def cutscene_house():
     return reverb(track.buf, wet=0.28, size=1.7, tail=1.0)
 
 
+@sound('cutscene/architect', -17)
+def cutscene_architect():
+    """
+    Avant l'Architecte (ArchitectCutscene) : on monte le long de la Tour (0 à 1,6 s), vent et notes qui montent ;
+    le plan se déroule (1,6 s) ; huit étages se dessinent à la craie (2,3 s, un toutes les 0,28 s), la Machine au
+    sommet (4,64 s) ; l'Architecte sort de l'ombre (5,4 s), son compas trace un cercle (6,0 à 6,9 s) ; les traits
+    s'embrasent d'or (IGNITE = 8,4 s).
+    """
+    track = Track(11.0)
+    track.add(ambience(1.8, 400, 2400, 0.35), 0.0, 1.0)
+    for k, note in enumerate(('C4', 'E4', 'G4', 'C5')):                       # la montée
+        track.add(modal(hz(note), 0.6, GLASS_RATIOS, [0.3, 0.15, 0.08, 0.04]), 0.2 + k * 0.35, 0.3)
+    rustle = bp(noise(0.6), 800, 5000) * ramp(0.6, 0.2, 1.0) * fade_out(0.6, 0.25)
+    track.add(rustle, 1.6, 0.5)                                                 # le plan qui se déroule
+    for k in range(8):                                                          # la craie, étage par étage
+        scratch = bp(noise(0.22), 2500 + k * 200, 7000) * adsr(0.22, 0.01, 0.05, 0.6, 0.08)
+        track.add(scratch, 2.3 + k * 0.28, 0.35)
+        track.add(modal(hz('G4') * 2 ** (k / 12), 0.3, GLASS_RATIOS, [0.12, 0.06, 0.03, 0.02]), 2.3 + k * 0.28 + 0.2, 0.15)
+    track.add(brass_chord(['G2', 'D3', 'G3', 'B3'], 1.2, 0.5), 4.64, 0.6)     # la Machine, au sommet
+    track.add(drone(['G1', 'D2'], 2.6, 'saw', fin=0.6, fout=0.8) * 0.3, 5.4, 0.5)   # l'Architecte
+    circle = bp(osc(sweep(300, 900, 0.9), 0.9, 'saw'), 1500, 5000) * 0.3 * fade_out(0.9, 0.2)
+    track.add(circle, 6.0, 0.35)                                                # le compas
+    track.add(mix((impact(0.7, 120, 40), 0, 1.0), (metal_hit(700, 0.8), 0, 0.5)), 8.4, 0.9)   # tout s'embrase
+    track.add(brass_chord(['D3', 'G3', 'B3', 'D4'], 1.8, 0.8), 8.45, 0.9)
+    track.add(sparkle(1.2, count=18), 8.5, 0.35)
+    return reverb(track.buf, wet=0.3, size=1.6, tail=1.0)
+
+
 @sound('cutscene/machine', -17)
 def cutscene_machine():
     """

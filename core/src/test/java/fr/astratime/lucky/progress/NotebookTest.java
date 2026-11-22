@@ -22,7 +22,7 @@ class NotebookTest {
         for (Chapter chapter : Chapter.values()) expected.add(chapter.getBoss());
         for (Place place : Place.values()) for (Dungeon dungeon : place.getDungeons()) expected.add(dungeon.getKing());
         assertEquals(expected, new LinkedHashSet<>(Notebook.owners()));
-        assertEquals(40 + fr.astratime.lucky.entities.tower.Chapter.values().length, Notebook.size()); // 40 rois et un boss par chapitre
+        assertEquals(40 + Chapter.values().length, Notebook.size());
         assertEquals(1, Notebook.number(EnemyKind.COMETE));
         assertEquals(0, Notebook.number(EnemyKind.SOLDAT_PIQUE));
         assertFalse(Notebook.hasPage(EnemyKind.GRAND_CROUPIER));

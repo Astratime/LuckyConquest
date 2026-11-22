@@ -145,6 +145,7 @@ public class TurnEngine {
         );
 
         if (result.isJackpot()) gameState.getEnemy().addKarma(); // Karma (Temple du Destin) : il garde le compte des Bingos
+        if (result.isJackpot()) gameState.getEnemy().knockStorey(); // Plan (l'Architecte) : un Bingo fait tomber un étage
 
         // Jeu bonus : après un Bingo, une fois sur dix, la grille s'ouvre ; ses gains sont crédités tout de suite.
         BonusGame bonus = bonusGame(result, turnContext.getSpinContext(), player, turnContext.getCombatContext());
