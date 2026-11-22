@@ -70,7 +70,7 @@ public abstract class BossScene extends Cutscene {
     protected boolean showBoss;
 
     protected BossScene(CutsceneKit kit, Moment moment, EnemyKind kind, int phase) {
-        super(kit.settings(), kit.shake(), kit.sound(moment == Moment.PHASE ? "boss_phase" : "boss_death"));
+        super(kit.settings(), kit.shake(), kit.sound(track(kind, moment, phase)));
         this.kit    = kit;
         this.moment = moment;
         this.kind   = kind;
@@ -89,6 +89,17 @@ public abstract class BossScene extends Cutscene {
             headline = theme.deathLine();
             subtitle = kind.getBarName();
         }
+    }
+
+    /**
+     * @return la bande-son de la scène : la sienne si elle existe (sounds/cutscene/phase{@code N}_{@code boss}.ogg ou
+     *         death_{@code boss}.ogg, par exemple phase2_comte_minuit), sinon le son commun boss_phase / boss_death
+     */
+    static String track(EnemyKind kind, Moment moment, int phase) {
+        String own = (moment == Moment.PHASE ? "phase" + phase : "death") + "_" + kind.name().toLowerCase(java.util.Locale.ROOT);
+        boolean exists = com.badlogic.gdx.Gdx.files != null
+            && com.badlogic.gdx.Gdx.files.internal("sounds/cutscene/" + own + ".ogg").exists();
+        return exists ? own : moment == Moment.PHASE ? "boss_phase" : "boss_death";
     }
 
     /** @return le moment joué. */
@@ -209,7 +220,10 @@ public abstract class BossScene extends Cutscene {
     protected float decorLight() { return 0.62f; }
 
     /** @return quand le symbole gagné se pose sur le boss (au moment où la phrase s'écrit). */
-    protected float gainedAt() { return PHASE_TEXT - 0.15f; }
+    protected float gainedAt() { return textAt() - 0.15f; }
+
+    /** @return quand la phrase s'écrit (une scène plus longue la retarde). */
+    protected float textAt() { return moment == Moment.PHASE ? PHASE_TEXT : DEATH_TEXT; }
 
     /**
      * Le symbole gagné (celui que la phrase nomme : Croc, Rage, Gel…) tombe du haut, grossi, et se pose à côté
@@ -239,7 +253,7 @@ public abstract class BossScene extends Cutscene {
     /** La phrase de la scène, qui s'imprime en bas, et son nom au-dessus. */
     private void drawTexts(Batch batch) {
         if (font == null) return;
-        float at = moment == Moment.PHASE ? PHASE_TEXT : DEATH_TEXT;
+        float at = textAt();
         float show = progress(at, at + 0.3f);
         if (show <= 0f) return;
         float width = worldWidth(), height = worldHeight();
