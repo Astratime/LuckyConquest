@@ -388,7 +388,7 @@ public class SymbolStrikes extends Actor implements Disposable {
             case NUGGET -> updateNugget(s, before, now, delta);
             case CROWN -> updateCrown(s, before, now, delta);
             case DEMON_KING, LUCK_APOSTLE -> updateStar(s, before, now, delta);
-            case FANGS, SPIKED_SHIELD, SCYTHE, MOON, PIGGY_BANK, TICKET, ANCHOR, GOLD_CHIP, FLAME, STEAM, SNOWFLAKE, DESCENT, BINGO_LIGHT ->
+            case FANGS, SPIKED_SHIELD, SCYTHE, MOON, PIGGY_BANK, TICKET, ANCHOR, GOLD_CHIP, FLAME, STEAM, SNOWFLAKE, GONG, DESCENT, BINGO_LIGHT ->
                 updateNewReel(s, before, now, delta);
             default -> { }
         }
@@ -498,6 +498,21 @@ public class SymbolStrikes extends Actor implements Disposable {
                     burst(s.toX, s.toY, 18, GOLD, 320f, 0.5f, 8f, true);
                     ringAt(s.toX, s.toY, GOLD, 0.9f);
                     onCoinArrived.run();
+                }
+            }
+            case GONG -> { // le gong file vers l'ennemi en vibrant, puis résonne : trois ondes d'or
+                if (flying && MathUtils.random() < delta * 30f) {
+                    float u = now / IMPACT_TIME;
+                    particle(MathUtils.lerp(s.fromX, s.toX, u), MathUtils.lerp(s.fromY, s.toY, u), GOLD, 20f, 0.35f,
+                        MathUtils.random(8f, 12f), false);
+                }
+                if (impact) {
+                    flashAt(s.toX, s.toY, GOLD, 220f);
+                    ringAt(s.toX, s.toY, GOLD, 1.0f);
+                    ringAt(s.toX, s.toY, GOLD, 1.4f);
+                    ringAt(s.toX, s.toY, Color.WHITE, 1.8f);
+                    burst(s.toX, s.toY, 20, GOLD, 360f, 0.6f, 10f, false);
+                    shake.shake(0.25f, 7f);
                 }
             }
             case STEAM -> { // un jet de vapeur siffle vers l'ennemi, puis éclate en nuage blanc
@@ -1077,7 +1092,7 @@ public class SymbolStrikes extends Actor implements Disposable {
             case BOMB -> drawBomb(batch, s, t, alpha);
             case CROWN -> drawCrown(batch, s, t, alpha);
             case DEMON_KING, LUCK_APOSTLE -> drawStar(batch, s, t, alpha);
-            case FANGS, SPIKED_SHIELD, SCYTHE, MOON, PIGGY_BANK, TICKET, ANCHOR, GOLD_CHIP, FLAME, STEAM, SNOWFLAKE, DESCENT, BINGO_LIGHT ->
+            case FANGS, SPIKED_SHIELD, SCYTHE, MOON, PIGGY_BANK, TICKET, ANCHOR, GOLD_CHIP, FLAME, STEAM, SNOWFLAKE, GONG, DESCENT, BINGO_LIGHT ->
                 drawNewReel(batch, s, t, alpha);
             default -> { }
         }

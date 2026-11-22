@@ -18,7 +18,7 @@ from palettes import FAMILIES, CARD_FAMILY  # noqa: E402
 
 MODULES = ['cards_jokers', 'cards_w1', 'cards_w2', 'cards_w3', 'cards_w4', 'cards_bingo', 'cards_archetypes',
            'cards_w5', 'cards_valet_as', 'cards_w6', 'cards_w7', 'cards_rois', 'cards_rapide',
-           'cards_palace']
+           'cards_palace', 'cards_temple']
 
 
 def palette(card_id):

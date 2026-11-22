@@ -5,6 +5,7 @@ import fr.astratime.lucky.entities.exploration.PlaceRule;
 import fr.astratime.lucky.i18n.Lang;
 
 import java.util.List;
+import java.util.Random;
 
 /**
  * Source de vérité de la partie.
@@ -18,6 +19,8 @@ public class GameState {
     private       int    turnNumber = 1;
     /** Règle du lieu (Exploration), qui joue dans tout le combat. */
     private       PlaceRule placeRule = PlaceRule.NONE;
+    /** Présage (Temple du Destin) : le symbole annoncé pour le tirage de ce tour, ou {@code null}. */
+    private       Symbol    omen;
 
     /**
      * Crée une nouvelle partie : le joueur démarre à pleine vie avec le deck
@@ -50,6 +53,23 @@ public class GameState {
 
     /** @return la règle du lieu du combat ({@link PlaceRule#NONE} hors de l'Exploration). */
     public PlaceRule getPlaceRule() { return placeRule; }
+
+    /**
+     * Présage : le temple annonce, pour le tirage de ce tour, le symbole d'un rouleau de la machine du joueur pris au
+     * hasard (un symbole présent sur plusieurs rouleaux a plus de chances d'être annoncé). Rien sans la règle.
+     */
+    public void announceOmen(Random random) {
+        omen = null;
+        if (!getActiveRule().hasOmen()) return;
+        List<Symbol> reels = player.getSlotMachine().getReels();
+        if (!reels.isEmpty()) omen = reels.get(random.nextInt(reels.size()));
+    }
+
+    /** @return le symbole annoncé par le Présage pour le tirage de ce tour, ou {@code null}. */
+    public Symbol getOmen() { return omen; }
+
+    /** Le tirage a eu lieu : le Présage ne vaut plus. @return le symbole qui était annoncé, ou {@code null} */
+    public Symbol takeOmen() { Symbol announced = omen; omen = null; return announced; }
 
     /**
      * @return la règle du lieu qui joue en ce moment : aucune pendant une Bulle

@@ -440,6 +440,11 @@ public class GameController {
                 "WAGON BONDÉ : {0} CARTES JOUÉES DE MOINS", PlaceRule.CROWDED_PLAYS), EffectPopup.Style.DAMAGE,
                 PopupScale.SECONDARY_INTENSITY));
         }
+        gameState.announceOmen(random); // Présage (Temple du Destin) : le symbole annoncé pour ce tirage
+        if (gameState.getOmen() != null) {
+            turnNotices.add(new EffectPopup(Lang.f("PRÉSAGE : {0}", gameState.getOmen().getDisplayName().toUpperCase()),
+                EffectPopup.Style.SPECIAL, PopupScale.SECONDARY_INTENSITY));
+        }
         List<Card> added     = new ArrayList<>(drawn.getAddedToHand());
         List<Card> discarded = new ArrayList<>(drawn.getDiscarded());
 

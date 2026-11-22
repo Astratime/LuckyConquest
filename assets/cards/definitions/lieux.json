@@ -370,5 +370,77 @@
     "name": "Bal des neiges",
     "assetPath": "cards/special/bal_des_neiges.png",
     "effects": [ { "type": "BONUS_PLAYS", "plays": 2 }, { "type": "GAINS_PERCENT", "percent": 40 } ]
+  },
+  {
+    "id": "baton_d_encens",
+    "name": "Bâton d'encens",
+    "assetPath": "cards/special/baton_d_encens.png",
+    "effects": [ { "type": "TRANSFUSION", "percent": 10 }, { "type": "DEFENSE", "bonus": 40 } ]
+  },
+  {
+    "id": "cloche_de_bronze",
+    "name": "Cloche de bronze",
+    "assetPath": "cards/special/cloche_de_bronze.png",
+    "effects": [ { "type": "RED_HERRING" }, { "type": "ATTACK", "bonus": 40 } ]
+  },
+  {
+    "id": "maillet_de_gong",
+    "name": "Maillet de gong",
+    "assetPath": "cards/special/maillet_de_gong.png",
+    "effects": [ { "type": "GONG_MALLET" }, { "type": "BOOST_SYMBOL", "symbol": "GONG", "amount": 50 } ]
+  },
+  {
+    "id": "feuille_de_the",
+    "name": "Feuille de thé",
+    "assetPath": "cards/special/feuille_de_the.png",
+    "effects": [ { "type": "REROLL" }, { "type": "GAINS_PERCENT", "percent": 15 } ]
+  },
+  {
+    "id": "boule_de_cristal",
+    "name": "Boule de cristal",
+    "assetPath": "cards/special/boule_de_cristal.png",
+    "effects": [ { "type": "EXTRA_DRAW", "extraCards": 2 }, { "type": "DEFENSE", "bonus": 30 } ]
+  },
+  {
+    "id": "fil_d_or",
+    "name": "Fil d'or",
+    "assetPath": "cards/special/fil_d_or.png",
+    "effects": [ { "type": "GUARANTEED_PAIR", "percent": 50 }, { "type": "GAIN", "amount": 400 } ]
+  },
+  {
+    "id": "de_d_ivoire",
+    "name": "Dé d'ivoire",
+    "assetPath": "cards/special/de_d_ivoire.png",
+    "effects": [ { "type": "ATTACK", "bonus": 60 }, { "type": "GAIN", "amount": 400 } ]
+  },
+  {
+    "id": "gobelet_a_des",
+    "name": "Gobelet à dés",
+    "assetPath": "cards/special/gobelet_a_des.png",
+    "effects": [ { "type": "BEST_OF_TWO" }, { "type": "ATTACK", "bonus": 30 } ]
+  },
+  {
+    "id": "double_six",
+    "name": "Double six",
+    "assetPath": "cards/special/double_six.png",
+    "effects": [ { "type": "BONUS_PLAYS", "plays": 2 }, { "type": "ATTACK", "bonus": 60 } ]
+  },
+  {
+    "id": "offrande_d_or",
+    "name": "Offrande d'or",
+    "assetPath": "cards/special/offrande_d_or.png",
+    "effects": [ { "type": "GAINS_PERCENT", "percent": 30 }, { "type": "GAIN", "amount": 500 } ]
+  },
+  {
+    "id": "masque_sacre",
+    "name": "Masque sacré",
+    "assetPath": "cards/special/masque_sacre.png",
+    "effects": [ { "type": "DEFENSE", "bonus": 70 } ]
+  },
+  {
+    "id": "oeil_de_l_idole",
+    "name": "Oeil de l'idole",
+    "assetPath": "cards/special/oeil_de_l_idole.png",
+    "effects": [ { "type": "GONG_MALLET" }, { "type": "ATTACK", "bonus": 100 } ]
   }
 ]

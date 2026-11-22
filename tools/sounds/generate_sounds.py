@@ -2546,6 +2546,72 @@ def king_prince_neiges():
     return king(prelude, reverb(entrance.buf, wet=0.35, size=1.8), gesture)
 
 
+def temple_gong(d=3.0):
+    """Un grand gong de temple : un coup sourd, puis un chatoiement de bronze qui enfle et s'éteint."""
+    strike = thump(90, 50, 0.4) * 0.8
+    shimmer = modal(hz('A2'), d, [1.0, 1.47, 2.09, 2.56, 3.2, 4.1], [1.0, 0.8, 0.6, 0.5, 0.35, 0.25])
+    return mix((strike, 0, 1.0), (shimmer * ramp(d, 0.4, 1.0), 0, 0.8))
+
+
+def dice_roll(d=0.6, count=6):
+    """Des dés qui roulent sur la pierre : des petits chocs de plus en plus serrés."""
+    track = Track(d + 0.1)
+    for k in range(count):
+        track.add(click(0.015, 1500, 5000), d * (1 - (1 - k / count) ** 1.6), rand(0.5, 1.0))
+    return track.buf
+
+
+@sound('cutscene/king_maitre_cloches', -17)
+def king_maitre_cloches():
+    """Le Maître des cloches : il monte les marches (0 à 1,2 s), le bourdon oscille, il frappe (3,4 s)."""
+    prelude = [(ambience(2.0, 300, 1200, 0.3), 0.0, 0.5), (bell_toll(hz('D3'), 2.0), 0.4, 0.2)]
+    entrance = Track(5.0)
+    entrance.add(footsteps(1.2, 5), 0.0, 0.5)
+    entrance.add(whoosh(0.5, 200, 1200), 1.0, 0.3)
+    gesture = [(temple_gong(3.0), 3.4, 0.9), (bell_toll(hz('A2'), 2.4), 3.45, 0.5),
+               (brass_chord(['D3', 'A3', 'D4', 'F4'], 1.2, 0.5), 3.5, 0.4)]
+    return king(prelude, reverb(entrance.buf, wet=0.3, size=1.6), gesture)
+
+
+@sound('cutscene/king_tisseuse', -17)
+def king_tisseuse():
+    """La Tisseuse de destins : le jardin la nuit, elle descend le long de ses fils (0 à 1,6 s), ses yeux s'ouvrent (3,4 s)."""
+    prelude = [(ambience(2.0, 200, 900, 0.3), 0.0, 0.5), (rustle(2.0), 0.0, 0.3)]
+    entrance = Track(5.0)
+    entrance.add(whoosh(1.6, 300, 1500, q=0.8), 0.0, 0.4)
+    for k in range(5):
+        entrance.add(modal(hz('E6') * (1 + k * 0.12), 0.8, GLASS_RATIOS, [1.0, 0.5, 0.3, 0.2]), 0.2 + k * 0.3, 0.15)
+    gesture = [(modal(hz('B5'), 2.0, GLASS_RATIOS, [1.0, 0.6, 0.4, 0.3]), 3.4, 0.4),
+               (brass_chord(['E3', 'G3', 'B3', 'D4'], 1.6, 0.4), 3.4, 0.4)]
+    return king(prelude, reverb(entrance.buf, wet=0.35, size=1.6), gesture)
+
+
+@sound('cutscene/king_seigneur_des', -17)
+def king_seigneur_des():
+    """Le Seigneur des Dés : le grand dé tombe (0,8 s), il en sort (1,4 s), lance ses deux dés d'or (3,4 s)."""
+    prelude = [(ambience(2.0, 200, 1000, 0.3), 0.0, 0.5), (rattle(2.0, 6, 6, 300, 1200, wood=True), 0.0, 0.2)]
+    entrance = Track(5.0)
+    entrance.add(whoosh(0.6, 200, 1500), 0.2, 0.4)
+    entrance.add(impact(0.6, 120, 40), 0.8, 1.0)
+    entrance.add(thump(160, 60, 0.3), 1.4, 0.6)
+    gesture = [(dice_roll(0.7, 7), 3.4, 0.9), (dice_roll(0.7, 6), 3.5, 0.7),
+               (brass_chord(['A2', 'E3', 'A3', 'C4'], 1.2, 0.5), 4.0, 0.5)]
+    return king(prelude, reverb(entrance.buf, wet=0.2, size=1.2), gesture)
+
+
+@sound('cutscene/king_idole_or', -17)
+def king_idole_or():
+    """L'Idole d'Or : les bougies s'allument (0,2 s), l'idole sort de l'ombre (1 s), son oeil s'ouvre et les pièces jaillissent (3,4 s)."""
+    prelude = [(ambience(2.0, 150, 700, 0.3), 0.0, 0.5), (drone(['D2', 'A2'], 2.0), 0.0, 0.3)]
+    entrance = Track(5.0)
+    for k in range(8):
+        entrance.add(hiss(0.2), 0.2 + k * 0.1, 0.15)
+    entrance.add(whoosh(1.2, 150, 900, q=0.8), 1.0, 0.4)
+    gesture = [(temple_gong(2.4), 3.4, 0.6), (coin_shower(1.2, 16), 3.5, 0.6),
+               (brass_chord(['D3', 'F3', 'A3', 'D4'], 1.4, 0.5), 3.5, 0.5)]
+    return king(prelude, reverb(entrance.buf, wet=0.3, size=1.5), gesture)
+
+
 @sound('cutscene/exploration_ending', -17, trim=False)
 def cutscene_exploration_ending():
     """Fin de l'Exploration : six lieux s'allument (0,6 s puis toutes les 0,55 s), la table (4,2 s), l'écaille d'or (5 s), le sourire (5,5 s)."""

@@ -310,6 +310,7 @@ public final class ExplorationArt {
             case FOIRE   -> FairDesertArt.FOIRE_GATES;
             case RAPIDE  -> ExpressArt.RAPIDE_GATES;
             case PALACE  -> PalaceArt.PALACE_GATES;
+            case TEMPLE  -> TempleArt.TEMPLE_GATES;
             case DESERT  -> FairDesertArt.DESERT_GATES;
         };
     }

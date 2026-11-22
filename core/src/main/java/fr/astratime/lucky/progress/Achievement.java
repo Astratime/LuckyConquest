@@ -40,6 +40,7 @@ public enum Achievement {
     PALACE("Client de marque", "Vider les 4 donjons du Palace des Neiges.", 120_000_000),
     MINES("Chercheur d'or", "Vider les 4 donjons des Mines d'Or.", 300_000_000),
     CASINO("Maître du Casino", "Vider les 4 donjons du Casino Englouti.", 1_000_000_000L),
+    TEMPLE("Élu du destin", "Vider les 4 donjons du Temple du Destin.", 3_000_000_000L),
     DESERT("Tueur de dragon", "Vider les 4 donjons du Désert de Braise.", 5_000_000_000L),
     GREAT_EXPLORER("Grand explorateur", "Vider tous les donjons de l'Exploration.", 5_000_000_000L),
     // Exploration difficile (2026-11-20 : environ une descente médiane du lieu, joueur malin, au Prestige où il s'ouvre)
@@ -50,6 +51,7 @@ public enum Achievement {
     HARD_PALACE("Palace sans pitié", "Vider les 4 donjons du Palace des Neiges en mode difficile.", 250_000_000_000L),
     HARD_MINES("Mines sans pitié", "Vider les 4 donjons des Mines d'Or en mode difficile.", 300_000_000_000L),
     HARD_CASINO("Casino sans pitié", "Vider les 4 donjons du Casino Englouti en mode difficile.", 500_000_000_000L),
+    HARD_TEMPLE("Temple sans pitié", "Vider les 4 donjons du Temple du Destin en mode difficile.", 700_000_000_000L),
     HARD_DESERT("Désert sans pitié", "Vider les 4 donjons du Désert de Braise en mode difficile.", 1_000_000_000_000L),
     FORTUNE("Fortune faite", "Gagner 1 milliard de pièces en Exploration, au total.", 300_000_000),
     // Tour des épreuves

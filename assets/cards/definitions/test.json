@@ -429,6 +429,19 @@
     ]
   },
   {
+    "id": "bingo_gong",
+    "name": "Bingo Gong",
+    "assetPath": "cards/test/bingo_gong.png",
+    "consumable": true,
+    "effects": [
+      {
+        "type": "BINGO",
+        "power": 1,
+        "symbol": "GONG"
+      }
+    ]
+  },
+  {
     "id": "bingo_descent",
     "name": "Bingo Descente aux enfers",
     "assetPath": "cards/test/bingo_descent.png",

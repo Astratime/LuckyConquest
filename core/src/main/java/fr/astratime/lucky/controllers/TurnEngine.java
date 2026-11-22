@@ -127,6 +127,7 @@ public class TurnEngine {
 
         // Prédiction de la Cartomancienne : son symbole est-il sorti ?
         gameState.getEnemy().checkPrediction(symbols);
+        omen(gameState, turnContext, symbols); // Présage (Temple du Destin)
 
         // Symboles -> couples (symbole, action)
         List<SymbolAction> symbolActions = actionResolver.resolve(symbols);
@@ -142,6 +143,8 @@ public class TurnEngine {
             drawn,
             turnContext.getEvents()
         );
+
+        if (result.isJackpot()) gameState.getEnemy().addKarma(); // Karma (Temple du Destin) : il garde le compte des Bingos
 
         // Jeu bonus : après un Bingo, une fois sur dix, la grille s'ouvre ; ses gains sont crédités tout de suite.
         BonusGame bonus = bonusGame(result, turnContext.getSpinContext(), player, turnContext.getCombatContext());
@@ -173,6 +176,26 @@ public class TurnEngine {
         gameState.nextTurn();
 
         return result;
+    }
+
+    /**
+     * Présage (Temple du Destin) : si le symbole annoncé est sorti, Puissance +{@link PlaceRule#OMEN_POWER} ce tour ;
+     * sinon, l'ennemi frappera {@link PlaceRule#OMEN_ENEMY_PERCENT} % plus fort à son tour.
+     */
+    private void omen(GameState gameState, TurnContext turnContext, Symbol[] symbols) {
+        Symbol omen = gameState.takeOmen();
+        if (omen == null) return;
+        boolean drawn = false;
+        for (Symbol symbol : symbols) if (symbol == omen) drawn = true;
+        gameState.getEnemy().setOmenMissed(!drawn);
+        if (drawn) {
+            turnContext.getCombatContext().addAttackPower(PlaceRule.OMEN_POWER, Lang.t("Présage"));
+            turnContext.addEvent(new StatusEvent(Lang.f("PRÉSAGE ACCOMPLI : PUISSANCE +{0}", PlaceRule.OMEN_POWER),
+                EffectPopup.Style.ATTACK));
+        } else {
+            turnContext.addEvent(new StatusEvent(Lang.f("PRÉSAGE MANQUÉ : L'ENNEMI FRAPPE +{0} %", PlaceRule.OMEN_ENEMY_PERCENT),
+                EffectPopup.Style.DAMAGE));
+        }
     }
 
     /**
@@ -524,6 +547,7 @@ public class TurnEngine {
             if (symbol == Symbol.LUCK_APOSTLE) angels++;
             if (symbol == Symbol.STEAM) steam = true;
         }
+        gauges.endGong(); // Maillet de gong : il ne valait que pour ce tirage
         int pressure = gauges.getSteam();
         if (gauges.steam(steam) > pressure) {
             events.add(new StatusEvent(Lang.f("VAPEUR {0}/{1}", gauges.getSteam(), ReelGauges.STEAM_MAX),

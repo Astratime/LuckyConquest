@@ -676,6 +676,7 @@ public class PlayerProfile {
             case PALACE          -> placeCleared(Place.PALACE);
             case MINES           -> placeCleared(Place.MINES);
             case CASINO          -> placeCleared(Place.CASINO);
+            case TEMPLE          -> placeCleared(Place.TEMPLE);
             case FOIRE           -> placeCleared(Place.FOIRE);
             case DESERT          -> placeCleared(Place.DESERT);
             case GREAT_EXPLORER  -> Arrays.stream(Place.values()).allMatch(this::placeCleared);
@@ -686,6 +687,7 @@ public class PlayerProfile {
             case HARD_PALACE     -> isHardPlaceCleared(Place.PALACE);
             case HARD_MINES      -> isHardPlaceCleared(Place.MINES);
             case HARD_CASINO     -> isHardPlaceCleared(Place.CASINO);
+            case HARD_TEMPLE     -> isHardPlaceCleared(Place.TEMPLE);
             case HARD_DESERT     -> isHardPlaceCleared(Place.DESERT);
             case FORTUNE         -> stats.get(PlayerStats.Stat.COINS) >= 1_000_000_000L;
             case COMET           -> clearedChapters.contains(Chapter.GENESE.name());

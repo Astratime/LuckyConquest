@@ -5,7 +5,7 @@ import java.util.function.BiPredicate;
 
 /**
  * Dessine les rouleaux vendus à la boutique (assets/symbols/13 à 20, puis 22 à 28),
- * les rouleaux des lieux (21 la Pépite, 29 à 32, 35 la Vapeur, 36 le Flocon) et ceux des Bingos imposés (33, 34), dans le
+ * les rouleaux des lieux (21 la Pépite, 29 à 32, 35 la Vapeur, 36 le Flocon, 38 le Gong) et ceux des Bingos imposés (33, 34), dans le
  * style des rouleaux classiques : 24 x 20 pixels de 6 px sur fond gris clair,
  * contour sombre, bord éclairé en haut à gauche et ombré en bas à droite.
  * Dessine aussi leur carte Bingo de test (assets/cards/test/), sur le modèle de
@@ -43,6 +43,7 @@ public class GenerateShopReels {
         reel("32-flame", "bingo_flame", flame());
         reel("35-steam", "bingo_steam", steam());
         reel("36-snowflake", "bingo_snowflake", snowflake());
+        reel("38-gong", "bingo_gong", gong());
         reel("33-descent", "bingo_descent", descent());
         reel("34-bingo_light", "bingo_bingo_light", bingoLight());
         recolor("gain_500", "gain_2000", new int[] {0xff460a1a, 0xff681228, 0xff540e20},
@@ -424,6 +425,18 @@ public class GenerateShopReels {
             }
             return false;
         });
+        return g;
+    }
+
+    /** Gong : un disque de bronze à bossage d'or, suspendu à un portique rouge. */
+    private static int[][] gong() {
+        int[][] g = grid();
+        fill(g, CRIMSON, (x, y) -> (y >= 0.5 && y < 2.5 && x >= 1 && x < 23)
+            || (y >= 2.5 && y < 19.5 && (Math.abs(x - 3) <= 1.2 || Math.abs(x - 21) <= 1.2)));
+        fill(g, BROWN, (x, y) -> y >= 2.5 && y < 4.5 && (Math.abs(x - 9) <= 0.6 || Math.abs(x - 15) <= 0.6));
+        fill(g, ORANGE, (x, y) -> Math.hypot(x - 12, y - 11) <= 7.2);
+        fill(g, GOLD, (x, y) -> Math.hypot(x - 12, y - 11) <= 4.6);
+        fill(g, YELLOW, (x, y) -> Math.hypot(x - 12, y - 11) <= 1.8);
         return g;
     }
 

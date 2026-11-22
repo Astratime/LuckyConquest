@@ -21,7 +21,10 @@ import fr.astratime.lucky.i18n.Lang;
  *   <li>{@link #WAGON_BONDE} : tous les {@link #CROWDED_PERIOD} tours, le joueur joue {@link #CROWDED_PLAYS}
  *       carte de moins ce tour-là (le wagon est bondé) ;</li>
  *   <li>{@link #VERGLAS} : tous les {@link #ICE_PERIOD} tours, les combinaisons ne donnent que
- *       {@link #ICE_COMBO_PERCENT} % de leur Puissance (attaque ; les gains ne changent pas).</li>
+ *       {@link #ICE_COMBO_PERCENT} % de leur Puissance (attaque ; les gains ne changent pas) ;</li>
+ *   <li>{@link #PRESAGE} : à chaque tour, le temple annonce un symbole de la machine du joueur ; s'il sort
+ *       au tirage, Puissance +{@link #OMEN_POWER} ce tour, sinon l'ennemi frappe {@link #OMEN_ENEMY_PERCENT} %
+ *       plus fort à son tour.</li>
  * </ul>
  */
 public enum PlaceRule {
@@ -38,7 +41,9 @@ public enum PlaceRule {
         + "PV max. Ton bouclier ne protège pas."),
     WAGON_BONDE("Wagon bondé", "Tous les 3 tours, le wagon est bondé : tu joues 1 carte de moins ce tour-là."),
     VERGLAS("Verglas", "Un tour sur deux, la table est verglacée : tes combinaisons ne donnent que la moitié de leur "
-        + "Puissance.");
+        + "Puissance."),
+    PRESAGE("Présage", "Chaque tour, le temple annonce un symbole de ta machine. S'il sort à ton tirage, Puissance +1 "
+        + "ce tour. Sinon, l'ennemi frappe 30 % plus fort à son tour.");
 
     /** Id de la carte Scorbut. */
     public static final String SCURVY_CARD = "scorbut";
@@ -73,6 +78,11 @@ public enum PlaceRule {
     public static final int ICE_PERIOD = 2;
     /** Verglas : part de la Puissance des combinaisons gardée ce tour-là, en %. */
     public static final int ICE_COMBO_PERCENT = 50;
+
+    /** Présage : Puissance gagnée quand le symbole annoncé sort au tirage. */
+    public static final int OMEN_POWER = 1;
+    /** Présage : force en plus des attaques de l'ennemi, à son tour, quand le symbole annoncé n'est pas sorti (en %). */
+    public static final int OMEN_ENEMY_PERCENT = 30;
 
     private final String name;
     private final String description;
@@ -116,6 +126,9 @@ public enum PlaceRule {
 
     /** @return {@code true} si la table est verglacée au tour {@code turn} (à partir de 1) : combinaisons à moitié. */
     public boolean isIcy(int turn) { return this == VERGLAS && turn % ICE_PERIOD == 0; }
+
+    /** @return {@code true} si le Présage joue (un symbole annoncé à chaque tour). */
+    public boolean hasOmen() { return this == PRESAGE; }
 
     /** @return {@code true} si la Soif joue (soins divisés, PV perdus sans soin). */
     public boolean isThirsty() { return this == SOIF; }

@@ -62,10 +62,10 @@ class SpinEconomyTest {
         assertEquals(500, EnemyKind.PRETENDANT.getSpinCost(), "chapitre 4");
         assertEquals(2_000, EnemyKind.PORTIER.getSpinCost(), "chapitre 5");
         assertEquals(5_000, EnemyKind.MACHINE_ORIGINELLE.getSpinCost(), "chapitre 6");
-        // Ordre d'ouverture : prairie, Fête foraine, Rapide de Minuit, Port, Mines, Casino, Désert de Braise ; coûts étirés
+        // Ordre d'ouverture : prairie, Fête foraine, Rapide de Minuit, Port, Mines, Casino, Temple du Destin, Désert de Braise ; coûts étirés
         // (Astra, 2026-10-29) pour qu'un lieu paie au moins deux fois le lieu d'avant
         Map<Place, Integer> costs = Map.of(Place.PRAIRIE, 100, Place.FOIRE, 700, Place.RAPIDE, 1_500, Place.PORT, 3_000,
-            Place.PALACE, 6_000, Place.MINES, 12_000, Place.CASINO, 45_000, Place.DESERT, 140_000);
+            Place.PALACE, 6_000, Place.MINES, 12_000, Place.CASINO, 45_000, Place.TEMPLE, 80_000, Place.DESERT, 140_000);
         for (Place place : Place.values()) {
             for (var dungeon : place.getDungeons()) {
                 assertEquals((int) costs.get(place), dungeon.getSoldier().getSpinCost(), place + " soldat");

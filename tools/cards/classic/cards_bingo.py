@@ -25,6 +25,8 @@ BINGO_SYMBOLS = {
     'steam': '35-steam',
     # Le Palace des Neiges (2026-11-21)
     'snowflake': '36-snowflake',
+    # Le Temple du Destin (2026-11-21)
+    'gong': '38-gong',
 }
 
 

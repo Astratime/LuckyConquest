@@ -58,7 +58,8 @@ class DungeonTest {
 
     @Test
     void thePlacesOpenInOrderWithTheirHpAndAChiefAtTheEnd() {
-        Place[] order = {Place.PRAIRIE, Place.FOIRE, Place.RAPIDE, Place.PORT, Place.PALACE, Place.MINES, Place.CASINO, Place.DESERT};
+        Place[] order = {Place.PRAIRIE, Place.FOIRE, Place.RAPIDE, Place.PORT, Place.PALACE, Place.MINES, Place.CASINO,
+            Place.TEMPLE, Place.DESERT};
         assertEquals(List.of(order), List.of(Place.values()));
         // PV du soldat (le roi en a le double), choix d'Astra 2026-10-24 : le Tombeau à part (la Salle des machines
         // et les Coffres alignés sur le Casino le 2026-10-29)
@@ -69,6 +70,7 @@ class DungeonTest {
         for (Dungeon d : Place.PALACE.getDungeons()) hp.put(d, 350_000); // 10 lieux, 2026-11-21
         for (Dungeon d : Place.MINES.getDungeons()) hp.put(d, 500_000); // Astra 2026-10-27, Gouffre compris
         for (Dungeon d : Place.CASINO.getDungeons()) hp.put(d, 1_200_000);
+        for (Dungeon d : Place.TEMPLE.getDungeons()) hp.put(d, 1_500_000); // 10 lieux, 2026-11-21
         for (Dungeon d : Place.DESERT.getDungeons()) hp.put(d, 1_500_000);
         hp.put(Dungeon.TOMBEAU, 1_050_000);
         for (int i = 1; i < order.length; i++) {

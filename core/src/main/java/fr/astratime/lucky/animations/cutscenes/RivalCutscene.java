@@ -105,6 +105,7 @@ public class RivalCutscene extends Cutscene {
             case RIVAL_PALACE -> EnemySymbol.KEY;
             case RIVAL_MINES -> EnemySymbol.DRILL;
             case RIVAL_CASINO -> EnemySymbol.BANK_BITE;
+            case RIVAL_TEMPLE -> EnemySymbol.DOUBLE_SIX;
             case RIVAL_DESERT -> EnemySymbol.BILL;
             default -> null;
         };
@@ -119,6 +120,7 @@ public class RivalCutscene extends Cutscene {
             case RIVAL_PALACE -> Lang.t("LE CONCIERGE M'A PRÊTÉ SES CLÉS. TES MEILLEURES CARTES RESTERONT AU VESTIAIRE.");
             case RIVAL_MINES -> Lang.t("LA MINE M'A APPRIS À PERCER LES BOUCLIERS.");
             case RIVAL_CASINO -> Lang.t("SOUS L'EAU, J'AI APPRIS À MORDRE LES GAINS.");
+            case RIVAL_TEMPLE -> Lang.t("AU TEMPLE, LES MOINES M'ONT APPRIS À FAIRE PARLER LES DÉS.");
             default -> Lang.t("TU M'AS SUIVI JUSQU'ICI.");
         };
     }

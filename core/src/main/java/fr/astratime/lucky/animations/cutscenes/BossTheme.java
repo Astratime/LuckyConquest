@@ -68,6 +68,11 @@ public record BossTheme(Color skyTop, Color skyLow, Color ground, Color accent, 
             case IMPERATRICE_GIVRE -> king(kind, "bfe8ff", "L'IMPÉRATRICE DU GIVRE A FONDU");
             case YETI -> king(kind, "f2f8ff", "LE YÉTI DORT SOUS LA NEIGE");
             case PRINCE_NEIGES -> king(kind, "8ac8f0", "LE BAL DU PRINCE EST FINI");
+            // ----- Le Temple du Destin -----
+            case MAITRE_CLOCHES -> king(kind, "e8b04a", "LE DERNIER COUP DE CLOCHE S'ÉTEINT");
+            case TISSEUSE -> king(kind, "ffd54a", "LE FIL DE LA TISSEUSE EST COUPÉ");
+            case SEIGNEUR_DES -> king(kind, "f6f0e2", "LES DÉS DU SEIGNEUR ROULENT SANS LUI");
+            case IDOLE_OR -> king(kind, "ffc93a", "L'IDOLE D'OR RETOURNE À LA POUSSIÈRE");
             // ----- Le Désert de Braise -----
             case EMIR -> king(kind, "ffd23a", "L'ÉMIR RETOURNE AU SABLE");
             case PHARAON -> king(kind, "6aff6a", "LE PHARAON RETOURNE À LA POUSSIÈRE");
@@ -92,6 +97,7 @@ public record BossTheme(Color skyTop, Color skyLow, Color ground, Color accent, 
             case FOIRE -> { top = "0a0614"; low = "2a0a2a"; ground = "140a10"; }      // la nuit sous le chapiteau
             case RAPIDE -> { top = "0a0c1e"; low = "1a2a4a"; ground = "2a0a14"; }     // le train dans la nuit
             case PALACE -> { top = "0e1a34"; low = "5a7aa8"; ground = "c8d8ec"; }     // la neige sous le ciel d'hiver
+            case TEMPLE -> { top = "2a1430"; low = "c86a3a"; ground = "5a3a2a"; }     // le crépuscule sur les falaises
             case DESERT -> { top = "2a0a0a"; low = "c8501e"; ground = "8a5a2a"; }     // le sable brûlant
             default -> { top = "1c1a28"; low = "2e2a3e"; ground = "141220"; }         // le donjon de pierre
         }

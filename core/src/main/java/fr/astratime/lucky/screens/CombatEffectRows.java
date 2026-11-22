@@ -321,6 +321,12 @@ final class CombatEffectRows {
                     + (icy ? Lang.t(" C'est ce tour-ci : tes combinaisons sont à moitié !")
                         : Lang.t(" La table sera verglacée au prochain tour."))));
             }
+            case PRESAGE -> {
+                fr.astratime.lucky.entities.Symbol omen = state.getOmen();
+                rows.add(new SidePanel.EffectRow(skull, null, omen == null ? rule.getName()
+                    : Lang.f("Présage : {0}", omen.getDisplayName()), rule.getName(), rule.getDescription()
+                    + (omen == null ? "" : Lang.f(" Ce tour, le temple annonce : {0}.", omen.getDisplayName()))));
+            }
             case SOIF -> rows.add(new SidePanel.EffectRow(skull, null,
                 Lang.f("Soif : soins /{0}", PlaceRule.THIRST_HEAL_DIVISOR), rule.getName(),
                 rule.getDescription() + Lang.t(" Pense à te soigner à chaque tour.")));
@@ -511,6 +517,8 @@ final class CombatEffectRows {
                 turns(target.getMaluses().getMarkedTurns()))));
         if (target.getMaluses().getRedHerrings() > 0) rows.add(new SidePanel.EffectRow(icon, null, Lang.t("Fausse piste"), Lang.t("Fausse piste"),
             Lang.t("À son prochain tirage, un de ses rouleaux ne tourne pas (une chance sur deux contre un boss ou un roi).")));
+        if (target.getMaluses().isStunned()) rows.add(new SidePanel.EffectRow(icon, null, Lang.t("Étourdi"), Lang.t("Gong"),
+            Lang.t("Ton Gong a étourdi un de ses rouleaux : il ne tourne pas à son prochain tirage.")));
         if (target.getMaluses().getSleights() > 0) rows.add(new SidePanel.EffectRow(icon, null, Lang.f("Passe-passe x{0}", target.getMaluses().getSleights()),
             Lang.t("Tour de passe-passe"),
             Lang.t("Son prochain effet spécial est annulé (une chance sur deux contre un boss ou un roi).")));

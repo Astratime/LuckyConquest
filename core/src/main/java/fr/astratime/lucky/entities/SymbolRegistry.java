@@ -14,6 +14,7 @@ import fr.astratime.lucky.entities.actions.ScytheAction;
 import fr.astratime.lucky.entities.actions.ShieldStrikeAction;
 import fr.astratime.lucky.entities.actions.SnowflakeAction;
 import fr.astratime.lucky.entities.actions.SteamAction;
+import fr.astratime.lucky.entities.actions.GongAction;
 import fr.astratime.lucky.entities.actions.AttackAction;
 import fr.astratime.lucky.entities.actions.BombAction;
 import fr.astratime.lucky.entities.actions.DefenseAction;
@@ -89,6 +90,7 @@ public class SymbolRegistry {
         ACTIONS.put(Symbol.FLAME,     new FlameAction(80));
         ACTIONS.put(Symbol.STEAM,     new SteamAction(50));
         ACTIONS.put(Symbol.SNOWFLAKE, new SnowflakeAction(40));
+        ACTIONS.put(Symbol.GONG,      new GongAction(60));
 
         // Bingos imposés par une jauge pleine (Roi démon, Apôtre de la Chance)
         ACTIONS.put(Symbol.DESCENT,     new BlessingAction(true));

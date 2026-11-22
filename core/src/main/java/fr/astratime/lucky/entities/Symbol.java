@@ -52,6 +52,8 @@ public enum Symbol {
     STEAM         ("35-steam"),
     /** Flocon : gagné en vidant le Palace des Neiges ; du bouclier, dont une part gelée revient au tour suivant. */
     SNOWFLAKE     ("36-snowflake"),
+    /** Gong : gagné en vidant le Temple du Destin ; une attaque qui peut étourdir un rouleau de l'ennemi. */
+    GONG          ("38-gong"),
     /** N'existe qu'au Bingo imposé par le Roi démon : jamais dans une machine. */
     DESCENT       ("33-descent"),
     /** N'existe qu'au Bingo imposé par l'Apôtre de la Chance : jamais dans une machine. */
@@ -150,6 +152,7 @@ public enum Symbol {
             case FLAME         -> Lang.t("FLAMME");
             case STEAM         -> Lang.t("VAPEUR");
             case SNOWFLAKE     -> Lang.t("FLOCON");
+            case GONG          -> Lang.t("GONG");
             case DESCENT       -> Lang.t("DESCENTE AUX ENFERS");
             case BINGO_LIGHT   -> Lang.t("LUMIÈRE DU BINGO");
             case JOKER         -> Lang.t("JOKER");

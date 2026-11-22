@@ -23,9 +23,14 @@ public final class ReelGauges {
     /** Vapeur : au plus ce nombre de crans (x2 au 4e tirage d'affilée). */
     public static final int STEAM_MAX = 4;
 
+    /** Gong : chances d'étourdir un rouleau de l'ennemi, en %. */
+    public static final int GONG_STUN_PERCENT = 25;
+
     private int piggyDraws;
     private int steam;
     private int frost;
+    /** Maillet de gong : le Gong étourdit à coup sûr à ce tirage. */
+    private boolean gongSure;
     private int anchoredThisTurn;
     private int anchorKept;
     private int demonization;
@@ -82,6 +87,17 @@ public final class ReelGauges {
 
     /** @return le bouclier gelé qui reviendra au début du prochain tour. */
     public int getFrost() { return frost; }
+
+    // ----- Gong -----
+
+    /** Maillet de gong : à ce tirage, le Gong étourdit à coup sûr un rouleau de l'ennemi. */
+    public void sureGong() { gongSure = true; }
+
+    /** @return {@code true} si le Gong étourdit à coup sûr à ce tirage. */
+    public boolean isGongSure() { return gongSure; }
+
+    /** Après le tirage : le Maillet de gong ne valait que pour celui-ci. */
+    public void endGong() { gongSure = false; }
 
     // ----- Ancre -----
 
@@ -170,7 +186,7 @@ public final class ReelGauges {
 
     /** @return {@code true} si aucun de ces rouleaux n'a rien retenu. */
     public boolean isEmpty() {
-        return piggyDraws == 0 && steam == 0 && frost == 0 && anchoredThisTurn == 0 && anchorKept == 0 && demonization == 0 && luckyAngel == 0
+        return piggyDraws == 0 && steam == 0 && frost == 0 && !gongSure && anchoredThisTurn == 0 && anchorKept == 0 && demonization == 0 && luckyAngel == 0
             && forced == null && invincibleTurns == 0;
     }
 }

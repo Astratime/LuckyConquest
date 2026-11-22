@@ -1345,6 +1345,157 @@ def suite_royale():
     GLOWS['suite_royale'] = ((180, 18), (74, 60), (286, 60))
     return vignette(im, 0.45)
 
+
+# ---------------------------------------------------------------------------- le Temple du Destin
+
+def torii(f, cx, top, half, height, red=(196, 50, 58), ink=(30, 20, 26)):
+    """Portique de temple : deux piliers rouges, double linteau noir aux bouts relevés."""
+    f.polygon([(cx - half - 14, top - 4), (cx + half + 14, top - 4), (cx + half + 8, top + 6), (cx - half - 8, top + 6)],
+              fill=ink)
+    f.rectangle([cx - half - 4, top + 16, cx + half + 4, top + 22], fill=ink)
+    f.rectangle([cx - 3, top + 6, cx + 3, top + 16], fill=ink)
+    for x in (cx - half, cx + half):
+        f.rectangle([x - 5, top + 6, x + 5, top + height], fill=red)
+        f.rectangle([x + 2, top + 6, x + 5, top + height], fill=(140, 30, 38))
+        f.rectangle([x - 7, top + height - 4, x + 7, top + height], fill=(60, 50, 46))
+
+
+def stone_lantern(f, x, y):
+    """Lanterne de pierre, flamme centrée en (x, y)."""
+    f.rectangle([x - 4, y + 8, x + 4, y + 30], fill=(140, 128, 112))
+    f.rectangle([x - 9, y + 28, x + 9, y + 34], fill=(120, 108, 94))
+    f.rectangle([x - 8, y - 6, x + 8, y + 8], fill=(140, 128, 112))
+    f.rectangle([x - 4, y - 3, x + 4, y + 5], fill=(255, 210, 120))
+    f.rectangle([x - 2, y - 1, x + 2, y + 3], fill=(255, 246, 210))
+    f.polygon([(x - 13, y - 6), (x + 13, y - 6), (x + 6, y - 14), (x - 6, y - 14)], fill=(110, 98, 86))
+
+
+def parvis():
+    """Le Parvis : le ciel du soir, des marches de pierre qui montent vers un grand portique, deux cloches suspendues."""
+    rng = np.random.default_rng(101)
+    im, d = base((0, 0, 0))
+    gradient(d, (70, 30, 70), (220, 120, 70), 0, 150)
+    d.ellipse([150, 96, 210, 156], fill=(255, 214, 140))
+    d.rectangle([0, 170, W, H], fill=(120, 108, 94))
+    for k in range(12):  # les marches, de plus en plus étroites vers le haut
+        y = 170 - k * 7
+        half = 180 - k * 9
+        d.rectangle([180 - half, y, 180 + half, y + 7], fill=[(168, 154, 136), (146, 134, 118)][k % 2])
+    fg, f = layer()
+    torii(f, 180, 40, 90, 130)
+    for x in (40, 320):  # les cloches de bronze, suspendues à leur poutre
+        f.rectangle([x - 30, 20, x + 30, 26], fill=(60, 40, 30))
+        f.line([x, 26, x, 40], fill=(60, 40, 30), width=3)
+        f.ellipse([x - 18, 38, x + 18, 64], fill=(200, 122, 58))
+        f.rectangle([x - 20, 52, x + 20, 80], fill=(200, 122, 58))
+        f.rectangle([x + 6, 52, x + 20, 80], fill=(138, 74, 30))
+        f.rectangle([x - 24, 78, x + 24, 84], fill=(196, 137, 30))
+        f.ellipse([x - 4, 84, x + 4, 92], fill=(138, 74, 30))
+    stone_lantern(f, 70, 120)
+    stone_lantern(f, 290, 120)
+    im = finish(im, fg)
+    GLOWS['parvis'] = ((70, 120), (290, 120), (180, 126))
+    return vignette(im, 0.45)
+
+
+def jardin_oracles():
+    """Le Jardin des oracles : arbres tordus aux feuilles rouges, fils d'or tendus entre les branches, un bassin."""
+    rng = np.random.default_rng(102)
+    im, d = base((0, 0, 0))
+    gradient(d, (40, 26, 60), (96, 60, 90), 0, 170)
+    stars(d, rng, 40, 80, colors=((255, 240, 200), (220, 200, 255)))
+    d.rectangle([0, 150, W, H], fill=(60, 80, 50))
+    fg, f = layer()
+    trunks = [(30, 150, 60, 40), (110, 150, 120, 60), (250, 150, 240, 56), (330, 150, 300, 36)]
+    for x0, y0, x1, y1 in trunks:
+        f.line([x0, y0, x1, y1], fill=(70, 44, 34), width=9)
+        for k in range(26):  # les feuillages rouges et orangés
+            r = int(rng.integers(6, 14))
+            x, y = x1 + int(rng.integers(-34, 34)), y1 + int(rng.integers(-24, 20))
+            f.ellipse([x - r, y - r, x + r, y + r], fill=[(200, 60, 60), (230, 120, 60), (170, 40, 50)][k % 3])
+    for a, b in ((0, 1), (1, 2), (2, 3), (0, 2), (1, 3)):  # les fils d'or, d'un arbre à l'autre
+        (_, _, xa, ya), (_, _, xb, yb) = trunks[a], trunks[b]
+        pts = [(xa + (xb - xa) * t / 10, ya + 10 + (yb - ya) * t / 10 + 14 * math.sin(math.pi * t / 10)) for t in range(11)]
+        f.line(pts, fill=(255, 214, 90), width=1)
+    f.ellipse([120, 160, 240, 190], fill=(60, 110, 140))  # le bassin
+    f.ellipse([130, 164, 230, 186], fill=(90, 150, 180))
+    stone_lantern(f, 180, 112)
+    im = finish(im, fg)
+    GLOWS['jardin_oracles'] = ((180, 112),)
+    return vignette(im, 0.5)
+
+
+def salle_des_des():
+    """La Salle des dés : un dallage en damier qui file vers le fond, des dés géants, des braseros."""
+    rng = np.random.default_rng(103)
+    im, d = base((0, 0, 0))
+    gradient(d, (50, 20, 24), (90, 36, 34), 0, 120)
+    for k in range(8):  # le damier en perspective
+        y0, y1 = 120 + k * 12, 132 + k * 12
+        for i in range(-8, 9):
+            xa, xb = 180 + i * (10 + k * 4), 180 + (i + 1) * (10 + k * 4)
+            d.rectangle([xa, y0, xb, y1], fill=[(230, 222, 200), (40, 24, 28)][(i + k) % 2])
+    for x in (20, 100, 260, 340):  # les colonnes rouges du fond
+        d.rectangle([x - 8, 10, x + 8, 120], fill=(150, 40, 46))
+        d.rectangle([x + 2, 10, x + 8, 120], fill=(110, 28, 34))
+    fg, f = layer()
+
+    def die(x, y, s, face):
+        f.rectangle([x, y, x + s, y + s], fill=(246, 240, 226))
+        f.polygon([(x, y), (x + s, y), (x + s + s // 3, y - s // 3), (x + s // 3, y - s // 3)], fill=(255, 250, 240))
+        f.polygon([(x + s, y), (x + s + s // 3, y - s // 3), (x + s + s // 3, y + s - s // 3), (x + s, y + s)],
+                  fill=(200, 192, 176))
+        r = max(2, s // 10)
+        spots = {1: [(0.5, 0.5)], 5: [(0.25, 0.25), (0.75, 0.25), (0.5, 0.5), (0.25, 0.75), (0.75, 0.75)],
+                 6: [(0.28, 0.2), (0.28, 0.5), (0.28, 0.8), (0.72, 0.2), (0.72, 0.5), (0.72, 0.8)]}[face]
+        for u, v in spots:
+            cx, cy = x + u * s, y + v * s
+            f.ellipse([cx - r, cy - r, cx + r, cy + r], fill=(200, 40, 44))
+
+    die(24, 118, 56, 6)
+    die(284, 124, 48, 6)
+    die(70, 150, 30, 5)
+    for x in (130, 230):  # les braseros
+        f.rectangle([x - 10, 92, x + 10, 116], fill=(80, 60, 40))
+        f.polygon([(x - 14, 92), (x + 14, 92), (x + 10, 84), (x - 10, 84)], fill=(196, 137, 30))
+        f.polygon([(x - 9, 84), (x + 9, 84), (x + 3, 66), (x, 58), (x - 3, 66)], fill=(240, 120, 30))
+        f.polygon([(x - 5, 84), (x + 5, 84), (x, 70)], fill=(255, 220, 90))
+    im = finish(im, fg)
+    GLOWS['salle_des_des'] = ((130, 74), (230, 74))
+    return vignette(im, 0.5)
+
+
+def sanctuaire():
+    """Le Sanctuaire : une salle d'or, l'autel aux offrandes, une roue du Karma gravée au mur, des bougies par dizaines."""
+    rng = np.random.default_rng(104)
+    im, d = base((0, 0, 0))
+    gradient(d, (60, 40, 20), (30, 20, 12), 0, 170)
+    for x in range(0, W, 40):  # les panneaux dorés
+        d.rectangle([x + 4, 10, x + 36, 140], fill=(110, 80, 30))
+        d.rectangle([x + 8, 14, x + 32, 136], fill=(140, 104, 40))
+    d.rectangle([0, 140, W, H], fill=(70, 30, 26))
+    fg, f = layer()
+    cx, cy, r = 180, 60, 46  # la roue du Karma, au mur
+    f.ellipse([cx - r, cy - r, cx + r, cy + r], fill=(230, 180, 60))
+    f.ellipse([cx - r + 8, cy - r + 8, cx + r - 8, cy + r - 8], fill=(110, 80, 30))
+    for k in range(8):
+        a = k * math.pi / 4
+        f.line([cx, cy, cx + (r - 6) * math.cos(a), cy + (r - 6) * math.sin(a)], fill=(230, 180, 60), width=4)
+    f.ellipse([cx - 8, cy - 8, cx + 8, cy + 8], fill=(200, 40, 44))
+    f.rectangle([110, 120, 250, 150], fill=(120, 40, 36))  # l'autel
+    f.rectangle([104, 114, 256, 122], fill=(196, 137, 30))
+    for x in (130, 160, 200, 230):  # les offrandes : coupes de pièces
+        f.ellipse([x - 9, 106, x + 9, 116], fill=(236, 186, 60))
+        f.ellipse([x - 5, 100, x + 5, 108], fill=(255, 234, 140))
+    for k in range(18):  # les bougies
+        x = int(rng.integers(10, 100)) if k % 2 else int(rng.integers(260, 350))
+        y = int(rng.integers(130, 170))
+        f.rectangle([x - 2, y, x + 2, y + 10], fill=(240, 230, 210))
+        f.ellipse([x - 2, y - 5, x + 2, y], fill=(255, 200, 90))
+    im = finish(im, fg)
+    GLOWS['sanctuaire'] = ((180, 60), (55, 140), (305, 140))
+    return vignette(im, 0.45)
+
 DECORS = {
     'chapiteau': chapiteau, 'train_fantome': train_fantome, 'grande_roue': grande_roue, 'stands': stands,
     'taverne': taverne, 'phare': phare, 'galion': galion,
@@ -1355,15 +1506,20 @@ DECORS = {
     'monde_sans_maitre': monde_sans_maitre, 'la_maison': la_maison, 'le_jackpot': le_jackpot,
     'locomotive': locomotive, 'wagon_restaurant': wagon_restaurant, 'wagon_lit': wagon_lit, 'fourgon': fourgon,
     'hall': hall, 'patinoire': patinoire, 'telepherique': telepherique, 'suite_royale': suite_royale,
+    'parvis': parvis, 'jardin_oracles': jardin_oracles, 'salle_des_des': salle_des_des, 'sanctuaire': sanctuaire,
     'entrainement': entrainement,
 }
 
 
 def main():
+    only = set(sys.argv[1:])  # des noms de décors : ne refaire que ceux-là
     for name, draw in DECORS.items():
+        if only and name not in only:
+            continue
         draw().convert('RGB').save(os.path.join(ROOT, 'decor_' + name + '.png'))
     for name in DECORS:
-        print(name, GLOWS.get(name, ()))
+        if not only or name in only:
+            print(name, GLOWS.get(name, ()))
 
 
 if __name__ == '__main__':

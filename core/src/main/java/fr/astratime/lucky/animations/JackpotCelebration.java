@@ -194,12 +194,13 @@ public class JackpotCelebration extends Group implements Disposable {
     private final FirePillarScene     firePillar     = new FirePillarScene(iconOf(Symbol.FLAME));
     private final SteamEngineScene    steamEngine    = new SteamEngineScene(iconOf(Symbol.STEAM));
     private final FrostCrystalScene   frostCrystal   = new FrostCrystalScene(iconOf(Symbol.SNOWFLAKE));
+    private final GongScene           gongScene      = new GongScene(iconOf(Symbol.GONG));
     private final HellGateScene       hellGate       = new HellGateScene();
     private final LightOrbScene       lightOrb       = new LightOrbScene(iconOf(Symbol.BINGO_LIGHT));
     private final List<BingoScene>    scenes = List.of(hydraulicPress, forge, cherryTree, winePress,
         gemCut, safe, katana, horseshoe, shieldWall, swords, heartbeat, tripleDice, shootingStar, bomb, coronation,
         mine, cannon, supernova, bite, piggyBank, spikedShield, scythe, moonrise, demonGate, heaven, scratchTicket,
-        anchorDrop, chipTower, firePillar, steamEngine, frostCrystal, hellGate, lightOrb);
+        anchorDrop, chipTower, firePillar, steamEngine, frostCrystal, gongScene, hellGate, lightOrb);
     private final Group        bannerLayer = new Group();
     /** La mise en scène au premier plan (objets, bannière, mot géant, flash) : elle s'efface quand on passe. */
     private final Group        foreground  = new Group();
@@ -459,6 +460,7 @@ public class JackpotCelebration extends Group implements Disposable {
             case FLAME         -> scheduleFirePillar(icon);
             case STEAM         -> scheduleSteamEngine(icon);
             case SNOWFLAKE     -> scheduleFrostCrystal(icon);
+            case GONG          -> scheduleGong(icon);
             case DESCENT       -> scheduleHellfire(icon);
             case BINGO_LIGHT   -> scheduleHalo(icon);
             case JOKER         -> scheduleCasino();
@@ -1051,6 +1053,42 @@ public class JackpotCelebration extends Group implements Disposable {
                 MathUtils.random(50f, 70f), 900f);
         });
         coinRain(whistle + 0.2f, whistle + 1.1f, 18, 1);
+    }
+
+    private void scheduleGong(TextureRegion icon) {
+        float centerX = playArea.getCenterX(), baseY = getHeight() * 0.1f;
+        float strike = GongScene.STRIKE_TIME;
+        playScene(gongScene, centerX, baseY, strike + 0.3f, 0.86f);
+        Color bronze = Color.valueOf("c8902aff"), shine = Color.valueOf("ffe39aff"), red = Color.valueOf("d03a30ff");
+        at(GongScene.RISE_TIME, () -> screenShake.shake(0.2f, 6f));
+        at(strike, () -> {
+            screenShake.shake(0.8f, 22f);
+            impactFlash(1f, 0.9f, 0.6f, 0.5f);
+            Vector2 c = gongScene.center();
+            shockwaves.ring(c.x, c.y, 620f, 0.7f, 0.3f, shine);
+            shockwaves.ring(c.x, c.y, 420f, 0.55f, 0.3f, Palette.GOLD);
+        });
+        // Le gong résonne : d'autres ondes, de plus en plus faibles.
+        for (int i = 1; i <= 3; i++) {
+            float when = strike + i * 0.28f;
+            at(when, () -> {
+                Vector2 c = gongScene.center();
+                shockwaves.ring(c.x, c.y, 520f, 0.6f, 0.3f, bronze);
+            });
+        }
+        emit(strike, strike + 0.8f, 160, i -> {
+            Vector2 c = gongScene.center();
+            float angle = MathUtils.random(MathUtils.PI2), speed = MathUtils.random(400f, 1000f);
+            frontGlitter.ember(c.x, c.y, MathUtils.cos(angle) * speed, MathUtils.sin(angle) * speed, -200f,
+                MathUtils.random(8f, 16f), MathUtils.random(0.5f, 0.9f),
+                i % 3 == 0 ? shine : i % 3 == 1 ? Palette.GOLD : red);
+        });
+        emit(strike + 0.15f, strike + 0.3f, 12, i -> {
+            Vector2 c = gongScene.center();
+            symbols.jet(icon, c.x, getHeight() * 0.7f, 200f + i * 12f, MathUtils.random(500f, 800f),
+                MathUtils.random(50f, 70f), 900f);
+        });
+        coinRain(strike + 0.2f, strike + 1.1f, 18, 1);
     }
 
     private void scheduleFirePillar(TextureRegion icon) {

@@ -9,7 +9,7 @@ import static fr.astratime.lucky.assets.PixelCanvas.rgba;
  * Portraits en pixel art du Joueur Masqué (voir {@link Rival}), en buste, à la taille du croupier :
  * redingote violette, chapeau plat avec une carte glissée dans le ruban, demi-masque doré aux yeux
  * qui brillent. À chaque rencontre, il porte une broche de plus sur le revers, gagnée dans le lieu
- * traversé (ticket, roue de locomotive, ancre, flocon, pépite, jeton). Au Désert, il a ôté son masque et le tient à la main.
+ * traversé (ticket, roue de locomotive, ancre, flocon, pépite, jeton, dé). Au Désert, il a ôté son masque et le tient à la main.
  */
 public final class RivalArt {
 
@@ -48,7 +48,7 @@ public final class RivalArt {
         g.rect(16, 31, 18, 33, BAND);
         g.set(17, 29, rgba("0f7a70"));
         // Broches gagnées en route, sur le revers gauche : une par lieu traversé.
-        int[][] pins = {{10, 32}, {11, 35}, {12, 38}, {8, 36}, {8, 39}, {11, 40}};
+        int[][] pins = {{10, 32}, {11, 35}, {12, 38}, {8, 36}, {8, 39}, {11, 40}, {6, 33}};
         for (int i = 0; i < Math.min(encounter - 1, pins.length); i++) pin(g, i, pins[i][0], pins[i][1]);
         // Cou, visage, cheveux.
         g.rect(14, 24, 20, 28, SKIN_SHADE);
@@ -108,7 +108,7 @@ public final class RivalArt {
         g.set(cx, cy + 1, GOLD_DARK);                                            // l'arête du nez
     }
 
-    /** La broche du lieu {@code index} (0 Foire, 1 Rapide, 2 Port, 3 Palace, 4 Mines, 5 Casino) en ({@code x}, {@code y}). */
+    /** La broche du lieu {@code index} (0 Foire, 1 Rapide, 2 Port, 3 Palace, 4 Mines, 5 Casino, 6 Temple) en ({@code x}, {@code y}). */
     private static void pin(PixelCanvas g, int index, int x, int y) {
         switch (index) {
             case 0 -> { g.rect(x - 1, y, x + 1, y + 1, RED); g.set(x, y, GOLD_LIGHT); }                    // ticket
@@ -116,6 +116,7 @@ public final class RivalArt {
             case 2 -> { g.line(x, y - 1, x, y + 1, rgba("b8c0cc")); g.line(x - 1, y + 1, x + 1, y + 1, rgba("b8c0cc")); } // ancre
             case 3 -> { g.line(x - 1, y, x + 1, y, rgba("bfe8ff")); g.line(x, y - 1, x, y + 1, rgba("bfe8ff")); g.set(x, y, CARD); } // flocon
             case 4 -> { g.ellipse(x, y, 1.2f, 1f, GOLD); g.set(x, y, GOLD_LIGHT); }                       // pépite
+            case 6 -> { g.rect(x - 1, y - 1, x + 1, y + 1, CARD); g.set(x, y, RED); }                        // dé du Temple
             default -> { g.ellipse(x, y, 1.3f, 1.3f, rgba("2a5ad8")); g.set(x, y, CARD); }               // jeton
         }
     }

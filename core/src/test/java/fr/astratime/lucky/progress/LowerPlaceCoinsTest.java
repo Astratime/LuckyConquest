@@ -17,7 +17,7 @@ class LowerPlaceCoinsTest {
         assertEquals(Place.PALACE, PlayerProfile.placeOf(Rank.REQUIN));
         assertEquals(Place.MINES, PlayerProfile.placeOf(Rank.GROS_BONNET));
         assertEquals(Place.CASINO, PlayerProfile.placeOf(Rank.MAGNAT));
-        assertEquals(Place.DESERT, PlayerProfile.placeOf(Rank.ROI_DU_CASINO));
+        assertEquals(Place.TEMPLE, PlayerProfile.placeOf(Rank.ROI_DU_CASINO));
         assertEquals(Place.DESERT, PlayerProfile.placeOf(Rank.LEGENDE));
     }
 
