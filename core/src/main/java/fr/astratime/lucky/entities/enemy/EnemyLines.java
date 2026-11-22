@@ -46,6 +46,11 @@ public final class EnemyLines {
             "Trois pareils... Le hasard t'aime bien.",
             "Le hasard a choisi. Ce n'est pas toi.",
             "Tu m'as fêlé. Changeons de jeu.");
+        say(EnemyKind.COLLECTIONNEUR, "Un Bingo ! Je l'étiquette et je le range.",
+            "Joli tirage. Il manquait à ma collection.",
+            "Te voilà presque prêt pour ma vitrine.",
+            "Une pièce rare ! L'éclat de la Valse, rien que pour toi.",
+            "Dernière pièce : le Scellé. Collection complète !");
         say(EnemyKind.PRETENDANT, "Cette chance sera bientôt la mienne.",
             "Tu brilles... Je prendrai ça aussi.",
             "Incline-toi devant ton nouveau maître.",

@@ -39,7 +39,8 @@ class EndlessRunTest {
             }
             assertEquals(Difficulty.endless(floor), run.getDifficulty());
         }
-        assertEquals(List.of(EnemyKind.COMETE, EnemyKind.REINE, EnemyKind.PROPHETE, EnemyKind.ECLAT, EnemyKind.PRETENDANT,
+        assertEquals(List.of(EnemyKind.COMETE, EnemyKind.REINE, EnemyKind.PROPHETE, EnemyKind.ECLAT, EnemyKind.COLLECTIONNEUR,
+            EnemyKind.PRETENDANT,
             EnemyKind.MAISON), EndlessRun.BOSSES);
         assertEquals(EnemyKind.COMETE, EndlessRun.bossOf(EndlessRun.BOSS_EVERY * (EndlessRun.BOSSES.size() + 1)),
             "les boss reviennent à tour de rôle");

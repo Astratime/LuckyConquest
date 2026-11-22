@@ -23,6 +23,7 @@ final class BossScenes {
         if (scene == null) scene = PalaceBossScenes.phase(kit, kind);
         if (scene == null) scene = TempleBossScenes.phase(kit, kind);
         if (scene == null) scene = ManorBossScenes.phase(kit, kind);
+        if (scene == null) scene = ShardsBossScenes.phase(kit, kind, phase);
         if (scene == null) scene = DesertBossScenes.phase(kit, kind);
         return scene;
     }
@@ -40,6 +41,7 @@ final class BossScenes {
         if (scene == null) scene = PalaceBossScenes.death(kit, kind);
         if (scene == null) scene = TempleBossScenes.death(kit, kind);
         if (scene == null) scene = ManorBossScenes.death(kit, kind);
+        if (scene == null) scene = ShardsBossScenes.death(kit, kind);
         if (scene == null) scene = DesertBossScenes.death(kit, kind);
         return scene;
     }

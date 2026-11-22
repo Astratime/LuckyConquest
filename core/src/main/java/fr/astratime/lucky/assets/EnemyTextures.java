@@ -120,6 +120,12 @@ public class EnemyTextures implements Disposable {
         chapterArt.put(Chapter.TABLES_SACREES, texture(Chapter2Art.tables(), false));
         chapterArt.put(Chapter.PELERINS, texture(PilgrimsArt.pilgrims(), false));
         chapterArt.put(Chapter.DERNIER_TIRAGE, texture(Chapter3Art.crater(), false));
+        chapterArt.put(Chapter.ECLATS_DISPERSES, texture(ShardsArt.scatteredShards(), false));
+        addPortrait(EnemyKind.RAMASSEUR, ShardsArt.ramasseur());
+        addPortrait(EnemyKind.HERITIER, ShardsArt.heritier());
+        addPortrait(EnemyKind.VEUVE, ShardsArt.veuve());
+        addPortrait(EnemyKind.NOTAIRE, ShardsArt.notaire());
+        addPortrait(EnemyKind.COLLECTIONNEUR, ShardsArt.collectionneur());
         chapterArt.put(Chapter.MONDE_SANS_MAITRE, texture(Chapter456Art.worldWithoutMaster(), false));
         chapterArt.put(Chapter.LA_MAISON, texture(Chapter456Art.house(), false));
         chapterArt.put(Chapter.LE_JACKPOT, texture(Chapter456Art.jackpot(), false));
@@ -475,6 +481,10 @@ public class EnemyTextures implements Disposable {
             case CURSE          -> ManorArt.curse();
             case SHROUD         -> ManorArt.shroud();
             case STRINGS        -> ManorArt.strings();
+            case SHARD          -> ShardsArt.shardSymbol();
+            case LEGACY         -> ShardsArt.legacy();
+            case WALTZ          -> ShardsArt.waltz();
+            case SEAL           -> ShardsArt.seal();
             case IRON_VOW       -> PilgrimsArt.ironVow();
             case SIGHT          -> PilgrimsArt.sight();
             case RELIC          -> PilgrimsArt.relic();

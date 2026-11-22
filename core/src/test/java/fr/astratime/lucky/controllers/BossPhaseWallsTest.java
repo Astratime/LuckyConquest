@@ -32,7 +32,7 @@ class BossPhaseWallsTest {
     @Test
     void everyBossHasAtLeastOnePhaseThreshold() {
         List<EnemyKind> bosses = bosses();
-        assertEquals(47, bosses.size());
+        assertEquals(40 + fr.astratime.lucky.entities.tower.Chapter.values().length, bosses.size()); // 40 rois et un boss par chapitre
         for (EnemyKind boss : bosses) {
             assertTrue(boss.isBoss(), boss.name());
             assertTrue(boss.phaseCount() >= 2, boss.name() + " a une phase 2");

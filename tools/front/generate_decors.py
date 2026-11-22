@@ -934,6 +934,42 @@ def dernier_tirage():
     return vignette(im, 0.45, 0.4)
 
 
+def eclats_disperses():
+    """Les Éclats dispersés : la plaine brûlée au pied du cratère, la nuit ; des éclats de toutes les couleurs
+    brillent dans l'herbe, des lanternes de ramasseurs au loin, et la vitrine ouverte du Collectionneur."""
+    rng = np.random.default_rng(57)
+    im, d = base((0, 0, 0))
+    gradient(d, (10, 10, 30), (68, 40, 78), 0, 150)
+    stars(d, rng, 70, 70)
+    fg, f = layer()
+    f.polygon([(0, 120), (110, 92), (150, 86), (210, 86), (250, 92), (360, 120), (360, 170), (0, 170)], fill=(28, 22, 40))
+    f.ellipse([150, 80, 210, 94], fill=(255, 176, 58))  # le cratère qui rougeoie encore
+    f.ellipse([166, 83, 194, 91], fill=(255, 246, 200))
+    for k in range(7):  # sa fumée lumineuse
+        r = 10 + k * 4
+        f.ellipse([180 + k * 3 - r, 70 - k * 9 - r / 2, 180 + k * 3 + r, 70 - k * 9 + r / 2], fill=(70, 50, 84))
+    f.polygon([(0, 140), (360, 140), (360, 170), (0, 170)], fill=(34, 28, 30))
+    colors = [(255, 213, 74), (224, 40, 58), (255, 246, 200), (90, 176, 255), (255, 106, 158), (94, 224, 138), (200, 160, 255)]
+    for k in range(18):  # les éclats dans l'herbe
+        x, y = int(rng.integers(10, 350)), int(rng.integers(122, 166))
+        c = colors[k % len(colors)]
+        f.polygon([(x - 3, y), (x, y - 6), (x + 3, y), (x, y + 3)], fill=c)
+        f.point([(x - 1, y - 2)], fill=(255, 255, 255))
+    for x in (70, 300):  # lanternes de ramasseurs
+        lantern(fg, x, 112)
+    for x0 in (14, 316):  # vitrines de verre ouvertes, une de chaque côté
+        f.rectangle([x0, 30, x0 + 30, 150], fill=(90, 66, 36))
+        f.rectangle([x0 + 3, 33, x0 + 27, 147], fill=(36, 50, 66))
+        for y in (62, 92, 122):
+            f.line([(x0 + 3, y), (x0 + 27, y)], fill=(138, 106, 58), width=2)
+            c = colors[(x0 + y) % len(colors)]
+            f.polygon([(x0 + 11, y - 2), (x0 + 15, y - 10), (x0 + 19, y - 2)], fill=c)
+    im = finish(im, fg)
+    d = ImageDraw.Draw(im)
+    d.rectangle([0, 165, W, H], fill=(30, 24, 30))
+    GLOWS['eclats_disperses'] = ((180, 88), (70, 112), (300, 112))
+
+
 def pelerins():
     """Les Pèlerins de la Comète : la route de nuit vers le cratère, des lanternes de pèlerins, la comète au ciel."""
     rng = np.random.default_rng(57)
@@ -1689,7 +1725,7 @@ DECORS = {
     'filon': filon, 'puits': puits, 'forge': forge, 'gouffre': gouffre,
     'bar': bar, 'machines': machines, 'coffres': coffres, 'vip': vip,
     'caravane': caravane, 'tombeau': tombeau, 'oasis': oasis, 'volcan': volcan,
-    'genese': genese, 'tables_sacrees': tables_sacrees, 'pelerins': pelerins, 'dernier_tirage': dernier_tirage,
+    'genese': genese, 'tables_sacrees': tables_sacrees, 'pelerins': pelerins, 'dernier_tirage': dernier_tirage, 'eclats_disperses': eclats_disperses,
     'monde_sans_maitre': monde_sans_maitre, 'la_maison': la_maison, 'le_jackpot': le_jackpot,
     'locomotive': locomotive, 'wagon_restaurant': wagon_restaurant, 'wagon_lit': wagon_lit, 'fourgon': fourgon,
     'hall': hall, 'patinoire': patinoire, 'telepherique': telepherique, 'suite_royale': suite_royale,
