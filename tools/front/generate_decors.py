@@ -968,6 +968,7 @@ def eclats_disperses():
     d = ImageDraw.Draw(im)
     d.rectangle([0, 165, W, H], fill=(30, 24, 30))
     GLOWS['eclats_disperses'] = ((180, 88), (70, 112), (300, 112))
+    return vignette(im, 0.45, 0.4)
 
 
 def pelerins():
