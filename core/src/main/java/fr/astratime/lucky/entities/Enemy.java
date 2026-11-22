@@ -61,6 +61,10 @@ public class Enemy {
     private       int         pressure;
     /** Couches de neige de son Avalanche (Palace des Neiges), de 0 à {@link EnemySymbol#AVALANCHE_MAX}. */
     private       int         snow;
+    /** Rassemblement (Guerre des Tables) : ses soldats, de 0 à {@link EnemySymbol#RALLY_MAX}, qui tirent à chacun de ses tours. */
+    private       int         troops;
+    /** Va-tout (Guerre des Tables) : il a tout misé ce tour, sa défense tombe à 0 à la fin de son tour. */
+    private       boolean     allOut;
     /** Karma (Temple du Destin) : Bingos du joueur gardés pour être renvoyés, de 0 à {@link EnemySymbol#KARMA_MAX}. */
     private       int         karma;
     /** Présage (Temple du Destin) : le symbole annoncé n'est pas sorti au dernier tirage, ses attaques de ce tour montent. */
@@ -197,6 +201,7 @@ public class Enemy {
         if (hourglass > 0 && lost * 1000L >= maxHp * EnemySymbol.HOURGLASS_HIT_PER_MILLE) hourglass--;
         if (pressure > 0 && lost * 1000L >= maxHp * EnemySymbol.PRESSURE_HIT_PER_MILLE) pressure--; // un gros coup fait baisser la Pression
         if (snow > 0 && lost * 100L >= maxHp * EnemySymbol.AVALANCHE_HIT_PERCENT) snow = 0; // un gros coup fait fondre l'Avalanche
+        if (troops > 0 && lost * 100L >= maxHp * EnemySymbol.RALLY_HIT_PERCENT) troops--; // un gros coup met un soldat à terre
         if (hp <= 0 && shroudArmed) { // Linceul : il se relève, une fois par combat
             shroudArmed = false;
             shroudUsed = true;
@@ -570,6 +575,22 @@ public class Enemy {
 
     /** Son Avalanche gagne une couche de neige, au plus {@link EnemySymbol#AVALANCHE_MAX}. */
     public void addSnow() { snow = Math.min(EnemySymbol.AVALANCHE_MAX, snow + 1); }
+
+    /** @return ses soldats (Rassemblement), de 0 à {@link EnemySymbol#RALLY_MAX}. */
+    public int getTroops() { return troops; }
+
+    /** Rassemblement : un soldat le rejoint, {@link EnemySymbol#RALLY_MAX} au plus. @return {@code false} s'il en avait déjà assez */
+    public boolean addTroop() {
+        if (troops >= EnemySymbol.RALLY_MAX) return false;
+        troops++;
+        return true;
+    }
+
+    /** Va-tout : il mise tout ce tour ; à la fin de son tour, sa défense tombe à 0 (voir {@link #takeAllOut()}). */
+    public void goAllOut() { allOut = true; }
+
+    /** @return {@code true} (une seule fois) s'il a fait Va-tout ce tour. */
+    public boolean takeAllOut() { boolean was = allOut; allOut = false; return was; }
 
     /** Son Avalanche fond : il repart de zéro. */
     public void meltSnow() { snow = 0; }

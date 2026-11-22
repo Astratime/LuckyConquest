@@ -533,6 +533,8 @@ public class EnemyTurnResolver {
                 }
             }
             turn.boostPercent = EnemySymbol.GEAR_PERCENT * gears;
+            goAllOut();
+            troopsFire();
 
         }
 
@@ -591,7 +593,8 @@ public class EnemyTurnResolver {
         private void act(EnemySymbol symbol, int i, List<Event> events) {
             boolean done = actTowerOpening(symbol, i, events) || actTowerLate(symbol, events)
                 || actPortMinesCasino(symbol, events) || actFairDesert(symbol, events) || actExpress(symbol, events)
-                || actPalace(symbol, events) || actTemple(symbol, events) || actManor(symbol, events);
+                || actPalace(symbol, events) || actTemple(symbol, events) || actManor(symbol, events)
+                || actWar(symbol, events);
             if (!done) throw new IllegalStateException("Symbole sans effet : " + symbol);
         }
 
@@ -1130,6 +1133,80 @@ public class EnemyTurnResolver {
             return true;
         }
 
+        /**
+         * Guerre des Tables : Rassemblement, Canon à jetons, Espionnage, Contrat et Va-tout.
+         *
+         * @return {@code false} si {@code symbol} n'est pas de cette famille
+         */
+        private boolean actWar(EnemySymbol symbol, List<Event> events) {
+            switch (symbol) {
+                case RALLY -> {
+                    if (enemy.addTroop()) {
+                        events.add(new StatusEvent(Lang.f("RASSEMBLEMENT : {0}/{1} SOLDATS", enemy.getTroops(), EnemySymbol.RALLY_MAX),
+                            EffectPopup.Style.SPECIAL));
+                    } else {
+                        events.add(turn.strike(kind.swordDamage())); // son armée est au complet : il charge
+                    }
+                }
+                case CANNON -> {
+                    // Poudre noire : le boulet traverse tout le bouclier ; sinon la moitié seulement l'arrête
+                    int stops = boosts.getOrDefault(EnemySignature.POUDRE_NOIRE, 0) > 0 ? 0 : 100 - EnemySymbol.CANNON_PIERCE_PERCENT;
+                    if (steal(BigNumber.percent(player.getGains(), EnemySymbol.CANNON_PERCENT), events)) {
+                        events.add(new StatusEvent(Lang.t("CANON À JETONS : FEU !"), EffectPopup.Style.ATTACK));
+                        events.add(turn.strike(kind.swordDamage() * EnemySymbol.CANNON_FACTOR, stops));
+                    } else {
+                        events.add(turn.strike(kind.swordDamage(), stops)); // rien à charger : il tire à vide
+                    }
+                }
+                case SPY -> {
+                    int seen = Math.min(EnemySymbol.SPY_MAX, player.getPlayedCards().size())
+                        * (enemy.takeCharge(EnemySignature.MICROFILM) ? 2 : 1);
+                    if (seen > 0) {
+                        events.add(new StatusEvent(Lang.n(seen, "ESPIONNAGE : ELLE A VU TA CARTE", "ESPIONNAGE : ELLE A VU TES {0} CARTES",
+                            seen), EffectPopup.Style.SPECIAL));
+                        events.add(turn.shield(kind.shieldDefense() * seen + shieldBonus));
+                    } else {
+                        events.add(turn.strike(kind.swordDamage())); // rien à espionner : elle frappe
+                    }
+                }
+                case CONTRACT -> {
+                    boolean paid = enemy.getDamageTaken() * 100 < enemy.getMaxHp() * EnemySymbol.CONTRACT_PERCENT;
+                    int percent = 100 + EnemySignature.PRIME_PERCENT * boosts.getOrDefault(EnemySignature.PRIME_DE_RISQUE, 0);
+                    if (paid) events.add(new StatusEvent(Lang.t("CONTRAT : IL TOUCHE SA PRIME !"), EffectPopup.Style.ATTACK));
+                    events.add(turn.strike((int) Math.min(Integer.MAX_VALUE,
+                        (long) kind.swordDamage() * (paid ? EnemySymbol.CONTRACT_FACTOR : 1) * percent / 100)));
+                }
+                case ALL_OUT -> events.add(new StatusEvent(Lang.t("VA-TOUT !"), EffectPopup.Style.ATTACK));
+                default -> {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        /**
+         * Va-tout : s'il en tire au moins un, ses attaques de tout le tour doublent (triplent avec l'Ordre de charge),
+         * et sa défense tombera à 0 à la fin de son tour (voir {@link #finish}).
+         */
+        private void goAllOut() {
+            if (Arrays.stream(symbols).noneMatch(symbol -> symbol == EnemySymbol.ALL_OUT)) return;
+            int factor = enemy.takeCharge(EnemySignature.ORDRE_DE_CHARGE) ? EnemySignature.ORDRE_FACTOR : EnemySymbol.ALL_OUT_FACTOR;
+            turn.attackFactor *= factor;
+            enemy.goAllOut();
+            openingEvents.add(new StatusEvent(Lang.f("VA-TOUT : ATTAQUES x{0}", factor), EffectPopup.Style.ATTACK));
+        }
+
+        /** Rassemblement : ses soldats tirent, chacun d'une part d'Épée, au début de son tour. */
+        private void troopsFire() {
+            int troops = enemy.getTroops();
+            if (troops <= 0 || player.isDefeated()) return;
+            openingEvents.add(new StatusEvent(Lang.n(troops, "SON SOLDAT TIRE", "SES {0} SOLDATS TIRENT", troops),
+                EffectPopup.Style.ATTACK));
+            for (int k = 0; k < troops; k++) {
+                openingEvents.add(turn.strike(kind.swordDamage() * EnemySymbol.RALLY_SHOT_PERCENT / 100));
+            }
+        }
+
         /** Prédiction : il annonce un symbole (deux avec le Tarot) pour le prochain tirage du joueur. */
         private void predict(List<Event> events) {
             List<Symbol> reels = player.getSlotMachine().getReels();
@@ -1311,6 +1388,11 @@ public class EnemyTurnResolver {
                     afterEvents.add(new DamageReflectedEvent(enemy.skinned(reflected)));
                     enemy.takeDamage(reflected);
                 }
+            }
+
+            if (enemy.takeAllOut() && !enemy.isDefeated()) { // Va-tout : il a tout misé, plus de défense jusqu'à son tour
+                enemy.bribe();
+                afterEvents.add(new StatusEvent(Lang.t("VA-TOUT : SA DÉFENSE TOMBE À 0"), EffectPopup.Style.DEFENSE));
             }
 
             if (forbidReel) {
@@ -1792,6 +1874,12 @@ public class EnemyTurnResolver {
                 case TERRE_FRAICHE -> {
                     if (enemy.armShroud()) {
                         events.add(new StatusEvent(Lang.f("TERRE FRAÎCHE : IL SE RELÈVERA À {0} % DE SES PV", EnemySymbol.SHROUD_RISE_PERCENT),
+                            EffectPopup.Style.SPECIAL));
+                    }
+                }
+                case CLAIRON -> {
+                    if (enemy.addTroop()) {
+                        events.add(new StatusEvent(Lang.f("CLAIRON : {0}/{1} SOLDATS", enemy.getTroops(), EnemySymbol.RALLY_MAX),
                             EffectPopup.Style.SPECIAL));
                     }
                 }

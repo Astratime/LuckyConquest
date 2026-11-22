@@ -47,6 +47,11 @@ public final class EnemyLines {
             "Incline-toi devant ton nouveau maître.",
             "Mon premier éclat ! Tu vas me le payer !",
             "Encore un ! Le maître, c'est moi, pas toi !");
+        say(EnemyKind.GENERAL, "Un Bingo ? Mes canons l'ont noté.",
+            "Gagne une bataille. Moi, je gagne la guerre.",
+            "Soldat, ta table est tombée.",
+            "Lieutenants ! À mes côtés !",
+            "Va-tout ! Je mise toute l'armée !");
         say(EnemyKind.MAISON, "La Maison note tes gains. Elle les reprendra.",
             "Un Bingo chez moi ? Profite du spectacle.",
             "La Maison gagne toujours. Toujours.",

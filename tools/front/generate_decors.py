@@ -965,6 +965,61 @@ def monde_sans_maitre():
     return vignette(im, 0.45, 0.4)
 
 
+def guerre_des_tables():
+    """La Guerre des Tables : une tranchée de piles de jetons à l'aube, étendards, canons et braseros."""
+    rng = np.random.default_rng(57)
+    im, d = base((0, 0, 0))
+    gradient(d, (44, 36, 56), (210, 150, 96), 0, 150)
+    fg, f = layer()
+    f.ellipse([150, 96, 210, 140], fill=(240, 196, 120))  # le soleil bas, à travers la poudre
+    for k in range(9):  # nuages de poudre
+        x, y, r = int(rng.integers(0, W)), int(rng.integers(20, 90)), int(rng.integers(14, 30))
+        f.ellipse([x - r, y - r / 2, x + r, y + r / 2], fill=(96, 82, 80))
+    for x0, color in ((0, (180, 40, 56)), (300, (42, 80, 170))):  # l'autre front : des tables, des soldats
+        for k in range(4):
+            x = x0 + 8 + k * 14
+            f.rectangle([x, 128, x + 1, 140], fill=(60, 40, 26))
+            f.ellipse([x - 6, 124, x + 8, 130], fill=(30, 100, 56))
+            f.rectangle([x - 2, 112, x + 2, 124], fill=color)
+            f.rectangle([x - 2, 108, x + 2, 111], fill=(232, 184, 144))
+    for x, color, spade in ((40, (200, 40, 56), True), (320, (42, 80, 190), False)):  # étendards
+        f.rectangle([x, 20, x + 2, 120], fill=(70, 46, 26))
+        f.rectangle([x + 3, 22, x + 40, 46], fill=color)
+        if spade:
+            f.polygon([(x + 21, 27), (x + 14, 38), (x + 28, 38)], fill=(20, 16, 24))
+            f.rectangle([x + 20, 38, x + 22, 42], fill=(20, 16, 24))
+        else:
+            f.ellipse([x + 13, 27, x + 21, 35], fill=(245, 240, 226))
+            f.ellipse([x + 20, 27, x + 28, 35], fill=(245, 240, 226))
+            f.polygon([(x + 13, 32), (x + 28, 32), (x + 20, 42)], fill=(245, 240, 226))
+    colors = ((200, 40, 56), (42, 80, 190), (40, 150, 74), (230, 190, 60), (240, 236, 226))
+    for x in range(0, W, 12):  # la tranchée : un mur de piles de jetons
+        top = 132 + int(rng.integers(0, 14)) if 120 < x < 240 else 120 + int(rng.integers(0, 16))
+        for y in range(160, top, -5):
+            c = colors[int(rng.integers(0, len(colors)))]
+            f.rectangle([x, y - 4, x + 10, y], fill=c)
+            f.rectangle([x + 4, y - 3, x + 6, y - 1], fill=(250, 250, 250))
+    for x0, s in ((96, 1), (264, -1)):  # deux canons pointés vers le haut
+        f.polygon([(x0, 120), (x0 + s * 30, 96), (x0 + s * 34, 102), (x0 + s * 6, 126)], fill=(70, 70, 84))
+        f.ellipse([x0 - 8, 118, x0 + 8, 134], fill=(90, 60, 34))
+        f.ellipse([x0 + s * 26 - 4, 90, x0 + s * 26 + 4, 98], fill=(200, 40, 56))
+    for x in (60, 300):  # braseros
+        f.polygon([(x - 10, 112), (x + 10, 112), (x + 6, 124), (x - 6, 124)], fill=(60, 56, 60))
+        f.polygon([(x - 8, 112), (x, 94), (x + 8, 112)], fill=(240, 120, 30))
+        f.polygon([(x - 4, 112), (x, 102), (x + 4, 112)], fill=(255, 220, 90))
+    for k in range(18):  # une guirlande de cartes en guise de barbelés
+        x = 130 + k * 6
+        f.rectangle([x, 150 + (k % 2) * 3, x + 4, 156 + (k % 2) * 3], fill=(240, 236, 226))
+    im = finish(im, fg)
+    d = ImageDraw.Draw(im)
+    d.rectangle([0, 160, W, H], fill=(30, 84, 50))
+    for _ in range(30):  # braises de poudre
+        x, y = int(rng.integers(0, W)), int(rng.integers(20, 150))
+        d.rectangle([x, y, x + 1, y + 1], fill=(255, 170, 70))
+    GLOWS['guerre_des_tables'] = ((60, 110), (300, 110), (180, 118))
+    return vignette(im, 0.45, 0.4)
+
+
 def la_maison():
     """La Maison : le bureau de la Maison, boiseries vertes, coffre-fort géant, lustres et rideaux."""
     im, d = base((0, 0, 0))
@@ -1659,7 +1714,7 @@ DECORS = {
     'bar': bar, 'machines': machines, 'coffres': coffres, 'vip': vip,
     'caravane': caravane, 'tombeau': tombeau, 'oasis': oasis, 'volcan': volcan,
     'genese': genese, 'tables_sacrees': tables_sacrees, 'dernier_tirage': dernier_tirage,
-    'monde_sans_maitre': monde_sans_maitre, 'la_maison': la_maison, 'le_jackpot': le_jackpot,
+    'monde_sans_maitre': monde_sans_maitre, 'guerre_des_tables': guerre_des_tables, 'la_maison': la_maison, 'le_jackpot': le_jackpot,
     'locomotive': locomotive, 'wagon_restaurant': wagon_restaurant, 'wagon_lit': wagon_lit, 'fourgon': fourgon,
     'hall': hall, 'patinoire': patinoire, 'telepherique': telepherique, 'suite_royale': suite_royale,
     'parvis': parvis, 'jardin_oracles': jardin_oracles, 'salle_des_des': salle_des_des, 'sanctuaire': sanctuaire,

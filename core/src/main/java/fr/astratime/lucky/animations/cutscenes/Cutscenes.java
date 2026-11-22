@@ -19,6 +19,7 @@ public final class Cutscenes {
             case REINE -> new QueenCutscene(kit);
             case ECLAT -> new ShardCutscene(kit);
             case PRETENDANT -> new PretenderCutscene(kit);
+            case GENERAL -> new GeneralCutscene(kit);
             case MAISON -> new HouseCutscene(kit);
             case MACHINE_ORIGINELLE -> new MachineCutscene(kit);
             case GRAND_CROUPIER -> new CroupierCutscene(kit, CroupierCutscene.Scene.INTRO);

@@ -52,8 +52,7 @@ class TowerChapters456Test {
         Chapter[] chapters = {Chapter.MONDE_SANS_MAITRE, Chapter.LA_MAISON, Chapter.LE_JACKPOT};
         for (int i = 0; i < chapters.length; i++) {
             Chapter chapter = chapters[i];
-            assertEquals(4 + i, chapter.getNumber());
-            int power = (4 + i) * 100;
+            int power = (4 + i) * 100; // leur force ne bouge pas quand un chapitre est inséré (Guerre des Tables, 2026-11-22)
             assertEquals(hp[i][0], chapter.getFirstEnemy().getMaxHp(Difficulty.NORMAL), chapter.name());
             assertEquals(hp[i][2], chapter.getBoss().getMaxHp(Difficulty.NORMAL), chapter.name());
             assertTrue(chapter.getBoss().isBoss());

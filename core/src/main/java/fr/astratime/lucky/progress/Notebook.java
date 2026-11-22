@@ -30,6 +30,8 @@ public final class Notebook {
             + "Il n'a jamais compris que le tirage était déjà décidé.");
         page(EnemyKind.PRETENDANT, "Sans maître, ils se sont tous battus pour le trône. Je les ai regardés faire. "
             + "Un trône vide, c'est la meilleure des mises.");
+        page(EnemyKind.GENERAL, "Les Maisons ont voulu une armée. Je leur ai donné un général qui mise tout. "
+            + "Une guerre, c'est un jeu où l'on perd des deux côtés. Sauf la Maison.");
         page(EnemyKind.MAISON, "La Maison gagne toujours, disent-ils. Ils oublient de demander qui a bâti la Maison.");
         page(EnemyKind.MACHINE_ORIGINELLE, "Ma toute première machine. Chaque fois qu'on tire son levier, le monde "
             + "recommence. Toi, tu l'as tiré. Et je me souviens de chaque tour.");

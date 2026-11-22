@@ -22,7 +22,7 @@ class EnemyLinesTest {
         Set<EnemyKind> bosses = EnumSet.noneOf(EnemyKind.class);
         for (EnemyKind kind : EnemyKind.values()) if (kind.isBoss()) bosses.add(kind);
         assertEquals(bosses, EnemyLines.speakers());
-        assertEquals(47, bosses.size(), "40 rois, 6 boss de la Tour et le Croupier");
+        assertEquals(48, bosses.size(), "40 rois, 7 boss de la Tour et le Croupier");
         assertFalse(EnemyLines.speaks(EnemyKind.SOLDAT_PIQUE));
         assertNull(EnemyLines.bingo(EnemyKind.SOLDAT_PIQUE, 0));
         assertNull(EnemyLines.lowHp(EnemyKind.CROUPIER));

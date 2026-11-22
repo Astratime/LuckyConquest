@@ -212,7 +212,19 @@ public enum EnemySignature {
     FIL_DE_SOIE("Fil de soie", EnemySymbol.STRINGS, Timing.NEXT,
         "Ses prochains Fils te font jouer 2 cartes", "FILS x2"),
     DERNIER_ACTE("Dernier acte", EnemySymbol.STRINGS, Timing.NOW,
-        "Fils tout de suite : il choisira une de tes cartes, et tu la joueras", "FILS");
+        "Fils tout de suite : il choisira une de tes cartes, et tu la joueras", "FILS"),
+
+    // La Guerre des Tables (chapitre de la Tour)
+    CLAIRON("Clairon", EnemySymbol.RALLY, Timing.NOW,
+        "Un soldat de plus le rejoint tout de suite", "SOLDAT +1"),
+    POUDRE_NOIRE("Poudre noire", EnemySymbol.CANNON, Timing.TURN,
+        "Ses Canons à jetons de ce tour ignorent tout ton bouclier", "CANON PERCANT"),
+    MICROFILM("Microfilm", EnemySymbol.SPY, Timing.NEXT,
+        "Son prochain Espionnage compte double", "ESPIONNAGE x2"),
+    PRIME_DE_RISQUE("Prime de risque", EnemySymbol.CONTRACT, Timing.TURN,
+        "Ses Contrats de ce tour frappent {0} % plus fort", "CONTRAT +{0}%"),
+    ORDRE_DE_CHARGE("Ordre de charge", EnemySymbol.ALL_OUT, Timing.NEXT,
+        "Son prochain Va-tout triple ses attaques au lieu de les doubler", "VA-TOUT x3");
 
     /** Exemplaires de chaque carte propre dans le deck d'un ennemi (choix d'Astra). */
     public static final int COPIES = 4;
@@ -241,6 +253,10 @@ public enum EnemySignature {
     public static final int FRENESIE_PERCENT = 5;
     /** Pas ce soir, Poids de l'or : force en plus des Videurs, des Lingots du tour, en %. */
     public static final int VIDEUR_PERCENT = 25, LINGOT_PERCENT = 25;
+    /** Prime de risque : force en plus des Contrats du tour, en %. */
+    public static final int PRIME_PERCENT = 50;
+    /** Ordre de charge : multiplicateur de ses attaques au prochain Va-tout. */
+    public static final int ORDRE_FACTOR = 3;
     /** Quenouille : soin de chaque Fil du destin du tour, en % de ses PV max. */
     public static final int QUENOUILLE_PERCENT = 4;
 
@@ -290,6 +306,7 @@ public enum EnemySignature {
             case ANNONCE           -> Lang.f(description, EnemyKind.CHEF_NOTHING_GOES_CARD_PERCENT);
             case POIDS_DE_L_OR     -> Lang.f(description, LINGOT_PERCENT);
             case QUENOUILLE        -> Lang.f(description, QUENOUILLE_PERCENT);
+            case PRIME_DE_RISQUE   -> Lang.f(description, PRIME_PERCENT);
             default                -> Lang.t(description);
         };
     }
@@ -309,6 +326,7 @@ public enum EnemySignature {
             case PAS_CE_SOIR       -> Lang.f(bonus, VIDEUR_PERCENT);
             case ANNONCE           -> Lang.f(bonus, EnemyKind.CHEF_NOTHING_GOES_CARD_PERCENT);
             case POIDS_DE_L_OR     -> Lang.f(bonus, LINGOT_PERCENT);
+            case PRIME_DE_RISQUE   -> Lang.f(bonus, PRIME_PERCENT);
             default                -> Lang.t(bonus);
         };
     }

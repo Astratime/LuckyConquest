@@ -112,6 +112,7 @@ public class EnemyTextures implements Disposable {
             if (grid == null) grid = PalacePortraits.of(kind);
             if (grid == null) grid = TemplePortraits.of(kind);
             if (grid == null) grid = ManorPortraits.of(kind);
+            if (grid == null) grid = WarPortraits.of(kind);
             if (grid == null) grid = RivalArt.of(kind);
             if (grid != null) addPortrait(kind, grid);
         }
@@ -119,6 +120,7 @@ public class EnemyTextures implements Disposable {
         chapterArt.put(Chapter.TABLES_SACREES, texture(Chapter2Art.tables(), false));
         chapterArt.put(Chapter.DERNIER_TIRAGE, texture(Chapter3Art.crater(), false));
         chapterArt.put(Chapter.MONDE_SANS_MAITRE, texture(Chapter456Art.worldWithoutMaster(), false));
+        chapterArt.put(Chapter.GUERRE_DES_TABLES, texture(WarArt.warOfTables(), false));
         chapterArt.put(Chapter.LA_MAISON, texture(Chapter456Art.house(), false));
         chapterArt.put(Chapter.LE_JACKPOT, texture(Chapter456Art.jackpot(), false));
         addPortrait(EnemyKind.PILLEUR, Chapter456Art.pilleur());
@@ -472,6 +474,11 @@ public class EnemyTextures implements Disposable {
             case BLOOD_PACT     -> ManorArt.bloodPact();
             case CURSE          -> ManorArt.curse();
             case SHROUD         -> ManorArt.shroud();
+            case RALLY          -> WarArt.rally();
+            case CANNON         -> WarArt.cannon();
+            case SPY            -> WarArt.spy();
+            case CONTRACT       -> WarArt.contract();
+            case ALL_OUT        -> WarArt.allOut();
             case STRINGS        -> ManorArt.strings();
             case BINGO_LIGHT    -> bingoLightGrid();
         };

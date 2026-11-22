@@ -277,6 +277,9 @@ public class EnemyView implements Disposable {
             if (shards >= 3) powers += Lang.t(", Éclat : Rouleau interdit");
             line(text, Lang.f("Éclats : {0}/3 ({1})", shards, powers));
         }
+        if (current.getTroops() > 0) {
+            line(text, Lang.f("Soldats : {0}/{1}, chacun tire à son tour", current.getTroops(), EnemySymbol.RALLY_MAX));
+        }
         if (kind == EnemyKind.MAISON) {
             String standing = (current.getPhase() <= 1 ? Lang.t("Façade") + ", " : "")
                 + (current.getPhase() <= 2 ? Lang.t("Coffre") + ", " : "") + Lang.t("Salle de jeu");

@@ -163,7 +163,17 @@ public enum EnemySymbol {
     /** Il se drape dans son linceul : la première fois qu'il tombe, il se relève avec une part de ses PV. */
     SHROUD("LINCEUL"),
     /** Au début de ton prochain tour, il choisit ta plus faible carte et tu la joues d'office. */
-    STRINGS("FILS");
+    STRINGS("FILS"),
+    /** Guerre des Tables : il appelle un soldat ; ses soldats tirent à chacun de ses tours. Tes gros coups les mettent à terre. */
+    RALLY("RASSEMBLEMENT"),
+    /** Guerre des Tables : il charge une part de tes gains dans son canon et tire, à travers une part de ton bouclier. */
+    CANNON("CANON À JETONS"),
+    /** Guerre des Tables : elle a lu tes plans ; un Bouclier par carte que tu as jouée à ton dernier tour. */
+    SPY("ESPIONNAGE"),
+    /** Guerre des Tables : il touche sa prime ; s'il a peu souffert depuis son dernier tour, il frappe bien plus fort. */
+    CONTRACT("CONTRAT"),
+    /** Guerre des Tables : il mise tout ; ses attaques du tour doublent, mais il n'a plus de défense jusqu'à son tour suivant. */
+    ALL_OUT("VA-TOUT");
 
     /** Dégâts de base d'une Épée. */
     public static final int SWORD_DAMAGE   = 20;
@@ -326,6 +336,17 @@ public enum EnemySymbol {
     /** Linceul : PV avec lesquels il se relève, en % de ses PV max. */
     public static final int SHROUD_RISE_PERCENT = 20;
 
+    /** Rassemblement : soldats au plus, force du tir de chaque soldat (en % d'une Épée), et coup qui en met un à terre (en % de ses PV max). */
+    public static final int RALLY_MAX = 3, RALLY_SHOT_PERCENT = 50, RALLY_HIT_PERCENT = 2;
+    /** Canon à jetons : part de tes gains chargée (en %), force du tir chargé (en coups d'Épée), et part de ton bouclier ignorée (en %). */
+    public static final int CANNON_PERCENT = 10, CANNON_FACTOR = 2, CANNON_PIERCE_PERCENT = 50;
+    /** Espionnage : Boucliers au plus (un par carte que tu as jouée à ton dernier tour). */
+    public static final int SPY_MAX = 4;
+    /** Contrat : il touche sa prime si tu lui as fait moins que cette part de ses PV max depuis son dernier tour (en %), et frappe d'autant de coups d'Épée. */
+    public static final int CONTRACT_PERCENT = 3, CONTRACT_FACTOR = 3;
+    /** Va-tout : ses attaques du tour sont multipliées d'autant (une fois par tour, même avec deux Va-tout). */
+    public static final int ALL_OUT_FACTOR = 2;
+
     private final String displayName;
 
     EnemySymbol(String displayName) {
@@ -479,6 +500,19 @@ public enum EnemySymbol {
             case SHROUD -> Lang.f("Linceul : la première fois qu'il tombe, il se relève avec {0} % de ses PV max (une fois par "
                 + "combat). Déjà drapé, il reforme sa défense", SHROUD_RISE_PERCENT);
             case STRINGS -> Lang.t("Fils : au début de ton prochain tour, il choisit ta plus faible carte et tu la joues d'office");
+            case RALLY -> Lang.f("Rassemblement : il appelle un soldat ({0} au plus). À chacun de ses tours, chaque soldat tire "
+                + "({1}). Un coup d'au moins {2} % de ses PV max en met un à terre", RALLY_MAX,
+                kind.hurt(kind.swordDamage() * RALLY_SHOT_PERCENT / 100, hard), RALLY_HIT_PERCENT);
+            case CANNON -> Lang.f("Canon à jetons : il charge {0} % de tes gains et tire ({1}). Ignore la moitié de ton bouclier. "
+                + "Sans gains, il tire à vide ({2})", CANNON_PERCENT, kind.hurt(kind.swordDamage() * CANNON_FACTOR, hard),
+                kind.hurt(kind.swordDamage(), hard));
+            case SPY -> Lang.f("Espionnage : elle a lu tes plans. Un Bouclier par carte jouée à ton dernier tour ({0} au plus)",
+                SPY_MAX);
+            case CONTRACT -> Lang.f("Contrat : si tu lui as fait moins de {0} % de ses PV max depuis son dernier tour, il touche "
+                + "sa prime et frappe de {1}. Sinon, attaque de {2}", CONTRACT_PERCENT,
+                kind.hurt(kind.swordDamage() * CONTRACT_FACTOR, hard), kind.hurt(kind.swordDamage(), hard));
+            case ALL_OUT -> Lang.f("Va-tout : ses attaques du tour x{0}. Mais il n'a plus aucune défense jusqu'à son prochain tour",
+                ALL_OUT_FACTOR);
         };
     }
 

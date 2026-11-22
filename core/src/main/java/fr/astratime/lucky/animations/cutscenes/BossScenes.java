@@ -13,6 +13,7 @@ final class BossScenes {
     /** @return la scène du boss {@code kind} qui entre dans sa phase {@code phase}, {@code null} s'il n'en a pas. */
     static BossScene phase(CutsceneKit kit, EnemyKind kind, int phase) {
         BossScene scene = TowerBossScenes.phase(kit, kind, phase);
+        if (scene == null) scene = WarBossScenes.phase(kit, kind, phase);
         if (scene == null) scene = PrairieBossScenes.phase(kit, kind);
         if (scene == null) scene = PortBossScenes.phase(kit, kind);
         if (scene == null) scene = MinesBossScenes.phase(kit, kind);
@@ -29,6 +30,7 @@ final class BossScenes {
     /** @return la scène de la mort du boss {@code kind}, {@code null} s'il n'en a pas. */
     static BossScene death(CutsceneKit kit, EnemyKind kind) {
         BossScene scene = TowerBossScenes.death(kit, kind);
+        if (scene == null) scene = WarBossScenes.death(kit, kind);
         if (scene == null) scene = PrairieBossScenes.death(kit, kind);
         if (scene == null) scene = PortBossScenes.death(kit, kind);
         if (scene == null) scene = MinesBossScenes.death(kit, kind);

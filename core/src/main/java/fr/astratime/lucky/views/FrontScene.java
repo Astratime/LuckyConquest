@@ -86,6 +86,7 @@ public class FrontScene extends Actor implements Disposable {
         TABLES_SACREES("tables_sacrees", WARM, 30f, 43, 40, 303, 40),
         DERNIER_TIRAGE("dernier_tirage", WATER, 30f, 320, 50, 60, 96, 290, 98),
         MONDE_SANS_MAITRE("monde_sans_maitre", LAVA, 34f, 50, 128, 310, 128),
+        GUERRE_DES_TABLES("guerre_des_tables", LAVA, 30f, 60, 110, 300, 110, 180, 118),
         LA_MAISON("la_maison", GOLDEN, 30f, 80, 16, 280, 16, 180, 60),
         LE_JACKPOT("le_jackpot", GOLDEN, 30f, 180, 40, 40, 50, 320, 60),
         ENTRAINEMENT("entrainement", WARM, 40f, 180, 32),
@@ -139,6 +140,7 @@ public class FrontScene extends Actor implements Disposable {
                 case TABLES_SACREES    -> TABLES_SACREES;
                 case DERNIER_TIRAGE    -> DERNIER_TIRAGE;
                 case MONDE_SANS_MAITRE -> MONDE_SANS_MAITRE;
+                case GUERRE_DES_TABLES -> GUERRE_DES_TABLES;
                 case LA_MAISON         -> LA_MAISON;
                 case LE_JACKPOT        -> LE_JACKPOT;
             };
