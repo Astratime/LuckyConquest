@@ -591,7 +591,8 @@ public class EnemyTurnResolver {
         private void act(EnemySymbol symbol, int i, List<Event> events) {
             boolean done = actTowerOpening(symbol, i, events) || actTowerLate(symbol, events)
                 || actPortMinesCasino(symbol, events) || actFairDesert(symbol, events) || actExpress(symbol, events)
-                || actPalace(symbol, events) || actTemple(symbol, events) || actManor(symbol, events);
+                || actPalace(symbol, events) || actTemple(symbol, events) || actManor(symbol, events)
+                || actScatteredShards(symbol, events);
             if (!done) throw new IllegalStateException("Symbole sans effet : " + symbol);
         }
 
@@ -1003,6 +1004,43 @@ public class EnemyTurnResolver {
                     events.add(heal(enemy, EnemySymbol.CHAMPAGNE_HEAL_PERCENT * glasses * healFactor / 100f));
                     events.add(turn.shield(kind.shieldDefense() + shieldBonus));
                 }
+                default -> {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        /**
+         * Tour, les Éclats dispersés (Éclat, Héritage, Valse, Scellé).
+         *
+         * @return {@code false} si {@code symbol} n'est pas de cette famille
+         */
+        private boolean actScatteredShards(EnemySymbol symbol, List<Event> events) {
+            switch (symbol) {
+                case SHARD -> pickShard(turn, events);
+                case LEGACY -> {
+                    int percent = enemy.takeCharge(EnemySignature.TESTAMENT) ? 100 : EnemySymbol.LEGACY_PERCENT;
+                    int taken = player.meltShield(percent);
+                    if (taken > 0) {
+                        events.add(new StatusEvent(Lang.f("HÉRITAGE : IL TE PREND {0} DE BOUCLIER", Lang.big(taken)),
+                            EffectPopup.Style.DAMAGE));
+                    }
+                    events.add(turn.strike(kind.swordDamage()));
+                }
+                case WALTZ -> {
+                    int missing = player.getMaxHp() <= 0 ? 0
+                        : (int) (100L * (player.getMaxHp() - player.getHp()) / player.getMaxHp());
+                    int bonus = Math.min(EnemySymbol.WALTZ_MAX_PERCENT, Math.max(0, missing));
+                    if (bonus > 0) events.add(new StatusEvent(Lang.f("VALSE : +{0} %", bonus), EffectPopup.Style.ATTACK));
+                    events.add(turn.strike((int) Math.min(Integer.MAX_VALUE, (long) kind.swordDamage() * (100 + bonus) / 100)));
+                    for (int k = 0; k < boosts.getOrDefault(EnemySignature.DERNIERE_DANSE, 0); k++) {
+                        events.add(heal(enemy, EnemySignature.DANSE_PERCENT * healFactor / 100f));
+                    }
+                }
+                case SEAL -> curse(events, EnemySignature.PARAPHE, n -> curses.addSeals(n * EnemySymbol.SEAL_PLAYS),
+                    Lang.t("SCELLÉ : UNE CARTE DE MOINS À TON PROCHAIN TOUR"),
+                    Lang.t("SCELLÉ : DEUX CARTES DE MOINS À TON PROCHAIN TOUR"));
                 default -> {
                     return false;
                 }
@@ -1749,6 +1787,21 @@ public class EnemyTurnResolver {
         return best;
     }
 
+    /**
+     * Éclat : il ramasse un éclat ; au {@link EnemySymbol#SHARD_MAX}e, les éclats se rejoignent et frappent
+     * ({@link EnemySymbol#SHARD_FACTOR} Épées) à travers le bouclier du joueur, puis il recommence.
+     */
+    private static void pickShard(Turn turn, List<Event> events) {
+        Enemy enemy = turn.enemy;
+        boolean joined = enemy.addShard();
+        events.add(new StatusEvent(Lang.f("ÉCLAT : {0}/{1}", joined ? EnemySymbol.SHARD_MAX : enemy.getShards(),
+            EnemySymbol.SHARD_MAX), EffectPopup.Style.SPECIAL));
+        if (joined) {
+            events.add(new StatusEvent(Lang.t("LES ÉCLATS SE REJOIGNENT !"), EffectPopup.Style.ATTACK));
+            events.add(turn.strike(enemy.getKind().swordDamage() * EnemySymbol.SHARD_FACTOR, true));
+        }
+    }
+
     /** Ses cartes propres qui agissent tout de suite : Remontoir, Compte à rebours, Encre. */
     private static void playNow(List<EnemySignature> now, Turn turn, LastingEffects curses, List<Event> events) {
         Enemy enemy = turn.enemy;
@@ -1799,6 +1852,7 @@ public class EnemyTurnResolver {
                     curses.addStrings(1);
                     events.add(new StatusEvent(Lang.t("DERNIER ACTE : IL CHOISIRA UNE CARTE QUE TU JOUERAS"), EffectPopup.Style.DAMAGE));
                 }
+                case POCHE_PLEINE -> pickShard(turn, events);
                 case ENCRE -> {
                     curses.blind(1);
                     events.add(new StatusEvent(Lang.t("ENCRE : UNE CARTE CACHÉE AU PROCHAIN TOUR"), EffectPopup.Style.DAMAGE));

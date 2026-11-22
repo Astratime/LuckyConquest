@@ -32,6 +32,8 @@ import java.util.Map;
  *       (Intérêts) ou {@link #ROULETTE} (Zéro), et la {@link #REINE} ;</li>
  *   <li>chapitre 3 : la {@link #GARDIENNE}, puis {@link #MIROIR} (Reflet), {@link #HORLOGER}
  *       (Sablier) ou {@link #FOU} (Tapis), et l'{@link #ECLAT}, en deux phases ;</li>
+ *   <li>les Éclats dispersés : le {@link #RAMASSEUR} (Éclat), puis l'{@link #HERITIER} (Héritage), la
+ *       {@link #VEUVE} (Valse) ou le {@link #NOTAIRE} (Scellé), et le {@link #COLLECTIONNEUR}, en trois phases ;</li>
  *   <li>chapitre 4 : le {@link #PILLEUR}, puis {@link #FAUSSAIRE} (Fausse monnaie), {@link #CARTOMANCIENNE}
  *       (Prédiction) ou {@link #DUELLISTE} (Duel), et le {@link #PRETENDANT} et ses trois éclats ;</li>
  *   <li>chapitre 5 : le {@link #PORTIER}, puis {@link #COMPTABLE} (Taxe), {@link #DIRECTEUR} (Nouvelle
@@ -958,6 +960,48 @@ public enum EnemyKind {
         List.of(Card.Suit.PIQUE, Card.Suit.CARREAU, Card.Suit.TREFLE, Card.Suit.COEUR),
         List.of(Card.Suit.COEUR, Card.Suit.CARREAU, Card.Suit.PIQUE, Card.Suit.TREFLE)),
 
+    // ----- Chapitre des Éclats dispersés (entre le Dernier Tirage et le Monde sans Maître) -----
+    RAMASSEUR("Le Ramasseur d'éclats", "RAMASSEUR",
+        "Il fouille les ruines du cratère. Il ramasse chaque éclat. Au troisième, les éclats se rejoignent et frappent à travers ton bouclier.",
+        180_000, 120, 5,
+        weights(EnemySymbol.SWORD, 2, EnemySymbol.SHIELD, 1, EnemySymbol.POTION, 1, EnemySymbol.SHARD, 2),
+        deck(new int[] {3, 6, 9, 12, 14}, new int[] {4, 8, 12},
+            new int[] {5, 9, 13, 14}, new int[] {3, 7, 11}),
+        List.of(Card.Suit.PIQUE, Card.Suit.CARREAU, Card.Suit.TREFLE, Card.Suit.COEUR),
+        List.of(Card.Suit.COEUR, Card.Suit.CARREAU, Card.Suit.PIQUE, Card.Suit.TREFLE)),
+    HERITIER("L'Héritier ruiné", "HÉRITIER",
+        "Il a tout perdu au jeu. Il réclame son héritage : ton bouclier. Il te le prend, puis il frappe.",
+        280_000, 80, 4,
+        weights(EnemySymbol.LEGACY, 2, EnemySymbol.SWORD, 2, EnemySymbol.SHIELD, 1, EnemySymbol.POTION, 1),
+        deck(new int[] {3, 6, 9, 12, 14}, new int[] {4, 8, 12},
+            new int[] {5, 9, 13, 14}, new int[] {3, 7, 11}),
+        List.of(Card.Suit.PIQUE, Card.Suit.CARREAU, Card.Suit.TREFLE, Card.Suit.COEUR),
+        List.of(Card.Suit.COEUR, Card.Suit.CARREAU, Card.Suit.PIQUE, Card.Suit.TREFLE)),
+    VEUVE("La Veuve joyeuse", "VEUVE JOYEUSE",
+        "Elle a enterré trois maris. Elle porte le deuil en riant. Plus tu es blessé, plus sa Valse frappe fort.",
+        280_000, 60, 4,
+        weights(EnemySymbol.WALTZ, 2, EnemySymbol.SWORD, 1, EnemySymbol.SHIELD, 1, EnemySymbol.POTION, 1),
+        deck(new int[] {3, 6, 9, 12, 14}, new int[] {4, 8, 12},
+            new int[] {5, 9, 13, 14}, new int[] {3, 7, 11}),
+        List.of(Card.Suit.PIQUE, Card.Suit.CARREAU, Card.Suit.TREFLE, Card.Suit.COEUR),
+        List.of(Card.Suit.COEUR, Card.Suit.CARREAU, Card.Suit.PIQUE, Card.Suit.TREFLE)),
+    NOTAIRE("Le Notaire du hasard", "NOTAIRE",
+        "Il enregistre chaque coup du hasard. Un coup de tampon, et tu joues une carte de moins au tour suivant.",
+        280_000, 100, 4,
+        weights(EnemySymbol.SEAL, 1, EnemySymbol.SWORD, 3, EnemySymbol.SHIELD, 1),
+        deck(new int[] {3, 6, 9, 12, 14}, new int[] {4, 8, 12},
+            new int[] {5, 9, 13, 14}, new int[] {3, 7, 11}),
+        List.of(Card.Suit.PIQUE, Card.Suit.CARREAU, Card.Suit.TREFLE, Card.Suit.COEUR),
+        List.of(Card.Suit.COEUR, Card.Suit.CARREAU, Card.Suit.PIQUE, Card.Suit.TREFLE)),
+    COLLECTIONNEUR("Le Collectionneur", "COLLECTIONNEUR",
+        "Il a ramassé tous les éclats de l'Éclat Originel. Un éclat, un pouvoir. Chaque tiers de ses PV perdu, il en sort un nouveau de sa vitrine.",
+        400_000, 130, 3,
+        weights(EnemySymbol.SWORD, 2, EnemySymbol.SHIELD, 1, EnemySymbol.POTION, 1, EnemySymbol.SHARD, 1, EnemySymbol.LEGACY, 1),
+        deck(new int[] {3, 6, 9, 12, 14}, new int[] {4, 8, 12},
+            new int[] {5, 9, 13, 14}, new int[] {3, 7, 11}),
+        List.of(Card.Suit.PIQUE, Card.Suit.CARREAU, Card.Suit.TREFLE, Card.Suit.COEUR),
+        List.of(Card.Suit.COEUR, Card.Suit.CARREAU, Card.Suit.PIQUE, Card.Suit.TREFLE)),
+
     // ----- Chapitre 4 : Le Monde sans Maître -----
     PILLEUR("Le Pilleur", "PILLEUR",
         "Il a pillé la boutique. Chaque carte que tu achètes, il en garde une copie : un As de plus dans son deck.",
@@ -1211,6 +1255,17 @@ public enum EnemyKind {
         EnemySymbol.SWORD, 2, EnemySymbol.POTION, 1, EnemySymbol.SAFE, 1, EnemySymbol.HOUSE_EDGE, 1));
     private static final Map<EnemySymbol, Integer> HOUSE_PHASE_THREE = Collections.unmodifiableMap(weights(
         EnemySymbol.SWORD, 2, EnemySymbol.HOUSE_EDGE, 1));
+
+    /**
+     * Symboles du Collectionneur à ses phases 2 et 3 : à chaque tiers de ses PV perdu, il sort un nouvel éclat
+     * de sa vitrine, et gagne son pouvoir (la Valse, puis le Scellé), en plus des siens.
+     */
+    private static final Map<EnemySymbol, Integer> COLLECTOR_PHASE_TWO = Collections.unmodifiableMap(weights(
+        EnemySymbol.SWORD, 2, EnemySymbol.SHIELD, 1, EnemySymbol.POTION, 1, EnemySymbol.SHARD, 1, EnemySymbol.LEGACY, 1,
+        EnemySymbol.WALTZ, 1));
+    private static final Map<EnemySymbol, Integer> COLLECTOR_PHASE_THREE = Collections.unmodifiableMap(weights(
+        EnemySymbol.SWORD, 2, EnemySymbol.SHIELD, 1, EnemySymbol.POTION, 1, EnemySymbol.SHARD, 1, EnemySymbol.LEGACY, 1,
+        EnemySymbol.WALTZ, 1, EnemySymbol.SEAL, 1));
 
     private final String                     displayName;
     private final String                     barName;
@@ -1554,7 +1609,7 @@ public enum EnemyKind {
     /** @return {@code true} pour le boss d'un chapitre ou le roi d'un donjon. */
     public boolean isBoss() {
         return switch (this) {
-            case COMETE, REINE, ECLAT, PRETENDANT, MAISON, MACHINE_ORIGINELLE, GRAND_CROUPIER, ROI_PIQUE, ROI_COEUR, ROI_CARREAU, ROI_TREFLE,
+            case COMETE, REINE, ECLAT, COLLECTIONNEUR, PRETENDANT, MAISON, MACHINE_ORIGINELLE, GRAND_CROUPIER, ROI_PIQUE, ROI_COEUR, ROI_CARREAU, ROI_TREFLE,
                  CAPITAINE_RAT, TAVERNIER, GARDIEN_PHARE, CAPITAINE_NOIR,
                  MONSIEUR_LOYAL, CONDUCTEUR, ROUE_FORTUNE, ROI_FORAIN, EMIR, PHARAON, DJINN, DRAGON,
                  LOCOMOTIVE, GRAND_CHEF, DAME_EN_NOIR, DESPERADO,
@@ -1668,7 +1723,7 @@ public enum EnemyKind {
     public float[] phaseThresholds() {
         if (!isBoss()) return new float[0];
         return switch (this) {
-            case PRETENDANT, MAISON -> new float[] {2f / 3f, 1f / 3f};
+            case COLLECTIONNEUR, PRETENDANT, MAISON -> new float[] {2f / 3f, 1f / 3f};
             case MACHINE_ORIGINELLE, GRAND_CROUPIER -> new float[] {PHASE_TWO_RATIO, MACHINE_LAST_RATIO};
             default -> new float[] {PHASE_TWO_RATIO};
         };
@@ -1737,7 +1792,7 @@ public enum EnemyKind {
     public int phaseFor(float hpRatio) {
         return switch (this) {
             case ECLAT, COMETE, REINE -> hpRatio < PHASE_TWO_RATIO ? 2 : 1;
-            case PRETENDANT, MAISON -> hpRatio * 3f <= 1f ? 3 : hpRatio * 3f <= 2f ? 2 : 1;
+            case COLLECTIONNEUR, PRETENDANT, MAISON -> hpRatio * 3f <= 1f ? 3 : hpRatio * 3f <= 2f ? 2 : 1;
             case MACHINE_ORIGINELLE, GRAND_CROUPIER -> hpRatio < MACHINE_LAST_RATIO ? 3 : hpRatio < PHASE_TWO_RATIO ? 2 : 1;
             default -> kingPhaseSymbol() != null && hpRatio < PHASE_TWO_RATIO ? 2 : 1;
         };
@@ -1747,6 +1802,7 @@ public enum EnemyKind {
     public String phaseText(int phase) {
         return switch (this) {
             case PRETENDANT -> phase == 2 ? Lang.t("ÉCLAT PERDU : FINI LE ROULEAU INTERDIT") : Lang.t("ÉCLAT PERDU : FINIE LA MISE ROYALE");
+            case COLLECTIONNEUR -> phase == 2 ? Lang.t("NOUVEL ÉCLAT : VALSE !") : Lang.t("NOUVEL ÉCLAT : SCELLÉ !");
             case MAISON -> phase == 2 ? Lang.t("LA FAÇADE TOMBE : PLUS DE DÉFENSE") : Lang.t("LE COFFRE TOMBE : PLUS DE SOINS");
             case MACHINE_ORIGINELLE -> Lang.t("ELLE TE VOLE UN ROULEAU !");
             case GRAND_CROUPIER -> phase == 2 ? Lang.t("IL TRUQUE TA TABLE !") : Lang.t("CARTES SUR TABLE !");
@@ -1838,6 +1894,8 @@ public enum EnemyKind {
             king.merge(kingPhaseSymbol(), KING_PHASE_WEIGHT, Integer::sum);
             return Collections.unmodifiableMap(king);
         }
+        if (this == COLLECTIONNEUR && phase >= 3) return COLLECTOR_PHASE_THREE;
+        if (this == COLLECTIONNEUR && phase == 2) return COLLECTOR_PHASE_TWO;
         if (this == MAISON && phase >= 3) return HOUSE_PHASE_THREE;
         if (this == MAISON && phase == 2) return HOUSE_PHASE_TWO;
         return weights;
@@ -1922,6 +1980,11 @@ public enum EnemyKind {
             case CARTOMANCIENNE -> List.of(EnemySignature.TAROT);
             case DUELLISTE -> List.of(EnemySignature.BOTTE_SECRETE);
             case PRETENDANT -> List.of(EnemySignature.ECLAT_VOLE);
+            case RAMASSEUR -> List.of(EnemySignature.POCHE_PLEINE);
+            case HERITIER -> List.of(EnemySignature.TESTAMENT);
+            case VEUVE -> List.of(EnemySignature.DERNIERE_DANSE);
+            case NOTAIRE -> List.of(EnemySignature.PARAPHE);
+            case COLLECTIONNEUR -> List.of(EnemySignature.POCHE_PLEINE, EnemySignature.TESTAMENT);
             case COMPTABLE -> List.of(EnemySignature.REDRESSEMENT);
             case DIRECTEUR -> List.of(EnemySignature.REGLEMENT_INTERIEUR);
             case SECURITE -> List.of(EnemySignature.CAMERAS);

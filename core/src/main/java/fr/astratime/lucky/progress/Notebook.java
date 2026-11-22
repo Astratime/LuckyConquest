@@ -28,6 +28,8 @@ public final class Notebook {
             + "celui qui s'y assoit. Elles appartiennent à celui qui distribue.");
         page(EnemyKind.ECLAT, "L'Éclat était un morceau de ma comète. Il voulait décider du prochain tirage. "
             + "Il n'a jamais compris que le tirage était déjà décidé.");
+        page(EnemyKind.COLLECTIONNEUR, "Quand l'Éclat s'est brisé, ses morceaux sont tombés partout. Un homme les a "
+            + "tous ramassés, un par un, et rangés dans sa vitrine. Il n'a jamais joué avec. Moi, je ne range rien.");
         page(EnemyKind.PRETENDANT, "Sans maître, ils se sont tous battus pour le trône. Je les ai regardés faire. "
             + "Un trône vide, c'est la meilleure des mises.");
         page(EnemyKind.MAISON, "La Maison gagne toujours, disent-ils. Ils oublient de demander qui a bâti la Maison.");

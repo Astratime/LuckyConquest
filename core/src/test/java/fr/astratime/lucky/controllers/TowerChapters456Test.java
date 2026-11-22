@@ -52,8 +52,8 @@ class TowerChapters456Test {
         Chapter[] chapters = {Chapter.MONDE_SANS_MAITRE, Chapter.LA_MAISON, Chapter.LE_JACKPOT};
         for (int i = 0; i < chapters.length; i++) {
             Chapter chapter = chapters[i];
-            assertEquals(4 + i, chapter.getNumber());
-            int power = (4 + i) * 100;
+            assertEquals(chapter.ordinal() + 1, chapter.getNumber());
+            int power = (4 + i) * 100; // leur force d'avant la Tour à 10 chapitres, gardée
             assertEquals(hp[i][0], chapter.getFirstEnemy().getMaxHp(Difficulty.NORMAL), chapter.name());
             assertEquals(hp[i][2], chapter.getBoss().getMaxHp(Difficulty.NORMAL), chapter.name());
             assertTrue(chapter.getBoss().isBoss());

@@ -27,6 +27,11 @@ public enum Chapter {
             + "encore. Celui qui le touche décidera du prochain tirage.",
         EnemyKind.GARDIENNE, List.of(EnemyKind.MIROIR, EnemyKind.HORLOGER, EnemyKind.FOU), EnemyKind.ECLAT,
         "La chance n'a plus de maître.", new Stats(300, 40, 167, 70, 500, 1_900, 8_000_000L, 1)),
+    ECLATS_DISPERSES("Les Éclats dispersés",
+        "L'Éclat Originel s'est brisé. Ses morceaux sont tombés partout. Chacun donne un pouvoir à qui le ramasse. "
+            + "Quelqu'un les ramasse tous.",
+        EnemyKind.RAMASSEUR, List.of(EnemyKind.HERITIER, EnemyKind.VEUVE, EnemyKind.NOTAIRE), EnemyKind.COLLECTIONNEUR,
+        null, new Stats(350, 45, 140, 65, 500, 2_780, 18_000_000L, 1)),
     MONDE_SANS_MAITRE("Le Monde sans Maître",
         "La chance n'avait plus de maître. Alors chacun voulut le devenir. Les tables brûlèrent. "
             + "Les joueurs se battirent pour les miettes de la comète.",

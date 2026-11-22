@@ -63,6 +63,7 @@ public class Enemy {
     private       int         snow;
     /** Karma (Temple du Destin) : Bingos du joueur gardés pour être renvoyés, de 0 à {@link EnemySymbol#KARMA_MAX}. */
     private       int         karma;
+    private       int         shards;            // Éclat (les Éclats dispersés) : éclats ramassés
     /** Présage (Temple du Destin) : le symbole annoncé n'est pas sorti au dernier tirage, ses attaques de ce tour montent. */
     private       boolean     omenMissed;
     /** Linceul (Manoir hanté) : drapé, il se relèvera à sa première chute ; il ne se relève qu'une fois par combat. */
@@ -573,6 +574,20 @@ public class Enemy {
 
     /** Son Avalanche fond : il repart de zéro. */
     public void meltSnow() { snow = 0; }
+
+    /**
+     * Éclat : il ramasse un éclat.
+     *
+     * @return {@code true} si c'était le {@link EnemySymbol#SHARD_MAX}e : les éclats se rejoignent (le compte repart à 0)
+     */
+    public boolean addShard() {
+        if (++shards < EnemySymbol.SHARD_MAX) return false;
+        shards = 0;
+        return true;
+    }
+
+    /** @return les éclats ramassés, en attente de se rejoindre. */
+    public int getShards() { return shards; }
 
     /** Karma : le joueur a fait un Bingo, il le garde ({@link EnemySymbol#KARMA_MAX} au plus). */
     public void addKarma() { karma = Math.min(EnemySymbol.KARMA_MAX, karma + 1); }
