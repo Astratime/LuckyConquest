@@ -164,7 +164,19 @@ public enum EnemySignature {
     MARCHAND_DE_SABLE("Marchand de sable", EnemySymbol.LULLABY, Timing.NEXT,
         "Sa prochaine Berceuse endort 2 cartes", "BERCEUSE x2"),
     HAUT_LES_MAINS("Haut les mains", EnemySymbol.HOLDUP, Timing.NEXT,
-        "Son prochain Braquage te prend ton bouclier, même si tu l'as beaucoup blessé", "BRAQUAGE ASSURÉ");
+        "Son prochain Braquage te prend ton bouclier, même si tu l'as beaucoup blessé", "BRAQUAGE ASSURÉ"),
+
+    // Le Palace des Neiges
+    TROUSSEAU("Trousseau", EnemySymbol.KEY, Timing.NEXT,
+        "Sa prochaine Clé ferme 2 cartes", "CLÉ x2"),
+    GIVRE_ETERNEL("Givre éternel", EnemySymbol.FREEZE, Timing.NEXT,
+        "Son prochain Gel prend 2 rouleaux", "GEL x2"),
+    BOULE_DE_NEIGE("Boule de neige", EnemySymbol.AVALANCHE, Timing.NOW,
+        "Son Avalanche gagne une couche de neige tout de suite", "AVALANCHE +1"),
+    TEMPETE("Tempête", EnemySymbol.AVALANCHE, Timing.NEXT,
+        "Sa prochaine Avalanche frappe deux fois plus fort", "AVALANCHE x2"),
+    GRAND_CRU("Grand cru", EnemySymbol.CHAMPAGNE, Timing.TURN,
+        "Ses Champagnes glacés de ce tour le soignent deux fois plus", "CHAMPAGNE x2");
 
     /** Exemplaires de chaque carte propre dans le deck d'un ennemi (choix d'Astra). */
     public static final int COPIES = 4;

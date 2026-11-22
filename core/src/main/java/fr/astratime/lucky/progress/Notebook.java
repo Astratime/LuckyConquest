@@ -60,6 +60,15 @@ public final class Notebook {
             + "descendre. Elle berce les joueurs qui veulent partir.");
         page(EnemyKind.DESPERADO, "Le Desperado braque le fourgon chaque nuit. Le fourgon est vide chaque nuit. "
             + "Il ne vole pas l'or : il vole l'envie de jouer.");
+        // ----- Le Palace des Neiges -----
+        page(EnemyKind.CONCIERGE, "Le Concierge garde les clés de toutes les chambres. Les clients ne repartent pas : "
+            + "il ne rend jamais les clés.");
+        page(EnemyKind.IMPERATRICE_GIVRE, "L'Impératrice a gelé la patinoire le soir où elle a perdu sa couronne au jeu. "
+            + "Elle attend toujours la revanche. Moi aussi.");
+        page(EnemyKind.YETI, "Le Yéti n'est pas un monstre. C'est un client qui a refusé de payer sa note. "
+            + "La montagne l'a gardé.");
+        page(EnemyKind.PRINCE_NEIGES, "Le Prince a donné un bal pour fêter son premier jackpot. Il y a cent ans. "
+            + "Ses invités dansent encore. Ils ont oublié comment partir.");
         // ----- Le Port des Contrebandiers -----
         page(EnemyKind.CAPITAINE_RAT, "Le Capitaine Rat a fui chaque naufrage. Il fuira aussi la dernière partie. "
             + "Tous fuient la dernière partie. Sauf toi, peut-être.");

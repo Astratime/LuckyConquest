@@ -79,6 +79,7 @@ public class SymbolStrikes extends Actor implements Disposable {
     private static final float ABOVE_REEL     = 110f;    // la cloche, la pastèque et le lingot, au-dessus du rouleau
 
     private static final Color JUICE  = Color.valueOf("d81b3cff");
+    private static final Color FROST  = Color.valueOf("bfe8ffff");
     private static final Color FIRE   = Color.valueOf("ff8a1fff");
     private static final Color FLAME  = Color.valueOf("ffd23fff");
     private static final Color VIOLET = Color.valueOf("9b4dd6ff");
@@ -387,7 +388,7 @@ public class SymbolStrikes extends Actor implements Disposable {
             case NUGGET -> updateNugget(s, before, now, delta);
             case CROWN -> updateCrown(s, before, now, delta);
             case DEMON_KING, LUCK_APOSTLE -> updateStar(s, before, now, delta);
-            case FANGS, SPIKED_SHIELD, SCYTHE, MOON, PIGGY_BANK, TICKET, ANCHOR, GOLD_CHIP, FLAME, STEAM, DESCENT, BINGO_LIGHT ->
+            case FANGS, SPIKED_SHIELD, SCYTHE, MOON, PIGGY_BANK, TICKET, ANCHOR, GOLD_CHIP, FLAME, STEAM, SNOWFLAKE, DESCENT, BINGO_LIGHT ->
                 updateNewReel(s, before, now, delta);
             default -> { }
         }
@@ -470,6 +471,21 @@ public class SymbolStrikes extends Actor implements Disposable {
                     ringAt(s.toX, s.toY, AZURE, 1.2f);
                     ringAt(s.toX, s.toY, Color.WHITE, 0.7f);
                     shake.shake(0.22f, 8f);
+                }
+            }
+            case SNOWFLAKE -> { // le flocon tourbillonne jusqu'au bouclier, qui se couvre de givre
+                if (flying && MathUtils.random() < delta * 40f) {
+                    Vector2 at = arc(s.fromX, s.fromY, s.toX, s.toY, now / IMPACT_TIME, 140f);
+                    Particle p = particle(at.x + MathUtils.random(-10f, 10f), at.y + MathUtils.random(-10f, 10f),
+                        MathUtils.randomBoolean() ? Color.WHITE : FROST, 20f, 0.5f, MathUtils.random(5f, 9f), false);
+                    p.gravity = -60f;
+                }
+                if (impact) {
+                    flashAt(s.toX, s.toY, FROST, 170f);
+                    burst(s.toX, s.toY, 24, FROST, 380f, 0.7f, 10f, false);
+                    burst(s.toX, s.toY, 12, Color.WHITE, 260f, 0.6f, 8f, false);
+                    ringAt(s.toX, s.toY, FROST, 1.1f);
+                    shake.shake(0.12f, 4f);
                 }
             }
             case GOLD_CHIP -> {
@@ -1061,7 +1077,7 @@ public class SymbolStrikes extends Actor implements Disposable {
             case BOMB -> drawBomb(batch, s, t, alpha);
             case CROWN -> drawCrown(batch, s, t, alpha);
             case DEMON_KING, LUCK_APOSTLE -> drawStar(batch, s, t, alpha);
-            case FANGS, SPIKED_SHIELD, SCYTHE, MOON, PIGGY_BANK, TICKET, ANCHOR, GOLD_CHIP, FLAME, STEAM, DESCENT, BINGO_LIGHT ->
+            case FANGS, SPIKED_SHIELD, SCYTHE, MOON, PIGGY_BANK, TICKET, ANCHOR, GOLD_CHIP, FLAME, STEAM, SNOWFLAKE, DESCENT, BINGO_LIGHT ->
                 drawNewReel(batch, s, t, alpha);
             default -> { }
         }
@@ -1140,6 +1156,12 @@ public class SymbolStrikes extends Actor implements Disposable {
                     float y = MathUtils.lerp(s.toY + 380f, s.toY, fall);
                     float x = MathUtils.lerp(s.fromX, s.toX, Math.min(1f, u * 2f));
                     symbol(batch, s.art, x, y, 0.9f, 8f * MathUtils.sin(t * 20f) * (1f - fall), alpha * fadeAfter(t));
+                }
+            }
+            case SNOWFLAKE -> { // il tourbillonne en arc jusqu'au bouclier
+                if (t < IMPACT_TIME) {
+                    Vector2 at = arc(s.fromX, s.fromY, s.toX, s.toY, u, 140f);
+                    symbol(batch, s.art, at.x, at.y, 0.8f, t * 360f, alpha);
                 }
             }
             case GOLD_CHIP -> { // le jeton vole en tournant sur lui-même

@@ -8,6 +8,7 @@ import fr.astratime.lucky.entities.Enemy;
 import fr.astratime.lucky.entities.LastingEffects;
 import fr.astratime.lucky.entities.Player;
 import fr.astratime.lucky.entities.SlotMachine;
+import fr.astratime.lucky.entities.Symbol;
 import fr.astratime.lucky.entities.context.SpinContext;
 import fr.astratime.lucky.entities.context.TurnContext;
 import fr.astratime.lucky.entities.effects.CorruptionEffect;
@@ -176,10 +177,14 @@ public class PreparationResolver {
             effect.apply(turnContext);
         }
         combatContext.setSource(null);
+        Symbol[] lastDrawn = lasting.getLastDrawn(); // Gel du Palace des Neiges : le rouleau garde son symbole
+        if (lastDrawn != null) for (int reel : lasting.getFrozenReels()) {
+            if (reel < lastDrawn.length && lastDrawn[reel] != null) spinContext.forceReel(reel, lastDrawn[reel]);
+        }
         if (lasting.getRiggedSymbol() != null) { // Table truquée du Croupier : après les cartes, rien ne la défait
             spinContext.forceReel(lasting.getRiggedReel(), lasting.getRiggedSymbol());
         }
-        if (houseRule != LastingEffects.HouseRule.NO_COMBOS) applyCombos(turnContext, player);
+        if (houseRule != LastingEffects.HouseRule.NO_COMBOS) applyCombos(turnContext, player, rule.isIcy(turn));
 
         return turnContext;
     }
@@ -283,14 +288,20 @@ public class PreparationResolver {
      * Suite et Paire, x9.5) ; une Couleur ou une Suite remplit en plus la jauge
      * de chaque carte à suite jouée.
      */
-    private static void applyCombos(TurnContext turnContext, Player player) {
+    private static void applyCombos(TurnContext turnContext, Player player, boolean icy) {
         CombatContext combat = turnContext.getCombatContext();
         List<Combo> combos = Combo.formed(player.getPlayedCards());
         if (combos.isEmpty()) return;
         float total = Combo.totalFactor(combos) + combat.getComboBonus() * combos.size(); // Chope
         String names = combos.stream().map(Combo::getDisplayName).collect(Collectors.joining(" + "));
         combat.multiplyGains(total, names);
-        combat.multiplyAttack(total, names);
+        // Verglas (Palace des Neiges) : un tour sur deux, l'attaque ne prend que la moitié de la Puissance des combinaisons.
+        float attack = icy ? Math.max(1f, total * PlaceRule.ICE_COMBO_PERCENT / 100f) : total;
+        combat.multiplyAttack(attack, names);
+        if (icy) {
+            turnContext.addEvent(new StatusEvent(Lang.f("VERGLAS : COMBINAISONS x{0} AU LIEU DE x{1}", factor(attack),
+                factor(total)), EffectPopup.Style.DAMAGE));
+        }
         courtCombos(turnContext, player, combos, total);
         for (Combo combo : combos) {
             if (combo.fillsGauges()){

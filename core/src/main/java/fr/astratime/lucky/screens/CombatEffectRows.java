@@ -87,6 +87,12 @@ final class CombatEffectRows {
                 Lang.t("Machine abandonnée"),
                 Lang.f("{0} sort 2 fois plus souvent. Jusqu'à la fin du combat.", favored.getDisplayName())));
         }
+        if (!lasting.getFrozenReels().isEmpty()) { // Gel du Palace des Neiges
+            String reels = String.join(", ", lasting.getFrozenReels().stream().map(r -> String.valueOf(r + 1)).toList());
+            rows.add(new SidePanel.EffectRow(new TextureRegion(hud.iconCorruption), cross, Lang.f("Rouleau {0} gelé", reels), Lang.t("Gel"),
+                Lang.f("L'ennemi a gelé ton rouleau {0} : au prochain tirage, il affiche le même symbole qu'au dernier.",
+                    reels)));
+        }
         if (lasting.getRiggedSymbol() != null) { // Table truquée du Croupier (phase 2)
             Symbol rigged = lasting.getRiggedSymbol();
             int turns = lasting.getRiggedTurns();
@@ -212,6 +218,11 @@ final class CombatEffectRows {
                 Lang.f("Sortie {0} fois ce combat. À la prochaine : {1} gains de base.", gauges.getPiggyDraws(),
                     fr.astratime.lucky.entities.SpinEconomy.symbolBaseText(gauges.getPiggyNext()))));
         }
+        if (gauges.getFrost() > 0) {
+            rows.add(new SidePanel.EffectRow(symbols.apply(Symbol.SNOWFLAKE), null,
+                Lang.f("Flocon {0}", Lang.big(gauges.getFrost())), Lang.t("Flocon"),
+                Lang.f("{0} de bouclier gelé : il dégèle au début de ton prochain tour.", Lang.big(gauges.getFrost()))));
+        }
         if (gauges.getAnchorKept() > 0) {
             rows.add(new SidePanel.EffectRow(symbols.apply(Symbol.ANCHOR), null,
                 Lang.f("Ancre {0}", Lang.big(gauges.getAnchorKept())), Lang.t("Ancre"),
@@ -301,6 +312,14 @@ final class CombatEffectRows {
                     + (turns == 1 ? Lang.t(" C'est ce tour-ci : tu joues une carte de moins !")
                         : turns == 2 ? Lang.t(" Le wagon sera bondé au prochain tour.")
                         : Lang.f(" Le wagon sera bondé dans {0}.", turns(turns - 1)))));
+            }
+            case VERGLAS -> {
+                boolean icy = rule.isIcy(turn);
+                rows.add(new SidePanel.EffectRow(skull, null, icy
+                    ? Lang.f("Verglas : combinaisons {0} %", PlaceRule.ICE_COMBO_PERCENT) : Lang.t("Verglas : au prochain tour"),
+                    rule.getName(), rule.getDescription()
+                    + (icy ? Lang.t(" C'est ce tour-ci : tes combinaisons sont à moitié !")
+                        : Lang.t(" La table sera verglacée au prochain tour."))));
             }
             case SOIF -> rows.add(new SidePanel.EffectRow(skull, null,
                 Lang.f("Soif : soins /{0}", PlaceRule.THIRST_HEAL_DIVISOR), rule.getName(),

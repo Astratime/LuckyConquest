@@ -103,6 +103,28 @@ public enum Dungeon {
         EnemyKind.PIRATE, EnemyKind.CAPITAINE_NOIR,
         List.of(new Loot("sabre_d_abordage", 40), new Loot("pavillon_noir", 40), new Loot("mutinerie", 20))),
 
+    // ----- Le Palace des Neiges -----
+
+    HALL("Le Hall", "Hall",
+        "Lustres de glace, tapis gelé. Derrière son comptoir, le concierge garde toutes les clés de l'hôtel.",
+        EnemyKind.GROOM, EnemyKind.CONCIERGE,
+        List.of(new Loot("passe_partout", 40), new Loot("sonnette_de_reception", 40), new Loot("cle_d_or", 20))),
+
+    PATINOIRE("La Patinoire", "Patinoire",
+        "Sous la verrière, la glace brille comme un miroir. Une silhouette y tourne sans fin, et tout ce qu'elle frôle gèle.",
+        EnemyKind.PATINEUSE, EnemyKind.IMPERATRICE_GIVRE,
+        List.of(new Loot("lames_de_patin", 40), new Loot("pirouette", 40), new Loot("couronne_de_givre", 20))),
+
+    TELEPHERIQUE("Le Téléphérique", "Téléphérique",
+        "La cabine grince au-dessus du vide. Là-haut, quelque chose de grand et de blanc attend les skieurs.",
+        EnemyKind.LIFTIER, EnemyKind.YETI,
+        List.of(new Loot("forfait_de_ski", 40), new Loot("boule_de_neige", 40), new Loot("avalanche", 20))),
+
+    SUITE_ROYALE("La Suite royale", "Suite royale",
+        "Au dernier étage, le champagne ne dégèle jamais. Le prince y donne une fête qui dure depuis cent ans.",
+        EnemyKind.MAJORDOME, EnemyKind.PRINCE_NEIGES,
+        List.of(new Loot("seau_a_glace", 40), new Loot("coupe_de_champagne", 40), new Loot("bal_des_neiges", 20))),
+
     // ----- Les Mines d'Or -----
 
     FILON("Le Filon", "Filon",

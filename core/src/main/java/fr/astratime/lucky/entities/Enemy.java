@@ -59,6 +59,8 @@ public class Enemy {
     private       int         hourglass;
     /** Pression de sa chaudière (Rapide de Minuit), de 0 à {@link EnemySymbol#PRESSURE_MAX}. */
     private       int         pressure;
+    /** Couches de neige de son Avalanche (Palace des Neiges), de 0 à {@link EnemySymbol#AVALANCHE_MAX}. */
+    private       int         snow;
     /** Sa mise (Tapis) : ses attaques sont multipliées d'autant, jusqu'à ce qu'il soit touché. */
     private       int         stake = 1;
     /** Tapis posé à son dernier tour : sa mise doublera à son tour suivant, s'il n'est pas touché d'ici là. */
@@ -188,6 +190,7 @@ public class Enemy {
         }
         if (hourglass > 0 && lost * 1000L >= maxHp * EnemySymbol.HOURGLASS_HIT_PER_MILLE) hourglass--;
         if (pressure > 0 && lost * 1000L >= maxHp * EnemySymbol.PRESSURE_HIT_PER_MILLE) pressure--; // un gros coup fait baisser la Pression
+        if (snow > 0 && lost * 100L >= maxHp * EnemySymbol.AVALANCHE_HIT_PERCENT) snow = 0; // un gros coup fait fondre l'Avalanche
         return lost;
     }
 
@@ -534,6 +537,15 @@ public class Enemy {
 
     /** @return la Pression de sa chaudière, de 0 à {@link EnemySymbol#PRESSURE_MAX} - 1. */
     public int getPressure() { return pressure; }
+
+    /** @return les couches de neige de son Avalanche (chacune ajoute {@link EnemySymbol#AVALANCHE_STEP_PERCENT} % à ses coups). */
+    public int getSnow() { return snow; }
+
+    /** Son Avalanche gagne une couche de neige, au plus {@link EnemySymbol#AVALANCHE_MAX}. */
+    public void addSnow() { snow = Math.min(EnemySymbol.AVALANCHE_MAX, snow + 1); }
+
+    /** Son Avalanche fond : il repart de zéro. */
+    public void meltSnow() { snow = 0; }
 
     /** Fin de son tour : ses Épines ne compteront que les coups encaissés à partir de maintenant. */
     public void resetDamageTaken() { damageTaken = 0; }

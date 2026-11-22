@@ -673,6 +673,7 @@ public class PlayerProfile {
             case PRAIRIE         -> placeCleared(Place.PRAIRIE);
             case RAPIDE          -> placeCleared(Place.RAPIDE);
             case PORT            -> placeCleared(Place.PORT);
+            case PALACE          -> placeCleared(Place.PALACE);
             case MINES           -> placeCleared(Place.MINES);
             case CASINO          -> placeCleared(Place.CASINO);
             case FOIRE           -> placeCleared(Place.FOIRE);
@@ -682,6 +683,7 @@ public class PlayerProfile {
             case HARD_FOIRE      -> isHardPlaceCleared(Place.FOIRE);
             case HARD_RAPIDE     -> isHardPlaceCleared(Place.RAPIDE);
             case HARD_PORT       -> isHardPlaceCleared(Place.PORT);
+            case HARD_PALACE     -> isHardPlaceCleared(Place.PALACE);
             case HARD_MINES      -> isHardPlaceCleared(Place.MINES);
             case HARD_CASINO     -> isHardPlaceCleared(Place.CASINO);
             case HARD_DESERT     -> isHardPlaceCleared(Place.DESERT);

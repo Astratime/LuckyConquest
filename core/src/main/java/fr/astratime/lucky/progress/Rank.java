@@ -36,8 +36,11 @@ public enum Rank {
         new RankBonus(1_200, 1_200, 120, 150, 550), 1_900_000_000L,
         new long[] {1_700_000_000L, 1_800_000_000L, 2_000_000_000L, 2_200_000_000L, 2_400_000_000L, 2_700_000_000L, 2_900_000_000L, 3_200_000_000L, 3_500_000_000L, 3_900_000_000L}),
     GROS_BONNET("Gros bonnet", "Sa table est toujours pleine.",
-        new RankBonus(1_350, 1_350, 135, 180, 750), 9_900_000_000L,
-        new long[] {25_000_000_000L, 27_000_000_000L, 30_000_000_000L, 33_000_000_000L, 36_000_000_000L, 40_000_000_000L, 44_000_000_000L, 48_000_000_000L, 53_000_000_000L, 58_000_000_000L}),
+        // Palace des Neiges (2026-11-21) : le Requin y gagne ~62 M par descente (joueur moyen), soit ~32
+        // descentes ; un peu au-dessus du Requin (1,9 Md) pour garder des prix croissants. Prix après Prestige
+        // réduits dans la même proportion (2 / 9,9).
+        new RankBonus(1_350, 1_350, 135, 180, 750), 2_000_000_000L,
+        new long[] {5_100_000_000L, 5_500_000_000L, 6_100_000_000L, 6_700_000_000L, 7_300_000_000L, 8_100_000_000L, 8_900_000_000L, 9_700_000_000L, 11_000_000_000L, 12_000_000_000L}),
     BARON("Baron du tapis vert", "Il règne sur la salle.",
         new RankBonus(2_200, 2_200, 220, 300, 1_000), 21_000_000_000L,
         new long[] {38_000_000_000L, 41_000_000_000L, 45_000_000_000L, 50_000_000_000L, 55_000_000_000L, 61_000_000_000L, 67_000_000_000L, 73_000_000_000L, 81_000_000_000L, 89_000_000_000L}),

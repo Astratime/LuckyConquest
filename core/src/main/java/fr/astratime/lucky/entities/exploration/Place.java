@@ -36,6 +36,12 @@ public enum Place {
             + "Même la chance.",
         PlaceRule.SCORBUT, 4, 50, 1_000, 10, 135, 3_000, 1_500, List.of(Dungeon.CALE, Dungeon.TAVERNE, Dungeon.PHARE, Dungeon.GALION)),
 
+    PALACE("Le Palace des Neiges", "Le Palace",
+        "Sur la route des Mines, un grand hôtel est pris dans la neige depuis cent ans. Ses clients jouent encore "
+            + "au salon, figés dans le givre.",
+        PlaceRule.VERGLAS, 5, 90, 3_000, 15, 125, 6_000, 2_000,
+        List.of(Dungeon.HALL, Dungeon.PATINOIRE, Dungeon.TELEPHERIQUE, Dungeon.SUITE_ROYALE)),
+
     MINES("Les Mines d'Or", "Les Mines",
         "Sous la montagne, l'or de la comète coule encore. Les mineurs creusent sans fin. Ils ont oublié la lumière. "
             + "Pas leur cupidité.",
@@ -118,6 +124,7 @@ public enum Place {
             case FOIRE   -> 250;
             case RAPIDE  -> 350;
             case PORT    -> 500;
+            case PALACE  -> 700;
             case MINES   -> 1_000;
             case CASINO  -> 2_000;
             case DESERT  -> 3_000;
@@ -137,6 +144,7 @@ public enum Place {
             case FOIRE   -> 32;
             case RAPIDE  -> 24;
             case PORT    -> 18;
+            case PALACE  -> 19;
             case MINES   -> 19;
             case CASINO  -> 15;
             case DESERT  -> 42;
@@ -203,6 +211,7 @@ public enum Place {
             case FOIRE   -> Symbol.TICKET;
             case RAPIDE  -> Symbol.STEAM;
             case PORT    -> Symbol.ANCHOR;
+            case PALACE  -> Symbol.SNOWFLAKE;
             case MINES   -> Symbol.NUGGET;
             case CASINO  -> Symbol.GOLD_CHIP;
             case DESERT  -> Symbol.FLAME;
@@ -219,6 +228,7 @@ public enum Place {
             case FOIRE   -> 78;
             case RAPIDE  -> 77;
             case PORT    -> 76;
+            case PALACE  -> 70;
             case MINES   -> 63;
             case CASINO  -> 72;
             case DESERT  -> 42;

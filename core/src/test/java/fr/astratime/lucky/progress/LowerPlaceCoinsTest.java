@@ -14,7 +14,8 @@ class LowerPlaceCoinsTest {
         assertEquals(Place.FOIRE, PlayerProfile.placeOf(Rank.AVARE));
         assertEquals(Place.FOIRE, PlayerProfile.placeOf(Rank.PARIEUR));
         assertEquals(Place.PORT, PlayerProfile.placeOf(Rank.HABITUE));
-        assertEquals(Place.MINES, PlayerProfile.placeOf(Rank.REQUIN));
+        assertEquals(Place.PALACE, PlayerProfile.placeOf(Rank.REQUIN));
+        assertEquals(Place.MINES, PlayerProfile.placeOf(Rank.GROS_BONNET));
         assertEquals(Place.CASINO, PlayerProfile.placeOf(Rank.MAGNAT));
         assertEquals(Place.DESERT, PlayerProfile.placeOf(Rank.ROI_DU_CASINO));
         assertEquals(Place.DESERT, PlayerProfile.placeOf(Rank.LEGENDE));
@@ -22,7 +23,7 @@ class LowerPlaceCoinsTest {
 
     @Test
     void lowerPlacesPayLess() {
-        assertEquals(100, PlayerProfile.coinsPercent(Rank.REQUIN, Place.MINES, false), "son lieu");
+        assertEquals(100, PlayerProfile.coinsPercent(Rank.REQUIN, Place.PALACE, false), "son lieu");
         assertEquals(100, PlayerProfile.coinsPercent(Rank.REQUIN, Place.CASINO, false), "plus haut");
         assertEquals(25, PlayerProfile.coinsPercent(Rank.REQUIN, Place.PORT, false), "un lieu en dessous");
         assertEquals(5, PlayerProfile.coinsPercent(Rank.REQUIN, Place.FOIRE, false), "deux lieux en dessous");

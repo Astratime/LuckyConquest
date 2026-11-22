@@ -304,11 +304,12 @@ public class EnemyTurnResolver {
             int plays = enemy.getPlaysPerTurn(); // le Kraken joue une carte par bras qui lui reste
             if (kind == EnemyKind.GRAND_CROUPIER && enemy.getPhase() >= 3) plays += EnemyKind.CROUPIER_OPEN_PLAYS;
             // Main trop pleine de cartes propres : il pioche juste assez pour jouer ses cartes habituelles.
+            // (Le Joueur Masqué garde une carte propre par lieu traversé : il lui faut parfois plus de pioches.)
             // Comme pour le joueur, sa main ne dépasse jamais Enemy.HAND_SIZE : une carte propre qu'il
             // ne jouera pas ce tour (en double, ou au-delà de ce qu'il peut jouer) part dans sa défausse
             // pour laisser la place à la nouvelle carte. Il joue donc les mêmes cartes qu'avant. Seul le
             // Kraken (8 bras + sa carte propre) peut encore en avoir 9 : toutes lui servent.
-            for (int tries = 0; drawn.size() - signatures(drawn) < plays && tries < Enemy.HAND_SIZE; tries++) {
+            for (int tries = 0; drawn.size() - signatures(drawn) < plays && tries < 3 * Enemy.HAND_SIZE; tries++) {
                 if (drawn.size() >= Enemy.HAND_SIZE) discardUselessOwnCard();
                 List<Card> more = enemy.draw(1);
                 if (more.isEmpty()) break;
@@ -581,7 +582,8 @@ public class EnemyTurnResolver {
         /** Le symbole {@code symbol} du rouleau {@code i} agit une fois. */
         private void act(EnemySymbol symbol, int i, List<Event> events) {
             boolean done = actTowerOpening(symbol, i, events) || actTowerLate(symbol, events)
-                || actPortMinesCasino(symbol, events) || actFairDesert(symbol, events) || actExpress(symbol, events);
+                || actPortMinesCasino(symbol, events) || actFairDesert(symbol, events) || actExpress(symbol, events)
+                || actPalace(symbol, events);
             if (!done) throw new IllegalStateException("Symbole sans effet : " + symbol);
         }
 
@@ -946,6 +948,64 @@ public class EnemyTurnResolver {
                 }
             }
             return true;
+        }
+
+        /**
+         * Exploration : le Palace des Neiges (Clé, Gel, Avalanche, Champagne glacé).
+         *
+         * @return {@code false} si {@code symbol} n'est pas de cette famille
+         */
+        private boolean actPalace(EnemySymbol symbol, List<Event> events) {
+            switch (symbol) {
+                case KEY -> {
+                    int count = enemy.takeCharge(EnemySignature.TROUSSEAU) ? 2 : 1;
+                    List<String> locked = new ArrayList<>();
+                    for (int k = 0; k < count; k++) {
+                        Card best = null;
+                        for (Card card : player.getCurrentHand()) if (best == null || keyStrength(card) > keyStrength(best)) best = card;
+                        if (best == null) break;
+                        if (player.steal(best, EnemySymbol.KEY_TURNS)) locked.add(best.getName().toUpperCase());
+                    }
+                    events.add(locked.isEmpty() ? turn.strike(kind.swordDamage()) // main vide : il frappe
+                        : new StatusEvent(Lang.f("CLÉ : {0} FERMÉE À CLÉ", String.join(", ", locked)), EffectPopup.Style.DAMAGE));
+                }
+                case FREEZE -> {
+                    int count = enemy.takeCharge(EnemySignature.GIVRE_ETERNEL) ? 2 : 1;
+                    LastingEffects lasting = player.getLastingEffects();
+                    List<Integer> free = new ArrayList<>();
+                    for (int r = 0; r < SlotMachine.SYMBOL_COUNT; r++) if (!lasting.getFrozenReels().contains(r)) free.add(r);
+                    List<String> reels = new ArrayList<>();
+                    for (int k = 0; k < count && !free.isEmpty(); k++) {
+                        int reel = free.remove(random.nextInt(free.size()));
+                        lasting.freeze(reel, EnemySymbol.FREEZE_TURNS);
+                        reels.add(String.valueOf(reel + 1));
+                    }
+                    events.add(new StatusEvent(Lang.f("GEL : ROULEAU {0} GELÉ", String.join(", ", reels)), EffectPopup.Style.DAMAGE));
+                }
+                case AVALANCHE -> {
+                    int percent = 100 + EnemySymbol.AVALANCHE_STEP_PERCENT * enemy.getSnow();
+                    if (enemy.takeCharge(EnemySignature.TEMPETE)) percent *= 2;
+                    if (enemy.getSnow() > 0) events.add(new StatusEvent(Lang.f("AVALANCHE : +{0} %", percent - 100),
+                        EffectPopup.Style.ATTACK));
+                    events.add(turn.strike((int) Math.min(Integer.MAX_VALUE, (long) kind.swordDamage() * percent / 100)));
+                    enemy.addSnow();
+                }
+                case CHAMPAGNE -> {
+                    int glasses = 1 + boosts.getOrDefault(EnemySignature.GRAND_CRU, 0);
+                    events.add(heal(enemy, EnemySymbol.CHAMPAGNE_HEAL_PERCENT * glasses * healFactor / 100f));
+                    events.add(turn.shield(kind.shieldDefense() + shieldBonus));
+                }
+                default -> {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        /** Clé : la carte la plus forte d'abord (carte spéciale, puis As, Roi, Dame...). */
+        private static int keyStrength(Card card) {
+            if (!card.hasRank()) return 15;
+            return card.getRank() == 1 ? 14 : card.getRank();
         }
 
         /** Prédiction : il annonce un symbole (deux avec le Tarot) pour le prochain tirage du joueur. */
@@ -1574,6 +1634,11 @@ public class EnemyTurnResolver {
                         events.add(new StatusEvent(Lang.f("COMPTE À REBOURS : PLUS QUE {0} TOURS", enemy.getTurnLimit()),
                             EffectPopup.Style.DAMAGE));
                     }
+                }
+                case BOULE_DE_NEIGE -> {
+                    enemy.addSnow();
+                    events.add(new StatusEvent(Lang.f("BOULE DE NEIGE : AVALANCHE +{0} %",
+                        EnemySymbol.AVALANCHE_STEP_PERCENT * enemy.getSnow()), EffectPopup.Style.SPECIAL));
                 }
                 case CHARBON -> {
                     boolean exploded = enemy.tickPressure();
