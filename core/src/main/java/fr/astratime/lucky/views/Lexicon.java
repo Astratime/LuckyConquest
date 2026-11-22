@@ -104,7 +104,7 @@ public final class Lexicon {
                 + "sa pression : +{0} % à son coup par cran, {1} crans au plus. Un tirage sans elle la fait retomber.",
                 ReelGauges.STEAM_STEP_PERCENT, ReelGauges.STEAM_MAX)),
             term(Lang.t("Flocon"), Lang.f("Rouleau du Palace des Neiges. Un bouclier dont {0} % gèlent : au début de "
-                + "ton tour suivant, cette part dégèle et te revient.", ReelGauges.FROST_PERCENT))));
+                + "ton tour suivant, cette part dégèle et te revient.", ReelGauges.FROST_PERCENT)),
             term(Lang.t("Gong"), Lang.f("Rouleau du Temple du Destin. Une fois sur {0}, il étourdit un rouleau de l'ennemi : "
                 + "ce rouleau ne tourne pas à son prochain tirage.", 100 / ReelGauges.GONG_STUN_PERCENT))));
     }
@@ -214,7 +214,7 @@ public final class Lexicon {
                 + "il affiche le même symbole qu'au dernier.")),
             term(Lang.t("Avalanche"), Lang.f("Au Palace des Neiges, chaque Avalanche frappe {0} % plus fort que la "
                 + "précédente. Un coup qui lui enlève au moins {1} % de ses PV max la fait fondre.",
-                EnemySymbol.AVALANCHE_STEP_PERCENT, EnemySymbol.AVALANCHE_HIT_PERCENT))));
+                EnemySymbol.AVALANCHE_STEP_PERCENT, EnemySymbol.AVALANCHE_HIT_PERCENT)),
             term(Lang.t("Présage"), Lang.f("Règle du Temple du Destin : chaque tour, le temple annonce un symbole de ta "
                 + "machine. S'il sort à ton tirage, Puissance +{0} ce tour. Sinon, l'ennemi frappe {1} % plus fort à son tour.",
                 PlaceRule.OMEN_POWER, PlaceRule.OMEN_ENEMY_PERCENT)),

@@ -26,7 +26,7 @@ class RivalTest {
             assertEquals(place, Place.of(rival), "ses stats sont celles du lieu de la rencontre");
             assertEquals(place.ordinal(), Rival.encounter(rival));
         }
-        assertEquals(7, Rival.encounter(EnemyKind.RIVAL_DESERT));
+        assertEquals(8, Rival.encounter(EnemyKind.RIVAL_DESERT));
         assertTrue(Rival.isFinal(EnemyKind.RIVAL_DESERT));
         assertFalse(EnemyKind.SOLDAT_PIQUE.isRival());
         assertNull(Rival.placeOf(EnemyKind.CLOWN));
@@ -48,7 +48,7 @@ class RivalTest {
         Set<EnemyKind> defeated = EnumSet.noneOf(EnemyKind.class);
         assertEquals(EnemyKind.RIVAL_FOIRE, Rival.due(Place.FOIRE, defeated::contains));
         assertEquals(EnemyKind.RIVAL_CASINO, Rival.due(Place.CASINO, defeated::contains), "chaque lieu a sa rencontre");
-        assertNull(Rival.due(Place.DESERT, defeated::contains), "le duel final attend les six premières");
+        assertNull(Rival.due(Place.DESERT, defeated::contains), "le duel final attend les sept premières");
         assertNull(Rival.due(Place.PRAIRIE, defeated::contains));
 
         defeated.add(EnemyKind.RIVAL_FOIRE);
