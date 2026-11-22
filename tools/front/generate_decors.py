@@ -934,6 +934,37 @@ def dernier_tirage():
     return vignette(im, 0.45, 0.4)
 
 
+def pelerins():
+    """Les Pèlerins de la Comète : la route de nuit vers le cratère, des lanternes de pèlerins, la comète au ciel."""
+    rng = np.random.default_rng(57)
+    im, d = base((0, 0, 0))
+    gradient(d, (12, 10, 32), (58, 36, 72), 0, 150)
+    stars(d, rng, 70, 80)
+    fg, f = layer()
+    f.line([(40, 20), (260, 46)], fill=(110, 96, 140), width=3)  # la queue de la comète
+    f.line([(120, 32), (262, 46)], fill=(255, 240, 200), width=1)
+    f.ellipse([258, 40, 270, 52], fill=(255, 214, 90))
+    f.ellipse([200, 96, 340, 136], fill=(110, 70, 26))  # la lueur du cratère à l'horizon
+    f.ellipse([240, 106, 300, 126], fill=(220, 160, 50))
+    f.polygon([(0, 112), (70, 100), (150, 110), (230, 116), (360, 104), (360, 170), (0, 170)], fill=(34, 26, 30))
+    f.polygon([(40, 170), (150, 130), (250, 118), (262, 118), (190, 140), (130, 170)], fill=(70, 56, 46))  # la route
+    for k in range(9):  # la file des pèlerins et leurs lanternes
+        u = k / 8
+        x = 70 + u * 180
+        y = 166 - u * 46
+        s = 14 - u * 10
+        f.rectangle([x - s * 0.3, y - s * 1.6, x + s * 0.3, y], fill=(200, 184, 144) if k % 3 else (90, 62, 42))
+        f.ellipse([x - s * 0.35, y - s * 2.1, x + s * 0.35, y - s * 1.5], fill=(240, 230, 204) if k % 3 else (58, 38, 24))
+        lantern(fg, int(x + s * 0.6), int(y - s * 1.1))
+    rocks(f, rng, 0, 140, 60, 168, [(54, 46, 50), (40, 34, 40)], 14, 10)
+    rocks(f, rng, 290, 130, 360, 168, [(54, 46, 50), (40, 34, 40)], 14, 10)
+    im = finish(im, fg)
+    d = ImageDraw.Draw(im)
+    d.rectangle([0, 166, W, H], fill=(36, 28, 30))
+    GLOWS['pelerins'] = ((264, 46), (270, 116), (80, 150))
+    return vignette(im, 0.45, 0.4)
+
+
 def monde_sans_maitre():
     """Le Monde sans Maître : la ville brûle au crépuscule, les tables de jeu renversées en flammes."""
     rng = np.random.default_rng(54)
@@ -1658,7 +1689,7 @@ DECORS = {
     'filon': filon, 'puits': puits, 'forge': forge, 'gouffre': gouffre,
     'bar': bar, 'machines': machines, 'coffres': coffres, 'vip': vip,
     'caravane': caravane, 'tombeau': tombeau, 'oasis': oasis, 'volcan': volcan,
-    'genese': genese, 'tables_sacrees': tables_sacrees, 'dernier_tirage': dernier_tirage,
+    'genese': genese, 'tables_sacrees': tables_sacrees, 'pelerins': pelerins, 'dernier_tirage': dernier_tirage,
     'monde_sans_maitre': monde_sans_maitre, 'la_maison': la_maison, 'le_jackpot': le_jackpot,
     'locomotive': locomotive, 'wagon_restaurant': wagon_restaurant, 'wagon_lit': wagon_lit, 'fourgon': fourgon,
     'hall': hall, 'patinoire': patinoire, 'telepherique': telepherique, 'suite_royale': suite_royale,

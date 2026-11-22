@@ -12,53 +12,76 @@ import java.util.List;
  */
 public enum Chapter {
 
-    GENESE(1, "La genèse",
+    GENESE("La genèse",
         "Un éclat de lumière frappa le monde entier. Les conflits devinrent des jeux obéissant à une règle : "
             + "celui qui a le plus de chance gagne.",
         EnemyKind.CROUPIER, List.of(EnemyKind.GARDIEN, EnemyKind.SANGSUE, EnemyKind.BRETTEUR), EnemyKind.COMETE,
-        null),
-    TABLES_SACREES(2, "Les Tables Sacrées",
+        null, new Stats(100, 125, 100, 72, 100, 600, 1_200_000L, 1)),
+    TABLES_SACREES("Les Tables Sacrées",
         "Les rois tombèrent. Les croupiers prirent leurs trônes. Chaque cité devint une table de jeu. "
             + "Ici, on ne se bat plus. On mise.",
         EnemyKind.CHEF, List.of(EnemyKind.TRICHEUR, EnemyKind.USURIER, EnemyKind.ROULETTE), EnemyKind.REINE,
-        null),
-    DERNIER_TIRAGE(3, "Le Dernier Tirage",
+        null, new Stats(200, 110, 100, 72, 100, 880, 2_500_000L, 1)),
+    PELERINS("Les Pèlerins de la Comète",
+        "Les Tables Sacrées sont tombées. Alors les foules se mirent en marche vers le cratère, pour toucher la lumière. "
+            + "Un prophète les mène. Il dit que la comète reviendra.",
+        EnemyKind.PASSEUR, List.of(EnemyKind.PELERIN_FER, EnemyKind.DISEUSE, EnemyKind.PORTEUR), EnemyKind.PROPHETE,
+        null, new Stats(250, 30, 120, 71, 300, 1_290, 4_500_000L, 1)),
+    DERNIER_TIRAGE("Le Dernier Tirage",
         "La comète n'était pas tombée par hasard. Elle était le hasard. Au fond du cratère, quelque chose bat "
             + "encore. Celui qui le touche décidera du prochain tirage.",
         EnemyKind.GARDIENNE, List.of(EnemyKind.MIROIR, EnemyKind.HORLOGER, EnemyKind.FOU), EnemyKind.ECLAT,
-        "La chance n'a plus de maître."),
-    MONDE_SANS_MAITRE(4, "Le Monde sans Maître",
+        "La chance n'a plus de maître.", new Stats(300, 40, 167, 70, 500, 1_900, 8_000_000L, 1)),
+    MONDE_SANS_MAITRE("Le Monde sans Maître",
         "La chance n'avait plus de maître. Alors chacun voulut le devenir. Les tables brûlèrent. "
             + "Les joueurs se battirent pour les miettes de la comète.",
         EnemyKind.PILLEUR, List.of(EnemyKind.FAUSSAIRE, EnemyKind.CARTOMANCIENNE, EnemyKind.DUELLISTE),
-        EnemyKind.PRETENDANT, null),
-    LA_MAISON(5, "La Maison",
+        EnemyKind.PRETENDANT, null, new Stats(400, 50, 217, 60, 500, 4_080, 40_000_000L, 1)),
+    LA_MAISON("La Maison",
         "Derrière chaque table, il y a une Maison. Derrière chaque Maison, une seule règle. La Maison gagne toujours.",
         EnemyKind.PORTIER, List.of(EnemyKind.COMPTABLE, EnemyKind.DIRECTEUR, EnemyKind.SECURITE), EnemyKind.MAISON,
-        null),
-    LE_JACKPOT(6, "Le Jackpot",
+        null, new Stats(500, 65, 300, 58, 2_000, 8_800, 100_000_000L, 1)),
+    LE_JACKPOT("Le Jackpot",
         "Au bout du chemin, une seule machine. Elle n'a jamais été jouée. On dit qu'elle donne tout. "
             + "On dit aussi qu'elle prend tout.",
         EnemyKind.GARDIEN_LEVIER, List.of(EnemyKind.OMBRE, EnemyKind.BANQUEROUTE, EnemyKind.TEMPS_MORT),
-        EnemyKind.MACHINE_ORIGINELLE, "Tu as tiré le levier. Le monde a recommencé.");
+        EnemyKind.MACHINE_ORIGINELLE, "Tu as tiré le levier. Le monde a recommencé.",
+        new Stats(600, 125, 167, 52, 5_000, 19_200, 500_000_000L, 3));
 
-    private final int             number;
+    /**
+     * Les réglages d'un chapitre, attachés à lui et non à son numéro (2026-11-22, Tour à 10 chapitres : un chapitre
+     * inséré ne décale pas les réglages des autres).
+     *
+     * @param power       force de ses ennemis en mode normal, en % (multiplie leurs attaques, défenses et effets)
+     * @param hpPercent   PV de ses ennemis en mode normal, en % de leur fiche (modèle de Puissance, 2026-11-18)
+     * @param damage      part de leurs coups qui porte en mode normal, en % (PR #181 : Épée 134 au Dernier Tirage…)
+     * @param drainScale  part de leurs coups gardée depuis le drain de vie relatif, en % (2026-11-20)
+     * @param spinCost    coût d'un tirage, en gains (mode difficile compris)
+     * @param hardPower   force de ses ennemis en mode difficile, en % (x1,47 par chapitre, de la Comète x6 à la
+     *                    Machine x192 : plan des 10 chapitres validé par Astra le 2026-11-20)
+     * @param hardBossHp  PV de son boss en mode difficile (les autres ennemis gardent leur rapport de PV avec lui)
+     * @param ownPlays    cartes propres que ses ennemis jouent au plus à chaque tour (3 au dernier chapitre)
+     */
+    public record Stats(int power, int hpPercent, int damage, int drainScale, int spinCost, int hardPower,
+                        long hardBossHp, int ownPlays) { }
+
     private final String          title;
     private final String          description;
     private final EnemyKind       firstEnemy;
     private final List<EnemyKind> challengers;
     private final EnemyKind       boss;
     private final String          ending;
+    private final Stats           stats;
 
-    Chapter(int number, String title, String description, EnemyKind firstEnemy, List<EnemyKind> challengers,
-            EnemyKind boss, String ending) {
-        this.number      = number;
+    Chapter(String title, String description, EnemyKind firstEnemy, List<EnemyKind> challengers,
+            EnemyKind boss, String ending, Stats stats) {
         this.title       = title;
         this.description = description;
         this.firstEnemy  = firstEnemy;
         this.challengers = challengers;
         this.boss        = boss;
         this.ending      = ending;
+        this.stats       = stats;
     }
 
     /**
@@ -73,9 +96,21 @@ public enum Chapter {
     }
 
     /** @return le numéro du chapitre (à partir de 1). */
-    public int getNumber() { return number; }
+    public int getNumber() { return ordinal() + 1; }
     /** @return "Chapitre N". */
-    public String getLabel() { return Lang.f("Chapitre {0}", number); }
+    public String getLabel() { return Lang.f("Chapitre {0}", getNumber()); }
+    /** @return ses réglages (force, PV, dégâts, coût de tirage, mode difficile). */
+    public Stats getStats() { return stats; }
+    /** @return le dernier chapitre, celui de la Machine Originelle. */
+    public static Chapter last() { return values()[values().length - 1]; }
+    /**
+     * @return la force de ses ennemis en mode difficile en multiplicateur affichable (ex : "8,8"), sans le "x"
+     */
+    public String hardPowerText() {
+        int power = stats.hardPower();
+        String text = power % 100 == 0 ? String.valueOf(power / 100) : String.valueOf(power / 100f);
+        return Lang.decimal(text);
+    }
     /** @return le titre du chapitre (ex : "La genèse"). */
     public String getTitle() { return Lang.t(title); }
     /** @return le récit du chapitre. */

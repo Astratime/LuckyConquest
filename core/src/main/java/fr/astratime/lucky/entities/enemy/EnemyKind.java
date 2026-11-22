@@ -30,7 +30,9 @@ import java.util.Map;
  *   <li>{@link #COMETE} : le boss du chapitre 1, qui reprend tout ;</li>
  *   <li>chapitre 2 : {@link #CHEF}, puis {@link #TRICHEUR} (Dés pipés), {@link #USURIER}
  *       (Intérêts) ou {@link #ROULETTE} (Zéro), et la {@link #REINE} ;</li>
- *   <li>chapitre 3 : la {@link #GARDIENNE}, puis {@link #MIROIR} (Reflet), {@link #HORLOGER}
+ *   <li>chapitre 3 : le {@link #PASSEUR}, puis {@link #PELERIN_FER} (Serment), {@link #DISEUSE} (Voyance) ou
+ *       {@link #PORTEUR} (Relique), et le {@link #PROPHETE} et ses pèlerins ;</li>
+ *   <li>chapitre 4 : la {@link #GARDIENNE}, puis {@link #MIROIR} (Reflet), {@link #HORLOGER}
  *       (Sablier) ou {@link #FOU} (Tapis), et l'{@link #ECLAT}, en deux phases ;</li>
  *   <li>chapitre 4 : le {@link #PILLEUR}, puis {@link #FAUSSAIRE} (Fausse monnaie), {@link #CARTOMANCIENNE}
  *       (Prédiction) ou {@link #DUELLISTE} (Duel), et le {@link #PRETENDANT} et ses trois éclats ;</li>
@@ -151,7 +153,55 @@ public enum EnemyKind {
         List.of(Card.Suit.TREFLE, Card.Suit.PIQUE, Card.Suit.CARREAU, Card.Suit.COEUR),
         List.of(Card.Suit.TREFLE, Card.Suit.COEUR, Card.Suit.PIQUE, Card.Suit.CARREAU)),
 
-    // ----- Chapitre 3 : Le Dernier Tirage -----
+    // ----- Chapitre 3 : Les Pèlerins de la Comète (Tour à 10 chapitres, 2026-11-22) -----
+
+    PASSEUR("Le Passeur du Gué", "PASSEUR",
+        "Il garde le seul gué vers le cratère. Il fait payer le passage, ramasse ta part et pipe les dés.",
+        30_000, 100, 25,
+        weights(EnemySymbol.SWORD, 2, EnemySymbol.SHIELD, 1, EnemySymbol.POTION, 1, EnemySymbol.TOLL, 1,
+            EnemySymbol.RAKE, 1, EnemySymbol.LOADED_DIE, 1),
+        deck(new int[] {3, 6, 9, 12, 14}, new int[] {4, 8, 12},
+            new int[] {5, 9, 13}, new int[] {3, 7, 11}),
+        List.of(Card.Suit.PIQUE, Card.Suit.TREFLE, Card.Suit.CARREAU, Card.Suit.COEUR),
+        List.of(Card.Suit.COEUR, Card.Suit.CARREAU, Card.Suit.PIQUE, Card.Suit.TREFLE)),
+
+    PELERIN_FER("Le Pèlerin de fer", "PÈLERIN DE FER",
+        "Il marche depuis des années dans son armure. À chaque Serment, il devient plus dur. Frappe-le tôt.",
+        50_000, 120, 10,
+        weights(EnemySymbol.IRON_VOW, 2, EnemySymbol.SWORD, 2, EnemySymbol.SHIELD, 1),
+        deck(new int[] {4, 8, 12}, new int[] {5, 11},
+            new int[] {3, 6, 9, 12, 14}, new int[] {6, 12}),
+        List.of(Card.Suit.CARREAU, Card.Suit.PIQUE, Card.Suit.TREFLE, Card.Suit.COEUR),
+        List.of(Card.Suit.CARREAU, Card.Suit.COEUR, Card.Suit.PIQUE, Card.Suit.TREFLE)),
+
+    DISEUSE("La Diseuse d'éclats", "DISEUSE",
+        "Elle lit l'avenir dans les éclats de la comète. Elle voit ta main. Plus tu tiens de cartes, plus elle frappe.",
+        50_000, 60, 15,
+        weights(EnemySymbol.SIGHT, 2, EnemySymbol.SWORD, 1, EnemySymbol.SHIELD, 1, EnemySymbol.POTION, 1),
+        deck(new int[] {3, 7, 11, 14}, new int[] {4, 9, 13},
+            new int[] {5, 10}, new int[] {4, 8, 12}),
+        List.of(Card.Suit.TREFLE, Card.Suit.PIQUE, Card.Suit.CARREAU, Card.Suit.COEUR),
+        List.of(Card.Suit.COEUR, Card.Suit.TREFLE, Card.Suit.CARREAU, Card.Suit.PIQUE)),
+
+    PORTEUR("Le Porteur de reliques", "PORTEUR",
+        "Il porte sur son dos les reliques de la comète. Chacune bénit une couleur. Tes cartes de cette couleur lui obéissent.",
+        50_000, 80, 15,
+        weights(EnemySymbol.RELIC, 2, EnemySymbol.SWORD, 2, EnemySymbol.SHIELD, 1),
+        deck(new int[] {3, 6, 9, 12}, new int[] {5, 11},
+            new int[] {4, 8, 12, 14}, new int[] {5, 10}),
+        List.of(Card.Suit.PIQUE, Card.Suit.CARREAU, Card.Suit.TREFLE, Card.Suit.COEUR),
+        List.of(Card.Suit.CARREAU, Card.Suit.COEUR, Card.Suit.PIQUE, Card.Suit.TREFLE)),
+
+    PROPHETE("Le Prophète du Cratère", "PROPHÈTE",
+        "Il mène les pèlerins vers la lumière. Plus ils sont nombreux, plus il frappe. Blessé, il appelle la comète.",
+        120_000, 120, 10,
+        weights(EnemySymbol.PILGRIMAGE, 2, EnemySymbol.SWORD, 2, EnemySymbol.SHIELD, 2, EnemySymbol.POTION, 1),
+        deck(new int[] {3, 6, 9, 12, 14}, new int[] {4, 8, 12, 14},
+            new int[] {5, 9, 13}, new int[] {4, 8, 12}),
+        List.of(Card.Suit.PIQUE, Card.Suit.CARREAU, Card.Suit.TREFLE, Card.Suit.COEUR),
+        List.of(Card.Suit.COEUR, Card.Suit.CARREAU, Card.Suit.PIQUE, Card.Suit.TREFLE)),
+
+    // ----- Chapitre 4 : Le Dernier Tirage -----
 
     GARDIENNE("Gardienne du Cratère", "GARDIENNE",
         "Elle veille au bord du cratère. Elle a appris des trois. Épines, Crocs et Rage.",
@@ -1126,7 +1176,7 @@ public enum EnemyKind {
      * Modèle de Puissance (Astra, 2026-11-18) : les bonus d'attaque s'additionnent, les PV redescendent ; réglés au
      * simulateur pour garder les victoires du joueur moyen à chaque rang (avant : 500 % partout).
      */
-    static final int[] TOWER_HP_PERCENT = { 125, 110, 40, 50, 65, 125 };
+    // (PV de chaque chapitre : Chapter.Stats#hpPercent)
     /** Force des ennemis du chapitre 3, en %. */
     public static final int CHAPTER_3_POWER = 3 * CHAPTER_POWER_STEP;
     /** Force des ennemis des chapitres 4, 5 et 6, en % (choix d'Astra : le rang rendra le joueur plus fort). */
@@ -1139,15 +1189,14 @@ public enum EnemyKind {
      * Originelle), choix d'Astra (2026-11-06) : PV du boss de chaque chapitre, du 1er au 6e.
      * Les autres ennemis du chapitre gardent leur rapport de PV avec leur boss.
      */
-    static final long[] HARD_BOSS_HP = { // modèle de Puissance (2026-11-18), avant : 20 M, 50 M, 200 M, 800 M, 2 Md, 10 Md
-        1_200_000L, 2_500_000L, 8_000_000L, 40_000_000L, 100_000_000L, 500_000_000L };
+    // (PV du boss de chaque chapitre : Chapter.Stats#hardBossHp ; modèle de Puissance, 2026-11-18)
 
     /**
      * Force des ennemis de la Tour en mode difficile, en %, du chapitre 1 au 6 (choix d'Astra, 2026-11-06) :
      * le chapitre 2 frappe deux fois plus fort que le chapitre 6 du mode normal, puis x2 à chaque chapitre.
      * Le chapitre 1 a la force du chapitre 6 du mode normal (x6), pour que la chaîne x2 parte de là.
      */
-    static final int[] HARD_POWER = { 600, 1_200, 2_400, 4_800, 9_600, 19_200 };
+    // (force de chaque chapitre : Chapter.Stats#hardPower ; x1,47 par chapitre depuis la Tour à 10 chapitres)
 
     /**
      * Mode sans fin (2026-11-08, Astra : plus fort que le chapitre 6 difficile) : à l'étage 1,
@@ -1170,7 +1219,7 @@ public enum EnemyKind {
 
     /** @return la force des ennemis de l'étage {@code floor} du mode sans fin, en %. */
     public static int endlessPower(int floor) {
-        return (int) Math.min(ENDLESS_MAX_POWER, Math.round(HARD_POWER[HARD_POWER.length - 1] * endlessFactor(floor)));
+        return (int) Math.min(ENDLESS_MAX_POWER, Math.round(Chapter.last().getStats().hardPower() * endlessFactor(floor)));
     }
 
     /** @return les PV d'un ennemi (ou d'un boss) de l'étage {@code floor} du mode sans fin. */
@@ -1203,6 +1252,14 @@ public enum EnemyKind {
     /** Symboles de l'Éclat Originel dans sa deuxième phase : ceux du chapitre 3. */
     private static final Map<EnemySymbol, Integer> ECLAT_PHASE_TWO = Collections.unmodifiableMap(weights(
         EnemySymbol.SHIELD, 3, EnemySymbol.MIRROR, 1, EnemySymbol.HOURGLASS, 1, EnemySymbol.ALL_IN, 1));
+
+    /**
+     * Symboles du Prophète du Cratère dans sa deuxième phase (valeurs par défaut de Claude) : il appelle la Comète Dorée,
+     * qu'il a vue tomber, et ses pèlerins prêtent serment.
+     */
+    private static final Map<EnemySymbol, Integer> PROPHET_PHASE_TWO = Collections.unmodifiableMap(weights(
+        EnemySymbol.PILGRIMAGE, 2, EnemySymbol.SWORD, 1, EnemySymbol.SHIELD, 1, EnemySymbol.GOLDEN_COMET, 1,
+        EnemySymbol.IRON_VOW, 1));
 
     /**
      * Symboles de la Maison sans sa Façade (plus de Boucliers ni de Mur porteur), puis sans
@@ -1248,7 +1305,7 @@ public enum EnemyKind {
     /**
      * @return ses points de vie maximum : ceux de la Tour des épreuves sont
      *         multipliés par {@link #TOWER_HP_FACTOR}, car le rang du joueur le
-     *         rend bien plus fort ; en mode difficile, ceux de {@link #HARD_BOSS_HP} pour le boss
+     *         rend bien plus fort ; en mode difficile, ceux de {@link Chapter.Stats#hardBossHp()} pour le boss
      *         du chapitre, et autant en proportion pour les autres ennemis du chapitre
      */
     public long getMaxHp(Difficulty hard) {
@@ -1262,14 +1319,14 @@ public enum EnemyKind {
         }
         Chapter chapter = Chapter.of(this);
         if (chapter == null) return maxHp;
-        if (!hard.hard()) return (long) maxHp * TOWER_HP_PERCENT[chapter.getNumber() - 1] / 100;
-        long bossHp = HARD_BOSS_HP[chapter.getNumber() - 1];
+        if (!hard.hard()) return (long) maxHp * chapter.getStats().hpPercent() / 100;
+        long bossHp = chapter.getStats().hardBossHp();
         int  bossBase = chapter.getBoss().maxHp;
         return this == chapter.getBoss() ? bossHp : Math.round((double) bossHp * maxHp / bossBase);
     }
 
     /** @return les PV du boss du chapitre {@code number} de la Tour en mode difficile. */
-    public static long hardBossHp(int number) { return HARD_BOSS_HP[number - 1]; }
+    public static long hardBossHp(int number) { return Chapter.values()[number - 1].getStats().hardBossHp(); }
 
     /** @return {@code true} pour un ennemi de la Tour des épreuves (voir {@link fr.astratime.lucky.entities.tower.Chapter}). */
     public boolean isTower() {
@@ -1297,17 +1354,17 @@ public enum EnemyKind {
     /**
      * @return sa force, en % : le multiplicateur de ses attaques, de ses défenses
      *         et de tous ses effets (100 au chapitre 1, puis plus à chaque chapitre ;
-     *         celle de {@link #HARD_POWER} dans la Tour en mode difficile)
+     *         celle de {@link Chapter.Stats#hardPower()} dans la Tour en mode difficile)
      */
     public int getPower(Difficulty hard) {
         if (this == GRAND_CROUPIER) return CROUPIER_POWER;
         if (hard.isEndless()) return endlessPower(hard.floor());
         Chapter chapter = Chapter.of(this);
-        return chapter != null && hard.hard() ? hardPower(chapter.getNumber()) : chapterPower();
+        return chapter != null && hard.hard() ? chapter.getStats().hardPower() : chapterPower();
     }
 
     /** @return la force des ennemis du chapitre {@code number} de la Tour en mode difficile, en %. */
-    public static int hardPower(int number) { return HARD_POWER[number - 1]; }
+    public static int hardPower(int number) { return Chapter.values()[number - 1].getStats().hardPower(); }
 
     /**
      * @return le coût d'un tirage contre lui, en gains : celui de son lieu en
@@ -1325,18 +1382,14 @@ public enum EnemyKind {
         if (this == GRAND_CROUPIER) return CROUPIER_SPIN_COST;
         Place place = Place.of(this);
         if (place != null) return place.getSpinCost();
-        if (!isTower()) return SpinEconomy.BASE_SPIN_COST;
-        int power = chapterPower();
-        if (power >= CHAPTER_6_POWER) return 5_000;
-        if (power >= CHAPTER_5_POWER) return 2_000;
-        if (power >= CHAPTER_3_POWER) return 500;
-        return SpinEconomy.BASE_SPIN_COST;
+        Chapter chapter = Chapter.of(this);
+        return chapter == null ? SpinEconomy.BASE_SPIN_COST : chapter.getStats().spinCost();
     }
 
-    /** @return sa force en mode normal, en % : 100 par numéro de chapitre de la Tour, 100 hors de la Tour. */
+    /** @return sa force en mode normal, en % : celle de son chapitre de la Tour, 100 hors de la Tour. */
     private int chapterPower() {
         Chapter chapter = Chapter.of(this);
-        return chapter == null ? CHAPTER_POWER_STEP : chapter.getNumber() * CHAPTER_POWER_STEP;
+        return chapter == null ? CHAPTER_POWER_STEP : chapter.getStats().power();
     }
 
     /** Dégâts de base d'une Épée du croupier d'entraînement. */
@@ -1401,7 +1454,7 @@ public enum EnemyKind {
             case RIVAL_FOIRE, RIVAL_RAPIDE, RIVAL_PORT, RIVAL_PALACE, RIVAL_MINES, RIVAL_MANOIR, RIVAL_CASINO, RIVAL_TEMPLE, RIVAL_DESERT ->
                 Place.of(this).getDamagePercent() * rivalDamage(Place.of(this)) / 100;
             default -> {
-                if (chapterPower() >= CHAPTER_3_POWER) yield TOWER_DAMAGE_PERCENT[Chapter.of(this).getNumber() - 1];
+                if (isTower()) yield Chapter.of(this).getStats().damage();
                 Place place = Place.of(this);
                 yield place != null && place.getDamagePercent() > 0 ? place.getDamagePercent() : 100;
             }
@@ -1420,7 +1473,7 @@ public enum EnemyKind {
      * Magnat (Épée à 300, choix d'Astra le 2026-11-19), le 6 pour le Roi du casino et la Légende. Des coups plus forts plutôt que des PV en plus :
      * le combat devient plus dangereux sans s'allonger.
      */
-    static final int[] TOWER_DAMAGE_PERCENT = { 100, 100, TOWER_LATE_DAMAGE, 217, 300, TOWER_LATE_DAMAGE };
+    // (part de chaque chapitre : Chapter.Stats#damage)
 
     /**
      * Dégâts des donjons réglés à part dans les autres lieux, en % (simulateur, 2026-10-24 ; relevés avec leur lieu
@@ -1475,7 +1528,7 @@ public enum EnemyKind {
      */
     // (part de chaque lieu : Place#getDrainScale)
     /** Pareil pour la Tour des épreuves, chapitre par chapitre ; en difficile, toute la Tour prend la part du chapitre 6. */
-    static final int[] TOWER_DAMAGE_SCALE = {72, 72, 70, 60, 58, 52};
+    // (part de chaque chapitre : Chapter.Stats#drainScale)
 
     public int hurt(int value, Difficulty hard) {
         int empowered = empowered(value, hard);
@@ -1490,9 +1543,9 @@ public enum EnemyKind {
     /** @return la part de ses coups gardée depuis le drain de vie relatif, en % (voir {@link #EXPLORATION_DAMAGE_SCALE}). */
     int drainScale(Difficulty hard) {
         if (isTower()) {
-            if (hard.hard()) return TOWER_DAMAGE_SCALE[TOWER_DAMAGE_SCALE.length - 1]; // toute la Tour difficile frappe comme le chapitre 6
-            Chapter chapter = Chapter.of(this);
-            return chapter == null ? 100 : TOWER_DAMAGE_SCALE[chapter.getNumber() - 1];
+            // toute la Tour difficile frappe comme le dernier chapitre
+            if (hard.hard()) return Chapter.last().getStats().drainScale();
+            return Chapter.of(this).getStats().drainScale();
         }
         Place place = Place.of(this);
         return place == null ? 100 : place.getDrainScale();
@@ -1545,10 +1598,9 @@ public enum EnemyKind {
      *         habituelles : une, ou jusqu'à 3 pour les ennemis du chapitre 6 (choix d'Astra)
      */
     public int getOwnPlaysPerTurn() {
-        return chapterPower() == CHAPTER_6_POWER ? CHAPTER_6_OWN_PLAYS : 1;
+        Chapter chapter = Chapter.of(this);
+        return chapter == null ? 1 : chapter.getStats().ownPlays();
     }
-    /** Cartes propres jouées au plus à chaque tour par un ennemi du chapitre 6. */
-    static final int CHAPTER_6_OWN_PLAYS = 3;
     /** @return {@code true} pour le Joueur Masqué, à l'une de ses cinq rencontres (voir {@link fr.astratime.lucky.entities.exploration.Rival}). */
     public boolean isRival() {
         return switch (this) {
@@ -1560,7 +1612,7 @@ public enum EnemyKind {
     /** @return {@code true} pour le boss d'un chapitre ou le roi d'un donjon. */
     public boolean isBoss() {
         return switch (this) {
-            case COMETE, REINE, ECLAT, PRETENDANT, MAISON, MACHINE_ORIGINELLE, GRAND_CROUPIER, ROI_PIQUE, ROI_COEUR, ROI_CARREAU, ROI_TREFLE,
+            case COMETE, REINE, PROPHETE, ECLAT, PRETENDANT, MAISON, MACHINE_ORIGINELLE, GRAND_CROUPIER, ROI_PIQUE, ROI_COEUR, ROI_CARREAU, ROI_TREFLE,
                  CAPITAINE_RAT, TAVERNIER, GARDIEN_PHARE, CAPITAINE_NOIR,
                  MONSIEUR_LOYAL, CONDUCTEUR, ROUE_FORTUNE, ROI_FORAIN, EMIR, PHARAON, DJINN, DRAGON,
                  LOCOMOTIVE, GRAND_CHEF, DAME_EN_NOIR, DESPERADO,
@@ -1660,7 +1712,7 @@ public enum EnemyKind {
      * @return {@code true} s'il change de symboles sous {@link #PHASE_TWO_RATIO} de vie : l'Éclat
      *         Originel, et les rois de l'Exploration (ils gagnent un symbole, voir {@link #kingPhaseSymbol()})
      */
-    public boolean hasPhaseTwo() { return this == ECLAT || kingPhaseSymbol() != null; }
+    public boolean hasPhaseTwo() { return this == ECLAT || this == PROPHETE || kingPhaseSymbol() != null; }
 
     /**
      * Seuils de phase (choix d'Astra) : la part de ses PV max sous laquelle il ne descend
@@ -1757,6 +1809,7 @@ public enum EnemyKind {
             case MACHINE_ORIGINELLE -> Lang.t("ELLE TE VOLE UN ROULEAU !");
             case GRAND_CROUPIER -> phase == 2 ? Lang.t("IL TRUQUE TA TABLE !") : Lang.t("CARTES SUR TABLE !");
             case COMETE -> Lang.t("LA COMÈTE S'EMBRASE !");
+            case PROPHETE -> Lang.t("LA COMÈTE RÉPOND À SON APPEL : COMÈTE !");
             case REINE -> Lang.t("MISE ROYALE : SES TRÈFLES COMPTENT DOUBLE !");
             case ECLAT -> Lang.t("L'ÉCLAT SE FEND : NOUVEAUX SYMBOLES !");
             case ROI_PIQUE -> Lang.t("LAMES ASSOIFFÉES : CROC !");
@@ -1839,6 +1892,7 @@ public enum EnemyKind {
     /** @return les symboles de ses rouleaux et leur poids dans la phase {@code phase} (1 ou 2). */
     public Map<EnemySymbol, Integer> getWeights(int phase) {
         if (phase >= 2 && this == ECLAT) return ECLAT_PHASE_TWO;
+        if (phase >= 2 && this == PROPHETE) return PROPHET_PHASE_TWO;
         if (phase >= 2 && kingPhaseSymbol() != null) {
             Map<EnemySymbol, Integer> king = new LinkedHashMap<>(weights);
             king.merge(kingPhaseSymbol(), KING_PHASE_WEIGHT, Integer::sum);
@@ -1919,6 +1973,11 @@ public enum EnemyKind {
             case USURIER -> List.of(EnemySignature.TAUX_USURAIRE);
             case ROULETTE, PIEUVRE -> List.of(EnemySignature.BILLE_TRUQUEE);
             case REINE -> List.of(EnemySignature.MAIN_DE_LA_REINE);
+            case PASSEUR -> List.of(EnemySignature.COUP_DE_RATEAU, EnemySignature.DE_CHARGE);
+            case PELERIN_FER -> List.of(EnemySignature.SERMENT_SOLENNEL);
+            case DISEUSE -> List.of(EnemySignature.BOULE_DE_CRISTAL);
+            case PORTEUR -> List.of(EnemySignature.AUTEL);
+            case PROPHETE -> List.of(EnemySignature.PROCESSION, EnemySignature.QUEUE_DE_COMETE);
             case GARDIENNE -> List.of(EnemySignature.RONCES, EnemySignature.SAIGNEE, EnemySignature.PROVOCATION);
             case MIROIR -> List.of(EnemySignature.MIROIR_DEFORMANT);
             case HORLOGER -> List.of(EnemySignature.REMONTOIR);

@@ -233,7 +233,18 @@ public final class Lexicon {
             term(Lang.t("Linceul"), Lang.f("Au Manoir hanté : la première fois qu'il tombe à 0 PV, l'ennemi se relève "
                 + "avec {0} % de ses PV max. Une seule fois par combat.", EnemySymbol.SHROUD_RISE_PERCENT)),
             term(Lang.t("Fils"), Lang.t("Au Manoir hanté : au tour suivant, le marionnettiste joue pour toi ta plus "
-                + "faible carte jouable."))));
+                + "faible carte jouable.")),
+            term(Lang.t("Serment"), Lang.f("Dans l'Histoire, chapitre des Pèlerins : le Pèlerin de fer gagne de la défense de base "
+                + "pour tout le combat, {0} fois au plus. Frappe-le tôt.", EnemySymbol.VOW_MAX)),
+            term(Lang.t("Voyance"), Lang.t("Dans l'Histoire, chapitre des Pèlerins : la Diseuse ferme ta plus forte carte en main "
+                + "et frappe plus fort pour chaque carte que tu tiens.")),
+            term(Lang.t("Relique"), Lang.f("Dans l'Histoire, chapitre des Pèlerins : le Porteur bénit la couleur que tu as le "
+                + "plus en main. Jusqu'à {0} cartes de cette couleur sont fermées à ton prochain tour.",
+                EnemySymbol.RELIC_MAX_CARDS)),
+            term(Lang.t("Pèlerinage"), Lang.f("Dans l'Histoire, chapitre des Pèlerins : un pèlerin de plus suit le Prophète "
+                + "({0} au plus), et chacun rend son coup {1} % plus fort. Un coup qui lui enlève au moins {2} % de ses PV "
+                + "max en chasse la moitié.", EnemySymbol.PILGRIM_MAX, EnemySymbol.PILGRIM_STEP_PERCENT,
+                EnemySymbol.PILGRIM_HIT_PERCENT))));
     }
 
     private static Category progress() {

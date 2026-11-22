@@ -91,6 +91,10 @@ public class PlayerProfile {
     static final String KEY_TOWER_HARD = "towerHard";
     static final String KEY_CHAPTERS      = "chapters";
     static final String KEY_HARD_CHAPTERS = "hardChapters";
+    /** Chapitres ouverts par une sauvegarde d'avant un nouveau chapitre ("HARD:" devant en difficile). */
+    static final String KEY_OPENED_CHAPTERS = "openedChapters";
+    /** Chapitres que la sauvegarde connaissait (pour ouvrir ce qui l'était quand un chapitre s'ajoute). */
+    static final String KEY_KNOWN_CHAPTERS = "knownChapters";
     /** Donjons vidés en Exploration difficile (voir {@link fr.astratime.lucky.entities.exploration.HardExploration}). */
     static final String KEY_HARD_DUNGEONS = "hardDungeons";
     /** Record du mode sans fin : le plus haut étage gagné. */
@@ -162,6 +166,8 @@ public class PlayerProfile {
     /** Chapitres de la Tour terminés (leur boss battu), en mode normal puis en mode difficile, par nom. */
     private final Set<String> clearedChapters     = new LinkedHashSet<>();
     private final Set<String> clearedHardChapters = new LinkedHashSet<>();
+    /** Chapitres ouverts sans leur précédent terminé : ouverts par l'ancien ordre d'une sauvegarde. */
+    private final Set<String> openedChapters      = new LinkedHashSet<>();
     /** Record du mode sans fin : le plus haut étage gagné (0 : aucun). */
     private int               endlessBest;
     /** Mode ADMIN : tout le contenu du jeu est ouvert, sans toucher à la progression enregistrée. */
@@ -242,6 +248,8 @@ public class PlayerProfile {
             for (Chapter chapter : Chapter.values()) clearedChapters.add(chapter.name());
         }
         readNames(storage.get(KEY_HARD_CHAPTERS), clearedHardChapters);
+        readNames(storage.get(KEY_OPENED_CHAPTERS), openedChapters);
+        keepChaptersOpen(storage.get(KEY_KNOWN_CHAPTERS));
         endlessBest = (int) Math.min(Integer.MAX_VALUE, parseCoins(storage.get(KEY_ENDLESS_BEST)));
         readNames(storage.get(KEY_GUIDES), seenGuides);
         readNames(storage.get(KEY_BINGOS), seenBingos);
@@ -864,8 +872,43 @@ public class PlayerProfile {
     public boolean isOpen(Chapter chapter, boolean hard) {
         if (admin) return true;
         if (hard && !towerHard) return false;
+        if (openedChapters.contains((hard ? HARD_PLACE_PREFIX : "") + chapter.name())) return true;
         Chapter previous = chapter.getPrevious();
         return previous == null || isCleared(previous, hard);
+    }
+
+    /** Les six chapitres d'avant la Tour à 10 chapitres (2026-11-22) : ceux des sauvegardes sans liste de chapitres. */
+    private static final List<String> FIRST_CHAPTERS = List.of("GENESE", "TABLES_SACREES", "DERNIER_TIRAGE",
+        "MONDE_SANS_MAITRE", "LA_MAISON", "LE_JACKPOT");
+
+    /**
+     * Une sauvegarde faite avant l'ajout d'un chapitre : ce qui était ouvert dans l'ancien ordre (sans les nouveaux
+     * chapitres) le reste, en normal comme en difficile, et un nouveau chapitre placé avant un chapitre ouvert
+     * s'ouvre aussi (comme les lieux, voir {@link #keepPlacesOpen(String)}).
+     *
+     * @param saved les chapitres que la sauvegarde connaissait, séparés par des virgules ({@code null} : sauvegarde
+     *              d'avant la Tour à 10 chapitres, qui connaissait les six premiers)
+     */
+    private void keepChaptersOpen(String saved) {
+        Set<String> known = new LinkedHashSet<>();
+        if (saved != null) readNames(saved, known);
+        else known.addAll(FIRST_CHAPTERS);
+        List<Chapter> old = new ArrayList<>();
+        for (Chapter chapter : Chapter.values()) if (known.contains(chapter.name())) old.add(chapter);
+        if (old.size() == Chapter.values().length) return;
+        for (boolean hard : new boolean[] {false, true}) {
+            String prefix = hard ? HARD_PLACE_PREFIX : "";
+            int last = -1;                                  // le dernier chapitre ouvert dans l'ancien ordre
+            for (int i = 1; i < old.size(); i++) {
+                if (isCleared(old.get(i - 1), hard)) {
+                    openedChapters.add(prefix + old.get(i).name());
+                    last = old.get(i).ordinal();
+                }
+            }
+            for (Chapter chapter : Chapter.values()) {
+                if (chapter.ordinal() < last && !known.contains(chapter.name())) openedChapters.add(prefix + chapter.name());
+            }
+        }
     }
 
     /** @return {@code true} si le donjon {@code dungeon} a déjà été vidé. */
@@ -1640,6 +1683,8 @@ public class PlayerProfile {
         storage.put(KEY_KNOWN_PLACES, Arrays.stream(Place.values()).map(Place::name).collect(Collectors.joining(",")));
         storage.put(KEY_CHAPTERS, String.join(",", clearedChapters));
         storage.put(KEY_HARD_CHAPTERS, String.join(",", clearedHardChapters));
+        storage.put(KEY_OPENED_CHAPTERS, String.join(",", openedChapters));
+        storage.put(KEY_KNOWN_CHAPTERS, Arrays.stream(Chapter.values()).map(Chapter::name).collect(Collectors.joining(",")));
         storage.put(KEY_ENDLESS_BEST, String.valueOf(endlessBest));
         storage.put(KEY_ADMIN_DECK, encode(adminDeck));
         storage.put(KEY_ADMIN_MACHINE, encodeSymbols(adminMachine));

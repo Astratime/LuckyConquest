@@ -60,6 +60,7 @@ public abstract class KingEntrance extends Cutscene {
             case CONCIERGE, IMPERATRICE_GIVRE, YETI, PRINCE_NEIGES -> new PalaceKings(kit, king);
             case MAITRE_CLOCHES, TISSEUSE, SEIGNEUR_DES, IDOLE_OR -> new TempleKings(kit, king);
             case COMTE_MINUIT, BIBLIOTHECAIRE, FOSSOYEUR, MARIONNETTISTE -> new ManorKings(kit, king);
+            case PROPHETE -> new PilgrimScenes.ProphetEntrance(kit); // boss de la Tour, chapitre 3
             default -> null;
         };
     }
