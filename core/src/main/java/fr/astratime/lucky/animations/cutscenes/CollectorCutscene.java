@@ -50,6 +50,9 @@ public class CollectorCutscene extends Cutscene {
         {0.55f, 0.19f}, {0.66f, 0.30f}, {0.76f, 0.15f}, {0.88f, 0.25f}, {0.24f, 0.08f}, {0.60f, 0.07f}};
 
     private final TextureRegion plain, collector, gem;
+    /** Son portrait avec 0, 1 puis 2 éclats sertis (le 3e : {@link #collector}), et ses trois vrais éclats, seuls. */
+    private final TextureRegion[] collectorWith = new TextureRegion[ShardsArt.VITRINE_AT.length];
+    private final TextureRegion[] chestGems = new TextureRegion[ShardsArt.VITRINE_AT.length];
     private final Color[] vitrine = new Color[ShardsArt.VITRINE_COLORS.length];
     private final Array<Particle> sparks = new Array<>(false, 256);
     private int shelved, set;
@@ -66,6 +69,10 @@ public class CollectorCutscene extends Cutscene {
             ".o#o.",
             "..o..");
         for (int i = 0; i < vitrine.length; i++) vitrine[i] = hex(ShardsArt.VITRINE_COLORS[i]);
+        for (int i = 0; i < chestGems.length; i++) {
+            collectorWith[i] = pixels(ShardsArt.collectionneur(i));
+            chestGems[i] = pixels(ShardsArt.chestGem(i));
+        }
     }
 
     @Override protected float coverStart() { return COVER_START; }
@@ -172,7 +179,9 @@ public class CollectorCutscene extends Cutscene {
         float reveal = progress(REVEAL, REVEAL + 0.7f);
         if (reveal > 0f) {
             batch.setColor(Color.WHITE);
-            portrait(batch, collector, width / 2f, collectorBottom(), collectorScale(), 1f - reveal, 1f);
+            // Ses sertis restent vides tant que ses éclats n'y sont pas : ce sont les mêmes qui viennent s'y poser.
+            TextureRegion shown = set < collectorWith.length ? collectorWith[set] : collector;
+            portrait(batch, shown, width / 2f, collectorBottom(), collectorScale(), 1f - reveal, 1f);
         }
         // Les étagères et leurs éclats rangés.
         for (int row = 0; row < 3; row++) {
@@ -201,8 +210,11 @@ public class CollectorCutscene extends Cutscene {
                 float hoverX = width * (0.35f + 0.15f * i), hoverY = height * 0.78f + MathUtils.sin(time * 4f + i) * 8f;
                 float into = Interpolation.pow3In.apply(progress(SET[i] - 0.35f, SET[i]));
                 float x = MathUtils.lerp(hoverX, chestX(i), into), y = MathUtils.lerp(hoverY, chestY(i), into);
-                float bright = i == 0 && lit ? 1f : time >= SET[i] ? 0.35f : 0.8f;
-                drawGem(batch, x, y, vitrine[i], bright, time >= SET[i] ? 0.55f : 1f);
+                if (i < set) {                                                 // serti : il fait partie du portrait
+                    if (i == 0 && lit) glow(batch, x, y, 90f * worldHeight() / 180f, vitrine[i], 0.6f);
+                    continue;
+                }
+                drawChestGem(batch, i, x, y);
             }
         }
         // Sa loupe qui jette un éclair.
@@ -216,6 +228,14 @@ public class CollectorCutscene extends Cutscene {
             batch.draw(trail, eyeX(), eyeY() - 4f, 0f, 4f, 320f * k, 8f, 1f, 1f, 210f);
             normal(batch);
         }
+    }
+
+    /** Le vrai éclat {@code i} de sa poitrine, centré en ({@code x}, {@code y}), à l'échelle de son portrait. */
+    private void drawChestGem(Batch batch, int i, float x, float y) {
+        float s = collectorScale(), w = ShardsArt.CHEST_GEM_W * s, h = ShardsArt.CHEST_GEM_H * s;
+        glow(batch, x, y, w * 2.6f, vitrine[i], 0.5f);
+        batch.setColor(Color.WHITE);
+        batch.draw(chestGems[i], x - w / 2f, y - h / 2f, w, h);
     }
 
     /** Un éclat de couleur {@code color}, de taille {@code size} (1 : sa taille sur les étagères). */
@@ -248,12 +268,14 @@ public class CollectorCutscene extends Cutscene {
     private float collectorBottom() { return worldHeight() * 0.1f - 30f * step(); }
     /** @return où est serti l'éclat {@code i} sur sa poitrine (voir {@link ShardsArt#VITRINE_AT}). */
     private float chestX(int i) {
-        return worldWidth() / 2f + (ShardsArt.VITRINE_AT[i][0] + 0.5f - collector.getRegionWidth() / 2f) * collectorScale();
+        float center = ShardsArt.chestGemLeft(i) + ShardsArt.CHEST_GEM_W / 2f;
+        return worldWidth() / 2f + (center - collector.getRegionWidth() / 2f) * collectorScale();
     }
     private float chestY(int i) {
-        return collectorBottom() + (collector.getRegionHeight() - ShardsArt.VITRINE_AT[i][1] - 0.5f) * collectorScale();
+        float center = ShardsArt.chestGemTop(i) + ShardsArt.CHEST_GEM_H / 2f;
+        return collectorBottom() + (collector.getRegionHeight() - center) * collectorScale();
     }
-    /** @return sa loupe de joaillier (pixel 20, 15 du portrait). */
-    private float eyeX() { return worldWidth() / 2f + (20.5f - collector.getRegionWidth() / 2f) * collectorScale(); }
-    private float eyeY() { return collectorBottom() + (collector.getRegionHeight() - 15.5f) * collectorScale(); }
+    /** @return le centre de sa loupe de joaillier (voir {@link ShardsArt#LOUPE_X}). */
+    private float eyeX() { return worldWidth() / 2f + (ShardsArt.LOUPE_X - collector.getRegionWidth() / 2f) * collectorScale(); }
+    private float eyeY() { return collectorBottom() + (collector.getRegionHeight() - ShardsArt.LOUPE_Y) * collectorScale(); }
 }

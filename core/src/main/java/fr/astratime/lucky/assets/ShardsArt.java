@@ -260,7 +260,10 @@ public final class ShardsArt {
      * longue redingote de velours prune ; trois éclats sont sertis sur sa poitrine (bleu, rose, vert). Derrière
      * lui, sa vitrine de verre : des étagères d'éclats étiquetés.
      */
-    public static int[][] collectionneur() {
+    public static int[][] collectionneur() { return collectionneur(VITRINE_AT.length); }
+
+    /** Le Collectionneur avec seulement ses {@code gems} premiers éclats sertis (les autres sertis restent vides). */
+    public static int[][] collectionneur(int gems) {
         PixelCanvas g = new PixelCanvas(W, H);
         int velvet = rgba("5a2a5e"), velvetDark = rgba("3a1a3e"), silver = rgba("d8dce4"), silverDark = rgba("9aa0aa");
         int glassFrame = rgba("8a6a3a"), glassPane = rgba("2a3a4a"), label = rgba("f0e6c8"), cravat = rgba("e6e0d2");
@@ -290,7 +293,8 @@ public final class ShardsArt {
         // Les trois éclats de sa vitrine personnelle, sertis sur sa poitrine.
         for (int i = 0; i < VITRINE_AT.length; i++) {
             g.ellipse(VITRINE_AT[i][0], VITRINE_AT[i][1], 3f, 3f, GOLD_DARK);
-            shard(g, VITRINE_AT[i][0], VITRINE_AT[i][1] + 1, VITRINE_COLORS[i]);
+            if (i < gems) shard(g, VITRINE_AT[i][0], VITRINE_AT[i][1] + 1, VITRINE_COLORS[i]);
+            else g.ellipse(VITRINE_AT[i][0], VITRINE_AT[i][1], 1.5f, 1.5f, rgba("2a1a14")); // le serti vide
         }
         // Visage long et maigre, cheveux argent tirés en arrière.
         g.rect(15, 24, 19, 28, SKIN_SHADE);
@@ -302,8 +306,8 @@ public final class ShardsArt {
         // Œil gauche mi-clos, loupe de joaillier noire vissée sur l'œil droit, qui brille.
         g.line(13, 15, 15, 15, EYE);
         g.set(14, 16, EYE);
-        g.ellipse(20f, 15.5f, 2.6f, 2.6f, rgba("1e1a24"));
-        g.ellipse(20f, 15.5f, 1.6f, 1.6f, rgba("8ad0ff"));
+        g.ellipse(LOUPE_X - 0.5f, LOUPE_Y - 0.5f, 2.6f, 2.6f, rgba("1e1a24"));
+        g.ellipse(LOUPE_X - 0.5f, LOUPE_Y - 0.5f, 1.6f, 1.6f, rgba("8ad0ff"));
         g.set(19, 15, rgba("ffffff"));
         g.set(17, 19, SKIN_SHADE);
         g.line(15, 22, 19, 22, MOUTH);
@@ -313,6 +317,21 @@ public final class ShardsArt {
         g.line(6, 36, 9, 29, GOLD_DARK);
         g.set(9, 28, GOLD_LIGHT);
         return g.outlined();
+    }
+
+    /** Taille de l'éclat serti {@code i} sur sa poitrine ; son coin haut-gauche est au pixel {@link #chestGemLeft}, {@link #chestGemTop}. */
+    /** Le centre de sa loupe de joaillier, en pixels du portrait (bord gauche et haut des pixels : x 20,5 = milieu du pixel 20). */
+    public static final float LOUPE_X = 20.5f, LOUPE_Y = 16f;
+
+    public static final int CHEST_GEM_W = 5, CHEST_GEM_H = 6;
+    public static int chestGemLeft(int i) { return VITRINE_AT[i][0] - 2; }
+    public static int chestGemTop(int i)  { return VITRINE_AT[i][1] - 2; }
+
+    /** @return l'éclat {@code i} de sa poitrine, seul : exactement les pixels de son portrait (pour le faire voler). */
+    public static int[][] chestGem(int i) {
+        PixelCanvas g = new PixelCanvas(CHEST_GEM_W, CHEST_GEM_H);
+        shard(g, 2, 3, VITRINE_COLORS[i]);
+        return g.pixels;
     }
 
     // -------------------------------------------------------------------------

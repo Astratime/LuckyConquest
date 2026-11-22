@@ -14,6 +14,7 @@ import static fr.astratime.lucky.assets.Palette.hex;
  * Les scènes de phase et de mort du Collectionneur, boss des Éclats dispersés (Tour à 10 chapitres, 2026-11-22).
  * Ses trois éclats sertis sur la poitrine ({@link ShardsArt#VITRINE_AT}) s'allument un par phase : l'Héritage dès
  * le début, la Valse à la phase 2, le Scellé à la phase 3. À sa mort, ils se fendent et retournent à la plaine.
+ * L'éclat qui vole est toujours le vrai, découpé dans son portrait : son serti reste vide tant qu'il n'y est pas.
  */
 final class ShardsBossScenes {
 
@@ -27,38 +28,54 @@ final class ShardsBossScenes {
         return kind == EnemyKind.COLLECTIONNEUR ? new CollectorDeath(kit) : null;
     }
 
-    static final String[] GEM = {"..o..", ".o#o.", "o###o", ".o#o.", "..o.."};
     static final Color GLASS = hex("b8d8f0"), INK = hex("1a0a0e");
 
     /** Socle des scènes du Collectionneur : ses éclats sertis, éteints ou allumés. */
     abstract static class CollectorScene extends BossScene {
-        protected final TextureRegion gem;
         protected final Color[] colors = new Color[ShardsArt.VITRINE_COLORS.length];
+        /** Ses vrais éclats, seuls, et leurs sertis vides (découpés dans son portrait sans éclats). */
+        protected final TextureRegion[] chestGems = new TextureRegion[ShardsArt.VITRINE_AT.length];
+        protected final TextureRegion[] emptySockets = new TextureRegion[ShardsArt.VITRINE_AT.length];
 
         CollectorScene(CutsceneKit kit, Moment moment, int phase) {
             super(kit, moment, EnemyKind.COLLECTIONNEUR, phase);
-            gem = art("o#", new Color[] {INK, Color.WHITE}, GEM);
             for (int i = 0; i < colors.length; i++) colors[i] = hex(ShardsArt.VITRINE_COLORS[i]);
+            TextureRegion bare = pixels(ShardsArt.collectionneur(0));
+            for (int i = 0; i < chestGems.length; i++) {
+                chestGems[i] = pixels(ShardsArt.chestGem(i));
+                emptySockets[i] = new TextureRegion(bare, ShardsArt.chestGemLeft(i), ShardsArt.chestGemTop(i),
+                    ShardsArt.CHEST_GEM_W, ShardsArt.CHEST_GEM_H);
+            }
         }
 
-        protected float chestX(int i) { return portraitX(ShardsArt.VITRINE_AT[i][0] + 0.5f); }
-        protected float chestY(int i) { return portraitY(ShardsArt.VITRINE_AT[i][1] + 0.5f); }
+        /** @return le centre de l'éclat {@code i} sur sa poitrine, à l'écran. */
+        protected float chestX(int i) { return portraitX(ShardsArt.chestGemLeft(i) + ShardsArt.CHEST_GEM_W / 2f); }
+        protected float chestY(int i) { return portraitY(ShardsArt.chestGemTop(i) + ShardsArt.CHEST_GEM_H / 2f); }
+
+        /** Le serti {@code i} vide : son éclat est ailleurs. */
+        protected void emptySocket(Batch batch, int i) {
+            onPortrait(batch, emptySockets[i], ShardsArt.chestGemLeft(i), ShardsArt.chestGemTop(i), 1f, 1f);
+        }
+
+        /** @return la taille d'un pixel de son portrait, à l'écran (celle de ses éclats quand ils volent). */
+        protected float gemScale() { return bossScale() * poseScale; }
 
         /** Sa lueur sur l'éclat {@code i} de sa poitrine, s'il est allumé ({@code light} de 0 à 1). */
         protected void lightGem(Batch batch, int i, float light) {
             if (light <= 0f) return;
-            float size = bossScale() * poseScale;
+            float size = gemScale();
             glow(batch, chestX(i), chestY(i), size * 10f * (0.7f + 0.3f * light), colors[i], 0.7f * light);
             glow(batch, chestX(i), chestY(i), size * 3f, WHITE, 0.6f * light);
         }
     }
 
     /**
-     * « Nouvel éclat » : la vitrine derrière lui s'ouvre, un éclat (rose pour la Valse, vert pour le Scellé) en sort
-     * en tournoyant, fait le tour de la scène, et plonge dans son serti ; il s'allume, ses autres éclats répondent.
+     * « Nouvel éclat » : l'éclat encore éteint de sa poitrine (rose pour la Valse, vert pour le Scellé) s'arrache de
+     * son serti, qui reste vide, fait le tour de la scène en tournoyant, et replonge dans son serti ; il s'allume,
+     * ses autres éclats répondent.
      */
     static final class CollectorPhase extends CollectorScene {
-        static final float OUT = 0.5f, DIVE = 1.7f;
+        static final float LEAVE = 0.15f, OUT = 0.6f, DIVE = 1.7f;
         private final int index;
 
         CollectorPhase(CutsceneKit kit, int phase) {
@@ -66,22 +83,27 @@ final class ShardsBossScenes {
             index = Math.min(colors.length - 1, Math.max(1, phase - 1));
         }
 
+        private float leave() { return Interpolation.pow2Out.apply(progress(LEAVE, OUT)); }
+        private float dive()  { return Interpolation.pow3In.apply(progress(DIVE, CLIMAX_PHASE)); }
+
         private float gemX() {
-            float orbit = progress(OUT, DIVE), dive = Interpolation.pow3In.apply(progress(DIVE, CLIMAX_PHASE));
+            float orbit = progress(OUT, DIVE);
             float x = bossX() + MathUtils.cos(orbit * MathUtils.PI2 * 1.25f) * worldWidth() * 0.32f;
-            return MathUtils.lerp(x, chestX(index), dive);
+            return MathUtils.lerp(MathUtils.lerp(chestX(index), x, leave()), chestX(index), dive());
         }
 
         private float gemY() {
-            float orbit = progress(OUT, DIVE), dive = Interpolation.pow3In.apply(progress(DIVE, CLIMAX_PHASE));
-            float rise = Interpolation.pow2Out.apply(progress(0f, OUT));
-            float y = bossY() + bossHeight() * (0.15f + 0.45f * rise) + MathUtils.sin(orbit * MathUtils.PI2 * 1.25f) * worldHeight() * 0.12f;
-            return MathUtils.lerp(y, chestY(index), dive);
+            float orbit = progress(OUT, DIVE);
+            float y = bossY() + bossHeight() * 0.6f + MathUtils.sin(orbit * MathUtils.PI2 * 1.25f) * worldHeight() * 0.12f;
+            return MathUtils.lerp(MathUtils.lerp(chestY(index), y, leave()), chestY(index), dive());
         }
+
+        /** @return sa taille : celle du portrait dans son serti, plus grand pendant qu'il tournoie. */
+        private float gemSize() { return gemScale() * (1f + 1.2f * leave() * (1f - dive())); }
 
         @Override
         protected void step(float delta) {
-            if (at(OUT)) { rumble(0.15f, 4f); sparks(bossX(), bossY() + bossHeight() * 0.4f, 20, colors[index], 400f, 10f); }
+            if (at(LEAVE)) { rumble(0.15f, 4f); sparks(chestX(index), chestY(index), 20, colors[index], 400f, 10f); }
             if (time > OUT && time < CLIMAX_PHASE && random.nextFloat() < delta * 40f) sparks(gemX(), gemY(), 1, colors[index], 120f, 10f);
             if (at(CLIMAX_PHASE)) {
                 rumble(0.6f, 12f);
@@ -103,10 +125,11 @@ final class ShardsBossScenes {
         protected void front(Batch batch) {
             for (int i = 0; i < index; i++) lightGem(batch, i, pulse(4f + i, 0.6f) * (time > CLIMAX_PHASE ? 1f : 0.7f));
             if (time >= CLIMAX_PHASE) lightGem(batch, index, 1f);
-            if (time > 0.1f && time < CLIMAX_PHASE) {                      // l'éclat qui tournoie puis plonge
-                float size = bossScale() * 1.6f * (1f - 0.5f * progress(DIVE, CLIMAX_PHASE));
-                glow(batch, gemX(), gemY(), size * 14f, colors[index], 0.8f);
-                draw(batch, gem, gemX(), gemY(), size, time * 360f, colors[index], 1f);
+            if (time >= LEAVE && time < CLIMAX_PHASE) {                    // le vrai éclat, hors de son serti
+                emptySocket(batch, index);
+                float size = gemSize(), spin = (time - LEAVE) * 360f * (1f - dive());
+                glow(batch, gemX(), gemY(), size * 12f, colors[index], 0.8f);
+                draw(batch, chestGems[index], gemX(), gemY(), size, spin, Color.WHITE, 1f);
             }
             wave(batch, CLIMAX_PHASE, 0.8f, chestX(index), chestY(index), colors[index], worldWidth() * 1.3f);
             flash(batch, colors[index], CLIMAX_PHASE, 0.3f, 0.45f);
@@ -115,7 +138,7 @@ final class ShardsBossScenes {
 
     /**
      * « La vitrine vole en éclats » : ses trois éclats se fendent, la vitre derrière lui se fêle de partout puis
-     * éclate ; les éclats s'envolent dans la nuit, chacun de sa couleur, et lui pâlit et s'efface, la main tendue.
+     * éclate ; ses trois éclats quittent leurs sertis et s'envolent dans la nuit, et lui pâlit et s'efface.
      */
     static final class CollectorDeath extends CollectorScene {
         static final float CRACK = 0.8f;
@@ -139,14 +162,12 @@ final class ShardsBossScenes {
             }
             if (!freed && time >= CLIMAX_DEATH + 0.2f) {                    // les éclats retournent à la plaine
                 freed = true;
-                for (int i = 0; i < colors.length; i++) {
-                    for (int k = 0; k < 4; k++) {
-                        Particle piece = place(gem, chestX(i), chestY(i), (i - 1) * 380f + (random.nextFloat() - 0.5f) * 300f,
-                            700f + 400f * random.nextFloat(), bossScale() * (0.9f + 0.4f * random.nextFloat()), 2.2f);
-                        piece.color.set(colors[i]);
-                        piece.gravity = -200f;
-                        piece.spin = (random.nextFloat() - 0.5f) * 600f;
-                    }
+                for (int i = 0; i < colors.length; i++) {                  // chacun le sien, pas de copie
+                    Particle piece = place(chestGems[i], chestX(i), chestY(i), (i - 1) * 380f + (random.nextFloat() - 0.5f) * 200f,
+                        700f + 300f * random.nextFloat(), gemScale(), 2.2f);
+                    piece.gravity = -200f;
+                    piece.spin = (random.nextFloat() - 0.5f) * 600f;
+                    sparks(chestX(i), chestY(i), 12, colors[i], 300f, 8f);
                 }
             }
         }
@@ -176,6 +197,7 @@ final class ShardsBossScenes {
         protected void front(Batch batch) {
             float dim = 1f - progress(CRACK, CLIMAX_DEATH);
             for (int i = 0; i < colors.length; i++) {
+                if (freed) emptySocket(batch, i);
                 if (time < CLIMAX_DEATH) {
                     lightGem(batch, i, 0.4f + 0.6f * dim);
                     crack(batch, chestX(i), chestY(i) + bossScale() * 2f, -80f, bossScale() * 5f * (1f - dim), 3L + i, INK,
