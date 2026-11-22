@@ -38,6 +38,8 @@ import java.util.Map;
  *       {@link #VEUVE} (Valse) ou le {@link #NOTAIRE} (Scellé), et le {@link #COLLECTIONNEUR}, en trois phases ;</li>
  *   <li>chapitre 4 : le {@link #PILLEUR}, puis {@link #FAUSSAIRE} (Fausse monnaie), {@link #CARTOMANCIENNE}
  *       (Prédiction) ou {@link #DUELLISTE} (Duel), et le {@link #PRETENDANT} et ses trois éclats ;</li>
+ *   <li>La Guerre des Tables : le {@link #SERGENT} (Rassemblement), puis le {@link #CANONNIER} (Canon à jetons),
+ *       l'{@link #ESPIONNE} (Espionnage) ou le {@link #MERCENAIRE} (Contrat), et le {@link #GENERAL} en trois tiers ;</li>
  *   <li>chapitre 5 : le {@link #PORTIER}, puis {@link #COMPTABLE} (Taxe), {@link #DIRECTEUR} (Nouvelle
  *       règle) ou {@link #SECURITE} (Fouille), et la {@link #MAISON} en trois parties ;</li>
  *   <li>L'Ascension : le {@link #LIFTIER_TOUR} (Ascenseur), puis l'{@link #ECHO} (ton dernier tour), le {@link #VERTIGE}
@@ -1096,6 +1098,50 @@ public enum EnemyKind {
         List.of(Card.Suit.PIQUE, Card.Suit.CARREAU, Card.Suit.TREFLE, Card.Suit.COEUR),
         List.of(Card.Suit.COEUR, Card.Suit.CARREAU, Card.Suit.PIQUE, Card.Suit.TREFLE)),
 
+    // ----- Chapitre : La Guerre des Tables (entre le Monde sans Maître et la Maison) -----
+
+    SERGENT("Le Sergent de table", "SERGENT",
+        "Il recrute à chaque table. Chaque Rassemblement appelle un soldat de plus. Abats-les avant qu'ils soient trois.",
+        360_000, 130, 5,
+        weights(EnemySymbol.SWORD, 3, EnemySymbol.SHIELD, 2, EnemySymbol.POTION, 1, EnemySymbol.RALLY, 2),
+        deck(new int[] {3, 6, 9, 12, 14}, new int[] {4, 8, 12},
+            new int[] {5, 9, 13, 14}, new int[] {3, 7, 11}),
+        List.of(Card.Suit.PIQUE, Card.Suit.CARREAU, Card.Suit.TREFLE, Card.Suit.COEUR),
+        List.of(Card.Suit.COEUR, Card.Suit.CARREAU, Card.Suit.PIQUE, Card.Suit.TREFLE)),
+    CANONNIER("Le Canonnier à jetons", "CANONNIER",
+        "Ses boulets, ce sont tes jetons. Plus tu gagnes, plus son Canon a de quoi tirer.",
+        630_000, 80, 4,
+        weights(EnemySymbol.CANNON, 2, EnemySymbol.SWORD, 2, EnemySymbol.SHIELD, 1),
+        deck(new int[] {3, 6, 9, 12, 14}, new int[] {4, 8, 12},
+            new int[] {5, 9, 13, 14}, new int[] {3, 7, 11}),
+        List.of(Card.Suit.PIQUE, Card.Suit.CARREAU, Card.Suit.TREFLE, Card.Suit.COEUR),
+        List.of(Card.Suit.COEUR, Card.Suit.CARREAU, Card.Suit.PIQUE, Card.Suit.TREFLE)),
+    ESPIONNE("L'Espionne", "ESPIONNE",
+        "Elle a lu tes plans. Chaque carte que tu joues lui apprend où se protéger.",
+        630_000, 100, 4,
+        weights(EnemySymbol.SPY, 2, EnemySymbol.SWORD, 3, EnemySymbol.POTION, 1),
+        deck(new int[] {3, 6, 9, 12, 14}, new int[] {4, 8, 12},
+            new int[] {5, 9, 13, 14}, new int[] {3, 7, 11}),
+        List.of(Card.Suit.PIQUE, Card.Suit.CARREAU, Card.Suit.TREFLE, Card.Suit.COEUR),
+        List.of(Card.Suit.COEUR, Card.Suit.CARREAU, Card.Suit.PIQUE, Card.Suit.TREFLE)),
+    MERCENAIRE("Le Mercenaire", "MERCENAIRE",
+        "Il se bat pour sa prime. Laisse-le tranquille un tour, et son Contrat frappe trois fois plus fort.",
+        630_000, 60, 4,
+        weights(EnemySymbol.CONTRACT, 2, EnemySymbol.SWORD, 2, EnemySymbol.SHIELD, 1),
+        deck(new int[] {3, 6, 9, 12, 14}, new int[] {4, 8, 12},
+            new int[] {5, 9, 13, 14}, new int[] {3, 7, 11}),
+        List.of(Card.Suit.PIQUE, Card.Suit.CARREAU, Card.Suit.TREFLE, Card.Suit.COEUR),
+        List.of(Card.Suit.COEUR, Card.Suit.CARREAU, Card.Suit.PIQUE, Card.Suit.TREFLE)),
+    GENERAL("Le Général Va-Tout", "GÉNÉRAL VA-TOUT",
+        "Il commande les armées des Maisons. Ses soldats, ses canons, puis ses lieutenants. Au dernier tiers de ses PV, il fait Va-tout : plus de défense, tout sur l'attaque.",
+        1_250_000, 140, 3,
+        weights(EnemySymbol.SWORD, 2, EnemySymbol.SHIELD, 2, EnemySymbol.POTION, 1, EnemySymbol.RALLY, 1,
+            EnemySymbol.CANNON, 1, EnemySymbol.ALL_OUT, 1),
+        deck(new int[] {3, 6, 9, 12, 14}, new int[] {4, 8, 12},
+            new int[] {5, 9, 13, 14}, new int[] {3, 7, 11}),
+        List.of(Card.Suit.PIQUE, Card.Suit.CARREAU, Card.Suit.TREFLE, Card.Suit.COEUR),
+        List.of(Card.Suit.COEUR, Card.Suit.CARREAU, Card.Suit.PIQUE, Card.Suit.TREFLE)),
+
     // ----- Chapitre 5 : La Maison -----
 
     PORTIER("Le Portier", "PORTIER",
@@ -1359,6 +1405,13 @@ public enum EnemyKind {
         EnemySymbol.SWORD, 2, EnemySymbol.POTION, 1, EnemySymbol.SAFE, 1, EnemySymbol.HOUSE_EDGE, 1));
     private static final Map<EnemySymbol, Integer> HOUSE_PHASE_THREE = Collections.unmodifiableMap(weights(
         EnemySymbol.SWORD, 2, EnemySymbol.HOUSE_EDGE, 1));
+    /** Le Général Va-Tout, sous les deux tiers de ses PV : ses lieutenants le rejoignent (l'Espionne et le Mercenaire). */
+    private static final Map<EnemySymbol, Integer> GENERAL_PHASE_TWO = Collections.unmodifiableMap(weights(
+        EnemySymbol.SWORD, 2, EnemySymbol.SHIELD, 2, EnemySymbol.POTION, 1, EnemySymbol.RALLY, 1, EnemySymbol.CANNON, 1,
+        EnemySymbol.SPY, 1, EnemySymbol.CONTRACT, 1, EnemySymbol.ALL_OUT, 1));
+    /** Le Général Va-Tout, sous le tiers de ses PV : il fait Va-tout, plus de Bouclier ni de Potion, tout sur l'attaque. */
+    private static final Map<EnemySymbol, Integer> GENERAL_PHASE_THREE = Collections.unmodifiableMap(weights(
+        EnemySymbol.SWORD, 3, EnemySymbol.RALLY, 1, EnemySymbol.CANNON, 1, EnemySymbol.CONTRACT, 1, EnemySymbol.ALL_OUT, 2));
 
     /**
      * Symboles du Collectionneur à ses phases 2 et 3 : à chaque tiers de ses PV perdu, il sort un nouvel éclat
@@ -1723,7 +1776,7 @@ public enum EnemyKind {
     /** @return {@code true} pour le boss d'un chapitre ou le roi d'un donjon. */
     public boolean isBoss() {
         return switch (this) {
-            case COMETE, REINE, PROPHETE, ECLAT, COLLECTIONNEUR, PRETENDANT, MAISON, ARCHITECTE, MACHINE_ORIGINELLE, GRAND_CROUPIER, ROI_PIQUE, ROI_COEUR, ROI_CARREAU, ROI_TREFLE,
+            case COMETE, REINE, PROPHETE, ECLAT, COLLECTIONNEUR, PRETENDANT, GENERAL, MAISON, ARCHITECTE, MACHINE_ORIGINELLE, GRAND_CROUPIER, ROI_PIQUE, ROI_COEUR, ROI_CARREAU, ROI_TREFLE,
                  CAPITAINE_RAT, TAVERNIER, GARDIEN_PHARE, CAPITAINE_NOIR,
                  MONSIEUR_LOYAL, CONDUCTEUR, ROUE_FORTUNE, ROI_FORAIN, EMIR, PHARAON, DJINN, DRAGON,
                  LOCOMOTIVE, GRAND_CHEF, DAME_EN_NOIR, DESPERADO,
@@ -1837,7 +1890,7 @@ public enum EnemyKind {
     public float[] phaseThresholds() {
         if (!isBoss()) return new float[0];
         return switch (this) {
-            case COLLECTIONNEUR, PRETENDANT, MAISON, ARCHITECTE -> new float[] {2f / 3f, 1f / 3f};
+            case COLLECTIONNEUR, PRETENDANT, GENERAL, MAISON, ARCHITECTE -> new float[] {2f / 3f, 1f / 3f};
             case MACHINE_ORIGINELLE, GRAND_CROUPIER -> new float[] {PHASE_TWO_RATIO, MACHINE_LAST_RATIO};
             default -> new float[] {PHASE_TWO_RATIO};
         };
@@ -1906,7 +1959,7 @@ public enum EnemyKind {
     public int phaseFor(float hpRatio) {
         return switch (this) {
             case ECLAT, COMETE, REINE -> hpRatio < PHASE_TWO_RATIO ? 2 : 1;
-            case COLLECTIONNEUR, PRETENDANT, MAISON, ARCHITECTE -> hpRatio * 3f <= 1f ? 3 : hpRatio * 3f <= 2f ? 2 : 1;
+            case COLLECTIONNEUR, PRETENDANT, GENERAL, MAISON, ARCHITECTE -> hpRatio * 3f <= 1f ? 3 : hpRatio * 3f <= 2f ? 2 : 1;
             case MACHINE_ORIGINELLE, GRAND_CROUPIER -> hpRatio < MACHINE_LAST_RATIO ? 3 : hpRatio < PHASE_TWO_RATIO ? 2 : 1;
             default -> kingPhaseSymbol() != null && hpRatio < PHASE_TWO_RATIO ? 2 : 1;
         };
@@ -1923,6 +1976,8 @@ public enum EnemyKind {
             case MACHINE_ORIGINELLE -> Lang.t("ELLE TE VOLE UN ROULEAU !");
             case GRAND_CROUPIER -> phase == 2 ? Lang.t("IL TRUQUE TA TABLE !") : Lang.t("CARTES SUR TABLE !");
             case COMETE -> Lang.t("LA COMÈTE S'EMBRASE !");
+            case GENERAL -> phase == 2 ? Lang.t("SES LIEUTENANTS ARRIVENT : ESPIONNAGE ET CONTRAT !")
+                : Lang.t("VA-TOUT : PLUS DE DÉFENSE, TOUT SUR L'ATTAQUE !");
             case PROPHETE -> Lang.t("LA COMÈTE RÉPOND À SON APPEL : COMÈTE !");
             case REINE -> Lang.t("MISE ROYALE : SES TRÈFLES COMPTENT DOUBLE !");
             case ECLAT -> Lang.t("L'ÉCLAT SE FEND : NOUVEAUX SYMBOLES !");
@@ -2016,6 +2071,8 @@ public enum EnemyKind {
         if (this == ARCHITECTE && phase == 2) return ARCHITECT_PHASE_TWO;
         if (this == COLLECTIONNEUR && phase >= 3) return COLLECTOR_PHASE_THREE;
         if (this == COLLECTIONNEUR && phase == 2) return COLLECTOR_PHASE_TWO;
+        if (this == GENERAL && phase >= 3) return GENERAL_PHASE_THREE;
+        if (this == GENERAL && phase == 2) return GENERAL_PHASE_TWO;
         if (this == MAISON && phase >= 3) return HOUSE_PHASE_THREE;
         if (this == MAISON && phase == 2) return HOUSE_PHASE_TWO;
         return weights;
@@ -2105,6 +2162,11 @@ public enum EnemyKind {
             case CARTOMANCIENNE -> List.of(EnemySignature.TAROT);
             case DUELLISTE -> List.of(EnemySignature.BOTTE_SECRETE);
             case PRETENDANT -> List.of(EnemySignature.ECLAT_VOLE);
+            case SERGENT -> List.of(EnemySignature.CLAIRON);
+            case CANONNIER -> List.of(EnemySignature.POUDRE_NOIRE);
+            case ESPIONNE -> List.of(EnemySignature.MICROFILM);
+            case MERCENAIRE -> List.of(EnemySignature.PRIME_DE_RISQUE);
+            case GENERAL -> List.of(EnemySignature.ORDRE_DE_CHARGE, EnemySignature.CLAIRON);
             case RAMASSEUR -> List.of(EnemySignature.POCHE_PLEINE);
             case HERITIER -> List.of(EnemySignature.TESTAMENT);
             case VEUVE -> List.of(EnemySignature.DERNIERE_DANSE);

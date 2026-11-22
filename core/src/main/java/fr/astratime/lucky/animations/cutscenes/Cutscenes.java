@@ -20,6 +20,7 @@ public final class Cutscenes {
             case ECLAT -> new ShardCutscene(kit);
             case COLLECTIONNEUR -> new CollectorCutscene(kit);
             case PRETENDANT -> new PretenderCutscene(kit);
+            case GENERAL -> new GeneralCutscene(kit);
             case MAISON -> new HouseCutscene(kit);
             case ARCHITECTE -> new ArchitectCutscene(kit);
             case MACHINE_ORIGINELLE -> new MachineCutscene(kit);

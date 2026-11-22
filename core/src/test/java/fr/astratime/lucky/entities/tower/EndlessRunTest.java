@@ -43,7 +43,7 @@ class EndlessRunTest {
         assertEquals(Chapter.values().length - 1, EndlessRun.BOSSES.size());
         assertEquals(EnemyKind.COMETE, EndlessRun.BOSSES.get(0));
         assertTrue(EndlessRun.BOSSES.containsAll(List.of(EnemyKind.REINE, EnemyKind.ECLAT, EnemyKind.PRETENDANT,
-            EnemyKind.MAISON, EnemyKind.ARCHITECTE)));
+            EnemyKind.GENERAL, EnemyKind.MAISON, EnemyKind.ARCHITECTE)));
         assertFalse(EndlessRun.BOSSES.contains(EnemyKind.MACHINE_ORIGINELLE));
         assertEquals(EnemyKind.COMETE, EndlessRun.bossOf(EndlessRun.BOSS_EVERY * (EndlessRun.BOSSES.size() + 1)),
             "les boss reviennent à tour de rôle");
