@@ -55,6 +55,8 @@ final class WarBossScenes {
         @Override protected float bossWidth()  { return FULL_W * bossScale(); }
         @Override protected float bossHeight() { return FULL_H * bossScale(); }
 
+        @Override protected void restart() { hatOff = pilesOff = false; }
+
         private int cropX() { return pilesOff ? PILE_COLS : 0; }
         protected int cropY() { return hatOff ? HAT_ROWS : 0; }
 
@@ -175,22 +177,30 @@ final class WarBossScenes {
     // -------------------------------------------------------------------------
 
     /**
-     * « Va-tout » : il jette son bouclier, qui tourne et se brise au sol ; les deux piles de jetons qu'il tient
-     * quittent ses mains et glissent devant lui, où elles se rejoignent ; une lueur rouge le couvre, il se gonfle,
-     * prêt à tout miser.
+     * « Va-tout : plus de défense, tout sur l'attaque » : il tient son Bouclier (le symbole de sa défense) devant lui,
+     * puis le jette par-dessus son épaule ; le bouclier tournoie, tombe et se fend en deux, et ses deux moitiés restent
+     * au sol. Les deux piles de jetons qu'il tient quittent ses mains et glissent devant lui, où elles se rejoignent :
+     * tout est misé. Une lueur rouge le couvre, il se gonfle, et le Va-tout s'allume à côté de lui.
      */
     static final class GeneralAllOut extends GeneralScene {
-        /** Ses piles quittent ses mains, puis se rejoignent devant lui. */
-        static final float PUSH = 1.4f;
-        private final TextureRegion shield;
+        /** Il jette son bouclier, le bouclier se brise au sol ; ses piles quittent ses mains, puis se rejoignent devant lui. */
+        static final float THROW = 0.45f, BREAK = 1.15f, PUSH = 1.4f;
+        private final TextureRegion shield, shieldLeft, shieldRight, allOut;
         private float handLeftX, handRightX, handY;
 
         GeneralAllOut(CutsceneKit kit) {
             super(kit, Moment.PHASE, 3);
             shield = symbol(EnemySymbol.SHIELD);
+            shieldLeft = shield == null ? null : new TextureRegion(shield, 0, 0, shield.getRegionWidth() / 2, shield.getRegionHeight());
+            shieldRight = shield == null ? null : new TextureRegion(shield, shield.getRegionWidth() / 2, 0,
+                shield.getRegionWidth() - shield.getRegionWidth() / 2, shield.getRegionHeight());
+            allOut = symbol(EnemySymbol.ALL_OUT);
         }
 
-        private float throwT() { return progress(0.4f, 1.3f); }
+        private float shieldScale() { return iconScale(0.17f); }
+        /** @return où le bouclier tombe et se brise. */
+        private float groundX() { return bossX() + worldWidth() * 0.33f; }
+        private float landY()   { return bossBottom() + shieldScale() * 5f; }
 
         /** @return où est la pile {@code side} (-1 gauche, 1 droite) : de sa main jusque devant lui. */
         private float pileX(int side) {
@@ -201,15 +211,10 @@ final class WarBossScenes {
 
         @Override
         protected void step(float delta) {
-            if (at(1.3f)) {                                                  // le bouclier se brise
-                rumble(0.3f, 8f);
-                sparks(bossX() + worldWidth() * 0.32f, groundY(), 40, hex("b0b8c8"), 600f, 10f);
-            }
-            if (at(PUSH)) {                                                  // ses vraies piles quittent ses mains
-                handLeftX = fullX(PILE_COLS / 2f);
-                handRightX = fullX(FULL_W - PILE_COLS / 2f);
-                handY = fullY(PILE_TOP + PILE_ROWS / 2f);
-                takePiles();
+            if (at(THROW)) rumble(0.1f, 3f);
+            if (at(BREAK)) {                                                 // le bouclier se brise
+                rumble(0.35f, 9f);
+                sparks(groundX(), landY(), 40, hex("b0b8c8"), 600f, 10f);
             }
             if (at(CLIMAX_PHASE)) {
                 rumble(0.7f, 14f);
@@ -220,27 +225,46 @@ final class WarBossScenes {
 
         @Override
         protected void back(Batch batch) {
+            if (time >= PUSH && !pilesOff) {                                 // ses vraies piles quittent ses mains
+                handLeftX = fullX(PILE_COLS / 2f);
+                handRightX = fullX(FULL_W - PILE_COLS / 2f);
+                handY = fullY(PILE_TOP + PILE_ROWS / 2f);
+                takePiles();
+            }
             fill(batch, Color.BLACK, 0.45f * progress(0.2f, 1.0f));
             glow(batch, bossX(), bossY(), bossHeight() * 1.6f, BLOOD, 0.35f * progress(1.4f, CLIMAX_PHASE) * pulse(5f, 0.6f));
             poseTint = 0.4f * progress(1.4f, CLIMAX_PHASE);
             poseTintColor.set(BLOOD);
             poseStretch = 0.08f * progress(1.6f, CLIMAX_PHASE);
-            poseTilt = -8f * gesture(0.3f, 0.9f);
+            poseTilt = -9f * gesture(0.2f, 0.95f);
+            if (shield != null && time >= BREAK) {                           // ses deux moitiés, au sol
+                float apart = Interpolation.pow2Out.apply(progress(BREAK, BREAK + 0.35f)), s = shieldScale();
+                draw(batch, shieldLeft, groundX() - s * 4f - apart * s * 6f, landY() - apart * s * 3f, s, 70f * apart, WHITE, 1f);
+                draw(batch, shieldRight, groundX() + s * 4f + apart * s * 6f, landY() - apart * s * 3f, s, -65f * apart, WHITE, 1f);
+            }
         }
 
         @Override
         protected void front(Batch batch) {
             drawSides(batch);
-            if (shield != null && time < 1.3f) {                              // le bouclier jeté, qui tournoie
-                float t = throwT();
-                float x = MathUtils.lerp(bossX(), bossX() + worldWidth() * 0.32f, t);
-                float y = MathUtils.lerp(bossY(), groundY(), t) + MathUtils.sin(t * MathUtils.PI) * worldHeight() * 0.2f;
-                draw(batch, shield, x, y, iconScale(0.12f), time * 720f, WHITE, 1f);
+            if (shield != null && time < BREAK) {                            // il tient son bouclier, puis le jette
+                float t = Interpolation.pow2In.apply(progress(THROW, BREAK)), s = shieldScale();
+                float x0 = fullX(12f), y0 = fullY(33f);
+                float x = MathUtils.lerp(x0, groundX(), t);
+                float y = MathUtils.lerp(y0, landY(), t) + MathUtils.sin(t * MathUtils.PI) * worldHeight() * 0.28f;
+                if (time < THROW) glow(batch, x0, y0, s * 30f, hex("7ab8ff"), 0.35f);
+                draw(batch, shield, x, y, s, -t * 900f, WHITE, 1f);
             }
             if (pilesOff) {                                                   // ses deux piles, poussées au milieu
                 for (int s = -1; s <= 1; s += 2) draw(batch, s < 0 ? leftPile : rightPile, pileX(s), handY, bossScale(), 0f, WHITE, 1f);
             }
             if (time >= CLIMAX_PHASE) glow(batch, bossX(), handY, 300f, GOLD, 0.5f * (1f - progress(CLIMAX_PHASE, 3.6f)));
+            if (allOut != null && time >= CLIMAX_PHASE) {                     // le Va-tout qu'il joue
+                float k = Interpolation.pow2Out.apply(progress(CLIMAX_PHASE, CLIMAX_PHASE + 0.4f));
+                float x = bossX() + bossWidth() * 0.85f, y = bossY() + bossHeight() * 0.3f;
+                glow(batch, x, y, iconScale(0.32f) * pulse(6f, 0.7f), BLOOD, 0.6f * k);
+                draw(batch, allOut, x, y, iconScale(0.13f) * (1.6f - 0.6f * k), 0f, WHITE, k);
+            }
             flash(batch, BLOOD, CLIMAX_PHASE, 0.3f, 0.4f);
         }
     }
@@ -250,15 +274,20 @@ final class WarBossScenes {
     // -------------------------------------------------------------------------
 
     /**
-     * Il a tout misé, il a tout perdu : les deux piles de jetons qu'il tient glissent de ses mains et roulent au loin,
-     * son bicorne s'envole, un drapeau blanc monte à côté de lui ; il s'efface dans la fumée de poudre. Les jetons et
-     * le bicorne sont ceux de son portrait : on les y découpe, ils ne restent pas dessinés sur lui.
+     * « Le Général hisse le drapeau blanc » : il a tout misé, il a tout perdu. Les deux piles de jetons qu'il tient
+     * glissent de ses mains et roulent au loin, son bicorne s'envole (les vrais morceaux de son portrait). Puis il
+     * hisse lui-même le drapeau blanc : la hampe monte dans sa main droite au-dessus de sa tête nue, le drapeau se
+     * déploie et claque au vent. Il reste là, le bras levé, et s'affaisse dans la fumée de poudre.
      */
     static final class GeneralDeath extends GeneralScene {
         private static final int CHIPS_PER_PILE = PILE_ROWS / 2;
         /** Sous le bicorne : ses cheveux gris, sur le haut du crâne (colonnes 11 à 23, au-dessus de la ligne 11). */
         private static final int SCALP_LEFT = 11;
-        static final float CRUMBLE = 0.5f, HAT_OFF = 0.8f;
+        static final float CRUMBLE = 0.5f, HAT_OFF = 0.8f, HOIST = 1.1f, SLUMP = 3.0f;
+        /** Sa main droite (à droite de l'écran), où était sa pile, en pixels du portrait entier. */
+        private static final float HAND_X = 30.5f, HAND_Y = 36f;
+        private static final Color POLE = hex("6a4a2a"), POLE_DARK = hex("2a1a10"), FIST = hex("e8b890");
+        private static final Color FLAG_SHADE = hex("dcd4c8"), FLAG_HEM = hex("b8b0a4");
         private final TextureRegion scalp;
         private final TextureRegion[] pileChips = new TextureRegion[CHIPS_PER_PILE * 2];
 
@@ -274,8 +303,11 @@ final class WarBossScenes {
                 "oiiiiiiiiiiio");
         }
 
-        private float flagX()   { return bossX() + bossWidth() * 0.85f; }
-        private float flagTop() { return groundY() + MathUtils.lerp(0f, bossHeight() * 1.2f, Interpolation.pow2Out.apply(progress(1.0f, CLIMAX_DEATH))); }
+        /** @return de 0 à 1 : la hampe qui monte dans sa main. */
+        private float hoist() { return Interpolation.pow2Out.apply(progress(HOIST, CLIMAX_DEATH)); }
+
+        /** @return le haut de la hampe, en pixels du portrait (au-dessus de sa tête quand elle est hissée). */
+        private float poleTop() { return MathUtils.lerp(HAND_Y - 4f, -16f, hoist()); }
 
         @Override
         protected void step(float delta) {
@@ -289,50 +321,63 @@ final class WarBossScenes {
                     falling.gravity = 900f;
                     falling.spin = 360f * (random.nextFloat() - 0.5f) * 4f;
                 }
-                takePiles();
             }
             if (at(HAT_OFF)) {                                                // son propre bicorne s'envole
                 rumble(0.15f, 5f);
                 Cutscene.Particle flying = place(hat, fullX(FULL_W / 2f), fullY(HAT_ROWS / 2f), -220f, 950f, bossScale(), 2.2f);
                 flying.gravity = 1300f;
                 flying.spin = -300f;
-                takeHat();
             }
-            if (time > 1.2f && time < 3.6f && random.nextFloat() < delta * 20f) {
-                sparks(bossX() + (random.nextFloat() - 0.5f) * bossWidth(), bossBottom() + bossHeight() * random.nextFloat(), 3,
-                    POWDER, 150f, 14f);
+            if (time > 1.2f && random.nextFloat() < delta * 18f) {           // la fumée de poudre
+                sparks(bossX() + (random.nextFloat() - 0.5f) * bossWidth() * 1.6f, bossBottom() + bossHeight() * random.nextFloat() * 0.6f,
+                    2, POWDER, 120f, 40f);
             }
-            if (at(CLIMAX_DEATH)) {
-                rumble(0.5f, 8f);
-                spray(coin, bossX(), bossY(), 20, 40f, 140f, 800f, coinScale(0.04f), 1400f, 1.5f);
+            if (at(CLIMAX_DEATH)) {                                           // le drapeau claque, tout en haut
+                rumble(0.4f, 6f);
+                sparks(fullX(HAND_X), fullY(poleTop()), 30, FLAG, 400f, 12f);
             }
         }
 
         @Override
         protected void back(Batch batch) {
-            fill(batch, POWDER, 0.2f * progress(1.0f, 3.0f));
-            poseTilt = -6f * progress(0.3f, 1.2f);
-            poseTint = 0.5f * progress(1.6f, 3.0f);
+            if (time >= CRUMBLE && !pilesOff) takePiles();                    // on retire les vrais morceaux du portrait
+            if (time >= HAT_OFF && !hatOff) takeHat();
+            fill(batch, POWDER, 0.22f * progress(1.0f, 3.5f));
+            poseTilt = -6f * gesture(0.3f, 1.1f);
+            float slump = Interpolation.pow2.apply(progress(SLUMP, SLUMP + 0.9f));
+            poseStretch = -0.1f * slump;
+            poseY = -bossHeight() * 0.04f * slump;
+            poseTint = 0.35f * progress(SLUMP, SLUMP + 1.2f);
             poseTintColor.set(POWDER);
-            poseAlpha = 1f - progress(2.4f, 3.8f);
-            showBoss = time < 3.9f;
+            poseShadow = 0.25f * slump;
         }
 
         @Override
         protected void front(Batch batch) {
             drawSides(batch);
             if (hatOff) onHim(batch, scalp, SCALP_LEFT, HAT_ROWS - scalp.getRegionHeight());   // tête nue
-            float x = flagX(), top = flagTop();                               // le drapeau blanc qui monte
-            rect(batch, hex("4a2e1a"), 1f, x - 3f, groundY(), 6f, top - groundY());
-            float wave = MathUtils.sin(time * 8f) * 6f;
-            float flagW = bossWidth() * 0.5f, flagH = bossHeight() * 0.22f;
-            if (top > groundY() + flagH) {
-                for (int k = 0; k < 6; k++) {
-                    float w = flagW / 6f;
-                    rect(batch, k % 2 == 0 ? FLAG : hex("d8d0c4"), 1f, x + 3f + k * w, top - flagH + MathUtils.sin(time * 8f + k) * 4f + wave * 0.2f,
-                        w + 1f, flagH);
-                }
+            if (time < HOIST) return;
+            // La hampe dans sa main droite, qui monte au-dessus de sa tête.
+            float appear = progress(HOIST, HOIST + 0.2f);
+            float x = fullX(HAND_X), bottom = fullY(HAND_Y + 6f), top = fullY(poleTop());
+            float px = bossScale() * poseScale;
+            rect(batch, POLE_DARK, appear, x - px * 0.9f, bottom, px * 1.8f, top - bottom);
+            rect(batch, POLE, appear, x - px * 0.5f, bottom, px * 1.0f, top - bottom);
+            glow(batch, x, fullY(HAND_Y), px * 6f, FLAG, 0.25f * appear);
+            rect(batch, FIST, appear, x - px * 1.5f, fullY(HAND_Y + 1.5f), px * 3f, px * 3f);       // son poing
+            // Le drapeau blanc qui se déploie en haut de la hampe, et claque au vent.
+            float open = Interpolation.pow2Out.apply(progress(HOIST + 0.5f, CLIMAX_DEATH + 0.2f));
+            if (open <= 0f) return;
+            float flagW = bossWidth() * 0.62f * open, flagH = bossHeight() * 0.26f;
+            int strips = 10;
+            for (int k = 0; k < strips; k++) {
+                float u = k / (float) strips, w = flagW / strips;
+                float wave = MathUtils.sin(time * 9f - k * 0.8f) * px * 2.2f * (0.3f + u);
+                float fx = x + px + k * w, fy = top - flagH + wave;
+                rect(batch, k % 2 == 0 ? FLAG : FLAG_SHADE, appear, fx, fy, w + 1f, flagH * (1f - 0.08f * u));
+                rect(batch, FLAG_HEM, appear, fx, fy, w + 1f, px);
             }
+            rect(batch, GOLD, appear, x - px * 1.2f, top, px * 2.4f, px * 2f);                // la pointe de la hampe
             flash(batch, FLAG, CLIMAX_DEATH, 0.3f, 0.35f);
         }
     }

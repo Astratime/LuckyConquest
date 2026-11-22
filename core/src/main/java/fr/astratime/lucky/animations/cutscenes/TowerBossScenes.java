@@ -1,20 +1,23 @@
 package fr.astratime.lucky.animations.cutscenes;
 
 import com.badlogic.gdx.graphics.Color;
+import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.Interpolation;
 import com.badlogic.gdx.math.MathUtils;
-import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.utils.Array;
+import fr.astratime.lucky.assets.StoryPortraits;
 import fr.astratime.lucky.entities.enemy.EnemyKind;
 import fr.astratime.lucky.entities.enemy.EnemySymbol;
+import fr.astratime.lucky.views.FrontScene;
 
 import static fr.astratime.lucky.assets.Palette.hex;
 
 /**
- * Les scènes de phase et de mort des boss de la Tour des épreuves (choix d'Astra, 2026-10-24).
- * La phase de la Comète et toute la Machine Originelle ont leurs propres cinématiques.
+ * Les scènes de phase et de mort des boss de l'Histoire (choix d'Astra, 2026-10-24 ; refaites le 2026-11-22 pour
+ * montrer ce que dit chaque phrase, devant le décor de leur chapitre). La phase de la Comète, toute la Machine
+ * Originelle et le Croupier ont leurs propres cinématiques.
  */
 final class TowerBossScenes {
 
@@ -192,37 +195,38 @@ final class TowerBossScenes {
     }
 
     /**
-     * Sa vraie couronne lui tombe de la tête ; elle se fend, se brise en deux, puis part en poussière d'or.
-     * Derrière elle, son château de cartes s'écroule.
+     * Sa vraie couronne lui glisse de la tête ; elle tombe, se fend, se brise en deux puis part en poussière d'or.
+     * Derrière elle, son château de cartes s'écroule. Sans couronne, la Reine n'est plus qu'une carte : elle se
+     * retourne sur le dos d'une carte et tombe à plat.
      */
     static final class QueenDeath extends BossScene {
-        static final float SLIP = 0.5f, LAND = 1.15f, DUST = 3.0f;
-        /** Sa couronne dans son portrait : colonnes 9 à 25, lignes 0 à 9. */
-        private static final int CROWN_X = 9, CROWN_W = 17, CROWN_H = 10;
-        private static final Color HAIR = hex("6a1e6a");
-        private final TextureRegion crown, left, right, body, scepter, back;
-        private boolean collapsed, dusted;
-        private final float[] halves = new float[8];                // x, y, rotation, vx des deux moitiés
+        static final float SLIP = 0.5f, LAND = 1.15f, DUST = 3.0f, FLIP = 3.5f, TURNED = 3.9f, TOPPLE = 4.3f, DOWN = 4.75f;
+        private static final Color VIOLET = hex("c8a0ff");
+        private final Piece crown;
+        private final TextureRegion bare, left, right, back, self;
+        private boolean off, collapsed, dusted;
+        private float crownX, crownY;
 
         QueenDeath(CutsceneKit kit) {
             super(kit, Moment.DEATH, EnemyKind.REINE, 0);
-            crown   = new TextureRegion(boss, CROWN_X, 0, CROWN_W, CROWN_H);
-            left    = new TextureRegion(boss, CROWN_X, 0, CROWN_W / 2, CROWN_H);
-            right   = new TextureRegion(boss, CROWN_X + CROWN_W / 2, 0, CROWN_W - CROWN_W / 2, CROWN_H);
-            body    = new TextureRegion(boss, 0, CROWN_H, boss.getRegionWidth(), boss.getRegionHeight() - CROWN_H);
-            scepter = new TextureRegion(boss, CROWN_X + CROWN_W, 0, boss.getRegionWidth() - CROWN_X - CROWN_W, CROWN_H);
-            back    = gameCard("cards/light/BACK.png");
+            int[][] rest = StoryPortraits.without(EnemyKind.REINE, StoryPortraits.Prop.QUEEN_CROWN);
+            crown = lift(StoryPortraits.pixels(EnemyKind.REINE), rest);
+            bare  = pixels(rest);
+            left  = new TextureRegion(crown.region, 0, 0, crown.width / 2, crown.height);
+            right = new TextureRegion(crown.region, crown.width / 2, 0, crown.width - crown.width / 2, crown.height);
+            back  = gameCard("cards/light/BACK.png");                   // son château de cartes
+            self  = back;                                               // elle, devenue une carte de son château
         }
 
-        @Override protected void restart() { collapsed = false; dusted = false; }
+        @Override protected void restart() { off = false; collapsed = false; dusted = false; }
 
-        private float crownScale() { return bossScale(); }
-        private float groundX() { return bossX() + bossWidth() * 0.55f; }
-        private float groundCrownY() { return groundY() + CROWN_H * crownScale() / 2f; }
+        private float groundX() { return bossX() + bossWidth() * 0.62f; }
+        private float groundCrownY() { return groundY() + crown.height * bossScale() / 2f + 30f; }
+        private float cardScale() { return bossHeight() / self.getRegionHeight(); }
 
         @Override
         protected void step(float delta) {
-            if (at(LAND)) { rumble(0.25f, 6f); sparks(groundX(), groundY() + 10f, 30, GOLD, 500f, 14f); }
+            if (at(LAND)) { rumble(0.25f, 6f); sparks(groundX(), groundCrownY() - 20f, 30, GOLD, 500f, 14f); }
             if (at(CLIMAX_DEATH)) {                                     // elle se brise en deux
                 rumble(0.5f, 10f);
                 sparks(groundX(), groundCrownY(), 60, GOLD, 800f, 18f);
@@ -252,6 +256,17 @@ final class TowerBossScenes {
                     }
                 }
             }
+            if (at(FLIP)) sparks(bossX(), bossY(), 30, VIOLET, 400f, 12f);
+            if (at(DOWN)) {                                             // la carte tombe à plat
+                rumble(0.3f, 8f);
+                for (int i = 0; i < 24; i++) {
+                    Particle dust = particle(bossX() + random.nextFloat() * bossHeight(), bossBottom() + 20f, 60f + 60f * random.nextFloat(),
+                        120f + 200f * random.nextFloat(), 1.2f, 60f + 60f * random.nextFloat());
+                    dust.color.set(0.8f, 0.6f, 0.7f, 0.35f);
+                    dust.drag = 0.3f;
+                    glows.add(dust);
+                }
+            }
         }
 
         /** @return la place d'une carte du château (rangée {@code row} depuis le haut), derrière la Reine. */
@@ -261,7 +276,7 @@ final class TowerBossScenes {
         }
 
         private float split() { return Interpolation.pow2Out.apply(progress(CLIMAX_DEATH, CLIMAX_DEATH + 0.5f)); }
-        private float halfX(int side) { return groundX() + (side == 0 ? -1f : 1f) * (CROWN_W * crownScale() / 4f + 70f * split()); }
+        private float halfX(int side) { return groundX() + (side == 0 ? -1f : 1f) * (crown.width * bossScale() / 4f + 70f * split()); }
         private float halfY() { return groundCrownY() + 40f * MathUtils.sin(split() * MathUtils.PI); }
 
         @Override
@@ -275,46 +290,59 @@ final class TowerBossScenes {
                     }
                 }
             }
-            poseShadow = 0.5f * progress(CLIMAX_DEATH, CLIMAX_DEATH + 1.0f);
-            poseAlpha = 1f - 0.6f * progress(CLIMAX_DEATH, CLIMAX_DEATH + 1.5f);
-            poseY = -30f * progress(CLIMAX_DEATH, CLIMAX_DEATH + 1.5f);
-            poseX = time < SLIP ? (random.nextFloat() - 0.5f) * 8f : 0f;
-            // dès que sa couronne glisse, on la dessine à part : son portrait reste sans couronne
-            showBoss = time < SLIP;
-            if (!showBoss) {
-                float scale = bossScale(), x0 = bossX() + poseX - bossWidth() / 2f, y0 = bossBottom() + poseY;
-                float light = 1f - poseShadow;
-                batch.setColor(light, light, light, poseAlpha);
-                batch.draw(body, x0, y0, body.getRegionWidth() * scale, body.getRegionHeight() * scale);
-                batch.draw(scepter, x0 + (CROWN_X + CROWN_W) * scale, y0 + body.getRegionHeight() * scale,
-                    scepter.getRegionWidth() * scale, CROWN_H * scale);
-                cap(batch, x0, y0, scale, CROWN_H - 1, CROWN_X, CROWN_X + CROWN_W - 1, HAIR, light, poseAlpha);   // ses cheveux, sous la couronne
+            if (!off && time >= SLIP) {                                 // sa vraie couronne glisse : elle n'en a plus
+                off = true;
+                crownX = pieceX(crown);
+                crownY = pieceY(crown);
+                wear(bare);
             }
+            poseShadow = 0.45f * progress(CLIMAX_DEATH, FLIP);
+            poseX = time < SLIP ? (random.nextFloat() - 0.5f) * 8f : 0f;
+            poseTilt = -4f * gesture(SLIP, LAND + 0.4f);
+            showBoss = time < FLIP;
+            if (time >= FLIP) drawTurning(batch);
+        }
+
+        /** Elle se retourne comme une carte : son portrait se referme, le dos d'une carte s'ouvre, puis elle tombe à plat. */
+        private void drawTurning(Batch batch) {
+            float k = progress(FLIP, TURNED);
+            if (k < 0.5f) {
+                float w = bossWidth() * (1f - 2f * k), h = bossHeight();
+                batch.setColor(0.55f, 0.55f, 0.55f, 1f);
+                batch.draw(boss, bossX() - w / 2f, bossBottom(), w, h);
+                return;
+            }
+            float s = cardScale(), full = self.getRegionWidth() * s, w = full * (2f * k - 1f), h = self.getRegionHeight() * s;
+            float fall = time < TOPPLE ? 0f : Interpolation.bounceOut.apply(progress(TOPPLE, DOWN + 0.25f));
+            float x = bossX() - w / 2f, light = 0.75f + 0.25f * progress(TURNED, TURNED + 0.3f);
+            glow(batch, bossX(), bossY(), bossWidth() * 1.6f, VIOLET, 0.3f * (1f - progress(TURNED, DOWN)));
+            batch.setColor(light, light, light, 1f);
+            batch.draw(self, x, bossBottom(), w, 0f, w, h, 1f, 1f, -90f * fall);
         }
 
         @Override
         protected void front(Batch batch) {
-            float scale = crownScale();
-            if (time < SLIP) return;
+            float scale = bossScale();
+            if (!off) return;
             if (time < CLIMAX_DEATH) {                                  // elle tombe de sa tête, roule un peu, puis se fend
                 float k = progress(SLIP, LAND);
-                float headX = portraitX(CROWN_X + CROWN_W / 2f), headY = portraitY(CROWN_H / 2f);
-                float x = MathUtils.lerp(headX, groundX(), k);
-                float y = MathUtils.lerp(headY, groundCrownY(), Interpolation.bounceOut.apply(k)) + 80f * MathUtils.sin(k * MathUtils.PI);
+                float x = MathUtils.lerp(crownX, groundX(), k);
+                float y = MathUtils.lerp(crownY, groundCrownY(), Interpolation.bounceOut.apply(k)) + 80f * MathUtils.sin(k * MathUtils.PI);
                 float rot = -25f * Interpolation.pow2Out.apply(k) + (time > LAND ? 25f * progress(LAND, LAND + 0.3f) : 0f);
-                draw(batch, crown, x, y, scale, rot, WHITE, 1f);
+                draw(batch, crown.region, x, y, scale, rot, WHITE, 1f);
                 float crack = progress(LAND + 0.3f, CLIMAX_DEATH);
                 if (crack > 0f) {
-                    crack(batch, groundX(), groundCrownY() + CROWN_H * scale / 2f, -90f, CROWN_H * scale * crack, 7L, hex("1a0a10"), 1f, 5f);
+                    crack(batch, groundX(), groundCrownY() + crown.height * scale / 2f, -90f, crown.height * scale * crack, 7L,
+                        hex("1a0a10"), 1f, 5f);
                 }
                 return;
             }
+            flash(batch, GOLD, CLIMAX_DEATH, 0.3f, 0.5f);
             if (time >= DUST + 0.2f) return;                            // il n'en reste que de la poussière
             float fade = 1f - progress(DUST - 0.2f, DUST + 0.2f);
             float s = split();
             draw(batch, left, halfX(0), halfY(), scale, -30f * s, WHITE, fade);
             draw(batch, right, halfX(1), halfY(), scale, 30f * s, WHITE, fade);
-            flash(batch, GOLD, CLIMAX_DEATH, 0.3f, 0.5f);
         }
     }
 
@@ -389,292 +417,383 @@ final class TowerBossScenes {
     // Le Prétendant
     // -------------------------------------------------------------------------
 
-    /** Les trois éclats sur la couronne du Prétendant, comme à son entrée : la Comète, la Reine, l'Éclat Originel. */
+    /** Les couleurs des trois pouvoirs volés, comme à son entrée : la Comète, la Reine, l'Éclat Originel. */
     static final Color[] SHARDS = {Color.valueOf("ffc93a"), Color.valueOf("e0283a"), Color.valueOf("fff6c8")};
-    /** Leur place sur son portrait (pixels, depuis le haut à gauche), et celle de ses yeux. */
-    static final float[] GEM_X = {10f, 17f, 24f};
-    static final float GEM_Y = 3.5f;
+    /** Ses yeux sur son portrait (pixels, depuis le haut à gauche). */
     static final float[][] PRETENDER_EYES = {{14f, 17.5f}, {21f, 17.5f}};
-    static final String[] GEM = {"..o..", ".o#o.", "o###o", ".o#o.", "..o.."};
 
-    /** Socle des trois scènes du Prétendant : ses éclats sertis, qui se fendent puis se brisent. */
-    abstract static class PretenderScene extends BossScene {
-        protected final TextureRegion gem, chip;
-
-        PretenderScene(CutsceneKit kit, Moment moment, int phase) {
-            super(kit, moment, EnemyKind.PRETENDANT, phase);
-            gem  = art("o#", new Color[] {hex("1a0a0e"), Color.WHITE}, GEM);
-            chip = load("hud/chip_enemy.png");
-        }
-
-        /** Dessine l'éclat {@code i} sur sa couronne ; {@code crack} de 0 à 1 le fend. */
-        protected void drawGem(Batch batch, int i, float crack, float alpha) {
-            float x = portraitX(GEM_X[i]), y = portraitY(GEM_Y), scale = bossScale() * 1.1f * poseScale;
-            float shake = crack > 0f ? (random.nextFloat() - 0.5f) * 6f * crack : 0f;
-            glow(batch, x, y, scale * 14f, SHARDS[i], 0.7f * alpha);
-            draw(batch, gem, x + shake, y, scale, 0f, SHARDS[i], alpha);
-            if (crack > 0f) crack(batch, x + shake, y + scale * 2.5f, -80f, scale * 5f * crack, 3L + i, hex("1a0a0e"), alpha, 3f);
-        }
-
-        /** L'éclat {@code i} se brise : ses morceaux et ses étincelles. */
-        protected void shatter(int i) {
-            float x = portraitX(GEM_X[i]), y = portraitY(GEM_Y);
-            sparks(x, y, 50, SHARDS[i], 900f, 18f);
-            for (int k = 0; k < 10; k++) {
-                Particle piece = place(new TextureRegion(gem, 1 + random.nextInt(3), 1 + random.nextInt(3), 1, 1), x, y,
-                    (random.nextFloat() - 0.5f) * 800f, 200f + 500f * random.nextFloat(), bossScale() * 0.8f, 1.4f);
-                piece.color.set(SHARDS[i]);
-                piece.gravity = 1600f;
-                piece.spin = (random.nextFloat() - 0.5f) * 700f;
-            }
-        }
-
-        /** Des jetons de casino qui volent dans tous les sens depuis ({@code x}, {@code y}). */
-        protected void chips(float x, float y, int count, float speed) {
-            for (int k = 0; k < count; k++) {
-                Particle token = place(chip, x, y, 0f, 0f, fit(50f, chip.getRegionHeight()) * (0.7f + 0.6f * random.nextFloat()), 2.2f);
-                float angle = 360f * random.nextFloat(), v = speed * (0.4f + 0.6f * random.nextFloat());
-                token.vx = MathUtils.cosDeg(angle) * v;
-                token.vy = MathUtils.sinDeg(angle) * v + 300f;
-                token.gravity = 900f + 900f * random.nextFloat();
-                token.spin = (random.nextFloat() - 0.5f) * 1400f;
+    /**
+     * Le morceau {@code region}, centré à l'écran sur ({@code x}, {@code y}) et agrandi {@code scale} fois, vole en
+     * carrés de {@code cell} pixels teintés {@code tint} ; {@code squash} écrase sa hauteur (un morceau couché).
+     */
+    static void burst(BossScene scene, TextureRegion region, float x, float y, float scale, float squash, int cell, Color tint,
+                      float speed, float gravity, float life) {
+        int w = region.getRegionWidth(), h = region.getRegionHeight();
+        for (int py = 0; py < h; py += cell) {
+            for (int px = 0; px < w; px += cell) {
+                int cw = Math.min(cell, w - px), ch = Math.min(cell, h - py);
+                float cx = x + (px + cw / 2f - w / 2f) * scale, cy = y + (h / 2f - py - ch / 2f) * scale * squash;
+                float dx = cx - x, dy = cy - y, length = Math.max(1f, (float) Math.sqrt(dx * dx + dy * dy));
+                float v = speed * (0.4f + 0.6f * scene.random.nextFloat());
+                Cutscene.Particle piece = scene.place(new TextureRegion(region, px, py, cw, ch), cx, cy,
+                    dx / length * v + (scene.random.nextFloat() - 0.5f) * speed * 0.4f, dy / length * v * 0.5f + speed * 0.35f,
+                    scale, life * (0.7f + 0.6f * scene.random.nextFloat()));
+                piece.gravity = gravity;
+                piece.spin = (scene.random.nextFloat() - 0.5f) * 600f;
+                piece.color.set(tint);
             }
         }
     }
 
-    /** Phase 2 : les éclats de gauche et de droite de sa couronne se fendent et se brisent ; ses jetons volent partout. */
-    static final class PretenderShard extends PretenderScene {
-        static final float CRACK = 1.0f;
+    /** Socle des trois scènes du Prétendant : ses vrais éclats, qui se fendent puis se brisent un à un. */
+    abstract static class PretenderScene extends BossScene {
 
-        PretenderShard(CutsceneKit kit) { super(kit, Moment.PHASE, 2); }
+        PretenderScene(CutsceneKit kit, Moment moment, int phase) { super(kit, moment, EnemyKind.PRETENDANT, phase); }
+
+        /** @return son portrait sans {@code props}. */
+        protected static int[][] without(StoryPortraits.Prop... props) { return StoryPortraits.without(EnemyKind.PRETENDANT, props); }
+
+        /** Dessine son vrai éclat {@code piece} à sa place, qui brille de {@code color} ; {@code crack} de 0 à 1 le fend. */
+        protected void drawShard(Batch batch, Piece piece, Color color, float crack) {
+            float x = pieceX(piece), y = pieceY(piece), s = bossScale();
+            float shake = crack > 0f ? (random.nextFloat() - 0.5f) * 8f * crack : 0f;
+            glow(batch, x, y, s * (14f + 6f * crack), color, 0.55f + 0.3f * crack);
+            draw(batch, piece.region, x + shake, y, s, 0f, WHITE, 1f);
+            if (crack > 0f) {
+                crack(batch, x + shake, y + piece.height * s * 0.45f, -95f, piece.height * s * 0.9f * crack, 3L, hex("1a0a0e"), 1f, 4f);
+                crack(batch, x + shake, y, -20f, piece.width * s * 0.5f * crack, 5L, hex("1a0a0e"), 1f, 3f);
+            }
+        }
+
+        /** Son vrai éclat {@code piece} se brise : ses pixels volent, avec des étincelles de sa couleur. */
+        protected void shatter(Piece piece, Color color) {
+            float x = pieceX(piece), y = pieceY(piece);
+            sparks(x, y, 60, color, 900f, 18f);
+            burst(this, piece.region, x, y, bossScale(), 1f, 1, WHITE, 700f, 1500f, 1.4f);
+        }
+    }
+
+    /**
+     * Phase 2 : sa carte Rouleau interdit flotte à côté de lui, tenue par un fil de lumière à l'éclat de l'Éclat
+     * Originel (à droite). L'éclat se fend et se brise : le fil casse, le cadenas de la carte tombe, la carte se
+     * fend en deux et part en cendres. Plus de rouleau interdit.
+     */
+    static final class PretenderShard extends PretenderScene {
+        static final float CRACK = 1.0f, ASH = 2.75f;
+        private static final Color REEL = hex("e0283a"), ASHES = hex("4a3a5a");
+        private final Piece shard;
+        private final TextureRegion rest, card, cardLeft, cardRight, lock;
+        private boolean loose;
+
+        PretenderShard(CutsceneKit kit) {
+            super(kit, Moment.PHASE, 2);
+            int[][] after = without(StoryPortraits.Prop.PRETENDER_SHARD_RIGHT);
+            shard     = lift(StoryPortraits.pixels(EnemyKind.PRETENDANT), after);
+            rest      = pixels(after);
+            card      = gameCard("cards/dark/FORBIDDEN_REEL.png");      // la carte du jeu, telle qu'il la joue
+            cardLeft  = new TextureRegion(card, 0, 0, 10, 18);
+            cardRight = new TextureRegion(card, 10, 0, 9, 18);
+            lock      = new TextureRegion(card, 0, 18, 19, 9);
+        }
+
+        @Override protected void restart() { loose = false; }
+
+        private float cardScale() { return fit(worldHeight() * 0.34f, 27); }
+        private float cardX() { return bossX() + bossWidth() * 0.5f + worldWidth() * 0.15f; }
+        private float cardY() { return bossY() + 20f + 10f * MathUtils.sin(time * 2.4f) + 60f * (1f - Interpolation.pow2Out.apply(progress(0f, 0.6f))); }
+        /** @return le centre du haut de la carte (sa fenêtre barrée), au-dessus du cadenas. */
+        private float topY() { return cardY() + 4.5f * cardScale(); }
+        private float lockY() { return cardY() - 9f * cardScale(); }
+
+        /** @return la place à l'écran d'une moitié de la carte fendue ({@code side} -1 ou 1) : elles s'écartent et basculent. */
+        private float halfX(int side) {
+            float k = Interpolation.pow2Out.apply(progress(CLIMAX_PHASE, ASH));
+            return cardX() + side * (cardScale() * 4.75f + 70f * k);
+        }
+        private float halfY() { return topY() - 50f * progress(CLIMAX_PHASE, ASH) * progress(CLIMAX_PHASE, ASH); }
 
         @Override
         protected void step(float delta) {
             if (at(CRACK)) rumble(0.2f, 5f);
             if (at(CLIMAX_PHASE)) {
                 rumble(0.8f, 14f);
-                shatter(0);
-                shatter(2);
-                chips(bossX(), bossY(), 60, 1600f);
+                shatter(shard, SHARDS[2]);
+                sparks(cardX(), topY(), 50, REEL, 800f, 18f);
+                Particle padlock = place(lock, cardX(), lockY(), 120f, 260f, cardScale(), 1.6f);   // le cadenas saute
+                padlock.gravity = 1800f;
+                padlock.spin = -260f;
             }
-            if (time > CLIMAX_PHASE && time < 3.6f && random.nextFloat() < 0.5f) {   // le chaos : encore des jetons
-                chips(worldWidth() * random.nextFloat(), worldHeight() * (0.2f + 0.6f * random.nextFloat()), 2, 900f);
+            if (at(ASH)) {                                              // les deux moitiés partent en cendres
+                for (int side = -1; side <= 1; side += 2) {
+                    burst(this, side < 0 ? cardLeft : cardRight, halfX(side), halfY(), cardScale(), 1f, 2, ASHES, 260f, -120f, 1.8f);
+                    for (int i = 0; i < 30; i++) {
+                        Particle smoke = particle(halfX(side) + (random.nextFloat() - 0.5f) * 120f, halfY() + (random.nextFloat() - 0.5f) * 160f,
+                            80f + 20f * random.nextFloat(), 60f + 100f * random.nextFloat(), 1.6f, 70f + 70f * random.nextFloat());
+                        smoke.color.set(0.35f, 0.25f, 0.45f, 0.5f);
+                        smoke.drag = 0.4f;
+                        glows.add(smoke);
+                    }
+                }
             }
         }
 
         @Override
         protected void back(Batch batch) {
+            if (!loose) { loose = true; wear(rest); }                   // son éclat de droite est dessiné à part
             poseX = time < CLIMAX_PHASE ? (random.nextFloat() - 0.5f) * 6f * progress(CRACK, CLIMAX_PHASE) : 0f;
-            poseY = 10f * gesture(CLIMAX_PHASE - 0.1f, CLIMAX_PHASE + 0.4f);
-            glow(batch, bossX(), bossY(), bossWidth() * 2.2f, GOLD, 0.25f);
+            poseTilt = 5f * gesture(CLIMAX_PHASE, CLIMAX_PHASE + 0.7f);  // il recule
         }
 
         @Override
         protected void front(Batch batch) {
-            float crack = progress(CRACK, CLIMAX_PHASE);
-            for (int i = 0; i < 3; i++) {
-                if (i != 1 && time >= CLIMAX_PHASE) continue;          // les éclats des côtés ont volé en morceaux
-                drawGem(batch, i, i == 1 ? 0f : crack, 1f);
+            float s = cardScale(), crack = progress(CRACK, CLIMAX_PHASE);
+            if (time < CLIMAX_PHASE) {
+                // le fil de lumière entre l'éclat et la carte
+                float flicker = time > CRACK && random.nextFloat() < 0.3f * crack ? 0.2f : 1f;
+                float link = progress(0.3f, 0.8f) * flicker;
+                additive(batch);
+                line(batch, SHARDS[2], 0.35f * link, pieceX(shard), pieceY(shard), cardX() - s * 9f, topY(), 18f);
+                line(batch, WHITE, 0.8f * link, pieceX(shard), pieceY(shard), cardX() - s * 9f, topY(), 4f);
+                normal(batch);
+                drawShard(batch, shard, SHARDS[2], crack);
+                float shake = (random.nextFloat() - 0.5f) * 6f * crack;
+                float alpha = progress(0f, 0.4f);
+                glow(batch, cardX(), cardY(), s * 40f, REEL, 0.45f * alpha * (0.8f + 0.2f * MathUtils.sin(time * 8f)));
+                draw(batch, card, cardX() + shake, cardY(), s, 0f, WHITE, alpha);
+                if (crack > 0f) crack(batch, cardX() + shake, topY() + s * 8f, -90f, s * 17f * crack, 11L, hex("fff6c8"), crack, 4f);
+            } else if (time < ASH) {                                    // la carte fendue en deux, sans son cadenas
+                float k = progress(CLIMAX_PHASE, ASH), light = 1f - 0.5f * k;
+                draw(batch, cardLeft, halfX(-1), halfY(), s, 22f * k, tmp.set(light, light, light, 1f), 1f);
+                draw(batch, cardRight, halfX(1), halfY(), s, -22f * k, tmp.set(light, light, light, 1f), 1f);
             }
-            wave(batch, CLIMAX_PHASE, 0.8f, bossX(), portraitY(GEM_Y), GOLD, worldWidth() * 1.3f);
-            flash(batch, GOLD, CLIMAX_PHASE, 0.3f, 0.45f);
-        }
-    }
-
-    /** Phase 3 : le fantôme de la Reine paraît, le dernier éclat (au milieu) se brise ; une aura d'or l'entoure, ses yeux s'allument. */
-    static final class PretenderQueen extends PretenderScene {
-        private final TextureRegion queen;
-
-        PretenderQueen(CutsceneKit kit) {
-            super(kit, Moment.PHASE, 3);
-            queen = kit.portrait(EnemyKind.REINE);
-        }
-
-        @Override
-        protected void step(float delta) {
-            if (at(CLIMAX_PHASE)) { rumble(0.7f, 12f); shatter(1); }
-            if (time > CLIMAX_PHASE && random.nextFloat() < 0.8f) {   // son aura : des étincelles d'or qui montent
-                Particle mote = particle(bossX() + (random.nextFloat() - 0.5f) * bossWidth() * 1.2f, bossBottom() + bossHeight() * random.nextFloat(),
-                    90f, 120f + 160f * random.nextFloat(), 1.0f, 10f + 10f * random.nextFloat());
-                mote.color.set(GOLD);
-                glows.add(mote);
-            }
-        }
-
-        private float ghostX() { return bossX() + bossWidth() * 0.6f; }
-
-        @Override
-        protected void back(Batch batch) {
-            float ghost = progress(0.3f, 1.3f) * (1f - progress(3.6f, 4.2f));
-            float scale = bossScale() * 1.15f;
-            float w = queen.getRegionWidth() * scale, h = queen.getRegionHeight() * scale;
-            float bob = MathUtils.sin(time * 2f) * 10f;
-            additive(batch);
-            batch.setColor(0.75f, 0.85f, 1f, 0.45f * ghost);
-            batch.draw(queen, ghostX() - w / 2f, bossBottom() + 40f + bob, w, h);
-            normal(batch);
-            float aura = progress(CLIMAX_PHASE, CLIMAX_PHASE + 0.5f);   // son aura d'or
-            float pulse = 0.8f + 0.2f * MathUtils.sin(time * 7f);
-            glow(batch, bossX(), bossY(), bossWidth() * 2.8f * pulse, GOLD, 0.55f * aura);
-            poseTintColor.set(GOLD);
-            poseTint = 0.3f * aura * pulse;
-        }
-
-        @Override
-        protected void front(Batch batch) {
-            if (time < CLIMAX_PHASE) drawGem(batch, 1, progress(1.2f, CLIMAX_PHASE), 1f);
-            eyes(batch, progress(CLIMAX_PHASE, CLIMAX_PHASE + 0.3f), GOLD, PRETENDER_EYES);
-            flash(batch, hex("ff3a5a"), CLIMAX_PHASE, 0.3f, 0.4f);
+            wave(batch, CLIMAX_PHASE, 0.8f, cardX(), cardY(), REEL, worldWidth() * 1.1f);
+            flash(batch, SHARDS[2], CLIMAX_PHASE, 0.3f, 0.45f);
         }
     }
 
     /**
-     * Ses propres jetons tournent autour de lui puis le transpercent un à un ; sa couronne s'envole et il tombe au
-     * sol. Son corps s'efface, et son âme monte au ciel avec celle de la Reine.
+     * Phase 3 : le fantôme de la Reine paraît à sa gauche et tire sur l'éclat qu'il lui a volé (le rouge, à gauche) ;
+     * il se brise, son éclat rouge rejoint la Reine, qui remonte au ciel avec sa mise royale. Ses yeux s'allument.
      */
-    static final class PretenderDeath extends PretenderScene {
-        static final float FIRST_HIT = 0.9f, HIT_STEP = 0.15f, FLY = 0.12f, FALL = CLIMAX_DEATH, FADE = 3.1f, SOUL = 3.3f;
-        /** Sa couronne dans son portrait : colonnes 9 à 25, lignes 0 à 9. */
-        private static final int CROWN_X = 9, CROWN_W = 17, CROWN_H = 10;
-        private static final Color HAIR = hex("8a3a1a"), HIT = hex("ff3a5a");
-        /** Là où chaque jeton le transperce, en pixels de son portrait. */
-        private static final float[][] HITS = {{17, 31}, {11, 35}, {23, 34}, {14, 24}, {21, 22}, {17, 38}, {8, 30},
-            {26, 29}, {12, 40}, {22, 39}};
-        private final TextureRegion crown, body, sideLeft, sideRight, queen;
-        private final Vector2 at = new Vector2();
-        private float pivotX, pivotY, rot;
+    static final class PretenderQueen extends PretenderScene {
+        private final Piece shard;
+        private final TextureRegion queen, rest;
+        private boolean loose;
 
-        PretenderDeath(CutsceneKit kit) {
-            super(kit, Moment.DEATH, 0);
-            crown     = new TextureRegion(boss, CROWN_X, 0, CROWN_W, CROWN_H);
-            body      = new TextureRegion(boss, 0, CROWN_H, boss.getRegionWidth(), boss.getRegionHeight() - CROWN_H);
-            sideLeft  = new TextureRegion(boss, 0, 0, CROWN_X, CROWN_H);
-            sideRight = new TextureRegion(boss, CROWN_X + CROWN_W, 0, boss.getRegionWidth() - CROWN_X - CROWN_W, CROWN_H);
-            queen     = kit.portrait(EnemyKind.REINE);
+        PretenderQueen(CutsceneKit kit) {
+            super(kit, Moment.PHASE, 3);
+            int[][] before = without(StoryPortraits.Prop.PRETENDER_SHARD_RIGHT);
+            int[][] after  = without(StoryPortraits.Prop.PRETENDER_SHARD_RIGHT, StoryPortraits.Prop.PRETENDER_SHARD_LEFT);
+            shard = lift(before, after);
+            rest  = pixels(after);
+            queen = kit.portrait(EnemyKind.REINE);
         }
 
-        private float hitTime(int i) { return FIRST_HIT + i * HIT_STEP + FLY; }
+        @Override protected void restart() { loose = false; }
 
-        /** Il tombe à gauche, en tournant autour du coin bas-gauche de son portrait, jusqu'à être couché au sol. */
-        private void pose() {
-            float fall = Interpolation.bounceOut.apply(progress(FALL, FALL + 0.6f));
-            pivotX = bossX() - bossWidth() / 2f;
-            pivotY = MathUtils.lerp(bossBottom(), groundY(), fall);
-            rot = 86f * fall;
-            if (time < FALL && time > FIRST_HIT) pivotX += (random.nextFloat() - 0.5f) * 6f;   // chaque jeton le secoue
-        }
-
-        /** @return la place à l'écran du pixel ({@code px}, {@code py}) de son portrait, tel qu'il est tombé. */
-        private Vector2 map(float px, float py) {
-            float s = bossScale(), dx = px * s, dy = (boss.getRegionHeight() - py) * s;
-            float cos = MathUtils.cosDeg(rot), sin = MathUtils.sinDeg(rot);
-            return at.set(pivotX + dx * cos - dy * sin, pivotY + dx * sin + dy * cos);
-        }
-
-        /** Dessine le morceau ({@code px}, {@code py}, {@code pw}, {@code ph}) de son portrait, tourné avec lui. */
-        private void part(Batch batch, TextureRegion region, float px, float py, float pw, float ph) {
-            float s = bossScale(), x = pivotX + px * s, y = pivotY + (boss.getRegionHeight() - py - ph) * s;
-            batch.draw(region, x, y, pivotX - x, pivotY - y, pw * s, ph * s, 1f, 1f, rot);
-        }
-
-        /** Son portrait sans couronne, le haut du crâne complété. */
-        private void crownless(Batch batch, float r, float g, float b, float light, float alpha) {
-            batch.setColor(r * light, g * light, b * light, alpha);
-            part(batch, body, 0, CROWN_H, body.getRegionWidth(), body.getRegionHeight());
-            part(batch, sideLeft, 0, 0, CROWN_X, CROWN_H);
-            part(batch, sideRight, CROWN_X + CROWN_W, 0, sideRight.getRegionWidth(), CROWN_H);
-            cap(batch, pivotX, pivotY, bossScale(), CROWN_H, CROWN_X + 1, CROWN_X + CROWN_W - 2, HAIR, light, alpha, rot);
-        }
+        private float ghostX() { return bossX() - bossWidth() * 0.95f; }
+        private float rise() { return worldHeight() * 0.45f * Interpolation.pow2In.apply(progress(CLIMAX_PHASE + 0.5f, 4.2f)); }
+        private float ghostY() { return bossBottom() + 50f + MathUtils.sin(time * 2f) * 10f + rise(); }
 
         @Override
         protected void step(float delta) {
-            pose();
-            for (int i = 0; i < HITS.length; i++) {
-                if (at(hitTime(i))) {                                  // un jeton le transperce
-                    Vector2 p = map(HITS[i][0], HITS[i][1]);
-                    sparks(p.x, p.y, 16, HIT, 600f, 10f);
-                    rumble(0.1f, 5f);
+            if (at(CLIMAX_PHASE)) {
+                rumble(0.7f, 12f);
+                shatter(shard, SHARDS[1]);
+                float x = pieceX(shard), y = pieceY(shard);
+                for (int i = 0; i < 40; i++) {                          // son pouvoir rejoint la Reine
+                    Particle mote = particle(x, y, 0f, 0f, 0.6f + 0.3f * random.nextFloat(), 14f + 10f * random.nextFloat());
+                    float tx = ghostX() + (random.nextFloat() - 0.5f) * 80f, ty = ghostY() + bossHeight() * 0.5f;
+                    mote.vx = (tx - x) / mote.life;
+                    mote.vy = (ty - y) / mote.life;
+                    mote.color.set(SHARDS[1]);
+                    glows.add(mote);
                 }
-            }
-            if (at(FALL)) { rumble(0.6f, 10f); chips(bossX(), bossY(), 16, 800f); }
-            if (at(FALL + 0.6f)) {                                      // il touche le sol
-                rumble(0.4f, 9f);
-                sparks(bossX() - bossHeight() * 0.5f, groundY(), 40, hex("d8c8a8"), 500f, 12f);
-            }
-            if (at(FADE)) {
-                Vector2 p = map(17f, 26f);
-                sparks(p.x, p.y, 60, WHITE, 400f, 10f);
             }
         }
 
         @Override
         protected void back(Batch batch) {
-            pose();
-            showBoss = false;
-            float light = 1f - 0.35f * progress(FALL, FALL + 0.6f), alpha = 1f - progress(FADE, FADE + 0.6f);
-            if (alpha <= 0f) return;
-            if (time < FALL) {
-                batch.setColor(light, light, light, alpha);
-                part(batch, boss, 0, 0, boss.getRegionWidth(), boss.getRegionHeight());
-            } else {
-                crownless(batch, 1f, 1f, 1f, light, alpha);
+            if (!loose) { loose = true; wear(rest); }                   // son éclat de gauche est dessiné à part
+            float ghost = progress(0.3f, 1.3f) * (1f - progress(3.6f, 4.3f));
+            float scale = bossScale() * 1.1f;
+            float w = queen.getRegionWidth() * scale, h = queen.getRegionHeight() * scale;
+            additive(batch);
+            batch.setColor(0.75f, 0.85f, 1f, 0.5f * ghost);
+            batch.draw(queen, ghostX() - w / 2f, ghostY(), w, h);
+            float red = progress(CLIMAX_PHASE + 0.3f, CLIMAX_PHASE + 0.6f) * ghost;
+            batch.setColor(1f, 0.25f, 0.3f, 0.35f * red);
+            batch.draw(queen, ghostX() - w / 2f, ghostY(), w, h);
+            normal(batch);
+            poseX = time < CLIMAX_PHASE ? -10f * progress(1.0f, CLIMAX_PHASE) + (random.nextFloat() - 0.5f) * 4f : 0f;
+            poseTintColor.set(GOLD);
+            poseTint = 0.2f * progress(CLIMAX_PHASE, CLIMAX_PHASE + 0.5f);
+        }
+
+        @Override
+        protected void front(Batch batch) {
+            if (time < CLIMAX_PHASE) {
+                float pull = progress(1.0f, 1.6f);
+                if (pull > 0f) {                                        // la Reine tire sur son éclat : un fil rouge
+                    additive(batch);
+                    float qx = ghostX() + bossWidth() * 0.3f, qy = ghostY() + bossHeight() * 0.35f;
+                    line(batch, SHARDS[1], 0.4f * pull, qx, qy, pieceX(shard), pieceY(shard), 16f);
+                    line(batch, WHITE, 0.7f * pull, qx, qy, pieceX(shard), pieceY(shard), 4f);
+                    normal(batch);
+                }
+                drawShard(batch, shard, SHARDS[1], progress(1.2f, CLIMAX_PHASE));
             }
-            // les jetons plantés en lui
-            float size = fit(44f, chip.getRegionHeight());
-            for (int i = 0; i < HITS.length; i++) {
-                if (time < hitTime(i)) continue;
-                Vector2 p = map(HITS[i][0], HITS[i][1]);
-                draw(batch, chip, p.x, p.y, size, rot + i * 37f, tmp.set(light, light, light, 1f), alpha);
+            eyes(batch, progress(CLIMAX_PHASE + 0.2f, CLIMAX_PHASE + 0.5f), GOLD, PRETENDER_EYES);
+            flash(batch, SHARDS[1], CLIMAX_PHASE, 0.3f, 0.4f);
+        }
+    }
+
+    /**
+     * Le trône du maître de la chance l'attend au bout de la rue, sous un rayon de lumière. Il marche vers lui, tend
+     * la main ; le dernier éclat (celui de la Comète, sur sa poitrine) se brise, il s'écroule au pied des marches,
+     * sa vraie couronne roule jusqu'au trône. Le rayon s'éteint et le trône s'effondre en poussière d'or : il n'y
+     * aura jamais de trône pour lui.
+     */
+    static final class PretenderDeath extends PretenderScene {
+        static final float WALK = 0.3f, REACH = 2.0f, FALL = CLIMAX_DEATH, DOWN = FALL + 0.55f, CRUMBLE = 3.15f;
+        private static final Color STONE = hex("6a4a3a"), STONE_TOP = hex("9a7a5a"), BEAM = hex("fff2a0");
+        private static final String[] THRONE = {
+            ".........oo.........", "........oyyo........", "...ooo..oggo..ooo...", "...oyo.oggggo.oyo...",
+            "...oggoggggggoggo...", "...oggggggggggggo...", "...ogdrrrrrrrrdgo...", "...ogdrrrrrrrrdgo...",
+            "...ogdrrRrrRrrdgo...", "...ogdrrrrrrrrdgo...", "...ogdrrrrrrrrdgo...", "...ogdrrRrrRrrdgo...",
+            "...ogdrrrrrrrrdgo...", "oooogdrrrrrrrrdgoooo", "oyyoodrrrrrrrrdooyyo", "oggggggggggggggggggo",
+            "orrrrrrrrrrrrrrrrrro", "oddddddddddddddddddo", "oooooooooooooooooooo", ".ogo............ogo.",
+            ".ogo............ogo.", ".ogo............ogo.", ".odo............odo.", "oyyyo..........oyyyo",
+            "ooooo..........ooooo"};
+        private final Piece shard, crown;
+        private final TextureRegion noShard, bare, throne;
+        private boolean loose, off;
+        private float crownX, crownY;
+
+        PretenderDeath(CutsceneKit kit) {
+            super(kit, Moment.DEATH, 0);
+            int[][] start = without(StoryPortraits.Prop.PRETENDER_SHARD_RIGHT, StoryPortraits.Prop.PRETENDER_SHARD_LEFT);
+            int[][] broken = without(StoryPortraits.Prop.PRETENDER_SHARD_RIGHT, StoryPortraits.Prop.PRETENDER_SHARD_LEFT,
+                StoryPortraits.Prop.PRETENDER_SHARD_CHEST);
+            int[][] uncrowned = without(StoryPortraits.Prop.PRETENDER_SHARD_RIGHT, StoryPortraits.Prop.PRETENDER_SHARD_LEFT,
+                StoryPortraits.Prop.PRETENDER_SHARD_CHEST, StoryPortraits.Prop.PRETENDER_CROWN);
+            shard   = lift(start, broken);
+            crown   = lift(broken, uncrowned);
+            noShard = pixels(broken);
+            bare    = pixels(uncrowned);
+            throne  = art("ogdyrR", new Color[] {hex("1a0a0e"), hex("ffc93a"), hex("b8801f"), hex("fff2a0"), hex("b0202c"), hex("7a1420")}, THRONE);
+        }
+
+        @Override protected void restart() { loose = false; off = false; }
+
+        private float throneScale() { return bossScale() * 1.45f; }
+        private float throneX() { return worldWidth() * 0.85f; }
+        private float daisTop() { return groundY() + 78f; }
+        private float throneY() { return daisTop() + THRONE.length * throneScale() / 2f; }
+        /** @return où sa couronne finit sa course : sur l'estrade, au pied du trône. */
+        private float restX() { return throneX() - 6f * throneScale(); }
+        private float restY() { return daisTop() + crown.height * bossScale() * 0.4f; }
+
+        /** @return le degré dont il bascule vers le trône (négatif : vers la droite). */
+        private float tilt() {
+            float lean = -10f * Interpolation.pow2Out.apply(progress(REACH, FALL));
+            float fall = Interpolation.bounceOut.apply(progress(FALL, DOWN + 0.2f));
+            return MathUtils.lerp(lean, -86f, fall);
+        }
+
+        /** @return la place à l'écran du pixel ({@code px}, {@code py}) de son portrait, tel qu'il bascule. */
+        private float mapX(float px, float py) {
+            float s = bossScale(), dx = (px - boss.getRegionWidth() / 2f) * s, dy = (boss.getRegionHeight() - py) * s;
+            return bossX() + poseX + dx * MathUtils.cosDeg(poseTilt) - dy * MathUtils.sinDeg(poseTilt);
+        }
+        private float mapY(float px, float py) {
+            float s = bossScale(), dx = (px - boss.getRegionWidth() / 2f) * s, dy = (boss.getRegionHeight() - py) * s;
+            return bossBottom() + poseY + dx * MathUtils.sinDeg(poseTilt) + dy * MathUtils.cosDeg(poseTilt);
+        }
+
+        @Override
+        protected void step(float delta) {
+            if (at(FALL)) { rumble(0.6f, 12f); shatter(shard, SHARDS[0]); }
+            if (at(DOWN)) {                                             // il touche le sol, au pied des marches
+                rumble(0.4f, 9f);
+                sparks(bossX() + bossHeight() * 0.4f, groundY() + 30f, 40, hex("d8c8a8"), 500f, 12f);
+            }
+            if (at(FALL + 0.8f)) sparks(restX(), restY(), 20, GOLD, 300f, 10f);
+            if (at(CRUMBLE)) {                                          // le trône s'effondre
+                rumble(0.7f, 12f);
+                burst(this, throne, throneX(), throneY(), throneScale(), 1f, 2, WHITE, 420f, 1500f, 1.8f);
+                for (int i = 0; i < 40; i++) {
+                    Particle dust = particle(throneX() + (random.nextFloat() - 0.5f) * 200f, daisTop() + random.nextFloat() * 200f,
+                        60f + 60f * random.nextFloat(), 60f + 160f * random.nextFloat(), 1.8f, 80f + 80f * random.nextFloat());
+                    dust.color.set(random.nextBoolean() ? GOLD : hex("d8c8a8"));
+                    dust.color.a = 0.4f;
+                    dust.drag = 0.3f;
+                    glows.add(dust);
+                }
+            }
+        }
+
+        @Override
+        protected void back(Batch batch) {
+            // la marche vers le trône, en sautillant, puis la chute
+            float walk = Interpolation.smooth.apply(progress(WALK, REACH));
+            poseX = MathUtils.lerp(-worldWidth() * 0.2f, worldWidth() * 0.05f, walk);
+            poseTilt = tilt();
+            float down = Interpolation.bounceOut.apply(progress(FALL, DOWN + 0.2f));
+            poseY = (time > WALK && time < REACH ? Math.abs(MathUtils.sin(time * 9f)) * 14f : 0f)
+                + bossWidth() / 2f * Math.abs(MathUtils.sinDeg(poseTilt)) + (groundY() - bossBottom()) * down;
+            poseShadow = 0.45f * progress(FALL, DOWN + 0.6f);
+            if (!loose) { loose = true; wear(noShard); }                // son dernier éclat est dessiné à part
+            if (!off && time >= FALL) {                                 // sa vraie couronne lui échappe
+                off = true;
+                crownX = mapX(crown.left + crown.width / 2f, crown.top + crown.height / 2f);
+                crownY = mapY(crown.left + crown.width / 2f, crown.top + crown.height / 2f);
+                wear(bare);
+            }
+            // l'estrade et le trône, sous son rayon de lumière
+            float beam = progress(0f, 0.5f) * (1f - progress(FALL, FALL + 0.5f));
+            if (beam > 0f) {
+                additive(batch);
+                for (int i = 0; i < 3; i++) {
+                    float w = 420f - i * 120f;
+                    batch.setColor(BEAM.r, BEAM.g, BEAM.b, (0.16f + 0.08f * i) * beam * (0.9f + 0.1f * MathUtils.sin(time * 5f + i)));
+                    batch.draw(soft, throneX() - w / 2f, daisTop() - 60f, w, worldHeight() * 1.6f);
+                }
+                normal(batch);
+                glow(batch, throneX(), throneY(), 700f, GOLD, 0.55f * beam);
+            }
+            float wide = 12f * throneScale() + 70f, narrow = 12f * throneScale();
+            rect(batch, STONE, 1f, throneX() - wide, groundY() - 10f, 2f * wide, 50f);
+            rect(batch, STONE_TOP, 1f, throneX() - wide, groundY() + 32f, 2f * wide, 8f);
+            rect(batch, STONE, 1f, throneX() - narrow, groundY() + 40f, 2f * narrow, 38f);
+            rect(batch, STONE_TOP, 1f, throneX() - narrow, groundY() + 70f, 2f * narrow, 8f);
+            if (time < CRUMBLE) {
+                float shake = time > CRUMBLE - 0.5f ? (random.nextFloat() - 0.5f) * 8f : 0f;
+                draw(batch, throne, throneX() + shake, throneY(), throneScale(), 0f, WHITE, 1f);
+                float crack = progress(CRUMBLE - 0.6f, CRUMBLE);
+                if (crack > 0f) {
+                    crack(batch, throneX(), throneY() + THRONE.length * throneScale() * 0.45f, -90f, THRONE.length * throneScale() * 0.9f * crack,
+                        17L, hex("1a0a0e"), 1f, 5f);
+                }
             }
         }
 
         @Override
         protected void front(Batch batch) {
-            // ses jetons montent du sol, tournent autour de lui, puis foncent sur lui un à un
-            float size = fit(44f, chip.getRegionHeight());
-            for (int i = 0; i < HITS.length; i++) {
-                float start = hitTime(i) - FLY;
-                if (time >= hitTime(i)) continue;
-                float t = Math.min(time, start), r = bossWidth() * 0.95f * Interpolation.pow2Out.apply(progress(0f, 0.7f));
-                float angle = t * 220f + i * 36f;
-                float ox = bossX() + MathUtils.cosDeg(angle) * r;
-                float oy = MathUtils.lerp(groundY(), bossY() + MathUtils.sinDeg(angle) * r * 0.5f, progress(0f, 0.7f));
-                float x = ox, y = oy;
-                if (time >= start) {
-                    float k = Interpolation.pow2In.apply(progress(start, hitTime(i)));
-                    Vector2 p = map(HITS[i][0], HITS[i][1]);
-                    x = MathUtils.lerp(ox, p.x, k);
-                    y = MathUtils.lerp(oy, p.y, k);
-                    line(batch, HIT, 0.6f * k, ox, oy, x, y, 6f);
-                }
-                glow(batch, x, y, 70f, HIT, 0.5f * progress(0.1f, 0.5f));
-                draw(batch, chip, x, y, size, time * 500f + i * 40f, WHITE, progress(0.1f, 0.5f));
+            if (time < FALL) {
+                float reach = progress(REACH - 0.6f, FALL);
+                drawShard(batch, shard, SHARDS[0], reach);
             }
-            if (time >= FALL) {                                         // sa couronne s'envole
-                float k = progress(FALL, FALL + 1.6f);
-                float x = portraitX(CROWN_X + CROWN_W / 2f) + worldWidth() * 0.45f * Interpolation.pow2In.apply(k);
-                float y = MathUtils.lerp(portraitY(CROWN_H / 2f), worldHeight() + 200f, Interpolation.pow2In.apply(k))
-                    + 40f * MathUtils.sin(k * 10f);
-                draw(batch, crown, x, y, bossScale(), -400f * k, WHITE, 1f);
+            if (off) {                                                  // la couronne vole, rebondit et roule au pied du trône
+                float k = progress(FALL, FALL + 0.8f), roll = progress(FALL + 0.8f, FALL + 1.4f);
+                float x = MathUtils.lerp(crownX, restX() - 30f, Interpolation.pow2Out.apply(k)) + 30f * Interpolation.pow2Out.apply(roll);
+                float y = MathUtils.lerp(crownY, restY(), Interpolation.bounceOut.apply(k)) + 120f * MathUtils.sin(k * MathUtils.PI);
+                float rot = -540f * Interpolation.pow2Out.apply(k) - 60f * Interpolation.pow2Out.apply(roll);
+                draw(batch, crown.region, x, y, bossScale(), rot, tmp.set(1f, 1f, 1f, 1f), 1f);
+                if (time > CRUMBLE) glow(batch, x, y, 120f, GOLD, 0.35f * (1f - progress(CRUMBLE, CRUMBLE + 1.5f)));
             }
-            // son âme, debout, monte au ciel avec celle de la Reine, puis toutes deux s'effacent
-            float soul = progress(SOUL, SOUL + 0.4f) * (1f - progress(4.4f, 5.0f));
-            if (soul > 0f) {
-                float rise = Interpolation.pow2In.apply(progress(SOUL, 5.0f)) * worldHeight() * 0.5f;
-                float s = bossScale(), w = boss.getRegionWidth() * s;
-                float keepX = pivotX, keepY = pivotY, keepRot = rot;
-                pivotX = bossX() - w / 2f - 130f;
-                pivotY = bossBottom() + rise;
-                rot = 0f;
-                additive(batch);
-                crownless(batch, 0.9f, 0.9f, 1f, 1f, 0.5f * soul);
-                float qw = queen.getRegionWidth() * s, qh = queen.getRegionHeight() * s;
-                batch.setColor(0.75f, 0.85f, 1f, 0.45f * soul);
-                batch.draw(queen, bossX() + 150f - qw / 2f, bossBottom() + 40f + rise * 1.05f, qw, qh);
-                normal(batch);
-                glow(batch, bossX(), bossY() + rise, w * 2.2f, WHITE, 0.25f * soul);
-                pivotX = keepX; pivotY = keepY; rot = keepRot;
-            }
+            flash(batch, SHARDS[0], FALL, 0.3f, 0.45f);
+            flash(batch, GOLD, CRUMBLE, 0.25f, 0.3f);
         }
     }
 
@@ -683,17 +802,21 @@ final class TowerBossScenes {
     // -------------------------------------------------------------------------
 
     /**
-     * Socle des scènes de la Maison, dans le décor de son entrée : ciel du soir, halo doré, manoir posé sur les
-     * nuages. {@link #evil} fait virer le décor au diabolique (ciel rouge, braises), {@link #holy} à l'angélique.
+     * Socle des scènes de la Maison, devant le vrai décor de son chapitre : la salle du coffre, rideaux rouges,
+     * lustres, et la grande porte ronde du coffre au mur. {@link #evil} y jette une lumière rouge et des braises,
+     * {@link #holy} des rayons de lumière et des plumes.
      */
     abstract static class HouseScene extends BossScene {
-        static final Color SKY_TOP = hex("1a1a4a"), SKY_MID = hex("7a3a7a"), SKY_LOW = hex("ffb46a"), HALO = hex("e89a6a");
-        static final Color HELL_TOP = hex("1a0204"), HELL_LOW = hex("c81a0a"), ROOM = hex("3a1420"), FLOOR = hex("6a2a1a");
-        /** Le corps central de son portrait (colonnes 8 à 26, lignes 13 à 37), ses yeux-fenêtres. */
-        static final float BODY_LEFT = 8f, BODY_RIGHT = 27f, BODY_TOP = 13f, BODY_BOTTOM = 38f;
+        static final Color HELL = hex("c81a0a"), HOLE = hex("0c0a0e"), RIM = hex("3a3a46");
+        /** Le corps de son portrait (colonnes 7 à 26, lignes 13 à 38), le haut de son plancher, ses yeux-fenêtres. */
+        static final float BODY_LEFT = 7f, BODY_RIGHT = 27f, BODY_TOP = 13f, BODY_BOTTOM = 39f, BODY_FLOOR = 34f;
         static final float[][] WINDOW_EYES = {{12f, 22f}, {22f, 22f}};
-        protected final TextureRegion machine, wing, horn;
+        /** La porte du coffre du décor (pixels du décor) : son carré, son centre, son rayon ; le sol où elle roule, le rideau de droite. */
+        static final int VAULT_LEFT = 140, VAULT_TOP = 20, VAULT_SIZE = 81;
+        static final float VAULT_CX = 180.5f, VAULT_CY = 60.5f, VAULT_R = 40.5f, FLOOR = 174f, WALL_RIGHT = 320f;
+        protected final TextureRegion machine, wing, horn, vaultDoor;
         protected float evil, holy;
+        private final Color lit = new Color();
 
         HouseScene(CutsceneKit kit, Moment moment, int phase) {
             super(kit, moment, EnemyKind.MAISON, phase);
@@ -705,31 +828,37 @@ final class TowerBossScenes {
                 "......ww", "....wwww", "..wwwwwg", ".wwwwwg.", "wwwwgg..", "wwgg....", "wg......");
             horn = art("rd", new Color[] {hex("8a0a0a"), hex("3a0404")},
                 "....d", "...rd", "..rrd", ".rrd.", "rrrd.", "rrd..");
+            vaultDoor = decorImage() == null ? null : door();
         }
 
-        /** Couleur de travail du ciel rouge, réutilisée à chaque bande (rien n'est alloué par image). */
-        private final Color hell = new Color();
+        /** @return son portrait sans {@code props}. */
+        protected static int[][] without(StoryPortraits.Prop... props) { return StoryPortraits.without(EnemyKind.MAISON, props); }
 
-        /** Le décor : le ciel de son entrée (qui vire au rouge avec {@link #evil}), le halo et les nuages. */
-        protected void decor(Batch batch) {
-            int bands = 30;
-            float height = worldHeight() + 2f * MARGIN, band = height / bands;
-            for (int i = 0; i < bands; i++) {
-                float k = i / (float) (bands - 1);
-                if (k < 0.5f) tmp.set(SKY_LOW).lerp(SKY_MID, k * 2f);
-                else tmp.set(SKY_MID).lerp(SKY_TOP, (k - 0.5f) * 2f);
-                hell.set(HELL_LOW).lerp(HELL_TOP, k);
-                tmp.lerp(hell, evil);
-                if (holy > 0f) tmp.lerp(hex("fff4d8"), holy * (0.55f - 0.3f * k));
-                batch.setColor(tmp.r, tmp.g, tmp.b, 1f);
-                batch.draw(pixel, -MARGIN, -MARGIN + i * band - 1f, worldWidth() + 2f * MARGIN, band + 2f);
+        /** @return la vraie porte du coffre, découpée en rond dans l'image du décor (le mur autour reste au mur). */
+        private TextureRegion door() {
+            Pixmap image = new Pixmap(com.badlogic.gdx.Gdx.files.internal(FrontScene.Decor.of(EnemyKind.MAISON).getPath()));
+            Pixmap cut = new Pixmap(VAULT_SIZE, VAULT_SIZE, Pixmap.Format.RGBA8888);
+            cut.setBlending(Pixmap.Blending.None);
+            float r2 = (VAULT_SIZE / 2f) * (VAULT_SIZE / 2f);
+            for (int y = 0; y < VAULT_SIZE; y++) {
+                for (int x = 0; x < VAULT_SIZE; x++) {
+                    float dx = x + 0.5f - VAULT_SIZE / 2f, dy = y + 0.5f - VAULT_SIZE / 2f;
+                    if (dx * dx + dy * dy <= r2) cut.drawPixel(x, y, image.getPixel(VAULT_LEFT + x, VAULT_TOP + y));
+                }
             }
-            for (int i = 0; i < 40; i++) {                              // les étoiles du soir
-                float x = (i * 173.3f) % worldWidth(), y = worldHeight() * (0.72f + 0.26f * ((i * 61) % 100) / 100f);
-                rect(batch, hex("e8e0ff"), 0.8f * (1f - evil) * (1f - holy), x, y, 4f, 4f);
+            image.dispose();
+            return region(cut, false);
+        }
+
+        @Override protected float decorLight() { return 0.62f * (1f - 0.25f * evil) + 0.3f * holy; }
+
+        /** La lumière de la salle : rouge et braises avec {@link #evil}, rayons dorés avec {@link #holy}. */
+        protected void light(Batch batch) {
+            if (evil > 0f) {
+                fill(batch, HELL, 0.3f * evil);
+                glow(batch, bossX(), groundY(), worldWidth() * 1.2f, HELL, 0.5f * evil);
             }
-            glow(batch, bossX(), bossY(), worldWidth() * 0.9f, tmp.set(HALO).lerp(HELL_LOW, evil).lerp(GOLD, holy), 0.45f);
-            if (holy > 0f) {                                            // des rayons de lumière tombent du ciel
+            if (holy > 0f) {                                            // des rayons de lumière tombent des lustres
                 additive(batch);
                 for (int i = 0; i < 7; i++) {
                     float x = worldWidth() * (0.1f + i * 0.13f) + 30f * MathUtils.sin(time + i);
@@ -737,54 +866,67 @@ final class TowerBossScenes {
                     batch.draw(soft, x - 60f, -MARGIN, 0f, 0f, 120f, worldHeight() * 1.3f, 1f, 1f, -12f);
                 }
                 normal(batch);
+                glow(batch, bossX(), bossY(), worldWidth() * 0.9f, GOLD, 0.3f * holy);
             }
-            clouds(batch);
         }
 
-        /** Les nuages sur lesquels repose le manoir, comme à son entrée. */
-        protected void clouds(Batch batch) {
-            Color pale = tmp.set(hex("f6e8f0")).lerp(hex("5a1a1a"), evil);
-            for (int i = 0; i < 16; i++) {
-                float x = worldWidth() * i / 15f, y = groundY() + 20f + 18f * MathUtils.sin(i * 1.7f), r = 150f + 40f * ((i * 7) % 3);
-                batch.setColor(pale.r, pale.g, pale.b, 1f);
-                batch.draw(soft, x - r, y - r * 0.6f, r * 2f, r * 1.2f);
+        /** Le trou laissé au mur par la porte du coffre : le coffre, vide et noir, dans son cercle d'acier. */
+        protected void hole(Batch batch) {
+            for (int dy = -40; dy <= 40; dy++) {
+                float half = (float) Math.sqrt(VAULT_R * VAULT_R - dy * dy);
+                decorRect(batch, RIM, VAULT_CX - half, VAULT_CY + dy - 0.5f, 2f * half, 1f);
+                float inner = VAULT_R - 5f;
+                if (Math.abs(dy) < inner) {
+                    float in = (float) Math.sqrt(inner * inner - dy * dy);
+                    decorRect(batch, HOLE, VAULT_CX - in, VAULT_CY + dy - 0.5f, 2f * in, 1f);
+                }
             }
-            rect(batch, pale, 1f, -MARGIN, -MARGIN, worldWidth() + 2f * MARGIN, groundY() + MARGIN);
         }
 
-        /** L'intérieur du manoir : une salle de jeu où volent des machines à sous aux ailes d'ange. */
+        /** La porte du coffre du décor, centrée sur le pixel ({@code cx}, {@code cy}) du décor, tournée de {@code rotation}. */
+        protected void door(Batch batch, float cx, float cy, float rotation) {
+            if (vaultDoor == null) return;
+            float size = VAULT_SIZE * decorScale();
+            batch.setColor(litLikeDecor(WHITE, lit));
+            batch.draw(vaultDoor, decorX(cx) - size / 2f, decorY(cy) - size / 2f, size / 2f, size / 2f, size, size, 1f, 1f, rotation);
+        }
+
+        /** Des machines à sous aux ailes d'ange qui volent dans sa salle de jeu (sans façade). */
         protected void interior(Batch batch, float alpha) {
             if (alpha <= 0f) return;
-            float x0 = portraitX(BODY_LEFT), x1 = portraitX(BODY_RIGHT), y0 = portraitY(BODY_BOTTOM), y1 = portraitY(BODY_TOP);
-            rect(batch, ROOM, alpha, x0, y0, x1 - x0, y1 - y0);
-            rect(batch, FLOOR, alpha, x0, y0, x1 - x0, (y1 - y0) * 0.18f);
+            float x0 = portraitX(BODY_LEFT), x1 = portraitX(BODY_RIGHT), y0 = portraitY(BODY_FLOOR), y1 = portraitY(BODY_TOP);
             glow(batch, (x0 + x1) / 2f, y1 - 20f, (x1 - x0) * 0.9f, GOLD, 0.35f * alpha);
             float scale = (x1 - x0) / 50f;
             for (int i = 0; i < 3; i++) {
-                float mx = MathUtils.lerp(x0, x1, 0.2f + i * 0.3f), my = MathUtils.lerp(y0, y1, i == 1 ? 0.6f : 0.4f)
+                float mx = MathUtils.lerp(x0, x1, 0.2f + i * 0.3f), my = MathUtils.lerp(y0, y1, i == 1 ? 0.62f : 0.38f)
                     + 10f * MathUtils.sin(time * 3f + i * 2f);
-                float flap = 1f + 0.25f * MathUtils.sin(time * 14f + i);
-                float ww = wing.getRegionWidth() * scale, wh = wing.getRegionHeight() * scale * flap;
-                batch.setColor(1f, 1f, 1f, alpha);
-                batch.draw(wing, mx - 7f * scale - ww, my - wh * 0.2f, ww, wh);                 // l'aile gauche
-                batch.draw(wing, mx + 7f * scale + ww, my - wh * 0.2f, -ww, wh);                // l'aile droite, en miroir
-                draw(batch, machine, mx, my, scale, 0f, WHITE, alpha);
+                flyer(batch, mx, my, scale, i, alpha);
             }
         }
 
-        /** La Maison démoniaque : son portrait rougi, des cornes sur le toit, des yeux de braise. */
+        /** Une machine à sous aux ailes d'ange, centrée sur ({@code x}, {@code y}). */
+        protected void flyer(Batch batch, float x, float y, float scale, int i, float alpha) {
+            float flap = 1f + 0.25f * MathUtils.sin(time * 14f + i);
+            float ww = wing.getRegionWidth() * scale, wh = wing.getRegionHeight() * scale * flap;
+            batch.setColor(1f, 1f, 1f, alpha);
+            batch.draw(wing, x - 7f * scale - ww, y - wh * 0.2f, ww, wh);                 // l'aile gauche
+            batch.draw(wing, x + 7f * scale + ww, y - wh * 0.2f, -ww, wh);                // l'aile droite, en miroir
+            draw(batch, machine, x, y, scale, 0f, WHITE, alpha);
+        }
+
+        /** La Maison démoniaque : des cornes sur le toit, des yeux de braise. */
         protected void demon(Batch batch, float alpha) {
             if (alpha <= 0f) return;
             float scale = bossScale(), x = portraitX(17f), y = portraitY(1f);
             for (int side = -1; side <= 1; side += 2) {
                 float hw = horn.getRegionWidth() * scale * 1.6f, hh = horn.getRegionHeight() * scale * 1.6f;
                 batch.setColor(1f, 1f, 1f, alpha);
-                batch.draw(horn, x + side * 40f - (side < 0 ? hw : 0f) + (side < 0 ? hw : 0f), y - 10f, side * hw, hh);
+                batch.draw(horn, x + side * 40f, y - 10f, side * hw, hh);
             }
             eyes(batch, alpha, hex("ff2a0a"), WINDOW_EYES);
         }
 
-        /** Des braises qui montent : le décor diabolique. */
+        /** Des braises qui montent. */
         protected void embers(float rate) {
             if (random.nextFloat() >= rate) return;
             Particle ember = particle(worldWidth() * random.nextFloat(), groundY(), 85f + 10f * random.nextFloat(),
@@ -793,111 +935,221 @@ final class TowerBossScenes {
             glows.add(ember);
         }
 
-        /** Des plumes blanches qui tombent : le décor angélique. */
+        /** Des plumes blanches qui tombent. */
         protected void feathers(float rate) {
             if (random.nextFloat() >= rate) return;
             Particle plume = place(wing, worldWidth() * random.nextFloat(), worldHeight() + 40f, 0f, -90f, 3f, 4f);
             plume.vx = (random.nextFloat() - 0.5f) * 80f;
             plume.spin = (random.nextFloat() - 0.5f) * 120f;
         }
+
+        /** Un nuage de poussière qui monte du sol, de {@code left} à {@code right}. */
+        protected void dust(float left, float right, float y, int count, Color color) {
+            for (int i = 0; i < count; i++) {
+                Particle puff = particle(MathUtils.lerp(left, right, random.nextFloat()), y, 60f + 60f * random.nextFloat(),
+                    200f + 300f * random.nextFloat(), 1.6f, 120f + 120f * random.nextFloat());
+                puff.color.set(color);
+                puff.drag = 0.3f;
+                glows.add(puff);
+            }
+        }
     }
 
-    /** Phase 2 : sa façade se fend et tombe ; derrière, la même silhouette montre l'intérieur, des machines aux ailes d'ange. */
+    /**
+     * Phase 2 : sa vraie façade (corps, fenêtres, porte, blason au bouclier) se fissure tout autour, se décolle,
+     * bascule vers nous et s'écrase en morceaux. Derrière, sa salle de jeu ouverte, où volent des machines aux
+     * ailes d'ange. Plus de défense.
+     */
     static final class HouseFacade extends HouseScene {
-        HouseFacade(CutsceneKit kit) { super(kit, Moment.PHASE, 2); }
+        static final float CRACK = 0.45f, TIP = 1.35f;
+        private static final Color SEAM = hex("1a0808");
+        private final Piece facade;
+        private final TextureRegion open;
+        private boolean loose;
+
+        HouseFacade(CutsceneKit kit) {
+            super(kit, Moment.PHASE, 2);
+            int[][] rest = without(StoryPortraits.Prop.HOUSE_FACADE);
+            facade = lift(StoryPortraits.pixels(EnemyKind.MAISON), rest);
+            open = pixels(rest);
+        }
+
+        @Override protected void restart() { loose = false; }
+
+        private float facadeBottom() { return portraitY(facade.top + facade.height); }
 
         @Override
         protected void step(float delta) {
-            if (at(CLIMAX_PHASE + 0.35f)) {                             // la façade touche les nuages
-                rumble(0.8f, 16f);
-                for (int i = 0; i < 40; i++) {
-                    Particle dust = particle(bossX() + (random.nextFloat() - 0.5f) * bossWidth() * 1.6f, groundY() + 20f,
-                        60f + 60f * random.nextFloat(), 200f + 300f * random.nextFloat(), 1.6f, 120f + 120f * random.nextFloat());
-                    dust.color.set(0.9f, 0.8f, 0.7f, 0.5f);
-                    dust.drag = 0.3f;
-                    glows.add(dust);
-                }
+            if (at(CRACK)) rumble(0.2f, 5f);
+            if (at(TIP)) { rumble(0.3f, 8f); sparks(pieceX(facade), facadeBottom(), 30, hex("d8c8a8"), 500f, 12f); }
+            if (at(CLIMAX_PHASE)) {                                     // elle s'écrase devant la Maison, en morceaux
+                rumble(0.9f, 18f);
+                float y = facadeBottom() - 20f;
+                burst(this, facade.region, pieceX(facade), y, bossScale() * 1.25f, 0.25f, 3, WHITE, 900f, 1700f, 1.7f);
+                dust(bossX() - bossWidth(), bossX() + bossWidth(), groundY() + 20f, 30, tmp.set(0.6f, 0.5f, 0.4f, 0.3f));
             }
         }
 
         @Override
         protected void back(Batch batch) {
-            decor(batch);
-            poseX = time < CLIMAX_PHASE ? (random.nextFloat() - 0.5f) * 8f * progress(0.6f, CLIMAX_PHASE) : 0f;
+            if (!loose && time >= TIP) { loose = true; wear(open); }    // la façade se décolle : elle est dessinée à part
+            poseX = time < TIP ? (random.nextFloat() - 0.5f) * 8f * progress(CRACK, TIP) : 0f;
         }
 
         @Override
         protected void front(Batch batch) {
-            interior(batch, time < CLIMAX_PHASE ? 0f : 1f);
-            if (time < CLIMAX_PHASE) {                                  // les fissures de la façade
-                float k = progress(0.8f, CLIMAX_PHASE);
-                for (int i = 0; i < 4; i++) {
-                    crack(batch, portraitX(10f + i * 5f), portraitY(BODY_TOP), -90f + (i - 1.5f) * 12f,
-                        (portraitY(BODY_TOP) - portraitY(BODY_BOTTOM)) * 0.8f * k, 20L + i, hex("1a0808"), 1f, 5f);
-                }
-            } else {                                                    // la façade bascule vers nous et tombe
-                float fall = Interpolation.pow2In.apply(progress(CLIMAX_PHASE, CLIMAX_PHASE + 0.35f));
-                if (fall < 1f) {
-                    TextureRegion facade = new TextureRegion(boss, (int) BODY_LEFT, (int) BODY_TOP, (int) (BODY_RIGHT - BODY_LEFT),
-                        (int) (BODY_BOTTOM - BODY_TOP));
-                    float scale = bossScale(), w = facade.getRegionWidth() * scale, h = facade.getRegionHeight() * scale * (1f - fall);
-                    batch.setColor(1f, 1f, 1f, 1f);
-                    batch.draw(facade, portraitX(BODY_LEFT), portraitY(BODY_BOTTOM) - 60f * fall, w, h);
+            if (!loose) {                                               // les fissures courent tout autour de la façade
+                float k = progress(CRACK, TIP);
+                float left = portraitX(BODY_LEFT), right = portraitX(BODY_RIGHT), top = portraitY(BODY_TOP), bottom = portraitY(BODY_BOTTOM);
+                crack(batch, left, top, -90f, (top - bottom) * k, 21L, SEAM, 1f, 6f);
+                crack(batch, right, top, -90f, (top - bottom) * k, 22L, SEAM, 1f, 6f);
+                crack(batch, left, top, 0f, (right - left) * k, 23L, SEAM, 1f, 6f);
+                crack(batch, bossX() + poseX, portraitY(5f), -90f, (portraitY(5f) - top) * k, 24L, SEAM, 1f, 4f);
+            } else {
+                interior(batch, progress(TIP, CLIMAX_PHASE + 0.3f));
+                if (time < CLIMAX_PHASE) {                              // elle bascule vers nous, pied posé, et tombe
+                    float k = Interpolation.pow2In.apply(progress(TIP, CLIMAX_PHASE));
+                    float s = bossScale(), angle = 88f * k;
+                    float w = facade.width * s * (1f + 0.7f * MathUtils.sinDeg(angle)), h = facade.height * s * MathUtils.cosDeg(angle);
+                    float light = 1f - 0.35f * k;
+                    batch.setColor(light, light, light, 1f);
+                    batch.draw(facade.region, pieceX(facade) - w / 2f, facadeBottom() - 110f * k, w, Math.max(2f, h));
                 }
             }
-            flash(batch, GOLD, CLIMAX_PHASE, 0.3f, 0.4f);
+            flash(batch, hex("fff0c8"), CLIMAX_PHASE, 0.3f, 0.45f);
         }
     }
 
-    /** Phase 3 : la Maison est détruite ; une nouvelle Maison, démoniaque, sort des nuages ; le ciel devient rouge. */
+    /**
+     * Phase 3 : les verrous de la grande porte du coffre du décor sautent un à un ; la petite porte de coffre de la
+     * Maison (sa vraie, sur son aile droite) se décroche ; puis la grande porte tombe du mur, roule et cogne le
+     * rideau. Les potions du coffre vide tombent et se brisent : plus de soins. La Maison vire au démon.
+     */
     static final class HouseVault extends HouseScene {
-        static final float BREAK = 1.2f;
-        private boolean broken;
+        static final float[] BOLTS = {0.35f, 0.65f, 0.95f, 1.25f};
+        static final float POP = 1.0f, DROP = 1.8f, WALL = 3.2f, EVIL = 2.7f;
+        private static final Color STEEL = hex("c8c8d4"), HEAL = hex("ff4a6a");
+        private final Piece small;
+        private final TextureRegion before, after, potion;
+        private final Array<Particle> potions = new Array<>(false, 8);
+        private boolean popped;
+        private float smallX, smallY;
 
-        HouseVault(CutsceneKit kit) { super(kit, Moment.PHASE, 3); }
+        HouseVault(CutsceneKit kit) {
+            super(kit, Moment.PHASE, 3);
+            int[][] open = without(StoryPortraits.Prop.HOUSE_FACADE);                          // sa façade est déjà tombée
+            int[][] empty = without(StoryPortraits.Prop.HOUSE_FACADE, StoryPortraits.Prop.HOUSE_VAULT);
+            small  = lift(open, empty);
+            before = pixels(open);
+            after  = pixels(empty);
+            potion = symbol(EnemySymbol.POTION);
+        }
 
-        @Override protected void restart() { broken = false; }
+        @Override protected void restart() { popped = false; potions.clear(); }
+
+        /** @return le centre de la grande porte, en pixels du décor : au mur, puis elle tombe, roule vers la droite et cogne le rideau. */
+        private float doorX() {
+            if (time < CLIMAX_PHASE) return VAULT_CX + (time > 1.4f ? (random.nextFloat() - 0.5f) * 1.5f : 0f);
+            return MathUtils.lerp(VAULT_CX, WALL_RIGHT - VAULT_R, Interpolation.pow2Out.apply(progress(CLIMAX_PHASE, WALL)));
+        }
+        private float doorY() {
+            float rest = FLOOR - VAULT_R;
+            if (time < DROP) return VAULT_CY;
+            if (time < CLIMAX_PHASE) return MathUtils.lerp(VAULT_CY, rest, Interpolation.pow2In.apply(progress(DROP, CLIMAX_PHASE)));
+            return rest - 8f * Math.abs(MathUtils.sin((time - CLIMAX_PHASE) * 9f)) * (1f - progress(CLIMAX_PHASE, CLIMAX_PHASE + 0.8f));
+        }
+        private float doorRotation() {
+            float lean = 7f * Interpolation.swingOut.apply(progress(WALL, WALL + 0.4f));
+            return -(doorX() - VAULT_CX) / VAULT_R * MathUtils.radiansToDegrees + lean;
+        }
 
         @Override
         protected void step(float delta) {
-            if (!broken && time >= BREAK) {                             // la Maison est détruite
-                broken = true;
-                rumble(0.7f, 14f);
-                MinesBossScenes.crumble(this, 3, WHITE, 500f);
+            for (int i = 0; i < BOLTS.length; i++) {
+                if (at(BOLTS[i])) {                                     // un verrou saute
+                    float angle = 45f + 90f * i;
+                    float x = decorX(VAULT_CX + MathUtils.cosDeg(angle) * (VAULT_R - 3f)), y = decorY(VAULT_CY - MathUtils.sinDeg(angle) * (VAULT_R - 3f));
+                    sparks(x, y, 18, STEEL, 500f, 10f);
+                    rumble(0.1f, 4f);
+                }
             }
-            if (at(CLIMAX_PHASE)) { rumble(0.8f, 16f); sparks(bossX(), groundY() + 40f, 90, hex("ff3a0a"), 1100f, 24f); }
-            embers(evil * 0.8f);
+            if (at(CLIMAX_PHASE)) {                                     // la porte touche le sol
+                rumble(0.9f, 18f);
+                dust(decorX(VAULT_CX - VAULT_R), decorX(VAULT_CX + VAULT_R), decorY(FLOOR), 30, tmp.set(0.6f, 0.5f, 0.4f, 0.3f));
+                for (int i = 0; i < 5; i++) {                           // les potions du coffre tombent
+                    float side = i % 2 == 0 ? 1f : -1f;
+                    Particle bottle = place(potion, decorX(VAULT_CX + side * (8f + 6f * i)), decorY(VAULT_CY + 18f),
+                        side * (220f + 120f * i), 200f + 80f * random.nextFloat(), iconScale(0.08f), 3f);
+                    bottle.gravity = 1700f;
+                    bottle.spin = side * -300f;
+                    sprites.removeValue(bottle, true);
+                    potions.add(bottle);
+                }
+            }
+            if (at(WALL)) { rumble(0.4f, 10f); sparks(decorX(WALL_RIGHT), decorY(FLOOR - VAULT_R), 30, STEEL, 500f, 12f); }
+            for (int i = potions.size - 1; i >= 0; i--) {               // une potion qui touche le sol se brise
+                Particle bottle = potions.get(i);
+                bottle.update(delta);
+                if (bottle.y <= decorY(FLOOR) && bottle.vy < 0f) {
+                    potions.removeIndex(i);
+                    sparks(bottle.x, bottle.y + 10f, 26, HEAL, 500f, 14f);
+                    burst(this, potion, bottle.x, bottle.y + 20f, bottle.size, 1f, 4, WHITE, 300f, 1600f, 0.9f);
+                }
+            }
+            if (time > EVIL) embers(evil * 0.8f);
         }
 
         @Override
         protected void back(Batch batch) {
-            evil = progress(BREAK, CLIMAX_PHASE);
-            decor(batch);
-            // la nouvelle Maison sort des nuages, rouge et noire
-            float rise = Interpolation.pow2Out.apply(progress(CLIMAX_PHASE - 0.4f, CLIMAX_PHASE + 0.3f));
-            showBoss = time < BREAK || rise > 0f;
-            if (time >= BREAK) {
-                poseY = -bossHeight() * (1f - rise);
-                poseTintColor.set(hex("ff1a0a"));
-                poseTint = 0.35f;
-                poseShadow = 0.6f;
+            evil = progress(EVIL, EVIL + 0.8f);
+            if (time >= DROP) hole(batch);
+            door(batch, doorX(), doorY(), doorRotation());
+            light(batch);
+            if (!popped && time >= POP) {                               // sa vraie petite porte de coffre se décroche
+                popped = true;
+                smallX = pieceX(small);
+                smallY = pieceY(small);
+                wear(after);
+            } else if (!popped) {
+                wear(before);
             }
+            poseX = time < POP ? (random.nextFloat() - 0.5f) * 5f * progress(0.3f, POP) : 0f;
+            poseTintColor.set(hex("ff1a0a"));
+            poseTint = 0.35f * evil;
+            poseShadow = 0.4f * evil;
         }
 
         @Override
         protected void front(Batch batch) {
-            if (time < BREAK) interior(batch, 1f);
-            if (time >= BREAK) demon(batch, progress(CLIMAX_PHASE, CLIMAX_PHASE + 0.3f));
-            clouds(batch);                                              // elle sort de derrière les nuages
-            flash(batch, hex("ff3a0a"), CLIMAX_PHASE, 0.3f, 0.5f);
+            if (popped) {                                               // elle tombe et roule au pied de la Maison
+                float k = progress(POP, POP + 0.7f);
+                float x = smallX + 140f * Interpolation.pow2Out.apply(progress(POP, POP + 1.4f));
+                float y = MathUtils.lerp(smallY, groundY() + 40f, Interpolation.bounceOut.apply(k)) + 60f * MathUtils.sin(k * MathUtils.PI);
+                draw(batch, small.region, x, y, bossScale() * 1.2f, -400f * Interpolation.pow2Out.apply(progress(POP, POP + 1.4f)), WHITE, 1f);
+            } else {
+                glow(batch, pieceX(small), pieceY(small), bossScale() * 12f, STEEL, 0.4f * progress(0.3f, POP));
+            }
+            for (Particle bottle : potions) {
+                glow(batch, bottle.x, bottle.y, bottle.size * 30f, HEAL, 0.4f);
+                draw(batch, potion, bottle.x, bottle.y, bottle.size, bottle.rotation, WHITE, 1f);
+            }
+            demon(batch, evil);
+            flash(batch, hex("ff3a0a"), CLIMAX_PHASE, 0.3f, 0.4f);
         }
     }
 
-    /** La Maison démoniaque est détruite ; le décor redevient angélique : lumière, plumes, ciel du soir. */
+    /**
+     * La Maison démoniaque, sans façade ni coffre, tremble et explose ; ses machines aux ailes d'ange s'envolent
+     * vers la lumière qui tombe des lustres ; la salle redevient dorée, des plumes tombent.
+     */
     static final class HouseDeath extends HouseScene {
+        private final TextureRegion ruined;
         private boolean broken;
 
-        HouseDeath(CutsceneKit kit) { super(kit, Moment.DEATH, 0); }
+        HouseDeath(CutsceneKit kit) {
+            super(kit, Moment.DEATH, 0);
+            ruined = pixels(without(StoryPortraits.Prop.HOUSE_FACADE, StoryPortraits.Prop.HOUSE_VAULT));
+        }
 
         @Override protected void restart() { broken = false; }
 
@@ -917,17 +1169,31 @@ final class TowerBossScenes {
         protected void back(Batch batch) {
             evil = 1f - progress(CLIMAX_DEATH + 0.2f, CLIMAX_DEATH + 1.4f);
             holy = progress(CLIMAX_DEATH + 0.4f, CLIMAX_DEATH + 1.6f);
-            decor(batch);
+            hole(batch);                                                // la porte du coffre est restée au sol, contre le rideau
+            door(batch, WALL_RIGHT - VAULT_R, FLOOR - VAULT_R, 7f - (WALL_RIGHT - VAULT_R - VAULT_CX) / VAULT_R * MathUtils.radiansToDegrees);
+            light(batch);
+            if (time < CLIMAX_DEATH) wear(ruined);
             showBoss = time < CLIMAX_DEATH;
             poseTintColor.set(hex("ff1a0a"));
             poseTint = 0.35f;
-            poseShadow = 0.6f;
+            poseShadow = 0.4f;
             poseX = (random.nextFloat() - 0.5f) * 10f * progress(1.0f, CLIMAX_DEATH);
         }
 
         @Override
         protected void front(Batch batch) {
-            if (time < CLIMAX_DEATH) demon(batch, 1f);
+            if (time < CLIMAX_DEATH) {
+                demon(batch, 1f);
+                float x0 = portraitX(BODY_LEFT), x1 = portraitX(BODY_RIGHT);
+                glow(batch, (x0 + x1) / 2f, bossY(), (x1 - x0) * 1.2f, hex("ff3a0a"), 0.3f * progress(1.0f, CLIMAX_DEATH));
+            } else {                                                    // ses machines aux ailes d'ange s'envolent, libres
+                float scale = bossWidth() / 50f, k = Interpolation.pow2In.apply(progress(CLIMAX_DEATH + 0.3f, 5.4f));
+                for (int i = 0; i < 3; i++) {
+                    float x = bossX() + (i - 1) * bossWidth() * (0.35f + 0.9f * k) + 20f * MathUtils.sin(time * 3f + i);
+                    float y = bossY() + (i == 1 ? 60f : 0f) + worldHeight() * 0.75f * k;
+                    flyer(batch, x, y, scale, i, progress(CLIMAX_DEATH + 0.3f, CLIMAX_DEATH + 0.7f));
+                }
+            }
             wave(batch, CLIMAX_DEATH, 1.0f, bossX(), bossY(), WHITE, worldWidth() * 1.6f);
             flash(batch, WHITE, CLIMAX_DEATH, 0.4f, 0.7f);
         }

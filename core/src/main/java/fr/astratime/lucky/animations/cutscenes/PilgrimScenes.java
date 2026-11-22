@@ -136,125 +136,281 @@ final class PilgrimScenes {
     // Phase 2 et mort
     // -------------------------------------------------------------------------
 
-    /** « La comète reviendra » : il tend les bras, une étoile d'or grossit au ciel et tombe derrière lui. */
-    static final class ProphetPhase extends BossScene {
-        ProphetPhase(CutsceneKit kit) { super(kit, Moment.PHASE, EnemyKind.PROPHETE, 2); }
+    /**
+     * Socle des scènes du Prophète, devant le vrai décor des Pèlerins : la comète du ciel (sa tête dorée et sa
+     * traîne, en pixels du décor) et les neuf lanternes de la file des pèlerins, qu'une scène éteint ou rallume.
+     */
+    abstract static class ProphetScene extends BossScene {
+        /** La tête de la comète du décor (son centre, en pixels du décor) et les deux bouts de sa traîne. */
+        static final float HEAD_X = 264f, HEAD_Y = 46.5f;
+        static final int TAIL_FROM = 38, TAIL_TO = 256;
+        static final float TAIL_FROM_Y = 20f, TAIL_TO_Y = 45.5f;
+        /** Les vitres des lanternes des pèlerins (coin haut-gauche, 6 x 11 pixels du décor), de la plus proche à la plus loin. */
+        static final int[][] LANTERNS = {{75, 145}, {97, 141}, {118, 136}, {140, 132}, {162, 128}, {184, 123}, {205, 119},
+            {227, 114}, {249, 110}};
+        static final Color GLASS_OUT = hex("2e2622");
+        /** La main levée du Prophète, en pixels de son portrait (colonnes 28 à 31, lignes 16 à 19). */
+        static final float HAND_X = 30f, HAND_Y = 18f;
+        private final TextureRegion tailPatch, headPatch;
+        private final int tailTop, headTop;
 
-        private float starY() {
-            float fall = Interpolation.pow3In.apply(progress(1.2f, CLIMAX_PHASE));
-            return MathUtils.lerp(worldHeight() * 0.95f, bossBottom(), fall);
+        ProphetScene(CutsceneKit kit, Moment moment, int phase) {
+            super(kit, moment, EnemyKind.PROPHETE, phase);
+            tailTop = DecorPatches.top(TAIL_FROM_Y, TAIL_TO_Y, 3);
+            headTop = DecorPatches.top(HEAD_Y, HEAD_Y, 9);
+            com.badlogic.gdx.graphics.Pixmap decor = DecorPatches.read(EnemyKind.PROPHETE);
+            if (decor == null) {
+                tailPatch = headPatch = null;
+                return;
+            }
+            tailPatch = region(DecorPatches.upright(decor, TAIL_FROM, TAIL_FROM_Y, TAIL_TO, TAIL_TO_Y, 3), false);
+            headPatch = region(DecorPatches.upright(decor, TAIL_TO - 1, HEAD_Y, 274, HEAD_Y, 9), false);
+            decor.dispose();
         }
+
+        /** @return la tête de la comète du décor, à l'écran. */
+        protected float headX() { return decorX(HEAD_X); }
+        protected float headY() { return decorY(HEAD_Y); }
+
+        /** La comète quitte le ciel du décor : on peint le ciel par-dessus sa tête et sa traîne. */
+        protected void eraseComet(Batch batch, float alpha) {
+            DecorPatches.draw(this, batch, tailPatch, TAIL_FROM, tailTop, alpha);
+            DecorPatches.draw(this, batch, headPatch, TAIL_TO - 1, headTop, alpha);
+        }
+
+        protected float lanternX(int k) { return decorX(LANTERNS[k][0] + 3f); }
+        protected float lanternY(int k) { return decorY(LANTERNS[k][1] + 5.5f); }
+
+        /** La lanterne {@code k} éteinte : sa vitre noircie. */
+        protected void lanternOut(Batch batch, int k) { decorRect(batch, GLASS_OUT, LANTERNS[k][0], LANTERNS[k][1], 6, 11); }
+
+        /** La lueur de la lanterne {@code k}. */
+        protected void lanternGlow(Batch batch, int k, float alpha) {
+            glow(batch, lanternX(k), lanternY(k), decorScale() * 22f * pulse(9f + k, 0.8f), LANTERN, alpha);
+        }
+
+        /** Une comète en ({@code x}, {@code y}) qui file vers ({@code dx}, {@code dy}) : sa tête et sa traîne. */
+        protected void comet(Batch batch, float x, float y, float dx, float dy, float size, float tail, float alpha) {
+            float length = (float) Math.sqrt(dx * dx + dy * dy);
+            if (length < 0.001f) { dx = 1f; dy = 0f; length = 1f; }
+            float ux = -dx / length, uy = -dy / length;
+            line(batch, TAIL, 0.55f * alpha, x, y, x + ux * tail, y + uy * tail, size * 0.22f);
+            line(batch, hex("fff6c8"), 0.8f * alpha, x, y, x + ux * tail * 0.55f, y + uy * tail * 0.55f, size * 0.09f);
+            for (int i = 1; i <= 6; i++) {
+                float k = i / 6f;
+                glow(batch, x + ux * tail * k, y + uy * tail * k, size * (1.1f - 0.8f * k), COMET, 0.35f * alpha * (1f - k));
+            }
+            glow(batch, x, y, size * 2.4f, COMET, 0.8f * alpha);
+            glow(batch, x, y, size * 0.8f, HOT, alpha);
+        }
+    }
+
+    /**
+     * « La comète répond à son appel » : il lève la main, un fil d'or monte de sa main vers la comète du ciel, qui
+     * flamboie, quitte le ciel du décor et plonge sur sa main levée ; elle éclate, les lanternes des pèlerins
+     * flambent, et la Comète (le symbole qu'il gagne) reste au-dessus de sa main.
+     */
+    static final class ProphetPhase extends ProphetScene {
+        static final float CALL = 0.35f, LEAVE = 1.1f;
+        private final TextureRegion icon;
+
+        ProphetPhase(CutsceneKit kit) {
+            super(kit, Moment.PHASE, 2);
+            icon = symbol(fr.astratime.lucky.entities.enemy.EnemySymbol.GOLDEN_COMET);
+        }
+
+        private float handX() { return portraitX(HAND_X); }
+        private float handY() { return portraitY(HAND_Y); }
+
+        /** @return où est la comète qui plonge : une courbe de sa place au ciel jusqu'à sa main. */
+        private float cometX(float k) {
+            float cx = MathUtils.lerp(headX(), handX(), 0.25f);
+            return (1 - k) * (1 - k) * headX() + 2 * k * (1 - k) * cx + k * k * handX();
+        }
+
+        private float cometY(float k) {
+            float cy = Math.max(headY(), handY()) + worldHeight() * 0.12f;
+            return (1 - k) * (1 - k) * headY() + 2 * k * (1 - k) * cy + k * k * handY();
+        }
+
+        private float dive() { return Interpolation.pow2In.apply(progress(LEAVE, CLIMAX_PHASE)); }
 
         @Override
         protected void step(float delta) {
-            if (time > 0.3f && time < CLIMAX_PHASE && random.nextFloat() < delta * 20f) {
-                sparks(bossX() + worldWidth() * 0.18f, starY(), 3, COMET, 200f, 8f);
+            if (at(CALL)) { rumble(0.15f, 3f); sparks(handX(), handY(), 14, COMET, 260f, 8f); }
+            if (at(LEAVE)) { rumble(0.25f, 5f); sparks(headX(), headY(), 30, COMET, 420f, 10f); }
+            if (time > LEAVE && time < CLIMAX_PHASE && random.nextFloat() < delta * 40f) {
+                float k = dive();
+                sparks(cometX(k), cometY(k), 2, COMET, 120f, 9f);
             }
             if (at(CLIMAX_PHASE)) {
                 rumble(0.7f, 14f);
-                sparks(bossX() + worldWidth() * 0.18f, bossBottom(), 80, COMET, 900f, 16f);
-                sparks(bossX(), bossY(), 40, HOT, 600f, 12f);
+                sparks(handX(), handY(), 80, COMET, 900f, 16f);
+                sparks(handX(), handY(), 40, HOT, 600f, 12f);
+                for (int k = 0; k < LANTERNS.length; k++) sparks(lanternX(k), lanternY(k), 6, LANTERN, 200f, 7f);
             }
         }
 
         @Override
         protected void back(Batch batch) {
-            fill(batch, Color.BLACK, 0.45f * progress(0.1f, 0.8f));
-            if (time < CLIMAX_PHASE + 0.1f) {
-                float x = bossX() + worldWidth() * 0.18f;
-                float size = MathUtils.lerp(40f, 260f, progress(0.3f, CLIMAX_PHASE));
-                line(batch, TAIL, 0.6f, x, starY(), x + 60f, starY() + 400f, 10f);
-                glow(batch, x, starY(), size, COMET, 0.9f);
-            }
-            if (time >= CLIMAX_PHASE) glow(batch, bossX(), bossBottom(), worldWidth() * 0.6f, CRATER, 0.4f * pulse(4f, 0.6f));
-            poseY = 24f * gesture(0.2f, CLIMAX_PHASE + 0.4f);
-            poseStretch = 0.08f * progress(0.2f, 1.0f);
-            poseTint = 0.4f * progress(CLIMAX_PHASE - 0.2f, CLIMAX_PHASE + 0.3f) * pulse(6f, 0.6f);
+            fill(batch, Color.BLACK, 0.3f * progress(0.1f, 0.8f));
+            if (time >= LEAVE) eraseComet(batch, progress(LEAVE, LEAVE + 0.12f));
+            else glow(batch, headX(), headY(), decorScale() * (16f + 26f * progress(0.6f, LEAVE)) * pulse(10f, 0.7f), COMET,
+                0.5f + 0.4f * progress(0.6f, LEAVE));
+            float flare = time < CLIMAX_PHASE ? 0f : 1f - 0.6f * progress(CLIMAX_PHASE, CLIMAX_PHASE + 1.2f);
+            for (int k = 0; k < LANTERNS.length; k++) lanternGlow(batch, k, 0.25f + 0.65f * flare);
+            poseY = 20f * gesture(0.2f, CLIMAX_PHASE + 0.6f);
+            poseStretch = 0.06f * progress(0.2f, 1.0f);
+            poseTint = 0.45f * progress(CLIMAX_PHASE - 0.1f, CLIMAX_PHASE + 0.3f) * pulse(6f, 0.6f);
             poseTintColor.set(COMET);
         }
 
         @Override
         protected void front(Batch batch) {
+            float call = progress(CALL, CALL + 0.6f);                         // le fil d'or de son appel
+            if (call > 0f && time < LEAVE + 0.2f) {
+                float x = MathUtils.lerp(handX(), headX(), call), y = MathUtils.lerp(handY(), headY(), call);
+                float a = 1f - progress(LEAVE, LEAVE + 0.2f);
+                line(batch, COMET, 0.5f * a, handX(), handY(), x, y, 5f);
+                line(batch, HOT, 0.8f * a, handX(), handY(), x, y, 2f);
+                glow(batch, x, y, 60f, COMET, 0.8f * a);
+            }
+            glow(batch, handX(), handY(), 90f * pulse(7f, 0.6f), COMET, 0.5f * progress(CALL, CALL + 0.4f));
+            if (time >= LEAVE && time < CLIMAX_PHASE) {                       // elle plonge sur sa main
+                float k = dive(), k2 = Math.min(1f, k + 0.02f);
+                float size = decorScale() * MathUtils.lerp(14f, 30f, k);
+                comet(batch, cometX(k), cometY(k), cometX(k2) - cometX(k), cometY(k2) - cometY(k), size,
+                    worldWidth() * MathUtils.lerp(0.12f, 0.3f, k), 1f);
+            }
             if (time >= CLIMAX_PHASE) eyes(batch, pulse(6f, 0.6f), COMET, new float[] {14f, 16f}, new float[] {21f, 16f});
+            wave(batch, CLIMAX_PHASE, 0.8f, handX(), handY(), COMET, worldWidth() * 1.2f);
+            if (icon != null && time >= CLIMAX_PHASE) {                       // la Comète qu'il gagne, au-dessus de sa main
+                float k = Interpolation.pow2Out.apply(progress(CLIMAX_PHASE, CLIMAX_PHASE + 0.45f));
+                float x = MathUtils.lerp(handX(), portraitX(40f), k), y = MathUtils.lerp(handY(), portraitY(9f), k);
+                glow(batch, x, y, iconScale(0.3f) * pulse(5f, 0.7f), COMET, 0.6f * k);
+                draw(batch, icon, x, y, iconScale(0.14f) * (0.4f + 0.6f * k), 0f, WHITE, k);
+            }
             flash(batch, COMET, CLIMAX_PHASE, 0.3f, 0.5f);
         }
     }
 
     /**
-     * Les lanternes s'éteignent, son auréole (la vraie, ôtée du portrait) file au ciel en étoile filante, il tombe en
-     * poussière d'or.
+     * « Le Prophète rejoint sa comète » : les lanternes des pèlerins s'éteignent une à une ; son auréole (la vraie,
+     * ôtée du portrait) part la première vers la comète du ciel. Puis il s'élève lui-même, devient lumière et monte
+     * jusqu'à la comète ; il s'y fond dans un éclat. La comète, plus grande, quitte le ciel du décor et file au loin ;
+     * dans son sillage, les pèlerins rallument leurs lanternes.
      */
-    static final class ProphetDeath extends BossScene {
-        /** Quand l'auréole quitte sa tête, et le centre de sa comète sur le portrait (pixels comptés du haut). */
-        private static final float HALO_UP = 0.8f, HALO_X = 26.5f, HALO_Y = 5.5f;
+    static final class ProphetDeath extends ProphetScene {
+        /** Quand l'auréole quitte sa tête et rejoint la comète, quand il s'élève ; le centre de l'auréole sur le portrait. */
+        private static final float HALO_UP = 0.8f, HALO_IN = 1.8f, RISE = 1.0f, HALO_X = 26.5f, HALO_Y = 5.5f;
+        /** Quand la comète, avec lui, s'en va, et quand elle a quitté l'écran. */
+        private static final float AWAY = 4.4f;
         private final TextureRegion halo, withoutHalo;
         private boolean haloOff;
         private float haloLeft, haloBottom;
 
         ProphetDeath(CutsceneKit kit) {
-            super(kit, Moment.DEATH, EnemyKind.PROPHETE, 0);
+            super(kit, Moment.DEATH, 0);
             halo = region(EnemyTextures.newProphetPart(true), false);
             withoutHalo = region(EnemyTextures.newProphetPart(false), false);
         }
 
-        private float out(int k) { return 0.2f + k * 0.18f; }
+        @Override protected void restart() { haloOff = false; }
+
+        private float out(int k)    { return 0.25f + k * 0.11f; }
+        private float relit(int k)  { return CLIMAX_DEATH + 0.5f + k * 0.1f; }
+        private float rise()        { return Interpolation.pow2In.apply(progress(RISE, CLIMAX_DEATH)); }
+        private float away()        { return Interpolation.pow2In.apply(progress(CLIMAX_DEATH + 0.2f, AWAY)); }
+        private float awayX(float k) { return MathUtils.lerp(headX(), worldWidth() + 300f, k); }
+        private float awayY(float k) { return MathUtils.lerp(headY(), worldHeight() + 120f, k * k); }
 
         @Override
         protected void step(float delta) {
-            for (int k = 0; k < 8; k++) if (at(out(k))) sparks(lanternX(k), lanternY(k), 6, LANTERN, 120f, 6f);
-            if (at(HALO_UP) && !haloOff) {
-                // son auréole se détache : on la retire du portrait (sa place est prise à la prochaine image)
-                boss.setRegion(withoutHalo);
-                haloLeft = Float.NaN;
-                haloOff = true;
+            for (int k = 0; k < LANTERNS.length; k++) {
+                if (at(out(k))) sparks(lanternX(k), lanternY(k), 5, LANTERN, 90f, 6f);
+                if (at(relit(k))) sparks(lanternX(k), lanternY(k), 8, LANTERN, 160f, 7f);
             }
-            if (time > 1.6f && time < 3.6f && random.nextFloat() < delta * 40f) {
-                sparks(bossX() + (random.nextFloat() - 0.5f) * bossWidth(), bossBottom() + bossHeight() * random.nextFloat(), 3,
-                    COMET, 200f, 8f);
+            if (at(HALO_IN)) { rumble(0.2f, 4f); sparks(headX(), headY(), 30, COMET, 400f, 10f); }
+            if (time > RISE && time < CLIMAX_DEATH && random.nextFloat() < delta * 40f) {
+                sparks(bossX() + poseX, bossBottom() + poseY + bossHeight() * poseScale * 0.5f, 2, COMET, 160f, 9f);
             }
-            if (at(CLIMAX_DEATH)) {
-                rumble(0.5f, 8f);
-                spray(coin, bossX(), bossY(), 24, 40f, 140f, 800f, coinScale(0.04f), 1400f, 1.5f);
+            if (at(CLIMAX_DEATH)) {                                           // il se fond dans sa comète
+                rumble(0.6f, 10f);
+                sparks(headX(), headY(), 90, COMET, 900f, 16f);
+                sparks(headX(), headY(), 40, HOT, 600f, 12f);
+            }
+            if (time > CLIMAX_DEATH + 0.2f && time < AWAY && random.nextFloat() < delta * 50f) {
+                float k = away();
+                sparks(awayX(k), awayY(k), 2, COMET, 140f, 10f);
             }
         }
 
-        private float lanternX(int k) { return worldWidth() * (0.08f + k * 0.12f); }
-        private float lanternY(int k) { return bossBottom() + 40f + (k % 2) * 30f; }
-
         @Override
         protected void back(Batch batch) {
-            for (int k = 0; k < 8; k++) {
-                if (time < out(k)) glow(batch, lanternX(k), lanternY(k), 110f * pulse(10f + k, 0.8f), LANTERN, 0.7f);
+            if (time >= HALO_UP && !haloOff) {                                // son auréole se détache du portrait
+                haloOff = true;
+                haloLeft = Float.NaN;
+                wear(withoutHalo);
             }
-            poseSink = 0.35f * progress(1.4f, 2.2f);
-            poseTint = 0.7f * progress(1.6f, 3.0f);
+            for (int k = 0; k < LANTERNS.length; k++) {
+                if (time < out(k)) lanternGlow(batch, k, 0.6f);
+                else if (time < relit(k)) lanternOut(batch, k);
+                else lanternGlow(batch, k, 0.75f + 0.25f * (1f - progress(relit(k), relit(k) + 0.6f)));
+            }
+            if (time < CLIMAX_DEATH) {                                        // la comète du ciel l'attend
+                float wait = progress(0.5f, CLIMAX_DEATH);
+                glow(batch, headX(), headY(), decorScale() * (14f + 24f * wait) * pulse(8f, 0.75f), COMET, 0.4f + 0.5f * wait);
+            } else {
+                eraseComet(batch, 1f);
+            }
+            float k = rise();
+            poseScale = MathUtils.lerp(1f, 0.12f, k);
+            poseX = (headX() - bossX()) * k;
+            poseY = (headY() - bossBottom() - bossHeight() * poseScale * 0.5f) * k;
+            poseTint = progress(RISE - 0.4f, CLIMAX_DEATH - 0.4f);
             poseTintColor.set(COMET);
-            poseAlpha = 1f - progress(2.4f, 3.6f);
-            showBoss = time < 3.7f;
+            showBoss = time < CLIMAX_DEATH;
         }
 
         @Override
         protected void front(Batch batch) {
-            float scale = bossScale() * poseScale;
+            float scale = bossScale();
             if (!haloOff) {
-                // l'auréole encore sur sa tête luit doucement
                 glow(batch, portraitX(HALO_X), portraitY(HALO_Y), 60f * pulse(5f, 0.7f), COMET, 0.6f);
-            } else if (time < 2.8f) {
-                if (Float.isNaN(haloLeft)) {                            // elle part d'exactement où elle était
-                    haloLeft = bossX() + poseX - boss.getRegionWidth() * scale / 2f;
+            } else if (time < HALO_IN + 0.1f) {                              // la vraie auréole monte vers la comète
+                if (Float.isNaN(haloLeft)) {
+                    haloLeft = bossX() + poseX - boss.getRegionWidth() * scale * poseScale / 2f;
                     haloBottom = bossBottom() + poseY;
                 }
-                float up = Interpolation.pow2In.apply(progress(HALO_UP, 2.6f));
-                float dx = up * worldWidth() * 0.4f, dy = up * worldHeight() * 0.6f;
-                float hx = haloLeft + HALO_X * scale + dx;
-                float hy = haloBottom + (boss.getRegionHeight() - HALO_Y) * scale + dy;
-                if (up > 0.05f) line(batch, TAIL, 0.6f * up, hx, hy, hx - 300f * up, hy - 160f * up, 6f);
-                batch.setColor(1f, 1f, 1f, 1f - progress(2.3f, 2.8f));
-                batch.draw(halo, haloLeft + dx, haloBottom + dy, halo.getRegionWidth() * scale, halo.getRegionHeight() * scale);
+                float up = Interpolation.pow2.apply(progress(HALO_UP, HALO_IN));
+                float startX = haloLeft + HALO_X * scale, startY = haloBottom + (boss.getRegionHeight() - HALO_Y) * scale;
+                float dx = (headX() - startX) * up, dy = (headY() - startY) * up;
+                float shrink = 1f - 0.6f * up;
+                float hx = startX + dx, hy = startY + dy;
+                if (up > 0.05f) line(batch, TAIL, 0.6f * up, hx, hy, hx - dx * 0.4f, hy - dy * 0.4f, 6f);
+                batch.setColor(1f, 1f, 1f, 1f - progress(HALO_IN - 0.15f, HALO_IN + 0.1f));
+                float w = halo.getRegionWidth() * scale * shrink, h = halo.getRegionHeight() * scale * shrink;
+                batch.draw(halo, hx - HALO_X * scale * shrink, hy - (halo.getRegionHeight() - HALO_Y) * scale * shrink, w, h);
                 batch.setColor(Color.WHITE);
                 glow(batch, hx, hy, 120f * (0.4f + 0.6f * up), COMET, 0.9f);
             }
-            flash(batch, COMET, CLIMAX_DEATH, 0.3f, 0.35f);
+            if (showBoss && time > RISE) {                                    // il devient lumière en montant
+                float cx = bossX() + poseX, cy = bossBottom() + poseY + bossHeight() * poseScale * 0.5f;
+                glow(batch, cx, cy, bossHeight() * poseScale * 2.2f, COMET, 0.6f * progress(RISE, RISE + 0.6f));
+            }
+            if (time >= CLIMAX_DEATH && time < AWAY + 0.1f) {                 // la comète, avec lui, file au loin
+                float k = away(), k2 = Math.min(1f, k + 0.02f);
+                float size = decorScale() * (20f + 10f * pulse(12f, 0.5f));
+                float dx = awayX(k2) - awayX(k), dy = awayY(k2) - awayY(k);
+                if (k < 0.02f) { dx = 1f; dy = 0.2f; }
+                comet(batch, awayX(k), awayY(k), dx, dy, size, worldWidth() * MathUtils.lerp(0.2f, 0.45f, k), 1f);
+            }
+            if (time >= CLIMAX_DEATH) {                                       // son sillage d'or qui s'efface
+                float k = away(), fade = 1f - progress(AWAY, DEATH_COVER_START);
+                line(batch, COMET, 0.25f * fade, headX(), headY(), awayX(k), awayY(k), 6f);
+            }
+            wave(batch, CLIMAX_DEATH, 0.9f, headX(), headY(), COMET, worldWidth() * 0.9f);
+            flash(batch, COMET, CLIMAX_DEATH, 0.3f, 0.4f);
         }
     }
 }
