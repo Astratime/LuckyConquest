@@ -56,7 +56,7 @@ public enum Chapter {
         EnemyKind.LIFTIER_TOUR, List.of(EnemyKind.ECHO, EnemyKind.VERTIGE, EnemyKind.GARGOUILLE), EnemyKind.ARCHITECTE,
         null, new Stats(550, 110, 270, 55, 3_000, 12_900, 220_000_000L, 1)),
     LE_JACKPOT("Le Jackpot",
-        "Au sommet de la Tour, une seule machine. Elle n'a jamais été jouée. On dit qu'elle donne tout. "
+        "Au bout du chemin, une seule machine. Elle n'a jamais été jouée. On dit qu'elle donne tout. "
             + "On dit aussi qu'elle prend tout.",
         EnemyKind.GARDIEN_LEVIER, List.of(EnemyKind.OMBRE, EnemyKind.BANQUEROUTE, EnemyKind.TEMPS_MORT),
         EnemyKind.MACHINE_ORIGINELLE, "Tu as tiré le levier. Le monde a recommencé.",

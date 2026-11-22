@@ -58,11 +58,11 @@ public enum Achievement {
     HARD_DESERT("Désert sans pitié", "Vider les 4 donjons du Désert de Braise en mode difficile.", 1_000_000_000_000L),
     FORTUNE("Fortune faite", "Gagner 1 milliard de pièces en Exploration, au total.", 300_000_000),
     // Tour des épreuves
-    COMET("Comète abattue", "Finir le chapitre {0} de la Tour des épreuves.", 250_000),
-    HALFWAY("Mi-chemin", "Finir le chapitre {0} de la Tour des épreuves.", 30_000_000),
-    ORIGIN("Fin de la Machine", "Finir le chapitre {0} de la Tour des épreuves.", 1_000_000_000L),
-    HARD_CHAPTER("Sans pitié", "Finir un chapitre de la Tour en mode difficile.", 200_000_000),
-    HARD_TOWER("Tour domptée", "Finir les {0} chapitres de la Tour en mode difficile.", 10_000_000_000L),
+    COMET("Comète abattue", "Finir le chapitre {0} de l'Histoire.", 250_000),
+    HALFWAY("Mi-chemin", "Finir le chapitre {0} de l'Histoire.", 30_000_000),
+    ORIGIN("Fin de la Machine", "Finir le chapitre {0} de l'Histoire.", 1_000_000_000L),
+    HARD_CHAPTER("Sans pitié", "Finir un chapitre de l'Histoire en mode difficile.", 200_000_000),
+    HARD_TOWER("Histoire domptée", "Finir les {0} chapitres de l'Histoire en mode difficile.", 10_000_000_000L),
     ENDLESS_5("Toujours plus haut", "Gagner l'étage 5 du mode sans fin.", 500_000_000),
     ENDLESS_10("Vertige", "Gagner l'étage 10 du mode sans fin.", 5_000_000_000L),
     // Progression

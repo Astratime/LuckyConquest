@@ -126,7 +126,7 @@ public class TowerScreen extends CasinoMenuScreen {
     private static final int CROUPIER_ROW = ENDLESS_ROW + 1;
 
     private TowerScreen(LuckyGame luckyGame, int startRow, boolean hardMode) {
-        super(luckyGame, Lang.t("TOUR DES ÉPREUVES"), 96, VEIL_ALPHA);
+        super(luckyGame, Lang.t("HISTOIRE"), 96, VEIL_ALPHA);
         this.hard      = hardMode && luckyGame.getProfile().isTowerHardOpen();
         this.enemyTextures = assets.enemyTextures();
 
@@ -239,10 +239,10 @@ public class TowerScreen extends CasinoMenuScreen {
         select(Math.min(startRow, rows.size() - 1), false);
         layout();
         firstVisit = new FirstVisitGuide(stage, hud, clickSound, luckyGame.getProfile(), PlayerProfile.GUIDE_TOWER,
-            Lang.t("La Tour des épreuves. Six chapitres, de plus en plus durs."),
+            Lang.t("Le mode Histoire. Dix chapitres, de plus en plus durs."),
             Lang.t("Un chapitre : un premier combat, puis tu choisis ton adversaire parmi trois cartes, puis le "
                 + "boss. Tes PV et tes gains te suivent."),
-            Lang.t("Bats le boss pour ouvrir le chapitre suivant. La Tour ne rapporte pas de pièces."));
+            Lang.t("Bats le boss pour ouvrir le chapitre suivant. L'Histoire ne rapporte pas de pièces."));
         fade.toFront();
     }
 

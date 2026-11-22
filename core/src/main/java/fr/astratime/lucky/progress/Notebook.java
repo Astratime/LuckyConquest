@@ -130,7 +130,7 @@ public final class Notebook {
         page(EnemyKind.DJINN, "Le Djinn exauce trois voeux. Je lui en ai demandé un seul : un adversaire à ma hauteur. "
             + "Il m'a montré ton visage.");
         page(EnemyKind.DRAGON, "Ignar dort sur la dernière braise de ma comète. Si tu lis ceci, il ne dort plus. "
-            + "Monte au sommet de la Tour une dernière fois, au plus dur. Je t'attendrai derrière ma table.");
+            + "Va au bout de l'histoire une dernière fois, au plus dur. Je t'attendrai derrière ma table.");
     }
 
     private static void page(EnemyKind kind, String text) { PAGES.put(kind, text); }
