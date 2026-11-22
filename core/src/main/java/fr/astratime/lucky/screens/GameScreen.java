@@ -2799,15 +2799,7 @@ public class GameScreen extends ScreenAdapter {
         if (run instanceof DungeonRun dungeonRun) return FrontScene.Decor.of(dungeonRun.getDungeon());
         if (run instanceof TowerRun towerRun)     return FrontScene.Decor.of(towerRun.getChapter());
         if (run instanceof EndlessRun || run instanceof CroupierRun) return FrontScene.Decor.of(Chapter.LE_JACKPOT); // le sommet de la Tour
-        if (run == null) { // Entraînement : le décor de l'ennemi choisi (son donjon, son chapitre)
-            for (Place place : Place.values()) {
-                for (Dungeon dungeon : place.getDungeons()) {
-                    if (dungeon.getSoldier() == trainingEnemy || dungeon.getKing() == trainingEnemy) return FrontScene.Decor.of(dungeon);
-                }
-            }
-            Chapter chapter = Chapter.of(trainingEnemy);
-            return chapter != null ? FrontScene.Decor.of(chapter) : FrontScene.Decor.ENTRAINEMENT;
-        }
+        if (run == null) return FrontScene.Decor.of(trainingEnemy); // Entraînement : le décor de l'ennemi choisi (son donjon, son chapitre)
         return FrontScene.Decor.CASINO;
     }
 

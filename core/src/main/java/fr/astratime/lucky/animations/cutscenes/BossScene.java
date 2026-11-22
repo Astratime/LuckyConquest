@@ -12,16 +12,18 @@ import com.badlogic.gdx.utils.Array;
 import fr.astratime.lucky.entities.enemy.EnemyKind;
 import fr.astratime.lucky.entities.enemy.EnemySymbol;
 import fr.astratime.lucky.i18n.Lang;
+import fr.astratime.lucky.views.FrontScene;
 import java.util.Random;
 
 import static fr.astratime.lucky.assets.Palette.hex;
 
 /**
  * Socle des cinématiques de phase et de mort des boss et des rois : chaque boss a
- * sa propre scène (voir {@link BossScenes}), dans le décor de son chapitre ou de
- * son lieu ({@link BossTheme}). Le socle dessine le ciel et le sol, le boss (avec
- * le geste que la scène lui donne), les particules, puis la phrase de la scène en
- * bas de l'écran ; fondu noir et la suite du combat.
+ * sa propre scène (voir {@link BossScenes}), devant le vrai décor de son donjon ou de
+ * son chapitre (celui de la vue de face, {@link FrontScene.Decor}), teinté par
+ * {@link BossTheme}. Le socle dessine le décor, le boss (avec le geste que la scène
+ * lui donne), les particules, le symbole que le boss gagne à sa phase, puis la phrase
+ * de la scène en bas de l'écran ; fondu noir et la suite du combat.
  *
  * Le moment fort tombe sur le son : {@link #CLIMAX_PHASE} (cutscene/boss_phase)
  * ou {@link #CLIMAX_DEATH} (cutscene/boss_death).
@@ -46,6 +48,10 @@ public abstract class BossScene extends Cutscene {
     protected final int           phase;
     protected final BossTheme     theme;
     protected final TextureRegion boss, coin;
+    /** Le vrai décor du lieu ou du chapitre du boss ({@code null} sans image). */
+    private final TextureRegion decor;
+    /** Le symbole que le boss gagne en entrant dans sa phase ({@code null} : aucun, ou sa mort). */
+    private final TextureRegion gained;
     /** Étincelles et lueurs (mélange additif). */
     protected final Array<Particle> glows   = new Array<>(false, 256);
     /** Images : pièces, symboles, morceaux, accessoires. */
@@ -64,7 +70,7 @@ public abstract class BossScene extends Cutscene {
     protected boolean showBoss;
 
     protected BossScene(CutsceneKit kit, Moment moment, EnemyKind kind, int phase) {
-        super(kit.settings(), kit.shake(), kit.sound(moment == Moment.PHASE ? "boss_phase" : "boss_death"));
+        super(kit.settings(), kit.shake(), kit.sound(track(kind, moment, phase)));
         this.kit    = kit;
         this.moment = moment;
         this.kind   = kind;
@@ -72,6 +78,9 @@ public abstract class BossScene extends Cutscene {
         theme = BossTheme.of(kind);
         boss  = kit.portrait(kind);
         coin  = load("hud/coin.png");
+        decor = loadDecor(kind);
+        EnemySymbol symbol = moment == Moment.PHASE ? kind.kingPhaseSymbol() : null;
+        gained = symbol == null || kit.enemies() == null ? null : kit.symbol(symbol);
         font  = kit.font();
         if (moment == Moment.PHASE) {
             headline = kind.phaseText(phase);
@@ -80,6 +89,17 @@ public abstract class BossScene extends Cutscene {
             headline = theme.deathLine();
             subtitle = kind.getBarName();
         }
+    }
+
+    /**
+     * @return la bande-son de la scène : la sienne si elle existe (sounds/cutscene/phase{@code N}_{@code boss}.ogg ou
+     *         death_{@code boss}.ogg, par exemple phase2_comte_minuit), sinon le son commun boss_phase / boss_death
+     */
+    static String track(EnemyKind kind, Moment moment, int phase) {
+        String own = (moment == Moment.PHASE ? "phase" + phase : "death") + "_" + kind.name().toLowerCase(java.util.Locale.ROOT);
+        boolean exists = com.badlogic.gdx.Gdx.files != null
+            && com.badlogic.gdx.Gdx.files.internal("sounds/cutscene/" + own + ".ogg").exists();
+        return exists ? own : moment == Moment.PHASE ? "boss_phase" : "boss_death";
     }
 
     /** @return le moment joué. */
@@ -139,6 +159,7 @@ public abstract class BossScene extends Cutscene {
         gradient(batch, theme.skyLow(), theme.skyTop());
         batch.setColor(theme.ground());
         batch.draw(pixel, -MARGIN, -MARGIN, worldWidth() + 2f * MARGIN, groundY() + MARGIN);
+        drawDecor(batch);
         poseX = poseY = poseTilt = poseStretch = poseShadow = poseSink = poseTint = 0f;
         poseScale = poseAlpha = 1f;
         showBoss = true;
@@ -147,6 +168,7 @@ public abstract class BossScene extends Cutscene {
         front(batch);
         drawParticles(batch, sprites);
         drawParticles(batch, glows);
+        drawGained(batch);
         drawTexts(batch);
         fadeFromBlack(batch, 0.4f);
     }
@@ -171,10 +193,67 @@ public abstract class BossScene extends Cutscene {
         }
     }
 
+    /** @return le décor du boss {@code kind}, chargé avec la scène ({@code null} s'il manque). */
+    private TextureRegion loadDecor(EnemyKind kind) {
+        String path = FrontScene.Decor.of(kind).getPath();
+        if (com.badlogic.gdx.Gdx.files == null || !com.badlogic.gdx.Gdx.files.internal(path).exists()) return null;
+        return load(path);
+    }
+
+    /**
+     * Le vrai décor du lieu, qui couvre l'écran (sans lissage), calé en haut comme en combat, teinté par la
+     * couleur du ciel de la scène et assombri de {@link #decorLight()} pour que le boss ressorte.
+     */
+    private void drawDecor(Batch batch) {
+        if (decor == null) return;
+        float width = worldWidth() + 2f * MARGIN, height = worldHeight() + 2f * MARGIN;
+        float scale = Math.max(width / decor.getRegionWidth(), height / decor.getRegionHeight());
+        float w = decor.getRegionWidth() * scale, h = decor.getRegionHeight() * scale;
+        float light = MathUtils.clamp(decorLight(), 0f, 1f);
+        Color sky = theme.skyLow();
+        batch.setColor(light * (0.75f + 0.25f * sky.r), light * (0.75f + 0.25f * sky.g), light * (0.75f + 0.25f * sky.b), 1f);
+        batch.draw(decor, worldWidth() / 2f - w / 2f, worldHeight() + MARGIN - h, w, h);
+        batch.setColor(Color.WHITE);
+    }
+
+    /** @return la lumière du décor à cette image (1 : comme en combat) ; une scène l'éteint, l'allume ou le fait clignoter. */
+    protected float decorLight() { return 0.62f; }
+
+    /** @return quand le symbole gagné se pose sur le boss (au moment où la phrase s'écrit). */
+    protected float gainedAt() { return textAt() - 0.15f; }
+
+    /** @return quand la phrase s'écrit (une scène plus longue la retarde). */
+    protected float textAt() { return moment == Moment.PHASE ? PHASE_TEXT : DEATH_TEXT; }
+
+    /**
+     * Le symbole gagné (celui que la phrase nomme : Croc, Rage, Gel…) tombe du haut, grossi, et se pose à côté
+     * du boss dans un éclat de lumière ; il y reste jusqu'au fondu.
+     */
+    private void drawGained(Batch batch) {
+        if (gained == null) return;
+        float t = time - gainedAt();
+        if (t < 0f) return;
+        float land = Math.min(1f, t / 0.35f);
+        float size = worldHeight() * 0.13f;
+        float scale = size / gained.getRegionHeight() * (1f + 1.6f * (1f - Interpolation.pow2In.apply(land)));
+        float x = bossX() + bossWidth() * 0.5f + size * 0.9f;
+        float y = bossBottom() + bossHeight() * 0.62f + worldHeight() * 0.35f * (1f - Interpolation.pow2In.apply(land));
+        float alpha = Math.min(1f, t / 0.15f);
+        glow(batch, x, y, size * (1.6f + 0.25f * MathUtils.sin(time * 6f)), theme.accent(), 0.55f * alpha);
+        if (land >= 1f && t < 0.6f) glow(batch, x, y, size * (2.5f + 6f * (t - 0.35f)), WHITE, 1f - (t - 0.35f) / 0.25f);
+        draw(batch, gained, x, y, scale, 0f, WHITE, alpha);
+    }
+
+    /** Joue le bruitage de cinématique {@code name} (sounds/cutscene/{@code name}.ogg), s'il existe et si le son est là. */
+    protected void sfx(String name, float volume) {
+        com.badlogic.gdx.audio.Sound sound = kit.sound(name);
+        if (sound != null) sound.play(volume);
+    }
+
     /** La phrase de la scène, qui s'imprime en bas, et son nom au-dessus. */
     private void drawTexts(Batch batch) {
         if (font == null) return;
-        float at = moment == Moment.PHASE ? PHASE_TEXT : DEATH_TEXT;
+        float at = textAt();
         float show = progress(at, at + 0.3f);
         if (show <= 0f) return;
         float width = worldWidth(), height = worldHeight();
