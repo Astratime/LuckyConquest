@@ -4448,7 +4448,10 @@ def death_maison():
         track.add(wing_flap(), 2.8 + k * 0.35, 0.35)
     track.add(choir(['C4', 'E4', 'G4', 'C5', 'E5'], 3.2), 2.9, 0.35)
     track.add(mix((bell_toll(hz('C5'), 2.0), 0, 0.5), (sparkle(1.2), 0, 0.5)), 3.0, 0.4)
+    return track.buf
 
+
+# ===========================================================================
 # Prairie : phases et morts des rois (PrairieBossScenes, 2026-11-22)
 # Les instants reprennent les constantes des scènes : si une scène change de rythme, mettre à jour ici.
 # ===========================================================================
