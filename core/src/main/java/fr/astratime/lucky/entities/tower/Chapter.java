@@ -40,7 +40,7 @@ public enum Chapter {
         "La Maison est vaincue. Il reste à monter la Tour jusqu'à la Machine. Chaque étage a son gardien. "
             + "Tout en haut, celui qui a tout bâti t'attend.",
         EnemyKind.LIFTIER_TOUR, List.of(EnemyKind.ECHO, EnemyKind.VERTIGE, EnemyKind.GARGOUILLE), EnemyKind.ARCHITECTE,
-        null, new Stats(550, 90, 230, 55, 3_000, 12_900, 220_000_000L, 1)),
+        null, new Stats(550, 110, 270, 55, 3_000, 12_900, 220_000_000L, 1)),
     LE_JACKPOT("Le Jackpot",
         "Au sommet de la Tour, une seule machine. Elle n'a jamais été jouée. On dit qu'elle donne tout. "
             + "On dit aussi qu'elle prend tout.",
