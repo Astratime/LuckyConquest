@@ -2481,6 +2481,71 @@ def king_desperado():
     return king(prelude, reverb(entrance.buf, wet=0.2, size=1.2), gesture)
 
 
+def service_bell(f='A6'):
+    """La sonnette de réception : « ding » clair et long."""
+    return modal(hz(f), 1.6, GLASS_RATIOS, [1.4, 0.8, 0.5, 0.3])
+
+
+def ice_crack(d=0.3):
+    """De la glace qui craque : un claquement sec et aigu, un peu vitré."""
+    return mix((crack(0.05, 0.005, 2000, 12000), 0, 1.0), (modal(hz('E7'), d, GLASS_RATIOS, [0.2, 0.15, 0.1, 0.08]), 0, 0.3))
+
+
+def skate_glide(d=1.2):
+    """Une lame de patin qui file sur la glace : un frottement aigu qui glisse."""
+    return svf(noise(d), sweep(4000, 2500, d), q=2.0, mode='bp') * expdec(d, d * 0.6, attack=0.05) * 0.8
+
+
+@sound('cutscene/king_concierge', -17)
+def king_concierge():
+    """Le Concierge : le hall, il se lève (0,6 s), il frappe la sonnette (3,4 s), la carte glisse."""
+    prelude = [(ambience(2.0, 200, 900, 0.3), 0.0, 0.5), (service_bell('E6') * 0.3, 1.2, 0.3)]
+    entrance = Track(5.0)
+    entrance.add(whoosh(0.6, 200, 900), 0.2, 0.4)
+    entrance.add(thump(150, 60, 0.3), 0.6, 0.6)
+    gesture = [(service_bell('A6'), 3.4, 0.8), (card_flick(), 3.7, 0.6), (sparkle(1.0), 3.45, 0.4),
+               (brass_chord(['D3', 'F#3', 'A3', 'D4'], 1.2, 0.5), 3.5, 0.5)]
+    return king(prelude, reverb(entrance.buf, wet=0.3, size=1.4), gesture)
+
+
+@sound('cutscene/king_imperatrice_givre', -17)
+def king_imperatrice_givre():
+    """L'Impératrice du Givre : la patinoire, elle patine (0 à 1,2 s), freine (1,2 s), lève son sceptre (3,4 s)."""
+    prelude = [(ambience(2.0, 1500, 5000, 0.2), 0.0, 0.4), (sparkle(2.0, 10), 0.0, 0.2)]
+    entrance = Track(5.0)
+    entrance.add(skate_glide(1.2), 0.0, 0.7)
+    entrance.add(screech(0.4, 5000), 1.1, 0.3)
+    entrance.add(ice_crack(), 1.2, 0.5)
+    gesture = [(modal(hz('B6'), 2.4, GLASS_RATIOS, [1.6, 1.0, 0.7, 0.4]), 3.4, 0.5), (sparkle(1.6, 24), 3.4, 0.5),
+               (brass_chord(['B2', 'F#3', 'B3', 'D4'], 1.6, 0.4), 3.5, 0.4)]
+    return king(prelude, reverb(entrance.buf, wet=0.35, size=1.8), gesture)
+
+
+@sound('cutscene/king_yeti', -17, trim=False)
+def king_yeti():
+    """Le Yéti : la tempête, il saute et atterrit (0,7 s), il rugit (3,4 s), les boules de neige dévalent."""
+    prelude = [(lp(noise(2.0), 600) * ramp(2.0, 0.3, 0.8), 0.0, 0.6), (boom(1.0, 40), 1.4, 0.3)]
+    entrance = Track(5.0)
+    entrance.add(lp(noise(5.0), 500), 0.0, 0.3)
+    entrance.add(whoosh(0.6, 300, 1500), 0.1, 0.5)
+    entrance.add(impact(0.6, 110, 35), 0.7, 1.0)
+    gesture = [(roar(1.8, 75), 3.4, 0.9), (boom(1.5, 45), 3.5, 0.5), (lp(noise(1.5), 400) * expdec(1.5, 0.6), 3.6, 0.6),
+               (brass_chord(['C2', 'G2', 'C3', 'Eb3'], 1.4, 0.5), 3.5, 0.5)]
+    return king(prelude, reverb(entrance.buf, wet=0.25, size=1.6), gesture)
+
+
+@sound('cutscene/king_prince_neiges', -17)
+def king_prince_neiges():
+    """Le Prince des Neiges : la salle de bal, il descend l'escalier (0 à 1,4 s), lève sa coupe (3,4 s)."""
+    prelude = [(ambience(2.0, 300, 1500, 0.3), 0.0, 0.4), (modal(hz('G5'), 2.0, GLASS_RATIOS, [1.0, 0.6, 0.4, 0.3]), 0.5, 0.2)]
+    entrance = Track(5.0)
+    for k in range(5):
+        entrance.add(footstep(220, 0.8), 0.1 + k * 0.28, 0.5)
+    gesture = [(modal(hz('C7'), 1.6, GLASS_RATIOS, [1.0, 0.6, 0.4, 0.3]), 3.4, 0.6), (bubbles(1.4, 18, 800, 2400), 3.45, 0.4),
+               (sparkle(1.2), 3.5, 0.4), (brass_chord(['G3', 'B3', 'D4', 'G4'], 1.4, 0.5), 3.5, 0.5)]
+    return king(prelude, reverb(entrance.buf, wet=0.35, size=1.8), gesture)
+
+
 def temple_gong(d=3.0):
     """Un grand gong de temple : un coup sourd, puis un chatoiement de bronze qui enfle et s'éteint."""
     strike = thump(90, 50, 0.4) * 0.8

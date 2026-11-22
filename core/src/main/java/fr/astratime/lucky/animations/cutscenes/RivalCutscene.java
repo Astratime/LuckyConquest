@@ -102,6 +102,7 @@ public class RivalCutscene extends Cutscene {
             case RIVAL_FOIRE -> EnemySymbol.RIGGED_GAME;
             case RIVAL_RAPIDE -> EnemySymbol.HOLDUP;
             case RIVAL_PORT -> EnemySymbol.BOARDING;
+            case RIVAL_PALACE -> EnemySymbol.KEY;
             case RIVAL_MINES -> EnemySymbol.DRILL;
             case RIVAL_CASINO -> EnemySymbol.BANK_BITE;
             case RIVAL_TEMPLE -> EnemySymbol.DOUBLE_SIX;
@@ -116,6 +117,7 @@ public class RivalCutscene extends Cutscene {
             case RIVAL_FOIRE -> Lang.t("TOI AUSSI, TU VEUX LA TABLE DU CROUPIER ?");
             case RIVAL_RAPIDE -> Lang.t("MÊME TRAIN, MÊME TABLE. DANS LE FOURGON, J'AI APPRIS À BRAQUER.");
             case RIVAL_PORT -> Lang.t("ENCORE TOI ? AU PORT, J'AI APPRIS À VOLER LES CARTES.");
+            case RIVAL_PALACE -> Lang.t("LE CONCIERGE M'A PRÊTÉ SES CLÉS. TES MEILLEURES CARTES RESTERONT AU VESTIAIRE.");
             case RIVAL_MINES -> Lang.t("LA MINE M'A APPRIS À PERCER LES BOUCLIERS.");
             case RIVAL_CASINO -> Lang.t("SOUS L'EAU, J'AI APPRIS À MORDRE LES GAINS.");
             case RIVAL_TEMPLE -> Lang.t("AU TEMPLE, LES MOINES M'ONT APPRIS À FAIRE PARLER LES DÉS.");

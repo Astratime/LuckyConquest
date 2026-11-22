@@ -416,6 +416,19 @@
     ]
   },
   {
+    "id": "bingo_snowflake",
+    "name": "Bingo Flocon",
+    "assetPath": "cards/test/bingo_snowflake.png",
+    "consumable": true,
+    "effects": [
+      {
+        "type": "BINGO",
+        "power": 1,
+        "symbol": "SNOWFLAKE"
+      }
+    ]
+  },
+  {
     "id": "bingo_gong",
     "name": "Bingo Gong",
     "assetPath": "cards/test/bingo_gong.png",

@@ -300,6 +300,78 @@
     "effects": [ { "type": "STEAM_VALVE" }, { "type": "BOOST_SYMBOL", "symbol": "STEAM", "amount": 40 } ]
   },
   {
+    "id": "passe_partout",
+    "name": "Passe-partout",
+    "assetPath": "cards/special/passe_partout.png",
+    "effects": [ { "type": "HELD_REEL" }, { "type": "EXTRA_DRAW", "extraCards": 1 } ]
+  },
+  {
+    "id": "sonnette_de_reception",
+    "name": "Sonnette de réception",
+    "assetPath": "cards/special/sonnette_de_reception.png",
+    "effects": [ { "type": "EXTRA_DRAW", "extraCards": 2 }, { "type": "GAIN", "amount": 1000 } ]
+  },
+  {
+    "id": "cle_d_or",
+    "name": "Clé d'or",
+    "assetPath": "cards/special/cle_d_or.png",
+    "effects": [ { "type": "GAINS_PERCENT", "percent": 60 }, { "type": "EXTRA_DRAW", "extraCards": 1 } ]
+  },
+  {
+    "id": "lames_de_patin",
+    "name": "Lames de patin",
+    "assetPath": "cards/special/lames_de_patin.png",
+    "effects": [ { "type": "ATTACK", "bonus": 60 }, { "type": "REROLL" } ]
+  },
+  {
+    "id": "pirouette",
+    "name": "Pirouette",
+    "assetPath": "cards/special/pirouette.png",
+    "effects": [ { "type": "REROLL" }, { "type": "DEFENSE", "bonus": 40 } ]
+  },
+  {
+    "id": "couronne_de_givre",
+    "name": "Couronne de givre",
+    "assetPath": "cards/special/couronne_de_givre.png",
+    "effects": [ { "type": "BOOST_SYMBOL", "symbol": "SNOWFLAKE", "amount": 60 }, { "type": "DEFENSE", "bonus": 60 } ]
+  },
+  {
+    "id": "forfait_de_ski",
+    "name": "Forfait de ski",
+    "assetPath": "cards/special/forfait_de_ski.png",
+    "effects": [ { "type": "EXTRA_DRAW", "extraCards": 2 }, { "type": "ATTACK", "bonus": 30 } ]
+  },
+  {
+    "id": "boule_de_neige",
+    "name": "Boule de neige",
+    "assetPath": "cards/special/boule_de_neige.png",
+    "effects": [ { "type": "ATTACK", "bonus": 60 }, { "type": "COMBO_BONUS", "bonus": 1 } ]
+  },
+  {
+    "id": "avalanche",
+    "name": "Avalanche",
+    "assetPath": "cards/special/avalanche.png",
+    "effects": [ { "type": "ATTACK", "bonus": 120 }, { "type": "EXTRA_DRAW", "extraCards": 1 } ]
+  },
+  {
+    "id": "seau_a_glace",
+    "name": "Seau à glace",
+    "assetPath": "cards/special/seau_a_glace.png",
+    "effects": [ { "type": "DEFENSE", "bonus": 50 }, { "type": "TRANSFUSION", "percent": 10 } ]
+  },
+  {
+    "id": "coupe_de_champagne",
+    "name": "Coupe de champagne",
+    "assetPath": "cards/special/coupe_de_champagne.png",
+    "effects": [ { "type": "TRANSFUSION", "percent": 15 }, { "type": "GAINS_PERCENT", "percent": 25 } ]
+  },
+  {
+    "id": "bal_des_neiges",
+    "name": "Bal des neiges",
+    "assetPath": "cards/special/bal_des_neiges.png",
+    "effects": [ { "type": "BONUS_PLAYS", "plays": 2 }, { "type": "GAINS_PERCENT", "percent": 40 } ]
+  },
+  {
     "id": "baton_d_encens",
     "name": "Bâton d'encens",
     "assetPath": "cards/special/baton_d_encens.png",

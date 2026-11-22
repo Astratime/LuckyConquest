@@ -140,6 +140,14 @@ public enum EnemySymbol {
     LULLABY("BERCEUSE"),
     /** Si tu l'as peu blessé depuis son dernier tour, il te prend ton bouclier ; sinon, il tire. */
     HOLDUP("BRAQUAGE"),
+    /** Palace des Neiges : il ferme à clé ta plus forte carte en main, jusqu'à la fin de ton prochain tour. */
+    KEY("CLÉ"),
+    /** Il gèle un de tes rouleaux : au prochain tirage, il affiche le même symbole. */
+    FREEZE("GEL"),
+    /** Il frappe, et chaque Avalanche grossit la suivante ; un gros coup de ta part la fait fondre. */
+    AVALANCHE("AVALANCHE"),
+    /** Il se soigne et reforme sa défense, d'un seul symbole. */
+    CHAMPAGNE("CHAMPAGNE GLACÉ"),
     /** Temple du Destin : le glas sonne ; un de tes rouleaux est bloqué à ton prochain tirage. */
     KNELL("GLAS"),
     /** Un de tes rouleaux est lié au sien : à ton prochain tirage, il montre le symbole qu'il choisit (le plus rare de ta machine). */
@@ -286,6 +294,16 @@ public enum EnemySymbol {
     /** Braquage : le bouclier volé ne lui donne pas plus que ce nombre de ses Boucliers. */
     public static final int HOLDUP_MAX_SHIELDS = 4;
 
+    /** Clé : tours du joueur que reste fermée la carte. */
+    public static final int KEY_TURNS = 1;
+    /** Gel : tirages que reste gelé le rouleau. */
+    public static final int FREEZE_TURNS = 1;
+    /** Avalanche : chaque couche de neige ajoute ce % à ses coups ; au plus tant de couches ; un coup d'au moins
+     * cette part de ses PV max (en %) la fait fondre. */
+    public static final int AVALANCHE_STEP_PERCENT = 50, AVALANCHE_MAX = 4, AVALANCHE_HIT_PERCENT = 2;
+    /** Champagne glacé : soin, en % de ses PV max. */
+    public static final int CHAMPAGNE_HEAL_PERCENT = 3;
+
     /** Glas : rouleaux du joueur bloqués à son prochain tirage. */
     public static final int KNELL_REELS = 1;
     /** Fil du destin : tours du joueur où son rouleau lié montre le symbole choisi (le prochain tirage). */
@@ -428,6 +446,13 @@ public enum EnemySymbol {
             case HOLDUP -> Lang.f("Braquage : si tu lui as fait moins de {0} % de ses PV max depuis son dernier tour, il te prend "
                 + "ton bouclier. Sinon, attaque de {1}", HOLDUP_PERCENT,
                 kind.hurt(kind.swordDamage(), hard));
+            case KEY -> Lang.t("Clé : il ferme à clé ta plus forte carte en main, jusqu'à la fin de ton prochain tour");
+            case FREEZE -> Lang.t("Gel : un de tes rouleaux gèle. Au prochain tirage, il affiche le même symbole");
+            case AVALANCHE -> Lang.f("Avalanche : attaque de {0}, puis +{1} % pour la suivante (jusqu'à +{2} %). Un coup "
+                + "d'au moins {3} % de ses PV max la fait fondre", kind.hurt(kind.swordDamage(), hard), AVALANCHE_STEP_PERCENT,
+                AVALANCHE_STEP_PERCENT * AVALANCHE_MAX, AVALANCHE_HIT_PERCENT);
+            case CHAMPAGNE -> Lang.f("Champagne glacé : il se soigne de {0} % de ses PV max et reforme sa défense",
+                CHAMPAGNE_HEAL_PERCENT);
             case KNELL -> Lang.t("Glas : un de tes rouleaux est bloqué à ton prochain tirage");
             case FATE_THREAD -> Lang.t("Fil du destin : un de tes rouleaux est lié au sien. À ton prochain tirage, il montre le "
                 + "symbole le plus rare de ta machine");

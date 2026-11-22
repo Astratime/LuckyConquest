@@ -8,7 +8,7 @@ ornement dans chaque coin (les coins ne sont pas étirés). Le feutre est un mot
 répété de 32 x 32 pixels de jeu. Tout est dessiné sur la grille du jeu (1 pixel
 = 3 pixels de texture), sans lissage.
 
-Produit assets/table/<lieu>/*.png pour prairie, foire, rapide, port, mines, temple et desert (le
+Produit assets/table/<lieu>/*.png pour prairie, foire, rapide, palace, port, mines, temple et desert (le
 casino, la Tour et l'Entraînement gardent la table d'origine, assets/table/*.png). Lancer depuis la racine du dépôt :
     python3 tools/table/generate_place_tables.py
 """
@@ -52,6 +52,10 @@ THEMES = {
         rail=[(150, 78, 52), (108, 50, 34), (84, 36, 26), (54, 22, 16)], groove=(214, 176, 104),
         metal=BRASS, felt=[(96, 26, 40), (80, 20, 32), (118, 40, 54)], ornament='rivet', motif='rails',
         emblem='wheel'),
+    'palace': dict(  # grand hôtel d'hiver : bois blanchi par le givre, argent, feutre bleu glacier
+        rail=[(236, 242, 250), (186, 200, 220), (146, 162, 188), (98, 112, 140)], groove=(190, 232, 255),
+        metal=IRON, felt=[(36, 86, 138), (30, 72, 118), (48, 104, 158)], ornament='gem', motif='flakes',
+        emblem='flake'),
     'port': dict(
         rail=[(150, 104, 62), (112, 72, 40), (86, 54, 30), (60, 36, 20)], groove=(198, 166, 106),
         metal=BRASS, felt=[(28, 66, 106), (22, 54, 90), (38, 82, 126)], ornament='rivet', motif='waves',
@@ -163,6 +167,8 @@ def felt(t):
             block(d, x + 4, y + 2, light)
         elif motif == 'diamonds':
             sprite(d, [".a.", "a.a", ".a."], x, y, {'a': light})
+        elif motif == 'flakes':  # un petit flocon
+            sprite(d, ["a.a", ".a.", "a.a"], x, y, {'a': light})
         elif motif == 'dice':  # un petit dé vu de face, ses deux points en diagonale
             sprite(d, ["aaa", "a.a", "aaa"], x, y, {'a': light})
             block(d, x + 1, y + 1, dark)
@@ -220,6 +226,10 @@ def emblem(t):
         sprite(d, ["...aaaaa...", "..abbbbba..", ".ab.aba.ba.", "ab.a.a.a.ba", "ab..aca..ba", "abaacccaaba",
                    "ab..aca..ba", "ab.a.a.a.ba", ".ab.aba.ba.", "..abbbbba..", "...aaaaa..."], 5, 1,
                {'a': m[0], 'b': m[2], 'c': (232, 64, 52)})
+    elif kind == 'flake':  # grand flocon de glace à six branches
+        sprite(d, ["....a.a.a....", ".....aaa.....", ".a....a....a.", "..a...a...a..", "...a.aba.a...",
+                   "aaaaabcbaaaaa", "...a.aba.a...", "..a...a...a..", ".a....a....a.", ".....aaa.....",
+                   "....a.a.a...."], 4, 2, {'a': (220, 240, 255), 'b': m[1], 'c': (120, 200, 255)})
     elif kind == 'torii':  # portail de temple rouge et or, un gong suspendu sous son linteau
         red, dark = (214, 52, 44), (138, 28, 26)
         for x in range(1, w - 1):

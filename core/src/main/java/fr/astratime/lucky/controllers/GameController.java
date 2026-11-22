@@ -431,6 +431,10 @@ public class GameController {
             turnNotices.add(new EffectPopup(Lang.n(buried, "ÉBOULEMENT : {0} CARTE DE MOINS",
                 "ÉBOULEMENT : {0} CARTES DE MOINS", buried), EffectPopup.Style.DAMAGE, PopupScale.SECONDARY_INTENSITY));
         }
+        if (gameState.getActiveRule().isIcy(gameState.getTurnNumber())) { // Verglas (Palace des Neiges)
+            turnNotices.add(new EffectPopup(Lang.f("VERGLAS : COMBINAISONS À {0} %", PlaceRule.ICE_COMBO_PERCENT),
+                EffectPopup.Style.DAMAGE, PopupScale.SECONDARY_INTENSITY));
+        }
         if (gameState.getActiveRule().isCrowded(gameState.getTurnNumber())) { // Wagon bondé (Rapide de Minuit)
             turnNotices.add(new EffectPopup(Lang.n(PlaceRule.CROWDED_PLAYS, "WAGON BONDÉ : {0} CARTE JOUÉE DE MOINS",
                 "WAGON BONDÉ : {0} CARTES JOUÉES DE MOINS", PlaceRule.CROWDED_PLAYS), EffectPopup.Style.DAMAGE,

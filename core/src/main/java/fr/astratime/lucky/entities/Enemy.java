@@ -59,6 +59,8 @@ public class Enemy {
     private       int         hourglass;
     /** Pression de sa chaudière (Rapide de Minuit), de 0 à {@link EnemySymbol#PRESSURE_MAX}. */
     private       int         pressure;
+    /** Couches de neige de son Avalanche (Palace des Neiges), de 0 à {@link EnemySymbol#AVALANCHE_MAX}. */
+    private       int         snow;
     /** Karma (Temple du Destin) : Bingos du joueur gardés pour être renvoyés, de 0 à {@link EnemySymbol#KARMA_MAX}. */
     private       int         karma;
     /** Présage (Temple du Destin) : le symbole annoncé n'est pas sorti au dernier tirage, ses attaques de ce tour montent. */
@@ -192,6 +194,7 @@ public class Enemy {
         }
         if (hourglass > 0 && lost * 1000L >= maxHp * EnemySymbol.HOURGLASS_HIT_PER_MILLE) hourglass--;
         if (pressure > 0 && lost * 1000L >= maxHp * EnemySymbol.PRESSURE_HIT_PER_MILLE) pressure--; // un gros coup fait baisser la Pression
+        if (snow > 0 && lost * 100L >= maxHp * EnemySymbol.AVALANCHE_HIT_PERCENT) snow = 0; // un gros coup fait fondre l'Avalanche
         return lost;
     }
 
@@ -538,6 +541,15 @@ public class Enemy {
 
     /** @return la Pression de sa chaudière, de 0 à {@link EnemySymbol#PRESSURE_MAX} - 1. */
     public int getPressure() { return pressure; }
+
+    /** @return les couches de neige de son Avalanche (chacune ajoute {@link EnemySymbol#AVALANCHE_STEP_PERCENT} % à ses coups). */
+    public int getSnow() { return snow; }
+
+    /** Son Avalanche gagne une couche de neige, au plus {@link EnemySymbol#AVALANCHE_MAX}. */
+    public void addSnow() { snow = Math.min(EnemySymbol.AVALANCHE_MAX, snow + 1); }
+
+    /** Son Avalanche fond : il repart de zéro. */
+    public void meltSnow() { snow = 0; }
 
     /** Karma : le joueur a fait un Bingo, il le garde ({@link EnemySymbol#KARMA_MAX} au plus). */
     public void addKarma() { karma = Math.min(EnemySymbol.KARMA_MAX, karma + 1); }

@@ -113,6 +113,23 @@ public final class EnemyLines {
             "Tu remplis le coffre. Je le viderai.",
             "Haut les mains ! C'est fini pour toi.",
             "Tout le monde à terre ! C'est un braquage !");
+        // ----- Le Palace des Neiges -----
+        say(EnemyKind.CONCIERGE, "Un Bingo ? Je le range au coffre de l'hôtel.",
+            "Monsieur a de la chance. Monsieur la laissera au vestiaire.",
+            "Votre chambre est prête. Pour toujours.",
+            "Service d'étage ! Champagne pour tout le monde !");
+        say(EnemyKind.IMPERATRICE_GIVRE, "Un Bingo ? La glace garde tout, même la chance.",
+            "Tu glisses. Tout le monde glisse sur ma patinoire.",
+            "Reste figé ici avec mes autres invités.",
+            "Que le bal de glace commence !");
+        say(EnemyKind.YETI, "GRRR ! Un Bingo ? La neige l'avalera.",
+            "Tu me chatouilles. La neige, elle, ne s'arrête pas.",
+            "Encore un joueur sous la neige.",
+            "GRAOOOH ! Souffle polaire !");
+        say(EnemyKind.PRINCE_NEIGES, "Un Bingo ? Charmant. Trinquons.",
+            "Tu danses bien. Personne ne quitte mon bal.",
+            "La fête continue sans toi.",
+            "Fermez les portes ! Le bal ne finit jamais !");
         // ----- Le Port des Contrebandiers -----
         say(EnemyKind.CAPITAINE_RAT, "Un trésor ! Mes rats vont le ronger.",
             "Couic ! Garde ta chance, je garde ta main.",

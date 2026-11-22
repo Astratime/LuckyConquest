@@ -84,6 +84,8 @@ public final class ReelShop {
                 + "Gagné en vidant le Désert de Braise.");
             case STEAM         -> Lang.t("Attaque 50, +25 % à chaque tirage d'affilée où elle sort (x2 au plus), "
                 + "retombe sans elle. Gagné en vidant le Rapide de Minuit.");
+            case SNOWFLAKE     -> Lang.t("Bouclier 40, dont la moitié gèle et revient au tour suivant. "
+                + "Gagné en vidant le Palace des Neiges.");
             case GONG          -> Lang.t("Attaque 60. Une fois sur quatre, il étourdit un rouleau de l'ennemi : il ne tourne "
                 + "pas à son prochain tirage. Gagné en vidant le Temple du Destin.");
             case DESCENT       -> Lang.t("Bingo du Roi démon. Au hasard : attaque 1000 et vampirisme. Ou bouclier 3000 "

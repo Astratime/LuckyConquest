@@ -386,6 +386,48 @@ def combat_rapide():
     return looped_reverb(loop_of(track, d), wet=0.2, size=1.1, tail=0.6)
 
 
+@music('combat_palace')
+def combat_palace():
+    """
+    Le Palace des Neiges : une valse de salle de bal figée dans le givre, en Si mineur, 3 temps à 168
+    battements par minute. Contrebasse au premier temps, accords de vibraphone sur les deux autres,
+    mélodie de célesta (carré doux, aigu), des clochettes qui scintillent ; un souffle de vent
+    d'hiver dessous. 32 mesures.
+    """
+    beat = 60 / 168
+    bar = 3 * beat
+    bars = 32
+    d = bars * bar
+    track = Track(d + 4)
+    prog = ['Bm', 'Bm', 'Em', 'Em', 'F#', 'F#', 'Bm', 'B', 'Em', 'Em', 'Bm', 'G', 'C', 'F#', 'Bm', 'F#']
+    roots = {'Bm': ('B', 'm'), 'Em': ('E', 'm'), 'F#': ('F#', '7'), 'B': ('B', '7'), 'G': ('G', 'M'), 'C': ('C', 'M')}
+    theme = [[4, 5, 7], [6, None, None], [3, 4, 6], [5, None, None],
+             [1, 2, 4], [6, None, 5], [4, None, None], [None, 2, 3],
+             [3, 4, 6], [8, None, 7], [6, 5, 4], [2, None, None],
+             [5, 6, 7], [8, 7, 6], [4, None, None], [None, None, None]]
+    for i in range(bars):
+        t0 = i * bar
+        root, kind = roots[prog[i % 16]]
+        chord = chord_notes(root, kind, 4)
+        track.add(bass(transpose(chord[0], -24), beat * 1.5, bright=600), t0, 0.5)
+        for k in (1, 2):
+            for f in chord[:3]:
+                track.add(vibes(f, beat * 1.1), t0 + k * beat, 0.045)
+        for k, deg in enumerate(theme[i % 16]):
+            if deg is None:
+                continue
+            length = 1
+            while k + length < 3 and theme[i % 16][k + length] is None:
+                length += 1
+            track.add(lead(scale_note('B', 'harmonic', deg, 5), length * beat * 0.9, duty=0.125, vib=0.006),
+                      t0 + k * beat, 0.13)
+        if i % 4 == 3:                                                                # clochettes
+            for k in range(4):
+                track.add(vibes(transpose(chord[k % 3], 24), 0.6), t0 + k * beat * 0.75, 0.03)
+    track.add(bp(noise(d), 300, 1200) * (0.6 + 0.4 * np.sin(np.arange(int(d * SR)) / SR * 0.7)), 0, 0.05)  # le vent
+    return looped_reverb(loop_of(track, d), wet=0.3, size=1.6, tail=0.8)
+
+
 @music('combat_temple')
 def combat_temple():
     """

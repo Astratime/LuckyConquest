@@ -519,6 +519,12 @@ public class TurnEngine {
 
     /** Ancre : le bouclier qu'elle a gardé au tour d'avant revient. */
     private static void returnAnchoredShield(Player player, TurnContext turnContext) {
+        int frost = player.getLastingEffects().getReelGauges().takeFrost(); // Flocon : le bouclier gelé revient
+        if (frost > 0) {
+            player.addShield(frost);
+            turnContext.addEvent(new StatusEvent(Lang.f("FLOCON : BOUCLIER {0} DÉGELÉ", Lang.big(frost)),
+                EffectPopup.Style.DEFENSE));
+        }
         int kept = player.getLastingEffects().getReelGauges().takeAnchorKept();
         if (kept <= 0) return;
         player.addShield(kept);

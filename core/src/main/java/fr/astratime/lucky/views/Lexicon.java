@@ -103,6 +103,8 @@ public final class Lexicon {
             term(Lang.t("Vapeur"), Lang.f("Rouleau du Rapide de Minuit. Chaque tirage d'affilée où la Vapeur sort monte "
                 + "sa pression : +{0} % à son coup par cran, {1} crans au plus. Un tirage sans elle la fait retomber.",
                 ReelGauges.STEAM_STEP_PERCENT, ReelGauges.STEAM_MAX)),
+            term(Lang.t("Flocon"), Lang.f("Rouleau du Palace des Neiges. Un bouclier dont {0} % gèlent : au début de "
+                + "ton tour suivant, cette part dégèle et te revient.", ReelGauges.FROST_PERCENT))));
             term(Lang.t("Gong"), Lang.f("Rouleau du Temple du Destin. Une fois sur {0}, il étourdit un rouleau de l'ennemi : "
                 + "ce rouleau ne tourne pas à son prochain tirage.", 100 / ReelGauges.GONG_STUN_PERCENT))));
     }
@@ -204,6 +206,15 @@ public final class Lexicon {
                 + "elle explose en un gros coup. Chaque coup qui lui enlève au moins {1} % de ses PV max la fait baisser.",
                 EnemySymbol.PRESSURE_MAX, Lang.decimal(String.valueOf(EnemySymbol.PRESSURE_HIT_PER_MILLE / 10.0)
                     .replaceAll("\\.0$", "")))),
+            term(Lang.t("Verglas"), Lang.f("Règle du Palace des Neiges : un tour sur {0}, tes combinaisons ne donnent "
+                + "que {1} % de leur Puissance. Tes gains ne changent pas.", PlaceRule.ICE_PERIOD, PlaceRule.ICE_COMBO_PERCENT)),
+            term(Lang.t("Clé"), Lang.t("Au Palace des Neiges, l'ennemi ferme à clé ta plus forte carte en main : "
+                + "tu ne peux pas la jouer à ton prochain tour.")),
+            term(Lang.t("Gel"), Lang.t("Au Palace des Neiges, l'ennemi gèle un de tes rouleaux : au prochain tirage, "
+                + "il affiche le même symbole qu'au dernier.")),
+            term(Lang.t("Avalanche"), Lang.f("Au Palace des Neiges, chaque Avalanche frappe {0} % plus fort que la "
+                + "précédente. Un coup qui lui enlève au moins {1} % de ses PV max la fait fondre.",
+                EnemySymbol.AVALANCHE_STEP_PERCENT, EnemySymbol.AVALANCHE_HIT_PERCENT))));
             term(Lang.t("Présage"), Lang.f("Règle du Temple du Destin : chaque tour, le temple annonce un symbole de ta "
                 + "machine. S'il sort à ton tirage, Puissance +{0} ce tour. Sinon, l'ennemi frappe {1} % plus fort à son tour.",
                 PlaceRule.OMEN_POWER, PlaceRule.OMEN_ENEMY_PERCENT)),
@@ -220,9 +231,10 @@ public final class Lexicon {
             term(Lang.t("Rang"), Lang.t("Acheté à la boutique. Plus de PV max, des symboles plus forts et un % de gains "
                 + "en plus sur toute la machine. Tu choisis ton rang à la Table du croupier.")),
             term(Lang.t("Lieu de ton rang"), Lang.f("Chaque rang a son lieu d'Exploration : la Prairie sans rang, la Foire "
-                + "pour l'Avare et le Parieur, le Rapide de Minuit pour le Flambeur, le Port pour l'Habitué, les Mines pour "
-                + "le Requin et le Gros bonnet, le Casino pour le Baron et le Magnat, le Temple du Destin pour le Roi du "
-                + "casino et le Désert pour la Légende. Un lieu en dessous ne rapporte que {0} % des pièces, deux lieux ou plus en dessous {1} %.",
+                + "pour l'Avare et le Parieur, le Rapide de Minuit pour le Flambeur, le Port pour l'Habitué, le Palace des "
+                + "Neiges pour le Requin, les Mines pour le Gros bonnet, le Casino pour le Baron et le Magnat, le Temple du "
+                + "Destin pour le Roi du casino et le Désert pour la Légende. Un lieu en dessous ne rapporte que {0} % des "
+                + "pièces, deux lieux ou plus en dessous {1} %.",
                 PlayerProfile.LOWER_PLACE_PERCENT, PlayerProfile.FAR_LOWER_PLACE_PERCENT)),
             term(Lang.t("Prestige"), Lang.f("Une fois tous les rangs achetés, la boutique te propose de les rendre. "
                 + "Chaque niveau multiplie par {0} tes PV max, l'attaque et la défense de tes symboles, et ajoute "
@@ -231,7 +243,8 @@ public final class Lexicon {
                 PlayerProfile.prestigeNumeral(PlayerProfile.MAX_PRESTIGE))),
             term(Lang.t("Sceau de Prestige"), Lang.t("Chaque Prestige demande un lieu vidé en Exploration difficile : "
                 + "la prairie pour le Prestige I, la Fête foraine pour II, le Rapide de Minuit pour III, le Port pour IV, "
-                + "les Mines pour V et VI, le Casino pour VII et VIII, le Temple du Destin pour IX et le Désert pour X.")),
+                + "le Palace des Neiges pour V, les Mines pour VI, le Casino pour VII et VIII, le Temple du Destin pour IX "
+                + "et le Désert pour X.")),
             term(Lang.t("Plancher de Prestige"), Lang.f("Après un Prestige, tes PV max, ton attaque et ta défense ne "
                 + "descendent jamais sous {0} % de ceux de la Légende du Jackpot (avant le bonus du Prestige).",
                 Rank.PRESTIGE_FLOOR_PERCENT)),

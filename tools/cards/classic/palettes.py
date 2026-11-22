@@ -32,6 +32,11 @@ FAMILIES = {
     'wagon_restaurant': ('#fdf0e8', '#ecc4a8', '#b08468'),   # nappe et vernis
     'wagon_lit':        ('#eeeafc', '#c0b4ec', '#8274b4'),   # nuit violette
     'fourgon':          ('#eef4ee', '#b4ccb8', '#76927a'),   # acier vert
+    # --- Palace des Neiges (2026-11-21) ---
+    'hall':         ('#fdf4e8', '#ead2a8', '#b09468'),   # marbre et laiton
+    'patinoire':    ('#eef8ff', '#b4dcf4', '#74a4c8'),   # glace
+    'telepherique': ('#f4f6fa', '#c8d0dc', '#8a94a8'),   # neige et acier
+    'suite_royale': ('#f4f0fc', '#ccc0ec', '#8c80b8'),   # velours lilas
     # --- Temple du Destin (2026-11-21) ---
     'parvis':         ('#fdf0e4', '#f0c8a0', '#b88a5c'),   # pierre au couchant
     'jardin_oracles': ('#eef6ea', '#bcdcb0', '#7ca070'),   # mousse et thé
@@ -123,6 +128,12 @@ CARD_FAMILY = {
     'plat_du_jour': 'wagon_restaurant', 'service_a_la_place': 'wagon_restaurant', 'menu_gastronomique': 'wagon_restaurant',
     'billet_de_seconde': 'wagon_lit', 'couchette': 'wagon_lit', 'billet_de_premiere': 'wagon_lit',
     'coffre_blinde': 'fourgon', 'aiguillage': 'fourgon', 'soupape': 'fourgon',
+    'roi_trousseau': 'hall', 'roi_givre_eternel': 'patinoire', 'roi_tempete': 'telepherique',
+    'roi_grand_cru': 'suite_royale',
+    'passe_partout': 'hall', 'sonnette_de_reception': 'hall', 'cle_d_or': 'hall',
+    'lames_de_patin': 'patinoire', 'pirouette': 'patinoire', 'couronne_de_givre': 'patinoire',
+    'forfait_de_ski': 'telepherique', 'boule_de_neige': 'telepherique', 'avalanche': 'telepherique',
+    'seau_a_glace': 'suite_royale', 'coupe_de_champagne': 'suite_royale', 'bal_des_neiges': 'suite_royale',
     'roi_tocsin': 'parvis', 'roi_fil_du_destin': 'jardin_oracles', 'roi_quitte_ou_double': 'salle_des_des',
     'roi_jugement': 'sanctuaire',
     'baton_d_encens': 'parvis', 'cloche_de_bronze': 'parvis', 'maillet_de_gong': 'parvis',

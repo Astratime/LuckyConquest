@@ -77,6 +77,9 @@ public class LastingEffects {
     private int riggedReel = -1;
     private Symbol riggedSymbol;
     private int riggedTurns = 0;
+    /** Gel (Palace des Neiges) : rouleaux gelés (ils gardent le symbole du dernier tirage) et tirages restants. */
+    private final java.util.Set<Integer> frozenReels = new java.util.TreeSet<>();
+    private int frozenTurns = 0;
     /** Aveuglement : cartes de la prochaine main piochées face cachée (une par Aveuglement, ils se cumulent). */
     private int blindCards = 0;
     /** Chant : cartes de la prochaine main jouées d'office, au hasard. */
@@ -445,6 +448,17 @@ public class LastingEffects {
     public Symbol getRiggedSymbol() { return riggedTurns > 0 ? riggedSymbol : null; }
     /** @return les tirages restants sur la table truquée (0 : elle ne l'est pas). */
     public int getRiggedTurns() { return riggedTurns; }
+
+    /** Gel : le rouleau {@code reel} gardera le symbole du dernier tirage pendant les {@code turns} prochains tirages. */
+    public void freeze(int reel, int turns) {
+        if (frozenTurns == 0) frozenReels.clear();
+        frozenReels.add(reel);
+        frozenTurns = Math.max(frozenTurns, turns);
+    }
+    /** @return les rouleaux gelés (vide si aucun). */
+    public java.util.Set<Integer> getFrozenReels() {
+        return frozenTurns > 0 ? java.util.Collections.unmodifiableSet(frozenReels) : java.util.Set.of();
+    }
 
     public void addNibble() { nibbles++; }
     /** @return les cartes qui seront rongées à la prochaine pioche. */
@@ -824,6 +838,7 @@ public class LastingEffects {
         if (goldVeinTurns > 0) goldVeinTurns--;
         if (bubbleTurns > 0) bubbleTurns--;
         if (riggedTurns > 0) riggedTurns--;
+        if (frozenTurns > 0 && --frozenTurns == 0) frozenReels.clear();
         if (propTurns > 0) propTurns--;
         if (cageTurns > 0) cageTurns--;
         if (anchorTurns > 0) anchorTurns--;
@@ -838,7 +853,7 @@ public class LastingEffects {
     public boolean isEmpty() {
         return removedSymbols.isEmpty() && gainBonus == 0f && corruptionTurns == 0 && extraPlaysTurns == 0
             && blades == 0 && blood == 0 && vault == 0 && luckyStar == 0 && safes.isEmpty() && goldVeinTurns == 0 && bubbleTurns == 0
-            && nibbles == 0 && favoredSymbol == null && riggedTurns == 0 && blindCards == 0 && songs == 0 && drunk == 0 && nuggetDraws == 0
+            && nibbles == 0 && favoredSymbol == null && riggedTurns == 0 && frozenTurns == 0 && blindCards == 0 && songs == 0 && drunk == 0 && nuggetDraws == 0
             && fakeGains == 0 && taxes == 0 && laterTaxes == 0 && houseRuleTurns == 0
             && traps == 0 && lanternDraws == 0 && earplugDraws == 0 && propTurns == 0 && lamps == 0
             && cageTurns == 0 && anchorTurns == 0 && temperPercent == 0 && bonusPlays == 0

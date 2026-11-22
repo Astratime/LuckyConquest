@@ -34,6 +34,7 @@ public final class CombatMusic {
     public static final String FOIRE   = "music/combat_foire.ogg";
     public static final String DESERT  = "music/combat_desert.ogg";
     public static final String RAPIDE  = "music/combat_rapide.ogg";
+    public static final String PALACE  = "music/combat_palace.ogg";
     public static final String TEMPLE  = "music/combat_temple.ogg";
     public static final String TOWER   = "music/combat_tour.ogg";
     public static final String BOSS    = "music/combat_boss.ogg";
@@ -73,6 +74,7 @@ public final class CombatMusic {
                 case CASINO  -> CASINO;
                 case FOIRE   -> FOIRE;
                 case RAPIDE  -> RAPIDE;
+                case PALACE  -> PALACE;
                 case TEMPLE  -> TEMPLE;
                 case DESERT  -> DESERT;
             };
@@ -127,6 +129,7 @@ public final class CombatMusic {
                 case CASINO  -> CASINO;
                 case FOIRE   -> FOIRE;
                 case RAPIDE  -> RAPIDE;
+                case PALACE  -> PALACE;
                 case TEMPLE  -> TEMPLE;
                 case DESERT  -> DESERT;
             };

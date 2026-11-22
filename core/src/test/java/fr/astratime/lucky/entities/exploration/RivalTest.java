@@ -53,7 +53,7 @@ class RivalTest {
 
         defeated.add(EnemyKind.RIVAL_FOIRE);
         assertNull(Rival.due(Place.FOIRE, defeated::contains));
-        defeated.addAll(Set.of(EnemyKind.RIVAL_RAPIDE, EnemyKind.RIVAL_PORT, EnemyKind.RIVAL_MINES));
+        defeated.addAll(Set.of(EnemyKind.RIVAL_RAPIDE, EnemyKind.RIVAL_PORT, EnemyKind.RIVAL_PALACE, EnemyKind.RIVAL_MINES));
         assertNull(Rival.due(Place.DESERT, defeated::contains));
         defeated.add(EnemyKind.RIVAL_CASINO);
         assertNull(Rival.due(Place.DESERT, defeated::contains));

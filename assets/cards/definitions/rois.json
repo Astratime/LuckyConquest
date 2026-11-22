@@ -359,6 +359,66 @@
     ]
   },
   {
+    "id": "roi_trousseau",
+    "name": "Trousseau du concierge",
+    "assetPath": "cards/special/roi_trousseau.png",
+    "effects": [
+      {
+        "type": "HELD_REEL"
+      },
+      {
+        "type": "GAINS_PERCENT",
+        "percent": 50
+      }
+    ]
+  },
+  {
+    "id": "roi_givre_eternel",
+    "name": "Givre éternel",
+    "assetPath": "cards/special/roi_givre_eternel.png",
+    "effects": [
+      {
+        "type": "BOOST_SYMBOL",
+        "symbol": "SNOWFLAKE",
+        "amount": 80
+      },
+      {
+        "type": "DEFENSE",
+        "bonus": 80
+      }
+    ]
+  },
+  {
+    "id": "roi_tempete",
+    "name": "Tempête du Yéti",
+    "assetPath": "cards/special/roi_tempete.png",
+    "effects": [
+      {
+        "type": "ATTACK",
+        "bonus": 150
+      },
+      {
+        "type": "COMBO_BONUS",
+        "bonus": 1
+      }
+    ]
+  },
+  {
+    "id": "roi_grand_cru",
+    "name": "Grand cru",
+    "assetPath": "cards/special/roi_grand_cru.png",
+    "effects": [
+      {
+        "type": "TRANSFUSION",
+        "percent": 20
+      },
+      {
+        "type": "GAINS_PERCENT",
+        "percent": 60
+      }
+    ]
+  },
+  {
     "id": "roi_tocsin",
     "name": "Tocsin",
     "assetPath": "cards/special/roi_tocsin.png",

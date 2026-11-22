@@ -61,7 +61,7 @@ public record BingoStyle(Color body, Color trim, Color letterA, Color letterB, C
             // Nouveaux rouleaux (2026-11-01)
             case FANGS, FLAME -> of(Symbol.TRIPLE_CHERRY);
             case PIGGY_BANK, GOLD_CHIP, TICKET -> of(Symbol.GOLD_BAR);
-            case SPIKED_SHIELD, ANCHOR -> of(Symbol.DIAMOND);
+            case SPIKED_SHIELD, ANCHOR, SNOWFLAKE -> of(Symbol.DIAMOND);
             case SCYTHE    -> of(Symbol.BAR);
             case STEAM     -> of(Symbol.SEVEN);
             case GONG      -> of(Symbol.GOLD_BAR);

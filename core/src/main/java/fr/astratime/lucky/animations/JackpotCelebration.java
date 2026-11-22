@@ -193,13 +193,14 @@ public class JackpotCelebration extends Group implements Disposable {
     private final ChipTowerScene      chipTower      = new ChipTowerScene(iconOf(Symbol.GOLD_CHIP));
     private final FirePillarScene     firePillar     = new FirePillarScene(iconOf(Symbol.FLAME));
     private final SteamEngineScene    steamEngine    = new SteamEngineScene(iconOf(Symbol.STEAM));
+    private final FrostCrystalScene   frostCrystal   = new FrostCrystalScene(iconOf(Symbol.SNOWFLAKE));
     private final GongScene           gongScene      = new GongScene(iconOf(Symbol.GONG));
     private final HellGateScene       hellGate       = new HellGateScene();
     private final LightOrbScene       lightOrb       = new LightOrbScene(iconOf(Symbol.BINGO_LIGHT));
     private final List<BingoScene>    scenes = List.of(hydraulicPress, forge, cherryTree, winePress,
         gemCut, safe, katana, horseshoe, shieldWall, swords, heartbeat, tripleDice, shootingStar, bomb, coronation,
         mine, cannon, supernova, bite, piggyBank, spikedShield, scythe, moonrise, demonGate, heaven, scratchTicket,
-        anchorDrop, chipTower, firePillar, steamEngine, gongScene, hellGate, lightOrb);
+        anchorDrop, chipTower, firePillar, steamEngine, frostCrystal, gongScene, hellGate, lightOrb);
     private final Group        bannerLayer = new Group();
     /** La mise en scène au premier plan (objets, bannière, mot géant, flash) : elle s'efface quand on passe. */
     private final Group        foreground  = new Group();
@@ -458,6 +459,7 @@ public class JackpotCelebration extends Group implements Disposable {
             case GOLD_CHIP     -> scheduleChipTower(icon);
             case FLAME         -> scheduleFirePillar(icon);
             case STEAM         -> scheduleSteamEngine(icon);
+            case SNOWFLAKE     -> scheduleFrostCrystal(icon);
             case GONG          -> scheduleGong(icon);
             case DESCENT       -> scheduleHellfire(icon);
             case BINGO_LIGHT   -> scheduleHalo(icon);
@@ -986,6 +988,40 @@ public class JackpotCelebration extends Group implements Disposable {
     }
 
     /** Flamme : un brasero, la Flamme grandit, puis une colonne de feu jaillit jusqu'en haut de l'écran. */
+    /** Flocon : le givre gagne la table, un immense cristal de glace se forme, puis vole en éclats. */
+    private void scheduleFrostCrystal(TextureRegion icon) {
+        float centerX = playArea.getCenterX(), centerY = getHeight() * 0.55f;
+        float shatter = FrostCrystalScene.SHATTER_TIME;
+        playScene(frostCrystal, centerX, centerY, shatter + 0.2f, 0.86f);
+        Color ice = Color.valueOf("bfe8ffff"), deep = Color.valueOf("6aa8d8ff");
+        emit(0f, FrostCrystalScene.FORMED_TIME, 60, i -> { // la neige tombe et converge vers le cristal
+            Vector2 c = frostCrystal.center();
+            float angle = MathUtils.random(MathUtils.PI2), r = MathUtils.random(300f, 520f);
+            frontGlitter.ember(c.x + MathUtils.cos(angle) * r, c.y + MathUtils.sin(angle) * r, -MathUtils.cos(angle) * 360f,
+                -MathUtils.sin(angle) * 360f, 0f, MathUtils.random(6f, 12f), MathUtils.random(0.6f, 0.9f),
+                i % 2 == 0 ? Color.WHITE : ice);
+        });
+        at(FrostCrystalScene.FORMED_TIME, () -> screenShake.shake(0.25f, 6f));
+        at(shatter, () -> {
+            screenShake.shake(0.6f, 18f);
+            impactFlash(0.8f, 0.95f, 1f, 0.55f);
+            Vector2 c = frostCrystal.center();
+            shockwaves.ring(c.x, c.y, 620f, 0.6f, 0.3f, ice);
+            shockwaves.ring(c.x, c.y, 400f, 0.5f, 0.3f, Color.WHITE);
+        });
+        emit(shatter, shatter + 0.5f, 180, i -> { // les éclats de glace
+            Vector2 c = frostCrystal.center();
+            float angle = MathUtils.random(MathUtils.PI2), speed = MathUtils.random(500f, 1300f);
+            frontGlitter.ember(c.x, c.y, MathUtils.cos(angle) * speed, MathUtils.sin(angle) * speed, -500f,
+                MathUtils.random(8f, 18f), MathUtils.random(0.5f, 0.9f), i % 3 == 0 ? Color.WHITE : i % 3 == 1 ? ice : deep);
+        });
+        emit(shatter + 0.1f, shatter + 0.3f, 12, i -> {
+            Vector2 c = frostCrystal.center();
+            symbols.jet(icon, c.x, c.y, 200f + i * 12f, MathUtils.random(500f, 800f), MathUtils.random(50f, 70f), 900f);
+        });
+        coinRain(shatter + 0.2f, shatter + 1.1f, 18, 1);
+    }
+
     /** Vapeur : la locomotive entre, freine, et siffle une colonne de vapeur blanche. */
     private void scheduleSteamEngine(TextureRegion icon) {
         float centerX = playArea.getCenterX(), baseY = getHeight() * 0.12f;

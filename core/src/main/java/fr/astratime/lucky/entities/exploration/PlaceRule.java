@@ -20,6 +20,8 @@ import fr.astratime.lucky.i18n.Lang;
  *       d'un tour sans soin, il perd {@link #THIRST_PERCENT} % de ses PV max (son bouclier ne protège pas) ;</li>
  *   <li>{@link #WAGON_BONDE} : tous les {@link #CROWDED_PERIOD} tours, le joueur joue {@link #CROWDED_PLAYS}
  *       carte de moins ce tour-là (le wagon est bondé) ;</li>
+ *   <li>{@link #VERGLAS} : tous les {@link #ICE_PERIOD} tours, les combinaisons ne donnent que
+ *       {@link #ICE_COMBO_PERCENT} % de leur Puissance (attaque ; les gains ne changent pas) ;</li>
  *   <li>{@link #PRESAGE} : à chaque tour, le temple annonce un symbole de la machine du joueur ; s'il sort
  *       au tirage, Puissance +{@link #OMEN_POWER} ce tour, sinon l'ennemi frappe {@link #OMEN_ENEMY_PERCENT} %
  *       plus fort à son tour.</li>
@@ -38,6 +40,8 @@ public enum PlaceRule {
     SOIF("Soif", "Tes soins sont divisés par 2. À la fin de chaque tour où tu ne t'es pas soigné, tu perds 1 % de tes "
         + "PV max. Ton bouclier ne protège pas."),
     WAGON_BONDE("Wagon bondé", "Tous les 3 tours, le wagon est bondé : tu joues 1 carte de moins ce tour-là."),
+    VERGLAS("Verglas", "Un tour sur deux, la table est verglacée : tes combinaisons ne donnent que la moitié de leur "
+        + "Puissance."),
     PRESAGE("Présage", "Chaque tour, le temple annonce un symbole de ta machine. S'il sort à ton tirage, Puissance +1 "
         + "ce tour. Sinon, l'ennemi frappe 30 % plus fort à son tour.");
 
@@ -69,6 +73,11 @@ public enum PlaceRule {
     public static final int CROWDED_PERIOD = 3;
     /** Wagon bondé : cartes jouées en moins ce tour-là. */
     public static final int CROWDED_PLAYS = 1;
+
+    /** Verglas : tous les tant de tours (au 2e, au 4e…). */
+    public static final int ICE_PERIOD = 2;
+    /** Verglas : part de la Puissance des combinaisons gardée ce tour-là, en %. */
+    public static final int ICE_COMBO_PERCENT = 50;
 
     /** Présage : Puissance gagnée quand le symbole annoncé sort au tirage. */
     public static final int OMEN_POWER = 1;
@@ -114,6 +123,9 @@ public enum PlaceRule {
 
     /** @return les tours avant le prochain wagon bondé, celui-ci compris (1 : ce tour). */
     public static int turnsBeforeCrowd(int turn) { return CROWDED_PERIOD - (turn - 1) % CROWDED_PERIOD; }
+
+    /** @return {@code true} si la table est verglacée au tour {@code turn} (à partir de 1) : combinaisons à moitié. */
+    public boolean isIcy(int turn) { return this == VERGLAS && turn % ICE_PERIOD == 0; }
 
     /** @return {@code true} si le Présage joue (un symbole annoncé à chaque tour). */
     public boolean hasOmen() { return this == PRESAGE; }
