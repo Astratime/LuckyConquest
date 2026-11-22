@@ -25,6 +25,29 @@ public final class ExpressPortraits {
     /** @return les pixels du portrait de l'ennemi {@code kind}, ou {@code null} s'il n'est pas du Rapide. */
     public static int[][] pixels(EnemyKind kind) { return of(kind); }
 
+    /** Ce qu'une cinématique peut retirer (ou éteindre) sur un portrait (voir {@link #without}). */
+    public enum Prop { COWCATCHER, LIGHTS, TOQUE, LADLE, VEIL, ROSE, HAT }
+
+    /** Les accessoires retirés du portrait en cours de dessin (vide hors de {@link #without}). */
+    private static java.util.Set<Prop> gone = java.util.EnumSet.noneOf(Prop.class);
+
+    private static boolean has(Prop prop) { return !gone.contains(prop); }
+
+    /**
+     * @return le portrait de {@code kind} dessiné sans les accessoires {@code props} (ce qu'il y avait dessous
+     * réapparaît ; {@link Prop#LIGHTS} : ses lumières éteintes) : les cinématiques en tirent le vrai morceau qui
+     * quitte le boss, jamais une copie.
+     */
+    public static synchronized int[][] without(EnemyKind kind, Prop... props) {
+        gone = java.util.EnumSet.noneOf(Prop.class);
+        java.util.Collections.addAll(gone, props);
+        try {
+            return of(kind);
+        } finally {
+            gone = java.util.EnumSet.noneOf(Prop.class);
+        }
+    }
+
     /** @return le portrait de l'ennemi {@code kind}, ou {@code null} s'il n'est pas du Rapide de Minuit. */
     static int[][] of(EnemyKind kind) {
         return switch (kind) {
@@ -101,9 +124,11 @@ public final class ExpressPortraits {
     private static int[][] locomotive() {
         PixelCanvas g = new PixelCanvas(W, H);
         // Le châssis rouge et le chasse-buffles, en bas.
-        g.rect(3, 34, 30, 37, RED_DARK);
-        g.triangle(5, 37, 29, 37, 17, 41, RED);
-        for (int x = 9; x <= 25; x += 4) g.line(x, 37, 17 + (x - 17) / 3, 41, RED_DARK);
+        if (has(Prop.COWCATCHER)) {
+            g.rect(3, 34, 30, 37, RED_DARK);
+            g.triangle(5, 37, 29, 37, 17, 41, RED);
+            for (int x = 9; x <= 25; x += 4) g.line(x, 37, 17 + (x - 17) / 3, 41, RED_DARK);
+        }
         // La chaudière vue de face : un grand disque noir cerclé de laiton.
         g.ellipseShaded(17f, 22f, 13f, 12.5f, COAL_LIGHT, COAL, 3f);
         for (int a = 0; a < 360; a += 4) {
@@ -113,8 +138,8 @@ public final class ExpressPortraits {
         // Les yeux : deux hublots qui brillent, des sourcils de rivets froncés.
         for (int cx : new int[] {11, 23}) {
             g.ellipse(cx, 19f, 3f, 3f, STEEL_DARK);
-            g.ellipse(cx, 19f, 2f, 2f, rgba("ffd27a"));
-            g.set(cx, 19, WHITE);
+            g.ellipse(cx, 19f, 2f, 2f, has(Prop.LIGHTS) ? rgba("ffd27a") : COAL_LIGHT);
+            g.set(cx, 19, has(Prop.LIGHTS) ? WHITE : COAL);
         }
         g.line(7, 14, 13, 16, GOLD);
         g.line(27, 14, 21, 16, GOLD);
@@ -124,7 +149,7 @@ public final class ExpressPortraits {
         g.set(9, 25, COAL); g.set(25, 25, COAL);
         // La lanterne au front et la cheminée au-dessus.
         g.rect(14, 8, 20, 11, GOLD_DARK);
-        g.rect(15, 9, 19, 10, rgba("fff2a0"));
+        g.rect(15, 9, 19, 10, has(Prop.LIGHTS) ? rgba("fff2a0") : COAL_LIGHT);
         g.rect(13, 1, 21, 6, COAL);
         g.rect(12, 0, 22, 1, COAL_LIGHT);
         g.ellipse(6f, 3f, 3f, 2.5f, rgba("8a8a96"));         // la fumée
@@ -171,15 +196,18 @@ public final class ExpressPortraits {
         g.set(7, 19, rgba("6a4a3a")); g.set(27, 19, rgba("6a4a3a"));
         g.ellipse(11f, 18f, 1.5f, 1f, rgba("ff9a8a"));         // les joues rouges
         g.ellipse(23f, 18f, 1.5f, 1f, rgba("ff9a8a"));
-        // La toque.
-        g.rect(10, 6, 24, 10, WHITE);
-        g.ellipse(12f, 3f, 4f, 3.5f, WHITE);
-        g.ellipse(17f, 2f, 4.5f, 3f, WHITE);
-        g.ellipse(22f, 3f, 4f, 3.5f, WHITE_SHADE);
-        g.line(10, 9, 24, 9, WHITE_SHADE);
-        // La louche dorée, levée.
-        g.line(30, 8, 29, 30, GOLD_DARK);
-        g.ellipse(30f, 7f, 2.5f, 2f, GOLD);
+        if (!has(Prop.TOQUE)) g.ellipse(17f, 9f, 7f, 2.5f, rgba("6a4a3a"));   // sans la toque : ses cheveux
+        if (has(Prop.TOQUE)) {                                  // la toque
+            g.rect(10, 6, 24, 10, WHITE);
+            g.ellipse(12f, 3f, 4f, 3.5f, WHITE);
+            g.ellipse(17f, 2f, 4.5f, 3f, WHITE);
+            g.ellipse(22f, 3f, 4f, 3.5f, WHITE_SHADE);
+            g.line(10, 9, 24, 9, WHITE_SHADE);
+        }
+        if (has(Prop.LADLE)) {                                  // la louche dorée, levée
+            g.line(30, 8, 29, 30, GOLD_DARK);
+            g.ellipse(30f, 7f, 2.5f, 2f, GOLD);
+        }
         return g.outlined();
     }
 
@@ -229,8 +257,8 @@ public final class ExpressPortraits {
         g.ellipse(25f, 15f, 2f, 5f, dress);
         g.rect(8, 4, 26, 6, dress);
         g.ellipse(17f, 3f, 5f, 2.5f, dress);
-        g.ellipse(23f, 2f, 2f, 1.5f, RED_DARK);                // une rose sur le chapeau
-        for (int y = 7; y <= 17; y += 2) for (int x = 10 + (y % 4 == 1 ? 1 : 0); x <= 24; x += 2) {
+        if (has(Prop.ROSE)) g.ellipse(23f, 2f, 2f, 1.5f, RED_DARK);   // une rose sur le chapeau
+        if (has(Prop.VEIL)) for (int y = 7; y <= 17; y += 2) for (int x = 10 + (y % 4 == 1 ? 1 : 0); x <= 24; x += 2) {
             if (g.get(x, y) != 0 && y > 12) continue;
             g.set(x, y, veil);
         }
@@ -282,12 +310,14 @@ public final class ExpressPortraits {
         g.rect(20, 18, 24, 25, RED_DARK);
         g.triangle(10, 25, 24, 25, 17, 29, RED);
         for (int x = 12; x <= 22; x += 3) g.set(x, 21, WHITE);
-        // Le chapeau à larges bords.
-        g.rect(11, 3, 23, 9, hat);
-        g.rect(15, 3, 19, 4, hatDark);
-        g.rect(4, 9, 30, 10, hat);
-        g.set(4, 8, hat); g.set(30, 8, hat);
-        g.line(11, 8, 23, 8, hatDark);
+        if (!has(Prop.HAT)) g.ellipse(17f, 9f, 7f, 2.5f, rgba("3a2a1e"));   // sans le chapeau : ses cheveux
+        if (has(Prop.HAT)) {                                    // le chapeau à larges bords
+            g.rect(11, 3, 23, 9, hat);
+            g.rect(15, 3, 19, 4, hatDark);
+            g.rect(4, 9, 30, 10, hat);
+            g.set(4, 8, hat); g.set(30, 8, hat);
+            g.line(11, 8, 23, 8, hatDark);
+        }
         // Le revolver, levé à droite.
         g.rect(28, 12, 32, 13, STEEL);
         g.rect(28, 13, 29, 18, rgba("6a4420"));
