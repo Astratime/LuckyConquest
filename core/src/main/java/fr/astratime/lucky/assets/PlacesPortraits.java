@@ -29,7 +29,13 @@ public final class PlacesPortraits {
     public static int[][] pixels(EnemyKind kind) { return of(kind); }
 
     /** Ce qu'une cinématique peut retirer d'un portrait (voir {@link #without}). */
-    public enum Prop { BARON_HAT }
+    public enum Prop {
+        BARON_HAT,
+        /** Le tricorne à plume du Capitaine Rat. */
+        RAT_HAT,
+        /** Le tricorne à tête de mort du Capitaine Noir. */
+        NOIR_HAT
+    }
 
     /** Les accessoires retirés du portrait en cours de dessin (vide hors de {@link #without}). */
     private static java.util.Set<Prop> gone = java.util.EnumSet.noneOf(Prop.class);
@@ -161,9 +167,11 @@ public final class PlacesPortraits {
         g.line(9, 25, 15, 25, belly);
         g.line(19, 25, 25, 25, belly);
         g.rect(16, 27, 18, 28, WHITE);
-        if (captain) {
+        if (captain && has(Prop.RAT_HAT)) {
             tricorn(g, rgba("2a2230"), rgba("1a141e"), GOLD);
             g.rect(7, 4, 9, 6, WHITE); // plume
+        }
+        if (captain) {
             // Sabre courbe tenu à droite.
             g.line(29, 38, 32, 22, STEEL);
             g.line(30, 38, 33, 23, STEEL_DARK);
@@ -324,12 +332,12 @@ public final class PlacesPortraits {
         }
         // Anneau d'or.
         g.set(24, 19, GOLD); g.set(25, 20, GOLD); g.set(24, 21, GOLD);
-        if (captain) {
+        if (captain && has(Prop.NOIR_HAT)) {
             tricorn(g, rgba("1a141e"), rgba("0e0a12"), GOLD);
             g.rect(15, 6, 19, 8, WHITE); // tête de mort
             g.set(16, 7, EYE); g.set(18, 7, EYE);
             g.set(15, 9, WHITE); g.set(19, 9, WHITE);
-        } else {
+        } else if (!captain) {
             g.ellipseShaded(17f, 9f, 7.5f, 3.5f, RED, RED_DARK, 2f);
             g.rect(24, 9, 27, 11, RED);
             g.rect(26, 11, 28, 14, RED_DARK);
