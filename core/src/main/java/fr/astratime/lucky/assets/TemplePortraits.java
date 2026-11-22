@@ -27,6 +27,28 @@ public final class TemplePortraits {
     /** @return les pixels du portrait de l'ennemi {@code kind}, ou {@code null} s'il n'est pas du Temple. */
     public static int[][] pixels(EnemyKind kind) { return of(kind); }
 
+    /** Ce qu'une cinématique peut retirer d'un portrait (voir {@link #without}). */
+    public enum Prop { BELL, DIE_LEFT, DIE_RIGHT }
+
+    /** Les accessoires retirés du portrait en cours de dessin (vide hors de {@link #without}). */
+    private static java.util.Set<Prop> gone = java.util.EnumSet.noneOf(Prop.class);
+
+    private static boolean has(Prop prop) { return !gone.contains(prop); }
+
+    /**
+     * @return le portrait de {@code kind} dessiné sans les accessoires {@code props} (ce qu'il y avait dessous
+     * réapparaît) : les cinématiques en tirent le vrai morceau qui quitte le boss, jamais une copie.
+     */
+    public static synchronized int[][] without(EnemyKind kind, Prop... props) {
+        gone = java.util.EnumSet.noneOf(Prop.class);
+        java.util.Collections.addAll(gone, props);
+        try {
+            return of(kind);
+        } finally {
+            gone = java.util.EnumSet.noneOf(Prop.class);
+        }
+    }
+
     /** @return le portrait de l'ennemi {@code kind}, ou {@code null} s'il n'est pas du Temple du Destin. */
     static int[][] of(EnemyKind kind) {
         return switch (kind) {
@@ -106,13 +128,19 @@ public final class TemplePortraits {
         g.rect(14, 23, 20, 27, IVORY);                                // la barbe blanche
         g.triangle(14, 27, 20, 27, 17, 31, IVORY);
         g.line(15, 21, 19, 21, MOUTH);
-        // Le bourdon de bronze, posé sur sa tête.
-        g.ellipseShaded(17f, 4f, 7f, 4f, BRONZE, BRONZE_DARK, 2f);
-        g.rect(9, 4, 25, 8, BRONZE);
-        g.rect(20, 4, 25, 8, BRONZE_DARK);
-        g.rect(7, 8, 27, 9, GOLD_DARK);
-        g.line(11, 6, 23, 6, GOLD);
-        g.rect(16, 0, 18, 1, BRONZE_DARK);
+        if (!has(Prop.BELL)) {                                        // sans son bourdon : un crâne chauve, deux touffes blanches
+            g.ellipseShaded(17f, 9f, 7f, 2.5f, SKIN, SKIN_SHADE, 2f);
+            g.ellipse(10f, 10.5f, 1.5f, 1.5f, IVORY);
+            g.ellipse(24f, 10.5f, 1.5f, 1.5f, IVORY);
+        }
+        if (has(Prop.BELL)) {                                         // le bourdon de bronze, posé sur sa tête
+            g.ellipseShaded(17f, 4f, 7f, 4f, BRONZE, BRONZE_DARK, 2f);
+            g.rect(9, 4, 25, 8, BRONZE);
+            g.rect(20, 4, 25, 8, BRONZE_DARK);
+            g.rect(7, 8, 27, 9, GOLD_DARK);
+            g.line(11, 6, 23, 6, GOLD);
+            g.rect(16, 0, 18, 1, BRONZE_DARK);
+        }
         // La corde de la cloche, sur l'épaule.
         for (int y = 9; y <= 40; y++) g.set(28 + (y % 3 == 0 ? 1 : 0), y, rgba("d8b878"));
         return g.outlined();
@@ -195,6 +223,7 @@ public final class TemplePortraits {
         g.line(15, 22, 19, 22, MOUTH);
         // La couronne : deux dés d'or penchés.
         for (int[] d : new int[][] {{9, 1}, {18, 2}}) {
+            if (!has(d[0] == 9 ? Prop.DIE_LEFT : Prop.DIE_RIGHT)) continue;
             g.rect(d[0], d[1], d[0] + 7, d[1] + 6, GOLD);
             g.rect(d[0] + 6, d[1], d[0] + 7, d[1] + 6, GOLD_DARK);
             g.set(d[0] + 2, d[1] + 2, RED_DARK); g.set(d[0] + 4, d[1] + 4, RED_DARK);
