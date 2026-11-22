@@ -12,16 +12,18 @@ import java.util.Random;
 import static fr.astratime.lucky.assets.Palette.hex;
 
 /**
- * Les rois de la prairie entrent en scène, au fond de leur donjon de pierre :
+ * Les rois de la prairie entrent en scène devant leur château, sur le vrai décor de leur combat (le château au
+ * soleil, l'herbe, l'arbre et la barrière, le même que leurs phases et leur mort) :
  * <ul>
- *   <li>Pique : un ciel d'orage, un éclair. Des lames tombent du plafond et se plantent en cercle ; le roi
- *   sort du centre. Il fait tourner son épée, les lames se lèvent.</li>
- *   <li>Trèfle : un trèfle à quatre feuilles pousse dans l'herbe. Une pluie de pièces s'empile ; le tas
- *   éclate, c'est le roi. Il attrape la dernière, la range dans sa poche et te fait signe d'approcher.</li>
- *   <li>Coeur : un vitrail en cœur s'éclaire. Les murs battent ; un cœur géant s'ouvre et le roi en sort.
- *   Il boit dans sa coupe, une goutte rouge tombe.</li>
- *   <li>Carreau : une carte au trésor se déroule, une croix rouge. Un tas de trésor bouge ; le roi se
- *   réveille dessus et lève son écu, éclat de diamant. Il pose son écu sur le tas, les pièces glissent.</li>
+ *   <li>Pique : l'orage sur son château, deux éclairs. L'orage passe ; des lames tombent du ciel et se plantent
+ *   en cercle dans l'herbe ; le roi sort du centre. Il fait tourner sa vraie épée, les lames se lèvent.</li>
+ *   <li>Trèfle : la nuit sur la prairie, un trèfle à quatre feuilles pousse dans l'herbe. Une pluie de pièces
+ *   s'empile ; le tas éclate, c'est le roi. Il attrape la dernière, la range dans sa poche et te fait signe
+ *   d'approcher.</li>
+ *   <li>Coeur : un vitrail en cœur s'éclaire dans la chapelle. Le château bat, ses bannières rougissent à chaque
+ *   battement ; un cœur géant s'ouvre et le roi en sort. Il boit dans sa coupe, une goutte rouge tombe.</li>
+ *   <li>Carreau : une carte au trésor se déroule, une croix rouge. Un tas de trésor bouge dans l'herbe ; le roi
+ *   se réveille dessus et lève son écu, éclat de diamant. Il pose son écu sur le tas, les pièces glissent.</li>
  * </ul>
  */
 public class PrairieKings extends KingEntrance {
@@ -48,6 +50,15 @@ public class PrairieKings extends KingEntrance {
     static final float DRINK_END = 4.4f, DROP = 4.0f, DROP_LAND = 4.55f, SHIELD_DOWN = 3.85f;
 
     private static final int BLADE_COUNT = 8;
+    /** La lumière du décor, comme dans leurs phases et leur mort. */
+    private static final float LIGHT = 0.62f;
+    /** Les deux bannières du château (pixels du décor : gauche, haut, largeur, hauteur). */
+    private static final int[][] BANNERS = {{40, 77, 13, 24}, {86, 77, 13, 24}};
+    /** Les fenêtres des tours (pixels du décor : gauche, haut) et le soleil du décor. */
+    private static final int[][] WINDOWS = {{30, 60}, {66, 60}, {108, 60}};
+    private static final float SUN_X = 307f, SUN_Y = 29f;
+    /** Pique : l'orage finit de passer pendant que les lames tombent. */
+    static final float STORM_CLEAR = 1.2f;
 
     private final Color tint, wall, wallDark, floor;
     private final TextureRegion blade, coin, heart, heartLeft, heartRight, leaf, stainedGlass;
@@ -62,7 +73,7 @@ public class PrairieKings extends KingEntrance {
             case ROI_COEUR -> hex("e0283a");
             default -> hex("ff9a2a");
         };
-        wall = hex("2e2a3e");
+        wall = hex("2e2a3e");                                  // la chapelle du vitrail (Coeur)
         wallDark = hex("1c1a28");
         floor = hex("141220");
         Color[] metal = {hex("140a0a"), hex("e8e8f0"), hex("9a9ab0"), hex("ffc93a"), hex("6b3a1e")};
@@ -155,8 +166,9 @@ public class PrairieKings extends KingEntrance {
                     rumble(0.25f, 6f);
                 }
                 for (int i = 0; i < BLADE_COUNT; i++) {
-                    if (at(BLADES + i * BLADE_STEP + BLADE_FALL)) {
-                        sparks(bladeX(i), bladeY(i), 10, Color.WHITE, 400f, 10f);
+                    if (at(BLADES + i * BLADE_STEP + BLADE_FALL)) {           // la lame se plante dans l'herbe
+                        sparks(bladeX(i), bladeY(i), 6, Color.WHITE, 400f, 10f);
+                        sparks(bladeX(i), bladeY(i), 8, hex("4a8a2a"), 300f, 12f);
                         rumble(0.12f, 4f);
                     }
                 }
@@ -226,7 +238,7 @@ public class PrairieKings extends KingEntrance {
 
     @Override
     protected void draw(Batch batch) {
-        drawDungeon(batch);
+        drawMeadow(batch);
         switch (kind) {
             case ROI_PIQUE -> drawSpade(batch);
             case ROI_TREFLE -> drawClub(batch);
@@ -236,8 +248,25 @@ public class PrairieKings extends KingEntrance {
         drawParticles(batch, parts);
     }
 
-    /** Le fond du donjon : mur de pierre, sol, deux torches, teinté de la couleur du roi. */
-    private void drawDungeon(Batch batch) {
+    /**
+     * Le vrai décor de son combat : le château au soleil, l'herbe, l'arbre, la barrière ; une lueur de la couleur
+     * du roi au centre. Pour Pique, l'orage du prélude finit de passer : la pluie et le ciel sombre s'en vont.
+     */
+    private void drawMeadow(Batch batch) {
+        float width = worldWidth(), height = worldHeight();
+        float storm = kind == EnemyKind.ROI_PIQUE ? 1f - progress(0f, STORM_CLEAR) : 0f;
+        drawPlace(batch, LIGHT - 0.3f * storm);
+        if (storm > 0f) {
+            fill(batch, hex("0a0c18"), 0.35f * storm);
+            rain(batch, 160, 0.35f * storm);
+        }
+        glow(batch, cx(), height * 0.35f, width * 1.1f, tint, 0.15f);
+        batch.setColor(0f, 0f, 0f, 0.3f);                          // vignette douce
+        batch.draw(ring, -width * 0.25f, -height * 0.6f, width * 1.5f, height * 2.2f);
+    }
+
+    /** Le mur de la chapelle du vitrail (prélude du Coeur) : pierre, sol, deux torches, teinté de rouge. */
+    private void drawChapel(Batch batch) {
         float width = worldWidth(), height = worldHeight(), brick = 48f;
         rect(batch, wallDark, -MARGIN, -MARGIN, width + 2f * MARGIN, height + 2f * MARGIN);
         for (int row = 0; row * brick < height + MARGIN; row++) {
@@ -378,7 +407,11 @@ public class PrairieKings extends KingEntrance {
         float beat = 0f;
         for (float at : HEART_BEATS) if (time >= at) beat = Math.max(beat, 1f - (time - at) / 0.22f);
         beat = Math.max(0f, beat);
-        fill(batch, tint, 0.18f * beat);
+        fill(batch, tint, 0.12f * beat);
+        for (int[] banner : BANNERS) {                             // les bannières du château battent avec lui
+            float bx = placeX(banner[0] + banner[2] / 2f), by = placeY(banner[1] + banner[3] / 2f);
+            glow(batch, bx, by, banner[3] * placeScale() * (1.6f + 0.8f * beat), tint, 0.25f + 0.6f * beat);
+        }
         float heartX = cx(), heartY = worldHeight() * 0.5f;
         float drink = gesture(GESTURE, DRINK_END);
         pose(0f, 0f, 7f * drink, 0.02f * drink);                 // il boit : la tête en arrière
@@ -462,13 +495,17 @@ public class PrairieKings extends KingEntrance {
     // Le décor, avant l'entrée
     // -------------------------------------------------------------------------
 
-    /** Pique : un ciel d'orage au-dessus du donjon, la pluie, deux éclairs. */
+    /** Pique : l'orage sur son vrai château, dans le noir ; les deux éclairs le découvrent. */
     private void drawStorm(Batch batch) {
         float width = worldWidth(), height = worldHeight();
         float lit = 0f;
         for (float bolt : BOLTS) if (time >= bolt) lit = Math.max(lit, 1f - (time - bolt) / 0.3f);
         lit = Math.max(0f, lit);
-        gradient(batch, hex("0a0c18"), hex("262c4a"));
+        drawPlace(batch, 0.2f + 0.5f * lit);
+        fill(batch, hex("0a0c18"), 0.55f * (1f - lit));
+        for (int[] window : WINDOWS) {                                  // ses fenêtres allumées
+            glow(batch, placeX(window[0] + 2f), placeY(window[1] + 2f), 70f, hex("ffb040"), 0.7f * pulse(9f + window[0], 0.6f));
+        }
         for (int i = 0; i < 14; i++) {                               // les nuages qui roulent
             float x = ((i * 233f + time * (40f + i * 6f)) % (width + 600f)) - 300f;
             float y = height * (0.72f + 0.05f * (i % 4)), size = 420f + 60f * (i % 5);
@@ -480,25 +517,16 @@ public class PrairieKings extends KingEntrance {
             float alpha = time >= BOLTS[i] ? 1f - (time - BOLTS[i]) / 0.3f : 0f;
             bolt(batch, width * (i == 0 ? 0.3f : 0.68f), height * 0.3f, 11L + i, alpha);
         }
-        // Le donjon en ombre, ses tours et ses créneaux.
-        Color wallColor = tmp.set(0.03f, 0.03f, 0.06f, 1f).lerp(hex("2e2a3e"), 0.5f * lit);
-        rect(batch, wallColor, -MARGIN, -MARGIN, width + 2f * MARGIN, height * 0.22f + MARGIN);
-        for (int t = 0; t < 3; t++) {
-            float x = width * (0.18f + t * 0.32f), w = t == 1 ? 260f : 180f, h = height * (t == 1 ? 0.5f : 0.36f);
-            rect(batch, wallColor, x - w / 2f, height * 0.2f, w, h);
-            for (int k = 0; k < 4; k++) rect(batch, wallColor, x - w / 2f + k * w / 3.5f, height * 0.2f + h, w / 7f, 34f);
-            glow(batch, x, height * 0.2f + h * 0.6f, 60f, hex("ffb040"), 0.6f * pulse(9f + t, 0.6f));
-        }
         rain(batch, 160, 0.35f);
         fill(batch, hex("c8d8ff"), 0.45f * lit * (settings.isReducedEffects() ? 0.3f : 1f));
     }
 
-    /** Trèfle : la prairie au crépuscule ; un trèfle à quatre feuilles pousse au milieu. */
+    /** Trèfle : sa prairie la nuit (le vrai décor, le soleil devenu lune) ; un trèfle à quatre feuilles pousse au milieu. */
     private void drawClover(Batch batch) {
         float width = worldWidth(), height = worldHeight(), ground = height * 0.24f;
-        gradient(batch, hex("2a3a3a"), hex("0e1430"));
-        glow(batch, width * 0.8f, height * 0.8f, 300f, hex("fff2c0"), 0.5f);              // la lune
-        rect(batch, hex("123a1e"), -MARGIN, -MARGIN, width + 2f * MARGIN, ground + MARGIN);
+        drawPlace(batch, 0.32f);
+        fill(batch, hex("0e1430"), 0.5f);
+        glow(batch, placeX(SUN_X), placeY(SUN_Y), 300f, hex("fff2c0"), 0.5f);          // la lune
         for (int i = 0; i < 90; i++) {                                                 // l'herbe qui ondule
             float x = i * (width + 2f * MARGIN) / 90f - MARGIN, h = 50f + (i * 37 % 7) * 14f;
             float sway = 10f * MathUtils.sin(time * 2f + i * 0.5f);
@@ -530,7 +558,7 @@ public class PrairieKings extends KingEntrance {
     /** Coeur : un vitrail en forme de cœur dans le mur de la chapelle, qui s'éclaire. */
     private void drawStainedGlass(Batch batch) {
         float width = worldWidth(), height = worldHeight();
-        drawDungeon(batch);
+        drawChapel(batch);
         fill(batch, Color.BLACK, 0.45f);
         float light = Interpolation.pow2In.apply(progress(GLASS_LIGHT, GLASS_FULL));
         float scale = 46f, w = stainedGlass.getRegionWidth() * scale, h = stainedGlass.getRegionHeight() * scale;
