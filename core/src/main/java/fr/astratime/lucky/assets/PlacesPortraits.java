@@ -34,7 +34,9 @@ public final class PlacesPortraits {
         /** Le tricorne à plume du Capitaine Rat. */
         RAT_HAT,
         /** Le tricorne à tête de mort du Capitaine Noir. */
-        NOIR_HAT
+        NOIR_HAT,
+        /** Casino Englouti : le levier du Jackpot vivant, le monocle et la pile de pièces du Requin banquier, la couronne du Kraken. */
+        JACKPOT_LEVER, SHARK_MONOCLE, SHARK_COINS, KRAKEN_CROWN
     }
 
     /** Les accessoires retirés du portrait en cours de dessin (vide hors de {@link #without}). */
@@ -659,9 +661,11 @@ public final class PlacesPortraits {
         g.rect(1, 25, 5, 27, EYE);
         g.rect(2, 26, 4, 26, GOLD_LIGHT);
         // Le levier, planté dans son dos.
-        g.rect(JACKPOT_LEVER_X - 1, JACKPOT_LEVER_BASE - 1, JACKPOT_LEVER_X + 2, JACKPOT_LEVER_BASE + 1, STEEL_DARK);
-        g.rect(JACKPOT_LEVER_X, 6, JACKPOT_LEVER_X + 1, JACKPOT_LEVER_BASE - 1, STEEL);
-        g.ellipse(JACKPOT_LEVER_X + 0.5f, 4f, 2.5f, 2.5f, RED);
+        if (has(Prop.JACKPOT_LEVER)) {
+            g.rect(JACKPOT_LEVER_X - 1, JACKPOT_LEVER_BASE - 1, JACKPOT_LEVER_X + 2, JACKPOT_LEVER_BASE + 1, STEEL_DARK);
+            g.rect(JACKPOT_LEVER_X, 6, JACKPOT_LEVER_X + 1, JACKPOT_LEVER_BASE - 1, STEEL);
+            g.ellipse(JACKPOT_LEVER_X + 0.5f, 4f, 2.5f, 2.5f, RED);
+        }
         return g.outlined();
     }
 
@@ -692,10 +696,14 @@ public final class PlacesPortraits {
             g.rect(11, 0, 23, 6, rgba("1a1a26"));
             g.rect(11, 5, 23, 5, RED);
             g.rect(8, 6, 26, 7, rgba("1a1a26"));
-            g.ellipse(23f, 13.5f, 2.5f, 2.5f, GOLD_DARK);
-            g.rect(22, 13, 24, 14, rgba("c8e6f0"));
+            if (has(Prop.SHARK_MONOCLE)) {
+                g.ellipse(23f, 13.5f, 2.5f, 2.5f, GOLD_DARK);
+                g.rect(22, 13, 24, 14, rgba("c8e6f0"));
+            }
             // Pile de pièces.
-            for (int i = 0; i < 4; i++) g.rect(26, 38 - i * 2, 32, 39 - i * 2, i % 2 == 0 ? GOLD : GOLD_DARK);
+            if (has(Prop.SHARK_COINS)) {
+                for (int i = 0; i < 4; i++) g.rect(26, 38 - i * 2, 32, 39 - i * 2, i % 2 == 0 ? GOLD : GOLD_DARK);
+            }
         } else {
             // Aileron dorsal qui dépasse.
             g.triangle(23, 7, 30, 10, 30, 1, skinShade);
@@ -734,10 +742,12 @@ public final class PlacesPortraits {
             g.line(10, 17, 15, 18, EYE);
             g.line(24, 17, 19, 18, EYE);
             // Couronne d'or.
-            g.rect(10, 4, 24, 6, GOLD);
-            g.rect(19, 4, 24, 6, GOLD_DARK);
-            for (int x : new int[] {10, 14, 17, 20, 24}) g.rect(x, 1, x, 3, GOLD);
-            g.set(17, 5, RED);
+            if (has(Prop.KRAKEN_CROWN)) {
+                g.rect(10, 4, 24, 6, GOLD);
+                g.rect(19, 4, 24, 6, GOLD_DARK);
+                for (int x : new int[] {10, 14, 17, 20, 24}) g.rect(x, 1, x, 3, GOLD);
+                g.set(17, 5, RED);
+            }
         } else {
             // Visière verte de croupier.
             g.rect(7, 10, 27, 11, rgba("2e8a5a"));
