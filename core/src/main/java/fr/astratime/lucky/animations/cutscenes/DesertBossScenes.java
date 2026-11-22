@@ -198,13 +198,14 @@ final class DesertBossScenes {
     // -------------------------------------------------------------------------
 
     /**
-     * Des rouleaux de machine à sous apparaissent sur son sarcophage, un levier sort sur le côté ; il le tire :
-     * les rouleaux tournent et s'arrêtent un à un sur son symbole, le Venin. Ses yeux verts s'allument.
+     * « Le sarcophage se ferme : Venin ! » : il se tient devant la cuve ouverte de son sarcophage ; des rouleaux
+     * apparaissent sur le couvercle dressé à côté, il tire le levier, les rouleaux s'arrêtent un à un sur le Venin ;
+     * le couvercle glisse et se ferme sur lui dans un grand fracas, le venin vert suinte des joints, les yeux du
+     * masque s'allument ; puis le couvercle se rouvre : il en sort, vert de venin.
      */
     static final class PharaohPhase extends BossScene {
-        /** Les rouleaux s'arrêtent un à un, le dernier à l'apogée. */
-        private static final float REELS_IN = 0.4f, LEVER_OUT = 0.8f, PULL = 1.1f, SPIN = 1.35f;
-        private static final float[] STOPS = {1.75f, 2.0f, CLIMAX_PHASE};
+        private static final float REELS_IN = 0.4f, LEVER_OUT = 0.6f, PULL = 0.85f, SPIN = 1.1f, SHUT = 1.95f, REOPEN = 3.3f;
+        private static final float[] STOPS = {1.45f, 1.65f, 1.85f};
         private final TextureRegion[] symbols;
         private final int venom;
 
@@ -217,47 +218,69 @@ final class DesertBossScenes {
             symbols = loaded[0] == null ? null : loaded;
         }
 
-        private float caseW() { return bossWidth() * 0.85f; }
-        private float caseH() { return bossHeight() * 1.12f; }
-        private float caseX() { return bossX() - bossWidth() * 1.05f; }
-        private float window() { return caseW() * 0.24f; }
-        private float reelX(int r) { return caseX() + (r - 1) * caseW() * 0.29f - window() / 2f; }
-        private float reelY() { return bossBottom() + caseH() * 0.3f; }
-        private float leverX() { return caseX() + caseW() / 2f + 8f; }
-        private float leverY() { return bossBottom() + caseH() * 0.42f; }
-        /** Le levier : dressé (70°), tiré vers le bas (-35°) puis il remonte. */
-        private float leverAngle() {
-            return MathUtils.lerp(70f, -35f, gesture(PULL, PULL + 0.6f));
+        /** @return 1 quand le couvercle est fermé sur lui, 0 quand il est dressé à côté. */
+        private float shut() {
+            return Interpolation.bounceOut.apply(progress(SHUT, CLIMAX_PHASE)) * (1f - Interpolation.pow2.apply(progress(REOPEN, REOPEN + 0.5f)));
         }
+
+        private float caseW() { return bossWidth() * 1.25f; }
+        private float caseH() { return bossHeight() * 1.18f; }
+        private float caseX() { return MathUtils.lerp(bossX() - bossWidth() * 1.45f, bossX(), shut()); }
+        private float window() { return caseW() * 0.2f; }
+        private float reelX(int r) { return caseX() + (r - 1) * caseW() * 0.24f - window() / 2f; }
+        private float reelY() { return bossBottom() + caseH() * 0.3f; }
+        private float leverX() { return caseX() - caseW() / 2f - 8f; }
+        private float leverY() { return bossBottom() + caseH() * 0.42f; }
+        /** Le levier : dressé (110°), tiré vers le bas (215°) puis il remonte. */
+        private float leverAngle() { return MathUtils.lerp(110f, 215f, gesture(PULL, PULL + 0.5f)); }
 
         @Override
         protected void step(float delta) {
             if (at(REELS_IN)) sparks(caseX(), reelY() + window() / 2f, 30, GREEN, 400f, 10f);
-            if (at(PULL + 0.3f)) rumble(0.2f, 6f);
+            if (at(PULL + 0.25f)) rumble(0.2f, 6f);
             for (int r = 0; r < 3; r++) {
                 if (!at(STOPS[r])) continue;
                 rumble(0.1f, 4f);
                 sparks(reelX(r) + window() / 2f, reelY() + window() / 2f, 14, GREEN, 300f, 8f);
             }
-            if (at(CLIMAX_PHASE)) { rumble(0.6f, 14f); sparks(caseX(), reelY(), 50, GREEN, 700f, 14f); }
-            if (time > CLIMAX_PHASE && time < 4.2f && random.nextFloat() < 0.5f) {           // le venin coule des rouleaux
-                int r = random.nextInt(3);
-                Particle drop = particle(reelX(r) + window() * random.nextFloat(), reelY(), 270f, 60f, 1.4f, 14f);
+            if (at(CLIMAX_PHASE)) { rumble(0.7f, 16f); sparks(bossX(), bossBottom() + caseH() * 0.5f, 50, SAND, 700f, 14f); }
+            if (time > CLIMAX_PHASE && time < REOPEN && random.nextFloat() < 0.7f) {             // le venin suinte des joints
+                float side = random.nextBoolean() ? -1f : 1f;
+                Particle drop = particle(caseX() + side * caseW() / 2f, bossBottom() + caseH() * (0.1f + 0.8f * random.nextFloat()),
+                    side > 0f ? -20f : 200f, 50f, 1.4f, 14f);
                 drop.gravity = 500f;
                 drop.color.set(GREEN);
                 glows.add(drop);
             }
+            if (at(REOPEN + 0.5f)) sparks(bossX(), bossY(), 30, GREEN, 500f, 10f);
         }
 
         @Override
         protected void back(Batch batch) {
-            float pull = gesture(PULL, PULL + 0.6f);
+            float w = caseW(), h = caseH(), x = bossX();
+            rect(batch, hex("1a0e06"), 1f, x - w / 2f - 6f, bossBottom() - 6f, w + 12f, h + 12f);   // la cuve ouverte, dressée
+            rect(batch, hex("c4891e"), 1f, x - w / 2f, bossBottom(), w, h);
+            rect(batch, hex("140a04"), 1f, x - w / 2f + 24f, bossBottom() + 20f, w - 48f, h - 44f);
+            float pull = gesture(PULL, PULL + 0.5f);
             poseX = -30f * pull;                                                             // il se penche sur le levier
             poseTilt = 4f * pull;
-            poseTint = 0.35f * progress(CLIMAX_PHASE, CLIMAX_PHASE + 0.4f);
+            poseTint = 0.4f * progress(REOPEN, REOPEN + 0.5f) * pulse(6f, 0.7f);
             poseTintColor.set(GREEN);
-            sarcophagus(this, batch, caseX(), bossBottom(), caseW(), caseH(), 1f);
-            float show = progress(REELS_IN, REELS_IN + 0.4f);                                // les rouleaux apparaissent
+        }
+
+        @Override
+        protected void front(Batch batch) {
+            float lever = progress(LEVER_OUT, LEVER_OUT + 0.3f) * (1f - progress(SHUT - 0.2f, SHUT));   // le levier sort du flanc
+            if (lever > 0f) {
+                float a = leverAngle(), length = caseH() * 0.3f * lever;
+                float ex = leverX() + MathUtils.cosDeg(a) * length, ey = leverY() + MathUtils.sinDeg(a) * length;
+                rect(batch, hex("1a0e06"), 1f, leverX() - 14f, leverY() - 22f, 28f, 44f);
+                line(batch, hex("8a97a8"), 1f, leverX(), leverY(), ex, ey, 14f);
+                rect(batch, hex("1a0e06"), 1f, ex - 22f, ey - 22f, 44f, 44f);
+                rect(batch, hex("c8102e"), 1f, ex - 18f, ey - 18f, 36f, 36f);
+            }
+            sarcophagus(this, batch, caseX(), bossBottom(), caseW(), caseH(), 1f);              // le couvercle, qui se ferme sur lui
+            float show = progress(REELS_IN, REELS_IN + 0.4f);                                // les rouleaux, sur le couvercle
             if (show > 0f && symbols != null) {
                 float w = window();
                 rect(batch, hex("1a0e06"), show, reelX(0) - 14f, reelY() - 14f, reelX(2) - reelX(0) + w + 28f, w + 28f);
@@ -272,20 +295,13 @@ final class DesertBossScenes {
                     if (time >= STOPS[r]) glow(batch, reelX(r) + w / 2f, reelY() + w / 2f, w * 2.2f, GREEN, 0.5f * pulse(9f, 0.5f));
                 }
             }
-            float lever = progress(LEVER_OUT, LEVER_OUT + 0.3f);                             // le levier sort du flanc
-            if (lever > 0f) {
-                float a = leverAngle(), length = caseH() * 0.36f * lever;
-                float ex = leverX() + MathUtils.cosDeg(a) * length, ey = leverY() + MathUtils.sinDeg(a) * length;
-                rect(batch, hex("1a0e06"), 1f, leverX() - 14f, leverY() - 22f, 28f, 44f);
-                line(batch, hex("8a97a8"), 1f, leverX(), leverY(), ex, ey, 14f);
-                rect(batch, hex("1a0e06"), 1f, ex - 22f, ey - 22f, 44f, 44f);
-                rect(batch, hex("c8102e"), 1f, ex - 18f, ey - 18f, 36f, 36f);
+            float closed = progress(CLIMAX_PHASE - 0.05f, CLIMAX_PHASE + 0.2f) * (1f - progress(REOPEN, REOPEN + 0.2f));
+            if (closed > 0f) {                                                               // les yeux du masque s'allument
+                float faceW = caseW() * 0.38f, eyeY = bossBottom() + caseH() * (0.7f + 0.13f) + caseH() * 0.0125f;
+                glow(batch, caseX() - faceW * 0.23f, eyeY, 120f, GREEN, closed * pulse(8f, 0.6f));
+                glow(batch, caseX() + faceW * 0.23f, eyeY, 120f, GREEN, closed * pulse(8f, 0.6f));
             }
-        }
-
-        @Override
-        protected void front(Batch batch) {
-            eyes(batch, progress(CLIMAX_PHASE, CLIMAX_PHASE + 0.2f), GREEN, new float[] {14f, 15f}, new float[] {21f, 15f});
+            if (time > REOPEN) eyes(batch, progress(REOPEN + 0.3f, REOPEN + 0.5f), GREEN, new float[] {14f, 15f}, new float[] {21f, 15f});
             flash(batch, GREEN, CLIMAX_PHASE, 0.3f, 0.35f);
         }
     }
@@ -377,54 +393,102 @@ final class DesertBossScenes {
     // Djinn du Mirage
     // -------------------------------------------------------------------------
 
-    /** Il se dédouble en trois (deux copies transparentes) ; tout ondule ; les palmiers deviennent des rouleaux qui tournent. */
+    /** L'oasis du décor : un ovale d'eau (pixels du décor), et le sable autour. */
+    static final float POND_X = 180f, POND_Y = 180f, POND_RX = 90f, POND_RY = 30f;
+    static final Color POND_SAND = hex("c69c5c"), POND_RIM = hex("3c96c8"), POND_WATER = hex("55abd1");
+    static final String[] SCROLL_END = {"oooooooooooooooooooo", "ossssssssssssssssddo", "oooooooooooooooooooo"};
+    static final String[] SEAL = {"..oooo..", ".orrrro.", "orrwrrro", "orrrrrro", "orrrrrro", "orrrrrro", ".orrrro.", "..oooo.."};
+
+    /** Un ovale peint dans le décor, ligne par ligne (centre et rayons en pixels du décor). */
+    static void decorOval(BossScene scene, Batch batch, Color color, float cx, float cy, float rx, float ry) {
+        if (rx <= 0f || ry <= 0f) return;
+        for (float y = -ry; y < ry; y += 1f) {
+            float half = rx * (float) Math.sqrt(Math.max(0f, 1f - (y + 0.5f) * (y + 0.5f) / (ry * ry)));
+            scene.decorRect(batch, color, Math.round(cx - half), cy + y, Math.round(2f * half), 1f);
+        }
+    }
+
+    /**
+     * « Voeu exaucé : Lettre de change ! » : sa lampe fume à ses pieds, il s'en élève, bras ouverts ; trois étoiles
+     * de voeu tournent autour de lui ; un grand parchemin se déroule devant lui, une plume d'or y écrit, et son
+     * sceau rouge s'écrase dessus ; la lettre de change s'envole vers toi.
+     */
     static final class DjinnPhase extends BossScene {
-        private final TextureRegion[] symbols;
+        private static final float UNROLL = 1.0f, WRITE = 1.4f, SEAL_AT = CLIMAX_PHASE, SEND = 2.9f;
+        private final TextureRegion lamp, rod, seal;
 
         DjinnPhase(CutsceneKit kit) {
             super(kit, Moment.PHASE, EnemyKind.DJINN, 2);
-            symbols = new TextureRegion[] {load("symbols/2-cherry.png"), load("symbols/3-seven.png"), load("symbols/6-bell.png"),
-                load("symbols/7-diamond.png")};
+            lamp = art("og", new Color[] {hex("4a3008"), GOLD}, LAMP);
+            rod = art("osd", new Color[] {hex("3a2412"), hex("c8904a"), hex("6e4524")}, SCROLL_END);
+            seal = art("orw", new Color[] {hex("5a0a0a"), hex("c8102e"), hex("ff8a8a")}, SEAL);
         }
+
+        private float paperW() { return bossWidth() * 1.1f; }
+        private float paperH() { return bossHeight() * 0.85f * Interpolation.pow2Out.apply(progress(UNROLL, UNROLL + 0.4f)); }
+        /** Le centre du parchemin : devant lui, puis il s'envole vers toi. */
+        private float paperX() { return bossX() + bossWidth() * 1.15f + worldWidth() * 0.3f * fly(); }
+        private float paperY() { return bossY() - worldHeight() * 0.15f * fly(); }
+        private float fly() { return Interpolation.pow2In.apply(progress(SEND, SEND + 0.7f)); }
 
         @Override
         protected void step(float delta) {
-            if (at(1.0f)) sparks(bossX(), bossY(), 40, PURPLE, 600f, 12f);
-            if (at(CLIMAX_PHASE)) { rumble(0.6f, 10f); sparks(bossX(), bossY(), 50, hex("fff2c0"), 700f, 14f); }
+            if (time < 1.2f && random.nextFloat() < 0.6f) {                                  // la fumée de la lampe
+                Particle smoke = particle(bossX() - bossWidth() * 0.55f, groundY() + 40f, 80f + 20f * random.nextFloat(), 140f, 1.2f, 60f);
+                smoke.color.set(0.75f, 0.6f, 1f, 0.35f);
+                glows.add(smoke);
+            }
+            if (at(0.7f)) sparks(bossX(), bossY(), 40, PURPLE, 600f, 12f);
+            if (at(SEAL_AT)) { rumble(0.6f, 12f); sparks(paperX(), paperY() - paperH() * 0.25f, 40, hex("ff3a3a"), 500f, 12f); }
+            if (at(SEND)) sparks(paperX(), paperY(), 30, GOLD, 500f, 10f);
         }
 
         @Override
         protected void back(Batch batch) {
-            float reels = progress(1.4f, 1.8f);
-            for (int r = 0; r < 4; r++) {                                                    // les palmiers devenus rouleaux
-                float x = worldWidth() * (0.08f + 0.28f * r), w = 150f, h = 130f;
-                rect(batch, hex("3a9a3a"), 1f - reels, x + w / 2f - 10f, groundY(), 20f, 360f);
-                if (reels > 0f) {
-                    rect(batch, hex("1a1018"), reels, x - 10f, groundY() + 200f, w + 20f, h + 20f);
-                    rect(batch, hex("f6f0e2"), reels, x, groundY() + 210f, w, h);
-                    batch.setColor(1f, 1f, 1f, reels);
-                    reel(batch, symbols, x, groundY() + 210f, w, h, time * (6f + r));
-                }
+            draw(batch, lamp, bossX() - bossWidth() * 0.55f, groundY() + 30f, fit(90f, 7), 0f, WHITE, 1f);   // sa lampe, à ses pieds
+            float rise = Interpolation.pow2Out.apply(progress(0.3f, 1.0f));
+            poseY = 40f * rise + 10f * MathUtils.sin(time * 2.5f);
+            poseStretch = 0.06f * rise;
+            for (int k = 0; k < 3; k++) {                                                    // les trois étoiles de voeu
+                float a = time * 220f + k * 120f, stars = progress(0.6f, 0.9f) * (1f - progress(UNROLL + 0.2f, UNROLL + 0.5f));
+                float x = bossX() + MathUtils.cosDeg(a) * bossWidth() * 0.8f, y = bossY() + 40f + MathUtils.sinDeg(a) * bossHeight() * 0.25f;
+                if (stars > 0f) { glow(batch, x, y, 120f, GOLD, stars); rect(batch, hex("fff2c0"), stars, x - 6f, y - 6f, 12f, 12f); }
             }
-            beginTilt(batch, 2.5f * MathUtils.sin(time * 5f) * progress(0.6f, 1.2f));      // tout ondule
-            float split = Interpolation.pow2Out.apply(progress(0.8f, 1.6f));
-            for (int side = -1; side <= 1 && split > 0f; side += 2) {                         // ses deux copies
-                float x = bossX() + side * bossWidth() * 1.1f * split;
-                batch.setColor(0.7f, 0.6f, 1f, 0.35f);
-                batch.draw(boss, x - bossWidth() / 2f, bossBottom() + 10f * MathUtils.sin(time * 3f + side), bossWidth(), bossHeight());
-            }
-            poseY = 14f * MathUtils.sin(time * 2.5f);
         }
 
         @Override
         protected void front(Batch batch) {
-            endTilt(batch);
-            eyes(batch, progress(CLIMAX_PHASE, CLIMAX_PHASE + 0.2f), GOLD, new float[] {14f, 16f}, new float[] {21f, 16f});
+            float h = paperH();
+            if (h > 1f && fly() < 1f) {                                                       // le parchemin
+                float w = paperW() * (1f - 0.3f * fly()), x = paperX(), y = paperY(), alpha = 1f - fly();
+                float scale = w / 20f;
+                rect(batch, hex("1a1018"), alpha, x - w / 2f - 4f, y - h / 2f, w + 8f, h);
+                rect(batch, hex("f0e2b8"), alpha, x - w / 2f, y - h / 2f, w, h);
+                int lines = (int) (7 * progress(WRITE, SEAL_AT - 0.1f));                    // la plume écrit, ligne après ligne
+                for (int l = 0; l < 7 && l < lines + 1; l++) {
+                    float k = l < lines ? 1f : (7 * progress(WRITE, SEAL_AT - 0.1f)) % 1f;
+                    float ly = y + h / 2f - h * (0.16f + 0.1f * l), lw = w * (l == 0 ? 0.5f : 0.75f) * k;
+                    rect(batch, hex("4a3018"), alpha, x - w * 0.38f, ly, lw, 6f);
+                    if (l == lines && time < SEAL_AT) {                                        // la plume d'or
+                        float qx = x - w * 0.38f + lw, qy = ly;
+                        line(batch, GOLD, 1f, qx, qy, qx + 30f, qy + 70f, 8f);
+                        line(batch, hex("fff2c0"), 1f, qx + 10f, qy + 20f, qx + 34f, qy + 64f, 4f);
+                    }
+                }
+                draw(batch, rod, x, y + h / 2f, scale, 0f, WHITE, alpha);
+                draw(batch, rod, x, y - h / 2f, scale, 0f, WHITE, alpha);
+                float stamp = progress(SEAL_AT - 0.15f, SEAL_AT);                              // le sceau rouge s'écrase
+                if (stamp > 0f) {
+                    float size = MathUtils.lerp(3f, 1f, Interpolation.pow2In.apply(stamp));
+                    draw(batch, seal, x + w * 0.22f, y - h * 0.28f, w * 0.03f * size, 0f, WHITE, alpha * stamp);
+                }
+            }
+            eyes(batch, progress(0.5f, 0.8f), GOLD, new float[] {14f, 16f}, new float[] {21f, 16f});
             flash(batch, PURPLE, CLIMAX_PHASE, 0.3f, 0.35f);
         }
     }
 
-    /** Ses copies éclatent en bulles ; il est aspiré en spirale dans sa lampe ; la lampe roule ; l'oasis s'évapore, la terre se craquèle. */
+    /** « Le Djinn retourne dans sa lampe » : il est aspiré en spirale dans sa lampe ; la lampe roule ; l'oasis du décor s'évapore, son fond se craquèle. */
     static final class DjinnDeath extends BossScene {
         private final TextureRegion lamp;
 
@@ -438,21 +502,25 @@ final class DesertBossScenes {
 
         @Override
         protected void step(float delta) {
-            if (at(0.5f)) for (int side = -1; side <= 1; side += 2) sparks(bossX() + side * bossWidth() * 1.1f, bossY(), 30, hex("d8c8ff"), 500f, 12f);
+            if (at(0.5f)) sparks(bossX(), bossY(), 30, hex("d8c8ff"), 500f, 12f);
             if (at(CLIMAX_DEATH)) rumble(0.4f, 8f);
+            if (time > 3.6f && time < 4.8f && random.nextFloat() < 0.5f) {                   // la vapeur de l'oasis
+                Particle steam = particle(decorX(POND_X + (random.nextFloat() - 0.5f) * 140f), decorY(POND_Y), 90f, 120f, 1.4f, 80f);
+                steam.color.set(1f, 1f, 1f, 0.25f);
+                glows.add(steam);
+            }
         }
 
         @Override
         protected void back(Batch batch) {
-            float dry = progress(3.6f, 4.8f);                                                // l'oasis s'évapore
-            rect(batch, hex("2a8ad8"), 1f - dry, bossX() - bossWidth() * 1.4f, groundY() - 40f, bossWidth() * 2.8f, 60f);
-            for (int k = 0; k < 16 && dry > 0f; k++) {
-                crack(batch, (k * 211f) % worldWidth(), groundY() * 0.5f, 10f + k * 23f, 120f, k, hex("8a5a2a"), dry, 4f);
-            }
-            if (time < 0.5f) {                                                               // ses copies, avant d'éclater
-                for (int side = -1; side <= 1; side += 2) {
-                    batch.setColor(0.7f, 0.6f, 1f, 0.35f);
-                    batch.draw(boss, bossX() + side * bossWidth() * 1.1f - bossWidth() / 2f, bossBottom(), bossWidth(), bossHeight());
+            float dry = progress(3.6f, 4.8f);                                                // l'oasis du décor s'évapore
+            if (dry > 0f) {
+                decorOval(this, batch, POND_SAND, POND_X, POND_Y, POND_RX + 1f, POND_RY + 1f);
+                float left = 1f - dry;
+                decorOval(this, batch, POND_RIM, POND_X, POND_Y, POND_RX * left, POND_RY * left);
+                decorOval(this, batch, POND_WATER, POND_X, POND_Y - 1f, (POND_RX - 10f) * left, (POND_RY - 5f) * left);
+                for (int k = 0; k < 9; k++) {                                                // le fond se craquèle
+                    crack(batch, decorX(POND_X - 70f + k * 17f), decorY(POND_Y + (k % 3 - 1) * 8f), 20f + k * 37f, 90f, k, hex("8a5a2a"), dry, 4f);
                 }
             }
             float suck = Interpolation.pow2In.apply(progress(1.2f, CLIMAX_DEATH + 0.6f));   // aspiré en spirale dans la lampe
@@ -465,7 +533,6 @@ final class DesertBossScenes {
 
         @Override
         protected void front(Batch batch) {
-            for (int side = -1; side <= 1; side += 2) wave(batch, 0.5f, 0.5f, bossX() + side * bossWidth() * 1.1f, bossY(), hex("d8c8ff"), 600f);
             float roll = progress(3.4f, 4.6f);                                               // la lampe se renverse et roule
             draw(batch, lamp, lampX(), lampY(), fit(110f, 7), 90f * progress(3.1f, 3.4f) + 540f * roll, WHITE, 1f);
         }
@@ -475,16 +542,33 @@ final class DesertBossScenes {
     // Ignar, le Dragon du Volcan
     // -------------------------------------------------------------------------
 
-    /** Il s'envole ; le volcan entre en éruption, la lave pleut ; ses écailles rougissent ; il plonge, son souffle remplit l'écran. */
+    static final String[] WING_LEFT = {"ooo.............", "orrooo..........", ".orrrroo........", ".orrrrrrooo.....", "..orrrrrrrrooo..", "..orrrrrrrrrrroo", "...orrrrrrrrrrro", "...ordrrdrrrrrro", "....od.od.drrrro", "....o..o..odrrro", "..........o.odro", "............o.oo"};
+    static final String[] WING_RIGHT = {".............ooo", "..........ooorro", "........oorrrro.", ".....ooorrrrrro.", "..ooorrrrrrrro..", "oorrrrrrrrrrro..", "orrrrrrrrrrro...", "orrrrrrdrrdro...", "orrrrd.do.do....", "orrrdo..o..o....", "ordo.o..........", "oo.o............"};
+    /** Le cratère du volcan du décor (pixels du décor). */
+    static final float CRATER_X = 70f, CRATER_Y = 30f;
+
+    /**
+     * « Envol : Brûlure ! » : il déplie ses ailes, s'arrache du sol et monte haut dans le ciel ; le volcan du
+     * décor crache sa lave ; ses écailles rougissent ; il plonge sur toi et son souffle remplit l'écran.
+     */
     static final class DragonPhase extends BossScene {
-        DragonPhase(CutsceneKit kit) { super(kit, Moment.PHASE, EnemyKind.DRAGON, 2); }
+        private static final float UNFOLD = 0.1f, LIFT = 0.5f, TOP = 1.5f, DIVE = 1.85f;
+        private final TextureRegion left, right;
+
+        DragonPhase(CutsceneKit kit) {
+            super(kit, Moment.PHASE, EnemyKind.DRAGON, 2);
+            Color[] scales = {hex("3a0a08"), hex("a82a1e"), hex("6a1a12")};
+            left = art("ord", scales, WING_LEFT);
+            right = art("ord", scales, WING_RIGHT);
+        }
 
         @Override
         protected void step(float delta) {
-            if (at(0.6f)) rumble(1.4f, 8f);
-            if (time > 0.6f && time < CLIMAX_PHASE && random.nextFloat() < 0.8f) {           // les pierres de lave
-                Particle rock = particle(worldWidth() * 0.5f, worldHeight() * 0.55f, 40f + 100f * random.nextFloat(),
-                    700f + 500f * random.nextFloat(), 2f, 18f + 14f * random.nextFloat());
+            if (at(LIFT)) { rumble(0.5f, 8f); sparks(bossX(), groundY() + 20f, 40, SAND_DARK, 500f, 10f); }
+            for (int k = 0; k < 6; k++) if (at(LIFT + k * 0.26f)) rumble(0.05f, 3f);           // chaque battement d'ailes
+            if (time > 0.6f && time < CLIMAX_PHASE && random.nextFloat() < 0.8f) {           // le volcan du décor crache sa lave
+                Particle rock = particle(decorX(CRATER_X), decorY(CRATER_Y), 50f + 80f * random.nextFloat(),
+                    600f + 500f * random.nextFloat(), 2f, 18f + 14f * random.nextFloat());
                 rock.gravity = 1300f;
                 rock.color.set(random.nextBoolean() ? LAVA : EMBER);
                 glows.add(rock);
@@ -492,20 +576,27 @@ final class DesertBossScenes {
             if (at(CLIMAX_PHASE)) rumble(0.8f, 18f);
         }
 
+        private float open() { return Interpolation.pow2Out.apply(progress(UNFOLD, LIFT)); }
+
         @Override
         protected void back(Batch batch) {
-            float peak = worldHeight() * 0.55f;
-            for (int x = -40; x < worldWidth() + 40; x += 14) {                              // le volcan, derrière lui
-                float y = peak - Math.abs(x - worldWidth() / 2f) * 0.8f;
-                rect(batch, hex("3a1e18"), 1f, x, -MARGIN, 16f, Math.max(0f, y) + MARGIN);
-            }
-            glow(batch, worldWidth() / 2f, peak, 900f * progress(0.6f, 1.2f), LAVA, 0.8f);
-            float fly = Interpolation.pow2Out.apply(progress(0.2f, 1.2f));
-            float dive = Interpolation.pow2In.apply(progress(1.6f, CLIMAX_PHASE));
-            poseY = 260f * fly - 200f * dive;
-            poseScale = 1f + 0.8f * dive;
+            glow(batch, decorX(CRATER_X), decorY(CRATER_Y), 700f * progress(0.6f, 1.2f), LAVA, 0.8f);
+            float fly = Interpolation.pow2Out.apply(progress(LIFT, TOP));
+            float dive = Interpolation.pow2In.apply(progress(DIVE, CLIMAX_PHASE));
+            poseY = worldHeight() * 0.3f * fly * (1f - dive) + 12f * MathUtils.sin(time * 12f) * fly - 120f * dive;
+            poseScale = MathUtils.lerp(1f, 0.7f, fly) * (1f - dive) + 1.9f * dive;
             poseTint = 0.6f * progress(0.8f, 1.6f) * pulse(10f, 0.6f);
             poseTintColor.set(LAVA);
+            float shadow = 1f - 0.6f * fly;                                                  // son ombre au sol, qui rapetisse
+            rect(batch, hex("1a0806"), 0.4f * (1f - dive), bossX() - bossWidth() * 0.5f * shadow, groundY() + 6f, bossWidth() * shadow, 18f * shadow);
+            float open = open();                                                             // ses ailes, qui battent
+            if (open > 0f) {
+                float flap = 28f * MathUtils.sin(time * 12f) * progress(LIFT - 0.2f, LIFT), scale = bossScale() * poseScale * 1.7f;
+                float w = 16f * scale * open, h = 12f * scale, sx = portraitX(5f), dx = portraitX(29f), sy = portraitY(27f);
+                batch.setColor(1f, 1f, 1f, 1f);
+                batch.draw(left, sx - w, sy - h * 0.35f, w, h * 0.35f, w, h, 1f, 1f, -flap);
+                batch.draw(right, dx, sy - h * 0.35f, 0f, h * 0.35f, w, h, 1f, 1f, flap);
+            }
         }
 
         @Override
