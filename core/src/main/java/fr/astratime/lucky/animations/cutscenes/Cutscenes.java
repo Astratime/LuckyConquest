@@ -18,8 +18,11 @@ public final class Cutscenes {
             case COMETE -> new CometCutscene(kit.settings(), kit.shake(), kit.sound("comet"));
             case REINE -> new QueenCutscene(kit);
             case ECLAT -> new ShardCutscene(kit);
+            case COLLECTIONNEUR -> new CollectorCutscene(kit);
             case PRETENDANT -> new PretenderCutscene(kit);
+            case GENERAL -> new GeneralCutscene(kit);
             case MAISON -> new HouseCutscene(kit);
+            case ARCHITECTE -> new ArchitectCutscene(kit);
             case MACHINE_ORIGINELLE -> new MachineCutscene(kit);
             case GRAND_CROUPIER -> new CroupierCutscene(kit, CroupierCutscene.Scene.INTRO);
             case RIVAL_FOIRE, RIVAL_RAPIDE, RIVAL_PORT, RIVAL_PALACE, RIVAL_MINES, RIVAL_MANOIR, RIVAL_CASINO, RIVAL_TEMPLE, RIVAL_DESERT -> RivalCutscene.before(kit, boss);

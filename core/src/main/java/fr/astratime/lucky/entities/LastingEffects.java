@@ -63,8 +63,12 @@ public class LastingEffects {
     private int lullabies;
     /** Malédiction (Manoir hanté) : meilleures cartes piochées qui retourneront sous la pioche au prochain tour. */
     private int maledictions;
+    /** Vertige (L'Ascension) : cartes jouées en moins au prochain tour, puis celles en moins pour ce tour. */
+    private int vertigos, dizzy;
     /** Fils (Manoir hanté) : plus faibles cartes de la main jouées d'office au prochain tour. */
     private int strings;
+    /** Scellés (le Notaire du hasard) : cartes de moins à jouer au prochain tour. */
+    private int seals;
     /** Aspirations de la Machine Originelle : une règle par rouleau menacé au prochain tirage. */
     private final List<fr.astratime.lucky.entities.enemy.AspirationRule> aspirations = new ArrayList<>();
     /** Coffres-forts : gains mis de côté (déjà doublés) et tours restants avant leur ouverture. */
@@ -391,12 +395,28 @@ public class LastingEffects {
     /** Pioche : les Malédictions valent pour celle-ci. */
     public int takeMaledictions() { int n = maledictions; maledictions = 0; return n; }
 
+    /** Vertige : le joueur jouera {@code cards} carte(s) de moins à son prochain tour. */
+    public void addVertigo(int cards) { vertigos += cards; }
+    /** @return les cartes jouées en moins au prochain tour (Vertige). */
+    public int getVertigos() { return vertigos; }
+    /** Pioche : les Vertiges valent pour ce tour. @return les cartes jouées en moins ce tour */
+    public int takeVertigos() { dizzy = vertigos; vertigos = 0; return dizzy; }
+    /** @return les cartes jouées en moins ce tour, à cause du Vertige. */
+    public int getDizzy() { return dizzy; }
+
     /** Fils : {@code cards} des plus faibles cartes de la main seront jouées d'office au prochain tour. */
     public void addStrings(int cards) { strings += cards; }
     /** @return les cartes que les Fils feront jouer d'office au prochain tour. */
     public int getStrings() { return strings; }
     /** Pioche : les Fils valent pour ce tour. */
     public int takeStrings() { int n = strings; strings = 0; return n; }
+
+    /** Scellé : {@code plays} cartes de moins à jouer au prochain tour. */
+    public void addSeals(int plays) { seals += plays; }
+    /** @return les cartes de moins à jouer au prochain tour (Scellé). */
+    public int getSeals() { return seals; }
+    /** Début du tour : les Scellés valent pour ce tour. @return les cartes de moins */
+    public int takeSeals() { int n = seals; seals = 0; return n; }
 
     /** Aspiration : la règle {@code rule} menace un rouleau au prochain tirage. */
     public void addAspiration(fr.astratime.lucky.entities.enemy.AspirationRule rule) { aspirations.add(rule); }
@@ -882,7 +902,7 @@ public class LastingEffects {
             && fakeGains == 0 && taxes == 0 && laterTaxes == 0 && houseRuleTurns == 0
             && traps == 0 && lanternDraws == 0 && earplugDraws == 0 && propTurns == 0 && lamps == 0
             && cageTurns == 0 && anchorTurns == 0 && temperPercent == 0 && bonusPlays == 0
-            && voidReels.isEmpty() && shortCircuits == 0 && houseEdges == 0 && rockfalls == 0 && lullabies == 0 && maledictions == 0 && strings == 0 && aspirations.isEmpty()
+            && voidReels.isEmpty() && shortCircuits == 0 && houseEdges == 0 && rockfalls == 0 && lullabies == 0 && maledictions == 0 && vertigos == 0 && dizzy == 0 && strings == 0 && seals == 0 && aspirations.isEmpty()
             && nextDraws == 0 && hatTurns == 0 && jokerBox == 0 && hoardTurns == 0 && annuityTurns == 0 && martingale == 0
             && juggles == 0 && scares == 0 && tunnels == 0 && turnstiles == 0 && riggedPrizes == 0 && riggedGame == 0
             && tolls == 0 && bills == 0 && venoms.isEmpty() && reelGauges.isEmpty()

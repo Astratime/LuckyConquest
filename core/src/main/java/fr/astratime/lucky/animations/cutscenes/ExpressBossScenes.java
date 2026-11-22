@@ -342,12 +342,26 @@ final class ExpressBossScenes {
         private static final Color HAIR = hex("3a2a1e");
         private static final float SHOT = 0.6f;
         private final TextureRegion hat;
+        /** Le portrait entier (chapeau compris) : sa taille à l'écran ne change pas quand le chapeau part. */
+        private final int fullRegionY, fullRows;
         private boolean hatOff;
 
         OutlawDeath(CutsceneKit kit) {
             super(kit, Moment.DEATH, EnemyKind.DESPERADO, 0);
             hat = new TextureRegion(boss, 0, 0, boss.getRegionWidth(), HAT_ROWS);
+            fullRegionY = boss.getRegionY();
+            fullRows = boss.getRegionHeight();
         }
+
+        @Override
+        protected void restart() {
+            if (hatOff) boss.setRegion(boss.getRegionX(), fullRegionY, boss.getRegionWidth(), fullRows);
+            hatOff = false;
+        }
+
+        /** Sans son chapeau, le portrait a moins de lignes : l'échelle reste celle du portrait entier (il ne grandit pas). */
+        @Override
+        protected float bossScale() { return super.bossScale() * boss.getRegionHeight() / fullRows; }
 
         @Override
         protected void step(float delta) {
