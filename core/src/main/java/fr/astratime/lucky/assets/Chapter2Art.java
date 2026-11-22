@@ -234,14 +234,16 @@ final class Chapter2Art {
         g.rect(15, 21, 19, 22, lips);
         g.set(17, 21, rgba("8a1018"));
         // Couronne d'or à trois pointes, pierres bleues.
-        g.rect(10, 7, 24, 9, gold);
-        g.triangle(10, 7, 13, 7, 11, 2, gold);
-        g.triangle(15, 7, 19, 7, 17, 0, gold);
-        g.triangle(21, 7, 24, 7, 23, 2, gold);
-        for (int x = 10; x <= 24; x++) g.set(x, 9, goldDark);
-        g.set(17, 4, gem);
-        g.set(12, 8, gem);
-        g.set(22, 8, gem);
+        if (StoryPortraits.has(StoryPortraits.Prop.QUEEN_CROWN)) {
+            g.rect(10, 7, 24, 9, gold);
+            g.triangle(10, 7, 13, 7, 11, 2, gold);
+            g.triangle(15, 7, 19, 7, 17, 0, gold);
+            g.triangle(21, 7, 24, 7, 23, 2, gold);
+            for (int x = 10; x <= 24; x++) g.set(x, 9, goldDark);
+            g.set(17, 4, gem);
+            g.set(12, 8, gem);
+            g.set(22, 8, gem);
+        }
         // Sceptre au jeton, tenu à droite.
         g.line(29, 41, 30, 14, goldDark);
         g.ellipse(30f, 11f, 3f, 3f, chip);

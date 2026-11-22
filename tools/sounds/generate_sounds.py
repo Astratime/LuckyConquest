@@ -4245,6 +4245,212 @@ def death_coeur_montagne():
     return track.buf
 
 
+# ===========================================================================
+# Histoire : phases et morts des boss (TowerBossScenes, 2026-11-22)
+# Les instants reprennent les constantes des scènes : si une scène change de rythme, mettre à jour ici.
+# ===========================================================================
+
+def glass_burst(count=10, lo=2600, hi=6500):
+    """Un éclat de cristal qui se brise : le claquement, puis les morceaux qui tintent en tombant."""
+    parts = [(crack(0.07, 0.01, 1500, 12000), 0, 1.0)]
+    parts += [(glass_clink(rand(lo, hi)), rand(0.0, 0.5), rand(0.1, 0.3)) for _ in range(count)]
+    return mix(*parts)
+
+
+def choir(notes, d, gain=1.0):
+    """Une nappe claire, comme un choeur lointain : des voix douces et tremblées."""
+    x = stack(*(osc(vibrato(hz(note), d, 4.5 + k, 0.006), d, 'tri') / (k + 1) ** 0.4 for k, note in enumerate(notes)))
+    return lp(x, 2400) * np.clip(times(d) / 0.5, 0, 1) * fade_out(d, 0.8) * gain
+
+
+def roll_rumble(d, f=90):
+    """Une lourde roue de fer qui roule sur un plancher et ralentit."""
+    rate = np.linspace(14, 4, n(d))
+    wobble = 0.6 + 0.4 * np.abs(np.sin(np.cumsum(rate) / SR * np.pi))
+    return lp(noise(d), f * 3) * wobble * np.linspace(1.0, 0.2, n(d))
+
+
+@sound('cutscene/death_comete', -17)
+def death_comete():
+    """La Comète Dorée meurt (CometDeath) : elle remonte vers le ciel (1,2 à 2,5 s), se défait en étoiles filantes
+    (2,5 s), ses étoiles s'allument une à une à sa place (2,9 à 3,7 s) puis les traits de la constellation (3,4 s)."""
+    track = Track(6.6)
+    track.add(ambience(5.6, 200, 1200, 0.2), 0.0, 1.0)
+    track.add(swell(1.3, 300, 3000), 1.2, 0.5)
+    track.add(fade(osc(sweep(220, 880, 1.3), 1.3, 'tri'), 0.0, 0.6), 1.2, 0.2)
+    track.add(mix((boom(1.6, 70), 0, 1.0), (sparkle(1.2, count=30), 0.02, 0.7)), 2.5, 0.8)
+    for k in range(6):                                                                       # les étoiles filantes
+        track.add(whoosh(0.5, rand(2500, 4000), rand(600, 1200), q=1.4), 2.55 + k * 0.12, 0.25)
+    for i, note in enumerate(['A5', 'C#6', 'E6', 'F#6', 'A6', 'B6', 'C#7', 'E7', 'F#7', 'A7']):
+        track.add(modal(hz(note), 1.0, GLASS_RATIOS, [0.5, 0.3, 0.2, 0.1]), 2.9 + i * 0.08, 0.18)
+    track.add(choir(['A3', 'E4', 'A4', 'C#5'], 2.6), 3.4, 0.25)
+    return track.buf
+
+
+@sound('cutscene/phase2_reine', -17)
+def phase2_reine():
+    """La Reine des Tables, phase 2 (QueenPhase) : elle renverse sa table d'un revers (0,9 s), ses cartes volent ;
+    une carte Trèfle géante tombe du ciel et se plaque (2,2 s), puis se dédouble (2,5 à 3,1 s)."""
+    track = Track(5.8)
+    track.add(ambience(4.8, 200, 900, 0.2), 0.0, 1.0)
+    track.add(whoosh(0.3, 300, 1500), 0.65, 0.5)
+    track.add(mix((thump(140, 60, 0.3, 0.08), 0, 1.0), (modal(160, 0.4, WOOD_RATIOS, [0.12, 0.06, 0.03]), 0, 0.8)), 0.9, 0.8)
+    track.add(card_riffle(0.6, 22), 0.95, 0.5)
+    track.add(whoosh(0.7, 200, 2000, q=0.8), 1.5, 0.4)
+    track.add(mix((card_slap(0.2), 0, 1.0), (boom(1.2, 80), 0, 0.8)), 2.2, 0.9)
+    track.add(card_flick(0.12), 2.5, 0.6)
+    track.add(card_slap(0.15), 2.85, 0.6)
+    track.add(sparkle(0.8), 2.6, 0.3)
+    track.add(brass_chord(['G3', 'B3', 'D4', 'G4'], 1.6, 0.6), 2.25, 0.45)
+    return track.buf
+
+
+@sound('cutscene/death_reine', -17)
+def death_reine():
+    """La Reine meurt (QueenDeath) : sa couronne glisse (0,5 s), tombe et tinte au sol (1,15 s), se fend (1,45 à
+    2,5 s) et se brise en deux (2,5 s) ; son château de cartes s'écroule (2,7 s), la couronne part en poussière d'or
+    (3,0 s). Elle se retourne en carte (3,5 à 3,9 s) et tombe à plat (4,3 à 4,75 s)."""
+    track = Track(6.6)
+    track.add(ambience(5.6, 200, 900, 0.2), 0.0, 1.0)
+    track.add(whoosh(0.4, 800, 2500), 0.5, 0.3)
+    track.add(metal_hit(2100, 0.6), 1.15, 0.6)
+    track.add(metal_hit(2300, 0.3), 1.35, 0.3)
+    for k in range(4):
+        track.add(crack(0.05, 0.01, 1500, 7000), 1.5 + k * 0.25, 0.2 + 0.05 * k)
+    track.add(mix((metal_hit(1700, 1.0), 0, 1.0), (crack_hit(), 0, 0.8), (thump(200, 80, 0.3), 0, 0.6)), 2.5, 0.8)
+    track.add(card_riffle(0.9, 26), 2.7, 0.55)
+    track.add(fade(sparkle(1.4, count=30), 1.0, 0.0), 3.0, 0.35)
+    track.add(mix((card_flick(0.15), 0, 1.0), (whoosh(0.4, 600, 3000), 0, 0.5)), 3.5, 0.6)
+    track.add(whoosh(0.45, 300, 1200), 4.3, 0.4)
+    track.add(mix((card_slap(0.25), 0, 1.0), (thump(110, 50, 0.3), 0, 0.6)), 4.75, 0.8)
+    return track.buf
+
+
+@sound('cutscene/phase2_eclat', -17)
+def phase2_eclat():
+    """L'Éclat Originel, phase 2 (ShardPhase) : il se fissure (0,4 à 2,2 s), se fend en six éclats (2,2 s) qui
+    tournent en montrant leurs symboles, puis se ressoudent dans une autre couleur (3,9 s)."""
+    track = Track(5.8)
+    track.add(ambience(4.8, 300, 1500, 0.2), 0.0, 1.0)
+    for k in range(7):
+        track.add(ice_crack(0.25), 0.4 + k * 0.26, 0.3 + 0.05 * k)
+    track.add(mix((glass_burst(14), 0, 1.0), (boom(1.2, 90), 0, 0.7)), 2.2, 0.8)
+    for i, note in enumerate(['E5', 'G5', 'B5', 'D6', 'F#6', 'A6']):                         # les six symboles
+        track.add(modal(hz(note), 1.2, GLASS_RATIOS, [0.6, 0.35, 0.2, 0.12]), 2.4 + i * 0.2, 0.25)
+    track.add(fade(osc(vibrato(hz('E5'), 1.4, 7, 0.02), 1.4, 'sine'), 0.0, 1.0), 2.4, 0.15)
+    track.add(whoosh(0.4, 3000, 600), 3.6, 0.4)
+    track.add(mix((modal(hz('E6'), 1.6, GLASS_RATIOS, [0.8, 0.5, 0.3, 0.2]), 0, 1.0), (sparkle(1.0), 0, 0.6)), 3.9, 0.5)
+    track.add(brass_chord(['E3', 'B3', 'E4', 'G#4'], 1.4, 0.5), 3.95, 0.35)
+    return track.buf
+
+
+@sound('cutscene/phase2_pretendant', -17)
+def phase2_pretendant():
+    """Le Prétendant, phase 2 (PretenderShard) : un fil de lumière relie son éclat à sa carte Rouleau interdit
+    (0,3 s) ; l'éclat se fend (1,0 à 2,2 s) et se brise (2,2 s), le cadenas saute et tombe, la carte se fend en deux
+    et part en cendres (2,75 s)."""
+    track = Track(5.8)
+    track.add(ambience(4.8, 100, 600, 0.25), 0.0, 1.0)
+    track.add(fade(osc(vibrato(hz('A4'), 1.9, 9, 0.01), 1.9, 'sine'), 0.0, 1.0), 0.3, 0.12)   # le fil qui vibre
+    for k in range(5):
+        track.add(crack(0.05, 0.01, 2000, 9000), 1.0 + k * 0.24, 0.2 + 0.05 * k)
+    track.add(mix((glass_burst(12), 0, 1.0), (boom(1.2, 80), 0, 0.7), (metal_hit(900, 0.5), 0.02, 0.5)), 2.2, 0.8)
+    track.add(metal_hit(1300, 0.3), 2.75, 0.4)                                               # le cadenas tombe
+    track.add(metal_hit(1100, 0.25), 2.95, 0.25)
+    track.add(mix((fire_burst(1.0), 0, 0.7), (hiss(1.2), 0, 0.6)), 2.75, 0.5)                # la carte en cendres
+    track.add(brass_chord(['D3', 'F3', 'A3', 'D4'], 1.6, 0.5), 2.25, 0.4)
+    return track.buf
+
+
+@sound('cutscene/phase3_pretendant', -17)
+def phase3_pretendant():
+    """Le Prétendant, phase 3 (PretenderQueen) : le fantôme de la Reine paraît (0,3 à 1,3 s) et tire sur l'éclat
+    rouge (1,0 s) ; il se brise (2,2 s), son pouvoir la rejoint ; elle remonte au ciel (2,7 à 4,2 s)."""
+    track = Track(5.8)
+    track.add(ambience(4.8, 100, 600, 0.25), 0.0, 1.0)
+    track.add(ghost_wail(1.2, 440), 0.3, 0.25)
+    track.add(fade(svf(noise(1.2), sweep(300, 1400, 1.2), q=6.0, mode='bp'), 0.2, 1.0), 1.0, 0.25)   # elle tire
+    track.add(mix((glass_burst(10), 0, 1.0), (boom(1.0, 90), 0, 0.6)), 2.2, 0.8)
+    track.add(sparkle(0.7, count=20), 2.25, 0.4)
+    track.add(choir(['D4', 'F4', 'A4', 'D5'], 2.2), 2.6, 0.3)
+    track.add(brass_chord(['D3', 'F3', 'A3', 'C4'], 1.4, 0.45), 2.3, 0.35)
+    return track.buf
+
+
+@sound('cutscene/death_pretendant', -17)
+def death_pretendant():
+    """Le Prétendant meurt (PretenderDeath) : le trône sous son rayon de lumière (0 à 2,5 s), il marche vers lui
+    (0,3 à 2,0 s) ; son dernier éclat se brise (2,5 s), il s'écroule (3,05 s), sa couronne rebondit et roule (3,3 s) ;
+    le trône se fend et s'effondre en poussière d'or (3,15 s)."""
+    track = Track(6.6)
+    track.add(ambience(5.6, 100, 600, 0.2), 0.0, 1.0)
+    track.add(choir(['C4', 'E4', 'G4', 'C5'], 2.7), 0.0, 0.25)
+    track.add(footsteps(1.7, 5.5, 300, 1200), 0.3, 0.45)
+    track.add(mix((glass_burst(12), 0, 1.0), (boom(1.4, 70), 0, 0.8)), 2.5, 0.8)
+    track.add(fade(osc(sweep(800, 200, 0.6), 0.6, 'sine'), 0.6, 0.0), 2.5, 0.2)              # la lumière s'éteint
+    track.add(mix((thump(110, 45, 0.4, 0.12), 0, 1.0), (rustle(0.4), 0, 0.5)), 3.05, 0.8)
+    track.add(metal_hit(1900, 0.5), 3.3, 0.45)
+    track.add(metal_hit(2100, 0.3), 3.55, 0.3)
+    track.add(crack(0.08, 0.015, 600, 6000), 2.6, 0.3)
+    track.add(mix((boom(1.4, 60), 0, 0.8), (rock_fall(1.2, 22), 0, 0.8), (metal_hit(600, 0.8), 0, 0.4)), 3.15, 0.85)
+    track.add(fade(sparkle(1.4, count=24), 1.0, 0.0), 3.2, 0.3)
+    return track.buf
+
+
+@sound('cutscene/phase2_maison', -17)
+def phase2_maison():
+    """La Maison, phase 2 (HouseFacade) : sa façade se fissure tout autour (0,45 à 1,35 s), se décolle en grinçant
+    (1,35 s), bascule et s'écrase en morceaux (2,2 s) ; ses machines aux ailes d'ange tintent dans la salle ouverte."""
+    track = Track(5.8)
+    track.add(ambience(4.8, 150, 800, 0.2), 0.0, 1.0)
+    for k in range(5):
+        track.add(crack(0.06, 0.012, 500, 6000), 0.45 + k * 0.2, 0.25 + 0.05 * k)
+    track.add(creak(0.8, 120), 1.35, 0.6)
+    track.add(whoosh(0.6, 150, 700, q=0.8), 1.6, 0.4)
+    track.add(mix((impact(0.8, 100, 35), 0, 1.0), (wood_break(), 0, 0.8), (rock_fall(1.0, 18), 0.05, 0.7)), 2.2, 0.9)
+    track.add(mix((sparkle(1.0), 0, 0.6), (bell_toll(hz('E5'), 1.6), 0, 0.3)), 2.5, 0.4)
+    track.add(brass_chord(['C3', 'E3', 'G3', 'C4'], 1.6, 0.5), 2.25, 0.4)
+    return track.buf
+
+
+@sound('cutscene/phase3_maison', -17)
+def phase3_maison():
+    """La Maison, phase 3 (HouseVault) : les verrous de la porte du coffre sautent (0,35 / 0,65 / 0,95 / 1,25 s),
+    sa petite porte de coffre tombe (1,0 s), la grande tombe du mur (1,8 à 2,2 s), roule et cogne le rideau (3,2 s) ;
+    les potions se brisent au sol (vers 3,0 s) ; la Maison vire au démon (2,7 s)."""
+    track = Track(5.8)
+    track.add(ambience(4.8, 150, 800, 0.2), 0.0, 1.0)
+    for at in (0.35, 0.65, 0.95, 1.25):
+        track.add(metal_hit(rand(1400, 1800), 0.35), at, 0.4)
+    track.add(mix((metal_hit(2400, 0.3), 0, 0.6), (thump(260, 120, 0.08, 0.03), 0.4, 0.5)), 1.0, 0.5)
+    track.add(creak(0.5, 90), 1.4, 0.5)
+    track.add(whoosh(0.4, 200, 900, q=0.8), 1.8, 0.5)
+    track.add(mix((metal_hit(110, 1.6, 0.6), 0, 1.0), (impact(0.8, 90, 30), 0, 1.0)), 2.2, 0.9)
+    track.add(roll_rumble(1.0), 2.25, 0.7)
+    track.add(mix((metal_hit(160, 1.0, 0.5), 0, 1.0), (thump(120, 50, 0.4), 0, 0.8)), 3.2, 0.7)
+    for at in (2.95, 3.0, 3.05, 3.1, 3.15):
+        track.add(glass_burst(4, 3000, 7000), at + rand(-0.03, 0.03), 0.3)
+    track.add(fade(drone(['D2', 'G#2', 'D3'], 2.6, 'saw'), 0.0, 1.0), 2.7, 0.12)
+    track.add(brass_chord(['D2', 'F2', 'G#2', 'D3'], 1.6, 0.5), 2.75, 0.35)
+    return track.buf
+
+
+@sound('cutscene/death_maison', -17)
+def death_maison():
+    """La Maison meurt (HouseDeath) : elle tremble (1,0 à 2,5 s) et explose (2,5 s) ; ses machines aux ailes
+    d'ange s'envolent (2,8 s), la lumière tombe des lustres, des plumes."""
+    track = Track(6.6)
+    track.add(ambience(5.6, 100, 600, 0.25), 0.0, 1.0)
+    track.add(fade(lp(noise(1.5), 200), 0.0, 1.0), 1.0, 0.5)
+    track.add(fade(drone(['D2', 'G#2'], 2.5, 'saw'), 1.0, 0.3), 0.0, 0.1)
+    track.add(mix((boom(2.0, 55), 0, 1.0), (wood_break(), 0, 0.7), (rock_fall(1.4, 24), 0.05, 0.7)), 2.5, 0.9)
+    for k in range(4):
+        track.add(wing_flap(), 2.8 + k * 0.35, 0.35)
+    track.add(choir(['C4', 'E4', 'G4', 'C5', 'E5'], 3.2), 2.9, 0.35)
+    track.add(mix((bell_toll(hz('C5'), 2.0), 0, 0.5), (sparkle(1.2), 0, 0.5)), 3.0, 0.4)
+    return track.buf
+
+
 def main(prefixes):
     done = 0
     for name, level, fmt, trim, loop, fn in SOUNDS:
