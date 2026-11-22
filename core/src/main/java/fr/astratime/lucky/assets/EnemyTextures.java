@@ -43,6 +43,8 @@ public class EnemyTextures implements Disposable {
     /** Contour lumineux des ennemis dorés, autour de leur portrait (blanc, teinté d'or à l'affichage). */
     private final Map<EnemyKind, Texture>   outlines  = new EnumMap<>(EnemyKind.class);
     /** Images de la Machine Originelle animée, par position du levier puis lumière des yeux (voir {@link #portrait(EnemyKind, float)}). */
+    /** L'Architecte sans son plan roulé, pour sa cinématique de mort (son plan s'envole de sous son bras). */
+    private Texture architectWithoutPlan;
     private final Texture[][] machineFrames = new Texture[3][3];
     private final Texture[][] machineFlashes = new Texture[3][3];
     private final CardTextures              cards;
@@ -112,6 +114,7 @@ public class EnemyTextures implements Disposable {
             if (grid == null) grid = PalacePortraits.of(kind);
             if (grid == null) grid = TemplePortraits.of(kind);
             if (grid == null) grid = ManorPortraits.of(kind);
+            if (grid == null) grid = AscensionArt.of(kind);
             if (grid == null) grid = PilgrimsArt.of(kind);
             if (grid == null) grid = RivalArt.of(kind);
             if (grid != null) addPortrait(kind, grid);
@@ -128,6 +131,7 @@ public class EnemyTextures implements Disposable {
         addPortrait(EnemyKind.COLLECTIONNEUR, ShardsArt.collectionneur());
         chapterArt.put(Chapter.MONDE_SANS_MAITRE, texture(Chapter456Art.worldWithoutMaster(), false));
         chapterArt.put(Chapter.LA_MAISON, texture(Chapter456Art.house(), false));
+        chapterArt.put(Chapter.L_ASCENSION, texture(AscensionArt.ascension(), false));
         chapterArt.put(Chapter.LE_JACKPOT, texture(Chapter456Art.jackpot(), false));
         addPortrait(EnemyKind.PILLEUR, Chapter456Art.pilleur());
         addPortrait(EnemyKind.FAUSSAIRE, Chapter456Art.faussaire());
@@ -201,6 +205,12 @@ public class EnemyTextures implements Disposable {
 
     /** @return le portrait de l'ennemi {@code kind}. */
     public Texture portrait(EnemyKind kind) { return portraits.get(kind); }
+
+    /** @return le portrait de l'Architecte sans son plan roulé sous le bras (créé à la première demande). */
+    public Texture architectWithoutPlan() {
+        if (architectWithoutPlan == null) architectWithoutPlan = texture(AscensionArt.architecteSansPlan(), false);
+        return architectWithoutPlan;
+    }
 
     /** @return la silhouette blanche du portrait de l'ennemi {@code kind}. */
     public Texture portraitFlash(EnemyKind kind) { return flashes.get(kind); }
@@ -477,6 +487,11 @@ public class EnemyTextures implements Disposable {
             case FATE_THREAD    -> TempleArt.fateThread();
             case DOUBLE_SIX     -> TempleArt.doubleSix();
             case KARMA          -> TempleArt.karma();
+            case ELEVATOR       -> AscensionArt.elevator();
+            case ECHO           -> AscensionArt.echoSymbol();
+            case VERTIGO        -> AscensionArt.vertigo();
+            case STONE          -> AscensionArt.stone();
+            case BLUEPRINT      -> AscensionArt.blueprint();
             case BLOOD_PACT     -> ManorArt.bloodPact();
             case CURSE          -> ManorArt.curse();
             case SHROUD         -> ManorArt.shroud();
@@ -643,6 +658,7 @@ public class EnemyTextures implements Disposable {
     @Override
     public void dispose() {
         portraits.values().forEach(Texture::dispose); // le croupier compris
+        if (architectWithoutPlan != null) architectWithoutPlan.dispose();
         flashes.values().forEach(Texture::dispose);
         outlines.values().forEach(Texture::dispose);
         for (int lever = 0; lever < 3; lever++) {      // la Machine au repos est dans les portraits

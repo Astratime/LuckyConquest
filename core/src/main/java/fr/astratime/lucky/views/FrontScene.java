@@ -89,6 +89,7 @@ public class FrontScene extends Actor implements Disposable {
         ECLATS_DISPERSES("eclats_disperses", WARM, 30f, 180, 88, 70, 112, 300, 112),
         MONDE_SANS_MAITRE("monde_sans_maitre", LAVA, 34f, 50, 128, 310, 128),
         LA_MAISON("la_maison", GOLDEN, 30f, 80, 16, 280, 16, 180, 60),
+        L_ASCENSION("l_ascension", GOLDEN, 28f, 40, 60, 320, 60, 180, 22),
         LE_JACKPOT("le_jackpot", GOLDEN, 30f, 180, 40, 40, 50, 320, 60),
         ENTRAINEMENT("entrainement", WARM, 40f, 180, 32),
         CASINO("menu/casino_interior.png", true);
@@ -144,6 +145,7 @@ public class FrontScene extends Actor implements Disposable {
                 case ECLATS_DISPERSES  -> ECLATS_DISPERSES;
                 case MONDE_SANS_MAITRE -> MONDE_SANS_MAITRE;
                 case LA_MAISON         -> LA_MAISON;
+                case L_ASCENSION       -> L_ASCENSION;
                 case LE_JACKPOT        -> LE_JACKPOT;
             };
         }

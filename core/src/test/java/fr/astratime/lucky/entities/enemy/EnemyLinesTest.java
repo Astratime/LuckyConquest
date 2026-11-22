@@ -1,5 +1,7 @@
 package fr.astratime.lucky.entities.enemy;
 
+import fr.astratime.lucky.entities.tower.Chapter;
+
 import fr.astratime.lucky.i18n.Lang;
 
 import org.junit.jupiter.api.Test;
@@ -22,7 +24,7 @@ class EnemyLinesTest {
         Set<EnemyKind> bosses = EnumSet.noneOf(EnemyKind.class);
         for (EnemyKind kind : EnemyKind.values()) if (kind.isBoss()) bosses.add(kind);
         assertEquals(bosses, EnemyLines.speakers());
-        assertEquals(41 + fr.astratime.lucky.entities.tower.Chapter.values().length, bosses.size(), "40 rois, un boss par chapitre de la Tour et le Croupier");
+        assertEquals(41 + Chapter.values().length, bosses.size(), "40 rois, un boss par chapitre et le Croupier");
         assertFalse(EnemyLines.speaks(EnemyKind.SOLDAT_PIQUE));
         assertNull(EnemyLines.bingo(EnemyKind.SOLDAT_PIQUE, 0));
         assertNull(EnemyLines.lowHp(EnemyKind.CROUPIER));

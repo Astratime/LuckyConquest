@@ -234,6 +234,18 @@ public final class Lexicon {
                 + "avec {0} % de ses PV max. Une seule fois par combat.", EnemySymbol.SHROUD_RISE_PERCENT)),
             term(Lang.t("Fils"), Lang.t("Au Manoir hanté : au tour suivant, le marionnettiste joue pour toi ta plus "
                 + "faible carte jouable.")),
+            term(Lang.t("Ascenseur"), Lang.f("Dans l'Ascension, le Liftier monte d'un étage. Chaque étage : ses coups et "
+                + "ses Boucliers +{0} %. Un coup qui lui enlève au moins {1} % de ses PV max le renvoie en bas.",
+                EnemySymbol.ELEVATOR_STEP_PERCENT, EnemySymbol.ELEVATOR_HIT_PERCENT)),
+            term(Lang.t("Écho"), Lang.t("Dans l'Ascension, l'ennemi rejoue contre toi toutes les cartes de ton dernier "
+                + "tour, à moitié de leur force.")),
+            term(Lang.t("Vertige"), Lang.f("Dans l'Ascension, tu joues une carte de moins à ton prochain tour ({0} au "
+                + "plus).", EnemySymbol.VERTIGO_MAX)),
+            term(Lang.t("Pétrification"), Lang.f("Dans l'Ascension, l'ennemi se change en pierre : jusqu'à son prochain "
+                + "tour, tes coups ne lui font que {0} %.", 100 - EnemySymbol.STONE_PERCENT)),
+            term(Lang.t("Plan"), Lang.f("Dans l'Ascension, l'Architecte bâtit un étage de sa Tour ({0} au plus). Chaque "
+                + "étage lui donne un Bouclier à chacun de ses tours. Chacun de tes Bingos en fait tomber un.",
+                EnemySymbol.BLUEPRINT_MAX)),
             term(Lang.t("Éclat"), Lang.f("Dans l'Histoire, aux Éclats dispersés : l'ennemi ramasse un éclat. Au {0}e, les "
                 + "éclats se rejoignent et frappent à travers ton bouclier.", EnemySymbol.SHARD_MAX)),
             term(Lang.t("Héritage"), Lang.f("Aux Éclats dispersés : l'ennemi te prend {0} % de ton bouclier, puis il frappe.",

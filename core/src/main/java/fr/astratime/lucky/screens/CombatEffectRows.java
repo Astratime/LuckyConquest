@@ -437,6 +437,9 @@ final class CombatEffectRows {
             rows.add(curse(skull, Lang.f("Malédiction x{0}", lasting.getMaledictions()), EnemySymbol.CURSE, foe));
         }
         if (lasting.getStrings() > 0) rows.add(curse(skull, Lang.f("Fils x{0}", lasting.getStrings()), EnemySymbol.STRINGS, foe));
+        if (lasting.getVertigos() > 0) {
+            rows.add(curse(skull, Lang.f("Vertige : -{0}", lasting.getVertigos()), EnemySymbol.VERTIGO, foe));
+        }
         if (lasting.getSeals() > 0) rows.add(curse(skull, Lang.f("Scellé -{0}", lasting.getSeals()), EnemySymbol.SEAL, foe));
         if (lasting.getRockfalls() > 0) {
             rows.add(curse(skull, Lang.f("Éboulement : -{0}", lasting.getRockfalls()), EnemySymbol.ROCKFALL, foe));

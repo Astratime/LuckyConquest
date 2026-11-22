@@ -164,6 +164,16 @@ public enum EnemySymbol {
     SHROUD("LINCEUL"),
     /** Au début de ton prochain tour, il choisit ta plus faible carte et tu la joues d'office. */
     STRINGS("FILS"),
+    /** L'Ascension : il monte d'un étage et frappe ; chaque étage renforce ses coups et ses Boucliers. Un gros coup le fait redescendre. */
+    ELEVATOR("ASCENSEUR"),
+    /** Il rejoue contre toi toutes les cartes de ton dernier tour, à moitié de leur force. */
+    ECHO("ÉCHO"),
+    /** Au prochain tour, tu joues une carte de moins. */
+    VERTIGO("VERTIGE"),
+    /** Il se change en pierre : jusqu'à son prochain tour, tes coups ne lui font que la moitié. */
+    STONE("PÉTRIFICATION"),
+    /** L'Architecte bâtit un étage de sa Tour : chaque étage lui donne un Bouclier à chacun de ses tours. Ton Bingo en fait tomber un. */
+    BLUEPRINT("PLAN"),
     /** Tour, les Éclats dispersés : il ramasse un éclat ; au troisième, les éclats se rejoignent et frappent à travers ton bouclier. */
     SHARD("ÉCLAT"),
     /** Il réclame son héritage : il te prend une part de ton bouclier, puis frappe. */
@@ -356,6 +366,15 @@ public enum EnemySymbol {
     /** Linceul : PV avec lesquels il se relève, en % de ses PV max. */
     public static final int SHROUD_RISE_PERCENT = 20;
 
+    /** Ascenseur : force en plus par étage (ses coups et ses Boucliers), en % ; étages au plus ; un coup d'au moins
+     * cette part de ses PV max (en %) le renvoie au rez-de-chaussée. */
+    public static final int ELEVATOR_STEP_PERCENT = 25, ELEVATOR_MAX = 4, ELEVATOR_HIT_PERCENT = 2;
+    /** Pétrification : part de tes coups qu'arrête la pierre, en % (75 avec le Granit). */
+    public static final int STONE_PERCENT = 50, GRANITE_PERCENT = 75;
+    /** Vertige : cartes jouées en moins au prochain tour, au plus (le joueur joue toujours au moins une carte). */
+    public static final int VERTIGO_MAX = 2;
+    /** Plan : étages de la Tour de l'Architecte au plus ; en phase 3, chaque étage renforce aussi ses coups de ce %. */
+    public static final int BLUEPRINT_MAX = 5, KEYSTONE_STEP_PERCENT = 10;
     /** Éclat : éclats ramassés avant qu'ils se rejoignent, et coups d'Épée de leur attaque (qui traverse le bouclier). */
     public static final int SHARD_MAX = 3, SHARD_FACTOR = 3;
     /** Héritage : part de ton bouclier qu'il te prend, en %. */
@@ -518,6 +537,17 @@ public enum EnemySymbol {
             case SHROUD -> Lang.f("Linceul : la première fois qu'il tombe, il se relève avec {0} % de ses PV max (une fois par "
                 + "combat). Déjà drapé, il reforme sa défense", SHROUD_RISE_PERCENT);
             case STRINGS -> Lang.t("Fils : au début de ton prochain tour, il choisit ta plus faible carte et tu la joues d'office");
+            case ELEVATOR -> Lang.f("Ascenseur : attaque de {0}, puis il monte d'un étage. Chaque étage : ses coups et ses "
+                + "Boucliers +{1} % ({2} étages au plus). Un coup d'au moins {3} % de ses PV max le renvoie en bas",
+                kind.hurt(kind.swordDamage(), hard), ELEVATOR_STEP_PERCENT, ELEVATOR_MAX, ELEVATOR_HIT_PERCENT);
+            case ECHO -> Lang.t("Écho : il rejoue contre toi toutes les cartes de ton dernier tour, à moitié de leur force. "
+                + "Pique, il frappe. Coeur, il se soigne. Carreau et Trèfle, il se protège");
+            case VERTIGO -> Lang.f("Vertige : au prochain tour, tu joues 1 carte de moins ({0} au plus). Déjà pris de "
+                + "vertige, tu prends un coup", VERTIGO_MAX);
+            case STONE -> Lang.f("Pétrification : jusqu'à son prochain tour, tes coups ne lui font que {0} %. Déjà de "
+                + "pierre, il frappe", 100 - STONE_PERCENT);
+            case BLUEPRINT -> Lang.f("Plan : il bâtit un étage de sa Tour ({0} au plus). À chacun de ses tours, chaque "
+                + "étage lui donne un Bouclier. Chacun de tes Bingos fait tomber un étage", BLUEPRINT_MAX);
             case SHARD -> Lang.f("Éclat : il ramasse un éclat. Au {0}e, les éclats se rejoignent : attaque de {1} qui traverse "
                 + "ton bouclier", SHARD_MAX, kind.hurt(kind.swordDamage() * SHARD_FACTOR, hard));
             case LEGACY -> Lang.f("Héritage : il te prend {0} % de ton bouclier, puis attaque de {1}", LEGACY_PERCENT,
