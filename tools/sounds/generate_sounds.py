@@ -3957,6 +3957,154 @@ def death_roi_forain():
     return track.buf
 
 
+# ===========================================================================
+# Désert de Braise : phases et morts des rois (DesertBossScenes, 2026-11-22)
+# Les instants reprennent les constantes des scènes : si une scène change de rythme, mettre à jour ici.
+# ===========================================================================
+
+def stone_slide(d=0.4):
+    """Un lourd couvercle de pierre qui glisse : un frottement grave et grainé."""
+    return lp(noise(d), 700) * adsr(d, 0.05, 0.1, 0.8, 0.1) + 0.4 * bp(noise(d), 1500, 4000) * adsr(d, 0.05, 0.1, 0.4, 0.1)
+
+
+def quill_scratch(d=0.25):
+    """Une plume qui gratte le parchemin."""
+    return bp(noise(d), 3000, 8000) * (0.5 + 0.5 * np.sin(np.linspace(0, 40, n(d)))) * adsr(d, 0.02, 0.05, 0.6, 0.05)
+
+
+@sound('cutscene/phase2_emir', -17)
+def phase2_emir():
+    """L'Émir, phase 2 (EmirPhase) : la tempête de sable se lève (0,2 à 1,0 s), le contrat se déchire en créances
+    (1,0 s) qui tournent, son ombrelle devient un cimeterre (2,2 s)."""
+    track = Track(5.8)
+    track.add(fade(desert_wind(4.8), 0.3, 1.0), 0.0, 0.8)
+    track.add(mix((rustle(0.3), 0, 1.0), (crack(0.05, 0.01, 2000, 8000), 0.05, 0.5)), 1.0, 0.6)  # le contrat déchiré
+    for k in range(10):
+        track.add(rustle(0.12), 1.2 + k * 0.09, 0.2)
+    track.add(mix((blade_swish(), 0, 1.0), (blade_ring(2600, 1.0), 0.05, 0.6)), 2.2, 0.8)
+    track.add(brass_chord(['D3', 'F3', 'G#3', 'C4'], 1.6, 0.6), 2.25, 0.45)
+    return track.buf
+
+
+@sound('cutscene/death_emir', -17)
+def death_emir():
+    """L'Émir meurt (EmirDeath) : la tempête tombe (0 à 1,2 s), les créances retombent et brûlent en pièces d'or
+    (2,5 s), il s'enfonce dans la dune (2,5 à 3,8 s), son ombrelle reste (3,6 s), les chameaux s'en vont (3,9 s)."""
+    track = Track(6.6)
+    track.add(fade(desert_wind(2.0), 1.0, 0.0), 0.0, 0.7)
+    for k in range(8):
+        track.add(rustle(0.1), 0.4 + k * 0.25, 0.15)
+    track.add(mix((fire_burst(0.8), 0, 0.5), (coin_shower(1.2, 10), 0.1, 0.6)), 2.5, 0.6)
+    track.add(sand_pour(1.3), 2.5, 0.45)
+    track.add(thump(140, 70, 0.15, 0.04), 3.6, 0.4)
+    for k in range(6):                                                                         # les chameaux qui s'en vont
+        track.add(footstep(rand(110, 140), 1.0), 3.9 + k * 0.28, 0.3 - 0.04 * k)
+    return track.buf
+
+
+@sound('cutscene/phase2_pharaon', -17)
+def phase2_pharaon():
+    """Le Pharaon, phase 2 (PharaohPhase) : des rouleaux sur le couvercle (0,4 s), il tire le levier (0,85 s), les
+    rouleaux s'arrêtent (1,45 / 1,65 / 1,85 s), le couvercle se ferme sur lui (1,95 à 2,2 s), le venin suinte,
+    le couvercle se rouvre (3,3 s)."""
+    track = Track(5.8)
+    track.add(ambience(4.8, 200, 900, 0.2), 0.0, 1.0)
+    track.add(sparkle(0.6), 0.4, 0.3)
+    track.add(mix((ratchet(900), 0, 1.0), (metal_hit(500, 0.3, 0.4), 0.1, 0.5)), 1.1, 0.5)
+    track.add(rattle(0.8, 22, 6, 1800, 4200), 1.1, 0.4)
+    for at in (1.45, 1.65, 1.85):
+        track.add(mix((thump(180, 90, 0.1, 0.03), 0, 0.8), (click(0.02, 1500, 5000), 0, 0.6)), at, 0.5)
+    track.add(stone_slide(0.3), 1.95, 0.7)
+    track.add(reverb(mix((impact(0.6, 100, 40), 0, 1.0), (crack(0.1, 0.02, 300, 5000), 0, 0.5)), wet=0.4, size=1.6, tail=1.0), 2.2, 0.9)
+    track.add(svf(noise(1.0), sweep(300, 900, 1.0), q=2.0) * adsr(1.0, 0.2, 0.2, 0.6, 0.3), 2.4, 0.3)   # le venin qui suinte
+    track.add(brass_chord(['E2', 'B2', 'E3', 'G3'], 1.6, 0.6), 2.25, 0.4)
+    track.add(stone_slide(0.5), 3.3, 0.6)
+    return track.buf
+
+
+@sound('cutscene/death_pharaon', -17)
+def death_pharaon():
+    """Le Pharaon meurt (PharaohDeath) : il se fend (0,8 à 2,5 s), part en poussière (2,5 s), le couvercle glisse
+    et se ferme sur le vide (3,9 à 4,25 s), les torches s'éteignent (4,3 à 5,0 s)."""
+    track = Track(6.6)
+    track.add(ambience(5.6, 200, 900, 0.2), 0.0, 1.0)
+    for k in range(4):
+        track.add(crack(0.12, 0.02, 400, 6000), 0.8 + k * 0.4, 0.3 + 0.08 * k)
+    track.add(sand_pour(1.6), 2.5, 0.6)
+    track.add(desert_wind(1.6), 2.5, 0.3)
+    track.add(stone_slide(0.4), 3.9, 0.7)
+    track.add(reverb(impact(0.6, 100, 40), wet=0.4, size=1.6, tail=1.0), 4.25, 0.9)
+    for k in range(4):
+        track.add(hiss(0.3), 4.3 + k * 0.2, 0.25)
+    return track.buf
+
+
+@sound('cutscene/phase2_djinn', -17)
+def phase2_djinn():
+    """Le Djinn, phase 2 (DjinnPhase) : la lampe fume, il s'élève, trois étoiles de voeu (0,6 s), le parchemin se
+    déroule (1,0 s), la plume écrit (1,4 à 2,1 s), le sceau s'écrase (2,2 s), la lettre s'envole (2,9 s)."""
+    track = Track(5.8)
+    track.add(ambience(4.8, 400, 1500, 0.2), 0.0, 1.0)
+    track.add(fade(hiss(1.2), 0.2, 1.0), 0.0, 0.3)
+    track.add(mix((sparkle(1.0), 0, 1.0), (music_box('E6', 1.0), 0, 0.4), (music_box('B6', 1.0), 0.15, 0.4)), 0.6, 0.4)
+    track.add(mix((rustle(0.4), 0, 1.0), (whoosh(0.4, 300, 1500), 0, 0.5)), 1.0, 0.5)
+    for k in range(7):
+        track.add(quill_scratch(0.09), 1.4 + k * 0.1, 0.35)
+    track.add(mix((thump(90, 40, 0.5, 0.15), 0, 1.0), (card_slap(0.18), 0, 0.6)), 2.2, 0.8)
+    track.add(brass_chord(['A2', 'E3', 'A3', 'C#4'], 1.6, 0.6), 2.25, 0.4)
+    track.add(mix((whoosh(0.7, 400, 2500), 0, 1.0), (sparkle(0.6), 0, 0.4)), 2.9, 0.4)
+    return track.buf
+
+
+@sound('cutscene/death_djinn', -17)
+def death_djinn():
+    """Le Djinn meurt (DjinnDeath) : il est aspiré en spirale dans sa lampe (1,2 à 3,1 s), la lampe se renverse et
+    roule (3,1 à 4,6 s), l'oasis s'évapore (3,6 à 4,8 s)."""
+    track = Track(6.6)
+    track.add(ambience(5.6, 400, 1500, 0.15), 0.0, 1.0)
+    track.add(sparkle(0.6), 0.5, 0.3)
+    track.add(svf(noise(1.9), sweep(200, 2400, 1.9), q=2.0) * adsr(1.9, 0.3, 0.2, 0.8, 0.2), 1.2, 0.5)  # l'aspiration
+    track.add(osc(sweep(800, 200, 0.4), 0.4, 'sine') * expdec(0.4, 0.2), 3.0, 0.4)                     # « plop » dans la lampe
+    track.add(metal_hit(1400, 0.3, 0.5), 3.15, 0.35)
+    for k in range(6):
+        track.add(metal_hit(rand(1200, 1600), 0.15, 0.4), 3.4 + k * 0.2, 0.15)
+    track.add(fade(hiss(1.4), 0.6, 0.0), 3.6, 0.35)
+    return track.buf
+
+
+@sound('cutscene/phase2_dragon', -17)
+def phase2_dragon():
+    """Ignar, phase 2 (DragonPhase) : il déplie ses ailes (0,1 à 0,5 s), s'arrache du sol (0,5 s) à grands
+    battements, le volcan crache sa lave, il plonge (1,85 s) et crache son souffle (2,2 s)."""
+    track = Track(5.8)
+    track.add(ambience(4.8, 60, 400, 0.3), 0.0, 1.0)
+    track.add(rustle(0.4), 0.1, 0.5)
+    track.add(mix((thump(70, 30, 0.6, 0.2), 0, 1.0), (sand_pour(0.6), 0, 0.4)), 0.5, 0.7)
+    for k in range(6):
+        track.add(wing_flap(), 0.5 + k * 0.26, 0.6)
+    track.add(fade(lp(noise(1.6), 200), 0.2, 1.0), 0.6, 0.5)                                    # le volcan gronde
+    track.add(whoosh(0.4, 200, 1500), 1.85, 0.6)
+    track.add(mix((roar(1.6, 90), 0, 1.0), (fire_burst(1.6), 0, 0.8)), 2.15, 0.9)
+    return track.buf
+
+
+@sound('cutscene/death_dragon', -17)
+def death_dragon():
+    """Ignar meurt (DragonDeath) : il s'écrase dans le cratère (2,5 s), le volcan gronde (2,6 s) et crache son
+    trésor (3,0 à 5,0 s)."""
+    track = Track(6.6)
+    track.add(ambience(5.6, 60, 400, 0.3), 0.0, 1.0)
+    track.add(roar(1.4, 70), 0.3, 0.6)
+    track.add(whoosh(0.8, 200, 1200), 1.7, 0.4)
+    track.add(mix((impact(0.8, 80, 30), 0, 1.0), (fire_burst(1.0), 0, 0.6)), 2.5, 0.9)
+    track.add(fade(lp(noise(0.8), 150), 0.0, 1.0), 2.6, 0.7)
+    track.add(mix((boom(1.4, 50), 0, 1.0), (fire_burst(1.4), 0, 0.5)), 3.0, 0.8)
+    track.add(coin_shower(2.0, 30), 3.1, 0.6)
+    for k in range(8):
+        track.add(metal_hit(rand(1200, 2400), 0.3, 0.5), 3.2 + rand(0.0, 1.8), 0.2)
+    return track.buf
+
+
 def main(prefixes):
     done = 0
     for name, level, fmt, trim, loop, fn in SOUNDS:
