@@ -4245,6 +4245,184 @@ def death_coeur_montagne():
     return track.buf
 
 
+# ===========================================================================
+# Port des Contrebandiers : phases et morts des rois (PortBossScenes, 2026-11-22)
+# Les instants reprennent les constantes des scènes : si une scène change de rythme, mettre à jour ici.
+# ===========================================================================
+
+def sea_swell(d, gain=1.0, rate=0.5):
+    """La mer : une houle grave qui va et vient."""
+    return lp(noise(d), 500) * (0.6 + 0.4 * np.sin(2 * math.pi * rate * times(d))) * fade_out(d, 0.5) * ramp(d, 0.0, 1.0, 0.3) * gain
+
+
+def water_rush(d, lo=300, hi=1800):
+    """De l'eau qui entre à flots : un grondement mouillé qui enfle."""
+    return mix((lp(noise(d), 700) * ramp(d, 0.3, 1.0), 0, 1.0), (bp(noise(d), lo, hi) * ramp(d, 0.2, 0.8), 0, 0.5)) * fade_out(d, 0.3)
+
+
+def hull_groan(d=0.9, f=90):
+    """La coque qui gémit : un bois grave qui force."""
+    return svf(osc(sweep(f, f * 0.75, d), d, 'saw'), 600, q=4.0, mode='bp') * adsr(d, 0.15, 0.2, 0.7, 0.3)
+
+
+def blow(d=0.35):
+    """Un souffle : on éteint une flamme."""
+    return bp(noise(d), 600, 3000) * adsr(d, 0.05, 0.1, 0.6, 0.15)
+
+
+def cannon(d=1.2):
+    """Un coup de canon : la détonation et son écho sur l'eau."""
+    return reverb(mix((boom(d, 50), 0, 1.0), (crack(0.05, 0.01, 800, 8000), 0, 0.6)), wet=0.35, size=1.8, tail=0.8)
+
+
+def punch():
+    """Un coup de poing dans la bagarre."""
+    return mix((thump(rand(150, 220), 70, 0.1, 0.03), 0, 1.0), (click(0.01, 500, 3000), 0, 0.5))
+
+
+@sound('cutscene/phase2_capitaine_rat', -17)
+def phase2_capitaine_rat():
+    """Le Capitaine Rat, phase 2 (RatPhase) : quatre grappins se plantent (0,6 / 0,85 / 1,1 / 1,35 s), les rats
+    descendent les cordes en couinant, déferlent sur le pont (1,2 à 3,6 s) ; à l'abordage (2,2 s)."""
+    track = Track(5.8)
+    track.add(sea_swell(4.8, 0.6), 0.0, 0.5)
+    for k in range(4):
+        at = 0.3 + 0.25 * k
+        track.add(whoosh(0.3, 300, 1400), at, 0.35)
+        track.add(mix((metal_hit(rand(1300, 1700), 0.25, 0.5), 0, 1.0), (wood_knock(200), 0, 0.8)), at + 0.3, 0.5)
+    for _ in range(26):
+        track.add(squeak(), rand(0.7, 4.2), rand(0.12, 0.3))
+    scurry = Track(3.0)
+    for _ in range(140):
+        scurry.add(click(0.004, 2500, 8000), rand(0, 2.9), rand(0.1, 0.4))
+    track.add(fade(scurry.buf, 0.2, 1.0), 1.2, 0.5)
+    track.add(mix((impact(0.6, 120, 45), 0, 1.0), (brass_chord(['C3', 'D#3', 'F#3', 'C4'], 1.6, 0.6), 0, 0.5)), 2.2, 0.9)
+    return track.buf
+
+
+@sound('cutscene/death_capitaine_rat', -17)
+def death_capitaine_rat():
+    """Le Capitaine Rat quitte le navire (RatDeath) : la coque heurte un récif (0,15 s) et gîte, l'eau monte ; le
+    hublot s'ouvre (0,4 s), ses rats y filent en couinant ; il bondit (1,7 s), son tricorne tombe à l'eau (2,25 s) ;
+    il se faufile par le hublot (2,5 s) et la mer s'y engouffre (3,9 s)."""
+    track = Track(6.6)
+    track.add(mix((impact(0.7, 90, 35), 0, 1.0), (wood_break(), 0.02, 0.6)), 0.15, 0.8)
+    track.add(hull_groan(1.2, 80), 0.3, 0.4)
+    track.add(water_rush(5.0), 0.2, 0.35)
+    track.add(creak(0.4, 600), 0.4, 0.45)                                                      # le hublot s'ouvre
+    for k in range(9):
+        track.add(squeak(), 0.6 + k * 0.13 + rand(0, 0.05), 0.3)
+    track.add(footsteps(1.2, 14, 2000, 6000), 0.6, 0.25)
+    track.add(whoosh(0.5, 200, 1500), 1.7, 0.45)
+    track.add(splash(0.5), 2.25, 0.45)
+    track.add(mix((osc(sweep(700, 250, 0.15), 0.15, 'sine') * expdec(0.15, 0.06), 0, 1.0), (squeak(3600), 0.05, 0.6)), 2.5, 0.6)
+    track.add(hull_groan(1.0, 70), 3.0, 0.3)
+    track.add(fade(water_rush(1.2, 500, 3000), 0.3, 1.0), 3.9, 0.6)
+    return track.buf
+
+
+@sound('cutscene/phase2_tavernier', -17)
+def phase2_tavernier():
+    """Le Tavernier, phase 2 (TavernPhase) : il lève sa chope (1,2 à 2,0 s) et l'abat (2,2 s) : la bière gicle, les
+    tabourets volent, la bagarre éclate (2,2 à 4,2 s)."""
+    track = Track(5.8)
+    track.add(ambience(4.8, 300, 1400, 0.25), 0.0, 1.0)
+    track.add(whoosh(0.6, 200, 900), 1.4, 0.3)
+    track.add(mix((impact(0.5, 160, 50), 0, 1.0), (modal(1100, 0.5, GLASS_RATIOS, [0.2, 0.1, 0.05, 0.02]), 0, 0.6),
+                  (splash(0.6), 0.02, 0.5)), 2.2, 0.9)
+    for k in range(6):
+        track.add(wood_knock(rand(160, 260)), 2.4 + k * 0.18 + rand(0, 0.05), 0.4)               # les tabourets retombent
+    for _ in range(14):
+        track.add(punch(), rand(2.5, 4.2), rand(0.3, 0.6))
+    track.add(crowd_boo(2.0), 2.4, 0.25)
+    track.add(brass_chord(['G2', 'D3', 'G3', 'A#3'], 1.6, 0.6), 2.25, 0.4)
+    return track.buf
+
+
+@sound('cutscene/death_tavernier', -17)
+def death_tavernier():
+    """La taverne ferme ses portes (TavernDeath) : il souffle les lanternes (0,6 / 1,25 s), le feu s'éteint (2,1 s) ;
+    les battants claquent (2,5 s), la barre tombe en travers (3,7 s), la fenêtre s'éteint (4,3 s)."""
+    track = Track(6.6)
+    track.add(fade(fire_burst(2.4), 0.5, 0.0), 0.0, 0.35)
+    for at in (0.6, 1.25):
+        track.add(blow(0.35), at - 0.3, 0.5)
+        track.add(click(0.01, 800, 3000), at, 0.25)
+    track.add(hiss(0.8), 2.1, 0.25)
+    track.add(creak(0.45, 220), 2.05, 0.5)
+    track.add(reverb(mix((impact(0.7, 110, 40), 0, 1.0), (wood_knock(120), 0, 0.8), (crack_hit(), 0, 0.5)), wet=0.3, size=1.2), 2.5, 1.0)
+    track.add(wood_knock(150), 2.65, 0.3)
+    track.add(mix((thump(140, 60, 0.25, 0.06), 0, 1.0), (wood_knock(180), 0, 0.7)), 3.7, 0.8)
+    track.add(click(0.02, 300, 1500), 4.3, 0.3)
+    return track.buf
+
+
+@sound('cutscene/phase2_gardien_phare', -17)
+def phase2_gardien_phare():
+    """Le Gardien du Phare, phase 2 (LighthousePhase) : la tempête se lève (vent, pluie), les vagues se brisent sur le
+    phare (0,5 / 1,2 / 1,85 / 2,5 / 3,3 s), son faisceau tourne de plus en plus vite ; tonnerre (0,7 / 1,5 / 3,3 s), la
+    foudre frappe le phare (2,2 s)."""
+    track = Track(5.8)
+    track.add(fade(rain_noise(5.2), 0.2, 1.0), 0.0, 0.35)
+    track.add(fade(icy_wind(5.2), 0.3, 1.0), 0.0, 0.3)
+    track.add(sea_swell(5.2, 1.0, 0.7), 0.0, 0.4)
+    for at in (0.5, 1.2, 1.85, 2.5, 3.3):
+        track.add(splash(0.9), at, 0.5)
+    for at, gain in ((0.7, 0.4), (1.5, 0.5), (3.3, 0.4)):
+        track.add(thunder(1.4), at, gain)
+    track.add(osc(sweep(200, 900, 2.0), 2.0, 'sine') * ramp(2.0, 0.0, 1.0) * 0.4, 0.3, 0.2)       # le faisceau qui s'emballe
+    track.add(mix((thunder(2.2), 0, 1.2), (crack_hit(), 0, 0.8)), 2.2, 0.9)
+    track.add(brass_chord(['A2', 'C3', 'E3', 'A3'], 1.6, 0.6), 2.25, 0.4)
+    return track.buf
+
+
+@sound('cutscene/death_gardien_phare', -17)
+def death_gardien_phare():
+    """Le phare s'éteint (LighthouseDeath) : la mer calme, la lampe grésille et bégaie (0,9 / 1,45 / 1,95 / 2,2 s),
+    s'éteint (2,5 s), une fumée monte ; une cloche au loin (3,4 s)."""
+    track = Track(6.6)
+    track.add(sea_swell(5.6, 0.8, 0.4), 0.0, 0.5)
+    hum = osc(hz('A2'), 2.5, 'saw') * 0.3
+    track.add(lp(hum, 400) * ramp(2.5, 1.0, 0.6), 0.0, 0.2)
+    for at in (0.9, 1.45, 1.95, 2.2):
+        track.add(mix((click(0.02, 2000, 7000), 0, 1.0), (click(0.015, 1500, 5000), 0.04, 0.6)), at, 0.4)
+    track.add(mix((click(0.04, 400, 2000), 0, 1.0), (thump(90, 45, 0.3, 0.08), 0, 0.6)), 2.5, 0.7)
+    track.add(hiss(1.0), 2.55, 0.2)
+    track.add(reverb(bell_toll(hz('D3'), 1.8), wet=0.5, size=1.6, tail=0.8), 3.4, 0.3)
+    return track.buf
+
+
+@sound('cutscene/phase2_capitaine_noir', -17)
+def phase2_capitaine_noir():
+    """Le Capitaine Noir, phase 2 (BlackPhase) : la bordée, sept canons l'un après l'autre (0,6 à 1,8 s), la fumée
+    couvre tout, son œil s'allume (2,2 s)."""
+    track = Track(5.8)
+    track.add(sea_swell(4.8, 0.7), 0.0, 0.4)
+    for k in range(7):
+        track.add(cannon(1.2), 0.6 + 0.2 * k, 0.5 + 0.05 * k)
+    track.add(fade(hiss(2.0), 0.6, 0.0), 1.0, 0.2)
+    track.add(mix((boom(1.4, 45), 0, 0.7), (sparkle(0.6, count=6, lo=1500, hi=4000), 0.05, 0.3)), 2.2, 0.6)
+    track.add(brass_chord(['D2', 'F2', 'G#2', 'D3'], 1.8, 0.6), 2.25, 0.45)
+    return track.buf
+
+
+@sound('cutscene/death_capitaine_noir', -17)
+def death_capitaine_noir():
+    """Le Capitaine Noir sombre avec son navire (BlackDeath) : la coque craque (0,4 s), la mer monte sur le pont
+    (0,2 à 3,0 s), le galion gîte et s'enfonce, son tricorne reste à flotter (vers 2,4 s), les mâts passent sous
+    l'eau dans un remous de bulles (3,9 s)."""
+    track = Track(6.6)
+    track.add(mix((impact(0.8, 80, 30), 0, 1.0), (wood_break(), 0.02, 0.5)), 0.4, 0.7)
+    track.add(water_rush(3.4, 200, 1200), 0.2, 0.5)
+    for at in (0.9, 1.7, 2.6, 3.4):
+        track.add(hull_groan(rand(0.8, 1.1), rand(60, 90)), at, 0.35)
+    track.add(bubbles(3.0, 30, 200, 700), 1.0, 0.35)
+    track.add(splash(0.4), 2.4, 0.35)
+    track.add(mix((splash(1.2), 0, 1.0), (bubbles(1.5, 40, 150, 500), 0, 0.8)), 3.9, 0.6)
+    track.add(sea_swell(2.2, 0.6, 0.3), 4.2, 0.4)
+    return track.buf
+
+
 def main(prefixes):
     done = 0
     for name, level, fmt, trim, loop, fn in SOUNDS:
