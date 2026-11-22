@@ -91,7 +91,7 @@ public final class Lexicon {
                 low.percent, medium.percent, high.percent, low.powerText(), medium.powerText(), high.powerText())),
             term(Lang.t("Cagnotte"), Lang.t("Tes Mises s'y accumulent. Le prochain Jeu bonus la joue, "
                 + "puis elle repart de 0. Chaque lieu a la sienne.")),
-            term(Lang.t("Jeu bonus"), Lang.f("Après un Bingo, {0} fois sur 10 ({1} dans la Tour). Roue, Plinko "
+            term(Lang.t("Jeu bonus"), Lang.f("Après un Bingo, {0} fois sur 10 ({1} en Histoire). Roue, Plinko "
                 + "ou Coup de poing multiplient la cagnotte. La grille, plus rare, la paie à chaque alignement.",
                 inTen, inTenTower)),
             term(Lang.t("Misables"), Lang.t("Les gains que la Mise peut prendre. Ceux de la cagnotte "
@@ -267,11 +267,11 @@ public final class Lexicon {
                 + "une fois le roi battu.")),
             term(Lang.t("Carte de roi"), Lang.f("Bats un roi d'Exploration {0} fois : sa carte se vend à la boutique, "
                 + "dans une version pour toi.", PlayerProfile.KING_CARD_WINS)),
-            term(Lang.t("Tour des épreuves"), Lang.t("Des chapitres qui s'ouvrent l'un après l'autre. Ils ne "
+            term(Lang.t("Histoire"), Lang.t("Des chapitres qui s'ouvrent l'un après l'autre. Ils ne "
                 + "rapportent pas de pièces. Quitter un chapitre le fait recommencer.")),
             term(Lang.t("Entraînement libre"), Lang.t("Choisis un ennemi déjà vaincu pour tester ton deck. "
                 + "Ce combat ne rapporte rien.")),
-            term(Lang.t("Mode difficile"), Lang.t("Une seconde Tour, bien plus dure, avec sa propre progression.")),
+            term(Lang.t("Mode difficile"), Lang.t("Une seconde Histoire, bien plus dure, avec sa propre progression.")),
             term(Lang.t("Exploration difficile"), Lang.t("Ouverte une fois le Désert vidé. La prairie y est aussi dure "
                 + "que le Désert, puis chaque lieu plus dur que le précédent. Plus de pièces, sa propre progression.")),
             term(Lang.t("Table du croupier"), Lang.t("Ton deck, ta machine, ton rang et la fusion des cartes."))));
