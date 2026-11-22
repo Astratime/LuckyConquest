@@ -2992,6 +2992,184 @@ def cutscene_rival_farewell():
     return reverb(track.buf, wet=0.3, size=1.6, tail=1.0)
 
 
+# ===========================================================================
+# Manoir hanté : phases et morts des rois (ManorBossScenes, 2026-11-22)
+# Les instants reprennent les constantes des scènes : si une scène change de rythme, mettre à jour ici.
+# ===========================================================================
+
+def squeak():
+    """Petit cri aigu de chauve-souris."""
+    d = 0.07
+    return osc(sweep(rand(4200, 5200), rand(2600, 3400), d), d) * expdec(d, 0.03, attack=0.003)
+
+
+def music_box(note, d=1.2):
+    """Une note de boîte à musique."""
+    return modal(hz(note), d, GLASS_RATIOS, [d * 0.6, d * 0.3, d * 0.2, d * 0.1], [1, 0.4, 0.25, 0.1])
+
+
+def wood_knock(f=220):
+    """Un morceau de bois qui tombe et claque."""
+    return mix((modal(f, 0.25, WOOD_RATIOS, [0.12, 0.08, 0.05, 0.03]), 0, 1.0), (crack_hit(), 0, 0.4))
+
+
+def snip():
+    """Un coup de ciseaux : deux lames qui se croisent."""
+    return mix((crack(0.03, 0.004, 3000, 12000), 0, 0.8), (metal_hit(2400, 0.25, 0.6), 0.005, 0.5))
+
+
+@sound('cutscene/phase2_comte_minuit', -17)
+def phase2_comte_minuit():
+    """Le Comte de Minuit, phase 2 (CountPhase) : la cloche sonne douze coups (0,4 s puis tous les 0,28 s), le dernier à 3,48 s."""
+    first, gap = 0.4, 0.28
+    last, end = first + 11 * gap, first + 11 * gap + 2.5
+    track = Track(end + 1.0)
+    track.add(ambience(end, 120, 600, 0.25), 0.0, 1.0)
+    track.add(drone(['D1', 'A1'], end, 'tri', fin=1.5, fout=1.0), 0.0, 0.2)
+    for k in range(12):
+        at = first + k * gap
+        track.add(bell_toll(hz('D3') if k < 11 else hz('A2'), 2.4), at, 0.32 + 0.02 * k)
+        track.add(wing_flap(), at + 0.05, 0.25)
+        track.add(squeak(), at + rand(0.05, 0.15), 0.12)
+    boom = mix((thump(80, 30, 1.4, 0.4), 0, 1.0), (crack(0.06, 0.01, 300, 8000), 0, 0.6))
+    track.add(reverb(boom, wet=0.3, size=1.6, tail=1.2), last, 0.9)
+    track.add(brass_chord(['D3', 'F3', 'G#3', 'C#4'], 1.6, 0.8), last + 0.1, 0.8)
+    for k in range(10):
+        track.add(wing_flap(), last + 0.05 + k * 0.08, 0.3)
+        track.add(squeak(), last + rand(0.05, 0.9), 0.15)
+    return track.buf
+
+
+@sound('cutscene/death_comte_minuit', -17)
+def death_comte_minuit():
+    """Le Comte de Minuit meurt (CountDeath) : l'aube monte, il grésille, il éclate en chauves-souris (2,5 s),
+    elles se dispersent, les dernières plongent dans le cercueil (3,2 s) et le couvercle claque (4,0 s)."""
+    burst, home, shut, end = 2.5, 3.2, 4.0, 5.6
+    track = Track(end + 1.0)
+    track.add(ambience(end, 150, 700, 0.2), 0.0, 1.0)
+    dawn = stack(*(osc(hz(note), burst, 'sine') for note in ('A3', 'C#4', 'E4', 'A4')))
+    track.add(dawn * ramp(burst, 0.0, 1.0, 1.5), 0.2, 0.18)
+    track.add(hp(noise(burst - 1.2), 4000) * ramp(burst - 1.2, 0.0, 1.0, 1.0), 1.2, 0.12)    # il grésille au soleil
+    track.add(mix((crack(0.06, 0.01, 400, 9000), 0, 1.0), (whoosh(0.8, 300, 2500), 0, 0.8)), burst, 0.8)
+    for k in range(26):                                                    # la nuée qui se disperse
+        track.add(wing_flap(), burst + rand(0.0, 1.2), rand(0.15, 0.3))
+    for k in range(12):
+        track.add(squeak(), burst + rand(0.0, 1.4), rand(0.08, 0.16))
+    for k in range(3):
+        track.add(whoosh(0.4, 500, 1800), home + 0.15 * k, 0.25)
+    track.add(creak(0.3, 120), shut - 0.3, 0.4)
+    track.add(mix((thump(110, 45, 0.5, 0.12), 0, 1.0), (wood_knock(160), 0, 0.8)), shut, 1.0)
+    track.add(brass_chord(['A2', 'C3', 'E3', 'A3'], 1.4, 0.5), shut + 0.05, 0.4)
+    return track.buf
+
+
+@sound('cutscene/phase2_bibliothecaire', -17)
+def phase2_bibliothecaire():
+    """La Bibliothécaire, phase 2 (LibrarianPhase) : trois bougies soufflées (0,6 / 1,05 / 1,5 s), « chut », ses yeux (2,2 s)."""
+    track = Track(5.8)
+    track.add(ambience(4.8, 200, 900, 0.2), 0.0, 1.0)
+    for at in (0.6, 1.05, 1.5):
+        puff = bp(noise(0.25), 400, 2500) * expdec(0.25, 0.08, attack=0.02)
+        track.add(puff, at - 0.05, 0.7)
+        track.add(hp(noise(0.4), 5000) * expdec(0.4, 0.15), at, 0.08)
+    shush = bp(noise(0.7), 3000, 7000) * expdec(0.7, 0.45, attack=0.08)
+    track.add(shush, 1.75, 0.5)
+    track.add(mix((thump(70, 30, 1.2, 0.35), 0, 1.0)), 2.2, 0.8)
+    track.add(modal(hz('E5'), 2.0, GLASS_RATIOS, [1.0, 0.6, 0.4, 0.3]), 2.2, 0.3)
+    track.add(brass_chord(['B2', 'D3', 'F3', 'A3'], 1.6, 0.5), 2.25, 0.6)
+    return track.buf
+
+
+@sound('cutscene/death_bibliothecaire', -17)
+def death_bibliothecaire():
+    """La Bibliothécaire meurt (LibrarianDeath) : le grimoire s'ouvre (0,5 s), ses pages tournent, il l'aspire (1,3 s),
+    il claque (2,5 s) et tombe au sol (3,25 s)."""
+    slam, end = 2.5, 5.6
+    track = Track(end + 1.0)
+    track.add(ambience(end, 200, 900, 0.2), 0.0, 1.0)
+    track.add(whoosh(0.5, 300, 1500), 0.05, 0.4)
+    for k in range(4):
+        track.add(rustle(0.3), 0.5 + k * 0.2, 0.4)
+    track.add(svf(noise(1.2), sweep(200, 3000, 1.2), q=1.5) * ramp(1.2, 0.0, 1.0, 1.5), 1.3, 0.5)    # il l'aspire
+    slam_sound = mix((crack(0.05, 0.008, 500, 9000), 0, 1.0), (thump(120, 40, 0.6, 0.15), 0, 1.2), (wood_knock(180), 0, 0.6))
+    track.add(reverb(slam_sound, wet=0.3, size=1.4, tail=1.0), slam, 1.0)
+    track.add(mix((thump(100, 40, 0.4, 0.1), 0, 1.0), (wood_knock(140), 0, 0.5)), slam + 0.75, 0.6)
+    fall = stack(*(osc(sweep(hz(note), hz(note) / 2, 2.0), 2.0, 'tri') for note in ('B3', 'D4', 'F4')))
+    track.add(fall * expdec(2.0, 1.0, attack=0.05), slam + 0.3, 0.1)
+    return track.buf
+
+
+@sound('cutscene/phase2_fossoyeur', -17)
+def phase2_fossoyeur():
+    """Le Fossoyeur, phase 2 (DiggerPhase) : trois coups de pelle (0,6 / 1,1 / 1,6 s), la terre gronde, l'éboulement (2,2 s)."""
+    track = Track(5.8)
+    track.add(ambience(4.8, 100, 500, 0.2), 0.0, 1.0)
+    track.add(lp(noise(3.6), 160) * ramp(3.6, 0.1, 1.0, 1.0), 0.6, 0.9)                         # la terre gronde
+    for k, at in enumerate((0.6, 1.1, 1.6)):
+        track.add(mix((metal_hit(380, 0.5, 0.7), 0, 0.6), (thump(130, 50, 0.4, 0.1), 0, 1.0)), at, 0.6 + 0.1 * k)
+        for r in range(2 + 2 * k):
+            track.add(crack_hit(), at + rand(0.3, 0.9), rand(0.15, 0.3))
+    boom = mix((thump(70, 25, 1.6, 0.5), 0, 1.2), (crack(0.08, 0.012, 300, 8000), 0, 0.8), (lp(noise(1.5), 900) * expdec(1.5, 0.5), 0, 0.8))
+    track.add(reverb(boom, wet=0.3, size=1.6, tail=1.2), 2.2, 1.0)
+    for r in range(16):
+        track.add(mix((crack_hit(), 0, 0.8), (thump(rand(150, 260), 60, 0.15, 0.04), 0, 0.6)), 2.3 + rand(0.0, 1.3), rand(0.15, 0.35))
+    return track.buf
+
+
+@sound('cutscene/death_fossoyeur', -17)
+def death_fossoyeur():
+    """Le Fossoyeur meurt (DiggerDeath) : la terre s'ouvre (0,6 s), il s'enfonce, la terre se referme (2,7 s),
+    sa pierre tombale sort (jusqu'à 3,2 s), son âme verte s'échappe (3,4 s)."""
+    track = Track(6.6)
+    track.add(ambience(5.6, 100, 500, 0.2), 0.0, 1.0)
+    track.add(lp(noise(2.3), 200) * ramp(2.3, 0.3, 1.0, 1.0), 0.6, 0.8)
+    for k in range(7):
+        track.add(bp(noise(0.2), 300, 1500) * expdec(0.2, 0.08), 0.7 + k * 0.28, rand(0.3, 0.5))   # la terre qui coule
+    track.add(thump(100, 40, 0.5, 0.15), 2.7, 0.8)
+    track.add(creak(0.5, 70), 2.7, 0.6)                                                        # la pierre qui sort de terre
+    track.add(mix((thump(90, 35, 0.6, 0.15), 0, 1.0), (crack_hit(), 0, 0.5)), 3.2, 0.8)
+    wail = osc(sweep(hz('E5'), hz('B4'), 1.6), 1.6, 'sine') * expdec(1.6, 0.8, attack=0.2)
+    track.add(reverb(wail, wet=0.5, size=1.8, tail=1.0), 3.4, 0.2)
+    track.add(bell_toll(hz('A2'), 2.0), 3.5, 0.2)
+    return track.buf
+
+
+@sound('cutscene/phase2_marionnettiste', -17)
+def phase2_marionnettiste():
+    """Le Marionnettiste, phase 2 (PuppeteerPhase) : le rideau se lève (0,25 à 1,2 s), le projecteur (0,9 s), les fils,
+    il danse et chante (boîte à musique), l'éclat de la phase (2,2 s)."""
+    track = Track(5.8)
+    track.add(ambience(4.8, 200, 900, 0.2), 0.0, 1.0)
+    track.add(whoosh(1.0, 150, 900, q=0.8), 0.25, 0.6)
+    track.add(mix((crack(0.04, 0.006, 800, 6000), 0, 0.6), (thump(160, 80, 0.2, 0.05), 0, 0.5)), 0.9, 0.5)   # le projecteur
+    for k in range(4):
+        track.add(pluck(hz(['E4', 'G4', 'B4', 'E5'][k]), 0.4), 1.0 + k * 0.1, 0.3)          # les fils tendus
+    melody = ['E5', 'G5', 'B5', 'A5', 'G5', 'E5', 'F#5', 'B5', 'E6']
+    for k, note in enumerate(melody):
+        track.add(music_box(note), 1.3 + k * 0.32, 0.4)
+    track.add(mix((thump(90, 40, 1.0, 0.3), 0, 1.0)), 2.2, 0.7)
+    track.add(brass_chord(['E3', 'G3', 'A#3', 'D4'], 1.4, 0.5), 2.25, 0.5)
+    return track.buf
+
+
+@sound('cutscene/death_marionnettiste', -17)
+def death_marionnettiste():
+    """Le Marionnettiste meurt (PuppeteerDeath) : quatre coups de ciseaux (0,6 / 1,05 / 1,5 / 1,95 s), il s'effondre
+    comme un pantin (2,5 s), le rideau tombe (3,6 à 4,4 s)."""
+    track = Track(6.6)
+    track.add(ambience(5.6, 200, 900, 0.2), 0.0, 1.0)
+    for k, at in enumerate((0.6, 1.05, 1.5, 1.95)):
+        track.add(snip(), at, 0.7)
+        track.add(pluck(hz(['B4', 'G4', 'E4', 'C4'][k]), 0.5), at + 0.01, 0.35)
+    for k in range(5):
+        track.add(wood_knock(rand(180, 320)), 2.5 + k * rand(0.07, 0.14), rand(0.4, 0.7))
+    for k, note in enumerate(['E5', 'D5', 'B4', 'G4']):
+        track.add(music_box(note, 1.4), 2.8 + k * (0.28 + 0.08 * k), 0.35)
+    track.add(whoosh(0.8, 120, 700, q=0.8), 3.6, 0.6)
+    track.add(mix((thump(90, 35, 0.6, 0.15), 0, 1.0), (lp(noise(0.3), 600) * expdec(0.3, 0.1), 0, 0.6)), 4.35, 0.8)
+    return track.buf
+
+
 def main(prefixes):
     done = 0
     for name, level, fmt, trim, loop, fn in SOUNDS:
