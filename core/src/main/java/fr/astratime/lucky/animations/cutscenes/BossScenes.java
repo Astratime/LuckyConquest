@@ -26,6 +26,7 @@ final class BossScenes {
         if (scene == null) scene = ShardsBossScenes.phase(kit, kind, phase);
         if (scene == null) scene = DesertBossScenes.phase(kit, kind);
         if (scene == null) scene = AscensionBossScenes.phase(kit, kind, phase);
+        if (scene == null) scene = WarBossScenes.phase(kit, kind, phase);
         return scene;
     }
 
@@ -45,6 +46,7 @@ final class BossScenes {
         if (scene == null) scene = ShardsBossScenes.death(kit, kind);
         if (scene == null) scene = DesertBossScenes.death(kit, kind);
         if (scene == null) scene = AscensionBossScenes.death(kit, kind);
+        if (scene == null) scene = WarBossScenes.death(kit, kind);
         return scene;
     }
 }

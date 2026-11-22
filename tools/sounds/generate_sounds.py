@@ -1320,6 +1320,33 @@ def cutscene_collector():
     return reverb(track.buf, wet=0.25, size=1.5, tail=1.0)
 
 
+@sound('cutscene/general', -17)
+def cutscene_general():
+    """
+    Avant le Général Va-Tout (GeneralCutscene) : les canons tirent un jeton (SHOTS = 0,4 / 1,0 / 1,5 / 2,0 s) qui
+    explose 0,6 s plus tard ; ses soldats entrent au pas (2,8 à 4,8 s, un coup de tambour toutes les 0,25 s) ; il se
+    lève (RISE = 5,2 s), pousse ses piles de jetons (PUSH = 6,4 s) qui se rejoignent (ALL_IN = 7,2 s) ; son regard
+    (STARE = 8,0 s).
+    """
+    track = Track(10.2)
+    track.add(ambience(9.5, 250, 1400, 0.2), 0.0, 1.0)
+    for at in (0.4, 1.0, 1.5, 2.0):                                            # les canons
+        track.add(mix((thump(110, 40, 0.4, 0.08), 0, 1.0), (click(0.02, 600, 2500), 0, 0.7)), at, 0.8)
+        track.add(whoosh(0.6, 400, 1600, q=1.2), at + 0.02, 0.25)
+        track.add(mix((impact(0.5, 120, 40), 0, 1.0), (chips_clatter(6, 0.3), 0.02, 0.6)), at + 0.6, 0.8)
+    for k in range(9):                                                         # le tambour de la marche
+        hit = mix((bp(noise(0.12), 180, 1800) * expdec(0.12, 0.04), 0, 1.0), (thump(160, 90, 0.12, 0.03), 0, 0.8))
+        track.add(hit, 2.8 + k * 0.25, 0.5 if k % 2 else 0.7)
+    track.add(brass_chord(['D3', 'A3', 'D4', 'F#4'], 1.4, 0.7), 5.2, 1.0)    # il se lève
+    for k in range(8):                                                         # les piles qui glissent
+        track.add(chips_clatter(3, 0.12), 6.4 + k * 0.1, 0.35)
+    track.add(mix((impact(0.8, 100, 35), 0, 1.2), (chips_clatter(12, 0.5), 0.0, 0.9)), 7.2, 1.0)
+    track.add(sparkle(1.0, count=20), 7.25, 0.35)
+    track.add(thump(70, 35, 1.0, 0.4), 8.0, 1.0)
+    track.add(drone(['D2', 'G#2'], 1.4, 'saw', fin=0.3, fout=0.6) * 0.3, 8.0, 0.4)
+    return reverb(track.buf, wet=0.22, size=1.4, tail=0.8)
+
+
 @sound('cutscene/house', -17)
 def cutscene_house():
     """

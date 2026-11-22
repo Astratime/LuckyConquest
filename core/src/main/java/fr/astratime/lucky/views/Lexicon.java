@@ -234,6 +234,18 @@ public final class Lexicon {
                 + "avec {0} % de ses PV max. Une seule fois par combat.", EnemySymbol.SHROUD_RISE_PERCENT)),
             term(Lang.t("Fils"), Lang.t("Au Manoir hanté : au tour suivant, le marionnettiste joue pour toi ta plus "
                 + "faible carte jouable.")),
+            term(Lang.t("Rassemblement"), Lang.f("Dans la Guerre des Tables, l'ennemi appelle un soldat ({0} au plus). "
+                + "À chacun de ses tours, chaque soldat tire. Un coup qui lui enlève au moins {1} % de ses PV max en met un à terre.",
+                EnemySymbol.RALLY_MAX, EnemySymbol.RALLY_HIT_PERCENT)),
+            term(Lang.t("Canon à jetons"), Lang.f("Dans la Guerre des Tables, l'ennemi charge {0} % de tes gains et tire "
+                + "un gros coup, que la moitié de ton bouclier seulement arrête.", EnemySymbol.CANNON_PERCENT)),
+            term(Lang.t("Espionnage"), Lang.f("Dans la Guerre des Tables, l'ennemi gagne un Bouclier par carte que tu as "
+                + "jouée à ton dernier tour ({0} au plus).", EnemySymbol.SPY_MAX)),
+            term(Lang.t("Contrat"), Lang.f("Dans la Guerre des Tables : si tu lui as fait moins de {0} % de ses PV max "
+                + "depuis son dernier tour, l'ennemi touche sa prime et frappe {1} fois plus fort.",
+                EnemySymbol.CONTRACT_PERCENT, EnemySymbol.CONTRACT_FACTOR)),
+            term(Lang.t("Va-tout"), Lang.f("Dans la Guerre des Tables : ses attaques du tour x{0}, mais sa défense tombe "
+                + "à 0 jusqu'à son tour suivant. Frappe-le juste après.", EnemySymbol.ALL_OUT_FACTOR)),
             term(Lang.t("Ascenseur"), Lang.f("Dans l'Ascension, le Liftier monte d'un étage. Chaque étage : ses coups et "
                 + "ses Boucliers +{0} %. Un coup qui lui enlève au moins {1} % de ses PV max le renvoie en bas.",
                 EnemySymbol.ELEVATOR_STEP_PERCENT, EnemySymbol.ELEVATOR_HIT_PERCENT)),

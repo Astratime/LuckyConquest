@@ -34,6 +34,8 @@ public final class Notebook {
             + "tous ramassés, un par un, et rangés dans sa vitrine. Il n'a jamais joué avec. Moi, je ne range rien.");
         page(EnemyKind.PRETENDANT, "Sans maître, ils se sont tous battus pour le trône. Je les ai regardés faire. "
             + "Un trône vide, c'est la meilleure des mises.");
+        page(EnemyKind.GENERAL, "Les Maisons ont voulu une armée. Je leur ai donné un général qui mise tout. "
+            + "Une guerre, c'est un jeu où l'on perd des deux côtés. Sauf la Maison.");
         page(EnemyKind.MAISON, "La Maison gagne toujours, disent-ils. Ils oublient de demander qui a bâti la Maison.");
         page(EnemyKind.ARCHITECTE, "Il fallait quelqu'un pour monter la Tour. Je lui ai donné les plans. Il a cru les avoir "
             + "dessinés. Chaque étage qu'il posait, je l'avais déjà mis sur la table.");
