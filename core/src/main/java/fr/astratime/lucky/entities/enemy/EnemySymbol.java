@@ -171,7 +171,15 @@ public enum EnemySymbol {
     /** Il frappe d'autant plus fort qu'il te manque de PV. */
     WALTZ("VALSE"),
     /** À ton prochain tour, tu joues une carte de moins. */
-    SEAL("SCELLÉ");
+    SEAL("SCELLÉ"),
+    /** Tour, chapitre 3 (Les Pèlerins de la Comète) : sa défense de base grandit, jusqu'à la fin du combat. */
+    IRON_VOW("SERMENT"),
+    /** Elle lit ta main : ta plus forte carte est fermée au prochain tour, et elle frappe selon les cartes que tu tiens. */
+    SIGHT("VOYANCE"),
+    /** Il bénit une couleur : tes cartes de cette couleur en main sont fermées jusqu'à la fin de ton prochain tour. */
+    RELIC("RELIQUE"),
+    /** Un pèlerin de plus le suit, puis il frappe, plus fort par pèlerin ; un gros coup de ta part en chasse la moitié. */
+    PILGRIMAGE("PÈLERINAGE");
 
     /** Dégâts de base d'une Épée. */
     public static final int SWORD_DAMAGE   = 20;
@@ -317,6 +325,20 @@ public enum EnemySymbol {
     /** Avalanche : chaque couche de neige ajoute ce % à ses coups ; au plus tant de couches ; un coup d'au moins
      * cette part de ses PV max (en %) la fait fondre. */
     public static final int AVALANCHE_STEP_PERCENT = 50, AVALANCHE_MAX = 4, AVALANCHE_HIT_PERCENT = 2;
+    /**
+     * Serment de fer (Pèlerin de fer, chapitre 3, valeurs par défaut de Claude) : défense de base ajoutée par
+     * chaque Serment, avant la force, et Serments au plus sur le combat.
+     */
+    public static final int VOW_DEFENSE = 40, VOW_MAX = 6;
+    /** Voyance (Diseuse d'éclats) : cartes fermées, et part de l'Épée de son coup par carte que tu tiens, en %. */
+    public static final int SIGHT_LOCKS = 1, SIGHT_PERCENT_PER_CARD = 25;
+    /** Relique (Porteur de reliques) : cartes de la couleur bénie fermées au plus, et tours. */
+    public static final int RELIC_MAX_CARDS = 3, RELIC_TURNS = 1;
+    /**
+     * Pèlerinage (Prophète du Cratère) : attaque en plus par pèlerin, en % de l'Épée, pèlerins au plus, et coup
+     * (en % de ses PV max) qui en chasse la moitié.
+     */
+    public static final int PILGRIM_STEP_PERCENT = 35, PILGRIM_MAX = 5, PILGRIM_HIT_PERCENT = 3;
     /** Champagne glacé : soin, en % de ses PV max. */
     public static final int CHAMPAGNE_HEAL_PERCENT = 3;
 
@@ -503,6 +525,15 @@ public enum EnemySymbol {
             case WALTZ -> Lang.f("Valse : attaque de {0}, +1 % par % de PV qui te manque (+{1} % au plus)",
                 kind.hurt(kind.swordDamage(), hard), WALTZ_MAX_PERCENT);
             case SEAL -> Lang.f("Scellé : à ton prochain tour, tu joues {0} carte de moins (une au moins)", SEAL_PLAYS);
+            case IRON_VOW -> Lang.f("Serment : sa défense de base +{0}, jusqu'à la fin du combat ({1} Serments au plus). "
+                + "Déjà au plus, il se protège", kind.empowered(VOW_DEFENSE, hard), VOW_MAX);
+            case SIGHT -> Lang.f("Voyance : elle lit ta main. Ta plus forte carte est fermée jusqu'à la fin de ton prochain "
+                + "tour, et elle frappe de {0} par carte que tu tiens", kind.hurt(kind.swordDamage() * SIGHT_PERCENT_PER_CARD / 100, hard));
+            case RELIC -> Lang.f("Relique : il bénit la couleur que tu as le plus en main. Jusqu'à {0} cartes de cette couleur "
+                + "sont fermées jusqu'à la fin de ton prochain tour", RELIC_MAX_CARDS);
+            case PILGRIMAGE -> Lang.f("Pèlerinage : un pèlerin de plus le suit ({0} au plus), puis il frappe de {1}, +{2} % par "
+                + "pèlerin. Un coup d'au moins {3} % de ses PV max en chasse la moitié", PILGRIM_MAX,
+                kind.hurt(kind.swordDamage(), hard), PILGRIM_STEP_PERCENT, PILGRIM_HIT_PERCENT);
         };
     }
 

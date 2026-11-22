@@ -22,6 +22,11 @@ public enum Chapter {
             + "Ici, on ne se bat plus. On mise.",
         EnemyKind.CHEF, List.of(EnemyKind.TRICHEUR, EnemyKind.USURIER, EnemyKind.ROULETTE), EnemyKind.REINE,
         null, new Stats(200, 110, 100, 72, 100, 880, 2_500_000L, 1)),
+    PELERINS("Les Pèlerins de la Comète",
+        "Les Tables Sacrées sont tombées. Alors les foules se mirent en marche vers le cratère, pour toucher la lumière. "
+            + "Un prophète les mène. Il dit que la comète reviendra.",
+        EnemyKind.PASSEUR, List.of(EnemyKind.PELERIN_FER, EnemyKind.DISEUSE, EnemyKind.PORTEUR), EnemyKind.PROPHETE,
+        null, new Stats(250, 30, 120, 71, 300, 1_290, 4_500_000L, 1)),
     DERNIER_TIRAGE("Le Dernier Tirage",
         "La comète n'était pas tombée par hasard. Elle était le hasard. Au fond du cratère, quelque chose bat "
             + "encore. Celui qui le touche décidera du prochain tirage.",

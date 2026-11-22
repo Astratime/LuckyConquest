@@ -39,17 +39,18 @@ class EndlessRunTest {
             }
             assertEquals(Difficulty.endless(floor), run.getDifficulty());
         }
-        assertEquals(List.of(EnemyKind.COMETE, EnemyKind.REINE, EnemyKind.ECLAT, EnemyKind.COLLECTIONNEUR, EnemyKind.PRETENDANT,
-            EnemyKind.MAISON),
-            EndlessRun.BOSSES);
-        assertEquals(EnemyKind.COMETE, EndlessRun.bossOf(EndlessRun.BOSS_EVERY * (EndlessRun.BOSSES.size() + 1)), "les boss reviennent à tour de rôle");
+        assertEquals(List.of(EnemyKind.COMETE, EnemyKind.REINE, EnemyKind.PROPHETE, EnemyKind.ECLAT, EnemyKind.COLLECTIONNEUR,
+            EnemyKind.PRETENDANT,
+            EnemyKind.MAISON), EndlessRun.BOSSES);
+        assertEquals(EnemyKind.COMETE, EndlessRun.bossOf(EndlessRun.BOSS_EVERY * (EndlessRun.BOSSES.size() + 1)),
+            "les boss reviennent à tour de rôle");
     }
 
     @Test
     void theOriginalMachineIsNeverMet() {
         assertFalse(EndlessRun.ENEMIES.contains(EnemyKind.MACHINE_ORIGINELLE));
         assertFalse(EndlessRun.BOSSES.contains(EnemyKind.MACHINE_ORIGINELLE));
-        assertEquals(28, EndlessRun.ENEMIES.size(), "premiers ennemis et challengers des sept chapitres");
+        assertEquals(4 * Chapter.values().length, EndlessRun.ENEMIES.size(), "premiers ennemis et challengers de tous les chapitres");
     }
 
     @Test

@@ -222,7 +222,16 @@ public enum EnemySignature {
     DERNIERE_DANSE("Dernière danse", EnemySymbol.WALTZ, Timing.TURN,
         "Chaque Valse de ce tour lui rend {0} % de ses PV max", "VALSE +SOIN"),
     PARAPHE("Paraphe", EnemySymbol.SEAL, Timing.NEXT,
-        "Son prochain Scellé te retire 2 cartes", "SCELLÉ x2");
+        "Son prochain Scellé te retire 2 cartes", "SCELLÉ x2"),
+    // La Tour, chapitre 3 : Les Pèlerins de la Comète
+    SERMENT_SOLENNEL("Serment solennel", EnemySymbol.IRON_VOW, Timing.NOW,
+        "Il prête serment tout de suite : sa défense de base monte jusqu'à la fin du combat", "SERMENT +1"),
+    BOULE_DE_CRISTAL("Boule de cristal", EnemySymbol.SIGHT, Timing.NEXT,
+        "Sa prochaine Voyance ferme 2 cartes et frappe deux fois plus fort", "VOYANCE x2"),
+    AUTEL("Autel", EnemySymbol.RELIC, Timing.NEXT,
+        "Sa prochaine Relique bénit aussi ta deuxième couleur", "RELIQUE x2"),
+    PROCESSION("Procession", EnemySymbol.PILGRIMAGE, Timing.NOW,
+        "Un pèlerin le rejoint tout de suite", "PÈLERIN +1");
 
     /** Exemplaires de chaque carte propre dans le deck d'un ennemi (choix d'Astra). */
     public static final int COPIES = 4;

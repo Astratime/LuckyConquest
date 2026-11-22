@@ -28,6 +28,7 @@ public record BossTheme(Color skyTop, Color skyLow, Color ground, Color accent, 
             // ----- Tour des épreuves -----
             case COMETE -> tower("05071a", "2b1a4a", "0e0a12", "ffc93a", "LA COMÈTE S'ÉTEINT...");
             case REINE -> tower("1a0612", "5a0f2a", "12040c", "ff3a5a", "LA REINE PERD SA COURONNE");
+            case PROPHETE -> tower("0c0a1e", "3a2448", "1a1414", "ffd54a", "LE PROPHÈTE REJOINT SA COMÈTE");
             case ECLAT -> tower("080614", "2a1650", "0a0814", "7ae8ff", "L'ÉCLAT VOLE EN MILLE MORCEAUX");
             case COLLECTIONNEUR -> tower("0a0a1e", "32244a", "0e0a12", "fff6c8", "LA VITRINE DU COLLECTIONNEUR VOLE EN ÉCLATS");
             case PRETENDANT -> tower("06080f", "1c2440", "080a12", "c8d4ff", "LE PRÉTENDANT N'AURA JAMAIS LE TRÔNE");

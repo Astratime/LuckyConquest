@@ -592,7 +592,8 @@ public class EnemyTurnResolver {
             boolean done = actTowerOpening(symbol, i, events) || actTowerLate(symbol, events)
                 || actPortMinesCasino(symbol, events) || actFairDesert(symbol, events) || actExpress(symbol, events)
                 || actPalace(symbol, events) || actTemple(symbol, events) || actManor(symbol, events)
-                || actScatteredShards(symbol, events);
+                || actScatteredShards(symbol, events)
+                || actPilgrims(symbol, events);
             if (!done) throw new IllegalStateException("Symbole sans effet : " + symbol);
         }
 
@@ -1166,6 +1167,92 @@ public class EnemyTurnResolver {
                 }
             }
             return true;
+        }
+
+        /**
+         * Tour, chapitre 3 : Les Pèlerins de la Comète (Serment, Voyance, Relique, Pèlerinage).
+         *
+         * @return {@code false} si {@code symbol} n'est pas de cette famille
+         */
+        private boolean actPilgrims(EnemySymbol symbol, List<Event> events) {
+            switch (symbol) {
+                case IRON_VOW -> {
+                    if (enemy.addVow()) {
+                        events.add(new StatusEvent(Lang.f("SERMENT : SA DÉFENSE DE BASE +{0}",
+                            Lang.big(kind.fortified(EnemySymbol.VOW_DEFENSE, enemy.getDifficulty()))), EffectPopup.Style.DEFENSE));
+                    } else {
+                        events.add(turn.shield(kind.shieldDefense() + shieldBonus)); // déjà tous ses Serments : il se protège
+                    }
+                }
+                case SIGHT -> {
+                    boolean crystal = enemy.takeCharge(EnemySignature.BOULE_DE_CRISTAL);
+                    int held = player.getCurrentHand().size();
+                    List<String> locked = lockBest(EnemySymbol.SIGHT_LOCKS * (crystal ? 2 : 1), EnemySymbol.KEY_TURNS);
+                    if (!locked.isEmpty()) {
+                        events.add(new StatusEvent(Lang.f("VOYANCE : {0} FERMÉE", String.join(", ", locked)), EffectPopup.Style.DAMAGE));
+                    }
+                    long hit = (long) kind.swordDamage() * EnemySymbol.SIGHT_PERCENT_PER_CARD * Math.max(1, held) / 100 * (crystal ? 2 : 1);
+                    events.add(turn.strike((int) Math.min(Integer.MAX_VALUE, Math.max(1, hit))));
+                }
+                case RELIC -> {
+                    boolean altar = enemy.takeCharge(EnemySignature.AUTEL);
+                    List<Card.Suit> suits = heldSuits();
+                    List<String> blessed = new ArrayList<>();
+                    int left = EnemySymbol.RELIC_MAX_CARDS * (altar ? 2 : 1);
+                    for (int k = 0; k < Math.min(altar ? 2 : 1, suits.size()); k++) {
+                        Card.Suit suit = suits.get(k);
+                        for (Card card : new ArrayList<>(player.getCurrentHand())) {
+                            if (left <= 0) break;
+                            if (card.getSuit() == suit && player.steal(card, EnemySymbol.RELIC_TURNS)) left--;
+                        }
+                        blessed.add(suitPlural(suit));
+                    }
+                    events.add(blessed.isEmpty() ? turn.strike(kind.swordDamage()) // pas de carte de couleur en main : il frappe
+                        : new StatusEvent(Lang.f("RELIQUE : TES {0} SONT FERMÉS", String.join(", ", blessed)), EffectPopup.Style.DAMAGE));
+                }
+                case PILGRIMAGE -> {
+                    enemy.addPilgrim();
+                    int percent = 100 + EnemySymbol.PILGRIM_STEP_PERCENT * enemy.getPilgrims();
+                    events.add(new StatusEvent(Lang.n(enemy.getPilgrims(), "PÈLERINAGE : 1 PÈLERIN, +{1} %",
+                        "PÈLERINAGE : {0} PÈLERINS, +{1} %", enemy.getPilgrims(), percent - 100), EffectPopup.Style.ATTACK));
+                    events.add(turn.strike((int) Math.min(Integer.MAX_VALUE, (long) kind.swordDamage() * percent / 100)));
+                }
+                default -> {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        /** Ferme à clé les {@code count} plus fortes cartes de la main pour {@code turns} tours (Clé, Voyance). */
+        private List<String> lockBest(int count, int turns) {
+            List<String> locked = new ArrayList<>();
+            for (int k = 0; k < count; k++) {
+                Card best = null;
+                for (Card card : player.getCurrentHand()) if (best == null || keyStrength(card) > keyStrength(best)) best = card;
+                if (best == null) break;
+                if (player.steal(best, turns)) locked.add(best.getName().toUpperCase());
+            }
+            return locked;
+        }
+
+        /** @return le nom de la couleur {@code suit} au pluriel, en capitales (Relique : « TES PIQUES SONT FERMÉS »). */
+        private String suitPlural(Card.Suit suit) {
+            return switch (suit) {
+                case PIQUE   -> Lang.t("PIQUES");
+                case COEUR   -> Lang.t("COEURS");
+                case CARREAU -> Lang.t("CARREAUX");
+                case TREFLE  -> Lang.t("TRÈFLES");
+            };
+        }
+
+        /** @return les couleurs des cartes en main, de la plus tenue à la moins tenue (Relique). */
+        private List<Card.Suit> heldSuits() {
+            Map<Card.Suit, Integer> counts = new EnumMap<>(Card.Suit.class);
+            for (Card card : player.getCurrentHand()) if (card.getSuit() != null) counts.merge(card.getSuit(), 1, Integer::sum);
+            List<Card.Suit> suits = new ArrayList<>(counts.keySet());
+            suits.sort(Comparator.comparingInt((Card.Suit suit) -> -counts.get(suit)).thenComparingInt(Enum::ordinal));
+            return suits;
         }
 
         /** Prédiction : il annonce un symbole (deux avec le Tarot) pour le prochain tirage du joueur. */
@@ -1818,6 +1905,17 @@ public class EnemyTurnResolver {
                         events.add(new StatusEvent(Lang.f("COMPTE À REBOURS : PLUS QUE {0} TOURS", enemy.getTurnLimit()),
                             EffectPopup.Style.DAMAGE));
                     }
+                }
+                case SERMENT_SOLENNEL -> {
+                    if (enemy.addVow()) {
+                        events.add(new StatusEvent(Lang.t("SERMENT SOLENNEL : SA DÉFENSE DE BASE MONTE"), EffectPopup.Style.DEFENSE));
+                    }
+                }
+                case PROCESSION -> {
+                    enemy.addPilgrim();
+                    events.add(new StatusEvent(Lang.n(enemy.getPilgrims(), "PROCESSION : UN PÈLERIN LE SUIT",
+                        "PROCESSION : {0} PÈLERINS LE SUIVENT", enemy.getPilgrims()),
+                        EffectPopup.Style.SPECIAL));
                 }
                 case BOULE_DE_NEIGE -> {
                     enemy.addSnow();

@@ -30,7 +30,9 @@ import java.util.Map;
  *   <li>{@link #COMETE} : le boss du chapitre 1, qui reprend tout ;</li>
  *   <li>chapitre 2 : {@link #CHEF}, puis {@link #TRICHEUR} (Dés pipés), {@link #USURIER}
  *       (Intérêts) ou {@link #ROULETTE} (Zéro), et la {@link #REINE} ;</li>
- *   <li>chapitre 3 : la {@link #GARDIENNE}, puis {@link #MIROIR} (Reflet), {@link #HORLOGER}
+ *   <li>chapitre 3 : le {@link #PASSEUR}, puis {@link #PELERIN_FER} (Serment), {@link #DISEUSE} (Voyance) ou
+ *       {@link #PORTEUR} (Relique), et le {@link #PROPHETE} et ses pèlerins ;</li>
+ *   <li>chapitre 4 : la {@link #GARDIENNE}, puis {@link #MIROIR} (Reflet), {@link #HORLOGER}
  *       (Sablier) ou {@link #FOU} (Tapis), et l'{@link #ECLAT}, en deux phases ;</li>
  *   <li>les Éclats dispersés : le {@link #RAMASSEUR} (Éclat), puis l'{@link #HERITIER} (Héritage), la
  *       {@link #VEUVE} (Valse) ou le {@link #NOTAIRE} (Scellé), et le {@link #COLLECTIONNEUR}, en trois phases ;</li>
@@ -153,7 +155,55 @@ public enum EnemyKind {
         List.of(Card.Suit.TREFLE, Card.Suit.PIQUE, Card.Suit.CARREAU, Card.Suit.COEUR),
         List.of(Card.Suit.TREFLE, Card.Suit.COEUR, Card.Suit.PIQUE, Card.Suit.CARREAU)),
 
-    // ----- Chapitre 3 : Le Dernier Tirage -----
+    // ----- Chapitre 3 : Les Pèlerins de la Comète (Tour à 10 chapitres, 2026-11-22) -----
+
+    PASSEUR("Le Passeur du Gué", "PASSEUR",
+        "Il garde le seul gué vers le cratère. Il fait payer le passage, ramasse ta part et pipe les dés.",
+        30_000, 100, 25,
+        weights(EnemySymbol.SWORD, 2, EnemySymbol.SHIELD, 1, EnemySymbol.POTION, 1, EnemySymbol.TOLL, 1,
+            EnemySymbol.RAKE, 1, EnemySymbol.LOADED_DIE, 1),
+        deck(new int[] {3, 6, 9, 12, 14}, new int[] {4, 8, 12},
+            new int[] {5, 9, 13}, new int[] {3, 7, 11}),
+        List.of(Card.Suit.PIQUE, Card.Suit.TREFLE, Card.Suit.CARREAU, Card.Suit.COEUR),
+        List.of(Card.Suit.COEUR, Card.Suit.CARREAU, Card.Suit.PIQUE, Card.Suit.TREFLE)),
+
+    PELERIN_FER("Le Pèlerin de fer", "PÈLERIN DE FER",
+        "Il marche depuis des années dans son armure. À chaque Serment, il devient plus dur. Frappe-le tôt.",
+        50_000, 120, 10,
+        weights(EnemySymbol.IRON_VOW, 2, EnemySymbol.SWORD, 2, EnemySymbol.SHIELD, 1),
+        deck(new int[] {4, 8, 12}, new int[] {5, 11},
+            new int[] {3, 6, 9, 12, 14}, new int[] {6, 12}),
+        List.of(Card.Suit.CARREAU, Card.Suit.PIQUE, Card.Suit.TREFLE, Card.Suit.COEUR),
+        List.of(Card.Suit.CARREAU, Card.Suit.COEUR, Card.Suit.PIQUE, Card.Suit.TREFLE)),
+
+    DISEUSE("La Diseuse d'éclats", "DISEUSE",
+        "Elle lit l'avenir dans les éclats de la comète. Elle voit ta main. Plus tu tiens de cartes, plus elle frappe.",
+        50_000, 60, 15,
+        weights(EnemySymbol.SIGHT, 2, EnemySymbol.SWORD, 1, EnemySymbol.SHIELD, 1, EnemySymbol.POTION, 1),
+        deck(new int[] {3, 7, 11, 14}, new int[] {4, 9, 13},
+            new int[] {5, 10}, new int[] {4, 8, 12}),
+        List.of(Card.Suit.TREFLE, Card.Suit.PIQUE, Card.Suit.CARREAU, Card.Suit.COEUR),
+        List.of(Card.Suit.COEUR, Card.Suit.TREFLE, Card.Suit.CARREAU, Card.Suit.PIQUE)),
+
+    PORTEUR("Le Porteur de reliques", "PORTEUR",
+        "Il porte sur son dos les reliques de la comète. Chacune bénit une couleur. Tes cartes de cette couleur lui obéissent.",
+        50_000, 80, 15,
+        weights(EnemySymbol.RELIC, 2, EnemySymbol.SWORD, 2, EnemySymbol.SHIELD, 1),
+        deck(new int[] {3, 6, 9, 12}, new int[] {5, 11},
+            new int[] {4, 8, 12, 14}, new int[] {5, 10}),
+        List.of(Card.Suit.PIQUE, Card.Suit.CARREAU, Card.Suit.TREFLE, Card.Suit.COEUR),
+        List.of(Card.Suit.CARREAU, Card.Suit.COEUR, Card.Suit.PIQUE, Card.Suit.TREFLE)),
+
+    PROPHETE("Le Prophète du Cratère", "PROPHÈTE",
+        "Il mène les pèlerins vers la lumière. Plus ils sont nombreux, plus il frappe. Blessé, il appelle la comète.",
+        120_000, 120, 10,
+        weights(EnemySymbol.PILGRIMAGE, 2, EnemySymbol.SWORD, 2, EnemySymbol.SHIELD, 2, EnemySymbol.POTION, 1),
+        deck(new int[] {3, 6, 9, 12, 14}, new int[] {4, 8, 12, 14},
+            new int[] {5, 9, 13}, new int[] {4, 8, 12}),
+        List.of(Card.Suit.PIQUE, Card.Suit.CARREAU, Card.Suit.TREFLE, Card.Suit.COEUR),
+        List.of(Card.Suit.COEUR, Card.Suit.CARREAU, Card.Suit.PIQUE, Card.Suit.TREFLE)),
+
+    // ----- Chapitre 4 : Le Dernier Tirage -----
 
     GARDIENNE("Gardienne du Cratère", "GARDIENNE",
         "Elle veille au bord du cratère. Elle a appris des trois. Épines, Crocs et Rage.",
@@ -1248,6 +1298,14 @@ public enum EnemyKind {
         EnemySymbol.SHIELD, 3, EnemySymbol.MIRROR, 1, EnemySymbol.HOURGLASS, 1, EnemySymbol.ALL_IN, 1));
 
     /**
+     * Symboles du Prophète du Cratère dans sa deuxième phase (valeurs par défaut de Claude) : il appelle la Comète Dorée,
+     * qu'il a vue tomber, et ses pèlerins prêtent serment.
+     */
+    private static final Map<EnemySymbol, Integer> PROPHET_PHASE_TWO = Collections.unmodifiableMap(weights(
+        EnemySymbol.PILGRIMAGE, 2, EnemySymbol.SWORD, 1, EnemySymbol.SHIELD, 1, EnemySymbol.GOLDEN_COMET, 1,
+        EnemySymbol.IRON_VOW, 1));
+
+    /**
      * Symboles de la Maison sans sa Façade (plus de Boucliers ni de Mur porteur), puis sans
      * son Coffre (plus de Potions ni de Coffre-fort) : la Salle de jeu garde son Avantage.
      */
@@ -1609,7 +1667,7 @@ public enum EnemyKind {
     /** @return {@code true} pour le boss d'un chapitre ou le roi d'un donjon. */
     public boolean isBoss() {
         return switch (this) {
-            case COMETE, REINE, ECLAT, COLLECTIONNEUR, PRETENDANT, MAISON, MACHINE_ORIGINELLE, GRAND_CROUPIER, ROI_PIQUE, ROI_COEUR, ROI_CARREAU, ROI_TREFLE,
+            case COMETE, REINE, PROPHETE, ECLAT, COLLECTIONNEUR, PRETENDANT, MAISON, MACHINE_ORIGINELLE, GRAND_CROUPIER, ROI_PIQUE, ROI_COEUR, ROI_CARREAU, ROI_TREFLE,
                  CAPITAINE_RAT, TAVERNIER, GARDIEN_PHARE, CAPITAINE_NOIR,
                  MONSIEUR_LOYAL, CONDUCTEUR, ROUE_FORTUNE, ROI_FORAIN, EMIR, PHARAON, DJINN, DRAGON,
                  LOCOMOTIVE, GRAND_CHEF, DAME_EN_NOIR, DESPERADO,
@@ -1709,7 +1767,7 @@ public enum EnemyKind {
      * @return {@code true} s'il change de symboles sous {@link #PHASE_TWO_RATIO} de vie : l'Éclat
      *         Originel, et les rois de l'Exploration (ils gagnent un symbole, voir {@link #kingPhaseSymbol()})
      */
-    public boolean hasPhaseTwo() { return this == ECLAT || kingPhaseSymbol() != null; }
+    public boolean hasPhaseTwo() { return this == ECLAT || this == PROPHETE || kingPhaseSymbol() != null; }
 
     /**
      * Seuils de phase (choix d'Astra) : la part de ses PV max sous laquelle il ne descend
@@ -1807,6 +1865,7 @@ public enum EnemyKind {
             case MACHINE_ORIGINELLE -> Lang.t("ELLE TE VOLE UN ROULEAU !");
             case GRAND_CROUPIER -> phase == 2 ? Lang.t("IL TRUQUE TA TABLE !") : Lang.t("CARTES SUR TABLE !");
             case COMETE -> Lang.t("LA COMÈTE S'EMBRASE !");
+            case PROPHETE -> Lang.t("LA COMÈTE RÉPOND À SON APPEL : COMÈTE !");
             case REINE -> Lang.t("MISE ROYALE : SES TRÈFLES COMPTENT DOUBLE !");
             case ECLAT -> Lang.t("L'ÉCLAT SE FEND : NOUVEAUX SYMBOLES !");
             case ROI_PIQUE -> Lang.t("LAMES ASSOIFFÉES : CROC !");
@@ -1889,6 +1948,7 @@ public enum EnemyKind {
     /** @return les symboles de ses rouleaux et leur poids dans la phase {@code phase} (1 ou 2). */
     public Map<EnemySymbol, Integer> getWeights(int phase) {
         if (phase >= 2 && this == ECLAT) return ECLAT_PHASE_TWO;
+        if (phase >= 2 && this == PROPHETE) return PROPHET_PHASE_TWO;
         if (phase >= 2 && kingPhaseSymbol() != null) {
             Map<EnemySymbol, Integer> king = new LinkedHashMap<>(weights);
             king.merge(kingPhaseSymbol(), KING_PHASE_WEIGHT, Integer::sum);
@@ -1971,6 +2031,11 @@ public enum EnemyKind {
             case USURIER -> List.of(EnemySignature.TAUX_USURAIRE);
             case ROULETTE, PIEUVRE -> List.of(EnemySignature.BILLE_TRUQUEE);
             case REINE -> List.of(EnemySignature.MAIN_DE_LA_REINE);
+            case PASSEUR -> List.of(EnemySignature.COUP_DE_RATEAU, EnemySignature.DE_CHARGE);
+            case PELERIN_FER -> List.of(EnemySignature.SERMENT_SOLENNEL);
+            case DISEUSE -> List.of(EnemySignature.BOULE_DE_CRISTAL);
+            case PORTEUR -> List.of(EnemySignature.AUTEL);
+            case PROPHETE -> List.of(EnemySignature.PROCESSION, EnemySignature.QUEUE_DE_COMETE);
             case GARDIENNE -> List.of(EnemySignature.RONCES, EnemySignature.SAIGNEE, EnemySignature.PROVOCATION);
             case MIROIR -> List.of(EnemySignature.MIROIR_DEFORMANT);
             case HORLOGER -> List.of(EnemySignature.REMONTOIR);
