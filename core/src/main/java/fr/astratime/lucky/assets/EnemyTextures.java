@@ -112,11 +112,13 @@ public class EnemyTextures implements Disposable {
             if (grid == null) grid = PalacePortraits.of(kind);
             if (grid == null) grid = TemplePortraits.of(kind);
             if (grid == null) grid = ManorPortraits.of(kind);
+            if (grid == null) grid = PilgrimsArt.of(kind);
             if (grid == null) grid = RivalArt.of(kind);
             if (grid != null) addPortrait(kind, grid);
         }
         chapterArt.put(Chapter.GENESE, texture(EnemyPortraits.genesis(), false));
         chapterArt.put(Chapter.TABLES_SACREES, texture(Chapter2Art.tables(), false));
+        chapterArt.put(Chapter.PELERINS, texture(PilgrimsArt.pilgrims(), false));
         chapterArt.put(Chapter.DERNIER_TIRAGE, texture(Chapter3Art.crater(), false));
         chapterArt.put(Chapter.MONDE_SANS_MAITRE, texture(Chapter456Art.worldWithoutMaster(), false));
         chapterArt.put(Chapter.LA_MAISON, texture(Chapter456Art.house(), false));
@@ -473,6 +475,10 @@ public class EnemyTextures implements Disposable {
             case CURSE          -> ManorArt.curse();
             case SHROUD         -> ManorArt.shroud();
             case STRINGS        -> ManorArt.strings();
+            case IRON_VOW       -> PilgrimsArt.ironVow();
+            case SIGHT          -> PilgrimsArt.sight();
+            case RELIC          -> PilgrimsArt.relic();
+            case PILGRIMAGE     -> PilgrimsArt.pilgrimage();
             case BINGO_LIGHT    -> bingoLightGrid();
         };
     }
@@ -573,8 +579,15 @@ public class EnemyTextures implements Disposable {
         return texture(croupierGrid(), false);
     }
 
-    /** @return la texture de la grille ({@code flash} : silhouette toute blanche). */
-    private static Texture texture(int[][] g, boolean flash) {
+    /**
+     * @return le Prophète du Cratère en deux morceaux, pour sa mort : son auréole seule ({@code halo}) ou lui sans
+     *         elle, à la même taille que son portrait ; à libérer par l'appelant
+     */
+    public static Pixmap newProphetPart(boolean halo) {
+        return pixmap(PilgrimsArt.prophete(halo ? PilgrimsArt.PROPHET_HALO : PilgrimsArt.PROPHET_WITHOUT_HALO), false);
+    }
+
+    private static Pixmap pixmap(int[][] g, boolean flash) {
         Pixmap pixmap = new Pixmap(g[0].length, g.length, Pixmap.Format.RGBA8888);
         pixmap.setBlending(Pixmap.Blending.None);
         for (int y = 0; y < g.length; y++) {
@@ -583,6 +596,12 @@ public class EnemyTextures implements Disposable {
                 pixmap.drawPixel(x, y, color == 0 ? 0 : flash ? 0xffffffff : color);
             }
         }
+        return pixmap;
+    }
+
+    /** @return la texture de la grille ({@code flash} : silhouette toute blanche). */
+    private static Texture texture(int[][] g, boolean flash) {
+        Pixmap pixmap = pixmap(g, flash);
         Texture texture = new Texture(pixmap);
         pixmap.dispose();
         return texture;

@@ -330,14 +330,15 @@ public abstract class BossScene extends Cutscene {
         batch.draw(region, rx, ry, footX - rx, footY - ry, w, h, 1f, 1f, poseTilt);
     }
 
-    /** @return l'abscisse à l'écran du pixel {@code px} du portrait (avec son geste). */
+    /** @return l'abscisse à l'écran du pixel {@code px} du portrait (avec son geste et son étirement). */
     protected float portraitX(float px) {
-        return bossX() + poseX + (px - boss.getRegionWidth() / 2f) * bossScale() * poseScale;
+        return bossX() + poseX + (px - boss.getRegionWidth() / 2f) * bossScale() * poseScale * (1f - poseStretch * 0.5f);
     }
 
-    /** @return l'ordonnée à l'écran du pixel {@code py} du portrait, compté depuis le haut (avec son geste). */
+    /** @return l'ordonnée à l'écran du pixel {@code py} du portrait, compté depuis le haut (avec son geste, son étirement et sa descente). */
     protected float portraitY(float py) {
-        return bossBottom() + poseY + (boss.getRegionHeight() - py) * bossScale() * poseScale;
+        int rows = Math.max(1, Math.round(boss.getRegionHeight() * (1f - MathUtils.clamp(poseSink, 0f, 1f))));
+        return bossBottom() + poseY + (rows - py) * bossScale() * poseScale * (1f + poseStretch);
     }
 
     private static final int[] CAP_INSETS = {0, 1, 3};
