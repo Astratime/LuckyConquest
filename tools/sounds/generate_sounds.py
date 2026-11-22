@@ -3007,5 +3007,22 @@ def main(prefixes):
         sys.exit(f'Aucun son ne correspond à {prefixes}')
 
 
+# --- Tour, chapitre 3 : Les Pèlerins de la Comète (Tour à 10 chapitres, 2026-11-22) ---
+
+@sound('cutscene/king_prophete', -17)
+def king_prophete():
+    """Le Prophète du Cratère : la route de nuit, il monte sur son rocher (0,4 s), les pèlerins s'agenouillent (2 s),
+    il lève son bâton et la comète passe (3,4 s)."""
+    prelude = [(ambience(2.0, 150, 700, 0.3), 0.0, 0.5), (drone(['D2', 'A2'], 2.0), 0.0, 0.3)]
+    entrance = Track(5.0)
+    entrance.add(whoosh(1.0, 120, 700, q=0.8), 0.4, 0.4)
+    entrance.add(thump(110, 45, 0.3), 2.0, 0.5)
+    entrance.add(rustle(0.8), 2.0, 0.3)
+    gesture = [(whoosh(1.6, 300, 2400, q=1.2), 3.0, 0.6), (bell_toll(hz('D3'), 2.4), 3.4, 0.5),
+               (modal(hz('A5'), 2.0, GLASS_RATIOS, [1.0, 0.6, 0.4, 0.3]), 3.45, 0.3),
+               (brass_chord(['D3', 'F#3', 'A3', 'D4'], 1.4, 0.5), 3.5, 0.5)]
+    return king(prelude, reverb(entrance.buf, wet=0.35, size=1.8), gesture)
+
+
 if __name__ == '__main__':
     main(sys.argv[1:])

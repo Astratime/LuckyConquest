@@ -61,6 +61,10 @@ public class Enemy {
     private       int         pressure;
     /** Couches de neige de son Avalanche (Palace des Neiges), de 0 à {@link EnemySymbol#AVALANCHE_MAX}. */
     private       int         snow;
+    /** Serments du Pèlerin de fer (Tour, chapitre 3) : sa défense de base grandit d'autant, de 0 à {@link EnemySymbol#VOW_MAX}. */
+    private       int         vows;
+    /** Pèlerins qui suivent le Prophète du Cratère (Tour, chapitre 3), de 0 à {@link EnemySymbol#PILGRIM_MAX}. */
+    private       int         pilgrims;
     /** Karma (Temple du Destin) : Bingos du joueur gardés pour être renvoyés, de 0 à {@link EnemySymbol#KARMA_MAX}. */
     private       int         karma;
     /** Présage (Temple du Destin) : le symbole annoncé n'est pas sorti au dernier tirage, ses attaques de ce tour montent. */
@@ -197,6 +201,7 @@ public class Enemy {
         if (hourglass > 0 && lost * 1000L >= maxHp * EnemySymbol.HOURGLASS_HIT_PER_MILLE) hourglass--;
         if (pressure > 0 && lost * 1000L >= maxHp * EnemySymbol.PRESSURE_HIT_PER_MILLE) pressure--; // un gros coup fait baisser la Pression
         if (snow > 0 && lost * 100L >= maxHp * EnemySymbol.AVALANCHE_HIT_PERCENT) snow = 0; // un gros coup fait fondre l'Avalanche
+        if (pilgrims > 0 && lost * 100L >= maxHp * EnemySymbol.PILGRIM_HIT_PERCENT) pilgrims /= 2; // un gros coup chasse la moitié des pèlerins
         if (hp <= 0 && shroudArmed) { // Linceul : il se relève, une fois par combat
             shroudArmed = false;
             shroudUsed = true;
@@ -574,6 +579,26 @@ public class Enemy {
     /** Son Avalanche fond : il repart de zéro. */
     public void meltSnow() { snow = 0; }
 
+    /** @return ses Serments (Pèlerin de fer) : chacun ajoute {@link EnemySymbol#VOW_DEFENSE} à sa défense de base, avant sa force. */
+    public int getVows() { return vows; }
+
+    /**
+     * Un Serment de plus, {@link EnemySymbol#VOW_MAX} au plus.
+     *
+     * @return {@code false} s'il en avait déjà le plus
+     */
+    public boolean addVow() {
+        if (vows >= EnemySymbol.VOW_MAX) return false;
+        vows++;
+        return true;
+    }
+
+    /** @return les pèlerins qui suivent le Prophète du Cratère (chacun ajoute {@link EnemySymbol#PILGRIM_STEP_PERCENT} % à son Pèlerinage). */
+    public int getPilgrims() { return pilgrims; }
+
+    /** Un pèlerin de plus le suit, {@link EnemySymbol#PILGRIM_MAX} au plus. */
+    public void addPilgrim() { pilgrims = Math.min(EnemySymbol.PILGRIM_MAX, pilgrims + 1); }
+
     /** Karma : le joueur a fait un Bingo, il le garde ({@link EnemySymbol#KARMA_MAX} au plus). */
     public void addKarma() { karma = Math.min(EnemySymbol.KARMA_MAX, karma + 1); }
 
@@ -823,7 +848,11 @@ public class Enemy {
     /** @return la part des dégâts du joueur que renverront ses Épines, en %. */
     public int    getThornsPercent() { return thornsPercent; }
     /** @return sa défense de base, reformée à chacun de ses tours. */
-    public int    getBaseDefense() { return kind.has(EnemyTrait.FALLING_FACADE) && phase >= 2 ? 0 : kind.getBaseDefense(hard); }
+    public int    getBaseDefense() {
+        if (kind.has(EnemyTrait.FALLING_FACADE) && phase >= 2) return 0;
+        int base = kind.getBaseDefense(hard);
+        return vows == 0 ? base : (int) Math.min(Integer.MAX_VALUE, base + (long) kind.fortified(EnemySymbol.VOW_DEFENSE, hard) * vows);
+    }
     /** @return le nom affiché de l'ennemi. */
     public String getName()        { return name; }
     /** @return les points de vie actuels. */

@@ -212,7 +212,17 @@ public enum EnemySignature {
     FIL_DE_SOIE("Fil de soie", EnemySymbol.STRINGS, Timing.NEXT,
         "Ses prochains Fils te font jouer 2 cartes", "FILS x2"),
     DERNIER_ACTE("Dernier acte", EnemySymbol.STRINGS, Timing.NOW,
-        "Fils tout de suite : il choisira une de tes cartes, et tu la joueras", "FILS");
+        "Fils tout de suite : il choisira une de tes cartes, et tu la joueras", "FILS"),
+
+    // La Tour, chapitre 3 : Les Pèlerins de la Comète
+    SERMENT_SOLENNEL("Serment solennel", EnemySymbol.IRON_VOW, Timing.NOW,
+        "Il prête serment tout de suite : sa défense de base monte jusqu'à la fin du combat", "SERMENT +1"),
+    BOULE_DE_CRISTAL("Boule de cristal", EnemySymbol.SIGHT, Timing.NEXT,
+        "Sa prochaine Voyance ferme 2 cartes et frappe deux fois plus fort", "VOYANCE x2"),
+    AUTEL("Autel", EnemySymbol.RELIC, Timing.NEXT,
+        "Sa prochaine Relique bénit aussi ta deuxième couleur", "RELIQUE x2"),
+    PROCESSION("Procession", EnemySymbol.PILGRIMAGE, Timing.NOW,
+        "Un pèlerin le rejoint tout de suite", "PÈLERIN +1");
 
     /** Exemplaires de chaque carte propre dans le deck d'un ennemi (choix d'Astra). */
     public static final int COPIES = 4;

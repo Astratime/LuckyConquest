@@ -112,11 +112,13 @@ public class EnemyTextures implements Disposable {
             if (grid == null) grid = PalacePortraits.of(kind);
             if (grid == null) grid = TemplePortraits.of(kind);
             if (grid == null) grid = ManorPortraits.of(kind);
+            if (grid == null) grid = PilgrimsArt.of(kind);
             if (grid == null) grid = RivalArt.of(kind);
             if (grid != null) addPortrait(kind, grid);
         }
         chapterArt.put(Chapter.GENESE, texture(EnemyPortraits.genesis(), false));
         chapterArt.put(Chapter.TABLES_SACREES, texture(Chapter2Art.tables(), false));
+        chapterArt.put(Chapter.PELERINS, texture(PilgrimsArt.pilgrims(), false));
         chapterArt.put(Chapter.DERNIER_TIRAGE, texture(Chapter3Art.crater(), false));
         chapterArt.put(Chapter.MONDE_SANS_MAITRE, texture(Chapter456Art.worldWithoutMaster(), false));
         chapterArt.put(Chapter.LA_MAISON, texture(Chapter456Art.house(), false));
@@ -473,6 +475,10 @@ public class EnemyTextures implements Disposable {
             case CURSE          -> ManorArt.curse();
             case SHROUD         -> ManorArt.shroud();
             case STRINGS        -> ManorArt.strings();
+            case IRON_VOW       -> PilgrimsArt.ironVow();
+            case SIGHT          -> PilgrimsArt.sight();
+            case RELIC          -> PilgrimsArt.relic();
+            case PILGRIMAGE     -> PilgrimsArt.pilgrimage();
             case BINGO_LIGHT    -> bingoLightGrid();
         };
     }
