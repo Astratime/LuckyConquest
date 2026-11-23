@@ -3963,5 +3963,17 @@
   "Vide {0} en Exploration difficile pour l'acheter.": "Clear {0} in hard Exploration to buy it.",
   "Exploration difficile : {0}": "Hard Exploration: {0}",
   "Difficile": "Hard",
-  "{0}\n{1}": "{0}\n{1}"
+  "{0}\n{1}": "{0}\n{1}",
+  "Menue monnaie": "Small Change",
+  "Les petites cartes, du 2 au 8 : elles se suivent facilement, et plus tu en joues, plus elles frappent.": "Small cards, from 2 to 8: they follow each other easily, and the more you play, the harder they hit.",
+  "Attaque +{0} % par carte de 2 à 8 jouée ce tour (celle-ci comprise).": "Attack +{0}% for each card from 2 to 8 played this turn (this one included).",
+  "MENUE MONNAIE": "SMALL CHANGE",
+  "MENUE MONNAIE : ATTAQUE +{0} %": "SMALL CHANGE: ATTACK +{0}%",
+  "Piécette": "Penny",
+  "Monnaie rendue": "Change Back",
+  "Bourse de cuivre": "Copper Purse",
+  "Pile de pièces": "Coin Stack",
+  "Rouleau de pièces": "Coin Roll",
+  "Escarcelle": "Belt Pouch",
+  "Bas de laine": "Nest Egg"
 }

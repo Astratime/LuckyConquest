@@ -73,6 +73,7 @@ FAMILIES = {
     'arch_cour':      ('#fdeef0', '#f0b4bc', '#b0606e'),   # velours royal
     'arch_revenant':  ('#eef0f8', '#c4c8dc', '#7c809c'),   # brume
     'arch_horloger':  ('#fbf0e0', '#e4c494', '#a47a44'),   # laiton
+    'arch_monnaie':   ('#fdf0e6', '#f0bc94', '#b0704a'),   # cuivre (2026-11-23)
     # --- cartes à usure (2026-11-14) ---
     'usure':          ('#fff4ea', '#f0cca4', '#b48a60'),   # cire
 }
@@ -123,6 +124,9 @@ CARD_FAMILY = {
     'bougie': 'usure', 'graine': 'usure', 'pile_ou_face': 'usure',
     'cle_de_remontage': 'arch_horloger', 'coucou': 'arch_horloger', 'grande_aiguille': 'arch_horloger',
     'douze_coups': 'arch_horloger',
+    'piecette': 'arch_monnaie', 'bas_de_laine': 'arch_monnaie', 'monnaie_rendue': 'arch_monnaie',
+    'bourse_de_cuivre': 'arch_monnaie', 'pile_de_pieces': 'arch_monnaie', 'rouleau_de_pieces': 'arch_monnaie',
+    'escarcelle': 'arch_monnaie',
     # cartes des rois (2026-11-14) : la couleur du donjon de leur roi
     'roi_provocation': 'pique', 'roi_taux_usuraire': 'trefle', 'roi_saignee': 'coeur', 'roi_ronces': 'carreau',
     'roi_roulement_de_tambour': 'chapiteau', 'roi_tunnel_sans_fin': 'train_fantome', 'roi_roue_lestee': 'grande_roue',

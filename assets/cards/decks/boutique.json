@@ -102,5 +102,12 @@
   { "id": "roi_usure", "price": 33000000000, "king": "EMIR" },
   { "id": "roi_momification", "price": 33000000000, "king": "PHARAON" },
   { "id": "roi_fata_morgana", "price": 33000000000, "king": "DJINN" },
-  { "id": "roi_braise", "price": 33000000000, "king": "DRAGON" }
+  { "id": "roi_braise", "price": 33000000000, "king": "DRAGON" },
+  { "id": "piecette", "price": 300000000 },
+  { "id": "monnaie_rendue", "price": 300000000 },
+  { "id": "bas_de_laine", "price": 700000000 },
+  { "id": "pile_de_pieces", "price": 700000000 },
+  { "id": "bourse_de_cuivre", "price": 4000000000 },
+  { "id": "rouleau_de_pieces", "price": 11000000000 },
+  { "id": "escarcelle", "price": 11000000000 }
 ]

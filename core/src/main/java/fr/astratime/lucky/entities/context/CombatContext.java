@@ -77,6 +77,7 @@ public class CombatContext {
     private int   goldenHearts  = 0;  // Cœur d'or : les gains du tirage frappent aussi l'ennemi
     // ----- Archétypes du Valet à l'As (Cour royale) -----
     private int   courtLadyPercent = 0;  // Dame de cour : attaque en plus par combinaison formée, en %
+    private int   smallChangePercent = 0; // Menue monnaie : attaque en plus par petite carte (2 à 8) jouée, en %
     private float royalFlushFactor = 1f; // Quinte royale : attaque multipliée si Suite et Couleur sont formées
     private int   sceptrePercent   = 0;  // Sceptre du roi : part du multiplicateur des combinaisons gardée au tirage suivant, en %
     // ----- Archétypes de deck -----
@@ -315,6 +316,12 @@ public class CombatContext {
     public void addCourtLady(int percent) { courtLadyPercent += percent; }
     /** @return l'attaque en plus par combinaison formée ce tour, en % (0 : aucune Dame de cour). */
     public int getCourtLadyPercent() { return courtLadyPercent; }
+
+    /** Menue monnaie : +{@code percent} % d'attaque par petite carte (2 à 8) jouée ce tour. */
+    public void addSmallChange(int percent) { smallChangePercent += percent; }
+
+    /** @return l'attaque en plus par petite carte jouée ce tour, en % (Menue monnaie). */
+    public int getSmallChangePercent() { return smallChangePercent; }
 
     /** Quinte royale : si Suite et Couleur sont formées ce tour, l'attaque est multipliée par {@code factor}. */
     public void addRoyalFlush(float factor) { royalFlushFactor *= factor; }
