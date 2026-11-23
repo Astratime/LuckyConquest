@@ -1,9 +1,11 @@
 package fr.astratime.lucky.progress;
 
 import fr.astratime.lucky.entities.Symbol;
+import fr.astratime.lucky.entities.exploration.Place;
 import fr.astratime.lucky.i18n.Lang;
 
 import java.util.Collections;
+import java.util.EnumMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -16,25 +18,38 @@ public final class ReelShop {
 
     private static final Map<Symbol, Long> PRICES = new LinkedHashMap<>();
 
+    /**
+     * Rouleaux réservés à l'Exploration difficile (Astra, 2026-11-23) : le lieu à vider en difficile avant de pouvoir
+     * les acheter. Leur prix suit les pièces d'une descente difficile, pas celles du mode normal.
+     */
+    private static final Map<Symbol, Place> HARD_GATES = new EnumMap<>(Symbol.class);
+
     static {
-        // Prix selon la note de force (Astra, 2026-11-05), recalés au simulateur le 2026-11-13 : 20 descentes du rang
-        // de la note (4 = 200 M … 10 = 160 Md), voir analyses/trefle_bonne_etoile_2026-11-13/
-        PRICES.put(Symbol.HORSESHOE,     200_000_000L);
-        PRICES.put(Symbol.ECU,           200_000_000L);
-        PRICES.put(Symbol.PIGGY_BANK,    200_000_000L);
-        PRICES.put(Symbol.HEART,         1_300_000_000L);
-        PRICES.put(Symbol.SPIKED_SHIELD, 1_300_000_000L);
-        PRICES.put(Symbol.FANGS,         2_500_000_000L);
-        PRICES.put(Symbol.DIE,           2_500_000_000L);
-        PRICES.put(Symbol.MOON,          2_500_000_000L);
-        PRICES.put(Symbol.STAR,          2_500_000_000L);
-        PRICES.put(Symbol.SCYTHE,        2_500_000_000L);
-        PRICES.put(Symbol.SWORD,         7_000_000_000L);
-        PRICES.put(Symbol.CROWN,         7_000_000_000L);
-        PRICES.put(Symbol.BOMB,          33_000_000_000L);
-        PRICES.put(Symbol.DEMON_KING,    160_000_000_000L);
-        PRICES.put(Symbol.LUCK_APOSTLE,  160_000_000_000L);
+        // Prix selon la note de force (Astra, 2026-11-05), recalés au simulateur le 2026-11-23 après les 10 lieux :
+        // ~20 descentes du joueur moyen du rang de la note (4 Flambeur = 300 M, 5 Habitué = 700 M, 6 Requin = 4 Md,
+        // 7 Gros bonnet = 11 Md, 8 Magnat = 130 Md), voir analyses/prix_boutique_2026-11-23/
+        PRICES.put(Symbol.HORSESHOE,     300_000_000L);
+        PRICES.put(Symbol.ECU,           300_000_000L);
+        PRICES.put(Symbol.PIGGY_BANK,    300_000_000L);
+        PRICES.put(Symbol.HEART,         700_000_000L);
+        PRICES.put(Symbol.SPIKED_SHIELD, 700_000_000L);
+        PRICES.put(Symbol.FANGS,         4_000_000_000L);
+        PRICES.put(Symbol.DIE,           4_000_000_000L);
+        PRICES.put(Symbol.MOON,          4_000_000_000L);
+        PRICES.put(Symbol.STAR,          4_000_000_000L);
+        PRICES.put(Symbol.SCYTHE,        4_000_000_000L);
+        PRICES.put(Symbol.SWORD,         11_000_000_000L);
+        PRICES.put(Symbol.CROWN,         11_000_000_000L);
+        PRICES.put(Symbol.BOMB,          130_000_000_000L);
+        // Réservés au difficile (2026-11-23) : le Rapide de Minuit vidé en difficile, ~20 à 30 descentes difficiles.
+        PRICES.put(Symbol.DEMON_KING,    20_000_000_000_000L);
+        PRICES.put(Symbol.LUCK_APOSTLE,  20_000_000_000_000L);
+        HARD_GATES.put(Symbol.DEMON_KING,   Place.RAPIDE);
+        HARD_GATES.put(Symbol.LUCK_APOSTLE, Place.RAPIDE);
     }
+
+    /** @return le lieu à vider en Exploration difficile avant d'acheter {@code symbol}, ou {@code null} s'il est libre. */
+    public static Place getHardGate(Symbol symbol) { return HARD_GATES.get(symbol); }
 
     /** @return les rouleaux en vente et leur prix, dans l'ordre d'affichage. */
     public static Map<Symbol, Long> getPrices() { return Collections.unmodifiableMap(PRICES); }

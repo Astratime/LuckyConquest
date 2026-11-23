@@ -290,9 +290,16 @@ public class PreparationResolver {
      */
     private static void applyCombos(TurnContext turnContext, Player player, boolean icy) {
         CombatContext combat = turnContext.getCombatContext();
+        int seized = player.getLastingEffects().takeComboSeizures(); // Saisie du Croupier : moitié par saisie
         List<Combo> combos = Combo.formed(player.getPlayedCards());
         if (combos.isEmpty()) return;
         float total = Combo.totalFactor(combos) + combat.getComboBonus() * combos.size(); // Chope
+        if (seized > 0) {
+            float full = total;
+            total = Math.max(1f, total / (1 << Math.min(seized, 10)));
+            turnContext.addEvent(new StatusEvent(Lang.f("SAISIE : COMBINAISONS x{0} AU LIEU DE x{1}", factor(total),
+                factor(full)), EffectPopup.Style.DAMAGE));
+        }
         String names = combos.stream().map(Combo::getDisplayName).collect(Collectors.joining(" + "));
         combat.multiplyGains(total, names);
         // Verglas (Palace des Neiges) : un tour sur deux, l'attaque ne prend que la moitié de la Puissance des combinaisons.

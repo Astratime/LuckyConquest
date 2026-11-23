@@ -1278,7 +1278,7 @@ public enum EnemyKind {
     // ----- Boss secret : le Croupier, ouvert après le Désert de Braise et le chapitre 6 difficile -----
 
     GRAND_CROUPIER("Le Croupier", "LE CROUPIER",
-        "Il t'a tout appris. Il tient toutes les machines. Il joue avec ton deck. Blessé, il truque ta table. "
+        "Il t'a tout appris. Il tient toutes les machines. Il joue avec ton deck et saisit tes bonus. Blessé, il truque ta table. "
             + "Presque vaincu, il joue cartes sur table.",
         2_000_000, 150, 2,
         weights(EnemySymbol.SWORD, 2, EnemySymbol.SHIELD, 1, EnemySymbol.POTION, 1, EnemySymbol.RAGE, 1,
@@ -1293,11 +1293,26 @@ public enum EnemyKind {
      * boss du mode sans fin à l'étage 5 (force x351, 18 Md PV) : force x360, 20 Md PV, tirage à 5 000.
      * Modèle de Puissance (2026-11-18) : PV x0,05 comme le mode sans fin, 1 Md.
      */
-    public static final long CROUPIER_HP = 1_000_000_000L;
-    public static final int  CROUPIER_POWER = 36_000;
+    public static final long CROUPIER_HP = 250_000_000L;
+    /**
+     * Astra, 2026-11-23 : le Croupier doit être gagnable par un joueur qui a tout (Légende, Prestige X) environ 3 fois
+     * sur 10 au simulateur (moyenne de 10 profils). Avant : force x360, 1 Md PV, 0 %. Avec x215, 250 M PV, les soins
+     * de l'Histoire difficile ({@link #HARD_STORY_MAX_HEAL_PERCENT}) et ses Saisies ({@link #CROUPIER_SEIZE_PERCENT}) :
+     * environ 30 % (deck Malin 0-5 %, Carreau 60-75 %).
+     */
+    public static final int  CROUPIER_POWER = 21_500;
     public static final int  CROUPIER_SPIN_COST = 5_000;
     /** Phase 2 du Croupier : chaque table truquée tient ce nombre de tirages du joueur. */
     public static final int  CROUPIER_RIG_TURNS = 2;
+    /**
+     * Saisie du Croupier (Astra, 2026-11-23 : il doit pouvoir s'en prendre aux bonus du joueur) : au début de chacun
+     * de ses tours, il saisit ton bonus le plus rempli (Coffre, Lames, Sang, Bonne étoile) et en prend ce %, ou, si tes
+     * cartes ont formé une combinaison et que tes jauges sont presque vides, il fait compter tes combinaisons à moitié
+     * à ton prochain tour. En phase 3, il saisit deux bonus.
+     */
+    public static final int CROUPIER_SEIZE_PERCENT = 50;
+    /** Jauge en dessous de laquelle (part de son maximum) le Croupier préfère saisir tes combinaisons. */
+    public static final double CROUPIER_SEIZE_COMBO_FILL = 0.25;
     /** Phase 3 du Croupier : il voit ta main et joue cette carte de plus à chaque tour. */
     public static final int  CROUPIER_OPEN_PLAYS = 1;
 
@@ -1344,6 +1359,11 @@ public enum EnemyKind {
     public static final int ENDLESS_SPIN_COST = 5_000;
     /** PV de base d'un ennemi et d'un boss du mode sans fin, avant l'étage (chapitre 6 difficile : boss 500 M). */
     static final long ENDLESS_ENEMY_HP = 250_000_000L, ENDLESS_BOSS_HP = 500_000_000L; // x0,05 (Puissance, 2026-11-18)
+    /**
+     * Force de départ du mode sans fin, avant l'étage : l'ancienne force de la Machine Originelle difficile (x192),
+     * gardée quand elle est passée à x130 (2026-11-23).
+     */
+    static final int ENDLESS_BASE_POWER = 19_200;
     /** Force et PV plafonnés, pour que les calculs restent justes aux étages extrêmes. */
     static final int ENDLESS_MAX_POWER = 1_000_000_000;
     static final long ENDLESS_MAX_HP = Long.MAX_VALUE / 1_000;
@@ -1355,7 +1375,7 @@ public enum EnemyKind {
 
     /** @return la force des ennemis de l'étage {@code floor} du mode sans fin, en %. */
     public static int endlessPower(int floor) {
-        return (int) Math.min(ENDLESS_MAX_POWER, Math.round(Chapter.last().getStats().hardPower() * endlessFactor(floor)));
+        return (int) Math.min(ENDLESS_MAX_POWER, Math.round(ENDLESS_BASE_POWER * endlessFactor(floor)));
     }
 
     /** @return les PV d'un ennemi (ou d'un boss) de l'étage {@code floor} du mode sans fin. */
@@ -1823,8 +1843,33 @@ public enum EnemyKind {
      */
     public static final int MAX_HEAL_PERCENT = 5;
 
+    /**
+     * Soin le plus fort d'un ennemi de l'Histoire difficile et du Croupier, en % de ses PV max (Astra, 2026-11-23). Leur
+     * force (x6 à x192) mettait chaque soin au plafond de 5 % : le Croupier rendait 10 % de ses PV par tour, plus que ce
+     * qu'un joueur au Prestige X lui retire.
+     */
+    public static final int HARD_STORY_MAX_HEAL_PERCENT = 1;
+
     /** @return {@code percent} ramené à {@link #MAX_HEAL_PERCENT} au plus (le soin qu'il rend vraiment). */
     public static float cappedHeal(float percent) { return Math.min(percent, MAX_HEAL_PERCENT); }
+
+    /** @return le plus fort soin qu'il se donne, en % de ses PV max : 1 % dans l'Histoire difficile et pour le Croupier, 5 % ailleurs. */
+    public int maxHealPercent(Difficulty hard) {
+        return isHardStory(hard) ? HARD_STORY_MAX_HEAL_PERCENT : MAX_HEAL_PERCENT;
+    }
+
+    /** @return {@code percent} ramené à son {@linkplain #maxHealPercent(Difficulty) plus fort soin}. */
+    public float cappedHeal(float percent, Difficulty hard) { return Math.min(percent, maxHealPercent(hard)); }
+
+    /** @return {@code true} pour le Croupier, et pour un ennemi de l'Histoire en mode difficile (pas le mode sans fin). */
+    public boolean isHardStory(Difficulty hard) {
+        return this == GRAND_CROUPIER || hard.hard() && !hard.isEndless() && isTower();
+    }
+
+    /** @return la part des PV max du joueur que fait tomber une Comète Dorée : 2 % dans l'Histoire difficile, 5 % ailleurs. */
+    public int goldenCometPercent(Difficulty hard) {
+        return isHardStory(hard) ? EnemySymbol.HARD_GOLDEN_COMET_PERCENT : EnemySymbol.GOLDEN_COMET_PERCENT;
+    }
 
     /** @return les points de vie que rend une Potion renforcée de {@code bonusPercent} (Cœurs), en % de ses PV max. */
     public float potionPercent(int bonusPercent, Difficulty hard) {

@@ -1,7 +1,6 @@
 package fr.astratime.lucky.animations.cutscenes;
 
 import com.badlogic.gdx.graphics.Color;
-import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.Interpolation;
@@ -10,7 +9,6 @@ import com.badlogic.gdx.utils.Array;
 import fr.astratime.lucky.assets.StoryPortraits;
 import fr.astratime.lucky.entities.enemy.EnemyKind;
 import fr.astratime.lucky.entities.enemy.EnemySymbol;
-import fr.astratime.lucky.views.FrontScene;
 
 import static fr.astratime.lucky.assets.Palette.hex;
 
@@ -802,21 +800,21 @@ final class TowerBossScenes {
     // -------------------------------------------------------------------------
 
     /**
-     * Socle des scènes de la Maison, devant le vrai décor de son chapitre : la salle du coffre, rideaux rouges,
-     * lustres, et la grande porte ronde du coffre au mur. {@link #evil} y jette une lumière rouge et des braises,
-     * {@link #holy} des rayons de lumière et des plumes.
+     * Socle des scènes de la Maison, dans son décor angélique (choix d'Astra, 2026-11-22) : un ciel doré et rose,
+     * des rayons de lumière, une mer de nuages où repose le manoir. {@link #evil} le fait virer au diabolique (ciel
+     * rouge, nuages de cendre, braises) pour la phase 3 ; {@link #holy} l'éclaire encore plus (sa mort).
      */
     abstract static class HouseScene extends BossScene {
-        static final Color HELL = hex("c81a0a"), HOLE = hex("0c0a0e"), RIM = hex("3a3a46");
+        static final Color SKY_TOP = hex("4a4aa8"), SKY_MID = hex("d898c8"), SKY_LOW = hex("ffe2a8"), HALO = hex("fff0c0");
+        static final Color HELL_TOP = hex("140204"), HELL_MID = hex("5a0a0a"), HELL_LOW = hex("e8320a");
+        static final Color CLOUD = hex("fff6f2"), CLOUD_SHADE = hex("d4a0c4"), ASH = hex("2a0c0e"), ASH_SHADE = hex("120406");
+        static final Color HELL = hex("c81a0a");
         /** Le corps de son portrait (colonnes 7 à 26, lignes 13 à 38), le haut de son plancher, ses yeux-fenêtres. */
         static final float BODY_LEFT = 7f, BODY_RIGHT = 27f, BODY_TOP = 13f, BODY_BOTTOM = 39f, BODY_FLOOR = 34f;
         static final float[][] WINDOW_EYES = {{12f, 22f}, {22f, 22f}};
-        /** La porte du coffre du décor (pixels du décor) : son carré, son centre, son rayon ; le sol où elle roule, le rideau de droite. */
-        static final int VAULT_LEFT = 140, VAULT_TOP = 20, VAULT_SIZE = 81;
-        static final float VAULT_CX = 180.5f, VAULT_CY = 60.5f, VAULT_R = 40.5f, FLOOR = 174f, WALL_RIGHT = 320f;
-        protected final TextureRegion machine, wing, horn, vaultDoor;
+        protected final TextureRegion machine, wing, horn;
         protected float evil, holy;
-        private final Color lit = new Color();
+        private final Color hell = new Color(), shade = new Color();
 
         HouseScene(CutsceneKit kit, Moment moment, int phase) {
             super(kit, moment, EnemyKind.MAISON, phase);
@@ -828,67 +826,86 @@ final class TowerBossScenes {
                 "......ww", "....wwww", "..wwwwwg", ".wwwwwg.", "wwwwgg..", "wwgg....", "wg......");
             horn = art("rd", new Color[] {hex("8a0a0a"), hex("3a0404")},
                 "....d", "...rd", "..rrd", ".rrd.", "rrrd.", "rrd..");
-            vaultDoor = decorImage() == null ? null : door();
         }
 
         /** @return son portrait sans {@code props}. */
         protected static int[][] without(StoryPortraits.Prop... props) { return StoryPortraits.without(EnemyKind.MAISON, props); }
 
-        /** @return la vraie porte du coffre, découpée en rond dans l'image du décor (le mur autour reste au mur). */
-        private TextureRegion door() {
-            Pixmap image = new Pixmap(com.badlogic.gdx.Gdx.files.internal(FrontScene.Decor.of(EnemyKind.MAISON).getPath()));
-            Pixmap cut = new Pixmap(VAULT_SIZE, VAULT_SIZE, Pixmap.Format.RGBA8888);
-            cut.setBlending(Pixmap.Blending.None);
-            float r2 = (VAULT_SIZE / 2f) * (VAULT_SIZE / 2f);
-            for (int y = 0; y < VAULT_SIZE; y++) {
-                for (int x = 0; x < VAULT_SIZE; x++) {
-                    float dx = x + 0.5f - VAULT_SIZE / 2f, dy = y + 0.5f - VAULT_SIZE / 2f;
-                    if (dx * dx + dy * dy <= r2) cut.drawPixel(x, y, image.getPixel(VAULT_LEFT + x, VAULT_TOP + y));
-                }
-            }
-            image.dispose();
-            return region(cut, false);
-        }
+        /** @return le haut de la mer de nuages, où tombent et se brisent les morceaux. */
+        protected float cloudTop() { return groundY() + 40f; }
 
-        @Override protected float decorLight() { return 0.62f * (1f - 0.25f * evil) + 0.3f * holy; }
+        /** @return où la porte de son coffre finit sa course, couchée sur les nuages (phase 3, puis sa mort). */
+        protected float doorRestX() { return portraitX(30f) + worldWidth() * 0.2f; }
 
-        /** La lumière de la salle : rouge et braises avec {@link #evil}, rayons dorés avec {@link #holy}. */
-        protected void light(Batch batch) {
-            if (evil > 0f) {
-                fill(batch, HELL, 0.3f * evil);
-                glow(batch, bossX(), groundY(), worldWidth() * 1.2f, HELL, 0.5f * evil);
+        /**
+         * Le ciel : doré au ras des nuages, rose puis bleu en haut, des étincelles d'or, un halo et des rayons de
+         * lumière qui tombent sur le manoir ; avec {@link #evil}, il vire au rouge sang et la lumière s'éteint.
+         */
+        protected void sky(Batch batch) {
+            int bands = 36;
+            float height = worldHeight() + 2f * MARGIN, band = height / bands;
+            for (int i = 0; i < bands; i++) {
+                float k = i / (float) (bands - 1);
+                if (k < 0.45f) tmp.set(SKY_LOW).lerp(SKY_MID, k / 0.45f);
+                else tmp.set(SKY_MID).lerp(SKY_TOP, (k - 0.45f) / 0.55f);
+                if (k < 0.5f) hell.set(HELL_LOW).lerp(HELL_MID, k * 2f);
+                else hell.set(HELL_MID).lerp(HELL_TOP, (k - 0.5f) * 2f);
+                tmp.lerp(hell, evil);
+                if (holy > 0f) tmp.lerp(hex("fff8e0"), holy * (0.55f - 0.3f * k));
+                batch.setColor(tmp.r, tmp.g, tmp.b, 1f);
+                batch.draw(pixel, -MARGIN, -MARGIN + i * band - 1f, worldWidth() + 2f * MARGIN, band + 2f);
             }
-            if (holy > 0f) {                                            // des rayons de lumière tombent des lustres
+            for (int i = 0; i < 44; i++) {                              // des étincelles d'or qui scintillent
+                float x = (i * 173.3f) % worldWidth(), y = worldHeight() * (0.45f + 0.53f * ((i * 61) % 100) / 100f);
+                float twinkle = 0.5f + 0.5f * MathUtils.sin(time * 3f + i * 1.3f), s = 3f + 3f * twinkle;
+                rect(batch, hex("fff4c8"), 0.8f * twinkle * (1f - evil), x - s / 2f, y - s / 2f, s, s);
+            }
+            tmp.set(HALO).lerp(HELL_LOW, evil).lerp(GOLD, holy);
+            glow(batch, bossX(), bossY() + bossHeight() * 0.1f, worldWidth() * 1.1f, tmp, 0.3f);
+            glow(batch, bossX(), bossY() + bossHeight() * 0.1f, worldWidth() * 0.4f, tmp, 0.25f * (1f - 0.6f * evil));
+            float rays = 0.07f * (1f - evil) + 0.1f * holy;            // les rayons de lumière tombent sur le manoir
+            if (rays > 0f) {
                 additive(batch);
-                for (int i = 0; i < 7; i++) {
-                    float x = worldWidth() * (0.1f + i * 0.13f) + 30f * MathUtils.sin(time + i);
-                    batch.setColor(1f, 0.95f, 0.8f, 0.12f * holy);
-                    batch.draw(soft, x - 60f, -MARGIN, 0f, 0f, 120f, worldHeight() * 1.3f, 1f, 1f, -12f);
+                for (int i = 0; i < 9; i++) {
+                    float angle = 180f + (i - 4f) * 11f + 2.5f * MathUtils.sin(time * 0.8f + i);
+                    batch.setColor(1f, 0.95f, 0.8f, rays * (i % 2 == 0 ? 1f : 0.6f));
+                    batch.draw(soft, bossX() - 55f, worldHeight() + 120f, 55f, 0f, 110f, worldHeight() * 1.5f, 1f, 1f, angle);
                 }
                 normal(batch);
-                glow(batch, bossX(), bossY(), worldWidth() * 0.9f, GOLD, 0.3f * holy);
+            }
+            for (int i = 0; i < 9; i++) {                               // la mer de nuages, au loin
+                float x = worldWidth() * (i - 0.5f) / 8f, y = groundY() + 150f + 25f * MathUtils.sin(i * 2.3f), r = 120f + 30f * (i % 3);
+                cloudColor(CLOUD_SHADE, ASH_SHADE);
+                batch.setColor(tmp.r, tmp.g, tmp.b, 0.75f);
+                batch.draw(soft, x - r, y - r * 0.45f, r * 2f, r * 0.9f);
             }
         }
 
-        /** Le trou laissé au mur par la porte du coffre : le coffre, vide et noir, dans son cercle d'acier. */
-        protected void hole(Batch batch) {
-            for (int dy = -40; dy <= 40; dy++) {
-                float half = (float) Math.sqrt(VAULT_R * VAULT_R - dy * dy);
-                decorRect(batch, RIM, VAULT_CX - half, VAULT_CY + dy - 0.5f, 2f * half, 1f);
-                float inner = VAULT_R - 5f;
-                if (Math.abs(dy) < inner) {
-                    float in = (float) Math.sqrt(inner * inner - dy * dy);
-                    decorRect(batch, HOLE, VAULT_CX - in, VAULT_CY + dy - 0.5f, 2f * in, 1f);
-                }
-            }
+        private void cloudColor(Color holyColor, Color evilColor) {
+            tmp.set(holyColor).lerp(evilColor, evil);
+            if (holy > 0f) tmp.lerp(hex("fff4d8"), 0.4f * holy);
         }
 
-        /** La porte du coffre du décor, centrée sur le pixel ({@code cx}, {@code cy}) du décor, tournée de {@code rotation}. */
-        protected void door(Batch batch, float cx, float cy, float rotation) {
-            if (vaultDoor == null) return;
-            float size = VAULT_SIZE * decorScale();
-            batch.setColor(litLikeDecor(WHITE, lit));
-            batch.draw(vaultDoor, decorX(cx) - size / 2f, decorY(cy) - size / 2f, size / 2f, size / 2f, size, size, 1f, 1f, rotation);
+        /** La mer de nuages où repose le manoir, comme à son entrée ; de cendre, éclairée de rouge, avec {@link #evil}. */
+        protected void clouds(Batch batch) {
+            cloudColor(CLOUD_SHADE, ASH_SHADE);
+            shade.set(tmp);
+            cloudColor(CLOUD, ASH);
+            for (int i = 0; i < 16; i++) {                              // l'ombre des nuages, puis leur dessus
+                float x = worldWidth() * i / 15f, y = groundY() + 12f + 18f * MathUtils.sin(i * 1.7f), r = 150f + 40f * ((i * 7) % 3);
+                batch.setColor(shade.r, shade.g, shade.b, 1f);
+                batch.draw(soft, x - r, y - r * 0.6f - 14f, r * 2f, r * 1.2f);
+            }
+            for (int i = 0; i < 16; i++) {
+                float x = worldWidth() * i / 15f, y = groundY() + 20f + 18f * MathUtils.sin(i * 1.7f), r = 140f + 40f * ((i * 7) % 3);
+                batch.setColor(tmp.r, tmp.g, tmp.b, 1f);
+                batch.draw(soft, x - r, y - r * 0.6f, r * 2f, r * 1.2f);
+            }
+            rect(batch, tmp, 1f, -MARGIN, -MARGIN, worldWidth() + 2f * MARGIN, groundY() + MARGIN);
+            if (evil > 0f) {                                            // les braises de l'enfer, sous la cendre
+                glow(batch, bossX(), groundY(), worldWidth() * 1.4f, HELL, 0.45f * evil);
+                fill(batch, HELL, 0.12f * evil);
+            }
         }
 
         /** Des machines à sous aux ailes d'ange qui volent dans sa salle de jeu (sans façade). */
@@ -943,7 +960,7 @@ final class TowerBossScenes {
             plume.spin = (random.nextFloat() - 0.5f) * 120f;
         }
 
-        /** Un nuage de poussière qui monte du sol, de {@code left} à {@code right}. */
+        /** Un nuage de poussière qui monte des nuages, de {@code left} à {@code right}. */
         protected void dust(float left, float right, float y, int count, Color color) {
             for (int i = 0; i < count; i++) {
                 Particle puff = particle(MathUtils.lerp(left, right, random.nextFloat()), y, 60f + 60f * random.nextFloat(),
@@ -956,9 +973,9 @@ final class TowerBossScenes {
     }
 
     /**
-     * Phase 2 : sa vraie façade (corps, fenêtres, porte, blason au bouclier) se fissure tout autour, se décolle,
-     * bascule vers nous et s'écrase en morceaux. Derrière, sa salle de jeu ouverte, où volent des machines aux
-     * ailes d'ange. Plus de défense.
+     * Phase 2 : dans son ciel angélique, sa vraie façade (corps, fenêtres, porte, blason au bouclier) se fissure
+     * tout autour, se décolle, bascule vers nous et s'écrase en morceaux sur les nuages. Derrière, sa salle de jeu
+     * ouverte, où volent des machines aux ailes d'ange. Plus de défense.
      */
     static final class HouseFacade extends HouseScene {
         static final float CRACK = 0.45f, TIP = 1.35f;
@@ -981,17 +998,19 @@ final class TowerBossScenes {
         @Override
         protected void step(float delta) {
             if (at(CRACK)) rumble(0.2f, 5f);
-            if (at(TIP)) { rumble(0.3f, 8f); sparks(pieceX(facade), facadeBottom(), 30, hex("d8c8a8"), 500f, 12f); }
-            if (at(CLIMAX_PHASE)) {                                     // elle s'écrase devant la Maison, en morceaux
+            if (at(TIP)) { rumble(0.3f, 8f); sparks(pieceX(facade), facadeBottom(), 30, hex("fff0c8"), 500f, 12f); }
+            if (at(CLIMAX_PHASE)) {                                     // elle s'écrase sur les nuages, en morceaux
                 rumble(0.9f, 18f);
                 float y = facadeBottom() - 20f;
                 burst(this, facade.region, pieceX(facade), y, bossScale() * 1.25f, 0.25f, 3, WHITE, 900f, 1700f, 1.7f);
-                dust(bossX() - bossWidth(), bossX() + bossWidth(), groundY() + 20f, 30, tmp.set(0.6f, 0.5f, 0.4f, 0.3f));
+                dust(bossX() - bossWidth(), bossX() + bossWidth(), cloudTop(), 34, tmp.set(1f, 0.95f, 0.9f, 0.35f));
             }
         }
 
         @Override
         protected void back(Batch batch) {
+            sky(batch);
+            clouds(batch);
             if (!loose && time >= TIP) { loose = true; wear(open); }    // la façade se décolle : elle est dessinée à part
             poseX = time < TIP ? (random.nextFloat() - 0.5f) * 8f * progress(CRACK, TIP) : 0f;
         }
@@ -1021,46 +1040,54 @@ final class TowerBossScenes {
     }
 
     /**
-     * Phase 3 : les verrous de la grande porte du coffre du décor sautent un à un ; la petite porte de coffre de la
-     * Maison (sa vraie, sur son aile droite) se décroche ; puis la grande porte tombe du mur, roule et cogne le
-     * rideau. Les potions du coffre vide tombent et se brisent : plus de soins. La Maison vire au démon.
+     * Phase 3 : les verrous de la porte de son coffre (la vraie, ronde, sur son aile droite) sautent un à un ; la
+     * porte se décroche, pend, tombe sur les nuages, roule et se couche. Les potions du coffre vide en jaillissent
+     * et se brisent : plus de soins. Le ciel angélique vire au rouge : la Maison devient démon.
      */
     static final class HouseVault extends HouseScene {
         static final float[] BOLTS = {0.35f, 0.65f, 0.95f, 1.25f};
-        static final float POP = 1.0f, DROP = 1.8f, WALL = 3.2f, EVIL = 2.7f;
+        static final float LURCH = 1.0f, HANG = 1.4f, DROP = 1.8f, FLAT = 3.2f, EVIL = 2.7f;
         private static final Color STEEL = hex("c8c8d4"), HEAL = hex("ff4a6a");
-        private final Piece small;
+        private final Piece door;
         private final TextureRegion before, after, potion;
         private final Array<Particle> potions = new Array<>(false, 8);
-        private boolean popped;
-        private float smallX, smallY;
+        private final float[] landing = new float[8];
+        private boolean loose;
 
         HouseVault(CutsceneKit kit) {
             super(kit, Moment.PHASE, 3);
             int[][] open = without(StoryPortraits.Prop.HOUSE_FACADE);                          // sa façade est déjà tombée
             int[][] empty = without(StoryPortraits.Prop.HOUSE_FACADE, StoryPortraits.Prop.HOUSE_VAULT);
-            small  = lift(open, empty);
+            door   = lift(open, empty);
             before = pixels(open);
             after  = pixels(empty);
             potion = symbol(EnemySymbol.POTION);
         }
 
-        @Override protected void restart() { popped = false; potions.clear(); }
+        @Override protected void restart() { loose = false; potions.clear(); }
 
-        /** @return le centre de la grande porte, en pixels du décor : au mur, puis elle tombe, roule vers la droite et cogne le rideau. */
+        /** @return le rayon de la porte une fois tombée (elle tombe vers nous : 1,5 fois sa taille au mur). */
+        private float radius() { return door.width * bossScale() * 0.75f; }
+        private float restY() { return cloudTop() + radius() * 0.8f; }
+
+        /** @return le centre de la porte : au mur, puis elle tombe sur les nuages et roule vers la droite. */
         private float doorX() {
-            if (time < CLIMAX_PHASE) return VAULT_CX + (time > 1.4f ? (random.nextFloat() - 0.5f) * 1.5f : 0f);
-            return MathUtils.lerp(VAULT_CX, WALL_RIGHT - VAULT_R, Interpolation.pow2Out.apply(progress(CLIMAX_PHASE, WALL)));
+            float wall = pieceX(door);
+            if (time < CLIMAX_PHASE) return wall + 14f * progress(DROP, CLIMAX_PHASE);
+            return MathUtils.lerp(wall + 14f, doorRestX(), Interpolation.pow2Out.apply(progress(CLIMAX_PHASE, FLAT)));
         }
         private float doorY() {
-            float rest = FLOOR - VAULT_R;
-            if (time < DROP) return VAULT_CY;
-            if (time < CLIMAX_PHASE) return MathUtils.lerp(VAULT_CY, rest, Interpolation.pow2In.apply(progress(DROP, CLIMAX_PHASE)));
-            return rest - 8f * Math.abs(MathUtils.sin((time - CLIMAX_PHASE) * 9f)) * (1f - progress(CLIMAX_PHASE, CLIMAX_PHASE + 0.8f));
+            float wall = pieceY(door);
+            if (time < HANG) return wall - 3f * progress(LURCH, HANG);
+            if (time < DROP) return wall - 3f - 6f * progress(HANG, DROP);
+            if (time < CLIMAX_PHASE) return MathUtils.lerp(wall - 9f, restY(), Interpolation.pow2In.apply(progress(DROP, CLIMAX_PHASE)));
+            return restY() + 30f * Math.abs(MathUtils.sin((time - CLIMAX_PHASE) * 7f)) * (1f - progress(CLIMAX_PHASE, CLIMAX_PHASE + 0.7f));
         }
         private float doorRotation() {
-            float lean = 7f * Interpolation.swingOut.apply(progress(WALL, WALL + 0.4f));
-            return -(doorX() - VAULT_CX) / VAULT_R * MathUtils.radiansToDegrees + lean;
+            if (time < HANG) return -12f * Interpolation.swingOut.apply(progress(LURCH, LURCH + 0.25f));
+            if (time < DROP) return -12f - 26f * Interpolation.swingOut.apply(progress(HANG, HANG + 0.3f)) + 6f * MathUtils.sin((time - HANG) * 12f);
+            if (time < CLIMAX_PHASE) return -38f - 160f * progress(DROP, CLIMAX_PHASE);
+            return -198f - (doorX() - pieceX(door) - 14f) / radius() * MathUtils.radiansToDegrees;
         }
 
         @Override
@@ -1068,29 +1095,34 @@ final class TowerBossScenes {
             for (int i = 0; i < BOLTS.length; i++) {
                 if (at(BOLTS[i])) {                                     // un verrou saute
                     float angle = 45f + 90f * i;
-                    float x = decorX(VAULT_CX + MathUtils.cosDeg(angle) * (VAULT_R - 3f)), y = decorY(VAULT_CY - MathUtils.sinDeg(angle) * (VAULT_R - 3f));
-                    sparks(x, y, 18, STEEL, 500f, 10f);
+                    sparks(pieceX(door) + MathUtils.cosDeg(angle) * radius() / 1.5f, pieceY(door) + MathUtils.sinDeg(angle) * radius() / 1.5f,
+                        16, STEEL, 450f, 8f);
                     rumble(0.1f, 4f);
                 }
             }
-            if (at(CLIMAX_PHASE)) {                                     // la porte touche le sol
+            if (at(LURCH)) rumble(0.2f, 6f);
+            if (at(CLIMAX_PHASE)) {                                     // la porte touche les nuages ; le coffre vide crache ses potions
                 rumble(0.9f, 18f);
-                dust(decorX(VAULT_CX - VAULT_R), decorX(VAULT_CX + VAULT_R), decorY(FLOOR), 30, tmp.set(0.6f, 0.5f, 0.4f, 0.3f));
-                for (int i = 0; i < 5; i++) {                           // les potions du coffre tombent
-                    float side = i % 2 == 0 ? 1f : -1f;
-                    Particle bottle = place(potion, decorX(VAULT_CX + side * (8f + 6f * i)), decorY(VAULT_CY + 18f),
-                        side * (220f + 120f * i), 200f + 80f * random.nextFloat(), iconScale(0.08f), 3f);
-                    bottle.gravity = 1700f;
-                    bottle.spin = side * -300f;
+                sparks(doorX(), cloudTop(), 30, STEEL, 600f, 12f);
+                dust(doorX() - 120f, doorX() + 120f, cloudTop(), 24, tmp.set(1f, 0.95f, 0.92f, 0.35f));
+                float x = portraitX(30f), y = portraitY(28f), g = 1300f;
+                for (int i = 0; i < 5; i++) {                           // chacune se brise entre 2,95 et 3,15 s (le son)
+                    float side = i % 2 == 0 ? 1f : -0.6f, flight = 0.75f + 0.05f * i;
+                    landing[i] = cloudTop() + 10f * random.nextFloat();
+                    float vy = (g * flight * flight / 2f - (y - landing[i])) / flight;
+                    Particle bottle = place(potion, x, y, side * (110f + 70f * i), vy, iconScale(0.08f), 3f);
+                    bottle.gravity = g;
+                    bottle.spin = side * -320f;
+                    bottle.delay = i;
                     sprites.removeValue(bottle, true);
                     potions.add(bottle);
                 }
             }
-            if (at(WALL)) { rumble(0.4f, 10f); sparks(decorX(WALL_RIGHT), decorY(FLOOR - VAULT_R), 30, STEEL, 500f, 12f); }
-            for (int i = potions.size - 1; i >= 0; i--) {               // une potion qui touche le sol se brise
+            if (at(FLAT)) { rumble(0.4f, 10f); dust(doorRestX() - 90f, doorRestX() + 90f, cloudTop(), 20, tmp.set(1f, 0.9f, 0.9f, 0.3f)); }
+            for (int i = potions.size - 1; i >= 0; i--) {               // une potion qui touche les nuages se brise
                 Particle bottle = potions.get(i);
                 bottle.update(delta);
-                if (bottle.y <= decorY(FLOOR) && bottle.vy < 0f) {
+                if (bottle.y <= landing[(int) bottle.delay] && bottle.vy < 0f) {
                     potions.removeIndex(i);
                     sparks(bottle.x, bottle.y + 10f, 26, HEAL, 500f, 14f);
                     burst(this, potion, bottle.x, bottle.y + 20f, bottle.size, 1f, 4, WHITE, 300f, 1600f, 0.9f);
@@ -1102,18 +1134,11 @@ final class TowerBossScenes {
         @Override
         protected void back(Batch batch) {
             evil = progress(EVIL, EVIL + 0.8f);
-            if (time >= DROP) hole(batch);
-            door(batch, doorX(), doorY(), doorRotation());
-            light(batch);
-            if (!popped && time >= POP) {                               // sa vraie petite porte de coffre se décroche
-                popped = true;
-                smallX = pieceX(small);
-                smallY = pieceY(small);
-                wear(after);
-            } else if (!popped) {
-                wear(before);
-            }
-            poseX = time < POP ? (random.nextFloat() - 0.5f) * 5f * progress(0.3f, POP) : 0f;
+            sky(batch);
+            clouds(batch);
+            if (!loose && time >= LURCH) { loose = true; wear(after); } // la vraie porte du coffre se décroche
+            else if (!loose) wear(before);
+            poseX = time < LURCH ? (random.nextFloat() - 0.5f) * 5f * progress(0.3f, LURCH) : 0f;
             poseTintColor.set(hex("ff1a0a"));
             poseTint = 0.35f * evil;
             poseShadow = 0.4f * evil;
@@ -1121,34 +1146,43 @@ final class TowerBossScenes {
 
         @Override
         protected void front(Batch batch) {
-            if (popped) {                                               // elle tombe et roule au pied de la Maison
-                float k = progress(POP, POP + 0.7f);
-                float x = smallX + 140f * Interpolation.pow2Out.apply(progress(POP, POP + 1.4f));
-                float y = MathUtils.lerp(smallY, groundY() + 40f, Interpolation.bounceOut.apply(k)) + 60f * MathUtils.sin(k * MathUtils.PI);
-                draw(batch, small.region, x, y, bossScale() * 1.2f, -400f * Interpolation.pow2Out.apply(progress(POP, POP + 1.4f)), WHITE, 1f);
+            if (!loose) {
+                glow(batch, pieceX(door), pieceY(door), bossScale() * 12f, STEEL, 0.45f * progress(0.3f, LURCH));
             } else {
-                glow(batch, pieceX(small), pieceY(small), bossScale() * 12f, STEEL, 0.4f * progress(0.3f, POP));
+                if (time >= CLIMAX_PHASE - 0.1f) {                      // le coffre vide : une lueur rose s'en échappe, puis s'éteint
+                    glow(batch, portraitX(30f), portraitY(28f), bossScale() * 16f, HEAL, 0.6f * gesture(CLIMAX_PHASE - 0.1f, CLIMAX_PHASE + 0.9f));
+                }
+                float k = time < FLAT ? 1f : 1f - 0.7f * Interpolation.bounceOut.apply(progress(FLAT, FLAT + 0.4f));
+                float s = bossScale() * (1f + 0.5f * progress(DROP, CLIMAX_PHASE)), w = door.width * s, h = door.height * s * k;
+                float y = time < FLAT ? doorY() : restY() - door.height * s * (1f - k) / 2f;
+                batch.setColor(WHITE);
+                batch.draw(door.region, doorX() - w / 2f, y - h / 2f, w / 2f, h / 2f, w, h, 1f, 1f, time < FLAT ? doorRotation() : 0f);
             }
             for (Particle bottle : potions) {
                 glow(batch, bottle.x, bottle.y, bottle.size * 30f, HEAL, 0.4f);
                 draw(batch, potion, bottle.x, bottle.y, bottle.size, bottle.rotation, WHITE, 1f);
             }
             demon(batch, evil);
-            flash(batch, hex("ff3a0a"), CLIMAX_PHASE, 0.3f, 0.4f);
+            flash(batch, WHITE, CLIMAX_PHASE, 0.25f, 0.3f);
+            flash(batch, hex("ff3a0a"), EVIL, 0.3f, 0.35f);
         }
     }
 
     /**
-     * La Maison démoniaque, sans façade ni coffre, tremble et explose ; ses machines aux ailes d'ange s'envolent
-     * vers la lumière qui tombe des lustres ; la salle redevient dorée, des plumes tombent.
+     * La Maison démoniaque, sans façade ni coffre, tremble sous son ciel rouge et explose dans une lumière d'or ;
+     * le ciel redevient angélique, ses machines aux ailes d'ange s'envolent, libres, et des plumes tombent.
      */
     static final class HouseDeath extends HouseScene {
-        private final TextureRegion ruined;
+        private final TextureRegion ruined, door;
         private boolean broken;
 
         HouseDeath(CutsceneKit kit) {
             super(kit, Moment.DEATH, 0);
-            ruined = pixels(without(StoryPortraits.Prop.HOUSE_FACADE, StoryPortraits.Prop.HOUSE_VAULT));
+            int[][] open = without(StoryPortraits.Prop.HOUSE_FACADE);
+            int[][] empty = without(StoryPortraits.Prop.HOUSE_FACADE, StoryPortraits.Prop.HOUSE_VAULT);
+            ruined = pixels(empty);
+            Piece piece = lift(open, empty);                            // la porte de son coffre, restée couchée sur les nuages
+            door = piece == null ? null : piece.region;
         }
 
         @Override protected void restart() { broken = false; }
@@ -1158,20 +1192,33 @@ final class TowerBossScenes {
             if (!broken && time >= CLIMAX_DEATH) {
                 broken = true;
                 rumble(0.9f, 16f);
-                MinesBossScenes.crumble(this, 3, hex("ff6a4a"), 700f);
-                sparks(bossX(), bossY(), 120, hex("ff5a1a"), 1200f, 26f);
+                MinesBossScenes.crumble(this, 3, hex("ffe0a0"), 800f);
+                sparks(bossX(), bossY(), 90, GOLD, 1200f, 26f);
+                sparks(bossX(), bossY(), 50, WHITE, 900f, 20f);
+                for (int i = 0; i < 16; i++) {                          // une gerbe de plumes jaillit de l'explosion
+                    float angle = 360f * i / 16f + 10f * random.nextFloat(), speed = 400f + 300f * random.nextFloat();
+                    Particle plume = place(wing, bossX(), bossY(), MathUtils.cosDeg(angle) * speed, MathUtils.sinDeg(angle) * speed, 3.5f, 3f);
+                    plume.drag = 0.2f;
+                    plume.gravity = 60f;
+                    plume.spin = (random.nextFloat() - 0.5f) * 300f;
+                }
             }
             embers(evil * 0.8f);
-            feathers(holy * 0.35f);
+            feathers(holy * 0.4f);
         }
 
         @Override
         protected void back(Batch batch) {
             evil = 1f - progress(CLIMAX_DEATH + 0.2f, CLIMAX_DEATH + 1.4f);
             holy = progress(CLIMAX_DEATH + 0.4f, CLIMAX_DEATH + 1.6f);
-            hole(batch);                                                // la porte du coffre est restée au sol, contre le rideau
-            door(batch, WALL_RIGHT - VAULT_R, FLOOR - VAULT_R, 7f - (WALL_RIGHT - VAULT_R - VAULT_CX) / VAULT_R * MathUtils.radiansToDegrees);
-            light(batch);
+            sky(batch);
+            clouds(batch);
+            if (door != null) {                                         // la porte du coffre, couchée là où elle a roulé
+                float s = bossScale() * 1.5f, w = door.getRegionWidth() * s, h = door.getRegionHeight() * s * 0.3f;
+                float light = 1f - 0.4f * evil;
+                batch.setColor(light, light * (1f - 0.3f * evil), light * (1f - 0.3f * evil), 1f);
+                batch.draw(door, doorRestX() - w / 2f, cloudTop() + door.getRegionHeight() * s * 0.4f - h / 2f, w, h);
+            }
             if (time < CLIMAX_DEATH) wear(ruined);
             showBoss = time < CLIMAX_DEATH;
             poseTintColor.set(hex("ff1a0a"));
@@ -1186,7 +1233,9 @@ final class TowerBossScenes {
                 demon(batch, 1f);
                 float x0 = portraitX(BODY_LEFT), x1 = portraitX(BODY_RIGHT);
                 glow(batch, (x0 + x1) / 2f, bossY(), (x1 - x0) * 1.2f, hex("ff3a0a"), 0.3f * progress(1.0f, CLIMAX_DEATH));
+                glow(batch, (x0 + x1) / 2f, bossY(), (x1 - x0) * 0.8f, GOLD, 0.5f * progress(2.0f, CLIMAX_DEATH));
             } else {                                                    // ses machines aux ailes d'ange s'envolent, libres
+                glow(batch, bossX(), bossY(), worldWidth() * 0.8f, GOLD, 0.5f * (1f - progress(CLIMAX_DEATH, CLIMAX_DEATH + 1.5f)));
                 float scale = bossWidth() / 50f, k = Interpolation.pow2In.apply(progress(CLIMAX_DEATH + 0.3f, 5.4f));
                 for (int i = 0; i < 3; i++) {
                     float x = bossX() + (i - 1) * bossWidth() * (0.35f + 0.9f * k) + 20f * MathUtils.sin(time * 3f + i);
@@ -1194,8 +1243,9 @@ final class TowerBossScenes {
                     flyer(batch, x, y, scale, i, progress(CLIMAX_DEATH + 0.3f, CLIMAX_DEATH + 0.7f));
                 }
             }
-            wave(batch, CLIMAX_DEATH, 1.0f, bossX(), bossY(), WHITE, worldWidth() * 1.6f);
-            flash(batch, WHITE, CLIMAX_DEATH, 0.4f, 0.7f);
+            wave(batch, CLIMAX_DEATH, 1.0f, bossX(), bossY(), GOLD, worldWidth() * 1.6f);
+            wave(batch, CLIMAX_DEATH + 0.15f, 1.0f, bossX(), bossY(), WHITE, worldWidth() * 1.2f);
+            flash(batch, hex("fff4d0"), CLIMAX_DEATH, 0.5f, 0.75f);
         }
     }
 }

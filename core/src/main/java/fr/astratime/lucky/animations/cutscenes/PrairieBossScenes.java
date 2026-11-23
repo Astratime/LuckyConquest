@@ -191,13 +191,13 @@ final class PrairieBossScenes {
     }
 
     /**
-     * « Le Roi de Pique brise son épée » : son épée (le sceptre à pique de son portrait, celle qu'il fait tournoyer
-     * à son entrée) se fend au milieu, puis casse net : la vraie moitié haute vole et se plante dans l'herbe, il
-     * garde le tronçon en main ; les lames plantées autour de lui tombent l'une après l'autre ; il pose un genou.
+     * « Le Roi de Pique brise son épée » : la vraie épée de son portrait (celle qu'il fait tournoyer à son entrée)
+     * se fend au milieu de la lame, puis casse net : la vraie moitié haute vole et se plante dans l'herbe, il garde
+     * en main la poignée et le tronçon ; les lames plantées autour de lui tombent l'une après l'autre ; il pose un genou.
      */
     static final class SpadeDeath extends BossScene {
-        /** La ligne du portrait où l'épée casse. */
-        private static final int BREAK = 21;
+        /** La dernière ligne du portrait qui part avec la moitié haute de la lame. */
+        private static final int BREAK = 17;
         private static final float[] CRACKS = {1.1f, 1.6f, 2.05f};
         private static final float GRAVITY = 2600f, LIFT = 1150f, DRIFT = 420f;
         private final TextureRegion blade, broken, shard;
@@ -209,7 +209,7 @@ final class PrairieBossScenes {
             super(kit, Moment.DEATH, EnemyKind.ROI_PIQUE, 0);
             blade = art("owsgb", METAL, BLADE);
             shard = art("yd", new Color[] {hex("ffd54a"), hex("c4891e")}, "yy", "yd");
-            int[][] full = king(Card.Suit.PIQUE), rest = king(Card.Suit.PIQUE, ExplorationArt.KingProp.SCEPTER);
+            int[][] full = king(Card.Suit.PIQUE), rest = king(Card.Suit.PIQUE, ExplorationArt.KingProp.SWORD);
             int[][] stump = new int[full.length][];
             for (int y = 0; y < full.length; y++) stump[y] = (y <= BREAK ? rest[y] : full[y]).clone();
             top = lift(full, stump);
@@ -218,7 +218,7 @@ final class PrairieBossScenes {
 
         @Override protected void restart() { snapped = false; landed = false; }
 
-        private float breakX() { return portraitX(30f); }
+        private float breakX() { return portraitX(ExplorationArt.SWORD_X + 0.5f); }
         private float breakY() { return portraitY(BREAK + 1f); }
         private float landY()  { return groundY() + top.height * bossScale() * 0.32f; }
 
@@ -283,7 +283,8 @@ final class PrairieBossScenes {
             for (int i = 0; i < bladeCount(); i++) if (MathUtils.sinDeg(bladeAngle(i)) <= 0f) drawBlade(batch, i);
             if (!snapped) {
                 float g = progress(0.3f, 0.9f);                         // un éclat court le long de la lame
-                if (g > 0f && g < 1f) glow(batch, portraitX(30f), portraitY(MathUtils.lerp(40f, 7f, g)), 140f, WHITE, 0.8f);
+                if (g > 0f && g < 1f) glow(batch, breakX(), portraitY(MathUtils.lerp(ExplorationArt.SWORD_BLADE_END + 1f,
+                    ExplorationArt.SWORD_TIP, g)), 140f, WHITE, 0.8f);
                 float crack = progress(CRACKS[0], CLIMAX_DEATH);        // elle se fend au milieu, chauffée à blanc
                 if (crack > 0f) {
                     glow(batch, breakX(), breakY(), 80f + 160f * crack, HOT, 0.3f + 0.6f * crack * pulse(30f, 0.6f));

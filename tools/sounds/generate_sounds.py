@@ -1974,7 +1974,7 @@ def entrance_coeur_montagne():
 
 
 def entrance_sirene():
-    """Sirène du Bar (CasinoKings) : sous l'eau, les bulles, le chant (0,5 s), les verres qui tintent, elle apparaît (2,0 s)."""
+    """Sirène du Bar (CasinoKings) : sous l'eau, les bulles, le chant (0,5 s), les bouteilles et les verres tintent, elle apparaît (2,0 s)."""
     track = Track(4.6)
     track.add(lp(noise(3.8), 400) * fade_out(3.8, 0.5), 0.0, 0.3)
     track.add(bubbles(3.6, 40), 0.0, 0.4)
@@ -2022,7 +2022,8 @@ def entrance_requin_banquier():
 
 
 def entrance_kraken():
-    """Kraken (CasinoKings) : la table se fend (0,5 s), huit bras sortent (0,8 s, tous les 0,18 s), l'œil s'ouvre (2,45 s)."""
+    """Kraken (CasinoKings, salon VIP) : la table se fend (0,5 s), huit bras sortent (0,8 s, tous les 0,18 s), ses yeux
+    luisent dans la fente (1,95 s), il monte de la table au cor (2,45 s) dans un bouillon de bulles, couronne (2,9 s)."""
     track = Track(4.6)
     track.add(lp(noise(3.8), 300) * fade_out(3.8, 0.5), 0.0, 0.3)
     track.add(mix((crack_hit(), 0, 1.0), (modal(500, 0.4, WOOD_RATIOS, [0.1, 0.05, 0.03]), 0, 0.8),
@@ -2032,8 +2033,11 @@ def entrance_kraken():
         track.add(slither, 0.8 + k * 0.18, 0.5)
         track.add(card_flick(0.06), 1.05 + k * 0.18, 0.3)
     horn = svf(stack(osc(hz('D1'), 1.6, 'saw'), osc(hz('A1'), 1.6, 'saw')), 400, q=0.9) * adsr(1.6, 0.2, 0.2, 0.8, 0.4)
+    track.add(osc(sweep(hz('A2'), hz('D3'), 0.4), 0.4, 'sine') * adsr(0.4, 0.1, 0.1, 0.6, 0.15), 1.95, 0.25)
     track.add(horn, 2.45, 0.6)
     track.add(lp(noise(1.5), 90) * ramp(1.5, 1.0, 0.2), 2.45, 0.9)
+    track.add(bubbles(0.6, 16, 200, 600), 2.45, 0.5)
+    track.add(sparkle(0.6, count=8), 2.9, 0.25)
     return reverb(track.buf, wet=0.3, size=1.8, tail=1.2)
 
 
@@ -5062,7 +5066,7 @@ def phase2_maison():
 @sound('cutscene/phase3_maison', -17)
 def phase3_maison():
     """La Maison, phase 3 (HouseVault) : les verrous de la porte du coffre sautent (0,35 / 0,65 / 0,95 / 1,25 s),
-    sa petite porte de coffre tombe (1,0 s), la grande tombe du mur (1,8 à 2,2 s), roule et cogne le rideau (3,2 s) ;
+    la porte se décroche (1,0 s), pend (1,4 s), tombe sur les nuages (1,8 à 2,2 s), roule et se couche (3,2 s) ;
     les potions se brisent au sol (vers 3,0 s) ; la Maison vire au démon (2,7 s)."""
     track = Track(5.8)
     track.add(ambience(4.8, 150, 800, 0.2), 0.0, 1.0)
@@ -5084,7 +5088,7 @@ def phase3_maison():
 @sound('cutscene/death_maison', -17)
 def death_maison():
     """La Maison meurt (HouseDeath) : elle tremble (1,0 à 2,5 s) et explose (2,5 s) ; ses machines aux ailes
-    d'ange s'envolent (2,8 s), la lumière tombe des lustres, des plumes."""
+    d'ange s'envolent (2,8 s), le ciel rouge redevient angélique, des plumes."""
     track = Track(6.6)
     track.add(ambience(5.6, 100, 600, 0.25), 0.0, 1.0)
     track.add(fade(lp(noise(1.5), 200), 0.0, 1.0), 1.0, 0.5)

@@ -7,14 +7,15 @@ import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.Interpolation;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.utils.Array;
+import fr.astratime.lucky.assets.StoryPortraits;
 import fr.astratime.lucky.entities.tower.Chapter;
 import fr.astratime.lucky.i18n.Lang;
 
 import static fr.astratime.lucky.assets.Palette.hex;
 
 /**
- * Avant la Maison (chapitre 5) : un escalier de jetons monte à travers les
- * nuages ; on le gravit jusqu'à un manoir doré. Un majordome en ombre ouvre les
+ * Avant la Maison (chapitre 5) : un escalier de marbre à nez d'or, incrusté
+ * de jetons, monte à travers les nuages ; on le gravit jusqu'à un manoir doré. Un majordome en ombre ouvre les
  * rideaux de la porte et s'incline. Les fenêtres sont des cartes, elles se
  * retournent une par une. La porte, une fente de machine à sous, s'ouvre. Une
  * pièce géante roule et y entre. Tout le manoir s'allume : « La Maison gagne
@@ -23,7 +24,7 @@ import static fr.astratime.lucky.assets.Palette.hex;
  */
 public class HouseCutscene extends Cutscene {
 
-    /** On gravit l'escalier de jetons (voir le son cutscene/house), puis on arrive devant le manoir. */
+    /** On gravit l'escalier du ciel (voir le son cutscene/house), puis on arrive devant le manoir. */
     public static final float STAIRS_END  = 1.5f;
     /** Le majordome ouvre les rideaux de la porte, puis s'incline. */
     public static final float CURTAINS    = 2.5f;
@@ -52,18 +53,30 @@ public class HouseCutscene extends Cutscene {
     /** La porte de l'illustration : centre et taille, en pixels de l'image. */
     private static final float DOOR_X = 64.5f, DOOR_Y = 53f, DOOR_W = 4.9f, DOOR_H = 18.7f;
     private static final Color GOLD = hex("ffc93a"), HOT = hex("fff6c8"), CURTAIN = hex("8a1426"), CURTAIN_LIGHT = hex("c8283c");
-    /** Les couleurs des jetons de l'escalier. */
+    /** Les couleurs des jetons incrustés dans les contremarches. */
     private static final Color[] CHIPS = {hex("c8283c"), hex("2a5ad8"), hex("1f9a4a"), hex("1a1a24"), hex("e8b020")};
+    /** Le marbre et l'or de l'escalier, et le ciel du soir de l'illustration (du haut vers le bas). */
+    private static final Color MARBLE = hex("f4eef6"), MARBLE_LIGHT = hex("ffffff"), MARBLE_VEIN = hex("d4c6e2"),
+        RISER = hex("d2c4e0"), RISER_DARK = hex("9a88b4"), EDGE = hex("5a4a7a"), GOLD_DARK = hex("b8801f");
+    private static final Color[] SKY = {hex("1a1a4a"), hex("2a225a"), hex("4a2a6a"), hex("7a3a7a"), hex("b85a7a"),
+        hex("e88a6a"), hex("ffb46a")};
+    /** L'escalier en perspective : marches (profondeur, hauteur), demi-largeur, hauteur des yeux, première marche. */
+    private static final int STEPS = 11;
+    private static final float RUN = 1f, RISE = 0.55f, HALF = 2.0f, EYE = 3.2f, NEAR = 1.2f;
 
-    private final TextureRegion house, coin, butlerLegs, butlerTop, aceRed, aceBlack, cardBack;
+    private final TextureRegion house, skyless, coin, butlerLegs, butlerTop, aceRed, aceBlack, cardBack;
     private final BitmapFont    font;
     private final Array<Particle> clouds = new Array<>(false, 32);
     private final Array<Particle> sparks = new Array<>(false, 64);
     private boolean entered, slammed;
+    /** La taille d'un gros pixel de l'escalier, sa ligne d'horizon, sa focale (en unités du monde). */
+    private float dot = 5f, horizon, focal;
+    private final Color shadeTmp = new Color();
 
     public HouseCutscene(CutsceneKit kit) {
         super(kit.settings(), kit.shake(), kit.sound("house"));
         house = kit.chapterArt(Chapter.LA_MAISON);
+        skyless = pixels(skyless(StoryPortraits.houseArt()));
         coin  = load("hud/coin.png");
         font  = kit.font();
         // Les As des fenêtres : les vraies cartes du jeu (As de Coeur, As de Pique, et leur dos).
@@ -205,45 +218,174 @@ public class HouseCutscene extends Cutscene {
     }
 
     /**
-     * L'escalier de jetons : des piles de jetons de casino qui montent en
-     * diagonale à travers les nuages ; on grimpe, le manoir apparaît en haut.
+     * L'escalier du ciel : des marches de marbre blanc à nez d'or, incrustées de jetons de casino, bordées de
+     * balustres, qui montent en perspective à travers les nuages jusqu'au manoir ; on les gravit (la caméra monte
+     * de trois marches). Dessiné en gros pixels, comme l'illustration du manoir.
      */
     private void drawStairs(Batch batch) {
         float width = worldWidth(), height = worldHeight();
-        gradient(batch, hex("6a5aa0"), hex("1a1640"));
+        dot = Math.max(3f, Math.round(height / 180f));
+        for (int i = 0; i < SKY.length; i++) {                         // le ciel du soir de l'illustration, en bandes
+            float band = (height + 2f * MARGIN) / SKY.length;
+            batch.setColor(SKY[SKY.length - 1 - i]);
+            batch.draw(pixel, -MARGIN, -MARGIN + i * band - 1f, width + 2f * MARGIN, band + 2f);
+        }
+        for (int i = 0; i < 30; i++) {
+            float x = (i * 211.7f) % width, y = height * (0.7f + 0.28f * ((i * 37) % 100) / 100f);
+            batch.setColor(hex("e8e0ff"));
+            batch.draw(pixel, snap(x), snap(y), dot, dot);
+        }
         float climb = Interpolation.sine.apply(progress(0f, STAIRS_END));
-        // Le manoir, au loin, en haut des marches.
-        float zoom = height * 0.32f / house.getRegionHeight() * (1f + 0.4f * climb);
-        float hw = house.getRegionWidth() * zoom, hh = house.getRegionHeight() * zoom;
-        float hy = height - hh * MathUtils.lerp(0.55f, 0.95f, climb);
-        glow(batch, width * 0.7f, hy + hh * 0.4f, hw * 1.3f, GOLD, 0.25f);
-        batch.setColor(0.9f, 0.85f, 0.85f, 1f);
-        batch.draw(house, width * 0.7f - hw / 2f, hy, hw, hh);
-        // Les marches de jetons, de bas en haut ; la caméra monte avec nous.
-        float stepW = width * 0.12f, stepH = height * 0.11f, chip = stepH / 5f;
-        float shift = climb * 4f;
+        horizon = height * 0.36f;
+        focal = height * 0.67f;
+        float scroll = climb * 3f;
+        // Le manoir, posé sur le palier du haut, au loin.
+        float zTop = NEAR + (STEPS - scroll) * RUN, yTop = (STEPS - scroll) * RISE - EYE;
+        float zHouse = zTop + 1.2f, scale = focal * 7.6f / zHouse / skyless.getRegionHeight();
+        float hw = skyless.getRegionWidth() * scale, hh = skyless.getRegionHeight() * scale;
+        float base = screenY(zHouse, yTop) - hh * 0.12f;
+        glow(batch, width / 2f, base + hh * 0.45f, hw * 1.5f, hex("e89a6a"), 0.55f);
+        glow(batch, width / 2f, base + hh * 0.45f, hw * 0.8f, GOLD, 0.3f);
+        batch.setColor(Color.WHITE);
+        batch.draw(skyless, width / 2f - hw / 2f, base, hw, hh);
+        // La mer de nuages, de chaque côté de l'escalier.
         for (int i = 0; i < 12; i++) {
-            float sx = width * 0.02f + (i - shift) * stepW * 0.75f, sy = -height * 0.05f + (i - shift) * stepH;
-            if (sy > hy + hh * 0.2f) break;
-            for (int k = 0; k < 5; k++) {                              // une pile de jetons
-                Color color = CHIPS[(i * 3 + k) % CHIPS.length];
-                float y = sy + k * chip;
-                batch.setColor(0f, 0f, 0f, 0.6f);
-                batch.draw(pixel, sx - 2f, y - 2f, stepW + 4f, chip + 2f);
-                batch.setColor(color);
-                batch.draw(pixel, sx, y, stepW, chip - 2f);
-                batch.setColor(1f, 1f, 1f, 0.85f);                    // les stries blanches du jeton
-                for (int s = 0; s < 4; s++) batch.draw(pixel, sx + (0.1f + s * 0.25f) * stepW, y + 2f, stepW * 0.08f, chip - 6f);
-                batch.setColor(1f, 1f, 1f, 0.2f);
-                batch.draw(pixel, sx, y + chip - 5f, stepW, 3f);
-            }
+            float x = width * (i - 0.5f) / 10f, y = horizon - height * (0.06f + 0.05f * (i % 3)), r = width * (0.12f + 0.03f * (i % 2));
+            batch.setColor(hex("c8a0c0"));
+            batch.draw(soft, x - r, y - r * 0.45f - 10f, r * 2f, r * 0.9f);
+            batch.setColor(hex("f0c8d0"));
+            batch.draw(soft, x - r, y - r * 0.45f, r * 2f, r * 0.9f);
+        }
+        batch.setColor(hex("f0c8d0"));
+        batch.draw(pixel, -MARGIN, -MARGIN, width + 2f * MARGIN, horizon - height * 0.12f + MARGIN);
+        // Les marches, de la plus lointaine à la plus proche.
+        for (int i = STEPS - 1; i >= 0; i--) {
+            float u = i - scroll, z = NEAR + u * RUN, y = (u + 1f) * RISE - EYE;
+            if (z < 0.25f) continue;
+            step(batch, i, z, y);
         }
         for (Particle cloud : clouds) {                               // les nuages défilent vers le bas
             float y = (cloud.y + height * 0.6f - climb * height * 1.4f) % (height * 1.4f);
             if (y < -height * 0.3f) y += height * 1.4f;
-            batch.setColor(1f, 0.92f, 0.95f, 0.45f);
+            batch.setColor(1f, 0.92f, 0.95f, 0.4f);
             batch.draw(soft, cloud.x - cloud.size / 2f, y - cloud.size * 0.3f, cloud.size * 1.3f, cloud.size * 0.6f);
         }
+    }
+
+    /** Une marche : sa contremarche (nez d'or, jetons incrustés), son giron de marbre veiné, ses deux balustres. */
+    private void step(Batch batch, int index, float z, float y) {
+        float cx = worldWidth() / 2f, half = focal * HALF / z;
+        float x0 = snap(cx - half), x1 = snap(cx + half);
+        // Le giron, s'il est sous nos yeux : un trapèze de marbre qui file vers le palier suivant.
+        if (y < 0f) {
+            float front = snap(screenY(z, y)), back = snap(screenY(z + RUN, y));
+            for (float row = front; row < back; row += dot) {
+                float k = (row + dot / 2f - horizon) / (front - horizon);          // 1 au bord avant, plus petit au fond
+                float rowHalf = half * k;
+                float a = snap(cx - rowHalf), b = snap(cx + rowHalf);
+                float depth = (row - front) / Math.max(dot, back - front);           // le fond du giron, dans l'ombre de la marche suivante
+                fillRect(batch, row == front ? MARBLE_LIGHT : shadeTmp.set(MARBLE).lerp(RISER, 0.6f * depth), a, row, b - a, dot);
+                fillRect(batch, EDGE, a, row, dot, dot);
+                fillRect(batch, EDGE, b - dot, row, dot, dot);
+            }
+            for (int v = 0; v < 2; v++) {                                          // les veines du marbre
+                long seed = index * 31L + v * 7L;
+                float va = 0.15f + 0.7f * hash(seed), vb = 0.15f + 0.6f * hash(seed + 3);
+                for (int p = 0; p < 6; p++) {
+                    float along = (va + p * 0.05f * (hash(seed + 11) < 0.5f ? 1f : -1f)) * 2f - 1f;
+                    float depth = Math.min(0.95f, vb + p * 0.05f), zz = z + RUN * depth;
+                    float sx = cx + along * focal * HALF / zz, sy = screenY(zz, y);
+                    if (snap(sy) >= back || snap(sy) <= front) continue;
+                    fillRect(batch, MARBLE_VEIN, snap(sx), snap(sy), dot, dot);
+                }
+            }
+        }
+        // La contremarche : de la hauteur du giron d'en dessous à celle de ce giron.
+        float bottom = snap(screenY(z, y - RISE)), top = snap(screenY(z, y));
+        int rows = Math.round((top - bottom) / dot);
+        if (rows >= 1) {
+            fillRect(batch, RISER, x0, bottom, x1 - x0, top - bottom);
+            fillRect(batch, RISER_DARK, x0, bottom, x1 - x0, dot);                 // l'ombre au pied
+            if (rows >= 3) fillRect(batch, GOLD_DARK, x0, top - 2f * dot, x1 - x0, dot);
+            fillRect(batch, GOLD, x0, top - dot, x1 - x0, dot);                    // le nez d'or de la marche
+            fillRect(batch, EDGE, x0, bottom, dot, top - bottom);
+            fillRect(batch, EDGE, x1 - dot, bottom, dot, top - bottom);
+            if (rows >= 6) {                                                       // une rangée de jetons incrustés
+                int size = Math.max(3, Math.min(7, (rows - 3) / 2 * 2 + 1));
+                float chip = size * dot, cy = snap((bottom + dot + top - 2f * dot) / 2f - chip / 2f);
+                int count = Math.max(3, (int) ((x1 - x0) / (chip * 2.2f)));
+                float gap = (x1 - x0) / count;
+                for (int c = 0; c < count; c++) chipAt(batch, snap(x0 + gap * (c + 0.5f) - chip / 2f), cy, size, CHIPS[(index + c) % CHIPS.length]);
+            } else if (rows >= 4) {
+                fillRect(batch, CHIPS[index % CHIPS.length], x0 + dot, snap((bottom + top) / 2f - dot), x1 - x0 - 2f * dot, dot);
+            }
+        }
+        // Les balustres : un pilier de marbre coiffé d'or à chaque bout, reliés par une rampe d'or.
+        if (y < 0.6f) {
+            for (int side = -1; side <= 1; side += 2) {
+                float postW = Math.max(dot, snap(focal * 0.16f / z)), postH = snap(focal * 0.85f / z);
+                float px = side < 0 ? x0 : x1 - postW, py = top;
+                fillRect(batch, MARBLE, px, py, postW, postH);
+                if (postW > dot) fillRect(batch, RISER_DARK, px + postW - dot, py, dot, postH);
+                fillRect(batch, GOLD, px - (postW > dot ? dot : 0f), py + postH, postW + (postW > dot ? 2f * dot : 0f), dot);
+                fillRect(batch, GOLD_DARK, px, py, postW, dot);
+                float nz = z + RUN, ny = y + RISE, nhalf = focal * HALF / nz;               // la rampe, vers le balustre suivant
+                float nx = side < 0 ? snap(worldWidth() / 2f - nhalf) : snap(worldWidth() / 2f + nhalf) - Math.max(dot, snap(focal * 0.16f / nz));
+                float ntop = snap(screenY(nz, ny)) + snap(focal * 0.85f / nz);
+                float sx = px + postW / 2f, sy = py + postH, ex = nx + Math.max(dot, snap(focal * 0.16f / nz)) / 2f, ey = ntop;
+                int n = Math.max(2, (int) (Math.max(Math.abs(ex - sx), Math.abs(ey - sy)) / dot));
+                for (int s = 0; s <= n; s++) {
+                    float t = s / (float) n;
+                    fillRect(batch, GOLD, snap(MathUtils.lerp(sx, ex, t) - dot / 2f), snap(MathUtils.lerp(sy, ey, t)), dot, dot);
+                    fillRect(batch, GOLD_DARK, snap(MathUtils.lerp(sx, ex, t) - dot / 2f), snap(MathUtils.lerp(sy, ey, t)) - dot, dot, dot);
+                }
+            }
+        }
+    }
+
+    /** Un jeton de casino incrusté, rond, de {@code size} gros pixels, à rayures blanches et cœur blanc. */
+    private void chipAt(Batch batch, float x, float y, int size, Color color) {
+        float c = (size - 1) / 2f;
+        for (int py = 0; py < size; py++) {
+            for (int px = 0; px < size; px++) {
+                float dx = px - c, dy = py - c, d = dx * dx + dy * dy;
+                if (d > (c + 0.5f) * (c + 0.5f)) continue;
+                Color shade = d > (c - 0.5f) * (c - 0.5f) ? (px == 0 || py == 0 || px == size - 1 || py == size - 1) && (px + py) % 2 == 0 ? Color.WHITE : color
+                    : d <= 0.6f ? Color.WHITE : color;
+                fillRect(batch, shade, x + px * dot, y + py * dot, dot, dot);
+            }
+        }
+        fillRect(batch, EDGE, x + c * dot, y - dot, dot, dot);
+    }
+
+    private void fillRect(Batch batch, Color color, float x, float y, float w, float h) {
+        batch.setColor(color);
+        batch.draw(pixel, x, y, w, h);
+    }
+
+    /** @return {@code v} posé sur la grille des gros pixels de l'escalier. */
+    private float snap(float v) { return Math.round(v / dot) * dot; }
+
+    /** @return l'ordonnée à l'écran d'un point à la profondeur {@code z} et à la hauteur {@code y} (sous nos yeux : négative). */
+    private float screenY(float z, float y) { return horizon + focal * y / z; }
+
+    private static float hash(long seed) {
+        long h = seed * 0x9E3779B97F4A7C15L;
+        h ^= h >>> 29;
+        return (h & 0xFFFF) / 65536f;
+    }
+
+    /** @return l'illustration du manoir sans son ciel (il flotte sur ses nuages, au sommet de l'escalier). */
+    private static int[][] skyless(int[][] art) {
+        java.util.Set<Integer> sky = new java.util.HashSet<>();
+        for (Color color : SKY) sky.add(Color.rgba8888(color));
+        for (String c : new String[] {"e8e0ff", "c87a6a", "e89a6a"}) sky.add(Color.rgba8888(hex(c)));
+        int[][] out = new int[art.length][];
+        for (int y = 0; y < art.length; y++) {
+            out[y] = art[y].clone();
+            for (int x = 0; x < out[y].length; x++) if (sky.contains(out[y][x])) out[y][x] = 0;
+        }
+        return out;
     }
 
     /** Le majordome en ombre : il ouvre les rideaux rouges de la porte, puis s'incline et s'efface. */
