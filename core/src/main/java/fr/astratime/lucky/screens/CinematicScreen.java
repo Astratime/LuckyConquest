@@ -49,21 +49,28 @@ import fr.astratime.lucky.settings.VisualSettings;
 import fr.astratime.lucky.views.MenuOption;
 
 import java.util.ArrayList;
+import java.util.EnumMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 import java.util.function.Function;
 
 /**
  * Mode Cinématique : rejoue n'importe quelle cinématique du jeu en mode ADMIN,
- * ou celles déjà vues depuis le Bestiaire (voir {@link Bestiary}), sur le modèle
- * de l'écran de la Tour des épreuves.
+ * ou celles déjà vues depuis le Bestiaire (voir {@link Bestiary}).
  *
- * À gauche, les groupes : les boss de la Tour, les fins et le duel des leviers,
- * puis les rois de chaque lieu de l'Exploration, et le Jeu bonus. À droite, les cinématiques du
- * groupe choisi, avec le portrait (ou l'illustration) de celle sélectionnée.
- * Un clic sur une cinématique (ou Entrée, ou « Lancer ») la joue par-dessus
- * l'écran ; finie ou passée (clic, ou une touche), on revient ici. Échap ou
- * « Retour » ramène au menu principal.
+ * <p>À gauche, les catégories : Histoire, Exploration, Jeux bonus, Joueur Masqué
+ * et Le Croupier. Au centre, les boss de la catégorie (pour l'Exploration, on
+ * choisit d'abord le lieu, puis ses rois). À droite, comme à la Boutique, les
+ * onglets du boss choisi : Entrée, Phase 2, Phase 3 (s'il en a une) et Fin ;
+ * dessous, la miniature et l'explication de la cinématique. Un onglet qui a
+ * plusieurs cinématiques (la fin de la Machine Originelle : le duel gagné,
+ * perdu, puis la fin du chapitre) les liste au-dessus de la miniature.
+ *
+ * <p>Un clic sur le boss, sur la miniature ou sur « Lancer » (ou Entrée) joue la
+ * cinématique par-dessus l'écran ; finie ou passée, on revient au même endroit.
+ * Haut/bas : le boss ; gauche/droite (ou Page haut/bas) : les onglets ; Tab :
+ * la catégorie ; Échap ou « Retour » : la liste des lieux, puis le menu principal.
  */
 public class CinematicScreen extends CasinoMenuScreen {
 
@@ -74,20 +81,53 @@ public class CinematicScreen extends CasinoMenuScreen {
     private static final float ROW_WIDTH    = 340f;
     private static final float ROW_HEIGHT   = 76f;
     private static final float ROW_GAP      = 18f;
-    private static final float ITEM_WIDTH   = 500f;
-    private static final float ITEM_HEIGHT  = 64f;
-    private static final float ITEM_GAP     = 14f;
+    private static final float ITEM_WIDTH   = 480f;
+    private static final float ITEM_HEIGHT  = 58f;
+    private static final float ITEM_GAP     = 10f;
+    private static final float VARIANT_HEIGHT = 50f;
+    private static final float VARIANT_GAP  = 8f;
+    private static final float CHIP_ROOM    = 64f;     // jeton d'une option sélectionnée, de chaque côté
+    private static final float TAB_GAP      = 16f;
     private static final float PANEL_PAD    = 40f;
     private static final float MORE_SPACE   = 50f;
     private static final float PANEL_TOP    = 210f;    // du haut de l'écran au haut des panneaux
     private static final float BOTTOM_SPACE = 130f;    // sous les panneaux : boutons
     private static final float ART_SCALE    = 4f;      // pixels du portrait
+    private static final Color DIMMED       = new Color(0.55f, 0.55f, 0.55f, 1f); // onglet non choisi, comme à la Boutique
 
-    /** Une cinématique de la liste : son nom, une ligne d'explication, son image et de quoi la créer. */
+    /** Les onglets d'un boss : son entrée en scène, ses nouvelles phases, sa fin. */
+    enum Moment {
+        ENTRANCE, PHASE_2, PHASE_3, END;
+
+        String label() {
+            return switch (this) {
+                case ENTRANCE -> Lang.t("Entrée");
+                case PHASE_2 -> Lang.f("Phase {0}", 2);
+                case PHASE_3 -> Lang.f("Phase {0}", 3);
+                case END -> Lang.t("Fin");
+            };
+        }
+    }
+
+    /** Une cinématique : son nom, une ligne d'explication, son image et de quoi la créer. */
     private record Entry(String name, String description, Texture art, Function<CutsceneKit, Cutscene> create) { }
 
-    /** Un groupe de cinématiques (une ligne du panneau de gauche). */
-    private record Group(String label, String title, List<Entry> entries, List<MenuOption> rows) { }
+    /** Un boss (ou un jeu bonus) de la liste du centre, et ses cinématiques onglet par onglet (jamais vide). */
+    private record Subject(String name, Map<Moment, List<Entry>> moments) {
+        /** @return les onglets qui ont une cinématique, dans l'ordre. */
+        List<Moment> tabs() { return new ArrayList<>(moments.keySet()); }
+    }
+
+    /** Un lieu de l'Exploration et ses rois. */
+    private record PlaceGroup(Place place, Texture art, List<Subject> kings) { }
+
+    /**
+     * Une catégorie (une ligne du panneau de gauche) : ses boss, ou pour l'Exploration ses lieux.
+     * {@code tabs} faux : pas d'onglets (les jeux bonus n'ont qu'une cinématique chacun).
+     */
+    private record Category(String label, String title, boolean tabs, List<Subject> subjects, List<PlaceGroup> places) {
+        boolean hasPlaces() { return !places.isEmpty(); }
+    }
 
     private final VisualSettings  settings = new VisualSettings();
     private final CardTextures    cardTextures = assets.cardTextures();
@@ -97,6 +137,7 @@ public class CinematicScreen extends CasinoMenuScreen {
     private final Texture         chipTexture = new Texture(Gdx.files.internal(CHIP_PATH));
     private final BitmapFont      rowFont     = Fonts.jersey(50, Color.WHITE, 4f, Palette.TEXT_SHADE);
     private final BitmapFont      itemFont    = Fonts.jersey(40, Color.WHITE, 3f, Palette.TEXT_SHADE);
+    private final BitmapFont      variantFont = Fonts.jersey(32, Color.WHITE, 2f, Palette.TEXT_SHADE);
     private final BitmapFont      labelFont   = Fonts.jersey(36, Palette.CREAM, 3f, Palette.TEXT_SHADE);
     private final BitmapFont      groupFont   = Fonts.jersey(72, Palette.GOLD, 5f, Palette.TEXT_SHADE);
     private final BitmapFont      bodyFont    = Fonts.jersey(36, Color.WHITE, 2f, Palette.TEXT_SHADE);
@@ -106,80 +147,103 @@ public class CinematicScreen extends CasinoMenuScreen {
 
     private final Image             listPanel;
     private final Image             detailPanel;
-    private final List<Group>       groups = new ArrayList<>();
-    private final List<MenuOption>  groupRows = new ArrayList<>();
-    private final Label             groupLabel;
-    private final Label             groupTitle;
+    private final List<Category>    categories = new ArrayList<>();
+    private final List<MenuOption>  categoryRows = new ArrayList<>();
+    private final Label             categoryTitle;
+    /** Les lignes du centre : les boss de la catégorie, ou les lieux de l'Exploration (refaites à chaque changement). */
+    private final List<MenuOption>  itemRows = new ArrayList<>();
+    /** Les onglets, un par {@link Moment} (seuls ceux du boss choisi sont visibles). */
+    private final Map<Moment, TextButton> tabButtons = new EnumMap<>(Moment.class);
+    /** Trait doré sous l'onglet choisi. */
+    private final Image             tabMark;
+    /** Les cinématiques de l'onglet, quand il en a plusieurs. */
+    private final List<MenuOption>  variantRows = new ArrayList<>();
     private final Image             art;
     private final Image             artFrame;
     private final Label             description;
     private final TextButton        playButton;
     private final TextButton        backButton;
+    private final Label             more;
 
-    private int      group = -1;
+    private int      category = -1;
+    /** Lieu ouvert de l'Exploration ({@code -1} : la liste des lieux). */
+    private int      place = -1;
+    /** Dernier lieu choisi : la liste des lieux s'y replace. */
+    private int      lastPlace;
+    /** Boss choisi dans la liste du centre (ou lieu, dans la liste des lieux). */
     private int      selected = -1;
-    /** Première cinématique visible du groupe (la liste défile quand elle est trop longue). */
+    private Moment   moment = Moment.ENTRANCE;
+    /** Cinématique choisie dans l'onglet. */
+    private int      variant;
+    /** Première ligne visible au centre (la liste défile quand elle est trop longue). */
     private int      scroll;
-    private final Label more;
-    /** Premier groupe visible dans le panneau de gauche (la colonne des lieux défile quand elle est trop haute). */
-    private int      groupScroll;
-    private final Label groupMore;
     private boolean  wheel;
     private Cutscene cutscene;
 
     public CinematicScreen(LuckyGame luckyGame) {
         super(luckyGame, Lang.t("CINÉMATIQUES"), 96, VEIL_ALPHA);
         kit        = new CutsceneKit(settings, shake, sounds, enemyTextures, cutsceneFont);
-        TextureRegionDrawable pixel = new TextureRegionDrawable(new TextureRegion(hud.pixel));
         listPanel   = new Image(hud.panelDrawable());
         detailPanel = new Image(hud.panelDrawable());
         listPanel.setTouchable(Touchable.disabled);
         detailPanel.setTouchable(Touchable.disabled);
 
-        buildGroups();
+        buildCategories();
         Label.LabelStyle rowStyle = new Label.LabelStyle(rowFont, Color.WHITE);
-        for (int i = 0; i < groups.size(); i++) {
+        for (int i = 0; i < categories.size(); i++) {
             int index = i;
-            MenuOption row = new MenuOption(groups.get(i).label(), rowStyle, hud.insetDrawable(),
+            MenuOption row = new MenuOption(categories.get(i).label(), rowStyle, hud.insetDrawable(),
                 new TextureRegion(chipTexture), ROW_WIDTH, ROW_HEIGHT);
             row.addListener(new ClickListener() {
                 @Override
                 public void enter(InputEvent event, float x, float y, int pointer, Actor fromActor) {
                     super.enter(event, x, y, pointer, fromActor);
-                    if (pointer == -1) selectGroup(index, true);
+                    if (pointer == -1 && !isPlaying()) selectCategory(index, true);
                 }
 
                 @Override
                 public void clicked(InputEvent event, float x, float y) {
-                    selectGroup(index, false);
+                    if (isPlaying()) return;
+                    if (category == index && place >= 0) closePlace(); // l'Exploration recliquée : retour aux lieux
+                    else selectCategory(index, false);
                 }
             });
-            groupRows.add(row);
+            categoryRows.add(row);
         }
 
-        groupLabel  = new Label("", new Label.LabelStyle(labelFont, Color.WHITE));
-        groupTitle  = new Label("", new Label.LabelStyle(groupFont, Color.WHITE));
+        categoryTitle = new Label("", new Label.LabelStyle(groupFont, Color.WHITE));
+        for (Moment each : Moment.values()) {
+            TextButton tab = buttons.create(each.label(), clickSound, () -> selectMoment(each, 0, false));
+            tabButtons.put(each, tab);
+        }
+        tabMark     = new Image(new TextureRegionDrawable(new TextureRegion(hud.pixel)));
+        tabMark.setColor(Palette.GOLD);
+        tabMark.setTouchable(Touchable.disabled);
         artFrame    = new Image(hud.insetDrawable());
         art         = new Image(new TextureRegionDrawable(new TextureRegion(enemyTextures.portrait(EnemyKind.COMETE))));
+        art.addListener(new ClickListener() {
+            @Override
+            public void clicked(InputEvent event, float x, float y) {
+                activate();
+            }
+        });
         description = new Label("", new Label.LabelStyle(bodyFont, Color.WHITE));
         description.setWrap(true);
         description.setAlignment(Align.topLeft);
+        description.setTouchable(Touchable.disabled);
         more = new Label("", new Label.LabelStyle(labelFont, Color.WHITE));
         more.setTouchable(Touchable.disabled);
-        groupMore = new Label("", new Label.LabelStyle(labelFont, Color.WHITE));
-        groupMore.setTouchable(Touchable.disabled);
-        playButton  = buttons.createAction(Lang.t("Lancer"), clickSound, this::launch);
-        backButton  = buttons.create(Lang.t("Retour"), clickSound, this::onBack);
+        playButton  = buttons.createAction(Lang.t("Lancer"), clickSound, this::activate);
+        backButton  = buttons.create(Lang.t("Retour"), clickSound, this::back);
 
         stage.getRoot().addActorAt(0, shake);   // invisible : met à jour la caméra (avant le décor, comme avant)
         stage.addActor(listPanel);
         stage.addActor(detailPanel);
-        groupRows.forEach(stage::addActor);
-        stage.addActor(groupLabel);
-        stage.addActor(groupTitle);
-        for (Group g : groups) g.rows().forEach(stage::addActor);
+        categoryRows.forEach(stage::addActor);
+        stage.addActor(categoryTitle);
+        tabButtons.values().forEach(stage::addActor);
+        stage.addActor(tabMark);
         stage.addActor(more);
-        stage.addActor(groupMore);
         stage.addActor(artFrame);
         stage.addActor(art);
         stage.addActor(description);
@@ -187,7 +251,9 @@ public class CinematicScreen extends CasinoMenuScreen {
         stage.addActor(backButton);
         reveal();
 
-        selectGroup(0, false);
+        art.setVisible(false);                  // rien de vu (hors mode ADMIN) : ni image ni texte
+        artFrame.setVisible(false);
+        if (!categories.isEmpty()) selectCategory(0, false);
         layout();
     }
 
@@ -195,123 +261,170 @@ public class CinematicScreen extends CasinoMenuScreen {
     // Les cinématiques
     // -------------------------------------------------------------------------
 
-    /** Les groupes : boss de la Tour (par chapitre), fins et duel, les rois de chaque lieu, puis le Jeu bonus. */
-    private void buildGroups() {
+    /** Les catégories, dans l'ordre du panneau de gauche. Une catégorie sans cinématique vue n'apparaît pas. */
+    private void buildCategories() {
         PlayerProfile profile = luckyGame.getProfile();
-        List<Entry> bosses = new ArrayList<>();
-        List<Entry> deaths = new ArrayList<>();                     // les fins des boss vont dans « Tour : fins »
+        addCategory(Lang.t("Histoire"), Lang.t("Les boss de l'Histoire"), true, story(profile), List.of());
+        addCategory(Lang.t("Exploration"), Lang.t("Choisis un lieu"), true, List.of(), exploration(profile));
+        addCategory(Lang.t("Jeux bonus"), Lang.t("Le Jeu bonus"), false, bonusGames(profile), List.of());
+        addCategory(Lang.t("Joueur Masqué"), Lang.t("Le Joueur Masqué"), true, rival(profile), List.of());
+        addCategory(Lang.t("Le Croupier"), Lang.t("Le boss secret"), true, croupier(profile), List.of());
+    }
+
+    private void addCategory(String label, String title, boolean tabs, List<Subject> subjects, List<PlaceGroup> places) {
+        if (subjects.isEmpty() && places.isEmpty()) return; // aucune encore vue (hors mode ADMIN)
+        categories.add(new Category(label, title, tabs, subjects, places));
+    }
+
+    /**
+     * L'Histoire : le boss de chaque chapitre. La fin de l'Éclat Originel est celle du chapitre « Le Dernier
+     * Tirage » ; celle de la Machine Originelle, le duel des leviers (gagné, perdu) puis la fin du « Jackpot ».
+     */
+    private List<Subject> story(PlayerProfile profile) {
+        List<Subject> bosses = new ArrayList<>();
+        Symbol[] reels = Symbol.classicReels().toArray(new Symbol[0]);
         for (Chapter chapter : Chapter.values()) {
             EnemyKind boss = chapter.getBoss();
-            if (!Bestiary.bossCutsceneSeen(profile, boss)) continue;
-            bosses.add(new Entry(chapter.getNumber() + ". " + boss.getDisplayName(),
-                Lang.f("{0}, « {1} » : avant le combat contre le boss.", chapter.getLabel(), chapter.getTitle()),
-                enemyTextures.portrait(boss), kit -> Cutscenes.beforeBoss(kit, boss)));
-            addMoments(bosses, deaths, profile, boss);
+            Map<Moment, List<Entry>> moments = new EnumMap<>(Moment.class);
+            if (Bestiary.bossCutsceneSeen(profile, boss)) {
+                add(moments, Moment.ENTRANCE, new Entry(boss.getDisplayName(),
+                    Lang.f("{0}, « {1} » : avant le combat contre le boss.", chapter.getLabel(), chapter.getTitle()),
+                    enemyTextures.portrait(boss), kit -> Cutscenes.beforeBoss(kit, boss)));
+            }
+            addMoments(moments, profile, boss);
+            if (boss == EnemyKind.MACHINE_ORIGINELLE && Bestiary.duelSeen(profile)) {
+                add(moments, Moment.END, new Entry(Lang.t("Duel des leviers : victoire"),
+                    Lang.t("Le Dernier tirage de la Machine Originelle. Tire ton levier à la souris. Une égalité, puis tu "
+                        + "gagnes."),
+                    enemyTextures.portrait(EnemyKind.MACHINE_ORIGINELLE),
+                    kit -> new LastDrawCutscene(kit, new LastDrawEvent(List.of(reels),
+                        List.of(Symbol.BELL, Symbol.SEVEN), List.of(Symbol.BELL, Symbol.GOLD_BAR), true))));
+                add(moments, Moment.END, new Entry(Lang.t("Duel des leviers : défaite"),
+                    Lang.t("Le Dernier tirage de la Machine Originelle. Tire ton levier à la souris. La Machine gagne."),
+                    enemyTextures.portrait(EnemyKind.MACHINE_ORIGINELLE),
+                    kit -> new LastDrawCutscene(kit, new LastDrawEvent(List.of(reels),
+                        List.of(Symbol.CHERRY), List.of(Symbol.DIAMOND), false))));
+            }
+            if (Bestiary.ENDINGS.contains(chapter) && Bestiary.endingSeen(profile, chapter)) { // voir Cutscenes.ending
+                add(moments, Moment.END, new Entry(Lang.f("Fin du {0}", chapter.getLabel().toLowerCase()),
+                    Lang.f("La fin de « {0} », après la victoire contre {1}.", chapter.getTitle(), boss.getDisplayName()),
+                    enemyTextures.chapterArt(chapter), kit -> Cutscenes.ending(kit, chapter)));
+            }
+            addSubject(bosses, chapter.getNumber() + ". " + boss.getDisplayName(), moments);
         }
-        addGroup(Lang.t("Histoire : boss"), Lang.t("Les boss de l'Histoire"), bosses);
+        return bosses;
+    }
 
-        List<Entry> endings = new ArrayList<>();
-        Symbol[] reels = Symbol.classicReels().toArray(new Symbol[0]);
-        if (Bestiary.duelSeen(profile)) {
-            endings.add(new Entry(Lang.t("Duel des leviers : victoire"),
-                Lang.t("Le Dernier tirage de la Machine Originelle. Tire ton levier à la souris. Une égalité, puis tu "
-                    + "gagnes."),
-                enemyTextures.portrait(EnemyKind.MACHINE_ORIGINELLE),
-                kit -> new LastDrawCutscene(kit, new LastDrawEvent(List.of(reels),
-                    List.of(Symbol.BELL, Symbol.SEVEN), List.of(Symbol.BELL, Symbol.GOLD_BAR), true))));
-            endings.add(new Entry(Lang.t("Duel des leviers : défaite"),
-                Lang.t("Le Dernier tirage de la Machine Originelle. Tire ton levier à la souris. La Machine gagne."),
-                enemyTextures.portrait(EnemyKind.MACHINE_ORIGINELLE),
-                kit -> new LastDrawCutscene(kit, new LastDrawEvent(List.of(reels),
-                    List.of(Symbol.CHERRY), List.of(Symbol.DIAMOND), false))));
-        }
-        for (Chapter chapter : Bestiary.ENDINGS) { // voir Cutscenes.ending
-            if (!Bestiary.endingSeen(profile, chapter)) continue;
-            endings.add(new Entry(Lang.f("Fin du {0}", chapter.getLabel().toLowerCase()),
-                Lang.f("La fin de « {0} », après la victoire contre {1}.",
-                    chapter.getTitle(), chapter.getBoss().getDisplayName()),
-                enemyTextures.chapterArt(chapter), kit -> Cutscenes.ending(kit, chapter)));
-        }
-        endings.addAll(deaths);
-        addGroup(Lang.t("Histoire : fins"), Lang.t("Le duel et les fins"), endings);
-
-        for (Place place : Place.values()) {
-            List<Entry> kings = new ArrayList<>();
-            for (Dungeon dungeon : place.getDungeons()) {
+    /** L'Exploration : les rois de chaque lieu ; le dernier roi du Désert de Braise a aussi la fin de l'Exploration. */
+    private List<PlaceGroup> exploration(PlayerProfile profile) {
+        List<PlaceGroup> places = new ArrayList<>();
+        for (Place each : Place.values()) {
+            List<Subject> kings = new ArrayList<>();
+            List<Dungeon> dungeons = each.getDungeons();
+            for (int i = 0; i < dungeons.size(); i++) {
+                Dungeon dungeon = dungeons.get(i);
                 EnemyKind king = dungeon.getKing();
-                if (!Bestiary.bossCutsceneSeen(profile, king)) continue;
-                kings.add(new Entry(king.getDisplayName(),
-                    Lang.f("{0}, « {1} » : l'entrée en scène du roi, après le soldat.",
-                        place.getName(), dungeon.getName()),
-                    enemyTextures.portrait(king), kit -> Cutscenes.beforeBoss(kit, king)));
-                addMoments(kings, kings, profile, king);
+                Map<Moment, List<Entry>> moments = new EnumMap<>(Moment.class);
+                if (Bestiary.bossCutsceneSeen(profile, king)) {
+                    add(moments, Moment.ENTRANCE, new Entry(king.getDisplayName(),
+                        Lang.f("{0}, « {1} » : l'entrée en scène du roi, après le soldat.", each.getName(), dungeon.getName()),
+                        enemyTextures.portrait(king), kit -> Cutscenes.beforeBoss(kit, king)));
+                }
+                addMoments(moments, profile, king);
+                if (each == Place.DESERT && i == dungeons.size() - 1 && Bestiary.explorationEndingSeen(profile)) {
+                    add(moments, Moment.END, new Entry(Lang.t("Fin de l'Exploration"),
+                        Lang.t("Les six lieux vidés : le Croupier fait le tour du monde et pose l'écaille d'or d'Ignar sur la table."),
+                        enemyTextures.portrait(EnemyKind.CROUPIER), Cutscenes::explorationEnding));
+                }
+                addSubject(kings, king.getDisplayName(), moments);
             }
-            if (place == Place.DESERT && Bestiary.explorationEndingSeen(profile)) {
-                kings.add(new Entry(Lang.t("Fin de l'Exploration"),
-                    Lang.t("Les six lieux vidés : le Croupier fait le tour du monde et pose l'écaille d'or d'Ignar sur la table."),
-                    enemyTextures.portrait(EnemyKind.CROUPIER), Cutscenes::explorationEnding));
-            }
-            addGroup(place.getShortName(), place.getName(), kings);
+            if (!kings.isEmpty()) places.add(new PlaceGroup(each, enemyTextures.map(each), kings));
         }
+        return places;
+    }
 
-        List<Entry> rival = new ArrayList<>(); // le Joueur Masqué : une scène par rencontre, puis ses adieux
-        for (Place place : Place.values()) {
-            EnemyKind kind = Rival.of(place);
-            if (kind == null || !Bestiary.bossCutsceneSeen(profile, kind)) continue;
-            rival.add(new Entry(Rival.isFinal(kind) ? Lang.t("Le masque tombe") : Lang.f("Rencontre {0} : {1}",
-                    Rival.encounter(kind), place.getShortName()),
-                Rival.isFinal(kind)
-                    ? Lang.t("Le duel final, au Désert de Braise : il enlève son masque. Lui aussi est un élève du Croupier.")
-                    : Lang.f("{0} : il prend la place du soldat. Sa machine a appris un nouveau symbole.", place.getName()),
-                enemyTextures.portrait(kind), kit -> Cutscenes.beforeBoss(kit, kind)));
-        }
-        if (Bestiary.deathSeen(profile, EnemyKind.RIVAL_DESERT)) {
-            rival.add(new Entry(Lang.t("Le masque est à toi"),
-                Lang.t("Battu, il pose son masque sur le tapis, te le laisse et s'efface dans le sable."),
-                enemyTextures.portrait(EnemyKind.RIVAL_DESERT), Cutscenes::rivalFarewell));
-        }
-        if (!rival.isEmpty()) addGroup(Lang.t("Joueur Masqué"), Lang.t("Le Joueur Masqué"), rival);
-
-        EnemyKind croupier = EnemyKind.GRAND_CROUPIER; // le boss secret : rien n'apparaît avant de l'avoir affronté
-        if (Bestiary.bossCutsceneSeen(profile, croupier)) {
-            List<Entry> secret = new ArrayList<>();
-            secret.add(new Entry(Lang.t("Le Croupier entre en scène"),
-                Lang.t("Une porte cachée au bout de l'Histoire mène à sa salle des machines. Il te distribue tes propres cartes."),
-                enemyTextures.portrait(croupier), kit -> withProfile(Cutscenes.beforeBoss(kit, croupier), profile)));
-            addMoments(secret, secret, profile, croupier);
-            if (Bestiary.deathSeen(profile, croupier)) {
-                secret.add(new Entry(Lang.t("La vraie fin"),
-                    Lang.t("Il perd sa dernière main, te laisse son chapeau et le sabot, puis s'efface dans l'aube. C'est toi qui distribues."),
-                    enemyTextures.portrait(croupier), Cutscenes::trueEnding));
-            }
-            addGroup(Lang.t("Le Croupier"), Lang.t("Le boss secret"), secret);
-        }
-
+    /** Les jeux bonus : une cinématique chacun, sans onglets. */
+    private List<Subject> bonusGames(PlayerProfile profile) {
+        List<Subject> games = new ArrayList<>();
+        if (!Bestiary.bonusGameSeen(profile)) return games;
         List<Symbol> machine = profile.getMachine();
-        if (Bestiary.bonusGameSeen(profile)) {
-            Texture art = cardTextures.get("cards/test/jeu_bonus.png");
-            Texture wheelArt = cardTextures.get("cards/test/jeu_bonus_roue.png");
-            Texture plinkoArt = cardTextures.get("cards/test/jeu_bonus_plinko.png");
-            Texture punchArt = cardTextures.get("cards/test/jeu_bonus_poing.png");
-            addGroup(Lang.t("Jeu bonus"), Lang.t("Le Jeu bonus"), List.of(
-                new Entry(Lang.t("Grille de la cagnotte"),
-                    Lang.t("Rang 4, le plus rare : la grille de 6 x 6 et ses tirages, sur ta machine. Chaque alignement paie "
-                        + "toute la cagnotte. Une nouvelle grille à chaque fois."),
-                    art, kit -> new BonusGameCutscene(kit, BonusGame.play(machine, SpinEconomy.BASE_SPIN_COST, new Random()),
-                        machine)),
-                new Entry(Lang.t("Roue de la cagnotte"),
-                    Lang.t("Rang 1 : un lancer de roue, la case où elle s'arrête multiplie la cagnotte."),
-                    wheelArt, kit -> new SmallBonusGameCutscene(kit, BonusGame.playSmall(BonusGame.Kind.WHEEL, 0,
-                        SpinEconomy.BASE_SPIN_COST, 1, new Random()))),
-                new Entry(Lang.t("Plinko de la cagnotte"),
-                    Lang.t("Rang 2 : une bille rebondit sur les clous et tombe dans une case qui multiplie la cagnotte."),
-                    plinkoArt, kit -> new SmallBonusGameCutscene(kit, BonusGame.playSmall(BonusGame.Kind.PLINKO, 0,
-                        SpinEconomy.BASE_SPIN_COST, 1, new Random()))),
-                new Entry(Lang.t("Coup de poing de la cagnotte"),
-                    Lang.t("Rang 3 : un gant de boxe frappe la cible, le score de la machine multiplie la cagnotte."),
-                    punchArt, kit -> new SmallBonusGameCutscene(kit, BonusGame.playSmall(BonusGame.Kind.PUNCH, 0,
-                        SpinEconomy.BASE_SPIN_COST, 1, new Random())))));
+        addSubject(games, new Entry(Lang.t("Grille de la cagnotte"),
+            Lang.t("Rang 4, le plus rare : la grille de 6 x 6 et ses tirages, sur ta machine. Chaque alignement paie "
+                + "toute la cagnotte. Une nouvelle grille à chaque fois."),
+            cardTextures.get("cards/test/jeu_bonus.png"),
+            kit -> new BonusGameCutscene(kit, BonusGame.play(machine, SpinEconomy.BASE_SPIN_COST, new Random()), machine)));
+        addSubject(games, new Entry(Lang.t("Roue de la cagnotte"),
+            Lang.t("Rang 1 : un lancer de roue, la case où elle s'arrête multiplie la cagnotte."),
+            cardTextures.get("cards/test/jeu_bonus_roue.png"), kit -> new SmallBonusGameCutscene(kit,
+                BonusGame.playSmall(BonusGame.Kind.WHEEL, 0, SpinEconomy.BASE_SPIN_COST, 1, new Random()))));
+        addSubject(games, new Entry(Lang.t("Plinko de la cagnotte"),
+            Lang.t("Rang 2 : une bille rebondit sur les clous et tombe dans une case qui multiplie la cagnotte."),
+            cardTextures.get("cards/test/jeu_bonus_plinko.png"), kit -> new SmallBonusGameCutscene(kit,
+                BonusGame.playSmall(BonusGame.Kind.PLINKO, 0, SpinEconomy.BASE_SPIN_COST, 1, new Random()))));
+        addSubject(games, new Entry(Lang.t("Coup de poing de la cagnotte"),
+            Lang.t("Rang 3 : un gant de boxe frappe la cible, le score de la machine multiplie la cagnotte."),
+            cardTextures.get("cards/test/jeu_bonus_poing.png"), kit -> new SmallBonusGameCutscene(kit,
+                BonusGame.playSmall(BonusGame.Kind.PUNCH, 0, SpinEconomy.BASE_SPIN_COST, 1, new Random()))));
+        return games;
+    }
+
+    /** Le Joueur Masqué : une ligne par rencontre (son entrée) ; la dernière, au Désert, a ses adieux pour fin. */
+    private List<Subject> rival(PlayerProfile profile) {
+        List<Subject> encounters = new ArrayList<>();
+        for (Place each : Place.values()) {
+            EnemyKind kind = Rival.of(each);
+            if (kind == null) continue;
+            Map<Moment, List<Entry>> moments = new EnumMap<>(Moment.class);
+            String name = Rival.isFinal(kind) ? Lang.t("Le masque tombe")
+                : Lang.f("Rencontre {0} : {1}", Rival.encounter(kind), each.getShortName());
+            if (Bestiary.bossCutsceneSeen(profile, kind)) {
+                add(moments, Moment.ENTRANCE, new Entry(name, Rival.isFinal(kind)
+                        ? Lang.t("Le duel final, au Désert de Braise : il enlève son masque. Lui aussi est un élève du Croupier.")
+                        : Lang.f("{0} : il prend la place du soldat. Sa machine a appris un nouveau symbole.", each.getName()),
+                    enemyTextures.portrait(kind), kit -> Cutscenes.beforeBoss(kit, kind)));
+            }
+            if (Rival.isFinal(kind) && Bestiary.deathSeen(profile, kind)) {
+                add(moments, Moment.END, new Entry(Lang.t("Le masque est à toi"),
+                    Lang.t("Battu, il pose son masque sur le tapis, te le laisse et s'efface dans le sable."),
+                    enemyTextures.portrait(kind), Cutscenes::rivalFarewell));
+            }
+            addSubject(encounters, name, moments);
         }
+        return encounters;
+    }
+
+    /** Le Croupier, boss secret : rien n'apparaît avant de l'avoir affronté. Sa fin est la vraie fin du jeu. */
+    private List<Subject> croupier(PlayerProfile profile) {
+        List<Subject> secret = new ArrayList<>();
+        EnemyKind croupier = EnemyKind.GRAND_CROUPIER;
+        if (!Bestiary.bossCutsceneSeen(profile, croupier)) return secret;
+        Map<Moment, List<Entry>> moments = new EnumMap<>(Moment.class);
+        add(moments, Moment.ENTRANCE, new Entry(Lang.t("Le Croupier entre en scène"),
+            Lang.t("Une porte cachée au bout de l'Histoire mène à sa salle des machines. Il te distribue tes propres cartes."),
+            enemyTextures.portrait(croupier), kit -> withProfile(Cutscenes.beforeBoss(kit, croupier), profile)));
+        addMoments(moments, profile, croupier);
+        if (Bestiary.deathSeen(profile, croupier)) {
+            add(moments, Moment.END, new Entry(Lang.t("La vraie fin"),
+                Lang.t("Il perd sa dernière main, te laisse son chapeau et le sabot, puis s'efface dans l'aube. C'est toi qui distribues."),
+                enemyTextures.portrait(croupier), Cutscenes::trueEnding));
+        }
+        addSubject(secret, croupier.getDisplayName(), moments);
+        return secret;
+    }
+
+    private static void add(Map<Moment, List<Entry>> moments, Moment moment, Entry entry) {
+        moments.computeIfAbsent(moment, m -> new ArrayList<>()).add(entry);
+    }
+
+    private static void addSubject(List<Subject> subjects, String name, Map<Moment, List<Entry>> moments) {
+        if (!moments.isEmpty()) subjects.add(new Subject(name, moments)); // rien de vu : le boss n'apparaît pas
+    }
+
+    /** Un jeu bonus : une seule cinématique, rangée sous l'entrée (les onglets sont cachés). */
+    private static void addSubject(List<Subject> subjects, Entry entry) {
+        Map<Moment, List<Entry>> moments = new EnumMap<>(Moment.class);
+        add(moments, Moment.ENTRANCE, entry);
+        subjects.add(new Subject(entry.name(), moments));
     }
 
     /**
@@ -335,22 +448,23 @@ public class CinematicScreen extends CasinoMenuScreen {
     }
 
     /**
-     * Ajoute à {@code entries} les cinématiques de phase du boss {@code boss} (vues dès
-     * qu'il a été rencontré), et à {@code deaths} celle de sa mort (vue une fois qu'il a été battu).
+     * Ajoute à {@code moments} les cinématiques de phase du boss {@code boss} (vues dès
+     * qu'il a été rencontré) et celle de sa mort (vue une fois qu'il a été battu).
      */
-    private void addMoments(List<Entry> entries, List<Entry> deaths, PlayerProfile profile, EnemyKind boss) {
+    private void addMoments(Map<Moment, List<Entry>> moments, PlayerProfile profile, EnemyKind boss) {
         Texture portrait = enemyTextures.portrait(boss);
         float[] thresholds = boss.phaseThresholds();
         if (Bestiary.bossCutsceneSeen(profile, boss)) {
-            for (int phase = 2; phase <= boss.phaseCount(); phase++) {
+            for (int phase = 2; phase <= Math.min(3, boss.phaseCount()); phase++) {
                 int shown = phase;
-                entries.add(new Entry(Lang.f("{0} : phase {1}", boss.getDisplayName(), phase),
-                    phaseDescription(boss, phase, Math.round(thresholds[phase - 2] * 100)),
-                    portrait, kit -> withProfile(Cutscenes.phase(kit, boss, shown), profile)));
+                add(moments, phase == 2 ? Moment.PHASE_2 : Moment.PHASE_3,
+                    new Entry(Lang.f("{0} : phase {1}", boss.getDisplayName(), phase),
+                        phaseDescription(boss, phase, Math.round(thresholds[phase - 2] * 100)),
+                        portrait, kit -> withProfile(Cutscenes.phase(kit, boss, shown), profile)));
             }
         }
         if (Cutscenes.hasDeath(boss) && Bestiary.deathSeen(profile, boss)) {
-            deaths.add(new Entry(Lang.f("{0} : la fin", boss.getDisplayName()),
+            add(moments, Moment.END, new Entry(Lang.f("{0} : la fin", boss.getDisplayName()),
                 Lang.f("Le coup final. « {0} »", BossTheme.of(boss).deathLine()),
                 portrait, kit -> Cutscenes.death(kit, boss)));
         }
@@ -370,67 +484,191 @@ public class CinematicScreen extends CasinoMenuScreen {
         return Lang.f("À {0} % de ses PV, phase {1} : « {2} »", percent, phase, boss.phaseText(phase));
     }
 
-    private void addGroup(String label, String groupName, List<Entry> entries) {
-        if (entries.isEmpty()) return; // aucune encore vue (hors mode ADMIN)
-        int groupIndex = groups.size();
-        Label.LabelStyle style = new Label.LabelStyle(itemFont, Color.WHITE);
-        List<MenuOption> rows = new ArrayList<>();
-        for (int i = 0; i < entries.size(); i++) {
-            int index = i;
-            MenuOption row = new MenuOption(entries.get(i).name(), style, hud.insetDrawable(),
-                new TextureRegion(chipTexture), ITEM_WIDTH, ITEM_HEIGHT);
-            row.addListener(new ClickListener() {
-                @Override
-                public void enter(InputEvent event, float x, float y, int pointer, Actor fromActor) {
-                    super.enter(event, x, y, pointer, fromActor);
-                    if (pointer == -1 && group == groupIndex) select(index, true);
-                }
+    // -------------------------------------------------------------------------
+    // Ce qui est montré
+    // -------------------------------------------------------------------------
 
-                @Override
-                public void clicked(InputEvent event, float x, float y) {
-                    if (group != groupIndex) return;
-                    select(index, false);
-                    launch();
-                }
-            });
-            rows.add(row);
-        }
-        groups.add(new Group(label, groupName, entries, rows));
+    private Category current() { return categories.get(category); }
+
+    /** @return {@code true} quand le centre montre les lieux de l'Exploration (pas encore de lieu ouvert). */
+    private boolean choosingPlace() {
+        return category >= 0 && current().hasPlaces() && place < 0;
+    }
+
+    /** @return les boss montrés au centre (vide pendant le choix du lieu). */
+    private List<Subject> subjects() {
+        if (category < 0 || choosingPlace()) return List.of();
+        Category shown = current();
+        return shown.hasPlaces() ? shown.places().get(place).kings() : shown.subjects();
+    }
+
+    /** @return le nombre de lignes du centre. */
+    private int itemCount() {
+        if (category < 0) return 0;
+        return choosingPlace() ? current().places().size() : subjects().size();
+    }
+
+    private Subject subject() {
+        List<Subject> shown = subjects();
+        return selected >= 0 && selected < shown.size() ? shown.get(selected) : null;
+    }
+
+    /** @return la cinématique choisie ({@code null} pendant le choix du lieu). */
+    private Entry entry() {
+        Subject shown = subject();
+        if (shown == null) return null;
+        List<Entry> entries = shown.moments().get(moment);
+        return entries == null ? null : entries.get(Math.min(variant, entries.size() - 1));
+    }
+
+    private boolean showsTabs() {
+        return category >= 0 && current().tabs() && !choosingPlace();
     }
 
     // -------------------------------------------------------------------------
     // Sélection et lecture
     // -------------------------------------------------------------------------
 
-    /** Sélectionne le groupe {@code index} et montre ses cinématiques (la première sélectionnée). */
-    private void selectGroup(int index, boolean sound) {
-        if (index == group) return;
+    /** Sélectionne la catégorie {@code index} : ses boss (le premier choisi), ou la liste des lieux. */
+    private void selectCategory(int index, boolean sound) {
+        if (index == category) return;
         if (sound) hoverSound.play();
-        group = index;
-        for (int i = 0; i < groupRows.size(); i++) groupRows.get(i).setSelected(i == index);
-        for (int i = 0; i < groups.size(); i++) {
-            for (MenuOption row : groups.get(i).rows()) row.setVisible(i == index);
-        }
-        Group current = groups.get(index);
-        groupLabel.setText(current.label().toUpperCase());
-        groupTitle.setText(current.title());
-        selected = -1;
-        scroll = 0;
-        select(0, false);
-        fadeIn(groupLabel);
-        fadeIn(groupTitle);
+        category = index;
+        place = -1;
+        for (int i = 0; i < categoryRows.size(); i++) categoryRows.get(i).setSelected(i == index);
+        rebuildItems(choosingPlace() ? lastPlace : 0);
     }
 
-    /** Sélectionne la cinématique {@code index} du groupe et montre son image et son explication. */
+    /** Ouvre le lieu {@code index} de l'Exploration : ses rois remplacent la liste des lieux. */
+    private void openPlace(int index) {
+        lastPlace = index;
+        place = index;
+        rebuildItems(0);
+    }
+
+    /** Revient de la liste des rois d'un lieu à la liste des lieux. */
+    private void closePlace() {
+        place = -1;
+        rebuildItems(lastPlace);
+    }
+
+    /** Refait les lignes du centre (boss ou lieux) et le titre, puis choisit la ligne {@code first}. */
+    private void rebuildItems(int first) {
+        itemRows.forEach(Actor::remove);
+        itemRows.clear();
+        Category shown = current();
+        categoryTitle.setText(choosingPlace() || !shown.hasPlaces() ? shown.title() : shown.places().get(place).place().getName());
+        Label.LabelStyle style = new Label.LabelStyle(itemFont, Color.WHITE);
+        int count = itemCount();
+        for (int i = 0; i < count; i++) {
+            int index = i;
+            String text = choosingPlace() ? shown.places().get(i).place().getName() : subjects().get(i).name();
+            MenuOption row = new MenuOption(text, style, hud.insetDrawable(), new TextureRegion(chipTexture),
+                ITEM_WIDTH, ITEM_HEIGHT);
+            row.addListener(new ClickListener() {
+                @Override
+                public void enter(InputEvent event, float x, float y, int pointer, Actor fromActor) {
+                    super.enter(event, x, y, pointer, fromActor);
+                    if (pointer == -1 && !isPlaying()) select(index, true);
+                }
+
+                @Override
+                public void clicked(InputEvent event, float x, float y) {
+                    if (isPlaying()) return;
+                    select(index, false);
+                    activate();
+                }
+            });
+            itemRows.add(row);
+            stage.getRoot().addActorBefore(more, row); // sous une cinématique en cours
+        }
+        buttons.setText(playButton, choosingPlace() ? Lang.t("Choisir") : Lang.t("Lancer"));
+        selected = -1;
+        scroll = 0;
+        moment = Moment.ENTRANCE; // nouvelle liste : on repart de l'entrée (la liste garde l'onglet d'un boss à l'autre)
+        select(Math.min(first, count - 1), false);
+        fadeIn(categoryTitle);
+    }
+
+    /** Choisit la ligne {@code index} du centre ; un boss garde l'onglet en cours s'il l'a. */
     private void select(int index, boolean sound) {
-        if (index == selected) return;
+        if (index == selected || index < 0) return;
         if (sound) hoverSound.play();
         selected = index;
-        Group current = groups.get(group);
-        for (int i = 0; i < current.rows().size(); i++) current.rows().get(i).setSelected(i == index);
-        Entry entry = current.entries().get(index);
-        ((TextureRegionDrawable) art.getDrawable()).setRegion(new TextureRegion(entry.art()));
-        description.setText(entry.description());
+        for (int i = 0; i < itemRows.size(); i++) itemRows.get(i).setSelected(i == index);
+        Subject shown = subject();
+        Moment next = shown == null || shown.moments().containsKey(moment) ? moment : shown.tabs().get(0);
+        selectMoment(next, 0, true);
+    }
+
+    /** Choisit l'onglet {@code shown} et sa cinématique {@code index}, puis montre sa miniature et son explication. */
+    private void selectMoment(Moment shown, int index, boolean force) {
+        if (!force && shown == moment && index == variant) return;
+        moment = shown;
+        variant = index;
+        rebuildVariants();
+        refreshDetail();
+    }
+
+    /** Les cinématiques de l'onglet, quand il en a plusieurs (sinon aucune ligne). */
+    private void rebuildVariants() {
+        variantRows.forEach(Actor::remove);
+        variantRows.clear();
+        Subject shown = subject();
+        List<Entry> entries = shown == null ? null : shown.moments().get(moment);
+        if (entries == null || entries.size() < 2) return;
+        Label.LabelStyle style = new Label.LabelStyle(variantFont, Color.WHITE);
+        for (int i = 0; i < entries.size(); i++) {
+            int index = i;
+            MenuOption row = new MenuOption(entries.get(i).name(), style, hud.insetDrawable(),
+                new TextureRegion(chipTexture), variantWidth(), VARIANT_HEIGHT);
+            row.addListener(new ClickListener() {
+                @Override
+                public void enter(InputEvent event, float x, float y, int pointer, Actor fromActor) {
+                    super.enter(event, x, y, pointer, fromActor);
+                    if (pointer == -1 && variant != index && !isPlaying()) {
+                        hoverSound.play();
+                        selectMoment(moment, index, false);
+                    }
+                }
+
+                @Override
+                public void clicked(InputEvent event, float x, float y) {
+                    if (isPlaying()) return;
+                    selectMoment(moment, index, false);
+                    activate();
+                }
+            });
+            row.setSelected(i == variant);
+            variantRows.add(row);
+            stage.getRoot().addActorBefore(artFrame, row); // sous une cinématique en cours
+        }
+    }
+
+    /** Onglets, miniature et explication de la ligne choisie. */
+    private void refreshDetail() {
+        Subject shown = subject();
+        for (Map.Entry<Moment, TextButton> tab : tabButtons.entrySet()) {
+            boolean has = showsTabs() && shown != null && shown.moments().containsKey(tab.getKey());
+            tab.getValue().setVisible(has);
+            tab.getValue().setColor(tab.getKey() == moment ? Color.WHITE : DIMMED);
+        }
+        for (int i = 0; i < variantRows.size(); i++) variantRows.get(i).setSelected(i == variant);
+        Texture texture;
+        String text;
+        if (choosingPlace()) {
+            PlaceGroup group = current().places().get(selected);
+            texture = group.art();
+            text = group.place().getDescription();
+        } else {
+            Entry chosen = entry();
+            texture = chosen == null ? null : chosen.art();
+            text = chosen == null ? "" : chosen.description();
+        }
+        art.setVisible(texture != null);
+        artFrame.setVisible(texture != null);
+        if (texture != null) ((TextureRegionDrawable) art.getDrawable()).setRegion(new TextureRegion(texture));
+        description.setText(text);
         fadeIn(art);
         fadeIn(description);
         layout();
@@ -442,10 +680,18 @@ public class CinematicScreen extends CasinoMenuScreen {
         actor.addAction(Actions.fadeIn(0.25f, Interpolation.pow2Out));
     }
 
-    /** Joue la cinématique sélectionnée par-dessus l'écran (la musique s'efface pendant la scène). */
+    /** Entrée, clic ou « Lancer » : ouvre le lieu choisi, ou joue la cinématique choisie. */
+    private void activate() {
+        if (leaving || isPlaying() || category < 0) return;
+        if (choosingPlace()) openPlace(selected);
+        else launch();
+    }
+
+    /** Joue la cinématique choisie par-dessus l'écran (la musique s'efface pendant la scène). */
     private void launch() {
-        if (leaving || isPlaying()) return;
-        Cutscene next = groups.get(group).entries().get(selected).create().apply(kit);
+        Entry chosen = entry();
+        if (chosen == null) return;
+        Cutscene next = chosen.create().apply(kit);
         if (next == null) return;
         if (cutscene != null) {
             cutscene.remove();
@@ -454,7 +700,8 @@ public class CinematicScreen extends CasinoMenuScreen {
         cutscene = next;
         stage.addActor(cutscene);
         music.setDucked(true);
-        // Écran couvert : l'écran de choix est déjà dessous, le fondu final s'estompe par-dessus.
+        // Écran couvert : l'écran de choix est déjà dessous (même catégorie, lieu, boss et onglet), le fondu
+        // final s'estompe par-dessus.
         cutscene.play(() -> {
             music.setDucked(false);
             shake.stop();
@@ -466,11 +713,38 @@ public class CinematicScreen extends CasinoMenuScreen {
         return cutscene != null && cutscene.isPlaying();
     }
 
+    /** Échap ou « Retour » : d'un lieu de l'Exploration à la liste des lieux, sinon au menu principal. */
+    private void back() {
+        if (isPlaying() || leaving) return;
+        if (category >= 0 && current().hasPlaces() && place >= 0) closePlace();
+        else onBack();
+    }
+
     /** Retour au menu principal (pas pendant une cinématique). */
     @Override
     protected void onBack() {
         if (isPlaying()) return;
         super.onBack();
+    }
+
+    /** L'onglet (ou la cinématique de l'onglet) précédent ou suivant, dans l'ordre Entrée, Phase 2, Phase 3, Fin. */
+    private void stepMoment(int step) {
+        Subject shown = subject();
+        if (!showsTabs() || shown == null) return;
+        List<Moment> order = new ArrayList<>();
+        List<Integer> indices = new ArrayList<>();
+        for (Moment each : shown.tabs()) {
+            for (int i = 0; i < shown.moments().get(each).size(); i++) {
+                order.add(each);
+                indices.add(i);
+            }
+        }
+        int at = 0;
+        for (int i = 0; i < order.size(); i++) if (order.get(i) == moment && indices.get(i) == variant) at = i;
+        int next = (at + step + order.size()) % order.size();
+        if (next == at) return;
+        hoverSound.play();
+        selectMoment(order.get(next), indices.get(next), false);
     }
 
     // -------------------------------------------------------------------------
@@ -486,39 +760,57 @@ public class CinematicScreen extends CasinoMenuScreen {
         float panelBottom = BOTTOM_SPACE;
         float panelHeight = panelTop - panelBottom;
         listPanel.setBounds(MARGIN, panelBottom, LIST_WIDTH, panelHeight);
-        layoutGroupRows(panelTop, panelBottom);
+        float rowX = MARGIN + (LIST_WIDTH - ROW_WIDTH) / 2f;
+        for (int i = 0; i < categoryRows.size(); i++) {
+            categoryRows.get(i).setPosition(rowX, panelTop - PANEL_PAD - ROW_HEIGHT - i * (ROW_HEIGHT + ROW_GAP));
+        }
 
         float detailX     = MARGIN + LIST_WIDTH + MARGIN / 2f;
         float detailWidth = width - detailX - MARGIN;
+        float detailRight = detailX + detailWidth - PANEL_PAD;
         detailPanel.setBounds(detailX, panelBottom, detailWidth, panelHeight);
         float innerX = detailX + PANEL_PAD;
+        float listX  = listX();
+        float sideX  = sideX();
+        float sideWidth = detailRight - sideX;
 
-        groupLabel.pack();
-        groupLabel.setPosition(innerX, panelTop - PANEL_PAD - groupLabel.getHeight());
-        groupTitle.pack();
-        groupTitle.setPosition(innerX, groupLabel.getY() - groupTitle.getHeight());
+        categoryTitle.pack();
+        categoryTitle.setPosition(innerX, panelTop - PANEL_PAD + 8f - categoryTitle.getHeight());
+        float contentTop = categoryTitle.getY() - 14f;
 
-        // Les cinématiques du groupe, en colonne sous le titre.
-        // Trop de cinématiques pour la hauteur : la liste défile avec la sélection (ou la molette).
-        float itemsTop = groupTitle.getY() - 24f;
-        int rows = visibleRows(itemsTop, panelBottom);
-        int shownCount = groups.isEmpty() || group < 0 ? 0 : groups.get(group).rows().size();
-        if (shownCount > rows) rows = visibleRows(itemsTop, panelBottom + MORE_SPACE); // la place du texte « au-dessus / en dessous »
-        for (int g = 0; g < groups.size(); g++) {
-            List<MenuOption> options = groups.get(g).rows();
-            int count = options.size();
-            if (g == group) {
-                if (!wheel && selected >= 0 && selected < scroll) scroll = selected;
-                if (!wheel && selected >= scroll + rows) scroll = selected - rows + 1;
-                scroll = Math.max(0, Math.min(scroll, count - rows));
+        // Les onglets du boss choisi, comme à la Boutique : au-dessus de sa miniature, ou calés à droite du panneau
+        // quand la colonne est trop étroite pour eux.
+        List<TextButton> tabs = new ArrayList<>();
+        for (TextButton tab : tabButtons.values()) if (tab.isVisible()) tabs.add(tab);
+        TextButton chosenTab = tabButtons.get(moment);
+        tabMark.setVisible(chosenTab.isVisible());
+        if (!tabs.isEmpty()) {
+            float tabsWidth = -TAB_GAP;
+            for (TextButton tab : tabs) tabsWidth += tab.getWidth() + TAB_GAP;
+            float x = sideX + tabsWidth <= detailRight ? sideX : detailRight - tabsWidth;
+            for (TextButton tab : tabs) {
+                tab.setPosition(x, contentTop - tab.getHeight());
+                x += tab.getWidth() + TAB_GAP;
             }
-            for (int i = 0; i < count; i++) {
-                int slot = g == group ? i - scroll : i;
-                options.get(i).setPosition(innerX, itemsTop - ITEM_HEIGHT - slot * (ITEM_HEIGHT + ITEM_GAP));
-                if (g == group) options.get(i).setVisible(slot >= 0 && slot < rows);
-            }
+            tabMark.setBounds(chosenTab.getX() + 10f, chosenTab.getY() - 9f, chosenTab.getWidth() - 20f, 5f);
+            contentTop -= tabs.get(0).getHeight() + 24f;
         }
-        int hidden = groups.isEmpty() || group < 0 ? 0 : groups.get(group).rows().size() - rows;
+
+        // Les boss (ou les lieux), en colonne. Trop de lignes pour la hauteur : la liste défile avec la
+        // sélection (ou la molette).
+        float itemsTop = contentTop;
+        int count = itemRows.size();
+        int rows = visibleRows(itemsTop, panelBottom);
+        if (count > rows) rows = visibleRows(itemsTop, panelBottom + MORE_SPACE); // la place du texte « au-dessus / en dessous »
+        if (!wheel && selected >= 0 && selected < scroll) scroll = selected;
+        if (!wheel && selected >= scroll + rows) scroll = selected - rows + 1;
+        scroll = Math.max(0, Math.min(scroll, count - rows));
+        for (int i = 0; i < count; i++) {
+            int slot = i - scroll;
+            itemRows.get(i).setPosition(listX, itemsTop - ITEM_HEIGHT - slot * (ITEM_HEIGHT + ITEM_GAP));
+            itemRows.get(i).setVisible(slot >= 0 && slot < rows);
+        }
+        int hidden = count - rows;
         more.setVisible(hidden > 0);
         if (hidden > 0) {
             int above = scroll, below = hidden - scroll;
@@ -527,34 +819,44 @@ public class CinematicScreen extends CasinoMenuScreen {
                 : Lang.f("{0} en dessous (molette ou flèches)", below));
             more.setFontScale(1f);
             more.pack();
-            if (more.getWidth() > ITEM_WIDTH) {                       // il tient dans la colonne des cinématiques
+            if (more.getWidth() > ITEM_WIDTH) {                       // il tient dans la colonne des boss
                 more.setFontScale(ITEM_WIDTH / more.getWidth());
                 more.pack();
             }
-            more.setPosition(innerX + (ITEM_WIDTH - more.getWidth()) / 2f, panelBottom + PANEL_PAD);
+            more.setPosition(listX + (ITEM_WIDTH - more.getWidth()) / 2f, panelBottom + PANEL_PAD);
         }
 
-        // À droite des cinématiques : l'image de celle sélectionnée, puis son explication.
-        float sideX     = innerX + ITEM_WIDTH + PANEL_PAD + 40f; // place des jetons de la cinématique choisie
-        float sideWidth = detailX + detailWidth - PANEL_PAD - sideX;
+        // À droite : les cinématiques de l'onglet s'il en a plusieurs, la miniature, puis l'explication.
+        float sideTop = itemsTop;
+        for (MenuOption row : variantRows) {
+            row.setPosition(sideX + CHIP_ROOM, sideTop - VARIANT_HEIGHT);
+            sideTop -= VARIANT_HEIGHT + VARIANT_GAP;
+        }
+        if (!variantRows.isEmpty()) sideTop -= 12f;
+
+        description.setWidth(sideWidth);
+        float textHeight = Math.max(80f, description.getPrefHeight());
         float frame     = 10f;
-        Texture texture = groups.isEmpty() || selected < 0 ? null : groups.get(group).entries().get(selected).art();
+        Drawn texture   = artSize();
         float artScale  = ART_SCALE;
-        float maxArtHeight = itemsTop - panelBottom - PANEL_PAD - 220f;
+        float maxArtHeight = sideTop - panelBottom - PANEL_PAD - textHeight - 24f - frame * 2;
         if (texture != null) {
-            while (artScale > 1f && (texture.getHeight() * artScale > maxArtHeight
-                || texture.getWidth() * artScale > sideWidth - frame * 2)) {
+            while (artScale > 1f && (texture.height() * artScale > maxArtHeight
+                || texture.width() * artScale > sideWidth - frame * 2)) {
                 artScale -= 1f;
             }
+            if (texture.width() * artScale > sideWidth - frame * 2) {      // une grande image (carte d'un lieu) : réduite
+                artScale = (sideWidth - frame * 2) / texture.width();
+            }
+            if (texture.height() * artScale > maxArtHeight) artScale = Math.max(0.25f, maxArtHeight / texture.height());
         }
-        float artWidth  = texture == null ? 0f : texture.getWidth() * artScale;
-        float artHeight = texture == null ? 0f : texture.getHeight() * artScale;
-        float artX = sideX + (sideWidth - artWidth) / 2f, artY = itemsTop - frame - artHeight;
+        float artWidth  = texture == null ? 0f : texture.width() * artScale;
+        float artHeight = texture == null ? 0f : texture.height() * artScale;
+        float artX = sideX + (sideWidth - artWidth) / 2f, artY = sideTop - frame - artHeight;
         art.setBounds(artX, artY, artWidth, artHeight);
         artFrame.setBounds(artX - frame, artY - frame, artWidth + frame * 2, artHeight + frame * 2);
 
-        float descriptionTop = artY - frame - 24f;
-        description.setWidth(sideWidth);
+        float descriptionTop = texture == null ? sideTop : artY - frame - 24f;
         description.setHeight(Math.max(60f, descriptionTop - panelBottom - PANEL_PAD));
         description.setPosition(sideX, panelBottom + PANEL_PAD);
 
@@ -562,85 +864,68 @@ public class CinematicScreen extends CasinoMenuScreen {
         backButton.setPosition(MARGIN, (BOTTOM_SPACE - backButton.getHeight()) / 2f);
     }
 
-    /**
-     * La colonne des groupes, dans le panneau de gauche. Trop de groupes pour la hauteur :
-     * elle défile avec le groupe choisi (ou la molette), et le bas du panneau dit combien sont cachés.
-     */
-    private void layoutGroupRows(float panelTop, float panelBottom) {
-        float rowX = MARGIN + (LIST_WIDTH - ROW_WIDTH) / 2f;
-        float rowsTop = panelTop - PANEL_PAD;
-        int count = groupRows.size();
-        int rows = visibleGroupRows(rowsTop, panelBottom);
-        if (count > rows) rows = visibleGroupRows(rowsTop, panelBottom + MORE_SPACE); // la place du texte « au-dessus / en dessous »
-        if (!wheel && group >= 0 && group < groupScroll) groupScroll = group;
-        if (!wheel && group >= groupScroll + rows) groupScroll = group - rows + 1;
-        groupScroll = Math.max(0, Math.min(groupScroll, count - rows));
-        for (int i = 0; i < count; i++) {
-            int slot = i - groupScroll;
-            groupRows.get(i).setPosition(rowX, rowsTop - ROW_HEIGHT - slot * (ROW_HEIGHT + ROW_GAP));
-            groupRows.get(i).setVisible(slot >= 0 && slot < rows);
-        }
-        int hidden = count - rows;
-        groupMore.setVisible(hidden > 0);
-        if (hidden <= 0) return;
-        int above = groupScroll, below = hidden - groupScroll;
-        groupMore.setText(above > 0 && below > 0 ? Lang.f("{0} au-dessus, {1} en dessous", above, below)
-            : above > 0 ? Lang.f("{0} au-dessus", above)
-            : Lang.f("{0} en dessous", below));
-        groupMore.setFontScale(1f);
-        groupMore.pack();
-        float room = LIST_WIDTH - PANEL_PAD;
-        if (groupMore.getWidth() > room) {                       // il tient dans le panneau de gauche
-            groupMore.setFontScale(room / groupMore.getWidth());
-            groupMore.pack();
-        }
-        groupMore.setPosition(MARGIN + (LIST_WIDTH - groupMore.getWidth()) / 2f, panelBottom + PANEL_PAD);
+    /** @return le bord gauche des lignes du centre (leur jeton de gauche tient dans le panneau). */
+    private static float listX() {
+        return MARGIN + LIST_WIDTH + MARGIN / 2f + PANEL_PAD + CHIP_ROOM - 24f;
     }
 
-    /** @return le nombre de groupes qui tiennent en colonne entre {@code rowsTop} et le bas du panneau. */
-    private static int visibleGroupRows(float rowsTop, float panelBottom) {
-        float room = rowsTop - panelBottom - PANEL_PAD;
-        return Math.max(1, (int) ((room + ROW_GAP) / (ROW_HEIGHT + ROW_GAP)));
+    /** @return le bord gauche de la colonne de la miniature. */
+    private static float sideX() {
+        return listX() + ITEM_WIDTH + CHIP_ROOM + 16f; // place des jetons de la ligne choisie
     }
 
-    /** @return le nombre de cinématiques qui tiennent en colonne entre {@code itemsTop} et le bas du panneau. */
+    /** @return la largeur des lignes des cinématiques d'un onglet (leurs jetons tiennent dans la colonne). */
+    private float variantWidth() {
+        float width = stage.getViewport().getWorldWidth();
+        return width - MARGIN - PANEL_PAD - sideX() - CHIP_ROOM * 2f;
+    }
+
+    /** La largeur change : les lignes des cinématiques de l'onglet sont refaites à la nouvelle largeur. */
+    @Override
+    public void resize(int width, int height) {
+        stage.getViewport().update(width, height, true);
+        rebuildVariants();
+        layout();
+    }
+
+    /** Taille en pixels de l'image montrée. */
+    private record Drawn(float width, float height) { }
+
+    private Drawn artSize() {
+        if (!art.isVisible() || !(art.getDrawable() instanceof TextureRegionDrawable drawable)) return null;
+        TextureRegion region = drawable.getRegion();
+        return new Drawn(region.getRegionWidth(), region.getRegionHeight());
+    }
+
+    /** @return le nombre de lignes qui tiennent en colonne entre {@code itemsTop} et le bas du panneau. */
     private static int visibleRows(float itemsTop, float panelBottom) {
         float room = itemsTop - panelBottom - PANEL_PAD;
         return Math.max(1, (int) ((room + ITEM_GAP) / (ITEM_HEIGHT + ITEM_GAP)));
     }
 
-    /** La molette au-dessus du panneau de gauche fait défiler la colonne des groupes, sans changer la sélection. */
-    private void scrollGroupsBy(int rows) {
-        if (groups.isEmpty()) return;
-        groupScroll += rows;
-        wheel = true; // le groupe choisi ne ramène pas la colonne à lui pendant ce défilement
-        layout();
-        wheel = false;
-    }
-
-    /** La molette fait défiler la liste du groupe, sans changer la sélection. */
+    /** La molette fait défiler la liste du centre, sans changer la sélection. */
     private void scrollBy(int rows) {
-        if (group < 0 || groups.isEmpty()) return;
+        if (category < 0) return;
         scroll += rows;
         wheel = true; // la sélection ne ramène pas la liste à elle pendant ce défilement
         layout();
         wheel = false;
     }
 
-    /** Molette : la liste des groupes à gauche, la liste des cinématiques à droite (pas pendant une cinématique). */
+    /** Molette : la liste du centre (pas pendant une cinématique). */
     @Override
     protected boolean onScroll(float amountY) {
         if (isPlaying() || amountY == 0f) return false;
         Vector2 mouse = stage.screenToStageCoordinates(new Vector2(Gdx.input.getX(), Gdx.input.getY()));
-        if (mouse.x < MARGIN + LIST_WIDTH + MARGIN / 4f) scrollGroupsBy(amountY > 0f ? 1 : -1);
-        else scrollBy(amountY > 0f ? 1 : -1);
+        if (mouse.x < MARGIN + LIST_WIDTH + MARGIN / 4f) return false;
+        scrollBy(amountY > 0f ? 1 : -1);
         return true;
     }
 
     /**
-     * Pendant une cinématique, une touche la passe. Sinon gauche/droite (ou Tab)
-     * changent de groupe, haut/bas choisissent une cinématique, Entrée ou Espace
-     * la lance, Échap revient au menu.
+     * Pendant une cinématique, une touche la passe. Sinon haut/bas choisissent le boss (ou le lieu),
+     * gauche/droite et Page haut/bas les onglets, Tab (Maj+Tab : en arrière) la catégorie, Entrée ou
+     * Espace ouvre le lieu ou lance la cinématique, Échap revient aux lieux puis au menu.
      */
     @Override
     protected boolean onKey(int keycode) {
@@ -648,19 +933,24 @@ public class CinematicScreen extends CasinoMenuScreen {
             if (!cutscene.keyDown(keycode)) cutscene.skip(); // le levier du duel se tire aussi au clavier
             return true;
         }
-        int count = groups.get(group).entries().size();
+        if (keycode == Input.Keys.ESCAPE || keycode == Input.Keys.BACKSPACE) {
+            clickSound.play();
+            back();
+            return true;
+        }
+        if (categories.isEmpty()) return false;
+        int count = itemCount();
+        int categoryCount = categories.size();
+        boolean shift = Gdx.input.isKeyPressed(Input.Keys.SHIFT_LEFT) || Gdx.input.isKeyPressed(Input.Keys.SHIFT_RIGHT);
         switch (keycode) {
             case Input.Keys.UP, Input.Keys.W -> select((selected + count - 1) % count, true);
             case Input.Keys.DOWN, Input.Keys.S -> select((selected + 1) % count, true);
-            case Input.Keys.LEFT, Input.Keys.A -> selectGroup((group + groups.size() - 1) % groups.size(), true);
-            case Input.Keys.RIGHT, Input.Keys.D, Input.Keys.TAB -> selectGroup((group + 1) % groups.size(), true);
+            case Input.Keys.LEFT, Input.Keys.A, Input.Keys.PAGE_UP -> stepMoment(-1);
+            case Input.Keys.RIGHT, Input.Keys.D, Input.Keys.PAGE_DOWN -> stepMoment(1);
+            case Input.Keys.TAB -> selectCategory((category + (shift ? categoryCount - 1 : 1)) % categoryCount, true);
             case Input.Keys.ENTER, Input.Keys.SPACE -> {
                 clickSound.play();
-                launch();
-            }
-            case Input.Keys.ESCAPE -> {
-                clickSound.play();
-                onBack();
+                activate();
             }
             default -> { return false; }
         }
@@ -676,6 +966,7 @@ public class CinematicScreen extends CasinoMenuScreen {
         chipTexture.dispose();
         Fonts.release(rowFont);
         Fonts.release(itemFont);
+        Fonts.release(variantFont);
         Fonts.release(labelFont);
         Fonts.release(groupFont);
         Fonts.release(bodyFont);
