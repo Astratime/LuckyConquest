@@ -28,7 +28,7 @@ import java.util.function.Function;
  *   <li>les cartes des coffres des lieux qu'il a vidés : tous les lieux sous le sien, et le sien aussi au second
  *       rang de la paire (Parieur, Habitué, Gros bonnet, Magnat, Légende). Il a fait assez de descentes pour en avoir
  *       {@link Card#UPGRADE_COST} exemplaires, donc il peut les fusionner, sauf celles de son propre lieu ;</li>
- *   <li>ce qu'il achète avec son budget de boutique : {@link #SHOP_SHARE} fois ce qu'il a payé pour ses rangs. Il
+ *   <li>ce qu'il achète avec son budget de boutique (sauf les cartes réservées à l'Exploration difficile) : {@link #SHOP_SHARE} fois ce qu'il a payé pour ses rangs. Il
  *       achète d'abord le moins cher de ce qui lui manque : cartes de son deck visé (boutique), rouleaux
  *       ({@link #REEL_WISH}), fusions en « + » des cartes de son deck ;</li>
  *   <li>les rouleaux gagnés en vidant un lieu (Ticket, Ancre, Pépite, Jeton d'or, Flamme).</li>

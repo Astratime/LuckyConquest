@@ -1163,6 +1163,8 @@ public final class BalanceSimulator {
     String profilesReport() {
         int runs = Integer.getInteger("lucky.rpRuns", 100);
         Map<String, Long> boutique = CardLoader.loadBoutique(reader);
+        // les cartes réservées à l'Exploration difficile ne s'achètent pas pendant la montée en rangs (mode normal)
+        boutique.keySet().removeAll(CardLoader.loadHardGates(reader).keySet());
         List<String> starter = new ArrayList<>();
         for (Card card : CardLoader.loadStarterDeck(reader)) starter.add(Card.baseId(card.getId()));
         RankProfiles profiles = new RankProfiles(boutique, starter, CardLoader.loadStartingCollection(reader), cards);

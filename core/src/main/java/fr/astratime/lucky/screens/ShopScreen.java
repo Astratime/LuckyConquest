@@ -33,6 +33,7 @@ import fr.astratime.lucky.entities.Card;
 import fr.astratime.lucky.entities.RankBonus;
 import fr.astratime.lucky.entities.Symbol;
 import fr.astratime.lucky.entities.enemy.EnemyKind;
+import fr.astratime.lucky.entities.exploration.Place;
 import fr.astratime.lucky.i18n.Lang;
 import fr.astratime.lucky.loaders.CardLoader;
 import fr.astratime.lucky.progress.Cosmetic;
@@ -43,6 +44,7 @@ import fr.astratime.lucky.views.CardDetailOverlay;
 import fr.astratime.lucky.views.CasinoButtons;
 import fr.astratime.lucky.views.CosmeticPreview;
 import fr.astratime.lucky.views.GuideOverlay;
+import fr.astratime.lucky.views.SidePanel;
 
 import java.util.ArrayList;
 import java.util.EnumMap;
@@ -117,6 +119,8 @@ public class ShopScreen extends CasinoMenuScreen {
     private final Map<String, Long> cardPrices;
     /** Cartes des rois : le roi à vaincre {@link PlayerProfile#KING_CARD_WINS} fois pour que sa carte se vende. */
     private final Map<String, EnemyKind> kingCards;
+    /** Cartes réservées à l'Exploration difficile : le lieu à y vider avant de les acheter. */
+    private final Map<String, Place> hardGates;
 
     private final Image      coin;
     private final Label      coins;
@@ -176,6 +180,7 @@ public class ShopScreen extends CasinoMenuScreen {
         }
         cardPrices = CardLoader.loadBoutique();
         kingCards  = CardLoader.loadKingCards();
+        hardGates  = CardLoader.loadHardGates();
         Function<String, Card> factory = CardLoader.cardFactory();
         for (String id : cardPrices.keySet()) cards.add(factory.apply(id));
         TextureRegionDrawable pixel = new TextureRegionDrawable(new TextureRegion(hud.pixel));
@@ -382,6 +387,11 @@ public class ShopScreen extends CasinoMenuScreen {
                 cells.add(lockedKingCell(card, king, price));
                 continue;
             }
+            Place gate = hardGates.get(card.getId());
+            if (!profile.isHardGateOpen(gate)) {
+                cells.add(lockedHardCell(card, gate, price));
+                continue;
+            }
             int owned = profile.getOwnedCopies(card.getId());
             Offer offer = new Offer(card.getName(), Lang.f("{0}\nPossédées : {1} / {2}.",
                 card.getDescription(), owned, PlayerProfile.MAX_COPIES), price,
@@ -412,6 +422,32 @@ public class ShopScreen extends CasinoMenuScreen {
             () -> detail.showForSale(card, cardTextures.get(card), goal));
     }
 
+    /** @return pourquoi un article réservé au difficile ne s'achète pas encore. */
+    private static String hardGateReason(Place gate) {
+        String name = gate.getName();
+        name = name.isEmpty() ? name : Character.toLowerCase(name.charAt(0)) + name.substring(1);
+        return Lang.f("Vide {0} en Exploration difficile pour l'acheter.", name);
+    }
+
+    /** @return la ligne d'objectif d'un article réservé au difficile. */
+    private static String hardGateGoal(Place gate) {
+        return Lang.f("Exploration difficile : {0}", gate.getName());
+    }
+
+    /**
+     * Carte réservée à l'Exploration difficile, lieu pas encore vidé : grisée, avec le lieu à vider ; sa fiche se lit,
+     * elle ne s'achète pas.
+     */
+    private Group lockedHardCell(Card card, Place gate, long price) {
+        String goal = hardGateGoal(gate);
+        String why = hardGateReason(gate);
+        Offer offer = new Offer(card.getName(), Lang.f("{0}\n{1}", why, card.getDescription()), price,
+            () -> why, () -> false);
+        return cell(new TextureRegion(cardTextures.get(card)), CARD_WIDTH, CARD_HEIGHT,
+            PlayerProfile.formatCoins(price), Lang.t("Difficile"), true, offer,
+            () -> detail.showForSale(card, cardTextures.get(card), goal));
+    }
+
     /** Onglet « Rouleau » : chaque rouleau en vente, son effet et son prix. */
     private List<Group> reelCells() {
         List<Group> cells = new ArrayList<>();
@@ -419,6 +455,17 @@ public class ShopScreen extends CasinoMenuScreen {
             Symbol symbol = entry.getKey();
             long price = entry.getValue();
             boolean owned = profile.ownsReel(symbol);
+            Place gate = ReelShop.getHardGate(symbol);
+            if (!owned && !profile.isHardGateOpen(gate)) {
+                String goal = hardGateGoal(gate);
+                String why = hardGateReason(gate);
+                Offer locked = new Offer(symbol.getDisplayName(), Lang.f("{0}\n{1}", why, ReelShop.describe(symbol)), price, () -> why, () -> false);
+                cells.add(cell(new TextureRegion(reelTextures.get(symbol)), REEL_WIDTH, REEL_HEIGHT,
+                    PlayerProfile.formatCoins(price), Lang.t("Difficile"), true, locked,
+                    () -> detail.showReel(symbol.getDisplayName(), new TextureRegion(reelTextures.get(symbol)),
+                        ReelShop.describe(symbol), Lang.f("{0} pièces", PlayerProfile.formatCoins(price)), goal)));
+                continue;
+            }
             Offer offer = new Offer(symbol.getDisplayName(), ReelShop.describe(symbol) + "\n"
                 + (owned ? Lang.t("Déjà dans ta collection de rouleaux.") : Lang.t("À placer dans ta machine, à la Table du croupier.")),
                 price, () -> profile.ownsReel(symbol) ? Lang.t("Tu possèdes déjà ce rouleau.") : null,
@@ -461,6 +508,7 @@ public class ShopScreen extends CasinoMenuScreen {
         Label priceLabel = new Label(price, new Label.LabelStyle(smallFont, Palette.GOLD));
         priceLabel.setAlignment(Align.center);
         priceLabel.setBounds(0f, 32f, cell.getWidth(), 28f);
+        SidePanel.fitWidth(priceLabel, cell.getWidth() - 6f); // les prix du difficile (ex : 20 000 000 000 000)
         Label stateLabel = new Label(state, new Label.LabelStyle(smallFont, Color.WHITE));
         stateLabel.setAlignment(Align.center);
         stateLabel.setBounds(0f, 2f, cell.getWidth(), 28f);
