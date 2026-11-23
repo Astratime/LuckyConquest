@@ -85,6 +85,8 @@ public class EnemyView implements Disposable {
     /** Vue de face : sa machine sort de la table un peu avant que ses rouleaux tournent. */
     private static final float MACHINE_RISE   = 0.45f;
     private static final float DEFENSE_GAP    = 40f;    // entre les rouleaux et la défense (au-delà du cadre)
+    private static final float TREND_SIZE     = 48f;    // icône de la tendance, à gauche de ses rouleaux
+    private static final float TREND_GAP      = 30f;
     private static final float OPENING_TIME   = 0.9f;   // ses Épines piquent, avant sa pioche
 
     private final TableView           table;
@@ -116,6 +118,11 @@ public class EnemyView implements Disposable {
     private final List<Image>   reels     = new ArrayList<>();
     /** Ses rouleaux, ensemble : en vue de face, ils sont couchés sur la table et montent dans sa machine au lancer. */
     private final Group         reelGroup = new Group();
+    /** Tendance (option, mode normal) : le symbole qui sort le plus souvent sur ses rouleaux, dans sa phase. */
+    private final Image         trend = new Image();
+    private EnemySymbol         trendSymbol;
+    private com.badlogic.gdx.scenes.scene2d.ui.Label trendLabel;
+    private java.util.function.BooleanSupplier trendShown = () -> false;
     /** Vue de face : sa machine sort de la table pour son lancer, puis y redescend. */
     private Runnable            machineUp = () -> { }, machineDown = () -> { };
     private final EnemySymbol[] shownSymbols = {EnemySymbol.SWORD, EnemySymbol.SHIELD, EnemySymbol.POTION,
@@ -203,8 +210,53 @@ public class EnemyView implements Disposable {
         reels.forEach(reelGroup::addActor);
         group.addActor(reelGroup);
         group.addActor(defense);
+        trend.setSize(TREND_SIZE, TREND_SIZE);
+        trend.setVisible(false);
+        hoverTooltip(trend, () -> Lang.f("Tendance : {0}", trendSymbol == null ? "" : trendSymbol.getDisplayName()),
+            () -> Lang.t("Le symbole qui sort le plus souvent sur ses rouleaux.\nCe n'est qu'une tendance : "
+                + "le tirage reste au hasard, et ses cartes peuvent le changer."));
+        group.addActor(new Actor() {
+            @Override
+            public void act(float delta) { refreshTrend(); }
+        });
+        group.addActor(trend);
+        trendLabel = new com.badlogic.gdx.scenes.scene2d.ui.Label(Lang.t("TENDANCE"),
+            new com.badlogic.gdx.scenes.scene2d.ui.Label.LabelStyle(pileFont, com.badlogic.gdx.graphics.Color.WHITE));
+        trendLabel.setTouchable(Touchable.disabled);
+        trendLabel.setVisible(false);
+        group.addActor(trendLabel);
         group.addActor(character);
         reset();
+    }
+
+    /** @param shown vrai quand la tendance doit s'afficher (option Accessibilité ; jamais en mode difficile) */
+    public void setTrendShown(java.util.function.BooleanSupplier shown) { this.trendShown = shown; }
+
+    /** @return le symbole au plus grand poids sur ses rouleaux dans sa phase ({@code null} s'il n'en a pas). */
+    public static EnemySymbol likeliest(java.util.Map<EnemySymbol, Integer> weights) {
+        EnemySymbol best = null;
+        int bestWeight = 0;
+        for (java.util.Map.Entry<EnemySymbol, Integer> entry : weights.entrySet()) {
+            int weight = entry.getValue() == null ? 0 : entry.getValue();
+            if (weight > bestWeight || (weight == bestWeight && best != null && entry.getKey().ordinal() < best.ordinal())) {
+                best = entry.getKey();
+                bestWeight = weight;
+            }
+        }
+        return best;
+    }
+
+    /** Met à jour l'icône de la tendance (sa phase peut changer les poids de ses rouleaux). */
+    private void refreshTrend() {
+        Enemy current = enemy.get();
+        boolean show = current != null && trendShown.getAsBoolean() && !current.getDifficulty().hard() && !frontView;
+        EnemySymbol symbol = show ? likeliest(current.getSpinWeights()) : null;
+        trend.setVisible(symbol != null);
+        if (trendLabel != null) trendLabel.setVisible(symbol != null);
+        if (symbol == null || symbol == trendSymbol) return;
+        trendSymbol = symbol;
+        trend.setDrawable(new TextureRegionDrawable(new TextureRegion(textures.symbol(symbol))));
+        trend.setSize(TREND_SIZE, TREND_SIZE);
     }
 
     /** @return le côté de l'ennemi, à ajouter au Stage au-dessus de la table. */
@@ -447,6 +499,11 @@ public class EnemyView implements Disposable {
         float reelsRight = table.getReelRowX() + EnemySlotMachine.SYMBOL_COUNT * SlotView.CELL_WIDTH;
         float centerY    = table.getEnemyReelRowY() + SlotView.CELL_HEIGHT / 2f;
         defense.setPosition(reelsRight + DEFENSE_GAP, centerY - defense.getHeight() / 2f);
+        trend.setPosition(table.getReelRowX() - TREND_GAP - TREND_SIZE, centerY - TREND_SIZE / 2f + 10f);
+        if (trendLabel != null) {
+            trendLabel.pack();
+            trendLabel.setPosition(trend.getX() + (TREND_SIZE - trendLabel.getWidth()) / 2f, trend.getY() - trendLabel.getHeight());
+        }
         for (int i = 0; i < handCards.size(); i++) {
             handCards.get(i).setPosition(table.getEnemyCardSlotX(i, handCards.size()), table.getEnemyCardRowY());
         }

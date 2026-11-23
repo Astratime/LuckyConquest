@@ -25,6 +25,7 @@ public class VisualSettings {
     private static final String GAMEPAD         = "gamepad";
     private static final String COLORED_CARDS   = "coloredCards";
     private static final String FRONT_VIEW      = "frontView";
+    private static final String ENEMY_TREND     = "enemyTrend";
 
     private final Preferences preferences = Gdx.app.getPreferences(PREFERENCES);
 
@@ -91,6 +92,17 @@ public class VisualSettings {
     /** Choisit la vue de face ou la vue classique de la table, et mémorise le choix. */
     public void setFrontView(boolean front) {
         preferences.putBoolean(FRONT_VIEW, front);
+        preferences.flush();
+    }
+
+    /** @return true si la tendance de l'ennemi (son symbole le plus fréquent) s'affiche en mode normal (activée par défaut). */
+    public boolean isEnemyTrend() {
+        return preferences.getBoolean(ENEMY_TREND, true);
+    }
+
+    /** Active ou désactive la tendance de l'ennemi, et mémorise le choix. */
+    public void setEnemyTrend(boolean enabled) {
+        preferences.putBoolean(ENEMY_TREND, enabled);
         preferences.flush();
     }
 

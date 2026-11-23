@@ -634,6 +634,7 @@ public class GameScreen extends ScreenAdapter {
         props.addPile(piles.deck());
         props.addPile(piles.discard());
         enemyView.setMachine(() -> enemyMachine.raise(enemyView.getReelGroup()), enemyMachine::lower);
+        enemyView.setTrendShown(settings::isEnemyTrend);
         frontScene = new FrontScene(projection, playArea, enemyTextures, enemyView, tooltip,
             () -> gameController.getGameState().getEnemy());
         frontScene.setDecor(frontDecor());

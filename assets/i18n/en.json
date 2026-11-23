@@ -3963,5 +3963,10 @@
   "Vide {0} en Exploration difficile pour l'acheter.": "Clear {0} in hard Exploration to buy it.",
   "Exploration difficile : {0}": "Hard Exploration: {0}",
   "Difficile": "Hard",
-  "{0}\n{1}": "{0}\n{1}"
+  "{0}\n{1}": "{0}\n{1}",
+  "Tendance : {0}": "Trend: {0}",
+  "Le symbole qui sort le plus souvent sur ses rouleaux.\nCe n'est qu'une tendance : le tirage reste au hasard, et ses cartes peuvent le changer.": "The symbol that comes up most often on its reels.\nIt's only a trend: the draw stays random, and its cards can change it.",
+  "Tendance de l'ennemi : affichée": "Enemy trend: shown",
+  "Tendance de l'ennemi : cachée": "Enemy trend: hidden",
+  "TENDANCE": "TREND"
 }
