@@ -17,7 +17,6 @@ import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 import com.badlogic.gdx.utils.Align;
-import fr.astratime.lucky.entities.enemy.Difficulty;
 import fr.astratime.lucky.LuckyGame;
 import fr.astratime.lucky.assets.CardTextures;
 import fr.astratime.lucky.assets.EnemyTextures;
@@ -380,15 +379,9 @@ public class ExplorationScreen extends CasinoMenuScreen {
             text.append(dungeon.getDescription());
             if (profile.isCleared(dungeon, hard)) text.append('\n').append(Lang.t("Déjà vidé."));
         }
-        if (hard) {
-            // La force du lieu difficile : celle du Désert en normal, x2 par lieu.
-            text.append('\n').append(Lang.f("Difficulté : le Désert x{0}.", Lang.decimal(String.format(java.util.Locale.ROOT, "%.3g", HardExploration.strength(place))
-                .replaceAll("\\.?0+$", ""))));
-        }
-        text.append("\n\n").append(Lang.f("Combat 1 : {0} ({1} PV)", dungeon.getSoldier().getDisplayName(),
-            Lang.big(dungeon.getSoldier().getMaxHp(Difficulty.of(hard)))));
-        text.append('\n').append(Lang.f("Combat 2 : {0} ({1} PV)", dungeon.getKing().getDisplayName(),
-            Lang.big(dungeon.getKing().getMaxHp(Difficulty.of(hard)))));
+        // Pas de chiffres techniques (force du lieu, PV des ennemis) : le joueur n'en a pas besoin (Astra, 2026-11-23).
+        text.append("\n\n").append(Lang.f("Combat {0} : {1}", 1, dungeon.getSoldier().getDisplayName()));
+        text.append('\n').append(Lang.f("Combat {0} : {1}", 2, dungeon.getKing().getDisplayName()));
         int percent = profile.coinsPercent(place, hard);
         text.append("\n\n").append(Lang.f("Coffre : {0} pièces + 1 carte",
             PlayerProfile.formatCoins(PlayerProfile.share(place.getChestCoins(hard), percent))));
