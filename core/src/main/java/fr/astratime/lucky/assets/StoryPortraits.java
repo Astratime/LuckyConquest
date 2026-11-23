@@ -36,6 +36,9 @@ public final class StoryPortraits {
         };
     }
 
+    /** @return l'illustration du chapitre de la Maison ({@code [y][x]}, RGBA8888) : le manoir sur les nuages, devant son ciel du soir. */
+    public static int[][] houseArt() { return Chapter456Art.house(); }
+
     /** @return le portrait de {@code kind} dessiné sans les accessoires {@code props} (ce qu'il y avait dessous réapparaît). */
     public static synchronized int[][] without(EnemyKind kind, Prop... props) {
         gone = java.util.EnumSet.noneOf(Prop.class);
