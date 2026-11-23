@@ -742,7 +742,7 @@ public class EnemyTurnResolver {
                 case GOLDEN_COMET -> {
                     int falls = enemy.takeCharge(EnemySignature.PLUIE_D_ETOILES) ? 2 : 1;
                     events.add(new StatusEvent(Lang.t("LA COMÈTE DORÉE TOMBE !"), EffectPopup.Style.ATTACK));
-                    for (int k = 0; k < falls; k++) events.add(turn.comet(EnemySymbol.GOLDEN_COMET_PERCENT));
+                    for (int k = 0; k < falls; k++) events.add(turn.comet(kind.goldenCometPercent(enemy.getDifficulty())));
                 }
                 case ASPIRATION -> aspire(events);
                 default -> {
@@ -1745,7 +1745,7 @@ public class EnemyTurnResolver {
             }
         }
         if (swords > 0) events.add(turn.strike(kind.swordDamage() + swords));
-        if (heals > 0f) events.add(heal(enemy, Math.min(heals, EnemyKind.MAX_HEAL_PERCENT)));
+        if (heals > 0f) events.add(heal(enemy, kind.cappedHeal(heals, enemy.getDifficulty())));
         if (shields > 0) events.add(turn.shield(kind.shieldDefense() + shields));
     }
 

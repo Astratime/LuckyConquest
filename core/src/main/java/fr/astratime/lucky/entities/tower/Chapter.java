@@ -60,7 +60,7 @@ public enum Chapter {
             + "On dit aussi qu'elle prend tout.",
         EnemyKind.GARDIEN_LEVIER, List.of(EnemyKind.OMBRE, EnemyKind.BANQUEROUTE, EnemyKind.TEMPS_MORT),
         EnemyKind.MACHINE_ORIGINELLE, "Tu as tiré le levier. Le monde a recommencé.",
-        new Stats(600, 125, 167, 52, 5_000, 19_200, 500_000_000L, 3));
+        new Stats(600, 125, 167, 52, 5_000, 13_000, 150_000_000L, 3));
 
     /**
      * Les réglages d'un chapitre, attachés à lui et non à son numéro (2026-11-22, Tour à 10 chapitres : un chapitre
@@ -72,7 +72,8 @@ public enum Chapter {
      * @param drainScale  part de leurs coups gardée depuis le drain de vie relatif, en % (2026-11-20)
      * @param spinCost    coût d'un tirage, en gains (mode difficile compris)
      * @param hardPower   force de ses ennemis en mode difficile, en % (x1,47 par chapitre, de la Comète x6 à la
-     *                    Machine x192 : plan des 10 chapitres validé par Astra le 2026-11-20)
+     *                    Machine x192 : plan des 10 chapitres validé par Astra le 2026-11-20 ; Machine ramenée à x130 et
+     *                    150 M PV le 2026-11-23, Astra : environ 30 % de victoires au Prestige X Légende au simulateur)
      * @param hardBossHp  PV de son boss en mode difficile (les autres ennemis gardent leur rapport de PV avec lui)
      * @param ownPlays    cartes propres que ses ennemis jouent au plus à chaque tour (3 au dernier chapitre)
      */
