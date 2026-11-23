@@ -6,6 +6,8 @@ import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.Interpolation;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.utils.Array;
+import fr.astratime.lucky.assets.StoryPortraits;
+import fr.astratime.lucky.assets.StoryPortraits.Prop;
 import fr.astratime.lucky.entities.enemy.EnemyKind;
 import fr.astratime.lucky.entities.tower.Chapter;
 
@@ -17,9 +19,13 @@ import static fr.astratime.lucky.assets.Palette.hex;
  * battent pour des éclats dorés. Une ombre traverse la foule : les flammes se
  * penchent sur son passage, les jetons au sol fondent. Elle ramasse trois
  * éclats, un, deux, trois, et les pose sur sa couronne, qui flotte au-dessus
- * d'elle : chacun s'allume de sa couleur (Comète, Reine, Éclat). Le Prétendant
- * est assis sur une pile de machines cassées, comme un trône ; la couronne se
- * pose sur sa tête. Il lève les yeux vers toi. Fondu noir.
+ * d'elle : chacun s'allume de sa couleur (Comète, Reine, Éclat). La couronne
+ * se pose sur la tête du Prétendant. Il lève les yeux vers toi. Fondu noir.
+ *
+ * <p>La couronne et les trois éclats sont les vrais morceaux de son portrait
+ * ({@link StoryPortraits#without}) : on le montre tête nue, sans ses éclats, et
+ * chaque morceau rejoint sa place exacte ; quand la couronne s'y pose, il porte de
+ * nouveau son portrait entier, pixel pour pixel, sans fondu ni second dessin.
  */
 public class PretenderCutscene extends Cutscene {
 
@@ -31,7 +37,7 @@ public class PretenderCutscene extends Cutscene {
     public static final float SHADOW_END   = 5.5f;
     /** Les trois éclats rejoignent l'ombre, un par un. */
     public static final float[] PICK       = {5.8f, 6.25f, 6.7f};
-    /** Le Prétendant apparaît, sur son trône de machines cassées. */
+    /** Le Prétendant apparaît. */
     public static final float REVEAL       = 7.2f;
     /** La couronne descend et se pose sur sa tête. */
     public static final float CROWN_DOWN   = 7.8f;
@@ -47,11 +53,19 @@ public class PretenderCutscene extends Cutscene {
 
     /** Les couleurs des trois éclats : la Comète, la Reine, l'Éclat Originel. */
     private static final Color[] SHARDS = {hex("ffc93a"), hex("e0283a"), hex("fff6c8")};
+    /** Ses trois éclats, dans l'ordre où l'ombre les ramasse : à gauche, à droite, sur la poitrine. */
+    private static final Prop[] SHARD_PROPS = {Prop.PRETENDER_SHARD_LEFT, Prop.PRETENDER_SHARD_RIGHT,
+        Prop.PRETENDER_SHARD_CHEST};
+    /** Les éclats qui flottent avec la couronne jusqu'à ce qu'elle se pose (celui de la poitrine va droit à sa place). */
+    private static final boolean[] RIDES_CROWN = {true, true, false};
     /** Où brillent les éclats dans la ville (fractions de l'écran). */
     private static final float[][] SHARD_AT = {{0.22f, 0.42f}, {0.78f, 0.47f}, {0.52f, 0.33f}};
     private static final Color FIRE = hex("ff7a1a"), GOLD = hex("ffc93a");
 
-    private final TextureRegion city, pretender, gem, crown, hand;
+    private final TextureRegion city, pretender, bare, gem, hand;
+    /** Les vrais morceaux de son portrait : sa couronne et ses trois éclats. */
+    private final Piece crown;
+    private final Piece[] shards = new Piece[3];
     private final Array<Particle> embers = new Array<>(false, 256);
     private final Array<Particle> sparks = new Array<>(false, 128);
     private float emberDebt;
@@ -62,21 +76,23 @@ public class PretenderCutscene extends Cutscene {
         super(kit.settings(), kit.shake(), kit.sound("pretender"));
         city = kit.chapterArt(Chapter.MONDE_SANS_MAITRE);
         pretender = kit.portrait(EnemyKind.PRETENDANT);
+        int[][] full = StoryPortraits.pixels(EnemyKind.PRETENDANT);
+        int[][] none = StoryPortraits.without(EnemyKind.PRETENDANT, Prop.PRETENDER_CROWN, Prop.PRETENDER_SHARD_LEFT,
+            Prop.PRETENDER_SHARD_RIGHT, Prop.PRETENDER_SHARD_CHEST);
+        bare = pixels(none);
+        crown = lift(StoryPortraits.without(EnemyKind.PRETENDANT, SHARD_PROPS), none, full);
+        for (int i = 0; i < shards.length; i++) {
+            Prop[] others = new Prop[3];
+            others[0] = Prop.PRETENDER_CROWN;
+            for (int k = 0, n = 1; k < SHARD_PROPS.length; k++) if (k != i) others[n++] = SHARD_PROPS[k];
+            shards[i] = lift(StoryPortraits.without(EnemyKind.PRETENDANT, others), none, full);
+        }
         gem = art("o#w", new Color[] {hex("1a0a0e"), Color.WHITE, hex("ffffff")},
             "..o..",
             ".o#o.",
             "o###o",
             ".o#o.",
             "..o..");
-        Color[] gold = {hex("1a0a0e"), hex("ffc93a"), hex("b8801f"), hex("e0283a")};
-        crown = art("ogdr", gold,
-            "o.....o.....o",
-            "go...ogo...og",
-            "ggo.oggdo.ogg",
-            "gggogggggoggg",
-            "ggggggrgggggg",
-            "ddddddddddddd",
-            "ooooooooooooo");
         hand = art("osd", new Color[] {hex("1a0a0e"), hex("f0c8a0"), hex("b88a68")},
             "..oooooooo....",
             ".ossssssssoo..",
@@ -117,8 +133,8 @@ public class PretenderCutscene extends Cutscene {
             landed = true;
             rumble(0.2f, 6f);
             for (int i = 0; i < 24; i++) {
-                Particle spark = particle(crownX(1), crownY(), 360f * random.nextFloat(), 200f + 250f * random.nextFloat(),
-                    0.5f, 12f);
+                Particle spark = particle(pieceX(crown, width / 2f, 10f), pieceY(crown, height * 0.12f, 10f),
+                    360f * random.nextFloat(), 200f + 250f * random.nextFloat(), 0.5f, 12f);
                 spark.drag = 0.1f;
                 spark.color.set(GOLD);
                 sparks.add(spark);
@@ -126,7 +142,7 @@ public class PretenderCutscene extends Cutscene {
         }
         while (picked < PICK.length && time >= PICK[picked]) {
             for (int i = 0; i < 18; i++) {
-                Particle spark = particle(crownX(picked), crownY(), 360f * random.nextFloat(),
+                Particle spark = particle(slotX(picked), slotY(picked), 360f * random.nextFloat(),
                     150f + 250f * random.nextFloat(), 0.5f, 12f);
                 spark.drag = 0.1f;
                 spark.color.set(SHARDS[picked]);
@@ -158,14 +174,17 @@ public class PretenderCutscene extends Cutscene {
         glow(batch, width / 2f, 0f, width * 1.4f, FIRE, 0.25f * flicker);
         drawParticles(batch, embers);
 
-        // Les éclats dorés que la foule se dispute, puis qui s'envolent vers l'ombre.
+        // Ses trois éclats, que la foule se dispute, puis qui s'envolent vers leur place sur lui.
         for (int i = 0; i < SHARDS.length; i++) {
             float fly = progress(PICK[i] - 0.35f, PICK[i]);
             if (fly >= 1f) continue;
             float e = Interpolation.pow2In.apply(fly);
-            float x = MathUtils.lerp(width * SHARD_AT[i][0], crownX(i), e);
-            float y = MathUtils.lerp(height * SHARD_AT[i][1], crownY(), e) + 8f * MathUtils.sin(time * 4f + i);
-            drawGem(batch, x, y, SHARDS[i], 7f);
+            float x = MathUtils.lerp(width * SHARD_AT[i][0], slotX(i), e);
+            float y = MathUtils.lerp(height * SHARD_AT[i][1] + 8f * MathUtils.sin(time * 4f + i), slotY(i), e);
+            float s = MathUtils.lerp(4f, 10f, e);
+            glow(batch, x, y, s * 14f, SHARDS[i], 0.7f);
+            batch.setColor(Color.WHITE);
+            sprite(batch, shards[i].region, x, y, s, 0f);
         }
 
         // L'ombre traverse la foule, de gauche à droite : les flammes se penchent, les jetons fondent.
@@ -176,7 +195,12 @@ public class PretenderCutscene extends Cutscene {
             float x = shadowX;
             batch.setColor(0f, 0f, 0f, 0.45f);
             batch.draw(soft, x - width * 0.35f, -height * 0.2f, width * 0.7f, height * 1.4f);
-            portrait(batch, pretender, x, -40f, 16f, 1f, 1f);
+            portrait(batch, bare, x, -40f, 16f, 1f, 1f);
+            // Sa couronne flotte au-dessus de l'ombre, sans personne pour la porter.
+            float bob = 8f * 16f + MathUtils.sin(time * 3f) * 16f;
+            glow(batch, pieceX(crown, x, 16f), pieceY(crown, -40f, 16f) + bob, 18f * 16f, GOLD, 0.25f);
+            batch.setColor(0.35f, 0.35f, 0.35f, 1f);
+            drawPiece(batch, crown, x, -40f, 16f, bob);
         }
 
         // Le Prétendant, en ombre, puis éclairé par ses éclats ; on s'approche de son visage.
@@ -186,22 +210,26 @@ public class PretenderCutscene extends Cutscene {
             float scale = MathUtils.lerp(10f, 15f, Interpolation.pow2In.apply(progress(STARE, COVER_FULL)));
             float baseY = MathUtils.lerp(height * 0.12f, -height * 0.35f, Interpolation.pow2In.apply(
                 progress(STARE, COVER_FULL)));
-            glow(batch, width / 2f, baseY + 30f * scale, 30f * scale, GOLD, 0.25f * light);
-            drawThrone(batch, width / 2f, baseY, scale, 1f - 0.85f * light, appear);
-            portrait(batch, pretender, width / 2f, baseY, scale, 1f - 0.9f * light, appear);
-            // La couronne flotte au-dessus de lui, puis se pose ; les éclats y sont sertis.
-            float hover = (1f - Interpolation.bounceOut.apply(progress(CROWN_DOWN, CROWN_LAND))) * 12f * scale
-                + (time < CROWN_DOWN ? MathUtils.sin(time * 3f) * scale : 0f);
-            float crownLight = Math.max(0.35f, light);
-            if (time < CROWN_LAND + 0.15f) {
-                glow(batch, width / 2f, baseY + 38.5f * scale + hover, 22f * scale, GOLD, 0.3f * appear);
-                batch.setColor(crownLight, crownLight, crownLight, appear * (1f - progress(CROWN_LAND, CROWN_LAND + 0.15f)));
-                sprite(batch, crown, width / 2f, baseY + 39f * scale + hover, scale * 1.4f, -6f);
-            }
-            for (int i = 0; i < picked; i++) {                         // les éclats sur la couronne
-                float x = width / 2f + (i - 1) * 7f * scale;
-                float y = baseY + 38.5f * scale + hover;
-                drawGem(batch, x, y, SHARDS[i], scale * 0.8f);
+            float cx = width / 2f, shadow = 1f - 0.9f * light;
+            glow(batch, cx, baseY + 30f * scale, 30f * scale, GOLD, 0.25f * light);
+            if (landed) {
+                // La couronne posée : il porte de nouveau son portrait entier, aux mêmes pixels.
+                portrait(batch, pretender, cx, baseY, scale, shadow, appear);
+            } else {
+                // Tête nue et sans ses éclats ; sa vraie couronne flotte au-dessus de lui, puis descend se poser.
+                portrait(batch, bare, cx, baseY, scale, shadow, appear);
+                float hover = hover() * scale;
+                float crownLight = Math.max(0.35f, light);
+                glow(batch, pieceX(crown, cx, scale), pieceY(crown, baseY, scale) + hover, 22f * scale, GOLD, 0.3f * appear);
+                batch.setColor(crownLight, crownLight, crownLight, appear);
+                drawPiece(batch, crown, cx, baseY, scale, hover);
+                for (int i = 0; i < picked; i++) {        // les éclats ramassés, à leur place (ceux du haut, avec la couronne)
+                    float rise = RIDES_CROWN[i] ? hover : 0f;
+                    glow(batch, pieceX(shards[i], cx, scale), pieceY(shards[i], baseY, scale) + rise, 9f * scale, SHARDS[i],
+                        0.35f * appear);
+                    batch.setColor(crownLight, crownLight, crownLight, appear);
+                    drawPiece(batch, shards[i], cx, baseY, scale, rise);
+                }
             }
         }
         drawParticles(batch, sparks);
@@ -308,33 +336,60 @@ public class PretenderCutscene extends Cutscene {
         }
     }
 
-    /** Son trône : une pile de machines à sous cassées, sous lui et autour. */
-    private void drawThrone(Batch batch, float cx, float baseY, float scale, float shadow, float alpha) {
-        float light = 1f - shadow;
-        float[][] boxes = {{-14f, -8f, 14f, 12f, -8f}, {13f, -9f, 15f, 13f, 6f}, {-4f, -14f, 16f, 12f, 2f},
-            {-20f, 2f, 11f, 10f, -15f}, {19f, 1f, 11f, 10f, 12f}, {-10f, -24f, 18f, 12f, -3f}, {9f, -23f, 18f, 12f, 4f}};
-        for (float[] b : boxes) {
-            float w = b[2] * scale, h = b[3] * scale, x = cx + b[0] * scale - w / 2f, y = baseY + b[1] * scale;
-            float tint = 0.25f + 0.75f * light;
-            batch.setColor(0.08f, 0.04f, 0.05f, alpha);
-            batch.draw(pixel, x - scale, y - scale, w / 2f + scale, h / 2f + scale, w + 2f * scale, h + 2f * scale, 1f, 1f, b[4]);
-            batch.setColor(0.8f * tint, 0.62f * tint, 0.2f * tint, alpha);
-            batch.draw(pixel, x, y, w / 2f, h / 2f, w, h, 1f, 1f, b[4]);
-            batch.setColor(0.1f, 0.06f, 0.08f, alpha);                     // la vitre des rouleaux, brisée
-            batch.draw(pixel, x + w * 0.15f, y + h * 0.4f, w * 0.35f, h * 0.1f, w * 0.7f, h * 0.35f, 1f, 1f, b[4]);
-        }
-    }
-
     private void drawGem(Batch batch, float x, float y, Color color, float scale) {
         glow(batch, x, y, scale * 14f, color, 0.7f);
         batch.setColor(color);
         sprite(batch, gem, x, y, scale, 0f);
     }
 
-    /** @return où l'éclat {@code i} rejoint la couronne de l'ombre (avant qu'on s'approche). */
-    private float crownX(int i) { return worldWidth() / 2f + (i - 1) * 70f; }
-    private float crownY() {
-        float hover = (1f - Interpolation.bounceOut.apply(progress(CROWN_DOWN, CROWN_LAND))) * 12f * 10f;
-        return worldHeight() * 0.12f + 38.5f * 10f + hover;
+    /** @return de combien de pixels du portrait la couronne flotte au-dessus de sa place (0 une fois posée). */
+    private float hover() {
+        float bob = MathUtils.sin(time * 3f) * (1f - progress(CROWN_DOWN - 0.3f, CROWN_DOWN));
+        return (1f - Interpolation.bounceOut.apply(progress(CROWN_DOWN, CROWN_LAND))) * 12f + bob;
+    }
+
+    /** @return où l'éclat {@code i} rejoint sa place sur lui, (avant qu'on s'approche). */
+    private float slotX(int i) { return pieceX(shards[i], worldWidth() / 2f, 10f); }
+    private float slotY(int i) {
+        return pieceY(shards[i], worldHeight() * 0.12f, 10f) + (RIDES_CROWN[i] ? hover() * 10f : 0f);
+    }
+
+    /** Un vrai morceau du portrait : ses pixels, et sa place (coin haut-gauche, en pixels du portrait). */
+    private record Piece(TextureRegion region, int left, int top) {}
+
+    /**
+     * @return le morceau que {@code with} (le portrait {@code rest} plus ce seul morceau) a en plus de {@code rest},
+     *         avec les couleurs du portrait entier {@code full}, à sa place exacte
+     */
+    private Piece lift(int[][] with, int[][] rest, int[][] full) {
+        int left = Integer.MAX_VALUE, top = Integer.MAX_VALUE, right = -1, bottom = -1;
+        for (int y = 0; y < with.length; y++) {
+            for (int x = 0; x < with[y].length; x++) {
+                if (with[y][x] == rest[y][x] || with[y][x] == 0) continue;
+                left = Math.min(left, x); right = Math.max(right, x);
+                top = Math.min(top, y); bottom = Math.max(bottom, y);
+            }
+        }
+        int[][] grid = new int[bottom - top + 1][right - left + 1];
+        for (int y = top; y <= bottom; y++) {
+            for (int x = left; x <= right; x++) if (with[y][x] != rest[y][x]) grid[y - top][x - left] = full[y][x];
+        }
+        return new Piece(pixels(grid), left, top);
+    }
+
+    /** Dessine {@code piece} à sa place sur le portrait posé en ({@code cx}, {@code baseY}), monté de {@code dy}. */
+    private void drawPiece(Batch batch, Piece piece, float cx, float baseY, float scale, float dy) {
+        float w = piece.region.getRegionWidth() * scale, h = piece.region.getRegionHeight() * scale;
+        float x = cx + (piece.left - pretender.getRegionWidth() / 2f) * scale;
+        float y = baseY + (pretender.getRegionHeight() - piece.top) * scale - h + dy;
+        batch.draw(piece.region, x, y, w, h);
+    }
+
+    /** @return le centre à l'écran de {@code piece} à sa place, le portrait posé en ({@code cx}, {@code baseY}). */
+    private float pieceX(Piece piece, float cx, float scale) {
+        return cx + (piece.left + piece.region.getRegionWidth() / 2f - pretender.getRegionWidth() / 2f) * scale;
+    }
+    private float pieceY(Piece piece, float baseY, float scale) {
+        return baseY + (pretender.getRegionHeight() - piece.top - piece.region.getRegionHeight() / 2f) * scale;
     }
 }
