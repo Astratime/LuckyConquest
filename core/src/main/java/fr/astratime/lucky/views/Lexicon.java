@@ -185,6 +185,10 @@ public final class Lexicon {
             term(Lang.t("Brèche"), Lang.f("Le surplus de dégâts arrêté par la Garde est gardé, jusqu'à {0} % de ses PV "
                 + "max. Il le frappe juste après son changement de phase, sans lui faire passer le seuil suivant.",
                 Enemy.BREACH_PERCENT)),
+            term(Lang.t("Saisie"), Lang.f("Le Croupier, au début de son tour, prend {0} % de ton bonus le plus rempli "
+                + "(Coffre, Lames, Sang ou Bonne étoile). Si tu as fait une combinaison et que tes jauges sont presque "
+                + "vides, tes combinaisons comptent à moitié au tour suivant. Deux saisies par tour en phase 3.",
+                EnemyKind.CROUPIER_SEIZE_PERCENT)),
             term(Lang.t("Phase 2 des rois"), Lang.f("Sous la moitié de ses PV, un roi prend le symbole d'un autre ennemi. "
                 + "Attaques +{0} %, soins -{1} %.", EnemyKind.KING_PHASE_ATTACK_PERCENT - 100,
                 100 - EnemyKind.KING_PHASE_HEAL_PERCENT)),

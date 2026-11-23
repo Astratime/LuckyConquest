@@ -236,6 +236,7 @@ public final class BalanceSimulator {
             : List.of(args).contains("--hardplace") ? simulator.hardPlaceReport()
             : List.of(args).contains("--rankplace") ? simulator.rankPlaceReport()
             : List.of(args).contains("--profiles") ? simulator.profilesReport()
+            : List.of(args).contains("--progress") ? simulator.progressReport()
             : System.getProperty("lucky.journal") != null ? simulator.journalReport(Paths.get(System.getProperty("lucky.journal")))
             : simulator.report();
         System.out.println(report);
@@ -1160,9 +1161,102 @@ public final class BalanceSimulator {
      * (le deck visé complet, tout en « + », la machine du moyen, joué en joueur malin). Le moyen et l'expert
      * sont donnés pour chaque deck visé. Les profils sont écrits dans profils_par_rang.md, pour relecture.
      */
+    // -------------------------------------------------------------------------
+    // Joueur qui progresse : ./gradlew :core:simulate -Pprogress (-Pwhat=place,tower,croupier -Plevels=0,5,10 -PrpRuns=40)
+    // -------------------------------------------------------------------------
+
+    /** Équipement d'un Légende : profils moyen et expert de chaque deck visé (voir {@link RankProfiles}). */
+    Map<String, Gear> legendGears() {
+        Map<String, Long> boutique = CardLoader.loadBoutique(reader);
+        List<String> starter = new ArrayList<>();
+        for (Card card : CardLoader.loadStarterDeck(reader)) starter.add(Card.baseId(card.getId()));
+        RankProfiles profiles = new RankProfiles(boutique, starter, CardLoader.loadStartingCollection(reader), cards);
+        Map<String, Gear> g = new LinkedHashMap<>();
+        String only = System.getProperty("lucky.onlyGear");
+        for (Map.Entry<String, Map<String, Integer>> target : profileTargets().entrySet()) {
+            RankProfiles.Profile profile = profiles.of(Rank.LEGENDE, target.getValue());
+            Gear moyen = new Gear("Moyen " + target.getKey(), profile.deck(), profile.reels(), true, false, true, profile.plus());
+            Gear expert = new Gear("Expert " + target.getKey(), target.getValue(), profile.reels(), true, true, true);
+            for (Gear x : List.of(moyen, expert)) if (only == null || List.of(only.split(",")).contains(x.name())) g.put(x.name(), x);
+        }
+        return g;
+    }
+
+    /** Part de chapitres de l'Histoire difficile gagnés (ou de combats contre le Croupier si {@code croupier}) par un Légende au Prestige {@code prestige}. */
+    double hardTowerWinRate(fr.astratime.lucky.entities.tower.Chapter chapter, int prestige, Gear gear, int runs, long seed, boolean croupier, double[] turnsOut) {
+        Random random = new Random(seed);
+        GameController game = controller(Rank.bonusAt(Rank.LEGENDE, prestige), gear);
+        game.setHardMode(true);
+        game.setPlaceRule(fr.astratime.lucky.entities.exploration.PlaceRule.NONE);
+        game.setBonusGameChance(fr.astratime.lucky.entities.BonusGame.TOWER_TRIGGER_CHANCE);
+        int wins = 0;
+        int[] turns = {0};
+        for (int run = 0; run < runs; run++) {
+            game.getPot().take();
+            if (croupier) {
+                game.restart(EnemyKind.GRAND_CROUPIER);
+                if (fight(game, random, gear, turns, true)) wins++;
+                continue;
+            }
+            game.restart(chapter.getFirstEnemy());
+            if (!fight(game, random, gear, turns)) continue;
+            game.startCombat(chapter.getChallengers().get(random.nextInt(chapter.getChallengers().size())));
+            if (!fight(game, random, gear, turns)) continue;
+            game.startCombat(chapter.getBoss());
+            if (fight(game, random, gear, turns, true)) wins++;
+        }
+        turnsOut[0] = turns[0] / (double) runs;
+        return wins / (double) runs;
+    }
+
+    /**
+     * Un Légende du Prestige 0 au X : le lieu de l'Exploration difficile qui donne son prochain sceau de Prestige, chaque
+     * chapitre de l'Histoire difficile et le Croupier (victoires en %, tours par partie).
+     */
+    String progressReport() {
+        int runs = Integer.getInteger("lucky.rpRuns", 40);
+        String what = System.getProperty("lucky.what", "place,tower,croupier");
+        Map<String, Gear> gears = legendGears();
+        List<String> lines = Collections.synchronizedList(new ArrayList<>());
+        List<Runnable> jobs = new ArrayList<>();
+        List<Integer> levels = new ArrayList<>();
+        for (String l : System.getProperty("lucky.levels", "0,1,2,3,4,5,6,7,8,9,10").split(",")) levels.add(Integer.parseInt(l));
+        for (Gear gear : gears.values()) {
+            if (what.contains("place")) for (int p : levels) {
+                if (p > 9) continue;
+                Place place = Place.atTier(p + 1);
+                jobs.add(() -> {
+                    RP total = new RP();
+                    rankPlace(place, true, Rank.LEGENDE, p, gear, true, runs, SEED).values().forEach(total::add);
+                    lines.add(String.format(Locale.ROOT, "place\t%s\tP%d\t%s\t%.0f\t%.1f", gear.name(), p, place.getShortName(),
+                        100.0 * total.wins / total.runs, total.turns / (double) total.runs));
+                });
+            }
+            if (what.contains("tower")) for (var ch : fr.astratime.lucky.entities.tower.Chapter.values()) for (int p : levels) {
+                jobs.add(() -> {
+                    double[] t = {0};
+                    double r = hardTowerWinRate(ch, p, gear, runs, SEED, false, t);
+                    lines.add(String.format(Locale.ROOT, "tower\t%s\tP%d\tch%d\t%.0f\t%.1f", gear.name(), p, ch.getNumber(), 100 * r, t[0]));
+                });
+            }
+            if (what.contains("croupier")) for (int p : levels) {
+                jobs.add(() -> {
+                    double[] t = {0};
+                    double r = hardTowerWinRate(null, p, gear, runs, SEED, true, t);
+                    lines.add(String.format(Locale.ROOT, "croupier\t%s\tP%d\t-\t%.0f\t%.1f", gear.name(), p, 100 * r, t[0]));
+                });
+            }
+        }
+        jobs.parallelStream().forEach(Runnable::run);
+        Collections.sort(lines);
+        return "kind\tgear\tprestige\twhere\twinPercent\tturns\n" + String.join("\n", lines) + "\n";
+    }
+
     String profilesReport() {
         int runs = Integer.getInteger("lucky.rpRuns", 100);
         Map<String, Long> boutique = CardLoader.loadBoutique(reader);
+        // les cartes réservées à l'Exploration difficile ne s'achètent pas pendant la montée en rangs (mode normal)
+        boutique.keySet().removeAll(CardLoader.loadHardGates(reader).keySet());
         List<String> starter = new ArrayList<>();
         for (Card card : CardLoader.loadStarterDeck(reader)) starter.add(Card.baseId(card.getId()));
         RankProfiles profiles = new RankProfiles(boutique, starter, CardLoader.loadStartingCollection(reader), cards);

@@ -463,7 +463,7 @@ public class SidePanel implements Disposable {
      * Réduit le texte de {@code label} s'il dépasse {@code maxWidth}, pour qu'il ne sorte
      * jamais du bloc Gains (ex : « 123 456 789 012 », « 1,25e12 ») ; taille normale sinon.
      */
-    static void fitWidth(Label label, float maxWidth) {
+    public static void fitWidth(Label label, float maxWidth) {
         label.setFontScale(1f);
         float width = label.getPrefWidth();
         if (width > maxWidth) label.setFontScale(maxWidth / width);

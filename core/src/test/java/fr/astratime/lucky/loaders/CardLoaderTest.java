@@ -225,11 +225,13 @@ class CardLoaderTest {
     @Test
     void theBoutiqueSellsKnownCardsButNeitherChestNorCombatShopCards() {
         Map<String, Long> boutique = CardLoader.loadBoutique(READER);
-        // Prix selon la note de force (Astra, 2026-11-05), recalés au simulateur le 2026-11-13
-        assertEquals(20_000_000L, boutique.get("gain_500"), "note 1");
-        assertEquals(1_300_000_000L, boutique.get("11_coeur"), "note 5");
-        assertEquals(160_000_000_000L, boutique.get("1_pique"), "note 10");
-        assertEquals(160_000_000_000L, boutique.get("in_the_sleeve"), "note 10");
+        // Prix selon la note de force (Astra, 2026-11-05), recalés au simulateur le 2026-11-23 (10 lieux) ; notes 9 et
+        // 10 réservées à l'Exploration difficile
+        assertEquals(40_000_000L, boutique.get("gain_500"), "note 1");
+        assertEquals(700_000_000L, boutique.get("11_coeur"), "note 5");
+        assertEquals(5_000_000_000_000L, boutique.get("masque_du_joker"), "note 9");
+        assertEquals(10_000_000_000_000L, boutique.get("1_pique"), "note 10");
+        assertEquals(10_000_000_000_000L, boutique.get("in_the_sleeve"), "note 10");
         assertEquals(boutique.get("1_trefle"), boutique.get("etoile_filante"), "les Étoiles valent l'As de Trèfle");
         Set<String> shop = CardLoader.loadShop(READER).keySet();
         for (Map.Entry<String, Long> entry : boutique.entrySet()) {

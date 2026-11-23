@@ -1424,6 +1424,17 @@ public class PlayerProfile {
         return seal == null || isHardPlaceCleared(seal) ? null : seal;
     }
 
+    /**
+     * Article de la Boutique réservé à l'Exploration difficile (Astra, 2026-11-23 : les cartes les plus fortes ne
+     * s'achètent qu'en avançant dans le difficile).
+     *
+     * @param gate le lieu à vider en difficile, ou {@code null} pour un article libre
+     * @return {@code true} si l'article peut s'acheter : libre, lieu vidé en difficile, ou mode ADMIN
+     */
+    public boolean isHardGateOpen(Place gate) {
+        return gate == null || admin || isHardPlaceCleared(gate);
+    }
+
     /** @return {@code true} si les quatre donjons du lieu {@code place} sont vidés en Exploration difficile. */
     public boolean isHardPlaceCleared(Place place) {
         return place.getDungeons().stream().allMatch(dungeon -> clearedHardDungeons.contains(dungeon.name()));
