@@ -37,6 +37,20 @@ public final class HardExploration {
     /** Force d'un palier de lieu difficile par rapport au précédent : racine de 2 (deux paliers font x2). */
     public static final double STRENGTH_STEP = Math.sqrt(2.0);
 
+    /**
+     * Attaque en plus des trois premiers lieux difficiles, en % (Astra, 2026-11-23) : un Légende les gagnait à 94-100 %
+     * au Prestige de leur sceau alors qu'ils gardent les meilleures cartes de la boutique. Visé : ~65-70 % de victoires
+     * (simulation analyses/difficile_debut_renforce_2026-11-23/). PV, défense et pièces inchangés.
+     */
+    static int extraAttackPercent(Place place) {
+        return switch (place) {
+            case PRAIRIE -> 650;
+            case FOIRE   -> 290;
+            case RAPIDE  -> 240;
+            default      -> 100;
+        };
+    }
+
     private HardExploration() { }
 
     /** @return la force du lieu {@code place} en mode difficile par rapport au Désert en normal : x1, x1,41, x2 … x22,6. */
@@ -86,7 +100,8 @@ public final class HardExploration {
             for (Place place : Place.values()) {
                 double strength = strength(place);
                 HP[place.ordinal()] = ratio(desertHp, averageHp(place)) * strength;
-                ATTACK[place.ordinal()] = ratio(desertAttack, averageAttack(place)) * strength;
+                ATTACK[place.ordinal()] = ratio(desertAttack, averageAttack(place)) * strength
+                    * extraAttackPercent(place) / 100.0;
                 DEFENSE[place.ordinal()] = ratio(desertDefense, averageDefense(place)) * strength;
             }
         }
