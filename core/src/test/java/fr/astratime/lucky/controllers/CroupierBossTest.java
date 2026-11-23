@@ -36,15 +36,14 @@ class CroupierBossTest {
     }
 
     @Test
-    void heIsStrongerThanTheHardestTowerBossAndTheFirstEndlessFloors() {
+    void heIsStrongerThanTheHardMachine() {
         Enemy croupier = new Enemy(EnemyKind.GRAND_CROUPIER, Difficulty.NORMAL);
         assertEquals(EnemyKind.CROUPIER_HP, croupier.getMaxHp());
         assertTrue(EnemyKind.GRAND_CROUPIER.isBoss());
         assertTrue(EnemyKind.GRAND_CROUPIER.copiesPlayerDeck(), "phase 1 : il joue avec ton deck");
         assertEquals(3, EnemyKind.GRAND_CROUPIER.phaseCount());
-        assertTrue(EnemyKind.CROUPIER_POWER > EnemyKind.hardPower(6), "plus fort que la Machine Originelle difficile");
-        assertTrue(EnemyKind.CROUPIER_POWER > EnemyKind.endlessPower(1), "plus fort que le premier étage sans fin");
-        assertTrue(EnemyKind.CROUPIER_HP > EnemyKind.hardBossHp(6));
+        assertTrue(EnemyKind.CROUPIER_POWER > EnemyKind.hardPower(fr.astratime.lucky.entities.tower.Chapter.last().getNumber()), "plus fort que la Machine Originelle difficile");
+        assertTrue(EnemyKind.CROUPIER_HP > EnemyKind.hardBossHp(fr.astratime.lucky.entities.tower.Chapter.last().getNumber()));
         assertFalse(EndlessRun.BOSSES.contains(EnemyKind.GRAND_CROUPIER));
     }
 

@@ -13,7 +13,8 @@ import java.util.Random;
 /**
  * L'entrée en scène d'un roi de l'Exploration, entre le soldat et le roi :
  * environ 8 secondes. D'abord le décor ({@link #PRELUDE} secondes, un plan à
- * part), puis le roi apparaît ; en place, il fait un geste et son nom
+ * part), puis le roi apparaît, sur le vrai décor de son lieu s'il le dessine
+ * ({@link #drawPlace}, le même que ses phases et sa mort) ; en place, il fait un geste et son nom
  * s'affiche ; fondu noir et sa présentation. Chaque lieu dessine ses quatre
  * rois ({@link PrairieKings}, {@link PortKings}, {@link MinesKings},
  * {@link CasinoKings}, {@link FairKings}, {@link DesertKings}, {@link ExpressKings}, {@link PalaceKings}, {@link TempleKings}, {@link ManorKings}) ; le son est cutscene/king_<i>roi</i>.
@@ -39,6 +40,9 @@ public abstract class KingEntrance extends Cutscene {
     private boolean entered;
     /** Le geste du roi : décalage, inclinaison (degrés) et étirement du portrait, remis à zéro à chaque image. */
     private float poseX, poseY, poseTilt, poseStretch;
+    /** Le vrai décor du lieu du roi (celui du combat et de ses phases), chargé au premier dessin. */
+    private PlaceDecor place;
+    private final Color placeShade = new Color();
 
     protected KingEntrance(CutsceneKit kit, EnemyKind kind) {
         super(kit.settings(), kit.shake(), kit.sound("king_" + kind.name().toLowerCase()));
@@ -174,6 +178,23 @@ public abstract class KingEntrance extends Cutscene {
     }
 
     /**
+     * Le roi comme {@link #drawKing}, mais seulement ce qui dépasse au-dessus de la ligne {@code floor} (à l'écran) :
+     * il monte d'une fente, d'une trappe, d'un trou, et le bas de son portrait reste caché dessous.
+     */
+    protected void drawKingAbove(Batch batch, float x, float y, float scale, float shadow, float alpha, float floor) {
+        float sy = scale * (1f + poseStretch);
+        int rows = king.getRegionHeight();
+        int hidden = MathUtils.clamp(MathUtils.ceil((floor - y - poseY) / sy), 0, rows);
+        if (hidden >= rows) return;
+        TextureRegion shown = hidden == 0 ? king : new TextureRegion(king, 0, 0, king.getRegionWidth(), rows - hidden);
+        float width = king.getRegionWidth() * scale * (1f - poseStretch * 0.5f), height = (rows - hidden) * sy;
+        float light = 1f - shadow;
+        batch.setColor(light, light, light, alpha);
+        batch.draw(shown, x + poseX - width / 2f, y + poseY + hidden * sy, width / 2f, -hidden * sy, width, height, 1f, 1f,
+            poseTilt);
+    }
+
+    /**
      * Dessine {@code region} sur le roi tel que {@link #drawKing} le pose en ({@code x}, {@code y}) à l'échelle
      * {@code scale} : son coin haut-gauche au pixel ({@code left}, {@code top}) du portrait, un pixel de
      * {@code region} valant {@code pixels} pixels du portrait. Elle suit son geste, comme si elle faisait partie du dessin.
@@ -198,6 +219,49 @@ public abstract class KingEntrance extends Cutscene {
     /** @return l'ordonnée à l'écran du pixel {@code py} (compté du haut) du roi posé en {@code y} (sans son inclinaison). */
     protected float kingPixelY(float py, float y, float scale) {
         return y + poseY + (king.getRegionHeight() - py) * scale * (1f + poseStretch);
+    }
+
+    // -------------------------------------------------------------------------
+    // Le vrai décor du lieu (le même que ses phases et sa mort, voir PlaceDecor)
+    // -------------------------------------------------------------------------
+
+    /** @return le décor du lieu du roi, chargé à la première demande. */
+    protected PlaceDecor place() {
+        if (place == null) place = new PlaceDecor(this, kind);
+        return place;
+    }
+
+    /** Dessine le vrai décor du lieu sur tout l'écran, éclairé à {@code light} (0,62 : comme dans ses phases). */
+    protected void drawPlace(Batch batch, float light) {
+        if (place().image() == null) {                      // sans fichiers : le ciel et le sol du lieu
+            BossTheme theme = BossTheme.of(kind);
+            gradient(batch, theme.skyLow(), theme.skyTop());
+            rect(batch, theme.ground(), -MARGIN, -MARGIN, worldWidth() + 2f * MARGIN, worldHeight() * 0.18f + MARGIN);
+            return;
+        }
+        batch.setColor(place().lit(Color.WHITE, light, placeShade));
+        place().drawImage(batch);
+        batch.setColor(Color.WHITE);
+    }
+
+    /** @return l'abscisse à l'écran du bord gauche de la colonne {@code px} du décor. */
+    protected float placeX(float px) { return place().x(px); }
+    /** @return l'ordonnée à l'écran du bord haut de la ligne {@code py} du décor (comptée depuis le haut). */
+    protected float placeY(float py) { return place().y(py); }
+    /** @return la taille à l'écran d'un pixel du décor. */
+    protected float placeScale() { return place().scale(); }
+
+    /** @return {@code out}, la couleur {@code color} éclairée comme le décor à {@code light} (un objet posé dedans). */
+    protected Color placeLit(Color color, float light, Color out) { return place().lit(color, light, out); }
+
+    /**
+     * Redessine le vrai morceau ({@code px}, {@code py}, {@code w}, {@code h}) du décor, décalé de ({@code dx},
+     * {@code dy}) à l'écran et éclairé à {@code light} : un objet du décor qui bouge (une bouteille qui danse…).
+     */
+    protected void placePart(Batch batch, int px, int py, int w, int h, float dx, float dy, float light) {
+        batch.setColor(place().lit(Color.WHITE, light, placeShade));
+        place().drawPart(batch, px, py, w, h, dx, dy);
+        batch.setColor(Color.WHITE);
     }
 
     /** Une gerbe de {@code count} étincelles de couleur {@code color} autour de ({@code x}, {@code y}). */

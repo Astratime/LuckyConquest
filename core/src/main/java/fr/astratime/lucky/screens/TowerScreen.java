@@ -323,8 +323,8 @@ public class TowerScreen extends CasinoMenuScreen {
         chapterLabel.setText(beaten ? Lang.t("BOSS SECRET · VAINCU") : Lang.t("BOSS SECRET"));
         chapterTitle.setText(Lang.t("Le Croupier"));
         description.setText(Lang.f("Il t'a tout appris. Il tient toutes les machines. Ce soir, il s'assoit en face de toi, "
-                + "avec ton propre deck.\n\nUn seul combat en trois phases : {0} PV, force x{1}. "
-                + "À 50 %, il truque ta table. À 10 %, il joue cartes sur table. Aucune pièce.",
+                + "avec ton propre deck.\n\nUn seul combat en trois phases : {0} PV, force x{1}. À chaque tour, il saisit "
+                + "ton plus gros bonus. À 50 %, il truque ta table. À 10 %, il joue cartes sur table. Aucune pièce.",
             Lang.big(EnemyKind.CROUPIER_HP), EnemyKind.CROUPIER_POWER / 100));
         ((TextureRegionDrawable) art.getDrawable()).setRegion(new TextureRegion(artTexture()));
         art.setVisible(true);

@@ -42,6 +42,8 @@ tasks.register('simulate', JavaExec) {
   if (project.hasProperty('rankplace')) args '--rankplace'
   if (project.hasProperty('hardplace')) args '--hardplace'
   if (project.hasProperty('profiles')) args '--profiles'
+  if (project.hasProperty('progress')) args '--progress'
+  ['what','levels'].each { p -> if (project.hasProperty(p)) systemProperty "lucky.$p", project.property(p) }
   if (project.hasProperty('journal')) systemProperty 'lucky.journal', project.property('journal')
   if (project.hasProperty('shopShare')) systemProperty 'lucky.shopShare', project.property('shopShare')
   if (project.hasProperty('hardRank')) systemProperty 'lucky.hardRank', project.property('hardRank')

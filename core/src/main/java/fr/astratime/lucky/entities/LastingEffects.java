@@ -57,6 +57,8 @@ public class LastingEffects {
     private int shortCircuits;
     /** Avantage de la maison : baisses des gains du prochain tirage. */
     private int houseEdges;
+    /** Saisies des combinaisons du Croupier : au prochain tour, ses combinaisons ne comptent qu'à moitié. */
+    private int comboSeizures;
     /** Éboulement : cartes de moins à la prochaine pioche. */
     private int rockfalls;
     /** Berceuse (Rapide de Minuit) : cartes jouées qui s'endormiront au prochain tour. */
@@ -373,6 +375,45 @@ public class LastingEffects {
     public int getHouseEdges() { return houseEdges; }
     /** Tirage : les Avantages de la maison valent pour celui-ci. */
     public int takeHouseEdges() { int n = houseEdges; houseEdges = 0; return n; }
+
+    /** Les bonus du joueur que le Croupier peut saisir (Astra, 2026-11-23). */
+    public enum Seizable { VAULT, BLADES, BLOOD, STAR, COMBOS }
+
+    /** Lames à partir desquelles la jauge compte comme pleine pour la Saisie du Croupier. */
+    public static final int SEIZE_FULL_BLADES = 30;
+
+    /**
+     * @return à quel point le bonus {@code bonus} est rempli, de 0 à 1 (Coffre, Sang et Bonne étoile sur leur maximum,
+     *         Lames sur {@link #SEIZE_FULL_BLADES}) ; 0 pour les combinaisons, qui n'ont pas de jauge
+     */
+    public double fill(Seizable bonus) {
+        return switch (bonus) {
+            case VAULT  -> vault / (double) MAX_VAULT;
+            case BLADES -> Math.min(1.0, blades / (double) SEIZE_FULL_BLADES);
+            case BLOOD  -> maxBlood <= 0 ? 0 : blood / (double) maxBlood;
+            case STAR   -> luckyStar / (double) MAX_LUCKY_STAR;
+            case COMBOS -> 0;
+        };
+    }
+
+    /**
+     * Saisie du Croupier : retire {@code percent} % de la jauge {@code bonus} (arrondi au-dessus), ou, pour les
+     * combinaisons, les fait compter à moitié au prochain tour.
+     *
+     * @return ce qui a été retiré de la jauge (1 pour les combinaisons)
+     */
+    public int seize(Seizable bonus, int percent) {
+        switch (bonus) {
+            case VAULT -> { int lost = (int) Math.ceil(vault * percent / 100.0); vault -= lost; return lost; }
+            case BLADES -> { int lost = (int) Math.ceil(blades * percent / 100.0); blades -= lost; return lost; }
+            case BLOOD -> { int lost = (int) Math.ceil(blood * percent / 100.0); blood -= lost; return lost; }
+            case STAR -> { int lost = (int) Math.ceil(luckyStar * percent / 100.0); luckyStar -= lost; return lost; }
+            default -> { comboSeizures++; return 1; }
+        }
+    }
+
+    /** @return le nombre de saisies des combinaisons pour ce tour, remis à 0. */
+    public int takeComboSeizures() { int n = comboSeizures; comboSeizures = 0; return n; }
 
     /** Éboulement : {@code cards} cartes de moins à la prochaine pioche. */
     public void addRockfall(int cards) { rockfalls += cards; }
@@ -902,7 +943,7 @@ public class LastingEffects {
             && fakeGains == 0 && taxes == 0 && laterTaxes == 0 && houseRuleTurns == 0
             && traps == 0 && lanternDraws == 0 && earplugDraws == 0 && propTurns == 0 && lamps == 0
             && cageTurns == 0 && anchorTurns == 0 && temperPercent == 0 && bonusPlays == 0
-            && voidReels.isEmpty() && shortCircuits == 0 && houseEdges == 0 && rockfalls == 0 && lullabies == 0 && maledictions == 0 && vertigos == 0 && dizzy == 0 && strings == 0 && seals == 0 && aspirations.isEmpty()
+            && voidReels.isEmpty() && shortCircuits == 0 && houseEdges == 0 && comboSeizures == 0 && rockfalls == 0 && lullabies == 0 && maledictions == 0 && vertigos == 0 && dizzy == 0 && strings == 0 && seals == 0 && aspirations.isEmpty()
             && nextDraws == 0 && hatTurns == 0 && jokerBox == 0 && hoardTurns == 0 && annuityTurns == 0 && martingale == 0
             && juggles == 0 && scares == 0 && tunnels == 0 && turnstiles == 0 && riggedPrizes == 0 && riggedGame == 0
             && tolls == 0 && bills == 0 && venoms.isEmpty() && reelGauges.isEmpty()
