@@ -286,11 +286,7 @@ public class TowerScreen extends CasinoMenuScreen {
             ? Lang.f(hard ? "Termine le {0} en mode difficile pour ouvrir ce chapitre."
                     : "Termine le {0} pour ouvrir ce chapitre.",
                 chapter.getPrevious().getLabel().toLowerCase())
-            : hard
-            ? Lang.f("{0}\n\nMode difficile : boss à {1} PV, ennemis force x{2}.",
-                chapter.getDescription(), Lang.big(EnemyKind.hardBossHp(chapter.getNumber())),
-                chapter.hardPowerText())
-            : chapter.getDescription());
+            : chapter.getDescription()); // pas de chiffres techniques (force, PV) : le joueur n'en a pas besoin
         ((TextureRegionDrawable) art.getDrawable()).setRegion(new TextureRegion(enemyTextures.chapterArt(chapter)));
         art.setVisible(open);
         lockMark.setVisible(!open);
@@ -308,9 +304,8 @@ public class TowerScreen extends CasinoMenuScreen {
             ? Lang.f("Termine le chapitre {0} en mode difficile pour ouvrir le mode sans fin.", Chapter.last().getNumber())
             : Lang.f("Des étages sans fin, plus forts que le dernier chapitre difficile. Choisis ton adversaire parmi trois "
                     + "cartes, un boss tous les {0} étages.\n\n"
-                    + "Étage 1 : force x{1}, {2} PV (boss {3}), puis +{4} % par étage. PV et gains gardés, aucune pièce.",
-                EndlessRun.BOSS_EVERY, EnemyKind.endlessPower(1) / 100, Lang.big(EnemyKind.endlessHp(1, false)),
-                Lang.big(EnemyKind.endlessHp(1, true)), EnemyKind.ENDLESS_STEP_PERCENT));
+                    + "Chaque étage est plus fort que le précédent. PV et gains gardés, aucune pièce.",
+                EndlessRun.BOSS_EVERY));
         ((TextureRegionDrawable) art.getDrawable()).setRegion(new TextureRegion(enemyTextures.chapterArt(Chapter.last())));
         art.setVisible(open);
         lockMark.setVisible(!open);
@@ -322,10 +317,9 @@ public class TowerScreen extends CasinoMenuScreen {
         boolean beaten = luckyGame.getProfile().hasDefeated(EnemyKind.GRAND_CROUPIER) && !luckyGame.getProfile().isAdmin();
         chapterLabel.setText(beaten ? Lang.t("BOSS SECRET · VAINCU") : Lang.t("BOSS SECRET"));
         chapterTitle.setText(Lang.t("Le Croupier"));
-        description.setText(Lang.f("Il t'a tout appris. Il tient toutes les machines. Ce soir, il s'assoit en face de toi, "
-                + "avec ton propre deck.\n\nUn seul combat en trois phases : {0} PV, force x{1}. À chaque tour, il saisit "
-                + "ton plus gros bonus. À 50 %, il truque ta table. À 10 %, il joue cartes sur table. Aucune pièce.",
-            Lang.big(EnemyKind.CROUPIER_HP), EnemyKind.CROUPIER_POWER / 100));
+        description.setText(Lang.t("Il t'a tout appris. Il tient toutes les machines. Ce soir, il s'assoit en face de toi, "
+                + "avec ton propre deck.\n\nUn seul combat en trois phases. À chaque tour, il saisit "
+                + "ton plus gros bonus. Blessé, il truque ta table. Presque vaincu, il joue cartes sur table. Aucune pièce."));
         ((TextureRegionDrawable) art.getDrawable()).setRegion(new TextureRegion(artTexture()));
         art.setVisible(true);
         lockMark.setVisible(false);
