@@ -48,7 +48,8 @@ public abstract class BossScene extends Cutscene {
     protected final int           phase;
     protected final BossTheme     theme;
     protected final TextureRegion boss, coin;
-    /** Le vrai décor du lieu ou du chapitre du boss ({@code null} sans image). */
+    /** Le vrai décor du lieu ou du chapitre du boss (son image est {@code null} sans fichiers). */
+    private final PlaceDecor place;
     private final TextureRegion decor;
     /** Le symbole que le boss gagne en entrant dans sa phase ({@code null} : aucun, ou sa mort). */
     private final TextureRegion gained;
@@ -81,7 +82,8 @@ public abstract class BossScene extends Cutscene {
         boss  = kit.portrait(kind);
         portrait = new TextureRegion(boss);
         coin  = load("hud/coin.png");
-        decor = loadDecor(kind);
+        place = new PlaceDecor(this, kind);
+        decor = place.image();
         EnemySymbol symbol = moment == Moment.PHASE ? kind.kingPhaseSymbol() : null;
         gained = symbol == null || kit.enemies() == null ? null : kit.symbol(symbol);
         font  = kit.font();
@@ -197,22 +199,14 @@ public abstract class BossScene extends Cutscene {
         }
     }
 
-    /** @return le décor du boss {@code kind}, chargé avec la scène ({@code null} s'il manque). */
-    private TextureRegion loadDecor(EnemyKind kind) {
-        String path = FrontScene.Decor.of(kind).getPath();
-        if (com.badlogic.gdx.Gdx.files == null || !com.badlogic.gdx.Gdx.files.internal(path).exists()) return null;
-        return load(path);
-    }
-
     /**
      * Le vrai décor du lieu, qui couvre l'écran (sans lissage), calé en haut comme en combat, teinté par la
      * couleur du ciel de la scène et assombri de {@link #decorLight()} pour que le boss ressorte.
      */
     private void drawDecor(Batch batch) {
         if (decor == null) return;
-        float scale = decorScale(), w = decor.getRegionWidth() * scale, h = decor.getRegionHeight() * scale;
         decorTint(batch, Color.WHITE);
-        batch.draw(decor, worldWidth() / 2f - w / 2f, worldHeight() + MARGIN - h, w, h);
+        place.drawImage(batch);
         batch.setColor(Color.WHITE);
     }
 
@@ -225,10 +219,7 @@ public abstract class BossScene extends Cutscene {
 
     /** @return {@code out}, la couleur {@code color} éclairée comme le décor (pour un objet posé dans le décor). */
     protected Color litLikeDecor(Color color, Color out) {
-        float light = MathUtils.clamp(decorLight(), 0f, 1f);
-        Color sky = theme.skyLow();
-        return out.set(color.r * light * (0.75f + 0.25f * sky.r), color.g * light * (0.75f + 0.25f * sky.g),
-            color.b * light * (0.75f + 0.25f * sky.b), 1f);
+        return place.lit(color, decorLight(), out);
     }
 
     /** @return l'image du décor du lieu ({@code null} s'il manque), pour une scène qui le déchire ou le déplace. */
@@ -236,17 +227,16 @@ public abstract class BossScene extends Cutscene {
 
     /** @return la taille à l'écran d'un pixel du décor (il couvre tout l'écran, calé en haut). */
     protected float decorScale() {
-        if (decor == null) return 1f;
-        return Math.max((worldWidth() + 2f * MARGIN) / decor.getRegionWidth(), (worldHeight() + 2f * MARGIN) / decor.getRegionHeight());
+        return place.scale();
     }
 
     /** @return l'abscisse à l'écran du bord gauche de la colonne {@code px} du décor. */
     protected float decorX(float px) {
-        return decor == null ? px : worldWidth() / 2f + (px - decor.getRegionWidth() / 2f) * decorScale();
+        return place.x(px);
     }
 
     /** @return l'ordonnée à l'écran du bord haut de la ligne {@code py} du décor (comptée depuis le haut). */
-    protected float decorY(float py) { return worldHeight() + MARGIN - py * decorScale(); }
+    protected float decorY(float py) { return place.y(py); }
 
     /** Repeint les pixels ({@code px}, {@code py}) à ({@code px + w}, {@code py + h}) du décor en {@code color}, éclairés comme lui. */
     protected void decorRect(Batch batch, Color color, float px, float py, float w, float h) {

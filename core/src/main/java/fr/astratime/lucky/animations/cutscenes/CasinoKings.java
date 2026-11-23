@@ -15,29 +15,33 @@ import java.util.Random;
 import static fr.astratime.lucky.assets.Palette.hex;
 
 /**
- * Les rois du Casino Englouti entrent en scène, sous la mer :
+ * Les rois du Casino Englouti entrent en scène sous la mer, chacun dans la vraie salle de son combat (le même
+ * décor que ses phases et sa mort) :
  * <ul>
- *   <li>Sirène du Bar : un verre glisse seul sur le comptoir. Des bulles montent, un chant ; les verres
- *   dansent ; elle apparaît derrière le comptoir. Elle souffle une bulle, une carte flotte dedans.</li>
- *   <li>Jackpot Vivant : un joueur fantôme tire un levier ; rien. Les machines s'allument, JACKPOT clignote
- *   partout ; la plus grande se lève et marche. Elle te crache des pièces et se met en garde.</li>
- *   <li>Grand Requin Banquier : une petite banque sous l'eau, le coffre ouvert. Des pièces coulent, une ombre
- *   tourne autour ; le requin surgit. Il tamponne « REFUSÉ » sur un chèque et sourit.</li>
- *   <li>Kraken : l'eau devient noire, des cartes coulent. La table VIP se fend, huit bras en sortent avec
- *   chacun une carte ; un œil s'ouvre dessous. Les bras battent les cartes et les étalent en éventail,
- *   un Joker au centre.</li>
+ *   <li>Sirène du Bar (le Bar) : un verre glisse seul sur le comptoir. Des bulles montent, un chant ; les
+ *   bouteilles des étagères et les verres dansent ; elle apparaît derrière le comptoir. Elle souffle une bulle,
+ *   une carte flotte dedans.</li>
+ *   <li>Jackpot Vivant (la salle des Machines) : un joueur fantôme tire le levier d'une machine ; rien. Les
+ *   machines de la salle s'allument une à une, leurs rouleaux tombent sur 7, JACKPOT clignote ; il sort de
+ *   l'allée et marche vers toi. Il te crache des pièces et se met en garde.</li>
+ *   <li>Grand Requin Banquier (la salle des Coffres) : la salle forte, la porte ronde, les coffres pleins. Des
+ *   pièces coulent, une ombre tourne autour ; le requin surgit de la porte du coffre. Il tamponne « REFUSÉ » sur
+ *   un chèque et sourit.</li>
+ *   <li>Kraken (le salon VIP) : l'eau devient noire, des cartes coulent. La table VIP se fend, huit bras en
+ *   sortent avec chacun une carte ; ses yeux s'allument dans la fente et le Kraken lui-même, couronné, monte
+ *   de la table. Ses bras battent les cartes et les étalent en éventail au-dessus de lui, un Joker au centre.</li>
  * </ul>
  */
 public class CasinoKings extends KingEntrance {
 
     /** Sirène : le chant commence, les verres dansent, elle apparaît. */
     static final float SONG = 0.5f, DANCE = 0.8f, SIREN = 2.0f;
-    /** Jackpot Vivant : les machines s'allument une à une, JACKPOT clignote, la grande machine marche. */
-    static final float LIGHTS = 0.3f, LIGHT_STEP = 0.13f, BLINK = 1.3f, WALK = 2.1f, WALK_END = 3.0f;
+    /** Jackpot Vivant : les machines de la salle s'allument, JACKPOT clignote, il sort de l'allée et marche. */
+    static final float LIGHTS = 0.3f, BLINK = 1.3f, WALK = 2.1f, WALK_END = 3.0f;
     /** Requin : l'ombre tourne, puis il surgit. */
     static final float CIRCLE = 0.4f, LUNGE = 2.1f;
-    /** Kraken : la table se fend, les bras sortent un à un, l'œil s'ouvre. */
-    static final float CRACK = 0.5f, ARMS = 0.8f, ARM_STEP = 0.18f, EYE = 2.45f;
+    /** Kraken : la table se fend, les bras sortent un à un, ses yeux luisent dans la fente, il monte (au cor). */
+    static final float CRACK = 0.5f, ARMS = 0.8f, ARM_STEP = 0.18f, GLIMPSE = 1.95f, EYE = 2.45f, RISEN = 3.0f;
 
     /** Le décor. Sirène : le verre glisse puis s'arrête. Jackpot : le fantôme tire le levier ; rien ; il s'efface. */
     static final float SLIDE_END = 1.4f, PULL = 0.55f, NOTHING = 1.1f, GHOST_FADE = 1.3f;
@@ -47,11 +51,21 @@ public class CasinoKings extends KingEntrance {
     static final float FAN = 4.3f, FANNED = 4.8f, JOKER = 4.85f;
 
     private static final int ARM_COUNT = 8;
-    private static final Color DEEP = hex("03101a"), SHALLOW = hex("0c3a4a"), FOAM = hex("bfeeff"), GOLD = hex("ffc93a");
-    private static final Color TENTACLE = hex("8a2a4a"), TENTACLE_LIGHT = hex("c25a7a");
+    private static final Color FOAM = hex("bfeeff"), GOLD = hex("ffc93a");
+    private static final Color TENTACLE = hex("8a1e2a"), TENTACLE_LIGHT = hex("b8404a");
+    /** La lumière du décor : un peu plus claire que dans leurs phases (0,62), pour bien voir la salle. */
+    private static final float LIGHT = 0.78f;
+    /** Le Bar : le dessus du comptoir et le sol (lignes du décor). */
+    private static final int COUNTER_TOP = 124, BAR_FLOOR = 171;
+    /** Les Machines : la machine du fantôme (une de devant) et le bas des machines. */
+    private static final int GHOST_MACHINE = 8, MACHINES_FLOOR = 161;
+    /** Les yeux du Kraken (bords de pixels de son portrait, comme dans ses phases). */
+    private static final float[][] KRAKEN_EYES = {{14f, 21f}, {22f, 21f}};
 
     private final BitmapFont font;
-    private final TextureRegion glass, note, machine, shark, coin, disc, ghost, safe;
+    private final TextureRegion glass, note, shark, coin, disc, ghost;
+    /** Les symboles des rouleaux des machines du décor. */
+    private final TextureRegion[] symbols;
     /** Les cartes du jeu : As de Coeur, As de Pique et le Joker. */
     private final TextureRegion aceHeart, aceSpade, joker;
     /** Le centre et l'angle de la carte au bout de chaque bras, pour l'éventail. */
@@ -81,21 +95,6 @@ public class CasinoKings extends KingEntrance {
             "..w..",
             "www..",
             "www..");
-        Color[] slotColors = {hex("0a0808"), hex("ffc93a"), hex("b8801f"), hex("f4ecdc"), hex("e0283a")};
-        machine = art("ogdwr", slotColors,
-            "..oooooooooo..",
-            ".oggggggggggo.",
-            "oggggggggggggo",
-            "ogoooooooooogo",
-            "ogowwowwowwogo",
-            "ogowrowrowrogo",
-            "ogowwowwowwogo",
-            "ogoooooooooogo",
-            "oggggggggggggo",
-            "ogggddddddgggo",
-            "oggggggggggggo",
-            "oddddddddddddo",
-            "oooooooooooooo");
         shark = art("s", new Color[] {Color.WHITE},
             "..........s...........",
             ".........ss...........",
@@ -126,17 +125,8 @@ public class CasinoKings extends KingEntrance {
             "oooooooo",
             "oooooooo",
             "o.o..o.o");
-        safe = art("ogdk", new Color[] {hex("0a0808"), hex("9a9aa8"), hex("5a5a6a"), hex("2a2a34")},
-            "oooooooooooo",
-            "ogggggggggdo",
-            "ogkkkkkkkkdo",
-            "ogkkkkkkkkdo",
-            "ogkkkkkkkkdo",
-            "ogkkkkkkkkdo",
-            "ogkkkkkkkkdo",
-            "ogkkkkkkkkdo",
-            "ogddddddddddo",
-            "oooooooooooo");
+        symbols = new TextureRegion[] {load("symbols/2-cherry.png"), load("symbols/3-seven.png"), load("symbols/4-bar.png"),
+            load("symbols/6-bell.png"), load("symbols/7-diamond.png"), load("symbols/11-watermelon.png")};
     }
 
     @Override
@@ -163,11 +153,10 @@ public class CasinoKings extends KingEntrance {
 
     @Override
     protected void prelude(Batch batch) {
-        drawWater(batch);
         switch (kind) {
             case SIRENE -> drawSlidingGlass(batch);
             case JACKPOT_VIVANT -> drawGhost(batch);
-            case REQUIN_BANQUIER -> drawBank(batch);
+            case REQUIN_BANQUIER -> drawVault(batch);
             default -> drawSinkingCards(batch);
         }
     }
@@ -222,7 +211,7 @@ public class CasinoKings extends KingEntrance {
                 if (at(LUNGE)) {
                     rumble(0.4f, 14f);
                     for (int i = 0; i < 40; i++) {
-                        Particle bubble = particle(cx(), worldHeight() * 0.45f, 360f * random.nextFloat(),
+                        Particle bubble = particle(placeX(CasinoBossScenes.VAULT_X), placeY(CasinoBossScenes.VAULT_Y), 360f * random.nextFloat(),
                             300f + 600f * random.nextFloat(), 0.8f, 10f + 20f * random.nextFloat());
                         bubble.drag = 0.1f;
                         bubble.color.set(FOAM);
@@ -241,7 +230,6 @@ public class CasinoKings extends KingEntrance {
 
     @Override
     protected void draw(Batch batch) {
-        drawWater(batch);
         switch (kind) {
             case SIRENE -> drawSiren(batch);
             case JACKPOT_VIVANT -> drawJackpot(batch);
@@ -256,26 +244,15 @@ public class CasinoKings extends KingEntrance {
         drawParticles(batch, parts);
     }
 
-    /** Sous la mer : dégradé bleu-vert, rayons de lumière qui tombent de la surface. */
-    private void drawWater(Batch batch) {
-        float width = worldWidth(), height = worldHeight();
-        gradient(batch, DEEP, SHALLOW);
-        additive(batch);
-        for (int i = 0; i < 7; i++) {
-            float x = width * (0.1f + i * 0.14f) + 40f * MathUtils.sin(time * 0.7f + i);
-            batch.setColor(0.6f, 0.95f, 1f, 0.07f + 0.04f * MathUtils.sin(time * 1.3f + i * 2f));
-            batch.draw(trail, x, height + 40f, 0f, 60f, height * 1.3f, 120f, 1f, 1f, 250f + i * 2f);
-        }
-        normal(batch);
-        rect(batch, hex("041820"), -MARGIN, -MARGIN, width + 2f * MARGIN, height * 0.12f + MARGIN);
-    }
-
     // -------------------------------------------------------------------------
     // Sirène du Bar
     // -------------------------------------------------------------------------
 
     private void drawSiren(Batch batch) {
-        float width = worldWidth(), height = worldHeight(), counter = height * 0.3f;
+        float width = worldWidth(), height = worldHeight(), counter = placeY(COUNTER_TOP);
+        drawPlace(batch, LIGHT);
+        float dance = progress(DANCE, DANCE + 0.4f);
+        drawBottles(batch, dance);
         // Les notes du chant, qui montent en ondulant.
         for (int i = 0; i < 10; i++) {
             float start = SONG + i * 0.28f;
@@ -306,20 +283,37 @@ public class CasinoKings extends KingEntrance {
             batch.draw(ring, bx - size, by - size, size * 2f, size * 2f);
             glow(batch, bx - size * 0.4f, by + size * 0.4f, size * 0.4f, Color.WHITE, 0.6f);
         }
-        // Le comptoir englouti.
-        rect(batch, hex("1a2a2e"), -MARGIN, -MARGIN, width + 2f * MARGIN, counter + MARGIN);
-        rect(batch, hex("3a5a5e"), -MARGIN, counter - 24f, width + 2f * MARGIN, 24f);
-        // Les verres qui dansent.
+        // Le vrai comptoir du Bar, devant elle.
+        placePart(batch, 0, COUNTER_TOP, 360, BAR_FLOOR - COUNTER_TOP, 0f, 0f, LIGHT);
+        // Les verres qui dansent dessus.
         for (int i = 0; i < 6; i++) {
             float x = width * (0.12f + i * 0.152f);
             if (Math.abs(x - cx()) < 160f) continue;
-            float dance = progress(DANCE, DANCE + 0.4f);
-            float hop = Math.abs(MathUtils.sin(time * 6f + i)) * 60f * dance;
+            float hop = Math.abs(MathUtils.sin(time * 6f + i)) * 40f * dance;
             float angle = 14f * MathUtils.sin(time * 6f + i * 1.7f) * dance;
             batch.setColor(Color.WHITE);
-            float scale = 19f;
+            float scale = 14f;
             batch.draw(glass, x - glass.getRegionWidth() * scale / 2f, counter + hop, glass.getRegionWidth() * scale / 2f,
                 0f, glass.getRegionWidth() * scale, glass.getRegionHeight() * scale, 1f, 1f, angle);
+        }
+    }
+
+    /**
+     * Les vraies bouteilles des étagères du Bar dansent à son chant : chacune se balance et sautille sur place,
+     * le verre luit en rose.
+     */
+    private void drawBottles(Batch batch, float dance) {
+        if (dance <= 0f) return;
+        float ds = placeScale();
+        for (int i = 0; i < CasinoBossScenes.BOTTLES; i++) {
+            int left = CasinoBossScenes.bottleLeft(i), top = CasinoBossScenes.bottleTop(i);
+            float beat = time * 7f + i * 0.9f;
+            float dx = MathUtils.sin(beat) * 0.8f * ds * dance, dy = Math.abs(MathUtils.cos(beat)) * 0.9f * ds * dance;
+            placePart(batch, left, top, CasinoBossScenes.BOTTLE_W, CasinoBossScenes.BOTTLE_H, dx, dy, LIGHT);
+            if (i % 3 == 0) {
+                glow(batch, placeX(left + CasinoBossScenes.BOTTLE_W / 2f) + dx, placeY(top + CasinoBossScenes.BOTTLE_H / 2f) + dy,
+                    120f, hex("ff7ad8"), 0.35f * dance * pulse(9f + i, 0.3f));
+            }
         }
     }
 
@@ -328,21 +322,31 @@ public class CasinoKings extends KingEntrance {
     // -------------------------------------------------------------------------
 
     private void drawJackpot(Batch batch) {
-        float width = worldWidth(), height = worldHeight(), floor = height * 0.3f;
-        // La rangée de machines au fond, qui s'allument une à une.
-        int count = 7;
-        for (int i = 0; i < count; i++) {
-            float x = width * (0.08f + i * 0.14f);
-            boolean center = i == count / 2;
-            if (center && time >= WALK) continue;                  // la grande s'est levée
-            float lit = progress(LIGHTS + i * LIGHT_STEP, LIGHTS + i * LIGHT_STEP + 0.1f);
-            float blink = time >= BLINK ? (((int) (time * 10f) + i) % 2 == 0 ? 1f : 0.6f) : 1f;
-            float scale = center ? 22f : 14f;
-            if (lit > 0f) glow(batch, x, floor + 120f, 380f, GOLD, 0.3f * lit * blink);
-            float light = 0.35f + 0.65f * lit * blink;
-            batch.setColor(light, light, light, 1f);
-            batch.draw(machine, x - machine.getRegionWidth() * scale / 2f, floor, machine.getRegionWidth() * scale,
-                machine.getRegionHeight() * scale);
+        float width = worldWidth(), height = worldHeight(), floor = placeY(MACHINES_FLOOR), ds = placeScale();
+        drawPlace(batch, 0.45f + (LIGHT - 0.45f) * progress(LIGHTS, BLINK));
+        // Les machines de la salle s'allument une à une, du milieu vers les bords ; leurs rouleaux tournent, puis 7.
+        int count = CasinoBossScenes.MACHINES.length;
+        for (int m = 0; m < count; m++) {
+            int[] sign = CasinoBossScenes.SIGNS[m], w = CasinoBossScenes.MACHINES[m];
+            float start = lightAt(m);
+            float lit = progress(start, start + 0.1f);
+            if (lit <= 0f) continue;
+            float blink = time >= BLINK ? (((int) (time * 10f) + m) % 2 == 0 ? 1f : 0.6f) : 1f;
+            Color bulb = time >= BLINK ? GOLD : CasinoBossScenes.BULBS[(int) (time * 8f + m) % CasinoBossScenes.BULBS.length];
+            tmp.set(bulb).lerp(Color.WHITE, 0.25f).mul(blink);
+            tmp.a = lit;
+            rect(batch, tmp, placeX(sign[0]), placeY(sign[1] + sign[3]), sign[2] * ds, sign[3] * ds);
+            glow(batch, placeX(sign[0] + sign[2] / 2f), placeY(sign[1] + sign[3] / 2f), sign[2] * ds * 1.4f, bulb, 0.4f * lit * blink);
+            for (int cell = 0; cell < 3; cell++) {
+                float wx = placeX(w[0] + cell * w[2]), wy = placeY(w[1] + w[4]);
+                float ww = (cell == 2 && w[4] > 10 ? w[3] + 1 : w[3]) * ds, wh = w[4] * ds;
+                float stop = BLINK - 0.25f + cell * 0.08f, speed = 14f + 3f * cell;
+                float offset = time >= stop ? SEVEN : SEVEN - (stop - time) * speed + m * 0.37f;
+                rect(batch, placeLit(CasinoBossScenes.SCREEN, 1f, tmp), wx, wy, ww, wh);
+                batch.setColor(Color.WHITE);
+                CasinoBossScenes.slot(batch, symbols, wx, wy, ww, wh, offset);
+            }
+            if (time >= BLINK) glow(batch, placeX(w[0] + w[2] * 1.5f), placeY(w[1] + w[4] / 2f), 180f, GOLD, 0.4f * pulse(12f, 0.4f));
         }
         // JACKPOT clignote partout.
         if (time >= BLINK && time < WALK + 0.5f) {
@@ -354,21 +358,30 @@ public class CasinoKings extends KingEntrance {
             }
             font.getData().setScale(1f);
         }
-        rect(batch, hex("0a1a20"), -MARGIN, -MARGIN, width + 2f * MARGIN, floor + MARGIN);
-        // La grande machine se lève et marche vers toi, pas à pas.
+        // Il sort de l'allée, entre les machines, et marche vers toi, pas à pas.
         if (time >= WALK) {
             float k = progress(WALK, WALK_END);
             float steps = Interpolation.linear.apply(k);
-            float scale = MathUtils.lerp(7f, KING_SCALE, steps);
+            float scale = MathUtils.lerp(5f, KING_SCALE, steps);
             float bob = Math.abs(MathUtils.sin(k * MathUtils.PI * 4f)) * 30f * (1f - k);
-            float y = MathUtils.lerp(floor, kingY(), steps) + bob;
+            float y = MathUtils.lerp(floor + 40f, kingY(), steps) + bob;
             float spit = gesture(SPIT - 0.15f, SPIT + 0.25f);
             float guard = Interpolation.swingOut.apply(progress(GUARD, GUARD + 0.3f));
             pose(0f, -30f * guard - 20f * spit, 0f, 0.05f * spit - 0.07f * guard);   // il crache, puis se met en garde
             glow(batch, cx(), y + 25f * scale, 70f * scale, GOLD, 0.4f + 0.3f * guard * pulse(8f, 0.5f));
-            drawKing(batch, cx(), y, scale, 0f, 1f);
+            drawKing(batch, cx(), y, scale, 0.5f * (1f - progress(WALK, WALK + 0.5f)), progress(WALK, WALK + 0.2f));
         }
     }
+
+    /** @return quand la machine {@code m} du décor s'allume : du milieu de la salle vers les bords. */
+    private float lightAt(int m) {
+        int[] sign = CasinoBossScenes.SIGNS[m];
+        float off = Math.abs(sign[0] + sign[2] / 2f - 180f) / 180f;
+        return LIGHTS + off * (BLINK - LIGHTS - 0.25f);
+    }
+
+    /** Le 7 parmi les symboles des rouleaux. */
+    private static final int SEVEN = 1;
 
     // -------------------------------------------------------------------------
     // Grand Requin Banquier
@@ -376,6 +389,7 @@ public class CasinoKings extends KingEntrance {
 
     private void drawShark(Batch batch) {
         float width = worldWidth(), height = worldHeight();
+        drawPlace(batch, LIGHT);
         for (Particle piece : coins) {                              // les pièces qui coulent
             float x = piece.x + 30f * MathUtils.sin(piece.age * 2f + piece.spin);
             float squash = Math.abs(MathUtils.cos(piece.age * 3f + piece.spin));
@@ -394,14 +408,16 @@ public class CasinoKings extends KingEntrance {
             batch.setColor(0f, 0.04f, 0.06f, 0.6f * progress(CIRCLE, CIRCLE + 0.4f));
             batch.draw(shark, left ? x + w / 2f : x - w / 2f, y - h / 2f, left ? -w : w, h);
         }
-        // Il surgit : cravate et dents.
+        // Il surgit de la porte ronde du coffre : cravate et dents.
         if (time >= LUNGE) {
             float k = Interpolation.swingOut.apply(progress(LUNGE, LUNGE + 0.3f));
             float scale = MathUtils.lerp(2f, KING_SCALE, k);
+            float vaultX = placeX(CasinoBossScenes.VAULT_X), vaultY = placeY(CasinoBossScenes.VAULT_Y);
+            glow(batch, vaultX, vaultY, 600f, GOLD, 0.5f * (1f - progress(LUNGE, LUNGE + 0.6f)));
             glow(batch, cx(), kingY() + 280f, 1000f, FOAM, 0.25f);
             float press = gesture(STAMP - 0.3f, STAMP + 0.2f);
             pose(0f, -30f * press, 0f, -0.03f * press);
-            drawKing(batch, cx(), MathUtils.lerp(height * 0.45f, kingY(), k), scale, 0f, 1f);
+            drawKing(batch, MathUtils.lerp(vaultX, cx(), k), MathUtils.lerp(vaultY - 21f * 2f, kingY(), k), scale, 0f, 1f);
             if (time >= SMILE) {                                    // le sourire : ses dents brillent
                 float smile = progress(SMILE, SMILE + 0.3f);
                 for (int i = 0; i < 4; i++) {
@@ -422,14 +438,16 @@ public class CasinoKings extends KingEntrance {
     private void drawKraken(Batch batch) {
         float width = worldWidth(), height = worldHeight();
         float tableY = height * 0.2f, rx = width * 0.42f, ry = height * 0.12f;
-        // L'œil s'ouvre sous la table, dans la fente.
-        float open = Interpolation.pow2Out.apply(progress(EYE, EYE + 0.4f));
+        drawPlace(batch, LIGHT - 0.22f * progress(CRACK, EYE));      // le salon s'assombrit
+        float chandelier = 1f - 0.6f * progress(CRACK, EYE);           // le lustre du salon VIP
+        glow(batch, placeX(CasinoBossScenes.CHANDELIER_X), placeY(CasinoBossScenes.CHANDELIER_Y), 600f, GOLD, 0.35f * chandelier);
         // La table VIP : rebord doré, tapis vert, la fente qui s'ouvre.
         ellipse(batch, hex("b8801f"), cx(), tableY, rx + 24f, ry + 14f);
         ellipse(batch, hex("1f6e3a"), cx(), tableY, rx, ry);
+        float rise = Interpolation.pow2Out.apply(progress(EYE, RISEN));
         float crack = progress(CRACK, CRACK + 0.2f);
         if (crack > 0f) {
-            float gap = 10f + 40f * progress(ARMS, EYE) + 60f * open;
+            float gap = 10f + 40f * progress(ARMS, EYE) + 60f * rise;
             batch.setColor(hex("020608"));
             for (int k = 0; k < 12; k++) {
                 float x0 = cx() - rx * 0.9f * crack + k * rx * 1.8f * crack / 12f;
@@ -437,23 +455,16 @@ public class CasinoKings extends KingEntrance {
                 batch.draw(pixel, x0, tableY - gap / 2f + wobble, rx * 1.8f * crack / 12f + 2f, gap);
             }
         }
-        if (open > 0f) {
-            float eyeW = 300f, eyeH = 130f * open;
-            glow(batch, cx(), tableY, 800f, hex("ffe066"), 0.4f * open);
-            ellipse(batch, hex("f4ecdc"), cx(), tableY, eyeW, eyeH);
-            ellipse(batch, hex("ffc93a"), cx(), tableY, eyeH * 0.95f, eyeH * 0.95f);
-            ellipse(batch, hex("0a0808"), cx(), tableY, eyeH * 0.18f, eyeH * 0.85f);
-        }
-        // Les huit bras, chacun une carte au bout.
+        // Ses huit bras, chacun une carte au bout.
         for (int i = 0; i < ARM_COUNT; i++) {
             float start = ARMS + i * ARM_STEP;
             if (time < start) continue;
-            float rise = Interpolation.pow2Out.apply(progress(start, start + 0.45f));
+            float out = Interpolation.pow2Out.apply(progress(start, start + 0.45f));
             float baseX = cx() + (i - (ARM_COUNT - 1) / 2f) * rx * 1.6f / ARM_COUNT;
             float side = i < ARM_COUNT / 2 ? -1f : 1f;
-            float x = baseX, y = tableY, angle = 90f - side * 8f;
+            float x = baseX, y = tableY, angle = 90f - side * (8f + 14f * rise);       // ils s'écartent pour lui
             int segments = 16;
-            float segment = 34f * rise;
+            float segment = 34f * out;
             for (int s = 0; s < segments; s++) {
                 float radius = MathUtils.lerp(40f, 12f, s / (float) segments);
                 angle += side * (6f + 4f * MathUtils.sin(time * 3f + i + s * 0.4f)) * (s / (float) segments);
@@ -462,7 +473,7 @@ public class CasinoKings extends KingEntrance {
                 batch.setColor(s % 3 == 0 ? TENTACLE_LIGHT : TENTACLE);
                 batch.draw(disc, x - radius, y - radius, radius * 2f, radius * 2f);
             }
-            if (rise > 0.6f) {                                       // la carte au bout du bras (battue après le geste)
+            if (out > 0.6f) {                                        // la carte au bout du bras (battue après le geste)
                 float cardAngle = angle - 90f;
                 if (time < GESTURE) {
                     batch.setColor(Color.WHITE);
@@ -476,13 +487,35 @@ public class CasinoKings extends KingEntrance {
                 cardA[i] = cardAngle;
             }
         }
+        // Ses deux yeux luisent dans la fente, juste avant qu'il monte.
+        float glimpse = progress(GLIMPSE, GLIMPSE + 0.3f) * (1f - progress(EYE, EYE + 0.25f));
+        if (glimpse > 0f) {
+            for (float[] eye : KRAKEN_EYES) {
+                float ex = kingPixelX(eye[0], cx(), KING_SCALE);
+                glow(batch, ex, tableY + 6f, 220f, hex("ffe066"), 0.8f * glimpse * pulse(7f, 0.6f));
+                glow(batch, ex, tableY + 6f, 60f, Color.WHITE, glimpse);
+            }
+        }
+        // Le Kraken lui-même, couronné, monte de la fente ; ses yeux s'allument en sortant.
+        if (time >= EYE) {
+            float y = MathUtils.lerp(tableY - KING_SCALE * 42f, kingY(), rise);
+            glow(batch, cx(), tableY + 260f * rise, 900f * rise, hex("ffe066"), 0.3f);
+            drawKingAbove(batch, cx(), y, KING_SCALE, 1f - progress(EYE + 0.15f, RISEN), 1f, tableY - 20f);
+            float stare = progress(EYE, EYE + 0.2f) * (1f - progress(RISEN + 0.3f, RISEN + 0.9f));
+            for (float[] eye : KRAKEN_EYES) {
+                float ex = kingPixelX(eye[0], cx(), KING_SCALE), ey = kingPixelY(eye[1], y, KING_SCALE);
+                if (ey < tableY) continue;
+                glow(batch, ex, ey, 9f * KING_SCALE, hex("ffe066"), 0.9f * stare);
+                glow(batch, ex, ey, 2.2f * KING_SCALE, Color.WHITE, stare);
+            }
+        }
         if (time >= GESTURE) drawShuffle(batch);
         flash(batch, hex("ffe066"), EYE, 0.2f, 0.35f);
     }
 
     /**
      * Les bras battent les cartes : elles sautent de bras en bras, puis se rangent
-     * en éventail au-dessus de la table ; un Joker monte au centre.
+     * en éventail au-dessus de lui ; un Joker monte au centre.
      */
     private void drawShuffle(Batch batch) {
         float fan = Interpolation.pow2Out.apply(progress(FAN, FANNED));
@@ -509,7 +542,7 @@ public class CasinoKings extends KingEntrance {
         }
     }
 
-    private float fanY() { return worldHeight() * 0.62f; }
+    private float fanY() { return worldHeight() * 0.84f; }
 
     /** La carte du jeu {@code card} centrée sur ({@code x}, {@code y}), tournée de {@code angle}. */
     private void drawCard(Batch batch, float x, float y, float angle, float scale, TextureRegion card) {
@@ -569,12 +602,11 @@ public class CasinoKings extends KingEntrance {
     // Le décor, avant l'entrée
     // -------------------------------------------------------------------------
 
-    /** Sirène : un verre glisse seul sur le comptoir englouti, et s'arrête devant toi. */
+    /** Sirène : un verre glisse seul sur le vrai comptoir du Bar, et s'arrête devant toi. */
     private void drawSlidingGlass(Batch batch) {
-        float width = worldWidth(), height = worldHeight(), counter = height * 0.3f;
+        float counter = placeY(COUNTER_TOP);
+        drawPlace(batch, LIGHT);
         glow(batch, cx(), counter + 300f, 900f, hex("ff9ad0"), 0.15f);
-        rect(batch, hex("1a2a2e"), -MARGIN, -MARGIN, width + 2f * MARGIN, counter + MARGIN);
-        rect(batch, hex("3a5a5e"), -MARGIN, counter - 24f, width + 2f * MARGIN, 24f);
         float k = Interpolation.pow2Out.apply(progress(0.1f, SLIDE_END));
         float x = MathUtils.lerp(-120f, cx(), k);
         float wobble = time >= SLIDE_END ? 6f * MathUtils.sin((time - SLIDE_END) * 25f) * Math.max(0f, 1f - (time
@@ -591,78 +623,80 @@ public class CasinoKings extends KingEntrance {
         }
     }
 
-    /** Jackpot Vivant : un joueur fantôme tire le levier d'une machine ; rien ; il s'efface. */
+    /**
+     * Jackpot Vivant : la salle des Machines dans la pénombre ; un joueur fantôme tire le levier d'une machine de
+     * devant, ses rouleaux tournent et tombent sur trois symboles différents ; rien ; il s'efface.
+     */
     private void drawGhost(Batch batch) {
-        float width = worldWidth(), height = worldHeight(), floor = height * 0.3f;
-        rect(batch, hex("0a1a20"), -MARGIN, -MARGIN, width + 2f * MARGIN, floor + MARGIN);
-        float scale = 26f, mw = machine.getRegionWidth() * scale, mh = machine.getRegionHeight() * scale;
-        float mx = cx() + 120f;
+        float floor = placeY(MACHINES_FLOOR), ds = placeScale();
+        drawPlace(batch, 0.42f);
+        int[] w = CasinoBossScenes.MACHINES[GHOST_MACHINE], sign = CasinoBossScenes.SIGNS[GHOST_MACHINE];
         float pull = gesture(PULL - 0.25f, PULL + 0.25f);
-        float spinning = time >= PULL && time < NOTHING ? 1f : 0f;
-        float dim = time >= NOTHING ? 0.4f : 0.7f;
-        glow(batch, mx, floor + mh * 0.5f, 700f, GOLD, 0.15f * dim);
-        batch.setColor(dim, dim, dim, 1f);
-        batch.draw(machine, mx - mw / 2f, floor, mw, mh);
-        if (spinning > 0f) {                                           // les rouleaux défilent un instant
-            additive(batch);
-            batch.setColor(1f, 1f, 1f, 0.25f * pulse(40f, 0.3f));
-            batch.draw(pixel, mx - mw * 0.36f, floor + mh * 0.47f, mw * 0.72f, mh * 0.23f);
-            normal(batch);
+        boolean played = time >= PULL;
+        float dim = time >= NOTHING ? 0.45f : 0.8f;
+        if (played) {                                                  // l'enseigne s'allume, les rouleaux tournent
+            tmp.set(GOLD).mul(dim);
+            tmp.a = 1f;
+            rect(batch, tmp, placeX(sign[0]), placeY(sign[1] + sign[3]), sign[2] * ds, sign[3] * ds);
+            glow(batch, placeX(sign[0] + sign[2] / 2f), placeY(sign[1] + sign[3] / 2f), sign[2] * ds * 1.4f, GOLD, 0.35f * dim);
+            for (int cell = 0; cell < 3; cell++) {
+                float wx = placeX(w[0] + cell * w[2]), wy = placeY(w[1] + w[4]);
+                float ww = (cell == 2 ? w[3] + 1 : w[3]) * ds, wh = w[4] * ds;
+                float stop = NOTHING - 0.24f + cell * 0.12f;
+                float offset = time >= stop ? LOSS[cell] : LOSS[cell] - (stop - time) * (14f + 3f * cell);
+                rect(batch, placeLit(CasinoBossScenes.SCREEN, dim + 0.2f, tmp), wx, wy, ww, wh);
+                batch.setColor(dim + 0.2f, dim + 0.2f, dim + 0.2f, 1f);
+                CasinoBossScenes.slot(batch, symbols, wx, wy, ww, wh, offset);
+            }
         }
-        // Le levier sur le côté.
-        float leverX = mx + mw / 2f + 10f, leverY = floor + mh * 0.55f, angle = MathUtils.lerp(80f, -60f, pull);
-        line(batch, hex("9a9aa8"), leverX, leverY, leverX + MathUtils.cosDeg(angle) * 200f, leverY + MathUtils.sinDeg(angle)
-            * 200f, 14f);
-        glow(batch, leverX + MathUtils.cosDeg(angle) * 200f, leverY + MathUtils.sinDeg(angle) * 200f, 60f, hex("e0283a"), 1f);
+        // La boule rouge du levier de la machine, qu'il tire vers le bas.
+        glow(batch, placeX(LEVER_X), placeY(LEVER_Y) - pull * 9f * ds, 60f, hex("e0283a"), 0.9f);
         // Le fantôme, transparent, qui s'efface après le « rien ».
         float alpha = 0.45f * (1f - progress(GHOST_FADE, PRELUDE - 0.2f)) * (0.85f + 0.15f * MathUtils.sin(time * 6f));
         float gs = 24f, gw = ghost.getRegionWidth() * gs, gh = ghost.getRegionHeight() * gs;
-        float gx = leverX + 230f, gy = floor + 20f + 15f * MathUtils.sin(time * 3f) + 200f * progress(GHOST_FADE, PRELUDE);
+        float gx = placeX(LEVER_X) + gw * 0.45f;
+        float gy = floor - 20f - 40f * pull + 15f * MathUtils.sin(time * 3f) + 200f * progress(GHOST_FADE, PRELUDE);
         glow(batch, gx, gy + gh * 0.5f, 600f, hex("a8f0ff"), alpha * 0.6f);
         batch.setColor(0.75f, 0.95f, 1f, alpha);
         batch.draw(ghost, gx - gw / 2f, gy, gw, gh);
         if (time >= NOTHING && time < GHOST_FADE + 0.4f) {
             font.getData().setScale(2.4f);
-            caption(batch, font, "...", mx, floor + mh + 60f, 1f - progress(GHOST_FADE, GHOST_FADE + 0.4f));
+            caption(batch, font, "...", placeX(sign[0] + sign[2] / 2f), placeY(sign[1]) + 60f,
+                1f - progress(GHOST_FADE, GHOST_FADE + 0.4f));
             font.getData().setScale(1f);
         }
     }
 
-    /** Requin : une petite banque engloutie, son coffre grand ouvert, plein d'or. */
-    private void drawBank(Batch batch) {
-        float width = worldWidth(), height = worldHeight(), floor = height * 0.12f;
-        float bx = cx() - 160f, bw = 760f, bh = height * 0.5f;
-        rect(batch, hex("1a3a48"), bx - bw / 2f, floor, bw, bh);                          // la façade
-        rect(batch, hex("24505e"), bx - bw / 2f - 30f, floor + bh, bw + 60f, 40f);
-        for (int i = 0; i < 4; i++) rect(batch, hex("3a6a78"), bx - bw / 2f + 60f + i * 200f, floor, 60f, bh);   // les colonnes
-        for (int r = 0; r < 4; r++) rect(batch, hex("24505e"), bx - (bw / 2f - r * 90f), floor + bh + 40f + r * 34f,
-            bw - r * 180f, 34f);                                                            // le fronton
-        font.getData().setScale(2.2f);
-        caption(batch, font, Lang.t("BANQUE"), bx, floor + bh - 50f, 0.8f);
-        font.getData().setScale(1f);
-        // Le coffre, au premier plan : la porte ouverte, l'or qui brille dedans.
-        float sx = width * 0.74f, scale = 30f, sw = safe.getRegionWidth() * scale, sh = safe.getRegionHeight() * scale;
-        glow(batch, sx, floor + sh * 0.5f, 700f, GOLD, 0.4f * pulse(4f, 0.7f));
-        batch.setColor(Color.WHITE);
-        batch.draw(safe, sx - sw / 2f, floor, sw, sh);
-        for (int i = 0; i < 9; i++) {
-            batch.setColor(Color.WHITE);
-            sprite(batch, coin, sx - sw * 0.3f + (i % 3) * sw * 0.3f, floor + 70f + (i / 3) * 60f, 1.4f, 0f);
-        }
-        float swing = 70f + 6f * MathUtils.sin(time * 2f);                              // la porte, entrouverte, qui ondule
-        float doorW = sw * MathUtils.cosDeg(swing);
-        rect(batch, hex("5a5a6a"), sx - sw / 2f - doorW, floor + 10f, doorW, sh - 20f);
-        glow(batch, sx - sw / 2f - doorW * 0.5f, floor + sh * 0.5f, 120f, hex("c8c8d8"), 0.5f);
-        for (int i = 0; i < 6; i++) {                                                   // des éclats d'or
+    /** Le levier de la machine du fantôme : sa boule rouge (pixels du décor). */
+    private static final float LEVER_X = 152.5f, LEVER_Y = 89f;
+    /** Les trois symboles différents où tombent ses rouleaux : cerise, barre, cloche. */
+    private static final float[] LOSS = {0f, 2f, 3f};
+
+    /**
+     * Requin : la salle des Coffres, sa porte ronde et ses deux coffres pleins d'or ; la roue dorée de la porte
+     * luit, des éclats d'or brillent sur les coffres.
+     */
+    private void drawVault(Batch batch) {
+        drawPlace(batch, LIGHT);
+        float vaultX = placeX(CasinoBossScenes.VAULT_X), vaultY = placeY(CasinoBossScenes.VAULT_Y), ds = placeScale();
+        glow(batch, vaultX, vaultY, 30f * ds, GOLD, 0.3f * pulse(4f, 0.6f));
+        glow(batch, placeX(CHESTS_X), placeY(CHESTS_Y), 60f * ds, GOLD, 0.3f * pulse(3f, 0.7f));
+        for (int i = 0; i < 8; i++) {                                                   // des éclats d'or
             float t = (time * 1.3f + i * 0.37f) % 1f;
-            glow(batch, sx - sw * 0.35f + (i * 97 % 100) / 100f * sw * 0.7f, floor + 60f + (i * 53 % 100) / 100f * sh * 0.6f,
-                80f * MathUtils.sin(t * MathUtils.PI), Color.WHITE, 0.8f);
+            float px = i < 6 ? CHESTS_X - 40f + (i * 97 % 100) / 100f * 80f : CasinoBossScenes.VAULT_X + (i == 6 ? -12f : 12f);
+            float py = i < 6 ? CHESTS_Y - 6f + (i * 53 % 100) / 100f * 8f : CasinoBossScenes.VAULT_Y;
+            glow(batch, placeX(px), placeY(py), 80f * MathUtils.sin(t * MathUtils.PI), Color.WHITE, 0.8f);
         }
     }
 
-    /** Kraken : l'eau devient noire, des cartes coulent lentement en tournant. */
+    /** Le dessus doré des deux coffres de la salle (pixels du décor). */
+    private static final float CHESTS_X = 297f, CHESTS_Y = 128f;
+
+    /** Kraken : le salon VIP ; l'eau devient noire, des cartes coulent lentement en tournant. */
     private void drawSinkingCards(Batch batch) {
         float width = worldWidth(), height = worldHeight();
+        drawPlace(batch, LIGHT);
+        glow(batch, placeX(CasinoBossScenes.CHANDELIER_X), placeY(CasinoBossScenes.CHANDELIER_Y), 600f, GOLD, 0.35f);
         for (int i = 0; i < 12; i++) {
             float x = width * ((i * 0.083f + 0.04f) % 1f) + 50f * MathUtils.sin(time * 1.5f + i);
             float y = height + 120f - (time * (90f + (i % 4) * 30f) + (i * 137 % 500)) ;
