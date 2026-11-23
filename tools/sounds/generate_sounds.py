@@ -5062,7 +5062,7 @@ def phase2_maison():
 @sound('cutscene/phase3_maison', -17)
 def phase3_maison():
     """La Maison, phase 3 (HouseVault) : les verrous de la porte du coffre sautent (0,35 / 0,65 / 0,95 / 1,25 s),
-    sa petite porte de coffre tombe (1,0 s), la grande tombe du mur (1,8 à 2,2 s), roule et cogne le rideau (3,2 s) ;
+    la porte se décroche (1,0 s), pend (1,4 s), tombe sur les nuages (1,8 à 2,2 s), roule et se couche (3,2 s) ;
     les potions se brisent au sol (vers 3,0 s) ; la Maison vire au démon (2,7 s)."""
     track = Track(5.8)
     track.add(ambience(4.8, 150, 800, 0.2), 0.0, 1.0)
@@ -5084,7 +5084,7 @@ def phase3_maison():
 @sound('cutscene/death_maison', -17)
 def death_maison():
     """La Maison meurt (HouseDeath) : elle tremble (1,0 à 2,5 s) et explose (2,5 s) ; ses machines aux ailes
-    d'ange s'envolent (2,8 s), la lumière tombe des lustres, des plumes."""
+    d'ange s'envolent (2,8 s), le ciel rouge redevient angélique, des plumes."""
     track = Track(6.6)
     track.add(ambience(5.6, 100, 600, 0.25), 0.0, 1.0)
     track.add(fade(lp(noise(1.5), 200), 0.0, 1.0), 1.0, 0.5)
