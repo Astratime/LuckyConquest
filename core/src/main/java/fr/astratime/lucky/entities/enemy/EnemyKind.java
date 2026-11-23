@@ -1278,7 +1278,7 @@ public enum EnemyKind {
     // ----- Boss secret : le Croupier, ouvert après le Désert de Braise et le chapitre 6 difficile -----
 
     GRAND_CROUPIER("Le Croupier", "LE CROUPIER",
-        "Il t'a tout appris. Il tient toutes les machines. Il joue avec ton deck. Blessé, il truque ta table. "
+        "Il t'a tout appris. Il tient toutes les machines. Il joue avec ton deck et saisit tes bonus. Blessé, il truque ta table. "
             + "Presque vaincu, il joue cartes sur table.",
         2_000_000, 150, 2,
         weights(EnemySymbol.SWORD, 2, EnemySymbol.SHIELD, 1, EnemySymbol.POTION, 1, EnemySymbol.RAGE, 1,
@@ -1296,13 +1296,23 @@ public enum EnemyKind {
     public static final long CROUPIER_HP = 250_000_000L;
     /**
      * Astra, 2026-11-23 : le Croupier doit être gagnable par un joueur qui a tout (Légende, Prestige X) environ 3 fois
-     * sur 10 au simulateur (moyenne de 6 profils). Avant : force x360, 1 Md PV, 0 %. Avec x250, 250 M PV et les soins
-     * de l'Histoire difficile ({@link #HARD_STORY_MAX_HEAL_PERCENT}) : 31 % (deck Malin 8 %, Carreau 80 %).
+     * sur 10 au simulateur (moyenne de 10 profils). Avant : force x360, 1 Md PV, 0 %. Avec x215, 250 M PV, les soins
+     * de l'Histoire difficile ({@link #HARD_STORY_MAX_HEAL_PERCENT}) et ses Saisies ({@link #CROUPIER_SEIZE_PERCENT}) :
+     * environ 30 % (deck Malin 0-5 %, Carreau 60-75 %).
      */
-    public static final int  CROUPIER_POWER = 25_000;
+    public static final int  CROUPIER_POWER = 21_500;
     public static final int  CROUPIER_SPIN_COST = 5_000;
     /** Phase 2 du Croupier : chaque table truquée tient ce nombre de tirages du joueur. */
     public static final int  CROUPIER_RIG_TURNS = 2;
+    /**
+     * Saisie du Croupier (Astra, 2026-11-23 : il doit pouvoir s'en prendre aux bonus du joueur) : au début de chacun
+     * de ses tours, il saisit ton bonus le plus rempli (Coffre, Lames, Sang, Bonne étoile) et en prend ce %, ou, si tes
+     * cartes ont formé une combinaison et que tes jauges sont presque vides, il fait compter tes combinaisons à moitié
+     * à ton prochain tour. En phase 3, il saisit deux bonus.
+     */
+    public static final int CROUPIER_SEIZE_PERCENT = 50;
+    /** Jauge en dessous de laquelle (part de son maximum) le Croupier préfère saisir tes combinaisons. */
+    public static final double CROUPIER_SEIZE_COMBO_FILL = 0.25;
     /** Phase 3 du Croupier : il voit ta main et joue cette carte de plus à chaque tour. */
     public static final int  CROUPIER_OPEN_PLAYS = 1;
 
