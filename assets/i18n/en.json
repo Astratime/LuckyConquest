@@ -3947,5 +3947,9 @@
   "Lieutenants ! À mes côtés !": "Lieutenants! To my side!",
   "Va-tout ! Je mise toute l'armée !": "All out! I'm betting the whole army!",
   "Les Maisons ont voulu une armée. Je leur ai donné un général qui mise tout. Une guerre, c'est un jeu où l'on perd des deux côtés. Sauf la Maison.": "The Houses wanted an army. I gave them a general who bets everything. A war is a game where both sides lose. Except the House.",
-  "LE GÉNÉRAL HISSE LE DRAPEAU BLANC": "THE GENERAL RAISES THE WHITE FLAG"
+  "LE GÉNÉRAL HISSE LE DRAPEAU BLANC": "THE GENERAL RAISES THE WHITE FLAG",
+  "Vide {0} en Exploration difficile pour l'acheter.": "Clear {0} in hard Exploration to buy it.",
+  "Exploration difficile : {0}": "Hard Exploration: {0}",
+  "Difficile": "Hard",
+  "{0}\n{1}": "{0}\n{1}"
 }
