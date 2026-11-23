@@ -3955,5 +3955,9 @@
   "SANG": "BLOOD",
   "BONNE ÉTOILE": "LUCKY STAR",
   "SAISIE : COMBINAISONS x{0} AU LIEU DE x{1}": "SEIZURE: COMBOS x{0} INSTEAD OF x{1}",
-  "Le Croupier, au début de son tour, prend {0} % de ton bonus le plus rempli (Coffre, Lames, Sang ou Bonne étoile). Si tu as fait une combinaison et que tes jauges sont presque vides, tes combinaisons comptent à moitié au tour suivant. Deux saisies par tour en phase 3.": "At the start of his turn, the Dealer takes {0}% of your fullest bonus (Vault, Blades, Blood or Lucky star). If you made a combo and your gauges are nearly empty, your combos count half next turn. Two seizures per turn in phase 3."
+  "Le Croupier, au début de son tour, prend {0} % de ton bonus le plus rempli (Coffre, Lames, Sang ou Bonne étoile). Si tu as fait une combinaison et que tes jauges sont presque vides, tes combinaisons comptent à moitié au tour suivant. Deux saisies par tour en phase 3.": "At the start of his turn, the Dealer takes {0}% of your fullest bonus (Vault, Blades, Blood or Lucky star). If you made a combo and your gauges are nearly empty, your combos count half next turn. Two seizures per turn in phase 3.",
+  "Vide {0} en Exploration difficile pour l'acheter.": "Clear {0} in hard Exploration to buy it.",
+  "Exploration difficile : {0}": "Hard Exploration: {0}",
+  "Difficile": "Hard",
+  "{0}\n{1}": "{0}\n{1}"
 }
