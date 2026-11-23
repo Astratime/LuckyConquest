@@ -503,12 +503,13 @@ public class Enemy {
 
     /**
      * Rend {@code amount} points de vie, sans dépasser le maximum. Chaque soin
-     * rend au plus {@link EnemyKind#MAX_HEAL_PERCENT} % de ses PV max (Astra, 2026-11-01).
+     * rend au plus {@link EnemyKind#MAX_HEAL_PERCENT} % de ses PV max (Astra, 2026-11-01), 1 % dans l'Histoire
+     * difficile et pour le Croupier ({@link EnemyKind#maxHealPercent}).
      *
      * @return les points de vie réellement rendus
      */
     public long heal(long amount) {
-        amount = Math.min(amount, maxHp * EnemyKind.MAX_HEAL_PERCENT / 100);
+        amount = Math.min(amount, maxHp * kind.maxHealPercent(hard) / 100); // 1 % dans l'Histoire difficile
         amount = amount * healPercent() / 100; // un roi en phase 2 se soigne moins
         long healed = Math.min(maxHp, hp + amount) - hp;
         hp += healed;
