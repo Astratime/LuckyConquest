@@ -8,11 +8,13 @@ import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.Interpolation;
 import com.badlogic.gdx.scenes.scene2d.Actor;
+import com.badlogic.gdx.scenes.scene2d.Group;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.Touchable;
 import com.badlogic.gdx.scenes.scene2d.actions.Actions;
 import com.badlogic.gdx.scenes.scene2d.ui.Image;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
+import com.badlogic.gdx.scenes.scene2d.ui.ScrollPane;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
@@ -37,6 +39,7 @@ import fr.astratime.lucky.loaders.CardLoader;
 import fr.astratime.lucky.progress.PlayerProfile;
 import fr.astratime.lucky.views.DungeonRewardsOverlay;
 import fr.astratime.lucky.views.MenuOption;
+import fr.astratime.lucky.views.SidePanel;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -80,6 +83,10 @@ public class ExplorationScreen extends CasinoMenuScreen {
     private static final float BADGE_SHARE  = 0.42f;
     /** Taille de la pastille d'un lieu entièrement vidé, dans la liste. */
     private static final float ROW_BADGE    = 36f;
+    /** Bord du panneau de la liste : les lieux qui défilent disparaissent sous lui. */
+    private static final float LIST_BORDER  = 14f;
+    /** Barre de défilement de la liste, collée au bord droit du panneau. */
+    private static final float LIST_BAR     = 6f;
     /** Pierres de la cagnotte du lieu, à droite de son nom. */
     private static final float POT_ICON_HEIGHT = 32f;
     private static final float POT_ICON_GAP    = 10f;
@@ -117,6 +124,11 @@ public class ExplorationScreen extends CasinoMenuScreen {
     /** Dans la liste, à droite de chaque lieu ouvert : donjons vidés « 2/4 », ou une pastille s'ils le sont tous. */
     private final List<Label>      rowCounts = new ArrayList<>();
     private final List<Image>      rowBadges = new ArrayList<>();
+    /** Les lignes des lieux, qui défilent quand elles ne tiennent pas dans le panneau (Astra, 2026-11-23). */
+    private final Group            listContent = new Group();
+    private final ScrollPane       listScroll;
+    private final Image            listRail;
+    private final Image            listKnob;
     private final Label            dungeonName;
     private final Label            dungeonText;
     /** Sous la carte : le nom de la règle du lieu, puis ce qu'elle fait. */
@@ -198,6 +210,29 @@ public class ExplorationScreen extends CasinoMenuScreen {
             rowBadges.add(rowBadge);
         }
         refreshRows();
+        rows.forEach(listContent::addActor);
+        rowCounts.forEach(listContent::addActor);
+        rowBadges.forEach(listContent::addActor);
+        // Sans style : la barre est dessinée à part, dans le panneau (la zone qui défile déborde
+        // du panneau pour garder les jetons du lieu choisi).
+        listScroll = new ScrollPane(listContent);
+        listScroll.setScrollingDisabled(true, false);
+        listScroll.setOverscroll(false, true);
+        listScroll.setFadeScrollBars(false);
+        listScroll.setCancelTouchFocus(true);
+        SidePanel.addWheelFocus(listScroll);
+        listRail = new Image(pixel);
+        listRail.setColor(0f, 0f, 0f, 0.35f);
+        listRail.setTouchable(Touchable.disabled);
+        listKnob = new Image(pixel) {
+            @Override
+            public void act(float delta) {
+                super.act(delta);
+                placeListKnob();
+            }
+        };
+        listKnob.setColor(Palette.TEXT_TITLE);
+        listKnob.setTouchable(Touchable.disabled);
 
         placeLabel = new Label("", new Label.LabelStyle(placeFont, Color.WHITE));
         potIcon = new Image(new TextureRegionDrawable(new TextureRegion(hud.iconPot)));
@@ -230,9 +265,9 @@ public class ExplorationScreen extends CasinoMenuScreen {
         modeButton.setVisible(profile.isExplorationHardOpen());
         stage.addActor(listPanel);
         stage.addActor(detailPanel);
-        rows.forEach(stage::addActor);
-        rowCounts.forEach(stage::addActor);
-        rowBadges.forEach(stage::addActor);
+        stage.addActor(listScroll);
+        stage.addActor(listRail);
+        stage.addActor(listKnob);
         stage.addActor(placeLabel);
         stage.addActor(potIcon);
         stage.addActor(potText);
@@ -409,6 +444,23 @@ public class ExplorationScreen extends CasinoMenuScreen {
     /** @return {@code true} si le lieu {@code p} peut être joué dans le mode choisi. */
     private boolean isOpen(Place p) { return profile.isOpen(p, hard); }
 
+    /** Fait défiler la liste jusqu'au lieu choisi, s'il est caché (au retour d'un combat dans un lieu du bas). */
+    private void showSelectedRow() {
+        MenuOption row = rows.get(place.ordinal());
+        listScroll.scrollTo(row.getX(), row.getY() - ROW_GAP, row.getWidth(), row.getHeight() + ROW_GAP * 2f);
+        listScroll.updateVisualScroll();
+        placeListKnob();
+    }
+
+    /** Le curseur de la barre : sa taille suit la part visible de la liste, sa place le défilement. */
+    private void placeListKnob() {
+        if (listContent.getHeight() <= 0f) return;
+        float railHeight = listRail.getHeight();
+        float knobHeight = Math.max(30f, railHeight * listScroll.getHeight() / listContent.getHeight());
+        float y = listRail.getY() + (railHeight - knobHeight) * (1f - listScroll.getVisualScrollPercentY());
+        listKnob.setBounds(listRail.getX(), y, LIST_BAR, knobHeight);
+    }
+
     /** Liste des lieux : un lieu fermé à peine visible, puis « 2/4 » ou la pastille d'un lieu vidé, dans le mode choisi. */
     private void refreshRows() {
         Place[] places = Place.values();
@@ -544,9 +596,18 @@ public class ExplorationScreen extends CasinoMenuScreen {
         float panelBottom = BOTTOM_SPACE;
         float panelHeight = panelTop - panelBottom;
         listPanel.setBounds(MARGIN, panelBottom, LIST_WIDTH, panelHeight);
+        // La zone qui défile : à l'intérieur du bord du panneau en hauteur, plus large que lui
+        // pour les jetons qui tournent de part et d'autre du lieu choisi.
+        float scrollBottom = panelBottom + LIST_BORDER;
+        float scrollHeight = panelHeight - LIST_BORDER * 2f;
+        float scrollWidth  = MARGIN + LIST_WIDTH + MARGIN / 2f; // jusqu'au panneau du lieu
+        float contentHeight = Math.max(scrollHeight,
+            (PANEL_PAD - LIST_BORDER) * 2f + rows.size() * ROW_HEIGHT + (rows.size() - 1) * ROW_GAP);
+        listScroll.setBounds(0f, scrollBottom, scrollWidth, scrollHeight);
+        listContent.setSize(scrollWidth, contentHeight);
         float rowX = MARGIN + (LIST_WIDTH - ROW_WIDTH) / 2f;
         for (int i = 0; i < rows.size(); i++) {
-            float rowY = panelTop - PANEL_PAD - ROW_HEIGHT - i * (ROW_HEIGHT + ROW_GAP);
+            float rowY = contentHeight - (PANEL_PAD - LIST_BORDER) - ROW_HEIGHT - i * (ROW_HEIGHT + ROW_GAP);
             rows.get(i).setPosition(rowX, rowY);
             Label count = rowCounts.get(i);
             count.pack();
@@ -554,6 +615,12 @@ public class ExplorationScreen extends CasinoMenuScreen {
             rowBadges.get(i).setBounds(rowX + ROW_WIDTH - 10f - ROW_BADGE, rowY + (ROW_HEIGHT - ROW_BADGE) / 2f,
                 ROW_BADGE, ROW_BADGE);
         }
+        listScroll.layout();
+        boolean overflows = contentHeight > scrollHeight + 0.5f;
+        listRail.setBounds(MARGIN + LIST_WIDTH - LIST_BORDER - LIST_BAR, scrollBottom, LIST_BAR, scrollHeight);
+        listRail.setVisible(overflows);
+        listKnob.setVisible(overflows);
+        showSelectedRow();
 
         float detailX     = MARGIN + LIST_WIDTH + MARGIN / 2f;
         float detailWidth = width - detailX - MARGIN;
