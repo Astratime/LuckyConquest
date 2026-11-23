@@ -390,6 +390,15 @@ public class CinematicScreen extends CasinoMenuScreen {
             }
             addSubject(encounters, name, moments);
         }
+        EnemyKind story = EnemyKind.RIVAL_HISTOIRE; // sa rencontre de l'Histoire, à la Maison du Croupier
+        if (Bestiary.bossCutsceneSeen(profile, story)) {
+            Map<Moment, List<Entry>> moments = new EnumMap<>(Moment.class);
+            String name = Lang.f("Histoire : {0}", Chapter.RIVAL_CHAPTER.getTitle());
+            add(moments, Moment.ENTRANCE, new Entry(name,
+                Lang.t("Il se cachait sous une carte des challengers, à la Maison du Croupier : il veut hériter de la table."),
+                enemyTextures.portrait(story), kit -> Cutscenes.beforeBoss(kit, story)));
+            addSubject(encounters, name, moments);
+        }
         return encounters;
     }
 

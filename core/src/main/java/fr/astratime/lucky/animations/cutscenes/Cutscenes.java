@@ -25,7 +25,8 @@ public final class Cutscenes {
             case ARCHITECTE -> new ArchitectCutscene(kit);
             case MACHINE_ORIGINELLE -> new MachineCutscene(kit);
             case GRAND_CROUPIER -> new CroupierCutscene(kit, CroupierCutscene.Scene.INTRO);
-            case RIVAL_FOIRE, RIVAL_RAPIDE, RIVAL_PORT, RIVAL_PALACE, RIVAL_MINES, RIVAL_MANOIR, RIVAL_CASINO, RIVAL_TEMPLE, RIVAL_DESERT -> RivalCutscene.before(kit, boss);
+            case RIVAL_FOIRE, RIVAL_RAPIDE, RIVAL_PORT, RIVAL_PALACE, RIVAL_MINES, RIVAL_MANOIR, RIVAL_CASINO, RIVAL_TEMPLE, RIVAL_DESERT,
+                RIVAL_HISTOIRE -> RivalCutscene.before(kit, boss);
             default -> KingEntrance.of(kit, boss);
         };
     }

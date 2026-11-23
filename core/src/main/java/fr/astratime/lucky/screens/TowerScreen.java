@@ -373,7 +373,8 @@ public class TowerScreen extends CasinoMenuScreen {
         boolean admin = luckyGame.getProfile().isAdmin() && fight > 0;
         int chosen = fight;
         goTo(() -> new GameScreen(luckyGame,
-            admin ? TowerRun.startingAt(chapter, hard, chosen) : new TowerRun(chapter, hard)));
+            admin ? TowerRun.startingAt(chapter, hard, chosen)
+                : new TowerRun(chapter, hard).withRival(!luckyGame.getProfile().hasDefeated(EnemyKind.RIVAL_HISTOIRE))));
     }
 
     /** Mode ADMIN : passe au combat suivant du chapitre (après le boss, revient au premier). */

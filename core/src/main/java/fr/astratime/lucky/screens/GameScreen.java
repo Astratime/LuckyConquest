@@ -1993,8 +1993,12 @@ public class GameScreen extends ScreenAdapter {
         CombatRun.Next next = run.win();
         refreshStageLabel();
         switch (next) {
-            case CHOOSE_ENEMY -> pickOverlay.showChoice(run.getChoices(), this::createButton,
-                index -> startNextCombat(run.choose(index)));
+            case CHOOSE_ENEMY -> pickOverlay.showChoice(run.getChoices(), this::createButton, index -> {
+                EnemyKind chosen = run.choose(index);
+                // Le Joueur Masqué se cachait sous cette carte (Histoire, la Maison) : sa scène d'abord.
+                if (chosen == EnemyKind.RIVAL_HISTOIRE) playCutscene(Cutscenes.beforeBoss(cutsceneKit, chosen), () -> startNextCombat(chosen));
+                else startNextCombat(chosen);
+            });
             case BOSS -> {
                 if (isDungeon()) enterCrossroads(); // Exploration : le carrefour, puis le roi
                 else introduceBoss();

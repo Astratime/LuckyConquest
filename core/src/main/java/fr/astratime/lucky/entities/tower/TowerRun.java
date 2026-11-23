@@ -91,6 +91,18 @@ public class TowerRun implements CombatRun {
         return fight == 0 ? 1 : fight == fights(chapter).size() - 1 ? STAGES : 2;
     }
 
+    private boolean rivalWaiting;
+
+    /**
+     * @param waiting {@code true} si le Joueur Masqué attend encore le joueur dans l'Histoire (pas encore battu) :
+     *                il prend alors la place d'un des challengers du chapitre {@link Chapter#RIVAL_CHAPTER}
+     * @return cette ascension
+     */
+    public TowerRun withRival(boolean waiting) {
+        this.rivalWaiting = waiting;
+        return this;
+    }
+
     /** @return le chapitre en cours. */
     public Chapter getChapter() { return chapter; }
     @Override
@@ -119,6 +131,8 @@ public class TowerRun implements CombatRun {
         }
         List<EnemyKind> shuffled = new ArrayList<>(chapter.getChallengers());
         Collections.shuffle(shuffled, random);
+        // Le Joueur Masqué se cache sous une des trois cartes (chapitre de la Maison, mode normal, tant qu'il n'est pas battu).
+        if (rivalWaiting && !hard && chapter == Chapter.RIVAL_CHAPTER) shuffled.set(random.nextInt(shuffled.size()), EnemyKind.RIVAL_HISTOIRE);
         choices = List.copyOf(shuffled);
         return Next.CHOOSE_ENEMY;
     }

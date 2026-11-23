@@ -76,7 +76,9 @@ public class RivalCutscene extends Cutscene {
         unmasked = kit.enemies() == null ? null : kit.portrait(EnemyKind.RIVAL_DESERT);
         EnemySymbol learned = learned(kind);
         symbol = kit.enemies() == null || learned == null ? null : kit.symbol(learned);
-        Texture place = kit.enemies() == null ? null : kit.enemies().map(Rival.placeOf(kind));
+        Texture place = kit.enemies() == null ? null : Rival.isStory(kind)
+            ? kit.enemies().chapterArt(fr.astratime.lucky.entities.tower.Chapter.RIVAL_CHAPTER) // la Maison du Croupier
+            : Rival.placeOf(kind) == null ? null : kit.enemies().map(Rival.placeOf(kind));
         map = place == null ? null : new TextureRegion(place);
         mask = art("yld", new Color[] {GOLD, hex("fff2a0"), hex("c4891e")}, MASK);
         font = kit.font();
@@ -123,6 +125,7 @@ public class RivalCutscene extends Cutscene {
             case RIVAL_MINES -> Lang.t("LA MINE M'A APPRIS À PERCER LES BOUCLIERS.");
             case RIVAL_CASINO -> Lang.t("SOUS L'EAU, J'AI APPRIS À MORDRE LES GAINS.");
             case RIVAL_TEMPLE -> Lang.t("AU TEMPLE, LES MOINES M'ONT APPRIS À FAIRE PARLER LES DÉS.");
+            case RIVAL_HISTOIRE -> Lang.t("UNE SEULE MAISON, UN SEUL HÉRITIER.");
             default -> Lang.t("TU M'AS SUIVI JUSQU'ICI.");
         };
     }
@@ -271,7 +274,8 @@ public class RivalCutscene extends Cutscene {
         }
         if (time >= EYES) drawEyes(batch, w, h, 1f - progress(EYES + 0.9f, EYES + 1.6f) * 0.6f);
         drawCaption(batch, line(kind), w / 2f, h * 0.9f, progress(LINE, LINE + 0.3f), 2f);
-        drawCaption(batch, Lang.f("RENCONTRE {0} SUR {1}", encounter, Place.values().length - 1), w / 2f, h * 0.08f,
+        drawCaption(batch, Rival.isStory(kind) ? Lang.t("HISTOIRE : LA MAISON DU CROUPIER")
+            : Lang.f("RENCONTRE {0} SUR {1}", encounter, Place.values().length - 1), w / 2f, h * 0.08f,
             progress(SUBTITLE, SUBTITLE + 0.3f), 1.4f);
     }
 

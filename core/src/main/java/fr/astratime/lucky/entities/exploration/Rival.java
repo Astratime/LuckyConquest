@@ -62,6 +62,9 @@ public final class Rival {
         return place == null ? 0 : place.ordinal();
     }
 
+    /** @return {@code true} pour sa rencontre de l'Histoire, à la Maison du Croupier (Astra, 2026-11-23). */
+    public static boolean isStory(EnemyKind kind) { return kind == EnemyKind.RIVAL_HISTOIRE; }
+
     /** @return {@code true} pour le duel final, au Désert de Braise, où il enlève son masque. */
     public static boolean isFinal(EnemyKind kind) { return kind == EnemyKind.RIVAL_DESERT; }
 

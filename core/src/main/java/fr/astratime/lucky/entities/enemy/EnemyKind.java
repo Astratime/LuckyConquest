@@ -1014,6 +1014,17 @@ public enum EnemyKind {
         List.of(Card.Suit.PIQUE, Card.Suit.CARREAU, Card.Suit.TREFLE, Card.Suit.COEUR),
         List.of(Card.Suit.COEUR, Card.Suit.CARREAU, Card.Suit.PIQUE, Card.Suit.TREFLE)),
 
+    // ----- Histoire : le Joueur Masqué à la Maison du Croupier (chapitre La Maison, Astra 2026-11-23) -----
+    RIVAL_HISTOIRE("Le Joueur Masqué", "JOUEUR MASQUÉ",
+        "Il t'attendait à la Maison du Croupier, caché sous une carte. Ici, il ne joue plus pour gagner : il joue pour hériter de la table.",
+        875_000, 80, 4,
+        weights(EnemySymbol.SWORD, 3, EnemySymbol.SHIELD, 1, EnemySymbol.POTION, 1, EnemySymbol.RIGGED_GAME, 1, EnemySymbol.HOLDUP, 1,
+            EnemySymbol.BOARDING, 1, EnemySymbol.KEY, 1),
+        deck(new int[] {3, 6, 9, 12, 13, 14}, new int[] {4, 8, 12},
+            new int[] {5, 9, 13}, new int[] {3, 7, 11}),
+        List.of(Card.Suit.PIQUE, Card.Suit.CARREAU, Card.Suit.TREFLE, Card.Suit.COEUR),
+        List.of(Card.Suit.COEUR, Card.Suit.CARREAU, Card.Suit.PIQUE, Card.Suit.TREFLE)),
+
     // ----- Chapitre des Éclats dispersés (entre le Dernier Tirage et le Monde sans Maître) -----
     RAMASSEUR("Le Ramasseur d'éclats", "RAMASSEUR",
         "Il fouille les ruines du cratère. Il ramasse chaque éclat. Au troisième, les éclats se rejoignent et frappent à travers ton bouclier.",
@@ -2306,7 +2317,7 @@ public enum EnemyKind {
             case RIVAL_FOIRE -> List.of(EnemySignature.CARTE_BISEAUTEE);
             case RIVAL_RAPIDE -> List.of(EnemySignature.CARTE_BISEAUTEE, EnemySignature.HAUT_LES_MAINS);
             case RIVAL_PORT -> List.of(EnemySignature.CARTE_BISEAUTEE, EnemySignature.HAUT_LES_MAINS, EnemySignature.GRAPPIN);
-            case RIVAL_PALACE -> List.of(EnemySignature.CARTE_BISEAUTEE, EnemySignature.HAUT_LES_MAINS, EnemySignature.GRAPPIN,
+            case RIVAL_PALACE, RIVAL_HISTOIRE -> List.of(EnemySignature.CARTE_BISEAUTEE, EnemySignature.HAUT_LES_MAINS, EnemySignature.GRAPPIN,
                 EnemySignature.TROUSSEAU);
             case RIVAL_MINES -> List.of(EnemySignature.CARTE_BISEAUTEE, EnemySignature.HAUT_LES_MAINS, EnemySignature.GRAPPIN, EnemySignature.TROUSSEAU, EnemySignature.MECHE_DE_DIAMANT);
             case RIVAL_MANOIR -> List.of(EnemySignature.CARTE_BISEAUTEE, EnemySignature.HAUT_LES_MAINS, EnemySignature.GRAPPIN, EnemySignature.TROUSSEAU, EnemySignature.MECHE_DE_DIAMANT,

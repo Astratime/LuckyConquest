@@ -104,11 +104,18 @@ public enum Chapter {
      *         challenger ou boss), ou {@code null} s'il n'est pas de la Tour
      */
     public static Chapter of(EnemyKind kind) {
+        if (kind == EnemyKind.RIVAL_HISTOIRE) return RIVAL_CHAPTER; // il se cache sous une carte des challengers
         for (Chapter chapter : values()) {
             if (chapter.firstEnemy == kind || chapter.boss == kind || chapter.challengers.contains(kind)) return chapter;
         }
         return null;
     }
+
+    /**
+     * Le chapitre où le Joueur Masqué peut se cacher sous une des cartes des challengers (Astra, 2026-11-23) :
+     * la Maison du Croupier, en mode normal, tant qu'il n'est pas battu dans l'Histoire.
+     */
+    public static final Chapter RIVAL_CHAPTER = LA_MAISON;
 
     /** @return le numéro du chapitre (à partir de 1). */
     public int getNumber() { return ordinal() + 1; }

@@ -3963,5 +3963,10 @@
   "Vide {0} en Exploration difficile pour l'acheter.": "Clear {0} in hard Exploration to buy it.",
   "Exploration difficile : {0}": "Hard Exploration: {0}",
   "Difficile": "Hard",
-  "{0}\n{1}": "{0}\n{1}"
+  "{0}\n{1}": "{0}\n{1}",
+  "Il t'attendait à la Maison du Croupier, caché sous une carte. Ici, il ne joue plus pour gagner : il joue pour hériter de la table.": "He was waiting for you at the Dealer's House, hidden under a card. Here he no longer plays to win: he plays to inherit the table.",
+  "UNE SEULE MAISON, UN SEUL HÉRITIER.": "ONE HOUSE, ONE HEIR.",
+  "HISTOIRE : LA MAISON DU CROUPIER": "STORY: THE DEALER'S HOUSE",
+  "Histoire : {0}": "Story: {0}",
+  "Il se cachait sous une carte des challengers, à la Maison du Croupier : il veut hériter de la table.": "He was hiding under one of the challengers' cards, at the Dealer's House: he wants to inherit the table."
 }
