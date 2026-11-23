@@ -295,6 +295,8 @@ public enum EnemySymbol {
     public static final int GEAR_PERCENT = 25;
     /** Comète Dorée : dégâts en % des PV max du joueur, à travers son bouclier. */
     public static final int GOLDEN_COMET_PERCENT = 5;
+    /** Pareil dans l'Histoire difficile (Astra, 2026-11-23 : la Machine difficile devait rester gagnable au Prestige X). */
+    public static final int HARD_GOLDEN_COMET_PERCENT = 2;
     /** Tours que tient la peau d'or d'un Placage ou d'un Battement. */
     public static final int PLATING_TURNS = 1;
     /** Battement : soin, en % de ses PV max. */
@@ -430,10 +432,10 @@ public enum EnemySymbol {
             case SWORD  -> Lang.f("Épée : attaque de {0}", kind.hurt(kind.swordDamage(), hard));
             case SHIELD -> Lang.f("Bouclier : défense +{0} pendant le tour suivant",
                 kind.empowered(kind.shieldDefense(), hard));
-            case POTION -> Lang.f("Potion : soigne {0} % des PV max", percent(EnemyKind.cappedHeal(kind.potionPercent(0, hard))));
+            case POTION -> Lang.f("Potion : soigne {0} % des PV max", percent(kind.cappedHeal(kind.potionPercent(0, hard), hard)));
             case THORNS -> Lang.f("Épines : renvoie {0} % de tes dégâts. Au début de son tour", kind.thornsPercent(hard));
             case FANG   -> Lang.f("Croc : mord de {0}. Chaque PV volé lui rend {1} % de ses PV max, {2} % au plus",
-                kind.hurt(FANG_DAMAGE, hard), percent(kind.drainPercent(hard)), EnemyKind.MAX_HEAL_PERCENT);
+                kind.hurt(FANG_DAMAGE, hard), percent(kind.drainPercent(hard)), kind.maxHealPercent(hard));
             case RAGE   -> Lang.f("Rage : attaque +{0}. Jusqu'à la fin du combat", kind.hurt(RAGE_ATTACK, hard));
             case LOADED_DIE -> Lang.f("Dé pipé : tes jauges (Coffre, Sang, Lames) perdent {0} %", kind.diePercent(hard));
             case INTEREST -> Lang.f("Intérêts : il prend {0} % de tes gains. Attaque +1 par {1} volés, au prochain coup. Sans gains, "
@@ -491,7 +493,7 @@ public enum EnemySymbol {
             case SHORT_CIRCUIT -> Lang.t("Court-circuit : à ton prochain tirage, ton meilleur rouleau devient ton pire. Il casse "
                 + "ta paire ou ton Bingo");
             case GOLDEN_COMET -> Lang.f("Comète : la Comète Dorée tombe, {0} % de tes PV max. Ignore ton bouclier",
-                GOLDEN_COMET_PERCENT);
+                kind.goldenCometPercent(hard));
             case ASPIRATION -> Lang.t("Aspiration : elle annonce une règle, 2 cartes à jouer pour la première, 1 carte pour "
                 + "chaque suivante, 3 règles au plus. Chaque règle que tes cartes du prochain tour ne respectent pas lui fait "
                 + "aspirer un de tes rouleaux pour ce tirage");

@@ -7,6 +7,7 @@ import fr.astratime.lucky.entities.Card;
 import fr.astratime.lucky.entities.Symbol;
 import fr.astratime.lucky.entities.effects.*;
 import fr.astratime.lucky.entities.enemy.EnemyKind;
+import fr.astratime.lucky.entities.exploration.Place;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -202,6 +203,25 @@ public class CardLoader {
             if (king != null) kings.put(entry.getString("id"), EnemyKind.valueOf(king));
         }
         return kings;
+    }
+
+    /**
+     * Cartes les plus fortes de la Boutique, réservées à l'Exploration difficile (Astra, 2026-11-23) : par id, le lieu
+     * à vider en difficile avant de pouvoir les acheter (champ {@code "hard"} de {@code BOUTIQUE_FILE}).
+     */
+    public static Map<String, Place> loadHardGates() {
+        return loadHardGates(GDX_READER);
+    }
+
+    /** Comme {@link #loadHardGates()}, en lisant les fichiers avec {@code reader} (ex : tests sans libGDX). */
+    public static Map<String, Place> loadHardGates(AssetReader reader) {
+        Map<String, Place> gates = new LinkedHashMap<>();
+        JsonValue root = new JsonReader().parse(reader.read(BOUTIQUE_FILE));
+        for (JsonValue entry = root.child; entry != null; entry = entry.next) {
+            String place = entry.getString("hard", null);
+            if (place != null) gates.put(entry.getString("id"), Place.valueOf(place));
+        }
+        return gates;
     }
 
     /**

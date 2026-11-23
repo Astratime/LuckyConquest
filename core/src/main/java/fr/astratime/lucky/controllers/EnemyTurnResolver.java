@@ -276,6 +276,42 @@ public class EnemyTurnResolver {
             openingEvents.addAll(thornsEvents); // ses Épines ont piqué pour les coups du tour du joueur
             enemy.resetDefense(); // la défense de son tour précédent ne valait que pour le tour du joueur
             rigTable();
+            seizeBonuses();
+        }
+
+        /** Saisie du Croupier : il prend tes bonus les plus remplis (voir {@link EnemyKind#CROUPIER_SEIZE_PERCENT}). */
+        void seizeBonuses() {
+            if (kind != EnemyKind.GRAND_CROUPIER || enemy.isDefeated() || player.isDefeated()) return;
+            LastingEffects lasting = player.getLastingEffects();
+            boolean combos = !fr.astratime.lucky.entities.Combo.formed(player.getPlayedCards()).isEmpty();
+            List<LastingEffects.Seizable> targets = new ArrayList<>(List.of(LastingEffects.Seizable.VAULT,
+                LastingEffects.Seizable.BLADES, LastingEffects.Seizable.BLOOD, LastingEffects.Seizable.STAR));
+            targets.removeIf(bonus -> lasting.fill(bonus) <= 0);
+            targets.sort(Comparator.comparingDouble(lasting::fill).reversed());
+            if (combos) { // tes combinaisons passent avant une jauge presque vide
+                int at = 0;
+                while (at < targets.size() && lasting.fill(targets.get(at)) >= EnemyKind.CROUPIER_SEIZE_COMBO_FILL) at++;
+                targets.add(at, LastingEffects.Seizable.COMBOS);
+            }
+            int seizures = Math.min(targets.size(), enemy.getPhase() >= 3 ? 2 : 1);
+            for (LastingEffects.Seizable bonus : targets.subList(0, seizures)) {
+                lasting.seize(bonus, EnemyKind.CROUPIER_SEIZE_PERCENT);
+                openingEvents.add(new StatusEvent(bonus == LastingEffects.Seizable.COMBOS
+                    ? Lang.t("SAISIE : TES COMBINAISONS COMPTENT À MOITIÉ")
+                    : Lang.f("SAISIE : {0} -{1} %", seizedName(bonus), EnemyKind.CROUPIER_SEIZE_PERCENT),
+                    EffectPopup.Style.DAMAGE));
+            }
+        }
+
+        /** @return le nom affiché d'une jauge saisie. */
+        String seizedName(LastingEffects.Seizable bonus) {
+            return switch (bonus) {
+                case VAULT -> Lang.t("COFFRE");
+                case BLADES -> Lang.t("LAMES");
+                case BLOOD -> Lang.t("SANG");
+                case STAR -> Lang.t("BONNE ÉTOILE");
+                case COMBOS -> Lang.t("COMBINAISONS");
+            };
         }
 
         /** @return le symbole que le Croupier impose : le plus rare des rouleaux du joueur (jamais le Joker). */
@@ -742,7 +778,7 @@ public class EnemyTurnResolver {
                 case GOLDEN_COMET -> {
                     int falls = enemy.takeCharge(EnemySignature.PLUIE_D_ETOILES) ? 2 : 1;
                     events.add(new StatusEvent(Lang.t("LA COMÈTE DORÉE TOMBE !"), EffectPopup.Style.ATTACK));
-                    for (int k = 0; k < falls; k++) events.add(turn.comet(EnemySymbol.GOLDEN_COMET_PERCENT));
+                    for (int k = 0; k < falls; k++) events.add(turn.comet(kind.goldenCometPercent(enemy.getDifficulty())));
                 }
                 case ASPIRATION -> aspire(events);
                 default -> {
@@ -1745,7 +1781,7 @@ public class EnemyTurnResolver {
             }
         }
         if (swords > 0) events.add(turn.strike(kind.swordDamage() + swords));
-        if (heals > 0f) events.add(heal(enemy, Math.min(heals, EnemyKind.MAX_HEAL_PERCENT)));
+        if (heals > 0f) events.add(heal(enemy, kind.cappedHeal(heals, enemy.getDifficulty())));
         if (shields > 0) events.add(turn.shield(kind.shieldDefense() + shields));
     }
 
