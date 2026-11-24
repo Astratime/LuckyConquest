@@ -1416,55 +1416,6 @@ public enum EnemyKind {
     /** Sous cette part de vie, l'Éclat Originel passe à sa deuxième phase. */
     public static final float PHASE_TWO_RATIO = 0.5f;
 
-    /** Symboles de l'Éclat Originel dans sa deuxième phase : ceux du chapitre 3. */
-    private static final Map<EnemySymbol, Integer> ECLAT_PHASE_TWO = Collections.unmodifiableMap(weights(
-        EnemySymbol.SHIELD, 3, EnemySymbol.MIRROR, 1, EnemySymbol.HOURGLASS, 1, EnemySymbol.ALL_IN, 1));
-
-    /**
-     * Symboles du Prophète du Cratère dans sa deuxième phase (valeurs par défaut de Claude) : il appelle la Comète Dorée,
-     * qu'il a vue tomber, et ses pèlerins prêtent serment.
-     */
-    private static final Map<EnemySymbol, Integer> PROPHET_PHASE_TWO = Collections.unmodifiableMap(weights(
-        EnemySymbol.PILGRIMAGE, 2, EnemySymbol.SWORD, 1, EnemySymbol.SHIELD, 1, EnemySymbol.GOLDEN_COMET, 1,
-        EnemySymbol.IRON_VOW, 1));
-
-    /**
-     * Symboles de la Maison sans sa Façade (plus de Boucliers ni de Mur porteur), puis sans
-     * son Coffre (plus de Potions ni de Coffre-fort) : la Salle de jeu garde son Avantage.
-     */
-    private static final Map<EnemySymbol, Integer> HOUSE_PHASE_TWO = Collections.unmodifiableMap(weights(
-        EnemySymbol.SWORD, 2, EnemySymbol.POTION, 1, EnemySymbol.SAFE, 1, EnemySymbol.HOUSE_EDGE, 1));
-    private static final Map<EnemySymbol, Integer> HOUSE_PHASE_THREE = Collections.unmodifiableMap(weights(
-        EnemySymbol.SWORD, 2, EnemySymbol.HOUSE_EDGE, 1));
-    /** Le Général Va-Tout, sous les deux tiers de ses PV : ses lieutenants le rejoignent (l'Espionne et le Mercenaire). */
-    private static final Map<EnemySymbol, Integer> GENERAL_PHASE_TWO = Collections.unmodifiableMap(weights(
-        EnemySymbol.SWORD, 2, EnemySymbol.SHIELD, 2, EnemySymbol.POTION, 1, EnemySymbol.RALLY, 1, EnemySymbol.CANNON, 1,
-        EnemySymbol.SPY, 1, EnemySymbol.CONTRACT, 1, EnemySymbol.ALL_OUT, 1));
-    /** Le Général Va-Tout, sous le tiers de ses PV : il fait Va-tout, plus de Bouclier ni de Potion, tout sur l'attaque. */
-    private static final Map<EnemySymbol, Integer> GENERAL_PHASE_THREE = Collections.unmodifiableMap(weights(
-        EnemySymbol.SWORD, 3, EnemySymbol.RALLY, 1, EnemySymbol.CANNON, 1, EnemySymbol.CONTRACT, 1, EnemySymbol.ALL_OUT, 2));
-
-    /**
-     * Symboles du Collectionneur à ses phases 2 et 3 : à chaque tiers de ses PV perdu, il sort un nouvel éclat
-     * de sa vitrine, et gagne son pouvoir (la Valse, puis le Scellé), en plus des siens.
-     */
-    private static final Map<EnemySymbol, Integer> COLLECTOR_PHASE_TWO = Collections.unmodifiableMap(weights(
-        EnemySymbol.SWORD, 2, EnemySymbol.SHIELD, 1, EnemySymbol.POTION, 1, EnemySymbol.SHARD, 1, EnemySymbol.LEGACY, 1,
-        EnemySymbol.WALTZ, 1));
-    private static final Map<EnemySymbol, Integer> COLLECTOR_PHASE_THREE = Collections.unmodifiableMap(weights(
-        EnemySymbol.SWORD, 2, EnemySymbol.SHIELD, 1, EnemySymbol.POTION, 1, EnemySymbol.SHARD, 1, EnemySymbol.LEGACY, 1,
-        EnemySymbol.WALTZ, 1, EnemySymbol.SEAL, 1));
-
-    /**
-     * Symboles de l'Architecte : ses échafaudages montent (phase 2, l'Écho de l'Ascension), puis la clé de voûte
-     * (phase 3, le Vertige) ; il garde ses Plans.
-     */
-    private static final Map<EnemySymbol, Integer> ARCHITECT_PHASE_TWO = Collections.unmodifiableMap(weights(
-        EnemySymbol.SWORD, 3, EnemySymbol.SHIELD, 1, EnemySymbol.POTION, 1, EnemySymbol.BLUEPRINT, 2, EnemySymbol.ECHO, 1));
-    private static final Map<EnemySymbol, Integer> ARCHITECT_PHASE_THREE = Collections.unmodifiableMap(weights(
-        EnemySymbol.SWORD, 3, EnemySymbol.SHIELD, 1, EnemySymbol.POTION, 1, EnemySymbol.BLUEPRINT, 2, EnemySymbol.ECHO, 1,
-        EnemySymbol.VERTIGO, 1));
-
     private final String                     displayName;
     private final String                     barName;
     private final String                     description;
@@ -1934,68 +1885,8 @@ public enum EnemyKind {
      */
     public boolean hasPhaseTwo() { return this == ECLAT || this == PROPHETE || kingPhaseSymbol() != null; }
 
-    /**
-     * Seuils de phase (choix d'Astra) : la part de ses PV max sous laquelle il ne descend
-     * pas avant d'être passé à la phase suivante, à son tour. Le surplus d'un coup qui
-     * franchit un seuil est perdu. Tous les boss et rois en ont : la moitié de leurs PV ;
-     * le Prétendant et la Maison, les deux tiers puis le tiers ; la Machine Originelle,
-     * la moitié puis {@link #MACHINE_LAST_RATIO}.
-     *
-     * @return ses seuils, de la phase 1 à la dernière (vide s'il n'a qu'une phase)
-     */
-    public float[] phaseThresholds() {
-        if (!isBoss()) return new float[0];
-        return switch (this) {
-            case COLLECTIONNEUR, PRETENDANT, GENERAL, MAISON, ARCHITECTE -> new float[] {2f / 3f, 1f / 3f};
-            case MACHINE_ORIGINELLE, GRAND_CROUPIER -> new float[] {PHASE_TWO_RATIO, MACHINE_LAST_RATIO};
-            default -> new float[] {PHASE_TWO_RATIO};
-        };
-    }
-
     /** @return le nombre de ses phases (1 s'il n'en change pas). */
     public int phaseCount() { return phaseThresholds().length + 1; }
-
-    /**
-     * @return le symbole qu'un roi de l'Exploration ajoute à ses rouleaux en phase 2, sous
-     *         {@link #PHASE_TWO_RATIO} de vie (poids {@link #KING_PHASE_WEIGHT}), ou {@code null}
-     */
-    public EnemySymbol kingPhaseSymbol() {
-        return switch (this) {
-            case ROI_PIQUE, SIRENE, BARON_OR -> EnemySymbol.FANG;
-            case ROI_COEUR, TAVERNIER, GARDIEN_PHARE, MAITRE_FORGE, REQUIN_BANQUIER -> EnemySymbol.RAGE;
-            case ROI_CARREAU, JACKPOT_VIVANT -> EnemySymbol.INTEREST;
-            case ROI_TREFLE -> EnemySymbol.DRUNK;
-            case CAPITAINE_RAT -> EnemySymbol.BOARDING;
-            case CAPITAINE_NOIR, KRAKEN -> EnemySymbol.BLIND;
-            case GRAND_FOREUR -> EnemySymbol.THORNS;
-            case COEUR_MONTAGNE -> EnemySymbol.ANVIL;
-            case MONSIEUR_LOYAL -> EnemySymbol.JUGGLE;
-            case CONDUCTEUR -> EnemySymbol.SCARE;
-            case ROUE_FORTUNE -> EnemySymbol.TURNSTILE;
-            case ROI_FORAIN -> EnemySymbol.RIGGED_PRIZE;
-            case EMIR -> EnemySymbol.TOLL;
-            case PHARAON -> EnemySymbol.VENOM;
-            case DJINN -> EnemySymbol.BILL;
-            case DRAGON -> EnemySymbol.BURN;
-            case LOCOMOTIVE -> EnemySymbol.BURN;
-            case GRAND_CHEF -> EnemySymbol.FANG;
-            case DAME_EN_NOIR -> EnemySymbol.VENOM;
-            case DESPERADO -> EnemySymbol.BOARDING;
-            case CONCIERGE -> EnemySymbol.CHAMPAGNE;
-            case IMPERATRICE_GIVRE -> EnemySymbol.CHAMPAGNE;
-            case YETI -> EnemySymbol.FREEZE;
-            case PRINCE_NEIGES -> EnemySymbol.KEY;
-            case MAITRE_CLOCHES -> EnemySymbol.DRUNK;
-            case TISSEUSE -> EnemySymbol.PREDICTION;
-            case SEIGNEUR_DES -> EnemySymbol.LOADED_DIE;
-            case IDOLE_OR -> EnemySymbol.MIRROR;
-            case COMTE_MINUIT -> EnemySymbol.FANG;
-            case BIBLIOTHECAIRE -> EnemySymbol.BLIND;
-            case FOSSOYEUR -> EnemySymbol.ROCKFALL;
-            case MARIONNETTISTE -> EnemySymbol.SONG;
-            default -> null;
-        };
-    }
 
     /** Poids du symbole qu'un roi ajoute en phase 2. */
     public static final int KING_PHASE_WEIGHT = 1;
@@ -2003,83 +1894,6 @@ public enum EnemyKind {
     public static final int KING_PHASE_ATTACK_PERCENT = 125;
     /** ... et ses soins ce % de leur valeur : il ne remonte pas à sa vie pleine. */
     public static final int KING_PHASE_HEAL_PERCENT = 50;
-
-    /**
-     * @return sa phase quand il lui reste {@code hpRatio} de ses PV : l'Éclat
-     *         Originel, la Comète Dorée et la Reine des Tables (sa Mise royale) passent à 2 sous la moitié ; le Prétendant perd un éclat et
-     *         la Maison une de ses parties à chaque tiers ; la Machine
-     *         Originelle vole un rouleau sous la moitié, puis un autre sous
-     *         {@link #MACHINE_LAST_RATIO} ; les rois de l'Exploration passent à 2
-     *         sous la moitié. Les autres restent en phase 1.
-     */
-    public int phaseFor(float hpRatio) {
-        return switch (this) {
-            case ECLAT, COMETE, REINE -> hpRatio < PHASE_TWO_RATIO ? 2 : 1;
-            case COLLECTIONNEUR, PRETENDANT, GENERAL, MAISON, ARCHITECTE -> hpRatio * 3f <= 1f ? 3 : hpRatio * 3f <= 2f ? 2 : 1;
-            case MACHINE_ORIGINELLE, GRAND_CROUPIER -> hpRatio < MACHINE_LAST_RATIO ? 3 : hpRatio < PHASE_TWO_RATIO ? 2 : 1;
-            default -> kingPhaseSymbol() != null && hpRatio < PHASE_TWO_RATIO ? 2 : 1;
-        };
-    }
-
-    /** @return le texte qui annonce sa phase {@code phase}, quand il y entre. */
-    public String phaseText(int phase) {
-        return switch (this) {
-            case PRETENDANT -> phase == 2 ? Lang.t("ÉCLAT PERDU : FINI LE ROULEAU INTERDIT") : Lang.t("ÉCLAT PERDU : FINIE LA MISE ROYALE");
-            case COLLECTIONNEUR -> phase == 2 ? Lang.t("NOUVEL ÉCLAT : VALSE !") : Lang.t("NOUVEL ÉCLAT : SCELLÉ !");
-            case MAISON -> phase == 2 ? Lang.t("LA FAÇADE TOMBE : PLUS DE DÉFENSE") : Lang.t("LE COFFRE TOMBE : PLUS DE SOINS");
-            case ARCHITECTE -> phase == 2 ? Lang.t("LES ÉCHAFAUDAGES MONTENT : ÉCHO !")
-                : Lang.t("LA CLÉ DE VOÛTE : SA TOUR FRAPPE, VERTIGE !");
-            case MACHINE_ORIGINELLE -> Lang.t("ELLE TE VOLE UN ROULEAU !");
-            case GRAND_CROUPIER -> phase == 2 ? Lang.t("IL TRUQUE TA TABLE !") : Lang.t("CARTES SUR TABLE !");
-            case COMETE -> Lang.t("LA COMÈTE S'EMBRASE !");
-            case GENERAL -> phase == 2 ? Lang.t("SES LIEUTENANTS ARRIVENT : ESPIONNAGE ET CONTRAT !")
-                : Lang.t("VA-TOUT : PLUS DE DÉFENSE, TOUT SUR L'ATTAQUE !");
-            case PROPHETE -> Lang.t("LA COMÈTE RÉPOND À SON APPEL : COMÈTE !");
-            case REINE -> Lang.t("MISE ROYALE : SES TRÈFLES COMPTENT DOUBLE !");
-            case ECLAT -> Lang.t("L'ÉCLAT SE FEND : NOUVEAUX SYMBOLES !");
-            case ROI_PIQUE -> Lang.t("LAMES ASSOIFFÉES : CROC !");
-            case ROI_COEUR -> Lang.t("COEUR FURIEUX : RAGE !");
-            case ROI_CARREAU -> Lang.t("LE TRÉSOR RAPPORTE : INTÉRÊTS !");
-            case ROI_TREFLE -> Lang.t("LA TABLE TOURNE : IVRESSE !");
-            case CAPITAINE_RAT -> Lang.t("LES RATS MONTENT À BORD : ABORDAGE !");
-            case TAVERNIER -> Lang.t("BAGARRE DE TAVERNE : RAGE !");
-            case GARDIEN_PHARE -> Lang.t("LA TEMPÊTE SE LÈVE : RAGE !");
-            case CAPITAINE_NOIR -> Lang.t("BORDÉE DE FUMÉE : AVEUGLEMENT !");
-            case BARON_OR -> Lang.t("AVIDITÉ : CROC !");
-            case GRAND_FOREUR -> Lang.t("ÉCLATS DE ROCHE : ÉPINES !");
-            case MAITRE_FORGE -> Lang.t("FORGE ARDENTE : RAGE !");
-            case COEUR_MONTAGNE -> Lang.t("LE COEUR DURCIT : ENCLUME !");
-            case SIRENE -> Lang.t("CHANT MORTEL : CROC !");
-            case JACKPOT_VIVANT -> Lang.t("MISE MAXIMALE : INTÉRÊTS !");
-            case REQUIN_BANQUIER -> Lang.t("FRÉNÉSIE : RAGE !");
-            case KRAKEN -> Lang.t("NUAGE D'ENCRE : AVEUGLEMENT !");
-            case MONSIEUR_LOYAL -> Lang.t("NUMÉRO FINAL : JONGLAGE !");
-            case CONDUCTEUR -> Lang.t("TERMINUS : FRAYEUR !");
-            case ROUE_FORTUNE -> Lang.t("LA ROUE S'EMBALLE : TOURNIQUET !");
-            case ROI_FORAIN -> Lang.t("TOUT EST TRUQUÉ : LOT TRUQUÉ !");
-            case EMIR -> Lang.t("TEMPÊTE DE SABLE : PÉAGE !");
-            case PHARAON -> Lang.t("LE SARCOPHAGE SE FERME : VENIN !");
-            case DJINN -> Lang.t("VOEU EXAUCÉ : LETTRE DE CHANGE !");
-            case DRAGON -> Lang.t("ENVOL : BRÛLURE !");
-            case LOCOMOTIVE -> Lang.t("VAPEUR BRÛLANTE : BRÛLURE !");
-            case GRAND_CHEF -> Lang.t("COUP DE FEU EN CUISINE : CROC !");
-            case DAME_EN_NOIR -> Lang.t("LA VOILETTE SE LÈVE : VENIN !");
-            case DESPERADO -> Lang.t("TOUT LE MONDE À TERRE : ABORDAGE !");
-            case CONCIERGE -> Lang.t("SERVICE D'ÉTAGE : CHAMPAGNE GLACÉ !");
-            case IMPERATRICE_GIVRE -> Lang.t("LE BAL DE GLACE COMMENCE : CHAMPAGNE GLACÉ !");
-            case YETI -> Lang.t("SOUFFLE POLAIRE : GEL !");
-            case PRINCE_NEIGES -> Lang.t("LES PORTES DU BAL SE FERMENT : CLÉ !");
-            case MAITRE_CLOCHES -> Lang.t("LE BOURDON TE SAOULE : IVRESSE !");
-            case TISSEUSE -> Lang.t("ELLE LIT TON FIL : PRÉDICTION !");
-            case SEIGNEUR_DES -> Lang.t("LES DÉS SONT PIPÉS : DÉ PIPÉ !");
-            case IDOLE_OR -> Lang.t("SON OR TE RENVOIE TON IMAGE : REFLET !");
-            case COMTE_MINUIT -> Lang.t("LES DOUZE COUPS SONNENT : CROC !");
-            case BIBLIOTHECAIRE -> Lang.t("LES BOUGIES S'ÉTEIGNENT : AVEUGLEMENT !");
-            case FOSSOYEUR -> Lang.t("LA TERRE TREMBLE : ÉBOULEMENT !");
-            case MARIONNETTISTE -> Lang.t("LE RIDEAU SE LÈVE : CHANT !");
-            default -> Lang.f("PHASE {0} !", phase);
-        };
-    }
 
     /** @return les éclats que porte le Prétendant dans sa phase {@code phase} (3, 2 puis 1). */
     public static int shards(int phase) { return Math.max(0, 4 - phase); }
@@ -2113,26 +1927,6 @@ public enum EnemyKind {
 
     /** @return les symboles de ses rouleaux et leur poids (dans l'ordre de tirage), en première phase. */
     public Map<EnemySymbol, Integer> getWeights() { return weights; }
-
-    /** @return les symboles de ses rouleaux et leur poids dans la phase {@code phase} (1 ou 2). */
-    public Map<EnemySymbol, Integer> getWeights(int phase) {
-        if (phase >= 2 && this == ECLAT) return ECLAT_PHASE_TWO;
-        if (phase >= 2 && this == PROPHETE) return PROPHET_PHASE_TWO;
-        if (phase >= 2 && kingPhaseSymbol() != null) {
-            Map<EnemySymbol, Integer> king = new LinkedHashMap<>(weights);
-            king.merge(kingPhaseSymbol(), KING_PHASE_WEIGHT, Integer::sum);
-            return Collections.unmodifiableMap(king);
-        }
-        if (this == ARCHITECTE && phase >= 3) return ARCHITECT_PHASE_THREE;
-        if (this == ARCHITECTE && phase == 2) return ARCHITECT_PHASE_TWO;
-        if (this == COLLECTIONNEUR && phase >= 3) return COLLECTOR_PHASE_THREE;
-        if (this == COLLECTIONNEUR && phase == 2) return COLLECTOR_PHASE_TWO;
-        if (this == GENERAL && phase >= 3) return GENERAL_PHASE_THREE;
-        if (this == GENERAL && phase == 2) return GENERAL_PHASE_TWO;
-        if (this == MAISON && phase >= 3) return HOUSE_PHASE_THREE;
-        if (this == MAISON && phase == 2) return HOUSE_PHASE_TWO;
-        return weights;
-    }
 
     /** @return les symboles qui peuvent sortir sur ses rouleaux, en première phase. */
     public List<EnemySymbol> getSymbols() { return List.copyOf(weights.keySet()); }
@@ -2193,145 +1987,6 @@ public enum EnemyKind {
         return removed;
     }
 
-    /** @return ses cartes propres, liées à ses rouleaux (voir le document « Cartes des ennemis »). */
-    public List<EnemySignature> getSignatures() {
-        return switch (this) {
-            case GARDIEN, ROI_CARREAU -> List.of(EnemySignature.RONCES);
-            case SANGSUE, ROI_COEUR -> List.of(EnemySignature.SAIGNEE);
-            case BRETTEUR, ROI_PIQUE, JACKPOT_VIVANT -> List.of(EnemySignature.PROVOCATION);
-            case COMETE -> List.of(EnemySignature.QUEUE_DE_COMETE);
-            case TRICHEUR -> List.of(EnemySignature.DE_CHARGE);
-            case USURIER -> List.of(EnemySignature.TAUX_USURAIRE);
-            case ROULETTE, PIEUVRE -> List.of(EnemySignature.BILLE_TRUQUEE);
-            case REINE -> List.of(EnemySignature.MAIN_DE_LA_REINE);
-            case PASSEUR -> List.of(EnemySignature.COUP_DE_RATEAU, EnemySignature.DE_CHARGE);
-            case PELERIN_FER -> List.of(EnemySignature.SERMENT_SOLENNEL);
-            case DISEUSE -> List.of(EnemySignature.BOULE_DE_CRISTAL);
-            case PORTEUR -> List.of(EnemySignature.AUTEL);
-            case PROPHETE -> List.of(EnemySignature.PROCESSION, EnemySignature.QUEUE_DE_COMETE);
-            case GARDIENNE -> List.of(EnemySignature.RONCES, EnemySignature.SAIGNEE, EnemySignature.PROVOCATION);
-            case MIROIR -> List.of(EnemySignature.MIROIR_DEFORMANT);
-            case HORLOGER -> List.of(EnemySignature.REMONTOIR);
-            case FOU -> List.of(EnemySignature.TOUT_SUR_LE_ROUGE);
-            case PILLEUR -> List.of(EnemySignature.SAC_DE_BUTIN);
-            case FAUSSAIRE -> List.of(EnemySignature.PLANCHE_A_BILLETS);
-            case CARTOMANCIENNE -> List.of(EnemySignature.TAROT);
-            case DUELLISTE -> List.of(EnemySignature.BOTTE_SECRETE);
-            case PRETENDANT -> List.of(EnemySignature.ECLAT_VOLE);
-            case SERGENT -> List.of(EnemySignature.CLAIRON);
-            case CANONNIER -> List.of(EnemySignature.POUDRE_NOIRE);
-            case ESPIONNE -> List.of(EnemySignature.MICROFILM);
-            case MERCENAIRE -> List.of(EnemySignature.PRIME_DE_RISQUE);
-            case GENERAL -> List.of(EnemySignature.ORDRE_DE_CHARGE, EnemySignature.CLAIRON);
-            case RAMASSEUR -> List.of(EnemySignature.POCHE_PLEINE);
-            case HERITIER -> List.of(EnemySignature.TESTAMENT);
-            case VEUVE -> List.of(EnemySignature.DERNIERE_DANSE);
-            case NOTAIRE -> List.of(EnemySignature.PARAPHE);
-            case COLLECTIONNEUR -> List.of(EnemySignature.POCHE_PLEINE, EnemySignature.TESTAMENT);
-            case COMPTABLE -> List.of(EnemySignature.REDRESSEMENT);
-            case DIRECTEUR -> List.of(EnemySignature.REGLEMENT_INTERIEUR);
-            case SECURITE -> List.of(EnemySignature.CAMERAS);
-            case GARDIEN_LEVIER -> List.of(EnemySignature.PLANCHE_A_BILLETS, EnemySignature.REDRESSEMENT,
-                EnemySignature.BOTTE_SECRETE);
-            case BANQUEROUTE -> List.of(EnemySignature.SAISIE);
-            case TEMPS_MORT -> List.of(EnemySignature.COMPTE_A_REBOURS);
-            case CHEF -> List.of(EnemySignature.ANNONCE, EnemySignature.COUP_DE_RATEAU);
-            case PORTIER -> List.of(EnemySignature.TENUE_EXIGEE, EnemySignature.PAS_CE_SOIR);
-            case MAISON -> List.of(EnemySignature.MACONNERIE, EnemySignature.DOUBLE_SERRURE, EnemySignature.BANQUE_GAGNE);
-            case LIFTIER_TOUR -> List.of(EnemySignature.BOUTON_D_APPEL);
-            case ECHO -> List.of(EnemySignature.RESONANCE);
-            case VERTIGE -> List.of(EnemySignature.LE_VIDE);
-            case GARGOUILLE -> List.of(EnemySignature.GRANIT);
-            case ARCHITECTE -> List.of(EnemySignature.FONDATIONS, EnemySignature.CLE_DE_VOUTE);
-            case MACHINE_ORIGINELLE -> List.of(EnemySignature.HUILE_NOIRE, EnemySignature.PLUIE_D_ETOILES,
-                EnemySignature.SURTENSION, EnemySignature.GRANDE_ASPIRATION);
-            case GOLEM_OR -> List.of(EnemySignature.OR_MASSIF, EnemySignature.POIDS_DE_L_OR);
-            case COEUR_MONTAGNE -> List.of(EnemySignature.GRONDEMENT, EnemySignature.FILON);
-            case BANDIT_MANCHOT -> List.of(EnemySignature.MONNAIE, EnemySignature.LEVIER_GRILLE);
-            case ROI_TREFLE -> List.of(EnemySignature.TAUX_USURAIRE, EnemySignature.DE_CHARGE);
-            case RAT_CALES -> List.of(EnemySignature.DENTS_DE_RAT);
-            case CAPITAINE_RAT -> List.of(EnemySignature.DENTS_DE_RAT, EnemySignature.SAIGNEE);
-            case BUVEUR, TAVERNIER -> List.of(EnemySignature.TOURNEE);
-            case GUETTEUR -> List.of(EnemySignature.LANTERNE);
-            case GARDIEN_PHARE -> List.of(EnemySignature.LANTERNE, EnemySignature.RONCES);
-            case PIRATE -> List.of(EnemySignature.GRAPPIN);
-            case CAPITAINE_NOIR -> List.of(EnemySignature.GRAPPIN, EnemySignature.PROVOCATION);
-            case CHERCHEUR_OR -> List.of(EnemySignature.TAMIS_NOIR);
-            case BARON_OR -> List.of(EnemySignature.TAMIS_NOIR, EnemySignature.TAUX_USURAIRE);
-            case FOREUR -> List.of(EnemySignature.MECHE_DE_DIAMANT);
-            case GRAND_FOREUR -> List.of(EnemySignature.MECHE_DE_DIAMANT, EnemySignature.PROVOCATION);
-            case FORGERON, MAITRE_FORGE -> List.of(EnemySignature.TREMPE);
-            case BARMAN_NOYE, SIRENE -> List.of(EnemySignature.REFRAIN);
-            case REQUIN -> List.of(EnemySignature.FRENESIE);
-            case REQUIN_BANQUIER -> List.of(EnemySignature.FRENESIE, EnemySignature.SAIGNEE);
-            case KRAKEN -> List.of(EnemySignature.ENCRE);
-            case CLOWN -> List.of(EnemySignature.MASSUES);
-            case MONSIEUR_LOYAL -> List.of(EnemySignature.ROULEMENT_DE_TAMBOUR, EnemySignature.PROVOCATION);
-            case SQUELETTE -> List.of(EnemySignature.BOUH);
-            case CONDUCTEUR -> List.of(EnemySignature.TUNNEL_SANS_FIN, EnemySignature.SAIGNEE);
-            case FORAIN -> List.of(EnemySignature.TOUR_DE_MANIVELLE);
-            case ROUE_FORTUNE -> List.of(EnemySignature.ROUE_LESTEE, EnemySignature.BILLE_TRUQUEE);
-            case BONIMENTEUR -> List.of(EnemySignature.LOT_DE_CONSOLATION, EnemySignature.TAUX_USURAIRE);
-            case ROI_FORAIN -> List.of(EnemySignature.CARTE_BISEAUTEE, EnemySignature.RONCES);
-            case CARAVANIER -> List.of(EnemySignature.OCTROI, EnemySignature.TAUX_USURAIRE);
-            case EMIR -> List.of(EnemySignature.USURE, EnemySignature.SAIGNEE);
-            case MOMIE -> List.of(EnemySignature.MOMIFICATION);
-            case PHARAON -> List.of(EnemySignature.MOMIFICATION, EnemySignature.RONCES);
-            case SCORPION -> List.of(EnemySignature.DARD);
-            case DJINN -> List.of(EnemySignature.FATA_MORGANA, EnemySignature.MIROIR_DEFORMANT);
-            case SALAMANDRE -> List.of(EnemySignature.COULEE_DE_LAVE);
-            case DRAGON -> List.of(EnemySignature.BRAISE, EnemySignature.TREMPE);
-            case CHAUFFEUR -> List.of(EnemySignature.CHARBON);
-            case LOCOMOTIVE -> List.of(EnemySignature.CHARBON, EnemySignature.PLEIN_REGIME);
-            case SERVEUR -> List.of(EnemySignature.DOIGTS_AGILES);
-            case GRAND_CHEF -> List.of(EnemySignature.DESSERT, EnemySignature.DOIGTS_AGILES);
-            case SOMNAMBULE -> List.of(EnemySignature.MARCHAND_DE_SABLE);
-            case DAME_EN_NOIR -> List.of(EnemySignature.MARCHAND_DE_SABLE, EnemySignature.DARD);
-            case CONVOYEUR -> List.of(EnemySignature.HAUT_LES_MAINS);
-            case DESPERADO -> List.of(EnemySignature.HAUT_LES_MAINS, EnemySignature.TOUT_SUR_LE_ROUGE);
-            case GROOM -> List.of(EnemySignature.TROUSSEAU);
-            case CONCIERGE -> List.of(EnemySignature.TROUSSEAU, EnemySignature.PROVOCATION);
-            case PATINEUSE -> List.of(EnemySignature.GIVRE_ETERNEL);
-            case IMPERATRICE_GIVRE -> List.of(EnemySignature.GIVRE_ETERNEL, EnemySignature.TEMPETE);
-            case LIFTIER -> List.of(EnemySignature.BOULE_DE_NEIGE);
-            case YETI -> List.of(EnemySignature.BOULE_DE_NEIGE, EnemySignature.TEMPETE);
-            case MAJORDOME -> List.of(EnemySignature.GRAND_CRU);
-            case PRINCE_NEIGES -> List.of(EnemySignature.GRAND_CRU, EnemySignature.GIVRE_ETERNEL);
-            case MOINE_HASARD -> List.of(EnemySignature.CARILLON);
-            case MAITRE_CLOCHES -> List.of(EnemySignature.CARILLON, EnemySignature.TOCSIN);
-            case ORACLE_AVEUGLE -> List.of(EnemySignature.QUENOUILLE);
-            case TISSEUSE -> List.of(EnemySignature.QUENOUILLE, EnemySignature.CISEAUX_DU_DESTIN);
-            case LANCEUR_DES -> List.of(EnemySignature.COUP_DE_DES);
-            case SEIGNEUR_DES -> List.of(EnemySignature.COUP_DE_DES, EnemySignature.QUITTE_OU_DOUBLE);
-            case STATUE_ANIMEE -> List.of(EnemySignature.OFFRANDE);
-            case IDOLE_OR -> List.of(EnemySignature.OFFRANDE, EnemySignature.JUGEMENT);
-            case VALET_FANTOME -> List.of(EnemySignature.PACTE_SCELLE);
-            case COMTE_MINUIT -> List.of(EnemySignature.PACTE_SCELLE, EnemySignature.DOUZE_COUPS);
-            case LIVRE_VIVANT -> List.of(EnemySignature.PAGE_ARRACHEE);
-            case BIBLIOTHECAIRE -> List.of(EnemySignature.PAGE_ARRACHEE, EnemySignature.SILENCE);
-            case GOULE -> List.of(EnemySignature.TERRE_FRAICHE);
-            case FOSSOYEUR -> List.of(EnemySignature.TERRE_FRAICHE, EnemySignature.GLAS);
-            case POUPEE_HANTEE -> List.of(EnemySignature.FIL_DE_SOIE);
-            case MARIONNETTISTE -> List.of(EnemySignature.FIL_DE_SOIE, EnemySignature.DERNIER_ACTE);
-            // Le Joueur Masqué : à chaque rencontre, il garde une carte du lieu traversé.
-            case RIVAL_FOIRE -> List.of(EnemySignature.CARTE_BISEAUTEE);
-            case RIVAL_RAPIDE -> List.of(EnemySignature.CARTE_BISEAUTEE, EnemySignature.HAUT_LES_MAINS);
-            case RIVAL_PORT -> List.of(EnemySignature.CARTE_BISEAUTEE, EnemySignature.HAUT_LES_MAINS, EnemySignature.GRAPPIN);
-            case RIVAL_PALACE, RIVAL_HISTOIRE -> List.of(EnemySignature.CARTE_BISEAUTEE, EnemySignature.HAUT_LES_MAINS, EnemySignature.GRAPPIN,
-                EnemySignature.TROUSSEAU);
-            case RIVAL_MINES -> List.of(EnemySignature.CARTE_BISEAUTEE, EnemySignature.HAUT_LES_MAINS, EnemySignature.GRAPPIN, EnemySignature.TROUSSEAU, EnemySignature.MECHE_DE_DIAMANT);
-            case RIVAL_MANOIR -> List.of(EnemySignature.CARTE_BISEAUTEE, EnemySignature.HAUT_LES_MAINS, EnemySignature.GRAPPIN, EnemySignature.TROUSSEAU, EnemySignature.MECHE_DE_DIAMANT,
-                EnemySignature.PACTE_SCELLE);
-            case RIVAL_CASINO -> List.of(EnemySignature.CARTE_BISEAUTEE, EnemySignature.HAUT_LES_MAINS, EnemySignature.GRAPPIN, EnemySignature.TROUSSEAU, EnemySignature.MECHE_DE_DIAMANT,
-                EnemySignature.PACTE_SCELLE, EnemySignature.FRENESIE);
-            case RIVAL_TEMPLE -> List.of(EnemySignature.CARTE_BISEAUTEE, EnemySignature.HAUT_LES_MAINS, EnemySignature.GRAPPIN, EnemySignature.TROUSSEAU, EnemySignature.MECHE_DE_DIAMANT,
-                EnemySignature.PACTE_SCELLE, EnemySignature.FRENESIE, EnemySignature.COUP_DE_DES);
-            case RIVAL_DESERT -> List.of(EnemySignature.CARTE_BISEAUTEE, EnemySignature.HAUT_LES_MAINS, EnemySignature.GRAPPIN, EnemySignature.TROUSSEAU, EnemySignature.MECHE_DE_DIAMANT,
-                EnemySignature.PACTE_SCELLE, EnemySignature.FRENESIE, EnemySignature.COUP_DE_DES, EnemySignature.USURE);
-            default -> List.of();
-        };
-    }
-
     /** @return la phrase qui résume ses rouleaux, pour son infobulle (ex : "Épée, Bouclier x2, Épines x2"). */
     public String describeReels() {
         return describeReels(1);
@@ -2352,7 +2007,57 @@ public enum EnemyKind {
         return String.join(", ", parts);
     }
 
-    private static Map<EnemySymbol, Integer> weights(Object... pairs) {
+    // Phases et cartes propres : voir EnemyPhases et EnemyKindSignatures.
+
+    /**
+     * Seuils de phase (choix d'Astra) : la part de ses PV max sous laquelle il ne descend
+     * pas avant d'être passé à la phase suivante, à son tour. Le surplus d'un coup qui
+     * franchit un seuil est perdu. Tous les boss et rois en ont : la moitié de leurs PV ;
+     * le Prétendant et la Maison, les deux tiers puis le tiers ; la Machine Originelle,
+     * la moitié puis {@link #MACHINE_LAST_RATIO}.
+     *
+     * @return ses seuils, de la phase 1 à la dernière (vide s'il n'a qu'une phase)
+     */
+    public float[] phaseThresholds() {
+        return EnemyPhases.thresholds(this);
+    }
+
+    /**
+     * @return le symbole qu'un roi de l'Exploration ajoute à ses rouleaux en phase 2, sous
+     *         {@link #PHASE_TWO_RATIO} de vie (poids {@link #KING_PHASE_WEIGHT}), ou {@code null}
+     */
+    public EnemySymbol kingPhaseSymbol() {
+        return EnemyPhases.kingSymbol(this);
+    }
+
+    /**
+     * @return sa phase quand il lui reste {@code hpRatio} de ses PV : l'Éclat
+     *         Originel, la Comète Dorée et la Reine des Tables (sa Mise royale) passent à 2 sous la moitié ; le Prétendant perd un éclat et
+     *         la Maison une de ses parties à chaque tiers ; la Machine
+     *         Originelle vole un rouleau sous la moitié, puis un autre sous
+     *         {@link #MACHINE_LAST_RATIO} ; les rois de l'Exploration passent à 2
+     *         sous la moitié. Les autres restent en phase 1.
+     */
+    public int phaseFor(float hpRatio) {
+        return EnemyPhases.phaseFor(this, hpRatio);
+    }
+
+    /** @return le texte qui annonce sa phase {@code phase}, quand il y entre. */
+    public String phaseText(int phase) {
+        return EnemyPhases.text(this, phase);
+    }
+
+    /** @return les symboles de ses rouleaux et leur poids dans la phase {@code phase} (1 ou 2). */
+    public Map<EnemySymbol, Integer> getWeights(int phase) {
+        return EnemyPhases.weights(this, phase);
+    }
+
+    /** @return ses cartes propres, liées à ses rouleaux (voir le document « Cartes des ennemis »). */
+    public List<EnemySignature> getSignatures() {
+        return EnemyKindSignatures.of(this);
+    }
+
+    static Map<EnemySymbol, Integer> weights(Object... pairs) {
         Map<EnemySymbol, Integer> map = new LinkedHashMap<>();
         for (int i = 0; i < pairs.length; i += 2) map.put((EnemySymbol) pairs[i], (Integer) pairs[i + 1]);
         return map;
