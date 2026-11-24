@@ -235,6 +235,49 @@ public class SidePanel implements Disposable {
         shownCombos = List.copyOf(combos);
     }
 
+    /**
+     * Aperçu au survol d'une carte de la main : les combinaisons déjà formées
+     * restent en or, celles que la carte ajouterait passent en vert, et le total
+     * montre le multiplicateur qu'on aurait en la jouant. {@link #setCombos} ou
+     * {@link #clearPreview} rendent l'affichage réel.
+     */
+    public void previewCombos(List<Combo> preview) {
+        for (Map.Entry<Combo, Label[]> entry : comboLabels.entrySet()) {
+            Combo combo = entry.getKey();
+            if (shownCombos.contains(combo)) {
+                highlight(entry.getValue(), true, false);
+            } else if (preview.contains(combo)) {
+                tint(entry.getValue(), PREVIEW);
+            } else {
+                highlight(entry.getValue(), false, false);
+            }
+        }
+        float total = Combo.totalFactor(preview);
+        totalLabels[1].setText("x" + Combo.formatFactor(total));
+        if (preview.equals(shownCombos)) highlight(totalLabels, !preview.isEmpty(), false);
+        else tint(totalLabels, PREVIEW);
+    }
+
+    /** Efface l'aperçu de {@link #previewCombos} : retour aux combinaisons des cartes jouées. */
+    public void clearPreview() {
+        List<Combo> shown = shownCombos;
+        for (Map.Entry<Combo, Label[]> entry : comboLabels.entrySet()) {
+            highlight(entry.getValue(), shown.contains(entry.getKey()), false);
+        }
+        totalLabels[1].setText("x" + Combo.formatFactor(Combo.totalFactor(shown)));
+        highlight(totalLabels, !shown.isEmpty(), false);
+    }
+
+    /** Couleur des combinaisons de l'aperçu (celles que la carte survolée formerait). */
+    private static final com.badlogic.gdx.graphics.Color PREVIEW = Palette.MINT;
+
+    private static void tint(Label[] row, com.badlogic.gdx.graphics.Color color) {
+        for (Label label : row) {
+            label.setColor(color);
+            label.getColor().a = 1f;
+        }
+    }
+
     /** Met en or une ligne ({@code on}) ou la laisse en retrait ; la fait grossir un instant si {@code pulse}. */
     private static void highlight(Label[] row, boolean on, boolean pulse) {
         for (Label label : row) {

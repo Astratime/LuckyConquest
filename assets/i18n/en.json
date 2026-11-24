@@ -3960,6 +3960,8 @@
   "Exploration difficile : {0}": "Hard Exploration: {0}",
   "Difficile": "Hard",
   "{0}\n{1}": "{0}\n{1}",
+  "Aide aux combinaisons : activée": "Combo hints: on",
+  "Aide aux combinaisons : désactivée": "Combo hints: off",
   "Un masque dans la foule": "A Mask in the Crowd",
   "Croiser le Joueur Masqué.": "Run into the Masked Gambler.",
   "Bas les masques": "Unmasked",

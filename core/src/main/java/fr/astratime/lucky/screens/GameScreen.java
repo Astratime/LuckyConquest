@@ -625,6 +625,7 @@ public class GameScreen extends ScreenAdapter {
             tutorial = null;
         }
         hand.setBlockedReason(this::unplayableReason, this::onCardRefused);
+        hand.setHoverListener(this::previewCombos);
         pileOverlay.setOnInspect(this::showCardDetail);
         shopIcon = new ShopIcon(hudTextures.shop, shopFont, sounds.shopHover, this::openShop);
         shopStand = new Billboard(projection, 1f, () -> new Vector2(shopIcon.getX() + shopIcon.getWidth() / 2f, shopIcon.getY()));
@@ -943,6 +944,21 @@ public class GameScreen extends ScreenAdapter {
                 EffectPopup.Style.GAINS, PopupScale.SECONDARY_INTENSITY));
         }
         effectPopupAnimator.play(popups, playArea.getCenterX(), table.getHandRowY() + CARD_HEIGHT * COMBO_TEXT_HEIGHT);
+    }
+
+    /**
+     * Aide aux combinaisons (option Accessibilité) : au survol d'une carte jouable,
+     * le panneau montre les combinaisons qu'on aurait en la jouant ; {@code null} efface l'aperçu.
+     */
+    private void previewCombos(Card hovered) {
+        if (hovered == null) {
+            sidePanel.clearPreview();
+            return;
+        }
+        if (!settings.isComboHint()) return;
+        List<Card> played = new ArrayList<>(player().getPlayedCards());
+        played.add(hovered);
+        sidePanel.previewCombos(Combo.formed(played));
     }
 
     /** Fait briller dans le panneau les combinaisons des cartes jouées ce tour. @return ces combinaisons */

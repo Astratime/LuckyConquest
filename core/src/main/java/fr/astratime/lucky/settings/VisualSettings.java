@@ -25,6 +25,7 @@ public class VisualSettings {
     private static final String GAMEPAD         = "gamepad";
     private static final String COLORED_CARDS   = "coloredCards";
     private static final String FRONT_VIEW      = "frontView";
+    private static final String COMBO_HINT      = "comboHint";
 
     private final Preferences preferences = Gdx.app.getPreferences(PREFERENCES);
 
@@ -91,6 +92,17 @@ public class VisualSettings {
     /** Choisit la vue de face ou la vue classique de la table, et mémorise le choix. */
     public void setFrontView(boolean front) {
         preferences.putBoolean(FRONT_VIEW, front);
+        preferences.flush();
+    }
+
+    /** @return true si le survol d'une carte de la main montre les combinaisons qu'elle formerait (activé par défaut). */
+    public boolean isComboHint() {
+        return preferences.getBoolean(COMBO_HINT, true);
+    }
+
+    /** Active ou désactive l'aide aux combinaisons, et mémorise le choix. */
+    public void setComboHint(boolean enabled) {
+        preferences.putBoolean(COMBO_HINT, enabled);
         preferences.flush();
     }
 
