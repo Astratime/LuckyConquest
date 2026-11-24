@@ -27,6 +27,7 @@ public final class RivalArt {
 
     /** @return le portrait de la rencontre {@code kind} du Joueur Masqué, ou {@code null} si ce n'est pas lui. */
     static int[][] of(EnemyKind kind) {
+        if (Rival.isStory(kind)) return portrait(Rival.encounter(EnemyKind.RIVAL_TEMPLE), false); // son masque le plus orné
         int encounter = Rival.encounter(kind);
         if (encounter == 0) return null;
         return portrait(encounter, Rival.isFinal(kind));
