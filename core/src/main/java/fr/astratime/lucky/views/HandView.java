@@ -123,6 +123,8 @@ public class HandView {
     /** Pourquoi une carte ne peut pas être jouée en ce moment ({@code null} : elle le peut). */
     private Function<Card, String> blockedReason = card -> null;
     private CardRefusedListener    refusedListener;
+    /** Prévenu au survol d'une carte jouable de la main (la carte), puis à sa sortie ou quand elle est jouée ({@code null}). */
+    private java.util.function.Consumer<Card> hoverListener;
     private boolean                locked;
     /** Cartes à montrer face cachée quand elles arrivent dans la main (Aveuglement de l'ennemi). */
     private Set<Card>    toHide = Set.of();
@@ -372,6 +374,7 @@ public class HandView {
                 cardImage.setHovered(true);
                 cardImage.tiltToward(x);
                 showTooltip(cardImage);
+                notifyHover(cardImage);
             }
 
             @Override
@@ -385,6 +388,7 @@ public class HandView {
                 if (pointer != -1) return;
                 cardImage.setHovered(false);
                 tooltip.hide();
+                if (hoverListener != null) hoverListener.accept(null);
             }
 
             @Override
@@ -415,6 +419,7 @@ public class HandView {
             if (refusedListener != null) refusedListener.onCardRefused(cardOf.get(cardImage), reason, cardCenter);
             return;
         }
+        if (hoverListener != null) hoverListener.accept(null);
         Card card = cardOf.remove(cardImage);
         images.remove(cardImage);
         hiddenImages.remove(cardImage);
@@ -450,6 +455,16 @@ public class HandView {
                 if (image instanceof CardImage card) card.setHovered(false);
             }
         }
+    }
+
+    /** @param listener prévenu au survol d'une carte jouable et visible de la main, puis avec {@code null} à sa sortie */
+    public void setHoverListener(java.util.function.Consumer<Card> listener) { this.hoverListener = listener; }
+
+    private void notifyHover(CardImage cardImage) {
+        if (hoverListener == null || hiddenImages.contains(cardImage)) return;
+        Card card = cardOf.get(cardImage);
+        if (card == null || (blockedReason != null && blockedReason.apply(card) != null)) return;
+        hoverListener.accept(card);
     }
 
     /**

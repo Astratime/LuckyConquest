@@ -8,6 +8,7 @@ import fr.astratime.lucky.entities.Symbol;
 import fr.astratime.lucky.entities.enemy.EnemyKind;
 import fr.astratime.lucky.entities.exploration.Dungeon;
 import fr.astratime.lucky.entities.exploration.Place;
+import fr.astratime.lucky.entities.exploration.Rival;
 import fr.astratime.lucky.entities.tower.Chapter;
 import fr.astratime.lucky.i18n.Lang;
 
@@ -724,6 +725,11 @@ public class PlayerProfile {
             case FULL_BESTIARY   -> defeatedEnemies.containsAll(Bestiary.enemies());
             case GOLDEN_FIRST    -> getGoldenDefeatedCount() >= 1;
             case GOLDEN_ALL      -> getGoldenDefeatedCount() >= Bestiary.goldenEnemies().size();
+            case RIVAL_MET       -> Arrays.stream(Place.values()).map(Rival::of).anyMatch(k -> k != null && metEnemies.contains(k));
+            case RIVAL_UNMASKED  -> defeatedEnemies.contains(EnemyKind.RIVAL_DESERT);
+            case CROUPIER_DOWN   -> defeatedEnemies.contains(EnemyKind.GRAND_CROUPIER);
+            case FULL_NOTEBOOK   -> Notebook.found(this) >= Notebook.size();
+            case CINEPHILE       -> { int[] seen = Bestiary.cutscenes(this); yield seen[0] >= seen[1]; }
         };
     }
 

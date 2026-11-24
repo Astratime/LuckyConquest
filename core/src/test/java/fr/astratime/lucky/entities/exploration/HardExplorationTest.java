@@ -34,7 +34,8 @@ class HardExplorationTest {
             double times = Math.pow(Math.sqrt(2.0), place.getTier() - 1);
             assertEquals(times, HardExploration.strength(place), 1e-9);
             double hp = average(Place.DESERT, k -> k.getMaxHp(Difficulty.NORMAL)) * times;
-            double attack = average(Place.DESERT, k -> k.hurt(k.swordDamage(), Difficulty.NORMAL)) * times;
+            double attack = average(Place.DESERT, k -> k.hurt(k.swordDamage(), Difficulty.NORMAL)) * times
+                * HardExploration.extraAttackPercent(place) / 100.0; // Prairie, Foire, Rapide : attaque en plus (2026-11-23)
             double defense = average(Place.DESERT, k -> k.getBaseDefense(Difficulty.NORMAL)) * times;
             assertEquals(1, average(place, k -> k.getMaxHp(Difficulty.HARD)) / hp, 0.001, place + " : PV");
             assertEquals(1, average(place, k -> k.hurt(k.swordDamage(), Difficulty.HARD)) / attack, 0.015, place + " : attaque (arrondis des petits coups)");
