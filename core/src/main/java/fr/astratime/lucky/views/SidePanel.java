@@ -355,7 +355,7 @@ public class SidePanel implements Disposable {
     }
 
     /** La molette fait défiler {@code scroll} tant que la souris est dessus. */
-    static void addWheelFocus(ScrollPane scroll) {
+    public static void addWheelFocus(ScrollPane scroll) {
         scroll.addListener(new InputListener() {
             @Override
             public void enter(InputEvent event, float x, float y, int pointer, Actor fromActor) {
