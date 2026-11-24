@@ -177,6 +177,7 @@ public class PreparationResolver {
             effect.apply(turnContext);
         }
         combatContext.setSource(null);
+        smallChange(turnContext, player);
         Symbol[] lastDrawn = lasting.getLastDrawn(); // Gel du Palace des Neiges : le rouleau garde son symbole
         if (lastDrawn != null) for (int reel : lasting.getFrozenReels()) {
             if (reel < lastDrawn.length && lastDrawn[reel] != null) spinContext.forceReel(reel, lastDrawn[reel]);
@@ -187,6 +188,27 @@ public class PreparationResolver {
         if (houseRule != LastingEffects.HouseRule.NO_COMBOS) applyCombos(turnContext, player, rule.isIcy(turn));
 
         return turnContext;
+    }
+
+    /** Plus petite et plus grande carte de la Menue monnaie (rangs 2 à 8, toutes familles confondues). */
+    public static final int SMALL_CHANGE_MIN = 2, SMALL_CHANGE_MAX = 8;
+
+    /** @return le nombre de petites cartes (rang 2 à 8, à suite ou d'archétype) parmi {@code played}. */
+    public static int smallCards(List<Card> played) {
+        int count = 0;
+        for (Card card : played) {
+            if (card.hasRank() && card.getRank() >= SMALL_CHANGE_MIN && card.getRank() <= SMALL_CHANGE_MAX) count++;
+        }
+        return count;
+    }
+
+    /** Menue monnaie : chaque petite carte jouée ce tour ajoute l'attaque des cartes Monnaie jouées, en une fois. */
+    private static void smallChange(TurnContext turnContext, Player player) {
+        CombatContext combat = turnContext.getCombatContext();
+        int percent = combat.getSmallChangePercent() * smallCards(player.getPlayedCards());
+        if (percent <= 0) return;
+        combat.multiplyAttack(1f + percent / 100f, "Menue monnaie");
+        turnContext.addEvent(new StatusEvent(Lang.f("MENUE MONNAIE : ATTAQUE +{0} %", percent), EffectPopup.Style.ATTACK));
     }
 
     /**
