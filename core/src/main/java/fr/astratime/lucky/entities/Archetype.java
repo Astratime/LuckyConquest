@@ -23,7 +23,9 @@ public enum Archetype {
     /** Du Valet à l'As : joue avec la défausse. */
     REVENANT("Revenant", "Tes cartes défaussées reviennent te servir."),
     /** Du Valet à l'As : des effets à retardement. */
-    HORLOGER("Horloger", "Tu remontes des Ressorts et prépares tes coups pour plus tard.");
+    HORLOGER("Horloger", "Tu remontes des Ressorts et prépares tes coups pour plus tard."),
+    /** Du 2 au 8 (Astra, 2026-11-23) : les petites cartes se suivent et rapportent ensemble. */
+    MENUE_MONNAIE("Menue monnaie", "Les petites cartes, du 2 au 8 : elles se suivent facilement, et plus tu en joues, plus elles frappent.");
 
     private final String displayName;
     private final String description;

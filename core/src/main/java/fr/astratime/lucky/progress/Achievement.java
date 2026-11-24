@@ -76,7 +76,13 @@ public enum Achievement {
     FULL_BESTIARY("Bestiaire complet", "Vaincre tous les ennemis du bestiaire.", 10_000_000_000L),
     // Ennemis dorés (2026-11-20) : le premier se croise vers la Fête foraine, le dernier au Désert
     GOLDEN_FIRST("Éclat d'or", "Vaincre un ennemi doré.", 1_000_000),
-    GOLDEN_ALL("Chasseur d'or", "Vaincre la version dorée de tous les soldats.", 5_000_000_000L);
+    GOLDEN_ALL("Chasseur d'or", "Vaincre la version dorée de tous les soldats.", 5_000_000_000L),
+    // Nouveau contenu (2026-11-23) : récompense à l'échelle du lieu ou du mode où on l'obtient
+    RIVAL_MET("Un masque dans la foule", "Croiser le Joueur Masqué.", 3_000_000),
+    RIVAL_UNMASKED("Bas les masques", "Vaincre le Joueur Masqué dans le Désert de Braise.", 5_000_000_000L),
+    CROUPIER_DOWN("Nouveau Croupier", "Vaincre le Croupier.", 20_000_000_000L),
+    FULL_NOTEBOOK("Carnet complet", "Trouver les {0} pages du Carnet.", 3_000_000_000L),
+    CINEPHILE("Cinéphile", "Voir toutes les cinématiques.", 5_000_000_000L);
 
     private final String name;
     private final String description;
@@ -99,6 +105,7 @@ public enum Achievement {
             case HALFWAY    -> Lang.f(description, Chapter.DERNIER_TIRAGE.getNumber());
             case ORIGIN     -> Lang.f(description, Chapter.last().getNumber());
             case HARD_TOWER -> Lang.f(description, Chapter.values().length);
+            case FULL_NOTEBOOK -> Lang.f(description, Notebook.size());
             default         -> Lang.t(description);
         };
     }

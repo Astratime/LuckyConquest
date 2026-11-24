@@ -471,6 +471,7 @@ public class CardLoader {
         add(effects, "GOLDEN_HEART", (json, v) -> new GoldenHeartEffect());
         add(effects, "EARPLUGS", (json, v) -> new EarplugsEffect(v.i("draws")));
         add(effects, "BONUS_PLAYS", (json, v) -> new BonusPlaysEffect(v.i("plays")));
+        add(effects, "SMALL_CHANGE", (json, v) -> new SmallChangeEffect(v.i("percent")));
         add(effects, "LOADED_COIN", (json, v) -> new LoadedCoinEffect());
         add(effects, "RUSTY_LEVER", (json, v) -> new RustyLeverEffect());
         add(effects, "SUNKEN_JACKPOT", (json, v) -> new SunkenJackpotEffect());

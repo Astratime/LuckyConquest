@@ -515,6 +515,25 @@ class PlayerProfileTest {
     }
 
     @Test
+    void newContentAchievementsFollowTheirGoals() {
+        PlayerProfile profile = profile(new MemoryStorage());
+        assertTrue(profile.checkAchievements().isEmpty());
+
+        profile.meet(EnemyKind.RIVAL_FOIRE);
+        assertEquals(List.of(Achievement.RIVAL_MET), profile.checkAchievements());
+
+        profile.defeat(EnemyKind.RIVAL_DESERT);
+        assertTrue(profile.checkAchievements().contains(Achievement.RIVAL_UNMASKED));
+
+        profile.defeat(EnemyKind.GRAND_CROUPIER);
+        assertTrue(profile.checkAchievements().contains(Achievement.CROUPIER_DOWN));
+
+        for (EnemyKind kind : Notebook.owners()) profile.defeat(kind);
+        assertTrue(profile.checkAchievements().contains(Achievement.FULL_NOTEBOOK));
+        assertTrue(Achievement.FULL_NOTEBOOK.getDescription().contains(String.valueOf(Notebook.size())));
+    }
+
+    @Test
     void hiddenStatisticsAreSavedButNotShown() {
         assertFalse(PlayerStats.Stat.CLOSE_WINS.isShown());
         assertTrue(PlayerStats.Stat.SPINS.isShown());
