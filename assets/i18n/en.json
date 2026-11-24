@@ -3959,5 +3959,15 @@
   "Vide {0} en Exploration difficile pour l'acheter.": "Clear {0} in hard Exploration to buy it.",
   "Exploration difficile : {0}": "Hard Exploration: {0}",
   "Difficile": "Hard",
-  "{0}\n{1}": "{0}\n{1}"
+  "{0}\n{1}": "{0}\n{1}",
+  "Un masque dans la foule": "A Mask in the Crowd",
+  "Croiser le Joueur Masqué.": "Run into the Masked Gambler.",
+  "Bas les masques": "Unmasked",
+  "Vaincre le Joueur Masqué dans le Désert de Braise.": "Defeat the Masked Gambler in the Ember Desert.",
+  "Nouveau Croupier": "New Dealer",
+  "Vaincre le Croupier.": "Defeat the Dealer.",
+  "Carnet complet": "Full Notebook",
+  "Trouver les {0} pages du Carnet.": "Find all {0} pages of the Notebook.",
+  "Cinéphile": "Film Buff",
+  "Voir toutes les cinématiques.": "Watch every cutscene."
 }
