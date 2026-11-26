@@ -55,14 +55,16 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 
 /**
- * Table du croupier : le joueur y prépare ce qu'il emmène au combat, en trois onglets.
+ * Table du croupier : le joueur y prépare ce qu'il emmène au combat, en quatre onglets.
  * <ul>
  *   <li>« Deck » : les {@link PlayerProfile#DECK_SIZE} cartes de son deck, parmi
  *       celles qu'il possède (collection de départ, coffres, boutique) ;</li>
  *   <li>« Rouleaux » : les {@link Symbol#MACHINE_SIZE} rouleaux de sa machine,
  *       tous différents, parmi les classiques et ceux achetés à la boutique ;</li>
  *   <li>« Rang » : le {@link Rank rang} avec lequel il joue, parmi ceux achetés
- *       à la boutique (ou sans rang), par exemple pour jouer moins fort.</li>
+ *       à la boutique (ou sans rang), par exemple pour jouer moins fort ;</li>
+ *   <li>« Prestige » : le niveau de Prestige avec lequel il joue, parmi ceux atteints
+ *       (ou sans Prestige), pour les mêmes raisons (Astra, 2026-11-26).</li>
  * </ul>
  *
  * À gauche, sa collection : chaque carte, avec le nombre d'exemplaires déjà
@@ -72,8 +74,9 @@ import java.util.function.Supplier;
  * où un clic retire un exemplaire. « Enregistrer » n'est possible qu'avec
  * exactement {@link PlayerProfile#DECK_SIZE} cartes ; « Retour » abandonne les changements.
  * Dans l'onglet « Rouleaux », un clic place un rouleau dans la machine ou l'en
- * retire. Dans l'onglet « Rang », un clic choisit un rang acheté. « Enregistrer »
- * enregistre le deck et la machine, complets tous les deux, et le rang choisi.
+ * retire. Dans l'onglet « Rang », un clic choisit un rang acheté, dans l'onglet « Prestige »
+ * un niveau atteint. « Enregistrer » enregistre le deck et la machine, complets tous
+ * les deux, le rang et le Prestige choisis.
  *
  * Le bouton « Tri » (en haut de la collection) change l'ordre des cartes ou
  * des rouleaux (voir {@link TableSort}) ; par défaut, le deck et la machine du
@@ -170,6 +173,7 @@ public class CroupierTableScreen extends CasinoMenuScreen {
     private final TextButton  deckTab;
     private final TextButton  reelsTab;
     private final TextButton  rankTab;
+    private final TextButton  prestigeTab;
     /** Onglet « Rang » : une ligne par rang (et « Sans rang »), dans le panneau de gauche. */
     private final Table       rankList = new Table();
     private final ScrollPane  rankScroll;
@@ -182,6 +186,15 @@ public class CroupierTableScreen extends CasinoMenuScreen {
     private final Label       rankText;
     /** Rang choisi, enregistré par « Enregistrer » ({@code null} : sans rang). */
     private Rank              chosenRank;
+    /** Onglet « Prestige » : une ligne par niveau (0 : sans Prestige), et le panneau du niveau choisi. */
+    private final Table       prestigeList = new Table();
+    private final ScrollPane  prestigeScroll;
+    private final List<Table> prestigeRows = new ArrayList<>();
+    private final List<Label> prestigeStates = new ArrayList<>();
+    private final Table       prestigeDetail = new Table();
+    private final Label       prestigeName;
+    private final Label       prestigeText;
+    private int               chosenPrestige;
     private final TextButton  classicButton;
     /** Change l'ordre des cartes (onglet « Deck ») ou des rouleaux (onglet « Rouleaux »). */
     private final TextButton  sortButton;
@@ -198,7 +211,7 @@ public class CroupierTableScreen extends CasinoMenuScreen {
     private int     columns = 6;
     private int     reelColumns = 4;
     /** Onglets de la table. */
-    private enum Tab { DECK, REELS, RANK }
+    private enum Tab { DECK, REELS, RANK, PRESTIGE }
     /** Onglet affiché. */
     private Tab     tab = Tab.DECK;
     /** Emplacements de deck (« Deck 1 » à « Deck 3 ») ; celui qu'on modifie, enregistré par « Enregistrer ». */
@@ -252,9 +265,23 @@ public class CroupierTableScreen extends CasinoMenuScreen {
         rankDetail.add(rankName).left().width(DECK_WIDTH - PANEL_PAD * 2).padBottom(12f).row();
         rankDetail.add(rankText).left().width(DECK_WIDTH - PANEL_PAD * 2).row();
 
+        chosenPrestige = profile.getActivePrestige();
+        prestigeName = new Label("", new Label.LabelStyle(headFont, Color.WHITE));
+        prestigeText = new Label("", new Label.LabelStyle(rowFont, Color.WHITE));
+        prestigeText.setWrap(true);
+        buildPrestigeList();
+        prestigeScroll = new ScrollPane(prestigeList);
+        prestigeScroll.setScrollingDisabled(true, false);
+        prestigeScroll.setFadeScrollBars(false);
+        prestigeScroll.setOverscroll(false, false);
+        prestigeDetail.top().left();
+        prestigeDetail.add(prestigeName).left().width(DECK_WIDTH - PANEL_PAD * 2).padBottom(12f).row();
+        prestigeDetail.add(prestigeText).left().width(DECK_WIDTH - PANEL_PAD * 2).row();
+
         deckTab  = buttons.create(Lang.t("Deck"), clickSound, () -> showTab(Tab.DECK));
         reelsTab = buttons.create(Lang.t("Rouleaux"), clickSound, () -> showTab(Tab.REELS));
         rankTab  = buttons.create(Lang.t("Rang"), clickSound, () -> showTab(Tab.RANK));
+        prestigeTab = buttons.create(Lang.t("Prestige"), clickSound, () -> showTab(Tab.PRESTIGE));
         saveButton    = buttons.createAction(Lang.t("Enregistrer"), clickSound, this::onSave);
         starterButton = buttons.create(Lang.t("Deck de départ"), clickSound, () -> {
             draft.resetToStarter();
@@ -296,9 +323,12 @@ public class CroupierTableScreen extends CasinoMenuScreen {
         stage.addActor(machineList);
         stage.addActor(rankScroll);
         stage.addActor(rankDetail);
+        stage.addActor(prestigeScroll);
+        stage.addActor(prestigeDetail);
         stage.addActor(deckTab);
         stage.addActor(reelsTab);
         stage.addActor(rankTab);
+        stage.addActor(prestigeTab);
         stage.addActor(classicButton);
         stage.addActor(sortButton);
         stage.addActor(hint);
@@ -360,7 +390,9 @@ public class CroupierTableScreen extends CasinoMenuScreen {
             .onStart(() -> before[0] = machineDraft.size()));
         steps.add(GuideOverlay.Step.say(Lang.t("L'onglet Rang te laisse choisir avec quel rang tu joues, parmi ceux que tu as achetés."),
             () -> GuideOverlay.boundsOf(rankTab)));
-        steps.add(GuideOverlay.Step.say(Lang.t("Enregistre pour garder ton deck, ta machine et ton rang. Retour les laisse comme avant."),
+        steps.add(GuideOverlay.Step.say(Lang.t("L'onglet Prestige fait pareil avec les niveaux de Prestige que tu as atteints."),
+            () -> GuideOverlay.boundsOf(prestigeTab)));
+        steps.add(GuideOverlay.Step.say(Lang.t("Enregistre pour garder ton deck, ta machine, ton rang et ton Prestige. Retour les laisse comme avant."),
             () -> GuideOverlay.boundsOf(saveButton).merge(GuideOverlay.boundsOf(backButton))));
         return steps;
     }
@@ -381,10 +413,12 @@ public class CroupierTableScreen extends CasinoMenuScreen {
     /** Affiche l'onglet {@code shown}. */
     private void showTab(Tab shown) {
         tab = shown;
-        boolean deck = shown == Tab.DECK, reels = shown == Tab.REELS, rank = shown == Tab.RANK;
+        boolean deck = shown == Tab.DECK, reels = shown == Tab.REELS, ranks = shown == Tab.RANK;
+        boolean prestige = shown == Tab.PRESTIGE, rank = ranks || prestige; // onglets sans tri ni compteur
         deckTab.setColor(deck ? Color.WHITE : USED_UP);
         reelsTab.setColor(reels ? Color.WHITE : USED_UP);
-        rankTab.setColor(rank ? Color.WHITE : USED_UP);
+        rankTab.setColor(ranks ? Color.WHITE : USED_UP);
+        prestigeTab.setColor(prestige ? Color.WHITE : USED_UP);
         scroll.setVisible(deck);
         deckList.setVisible(deck && !sheetShown);
         deckSheet.setVisible(deck && sheetShown);
@@ -397,17 +431,21 @@ public class CroupierTableScreen extends CasinoMenuScreen {
         clearButton.setVisible(!rank);
         sortButton.setVisible(!rank);
         counter.setVisible(!rank);
-        rankScroll.setVisible(rank);
-        rankDetail.setVisible(rank);
+        rankScroll.setVisible(ranks);
+        rankDetail.setVisible(ranks);
+        prestigeScroll.setVisible(prestige);
+        prestigeDetail.setVisible(prestige);
         collectionHead.setText(switch (shown) {
             case DECK  -> Lang.t("MA COLLECTION");
             case REELS -> Lang.t("MES ROULEAUX");
             case RANK  -> Lang.t("MES RANGS");
+            case PRESTIGE -> Lang.t("MES PRESTIGES");
         });
         deckHead.setText(switch (shown) {
             case DECK  -> Lang.t("MON DECK");
             case REELS -> Lang.t("MA MACHINE");
             case RANK  -> Lang.t("MON RANG");
+            case PRESTIGE -> Lang.t("MON PRESTIGE");
         });
         stage.setScrollFocus(scrollOf(shown));
         if (deck) sortCollection();
@@ -468,6 +506,7 @@ public class CroupierTableScreen extends CasinoMenuScreen {
             case DECK  -> scroll;
             case REELS -> reelScroll;
             case RANK  -> rankScroll;
+            case PRESTIGE -> prestigeScroll;
         };
     }
 
@@ -554,10 +593,101 @@ public class CroupierTableScreen extends CasinoMenuScreen {
             entry.getValue().setColor(rank == chosenRank ? Color.WHITE : owned ? OWNED_RANK : OTHER_SLOT);
         }
         rankName.setText(rankTitle(chosenRank));
-        String prestige = profile.getPrestige() == 0 ? "" : "\n\n" + Lang.f("Prestige {0} : PV, attaque et défense {1}, gains +{2} % (rang compris).",
-            PlayerProfile.prestigeNumeral(profile.getPrestige()), PlayerProfile.prestigeFactorText(profile.getPrestige()),
-            profile.getPrestige() * RankBonus.PRESTIGE_PERCENT);
+        String prestige = chosenPrestige == 0 ? "" : "\n\n" + prestigeBonusText(chosenPrestige);
         rankText.setText(rankBody(chosenRank) + prestige);
+    }
+
+    // -------------------------------------------------------------------------
+    // Prestige
+    // -------------------------------------------------------------------------
+
+    /**
+     * Une ligne par niveau, de « Sans Prestige » au Prestige X : son nom, ses bonus,
+     * et à droite « Joué », « Atteint » ou « Pas encore atteint ». Un clic sur un niveau atteint le choisit.
+     */
+    private void buildPrestigeList() {
+        prestigeList.top().left();
+        for (int i = 0; i <= PlayerProfile.MAX_PRESTIGE; i++) {
+            int level = i;
+            Table row = new Table();
+            row.setTouchable(Touchable.enabled);
+            row.setBackground(hud.insetDrawable());
+            row.pad(10f, 18f, 10f, 18f);
+            Label name = new Label(prestigeTitle(level), new Label.LabelStyle(rowFont, Palette.GOLD));
+            Label text = new Label(level == 0 ? Lang.t("Aucun bonus de Prestige.")
+                : Lang.f("PV, attaque et défense {0}, gains +{1} % (rang compris).", PlayerProfile.prestigeFactorText(level),
+                    level * RankBonus.PRESTIGE_PERCENT),
+                new Label.LabelStyle(hintFont, Color.WHITE));
+            text.setWrap(true);
+            Label state = new Label("", new Label.LabelStyle(countFont, Color.WHITE));
+            state.setAlignment(Align.right);
+            state.setWrap(true);
+            Table left = new Table();
+            left.add(name).left().row();
+            left.add(text).growX().left();
+            row.add(left).growX().left().padRight(16f);
+            row.add(state).width(190f).right();
+            row.addListener(new ClickListener() {
+                @Override
+                public void enter(InputEvent event, float x, float y, int pointer, Actor fromActor) {
+                    super.enter(event, x, y, pointer, fromActor);
+                    if (pointer == -1 && profile.ownsPrestige(level) && level != chosenPrestige) name.setColor(Color.WHITE);
+                }
+
+                @Override
+                public void exit(InputEvent event, float x, float y, int pointer, Actor toActor) {
+                    super.exit(event, x, y, pointer, toActor);
+                    if (pointer == -1) name.setColor(Palette.GOLD);
+                }
+
+                @Override
+                public void clicked(InputEvent event, float x, float y) { pickPrestige(level, row); }
+            });
+            prestigeRows.add(row);
+            prestigeStates.add(state);
+            prestigeList.add(row).growX().padBottom(8f).row();
+        }
+    }
+
+    /** @return « Prestige IV », ou « Sans Prestige ». */
+    private static String prestigeTitle(int level) {
+        return level == 0 ? Lang.t("Sans Prestige") : Lang.f("Prestige {0}", PlayerProfile.prestigeNumeral(level));
+    }
+
+    /** @return les bonus du niveau {@code level} (au moins I), en une phrase. */
+    private static String prestigeBonusText(int level) {
+        return Lang.f("Prestige {0} : PV, attaque et défense {1}, gains +{2} % (rang compris).",
+            PlayerProfile.prestigeNumeral(level), PlayerProfile.prestigeFactorText(level), level * RankBonus.PRESTIGE_PERCENT);
+    }
+
+    /** Choisit le niveau {@code level} s'il est atteint, sinon dit qu'il s'atteint à la boutique. */
+    private void pickPrestige(int level, Actor feedback) {
+        if (!profile.ownsPrestige(level)) {
+            refuse(Lang.t("Ce Prestige s'atteint d'abord à la boutique"), feedback);
+            return;
+        }
+        if (level == chosenPrestige) return;
+        chosenPrestige = level;
+        dealSound.play();
+        refresh();
+    }
+
+    /** Met à jour les lignes des niveaux (joué, atteint, pas encore) et le panneau du niveau choisi. */
+    private void refreshPrestige() {
+        for (int level = 0; level < prestigeRows.size(); level++) {
+            boolean owned = profile.ownsPrestige(level);
+            Label state = prestigeStates.get(level);
+            state.setText(level == chosenPrestige ? Lang.t("Joué") : owned ? Lang.t("Atteint") : Lang.t("Pas encore atteint"));
+            state.setColor(level == chosenPrestige ? Palette.GOLD : Color.WHITE);
+            prestigeRows.get(level).setColor(level == chosenPrestige ? Color.WHITE : owned ? OWNED_RANK : OTHER_SLOT);
+        }
+        prestigeName.setText(prestigeTitle(chosenPrestige));
+        String body = chosenPrestige == 0 ? Lang.t("Aucun bonus de Prestige.") : prestigeBonusText(chosenPrestige)
+            + "\n\n" + Lang.f("Tes PV max, ton attaque et ta défense ne descendent pas sous {0} % de ceux de la Légende du Jackpot.",
+                Rank.PRESTIGE_FLOOR_PERCENT);
+        body += "\n\n" + Lang.f("Prestige atteint : {0}. Les prix des rangs et les sceaux suivent celui-ci, pas celui joué.",
+            profile.getPrestige() == 0 ? Lang.t("aucun") : PlayerProfile.prestigeNumeral(profile.getPrestige()));
+        prestigeText.setText(body);
     }
 
     // -------------------------------------------------------------------------
@@ -823,12 +953,16 @@ public class CroupierTableScreen extends CasinoMenuScreen {
 
         refreshMachine();
         refreshRanks();
+        refreshPrestige();
         for (int i = 0; i < slotButtons.size(); i++) slotButtons.get(i).setColor(i == editingSlot ? Color.WHITE : OTHER_SLOT);
         saveButton.setDisabled(!draft.isComplete() || !machineDraft.isComplete());
         hint.setColor(Color.WHITE);
         if (tab == Tab.RANK) {
             hint.setText(chosenRank == profile.getActiveRank() ? Lang.t("Clique sur un rang acquis pour jouer avec.")
                 : Lang.t("Enregistre pour jouer avec ce rang."));
+        } else if (tab == Tab.PRESTIGE) {
+            hint.setText(chosenPrestige == profile.getActivePrestige() ? Lang.t("Clique sur un Prestige atteint pour jouer avec.")
+                : Lang.t("Enregistre pour jouer avec ce Prestige."));
         } else if (tab == Tab.REELS) {
             int reels = machineDraft.size();
             counter.setText(reels + " / " + Symbol.MACHINE_SIZE);
@@ -1018,7 +1152,7 @@ public class CroupierTableScreen extends CasinoMenuScreen {
     /** Enregistre le deck (dans son emplacement, qui devient le deck joué) et la machine, et revient au menu principal. */
     private void onSave() {
         if (leaving || !draft.isComplete() || !machineDraft.isComplete() || !draft.save(editingSlot)
-            || !machineDraft.save() || !profile.chooseRank(chosenRank)) return;
+            || !machineDraft.save() || !profile.chooseRank(chosenRank) || !profile.choosePrestige(chosenPrestige)) return;
         leaveTo(() -> new MenuScreen(luckyGame));
     }
 
@@ -1041,7 +1175,8 @@ public class CroupierTableScreen extends CasinoMenuScreen {
     @Override
     protected void layoutContent(float width, float height) {
         title.setPosition(MARGIN, height - TITLE_TOP - title.getHeight() / 2f);
-        rankTab.setPosition(width - MARGIN - rankTab.getWidth(), height - TITLE_TOP - rankTab.getHeight() / 2f);
+        prestigeTab.setPosition(width - MARGIN - prestigeTab.getWidth(), height - TITLE_TOP - prestigeTab.getHeight() / 2f);
+        rankTab.setPosition(prestigeTab.getX() - 20f - rankTab.getWidth(), prestigeTab.getY());
         reelsTab.setPosition(rankTab.getX() - 20f - reelsTab.getWidth(), rankTab.getY());
         deckTab.setPosition(reelsTab.getX() - 20f - deckTab.getWidth(), reelsTab.getY());
 
@@ -1085,6 +1220,8 @@ public class CroupierTableScreen extends CasinoMenuScreen {
         reelScroll.layout();
         rankScroll.setBounds(scroll.getX(), scroll.getY(), scroll.getWidth(), scroll.getHeight());
         rankScroll.layout();
+        prestigeScroll.setBounds(scroll.getX(), scroll.getY(), scroll.getWidth(), scroll.getHeight());
+        prestigeScroll.layout();
 
         deckHead.pack();
         deckHead.setPosition(deckX + PANEL_PAD, panelTop - PANEL_PAD - deckHead.getHeight());
@@ -1100,6 +1237,8 @@ public class CroupierTableScreen extends CasinoMenuScreen {
         machineList.setPosition(deckX + PANEL_PAD, deckHead.getY() - 20f - machineList.getHeight());
         rankDetail.pack();
         rankDetail.setPosition(deckX + PANEL_PAD, deckHead.getY() - 20f - rankDetail.getHeight());
+        prestigeDetail.pack();
+        prestigeDetail.setPosition(deckX + PANEL_PAD, deckHead.getY() - 20f - prestigeDetail.getHeight());
         hint.setWrap(true);
         // sur l'onglet Deck, le bouton « Fiche » prend la droite de la ligne d'aide
         hint.setWidth(DECK_WIDTH - PANEL_PAD * 2 - (tab == Tab.DECK ? sheetButton.getWidth() + 12f : 0f));

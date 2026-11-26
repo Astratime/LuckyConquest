@@ -587,7 +587,7 @@ abstract class GameScreenRun extends GameScreenBase {
         CombatLog.append(CombatLog.DEFAULT_FILE, String.format(java.util.Locale.ROOT,
             "COMBAT date=%s mode=%s ennemi=%s dore=%b rang=%s prestige=%d pv=%d/%d gains=%.0f cout_tirage=%.0f deck=%s machine=%s",
             java.time.LocalDateTime.now().withNano(0), mode, state.getEnemy().getKind().name(), state.getEnemy().isGolden(),
-            profile.getRank() == null ? "-" : profile.getRank().name(), profile.getPrestige(), state.getPlayer().getHp(),
+            profile.getRank() == null ? "-" : profile.getRank().name(), profile.getActivePrestige(), state.getPlayer().getHp(),
             state.getPlayer().getMaxHp(), state.getPlayer().getGains(), (double) gameController.getSpinCost(),
             String.join(",", deck), String.join(",", machine)));
     }
@@ -603,7 +603,7 @@ abstract class GameScreenRun extends GameScreenBase {
         for (Symbol symbol : profile.getMachine()) machine.add(symbol.name());
         DescentLog.append(DescentLog.DEFAULT_FILE, new DescentLog.Entry(
             Place.of(dungeonRun.getDungeon()).name(), dungeonRun.getDungeon().name(), dungeonRun.isHard(),
-            profile.getRank() == null ? null : profile.getRank().name(), profile.getPrestige(), run.isBossStage(), won,
+            profile.getRank() == null ? null : profile.getRank().name(), profile.getActivePrestige(), run.isBossStage(), won,
             state.getTurnNumber(), state.getPlayer().getGains(), reward, state.getEnemy().isGolden(),
             gameController.getStake().percent, profile.getDeck(), machine));
     }
