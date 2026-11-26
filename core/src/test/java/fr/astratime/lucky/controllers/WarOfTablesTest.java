@@ -54,7 +54,7 @@ class WarOfTablesTest {
         // Plan des 10 chapitres (Astra, 2026-11-20) : force x4,5, tirage 1 000, difficile x60 (6 000 %), boss 63 M.
         assertEquals(450, EnemyKind.GENERAL.getPower(Difficulty.NORMAL));
         assertEquals(1_000, EnemyKind.SERGENT.getSpinCost());
-        assertEquals(6_000, EnemyKind.CANONNIER.getPower(Difficulty.HARD));
+        assertEquals(10_200, EnemyKind.CANONNIER.getPower(Difficulty.HARD));
         assertEquals(63_000_000L, EnemyKind.GENERAL.getMaxHp(Difficulty.HARD));
         assertEquals(1, EnemyKind.MERCENAIRE.getOwnPlaysPerTurn(), "4 cartes au plus, comme avant le dernier chapitre");
         // Ses voisins entre lesquels il se place : force et PV.

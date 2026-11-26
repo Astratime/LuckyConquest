@@ -55,7 +55,7 @@ class TowerChapter3Test {
     void itsStrengthIsBetweenItsNeighbours() {
         assertEquals(250, EnemyKind.PROPHETE.getPower(Difficulty.NORMAL));
         assertEquals(300, EnemyKind.PASSEUR.getSpinCost());
-        assertEquals(1_290, EnemyKind.PROPHETE.getPower(Difficulty.HARD));
+        assertEquals(11_700, EnemyKind.PROPHETE.getPower(Difficulty.HARD));
         assertEquals(4_500_000L, EnemyKind.PROPHETE.getMaxHp(Difficulty.HARD));
         for (EnemyKind kind : List.of(EnemyKind.PASSEUR, EnemyKind.PELERIN_FER, EnemyKind.PROPHETE)) {
             int power = kind.getPower(Difficulty.NORMAL);

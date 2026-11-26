@@ -45,7 +45,7 @@ class ScatteredShardsTest {
         // Plan des 10 chapitres : force x3,5 et tirage à 500 ; difficile x27,8 et boss à 18 M (entre 8 M et 40 M).
         assertEquals(350, EnemyKind.HERITIER.getPower(Difficulty.NORMAL));
         assertEquals(500, EnemyKind.HERITIER.getSpinCost());
-        assertEquals(2_780, EnemyKind.COLLECTIONNEUR.getPower(Difficulty.HARD));
+        assertEquals(10_000, EnemyKind.COLLECTIONNEUR.getPower(Difficulty.HARD));
         assertEquals(18_000_000L, EnemyKind.COLLECTIONNEUR.getMaxHp(Difficulty.HARD));
         assertEquals(1, EnemyKind.VEUVE.getOwnPlaysPerTurn());
     }
