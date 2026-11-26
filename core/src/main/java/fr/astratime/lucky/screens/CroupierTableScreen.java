@@ -707,8 +707,8 @@ public class CroupierTableScreen extends CasinoMenuScreen {
         String id = card.getId();
         Card plus = factory.apply(Card.upgradedId(id));
         tooltip.hide();
-        String cost = Lang.f("Prix : {0} pièces. Tu en as {1}.", PlayerProfile.formatCoins(Card.UPGRADE_PRICE),
-            PlayerProfile.formatCoins(profile.getCoins()));
+        String cost = Lang.f("Prix : {0}. Tu as {1}.", PlayerProfile.formatPrice(Card.UPGRADE_PRICE),
+            profile.formatWealth());
         upgradeOverlay.show(card, cardTextures.get(card), plus, cardTextures.get(plus), cost, profile.upgradeProblem(id), () -> {
             if (!profile.upgradeCard(id)) return;
             draft.afterUpgrade(id);

@@ -90,7 +90,7 @@ public class AchievementToast extends Group implements Disposable {
         name.setText(achievement.getName());
         name.pack();
         name.setPosition(textX, (HEIGHT - name.getHeight()) / 2f - 2f);
-        reward.setText(Lang.f("+{0} pièces", PlayerProfile.formatCoins(achievement.getReward())));
+        reward.setText(Lang.f("+{0}", PlayerProfile.formatPrice(achievement.getReward())));
         reward.pack();
         reward.setPosition(textX, PAD - 6f);
 

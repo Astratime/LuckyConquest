@@ -73,6 +73,7 @@ public class PlayerProfile {
     static final String KEY_COLLECTION = "collection";
     static final String KEY_DECK       = "deck";
     static final String KEY_COINS      = "coins";
+    static final String KEY_INGOTS     = "ingots";
     static final String KEY_RANK       = "rank";
     /** Rang choisi à la Table du croupier, en nombre de rangs (absent : le plus haut rang acheté). */
     static final String KEY_CHOSEN_RANK = "chosenRank";
@@ -145,6 +146,8 @@ public class PlayerProfile {
     private final List<Map<String, Integer>> deckSlots = new ArrayList<>();
     private int deckSlot;
     private long coins;
+    /** Lingots du joueur (Astra, 2026-11-26) : 1 Lingot vaut {@link #INGOT_VALUE} pièces. */
+    private long ingots;
     /** Nombre de rangs achetés (0 : aucun rang). */
     private int  ranks;
     /** Rang joué, choisi parmi les rangs achetés (0 : sans rang ; {@code ranks} : le plus haut). */
@@ -231,6 +234,7 @@ public class PlayerProfile {
         loadDeckSlots();
         String savedCoins = storage.get(KEY_COINS);
         coins = parseCoins(savedCoins);
+        ingots = parseCoins(storage.get(KEY_INGOTS)); // vieille sauvegarde : 0 Lingot, pièces intactes
         ranks = Math.max(0, Math.min(Rank.values().length, (int) parseCoins(storage.get(KEY_RANK))));
         prestige = Math.max(0, Math.min(MAX_PRESTIGE, (int) parseCoins(storage.get(KEY_PRESTIGE))));
         String savedChosen = storage.get(KEY_CHOSEN_RANK);
@@ -656,7 +660,7 @@ public class PlayerProfile {
         for (Achievement achievement : Achievement.values()) {
             if (achievements.contains(achievement) || !isAchieved(achievement)) continue;
             achievements.add(achievement);
-            coins += achievement.getReward();
+            receive(achievement.getReward());
             unlocked.add(achievement);
         }
         if (!unlocked.isEmpty()) save();
@@ -1102,8 +1106,7 @@ public class PlayerProfile {
     public String upgradeProblem(String id) {
         String problem = upgradeOffer(id);
         if (problem != null) return problem;
-        if (coins < Card.UPGRADE_PRICE) return Lang.f("Il te manque {0} pièces",
-            formatCoins(Card.UPGRADE_PRICE - coins));
+        if (!canAfford(Card.UPGRADE_PRICE)) return Lang.f("Il te manque {0}", formatPrice(missing(Card.UPGRADE_PRICE)));
         return null;
     }
 
@@ -1154,7 +1157,7 @@ public class PlayerProfile {
         deck.clear();
         deck.putAll(newDeck);
         for (int i = 0; i < DECK_SLOTS; i++) deckSlots.set(i, newSlots.get(i));
-        coins -= Card.UPGRADE_PRICE;
+        pay(Card.UPGRADE_PRICE);
         save();
         return true;
     }
@@ -1203,6 +1206,127 @@ public class PlayerProfile {
 
     /** @return les pièces du joueur, pour la boutique. */
     public long getCoins() { return coins; }
+
+    // -------------------------------------------------------------------------
+    // Lingots (Astra, 2026-11-26 : les sommes en milliards devenaient illisibles)
+    // -------------------------------------------------------------------------
+
+    /** Valeur d'un Lingot, en pièces. */
+    public static final long INGOT_VALUE = 1_000_000_000L;
+    /**
+     * Un prix d'au moins ce montant (en pièces) s'affiche et se paie en Lingots. À 10 milliards, tous les prix
+     * concernés tombent sur un nombre rond de milliards : aucun prix ne change. En dessous, on paie en pièces.
+     */
+    public static final long INGOT_THRESHOLD = 10 * INGOT_VALUE;
+
+    /** @return les Lingots du joueur. */
+    public long getIngots() { return ingots; }
+
+    /** @return {@code true} si le prix {@code price} (en pièces) se paie en Lingots. */
+    public static boolean inIngots(long price) { return price >= INGOT_THRESHOLD; }
+
+    /** @return le prix {@code price} (en pièces) en Lingots, arrondi au Lingot supérieur. */
+    public static long ingotsOf(long price) { return price <= 0 ? 0 : (price - 1) / INGOT_VALUE + 1; }
+
+    /** @return ce que coûte vraiment {@code price}, en pièces (un prix en Lingots compte des Lingots entiers). */
+    private static long cost(long price) {
+        if (!inIngots(price)) return price;
+        long n = ingotsOf(price);
+        return n > Long.MAX_VALUE / INGOT_VALUE ? Long.MAX_VALUE : n * INGOT_VALUE;
+    }
+
+    /** @return toute la fortune du joueur en pièces (pièces + Lingots), bornée à {@link Long#MAX_VALUE}. */
+    public long getWealth() {
+        if (ingots > (Long.MAX_VALUE - coins) / INGOT_VALUE) return Long.MAX_VALUE;
+        return coins + ingots * INGOT_VALUE;
+    }
+
+    /** @return {@code true} si le joueur peut payer {@code price}, en convertissant au besoin pièces ou Lingots. */
+    public boolean canAfford(long price) { return price >= 0 && getWealth() >= cost(price); }
+
+    /** @return ce qui manque pour payer {@code price}, en pièces (0 si le joueur peut payer). */
+    public long missing(long price) { return Math.max(0, cost(price) - getWealth()); }
+
+    /**
+     * Paie {@code price} : en Lingots s'il est en Lingots, sinon en pièces. Ce qui manque dans une monnaie est
+     * converti depuis l'autre, sans frais (le minimum nécessaire). Ne fait rien si le joueur ne peut pas payer.
+     */
+    private void pay(long price) {
+        if (!canAfford(price)) return;
+        if (inIngots(price)) {
+            long need = ingotsOf(price);
+            if (ingots < need) {
+                long convert = need - ingots;
+                coins -= convert * INGOT_VALUE;
+                ingots += convert;
+            }
+            ingots -= need;
+        } else {
+            if (coins < price) {
+                long convert = (price - coins - 1) / INGOT_VALUE + 1;
+                ingots -= convert;
+                coins += convert * INGOT_VALUE;
+            }
+            coins -= price;
+        }
+    }
+
+    /** Reçoit {@code amount} pièces de récompense : en Lingots si c'est une somme en Lingots, sinon en pièces. */
+    private void receive(long amount) {
+        if (amount <= 0) return;
+        if (inIngots(amount) && amount % INGOT_VALUE == 0) ingots += amount / INGOT_VALUE;
+        else coins += amount;
+    }
+
+    /**
+     * Convertit {@code count} milliards de pièces en {@code count} Lingots, sans frais. Le profil est enregistré.
+     *
+     * @return {@code false} si les pièces manquent (ou en mode ADMIN)
+     */
+    public boolean convertToIngots(long count) {
+        if (admin || count <= 0 || count > coins / INGOT_VALUE) return false;
+        coins -= count * INGOT_VALUE;
+        ingots += count;
+        save();
+        return true;
+    }
+
+    /** @return le nombre de Lingots que les pièces du joueur permettent d'obtenir. */
+    public long convertibleIngots() { return coins / INGOT_VALUE; }
+
+    /**
+     * Convertit {@code count} Lingots en {@code count} milliards de pièces, sans frais. Le profil est enregistré.
+     *
+     * @return {@code false} si les Lingots manquent (ou en mode ADMIN)
+     */
+    public boolean convertToCoins(long count) {
+        if (admin || count <= 0 || count > ingots || coins > Long.MAX_VALUE - count * INGOT_VALUE) return false;
+        ingots -= count;
+        coins += count * INGOT_VALUE;
+        save();
+        return true;
+    }
+
+    /** @return {@code price} (en pièces) écrit dans sa monnaie : « 38 Lingots » ou « 1 300 000 000 pièces ». */
+    public static String formatPrice(long price) {
+        if (inIngots(price)) {
+            long n = ingotsOf(price);
+            return Lang.n(n, "{0} Lingot", "{0} Lingots", formatCoins(n));
+        }
+        return Lang.n(price, "{0} pièce", "{0} pièces", formatCoins(price));
+    }
+
+    /** @return {@code price} pour une case de la boutique : « 38 Lingots » ou juste « 1 300 000 000 ». */
+    public static String priceTag(long price) {
+        return inIngots(price) ? formatPrice(price) : formatCoins(price);
+    }
+
+    /** @return la fortune du joueur écrite « 120 pièces et 3 Lingots » (ou seulement les pièces sans Lingot). */
+    public String formatWealth() {
+        String pieces = Lang.n(coins, "{0} pièce", "{0} pièces", formatCoins(coins));
+        if (ingots <= 0) return pieces;
+        return Lang.f("{0} et {1}", pieces, Lang.n(ingots, "{0} Lingot", "{0} Lingots", formatCoins(ingots)));
+    }
 
     /**
      * Pièces versées à la fin d'un combat de l'Exploration : les gains affichés
@@ -1390,8 +1514,8 @@ public class PlayerProfile {
      */
     public boolean buyNextRank() {
         Rank next = getNextRank();
-        if (next == null || coins < next.getPrice(prestige)) return false;
-        coins -= next.getPrice(prestige);
+        if (next == null || !canAfford(next.getPrice(prestige))) return false;
+        pay(next.getPrice(prestige));
         ranks++;
         chosenRanks = ranks; // un rang acheté se joue tout de suite
         save();
@@ -1460,6 +1584,7 @@ public class PlayerProfile {
         prestige++;
         ranks = 0;
         coins = 0;
+        ingots = 0; // sinon il suffirait de tout convertir avant le Prestige (Astra, 2026-11-26)
         chosenRanks = 0;
         save();
         return true;
@@ -1488,8 +1613,8 @@ public class PlayerProfile {
     public boolean buyCard(String id, long price) {
         if (admin) return false;
         int owned = getOwnedCopies(id);
-        if (owned >= MAX_COPIES || price < 0 || coins < price) return false;
-        coins -= price;
+        if (owned >= MAX_COPIES || !canAfford(price)) return false;
+        pay(price);
         collection.put(id, owned + 1);
         save();
         return true;
@@ -1515,8 +1640,8 @@ public class PlayerProfile {
      * @return {@code false} s'il est déjà possédé, si c'est le Joker ou si les pièces manquent
      */
     public boolean buyReel(Symbol symbol, long price) {
-        if (admin || symbol == Symbol.JOKER || ownsReel(symbol) || price < 0 || coins < price) return false;
-        coins -= price;
+        if (admin || symbol == Symbol.JOKER || ownsReel(symbol) || !canAfford(price)) return false;
+        pay(price);
         boughtReels.add(symbol);
         save();
         return true;
@@ -1649,8 +1774,8 @@ public class PlayerProfile {
      */
     public boolean buyCosmetic(Cosmetic cosmetic) {
         if (admin || cosmetic.getUnlock() != Cosmetic.Unlock.COINS || boughtCosmetics.contains(cosmetic)
-            || coins < cosmetic.getGoal()) return false;
-        coins -= cosmetic.getGoal();
+            || !canAfford(cosmetic.getGoal())) return false;
+        pay(cosmetic.getGoal());
         boughtCosmetics.add(cosmetic);
         chosenCosmetics.put(cosmetic.getKind(), cosmetic);
         save();
@@ -1689,6 +1814,7 @@ public class PlayerProfile {
             .collect(Collectors.joining("|")));
         storage.put(KEY_DECK_SLOT, String.valueOf(deckSlot));
         storage.put(KEY_COINS, String.valueOf(coins));
+        storage.put(KEY_INGOTS, String.valueOf(ingots));
         storage.put(KEY_RANK, String.valueOf(ranks));
         storage.put(KEY_CHOSEN_RANK, String.valueOf(chosenRanks));
         storage.put(KEY_PRESTIGE, String.valueOf(prestige));

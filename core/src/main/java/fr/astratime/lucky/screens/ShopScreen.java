@@ -57,7 +57,7 @@ import java.util.function.Supplier;
 
 /**
  * Boutique : le joueur y dépense les pièces gagnées dans les donjons de
- * l'Exploration (voir {@link PlayerProfile#getCoins()}). Quatre onglets :
+ * l'Exploration (voir {@link PlayerProfile#getCoins()}) et ses Lingots. Cinq onglets :
  * <ul>
  *   <li>« Rang » : les {@link Rank rangs}, achetés dans l'ordre, qui augmentent
  *       les PV et les rouleaux du joueur ;</li>
@@ -68,13 +68,14 @@ import java.util.function.Supplier;
  *   <li>« Cosmétiques » : dos de cartes, tapis et machine ({@link Cosmetic}), sans
  *       effet en combat ; certains se débloquent par les succès ou le bestiaire,
  *       les autres s'achètent. Un cosmétique possédé s'habille avec « Choisir ».</li>
+ *   <li>« Banque » : change les pièces en Lingots (1 Lingot = 1 milliard) et l'inverse.</li>
  * </ul>
  * Un clic choisit un article ; « Acheter » le paie. Échap ou « Retour » ramène au menu principal.
  */
 public class ShopScreen extends CasinoMenuScreen {
 
     /** Onglets de la boutique. */
-    enum Tab { RANG("Rang"), CARTES("Cartes"), ROULEAU("Rouleau"), COSMETIQUES("Cosmétiques");
+    enum Tab { RANG("Rang"), CARTES("Cartes"), ROULEAU("Rouleau"), COSMETIQUES("Cosmétiques"), BANQUE("Banque");
         final String label;
         Tab(String label) { this.label = label; }
     }
@@ -232,7 +233,7 @@ public class ShopScreen extends CasinoMenuScreen {
         List<GuideOverlay.Step> steps = new ArrayList<>();
         steps.add(GuideOverlay.Step.say(Lang.t("La Boutique. Tes pièces s'y dépensent. Seuls les combats d'Exploration en rapportent."),
             () -> GuideOverlay.boundsOf(coin).merge(GuideOverlay.boundsOf(coins))).onStart(() -> showTab(Tab.RANG)));
-        steps.add(GuideOverlay.Step.say(Lang.t("Quatre onglets : Rang, Cartes, Rouleau et Cosmétiques."), this::tabsBounds));
+        steps.add(GuideOverlay.Step.say(Lang.t("Cinq onglets : Rang, Cartes, Rouleau, Cosmétiques et Banque."), this::tabsBounds));
         steps.add(GuideOverlay.Step.say(Lang.t("Onglet Rang. Un rang te rend plus fort dans tous les combats. Ils s'achètent dans l'ordre ; "
             + "chacun remplace le précédent."), () -> GuideOverlay.boundsOf(panel)));
         steps.add(GuideOverlay.Step.action(Lang.t("Ouvre l'onglet Cartes."),
@@ -247,6 +248,9 @@ public class ShopScreen extends CasinoMenuScreen {
             () -> GuideOverlay.boundsOf(panel)));
         steps.add(GuideOverlay.Step.say(Lang.t("Onglet Cosmétiques : le dos de tes cartes, ton tapis et ta machine. "
             + "Ils ne changent rien aux combats."), () -> GuideOverlay.boundsOf(tabButtons.get(Tab.COSMETIQUES.ordinal()))));
+        steps.add(GuideOverlay.Step.say(Lang.t("Onglet Banque : un Lingot vaut un milliard de pièces. Les gros achats se paient en "
+            + "Lingots ; change tes pièces ici, ou laisse l'achat le faire pour toi."),
+            () -> GuideOverlay.boundsOf(tabButtons.get(Tab.BANQUE.ordinal()))));
         return steps;
     }
 
@@ -284,10 +288,61 @@ public class ShopScreen extends CasinoMenuScreen {
             case CARTES  -> buildGrid(cardCells());
             case ROULEAU -> buildGrid(reelCells());
             case COSMETIQUES -> buildCosmetics();
+            case BANQUE  -> buildBank();
         }
         refreshCoins();
         layout();
         scroll.setScrollY(0f);
+    }
+
+    /**
+     * Onglet « Banque » (Astra, 2026-11-26) : change les pièces en Lingots (1 Lingot = 1 milliard de pièces) et
+     * l'inverse, sans frais. Un article de 10 milliards ou plus se paie en Lingots ; s'il en manque, l'achat
+     * convertit tout seul le nécessaire.
+     */
+    private void buildBank() {
+        content.top().left();
+        Label header = new Label(Lang.f("Tu as {0}.", profile.formatWealth()), new Label.LabelStyle(headFont, Color.WHITE));
+        content.add(header).left().padBottom(8f).row();
+        Label rule = new Label(Lang.f("1 Lingot vaut {0} pièces. Les articles de {1} Lingots ou plus se paient en Lingots ; "
+            + "s'il t'en manque, l'achat convertit tes pièces tout seul.", PlayerProfile.formatCoins(PlayerProfile.INGOT_VALUE),
+            PlayerProfile.INGOT_THRESHOLD / PlayerProfile.INGOT_VALUE), new Label.LabelStyle(bodyFont, Color.WHITE));
+        rule.setWrap(true);
+        content.add(rule).growX().left().padBottom(16f).row();
+        long convertible = profile.convertibleIngots();
+        bankRow(Lang.t("Pièces en Lingots"), convertible > 0
+            ? Lang.f("Change {0} en {1}. Le reste, sous un milliard, reste en pièces.",
+                Lang.n(convertible * PlayerProfile.INGOT_VALUE, "{0} pièce", "{0} pièces",
+                    PlayerProfile.formatCoins(convertible * PlayerProfile.INGOT_VALUE)),
+                Lang.n(convertible, "{0} Lingot", "{0} Lingots", PlayerProfile.formatCoins(convertible)))
+            : Lang.f("Il faut au moins {0} pièces pour un Lingot.", PlayerProfile.formatCoins(PlayerProfile.INGOT_VALUE)),
+            () -> profile.convertibleIngots() > 0 ? null : Lang.t("Pas assez de pièces pour un Lingot."),
+            () -> profile.convertToIngots(profile.convertibleIngots()));
+        for (long count : new long[] {1, 10, 100}) {
+            bankRow(Lang.n(count, "{0} Lingot en pièces", "{0} Lingots en pièces", PlayerProfile.formatCoins(count)),
+                Lang.f("Change {0} en {1}.", Lang.n(count, "{0} Lingot", "{0} Lingots", PlayerProfile.formatCoins(count)),
+                    Lang.n(count * PlayerProfile.INGOT_VALUE, "{0} pièce", "{0} pièces",
+                        PlayerProfile.formatCoins(count * PlayerProfile.INGOT_VALUE))),
+                () -> profile.getIngots() >= count ? null : Lang.t("Pas assez de Lingots."),
+                () -> profile.convertToCoins(count));
+        }
+    }
+
+    /** Une ligne de l'onglet « Banque » : un clic la choisit, « Convertir » la fait. */
+    private void bankRow(String title, String text, Supplier<String> blocked, BooleanSupplier convert) {
+        Table row = new Table();
+        row.setTouchable(Touchable.enabled);
+        row.setBackground(hud.insetDrawable());
+        row.pad(14f, 22f, 14f, 22f);
+        Label name = new Label(title, new Label.LabelStyle(headFont, Color.WHITE));
+        Label body = new Label(text, new Label.LabelStyle(bodyFont, Color.WHITE));
+        body.setWrap(true);
+        row.add(name).width(420f).left();
+        row.add(body).growX().left();
+        if (blocked.get() != null) row.setColor(DIMMED);
+        Offer offer = new Offer(title, text, 0, blocked, convert);
+        row.addListener(selectOnClick(offer, row));
+        content.add(row).growX().padBottom(10f).row();
     }
 
     /** Onglet « Rang » : une ligne par rang ; seul le suivant peut être choisi. */
@@ -315,8 +370,8 @@ public class ShopScreen extends CasinoMenuScreen {
             Label text = new Label(rank.getDescription() + "\n" + rank.getBonusText(),
                 new Label.LabelStyle(bodyFont, Color.WHITE));
             text.setWrap(true);
-            Label state = new Label(owned ? Lang.t("Acquis") : Lang.f("{0} pièces",
-                PlayerProfile.formatCoins(rank.getPrice(profile.getPrestige()))),
+            Label state = new Label(owned ? Lang.t("Acquis")
+                : PlayerProfile.formatPrice(rank.getPrice(profile.getPrestige())),
                 new Label.LabelStyle(bodyFont, Color.WHITE));
             state.setAlignment(Align.right);
             row.add(name).width(330f).left();
@@ -399,10 +454,9 @@ public class ShopScreen extends CasinoMenuScreen {
                     ? Lang.f("Tu as déjà {0} exemplaires.", PlayerProfile.MAX_COPIES) : null,
                 () -> profile.buyCard(card.getId(), price));
             cells.add(cell(new TextureRegion(cardTextures.get(card)), CARD_WIDTH, CARD_HEIGHT,
-                PlayerProfile.formatCoins(price), owned + " / " + PlayerProfile.MAX_COPIES,
+                PlayerProfile.priceTag(price), owned + " / " + PlayerProfile.MAX_COPIES,
                 owned >= PlayerProfile.MAX_COPIES, offer,
-                () -> detail.showForSale(card, cardTextures.get(card), Lang.f("{0} pièces",
-                    PlayerProfile.formatCoins(price)))));
+                () -> detail.showForSale(card, cardTextures.get(card), PlayerProfile.formatPrice(price))));
         }
         return cells;
     }
@@ -418,7 +472,7 @@ public class ShopScreen extends CasinoMenuScreen {
         Offer offer = new Offer(card.getName(), Lang.f("{0}\n{1}\n{2}", card.getDescription(), goal, why), price,
             () -> why, () -> false);
         return cell(new TextureRegion(cardTextures.get(card)), CARD_WIDTH, CARD_HEIGHT,
-            PlayerProfile.formatCoins(price), wins + " / " + PlayerProfile.KING_CARD_WINS, true, offer,
+            PlayerProfile.priceTag(price), wins + " / " + PlayerProfile.KING_CARD_WINS, true, offer,
             () -> detail.showForSale(card, cardTextures.get(card), goal));
     }
 
@@ -444,7 +498,7 @@ public class ShopScreen extends CasinoMenuScreen {
         Offer offer = new Offer(card.getName(), Lang.f("{0}\n{1}", why, card.getDescription()), price,
             () -> why, () -> false);
         return cell(new TextureRegion(cardTextures.get(card)), CARD_WIDTH, CARD_HEIGHT,
-            PlayerProfile.formatCoins(price), Lang.t("Difficile"), true, offer,
+            PlayerProfile.priceTag(price), Lang.t("Difficile"), true, offer,
             () -> detail.showForSale(card, cardTextures.get(card), goal));
     }
 
@@ -461,9 +515,9 @@ public class ShopScreen extends CasinoMenuScreen {
                 String why = hardGateReason(gate);
                 Offer locked = new Offer(symbol.getDisplayName(), Lang.f("{0}\n{1}", why, ReelShop.describe(symbol)), price, () -> why, () -> false);
                 cells.add(cell(new TextureRegion(reelTextures.get(symbol)), REEL_WIDTH, REEL_HEIGHT,
-                    PlayerProfile.formatCoins(price), Lang.t("Difficile"), true, locked,
+                    PlayerProfile.priceTag(price), Lang.t("Difficile"), true, locked,
                     () -> detail.showReel(symbol.getDisplayName(), new TextureRegion(reelTextures.get(symbol)),
-                        ReelShop.describe(symbol), Lang.f("{0} pièces", PlayerProfile.formatCoins(price)), goal)));
+                        ReelShop.describe(symbol), PlayerProfile.formatPrice(price), goal)));
                 continue;
             }
             Offer offer = new Offer(symbol.getDisplayName(), ReelShop.describe(symbol) + "\n"
@@ -471,9 +525,9 @@ public class ShopScreen extends CasinoMenuScreen {
                 price, () -> profile.ownsReel(symbol) ? Lang.t("Tu possèdes déjà ce rouleau.") : null,
                 () -> profile.buyReel(symbol, price));
             cells.add(cell(new TextureRegion(reelTextures.get(symbol)), REEL_WIDTH, REEL_HEIGHT,
-                PlayerProfile.formatCoins(price), owned ? Lang.t("Possédé") : symbol.getDisplayName(), owned, offer,
+                PlayerProfile.priceTag(price), owned ? Lang.t("Possédé") : symbol.getDisplayName(), owned, offer,
                 () -> detail.showReel(symbol.getDisplayName(), new TextureRegion(reelTextures.get(symbol)),
-                    ReelShop.describe(symbol), Lang.f("{0} pièces", PlayerProfile.formatCoins(price)),
+                    ReelShop.describe(symbol), PlayerProfile.formatPrice(price),
                     profile.ownsReel(symbol) ? Lang.t("Possédé") : Lang.t("Pas encore acheté"))));
         }
         return cells;
@@ -597,7 +651,7 @@ public class ShopScreen extends CasinoMenuScreen {
             case ACHIEVEMENTS -> Lang.f("Succès : {0} / {1}", progress[0], progress[1]);
             case BESTIARY     -> Lang.f("Bestiaire : {0} / {1}", progress[0], progress[1]);
             case GOLDEN       -> Lang.f("Ennemis dorés : {0} / {1}", progress[0], progress[1]);
-            case COINS        -> PlayerProfile.formatCoins(cosmetic.getGoal());
+            case COINS        -> PlayerProfile.priceTag(cosmetic.getGoal());
             case DEFAULT      -> "";
         };
     }
@@ -613,7 +667,7 @@ public class ShopScreen extends CasinoMenuScreen {
             case GOLDEN       -> cosmetic.getGoal() == Cosmetic.Unlock.ALL
                 ? Lang.f("Se débloque en vainquant tous les ennemis dorés ({0} / {1}).", progress[0], progress[1])
                 : Lang.f("Se débloque en vainquant {0} ennemis dorés ({1} / {0}).", progress[1], progress[0]);
-            case COINS        -> Lang.f("Prix : {0} pièces.", PlayerProfile.formatCoins(cosmetic.getGoal()));
+            case COINS        -> Lang.f("Prix : {0}.", PlayerProfile.formatPrice(cosmetic.getGoal()));
             case DEFAULT      -> "";
         };
     }
@@ -654,8 +708,8 @@ public class ShopScreen extends CasinoMenuScreen {
         if (cosmetic.getUnlock() != Cosmetic.Unlock.COINS) return;
         if (profile.isAdmin() || !profile.buyCosmetic(cosmetic)) {
             refuseSound.play();
-            detailText.setText(profile.isAdmin() ? Lang.t("Achat impossible.") : Lang.f("Il te manque {0} pièces.",
-                PlayerProfile.formatCoins(cosmetic.getGoal() - profile.getCoins())));
+            detailText.setText(profile.isAdmin() ? Lang.t("Achat impossible.") : Lang.f("Il te manque {0}.",
+                PlayerProfile.formatPrice(profile.missing(cosmetic.getGoal()))));
             detailText.setColor(REFUSED);
             return;
         }
@@ -699,12 +753,13 @@ public class ShopScreen extends CasinoMenuScreen {
         selectedCosmetic = null;
         if (cosmeticFrame != null) cosmeticFrame.remove();
         prestigeArmed = false;
-        buttons.setText(buyButton, offer != null && offer == prestigeOffer ? Lang.t("Prestige") : Lang.t("Acheter"));
+        buttons.setText(buyButton, offer != null && offer == prestigeOffer ? Lang.t("Prestige")
+            : tab == Tab.BANQUE ? Lang.t("Convertir") : Lang.t("Acheter"));
         selected      = offer;
         selectedActor = actor;
         if (actor instanceof Label label) label.setColor(Color.WHITE);
         if (offer == null) {
-            showDetail(tab == Tab.RANG ? "" : Lang.t("Choisis un article."),
+            showDetail(tab == Tab.RANG ? "" : tab == Tab.BANQUE ? Lang.t("Choisis une conversion.") : Lang.t("Choisis un article."),
                 tab == Tab.CARTES ? Lang.t("Les cartes achetées rejoignent ta collection, puis la Table du croupier.")
                     : tab == Tab.ROULEAU ? Lang.t("Les rouleaux achetés se placent dans ta machine, à la Table du croupier.")
                     : tab == Tab.COSMETIQUES ? Lang.t("Les cosmétiques habillent ton jeu sans rien changer aux combats. "
@@ -714,7 +769,7 @@ public class ShopScreen extends CasinoMenuScreen {
             return;
         }
         showDetail(offer.price() == 0 ? offer.name()
-            : Lang.f("{0}  -  {1} pièces", offer.name(), PlayerProfile.formatCoins(offer.price())), offer.text());
+            : Lang.f("{0}  -  {1}", offer.name(), PlayerProfile.formatPrice(offer.price())), offer.text());
         buyButton.setDisabled(offer.blocked().get() != null);
     }
 
@@ -740,9 +795,8 @@ public class ShopScreen extends CasinoMenuScreen {
         }
         boolean ascending = selected == prestigeOffer;
         String blocked = selected.blocked().get();
-        if (blocked == null && profile.getCoins() < selected.price()) {
-            blocked = Lang.f("Il te manque {0} pièces.",
-                PlayerProfile.formatCoins(selected.price() - profile.getCoins()));
+        if (blocked == null && !profile.canAfford(selected.price())) {
+            blocked = Lang.f("Il te manque {0}.", PlayerProfile.formatPrice(profile.missing(selected.price())));
         }
         if (blocked != null || !selected.purchase().getAsBoolean()) {
             refuseSound.play();
@@ -756,7 +810,9 @@ public class ShopScreen extends CasinoMenuScreen {
         showTab(tab); // met à jour les états (possédé, rang suivant…)
         this.scroll.layout();
         this.scroll.setScrollY(scroll);
-        if (ascending) {
+        if (tab == Tab.BANQUE) {
+            showDetail(Lang.t("Conversion faite !"), Lang.f("Tu as maintenant {0}.", profile.formatWealth()));
+        } else if (ascending) {
             showDetail(Lang.f("{0} !", name), Lang.t("Tu repars sans rang et sans pièces. Ton Prestige vaut dans tous les combats, pour toujours."));
         } else showDetail(Lang.f("{0} : acheté !", name), tab == Tab.RANG ? Lang.t("Ton nouveau rang vaut dans tous les combats.")
             : tab == Tab.CARTES ? Lang.t("La carte t'attend à la Table du croupier.")
@@ -771,9 +827,9 @@ public class ShopScreen extends CasinoMenuScreen {
      * joueur rachèterait tout de suite ses rangs avec ce qu'il a gardé.
      */
     private void confirmPrestige() {
-        GuideOverlay.Step warning = GuideOverlay.Step.say(Lang.f("Attention : passer au Prestige remet tes pièces à 0 "
-            + "(tu en as {0}) et te fait rendre tous tes rangs. Tu gardes tes cartes, tes rouleaux, tes decks et ta "
-            + "progression.", PlayerProfile.formatCoins(profile.getCoins()))).buttons(
+        GuideOverlay.Step warning = GuideOverlay.Step.say(Lang.f("Attention : passer au Prestige remet tes pièces et tes Lingots à 0 "
+            + "(tu as {0}) et te fait rendre tous tes rangs. Tu gardes tes cartes, tes rouleaux, tes decks et ta "
+            + "progression.", profile.formatWealth())).buttons(
             buttons.create(Lang.t("Passer au Prestige"), clickSound, () -> {
                 warningGuide.stop();
                 prestigeArmed = true;
@@ -785,8 +841,7 @@ public class ShopScreen extends CasinoMenuScreen {
     }
 
     private void refreshCoins() {
-        long amount = profile.getCoins();
-        coins.setText(Lang.n(amount, "{0} pièce", "{0} pièces", PlayerProfile.formatCoins(amount)));
+        coins.setText(profile.formatWealth());
         coins.pack();
     }
 
