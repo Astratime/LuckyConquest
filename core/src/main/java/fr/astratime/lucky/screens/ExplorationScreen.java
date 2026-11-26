@@ -294,7 +294,10 @@ public class ExplorationScreen extends CasinoMenuScreen {
             Lang.t("Dans chaque donjon, un soldat, puis son roi. Bats le roi : son coffre s'ouvre. Une carte et des "
                 + "pièces."),
             Lang.t("Seuls ces combats rapportent des pièces. Vide les quatre donjons d'un lieu pour ouvrir le "
-                + "suivant."));
+                + "suivant."),
+            Lang.t("Chaque lieu a sa règle et sa cagnotte. Récompenses : ce que chaque donjon peut te donner."),
+            Lang.t("Perdu ? Tu gardes une part de tes gains. Un lieu sous celui de ton rang rapporte moins de pièces."),
+            Lang.t("Vide le dernier lieu : le mode difficile s'ouvre. Plus dur, il rapporte plus et ouvre le Prestige."));
         fade.toFront();
     }
 

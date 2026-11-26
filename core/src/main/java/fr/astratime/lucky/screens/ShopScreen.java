@@ -236,12 +236,16 @@ public class ShopScreen extends CasinoMenuScreen {
         steps.add(GuideOverlay.Step.say(Lang.t("Cinq onglets : Rang, Cartes, Rouleau, Cosmétiques et Banque."), this::tabsBounds));
         steps.add(GuideOverlay.Step.say(Lang.t("Onglet Rang. Un rang te rend plus fort dans tous les combats. Ils s'achètent dans l'ordre ; "
             + "chacun remplace le précédent."), () -> GuideOverlay.boundsOf(panel)));
+        steps.add(GuideOverlay.Step.say(Lang.t("Tous les rangs achetés, le Prestige t'attend : tu repars sans rang ni pièces, "
+            + "mais plus fort pour toujours."), () -> GuideOverlay.boundsOf(panel)));
         steps.add(GuideOverlay.Step.action(Lang.t("Ouvre l'onglet Cartes."),
             () -> GuideOverlay.boundsOf(tabButtons.get(Tab.CARTES.ordinal())), () -> tab == Tab.CARTES));
         steps.add(GuideOverlay.Step.action(Lang.t("Clique sur une carte pour la choisir."),
             () -> GuideOverlay.boundsOf(panel), () -> tab == Tab.CARTES && selected != null));
         steps.add(GuideOverlay.Step.say(Lang.t("Son prix et son effet s'affichent ici. Acheter la paie : elle rejoint ta collection. Clic droit "
             + "sur un article : sa fiche complète."), this::detailBounds));
+        steps.add(GuideOverlay.Step.say(Lang.t("Les cartes les plus fortes s'ouvrent quand tu vides un lieu en mode difficile."),
+            () -> GuideOverlay.boundsOf(panel)));
         steps.add(GuideOverlay.Step.action(Lang.t("Ouvre l'onglet Rouleau."),
             () -> GuideOverlay.boundsOf(tabButtons.get(Tab.ROULEAU.ordinal())), () -> tab == Tab.ROULEAU));
         steps.add(GuideOverlay.Step.say(Lang.t("Un rouleau acheté se place dans ta machine, à la Table du croupier."),

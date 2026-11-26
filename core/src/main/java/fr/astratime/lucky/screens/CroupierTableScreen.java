@@ -9,6 +9,7 @@ import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.Interpolation;
+import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.Group;
@@ -337,6 +338,10 @@ public class CroupierTableScreen extends CasinoMenuScreen {
             + "pièces, ils deviennent une carte +, avec un liseré doré et des valeurs +50 %.", Card.UPGRADE_COST,
             PlayerProfile.formatCoins(Card.UPGRADE_PRICE)),
             () -> GuideOverlay.boundsOf(collectionPanel)));
+        if (!profile.isAdmin()) { // le mode ADMIN a un seul deck
+            steps.add(GuideOverlay.Step.say(Lang.f("Tu peux garder {0} decks, et choisir lequel jouer. Fiche : tout ton deck "
+                + "d'un coup d'oeil.", PlayerProfile.DECK_SLOTS), this::deckButtonsBounds));
+        }
         steps.add(GuideOverlay.Step.action(Lang.t("Ta machine a ses propres rouleaux. Ouvre l'onglet Rouleaux."),
             () -> GuideOverlay.boundsOf(reelsTab), () -> tab == Tab.REELS));
         steps.add(GuideOverlay.Step.say(Lang.f("Tes rouleaux. Ceux en or tournent dans ta machine. Elle en prend {0}, tous différents.",
@@ -353,6 +358,13 @@ public class CroupierTableScreen extends CasinoMenuScreen {
         steps.add(GuideOverlay.Step.say(Lang.t("Enregistre pour garder ton deck, ta machine et ton rang. Retour les laisse comme avant."),
             () -> GuideOverlay.boundsOf(saveButton).merge(GuideOverlay.boundsOf(backButton))));
         return steps;
+    }
+
+    /** Les boutons des decks enregistrés et celui de la fiche du deck. */
+    private Rectangle deckButtonsBounds() {
+        Rectangle bounds = GuideOverlay.boundsOf(sheetButton);
+        for (TextButton button : slotButtons) bounds.merge(GuideOverlay.boundsOf(button));
+        return bounds;
     }
 
     /** Bouton « Tutoriel » : le Croupier présente la table de nouveau. */
