@@ -299,7 +299,8 @@ public final class Lexicon {
                 PlayerProfile.LOWER_PLACE_PERCENT, PlayerProfile.FAR_LOWER_PLACE_PERCENT)),
             term(Lang.t("Prestige"), Lang.f("Une fois tous les rangs achetés, la boutique te propose de les rendre. "
                 + "Chaque niveau multiplie par {0} tes PV max, l'attaque et la défense de tes symboles, et ajoute "
-                + "+{1} % de gains, jusqu'au Prestige {2}. Tes pièces repartent à 0, tu gardes tout le reste.",
+                + "+{1} % de gains, jusqu'au Prestige {2}. Tes pièces repartent à 0, tu gardes tout le reste. "
+                + "À la Table du croupier, l'onglet Prestige te laisse jouer avec un niveau plus bas.",
                 Lang.decimal(String.valueOf(RankBonus.PRESTIGE_GUARD_FACTOR)), RankBonus.PRESTIGE_PERCENT,
                 PlayerProfile.prestigeNumeral(PlayerProfile.MAX_PRESTIGE))),
             term(Lang.t("Sceau de Prestige"), Lang.t("Chaque Prestige demande un lieu vidé en Exploration difficile : "
