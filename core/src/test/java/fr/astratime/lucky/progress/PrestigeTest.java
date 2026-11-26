@@ -59,6 +59,52 @@ class PrestigeTest {
         assertEquals(1, PlayerProfileTest.profile(storage).getPrestige(), "le Prestige est enregistré");
     }
 
+    /** Astra (2026-11-26) : la Table du croupier laisse jouer avec un Prestige plus bas, parmi ceux atteints. */
+    @Test
+    void aLowerPrestigeCanBeChosenForCombatOnly() {
+        PlayerProfileTest.MemoryStorage storage = new PlayerProfileTest.MemoryStorage();
+        PlayerProfile profile = legend(storage);
+        breakSeal(profile);
+        assertTrue(profile.ascend());
+        for (Rank rank : Rank.values()) {
+            profile.addCoins(rank.getPrice(profile.getPrestige()));
+            assertTrue(profile.buyNextRank());
+        }
+        breakSeal(profile);
+        assertTrue(profile.ascend());
+        assertEquals(2, profile.getActivePrestige(), "un Prestige atteint se joue tout de suite");
+
+        assertFalse(profile.choosePrestige(3), "pas encore atteint");
+        assertFalse(profile.choosePrestige(-1));
+        assertTrue(profile.choosePrestige(1));
+        assertEquals(1, profile.getActivePrestige());
+        assertEquals(1, profile.getRankBonus().prestige(), "le combat suit le Prestige joué");
+        assertEquals(2, profile.getPrestige(), "le Prestige atteint ne bouge pas");
+        assertEquals(Rank.AVARE.getPrice(2), profile.getNextRank().getPrice(profile.getPrestige()));
+        assertEquals(1, PlayerProfileTest.profile(storage).getActivePrestige(), "le choix est enregistré");
+
+        assertTrue(profile.choosePrestige(0));
+        assertEquals(0, profile.getRankBonus().prestige());
+        assertTrue(profile.chooseRank(null));
+        assertEquals(0, profile.getRankBonus().hp(), "sans Prestige ni rang : aucun bonus, pas de plancher");
+
+        profile.setAdmin(true);
+        assertTrue(profile.choosePrestige(PlayerProfile.MAX_PRESTIGE), "le mode ADMIN a tous les niveaux");
+        assertEquals(PlayerProfile.MAX_PRESTIGE, profile.getActivePrestige());
+        profile.setAdmin(false);
+        assertEquals(0, profile.getActivePrestige(), "le choix ADMIN ne touche pas la partie");
+    }
+
+    @Test
+    void anOldSavePlaysItsReachedPrestige() {
+        PlayerProfileTest.MemoryStorage storage = new PlayerProfileTest.MemoryStorage();
+        PlayerProfile profile = legend(storage);
+        breakSeal(profile);
+        assertTrue(profile.ascend());
+        storage.values.remove(PlayerProfile.KEY_CHOSEN_PRESTIGE);
+        assertEquals(1, PlayerProfileTest.profile(storage).getActivePrestige());
+    }
+
     @Test
     void prestigeStopsAtTen() {
         PlayerProfileTest.MemoryStorage storage = new PlayerProfileTest.MemoryStorage();

@@ -360,6 +360,10 @@ public class ShopScreen extends CasinoMenuScreen {
                 active == null ? Lang.t("Sans rang") : active.getTitle());
         if (profile.getPrestige() > 0) {
             headerText += "   " + Lang.f("Prestige {0}", PlayerProfile.prestigeNumeral(profile.getPrestige()));
+            if (profile.getActivePrestige() != profile.getPrestige()) {
+                headerText += " " + Lang.f("(tu joues : {0})", profile.getActivePrestige() == 0 ? Lang.t("Sans Prestige")
+                    : PlayerProfile.prestigeNumeral(profile.getActivePrestige()));
+            }
         }
         Label header = new Label(headerText,
             new Label.LabelStyle(headFont, Color.WHITE));

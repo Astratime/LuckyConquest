@@ -78,6 +78,7 @@ public class PlayerProfile {
     /** Rang choisi à la Table du croupier, en nombre de rangs (absent : le plus haut rang acheté). */
     static final String KEY_CHOSEN_RANK = "chosenRank";
     static final String KEY_PRESTIGE    = "prestige";
+    static final String KEY_CHOSEN_PRESTIGE = "chosenPrestige";
     static final String KEY_REELS      = "reels";
     static final String KEY_MACHINE    = "machine";
     static final String KEY_DUNGEONS   = "dungeons";
@@ -156,6 +157,10 @@ public class PlayerProfile {
     private int  chosenRanks;
     /** Niveau de Prestige : combien de fois le joueur a rendu tous ses rangs (0 à {@link #MAX_PRESTIGE}). */
     private int  prestige;
+    /** Niveau de Prestige joué en combat, choisi à la Table du croupier (0 à {@link #prestige}). */
+    private int  chosenPrestige;
+    /** Prestige joué en mode ADMIN (non enregistré) ; -1 : celui de la partie. */
+    private int  adminChosenPrestige = -1;
     /** Rang joué en mode ADMIN (jamais enregistré, tous les rangs au départ). */
     private int  adminChosenRanks = Rank.values().length;
     /** Rouleaux achetés à la boutique, dans l'ordre d'achat. */
@@ -239,6 +244,8 @@ public class PlayerProfile {
         ingots = parseCoins(storage.get(KEY_INGOTS)); // vieille sauvegarde : 0 Lingot, pièces intactes
         ranks = Math.max(0, Math.min(Rank.values().length, (int) parseCoins(storage.get(KEY_RANK))));
         prestige = Math.max(0, Math.min(MAX_PRESTIGE, (int) parseCoins(storage.get(KEY_PRESTIGE))));
+        String savedPrestige = storage.get(KEY_CHOSEN_PRESTIGE);
+        chosenPrestige = savedPrestige == null ? prestige : Math.max(0, Math.min(prestige, (int) parseCoins(savedPrestige)));
         String savedChosen = storage.get(KEY_CHOSEN_RANK);
         chosenRanks = savedChosen == null ? ranks : Math.max(0, Math.min(ranks, (int) parseCoins(savedChosen)));
         for (Symbol symbol : decodeSymbols(storage.get(KEY_REELS))) {
@@ -1476,7 +1483,7 @@ public class PlayerProfile {
      *         celui choisi à la Table du croupier, pas forcément le plus haut acheté
      */
     public RankBonus getRankBonus() {
-        return Rank.bonusAt(getActiveRank(), prestige); // plancher de Prestige compris
+        return Rank.bonusAt(getActiveRank(), getActivePrestige()); // plancher de Prestige compris
     }
 
     /** @return le rang joué en combat, choisi parmi ceux achetés, ou {@code null} pour jouer sans rang. */
@@ -1526,6 +1533,36 @@ public class PlayerProfile {
 
     /** @return le niveau de Prestige du joueur (0 : aucun). */
     public int getPrestige() { return prestige; }
+
+    /**
+     * @return le niveau de Prestige joué en combat, choisi à la Table du croupier parmi ceux atteints
+     *         (Astra, 2026-11-26) : il donne les bonus du combat. Les prix des rangs et les sceaux
+     *         suivent toujours {@link #getPrestige() le Prestige atteint}.
+     */
+    public int getActivePrestige() {
+        if (admin) return adminChosenPrestige < 0 ? prestige : adminChosenPrestige;
+        return Math.min(chosenPrestige, prestige);
+    }
+
+    /** @return {@code true} si le niveau de Prestige {@code level} peut se jouer (tous en mode ADMIN). */
+    public boolean ownsPrestige(int level) { return level >= 0 && level <= (admin ? MAX_PRESTIGE : prestige); }
+
+    /**
+     * Joue au niveau de Prestige {@code level} (0 : sans Prestige), parmi ceux atteints,
+     * et enregistre le profil. En mode ADMIN, le choix ne s'enregistre pas.
+     *
+     * @return {@code false} si ce niveau n'est pas encore atteint
+     */
+    public boolean choosePrestige(int level) {
+        if (!ownsPrestige(level)) return false;
+        if (admin) {
+            adminChosenPrestige = level;
+            return true;
+        }
+        chosenPrestige = level;
+        save();
+        return true;
+    }
 
     /**
      * @return {@code true} si le joueur peut passer au Prestige suivant : tous ses rangs
@@ -1584,6 +1621,7 @@ public class PlayerProfile {
     public boolean ascend() {
         if (!canPrestige()) return false;
         prestige++;
+        chosenPrestige = prestige; // un Prestige atteint se joue tout de suite
         ranks = 0;
         coins = 0;
         ingots = 0; // sinon il suffirait de tout convertir avant le Prestige (Astra, 2026-11-26)
@@ -1820,6 +1858,7 @@ public class PlayerProfile {
         storage.put(KEY_RANK, String.valueOf(ranks));
         storage.put(KEY_CHOSEN_RANK, String.valueOf(chosenRanks));
         storage.put(KEY_PRESTIGE, String.valueOf(prestige));
+        storage.put(KEY_CHOSEN_PRESTIGE, String.valueOf(chosenPrestige));
         storage.put(KEY_REELS, encodeSymbols(boughtReels));
         storage.put(KEY_MACHINE, encodeSymbols(machine));
         storage.put(KEY_DUNGEONS, String.join(",", clearedDungeons));

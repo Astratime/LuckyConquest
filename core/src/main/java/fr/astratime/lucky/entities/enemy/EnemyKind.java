@@ -1358,7 +1358,7 @@ public enum EnemyKind {
      * le chapitre 2 frappe deux fois plus fort que le chapitre 6 du mode normal, puis x2 à chaque chapitre.
      * Le chapitre 1 a la force du chapitre 6 du mode normal (x6), pour que la chaîne x2 parte de là.
      */
-    // (force de chaque chapitre : Chapter.Stats#hardPower ; x1,47 par chapitre depuis la Tour à 10 chapitres)
+    // (force de chaque chapitre : Chapter.Stats#hardPower ; réglée par chapitre, ~30 % au Prestige N, Astra 2026-11-26)
 
     /**
      * Mode sans fin (2026-11-08, Astra : plus fort que le chapitre 6 difficile) : à l'étage 1,
