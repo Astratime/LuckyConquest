@@ -46,8 +46,8 @@ public class GainsMultiplierEffect extends Effect {
 
     @Override
     public String getDescription() {
-        return Lang.f("Gains actuels +{0}%{1}",
-            percent, (gaugeFactor > 1 ? Lang.f(". Lames, Sang et Coffre x{0}", gaugeFactor) : ""));
+        return Lang.f("Gains actuels +{0}% (comptés jusqu'à {1} fois le prix du tirage){2}",
+            percent, Lang.big(fr.astratime.lucky.entities.SpinEconomy.CURRENT_GAINS_CAP_SPINS), (gaugeFactor > 1 ? Lang.f(". Lames, Sang et Coffre x{0}", gaugeFactor) : ""));
     }
 
     @Override

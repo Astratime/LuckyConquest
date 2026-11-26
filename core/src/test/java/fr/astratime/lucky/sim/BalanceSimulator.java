@@ -237,6 +237,7 @@ public final class BalanceSimulator {
             : List.of(args).contains("--rankplace") ? simulator.rankPlaceReport()
             : List.of(args).contains("--profiles") ? simulator.profilesReport()
             : List.of(args).contains("--progress") ? simulator.progressReport()
+            : List.of(args).contains("--journey") ? simulator.journeyReport()
             : System.getProperty("lucky.journal") != null ? simulator.journalReport(Paths.get(System.getProperty("lucky.journal")))
             : simulator.report();
         System.out.println(report);
@@ -1459,6 +1460,67 @@ public final class BalanceSimulator {
                 gear.name(), title(rank), PRESTIGE, place.getShortName(), hard, place.getSpinCost(hard), rp.runs,
                 100.0 * rp.wins / rp.runs, coins, rp.median(), rp.typical(30), rp.turns / (double) rp.runs,
                 coins / Math.max(1, rp.turns / (double) rp.runs)));
+        }
+        return out.toString();
+    }
+
+    /**
+     * Parcours d'un Prestige (Astra, 2026-11-26) : au Prestige N, le joueur repart sans rang et rachète ses rangs dans
+     * le lieu le plus rentable qu'il a ouvert, le lieu normal de son rang ou un lieu difficile déjà vidé (les N sceaux,
+     * de la prairie au lieu N). Pour chaque rang : le meilleur lieu, ses victoires, les pièces d'une descente typique
+     * (robots malins Malin, Pique, Coeur, Trèfle mis ensemble) et le nombre de descentes pour le rang suivant au prix
+     * actuel. {@code ./gradlew :core:simulate -Pjourney -Pstake=15 (-Plevels=1,5,10 -PrpRuns=60)}
+     */
+    String journeyReport() {
+        int runs = Integer.getInteger("lucky.rpRuns", 60);
+        List<Integer> levels = new ArrayList<>();
+        for (String l : System.getProperty("lucky.levels", "1,2,3,4,5,6,7,8,9,10").split(",")) levels.add(Integer.parseInt(l));
+        List<Gear> gears = new ArrayList<>();
+        for (Gear gear : SUIT_GEARS) if (gear != Gear.STARTER && !gear.name().equals("Carreau")) gears.add(gear);
+        List<Rank> ranks = new ArrayList<>(allRanks());
+        ranks.remove(Rank.LEGENDE);
+        Map<String, RP> results = new ConcurrentHashMap<>();
+        List<Runnable> jobs = new ArrayList<>();
+        for (int level : levels) for (Rank rank : ranks) {
+            List<Object[]> candidates = new ArrayList<>();
+            candidates.add(new Object[] {placeOfRank(rank), false});
+            for (int tier = 1; tier <= level; tier++) candidates.add(new Object[] {Place.atTier(tier), true});
+            for (Object[] c : candidates) for (Gear gear : gears) {
+                Place place = (Place) c[0];
+                boolean hard = (boolean) c[1];
+                String key = level + "|" + title(rank) + "|" + place + "|" + hard;
+                jobs.add(() -> {
+                    RP total = new RP();
+                    rankPlace(place, hard, rank, level, gear, true, runs, SEED).values().forEach(total::add);
+                    results.merge(key, total, (a, b) -> { RP m = new RP(); m.add(a); m.add(b); return m; });
+                });
+            }
+        }
+        jobs.parallelStream().forEach(Runnable::run);
+        StringBuilder out = new StringBuilder("prestige\trank\tplace\thard\twinPercent\ttypical30\tbest\tnextRank\tnextPrice\tdescents\n");
+        for (int level : levels) for (Rank rank : ranks) {
+            Rank next = rank == null ? Rank.values()[0] : Rank.values()[rank.ordinal() + 1];
+            String best = null;
+            double bestTypical = -1;
+            List<String> rows = new ArrayList<>();
+            for (Map.Entry<String, RP> e : results.entrySet()) {
+                String[] k = e.getKey().split("\\|");
+                if (!k[0].equals(String.valueOf(level)) || !k[1].equals(title(rank))) continue;
+                double typical = e.getValue().typical(30);
+                if (typical > bestTypical) { bestTypical = typical; best = e.getKey(); }
+            }
+            for (Map.Entry<String, RP> e : results.entrySet()) {
+                String[] k = e.getKey().split("\\|");
+                if (!k[0].equals(String.valueOf(level)) || !k[1].equals(title(rank))) continue;
+                RP rp = e.getValue();
+                double typical = rp.typical(30);
+                long price = next.getPrice(level);
+                rows.add(String.format(Locale.ROOT, "%d\t%s\t%s\t%s\t%.0f\t%.0f\t%s\t%s\t%d\t%.1f", level, title(rank),
+                    Place.valueOf(k[2]).getShortName(), k[3], 100.0 * rp.wins / rp.runs, typical, e.getKey().equals(best) ? "*" : "",
+                    title(next), price, typical > 0 ? price / typical : Double.POSITIVE_INFINITY));
+            }
+            Collections.sort(rows);
+            rows.forEach(r -> out.append(r).append('\n'));
         }
         return out.toString();
     }

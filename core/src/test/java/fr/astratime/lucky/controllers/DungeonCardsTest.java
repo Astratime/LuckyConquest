@@ -167,7 +167,7 @@ class DungeonCardsTest {
     void kingsFortuneAttackIsCappedAtSevenSpinCosts() {
         player.addGains(10_000_000);
         TurnContext turn = play("fortune_du_roi");
-        assertEquals(10_700_000, player.getGains(), "les gains ne sont pas limités");
+        assertEquals(10_007_000, player.getGains(), "gains +7 % comptés jusqu'à 1 000 tirages (100 000)");
         assertEquals(fortunePower(700), turn.getCombatContext().getAttackFactor(), 1e-4, "Prairie : 7 x 100 au plus (au lieu de 70 000)");
     }
 

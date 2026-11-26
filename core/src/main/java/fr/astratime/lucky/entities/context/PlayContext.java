@@ -190,7 +190,8 @@ public class PlayContext {
      * @return les gains ajoutés
      */
     public double addGainsPercent(int percent) {
-        double added = BigNumber.percent(player.getGains() + gains, percent);
+        double counted = Math.min(player.getGains() + gains, (double) SpinEconomy.CURRENT_GAINS_CAP_SPINS * spinCost);
+        double added = BigNumber.percent(counted, percent);
         potGains = BigNumber.add(potGains, player.potShare(added, gains));
         gains = BigNumber.add(gains, added);
         return added;
