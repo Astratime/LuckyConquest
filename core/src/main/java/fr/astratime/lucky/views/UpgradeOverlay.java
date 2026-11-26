@@ -28,11 +28,19 @@ import fr.astratime.lucky.i18n.Lang;
  * exemplaires d'une carte à gauche, sa version « + » à droite, et ce que fait
  * chacune. « Fusionner » lance la fusion : les trois cartes glissent sur la
  * carte « + », qui s'allume ; « Annuler » ferme sans rien changer.
+ *
+ * <p>Le prix se place juste au-dessus des boutons. Si les descriptions sont
+ * longues, le cadre grandit (sans sortir de l'écran), puis les cartes
+ * rapetissent : le texte ne passe jamais sous les boutons.</p>
  */
 public class UpgradeOverlay implements Disposable {
 
     private static final float PANEL_WIDTH  = 1180f;
     private static final float PANEL_HEIGHT = 900f;
+    /** Espace gardé au-dessus et au-dessous du cadre quand il grandit. */
+    private static final float MARGIN       = 20f;
+    /** Les cartes ne rapetissent pas sous cette part de leur taille. */
+    private static final float MIN_CARD_SCALE = 0.6f;
     private static final float CARD_WIDTH   = 200f;
     private static final float CARD_HEIGHT  = 280f;
     private static final float TEXT_WIDTH   = 460f;
@@ -67,6 +75,8 @@ public class UpgradeOverlay implements Disposable {
 
     private Runnable onConfirm;
     private Runnable onClose;
+    /** Taille des cartes de gauche à la dernière mise en page (elles rapetissent si la place manque). */
+    private float cardWidth = CARD_WIDTH, cardHeight = CARD_HEIGHT;
 
     /**
      * @param buttons      fabrique des boutons du casino
@@ -145,16 +155,12 @@ public class UpgradeOverlay implements Disposable {
         this.onClose   = onClose;
         for (Image copy : copies) {
             copy.setDrawable(new TextureRegionDrawable(new TextureRegion(baseTexture)));
-            copy.setSize(CARD_WIDTH, CARD_HEIGHT);
-            copy.setOrigin(Align.center);
             copy.clearActions();
             copy.setColor(Color.WHITE);
             copy.setScale(1f);
             copy.setVisible(true);
         }
         upgraded.setDrawable(new TextureRegionDrawable(new TextureRegion(plusTexture)));
-        upgraded.setSize(CARD_WIDTH * 1.1f, CARD_HEIGHT * 1.1f);
-        upgraded.setOrigin(Align.center);
         upgraded.clearActions();
         upgraded.setScale(1f);
         upgraded.setColor(1f, 1f, 1f, PREVIEW);
@@ -193,8 +199,8 @@ public class UpgradeOverlay implements Disposable {
         upgradeSound.play();
         confirm.setVisible(false);
         cancel.setVisible(false);
-        float targetX = upgraded.getX() + (upgraded.getWidth() - CARD_WIDTH) / 2f;
-        float targetY = upgraded.getY() + (upgraded.getHeight() - CARD_HEIGHT) / 2f;
+        float targetX = upgraded.getX() + (upgraded.getWidth() - cardWidth) / 2f;
+        float targetY = upgraded.getY() + (upgraded.getHeight() - cardHeight) / 2f;
         for (int i = 0; i < copies.length; i++) {
             copies[i].addAction(Actions.sequence(
                 Actions.delay(i * 0.12f),
@@ -231,41 +237,63 @@ public class UpgradeOverlay implements Disposable {
     /** Place la fenêtre au centre d'un écran de {@code width} x {@code height}. */
     public void layout(float width, float height) {
         veil.setBounds(0f, 0f, width, height);
-        float left = (width - PANEL_WIDTH) / 2f, bottom = (height - PANEL_HEIGHT) / 2f;
-        panel.setBounds(left, bottom, PANEL_WIDTH, PANEL_HEIGHT);
         title.pack();
-        title.setPosition(left + (PANEL_WIDTH - title.getWidth()) / 2f, bottom + PANEL_HEIGHT - 40f - title.getHeight());
-
-        float cardsTop = title.getY() - 30f;
-        float leftCenter = left + PANEL_WIDTH * 0.28f, rightCenter = left + PANEL_WIDTH * 0.72f;
-        for (int i = 0; i < copies.length; i++) {
-            if (copies[i].hasActions()) continue;
-            float offset = (i - (copies.length - 1) / 2f) * FAN;
-            copies[i].setPosition(leftCenter - CARD_WIDTH / 2f + offset, cardsTop - CARD_HEIGHT - Math.abs(offset) * 0.3f);
-            copies[i].setRotation(-offset * 0.18f);
-        }
-        upgraded.setPosition(rightCenter - upgraded.getWidth() / 2f, cardsTop - upgraded.getHeight());
-        arrow.pack();
-        arrow.setPosition(left + (PANEL_WIDTH - arrow.getWidth()) / 2f, cardsTop - CARD_HEIGHT / 2f - arrow.getHeight() / 2f);
-
-        float namesY = cardsTop - upgraded.getHeight() - 24f;
-        place(baseName, leftCenter, namesY);
-        place(upgradedName, rightCenter, namesY);
         before.setWidth(TEXT_WIDTH);
         after.setWidth(TEXT_WIDTH);
         before.setAlignment(Align.topLeft);
         after.setAlignment(Align.topLeft);
         before.setHeight(before.getPrefHeight());
         after.setHeight(after.getPrefHeight());
+        baseName.pack();
+        upgradedName.pack();
+        price.pack();
+        float gap = 30f;
+
+        // Ce qu'il faut de haut en bas : titre, cartes, noms, textes, puis prix et boutons.
+        float buttonHeight = Math.max(cancel.getHeight(), confirm.getHeight());
+        float bottomPart = 40f + buttonHeight + 22f + price.getHeight() + 24f;
+        float fixedTop = 40f + title.getHeight() + 30f + 24f
+            + Math.max(baseName.getHeight(), upgradedName.getHeight()) + 18f
+            + Math.max(before.getHeight(), after.getHeight());
+        float cardsPart = CARD_HEIGHT * 1.1f;
+        float panelHeight = Math.min(Math.max(PANEL_HEIGHT, fixedTop + cardsPart + bottomPart), height - 2f * MARGIN);
+        float scale = Math.max(MIN_CARD_SCALE, Math.min(1f, (panelHeight - fixedTop - bottomPart) / cardsPart));
+        cardWidth  = CARD_WIDTH * scale;
+        cardHeight = CARD_HEIGHT * scale;
+
+        float left = (width - PANEL_WIDTH) / 2f, bottom = (height - panelHeight) / 2f;
+        panel.setBounds(left, bottom, PANEL_WIDTH, panelHeight);
+        title.setPosition(left + (PANEL_WIDTH - title.getWidth()) / 2f, bottom + panelHeight - 40f - title.getHeight());
+
+        float cardsTop = title.getY() - 30f;
+        float leftCenter = left + PANEL_WIDTH * 0.28f, rightCenter = left + PANEL_WIDTH * 0.72f;
+        float fan = FAN * scale;
+        for (int i = 0; i < copies.length; i++) {
+            if (copies[i].hasActions()) continue;
+            float offset = (i - (copies.length - 1) / 2f) * fan;
+            copies[i].setSize(cardWidth, cardHeight);
+            copies[i].setOrigin(Align.center);
+            copies[i].setPosition(leftCenter - cardWidth / 2f + offset, cardsTop - cardHeight - Math.abs(offset) * 0.3f);
+            copies[i].setRotation(-offset * 0.18f / scale);
+        }
+        if (!upgraded.hasActions()) {
+            upgraded.setSize(cardWidth * 1.1f, cardHeight * 1.1f);
+            upgraded.setOrigin(Align.center);
+        }
+        upgraded.setPosition(rightCenter - upgraded.getWidth() / 2f, cardsTop - upgraded.getHeight());
+        arrow.pack();
+        arrow.setPosition(left + (PANEL_WIDTH - arrow.getWidth()) / 2f, cardsTop - cardHeight / 2f - arrow.getHeight() / 2f);
+
+        float namesY = cardsTop - upgraded.getHeight() - 24f;
+        place(baseName, leftCenter, namesY);
+        place(upgradedName, rightCenter, namesY);
         float textTop = Math.min(baseName.getY(), upgradedName.getY()) - 18f;
         before.setPosition(leftCenter - TEXT_WIDTH / 2f, textTop - before.getHeight());
         after.setPosition(rightCenter - TEXT_WIDTH / 2f, textTop - after.getHeight());
 
+        // Le prix juste au-dessus des boutons : il ne passe plus dessous.
         float buttonY = bottom + 40f;
-        price.pack();
-        price.setPosition(left + (PANEL_WIDTH - price.getWidth()) / 2f,
-            Math.min(before.getY(), after.getY()) - 28f - price.getHeight());
-        float gap = 30f;
+        price.setPosition(left + (PANEL_WIDTH - price.getWidth()) / 2f, buttonY + buttonHeight + 22f);
         cancel.setPosition(left + PANEL_WIDTH / 2f - gap / 2f - cancel.getWidth(), buttonY);
         confirm.setPosition(left + PANEL_WIDTH / 2f + gap / 2f, buttonY);
         close.setPosition(left + (PANEL_WIDTH - close.getWidth()) / 2f, buttonY);

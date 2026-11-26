@@ -137,6 +137,8 @@ public class PlayerProfile {
     public static final String GUIDE_TOWER       = "tower";
     /** Première ouverture du Jeu bonus, en combat. */
     public static final String GUIDE_BONUS       = "bonus";
+    /** Premier petit Jeu bonus (Roue, Plinko ou Coup de poing), en combat. */
+    public static final String GUIDE_SMALL_BONUS = "small_bonus";
 
     private final ProfileStorage       storage;
     private final Map<String, Integer> starterDeck;
