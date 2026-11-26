@@ -176,7 +176,7 @@ public class AchievementsOverlay implements Disposable {
             names[i].setColor(done ? Palette.GOLD : LOCKED);
             descriptions[i].setText(achievement.getDescription());
             descriptions[i].setColor(done ? Palette.CREAM : LOCKED);
-            rewards[i].setText((done ? "" : "+") + PlayerProfile.formatCoins(achievement.getReward()));
+            rewards[i].setText((done ? "" : "+") + PlayerProfile.priceTag(achievement.getReward()));
             rewards[i].setColor(done ? Palette.GOLD : LOCKED);
         }
         fillHistory(profile.getHistory());
