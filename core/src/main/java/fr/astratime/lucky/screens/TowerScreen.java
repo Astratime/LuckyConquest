@@ -242,7 +242,9 @@ public class TowerScreen extends CasinoMenuScreen {
             Lang.t("Le mode Histoire. Dix chapitres, de plus en plus durs."),
             Lang.t("Un chapitre : un premier combat, puis tu choisis ton adversaire parmi trois cartes, puis le "
                 + "boss. Tes PV et tes gains te suivent."),
-            Lang.t("Bats le boss pour ouvrir le chapitre suivant. L'Histoire ne rapporte pas de pièces."));
+            Lang.t("Bats le boss pour ouvrir le chapitre suivant. L'Histoire ne rapporte pas de pièces."),
+            Lang.t("Quitte un chapitre en route, et il faudra le recommencer depuis le début."),
+            Lang.t("Finis l'Histoire : elle recommence en mode difficile. Plus loin encore, le mode sans fin."));
         fade.toFront();
     }
 

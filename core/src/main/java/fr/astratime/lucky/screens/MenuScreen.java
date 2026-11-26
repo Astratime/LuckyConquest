@@ -531,14 +531,16 @@ public class MenuScreen extends ScreenAdapter {
             guide.stop();
         }));
         String[] lines = {
-            Lang.t("Entraînement : un combat contre moi, pour t'exercer. Il ne rapporte rien."),
+            Lang.t("Entraînement : un combat pour t'exercer, contre moi ou un ennemi déjà battu. Il ne "
+                + "rapporte rien."),
             Lang.t("Histoire : dix chapitres de combats, jusqu'au bout du chemin. Elle ne rapporte pas de pièces."),
             Lang.t("Exploration : des donjons, leurs rois et leurs coffres. Les seuls combats qui rapportent des "
                 + "pièces."),
             Lang.t("Table du croupier : ton deck de 20 cartes et les 11 rouleaux de ta machine."),
             Lang.t("Boutique : tes pièces y achètent des rangs, des cartes, des rouleaux et des cosmétiques."),
             Lang.t("Cinématique : les cinématiques que tu as déjà vues, à revoir quand tu veux."),
-            Lang.t("Options : le tutoriel s'y rejoue. Bonne chance à la table.")};
+            Lang.t("Options : le tutoriel s'y rejoue. Le Lexique des règles et le Bestiaire t'y attendent "
+                + "aussi. Bonne chance à la table.")};
         List<GuideOverlay.Step> steps = new ArrayList<>();
         for (int i = 0; i < lines.length; i++) {
             int index = i; // une ligne par bouton, dans l'ordre de la page principale
