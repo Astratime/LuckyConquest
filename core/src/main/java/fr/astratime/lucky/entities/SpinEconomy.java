@@ -36,6 +36,12 @@ public final class SpinEconomy {
      * joueur s'applique partout, pour garder les pièces par descente.
      */
     public static final float SYMBOL_TABLE = 0.5f;
+    /**
+     * Plafond des cartes « +X % de tes gains actuels » (Chope, Cocktail des abysses, Pot de Lutin, Fortune du roi…),
+     * en coûts de tirage (Astra, 2026-11-26) : elles ne comptent les gains que jusqu'à ce montant. Sans lui, chaque
+     * tour du deck multipliait tous les gains déjà faits, et un long combat rapportait des milliers de milliards.
+     */
+    public static final int CURRENT_GAINS_CAP_SPINS = 1_000;
     /** Dette (en coûts de tirage) à partir de laquelle l'Huissier remplace l'Endetté. */
     public static final int BAILIFF_SPINS = 5;
     /** Facteur des symboles d'attaque et de défense quand le joueur est endetté. */

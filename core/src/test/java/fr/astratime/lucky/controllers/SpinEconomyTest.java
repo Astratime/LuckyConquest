@@ -386,6 +386,19 @@ class SpinEconomyTest {
 
     /** Chope, Cocktail des abysses : le % ajouté sur les gains de la cagnotte ne se remise pas (sinon elle gonfle sans fin). */
     @Test
+    void gainsPercentCardsCountCurrentGainsUpToTheCap() {
+        Card cocktail = new Card("cocktail", "cocktail", "x.png",
+            List.of(new fr.astratime.lucky.entities.effects.GainsPercentEffect(50)), null, 1, true);
+        Player player = new Player("test", 100, List.of(cocktail));
+        int spinCost = 500;
+        double cap = (double) SpinEconomy.CURRENT_GAINS_CAP_SPINS * spinCost;
+        player.addGains(10 * cap);
+        fr.astratime.lucky.entities.context.PlayContext context =
+            new fr.astratime.lucky.entities.context.PlayContext(player, spinCost);
+        assertEquals(cap / 2, context.addGainsPercent(50), 1e-6, "+50 % comptés sur le plafond, pas sur tous les gains");
+    }
+
+    @Test
     void gainsPercentCardsDoNotMakePotWinningsStakeable() {
         Card cocktail = new Card("cocktail", "cocktail", "x.png",
             List.of(new fr.astratime.lucky.entities.effects.GainsPercentEffect(50)), null, 1, true);
@@ -397,8 +410,8 @@ class SpinEconomyTest {
         controller.restart(EnemyKind.CROUPIER);
         Player player = player(controller);
         player.addGains(1_000 - player.getGains()); // 1 000 gains à soi
-        player.addGains(1_000_000);
-        player.addPotWinnings(1_000_000); // 1 M rapporté par la cagnotte
+        player.addGains(1_000);
+        player.addPotWinnings(1_000); // 1 000 rapportés par la cagnotte (sous le plafond des gains actuels)
         controller.drawCards();
         Card inHand = player.getCurrentHand().stream().filter(c -> c.getId().equals("cocktail")).findFirst()
             .orElseGet(() -> {
@@ -406,7 +419,7 @@ class SpinEconomyTest {
                 return cocktail;
             });
         controller.playCard(inHand);
-        assertEquals(1_501_500, player.getGains(), 1e-6, "gains +50 %");
+        assertEquals(3_000, player.getGains(), 1e-6, "gains +50 %");
         assertEquals(1_500, player.getStakeableGains(), 1e-6, "seule la part sur les gains à soi se mise");
     }
 

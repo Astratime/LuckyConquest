@@ -96,6 +96,9 @@ public final class Lexicon {
                 inTen, inTenTower)),
             term(Lang.t("Misables"), Lang.t("Les gains que la Mise peut prendre. Ceux de la cagnotte "
                 + "ne se misent pas avant la fin de la descente.")),
+            term(Lang.t("Gains actuels"), Lang.f("Les cartes qui ajoutent un % de tes gains actuels (Chope, Cocktail "
+                + "des abysses…) ne comptent tes gains que jusqu'à {0} fois le prix du tirage.",
+                Lang.big(SpinEconomy.CURRENT_GAINS_CAP_SPINS))),
             term(Lang.t("Endetté"), Lang.t("Tes gains sont sous 0. Attaque et bouclier des symboles -25 %.")),
             term(Lang.t("Huissier"), Lang.f("Tu dois plus de {0} tirages. Symboles -50 %, et l'ennemi joue une "
                 + "carte de plus. Une Paire ou un Bingo te renfloue.", SpinEconomy.BAILIFF_SPINS)),

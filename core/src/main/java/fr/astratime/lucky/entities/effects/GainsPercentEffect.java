@@ -1,5 +1,6 @@
 package fr.astratime.lucky.entities.effects;
 
+import fr.astratime.lucky.entities.SpinEconomy;
 import fr.astratime.lucky.entities.context.PlayContext;
 import fr.astratime.lucky.entities.context.TurnContext;
 import fr.astratime.lucky.i18n.Lang;
@@ -32,7 +33,10 @@ public class GainsPercentEffect extends Effect {
     public void apply(TurnContext context) { }
 
     @Override
-    public String getDescription() { return Lang.f("Gains +{0} % de tes gains actuels.", percent); }
+    public String getDescription() {
+        return Lang.f("Gains +{0} % de tes gains actuels (comptés jusqu'à {1} fois le prix du tirage).", percent,
+            Lang.big(SpinEconomy.CURRENT_GAINS_CAP_SPINS));
+    }
 
     @Override
     public List<EffectPopup> getPopups() {
