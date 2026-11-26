@@ -146,6 +146,8 @@ final class TutorialDirector {
             }
             case VICTORY -> {
                 steps.add(say(Lang.t("Bien joué. Tu connais la table, maintenant.")));
+                steps.add(say(Lang.t("Un mot t'échappe ? Le Lexique des règles est dans la Pause. Le Journal, à côté, "
+                    + "garde tes derniers tours.")));
                 steps.add(say(Lang.t("Retourne au menu. Je t'y montre le reste.")));
             }
         }
@@ -162,8 +164,8 @@ final class TutorialDirector {
                     () -> board.hand(card -> true)));
                 steps.add(play(Lang.t("Joue la carte Gains +500. Clique dessus."), Set.of(TutorialRun.GAINS_CARD), 1));
                 steps.add(say(Lang.t("Tes gains montent. Tu en avais 500 au départ. Chaque tirage en coûte 100."), board::gains));
-                steps.add(say(Lang.t("Une Paire sur les rouleaux en rapporte 300. Un Bingo, bien plus. Tes gains servent aussi "
-                    + "à l'échoppe."), board::gains));
+                steps.add(say(Lang.t("Deux symboles pareils sur les rouleaux rapportent des gains. Trois, un Bingo, bien plus. "
+                    + "Tes gains servent aussi à l'échoppe."), board::gains));
                 steps.add(play(Lang.t("Survole une carte pour lire son effet. Clic droit : sa fiche. Joue le 7 de Trèfle."),
                     Set.of(TutorialRun.CLUB_SEVEN), 1));
                 steps.add(spin(Lang.t("Tes cartes sont posées. Lance la machine. Elle te prend 100 gains."), TutorialRun.rigged(1)));
@@ -210,7 +212,7 @@ final class TutorialDirector {
             }
             case 2 -> {
                 steps.add(say(Lang.t("Ta Paire a multiplié tout le tirage : attaque, gains et bouclier. Ta Mise attend dans la "
-                    + "cagnotte : au Jeu bonus, chaque alignement la rapporte."),
+                    + "cagnotte : le prochain Jeu bonus la joue."),
                     board::reels));
                 steps.add(say(Lang.t("Attention : sous 0 gains, tu es endetté. Tes symboles faiblissent. "
                     + "Plus bas, l'Huissier arrive."), board::gains));

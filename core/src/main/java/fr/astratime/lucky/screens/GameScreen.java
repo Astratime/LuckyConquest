@@ -1064,10 +1064,12 @@ public class GameScreen extends GameScreenRun {
             return;
         }
         if (bonus.getKind() != BonusGame.Kind.GRID) { // Roue, Plinko, Coup de poing
-            playCutscene(new SmallBonusGameCutscene(cutsceneKit, bonus), () -> {
+            Runnable play = () -> playCutscene(new SmallBonusGameCutscene(cutsceneKit, bonus), () -> {
                 onGainsShown(bonus.getTotal());
                 then.run();
             });
+            if (luckyGame.getProfile().hasSeen(PlayerProfile.GUIDE_SMALL_BONUS)) play.run();
+            else explainSmallBonusGame(play);
             return;
         }
         BonusGameCutscene scene = new BonusGameCutscene(cutsceneKit, bonus, player().getSlotMachine().getReels());
@@ -1079,23 +1081,44 @@ public class GameScreen extends GameScreenRun {
         });
     }
 
+    /** Le Croupier qui explique les Jeux bonus, créé à sa première réplique ; « Passer » fait {@code onSkip}. */
+    private GuideOverlay bonusGuide(Runnable onSkip) {
+        if (bonusGuide == null) {
+            bonusGuide = new GuideOverlay(hudTextures, enemyTextures.portrait(EnemyKind.ENTRAINEMENT));
+            stage.addActor(bonusGuide);
+        }
+        bonusGuide.setSkipButton(buttons.create(Lang.t("Passer"), sounds.buttonClick, () -> {
+            bonusGuide.stop();
+            onSkip.run();
+        }));
+        bonusGuide.toFront();
+        return bonusGuide;
+    }
+
+    /** Premier petit Jeu bonus (Roue, Plinko ou Coup de poing) : le Croupier l'explique, puis {@code play}. */
+    private void explainSmallBonusGame(Runnable play) {
+        PlayerProfile profile = luckyGame.getProfile();
+        Runnable done = () -> {
+            profile.markSeen(PlayerProfile.GUIDE_SMALL_BONUS);
+            play.run();
+        };
+        bonusGuide(done).play(List.of(
+            GuideOverlay.Step.say(Lang.t("Un Jeu bonus ! La Roue, le Plinko ou le Coup de poing : ici, seule la chance décide.")),
+            GuideOverlay.Step.say(Lang.t("Ce qu'il tire multiplie ta cagnotte, celle de tes Mises. Plus elle est pleine, "
+                + "plus tu gagnes. Puis elle repart de zéro."))), done);
+    }
+
     /** Première fois : le Croupier explique le Jeu bonus sur la grille ouverte, puis les tirages commencent. */
     void explainBonusGame(BonusGameCutscene scene) {
         PlayerProfile profile = luckyGame.getProfile();
-        if (bonusGuide == null) {
-            bonusGuide = new GuideOverlay(hudTextures, enemyTextures.portrait(EnemyKind.ENTRAINEMENT));
-            bonusGuide.setSkipButton(buttons.create(Lang.t("Passer"), sounds.buttonClick, () -> {
-                bonusGuide.stop();
-                profile.markSeen(PlayerProfile.GUIDE_BONUS);
-                scene.resumeGrid();
-            }));
-            stage.addActor(bonusGuide);
-        }
-        bonusGuide.toFront();
+        GuideOverlay bonusGuide = bonusGuide(() -> {
+            profile.markSeen(PlayerProfile.GUIDE_BONUS);
+            scene.resumeGrid();
+        });
         bonusGuide.play(List.of(
             GuideOverlay.Step.say(Lang.t("La grille de la cagnotte ! C'est le plus rare et le plus généreux des Jeux bonus.")),
-            GuideOverlay.Step.say(Lang.t("La grille tourne trois fois. Les symboles alignés se figent en doré, "
-                + "les autres relancent.")),
+            GuideOverlay.Step.say(Lang.f("La grille tourne {0} fois. Les symboles alignés se figent en doré, "
+                + "les autres relancent.", BonusGame.SPINS)),
             GuideOverlay.Step.say(Lang.t("Aligne au moins trois symboles identiques : en ligne, en colonne ou en "
                 + "diagonale. Le Joker compte pour n'importe lequel.")),
             GuideOverlay.Step.say(Lang.t("Plus l'alignement est long et le symbole rare, plus tu gagnes. "
