@@ -42,6 +42,7 @@ import fr.astratime.lucky.progress.PlayerProfile;
 import fr.astratime.lucky.progress.Rank;
 import fr.astratime.lucky.progress.TableSort;
 import fr.astratime.lucky.views.GuideOverlay;
+import fr.astratime.lucky.views.SidePanel;
 import fr.astratime.lucky.views.Tooltip;
 import fr.astratime.lucky.views.UpgradeOverlay;
 
@@ -102,6 +103,10 @@ public class CroupierTableScreen extends CasinoMenuScreen {
     private static final float REEL_WIDTH   = 144f;
     private static final float REEL_HEIGHT  = 120f;
     private static final float CELL_GAP     = 16f;
+    /** Hauteur que peut prendre le nom d'un rouleau sous son image (sur deux lignes au besoin). */
+    private static final float REEL_NAME_MAX_HEIGHT = 44f;
+    /** En dessous de cette réduction sur une ligne, un nom long passe sur deux lignes. */
+    private static final float TWO_LINES_BELOW = 0.8f;
     private static final float HOVER_SCALE  = 1.06f;
     private static final Color REFUSED      = new Color(1f, 0.45f, 0.45f, 1f);
     private static final Color USED_UP      = new Color(0.6f, 0.6f, 0.6f, 1f);
@@ -577,6 +582,7 @@ public class CroupierTableScreen extends CasinoMenuScreen {
         Label state = new Label(symbol.getDisplayName(), new Label.LabelStyle(countFont, Color.WHITE));
         state.setAlignment(Align.center);
         state.setBounds(0f, 0f, REEL_WIDTH, 30f);
+        fitReelName(state, symbol.getDisplayName(), REEL_WIDTH - 4f, REEL_NAME_MAX_HEIGHT);
         cell.addActor(holder);
         cell.addActor(state);
         reelStates.put(symbol, state);
@@ -613,6 +619,39 @@ public class CroupierTableScreen extends CasinoMenuScreen {
             }
         });
         return cell;
+    }
+
+    /**
+     * Fait tenir le nom d'un rouleau dans sa case, au lieu de déborder sur les voisins
+     * (ex : « Apôtre de la Chance », « Apostle of Luck ») : taille normale s'il tient ;
+     * sinon, s'il faudrait trop le réduire sur une ligne, coupé en deux lignes au mot
+     * le plus proche du milieu ; dans tous les cas réduit juste ce qu'il faut.
+     */
+    static void fitReelName(Label label, String name, float maxWidth, float maxHeight) {
+        label.setWrap(false);
+        label.setText(name);
+        SidePanel.fitWidth(label, maxWidth);
+        float oneLine = label.getFontScaleX();
+        int split = middleSpace(name);
+        if (oneLine >= TWO_LINES_BELOW || split < 0) return;
+        label.setFontScale(1f);
+        label.setText(name.substring(0, split) + "\n" + name.substring(split + 1));
+        float twoLines = Math.min(1f, Math.min(maxWidth / label.getPrefWidth(), maxHeight / label.getPrefHeight()));
+        if (twoLines > oneLine) {
+            label.setFontScale(twoLines);
+        } else {
+            label.setText(name);
+            label.setFontScale(oneLine);
+        }
+    }
+
+    /** @return l'espace de {@code name} le plus proche du milieu, ou -1 s'il n'y en a pas. */
+    static int middleSpace(String name) {
+        int best = -1;
+        for (int i = name.indexOf(' '); i >= 0; i = name.indexOf(' ', i + 1)) {
+            if (best < 0 || Math.abs(i - name.length() / 2f) < Math.abs(best - name.length() / 2f)) best = i;
+        }
+        return best;
     }
 
     /** Place le rouleau {@code symbol} dans la machine, ou dit pourquoi ce n'est pas possible. */
