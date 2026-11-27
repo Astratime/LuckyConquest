@@ -7,6 +7,7 @@ import com.badlogic.gdx.utils.JsonReader;
 import com.badlogic.gdx.utils.JsonValue;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -14,7 +15,7 @@ import java.util.Map;
  *
  * Les textes du jeu sont écrits en français dans le code : le texte français
  * sert de clé. {@link #t(String)} renvoie sa traduction dans la langue
- * choisie, lue dans {@code i18n/<code>.json} ({@code {"Retour": "Back"}}).
+ * choisie, lue dans les fichiers {@code i18n/<code>/<thème>.json} ({@code {"Retour": "Back"}}, voir {@link #PARTS}).
  * Un texte sans traduction reste en français.
  *
  * Pour un texte qui contient des valeurs, {@link #f(String, Object...)} prend
@@ -28,7 +29,7 @@ public final class Lang {
         FRENCH("fr", "Français"),
         ENGLISH("en", "English");
 
-        /** Code de la langue, nom de son fichier de traductions (ex : {@code en} → {@code i18n/en.json}). */
+        /** Code de la langue, nom du dossier de ses traductions (ex : {@code en} → {@code i18n/en/}). */
         public final String code;
         /** Nom de la langue dans sa propre langue, tel qu'affiché dans les options. */
         public final String label;
@@ -81,8 +82,25 @@ public final class Lang {
             table = Map.of();
             return;
         }
-        FileHandle file = Gdx.files.internal("i18n/" + language.code + ".json");
-        table = file.exists() ? parse(file.readString("UTF-8")) : Map.of();
+        Map<String, String> merged = new HashMap<>();
+        for (String part : PARTS) {
+            FileHandle file = Gdx.files.internal(partPath(language, part));
+            if (file.exists()) merged.putAll(parse(file.readString("UTF-8")));
+        }
+        table = merged;
+    }
+
+    /**
+     * Fichiers de traductions d'une langue, par thème, dans {@code i18n/<code>/} (Astra, 2026-11-27 : un seul gros
+     * fichier faisait se marcher dessus toutes les PR). Dans chaque fichier, les textes sont rangés par ordre
+     * alphabétique : un nouveau texte va à sa place, pas à la fin. Un fichier ajouté ici doit aussi exister.
+     */
+    public static final List<String> PARTS = List.of(
+        "aide", "cartes", "combat", "divers", "ecrans", "ennemis", "exploration", "histoire");
+
+    /** @return le chemin du fichier de traductions {@code part} de {@code language} (ex : {@code i18n/en/cartes.json}). */
+    public static String partPath(Language language, String part) {
+        return "i18n/" + language.code + "/" + part + ".json";
     }
 
     /**

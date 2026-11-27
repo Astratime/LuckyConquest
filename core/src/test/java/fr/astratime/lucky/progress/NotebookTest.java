@@ -31,8 +31,7 @@ class NotebookTest {
 
     @Test
     void everyPageIsTranslated() throws Exception {
-        String json = java.nio.file.Files.readString(java.nio.file.Path.of("..", "assets", "i18n", "en.json"), java.nio.charset.StandardCharsets.UTF_8);
-        java.util.Map<String, String> english = Lang.parse(json);
+        java.util.Map<String, String> english = fr.astratime.lucky.i18n.EnglishFiles.read();
         for (EnemyKind kind : Notebook.owners()) {
             String french = Notebook.text(kind);
             assertTrue(english.containsKey(french), kind.name() + " : page sans traduction anglaise");

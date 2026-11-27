@@ -62,8 +62,7 @@ class EnemyLinesTest {
 
     @Test
     void everyLineIsTranslated() throws Exception {
-        String json = Files.readString(Path.of("..", "assets", "i18n", "en.json"), StandardCharsets.UTF_8);
-        Map<String, String> english = Lang.parse(json);
+        java.util.Map<String, String> english = fr.astratime.lucky.i18n.EnglishFiles.read();
         for (EnemyKind kind : EnemyLines.speakers()) {
             for (String line : EnemyLines.all(kind)) {
                 assertTrue(english.containsKey(line), kind + " : sans traduction anglaise : " + line);
