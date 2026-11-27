@@ -38,6 +38,7 @@ import fr.astratime.lucky.i18n.Lang;
 import fr.astratime.lucky.loaders.CardLoader;
 import fr.astratime.lucky.progress.Cosmetic;
 import fr.astratime.lucky.progress.PlayerProfile;
+import fr.astratime.lucky.progress.Money;
 import fr.astratime.lucky.progress.Rank;
 import fr.astratime.lucky.progress.ReelShop;
 import fr.astratime.lucky.views.CardDetailOverlay;
@@ -309,24 +310,24 @@ public class ShopScreen extends CasinoMenuScreen {
         Label header = new Label(Lang.f("Tu as {0}.", profile.formatWealth()), new Label.LabelStyle(headFont, Color.WHITE));
         content.add(header).left().padBottom(8f).row();
         Label rule = new Label(Lang.f("1 Lingot vaut {0} pièces. Les articles de {1} Lingots ou plus se paient en Lingots ; "
-            + "s'il t'en manque, l'achat convertit tes pièces tout seul.", PlayerProfile.formatCoins(PlayerProfile.INGOT_VALUE),
-            PlayerProfile.INGOT_THRESHOLD / PlayerProfile.INGOT_VALUE), new Label.LabelStyle(bodyFont, Color.WHITE));
+            + "s'il t'en manque, l'achat convertit tes pièces tout seul.", Money.formatCoins(Money.INGOT_VALUE),
+            Money.INGOT_THRESHOLD / Money.INGOT_VALUE), new Label.LabelStyle(bodyFont, Color.WHITE));
         rule.setWrap(true);
         content.add(rule).growX().left().padBottom(16f).row();
         long convertible = profile.convertibleIngots();
         bankRow(Lang.t("Pièces en Lingots"), convertible > 0
             ? Lang.f("Change {0} en {1}. Le reste, sous un milliard, reste en pièces.",
-                Lang.n(convertible * PlayerProfile.INGOT_VALUE, "{0} pièce", "{0} pièces",
-                    PlayerProfile.formatCoins(convertible * PlayerProfile.INGOT_VALUE)),
-                Lang.n(convertible, "{0} Lingot", "{0} Lingots", PlayerProfile.formatCoins(convertible)))
-            : Lang.f("Il faut au moins {0} pièces pour un Lingot.", PlayerProfile.formatCoins(PlayerProfile.INGOT_VALUE)),
+                Lang.n(convertible * Money.INGOT_VALUE, "{0} pièce", "{0} pièces",
+                    Money.formatCoins(convertible * Money.INGOT_VALUE)),
+                Lang.n(convertible, "{0} Lingot", "{0} Lingots", Money.formatCoins(convertible)))
+            : Lang.f("Il faut au moins {0} pièces pour un Lingot.", Money.formatCoins(Money.INGOT_VALUE)),
             () -> profile.convertibleIngots() > 0 ? null : Lang.t("Pas assez de pièces pour un Lingot."),
             () -> profile.convertToIngots(profile.convertibleIngots()));
         for (long count : new long[] {1, 10, 100}) {
-            bankRow(Lang.n(count, "{0} Lingot en pièces", "{0} Lingots en pièces", PlayerProfile.formatCoins(count)),
-                Lang.f("Change {0} en {1}.", Lang.n(count, "{0} Lingot", "{0} Lingots", PlayerProfile.formatCoins(count)),
-                    Lang.n(count * PlayerProfile.INGOT_VALUE, "{0} pièce", "{0} pièces",
-                        PlayerProfile.formatCoins(count * PlayerProfile.INGOT_VALUE))),
+            bankRow(Lang.n(count, "{0} Lingot en pièces", "{0} Lingots en pièces", Money.formatCoins(count)),
+                Lang.f("Change {0} en {1}.", Lang.n(count, "{0} Lingot", "{0} Lingots", Money.formatCoins(count)),
+                    Lang.n(count * Money.INGOT_VALUE, "{0} pièce", "{0} pièces",
+                        Money.formatCoins(count * Money.INGOT_VALUE))),
                 () -> profile.getIngots() >= count ? null : Lang.t("Pas assez de Lingots."),
                 () -> profile.convertToCoins(count));
         }
@@ -379,7 +380,7 @@ public class ShopScreen extends CasinoMenuScreen {
                 new Label.LabelStyle(bodyFont, Color.WHITE));
             text.setWrap(true);
             Label state = new Label(owned ? Lang.t("Acquis")
-                : PlayerProfile.formatPrice(rank.getPrice(profile.getPrestige())),
+                : Money.formatPrice(rank.getPrice(profile.getPrestige())),
                 new Label.LabelStyle(bodyFont, Color.WHITE));
             state.setAlignment(Align.right);
             row.add(name).width(330f).left();
@@ -462,9 +463,9 @@ public class ShopScreen extends CasinoMenuScreen {
                     ? Lang.f("Tu as déjà {0} exemplaires.", PlayerProfile.MAX_COPIES) : null,
                 () -> profile.buyCard(card.getId(), price));
             cells.add(cell(new TextureRegion(cardTextures.get(card)), CARD_WIDTH, CARD_HEIGHT,
-                PlayerProfile.priceTag(price), owned + " / " + PlayerProfile.MAX_COPIES,
+                Money.priceTag(price), owned + " / " + PlayerProfile.MAX_COPIES,
                 owned >= PlayerProfile.MAX_COPIES, offer,
-                () -> detail.showForSale(card, cardTextures.get(card), PlayerProfile.formatPrice(price))));
+                () -> detail.showForSale(card, cardTextures.get(card), Money.formatPrice(price))));
         }
         return cells;
     }
@@ -480,7 +481,7 @@ public class ShopScreen extends CasinoMenuScreen {
         Offer offer = new Offer(card.getName(), Lang.f("{0}\n{1}\n{2}", card.getDescription(), goal, why), price,
             () -> why, () -> false);
         return cell(new TextureRegion(cardTextures.get(card)), CARD_WIDTH, CARD_HEIGHT,
-            PlayerProfile.priceTag(price), wins + " / " + PlayerProfile.KING_CARD_WINS, true, offer,
+            Money.priceTag(price), wins + " / " + PlayerProfile.KING_CARD_WINS, true, offer,
             () -> detail.showForSale(card, cardTextures.get(card), goal));
     }
 
@@ -506,7 +507,7 @@ public class ShopScreen extends CasinoMenuScreen {
         Offer offer = new Offer(card.getName(), Lang.f("{0}\n{1}", why, card.getDescription()), price,
             () -> why, () -> false);
         return cell(new TextureRegion(cardTextures.get(card)), CARD_WIDTH, CARD_HEIGHT,
-            PlayerProfile.priceTag(price), Lang.t("Difficile"), true, offer,
+            Money.priceTag(price), Lang.t("Difficile"), true, offer,
             () -> detail.showForSale(card, cardTextures.get(card), goal));
     }
 
@@ -523,9 +524,9 @@ public class ShopScreen extends CasinoMenuScreen {
                 String why = hardGateReason(gate);
                 Offer locked = new Offer(symbol.getDisplayName(), Lang.f("{0}\n{1}", why, ReelShop.describe(symbol)), price, () -> why, () -> false);
                 cells.add(cell(new TextureRegion(reelTextures.get(symbol)), REEL_WIDTH, REEL_HEIGHT,
-                    PlayerProfile.priceTag(price), Lang.t("Difficile"), true, locked,
+                    Money.priceTag(price), Lang.t("Difficile"), true, locked,
                     () -> detail.showReel(symbol.getDisplayName(), new TextureRegion(reelTextures.get(symbol)),
-                        ReelShop.describe(symbol), PlayerProfile.formatPrice(price), goal)));
+                        ReelShop.describe(symbol), Money.formatPrice(price), goal)));
                 continue;
             }
             Offer offer = new Offer(symbol.getDisplayName(), ReelShop.describe(symbol) + "\n"
@@ -533,9 +534,9 @@ public class ShopScreen extends CasinoMenuScreen {
                 price, () -> profile.ownsReel(symbol) ? Lang.t("Tu possèdes déjà ce rouleau.") : null,
                 () -> profile.buyReel(symbol, price));
             cells.add(cell(new TextureRegion(reelTextures.get(symbol)), REEL_WIDTH, REEL_HEIGHT,
-                PlayerProfile.priceTag(price), owned ? Lang.t("Possédé") : symbol.getDisplayName(), owned, offer,
+                Money.priceTag(price), owned ? Lang.t("Possédé") : symbol.getDisplayName(), owned, offer,
                 () -> detail.showReel(symbol.getDisplayName(), new TextureRegion(reelTextures.get(symbol)),
-                    ReelShop.describe(symbol), PlayerProfile.formatPrice(price),
+                    ReelShop.describe(symbol), Money.formatPrice(price),
                     profile.ownsReel(symbol) ? Lang.t("Possédé") : Lang.t("Pas encore acheté"))));
         }
         return cells;
@@ -659,7 +660,7 @@ public class ShopScreen extends CasinoMenuScreen {
             case ACHIEVEMENTS -> Lang.f("Succès : {0} / {1}", progress[0], progress[1]);
             case BESTIARY     -> Lang.f("Bestiaire : {0} / {1}", progress[0], progress[1]);
             case GOLDEN       -> Lang.f("Ennemis dorés : {0} / {1}", progress[0], progress[1]);
-            case COINS        -> PlayerProfile.priceTag(cosmetic.getGoal());
+            case COINS        -> Money.priceTag(cosmetic.getGoal());
             case DEFAULT      -> "";
         };
     }
@@ -675,7 +676,7 @@ public class ShopScreen extends CasinoMenuScreen {
             case GOLDEN       -> cosmetic.getGoal() == Cosmetic.Unlock.ALL
                 ? Lang.f("Se débloque en vainquant tous les ennemis dorés ({0} / {1}).", progress[0], progress[1])
                 : Lang.f("Se débloque en vainquant {0} ennemis dorés ({1} / {0}).", progress[1], progress[0]);
-            case COINS        -> Lang.f("Prix : {0}.", PlayerProfile.formatPrice(cosmetic.getGoal()));
+            case COINS        -> Lang.f("Prix : {0}.", Money.formatPrice(cosmetic.getGoal()));
             case DEFAULT      -> "";
         };
     }
@@ -717,7 +718,7 @@ public class ShopScreen extends CasinoMenuScreen {
         if (profile.isAdmin() || !profile.buyCosmetic(cosmetic)) {
             refuseSound.play();
             detailText.setText(profile.isAdmin() ? Lang.t("Achat impossible.") : Lang.f("Il te manque {0}.",
-                PlayerProfile.formatPrice(profile.missing(cosmetic.getGoal()))));
+                Money.formatPrice(profile.missing(cosmetic.getGoal()))));
             detailText.setColor(REFUSED);
             return;
         }
@@ -777,7 +778,7 @@ public class ShopScreen extends CasinoMenuScreen {
             return;
         }
         showDetail(offer.price() == 0 ? offer.name()
-            : Lang.f("{0}  -  {1}", offer.name(), PlayerProfile.formatPrice(offer.price())), offer.text());
+            : Lang.f("{0}  -  {1}", offer.name(), Money.formatPrice(offer.price())), offer.text());
         buyButton.setDisabled(offer.blocked().get() != null);
     }
 
@@ -804,7 +805,7 @@ public class ShopScreen extends CasinoMenuScreen {
         boolean ascending = selected == prestigeOffer;
         String blocked = selected.blocked().get();
         if (blocked == null && !profile.canAfford(selected.price())) {
-            blocked = Lang.f("Il te manque {0}.", PlayerProfile.formatPrice(profile.missing(selected.price())));
+            blocked = Lang.f("Il te manque {0}.", Money.formatPrice(profile.missing(selected.price())));
         }
         if (blocked != null || !selected.purchase().getAsBoolean()) {
             refuseSound.play();

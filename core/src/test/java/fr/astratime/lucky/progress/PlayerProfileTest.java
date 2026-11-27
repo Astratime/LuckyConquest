@@ -93,7 +93,7 @@ class PlayerProfileTest {
         Map<String, Integer> old = new LinkedHashMap<>();
         old.put("double", 2);
         for (int i = 0; i < 18; i++) old.put("carte_" + i, 1);
-        storage.put(PlayerProfile.KEY_DECK, PlayerProfile.encode(old));
+        storage.put(PlayerProfile.KEY_DECK, ProfileCodec.encode(old));
 
         PlayerProfile profile = profile(storage);
         Map<String, Integer> deck = profile.getDeck();
@@ -178,36 +178,36 @@ class PlayerProfileTest {
         Map<String, Integer> copies = new LinkedHashMap<>();
         copies.put("1_pique", 2);
         copies.put("joker", 1);
-        assertEquals("1_pique:2,joker:1", PlayerProfile.encode(copies));
-        assertEquals(copies, PlayerProfile.decode("1_pique:2,joker:1"));
-        assertEquals(Map.of("joker", 1), PlayerProfile.decode("joker:1,abîmé,x:y"));
-        assertTrue(PlayerProfile.decode("").isEmpty());
+        assertEquals("1_pique:2,joker:1", ProfileCodec.encode(copies));
+        assertEquals(copies, ProfileCodec.decode("1_pique:2,joker:1"));
+        assertEquals(Map.of("joker", 1), ProfileCodec.decode("joker:1,abîmé,x:y"));
+        assertTrue(ProfileCodec.decode("").isEmpty());
     }
 
     @Test
     void coinsAreShownWithSpacesBetweenThousands() {
-        assertEquals("0", PlayerProfile.formatCoins(0));
-        assertEquals("999", PlayerProfile.formatCoins(999));
-        assertEquals("10 000", PlayerProfile.formatCoins(10_000));
-        assertEquals("1 234 567", PlayerProfile.formatCoins(1_234_567));
+        assertEquals("0", Money.formatCoins(0));
+        assertEquals("999", Money.formatCoins(999));
+        assertEquals("10 000", Money.formatCoins(10_000));
+        assertEquals("1 234 567", Money.formatCoins(1_234_567));
     }
 
     @Test
     void combatCoinsAreTheShownGainsAfterTheKingAndAFifthOfThemAfterADefeat() {
-        assertEquals(32_000, PlayerProfile.combatReward(true, true, 32_000, Place.PRAIRIE, 1), "les gains affichés, pas plus");
-        assertEquals(0, PlayerProfile.combatReward(true, false, 32_000, Place.PRAIRIE, 1), "rien après le soldat");
-        assertEquals(6_400, PlayerProfile.combatReward(false, true, 32_000, Place.PRAIRIE, 1), "20 % après une défaite contre le roi");
-        assertEquals(6_400, PlayerProfile.combatReward(false, false, 32_000, Place.PRAIRIE, 1), "20 % après une défaite contre le soldat");
-        assertEquals(0, PlayerProfile.combatReward(false, true, -5_000, Place.PRAIRIE, 1), "rien avec des gains négatifs");
-        assertEquals(50_000, PlayerProfile.combatReward(false, true, 10_000_000, Place.PRAIRIE, 1), "au plus 500 tirages de la Prairie");
-        assertEquals(22_500_000, PlayerProfile.combatReward(false, true, 1e12, Place.CASINO, 1), "au plus 500 tirages du Casino");
-        assertEquals(1_000_000_000_000L, PlayerProfile.combatReward(true, true, 1e12, Place.CASINO, 1), "victoire : sans limite");
-        assertEquals(3_200, PlayerProfile.combatReward(false, true, 32_000, Place.PRAIRIE, 0.5), "la moitié du donjon faite : la moitié");
-        assertEquals(0, PlayerProfile.combatReward(false, false, 32_000, Place.PRAIRIE, 0), "mort au premier tour : rien");
-        assertEquals(0.0, PlayerProfile.dungeonProgress(false, 1), 1e-9);
-        assertEquals(0.25, PlayerProfile.dungeonProgress(false, 0.5), 1e-9);
-        assertEquals(0.75, PlayerProfile.dungeonProgress(true, 0.5), 1e-9);
-        assertEquals(1.0, PlayerProfile.dungeonProgress(true, 0), 1e-9);
+        assertEquals(32_000, CoinRewards.combatReward(true, true, 32_000, Place.PRAIRIE, 1), "les gains affichés, pas plus");
+        assertEquals(0, CoinRewards.combatReward(true, false, 32_000, Place.PRAIRIE, 1), "rien après le soldat");
+        assertEquals(6_400, CoinRewards.combatReward(false, true, 32_000, Place.PRAIRIE, 1), "20 % après une défaite contre le roi");
+        assertEquals(6_400, CoinRewards.combatReward(false, false, 32_000, Place.PRAIRIE, 1), "20 % après une défaite contre le soldat");
+        assertEquals(0, CoinRewards.combatReward(false, true, -5_000, Place.PRAIRIE, 1), "rien avec des gains négatifs");
+        assertEquals(50_000, CoinRewards.combatReward(false, true, 10_000_000, Place.PRAIRIE, 1), "au plus 500 tirages de la Prairie");
+        assertEquals(22_500_000, CoinRewards.combatReward(false, true, 1e12, Place.CASINO, 1), "au plus 500 tirages du Casino");
+        assertEquals(1_000_000_000_000L, CoinRewards.combatReward(true, true, 1e12, Place.CASINO, 1), "victoire : sans limite");
+        assertEquals(3_200, CoinRewards.combatReward(false, true, 32_000, Place.PRAIRIE, 0.5), "la moitié du donjon faite : la moitié");
+        assertEquals(0, CoinRewards.combatReward(false, false, 32_000, Place.PRAIRIE, 0), "mort au premier tour : rien");
+        assertEquals(0.0, CoinRewards.dungeonProgress(false, 1), 1e-9);
+        assertEquals(0.25, CoinRewards.dungeonProgress(false, 0.5), 1e-9);
+        assertEquals(0.75, CoinRewards.dungeonProgress(true, 0.5), 1e-9);
+        assertEquals(1.0, CoinRewards.dungeonProgress(true, 0), 1e-9);
     }
 
     @Test

@@ -37,6 +37,8 @@ import fr.astratime.lucky.entities.exploration.PlaceRule;
 import fr.astratime.lucky.i18n.Lang;
 import fr.astratime.lucky.loaders.CardLoader;
 import fr.astratime.lucky.progress.PlayerProfile;
+import fr.astratime.lucky.progress.CoinRewards;
+import fr.astratime.lucky.progress.Money;
 import fr.astratime.lucky.views.DungeonRewardsOverlay;
 import fr.astratime.lucky.views.MenuOption;
 import fr.astratime.lucky.views.SidePanel;
@@ -422,7 +424,7 @@ public class ExplorationScreen extends CasinoMenuScreen {
         text.append('\n').append(Lang.f("Combat {0} : {1}", 2, dungeon.getKing().getDisplayName()));
         int percent = profile.coinsPercent(place, hard);
         text.append("\n\n").append(Lang.f("Coffre : {0} pièces + 1 carte",
-            PlayerProfile.formatCoins(PlayerProfile.share(place.getChestCoins(hard), percent))));
+            Money.formatCoins(CoinRewards.share(place.getChestCoins(hard), percent))));
         if (percent < 100) { // un lieu en dessous de celui du rang joué rapporte moins (Astra, 2026-11-15)
             text.append('\n').append(Lang.f("Ton rang est au-dessus de ce lieu : tu n'y gagnes que {0} % des pièces.", percent));
         }

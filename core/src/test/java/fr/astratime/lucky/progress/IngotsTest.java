@@ -9,15 +9,15 @@ import static org.junit.jupiter.api.Assertions.*;
 /** Les Lingots (Astra, 2026-11-26) : 1 Lingot = 1 milliard de pièces, les prix de 10 milliards ou plus en Lingots. */
 class IngotsTest {
 
-    private static final long BILLION = PlayerProfile.INGOT_VALUE;
+    private static final long BILLION = Money.INGOT_VALUE;
 
     @Test
     void aPriceOfTenBillionsOrMoreIsInIngots() {
         assertEquals(1_000_000_000L, BILLION);
-        assertFalse(PlayerProfile.inIngots(9_999_999_999L));
-        assertTrue(PlayerProfile.inIngots(10 * BILLION));
-        assertEquals(38, PlayerProfile.ingotsOf(38 * BILLION));
-        assertEquals(11, PlayerProfile.ingotsOf(10 * BILLION + 1), "arrondi au Lingot supérieur");
+        assertFalse(Money.inIngots(9_999_999_999L));
+        assertTrue(Money.inIngots(10 * BILLION));
+        assertEquals(38, Money.ingotsOf(38 * BILLION));
+        assertEquals(11, Money.ingotsOf(10 * BILLION + 1), "arrondi au Lingot supérieur");
     }
 
     @Test
@@ -26,19 +26,19 @@ class IngotsTest {
         for (Rank rank : Rank.values()) {
             for (int level = 0; level <= PlayerProfile.MAX_PRESTIGE; level++) {
                 long price = rank.getPrice(level);
-                if (PlayerProfile.inIngots(price)) assertEquals(0, price % BILLION, rank + " P" + level);
+                if (Money.inIngots(price)) assertEquals(0, price % BILLION, rank + " P" + level);
             }
         }
         ReelShop.getPrices().forEach((symbol, price) -> {
-            if (PlayerProfile.inIngots(price)) assertEquals(0, price % BILLION, symbol.name());
+            if (Money.inIngots(price)) assertEquals(0, price % BILLION, symbol.name());
         });
         for (Cosmetic cosmetic : Cosmetic.values()) {
-            if (cosmetic.getUnlock() == Cosmetic.Unlock.COINS && PlayerProfile.inIngots(cosmetic.getGoal())) {
+            if (cosmetic.getUnlock() == Cosmetic.Unlock.COINS && Money.inIngots(cosmetic.getGoal())) {
                 assertEquals(0, cosmetic.getGoal() % BILLION, cosmetic.name());
             }
         }
         for (Achievement achievement : Achievement.values()) {
-            if (PlayerProfile.inIngots(achievement.getReward())) assertEquals(0, achievement.getReward() % BILLION, achievement.name());
+            if (Money.inIngots(achievement.getReward())) assertEquals(0, achievement.getReward() % BILLION, achievement.name());
         }
     }
 
@@ -112,8 +112,8 @@ class IngotsTest {
 
     @Test
     void pricesAreWrittenInTheirCurrency() {
-        assertEquals("38 Lingots", PlayerProfile.formatPrice(38 * BILLION));
-        assertEquals("1 300 000 000 pièces", PlayerProfile.formatPrice(1_300_000_000L).replace(' ', ' ').replace(' ', ' '));
-        assertEquals("38 Lingots", PlayerProfile.priceTag(38 * BILLION));
+        assertEquals("38 Lingots", Money.formatPrice(38 * BILLION));
+        assertEquals("1 300 000 000 pièces", Money.formatPrice(1_300_000_000L).replace(' ', ' ').replace(' ', ' '));
+        assertEquals("38 Lingots", Money.priceTag(38 * BILLION));
     }
 }

@@ -22,6 +22,8 @@ import fr.astratime.lucky.entities.exploration.DungeonRun;
 import fr.astratime.lucky.entities.exploration.PlaceRule;
 import fr.astratime.lucky.i18n.Lang;
 import fr.astratime.lucky.progress.PlayerProfile;
+import fr.astratime.lucky.progress.CoinRewards;
+import fr.astratime.lucky.progress.Money;
 import fr.astratime.lucky.progress.Rank;
 
 import java.util.List;
@@ -291,7 +293,7 @@ public final class Lexicon {
             term(Lang.t("Pièces"), Lang.t("L'argent hors combat : boutique, rangs, fusion. Seule l'Exploration en "
                 + "rapporte. Elles ne servent jamais en combat.")),
             term(Lang.t("Défaite"), Lang.f("En Exploration, tu gardes {0} % de tes gains en pièces, selon la part du "
-                + "donjon faite.", PlayerProfile.DEFEAT_KEEP_PERCENT)),
+                + "donjon faite.", CoinRewards.DEFEAT_KEEP_PERCENT)),
             term(Lang.t("Rang"), Lang.t("Acheté à la boutique. Plus de PV max, des symboles plus forts et un % de gains "
                 + "en plus sur toute la machine. Tu choisis ton rang à la Table du croupier.")),
             term(Lang.t("Lieu de ton rang"), Lang.f("Chaque rang a son lieu d'Exploration : la Prairie sans rang, la Foire "
@@ -299,7 +301,7 @@ public final class Lexicon {
                 + "Neiges pour le Requin, les Mines pour le Gros bonnet, le Manoir hanté pour le Baron, le Casino pour le "
                 + "Magnat, le Temple du Destin pour le Roi du casino et le Désert pour la Légende. Un lieu en dessous ne rapporte "
                 + "que {0} % des pièces, deux lieux ou plus en dessous {1} %.",
-                PlayerProfile.LOWER_PLACE_PERCENT, PlayerProfile.FAR_LOWER_PLACE_PERCENT)),
+                CoinRewards.LOWER_PLACE_PERCENT, CoinRewards.FAR_LOWER_PLACE_PERCENT)),
             term(Lang.t("Prestige"), Lang.f("Une fois tous les rangs achetés, la boutique te propose de les rendre. "
                 + "Chaque niveau multiplie par {0} tes PV max, l'attaque et la défense de tes symboles, et ajoute "
                 + "+{1} % de gains, jusqu'au Prestige {2}. Tes pièces et tes Lingots repartent à 0, tu gardes tout le reste. "
@@ -309,7 +311,7 @@ public final class Lexicon {
             term(Lang.t("Lingot"), Lang.f("Monnaie des grosses sommes : 1 Lingot vaut {0} pièces. Les articles de {1} Lingots "
                 + "ou plus se paient en Lingots, les succès de cette taille sont versés en Lingots. L'onglet Banque de la "
                 + "boutique change les pièces en Lingots et l'inverse, sans frais ; un achat convertit tout seul ce qui manque.",
-                PlayerProfile.formatCoins(PlayerProfile.INGOT_VALUE), PlayerProfile.INGOT_THRESHOLD / PlayerProfile.INGOT_VALUE)),
+                Money.formatCoins(Money.INGOT_VALUE), Money.INGOT_THRESHOLD / Money.INGOT_VALUE)),
             term(Lang.t("Sceau de Prestige"), Lang.t("Chaque Prestige demande un lieu vidé en Exploration difficile : "
                 + "la prairie pour le Prestige I, la Fête foraine pour II, le Rapide de Minuit pour III, le Port pour IV, "
                 + "le Palace des Neiges pour V, les Mines pour VI, le Manoir hanté pour VII, le Casino pour VIII, le Temple du Destin pour IX "
