@@ -59,7 +59,44 @@ class LangTest {
     }
 
     private static Map<String, String> english() {
-        return Lang.parse(read(ASSETS.resolve("i18n/en.json")));
+        return EnglishFiles.read();
+    }
+
+    /** @return les clés du fichier {@code file}, dans l'ordre où elles sont écrites. */
+    private static List<String> keysInOrder(Path file) {
+        List<String> keys = new ArrayList<>();
+        for (JsonValue entry = new JsonReader().parse(read(file)).child; entry != null; entry = entry.next) keys.add(entry.name);
+        return keys;
+    }
+
+    /**
+     * Les traductions sont rangées par thème ({@link Lang#PARTS}) et, dans chaque fichier, par ordre alphabétique,
+     * sans doublon : deux PR qui ajoutent des textes ne touchent presque jamais les mêmes lignes.
+     */
+    @Test
+    void translationFilesAreSortedWithoutDuplicates() throws IOException {
+        Path folder = ASSETS.resolve("i18n/en");
+        List<String> onDisk;
+        try (Stream<Path> list = Files.list(folder)) {
+            onDisk = list.map(path -> path.getFileName().toString()).sorted().toList();
+        }
+        assertEquals(Lang.PARTS.stream().map(part -> part + ".json").sorted().toList(), onDisk,
+            "Chaque fichier de i18n/en/ doit être listé dans Lang.PARTS (sinon le jeu ne le lit pas)");
+        Map<String, String> seen = new java.util.HashMap<>();
+        List<String> problems = new ArrayList<>();
+        for (String part : Lang.PARTS) {
+            List<String> keys = keysInOrder(folder.resolve(part + ".json"));
+            for (int i = 1; i < keys.size(); i++) {
+                if (keys.get(i - 1).compareTo(keys.get(i)) >= 0) {
+                    problems.add(part + ".json : « " + keys.get(i) + " » doit aller avant « " + keys.get(i - 1) + " »");
+                }
+            }
+            for (String key : keys) {
+                String other = seen.put(key, part);
+                if (other != null) problems.add("« " + key + " » est dans " + other + ".json et " + part + ".json");
+            }
+        }
+        assertEquals(List.of(), problems, "Traductions mal rangées (ordre alphabétique, une seule fois)");
     }
 
     @Test

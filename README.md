@@ -101,9 +101,11 @@ Le jeu est écrit en Java 21 avec [libGDX](https://libgdx.com/).
   - `screens` et `views` : les écrans et leurs éléments ; `animations` : les mises en scène.
   - `progress` : le profil du joueur (collection, deck, pièces, rangs, sauvegarde, statistiques, succès).
 - `lwjgl3` : le lanceur pour ordinateur.
-- `assets` : images, sons, polices, cartes (`assets/cards`) et traductions (`assets/i18n/en.json`).
-  Chaque texte du jeu est écrit en français dans le code et traduit dans `en.json` ; un test vérifie
-  qu'aucun ne manque.
+- `assets` : images, sons, polices, cartes (`assets/cards`) et traductions (`assets/i18n/en/`).
+  Chaque texte du jeu est écrit en français dans le code et traduit dans un des fichiers de `assets/i18n/en/`,
+  par thème (`cartes.json`, `ennemis.json`, `histoire.json`…, liste dans `Lang.PARTS`). Dans chaque fichier
+  les textes sont rangés **par ordre alphabétique** : un nouveau texte va à sa place, pas à la fin.
+  Des tests vérifient qu'aucun ne manque, que l'ordre est respecté et qu'aucun texte n'est en double.
 - `tools/sounds` : le générateur des bruitages (`python3 generate_sounds.py <nom>`).
 
 ### Simulateur d'équilibrage
