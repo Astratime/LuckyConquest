@@ -1,5 +1,6 @@
 package fr.astratime.lucky.entities.tower;
 
+import fr.astratime.lucky.entities.GameRandom;
 import fr.astratime.lucky.entities.BonusPot;
 import fr.astratime.lucky.entities.enemy.EnemyKind;
 import fr.astratime.lucky.entities.run.CombatRun;
@@ -43,7 +44,7 @@ public class TowerRun implements CombatRun {
 
     /** @param hard mode difficile : ennemis plus forts (voir {@link EnemyKind#getPower(boolean)}) */
     public TowerRun(Chapter chapter, boolean hard) {
-        this(chapter, new Random(), hard);
+        this(chapter, GameRandom.live(), hard);
     }
 
     /** @param random ordre des cartes du choix de l'adversaire (graine fixe pour les tests) */
@@ -74,7 +75,7 @@ public class TowerRun implements CombatRun {
         List<EnemyKind> fights = fights(chapter);
         EnemyKind kind = fights.get(fight);
         int stage = fight == 0 ? 0 : fight == fights.size() - 1 ? STAGES - 1 : 1;
-        return new TowerRun(chapter, new Random(), hard, stage, kind);
+        return new TowerRun(chapter, GameRandom.live(), hard, stage, kind);
     }
 
     /** @return tous les combats du chapitre, dans l'ordre : premier ennemi, les trois challengers, le boss. */

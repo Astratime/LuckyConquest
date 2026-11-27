@@ -1,5 +1,6 @@
 package fr.astratime.lucky.entities.effects;
 
+import fr.astratime.lucky.entities.GameRandom;
 import fr.astratime.lucky.entities.Card;
 import fr.astratime.lucky.entities.context.PlayContext;
 import fr.astratime.lucky.entities.context.TurnContext;
@@ -9,7 +10,6 @@ import fr.astratime.lucky.popups.EffectSound;
 import fr.astratime.lucky.popups.PopupScale;
 
 import java.util.List;
-import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Predicate;
 
 /**
@@ -36,7 +36,7 @@ public class HeraldEffect extends Effect {
     private static int call(PlayContext context, List<Card> deck, Predicate<Card> rank) {
         List<Card> matching = deck.stream().filter(Card::hasRank).filter(rank).toList();
         if (matching.isEmpty()) return 0;
-        Card card = matching.get(ThreadLocalRandom.current().nextInt(matching.size()));
+        Card card = matching.get(GameRandom.get().nextInt(matching.size()));
         deck.remove(card);
         context.fetchCard(card);
         return 1;

@@ -1,5 +1,6 @@
 package fr.astratime.lucky.entities.effects;
 
+import fr.astratime.lucky.entities.GameRandom;
 import fr.astratime.lucky.entities.LastingEffects;
 import fr.astratime.lucky.entities.Symbol;
 import fr.astratime.lucky.entities.SymbolRegistry;
@@ -40,7 +41,6 @@ public class AceOfClubsEffect extends Effect {
     public static final int OWN_STARS  = 10;
     /** Points de Bonne étoile qui garantissent le Bingo (carte normale). */
     public static final int GUARANTEED = 30;
-    private static final Random RANDOM = new Random();
 
     private final Kind  kind;
     /** Puissance de la carte : 1, ou {@link fr.astratime.lucky.entities.Card#UPGRADE_FACTOR} pour sa version « + ». */
@@ -88,7 +88,7 @@ public class AceOfClubsEffect extends Effect {
     }
 
     /** @return {@code true} si le sort réussit (toujours à 100 %). Ouvert aux tests. */
-    protected boolean roll(float chance) { return chance >= 1f || RANDOM.nextFloat() < chance; }
+    protected boolean roll(float chance) { return chance >= 1f || GameRandom.get().nextFloat() < chance; }
 
     /** @return le symbole du Bingo, ou {@code null} : tiré au hasard dans la machine (As, ou machine sans symbole du bon genre). */
     private Symbol pick(PlayContext context) {
@@ -98,7 +98,7 @@ public class AceOfClubsEffect extends Effect {
             case DEFENSE -> SymbolRegistry.getDefenseSymbols(context.getPlayer());
             case GAINS   -> SymbolRegistry.getGainSymbols(context.getPlayer());
         };
-        return pool.isEmpty() ? null : pool.get(RANDOM.nextInt(pool.size()));
+        return pool.isEmpty() ? null : pool.get(GameRandom.get().nextInt(pool.size()));
     }
 
     /** Aucun effet propre au tirage : le Bingo obtenu à la pose y est imposé par {@link StarBingo}. */

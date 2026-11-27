@@ -1,5 +1,6 @@
 package fr.astratime.lucky.entities.context;
 
+import fr.astratime.lucky.entities.GameRandom;
 import fr.astratime.lucky.i18n.Lang;
 
 import fr.astratime.lucky.entities.BigNumber;
@@ -445,7 +446,7 @@ public class CombatContext {
     public Blessing nextBlessing() {
         if (blessingIndex < blessings.length) return blessings[blessingIndex++];
         Blessing[] all = Blessing.values();
-        return all[java.util.concurrent.ThreadLocalRandom.current().nextInt(all.length)];
+        return all[GameRandom.get().nextInt(all.length)];
     }
 
     /** Descente aux enfers : s'il attaque, l'ennemi reçoit {@code percent} % de ses PV max en plus (sans plafond, s'additionne par rouleau). */

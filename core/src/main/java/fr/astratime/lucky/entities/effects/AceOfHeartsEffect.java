@@ -1,5 +1,6 @@
 package fr.astratime.lucky.entities.effects;
 
+import fr.astratime.lucky.entities.GameRandom;
 import fr.astratime.lucky.entities.LastingEffects;
 import fr.astratime.lucky.entities.Player;
 import fr.astratime.lucky.entities.Symbol;
@@ -27,7 +28,6 @@ public class AceOfHeartsEffect extends Effect {
     private static final int    BOOST_AMOUNT = 200;
     /** Multiplicateur ajouté par proportion de vie manquante (x3 à 0 PV). */
     static final float          FRENZY_PER_MISSING_HP = 2f;
-    private static final Random RANDOM       = new Random();
 
     /** Puissance de la carte : 1, ou {@link fr.astratime.lucky.entities.Card#UPGRADE_FACTOR} pour sa version « + ». */
     private final float power;
@@ -41,7 +41,7 @@ public class AceOfHeartsEffect extends Effect {
     public void apply(TurnContext context) {
         List<Symbol> attackSymbols = SymbolRegistry.getAttackSymbols(context.getCombatContext().getPlayer()); // ceux de sa machine
         if (!attackSymbols.isEmpty()) {
-            Symbol target = attackSymbols.get(RANDOM.nextInt(attackSymbols.size()));
+            Symbol target = attackSymbols.get(GameRandom.get().nextInt(attackSymbols.size()));
             int boost = Math.round(BOOST_AMOUNT * power);
             context.getSpinContext().addWeightBoost(target, boost);
             context.addEvent(new SymbolBoostedEvent(target, boost));

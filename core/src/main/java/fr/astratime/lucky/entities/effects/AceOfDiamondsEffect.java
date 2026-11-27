@@ -1,5 +1,6 @@
 package fr.astratime.lucky.entities.effects;
 
+import fr.astratime.lucky.entities.GameRandom;
 import fr.astratime.lucky.entities.LastingEffects;
 import fr.astratime.lucky.entities.Symbol;
 import fr.astratime.lucky.entities.SymbolRegistry;
@@ -30,7 +31,6 @@ public class AceOfDiamondsEffect extends Effect {
     static final int            VAULT_PER_ATTACK = 10;
     /** Boost de poids appliqué au symbole d'attaque choisi au hasard. */
     private static final int    BOOST_AMOUNT     = 200;
-    private static final Random RANDOM           = new Random();
 
     /** Puissance de la carte : 1, ou {@link fr.astratime.lucky.entities.Card#UPGRADE_FACTOR} pour sa version « + ». */
     private final float power;
@@ -46,7 +46,7 @@ public class AceOfDiamondsEffect extends Effect {
         List<Symbol> boostable = SymbolRegistry.getAttackSymbols(combat.getPlayer()); // ceux de sa machine
         if (boostable.isEmpty()) boostable = SymbolRegistry.getDefenseSymbols(combat.getPlayer()); // machine sans attaque
         if (!boostable.isEmpty()) {
-            Symbol target = boostable.get(RANDOM.nextInt(boostable.size()));
+            Symbol target = boostable.get(GameRandom.get().nextInt(boostable.size()));
             int boost = Math.round(BOOST_AMOUNT * power);
             context.getSpinContext().addWeightBoost(target, boost);
             context.addEvent(new SymbolBoostedEvent(target, boost));

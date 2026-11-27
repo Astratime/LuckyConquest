@@ -49,7 +49,7 @@ public class SlotMachine {
 
     /** @param reels symboles de la machine (le Joker s'y ajoute toujours) */
     public SlotMachine(List<Symbol> reels) {
-        this(reels, new Random());
+        this(reels, GameRandom.live());
     }
 
     /** @param random source d'aléatoire (ex : graine fixe pour des tests reproductibles) */

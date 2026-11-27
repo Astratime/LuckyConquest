@@ -1,5 +1,6 @@
 package fr.astratime.lucky.entities.tower;
 
+import fr.astratime.lucky.entities.GameRandom;
 import fr.astratime.lucky.entities.BonusPot;
 import fr.astratime.lucky.entities.enemy.Difficulty;
 import fr.astratime.lucky.entities.enemy.EnemyKind;
@@ -61,7 +62,7 @@ public class EndlessRun implements CombatRun {
     private final BonusPot  pot = new BonusPot();
 
     public EndlessRun() {
-        this(new Random());
+        this(GameRandom.live());
     }
 
     /** @param random ennemis tirés (graine fixe pour les tests) */
