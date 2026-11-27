@@ -4050,5 +4050,9 @@
   "Tu peux garder {0} decks, et choisir lequel jouer. Fiche : tout ton deck d'un coup d'oeil.": "You can keep {0} decks, and pick which one to play. Profile: your whole deck at a glance.",
   "Un Jeu bonus ! La Roue, le Plinko ou le Coup de poing : ici, seule la chance décide.": "A Bonus game! The Wheel, the Plinko or the Punch: here, only luck decides.",
   "Ce qu'il tire multiplie ta cagnotte, celle de tes Mises. Plus elle est pleine, plus tu gagnes. Puis elle repart de zéro.": "What it draws multiplies your pot, the one your Stakes fill. The fuller it is, the more you win. Then it starts again from zero.",
-  "Une fois tous les rangs achetés, la boutique te propose de les rendre. Chaque niveau multiplie par {0} tes PV max, l'attaque et la défense de tes symboles, et ajoute +{1} % de gains, jusqu'au Prestige {2}. Tes pièces et tes Lingots repartent à 0, tu gardes tout le reste. À la Table du croupier, l'onglet Prestige te laisse jouer avec un niveau plus bas.": "Once every rank is bought, the shop offers to give them back. Each level multiplies your max HP and your symbols' attack and defense by {0}, and adds +{1}% gains, up to Prestige {2}. Your coins and Ingots go back to 0, you keep everything else. At the Dealer's table, the Prestige tab lets you play at a lower level."
+  "Une fois tous les rangs achetés, la boutique te propose de les rendre. Chaque niveau multiplie par {0} tes PV max, l'attaque et la défense de tes symboles, et ajoute +{1} % de gains, jusqu'au Prestige {2}. Tes pièces et tes Lingots repartent à 0, tu gardes tout le reste. À la Table du croupier, l'onglet Prestige te laisse jouer avec un niveau plus bas.": "Once every rank is bought, the shop offers to give them back. Each level multiplies your max HP and your symbols' attack and defense by {0}, and adds +{1}% gains, up to Prestige {2}. Your coins and Ingots go back to 0, you keep everything else. At the Dealer's table, the Prestige tab lets you play at a lower level.",
+  "Lot truqué": "Rigged prize",
+  "Jeu truqué": "Rigged game",
+  "Avantage de la maison": "House edge",
+  "Frayeur": "Fright"
 }

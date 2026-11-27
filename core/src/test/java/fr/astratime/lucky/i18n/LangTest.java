@@ -129,6 +129,49 @@ class LangTest {
         assertEquals(List.of(), missing, "Textes sans traduction anglaise");
     }
 
+    /**
+     * Les libellés passés au détail d'un symbole ({@code multiplyAttack(x, "Frayeur")}…) sont traduits
+     * à l'affichage : chacun doit avoir sa traduction, comme les textes de {@code Lang.t}.
+     */
+    @Test
+    void everyPowerLabelIsTranslated() throws IOException {
+        Map<String, String> english = english();
+        List<String> missing = new ArrayList<>();
+        List<Path> files;
+        try (Stream<Path> walk = Files.walk(SOURCES)) {
+            files = walk.filter(path -> path.toString().endsWith(".java")).toList();
+        }
+        int found = 0;
+        for (Path file : files) {
+            for (String label : powerLabels(read(file))) {
+                found++;
+                if (!english.containsKey(label)) missing.add(file.getFileName() + " : " + label);
+            }
+        }
+        assertTrue(found > 20, "Les libellés du détail des symboles n'ont pas été trouvés");
+        assertEquals(List.of(), missing, "Libellés du détail des symboles sans traduction anglaise");
+    }
+
+    /** Méthodes de {@code CombatContext} dont le deuxième argument est un libellé affiché. */
+    private static final Pattern POWER_CALL = Pattern.compile(
+        "\\.(addAttackBonus|addAttackPower|addFlatAsPower|addDefenseBonus|multiplyGains|multiplyAttack"
+            + "|multiplyDefense|multiplySymbolPower)\\(");
+
+    /** @return les libellés écrits en toutes lettres (deuxième argument) des appels {@link #POWER_CALL}. */
+    static List<String> powerLabels(String source) {
+        List<String> labels = new ArrayList<>();
+        Matcher matcher = POWER_CALL.matcher(source);
+        while (matcher.find()) {
+            int end = argumentKeys(source, matcher.end(), new ArrayList<>()); // la valeur
+            if (end >= source.length() || source.charAt(end) != ',') continue;
+            List<String> second = new ArrayList<>();
+            int after = argumentKeys(source, end + 1, second);
+            String argument = source.substring(end + 1, after).trim();
+            if (second.size() == 1 && argument.startsWith("\"") && argument.endsWith("\"")) labels.add(second.get(0));
+        }
+        return labels;
+    }
+
     @Test
     void everyCardNameIsTranslated() throws IOException {
         Map<String, String> english = english();
