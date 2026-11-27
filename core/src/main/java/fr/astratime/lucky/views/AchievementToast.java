@@ -16,6 +16,7 @@ import fr.astratime.lucky.assets.Palette;
 import fr.astratime.lucky.i18n.Lang;
 import fr.astratime.lucky.progress.Achievement;
 import fr.astratime.lucky.progress.PlayerProfile;
+import fr.astratime.lucky.progress.Money;
 
 import java.util.ArrayDeque;
 import java.util.Collection;
@@ -90,7 +91,7 @@ public class AchievementToast extends Group implements Disposable {
         name.setText(achievement.getName());
         name.pack();
         name.setPosition(textX, (HEIGHT - name.getHeight()) / 2f - 2f);
-        reward.setText(Lang.f("+{0}", PlayerProfile.formatPrice(achievement.getReward())));
+        reward.setText(Lang.f("+{0}", Money.formatPrice(achievement.getReward())));
         reward.pack();
         reward.setPosition(textX, PAD - 6f);
 

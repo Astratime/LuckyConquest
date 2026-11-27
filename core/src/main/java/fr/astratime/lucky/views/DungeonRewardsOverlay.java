@@ -27,6 +27,8 @@ import fr.astratime.lucky.entities.exploration.Dungeon;
 import fr.astratime.lucky.entities.exploration.Place;
 import fr.astratime.lucky.i18n.Lang;
 import fr.astratime.lucky.progress.PlayerProfile;
+import fr.astratime.lucky.progress.CoinRewards;
+import fr.astratime.lucky.progress.Money;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -144,19 +146,19 @@ public class DungeonRewardsOverlay implements Disposable {
         List<String> lines = new ArrayList<>();
         if (admin) lines.add(Lang.t("Mode ADMIN : ses combats ne rapportent rien."));
         if (hard) lines.add(Lang.f("Mode difficile : un tirage coûte {0}, tous les gains suivent.",
-            PlayerProfile.formatCoins(cost)));
+            Money.formatCoins(cost)));
         lines.add(Lang.t("Roi battu : tes gains du combat (cadre Gains) deviennent des pièces."));
-        lines.add(Lang.f("Coffre : {0} pièces ({1} tirages à {2}).", PlayerProfile.formatCoins(chest),
-            PlayerProfile.formatCoins(chest / cost), PlayerProfile.formatCoins(cost)));
+        lines.add(Lang.f("Coffre : {0} pièces ({1} tirages à {2}).", Money.formatCoins(chest),
+            Money.formatCoins(chest / cost), Money.formatCoins(cost)));
         lines.add(Lang.f("Carte du coffre déjà en {0} exemplaires : {1} pièces en plus.", PlayerProfile.MAX_COPIES,
-            PlayerProfile.formatCoins(place.getDuplicateCoins(hard))));
+            Money.formatCoins(place.getDuplicateCoins(hard))));
         lines.add(Lang.f("Défaite : tu gardes {0} % de tes gains, en pièces (au plus {1}), selon la part du "
                 + "donjon faite.",
-            PlayerProfile.DEFEAT_KEEP_PERCENT, PlayerProfile.formatCoins(place.getDefeatCap(hard))));
+            CoinRewards.DEFEAT_KEEP_PERCENT, Money.formatCoins(place.getDefeatCap(hard))));
         lines.add(Lang.t("Carte au trésor jouée : un coffre de plus."));
         if (!hard) {
             lines.add(Lang.f("Lieu en dessous de celui de ton rang : {0} % des pièces (un lieu en dessous), {1} % (deux "
-                + "ou plus).", PlayerProfile.LOWER_PLACE_PERCENT, PlayerProfile.FAR_LOWER_PLACE_PERCENT));
+                + "ou plus).", CoinRewards.LOWER_PLACE_PERCENT, CoinRewards.FAR_LOWER_PLACE_PERCENT));
         }
         Symbol reel = place.getReelReward();
         if (reel != null && !hard) {

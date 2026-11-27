@@ -29,6 +29,7 @@ import fr.astratime.lucky.entities.exploration.Dungeon;
 import fr.astratime.lucky.entities.exploration.Place;
 import fr.astratime.lucky.i18n.Lang;
 import fr.astratime.lucky.progress.PlayerProfile;
+import fr.astratime.lucky.progress.Money;
 
 /**
  * Coffre au trésor, au bout d'un donjon de l'Exploration. Le coffre fermé
@@ -168,8 +169,8 @@ public class ChestOverlay implements Disposable {
         copiesText.setText(reward.newCopy()
             ? Lang.f("NOUVELLE CARTE ! {0}/{1} EXEMPLAIRES", reward.copies(), PlayerProfile.MAX_COPIES)
             : Lang.f("DÉJÀ {0} EXEMPLAIRES : {1} PIÈCES EN PLUS",
-                PlayerProfile.MAX_COPIES, PlayerProfile.formatCoins(Place.of(dungeon).getDuplicateCoins(hard))));
-        coinsText.setText(Lang.f("PIÈCES +{0}", PlayerProfile.formatCoins(reward.coins())));
+                PlayerProfile.MAX_COPIES, Money.formatCoins(Place.of(dungeon).getDuplicateCoins(hard))));
+        coinsText.setText(Lang.f("PIÈCES +{0}", Money.formatCoins(reward.coins())));
         reelText.setText(earnedReel == null ? ""
             : Lang.f("NOUVEAU ROULEAU : {0} ! (TABLE DU CROUPIER)", earnedReel.getDisplayName()));
         earnedReel = null; // annoncé une seule fois, au premier coffre

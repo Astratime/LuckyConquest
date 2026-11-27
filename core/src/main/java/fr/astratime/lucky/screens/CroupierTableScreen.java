@@ -39,6 +39,7 @@ import fr.astratime.lucky.progress.DeckDraft;
 import fr.astratime.lucky.progress.MachineDraft;
 import fr.astratime.lucky.progress.ReelShop;
 import fr.astratime.lucky.progress.PlayerProfile;
+import fr.astratime.lucky.progress.Money;
 import fr.astratime.lucky.progress.Rank;
 import fr.astratime.lucky.progress.TableSort;
 import fr.astratime.lucky.views.GuideOverlay;
@@ -371,7 +372,7 @@ public class CroupierTableScreen extends CasinoMenuScreen {
             .onStart(() -> before[0] = draft.size()));
         steps.add(GuideOverlay.Step.say(Lang.f("Quand tu as {0} exemplaires d'une carte, FUSIONNER apparaît dessus. Pour {1} "
             + "pièces, ils deviennent une carte +, avec un liseré doré et des valeurs +50 %.", Card.UPGRADE_COST,
-            PlayerProfile.formatCoins(Card.UPGRADE_PRICE)),
+            Money.formatCoins(Card.UPGRADE_PRICE)),
             () -> GuideOverlay.boundsOf(collectionPanel)));
         if (!profile.isAdmin()) { // le mode ADMIN a un seul deck
             steps.add(GuideOverlay.Step.say(Lang.f("Tu peux garder {0} decks, et choisir lequel jouer. Fiche : tout ton deck "
@@ -888,7 +889,7 @@ public class CroupierTableScreen extends CasinoMenuScreen {
         String id = card.getId();
         Card plus = factory.apply(Card.upgradedId(id));
         tooltip.hide();
-        String cost = Lang.f("Prix : {0}. Tu as {1}.", PlayerProfile.formatPrice(Card.UPGRADE_PRICE),
+        String cost = Lang.f("Prix : {0}. Tu as {1}.", Money.formatPrice(Card.UPGRADE_PRICE),
             profile.formatWealth());
         upgradeOverlay.show(card, cardTextures.get(card), plus, cardTextures.get(plus), cost, profile.upgradeProblem(id), () -> {
             if (!profile.upgradeCard(id)) return;

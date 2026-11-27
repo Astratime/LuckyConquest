@@ -26,6 +26,8 @@ import fr.astratime.lucky.entities.exploration.DungeonRun;
 import fr.astratime.lucky.entities.exploration.Place;
 import fr.astratime.lucky.loaders.CardLoader;
 import fr.astratime.lucky.progress.PlayerProfile;
+import fr.astratime.lucky.progress.CoinRewards;
+import fr.astratime.lucky.progress.Money;
 import fr.astratime.lucky.progress.Rank;
 
 import java.io.IOException;
@@ -416,7 +418,7 @@ public final class BalanceSimulator {
                 for (Rank rank : RANKS) {
                     DungeonStats stats = dungeon(dungeon, place, rank, sizes.dungeonRuns(), SEED);
                     out.append(String.format(Locale.ROOT, " %.0f %% / %s |", stats.winRate() * 100,
-                        stats.winRate() == 0 ? "-" : PlayerProfile.formatCoins(stats.medianCoins())));
+                        stats.winRate() == 0 ? "-" : Money.formatCoins(stats.medianCoins())));
                 }
                 out.append('\n');
             }
@@ -455,7 +457,7 @@ public final class BalanceSimulator {
                 effort = 0.5 + 0.5 * (1 - Math.max(0, game.getGameState().getEnemy().getHpRatio()));
             }
             played.add(new Run(won, game.getGameState().getPlayer().getGains(), turns[0] - before, won ? 1 : effort));
-            long reward = PlayerProfile.combatReward(won, true, game.getGameState().getPlayer().getGains(),
+            long reward = CoinRewards.combatReward(won, true, game.getGameState().getPlayer().getGains(),
                 place, effort);
             if (!won) {
                 lossTotal += reward;
@@ -636,7 +638,7 @@ public final class BalanceSimulator {
         out.append("\n### Prix des rangs\n\n")
             .append("Pour payer chaque rang, le joueur fait le donjon qui rapporte le plus avec le rang d'avant "
                 + "(deck de départ, coffre compris). Descentes = prix / pièces moyennes d'une descente "
-                + "(défaites comprises, elles rapportent " + PlayerProfile.DEFEAT_KEEP_PERCENT + " % des gains).\n\n")
+                + "(défaites comprises, elles rapportent " + CoinRewards.DEFEAT_KEEP_PERCENT + " % des gains).\n\n")
             .append("| Rang | Prix | Meilleur donjon avec le rang d'avant | Pièces par descente | Descentes |\n")
             .append("|---|---:|---|---:|---:|\n");
         Rank previous = null;
@@ -653,8 +655,8 @@ public final class BalanceSimulator {
                 }
             }
             out.append(String.format(Locale.ROOT, "| %s | %s | %s | %s | %s |%n", rank.getTitle(),
-                PlayerProfile.formatCoins(rank.getPrice()), bestName,
-                bestCoins == 0 ? "-" : PlayerProfile.formatCoins(Math.round(bestCoins)),
+                Money.formatCoins(rank.getPrice()), bestName,
+                bestCoins == 0 ? "-" : Money.formatCoins(Math.round(bestCoins)),
                 bestCoins == 0 ? "-" : String.valueOf((long) Math.ceil(rank.getPrice() / bestCoins))));
             previous = rank;
         }
@@ -670,12 +672,12 @@ public final class BalanceSimulator {
         out.append("## 6. Pièces moyennes d'une descente, par rang\n\n")
             .append("Deck de départ, sans échoppe. Une descente = le soldat puis le roi. Victoire : gains du combat + coffre ")
             .append("(Prairie 500, Port 1 500, Mines 4 500, Casino 13 500 coûts de tirage, sans la carte en double ni ")
-            .append("Carte au trésor). Défaite : ").append(PlayerProfile.DEFEAT_KEEP_PERCENT).append(" % des gains au ")
+            .append("Carte au trésor). Défaite : ").append(CoinRewards.DEFEAT_KEEP_PERCENT).append(" % des gains au ")
             .append("moment de la défaite. Moyenne sur toutes les descentes, défaites comprises.\n\n")
             .append("Coffres : ");
         List<String> chests = new ArrayList<>();
         for (Place place : Place.values()) {
-            chests.add(place.getShortName() + " " + PlayerProfile.formatCoins(place.getChestCoins()));
+            chests.add(place.getShortName() + " " + Money.formatCoins(place.getChestCoins()));
         }
         out.append(String.join(", ", chests)).append(".\n\n");
 
@@ -733,7 +735,7 @@ public final class BalanceSimulator {
             Rank next = i + 1 < ranks.size() ? ranks.get(i + 1) : null;
             out.append(String.format(Locale.ROOT, "| %s | %s | %.0f %% | %s | %s | %s |%n", title(rank), bestName,
                 bestWins * 100, best == 0 ? "-" : abbreviated(best),
-                next == null ? "-" : next.getTitle() + " (" + PlayerProfile.formatCoins(next.getPrice()) + ")",
+                next == null ? "-" : next.getTitle() + " (" + Money.formatCoins(next.getPrice()) + ")",
                 next == null || best == 0 ? "-" : String.valueOf((long) Math.ceil(next.getPrice() / best))));
         }
 
@@ -776,8 +778,8 @@ public final class BalanceSimulator {
             Rank next = i + 1 < ranks.size() ? ranks.get(i + 1) : null;
             out.append(String.format(Locale.ROOT, "| %s | %s | %.0f %% | %s | %s | %s |%n", title(rank), bestName,
                 bestWins * 100,
-                best == 0 ? "-" : PlayerProfile.formatCoins(Math.round(best)),
-                next == null ? "-" : next.getTitle() + " (" + PlayerProfile.formatCoins(next.getPrice()) + ")",
+                best == 0 ? "-" : Money.formatCoins(Math.round(best)),
+                next == null ? "-" : next.getTitle() + " (" + Money.formatCoins(next.getPrice()) + ")",
                 next == null || best == 0 ? "-" : String.valueOf((long) Math.ceil(next.getPrice() / best))));
         }
         out.append('\n');
@@ -796,7 +798,7 @@ public final class BalanceSimulator {
      *         avec ces coffres
      */
     static Policy withChests(String name, int... chestSpins) {
-        double keep = PlayerProfile.DEFEAT_KEEP_PERCENT / 100.0;
+        double keep = CoinRewards.DEFEAT_KEEP_PERCENT / 100.0;
         StringBuilder text = new StringBuilder("coffres de ");
         for (int i = 0; i < chestSpins.length; i++) {
             text.append(i == 0 ? "" : " / ").append(chestSpins[i]);
@@ -878,7 +880,7 @@ public final class BalanceSimulator {
         if (coins >= 1e9) return String.format(Locale.FRANCE, "%.1f G", coins / 1e9);
         if (coins >= 1e6) return String.format(Locale.FRANCE, "%.1f M", coins / 1e6);
         if (coins >= 1e4) return String.format(Locale.FRANCE, "%.0f k", coins / 1e3);
-        return PlayerProfile.formatCoins(Math.round(coins));
+        return Money.formatCoins(Math.round(coins));
     }
 
     // -------------------------------------------------------------------------
@@ -906,8 +908,8 @@ public final class BalanceSimulator {
             for (Rank rank : ranks) {
                 DungeonStats st = dungeon(dungeon, place, rank, Gear.STARTER, sizes.dungeonRuns(), SEED);
                 out.append(String.format(Locale.ROOT, " %.0f%% %s %s/t |", st.winRate() * 100,
-                    PlayerProfile.formatCoins((long) st.averageCoins()),
-                    PlayerProfile.formatCoins((long) (st.averageCoins() / Math.max(1, st.averageTurns())))));
+                    Money.formatCoins((long) st.averageCoins()),
+                    Money.formatCoins((long) (st.averageCoins() / Math.max(1, st.averageTurns())))));
             }
             out.append('\n');
         }
@@ -991,7 +993,7 @@ public final class BalanceSimulator {
 
     /** Lieu associé à chaque rang : celui du jeu (dix paliers, 2026-11-20). */
     static Place placeOfRank(Rank rank) {
-        return fr.astratime.lucky.progress.PlayerProfile.placeOf(rank);
+        return fr.astratime.lucky.progress.CoinRewards.placeOf(rank);
     }
 
     /** Totaux d'un donjon (somme sur les descentes). */
@@ -1087,9 +1089,9 @@ public final class BalanceSimulator {
                 effort = 0.5 + 0.5 * (1 - Math.max(0, game.getGameState().getEnemy().getHpRatio()));
             }
             double gains = game.getGameState().getPlayer().getGains();
-            int share = PlayerProfile.coinsPercent(rank, place, hard); // lieu en dessous de celui du rang
-            long reward = PlayerProfile.share(PlayerProfile.combatReward(won, true, gains, place, hard, won ? 1 : effort), share);
-            long chestShare = PlayerProfile.share(chest, share);
+            int share = CoinRewards.coinsPercent(rank, place, hard); // lieu en dessous de celui du rang
+            long reward = CoinRewards.share(CoinRewards.combatReward(won, true, gains, place, hard, won ? 1 : effort), share);
+            long chestShare = CoinRewards.share(chest, share);
             rp.runs++;
             rp.runCoins.add((double) reward + (won ? chestShare : 0));
             rp.turns += turns[0];
