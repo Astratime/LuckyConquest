@@ -1,5 +1,6 @@
 package fr.astratime.lucky.sim;
 
+import fr.astratime.lucky.entities.GameRandom;
 import fr.astratime.lucky.controllers.GameController;
 import fr.astratime.lucky.entities.BonusGame;
 import fr.astratime.lucky.entities.Card;
@@ -227,7 +228,30 @@ public final class BalanceSimulator {
         this.explorationStall = GameController.stallFor(shop, cards, false, false);
     }
 
+    /**
+     * Graine du hasard du jeu ({@code -Pseed=N}, 42 par défaut) : deux lancements avec la même graine donnent
+     * exactement le même rapport, donc un « avant / après » ne mesure que l'effet du réglage.
+     */
+    static final long GAME_SEED = Long.getLong("lucky.seed", 42L);
+
+    /**
+     * Joue les lots en parallèle, chacun avec sa propre graine (tirée de {@link #GAME_SEED} et de sa place
+     * dans la liste) : le résultat ne dépend ni de l'ordre ni du fil qui les joue.
+     */
+    static void runJobs(List<Runnable> jobs) {
+        java.util.stream.IntStream.range(0, jobs.size()).parallel().forEach(index -> {
+            java.util.Random before = GameRandom.seeded(); // le fil principal joue aussi des lots : il retrouve le sien
+            GameRandom.seed(GAME_SEED * 1_000_003L + index);
+            try {
+                jobs.get(index).run();
+            } finally {
+                GameRandom.restore(before);
+            }
+        });
+    }
+
     public static void main(String[] args) throws IOException {
+        GameRandom.seed(GAME_SEED);
         boolean quick = List.of(args).contains("--quick");
         Path assets = Paths.get(System.getProperty("lucky.assets", "../assets")).toAbsolutePath().normalize();
         BalanceSimulator simulator = new BalanceSimulator(assets, quick ? Sizes.QUICK : Sizes.FULL);
@@ -280,7 +304,7 @@ public final class BalanceSimulator {
                 }
             }
         }
-        jobs.parallelStream().forEach(Runnable::run);
+        runJobs(jobs);
     }
 
     // -------------------------------------------------------------------------
@@ -897,7 +921,7 @@ public final class BalanceSimulator {
         for (Place place : Place.values()) if (only.isEmpty() || only.contains(place.name())) places.add(place);
         for (Place place : places) for (Dungeon dungeon : place.getDungeons()) for (Rank rank : ranks)
             jobs.add(() -> dungeon(dungeon, place, rank, Gear.STARTER, sizes.dungeonRuns(), SEED));
-        jobs.parallelStream().forEach(Runnable::run);
+        runJobs(jobs);
         StringBuilder out = new StringBuilder("| Donjon |");
         for (Rank rank : ranks) out.append(' ').append(title(rank)).append(" |");
         out.append('\n');
@@ -964,7 +988,7 @@ public final class BalanceSimulator {
                 }
             }
         }
-        jobs.parallelStream().forEach(Runnable::run);
+        runJobs(jobs);
         for (int pass = 0; pass < 2; pass++) {
             Map<String, Double> rates = pass == 0 ? starter : top;
             out.append(pass == 0 ? "### Deck de départ\n\n" : "### Meilleur équipement au maximum\n\n");
@@ -1248,7 +1272,7 @@ public final class BalanceSimulator {
                 });
             }
         }
-        jobs.parallelStream().forEach(Runnable::run);
+        runJobs(jobs);
         Collections.sort(lines);
         return "kind\tgear\tprestige\twhere\twinPercent\tturns\n" + String.join("\n", lines) + "\n";
     }
@@ -1288,7 +1312,7 @@ public final class BalanceSimulator {
                 results.put(index, total);
             });
         }
-        jobs.parallelStream().forEach(Runnable::run);
+        runJobs(jobs);
         StringBuilder out = new StringBuilder("rank\tplace\tplayer\ttarget\truns\twinPercent\tavgCoinsRun\tmedianCoinsRun\ttypical30\tturnsPerRun\tdescentsForNextRank\n");
         for (int i = 0; i < cases.size(); i++) {
             Object[] c = cases.get(i);
@@ -1381,7 +1405,7 @@ public final class BalanceSimulator {
             jobs.add(() -> rankPlace(first.place(), first.hard(), first.rank(), first.prestige(), g.getValue(), true, runs, SEED)
                 .forEach((name, rp) -> simulated.put(g.getKey() + ';' + name, rp)));
         }
-        jobs.parallelStream().forEach(Runnable::run);
+        runJobs(jobs);
         StringBuilder out = new StringBuilder(String.format(Locale.ROOT,
             "# Journal des descentes comparé au joueur malin%n%n%d descentes lues dans %s ; Mise du robot %d %%, %d descentes simulées par donjon.%n%n",
             descents.size(), file.getFileName(), STAKE.percent, runs));
@@ -1447,7 +1471,7 @@ public final class BalanceSimulator {
                 results.put(gear.name() + '|' + place + '|' + hard, total);
             });
         }
-        jobs.parallelStream().forEach(Runnable::run);
+        runJobs(jobs);
         StringBuilder out = new StringBuilder("gear\trank\tprestige\tplace\thard\tspinCost\truns\twinPercent\tavgCoinsRun"
             + "\tmedianCoinsRun\ttypical30\tturnsPerRun\tcoinsPerTurn\n");
         for (Gear gear : gears) for (Object[] c : cases) {
@@ -1496,7 +1520,7 @@ public final class BalanceSimulator {
                 });
             }
         }
-        jobs.parallelStream().forEach(Runnable::run);
+        runJobs(jobs);
         StringBuilder out = new StringBuilder("prestige\trank\tplace\thard\twinPercent\ttypical30\tbest\tnextRank\tnextPrice\tdescents\n");
         for (int level : levels) for (Rank rank : ranks) {
             Rank next = rank == null ? Rank.values()[0] : Rank.values()[rank.ordinal() + 1];
@@ -1539,7 +1563,7 @@ public final class BalanceSimulator {
             jobs.add(() -> rankPlace(place, rank, gear, on, runs, SEED).forEach((name, rp) ->
                 results.put(gear.name() + '|' + title(rank) + '|' + on + '|' + name, rp)));
         }
-        jobs.parallelStream().forEach(Runnable::run);
+        runJobs(jobs);
         if (POT_LOG != null) {
             StringBuilder log = new StringBuilder("pot\tlines\ttotal\tspinCost\n");
             for (double[] row : POT_LOG) log.append(String.format(Locale.ROOT, "%.0f\t%.0f\t%.0f\t%.0f%n", row[0], row[1], row[2], row[3]));

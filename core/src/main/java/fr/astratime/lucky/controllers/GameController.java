@@ -1,5 +1,6 @@
 package fr.astratime.lucky.controllers;
 
+import fr.astratime.lucky.entities.GameRandom;
 import fr.astratime.lucky.entities.BigNumber;
 import fr.astratime.lucky.entities.BonusGame;
 import fr.astratime.lucky.entities.BonusPot;
@@ -155,7 +156,7 @@ public class GameController {
     /** Cartes achetées à l'échoppe dans ce combat, par id : chaque achat double le prix de la suivante. */
     private final Map<String, Integer> bought = new HashMap<>();
 
-    private final Random random = new Random();
+    private final Random random = GameRandom.live();
 
     /** Rouleaux de l'échoppe : achetés ou retirés le temps du combat. */
     private final ReelStall reelStall = new ReelStall(random);

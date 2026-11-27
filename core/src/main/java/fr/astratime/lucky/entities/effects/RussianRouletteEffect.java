@@ -1,5 +1,6 @@
 package fr.astratime.lucky.entities.effects;
 
+import fr.astratime.lucky.entities.GameRandom;
 import fr.astratime.lucky.entities.choices.RouletteChoice;
 import fr.astratime.lucky.entities.context.PlayContext;
 import fr.astratime.lucky.entities.context.TurnContext;
@@ -44,7 +45,7 @@ public class RussianRouletteEffect extends Effect {
     public void onPlay(PlayContext context) {
         List<Boolean> cursed = new ArrayList<>(Collections.nCopies(CARDS, false));
         cursed.set(0, true);
-        Collections.shuffle(cursed);
+        Collections.shuffle(cursed, GameRandom.get());
         context.requestChoice(new RouletteChoice(percent, cursedPercent, penaltyPercent, cursed));
         context.addPopups(getPopups());
     }

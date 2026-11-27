@@ -1,5 +1,6 @@
 package fr.astratime.lucky.entities.exploration;
 
+import fr.astratime.lucky.entities.GameRandom;
 import fr.astratime.lucky.entities.enemy.EnemyKind;
 import fr.astratime.lucky.entities.run.CombatRun;
 import fr.astratime.lucky.i18n.Lang;
@@ -28,7 +29,7 @@ public class DungeonRun implements CombatRun {
     /** Le Joueur Masqué, qui prend la place du soldat dans cette descente (voir {@link Rival}), ou {@code null}. */
     private final EnemyKind  rival;
     /** Le carrefour entre le soldat et le roi, et ce qu'il donne contre le roi. */
-    private final Crossroads crossroads = new Crossroads(new Random());
+    private final Crossroads crossroads = new Crossroads(GameRandom.live());
     /** Mode ADMIN : le soldat arrive toujours doré. */
     private final boolean    goldenSoldier;
     /** Exploration difficile (voir {@link HardExploration}). */

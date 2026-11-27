@@ -1,5 +1,6 @@
 package fr.astratime.lucky.entities.effects;
 
+import fr.astratime.lucky.entities.GameRandom;
 import fr.astratime.lucky.entities.LastingEffects;
 import fr.astratime.lucky.entities.Symbol;
 import fr.astratime.lucky.entities.context.PlayContext;
@@ -20,8 +21,6 @@ import java.util.Random;
  */
 public class RecycleEffect extends Effect {
 
-    private static final Random RANDOM = new Random();
-
     private final int turns;
 
     /** @param turns nombre de tirages pendant lesquels le symbole est retiré. */
@@ -39,7 +38,7 @@ public class RecycleEffect extends Effect {
             context.addPopups(getPopups());
             return;
         }
-        Symbol removed = candidates.get(RANDOM.nextInt(candidates.size()));
+        Symbol removed = candidates.get(GameRandom.get().nextInt(candidates.size()));
         lasting.removeSymbol(removed, turns);
         context.addPopups(List.of(
             new EffectPopup(Lang.f("RECYCLAGE : {0}", removed.getDisplayName()), EffectPopup.Style.SPECIAL, PopupScale.MAX_INTENSITY),

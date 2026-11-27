@@ -1,5 +1,6 @@
 package fr.astratime.lucky.entities.actions;
 
+import fr.astratime.lucky.entities.GameRandom;
 import fr.astratime.lucky.entities.context.CombatContext;
 import fr.astratime.lucky.i18n.Lang;
 
@@ -12,7 +13,7 @@ public final class RandomGainAction extends GainAction {
     private final int    max;
     private final Random random;
 
-    public RandomGainAction(int min, int max) { this(min, max, new Random()); }
+    public RandomGainAction(int min, int max) { this(min, max, GameRandom.live()); }
 
     /** @param random source d'aléatoire (ex : graine fixe pour des tests reproductibles) */
     public RandomGainAction(int min, int max, Random random) {

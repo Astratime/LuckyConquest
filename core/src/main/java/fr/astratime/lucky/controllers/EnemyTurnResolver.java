@@ -1,5 +1,6 @@
 package fr.astratime.lucky.controllers;
 
+import fr.astratime.lucky.entities.GameRandom;
 import fr.astratime.lucky.entities.BigNumber;
 import fr.astratime.lucky.entities.Card;
 import fr.astratime.lucky.entities.Enemy;
@@ -88,7 +89,7 @@ public class EnemyTurnResolver {
     final EnemySlotMachine machine;
 
     public EnemyTurnResolver() {
-        this(new Random());
+        this(GameRandom.live());
     }
 
     /** @param random source d'aléatoire (ex : graine fixe pour des tests reproductibles) */

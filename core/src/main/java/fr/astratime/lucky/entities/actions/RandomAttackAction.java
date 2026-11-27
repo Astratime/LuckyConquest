@@ -1,5 +1,6 @@
 package fr.astratime.lucky.entities.actions;
 
+import fr.astratime.lucky.entities.GameRandom;
 import fr.astratime.lucky.i18n.Lang;
 
 import java.util.Random;
@@ -15,7 +16,7 @@ public final class RandomAttackAction extends AttackAction {
      * @param min dégâts de base au plus bas
      * @param max dégâts de base au plus haut (compris)
      */
-    public RandomAttackAction(int min, int max) { this(min, max, new Random()); }
+    public RandomAttackAction(int min, int max) { this(min, max, GameRandom.live()); }
 
     /** @param random source d'aléatoire (ex : graine fixe pour des tests reproductibles) */
     public RandomAttackAction(int min, int max, Random random) {

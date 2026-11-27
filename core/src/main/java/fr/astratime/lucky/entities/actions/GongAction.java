@@ -1,5 +1,6 @@
 package fr.astratime.lucky.entities.actions;
 
+import fr.astratime.lucky.entities.GameRandom;
 import fr.astratime.lucky.entities.EnemyMaluses;
 import fr.astratime.lucky.entities.ReelGauges;
 import fr.astratime.lucky.entities.context.CombatContext;
@@ -21,7 +22,7 @@ public final class GongAction extends AttackAction {
 
     private final Random random;
 
-    public GongAction(int baseDamage) { this(baseDamage, new Random()); }
+    public GongAction(int baseDamage) { this(baseDamage, GameRandom.live()); }
 
     /** @param random source d'aléatoire (ex : graine fixe pour des tests reproductibles) */
     public GongAction(int baseDamage, Random random) {
