@@ -10,33 +10,33 @@ class LowerPlaceCoinsTest {
 
     @Test
     void eachRankHasItsPlace() {
-        assertEquals(Place.PRAIRIE, PlayerProfile.placeOf(null));
-        assertEquals(Place.FOIRE, PlayerProfile.placeOf(Rank.AVARE));
-        assertEquals(Place.FOIRE, PlayerProfile.placeOf(Rank.PARIEUR));
-        assertEquals(Place.PORT, PlayerProfile.placeOf(Rank.HABITUE));
-        assertEquals(Place.PALACE, PlayerProfile.placeOf(Rank.REQUIN));
-        assertEquals(Place.MINES, PlayerProfile.placeOf(Rank.GROS_BONNET));
-        assertEquals(Place.CASINO, PlayerProfile.placeOf(Rank.MAGNAT));
-        assertEquals(Place.TEMPLE, PlayerProfile.placeOf(Rank.ROI_DU_CASINO));
-        assertEquals(Place.DESERT, PlayerProfile.placeOf(Rank.LEGENDE));
+        assertEquals(Place.PRAIRIE, CoinRewards.placeOf(null));
+        assertEquals(Place.FOIRE, CoinRewards.placeOf(Rank.AVARE));
+        assertEquals(Place.FOIRE, CoinRewards.placeOf(Rank.PARIEUR));
+        assertEquals(Place.PORT, CoinRewards.placeOf(Rank.HABITUE));
+        assertEquals(Place.PALACE, CoinRewards.placeOf(Rank.REQUIN));
+        assertEquals(Place.MINES, CoinRewards.placeOf(Rank.GROS_BONNET));
+        assertEquals(Place.CASINO, CoinRewards.placeOf(Rank.MAGNAT));
+        assertEquals(Place.TEMPLE, CoinRewards.placeOf(Rank.ROI_DU_CASINO));
+        assertEquals(Place.DESERT, CoinRewards.placeOf(Rank.LEGENDE));
     }
 
     @Test
     void lowerPlacesPayLess() {
-        assertEquals(100, PlayerProfile.coinsPercent(Rank.REQUIN, Place.PALACE, false), "son lieu");
-        assertEquals(100, PlayerProfile.coinsPercent(Rank.REQUIN, Place.CASINO, false), "plus haut");
-        assertEquals(25, PlayerProfile.coinsPercent(Rank.REQUIN, Place.PORT, false), "un lieu en dessous");
-        assertEquals(5, PlayerProfile.coinsPercent(Rank.REQUIN, Place.FOIRE, false), "deux lieux en dessous");
-        assertEquals(5, PlayerProfile.coinsPercent(Rank.LEGENDE, Place.PRAIRIE, false));
-        assertEquals(100, PlayerProfile.coinsPercent(null, Place.PRAIRIE, false));
-        assertEquals(100, PlayerProfile.coinsPercent(Rank.LEGENDE, Place.PRAIRIE, true), "mode difficile : tout");
+        assertEquals(100, CoinRewards.coinsPercent(Rank.REQUIN, Place.PALACE, false), "son lieu");
+        assertEquals(100, CoinRewards.coinsPercent(Rank.REQUIN, Place.CASINO, false), "plus haut");
+        assertEquals(25, CoinRewards.coinsPercent(Rank.REQUIN, Place.PORT, false), "un lieu en dessous");
+        assertEquals(5, CoinRewards.coinsPercent(Rank.REQUIN, Place.FOIRE, false), "deux lieux en dessous");
+        assertEquals(5, CoinRewards.coinsPercent(Rank.LEGENDE, Place.PRAIRIE, false));
+        assertEquals(100, CoinRewards.coinsPercent(null, Place.PRAIRIE, false));
+        assertEquals(100, CoinRewards.coinsPercent(Rank.LEGENDE, Place.PRAIRIE, true), "mode difficile : tout");
     }
 
     @Test
     void theShareIsRounded() {
-        assertEquals(250L, PlayerProfile.share(1_000L, 25));
-        assertEquals(1_000L, PlayerProfile.share(1_000L, 100));
-        assertEquals(50L, PlayerProfile.share(1_000L, 5));
+        assertEquals(250L, CoinRewards.share(1_000L, 25));
+        assertEquals(1_000L, CoinRewards.share(1_000L, 100));
+        assertEquals(50L, CoinRewards.share(1_000L, 5));
     }
 
     @Test

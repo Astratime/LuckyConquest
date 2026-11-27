@@ -53,6 +53,7 @@ tasks.register('simulate', JavaExec) {
   if (project.hasProperty('level')) systemProperty 'lucky.prestige', project.property('level')
   if (project.hasProperty('stake')) systemProperty 'lucky.stake', project.property('stake')
   if (project.hasProperty('potPerRun')) systemProperty 'lucky.potPerRun', 'true'
+  if (project.hasProperty('seed')) systemProperty 'lucky.seed', project.property('seed')
   if (project.hasProperty('oldBot')) systemProperty 'lucky.oldBot', 'true'
 }
 

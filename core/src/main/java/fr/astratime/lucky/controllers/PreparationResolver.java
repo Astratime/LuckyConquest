@@ -1,5 +1,6 @@
 package fr.astratime.lucky.controllers;
 
+import fr.astratime.lucky.entities.GameRandom;
 import fr.astratime.lucky.entities.Card;
 import fr.astratime.lucky.entities.Combo;
 import fr.astratime.lucky.entities.CourtAndClock;
@@ -42,7 +43,7 @@ import java.util.stream.Collectors;
 public class PreparationResolver {
 
     /** Le hasard du Manège (Fête foraine). */
-    private final Random carousel = new Random();
+    private final Random carousel = GameRandom.live();
 
     /** Attaque ajoutée à chaque symbole par Lame (Pique). */
     public static final int BLADE_ATTACK = 20;

@@ -1,5 +1,6 @@
 package fr.astratime.lucky.controllers;
 
+import fr.astratime.lucky.entities.GameRandom;
 import fr.astratime.lucky.entities.EnemyMaluses;
 import fr.astratime.lucky.entities.*;
 import fr.astratime.lucky.entities.context.CombatContext;
@@ -44,7 +45,7 @@ public class TurnEngine {
     private final ActionResolver      actionResolver      = new ActionResolver();
     private final CombatResolver      combatResolver      = new CombatResolver();
     private final EnemyTurnResolver   enemyTurnResolver   = new EnemyTurnResolver();
-    private final Random              random              = new Random();
+    private final Random              random              = GameRandom.live();
     /** Le Jeu bonus peut s'ouvrir après un Bingo (pas dans le tutoriel). */
     private boolean                   bonusGameEnabled    = true;
 

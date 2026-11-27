@@ -20,6 +20,7 @@ import fr.astratime.lucky.progress.Achievement;
 import fr.astratime.lucky.entities.exploration.Place;
 import fr.astratime.lucky.progress.PlaceHistory;
 import fr.astratime.lucky.progress.PlayerProfile;
+import fr.astratime.lucky.progress.Money;
 import fr.astratime.lucky.progress.PlayerStats;
 import fr.astratime.lucky.progress.PlayerStats.Stat;
 
@@ -176,7 +177,7 @@ public class AchievementsOverlay implements Disposable {
             names[i].setColor(done ? Palette.GOLD : LOCKED);
             descriptions[i].setText(achievement.getDescription());
             descriptions[i].setColor(done ? Palette.CREAM : LOCKED);
-            rewards[i].setText((done ? "" : "+") + PlayerProfile.priceTag(achievement.getReward()));
+            rewards[i].setText((done ? "" : "+") + Money.priceTag(achievement.getReward()));
             rewards[i].setColor(done ? Palette.GOLD : LOCKED);
         }
         fillHistory(profile.getHistory());
@@ -209,7 +210,7 @@ public class AchievementsOverlay implements Disposable {
                 addHistoryRow(hard ? Palette.CREAM : Color.WHITE, statFont, place.getName(),
                     Lang.grouped(line.fights()), line.winPercent() + " %",
                     Lang.grouped(line.kingWins()) + " / " + Lang.grouped(line.kings()),
-                    PlayerProfile.formatCoins(line.coinsPerFight()), PlayerProfile.formatCoins(line.best()));
+                    Money.formatCoins(line.coinsPerFight()), Money.formatCoins(line.best()));
             }
         }
     }

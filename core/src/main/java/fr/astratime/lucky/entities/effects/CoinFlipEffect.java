@@ -1,5 +1,6 @@
 package fr.astratime.lucky.entities.effects;
 
+import fr.astratime.lucky.entities.GameRandom;
 import fr.astratime.lucky.entities.context.PlayContext;
 import fr.astratime.lucky.entities.context.TurnContext;
 import fr.astratime.lucky.i18n.Lang;
@@ -8,7 +9,6 @@ import fr.astratime.lucky.popups.EffectSound;
 import fr.astratime.lucky.popups.PopupScale;
 
 import java.util.List;
-import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.BooleanSupplier;
 
 /**
@@ -18,7 +18,7 @@ import java.util.function.BooleanSupplier;
 public class CoinFlipEffect extends Effect {
 
     /** Le lancer : {@code true} pour pile (remplacé dans les tests). */
-    static BooleanSupplier coin = () -> ThreadLocalRandom.current().nextBoolean();
+    static BooleanSupplier coin = () -> GameRandom.get().nextBoolean();
 
     private final int percent;
 

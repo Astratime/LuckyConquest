@@ -1,5 +1,6 @@
 package fr.astratime.lucky.entities.effects;
 
+import fr.astratime.lucky.entities.GameRandom;
 import fr.astratime.lucky.entities.context.PlayContext;
 import fr.astratime.lucky.entities.context.TurnContext;
 import fr.astratime.lucky.i18n.Lang;
@@ -20,11 +21,9 @@ public class ScratchTicketEffect extends Effect {
     /** Lots, en coûts du tirage, et leur chance (%) : 0 (40), 4 (20), 6 (20), 10 (20). */
     public static final int[] PRIZES  = {0, 4, 6, 10};
     public static final int[] CHANCES = {40, 20, 20, 20};
-
-    private static final Random RANDOM = new Random();
     private final Random random;
 
-    public ScratchTicketEffect() { this(RANDOM); }
+    public ScratchTicketEffect() { this(GameRandom.live()); }
 
     /** @param random tirage du lot (tests) */
     public ScratchTicketEffect(Random random) { this.random = random; }

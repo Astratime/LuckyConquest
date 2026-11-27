@@ -1,5 +1,6 @@
 package fr.astratime.lucky.sim;
 
+import fr.astratime.lucky.entities.GameRandom;
 import fr.astratime.lucky.controllers.GameController;
 import fr.astratime.lucky.entities.BonusGame;
 import fr.astratime.lucky.entities.Card;
@@ -26,6 +27,8 @@ import fr.astratime.lucky.entities.exploration.DungeonRun;
 import fr.astratime.lucky.entities.exploration.Place;
 import fr.astratime.lucky.loaders.CardLoader;
 import fr.astratime.lucky.progress.PlayerProfile;
+import fr.astratime.lucky.progress.CoinRewards;
+import fr.astratime.lucky.progress.Money;
 import fr.astratime.lucky.progress.Rank;
 
 import java.io.IOException;
@@ -227,7 +230,30 @@ public final class BalanceSimulator {
         this.explorationStall = GameController.stallFor(shop, cards, false, false);
     }
 
+    /**
+     * Graine du hasard du jeu ({@code -Pseed=N}, 42 par défaut) : deux lancements avec la même graine donnent
+     * exactement le même rapport, donc un « avant / après » ne mesure que l'effet du réglage.
+     */
+    static final long GAME_SEED = Long.getLong("lucky.seed", 42L);
+
+    /**
+     * Joue les lots en parallèle, chacun avec sa propre graine (tirée de {@link #GAME_SEED} et de sa place
+     * dans la liste) : le résultat ne dépend ni de l'ordre ni du fil qui les joue.
+     */
+    static void runJobs(List<Runnable> jobs) {
+        java.util.stream.IntStream.range(0, jobs.size()).parallel().forEach(index -> {
+            java.util.Random before = GameRandom.seeded(); // le fil principal joue aussi des lots : il retrouve le sien
+            GameRandom.seed(GAME_SEED * 1_000_003L + index);
+            try {
+                jobs.get(index).run();
+            } finally {
+                GameRandom.restore(before);
+            }
+        });
+    }
+
     public static void main(String[] args) throws IOException {
+        GameRandom.seed(GAME_SEED);
         boolean quick = List.of(args).contains("--quick");
         Path assets = Paths.get(System.getProperty("lucky.assets", "../assets")).toAbsolutePath().normalize();
         BalanceSimulator simulator = new BalanceSimulator(assets, quick ? Sizes.QUICK : Sizes.FULL);
@@ -280,7 +306,7 @@ public final class BalanceSimulator {
                 }
             }
         }
-        jobs.parallelStream().forEach(Runnable::run);
+        runJobs(jobs);
     }
 
     // -------------------------------------------------------------------------
@@ -416,7 +442,7 @@ public final class BalanceSimulator {
                 for (Rank rank : RANKS) {
                     DungeonStats stats = dungeon(dungeon, place, rank, sizes.dungeonRuns(), SEED);
                     out.append(String.format(Locale.ROOT, " %.0f %% / %s |", stats.winRate() * 100,
-                        stats.winRate() == 0 ? "-" : PlayerProfile.formatCoins(stats.medianCoins())));
+                        stats.winRate() == 0 ? "-" : Money.formatCoins(stats.medianCoins())));
                 }
                 out.append('\n');
             }
@@ -455,7 +481,7 @@ public final class BalanceSimulator {
                 effort = 0.5 + 0.5 * (1 - Math.max(0, game.getGameState().getEnemy().getHpRatio()));
             }
             played.add(new Run(won, game.getGameState().getPlayer().getGains(), turns[0] - before, won ? 1 : effort));
-            long reward = PlayerProfile.combatReward(won, true, game.getGameState().getPlayer().getGains(),
+            long reward = CoinRewards.combatReward(won, true, game.getGameState().getPlayer().getGains(),
                 place, effort);
             if (!won) {
                 lossTotal += reward;
@@ -636,7 +662,7 @@ public final class BalanceSimulator {
         out.append("\n### Prix des rangs\n\n")
             .append("Pour payer chaque rang, le joueur fait le donjon qui rapporte le plus avec le rang d'avant "
                 + "(deck de départ, coffre compris). Descentes = prix / pièces moyennes d'une descente "
-                + "(défaites comprises, elles rapportent " + PlayerProfile.DEFEAT_KEEP_PERCENT + " % des gains).\n\n")
+                + "(défaites comprises, elles rapportent " + CoinRewards.DEFEAT_KEEP_PERCENT + " % des gains).\n\n")
             .append("| Rang | Prix | Meilleur donjon avec le rang d'avant | Pièces par descente | Descentes |\n")
             .append("|---|---:|---|---:|---:|\n");
         Rank previous = null;
@@ -653,8 +679,8 @@ public final class BalanceSimulator {
                 }
             }
             out.append(String.format(Locale.ROOT, "| %s | %s | %s | %s | %s |%n", rank.getTitle(),
-                PlayerProfile.formatCoins(rank.getPrice()), bestName,
-                bestCoins == 0 ? "-" : PlayerProfile.formatCoins(Math.round(bestCoins)),
+                Money.formatCoins(rank.getPrice()), bestName,
+                bestCoins == 0 ? "-" : Money.formatCoins(Math.round(bestCoins)),
                 bestCoins == 0 ? "-" : String.valueOf((long) Math.ceil(rank.getPrice() / bestCoins))));
             previous = rank;
         }
@@ -670,12 +696,12 @@ public final class BalanceSimulator {
         out.append("## 6. Pièces moyennes d'une descente, par rang\n\n")
             .append("Deck de départ, sans échoppe. Une descente = le soldat puis le roi. Victoire : gains du combat + coffre ")
             .append("(Prairie 500, Port 1 500, Mines 4 500, Casino 13 500 coûts de tirage, sans la carte en double ni ")
-            .append("Carte au trésor). Défaite : ").append(PlayerProfile.DEFEAT_KEEP_PERCENT).append(" % des gains au ")
+            .append("Carte au trésor). Défaite : ").append(CoinRewards.DEFEAT_KEEP_PERCENT).append(" % des gains au ")
             .append("moment de la défaite. Moyenne sur toutes les descentes, défaites comprises.\n\n")
             .append("Coffres : ");
         List<String> chests = new ArrayList<>();
         for (Place place : Place.values()) {
-            chests.add(place.getShortName() + " " + PlayerProfile.formatCoins(place.getChestCoins()));
+            chests.add(place.getShortName() + " " + Money.formatCoins(place.getChestCoins()));
         }
         out.append(String.join(", ", chests)).append(".\n\n");
 
@@ -733,7 +759,7 @@ public final class BalanceSimulator {
             Rank next = i + 1 < ranks.size() ? ranks.get(i + 1) : null;
             out.append(String.format(Locale.ROOT, "| %s | %s | %.0f %% | %s | %s | %s |%n", title(rank), bestName,
                 bestWins * 100, best == 0 ? "-" : abbreviated(best),
-                next == null ? "-" : next.getTitle() + " (" + PlayerProfile.formatCoins(next.getPrice()) + ")",
+                next == null ? "-" : next.getTitle() + " (" + Money.formatCoins(next.getPrice()) + ")",
                 next == null || best == 0 ? "-" : String.valueOf((long) Math.ceil(next.getPrice() / best))));
         }
 
@@ -776,8 +802,8 @@ public final class BalanceSimulator {
             Rank next = i + 1 < ranks.size() ? ranks.get(i + 1) : null;
             out.append(String.format(Locale.ROOT, "| %s | %s | %.0f %% | %s | %s | %s |%n", title(rank), bestName,
                 bestWins * 100,
-                best == 0 ? "-" : PlayerProfile.formatCoins(Math.round(best)),
-                next == null ? "-" : next.getTitle() + " (" + PlayerProfile.formatCoins(next.getPrice()) + ")",
+                best == 0 ? "-" : Money.formatCoins(Math.round(best)),
+                next == null ? "-" : next.getTitle() + " (" + Money.formatCoins(next.getPrice()) + ")",
                 next == null || best == 0 ? "-" : String.valueOf((long) Math.ceil(next.getPrice() / best))));
         }
         out.append('\n');
@@ -796,7 +822,7 @@ public final class BalanceSimulator {
      *         avec ces coffres
      */
     static Policy withChests(String name, int... chestSpins) {
-        double keep = PlayerProfile.DEFEAT_KEEP_PERCENT / 100.0;
+        double keep = CoinRewards.DEFEAT_KEEP_PERCENT / 100.0;
         StringBuilder text = new StringBuilder("coffres de ");
         for (int i = 0; i < chestSpins.length; i++) {
             text.append(i == 0 ? "" : " / ").append(chestSpins[i]);
@@ -878,7 +904,7 @@ public final class BalanceSimulator {
         if (coins >= 1e9) return String.format(Locale.FRANCE, "%.1f G", coins / 1e9);
         if (coins >= 1e6) return String.format(Locale.FRANCE, "%.1f M", coins / 1e6);
         if (coins >= 1e4) return String.format(Locale.FRANCE, "%.0f k", coins / 1e3);
-        return PlayerProfile.formatCoins(Math.round(coins));
+        return Money.formatCoins(Math.round(coins));
     }
 
     // -------------------------------------------------------------------------
@@ -897,7 +923,7 @@ public final class BalanceSimulator {
         for (Place place : Place.values()) if (only.isEmpty() || only.contains(place.name())) places.add(place);
         for (Place place : places) for (Dungeon dungeon : place.getDungeons()) for (Rank rank : ranks)
             jobs.add(() -> dungeon(dungeon, place, rank, Gear.STARTER, sizes.dungeonRuns(), SEED));
-        jobs.parallelStream().forEach(Runnable::run);
+        runJobs(jobs);
         StringBuilder out = new StringBuilder("| Donjon |");
         for (Rank rank : ranks) out.append(' ').append(title(rank)).append(" |");
         out.append('\n');
@@ -906,8 +932,8 @@ public final class BalanceSimulator {
             for (Rank rank : ranks) {
                 DungeonStats st = dungeon(dungeon, place, rank, Gear.STARTER, sizes.dungeonRuns(), SEED);
                 out.append(String.format(Locale.ROOT, " %.0f%% %s %s/t |", st.winRate() * 100,
-                    PlayerProfile.formatCoins((long) st.averageCoins()),
-                    PlayerProfile.formatCoins((long) (st.averageCoins() / Math.max(1, st.averageTurns())))));
+                    Money.formatCoins((long) st.averageCoins()),
+                    Money.formatCoins((long) (st.averageCoins() / Math.max(1, st.averageTurns())))));
             }
             out.append('\n');
         }
@@ -964,7 +990,7 @@ public final class BalanceSimulator {
                 }
             }
         }
-        jobs.parallelStream().forEach(Runnable::run);
+        runJobs(jobs);
         for (int pass = 0; pass < 2; pass++) {
             Map<String, Double> rates = pass == 0 ? starter : top;
             out.append(pass == 0 ? "### Deck de départ\n\n" : "### Meilleur équipement au maximum\n\n");
@@ -991,7 +1017,7 @@ public final class BalanceSimulator {
 
     /** Lieu associé à chaque rang : celui du jeu (dix paliers, 2026-11-20). */
     static Place placeOfRank(Rank rank) {
-        return fr.astratime.lucky.progress.PlayerProfile.placeOf(rank);
+        return fr.astratime.lucky.progress.CoinRewards.placeOf(rank);
     }
 
     /** Totaux d'un donjon (somme sur les descentes). */
@@ -1087,9 +1113,9 @@ public final class BalanceSimulator {
                 effort = 0.5 + 0.5 * (1 - Math.max(0, game.getGameState().getEnemy().getHpRatio()));
             }
             double gains = game.getGameState().getPlayer().getGains();
-            int share = PlayerProfile.coinsPercent(rank, place, hard); // lieu en dessous de celui du rang
-            long reward = PlayerProfile.share(PlayerProfile.combatReward(won, true, gains, place, hard, won ? 1 : effort), share);
-            long chestShare = PlayerProfile.share(chest, share);
+            int share = CoinRewards.coinsPercent(rank, place, hard); // lieu en dessous de celui du rang
+            long reward = CoinRewards.share(CoinRewards.combatReward(won, true, gains, place, hard, won ? 1 : effort), share);
+            long chestShare = CoinRewards.share(chest, share);
             rp.runs++;
             rp.runCoins.add((double) reward + (won ? chestShare : 0));
             rp.turns += turns[0];
@@ -1248,7 +1274,7 @@ public final class BalanceSimulator {
                 });
             }
         }
-        jobs.parallelStream().forEach(Runnable::run);
+        runJobs(jobs);
         Collections.sort(lines);
         return "kind\tgear\tprestige\twhere\twinPercent\tturns\n" + String.join("\n", lines) + "\n";
     }
@@ -1288,7 +1314,7 @@ public final class BalanceSimulator {
                 results.put(index, total);
             });
         }
-        jobs.parallelStream().forEach(Runnable::run);
+        runJobs(jobs);
         StringBuilder out = new StringBuilder("rank\tplace\tplayer\ttarget\truns\twinPercent\tavgCoinsRun\tmedianCoinsRun\ttypical30\tturnsPerRun\tdescentsForNextRank\n");
         for (int i = 0; i < cases.size(); i++) {
             Object[] c = cases.get(i);
@@ -1381,7 +1407,7 @@ public final class BalanceSimulator {
             jobs.add(() -> rankPlace(first.place(), first.hard(), first.rank(), first.prestige(), g.getValue(), true, runs, SEED)
                 .forEach((name, rp) -> simulated.put(g.getKey() + ';' + name, rp)));
         }
-        jobs.parallelStream().forEach(Runnable::run);
+        runJobs(jobs);
         StringBuilder out = new StringBuilder(String.format(Locale.ROOT,
             "# Journal des descentes comparé au joueur malin%n%n%d descentes lues dans %s ; Mise du robot %d %%, %d descentes simulées par donjon.%n%n",
             descents.size(), file.getFileName(), STAKE.percent, runs));
@@ -1447,7 +1473,7 @@ public final class BalanceSimulator {
                 results.put(gear.name() + '|' + place + '|' + hard, total);
             });
         }
-        jobs.parallelStream().forEach(Runnable::run);
+        runJobs(jobs);
         StringBuilder out = new StringBuilder("gear\trank\tprestige\tplace\thard\tspinCost\truns\twinPercent\tavgCoinsRun"
             + "\tmedianCoinsRun\ttypical30\tturnsPerRun\tcoinsPerTurn\n");
         for (Gear gear : gears) for (Object[] c : cases) {
@@ -1496,7 +1522,7 @@ public final class BalanceSimulator {
                 });
             }
         }
-        jobs.parallelStream().forEach(Runnable::run);
+        runJobs(jobs);
         StringBuilder out = new StringBuilder("prestige\trank\tplace\thard\twinPercent\ttypical30\tbest\tnextRank\tnextPrice\tdescents\n");
         for (int level : levels) for (Rank rank : ranks) {
             Rank next = rank == null ? Rank.values()[0] : Rank.values()[rank.ordinal() + 1];
@@ -1539,7 +1565,7 @@ public final class BalanceSimulator {
             jobs.add(() -> rankPlace(place, rank, gear, on, runs, SEED).forEach((name, rp) ->
                 results.put(gear.name() + '|' + title(rank) + '|' + on + '|' + name, rp)));
         }
-        jobs.parallelStream().forEach(Runnable::run);
+        runJobs(jobs);
         if (POT_LOG != null) {
             StringBuilder log = new StringBuilder("pot\tlines\ttotal\tspinCost\n");
             for (double[] row : POT_LOG) log.append(String.format(Locale.ROOT, "%.0f\t%.0f\t%.0f\t%.0f%n", row[0], row[1], row[2], row[3]));

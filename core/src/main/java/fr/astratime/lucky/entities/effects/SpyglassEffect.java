@@ -1,5 +1,6 @@
 package fr.astratime.lucky.entities.effects;
 
+import fr.astratime.lucky.entities.GameRandom;
 import fr.astratime.lucky.entities.Symbol;
 import fr.astratime.lucky.entities.context.PlayContext;
 import fr.astratime.lucky.entities.context.TurnContext;
@@ -21,7 +22,7 @@ public class SpyglassEffect extends Effect {
 
     private final Random random;
 
-    public SpyglassEffect() { this(new Random()); }
+    public SpyglassEffect() { this(GameRandom.live()); }
 
     /** @param random source d'aléatoire (graine fixe dans les tests) */
     public SpyglassEffect(Random random) { this.random = random; }

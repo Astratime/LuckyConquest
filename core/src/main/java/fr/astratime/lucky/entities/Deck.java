@@ -13,8 +13,6 @@ import java.util.Random;
  */
 public class Deck {
 
-    private static final Random RANDOM = new Random();
-
     private final List<Card>  cards = new ArrayList<>();
     private final DiscardPile discardPile;
 
@@ -27,7 +25,7 @@ public class Deck {
     public Deck(List<Card> cards, DiscardPile discardPile) {
         this.discardPile = discardPile;
         this.cards.addAll(cards);
-        Collections.shuffle(this.cards);
+        Collections.shuffle(this.cards, GameRandom.get());
     }
 
     /**
@@ -53,7 +51,7 @@ public class Deck {
 
     /** Glisse {@code card} dans le deck, à une place tirée au hasard. */
     public void insertRandomly(Card card) {
-        cards.add(RANDOM.nextInt(cards.size() + 1), card);
+        cards.add(GameRandom.get().nextInt(cards.size() + 1), card);
     }
 
     /** Pose {@code card} sur le dessus du deck : c'est la prochaine carte piochée. */

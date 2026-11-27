@@ -28,6 +28,10 @@ import java.util.Set;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
+import static fr.astratime.lucky.progress.CoinRewards.*;
+import static fr.astratime.lucky.progress.Money.*;
+import static fr.astratime.lucky.progress.ProfileCodec.*;
+
 /**
  * Ce que le joueur garde d'une partie à l'autre, enregistré dans un
  * {@link ProfileStorage} :
@@ -67,8 +71,6 @@ public class PlayerProfile {
     public static final int DECK_MAX_COPIES = 1;
     /** Niveaux de Prestige au plus (+10 % par niveau : +100 % au dernier). */
     public static final int MAX_PRESTIGE = 10;
-    /** Part des gains gardée en pièces après une défaite dans un donjon, en %. */
-    public static final int DEFEAT_KEEP_PERCENT = 20;
 
     static final String KEY_COLLECTION = "collection";
     static final String KEY_DECK       = "deck";
@@ -339,33 +341,6 @@ public class PlayerProfile {
         }
     }
 
-    /** @return {@code wins} écrit "ROI:nombre,ROI:nombre". */
-    static String encodeKingWins(Map<EnemyKind, Integer> wins) {
-        return wins.entrySet().stream().map(entry -> entry.getKey().name() + ":" + entry.getValue())
-            .collect(Collectors.joining(","));
-    }
-
-    /** @return les victoires lues dans {@code text} (voir {@link #encodeKingWins(Map)}) ; les entrées illisibles sont ignorées. */
-    static Map<EnemyKind, Integer> decodeKingWins(String text) {
-        Map<EnemyKind, Integer> wins = new EnumMap<>(EnemyKind.class);
-        if (text == null || text.isBlank()) return wins;
-        for (String entry : text.split(",")) {
-            int colon = entry.indexOf(':');
-            if (colon <= 0) continue;
-            try {
-                int count = Integer.parseInt(entry.substring(colon + 1).trim());
-                if (count > 0) wins.put(EnemyKind.valueOf(entry.substring(0, colon).trim()), count);
-            } catch (IllegalArgumentException ignored) { }
-        }
-        return wins;
-    }
-
-    private static void readEnemies(String text, Set<EnemyKind> enemies) {
-        Set<String> names = new LinkedHashSet<>();
-        readNames(text, names);
-        for (EnemyKind kind : EnemyKind.values()) if (names.contains(kind.name())) enemies.add(kind);
-    }
-
     // -------------------------------------------------------------------------
     // Bestiaire et collection
     // -------------------------------------------------------------------------
@@ -564,34 +539,6 @@ public class PlayerProfile {
 
     /** Suffixe de la clé de la cagnotte d'un lieu en Exploration difficile. */
     static final String HARD_POT_SUFFIX = "_DIFFICILE";
-
-    /** @return {@code pots} écrit "CLE:montant,CLE:montant". */
-    static String encodePots(Map<String, Double> pots) {
-        StringBuilder text = new StringBuilder();
-        pots.forEach((key, amount) -> {
-            if (!(amount > 0)) return;
-            if (text.length() > 0) text.append(',');
-            text.append(key).append(':').append(amount);
-        });
-        return text.toString();
-    }
-
-    /** @return les cagnottes écrites par {@link #encodePots(Map)} (les entrées illisibles sont ignorées). */
-    static Map<String, Double> decodePots(String text) {
-        Map<String, Double> pots = new LinkedHashMap<>();
-        if (text == null || text.isBlank()) return pots;
-        for (String entry : text.split(",")) {
-            int colon = entry.lastIndexOf(':');
-            if (colon <= 0) continue;
-            try {
-                double amount = Double.parseDouble(entry.substring(colon + 1).trim());
-                if (amount > 0 && Double.isFinite(amount)) pots.put(entry.substring(0, colon).trim(), amount);
-            } catch (NumberFormatException ignored) {
-                // entrée abîmée : ignorée
-            }
-        }
-        return pots;
-    }
 
     // -------------------------------------------------------------------------
     // Guides du Croupier
@@ -1220,29 +1167,8 @@ public class PlayerProfile {
     // Lingots (Astra, 2026-11-26 : les sommes en milliards devenaient illisibles)
     // -------------------------------------------------------------------------
 
-    /** Valeur d'un Lingot, en pièces. */
-    public static final long INGOT_VALUE = 1_000_000_000L;
-    /**
-     * Un prix d'au moins ce montant (en pièces) s'affiche et se paie en Lingots. À 10 milliards, tous les prix
-     * concernés tombent sur un nombre rond de milliards : aucun prix ne change. En dessous, on paie en pièces.
-     */
-    public static final long INGOT_THRESHOLD = 10 * INGOT_VALUE;
-
     /** @return les Lingots du joueur. */
     public long getIngots() { return ingots; }
-
-    /** @return {@code true} si le prix {@code price} (en pièces) se paie en Lingots. */
-    public static boolean inIngots(long price) { return price >= INGOT_THRESHOLD; }
-
-    /** @return le prix {@code price} (en pièces) en Lingots, arrondi au Lingot supérieur. */
-    public static long ingotsOf(long price) { return price <= 0 ? 0 : (price - 1) / INGOT_VALUE + 1; }
-
-    /** @return ce que coûte vraiment {@code price}, en pièces (un prix en Lingots compte des Lingots entiers). */
-    private static long cost(long price) {
-        if (!inIngots(price)) return price;
-        long n = ingotsOf(price);
-        return n > Long.MAX_VALUE / INGOT_VALUE ? Long.MAX_VALUE : n * INGOT_VALUE;
-    }
 
     /** @return toute la fortune du joueur en pièces (pièces + Lingots), bornée à {@link Long#MAX_VALUE}. */
     public long getWealth() {
@@ -1316,20 +1242,6 @@ public class PlayerProfile {
         return true;
     }
 
-    /** @return {@code price} (en pièces) écrit dans sa monnaie : « 38 Lingots » ou « 1 300 000 000 pièces ». */
-    public static String formatPrice(long price) {
-        if (inIngots(price)) {
-            long n = ingotsOf(price);
-            return Lang.n(n, "{0} Lingot", "{0} Lingots", formatCoins(n));
-        }
-        return Lang.n(price, "{0} pièce", "{0} pièces", formatCoins(price));
-    }
-
-    /** @return {@code price} pour une case de la boutique : « 38 Lingots » ou juste « 1 300 000 000 ». */
-    public static String priceTag(long price) {
-        return inIngots(price) ? formatPrice(price) : formatCoins(price);
-    }
-
     /** @return la fortune du joueur écrite « 120 pièces et 3 Lingots » (ou seulement les pièces sans Lingot). */
     public String formatWealth() {
         String pieces = Lang.n(coins, "{0} pièce", "{0} pièces", formatCoins(coins));
@@ -1337,91 +1249,8 @@ public class PlayerProfile {
         return Lang.f("{0} et {1}", pieces, Lang.n(ingots, "{0} Lingot", "{0} Lingots", formatCoins(ingots)));
     }
 
-    /**
-     * Pièces versées à la fin d'un combat de l'Exploration : les gains affichés
-     * dans le cadre « Gains » après la victoire contre le roi du donjon, et
-     * {@link #DEFEAT_KEEP_PERCENT} % de ces gains après une défaite (contre le
-     * soldat ou le roi), au plus {@link Place#getDefeatCap} (500 coûts de tirage du lieu),
-     * multipliés par la part du donjon faite ({@link #dungeonProgress}).
-     * Le soldat battu ne rapporte rien tout de suite : ses
-     * gains sont gardés pour le roi. L'Entraînement et la Tour des épreuves ne
-     * rapportent aucune pièce.
-     *
-     * @param victory   l'ennemi est vaincu
-     * @param lastFight c'était le dernier combat du donjon (le roi)
-     * @param gains     les gains du joueur à la fin du combat
-     * @param place     lieu du donjon (il fixe la limite après une défaite)
-     * @param progress  après une défaite, part du donjon faite, de 0 à 1 (voir {@link #dungeonProgress})
-     * @return les pièces à ajouter au profil
-     */
-    public static long combatReward(boolean victory, boolean lastFight, double gains, Place place, double progress) {
-        return combatReward(victory, lastFight, gains, place, false, progress);
-    }
-
-    /** Comme {@link #combatReward(boolean, boolean, double, Place, double)}, en Exploration difficile si {@code hard}. */
-    public static long combatReward(boolean victory, boolean lastFight, double gains, Place place, boolean hard,
-                                    double progress) {
-        if (victory) return lastFight ? Math.max(0, BigNumber.toLong(gains)) : 0;
-        long kept = Math.min(Math.max(0, BigNumber.toLong(gains * DEFEAT_KEEP_PERCENT / 100.0)), place.getDefeatCap(hard));
-        return Math.round(kept * Math.max(0, Math.min(1, progress)));
-    }
-
-    /** Pièces dans le lieu juste en dessous de celui du rang joué, en % (Astra, 2026-11-15). */
-    public static final int LOWER_PLACE_PERCENT = 25;
-    /** Pièces deux lieux ou plus en dessous de celui du rang joué, en %. */
-    public static final int FAR_LOWER_PLACE_PERCENT = 5;
-
-    /**
-     * @return le lieu d'Exploration fait pour {@code rank} : la Prairie sans rang, puis un lieu pour chaque paire
-     *         de rangs (Avare et Parieur à la Foire … Roi du casino et Légende au Désert)
-     */
-    public static Place placeOf(Rank rank) {
-        return Place.atTier(tierOf(rank));
-    }
-
-    /**
-     * @return le palier de lieu du rang {@code rank} (Astra, 2026-11-20 : 10 lieux) : 1 sans rang, 2 pour l'Avare et
-     *         le Parieur, puis un palier par rang (3 le Flambeur … 10 la Légende). Tant qu'un palier n'a pas encore son
-     *         lieu, le rang va au lieu suivant (voir {@link Place#atTier(int)}).
-     */
-    public static int tierOf(Rank rank) {
-        return rank == null ? 1 : Math.max(2, rank.ordinal() + 1);
-    }
-
-    /**
-     * Part des pièces gagnée dans {@code place} avec le rang {@code rank} (Astra, 2026-11-15) : toutes dans le lieu du
-     * rang ou plus haut, {@link #LOWER_PLACE_PERCENT} % un lieu en dessous, {@link #FAR_LOWER_PLACE_PERCENT} % deux
-     * lieux ou plus en dessous. Le mode difficile est toujours au-dessus des rangs : tout y est gagné.
-     *
-     * @return la part, en % (100 : rien n'est retenu)
-     */
-    public static int coinsPercent(Rank rank, Place place, boolean hard) {
-        if (hard || place == null) return 100;
-        int gap = placeOf(rank).ordinal() - place.ordinal();
-        return gap <= 0 ? 100 : gap == 1 ? LOWER_PLACE_PERCENT : FAR_LOWER_PLACE_PERCENT;
-    }
-
     /** @return la part des pièces gagnée dans {@code place} avec le rang joué (voir {@link #coinsPercent(Rank, Place, boolean)}). */
-    public int coinsPercent(Place place, boolean hard) { return coinsPercent(getActiveRank(), place, hard); }
-
-    /** @return {@code coins} réduites à {@code percent} % (arrondi). */
-    public static long share(long coins, int percent) {
-        return percent >= 100 ? coins : Math.round(coins * (percent / 100.0));
-    }
-
-    /**
-     * Part d'un donjon faite au moment d'une défaite : la moitié pour le soldat,
-     * la moitié pour le roi, chacun au prorata des PV qu'il a perdus. Mourir au
-     * premier tour contre le soldat vaut presque 0, perdre contre un roi à moitié
-     * mort vaut 0,75.
-     *
-     * @param bossStage le combat perdu était celui du roi (le soldat est donc battu)
-     * @param hpRatio   PV restants de l'ennemi qui a gagné, de 0 à 1
-     */
-    public static double dungeonProgress(boolean bossStage, double hpRatio) {
-        double done = 1 - Math.max(0, Math.min(1, hpRatio));
-        return (bossStage ? 0.5 : 0) + 0.5 * done;
-    }
+    public int coinsPercent(Place place, boolean hard) { return CoinRewards.coinsPercent(getActiveRank(), place, hard); }
 
     /** Ajoute {@code amount} pièces (rien si négatif) et enregistre le profil. */
     public void addCoins(long amount) {
@@ -1850,7 +1679,7 @@ public class PlayerProfile {
         storage.put(KEY_TOWER_HARD, String.valueOf(towerHard));
         storage.put(KEY_COLLECTION, encode(collection));
         storage.put(KEY_DECK, encode(deck));
-        storage.put(KEY_DECK_SLOTS, deckSlots.stream().map(PlayerProfile::encode)
+        storage.put(KEY_DECK_SLOTS, deckSlots.stream().map(ProfileCodec::encode)
             .collect(Collectors.joining("|")));
         storage.put(KEY_DECK_SLOT, String.valueOf(deckSlot));
         storage.put(KEY_COINS, String.valueOf(coins));
@@ -1881,76 +1710,4 @@ public class PlayerProfile {
         saveBestiary();
     }
 
-    /** Ajoute à {@code names} les noms de {@code text} ("a,b,c" ; rien si {@code null}). */
-    private static void readNames(String text, Set<String> names) {
-        if (text == null) return;
-        for (String name : text.split(",")) if (!name.isBlank()) names.add(name.trim());
-    }
-
-    /** @return {@code copies} écrit "id:n,id:n" (dans l'ordre de la table). */
-    static String encode(Map<String, Integer> copies) {
-        StringBuilder text = new StringBuilder();
-        copies.forEach((id, count) -> {
-            if (count <= 0) return;
-            if (text.length() > 0) text.append(',');
-            text.append(id).append(':').append(count);
-        });
-        return text.toString();
-    }
-
-    /** @return la table écrite par {@link #encode(Map)} (les entrées illisibles sont ignorées). */
-    static Map<String, Integer> decode(String text) {
-        Map<String, Integer> copies = new LinkedHashMap<>();
-        if (text.isBlank()) return copies;
-        for (String entry : text.split(",")) {
-            int colon = entry.lastIndexOf(':');
-            if (colon <= 0) continue;
-            try {
-                int count = Integer.parseInt(entry.substring(colon + 1).trim());
-                if (count > 0) copies.merge(entry.substring(0, colon).trim(), count, Integer::sum);
-            } catch (NumberFormatException ignored) {
-                // entrée abîmée : ignorée
-            }
-        }
-        return copies;
-    }
-
-    /** @return {@code symbols} écrits "NOM,NOM". */
-    static String encodeSymbols(List<Symbol> symbols) {
-        return String.join(",", symbols.stream().map(Symbol::name).toList());
-    }
-
-    /** @return les symboles écrits par {@link #encodeSymbols(List)} (les noms inconnus sont ignorés). */
-    static List<Symbol> decodeSymbols(String text) {
-        List<Symbol> symbols = new ArrayList<>();
-        if (text == null || text.isBlank()) return symbols;
-        for (String name : text.split(",")) {
-            try {
-                symbols.add(Symbol.valueOf(name.trim().toUpperCase(Locale.ROOT)));
-            } catch (IllegalArgumentException ignored) {
-                // nom abîmé : ignoré
-            }
-        }
-        return symbols;
-    }
-
-    /** @return {@code amount} écrit avec des espaces entre les milliers (ex : "10 000"). */
-    public static String formatCoins(long amount) {
-        String digits = String.valueOf(Math.abs(amount));
-        StringBuilder text = new StringBuilder();
-        for (int i = 0; i < digits.length(); i++) {
-            if (i > 0 && (digits.length() - i) % 3 == 0) text.append(Lang.thousands());
-            text.append(digits.charAt(i));
-        }
-        return (amount < 0 ? "-" : "") + text;
-    }
-
-    private static long parseCoins(String text) {
-        if (text == null) return 0L;
-        try {
-            return Math.max(0L, Long.parseLong(text.trim()));
-        } catch (NumberFormatException e) {
-            return 0L;
-        }
-    }
 }

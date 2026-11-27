@@ -1,5 +1,6 @@
 package fr.astratime.lucky.entities.effects;
 
+import fr.astratime.lucky.entities.GameRandom;
 import fr.astratime.lucky.entities.context.TurnContext;
 import fr.astratime.lucky.entities.events.StatusEvent;
 import fr.astratime.lucky.i18n.Lang;
@@ -18,7 +19,6 @@ public class DrumrollEffect extends Effect {
 
     /** Chance que le numéro réussisse, en %. */
     public static final int SUCCESS_PERCENT = 67;
-    private static final Random RANDOM = new Random();
 
     private final int   factor;
     private final float missFactor;
@@ -28,7 +28,7 @@ public class DrumrollEffect extends Effect {
 
     @Override
     public void apply(TurnContext context) {
-        boolean success = RANDOM.nextInt(100) < SUCCESS_PERCENT;
+        boolean success = GameRandom.get().nextInt(100) < SUCCESS_PERCENT;
         context.getCombatContext().multiplyAttack(success ? factor : missFactor, "Roulement de tambour");
         context.addEvent(new StatusEvent(success ? Lang.f("NUMÉRO RÉUSSI : ATTAQUE x{0}", factor)
             : Lang.f("NUMÉRO RATÉ : ATTAQUE x{0}", Lang.decimal(String.valueOf(missFactor))),

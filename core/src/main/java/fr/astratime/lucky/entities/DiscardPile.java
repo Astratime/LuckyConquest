@@ -48,7 +48,7 @@ public class DiscardPile {
      */
     public List<Card> drainShuffled() {
         List<Card> result = new ArrayList<>(cards);
-        Collections.shuffle(result);
+        Collections.shuffle(result, GameRandom.get());
         cards.clear();
         return result;
     }

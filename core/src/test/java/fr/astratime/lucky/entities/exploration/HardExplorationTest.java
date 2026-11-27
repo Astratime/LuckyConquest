@@ -5,6 +5,7 @@ import fr.astratime.lucky.entities.SpinEconomy;
 import fr.astratime.lucky.entities.enemy.Difficulty;
 import fr.astratime.lucky.entities.enemy.EnemyKind;
 import fr.astratime.lucky.progress.PlayerProfile;
+import fr.astratime.lucky.progress.CoinRewards;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
@@ -75,7 +76,7 @@ class HardExplorationTest {
             // La force tirée des gains suit les ennemis (le Désert x1,41 par palier).
             assertEquals(Math.round(3_000 * HardExploration.strength(place)), SpinEconomy.powerSpinCost(cost));
         }
-        long kept = PlayerProfile.combatReward(false, true, 1e18, Place.PRAIRIE, true, 1);
+        long kept = CoinRewards.combatReward(false, true, 1e18, Place.PRAIRIE, true, 1);
         assertEquals(Place.PRAIRIE.getDefeatCap(true), kept);
     }
 

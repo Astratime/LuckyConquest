@@ -37,6 +37,8 @@ import fr.astratime.lucky.entities.exploration.Place;
 import fr.astratime.lucky.entities.run.CombatRun;
 import fr.astratime.lucky.i18n.Lang;
 import fr.astratime.lucky.progress.PlayerProfile;
+import fr.astratime.lucky.progress.CoinRewards;
+import fr.astratime.lucky.progress.Money;
 import fr.astratime.lucky.progress.PlayerStats;
 import fr.astratime.lucky.loaders.CardLoader;
 import fr.astratime.lucky.popups.EffectPopup;
@@ -489,8 +491,8 @@ abstract class GameScreenRun extends GameScreenBase {
         // Les gains affichés, versés en pièces pour la boutique après le roi d'un donjon (une part après une défaite).
         long earned = combatReward(victory);
         if (earned > 0) {
-            String coinsText = victory ? Lang.f("PIÈCES +{0}", PlayerProfile.formatCoins(earned))
-                : Lang.f("PIÈCES +{0} (PART DES GAINS GARDÉE)", PlayerProfile.formatCoins(earned));
+            String coinsText = victory ? Lang.f("PIÈCES +{0}", Money.formatCoins(earned))
+                : Lang.f("PIÈCES +{0} (PART DES GAINS GARDÉE)", Money.formatCoins(earned));
             int percent = luckyGame.getProfile().coinsPercent(Place.of(((DungeonRun) run).getDungeon()), run.isHard());
             if (percent < 100) coinsText += "\n" + Lang.f("TON RANG EST AU-DESSUS DE CE LIEU : {0} % DES PIÈCES", percent);
             Label coinsLabel = new Label(coinsText, new Label.LabelStyle(shopFont, Palette.GOLD));
@@ -612,11 +614,11 @@ abstract class GameScreenRun extends GameScreenBase {
     long combatReward(boolean victory) {
         if (!isDungeon()) return 0; // seule l'Exploration rapporte des pièces (ni Entraînement, ni Tour)
         Place place = Place.of(((DungeonRun) run).getDungeon());
-        long reward = PlayerProfile.combatReward(victory, run.isBossStage(),
+        long reward = CoinRewards.combatReward(victory, run.isBossStage(),
             gameController.getGameState().getPlayer().getGains(), place, run.isHard(),
-            PlayerProfile.dungeonProgress(run.isBossStage(), gameController.getGameState().getEnemy().getHpRatio()));
+            CoinRewards.dungeonProgress(run.isBossStage(), gameController.getGameState().getEnemy().getHpRatio()));
         // Un lieu en dessous de celui du rang joué rapporte moins (Astra, 2026-11-15).
-        return PlayerProfile.share(reward, luckyGame.getProfile().coinsPercent(place, run.isHard()));
+        return CoinRewards.share(reward, luckyGame.getProfile().coinsPercent(place, run.isHard()));
     }
 
     /** Règle la difficulté du combat qui vient : celle de la Tour ou de l'étage du mode sans fin (normale sans épreuve). */
