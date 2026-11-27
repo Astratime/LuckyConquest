@@ -14,6 +14,7 @@ import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Random;
 import java.util.function.Supplier;
@@ -110,12 +111,18 @@ class ScatteredShardsTest {
         assertTrue(hurt > full, "plus le joueur est blessé, plus la Valse frappe (" + full + " / " + hurt + ")");
     }
 
-    /** @return les PV qu'un tour de la Veuve (graine 0 qui sort une Valse) fait perdre au joueur, qui en a {@code hp}. */
+    /**
+     * @return les PV qu'un tour de la Veuve (première graine qui sort trois Valses) fait perdre au joueur, qui en
+     *         a {@code hp}. Son deck est remis dans un ordre fixe : mélangé au hasard, la carte qu'elle joue changeait
+     *         d'un appel à l'autre et le test échouait environ une fois sur vingt.
+     */
     private static long totalHit(int hp) {
         for (int seed = 0; seed < 500; seed++) {
             Player player = new Player("Joueur", 1_000_000, List.of());
             player.takeDamage(1_000_000 - hp, true);
-            EnemyTurnResult turn = new EnemyTurnResolver(new Random(seed)).resolve(new Enemy(EnemyKind.VEUVE), player);
+            Enemy widow = new Enemy(EnemyKind.VEUVE);
+            widow.arrangeDeck(Comparator.comparing(Card::getId));
+            EnemyTurnResult turn = new EnemyTurnResolver(new Random(seed)).resolve(widow, player);
             if (Arrays.stream(turn.symbols()).allMatch(symbol -> symbol == EnemySymbol.WALTZ)) return hp - player.getHp();
         }
         throw new AssertionError("aucun tirage de trois Valses");
